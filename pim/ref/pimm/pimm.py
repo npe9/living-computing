@@ -23,11 +23,12 @@ On this model ALONE (the Bluespec core has none of it yet), a
 prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
 what the IPL's SCSI stack needs besides (a merger input bound to a
-vector, built-ins waiting on a vector's element, put_reused_structure
-of a long vector).  ref/pimm/ref_scsi.py runs them.  The core has
-since been given read_eagerly, not_equal and wait_vector_1/4/6
-(lockstep_alt.py), b_divide, b_modulo, b_string and
-enqueue_goal_to_processor (lockstep_body.py).
+vector, scsi_command waiting on its vector's elements,
+put_reused_structure of a long vector).  ref/pimm/ref_scsi.py runs
+them.  The core has since been given read_eagerly, not_equal and
+wait_vector_1/4/6 (lockstep_alt.py), b_divide, b_modulo, b_string and
+enqueue_goal_to_processor (lockstep_body.py), and string_operation
+waiting on an element of its vector (lockstep_elw.py).
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -515,7 +516,7 @@ class Machine:
         wait = [w[1] for k, w in enumerate(vals) if self.unbound(w) and k not in nowait]
         if not wait and elements is not None:
             wait = elements(*vals)
-            if wait:
+            if wait and name != 'string_operation':
                 self.alone(name + ' waiting on a vector element')
         if not wait:
             for r, w in zip(outs, f(*vals)):

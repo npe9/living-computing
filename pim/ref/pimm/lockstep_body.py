@@ -67,10 +67,9 @@ NOT caught:
   the other numbers are a refusal)
 
 Not run:
-  b_string at a real site: each of the image's five is followed by a
-  string_operation on a vector with an element not yet bound, which
-  the Bluespec core does not have at this commit (pimm.py
-  Machine.alone);
+  b_string at a real site here: each of the image's five is followed
+  by a string_operation on a vector with an element not yet bound;
+  lockstep_elw.py runs three of them;
   enqueue_goal_to_processor to another processor, a zero divisor, the
   least integer divided by -1, b_string of a non-string: refusals,
   which the lockstep driver cannot play; scsi:create/2 with an integer

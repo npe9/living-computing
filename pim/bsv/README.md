@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Thirty-five tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Thirty-six tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -156,7 +156,9 @@ use, on code the bench writes). `body`: `b_divide` and `b_modulo`
 (`scsi_fep_module:str8_to_msg/3` and `str16_to_str8/2`, and signed
 operands at the stubs), `b_string` at its stub,
 `enqueue_goal_to_processor` (`scsi_fep_module:create/7`; processor 0
-only).
+only). `elw`: `string_operation` waits on an element of its vector
+that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
+`b_string`'s real sites, and `builtin_utility:append_string/2`).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (hours; the
 whole list has been run on the reference model alone, see the

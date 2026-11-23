@@ -79,7 +79,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
-               XProc, XBDiv, XBSInfo, XBSInfo2 } XState deriving (Bits, Eq);
+               XProc, XBDiv, XBSInfo, XBSInfo2,
+               XSoW } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
@@ -1150,8 +1151,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_string_operation) begin
-      // the binary form only: a vector of five (compiler/blt.kl1)
-      if (!isInt(a) || a.val > 15 || isLongVec(b) || !isVec(b) || sizeOf(b) != 5) stop(EndUnimp);
+      // the binary form only: a vector of five (compiler/blt.kl1); the
+      // operation is checked when the elements are all there
+      if (isLongVec(b) || !isVec(b) || sizeOf(b) != 5) stop(EndUnimp);
       else begin
         packK <= 0;
         vbox.element(b, 0);
@@ -1353,15 +1355,32 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
   endrule
 
+  // An element that is not yet a value is waited for (the manual: the
+  // built-in waits): the goal of the stub, as for an unbound operand,
+  // hooked on the first such element in order.  A wrong type or
+  // operation (the built-in's exception) is not modelled
+  function Bool svWaits(Integer i) = isRef(sv[i]);
+
   rule strOp3 (st == XSo3);
-    // an element that is not yet a value (the manual: the built-in
-    // waits) and a wrong type (its exception) are not modelled
-    if (!isInt(sv[0]) || !isStrg(sv[1]) || !isInt(sv[2]) || !isInt(sv[3]) || !isStrg(sv[4]))
+    if (svWaits(0) || svWaits(1) || svWaits(2) || svWaits(3) || svWaits(4)) begin
+      gbox.waitRecord(stub.addr, stub.n, operand, stub.outs);
+      st <= XSoW;
+    end
+    else if (!isInt(vals[0]) || vals[0].val > 15
+             || !isInt(sv[0]) || !isStrg(sv[1]) || !isInt(sv[2]) || !isInt(sv[3]) || !isStrg(sv[4]))
       stop(EndUnimp);
     else begin
       sbox.stringOp(truncate(vals[0].val), sv[1], sv[0].val, sv[2].val, sv[3].val, sv[4]);
       st <= XSo4;
     end
+  endrule
+
+  rule strOpWait (st == XSoW);
+    let g <- gbox.recordResult;
+    Cell v = svWaits(0) ? sv[0] : (svWaits(1) ? sv[1] : (svWaits(2) ? sv[2]
+           : (svWaits(3) ? sv[3] : sv[4])));
+    gbox.hook(g, cellAddr(v));
+    st <= XBWait2;
   endrule
 
   rule strOp4 (st == XSo4);
