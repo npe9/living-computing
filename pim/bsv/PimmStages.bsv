@@ -78,7 +78,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
-               XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
+               XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
+               XProc, XBDiv, XBSInfo, XBSInfo2 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
@@ -139,7 +140,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_vector_element || op == op_new_instruction
                   || op == op_new_module || op == op_calculate_priority_from_minimum
                   || op == op_change_element_size || op == op_string_operation
-                  || op == op_hash || op == op_predicate_to_code || op == op_apply;
+                  || op == op_hash || op == op_predicate_to_code || op == op_apply
+                  || op == op_b_divide || op == op_b_modulo || op == op_b_string;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -432,6 +434,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         gbox.record(fromInteger(lay_READY), labelOf(pc, c16), ins2.val[31:24], True, True);
         st <= XEnq;
       end
+    end
+    else if (op == op_enqueue_goal_to_processor) begin
+      // Goal@processor(N), the operands of enqueue_goal_with_priority:
+      // the processor's register, the label; the arity in the next
+      // cell's top byte.  One processor here, number 0 (ours)
+      dbox.deref(regs.r(x));
+      st <= XProc;
     end
     else if (op == op_enqueue_goal) begin
       // A goal has 11 argument slots; the compiler packs the arguments
@@ -836,6 +845,25 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     next;
   endrule
 
+  rule bDivided (st == XBDiv);
+    let d <- mbox.result;
+    regs.wr(z, intC(op == op_b_divide ? d.quotient : d.remainder));
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // b_string: the size, the element width, then the string itself
+  rule bStrInfo (st == XBSInfo);
+    let r <- sbox.result;
+    regs.wr(y, r.a);
+    opA <= r.b;
+    st <= XBSInfo2;
+  endrule
+
+  rule bStrInfo2 (st == XBSInfo2);
+    regs.wr(z, opA);
+    st <= XBOut2;
+  endrule
+
   rule note2 (st == XNote2);
     note(opA);
     guardFail;
@@ -992,9 +1020,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
   endrule
 
+  // enqueue_goal_to_processor: for processor 0 the goal is made as
+  // enqueue_goal makes it; any other processor is refused
+  rule toProcessor (st == XProc);
+    let a <- dbox.derefResult;
+    if (!isInt(a) || a.val != 0 || ins2.val[31:24] > 11) stop(EndUnimp);
+    else begin
+      gbox.record(fromInteger(lay_READY), labelOf(pc, c16), ins2.val[31:24], True, True);
+      st <= XEnq;
+    end
+  endrule
+
   rule enqueued (st == XEnq);
     let g <- gbox.recordResult;
-    finish(tagged Next (op == op_enqueue_goal_with_priority ? pc + 2 : pc + 1));
+    Bool twoCells = op == op_enqueue_goal_with_priority || op == op_enqueue_goal_to_processor;
+    finish(tagged Next (twoCells ? pc + 2 : pc + 1));
   endrule
 
   rule susp1 (st == XSusp1);
@@ -1078,6 +1118,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         mbox.multiply(a.val, b.val);
         st <= XMul;
+      end
+    end
+    else if (op == op_b_divide || op == op_b_modulo) begin
+      // r[z] := r[x] / r[y], or the remainder, as the guards (the
+      // divide box).  A non-integer, a zero divisor and, for divide,
+      // the least integer by -1 are the built-in's exception: not
+      // modelled
+      if (!isInt(a) || !isInt(b) || b.val == 0
+          || (op == op_b_divide && a.val == 32'h80000000 && b.val == 32'hffffffff)) stop(EndUnimp);
+      else begin
+        mbox.divide(a.val, b.val);
+        st <= XBDiv;
+      end
+    end
+    else if (op == op_b_string) begin
+      // string(X, ^Size, ^ElementSize, ^NewString): anything but a
+      // string is the built-in's exception: not modelled
+      if (!isStrg(a)) stop(EndUnimp);
+      else begin
+        sbox.info(a);
+        st <= XBSInfo;
       end
     end
     else if (op == op_change_element_size) begin

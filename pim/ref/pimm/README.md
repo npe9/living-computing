@@ -54,13 +54,14 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
 the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `code`, `lockstep_apply.py` `apply`, `lockstep_alt.py` `read_eagerly`
-(`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`;
-`longrun_ipl.py` is the long run (not in the suite); 121
+(`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`,
+`lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
+`enqueue_goal_to_processor`;
+`longrun_ipl.py` is the long run (not in the suite); 125
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with
-`enqueue_goal_to_processor`, `b_string`, `b_divide`, `b_modulo`, a
-merger input bound to a vector, a built-in waiting on an element of
+a merger input bound to a vector, a built-in waiting on an element of
 its argument vector and `put_reused_structure` of a long vector
 (each refused unless `Machine.ahead` is set); `ref_scsi.py` runs the body of `ipl:boot0` on
 them, the IPL reading its list and its files through its own SCSI

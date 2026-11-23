@@ -22,12 +22,12 @@ raises Unimplemented: it never guesses.
 On this model ALONE (the Bluespec core has none of it yet), a
 prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
-what the IPL's SCSI stack needs besides (enqueue_goal_to_processor,
-b_string, b_divide, b_modulo, a merger input bound to a vector,
-built-ins waiting on a vector's element, put_reused_structure of a
-long vector).  ref/pimm/ref_scsi.py runs them.  The core has since
-been given read_eagerly, not_equal and wait_vector_1/4/6
-(lockstep_alt.py).
+what the IPL's SCSI stack needs besides (a merger input bound to a
+vector, built-ins waiting on a vector's element, put_reused_structure
+of a long vector).  ref/pimm/ref_scsi.py runs them.  The core has
+since been given read_eagerly, not_equal and wait_vector_1/4/6
+(lockstep_alt.py), b_divide, b_modulo, b_string and
+enqueue_goal_to_processor (lockstep_body.py).
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -1363,7 +1363,6 @@ class Machine:
         self.builtin('b_multiply', [x, y, z], f)
 
     def i_b_divide(self, pc, x, y, z, c16):
-        self.alone('b_divide')
         # divide(Integer1, Integer2, ^NewInteger), guard and body:
         # "Divides Integer1 by Integer2 and unifies the quotient with
         # NewInteger" (PIMOS manual, e-builtin.tex line 285).  As the
@@ -1379,7 +1378,6 @@ class Machine:
         self.builtin('b_divide', [x, y, z], f)
 
     def i_b_modulo(self, pc, x, y, z, c16):
-        self.alone('b_modulo')
         # modulo(Integer1, Integer2, ^NewInteger), guard and body:
         # "unifies the remainder with NewInteger" (PIMOS manual,
         # e-builtin.tex line 303).  As the guard here (the remainder
@@ -1512,7 +1510,6 @@ class Machine:
         self.builtin('new_string', [x, y, z], f)
 
     def i_b_string(self, pc, x, y, z, c16):
-        self.alone('b_string')
         # body string(X, ^Size, ^ElementSize, ^NewString): "The size
         # of string X is unified with Size, the element bit width is
         # unified with ElementSize, and X is unified with NewString"
@@ -1887,7 +1884,6 @@ class Machine:
 
     # ---- one processor ------------------------------------------------
     def i_enqueue_goal_to_processor(self, pc, x, y, z, c16):
-        self.alone('enqueue_goal_to_processor')
         # Goal@processor(N).  Two cells, as enqueue_goal_with_priority
         # (assembler/klb_opr.kl1 p(r_c16_c8_exe)): the processor's
         # register, the label; the arity in the next cell's top byte.
