@@ -1776,6 +1776,25 @@ class Machine:
         self.reg[self.cells[pc + 1][1] >> 24] = (INT, w[1] - m)
         return pc + 2
 
+    def i_scsi_where(self, pc, x, y, z, c16):
+        # scsi_where(^Info), 22:A0: "Info ::= [] | [SCSI_Info | Info],
+        # SCSI_Info ::= {Cluster, Processor, SCSI_PORT, MY_UNIT}" (the
+        # built-in's stand-in in PIMOS source, bios/boot/scsi_conf.kl1,
+        # whose header gives that grammar; its compiler entry
+        # library/compiler/blt.kl1 has one output, no input).  The
+        # value is the stand-in's for one front-end processor on eight
+        # or fewer nodes, [{0, 0, 0, 6}]: one SCSI port on cluster 0,
+        # processor 0, port 0, this machine's own unit 6.  What PIM/m's
+        # firmware read it from (the machine's configuration) is not
+        # known; the single-FEP value is the stand-in's, labelled as
+        # such.
+        w, a = self.vnew(4)
+        for k, v in enumerate((0, 0, 0, 6)):
+            self.mem[a + k] = (INT, v)
+        c = self.alloc(2)
+        self.mem[c], self.mem[c + 1] = w, NIL
+        self.reg[x] = (LIST + 1, c)
+
     def i_new_atom(self, pc, x, y, z, c16):
         # new_atom(^Atom): "creates a new atom ... The atom has no
         # printing name" (PDSS manual, pdss.tex).  Which number is

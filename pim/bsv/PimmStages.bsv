@@ -76,7 +76,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
@@ -318,6 +318,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_put_list) begin
       gbox.alloc(2);       // car, then cdr
       st <= XVec;
+    end
+    else if (op == op_scsi_where) begin
+      // scsi_where(^Info): [{0, 0, 0, 6}], one SCSI port on cluster 0,
+      // processor 0, port 0, own unit 6 (the stand-in's single-FEP
+      // value, PIMOS bios/boot/scsi_conf.kl1): a vector of four, then
+      // the list cell, in one allocation of six cells
+      gbox.alloc(6);
+      st <= XSWh1;
     end
     else if (op == op_new_atom) begin
       // new_atom(^Atom): the next of a counter; which numbers is ours
@@ -1378,6 +1386,31 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       packK <= packK + 1;
       smem.read(at + 1);
     end
+  endrule
+
+  // scsi_where: the vector's four cells, the list cell's two
+  rule scsiWhere1 (st == XSWh1);
+    let at <- gbox.allocResult;
+    opA <= mkCell(tag_LISTo + 1, absAddr(at + 4));
+    smem.write(at, intCell(0));
+    packK <= 1;
+    st <= XSWh2;
+  endrule
+
+  rule scsiWhere2 (st == XSWh2);
+    Addr list = cellAddr(opA);
+    Addr vec = list - 4;
+    case (packK)
+      1, 2: smem.write(vec + zeroExtend(packK), intCell(0));
+      3:    smem.write(vec + 3, intCell(6));
+      4:    smem.write(list, mkCell(tag_VECT0o + 9, absAddr(vec)));
+      5:    smem.write(list + 1, mkCell(tag_ATOMo, 0));
+    endcase
+    if (packK == 6) begin
+      regs.wr(x, opA);
+      next;
+    end
+    else packK <= packK + 1;
   endrule
 
   // the guard code: the head, then the module's descriptor cell
