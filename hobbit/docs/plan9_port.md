@@ -19,6 +19,15 @@ Three parts matter, and only one of them is vendored in `tools/`:
 | toolchain sources | `sys/src/cmd/{za,zc,zl}` | the `z` assembler, compiler back end and linker; `zl/asm.c` is the encoder, and **no file in 1e defines `outcode`** (see `tools/README.md`) |
 | executable header | `sys/include/a.out.h` | `struct Exec {magic, text, data, bss, syms, entry, spsz, pcsz}`, `Z_MAGIC = _MAGIC(10) = 0x197` |
 
+**Vendored for A3's generated kernel inputs (2026-11-23).**  From the
+same tarball (sha256 above, re-verified that day), verbatim, dated
+3 January 1993, pinned in `tools/SHA256SUMS`: `hobbit/bin/{awk, sed,
+xd, grep, sort, tr, strip, rl}` and `hobbit/lib/libauth.a`.  They are
+what `sys/src/9/port/mk*`, `sys/src/9/boot/mkboot`, `hobbit/mkfile`'s
+`init.h` rule and `boot/mkfile` run (`tools/p9kgen.py`; the boot
+program links `-lauth`; `rl` makes the `__.SYMDEF` that `zl` requires).
+`date` was not vendored: `KERNDATE` is read back from `s9term`.
+
 So the port exists twice over: as binaries that were built at the time,
 and as the kernel and library sources that produced them. The proof of
 concept uses the binaries as the oracle and the sources as the rules.

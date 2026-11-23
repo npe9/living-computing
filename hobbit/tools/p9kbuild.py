@@ -32,24 +32,29 @@ size and sha256, and what it printed.
 What is not the release's tooling, and why
 ------------------------------------------
 * $DEV/$STREAM/$MISC: the mkfile gets them from `rc ../port/mkdevlist`
-  (sed|awk) on the config file.  Those need rc, sed and awk on the model
-  (not yet); the lists are read from `tools/p9kbuild/<conf>.{dev,stream,
-  misc}list`, written by hand from the scripts and the config, in the
-  scripts' own output format so the generated ones can replace them.
-* devtab.h: `rc ../port/mkdevh $CONFLIST` (mkextract -u | awk).  Generated
-  here by a transcription of those two scripts; PROVISIONAL, replaceable
-  with --devtab-h FILE.
+  (sed|awk) on the config file.  By default they are read from
+  `tools/p9kbuild/<conf>.{dev,stream,misc}list`, written by hand from the
+  scripts and the config; `--kgen DIR` takes them instead from
+  tools/p9kgen.py's `DIR/objlists`, the scripts' own output with the
+  release's sed and awk run on the model (identical for term,
+  2026-11-23; the log says so).
+* devtab.h: `rc ../port/mkdevh $CONFLIST` (mkextract -u | awk).  By
+  default a Python transcription of those two scripts (PROVISIONAL);
+  `--kgen DIR` (or --devtab-h FILE) takes the one p9kgen made with
+  the release's awk and sort (identical to the transcription for the
+  shipped CONFLIST).
 * init.h (rammain.c includes it): initcode is assembled and linked on the
   model (`za initcode`, `zl -l -s -o init.out -H2 -T0x1020 -R4
-  initcode.z`), but the text step (`xd -r -1x init.out | sed ...`) is a
-  transcription of xd.c and the two sed expressions.  PROVISIONAL, and
-  so is rammain.z; replaceable with --init-h FILE.
+  initcode.z`), and by default the text step (`xd -r -1x init.out | sed
+  ...`) is a transcription of xd.c and the two sed expressions
+  (PROVISIONAL); `--kgen DIR` (or --init-h FILE) takes p9kgen's, made by
+  the release's xd and sed (identical; equal to s9term's initcode[]).
 * rl's `fexec("/bin/ar", ...)`: rl forks and execs ar to put the table it
-  wrote into the archive (rl.c writerl/fexec).  p9run models one process
-  and refuses rfork(RFPROC); rl therefore stops there, after it has
-  written and closed __.SYMDEF.  The driver checks that it stopped at
-  exactly that call, then does what the rest of writerl() does: runs the
-  same `ar` command lines on the model, then removes __.SYMDEF.
+  wrote into the archive (rl.c writerl/fexec).  p9run runs the child (a
+  copy of the process, to its exits, before the parent's wait), so rl
+  runs to its end; `play_rl` fixes the run's clock at the table's date
+  and the directory's mode at 0775 so the table's header is
+  reproducible.
 * dates and modes: ar copies the input file's mtime and mode into each
   member header.  For a reproducible archive the driver sets every input
   to mode 0664 (what every shipped libc.a member records) and mtime
@@ -95,16 +100,19 @@ LIBC_ASM_REPLACED = {"port/" + n for n in (
 # One run of a 1e binary on the model (in a worker process)
 # --------------------------------------------------------------------
 
-def run_tool(root, cwd, tool, args, max_steps=MAX_STEPS):
-    """Run hobbit/bin/<tool> with `args` in `cwd` (a path under root)."""
+def run_tool(root, cwd, tool, args, max_steps=MAX_STEPS, clock=None):
+    """Run hobbit/bin/<tool> with `args` in `cwd` (a path under root).
+    `clock` fixes the times of the files it writes (p9run Kernel.stamp).
+    Instructions and system calls include any child it forks."""
     import p9run
     out = io.BytesIO()
     t0 = time.time()
     status, steps, k, _ops = p9run.run(
         str(pathlib.Path(root) / "hobbit" / "bin" / tool), [tool] + args,
-        str(root), max_steps, out, cwd=cwd)
+        str(root), max_steps, out, cwd=cwd, clock=clock)
     return {"tool": tool, "args": args, "cwd": cwd, "status": status,
-            "steps": steps, "syscalls": len(k.trace),
+            "steps": steps + k.child_steps,
+            "syscalls": len(k.trace) + sum(len(c[3]) for c in k.children),
             "seconds": round(time.time() - t0, 1),
             "console": out.getvalue().decode("latin-1")}
 
@@ -260,10 +268,23 @@ CONFLIST = ["cpu", "term", "termlocal", "bart", "rom"]
 CFLAGS = ["-w", "-Dram"]
 
 
-def kernel_objects(conf):
+def kgen_lists(kgen):
+    """The DEV/STREAM/MISC lines tools/p9kgen.py writes to `objlists`
+    (the output of rc ../port/mk{dev,stream,misc}list, run on the
+    model) as {"dev": [...], "stream": [...], "misc": [...]}."""
+    out = {}
+    for line in (pathlib.Path(kgen) / "objlists").read_text().splitlines():
+        var, words = line.split("=", 1)
+        out[var.lower()] = words.split()
+    return out
+
+
+def kernel_objects(conf, lists=None):
+    """$OBJ; `lists` (kgen_lists) replaces the hand-written lists."""
     def lst(kind):
-        return [n[:-2] if n.endswith(".z") else n
-                for n in read_list(LISTS / ("%s.%slist" % (conf, kind)))]
+        names = (lists[kind] if lists is not None else
+                 read_list(LISTS / ("%s.%slist" % (conf, kind))))
+        return [n[:-2] if n.endswith(".z") else n for n in names]
     return OBJ_HEAD + lst("dev") + lst("misc") + lst("stream") + OBJ_TAIL
 
 
@@ -308,48 +329,32 @@ class Log:
 
 def play_rl(root, cwd, libname, log, max_steps, mtime=FIXED_MTIME,
             mode=FIXED_MODE):
-    """Run rl on `libname`; then do writerl()'s fexec("/bin/ar", ...) and
-    remove(symname) (rl.c), which p9run cannot (see the module doc)."""
+    """$RL $LIBRARY: run rl on `libname` to its end.  rl.c writerl()
+    creates __.SYMDEF (perm 0664), writes the table, then fexec()s
+    `/bin/ar rb|mb|r ...` (fork, exec, wait: p9run runs the child) and
+    removes __.SYMDEF.  ar copies the table file's date and mode into its
+    member header, so the run's clock is fixed at `mtime` and the
+    directory is given mode 0775 (create's perm is ANDed with the
+    directory's, open(2)), which leaves 0664 = `mode`."""
     import build_zl_inferno
     d = pathlib.Path(root) / cwd
-    r = run_tool(root, cwd, "rl", [libname], max_steps)
+    if mode != 0o664:
+        raise SystemExit("p9kbuild: rl creates __.SYMDEF 0664, not %o"
+                         % mode)
+    os.chmod(d, 0o775)
+    r = run_tool(root, cwd, "rl", [libname], max_steps, clock=mtime)
     report("rl", r)
-    expect = ("p9run: refused rfork(0x14): RFPROC (a new process) "
-              "is not modelled")
-    symdef = d / "__.SYMDEF"
-    if ok(r):
-        # A runner that models fork/exec/wait ran writerl() to its end:
-        # the table must then be the archive's first member, its file gone.
-        # (Its header date is then the host clock's: not reproducible.)
-        log.line("rl", r, d / libname, "ran to the end (fork modelled)")
-        members = list(build_zl_inferno.read_members(str(d / libname)))
-        if members[:1] != ["__.SYMDEF"] or symdef.exists():
-            raise SystemExit("p9kbuild: rl exited but left no table first")
-        return
-    log.line("rl", r, symdef, "stopped at fork(): the driver plays fexec")
-    if r["status"] != expect or not symdef.exists():
-        raise SystemExit("p9kbuild: rl did not stop at its fork: %s"
-                         % r["status"])
-    os.chmod(symdef, mode)
-    os.utime(symdef, (mtime, mtime))
-    # writerl(): firstname is the archive's first member before rl ran,
-    # symsize the size of an __.SYMDEF already in it.
+    log.line("rl", r, d / libname, "rl's fork+exec of ar run by p9run")
+    if not ok(r):
+        raise SystemExit("p9kbuild: rl failed: %s" % r["status"])
     members = list(build_zl_inferno.read_members(str(d / libname)))
-    firstname = members[0] if members else ""
-    had = "__.SYMDEF" in members
-    if firstname != "__.SYMDEF":
-        cmds = ([["mb", firstname, libname, "__.SYMDEF"],
-                 ["r", libname, "__.SYMDEF"]] if had else
-                [["rb", firstname, libname, "__.SYMDEF"]])
-    else:
-        cmds = [["r", libname, "__.SYMDEF"]]
-    for args in cmds:
-        ra = run_tool(root, cwd, "ar", args, max_steps)
-        report("ar " + args[0], ra)
-        log.line("ar " + args[0], ra, d / libname, "rl's fexec")
-        if not ok(ra):
-            raise SystemExit("p9kbuild: %s failed: %s" % (args, ra["status"]))
-    symdef.unlink()                         # remove(symname)
+    if members[:1] != ["__.SYMDEF"] or (d / "__.SYMDEF").exists():
+        raise SystemExit("p9kbuild: rl exited but left no table first")
+    hdr = (d / libname).read_bytes()[8:68]
+    if (int(hdr[16:28].decode().strip()) != mtime
+            or int(hdr[40:48].decode().strip(), 8) != mode):
+        raise SystemExit("p9kbuild: __.SYMDEF header %r: not dated %d "
+                         "mode %o" % (hdr, mtime, mode))
 
 
 def make_library(root, cwd, libname, names, log, max_steps):
@@ -382,6 +387,22 @@ def target_kernel(a):
              % a.conf)
 
     provisional = set()
+    lists = None
+    if a.kgen:
+        # tools/p9kgen.py's products: rc's scripts run on the model
+        kg = pathlib.Path(a.kgen)
+        a.devtab_h = a.devtab_h or str(kg / "devtab.h")
+        a.init_h = a.init_h or str(kg / "init.h")
+        lists = kgen_lists(kg)
+        for kind in ("dev", "stream", "misc"):
+            hand = read_list(LISTS / ("%s.%slist" % (a.conf, kind)))
+            log.note("%slist from %s: %s the hand list (%d objects)"
+                     % (kind, kg, "same as" if hand == lists[kind]
+                        else "DIFFERENT from", len(lists[kind])))
+        tdevtab = devtab_h(hdir, CONFLIST)
+        log.note("devtab.h from %s: %s the transcription" % (
+            kg, "same as" if (kg / "devtab.h").read_text() == tdevtab
+            else "DIFFERENT from"))
     if a.devtab_h:
         shutil.copy(a.devtab_h, hdir / "devtab.h")
         log.note("devtab.h from %s" % a.devtab_h)
@@ -389,7 +410,7 @@ def target_kernel(a):
         (hdir / "devtab.h").write_text(devtab_h(hdir, CONFLIST))
         log.note("devtab.h PROVISIONAL: mkdevh transcribed in Python, "
                  "sha256 %s" % sha(hdir / "devtab.h"))
-    objs = kernel_objects(a.conf)
+    objs = kernel_objects(a.conf, lists)
     only = set(a.only.split(",")) if a.only else None
     want = [o for o in objs if only is None or o in only]
     if only and only - set(objs) - {"raml"}:
@@ -652,6 +673,9 @@ def main(argv):
                     "transcribed mkdevh")
     ap.add_argument("--init-h", help="use this init.h, not the "
                     "provisional one")
+    ap.add_argument("--kgen", metavar="DIR",
+                    help="kernel: take devtab.h, init.h and the DEV/STREAM/"
+                    "MISC lists from a tools/p9kgen.py output directory")
     ap.add_argument("--no-library", action="store_true",
                     help="kernel: compile only; no ar/rl")
     a = ap.parse_args(argv)
