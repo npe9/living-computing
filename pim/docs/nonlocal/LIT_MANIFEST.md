@@ -1452,3 +1452,26 @@ FSTJ issue that was over the fetch's 95 MB limit,
 stand with the other issues: on disk only, like them, with its row in
 `SOURCES.tsv` and `SHA256SUMS`. With it all 17 cited FSTJ issues are
 held.
+
+## Addendum 2026-11-23: the PSI / SIMPOS acquisition (roadmap section 9, rung P0)
+
+A search for SIMPOS, ESP, KL0 and PSI hardware material, made because
+the owner put the PSI and SIMPOS in the plan. Its findings are
+`docs/psi_acquisition.md`; this addendum only records the files.
+
+- Fetched 154 files (159.3 MB) with plain `curl` and a generic user
+  agent; 63 were byte-identical to files already held (`ifs/`, `lit/`)
+  and were not added again.
+- Added: 64 ICOT technical reports to `lit/trtm/` (in git, as the rest
+  of `trtm/`: the AIST-hosted FGCS Digital Archive "permits free use
+  of the contents ... for academic purposes without changing any parts
+  of the contents", `using-FGCSDA-E.html`); 27 IPSJ papers to
+  `lit/ipsj/` (on disk only, as the rest of `ipsj/`: the record's
+  licence field is `license_free` with no text).
+- Every added file has its row in `lit/SOURCES.tsv` (retrieval column
+  "fetched 2026-11-23, PSI/SIMPOS acquisition P0") and its line in
+  `lit/SHA256SUMS`; `cd lit && shasum -a 256 -c SHA256SUMS` passes
+  for every file. (`SHA256SUMS` lists `SOURCES.tsv` too; its line was
+  recomputed after the append.)
+- The summary table above is as of 2026-11-20 and was not regenerated:
+  `lit/trtm/` now holds 356 files, `lit/ipsj/` 157.
