@@ -37,6 +37,8 @@ MOD = 0x27                  # a module object: {MOD, a} -> {CDESC, 06 << 24 | n}
 VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
+FLT = 0x30                  # a floating point number (kbn.TAGS FLTo): not modelled
+NEW_ATOM0 = 0x10000         # the first atom new_atom gives: ours
 VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
@@ -114,6 +116,7 @@ class Machine:
         self.argv.machine, self.argv.letter = self, 'A'
         self.hp = self.load + heap            # heap pointer: the next free cell
         self.rq = 0                           # ready queue: the newest goal record
+        self.next_atom = NEW_ATOM0            # new_atom's counter (ours)
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
@@ -687,13 +690,24 @@ class Machine:
 
     def i_wait_value(self, pc, x, y, z, c16):
         # the guard X = Y on two arguments (TR-246 p. 5).  Modelled for
-        # atomic values; two structures, or one variable twice, need
-        # the general passive unification and are refused
+        # atomic values and strings: two strings are equal when their
+        # descriptors and all their words are (PDSS emulator/passive.c
+        # passive_unify, case STRING), a string and an atomic value
+        # are not.  Lists and vectors, or one variable twice, need the
+        # general passive unification and are refused
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
             raise Unimplemented('wait_value of a variable with itself')
         a, b = self.g_word(x), self.g_word(y)
         if a is None or b is None:
+            return self.guard_fail()
+        sa, sb = a[0] & ~1 == STRG, b[0] & ~1 == STRG
+        if sa and sb:
+            n = self.mem[a[1]][1] & 0xffffff
+            if any(self.mem[a[1] + i] != self.mem[b[1] + i] for i in range(n + 1)):
+                return self.guard_fail()
+            return
+        if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):
             return self.guard_fail()
         if not (self.atomic(a) and self.atomic(b)):
             raise Unimplemented('wait_value on a structure')
@@ -725,6 +739,19 @@ class Machine:
 
     def i_equal(self, pc, x, y, z, c16):
         return self.compare(x, y, lambda a, b: a == b)
+
+    def i_floating_point_not_less_than(self, pc, x, y, z, c16):
+        # guard floating_point_not_less_than(F1, F2), function 3 of
+        # opcode 23:FC, registers y and z.  "If both Float1 and Float2
+        # are floating points and the value of the former is larger
+        # than, or equal that of the latter, this predicate succeeds.
+        # Otherwise it fails" (PDSS manual).  The IPL's pool tries it
+        # on every key that is neither atom nor integer; there is no
+        # floating point here, so two floats are refused.
+        a, b = self.g_word(y), self.g_word(z)
+        if a is None or b is None or a[0] & ~1 != FLT or b[0] & ~1 != FLT:
+            return self.guard_fail()
+        raise Unimplemented('floating point comparison')
 
     def i_exclusive_or(self, pc, x, y, z, c16):  # guard arithmetic
         a, b = self.g_int(x), self.g_int(y)
@@ -1364,6 +1391,49 @@ class Machine:
                 self.mem[a + i] = c
             return [(MOD, a)]
         self.builtin('new_module', [x, y], f)
+
+    def i_new_atom(self, pc, x, y, z, c16):
+        # new_atom(^Atom): "creates a new atom ... The atom has no
+        # printing name" (PDSS manual, pdss.tex).  Which number is
+        # OURS: a counter up from NEW_ATOM0, clear of the image's own
+        # atoms.  PDSS counts down from the top of its table; PIM/m
+        # gave each processor a range (supply_atom_number, the server
+        # in pimos::top), whose first value is not known.
+        if self.next_atom > 0xffffff:
+            raise Unimplemented('new_atom: out of atom numbers')
+        self.reg[x] = (ATOM, self.next_atom)
+        self.next_atom += 1
+
+    def i_hash(self, pc, x, y, z, c16):
+        # hash(X, ^Value, ^NewX): "unifies Value with a hash code
+        # computed according to X, and also unifies NewX with X" (PDSS
+        # manual).  The code is PDSS's (emulator/blt_system.c
+        # blt_b_hash): the value of an atom or integer, -1 for a list,
+        # a vector's length, and for a string its word count plus a
+        # mix of its first and last words.  PIM/m's own function is
+        # lost with the firmware; any function gives a correct table,
+        # so where an entry lies in a hashed table is not the
+        # machine's.  PDSS gives 0 for anything else: refused here.
+        def f(w):
+            t = w[0] & ~1
+            if t in (INT, ATOM):
+                h = w[1]
+            elif t == LIST:
+                h = 0xffffffff
+            elif t == STRG:
+                d = self.mem[w[1]]
+                if d[0] != CDESC:
+                    raise RuntimeError('string without a descriptor at %x' % w[1])
+                h = d[1] & 0xffffff
+                if h:
+                    a, b = self.mem[w[1] + 1][1], self.mem[w[1] + h][1]
+                    h += a + (a >> 16) + (a >> 24) + (b << 1) + (b >> 15) + (b >> 23)
+            elif VECT0 <= t <= VECT0 + 12:
+                h = self.vsize(w)
+            else:           # a long vector too, for now
+                raise Unimplemented('hash of %r' % (w,))
+            return [(INT, h & 0xffffffff), w]
+        self.builtin('hash', [x, y, z], f)
 
     def i_b_vector_element(self, pc, x, y, z, c16):
         # vector_element(V, I, ^E, ^V1): r[z] := element, r[w] := the vector

@@ -8,6 +8,8 @@
 //   info(s)            a = {INT, length}, b = {INT, element bits}
 //   element(s, i)      a = {INT, element i}
 //   newStr(n, bits)    a = a new string of n zero elements
+//   hashStr(s)         a = the hash code of the string (PDSS's function)
+//   equal(s1, s2)      ok is whether the strings are the same, word for word
 //   tryElement(s, i)   the same for a guard: ok is False when i is
 //                      out of range
 //   changeSize(s,bits) a = s with elements of `bits` bits (8, 16, 32).
@@ -51,16 +53,18 @@ interface PimmSBox;
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
   method Action changeSize(Cell s, Bit#(32) bits);
   method Action stringOp(Bit#(4) op, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2);
+  method Action hashStr(Cell s);
+  method Action equal(Cell s1, Cell s2);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq } SKind deriving (Bits, Eq);
 
 typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
   SReq deriving (Bits);
 
 typedef enum { SIdle, SDesc, SDesc2, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr,
-               SOp0, SOp1, SOp2 }
+               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3 }
   SState deriving (Bits, Eq);
 
 module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
@@ -171,6 +175,19 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
       gbox.alloc(toAddr(wordsOf(d)) + 1);
       st <= SAlloc;
     end
+    else if (rq.k == KHash) begin
+      // words, then a mix of the first and the last word
+      if (wordsOf(d) == 0) answer(intC(0), ?);
+      else begin
+        mem.read(src + 1);
+        st <= SHash1;
+      end
+    end
+    else if (rq.k == KEq) begin
+      if (!inMemory(rq.s2.val)) fatal("string pointer outside memory");
+      mem.read(cellAddr(rq.s2));
+      st <= SEq0;
+    end
     else if (rq.k == KOp) begin
       if (!inMemory(rq.s2.val)) fatal("string pointer outside memory");
       mem.read(cellAddr(rq.s2));
@@ -224,6 +241,60 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     else begin
       j <= j + 1;
       st <= SOp0;
+    end
+  endrule
+
+  // hashStr: PDSS's function (emulator/blt_system.c blt_b_hash)
+  rule hash1 (st == SHash1);
+    let c <- mem.data;
+    j <= c.val;
+    mem.read(src + toAddr(wordsOf(desc)));
+    st <= SHash2;
+  endrule
+
+  rule hash2 (st == SHash2);
+    let c <- mem.data;
+    let a = j;
+    let b = c.val;
+    answer(intC(zeroExtend(wordsOf(desc)) + a + (a >> 16) + (a >> 24)
+                + (b << 1) + (b >> 15) + (b >> 23)), ?);
+  endrule
+
+  // equal: the descriptors, then every word (PDSS passive_unify)
+  function Action differ();
+    action
+      resQ.enq(SResult { a: ?, b: ?, ok: False });
+      st <= SIdle;
+    endaction
+  endfunction
+
+  rule eq0 (st == SEq0);
+    let c <- mem.data;
+    k <= 0;
+    if (c != mkCell(tag_CDESC, desc)) differ;
+    else if (wordsOf(desc) == 0) answer(?, ?);
+    else st <= SEq1;
+  endrule
+
+  rule eq1 (st == SEq1);
+    mem.read(src + 1 + toAddr(k));
+    st <= SEq2;
+  endrule
+
+  rule eq2 (st == SEq2);
+    let c <- mem.data;
+    j <= c.val;
+    mem.read(cellAddr(rq.s2) + 1 + toAddr(k));
+    st <= SEq3;
+  endrule
+
+  rule eq3 (st == SEq3);
+    let c <- mem.data;
+    if (c.val != j) differ;
+    else if (k + 1 == wordsOf(desc)) answer(?, ?);
+    else begin
+      k <= k + 1;
+      st <= SEq1;
     end
   endrule
 
@@ -289,6 +360,9 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   method Action changeSize(Cell s, Bit#(32) bits) = reqQ.enq(mk(KChg, s, bits, ?));
   method Action stringOp(Bit#(4) o, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2) =
     reqQ.enq(SReq { k: KOp, s: s1, i: p1, e: n, s2: s2, p2: p2, op: o });
+  method Action hashStr(Cell s) = reqQ.enq(mk(KHash, s, ?, ?));
+  method Action equal(Cell s1, Cell s2) =
+    reqQ.enq(SReq { k: KEq, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
   method ActionValue#(SResult) result;
     resQ.deq;
     return resQ.first;

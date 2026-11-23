@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Twenty-four tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Twenty-five tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -127,7 +127,11 @@ and atom-number pool; a file with its checksum altered is refused;
 `string_operation`, `change_element_size`, 32-bit strings) and `mrb`
 (`set_vector_element` on a vector held twice, held once, behind a
 marked and a plain reference, and over an unbound element: in place
-or copied, by address and content). State: 102
+or copied, by address and content) and `atab` (the IPL's own atom
+table, `ipl_loader:atom_table/1`: names interned, read back with
+`get_all`, and a real object file loaded against it; `new_atom`,
+`hash`, string equality in `wait_value`, the guard
+`floating_point_not_less_than`). State: 105
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

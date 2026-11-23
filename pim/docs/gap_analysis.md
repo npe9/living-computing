@@ -138,9 +138,13 @@ MRB bit, which it now does (`lockstep_mrb.py`).
 `ipl_loader:load_file/9` now loads a real file with the IPL's own
 reader, checksum and atom-number pool (`lockstep_load.py`); the test
 stands in only for the file's buffers (`getb`, a buffer size of ours)
-and for `intern`. Next: the IPL's own `atom_table/1` (and `new_atom`)
-answering `intern`, now that `set_vector_element` is in place under
-the MRB; console output (C1), so that the file's name and a 5702h
+and for `intern`. `intern` is now answered by the IPL's own
+`atom_table/1` (`lockstep_atab.py`): a 16384-cell keyed pool of
+names, which `set_ipl_atoms/3` first gives "pimos", "pim" and "go"
+(the boot entry is `pimos::pim:go/4`), each a `new_atom`, and `[]`
+as nil. The names are hashed by the `hash` built-in, whose function
+here is PDSS's, not known to be PIM/m's. The test stands in only for
+the file's buffers. Next: console output (C1), so that the file's name and a 5702h
 file's comment are displayed; then `load_files/10` over the file
 list, with the FEP's `open` (C2).
 
@@ -150,7 +154,7 @@ list, with the FEP's `open` (C2).
 |---|---|---|
 | C1 | Console: `display_console` 61, `put_console` 71, `read_console`, `get_console`, `halt` | the first observable of R4. Semantics of the argument (string? character?) to settle from `ipl`'s uses and the microcode entries |
 | C2 | The front-end processor over SCSI: `scsi_command`, `scsi_init` and the five `scsi_fep_*` modules that speak to it (no source for those modules in `pimos.tar.Z`) | the IPL reads `pimos.ipl` and the `.sav` files *from the FEP*. We must emulate the FEP end: either at the `scsi_command` built-in (need the packet format, from `scsi_fep_module`'s object code and `pimfep.ptf`), or above it by answering the IPL's file requests. This is the largest piece of new design before R4 |
-| C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers |
+| C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers. `new_atom` is in since 2026-11-23 with a numbering of OURS (up from 10000h); the server (`top:atom_number_server/7`, `supply_atom_number`) is not |
 | C4 | Timer, date, and the FEP services PIMOS opens after boot (window, file, string_io) | R5-R6. The PIMOS internal file system is not in the released source (`icot_databases.md` section 6) |
 | C5 | A `.sav` loader for tests (owed for R2 as written) | `asm/unlsav.py` decodes; relocation and atom renumbering are what the IPL's own loader does, so B2 and C3 inform it |
 | C6 | More than one processing element: export/import tables, messages, weighted reference counts | field names known from the console (`pseudo_pimm_firmware.md`); defer: configure one PE. Distributed Pool and multi-node Kappa-P need it |

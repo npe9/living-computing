@@ -76,7 +76,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
@@ -102,6 +102,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // sp was set by wait_vector_N from a vector reached with every MRB
   // off: read_variable takes its elements as they are
   Reg#(Bool)         spSingle <- mkReg(False);
+  Reg#(Bit#(25))     nextAtom <- mkReg(25'h0010000);   // new_atom's counter: ours
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
@@ -136,11 +137,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_new_vector || op == op_set_vector_element
                   || op == op_b_vector_element || op == op_new_instruction
                   || op == op_new_module || op == op_calculate_priority_from_minimum
-                  || op == op_change_element_size || op == op_string_operation;
+                  || op == op_change_element_size || op == op_string_operation
+                  || op == op_hash;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
   Bool isTagAndValue = op == 16'h2376 && x == 4;
+  // opcode FC likewise: 3 is the guard floating_point_not_less_than(F1,
+  // F2), registers y and z
+  Bool isFloatGE = op == 16'h23fc && x == 3;
   // a vector pointer, short (0..6 elements, the size in the tag) or long
   function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
   function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
@@ -250,7 +255,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;
     end
-    else if (isTagAndValue) begin
+    else if (isTagAndValue || isFloatGE) begin
       dbox.deref(regs.r(y));
       st <= XDeref1;
     end
@@ -307,6 +312,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_put_list) begin
       gbox.alloc(2);       // car, then cdr
       st <= XVec;
+    end
+    else if (op == op_new_atom) begin
+      // new_atom(^Atom): the next of a counter; which numbers is ours
+      if (nextAtom[24] == 1) stop(EndUnimp);
+      else begin
+        regs.wr(x, mkCell(tag_ATOMo, zeroExtend(nextAtom)));
+        nextAtom <= nextAtom + 1;
+        next;
+      end
     end
     else if (op == op_put_vector_0) begin
       regs.wr(x, mkCell(tag_VECT0o, 0));     // the empty vector: no cells
@@ -614,7 +628,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else begin
       opA <= a;
-      dbox.deref(regs.r(y));
+      dbox.deref(regs.r(isFloatGE ? z : y));
       st <= XDeref2;
     end
   endrule
@@ -653,8 +667,23 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       note(isRef(a) ? a : b);
       guardFail;
     end
+    else if (isFloatGE) begin
+      // "If both are floating points and ... succeeds.  Otherwise it
+      // fails": no floating point here, so two floats are refused
+      if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo) stop(EndUnimp);
+      else guardFail;
+    end
+    else if (op == op_wait_value && isStrg(a) && isStrg(b)) begin
+      // two strings: the same when every word is
+      sbox.equal(a, b);
+      st <= XSEq;
+    end
+    else if (op == op_wait_value && (isStrg(a) || isStrg(b))
+             && (isStrg(a) || isAtomic(a)) && (isStrg(b) || isAtomic(b)))
+      guardFail;                   // a string and an atomic value
     else if (op == op_wait_value) begin
-      // the guard X = Y, for atomic values; structures are refused
+      // the guard X = Y, for atomic values and strings; lists and
+      // vectors are refused
       if (!isAtomic(a) || !isAtomic(b)) stop(EndUnimp);
       else if (sameAtomic(a, b)) next;
       else guardFail;
@@ -996,6 +1025,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBStr;
       end
     end
+    else if (op == op_hash) begin
+      // hash(X, ^Value, ^NewX), PDSS's function: an atom's or
+      // integer's value, -1 for a list, a short vector's size, a
+      // string's by the string box; anything else is refused
+      if (isStrg(a)) begin
+        sbox.hashStr(a);
+        st <= XBHash;
+      end
+      else if (isAtomic(a) || (a.tag & 8'hfe) == tag_LISTo || (isVec(a) && !isLongVec(a))) begin
+        regs.wr(y, intC(isAtomic(a) ? a.val : (isVec(a) ? sizeOf(a) : 32'hffffffff)));
+        st <= XBHash2;
+      end
+      else stop(EndUnimp);
+    end
     else if (op == op_new_module) begin
       // new_module(Vector, ^Module): the vector box makes the object
       if (!isVec(a)) stop(EndUnimp);
@@ -1083,6 +1126,24 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(operand[3], r.a);
       finish(tagged Next afterBuiltin);
     end
+  endrule
+
+  rule sEqual (st == XSEq);
+    let r <- sbox.result;
+    if (r.ok) next;
+    else guardFail;
+  endrule
+
+  // hash(X, ^Value, ^NewX): Value, then NewX = X
+  rule bHash (st == XBHash);
+    let r <- sbox.result;
+    regs.wr(y, r.a);
+    st <= XBHash2;
+  endrule
+
+  rule bHash2 (st == XBHash2);
+    regs.wr(z, vals[0]);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule sElement (st == XSEl);

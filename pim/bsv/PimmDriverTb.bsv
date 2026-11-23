@@ -21,6 +21,10 @@ module mkPimmDriverTb(Empty);
 
   Reg#(Bit#(20)) ip      <- mkReg(0);
   Reg#(Bool)     awaited <- mkReg(False);   // the operation's answer is awaited
+  // cycles one operation has been awaited.  A core that never answers
+  // (a fault injection once left it running for two hours) ends the
+  // simulation with a line no reference trace has.
+  Reg#(Bit#(31)) waited  <- mkReg(0);
 
   let w = script.sub(ip);
   Bit#(8) kind8 = w[63:56];
@@ -52,6 +56,15 @@ module mkPimmDriverTb(Empty);
     endcase
     if (answer) awaited <= True;
     else ip <= ip + 1;
+    waited <= 0;
+  endrule
+
+  rule stalled (awaited);
+    if (waited[30] == 1) begin
+      $display("X the core has not answered operation %0d in 2^30 cycles", ip);
+      $finish(1);
+    end
+    waited <= waited + 1;
   endrule
 
   rule gotVar (awaited && kind == NewVar);
