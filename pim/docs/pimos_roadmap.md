@@ -86,6 +86,17 @@ model has been in) is **off the critical path** from here.
 
 ## 2. Definition of done: a ladder of observable rungs
 
+**The goal, as the owner stated it on 2026-11-23: "to recreate the
+entire operating environment."** That is the installation, not PIMOS
+alone: PIM/m running PIMOS and its applications, AND the PSI beside
+it running SIMPOS as console processor and front-end processor. Done
+is therefore R1..R9 below together with P0..P5 of section 9. Where
+this document has our own program standing in for one of ICOT's (the
+host-side front end, `ref/pimm/fep.py`), that is scaffolding on the
+way and is labelled OURS; it is not an end state. A piece that cannot
+be found is reconstructed from its sources at the best fidelity they
+allow and labelled a reconstruction.
+
 Each rung is a runnable check that goes into `run_tests.sh` (or a
 longer `run_boot.sh` once runs exceed a few minutes).
 
@@ -461,8 +472,10 @@ SIMPOS: it was the console processor (clear, init, load microcode,
 IPL, start) and the front-end processor that served files, windows,
 timers, string I/O and sockets to PIMOS over SCSI. The plan above
 replaces it with a host-side stand-in (decision 4; `ref/pimm/fep.py`
-is its first piece). This section is the plan for the real thing. It
-does not block R1..R8, and it is a different machine: the PSI executes
+is its first piece). This section is the plan for the real thing, and
+since the owner's statement of the goal (section 2) it is part of
+what done means, not an optional extra. It does not block R1..R8,
+and it is a different machine: the PSI executes
 KL0, not KL1-B. By the repository's scope rule the work belongs in a
 sibling directory of its own (`psi/`) once it starts; until then this
 section and `docs/` hold the research.
@@ -497,9 +510,12 @@ emulator.
 | P4 | SIMPOS boots | **SIMPOS itself, which is not held.** Without it this rung cannot be reached and P5 falls back to stubs of the SIMPOS classes the FEP calls, labelled OURS |
 | P5 | The held `pimfep.ptf` serves the PIM/m model's SCSI link in place of `fep.py`, and `pimmcsp.ptf` performs the boot | P3, and P4 or its stubs; the SCSI device interface on the core |
 
-**The gate is P0.** If no SIMPOS is found, the honest end state is
-P3 plus the held FEP classes running over stubs, and the document
-says which SIMPOS classes were stubbed. If a PSI-II (not III)
+**The gate is P0.** If no SIMPOS is found, P4 becomes a
+reconstruction: the SIMPOS classes the held console and front-end
+software call are rebuilt from the SIMPOS and ESP documentation P0
+finds, each labelled a reconstruction with its source, starting with
+the ones `pimfep.ptf` and `pimmcsp.ptf` name; the document lists
+which classes are ICOT's code and which are rebuilt. If a PSI-II (not III)
 artifact is all that is found, the microcode held here does not run
 on it.
 
