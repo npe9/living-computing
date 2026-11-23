@@ -140,7 +140,10 @@ default until overruled.
    default FEP per task. *Default: a host-side FEP stand-in that speaks
    the documented protocol (`pimos/protocol/*.prt`, `src/server`,
    `src/vm/`) to the unmodified PIMOS, serving a directory of files;
-   SIMPOS itself is out of scope.*
+   SIMPOS itself is out of scope.* **Changed 2026-11-23**: the owner
+   asked in-session for SIMPOS and the PSI to be in the plan ("Do we
+   have simpos in the plan?", then "Add psi to the plan too"). The
+   stand-in stays the way to R5..R8; the real front end is section 9.
 
 ## 4. Phases
 
@@ -450,6 +453,55 @@ addressing rule on a layout known from elsewhere.*
   gate 4).
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
   the block device.
+
+## 9. The PSI and SIMPOS (added 2026-11-23, at the owner's request)
+
+On the real installation the machine beside PIM/m was a PSI running
+SIMPOS: it was the console processor (clear, init, load microcode,
+IPL, start) and the front-end processor that served files, windows,
+timers, string I/O and sockets to PIMOS over SCSI. The plan above
+replaces it with a host-side stand-in (decision 4; `ref/pimm/fep.py`
+is its first piece). This section is the plan for the real thing. It
+does not block R1..R8, and it is a different machine: the PSI executes
+KL0, not KL1-B. By the repository's scope rule the work belongs in a
+sibling directory of its own (`psi/`) once it starts; until then this
+section and `docs/` hold the research.
+
+**What is held** (all binary; `icot_software_survey.md` items 1, 3,
+9, 10, 17 and `binary_reverse_engineering.md` 4 and 5):
+
+- `PMPSI.DIR/syspsi`: a PSI-III control store, 32,768 x 64-bit words,
+  the KL0/SIMPOS microcode; `sysidat`, the KL0 decode table (read);
+  `sysinit`, not characterised.
+- `pimm.MEkbn`: the Pseudo PIM/m KL1 firmware as PSI-III microcode.
+- `pimmcsp.ptf` (281 ESP classes), `pimfep.ptf`, `pimscsi.ptf`:
+  the console and front-end software, compiled ESP built against
+  SIMPOS; their calls into `simpos##...` classes dangle.
+- `paragraph.ptf` with its ESP source: the known plaintext for the
+  compiled-ESP format.
+- SIMPOS fonts and an icon.
+
+**What is not held, and was not found:** SIMPOS itself (source or
+binary), the ESP compiler and runtime, any KL0 firmware source, a
+PSI hardware description at the level of the microinstruction, a PSI
+emulator.
+
+**Rungs** (each observable, as section 2's are):
+
+| Rung | What is seen | Needs |
+|---|---|---|
+| P0 | An acquisition report: what of SIMPOS, ESP, the PSI-II/III hardware manuals and KL0 exists anywhere, with terms | a search (started 2026-11-23); nothing else |
+| P1 | The PSI-III microinstruction format read from `syspsi`: fields, sequencing, the decode through `sysidat`, checked against whatever hardware description P0 finds | P0's hardware papers; the control store |
+| P2 | A PSI-III datapath model that runs the held microcode from its entry far enough to decode KL0 instructions | P1 |
+| P3 | Compiled ESP (`.ptf`) loaded and one method of a held class run, `paragraph`'s source as the oracle | P2, the `.ptf` format (`binary_reverse_engineering.md` 4) |
+| P4 | SIMPOS boots | **SIMPOS itself, which is not held.** Without it this rung cannot be reached and P5 falls back to stubs of the SIMPOS classes the FEP calls, labelled OURS |
+| P5 | The held `pimfep.ptf` serves the PIM/m model's SCSI link in place of `fep.py`, and `pimmcsp.ptf` performs the boot | P3, and P4 or its stubs; the SCSI device interface on the core |
+
+**The gate is P0.** If no SIMPOS is found, the honest end state is
+P3 plus the held FEP classes running over stubs, and the document
+says which SIMPOS classes were stubbed. If a PSI-II (not III)
+artifact is all that is found, the microcode held here does not run
+on it.
 
 ## 8. What stops now
 

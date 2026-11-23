@@ -118,7 +118,7 @@ measurement.
 | 14 | **Virtual machine and disk simulator** (`src/vm`: `vm`, `sim`, `DKS`, `DKSF`, `scsi_disk`) | Yes: 9 files / 4,413 lines | UNKNOWN whether in the object set | FGCS'92 PIMOS overview 4.5.4 (READ) | No | Test scaffolding of the file system effort |
 | 15 | **ParaGraph**, performance meter, load-balancing library | Yes, including the FEP halves in ESP: `src_util/paragraph` 83 `.esp` / 18,261 lines; `pmeter` 7 `.esp`; `pmeter_c` 10 `.c` + 8 `.h`; `plib` 14 `.kl1`; `parallel` 3 `.kl1` + `balman.ps.Z` | Yes: `object/paragraph.ptf`, 1,020,476 B (compiled ESP) | FGCS'92 ParaGraph paper | FEP half: only if wanted | The only ESP source we hold |
 | 16 | **Applications** (IFS, 49 PIMOS packages) | Not held; PUBLIC verified | none (source distributions) | per package | No | Need #8 running. Many also load an ESP part on the FEP |
-| 17 | **SIMPOS and the ESP system** under the real FEP and CSP | No | No (the `.ptf` files are applications of it, not it) | ESP manuals PUBLIC (listed); SIMPOS manuals CITED-ONLY | **Not planned**: replaced by host-side stand-ins for #3, #9, #10 | Section 4 |
+| 17 | **SIMPOS and the ESP system** under the real FEP and CSP | No | No (the `.ptf` files are applications of it, not it) | ESP manuals PUBLIC (listed); SIMPOS manuals CITED-ONLY | Was "not planned"; **in the plan since 2026-11-23** at the owner's request, as a later track gated on finding SIMPOS (`pimos_roadmap.md` section 9). The host-side stand-ins for #3, #9, #10 remain the route to a running PIMOS | Section 4 |
 | 18 | **Real PIM/m microcode and CSP** | No | No | TM-1213, TM-1021/1022, TM-850, TR-742, TR-799 | n/a | The Pseudo PIM/m is the nearest surviving thing; section 4 |
 
 ### 1.1 The FEP side in detail
