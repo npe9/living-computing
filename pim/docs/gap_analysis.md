@@ -150,10 +150,10 @@ for `pimm_bios360E.sav`) and the NAME of a 5502h file, not both
 (object code of `check_magic_num/13`). `ipl_loader:load/4` runs
 whole for a list of one file (`lockstep_link.py`): `load_files/10`,
 the link table (`ipl_link_table`) and `check_link_status/5`, the
-bench answering `open(Name, R)` with `normal(File)`. Next: the
-unification of two vectors (a second file needs it); goal and
-suspension records reused (B8); a memory beyond 1 M cells; then the
-real file list, and the FEP protocol under `open` (C2).
+bench answering `open(Name, R)` with `normal(File)`. The unification of two vectors or lists, which a second
+file's link needs, is in (`lockstep_unif.py`, PDSS's goal). Next: a
+memory beyond 1 M cells; goal and suspension records reused if that
+is not enough (B8); then the real file list, and the FEP protocol under `open` (C2).
 
 ### C. The world outside the processor
 

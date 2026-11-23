@@ -35,7 +35,7 @@ REGS = {'r': 1, 'r_r': 2, 'r_r_r': 3, 'r4': 4, 'r5': 5, 'r6': 6, 'r7': 7}
 GET_VALUE = (0x23, 0xbc)
 PROCEED = (0x23, 0x60)
 
-PINNED = dict(stubs=70, cells=258)
+PINNED = dict(stubs=71, cells=260)
 
 # The merger's step.  NOT a PIM/m instruction: the machine's merger is a
 # cell with its own tag (MGHOK) that acts when it is unified; here a
@@ -44,6 +44,17 @@ PINNED = dict(stubs=70, cells=258)
 # decode table (asm/psdpim.py --table 2); both models refuse it
 # anywhere but here.
 MERGE_IN = (0x22, 0x00)
+
+# The step of a unification of two structures.  NOT a PIM/m instruction
+# either (22:01 has no entry in the firmware's table).  PDSS does not
+# unify two lists or two vectors where it meets them: it makes a goal
+# of a pseudo-predicate (emulator/unify.c
+# make_unify_vector_vector_goal_and_enqueue, dc_unify_vector_vector2:
+# arguments X, Y and the element to go on from) that unifies the
+# elements when it runs.  Here that goal's code is this stub:
+# unify_step 0, 1, 2 unifies element r2 of r0 and r1, adds one to r2
+# and is taken again, until r2 is the size.
+UNIFY_STEP = (0x22, 0x01)
 
 
 def encode(tag, op, regs):
@@ -90,6 +101,10 @@ def build(base):
     # merge_in 0, 1: the input stream, the merger's record
     table['$merge_in'] = dict(addr=base + len(cells), dirs='ii', words=1)
     cells.append((MERGE_IN[0], MERGE_IN[1] << 24 | 0 << 16 | 1 << 8))
+    cells.append((PROCEED[0], PROCEED[1] << 24))
+    # unify_step 0, 1, 2: the two structures, the element to go on from
+    table['$unify_step'] = dict(addr=base + len(cells), dirs='iii', words=1)
+    cells.append((UNIFY_STEP[0], UNIFY_STEP[1] << 24 | 0 << 16 | 1 << 8 | 2))
     cells.append((PROCEED[0], PROCEED[1] << 24))
     return cells, table
 

@@ -105,6 +105,10 @@ module mkPimmCore#(String image)(PimmCore);
         outsideWake <= True;
       end
       tagged UOk: unifyQ.enq(True);
+      tagged UGoal .q: begin         // put off to a goal: the next run does it
+        gbox.unifyGoal(q.a, q.b);
+        outsideWake <= True;
+      end
       default:    unifyQ.enq(False);
     endcase
   endrule

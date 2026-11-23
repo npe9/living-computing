@@ -11,6 +11,9 @@
 //               arguments the instruction's operands; an output
 //               operand gets a fresh variable, in the record and in
 //               the register
+//   unifyGoal   a READY goal of the stub unify_step with arguments
+//               a, b, 0: the unification of two structures put off
+//               (PimmDBox.bsv UGoal); answered through done
 //   alloc       heap cells for another box
 //   hook        add a goal to the goals waiting on an unbound cell
 //   wake        walk a suspension list; each goal still SUSPENDED
@@ -35,6 +38,7 @@ interface PimmGBox;
   method Action record(Bit#(2) status, Addr code, Bit#(8) argn, Bool fromArgv, Bool wantResult);
   method Action waitRecord(Addr code, Bit#(3) argn, Vector#(7, Bit#(8)) operands, Bit#(7) outs);
   method ActionValue#(Addr) recordResult;       // of record (if asked) and waitRecord
+  method Action unifyGoal(Cell a, Cell b);
   method Action alloc(Addr cells);
   method ActionValue#(Addr) allocResult;
   method Action hook(Addr g, Addr v);
@@ -48,13 +52,14 @@ typedef union tagged {
   void NewVar;
   struct { Bit#(2) status; Addr code; Bit#(8) argn; Bool fromArgv; Bool want; } Record;
   struct { Addr code; Bit#(3) argn; Vector#(7, Bit#(8)) operands; Bit#(7) outs; } WaitRecord;
+  struct { Cell a; Cell b; } UnifyGoal;
   Addr Alloc;
   struct { Addr g; Addr v; } Hook;
   Bit#(32) Wake;
   void Pickup;
 } GReq deriving (Bits);
 
-typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GWArg, GWArg2, GHook1, GHook2, GHook3,
+typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GUg1, GUg2, GUg3, GUg4, GUg5, GUg6, GWArg, GWArg2, GHook1, GHook2, GHook3,
                GWk0, GWk1, GWk2, GWk3, GWk4, GWk5,
                GPk1, GPk2, GPk3, GPk4, GPk5 } GState deriving (Bits, Eq);
 
@@ -63,6 +68,8 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)   rq <- mkReg(0);                        // the newest ready goal, or 0
 
   Reg#(GState)  st    <- mkReg(GIdle);
+  Reg#(Cell)    ugA   <- mkRegU;
+  Reg#(Cell)    ugB   <- mkRegU;
   Reg#(Addr)    g     <- mkRegU;
   Reg#(Bit#(8)) i     <- mkRegU;
   Reg#(Bit#(8)) n     <- mkRegU;
@@ -147,6 +154,14 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         mem.write(hp + gLink, intC(0));
         st <= GRec1;
       end
+      tagged UnifyGoal .q: begin
+        g <= hp;
+        take(gArgs + 3);
+        ugA <= q.a;
+        ugB <= q.b;
+        mem.write(hp + gLink, intC(linkOf(rq)));
+        st <= GUg1;
+      end
       tagged Alloc .cells: begin
         take(cells);
         allocQ.enq(hp);
@@ -171,6 +186,34 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         end
       end
     endcase
+  endrule
+
+  // ---- the goal of a unification put off ---------------------------
+  rule ug1 (st == GUg1);
+    mem.write(g + gStatus, intC(zeroExtend(ready)));
+    st <= GUg2;
+  endrule
+  rule ug2 (st == GUg2);
+    mem.write(g + gCode, intC(absAddr(unifyStepStub)));
+    st <= GUg3;
+  endrule
+  rule ug3 (st == GUg3);
+    mem.write(g + gArgn, intC(3));
+    st <= GUg4;
+  endrule
+  rule ug4 (st == GUg4);
+    mem.write(g + gArgs, ugA);
+    st <= GUg5;
+  endrule
+  rule ug5 (st == GUg5);
+    mem.write(g + gArgs + 1, ugB);
+    st <= GUg6;
+  endrule
+  rule ug6 (st == GUg6);
+    mem.write(g + gArgs + 2, intC(0));
+    rq <= g;
+    doneQ.enq(True);
+    st <= GIdle;
   endrule
 
   // ---- record ------------------------------------------------------
@@ -358,6 +401,7 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   endmethod
   method Action waitRecord(Addr c, Bit#(3) argn, Vector#(7, Bit#(8)) operands, Bit#(7) outs) =
     reqQ.enq(tagged WaitRecord { code: c, argn: argn, operands: operands, outs: outs });
+  method Action unifyGoal(Cell a, Cell b) = reqQ.enq(tagged UnifyGoal { a: a, b: b });
   method Action alloc(Addr cells) = reqQ.enq(tagged Alloc cells);
   method ActionValue#(Addr) allocResult;
     allocQ.deq;

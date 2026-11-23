@@ -77,7 +77,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow,
-               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4,
+               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
@@ -484,6 +484,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XMi0;
       end
     end
+    else if (op == op_unify_step) begin
+      // the step of a unification of two structures: not a PIM/m
+      // instruction, only at its stub (asm/pimm_stubs.py)
+      let sa = regs.r(x);
+      Bit#(32) size = ((sa.tag & 8'hfe) == tag_LISTo) ? 2 : zeroExtend(((sa.tag & 8'hfe) - tag_VECT0o) >> 1);
+      let ix = regs.r(z).val;
+      if (pc != unifyStepStub) stop(EndUnimp);
+      else if (ix == size) next;
+      else begin
+        regs.wr(z, intC(ix + 1));
+        dbox.step(sa, regs.r(y), truncate(ix));
+        st <= XUStep;
+      end
+    end
     else if (op == op_proceed) stop(EndDone);
     // ---- body built-ins
     else if (builtinHere) begin
@@ -823,6 +837,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
       tagged UFail:    stop(EndFail);
       tagged UUnimp:   stop(EndUnimp);
+      tagged UGoal .q: begin
+        gbox.unifyGoal(q.a, q.b);
+        st <= XWake;
+      end
+    endcase
+  endrule
+
+  // an element of two structures unified: the instruction is taken again
+  rule unifyStepped (st == XUStep || st == XMiU);
+    let r <- dbox.unifyResult;
+    case (r) matches
+      tagged UOk:      finish(tagged Next pc);
+      tagged UWake .s: begin
+        gbox.wake(s);
+        st <= XMi2w;
+      end
+      tagged UFail:    stop(EndFail);
+      tagged UUnimp:   stop(EndUnimp);
+      tagged UGoal .q: begin
+        gbox.unifyGoal(q.a, q.b);
+        st <= XMi2w;
+      end
     endcase
   endrule
 
@@ -1319,19 +1355,6 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     regs.wr(x, r.c);
     dbox.unify(r.b, r.a);
     st <= XMiU;
-  endrule
-
-  rule mergeInU (st == XMiU);
-    let r <- dbox.unifyResult;
-    case (r) matches
-      tagged UOk:      finish(tagged Next pc);
-      tagged UWake .s: begin
-        gbox.wake(s);
-        st <= XMi2w;
-      end
-      tagged UFail:    stop(EndFail);
-      tagged UUnimp:   stop(EndUnimp);
-    endcase
   endrule
 
   rule mergeInW (st == XMi2w);

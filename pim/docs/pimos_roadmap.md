@@ -286,8 +286,11 @@ console is given "IPL loading", the file's name and "Link Modules
 Found" and the module the file calls and does not hold. R4 itself
 needs the list in `pimos.ipl`; a second file of 41,359 words was
 tried on the reference model alone and needs 1.29 M cells (about 31
-a file word, 0.9 M of them goal and suspension records never reused)
-and the unification of two vectors, neither of which is in yet.*
+a file word, 0.9 M of them goal and suspension records never reused);
+the unification of two vectors it also needs is in
+(`lockstep_unif.py`), the memory is not. The linker reports ONE
+undefined module, the first it meets: a normal link needs every
+module the files name.*
 
 ### Phase 2 - The runtime
 

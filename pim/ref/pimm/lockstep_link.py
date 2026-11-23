@@ -27,9 +27,14 @@ Checked:
   - the console is given "IPL loading", the file's name, "Link
     Modules ..." (the last is the line the PIMOS manual's boot log
     shows, e-sysman.tex);
-  - Loaded = abnormal(["Undefined Module Found" | Names]), Names the
-    modules the file calls and does not hold, worked out from the
-    file by asm/unlsav.py (lockstep_gca.areas): pool_usage;
+  - Loaded = abnormal(["Undefined Module Found", Name]), Name ONE
+    module the file calls and does not hold: the linker stops at the
+    first it meets (ipl_link_table:resolve_2/9 as decompiled by
+    asm/kl1decomp.py: "resolve_2(yes, A, ...) :- B = [], C =
+    abnormal([string8#"Undefined Module Found", A])").  This file
+    has only one, pool_usage, by asm/unlsav.py's reading
+    (lockstep_gca.areas).  (A file with sixteen, tried on the
+    reference model alone, has one of them reported.)
   - the file is read to its last word; no goal is left waiting.
 
 New on both models: the guard atom (a type test).  Also new, for the
@@ -50,7 +55,7 @@ always succeeds" passes, for the same reason.
 Not run: a normal link (it needs the boot module, pimos::pim, hence
 the system's files); more than one file; a file whose modules call
 each other (tried on the reference model alone: it needs the
-unification of two vectors and more than 1 M cells; gap_analysis B8).
+more than 1 M cells; gap_analysis B8).
 """
 import os
 import sys
@@ -155,10 +160,12 @@ def check(s, m, want, lines):
     if got != text:
         bad.append(('console', got))
     missing = unresolved(FILES)
-    exp = ('abnormal', [(8, [ord(c) for c in 'Undefined Module Found'])]
-           + [(16, cons.jis(n)) for n in missing])
+    # the message and ONE of the missing modules (the linker stops at
+    # the first it meets)
     t = None if m.unbound(loaded) else m.term(loaded)
-    if t != exp:
+    msg = (8, [ord(c) for c in 'Undefined Module Found'])
+    if not (isinstance(t, tuple) and t[0] == 'abnormal' and len(t[1]) == 2 and t[1][0] == msg
+            and t[1][1] in [(16, cons.jis(n)) for n in missing]):
         bad.append(('Loaded', str(t)[:200]))
     if not m.unbound(m.deref(opens)):
         bad.append(('the open requests go on', m.term(opens)))

@@ -69,7 +69,9 @@ def main(argv):
     lines += ['    default: return tagged Invalid;', '  endcase', 'endfunction', '',
               '// the merger step (asm/pimm_stubs.py: ours, not a PIM/m instruction)',
               "Bit#(16) op_merge_in = 16'h2200;",
-              'Bit#(AddrBits) mergeInStub = %d;' % table['$merge_in']['addr'], '']
+              'Bit#(AddrBits) mergeInStub = %d;' % table['$merge_in']['addr'],
+              "Bit#(16) op_unify_step = 16'h2201;",
+              'Bit#(AddrBits) unifyStepStub = %d;' % table['$unify_step']['addr'], '']
     # the address of every predicate's first instruction
     im = kbndis.Image()
     lines += ['', "Bit#(32) loadAddress = 32'h%08x;" % im.load,

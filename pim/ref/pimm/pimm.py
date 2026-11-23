@@ -133,6 +133,7 @@ class Machine:
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
+        self.optab[(0x22, 0x01)] = ('unify_step',)   # ours: asm/pimm_stubs.py
         # instruction names by code address; for code in the heap this
         # assumes a heap cell is never reused for other code
         self.names = {}
@@ -228,6 +229,20 @@ class Machine:
             if a[1] != b[1]:
                 raise Unimplemented('unify of two string objects')
             return
+        if a[0] & ~1 == LIST or VECT0 + 2 <= a[0] & ~1 <= VECT0 + 12:
+            # Two lists, or two vectors of the same size (of up to six:
+            # the size is in the tag, so the tags were equal).  Not
+            # unified here: a goal is made that unifies the elements
+            # when it runs, as PDSS does (emulator/unify.c
+            # make_unify_list_list_goal_and_enqueue,
+            # make_unify_vector_vector_goal_and_enqueue).  What PIM/m's
+            # firmware did is not known.  The goal's code is the stub
+            # unify_step (asm/pimm_stubs.py).  The same object against
+            # itself makes a goal too, as in PDSS.
+            self.record(READY, self.stubs['$unify_step']['addr'], [a, b, (INT, 0)])
+            return
+        # a vector of seven or more (its size is in memory), a module,
+        # anything else
         raise Unimplemented('unify of %r and %r' % (a, b))
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
@@ -1443,6 +1458,27 @@ class Machine:
                 self.unify(self.mem[rec], NIL)
         else:
             raise Unimplemented('merger input %r' % (w,))
+
+    def i_unify_step(self, pc, x, y, z, c16):
+        """Ours, only at its stub: element r[z] of the structures r[x]
+        and r[y] is unified, r[z] goes up by one and the instruction is
+        taken again; at the size it is passed.  An element is taken
+        with its MRB on if its structure's is (PDSS
+        dc_unify_vector_vector2: "Dereference(vp1+i); if(mrb1 ==
+        MRBON) SetMrbof(vp1+i, MRBON)"), else as it is.  PDSS does all
+        the elements in one reduction and frees a structure whose MRB
+        is off; here nothing is freed."""
+        if pc != self.stubs['$unify_step']['addr']:
+            raise Unimplemented('unify_step at %d' % pc)
+        a, b, i = self.reg[x], self.reg[y], self.reg[z][1]
+        n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
+        if i == n:
+            return None
+        ea = self.taken(a[1] + i, single=not a[0] & 1)
+        eb = self.taken(b[1] + i, single=not b[0] & 1)
+        self.reg[z] = (INT, i + 1)
+        self.unify(ea, eb)
+        return pc
 
     def i_new_instruction(self, pc, x, y, z, c16):
         # new_instruction(Tag, Value, ^Cell): the cell with that tag
