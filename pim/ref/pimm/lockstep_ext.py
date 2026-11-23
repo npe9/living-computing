@@ -30,8 +30,9 @@ The same address check is made at every execute_external of the image
 that can be entered today: the goal is started at the instruction
 itself with unbound arguments (a use of the driver, not something the
 machine does), 74 of the 76 sites, 21 of the 23 predicates
-called (59 and 18 until read_eagerly, not_equal and wait_vector_4
-were given to the Bluespec core, lockstep_alt.py).  The others'
+called (59 and 18 until the gates of read_eagerly, not_equal and
+wait_vector_1/4/6 were removed with lockstep_alt.py; which of them
+opened which site was not looked at).  The others'
 targets begin with an instruction not modelled.
 
 wait_constant.  ipl_pool:hash_int/2 (object code):

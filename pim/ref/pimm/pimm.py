@@ -19,8 +19,8 @@ kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
 it; no shoen, no exceptions.  An instruction this file does not implement
 raises Unimplemented: it never guesses.
 
-On this model ALONE (the Bluespec core has none of it yet), a
-prototype: the SCSI built-ins scsi_init and scsi_command against a
+On this model ALONE (the Bluespec core has none of what this
+paragraph lists as not given), a prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
 what the IPL's SCSI stack needs besides (a merger input bound to a
 vector, scsi_command waiting on its vector's elements).
