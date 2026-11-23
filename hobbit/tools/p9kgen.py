@@ -178,6 +178,7 @@ class Rc:
             str(BIN / prog), [prog] + list(args), str(self.root), MAX_STEPS,
             err, cwd=cwd, stdin=stdin, stdout=out)
         dt = time.time() - t0
+        steps += k.child_steps          # rl's fork of ar counts too
         shown = " ".join(a if a.isprintable() and len(a) < 40
                          else repr(a[:24]) + "..." for a in args)
         line = "%-6s %-40s %12d instr %4d syscalls %8.1f s  %s" % (

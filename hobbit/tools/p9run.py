@@ -1091,6 +1091,10 @@ def main(argv):
     sys.stdout.flush()
     print("p9run: %s after %d instructions, %d syscalls"
           % (status, steps, len(k.trace)), file=sys.stderr)
+    for pid, text, csteps, ctrace, cstatus in k.children:
+        print("p9run:   child %d (%s): %s after %d instructions, %d "
+              "syscalls" % (pid, text, cstatus, csteps, len(ctrace)),
+              file=sys.stderr)
     if args.census:
         for key, n in sorted(ops.items(), key=lambda kv: -kv[1]):
             print("  %8d  %s" % (n, key), file=sys.stderr)

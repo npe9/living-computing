@@ -351,9 +351,55 @@ what is not:
   kernel image the release ships (550,846 bytes) -- the candidate oracle
   for the link.
 
-Not done: the kernel's generated inputs (`cpu.c` from `mkdevc`,
-`init.h`, `boot*.root`, `KERNDATE` -- rc pipelines needing fork, exec
-and pipes, which `p9run` refuses); `ar`; the link; a kernel-image mode
+**Status 2026-11-23: the generated inputs for `term` are made by the
+release's own tools.**  `tools/p9kgen.py --out DIR` lays out a copy of
+the vendored tree under `DIR/root` and runs, on the reference model,
+every command `mk 9term` would run to make the kernel's generated
+inputs, each a shipped Hobbit binary (`awk`, `sed`, `xd`, `grep`,
+`sort`, `tr`, `strip`, `ar`, `rl`, `echo`, `cat`, `za`, `zc`, `zl`).
+Python plays rc only: a pipeline is run a stage at a time, each stage's
+standard output buffered and handed to the next as its standard input;
+the awk and sed programs are taken out of the vendored scripts by an rc
+quote/here-document reader, not retyped.  The system calls this needed
+(stat, fstat, notify, rfork, fork/exec/wait, `#c/pid`, `#e`, create's
+permissions, fd 0/1 redirection) are in `docs/plan9_syscalls.md`.
+
+| product | made by | checked against | result |
+|---|---|---|---|
+| `errstr.h` | `mkerrstr` (sed) | the shipped `hobbit/errstr.h` | **identical** |
+| first half of `systab.h` | `mksystab` up to its first `sam -d` (cat; sed \| tr \| sed; cat) | the first 806 bytes of the shipped `port/systab.h` | **identical**; the sam halves not run |
+| `devtab.h` | `mkdevh cpu term termlocal bart rom` (awk; sort -u; awk) | -- (nothing shipped) | 286 lines |
+| `term.c` | `mkdevc term` (cat, awk, echo, grep) | s9term's `devtab[]` resolved through its symbol table; `devchar`; `conffile` | **all 21 entries x 13 functions in order; devchar's characters; "term"** |
+| `term.z` | `zc -w -Dram -DKERNDATE=721110517 term.c` | -- | compiles |
+| `objlists` | `mkdevlist`/`mkstreamlist`/`mkmisclist term` (sed \| awk) | -- | `DEV=` 31 objects, `STREAM=` 4, `MISC=` none |
+| `init.h` | `za initcode`; `zl -l -s -H2 -T0x1020 -R4`; `xd -r -1x \| sed` | s9term's `initcode[]` | **identical, 60 bytes** |
+| `bootterm.c` | `../boot/mkboot term` (cat, awk) | -- | |
+| `bootterm.root.c` | `zc` x 21, `ar vu`, `rl` (fork+exec of `ar`), `zc print.c`, `zl ... -lauth`, `mkroot` (strip; `xd -1x \| sed`) | s9term's `bootcode[]` (`bootlen` 26,796) | **differs**: see below |
+| `bootterm.root.z` | `zc -w -Dram bootterm.root.c` | -- | |
+| `KERNDATE` | not `date -n`: read back from s9term | -- | **721110517** = 1992-11-07 04:28:37 GMT, the `kerndate` word in s9term's data |
+
+**The boot program does not reproduce s9term's, and the difference is
+libc's, not the boot code's.**  Our `bootterm.out` (stripped) has text
+0x5e30, data 0xb94, bss 0x4d0; s9term's `bootcode[]` has text 0x5cf8 and
+the same data and bss.  The 2,964 data bytes are identical, function
+pointers included.  Function by function (`bootterm.out`'s symbols laid
+over s9term's bytes): every boot function from `main` to `getpasswd`,
+and libc's `fmtinstall`/`numbconv`/`sconv`/..., sit at the same
+addresses, and are either identical or differ in a few bytes (call
+targets beyond the shift; not checked operand by operand); libc's
+`convS2M` is where the shift starts -- everything after it is 268 bytes
+lower in s9term -- and the rune functions (`chartorune`, `runetochar`,
+`runelen`, `fullrune`, `utflen`) and the libc assembler routines after
+them are not found in s9term at all.  Together with `devchar` (s9term
+holds its `L""` string one byte per character; the shipped `zc` emits
+16-bit runes), this says **s9term (whose `kerndate` is 7 November
+1992) was linked against an earlier libc than the shipped `libc.a` (3
+January 1993)**.  The boot program built here is the one the shipped
+tree builds; s9term is not a byte oracle for anything linked with libc.
+That also bounds the kernel-link gate: the image built from this tree
+will not be byte-identical to s9term.
+
+Not done: the link; a kernel-image mode
 for `tools/p9exec.py`; and the decision the cost implies -- about 100
 files at ~8 million instructions each is an hour on the reference model
 and several on the core, so the full build belongs in a recorded long
