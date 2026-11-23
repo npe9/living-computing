@@ -680,6 +680,20 @@ class Machine:
         if self.g_word(x) is None:
             return self.guard_fail()
 
+    def i_display_console(self, pc, x, y, z, c16):
+        # display_console(X): "displays the current value of X on the
+        # console window, even if this variable is unbound" (PDSS
+        # manual); it does not wait and cannot fail.  What the console
+        # is given is traced: the value, and for a string its
+        # descriptor and words.  How PIM/m's console showed a value
+        # (an integer's digits, the end of a line) is not known and
+        # not modelled.
+        w = self.deref(self.reg[x])
+        self.event('C %02x%08x' % w)
+        if w[0] & ~1 == STRG:
+            for i in range((self.mem[w[1]][1] & 0xffffff) + 1):
+                self.event('S %02x%08x' % self.mem[w[1] + i])
+
     def i_wait_integer(self, pc, x, y, z, c16):
         if self.g_int(x) != sx16(c16):
             return self.guard_fail()
@@ -704,7 +718,8 @@ class Machine:
         sa, sb = a[0] & ~1 == STRG, b[0] & ~1 == STRG
         if sa and sb:
             n = self.mem[a[1]][1] & 0xffffff
-            if any(self.mem[a[1] + i] != self.mem[b[1] + i] for i in range(n + 1)):
+            if self.mem[a[1]] != self.mem[b[1]] or any(
+                    self.mem[a[1] + i][1] != self.mem[b[1] + i][1] for i in range(1, n + 1)):
                 return self.guard_fail()
             return
         if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):

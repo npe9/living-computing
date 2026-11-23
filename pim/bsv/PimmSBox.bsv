@@ -8,6 +8,7 @@
 //   info(s)            a = {INT, length}, b = {INT, element bits}
 //   element(s, i)      a = {INT, element i}
 //   newStr(n, bits)    a = a new string of n zero elements
+//   show(s)            the string's descriptor and words as `S` trace lines
 //   hashStr(s)         a = the hash code of the string (PDSS's function)
 //   equal(s1, s2)      ok is whether the strings are the same, word for word
 //   tryElement(s, i)   the same for a guard: ok is False when i is
@@ -55,16 +56,17 @@ interface PimmSBox;
   method Action stringOp(Bit#(4) op, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2);
   method Action hashStr(Cell s);
   method Action equal(Cell s1, Cell s2);
+  method Action show(Cell s);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow } SKind deriving (Bits, Eq);
 
 typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
   SReq deriving (Bits);
 
 typedef enum { SIdle, SDesc, SDesc2, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr,
-               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3 }
+               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3, SShow1, SShow2 }
   SState deriving (Bits, Eq);
 
 module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
@@ -175,6 +177,12 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
       gbox.alloc(toAddr(wordsOf(d)) + 1);
       st <= SAlloc;
     end
+    else if (rq.k == KShow) begin
+      traceS(c);
+      k <= 0;
+      if (wordsOf(d) == 0) answer(?, ?);
+      else st <= SShow1;
+    end
     else if (rq.k == KHash) begin
       // words, then a mix of the first and the last word
       if (wordsOf(d) == 0) answer(intC(0), ?);
@@ -241,6 +249,22 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     else begin
       j <= j + 1;
       st <= SOp0;
+    end
+  endrule
+
+  // show: every word to the console trace
+  rule show1 (st == SShow1);
+    mem.read(src + 1 + toAddr(k));
+    st <= SShow2;
+  endrule
+
+  rule show2 (st == SShow2);
+    let c <- mem.data;
+    traceS(c);
+    if (k + 1 == wordsOf(desc)) answer(?, ?);
+    else begin
+      k <= k + 1;
+      st <= SShow1;
     end
   endrule
 
@@ -361,6 +385,7 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   method Action stringOp(Bit#(4) o, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2) =
     reqQ.enq(SReq { k: KOp, s: s1, i: p1, e: n, s2: s2, p2: p2, op: o });
   method Action hashStr(Cell s) = reqQ.enq(mk(KHash, s, ?, ?));
+  method Action show(Cell s) = reqQ.enq(mk(KShow, s, ?, ?));
   method Action equal(Cell s1, Cell s2) =
     reqQ.enq(SReq { k: KEq, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
   method ActionValue#(SResult) result;

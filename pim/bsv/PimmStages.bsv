@@ -76,7 +76,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
@@ -257,6 +257,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (isTagAndValue || isFloatGE) begin
       dbox.deref(regs.r(y));
+      st <= XDeref1;
+    end
+    else if (op == op_display_console) begin
+      dbox.deref(regs.r(x));
       st <= XDeref1;
     end
     else if (oneOperandGuard || twoOperandGuard) begin
@@ -500,6 +504,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         opA <= a;
         st <= XTagVal;
       end
+    end
+    else if (op == op_display_console) begin
+      // display_console(X): the value as it is now, to the console
+      // trace; a string's cells by the string box.  Never waits.
+      traceC(a);
+      if (isStrg(a)) begin
+        sbox.show(a);
+        st <= XShow;
+      end
+      else next;
     end
     else if (isWaitAtom) begin
       if (isRef(a)) note(a);
@@ -1126,6 +1140,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(operand[3], r.a);
       finish(tagged Next afterBuiltin);
     end
+  endrule
+
+  rule shown (st == XShow);
+    let r <- sbox.result;
+    next;
   endrule
 
   rule sEqual (st == XSEq);

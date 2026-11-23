@@ -73,7 +73,7 @@ carry no open question.
 | B5 | Built-in exceptions. Every built-in error stops the model today (`Unimplemented('built-in exception ...')`) | how an exception becomes a report to the shoen (`exception(Info, Goal, NewGoal)`), and the info codes | `kernel/builtin/excpt_tbl.kl1` (source held, partly running already), manual |
 | B6 | Suspension layout: ours is `HOOK` -> suspension record always | the machine's: `HOOK` vs `MHOOK`, record fields, merge on variable-variable binding | microcode at `1c08`, `1d3a`; blocked on the memory datapath fields (`pseudo_pimm_microcode.md` section 13) |
 | B7 | Goal record layout | not in print, not in the console text | same microcode pass |
-| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits are kept since 2026-11-23 (`pimm_semantics.md` "The MRB") and `set_vector_element` updates in place on them (`lockstep_mrb.py`): the heap used by `lockstep_newm.py` after loading the image fell from 749,440 cells to 107,059, `lockstep_load.py`'s from 509,438 to 200,064 | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
+| B8 | MRB and reclamation; garbage collection. The heap only grows, in 1 M cells; `put_reused_structure`, `set_string_element` always copy; `collect_*` do nothing. The MRB bits are kept since 2026-11-23 (`pimm_semantics.md` "The MRB") and `set_vector_element` updates in place on them (`lockstep_mrb.py`): the heap used by `lockstep_newm.py` after loading the image fell from 749,440 cells to 107,059, `lockstep_load.py`'s from 509,438 to 200,064. What is left is mostly goal records, which are never reused: in `lockstep_atab.py` (449,144 cells at the end, 33,687 of them the image and stubs) one `get_all` over the 16384-slot atom table takes 147,549 cells, 131,081 of them goal records (one goal a slot); loading one file takes about 100,000 more, 137,176 goal records in that part with its own `get_all`, 58,065 the file's buffer strings. Twenty files will not fit in 1 M cells until goal records are reused when their goal has run (the machine kept them on a free list, TR-466), which needs no MRB | whether PIMOS's boot fits in a no-GC heap of feasible size (not measured); the collector's algorithm for PIM/m (copying, per the papers) | measure heap use at R4/R5 first; then TR-469, `PIMM.PARAM` |
 | B9 | Floats (59 names in the object set, 3 in the IPL image), bignum (9 names) | formats beyond the tag | manual; `kbnheap.kl1`; low priority, 0.1% of instructions |
 
 *The IPL's file decoder has near-source (found 2026-11-20).*
@@ -144,15 +144,18 @@ names, which `set_ipl_atoms/3` first gives "pimos", "pim" and "go"
 (the boot entry is `pimos::pim:go/4`), each a `new_atom`, and `[]`
 as nil. The names are hashed by the `hash` built-in, whose function
 here is PDSS's, not known to be PIM/m's. The test stands in only for
-the file's buffers. Next: console output (C1), so that the file's name and a 5702h
-file's comment are displayed; then `load_files/10` over the file
-list, with the FEP's `open` (C2).
+the file's buffers. Console output is in (`lockstep_cons.py`): the
+decoder shows the comment of a 5702h file ("PIMM BIOS       :3.600:25-Nov-93"
+for `pimm_bios360E.sav`) and the NAME of a 5502h file, not both
+(object code of `check_magic_num/13`). Next: goal records reused
+when their goal has run (B8: twenty files do not fit otherwise);
+then `load_files/10` over the file list, with the FEP's `open` (C2).
 
 ### C. The world outside the processor
 
 | | Missing | Notes |
 |---|---|---|
-| C1 | Console: `display_console` 61, `put_console` 71, `read_console`, `get_console`, `halt` | the first observable of R4. Semantics of the argument (string? character?) to settle from `ipl`'s uses and the microcode entries |
+| C1 | Console: `display_console` 61, `put_console` 71, `read_console`, `get_console`, `halt` | the first observable of R4. `display_console` is in since 2026-11-23 (`lockstep_cons.py`): the PDSS manual's meaning, the console being trace lines; the IPL gives it 8-bit strings (after `jis_to_ascii`) and, in `top`, integers. How the machine rendered a value is not known. `put_console`, `read_console`, `get_console`, `halt` are not in |
 | C2 | The front-end processor over SCSI: `scsi_command`, `scsi_init` and the five `scsi_fep_*` modules that speak to it (no source for those modules in `pimos.tar.Z`) | the IPL reads `pimos.ipl` and the `.sav` files *from the FEP*. We must emulate the FEP end: either at the `scsi_command` built-in (need the packet format, from `scsi_fep_module`'s object code and `pimfep.ptf`), or above it by answering the IPL's file requests. This is the largest piece of new design before R4 |
 | C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers. `new_atom` is in since 2026-11-23 with a numbering of OURS (up from 10000h); the server (`top:atom_number_server/7`, `supply_atom_number`) is not |
 | C4 | Timer, date, and the FEP services PIMOS opens after boot (window, file, string_io) | R5-R6. The PIMOS internal file system is not in the released source (`icot_databases.md` section 6) |

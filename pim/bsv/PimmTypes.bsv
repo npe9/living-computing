@@ -84,5 +84,10 @@ function Action traceA(Bit#(8) r, Cell c) =
   $display("A %0d %02x%08x", r, c.tag, c.val);
 function Action traceM(Addr a, Cell c) =
   $display("M %0d %02x%08x", a, c.tag, c.val);
+// the console: a value displayed, and each cell of a string displayed
+function Action traceC(Cell c) =
+  $display("C %02x%08x", c.tag, c.val);
+function Action traceS(Cell c) =
+  $display("S %02x%08x", c.tag, c.val);
 
 endpackage

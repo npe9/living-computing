@@ -46,7 +46,8 @@ merger under the IPL's keyed pool, `lockstep_load.py` a real file
 loaded by `ipl_loader:load_file/9` with the IPL's own reader and
 checksum, `lockstep_mrb.py` `set_vector_element` in place or copied
 as the MRB says, `lockstep_atab.py` the IPL's own atom table
-(`new_atom`, `hash`) and a file loaded against it; 105
+(`new_atom`, `hash`) and a file loaded against it,
+`lockstep_cons.py` the console (`display_console`); 106
 instructions now. No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
