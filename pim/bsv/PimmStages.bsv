@@ -23,6 +23,7 @@ import PimmGBox::*;
 import PimmSBox::*;
 import PimmVBox::*;
 import PimmMBox::*;
+import PimmNBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -75,10 +76,12 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod } XState deriving (Bits, Eq);
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod,
+               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
-                   PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, MemPort smem)(PimmExec);
+                   PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
+                   MemPort smem)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -289,6 +292,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       gbox.alloc(2);       // car, then cdr
       st <= XVec;
     end
+    else if (op == op_put_vector_0) begin
+      regs.wr(x, mkCell(tag_VECT0o, 0));     // the empty vector: no cells
+      next;
+    end
     else if (isPutVector) begin
       gbox.alloc(zeroExtend(vectorN));
       st <= XVec;
@@ -363,6 +370,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wa(x, intCell(c16));
       next;
     end
+    else if (op == op_set_nil) begin
+      regs.wa(x, mkCell(tag_ATOMo, 0));
+      next;
+    end
     else if (isSetAtom) begin
       regs.wa(zeroExtend(ins.val[27:24]), atomHere);
       next;
@@ -411,6 +422,30 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // the predicate from the descriptor at the label
       hbox.external(labelOf(pc, c16));
       st <= XExt;
+    end
+    else if (op == op_enqueue_goal_external) begin
+      // enqueue_goal with the predicate found as execute_external
+      // finds it (the same operand type, klb_opr.kl1 p(c8_c16_ext))
+      if (x > 11) stop(EndUnimp);
+      else begin
+        hbox.external(labelOf(pc, c16));
+        st <= XExt;
+      end
+    end
+    else if (op == op_merge) begin
+      // merge(Out, ^In) as compiled (compiler/blt.kl1): the merger box
+      // makes the record and the input variable, and a goal of the
+      // stub merge_in waits on that variable (PimmNBox.bsv: ours)
+      dbox.deref(regs.r(x));
+      st <= XMg0;
+    end
+    else if (op == op_merge_in) begin
+      // the merger's step: not a PIM/m instruction, only at its stub
+      if (pc != mergeInStub) stop(EndUnimp);
+      else begin
+        dbox.deref(regs.r(x));
+        st <= XMi0;
+      end
     end
     else if (op == op_proceed) stop(EndDone);
     // ---- body built-ins
@@ -987,6 +1022,108 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
   endrule
 
+  // ---- the merger ------------------------------------------------------
+  rule merge0 (st == XMg0);
+    let a <- dbox.derefResult;
+    if (!isRef(a)) stop(EndUnimp);        // the output must be a variable
+    else begin
+      nbox.create(a);
+      st <= XMg1;
+    end
+  endrule
+
+  rule merge1 (st == XMg1);
+    let r <- nbox.result;
+    regs.wr(y, r.a);
+    opA <= r.a;
+    vnew <= r.b;
+    st <= XMg2;
+  endrule
+
+  rule merge2 (st == XMg2);
+    Vector#(7, Bit#(8)) ops = replicate(0);
+    ops[0] = y;
+    ops[1] = 254;
+    regs.wr(254, vnew);
+    gbox.waitRecord(mergeInStub, 2, ops, 0);
+    st <= XMg3;
+  endrule
+
+  rule merge3 (st == XMg3);
+    let g <- gbox.recordResult;
+    gbox.hook(g, cellAddr(opA));
+    st <= XMi2;
+  endrule
+
+  rule mergeIn0 (st == XMi0);
+    let a <- dbox.derefResult;
+    opA <= a;
+    if (isRef(a)) begin
+      // nothing yet: wait on the stream again
+      Vector#(7, Bit#(8)) ops = replicate(0);
+      ops[0] = x;
+      ops[1] = y;
+      gbox.waitRecord(mergeInStub, 2, ops, 0);
+      st <= XMi1;
+    end
+    else if ((a.tag & 8'hfe) == tag_LISTo) begin
+      nbox.cons(a, regs.r(y));
+      st <= XMi3;
+    end
+    else if ((a.tag & 8'hfe) == tag_ATOMo && a.val == 0) begin
+      nbox.close(regs.r(y));
+      st <= XMi4;
+    end
+    else stop(EndUnimp);                  // a vector (more inputs), or not a stream
+  endrule
+
+  rule mergeIn1 (st == XMi1);
+    let g <- gbox.recordResult;
+    gbox.hook(g, cellAddr(opA));
+    st <= XMi2;
+  endrule
+
+  rule mergeIn2 (st == XMi2);
+    gbox.done;
+    next;
+  endrule
+
+  // an element: on with the cdr, the output gets the new list cell
+  rule mergeIn3 (st == XMi3);
+    let r <- nbox.result;
+    regs.wr(x, r.c);
+    dbox.unify(r.b, r.a);
+    st <= XMiU;
+  endrule
+
+  rule mergeInU (st == XMiU);
+    let r <- dbox.unifyResult;
+    case (r) matches
+      tagged UOk:      finish(tagged Next pc);
+      tagged UWake .s: begin
+        gbox.wake(s);
+        st <= XMi2w;
+      end
+      tagged UFail:    stop(EndFail);
+      tagged UUnimp:   stop(EndUnimp);
+    endcase
+  endrule
+
+  rule mergeInW (st == XMi2w);
+    gbox.done;
+    finish(tagged Next pc);
+  endrule
+
+  // an input ends: the last one closes the output
+  rule mergeIn4 (st == XMi4);
+    let r <- nbox.result;
+    if (r.ok) begin
+      dbox.unify(r.a, mkCell(tag_ATOMo, 0));
+      st <= XUnify;
+    end
+    else next;
+  endrule
+
   rule bVectorElement (st == XBVEl);
     let r <- vbox.result;
     if (!r.ok) stop(EndUnimp);
@@ -1009,9 +1146,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule external (st == XExt);
     let t <- hbox.resolved;
     if (t matches tagged Valid .a) begin
-      alt <= tagged Invalid;
-      nNoted <= 0;
-      finish(tagged Next a);
+      if (op == op_enqueue_goal_external) begin
+        gbox.record(fromInteger(lay_READY), a, x, True, True);
+        st <= XEnq;
+      end
+      else begin
+        alt <= tagged Invalid;
+        nNoted <= 0;
+        finish(tagged Next a);
+      end
     end
     else stop(EndUnimp);
   endrule

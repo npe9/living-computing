@@ -61,10 +61,15 @@ def main(argv):
               '  deriving (Bits);', '',
               'function Maybe#(Stub) stubOf(Bit#(16) op);', '  case (op)']
     for name, e in table.items():
+        if name.startswith('$'):
+            continue
         outs = sum(1 << k for k, d in enumerate(e['dirs']) if d == 'o')
         lines.append("    16'h%02x%02x: return tagged Valid Stub { addr: %d, n: %d, outs: 7'h%02x };  // %s"
                      % (enc[name][0], enc[name][1], e['addr'], len(e['dirs']), outs, name))
-    lines += ['    default: return tagged Invalid;', '  endcase', 'endfunction', '']
+    lines += ['    default: return tagged Invalid;', '  endcase', 'endfunction', '',
+              '// the merger step (asm/pimm_stubs.py: ours, not a PIM/m instruction)',
+              "Bit#(16) op_merge_in = 16'h2200;",
+              'Bit#(AddrBits) mergeInStub = %d;' % table['$merge_in']['addr'], '']
     # the address of every predicate's first instruction
     im = kbndis.Image()
     lines += ['', "Bit#(32) loadAddress = 32'h%08x;" % im.load,

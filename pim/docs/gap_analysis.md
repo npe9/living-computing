@@ -124,7 +124,16 @@ table (`lockstep_file.py`, `lockstep_file3.py`); B4's minimum is in
 in for by the test: the reader (`ipl_loader:read_unload_file/7`, the
 sum check) and the atom table (`ipl_loader:decode_atom/3`), both real
 IPL code that can replace the stand-ins. Left waiting: the file name
-on the console (C1). Next: `ipl_loader:load_file/9` with the IPL's
+on the console (C1).
+
+The built-in merger is in (`lockstep_pool.py`), as a waiting goal and
+not as the machine's merger cell, because every request to the IPL's
+keyed pool goes through one. The pool copies its table at every
+request (`set_vector_element` without MRB): `decode_atom/3`'s table
+is 1024 cells, `atom_table/1`'s 16384, so the IPL's own atom table
+cannot run until `set_vector_element` updates in place under the MRB
+bit; that is a milestone of its own, ahead of it. Next:
+`ipl_loader:load_file/9` with the IPL's
 own reader and atom table in place of the test's, which needs a
 stand-in only for the file's bytes (C2); then console output (C1),
 so that the name and a 5702h file's comment are displayed.
@@ -188,6 +197,8 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
+- Not run at all: `set_nil`, `enqueue_goal_external`; the merger's
+  refusals and a vector on a merger's input.
 - Not caught by any run: `calculate_priority_from_minimum`'s result
   register (and its value is read by nothing); a file whose atom table
   has names; a 5702h file's comment; `new_module`'s refusals; integer keys in a

@@ -107,6 +107,7 @@ class Machine:
         self.rq = 0                           # ready queue: the newest goal record
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
+        self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
         self.names = {}
         # statistics, not machine state
         self.nsusp = 0
@@ -795,6 +796,9 @@ class Machine:
             raise Unimplemented('put_vector of %d' % n)
         self.reg[x], self.sp = self.vnew(n)
 
+    def i_put_vector_0(self, pc, x, y, z, c16):
+        self.reg[x] = (VECT0, 0)              # the empty vector: no cells
+
     def i_put_vector_1(self, pc, x, y, z, c16):
         self.put_vector(1, x)
 
@@ -925,6 +929,9 @@ class Machine:
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
 
+    def i_set_nil(self, pc, x, y, z, c16):
+        self.argv[x] = NIL
+
     def i_set_integer(self, pc, x, y, z, c16):
         self.argv[x] = (INT, sx16(c16) & 0xffffffff)
 
@@ -990,13 +997,30 @@ class Machine:
         # code address on the first call.  What is written there is not
         # known: this model looks the predicate up at every call and
         # writes nothing, and refuses a cache field that is not 0.
+        target = self.external(pc, c16, 'execute_external')
+        self.reductions += 1
+        self.alt = None
+        self.waiting = []
+        return target
+
+    def i_enqueue_goal_external(self, pc, x, y, z, c16):
+        # enqueue_goal with the predicate found as execute_external
+        # finds it (the same operand type, assembler/klb_opr.kl1
+        # p(c8_c16_ext)).  More than 11 arguments is refused.
+        if x > 11:
+            raise Unimplemented('enqueue_goal_external %d' % x)
+        self.record(READY, self.external(pc, c16, 'enqueue_goal_external'), self.argv[1:x + 1])
+
+    def external(self, pc, c16, what):
+        """The code address of the predicate whose descriptor is at the
+        label."""
         mem, e = self.mem, self.load + pc + 2 + sx16(c16)
         if mem[e] != (INT, 0):
-            raise Unimplemented('execute_external: a filled cache field')
+            raise Unimplemented(what + ': a filled cache field')
         via = mem[e + 1]
         head = mem[via[1]]
         if via[0] & ~1 != REF or head[0] & ~1 != REF:
-            raise Unimplemented('execute_external: the module field')
+            raise Unimplemented(what + ': the module field')
         h, key = head[1], mem[e + 2]
         table = h + 3 + mem[h + 2][1]
         slot = table + 1 + (key[1] & mem[table][1])
@@ -1009,10 +1033,7 @@ class Machine:
                     target = p + 1 + mem[p + 1][1]
                     break
         if target is None:
-            raise Unimplemented('execute_external: no such predicate')
-        self.reductions += 1
-        self.alt = None
-        self.waiting = []
+            raise Unimplemented(what + ': no such predicate')
         return target - self.load
 
     def i_proceed(self, pc, x, y, z, c16):
@@ -1083,6 +1104,70 @@ class Machine:
             return [self.element(s, self.need_int(i)), s]
         self.builtin('b_string_element', [x, y, z, w4], f)
         return pc + 2
+
+    # The merger.  merge(In, ^Out) "creates a built-in constant time
+    # merger" (manual); the compiler makes it merge(Out, ^In): the first
+    # operand is the output stream as given, the second receives the
+    # input (library/compiler/blt.kl1 active_builtin(merge(X1,X2))).
+    # On the machine the input is a cell of its own tag (MGHOK) pointing
+    # at a merger record {output variable}{number of inputs} (TR-466
+    # 3.3), and the merger acts when that cell is unified.  HERE a
+    # merger input is a GOAL waiting on the input stream, with the
+    # record {output}{count} and the first input variable in three
+    # cells; its code is the stub merge_in (asm/pimm_stubs.py), which
+    # is not a PIM/m instruction.  So the output appears after a goal
+    # switch, not at the unification.  A vector on the input (more
+    # inputs) is refused for now; anything but a list, [] or a
+    # variable is the machine's illegal_merger_input exception:
+    # refused.  The output operand must be an unbound variable (it is
+    # a fresh put_variable at all six sites in the image).
+    def i_merge(self, pc, x, y, z, c16):
+        out = self.deref(self.reg[x])
+        if not self.unbound(out):
+            raise Unimplemented('merge onto %r' % (out,))
+        rec = self.alloc(3)
+        self.mem[rec] = out
+        self.mem[rec + 1] = (INT, 1)
+        self.mem[rec + 2] = (UNDF, 0)
+        self.reg[y] = (REF, rec + 2)
+        self.reg[254] = (INT, rec)
+        self.merge_wait(self.reg[y], self.reg[254], rec + 2)
+
+    def merge_wait(self, stream, rec, var):
+        """A goal of merge_in(stream, rec) waiting on the cell var."""
+        self.nsusp += 1
+        g = self.alloc(G_ARGS + 2)
+        self.mem[g + G_LINK] = (INT, 0)
+        self.mem[g + G_STATUS] = (INT, SUSPENDED)
+        self.mem[g + G_CODE] = (INT, self.load + self.stubs['$merge_in']['addr'])
+        self.mem[g + G_ARGN] = (INT, 2)
+        self.mem[g + G_ARGS] = stream
+        self.mem[g + G_ARGS + 1] = rec
+        self.hook(g, var)
+
+    def i_merge_in(self, pc, x, y, z, c16):
+        if pc != self.stubs['$merge_in']['addr']:
+            raise Unimplemented('merge_in at %d' % pc)
+        w = self.deref(self.reg[x])
+        rec = self.reg[y][1]
+        if self.unbound(w):
+            self.merge_wait(self.reg[x], self.reg[y], w[1])
+        elif w[0] & ~1 == LIST:
+            out = self.mem[rec]
+            c = self.alloc(2)
+            self.mem[c] = self.taken(w[1])
+            self.mem[c + 1] = (UNDF, 0)
+            self.mem[rec] = (REF, c + 1)
+            self.reg[x] = self.taken(w[1] + 1)
+            self.unify(out, (LIST + 1, c))
+            return pc                         # go on with the cdr
+        elif (w[0] & ~1, w[1]) == NIL:
+            n = self.mem[rec + 1][1] - 1
+            self.mem[rec + 1] = (INT, n)
+            if n == 0:
+                self.unify(self.mem[rec], NIL)
+        else:
+            raise Unimplemented('merger input %r' % (w,))
 
     def i_new_instruction(self, pc, x, y, z, c16):
         # new_instruction(Tag, Value, ^Cell): the cell with that tag

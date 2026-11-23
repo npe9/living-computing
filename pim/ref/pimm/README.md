@@ -41,7 +41,8 @@ areas (`b_multiply`, `write_marked_variable`, `write_integer`),
 instructions, listed in its header), `lockstep_pack.py` a goal of
 more than eleven arguments, `lockstep_newm.py` whole module objects
 (`new_module`), `lockstep_file.py` and `lockstep_file3.py` whole real
-object files through `decode/8`; 93
+object files through `decode/8`, `lockstep_pool.py` the built-in
+merger under the IPL's keyed pool; 95
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

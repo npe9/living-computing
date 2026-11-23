@@ -35,7 +35,15 @@ REGS = {'r': 1, 'r_r': 2, 'r_r_r': 3, 'r4': 4, 'r5': 5, 'r6': 6, 'r7': 7}
 GET_VALUE = (0x23, 0xbc)
 PROCEED = (0x23, 0x60)
 
-PINNED = dict(stubs=69, cells=256)
+PINNED = dict(stubs=70, cells=258)
+
+# The merger's step.  NOT a PIM/m instruction: the machine's merger is a
+# cell with its own tag (MGHOK) that acts when it is unified; here a
+# merger input is a goal of this code waiting on the input stream
+# (docs/pimm_semantics.md).  22:00 has no entry in the firmware's
+# decode table (asm/psdpim.py --table 2); both models refuse it
+# anywhere but here.
+MERGE_IN = (0x22, 0x00)
 
 
 def encode(tag, op, regs):
@@ -79,6 +87,10 @@ def build(base):
         for r, k in outs:
             cells.append((GET_VALUE[0], GET_VALUE[1] << 24 | r << 16 | k << 8))
         cells.append((PROCEED[0], PROCEED[1] << 24))
+    # merge_in 0, 1: the input stream, the merger's record
+    table['$merge_in'] = dict(addr=base + len(cells), dirs='ii', words=1)
+    cells.append((MERGE_IN[0], MERGE_IN[1] << 24 | 0 << 16 | 1 << 8))
+    cells.append((PROCEED[0], PROCEED[1] << 24))
     return cells, table
 
 
