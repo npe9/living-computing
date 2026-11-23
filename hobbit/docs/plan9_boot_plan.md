@@ -590,6 +590,29 @@ binaries on the reference model -- the core had no little-endian data
 mode, which every 1e program but `cat` depends on (A2's status above;
 added with golden `017`).
 
+## A4 status, reference side (2026-11-23): s9term boots to /boot's prompt
+
+`tools/p9boot.py` boots the shipped kernel image `s9term` on the
+reference model (`sem/hobbit_sem.py` with a `System`: CPU-prefixed
+control registers, CSP = ISP, the Chapter 2 MMU, the event sequences),
+with a device model for each board register the kernel touches (Quart,
+Irq, WD33C93, SONIC, IIC, LCD, incon), every unknown a stated choice.
+Details, milestones and choices: `docs/p9boot.md`.
+
+* 2,131,084 instructions: pageinit's line, byte-exact on the screen
+  (`screenputs`) and, as `\r\n`, on Quart channel 0:
+  `1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K`.
+  Pinned by `tests/test_p9boot.py` (in the suite).
+* 2,859,426: `touser`, the first CRET to user level (initcode), then
+  `sysexec("/boot")` and `/boot` demand-paging in user mode; the clock
+  interrupt (the Quart counter) is taken.
+* 22,530,554: `/boot`'s prompt on the screen, `root is from (il, tcp, incon, 9600, 19200)[il]: ` (with `--counter-period 0.04`, a stated choice); it waits for a keyboard byte.  Its default transport, `il`, needs the SONIC ethernet and the IIC EEPROM (docs/p9boot.md).
+
+The gate as written above (the boot banner and prompt on the UART) is
+not met yet: s9term prints no banner of its own; the first text after
+pageinit's line is `/boot`'s prompt.  The Bluespec-side DUART below is
+unchanged.
+
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 
 A first `mkHobbitDuart` exists but its gate is **not** green: 26 of 37
