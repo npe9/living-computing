@@ -1581,6 +1581,31 @@ class Machine:
         self.builtin('predicate_to_code', [x, y, z, w4], f)
         return pc + 2
 
+    def i_apply(self, pc, x, y, z, c16):
+        # apply(Code, Args), 22:F1.  "Calls a predicate corresponding
+        # to Code with argument environment Args.  Suspend: Code or
+        # Args uninstantiated.  Exception: Code other than a code, Args
+        # other than a vector, the number of arguments to Code and the
+        # number of elements in Args do not agree" (PIMOS manual,
+        # e-builtin.tex apply).  A new ready goal of the code, as PDSS
+        # makes one (emulator/blt_system.c blt_b_apply: a goal record,
+        # each element dereferenced and its MRB set if the vector's
+        # is, enqueue).  The arguments go through the argument
+        # registers, as for enqueue_goal.  The exceptions are refused;
+        # so are a vector of seven or more (its size is in memory) and
+        # the empty vector (no test can run a predicate of no argument:
+        # the image's three are boot, boot0 and noop).
+        def f(code, args):
+            n = self.vsize(args)
+            head = self.mem[code[1] - 2] if code[0] == COD else None
+            if head is None or head[0] != PREDH or not n or n > 6 or n != head[1] >> 24:
+                raise Unimplemented('built-in exception: apply(%r, %r)' % (code, args))
+            for i in range(n):
+                self.argv[i + 1] = self.taken(args[1] + i, single=not args[0] & 1)
+            self.record(READY, code[1] - self.load, self.argv[1:n + 1])
+            return []
+        self.builtin('apply', [x, y], f)
+
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.
         # "Unifies the number of arguments of the code X with Arity,

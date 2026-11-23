@@ -52,7 +52,8 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_link.py` the IPL's whole `load/4` with its linker,
 `lockstep_unif.py` the unification of two vectors or lists,
 `lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
-the real `pimos.ipl`; 112
+the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
+`code`, `lockstep_apply.py` `apply`; `longrun_ipl.py` is the long run (not in the suite); 116
 instructions now. No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed

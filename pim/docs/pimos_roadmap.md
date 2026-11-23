@@ -95,7 +95,7 @@ longer `run_boot.sh` once runs exceed a few minutes).
 | R2 | One predicate from a real PIMOS module, loaded from its `.sav`, runs to completion with arguments we construct and returns the right answer | expected value computed independently (by hand for the first; by KLIC 2.002 for the rest) |
 | R3 | The same, for a predicate that suspends and is resumed | same |
 | R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
-| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; those two strings are in no held 3.6 binary, and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs |
+| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs |
 | R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`) |
 | R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
 | R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
@@ -292,7 +292,12 @@ the unification of two vectors it also needs is in
 loads and links on both models (`lockstep_link.py` part 2).
 On the reference model alone, 2026-11-23, the twenty files of the
 held `pimos.ipl`, in its order, load and link NORMALLY (73 M cells,
-fifteen minutes); the IPL then stops at `predicate_to_code`. The linker reports ONE
+fifteen minutes); `predicate_to_code` then gives the code of
+`pim:go/4` and the answer is `normal(Atoms, Modules, Comments, Code)`:
+10,032 atoms, 480 modules; eight modules are in two files and each
+ends as its later file's (`ref/pimm/longrun_ipl.py --reference`).
+`top:go_pimos1/2` applies that code (`apply`, `lockstep_apply.py`).
+The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
 

@@ -76,7 +76,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
@@ -139,7 +139,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_vector_element || op == op_new_instruction
                   || op == op_new_module || op == op_calculate_priority_from_minimum
                   || op == op_change_element_size || op == op_string_operation
-                  || op == op_hash || op == op_predicate_to_code;
+                  || op == op_hash || op == op_predicate_to_code || op == op_apply;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1120,6 +1120,18 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
       else stop(EndUnimp);
     end
+    else if (op == op_apply) begin
+      // apply(Code, Args): a ready goal of the code, its arguments the
+      // vector's elements (through the argument registers).  Anything
+      // but a code and a vector of up to six is the built-in's
+      // exception or not modelled; the count is checked against the
+      // predicate head, two cells before the code
+      if (a.tag != tag_COD || !isVec(b) || (b.tag & 8'hfe) > tag_VECT0o + 12) stop(EndUnimp);
+      else begin
+        smem.read(cellAddr(a) - 2);
+        st <= XAp1;
+      end
+    end
     else if (op == op_predicate_to_code) begin
       // predicate_to_code(Module, Name, Arity, ^Code): the hash box
       // finds the predicate in the module's entry table; the key is
@@ -1334,6 +1346,38 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule p2cW3 (st == XP2Cw3);
     regs.wr(operand[3], opA);
     finish(tagged Next afterBuiltin);
+  endrule
+
+  // apply: the head's arity must be the vector's size; then each
+  // element is taken (its MRB on if the vector's is) into an argument
+  // register, and the goal is made as enqueue_goal makes one
+  Bit#(8) applyN = zeroExtend(((vals[1].tag & 8'hfe) - tag_VECT0o) >> 1);
+
+  rule apply1 (st == XAp1);
+    let h <- smem.data;
+    if (h.tag != tag_PREDH || h.val[31:24] != applyN) stop(EndUnimp);
+    else if (applyN == 0) stop(EndUnimp);   // the empty vector: not run, refused
+    else begin
+      packK <= 0;
+      smem.read(cellAddr(vals[1]));
+      st <= XAp2;
+    end
+  endrule
+
+  rule apply2 (st == XAp2);
+    let c <- smem.data;
+    Bool on = vals[1].tag[0] == 1;
+    Addr at = cellAddr(vals[1]) + zeroExtend(packK);
+    regs.wa(packK + 1, isUnboundCell(c) ? mkCell(on ? tag_REFx : tag_REFo, absAddr(at))
+                                        : (on ? marked(c) : c));
+    if (packK + 1 == applyN) begin
+      gbox.record(fromInteger(lay_READY), cellAddr(vals[0]), applyN, True, True);
+      st <= XEnq;
+    end
+    else begin
+      packK <= packK + 1;
+      smem.read(at + 1);
+    end
   endrule
 
   // the guard code: the head, then the module's descriptor cell

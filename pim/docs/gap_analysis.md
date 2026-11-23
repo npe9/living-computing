@@ -157,11 +157,13 @@ linker's vector unification run 23 times (`lockstep_link.py` part
 2). `new_string` makes 32-bit strings (`lockstep_s32.py`), which
 was all the system files lacked: on the reference model alone the
 IPL loads the twenty files of the held `pimos.ipl` in its order and
-the link is NORMAL; it stops at `predicate_to_code`, looking for
-`pim:go/4`. The IPL's own reader of the list, `ipl:ipl_files/4`,
+the link is NORMAL; `predicate_to_code` gives the code of
+`pim:go/4` (`lockstep_p2c.py`; the whole run is
+`ref/pimm/longrun_ipl.py`, outside the suite) and `apply` runs a
+code (`lockstep_apply.py`). The IPL's own reader of the list, `ipl:ipl_files/4`,
 gives the twenty names from the held file on both models
-(`lockstep_ipll.py`). Next: `predicate_to_code` and the guard `code`; the
-whole list on the Bluespec (a long run, not a suite test); `apply`; and the FEP protocol under `open` (C2).
+(`lockstep_ipll.py`). Next: the whole list on the Bluespec to the end
+(`bsv/run_pimm_longrun.sh`); `pim:go/4` applied, its stops taken in the order they come; and the FEP protocol under `open` (C2).
 
 ### C. The world outside the processor
 
