@@ -57,6 +57,35 @@ Not discriminated by anything here: FADD/FMUL/FDIV rounding against
 fpi.c (the arithmetic is host IEEE double, not fpi.c's `Internal`), and
 errstr's text.
 
+A3's system calls (2026-11-23: `Redirection`, `Stat`, `Create`,
+`Devices`, `Processes`, `ArAndRl`, `KernelInputs`; 50 tests in all).
+Nine bugs were injected into tools/p9run.py one at a time
+(P9RUN_MAX_STEPS=1700000), the whole file run each time, the saved file
+written back after; nothing failed but what is listed:
+
+  convD2M: the length and its high word swapped
+      2 tests: Stat fstat-of-a-file, ArAndRl (ar sizes its members by
+      dirfstat)
+  fstat of a redirected fd says a file (type M), not a pipe
+      1 test: Stat fstat-of-a-pipe-and-the-console
+  redirected stdout written to the console
+      4 tests: Redirection stdin/stdout, Redirection cat, KernelInputs
+      mkstreamlist, KernelInputs init.h
+  #c/pid not padded to NUMSIZE
+      1 test: Devices c_pid (ar's mktemp does not care: it takes digits)
+  fork: the child's rfork returns the pid instead of 0
+      1 test: ArAndRl
+  exec: /bin not bound to /hobbit/bin
+      1 test: ArAndRl
+  wait returns a pid one too high
+      1 test: ArAndRl
+  rfork(RFNOTEG) taken as a fork
+      2 tests: Processes rfork-without-rfproc, ArAndRl
+  create ignores perm
+      1 test: Create
+
+Not injected: `#e`, notify, Enochild, the exec of a missing file.
+
 `ArCalls` and `Ar` (A3, 2026-11-23): fstat and rfork(RFNOTEG) as the
 shipped `ar` uses them, and `ar t`/`x`/`vu` and `rl` on members of the
 shipped libc.a.  Five bugs injected one at a time into tools/p9run.py
@@ -78,7 +107,13 @@ and after), observed failures:
 
 `ar t` and `ar x` never call fstat or rfork, so none of these reach
 them; they are there as the oracle that the archive reader agrees with
-the shipped file.
+the shipped file.  (That table was observed before the merge with the
+fork/exec/wait work, against `ar_fstat`/`dir_bytes`, which the merge
+replaced by `sys_fstat`/`convD2M`; `test_rl_writes_the_table_then_
+stops_at_its_fork` is now `test_rl_writes_the_table_and_its_fork_puts_
+it_first`, and the two rfork-refusal tests became
+`test_a_fork_that_shares_memory_or_is_recorded_is_refused` and
+`test_rfork_group_flags_without_rfproc_return_zero`.  Not re-injected.)
 
 `StackCacheContents` (added later the same day, with `State.cache`) has
 no injection table of its own: the injection that matters for it is the
@@ -91,6 +126,7 @@ import io
 import os
 import pathlib
 import shutil
+import struct
 import sys
 import tempfile
 import unittest
@@ -101,6 +137,7 @@ sys.path.insert(0, str(HOBBIT / "tools"))
 sys.path.insert(0, str(HOBBIT / "sem"))
 import build_zl_inferno   # noqa: E402
 import hobbit_sem as sem  # noqa: E402
+import p9kgen             # noqa: E402
 import p9run              # noqa: E402
 
 REL = HOBBIT / "tools" / "plan9-1e"
@@ -483,6 +520,242 @@ class StackCacheContents(unittest.TestCase):
         self.assertEqual(st.memory[0x1004], 0xB000 + 0x1004)
 
 
+# --------------------------------------------------------------------
+# A3: the system calls the kernel's generated inputs need (tools/p9kgen.py)
+# --------------------------------------------------------------------
+
+NUM = {v: k for k, v in p9run.SYSCALLS.items()}
+SP = 0x10000            # where a test puts the caller's frame
+STR = 0x20000           # strings
+BUF = 0x30000           # result buffers
+
+
+class KernelCall(unittest.TestCase):
+    """One system call against a bare machine: the arguments at SP+4..,
+    as the libc stub leaves them."""
+
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp(prefix="p9run-"))
+        self.addCleanup(shutil.rmtree, self.root)
+        self.out = io.BytesIO()
+        self.console = io.BytesIO()
+        self.st = sem.State()
+        self.m = p9run.Machine(self.st)
+        self.k = p9run.Kernel(str(self.root), self.m, 0x8000, self.console,
+                              stdin=b"abc", stdout=self.out)
+        self.addCleanup(lambda: [f.close() for f in self.k.fds.values()
+                                 if f not in (None, "console")])
+
+    def call(self, name, *args):
+        words, s = [], STR
+        for a in args:
+            if isinstance(a, (str, bytes)):
+                b = a.encode() if isinstance(a, str) else a
+                self.m.set_bytes(s, b + b"\0")
+                words.append(s)
+                s += len(b) + 1
+            else:
+                words.append(a & 0xFFFFFFFF)
+        for i, w in enumerate(words):
+            self.m.set_word(SP + 4 + 4 * i, w)
+        return self.k.call(NUM[name], SP)
+
+    def dir_at(self, addr):
+        b = self.m.bytes(addr, p9run.DIRLEN)
+        name, uid, gid = (b[i:i + 28].split(b"\0")[0] for i in (0, 28, 56))
+        qpath, qvers, mode, atime, mtime, length, hlen = struct.unpack(
+            "<7I", b[84:112])
+        typ, dev = struct.unpack("<HH", b[112:116])
+        return dict(name=name, uid=uid, qpath=qpath, mode=mode, mtime=mtime,
+                    length=length, hlen=hlen, type=chr(typ), dev=dev)
+
+
+class Redirection(KernelCall):
+    def test_stdin_is_read_and_stdout_captured_fd2_stays_console(self):
+        self.assertEqual(self.call("read", 0, BUF, 2), 2)
+        self.assertEqual(self.m.bytes(BUF, 2), b"ab")
+        self.assertEqual(self.call("read", 0, BUF, 10), 1)
+        self.assertEqual(self.call("read", 0, BUF, 10), 0)   # end of file
+        self.m.set_bytes(BUF, b"out")
+        self.assertEqual(self.call("write", 1, BUF, 3), 3)
+        self.m.set_bytes(BUF, b"err")
+        self.assertEqual(self.call("write", 2, BUF, 3), 3)
+        self.assertEqual((self.out.getvalue(), self.console.getvalue()),
+                         (b"out", b"err"))
+
+    def test_seek_on_a_pipe_is_eisstream(self):
+        self.assertEqual(self.call("seek", 0, 0, 0), 0xFFFFFFFF)
+        self.assertEqual(self.k.errstr, b"seek on a stream")
+
+    def test_cat_copies_standard_input_to_standard_output(self):
+        out = io.BytesIO()
+        text = (REL / "sys/src/9/hobbit/term").read_bytes()
+        status, steps, _k, _o = p9run.run(str(BIN / "cat"), ["cat"],
+                                          str(self.root), MAX_STEPS,
+                                          self.console, stdin=text,
+                                          stdout=out)
+        self.assertEqual((status, out.getvalue(), self.console.getvalue()),
+                         ("exits('')", text, b""))
+
+
+class Stat(KernelCall):
+    def test_fstat_of_a_file_is_convD2M_of_the_file_servers_dir(self):
+        (self.root / "f.c").write_bytes(b"x" * 1234)
+        fd = self.call("open", "f.c", 0)
+        self.assertEqual(self.call("fstat", fd, BUF), 0)
+        d = self.dir_at(BUF)
+        self.assertEqual((d["name"], d["uid"], d["length"], d["hlen"],
+                          d["type"], d["mode"] & p9run.CHDIR),
+                         (b"f.c", b"bootes", 1234, 0, "M", 0))
+        self.assertEqual(d["mtime"],
+                         int(os.stat(self.root / "f.c").st_mtime))
+
+    def test_stat_of_a_directory_sets_chdir_in_mode_and_qid(self):
+        (self.root / "d").mkdir()
+        self.assertEqual(self.call("stat", "/d", BUF), 0)
+        d = self.dir_at(BUF)
+        self.assertEqual((d["name"], d["mode"] & p9run.CHDIR,
+                          d["qpath"] & p9run.CHDIR, d["length"]),
+                         (b"d", p9run.CHDIR, p9run.CHDIR, 0))
+
+    def test_stat_of_a_missing_file_fails_with_enonexist(self):
+        self.assertEqual(self.call("stat", "nothere", BUF), 0xFFFFFFFF)
+        self.assertEqual(self.k.errstr, b"file does not exist")
+
+    def test_fstat_of_a_pipe_and_of_the_console(self):
+        self.assertEqual(self.call("fstat", 1, BUF), 0)
+        d = self.dir_at(BUF)
+        self.assertEqual((d["name"], d["type"], d["qpath"], d["mode"]),
+                         (b"pipe", "|", (1 << 5) | 31, 0o666))
+        self.assertEqual(self.call("fstat", 2, BUF), 0)
+        d = self.dir_at(BUF)
+        self.assertEqual((d["name"], d["type"], d["qpath"], d["mtime"]),
+                         (b"cons", "c", 3, p9run.KERNDATE))
+
+    def test_fstat_of_a_closed_fd_fails_and_a_device_stat_is_refused(self):
+        self.assertEqual(self.call("fstat", 7, BUF), 0xFFFFFFFF)
+        with self.assertRaises(p9run.Stop):
+            self.call("stat", "#c/cons", BUF)
+
+
+class Create(KernelCall):
+    def test_a_new_files_perm_is_anded_with_the_directorys(self):
+        os.chmod(self.root, 0o755)
+        self.call("create", "z.out", 1, 0o775)
+        self.assertEqual(os.stat(self.root / "z.out").st_mode & 0o777, 0o755)
+        os.chmod(self.root / "z.out", 0o600)
+        self.call("create", "z.out", 1, 0o775)          # exists: unchanged
+        self.assertEqual(os.stat(self.root / "z.out").st_mode & 0o777, 0o600)
+
+
+class Devices(KernelCall):
+    def test_c_pid_reads_readnum_of_the_pid(self):
+        fd = self.call("open", "#c/pid", 0)
+        self.assertEqual(self.call("read", fd, BUF, 20), 12)
+        self.assertEqual(self.m.bytes(BUF, 12), b"          1 ")
+
+    def test_e_is_an_empty_directory(self):
+        fd = self.call("open", "#e", 0)
+        self.assertEqual(self.call("read", fd, BUF, 116), 0)
+        self.call("fstat", fd, BUF)
+        d = self.dir_at(BUF)
+        self.assertEqual((d["name"], d["type"], d["mode"]),
+                         (b".", "e", p9run.CHDIR | 0o700))
+        self.assertEqual(self.call("open", "#e/path", 0), 0xFFFFFFFF)
+
+    def test_any_other_device_is_refused(self):
+        with self.assertRaises(p9run.Stop):
+            self.call("open", "#t/eia1", 0)
+
+
+class Processes(KernelCall):
+    def test_notify_keeps_the_handler(self):
+        self.assertEqual(self.call("notify", 0x12D0), 0)
+        self.assertEqual(self.k.notify, 0x12D0)
+
+    def test_rfork_without_rfproc(self):
+        self.assertEqual(self.call("rfork", p9run.RFNOTEG), 0)
+        self.assertEqual(self.k.noteid, 2)
+        self.assertEqual(self.call("rfork", p9run.RFNAMEG | p9run.RFCNAMEG),
+                         0xFFFFFFFF)
+        self.assertEqual(self.k.errstr, b"bad arg in system call")
+        with self.assertRaises(p9run.Stop):
+            self.call("rfork", p9run.RFCFDG)
+
+    def test_wait_with_no_children_is_enochild(self):
+        self.assertEqual(self.call("wait", BUF), 0xFFFFFFFF)
+        self.assertEqual(self.k.errstr, b"no living children")
+
+    def test_exec_of_a_missing_file_fails(self):
+        self.m.set_word(BUF, 0)
+        self.assertEqual(self.call("exec", "/bin/none", BUF), 0xFFFFFFFF)
+
+
+class ArAndRl(Tree):
+    """ar (rfork(RFNOTEG), mktemp: #c/pid and stat) and rl (fork, exec of
+    /bin/ar through lib/namespace's bind, wait) on the shipped binaries."""
+
+    def test_ar_then_rl_puts_a_symdef_first(self):
+        members = build_zl_inferno.read_members(str(LIBC))
+        (self.root / "main9.z").write_bytes(members["main9.z"])
+        (self.root / "tmp").mkdir()
+        shutil.copytree(BIN, self.root / "hobbit" / "bin")
+        status, console, k, _n = run(self.root, BIN / "ar", "vu", "x.a",
+                                     "main9.z")
+        self.assertEqual(status, "exits('')")
+        self.assertEqual(console, b"ar: creating x.a\na - main9.z\n")
+        self.assertIn(("rfork", 0), k.trace)
+        out = io.BytesIO()
+        status, steps, k, _o = p9run.run(str(BIN / "rl"), ["rl", "x.a"],
+                                         str(self.root), MAX_STEPS, out)
+        self.assertEqual((status, out.getvalue()), ("exits('')", b""))
+        # one child: the fork, exec("/bin/ar", "ar rb main9.z x.a
+        # __.SYMDEF"), its exits; the parent's wait returns its pid
+        (pid, text, csteps, ctrace, cstatus), = k.children
+        self.assertEqual((pid, text, cstatus), (2, "ar", "exits('')"))
+        self.assertIn(("exec", 0), ctrace)
+        self.assertIn(("wait", 2), k.trace)
+        self.assertFalse((self.root / "__.SYMDEF").exists())   # removed
+        a = (self.root / "x.a").read_bytes()
+        self.assertEqual(a[:8], b"!<arch>\n")
+        self.assertEqual(a[8:17], b"__.SYMDEF")
+        self.assertIn(b"main9.z", a[60:])
+
+
+class KernelInputs(unittest.TestCase):
+    """A sample of tools/p9kgen.py (the whole of it is a recorded long
+    run, docs/plan9_boot_plan.md A3): the rc scripts' quoting, a
+    sed | awk list, and init.h against the shipped kernel's initcode[]."""
+
+    def setUp(self):
+        self.out = pathlib.Path(tempfile.mkdtemp(prefix="p9kgen-"))
+        self.addCleanup(shutil.rmtree, self.out)
+        p9kgen.make_tree(self.out)
+        self.rc = p9kgen.Rc(self.out, io.StringIO())
+
+    def test_rc_pieces_skips_comments_and_takes_here_documents(self):
+        p = p9kgen.rc_pieces(p9kgen.BOOT / "mkboot")
+        # mkboot's comments quote 'boot', 'misc' and 'cfs.root'; none of
+        # them is a piece
+        self.assertEqual([k for k, _t in p], ["h", "q", "h", "q", "q"])
+        self.assertTrue(p[2][1].startswith("\t{ 0 },\n};\n"))
+        p = p9kgen.rc_pieces(p9kgen.PORT / "mkextract")
+        self.assertEqual(p[2][1], ' }\n\t\t$0 ~ "^')
+
+    def test_mkstreamlist_term(self):
+        # sed '/^$/d; /^#/d' term | awk '...' 'field=^stream'
+        out = p9kgen.mklist(self.rc, "mkstreamlist", "stream", "term")
+        self.assertEqual(out.split(),
+                         [b"sturp.z", b"stip.z", b"stasync.z", b"stfcall.z"])
+
+    def test_init_h_is_the_shipped_kernels_initcode(self):
+        text = p9kgen.mkfile_init_h(self.rc).decode()
+        mine = p9kgen.c_bytes(text)
+        theirs, room = p9kgen.kernel_array("initcode", len(mine))
+        self.assertEqual((mine, len(mine), room), (theirs, 60, 60))
+        self.assertTrue(text.startswith("uchar initcode[]={\n0x00,0x00,"))
+
+
 def archive(data):
     """[(name, 60-byte header, body, offset of the header)]."""
     out, off = [], 8
@@ -531,8 +804,8 @@ class ArCalls(unittest.TestCase):
         self.assertEqual(self.k.call(11, self._args(3, 0x3000)), 0)
         d = self.m.bytes(0x3000, 116)
         self.assertEqual(d[0:28], b"a-file-name.z" + b"\0" * 15)  # name
-        self.assertEqual(d[28:56], b"none" + b"\0" * 24)          # uid
-        self.assertEqual(d[56:84], b"none" + b"\0" * 24)          # gid
+        self.assertEqual(d[28:56], b"bootes" + b"\0" * 22)        # uid: eve
+        self.assertEqual(d[56:84], b"bootes" + b"\0" * 22)        # gid
         ino = os.stat(path).st_ino & 0x7FFFFFFF
         self.assertEqual(d[84:88], ino.to_bytes(4, "little"))    # qid.path
         self.assertEqual(d[88:92], bytes(4))                     # qid.vers
@@ -544,7 +817,7 @@ class ArCalls(unittest.TestCase):
         self.assertEqual(self.m.bytes(0x3000 + 116, 4), b"\xAA" * 4)
 
     def test_fstat_of_a_directory_carries_chdir(self):
-        d = p9run.Kernel.dir_bytes("x", os.stat(self.root))
+        d = self.k.dir_entry(str(self.root))
         self.assertEqual(d[95] & 0x80, 0x80)                  # mode CHDIR
         self.assertEqual(d[87] & 0x80, 0x80)                  # qid CHDIR
 
@@ -558,22 +831,29 @@ class ArCalls(unittest.TestCase):
         with self.assertRaisesRegex(p9run.Stop, "odd address"):
             self.k.call(11, self._args(3, 0x3002))
 
-    def test_fstat_of_the_console_is_refused(self):
-        with self.assertRaisesRegex(p9run.Stop, "console"):
-            self.k.call(11, self._args(1, 0x3000))
+    def test_fstat_of_the_console_is_devcons_cons(self):
+        # (refused before 2026-11-23: devcons.c consdir "cons" now)
+        self.assertEqual(self.k.call(11, self._args(1, 0x3000)), 0)
+        self.assertEqual(self.m.bytes(0x3000, 5), b"cons\0")
+        self.assertEqual(self.m.bytes(0x3000 + 112, 2), b"c\0")
 
     def test_rfork_rfnoteg_returns_zero(self):
         self.assertEqual(self.k.call(19, self._args(8)), 0)
 
-    def test_rfork_of_a_process_is_refused(self):
-        with self.assertRaisesRegex(p9run.Stop, r"rfork\(0x14\): RFPROC"):
+    def test_a_fork_that_shares_memory_or_is_recorded_is_refused(self):
+        # fork() itself runs now (Processes, ArAndRl, Ar); RFMEM and a
+        # fork under --record are what stays refused.
+        with self.assertRaisesRegex(p9run.Stop, r"rfork\(0x34\)"):
+            self.k.call(19, self._args(0x34))                # RFPROC|RFMEM
+        self.k.recording = True
+        with self.assertRaisesRegex(p9run.Stop, "recorded"):
             self.k.call(19, self._args(0x14))                # fork()
 
-    def test_rfork_other_flags_are_refused(self):
+    def test_rfork_group_flags_without_rfproc_return_zero(self):
+        # sysrfork without RFPROC: new name/env/fd/note groups
         for flag in (0x1, 0x2, 0x4, 0x9):
             with self.subTest(flag=flag):
-                with self.assertRaisesRegex(p9run.Stop, "only RFNOTEG"):
-                    self.k.call(19, self._args(flag))
+                self.assertEqual(self.k.call(19, self._args(flag)), 0)
 
     def _args(self, *args):
         sp = 0x4000
@@ -627,25 +907,30 @@ class Ar(Tree):
         self.assertEqual([(n, h, b) for n, h, b, _o in made],
                          [(n,) + self.entries[n] for n in self.MEMBERS])
 
-    def test_rl_writes_the_table_then_stops_at_its_fork(self):
+    def test_rl_writes_the_table_and_its_fork_puts_it_first(self):
         self.put_members()
         status, _c, _k, _n = run(self.root, BIN / "ar", "vu", "new.a",
                                  *self.MEMBERS)
         self.assertEqual(status, "exits('')")
-        status, _c, _k, _n = run(self.root, BIN / "rl", "new.a")
-        # rl.c writerl(): the table is written and closed, then
-        # fexec() forks to run ar -- which p9run refuses, loudly.
-        self.assertEqual(status, "p9run: refused rfork(0x14): RFPROC (a new "
-                         "process) is not modelled")
+        # rl.c writerl(): the table is written and closed, then fexec()
+        # forks and execs `ar rb abort.z new.a __.SYMDEF` and waits.
+        # The table's header carries its file's date and mode: the clock
+        # fixed at the shipped table's date, the directory 0775 so that
+        # create's 0664 survives (open(2): perm & the directory's).
         hdr = self.entries["__.SYMDEF"][0]
-        os.chmod(self.root / "__.SYMDEF", int(hdr[40:48].decode(), 8))
-        t = int(hdr[16:28].decode())
-        os.utime(self.root / "__.SYMDEF", (t, t))
-        # writerl()'s next step, played: ar rb <first member> lib __.SYMDEF
-        status, _c, _k, _n = run(self.root, BIN / "ar", "rb", "abort.z",
-                                 "new.a", "__.SYMDEF")
-        self.assertEqual(status, "exits('')")
+        os.chmod(self.root, 0o775)
+        shutil.copytree(BIN, self.root / "hobbit" / "bin")   # /bin/ar
+        out = io.BytesIO()
+        status, _s, k, _o = p9run.run(
+            str(BIN / "rl"), ["rl", "new.a"], str(self.root), MAX_STEPS, out,
+            clock=int(hdr[16:28].decode()))
+        self.assertEqual((status, out.getvalue()), ("exits('')", b""))
+        self.assertEqual([(t, s) for _p, t, _n, _tr, s in k.children],
+                         [("ar", "exits('')")])
+        self.assertFalse((self.root / "__.SYMDEF").exists())
         made = (self.root / "new.a").read_bytes()
+        mine = archive(made)[0][1]          # all but the size (3 members)
+        self.assertEqual((mine[:48], mine[58:]), (hdr[:48], hdr[58:]))
         self.assertEqual([n for n, _h, _b, _o in archive(made)],
                          ["__.SYMDEF"] + self.MEMBERS)
         # Every entry points at the member that defines it, with the

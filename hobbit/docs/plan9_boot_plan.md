@@ -361,6 +361,16 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   * `devtab.h` (`rc ../port/mkdevh $CONFLIST`, included by ~25 objects)
     is a Python transcription of `mkdevh`/`mkextract`: **provisional**
     (`--devtab-h FILE` swaps in a generated one).
+  * **All three are now made by the release's tools** (`tools/p9kgen.py`,
+    below) and `p9kbuild.py kernel --kgen DIR` takes them from its
+    output.  Compared 2026-11-23: the generated `DEV`, `STREAM` and
+    `MISC` lists equal the hand lists, the generated `devtab.h` equals
+    the transcription, and the generated `init.h` (the release's `xd`
+    and `sed`) equals the transcribed one byte for byte.  `p9kbuild.py
+    kernel --kgen DIR` then rebuilds `libram.a` with the same sha256,
+    `f709cea9...`, its `rl` now running its own fork of `ar`
+    (40,944,389 instructions with the child; 478 s for the 63 objects
+    at 8 processes).
   * `init.h` (`rammain.c` includes it): `za initcode` and `zl -l -s -o
     init.out -H2 -T0x1020 -R4 initcode.z` run on the model, but the text
     step `xd -r -1x init.out | sed ...` is transcribed from `xd.c` and
@@ -384,10 +394,14 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   (`docs/plan9_syscalls.md`).  Why the model's residue differs from the
   1993 machine's at those positions is **open** (not traced; the model
   is the core's oracle, so it matters).  For this `p9run` gained `fstat` and
-  `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` is
-  refused (one process), so `rl` stops at that call with its table
-  written and the driver runs the `ar` command line `writerl()` would
-  have, on the model.
+  `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` was
+  refused (one process), so `rl` stopped at that call with its table
+  written and the driver ran the `ar` command line `writerl()` would
+  have.  **Since the merge with the generated-inputs work (below) the
+  fork is p9run's**: `rl` runs to its end with the clock fixed at the
+  table's date (`run(clock=)`), and `archeck` gives the same result
+  (every member and header identical, the same 212 residue bytes; `rl`
+  with its child 8,592,333 instructions).
 * **libc reproduction is recorded** (`python3 tools/p9kbuild.py libc
   --check`, 260 s at 7 processes): the 102 C files of `libc/hobbit`,
   `port` and `9sys` that have a member in the shipped `libc.a`,
@@ -463,12 +477,73 @@ Done 2026-11-23:
   predicted path of mispredicted conditional jumps, which PRM p. 2-3
   says the part makes too (`docs/conformance_1to1.md` §1c).
 
-Not done: the kernel's generated inputs (`cpu.c` from `mkdevc`,
-`init.h`, `boot*.root`, `KERNDATE` -- rc pipelines needing fork, exec
-and pipes, which `p9run` refuses); `ar`; the link; and the decision the
-cost implies -- about 100 files at ~8 million instructions each is an
+**Status 2026-11-23: the generated inputs for `term` are made by the
+release's own tools.**  `tools/p9kgen.py --out DIR` lays out a copy of
+the vendored tree under `DIR/root` and runs, on the reference model,
+every command `mk 9term` would run to make the kernel's generated
+inputs, each a shipped Hobbit binary (`awk`, `sed`, `xd`, `grep`,
+`sort`, `tr`, `strip`, `ar`, `rl`, `echo`, `cat`, `za`, `zc`, `zl`).
+Python plays rc only: a pipeline is run a stage at a time, each stage's
+standard output buffered and handed to the next as its standard input;
+the awk and sed programs are taken out of the vendored scripts by an rc
+quote/here-document reader, not retyped.  The system calls this needed
+(stat, fstat, notify, rfork, fork/exec/wait, `#c/pid`, `#e`, create's
+permissions, fd 0/1 redirection) are in `docs/plan9_syscalls.md`.
+
+| product | made by | checked against | result |
+|---|---|---|---|
+| `errstr.h` | `mkerrstr` (sed) | the shipped `hobbit/errstr.h` | **identical** |
+| first half of `systab.h` | `mksystab` up to its first `sam -d` (cat; sed \| tr \| sed; cat) | the first 806 bytes of the shipped `port/systab.h` | **identical**; the sam halves not run |
+| `devtab.h` | `mkdevh cpu term termlocal bart rom` (awk; sort -u; awk) | -- (nothing shipped) | 286 lines |
+| `term.c` | `mkdevc term` (cat, awk, echo, grep) | s9term's `devtab[]` resolved through its symbol table; `devchar`; `conffile` | **all 21 entries x 13 functions in order; devchar's characters; "term"** |
+| `term.z` | `zc -w -Dram -DKERNDATE=721110517 term.c` | -- | compiles |
+| `objlists` | `mkdevlist`/`mkstreamlist`/`mkmisclist term` (sed \| awk) | -- | `DEV=` 31 objects, `STREAM=` 4, `MISC=` none |
+| `init.h` | `za initcode`; `zl -l -s -H2 -T0x1020 -R4`; `xd -r -1x \| sed` | s9term's `initcode[]` | **identical, 60 bytes** |
+| `bootterm.c` | `../boot/mkboot term` (cat, awk) | -- | |
+| `bootterm.root.c` | `zc` x 21, `ar vu`, `rl` (fork+exec of `ar`), `zc print.c`, `zl ... -lauth`, `mkroot` (strip; `xd -1x \| sed`) | s9term's `bootcode[]` (`bootlen` 26,796) | **differs**: see below |
+| `bootterm.root.z` | `zc -w -Dram bootterm.root.c` | -- | |
+| `KERNDATE` | not `date -n`: read back from s9term | -- | **721110517** = 1992-11-07 04:28:37 GMT, the `kerndate` word in s9term's data |
+
+Cost (the recorded full run, 2026-11-23, one process on a loaded
+machine): 74 programs, 908,516,178 instructions, 4,462 s.  Without the
+boot program (`--no-boot`): 36 programs, 30,391,046 instructions,
+217 s.  The long pole is mkroot's `sed` over `xd -1x`'s 1,695 lines of
+the 27,108-byte boot image: **733,075,888 instructions, 3,332 s** (the
+`s/ (..)/0x\1,/g` substitution costs ~27,000 instructions a byte); then
+`zc bootterm.root.c` 60,064,630 (215 s), `xd -1x` 15,258,918, the 21
+boot-library compiles 1.8-7.6 M each, the boot link 10,385,478.  Slow,
+not impractical: the 1e `sed` stays the authority, and no host tool
+stands in for any stage.  The suite runs a sample
+(`tests/test_p9run.py` `KernelInputs`: `mkstreamlist`, `init.h`, 15 s);
+`build/` is not in git: the products are remade by the command.
+
+**The boot program does not reproduce s9term's, and the difference is
+libc's, not the boot code's.**  Our `bootterm.out` (stripped) has text
+0x5e30, data 0xb94, bss 0x4d0; s9term's `bootcode[]` has text 0x5cf8 and
+the same data and bss.  The 2,964 data bytes are identical, function
+pointers included.  Function by function (`bootterm.out`'s symbols laid
+over s9term's bytes): every boot function from `main` to `getpasswd`,
+and libc's `fmtinstall`/`numbconv`/`sconv`/..., sit at the same
+addresses, and are either identical or differ in a few bytes (call
+targets beyond the shift; not checked operand by operand); libc's
+`convS2M` is where the shift starts -- everything after it is 268 bytes
+lower in s9term -- and the rune functions (`chartorune`, `runetochar`,
+`runelen`, `fullrune`, `utflen`) and the libc assembler routines after
+them are not found in s9term at all.  Together with `devchar` (s9term
+holds its `L""` string one byte per character; the shipped `zc` emits
+16-bit runes), this says **s9term (whose `kerndate` is 7 November
+1992) was linked against an earlier libc than the shipped `libc.a` (3
+January 1993)**.  The boot program built here is the one the shipped
+tree builds; s9term is not a byte oracle for anything linked with libc.
+That also bounds the kernel-link gate: the image built from this tree
+will not be byte-identical to s9term.
+
+Not done: the link (`zl ... raml.z term.z bootterm.root.z libram.a
+-lgnot -lg -lc`; `libram.a` itself is `tools/p9kbuild.py`'s, above); the
+cost decision -- about 100 files at ~8 million instructions each is an
 hour on the reference model and several on the core, so the full build
-belongs in a recorded long run with a sample in the suite.
+belongs in a recorded long run with a sample in the suite; and, for
+the generated inputs, `mksystab`'s sam halves (no sam on the model).
 
 ### A4 — boot to the console
 
