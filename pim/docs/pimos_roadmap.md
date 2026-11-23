@@ -316,7 +316,8 @@ wherever the dialects differ. In dependency order:
 4. `save`/`restore`, `execute_external`/`enqueue_goal_external` and
    module linkage;
 5. shoen, priorities and exceptions (the IPL starts PIMOS "at priority
-   4050");
+   4050"); the shoen's first stage (`create_shoen`, `start_shoen`,
+   termination) is on both models, `ref/pimm/lockstep_shoen.py`;
 6. garbage collection - only when a run exhausts memory; until then
    size memory to avoid it and record that.
 

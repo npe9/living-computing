@@ -71,13 +71,17 @@ def main(argv):
               "Bit#(16) op_merge_in = 16'h2200;",
               'Bit#(AddrBits) mergeInStub = %d;' % table['$merge_in']['addr'],
               "Bit#(16) op_unify_step = 16'h2201;",
-              'Bit#(AddrBits) unifyStepStub = %d;' % table['$unify_step']['addr'], '']
+              'Bit#(AddrBits) unifyStepStub = %d;' % table['$unify_step']['addr'],
+              "// a shoen's first goal is a goal of apply's stub (PimmShBox.bsv)",
+              'Bit#(AddrBits) applyStub = %d;' % table['apply']['addr'], '']
     # the address of every predicate's first instruction
     im = kbndis.Image()
     lines += ['', "Bit#(32) loadAddress = 32'h%08x;" % im.load,
               'Integer heapStart = %d;' % L.HEAP, '']
     for k in ('G_LINK', 'G_STATUS', 'G_CODE', 'G_ARGN', 'G_ARGS', 'READY',
-              'SUSPENDED', 'TAKEN', 'S_NEXT', 'S_GOAL', 'S_SIZE'):
+              'SUSPENDED', 'TAKEN', 'S_NEXT', 'S_GOAL', 'S_SIZE',
+              'SH_COUNT', 'SH_STATUS', 'SH_PARENT', 'SH_REPORT', 'SH_GOAL', 'SH_SIZE',
+              'DORMANT', 'STARTED', 'TERMINATED', 'REPORT_STARTED', 'REPORT_TERMINATED'):
         lines.append('Integer lay_%s = %d;' % (k, getattr(L, k)))
     lines.append('')
     for m in im.mods:

@@ -16,8 +16,9 @@ they are this project's design, the firmware being lost).  One
 processor, a LIFO ready queue without priorities, 8- and 16-bit
 strings.  No garbage collection (the heap only grows); the MRB is
 kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
-it; no shoen, no exceptions.  An instruction this file does not implement
-raises Unimplemented: it never guesses.
+it; the shoen in its first stage only (create_shoen, start_shoen
+and termination: "the shoen" below); no exceptions.  An instruction
+this file does not implement raises Unimplemented: it never guesses.
 
 On this model ALONE (the Bluespec core has none of it yet), a
 prototype: the SCSI built-ins scsi_init and scsi_command against a
@@ -54,9 +55,16 @@ NIL = (ATOM, 0)
 FLT = 0x30                  # a floating point number (kbn.TAGS FLTo): not modelled
 NEW_ATOM0 = 0x10000         # the first atom new_atom gives: ours
 VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
+# A shoen's handle: {SHREC, the address of its shoen record}.  The tag
+# is PIM/m-sourced (PIMOS debugger/inspector/tagtbl.kl1, 16#"38" SHREC);
+# what it points at is OURS (asm/pimm_layout.py).  From 20h: no MRB bit.
+SHREC = 0x38
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
                          MEMORY_CELLS, HEAP)
+from pimm_layout import (SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT,  # noqa: E402
+                         SH_GOAL, SH_SIZE, DORMANT, STARTED, TERMINATED,
+                         REPORT_STARTED, REPORT_TERMINATED)
 
 
 class Unimplemented(Exception):
@@ -143,6 +151,9 @@ class Machine:
         self.argv.machine, self.argv.letter = self, 'A'
         self.hp = self.load + heap            # heap pointer: the next free cell
         self.rq = 0                           # ready queue: the newest goal record
+        # the current shoen: the shoen record of the goal taken from the
+        # ready queue; 0 for the root (no record) and between runs
+        self.shoen = 0
         self.next_atom = NEW_ATOM0            # new_atom's counter (ours)
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
@@ -220,9 +231,10 @@ class Machine:
             s = old[1]
             while s:
                 g = self.mem[s + S_GOAL][1]
-                if self.mem[g + G_STATUS][1] == SUSPENDED:
+                st = self.mem[g + G_STATUS][1]      # shoen << 2 | status
+                if st & 3 == SUSPENDED:
                     self.event('W %d' % (g - self.load))
-                    self.mem[g + G_STATUS] = (INT, READY)
+                    self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
                     self.mem[g + G_LINK] = (INT, self.rq)
                     self.rq = g
                     self.nsusp -= 1
@@ -347,24 +359,93 @@ class Machine:
             return ('COD', w[1] - self.load)
         if w[0] == MOD:                      # tags from 20h have no MRB bit
             return ('MOD', self.mem[w[1]][1] & 0xffffff)
+        if w[0] == SHREC:
+            return ('SHREC', w[1] - self.load)
         if VECT0 <= t <= VECT0 + 14:
             n, a = self.vsize(w), self.vbase(w)
             return tuple(self.term(self.mem[a + i]) for i in range(n))
         raise Unimplemented('term with tag %02x' % w[0])
 
     # ---- goals -----------------------------------------------------
-    def record(self, status, code, args):
-        """Write a goal record; code is a cell index."""
+    def record(self, status, code, args, shoen=None):
+        """Write a goal record; code is a cell index.  It belongs to the
+        current shoen and is counted there; with `shoen` (a shoen
+        record: create_shoen's first goal) to that one, not counted."""
         g = self.alloc(G_ARGS + len(args))
         self.mem[g + G_LINK] = (INT, self.rq if status == READY else 0)
-        self.mem[g + G_STATUS] = (INT, status)
+        self.mem[g + G_STATUS] = self.gstatus(status, shoen)
         self.mem[g + G_CODE] = (INT, self.load + code)
         self.mem[g + G_ARGN] = (INT, len(args))
         for i, a in enumerate(args):
             self.mem[g + G_ARGS + i] = a
+        if shoen is None:
+            self.counted()
         if status == READY:
             self.rq = g
         return g
+
+    # ---- the shoen ---------------------------------------------------
+    # Stage 1: create_shoen, start_shoen, termination.  What is
+    # PIM/m-sourced is said at each place; the record, the count, the
+    # parked first goal and when a message is reported are not (they
+    # are carried over from PDSS and VPIM, or ours): docs/
+    # pimm_semantics.md "Shoen".
+    def gstatus(self, status, shoen=None):
+        """A goal record's status cell: {INT, shoen << 2 | status}, the
+        shoen as its record's address relative to the load address; the
+        root is 0, so a goal outside every shoen has the plain status
+        (OURS, asm/pimm_layout.py)."""
+        sh = self.shoen if shoen is None else shoen
+        return (INT, ((sh - self.load) << 2 if sh else 0) | status)
+
+    def counted(self):
+        """A goal record has been written while a shoen is current: one
+        more on its count.  Nothing for the root.  (Carried over from
+        PDSS: record.h number_of_children, counted up where a goal
+        record is made.)"""
+        if self.shoen:
+            a = self.shoen + SH_COUNT
+            self.mem[a] = (INT, self.mem[a][1] + 1)
+
+    def report(self, sh, code):
+        """A message on a shoen's report stream: its unbound tail is
+        bound to [code | NewTail], waking the goals that wait on it,
+        and NewTail is the tail from now on (OURS).  The tail is
+        followed through references (create_shoen run from its stub
+        has its Report bound to the caller's variable); a tail that
+        someone has bound to a value is refused."""
+        c = self.alloc(2)
+        self.mem[c] = (INT, code)
+        self.mem[c + 1] = (UNDF, 0)
+        tail = self.deref(self.mem[sh + SH_REPORT])
+        if not self.unbound(tail):
+            raise Unimplemented('the report stream of a shoen is bound to %r' % (tail,))
+        self.unify(tail, (LIST, c))
+        self.mem[sh + SH_REPORT] = (REF, c + 1)
+
+    def end_reduction(self):
+        """The reduction of a goal has ended (proceed or suspend; not
+        execute, which goes on with the same goal): one less on its
+        shoen's count.  A suspension wrote its record first (+1), so it
+        nets nothing.  At 0 the shoen has terminated: its status says
+        so, 12 (terminated) is reported, and its parent, of which it
+        was one, loses one in turn.  Nothing for the root.
+
+        Carried over from PDSS (emulator/emulate.c:340 "if(--number_
+        of_children == 0){ terminate_shoen(); }"; shoen.c:280-309: the
+        parent's count, the report, recursing) and VPIM (functions/
+        f_shoen_with_fp.psl.c:86: `terminated` alone while the control
+        stream is open); not PIM/m-sourced.  The code 12 is
+        (asm/pimm_layout.py)."""
+        sh = self.shoen
+        while sh:
+            n = self.mem[sh + SH_COUNT][1] - 1 & 0xffffffff
+            self.mem[sh + SH_COUNT] = (INT, n)
+            if n:
+                break
+            self.mem[sh + SH_STATUS] = (INT, TERMINATED)
+            self.report(sh, REPORT_TERMINATED)
+            sh = self.mem[sh + SH_PARENT][1]
 
     def hook(self, g, var):
         """Add goal record g to the goals waiting on the unbound cell."""
@@ -393,11 +474,15 @@ class Machine:
             g = self.rq
             self.event('G %d' % (g - self.load))
             self.rq = self.mem[g + G_LINK][1]
-            self.mem[g + G_STATUS] = (INT, TAKEN)
+            st = self.mem[g + G_STATUS][1]        # shoen << 2 | status
+            self.shoen = self.load + (st >> 2) if st >> 2 else 0
+            self.mem[g + G_STATUS] = (INT, st & ~3 | TAKEN)
             code = self.mem[g + G_CODE][1] - self.load
             for i in range(self.mem[g + G_ARGN][1]):
                 self.reg[i] = self.mem[g + G_ARGS + i]
             self.reduce(code, before + limit)     # the limit is this run's
+            self.end_reduction()
+        self.shoen = 0                # what a bench makes between runs is the root's
         self.event('Q')
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
@@ -458,6 +543,10 @@ class Machine:
                     return
                 pc = pc + 1 if nxt is None else nxt
         except Fail:
+            if self.shoen:
+                # inside a shoen a failure is reported to the shoen
+                # (the exception path): not modelled
+                raise Unimplemented('a goal failed inside a shoen')
             self.event('E fail')
             raise
 
@@ -523,7 +612,7 @@ class Machine:
         self.nsusp += 1
         g = self.alloc(G_ARGS + len(operands))
         self.mem[g + G_LINK] = (INT, 0)
-        self.mem[g + G_STATUS] = (INT, SUSPENDED)
+        self.mem[g + G_STATUS] = self.gstatus(SUSPENDED)
         self.mem[g + G_CODE] = (INT, self.load + stub['addr'])
         self.mem[g + G_ARGN] = (INT, len(operands))
         for k, (r, d) in enumerate(zip(operands, dirs)):
@@ -533,6 +622,7 @@ class Machine:
                 var = self.new_var()
                 self.mem[g + G_ARGS + k] = var
                 self.reg[r] = var
+        self.counted()
         self.hook(g, wait[0])
 
     # What only this model has (see the module's header) is refused
@@ -1573,11 +1663,12 @@ class Machine:
         self.nsusp += 1
         g = self.alloc(G_ARGS + 2)
         self.mem[g + G_LINK] = (INT, 0)
-        self.mem[g + G_STATUS] = (INT, SUSPENDED)
+        self.mem[g + G_STATUS] = self.gstatus(SUSPENDED)
         self.mem[g + G_CODE] = (INT, self.load + self.stubs['$merge_in']['addr'])
         self.mem[g + G_ARGN] = (INT, 2)
         self.mem[g + G_ARGS] = stream
         self.mem[g + G_ARGS + 1] = rec
+        self.counted()
         self.hook(g, var)
 
     def i_merge_in(self, pc, x, y, z, c16):
@@ -1750,6 +1841,95 @@ class Machine:
             self.record(READY, code[1] - self.load, self.argv[1:n + 1])
             return []
         self.builtin('apply', [x, y], f)
+
+    def i_create_shoen(self, pc, x, y, z, c16):
+        # create_shoen(MinPrio, MaxPrio, ExcepMask, Code, Argv, ^Report,
+        # ^Shoen), 22:E0, r7: two cells, the last four registers in the
+        # second (PIMOS library/assembler/inst_tab.kl1:332-362,
+        # klb_opr.kl1:144-154; directions library/compiler/blt.kl1:
+        # 567-569; meanings kernel/builtin/shoen.kl1:40-48).  All that
+        # is PIM/m-sourced, and so is that the outputs may be the input
+        # registers: the image's shoen:execute/4 (cell 15553) has
+        # 22:e0040506, 00:00010001, Code and Report both r0, Argv and
+        # Shoen both r1, so every input is read before an output is
+        # written.  The PIMOS manual does not document the built-in.
+        #
+        # What it DOES is not PIM/m-sourced:
+        #  - MinPrio, MaxPrio and ExcepMask are waited for, must be
+        #    integers (shoen:execute1/7 passes vectors: refused) and
+        #    are then DROPPED: no priorities and no exceptions here
+        #    (OURS, as enqueue_goal_with_priority drops its priority);
+        #  - a shoen record (OURS, asm/pimm_layout.py): dormant, count
+        #    1, its parent the current shoen, which counts it as one
+        #    (carried over from PDSS, emulator/shoen.c:123-178: "prec->
+        #    number_of_children = 1; ... prec->parent = parent;
+        #    number_of_children++");
+        #  - Report is a fresh variable, the handle {SHREC, the record}
+        #    (OURS);
+        #  - ONE goal, apply(Code, Argv), of the new shoen, its code
+        #    apply's stub (PDSS: "grec->code = (OBJ *)dc_apply;
+        #    grec->argn = 2"), its arguments through the argument
+        #    registers.  It is PARKED: suspended, on no queue and on no
+        #    variable, until start_shoen (PDSS hooks the goals of a
+        #    shoen that is not ready on the shoen, goal.c:310-334; the
+        #    PIMOS manual has a shoen dormant until `start`,
+        #    e-shoen.tex:117-262).  Code and Argv are not waited for:
+        #    apply waits itself.
+        # No resource is counted and resource_low (6) is NEVER reported
+        # (OURS.  VPIM reports it for a shoen with no limit left, and
+        # the callers of execute/4 grant resource only when they get
+        # it, so the machine probably did report it).
+        r7 = self.cells[pc + 1][1]
+        regs = [x, y, z, r7 >> 24, r7 >> 16 & 255, r7 >> 8 & 255, r7 & 255]
+
+        def f(lo, hi, mask, _code, _argv):
+            for w in (lo, hi, mask):
+                if w[0] & ~1 != INT:
+                    raise Unimplemented('create_shoen(%r, %r, %r, ..)' % (lo, hi, mask))
+            self.argv[1] = self.reg[regs[3]]          # as they are
+            self.argv[2] = self.reg[regs[4]]
+            sh = self.alloc(SH_SIZE)
+            self.mem[sh + SH_COUNT] = (INT, 1)
+            self.mem[sh + SH_STATUS] = (INT, DORMANT)
+            self.mem[sh + SH_PARENT] = (INT, self.shoen)
+            var = self.new_var()
+            self.mem[sh + SH_REPORT] = var
+            g = self.record(SUSPENDED, self.stubs['apply']['addr'], self.argv[1:3], shoen=sh)
+            self.mem[sh + SH_GOAL] = (INT, g)
+            self.counted()                # the child is one of its parent's
+            self.nsusp += 1
+            return [var, (SHREC, sh)]
+        self.builtin('create_shoen', regs, f, nowait=(3, 4))
+        return pc + 2
+
+    def i_start_shoen(self, pc, x, y, z, c16):
+        # start_shoen(Shoen, ^NewShoen), 22:E1, r_r (inst_tab.kl1,
+        # blt.kl1:537-601: PIM/m-sourced; the image's control/2, cell
+        # 15755, has start_shoen 1,1).  A dormant shoen: 8 (started) is
+        # reported FIRST, then the status changes (VPIM functions/
+        # f_shoen_control.psl.c:324-330 reports before it changes the
+        # state: carried over, not PIM/m-sourced), and the parked goal
+        # goes on the ready queue as a woken goal does.  NewShoen is
+        # the same handle (OURS).  A shoen that is not dormant
+        # (started twice, or terminated) is refused, as is anything
+        # but a handle.
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('start_shoen(%r)' % (h,))
+            sh = h[1]
+            if self.mem[sh + SH_STATUS][1] != DORMANT:
+                raise Unimplemented('start_shoen of a shoen that is not dormant')
+            self.report(sh, REPORT_STARTED)
+            self.mem[sh + SH_STATUS] = (INT, STARTED)
+            g = self.mem[sh + SH_GOAL][1]
+            st = self.mem[g + G_STATUS][1]
+            self.event('W %d' % (g - self.load))
+            self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
+            self.mem[g + G_LINK] = (INT, self.rq)
+            self.rq = g
+            self.nsusp -= 1
+            return [h]
+        self.builtin('start_shoen', [x, y], f)
 
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.

@@ -82,6 +82,8 @@ of this module can check, on either model, and injections confirm it:
 | unification of two lists or two vectors (any instruction that unifies) | — | not done on the spot: a ready goal of the stub `unify_step` (`22:01`, OURS, `asm/pimm_stubs.py`) with arguments X, Y, 0 unifies the elements one pair each time the step is taken, an element taken with its MRB on if its structure's is. From PDSS (`emulator/unify.c` `make_unify_vector_vector_goal_and_enqueue`, `dc_unify_vector_vector2`); PIM/m's own way is not known. Vectors of seven or more are refused | `lockstep_unif.py`; the MRB rule is not caught by it |
 | `predicate_to_code` | `22:F3 x y z`, a fourth register in the next cell | `r[w]` := the code of predicate `r[y]`/`r[z]` in the module object `r[x]`, or the vector `{Module, Name, Arity}` if the module has none (PIMOS manual `e-builtin.tex`; PDSS differs). A code is `{COD, first instruction}`: the target is assumed (`lockstep_p2c.py` header) | checked on the image's 349 predicates (`lockstep_p2c.py`) |
 | `apply` | `22:F1 x y` | `apply(Code, Args)`: a new ready goal of the code `r[x]` with the elements of the vector `r[y]` as its arguments; waits for either (PIMOS manual `e-builtin.tex`). The goal is made as PDSS makes it (`emulator/blt_system.c` `blt_b_apply`): each element taken with its MRB on if the vector's is. The manual's exceptions (not a code, not a vector, the count differs from the predicate's) are refused, as is a vector of seven or more | checked, with the IPL's own `apply` site (`lockstep_apply.py`) |
+| `create_shoen` | `22:E0 x y z`, four more registers in the next cell | `create_shoen(MinPrio, MaxPrio, ExcepMask, Code, Argv, ^Report, ^Shoen)`, format `r7`. **PIM/m-sourced**: the encoding and the directions (`assembler/inst_tab.kl1`:332-362, `klb_opr.kl1`:144-154, `compiler/blt.kl1`:567-569), and that the outputs may be the input registers (the image's `shoen:execute/4`, cell 15553, is `22:e0040506 / 00:00010001`: Code and Report both `r0`, Argv and Shoen both `r1`), so every input is read before an output is written. The manual does not document it. **What it does is not PIM/m-sourced** ("Shoen" below): the three first operands are waited for, must be integers and are dropped; a shoen record, a fresh Report variable, the handle `{SHREC, record}`, and one parked goal `apply(Code, Argv)` of the new shoen. Code and Argv are not waited for. Refused: a priority or mask that is not an integer (`shoen:execute1/7` passes vectors) | checked (`lockstep_shoen.py`, through the image's `execute/4` and through its stub); the refusal is not in the suite (observed by hand on both models, the test's header) |
+| `start_shoen` | `22:E1 x y` | `start_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2`, cell 15755). A dormant shoen: 8 is reported first, then it is started and its parked goal goes on the ready queue (the order is VPIM's, **carried over**); `r[y]` := the same handle (**ours**). Refused: a shoen that is not dormant, anything but a handle | checked (`lockstep_shoen.py`); a second start is refused on both models, observed by hand (the test's header), not in the suite |
 | `code` (guard) | `23:FA x y z`, a fourth register in the next cell | succeeds if `r[x]` is a code (whole tag 26h), with `r[y]` := arity, `r[z]` := its module, the fourth := its offset from the module's descriptor cell; anything else fails (PIMOS manual) | checked, outputs from the trace (`lockstep_p2c.py`) |
 | `atom` (guard) | `23:E1 x` | "If X is an atom, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted | run succeeding only (`lockstep_link.py`: the IPL's link table); a non-atom is not run |
 | `floating_point` (guard) | `23:E6 x` | "If X is a floating point, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted. The type test only | run failing only (`lockstep_run.py`) |
@@ -304,7 +306,7 @@ How the PIM/m firmware kept goals, the ready queue and suspended goals
 is lost with it. What follows is **this project's design**, shaped
 after PDSS (`emulator/record.h`, `goal.c`) and fixed in
 `asm/pimm_layout.py`, which both models read. It will grow (priorities,
-the shoen a goal belongs to, MRB) and is not a claim about the machine.
+MRB) and is not a claim about the machine.
 
 **What the literature says against it** (`docs/literature_gaps.md`
 section 0, a search made 2026-11-20). PIM/m's KL1 system was converted
@@ -335,9 +337,11 @@ those are its fields is not established.
 - **Heap.** A heap pointer register; cells are taken in order and never
   returned. Running out stops both models.
 - **Goal record**, 4 + n cells: `{INT, next record in the ready queue
-  or 0}`, `{INT, status}` (0 ready, 1 suspended, 2 taken),
-  `{INT, code address}`, `{INT, n}`, then the n arguments. Addresses in
-  cells are absolute.
+  or 0}`, `{INT, shoen << 2 | status}` (0 ready, 1 suspended, 2 taken;
+  the shoen is the goal's shoen record as an address relative to the
+  load address, 0 for the root, so a goal outside every shoen has the
+  plain status: "Shoen" below), `{INT, code address}`, `{INT, n}`,
+  then the n arguments. Addresses in cells are absolute.
 - **Ready queue.** A register holding the newest ready record; a new or
   woken goal goes on the front and the front goal runs next (PDSS's
   default, `enqueue` to the head of its priority's queue). No
@@ -366,6 +370,84 @@ those are its fields is not established.
   output, hooked on the first unbound input. PDSS does the same with
   its `dc_*` pseudo-code (`body_builtin_suspend`). Because a stub is
   ordinary code, a test can also spawn one directly.
+
+### Shoen (stage 1: create, start, terminate)
+
+Three tiers, kept apart:
+
+- **PIM/m-sourced** (the IPL image, PIMOS's compiler, assembler, macros
+  and manual): the encodings and operand directions of `create_shoen`
+  and `start_shoen` (rows above); the handle's tag, 38h `SHREC`
+  (`debugger/inspector/tagtbl.kl1`); the report stream's integer
+  codes, 8 `started` and 12 `terminated`, which the image's
+  `shoen:report/2` (cell 15818) translates (`macro/pimos/pimos/
+  pimos.vmac`:177-199 agrees); that a shoen is dormant until `start`
+  and that `terminated` reports its end (manual, `e-shoen.tex`:
+  117-262); the protocol of `shoen:execute/4`, `control/2`, `report/2`.
+- **Carried over from the siblings, not PIM/m-sourced**: counting a
+  shoen's goals and its child shoen and ending it at zero (PDSS
+  `emulator/emulate.c`:340, `shoen.c`:123-178 and 280-309); the first
+  goal being an `apply` (PDSS `dc_apply`) and being parked until the
+  shoen is started (PDSS `goal.c`:310-334); `started` reported before
+  the state changes and `terminated` alone while the control stream
+  is open (VPIM `functions/f_shoen_control.psl.c`:324-330,
+  `f_shoen_with_fp.psl.c`:86). VPIM's own message numbers are not
+  used.
+- **Ours**: everything below about records and cells.
+
+The design:
+
+- **Shoen record**, 5 cells in the heap (`asm/pimm_layout.py`):
+  `{INT, count}` the shoen's live goals plus its live child shoen;
+  `{INT, status}` 0 dormant, 1 started, 2 terminated; `{INT, the
+  parent's record, or 0}` (the root has no record); a reference to
+  the report stream's unbound tail; `{INT, the goal record of the
+  first goal}`. The handle is `{SHREC, the record's address}`.
+- **A goal's shoen** is in its record's status cell (above). The
+  machine has a register, the current shoen: that of the goal last
+  taken from the ready queue, and the root's (0) once the queue is
+  empty, so what a bench makes between runs is the root's. A goal
+  record written during a reduction (a new goal, a suspension, a
+  waiting built-in, the goal of a unification or of a merger input)
+  belongs to the current shoen. Waking keeps a goal's shoen.
+- **Counting.** Every goal record written while a shoen is current
+  adds one to its count, after the record's last cell; the end of
+  every reduction of a goal of that shoen (`proceed` or a suspension,
+  not `execute`) takes one off. So a suspension nets nothing and a
+  `proceed` is one less. The root is not counted: no memory traffic,
+  and every trace made before the shoen existed is unchanged.
+- **`create_shoen`**: Code and Argv go to argument registers 1 and 2
+  as they are; then the record (count 1, dormant, parent = the
+  current shoen), a fresh Report variable, the first goal (code:
+  `apply`'s stub of `asm/pimm_stubs.py`; suspended, on no queue and
+  on no variable; it belongs to the new shoen and is the 1 of its
+  count), and one more on the parent's count unless that is the root.
+- **`start_shoen`**: 8 on the report stream, status started, then the
+  first goal becomes ready and goes on the queue as a woken goal does
+  (a `W` line).
+- **Termination.** When a count reaches 0: status terminated, 12 on
+  the report stream, then one off the parent's count, and so on up.
+- **A message on the report stream**: two new cells `{INT, code}`
+  `{UNDF}`; the record's tail, followed through references, is bound
+  to the list cell with the ordinary wake of the goals waiting on it;
+  the record's tail becomes the new cell. A tail someone has bound to
+  a value is refused.
+- **No resource model: 6 (`resource_low`) is never reported.** Ours,
+  and probably not the machine's: VPIM reports it for a shoen with no
+  limit left, and every caller of `execute/4` in the image grants
+  resource only when it is told `resource_low`.
+- **Refused, loudly** (the reference model raises `Unimplemented`,
+  the Bluespec ends `E unimp`): `stop_shoen`, `abort_shoen`,
+  `remove_shoen`, `shoen_statistics`, `add_shoen_resource`,
+  `allow_shoen_resource_report`, `shoen_profile`,
+  `create_profiling_shoen`, `raise`, and a goal that FAILS inside a
+  shoen (that is the exception path).
+- **What follows for the image's own `execute/4`** (observed,
+  `lockstep_shoen.py`): its `control/2` and `report/2` belong to the
+  shoen that called it, and end only through `remove_shoen` and the
+  closing of the report stream. So a shoen whose code is `execute/4`
+  does not terminate in stage 1 even after the shoen it made has, and
+  the step "a child's end brings its parent to 0" is never run.
 
 Things this predicate shows about the compiler, useful for reading the
 rest: range guards compile to `put_integer` and a comparison per bound;

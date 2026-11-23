@@ -24,6 +24,7 @@ import PimmSBox::*;
 import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
+import PimmShBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -78,11 +79,13 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
+               XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
-                   MemPort smem)(PimmExec);
+                   MemPort smem,
+                   PimmShBox shbox)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -163,8 +166,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   function Action next() = finish(tagged Next (pc + 1));
 
-  function Action stop(End e);
+  function Action stop(End e0);
     action
+      // a goal failing inside a shoen is the shoen's exception path:
+      // not modelled, so refused
+      End e = (e0 == EndFail && gbox.shoen != 0) ? EndUnimp : e0;
       case (e)
         EndDone:  $display("E done");
         EndFail:  $display("E fail");
@@ -199,6 +205,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XSusp1;
     endaction
   endfunction
+
+  // the shoen built-ins of stage 1 (PimmShBox.bsv); the inputs that are
+  // waited for: MinPrio, MaxPrio, ExcepMask, or the handle
+  Bool shoenHere = op == op_create_shoen || op == op_start_shoen;
+  Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
 
   // wait_vector_N, N = 2, 3, 5
   Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5;
@@ -498,6 +509,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         dbox.step(sa, regs.r(y), truncate(ix));
         st <= XUStep;
       end
+    end
+    // ---- the shoen: create_shoen, start_shoen (rules below)
+    else if (shoenHere) begin
+      bK <= 0;
+      vals[3] <= intC(0);          // create_shoen does not wait for Code
+      st <= XShIn;
     end
     else if (op == op_proceed) stop(EndDone);
     // ---- body built-ins
@@ -1508,6 +1525,86 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XUnify;
     end
     else next;
+  endrule
+
+  // ---- the shoen ---------------------------------------------------------
+  // create_shoen(MinPrio, MaxPrio, ExcepMask, Code, Argv, ^Report,
+  // ^Shoen), 22:E0, seven registers (klb_opr.kl1 p(r7)), and
+  // start_shoen(Shoen, ^NewShoen), 22:E1: encodings and directions are
+  // PIM/m-sourced (PIMOS library/assembler/inst_tab.kl1:332-362,
+  // library/compiler/blt.kl1:537-601), what they do is not
+  // (PimmShBox.bsv).  The inputs waited for are dereferenced in order;
+  // an unbound one makes the built-in a goal of its stub, as any body
+  // built-in.
+  rule shIn (st == XShIn);
+    dbox.deref(regs.r(operand[bK]));
+    st <= XShInW;
+  endrule
+
+  rule shInW (st == XShInW);
+    let v <- dbox.derefResult;
+    vals[bK] <= v;
+    if (bK + 1 == shoenIns) st <= XShGo;
+    else begin
+      bK <= bK + 1;
+      st <= XShIn;
+    end
+  endrule
+
+  rule shGo (st == XShGo);
+    if (waitsOn(0) || waitsOn(1) || waitsOn(2)) begin
+      gbox.waitRecord(stub.addr, stub.n, operand, stub.outs);
+      st <= XBWait1;
+    end
+    else if (op == op_start_shoen) begin
+      // anything but a handle is refused
+      if (vals[0].tag != tag_SHREC) stop(EndUnimp);
+      else begin
+        shbox.start(vals[0]);
+        st <= XShS;
+      end
+    end
+    // MinPrio, MaxPrio and ExcepMask must be integers (shoen:execute1/7
+    // passes vectors: refused) and are then dropped: no priorities and
+    // no exceptions here
+    else if (!isInt(vals[0]) || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
+    else begin
+      // Code and Argv as they are (apply waits for them itself), to
+      // the argument registers of the first goal.  They are read
+      // before an output is written: in the image the outputs ARE
+      // these registers (shoen:execute/4, cell 15553: 22:e0040506,
+      // 00:00010001)
+      regs.wa(1, regs.r(operand[3]));
+      st <= XShC1;
+    end
+  endrule
+
+  rule shCreate1 (st == XShC1);
+    regs.wa(2, regs.r(operand[4]));
+    shbox.create;
+    st <= XShC2;
+  endrule
+
+  rule shCreate2 (st == XShC2);
+    let r <- shbox.result;
+    regs.wr(operand[5], r.a);        // Report: a fresh variable
+    opA <= r.b;
+    st <= XShC3;
+  endrule
+
+  rule shCreate3 (st == XShC3);
+    regs.wr(operand[6], opA);        // Shoen: the handle
+    finish(tagged Next (pc + 2));
+  endrule
+
+  // a shoen that is not dormant is refused; NewShoen is the same handle
+  rule shStarted (st == XShS);
+    let r <- shbox.result;
+    if (!r.ok) stop(EndUnimp);
+    else begin
+      regs.wr(y, vals[0]);
+      next;
+    end
   endrule
 
   rule bVectorElement (st == XBVEl);
