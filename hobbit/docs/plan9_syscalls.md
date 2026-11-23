@@ -249,7 +249,76 @@ directory (`zl` finds `/hobbit/lib/libc.a` there); a path that leaves it
 stops the run.  Any other id stops the run with its number and name.
 This is what `za` and `zl` use; it is not the 1e system-call set
 (`sys.h` has 37 numbers) and nothing here pretends to `fork`, `exec`,
-`stat`, `pipe` or `notify`.
+`stat`, `pipe` or `notify`.  `fstat` and `rfork(RFNOTEG)` were added
+for `ar` (below).
+
+### Added for `ar` and `rl` (A3, 2026-11-23)
+
+`sys/src/cmd/ar.c` (vendored with `rl.c` for this) calls `dirfstat()` in
+`armove()` and for its `u` test, and `rfork(RFNOTEG)` in `install()` and
+`qcmd()`.  Both are their own methods in `Kernel` (`ar_fstat`,
+`ar_rfork`, the Dir builder `dir_bytes`), apart from the calls above, so
+other additions merge without touching them.
+
+| id | call | arguments | result |
+|---|---|---|---|
+| 11 | `fstat(fd, buf)` | fd, buf | 0; `buf` gets the fd's Dir, 116 bytes (DIRLEN); -1 and "fd out of range or not open" (Ebadfd) for a closed fd |
+| 19 | `rfork(flag)` | flag | 0 for `RFNOTEG` (8); any other flag stops the run |
+
+* **fstat** is `sysfstat()` (`sys/src/9/port/sysfile.c:380`): `evenaddr`
+  (`hobbit/trap.c:461`) on the buffer -- an address not on a word
+  boundary stops the run (the kernel posts "sys: odd address", and
+  notes are not modelled) -- then the device's `stat`, which for a file
+  is the file server's Dir through `mntstat()` and `mntdirfix()`
+  (`devmnt.c:309,774`).  The host is the file server, so its answer is
+  the layout `convD2M()` writes (`libc/9sys/convD2M.c`, `Dir` in
+  `sys/include/libc.h:275`, little-endian):
+
+  | bytes | field | value |
+  |---|---|---|
+  | 0-27 | name | the last path element, NUL-padded |
+  | 28-55, 56-83 | uid, gid | `"none"` (a stated choice; the host owner is not a Plan 9 user; ar ignores both) |
+  | 84-91 | qid.path, qid.vers | the host inode (31 bits) \| CHDIR, 0 |
+  | 92-95 | mode | host permission bits \| CHDIR (0x80000000) for a directory |
+  | 96-103 | atime, mtime | the host's, seconds |
+  | 104-111 | length | host size; convD2M's VLONG, high word 0 |
+  | 112-115 | type, dev | `'M'` (mntdirfix: the mount driver's devchar), 0 (the mount id, not modelled) |
+
+  `ar` copies mtime, mode and length into each member header, so a
+  reproducible archive needs its inputs' dates and modes set by whoever
+  runs it (`tools/p9kbuild.py` does).  The console's Dir (`devcons`) is
+  refused rather than invented.
+* **rfork** is `sysrfork()` (`sysproc.c:21`) without RFPROC: RFNOTEG
+  gives the process a new note group, which changes nothing here (no
+  notes).  RFPROC -- `fork()` is `rfork(RFPROC|RFFDG)`, 0x14 -- stops the
+  run with `refused rfork(0x14): RFPROC (a new process) is not
+  modelled`; so do RFNAMEG, RFENVG, RFFDG and the rest without RFPROC.
+* **`rl` stops at its fork, by design.**  `rl` (`$RL` in `/hobbit/mkfile`)
+  writes and closes `__.SYMDEF`, then `fexec("/bin/ar", "ar", "rb",
+  first, lib, "__.SYMDEF")` forks and execs `ar` and waits
+  (`rl.c` `writerl`, `fexec`).  There is one process here, so the run
+  stops at exactly that refusal with the table complete; the driver
+  (`tools/p9kbuild.py` `play_rl`) checks that status and runs the same
+  `ar` command lines on the model, then removes `__.SYMDEF`, which is the
+  rest of `writerl()`.  fork, exec and wait themselves are still not
+  modelled (`mk` will need them).
+
+Validated against the shipped `hobbit/lib/libc.a` (`p9kbuild.py
+archeck`): `ar t` lists its 141 members; `ar x` extracts all 140 object
+members byte-exact; `ar vu` of those files, dated and moded as their
+headers say, then `rl` and its `ar rb`, rebuild a 297,782-byte archive
+whose 140 members and all 141 headers are byte-identical to the shipped
+file, and whose `__.SYMDEF` has the shipped table's 201 entries with the
+same offsets, names and types in the same order.  212 bytes of the
+table differ, every one after the NUL of a name: `rl` writes NNAME (20)
+bytes of each name, which come from libmach `obj.c` `readar()`'s local
+`Prog p`, filled by `_readz` only up to the NUL -- past it is stack
+residue, not a property of `ar`, `rl` or the archive.  On this run the
+byte at name[17] is 3 in all 201 entries and 0 in the shipped file, and
+11 more bytes differ at name[7] and name[8] of 10 entries.  **Open:**
+why the model's residue differs from the 1993 machine's has not been
+traced (rl's `Prog p` is on the stack, so the stack cache's contents
+are the first suspect, as for `za` in A2).
 
 **Floating point** is not a system call: it is the
 unimplemented-instruction sequence (p. 1-39) and a user-level handler,

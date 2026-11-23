@@ -1,0 +1,10 @@
+# $STREAM for CONF=term: what `rc ../port/mkstreamlist term` prints
+# ("st" $1 ".z" for each line of term's `stream` section).  Derived BY
+# HAND from sys/src/9/port/mkstreamlist and sys/src/9/hobbit/term;
+# replace with the script's own output when it can be generated.
+# Cross-check: the shipped hobbit/s9term has the streams urp, ip, async,
+# fcall, in this order (docs/s9term.md, on master).
+sturp.z
+stip.z
+stasync.z
+stfcall.z
