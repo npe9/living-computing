@@ -22,6 +22,7 @@ where SCRIPT is a file of lines:
     type <text>              type text; \\n is Return
     sleep <seconds>
     screen                   print the screen
+    host <shell command>     run a host command (fails the script on error)
     quit
 
 Every QEMU process this starts is killed by PID on exit.
@@ -214,6 +215,13 @@ def main():
                 m._log(s)
             elif op == 'type':
                 m.type(arg.encode().decode('unicode_escape'))
+            elif op == 'host':
+                m._log('$ ' + arg)
+                r = subprocess.run(arg, shell=True, capture_output=True, text=True)
+                print(r.stdout + r.stderr, end='')
+                m._log(r.stdout + r.stderr)
+                if r.returncode:
+                    raise RuntimeError('host command failed: ' + arg)
             elif op == 'sleep':
                 time.sleep(float(arg))
             elif op == 'screen':

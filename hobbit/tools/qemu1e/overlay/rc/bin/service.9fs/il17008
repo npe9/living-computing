@@ -5,8 +5,12 @@
 # Run by aux/listen as a trusted service (-t), in the listener's name
 # space, where /n/kfs is the kfs.  exportfs -s serves its / with no
 # tree-name preamble and answers Tnop/Tsession (exportfs/exportsrv.c).
+# listen dups the connection onto fd 2 as well: stderr goes to a file
+# in the kfs's /adm (its /tmp is mode 555), not into the 9P stream.
+# Everything is bound inside the kfs first: once / is replaced,
+# rc finds commands (bind too) only in the kfs's own /bin.
+bind /n/kfs/386/bin /n/kfs/bin
+bind -a /n/kfs/rc/bin /n/kfs/bin
+bind '#c' /n/kfs/dev
 bind /n/kfs /
-bind '#c' /dev
-bind /386/bin /bin
-bind -a /rc/bin /bin
-exec /bin/exportfs -s
+exec /bin/exportfs -s >[2] /adm/il17008.err

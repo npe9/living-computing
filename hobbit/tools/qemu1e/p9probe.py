@@ -70,7 +70,14 @@ class Conn:
             rep = rest + data
         else:
             if rtyp not in RSIZE:
-                raise ValueError('unknown reply type %d' % rtyp)
+                # not 9P: most likely the service's stderr (listen dups
+                # the connection onto fds 0-2), so show it
+                self.sock.settimeout(3)
+                try:
+                    more = self.sock.recv(4096)
+                except OSError:
+                    more = b''
+                raise ValueError('reply is not 9P: %r' % (hdr + self.buf + more))
             rep = self.recvn(RSIZE[rtyp] - 3)
         if rtag != tag:
             raise ValueError('tag %d for %d' % (rtag, tag))

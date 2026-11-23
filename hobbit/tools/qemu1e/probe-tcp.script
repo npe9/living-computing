@@ -1,0 +1,17 @@
+# qemu1e.py script: serve the kfs on QEMU user networking (slirp,
+# guest 10.0.2.15) and probe it from the host with p9probe.py through a
+# hostfwd of tcp 564.  Run from build/qemu by probe-tcp.sh.
+wait boot from 30
+type \n
+wait root is from 60
+type \n
+wait user 60
+type glenda\n
+wait password 10
+type password\n
+wait ^% 60
+type rc /serve 10.0.2.15 255.255.255.0\n
+wait ^serving 120
+screen
+host python3 ../../tools/qemu1e/p9probe.py 127.0.0.1 ${P9PORT:-5640} src/plan9-1e lib/ndb/local hobbit/s9term 386/9pc rc/bin/termrc
+screen

@@ -1,0 +1,16 @@
+# qemu1e.py script: unpack a small mkfs archive (hd1) into the existing
+# kfs (hd0fs) without reaming: used by overlay.sh to refresh
+# tools/qemu1e/overlay in fs.img.
+wait boot from 30
+type \n
+wait root is from 60
+type \n
+wait user 60
+type glenda\n
+wait password 10
+type password\n
+wait ^% 60
+type disk/kfs -f /dev/hd0fs; mount -c /srv/kfs /n/kfs; disk/kfscmd allow\n
+type disk/mkext -u -d /n/kfs < /dev/hd1disk; disk/kfscmd sync; echo overlay done\n
+wait ^overlay done 600
+screen
