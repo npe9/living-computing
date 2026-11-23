@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import kbn  # noqa: E402,F401
 import kbndis  # noqa: E402
 import pimm_stubs  # noqa: E402
-from census import opcode_table  # noqa: E402
+from census import atom_base, opcode_table  # noqa: E402
 
 INT, ATOM, REF, UNDF, HOOK, STRG, CDESC = 0x00, 0x02, 0x06, 0x08, 0x0a, 0x0e, 0x25
 MOD = 0x27                  # a module object: {MOD, a} -> {CDESC, 06 << 24 | n}, n cells
@@ -84,6 +84,16 @@ class _Regs(list):
             m.tr.append('%s %d %02x%08x' % (self.letter, i, w[0], w[1]))
 
 
+class _Code(list):
+    """The code as loaded; an index past it is a cell of the heap."""
+
+    def __getitem__(self, i):
+        if isinstance(i, int) and i >= len(self):
+            m = self.machine
+            return m.mem[m.load + i]
+        return list.__getitem__(self, i)
+
+
 class _Mem(dict):
     """Memory; every write is traced."""
 
@@ -106,7 +116,10 @@ class Machine:
         self.tr = None
         # code = the image, then the built-in stubs
         stubs, self.stubs = pimm_stubs.build(len(self.im.cells))
-        self.cells = list(self.im.cells) + stubs
+        # code is fetched from here: the image and the stubs as loaded,
+        # and beyond them the heap, where a module the IPL builds lies
+        self.cells = _Code(list(self.im.cells) + stubs)
+        self.cells.machine = self
         assert len(self.cells) <= heap
         self.mem = _Mem({self.load + i: c for i, c in enumerate(self.cells)})
         self.mem.machine = self
@@ -361,9 +374,24 @@ class Machine:
         if name is None:
             if pc < len(self.im.cells):
                 name = self.im.dis(pc).split()[0]
-            else:
+            elif pc < len(self.cells):       # a built-in's stub
                 t, v = self.cells[pc]
                 name = self.optab[(t, v >> 24)][0]
+            else:
+                # code in the heap, named as asm/kbndis.py names the
+                # image's: the atom forms carry a register in the
+                # opcode, two opcodes are numbered by their x field
+                t, v = self.cells[pc]
+                k = (t, v >> 24)
+                if k not in self.im.key:
+                    name = self.im.key[(0x23, atom_base(v >> 24))][0]
+                else:
+                    name = self.im.key[k][0]
+                    fn = kbndis.functions().get(k)
+                    if fn:
+                        if (v >> 16) & 255 not in fn:
+                            raise Unimplemented('%s function %d at %d' % (name, (v >> 16) & 255, pc))
+                        name = fn[(v >> 16) & 255][0]
             self.names[pc] = name
         return name
 
@@ -786,6 +814,14 @@ class Machine:
             return self.guard_fail()
         self.reg[z] = (INT, (a & 0xffffffff) >> b)
 
+    def i_shift_left(self, pc, x, y, z, c16):    # guard arithmetic
+        # as the body b_shift_left: bits shifted out are lost; a count
+        # outside 0..31 fails the guard, as shift_right
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or not 0 <= b < 32:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a << b) & 0xffffffff)
+
     def i_modulo(self, pc, x, y, z, c16):        # guard arithmetic
         # the remainder has the dividend's sign, as PDSS's C % (not
         # established for PIM/m); a zero divisor fails the guard
@@ -794,6 +830,27 @@ class Machine:
             return self.guard_fail()
         r = abs(a) % abs(b)
         self.reg[z] = (INT, (-r if a < 0 else r) & 0xffffffff)
+
+    def i_divide(self, pc, x, y, z, c16):        # guard arithmetic
+        # "The result of the division is unified with NewInteger ...
+        # if overflow is detected, or if Integer2 is bound to 0,
+        # failure or exception occurs" (PDSS manual): in a guard, a
+        # failure.  The quotient is truncated towards zero, as PDSS's
+        # C / (not established for PIM/m, as for modulo); the one
+        # overflow is the least integer divided by -1.
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or b == 0 or (a == -1 << 31 and b == -1):
+            return self.guard_fail()
+        q = abs(a) // abs(b)
+        self.reg[z] = (INT, (-q if (a < 0) != (b < 0) else q) & 0xffffffff)
+
+    def i_floating_point(self, pc, x, y, z, c16):
+        # guard floating_point(X): "If X is a floating point, this
+        # predicate succeeds, otherwise it fails" (PDSS manual); an
+        # unbound X is noted
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != FLT:
+            return self.guard_fail()
 
     def i_integer(self, pc, x, y, z, c16):       # guard type check
         if self.g_int(x) is None:
@@ -851,6 +908,14 @@ class Machine:
         var = self.new_var()
         self.reg[x] = var
         self.reg[y] = var
+
+    def i_put_marked_variable(self, pc, x, y, z, c16):
+        # as put_variable, both references with the MRB on (PDSS
+        # emulate.c KL1B_PUT_MARKED_VARIABLE: SetAll(reg, REF, undef,
+        # MRBON), then the second register a copy)
+        var = self.new_var()
+        self.reg[x] = (REF + 1, var[1])
+        self.reg[y] = (REF + 1, var[1])
 
     def i_get_integer(self, pc, x, y, z, c16):
         self.unify(self.reg[x], (INT, sx16(c16) & 0xffffffff))
@@ -988,6 +1053,16 @@ class Machine:
     def i_read_variable(self, pc, x, y, z, c16):
         self.reg[x] = self.taken(self.sp, single=self.sp_single)
         self._sp += 1
+
+    def i_read_variable_without_deref(self, pc, x, y, z, c16):
+        # The compiler writes this for read_variable when the clause
+        # collects the structure and not the element (library/compiler/
+        # regass.kl1 convertIfNotCollected); same operands, same data
+        # movement.  The machine's read_variable dereferences what it
+        # takes at once and this one does not; here neither does (the
+        # instruction that uses the register dereferences), so the
+        # two are the same.
+        return self.i_read_variable(pc, x, y, z, c16)
 
     def i_put_reused_structure(self, pc, x, y, z, c16):
         # r[x] := a structure of z cells to be filled by write_*, which

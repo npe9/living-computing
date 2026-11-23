@@ -268,6 +268,15 @@ strings into the 8-bit strings its source gives (full-width
 "PIMOS 3.6" among them), in lockstep with the reference model
 (`ref/pimm/lockstep_conv.py`). That is the amended R2 gate for the IPL
 image; what R2 still owes is a predicate loaded from a `.sav`.*
+*2026-11-23: **R2 is met as written.** `hasher:hash/3`
+(`pimm_patch_hash360E.sav`; source `src/utility/pool/hash.kl1`) is
+loaded by the IPL's own `load_file/9`, reader, checksum and atom
+table, and then run from the module object in the heap on both
+models (`ref/pimm/lockstep_run.py`); its answers for integers, an
+atom, a string, a list and a vector are those the KL1 source gives.
+The test stands in for the file's buffers and starts the goal
+itself: the IPL's linker (`ipl_link_table`) and a call between
+loaded modules are not run yet.*
 
 ### Phase 2 - The runtime
 

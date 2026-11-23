@@ -205,7 +205,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
-                      || op == op_integer || op == op_wait_constant
+                      || op == op_integer || op == op_wait_constant || op == op_floating_point
                       || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector;
@@ -213,7 +213,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_subtract || op == op_and || op == op_vector_element
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
                       || op == op_add || op == op_exclusive_or || op == op_string_element
-                      || op == op_mark_element;
+                      || op == op_mark_element || op == op_divide || op == op_shift_left;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -293,7 +293,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       opA <= marked(regs.r(src));
       st <= XMark;
     end
-    else if (op == op_put_variable || op == op_set_variable) begin
+    else if (op == op_put_variable || op == op_set_variable || op == op_put_marked_variable) begin
       gbox.newVar;
       st <= XVar1;
     end
@@ -368,7 +368,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       sp <= sp + 1;
       next;
     end
-    else if (op == op_read_variable || op == op_read_atom) begin
+    // read_variable_without_deref: as read_variable here (neither
+    // dereferences; library/compiler/regass.kl1 writes it for
+    // read_variable when the structure is collected)
+    else if (op == op_read_variable || op == op_read_atom || op == op_read_variable_without_deref) begin
       smem.read(sp);
       st <= XRead;
     end
@@ -631,6 +634,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (isInt(a)) next;
       else guardFail;
     end
+    else if (op == op_floating_point) begin
+      // the type test only: there is no floating point arithmetic
+      if (isRef(a)) note(a);
+      if ((a.tag & 8'hfe) == tag_FLTo) next;
+      else guardFail;
+    end
     else if (op == op_string) begin
       // string(S, ^Length, ^Bits)
       if (isRef(a)) note(a);
@@ -734,20 +743,21 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(z, intC(a.val ^ b.val));
       next;
     end
-    else if (op == op_modulo) begin
-      // a zero divisor fails the guard; the divide box takes 32 steps
-      if (b.val == 0) guardFail;
+    else if (op == op_modulo || op == op_divide) begin
+      // a zero divisor fails the guard, and for divide the one
+      // overflow, the least integer by -1; the divide box takes 32 steps
+      if (b.val == 0 || (op == op_divide && a.val == 32'h80000000 && b.val == 32'hffffffff)) guardFail;
       else begin
         mbox.divide(a.val, b.val);
         st <= XDiv;
       end
     end
-    else if (op == op_shift_right) begin
+    else if (op == op_shift_right || op == op_shift_left) begin
       // logical; a count outside 0..31 fails the guard
       Bit#(5) count = truncate(b.val);
       if (b.val >= 32) guardFail;
       else begin
-        regs.wr(z, intC(a.val >> count));
+        regs.wr(z, intC(op == op_shift_left ? a.val << count : a.val >> count));
         next;
       end
     end
@@ -782,7 +792,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule divided (st == XDiv);
     let d <- mbox.result;
-    regs.wr(z, intC(d.remainder));
+    regs.wr(z, intC(op == op_divide ? d.quotient : d.remainder));
     next;
   endrule
 
@@ -817,9 +827,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   // ---- variables and goals -------------------------------------------------
   rule var1 (st == XVar1);
-    let v <- gbox.newVarResult;
+    let v0 <- gbox.newVarResult;
+    // put_marked_variable: both references with the MRB on (PDSS)
+    let v = op == op_put_marked_variable ? marked(v0) : v0;
     opA <= v;
-    if (op == op_put_variable) regs.wr(x, v);
+    if (op == op_put_variable || op == op_put_marked_variable) regs.wr(x, v);
     else regs.wa(x, v);
     st <= XVar2;
   endrule

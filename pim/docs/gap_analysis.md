@@ -111,8 +111,8 @@ more than eleven arguments (`lockstep_pack.py`), and the whole of
 `ipl_module:load/4`: five real modules become module objects
 (`lockstep_newm.py`, `new_module`), each cell as the file and the
 layout of the image's own modules say. What that does not show: that
-code in a built module runs (both models fetch code from the image,
-not from the heap). Modules over about 2700 file words did not fit
+code in a built module runs: that is shown since 2026-11-23 by
+`lockstep_run.py` (`hasher:hash/3` run from its module object). Modules over about 2700 file words did not fit
 while every `set_vector_element` copied the vector; since the update
 in place they should, which is not yet tried on one. A built external-call
 descriptor has five cells where the image's own have four.
@@ -159,7 +159,7 @@ then `load_files/10` over the file list, with the FEP's `open` (C2).
 | C2 | The front-end processor over SCSI: `scsi_command`, `scsi_init` and the five `scsi_fep_*` modules that speak to it (no source for those modules in `pimos.tar.Z`) | the IPL reads `pimos.ipl` and the `.sav` files *from the FEP*. We must emulate the FEP end: either at the `scsi_command` built-in (need the packet format, from `scsi_fep_module`'s object code and `pimfep.ptf`), or above it by answering the IPL's file requests. This is the largest piece of new design before R4 |
 | C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers. `new_atom` is in since 2026-11-23 with a numbering of OURS (up from 10000h); the server (`top:atom_number_server/7`, `supply_atom_number`) is not |
 | C4 | Timer, date, and the FEP services PIMOS opens after boot (window, file, string_io) | R5-R6. The PIMOS internal file system is not in the released source (`icot_databases.md` section 6) |
-| C5 | A `.sav` loader for tests (owed for R2 as written) | `asm/unlsav.py` decodes; relocation and atom renumbering are what the IPL's own loader does, so B2 and C3 inform it |
+| C5 | A `.sav` loader for tests (R2 as written is met since 2026-11-23 with the IPL's own loader, `lockstep_run.py`; no separate loader was needed) | `asm/unlsav.py` decodes; relocation and atom renumbering are what the IPL's own loader does, so B2 and C3 inform it |
 | C6 | More than one processing element: export/import tables, messages, weighted reference counts | field names known from the console (`pseudo_pimm_firmware.md`); defer: configure one PE. Distributed Pool and multi-node Kappa-P need it |
 
 *Correction from `icot_software_survey.md` (2026-11-20), spot-checked
