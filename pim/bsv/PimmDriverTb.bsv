@@ -16,10 +16,10 @@ typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
 
 module mkPimmDriverTb(Empty);
   PimmCore core <- mkPimmCore("generated/pimm_ipl.hex");
-  RegFile#(Bit#(20), Bit#(64)) script <- mkRegFileFullLoad("generated/pimm_script.hex");
+  RegFile#(Bit#(24), Bit#(64)) script <- mkRegFileFullLoad("generated/pimm_script.hex");
   RegFile#(Bit#(4), Cell) slot <- mkRegFileFull;
 
-  Reg#(Bit#(20)) ip      <- mkReg(0);
+  Reg#(Bit#(24)) ip      <- mkReg(0);
   Reg#(Bool)     awaited <- mkReg(False);   // the operation's answer is awaited
   // cycles one operation has been awaited.  A core that never answers
   // (a fault injection once left it running for two hours) ends the

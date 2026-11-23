@@ -49,7 +49,10 @@ import pimm  # noqa: E402
 
 (END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT,
  SETW) = range(14)
-SCRIPT_BITS = 20            # the driver's script memory holds 1 << 20 operations
+SCRIPT_BITS = 24            # the driver's script memory holds 1 << 24 operations
+# The script file holds the operations only, so the simulator's first
+# line is its warning that the rest of the memory is not given.
+GAP = "Warning: file 'generated/pimm_script.hex' for memory 'script' has a gap"
 
 
 class Script:
@@ -167,8 +170,6 @@ class Script:
         with open(path, 'w') as f:
             words = self.words()
             f.write(''.join('%016x\n' % w for w in words))
-            # the whole memory, so that the simulator has no gap to report
-            f.write('0000000000000000\n' * ((1 << SCRIPT_BITS) - len(words)))
 
     @staticmethod
     def _do(m, slot, o, outs, label):
@@ -232,9 +233,13 @@ def compare(script, stream, name, pinned=None):
     """Compare the Bluespec trace on `stream` with the script played on
     the reference model.  Prints PASS/FAIL; returns (ok, machine)."""
     parts = lines = 0
+    first = True
     for what, want in script.play():
         for i, w in enumerate(want):
             got = stream.readline().rstrip('\n')
+            if first and got.startswith(GAP):
+                got = stream.readline().rstrip('\n')
+            first = False
             if got != w:
                 print('%s: FAIL at part %d (%s), line %d of its trace' % (name, parts, what, i))
                 print('  reference: %s' % w)
