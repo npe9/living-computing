@@ -23,9 +23,11 @@ On this model ALONE (the Bluespec core has none of it yet), a
 prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
 what the IPL's SCSI stack needs besides (enqueue_goal_to_processor,
-read_eagerly, b_string, b_divide, b_modulo, not_equal, a merger
-input bound to a vector, built-ins waiting on a vector's element).
-ref/pimm/ref_scsi.py runs them.
+b_string, b_divide, b_modulo, a merger input bound to a vector,
+built-ins waiting on a vector's element, put_reused_structure of a
+long vector).  ref/pimm/ref_scsi.py runs them.  The core has since
+been given read_eagerly, not_equal and wait_vector_1/4/6
+(lockstep_alt.py).
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -853,7 +855,6 @@ class Machine:
         return self.compare(x, y, lambda a, b: a == b)
 
     def i_not_equal(self, pc, x, y, z, c16):
-        self.alone('not_equal')
         # guard not_equal(Integer1, Integer2), X =\= Y: "Succeeds if
         # Integer1 is not equal to Integer2"; suspends on an
         # uninstantiated one, fails on a non-integer (PIMOS manual,
@@ -1135,15 +1136,12 @@ class Machine:
         return self.wait_vector(5, x)
 
     def i_wait_vector_1(self, pc, x, y, z, c16):
-        self.alone('wait_vector_1')
         return self.wait_vector(1, x)
 
     def i_wait_vector_4(self, pc, x, y, z, c16):
-        self.alone('wait_vector_4')
         return self.wait_vector(4, x)
 
     def i_wait_vector_6(self, pc, x, y, z, c16):
-        self.alone('wait_vector_6')
         return self.wait_vector(6, x)
 
     def i_read_variable(self, pc, x, y, z, c16):
@@ -1905,7 +1903,6 @@ class Machine:
         return pc + 2
 
     def i_read_eagerly(self, pc, x, y, z, c16):
-        self.alone('read_eagerly')
         # What the compiler writes for `alternatively.` (library/
         # compiler/indexornot.kl1 compile_one_block: "&code <<=
         # [read_eagerly]").  The clauses after it are tried "not only

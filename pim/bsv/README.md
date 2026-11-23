@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Thirty-three tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Thirty-four tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -147,7 +147,12 @@ are unified by a goal of their own (PDSS's way; the stub
 `s32`: `new_string` with 32-bit elements. `ipll`: the IPL's
 `ipl_files/4` reads the held `pimos.ipl` and gives its twenty names. `p2c`: `predicate_to_code` on every predicate
 of the image and the guard `code`. `apply`: `apply(Code, Args)`, with
-`top:go_pimos1/2`'s own.
+`top:go_pimos1/2`'s own. `alt`: `read_eagerly` (what the compiler
+writes for `alternatively`), the guard `not_equal` and
+`wait_vector_1`, `_4`, `_6`, on `scsi_fep_util`,
+`scsi_fep_file:reply_with_attention/4`, `scsi:request_manager/3` and
+`scsi:command_executer/2` (`wait_vector_1`, which the image does not
+use, on code the bench writes).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (hours; the
 whole list has been run on the reference model alone, see the
@@ -155,7 +160,7 @@ harness's header): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 116
+State: 121
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

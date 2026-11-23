@@ -200,8 +200,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
-  // wait_vector_N, N = 2, 3, 5
-  Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5;
+  // wait_vector_N, N = 1..6
+  Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5
+                   || op == op_wait_vector_1 || op == op_wait_vector_4 || op == op_wait_vector_6;
   Bit#(8) waitN = ins.val[31:24] - op_wait_vector_0[7:0];
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
                       || op == op_switch_on_constant
@@ -215,7 +216,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_subtract || op == op_and || op == op_vector_element
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
                       || op == op_add || op == op_exclusive_or || op == op_string_element
-                      || op == op_mark_element || op == op_divide || op == op_shift_left;
+                      || op == op_mark_element || op == op_divide || op == op_shift_left
+                      || op == op_not_equal;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -253,6 +255,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (nNoted != 0) suspendGoal;
       else stop(EndFail);
     end
+    // read_eagerly, what the compiler writes for `alternatively.`: an
+    // eager read of external references (TM-1044).  One processor has
+    // none: nothing is done, the variables noted so far stay noted
+    else if (op == op_read_eagerly) next;
     else if (isWaitAtom) begin
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;
@@ -810,7 +816,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       next;
     end
     else if ((op == op_not_less_than && ia >= ib) || (op == op_less_than && ia < ib)
-             || (op == op_equal && ia == ib)) next;
+             || (op == op_equal && ia == ib)
+             || (op == op_not_equal && ia != ib)) next;
     else guardFail;
   endrule
 
