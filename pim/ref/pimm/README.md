@@ -19,7 +19,10 @@ State: all machine state is registers and memory cells (goal records,
 the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
-stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.
+stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.  The shoen in its
+first stage: `create_shoen`, `start_shoen`, termination (shoen records
+in the heap, a goal's shoen in its record's status cell;
+`docs/pimm_semantics.md` "Shoen").
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
@@ -53,7 +56,9 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_unif.py` the unification of two vectors or lists,
 `lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
 the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
-`code`, `lockstep_apply.py` `apply`, `lockstep_where.py` `scsi_where`; `longrun_ipl.py` is the long run (not in the suite); 117
+`code`, `lockstep_apply.py` `apply`, `lockstep_where.py` `scsi_where`, `lockstep_shoen.py` the shoen
+(`create_shoen`, `start_shoen`, termination, through the image's own
+`shoen:execute/4`); `longrun_ipl.py` is the long run (not in the suite); 119
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with
@@ -64,7 +69,8 @@ them, the IPL reading its list and its files through its own SCSI
 stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
-(`docs/pimm_semantics.md` "The MRB"), no shoen, no exceptions.
+(`docs/pimm_semantics.md` "The MRB"), of the shoen only its first
+stage (no stop, abort, remove, statistics, resource), no exceptions.
 
     python3 ref/pimm/test_jtoa.py
 
