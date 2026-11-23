@@ -1521,12 +1521,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule structuredConstant (st == XSCnst);
     let c <- smem.data;
-    // a reference there is not a structure pointer: refused
-    if (isRef(c)) stop(EndUnimp);
-    else begin
-      regs.wr(x, c);
-      next;
-    end
+    // the cell as it stands: a structure pointer, or for module#M a
+    // reference (to the image's module table, or to the variable the
+    // IPL's linker binds), which whatever uses it dereferences
+    regs.wr(x, c);
+    next;
   endrule
 
   rule external (st == XExt);

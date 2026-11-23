@@ -4,6 +4,7 @@
     python3 ref/pimm/longrun_ipl.py --script FILE [N]   write the script
     sim_pimm_driver | python3 ref/pimm/longrun_ipl.py compare [N]
     python3 ref/pimm/longrun_ipl.py --reference [N]     reference model alone
+    python3 ref/pimm/longrun_ipl.py --reference --go    ... and then PIMOS is entered
 
 Run by bsv/run_pimm_longrun.sh.  NOT part of run_tests.sh.
 
@@ -19,11 +20,23 @@ must be the later one's; no goal left waiting.
 Measured 2026-11-23, the reference model alone (--reference): 844 s,
 of which 416 s making the script; 1,644,180 script operations;
 73,483,342 heap cells; 10,032 atoms, 480 modules, 20 comments.
-On both models the WHOLE list has not been run yet: PINNED['lines']
-is 0 until it has, and the compare fails on it by design.  What has
-been run on both (an earlier harness, to the IPL's predicate_to_code,
-then unimplemented): the eight system files and one patch,
-410,970,440 trace lines identical, about 52 minutes.
+On BOTH models (bsv/run_pimm_longrun.sh), 2026-11-23: the whole list,
+447,739,516 trace lines identical, every check above passing; 7,350 s
+on a machine shared with other runs (668 s of it making the script).
+That run's simulator was built from the tree of b7187d59.
+
+--go (reference model alone, with what only it has: Machine.ahead):
+after the link, top:go_pimos1(Loaded, BootInfo) is started as the IPL
+would, apply(Code, {BootInfo, Atoms, Modules, Comments}), and run
+until the model refuses something.  It is NOT the IPL's boot: the
+goal is started by the bench outside any shoen, BootInfo is an
+unbound variable, and no device is attached.  Observed 2026-11-23:
+pim:go/4 runs 1,244 instructions in the loaded modules, the console
+is given "PIMOS V 3.600 20-May-93" (display_console; the text the
+source's default branch gives, bios/boot/bios.kl1 and
+kernel/init/version.kl1), and it stops at scsi_where (22:A0, not
+implemented).  The check is the banner; the stop is printed, since it
+moves as the model grows.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -42,8 +55,9 @@ import lockstep_ipll as ipll  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=0)
+PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=447739516)
 T0 = time.time()
+BANNER = 'PIMOS V 3.600 20-May-93'
 
 
 def names():
@@ -185,6 +199,25 @@ def main(argv):
         if not ok:
             return 1
     bad, info = check(s, m, want, files)
+    if '--go' in argv and '--reference' in argv and not bad:
+        loaded = [w for _l, w in s.outs][-3]
+        im = pimm.kbndis.Image()
+        m.ahead = True
+        m.argv[1], m.argv[2] = pimm.marked(loaded), pimm.marked(m.new_var())
+        m.record(pimm.READY, pimm.predicate(im, 'top', 'go_pimos1/2'), m.argv[1:3])
+        m.tr = []
+        try:
+            m.run()
+            stop = 'nothing left to run, %d goals waiting' % m.nsusp
+        except pimm.Unimplemented as e:
+            stop = 'refused: %s' % e
+        except (pimm.Suspend, pimm.Fail) as e:
+            stop = type(e).__name__
+        shown = cons.console(m.tr)
+        info['go'] = dict(instructions=sum(1 for ln in m.tr if ln[0] == 'I'), console=shown,
+                          stop=stop)
+        if shown[:1] != [BANNER]:
+            bad.append(('the console after go', shown))
     say('compared')
     whole = n is None
     if bad or (whole and any(info.get(k) != PINNED[k] for k in ('modules', 'atoms', 'replaced', 'stay'))) \

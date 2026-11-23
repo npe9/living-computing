@@ -1234,12 +1234,13 @@ class Machine:
     def i_put_structured_constant(self, pc, x, y, z, c16):
         # r[x] := the cell at the label, a place in the module's GC
         # area that holds the pointer to a constant built outside the
-        # module (TM-662).  A {REFx} there (ten in the image) is not a
-        # structure pointer and is refused until it is understood
-        w = self.mem[self.load + pc + 2 + sx16(c16)]
-        if w[0] & ~1 == REF:
-            raise Unimplemented('put_structured_constant of a reference')
-        self.reg[x] = w
+        # module (TM-662).  A {REFx} there is module#M: in the image a
+        # reference to the module table's cell (ipl:boot/0 gives it to
+        # predicate_to_code as module#ipl), in a module the IPL loaded
+        # a reference to the variable its linker binds to the module
+        # object.  The register gets the cell as it stands, and
+        # whatever uses a reference dereferences it.
+        self.reg[x] = self.mem[self.load + pc + 2 + sx16(c16)]
 
     def i_set_variable(self, pc, x, y, z, c16):
         var = self.new_var()

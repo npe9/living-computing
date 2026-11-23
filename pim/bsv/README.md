@@ -149,9 +149,9 @@ are unified by a goal of their own (PDSS's way; the stub
 of the image and the guard `code`. `apply`: `apply(Code, Args)`, with
 `top:go_pimos1/2`'s own.
 
-`run_pimm_longrun.sh` is the long run, outside the suite (hours; the
-whole list has been run on the reference model alone, see the
-harness's header): the IPL's `load/4` on the whole held `pimos.ipl`,
+`run_pimm_longrun.sh` is the long run, outside the suite (about two
+hours; run whole on both models 2026-11-23: 447,739,516 trace lines
+identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
