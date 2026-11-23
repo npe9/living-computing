@@ -6396,6 +6396,37 @@ Staged, each step green and committed:
      IX-Rec. levels' occupancy (an index change ahead is still undone from
      the record, not a level); other interruption sources; a BD in the
      latch clocks.
+   - **5f stage 2 (2026-11-23): THE CONFINEMENT LIFTED -- the I-box starts
+     beside a box-held level in the box's HOLD CLOCKS too**, not only in
+     the clock the box answered. The confinement (2026-11-20) stood in for
+     the undo the 7030 does on an interruption (Perf. Char. Vol. 1 printed
+     p.3-24; Buchholz §15.6), which the model lacked for a store made
+     there; since the store level (second milestone above) it has it. Two
+     parts, each with its switch in StretchCore: (a) `liftHoldClocks` --
+     `besideHold` (the FP box holds a look-ahead level, no resume ready)
+     opens rl_prepare's E-box gate; mkEBox start() still refuses an
+     instruction that needs a read or a box; (b) `uncountRefused` -- an
+     instruction start() refuses is not counted as an advance (advSeq,
+     iboxAt) and holds nothing (storeSeq, the store level).
+     THE ATLAS DECIDES (Vol. 2 PDF 42-101, all 9406 cases, `atlas_oracle.py
+     --tsv`): byte-identical to master's, so the lift stays.
+     MOVED PINS (MODEL; each given back by HA, `liftHoldClocks := False`,
+     real file, exact inverse edit, cmp IDENTICAL, values passing):
+     fp_box_release_interlock 1153 -> 1142 (its 2026-11-20 number back),
+     fp_box_interrupt_landing 426 -> 425, int_recovery_resume 612 -> 611.
+     HB (`uncountRefused := False`) moves nothing on any of the seven FP
+     and recovery decks: unreached, kept (counting an instruction that did
+     nothing is wrong in kind).
+     NEW DECK `fp_box_hold_store`: A, an SX in an interrupting multiply's
+     hold clocks (seen there with a temporary $display, removed) leaves no
+     trace; B, beside a multiply that does not interrupt, is made; C, a
+     SIC not taken stores nothing. HA: CYCLES 313, MEMREADS 28 only; K1:
+     wherea 4237, stwa 1, "NOT recovered".
+     TRIED AND BACKED OUT: Table A-2's "SIC store level will not exist if
+     branch is not taken", as a switch (`sicLevelIfTaken`): with it
+     removed no deck moved (fp_box_hold_store's case C, also with an LVE
+     after the SIC to wait on store levels, and the six FP/recovery decks),
+     so it had no pin to attribute; recorded in NEXT.md.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

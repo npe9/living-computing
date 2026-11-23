@@ -558,13 +558,16 @@ run_tests.sh). Without it, the stage moved the PINNED
 `fp_mplus_ds_not_df` 981 -> 985 (the `NOP` behind each add a clock late,
 traced); with it, 981 passed unchanged (1056 since the interruption
 recovery, 2026-11-20, which re-runs the instructions run ahead of each DS
-level; 981 again with the recovery's window injected off). NOT during the box's hold clocks,
-and not for an E-box-class load or an indicator branch's guess, both of
-which the first version (c823af2) did: the 7030 undoes the I-box's advance
-on an interruption (Ref. Manual printed p.48; Perf. Char. Vol. 1 printed
-p.3-24; Buchholz §15.6), and the model's recovery (below) could not undo a
-store made beside it (it can since the store level, 2026-11-20; the
-confinement is still in place, docs/NEXT.md); the E-box-class yield moved the atlas's `M+`
+level; 981 again with the recovery's window injected off). DURING THE
+BOX'S HOLD CLOCKS TOO since 2026-11-23 (StretchCore `liftHoldClocks`;
+confined to the answered clock 2026-11-20 to 2026-11-23, while the model's
+recovery could not undo a store made beside the level -- the 7030 undoes
+the I-box's advance on an interruption, Ref. Manual printed p.48, Perf.
+Char. Vol. 1 printed p.3-24, Buchholz §15.6 -- and lifted once a store made
+there waited in a store level); the Vol. 2 atlas is byte-identical with
+it, and `decks/fp_box_hold_store.strap` pins an SX started there. Still
+not for an E-box-class load or an indicator branch's guess, both of which
+the first version (c823af2) did: the E-box-class yield moved the atlas's `M+`
 EXTERNAL columns (PDF 100-101) up to 0.62 clock a case further from the
 page.
 

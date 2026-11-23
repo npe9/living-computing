@@ -947,18 +947,18 @@ module mkStretchCore(StretchCore);
   // index words, index indicators and counter (rl_int_recover); until the
   // store level (deferIboxStores, the same day) it could NOT undo a
   // store an I-box instruction made ahead (it then took the interruption
-  // late, after the drain).  So the release stays confined to the overlap
-  // the model ALREADY had with the add inline (the 981 pin, now 1056: the
-  // recovery re-runs what ran ahead of the deck's five DS levels; with the
-  // recovery window injected off it is 981 again, 2026-11-20): one
-  // instruction, in the clock after the result was formed.  That one is
-  // not what the pages describe either; it is kept because inline had it.
-  // A first version also started I-box instructions during a multiply's
-  // four hold clocks; decks/fp_box_interrupt_landing.strap, which now
-  // lands where the pages say, moved CYCLES only with that version back.
-  // The store case is answered since the store level (deferIboxStores,
-  // 2026-11-20); lifting the confinement is docs/NEXT.md "AN INTERRUPTION
-  // RAISED BY A LEVEL" item 2.
+  // late, after the drain).  So from 2026-11-20 to 2026-11-23 the release
+  // was confined to the overlap the model ALREADY had with the add inline
+  // (the 981 pin, now 1056: the recovery re-runs what ran ahead of the
+  // deck's five DS levels; with the recovery window injected off it is 981
+  // again, 2026-11-20): one instruction, in the clock after the result was
+  // formed.  SINCE 2026-11-23 THE HOLD CLOCKS ARE OPEN TOO (besideHold,
+  // below armResume; liftHoldClocks is its switch): with the store level
+  // the confinement's reason is gone.  The Vol. 2 atlas is byte-identical
+  // with it; it gives back fp_box_release_interlock 1153 -> 1142,
+  // fp_box_interrupt_landing 426 -> 425 and int_recovery_resume 612 -> 611
+  // (each restored with liftHoldClocks := False); decks/fp_box_hold_store
+  // .strap pins an SX started there.
   //
   // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
   // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
@@ -1031,6 +1031,22 @@ module mkStretchCore(StretchCore);
                         && !redecodeAfterHold && !prepInstrStored
                         && prepWouldAct();
   Bool armResume   = armResumeBase && !yieldToPrepare;
+  // AND IN THE BOX'S HOLD CLOCKS (2026-11-23, plan §1c 5f stage 2): an
+  // I-box instruction may start beside the level the FP box holds while
+  // the box works, not only in the clock it answered.  The confinement's
+  // reason is gone: what such an instruction does is given back if the
+  // held level interrupts (rl_int_recover), and a store it makes waits in
+  // a store level (deferIboxStores) -- the undo the 7030 does (Perf.
+  // Char. Vol. 1 printed p.3-24; Buchholz §15.6), which the confinement
+  // stood in for (the FP box's release note).  `liftHoldClocks` is the
+  // switch (part a).
+  Bool liftHoldClocks = True;
+  Bool besideHold = liftHoldClocks && ebox.fpBoxWaiting() && !resumeReady;
+  // An instruction mkEBox's start() REFUSES beside a held level (one that
+  // needs a read or a box) has had no effect, so it is not counted as an
+  // advance and holds nothing: it is offered again next clock.
+  // `uncountRefused` is the switch (part b).
+  Bool uncountRefused = True;
 
   // ---- INTERRUPTION RECOVERY: WHEN (plan §1c 5f, 2026-11-20) ----
   // Buchholz §15.6 (printed p.246, PDF 271): "As soon as the arithmetic-
@@ -2419,24 +2435,27 @@ module mkStretchCore(StretchCore);
       // instruction that would bail.)
       // An I-box store that will need a store level waits for a free one.
       Maybe#(WordAddr) sw = iboxStoreWord(di);
-      if ((!ebox.busyFor(OwnerLA) || yieldToPrepare)
+      if ((!ebox.busyFor(OwnerLA) || yieldToPrepare || besideHold)
           && !iboxHazard(st, guessPending, di, nl)
           && !(isValid(sw) && storeNeedsLevel && la.count() == 4)
           && !lveBehindStore(di, nl)) begin
         match {.completed, .d1} <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;
-        advSeq <= advSeq + 1;   // the I-box has advanced (interruption recovery)
-        iboxAt <= clk;          // ... in this clock (rl_int_watch)
-        // storeSeq counts the I-box stores MADE ahead (not held in a
-        // level); one that reads first is counted, or held, when it
-        // completes (rl_exec_resume).
-        if (completed &&& sw matches tagged Valid .w &&& storeNeedsLevel)
-          holdStoreInLevel(pc, len, di, w);
-        else if (isIboxStore(di) && (completed || !isValid(sw)))
-          storeSeq <= storeSeq + 1;
-        xholdPc <= tagged Invalid;
-        serialPc <= tagged Invalid;
+        Bool refused = uncountRefused && ebox.busyFor(OwnerLA) && !completed;
+        if (!refused) begin
+          advSeq <= advSeq + 1;   // the I-box has advanced (interruption recovery)
+          iboxAt <= clk;          // ... in this clock (rl_int_watch)
+          // storeSeq counts the I-box stores MADE ahead (not held in a
+          // level); one that reads first is counted, or held, when it
+          // completes (rl_exec_resume).
+          if (completed &&& sw matches tagged Valid .w &&& storeNeedsLevel)
+            holdStoreInLevel(pc, len, di, w);
+          else if (isIboxStore(di) && (completed || !isValid(sw)))
+            storeSeq <= storeSeq + 1;
+          xholdPc <= tagged Invalid;
+          serialPc <= tagged Invalid;
+        end
       end
     end
     ebusy <= eb;

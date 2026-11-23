@@ -1,0 +1,73 @@
+! AN I-BOX STORE STARTED IN A BOX-HELD MULTIPLY'S HOLD CLOCKS, 2026-11-23
+! (docs/microarchitecture_plan.md §1c step 5f stage 2; StretchCore's
+! liftHoldClocks and uncountRefused switches, deferIboxStores).
+!
+! THE PAGES.  An interruption is taken "before execution of the next
+! instruction" (Ref. Manual printed p.48, PDF 51); what the I-box did
+! ahead is undone (Perf. Char. Vol. 1 printed p.3-24, PDF 42; Buchholz
+! §15.6, printed pp.246-247); a store prepared by the I-box is made by
+! the look-ahead, level by level (Perf. Char. Vol. 1 printed p.3-20, PDF
+! 38; Table A-2, PDF 69; Buchholz §15.3, printed p.240), so one prepared
+! after an interrupting level is never made.  A SIC stores "if and only if
+! the associated branching is successful" (Ref. Manual printed p.49).
+!
+!   A: L, * (ZM on: the interruption), NOP, then SX into STWA: with the
+!      hold clocks open the SX starts while the FP box holds the multiply
+!      (the NOP's short time brings it there; seen with a temporary
+!      $display, removed), and waits in a store level that housecleaning
+!      cancels.  STWA = 0, X7 = X8 = 0 (the trail), WHEREA = the NOP
+!      (p.48's "next instruction").
+!   B: disabled; L, * (no interruption), then SX into STWB beside the
+!      held multiply: the store IS made.  STWB = X6 = 1.
+!   C: disabled; L, * then SIC,STWC prefixed to a branch NOT taken: no
+!      store.  STWC = 0, X9 = 1.  (Table A-2 gives it no store level either;
+!      the model still loads an empty one -- docs/NEXT.md -- because no
+!      deck could see the difference: with it removed, this deck, an LVE
+!      after the SIC and six FP/recovery decks ran in the same clocks.)
+! CYCLES/MEMREADS are MODEL behaviour.  The run line in tests/run_tests.sh
+! has the observed injections.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the mask are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $ZM,  $+1.0
+        BB1, 12.33, $+1.0            ! ZM's mask bit := ONE
+        LVI, $X6,  1                 ! the value the SXs store
+        BE,  $+.32                   ! ENABLE
+! CASE A: an SX in the multiply's hold clocks; the multiply interrupts.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+NEXTA   NOP                          ! brings the SX into the hold clocks
+        SX,  $X6, STWA               ! must leave no trace
+        LVI, $X7, 1                  ! the trail
+        LVI, $X8, 1
+DONEA   BD,  $+.32                   ! entry 33 branches here
+        BBZ, $ZM,  $+1.0
+! CASE B: disabled; the store beside the held multiply is made.
+        L(U), NZF0
+        *(N), NZF0
+        SX,  $X6, STWB
+! CASE C: disabled; a SIC whose branch is not taken.
+        L(U), NZF0
+        *(N), NZF0
+        LVI, $X10, 1                 ! XVZ off (a nonzero value)
+        SIC, STWC
+        BXVZ, FIN                    ! not taken; an index indicator, so the
+                                     !   I-box decides it beside the level
+        LVI, $X9, 1
+FIN     B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+        SLC, (8)6400.0
+WHEREA  DD, 0                        ! the counter case A's interruption left
+STWA    DD, 0
+STWB    DD, 0
+STWC    DD, 0
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6541.0
+ZMRTN   SIC, WHEREA                  ! entry 33 = ZM
+        B,   DONEA
+        END, START
