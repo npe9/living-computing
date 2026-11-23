@@ -158,7 +158,9 @@ linker's vector unification run 23 times (`lockstep_link.py` part
 was all the system files lacked: on the reference model alone the
 IPL loads the twenty files of the held `pimos.ipl` in its order and
 the link is NORMAL; it stops at `predicate_to_code`, looking for
-`pim:go/4`. Next: `predicate_to_code` and the guard `code`; the
+`pim:go/4`. The IPL's own reader of the list, `ipl:ipl_files/4`,
+gives the twenty names from the held file on both models
+(`lockstep_ipll.py`). Next: `predicate_to_code` and the guard `code`; the
 whole list on the Bluespec (a long run, not a suite test); `apply`; and the FEP protocol under `open` (C2).
 
 ### C. The world outside the processor
