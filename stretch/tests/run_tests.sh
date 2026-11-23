@@ -2797,6 +2797,11 @@ run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_p
 # word, near a multiply's answer, must be refused there and run after.
 # CYCLES 1142 -> 1153 on 2026-11-20 when the release was confined to the
 # answered clock (StretchCore's "WHY ONLY THEN, AND ONLY ONE"): MODEL.
+# RE-PINNED 2026-11-23: CYCLES 1153 -> 1142.  Cause, measured: the
+# confinement lifted (StretchCore liftHoldClocks, plan §1c 5f stage 2):
+# injection HA (liftHoldClocks := False, real file, exact inverse edit,
+# cmp IDENTICAL) gives 1153 back with every value check passing; HB
+# (uncountRefused := False) moves nothing.
 # OBSERVED injections, 2026-11-20, each in the REAL files, reverted by the
 # exact inverse edit and cmp IDENTICAL to a saved copy:
 #   iboxHazard dropped from both release paths   zout only (the Z ran
@@ -2811,7 +2816,7 @@ run "FP M+ / M+MG ON A PROTECTED WORD: DS, NOT DF (printed p.51 item a)" ./run_p
 # CYCLES and MEMREADS are MODEL behaviour.
 run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan §1c 5f)" ./run_program.sh ../decks/fp_box_release_interlock.strap StretchFpRelIlTb \
     "PC=381" \
-    "CYCLES=1153+-0" \
+    "CYCLES=1142+-0" \
     "MEMREADS=108" \
     "out:193=0x004C000000000000" "sum1:194=0x004C000000000000" "zout:195=0x0" \
     "xout0:197=0x0001230000000000" "xout1:198=0x0001230000000000" "xout2:199=0x0001230000000000" "xout3:200=0x0001230000000000" "xout4:201=0x0001230000000000" \
@@ -2850,13 +2855,41 @@ run "FP BOX LEVEL RELEASE: THE INTERLOCK HOLDS, A READ IS REFUSED BESIDE (plan �
 #                                            4236, x6 x7 set)
 # The two found 2026-11-20 before the recovery still hold as stated at the
 # time: beside starts during the box's hold clocks too moved CYCLES only.
+# RE-PINNED 2026-11-23: CYCLES 426 -> 425.  Cause, measured: the hold
+# clocks opened (StretchCore liftHoldClocks): injection HA (real file,
+# exact inverse edit, cmp IDENTICAL) gives 426 back, every value check
+# passing (the landing is unchanged); HB moves nothing.
 run "FP BOX: WHERE A BOX-HELD MULTIPLY'S INTERRUPTION LANDS (printed p.48; MODEL)" ./run_program.sh ../decks/fp_box_interrupt_landing.strap StretchFpIntLandTb \
     "PC=4256" \
-    "CYCLES=426+-0" \
+    "CYCLES=425+-0" \
     "MEMREADS=40" \
     "where_case2:3328=0x0213200000000000" "where1_case1:3329=0x0211400000000000" \
     "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" \
     "x10:26=0" "x11:27=0" "x12:28=0" "x14:30=0"
+# AN I-BOX STORE IN A BOX-HELD MULTIPLY'S HOLD CLOCKS, 2026-11-23 (plan §1c
+# 5f stage 2; decks/fp_box_hold_store.strap's header).  A: the SX beside
+# the interrupting multiply leaves no trace; B: beside a multiply that does
+# not interrupt it is made; C: a SIC not taken stores nothing.
+# CYCLES / MEMREADS are MODEL behaviour.
+# Case A's SX was seen starting in a hold clock with a temporary $display
+# (removed by exact inverse edit, cmp IDENTICAL).
+# OBSERVED injections (real file StretchCore.bsv, exact inverse edit, cmp
+# IDENTICAL):
+#   HA liftHoldClocks := False     CYCLES 313, MEMREADS 28 only (the SX
+#                                  waits for the answered clock; still
+#                                  held, still recovered)
+#   HB uncountRefused := False     nothing (unreached here and on the six
+#                                  FP / recovery decks)
+#   K1 deferIboxStores := False    wherea 4237, stwa 1, CYCLES 304,
+#                                  MEMREADS 26; "NOT recovered: an I-box
+#                                  store ran ahead" at 4235
+run "FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS (p.3-20, p.3-24, Table A-2; MODEL)" ./run_program.sh ../decks/fp_box_hold_store.strap StretchFpHoldStoreTb \
+    "PC=4252" \
+    "CYCLES=311+-0" \
+    "MEMREADS=27" \
+    "wherea:3328=0x0211600000000000" \
+    "stwa:3329=0" "stwb:3330=0x0000200000000000" "stwc:3331=0" \
+    "x7:23=0" "x8:24=0" "x9:25=0x0000200000000000"
 
 # >>> INTERRUPTION RECOVERY: WHAT IS UNDONE, 2026-11-20 (plan §1c 5f). <<<
 # Perf. Char. Vol. 1 printed p.3-24 (PDF 42) and Buchholz §15.6 as above;
@@ -2892,6 +2925,10 @@ run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (P
 # recovers (the trail re-runs after the return) -- injection K1
 # (deferIboxStores := False) gives 561 / 56 back with every value check
 # passing (the late landing, as before).
+# RE-PINNED 2026-11-23: CYCLES 612 -> 611.  Cause, measured: the hold
+# clocks opened (StretchCore liftHoldClocks): injection HA (real file,
+# exact inverse edit, cmp IDENTICAL) gives 612 back, every value check
+# passing; HB moves nothing.
 # OBSERVED injections (real file, exact inverse edit, cmp IDENTICAL):
 #   J2  no index undo                      x5 0x0000400000000000 only
 #                                          (counted twice)
@@ -2916,7 +2953,7 @@ run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (P
 # (0x1800000000000).
 run "INTERRUPTION RECOVERY: what is given back runs again once (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_resume.strap StretchIntRecResTb \
     "PC=4260" \
-    "CYCLES=612+-0" \
+    "CYCLES=611+-0" \
     "MEMREADS=60" \
     "accd:3328=0x0123456789ABCDE8" "cnt:3329=0x0000200000000000" "cnt2:3330=0x0000200000000000" "mark:3331=0x8000000000000000" \
     "x5:21=0x0000200000000000" "x1:17=0x0000200000000000" "x2:18=0x0000200000000000"

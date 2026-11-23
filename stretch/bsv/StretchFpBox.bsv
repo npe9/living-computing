@@ -126,22 +126,23 @@
 // measured in microarchitecture_plan.md §1c step 5f and bsv/README.md.
 //
 // THE LEVEL IS RELEASED WHEN THIS BOX ANSWERS (2026-11-19, confined
-// 2026-11-20).  In the clock the box has answered for a look-ahead level,
+// 2026-11-20, and in the hold clocks again since 2026-11-23).  In the clock the box has answered for a look-ahead level,
 // the resume yields once to the instruction unit, which may start ONE I-box
 // instruction beside the held level (StretchCore's yieldToPrepare note;
 // mkEBox start()'s "beside" refusal).  So the one-clock add costs the
 // instruction unit nothing it did not cost inline
 // (decks/fp_mplus_ds_not_df.strap's 981 pin held; since the interruption
 // recovery, 2026-11-20, it is 1056, and 981 with the recovery's window
-// injected off -- the release itself is unchanged).  NOT during the hold
-// clocks: an instruction started there commits before the level's
+// injected off -- the release itself is unchanged).  Until 2026-11-23 NOT
+// during the hold clocks: an instruction started there commits before the level's
 // indicators are set, and the 7030 undoes such advance on an interruption
 // (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6; Ref. Manual p.48),
 // which the model could not until 2026-11-20 (StretchCore rl_int_recover;
 // and a store made there waits in a store level, the deferIboxStores
-// note).  Lifting the confinement is docs/NEXT.md "AN INTERRUPTION RAISED
-// BY A LEVEL" item 2.  Where a box-held multiply's interruption lands is
-// pinned by decks/fp_box_interrupt_landing.strap.  The
+// note).  SINCE 2026-11-23 the hold clocks are open too (StretchCore
+// liftHoldClocks; decks/fp_box_hold_store.strap).  Where a box-held
+// multiply's interruption lands is pinned by
+// decks/fp_box_interrupt_landing.strap.  The
 // interlock is unchanged: the level stays in the look-ahead until the
 // resume retires it, so iboxHazard holds back an instruction that reads or
 // writes what it writes (decks/fp_box_release_interlock.strap).

@@ -119,29 +119,26 @@ STILL OPEN, in order:
    into words 0-31 (1-6 are in no record), T/SWAP, RNX -- still blocks
    recovery (the `stored` backstop, unreached by the suite); the LAAR and
    p.3-22's 0.9-1.2 us per I-box level are not modelled for store levels;
-   a not-taken SIC gets an empty store level (Table A-2 says none); an LVE
+   a not-taken SIC gets an empty store level (Table A-2 says none: tried
+   2026-11-23 with its own switch and backed out, because no deck could see
+   it -- with the gate removed, fp_box_hold_store's not-taken SIC beside a
+   pending multiply, an LVE placed after it to wait on store levels, and
+   six FP/recovery decks all ran in the same clocks); an LVE
    waits for every pending store level (`lveBehindStore`, a MODEL rule:
    its chain is not checked word by word), 15 clocks on
    negative_effective_address; headReady's LaStore term is reached by no
    deck.
-2. **THE HOLD-CLOCK BESIDE STARTS** (the level release's confinement, plan
-   §1c 5f stage 2). Recovery now undoes an index change made beside a held
-   level, and a store made there waits in a store level (item 1), so the
-   confinement's reason is gone; lifting it is the next step. A DRAFT
-   (not committed; 2026-11-20) let rl_prepare start an I-box instruction
-   whenever the FP box holds a look-ahead level (`fpBoxWaiting`, no resume
-   ready), and stopped counting an instruction mkEBox start() refused
-   (advSeq, storeSeq, the store level): fp_box_release_interlock 1153 ->
-   1142, fp_box_interrupt_landing 426 -> 425 (landing values unchanged),
-   int_recovery_resume 612 -> 611, fp_mplus_ds_not_df 1056, int_recovery_
-   undo 558 and the store deck unchanged. NOT yet: a full suite, the
-   Vol. 2 atlas (its loops put a count branch behind each FP operation, so
-   hold-clock starts may move the FP pages -- the atlas decides whether the
-   lift stays), separate switches for the two changes (the refusal
-   accounting also touches the existing yield clock), and a deck with an
-   SX started in an interrupting multiply's hold clocks. Measured before: lifting it gives back 11 clocks on
-   `fp_box_release_interlock` (1153 -> 1142) and 2 on this landing deck.
-   Do it after item 1.
+2. **THE HOLD-CLOCK BESIDE STARTS -- DONE 2026-11-23** (plan §1c 5f, stage
+   2 "the confinement lifted"): rl_prepare may start an I-box instruction
+   whenever the FP box holds a look-ahead level (StretchCore
+   `liftHoldClocks`), and one mkEBox start() refuses there is not counted
+   as an advance (`uncountRefused`). The Vol. 2 atlas (all 9406 cases) is
+   byte-identical to master's, so the lift stays. Moved pins, each given
+   back by `liftHoldClocks := False`: fp_box_release_interlock 1153 ->
+   1142, fp_box_interrupt_landing 426 -> 425, int_recovery_resume 612 ->
+   611. `uncountRefused` is reached by NO deck (injected off, nothing
+   moves): kept because counting an instruction that did nothing is wrong
+   in kind, recorded as unreached. New deck `decks/fp_box_hold_store.strap`.
 3. **A BD IN THE LATCH CLOCKS.** interruptDue() is two clocks behind the
    indicator; an unconditional branch prepared in those clocks drains the
    (empty) look-ahead and, if it disables, the interruption is lost
