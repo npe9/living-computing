@@ -48,7 +48,12 @@ probe -- devhard.c `hardprobe` (called by `hardparams` right after
     predecessor in its only caller, `hardparams` -- has just set; hardprobe
     already sets `cp->buf = 0` after the sleep.
 
-usage: patch_kernel.py in-kernel out-kernel
+With --strip, the symbol and pc/line tables are dropped (header words
+syms, spsz, pcsz set to 0, file cut after text+data), as `strip` would;
+386/9pc (583,255 bytes with symbols) then fits on the floppy in place of
+9DOS.
+
+usage: patch_kernel.py [--strip] in-kernel out-kernel
 """
 import re
 import sys
@@ -106,8 +111,18 @@ def probe(b):
 
 
 def main():
-    src, dst = sys.argv[1:3]
+    args = sys.argv[1:]
+    strip = args[:1] == ['--strip']
+    if strip:
+        args = args[1:]
+    src, dst = args
     b = bytearray(open(src, 'rb').read())
+    if strip:
+        import struct
+        magic, text, data, bss, syms, entry, spsz, pcsz = struct.unpack('>8I', b[:32])
+        assert magic == 0x1eb, hex(magic)       # I_MAGIC, 386
+        b = b[:32 + text + data]
+        struct.pack_into('>8I', b, 0, magic, text, data, bss, 0, entry, 0, 0)
     for name, f in (('ne2000', ne2000), ('ident', ident), ('probe', probe)):
         offs = f(b)
         print('%s: %s at file %s (va %s)' % (dst, name,

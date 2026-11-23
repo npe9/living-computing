@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Host-side probe that speaks 1st Edition 9P to the QEMU 1e file server.
+
+The messages are the 1e ones (sys/include/fcall.h:45-83; layouts from
+sys/src/libc/9sys/convS2M.c): little-endian, fixed-width NUL-padded
+strings, NAMELEN 28, DIRLEN 116, a 3-byte header type[1] tag[2], and no
+length prefix.  On TCP the server's end has the `fcall` line discipline
+pushed (exportfs -c), and a 1e reader needs each message whole
+(convM2S.c:185-187), so each T-message is sent with one write and the
+replies are split here by their known sizes.
+
+The probe replays what a terminal's boot does on its root connection
+(sys/src/9/boot/boot.c:95-113, nopsession.c): Tnop and Tsession with tag
+NOTAG, then the kernel mount driver's Tattach (devmnt.c mattach: uname
+= the user, aname "", auth all zero) -- and then reads a directory and a
+file and compares the file with the host's copy of the release.
+
+usage: p9probe.py HOST PORT TREE [path ...]
+"""
+import socket
+import struct
+import sys
+
+NAMELEN, DIRLEN, ERRLEN = 28, 116, 64
+NOTAG = 0xFFFF
+(Tnop, Rnop, Tsession, Rsession, Terror, Rerror, Tflush, Rflush, Tattach,
+ Rattach, Tclone, Rclone, Twalk, Rwalk, Topen, Ropen, Tcreate, Rcreate, Tread,
+ Rread, Twrite, Rwrite, Tclunk, Rclunk, Tremove, Rremove, Tstat, Rstat) = range(50, 78)
+CHDIR = 0x80000000
+
+# fixed sizes of R-messages; Rread is 8+count
+RSIZE = {Rnop: 3, Rsession: 3, Rerror: 67, Rflush: 3, Rattach: 13, Rclone: 5,
+         Rwalk: 13, Ropen: 13, Rcreate: 13, Rwrite: 7, Rclunk: 5,
+         Rremove: 5, Rstat: 121}
+
+
+def s(x, n):
+    b = x.encode()
+    assert len(b) < n
+    return b + bytes(n - len(b))
+
+
+class Conn:
+    def __init__(self, host, port):
+        self.sock = socket.create_connection((host, port), timeout=30)
+        self.buf = b''
+        self.tag = 0
+
+    def recvn(self, n):
+        while len(self.buf) < n:
+            d = self.sock.recv(65536)
+            if not d:
+                raise EOFError('connection closed with %r pending' % self.buf)
+            self.buf += d
+        r, self.buf = self.buf[:n], self.buf[n:]
+        return r
+
+    def rpc(self, typ, body=b'', tag=None):
+        if tag is None:
+            self.tag += 1
+            tag = self.tag
+        msg = struct.pack('<BH', typ, tag) + body
+        self.sock.sendall(msg)
+        hdr = self.recvn(3)
+        rtyp, rtag = struct.unpack('<BH', hdr)
+        if rtyp == Rread:
+            rest = self.recvn(5)
+            fid, count, pad = struct.unpack('<HHB', rest)
+            data = self.recvn(count)
+            rep = rest + data
+        else:
+            if rtyp not in RSIZE:
+                raise ValueError('unknown reply type %d' % rtyp)
+            rep = self.recvn(RSIZE[rtyp] - 3)
+        if rtag != tag:
+            raise ValueError('tag %d for %d' % (rtag, tag))
+        if rtyp == Rerror:
+            raise IOError('Rerror: ' + rep.split(b'\0')[0].decode())
+        if rtyp != typ + 1:
+            raise ValueError('reply %d to %d' % (rtyp, typ))
+        return msg, hdr + rep
+
+    def qid(self, rep):
+        fid, path, vers = struct.unpack('<HII', rep[3:13])
+        return path, vers
+
+
+def dirent(b):
+    name, uid, gid = (b[i:i + 28].split(b'\0')[0].decode() for i in (0, 28, 56))
+    path, vers, mode, atime, mtime, length = struct.unpack('<IIIIII', b[84:108])
+    return name, uid, gid, path, mode, mtime, length
+
+
+def main():
+    host, port, tree = sys.argv[1], int(sys.argv[2]), sys.argv[3]
+    paths = sys.argv[4:] or ['lib/ndb/local']
+    c = Conn(host, port)
+
+    def show(name, m, r):
+        print('%-8s T %s' % (name, m.hex()[:64] + ('...' if len(m) > 32 else '')))
+        print('%-8s R %s' % ('', r.hex()[:64] + ('...' if len(r) > 32 else '')))
+
+    m, r = c.rpc(Tnop, tag=NOTAG)
+    show('Tnop', m, r)
+    m, r = c.rpc(Tsession, tag=NOTAG)
+    show('Tsession', m, r)
+    m, r = c.rpc(Tattach, struct.pack('<H', 1) + s('none', NAMELEN) + s('', NAMELEN) + bytes(28))
+    show('Tattach', m, r)
+    print('root qid path 0x%x vers %d' % c.qid(r))
+
+    # the root directory: clone, open, read DIRLEN records
+    c.rpc(Tclone, struct.pack('<HH', 1, 2))
+    c.rpc(Topen, struct.pack('<HB', 2, 0))
+    names = []
+    off = 0
+    while True:
+        m, r = c.rpc(Tread, struct.pack('<HIIH', 2, off, 0, 8192 // DIRLEN * DIRLEN))
+        data = r[8:]
+        if not data:
+            break
+        for i in range(0, len(data), DIRLEN):
+            names.append(dirent(data[i:i + DIRLEN]))
+        off += len(data)
+    c.rpc(Tclunk, struct.pack('<H', 2))
+    print('/ has %d entries:' % len(names))
+    for n, uid, gid, path, mode, mtime, length in names:
+        print('  %s%s %s %s %d' % (n, '/' if mode & CHDIR else '', uid, gid, length))
+
+    ok = True
+    fid = 10
+    for p in paths:
+        fid += 1
+        c.rpc(Tclone, struct.pack('<HH', 1, fid))
+        for comp in p.split('/'):
+            c.rpc(Twalk, struct.pack('<H', fid) + s(comp, NAMELEN))
+        m, r = c.rpc(Tstat, struct.pack('<H', fid))
+        st = dirent(r[5:5 + DIRLEN])
+        c.rpc(Topen, struct.pack('<HB', fid, 0))
+        got = b''
+        while True:
+            m, r = c.rpc(Tread, struct.pack('<HIIH', fid, len(got), 0, 8192))
+            if len(r) == 8:
+                break
+            got += r[8:]
+        c.rpc(Tclunk, struct.pack('<H', fid))
+        want = open('%s/%s' % (tree, p), 'rb').read()
+        same = got == want
+        ok &= same
+        print('%s: Tstat %s %s %s mode %o length %d; read %d bytes; %s host copy'
+              % (p, st[0], st[1], st[2], st[4], st[6], len(got),
+                 'identical to' if same else 'DIFFERS FROM'))
+    c.rpc(Tclunk, struct.pack('<H', 1))
+    print('PASS' if ok else 'FAIL')
+    sys.exit(0 if ok else 1)
+
+
+if __name__ == '__main__':
+    main()

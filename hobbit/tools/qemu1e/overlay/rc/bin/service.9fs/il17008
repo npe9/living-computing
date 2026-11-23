@@ -1,0 +1,12 @@
+#!/bin/rc
+# qemu1e addition (not in the 1e release): serve the kfs as a terminal's
+# root on il!*!17008 (lib/ndb/local: il=9fs port=17008), which is what a
+# terminal's boot program dials (sys/src/9/boot/ip.c connectil).
+# Run by aux/listen as a trusted service (-t), in the listener's name
+# space, where /n/kfs is the kfs.  exportfs -s serves its / with no
+# tree-name preamble and answers Tnop/Tsession (exportfs/exportsrv.c).
+bind /n/kfs /
+bind '#c' /dev
+bind /386/bin /bin
+bind -a /rc/bin /bin
+exec /bin/exportfs -s

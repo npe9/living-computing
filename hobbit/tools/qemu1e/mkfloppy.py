@@ -38,8 +38,6 @@ def main():
     pcdisk, bcom, out = sys.argv[1:4]
     shutil.copyfile(pcdisk, out)
     os.chmod(out, 0o644)
-    if len(sys.argv) > 4:
-        subprocess.check_call(['mcopy', '-i', out, '-o', '-m', sys.argv[4], '::9DOS'])
     b = open(bcom, 'rb').read()
     sysfile = bytes([0xe9, 0xfd, 0x00]) + bytes(253) + b
     assert len(sysfile) <= 128 * 512, 'boot sector loads 128 sectors'
@@ -48,6 +46,10 @@ def main():
     subprocess.check_call(['mcopy', '-i', out, '-o', tmp, '::PLAN9.SYS'])
     subprocess.check_call(['mattrib', '-i', out, '+r', '+h', '+s', '::PLAN9.SYS'])
     os.unlink(tmp)
+    # after PLAN9.SYS has taken the free run at the end of the disk, so
+    # that it stays contiguous
+    if len(sys.argv) > 4:
+        subprocess.check_call(['mcopy', '-i', out, '-o', '-m', sys.argv[4], '::9DOS'])
 
     img = bytearray(open(out, 'rb').read())
     bps, spc, nres, nfat, nroot = struct.unpack_from('<HBHBH', img, 11)

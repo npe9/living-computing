@@ -1,0 +1,12 @@
+#!/bin/rc
+# qemu1e addition (not in the 1e release): as il17008, on tcp!*!564,
+# the port a terminal's boot program dials for `tcp` (boot/ip.c
+# connecttcp, which pushes the fcall line discipline on its end).
+# exportfs -c pushes fcall on this end (exportfs.c pushfcall); $3 is the
+# connection directory, /net/tcp/N, so '#I' is put back on /net first.
+bind /n/kfs /
+bind '#c' /dev
+bind '#I' /net
+bind /386/bin /bin
+bind -a /rc/bin /bin
+exec /bin/exportfs -s -c $3/ctl

@@ -1,0 +1,32 @@
+
+#
+# qemu1e additions (appended to the distribution floppy's /lib/ndb/local
+# by build.sh).  The network is private to QEMU: a dgram netdev between
+# the server and a terminal (docs/qemu_1e_server.md).  ip/bootp answers
+# only machines listed here with an ether= and a bootf= (bootp.c main,
+# lookup); its reply's vendor field is "p9  ipmask fs auth ipgw"
+# (bootp.c doreply), which is what /boot reads (boot/ip.c ipconfig).
+#
+ip=10.9.0.0 ipmask=255.255.255.0
+	fs=fs9 auth=fs9 ipgw=fs9
+
+# the server: QEMU's default NE2000 address
+sys=fs9
+	dom=fs9.qemu1e
+	ip=10.9.0.1 ether=525400123456
+	proto=il
+
+# the Hobbit terminal (s9term on the Bluespec model).  The ether address
+# is a placeholder until the model's SONIC address is fixed.
+sys=hobbit
+	dom=hobbit.qemu1e
+	ip=10.9.0.2 ether=525400000b0b
+	bootf=/hobbit/s9term
+	proto=il
+
+# a second QEMU running the shipped 9pc as a terminal (the test client)
+sys=term386
+	dom=term386.qemu1e
+	ip=10.9.0.3 ether=525400123457
+	bootf=/386/9pc
+	proto=il
