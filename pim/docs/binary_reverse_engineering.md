@@ -195,7 +195,13 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
    constant for it (the non-built-in stub in `scsi_blt.kl1` says
    16000).
 4. `[processor(7, 0, S)]` opens the send device. Because the LUN is
-   0, the handler issues **TEST UNIT READY** first (CDB of six bytes,
+   0, the handler issues **TEST UNIT READY** first (CDB of FIVE
+   bytes as the built-in is given it, not the six this document
+   first said: `new_string(5, 8, CDB)` in the decompiled
+   `scsi_common:test_unit_ready/6`, `scsi#group_0_command_size => 5`
+   in `macro/pimos/scsi/scsi.vmac` line 38, and five bytes observed
+   in the run of 1.4; whether the firmware put a sixth, the control
+   byte of a SCSI group 0 command, on the bus is not known;
    `scsi_common.kl1` lines 21-42, READ). `[processor(7, 1, R)]` opens
    the receive device with no command (its LUN is not 0).
 5. Two byte strings of `MaxBuffer` bytes are made (send and receive
@@ -373,11 +379,16 @@ loads the files it names through the IPL's own stack; the answer of
   counts what comes as 8-bit elements (lines 301, 397-400, 510-534,
   READ); `file_dvc.kl1` line 390 asks for `Size*3+1`. The same
   front end served the IPL and then the kernel in one boot, so
-  bytes is the reading with a source (INFERENCE for the IPL: the
-  kernel's client is a later generation, and a commented-out
+  bytes is the reading with a source. It stays an INFERENCE: the
+  kernel's code only needs the front end to give AT LEAST what it
+  counts in bytes (it keeps what is left over), so a front end
+  counting characters would satisfy it too; the kernel's client is
+  a later generation than the IPL's; and a commented-out
   `send_message_getb` in the same file passes `Size` unchanged for
-  code 0). `fep.py` takes bytes by default. Arithmetic only: 16 + 4
-  + 15,872 = 15,892 fits the stand-in's 16,000 as well.
+  code 0. The front end's own `getb/4` (`pimfep.ptf`, `pimos_file`)
+  is not decoded. `fep.py` takes bytes by default, as OURS.
+  Arithmetic only: 16 + 4 + 15,872 = 15,892 fits the stand-in's
+  16,000 as well.
 - **Widening is `change_element_size(S, 16, S1)`**
   (`scsi_fep_module:str8_to_msg3/8` through `str8_to_str16/2`): two
   bytes an element, the first the high byte, and an odd byte count
@@ -397,16 +408,19 @@ loads the files it names through the IPL's own stack; the answer of
   list and has no such limit. So `MaxBuffer` must hold a whole
   `getb` reply: at least 7,956 bytes if 7936 counts bytes, 15,892 if
   characters.
-- **`TransferredLength` need not be exact for the IPL** (correcting
-  "must be the true byte count" above): with the buffer's length
-  returned instead, the same files load to the same answer; the
-  payload is cut by the message's own length words (injection D in
-  `ref_scsi.py`'s header). `Data`, though, must be the whole buffer:
-  the IPL uses it as its next buffer, and an exact-length string
-  makes the next RECEIVE longer than its buffer (injection E).
+- **`TransferredLength` too large is harmless for a reply in one
+  packet** (narrowing "must be the true byte count" above, which
+  holds for a continued reply, whose pieces are joined by that
+  length): with the buffer's length returned instead, the same
+  files load to the same answer; the IPL cuts a one-packet reply by
+  the message's own length words (an injection in `ref_scsi.py`'s
+  header; only one-packet replies were run). `Data`, though, must
+  be the whole buffer: the IPL uses it as its next buffer, and an
+  exact-length string makes the next RECEIVE longer than its buffer
+  (another injection there).
 - **A check condition is followed up**: with TEST UNIT READY
   answered 2 the handler sends REQUEST SENSE, CDB `03 00 00 00 08`,
-  direction in, 8 bytes (injection F, observed; not served).
+  direction in, 8 bytes (an injection, observed; not served).
 - The RECEIVE for a reply reaches the built-in AFTER its SEND in
   this model's goal order (never before, in every part), so the
   built-in's "not finished yet" path is only run by a test device
@@ -417,7 +431,8 @@ loads the files it names through the IPL's own stack; the answer of
   opened as device 2; the console is given "IPL loading", "PIMM
   KERNEL     :3.600:25-Nov-93", "PIMM SHELL      :3.600:25-Nov-93"
   (a system file's own title, where a patch file shows its path).
-  7.3 M heap cells, 14.2 M instructions, about six minutes.
+  7.3 M heap cells, 14.2 M instructions; 388 s, measured with seven
+  other runs on the machine, so an upper bound.
 
 Not run: `top:go/4` and both shoens, a failing open, abort,
 attention, a message sent in more than one packet.

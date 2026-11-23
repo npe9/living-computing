@@ -832,8 +832,10 @@ class Machine:
         return self.compare(x, y, lambda a, b: a == b)
 
     def i_not_equal(self, pc, x, y, z, c16):
-        # the guard X =\= Y on integers (scsi_fep_file:
-        # reply_with_attention/4, "H =\= 3", as decompiled)
+        # guard not_equal(Integer1, Integer2), X =\= Y: "Succeeds if
+        # Integer1 is not equal to Integer2"; suspends on an
+        # uninstantiated one, fails on a non-integer (PIMOS manual,
+        # e-builtin.tex line 206)
         return self.compare(x, y, lambda a, b: a != b)
 
     def i_floating_point_not_less_than(self, pc, x, y, z, c16):
@@ -1322,7 +1324,10 @@ class Machine:
         self.builtin('b_multiply', [x, y, z], f)
 
     def i_b_divide(self, pc, x, y, z, c16):
-        # as the guard divide (truncated towards zero, PDSS's C /, not
+        # divide(Integer1, Integer2, ^NewInteger), guard and body:
+        # "Divides Integer1 by Integer2 and unifies the quotient with
+        # NewInteger" (PIMOS manual, e-builtin.tex line 285).  As the
+        # guard here (truncated towards zero, PDSS's C /, not
         # established for PIM/m); a zero divisor or the one overflow
         # is the built-in's exception: not modelled
         def f(a, b):
@@ -1334,9 +1339,12 @@ class Machine:
         self.builtin('b_divide', [x, y, z], f)
 
     def i_b_modulo(self, pc, x, y, z, c16):
-        # as the guard modulo (the remainder has the dividend's sign,
-        # PDSS's C %, not established for PIM/m); a zero divisor is
-        # the built-in's exception: not modelled
+        # modulo(Integer1, Integer2, ^NewInteger), guard and body:
+        # "unifies the remainder with NewInteger" (PIMOS manual,
+        # e-builtin.tex line 303).  As the guard here (the remainder
+        # has the dividend's sign, PDSS's C %, not established for
+        # PIM/m); a zero divisor is the built-in's exception: not
+        # modelled
         def f(a, b):
             a, b = self.need_int(a), self.need_int(b)
             if b == 0:
@@ -1463,10 +1471,13 @@ class Machine:
         self.builtin('new_string', [x, y, z], f)
 
     def i_b_string(self, pc, x, y, z, c16):
-        # body string(S, ^Length, ^ElementSize, ^NewS) (library/
-        # compiler/blt.kl1 active_builtin(string(X1,X2,X3,X4)): one
-        # input, three outputs): the guard string's two values and the
-        # string again
+        # body string(X, ^Size, ^ElementSize, ^NewString): "The size
+        # of string X is unified with Size, the element bit width is
+        # unified with ElementSize, and X is unified with NewString"
+        # (PIMOS manual, e-builtin.tex line 844; directions also in
+        # library/compiler/blt.kl1 active_builtin(string(X1,X2,X3,
+        # X4))).  Anything but a string is the built-in's exception:
+        # refused
         w4 = self.cells[pc + 1][1] >> 24
 
         def f(s):
@@ -1552,7 +1563,9 @@ class Machine:
             # the merger process and each element of the vector is
             # unified to each new input stream" (TR-466 3.3; TR-483
             # 2.7.2: merge({}, O) :- O = [], merge({I}, O) :-
-            # merge(I, O), merge({I1,I2}, O) :- merge(I1, I2, O)).
+            # merge(I, O), merge({I1,I2}, O) :- merge(I1, I2, O);
+            # both as quoted in docs/literature_gaps.md, lines 1571
+            # and 1581: the reports were not opened again for this).
             # Here: this input ends and each element gets a goal of
             # merge_in, ready, the last element's first (it suspends
             # itself if its stream is unbound).
@@ -1751,7 +1764,8 @@ class Machine:
         # Goal@processor(N).  Two cells, as enqueue_goal_with_priority
         # (assembler/klb_opr.kl1 p(r_c16_c8_exe)): the processor's
         # register, the label; the arity in the next cell's top byte.
-        # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY).  There
+        # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY) (as
+        # listed in docs/literature_gaps.md, line 2441).  There
         # is ONE processor here, number 0 (ours): for 0 the goal is
         # made as enqueue_goal makes it; anything else is refused.
         n = self.cells[pc + 1][1] >> 24
@@ -1768,7 +1782,8 @@ class Machine:
         # when the first clause fails but also when it suspends"
         # (TR-483 2.4.4); the instruction itself: "if external
         # references are on the suspension stack, perform Eager Read
-        # on them", no branch (TM-1044 s3, alternatively()).  One
+        # on them", no branch (TM-1044 s3, alternatively()); both as
+        # quoted in docs/literature_gaps.md, lines 1534 and 2259.  One
         # processor has no external references: nothing is done, the
         # variables noted so far stay noted, and the next clause is
         # tried.
@@ -1812,9 +1827,10 @@ class Machine:
         # the WHOLE buffer with the bytes received written in (a copy
         # here; the same string for a command that receives nothing).
         # OURS:
-        #  - it waits for every element of the vector (the buffer of a
-        #    send is often still being filled when the command is
-        #    made), as string_operation waits for its vector's;
+        #  - it waits for every element of the vector, as
+        #    string_operation waits for its vector's.  NOT run: in
+        #    every run so far the elements were all bound when the
+        #    command was made (taking the wait out changes nothing);
         #  - Id is the count of commands so far (no caller reads it);
         #  - NewObj is Obj;
         #  - a command the device cannot finish yet (a RECEIVE with no

@@ -88,8 +88,30 @@ directory (the tree itself was not edited):
         caught ONLY by the pinned heap cells (458,899 for 388,311 in
         "one file"); Files and Loaded are the same.  The IPL cuts a
         reply by its own length words
-NOT caught: fep.py padding a reply's string to 2 bytes, not 4 (the
-string is the last thing in every reply the IPL gets here).
+  pimm.py: a merger input bound to a vector refused (as before)
+        Unimplemented in the first part: the path is run
+  pimm.py: string_operation not waiting for its vector's element
+        Unimplemented (an unbound element reaches the operation)
+  pimm.py: read_eagerly stopping when a variable is noted
+        it stops in the first part: `alternatively` is met with a
+        variable noted, where `otherwise` would suspend
+  pimm.py: not_equal as equal
+        every part: 5 commands, only the list opened, Loaded unbound
+  pimm.py: b_modulo one too many
+        the device refuses the first SEND (66 bytes for 64)
+  pimm.py: b_string's length one too many
+        Unimplemented (string_operation's bounds)
+  pimm.py: enqueue_goal_to_processor refusing processor 0;
+           put_reused_structure without the long vector's descriptor
+        Unimplemented at once, both
+NOT caught:
+  - fep.py padding a reply's string to 2 bytes, not 4, and pimm.py
+    b_divide one too many (four are run): both only place what
+    follows a string, and the string is the last thing in every
+    reply the IPL gets here;
+  - scsi_command not waiting for its vector's elements: they were
+    bound every time (the wait is NOT run).
+Not run at all: wait_vector_1.
 
 Not run: top:go/4 and the shoens; an open that fails; a read error;
 abort (70); attention (status 3); a message the IPL sends in more
@@ -298,12 +320,14 @@ def check(label, files, device, m, v, opened):
 
 
 def against_document(wire):
-    """The first five commands on the bus against 1.3."""
+    """The first four commands on the bus against 1.3."""
     H = lambda t: bytes.fromhex(t.replace(' ', ''))     # noqa: E731
     want = [('TEST UNIT READY', H(DOC['tur']), b'', b''),
             ('SEND', H(DOC['open_cdb']), H(DOC['open']), b''),
             ('RECEIVE', H(DOC['receive_cdb']), b'', H(DOC['open_reply'])),
             ('SEND', H(DOC['getb_cdb']), H(DOC['getb']), b'')]
+    if len(wire) < len(want):
+        return [('the bus: %d commands' % len(wire),)]
     return [('the bus, command %d' % i, w[0], w[1].hex(), fepm.hexdump(w[2] + w[3]))
             for i, (w, x) in enumerate(zip(wire, want)) if w != x]
 

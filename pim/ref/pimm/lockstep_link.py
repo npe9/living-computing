@@ -26,7 +26,8 @@ Two parts, each a list of ONE file:
                and two vectors are unified (lockstep_unif.py): 23
                times, three steps each, counted.  The heap passes
                2^20 cells in this part (1,509,638 at the end).  The test stands in for
-what answers OpenRequests (the IPL's SCSI file service, not run) and
+what answers OpenRequests (the IPL's SCSI file service, not run
+here; on the reference model alone ref/pimm/ref_scsi.py runs it) and
 for the file's buffers.  The file's name is its name in the archive:
 OURS, the IPL's own list (pimos.ipl) is not played.
 
