@@ -248,8 +248,9 @@ Paths resolve inside `--root`, which is both `/` and the working
 directory (`zl` finds `/hobbit/lib/libc.a` there); a path that leaves it
 stops the run.  Any other id stops the run with its number and name.
 This is what `za` and `zl` use; it is not the 1e system-call set
-(`sys.h` has 37 numbers) and nothing here pretends to `fork`, `exec`,
-`stat`, `pipe` or `notify`.
+(`sys.h` has 37 numbers).  (As of 2026-11-20.  `stat`, `fstat`,
+`notify`, `rfork`, `exec` and `wait` were added for A3 on 2026-11-23,
+below; `pipe` is still refused.)
 
 **Floating point** is not a system call: it is the
 unimplemented-instruction sequence (p. 1-39) and a user-level handler,
@@ -266,6 +267,47 @@ over consecutive floating-point instructions.  The arithmetic is host
 IEEE double, not `fpi.c`'s 53+3-bit `Internal`, so FADD/FSUB/FMUL/FDIV
 may round differently from 1e in a last bit; moves, compares and integer
 conversions are exact.  `za` executes one FMOV (0x26d0, `cinit`).
+
+### Added for A3's generated inputs (2026-11-23)
+
+`tools/p9kgen.py` runs `awk`, `sed`, `xd`, `grep`, `sort`, `tr`,
+`strip`, `ar` and `rl` (and `echo`, `cat`, `za`, `zc`, `zl`) as the
+stages of the kernel mkfiles' rc pipelines.  They needed these, each in
+its own `Kernel` method (`call_a3` dispatches; `call` itself only gained
+the `#` branch of `open` and create's permission rule), each tested in
+`tests/test_p9run.py`:
+
+| id | call | source | what the runner does |
+|---|---|---|---|
+| — | fd 0 / fd 1 | rc's `<`, `>` and `\|` | `run(stdin=bytes, stdout=file)` (`--stdin`/`--stdout`): fd 0 reads the bytes, fd 1 writes the file object; fd 2 stays the console.  A redirected fd is a `Stream`: `seek` on it fails `Eisstream` (`sysseek`: devchar `\|`) |
+| 11 | `fstat(fd, buf)` | `sysfile.c sysfstat`; `libc/9sys/convD2M.c`; `sys/include/libc.h` `Dir`, DIRLEN 116 | the 116-byte Dir: name, uid, gid (28 each), qid.path, qid.vers, mode, atime, mtime (LE longs), length (8 bytes, high word 0), type, dev.  A host file is type `M` (devmnt), mode = its permission bits, CHDIR (0x80000000) in mode and qid.path for a directory, length and times from the host.  A redirected fd is a pipe (`devpipe.c pipestat` -> `streamstat(c, db, "pipe", 0666)`, qid `STREAMQID(1, Sdataqid)` = 63, type `\|`); the console is `cons` (`devcons.c` `{Qcons}` = 3, 0660, mtime `kerndate`).  uid = gid = `bootes` (`devcons.c:24` `eve`) |
+| 18 | `stat(name, buf)` | `sysfile.c sysstat` | the same Dir for a path in the tree; a missing file fails "file does not exist" (Enonexist); a `#` name is refused |
+| 14 | `open("#...")` | `devcons.c` Qpid, `devenv.c` | `#c/pid` reads `readnum(pid, NUMSIZE)`: the pid right-aligned in 11 characters and a blank (pid 1; `getpid()`, so `mktemp()` in `ar`); `#e` is an empty directory (OREAD only; reads 0 bytes; Dir `.`, CHDIR\|0700, type `e`), `#e/x` fails Enonexist.  Any other device is refused |
+| 22 | `create` perm | `sys/man/2/open` | a new file gets perm ANDed with its directory's permission bits; an existing file keeps its own.  (`zl` creates with 0775; `strip` refuses a file with no execute bit) |
+| 28 | `notify(fn)` | `sysproc.c sysnotify` | the handler is kept; returns 0.  No note is ever posted |
+| 19 | `rfork(flags)` without RFPROC | `sysproc.c sysrfork` | new name/env/note groups of a process that is alone: no effect but the note id; the paired flags (RFNAMEG\|RFCNAMEG, RFENVG\|RFCENVG) and RFMEM/RFNOWAIT fail Ebadarg as there; RFCFDG is refused |
+| 19 | `rfork(RFPROC\|...)` | `sysrfork`, `proc.c pexit` | the child is a deep copy of the process (memory, registers, the stack cache's array), its `rfork` returns 0, and it **runs first, to its `exits`**, before the parent gets the child's pid.  RFFDG copies the fd table (same channels, so shared offsets; the child's `close` does not close the parent's file), no RFFDG shares it.  RFCFDG and RFMEM are refused, and so is any fork while `--record` is on (the Bluespec replayer has one process) |
+| 7 | `exec(file, argv)` | `sysproc.c sysexec`, `lib/namespace` | `/bin/x` is `/hobbit/bin/x` (`bind /$cputype/bin /bin`; `/rc/bin` is not modelled); the Z_MAGIC header is checked (else Ebadexec), the arguments copied out, and a new image built exactly as the first process's; `Proc.text` = the file's last element.  `#!` files are refused |
+| 36 | `wait(Waitmsg*)` | `sysproc.c syswait`, `proc.c pwait`/`pexit` | the first wait record: pid and three times as `readnum` (12 bytes each; the times are 0), then `"text pid:exitstr"` or `""` in msg[ERRLEN 64]; returns the pid.  No record: "no living children" (Enochild) |
+
+What "child runs first" covers: a parent that forks and waits (`rl`'s
+`fexec` of `/bin/ar`, and what rc does for a simple command).  It does
+not cover a parent and child that must run together (the two ends of a
+pipe); `pipe` is still refused, and `tools/p9kgen.py` plays rc's
+pipelines a stage at a time instead.
+
+Not modelled and still refused: `pipe`, `dup`, `bind`, `mount`,
+`chdir`, `wstat`/`fwstat`, `sleep`, `alarm`, `segbrk`/`seg*`,
+`rendezvous`, `noted`, `unmount`.
+
+**A finding, not fixed here.**  `sysexec` starts `nbytes = BY2WD`
+("hole for profiling clock at top of stack") before adding the string
+lengths, so the strings end 4 bytes below USTKTOP and `sp[0] =
+USTKTOP-4` points at that hole.  `exec_frame` (above, and the A2 runs)
+counts only the strings, so the last string's tail overlaps the hole.
+It changes `ssize` (and so possibly `sp`) by 4 for some argument
+lists; fixing it moves every recorded frame, so it is left for a change
+of its own with the Bluespec recordings re-made.
 
 ## The Bluespec run's kernel entry (`bsv/P9HostTb.bsv`, 2026-11-20)
 
