@@ -19,6 +19,9 @@ python3 "$hobbit/tools/check_optab.py"
 python3 "$hobbit/tools/check_timing.py"
 # The 1e executable reader: `_main` must still begin with main9.s's MOV.
 python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/bin/echo" >/dev/null
+# The shipped kernel image (-H1) and the facts docs/s9term.md reads from it.
+python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/s9term" >/dev/null
+python3 "$here/test_p9exec.py"
 
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"

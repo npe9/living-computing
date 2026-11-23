@@ -47,6 +47,12 @@ which is exactly what all five shipped binaries carry.
 
     python3 tools/p9exec.py hobbit/tools/plan9-1e/hobbit/bin/echo
     python3 tools/p9exec.py --image echo.hex <binary>
+    python3 tools/p9exec.py hobbit/tools/plan9-1e/hobbit/s9term
+
+A kernel image (`zl -H1`, the 80-byte COFF-style header of zl/asm.c's
+case 1) is recognised by its first word and read by `read_kernel`; the
+user-binary checks (`_main`, UTZERO) do not apply to it.  See
+docs/s9term.md.
 """
 
 import argparse
@@ -241,9 +247,169 @@ def check_main(exe, syms, parcels):
     return []
 
 
+# ---------------------------------------------------------------------------
+# Kernel images: `zl -H1` ("boot", zl/obj.c), as the kernel mkfile links
+# them (sys/src/9/hobbit/mkfile: `-l -R4 -H1 -T0x80004000 -E0x80004000`).
+#
+# zl/obj.c case 1 sets HEADR = 20+60 = 80 bytes; zl/asm.c `asmb` case 1
+# writes twenty big-endian words (`lput` = two big-endian `SPUT`s, with
+# `swizflag` already cleared), a MIPS-style COFF file header and optional
+# header:
+#
+#   0  0x161<<16           magic 0x161 and 0 sections
+#   1  0                   time and date
+#   2  HEADR+text+data     (the file offset of the symbol table)
+#   3  symsize             nsyms: bytes of 28-byte Sym records
+#   4  0x38<<16 | 7        optional-header size and flags
+#   5  407<<16 | 0437      magic (decimal 407 = 0x197) and version 0x11f
+#   6  text  7 data  8 bss
+#   9  entry               entryvalue(): -E, here a number
+#  10  INITTEXT            text base       11 INITDAT  data base
+#  12  INITDAT+data        bss base        13 ~0       "gp reg mask"
+#  14  lcsize              pc/line table   15-17 0
+#  18  ~0                  "gp value ??"   19 0        "complete mystery"
+#
+# then the text at offset 80 (little-endian words, as in a user binary:
+# `cflush` swizzles while `swizflag` is set), the data at 80+text, the
+# symbols (`asmsym`, big-endian `lput` values) and the pc/line table
+# (`asmlc`).  There is no rounding between sections (asmb's case 1/2
+# seeks to HEADR+textsize, HEADR+textsize+datsize).
+# ---------------------------------------------------------------------------
+
+KHEADER = struct.Struct(">20I")
+KMAGIC = 0x161 << 16
+KOPT = (0x38 << 16) | 7
+KAOUT = (407 << 16) | 0o437
+
+
+def is_kernel(path):
+    with open(path, "rb") as handle:
+        head = handle.read(4)
+    return len(head) == 4 and int.from_bytes(head, "big") == KMAGIC
+
+
+def read_kernel(path):
+    """The -H1 header and section offsets; raises SystemExit if not -H1."""
+    with open(path, "rb") as handle:
+        blob = handle.read()
+    if len(blob) < KHEADER.size:
+        raise SystemExit("%s: shorter than a -H1 header" % path)
+    w = KHEADER.unpack_from(blob)
+    if w[0] != KMAGIC:
+        raise SystemExit("%s: word 0 is 0x%08x, not -H1's 0x%08x"
+                         % (path, w[0], KMAGIC))
+    k = {"path": path, "blob": blob, "words": w,
+         "symptr": w[2], "syms": w[3], "text": w[6], "data": w[7],
+         "bss": w[8], "entry": w[9], "textbase": w[10], "database": w[11],
+         "bssbase": w[12], "lcsize": w[14]}
+    k["text_off"] = KHEADER.size
+    k["data_off"] = k["text_off"] + k["text"]
+    k["sym_off"] = k["data_off"] + k["data"]
+    k["lc_off"] = k["sym_off"] + k["syms"]
+    return k
+
+
+def kernel_symbols(k):
+    """The symbol table as a list, in file order: (value, type, name)."""
+    blob = k["blob"][k["sym_off"]:k["sym_off"] + k["syms"]]
+    out = []
+    for i in range(0, len(blob) - SYM.size + 1, SYM.size):
+        value, typ, name, _pad = SYM.unpack_from(blob, i)
+        out.append((value, chr(typ), name.split(b"\0")[0].decode("latin-1")))
+    return out
+
+
+def check_kernel(k, syms):
+    """What asmb's case 1 and pass.c's xdefine()s make true of any -H1 file."""
+    w = k["words"]
+    p = []
+    fixed = {1: 0, 4: KOPT, 5: KAOUT, 13: 0xFFFFFFFF, 15: 0, 16: 0, 17: 0,
+             18: 0xFFFFFFFF, 19: 0}
+    for i, v in sorted(fixed.items()):
+        if w[i] != v:
+            p.append("header word %d is 0x%08x, asm.c writes 0x%08x"
+                     % (i, w[i], v))
+    if w[2] != KHEADER.size + k["text"] + k["data"]:
+        p.append("word 2 (0x%x) != HEADR + text + data" % w[2])
+    want = k["lc_off"] + k["lcsize"]
+    if len(k["blob"]) != want:
+        p.append("file is %d bytes; 80 + text + data + syms + lcsize = %d"
+                 % (len(k["blob"]), want))
+    if k["syms"] % SYM.size:
+        p.append("symbol table size 0x%x is not a multiple of %d"
+                 % (k["syms"], SYM.size))
+    if k["text"] % 4:
+        p.append("text size 0x%x is not a multiple of 4" % k["text"])
+    if k["bssbase"] != k["database"] + k["data"]:
+        p.append("bss base != data base + data")
+    # -R4 and no -D: INITDAT = rnd(INITTEXT + textsize, INITRND).
+    gap = k["database"] - (k["textbase"] + k["text"])
+    if not 0 <= gap < 4096 or k["database"] % 4:
+        p.append("data base 0x%x does not follow the text (gap %d)"
+                 % (k["database"], gap))
+    if not k["textbase"] <= k["entry"] < k["textbase"] + k["text"]:
+        p.append("entry 0x%x outside the text" % k["entry"])
+    if not syms:
+        return p
+    named = {}
+    for v, t, n in syms:
+        named.setdefault((n, t), v)
+    expect = [(("etext", "T"), k["textbase"] + k["text"]),
+              (("bdata", "B"), k["database"]),
+              (("edata", "B"), k["database"] + k["data"]),
+              (("end", "B"), k["bssbase"] + k["bss"])]
+    for key, v in expect:
+        if key not in named:
+            p.append("no `%s` symbol" % key[0])
+        elif named[key] != v:
+            p.append("`%s` is 0x%08x, the header says 0x%08x"
+                     % (key[0], named[key], v))
+    lo_t, hi_t = k["textbase"], k["textbase"] + k["text"]
+    lo_d, hi_d = k["database"], k["bssbase"] + k["bss"]
+    for v, t, n in syms:
+        if t in "TtLl" and not lo_t <= v <= hi_t:
+            p.append("text symbol %s 0x%08x outside the text" % (n, v))
+        if t in "DdBb" and not lo_d <= v <= hi_d:
+            p.append("data symbol %s 0x%08x outside data+bss" % (n, v))
+    return p
+
+
+def kernel_main(path, ndecode):
+    k = read_kernel(path)
+    syms = kernel_symbols(k)
+    print("%s: -H1 kernel image (zl asm.c case 1), %d bytes" %
+          (path, len(k["blob"])))
+    print("  text 0x%x  data 0x%x  bss 0x%x  syms 0x%x (%d entries)  "
+          "lcsize 0x%x" % (k["text"], k["data"], k["bss"], k["syms"],
+                           k["syms"] // SYM.size, k["lcsize"]))
+    print("  entry 0x%08x  text 0x%08x  data 0x%08x  bss 0x%08x  end 0x%08x"
+          % (k["entry"], k["textbase"], k["database"], k["bssbase"],
+             k["bssbase"] + k["bss"]))
+    print("  file offsets: text 0x%x  data 0x%x  syms 0x%x  pc/line 0x%x"
+          % (k["text_off"], k["data_off"], k["sym_off"], k["lc_off"]))
+    print("  %s" % ("stripped" if not syms else "not stripped"))
+    at = [n for v, t, n in syms if v == k["entry"] and t in "TtLl"]
+    if at:
+        print("  entry is %s" % ", ".join(at))
+    if ndecode:
+        parcels = parcel_stream(k)
+        for item in decode(parcels, k["textbase"], k["entry"], ndecode):
+            print("  %08x  %04x  %s" % (item[0], item[1],
+                                        " ".join(map(str, item[2:]))))
+    problems = check_kernel(k, syms)
+    if problems:
+        print("  CHECK FAILED: " + "; ".join(problems), file=sys.stderr)
+        return 1
+    print("  check: header words, file size, section bases, etext/bdata/"
+          "edata/end and every symbol's section agree")
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("binary")
+    ap.add_argument("--kernel", action="store_true",
+                    help="require a -H1 kernel image (detected anyway)")
     ap.add_argument("--image", metavar="PATH",
                     help="write the model image (one 32-bit word per line)")
     ap.add_argument("--entry-bsv", metavar="PATH",
@@ -252,6 +418,11 @@ def main(argv):
     ap.add_argument("--decode", type=int, default=8,
                     help="instructions to decode at the entry (default 8)")
     args = ap.parse_args(argv)
+
+    if args.kernel or is_kernel(args.binary):
+        if args.image or args.entry_bsv:
+            raise SystemExit("--image/--entry-bsv are for user binaries")
+        return kernel_main(args.binary, args.decode)
 
     exe = read(args.binary)
     syms = symbols(exe)
