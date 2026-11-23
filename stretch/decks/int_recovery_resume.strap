@@ -14,11 +14,13 @@
 !   E: L, *, then LX / V+I / SX on CNT: recovered before the SX starts,
 !      run once -- CNT = X1 = 1.
 !   F: as E behind an older divide, so the SX (an I-box STORE) runs ahead
-!      of the interrupting multiply.  A store is not given back, so the
-!      model does NOT recover (it says so) and takes the interruption after
-!      the levels drain, as before 2026-11-20 -- CNT2 = X2 = 1, not 2.
-!      This is the case left open: docs/NEXT.md "AN INTERRUPTION RAISED BY
-!      A LEVEL" item 1.
+!      of the interrupting multiply.  Since 2026-11-20 (second milestone)
+!      its store waits in a store level (Perf. Char. Vol. 1 printed p.3-20,
+!      PDF 38; Table A-2, PDF 69) and is housecleaned with the younger
+!      levels, so the model recovers here too and the routine's return runs
+!      LX / V+I / SX once -- CNT2 = X2 = 1, not 2.  (Until then the model
+!      did not recover and took the interruption after the drain.)
+!      decks/int_recovery_store.strap pins that the store is not made.
 ! The run line in tests/run_tests.sh has the observed injections.
         SLC, (8)4100.0
 START   BD,  $+.32                   ! disable while IA and the mask are set

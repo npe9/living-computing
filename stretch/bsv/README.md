@@ -562,8 +562,9 @@ level; 981 again with the recovery's window injected off). NOT during the box's 
 and not for an E-box-class load or an indicator branch's guess, both of
 which the first version (c823af2) did: the 7030 undoes the I-box's advance
 on an interruption (Ref. Manual printed p.48; Perf. Char. Vol. 1 printed
-p.3-24; Buchholz §15.6), and the model's recovery (below) cannot undo a
-store made beside it; the E-box-class yield moved the atlas's `M+`
+p.3-24; Buchholz §15.6), and the model's recovery (below) could not undo a
+store made beside it (it can since the store level, 2026-11-20; the
+confinement is still in place, docs/NEXT.md); the E-box-class yield moved the atlas's `M+`
 EXTERNAL columns (PDF 100-101) up to 0.62 clock a case further from the
 page.
 
@@ -574,13 +575,19 @@ restores the index words and index indicators the I-box changed after the
 level's load and returns the counter to the instruction after it (Perf.
 Char. Vol. 1 printed pp.3-22..3-24, PDF 40-42; Buchholz §15.6, printed
 pp.246-247). It reuses the wrong-way recovery's snapshot, now one record
-per look-ahead slot (`ixRec`, read by both). Not when an I-box store ran
-ahead (taken late, as before, and said), and not for other interruption
-sources. `decks/fp_box_interrupt_landing.strap` lands at the printed
+per look-ahead slot (`ixRec`, read by both). An I-box store run ahead
+(SX, SV, SC, SR, SVA, Z, SIC into core storage) waits in a STORE LEVEL
+since the second milestone the same day: StretchStorage `captureStore`
+keeps the write, the core loads an `LaStore` level, `rl_store_retire`
+releases it at the head outside the latch clocks, and housecleaning
+cancels it unmade (Perf. Char. Vol. 1 printed p.3-20, Table A-2; Buchholz
+§15.3, §15.5; `decks/int_recovery_store.strap`). Not when a store was MADE
+ahead (words 0-31, T/SWAP, RNX: taken late, as before, and said), and not
+for other interruption sources. `decks/fp_box_interrupt_landing.strap` lands at the printed
 4234 / 4249 with no trail register set; `decks/int_recovery_undo.strap`
 and `decks/int_recovery_resume.strap` pin the younger level, a VFL level,
-a progressive level's own index, a routine that returns and the store
-guard (docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL"). Also no
+a progressive level's own index, a routine that returns and (case F) a
+store run ahead (docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL"). Also no
 recovery when a non-index indicator rose since the level's load outside
 the clock after a level's completion (`otherSeq`: the interruption may not
 be the level's). `StretchStorage.restoreIndex` takes a keep mask and only

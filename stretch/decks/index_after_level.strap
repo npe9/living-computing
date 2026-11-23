@@ -83,6 +83,11 @@
 !
 ! RE-PINNED 2026-11-17: CYCLES 2854 -> 2896.  Cause, measured:
 ! the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17); injection C (arm disabled) restores 2854, injection B (internal wait off) leaves 2896.
+!
+! RE-PINNED 2026-11-20: CYCLES 2896 -> 2875.  Cause, measured: the I-box
+! store level (StretchCore's deferIboxStores note; docs/microarchitecture_
+! plan.md §1c 5f, second milestone): with it injected off the deck runs in
+! 2896 again and no value moves (tests/run_tests.sh at the run line).
         SLC, (8)2000.0
 START   NOP
 ! ---- V0: V+I, $3, 1.0, 0 extra pending load(s)

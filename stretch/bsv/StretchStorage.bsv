@@ -154,6 +154,35 @@ interface StretchStorage;
   // Char. Vol. 1 printed p.3-20); StretchCore's laarBusy reads this.
   method Bool storesPending();
 
+  // >>> AN I-BOX STORE IS HELD IN ITS LOOK-AHEAD LEVEL, 2026-11-20. <<<
+  // Perf. Char. Vol. 1 printed p.3-20 (PDF 38): "All 'to-memory'
+  // operations involving the main memory from the 7030 CPU are prepared
+  // by the I-box and accomplished by the look-ahead ... In the case of
+  // I-box store type instructions (SX, SV, SC, SR, SVA, R, RXZ, T, SWAP,
+  // etc.) the store operands are already available during I-box
+  // processing time and can be converted to ECC check bits during
+  // shipment to LA"; Table A-2 (PDF 69) gives SX, Z, SV, SC, SR, SVA and
+  // SIC a "store" level.  The store reaches memory when the look-ahead's
+  // store-check counter gets to that level, in order (Buchholz §15.3,
+  // printed p.240, PDF 265), so an interruption raised by an older level
+  // housecleans it before it is made (§15.6, printed p.246, PDF 271).
+  // StretchCore runs the I-box store as before and, in the same clock,
+  // calls captureStore(slot, a): the core-storage write to word `a` that
+  // the instruction makes this clock is kept in capture register `slot`
+  // (the look-ahead slot of its store level) instead of being queued.
+  // No write this clock (the store was suppressed) leaves the register
+  // empty.  releaseCaptured(slot) queues it, as writeWord would, when
+  // the level retires.  A level housecleaned instead (cancelAll) is never
+  // released, and its register is rewritten by the next capture into the
+  // slot, which every store level makes in the clock it is loaded -- so
+  // a stale register is never released and needs no dropping.
+  // A held word is NOT forwarded to reads: a read of it by an OLDER
+  // instruction must see storage as it is, and the core keeps a younger
+  // one waiting on the store level (levelHolds, waitFor).  The caller
+  // guarantees that no other store reaches writeWord in a release clock.
+  method Action captureStore(Bit#(2) slot, WordAddr a);
+  method Action releaseCaptured(Bit#(2) slot);
+
   // Indicators: read the current 64-bit indicator word, or replace it
   // wholesale. An instruction that changes several indicator bits must
   // compute the combined new value itself (see StretchExecute.bsv's
@@ -357,6 +386,11 @@ module mkStretchStorage(StretchStorage);
   // all (see memCtl's own header).
   RWire#(MemReq)   storeTailW <- mkRWire;
   Reg#(Maybe#(MemReq)) storeTail <- mkReg(tagged Invalid);
+  // The I-box stores held in their look-ahead levels (captureStore), one
+  // per slot, and this clock's capture and release requests.
+  Vector#(4, Reg#(Maybe#(MemReq))) capSt <- replicateM(mkReg(tagged Invalid));
+  RWire#(Tuple2#(Bit#(2), WordAddr)) capW <- mkRWire;
+  RWire#(Bit#(2))  relW  <- mkRWire;
   Reg#(Bool)       irqEn  <- mkConfigReg(False); // interrupt system: reset = disabled (ConfigReg: intDueCalc)
   Reg#(Maybe#(WordAddr)) recentStoreReg <- mkReg(tagged Invalid); // see recentStore()
   function Bool memInRange(WordAddr a) = installed(a);
@@ -730,6 +764,32 @@ module mkStretchStorage(StretchStorage);
     // queue cannot stay full with nothing else arriving.  Holding the
     // tail one more clock is exactly the wait the comment above already
     // claims the core performs.
+    // THE I-BOX STORE HELD IN ITS LEVEL (captureStore, in the interface):
+    // this clock's core-storage write is kept in its slot's register
+    // instead of being queued, or a held one is released and queued as
+    // this clock's write.  `newStore` stands for storeW below.
+    Maybe#(MemReq) newStore = storeW.wget;
+    Vector#(4, Maybe#(MemReq)) capNext = readVReg(capSt);
+    if (capW.wget matches tagged Valid {.cs, .ca}) begin
+      capNext[cs] = tagged Invalid;
+      if (storeW.wget matches tagged Valid .r) begin
+        if (r.addr == ca) begin
+          capNext[cs] = tagged Valid r;
+          newStore = tagged Invalid;
+        end else
+          $display("StretchStorage: I-box store held for word %0d was written to %0d: queued, NOT held", ca, r.addr);
+      end
+    end
+    if (relW.wget matches tagged Valid .rs) begin
+      if (capSt[rs] matches tagged Valid .h) begin
+        if (isValid(newStore))
+          $display("StretchStorage: a held I-box store to %0d was released beside another write and was LOST", h.addr);
+        else
+          newStore = tagged Valid h;
+      end
+      capNext[rs] = tagged Invalid;
+    end
+    writeVReg(capSt, capNext);
     Maybe#(MemReq) tailNext = storeTail;
     if (storeTail matches tagged Valid .t) begin
       if (storeQ.notFull) begin
@@ -757,10 +817,10 @@ module mkStretchStorage(StretchStorage);
         recentStoreReg <= tagged Valid t.addr;
         $display("StretchStorage: store queue full, CROSSING-FIELD TAIL to %0d HELD", t.addr);
       end
-      if (storeW.wget matches tagged Valid .r)
+      if (newStore matches tagged Valid .r)
         $display("StretchStorage: write to %0d arrived while a crossing-field tail was pending and was LOST", r.addr);
     end
-    else if (storeW.wget matches tagged Valid .r) begin
+    else if (newStore matches tagged Valid .r) begin
       if (storeQ.notFull) storeQ.enq(r);
       else $display("StretchStorage: store queue full, write to %0d LOST", r.addr);
       recentStoreReg <= tagged Valid r.addr;
@@ -855,7 +915,7 @@ module mkStretchStorage(StretchStorage);
       // slip between them either.
       Bool fpYields = (c >= 3) && chFpLevel[c - 3] && yWaiting;
       if (!busUsed && !issued && !fpYields && !storeQ.notEmpty && !isValid(storeTail)
-          && !isValid(storeW.wget) && !isValid(storeTailW.wget)) begin
+          && !isValid(newStore) && !isValid(storeTailW.wget)) begin
         if (pr matches tagged Valid .a &&& mbcu.canAccept(a)) begin
           mbcu.put(MemReq{ write: False, addr: a, data: 0, tag: fromInteger(c) });
           issued = True;
@@ -1011,6 +1071,13 @@ module mkStretchStorage(StretchStorage);
 
   method Bool storesPending();
     return storeQ.notEmpty || isValid(storeTail);
+  endmethod
+
+  method Action captureStore(Bit#(2) slot, WordAddr a);
+    capW.wset(tuple2(slot, a));
+  endmethod
+  method Action releaseCaptured(Bit#(2) slot);
+    relW.wset(slot);
   endmethod
 
   method Action loadWord4(Word64 v);

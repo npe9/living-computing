@@ -104,7 +104,9 @@
 !   injected wrap sends one to an uninstalled word (which ended the run
 !   before 2026-11-18, and now sets AD and falls through).
 !
-! CYCLES 811, PC 455 (the control).  The injections' clock differences
+! CYCLES 827 (811 until the I-box store level, 2026-11-20: with it
+! injected off 811 again, with only its LVE wait off 812;
+! tests/run_tests.sh), PC 455 (the control).  The injections' clock differences
 ! are the program's own path (AD no-ops, skipped stores, a run ended
 ! early); the fix moved no existing deck's pin (full suite, 2026-11-18).
 ! MEASURED INJECTIONS (2026-11-18; StretchExecute.bsv restored from a
