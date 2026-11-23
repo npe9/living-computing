@@ -108,22 +108,38 @@ younger level run exactly once) pin the rest.
 
 STILL OPEN, in order:
 
-1. **AN I-BOX STORE AHEAD OF AN INTERRUPTING LEVEL.** An I-box store
-   (`isIboxStore`: SX/SV/SC/SR, Z, SIC) that ran ahead of the level cannot
-   be taken back, and returning the counter would run it again
-   (`LX / V+I / SX` would count twice), so when one has started since the
-   level's load there is NO recovery and the interruption is taken late,
-   after the levels drain, as before (`int_recovery_resume` case F). The
-   wrong-way recovery never meets this: iboxHazard holds an I-box store
-   while a guess is pending. THE FIX is the same hold whenever an
-   interrupt-enabled level is pending (or the store as a real store level,
-   Buchholz §15.3, cancelled by housecleaning); it moves the timing of
-   every enabled run with a store behind a level (MCP), so it is its own
-   measured step.
+1. **AN I-BOX STORE AHEAD OF AN INTERRUPTING LEVEL -- DONE 2026-11-20**
+   (plan §1c 5f, "second milestone"): the pages say the store is made by
+   the look-ahead, in order (Perf. Char. Vol. 1 printed p.3-20, PDF 38;
+   Table A-2, PDF 69; Buchholz §15.3/15.5, printed pp.240, 246), so it is
+   never made when an older level interrupts. The model holds the write in
+   a store level (StretchCore `deferIboxStores`, `rl_store_retire`;
+   StretchStorage `captureStore`); `decks/int_recovery_store.strap`, and
+   `int_recovery_resume` case F now recovers. LEFT: a store MADE ahead --
+   into words 0-31 (1-6 are in no record), T/SWAP, RNX -- still blocks
+   recovery (the `stored` backstop, unreached by the suite); the LAAR and
+   p.3-22's 0.9-1.2 us per I-box level are not modelled for store levels;
+   a not-taken SIC gets an empty store level (Table A-2 says none); an LVE
+   waits for every pending store level (`lveBehindStore`, a MODEL rule:
+   its chain is not checked word by word), 15 clocks on
+   negative_effective_address; headReady's LaStore term is reached by no
+   deck.
 2. **THE HOLD-CLOCK BESIDE STARTS** (the level release's confinement, plan
    §1c 5f stage 2). Recovery now undoes an index change made beside a held
-   level, but not a store (item 1), so lifting the confinement is still a
-   risk of its own. Measured before: lifting it gives back 11 clocks on
+   level, and a store made there waits in a store level (item 1), so the
+   confinement's reason is gone; lifting it is the next step. A DRAFT
+   (not committed; 2026-11-20) let rl_prepare start an I-box instruction
+   whenever the FP box holds a look-ahead level (`fpBoxWaiting`, no resume
+   ready), and stopped counting an instruction mkEBox start() refused
+   (advSeq, storeSeq, the store level): fp_box_release_interlock 1153 ->
+   1142, fp_box_interrupt_landing 426 -> 425 (landing values unchanged),
+   int_recovery_resume 612 -> 611, fp_mplus_ds_not_df 1056, int_recovery_
+   undo 558 and the store deck unchanged. NOT yet: a full suite, the
+   Vol. 2 atlas (its loops put a count branch behind each FP operation, so
+   hold-clock starts may move the FP pages -- the atlas decides whether the
+   lift stays), separate switches for the two changes (the refusal
+   accounting also touches the existing yield clock), and a deck with an
+   SX started in an interrupting multiply's hold clocks. Measured before: lifting it gives back 11 clocks on
    `fp_box_release_interlock` (1153 -> 1142) and 2 on this landing deck.
    Do it after item 1.
 3. **A BD IN THE LATCH CLOCKS.** interruptDue() is two clocks behind the

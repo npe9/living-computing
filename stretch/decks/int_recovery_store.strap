@@ -1,0 +1,108 @@
+! INTERRUPTION RECOVERY: AN I-BOX STORE RUN AHEAD LEAVES NO TRACE,
+! 2026-11-20 (docs/microarchitecture_plan.md §1c step 5f; StretchCore's
+! deferIboxStores note, rl_store_retire, rl_int_recover).
+!
+! THE PAGES.  Perf. Char. Vol. 1 printed p.3-20 (PDF 38): "All 'to-memory'
+! operations involving the main memory from the 7030 CPU are prepared by
+! the I-box and accomplished by the look-ahead"; I-box store type
+! instructions (SX, SV, SC, SR, SVA ...) ship their operand to LA; Table
+! A-2 (PDF 69) gives each a "store" level.  Buchholz §15.3 (printed p.240,
+! PDF 265): the store-check counter sends operands to storage level by
+! level; §15.5-15.6 (printed p.246, PDF 271): an interrupt sensed by the
+! arithmetic-bus counter abandons the levels after it; §15.1 (printed
+! p.230, PDF 255): instructions run ahead of an interruption "should leave
+! no traces".  So an I-box store prepared after the interrupting level is
+! never made: the word keeps its old contents when the routine is entered.
+!
+! Cases G and H: an older divide holds the E-box (as int_recovery_undo case
+! B) so that the trail runs ahead of the interrupting multiply (ZM, entry
+! 33); case I has no divide.
+! The routine records where the interruption landed (SIC) and branches past
+! the trail, so nothing behind the multiply runs again (case H points the
+! interruption address at a second table, TBLH, for its own routine).
+!   G: SX into STWG ahead (a store made in one clock).   STWG = 0.
+!   H: SV into STWH ahead (a store that reads its word first, completing
+!      in rl_exec_resume).                                 STWH = 0.
+!   I: no older level: the SX into STWI starts after the multiply has
+!      completed, in the two clocks before its interruption is due (the
+!      model's latch; StretchCore's intWin), with the look-ahead empty.
+!      It is held all the same (the window term of storeNeedsLevel:
+!      injected off, the store is made and the interruption is taken
+!      late).                                              STWI = 0.
+! and in each the trail registers (X6, X7 / X8, X9 / X10, X11) stay 0, and
+! WHEREG / WHEREH / WHEREI are the instruction after the multiply (NEXTG,
+! NEXTH, NEXTI) -- the landing p.48 gives ("before execution of the next
+! instruction").
+! The run line in tests/run_tests.sh has the observed injections.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the mask are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $ZM,  $+1.0
+        BB1, 12.33, $+1.0            ! ZM's mask bit := ONE
+        BE,  $+.32                   ! ENABLE
+! CASE G: SX ahead of the interrupting multiply.
+        L(N), NZF0
+        /(N), NZF0                   ! an older divide holds the E-box
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+NEXTG   LVI, $X6, 1                  ! the trail
+        SX,  $X6, STWG               ! an I-box store: must leave no trace
+        LVI, $X7, 1
+        BD,  $+.32
+RTNG    BD,  $+.32                   ! case G's routine branches here
+        BBZ, $ZM,  $+1.0             ! so that a ZM case G left pending
+                                     !   cannot be taken in case H
+        LVI, $X13, TBLH              ! case H's table
+        SV,  $X13, $IA
+        BE,  $+.32
+! CASE H: SV (reads its word, then stores) ahead of the multiply.
+        L(N), NZF0
+        /(N), NZF0
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+NEXTH   LVI, $X8, 1
+        SV,  $X8, STWH               ! an I-box store that reads first
+        LVI, $X9, 1
+        BD,  $+.32
+RTNH    BD,  $+.32                   ! case H's routine branches here
+        BBZ, $ZM,  $+1.0
+        LVI, $X13, TBLI              ! case I's table
+        SV,  $X13, $IA
+        BE,  $+.32
+! CASE I: the SX starts in the window after the multiply completes.
+        L(U), ZF0
+        *(N), NZF0                   ! ZM on: the interruption
+NEXTI   LVI, $X10, 1                 ! beside the answered multiply
+        SX,  $X10, STWI              ! after it completes: the window
+        LVI, $X11, 1
+        BD,  $+.32
+RTNI    BD,  $+.32                   ! case I's routine branches here
+        B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+ZF0     DD(BU,64), 0                 ! fraction 0, exponent 0
+NZF0    DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+        SLC, (8)6400.0
+WHEREG  DD, 0                        ! the counter case G's interruption left
+WHEREH  DD, 0                        ! ... case H's
+STWG    DD, 0                        ! SX's word
+STWH    DD, 0                        ! SV's word
+WHEREI  DD, 0                        ! the counter case I's interruption left
+STWI    DD, 0                        ! case I's SX's word
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6541.0
+ZMRTNG  SIC, WHEREG                  ! entry 33 = ZM, case G
+        B,   RTNG
+        SLC, (8)6600.0
+TBLH    DD, 0
+        SLC, (8)6641.0
+ZMRTNH  SIC, WHEREH                  ! entry 33 = ZM, case H
+        B,   RTNH
+        SLC, (8)6700.0
+TBLI    DD, 0
+        SLC, (8)6741.0
+ZMRTNI  SIC, WHEREI                  ! entry 33 = ZM, case I
+        B,   RTNI
+        END, START

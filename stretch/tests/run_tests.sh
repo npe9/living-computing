@@ -1601,7 +1601,15 @@ run "An index read after a pending progressive write" ./run_program.sh ../decks/
 # item 7).  MEASURED with that mechanism removed (both halves): 2864 again,
 # every value check unchanged.
 # RE-PINNED 2026-11-17: CYCLES 2854 -> 2896.  Cause, measured: the decode wait after a VFL store into index storage (StretchCore redecodeAfterHold, 2026-11-17); injection C (arm disabled) restores 2854, injection B (internal wait off) leaves 2896.
-run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2896+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
+# RE-PINNED 2026-11-20: CYCLES 2896 -> 2875.  Cause, measured: the I-box
+# store level (StretchCore's deferIboxStores note; plan §1c 5f, second
+# milestone) -- injection K1 (deferIboxStores := False, real file, exact
+# inverse edit, cmp IDENTICAL) gives 2896 back with every value check
+# passing.  The deck's SX/SV run ahead of pending levels; held in a level
+# their writes no longer sit in the store queue, which holds every read
+# off while it is non-empty (StretchStorage memCtl).  That reading is from
+# the mechanism, not a per-clock trace.
+run "An index write while a pending level is indexed by it" ./run_program.sh ../decks/index_after_level.strap StretchIdxLevelTb ASM=strap2 CYCLES=2875+-0 DV0a:1144=0x5a5a5a5a5a5a5a5a DV0b:1145=0x0 RV0:1146=0x11e400000000000 DV1a:1147=0x5a5a5a5a5a5a5a5a DV1b:1148=0x0 RV1:1149=0x11f000000000000 DV2a:1150=0x5a5a5a5a5a5a5a5a DV2b:1151=0x0 RV2:1152=0x11fc00000000000 DL0a:1153=0x5a5a5a5a5a5a5a5a DL0b:1154=0x0 RL0:1155=0x400000000000 DL1a:1156=0x5a5a5a5a5a5a5a5a DL1b:1157=0x0 RL1:1158=0x400000000000 DL2a:1159=0x5a5a5a5a5a5a5a5a DL2b:1160=0x0 RL2:1161=0x400000000000 DS0a:1162=0x5a5a5a5a5a5a5a5a DS0b:1163=0x0 RS0:1164=0x0 DS1a:1165=0x5a5a5a5a5a5a5a5a DS1b:1166=0x0 RS1:1167=0x0 DS2a:1168=0x5a5a5a5a5a5a5a5a DS2b:1169=0x0 RS2:1170=0x0 DF0a:1171=0x5a5a5a5a5a5a5a5a DF0b:1172=0x0 RF0:1173=0x125000000000000 DF1a:1174=0x5a5a5a5a5a5a5a5a DF1b:1175=0x0 RF1:1176=0x125c00000000000 DF2a:1177=0x5a5a5a5a5a5a5a5a DF2b:1178=0x0 RF2:1179=0x126800000000000 AE0:1180=0xaaaaaaaaaaaaaaaa GE0:1182=0xbbbbbbbbbbbbbbbb GE1:1185=0xbbbbbbbbbbbbbbbb GE2:1188=0xbbbbbbbbbbbbbbbb DCa:1189=0x5a5a5a5a5a5a5a5a DCb:1190=0x0 RC:1191=0x11c200000000000 PC=2278
 # The 7101's STORE WAIT (R23-9732 Figs 3.1.13/3.1.20/3.1.24): an I-box index
 # instruction behind a pending level storing into its index word.  Injections
 # in the deck's header.
@@ -2653,9 +2661,16 @@ run "COMPLETES WITHOUT FETCH: DF suppression, VFL/connective/FP (printed p.45 it
 # indicator branch (1-bit I), LVE (value, sign, XVLZ), SHFL; a
 # positive-carry control (RK).  Injections and
 # their observed failures are in the deck's header.
+# RE-PINNED 2026-11-20: CYCLES 811 -> 827.  Cause, measured, two parts,
+# each injection in the real file (exact inverse edit, cmp IDENTICAL) with
+# every value check passing: K1 (deferIboxStores := False, no store levels
+# at all) gives 811; K8 (the LVE wait behind a store level,
+# StretchCore lveBehindStore, removed) gives 812.  So 15 clocks are the
+# deck's LVEs waiting for the SX/SV store levels ahead of them, and 1 the
+# store levels themselves (not traced per clock).
 run "NEGATIVE EFFECTIVE ADDRESS: its magnitude is used (RefMan printed p.21)" ./run_program.sh ../decks/negative_effective_address.strap StretchNegEaTb \
     "PC=455" \
-    "CYCLES=811+-0" \
+    "CYCLES=827+-0" \
     "RA:768=72623859790382856" "RA2:780=2" "RB:769=55" "RC:770=7" "RK:771=12" \
     "RD:772=2251799813685248" "RE:773=24189255811072" \
     "RF:774=35184372088832" "RG:775=35184372088832" \
@@ -2870,16 +2885,29 @@ run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (P
 # >>> INTERRUPTION RECOVERY: RESUMING, 2026-11-20 (plan §1c 5f). <<<
 # What recovery gives back runs again exactly once when the routine (a
 # single non-branching BB1) returns; the deck header has the cases.  Case F
-# is the open one: an I-box store ran ahead, so the model does not recover
-# and takes the interruption after the drain (it prints "NOT recovered").
+# (an I-box store ran ahead) was the open one until the store level
+# (2026-11-20, second milestone; StretchCore's deferIboxStores note): its
+# SX now waits in a store level, is housecleaned, and case F recovers.
+# RE-PINNED then: CYCLES 561 -> 612, MEMREADS 56 -> 60.  Cause: case F
+# recovers (the trail re-runs after the return) -- injection K1
+# (deferIboxStores := False) gives 561 / 56 back with every value check
+# passing (the late landing, as before).
 # OBSERVED injections (real file, exact inverse edit, cmp IDENTICAL):
 #   J2  no index undo                      x5 0x0000400000000000 only
 #                                          (counted twice)
 #   J6  recover even after an I-box store  cnt2, x2 0x0000400000000000,
 #       ran ahead (store guard dropped)    CYCLES 612, MEMREADS 60
+#       (observed BEFORE the store level, when case F's SX was made
+#       ahead; with the store level the guard is not reached here)
 #   J3  no cancel of younger levels        CYCLES 562, MEMREADS 57
 #   J1b no recovery window                 CYCLES 512, MEMREADS 49
 #   J4  no removal hold                    nothing
+# With the store level (2026-11-20, same rules):
+#   K1  deferIboxStores := False           CYCLES 561, MEMREADS 56 only
+#                                          ("NOT recovered" at 4254)
+#   K2  store retired in the window        cnt2, x2 0x0000400000000000
+#                                          (counted twice) only
+#   K4  no captureStore                    cnt2, x2 0x0000400000000000 only
 # And the wrong-way recovery the mechanism is shared with: J7 (rl_recover
 # restoring slot recoverSlot+1 instead of the guessing level's) moved
 # nothing in la_guess_target_index or la_branch_guess -- the guessing
@@ -2888,10 +2916,50 @@ run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (P
 # (0x1800000000000).
 run "INTERRUPTION RECOVERY: what is given back runs again once (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_resume.strap StretchIntRecResTb \
     "PC=4260" \
-    "CYCLES=561+-0" \
-    "MEMREADS=56" \
+    "CYCLES=612+-0" \
+    "MEMREADS=60" \
     "accd:3328=0x0123456789ABCDE8" "cnt:3329=0x0000200000000000" "cnt2:3330=0x0000200000000000" "mark:3331=0x8000000000000000" \
     "x5:21=0x0000200000000000" "x1:17=0x0000200000000000" "x2:18=0x0000200000000000"
+
+# >>> INTERRUPTION RECOVERY: AN I-BOX STORE RUN AHEAD LEAVES NO TRACE,
+# 2026-11-20 (plan §1c 5f, second milestone). <<<  Perf. Char. Vol. 1
+# printed p.3-20 (PDF 38): "All 'to-memory' operations ... are prepared by
+# the I-box and accomplished by the look-ahead"; Table A-2 (PDF 69): SX,
+# SV ... load a "store" level; Buchholz §15.3/15.5-15.6 (printed pp.240,
+# 246; PDF 265, 271): the store-check counter sends a level's operand to
+# storage in order, and an interruption sensed at an older level abandons
+# it.  So STWG / STWH (an SX, and an SV that reads first, run ahead of the
+# interrupting multiply) stay 0; WHEREG / WHEREH are the instruction after
+# the multiply (NEXTG 4236, NEXTH 4250); the trail registers stay 0.
+# CYCLES / MEMREADS are MODEL behaviour.
+# OBSERVED injections (real file StretchCore.bsv, exact inverse edit, cmp
+# IDENTICAL):
+#   K1 deferIboxStores := False   whereg 0 (case G's interruption lost: the
+#      (no store level)           BD disabled first), whereh 4253, wherei
+#                                 4264, stwg stwh stwi, x6-x10 all 1,
+#                                 CYCLES 564, MEMREADS 43; "NOT recovered:
+#                                 an I-box store ran ahead" at 4250, 4262
+#   K2 rl_store_retire not held   stwg, stwh 1, CYCLES 595, MEMREADS 48
+#      in the window (!intWin &&  (the store made before the interruption
+#      !intRecWanted dropped)     rose; recovered, landing right)
+#   K4 no captureStore            stwg, stwh, stwi 1, CYCLES 592 (the write
+#                                 made at once, the level empty)
+#   K5 storeNeedsLevel's window   wherei 4264, stwi, x10 1, CYCLES 592,
+#      terms dropped (la.count()  MEMREADS 48; "NOT recovered" at 4262 --
+#      != 0 only)                 case I is the one that reaches them
+#   K6 headReady's kind !=        nothing (here and on the resume, undo,
+#      LaStore dropped            landing, index_after_level and negative
+#                                 effective address decks): UNREACHED
+#   K7 the full-look-ahead wait   nothing here; index_after_level CYCLES
+#      in rl_prepare dropped      2875 -> 2797 only (values pass)
+run "INTERRUPTION RECOVERY: an I-box store run ahead is never made (Perf. Char. p.3-20, Table A-2)" ./run_program.sh ../decks/int_recovery_store.strap StretchIntRecStoreTb \
+    "PC=4268" \
+    "CYCLES=586+-0" \
+    "MEMREADS=49" \
+    "whereg:3328=0x0211800000000000" "whereh:3329=0x0213400000000000" \
+    "wherei:3332=0x0214c00000000000" \
+    "stwg:3330=0" "stwh:3331=0" "stwi:3333=0" \
+    "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" "x10:26=0" "x11:27=0"
 
 # THE SECOND INDEX OF A VFL INSTRUCTION (bits 60-63) MODIFIES ITS
 # LENGTH, BYTE SIZE AND OFFSET, index bits 3-18 aligned with bits 35-50

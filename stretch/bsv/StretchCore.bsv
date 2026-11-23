@@ -537,7 +537,8 @@ module mkStretchCore(StretchCore);
       end
     endaction;
 
-  function ActionValue#(Bool) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
+  // Returns (completed in this clock, halted).
+  function ActionValue#(Tuple2#(Bool, Bool)) startExecute(HWordAddr pc, InstrLen len, DecodedInstr di,
                                            Maybe#(HWordAddr) intIC) =
     actionvalue
       let r <- ebox.start(pc, len, di, replicate(0), 0, OwnerIbox, intIC);
@@ -559,9 +560,9 @@ module mkStretchCore(StretchCore);
           $display("StretchCore: SWAP started at half-word %0d, %0d words", pc, xs.remaining);
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         ibusy <= budgetClocks(di, taken);   // completed in the dispatch clock
-        return isHalt(di, o.next, pc);
+        return tuple2(True, isHalt(di, o.next, pc));
       end else
-        return False;
+        return tuple2(False, False);
     endactionvalue;
 
   // =====================================================================
@@ -762,6 +763,7 @@ module mkStretchCore(StretchCore);
                      && lftDeferredLaar(la.headLevel().di, la.headLevel().da)
                      && clk < laarFreeAt;
   Bool headReady   = la.count() != 0 && ebusy == 0 && !ebox.busy() && !intWait && !lftWait
+                     && la.headLevel().kind != LaStore    // rl_store_retire's
                      && (!isValid(la.headLevel().da) || isValid(la.headLevel().data));
   Bool armRemoveBase = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                        && !resumeReady && headReady;
@@ -821,8 +823,9 @@ module mkStretchCore(StretchCore);
   // interruption is now undone -- its index words, its index indicators
   // and the instruction counter -- by rl_int_recover (the "INTERRUPTION
   // RECOVERY: WHEN" note below armResume), and younger levels are
-  // cancelled.  NOT when one of those instructions was an I-box STORE
-  // (taken late after the drain, as before), and not for an interruption
+  // cancelled, with any I-box store held in a store level among them
+  // (never made).  NOT when an I-box store was MADE ahead -- into words
+  // 0-31, T/SWAP, RNX (taken late after the drain, as before), and not for an interruption
   // with any other cause (an I/O report, the timer, an I-box
   // instruction's own indicator): those still wait for the levels to
   // drain here.  docs/NEXT.md "AN INTERRUPTION RAISED BY A LEVEL".
@@ -941,8 +944,9 @@ module mkStretchCore(StretchCore);
   // interruption occurred"; Ref. Manual printed p.9 (PDF 12), look-ahead
   // "makes the machine appear as if it were dealing with only one
   // instruction at a time".  Since 2026-11-20 the model undoes the
-  // index words, index indicators and counter (rl_int_recover), but NOT a
-  // store an I-box instruction made ahead (it then takes the interruption
+  // index words, index indicators and counter (rl_int_recover); until the
+  // store level (deferIboxStores, the same day) it could NOT undo a
+  // store an I-box instruction made ahead (it then took the interruption
   // late, after the drain).  So the release stays confined to the overlap
   // the model ALREADY had with the add inline (the 981 pin, now 1056: the
   // recovery re-runs what ran ahead of the deck's five DS levels; with the
@@ -952,14 +956,59 @@ module mkStretchCore(StretchCore);
   // A first version also started I-box instructions during a multiply's
   // four hold clocks; decks/fp_box_interrupt_landing.strap, which now
   // lands where the pages say, moved CYCLES only with that version back.
-  // Lifting the confinement waits on the store case: docs/NEXT.md "AN
-  // INTERRUPTION RAISED BY A LEVEL" items 1-2.
+  // The store case is answered since the store level (deferIboxStores,
+  // 2026-11-20); lifting the confinement is docs/NEXT.md "AN INTERRUPTION
+  // RAISED BY A LEVEL" item 2.
   //
   // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
   // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
   // pending level: an I-box instruction that reads the accumulator, the
   // factor or the indicator words (eboxRegister), or branches on a non-
   // index indicator, or stores where the level stores, still waits.
+  // AN I-BOX STORE'S STORE LEVEL: the switch and the word (the note at
+  // storeNeedsLevel, below).
+  Bool deferIboxStores = True;
+  // The core-storage word an I-box store writes, as indexed now; Invalid
+  // for every other instruction and for a word below 32.
+  function Maybe#(WordAddr) iboxStoreWord(DecodedInstr d);
+    Maybe#(WordAddr) w = tagged Invalid;
+    case (d) matches
+      tagged DirIndex .x:
+        if (x.code == dixop_SX || x.code == dixop_SV || x.code == dixop_SC
+            || x.code == dixop_SR || x.code == dixop_SVA) begin
+          HWordAddr ea = effAddr19(st, x.addr, x.idx);
+          w = tagged Valid ea[18:1];
+        end
+      tagged BranchOrMisc .x:
+        if (x.misc && x.code == 3'b100)                                   // Z
+          w = tagged Valid baWord(effAddr24(st, {x.addr, 5'b0}, x.idx));
+      tagged Sic .x: begin
+        BitAddr ea = effAddr24(st, x.addr, x.idx);
+        w = tagged Valid ea[23:6];
+      end
+      default: w = tagged Invalid;
+    endcase
+    if (w matches tagged Valid .a &&& a < 32) w = tagged Invalid;
+    return w;
+  endfunction
+  // LVE READS A CHAIN OF WORDS (Ref. Manual printed p.29), and iboxHazard
+  // tests only the first, so while a store level is pending an LVE could
+  // read a held word as storage still has it.  Before the store level the
+  // write was in the store queue, which holds every read off.  So an LVE
+  // waits for the store levels.  A MODEL rule, the narrowest that keeps
+  // the chain from reading a held word; the pages give LVE a look-ahead
+  // drain only with its address in index storage (Perf. Char. Vol. 1
+  // Tables 4-9, IR column; docs/spec_lookahead.md 2.2 item 6, 3.6).  It
+  // costs decks/negative_effective_address.strap 15 clocks (812 -> 827
+  // with it removed; tests/run_tests.sh at the run line).
+  function Bool lveBehindStore(DecodedInstr d, Vector#(4, LaLevel) nl);
+    Bool st_ = False;
+    for (Integer k = 0; k < 4; k = k + 1)
+      if (nl[k].valid && nl[k].kind == LaStore) st_ = True;
+    Bool lve = False;
+    if (d matches tagged DirIndex .x &&& x.code == dixop_LVE) lve = True;
+    return lve && st_;
+  endfunction
   function Bool prepWouldAct();
     Bool r = False;
     if (prepPrepared matches tagged Valid {.len, .di}) begin
@@ -969,7 +1018,9 @@ module mkStretchCore(StretchCore);
       // yield: measured, that also moved Perf. Char. Vol. 2's M+ EXTERNAL
       // columns (atlas PDF 100-101) further from the printed times.
       if (!isEboxClass(di) && !branchLevel)
-        r = !iboxHazard(st, guessPending, di, prepNl);
+        r = !iboxHazard(st, guessPending, di, prepNl)
+            && !(deferIboxStores && isValid(iboxStoreWord(di)) && la.count() == 4)
+            && !lveBehindStore(di, prepNl);
     end
     return r;
   endfunction
@@ -1013,6 +1064,61 @@ module mkStretchCore(StretchCore);
                 && (clk - validValue(lastRet).at) >= 1 && (clk - validValue(lastRet).at) <= 2;
   Bool intRise = isValid(intDue) && !intDuePrev && !isValid(intPC);
   Bool intRecWanted = (intRecReq != intRecAck) || (intRise && intWin);
+
+  // ---- AN I-BOX STORE GOES INTO A STORE LEVEL (plan §1c 5f, 2026-11-20) ----
+  // THE PAGES.  Perf. Char. Vol. 1 printed p.3-20 (PDF 38): "All 'to-
+  // memory' operations involving the main memory from the 7030 CPU are
+  // prepared by the I-box and accomplished by the look-ahead", and "In
+  // the case of I-box store type instructions (SX, SV, SC, SR, SVA, R,
+  // RXZ, T, SWAP, etc.) the store operands are already available during
+  // I-box processing time and can be converted to ECC check bits during
+  // shipment to LA"; Table A-2 (PDF 69, docs/spec_lookahead.md 1.7): SX,
+  // Z, SV, SC, SR, SVA and a taken SIC each load a "store" level.
+  // Buchholz §15.3 (printed p.240, PDF 265): the store-check counter
+  // "designates the next level from which an operand is to be sent to
+  // storage" -- the ring counters advance level by level, in order -- and
+  // §15.5 (printed p.246, PDF 271): "The arithmetic-bus counter first
+  // tests whether an interrupt is waiting, which would cause the present
+  // sequence to be abandoned".  So a store an I-box instruction made
+  // AHEAD of an older level reaches storage only after that level, and an
+  // interruption the older level raises housecleans it first: "The
+  // instruction and look-ahead units may be working on instructions which
+  // may never recur after the interruption and which, therefore, should
+  // leave no traces" (§15.1, printed p.230, PDF 255).
+  // THE MODEL.  An I-box store into core storage that completes while a
+  // level is pending (or in the interruption window after one completed,
+  // or with a recovery owed) is still executed as before, but its write
+  // is held (StretchStorage captureStore) in a STORE LEVEL loaded at the
+  // tail: kind LaStore, storeAddr = the word.  It is the look-ahead's
+  // like any level -- younger readers wait for it (levelHolds, waitFor,
+  // the instruction-word compare), a drain waits for it, cancelAll
+  // housecleans it (its store is then never made) -- and rl_store_retire makes the store
+  // when it reaches the head, outside the window, as the E-box removal
+  // waits.  No E-box time, and no I-box time beyond the arm clock: the
+  // "0.9 to 1.2 us to process an LA level corresponding to I-box
+  // instructions" (printed p.3-22, PDF 40) is not charged for any I-box
+  // level in this model, and is not started here.  NOT HELD: a store into
+  // words 0-31 (written at once, as before; words 7-15 wait on a pending
+  // level by iboxHazard, the index words 16-31 are in the recovery
+  // record, words 1-6 are not), T/SWAP, RNX, and the LAAR is not modelled
+  // for it (Table A-2 says "yes"; the model's one LAAR is FP-only).
+  // deferIboxStores is the switch the attributing injection turns off.
+  // (deferIboxStores and iboxStoreWord are above prepWouldAct.)
+  Bool storeNeedsLevel = deferIboxStores && !isValid(intPC)
+                         && (la.count() != 0 || intWin || intRecWanted);
+  // In the clock the I-box store completes: hold it in a store level.
+  function Action holdStoreInLevel(HWordAddr pc, InstrLen len, DecodedInstr d, WordAddr w) =
+    action
+      la.load(LaLevel{valid: True, kind: LaStore, di: d, pc: pc, len: len, da: tagged Invalid,
+                      data: tagged Invalid, fetchIssued: False, waitFor: tagged Invalid,
+                      branch: False, target: 0, storeAddr: tagged Valid w,
+                      storeAddr2: tagged Invalid, carry: LaCarry{addr: 0, lbo: 0}});
+      st.captureStore(la.tail(), w);
+    endaction;
+  Bool headStore = la.count() != 0 && la.headLevel().kind == LaStore;
+  Bool armStoreRetire = !armRecover && !busyXfer && !isValid(pendingIdxWrite)
+                        && !resumeReady && headStore && !intWin && !intRecWanted
+                        && st.writeReady();
   Bool armIntRecover = intRecWanted && !armRecover && !busyXfer && !isValid(pendingIdxWrite)
                        && !ebox.busy();
   Bool armRemove   = armRemoveBase && !intWin && !intRecWanted;
@@ -1023,6 +1129,7 @@ module mkStretchCore(StretchCore);
                       && la.count() == 0 && !ebox.busy() && ibusy == 0
                       && isValid(intDue);
   Bool armPrepare  = !armRecover && !busyXfer && !isValid(pendingIdxWrite) && !armIntRecover
+                     && !armStoreRetire
                      && (!resumeReady || yieldToPrepare) && (!headReady || (armRemoveBase && !armRemove))   // removal held by intWin only
                      && !armInterrupt;
 
@@ -1129,11 +1236,14 @@ module mkStretchCore(StretchCore);
   // the operation during which the indicator is turned on", "before
   // execution of the next instruction").  Nothing to give back (nothing
   // prepared after the level): no effect.
-  // NOT GIVEN BACK: a STORE TO CORE STORAGE an I-box instruction ahead
-  // made (SX, SV, SC, SR, Z, SIC: isIboxStore -- iboxHazard lets them run
-  // ahead of a level that does not name the word), so when one has started
-  // since the level's load there is no recovery at all (`stored`, below);
-  // and any indicator other than the index ones.  No time is charged for the housecleaning: no page found
+  // A STORE TO CORE STORAGE an I-box instruction made ahead (SX, SV, SC,
+  // SR, SVA, Z, SIC) is in a store level since 2026-11-20 (the note at
+  // deferIboxStores) and is housecleaned with the younger levels: never
+  // made.  NOT GIVEN BACK: an I-box store MADE ahead -- into words 0-31,
+  // T/SWAP, RNX, KC/LVE (isIboxStore counts them), or any store while
+  // deferIboxStores is off -- so when one has started since the level's
+  // load there is no recovery at all (`stored`, below); and any indicator
+  // other than the index ones.  No time is charged for the housecleaning: no page found
   // gives a number for it (Perf. Char. Vol. 1 PDF 11 and 63 list its
   // steps only), so the I-box's own countdown runs on.
   rule rl_int_recover (running && armIntRecover);
@@ -1149,18 +1259,18 @@ module mkStretchCore(StretchCore);
       // drain as before 2026-11-20.
       $display("StretchCore: interruption at half-word %0d NOT recovered: an indicator rose outside the level's completion", nxt);
     else if (stored)
-      // AN I-BOX STORE RAN AHEAD: the store cannot be taken back, and
-      // returning the counter would run it (and what led to it) AGAIN
-      // when the routine returns -- "LX / V+I / SX" behind the level would
-      // count twice.  So no recovery: the interruption is taken after the
-      // levels drain, late, as before 2026-11-20 (the wrong-way recovery
-      // never meets this: iboxHazard holds an I-box store while a guess is
-      // pending).  docs/NEXT.md "AN I-BOX STORE AHEAD OF AN INTERRUPTING
-      // LEVEL".
+      // AN I-BOX STORE WAS MADE AHEAD (one not held in a store level, the
+      // note above): it cannot be taken back, and returning the counter
+      // would run it (and what led to it) AGAIN when the routine returns
+      // -- "LX / V+I / SX" behind the level would count twice.  So no
+      // recovery: the interruption is taken after the levels drain, late,
+      // as before 2026-11-20 (the wrong-way recovery never meets this:
+      // iboxHazard holds an I-box store while a guess is pending).  The
+      // backstop since the store level (docs/NEXT.md).
       $display("StretchCore: interruption at half-word %0d NOT recovered: an I-box store ran ahead", nxt);
     else if (advanced || la.count() != 0 || pcReg != nxt) begin
       if (advanced) undoAdvance(r.rec, r.keepX, r.ownInd);
-      la.cancelAll();
+      la.cancelAll();      // with any store levels: their stores are never made
       guessPending <= False;
       pcReg <= nxt;
       // THE REFETCH COSTS TWO CLOCKS THE PAGES DO NOT GIVE: rl_interrupt
@@ -1182,7 +1292,19 @@ module mkStretchCore(StretchCore);
     haltedReg <= False;
   endrule
 
-  (* mutually_exclusive = "rl_recover, rl_io, rl_tail_write, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare, rl_int_recover" *)
+  // THE STORE LEVEL REACHES THE STORE-CHECK COUNTER: its held store goes
+  // to storage, in order (the note at deferIboxStores).  Not in the two
+  // clocks after a level completed, nor with a recovery owed: the level
+  // ahead of it may yet be the one an interruption belongs to.
+  rule rl_store_retire (running && armStoreRetire);
+    st.releaseCaptured(la.head());
+    la.retireHead();
+    ebusy <= eb;
+    ibusy <= ib;
+    haltedReg <= False;
+  endrule
+
+  (* mutually_exclusive = "rl_recover, rl_io, rl_tail_write, rl_idx_write, rl_exec_resume, rl_au_remove, rl_prepare, rl_int_recover, rl_store_retire" *)
   rule rl_recover (running && armRecover);
     // Wrong-way recovery (Perf. Char. p.3-23): undo the index
     // registers and index indicators the I-box changed ahead, take the
@@ -1870,6 +1992,12 @@ module mkStretchCore(StretchCore);
         la.retireHead();
       end else begin
         commitNext(pc, len, o.next);
+        // An I-box store that read its word first (SV, SC, SR, SVA, SIC)
+        // completes here: held in a store level, or counted as made.
+        if (iboxStoreWord(di) matches tagged Valid .w) begin
+          if (storeNeedsLevel) holdStoreInLevel(pc, len, di, w);
+          else storeSeq <= storeSeq + 1;
+        end
         Bool taken = (o.next != pc + ((len == Full) ? 2 : 1));
         Bit#(32) elapsed = clk - startClk;
         Bit#(16) budget = budgetClocks(di, taken) + boxX;
@@ -2289,14 +2417,24 @@ module mkStretchCore(StretchCore);
       // (or BESIDE a level the FP box holds, in the one clock the resume
       // yields: the level release, above yieldToPrepare; mkEBox refuses an
       // instruction that would bail.)
+      // An I-box store that will need a store level waits for a free one.
+      Maybe#(WordAddr) sw = iboxStoreWord(di);
       if ((!ebox.busyFor(OwnerLA) || yieldToPrepare)
-          && !iboxHazard(st, guessPending, di, nl)) begin
-        let d1 <- startExecute(pc, len, di,
+          && !iboxHazard(st, guessPending, di, nl)
+          && !(isValid(sw) && storeNeedsLevel && la.count() == 4)
+          && !lveBehindStore(di, nl)) begin
+        match {.completed, .d1} <- startExecute(pc, len, di,
                               isValid(intPC) ? tagged Valid pcReg : tagged Invalid);
         done = d1;
         advSeq <= advSeq + 1;   // the I-box has advanced (interruption recovery)
         iboxAt <= clk;          // ... in this clock (rl_int_watch)
-        if (isIboxStore(di)) storeSeq <= storeSeq + 1;
+        // storeSeq counts the I-box stores MADE ahead (not held in a
+        // level); one that reads first is counted, or held, when it
+        // completes (rl_exec_resume).
+        if (completed &&& sw matches tagged Valid .w &&& storeNeedsLevel)
+          holdStoreInLevel(pc, len, di, w);
+        else if (isIboxStore(di) && (completed || !isValid(sw)))
+          storeSeq <= storeSeq + 1;
         xholdPc <= tagged Invalid;
         serialPc <= tagged Invalid;
       end

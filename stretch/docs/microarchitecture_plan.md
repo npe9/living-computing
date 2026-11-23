@@ -95,7 +95,7 @@ in parentheses); **open** = no stage assigned yet.
 | An indexed FP operand in index storage costs one more I-box cycle (0.6 us): the index register and the operand are two reads of index storage | Perf. Char. Vol. 1 printed pp.3-17, 3-18, 3-23; Vol. 2 PDF 42, 64, 73 (I-BOX columns +0.6 us indexed) | DONE 2026-11-17: `StretchTiming.bsv` fpIndexedIboxClocks, +2 preparation clocks; + L LWF exact on PDF 42, 64, 65, 73, 95. `docs/atlas_oracle.md` "Closing the residuals" item 5 |
 | An immediate compare (KI ... KFEI) does not step through its own immediate bytes: 10 + 2(b − 24/y), read row by row | Perf. Char. Vol. 2 PDF 177-182 | DONE 2026-11-17 as a measurement at the atlas operands (`StretchTiming.bsv` eboxClocks, kFamily). The inverted-sign early end (PDF 127-132, 177-182: 12/14 clocks) is not modelled because eboxClocks sees no data. `docs/atlas_oracle.md` "Closing the residuals" item 4 |
 | I-box instructions load index-recovery pseudo-store levels | Perf. Char. p.3-22; Blosk p.33 | partial (3c; 2026-11-20): a record per look-ahead slot (index words, indicators, I-box start counts at the load) stands in for them, for both recoveries; their per-level cost and occupancy are not charged |
-| Interrupt recovery / housecleaning | Buchholz §15.6 (printed pp.246-247, PDF 271-272); Perf. Char. Vol. 1 printed pp.3-22..3-24 (PDF 40-42), PDF 11, 63; CE figs 3.2.22-23 | partial (2026-11-20, §1c 5f "INTERRUPTION RECOVERY"): an interruption raised by the level that just completed cancels the younger levels, restores the index words and index indicators and returns the counter (`rl_int_recover`); NOT when an I-box store ran ahead, NOT for other sources, housecleaning not timed (docs/NEXT.md) |
+| Interrupt recovery / housecleaning | Buchholz §15.6 (printed pp.246-247, PDF 271-272); Perf. Char. Vol. 1 printed pp.3-22..3-24 (PDF 40-42), PDF 11, 63; CE figs 3.2.22-23 | partial (2026-11-20, §1c 5f "INTERRUPTION RECOVERY"): an interruption raised by the level that just completed cancels the younger levels, restores the index words and index indicators and returns the counter (`rl_int_recover`); an I-box store run ahead waits in a store level and is housecleaned (second milestone, same day); NOT when a store was made ahead into words 0-31 or by T/RNX, NOT for other sources, housecleaning not timed (docs/NEXT.md) |
 | Serial and parallel arithmetic units, A/B and C/D registers | Buchholz §14.4 | planned (4) |
 | Floating-point arithmetic (all ops), timing per table 2 and CE figs 3.8.x | Ref. Manual pp.78-94; CE 3.3.x/3.8.x | partial (4c): single-precision L/LWF/+/+MG/M+/M+MG/ST/K/KMG/KR/KMGR/*/E+/E+I/SHF; divide, double precision, root (SRT), LFT, *+, F+ open. K compare VERIFIED against jb_af1c F202A1-6/A15-20 (all of AL/AE/AH, normal + XFN/XFP ranges). jb_af1c F202G (KR Compare-for-Range, p.45) RUNS and passes (`fp_compare_f202g.strap`, `verify_fp_compare_g_listing.py`): `Z,$IND` clears indicators (b1a6ad0), `BB1,$AH` sets the gate (63721f1), and KR was fixed to p.91 -- it sets AE to "accumulator low" and leaves AL and AH unchanged (the range path had wrongly set AH := acc>=opnd). Discriminating on KR's AE via G15. (F202G's own operands do not distinguish the AH-leave-vs-set aspect -- its AH-preset sub-tests all have cmp>=0 -- but p.91 mandates leaving AH.) |
 | Decimal VFL, radix conversion, VFL multiply/divide | Ref. Manual; CE 3.11.x | open |
@@ -6298,6 +6298,104 @@ Staged, each step green and committed:
      index changes but not a store, so lifting it is its own risk; a BD
      in the latch clocks; other sources; housecleaning time; level
      occupancy.
+   - **5f (2026-11-20): INTERRUPTION RECOVERY, second milestone: AN I-BOX
+     STORE GOES INTO A STORE LEVEL.** WHAT THE PAGES SAY OF A STORE RUN
+     AHEAD: Perf. Char. Vol. 1 printed p.3-20 (PDF 38), "All 'to-memory'
+     operations involving the main memory from the 7030 CPU are prepared
+     by the I-box and accomplished by the look-ahead", and "In the case of
+     I-box store type instructions (SX, SV, SC, SR, SVA, R, RXZ, T, SWAP,
+     etc.) the store operands are already available during I-box
+     processing time and can be converted to ECC check bits during
+     shipment to LA"; Table A-2 (PDF 69; docs/spec_lookahead.md 1.7): SX,
+     Z, SV, SC, SR, SVA and a taken SIC each load a "store" level (LAAR
+     "yes"). Buchholz §15.3 (printed p.240, PDF 265): the store-check
+     counter "designates the next level from which an operand is to be
+     sent to storage", the counters advancing level by level; §15.5
+     (printed p.246, PDF 271): "The arithmetic-bus counter first tests
+     whether an interrupt is waiting, which would cause the present
+     sequence to be abandoned"; §15.1 (printed p.230, PDF 255): the units
+     "may be working on instructions which may never recur after the
+     interruption and which, therefore, should leave no traces"; and
+     printed p.229 (PDF 254), "A store operation causes the result to be
+     returned to an available level in the look-ahead unit and then to be
+     sent to storage". So the store is not undone: it was never made. The
+     model wrote it at once. THE MECHANISM: an I-box store into core
+     storage (word 32 up) that completes while a level is pending, in the
+     two clocks after one completed with the system enabled, or with a
+     recovery owed, still executes as before, but StretchStorage keeps its
+     write (`captureStore(slot, word)`, one register per look-ahead slot)
+     and the core loads a STORE LEVEL at the tail (`LaStore`, storeAddr =
+     the word). Everything that sees levels sees it: younger readers wait
+     (levelHolds, waitFor, the instruction-word compare), a drain waits,
+     cancelAll housecleans it (its register is never released and is
+     rewritten by the next capture into the slot). `rl_store_retire`
+     releases the write when the level is the head, outside the two
+     latch clocks and with no recovery owed -- the same gate the E-box
+     removal has -- in an arm clock, with no E-box time and no further
+     I-box time (p.3-22's "0.9 to 1.2 us to process an LA level
+     corresponding to I-box instructions" is charged for no I-box level in
+     this model and is not started here). `storeSeq` now counts only the
+     I-box stores MADE ahead, so the `stored` guard is the backstop for
+     what is not held: stores into words 0-31 (7-15 wait on a pending
+     level by iboxHazard; 16-31 are in the recovery record; 1-6 are not),
+     T/SWAP, RNX, KC/LVE (isIboxStore counts them), and everything with
+     the switch off. No suite run reaches it now (no "an I-box store ran
+     ahead" line). NOT MODELLED: the LAAR for these levels (Table A-2 says
+     "yes"; the model's one LAAR is FP-only); a not-taken SIC still gets a
+     store level, with nothing captured (Table A-2: "SIC store level will
+     not exist if branch is not taken"). A held word is not forwarded: an
+     older reader must see storage as it is, and no younger one passes
+     the level.
+     NEW DECK `int_recovery_store` (G: SX run ahead of an interrupting
+     multiply behind an older divide; H: SV, which reads first and
+     completes in rl_exec_resume; I: an SX in the two latch clocks after
+     the multiply completed, nothing older pending): the stored words stay
+     0, the landing is the instruction after the multiply (4236, 4250,
+     4262), the trail registers stay 0. `int_recovery_resume` case F now recovers (its store was the
+     open case) and still counts once.
+     DISCRIMINATION (observed; failure sets at the run lines in
+     tests/run_tests.sh): K1 deferIboxStores := False (real file, exact
+     inverse edit, cmp IDENTICAL) -- store deck wheregi/stwghi/x6-x10,
+     CYCLES 564, MEMREADS 43 (case G's interruption lost to the BD, H's and
+     I's late), resume CYCLES 561 / MEMREADS 56 only; K2 the retire's
+     window gate dropped -- store deck stwg stwh CYCLES 595 MEMREADS 48,
+     resume cnt2 x2 (counted twice); K4 no capture -- store deck stwg stwh
+     stwi CYCLES 592, resume cnt2 x2; K5 storeNeedsLevel's window terms
+     dropped -- store deck wherei stwi x10 CYCLES 592 MEMREADS 48 (case I),
+     nothing on the other decks (all in the real file, exact inverse
+     edit, cmp IDENTICAL).
+     MOVED PINS (all MODEL, all given back by K1 with every value check
+     passing): `int_recovery_resume` 561/56 -> 612/60 (case F recovers and
+     its trail re-runs), `index_after_level` 2896 -> 2875, and
+     `negative_effective_address` 811 -> 827 (812 with only the LVE wait
+     injected off, K8: its LVEs wait 15 clocks for store levels); both are
+     I-box stores behind pending levels whose writes no longer sit in the
+     store queue (which holds every read off while non-empty) and whose
+     levels retire in an arm clock -- from the mechanism, not a per-clock
+     trace. THE LVE WAIT (`lveBehindStore`, a MODEL rule): LVE reads a
+     chain of words and iboxHazard tests only the first, so an LVE waits
+     while a store level is pending (the pages drain the look-ahead for
+     LVE only with its address in index storage, Tables 4-9 IR column).
+     UNREACHED GUARD, recorded: K6 (headReady's `kind != LaStore`
+     dropped) moves nothing on the recovery decks, index_after_level or
+     negative_effective_address; K7 (the full-look-ahead wait in
+     rl_prepare dropped) moves only index_after_level's CYCLES
+     (2875 -> 2797, values pass).
+     HALT CLOCKS against master (the 7a1065f suite log, whose bsv/ is
+     byte-identical to master's; `STRETCH_HALT_REPORT=1`; only sections
+     that print a halt report are compared, so `index_after_level`, whose
+     CYCLES pin moved, is outside it): the table is in this milestone's
+     commit message, made from the final suite run. Two unpinned MCP runs
+     move (`PAST T MOVE` 6339176 -> 6339172, `MCP's OWN IOD DECK`
+     6734474 -> 6734458, MEMREADS unchanged); K1 gives both master numbers
+     back.
+     THE ATLAS (Vol. 2 PDF 42-101, every FP page, `atlas_oracle.py --pdf
+     42 ... --pdf 101 --tsv`, 9406 cases): the TSV is byte-identical to
+     master's (2da597e's bsv/, run the same way). Nothing moved.
+     NOT DONE: the LAAR and p.3-22's per-level time for I-box levels; the
+     IX-Rec. levels' occupancy (an index change ahead is still undone from
+     the record, not a level); other interruption sources; a BD in the
+     latch clocks.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

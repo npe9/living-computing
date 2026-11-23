@@ -137,9 +137,11 @@
 // clocks: an instruction started there commits before the level's
 // indicators are set, and the 7030 undoes such advance on an interruption
 // (Perf. Char. Vol. 1 printed p.3-24; Buchholz §15.6; Ref. Manual p.48),
-// which the model cannot.  Where a box-held multiply's interruption lands
-// is pinned, as a MODEL fact, by decks/fp_box_interrupt_landing.strap; the
-// gap is docs/NEXT.md's "AN INTERRUPTION RAISED BY A BOX-HELD LEVEL".  The
+// which the model could not until 2026-11-20 (StretchCore rl_int_recover;
+// and a store made there waits in a store level, the deferIboxStores
+// note).  Lifting the confinement is docs/NEXT.md "AN INTERRUPTION RAISED
+// BY A LEVEL" item 2.  Where a box-held multiply's interruption lands is
+// pinned by decks/fp_box_interrupt_landing.strap.  The
 // interlock is unchanged: the level stays in the look-ahead until the
 // resume retires it, so iboxHazard holds back an instruction that reads or
 // writes what it writes (decks/fp_box_release_interlock.strap).
