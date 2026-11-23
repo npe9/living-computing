@@ -1,0 +1,193 @@
+#!/usr/bin/env python3
+"""A small model of the front-end processor (FEP) on the SCSI bus.
+
+PROTOTYPE, for the reference model only (pimm.Machine.fep).  It is the
+other end of the built-in scsi_command: a SCSI target of the
+processor type at unit 7, which takes packets with SEND on LUN 0 and
+gives them with RECEIVE on LUN 1, and answers the file requests the
+IPL makes.  The real FEP (a PSI running pimfep.ptf) is not held as
+source; this is written from the PIMOS side of the protocol:
+
+  SCSI level     bios/scsi/scsi_common.kl1, scsi_processor.kl1
+                 (TEST UNIT READY 00h, SEND 0Ah, RECEIVE 08h; group 0
+                 CDBs; the length in bytes 2-4)
+  packet level   the IPL image's scsi_fep_module (send_last_packet/9,
+                 send_continued_packet/10, receive_packet*/9,
+                 msg_to_str8/2, str8_to_msg*/n as decompiled by
+                 asm/kl1decomp.py) and the kernel's
+                 bios/fep_module/scsi_fep.kl1; laid out in
+                 docs/binary_reverse_engineering.md 1.4
+  commands       macro/pimos/pimos/pimos.vmac (fep#read_open 201,
+                 fep#getb 210, fep#close 60, fep#abort 70; fep#normal
+                 1, fep#eod 2, fep#abnormal 5)
+
+OURS, each for want of the FEP's own code:
+  - MAX_BUFFER, the packet buffer size scsi_init reports: 16000, the
+    number in the stand-in bios/scsi/scsi_blt.kl1;
+  - a reply is queued when the request's last packet arrives, and a
+    RECEIVE with nothing queued is not answered (command() returns
+    None; the caller holds it);
+  - an open of a file that is not there is answered with status 5;
+  - the unit of getb's count: `getb_unit` bytes per unit, 1 by
+    default.  The IPL does not determine it; the kernel's file
+    device counts bytes (server/fep/file/file_dvcb.kl1: getb(Size)
+    asks for Size*2+1).  docs/binary_reverse_engineering.md 1.4;
+  - a getb at the end of the data is answered with status 2 every
+    time it is asked (the loader asks more than once);
+  - a reply longer than the RECEIVE's length is cut into continued
+    packets as the IPL cuts its own (flag 1 on all but the last).
+    The IPL does not then ask for the rest (ref_scsi.py, "small
+    buffer"), so in practice a reply must fit;
+  - close is answered with status 1.
+Anything else (another unit or LUN, another CDB, another command)
+raises FepError: nothing is guessed.
+"""
+import struct
+
+TEST_UNIT_READY, RECEIVE, SEND = 0x00, 0x08, 0x0a
+READ_OPEN, GETB, CLOSE, ABORT = 201, 210, 60, 70
+NORMAL, EOD, ABNORMAL = 1, 2, 5
+
+
+class FepError(Exception):
+    pass
+
+
+def pack_message(args):
+    """The body of a packet after the 8-byte header: command or status,
+    the number of arguments, a length word for each (-1 for an
+    integer), then the arguments, a string padded with zeros to four
+    bytes.  args[0] is the command or status."""
+    rest = args[1:]
+    out = struct.pack('>ii', args[0], len(rest))
+    for a in rest:
+        out += struct.pack('>i', -1 if isinstance(a, int) else len(a))
+    for a in rest:
+        out += struct.pack('>i', a) if isinstance(a, int) else a + bytes(-len(a) % 4)
+    return out
+
+
+def unpack_message(body):
+    """The inverse of pack_message: [command, argument, ...]."""
+    cmd, n = struct.unpack('>ii', body[:8])
+    lens = struct.unpack('>%di' % n, body[8:8 + 4 * n])
+    at, out = 8 + 4 * n, [cmd]
+    for ln in lens:
+        if ln == -1:
+            out.append(struct.unpack('>i', body[at:at + 4])[0])
+            at += 4
+        else:
+            out.append(body[at:at + ln])
+            at += ln + (-ln % 4)
+    if at != len(body):
+        raise FepError('a message of %d bytes, %d used' % (len(body), at))
+    return out
+
+
+class Fep:
+    MAX_BUFFER = 16000
+    UNIT, SEND_LUN, RECEIVE_LUN = 7, 0, 1
+
+    def __init__(self, open_file, getb_unit=1, limit=None, max_buffer=None, lag=False,
+                 getb_bytes=None):
+        """open_file(path bytes) -> the file's bytes, or None.  For
+        tests: limit, the number of commands after which the device
+        stops answering; max_buffer, another buffer size; lag, every
+        RECEIVE is refused once before it is answered (a reply that
+        is not ready when it is asked for); getb_bytes, the bytes a
+        getb gives whatever it asks for."""
+        self.open_file = open_file
+        self.getb_unit = getb_unit
+        self.limit = limit
+        self.lag = lag
+        self.lagged = False
+        self.getb_bytes = getb_bytes
+        if max_buffer is not None:
+            self.MAX_BUFFER = max_buffer
+        self.wire = []          # (name, CDB, bytes out, bytes in) per finished command
+        self.messages = []      # ('>' or '<', device id, [command or status, args...])
+        self.partial = {}       # device id -> the pieces of a continued message
+        self.files = {}         # device id -> [bytes, position]
+        self.replies = []       # packets to give, in order
+        self.stopped = False
+
+    def command(self, unit, lun, cdb, length, direction, data):
+        """One scsi_command.  Returns (result, bytes received), or None
+        when the command cannot finish yet."""
+        if self.limit is not None and len(self.wire) >= self.limit:
+            self.stopped = True
+            return None
+        if unit != self.UNIT or len(cdb) != 5:
+            raise FepError('unit %d, CDB %s' % (unit, cdb.hex()))
+        op, clun = cdb[0], cdb[1] >> 5
+        clen = cdb[2] << 16 | cdb[3] << 8 | cdb[4]
+        if clun != lun or cdb[1] & 31:
+            raise FepError('LUN %d, CDB %s' % (lun, cdb.hex()))
+        if op == TEST_UNIT_READY and direction == 0 and length == 0 and clen == 0:
+            self.wire.append(('TEST UNIT READY', cdb, b'', b''))
+            return 0, b''
+        if op == SEND and lun == self.SEND_LUN and direction == 1 and clen == length:
+            self.wire.append(('SEND', cdb, data, b''))
+            self.packet(data)
+            return 0, b''
+        if op == RECEIVE and lun == self.RECEIVE_LUN and direction == 2 and clen == length:
+            if not self.replies:
+                return None
+            if self.lag and not self.lagged:
+                self.lagged = True
+                return None
+            self.lagged = False
+            if len(self.replies[0]) > length:
+                # cut: this piece is continued, the rest keeps the header
+                p = self.replies[0]
+                self.replies[0] = p[:4] + struct.pack('>i', 1) + p[8:length]
+                self.replies.insert(1, p[:8] + p[length:])
+            out = self.replies.pop(0)
+            self.wire.append(('RECEIVE', cdb, b'', out))
+            return 0, out
+        raise FepError('command %s on LUN %d, direction %d, length %d'
+                       % (cdb.hex(), lun, direction, length))
+
+    def packet(self, data):
+        if len(data) < 8:
+            raise FepError('a packet of %d bytes' % len(data))
+        dev, flag = struct.unpack('>ii', data[:8])
+        self.partial.setdefault(dev, []).append(data[8:])
+        if flag == 1:
+            return
+        if flag != 0:
+            raise FepError('packet flag %d' % flag)
+        msg = unpack_message(b''.join(self.partial.pop(dev)))
+        self.messages.append(('>', dev, msg))
+        reply = self.request(dev, msg)
+        if reply is not None:
+            self.messages.append(('<', dev, reply))
+            self.replies.append(struct.pack('>ii', dev, 0) + pack_message(reply))
+
+    def request(self, dev, msg):
+        cmd = msg[0]
+        if cmd == READ_OPEN and len(msg) == 5 and dev not in self.files:
+            # {Id, 201, "", User, Password, Path}
+            data = self.open_file(msg[4])
+            if data is None:
+                return [ABNORMAL]
+            self.files[dev] = [data, 0]
+            return [NORMAL]
+        if cmd == GETB and len(msg) == 2 and dev in self.files:
+            f = self.files[dev]
+            chunk = f[0][f[1]:f[1] + (self.getb_bytes or msg[1] * self.getb_unit)]
+            if not chunk:
+                return [EOD]
+            f[1] += len(chunk)
+            return [NORMAL, chunk]
+        if cmd == CLOSE and len(msg) == 1 and dev in self.files:
+            del self.files[dev]
+            return [NORMAL]
+        if cmd == ABORT and len(msg) == 1:
+            return None
+        raise FepError('device %d: request %r' % (dev, msg))
+
+
+def hexdump(b, width=4):
+    """Bytes as groups of `width`, in hex."""
+    return ' '.join(b[i:i + width].hex() for i in range(0, len(b), width))
