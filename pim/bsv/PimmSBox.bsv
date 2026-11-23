@@ -1,18 +1,36 @@
 // PIM/m core: the string box.  Multi-cycle string built-ins over
 // memory.  A string is {STRG, address} -> {CDESC, pad << 27 | type <<
 // 24 | words}, then `words` cells of 32 bits with the elements packed
-// from the top; type 3 is 8-bit elements, 4 is 16-bit
+// from the top; type 3 is 8-bit elements, 4 is 16-bit, 5 is 32-bit
 // (library/kbn/kbnheap.kl1 string_cdesc; the IPL image's message
 // strings decode this way).
 //
 //   info(s)            a = {INT, length}, b = {INT, element bits}
 //   element(s, i)      a = {INT, element i}
 //   newStr(n, bits)    a = a new string of n zero elements
+//   tryElement(s, i)   the same for a guard: ok is False when i is
+//                      out of range
+//   changeSize(s,bits) a = s with elements of `bits` bits (8, 16, 32).
+//                      "The smallest index element occupies the
+//                      highest order bits" and widening pads with zero
+//                      elements (PIMOS manual, change_element_size):
+//                      with the elements packed from the top that is
+//                      the same words under another descriptor, so the
+//                      words are copied as they are (the padding of a
+//                      string is zero)
+//   stringOp(op, s1, p1, n, p2, s2)
+//                      a = a copy of s1 in which each of the n
+//                      elements from p1 is replaced by operation `op`
+//                      (0..15, the manual's table "General String
+//                      Operations") of itself and the element of s2
+//                      from p2; b = s2.  The copy is made first, then
+//                      one word is rewritten per element.
 //   setElement(s,i,e)  a = a copy of s with element i set to e.  The
 //                      machine could update in place when s is singly
 //                      referenced; without MRB this box always copies.
 //
-// An index out of range, a size other than 8 or 16, or a pointer that
+// An index out of range, a size other than 8, 16 or 32 (new strings: 8
+// or 16), strings of different sizes in stringOp, or a pointer that
 // is not at a descriptor stops the simulation: the built-in's
 // exception is not modelled.
 package PimmSBox;
@@ -23,21 +41,26 @@ import PimmTypes::*;
 import PimmMem::*;
 import PimmGBox::*;
 
-typedef struct { Cell a; Cell b; } SResult deriving (Bits);
+typedef struct { Cell a; Cell b; Bool ok; } SResult deriving (Bits);
 
 interface PimmSBox;
   method Action info(Cell s);
   method Action element(Cell s, Bit#(32) i);
+  method Action tryElement(Cell s, Bit#(32) i);
   method Action newStr(Bit#(32) n, Bit#(32) bits);
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
+  method Action changeSize(Cell s, Bit#(32) bits);
+  method Action stringOp(Bit#(4) op, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KNew, KSet } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp } SKind deriving (Bits, Eq);
 
-typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; } SReq deriving (Bits);
+typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
+  SReq deriving (Bits);
 
-typedef enum { SIdle, SDesc, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr }
+typedef enum { SIdle, SDesc, SDesc2, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr,
+               SOp0, SOp1, SOp2 }
   SState deriving (Bits, Eq);
 
 module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
@@ -46,6 +69,8 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   Reg#(Bit#(32)) desc  <- mkRegU;     // the descriptor's value
   Reg#(Addr)     dst   <- mkRegU;     // the new string
   Reg#(Bit#(24)) k     <- mkRegU;     // the word being written
+  Reg#(Bit#(32)) j     <- mkRegU;     // stringOp: the element in hand
+  Reg#(Bit#(32)) e2    <- mkRegU;     // ... and s2's
   FIFO#(SReq)    reqQ  <- mkFIFO;
   FIFO#(SResult) resQ  <- mkFIFO;
 
@@ -53,23 +78,50 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   function Addr toAddr(Bit#(24) v) = truncate(v);   // a word count or index as an address offset
 
   // from a descriptor
-  function Bool     is16(Bit#(32) d)  = d[26:24] == 4;
+  // lg: log2 of the element bits (3, 4, 5); a word holds 1 << (5 - lg)
+  function Bit#(3)  lgOf(Bit#(32) d) = d[26:24];
   function Bit#(24) wordsOf(Bit#(32) d) = d[23:0];
   function Bit#(32) lengthOf(Bit#(32) d);
     Bit#(32) w = zeroExtend(wordsOf(d));
-    return (is16(d) ? (w << 1) : (w << 2)) - zeroExtend(d[28:27]);
+    return (w << (5 - lgOf(d))) - zeroExtend(d[28:27]);
   endfunction
+  function Bit#(32) bitsOf(Bit#(32) d) = 1 << lgOf(d);
 
   // element i of a string with this descriptor: its word, the shift
   // that brings it to the bottom, its mask
-  function Bit#(24) wordIx(Bit#(32) d, Bit#(32) i) = truncate(is16(d) ? (i >> 1) : (i >> 2));
-  function Bit#(5)  shiftOf(Bit#(32) d, Bit#(32) i) =
-    is16(d) ? (i[0] == 0 ? 16 : 0) : (24 - (zeroExtend(i[1:0]) << 3));
-  function Bit#(32) maskOf(Bit#(32) d) = is16(d) ? 32'h0000ffff : 32'h000000ff;
+  function Bit#(24) wordIx(Bit#(32) d, Bit#(32) i) = truncate(i >> (5 - lgOf(d)));
+  function Bit#(5)  shiftOf(Bit#(32) d, Bit#(32) i);
+    Bit#(3) per = 5 - lgOf(d);
+    Bit#(5) sub = truncate(i) & ((1 << per) - 1);
+    return (((1 << per) - 1 - sub) << lgOf(d));
+  endfunction
+  function Bit#(32) maskOf(Bit#(32) d) =
+    lgOf(d) == 5 ? 32'hffffffff : (lgOf(d) == 4 ? 32'h0000ffff : 32'h000000ff);
+
+  function Bit#(32) operate(Bit#(4) o, Bit#(32) a, Bit#(32) b);
+    case (o)
+      0: return 0;
+      1: return a & b;
+      2: return ~a & b;
+      3: return b;
+      4: return a & ~b;
+      5: return a;
+      6: return a ^ b;
+      7: return a | b;
+      8: return ~(a | b);
+      9: return ~(a ^ b);
+      10: return ~a;
+      11: return ~a | b;
+      12: return ~b;
+      13: return a | ~b;
+      14: return ~(a & b);
+      default: return 32'hffffffff;
+    endcase
+  endfunction
 
   function Action answer(Cell a, Cell b);
     action
-      resQ.enq(SResult { a: a, b: b });
+      resQ.enq(SResult { a: a, b: b, ok: True });
       st <= SIdle;
     endaction
   endfunction
@@ -99,13 +151,34 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     let c <- mem.data;
     let d = c.val;
     if (c.tag != tag_CDESC) fatal("string without a descriptor");
-    if (d[26:24] != 3 && d[26:24] != 4) fatal("string element type not 8 or 16 bits");
-    desc <= d;
+    if (d[26:24] != 3 && d[26:24] != 4 && d[26:24] != 5) fatal("string element type not 8, 16 or 32 bits");
+    // changeSize: the same words under a new descriptor
+    Bit#(3) lgN = rq.i == 8 ? 3 : (rq.i == 16 ? 4 : 5);
+    Bit#(32) len = lengthOf(d);
+    Bit#(32) newLen = lgN >= lgOf(d) ? ((len + (1 << (lgN - lgOf(d))) - 1) >> (lgN - lgOf(d)))
+                                      : (len << (lgOf(d) - lgN));
+    Bit#(32) pad = (zeroExtend(wordsOf(d)) << (5 - lgN)) - newLen;
+    Bit#(32) changed = (pad << 27) | (zeroExtend(lgN) << 24) | zeroExtend(wordsOf(d));
+    desc <= rq.k == KChg ? changed : d;
     if (rq.k == KInfo)
-      answer(intC(lengthOf(d)), intC(is16(d) ? 16 : 8));
+      answer(intC(lengthOf(d)), intC(bitsOf(d)));
+    else if (rq.k == KTry && rq.i >= lengthOf(d)) begin
+      resQ.enq(SResult { a: ?, b: ?, ok: False });
+      st <= SIdle;
+    end
+    else if (rq.k == KChg) begin
+      if (rq.i != 8 && rq.i != 16 && rq.i != 32) fatal("change_element_size: not 8, 16 or 32");
+      gbox.alloc(toAddr(wordsOf(d)) + 1);
+      st <= SAlloc;
+    end
+    else if (rq.k == KOp) begin
+      if (!inMemory(rq.s2.val)) fatal("string pointer outside memory");
+      mem.read(cellAddr(rq.s2));
+      st <= SDesc2;
+    end
     else begin
       if (rq.i >= lengthOf(d)) fatal("string index out of range");
-      if (rq.k == KElem) begin
+      if (rq.k == KElem || rq.k == KTry) begin
         mem.read(src + 1 + toAddr(wordIx(d, rq.i)));
         st <= SElem;
       end
@@ -113,6 +186,44 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
         gbox.alloc(toAddr(wordsOf(d)) + 1);
         st <= SAlloc;
       end
+    end
+  endrule
+
+  rule gotDesc2 (st == SDesc2);
+    let c <- mem.data;
+    let d2 = c.val;
+    if (c.tag != tag_CDESC || lgOf(d2) != lgOf(desc)) fatal("string_operation: strings of different kinds");
+    // i = p1, e = n: both ranges must lie inside their strings
+    if (rq.i + rq.e > lengthOf(desc) || rq.p2 + rq.e > lengthOf(d2) || rq.i + rq.e < rq.i)
+      fatal("string_operation: out of range");
+    gbox.alloc(toAddr(wordsOf(desc)) + 1);
+    st <= SAlloc;
+  endrule
+
+  // stringOp, after the copy: element j of the range
+  rule op0 (st == SOp0);
+    mem.read(cellAddr(rq.s2) + 1 + toAddr(wordIx(desc, rq.p2 + j)));
+    st <= SOp1;
+  endrule
+
+  rule op1 (st == SOp1);
+    let c <- mem.data;
+    e2 <= (c.val >> shiftOf(desc, rq.p2 + j)) & maskOf(desc);
+    mem.read(dst + 1 + toAddr(wordIx(desc, rq.i + j)));
+    st <= SOp2;
+  endrule
+
+  rule op2 (st == SOp2);
+    let c <- mem.data;
+    let sh = shiftOf(desc, rq.i + j);
+    let m = maskOf(desc);
+    Bit#(32) e1 = (c.val >> sh) & m;
+    mem.write(dst + 1 + toAddr(wordIx(desc, rq.i + j)),
+              intC((c.val & ~(m << sh)) | ((operate(rq.op, e1, e2) & m) << sh)));
+    if (j + 1 == rq.e) answer(mkCell(tag_STRGx, absAddr(dst)), rq.s2);
+    else begin
+      j <= j + 1;
+      st <= SOp0;
     end
   endrule
 
@@ -130,13 +241,17 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   rule wrDesc (st == SWrDesc);
     mem.write(dst, mkCell(tag_CDESC, desc));
     k <= 0;
-    if (wordsOf(desc) == 0) answer(mkCell(tag_STRGx, absAddr(dst)), ?);
+    j <= 0;
+    if (wordsOf(desc) == 0) answer(mkCell(tag_STRGx, absAddr(dst)), rq.s2);
     else st <= (rq.k == KNew) ? SFill : SCopyRd;
   endrule
 
   function Action wrote();
     action
-      if (k + 1 == wordsOf(desc)) answer(mkCell(tag_STRGx, absAddr(dst)), ?);
+      if (k + 1 == wordsOf(desc)) begin
+        if (rq.k == KOp && rq.e != 0) st <= SOp0;
+        else answer(mkCell(tag_STRGx, absAddr(dst)), rq.s2);
+      end
       else begin
         k <= k + 1;
         st <= (rq.k == KNew) ? SFill : SCopyRd;
@@ -158,16 +273,22 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     let c <- mem.data;
     let sh = shiftOf(desc, rq.i);
     let m = maskOf(desc);
-    Bit#(32) v = (k == wordIx(desc, rq.i)) ? ((c.val & ~(m << sh)) | ((rq.e & m) << sh)) : c.val;
+    Bit#(32) v = (rq.k == KSet && k == wordIx(desc, rq.i))
+                 ? ((c.val & ~(m << sh)) | ((rq.e & m) << sh)) : c.val;
     mem.write(dst + 1 + toAddr(k), intC(v));
     wrote;
   endrule
 
-  method Action info(Cell s) = reqQ.enq(SReq { k: KInfo, s: s, i: ?, e: ? });
-  method Action element(Cell s, Bit#(32) i) = reqQ.enq(SReq { k: KElem, s: s, i: i, e: ? });
-  method Action newStr(Bit#(32) n, Bit#(32) bits) = reqQ.enq(SReq { k: KNew, s: ?, i: n, e: bits });
-  method Action setElement(Cell s, Bit#(32) i, Bit#(32) e) =
-    reqQ.enq(SReq { k: KSet, s: s, i: i, e: e });
+  function SReq mk(SKind kd, Cell s, Bit#(32) i, Bit#(32) e) =
+    SReq { k: kd, s: s, i: i, e: e, s2: ?, p2: ?, op: ? };
+  method Action info(Cell s) = reqQ.enq(mk(KInfo, s, ?, ?));
+  method Action element(Cell s, Bit#(32) i) = reqQ.enq(mk(KElem, s, i, ?));
+  method Action tryElement(Cell s, Bit#(32) i) = reqQ.enq(mk(KTry, s, i, ?));
+  method Action newStr(Bit#(32) n, Bit#(32) bits) = reqQ.enq(mk(KNew, ?, n, bits));
+  method Action setElement(Cell s, Bit#(32) i, Bit#(32) e) = reqQ.enq(mk(KSet, s, i, e));
+  method Action changeSize(Cell s, Bit#(32) bits) = reqQ.enq(mk(KChg, s, bits, ?));
+  method Action stringOp(Bit#(4) o, Cell s1, Bit#(32) p1, Bit#(32) n, Bit#(32) p2, Cell s2) =
+    reqQ.enq(SReq { k: KOp, s: s1, i: p1, e: n, s2: s2, p2: p2, op: o });
   method ActionValue#(SResult) result;
     resQ.deq;
     return resQ.first;

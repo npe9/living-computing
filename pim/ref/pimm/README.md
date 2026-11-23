@@ -42,7 +42,9 @@ instructions, listed in its header), `lockstep_pack.py` a goal of
 more than eleven arguments, `lockstep_newm.py` whole module objects
 (`new_module`), `lockstep_file.py` and `lockstep_file3.py` whole real
 object files through `decode/8`, `lockstep_pool.py` the built-in
-merger under the IPL's keyed pool; 95
+merger under the IPL's keyed pool, `lockstep_load.py` a real file
+loaded by `ipl_loader:load_file/9` with the IPL's own reader and
+checksum; 102
 instructions now. No
 garbage collection, no MRB, no shoen, no exceptions.
 

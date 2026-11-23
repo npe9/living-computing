@@ -78,7 +78,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Twenty-two tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test. Twenty-three tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -121,9 +121,11 @@ whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
 `ipl_pool:keyed_set/2`, against a dictionary; the merger is a waiting
-goal here, `PimmNBox.bsv`, not the machine's merger cell). State: 95
-instructions (`set_nil` and `enqueue_goal_external` are also in both
-models but no test runs them yet); goals as
+goal here, `PimmNBox.bsv`, not the machine's merger cell) and `load` (`ipl_loader:load_file/9`
+loads a real object file with the IPL's own buffer reader, checksum
+and atom-number pool; a file with its checksum altered is refused;
+`string_operation`, `change_element_size`, 32-bit strings). State: 102
+instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

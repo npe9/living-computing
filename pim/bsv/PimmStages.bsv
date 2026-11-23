@@ -77,7 +77,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod,
-               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4 } XState deriving (Bits, Eq);
+               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4,
+               XSEl, XSo1, XSo2, XSo3, XSo4 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
@@ -101,6 +102,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
+  Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -124,12 +126,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   operand[6] = ins2.val[7:0];
   Stub stub = fromMaybe(?, stubOf(op));
   Bool arithHere = op == op_b_add || op == op_b_subtract || op == op_b_and || op == op_b_or
+                || op == op_b_exclusive_or
                 || op == op_b_shift_left || op == op_b_shift_right;
   Bool builtinHere = arithHere || op == op_b_multiply || op == op_new_string
                   || op == op_b_string_element || op == op_set_string_element
                   || op == op_new_vector || op == op_set_vector_element
                   || op == op_b_vector_element || op == op_new_instruction
-                  || op == op_new_module || op == op_calculate_priority_from_minimum;
+                  || op == op_new_module || op == op_calculate_priority_from_minimum
+                  || op == op_change_element_size || op == op_string_operation;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -200,7 +204,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
-                      || op == op_add;
+                      || op == op_add || op == op_exclusive_or || op == op_string_element;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -649,7 +653,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XVEl;
       end
     end
+    else if (op == op_string_element) begin
+      // guard string_element(String, Position, ^Element): the string
+      // box says whether the position is inside
+      if (!isStrg(a) || !isInt(b)) guardFail;
+      else begin
+        sbox.tryElement(a, b.val);
+        st <= XSEl;
+      end
+    end
     else if (!isInt(a) || !isInt(b)) guardFail;
+    else if (op == op_exclusive_or) begin
+      regs.wr(z, intC(a.val ^ b.val));
+      next;
+    end
     else if (op == op_modulo) begin
       // a zero divisor fails the guard; the divide box takes 32 steps
       if (b.val == 0) guardFail;
@@ -884,6 +901,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    : (op == op_b_subtract) ? pack(ia - ib)
                    : (op == op_b_and) ? (a.val & b.val)
                    : (op == op_b_or) ? (a.val | b.val)
+                   : (op == op_b_exclusive_or) ? (a.val ^ b.val)
                    : (op == op_b_shift_right) ? (a.val >> count)
                    : (a.val << count);
         regs.wr(z, intC(r));
@@ -897,6 +915,23 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         mbox.multiply(a.val, b.val);
         st <= XMul;
+      end
+    end
+    else if (op == op_change_element_size) begin
+      // change_element_size(String, Bits, ^NewString)
+      if (!isStrg(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        sbox.changeSize(a, b.val);
+        st <= XBStr;
+      end
+    end
+    else if (op == op_string_operation) begin
+      // the binary form only: a vector of five (compiler/blt.kl1)
+      if (!isInt(a) || a.val > 15 || isLongVec(b) || !isVec(b) || sizeOf(b) != 5) stop(EndUnimp);
+      else begin
+        packK <= 0;
+        vbox.element(b, 0);
+        st <= XSo1;
       end
     end
     else if (op == op_new_string) begin
@@ -990,7 +1025,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule bStr (st == XBStr);
     let r <- sbox.result;
-    if (op == op_new_string) begin
+    if (op == op_new_string || op == op_change_element_size) begin
       regs.wr(z, r.a);
       finish(tagged Next afterBuiltin);
     end
@@ -1002,6 +1037,52 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(operand[3], r.a);
       finish(tagged Next afterBuiltin);
     end
+  endrule
+
+  rule sElement (st == XSEl);
+    let r <- sbox.result;
+    if (!r.ok) guardFail;
+    else begin
+      regs.wr(z, r.a);
+      next;
+    end
+  endrule
+
+  // string_operation(Op, {Pos1, Str1, Len, Pos2, Str2}, ^NewS1, ^NewS2):
+  // the five elements, dereferenced, then the string box
+  rule strOp1 (st == XSo1);
+    let r <- vbox.result;
+    dbox.deref(r.a);
+    st <= XSo2;
+  endrule
+
+  rule strOp2 (st == XSo2);
+    let v <- dbox.derefResult;
+    sv[packK] <= v;
+    if (packK == 4) st <= XSo3;
+    else begin
+      packK <= packK + 1;
+      vbox.element(vals[1], zeroExtend(packK) + 1);
+      st <= XSo1;
+    end
+  endrule
+
+  rule strOp3 (st == XSo3);
+    // an element that is not yet a value (the manual: the built-in
+    // waits) and a wrong type (its exception) are not modelled
+    if (!isInt(sv[0]) || !isStrg(sv[1]) || !isInt(sv[2]) || !isInt(sv[3]) || !isStrg(sv[4]))
+      stop(EndUnimp);
+    else begin
+      sbox.stringOp(truncate(vals[0].val), sv[1], sv[0].val, sv[2].val, sv[3].val, sv[4]);
+      st <= XSo4;
+    end
+  endrule
+
+  rule strOp4 (st == XSo4);
+    let r <- sbox.result;
+    regs.wr(z, r.a);
+    vals[0] <= r.b;
+    st <= XBOut2;
   endrule
 
   rule vElement (st == XVEl);

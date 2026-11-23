@@ -132,11 +132,16 @@ keyed pool goes through one. The pool copies its table at every
 request (`set_vector_element` without MRB): `decode_atom/3`'s table
 is 1024 cells, `atom_table/1`'s 16384, so the IPL's own atom table
 cannot run until `set_vector_element` updates in place under the MRB
-bit; that is a milestone of its own, ahead of it. Next:
-`ipl_loader:load_file/9` with the IPL's
-own reader and atom table in place of the test's, which needs a
-stand-in only for the file's bytes (C2); then console output (C1),
-so that the name and a 5702h file's comment are displayed.
+bit; that is a milestone of its own, ahead of it.
+
+`ipl_loader:load_file/9` now loads a real file with the IPL's own
+reader, checksum and atom-number pool (`lockstep_load.py`); the test
+stands in only for the file's buffers (`getb`, a buffer size of ours)
+and for `intern`. Next: `set_vector_element` in place under MRB, so
+that the IPL's own `atom_table/1` (and `new_atom`) can answer
+`intern`; console output (C1), so that the file's name and a 5702h
+file's comment are displayed; then `load_files/10` over the file
+list, with the FEP's `open` (C2).
 
 ### C. The world outside the processor
 
@@ -197,7 +202,8 @@ the clauses it uses, as the tests do.
 
 ### E. Verification debts (recorded where they arose, collected here)
 
-- Not run at all: `set_nil`, `enqueue_goal_external`; the merger's
+- Not run at all: string operations other than 3, narrowing
+  `change_element_size`, a file read error; the merger's
   refusals and a vector on a merger's input.
 - Not caught by any run: `calculate_priority_from_minimum`'s result
   register (and its value is read by nothing); a file whose atom table

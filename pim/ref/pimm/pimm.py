@@ -188,13 +188,14 @@ class Machine:
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
     # then `words` cells of 32 bits, elements packed from the top.
-    # type 3 = 8-bit elements, 4 = 16-bit (kbnheap.kl1 string_cdesc).
+    # type 3 = 8-bit elements, 4 = 16-bit, 5 = 32-bit (kbnheap.kl1
+    # string_cdesc); 1-bit strings are not modelled.
     def string(self, w):
         t, v = self.mem[w[1]]
         if t != CDESC:
             raise RuntimeError('string without a descriptor at %x' % w[1])
         typ, pad, words = (v >> 24) & 7, (v >> 27) & 3, v & 0xffffff
-        if typ not in (3, 4):
+        if typ not in (3, 4, 5):
             raise Unimplemented('string element type %d' % typ)
         size = 1 << typ
         per = 32 // size
@@ -228,7 +229,7 @@ class Machine:
         return (INT, elems[i])
 
     def make_string(self, size, elems):
-        typ = {8: 3, 16: 4}[size]
+        typ = {8: 3, 16: 4, 32: 5}[size]
         per = 32 // size
         words = (len(elems) + per - 1) // per
         pad = words * per - len(elems)
@@ -682,6 +683,12 @@ class Machine:
     def i_equal(self, pc, x, y, z, c16):
         return self.compare(x, y, lambda a, b: a == b)
 
+    def i_exclusive_or(self, pc, x, y, z, c16):  # guard arithmetic
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a ^ b) & 0xffffffff)
+
     def i_and(self, pc, x, y, z, c16):           # guard arithmetic
         a, b = self.g_int(x), self.g_int(y)
         if a is None or b is None:
@@ -712,6 +719,17 @@ class Machine:
         if a is None or b is None:
             return self.guard_fail()
         self.reg[z] = (INT, (a - b) & 0xffffffff)
+
+    def i_string_element(self, pc, x, y, z, c16):
+        # guard string_element(String, Position, ^Element); anything
+        # but a string and a position inside it fails the guard
+        w, i = self.g_word(x), self.g_int(y)
+        if w is None or i is None or w[0] & ~1 != STRG:
+            return self.guard_fail()
+        _size, elems = self.string(w)
+        if not 0 <= i < len(elems):
+            return self.guard_fail()
+        self.reg[z] = (INT, elems[i])
 
     def i_string(self, pc, x, y, z, c16):
         # guard string(S, Length, ElementSize): r[y] := length, r[z] := size
@@ -1063,6 +1081,10 @@ class Machine:
         self.builtin('b_and', [x, y, z], lambda a, b: [
             (INT, (self.need_int(a) & self.need_int(b)) & 0xffffffff)])
 
+    def i_b_exclusive_or(self, pc, x, y, z, c16):
+        self.builtin('b_exclusive_or', [x, y, z], lambda a, b: [
+            (INT, (self.need_int(a) ^ self.need_int(b)) & 0xffffffff)])
+
     def i_b_or(self, pc, x, y, z, c16):
         self.builtin('b_or', [x, y, z], lambda a, b: [
             (INT, (self.need_int(a) | self.need_int(b)) & 0xffffffff)])
@@ -1089,6 +1111,81 @@ class Machine:
 
     # strings.  The fourth register of a four-register built-in is the
     # top byte of the following cell (klb_opr.kl1 p(r4,...)).
+    def i_change_element_size(self, pc, x, y, z, c16):
+        # change_element_size(String, NewElemSize, ^NewString): "the
+        # smallest index element occupies the highest order bits";
+        # widening pads with zero elements to the boundary (manual).
+        # 8, 16 and 32 bits; a 1-bit string is refused.
+        def f(s, new):
+            size, elems = self.need_string(s)
+            new = self.need_int(new)
+            if new not in (8, 16, 32):
+                raise Unimplemented('change_element_size to %d' % new)
+            if new > size:
+                per = new // size
+                elems = list(elems) + [0] * (-len(elems) % per)
+                out = []
+                for i in range(0, len(elems), per):
+                    v = 0
+                    for e in elems[i:i + per]:
+                        v = v << size | e
+                    out.append(v)
+            else:
+                per = size // new
+                out = [(e >> new * (per - 1 - k)) & ((1 << new) - 1)
+                       for e in elems for k in range(per)]
+            return [self.make_string(new, out)]
+        self.builtin('change_element_size', [x, y, z], f)
+
+    # The 16 general string operations (manual, table "General String
+    # Operations"), by number: the output for inputs S1 and S2.
+    STRING_OPS = [
+        lambda a, b: 0,          lambda a, b: a & b,     lambda a, b: ~a & b,
+        lambda a, b: b,          lambda a, b: a & ~b,    lambda a, b: a,
+        lambda a, b: a ^ b,      lambda a, b: a | b,     lambda a, b: ~(a | b),
+        lambda a, b: ~(a ^ b),   lambda a, b: ~a,        lambda a, b: ~a | b,
+        lambda a, b: ~b,         lambda a, b: a | ~b,    lambda a, b: ~(a & b),
+        lambda a, b: -1]
+
+    def i_string_operation(self, pc, x, y, z, c16):
+        # string_operation(Op, Vector, ^NewS1, ^NewS2), what the compiler
+        # makes of binary_string_operation(Op, Str1, Pos1, Len, Str2,
+        # Pos2, NewS1, NewS2): Vector = {Pos1, Str1, Len, Pos2, Str2}
+        # (library/compiler/blt.kl1 specialPredicate).  The operation
+        # on Len elements of Str1 from Pos1 and of Str2 from Pos2;
+        # NewS1 is Str1 with those elements replaced (a copy here),
+        # NewS2 is Str2 (manual).  The vectors of four and three
+        # elements (the shifting and unary forms) are refused, and so
+        # is an element of the vector that is not yet a value (the
+        # manual says the built-in waits).
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(op, v):
+            op = self.need_int(op)
+            if self.vsize(v) != 5 or not 0 <= op <= 15:
+                raise Unimplemented('string_operation %d on %r' % (op, v))
+            e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(5)]
+            if any(self.unbound(c) for c in e):
+                raise Unimplemented('string_operation: an unbound element')
+            p1, n, p2 = self.need_int(e[0]), self.need_int(e[2]), self.need_int(e[3])
+            size1, s1 = self.need_string(e[1])
+            size2, s2 = self.need_string(e[4])
+            if size1 != size2 or min(p1, n, p2) < 0 or p1 + n > len(s1) or p2 + n > len(s2):
+                raise Unimplemented('built-in exception: string_operation')
+            # as the string box does it: the copy, then one word
+            # rewritten per element
+            fn, mask, per = self.STRING_OPS[op], (1 << size1) - 1, 32 // size1
+            new = self.make_string(size1, s1)
+            for i in range(n):
+                a = new[1] + 1 + (p1 + i) // per
+                sh = size1 * (per - 1 - (p1 + i) % per)
+                w = self.mem[a][1]
+                self.mem[a] = (INT, w & ~(mask << sh) & 0xffffffff
+                               | (fn(s1[p1 + i], s2[p2 + i]) & mask) << sh)
+            return [new, e[4]]
+        self.builtin('string_operation', [x, y, z, w4], f)
+        return pc + 2
+
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
