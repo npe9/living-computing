@@ -1237,12 +1237,15 @@ class Machine:
         if mem[e] != (INT, 0):
             raise Unimplemented(what + ': a filled cache field')
         via = mem[e + 1]
-        head = mem[via[1]]
-        if via[0] & ~1 != REF or head[0] & ~1 != REF:
+        # the module field, dereferenced, is the module object {MOD,
+        # its descriptor cell}: in the image through the module table's
+        # reference to a cell {MOD, the next cell}; in a module the IPL
+        # loaded through the variable its linker bound
+        # (ipl_link_table:unify_modules/1 as decompiled)
+        head = self.deref(via)
+        if via[0] & ~1 != REF or head[0] != MOD:
             raise Unimplemented(what + ': the module field')
-        # the cell the image's module table refers to holds {MOD, the
-        # next cell}: the module's descriptor cell follows it
-        target = self.entry(head[1] + 1, mem[e + 2])
+        target = self.entry(head[1], mem[e + 2])
         if target is None:
             raise Unimplemented(what + ': no such predicate')
         return target - self.load
