@@ -21,9 +21,9 @@ The IPL needs it in its linker: ipl_link_table:put_ex_mod/8 sends
 get_and_put(A, {B, H}, {B, [D|H]}) to a keyed set, whose
 do_get_and_put/5 unifies the stored {B, List} with {B, H}
 (asm/kl1decomp.py ipl_link_table).  That runs only when two modules
-name the same external module, which no one-file test here does;
-loading pimm_patch_mkdir360E.sav (six modules) on the reference model
-alone does it 23 times.
+name the same external module: lockstep_link.py's second part
+(pimm_patch_mkdir360E.sav, six modules) does it 23 times, from
+get_value in clause code.
 
 Nine parts, each a unification by the bench and then a run:
   flat          {X, Y} = {1, normal}
@@ -51,7 +51,9 @@ structure here is made by the bench, whose slots always have the MRB
 on, and every element is a reference to a bound variable holding a
 value stored with its MRB on, so what is taken looks the same.  The
 MRB rule (an element is taken with its MRB on if its structure's is)
-is from PDSS and is untested.
+is from PDSS and is untested: the two injections pass
+lockstep_link.py's second part as well, where the linker's own
+vectors are unified.
 
 The same wrong rule in BOTH models, tried on the reference model
 alone, is reported by the value checks: the last element skipped, a
@@ -59,9 +61,7 @@ list of one cell, b's element from another cell, no unification.
 
 Not run: a vector of seven or more (refused: its size is in memory);
 a vector against a list or sizes differing at the top (plain failure
-in unify, as before); a unification inside clause code that makes
-the goal (get_value on two vectors: only on the reference model, in
-the linker); strings and modules (as before).
+in unify, as before); strings and modules (as before).
 """
 import os
 import sys

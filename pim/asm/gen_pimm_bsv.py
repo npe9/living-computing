@@ -92,11 +92,12 @@ def main(argv):
     got, cells = kbn.decode(kbn.image())[:2]
     stubs, table = pimm_stubs.build(len(cells))
     cells = list(cells) + stubs
-    assert len(cells) <= L.HEAP
+    # the cells below the heap only: the heap is not loaded (PimmMem.bsv)
+    assert len(cells) <= L.HEAP == 1 << 15 <= L.MEMORY_CELLS
     with open(os.path.join(out, 'pimm_ipl.hex'), 'w') as f:
         for t, v in cells:
             f.write('%02x%08x\n' % (t, v))
-        for _ in range(L.MEMORY_CELLS - len(cells)):
+        for _ in range(L.HEAP - len(cells)):
             f.write('0000000000\n')
     return 0
 

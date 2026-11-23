@@ -83,7 +83,12 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   FIFO#(SResult) resQ  <- mkFIFO;
 
   Addr src = cellAddr(rq.s);
-  function Addr toAddr(Bit#(24) v) = truncate(v);   // a word count or index as an address offset
+  // a word count or index as an address offset (through 32 bits: the
+  // address may be wider or narrower than a word count)
+  function Addr toAddr(Bit#(24) v);
+    Bit#(32) w = zeroExtend(v);
+    return truncate(w);
+  endfunction
 
   // from a descriptor
   // lg: log2 of the element bits (3, 4, 5); a word holds 1 << (5 - lg)
@@ -140,11 +145,12 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     rq <= q;
     if (q.k == KNew) begin
       // i = length, e = element bits
-      if (q.e != 8 && q.e != 16) fatal("new_string: element size not 8 or 16");
-      Bool w16 = q.e == 16;
-      Bit#(32) words = w16 ? ((q.i + 1) >> 1) : ((q.i + 3) >> 2);
-      Bit#(32) pad = (w16 ? (words << 1) : (words << 2)) - q.i;
-      desc <= (pad << 27) | ((w16 ? 4 : 3) << 24) | words;
+      if (q.e != 8 && q.e != 16 && q.e != 32) fatal("new_string: element size not 8, 16 or 32");
+      Bit#(3) lgE = q.e == 32 ? 5 : (q.e == 16 ? 4 : 3);
+      Bit#(3) sh = 5 - lgE;                     // log2 of the elements in a word
+      Bit#(32) words = (q.i + (1 << sh) - 1) >> sh;
+      Bit#(32) pad = (words << sh) - q.i;
+      desc <= (pad << 27) | (zeroExtend(lgE) << 24) | words;
       gbox.alloc(truncate(words + 1));
       st <= SAlloc;
     end

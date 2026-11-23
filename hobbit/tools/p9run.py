@@ -209,7 +209,8 @@ def build_stubs():
 
 #: arguments each system call reads (the Bluespec run compares that many)
 NARGS = {"exits": 1, "errstr": 1, "brk_": 1, "open": 2, "create": 3,
-         "close": 1, "read": 3, "write": 3, "seek": 3, "remove": 1}
+         "close": 1, "read": 3, "write": 3, "seek": 3, "remove": 1,
+         "fstat": 2, "rfork": 1, "stat": 2, "notify": 1}
 
 
 class Recorder:
@@ -384,6 +385,7 @@ class Kernel:
         self.recording = False
         self.child_steps = 0    # instructions retired by children
         self.children = []      # (pid, text, steps, trace, status)
+        self.clock = None       # a fixed time for the files it writes
 
     def host_path(self, name):
         # An absolute path is under --root; a relative one is under the
@@ -463,6 +465,7 @@ class Kernel:
             if new:
                 dirmode = os.stat(os.path.dirname(host)).st_mode
                 os.chmod(host, a[2] & dirmode & 0o777)
+            self.stamp(host)
             return self.new_fd(f)
         if name == "close":
             f = self.fds.pop(a[0], None)
@@ -490,6 +493,7 @@ class Kernel:
                     m.rec.output(os.path.relpath(f.name, self.root),
                                  f.tell(), a[1], a[2])
                 f.write(data)
+                self.stamp(f.name, f)
             return len(data)
         if name == "seek":
             f = self.fds.get(a[0], "absent")
@@ -624,6 +628,7 @@ class Kernel:
         ck.text = self.text
         ck.noteid = self.noteid if not flag & RFNOTEG else self.noteid + 1
         ck.max_steps, ck.verbose = self.max_steps, self.verbose
+        ck.clock = self.clock
         if flag & RFFDG:
             ck.fds = dict(self.fds)
             ck.inherited = self.inherited | {id(f) for f in self.fds.values()}
@@ -701,6 +706,18 @@ class Kernel:
             self.m.set_bytes(a[0], w)
         return int(w[:12])
 
+    def stamp(self, host, f=None):
+        """The file server's clock.  With `clock` set (run(clock=T),
+        --clock T), a file this process creates or writes gets atime =
+        mtime = T, as a server whose clock read T would give it; ar
+        copies that into a member header (rl's __.SYMDEF), so a fixed
+        clock makes an archive reproducible.  Unset, the host's times
+        stand."""
+        if self.clock is not None:
+            if f is not None:           # the bytes first, then the time
+                f.flush()
+            os.utime(host, (self.clock, self.clock))
+
     def sys_notify(self, a):
         """sysproc.c sysnotify: u->notify = arg[0]; return 0.  No note is
         ever posted to a process here, so the handler is only kept."""
@@ -745,9 +762,18 @@ class Kernel:
                        int(st.st_atime), int(st.st_mtime),
                        0 if isdir else st.st_size, ord("M"), 0)
 
+    @staticmethod
+    def evenaddr(buf):
+        """sysfstat/sysstat call evenaddr(arg[1]) (sys/src/9/hobbit/
+        trap.c): a buffer not on a word boundary posts "sys: odd
+        address"; notes are not modelled, so the run stops."""
+        if buf & 3:
+            raise Stop("p9run: stat buffer 0x%08x: odd address" % buf)
+
     def sys_fstat(self, a):
         """sysfile.c sysfstat(fd, buf): the device's stat of the fd's
         channel into buf (DIRLEN bytes)."""
+        self.evenaddr(a[1])
         f = self.fds.get(a[0], "absent")
         if f == "absent":
             return self.fail("fd out of range or not open")   # Ebadfd
@@ -760,6 +786,7 @@ class Kernel:
     def sys_stat(self, a):
         """sysfile.c sysstat(name, buf): namec, then the device's stat.
         Only the file tree is modelled; a `#` device name is refused."""
+        self.evenaddr(a[1])
         path = self.m.cstring(a[0]).decode("latin-1")
         if path.startswith("#"):
             raise Stop("p9run: refused stat(%r): devices are not modelled"
@@ -920,12 +947,14 @@ def mnemonic_key(parcels):
 
 
 def run(binary, argv, root, max_steps, console, census=False, verbose=False,
-        record=None, hri=None, cwd="", stdin=None, stdout=None):
+        record=None, hri=None, cwd="", stdin=None, stdout=None, clock=None):
     """Run `binary`; optionally write the Bluespec run's recording and
     the HRI trace (one line per retirement, the comparison's reference).
 
     `stdin` (bytes) is what fd 0 reads, end of file when None; `stdout`
     (a binary file object) receives fd 1, which is otherwise the console.
+    `clock` (seconds) fixes the times of the files the process writes
+    (Kernel.stamp).
     """
     state, bss_end = process_image(binary, argv)
     m = Machine(state)
@@ -935,6 +964,7 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
     k.max_steps = max_steps
     k.verbose = verbose
     k.recording = bool(record)
+    k.clock = clock
     recorder = Recorder() if record else None
     boot_memory = dict(state.memory) if record else None
     start = (state.pc, state.sp, state.psw, state.isp, state.vb)
@@ -1075,6 +1105,8 @@ def main(argv):
                     help="a host file for fd 0 (default: end of file)")
     ap.add_argument("--stdout", metavar="FILE",
                     help="a host file for fd 1 (default: the console)")
+    ap.add_argument("--clock", type=int, metavar="SECONDS",
+                    help="the time of every file the process writes")
     ap.add_argument("binary")
     ap.add_argument("args", nargs=argparse.REMAINDER)
     args = ap.parse_args(argv)
@@ -1085,7 +1117,8 @@ def main(argv):
                                 args.max_steps, sys.stdout.buffer,
                                 args.census, args.verbose,
                                 record=args.record, hri=args.hri,
-                                cwd=args.cwd, stdin=stdin, stdout=stdout)
+                                cwd=args.cwd, stdin=stdin, stdout=stdout,
+                                clock=args.clock)
     if stdout:
         stdout.close()
     sys.stdout.flush()

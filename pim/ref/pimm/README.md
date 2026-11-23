@@ -50,7 +50,9 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_cons.py` the console (`display_console`),
 `lockstep_run.py` a predicate of a loaded module run from the heap,
 `lockstep_link.py` the IPL's whole `load/4` with its linker,
-`lockstep_unif.py` the unification of two vectors or lists; 112
+`lockstep_unif.py` the unification of two vectors or lists,
+`lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
+the real `pimos.ipl`; 112
 instructions now. No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed

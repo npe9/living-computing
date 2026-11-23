@@ -32,6 +32,23 @@ So the port exists twice over: as binaries that were built at the time,
 and as the kernel and library sources that produced them. The proof of
 concept uses the binaries as the oracle and the sources as the rules.
 
+**Libraries vendored for the kernel link (2026-11-23).**  The `term`
+kernels link `-lgnot -lg -lc` (`sys/src/9/hobbit/mkfile`, `9bart 9term
+9termlocal`), so beside `hobbit/lib/libc.a` and `libbio.a` the vendored
+tree now holds, verbatim from the same tarball (sha256 above, extracted
+with `tar -xjf plan9-1e.tar.bz2 plan9-1e/hobbit/lib/libg.a
+plan9-1e/hobbit/lib/libgnot.a`, dates 3 January 1993 kept):
+
+| file | bytes | sha256 | members |
+|---|---|---|---|
+| `tools/plan9-1e/hobbit/lib/libgnot.a` | 208,264 | `db3d2c81477afcf5d129f43749de018afa374ec31422f82abf35841e47fbadb8` | 12 and `__.SYMDEF` |
+| `tools/plan9-1e/hobbit/lib/libg.a` | 161,114 | `c878994793385780cdc17f9cc5d6a9b8228f971fd6d4b566f79ecff08ab541c4` | 38 and `__.SYMDEF` |
+
+Both are in `tools/SHA256SUMS` (with `hobbit/s9term`), under the
+release's MIT licence (`tools/plan9-1e/license`).  Every `libgnot`/`libg`
+member the shipped kernel image `s9term` links has a member of that name
+in these archives (`docs/s9term.md`, "Link order").
+
 Measured example (`hobbit/bin/echo`, 27,642 bytes):
 
 ```text

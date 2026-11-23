@@ -148,7 +148,7 @@ of this module can check, on either model, and injections confirm it:
 | `set_variable` | `23:13 x y` | argument `x` of the goal being built and `r[y]` := one fresh variable | inferred from `ipl:boot/0`; not yet executed |
 | `enqueue_goal` | `23:63 x c16` | make a goal of the predicate at the label with the `x` built arguments and put it on the ready queue | checked. That the newest goal runs first is the model's choice, not established |
 | `execute` | `23:61 x c16` | continue as a reduction of the predicate at the label, arguments already in `r[0..x)` | checked |
-| `new_string` | `22:D4 x y z` | `r[z]` := a new string of `r[x]` elements of `r[y]` bits | checked |
+| `new_string` | `22:D4 x y z` | `r[z]` := a new string of `r[x]` elements of `r[y]` bits: 8, 16 or 32 (the manual allows 1 to 32; others are refused) | checked (`lockstep_s32.py` for 32) |
 | `b_string_element` | `22:CD x y z`, next cell `w << 24` | `r[z]` := element `r[y]` of string `r[x]`; `r[w]` := the string | checked |
 | `set_string_element` | `22:D1 x y z`, next cell `w << 24` | `r[w]` := string `r[x]` with element `r[y]` set to `r[z]` | checked, including the case that matters: `r[z]` unbound when the instruction is reached |
 

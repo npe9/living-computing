@@ -1,0 +1,43 @@
+# $DEV for CONF=term: what `rc ../port/mkdevlist term` prints
+# (sys/src/9/port/mkdevlist: sed '/^$/d; /^#/d' term | awk ... -- for
+# each line of the `dev` section, "dev" $1 ".z", then $3..$NF, each with
+# ".z").  Derived BY HAND from that script and sys/src/9/hobbit/term,
+# not generated: replace this file with the script's own output (one
+# name per line, as here) once rc, sed and awk run on the model.  The
+# blank line in term's dev section (between ip and bit) is deleted by the
+# sed first, so bit and kprof belong to the section.
+# Cross-check: the shipped kernel image hobbit/s9term carries 21 devices
+# in the order of the device-character string "/ce|psMd2trikSwlaPIbT"
+# (docs/s9term.md, on master) -- term's dev section in this order,
+# root / ... kprof T, one per `dev` line below.
+devroot.z
+devcons.z
+devenv.z
+devpipe.z
+devproc.z
+devsrv.z
+devmnt.z
+devdup.z
+deviic.z
+deveia.z
+devrtc.z
+devincon.z
+devdk.z
+devscsi.z
+scsi.z
+scsibuf.z
+devwren.z
+devether.z
+devarp.z
+deviproute.z
+devip.z
+tcpinput.z
+tcpoutput.z
+tcptimer.z
+tcpif.z
+stil.z
+devbit.z
+bbmalloc.z
+screen.z
+kbd.z
+devkprof.z

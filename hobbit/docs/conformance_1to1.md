@@ -167,11 +167,62 @@ compare:
   differed; but it is a bus read the program never asked for, and a
   device register would see it.  `fetchOperand` now waits for that slot
   to empty; the count is back to 55 (observed on the same run: 2,399
-  without the gate, 55 with).  The 55 that remain are 5 reads of address
-  0 and 50 of 0x80000000, the word just past USTKTOP; I read the second
-  as the refill engine requesting one word beyond its bound and
-  discarding it, and have not traced either further.  They are spurious
-  reads too, and open.
+  without the gate, 55 with).
+
+  **The ones that remain are legitimate (traced 2026-11-23).**  Two
+  findings, on `zc frexp.c` (then 1,376: 1,332 of address 0, 44 of
+  0x80000000) and checked on `za` and `zl`:
+
+  1. *The meter counted clocks, not reads.*  `mkP9HostMem`'s `fetch`
+     rule reads its registered address on every clock (it must: the
+     word may be written), and `p9h_read` counted each of those, so one
+     request was counted again until the next request, and the five
+     clocks before the first request -- the address register at its
+     reset value, 0 -- were five "reads of address 0" on every run.
+     The testbench now reports each *request* once (`p9h_request`).
+     Same runs, same clocks, new counts: `echo`, `cat`, `hello` 0, `za`
+     2, `zl` 9, `zc` 51 (was 1,376).  Removing the `!s2Taken` gate
+     again makes `za` 1,174, so the alarm (100) still fires on the
+     defect it was set for.
+  2. *Every remaining request is an operand fetch by an instruction on
+     the predicted path of a conditional jump that mispredicted.*  With
+     `$display`s in `fetchOperand`, in the stack-cache box's port
+     arbiter and in `redirect` (a local build, not committed), all 51 of
+     `zc`'s requests came from EU_S1's operand fetch (none from the
+     prefetch or the CATCH refill), at four instructions, each followed
+     within two retirements by an EU_S3 squash:
+
+     | pc (zc) | function | requests | instruction | why its operand is unmapped |
+     |---|---|---|---|---|
+     | 0x129e2 | `dotsearch` | 39 | `CMPEQ *R28, …` (`9fed 001c …`) | follows `CMPEQ $0,R28; JMPTN` (0x129de/0x129e0, `for(t1 = t; t1 != T; t1 = t1->down)`), predicted *not* taken; when `t1` is nil the jump is taken and the fall-through reads `*0` |
+     | 0x12a72 | `dotsearch` | 10 | `CMPEQ $0, *R28` (`9ffe 0000 001c`) | the second such loop: `CMPEQ $0,R28; JMPTN` at 0x12a6e/0x12a70 |
+     | 0x1960e | `strchr` | 1 | `CMPEQ *R4.B, R8.B` (`9f84 0004 0008`) | loop head after `ADD $1,R4; JMPFY` (predicted taken); the string's NUL is at 0x7fffffff, so the predicted next pass reads 0x80000000 |
+     | 0x19832 | `strlen` (libc `strlen.s`) | 1 | `CMPEQ $0, *Rn.B` (`9ff8 …`) | the same: one past a NUL at 0x7fffffff |
+
+     `za`'s 2 are the 0x80000000 case in the same two libc routines
+     (`strchr` 0x78b6, `strlen` 0x7ada) and `zl`'s 9 the nil case
+     (`zaddr` 0x4a86, `dodata` 0x6210), each likewise followed by a
+     squash.  The value read through is right -- the pointer is the
+     newest one, nil or one past the end -- it is the *path* that is
+     wrong.  And on the reference model, which executes only the
+     retiring path, the same programs make **no** reads outside their
+     segments (`tools/p9archreads.py`: `zc` 0, `za` 0 and 0, `zl` 0;
+     with the stack dropped from the legal set, as a control, `zc`
+     80,636), so none of the core's 51 belongs to a retired instruction.
+     `tests/run_p9host_tests.sh` checks that for `zc` on every run.
+
+  The part does this too.  PRM §2.2 p. 2-3, *Read fault*: "This fault
+  can be ignored if the read was requested because of a mispredicted
+  branch" -- the chip issues data reads for instructions on a
+  mispredicted path, and §1.10.1 p. 1-33 has the PDU issue instructions
+  down the predicted path "into the pipeline without any
+  discontinuity".  So these are modelled behaviour, not a defect, and no
+  golden is added for them.  What the model does *not* do is the second
+  half of that sentence: it has no read fault to suppress (addressing is
+  physical in these runs and `p9host.c` serves any address).  The
+  earlier guess here -- the refill engine reading one word past its
+  bound -- was wrong for these runs: no refill request went outside a
+  segment.
 
 Two things are worth keeping from this beyond the fixes.
 

@@ -31,10 +31,18 @@ typedef struct {
   Cell data;
 } MemReq deriving (Bits);
 
+// Two RAMs behind the one queue: the cells below the heap (the IPL
+// image and the stubs), loaded from the file, and the heap, which is
+// not loaded: a heap cell is written before it is read.  So the file
+// is 2^15 lines whatever the memory's size.
+typedef 15 LowBits;
+
 module mkPimmMem#(String file)(PimmMem);
   BRAM_Configure cfg = defaultValue;
   cfg.loadFormat = tagged Hex file;
-  BRAM1Port#(Addr, Cell) ram <- mkBRAM1Server(cfg);
+  BRAM1Port#(Bit#(LowBits), Cell) low <- mkBRAM1Server(cfg);
+  BRAM1Port#(Addr, Cell) ram <- mkBRAM1Server(defaultValue);
+  FIFO#(Bool) fromLow <- mkSizedFIFO(4);
 
   // One request queue for all clients: requests reach the RAM in the
   // order they were made, whoever made them, so a read never overtakes
@@ -46,15 +54,31 @@ module mkPimmMem#(String file)(PimmMem);
   rule issue;
     let r = reqs.first;
     reqs.deq;
-    ram.portA.request.put(BRAMRequest { write: r.wr, responseOnWrite: False,
-                                        address: r.addr, datain: r.data });
-    if (!r.wr) who.enq(r.who);
+    Bool isLow = (r.addr >> valueOf(LowBits)) == 0;
+    if (isLow)
+      low.portA.request.put(BRAMRequest { write: r.wr, responseOnWrite: False,
+                                          address: truncate(r.addr), datain: r.data });
+    else
+      ram.portA.request.put(BRAMRequest { write: r.wr, responseOnWrite: False,
+                                          address: r.addr, datain: r.data });
+    if (!r.wr) begin
+      who.enq(r.who);
+      fromLow.enq(isLow);
+    end
   endrule
 
-  rule route;
+  rule routeLow (fromLow.first);
+    let d <- low.portA.response.get;
+    resps[who.first].enq(d);
+    who.deq;
+    fromLow.deq;
+  endrule
+
+  rule route (!fromLow.first);
     let d <- ram.portA.response.get;
     resps[who.first].enq(d);
     who.deq;
+    fromLow.deq;
   endrule
 
   function MemPort mkPort(Integer i);

@@ -252,6 +252,76 @@ This is what `za` and `zl` use; it is not the 1e system-call set
 `notify`, `rfork`, `exec` and `wait` were added for A3 on 2026-11-23,
 below; `pipe` is still refused.)
 
+### Added for `ar` and `rl` (A3, 2026-11-23)
+
+`sys/src/cmd/ar.c` (vendored with `rl.c` for this) calls `dirfstat()` in
+`armove()` and for its `u` test, and `rfork(RFNOTEG)` in `install()` and
+`qcmd()`.  Both are their own methods in `Kernel` (`ar_fstat`,
+`ar_rfork`, the Dir builder `dir_bytes`), apart from the calls above, so
+other additions merge without touching them.  **Merged 2026-11-23 with
+the A3 generated-inputs work (next section):** one Dir builder
+(`convD2M`, `Kernel.dir_entry`) and one fstat (`sys_fstat`, with this
+section's `evenaddr` check) remain; the bullets below are updated to
+what the merged runner does.
+
+| id | call | arguments | result |
+|---|---|---|---|
+| 11 | `fstat(fd, buf)` | fd, buf | 0; `buf` gets the fd's Dir, 116 bytes (DIRLEN); -1 and "fd out of range or not open" (Ebadfd) for a closed fd |
+| 19 | `rfork(flag)` | flag | 0 for the group flags without RFPROC; with RFPROC a child runs (next section) |
+
+* **fstat** is `sysfstat()` (`sys/src/9/port/sysfile.c:380`): `evenaddr`
+  (`hobbit/trap.c:461`) on the buffer -- an address not on a word
+  boundary stops the run (the kernel posts "sys: odd address", and
+  notes are not modelled) -- then the device's `stat`, which for a file
+  is the file server's Dir through `mntstat()` and `mntdirfix()`
+  (`devmnt.c:309,774`).  The host is the file server, so its answer is
+  the layout `convD2M()` writes (`libc/9sys/convD2M.c`, `Dir` in
+  `sys/include/libc.h:275`, little-endian):
+
+  | bytes | field | value |
+  |---|---|---|
+  | 0-27 | name | the last path element, NUL-padded |
+  | 28-55, 56-83 | uid, gid | `"bootes"` (`devcons.c:24` eve; it was `"none"` before the merge; ar ignores both) |
+  | 84-91 | qid.path, qid.vers | the host inode (31 bits) \| CHDIR, 0 |
+  | 92-95 | mode | host permission bits \| CHDIR (0x80000000) for a directory |
+  | 96-103 | atime, mtime | the host's, seconds |
+  | 104-111 | length | host size; convD2M's VLONG, high word 0 |
+  | 112-115 | type, dev | `'M'` (mntdirfix: the mount driver's devchar), 0 (the mount id, not modelled) |
+
+  `ar` copies mtime, mode and length into each member header, so a
+  reproducible archive needs its inputs' dates and modes set by whoever
+  runs it (`tools/p9kbuild.py` does), or a fixed clock for the files
+  the run writes (`run(clock=T)`, `--clock T`).  The console's Dir is
+  devcons's `cons` (next section).
+* **rfork** is `sysrfork()` (`sysproc.c:21`): without RFPROC the group
+  flags change nothing here (RFNOTEG: no notes); `fork()` is
+  `rfork(RFPROC|RFFDG)`, 0x14, and runs the child first (next section).
+* **`rl` now runs to its end.**  `rl` (`$RL` in `/hobbit/mkfile`) writes
+  and closes `__.SYMDEF`, then `fexec("/bin/ar", "ar", "rb", first, lib,
+  "__.SYMDEF")` forks, execs `ar` and waits (`rl.c` `writerl`, `fexec`);
+  then it removes `__.SYMDEF`.  Until the merge the run stopped at that
+  fork and `tools/p9kbuild.py` `play_rl` ran the same `ar` lines itself;
+  `play_rl` now runs `rl` with the clock fixed at the table's date, in a
+  directory of mode 0775 so create's 0664 survives, and the fork is the
+  runner's.
+
+Validated against the shipped `hobbit/lib/libc.a` (`p9kbuild.py
+archeck`): `ar t` lists its 141 members; `ar x` extracts all 140 object
+members byte-exact; `ar vu` of those files, dated and moded as their
+headers say, then `rl` and its `ar rb`, rebuild a 297,782-byte archive
+whose 140 members and all 141 headers are byte-identical to the shipped
+file, and whose `__.SYMDEF` has the shipped table's 201 entries with the
+same offsets, names and types in the same order.  212 bytes of the
+table differ, every one after the NUL of a name: `rl` writes NNAME (20)
+bytes of each name, which come from libmach `obj.c` `readar()`'s local
+`Prog p`, filled by `_readz` only up to the NUL -- past it is stack
+residue, not a property of `ar`, `rl` or the archive.  On this run the
+byte at name[17] is 3 in all 201 entries and 0 in the shipped file, and
+11 more bytes differ at name[7] and name[8] of 10 entries.  **Open:**
+why the model's residue differs from the 1993 machine's has not been
+traced (rl's `Prog p` is on the stack, so the stack cache's contents
+are the first suspect, as for `za` in A2).
+
 **Floating point** is not a system call: it is the
 unimplemented-instruction sequence (p. 1-39) and a user-level handler,
 `fprt0.s` + `fpihobbit.c` + `fpi.c`.  The reference model retires the
@@ -284,6 +354,7 @@ the `#` branch of `open` and create's permission rule), each tested in
 | 18 | `stat(name, buf)` | `sysfile.c sysstat` | the same Dir for a path in the tree; a missing file fails "file does not exist" (Enonexist); a `#` name is refused |
 | 14 | `open("#...")` | `devcons.c` Qpid, `devenv.c` | `#c/pid` reads `readnum(pid, NUMSIZE)`: the pid right-aligned in 11 characters and a blank (pid 1; `getpid()`, so `mktemp()` in `ar`); `#e` is an empty directory (OREAD only; reads 0 bytes; Dir `.`, CHDIR\|0700, type `e`), `#e/x` fails Enonexist.  Any other device is refused |
 | 22 | `create` perm | `sys/man/2/open` | a new file gets perm ANDed with its directory's permission bits; an existing file keeps its own.  (`zl` creates with 0775; `strip` refuses a file with no execute bit) |
+| — | the clock | a file server's clock | `run(clock=T)` / `--clock T`: every file the process (or a child) creates or writes gets atime = mtime = T (`Kernel.stamp`), so `rl`'s `__.SYMDEF` header and any archive `ar` builds are reproducible.  Unset, host times stand |
 | 28 | `notify(fn)` | `sysproc.c sysnotify` | the handler is kept; returns 0.  No note is ever posted |
 | 19 | `rfork(flags)` without RFPROC | `sysproc.c sysrfork` | new name/env/note groups of a process that is alone: no effect but the note id; the paired flags (RFNAMEG\|RFCNAMEG, RFENVG\|RFCENVG) and RFMEM/RFNOWAIT fail Ebadarg as there; RFCFDG is refused |
 | 19 | `rfork(RFPROC\|...)` | `sysrfork`, `proc.c pexit` | the child is a deep copy of the process (memory, registers, the stack cache's array), its `rfork` returns 0, and it **runs first, to its `exits`**, before the parent gets the child's pid.  RFFDG copies the fd table (same channels, so shared offsets; the child's `close` does not close the parent's file), no RFFDG shares it.  RFCFDG and RFMEM are refused, and so is any fork while `--record` is on (the Bluespec replayer has one process) |

@@ -137,6 +137,13 @@ of the port, which is what the proof of concept runs
 | `plan9-1e/sys/src/libc/hobbit/` | the Hobbit libc assembly (19 files), including `main9.s` (`_main`: `argc+0(FP)`, `argv+4(FP)`, `CALL main`, `exits("main")`) |
 | `plan9-1e/sys/include/a.out.h` | `struct Exec` and `Z_MAGIC = _MAGIC(10) = 0x197` |
 
+Added 2026-11-23 for A3's library step, from the same archive (sha256
+re-verified that day) and pinned in `SHA256SUMS`:
+`plan9-1e/hobbit/bin/rl` (`$RL` in `/hobbit/mkfile`: writes an archive's
+`__.SYMDEF`, then forks `ar` to insert it), and the sources the runner and
+`tools/p9kbuild.py` cite for `ar`, `rl` and the `init.h` text step:
+`plan9-1e/sys/src/cmd/ar.c`, `rl.c`, `xd.c`.
+
 `hobbit/bin/echo` measures: `magic 0x197`, text 0x2258 loaded at 0x1000,
 data 0x374, bss 0x354, entry 0x2ad0, `syms` 0x3db0 — a 1st Edition
 `a.out`, so the loader needed for the port is a header parse and three
