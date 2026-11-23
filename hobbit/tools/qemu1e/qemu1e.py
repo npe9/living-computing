@@ -94,6 +94,9 @@ class Machine:
         for _ in range(100):
             if os.path.exists(path):
                 break
+            if self.p.poll() is not None:
+                raise RuntimeError('qemu exited: ' + open(os.path.join(
+                    workdir, 'qemu.stderr')).read())
             time.sleep(0.1)
         cwd = os.getcwd()
         os.chdir(workdir)
@@ -184,6 +187,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--fd')
     ap.add_argument('--hd')
+    ap.add_argument('--hd2')
     ap.add_argument('--net', action='append', default=[])
     ap.add_argument('--serial')
     ap.add_argument('--workdir', default='.')
@@ -194,7 +198,7 @@ def main():
     net = []
     for n in a.net:
         net += n.split()
-    m = Machine(a.workdir, fd=a.fd, hd=a.hd, net=net or None, serial=a.serial,
+    m = Machine(a.workdir, fd=a.fd, hd=a.hd, hd2=a.hd2, net=net or None, serial=a.serial,
                 log=a.log, extra=sum([e.split() for e in a.extra], []))
     try:
         for line in open(a.script):
