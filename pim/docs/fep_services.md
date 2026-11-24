@@ -448,7 +448,7 @@ branch), the other window calls.
 | U6 | **Settled on the PIMOS side (READ, 2026-11-24; §7.1).** 70 gets no reply of its own, in all six device modules. Idle device: `{Id, 70}` is sent and only the send's result is taken (`file_dvc.kl1`:256-260, 552-556); no `receive` is queued. Request outstanding: its `receive(Vars, Result)` is already queued (493-498); `{Id, 70}` is sent and `device_abort1` waits for the send's result **and** the outstanding request's reply (521-525, 578-582). So the FEP owes exactly one reply, that of the interrupted request, with any status (6, `aborted`, gives the caller 6 and zeros by the reply rule); a second packet would be taken as the answer to the device's next request (`fep_rcvr.kl1`:86-92, replies are matched in order). After either the device answers every request `aborted` locally until a `reset` (`device_aborted`, 352-406) | Open on the PSI side only: what status the real FEP gives the interrupted request (`abort_timer`, `device_abort/1` in `pimfep.ptf`) |
 | U7 | **Settled on the PIMOS side (READ; §7.1).** Both are ONE string, widened to 16 bits for Code 0 (EUC to JIS for 1), cut at elements of value 10 (LF). `File_names` (237, 238): each name up to an LF; the last may end with the string instead (`server/fep/file/dir_dvc.kl1`:304-339); the result is a list of 16-bit strings. `Attributes` (222): nine fields, the first six strings (Owner, UpdateUser, CDate, CTime, MDate, MTime), then three decimal integers in JIS digits (LinkCnt, FSize, RSize), **every integer field ended by an LF** (the digits are counted to one before the cut, `file_dvcb.kl1`:598-651, 668-691); taken only if 240's OS string begins `"SIMPOS"` (or Code is 1, the UNIX reading), otherwise abnormal (557-576). The object's modules agree with this source in clause counts and integers (`dir_device`, `file_request_device`, `fep_directory_device` are the `mkdir` patch's; §7.1) | The PSI's side (`pimos_directory`, `pimos_file`), not decoded; the date and time strings' format, which PIMOS passes through unread |
 | U8 | **Settled to the depth of §7.1** (`python3 asm/fep_services/savpreds.py`). (a) The patch modules ARE the held source: `scsi_fep` differs from its base in `send_packet2/10` and `send_packet3/10` alone, exactly the source's "Remake by Amanuma" (the rounding of a string's length moved, `copy_string_elements` for `substring`: a string argument cut across packets); `fep_server` gains an abort line through the 240 fetch (8 predicates added, 5 dropped, 2 changed); neither changes a code, a layout or the order of commands. (b) The object is built with `fep_interface` = `scsi`, `virtual_machine_interface` not `yes`, `machine` not `vm` (and `mpsi`/`pimm` in the timer), `machine_type` = `mpsi`, `ipl_parameter` = `yes`, `autoloading` not `no`: it asks for `pimos:autoload.tbl`. tcpip, telnet and remote login are not build switches but `pimos.conf` terms | Instruction-level equality with the source was not shown (no compiler is run): the measure is predicate names, clause counts, integers, atoms and the module's constants. `pimos.h`, which sets the switches, is not held |
-| U9 | **Settled by reading (§7.3); one link INFERENCE.** The login shell's standard I/O is the "PIMOS CONSOLE" window of step 15: the user's task is made with no `stdio` option (`login_sv.kl1`:1536-1541) and `login_p:top` sets `task:top_task` (`login_p.kl1`:94), which makes `shell:login` use its standard I/O and not a new window (`shell/main/shell.kl1`:101-110). That the task inherits the "login" task's window is INFERENCE (the request handler between them was not traced). No partition dialogue with the held files: `login:go(.., [], off)` has no partition list, so `login_p:go2` takes its `[]` clause (`login_p.kl1`:29-34); "Enter your partition ?" needs a non-empty list and a `k` at "Confirm(<return> or kill): " | The run. Not traced: whether the stdio switch sends 141/142, and the wire effect of the login server's `get_date_time` |
+| U9 | **Settled by reading (§7.3); one link INFERENCE.** The login shell's standard I/O is the "PIMOS CONSOLE" window of step 15: the user's task is made with no `stdio` option (`login_sv.kl1`:1536-1541) and `login_p:top` sets `task:top_task` (`login_p.kl1`:94), which makes `shell:login` use its standard I/O and not a new window (`shell/main/shell.kl1`:101-110). That the task inherits the "login" task's window is INFERENCE (the request handler between them was not traced). No partition dialogue with the held files: `login:go(.., [], off)` has no partition list (`login.kl1`:204-207 makes it `none`), the login server answers `get_part_info` with `[]` (`login_sv.kl1`:961-964), so `login_p:go2` takes its `[]` clause (`login_p.kl1`:29-34); "Enter your partition ?" needs a non-empty list and a `k` at "Confirm(<return> or kill): " (275-277, 485-488), on the task's `inter` window (24) | The run. Not traced: whether the stdio switch sends 141/142, and the wire effect of the login server's `get_date_time` |
 | U10 | **Settled (§7.2).** `pimos:` is the SIMPOS directory `>sys>csp>PIMOS.DIR` (`object/login.com`) holding `object/*` (`object/INSTALL`:8): serve `pimos:NAME` from `pimosobj.tar.Z` `object/NAME`. `me:` is `user:pmpsi` and holds only `init.com` and `login.com` (INSTALL:9), which PIMOS never opens: `me:pimos.init` is absent, status 5. A third name space was missed: the shell's `shell.com` and `pimos.com` are opened in the HOME directory the FEP's `simpos_user_device` gives, not in `pimos:` | Nothing for a stand-in. What a real user's home held is not knowable from the held set |
 
 In rows U6-U10 the second column is now the result and the third what
@@ -501,25 +501,39 @@ them so at instruction-count depth.)
 | Module (patch file) | Predicates changed | What the change is, READ against the source |
 |---|---|---|
 | `scsi_fep` (scsifep) | `send_packet2/10`, `send_packet3/10`; 41 the same, the module's constants the same | the base rounds a cut string's length up in `send_packet2` and copies the rest with `substring`; the patch passes the true length and rounds in `send_packet3`, copying with `copy_string_elements`. That is the source's "Remake by Amanuma" (`scsi_fep.kl1`:350-357, 394-417, the old text commented out beside it). Only a string argument cut across two packets is touched; no code, no layout |
-| `fep_server` (fepsv) | added `get_fep_stream_wait/6`, `get_fep_stream_and_max_wait/7`, `get_fep_attributes/9`, `get_fep_attributes1/8`, `get_fep_attributes2/8`, `3/8`, `4/10`, `5/10`; dropped `get_fep_attributes/7`, `2/7`, `3/7`, `4/8`, `5/7`; changed `wait_21/9`, `wait_25/10` | the 240 fetch gets an abort line: each `get_fep_attributes*` has a new first clause `wait(AB)` that answers `aborted` and binds the device's attention to `abort` (`fep_sv.kl1`:537-626), and `wait_25` a clause for `fep_info` under abort. Without an abort the requests and their order are the base's: `file` or `remote_file`, `reset`, `fep_attributes` |
-| `fep_directory_device`, `dir_device`, `file_request_device`, `fep_file_request_device`, `fep_filter`, `filereq_filter` (mkdir) | 2, 1, 2, 1, 1 and 4 (3 added) | 205 `make_directory` (and its path through the request filter) is new in the patch; the base has 204 only |
+| `fep_server` (fepsv) | added `get_fep_stream_wait/6`, `get_fep_stream_and_max_wait/7`, `get_fep_attributes/9`, `get_fep_attributes1/8`, `get_fep_attributes2/8`, `3/8`, `4/10`, `5/10`; dropped `get_fep_attributes/7`, `2/7`, `3/7`, `4/8`, `5/7`; changed `wait_21/9`, `wait_25/10` | an abort line through the start of a request: `wait_21` now calls the two new `get_fep_stream*_wait`, which add a `wait(AB)` clause before the FEP's stream is taken (`fep_sv.kl1`:142-185, 464-474); each `get_fep_attributes*` has a new first clause `wait(AB)` that answers `aborted` and binds the device's attention to `abort` (537-626); `wait_25` has a sixth clause, for `fep_info` under abort. The atoms of the 240 fetch are the same in the dropped and the added predicates (`file`, `remote_file`, `reset`, `fep_attributes`, `attri`, `put`), plus `aborted`/`abort` in each of the new ones (MEASURED); that the order without an abort is unchanged is the reading of the source's commented-out old lines beside the new, not a trace of the base |
+| `fep_directory_device`, `dir_device`, `file_request_device`, `fep_file_request_device`, `fep_filter`, `filereq_filter` (mkdir) | 2, 1, 2, 1, 1 and 4 (3 added) | two commands are new in the patch (each diff looked at): 205 `make_directory` (`fep_directory_device:device_create/5` gains the clause with 205; `file_request_device:send_message/9` and `return_values/6` one clause each with the atom `make_directory`, the source's 529-533; `fep_file_request_device:request_device_io0/6` and `fep_filter:trans/3` one clause each) and 239 `kill` (`fep_directory_device:device_io1/8` one clause with 239; `dir_device:send_message/7` two, for Code 0 and 1). 240's handling (`return_values/6`'s `fep_attributes` clause) is not touched |
 
 **Patch against source** (`--source MODULE`), MEASURED: every predicate
 of `scsi_fep` (43), `fep_server` (36), `fep_directory_device` (16),
 `dir_device` (18), `file_request_device` (37),
-`fep_file_request_device` (6) has the source's clause count, and every
-integer of the source clause (literal or `fep#` macro) is in the object
-predicate, but one: `scsi_sender/4`'s 80, which is in the module's
-constants as `{-1,80}`. Unpatched modules on the same path agree the
-same way: `scsi` (8), `scsi_processor` (5), `fep_file_device` (18),
-`fep_string_io_device` (16), `login_server` (108), `login` (120 of 122;
-two are compiler-made, and the window default's 200, 47, 14 are in the
-constants as `{"PIMOS CONSOLE",{at,200,200},{char,47,14},
-"font:test_11.font"}`). So where a patch replaces a module, §1-§3 read
-the right text, and the "Caveat on the object" at the top is answered
-for these modules. Depth: names, arities, clause counts, constants; not
-instruction for instruction (that needs the compiler run on the
-source).
+`fep_file_request_device` (6) has the source's clause count. Every
+integer of a source clause (literal or `fep#` macro, the small ones
+too) is among its object predicate's integers in the four `mkdir`
+modules; in `scsi_fep` all but `scsi_sender/4`'s -1 and 80, which are
+in the module's constants as `{-1,80}`; in `fep_server` all but 0 and
+7 in five predicates (`file/3` and its four likes), also inside a
+structured constant. Unpatched modules on the same path: `scsi` (8),
+`fep_file_device` (18), `fep_string_io_device` (16) agree in full;
+`scsi_processor` (4 of 5) and `login_server` (105 of 108) but for a
+-1, 0, 1 or 7 of that kind; `login` 120 of 122 (two are compiler-made;
+the window default's 200, 47, 14 are in the constants as
+`{"PIMOS CONSOLE",{at,200,200},{char,47,14},"font:test_11.font"}`).
+
+What this measure can and cannot tell (`--source MODULE --base`): the
+BASE `fep_server` fails it (five predicates not in the source,
+`wait_25/10` five clauses for the source's six), and so does the base
+`fep_directory_device` (205 and 239 missing, a clause short in two
+predicates), so for those the patch, not the base, is the held source.
+The base `scsi_fep` passes it as the patch does: the change there
+moves arithmetic and adds no clause or constant, and it is the
+instruction diff above, read against the "Remake by Amanuma" text,
+that identifies the patch as the source. The comparison is one way
+(integers the object has beyond the source are not reported) and stops
+at names, arities, clause counts and constants: not instruction for
+instruction, which needs the compiler run on the source. Within that,
+where a patch replaces a module §1-§3 read the right text, and the
+"Caveat on the object" at the top is answered for these modules.
 
 **Build switches of the held object**, each decided from the object
 (`--has`, `--grep`; `pimos.h`, which sets them, is not in
@@ -531,7 +545,7 @@ source).
 | `virtual_machine_interface` | not `yes` | `syslog` holds `"pimos:pimos.syslog"`; no string `>sys>user>me` or `PIMOS/VM` in any file (`bios/boot/syslog.kl1`:29-53, `bios.kl1`:22-51); `pim` holds `"PIMOS "` |
 | `machine` | not `vm`; `mpsi` or `pimm` | `user_server_manager` holds `"pimos:pimos.conf"` (`server/login/init/usersvman.kl1`:29-40); `pseudo_system_timer_device` has 19 predicates, not the one of its default branch (`server/fep/timer/timePdvc.kl1`:15-16, 305-306) |
 | `machine_type` | `mpsi` | `system_timer_manager:create/3` runs `set_timer` with two registers (`bios/boot/sysTman.kl1`:18-21; the `vpim` form has three) |
-| `ipl_parameter` | `yes` | `pim:go2/4` holds no integer 7 (the default branch sets Unit = 7, `bios.kl1`:64-67) and `decompose_boot_info/7` is there; the run agrees (§1.4) |
+| `ipl_parameter` | `yes` | `pim:go2/4` builds its vector of five from five variables (`put_vector_5`, five `write_variable`) and ends in an `execute` after three `enqueue_goal` and two external ones: four goals of the module's own, the `yes` branch's (`bios.kl1`:54-63); the default branch has three and writes 0, 0, 7, 0, 1 (64-74), and neither `go2/4` nor the module's constants hold a 7. The run agrees (§1.4) |
 | `autoloading` | not `no` | `autoload` has `init_0/4` and the string `"pimos:autoload.tbl"` (`server/module/autoload.kl1`:19-29): **the object asks for the file** (step 6 of §3) |
 | `scsi#scsi_init`, `scsi#scsi_command` | the built-ins | `scsi:create/2` holds the instruction `scsi_init`, `command_executer/2` `scsi_command`; `scsi_builtin`'s KL1 stand-ins are in the file but not called there |
 
@@ -580,7 +594,7 @@ where the source chains them.
 | 2 | < | S: `{S, 1, NI}`, the login record (§7.5) | decoded 995-998, 1244-1269 |
 | 3 | > | R: 620 `io(1, [ID] ++ "Login procedure starts.")` | 1007-1010, 1215-1219 |
 | 4 | > | S: 620 `io(1, " ")`, the next login; held again | 1011 |
-| 5 | > | a new device C: 601 `{C, 601, "", RN, RP, "simpos_user_device"}`, then 620 `io(0, [len RN, len RP] ++ RN ++ RP)`; wants `{C, 1, Dir}`. The Fep server confirms RN, RP before it serves the file request of 1013-1014; with strings it always does, and an empty RN does not skip it (the skip needs the integers 0, 0, which a record cannot give) | `server/fep/fep/confirm.kl1`:23-34, 301-323; `conf_dvc.kl1`:41-44, 64-68, 79-91 |
+| 5 | > | a new device C: 601 `{C, 601, "", RN, RP, "simpos_user_device"}` (the confirm's device is made with RN, RP as its user, `conf_dvc.kl1`:12-18; `server/fep/string_io/strioRdvc.kl1`:167-170), then 620 `io(0, [len RN, len RP] ++ RN ++ RP)`; wants `{C, 1, Dir}`. The Fep server confirms RN, RP before it serves the file request of 1013-1014; with strings it always does, and an empty RN does not skip it (the skip needs the integers 0, 0, which a record cannot give) | `server/fep/fep/confirm.kl1`:23-34, 301-323; `conf_dvc.kl1`:41-44, 64-68, 79-91 |
 | 6 | > | file: 201 `"me:pimos.init"`, User RN, Password RP; before it 240 if this I/O node was not yet asked. 5 gives the default window | 1093-1106, 1169-1173 |
 | 7 | > | window W: 104 `{W, 104, "", RN, RP}`, then 127 `(200, 200, 47, 14)`, 130 `"PIMOS CONSOLE"`, 132 `"font:test_11.font"`, 143 | 1031-1042; `kernel/stdio/s-server.kl1`:267-271, 288-292; `server/fep/window/winRdvc.kl1`:166-169, `win_dvc.kl1`:498-499 |
 | 8 | - | UN, UP checked by the login server against `pimos.logins` (read at step 9 of §3): no wire | 1059-1069 |
@@ -651,8 +665,10 @@ without using up a `receive` (`fep_rcvr.kl1`:75-80). Anything else is
 matched to the device's next `receive` in order (86-92), so the
 replies of one device must come in the order of its requests; between
 devices the order is free (`id_manager1`, 144-149, routes by id). A
-packet for an id PIMOS has not given out ends the id manager with
-`SCSI_FEP internal error.` (161-168): the FEP must never invent one.
+packet for an id below the next free one that is not in the pool ends
+the id manager with `SCSI_FEP internal error.` (161-168), and one for
+an id above it matches no clause at all (the guard `DevID =< MaxID`,
+146): the FEP must never invent an id.
 The login record is therefore not unsolicited: it is the late reply
 to request 1 of §7.3, on S's id.
 
@@ -716,7 +732,9 @@ are of that code (`"pimos:pimos.syslog"` begins 2370h, 2369h).
 
 The script that reaches R6: the login, then one shell command that
 needs only the kernel, then nothing: the run ends with the 110 after
-the command's output held.
+the command's output held. Which command, and the manual transcript it
+is checked against, is R6's choice (`pimos_roadmap.md` §2) and was not
+made here.
 
 ### 7.6 What should be seen
 
@@ -730,7 +748,8 @@ the command's output held.
 
 ### 7.7 What the models lack
 
-Nothing in the machine: the built-in's deferred completion is in both
+As of this tree (cf71ee6c; another agent is changing `fep.py` and the
+bench now). Nothing in the machine: the built-in's deferred completion is in both
 (`ref/pimm/pimm.py` `i_scsi_command`, `scsi_poll`;
 `bsv/PimmScsiBox.bsv`, "Not finished yet"). No target-initiated
 interrupt is needed, because none reaches KL1 (§7.4). What is missing

@@ -22,12 +22,17 @@ atom, integer, an item of tag 24h whose top byte is the arity) it takes
         base module against patch module: predicates added, dropped,
         changed (ops or consts differ); --show prints a diff of the
         changed ones
-    python3 asm/fep_services/savpreds.py --source MODULE
-        each object predicate (patch if there is one, else base)
-        against the source file declaring the module: clause count
-        (ends against the crude source reader's count, which counts
-        every branch of a conditional), the integers of the source's
-        fep#/scsi# macros and literals not in the object, and back
+    python3 asm/fep_services/savpreds.py --source MODULE [--base]
+        each object predicate (patch if there is one, else base; with
+        --base the base) against the source file declaring the module:
+        clause count (ends against the crude source reader's count,
+        which counts every branch of a conditional) and the integers
+        of the source clause (literals and fep#/scsi# macros) that are
+        not among the predicate's integers.  One way only: integers
+        the object has and the source does not are not reported (the
+        compiler adds arities and sizes), and an integer inside a
+        structured constant is in the module's GC area, not the
+        predicate's
     python3 asm/fep_services/savpreds.py --has MODULE [PRED/N ...]
         which .sav files hold the module, and whether each predicate
         is in it (for the build switches)
@@ -264,9 +269,9 @@ def source_preds(text, table):
     return out
 
 
-def source_diff(mods, name, out=print):
+def source_diff(mods, name, out=print, use_base=False):
     base, patch = pick(mods, name)
-    f, p = (patch or base)[-1]
+    f, p = (base if use_base else (patch or base))[-1]
     texts = savsrc.sources().get(name)
     if not texts:
         out('%s: no source module' % name)
@@ -285,7 +290,7 @@ def source_diff(mods, name, out=print):
         n, ints = src[k]
         objints = set(c[1] for c in consts if c[0] in ('int', 'imm')) | \
             set(c[2] for c in consts if c[0] == 'key' and c[1] == 'int')
-        missing = sorted(i for i in ints if i not in objints and abs(i) > 9)
+        missing = sorted(i for i in ints if i not in objints)
         if ends == n and not missing:
             same += 1
             continue
@@ -312,7 +317,7 @@ def main(argv):
     if '--patch' in argv:
         patch_diff(mods, args[0], '--show' in argv)
     elif '--source' in argv:
-        source_diff(mods, args[0])
+        source_diff(mods, args[0], use_base='--base' in argv)
     elif '--has' in argv:
         hit = [(f, p) for f, m, p, _g in mods if m == args[0]]
         if not hit:
