@@ -11,7 +11,8 @@ p9boot.Sonic, on a real p9boot.Board memory, through the rest, and
 records it with sonic_trace.tap in the same trace format:
 
 * several frames packed into one buffer (Lpkt only when the buffer runs
-  low), the Rrra wrap from rea to rsa;
+  low; one frame leaves exactly eobc words, which is not yet low), the
+  Rrra wrap from rea to rsa;
 * the filter: unicast to the CAM entry, unicast elsewhere and multicast
   refused (rcr without Pro), broadcast with and without Brd, a CAM entry
   loaded but not enabled, Pro accepting any unicast, the receiver off;
@@ -176,15 +177,24 @@ def main():
     put(rda + 0x60 + 20, (rda & 0xFFFF) | 1)
     put(rda + 0x60 + 24, 1)
     W(ISR, 0xFFFF)
-    s.receive(frame(EA, 120, 9))             # the kept descriptor; Lpkt, Rrra wraps
+    # the kept descriptor; 52 bytes (28 words) leave exactly eobc (64)
+    # words: no Lpkt yet (rbwc < eobc is strict)
+    s.receive(frame(EA, 52, 9))
     R(ISR)
     R(CRDA)
     R(RSC)
     R(RRP)
     W(RCR, 0x3000)                           # Pro | Brd
     W(ISR, 0xFFFF)
-    s.receive(frame(OTHER, 66, 10))          # Pro: any unicast
+    # frame 9's link had EOL again: free it to descriptor 0, which now ends
+    # the list, so frame 10 is received (and not counted in mpt)
+    put(rda + 0x60 + 20, rda & 0xFFFF)
+    put(rda + 20, ((rda + 0x20) & 0xFFFF) | 1)
+    put(rda + 24, 1)
+    s.receive(frame(OTHER, 66, 10))          # Pro: any unicast; Lpkt, Rrra wraps
     R(ISR)
+    R(RSC)
+    R(RRP)
     W(CR, 0x0004)                            # Rxdis
     R(CR)
     s.receive(frame(EA, 60, 11))             # off again

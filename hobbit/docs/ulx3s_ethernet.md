@@ -251,11 +251,17 @@ Test on the host: `python3 hobbit/tests/test_ethrelay.py` (also run by
 `tests/run_tests.sh`).  See the test's docstring for what each check is
 evidence of, and for the injected bugs it catches.
 
-## 6. FPGA side: `sonic` and `esplink` (specification)
+## 6. FPGA side: `sonic` and `esplink`
 
-Paths for the RTL when it is written: `fpga/dev/sonic*`, `fpga/dev/esplink*`.
-Provenance goes in `fpga/IP_PROVENANCE.md`.  Both modules are BSV,
-per the plan's device bus contract.
+The RTL exists, in BSV, to the plan's device bus contract:
+`fpga/dev/Sonic.bsv` (`mkSonic`) and `fpga/dev/EspLink.bsv`
+(`mkEspLink`, `mkEspLink25M`).  Its design, tests (p9boot.Sonic traces
+replayed word for word; the link against relay.c), discrimination and
+yosys sizes are in `fpga/dev/sonic.md`; provenance in
+`fpga/IP_PROVENANCE.md`.  This section was the specification.  Where
+the RTL differs, it says so below: the engine buffers whole frames
+(2 KB each way), makes one DMA read at a time, and has no address
+check.
 
 ### 6.1 Register port (the plan's device bus contract)
 
@@ -327,7 +333,7 @@ endinterface
 ```
 
 * One 32-bit word per request.  The arbiter may stall either side for
-  any number of cycles, and the engine has at most 4 reads outstanding.
+  any number of cycles, and the engine has at most 4 reads outstanding (the RTL has 1).
 * Writes are posted (no response).  The arbiter keeps this port's
   requests in order: a read after a write to the same word returns the
   written data.  A write must reach memory before the engine raises
@@ -338,8 +344,8 @@ endinterface
   honour.
 * Addresses are physical.  The kernel's PADDR is the identity
   (`SONIC_CHOICES['dma']`), and RAM is at 0x80000000 (`ulx3s_plan.md`
-  memory map).  An address outside RAM sets an error bit and stops the
-  engine; it never wraps.
+  memory map).  The RTL makes no address check, because the model has
+  none.  The arbiter owns the map.
 * The bandwidth needed is small: a 10 Mb/s-class stream is about
   1.25 MB/s, about 320 k words/s plus descriptors.  Bursts are not
   needed.  A later `len` field can add them without changing the
@@ -362,8 +368,9 @@ endinterface
 The bytes are the frame from its destination address, with no FCS.  An
 RX frame whose `last` byte carries `bad` (a link CRC error, or an RMII
 FCS error) is discarded by the engine, and nothing is committed to
-memory or descriptors.  The engine writes into the buffer as bytes
-arrive, and advances crba and the descriptor only on a good `last`.
+memory or descriptors.  The RTL holds the whole frame in a 2 KB buffer
+and writes it to memory only after a good `last`, so its DMA order is
+the model's: buffer words first, then the descriptor.
 
 ### 6.5 `esplink`
 
@@ -375,23 +382,25 @@ arrive, and advances crba and the descriptor only on a good `last`.
 
 The system clock must be an integer multiple of the baud rate.  25 MHz
 (10 clocks a bit at 2.5 Mbaud, 5 at 5 Mbaud) and 50 MHz (20 and 10) both
-are.  The SoC agent picks the clock in plan step 1.  It is an 8N1 UART (16x oversampled RX, or
-a mid-bit sample at 10 clocks a bit), plus:
+are.  The SoC agent picks the clock in plan step 1.  It is an 8N1 UART (the RTL samples
+RX mid-bit, after a 2-flop synchroniser), plus:
 
-* TX: CRC-32 over 0x45 and the frame, then a streaming COBS encoder,
-  which needs a 254-byte look-ahead buffer (one EBR block), then the
-  0x00 delimiter.
+* TX: CRC-32 over 0x45 and the frame, then a COBS encoder, then the
+  0x00 delimiter.  The RTL gathers the whole frame (2 KB) and scans
+  ahead up to 254 bytes before each code byte.
 * RX: a streaming COBS decoder, a 4-byte delay line so the trailing CRC
   is not passed on, and a CRC check at the 0x00 that sets `bad` on
   `last`.  The first body byte is the type.  A non-0x45 packet is
   swallowed.
-* Counters readable for debugging: good, bad_crc, bad_cobs, overflow
-  (the same as `relay_dec`).
+* Counters readable for debugging: `relay_dec`'s good, bad_crc,
+  bad_cobs, bad_len, overflows and bad_type, plus UART framing errors,
+  bytes lost and frames too long to send.
 
-Its test: Bluesim or Verilator runs the Python reference codec's
-vectors from `tests/test_ethrelay.py` (`packet()`) through the RTL in
-both directions, including the bad-packet stream of
-`test_bad_packets_dropped`, and compares byte for byte.
+Its test (`fpga/dev/esplink_run_tests.sh`): Bluesim runs the RTL in both
+directions against the relay's own C (`relay.c`, through
+`esplink_ref.c`).  That includes the bad-packet stream of
+`test_bad_packets_dropped`.  It compares byte for byte, and frame and
+counter for frame and counter.
 
 ## 7. Programming the ESP32 (procedure, not run)
 

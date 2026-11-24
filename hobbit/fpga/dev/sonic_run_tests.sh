@@ -9,6 +9,17 @@
 #
 #   sh hobbit/fpga/dev/sonic_run_tests.sh [TRACE ...]
 #
+# Discrimination (observed, 2026-11-24; sonic.md has the table):
+#   S1 FCS not inverted        join 534, directed 9 mismatches
+#   S2 isr write-one-to-set    join 2264, directed 25
+#   S3 Bc without Brd          join pass, directed 1232
+#   S4 mpt not counted         join pass, directed 2
+#   S5 fragments 16 apart      join pass, directed 9
+#   S6 Lpkt at rbwc <= eobc    join pass, directed 1141
+#   S7 rrp wraps at rea+16     join 1232, directed 1
+#   S8 irq ignores imr         join 4, directed 10
+#   S9 rcr Pro ignored         directed 595 (join not run)
+#
 # A trace passes when the Python check has no mismatch, the RTL prints no
 # MISMATCH line, and the testbench reaches its SUMMARY with every event.
 # Build products go to a scratch directory (BUILD_DIR to keep them), never

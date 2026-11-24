@@ -96,3 +96,25 @@ Flute: Apache License 2.0. LICENSE was added to its main branch as commit
 631c88b. Files from that repository that earlier sections recorded as having
 no licence line (for example `flute-m50/src/Uart_Pins.bsv`) are therefore
 Apache-2.0 and may be copied in with attribution.
+
+## Step 6: SONIC subset and ESP32 link (`fpga/dev/Sonic.bsv`, `fpga/dev/EspLink.bsv`), 2026-11-24
+
+* **Copied: nothing.** `Sonic.bsv`, `EspLink.bsv`, their testbenches
+  (`SonicReplayTb.bsv`, `EspLinkTb.bsv`), `esplink_ref.c` and the Python
+  and shell scripts beside them are new. The behaviour reference is this
+  repository's own `tools/p9boot.py` (`Sonic`, `SONIC_CHOICES`). The link
+  protocol is this repository's `fpga/esp32_ethrelay/main/relay.c`, which
+  `esplink_run_tests.sh` compiles in place, not from a copy.
+* **Library cells:** bsc's own FIFO2, SizedFIFO, RegFile, RegFileLoad
+  (testbench only), BRAM2 (under `mkSizedBRAMFIFOF`) and StmtFSM
+  (BSD-3-Clause / Apache-2.0, part of the bsc installation), read at
+  build time and not copied into the tree.
+* **Consulted, read-only, nothing taken:**
+  * LiteEth (BSD-2-Clause), for the general shape of a MAC's frame stream;
+  * emard's ULX3S `ulx3s_v20.lpf`, for the ESP32 pin sites (L1, N3, H1).
+    The pin sites are facts about the board, cited in
+    `docs/ulx3s_ethernet.md` §2.
+* **Traces:** `fpga/dev/sonic_tests/*.trace.gz` were generated here, from
+  the reference model running the recorded join of `tests/test_p9boot.py`.
+  The frames in them are that session's own: the 1st Edition kernel's and
+  the recorded 1e file server's.
