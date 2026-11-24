@@ -71,6 +71,7 @@ instruction and is tested by trace comparison with it.
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element |
+| `PimmShBox.bsv` | shoen box (stage 1): the shoen record, the report stream, start, the count at the end of a reduction and termination |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
 | `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`) |
@@ -78,7 +79,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test. Thirty-four tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Thirty-nine tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -147,7 +148,27 @@ are unified by a goal of their own (PDSS's way; the stub
 `s32`: `new_string` with 32-bit elements. `ipll`: the IPL's
 `ipl_files/4` reads the held `pimos.ipl` and gives its twenty names. `p2c`: `predicate_to_code` on every predicate
 of the image and the guard `code`. `apply`: `apply(Code, Args)`, with
-`top:go_pimos1/2`'s own. `where`: `scsi_where`.
+`top:go_pimos1/2`'s own. `shoen`: the shoen in its first stage,
+`create_shoen`, `start_shoen` and termination, driven through the
+image's own `shoen:execute/4` (its `control/2` and `report/2` are the
+consumers): a goal run in a shoen with `started`, `terminated`
+reported; a shoen not started; one whose goal waits; a shoen inside a
+shoen; the records' counts read from memory (`PimmShBox.bsv`;
+`../docs/pimm_semantics.md` "Shoen" says what is PIM/m-sourced, what
+is carried over from PDSS and VPIM, and what is ours). `alt`: `read_eagerly` (what the compiler
+writes for `alternatively`), the guard `not_equal` and
+`wait_vector_1`, `_4`, `_6`, on `scsi_fep_util`,
+`scsi_fep_file:reply_with_attention/4`, `scsi:request_manager/3` and
+`scsi:command_executer/2` (`wait_vector_1`, which the image does not
+use, on code the bench writes). `body`: `b_divide` and `b_modulo`
+(`scsi_fep_module:str8_to_msg/3` and `str16_to_str8/2`, and signed
+operands at the stubs), `b_string` at its stub,
+`enqueue_goal_to_processor` (`scsi_fep_module:create/7`; processor 0
+only). `elw`: `string_operation` waits on an element of its vector
+that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
+`b_string`'s real sites, and `builtin_utility:append_string/2`).
+`reuse`: `put_reused_structure` of a vector of seven
+(`scsi_fep_file:request_device_io/6`).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -155,7 +176,7 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 117
+State: 128
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
@@ -164,7 +185,10 @@ its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
 `../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
 instruction before it), no timing claimed. The MRB is kept, and `set_vector_element`
 updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are always copied
-(`../docs/pimm_semantics.md` "The MRB"). Not modelled: garbage collection, priorities, shoen, built-in
+(`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen` and termination only
+(a goal knows its shoen, a shoen counts its goals and children and reports `started` and `terminated`);
+its other built-ins, resources and a failure inside a shoen stop the model.
+Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
 

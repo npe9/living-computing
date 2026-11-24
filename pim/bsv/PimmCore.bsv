@@ -21,6 +21,7 @@ import PimmSBox::*;
 import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
+import PimmShBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -53,7 +54,8 @@ module mkPimmCore#(String image)(PimmCore);
   PimmVBox  vbox  <- mkPimmVBox(mem.port[6], gbox);
   PimmMBox  mbox  <- mkPimmMBox;
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5]);
+  PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -66,15 +68,22 @@ module mkPimmCore#(String image)(PimmCore);
     exec.enq(f);
   endrule
 
-  (* descending_urgency = "advance, begin_run" *)
+  (* descending_urgency = "advance, reduction_ended, begin_run" *)
   rule advance;
     let s <- exec.out;
     case (s) matches
       tagged Next .pc: fetch.enq(pc);
       tagged Stop .e:
-        if (e == EndDone || e == EndSusp) gbox.pickup;   // on to the next goal
+        // the reduction is over: the goal's shoen loses one (the shoen
+        // box; nothing for the root), then on to the next goal
+        if (e == EndDone || e == EndSusp) shbox.endReduction;
         else endQ.enq(e);
     endcase
+  endrule
+
+  rule reduction_ended;
+    shbox.ended;
+    gbox.pickup;
   endrule
 
   rule begin_run;
