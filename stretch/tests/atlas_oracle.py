@@ -96,8 +96,10 @@ ASSUMPTIONS = [
     "boundary (with forwarding, PDF 114's bit 60, .74 octal)",
     "INDEXING columns: indexed by $X5, which holds zero (a half-word "
     "branch by $X1, its one-bit K field's only choice)",
-    "TRANSMIT: the I-box block is 18.0 for source and destination "
-    "(ibox_ibox transmits onto itself); external 10000.0 -> 50000.0 (octal)",
+    "TRANSMIT: the I-box block is 18.0 ($2); I-BOX TO I-BOX is 18.0 -> 19.0 "
+    "(DERIVED from the pages' row extents); external 10000.0 -> 50000.0 "
+    "(octal); TI rows above 1WD with an I-box source are not run (PDF 106 "
+    "prints them flat in the count)",
     "branch SUCCESS columns: each copy branches to the next copy, a "
     "half-word on; the condition is set once in the set-up and stays",
     "INVERT SIGN blocks: VFL invert-sign modifier bit XORed into the word",
@@ -731,17 +733,54 @@ def branch_case(rec):
 # --- transmit, PDF 106 / 107 -------------------------------------------------
 # PDF 105 (printed 98): "external operands in the two lowest memory boxes ...
 # The index operands were in $2 through $14 (18.0 through 30.0)."
+#
+# THE I-BOX TO I-BOX BLOCKS ARE ONE WORD APART -- DERIVED, 2026-11-23.  The
+# first generator put source and destination both at 18.0, a transmit onto
+# itself.  The pages' row extents say otherwise, if GENER ran every row that
+# fitted: EXTERNAL TO I-BOX and I-BOX TO EXTERNAL run to 13WD, exactly the
+# thirteen words $2-$14, but I-BOX TO I-BOX stops at 11WD on both pages, so
+# its two blocks are offset (an offset of 0 would fit 13 words); and
+# INTERNAL TO INTERNAL runs to 5WD in the six locations 4.0-9.0, so there
+# the offset is at most 1.  One offset fits both: the receiving block starts
+# one word after the sending one (18.0 -> 19.0), and at most 12 words fit.
+# Which way round is not printed; the 7030's time does not depend on it
+# (PDF 107: I-BOX TO I-BOX equals EXTERNAL TO I-BOX to 0.01 us, so the
+# source's place does not matter at all), and neither does the model's.
+XMIT_EXT = (0o10000, 0o50000)       # source, destination (octal word addresses)
+XMIT_IBOX = (18, 18)                # source, destination, one-place columns
+XMIT_IBOX_IBOX = (18, 19)           # source, destination, I-BOX TO I-BOX
+XMIT_IBOX_LAST = 30                 # $14
+XMIT_CASES = 47                     # cells of PDF 106-107 generated (selftest)
+
+
 def transmit_case(rec):
     n = int(rec.row[:-2])
     src, dst = rec.col.split("_")
     if "int" in (src, dst):
         return ("INTERNAL operands are locations 4.0-9.0 (PDF 105), the "
                 "boundary and accumulator registers; not generated")
-    where = {"ext": ("(8)10000.0", "(8)50000.0"), "ibox": ("18.0", "18.0")}
-    if n > 13 and "ibox" in (src, dst):
-        return "more words than $2-$14 hold"
-    a = where[src][0]
-    b = where[dst][1]
+    # PDF 106 (TRANSMITI): EVERY column whose source is INTERNAL or I-BOX is
+    # flat in the word count (six columns) -- each row equals its own 1WD
+    # cell, and for an I-BOX source that cell equals the same destination's
+    # 1WD cell from EXTERNAL (I-BOX TO I-BOX 13.28 = EXTERNAL TO I-BOX 1WD
+    # 13.28; I-BOX TO EXTERNAL 13.85 = EXTERNAL TO EXTERNAL 1WD 13.84).
+    # (INTERNAL sources are not generated at all.)  PDF 107 (TRANSMIT) has no such
+    # columns: there I-BOX TO EXTERNAL equals EXTERNAL TO EXTERNAL row for
+    # row.  So the TI rows above 1WD with such a source time ONE word,
+    # whatever the label says -- UNEXPLAINED (PDF 105 is silent) -- and a
+    # residual against an n-word program would be an artifact.
+    if rec.instr == "TI" and src != "ext" and n > 1:
+        return ("PDF 106 prints this column flat in the word count (each "
+                "row = its 1WD cell): the run moved one word; unexplained")
+    ib = XMIT_IBOX_IBOX if (src, dst) == ("ibox", "ibox") else XMIT_IBOX
+    where = {"ext": XMIT_EXT, "ibox": ib}
+    sa, da = where[src][0], where[dst][1]
+    for p, w in ((src, sa), (dst, da)):
+        if p == "ibox" and w + n - 1 > XMIT_IBOX_LAST:
+            return "more words than $2-$14 hold (%d.0 + %d)" % (w, n)
+    fmt = {"ext": "(8)%o.0", "ibox": "%d.0"}
+    a = fmt[src] % sa
+    b = fmt[dst] % da
     setup = ["LX, $X1, ATLTC"]
     data = ["ATLTC   XW, 0, %d, 0" % n]
     if rec.instr == "TI":
@@ -939,6 +978,62 @@ def _decode_vfl(w):
                 code=(w >> 4) & 0x3F, inv=int(bool(w & VFL_INVERT_BIT)))
 
 
+def _decode_xmit(w):
+    """A full-word TRANSMIT as StretchDecode reads it: addr1 a bit address
+    (IBM bits 0-23), I1 bits 28-31, addr2 a half-word address (bits
+    32-50), J bits 51-54, modifiers 55 (backward) 56 (immediate count) 57
+    (swap), sub-op bits 57-59, I2 bits 60-63."""
+    return dict(src=(w >> 40) >> 6, i1=(w >> 32) & 0xF,
+                dst=((w >> 13) & 0x7FFFF) >> 1, j=(w >> 9) & 0xF,
+                backward=(w >> 8) & 1, imm=(w >> 7) & 1, swap=(w >> 6) & 1,
+                subop=(w >> 4) & 7, i2=w & 0xF)
+
+
+def xmit_encoding_errors(cases):
+    """Every TRANSMIT case, statically: the word is a forward, non-swap
+    transmit of the page's kind (TI: immediate count n; T: count from $X1,
+    whose index word's count field is n); the two blocks are where PDF 105
+    and the column say -- external at 10000/50000 (octal), I-box blocks
+    inside $2-$14, the I-BOX TO I-BOX blocks NOT the same block -- and no
+    written word is $X1 (the count) or $X15 (GENER's loop count)."""
+    errs = []
+    for c in cases:
+        r = c.rec
+        if r.cls != "TRANSMIT":
+            continue
+        n = int(r.row[:-2])
+        src, dst = r.col.split("_")
+        full, _ = c.images(1)
+        words = dict(full)
+        d = _decode_xmit(words[BODY_ADDR])
+        prog = _assemble(_program(c.setup, c.body(1), c.data, loop=False))
+        tc = (prog.words[prog.symtab["ATLTC"] >> 6] >> 18) & 0x3FFFF
+        imm = r.instr == "TI"
+        want = dict(subop=2, swap=0, backward=0, imm=int(imm), i1=0, i2=0,
+                    j=(n % 16) if imm else 1)
+        got = {k: d[k] for k in want}
+        if got != want:
+            errs.append((c, "decodes %r, wants %r" % (got, want)))
+            continue
+        if not imm and tc != n:
+            errs.append((c, "$X1's count field is %d, wants %d" % (tc, n)))
+            continue
+        for place, a, which in ((src, d["src"], 0), (dst, d["dst"], 1)):
+            if place == "ext" and a != XMIT_EXT[which]:
+                errs.append((c, "external %s address %o" % (
+                    ("source", "destination")[which], a)))
+            if place == "ibox" and not (18 <= a and a + n - 1 <= 30):
+                errs.append((c, "I-box block %d.0 + %d words leaves $2-$14"
+                             % (a, n)))
+        if src == dst == "ibox" and d["src"] == d["dst"]:
+            errs.append((c, "I-BOX TO I-BOX transmits a block onto itself"))
+        written = range(d["dst"], d["dst"] + n)
+        if 17 in written or 31 in written:
+            errs.append((c, "the destination %d.0 + %d overwrites $X1 or $X15"
+                         % (d["dst"], n)))
+    return errs
+
+
 def vfl_new_encoding_errors(cases):
     """The INTERNL, IMMED. and ACCUM. cases, statically: the address field,
     the addressing mode P, the index and the invert-sign bit are the ones
@@ -1019,6 +1114,30 @@ def selftest(pages):
                                       errs[0][0].rec.block, errs[0][0].rec.row,
                                       errs[0][0].rec.col, errs[0][1])
                                      if errs else (0, "", "", "", "", "too few"))))
+    fails += not ok
+    # 0b. THE TRANSMIT WORDS ARE THE ONES PDF 105-107 DESCRIBE (static): see
+    #     xmit_encoding_errors.  Proven discriminating 2026-11-23: with
+    #     XMIT_IBOX_IBOX = (18, 18) -- the first generator's transmit onto
+    #     itself -- it fails on exactly the 7 I-BOX TO I-BOX cells (PDF 106
+    #     TI 1WD, PDF 107 T 1WD-11WD), first "PDF 106 TI 1WD ibox_ibox: I-BOX
+    #     TO I-BOX transmits a block onto itself", every other check ok;
+    #     with the T line's J = 2 it fails on all 30 T cells (J decodes 2,
+    #     wants 1), first PDF 107 T 1WD ext_ext.  Both reverted by the
+    #     inverse edit, file byte-identical after.  The case count pins the cells
+    #     the generator expresses (47 of the 58 T and TI cells, 2026-11-23).
+    xc, _ = build_cases(pages, pdf=[106, 107])
+    errs = xmit_encoding_errors(xc)
+    ok = not errs and len(xc) == XMIT_CASES
+    print("%s TRANSMIT encoding: %d T/TI cases decoded (kind, count, "
+          "blocks)%s" % ("ok  " if ok else "FAIL", len(xc),
+                         "" if ok else "; first: %s: %s" % (
+                             ("PDF %d %s %s %s" % (errs[0][0].rec.pdf,
+                                                   errs[0][0].rec.instr,
+                                                   errs[0][0].rec.row,
+                                                   errs[0][0].rec.col),
+                              errs[0][1]) if errs
+                             else ("count", "%d, wants %d" % (len(xc),
+                                                              XMIT_CASES)))))
     fails += not ok
     r = recs.get((120, "L", "-", "(BU,8,8)", "ni_ext"))
     if r is None:

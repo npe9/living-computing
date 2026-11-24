@@ -277,6 +277,8 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
 
 ### 1.4 The packet and message format the IPL speaks (READ from `scsi_fep_module`, `scsi_fep_file`, `scsi_processor`)
 
+*(The whole command set and the order of the start, from the PIMOS source: `docs/fep_services.md`.)*
+
 **SCSI level.** One built-in, `scsi_command(Obj, {Unit, LUN, CDB,
 Length, Dir, Buffer, 0}, ^Data, ^TransferredLength, ^Id, ^Result,
 ^NewObj)` (operand directions from `compiler/blt.kl1`). The IPL uses
@@ -454,34 +456,108 @@ then `--load FILE --go --fep`, the same result).
 attached as `ref_scsi.py` attaches it, and the commands that wait for
 the device are given it again whenever the machine runs dry.
 
-- **The conversation is empty.** `scsi_init` passes (OURS values,
-  `docs/pimm_semantics.md`), and no `scsi_command` is issued before the
-  model stops: the device is given 0 commands, raises no `FepError`, and
-  no answer for the kernel has been added to `fep.py`. The console
-  shows the banner only: `PIMOS V 3.600 20-May-93`. 3,612 instructions
-  run, against 1,722 without the device, which stop at `scsi_init`.
-- **The stop is not a FEP command.** It is the guard instruction
-  `multiply` (`23:F6`, `r_r_r`, `docs/kl1_encoding.md`; only the body
-  form `b_multiply` is in `pimm.py`) at cell 62160538. The cell is in the
-  loaded module `scsi`, predicate `check_lun/4`, which is
-  `bios/scsi/scsi_handler.kl1`:119-122, `LUN =< ((ExtLUN * 2040) + 7)`.
-  The trace has `put_integer 2040` just before it. The registers at the
-  stop are LUN 0, ExtLUN 4 and Unit 0. ExtLUN is element 2 of
-  `scsi_init`'s Info, the 4 that is OURS (the stand-in `scsi_blt.kl1`).
-  The call chain is `scsi:request_manager/3` on
-  `processor(Unit, LUN, Result)` (lines 49-53), then `check/4`
-  (107-111), then `check_lun/4`. The sender is the kernel's bus scan,
-  `scsi_manager:check_unit_without_myself/6` (`bios/boot/scsi_man.kl1`:
-  198-207), which asks for a processor device on every unit but its
-  own, unit 0 first. The model stops here: instructions are being
-  added to `pimm.py` by other work, and this one is recorded, not
-  implemented.
+- **First run (2026-11-23, rung S0 begun): the conversation was empty.**
+  `scsi_init` passed (OURS values, `docs/pimm_semantics.md`), no
+  `scsi_command` was issued: 3,612 instructions, the stop the guard
+  instruction `multiply` (`23:F6`) in the loaded module `scsi`,
+  `check_lun/4` (`bios/scsi/scsi_handler.kl1`:119-122, `LUN =<
+  ((ExtLUN * 2040) + 7)`, ExtLUN 4, `scsi_init`'s Info element 2, OURS),
+  for unit 0 LUN 0 of the kernel's bus scan.
+- **The loop since** (each stop, what was done; the instructions on both
+  models with a lockstep test, the FEP answers in `fep.py`):
+
+  | Stop | Done | Instructions run |
+  |---|---|---|
+  | guard `multiply` in `scsi:check_lun/4` | implemented (`lockstep_gmul.py`; with it `save`/`restore`, which its test site needs) | 3,612 |
+  | `FepError`: INQUIRY to unit 7 | answered (below) | 5,066 |
+  | guard `diff` in `scsi_manager:create_scsi_device/9` (`Type \= non_existent`) | implemented (`lockstep_rdvc.py`) | 5,198 |
+  | `FepError`: TEST UNIT READY to unit 5 | an absent unit answered (below) | 5,447 |
+  | `enqueue_goal_to_processor` with an unbound number, `bios.kl1`:383 `scsi_fep:create(..)@node(Cluster)` | not the machine: the bench's BootInfo was unbound; `longrun_ipl.py --go` now runs the IPL's own `make_boot_info/1` on it, as `ipl:boot0` does (item 11 of 1.3) | 6,500 |
+  | `wait_value` on two vectors, `keyed_bag`, the key `{0,0,0}` | implemented for vectors of atomic elements (`lockstep_pvec.py`) | 10,781 |
+  | `enqueue_goal_to_processor` with an unbound number, `scsi_manager:check_lpid_pool/7` (`bios/boot/scsi_man.kl1`:499/506, `create_scsi_device(..)@node(Cluster)`, Cluster from an `LPID_POOL` `get` in the same body) | waited for, from VPIM (`lockstep_tproc.py`; below) | 12,912 |
+  | `system_timer` in `system_timer_manager:create/3`, then `set_timer` | implemented, the clock at 0, OURS (`lockstep_timer.py`) | 13,695 |
+  | `write_integer` with bit 23 set, `scsi_fep:check_data_size1/6` `L = [-1\|NL]` | the 24 bits are signed, the assembler's c24 form (`lockstep_wint.py`) | 14,482 |
+  | `FepError`: the kernel's first FEP message, `append_open` of `pimos:pimos.syslog` | answered (below) | 15,331 |
+  | `wait_vector_0`, `scsi_fep:receive_packet2_1/8` | implemented (`lockstep_alt.py`) | 16,104 |
+  | `apply(Code, {})`, a predicate of no argument | implemented (`lockstep_apply.py`) | 17,501 |
+  | `diff` of a structure and an atom, `task_handler` | succeeds, as KLIC and PDSS have it (`lockstep_rdvc.py`) | 22,630 |
+  | `enqueue_goal_to_processor` waiting, 10 arguments | the stub's limit raised from 9 to 11 | 22,902 |
+  | `jump`, in a module the boot loads | implemented (`lockstep_alt.py`) | 23,348 |
+  | `set_marked_variable` | implemented (`lockstep_alt.py`) | 23,498 |
+  | `wait_vector`, the general form for 7 or more | implemented (`lockstep_alt.py`) | 28,156 |
+  | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
+  | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
+  | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
+  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+
+  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
+
+  The counts from `jump` on are from a cached machine made afresh with
+  `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
+  it gives 23,348 at `jump`, as the earlier cache patched with the new
+  stubs did).
+
+  The console is still the banner alone, `PIMOS V 3.600 20-May-93`.
+  With the BootInfo string the cluster of `create_os_device/3` is bound
+  where without it it was not: so the held `pimm_bios360E.sav` takes
+  `decompose_boot_info`'s elements, not the constants branch of 1.3
+  item 11 (INFERENCE from the two runs).
+- **The conversation so far** (every command the device is given, in
+  order; `python3 ref/pimm/longrun_ipl.py --load FILE --go --fep`):
+
+  | # | Unit, LUN | Command | Answer (all OURS where not the source's) |
+  |---|---|---|---|
+  | 1 | 7, 0 | TEST UNIT READY, CDB `00 00 00 00 00` | Result 0 |
+  | 2 | 7, 0 | INQUIRY, CDB `12 00 00 00 ff`, 255 bytes in | 5 bytes `03 00 07 00 00`: device type 3 (processor, `scsi.vmac`:82), not removable, byte 2 7, additional length 0. The values are the source's own canned answer for a front end it does not ask, `normal(scsi#processor,0,7,"")` (`scsi_man.kl1`, `inquiry/8` under `fep_interface` `kl1_network`); the length is OURS, the least that gives that answer (`scsi_common.kl1`:99-106). No inquiry data was found in `pimscsi.ptf` or `pimfep.ptf` (`asm/ptfdump.py`: the classes `scsi_device`, `scsi_handler`, `pseudo_scsi`, `scsi_communicator`, `scsi_device_bus_management` have `sense` and nothing of the kind) |
+  | 3-8 | 5, 4, 3, 2, 1, 0; LUN 0 | TEST UNIT READY | no device: Result `800h`, completion code 8, which PIMOS reads as `abnormal(no_status(8,0))` (`scsi_common.kl1`:186-199: bit 3 of the completion code is the only failure code the source names); the scan then drops the unit with no message (`scsi_man.kl1` `inquiry/8`'s last clause). OURS, a choice about the lost built-in, not the FEP; the manual's boot log finds unit 7 only (`e-sysman.tex`:103-112, "SCSI UNITS FOUND", then 7 and 0) |
+
+  | 9 | 7, 0 | SEND, the packet of device 16: `append_open` (203, `macro/pimos/pimos/pimos.vmac`:69), `{16, 203, "", 0, 0, "pimos:pimos.syslog"}` in JIS, the kernel's syslog (`bios/boot/syslog.kl1` `wait_status1/3`, on every boot) | accepted, `[1]` (normal), OURS: the stand-in keeps what is appended in memory (`Fep.appended`), as a FEP holding the file would append to it. PIMOS also takes an abnormal answer, with "SYSLOG ERROR: reason / cannot open file pimos:pimos.syslog" on the console (`syslog.kl1`); the real FEP's answer is not held |
+  | 10 | 7, 1 | RECEIVE, the reply | as before |
+  | 11-12 | 7, 0 then 1 | SEND and RECEIVE, device 17: `create_timer` (310, `pimos.vmac`:146), `{17, 310, Node, User, Password}`, the kernel's timer device (`bios/fep_module/time_dvc.kl1` `device_create/5`) | accepted, `[1]`, OURS: a FEP that has a timer. `reply/9` goes on to `device_process`, the timer's requests; an abnormal answer would end the device |
+  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, 0]`, OURS: a fixed clock, so every run is the same (`fep.py` `DATE`, `TIME`). The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`); the time is 00:00:00 (milliseconds from midnight, `utility/timer/time.kl1`) |
+
+  New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
+  on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
+  packets `append_open` (203), `create_timer` (310) and
+  `get_date_time` (304).
+
+  Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
+  The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
+  every command of the table above as `fep.py` does, byte for byte
+  (2026-11-24): the tape `ref/pimm/fep_tapes/kernel.tape` is this
+  conversation recorded from the run (`ref/pimm/record_fep.py --kernel
+  PKL`), and `direct_kernel.tape` its edges. `putb` (111), which the
+  syslog sends next by the source, is refused there as `fep.py` refuses
+  it today.
+- **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
+  lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
+  labelled "carried over from VPIM, agreeing with KLIC; the PIM/m
+  firmware's behaviour is not held"). The readings, as recorded:
+  `Goal@node(N)` with N unbound: the cluster number comes from a pool's
+  answer in the same clause body, so on every boot the number is
+  unbound when the goal is made, and refusing cannot be the machine's
+  behaviour. VPIM, PIM's own virtual machine (`vpim.tar.Z`,
+  `src/interpreter/klb_fork.psl.c` `klb_enqueue_to_processor`, its
+  comment at lines 406-447, EUC Japanese): when Rpe is unbound, (1)
+  the goal's arguments are made a vector, (2) the goal record is
+  reclaimed, (3) a D-code goal `dcode_enqueue_processor(Processor,
+  Code, Argv) :- integer(Processor) | dcode_apply(Code,Argv)@processor
+  (Processor)` is made and hooked on Rpe: the goal WAITS for the
+  number. KLIC agrees (`runtime/sched.c` `enqueue_throw_goal`, 267-330:
+  a goal of `wait_penum_preds` waits for the node number). PDSS, a
+  single processor, drops the number at compile time
+  (`compiler/outp.kl1`:360-363: `enqueue_to_processor` and
+  `enqueue_to_node` become `enqueue_goal`), which would let a later
+  non-zero number pass silently. The VPIM reading is a parked goal of
+  a new stub on both models (`asm/pimm_stubs.py` `TO_PROCESSOR`); the
+  stubs were appended, so no earlier stub moved and no pin changed.
 
 What the source says comes next (READ, not run; to be confirmed by
 the run once guard `multiply` exists; the build switches of the
 held object were not checked):
 
-1. The bus scan sends TEST UNIT READY to each unit 0-7 except its own,
+1. (CONFIRMED by the run, in the order 7, then 5 down to 0.) The bus
+   scan sends TEST UNIT READY to each unit 0-7 except its own,
    6 (`scsi_where`'s answer). That is `scsi_man.kl1`:198-216 and
    `test_unit_ready/7` (218-227), with the CDB from
    `scsi_common.kl1`:35-42. A unit that answers gets an INQUIRY:
@@ -518,8 +594,8 @@ held object were not checked):
    (`fep_utility:set_value/2`, `fep_util.kl1`), or the results are set
    to `fep#nil`.
 
-`pimfep.ptf` was not needed: no constant had to be chosen, since no
-FEP command was reached. What was extracted for the next run
+`pimfep.ptf` was not needed for a FEP message yet: the commands met so
+far are SCSI ones (above). What was extracted for the next run
 (`python3 asm/ptfdump.py pimfep CLASS`):
 
 - `pimos_scsi_front_end`: version "V0.45", "14-Jan-94", comment
@@ -765,19 +841,19 @@ big-endian words:
 
 | Check | Result |
 |---|---|
-| classes whose cells land exactly on `L` | 552 of 554 (`csp_compare_break_menu`, `csp_mpsi_data_converter` overshoot; not investigated) |
-| predicate headers with code two cells after the head | 8,230 of 9,839 candidates; 1,609 not understood |
-| header kinds | `11` local 3,559; `12` local 1,904; `35` instance method 3,256; `25` class method 589; five other kinds, 156, unidentified |
-| local call target = cell + 2 + signed 16 bits | opcode `60`: 4,131 of 5,214 land on a head; `61`: 1,949 of 2,556; `62`: 1,384 of 1,851 |
+| classes whose cells land exactly on `L` | 554 of 554 (2026-11-24, once a hash table is counted as `mask+1 + 2*keys + 2` cells, `ptfdump.table_span`; with the table's size word + 1, as before, 552, and the two `pimmcsp` classes overshot) |
+| predicate headers with code two cells after the head | 9,815 of 9,815 (2026-11-24, same numbering; the earlier "8,230 of 9,839, 1,609 not understood" was the size-word numbering drifting after hash tables) |
+| header kinds | `11` local 3,609; `12` local 2,205; `35` instance method 3,256; `25` class method 589; the other five kinds 156 (`22` 15, `27` 16, `32` 57, `36` 22, `37` 46; named in `simpos/layers/FORMATS.md` §2). Recounted 2026-11-24 with the fixed numbering; before it, 3,559 and 1,904 |
+| local call target = cell + 2 + signed 16 bits | every one lands on a head (2026-11-24): opcode `60` 5,390 of 5,390, `61` 2,646 of 2,646, `62` 1,916 of 1,916 (before the numbering fix: 4,131/5,214, 1,949/2,556, 1,384/1,851) |
 
 | Package | Classes | Cells | Class-0 instr. | Class-1 instr. | Symbols |
 |---|---|---|---|---|---|
-| `pimfep` | 47 | 28,832 | 18,574 | 1,764 | 2,747 |
-| `pimscsi` | 24 | 12,979 | 8,311 | 1,147 | 1,086 |
-| `pimmcsp` | 281 | 149,954 | 99,066 | 8,877 | 14,217 |
-| `pimmutil` | 51 | 53,639 | 39,720 | 3,161 | 3,085 |
-| `mpsicspR` | 30 | 14,897 | 9,148 | 674 | 2,124 |
-| `paragraph` | 121 | 89,204 | 53,717 | 14,429 | 5,705 |
+| `pimfep` | 47 | 28,935 | 18,658 | 1,765 | 2,747 |
+| `pimscsi` | 24 | 12,977 | 8,311 | 1,147 | 1,086 |
+| `pimmcsp` | 281 | 156,090 | 103,403 | 9,158 | 14,217 |
+| `pimmutil` | 51 | 54,615 | 40,312 | 3,223 | 3,085 |
+| `mpsicspR` | 30 | 15,616 | 9,629 | 723 | 2,124 |
+| `paragraph` | 121 | 93,582 | 56,580 | 14,804 | 5,705 |
 
 (`icot_software_survey.md` says 23 classes for `pimscsi` and 50 for
 `pimmutil`; the files hold 24 and 51.) *Note 2026-11-23: for `pimscsi`
@@ -790,8 +866,8 @@ undercount; the survey is corrected to 51 in place.*
 - **The opcode set: yes** (MEASURED, `ptfdump.py --opcodes`).
   `PMPSI.DIR/sysidat` is the KL0 decode table, 1,024 entries indexed
   by class x 256 + opcode, 214 populated in class 0 and 241 in class
-  1. Every opcode the six packages use has an entry: 228,536 class-0
-  and 30,052 class-1 instructions, 101 and 111 distinct opcodes, none
+  1. Every opcode the six packages use has an entry: 236,893 class-0
+  and 30,820 class-1 instructions (2026-11-24, fixed numbering; 228,536 and 30,052 before), 101 and 111 distinct opcodes, none
   missing.
 - `sysidat`'s classes 0-1 are the table at the head of `pimm.MEkbn`'s
   classes 0-1 (496 of 512 entries byte-identical): the "PMI"/"BLT"
@@ -925,21 +1001,22 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - **Container, class and method listing, fact tables: done.**
 - **KL0 disassembler: mechanical with a research tail.** To build:
   names and operand formats for 212 opcodes (101 class 0, 111 class
-  1). Material: the `paragraph` pair (68,146 instructions with
+  1). Material: the `paragraph` pair (71,384 instructions with
   source), and the microcode entry of each opcode as a tie-breaker.
   The ten commonest class-0 opcodes (`a2 20 73 a0 a4 a7 a3 27 5f f0`)
-  are 118,126 of 228,536 uses, so a few dozen paired clauses settle
+  are 121,668 of 236,893 uses, so a few dozen paired clauses settle
   most of the volume (INFERENCE); the 111 built-in opcodes are the
   tail, each needing a source witness or a document (TM-444, TR-265,
   TM-261/353/354; a KL0 built-in manual is catalogued and not
-  obtained, `literature_gaps.md`). Also to settle: the 1,609
-  irregular headers, `h1`, the trailer's slot definitions.
+  obtained, `literature_gaps.md`). Also to settle: `h1`. (The 1,609
+  "irregular headers" were a cell-numbering error, fixed 2026-11-24, 4.1;
+  the trailer is decoded by `psi/librarian.py`.)
 - **Decompiling the FEP services for a faithful stand-in: mechanical
   after that.** For boot: `fep_message_assembler` (503 cells),
   `pimos_scsi_front_end` `command_type/2` + `refute_command/3`
   (1,708), `pimos_file` (1,157), `scsi_stream` (1,296): about 4,700
   cells, each checkable against the PIMOS client source and section
-  1.4. All services: 47 classes, 28,832 cells. The SIMPOS classes
+  1.4. All services: 47 classes, 28,935 cells. The SIMPOS classes
   they call (`simpos##...`) are not held, so a decompiled FEP is a
   specification to re-implement against, not something to run.
 - **Unblocks:** C2 and C4 from the server's side; the command numbers
@@ -987,8 +1064,9 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - Which `ipl_parameter` branch `pimm_bios360E.sav` was built with
   (harmless either way, 1.3 step 11).
 - Clause-level identity of any `.sav` module with its source.
-- KL0 opcode names beyond the ten rows of 4.2; `h1`; 1,609 irregular
-  predicate headers; two overshooting `pimmcsp` classes.
+- KL0 opcode names beyond the ten rows of 4.2; `h1`;
+  the hash table's size word (the irregular headers and the two
+  overshooting classes were a cell-numbering error, 4.1).
 - The FEP's own message header code (names only).
 - `rassy`'s bit positions and the numbering of its memory commands
   and conditions; whether its 1989 date matches the PIM/m chips in

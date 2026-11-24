@@ -35,15 +35,20 @@ That run's simulator was built from the tree of b7187d59.
 after the link, top:go_pimos1(Loaded, BootInfo) is started as the IPL
 would, apply(Code, {BootInfo, Atoms, Modules, Comments}), and run
 until the model refuses something.  It is NOT the IPL's boot: the
-goal is started by the bench outside any shoen, BootInfo is an
-unbound variable, and no device is attached.  Observed 2026-11-23:
+goal is started by the bench outside any shoen, and no device is
+attached.  BootInfo was an unbound variable until 2026-11-23; since
+then it is made by the IPL's own ipl:make_boot_info/1, spawned beside
+the goal as ipl:boot0 makes it (docs/binary_reverse_engineering.md
+1.3, item 11): with it unbound, bios.kl1's create_os_device/3 met an
+unbound cluster at its @node(Cluster).  Observed 2026-11-23:
 pim:go/4 runs 1,244 instructions in the loaded modules, the console
 is given "PIMOS V 3.600 20-May-93" (display_console; the text the
 source's default branch gives, bios/boot/bios.kl1 and
 kernel/init/version.kl1), and it stops at scsi_where (22:A0, not
 implemented).  The check is the banner; the stop is printed, since it
 moves as the model grows.  Later (scsi_where implemented): 1,722
-instructions, the stop scsi_init: no device attached.
+instructions, the stop scsi_init: no device attached (1,791 with
+make_boot_info, which runs first).
 
 --fep (rung S0 of docs/scsi_plan.md): the device ref/pimm/fep.py is
 attached as ref_scsi.py attaches it (Machine.fep), and when the
@@ -59,7 +64,22 @@ guard instruction multiply (23:F6) at cell 62160538, in
 scsi:check_lun/4 (bios/scsi/scsi_handler.kl1:119-122, LUN =<
 ExtLUN*2040+7; ExtLUN = 4, scsi_init's Info element 2, OURS), for
 unit 0 LUN 0 of the kernel's bus scan.  docs/binary_reverse_
-engineering.md 1.4, "The kernel's FEP conversation".
+engineering.md 1.4, "The kernel's FEP conversation".  Later the same
+day (the instructions met implemented on both models, fep.py's
+answers for the bus scan, make_boot_info): 12,912 instructions, 8 SCSI
+commands (the bus scan: unit 7 found, 5..0 absent), no FEP packet, the
+console the banner alone; the stop enqueue_goal_to_processor with an
+unbound node number in scsi_manager:check_lpid_pool/7 (1.4).
+2026-11-24 (that goal waits, from VPIM; system_timer, set_timer,
+signed write_integer, wait_vector_0, apply with {}, diff of a
+structure; fep.py's append_open): 23,348 instructions, 10 SCSI
+commands, the first FEP message (append_open of pimos:pimos.syslog),
+the console the banner alone; the stop jump, not implemented.
+2026-11-24, a cached machine made afresh with --save (23,348 at jump
+again): jump, set_marked_variable, wait_vector, the timer device's
+create_timer and get_date_time (fep.py), multiply_bignum_by_word:
+65,482 instructions, the console the banner alone; the stop
+subtract_bignum(32#{}, 32#{0}), the 32#{0} from the clock at 0.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -237,8 +257,15 @@ def go(m, loaded, info, bad, with_fep):
     given it again (Machine.scsi_poll, as ref_scsi.boot does)."""
     im = m.im
     m.ahead = True
-    m.argv[1], m.argv[2] = pimm.marked(loaded), pimm.marked(m.new_var())
+    boot_info = m.new_var()
+    m.argv[1], m.argv[2] = pimm.marked(loaded), pimm.marked(boot_info)
     m.record(pimm.READY, pimm.predicate(im, 'top', 'go_pimos1/2'), m.argv[1:3])
+    # BootInfo is made by the IPL's own make_boot_info/1, as ipl:boot0
+    # makes it (docs/binary_reverse_engineering.md 1.3, item 11;
+    # ref_scsi.py checks the string it gives): without it the
+    # cluster of bios.kl1's create_os_device/3, element 0, is unbound
+    # and scsi_fep:create/2@node(Cluster) cannot be placed
+    m.spawn(pimm.predicate(im, 'ipl', 'make_boot_info/1'), [boot_info])
     m.tr = GoTrace()
     dev = None
     if with_fep:

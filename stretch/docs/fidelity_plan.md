@@ -235,9 +235,14 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   meet the rule.
 
 **A7. Transmit and branches.**
-- Transmit's fixed cost of about 30 clocks, and its 14-clock word to
-  and from the I-box (`atlas_oracle.md` "furthest off" 2). First check
-  the generator's I-box block assumption, which no self-test covers.
+- Transmit. DIAGNOSED 2026-11-23 (`atlas_oracle.md` "furthest off"
+  2, which gives the change with a citation for each term). Per word,
+  charge by destination: 10 clocks to core or internal, 14 to index
+  storage (Table 9; PDF 107). The model now charges the source read
+  instead (2 from index storage, 10 or 17 from core). Fixed cost:
+  F = 38 / 32 clocks for T, F − 2 for TI, where the model has 15. The
+  generator's I-BOX TO I-BOX block is fixed (18.0 → 19.0), and
+  `--selftest` check 0b now covers the transmit generator.
 - CB 16/15 clocks, and BXL/BAL.
 - Exit: PDF 102-112 meet the rule, or the BAL environment the page
   does not spell out is recorded as the reason.
@@ -303,6 +308,21 @@ between readings the sources allow; every pin will move.
 display/store, single step, repeat mode, the index-storage test. It
 goes as far as the pages specify, as testbench-visible controls.
 
+**A13. The rest of the interrupt and execute rules** (rows §1a had no
+milestone for, found by the 2026-11-24 refresh; Ref. Manual pp.43-51):
+- MK, IK, IJ and EK are defined and never set, and CBJ is never set.
+- An E-box-class instruction at the interruption address (p.49, "may be
+  of any type"; `rl_prepare` says it is unbuilt).
+- p.50's two disabled-state exceptions.
+- A Class S alert during an EX/EXIC subject instruction.
+- EX/EXIC's 1 ms USA end (LVE has one).
+- AD for an instruction counter stepped past the end of storage.
+- EXIC's p.51 item (d); IF beside EXE under EXECUTE.
+- The stale "IF is not implemented at all" comment in `StretchCore.bsv`
+  (IF is built).
+Exit: a deck per item, with its injection; §1a's interrupt and EXIC rows
+done.
+
 ## Track B, beside track A
 
 - 0.2 and 0.3 above.
@@ -356,7 +376,8 @@ recommendation is built behind a switch until it is decided.
 ## Order, and why
 
 Phase 0 runs now. Then A1 → A2 → A3 → A6 → A7 → A4 → A5 → A8 → A9 →
-A10 → A11 → A12.
+A10 → A11 → A12, with A13 taken when a core slot is free between
+them (its items are small and independent).
 
 - A3 comes early because the VFL family is the largest remaining
   timing gap, and the serial unit is also the rewrite's largest

@@ -9,6 +9,36 @@
 // answers, byte for byte, which bsv/run_fepemu.sh checks against fep.py
 // itself on every command of ref/pimm/ref_scsi.py's parts.
 //
+// AND WHAT fep.py HAS FOR PIMOS's START (2026-11-24, fep.py on master):
+// INQUIRY (12h) to unit 7, LUN 0, 255 bytes in: five bytes 03 00 07 00 00;
+// TEST UNIT READY to an absent unit, 0-5: Result noDevice (800h).  fep.py
+// decides absence in Fep.command, ahead of its unit and LUN checks and
+// with no look at the LUN or CDB bytes 1-4, so it is decided here, in the
+// same place, and not in the adapter to the core.  append_open (203,
+// four arguments, a device with no file open and not appending): [1],
+// whatever the path; the device is noted as appending (AppendSlots).
+// fep.py on master serves NO putb (111) and no getb or close on a device
+// that only appends: it raises on each, so each is refused here, and no
+// log is kept (fep.py's Fep.appended stays empty).  The card is never
+// written either way: an in-memory log comes with fep.py's putb.
+//
+// ADDING THE NEXT COMMAND fep.py ANSWERS (the recipe):
+//   1. a message (fep.Fep.request): one `else if (mcmd == ...)` branch in
+//      `serve`, queueing a ReplyDesc (status, and card data if any); a SCSI
+//      command (fep.Fep.command): one `else if (op == ...)` in
+//      `oneCommand`, in fep.py's order of tests.  A constant next to
+//      reqAppendOpen / opInquiry; new state cleared in `main`'s configure.
+//   2. one line or section in record_fep.direct_kernel_sections (the
+//      answer and the FepError next to it), then
+//      `python3 ref/pimm/record_fep.py --part direct_kernel`; and, if the
+//      kernel now reaches it, `--kernel PKL` again for the kernel tape.
+//   3. bsv/run_fepemu.sh; one injection into the new branch, its observed
+//      failures in PimmFepEmuTb.bsv's header.
+//   direct_kernel's error sections hold putb (111), and getb and close
+//   on a device that only appends, as tripwires: when fep.py answers one,
+//   run_fepemu.sh fails on that line until the emulator follows; move
+//   that line out of the error sections then.
+//
 // FROM PIMOS SOURCE (through fep.py, whose header cites each):
 //   the CDBs (TEST UNIT READY 00h, RECEIVE 08h, SEND 0Ah; group 0, the
 //   length in bytes 2-4, the LUN in byte 1 bits 7-5:
@@ -38,7 +68,8 @@
 //   ref_scsi.py part, whose largest request is 120 bytes, at most two
 //   files open, two replies queued: ref/pimm/record_fep.py prints them):
 //   a request message of at most BodyMax (1024) bytes; FileSlots (4)
-//   files open; ReplySlots (8) replies queued; one continued request
+//   files open; ReplySlots (8) replies queued; AppendSlots (2) devices
+//   appending (the kernel opens one, its syslog); one continued request
 //   message in assembly at a time; a getb whose size is negative; a
 //   RECEIVE shorter than 8 bytes that would have to be cut.
 // AND, DIFFERENT FROM ref_scsi.py's open_file, NOT fep.py: a name is
@@ -94,12 +125,13 @@ typedef struct {
 
 typedef enum { FepDone, FepNotReady, FepRefused } FepAnswerKind deriving (Bits, Eq, FShow);
 
-// FepDone: fep.py's (result, bytes): result 0 always, count the bytes
-// received (0 but for RECEIVE).  FepNotReady: fep.py's None.
+// FepDone: fep.py's (result, bytes): result 0 but for an absent unit's
+// TEST UNIT READY (noDevice), count the bytes received (0 but for
+// RECEIVE and INQUIRY).  FepNotReady: fep.py's None.
 // FepRefused: fep.py raised; `why` says where (OURS, for a person).
 typedef struct {
    FepAnswerKind kind;
-   Bit#(8)       result;
+   Bit#(32)      result;    // scsi_command's Result: 0, or noDevice
    UInt#(24)     count;
    Bit#(8)       why;
 } FepAnswer deriving (Bits, Eq, FShow);
@@ -142,7 +174,11 @@ endinterface
 Bit#(8)  opTestUnitReady = 8'h00;
 Bit#(8)  opReceive       = 8'h08;
 Bit#(8)  opSend          = 8'h0a;
+Bit#(8)  opInquiry       = 8'h12;
+Bit#(32) noDevice        = 32'h800;   // fep.NO_DEVICE: completion code 8, OURS as fep.py's
+Bit#(32) absentLast      = 5;         // fep.Fep.ABSENT: units 0..5
 Int#(32) reqReadOpen = 201;
+Int#(32) reqAppendOpen = 203;
 Int#(32) reqGetb     = 210;
 Int#(32) reqClose    = 60;
 Int#(32) reqAbort    = 70;
@@ -153,6 +189,7 @@ Int#(32) stAbnormal = 5;
 typedef 1024 BodyMax;
 typedef 4    FileSlots;
 typedef 8    ReplySlots;
+typedef 2    AppendSlots; // devices appending at once (OURS; the kernel opens one, its syslog)
 typedef 4    MaxArgs;     // fep.py serves nothing with more than 4 arguments
 
 // ---------------------------------------------------------------
@@ -355,6 +392,9 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(Bool)      partValid <- mkReg(False);
    Reg#(Bit#(32))  partDev  <- mkReg(0);
    Reg#(UInt#(32)) partLen  <- mkReg(0);
+   // fep.Fep.appending: the devices an append_open accepted (the path and
+   // fep.Fep.appended are not kept: nothing on master appends yet)
+   Vector#(AppendSlots, Reg#(Maybe#(Bit#(32)))) appending <- replicateM(mkReg(tagged Invalid));
 
    // the command in hand
    Reg#(FepCmd)    cur   <- mkRegU;
@@ -399,6 +439,18 @@ module mkPimmFepEmu(PimmFepEmu);
          if (files[s].valid && files[s].dev == dev) r = tagged Valid fromInteger(s);
       return r;
    endfunction
+   function Bool isAppending(Bit#(32) dev);
+      Bool r = False;
+      for (Integer s = 0; s < valueOf(AppendSlots); s = s + 1)
+         if (appending[s] == tagged Valid dev) r = True;
+      return r;
+   endfunction
+   function Maybe#(UInt#(TLog#(AppendSlots))) freeAppend();
+      Maybe#(UInt#(TLog#(AppendSlots))) r = tagged Invalid;
+      for (Integer s = valueOf(AppendSlots) - 1; s >= 0; s = s - 1)
+         if (!isValid(appending[s])) r = tagged Valid fromInteger(s);
+      return r;
+   endfunction
    function Maybe#(UInt#(TLog#(FileSlots))) freeSlot();
       Maybe#(UInt#(TLog#(FileSlots))) r = tagged Invalid;
       for (Integer s = valueOf(FileSlots) - 1; s >= 0; s = s - 1)
@@ -408,6 +460,8 @@ module mkPimmFepEmu(PimmFepEmu);
 
    function Action answer(FepAnswerKind k, UInt#(24) n, Bit#(8) y) =
       ansF.enq(FepAnswer { kind: k, result: 0, count: n, why: y });
+   function Action answerResult(Bit#(32) r) =
+      ansF.enq(FepAnswer { kind: FepDone, result: r, count: 0, why: 0 });
    function Action refuse(Bit#(8) y) = action
       ansF.enq(FepAnswer { kind: FepRefused, result: 0, count: 0, why: y });
       dead <= True;
@@ -556,6 +610,20 @@ module mkPimmFepEmu(PimmFepEmu);
             endaction
          endseq
       endseq
+      // append_open {Id, 203, "", User, Password, Path}: accepted, [1],
+      // whatever the arguments are (fep.py never looks at the path's
+      // bytes: no open_file), if the device has no file and is not
+      // appending
+      else if (mcmd == reqAppendOpen && nargs == 4 && !isValid(slotOf(pdev)) && !isAppending(pdev))
+         action
+            case (freeAppend()) matches
+               tagged Valid .s: begin
+                  appending[s] <= tagged Valid pdev;
+                  queue(ReplyDesc { dev: pdev, status: stNormal, hasData: False, addr: 0, dlen: 0 });
+               end
+               default: perr <= whyLimit;
+            endcase
+         endaction
       else if (mcmd == reqGetb && nargs == 1 && isValid(slotOf(pdev))) action
          let s = validValue(slotOf(pdev));
          let f = files[s];
@@ -658,10 +726,20 @@ module mkPimmFepEmu(PimmFepEmu);
          endaction
       if (dead) refuse(whyAfter);
       else if (mnt != MountOk) refuse(whyCard);
+      // an absent unit (fep.py decides it in Fep.command, before the
+      // unit and LUN checks: no LUN or CDB-length check here)
+      else if (cur.unit <= absentLast && cur.cdbLen == 5 && op == opTestUnitReady
+               && cur.dir == 0 && curLen == 0)
+         answerResult(noDevice);
       else if (cur.unit != 7 || cur.cdbLen != 5) refuse(whyUnitCdb);
       else if (clun != cur.lun || cur.cdb[1][4:0] != 0) refuse(whyLun);
       else if (op == opTestUnitReady && cur.dir == 0 && curLen == 0 && cdbLenOk)
          answer(FepDone, 0, 0);
+      // INQUIRY (the kernel's bus scan): five bytes, 03 00 07 00 00
+      else if (op == opInquiry && cur.lun == 0 && cur.dir == 2 && cdbLenOk && curLen == 255) seq
+         answer(FepDone, 5, 0);
+         recvF.enq(8'h03); recvF.enq(8'h00); recvF.enq(8'h07); recvF.enq(8'h00); recvF.enq(8'h00);
+      endseq
       else if (op == opSend && cur.lun == 0 && cur.dir == 1 && cdbLenOk)
          doSend;
       else if (op == opReceive && cur.lun == 1 && cur.dir == 2 && cdbLenOk)
@@ -677,6 +755,7 @@ module mkPimmFepEmu(PimmFepEmu);
             cfg <= cfgF.first; cfgF.deq;
             dead <= False;
             for (Integer s = 0; s < valueOf(FileSlots); s = s + 1) files[s] <= unpack(0);
+            for (Integer s = 0; s < valueOf(AppendSlots); s = s + 1) appending[s] <= tagged Invalid;
             replies.clear;
             skip <= 8; lagged <= False; partValid <= False; partLen <= 0;
          endaction

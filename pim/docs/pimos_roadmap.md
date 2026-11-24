@@ -119,7 +119,7 @@ longer `run_boot.sh` once runs exceed a few minutes).
 | R3 | The same, for a predicate that suspends and is resumed | same |
 | R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
 | R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs. *Note 2026-11-23: the version module at least agrees with the source. "20-May-93" occurs once in `pimm_kernel360E.sav` as a two-byte JIS string, and the reference model's run prints it. The objects' "3.600:25-Nov-93" is the base files' comment date, a different artefact (`binary_reverse_engineering.md` §2)* |
-| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`) |
+| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`). *Status 2026-11-24: not reached; `pim:go/4` with the FEP device (reference model) gets past the bus scan and the kernel's first FEP message (the syslog's `append_open`) and the timer device's `create_timer` and `get_date_time`, and stops at 65,482 instructions at `subtract_bignum` on a `32#{0}` that our clock at 0 made (`binary_reverse_engineering.md` 1.4)* |
 | R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
 | R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
 | R9 | A period application (candidates in §6) | its published result |
@@ -329,6 +329,19 @@ Bluespec core. On the reference model alone `pim:go/4` then gives the
 console "PIMOS V 3.600 20-May-93" (R5's banner line; started by the
 bench outside any shoen, with an unbound BootInfo:
 `longrun_ipl.py --reference --go`) and stops at `scsi_where`.
+*Later, 2026-11-23 (rung S0, `docs/scsi_plan.md`): BootInfo made by the
+IPL's own `make_boot_info/1`, the FEP device attached (`--go --fep`):
+12,912 instructions, the kernel's bus scan done (TEST UNIT READY and
+INQUIRY to unit 7, TEST UNIT READY to 5..0, answered as `fep.py`
+says), the console still the banner alone; the stop is R6's way:
+`enqueue_goal_to_processor` with an unbound processor
+(`scsi_manager:check_lpid_pool/7`, `Goal@node(Cluster)`, Cluster not
+yet given by its pool), `docs/binary_reverse_engineering.md` 1.4.*
+*2026-11-24: that goal waits for the number (from VPIM); seven more
+stops passed (1.4's table): 23,348 instructions, the syslog's
+`append_open` the first FEP message, the stop `jump`.  Then (a fresh
+cache) six more: 65,482 instructions, the timer device made, the stop
+`subtract_bignum` on a bignum our clock at 0 made.*
 The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
@@ -381,6 +394,8 @@ request.
 *Gates:* R4, then R5.
 
 ### Phase 4 - A usable PIMOS
+
+*(What the FEP must answer from the banner to a shell, sourced from PIMOS: `docs/fep_services.md`.)*
 
 1. The rest of the FEP services: login, files, the window/terminal the
    shell wants (`pimos.logins`, `login.com`, `shell.com`).

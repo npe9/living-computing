@@ -29,6 +29,8 @@ failures recorded, the file restored byte for byte):
   - attribute flag bit read as 0x20 instead of 0x10: only
     test_known_plaintext fails (every slot's attribute/component kind then
     disagrees with the source).
+  - (2026-11-24) a hash table counted as its size word + 1 cells (the old
+    numbering) in librarian._tokens: only test_cell_numbering fails.
 """
 import os
 import sys
@@ -227,6 +229,28 @@ class Held(unittest.TestCase):
         # the dynamic-predicate field (tour_bel.esp:177-195)
         t = lib.templates['tour##tt_belief_system']
         self.assertEqual(len(t.dynamic), 19)
+
+    def test_cell_numbering(self):
+        """psi/README.md "Cell numbering": with tables spanning
+        mask+1 + 2*keys + 2 cells, every predicate's first cell is numbered
+        its header's offset and every local call (pmi 60/61/62, target
+        cell + 2 + signed 16 bits) lands on a predicate's code."""
+        n = calls = 0
+        for t in self.lib.templates.values():
+            offs = {p.offset for p in t.preds() if p is not None}
+            for p in t.preds():
+                if p is None or not p.cells:
+                    continue
+                n += 1
+                self.assertEqual(p.cells[0][0], p.offset, (t.id, p))
+                for c in p.cells:
+                    if c[1] == 0x20 and c[3] >> 24 in (0x60, 0x61, 0x62):
+                        s16 = c[3] & 0xffff
+                        tgt = c[0] + 2 + (s16 - 0x10000 if s16 & 0x8000 else s16)
+                        calls += 1
+                        self.assertIn(tgt, offs, (t.id, p, c))
+        self.assertEqual(n, 32901)
+        self.assertEqual(calls, 35542)
 
     def test_held_free_closures(self):
         lib = self.lib

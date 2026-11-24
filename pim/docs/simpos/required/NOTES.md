@@ -21,6 +21,15 @@ To re-run everything (about 1 minute): `sh <B>/bin/run_all.sh`.
   `bin/ptfside.py`; output `ptf.json`):
   - `kappa.ptf`, utter's four packages and papyrus's ten `.pak.1`;
   - psdpim's five packages and pimosobj's `paragraph`, which have no source.
+  - *Note 2026-11-24: this scan predates the fix to ptfdump's cell numbering
+    (`../../../psi/README.md`, "Cell numbering"). Before it, cells after some hash tables
+    were numbered too high and the cell walk stopped short of the class end. Measured over
+    the eleven held packages (ad hoc probe, old walk against new): the predicate sets
+    `ptfside.py` reads differ in 43 classes (2,516 predicates, almost all locals and `$or`;
+    13 more class/instance primaries, 9,863 against 9,850) and the selector sets in 29
+    classes (206 selectors). The `ptf*` outputs here are not regenerated: the pipeline
+    (`asm/simpos_census/run_all.sh`) needs the extracted IFS trees. The figures read from
+    them are therefore slight undercounts.*
 - **Command and login files**: 56 `.com/.COM`/login files, read by `bin/comscan.py`.
 - **For corroboration**: the OCR text of 51 SIMPOS TR/TMs (`scratchpad/simpos2/ocr`) and the ESP
   manual TeX (`inside/x/esptex`, `esptexj`).

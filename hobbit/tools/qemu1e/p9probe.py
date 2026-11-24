@@ -143,7 +143,20 @@ def walk(c, listfile):
 
     visit('')
     missing = sorted(p for p in want if p not in got)
-    wrong = sorted(p for p in want if p in got and got[p] != want[p])
+    # files the administration changes after provisioning (authinit.rc:
+    # kfscmd newuser, auth/adduser through keyfs): reported, not failed
+    admin = ('/adm/keys', '/adm/users')
+    wrong = sorted(p for p in want if p in got and got[p] != want[p]
+                   and p not in admin)
+    for p in admin:
+        if p in got and p in want and got[p] != want[p]:
+            print('  administered %s server %d release %d' % (p, got[p], want[p]))
+    # keyfs must never show through the served tree (serve.rc)
+    leak = sorted(p for p in got if p.startswith('/mnt/keys/')
+                  or p.startswith('/mnt/netkeys/'))
+    for p in leak:
+        print('  LEAK keyfs entry served:', p)
+    wrong += leak
     extra = sorted(p for p in got if p not in want)
     print('walk: server has %d paths, list %d; missing %d, length differs %d, extra %d'
           % (len(got), len(want), len(missing), len(wrong), len(extra)))

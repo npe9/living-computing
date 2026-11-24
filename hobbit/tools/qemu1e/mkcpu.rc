@@ -1,0 +1,40 @@
+#!/bin/rc
+# Run on the 1e floppy system (9dos, root = the distribution floppy) to
+# build the CPU-server kernel 9pccpu from the release's own sources with
+# the release's own mk, 8c, 8a, 8l (docs/qemu_1e_server.md section 5):
+#	rc /mkcpu
+# No shipped kernel takes its root from a kfs (kfs.root is in no shipped
+# configuration), and mk's rules name absolute paths (/$objtype/mkfile,
+# /sys/include, /386/lib), so the build runs in a name space whose root
+# is the kfs: the kernel devices are bound into the kfs's own mount
+# points first, then the kfs onto /, as the il17008 service does.
+# The second disk (hd1, made by cpukernel.sh) has two partitions: swap,
+# and out, where the kernel is copied raw for cpukernel.sh to read back.
+disk/kfs -f /dev/hd0fs
+mount -c /srv/kfs /n/kfs
+# 16 MB is all the kernel probes for (pc/main.c confinit), 11200K free:
+# without a swap channel mk and 8c stop at `no physical memory`
+# (port/swap.c), so swap on hd1swap (swap(8)); it must hold the swap
+# the kernel configures, 46400K
+/n/kfs/386/bin/swap /dev/hd1swap
+# no permission checks: the kfs's /tmp and the source tree are owned by
+# sys with the tarball's modes (mode 555 for /tmp)
+disk/kfscmd allow
+bind /n/kfs/386/bin /n/kfs/bin
+bind -a /n/kfs/rc/bin /n/kfs/bin
+bind '#c' /n/kfs/dev
+bind -a '#w' /n/kfs/dev
+bind -c '#e' /n/kfs/env
+bind '#d' /n/kfs/fd
+bind '#p' /n/kfs/proc
+bind -c '#s' /n/kfs/srv
+bind /n/kfs /
+cd /sys/src/9/pc
+echo mkcpu: start `{date}
+mk 'CONF=pccpu' >/adm/mkcpu.log >[2=1]
+echo mkcpu: mk status $status `{date}
+tail -12 /adm/mkcpu.log
+ls -l 9pccpu
+cp 9pccpu /dev/hd1out
+/386/bin/disk/kfscmd sync
+echo mkcpu done

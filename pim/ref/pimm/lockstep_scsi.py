@@ -111,6 +111,57 @@ again at a poll where the reference keeps their bytes (nothing changes
 them between); the waiting list's order with two or more waiting (one
 at a time is the most run, here and in ref_scsi.py's "late").
 
+Observed fault injections against all seven runs (the unit script and
+--part 1..6), 2026-11-24: eleven, each in its own copy of pim/ (bsv/
+PimmScsiBox.bsv, the eighth into PimmStages.bsv's scsiInit1), the file
+backed up, injected, rebuilt (compile.log showing the package
+recompiled), the seven run one by one, restored with cp and compared
+byte for byte with the backup and with the committed file.  The
+first difference, unit script / IPL parts:
+  the CDB's words byte-reversed       all 7.  scsi: receive, nothing
+                                      yet, line 103 (the TEST UNIT
+                                      READY's CDB is all zero: the same
+                                      reversed); @1..5 line 29,759, @6
+                                      line 10,399: the first SEND's B line
+  unit and LUN swapped                all 7.  scsi: test unit ready,
+                                      line 101; @1..6 line 1,250: B 0 7
+  the last byte received dropped      all 7.  scsi: send, line 104;
+                                      @1/@5 line 75,395, @2/@3 79,597,
+                                      @4 99,794, @6 25,059: an M line
+  TransferredLength the length asked  all 7.  scsi: send, line 118;
+  for, for a RECEIVE too              @1..3/@5 line 34,421 (R 2 = 16000
+                                      for 16; @6 512), @4 line 54,458
+  Result the device's with bit 0      all 7.  scsi: test unit ready,
+  flipped                             line 105; @1..6 line 1,254: R 9
+  Info's buffer size one less         all 7.  scsi: create, line 31;
+                                      @1..6 line 396 (3e7f for 3e80;
+                                      @6 1ff for 200)
+  Info's 8 and 4 swapped              all 7.  scsi: create, line 32;
+                                      @1..6 line 397
+  TargetInterruptVector and Info to   all 7.  scsi: create, line 30;
+  each other's register (the hook)    @1..6 line 395: R 2 for R 1
+  a command not ready at a poll       scsi only: send, line 99 (no B
+  dropped from the waiting list       line for the RECEIVE given again)
+  a poll taking "not ready" as ready  scsi only: receive, nothing yet,
+  with nothing received               line 171 (its variables bound)
+  the copy's pad bytes from the old   NONE of the 7
+  buffer's memory, not zero
+Not caught by the IPL parts, and why (counted on the reference from
+ipl_build(n)'s tape and fep.wire): no command of any part is not ready
+at a poll ("late" has 15 not-ready answers, all to the command itself,
+each finished at its first retry; the other parts none), so the two
+poll injections are caught only by the unit script's "receive, nothing
+yet", whose first POLL finds nothing.  The pad: the IPL's buffers are
+16000 and 512 bytes (no pad), the unit script's 61 (pad 3) made with
+zero pad, and every string the machine makes has zero pad, so the
+mutation is not observable on any input the core can be given (not a
+hole a part could close).  Every Result on every tape is 0 and every
+byte count a multiple of four in the IPL parts (hence a flip, not a
+forced 0, for Result).  By reading, not injected: the poll's count
+(scsiPolled) is discarded by the bench (PimmDriverTb.bsv rule polled),
+so no part can catch a wrong count; the script's flow, not the count,
+decides the next RUN.
+
 Not run: a vector not of seven, a seventh element not 0, a length over
 the buffer, a CDB or buffer not of 8-bit elements, the device giving
 more bytes than asked (refusals, which the driver cannot play);

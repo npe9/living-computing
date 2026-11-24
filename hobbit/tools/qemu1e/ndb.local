@@ -34,3 +34,13 @@ sys=term386
 	ip=10.9.0.3 ether=525400123457
 	bootf=/386/9pc
 	proto=il
+
+# the CPU server: 9pccpu, built in the guest (cpukernel.sh); its key
+# is in fs9's /adm/keys as the host cpu9 (authinit.rc).  ip/bootp
+# answers only an entry with a bootf=; a CPU server's /boot does not
+# load it (boot.c: newkernel() only when cpuflag == 0).
+sys=cpu9
+	dom=cpu9.qemu1e
+	ip=10.9.0.4 ether=525400123458
+	bootf=/386/9pccpu
+	proto=il

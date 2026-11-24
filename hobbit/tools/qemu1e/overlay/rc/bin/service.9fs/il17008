@@ -9,6 +9,11 @@
 # in the kfs's /adm (its /tmp is mode 555), not into the 9P stream.
 # Everything is bound inside the kfs first: once / is replaced,
 # rc finds commands (bind too) only in the kfs's own /bin.
+# The network's names (fs9, cpu9, $auth) for the machines whose root
+# this is: the release's /lib/ndb/local plus tools/qemu1e/ndb.local,
+# made by floppies.sh as the floppy's /lib/ndb/served.  The kfs's own
+# file stays the release's.
+bind /lib/ndb/served /n/kfs/lib/ndb/local
 bind /n/kfs/386/bin /n/kfs/bin
 bind -a /n/kfs/rc/bin /n/kfs/bin
 bind '#c' /n/kfs/dev

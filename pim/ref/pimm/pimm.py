@@ -91,6 +91,10 @@ class Fail(Exception):
     """No clause applies (a reduction failure), or a body unification fails."""
 
 
+def sx24(v):
+    return v - (1 << 24) if v & 0x800000 else v
+
+
 def sx16(v):
     v &= 0xffff
     return v - 0x10000 if v & 0x8000 else v
@@ -175,6 +179,7 @@ class Machine:
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
         self.optab[(0x22, 0x01)] = ('unify_step',)   # ours: asm/pimm_stubs.py
+        self.optab[(0x22, 0x02)] = ('to_processor',)  # ours: asm/pimm_stubs.py
         # instruction names by code address; for code in the heap this
         # assumes a heap cell is never reused for other code
         self.names = {}
@@ -821,6 +826,15 @@ class Machine:
     def i_try_me_else(self, pc, x, y, z, c16):
         self.alt = pc + 2 + sx16(c16)
 
+    def i_jump(self, pc, x, y, z, c16):
+        # 23:67 c16_exe: an unconditional branch to the label, the
+        # label as try_me_else's (assembler/klb_opr.kl1 p(c16_exe),
+        # cal_location_address: Label - (pc + 2)).  The compiler puts
+        # it after a branch of register shortage (compiler/regass.kl1
+        # insertBranch); VPIM klb_control.psl.c klb_jump and PDSS
+        # emulate.c KL1B_JUMP branch with nothing else
+        return pc + 2 + sx16(c16)
+
     def i_otherwise(self, pc, x, y, z, c16):
         # Clauses after `otherwise` apply only when none before can:
         # if an earlier guard was waiting on a variable, suspend instead.
@@ -914,6 +928,17 @@ class Machine:
         if a is None or b is None or not -(1 << 31) <= a + b < 1 << 31:
             return self.guard_fail()
         self.reg[z] = (INT, (a + b) & 0xffffffff)
+
+    def i_multiply(self, pc, x, y, z, c16):      # guard arithmetic
+        # multiply(Integer1, Integer2, ^NewInteger), 23:F6 r_r_r
+        # (inst_tab.kl1:209; directions iio, blt.kl1:29-30): "Fail,
+        # Exception: if either ... is not an integer; if an overflow
+        # occurs" (PIMOS manual, e-builtin.tex:268-283): as a guard,
+        # the guard fails; an unbound operand is noted
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or not -(1 << 31) <= a * b < 1 << 31:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a * b) & 0xffffffff)
 
     def i_switch_on_non_list(self, pc, x, y, z, c16):
         # a list: the structure pointer is set to its car, for read_*
@@ -1078,8 +1103,8 @@ class Machine:
         # atomic values and strings: two strings are equal when their
         # descriptors and all their words are (PDSS emulator/passive.c
         # passive_unify, case STRING), a string and an atomic value
-        # are not.  Lists and vectors, or one variable twice, need the
-        # general passive unification and are refused
+        # are not.  Vectors as below; lists, and one variable twice,
+        # need the general passive unification and are refused
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
             raise Unimplemented('wait_value of a variable with itself')
@@ -1095,9 +1120,78 @@ class Machine:
             return
         if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):
             return self.guard_fail()
+        if self.structure(a) or self.structure(b):
+            # vectors: PDSS's passive unification (emulator/emulate.c
+            # KL1B_WAIT_VALUE, emulator/passive.c passive_unify) as far
+            # as both models take it: two vectors of 0..6 elements are
+            # equal when the sizes are and each pair of elements is the
+            # same atomic value; in order, the first unbound element met
+            # is noted and the guard fails there (X's; or Y's opposite
+            # an atomic element of X).  A vector against anything else
+            # bound fails.  Refused: a list, a vector of seven or more,
+            # an element of X that is a structure or a string
+            if not self.passive(a, b):
+                return self.guard_fail()
+            return
         if not (self.atomic(a) and self.atomic(b)):
             raise Unimplemented('wait_value on a structure')
         if (a[0] & ~1, a[1]) != (b[0] & ~1, b[1]):
+            return self.guard_fail()
+
+    def structure(self, w):
+        return w[0] & ~1 == LIST or self.vsize(w) is not None
+
+    def passive(self, a, b):
+        """Two bound words, at least one a list or a vector: whether
+        they are equal (wait_value).  An unbound element met is noted
+        and answers False."""
+        short = lambda w: VECT0 <= w[0] & ~1 <= VECT0 + 12      # noqa: E731
+        for w in (a, b):
+            if w[0] & ~1 == LIST or (self.vsize(w) is not None and not short(w)):
+                raise Unimplemented('wait_value on %r' % (w,))
+        if not (short(a) and short(b)):
+            return False
+        n = self.vsize(a)
+        if n != self.vsize(b):
+            return False
+        for i in range(n):
+            x = self.deref(self.taken(self.vbase(a) + i))
+            y = self.deref(self.taken(self.vbase(b) + i))
+            if self.unbound(x):
+                self.waiting.append(x[1])
+                return False
+            if not self.atomic(x):
+                raise Unimplemented('wait_value: an element %r' % (x,))
+            if self.unbound(y):
+                self.waiting.append(y[1])
+                return False
+            if (x[0] & ~1, x[1]) != (y[0] & ~1, y[1]):
+                return False
+        return True
+
+    def i_diff(self, pc, x, y, z, c16):
+        # the guard diff(X, Y), X \= Y, 23:F9 r_r (inst_tab.kl1:212;
+        # both inputs, blt.kl1:239-244): "Succeeds if it is assured
+        # that X is not equal to Y ... X or Y must be an atomic term";
+        # suspends on an unbound one, fails if they are equal (PIMOS
+        # manual, e-builtin.tex:114-143).  A term that is not atomic
+        # is "Illegal DIFF!!!" on the CSP (the same page): refused.
+        # Atomic here: an integer or an atom (the manual's empty
+        # vector is refused, not met)
+        a, b = self.g_word(x), self.g_word(y)
+        if a is None or b is None:
+            return self.guard_fail()
+        if not self.atomic(a) and not self.atomic(b):
+            raise Unimplemented('diff on two terms that are not atomic')
+        if not (self.atomic(a) and self.atomic(b)):
+            # one atomic (one word), the other a structure, string or
+            # the like: never equal, diff succeeds.  The manual: "X or
+            # Y must be an atomic term"; KLIC (include/klic/gb.h
+            # gblt_diff: "isatomic(y) || isatomic(x) ? (x) == (y)")
+            # and PDSS (emulator/emulate.c KL1B_G_DIFF, passive_unify)
+            # agree.  Met in pim:go/4 (task_handler)
+            return None
+        if (a[0] & ~1, a[1]) == (b[0] & ~1, b[1]):
             return self.guard_fail()
 
     def i_wait_constant(self, pc, x, y, z, c16):
@@ -1254,6 +1348,32 @@ class Machine:
     def i_put_value(self, pc, x, y, z, c16):
         self.reg[x] = self.reg[y]
 
+    # save r, POS and restore r, POS, 23:19 and 23:1A r_c16
+    # (inst_tab.kl1:23, 25): the KL1 compiler's spill of a register it
+    # has run out of (library/compiler/regass.kl1 outputCode/6,
+    # saveRegisters, restoreRegisters: save(Y, W) after the register Y
+    # is written, restore(Y, W) before it is read again, W the virtual
+    # register).  TM-1044 names them save(Reg, POS) and restore(POS,
+    # Reg) on "work memory" (作業用メモリ, TM-1044.j_s3.tex:1559-1567, as
+    # listed in docs/literature_gaps.md), in each processor's local
+    # fixed area.  HERE (OURS) that area is 256 slots of its own,
+    # traced as V lines; a POS of 256 or more is refused
+    def work(self):
+        if 'wk' not in self.__dict__:
+            self.wk = _Regs([(INT, 0)] * 256)
+            self.wk.machine, self.wk.letter = self, 'V'
+        return self.wk
+
+    def i_save(self, pc, x, y, z, c16):
+        if c16 >= 256:
+            raise Unimplemented('save to work slot %d' % c16)
+        self.work()[c16] = self.reg[x]
+
+    def i_restore(self, pc, x, y, z, c16):
+        if c16 >= 256:
+            raise Unimplemented('restore from work slot %d' % c16)
+        self.reg[x] = self.work()[c16]
+
     def i_put_marked_value(self, pc, x, y, z, c16):
         # "the same functions as those without it except that the MRB
         # of the destination is always set.  They are for reference
@@ -1351,12 +1471,15 @@ class Machine:
         self._sp += 1
 
     def i_write_integer(self, pc, x, y, z, c16):
-        # the integer is the low 24 bits.  Whether bit 23 is a sign is
-        # not established (the image has no such operand): refused
-        v = self.cells[pc][1] & 0xffffff
-        if v >> 23:
-            raise Unimplemented('write_integer with bit 23 set')
-        self.mem[self.sp] = (INT, v)
+        # the integer is the low 24 bits, SIGNED: the PIMOS assembler
+        # writes an integer constant in -2^23..2^23-1 (16#"FF800000"
+        # ..16#"007FFFFF") in this c24 form, masked to 24 bits, and any
+        # other in the two-cell c40 form (library/assembler/klb_opr.kl1
+        # p(c24, ..), lines 50-54, and p(c40, ..), 60-81).  A real -1:
+        # scsi_fep's check_data_size1/6, `L = [-1|NL]`
+        # (bios/fep_module/scsi_fep.kl1:429-433)
+        v = sx24(self.cells[pc][1] & 0xffffff)
+        self.mem[self.sp] = (INT, v & 0xffffffff)
         self._sp += 1
 
     def i_write_nil(self, pc, x, y, z, c16):
@@ -1398,6 +1521,20 @@ class Machine:
         self.sp = w[1]
         self.sp_single = not w[0] & 1
 
+    def i_wait_vector(self, pc, x, y, z, c16):
+        # the general form, 23:AF r_vector: a vector of 7 or more, the
+        # length in the low bits (assembler klb_opr.kl1 p(r_vector, ..)
+        # Length>6: Op \/ Reg<<16 \/ Length; read as 16 bits, as
+        # put_vector's).  Below 7 the assembler writes wait_vector_N
+        n = c16
+        if n < 7:
+            raise Unimplemented('wait_vector of %d' % n)
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != VECT0 + 14 or self.vsize(w) != n:
+            return self.guard_fail()
+        self.sp = self.vbase(w)
+        self.sp_single = not w[0] & 1
+
     def i_wait_vector_2(self, pc, x, y, z, c16):
         return self.wait_vector(2, x)
 
@@ -1406,6 +1543,10 @@ class Machine:
 
     def i_wait_vector_5(self, pc, x, y, z, c16):
         return self.wait_vector(5, x)
+
+    def i_wait_vector_0(self, pc, x, y, z, c16):
+        # the empty vector {} (no element is read after it)
+        return self.wait_vector(0, x)
 
     def i_wait_vector_1(self, pc, x, y, z, c16):
         return self.wait_vector(1, x)
@@ -1499,6 +1640,37 @@ class Machine:
             return [(INT, 4096 + v if v < 0 else 4096)]
         self.builtin('calculate_priority_from_current', [x, y], f)
 
+    def i_system_timer(self, pc, x, y, z, c16):  # guard, no input
+        # system_timer(^X1, ^X2), 23:78 r_r (blt.kl1:287-288, both
+        # outputs): "The upper 16 bits of the time (in 1/16 msec units)
+        # that has passed since the processor ... was booted is unified
+        # with X1, and the lower 32 bits ... with X2. Suspend,
+        # Exception: None" (manual, e-builtin.tex:1537-1549).  VPIM
+        # gives X1 = 0 and X2 the current time (klb_pimos.psl.c
+        # kblt_system_timer, "just for PIM/s").  The CLOCK IS OURS: no
+        # time passes on this model, it stands at 0 (X1 = 0, X2 = 0),
+        # written r[x] then r[y]; set_timer agrees with it.
+        self.reg[x] = (INT, 0)
+        self.reg[y] = (INT, 0)
+
+    def i_set_timer(self, pc, x, y, z, c16):
+        # set_timer(Time, ^Wakeup), 22:FF r_r (blt.kl1:702-704: input
+        # X1, output X2; class pimos).  VPIM's account (klb_pimos.psl.c,
+        # the comment before kblt_system_timer, for its three-argument
+        # form): an alarm; "if the specified time (in system timer
+        # values) has already come, Wakeup is unified at once with the
+        # system timer's value", else at the earliest time after; "T2
+        # is after T1 :- T2 &- T1 < 2^(W-1)" (&- unsigned, mod 2^W).
+        # With this model's clock at 0 (system_timer, OURS) a time
+        # reached gives Wakeup = 0; a time still to come would never
+        # come, and is refused rather than left waiting silently.
+        def f(t):
+            t = self.need_int(t)
+            if (0 - t) & 0xffffffff >= 1 << 31:
+                raise Unimplemented('set_timer to a time still to come (%d)' % t)
+            return [(INT, 0)]
+        self.builtin('set_timer', [x, y], f)
+
     def i_current_node(self, pc, x, y, z, c16):
         # current_node(^NodeNumber, ^TotalNode), 22:EE r_r: "NodeNumber
         # is unified with the number of node on which this predicate is
@@ -1550,6 +1722,15 @@ class Machine:
         var = self.new_var()
         self.argv[x] = var
         self.reg[y] = var
+
+    def i_set_marked_variable(self, pc, x, y, z, c16):
+        # as set_variable, the argument and the register with the MRB
+        # on (23:15 c8_r, assembler/inst_tab.kl1:18; PDSS emulate.c
+        # KL1B_SET_MARKED_VARIABLE: SetAll(arg, REF, undef, MRBON), the
+        # register a copy), as put_marked_variable
+        var = self.new_var()
+        self.argv[x] = (REF + 1, var[1])
+        self.reg[y] = (REF + 1, var[1])
 
     def i_enqueue_goal(self, pc, x, y, z, c16):
         # A goal has 11 argument slots; the compiler packs the
@@ -1813,6 +1994,41 @@ class Machine:
             self.unbound_elements(v) if self.vsize(v) == 5 else []))
         return pc + 2
 
+    def i_multiply_bignum_word(self, pc, x, y, z, c16):
+        # multiply_bignum_by_word(BigX, Y, ^BigZ), 22:B8 r_r_r
+        # (assembler/inst_tab.kl1:247; compiler/blt.kl1 the inputs X, Y,
+        # the output Z): "The result of multiplying BigX by Y seen as a
+        # 32-bit unsigned integer"; a bignum is a 32-bit string read as
+        # unsigned, "The MSB is the zeroth element and is zero
+        # suppressed" (PIMOS manual e-builtin.tex 703-741).  As VPIM
+        # (interpreter/klb_body_blt_bignum.psl.c
+        # kblt_b_multiply_bignum_by_word, functions/f_reduce_bignum.psl.c
+        # f_Multiply_BIGNUM_By_Word_Sub, structures/str_bignum.psl.c
+        # s_Multiply_BIGNUM_By_Word): the empty X is the answer itself;
+        # Y = 0 gives the empty string; otherwise the product, one word
+        # longer only when the last carry is not 0.  A leading zero word,
+        # or BigX not a 32-bit string, or Y not an integer: the
+        # built-in's exception (VPIM's too), refused.  The words are
+        # written from the least significant up into a new string of
+        # zeros (OURS: the Bluespec's order)
+        def f(big, w):
+            size, elems = self.need_string(big)
+            yv = self.need_int(w) & 0xffffffff
+            if size != 32 or (elems and elems[0] == 0):
+                raise Unimplemented('built-in exception: multiply_bignum_word of %r' % (elems[:2],))
+            if not elems:
+                return [big]
+            v = 0
+            for e in elems:
+                v = (v << 32) | e
+            p = v * yv
+            n = 0 if yv == 0 else len(elems) + (1 if p >> (32 * len(elems)) else 0)
+            out = self.new_string(n, 32)
+            for i in reversed(range(n)):
+                self.mem[out[1] + 1 + i] = (INT, (p >> (32 * (n - 1 - i))) & 0xffffffff)
+            return [out]
+        self.builtin('multiply_bignum_word', [x, y, z], f)
+
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
@@ -2053,13 +2269,13 @@ class Machine:
         # each element dereferenced and its MRB set if the vector's
         # is, enqueue).  The arguments go through the argument
         # registers, as for enqueue_goal.  The exceptions are refused;
-        # so are a vector of seven or more (its size is in memory) and
-        # the empty vector (no test can run a predicate of no argument:
-        # the image's three are boot, boot0 and noop).
+        # so is a vector of seven or more (its size is in memory).  The
+        # empty vector makes a goal of no argument (2026-11-24: met in
+        # pim:go/4 with the device).
         def f(code, args):
             n = self.vsize(args)
             head = self.mem[code[1] - 2] if code[0] == COD else None
-            if head is None or head[0] != PREDH or not n or n > 6 or n != head[1] >> 24:
+            if head is None or head[0] != PREDH or n is None or n > 6 or n != head[1] >> 24:
                 raise Unimplemented('built-in exception: apply(%r, %r)' % (code, args))
             for i in range(n):
                 self.argv[i + 1] = self.taken(args[1] + i, single=not args[0] & 1)
@@ -2504,13 +2720,44 @@ class Machine:
         # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY) (as
         # listed in docs/literature_gaps.md, line 2441).  There
         # is ONE processor here, number 0 (ours): for 0 the goal is
-        # made as enqueue_goal makes it; anything else is refused.
+        # made as enqueue_goal makes it; another number is refused.
+        # An unbound number is waited for (carried over from VPIM,
+        # agreeing with KLIC; the PIM/m firmware's behaviour is not
+        # held: asm/pimm_stubs.py TO_PROCESSOR): P and the code address
+        # are put after the arguments, and a goal of the stub
+        # to_processor N is hooked on P.
         n = self.cells[pc + 1][1] >> 24
         w = self.deref(self.reg[x])
+        if self.unbound(w) and n <= pimm_stubs.TO_PROCESSOR_MAX:
+            self.argv[n + 1] = w
+            self.argv[n + 2] = (INT, self.load + pc + 2 + sx16(c16))
+            g = self.record(SUSPENDED, self.stubs['$to_processor%d' % n]['addr'], self.argv[1:n + 3])
+            self.nsusp += 1
+            self.hook(g, w[1])
+            return pc + 2
         if w[0] & ~1 != INT or w[1] != 0 or n > 11:
             raise Unimplemented('enqueue_goal_to_processor %r, %d arguments' % (w, n))
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
+
+    def i_to_processor(self, pc, x, y, z, c16):
+        """Ours, only at its stub: the waiting goal of Goal@processor(P),
+        r0.. the goal's z arguments, r[x] = P, r[y] = the goal's code
+        address.  P still unbound: the goal waits again.  P = 0: the
+        goal is made ready (VPIM's dcode_apply(Code,Argv)@processor(P)).
+        Another number is refused."""
+        if pc != self.stubs.get('$to_processor%d' % z, {}).get('addr'):
+            raise Unimplemented('to_processor at %d' % pc)
+        w = self.deref(self.reg[x])
+        if self.unbound(w):
+            g = self.record(SUSPENDED, pc, self.reg[:z + 2])
+            self.nsusp += 1
+            self.hook(g, w[1])
+            return None
+        if w[0] & ~1 != INT or w[1] != 0:
+            raise Unimplemented('enqueue_goal_to_processor %r' % (w,))
+        self.record(READY, self.reg[y][1] - self.load, self.reg[:z])
+        return None
 
     def i_read_eagerly(self, pc, x, y, z, c16):
         # What the compiler writes for `alternatively.` (library/

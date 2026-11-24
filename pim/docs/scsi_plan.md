@@ -15,7 +15,29 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   during the kernel's bus scan, before any `scsi_command`. So the FEP
   conversation is still empty. `docs/binary_reverse_engineering.md`
   1.4, "The kernel's FEP conversation". `--save`/`--load` cache the
-  machine after the link.)* On the Bluespec core the whole
+  machine after the link.)* *(Later 2026-11-23: guard `multiply`,
+  `save`/`restore`, `diff` and `wait_value` on vectors on both models;
+  `fep.py` answers INQUIRY to unit 7 and TEST UNIT READY to the absent
+  units 0-5 (OURS, sourced in 1.4); `--go` makes BootInfo with the
+  IPL's `make_boot_info/1`. The kernel's bus scan completes: 8 SCSI
+  commands, 12,912 instructions; no FEP packet yet. The stop is
+  `enqueue_goal_to_processor` with an unbound node number, a choice
+  about the firmware recorded in 1.4 with VPIM's and KLIC's reading
+  (wait for the number) and PDSS's (ignore it).)* *(2026-11-24: the
+  wait implemented from VPIM, as the session lead decided; then
+  `system_timer`/`set_timer` (the clock at 0, ours), signed
+  `write_integer`, `wait_vector_0`, `apply` with `{}`, `diff` of a
+  structure and an atom, all on both models; `fep.py` answers the
+  kernel's FIRST FEP MESSAGE, `append_open` of `pimos:pimos.syslog`
+  (accepted, ours). 23,348 instructions, 10 SCSI commands, the console
+  still the banner alone; the stop `jump`, not implemented (1.4).)*
+  *(Later 2026-11-24, from a cached machine made afresh: `jump`,
+  `set_marked_variable`, the general `wait_vector` and
+  `multiply_bignum_by_word` on both models; `fep.py` answers the
+  kernel's timer device, `create_timer` and `get_date_time` (a fixed
+  clock, ours). 65,482 instructions, the console the banner alone; the
+  stop `subtract_bignum` on a `32#{0}` made from our clock at 0, a
+  decision about the clock (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
@@ -98,11 +120,26 @@ STATUS 2026-11-23: verified in Bluesim only. Every command
 `ref/pimm/record_fep.py`, `ref/pimm/fep_tapes/`), plus a direct sequence
 of OURS for what the parts never do (a failed open, abort, a request in
 two packets, a reply cut three times, each `FepError`), answered equal to
-`fep.py` byte for byte: 7 tapes, 230 commands, over the image file and
-over the SPI reader with a card model (`bsv/run_fepemu.sh`, in
-`run_tests.sh`); injected faults caught (`bsv/PimmFepEmuTb.bsv` header).
-The board top with a self-test synthesizes (10,039 LUT4, 3 DP16KD,
-40.39 MHz; `bsv/run_fepemu_fpga.sh`) and its self-test passes in
+`fep.py` byte for byte, over the image file and over the SPI reader
+with a card model (`bsv/run_fepemu.sh`, in `run_tests.sh`); injected
+faults caught (`bsv/PimmFepEmuTb.bsv` header).
+STATUS 2026-11-24: it follows `fep.py` into PIMOS's start. Covered, as
+`fep.py` on master has them: INQUIRY to unit 7 (`03 00 07 00 00`), TEST
+UNIT READY to the absent units 0-5 (Result `800h`, decided in the
+emulator because `fep.py` decides it in `Fep.command`, not in the
+device port), and `append_open` (203) answered `[1]`. Tapes: `kernel`,
+recorded from the real start (`record_fep.py --kernel PKL` on a machine
+`longrun_ipl.py --reference --save` wrote: 11 calls, 10 answered, the
+start stopping at `jump`), and `direct_kernel`, a direct sequence of
+OURS for those answers' edges and every `FepError` next to them (52
+commands). 9 tapes, 293 commands, all equal; nine injections into the
+new paths each caught. NOT covered, because `fep.py` does not answer
+them yet: `putb` (111) and `close` of an appending device (both refused,
+as `fep.py` raises); no log is kept, and the card stays read-only. How
+to add the next command: the recipe in `bsv/PimmFepEmu.bsv`'s header.
+The board top with a self-test synthesizes (10,499 LUT4, 3 DP16KD,
+42.50 MHz, 2026-11-24; 10,039 LUT4 and 40.39 MHz before;
+`bsv/run_fepemu_fpga.sh`) and its self-test passes in
 Bluesim; it has NOT run on a board (the board is in use; programming it
 and writing a card are the owner's steps, `bsv/README.md`). Not yet
 connected to the core: the adapter to S1's `scsiReq`/`scsiResp` port is
@@ -182,7 +219,15 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   bus check on each. The bench now waits for a spawned goal's record
   before its next operation (the IPL parts load an argument register
   right after a SPAWN, and the register's A line was traced before the
-  record's M lines).
+  record's M lines). Injections re-done against the six IPL parts
+  (2026-11-24, eleven, each against `scsi` and `scsi@1..6`, observed
+  sets in `lockstep_scsi.py`'s header): the CDB byte order, unit/LUN
+  swapped, the last received byte dropped, TransferredLength, Result,
+  two Info elements and the init hook's registers fail all seven; a
+  command not ready at a poll dropped or taken as ready fail `scsi`
+  only (no IPL part has a command not ready at a poll: counted on the
+  tapes); the copy's pad from old memory fails none (unobservable:
+  every string's pad is zero).
 
 ## 4. Order and dependencies
 

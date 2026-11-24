@@ -28,6 +28,12 @@ Five parts, on a bare machine:
   one argument  ipl:close/1: its argument becomes [].
   waiting       the code unbound, then the vector unbound: apply
                 waits and runs when each is bound.
+  no argument   (2026-11-24, met in pim:go/4 with the device) the
+                empty vector: a goal of no argument, on three cells of
+                the bench (p :- true | true., OURS; the image's
+                predicates of no argument cannot run here).  Pins 5
+                parts / 138935 lines -> 6 / 138965, this part's 30
+                lines, the others unchanged.
 A code in the HEAP (a module the IPL loaded) is applied in
 lockstep_run.py.
 
@@ -35,6 +41,8 @@ Observed fault injections into the Bluespec, 2026-11-23, restored:
   the second element read for every argument  apply: the IPL, line 80
   element MRB always off                      apply: convert, line 48
   the goal one argument short                 apply: convert, line 52
+  (2026-11-24) the goal of no argument given one   no argument, line 22
+  (2026-11-24) the goal of no argument not made    no argument, line 19
 NOT caught:
   element MRB always on       every vector here has its MRB on when
                               apply takes it (the bench's slots, and
@@ -46,10 +54,8 @@ NOT caught:
 The last two are refusals (the manual's exceptions), and a refusal
 stops the reference model: the lockstep driver cannot play one.
 
-Not run, and refused by both models: the empty vector (the image's
-predicates of no argument are ipl:boot/0, boot0/0 and shoen:noop/0,
-none of which can run yet; ipl:boot/0 gives {} to shoen:execute/4,
-not to apply); a vector of seven or more; the manual's exceptions.
+Not run, and refused by both models: a vector of seven or more; the
+manual's exceptions.
 """
 import os
 import sys
@@ -61,7 +67,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=5, lines=138935)
+PINNED = dict(parts=6, lines=138965)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NO_MODULE = 'No PIMOS Top Module'
 
@@ -157,6 +163,21 @@ def script():
     s.unify(3, 2)
     s.run()
     s.out(5)
+
+    # 6. no argument: a predicate of no argument applied to {}
+    #    (2026-11-24).  The image's three cannot run here (shoen:noop/0
+    #    begins with put_console; ipl:boot/0 and boot0/0 are the boot):
+    #    three cells of the bench, OURS, p :- true | true. as a head
+    #    cell of arity 0, a cell, proceed; the code is the proceed
+    s.label('no argument')
+    s.vector(15, 4, [(pimm.PREDH, 0), (pimm.INT, 0), (0x23, 0x60 << 24)])
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    s.no_arg = at + 2
+    s.setslot(0, (pimm.COD, m.load + at + 2))
+    s.setslot(2, (pimm.VECT0, 0))
+    apply(0, 2)
+    s.run()
     return s
 
 
@@ -176,6 +197,9 @@ def check(s, m, parts):
     got = cons.console(parts['the IPL'])
     if got != ['IPL loading', 'Link Modules ...']:
         bad.append(('console', got))
+    noop = 'I %d ' % s.no_arg
+    if not any(ln.startswith(noop) for ln in parts.get('no argument', [])):
+        bad.append(('no argument: the goal of no argument not run',))
     stub = 'I %d ' % m.stubs['apply']['addr']
     if not any(ln.startswith(stub) for ln in parts['waiting']):
         bad.append(('apply did not wait',))
