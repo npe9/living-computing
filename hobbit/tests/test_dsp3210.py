@@ -61,6 +61,13 @@ failures:
 - dsp3210, cycles_until_event one cycle long (skips onto the tick):
   test_idle_skip.
 - dsp3210, skip() not counting the timer down: test_idle_skip.
+- dsp3210, notify_write never ending a spin: test_skip_equals_stepping.
+- dsp3210, spin skip jumping period-1 cycles per iteration:
+  test_skip_equals_stepping.
+- dsp3210, spin skip not advancing the timer: test_skip_equals_stepping.
+- dsp3210, spin proven despite side effects (the clean check dropped):
+  test_bus_write_is_not_a_spin, test_memory_counter_is_not_a_spin.
+- dsp3210, bus writes not breaking a spin: test_bus_write_is_not_a_spin.
 
 Tried and not discriminating: doblock taking K from its field instead
 of forcing 0.  Every doblock in the code has K = 0 encoded.
@@ -878,6 +885,134 @@ class VcosBootTest(unittest.TestCase):
         self.assertEqual(d.r[26], b + 0x130)                # vector table
         self.assertIn(0xE108, seen)                         # __vcos entered on-chip
         self.assertEqual(d.ram[:0x188], bytes(img[0x67C:0x67C + 0x188]))
+
+
+
+class WatchBus(BoardBus):
+    """A board that agrees to report writes to watched words."""
+
+    def __init__(self):
+        super().__init__()
+        self.watched = []
+
+    def watch(self, ranges):
+        self.watched = list(ranges)
+        return True
+
+
+class SpinSkipTest(unittest.TestCase):
+    """VCOS's empty-list poll skipped versus stepped: identical state.
+
+    The standalone boot of VcosBootTest, with the execution-list pointer
+    word (module 0x768, copied on-chip to 0xE0EC) pointing at a zero
+    word in host memory: an empty list (INFERRED layout: __vcos reads
+    *(*0xE0EC) and polls while it is zero)."""
+
+    BASE = VcosBootTest.BASE
+    HEAD = BASE + 0xF00                 # the list head word, host memory
+
+    def boot(self):
+        disk_or_skip(self)
+        coff = module_words("/system/vcos/mml/os")
+        b = self.BASE
+        img, _ = relocate(coff, {12: b, 63: 0xE000 - 0x69C,
+                                 68: 0xE000 - 0x69C + 0x20, 81: 0xE400 - 0x69C})
+        img[0x128:0x12C] = struct.pack(">I", 0x3D80)
+        img[0x768:0x76C] = struct.pack(">I", self.HEAD)
+        img += bytes(0x1000 - len(img))
+        # one task entry: word 0 next (none), word 20 its code
+        img[0xE00:0xE04] = struct.pack(">I", 0)
+        img[0xE14:0xE18] = struct.pack(">I", b + 0xE40)
+        for i, w in enumerate([add3("r9", "r9", 1), br("true", "r18"), NOP]):
+            img[0xE40 + 4 * i:0xE44 + 4 * i] = struct.pack(">I", w)
+        bus = WatchBus()
+        for i, x in enumerate(img):
+            bus.b.mem[b + i] = x
+        for i, x in enumerate((b + 0x58).to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.Dsp3210(1, bus)
+        d.release()
+        return d, bus
+
+    def state(self, d):
+        c = d.core
+        return (c._snap(), bytes(c.ram), c.timer_count, c.timer_frac,
+                c.steps, c.cycles, d.pc)
+
+    def test_skip_equals_stepping(self):
+        a, abus = self.boot()
+        b, bbus = self.boot()
+        window = 300000                              # instruction cycles
+        for _ in range(window):
+            a.step()
+        done, skipped = 0, 0
+        while done < window:
+            h = b.clocks_until_event()
+            if h:
+                n = min(h // 4, window - done)
+                b.skip(4 * n)
+                skipped += n
+                done += n
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, window * 9 // 10)    # it did skip
+        self.assertIn((self.HEAD, 4), bbus.watched)      # the polled word
+        self.assertEqual(self.state(a), self.state(b))
+        # the board puts a task on the list: the spin ends at once
+        for d, bus in ((a, abus), (b, bbus)):
+            bus.b.write(self.HEAD, 4, self.BASE + 0xE00)
+            d.notify_write(self.HEAD, 4)
+        self.assertEqual(b.clocks_until_event(), 0)
+        for d in (a, b):
+            for _ in range(20000):
+                d.step()
+        self.assertGreater(a.core.r[9], 0)                # the task ran
+        self.assertEqual(self.state(a), self.state(b))
+
+    def test_no_watch_no_skip(self):
+        d, bus = self.boot()
+        bus.watch = None
+        for _ in range(50000):
+            d.step()
+        self.assertEqual(d.clocks_until_event(), 0)
+
+
+class SpinRulesTest(unittest.TestCase):
+    """Loops whose registers repeat but which still do something are not
+    spins: a changing on-chip word, and a bus write (a possible doorbell)."""
+
+    def run_loop(self, prog):
+        bus = WatchBus()
+        bus.b.words(CODE, prog)
+        for i, b in enumerate(CODE.to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, b)
+        d = dsp3210.Dsp3210(1, bus)
+        d.release()
+        d.core.r = [0] * 32
+        seen = 0                    # steps at which a skip was offered
+        for _ in range(2000):
+            d.step()
+            seen += d.clocks_until_event() != 0      # None (no horizon) too
+        return d, seen
+
+    def test_memory_counter_is_not_a_spin(self):
+        d, seen = self.run_loop([set24("r1", 0xE000),
+                                 mov(0, 7, "r3", "r1"),        # 4: r3 = *r1
+                                 add3("r3", "r3", 1),
+                                 mov(1, 7, "r3", "r1"),        # *r1 = r3
+                                 br("true", "pc", -20),        # 10: goto 4
+                                 add3("r3", "r0", 0)])         # r3 = 0
+        self.assertEqual(seen, 0)
+        self.assertGreater(d.core.load(0xE000, 4), 300)
+
+    def test_bus_write_is_not_a_spin(self):
+        d, seen = self.run_loop([set24("r5", 0x1800), set24("r6", 0x6000),
+                                 0x90C56000,                   # r6 = r5 <<| 0x6000
+                                 mov(1, 7, "r0", "r6"),        # c: *r6 = r0
+                                 br("true", "pc", -12),        # 10: goto c
+                                 NOP])
+        self.assertEqual(seen, 0)
 
 
 if __name__ == "__main__":
