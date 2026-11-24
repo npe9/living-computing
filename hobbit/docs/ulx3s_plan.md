@@ -59,7 +59,8 @@ into the RTL and the Python model and compares results.
    the real ROM's path once docs/boot_rom.md says what it is).
 4. **Framebuffer.** `Lcdisp` emulation: the ctl/data write protocol
    of `LcdPanel` fills a 768 x 1024 x 2-bit buffer (196 KB: BRAM fits,
-   about 40% of the 85F's EBR, or SDRAM), scanned out over GPDI as
+   measured 96 of the 85F's 208 DP16KD, 46%, and 114 of 208 with the
+   core's 18; or SDRAM), scanned out over GPDI as
    HDMI. The portrait panel goes on a 1024 x 768 display rotated, or
    letterboxed on 1280 x 1024; the agent records the choice.
 5. **RTC + IIC EEPROM.** Small devices; the RTC can start from a
