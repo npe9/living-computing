@@ -201,7 +201,9 @@ The writer of the archive is a host script; the file system, its
 format, and every write into it are 1e's kfs and mkext from the floppy.
 Result (`build.out`, 2026-11-23, 11m24s for the whole build):
 734 dirs, 12,131 files, 391,570,750 data bytes (the release plus the
-three overlay entries);
+three overlay entries of that build; the `usr/none` entries came
+later and were put on the built image with `overlay.sh`, so these
+counts predate them, and a fresh `build.sh` with them has not been run);
 `ls -l /n/kfs` shows the release's top level owned by `sys`; mkext's
 stderr is kept in the kfs as `/adm/mkext.log`, which holds only
 `done` (5 bytes): no errors.  The probe's `--walk` (section 4) checks

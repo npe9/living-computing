@@ -235,19 +235,37 @@ at 618,458,635 instructions (601,206,616 retired idle laps), 31.0 s of
 model time, 456 s of host time, 1455 frames: an interactive rc on the
 Hobbit with its root from the 1e file server.
 
-`tests/net/join_init.pcap` is that run's `--pcap` (nanosecond stamps, so
-whole cycles).  `JoinReplayTest` re-runs the model with
-`--ether-replay` of it: the server's frames are delivered at their
-recorded cycle offsets from the model frame they followed, and every
-one of the model's 277-frame exchange must match the recording byte for
-byte.  It does, to the same instruction count (310,933,347), in ~60 s of
-CPU, without QEMU:
+`tests/net/join_init.pcap` is the `--pcap` of the run to `init` above
+(nanosecond stamps, so whole cycles); replaying it (`--ether-replay`)
+re-runs the model with the server's frames delivered at their recorded
+cycle offsets from the model frame they followed, and every one of the
+model's 277-frame exchange matches the recording byte for byte, to the
+same instruction count (310,933,347), in ~60 s of CPU, without QEMU:
 
 ```sh
 python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
     --max-steps 400000000 --type 'il]: =\r' --type 'user[none]: =\r' \
     --ether-replay hobbit/tests/net/join_init.pcap --until 'init: starting'
 ```
+
+It is kept as the record of the first join.  `JoinReplayTest` now
+replays `tests/net/join_echo.pcap` instead: the first 615 frames of the
+lockstep run of "Commands at rc's prompt" below, through init, termrc,
+init's restart of rc, and `echo hello` typed at `% ` and run, to
+715,867,166 instructions (700,303,728 idle-skipped), 35.9 s of model
+time, ~3 min of CPU (174 s measured):
+
+```sh
+python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
+    --max-steps 800000000 --type 'il]: =\r' --type 'user[none]: =\r' \
+    --type '% =echo hello\r' --ether-replay hobbit/tests/net/join_echo.pcap \
+    --until 'echo hello\nhello\n% '
+```
+
+A lockstep recording replays like a free-running one: the model's
+frames carry model time and the console bytes are typed at screen text,
+so the run is reproduced instruction for instruction (the replay typed
+`echo hello` at step 711,879,422, as the live run did).
 
 Live and free-running (`p9join.py --free-run`, the only mode until
 2026-11-23's lockstep), busy model time runs ~200 times slower than the
@@ -291,8 +309,15 @@ with the host's load; `shift=auto` would track the host clock, which the
 model cannot keep up with.  Under the lockstep that does not matter (the
 server is run by its own ticks), and icount makes catching up 8 times
 cheaper and keeps host scheduling out of the guest's time (the ack-0
-sync below).  The server is ahead of the model by at most about a tick
-(50 ms) plus a monitor round trip.
+sync below).  By design the server should be ahead of the model by at
+most about a tick (50 ms) plus a monitor round trip; measured, the skew
+runs from -0.63 to +0.12 s.  The positive side fits that bound.  The
+negative excursions (11 frames of 591 in run 3 below 0.15 s) are all
+server-to-Hobbit frames that reached the model up to 0.63 s of server
+time after the server's pcap stamped them, often two sent apart
+delivered at one model instant (frames 422 and 423 of run 3: sent at
+6.656 and 6.979 s, both taken at model time 7.287 s).  Why the model
+read them that late is not explained.
 
 Measured on live runs to `% ` (IL counts from the Hobbit's pcap; skew
 is the server's pcap stamp minus the model's for the same frame, both
@@ -511,12 +536,13 @@ then IL syncs from new ports, each closed after the answer) gave **0
 ack-0 answers in 612 dials** -- 300 on a free-running server, 300 under
 `-icount shift=4`, and 12 first dials on freshly booted servers (the
 failed run's dial was the first after boot, the case with a fresh
-Ipconv and code never translated by QEMU before).  The likeliest
-stretch is the host: without icount the guest's clock is the host's,
-so a QEMU thread descheduled inside the window (the host's load was
-above 70) comes back to an overdue timer interrupt.  Under `-icount`
-the guest's clock follows its instructions, so that stretch is gone;
-the window itself, a 1e bug, remains.
+Ipconv and code never translated by QEMU before).  A guess, not
+measured: without icount the guest's clock is the host's, so a QEMU
+thread descheduled inside the window (the host's load was above 70)
+comes back to an overdue timer interrupt; under `-icount` the guest's
+clock follows its instructions and that stretch cannot happen.  The
+probe saw no difference (0 of 300 either way), so whether icount
+changes the rate is not known.  The window itself, a 1e bug, remains.
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
@@ -830,11 +856,15 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **Past rc's prompt**: commands typed at `% ` (`--type`) are not yet
-   tried; termrc was not run (init ran rc without it: no /usr/none).
-2. **The live join's reliability**: a 1e server IL race (the ack-0
-   sync, above) can reject the connection; the busy model is ~200
-   times slower than the wall clock the server runs on.
+1. **8½ and the rest of a terminal**: `tor`'s profile (the release's
+   model user) execs 8½, which wants `/dev/bitblt` and the mouse (Quart
+   channel 3); neither is modelled beyond the LCD's write counter, so
+   the console stays plain rc as `none`.
+2. **The ack-0 IL sync** (above): a 1e bug in the server's `stil.c`,
+   not removed.  It has not been seen since (0 of 612 probe dials, 0 of
+   9 live runs); whether `-icount` changes its rate could not be
+   measured (0 of 300 dials either way).  A run it hits ends in `panic:
+   boot process died`.
 3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).

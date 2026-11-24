@@ -36,9 +36,10 @@ python3 "$here/test_sem_extended.py"
 python3 "$here/test_sem_system.py"
 # A4: the shipped kernel s9term boots on the reference model: pageinit's
 # console line, /boot's prompt, the BOOTP request, the no-server path,
-# and a replay of the join with the 1e file server to `init: starting`;
-# the idle skip is checked against a run without it (tools/p9boot.py,
-# docs/p9boot.md; ~4-5 min on a loaded machine).
+# and a replay of the join with the 1e file server through init, rc's
+# prompt and `echo hello` at it (A5, ~3 min of it); the idle skip is
+# checked against a run without it (tools/p9boot.py, docs/p9boot.md;
+# ~6-7 min on a loaded machine).
 python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
@@ -53,6 +54,12 @@ python3 "$here/test_p9run.py"
 # exited 1; an --only name with no libc.a member stops the run.
 python3 "$hobbit/tools/p9kbuild.py" libc --check -j 3 --build "$tmp/p9kbuild" \
     --only port/toupper,hobbit/getfcr,9sys/fork
+# A5: the boot ROM's fpi, rebuilt from the release's sources with the
+# shipped za/zc/zl on the model, must equal tools/p9kbuild/fpi.rom (what
+# p9boot loads; ~30 s).  Observed 2026-11-23 with one byte of the
+# committed fpi.rom changed in a scratch copy: "FAILED: fpi.rom differs",
+# exit 1.
+python3 "$hobbit/tools/p9kbuild.py" fpi --check -j 3 --build "$tmp/p9kbuild"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"

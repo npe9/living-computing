@@ -1700,8 +1700,10 @@ ETHER_CHOICES = {
                 "next datagram, which is stamped with the server's time.  "
                 "Neither side sees the other run slow: the model's busy "
                 "time costs the server nothing, and the server's time "
-                "costs the model only its idle laps.  The server is ahead "
-                "by at most one of its ticks plus a monitor round trip.",
+                "costs the model only its idle laps.  By design the server "
+                "is ahead by at most one of its ticks plus a monitor round "
+                "trip; measured skews run from -0.63 to +0.12 s, the "
+                "negative ones unexplained (docs/p9boot.md).",
     "replay": "--ether-replay PCAP answers the model's frames with a "
               "recorded live session's (--pcap of a run joined to the 1e "
               "server in QEMU): when the model transmits the next "

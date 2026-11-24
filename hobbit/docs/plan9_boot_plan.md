@@ -761,6 +761,43 @@ binaries on the reference model -- the core had no little-endian data
 mode, which every 1e program but `cat` depends on (A2's status above;
 added with golden `017`).
 
+## A5 status, reference side (2026-11-23): the gate is met on the reference model
+
+On `sem/hobbit_sem.py` (tools/p9boot.py, the shipped s9term) with its
+root from the 1e 386 file server in QEMU (tools/p9join.py), a scripted
+console session ran: `echo hello`, `ls /hobbit | wc`, `cat
+/lib/ndb/local` (byte-identical to the release's file), `cd /usr/none`,
+**`za hello.s`, `zl hello.z -lc`**, `ls -l`, `sum hello.z z.out` (the
+same sums as the shipped za/zl/sum give under p9run), and `z.out`, which
+printed `hello 1e`.  840,583,000 instructions, 42.2 s of model time,
+732 s of host time.  Transcript, checks and commands: docs/p9boot.md
+"Commands at rc's prompt"; `tests/net/a5_screen.txt`, `a5_uart0.txt`.
+"A modelled disk image" in the gate is the server's kfs, a disk image
+reached over IL: s9term is a diskless terminal (its WD33C93 finds no
+targets), as the 1992 Hobbit terminals were.
+
+What it took, each in docs/p9boot.md:
+
+* **One time base** (ETHER_CHOICES `lockstep`): QEMU paused while the
+  model is busy and run until the server's own tick counter catches up
+  with model time; `-icount shift=4`.  Server IL resends to the prompt
+  fell from 407 to 1-5; six consecutive live runs to `% ` and two more
+  had no failure.
+* **The user**: `none`'s home as 1e's PC install floppy has it
+  (`/usr/none/lib/profile`, empty) on the server's kfs; init's
+  `rc -c` then runs termrc and exits cleanly, and init restarts rc.
+* **The ROM's fpi** (CHOICES `fpi-rom`): za's floating point goes
+  through the unimplemented-instruction vector to the boot ROM's
+  interpreter, which the release ships as source; `tools/p9kbuild.py
+  fpi` builds it with the shipped za/zc/zl on the model (mkfile's
+  `fpi.out` rule, linked in the ROM's segment).
+* `JoinReplayTest` replays the recorded session through `echo hello`
+  without QEMU (~3 min).
+
+Not done: the Bluespec core has not run any of this; 8½ (bitmap and
+mouse) is not modelled; the server's ack-0 IL sync race is a 1e bug,
+not removed, not seen since (0 of 612 probe dials, 0 of 9 live runs).
+
 ## A4 status, reference side (2026-11-23): s9term boots to init, root from the 1e server
 
 `tools/p9boot.py` boots the shipped kernel image `s9term` on the
@@ -803,9 +840,10 @@ Details, milestones and choices: `docs/p9boot.md`.
   **`init: starting /bin/rc`** at 310,933,347 instructions (15.6 s of
   model time, 150 s of host time, 277 frames): BOOTP from the server's
   ip/bootp, ARP, IL to il!10.9.0.1!17008, user none, the time written to
-  the timekeeper, /hobbit/init from the server.  `JoinReplayTest`
-  replays the recorded session without QEMU, byte for byte and to the
-  same instruction.  The one device it needed beyond the SONIC: the
+  the timekeeper, /hobbit/init from the server.  Its recording
+  (`tests/net/join_init.pcap`) replays without QEMU, byte for byte and
+  to the same instruction (`JoinReplayTest` now replays the longer A5
+  recording, above).  The one device it needed beyond the SONIC: the
   MK48T02-style timekeeper at IONAK 0x2000/0x3FE0 (CHOICES `rtc`; the
   first live run stopped at setrtc).  No CRET was clamped on this
   path; the clamp (a CRET with MSP > SP + 256, notify()'s frames;
