@@ -31,10 +31,46 @@ compared.  Sequences (rtc.md / iic.md "Test"):
 
 Exit status 0 iff every comparison holds.
 
-Bug injection (AGENTS.md "proven discriminating"); OBSERVED failures,
-each injected into the BSV, run, and reverted by reverse patch:
+Bug injection (AGENTS.md "proven discriminating"): rtc_iic_inject.py
+injects each bug into the BSV, runs this check, and reverts by reverse
+patch.  OBSERVED failures, 2026-11-24 (79 sequences; every other sequence
+still agreed):
 
-  (filled in below as each injection is run)
+  R1 divider not restarted on a load (div <= 0)            71/79
+     phase after a load, sec at load+1000 and load+2000, all 4 skews
+     (load+999/+1001 agree: the second comes one cycle late).  The first
+     run, before the phase probes were one per sequence, passed 52/52.
+  R2 leap year from the units digit only                   77/79
+     rollover Feb 28 1996, rollover Feb 29 1996
+  R3 a new snapshot on every R/W control write             76/79
+     W cleared with R still set loads and unfreezes; R then W without a
+     new snapshot; fault: W cleared with nothing held
+  R4 weekday table, March 2 -> 3                           78/79
+     300 random dates
+  R5 clock-register reads ignore the held set              74/79
+     freeze with R; held set visible while W is set; R then W; fault:
+     a load of month 0x13; RTL-only fault: Feb 30
+  R6 April has 31 days                                     78/79
+     rollover Apr 30
+  R7 NVRAM index from addr[11:1]                           17/79
+     62 RTC sequences: all but phase at reset at cycles 0, 998, 999
+     and the RTL-only lane-1 fault (which faults before the index)
+  R8 clock-register write without W accepted               77/79
+     fault: written without RTCWRITE; fault: written with R only
+  I1 repeated START's address taken as a data byte         75/79
+     iic_join.trace; EEPROM reads from 5, from 250, from 0
+  I2 LRB inverted                                          73/79
+     iic_join.trace; ledputbyte; no-acknowledge slave; EEPROM x3
+  I3 BB reads busy, not free                               72/79
+     as I2, plus PIN set and STA|STO together
+  I4 0xC0 does not complete the byte in progress           75/79
+     iic_join.trace; EEPROM x3
+  I5 LED latch write count not kept                        78/79
+     ledputbyte x3
+  I6 S0 read with ACK does not advance the pointer         75/79
+     iic_join.trace; EEPROM x3
+  I7 S0 readable with ESO off                              78/79
+     fault: S0 read with ESO off
 """
 import os
 import random
