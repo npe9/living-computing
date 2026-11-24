@@ -18,13 +18,32 @@ pointer.
   - `D+` / `D+MG`: down to −37 on a few cases;
   - `M+` / `M+MG`: −5 … +7.3 (the EXTERNAL surplus, `atlas_oracle.md`
     item 15).
-- **VFL, transmit, branches, Vol. 2 PDF 102-189: RE-MEASURE RUNNING**
-  (step 0.1). The last full figures are from 2026-11-16, before
-  INTERNL item 11 and the I-box supply work:
-  - PDF 116-142: 36% exact, mean −3.46;
-  - INTERNL PDF 143-169: 3% exact, median −7.10;
-  - IMMED. PDF 171-189: 41% exact.
-  The table below is to be replaced by the new run.
+- **VFL, transmit, branches, Vol. 2 PDF 102-189, 18,249 cases**, master
+  `b7187d5` (stretch/ as `3997745`), re-measured 2026-11-23 (`--jobs 6`,
+  TSV in the session scratchpad, not committed): median −0.02, mean
+  −1.45; 36.6% exact, 48.8% within 1 clock, 61.8% within 3.
+
+  | Pages | n | within 1 | within 3 | median | mean |
+  |---|---:|---:|---:|---:|---:|
+  | 102-115 I-box, branch, transmit | 167 | 17% | 43% | −4.58 | −18.73 |
+  | 116-142 VFL external | 6,290 | 52% | 67% | −0.00 | −0.61 |
+  | 143-169 INTERNL / forwarding | 10,188 | 43% | 55% | −0.04 | −2.05 |
+  | 170-189 IMMED. | 1,604 | 78% | 90% | −0.00 | +0.97 |
+
+  Where it is off, by cells:
+  - **Word-boundary crossover columns** (`*_wbx`, 5,390 cells): 2-10%
+    within 3; external median +4.9, internal −9.1. This is A6.
+  - **INVERT SIGN blocks** (8,106 cells): 54% within 3 against 68%
+    elsewhere. These are Table 3's unlike-sign terms and the compare's
+    early end (K family mean +3.8). This is A3.
+  - **The M+ family:** M+MG median −10.4, M+1 −4.3, M+ −2.1, with tails
+    to −59. These are the store path (A6) and unlike signs (A3).
+  - **Transmit:** T median −48 (to −152), TI −29; 0 of 58 cells within
+    3. This is A7.
+  - **BAL** −32, **`/I`** +32 (A3, the data-dependent divide), **SV / SC /
+    SR** −7.5, **`*I+`** −7.
+  - Medians at 0 everywhere else. The FP pages are close (above). What
+    remains is spread, not offset.
 - **Structure** (§1c-audit, against Piccolo): 6 of 8 rows match or do
   not apply. The two that differ:
   - the E-box is still largely an interpreter (`vflIntOp` about 2,200
@@ -93,8 +112,10 @@ The model matches the documented architecture when all of these hold:
 
 ## Phase 0: the baseline (track B, now)
 
-**0.1 Re-measure the whole atlas on master.** PDF 42-101 is done (above).
-PDF 102-189 is running at `--jobs 6`. Exit: a per-family table (n,
+**0.1 Re-measure the whole atlas on master. DONE 2026-11-23** (above).
+The order below stands: A3 (unlike signs, `/I`) and A6 (crossover, the
+M+ store path) hold the most cells; A7's transmit is the largest
+per-cell error. Exit: a per-family table (n,
 exact, within 1, median, mean, range) in `atlas_oracle.md`. This file's
 phase order is then re-checked against it.
 
@@ -117,6 +138,7 @@ charts, Figs 3.8.1-3.8.20, PDF 225-244; the SAU flow diagrams, Figs
 3.11.1-3.11.14, PDF 255-268, print no clock, so the serial unit's per-step
 time is Buchholz p.209's 0.6 µs per byte pair; no figure covers the
 connectives). LEFT: the LA flow diagrams and the memory timing.
+LA/I-BOX/MEMORY HALF DONE 2026-11-23: `ibox_la_spec.md` (Figs 3.1.6-3.1.24, 3.2.1-3.2.27, §4 Procedure 1; no flow diagram prints a time).
 - R23-9732 (7101 CE manual) Figs 3.8.1-3.8.19, the PAU/SAU per-cycle
   charts (source_audit.md G5 item 4, printed pp.225-243; Fig. 3.8.15
   and 3.8.19 already read, `ebox_roadmap.md`).
@@ -257,6 +279,15 @@ conflicts** (Blosk p.15; Perf. Char. p.3-19). Exit: a deck that
 injects a single-bit error in a storage word, sees it corrected and
 the indicator set, and a double-bit error detected.
 
+**A11a. The memory cycle, before the exchange.** `memCycleClocks = 7`
+(2.1 µs, Buchholz) against the CE procedure's Busy trigger of 1800 ns =
+6 clocks (§4 Procedure 1, PDF 274) and Perf. Char.'s 2.2 µs recycle and
+1 µs readout (p.3-15); `memReadClocks = 5` against the CE's 5th sample
+pulse for an LA level and 5th-6th for 1Y/2Y (`ibox_la_spec.md` §12 item
+7). `NEXT.md` §5f measured the cycle at 2.4 µs once. Settle which
+figure the shipped machine had, with the atlas as the arbiter only
+between readings the sources allow; every pin will move.
+
 **A11. The exchange as a bus requester with real overlap.**
 - Memory-cycle stealing, the priority order and the byte-demand weights
   (`exchange_and_io.md` §4, Buchholz ch.16).
@@ -303,7 +334,10 @@ recommendation is built behind a switch until it is decided.
    Table 2's `/` + 6; the chart draws no wait for the remainder's store.
 2. **The shipped machine's two LAARs** (`NEXT.md` 2026-10-25):
    *recommend:* model the shipped machine, the one MCP ran on. Keep
-   the one-LAAR reading of Perf. Char. as a switch.
+   the one-LAAR reading of Perf. Char. as a switch. Read 2026-11-23 (`ibox_la_spec.md`): Fig 3.2.2
+   sheet 2 (PDF 94, printed 2-4) assigns LAAR 1 if free, else LAAR 2
+   (spot-checked on the image), and the level's FROM bit picks which LAAR
+   the TBC sends (Fig 3.2.12). Perf. Char. p.3-21 (PDF 39) says one.
 3. **One parallel multiplier or two: SETTLED BY THE SOURCES, one**
    (`sau_pau_spec.md` §6, 2026-11-23). Fig. 3.8.18 says the SAU multiply
    is "IDENTICAL TO FLOATING POINT MULTIPLY"; Figs. 3.11.1 and 3.11.10

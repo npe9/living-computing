@@ -127,7 +127,7 @@ PIM machines.
 | 11 | Documentation | 2.18 GB of literature (`LIT_MANIFEST.md`), PIMOS/KL1/ESP manuals, IFS newsletters HELD | n/a | CSP manuals (Multi-PSI/V2, PIM/m), SIMPOS manuals of PSI-II/III era, PIMOS 2.5 manual: CITED-ONLY | many held reports unread | interpretation everywhere |
 | 12 | Our scaffolding | n/a | `pimm_semantics.md`, `pimm_layout.py`, `pimm_stubs.py`, `fep.py` headers | n/a | in use; each labelled OURS | to be replaced as sources are read |
 | 13 | PSI hardware and KL0 microcode (PSI-I/II/III) | PSI-III control store `syspsi`, `sysidat`, `sysinit` HELD-BINARY-ONLY; papers | TR-265 (PSI-II, held, read); PSI-I well documented, PSI-III thin, no microinstruction-format document (`psi_acquisition.md` §3); TM-862: PSI-III and the PIM/m PE are one chip | KL0 source; PSI-I/II microcode; any PSI emulator (searched 2026-11-23) | `sysidat` read as the KL0 decode table; nothing executed | P1, P2 |
-| 14 | SIMPOS and ESP | ESP manuals HELD (volumes 1 and 3 of 4, not opened by the project); SIMPOS none | 24 SIMPOS reports now held (`psi_acquisition.md` §5); other manuals CITED-ONLY | SIMPOS (all forms) and the PSI's ESP system: LOST, searched 2026-11-23 (`psi_acquisition.md` §1, §2); Common ESP CITED-ONLY (tape only) | none | P3, P4; every ESP application and FEP half |
+| 14 | SIMPOS and ESP | ESP manuals HELD (volumes 1 and 3 of 4, not opened by the project); SIMPOS none | 24 SIMPOS reports now held (`psi_acquisition.md` §5); other manuals CITED-ONLY | SIMPOS (all forms) and the PSI's ESP system: LOST, searched 2026-11-23 twice (`psi_acquisition.md` §1, §2, §9; classes partly printed, §7 below); Common ESP CITED-ONLY (tape only) | none | P3, P4; every ESP application and FEP half |
 | 15 | CSP and FEP software (ESP, for SIMPOS) | `pimmcsp`, `pimmutil`, `mpsicspR`, `pimfep`, `pimscsi` `.ptf` HELD-BINARY-ONLY; `paragraph.ptf` with source | container parsed (`asm/ptfdump.py`); command table recovered | their ESP source | container and tables read; KL0 opcodes about ten named | P3, P5 |
 | 16 | Other PIM machines (PIM/p, /c, /i, /k) and Multi-PSI | papers; VPIM source (all PIMs but PIM/m) HELD; PIMOS source has `mpsi`, `pimp`, `pimc`, `pimi`, `vpim` branches | `literature_gaps.md` "The other PIMs"; TM-1044 | all their firmware, back ends, PSL translator, per-machine object sets, Multi-PSI `.mbn` | none | the third phase of the owner's order |
 
@@ -818,3 +818,55 @@ an item may turn out to be in a document already held.
   decides how far a reading of the Pseudo PIM/m microprogram is a
   reading of PIM/m.
 
+
+## 7. Status changes from the three searches of 2026-11-23 (later the same day)
+
+Sections 2-5 above are as first written; these supersede them where
+they differ. Sources: `psi_acquisition.md` sections 9 (SIMPOS) and 10
+(second broad search), `archive_search_notes.md` (inside the held
+archives; tables and scripts kept outside git).
+
+- **PSI microinstruction formats**: NOT FOUND → FOUND, primary
+  (Nakashima's thesis, PSI-I 63, PSI-II 53, PSI-III 64 bits;
+  `psi_acquisition.md` §10). Changes section 4.2's rank 4 and rows
+  naming P1.
+- **SIMPOS**: still LOST as software. Its supervisor, file and window
+  classes are partly PRINTED in ICOT reports (TM-100, TR-524, TR-046,
+  TR-056, TR-059, TM-065, TM-125); the ~300 system classes the held
+  applications call are listed (`simpos/class_census.tsv`); five PSI-I
+  SIMPOS/KL0/CSP manuals are HELD-ELSEWHERE at the JAIST library
+  (`psi_acquisition.md` §9). Row 14.
+- **Every ICOT TR/TM on SIMPOS, ESP or the PSI**: HELD (87 of 87).
+- **The 16 IFS `.sav` files**: undecoded → decoded (`asm/unlsav.py`
+  reads all; magic 5502 module, 5602 package, 5702/5802 with comment,
+  from `library/unloader/unlver.kl1`); `simplex_if.sav` is a package
+  file the IPL refuses. Section 5 item 1.
+- **Undamaged KL1 object files in IFS**: 16 → 25 (nine more, in
+  alignga, editalign, multialign, mendels, papyrus), plus 5 damaged
+  by a text conversion (`rodin.sav` is one: 4 of 111 modules recovered;
+  helic2's `plib.sav` recovered whole). Section 3 area F.
+- **`pimos.h`**, the machine-configuration header 75 files of the 3.6
+  source include and no PIMOS archive holds: FOUND in
+  `symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz` (1995). Its
+  `case(pimm)`: `machine_type mpsi`, `ipl_parameter yes`,
+  `fep_interface scsi`. So "PIM/m takes the `mpsi` branch" is READ, not
+  inferred; `case(pimk)` exists (contradicting "none anywhere").
+- **Version drift**: `mmi/system.sav` uses opcodes 43h, 44h, known
+  neither to `kl1_encoding.md` nor to the 3.6 objects; dpool uses 1Bh
+  `clause_info`.
+- **`.ptf` files**: opened and parsed (kappa 797 classes, 696 with a
+  same-named held ESP source: a known-plaintext pair far larger than
+  `paragraph`). Section 5 item 13a.
+- **FGCS'92 benchmarks**: append HELD; best-path a driver only (its
+  `bp` module not held); 15-puzzle a KLIB version HELD (not shown to
+  be the paper's); pentomino NOT FOUND. Section 5 item 17.
+- **ESP manuals**: read (PSI II specification table in the Overview;
+  the Programming volume lacks the SIMPOS programming-system part).
+- **Not found inside**: firmware, microcode, `.kbn`/`.mbn`, `pimm_patch.com`,
+  `mpsi_*` objects. **Not found outside**: SIMPOS, the ESP system,
+  CESP, KL0 source, the PIM/m firmware, `pimm_patch.com`.
+- **R7/R9 candidates** (applications to run): modules with no
+  external calls (`gc.sav`, the MGTP problem modules, `dayhoff.unload`,
+  `mdllibrary.exe`); then MGTP (`mgtpNS7.sav` with a problem file),
+  whose expected output is recorded (`H9-07/nseq/pim/aitec19980402.log`:
+  "Number of Failed Branches = 43782", "unsat", 64,089,346 reductions).

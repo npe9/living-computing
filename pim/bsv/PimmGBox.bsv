@@ -22,6 +22,24 @@
 //               arguments into r0.., answer its code address; or
 //               answer Invalid when the queue is empty
 //
+// The shoen (asm/pimm_layout.py, docs/pimm_semantics.md "Shoen": this
+// project's design).  A goal record's status cell also says which
+// shoen the goal belongs to: {INT, shoen << 2 | status}, the shoen as
+// its record's address (an Addr is relative to the load address), 0
+// the root, which has no record.  `shoen` is the current shoen: that
+// of the goal last taken, 0 once the queue is empty (what a bench
+// makes between runs is the root's).  A record written by record,
+// waitRecord or unifyGoal belongs to the current shoen and, unless
+// that is the root, adds one to its count (carried over from PDSS,
+// record.h number_of_children), after its last cell.  The rest of the
+// shoen is PimmShBox.bsv, which uses:
+//
+//   recordFor   the SUSPENDED first goal of a new shoen, from the
+//               argument registers: it belongs to the shoen given and
+//               is not counted (the new record's count starts at 1)
+//   unpark      a goal parked that way becomes READY and goes on the
+//               ready queue, as a woken goal does
+//
 // The heap only grows; running out of memory stops the simulation.
 package PimmGBox;
 
@@ -46,6 +64,10 @@ interface PimmGBox;
   method Action done;                           // a hook or a wake has finished
   method Action pickup;
   method ActionValue#(Maybe#(Addr)) picked;
+  // the shoen
+  method Addr shoen;                            // the current shoen's record, 0 = the root
+  method Action recordFor(Addr sh, Addr code, Bit#(8) argn);   // answered by recordResult
+  method Action unpark(Addr g);                // answered by done
 endinterface
 
 typedef union tagged {
@@ -57,11 +79,14 @@ typedef union tagged {
   struct { Addr g; Addr v; } Hook;
   Bit#(32) Wake;
   void Pickup;
+  struct { Addr sh; Addr code; Bit#(8) argn; } RecordFor;
+  Addr Release;
 } GReq deriving (Bits);
 
 typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GUg1, GUg2, GUg3, GUg4, GUg5, GUg6, GWArg, GWArg2, GHook1, GHook2, GHook3,
                GWk0, GWk1, GWk2, GWk3, GWk4, GWk5,
-               GPk1, GPk2, GPk3, GPk4, GPk5 } GState deriving (Bits, Eq);
+               GPk1, GPk2, GPk3, GPk4, GPk5,
+               GPk0, GCnt0, GCnt, GUgCnt0, GUgCnt, GRl1, GRl2 } GState deriving (Bits, Eq);
 
 module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)   hp <- mkReg(fromInteger(heapStart));   // the next free cell
@@ -85,6 +110,9 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)    var_  <- mkRegU;
   Reg#(Addr)    sAddr <- mkRegU;
   Reg#(Bit#(32)) s    <- mkRegU;
+  Reg#(Addr)    cur   <- mkReg(0);    // the current shoen's record, 0 = the root
+  Reg#(Addr)    rSh   <- mkRegU;      // the shoen of the record being written
+  Reg#(Bool)    rCount <- mkRegU;     // ... and whether the record is counted there
 
   FIFO#(GReq)          reqQ  <- mkFIFO;
   FIFO#(Cell)          varQ  <- mkFIFO;
@@ -104,6 +132,12 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Bit#(2) taken     = fromInteger(lay_TAKEN);
 
   function Bit#(32) linkOf(Addr a) = (a == 0) ? 0 : absAddr(a);
+  // a status cell: the goal's shoen above the two status bits
+  function Cell statusCell(Addr sh, Bit#(2) status);
+    Bit#(32) sh32 = zeroExtend(sh);
+    return intC((sh32 << 2) | zeroExtend(status));
+  endfunction
+  Addr shCount = fromInteger(lay_SH_COUNT);
 
   function Action take(Addr cells);
     action
@@ -113,13 +147,32 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     endaction
   endfunction
 
-  function Action recordDone();
+  function Action recordEnd();
     action
       if (rStatus == ready) rq <= g;
       if (rWant) recQ.enq(g);
       st <= GIdle;
     endaction
   endfunction
+
+  // the record's last cell is written: it is counted on its shoen
+  function Action recordDone();
+    action
+      if (rCount) st <= GCnt0;
+      else recordEnd;
+    endaction
+  endfunction
+
+  rule count (st == GCnt0);
+    mem.read(rSh + shCount);
+    st <= GCnt;
+  endrule
+
+  rule counted (st == GCnt);
+    let c <- mem.data;
+    mem.write(rSh + shCount, intC(c.val + 1));
+    recordEnd;
+  endrule
 
   rule accept (st == GIdle);
     reqQ.deq;
@@ -138,6 +191,8 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         rFromArgv <= q.fromArgv;
         rWant <= q.want;
         rBuiltin <= False;
+        rSh <= cur;
+        rCount <= cur != 0;
         mem.write(hp + gLink, intC(q.status == ready ? linkOf(rq) : 0));
         st <= GRec1;
       end
@@ -149,6 +204,8 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         n <= zeroExtend(q.argn);
         rWant <= True;
         rBuiltin <= True;
+        rSh <= cur;
+        rCount <= cur != 0;
         rOps <= q.operands;
         rOuts <= q.outs;
         mem.write(hp + gLink, intC(0));
@@ -177,20 +234,42 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         st <= GWk0;
       end
       tagged Pickup: begin
-        if (rq == 0) pickQ.enq(tagged Invalid);
+        if (rq == 0) begin
+          cur <= 0;
+          pickQ.enq(tagged Invalid);
+        end
         else begin
           $display("G %0d", rq);
           g <= rq;
-          mem.read(rq + gLink);
-          st <= GPk1;
+          mem.read(rq + gStatus);
+          st <= GPk0;
         end
+      end
+      tagged RecordFor .q: begin
+        g <= hp;
+        take(gArgs + zeroExtend(q.argn));
+        rStatus <= suspended;
+        code <= q.code;
+        n <= q.argn;
+        rFromArgv <= True;
+        rWant <= True;
+        rBuiltin <= False;
+        rSh <= q.sh;
+        rCount <= False;
+        mem.write(hp + gLink, intC(0));
+        st <= GRec1;
+      end
+      tagged Release .q: begin
+        g <= q;
+        mem.read(q + gStatus);
+        st <= GRl1;
       end
     endcase
   endrule
 
   // ---- the goal of a unification put off ---------------------------
   rule ug1 (st == GUg1);
-    mem.write(g + gStatus, intC(zeroExtend(ready)));
+    mem.write(g + gStatus, statusCell(cur, ready));
     st <= GUg2;
   endrule
   rule ug2 (st == GUg2);
@@ -212,13 +291,28 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   rule ug6 (st == GUg6);
     mem.write(g + gArgs + 2, intC(0));
     rq <= g;
+    if (cur != 0) st <= GUgCnt0;
+    else begin
+      doneQ.enq(True);
+      st <= GIdle;
+    end
+  endrule
+
+  rule ugCount (st == GUgCnt0);
+    mem.read(cur + shCount);
+    st <= GUgCnt;
+  endrule
+
+  rule ugCounted (st == GUgCnt);
+    let c <- mem.data;
+    mem.write(cur + shCount, intC(c.val + 1));
     doneQ.enq(True);
     st <= GIdle;
   endrule
 
   // ---- record ------------------------------------------------------
   rule rec1 (st == GRec1);
-    mem.write(g + gStatus, intC(zeroExtend(rStatus)));
+    mem.write(g + gStatus, statusCell(rSh, rStatus));
     st <= GRec2;
   endrule
 
@@ -315,9 +409,9 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
 
   rule wk2 (st == GWk2);
     let c <- mem.data;
-    if (c.val == zeroExtend(suspended)) begin
+    if (c.val[1:0] == suspended) begin       // the goal's shoen stays
       $display("W %0d", g);
-      mem.write(g + gStatus, intC(zeroExtend(ready)));
+      mem.write(g + gStatus, intC({c.val[31:2], ready}));
       st <= GWk3;
     end
     else st <= GWk4;
@@ -341,10 +435,18 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   endrule
 
   // ---- pickup ------------------------------------------------------
+  // the goal's shoen is the current shoen from here on
+  rule pk0 (st == GPk0);
+    let c <- mem.data;
+    cur <= truncate(c.val >> 2);
+    mem.read(g + gLink);
+    st <= GPk1;
+  endrule
+
   rule pk1 (st == GPk1);
     let c <- mem.data;
     rq <= truncate(c.val);
-    mem.write(g + gStatus, intC(zeroExtend(taken)));
+    mem.write(g + gStatus, statusCell(cur, taken));
     st <= GPk2;
   endrule
 
@@ -387,6 +489,21 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     end
   endrule
 
+  // ---- release: a parked goal goes on the ready queue ---------------
+  rule rl1 (st == GRl1);
+    let c <- mem.data;
+    $display("W %0d", g);
+    mem.write(g + gStatus, intC({c.val[31:2], ready}));
+    st <= GRl2;
+  endrule
+
+  rule rl2 (st == GRl2);
+    mem.write(g + gLink, intC(linkOf(rq)));
+    rq <= g;
+    doneQ.enq(True);
+    st <= GIdle;
+  endrule
+
   method Action newVar = reqQ.enq(tagged NewVar);
   method ActionValue#(Cell) newVarResult;
     varQ.deq;
@@ -415,6 +532,10 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     pickQ.deq;
     return pickQ.first;
   endmethod
+  method Addr shoen = cur;
+  method Action recordFor(Addr sh, Addr c, Bit#(8) argn) =
+    reqQ.enq(tagged RecordFor { sh: sh, code: c, argn: argn });
+  method Action unpark(Addr goal) = reqQ.enq(tagged Release goal);
 endmodule
 
 endpackage

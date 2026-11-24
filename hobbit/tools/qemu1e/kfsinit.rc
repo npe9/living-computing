@@ -1,0 +1,18 @@
+#!/bin/rc
+# Run on the 1e floppy system (9dos, root = the distribution floppy),
+# whose /bin has only the floppy's commands (no sleep, no date).
+# Reams a kfs on hd0fs with 1e's own disk/kfs, then unpacks the mkfs
+# archive on the raw second disk into it with 1e's own disk/mkext.
+# The floppy's /rc/bin/termrc has already bound '#w' onto /dev.
+disk/kfs -r -f /dev/hd0fs
+mount -c /srv/kfs /n/kfs
+disk/kfscmd allow
+# first /adm alone, so that kfs can load the release's /adm/users
+# (it knows only its minimal table after a ream, where "sys" maps to
+# none); then everything, owners included
+disk/mkext -u -d /n/kfs /adm < /dev/hd1disk
+disk/kfscmd user
+disk/mkext -u -d /n/kfs < /dev/hd1disk >[2] /n/kfs/adm/mkext.log
+disk/kfscmd sync
+ls -l /n/kfs /n/kfs/adm/mkext.log
+echo kfsinit done

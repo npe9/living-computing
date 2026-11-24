@@ -317,6 +317,12 @@ fifteen minutes); `predicate_to_code` then gives the code of
 10,032 atoms, 480 modules; eight modules are in two files and each
 ends as its later file's (`ref/pimm/longrun_ipl.py --reference`).
 `top:go_pimos1/2` applies that code (`apply`, `lockstep_apply.py`).
+On BOTH models the twenty-file load and link agree for 447,739,516
+trace lines (`bsv/run_pimm_longrun.sh`, 2026-11-23): R4 on the
+Bluespec core. On the reference model alone `pim:go/4` then gives the
+console "PIMOS V 3.600 20-May-93" (R5's banner line; started by the
+bench outside any shoen, with an unbound BootInfo:
+`longrun_ipl.py --reference --go`) and stops at `scsi_where`.
 The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
@@ -336,7 +342,8 @@ wherever the dialects differ. In dependency order:
 4. `save`/`restore`, `execute_external`/`enqueue_goal_external` and
    module linkage;
 5. shoen, priorities and exceptions (the IPL starts PIMOS "at priority
-   4050");
+   4050"); the shoen's first stage (`create_shoen`, `start_shoen`,
+   termination) is on both models, `ref/pimm/lockstep_shoen.py`;
 6. garbage collection - only when a run exhausts memory; until then
    size memory to avoid it and record that.
 

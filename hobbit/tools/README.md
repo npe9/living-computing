@@ -11,6 +11,11 @@ of the chip: the archive's file dates are 3 January 1993, the same month
 as the manual. That makes it the closest thing to hand that states what
 the machine encodes, in code rather than in prose.
 
+`qemu1e/` is separate from the vendored toolchain: scripts (no
+binaries) that boot the release's own 386 kernels in QEMU as the 1e file
+server the Hobbit terminal boots from; see
+[`../docs/qemu_1e_server.md`](../docs/qemu_1e_server.md).
+
 ## Provenance
 
 | item | value |
@@ -143,6 +148,14 @@ re-verified that day) and pinned in `SHA256SUMS`:
 `__.SYMDEF`, then forks `ar` to insert it), and the sources the runner and
 `tools/p9kbuild.py` cite for `ar`, `rl` and the `init.h` text step:
 `plan9-1e/sys/src/cmd/ar.c`, `rl.c`, `xd.c`.
+
+The kernel link (A3): `tools/p9kgen.py` makes the generated inputs,
+`tools/p9kbuild.py kernel --kgen K` builds `libram.a`, and
+`tools/p9kbuild.py link --kgen K --check` runs the shipped `zl` to make
+`9term` (351 M instructions on the reference model, sha256 `002880c0...`).
+`tools/p9kcmp.py IMAGE` compares any `-H1` image with the shipped
+`plan9-1e/hobbit/s9term`, failing only on what must agree
+(`docs/s9term.md`).
 
 `hobbit/bin/echo` measures: `magic 0x197`, text 0x2258 loaded at 0x1000,
 data 0x374, bss 0x354, entry 0x2ad0, `syms` 0x3db0 — a 1st Edition

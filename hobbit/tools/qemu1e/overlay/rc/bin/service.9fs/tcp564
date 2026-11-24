@@ -1,0 +1,16 @@
+#!/bin/rc
+# qemu1e addition (not in the 1e release): as il17008, on tcp!*!564,
+# the port a terminal's boot program dials for `tcp` (boot/ip.c
+# connecttcp, which pushes the fcall line discipline on its end).
+# exportfs -c pushes fcall on this end (exportfs.c pushfcall); $3 is the
+# connection directory, /net/tcp/N, so '#Itcp' is put back on /net first.
+# listen dups the connection onto fd 2 as well: stderr goes to a file
+# in the kfs's /adm (its /tmp is mode 555), not into the 9P stream.
+# Everything is bound inside the kfs first: once / is replaced,
+# rc finds commands (bind too) only in the kfs's own /bin.
+bind /n/kfs/386/bin /n/kfs/bin
+bind -a /n/kfs/rc/bin /n/kfs/bin
+bind '#c' /n/kfs/dev
+bind -a '#Itcp' /n/kfs/net
+bind /n/kfs /
+exec /bin/exportfs -s -c $3/ctl >[2] /adm/tcp564.err

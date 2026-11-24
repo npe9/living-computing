@@ -1475,3 +1475,29 @@ the owner put the PSI and SIMPOS in the plan. Its findings are
   recomputed after the append.)
 - The summary table above is as of 2026-11-20 and was not regenerated:
   `lit/trtm/` now holds 356 files, `lit/ipsj/` 157.
+
+## Addendum 2026-11-23 (second): the SIMPOS-only search
+
+Findings: `docs/psi_acquisition.md` section 9. Files: 45 fetched;
+two (Giho 8707, 8907) were already held and not added. Added: 29 ICOT
+reports to `lit/trtm/` (in git, the FGCS Digital Archive's terms as
+above); the ICOT museum's PSI video, seven WMV segments and seven
+abstract pages, to `lit/web/icot-museum-video-psi/`, and the WINCS
+article (*Computer Software* 8(1), 1991) and Giho 1991-03 to
+`lit/journals/`: on disk only (no redistribution terms stated for the
+last two; the video kept with them for its size, 25 MB). Rows in
+`lit/SOURCES.tsv` (retrieval "fetched 2026-11-23, SIMPOS search"),
+lines in `lit/SHA256SUMS` (its `SOURCES.tsv` line recomputed);
+`shasum -a 256 -c` passes. `lit/trtm/` now holds 385 files.
+
+## Addendum 2026-11-23 (third): the second broad search
+
+Findings: `docs/psi_acquisition.md` section 10. 14 files fetched,
+one (Giho 1991-03) a duplicate of the SIMPOS search's. Added, on disk
+only (no redistribution terms stated): two Kyoto theses with their
+abstracts and a text layer (Nakashima 1991, the PSI microinstruction
+formats; Ohno 1998) and a Waseda summary (Rokusawa 1998) to the new
+`lit/theses/` (gitignored); four IPSJ papers (IP1704) to `lit/ipsj/`;
+Giho 1988-05, 1988-10, 1989-01 to `lit/journals/`. KURENAI's served
+PDFs differ from its own bitstream checksums (probably stamped
+copies): the checksums in `lit/SHA256SUMS` are of what was served.

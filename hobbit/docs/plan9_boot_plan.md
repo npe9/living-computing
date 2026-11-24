@@ -323,6 +323,99 @@ model, producing a 1e Hobbit kernel image. Gate: the image's `Exec`
 header passes `tools/p9exec.py` and the relocation/symbol checks the
 `zl` sources define; the image is reproducible from a recorded command.
 
+**Status 2026-11-23 (later): linked; the gate as written is closed.**
+The release's `zl` links `9term` on the reference model, from inputs
+every one of which the release's own tools made on the model:
+
+    python3 tools/p9kgen.py --out K                  # term.c, bootterm.root.c, kerndate, ...
+    python3 tools/p9kbuild.py kernel --kgen K        # libram.a, f709cea9...
+    python3 tools/p9kbuild.py link --kgen K --check  # 9term
+
+(The first two were run once, on the p9kgen branch; their products --
+`term.c`, `bootterm.root.c`, `kerndate`, `libram.a` f709cea9... -- were
+copied and the third run on them, so the three have not yet been run
+end to end in one sitting.)  `link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
+raml.s`, `zc -w -Dram -DKERNDATE=721110517 term.c` and `zc -w -Dram
+bootterm.root.c` (the three objects equal the ones p9kgen and the kernel
+target made), then `zl -o 9term -l -R4 -H1 -T0x80004000 -E0x80004000
+raml.z term.z bootterm.root.z libram.a -lgnot -lg -lc` against the
+vendored `libgnot.a`, `libg.a`, `libc.a`.  The log
+(`BUILD/link-term.log`) records every input's sha256.
+
+* **The link**: zl `exits('')`, prints nothing, **351,299,086
+  instructions**, 753 system calls, 2,878 s wall on the loaded machine
+  (the three compiles before it 69.9 M more, about 9 min).  `9term` is
+  562,452 bytes, sha256
+  **`002880c011bd7418c36c036b16f450e61d1ed43e1ec963a6f5b4574a2eece1b1`**
+  (`p9kbuild.NINETERM_SHA256`; `--check` fails on any other).
+* **Reproducible**: the recorded command run twice more (at once), each
+  in its own fresh `--build` directory, gave the same sha256 and the
+  same status, instruction count, system calls, size and sha256 for
+  every one of its four steps as each other, and the same image as the
+  scratch run before them; 3,337 and 3,345 s wall.  (They ran before
+  the sha256 was written into `NINETERM_SHA256`, so `--check`'s own
+  comparison has not yet been exercised by a full link.)
+* **`p9exec` accepts it** as a `-H1` image: every constant header word,
+  the file size (80 + text + data + syms + lcsize), the section bases,
+  `etext/bdata/edata/end` against the header, and every one of its
+  8,287 symbols inside its section (`check_kernel`, the checks asm.c and
+  pass.c's `xdefine`s imply).
+* **zl's own relocation/symbol checks passed**: every check in the
+  vendored `sys/src/cmd/zl` reports through `diag()` (44 call sites --
+  `undefined:` pass.c:302, `undefined external:` span.c:250 and
+  asm.c:544, among them), which counts `nerrors` (list.c:215), and
+  `errorexit()` (obj.c:209-216) removes the output and exits `"error"`
+  when any was counted.  zl exited `''` with nothing on its console (the
+  driver fails otherwise), so it counted none.
+* **`tools/p9kcmp.py 9term`** against s9term: **every MUST item agrees**
+  -- header constants, entry 0x80004000 = `_startup` and its first four
+  instructions, raml.s then term.c, the libraries in link-line order,
+  `kerndate` 721110517, `conffile` "term", `devchar`'s 21 characters,
+  all 21 x 13 `devtab[]` functions by name, `streaminit`'s four
+  `newqinfo` arguments, the 60 `initcode` bytes.  Reported, with the
+  reason (the sources drifted, `docs/s9term.md`):
+
+  | | 9term | s9term | |
+  |---|---|---|---|
+  | text | 224,236 | 219,968 | +4,268 |
+  | data | 72,908 | 70,388 | +2,520 |
+  | bss | 101,152 | 98,476 | +2,676 |
+  | symbols | 232,036 (8,287) | 227,808 (8,136) | +151 records |
+  | pc/line | 33,192 | 32,602 | +590 |
+  | file | 562,452 | 550,846 | +11,606 |
+
+  The text difference is accounted for object by object (35 objects
+  differ in size, summing to exactly +4,268): the largest are `scsi.c`
+  +1,168 (six functions the vendored file has and s9term does not),
+  `kbd.c` +1,018 and `latin1.c` +170 (linked here, absent there: the
+  vendored `screen.c` calls `kbdinit`), `devbit.c` +918, `devip.c` +214,
+  `deveia.c` +200, `raml.s` +164 (`getcpureg`), `devscsi.c` -208,
+  `rune.c` +42 (the January libc).  The functions defined only in one
+  image are exactly the per-file table of `docs/s9term.md`, found there
+  from the sources and here from the two links.  `-lgnot`, `-lg` and
+  `-lc` load the **same members in the same order** as s9term (7, 3,
+  19).  `libram.a`'s order differs in four places (`deviic`, `scsibuf`,
+  `screen`/`devbit` placement) besides `kbd` and `latin1`: here those
+  members keep the relative order of the generated `DEV=` list
+  (`deviic` before `deveia`, `scsibuf` after `scsi`, `devbit screen kbd`
+  before `devkprof`); in s9term they do not (`deviic` after `devwren`,
+  `scsibuf screen devbit` after `fcall`).  Load order is by need (zl
+  scans `__.SYMDEF` from the start each pass), so this says s9term's
+  `libram.a` or its `term` file listed them differently; which, is not
+  known.  The embedded boot program is the 27,108-byte one p9kgen
+  made (s9term's is 26,796; above).
+
+The gate -- "the image's `Exec` header passes `tools/p9exec.py` and the
+relocation/symbol checks ...; the image is reproducible from a recorded
+command" -- holds.  What it does not say, and is **not** shown: that this
+kernel boots (A4), or that it is the bytes Bell Labs would have linked
+from this tree (no oracle: s9term is older).  The link was not
+attempted on the Bluespec core.  In the suite: `p9kcmp`
+on s9term and on corrupted copies (`tests/test_p9kcmp.py`, each MUST
+item injected, plus three injections into the tool itself recorded in
+its header); the link itself is the long run, as `9term` is a build
+product and not committed.
+
 **Status 2026-11-23: the kernel library is built; not closed.**
 `tools/p9kbuild.py` (the recorded command; module doc for the details)
 drives the release's own binaries on the reference model in a staged
@@ -412,10 +505,8 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   2026-11-20.  A 3-file sample runs in
   `tests/run_tests.sh`.
 
-Next: `cpu.c`/`term.c` (`mkdevc`), `boot$CONF.root`, `KERNDATE`, the
-link with `zl -l -R4 -H1 -T0x80004000 -E0x80004000` against `-lgnot -lg
--lc` (libgnot.a and libg.a are in the release, not vendored yet), and
-the comparison with the shipped `hobbit/s9term`.
+(Then: `term.c`, `boot$CONF.root`, `KERNDATE` (p9kgen, below), the link
+and the comparison with s9term -- done, the status above.)
 
 **Status 2026-11-20 (kept for the record): started, paused.**  What was
 done and what was not:
@@ -538,9 +629,8 @@ tree builds; s9term is not a byte oracle for anything linked with libc.
 That also bounds the kernel-link gate: the image built from this tree
 will not be byte-identical to s9term.
 
-Not done: the link (`zl ... raml.z term.z bootterm.root.z libram.a
--lgnot -lg -lc`; `libram.a` itself is `tools/p9kbuild.py`'s, above); the
-cost decision -- about 100 files at ~8 million instructions each is an
+Not done at the time (the link is now done: the first status of this
+section); the cost decision -- about 100 files at ~8 million instructions each is an
 hour on the reference model and several on the core, so the full build
 belongs in a recorded long run with a sample in the suite; and, for
 the generated inputs, `mksystab`'s sam halves (no sam on the model).
@@ -564,6 +654,12 @@ Gate: a shell (`rc`) from `hobbit/bin` runs over the console, `cat`
 reads a file from a modelled disk image, and `za` assembles a program
 *inside* the boot. That is "1e is running", not "the model can run one
 binary".
+
+The file server s9term's `/boot` needs (it is a terminal: root over IL
+17008 after BOOTP) is a 1e 386 machine in QEMU, serving the whole 1e
+release from a kfs made by 1e's own tools; a shipped 9pc terminal boots
+its root from it over the same frame boundary the model's SONIC will
+use. See [`qemu_1e_server.md`](qemu_1e_server.md) and `tools/qemu1e/`.
 
 ## A0 status (2026-11-19): closed — there was no hole
 

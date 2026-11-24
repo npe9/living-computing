@@ -206,7 +206,10 @@ Three implementable facts fall straight out:
    register already loaded.
 
 **Verdict under the tie-breaker rule: implement two LAARs**, each 18 bits + check, each with
-its own busy trigger, allocated round-robin ("LAAR n NEXT"). Two store-type operations may
+its own busy trigger, allocated LAAR 1 first, LAAR 2 only while LAAR 1 is busy (CORRECTED
+2026-11-23: Fig 3.2.2 sheet 2, PDF 94, printed 2-4, "LAAR 1 BUSY" NO -> "SET FROM 1 & LAAR 1
+BUSY", YES -> "SET FROM 2 & LAAR 2 BUSY", read on the image; this file said round-robin,
+`ibox_la_spec.md` §12 item 2). Two store-type operations may
 be outstanding at once. **But see §6.2 item 9 before wiring this in: every published timing in the corpus was measured
 on the one-LAAR machine, so two LAARs buy fidelity of structure at the cost of every timing
 oracle.** The recommendation there is two LAARs with a switch, defaulting to one, and all
@@ -416,7 +419,7 @@ Verbatim:
   unit counter." (OCC)
 - Buchholz PDF 268: "Each counter is appropriately interlocked with its predecessor."
 - **CE manual PDF 96** (Fig 3.2.4), terminal box, verbatim: **"ADVANCE TBC IF NOT INTLKD BY OCC"**.
-- **CE manual PDF 113** (OCR of the ABC figure): **"ADV ABC IF NOT INTLKD BY TBC"**.
+- **CE manual PDF 114** (corrected 2026-11-23 from PDF 113; OCR of the ABC figure): **"ADV ABC IF NOT INTLKD BY TBC"**.
 
 **[CONFLICT, resolved]** Buchholz's *figures* 15.9 and 15.10 (PDF 269, 270) print the branch
 labels the other way round from figures 15.7 and 15.8. Read at 700 dpi:
@@ -769,7 +772,7 @@ HSCLN TIMER (E,M)
        -> SET "INTRPT INHIBIT LOAD" TRIG (38.39.03.1)
        -> SET "DISABLE INTRPT" TRIG      (38.39.05.1)
        -> SET "I BOX RQST HSCLN" TRIG    -> START I BOX HSCLN TIMER (38.03.10.1)
-  -> (execution units) SAU INSTR? (LAOP X1, 35, 43) / PAU INSTR? (LAOP X2)
+  -> (execution units) SAU INSTR? (LAOP X1, 35, 75, 43 -- Fig 3.2.6, PDF 98, read on the image 2026-11-23; was X1, 35, 43) / PAU INSTR? (LAOP X2)
        -> SAU IDLE? / PAU IDLE? -> SET "EXECUTION UNITS IDLE" TRIG (38.39.04.1)
   -> EXEC UNITS IDLE? -> SET LA HSCLN MODE TRIG (38.39.04.1)
                       -> RESET "EXEC UNITS IDLE" TRIG; RESET I BOX HSCLN TIMER
@@ -1399,7 +1402,7 @@ instruction is loaded into the single lookahead level."*
    - no-index transfer (to a Y register): LAOP **45, 51** (Fig 3.2.25)
    - illegal pseudo-store: LAOP **42, 44, 46** (Fig 3.2.25)
    - store data taken from TOB rather than ACOB: LAOP **33 EXT or 31** (Fig 3.2.12)
-   - SAU instruction: LAOP **X1, 35, 43**; PAU instruction: LAOP **X2** (Fig 3.2.22)
+   - SAU instruction: LAOP **X1, 35, 43** (Figs 3.2.6 and 3.2.8 print **X1, 35, 75, 43**; PDF 98 checked on the image 2026-11-23, `ibox_la_spec.md` §12); PAU instruction: LAOP **X2** (Fig 3.2.22)
    - ECC-check load: LAOP **33**; special LLP-1 case: LAOP **45** (Fig 3.2.1 / 3.2.2)
    - VFL operand levels: LAOP **03, 05, 07**; VFL special operand: LAOP **15**;
      I/O: op **20** and **24** (figure titles, Figs 3.2.7/3.2.9/3.2.10)
