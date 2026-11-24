@@ -126,8 +126,21 @@ the same either way.
                   shoen still started with count 1.  Its hash/3 goal,
                   control/2 and report/2 are left waiting.  Pins 15 /
                   8375 -> 16 / 8671, this part's 296 lines.
-Eight goals are left waiting (WAITING, by hand; five before
-add_resource).
+  allow_resource_report  (2026-11-24) allow_shoen_resource_report,
+                  22:E7, the same way, Control [start,
+                  allow_resource_report | C]: the Report [started,
+                  resource_report_allowed | _] (7, pimos.vmac; the
+                  manual's ACK, e-shoen.tex 174-180, 254-262).
+  execute1        (2026-11-24) create_shoen's distributed form:
+                  shoen:execute1/7 (what execute/9 calls) with Prio
+                  {0, 4096} and Node {0, 1} in place of the two
+                  integers, mask -1, hash/3 suspended, Control [start |
+                  C]: the Report [started | _], a new started shoen of
+                  count 1, its mask -1.  Pins 16 / 8671 -> 18 / 9198,
+                  these parts' 280 and 247 lines.
+Fourteen goals are left waiting (WAITING, by hand; five before
+add_resource, eight before allow_resource_report: each of the last
+three parts leaves hash/3, control/2 and report/2).
 
 Observed fault injections into add_shoen_resource, 2026-11-24 (the
 trace's part numbers count from 0, so add_resource is part 15):
@@ -135,6 +148,10 @@ trace's part numbers count from 0, so add_resource is part 15):
                                      M .. 5
   reported as stopped (11)           add_resource, line 142: M .. b for 5
   NewShoen to the second operand     add_resource, line 146: R 5 for R 1
+Observed 2026-11-24 (allow_resource_report is part 16, execute1 17):
+  reported as resource_added (5)     allow_resource_report, line 126:
+                                     M .. 5 for 7
+  create_shoen's vector form refused execute1, line 43: E unimp
 
 Observed fault injections into the Bluespec, 2026-11-23, one at a time
 in a private copy of pim/ (the restore is the copy; the clean copy then
@@ -201,7 +218,7 @@ import lockstep_shoen as stage1  # noqa: E402
 import lockstep_shoen2 as stage2  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=16, lines=8671)
+PINNED = dict(parts=18, lines=9198)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 STATUS = {L.DORMANT: 'dormant', L.STARTED: 'started', L.TERMINATED: 'terminated',
           L.REMOVED: 'removed', L.STOPPED: 'stopped'}
@@ -430,6 +447,33 @@ def script():
     goal(execute4, 0, 2, 3, 8)
     s.run()
     s.out(8)
+
+    # (i) allow_shoen_resource_report (2026-11-24): the same with
+    # Control [start, allow_resource_report | C]
+    s.label('allow_resource_report')
+    code('ipl_pool', 'hash/3', 0)
+    s.vector(2, 12, [None, None, None])
+    s.cons(10, 6, A('allow_resource_report'), None)    # C in 7
+    s.cons(3, 13, A('start'), ('slot', 10))
+    s.newvar(8)                                    # Report
+    goal(execute4, 0, 2, 3, 8)
+    s.run()
+    s.out(8)
+
+    # (j) create_shoen's distributed form (2026-11-24): shoen:execute1/7
+    # with Prio {0, 4096} and Node {0, 1}, mask -1, hash/3 suspended,
+    # Control [start | C]
+    s.label('execute1')
+    code('ipl_pool', 'hash/3', 0)
+    s.vector(2, 12, [None, None, None])
+    s.vector(4, 6, [I(0), I(4096)])
+    s.vector(5, 9, [I(0), I(1)])
+    s.cons(3, 13, A('start'), None)
+    s.setslot(11, I(-1))
+    s.newvar(8)                                    # Report
+    goal(P('shoen', 'execute1/7'), 0, 2, 4, 5, 11, 3, 8)
+    s.run()
+    s.out(8)
     return s
 
 
@@ -522,12 +566,21 @@ EXPECT = [
     ('add_resource', [STREAM('started', 'resource_added')], [],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
                                                                    (1, 'started', None, 0, -1)]),
+    ('allow_resource_report', [STREAM('started', 'resource_report_allowed')], [],
+     AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
+                                                                   (1, 'started', None, 0, -1),
+                                                                   (1, 'started', None, 0, -1)]),
+    ('execute1', [STREAM('started')], [],
+     AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
+                                                                   (1, 'started', None, 0, -1),
+                                                                   (1, 'started', None, 0, -1),
+                                                                   (1, 'started', None, 0, -1)]),
 ]
 # The goals left waiting, by hand: `stop` and `abort inner` leave their
 # root shoen's control/2 and report/2 (no monitor closes them); `abort
 # outer` the inner's report/2, a goal of the aborted outer that waits on
 # the inner's report stream.  The goals discarded were woken first.
-WAITING = 8
+WAITING = 14
 # the lines that say a goal was discarded or parked, per part
 TAKEN = {'stop: woken, parked': ['E park'], 'abort inner: woken': ['E aborted'],
          'abort outer: woken': ['E aborted', 'E aborted']}

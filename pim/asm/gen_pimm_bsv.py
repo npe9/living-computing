@@ -88,7 +88,8 @@ def main(argv):
               'SH_REDUCTIONS', 'SH_REMOVE', 'REMOVED', 'REPORT_STATISTICS_STARTED',
               'REPORT_STATISTICS', 'REPORT_RETURN_RESOURCE',
               'SH_MASK', 'STOPPED', 'REPORT_ABORTED', 'REPORT_EXCEPTION', 'REPORT_STOPPED',
-              'EXC_REDUCTION_FAILURE', 'EXC_RAISED', 'REPORT_RESOURCE_ADDED'):
+              'EXC_REDUCTION_FAILURE', 'EXC_RAISED', 'REPORT_RESOURCE_ADDED',
+              'REPORT_RESOURCE_REPORT_ALLOWED'):
         lines.append('Integer lay_%s = %d;' % (k, getattr(L, k)))
     lines.append('')
     for m in im.mods:

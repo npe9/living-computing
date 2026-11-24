@@ -113,6 +113,15 @@ gives it, not from either model:
                 ..}; 5 against 6 fails; sizes 8 and 9 fail.  With part
                 code to predicate, pins 15 / 2349 -> 17 / 2697 (139 and
                 209 lines).
+  search        search_character, 22:D9 r6 (2026-11-24; the stop of
+                pim:go/4 reading pimos.conf), at its stub: in the 8-bit
+                {1, 2, 3, 1, 2}, 1 from 1 to 4 at 3; 2 from 4 back to 0
+                at 4; 9 from 0 to 2 nowhere, -1, NewString the string;
+                3 from 4 back to 0 at 2 (two steps back); in the 16-bit
+                {2164h, 2127h, 2164h}, 2127h from 0 to 2 at 1, 2164h
+                from 2 back to 0 at 2; Start unbound waits, then 0
+                gives 1.  Pins 17 / 2697 -> 18 / 3006, this part's 309
+                lines.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -158,6 +167,12 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
                                              unify, line 63
   (2026-11-24) long unify, two long vectors not a goal  long unify,
                                              line 47: E unimp
+  (2026-11-24, bsv/PimmSBox.bsv and PimmStages.bsv) search_character
+    always forward                           search, line 144: R 6 b for 2
+    a miss gives 0                           search, line 106: R 6 0 for -1
+    NewString to the wrong register          search, line 33: R 0 for R 7
+    (always forward PASSED until the case 3 from 4 back to 0 was
+    added: the other backward searches find at their first element)
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -178,7 +193,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=17, lines=2697)
+PINNED = dict(parts=18, lines=3006)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -681,6 +696,51 @@ def script():
     unify_long()
     v = (5, None, 9) + (None,) * 5
     part('long unify', [v, v])
+    # 17. search_character (2026-11-24, met in pim:go/4 reading
+    #    pimos.conf), at its stub: in the 8-bit {1, 2, 3, 1, 2}, 1 from
+    #    1 to 4 is at 3, 2 from 4 back to 0 at 4 (End < Start: from the
+    #    rear), 9 from 0 to 2 nowhere, -1, and NewString is the string;
+    #    in the 16-bit {2164h, 2127h, 2164h}, 2127h from 0 to 2 at 1,
+    #    2164h from 2 back to 0 at 2; an unbound Start waits, then 0
+    #    gives 2127h at 1 again
+    s.label('search')
+    stub = m.stubs['search_character']['addr']
+
+    def search(slot, a, b, c):
+        s.newvar(11)
+        s.newvar(12)
+        s.arg(1, slot)
+        for k, v in enumerate((a, b, c)):
+            if isinstance(v, int):
+                s.argc(2 + k, I(v & 0xffffffff))
+            else:
+                s.arg(2 + k, v[1])
+        s.arg(5, 11)
+        s.arg(6, 12)
+        s.spawn(stub, 6)
+        s.run()
+    s.string(10, 8, [1, 2, 3, 1, 2])
+    search(10, 1, 4, 1)
+    s.out(11)
+    search(10, 4, 0, 2)
+    s.out(11)
+    search(10, 0, 2, 9)
+    s.out(11)
+    s.out(12)
+    search(10, 4, 0, 3)
+    s.out(11)
+    s.string(9, 16, [0x2164, 0x2127, 0x2164])
+    search(9, 0, 2, 0x2127)
+    s.out(11)
+    search(9, 2, 0, 0x2164)
+    s.out(11)
+    s.newvar(8)
+    search(9, ('slot', 8), 2, 0x2127)
+    s.out(11)
+    s.unifyc(8, I(0))
+    s.run()
+    s.out(11)
+    part('search', [3, 4, -1, (8, [1, 2, 3, 1, 2]), 2, 1, 2, None, 1])
     return s, want
 
 
@@ -690,7 +750,7 @@ ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal'
         'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0),
         'marked variable': (0, 0), 'vector 7': (2, 1),
         'constant': (1, 0), 'body vector': (0, 0), 'code to predicate': (0, 0),
-        'long unify': (2, 0)}
+        'long unify': (2, 0), 'search': (0, 0)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
@@ -700,8 +760,8 @@ TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'jump': ('jump', 2), 'marked variable': ('set_marked_variable', 1),
          'vector 7': ('wait_vector', 5), 'constant': ('get_constant', 3),
          'body vector': ('b_vector', 5), 'code to predicate': ('code_to_predicate', 3),
-         'long unify': ('get_value', 3)}
-OPCODE = {'code_to_predicate': '22f4', 'b_vector': '22ca', 'get_value': '23bc', 'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'long unify': ('get_value', 3), 'search': ('search_character', 8)}
+OPCODE = {'search_character': '22d9', 'code_to_predicate': '22f4', 'b_vector': '22ca', 'get_value': '23bc', 'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 
