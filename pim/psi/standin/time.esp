@@ -1,0 +1,31 @@
+% SCAFFOLDING stand-in for SIMPOS's class `time`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no part of `time` is
+% printed or held.  It is MINIMAL: create/2 and set_count/2 only, for the
+% alarm_watch stand-in's callers.  INTERPOLATED (labelled) from:
+%   - pimfep##pimos_timer's local on_after/4 (held .ptf @10c):
+%     `:create(#time,T), :set_count(T,N)` with N the timer's count, then
+%     `:on_after(Watch,T)`;
+%   - gog-kl1 ESP/PLAYSLOT.ESP:83-84 (ICOT Free Software): `:create(#time,
+%     Time), :set_value(Time,0,0,S,M)` before `:on_after(Watch,Time)`;
+%   - docs/simpos/required/classes.tsv (row `time`): create/2, now/2,
+%     present/2, make_string/6, make_value/6, get_string/2, plus/3,
+%     set_value/5.  set_count/2 is pimfep's, not in that row.
+% Not stood in: now/2, set_value/5 and the rest.  The unit of set_count/2's
+% count is UNKNOWN.
+
+class time has
+
+% INTERPOLATED from: `:create(#time,Time)` (see above).
+:create(Class, Time) :-
+        :new(Class, Time);
+
+instance
+
+% INTERPOLATED: the representation (OURS); the unit is UNKNOWN.
+attribute count := 0;
+
+% INTERPOLATED from: pimos_timer on_after/4 `:set_count(T,N)`.
+:set_count(Time, Count) :-
+        Time!count := Count;
+
+end.

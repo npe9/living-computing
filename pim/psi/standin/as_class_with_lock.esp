@@ -1,0 +1,50 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_class_with_lock`, compiled
+% by psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `as_class_with_lock` is printed or held.  Every method is INTERPOLATED
+% (labelled) from:
+%   - kappa2 `utility/tool/LOADER.ESP` (ICOT Free Software, held), class
+%     kappa_loader, nature `as_class_with_lock, as_program` (:21-23):
+%     `load_classes/2` (:133-147) tests `:locked(Class)` first, then calls
+%     `:lock(Class)`, loads, and ends with `:unlock(Class)`.  Its comment
+%     at :145-146 and :152-153 (1991-12-17, M. Ozawa) says, in Japanese,
+%     ":lock has :unlock as its own alternative, so a ! must not be put
+%     here", and that a clause unlocking on failure is therefore not
+%     needed;
+%   - docs/simpos/required/classes.tsv:52, 85, 276: the selectors the
+%     held programs send through this nature are lock/1, locked/1 and
+%     unlock/1;
+%   - the pimfep tables (pimos_remote_login_socket_table,
+%     pimos_socket_manager_table) and pimscsi's packet and pseudo_scsi,
+%     whose class methods send lock/1 and locked/1 to their own class.
+% Model (OURS): a count in a class slot.  One process is modelled, so a
+% lock never waits; a second lock by the same process nests.
+
+class as_class_with_lock has
+
+% INTERPOLATED: the representation (OURS).
+attribute lock_count := 0;
+
+% INTERPOLATED from: LOADER.ESP:140-147 and its comment (:unlock is the
+% alternative of :lock, so failing after a lock unlocks).
+:lock(Class) :-
+        N = Class!lock_count,
+        Class!lock_count := N + 1;
+:lock(Class) :-
+        :unlock(Class),
+        fail;
+
+% INTERPOLATED from: LOADER.ESP:147 `:unlock(Class);`.  Unlocking a class
+% that is not locked succeeds and leaves it unlocked (OURS).
+:unlock(Class) :-
+        N = Class!lock_count,
+        0 < N, !,
+        Class!lock_count := N - 1;
+:unlock(Class);
+
+% INTERPOLATED from: LOADER.ESP:134 `:locked(Class),!, ... fail;`: it
+% succeeds when the class is locked.
+:locked(Class) :-
+        N = Class!lock_count,
+        0 < N;
+
+end.
