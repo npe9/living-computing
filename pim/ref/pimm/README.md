@@ -84,7 +84,7 @@ loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
 `lockstep_pvec.py` the guard `X = Y` on two vectors (the IPL's pool
 with vector keys), `lockstep_tproc.py` `Goal@processor(P)` waiting
 for an unbound P, `lockstep_timer.py` `system_timer` and `set_timer`
-(the clock at 0, ours),
+(the clock at 0, ours), `lockstep_wint.py` `write_integer -1`,
 `lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The

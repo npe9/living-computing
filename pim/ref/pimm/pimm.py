@@ -91,6 +91,10 @@ class Fail(Exception):
     """No clause applies (a reduction failure), or a body unification fails."""
 
 
+def sx24(v):
+    return v - (1 << 24) if v & 0x800000 else v
+
+
 def sx16(v):
     v &= 0xffff
     return v - 0x10000 if v & 0x8000 else v
@@ -1450,12 +1454,15 @@ class Machine:
         self._sp += 1
 
     def i_write_integer(self, pc, x, y, z, c16):
-        # the integer is the low 24 bits.  Whether bit 23 is a sign is
-        # not established (the image has no such operand): refused
-        v = self.cells[pc][1] & 0xffffff
-        if v >> 23:
-            raise Unimplemented('write_integer with bit 23 set')
-        self.mem[self.sp] = (INT, v)
+        # the integer is the low 24 bits, SIGNED: the PIMOS assembler
+        # writes an integer constant in -2^23..2^23-1 (16#"FF800000"
+        # ..16#"007FFFFF") in this c24 form, masked to 24 bits, and any
+        # other in the two-cell c40 form (library/assembler/klb_opr.kl1
+        # p(c24, ..), lines 50-54, and p(c40, ..), 60-81).  A real -1:
+        # scsi_fep's check_data_size1/6, `L = [-1|NL]`
+        # (bios/fep_module/scsi_fep.kl1:429-433)
+        v = sx24(self.cells[pc][1] & 0xffffff)
+        self.mem[self.sp] = (INT, v & 0xffffffff)
         self._sp += 1
 
     def i_write_nil(self, pc, x, y, z, c16):

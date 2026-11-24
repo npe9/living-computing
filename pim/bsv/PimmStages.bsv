@@ -448,14 +448,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_write_integer) begin
-      // the integer is the low 24 bits; whether bit 23 is a sign is not
-      // established (the image has no such operand): refused
-      if (ins.val[23] == 1) stop(EndUnimp);
-      else begin
-        smem.write(sp, intC(zeroExtend(ins.val[23:0])));
-        sp <= sp + 1;
-        next;
-      end
+      // the integer is the low 24 bits, signed (the assembler's c24
+      // form: klb_opr.kl1 p(c24, ..), p(c40, ..))
+      smem.write(sp, intC(signExtend(ins.val[23:0])));
+      sp <= sp + 1;
+      next;
     end
     else if (op == op_write_nil) begin
       smem.write(sp, mkCell(tag_ATOMo, 0));

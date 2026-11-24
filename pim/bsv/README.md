@@ -210,7 +210,8 @@ IPL's pool `ipl_pool:keyed_set/2` given vector keys. `tproc`:
 `Goal@processor(P)` with P unbound waits (rules `tq1`..`tq4`, the
 stub `to_processor`, rules `tp0`..`tpE`; from VPIM), at the one site
 of `pimm_patch_scsifep360E.sav`. `timer`: `system_timer` and
-`set_timer`, the model's clock at 0 (ours).
+`set_timer`, the model's clock at 0 (ours). `wint`: `write_integer`
+with a negative operand, at `scsi_fep:check_data_size1/6`.
 `scsi`: `scsi_init` and `scsi_command` (`PimmScsiBox.bsv`) at their
 sites (`scsi:create/2`, `scsi:command_executer/2`), the device on the
 tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE, a
