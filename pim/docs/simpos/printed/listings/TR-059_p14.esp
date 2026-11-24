@@ -1,0 +1,18 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 14, printed folio 12. Section 3.1(4) read sequence (cont. from p13) and 3.1(5) 'Sequential access' (file tap).
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+          % Specify the input position.
+   :read(File,Buffer,File_Marker),
+          % Issue a read operation on the file.
+   :record_data(Buffer,Record_Data),
+          % Take out the record data.
+   :data_size(Buffer,Data_Size).
+          % If necessary, get the data size.
+% (5) Sequential access
+% o To create a tap on a file
+          :tap(File,Tap)
+% o To read or write a record at the current position
+          :read(Tap,Buffer)
+          :write(Tap,Buffer)

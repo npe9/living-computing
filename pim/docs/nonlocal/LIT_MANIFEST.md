@@ -1452,3 +1452,52 @@ FSTJ issue that was over the fetch's 95 MB limit,
 stand with the other issues: on disk only, like them, with its row in
 `SOURCES.tsv` and `SHA256SUMS`. With it all 17 cited FSTJ issues are
 held.
+
+## Addendum 2026-11-23: the PSI / SIMPOS acquisition (roadmap section 9, rung P0)
+
+A search for SIMPOS, ESP, KL0 and PSI hardware material, made because
+the owner put the PSI and SIMPOS in the plan. Its findings are
+`docs/psi_acquisition.md`; this addendum only records the files.
+
+- Fetched 154 files (159.3 MB) with plain `curl` and a generic user
+  agent; 63 were byte-identical to files already held (`ifs/`, `lit/`)
+  and were not added again.
+- Added: 64 ICOT technical reports to `lit/trtm/` (in git, as the rest
+  of `trtm/`: the AIST-hosted FGCS Digital Archive "permits free use
+  of the contents ... for academic purposes without changing any parts
+  of the contents", `using-FGCSDA-E.html`); 27 IPSJ papers to
+  `lit/ipsj/` (on disk only, as the rest of `ipsj/`: the record's
+  licence field is `license_free` with no text).
+- Every added file has its row in `lit/SOURCES.tsv` (retrieval column
+  "fetched 2026-11-23, PSI/SIMPOS acquisition P0") and its line in
+  `lit/SHA256SUMS`; `cd lit && shasum -a 256 -c SHA256SUMS` passes
+  for every file. (`SHA256SUMS` lists `SOURCES.tsv` too; its line was
+  recomputed after the append.)
+- The summary table above is as of 2026-11-20 and was not regenerated:
+  `lit/trtm/` now holds 356 files, `lit/ipsj/` 157.
+
+## Addendum 2026-11-23 (second): the SIMPOS-only search
+
+Findings: `docs/psi_acquisition.md` section 9. Files: 45 fetched;
+two (Giho 8707, 8907) were already held and not added. Added: 29 ICOT
+reports to `lit/trtm/` (in git, the FGCS Digital Archive's terms as
+above); the ICOT museum's PSI video, seven WMV segments and seven
+abstract pages, to `lit/web/icot-museum-video-psi/`, and the WINCS
+article (*Computer Software* 8(1), 1991) and Giho 1991-03 to
+`lit/journals/`: on disk only (no redistribution terms stated for the
+last two; the video kept with them for its size, 25 MB). Rows in
+`lit/SOURCES.tsv` (retrieval "fetched 2026-11-23, SIMPOS search"),
+lines in `lit/SHA256SUMS` (its `SOURCES.tsv` line recomputed);
+`shasum -a 256 -c` passes. `lit/trtm/` now holds 385 files.
+
+## Addendum 2026-11-23 (third): the second broad search
+
+Findings: `docs/psi_acquisition.md` section 10. 14 files fetched,
+one (Giho 1991-03) a duplicate of the SIMPOS search's. Added, on disk
+only (no redistribution terms stated): two Kyoto theses with their
+abstracts and a text layer (Nakashima 1991, the PSI microinstruction
+formats; Ohno 1998) and a Waseda summary (Rokusawa 1998) to the new
+`lit/theses/` (gitignored); four IPSJ papers (IP1704) to `lit/ipsj/`;
+Giho 1988-05, 1988-10, 1989-01 to `lit/journals/`. KURENAI's served
+PDFs differ from its own bitstream checksums (probably stamped
+copies): the checksums in `lit/SHA256SUMS` are of what was served.

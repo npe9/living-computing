@@ -1,0 +1,27 @@
+% TM-126 「マルチウィンドウシステムを通して見たインターフェースの考察」 (内田, 辻, June 1985)
+% PDF page 6, printed folio 5. Inside screenshots 図3 ディバッガの子ウィンドウの例(1) and
+% 図4 ディバッガの子ウィンドウの例(2) (same editor_1 content in both). EXAMPLE program, not SIMPOS.
+% transcribed by eye from 300dpi crops (work/tm0126/p-6_fig3_editor.png).
+% NOTE: in the screen font, argument separators render as a low dot that cannot be told apart
+% from '.' at this resolution; they are transcribed as ',' (INFERENCE: ESP/Prolog argument
+% syntax), the clause terminators ';' and 'end.' are clear.
+
+class denwa has
+instance
+:number(Obj,X,N) :- :stay(Obj,X,Y),:denwa(Obj,Y,N);
+:stay(Obj,X,Z) :- :visit(Obj,X,Y),:stay(Obj,Y,Z);
+:stay(Obj,jiro,saburo);
+:stay(Obj,X,X);
+:visit(Obj,taro,jiro);
+:denwa(Obj,taro,1111);
+:denwa(Obj,jiro,2222);
+:denwa(Obj,saburo,3333);
+
+end.
+
+% debugger_1 window (Fig 3), as shown:
+%   :- :new(#denwa,D).
+%   > Success !!
+%
+%   :- :number(D,taro,Number
+% Variable Window:  D * $denwa:      ('*' as shown in Fig 3; Fig 4 shows 'D = $den' truncated)

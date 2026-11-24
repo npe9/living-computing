@@ -1,0 +1,74 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+window			:create/1; :create/2 (Initiation list, Table 1)	:set_size/2; :set_position/2; :set_superior/1; :set«?»border_width/1; :set_label_position/1; :set_title/1; :set_top_title/1; :set_bottom_title/1; :set_margins/4; :activate/0; :show/0; :deactivate/0; :hide/0; :write/1; :move_cursor/2; :insert/1; :delete/1; :clear_line/0; :scroll/1; :open_rows/2; :move_rows/3; :get_point_value/3; :set_point_value/3; :draw_line/4; :draw_line/7; :draw_rectangle/4; :draw_rectangle/7; :draw_string/3; :draw_string/4; :create_marker/1; :draw_marker/1; :erase_marker/1; :move_marker/3; :set_marker_type/2; :set_marker_size/3; :get_marker_list/1; :read/1; :read_sense/1; :kill/0; :select/0	PRINTED-INTERFACE	TM-125	8-13; 13-19; 22	7-12; 12-18; 21	stand-alone: the class for make a standard window || methods: ch.5 "Using the Window" (tm0125_p13.esp); attaching them to class window is INFERENCE (report documents them for windows generally, receiver named Window); :draw_line/7 printed X1,X2,X2,Y2; :select/0 named in 6.2 prose only
+window_without_label					PROSE	TM-125	8-13	7-12	stand-alone: the class for making a window which has no labels.
+window_with_two_labels					PROSE	TM-125	8-13	7-12	stand-alone: the class for making a window with two labels, top label and bottom label. user can use one of
+superior_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the superior window, the window which can have the sub-windows.
+labeled_superior_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the superior window with label.
+menu			:create/2 (menu item vector format, p14)	:add_item/2; :add_item/3 (multi column); :delete_item/1	PRINTED-INTERFACE	TM-125	8-13	7-12	stand-alone: the class for making the standard menu, single select single column menu. || add_item/delete_item receiver printed as Menu; INFERENCE that they belong to menu classes
+multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi column menu.
+temporary_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the single select single column temporary menu.
+temporary_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the single select multi column temporary menu.
+multiple_select_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi select single column menu.
+multiple_select_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi select multi column menu.
+temporary_multiple_select_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the temporary multi select single column menu.
+temporary_multiple_select_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the temporary multi select multi column menu.
+submenu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the sub menu which is the sub window of another window.
+menu_item		item string, value returned when selected, item type, documentation (prose, unnamed slots)			PROSE	TM-125	8-13	7-12	stand-alone: the class for making the menu item. It has the slots, item string, the value to be returned when
+choice_window			:create/2 (choice item vector {item_string,item_type,elements_list,initial_element,documentation})		PRINTED-INTERFACE	TM-125	8-13	7-12	stand-alone: the class for making a standard choice window
+choice_item					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice item.
+marker				(window methods :create_marker/:draw_marker/... take Marker as argument)	PROSE	TM-125	8-13	7-12	stand-alone: the class for making the marker.
+popup_choice_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice window with popup feature.
+window_region					PROSE	TM-125	8-13	7-12	stand-alone: the class for defining the window region.
+basic_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class supplying the function as a window. Every window must inherit this class.
+user_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making the standard window which can be used by the user.
+as_inferior					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class supplying the function as a sub window. All the window class which is defined by the
+as_superior	as_relation (prose: as_relation is inherited by as_superior)				PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as superior window. If the user want to use the sub
+as_inside					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for managing the inside area of the window.  The inside area is the part of window
+bare_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the basic function of the window.  For example, making the object,
+with_border					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have a border of the window.
+with_label					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have a label.
+with_two_labels					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have two labels, top label and bottom label.
+with_margin					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have the margins.  The margin is the blank area at the
+as_relation					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for managing the allocation of the sub windows in the superior window. This class is || inherited by as_superior (prose)
+external					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to access to the window from outside of window  manager.
+as_temporary_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as temporary window.
+as_popup_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as a popup window.  Popup window is the temporary
+sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border and margins.
+labeled_sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border, margins and label.
+two_labeled_sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border, margins and two labels.
+as_output					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function of output.
+as_cursor					PROSE	TM-125	8-13	7-12	mixin 2): the class to manage the cursor which shows the position where the output is done.
+as_string_output					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to output a string.
+as_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to scroll the window.
+as_dot_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to scroll the window by dot bases.
+with_mouse_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to cause  scrolling by the mouse. this class support the  two | listed again under mixin 3): the class for supplying the function to scroll the contents of the window by mou
+as_graphics					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to output the graphic primitives.
+as_markers					PROSE	TM-125	8-13	7-12	mixin 2): the class for suppling the function to have markers in the window.
+as_input					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function of input from keyboard.
+as_mouse_input					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function of input from mouse.
+with_default_mouse					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the basic function  about mouse control, to detect the mouse  movement
+with_translation_table					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to have translation table.  The translation table is used  for
+with_superior_input_buffer					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to share the input buffer with its own superior window.
+with_window_region					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to define a mouse sensitive area in that window.
+with_line_selection					PROSE	TM-125	8-13	7-12	mixin 3): the class  for making  the window  whose each  line can  be selected  by mouse like to item of
+as_notification					PROSE	TM-125	8-13	7-12	mixin 3): the class  for supplying  the function  to have  the output  permission type  of "notify".  If the
+as«?»single_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function of single select.
+as_multiple_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function of multi select.
+as_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function for selecting the item by mouse.
+as_multiple_column					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the multi column menu.
+as_menu					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the menu window. Every menu window must inherit this class.
+as_on«?»off_menu					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the on-off menu. When  the window inherit this class, the item with  type
+as_submenu					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function as a sub menu. In the multi_column menu, each column is
+as«?»choice					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the basic function as a choice window.  This class manages the choice
+window_manager					PROSE	TM-125	8-13	7-12	internal: the internal class for window manager process.
+display					PROSE	TM-125	8-13	7-12	internal: the class for defining the bitmap display.  The bitmap display is constructed by the  screen and
+screen					PROSE	TM-125	8-13	7-12	internal: the class for managing the  logical screen on the display.
+status_line					PROSE	TM-125	8-13	7-12	internal: the class for managing the status line. The status line is located at the bottom of the display
+logical_mouse	single_object				PROSE	TM-125	8-13	7-12	internal: the class for the mouse device.  This class must have only one object and inherits the class
+window_message					PROSE	TM-125	8-13	7-12	internal: the class for making the message for the inter process communication between the user  process
+single_object					PROSE	TM-125	8-13	7-12	internal: the class to limit the number of object of the class.
+window_manipulator					PROSE	TM-125	8-13	7-12	internal: the class for the window_manipulator. This class control the window manipulator menu.
+(measurement window, unnamed "ordinary window")	labeled_sash, as_scroll, as_output, as_graphics, as_markers, as_input, as_mouse_input, user_window				PRINTED-INTERFACE	TM-125	20-21	19-20	nature list used for the 6.1 speed measurements (tm0125_p20.txt); no class name, no order semantics stated
+fact		instance attribute: base, base_tap	:create/1 (partly hidden)	:read/1 (partly hidden)	PRINTED-SOURCE	TM-125	23	22	EXAMPLE in Fig 6 screenshot, right halves of lines hidden (tm0125_p23.esp)
+escher					NAMED	TM-125	4	3	EXAMPLE class in Fig 2 screenshot (tm0125_p04.txt)
+debugger_choice_menu_without_label					NAMED	TM-125	23	22	status-line selected-window name in Fig 6

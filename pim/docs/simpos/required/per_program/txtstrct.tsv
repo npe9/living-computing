@@ -1,0 +1,142 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	unify	2	734	txtstrct/code.1:229
+builtin		builtin	:=	2	174	txtstrct/code.1:22
+builtin		builtin	=	2	157	txtstrct/code.1:213
+builtin		builtin	equal_string	2	49	txtstrct/codegen.esp:473
+builtin		builtin	==	2	46	txtstrct/ctx_system.esp:32
+builtin		builtin	string	3	33	txtstrct/codegen.esp:1176
+builtin		builtin	cut_and_fail	0	31	txtstrct/code.1:140
+builtin		constant a#b	string#str		25	
+builtin		constant a#b	16#str		15	
+builtin		builtin	bound	1	12	txtstrct/code.1:213
+builtin		builtin	copy_string_elements	5	11	txtstrct/ctx_system.esp:318
+builtin		builtin	new_string	3	9	txtstrct/ctx_system.esp:317
+builtin		builtin	\==	2	7	txtstrct/make_wmdat.esp:1250
+builtin		builtin	=<	2	6	txtstrct/ctx_system.esp:311
+builtin		builtin	melt	2	5	txtstrct/ctx_system.esp:209
+builtin		builtin	<	2	5	txtstrct/initial_wm.esp:60
+builtin		builtin	string_tail	3	5	txtstrct/ctx_system.esp:319
+builtin		builtin	equal	2	5	txtstrct/make_txt.esp:354
+builtin		builtin	unbound	1	4	txtstrct/make_wmdat.esp:1503
+builtin		builtin	>=	2	4	txtstrct/str_dsp.esp:262
+builtin		builtin	freeze	2	3	txtstrct/ctx_system.esp:198
+builtin		builtin	list	1	3	txtstrct/codegen.esp:733
+builtin		builtin	not_equal_string	2	3	txtstrct/make_txt.esp:228
+builtin		builtin	repeat	0	2	txtstrct/codegen.esp:149
+builtin		builtin	atom	1	2	txtstrct/make_wmdat.esp:2225
+builtin		builtin	substring	4	2	txtstrct/struct_ext.esp:77
+builtin		builtin	set_string_element	3	2	txtstrct/lex.esp:196
+builtin		constant a#b	double_bytes#brace		2	
+builtin		builtin	rule	5	2	txtstrct/code.1:42
+builtin		builtin	search_character	5	1	txtstrct/ctx_system.esp:304
+builtin		builtin	number	1	1	txtstrct/make_wmdat.esp:2231
+builtin		builtin	add	3	1	txtstrct/lex.esp:128
+builtin		builtin	subtract	3	1	txtstrct/lex.esp:194
+requirement	?	unknown	putf	2	109	txtstrct/ctx_system.esp:219
+requirement	symbolizer	ref	(#ref)		86	txtstrct/code.1:487
+requirement	string	class	append	3	66	txtstrct/code.1:488
+requirement	?	unknown	putl	2	66	txtstrct/codegen.esp:151
+requirement	string	ref	(#ref)		66	txtstrct/code.1:488
+requirement	?	unknown	putt	2	51	txtstrct/make_wmdat.esp:1726
+requirement	symbolizer	class	enter_atom	3	32	txtstrct/code.1:489
+requirement	symbolizer	class	get_number_string	4	21	txtstrct/code.1:487
+requirement	symbolizer	class	get_atom_string	3	19	txtstrct/codegen.esp:1139
+requirement	?	unknown	goto_beginning	1	13	txtstrct/str_dsp.esp:86
+requirement	symbolizer	class	get_number_string	3	10	txtstrct/initial_wm.esp:56
+requirement	?	unknown	goto_end	1	9	txtstrct/str_dsp.esp:1355
+requirement	?	unknown	kill	1	8	txtstrct/ctx_system.esp:348
+requirement	standard_input_file	class	create	3	7	txtstrct/codegen.esp:148
+requirement	as_mouse_input	nature	(inherited)		7	txtstrct/ctx_system.esp:329
+requirement	standard_input_file	ref	(#ref)		7	txtstrct/codegen.esp:148
+requirement	inferior_window	nature	(inherited)		6	txtstrct/ctx_system.esp:329
+requirement	standard_output_file	class	create	3	5	txtstrct/codegen.esp:66
+requirement	font	class	create	3	5	txtstrct/ctx_system.esp:419
+requirement	?	unknown	end_of_input	1	5	txtstrct/initial_wm.esp:227
+requirement	temporary_window	class	create	3	5	txtstrct/ctx_system.esp:242
+requirement	standard_output_file	ref	(#ref)		5	txtstrct/codegen.esp:66
+requirement	font	ref	(#ref)		5	txtstrct/ctx_system.esp:419
+requirement	?	unknown	activate	1	5	txtstrct/ctx_system.esp:433
+requirement	?	unknown	close_input	1	5	txtstrct/initial_wm.esp:672
+requirement	standard_editor	instance	get_window	2	5	txtstrct/ctx_system.esp:27
+requirement	{with_border|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|temporary_window}	instance	show	1	5	txtstrct/ctx_system.esp:243
+requirement	{with_border|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|temporary_window}	instance	putl	2	5	txtstrct/ctx_system.esp:244
+requirement	?	unknown	show	1	4	txtstrct/ctx_system.esp:30
+requirement	inferior_window	class	create	3	4	txtstrct/ctx_system.esp:415
+requirement	symbolizer	class	get_number	3	4	txtstrct/make_wmdat.esp:1769
+requirement	with_border	nature	(inherited)		4	txtstrct/ctx_system.esp:363
+requirement	as_superior	nature	(inherited)		4	txtstrct/ctx_system.esp:329
+requirement	with_default_mouse	nature	(inherited)		4	txtstrct/ctx_system.esp:329
+requirement	with_superior_input_buffer	nature	(inherited)		4	txtstrct/ctx_system.esp:329
+requirement	?	unknown	read	2	4	txtstrct/ctx_system.esp:31
+requirement	?	unknown	next_line	1	4	txtstrct/str_dsp.esp:507
+requirement	standard_output_file	instance	close_output	1	3	txtstrct/codegen.esp:72
+requirement	library_utility	class	create	2	3	txtstrct/ctx_system.esp:156
+requirement	library_utility	instance	catalogue	3	3	txtstrct/ctx_system.esp:157
+requirement	reshape_notifier	nature	(inherited)		3	txtstrct/ctx_system.esp:392
+requirement	with_label	nature	(inherited)		3	txtstrct/ctx_system.esp:363
+requirement	as_input	nature	(inherited)		3	txtstrct/ctx_system.esp:329
+requirement	library_utility	ref	(#ref)		3	txtstrct/ctx_system.esp:156
+requirement	?	unknown	get_inside_size	3	3	txtstrct/ctx_system.esp:404
+requirement	character	ref	(#ref)		3	txtstrct/lex.esp:105
+requirement	standard_input_file	instance	getc	2	3	txtstrct/lex.esp:28
+requirement	?	unknown	backward_character	1	3	txtstrct/str_dsp.esp:1332
+requirement	?	unknown	command_interpret	1	2	txtstrct/ctx_system.esp:473
+requirement	standard_input_file	instance	close_input	1	2	txtstrct/codegen.esp:153
+requirement	standard_input_file	instance	end_of_input	1	2	txtstrct/codegen.esp:152
+requirement	?	unknown	getl	2	2	txtstrct/make_txt.esp:430
+requirement	?	unknown	current_position	2	2	txtstrct/str_dsp.esp:979
+requirement	?	unknown	close_output	1	2	txtstrct/make_txt.esp:404
+requirement	as_program	nature	(inherited)		2	txtstrct/ctx_system.esp:445
+requirement	as_single_select	nature	(inherited)		2	txtstrct/ctx_system.esp:363
+requirement	standard_editor	nature	(inherited)		2	txtstrct/ctx_system.esp:8
+requirement	with_pmacs_window	nature	(inherited)		2	txtstrct/ctx_system.esp:329
+requirement	?	unknown	get_interpreter	2	2	txtstrct/ctx_system.esp:472
+requirement	?	unknown	deactivate	1	2	txtstrct/str_dsp_ch.esp:108
+requirement	?	unknown	current_buffer	2	2	txtstrct/str_dsp.esp:977
+requirement	?	unknown	flash	1	2	txtstrct/ctx_system.esp:221
+requirement	library_utility	instance	save	2	2	txtstrct/make_wmdat.esp:563
+requirement	popup_choice_window	class	create	3	2	txtstrct/ctx_system.esp:517
+requirement	{with_pmacs_window|as_superior|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	class	create_with_input	4	2	txtstrct/ctx_system.esp:408
+requirement	{with_pmacs_window|as_superior|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	set_font	2	2	txtstrct/ctx_system.esp:420
+requirement	popup_choice_window	nature	(inherited)		2	txtstrct/ctx_system.esp:480
+requirement	popup_choice_window	instance	set_label_font	2	2	txtstrct/ctx_system.esp:520
+requirement	popup_choice_window	instance	set_title	2	2	txtstrct/ctx_system.esp:521
+requirement	popup_choice_window	instance	set_font	2	2	txtstrct/ctx_system.esp:522
+requirement	character	class	is_control	2	2	txtstrct/lex.esp:105
+requirement	?	unknown	delete_character_forward	1	2	txtstrct/str_dsp.esp:1333
+requirement	<root>	class	new	2	1	txtstrct/ctx_system.esp:512
+requirement	inferior_window	instance	kill	1	1	txtstrct/ctx_system.esp:474
+requirement	standard_input_file	instance	getl	2	1	txtstrct/codegen.esp:150
+requirement	?	unknown	move_end_of_line	1	1	txtstrct/str_dsp.esp:980
+requirement	pmacs_window	class	create	3	1	txtstrct/ctx_system.esp:540
+requirement	?	unknown	move_begin_of_line	1	1	txtstrct/str_dsp.esp:978
+requirement	as_graphics	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	as_multiple_column	nature	(inherited)		1	txtstrct/str_dsp_ch.esp:27
+requirement	pmacs_window	ref	(#ref)		1	txtstrct/ctx_system.esp:540
+requirement	?	unknown	get_editor	2	1	txtstrct/str_dsp.esp:85
+requirement	?	unknown	set_title	2	1	txtstrct/str_dsp.esp:80
+requirement	?	unknown	set_font	2	1	txtstrct/ctx_system.esp:465
+requirement	?	unknown	set_label_font	2	1	txtstrct/str_dsp.esp:76
+requirement	with_margin	nature	(inherited)		1	txtstrct/ctx_system.esp:363
+requirement	as_output	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	as_menu	nature	(inherited)		1	txtstrct/ctx_system.esp:363
+requirement	temporary_window	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	as_standard_io_window	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	as_scroll	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	as_markers	nature	(inherited)		1	txtstrct/msage_win.esp:5
+requirement	?	unknown	getc	2	1	txtstrct/initial_wm.esp:230
+requirement	character	class	to_lowercase	3	1	txtstrct/lex.esp:195
+requirement	{with_margin|with_label|with_border|as_menu|as_single_select|with_superior_input_buffer|as_mouse_input|inferior_window}	instance	set_label_font	2	1	txtstrct/ctx_system.esp:422
+requirement	{with_margin|with_label|with_border|as_menu|as_single_select|with_superior_input_buffer|as_mouse_input|inferior_window}	instance	set_font	2	1	txtstrct/ctx_system.esp:423
+requirement	{with_margin|with_label|with_border|as_menu|as_single_select|with_superior_input_buffer|as_mouse_input|inferior_window}	instance	set_title	2	1	txtstrct/ctx_system.esp:424
+requirement	{with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	set_label_font	2	1	txtstrct/ctx_system.esp:459
+requirement	{with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	set_title	2	1	txtstrct/ctx_system.esp:461
+requirement	{with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	activate	1	1	txtstrct/ctx_system.esp:463
+requirement	<root>	slot	!txt_dir	0	1	txtstrct/make_wmdat.esp:390
+requirement	<root>	slot	!mor_dir	0	1	txtstrct/make_wmdat.esp:395
+requirement	<root>	slot	!prs_dir	0	1	txtstrct/make_wmdat.esp:400
+requirement	<root>	slot	!int_dir	0	1	txtstrct/make_wmdat.esp:405
+requirement	?	unknown	kill_line_forward	1	1	txtstrct/str_dsp.esp:95
+requirement	?	unknown	end_of_line	1	1	txtstrct/str_dsp.esp:994
+requirement	?	unknown	forward_character	1	1	txtstrct/str_dsp.esp:999
+requirement	?	unknown	delete_character_backward	1	1	txtstrct/str_dsp.esp:1464

@@ -1,0 +1,198 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (Tsuji, Uchida, July 1985)
+% PDF pages 8-13, printed "Page 7"-"Page 12". Chapter 4 Classes (a printed class catalogue:
+% name + one-line description; NO source, NO method lists).
+% transcribed by eye from 300dpi crops (work/tm0125/p-08_3 .. p-13_1), OCR used as draft only.
+% Typos are as printed ("suppling", "thuser", "occured", "specifyed").
+% «?» marks a character position where the print shows a gap/no underscore.
+
+4. Classes
+  The SIMPOS window system is constructed by about 120 classes. This chapter describes main
+classes. Those classes are classified to three types. One is the stand-alone class which can be
+used by itself as a window class. Another one is mixin class which supply a function and is used
+as a super class of another class. And the last one is the internal class which is used by window
+system itself, and not used by the user.
+
+4.1 Stand-alone Classes
+ * window
+     the class for make a standard window
+ * window_without_label
+     the class for making a window which has no labels.
+ * window_with_two_labels
+     the class for making a window with two labels, top label and bottom label. user can use one of
+     the labels for his own usage.
+ * superior_window
+     the class for making the superior window, the window which can have the sub-windows.
+ * labeled_superior_window
+     the class for making the superior window with label.
+ * menu
+     the class for making the standard menu, single select single column menu.
+ * multi_column_menu
+     the class for making the multi column menu.
+ * temporary_menu
+     the class for making the single select single column temporary menu.
+ * temporary_multi_column_menu
+     the class for making the single select multi column temporary menu.
+ * multiple_select_menu
+     the class for making the multi select single column menu.
+ * multiple_select_multi_column_menu
+     the class for making the multi select multi column menu.
+ * temporary_multiple_select_menu
+     the class for making the temporary multi select single column menu.
+ * temporary_multiple_select_multi_column_menu
+     the class for making the temporary multi select multi column menu.
+ * submenu
+     the class for making the sub menu which is the sub window of another window.
+ * menu_item
+     the class for making the menu item. It has the slots, item string, the value to be returned when
+     selected, item type, the documentation for that item.
+ * choice_window
+     the class for making a standard choice window
+ * choice_item
+     the class for making the choice item.
+ * marker
+     the class for making the marker.
+ * popup_choice_window
+     the class for making the choice window with popup feature.
+ * window_region
+     the class for defining the window region.
+
+4.2 Mixin Classes
+ 1) primitive classes
+ * basic_window
+     the class supplying the function as a window. Every window must inherit this class.
+ * user_window
+     the class for making the standard window which can be used by the user.
+ * as_inferior
+     the class supplying the function as a sub window. All the window class which is defined by the
+     user must inherit this class.
+ * as_superior
+     the class for supplying the function as superior window. If the user want to use the sub
+     windows, The window must inherit this class.
+ * as_inside
+     the class for managing the inside area of the window.  The inside area is the part of window
+     which does not include the border, label, and the margins.
+ * bare_window
+     the class for supplying the basic function of the window.  For example, making the object,
+     allocating the bitmap area, etc.
+ * with_border
+     the class for supplying the function to have a border of the window.
+ * with_label
+     the class for supplying the function to have a label.
+ * with_two_labels
+     the class for supplying the function to have two labels, top label and bottom label.
+ * with_margin
+     the class for supplying the function to have the margins.  The margin is the blank area at the
+     outside of windows.
+
+     [Figure 5. the Border, Label, and Margins -- outer solid rectangle; top strip containing
+      "This is Label" (callout 'label'); inside it a dashed rectangle; callouts 'margin' and
+      'border' point at the band between the outer rectangle and the dashed one; centre text
+      'window inside'.]
+
+ * as_relation
+     the class for managing the allocation of the sub windows in the superior window. This class is
+     inherited by the class as_superior.
+ * external
+     the class for supplying the function to access to the window from outside of window  manager.
+     In other words, it supply the function to communication between the user process and window
+     manager process.
+ * as_temporary_window
+     the class for supplying the function as temporary window.
+ * as_popup_window
+     the class for supplying the function as a popup window.  Popup window is the temporary
+     window which is not hidden by the exit of mouse cursor.
+ * sash
+     the class for making a window which has border and margins.
+ * labeled_sash
+     the class for making a window which has border, margins and label.
+ * two_labeled_sash
+     the class for making a window which has border, margins and two labels.
+
+ 2) output control
+ * as_output
+     the class for supplying the function of output.
+ * as_cursor
+     the class to manage the cursor which shows the position where the output is done.
+ * as_string_output
+     the class for supplying the function to output a string.
+ * as_scroll
+     the class for supplying the function to scroll the window.
+ * as_dot_scroll
+     the class for supplying the function to scroll the window by dot bases.
+ * with_mouse_scroll
+     the class for supplying the function to cause  scrolling by the mouse. this class support the  two
+     kind of mouse scroll, by the movement of mouse, and by the click of mouse buttons.
+ * as_graphics
+     the class for supplying the function to output the graphic primitives.
+ * as_markers
+     the class for suppling the function to have markers in the window.
+
+ 3) input control
+ * as_input
+     the class for supplying the function of input from keyboard.
+ * as_mouse_input
+     the class for supplying the function of input from mouse.
+ * with_default_mouse
+     the class for supplying the basic function  about mouse control, to detect the mouse  movement
+     and to show the mouse cursor in the window, etc.
+ * with_translation_table
+     the class for supplying the function to have translation table.  The translation table is used  for
+     customization and translation the input code to users own character code.
+ * with_superior_input_buffer
+     the class for supplying the function to share the input buffer with its own superior window.
+ * with_mouse_scroll
+     the class for supplying the function to scroll the contents of the window by mouse.
+     [NOTE: with_mouse_scroll is listed twice, under 2) and 3), with different wording -- as printed]
+ * with_window_region
+     the class for supplying the function to define a mouse sensitive area in that window.
+ * with_line_selection
+     the class  for making  the window  whose each  line can  be selected  by mouse like to item of
+     menu window.
+ * as_notification
+     the class  for supplying  the function  to have  the output  permission type  of "notify".  If the
+     window inherits  this  class  and  the  window  output  permission is set to "notify", the notify
+     window is appeared  to show  thuser that  the output  request is  occured, when  the output is
+     requested during the window is unshown.
+
+ 4) menus / choice windows
+ * as«?»single_select
+     the class for supplying the function of single select.
+ * as_multiple_select
+     the class for supplying the function of multi select.
+ * as_select
+     the class for supplying the function for selecting the item by mouse.
+ * as_multiple_column
+     the class for making the multi column menu.
+ * as_menu
+     the class for making the menu window. Every menu window must inherit this class.
+ * as_on«?»off_menu
+     the class for making the on-off menu. When  the window inherit this class, the item with  type
+     of on_off is reversed when selected.
+ * as_submenu
+     the class for supplying the function as a sub menu. In the multi_column menu, each column is
+     defined as sub menu using this class.
+ * as«?»choice
+     the class for supplying the basic function as a choice window.  This class manages the choice
+     items defined at this window.
+
+4.3 Internal Classes
+ * window_manager
+     the internal class for window manager process.
+ * display
+     the class for defining the bitmap display.  The bitmap display is constructed by the  screen and
+     status_line.
+ * screen
+     the class for managing the  logical screen on the display.
+ * status_line
+     the class for managing the status line. The status line is located at the bottom of the display
+     and it shows some system statuses, date, time, user name, selected window, etc..
+ * logical_mouse
+     the class for the mouse device.  This class must have only one object and inherits the class
+     single_object.
+ * window_message
+     the class for making the message for the inter process communication between the user  process
+     and window manager process.
+ * single_object
+     the class to limit the number of object of the class.
+ * window_manipulator
+     the class for the window_manipulator. This class control the window manipulator menu.

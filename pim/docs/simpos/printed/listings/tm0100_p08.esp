@@ -1,0 +1,60 @@
+% TM-100 PDF page 8, printed folio 6. Figure 3.1 "Part of class 'process'" (continued).
+% Transcribed by eye from 300dpi crops. The first line below sits alone at the top of
+% the page, indented as a comment on the preceding slot (instance_array, PDF p7).
+                % Relates a process to its context_number.
+
+:create(Class, Process) :- !,
+            % Make an instance and initiate it.  If hardware processes
+            % are exhausted, then fail.
+        :create(#context, Context_number, Stack_number, Context),
+        :create_core(PROCESS, Process, Context), ! ;
+
+:create_core(Class, Process, Context) :-
+        :new(Class, Process),
+        :get_number(Context, Context_number),
+        set_vector_element(#process!instance_array,
+                                Context_number, Process),
+        :self(#process, Self_process),
+        Process!context := Context,
+        Process!priority := 0,
+        Process!sub_priority := 0,
+        Process!parent_process := Self_process,
+        :add_child(Self_process, Process),
+        Process!world := Self_process!world,
+        Process!user := Self_process!user,
+        Process!status := dormant, ! ;
+
+instance
+
+attribute   context,    % Hardware PC«?»
+            priority,   % Corresponds to interrupt level
+            sub_priority,
+            mask_count          := 0,
+                    % The number of interrupt mask nestings
+            suspend_reason  := nil,
+          ( suspend_reasons := List :- :create(#list, List) ),
+            suspend_flag    := nil,
+            status          := nil,
+                    % nil(=dead), dormant, suspended, ready, (active)
+                    % and some others
+            parent_process,
+          ( children_processes  := List :- :create(#list, List) ),
+            killer_process,     % which terminates this process
+          ( invocation_stack    := List :- :create(#list, List) ),
+          ( resources           := List :- :create(#list, List) ),
+            world,
+            user,
+            interpreter_instance,
+                    % Interpreter instance which runs on this process
+          ( clock     := Clock :- :create(#process_clock, Clock) ) ;
+                    % The elapse time of this process
+
+:activate(Process, Program) :-
+            % Give Program to Process, and make it ready.
+        :status(Process, dormant, on_activate), !,
+        :entry_of_invoke(Program, Entry),
+        :set_entry_point(Process!context, Entry),
+% [transcriber] "% Hardware PC«?»": last glyph is B or 2 even zoomed (OCR read "PC2");
+% "PCB" (process control block) would fit -- INFERENCE, not asserted.
+% [transcriber] :create_core(PROCESS, ...) is printed with PROCESS in capitals (a
+% variable in ESP syntax, distinct from Process); probably a typo for Class -- as printed.

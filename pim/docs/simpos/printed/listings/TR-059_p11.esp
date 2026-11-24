@@ -1,0 +1,17 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 11, printed folio 9. Section 3.1(1) 'Creating and opening a file' and 3.1(2) 'File buffer'.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To open a file
+             :open(#file,File,File_Name)
+% o To create a file
+             :create(#file,File,File_Name)
+% o To close a file
+             :close(File)
+% o To remove a file
+             :remove(File)
+% (2) File buffer
+% o To get the record data in a vector/string
+             :record_data(Buffer,Record_Data)
+% o To get or set the data size        (continued on PDF p12)

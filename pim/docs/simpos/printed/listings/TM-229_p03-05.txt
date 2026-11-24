@@ -1,0 +1,55 @@
+% TM-229 「SIMPOS（逐次型推論マシンPSIのOS）―ユーザ・インタフェースとその特徴―」
+% (佐藤裕幸, 近山隆, 石橋弘義, 吉田かおる, 内田俊一; マルチメディア通信と分散処理 31-1, 1986.9.29).
+% Excerpts transcribed by eye from 400/600 dpi crops (F4). Japanese as printed; «?» = not legible.
+
+%% ---- p3 (folio -2-) right column: ①カーネル ----
+ カーネルは、ハードウェア資源（プロセサ，メモリ，入出力装置等）の管理及びシステムの起動を行う。
+  プロセサ ： マルチ・プロセス環境を実現する機能を提供する。
+  メモリ   ： メモリの割当てやアドレス空間の管理(GC 等）を行う。
+  デバイス ： 接続される各入出力装置の管理及び制御を行う。
+  カナ漢   ： カナ漢字変換機能を提供する。キーボード・ハンドラに内蔵させることで、SIMPOSのどこからでも漢字を入力できるようになっている。
+  IPL      ： システム(SIMPOS)本体のロードや初期化を行う。
+
+%% ---- p4 (folio -3-) left column: ②③④ ----
+②スーパバイザ（実行管理プログラム）
+  スーパバイザは、プログラムを実行するために必要な機能や環境を提供する。
+  プロセス ： プログラムの実行主体であるプロセスの管理，制御を行う。
+  プール   ： オブジェクトを格納する種々の容器としての機能を提供する。
+  ストリーム： プロセス間の通信，同期の機能を提供する。
+  ワイルドカード： ワイルドカード機能を提供する。
+  ディレクトリ： ディレクトリの管理を行う。
+  ユーザ管理： ログイン・ユーザの管理を行う。
+③入出力メディア・システム
+  入出力機能を提供する。
+  ウィンドウ： マウスやマルチ・ウィンドウ等の機能を提供する。
+  フォント ： ウィンドウに表示するフォントの管理を行う。
+  シンボライザ： プログラムやデータ等の外部表現（文字列）と内部表現（構造）との間の変換を行う。
+  ファイル ： ディスク装置への格納，取り出しの機能を提供する。
+  磁気テープ： 磁気テープ装置への格納，取り出しの機能を提供する。
+  プリンタ ： プリンタ装置への出力機能を提供する。
+  ネットワーク： 他PSI や汎用機とのデータ転送機能を提供する。
+④プログラミング・システム
+  ユーザが直接操作するプログラム開発支援ツールとOSの各種ユーティリティの機能をメニュー選択という簡便な方法で提供するマニピュレータがある。各システムについては、4，5節で説明する。
+
+%% ---- p3 lower: 図-2-1 SIMPOSのシステム構成 (concentric half-rings; tiny labels, many «?») ----
+%  centre:      ハードウェア
+%  kernel ring: プロセサ | メモリ | カナ漢«?» | IPL | デバイス
+%  supervisor:  シチュエーション(例外処理) | プロセス | プール | ストリーム | ユーティリティ«?» | ワイルドカード | ディレクトリ | ユーザ管理
+%  I/O media:   フォント管理 | ウィンドウ | テキストバッファ | ホワイトボード«?» | 漢字«?» | «?» | シンボライザ | ライブラリ | ファイル | プリンタ | 磁気テープ | ネットワーク
+%  PS (outer):  コールカウンタ | フォントエディタ | インスペクタ/デバッガ | システムデバッグツール | ウィンドウマニピュレータ | «?» | エディタ(PMACS/EDIPS) | コーディネータ/シェル | ライブラリアン | ファイル・マニピュレータ | スプーラ・マニピュレータ | 磁気テープマニピュレータ | ファイル転送«?» | トーク | «?»スプーラ«?» | メイル«?»
+%  baseline:    プログラミング・システム <-> | 入出力メディア・システム | スーパバイザ | カーネル  (オペレーティング・システム <->); KL0 <-> | KL0/ESP
+%  caption:     図-2-1 SIMPOSの システム構成
+
+%% ---- p5 (folio -4-) right column: system menu screenshot ----
+ SYSTEM MENU
+   Experts                          MEDIA SYSTEMS
+   Debugger        Escher           user process list
+   Pmacs           Oekaki           window manipulator
+   File            Queens           network
+   Librarian       Squares          shell
+   Font_editor     Bounce           whiteboard
+   Edips                            kanakan initiate
+   Spooler                          garbage collection
+                                    login
+                                    shut down
+ (text above: EXPERTS programs can be invoked several at a time; MEDIA SYSTEMS only one each; users can add programs to the EXPERTS column and remove unused ones.)

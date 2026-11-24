@@ -1,0 +1,34 @@
+% TM-009 "Basic Constructs of the SIM Operating System" (T. Hattori, T. Yokoi, June 1983).
+% Notation fragments of the 1983 pre-ESP design notation (not ESP, not a listing).
+% PDF pages 3-7 = typed "Page 2".."Page 6". Fragments on p3, p4, p7 transcribed by eye
+% from 300dpi crops (F4); the p5 relation form's last two lines are from the OCR and the
+% 200dpi page only (marked «?» where uncertain). The original is in an italic typewriter face.
+
+% p3 (Page 2), 1.1 Objects -- compound object:
+          <class-name>(<subobject1>,....,<subobjectN>),
+% p3 (Page 2), 1.2 Relations:
+               <relation-name>(<object1>,...,<objectN>).
+          fact: <relation-name>(<object1>,...,<objectN>).
+          rule: <relation-name>(<object1>,...,<objectN>) :-
+                         <predicate1>,...,<predicateM>.
+% p3-p4: "A clause is considered as a meta-object whose class name is ':-'"
+% p4 (Page 3):
+          fact:  :-(<head>,true)
+          rule:  :-(<head>,body(<goal1>,...,<goalN>))
+% p4 (Page 3), 2. Classes -- instance template:
+          <class-name>(<subobject1>,...,<subobjectN>),
+% "where <subobjectI> is a variable object."  Instance template definition:
+          new(<class-name>:class,
+              <subobject-names>,
+              <component-class-names>,
+              <required-subobject-names>,
+              <required-component-class-names>),
+% p5 (Page 4), relation with typed arguments:
+          <relation-name>(<variable1>:<class-name1>,...,
+                  <variableM>:<class-nameM>) :-          «?» (layout of this line from OCR)
+                  <predicate1>,...<predicateL>.          «?»
+% p7 (Page 6), 5.1 Process Creation -- fork:
+          ...,<process-name1>::<question1> !!
+                 <process-name2>::<question2>,...
+% p7 (Page 6) -- remote call (OCR, 200dpi check):
+          ..., <question> @ <world>,...

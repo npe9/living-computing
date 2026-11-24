@@ -96,6 +96,11 @@
 ! ---------------------------------------------------------------
 ! >>> THE PAGE DEFINES "ZFRO5" TWICE AND strap_asm REFUSES IT <<<
 ! ---------------------------------------------------------------
+! (2026-11-23: C22-6729 printed p.127, MULTI, gives the rule -- the
+! FIRST definition serves all references -- and line 20 contradicts
+! it; strap2, which builds MULTI, gives line 20 220267.34.  Line 30's
+! location asterisk fits MULTI's error flag, p.25 Box 54.  See
+! docs/NEXT.md, "printed p.166 PRINTS ONE LABEL TWICE".)
 ! THIS IS THE ONE THING ON THE PAGE THAT IS NOT SETTLED, and the
 ! deck below carries a LOUD STAND-IN for it.  What the page prints:
 !
@@ -400,7 +405,7 @@ ZFRO5B  LVI,7,ZFRO2                 ! line 19  printed "Z FRO5B"
         B,ZID09                     ! line 23  same card IM000021 -CONVERT JOB NAME
 ZFRO6   LVI,7,8.                    ! line 24
         CM1111(BU,1),SDISPO($11)    ! line 25  printed "SDISPO"
-        B,KUNLD1+1.32               ! line 26  printed "K UNLD1+1.32"
+        B,K UNLD1+1.32              ! line 26  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
 ZFRO5   BZB,SOVRES($11),ZFRO5A      ! line 27  -IF NOT OVERLAP RESERED (sic)
         BB,SUNRES($11),ZFRO7        ! line 28  -IF IT IS NOT OVERLAP RESERVED
 ZFRO5A  L(BU,64),KSCRAC.16          ! line 29  -REMOVE THE SCRATCH TAPE

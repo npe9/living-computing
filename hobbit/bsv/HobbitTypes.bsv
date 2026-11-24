@@ -50,7 +50,18 @@ typedef enum {
   // --- control flow ---------------------------------------------------
   OP_CALL, OP_JMP, OP_JMPTY, OP_JMPTN, OP_JMPFY, OP_JMPFN,
   // --- DQM with a constant source: two or four words (p. 3-18) ---------
-  OP_DQM2, OP_DQM4
+  OP_DQM2, OP_DQM4,
+  // --- the privileged machine (mkHobbitCoreSystem only) ----------------
+  // CRET (niladic 0x005, p. 3-15) and KRET (niladic 0x001, p. 3-30)
+  // return through the interrupt-stack frame; FLUSHPTE (monadic 0xB,
+  // p. 3-27) drops the TLB/NPSR entry of its effective address; FLUSH
+  // is FLUSHI and FLUSHP (niladic 0x003/0x004, pp. 3-24, 3-25), which
+  // empty the decoded-instruction store and the prefetch buffer.
+  OP_CRET, OP_KRET, OP_FLUSHPTE, OP_FLUSH,
+  // The interlocked read-modify-writes, opcodes 0x01/0x02/0x03 (ORI, ANDI,
+  // ADDI; pp. 3-37, 3-8, 3-6): dst = dst OP src, and the destination's
+  // previous value goes to the accumulator -- two architectural writes.
+  OP_ORI, OP_ANDI, OP_ADDI
 } HobbitOp deriving (Eq, Bits);
 
 // DQM (p. 3-18) moves two or four contiguous words; "if the source mode
@@ -73,7 +84,9 @@ typedef enum {
                     // runaway PC therefore fetches whatever is there
                     // instead of stopping here; the harnesses stop it by
                     // their PC limit or their clock limit.
-  TR_FETCH_FAULT    // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
+  TR_FETCH_FAULT,   // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
+  TR_UNIMP_REG      // CPU escape naming control register 0 or 13..15:
+                    // exception 6 (Table 1-24 p. 1-26, p. 1-27)
 } TrapReason deriving (Eq, Bits);
 
 // Operand addressing mode after decode: the four-bit code of Table 1-21
@@ -200,6 +213,14 @@ typedef struct {
   Word       foldTarget;  // target taken by the folded branch
   Word       foldAfter;   // PC after the folded branch (not taken)
   TrapReason tr;
+  // The instruction follows a CPU escape (niladic 0x000, p. 3-14): "The
+  // instruction following CPU is considered part of the CPU
+  // instruction", so the two are one decoded instruction, `pc` is the
+  // CPU parcel's, `plen` counts it (4 or 6), insn0 is 0x2C00 and insn1
+  // the following instruction's first parcel (the reference model's
+  // record), and an operand of mode 7 names the control register
+  // `val[3:0]` (Table 1-22/1-24, p. 1-26) instead of a stack half-word.
+  Bool       cpu;
 } DecodedInstr deriving (Bits);
 
 // HRI -- the Hobbit Retirement Interface, the Hobbit analogue of
@@ -350,8 +371,12 @@ function HobbitOp decFoldOp(Bit#(3) c);
   endcase
 endfunction
 
+// Bit 191 (one of the three reserved bits) is the CPU-escape flag; the
+// plen code then counts the instruction after the escape, and the escape's
+// one parcel is added back on unpack.
 function DecEntry packDecEntry(DecodedInstr d);
-  Bit#(52) hi = { 3'b0, d.pc[31:6], pack(d.op), encPlen(d.plen),
+  Bit#(8) basePlen = d.cpu ? d.plen - 1 : d.plen;
+  Bit#(52) hi = { pack(d.cpu), 2'b0, d.pc[31:6], pack(d.op), encPlen(basePlen),
                   pack(d.tr), d.src.mode, d.dst.mode,
                   encFoldOp(d.foldOp) };
   Bit#(112) body = { d.src.val, d.dst.val, d.insn0, d.insn1, d.foldInsn0 };
@@ -367,7 +392,8 @@ function Word decEntryPc(DecEntry e, Word indexPc);
 endfunction
 
 function DecodedInstr unpackDecEntry(DecEntry e, Word pc);
-  Bit#(8) plen = decPlen(e[156:155]);
+  Bool cpu = (e[191] == 1'b1);
+  Bit#(8) plen = decPlen(e[156:155]) + (cpu ? 1 : 0);
   Word fpc = pc + plenBytes(plen);
   return DecodedInstr {
     pc: pc,
@@ -383,7 +409,8 @@ function DecodedInstr unpackDecEntry(DecEntry e, Word pc);
     foldInsn0: e[43:28],
     foldTarget: fpc + (signExtend(e[43:28][9:0]) << 1),
     foldAfter: fpc + 2,
-    tr: unpack(e[154:151])
+    tr: unpack(e[154:151]),
+    cpu: cpu
   };
 endfunction
 
@@ -451,6 +478,7 @@ function String trapText(TrapReason t);
     TR_ALIGN:       return "misaligned word stack operand (p. 1-27)";
     TR_FETCH_MISS:  return "fetch missed the 3 KB prefetch window (Figure 1-1, p. 1-2)";
     TR_FETCH_FAULT: return "MMU fetch fault (Table 1-26 0x7, p. 1-38)";
+    TR_UNIMP_REG:   return "unimplemented control register (p. 1-27)";
     default:        return "none";
   endcase
 endfunction
@@ -651,6 +679,9 @@ function Word opExtraCycles(DecInstEntry e, Word sp, Word msp, MemCycles m,
     OP_USHR3: return 0;
     OP_MOVA:  return 0;                         // MOVA row, 1 (Table 4-32)
     OP_LDRAA: return 0;                         // LDRAA row, 1
+    OP_ORI:   return 1;                         // ORI row, 2 (Table 4-32)
+    OP_ANDI:  return 1;                         // ANDI row, 2
+    OP_ADDI:  return 1;                         // ADDI row, 2
     // Table 4-34 (printed p. 4-4), DQM with a constant source: to the
     // stack cache 3 (double-word) and 5 (quad-word); to memory 1 + D and
     // 1 + Q, which are the same 3 and 5 with this model's D = 2, Q = 4.

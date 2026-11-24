@@ -54,7 +54,12 @@ source and knows nothing of this file:
   `wait_different_value`, which no PIMOS object uses, and
   `scsi_transfer`, which the IPL image does not use and the object set
   uses once. So this firmware build is not quite the one that object
-  set needs, or that one call was never reached. The ten KLB opcode values with no name (`17 6c 6d 72 a3
+  set needs, or that one call was never reached. *(Note 2026-11-23:
+  the one use is the listener's command pass-through,
+  `do_command(scsi_transfer(...))` in module `listener_cmd_builtin`
+  (`pimm_debugger360E.sav`; source `src/debugger/listener/com_built.kl1`:135).
+  It is reached only if a user types that command; no boot or system
+  path uses it.)* The ten KLB opcode values with no name (`17 6c 6d 72 a3
   b5 bb be bf e7`) have no entry either: they are unassigned, not
   undocumented instructions.
 - Classes 0 and 1 (PMI, BLT) are populated (class 0: 32 entries of one

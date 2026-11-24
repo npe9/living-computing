@@ -1,0 +1,358 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	778	icotext/src/ans_input.esp:23
+builtin		builtin	:=	2	546	icotext/src/ans_input.esp:11
+builtin		builtin	melt	2	192	icotext/src/bun_bunkatu.esp:134
+builtin		builtin	freeze	2	135	icotext/src/bun_bunkatu.esp:54
+builtin		builtin	==	2	134	icotext/src/imi_draw_win.esp:195
+builtin		builtin	>	2	107	icotext/src/bunkatu.esp:145
+builtin		builtin	<	2	88	icotext/src/bunkatu.esp:142
+builtin		builtin	string	3	73	icotext/src/bunkatu.esp:225
+builtin		builtin	integer	1	52	icotext/src/imi_kaiseki.esp:365
+builtin		builtin	floating_point_to_integer	2	48	icotext/src/imi_draw_win.esp:814
+builtin		builtin	integer_to_floating_point	2	37	icotext/src/imi_draw_win.esp:819
+builtin		builtin	>=	2	32	icotext/src/ict_gen92.esp:67
+builtin		builtin	=<	2	26	icotext/src/imi_draw_win.esp:824
+builtin		builtin	vector_element	3	26	icotext/src/my_select.esp:34
+builtin		builtin	atom	1	24	icotext/src/imi_draw_win.esp:667
+builtin		builtin	substring	4	23	icotext/src/imi_draw_win.esp:198
+builtin		builtin	unbound	1	15	icotext/src/check_gr_sem.esp:104
+builtin		file-level directive	add_operator	3	13	
+builtin		builtin	set_vector_element	3	11	icotext/src/kei_draw_win2.esp:152
+builtin		builtin	repeat	0	10	icotext/src/dummy_ki.esp:67
+builtin		builtin	\==	2	9	icotext/src/bun_bunkatu.esp:232
+builtin		builtin	list_to_vector	3	9	icotext/src/buntai_data.esp:98
+builtin		builtin	bound	1	8	icotext/src/bun_bunkatu.esp:206
+builtin		builtin	equal_string	2	8	icotext/src/ki_h3.esp:259
+builtin		builtin	list	1	7	icotext/src/kakari_data_make.esp:468
+builtin		file-level directive	use_package	1	7	
+builtin		builtin	stack_vector	2	6	icotext/src/dummy_ki.esp:87
+builtin		builtin	first	2	6	icotext/src/dummy_ki.esp:88
+builtin		builtin	is	2	4	icotext/src/my_select.esp:43
+builtin		builtin	second	2	4	icotext/src/my_select.esp:31
+builtin		builtin	not_equal_string	2	3	icotext/src/ki_window.esp:139
+builtin		builtin	string_tail	3	3	icotext/src/imi_draw_win.esp:199
+builtin		builtin	number	1	3	icotext/src/ict_gen92.esp:106
+builtin		builtin	vector_to_list	3	3	icotext/src/ict_gen92.esp:19
+builtin		builtin	unify	2	2	icotext/src/bunkatu_io.esp:29
+builtin		builtin	new_heap_vector	2	2	icotext/src/kei_draw_win2.esp:151
+builtin		constant a#b	mouse#l		2	
+builtin		builtin	new_stack_vector	2	1	icotext/src/my_select.esp:30
+builtin		builtin	object	3	1	icotext/src/dummy_ki.esp:45
+builtin		builtin	search_character	5	1	icotext/src/imi_draw_win.esp:197
+builtin		builtin	equal	2	1	icotext/src/check_gr_sem.esp:100
+requirement	symbolizer	ref	(#ref)		203	icotext/src/bunkatu.esp:224
+requirement	symbolizer	class	get_atom_string	3	109	icotext/src/bunkatu.esp:224
+requirement	?	unknown	activate	1	66	icotext/src/bun_bunkatu.esp:153
+requirement	string	class	append	3	57	icotext/src/frame_make.esp:146
+requirement	string	ref	(#ref)		57	icotext/src/frame_make.esp:146
+requirement	?	unknown	deactivate	1	47	icotext/src/bun_bunkatu.esp:155
+requirement	?	unknown	putf	3	46	icotext/src/ki_h3.esp:49
+requirement	list_index	instance	get_at	3	43	icotext/src/imi_draw_win.esp:536
+requirement	list_index	instance	add_at	3	40	icotext/src/imi_draw_win.esp:382
+requirement	symbolizer	class	get_number_string	3	35	icotext/src/disp1_test.esp:81
+requirement	list_index	ref	(#ref)		35	icotext/src/imi_draw_win.esp:27
+requirement	list_index	instance	clear	1	34	icotext/src/imi_draw_win.esp:155
+requirement	?	unknown	set_title	2	32	icotext/src/bun_bunkatu.esp:362
+requirement	mathematical_functions	ref	(#ref)		27	icotext/src/imi_draw_win.esp:962
+requirement	?	unknown	set_font	2	25	icotext/src/imi_menu.esp:21
+requirement	?	unknown	insert_string	2	21	icotext/src/bun_bunkatu.esp:268
+requirement	?	unknown	set_label_font	2	20	icotext/src/kei_attr_menu.esp:18
+requirement	{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_inside_size	3	20	icotext/src/imi_draw_win.esp:296
+requirement	?	unknown	kill	1	19	icotext/src/imi_kaiseki.esp:97
+requirement	?	ambiguous	flash	1	18	icotext/src/ki_h3.esp:131
+requirement	inferior_window	instance	get_size	3	18	icotext/src/kei_bunsho_win.esp:48
+requirement	?	unknown	current_buffer	2	18	icotext/src/bun_bunkatu.esp:117
+requirement	laxinf	ref	(#ref)		18	icotext/src/ans_input.esp:10
+requirement	inferior_window	class	create	3	17	icotext/src/imi_draw_win.esp:13
+requirement	?	unknown	reshape	5	16	icotext/src/kei_command_menu.esp:32
+requirement	symbolizer	class	enter_atom	3	15	icotext/src/frame_make.esp:147
+requirement	symbolizer	class	get_number	3	15	icotext/src/initialize.esp:91
+requirement	?	unknown	read	2	15	icotext/src/bun_bunkatu.esp:154
+requirement	trans_buffer	ref	(#ref)		15	icotext/src/imi_draw_win.esp:672
+requirement	?	unknown	reset	1	14	icotext/src/bun_bunkatu.esp:120
+requirement	list_index	instance	get_contents	2	13	icotext/src/imi_draw_win.esp:357
+requirement	font	class	create	3	12	icotext/src/imi_main.esp:235
+requirement	symbolizer	class	list_to_string	3	12	icotext/src/kei_draw_win2.esp:147
+requirement	font	ref	(#ref)		12	icotext/src/imi_main.esp:235
+requirement	?	unknown	get_inside_size	3	12	icotext/src/imi_draw_win.esp:12
+requirement	?	unknown	putf	2	12	icotext/src/bun_bunkatu.esp:269
+requirement	?	unknown	put	2	12	icotext/src/bunkatu_io.esp:31
+requirement	trans_buffer	class	term_to_string	3	12	icotext/src/imi_draw_win.esp:672
+requirement	symbolizer	class	get_atom_token	3	11	icotext/src/henkan_dict.esp:156
+requirement	?	unknown	close	1	11	icotext/src/bun_bunkatu.esp:146
+requirement	pmacs_window	class	create	3	11	icotext/src/ki_window.esp:54
+requirement	stream	class	create	2	11	icotext/src/bun_bunkatu.esp:394
+requirement	stream	ref	(#ref)		11	icotext/src/bun_bunkatu.esp:394
+requirement	?	unknown	get_at	3	10	icotext/src/imi_kaiseki.esp:277
+requirement	?	unknown	get_superior	2	10	icotext/src/imi_kaiseki.esp:52
+requirement	imi_set_data	ref	(#ref)		10	icotext/src/imi_draw_win.esp:220
+requirement	?	unknown	add_at	3	9	icotext/src/imi_kaiseki.esp:326
+requirement	mathematical_functions	class	sqrt	3	9	icotext/src/imi_draw_win.esp:1016
+requirement	?	unknown	show_buffer	1	9	icotext/src/bun_bunkatu.esp:282
+requirement	laxinf	class	get_lex_obj	3	9	icotext/src/ans_input.esp:10
+requirement	laxinf	class	get_sem_obj	3	9	icotext/src/ans_input.esp:12
+requirement	standard_popup_choice_window	instance	change_item	3	9	icotext/src/kei_attr_menu.esp:26
+requirement	?	unknown	getl	2	8	icotext/src/input_test.esp:62
+requirement	?	unknown	add_items	3	8	icotext/src/ki_h3.esp:151
+requirement	?	unknown	move_to	2	8	icotext/src/disp1_test.esp:110
+requirement	mathematical_functions	class	atan	4	8	icotext/src/imi_draw_win.esp:1292
+requirement	as_mouse_input	nature	(inherited)		8	icotext/src/imi_menu.esp:6
+requirement	inferior_window	nature	(inherited)		8	icotext/src/imi_menu.esp:6
+requirement	?	unknown	clear_items	1	8	icotext/src/ki_h3.esp:149
+requirement	?	unknown	add_last	2	8	icotext/src/kakari_data_make.esp:146
+requirement	?	unknown	lexs	3	8	icotext/src/ans_input.esp:26
+requirement	?	unknown	sems	3	8	icotext/src/ans_input.esp:27
+requirement	?	unknown	show	1	7	icotext/src/kkr_main.esp:187
+requirement	standard_input_file	class	create	3	7	icotext/src/initialize.esp:47
+requirement	standard_input_file	instance	close_input	1	7	icotext/src/initialize.esp:49
+requirement	?	unknown	read	3	7	icotext/src/con_window.esp:44
+requirement	as_program	nature	(inherited)		7	icotext/src/bun_bunkatu.esp:10
+requirement	with_superior_input_buffer	nature	(inherited)		7	icotext/src/imi_menu.esp:6
+requirement	process	ref	(#ref)		7	icotext/src/bun_bunkatu.esp:20
+requirement	standard_input_file	ref	(#ref)		7	icotext/src/initialize.esp:47
+requirement	list_index	instance	remove_at	3	7	icotext/src/imi_make_data.esp:77
+requirement	list_index	instance	get_contents_with_key	2	7	icotext/src/imi_draw_win.esp:126
+requirement	{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	copy	9	7	icotext/src/util_scroll.esp:211
+requirement	?	unknown	get_contents	2	6	icotext/src/kakari_data_make.esp:210
+requirement	process	class	create	2	6	icotext/src/bun_bunkatu.esp:20
+requirement	mathematical_functions	class	max	3	6	icotext/src/kei_draw_data.esp:77
+requirement	?	unknown	get_contents_at	3	6	icotext/src/imi_kaiseki.esp:279
+requirement	list_stack	instance	push	2	6	icotext/src/imi_kaiseki.esp:19
+requirement	name	ref	(#ref)		6	icotext/src/ki_window.esp:164
+requirement	?	ambiguous	draw_string	5	6	icotext/src/imi_draw_win.esp:1201
+requirement	?	unknown	get_activity	2	6	icotext/src/dummy_ki.esp:22
+requirement	imi_set_data	class	get_child_str	3	6	icotext/src/imi_draw_win.esp:347
+requirement	?	unknown	term_to_string	3	6	icotext/src/kei_bun_menu.esp:94
+requirement	?	unknown	expose	1	6	icotext/src/kei_command_menu.esp:72
+requirement	standard_popup_menu	instance	add_items	3	6	icotext/src/kei_select.esp:38
+requirement	standard_popup_menu	instance	deactivate	1	6	icotext/src/kei_select.esp:65
+requirement	make_sem_data2	ref	(#ref)		6	icotext/src/ki_main_test.esp:174
+requirement	standard_popup_menu	instance	read	2	5	icotext/src/kei_select.esp:44
+requirement	standard_output_file	class	create	3	5	icotext/src/initialize.esp:115
+requirement	?	unknown	current_position	2	5	icotext/src/disp1_test.esp:104
+requirement	pathname	class	append	4	5	icotext/src/ki_window.esp:132
+requirement	standard_output_file	ref	(#ref)		5	icotext/src/initialize.esp:115
+requirement	directory	ref	(#ref)		5	icotext/src/initialize.esp:107
+requirement	list	ref	(#ref)		5	icotext/src/kakari_data_make.esp:32
+requirement	pathname	ref	(#ref)		5	icotext/src/ki_window.esp:132
+requirement	as_program	class	create	2	5	icotext/src/dummy_ki.esp:14
+requirement	?	unknown	get_size	3	5	icotext/src/kei_bunsho_win.esp:16
+requirement	?	unknown	get_keys	2	5	icotext/src/imi_kaiseki.esp:265
+requirement	list_index	instance	get_contents_at	3	5	icotext/src/imi_kaiseki.esp:337
+requirement	standard_popup_menu	class	create	3	5	icotext/src/kei_select.esp:15
+requirement	standard_popup_menu	instance	show	1	4	icotext/src/kei_select.esp:41
+requirement	standard_input_file	instance	gett	2	4	icotext/src/initialize.esp:48
+requirement	list	class	create	2	4	icotext/src/kakari_data_make.esp:32
+requirement	?	unknown	set_position	3	4	icotext/src/imi_kaiseki.esp:57
+requirement	?	unknown	terminate	1	4	icotext/src/dummy_ki.esp:76
+requirement	?	unknown	release	1	4	icotext/src/dummy_ki.esp:77
+requirement	pmacs_window	nature	(inherited)		4	icotext/src/bun_bunkatu.esp:10
+requirement	as_single_select	nature	(inherited)		4	icotext/src/imi_menu.esp:6
+requirement	as_input	nature	(inherited)		4	icotext/src/kei_super_win.esp:7
+requirement	?	unknown	put_at	3	4	icotext/src/imi_make_data.esp:88
+requirement	?	unknown	set_size	3	4	icotext/src/kei_main.esp:72
+requirement	?	unknown	set_region	4	4	icotext/src/disp1_test.esp:111
+requirement	essential_scrolling_menu	class	create	3	4	icotext/src/ki_window.esp:85
+requirement	essential_scrolling_menu	ref	(#ref)		4	icotext/src/ki_window.esp:85
+requirement	?	ambiguous	activate	2	4	icotext/src/bun_bunkatu.esp:21
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	instance	add_items	4	4	icotext/src/kei_bun_menu.esp:33
+requirement	standard_popup_menu	instance	clear_items	1	4	icotext/src/kei_select.esp:30
+requirement	lax_sax	class	conv	3	4	icotext/src/ki_h3.esp:169
+requirement	sax_starter	class	parse	4	4	icotext/src/ki_h3.esp:170
+requirement	{as_graphics|inferior_window}	instance	draw_arc	9	4	icotext/src/util_scroll.esp:128
+requirement	imi_save_child	ref	(#ref)		4	icotext/src/imi_main.esp:109
+requirement	lax_sax	ref	(#ref)		4	icotext/src/ki_h3.esp:169
+requirement	sax_starter	ref	(#ref)		4	icotext/src/ki_h3.esp:170
+requirement	rdg_v26_4	ref	(#ref)		4	icotext/src/ki_h3.esp:170
+requirement	?	unknown	get_first	2	3	icotext/src/kakari_data_make.esp:478
+requirement	?	unknown	putl	2	3	icotext/src/semdic_div.esp:37
+requirement	standard_output_file	instance	putt	2	3	icotext/src/initialize.esp:116
+requirement	standard_output_file	instance	close_output	1	3	icotext/src/initialize.esp:117
+requirement	standard_input_file	instance	getl	2	3	icotext/src/ki_window.esp:138
+requirement	monogyny_list_index	instance	get_at	3	3	icotext/src/kkr_data.esp:154
+requirement	monogyny_list_index	instance	put_at	3	3	icotext/src/imi_make_data.esp:40
+requirement	?	unknown	delete	3	3	icotext/src/initialize.esp:108
+requirement	?	unknown	close_output	1	3	icotext/src/semdic_div.esp:82
+requirement	standard_superior_window	class	create	3	3	icotext/src/ki_window.esp:51
+requirement	symbolizer	class	get_ch_string_token	3	3	icotext/src/semdic_div.esp:68
+requirement	standard_popup_menu	nature	(inherited)		3	icotext/src/kei_select.esp:6
+requirement	as_graphics	nature	(inherited)		3	icotext/src/util_scroll.esp:6
+requirement	sash	nature	(inherited)		3	icotext/src/imi_menu.esp:6
+requirement	directory	class	retrieve	4	3	icotext/src/initialize.esp:107
+requirement	name	class	append_type	4	3	icotext/src/semdic_div.esp:108
+requirement	?	unknown	expunge	1	3	icotext/src/initialize.esp:109
+requirement	name	class	ident	3	3	icotext/src/ki_window.esp:164
+requirement	with_icon	nature	(inherited)		3	icotext/src/kei_super_win.esp:7
+requirement	labeled_sash	nature	(inherited)		3	icotext/src/kei_bun_menu.esp:8
+requirement	with_bell	nature	(inherited)		3	icotext/src/imi_menu.esp:6
+requirement	?	unknown	remove_first	2	3	icotext/src/kakari_data_make.esp:480
+requirement	sentence	class	sentence_check	3	3	icotext/src/bunkatu.esp:18
+requirement	?	unknown	do_forcing_input	2	3	icotext/src/dummy_ki.esp:23
+requirement	temporary_multiple_select_menu	instance	set_title	2	3	icotext/src/imi_main.esp:134
+requirement	trans_buffer	class	set_buffer	2	3	icotext/src/kei_bun_menu.esp:29
+requirement	make_sem_data2	class	init_slot	1	3	icotext/src/ki_main_test.esp:174
+requirement	make_sem_data2	class	make_sem_data	3	3	icotext/src/ki_main_test.esp:175
+requirement	conv_sem_data	class	conv_data	3	3	icotext/src/ki_main_test.esp:176
+requirement	sentence	ref	(#ref)		3	icotext/src/bunkatu.esp:18
+requirement	imi_super_win	ref	(#ref)		3	icotext/src/imi_kaiseki.esp:32
+requirement	conv_sem_data	ref	(#ref)		3	icotext/src/ki_main_test.esp:176
+requirement	list_index	class	create	2	2	icotext/src/kei_collect.esp:335
+requirement	process	instance	activate	2	2	icotext/src/dummy_ki.esp:17
+requirement	<root>	class	new	2	2	icotext/src/ans_input.esp:9
+requirement	standard_input_file	instance	end_of_input	1	2	icotext/src/ki_window.esp:143
+requirement	standard_io_window	class	create	3	2	icotext/src/ki_window.esp:53
+requirement	?	unknown	get_position	3	2	icotext/src/kei_bunsho_win.esp:15
+requirement	library_utility	instance	catalogue	3	2	icotext/src/semdic_div.esp:166
+requirement	list	instance	get_contents	2	2	icotext/src/kkr_data_make.esp:32
+requirement	monogyny_list_index	instance	clear	1	2	icotext/src/imi_make_data.esp:19
+requirement	directory	class	retrieve_with_wildcard	4	2	icotext/src/ki_window.esp:155
+requirement	symbolizer	class	get_atom	3	2	icotext/src/node_make.esp:170
+requirement	mathematical_functions	class	sin	3	2	icotext/src/imi_draw_win.esp:962
+requirement	mathematical_functions	class	cos	3	2	icotext/src/imi_draw_win.esp:963
+requirement	with_border	nature	(inherited)		2	icotext/src/util_scroll.esp:6
+requirement	as_superior	nature	(inherited)		2	icotext/src/kei_super_win.esp:7
+requirement	as_multiple_column	nature	(inherited)		2	icotext/src/kei_bun_menu.esp:8
+requirement	monogyny_list_index	ref	(#ref)		2	icotext/src/imi_make_data.esp:9
+requirement	list_stack	ref	(#ref)		2	icotext/src/imi_kaiseki.esp:11
+requirement	standard_io_window	ref	(#ref)		2	icotext/src/ki_window.esp:53
+requirement	pmacs_window	ref	(#ref)		2	icotext/src/ki_window.esp:54
+requirement	list_stack	instance	pop	2	2	icotext/src/imi_kaiseki.esp:31
+requirement	standard_superior_window	nature	(inherited)		2	icotext/src/select_win.esp:10
+requirement	with_margin	nature	(inherited)		2	icotext/src/util_scroll.esp:6
+requirement	as_scrolling_menu	nature	(inherited)		2	icotext/src/imi_menu.esp:6
+requirement	list_index	instance	get_keys	2	2	icotext/src/kei_draw_data.esp:71
+requirement	standard_popup_choice_window	class	create	3	2	icotext/src/kei_attr_menu.esp:15
+requirement	stream	instance	get	2	2	icotext/src/dummy_ki.esp:70
+requirement	<root>	class	set_slot	3	2	icotext/src/bun_bunkatu.esp:289
+requirement	imi_set_data	class	get_children	3	2	icotext/src/imi_draw_win.esp:220
+requirement	imi_super_win	class	create	3	2	icotext/src/imi_kaiseki.esp:32
+requirement	imi_super_win	instance	set_label_font	2	2	icotext/src/imi_kaiseki.esp:36
+requirement	list_stack	instance	get_contents	2	2	icotext/src/imi_kaiseki.esp:82
+requirement	imi_save_child	class	remove_c	4	2	icotext/src/imi_main.esp:109
+requirement	temporary_multiple_select_menu	instance	clear_items	1	2	icotext/src/imi_main.esp:132
+requirement	temporary_multiple_select_menu	instance	add_items	3	2	icotext/src/imi_main.esp:133
+requirement	temporary_multiple_select_menu	instance	show	1	2	icotext/src/imi_main.esp:135
+requirement	temporary_multiple_select_menu	instance	read	2	2	icotext/src/imi_main.esp:136
+requirement	temporary_multiple_select_menu	instance	deactivate	1	2	icotext/src/imi_main.esp:137
+requirement	<root>	class	test	4	2	icotext/src/imi_test_data.esp:9
+requirement	standard_popup_choice_window	instance	activate	1	2	icotext/src/kei_attr_menu.esp:29
+requirement	standard_popup_choice_window	instance	read	2	2	icotext/src/kei_attr_menu.esp:30
+requirement	standard_popup_choice_window	instance	deactivate	1	2	icotext/src/kei_attr_menu.esp:31
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	instance	clear_items	1	2	icotext/src/kei_bun_menu.esp:28
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	instance	show	1	2	icotext/src/kei_bun_menu.esp:35
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	instance	read	2	2	icotext/src/kei_bun_menu.esp:36
+requirement	?	ambiguous	draw_filled_rectangle	6	2	icotext/src/kei_change.esp:29
+requirement	standard_popup_menu	instance	set_item_status	3	2	icotext/src/kei_select.esp:114
+requirement	as_program	slot	!parent_process	0	2	icotext/src/kkr_main.esp:40
+requirement	{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window}	instance	reshape	5	2	icotext/src/kkr_super_win.esp:45
+requirement	{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_mouse_dot_position	3	2	icotext/src/util_scroll.esp:79
+requirement	{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	warp_mouse	3	2	icotext/src/util_scroll.esp:84
+requirement	{as_graphics|inferior_window}	instance	get_point_value	4	2	icotext/src/util_scroll.esp:88
+requirement	{as_graphics|inferior_window}	instance	set_point_value	4	2	icotext/src/util_scroll.esp:90
+requirement	{as_graphics|inferior_window}	instance	draw_line	8	2	icotext/src/util_scroll.esp:93
+requirement	{as_graphics|inferior_window}	instance	draw_line	5	2	icotext/src/util_scroll.esp:96
+requirement	{as_graphics|inferior_window}	instance	draw_rectangle	8	2	icotext/src/util_scroll.esp:99
+requirement	{as_graphics|inferior_window}	instance	draw_rectangle	5	2	icotext/src/util_scroll.esp:102
+requirement	{as_graphics|inferior_window}	instance	draw_filled_rectangle	6	2	icotext/src/util_scroll.esp:105
+requirement	{as_graphics|inferior_window}	instance	draw_filled_rectangle	8	2	icotext/src/util_scroll.esp:108
+requirement	{as_graphics|inferior_window}	instance	draw_circle	7	2	icotext/src/util_scroll.esp:111
+requirement	{as_graphics|inferior_window}	instance	draw_ellipse	8	2	icotext/src/util_scroll.esp:114
+requirement	{as_graphics|inferior_window}	instance	draw_filled_ellipse	8	2	icotext/src/util_scroll.esp:117
+requirement	{as_graphics|inferior_window}	instance	draw_filled_circle	5	2	icotext/src/util_scroll.esp:120
+requirement	{as_graphics|inferior_window}	instance	draw_filled_fan	9	2	icotext/src/util_scroll.esp:124
+requirement	{as_graphics|inferior_window}	instance	draw_string	4	2	icotext/src/util_scroll.esp:134
+requirement	{as_graphics|inferior_window}	instance	draw_string	5	2	icotext/src/util_scroll.esp:137
+requirement	{as_graphics|inferior_window}	instance	transfer	8	2	icotext/src/util_scroll.esp:140
+requirement	{as_graphics|inferior_window}	instance	copy	9	2	icotext/src/util_scroll.esp:143
+requirement	{as_graphics|inferior_window}	instance	copy_to_string	11	2	icotext/src/util_scroll.esp:146
+requirement	{as_graphics|inferior_window}	instance	copy_from_string	11	2	icotext/src/util_scroll.esp:149
+requirement	{as_graphics|inferior_window}	instance	execute_graphics_command	2	2	icotext/src/util_scroll.esp:152
+requirement	{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	clear	1	2	icotext/src/util_scroll.esp:161
+requirement	{as_graphics|inferior_window}	instance	clear	1	2	icotext/src/util_scroll.esp:162
+requirement	{as_graphics|inferior_window}	instance	hardcopy	1	2	icotext/src/util_scroll.esp:170
+requirement	standard_popup_choice_window	nature	(inherited)		2	icotext/src/kei_attr_menu.esp:6
+requirement	standard_popup_menu	ref	(#ref)		2	icotext/src/user_int.esp:40
+requirement	standard_popup_menu	instance	set_title	2	1	icotext/src/kkr_select_menu.esp:30
+requirement	pmacs_window	instance	set_title	2	1	icotext/src/user_int.esp:53
+requirement	process	class	self	2	1	icotext/src/dummy_ki.esp:84
+requirement	?	unknown	die	1	1	icotext/src/dummy_ki.esp:85
+requirement	library_utility	class	create	2	1	icotext/src/semdic_div.esp:161
+requirement	list	instance	remove	2	1	icotext/src/kkr_data_make.esp:169
+requirement	list	instance	clear	1	1	icotext/src/kei_main.esp:154
+requirement	temporary_menu	class	create	3	1	icotext/src/imi_main.esp:256
+requirement	?	unknown	move_to_last	1	1	icotext/src/bun_bunkatu.esp:267
+requirement	pmacs_window	instance	set_font	2	1	icotext/src/user_int.esp:51
+requirement	library_utility	ref	(#ref)		1	icotext/src/semdic_div.esp:161
+requirement	temporary_menu	ref	(#ref)		1	icotext/src/imi_main.esp:256
+requirement	standard_superior_window	ref	(#ref)		1	icotext/src/ki_window.esp:51
+requirement	?	unknown	get_editor	2	1	icotext/src/input_test.esp:119
+requirement	?	unknown	add_first	2	1	icotext/src/kkr_data_make.esp:47
+requirement	list	instance	add_first	2	1	icotext/src/kei_main.esp:306
+requirement	list_stack	instance	clear	1	1	icotext/src/imi_kaiseki.esp:17
+requirement	inferior_window	instance	get_position	3	1	icotext/src/kkr_super_win.esp:46
+requirement	as_multiple_select	nature	(inherited)		1	icotext/src/my_pmacs_w.esp:14
+requirement	as_on_off_menu	nature	(inherited)		1	icotext/src/kei_bun_menu.esp:8
+requirement	?	unknown	clear	1	1	icotext/src/kei_main.esp:325
+requirement	menu_with_superior_input_buffer	class	create	3	1	icotext/src/window_test.esp:70
+requirement	temporary_menu	instance	show	1	1	icotext/src/imi_main.esp:121
+requirement	temporary_menu	instance	read	2	1	icotext/src/imi_main.esp:122
+requirement	temporary_menu	instance	set_font	2	1	icotext/src/imi_main.esp:259
+requirement	menu_with_superior_input_buffer	ref	(#ref)		1	icotext/src/window_test.esp:70
+requirement	monogyny_list_index	instance	remove_at	3	1	icotext/src/kkr_data.esp:73
+requirement	list	instance	remove_first	2	1	icotext/src/kei_main.esp:309
+requirement	temporary_menu	instance	set_title	2	1	icotext/src/imi_main.esp:261
+requirement	?	unknown	try_to_get	2	1	icotext/src/bunkatu_io.esp:24
+requirement	?	unknown	remove_last	2	1	icotext/src/kakari_data_make.esp:228
+requirement	?	ambiguous	draw_arc	9	1	icotext/src/kkr_draw_win.esp:198
+requirement	choice_window	class	create	3	1	icotext/src/window_test.esp:109
+requirement	{as_program|pmacs_window}	class	create	2	1	icotext/src/bun_bunkatu.esp:19
+requirement	<root>	class	id	3	1	icotext/src/dummy_ki.esp:146
+requirement	imi_test	class	test2	3	1	icotext/src/ict_gen92.esp:28
+requirement	imi_set_data	class	set	4	1	icotext/src/imi_main.esp:79
+requirement	imi_first_save	class	get_saved_data	5	1	icotext/src/imi_main.esp:108
+requirement	imi_set_data	class	multiple_child	4	1	icotext/src/imi_main.esp:125
+requirement	imi_save_child	class	remove_child	6	1	icotext/src/imi_main.esp:143
+requirement	imi_save_child	class	regist	2	1	icotext/src/imi_main.esp:152
+requirement	imi_super_win	class	create_window	3	1	icotext/src/imi_main.esp:240
+requirement	imi_attribute_menu	class	create_window	2	1	icotext/src/imi_main.esp:251
+requirement	imi_attribute_sub_menu	class	create_window	2	1	icotext/src/imi_main.esp:253
+requirement	temporary_menu	instance	set_label_font	2	1	icotext/src/imi_main.esp:260
+requirement	temporary_multiple_select_menu	class	create	3	1	icotext/src/imi_main.esp:264
+requirement	temporary_multiple_select_menu	instance	set_font	2	1	icotext/src/imi_main.esp:265
+requirement	temporary_multiple_select_menu	instance	set_label_font	2	1	icotext/src/imi_main.esp:266
+requirement	imi_super_win	instance	activate	1	1	icotext/src/imi_main.esp:271
+requirement	imi_super_win	instance	close	1	1	icotext/src/imi_main.esp:275
+requirement	imi_super_win	instance	kill	1	1	icotext/src/imi_main.esp:289
+requirement	{with_superior_input_buffer|sash|as_scrolling_menu|as_single_select|as_mouse_input|with_bell|inferior_window}	instance	clear_items	1	1	icotext/src/imi_menu.esp:49
+requirement	{with_superior_input_buffer|sash|as_scrolling_menu|as_single_select|as_mouse_input|with_bell|inferior_window}	instance	add_item	3	1	icotext/src/imi_menu.esp:66
+requirement	?	unknown	cursor_with_mouse	1	1	icotext/src/input_test.esp:120
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	class	create	3	1	icotext/src/kei_bun_menu.esp:19
+requirement	{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	instance	deactivate	1	1	icotext/src/kei_bun_menu.esp:169
+requirement	multi_column_menu_with_superior_input_buffer	class	create	3	1	icotext/src/ki_window.esp:69
+requirement	as_program	class	select_kakari_structure	3	1	icotext/src/kkr_main.esp:90
+requirement	kakari_attribute_menu	class	create_window	2	1	icotext/src/kkr_main.esp:175
+requirement	kakari_attribute_menu	instance	kill	1	1	icotext/src/kkr_main.esp:197
+requirement	standard_popup_menu	instance	add_item	3	1	icotext/src/kkr_seiyaku_menu.esp:27
+requirement	{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window}	instance	get_inside_size	3	1	icotext/src/kkr_super_win.esp:53
+requirement	std	class	append	4	1	icotext/src/make_sentence.esp:217
+requirement	symbolizer	class	get_number_token	3	1	icotext/src/semdic_div.esp:116
+requirement	standard_popup_menu	instance	kill	1	1	icotext/src/user_int.esp:33
+requirement	standard_popup_menu	instance	set_font	2	1	icotext/src/user_int.esp:43
+requirement	pmacs_window	instance	set_label_font	2	1	icotext/src/user_int.esp:52
+requirement	essential_scrolling_menu	instance	set_font	2	1	icotext/src/user_int.esp:54
+requirement	essential_scrolling_menu	instance	set_label_font	2	1	icotext/src/user_int.esp:55
+requirement	essential_scrolling_menu	instance	set_title	2	1	icotext/src/user_int.esp:56
+requirement	standard_popup_menu	instance	activate	1	1	icotext/src/user_int.esp:98
+requirement	utls_icon	class	get_and_set_icon_id	3	1	icotext/src/window_test.esp:34
+requirement	popup_window	nature	(inherited)		1	icotext/src/kei_bun_menu.esp:8
+requirement	with_keeping_status	nature	(inherited)		1	icotext/src/my_pmacs_w.esp:14
+requirement	choice_window	nature	(inherited)		1	icotext/src/my_pmacs_w.esp:14
+requirement	imi_test	ref	(#ref)		1	icotext/src/ict_gen92.esp:28
+requirement	imi_first_save	ref	(#ref)		1	icotext/src/imi_main.esp:108
+requirement	imi_attribute_menu	ref	(#ref)		1	icotext/src/imi_main.esp:251
+requirement	imi_attribute_sub_menu	ref	(#ref)		1	icotext/src/imi_main.esp:253
+requirement	temporary_multiple_select_menu	ref	(#ref)		1	icotext/src/imi_main.esp:264
+requirement	multi_column_menu_with_superior_input_buffer	ref	(#ref)		1	icotext/src/ki_window.esp:69
+requirement	kakari_attribute_menu	ref	(#ref)		1	icotext/src/kkr_main.esp:175
+requirement	std	ref	(#ref)		1	icotext/src/make_sentence.esp:217
+requirement	utls_icon	ref	(#ref)		1	icotext/src/window_test.esp:34

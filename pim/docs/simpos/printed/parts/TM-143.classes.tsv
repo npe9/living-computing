@@ -1,0 +1,24 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+temporary-window	-	-	-	-	NAMED	TM-143	6	-	"basic window class (always needed)"; printed with hyphens; real identifier presumably uses underscores (INFERENCE)
+inferior-window	-	-	-	-	NAMED	TM-143	6	-	"basic window class (always needed)"; printed with hyphens; real identifier presumably uses underscores (INFERENCE)
+with-border	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible
+with-label	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible
+with-two-labels	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible
+with-margin	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible
+as-output	-	-	-	-	NAMED	TM-143	6	-	function class: character output
+as-scroll	-	-	-	-	NAMED	TM-143	6	-	function class: scrolling of output
+as-graphic	-	-	-	-	NAMED	TM-143	6	-	function class: graphics output
+as-input	-	-	-	-	NAMED	TM-143	6	-	function class: keyboard input
+as-mouse-input	-	-	-	-	NAMED	TM-143	6	-	function class: mouse-click input
+as-esp-transducer	-	-	-	-	NAMED	TM-143	6	-	transducer function class
+as-standard-transducer	-	-	-	-	NAMED	TM-143	6	-	transducer function class
+as-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class
+as-multiple-column-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class
+as-scrolling-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class
+as-single-select	-	-	-	-	NAMED	TM-143	6	-	menu extension class
+as-multiple-select	-	-	-	-	NAMED	TM-143	6	-	menu extension class
+as-on-off	-	-	-	-	NAMED	TM-143	6	-	menu extension class
+window	(ready-made combination of the part classes)	-	-	-	NAMED	TM-143	6	-	"標準品のクラス window や menu"
+menu	(ready-made combination)	-	-	-	NAMED	TM-143	6	-	same sentence
+system_menu (EXPERTS items)	-	-	-	-	NAMED	TM-143	3	-	screenshot: generalist?, debugger, editor, file_manipulator, librarian, terminal? (low confidence)
+system_menu (MEDIA SYSTEMS items)	-	-	-	-	NAMED	TM-143	3	-	screenshot: window_manipulator, network, shell?, whiteboard, login, shut down? (low confidence)

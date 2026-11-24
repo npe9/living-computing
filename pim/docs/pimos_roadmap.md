@@ -62,6 +62,12 @@ the per-opcode table in `pimos_boot_requirements.md`, reproduced by
 | distinct (tag, opcode) pairs used | 197, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
 | of those, with any arm in `PimKL1B.bsv` | 51 |
 
+*(Note 2026-11-23: the 51 is the BENCH model, `bsv/PimKL1B.bsv`, by a
+text match on its arms. The two models of the current work, the
+reference `ref/pimm/pimm.py` and the core `bsv/Pimm*.bsv`, implement
+128 instructions on both (`ref/pimm/README.md`, `bsv/README.md`
+"State"). The counts are of different models, not a disagreement.)*
+
 The 51 cover 73.4% of instruction words by static count, but that
 figure flatters the model: several of the arms are stand-ins
 (`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
@@ -86,6 +92,23 @@ model has been in) is **off the critical path** from here.
 
 ## 2. Definition of done: a ladder of observable rungs
 
+**The goal, as the owner stated it on 2026-11-23: "to recreate the
+entire operating environment."** That is the installation, not PIMOS
+alone: PIM/m running PIMOS and its applications, AND the PSI beside
+it running SIMPOS as console processor and front-end processor. Done
+is therefore R1..R9 below together with P0..P5 of section 9. Where
+this document has our own program standing in for one of ICOT's (the
+host-side front end, `ref/pimm/fep.py`), that is scaffolding on the
+way and is labelled OURS; it is not an end state. A piece that cannot
+be found is reconstructed from its sources at the best fidelity they
+allow and labelled a reconstruction.
+
+**Order of work (owner, 2026-11-23): "PIM/m, PSI and then the other
+PIM machines."** First the PIM/m installation (R1..R9); then the PSI
+with SIMPOS (section 9, P0..P5); then the other machines of the PIM
+family (section 10). Searches and acquisitions for a later machine
+may run at any time; building it waits its turn.
+
 Each rung is a runnable check that goes into `run_tests.sh` (or a
 longer `run_boot.sh` once runs exceed a few minutes).
 
@@ -95,8 +118,8 @@ longer `run_boot.sh` once runs exceed a few minutes).
 | R2 | One predicate from a real PIMOS module, loaded from its `.sav`, runs to completion with arguments we construct and returns the right answer | expected value computed independently (by hand for the first; by KLIC 2.002 for the rest) |
 | R3 | The same, for a predicate that suspends and is resumed | same |
 | R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
-| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; those two strings are in no held 3.6 binary, and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs |
-| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`) |
+| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs. *Note 2026-11-23: the version module at least agrees with the source. "20-May-93" occurs once in `pimm_kernel360E.sav` as a two-byte JIS string, and the reference model's run prints it. The objects' "3.600:25-Nov-93" is the base files' comment date, a different artefact (`binary_reverse_engineering.md` §2)* |
+| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`). *Status 2026-11-24: not reached; `pim:go/4` with the FEP device (reference model) gets past the bus scan and the kernel's first FEP message (the syslog's `append_open`) and the timer device's `create_timer` and `get_date_time`, and stops at 65,482 instructions at `subtract_bignum` on a `32#{0}` that our clock at 0 made (`binary_reverse_engineering.md` 1.4)* |
 | R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
 | R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
 | R9 | A period application (candidates in §6) | its published result |
@@ -140,7 +163,10 @@ default until overruled.
    default FEP per task. *Default: a host-side FEP stand-in that speaks
    the documented protocol (`pimos/protocol/*.prt`, `src/server`,
    `src/vm/`) to the unmodified PIMOS, serving a directory of files;
-   SIMPOS itself is out of scope.*
+   SIMPOS itself is out of scope.* **Changed 2026-11-23**: the owner
+   asked in-session for SIMPOS and the PSI to be in the plan ("Do we
+   have simpos in the plan?", then "Add psi to the plan too"). The
+   stand-in stays the way to R5..R8; the real front end is section 9.
 
 ## 4. Phases
 
@@ -292,7 +318,31 @@ the unification of two vectors it also needs is in
 loads and links on both models (`lockstep_link.py` part 2).
 On the reference model alone, 2026-11-23, the twenty files of the
 held `pimos.ipl`, in its order, load and link NORMALLY (73 M cells,
-fifteen minutes); the IPL then stops at `predicate_to_code`. The linker reports ONE
+fifteen minutes); `predicate_to_code` then gives the code of
+`pim:go/4` and the answer is `normal(Atoms, Modules, Comments, Code)`:
+10,032 atoms, 480 modules; eight modules are in two files and each
+ends as its later file's (`ref/pimm/longrun_ipl.py --reference`).
+`top:go_pimos1/2` applies that code (`apply`, `lockstep_apply.py`).
+On BOTH models the twenty-file load and link agree for 447,739,516
+trace lines (`bsv/run_pimm_longrun.sh`, 2026-11-23): R4 on the
+Bluespec core. On the reference model alone `pim:go/4` then gives the
+console "PIMOS V 3.600 20-May-93" (R5's banner line; started by the
+bench outside any shoen, with an unbound BootInfo:
+`longrun_ipl.py --reference --go`) and stops at `scsi_where`.
+*Later, 2026-11-23 (rung S0, `docs/scsi_plan.md`): BootInfo made by the
+IPL's own `make_boot_info/1`, the FEP device attached (`--go --fep`):
+12,912 instructions, the kernel's bus scan done (TEST UNIT READY and
+INQUIRY to unit 7, TEST UNIT READY to 5..0, answered as `fep.py`
+says), the console still the banner alone; the stop is R6's way:
+`enqueue_goal_to_processor` with an unbound processor
+(`scsi_manager:check_lpid_pool/7`, `Goal@node(Cluster)`, Cluster not
+yet given by its pool), `docs/binary_reverse_engineering.md` 1.4.*
+*2026-11-24: that goal waits for the number (from VPIM); seven more
+stops passed (1.4's table): 23,348 instructions, the syslog's
+`append_open` the first FEP message, the stop `jump`.  Then (a fresh
+cache) six more: 65,482 instructions, the timer device made, the stop
+`subtract_bignum` on a bignum our clock at 0 made.*
+The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
 
@@ -311,7 +361,18 @@ wherever the dialects differ. In dependency order:
 4. `save`/`restore`, `execute_external`/`enqueue_goal_external` and
    module linkage;
 5. shoen, priorities and exceptions (the IPL starts PIMOS "at priority
-   4050");
+   4050"); the shoen's first stage (`create_shoen`, `start_shoen`,
+   termination) is on both models, `ref/pimm/lockstep_shoen.py`, and
+   its second (`shoen_statistics`, `remove_shoen`, the image's monitors
+   to `Shut = shut`), `ref/pimm/lockstep_shoen2.py`, and its third
+   (a reduction failure and `raise` reported as `exception(..)` to the
+   innermost shoen whose mask accepts, the handler's NewCode/NewArgv
+   run as the replacing goal; `stop_shoen`, start after stop,
+   `abort_shoen`; `current_processor`), `ref/pimm/lockstep_shoen3.py`;
+   resource limits (`add_shoen_resource`,
+   `allow_shoen_resource_report`, `resource_low`), profiling and the
+   unification failure are not, the resource part for want of a source
+   for the allowance and the threshold;
 6. garbage collection - only when a run exhausts memory; until then
    size memory to avoid it and record that.
 
@@ -415,12 +476,18 @@ addressing rule on a layout known from elsewhere.*
   `psdpim`). Still wanted: any PSI-III emulator or microcode listing.
 - TR-373 "KL1 no jitsugen houshiki to heiretsu OS no kijutsu" and
   TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
-  `nonlocal/MANIFEST.md` §3).
+  `nonlocal/MANIFEST.md` §3). *Held since 2026-11-20:
+  `nonlocal/lit/trtm/tr0373.pdf`, `tm1203.pdf` (`LIT_MANIFEST.md`;
+  note 2026-11-23).*
 - `pimosman.ps.Z` (the typeset manual; we hold only the LaTeX).
   *`icot_software_survey.md` (2026-11-20) found it on the AIST mirror,
   with the PIMOS 1.5 and 3.0 manuals, the primer and the ESP manuals;
   that survey is the full inventory of ICOT software held, public and
   lost, and its section 5 is the acquisition list. Not fetched yet.*
+  *Corrected 2026-11-23: all of these were fetched as data on
+  2026-11-20 with the whole IFS tree, `nonlocal/ifs/symbolic-proc/pim-psi/pimosman.ps.Z`,
+  `nonlocal/ifs/manuals/pimos/`, `nonlocal/ifs/manuals/esp/`
+  (`nonlocal/IFS_MANIFEST.md`).*
 - Multi-PSI KL1 implementation reports (the distributed
   implementation, export/import tables, weighted reference counts) for
   §7.
@@ -432,6 +499,9 @@ addressing rule on a layout known from elsewhere.*
   node with pages kept by the front end, which needs a host shim for an
   8-operation page-file protocol and the PIMOS KL1 compiler, since it
   ships as source for PIMOS 3.4/3.45. Not fetched; nothing tried.
+  *(Note 2026-11-23: now held as data, nothing tried:
+  `nonlocal/ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz`,
+  `nonlocal/ifs/kbms-clp/pimos/kappa-p.tar.Z`.)*
 - Period KL1 applications for R9: the benchmarks the FGCS'92 PIM/m
   paper reports, and the IFS KL1 programs (theorem provers, puzzle
   and search benchmarks) once the IFS index is reachable.
@@ -446,8 +516,82 @@ addressing rule on a layout known from elsewhere.*
 - FPGA: memory budget for the images on the ULX3S, and the SD card as
   the block device.
 
+## 9. The PSI and SIMPOS (added 2026-11-23, at the owner's request)
+
+On the real installation the machine beside PIM/m was a PSI running
+SIMPOS: it was the console processor (clear, init, load microcode,
+IPL, start) and the front-end processor that served files, windows,
+timers, string I/O and sockets to PIMOS over SCSI. The plan above
+replaces it with a host-side stand-in (decision 4; `ref/pimm/fep.py`
+is its first piece). This section is the plan for the real thing, and
+since the owner's statement of the goal (section 2) it is part of
+what done means, not an optional extra. It does not block R1..R8,
+and it is a different machine: the PSI executes
+KL0, not KL1-B. By the repository's scope rule the work belongs in a
+sibling directory of its own (`psi/`) once it starts; until then this
+section and `docs/` hold the research.
+
+**What is held** (all binary; `icot_software_survey.md` items 1, 3,
+9, 10, 17 and `binary_reverse_engineering.md` 4 and 5):
+
+- `PMPSI.DIR/syspsi`: a PSI-III control store, 32,768 x 64-bit words,
+  the KL0/SIMPOS microcode; `sysidat`, the KL0 decode table (read);
+  `sysinit`, not characterised.
+- `pimm.MEkbn`: the Pseudo PIM/m KL1 firmware as PSI-III microcode.
+- `pimmcsp.ptf` (281 ESP classes), `pimfep.ptf`, `pimscsi.ptf`:
+  the console and front-end software, compiled ESP built against
+  SIMPOS; their calls into `simpos##...` classes dangle.
+- `paragraph.ptf` with its ESP source: the known plaintext for the
+  compiled-ESP format.
+- SIMPOS fonts and an icon.
+
+**What is not held, and was not found:** SIMPOS itself (source or
+binary), the ESP compiler and runtime, any KL0 firmware source, a
+PSI hardware description at the level of the microinstruction, a PSI
+emulator.
+
+**Rungs** (each observable, as section 2's are):
+
+| Rung | What is seen | Needs |
+|---|---|---|
+| P0 | An acquisition report: what of SIMPOS, ESP, the PSI-II/III hardware manuals and KL0 exists anywhere, with terms | a search (started 2026-11-23); nothing else |
+| P1 | The PSI-III microinstruction format read from `syspsi`: fields, sequencing, the decode through `sysidat`, checked against whatever hardware description P0 finds | P0's hardware papers; the control store |
+| P2 | A PSI-III datapath model that runs the held microcode from its entry far enough to decode KL0 instructions | P1 |
+| P3 | Compiled ESP (`.ptf`) loaded and one method of a held class run, `paragraph`'s source as the oracle | P2, the `.ptf` format (`binary_reverse_engineering.md` 4) |
+| P4 | SIMPOS boots | **SIMPOS itself, which is not held.** Without it this rung cannot be reached and P5 falls back to stubs of the SIMPOS classes the FEP calls, labelled OURS |
+| P5 | The held `pimfep.ptf` serves the PIM/m model's SCSI link in place of `fep.py`, and `pimmcsp.ptf` performs the boot | P3, and P4 or its stubs; the SCSI device interface on the core |
+
+**The gate is P0.** If no SIMPOS is found, P4 becomes a
+reconstruction: the SIMPOS classes the held console and front-end
+software call are rebuilt from the SIMPOS and ESP documentation P0
+finds, each labelled a reconstruction with its source, starting with
+the ones `pimfep.ptf` and `pimmcsp.ptf` name; the document lists
+which classes are ICOT's code and which are rebuilt. If a PSI-II (not III)
+artifact is all that is found, the microcode held here does not run
+on it.
+
+## 10. The other PIM machines (added 2026-11-23, third in order)
+
+After PIM/m and the PSI: the other machines of the family, PIM/p,
+PIM/c, PIM/i and PIM/k, and Multi-PSI (built from PSI-II
+processors). Each would be its own sibling directory when its turn
+comes. What is held and documented for each, and what has not been
+searched for, is in `environment_audit.md` (area L). Two things
+already held bear on them: VPIM (a PIM-family runtime, `vpim.tar.Z`)
+and the PIMOS source tree, which carries per-machine variants; the
+`INSTALL` of the held 3.6 objects names "Pseudo Multi-PSI" beside
+"Pseudo PIM/M". No rungs are set until the audit's searches report.
+
 ## 8. What stops now
 
 The one-opcode-per-commit loop on the current `PimKL1B.bsv`. Its
 benches stay in the suite; no further instructions are added to that
 module except to support a Phase 0 measurement.
+
+## 11. SCSI
+
+The plan for the SCSI link and the front-end processor, rungs S0..S7
+(the kernel's FEP conversation, a device box on the Bluespec core,
+the bench's device tape, lockstep of the IPL's file service, the real
+IPL by SCSI, `pim:go/4` past `scsi_init`, a live FEP, the real FEP):
+`scsi_plan.md`.

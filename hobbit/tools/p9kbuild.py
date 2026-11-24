@@ -10,13 +10,35 @@ one zc run is ~8 million instructions, ~35 s), and records what came out.
 
 Targets
 -------
+  all      the whole chain in one fresh --build directory, nothing reused:
+           tools/p9kgen.py (into BUILD/kgen), then `kernel --kgen
+           BUILD/kgen`, then `link --kgen BUILD/kgen --check` on the
+           libram.a just made; BUILD/all.log sums each stage
   kernel   sys/src/9/hobbit/mkfile for one CONF (default `term`): every
            object of $OBJ (`zc -w -Dram`, port files `-I. ../port/X.c`,
            `fcall` without -I., fprt0.s through za), raml.s through za,
            then `ar vu libram.a $OBJ` and `rl libram.a` ($RL, /hobbit/mkfile)
+  link     the mkfile's `9term` rule: `za raml.s`, `zc -w -Dram
+           -DKERNDATE=<kerndate> term.c`, `zc -w -Dram bootterm.root.c`
+           (term.c, bootterm.root.c and kerndate from tools/p9kgen.py,
+           --kgen DIR), then `zl -o 9term -l -R4 -H1 -T0x80004000
+           -E0x80004000 raml.z term.z bootterm.root.z libram.a -lgnot -lg
+           -lc` (libram.a from the kernel target, BUILD/libram.a, or
+           --libram); the image is checked by p9exec.check_kernel and
+           compared with s9term by tools/p9kcmp.py; --check also requires
+           the recorded sha256 (NINETERM_SHA256)
   libc     every C source of sys/src/libc/{hobbit,port,9sys} that has a
            member in the shipped hobbit/lib/libc.a, compiled with `zc` in
            its own directory and compared with that member
+  fpi      the floating-point interpreter the boot ROM carries (raml.s
+           copies the ROM's PPage0+0x74, `fprt0`, into the niladic and
+           unimplemented-instruction vectors): mkfile's `fpi.out` rule,
+           `za fprt0.s`, `zc -w -Dram fpihobbit.c fpi.c`, `zl -l -R4
+           -T<addr> fprt0.z fpihobbit.z fpi.z`, with the rule's
+           -T0xE0000020 replaced by FPI_TEXT (0xC0000020: the same offset
+           in VROMBASE's segment, which raml.s maps user-executable onto
+           the ROM at PROMBASE); writes BUILD/fpi.rom, --check compares
+           it with tools/p9kbuild/fpi.rom (docs/p9boot.md "The ROM's fpi")
   archeck  `ar` and `rl` validated against the shipped libc.a: `ar x`
            every member, give each file the date and mode its header
            records, `ar vu` them back in the archive's order, `rl`, and
@@ -32,30 +54,39 @@ size and sha256, and what it printed.
 What is not the release's tooling, and why
 ------------------------------------------
 * $DEV/$STREAM/$MISC: the mkfile gets them from `rc ../port/mkdevlist`
-  (sed|awk) on the config file.  Those need rc, sed and awk on the model
-  (not yet); the lists are read from `tools/p9kbuild/<conf>.{dev,stream,
-  misc}list`, written by hand from the scripts and the config, in the
-  scripts' own output format so the generated ones can replace them.
-* devtab.h: `rc ../port/mkdevh $CONFLIST` (mkextract -u | awk).  Generated
-  here by a transcription of those two scripts; PROVISIONAL, replaceable
-  with --devtab-h FILE.
+  (sed|awk) on the config file.  By default they are read from
+  `tools/p9kbuild/<conf>.{dev,stream,misc}list`, written by hand from the
+  scripts and the config; `--kgen DIR` takes them instead from
+  tools/p9kgen.py's `DIR/objlists`, the scripts' own output with the
+  release's sed and awk run on the model (identical for term,
+  2026-11-23; the log says so).
+* devtab.h: `rc ../port/mkdevh $CONFLIST` (mkextract -u | awk).  By
+  default a Python transcription of those two scripts (PROVISIONAL);
+  `--kgen DIR` (or --devtab-h FILE) takes the one p9kgen made with
+  the release's awk and sort (identical to the transcription for the
+  shipped CONFLIST).
 * init.h (rammain.c includes it): initcode is assembled and linked on the
   model (`za initcode`, `zl -l -s -o init.out -H2 -T0x1020 -R4
-  initcode.z`), but the text step (`xd -r -1x init.out | sed ...`) is a
-  transcription of xd.c and the two sed expressions.  PROVISIONAL, and
-  so is rammain.z; replaceable with --init-h FILE.
+  initcode.z`), and by default the text step (`xd -r -1x init.out | sed
+  ...`) is a transcription of xd.c and the two sed expressions
+  (PROVISIONAL); `--kgen DIR` (or --init-h FILE) takes p9kgen's, made by
+  the release's xd and sed (identical; equal to s9term's initcode[]).
 * rl's `fexec("/bin/ar", ...)`: rl forks and execs ar to put the table it
-  wrote into the archive (rl.c writerl/fexec).  p9run models one process
-  and refuses rfork(RFPROC); rl therefore stops there, after it has
-  written and closed __.SYMDEF.  The driver checks that it stopped at
-  exactly that call, then does what the rest of writerl() does: runs the
-  same `ar` command lines on the model, then removes __.SYMDEF.
+  wrote into the archive (rl.c writerl/fexec).  p9run runs the child (a
+  copy of the process, to its exits, before the parent's wait), so rl
+  runs to its end; `play_rl` fixes the run's clock at the table's date
+  and the directory's mode at 0775 so the table's header is
+  reproducible.
 * dates and modes: ar copies the input file's mtime and mode into each
   member header.  For a reproducible archive the driver sets every input
   to mode 0664 (what every shipped libc.a member records) and mtime
   726010682 (the shipped libc.a's __.SYMDEF date) before ar runs.
 
+    python3 tools/p9kbuild.py all --build B     # p9kgen+kernel+link, ~3 h
     python3 tools/p9kbuild.py kernel            # everything, 8 processes
+    python3 tools/p9kgen.py --out K             # ~75 min (mkroot's sed)
+    python3 tools/p9kbuild.py kernel --kgen K
+    python3 tools/p9kbuild.py link --kgen K --check
     python3 tools/p9kbuild.py kernel --only trap,clock
     python3 tools/p9kbuild.py libc --only frexp,abs --check
     python3 tools/p9kbuild.py archeck
@@ -82,6 +113,7 @@ sys.path.insert(0, str(HOBBIT / "sem"))
 FIXED_MTIME = 726010682         # shipped libc.a __.SYMDEF header date
 FIXED_MODE = 0o664              # every shipped libc.a member's mode
 MAX_STEPS = 200_000_000
+LINK_STEPS = 2_000_000_000      # zl of 9term: see target_link's log
 
 #: libc/port C files whose libc.a member is built from libc/hobbit's
 #: assembler version instead (hobbit/mkfile OFILES), so the zc object
@@ -95,16 +127,19 @@ LIBC_ASM_REPLACED = {"port/" + n for n in (
 # One run of a 1e binary on the model (in a worker process)
 # --------------------------------------------------------------------
 
-def run_tool(root, cwd, tool, args, max_steps=MAX_STEPS):
-    """Run hobbit/bin/<tool> with `args` in `cwd` (a path under root)."""
+def run_tool(root, cwd, tool, args, max_steps=MAX_STEPS, clock=None):
+    """Run hobbit/bin/<tool> with `args` in `cwd` (a path under root).
+    `clock` fixes the times of the files it writes (p9run Kernel.stamp).
+    Instructions and system calls include any child it forks."""
     import p9run
     out = io.BytesIO()
     t0 = time.time()
     status, steps, k, _ops = p9run.run(
         str(pathlib.Path(root) / "hobbit" / "bin" / tool), [tool] + args,
-        str(root), max_steps, out, cwd=cwd)
+        str(root), max_steps, out, cwd=cwd, clock=clock)
     return {"tool": tool, "args": args, "cwd": cwd, "status": status,
-            "steps": steps, "syscalls": len(k.trace),
+            "steps": steps + k.child_steps,
+            "syscalls": len(k.trace) + sum(len(c[3]) for c in k.children),
             "seconds": round(time.time() - t0, 1),
             "console": out.getvalue().decode("latin-1")}
 
@@ -260,10 +295,23 @@ CONFLIST = ["cpu", "term", "termlocal", "bart", "rom"]
 CFLAGS = ["-w", "-Dram"]
 
 
-def kernel_objects(conf):
+def kgen_lists(kgen):
+    """The DEV/STREAM/MISC lines tools/p9kgen.py writes to `objlists`
+    (the output of rc ../port/mk{dev,stream,misc}list, run on the
+    model) as {"dev": [...], "stream": [...], "misc": [...]}."""
+    out = {}
+    for line in (pathlib.Path(kgen) / "objlists").read_text().splitlines():
+        var, words = line.split("=", 1)
+        out[var.lower()] = words.split()
+    return out
+
+
+def kernel_objects(conf, lists=None):
+    """$OBJ; `lists` (kgen_lists) replaces the hand-written lists."""
     def lst(kind):
-        return [n[:-2] if n.endswith(".z") else n
-                for n in read_list(LISTS / ("%s.%slist" % (conf, kind)))]
+        names = (lists[kind] if lists is not None else
+                 read_list(LISTS / ("%s.%slist" % (conf, kind))))
+        return [n[:-2] if n.endswith(".z") else n for n in names]
     return OBJ_HEAD + lst("dev") + lst("misc") + lst("stream") + OBJ_TAIL
 
 
@@ -284,12 +332,21 @@ def kernel_command(name, hobbit_dir, port_dir):
     raise SystemExit("p9kbuild: no source for %s.z" % name)
 
 
+#: every Log opened in this process (target_all sums their steps)
+LOGS = []
+
+
 class Log:
     def __init__(self, path):
         self.path = path
         self.f = open(path, "w")
+        self.steps = 0          # instructions of every step logged
+        self.runs = 0
+        LOGS.append(self)
 
     def line(self, key, r, out=None, note=""):
+        self.steps += r["steps"]
+        self.runs += 1
         size = digest = "-"
         if out is not None and pathlib.Path(out).exists():
             size = str(pathlib.Path(out).stat().st_size)
@@ -308,48 +365,32 @@ class Log:
 
 def play_rl(root, cwd, libname, log, max_steps, mtime=FIXED_MTIME,
             mode=FIXED_MODE):
-    """Run rl on `libname`; then do writerl()'s fexec("/bin/ar", ...) and
-    remove(symname) (rl.c), which p9run cannot (see the module doc)."""
+    """$RL $LIBRARY: run rl on `libname` to its end.  rl.c writerl()
+    creates __.SYMDEF (perm 0664), writes the table, then fexec()s
+    `/bin/ar rb|mb|r ...` (fork, exec, wait: p9run runs the child) and
+    removes __.SYMDEF.  ar copies the table file's date and mode into its
+    member header, so the run's clock is fixed at `mtime` and the
+    directory is given mode 0775 (create's perm is ANDed with the
+    directory's, open(2)), which leaves 0664 = `mode`."""
     import build_zl_inferno
     d = pathlib.Path(root) / cwd
-    r = run_tool(root, cwd, "rl", [libname], max_steps)
+    if mode != 0o664:
+        raise SystemExit("p9kbuild: rl creates __.SYMDEF 0664, not %o"
+                         % mode)
+    os.chmod(d, 0o775)
+    r = run_tool(root, cwd, "rl", [libname], max_steps, clock=mtime)
     report("rl", r)
-    expect = ("p9run: refused rfork(0x14): RFPROC (a new process) "
-              "is not modelled")
-    symdef = d / "__.SYMDEF"
-    if ok(r):
-        # A runner that models fork/exec/wait ran writerl() to its end:
-        # the table must then be the archive's first member, its file gone.
-        # (Its header date is then the host clock's: not reproducible.)
-        log.line("rl", r, d / libname, "ran to the end (fork modelled)")
-        members = list(build_zl_inferno.read_members(str(d / libname)))
-        if members[:1] != ["__.SYMDEF"] or symdef.exists():
-            raise SystemExit("p9kbuild: rl exited but left no table first")
-        return
-    log.line("rl", r, symdef, "stopped at fork(): the driver plays fexec")
-    if r["status"] != expect or not symdef.exists():
-        raise SystemExit("p9kbuild: rl did not stop at its fork: %s"
-                         % r["status"])
-    os.chmod(symdef, mode)
-    os.utime(symdef, (mtime, mtime))
-    # writerl(): firstname is the archive's first member before rl ran,
-    # symsize the size of an __.SYMDEF already in it.
+    log.line("rl", r, d / libname, "rl's fork+exec of ar run by p9run")
+    if not ok(r):
+        raise SystemExit("p9kbuild: rl failed: %s" % r["status"])
     members = list(build_zl_inferno.read_members(str(d / libname)))
-    firstname = members[0] if members else ""
-    had = "__.SYMDEF" in members
-    if firstname != "__.SYMDEF":
-        cmds = ([["mb", firstname, libname, "__.SYMDEF"],
-                 ["r", libname, "__.SYMDEF"]] if had else
-                [["rb", firstname, libname, "__.SYMDEF"]])
-    else:
-        cmds = [["r", libname, "__.SYMDEF"]]
-    for args in cmds:
-        ra = run_tool(root, cwd, "ar", args, max_steps)
-        report("ar " + args[0], ra)
-        log.line("ar " + args[0], ra, d / libname, "rl's fexec")
-        if not ok(ra):
-            raise SystemExit("p9kbuild: %s failed: %s" % (args, ra["status"]))
-    symdef.unlink()                         # remove(symname)
+    if members[:1] != ["__.SYMDEF"] or (d / "__.SYMDEF").exists():
+        raise SystemExit("p9kbuild: rl exited but left no table first")
+    hdr = (d / libname).read_bytes()[8:68]
+    if (int(hdr[16:28].decode().strip()) != mtime
+            or int(hdr[40:48].decode().strip(), 8) != mode):
+        raise SystemExit("p9kbuild: __.SYMDEF header %r: not dated %d "
+                         "mode %o" % (hdr, mtime, mode))
 
 
 def make_library(root, cwd, libname, names, log, max_steps):
@@ -382,6 +423,22 @@ def target_kernel(a):
              % a.conf)
 
     provisional = set()
+    lists = None
+    if a.kgen:
+        # tools/p9kgen.py's products: rc's scripts run on the model
+        kg = pathlib.Path(a.kgen)
+        a.devtab_h = a.devtab_h or str(kg / "devtab.h")
+        a.init_h = a.init_h or str(kg / "init.h")
+        lists = kgen_lists(kg)
+        for kind in ("dev", "stream", "misc"):
+            hand = read_list(LISTS / ("%s.%slist" % (a.conf, kind)))
+            log.note("%slist from %s: %s the hand list (%d objects)"
+                     % (kind, kg, "same as" if hand == lists[kind]
+                        else "DIFFERENT from", len(lists[kind])))
+        tdevtab = devtab_h(hdir, CONFLIST)
+        log.note("devtab.h from %s: %s the transcription" % (
+            kg, "same as" if (kg / "devtab.h").read_text() == tdevtab
+            else "DIFFERENT from"))
     if a.devtab_h:
         shutil.copy(a.devtab_h, hdir / "devtab.h")
         log.note("devtab.h from %s" % a.devtab_h)
@@ -389,7 +446,7 @@ def target_kernel(a):
         (hdir / "devtab.h").write_text(devtab_h(hdir, CONFLIST))
         log.note("devtab.h PROVISIONAL: mkdevh transcribed in Python, "
                  "sha256 %s" % sha(hdir / "devtab.h"))
-    objs = kernel_objects(a.conf)
+    objs = kernel_objects(a.conf, lists)
     only = set(a.only.split(",")) if a.only else None
     want = [o for o in objs if only is None or o in only]
     if only and only - set(objs) - {"raml"}:
@@ -453,6 +510,187 @@ def target_kernel(a):
         print("p9kbuild: libram.a %d bytes sha256 %s"
               % (lib.stat().st_size, sha(lib)))
         shutil.copy2(lib, build / "libram.a")
+    return 0
+
+
+# --------------------------------------------------------------------
+# The link: 9$CONF
+# --------------------------------------------------------------------
+
+#: The sha256 of libram.a for `term` as the kernel target makes it
+#: (docs/plan9_boot_plan.md A3).  Reported by `all`, not enforced here:
+#: its __.SYMDEF carries rl's stack residue (target_archeck).
+LIBRAM_SHA256 = ("f709cea932f1a3694a08a93f4eb013c4"
+                 "a0703499938d0a9cd31ba0d8515b7ea6")
+#: sys/src/9/hobbit/mkfile, rule `9term 9bart 9termlocal`.
+LINK_FLAGS = ["-l", "-R4", "-H1", "-T0x80004000", "-E0x80004000"]
+LINK_LIBS = ["-lgnot", "-lg", "-lc"]
+#: The sha256 of `9term` as the recorded command makes it from the
+#: generated inputs of tools/p9kgen.py and libram.a f709cea9...
+#: (docs/plan9_boot_plan.md A3).  `link --check` fails on any other.
+NINETERM_SHA256 = ("002880c011bd7418c36c036b16f450e6"
+                   "1d1ed43e1ec963a6f5b4574a2eece1b1")
+
+
+#: sizeof(struct mipsexec) (sys/include/bootexec.h): libmach's hdrsz for
+#: a "hobbit plan 9 boot image" (executable.c exectab), which size.c
+#: subtracts from a txtsz that, for that format, never included it.
+MIPSEXEC_SIZE = 76
+
+
+def size_line(k, name):
+    """What the release's `size NAME` prints for the -H1 image k
+    (p9exec.read_kernel): size.c's "%ldt + %ldd + %ldb = %ld\t%s\n" of
+    crackhdr()'s txtsz - hdrsz, datsz, bsssz; hobbitboot() sets txtsz =
+    the header's text, so the text figure is 76 short of it."""
+    text = k["text"] - MIPSEXEC_SIZE
+    return "%dt + %dd + %db = %d\t%s\n" % (
+        text, k["data"], k["bss"], text + k["data"] + k["bss"], name)
+
+
+def target_link(a):
+    """9$CONF: the mkfile's rule, with its three inputs made on the model:
+        $CC $CFLAGS '-DKERNDATE='`{date -n} $CONF.c
+        $LD -o $target -l -R4 -H1 -T0x80004000 -E0x80004000 \\
+            ${TYPE}l.$O $CONF.$O boot$CONF.root.$O lib$TYPE.a $LIB
+    ($LIB = -lgnot -lg -lc).  raml.s is assembled and boot$CONF.root.c
+    compiled here too (portmkfile's %.$O rules), so the link's inputs
+    are: tools/p9kgen.py's $CONF.c, boot$CONF.root.c and kerndate
+    (--kgen DIR), and libram.a (--libram, default BUILD/libram.a, the
+    `kernel` target's product).  The rule's last command, `size 9$CONF`,
+    is run too (size_line: its line must be the header's figures)."""
+    if not a.kgen:
+        raise SystemExit("p9kbuild: link needs --kgen DIR (tools/p9kgen.py)")
+    kg = pathlib.Path(a.kgen)
+    build = pathlib.Path(a.build)
+    build.mkdir(parents=True, exist_ok=True)
+    libram = pathlib.Path(a.libram or build / "libram.a")
+    if not libram.exists():
+        raise SystemExit("p9kbuild: no %s (run the kernel target first, or "
+                         "give --libram)" % libram)
+    conf = a.conf
+    target = "9" + conf
+    root = stage(build, "link-" + conf)
+    cwd = "sys/src/9/hobbit"
+    hdir = root / cwd
+    log = Log(build / ("link-%s.log" % conf))
+    log.note("p9kbuild link CONF=%s; columns: step, command, status, "
+             "instructions, syscalls, seconds, size, sha256, note, console"
+             % conf)
+    kerndate = int((kg / "kerndate").read_text().split()[0])
+    for name in (conf + ".c", "boot%s.root.c" % conf, "devtab.h", "init.h"):
+        shutil.copy(kg / name, hdir / name)
+        log.note("input %s from %s sha256 %s" % (name, kg, sha(hdir / name)))
+    shutil.copy(libram, hdir / "libram.a")
+    log.note("input libram.a from %s sha256 %s"
+             % (libram, sha(hdir / "libram.a")))
+    for lib in ("libgnot.a", "libg.a", "libc.a"):
+        log.note("input /hobbit/lib/%s (vendored) sha256 %s"
+                 % (lib, sha(root / "hobbit/lib" / lib)))
+    log.note("KERNDATE %d from %s/kerndate" % (kerndate, kg))
+    specs = [("raml", cwd, "za", ["raml.s"]),
+             (conf, cwd, "zc", CFLAGS + ["-DKERNDATE=%d" % kerndate,
+                                         conf + ".c"]),
+             ("boot%s.root" % conf, cwd, "zc",
+              CFLAGS + ["boot%s.root.c" % conf])]
+    t0 = time.time()
+    res = run_many(root, a.jobs, specs, a.max_steps)
+    for key, _c, _t, _a in specs:
+        log.line(key, res[key], hdir / (key + ".z"))
+        if not ok(res[key]) or not (hdir / (key + ".z")).exists():
+            raise SystemExit("p9kbuild: %s failed: %s"
+                             % (key, res[key]["status"]))
+    for key in ("raml", conf, "boot%s.root" % conf):
+        theirs = kg / (key + ".z")
+        if theirs.exists():
+            log.note("%s.z %s the one in %s" % (
+                key, "same as" if theirs.read_bytes() ==
+                (hdir / (key + ".z")).read_bytes() else "DIFFERENT from",
+                kg))
+    args = (["-o", target] + LINK_FLAGS +
+            ["raml.z", conf + ".z", "boot%s.root.z" % conf, "libram.a"] +
+            LINK_LIBS)
+    r = run_tool(root, cwd, "zl", args, a.link_steps)
+    report("zl", r)
+    out = hdir / target
+    log.line("zl", r, out)
+    if not ok(r) or not out.exists() or r["console"]:
+        raise SystemExit("p9kbuild: zl: %s %r" % (r["status"], r["console"]))
+    shutil.copy2(out, build / target)
+    digest = sha(out)
+    msg = ("%s %d bytes sha256 %s; zl %d instructions, %.0f s; %.0f s in all"
+           % (target, out.stat().st_size, digest, r["steps"], r["seconds"],
+              time.time() - t0))
+    log.note(msg)
+    print("p9kbuild: " + msg)
+    import p9exec
+    import p9kcmp
+    k = p9exec.read_kernel(str(out))
+    r = run_tool(root, cwd, "size", [target], a.max_steps)
+    report("size", r)
+    want = size_line(k, target)
+    log.line("size", r, None, "header's figures" if r["console"] == want
+             else "NOT the header's figures: %r" % want)
+    print("p9kbuild: " + r["console"].rstrip("\n"))
+    if not ok(r) or r["console"] != want:
+        print("p9kbuild: FAILED: size printed %r, the header says %r"
+              % (r["console"], want))
+        return 1
+    problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k))
+    log.note("p9exec.check_kernel: %s" % ("; ".join(problems) or "passes"))
+    status = p9kcmp.compare(p9kcmp.Image(out), p9kcmp.Image(p9kcmp.S9TERM))
+    log.note("p9kcmp against s9term: exit %d" % status)
+    if problems or status:
+        return 1
+    if a.check and conf == "term":
+        if digest != NINETERM_SHA256:
+            print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
+                  % (target, digest, NINETERM_SHA256))
+            return 1
+        print("p9kbuild: %s is the recorded image" % target)
+    return 0
+
+
+#: tools/p9kbuild/fpi.rom: the fpi target's product, as tools/p9boot.py
+#: loads it into the boot ROM.
+FPI_TEXT = 0xC0000020
+FPI_ROM = LISTS / "fpi.rom"
+
+
+def target_fpi(a):
+    build = pathlib.Path(a.build)
+    build.mkdir(parents=True, exist_ok=True)
+    root = stage(build, "fpi")
+    cwd = "sys/src/9/hobbit"
+    hdir, pdir = root / cwd, root / "sys/src/9/port"
+    log = Log(build / "fpi.log")
+    log.note("p9kbuild fpi; columns: step, command, status, instructions, "
+             "syscalls, seconds, size, sha256, note, console")
+    names = ["fprt0", "fpihobbit", "fpi"]
+    specs = [(n, cwd) + kernel_command(n, hdir, pdir) for n in names]
+    res = run_many(root, a.jobs, specs, a.max_steps)
+    for n in names:
+        log.line(n, res[n], hdir / (n + ".z"))
+        if not ok(res[n]) or not (hdir / (n + ".z")).exists():
+            raise SystemExit("p9kbuild: %s failed: %s" % (n, res[n]["status"]))
+    r = run_tool(root, cwd, "zl", ["-l", "-R4", "-T0x%08X" % FPI_TEXT,
+                                   "-o", "fpi.out"] +
+                 [n + ".z" for n in names], a.max_steps)
+    report("zl", r)
+    out = hdir / "fpi.out"
+    log.line("zl", r, out)
+    if not ok(r) or not out.exists() or r["console"]:
+        raise SystemExit("p9kbuild: zl: %s %r" % (r["status"], r["console"]))
+    shutil.copy2(out, build / "fpi.rom")
+    digest = sha(out)
+    msg = "fpi.rom %d bytes sha256 %s" % (out.stat().st_size, digest)
+    log.note(msg)
+    print("p9kbuild: " + msg)
+    if a.check:
+        if out.read_bytes() != FPI_ROM.read_bytes():
+            print("p9kbuild: FAILED: fpi.rom differs from %s" % FPI_ROM)
+            return 1
+        print("p9kbuild: fpi.rom is %s" % FPI_ROM)
     return 0
 
 
@@ -631,14 +869,104 @@ def symdef_residue_only(got, want):
         detail = ("every member and header identical; __.SYMDEF's %d "
                   "entries identical in offset, name and type, %d bytes "
                   "differ, all after a name's NUL (readar's uninitialised "
-                  "Prog.id; why the model's residue differs is open)"
-                  % (n, nbytes))
+                  "Prog.id)" % (n, nbytes))
+        try:
+            import p9symdef
+            full = b"!<arch>\n" + b"".join(
+                h + b + b"\n" * (len(b) & 1) for _n, h, b in want)
+            c, odd = p9symdef.explain(full)
+            mine, _odd = p9symdef.explain(full, g[2])
+            detail += ("; of the shipped table's %d bytes past the NULs, "
+                       "%d are in-call bytes as replayed and %d stack bytes "
+                       "as /mips/bin/rl's frames leave them; %d are not"
+                       "; this table's: %d in-call as replayed, %d stack "
+                       "bytes the MIPS frames would differ in -- the "
+                       "Hobbit rl's own (tools/p9symdef.py)"
+                       % (c["in_call"] + c["pre"], c["in_call_same"],
+                          c["pre_mips"], len(odd), mine["in_call_same"],
+                          mine["pre"] - mine["pre_mips"]))
+        except SystemExit as exc:
+            detail += "; p9symdef: %s" % exc
     return True, detail
+
+
+# --------------------------------------------------------------------
+# all: the whole chain from the vendored tree
+# --------------------------------------------------------------------
+
+def target_all(a):
+    """p9kgen, then `kernel --kgen`, then `link --kgen --check`, in one
+    fresh build directory: BUILD/kgen (tools/p9kgen.py's products and
+    log), BUILD/kernel-CONF{,.log}, BUILD/link-CONF{,.log}; nothing is
+    taken from an earlier run.  BUILD/all.log records each stage's
+    programs, instructions and wall time, and the products' sha256."""
+    import p9kgen
+    build = pathlib.Path(a.build)
+    if build.exists() and any(build.iterdir()):
+        raise SystemExit("p9kbuild: all wants a fresh --build directory; "
+                         "%s is not empty" % build)
+    build.mkdir(parents=True, exist_ok=True)
+    kg = build / "kgen"
+    kg.mkdir()
+    summary = open(build / "all.log", "w")
+
+    def note(text):
+        print("p9kbuild all: " + text, flush=True)
+        summary.write(text + "\n")
+        summary.flush()
+
+    t_all = time.time()
+    stages = []
+    t0 = time.time()
+    with open(kg / "p9kgen.log", "w") as klog:
+        products, rc = p9kgen.generate(kg, a.conf, True, klog)
+        report = p9kgen.check(products, a.conf)
+        for what, good in report:
+            klog.write("%s: %s\n" % ("same" if good else "DIFFERENT", what))
+    ksteps = sum(r[2] for r in rc.runs)
+    stages.append(("p9kgen", len(rc.runs), ksteps, time.time() - t0))
+    note("p9kgen: %d programs, %d instructions, %.0f s"
+         % stages[-1][1:])
+    for what, good in report:
+        note("  %s: %s" % ("same" if good else "DIFFERENT", what))
+    if not all(good for what, good in report
+               if not what.startswith("bootterm.root.c")):
+        note("FAILED: p9kgen's checks")
+        return 1
+    a.kgen = str(kg)
+    for name, fn in (("kernel", target_kernel), ("link", target_link)):
+        if name == "link":
+            a.libram = str(build / "libram.a")
+            a.check = True
+        t0 = time.time()
+        n0 = len(LOGS)
+        status = fn(a)
+        logs = LOGS[n0:]
+        stages.append((name, sum(lg.runs for lg in logs),
+                       sum(lg.steps for lg in logs), time.time() - t0))
+        note("%s: %d programs, %d instructions, %.0f s" % stages[-1])
+        if status:
+            note("FAILED: %s exited %d" % (name, status))
+            return status
+    lib = build / "libram.a"
+    img = build / ("9" + a.conf)
+    note("libram.a %d bytes sha256 %s (%s LIBRAM_SHA256)"
+         % (lib.stat().st_size, sha(lib),
+            "=" if sha(lib) == LIBRAM_SHA256 else "DIFFERENT from"))
+    note("%s %d bytes sha256 %s%s" % (
+        img.name, img.stat().st_size, sha(img),
+        " (= NINETERM_SHA256, link --check passed)"
+        if a.conf == "term" else ""))
+    note("total: %d programs, %d instructions, %.0f s wall"
+         % (sum(s[1] for s in stages), sum(s[2] for s in stages),
+            time.time() - t_all))
+    return 0
 
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("target", choices=["kernel", "libc", "archeck"])
+    ap.add_argument("target", choices=["all", "kernel", "link", "libc",
+                                       "archeck", "fpi"])
     ap.add_argument("--build", default=str(HOBBIT / "build" / "p9kbuild"),
                     help="build directory (each target's staged tree is "
                     "BUILD/<target>/root)")
@@ -647,16 +975,25 @@ def main(argv):
     ap.add_argument("-j", "--jobs", type=int, default=8)
     ap.add_argument("--max-steps", type=int, default=MAX_STEPS)
     ap.add_argument("--check", action="store_true",
-                    help="libc: fail if any object differs unexpectedly")
+                    help="libc: fail if any object differs unexpectedly; "
+                    "link: fail unless 9term has the recorded sha256")
+    ap.add_argument("--libram", help="link: the libram.a to link "
+                    "(default BUILD/libram.a, the kernel target's)")
+    ap.add_argument("--link-steps", type=int, default=LINK_STEPS,
+                    help="link: zl's instruction limit")
     ap.add_argument("--devtab-h", help="use this devtab.h, not the "
                     "transcribed mkdevh")
     ap.add_argument("--init-h", help="use this init.h, not the "
                     "provisional one")
+    ap.add_argument("--kgen", metavar="DIR",
+                    help="kernel: take devtab.h, init.h and the DEV/STREAM/"
+                    "MISC lists from a tools/p9kgen.py output directory")
     ap.add_argument("--no-library", action="store_true",
                     help="kernel: compile only; no ar/rl")
     a = ap.parse_args(argv)
-    return {"kernel": target_kernel, "libc": target_libc,
-            "archeck": target_archeck}[a.target](a)
+    return {"all": target_all, "kernel": target_kernel, "link": target_link,
+            "libc": target_libc, "archeck": target_archeck,
+            "fpi": target_fpi}[a.target](a)
 
 
 if __name__ == "__main__":

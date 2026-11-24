@@ -1,0 +1,290 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	330	knov/src/example_A/prim.esp:73
+builtin		builtin	:=	2	212	knov/src/system/aman.esp:17
+builtin		builtin	cut_and_fail	0	58	knov/src/example_A/prim.esp:363
+builtin		builtin	==	2	53	knov/src/system/ass_m.esp:78
+builtin		builtin	unbound	1	38	knov/src/example_A/prim.esp:362
+builtin		builtin	stack_vector	2	36	knov/src/system/ap.esp:301
+builtin		builtin	first	2	32	knov/src/system/aman.esp:146
+builtin		builtin	string	3	27	knov/src/example_A/prim.esp:358
+builtin		builtin	vector_element	3	26	knov/src/system/ap.esp:303
+builtin		builtin	melt	2	25	knov/src/system/aman.esp:63
+builtin		builtin	list_to_vector	3	22	knov/src/system/assum_n.esp:54
+builtin		builtin	>	2	20	knov/src/system/cg.esp:349
+builtin		builtin	list	1	20	knov/src/example_A/prim.esp:283
+builtin		builtin	shift_left	3	19	knov/src/system/atms.esp:115
+builtin		builtin	second	2	18	knov/src/system/aman.esp:165
+builtin		builtin	freeze	2	16	knov/src/system/aman.esp:118
+builtin		builtin	repeat	0	15	knov/src/system/ap.esp:126
+builtin		builtin	equal_string	2	14	knov/src/example_A/prim.esp:359
+builtin		builtin	=\=	2	14	knov/src/example_A/prim.esp:376
+builtin		builtin	and	3	14	knov/src/system/ana.esp:79
+builtin		builtin	integer	1	13	knov/src/system/ass_m.esp:118
+builtin		builtin	atomic	1	13	knov/src/example_A/prim.esp:296
+builtin		file-level directive	flag	2	13	knov/manual.j:2529
+builtin		builtin	<	2	12	knov/src/system/assum_n.esp:249
+builtin		builtin	is	2	10	knov/src/system/assum_n.esp:247
+builtin		builtin	relative_cut	1	10	knov/src/system/db_mm.esp:73
+builtin		builtin	bound	1	9	knov/src/example_A/prim.esp:308
+builtin		builtin	or	3	9	knov/src/system/good_db.esp:124
+builtin		builtin	shift_right	3	9	knov/src/system/ana.esp:43
+builtin		builtin	atom	1	7	knov/src/system/ass_m.esp:255
+builtin		constant a#b	16#str		7	
+builtin		builtin	vector_to_list	3	6	knov/src/system/assum_n.esp:335
+builtin		builtin	xor	3	6	knov/src/system/good_db.esp:192
+builtin		builtin	vector_tail	3	5	knov/src/system/dmce.esp:233
+builtin		builtin	subvector	4	5	knov/src/system/db_m.esp:36
+builtin		file-level directive	db	4	5	knov/manual.j:1801
+builtin		builtin	=<	2	4	knov/src/example_B/m_prim.esp:273
+builtin		file-level directive	db	3	4	knov/manual.j:1804
+builtin		builtin	\==	2	2	knov/src/example_B/m_prim.esp:181
+builtin		builtin	>=	2	2	knov/src/example_B/m_prim.esp:272
+builtin		builtin	level	1	2	knov/src/system/dmce.esp:90
+builtin		builtin	multiply	3	2	knov/src/system/good_db.esp:194
+builtin		file-level directive	rule2	4	2	knov/manual.j:1615
+builtin		file-level directive	db	6	2	knov/manual.j:1810
+builtin		builtin	not_equal_string	2	1	knov/src/example_A/prim.esp:374
+builtin		builtin	relative_cut_and_fail	1	1	knov/src/system/assum_n.esp:295
+builtin		builtin	absolute_cut_and_fail	1	1	knov/src/system/dmce.esp:239
+builtin		file-level directive	error1	4	1	knov/manual.j:1617
+builtin		file-level directive	error2	4	1	knov/manual.j:1618
+builtin		file-level directive	frame	5	1	knov/manual.j:1650
+builtin		file-level directive	rule2	3	1	knov/manual.j:1848
+builtin		file-level directive	test	2	1	knov/manual.j:1868
+builtin		file-level directive	:-	2	1	knov/manual.j:1915
+requirement	?	ambiguous	get_at	3	288	knov/src/system/aman.esp:60
+requirement	?	unknown	get_contents	2	244	knov/src/system/aman.esp:61
+requirement	list	ref	(#ref)		83	knov/src/system/aman.esp:26
+requirement	?	unknown	add_last	2	81	knov/src/system/aman.esp:119
+requirement	<root>	class	new	2	66	knov/src/system/aman.esp:15
+requirement	symbolizer	ref	(#ref)		59	knov/src/system/aman.esp:84
+requirement	?	unknown	put_at	3	59	knov/src/system/assum_n.esp:160
+requirement	list	instance	get_contents	2	57	knov/src/system/aman.esp:48
+requirement	?	unknown	get_slot	3	54	knov/src/system/ass_m.esp:174
+requirement	list	instance	add_last	2	53	knov/src/system/ana.esp:28
+requirement	standard_io_window	instance	draw_line	7	53	knov/src/system/cg.esp:62
+requirement	array	instance	put_at	3	44	knov/src/system/good_db.esp:24
+requirement	?	ambiguous	putl	2	42	knov/src/system/ap.esp:137
+requirement	?	ambiguous	put	2	32	knov/src/system/kco.esp:43
+requirement	array	instance	get_at	3	31	knov/src/system/good_db.esp:70
+requirement	symbolizer	class	is_object	2	29	knov/src/system/good_db.esp:402
+requirement	?	unknown	flash	1	29	knov/src/system/ap.esp:142
+requirement	?	unknown	count	2	29	knov/src/system/ass_m.esp:48
+requirement	?	ambiguous	show	1	29	knov/src/system/ap.esp:31
+requirement	list	class	create	2	28	knov/src/system/aman.esp:139
+requirement	?	unknown	set_slot	3	27	knov/src/system/kco.esp:130
+requirement	?	unknown	melt	2	27	knov/src/system/ap.esp:327
+requirement	?	ambiguous	clear	1	26	knov/src/system/assum_n.esp:88
+requirement	?	ambiguous	putb	3	24	knov/src/system/fman.esp:113
+requirement	library	ref	(#ref)		22	knov/src/system/ap.esp:18
+requirement	?	ambiguous	get	2	22	knov/src/system/good_db.esp:220
+requirement	?	unknown	putt	4	21	knov/src/system/fman.esp:228
+requirement	?	unknown	remove	2	20	knov/src/system/con.esp:55
+requirement	library	class	get_class_object	3	19	knov/src/system/ap.esp:186
+requirement	?	ambiguous	putt	2	18	knov/src/system/cg.esp:372
+requirement	list	instance	put_contents	2	18	knov/src/system/aman.esp:107
+requirement	list	instance	clear	1	18	knov/src/system/ana.esp:33
+requirement	standard_io_window	instance	putb	3	18	knov/src/system/cg.esp:365
+requirement	?	ambiguous	reset	1	17	knov/src/system/fman.esp:138
+requirement	?	unknown	get_first	2	16	knov/src/system/atms.esp:122
+requirement	?	ambiguous	putc	2	16	knov/src/system/fman.esp:229
+requirement	?	unknown	get_contents_with_key	2	16	knov/src/system/ass_m.esp:245
+requirement	array	class	create	3	16	knov/src/system/assum_n.esp:19
+requirement	array	ref	(#ref)		16	knov/src/system/assum_n.esp:19
+requirement	symbolizer	class	get_atom_string	3	15	knov/src/system/aman.esp:84
+requirement	standard_io_window	instance	write_line_tail	4	15	knov/src/system/cg.esp:335
+requirement	standard_io_window	ref	(#ref)		14	knov/src/system/cg.esp:42
+requirement	?	unknown	put_contents	2	14	knov/src/system/atms.esp:109
+requirement	?	unknown	id	5	14	knov/src/system/cg.esp:383
+requirement	standard_io_window	instance	activate	1	13	knov/src/system/cg.esp:47
+requirement	as_program	instance	get_slot	3	13	knov/src/system/kvs.esp:77
+requirement	?	unknown	draw_line	7	13	knov/src/system/eg.esp:69
+requirement	standard_input_file	class	create	3	12	knov/src/system/aman.esp:42
+requirement	standard_input_file	instance	close_input	1	12	knov/src/system/aman.esp:44
+requirement	standard_io_window	class	create	3	12	knov/src/system/cg.esp:42
+requirement	?	ambiguous	gett	2	12	knov/src/system/ap.esp:138
+requirement	standard_input_file	ref	(#ref)		12	knov/src/system/aman.esp:42
+requirement	standard_io_window	instance	set_label_font	2	12	knov/src/system/cg.esp:44
+requirement	standard_io_window	instance	set_title	2	12	knov/src/system/cg.esp:45
+requirement	standard_io_window	instance	putt	4	12	knov/src/system/cg.esp:377
+requirement	?	ambiguous	get	3	11	knov/src/system/dmce.esp:166
+requirement	string	class	append	3	11	knov/src/system/aman.esp:85
+requirement	standard_output_file	instance	putb	3	11	knov/src/system/fman.esp:308
+requirement	standard_io_window	instance	show	1	11	knov/src/system/cg.esp:133
+requirement	?	unknown	class_object	2	11	knov/src/system/atms.esp:185
+requirement	<root>	instance	get_slot	3	11	knov/src/system/assum_n.esp:60
+requirement	string	ref	(#ref)		11	knov/src/system/aman.esp:85
+requirement	frozen_term	class	freeze	3	11	knov/src/system/atms.esp:50
+requirement	standard_io_window	instance	set_font	2	11	knov/src/system/cg.esp:52
+requirement	frozen_term	ref	(#ref)		11	knov/src/system/atms.esp:50
+requirement	?	ambiguous	kill	1	10	knov/src/system/ap.esp:52
+requirement	list	instance	add_first	2	10	knov/src/system/ana.esp:41
+requirement	standard_superior_window	instance	show	1	10	knov/src/system/cg.esp:145
+requirement	?	unknown	add_at	3	9	knov/src/system/aman.esp:140
+requirement	font	class	create	3	9	knov/src/system/ap.esp:115
+requirement	monogyny_hash_index	class	create	3	9	knov/src/system/aman.esp:16
+requirement	font	ref	(#ref)		9	knov/src/system/ap.esp:115
+requirement	monogyny_hash_index	ref	(#ref)		9	knov/src/system/aman.esp:16
+requirement	?	ambiguous	getl	2	9	knov/src/system/ap.esp:203
+requirement	standard_io_window	instance	draw_string	4	9	knov/src/system/cg.esp:58
+requirement	standard_io_window	instance	write_line	4	9	knov/src/system/cg.esp:307
+requirement	standard_input_file	instance	end_of_input	1	8	knov/src/system/aman.esp:97
+requirement	standard_io_window	instance	putl	1	8	knov/src/system/cg.esp:357
+requirement	standard_io_window	instance	kill	1	8	knov/src/system/cg.esp:208
+requirement	pmacs_window	class	create	3	8	knov/src/system/ap.esp:116
+requirement	pmacs_window	instance	set_font	2	8	knov/src/system/ap.esp:119
+requirement	pmacs_window	ref	(#ref)		8	knov/src/system/ap.esp:116
+requirement	?	unknown	refute	3	7	knov/src/system/db_mm.esp:72
+requirement	?	unknown	is_class	1	7	knov/src/system/inf.esp:510
+requirement	standard_temporary_choice_window	ref	(#ref)		7	knov/src/system/kvs_menu.esp:84
+requirement	?	unknown	set_item_status	3	7	knov/src/system/ap.esp:128
+requirement	as_program	instance	set_slot	3	7	knov/src/system/kvs.esp:117
+requirement	standard_io_window	instance	draw_rectangle	7	7	knov/src/system/cg.esp:60
+requirement	standard_temporary_choice_window	class	create	3	7	knov/src/system/kvs_menu.esp:84
+requirement	standard_temporary_choice_window	instance	read	2	7	knov/src/system/kvs_menu.esp:220
+requirement	standard_temporary_choice_window	instance	set_font	2	7	knov/src/system/kvs_menu.esp:92
+requirement	standard_temporary_choice_window	instance	show	1	7	knov/src/system/kvs_menu.esp:219
+requirement	?	unknown	putl	1	6	knov/src/system/kvs_win.esp:111
+requirement	list	instance	remove	2	6	knov/src/system/net.esp:74
+requirement	symbolizer	class	enter_atom	3	6	knov/src/system/cg.esp:174
+requirement	?	unknown	set_input_position	1	6	knov/src/system/kvs_win.esp:79
+requirement	symbolizer	class	get_number_string	4	6	knov/src/system/cg.esp:172
+requirement	<root>	instance	set_slot	3	6	knov/src/system/assum_n.esp:106
+requirement	standard_input_file	instance	gett	4	6	knov/src/system/db_m.esp:151
+requirement	?	unknown	write_line_tail	4	6	knov/src/system/eg.esp:62
+requirement	standard_io_buffer	ref	(#ref)		5	knov/src/system/fman.esp:49
+requirement	?	unknown	reread	1	5	knov/src/system/fman.esp:63
+requirement	?	unknown	read	2	5	knov/src/system/ap.esp:127
+requirement	list	instance	remove_first	2	5	knov/src/system/assum_n.esp:399
+requirement	list	instance	remove_last	2	5	knov/src/system/ana.esp:42
+requirement	standard_menu	instance	clear_buffer	1	5	knov/src/system/cg.esp:151
+requirement	?	unknown	pattern	4	5	knov/src/system/cg.esp:385
+requirement	?	unknown	write_line	4	5	knov/src/system/eg.esp:314
+requirement	pmacs_window	instance	unquote_atom	1	5	knov/src/system/kvs_win.esp:29
+requirement	standard_output_file	class	create	3	4	knov/src/system/fman.esp:87
+requirement	standard_io_window	instance	putt	2	4	knov/src/system/cg.esp:364
+requirement	list	instance	count	2	4	knov/src/system/assum_n.esp:395
+requirement	monogyny_hash_index	instance	get_at	3	4	knov/src/system/kb_m.esp:32
+requirement	temporary_menu	class	create	3	4	knov/src/system/ap.esp:91
+requirement	?	unknown	close_output	1	4	knov/src/system/fman.esp:128
+requirement	standard_superior_window	class	create	3	4	knov/src/system/cg.esp:37
+requirement	?	ambiguous	getc	2	4	knov/src/system/int.esp:79
+requirement	?	unknown	catalogue	3	4	knov/src/system/fman.esp:130
+requirement	pmacs_window	instance	activate	1	4	knov/src/system/ap.esp:120
+requirement	standard_output_file	ref	(#ref)		4	knov/src/system/fman.esp:87
+requirement	directory	ref	(#ref)		4	knov/src/system/aman.esp:92
+requirement	temporary_menu	ref	(#ref)		4	knov/src/system/ap.esp:91
+requirement	standard_menu	ref	(#ref)		4	knov/src/system/cg.esp:94
+requirement	standard_menu	class	create	3	4	knov/src/system/cg.esp:94
+requirement	list	instance	in	2	4	knov/src/system/cg.esp:140
+requirement	standard_menu	instance	activate	1	4	knov/src/system/cg.esp:104
+requirement	standard_menu	instance	read	2	4	knov/src/system/cg.esp:152
+requirement	standard_output_file	instance	putt	4	4	knov/src/system/fman.esp:314
+requirement	standard_superior_window	instance	activate	1	4	knov/src/system/cg.esp:41
+requirement	?	unknown	remove_last	2	4	knov/src/system/atms.esp:110
+requirement	?	ambiguous	get_contents	3	4	knov/src/system/assum_n.esp:138
+requirement	list	instance	get_first	2	4	knov/src/system/assum_n.esp:394
+requirement	?	unknown	count	3	4	knov/src/system/assum_n.esp:246
+requirement	standard_menu	instance	expose	1	4	knov/src/system/cg.esp:150
+requirement	pmacs_window	instance	set_title	2	3	knov/src/system/ap.esp:118
+requirement	library	class	assign	1	3	knov/src/system/ap.esp:18
+requirement	standard_output_file	instance	putt	2	3	knov/src/system/fman.esp:307
+requirement	standard_io_buffer	class	create	2	3	knov/src/system/fman.esp:106
+requirement	standard_output_file	instance	putl	1	3	knov/src/system/fman.esp:324
+requirement	?	unknown	end_of_input	1	3	knov/src/system/fman.esp:197
+requirement	?	unknown	stick_tap	2	3	knov/src/system/good_val.esp:32
+requirement	standard_superior_window	ref	(#ref)		3	knov/src/system/cg.esp:37
+requirement	?	unknown	activate	1	3	knov/src/system/eg.esp:59
+requirement	?	unknown	size	2	3	knov/src/system/fman.esp:173
+requirement	standard_superior_window	instance	kill	1	3	knov/src/system/cg.esp:211
+requirement	standard_io_window	instance	draw_circle	7	3	knov/src/system/cg.esp:66
+requirement	?	unknown	expose	1	3	knov/src/system/eg.esp:154
+requirement	<root>	slot	!adjust	0	3	knov/src/system/assum_n.esp:384
+requirement	standard_menu	instance	set_font	2	3	knov/src/system/cg.esp:103
+requirement	standard_io_window	instance	get_activity	2	3	knov/src/system/cg.esp:158
+requirement	standard_io_window	instance	draw_elliptical_arc	10	3	knov/src/system/cg.esp:274
+requirement	list_bucket	instance	add_last	2	3	knov/src/system/kb_m.esp:83
+requirement	list_bucket	instance	get_at	3	3	knov/src/system/kb_m.esp:145
+requirement	?	unknown	get_last	2	2	knov/src/system/atms.esp:103
+requirement	list	instance	stick_tap	2	2	knov/src/system/good_db.esp:27
+requirement	standard_input_file	instance	gett	2	2	knov/src/system/aman.esp:99
+requirement	as_program	class	new	2	2	knov/src/system/ap.esp:17
+requirement	?	unknown	remove_at	3	2	knov/src/system/in.esp:67
+requirement	directory	class	current_directory	3	2	knov/src/system/aman.esp:92
+requirement	library_utility	class	create	2	2	knov/src/system/fman.esp:16
+requirement	library_utility	instance	catalogue	3	2	knov/src/system/trans.esp:117
+requirement	monogyny_hash_index	instance	put_at	3	2	knov/src/system/kb_m.esp:85
+requirement	standard_io_buffer	instance	putb	3	2	knov/src/system/fman.esp:50
+requirement	as_program	nature	(inherited)		2	knov/src/system/ap.esp:8
+requirement	library_utility	ref	(#ref)		2	knov/src/system/fman.esp:16
+requirement	?	unknown	set_title	2	2	knov/src/system/eg.esp:56
+requirement	?	unknown	close_input	1	2	knov/src/system/kvs.esp:137
+requirement	standard_superior_window	instance	get_position	3	2	knov/src/system/cg.esp:106
+requirement	?	unknown	set_font	2	2	knov/src/system/eg.esp:52
+requirement	?	unknown	set_label_font	2	2	knov/src/system/eg.esp:54
+requirement	temporary_menu	instance	show	1	2	knov/src/system/kvs_menu.esp:223
+requirement	temporary_menu	instance	read	2	2	knov/src/system/kvs_menu.esp:224
+requirement	?	unknown	add_before	3	2	knov/src/system/sch.esp:69
+requirement	?	unknown	find	4	2	knov/src/system/aman.esp:93
+requirement	<root>	class	a	6	2	knov/manual.j:1769
+requirement	cascade	class	create	3	2	knov/src/system/assum_n.esp:17
+requirement	?	unknown	draw_arc	9	2	knov/src/system/eg.esp:66
+requirement	standard_io_window	instance	draw_arc	9	2	knov/src/system/eg.esp:106
+requirement	directory	class	change_directory	3	2	knov/src/system/fman.esp:33
+requirement	?	unknown	pattern	2	2	knov/src/system/ie.esp:255
+requirement	?	unknown	goal	4	2	knov/src/system/ie.esp:260
+requirement	list_bucket	instance	add_first	2	2	knov/src/system/kb_m.esp:82
+requirement	cascade	ref	(#ref)		2	knov/src/system/assum_n.esp:17
+requirement	list_bucket	ref	(#ref)		2	knov/src/system/kb_m.esp:21
+requirement	?	unknown	add_operator	4	1	knov/src/system/trans.esp:27
+requirement	standard_output_file	instance	close_output	1	1	knov/src/system/fman.esp:89
+requirement	?	ambiguous	load	2	1	knov/src/system/aman.esp:19
+requirement	?	ambiguous	create	3	1	knov/src/system/kco.esp:55
+requirement	symbolizer	class	get_variable	5	1	knov/src/system/assum_n.esp:357
+requirement	?	unknown	get_string	2	1	knov/src/system/kvs.esp:146
+requirement	time	class	now	2	1	knov/src/system/kvs.esp:145
+requirement	symbolizer	class	get_number	3	1	knov/src/system/kvs.esp:261
+requirement	?	ambiguous	goal	1	1	knov/src/system/ap.esp:175
+requirement	?	ambiguous	create	2	1	knov/src/system/kvs.esp:396
+requirement	symbolizer	class	get_variable_string	5	1	knov/src/system/rman.esp:52
+requirement	with_label	nature	(inherited)		1	knov/src/system/eg.esp:7
+requirement	time	ref	(#ref)		1	knov/src/system/kvs.esp:145
+requirement	menu	ref	(#ref)		1	knov/src/system/ap.esp:58
+requirement	date_time	class	now	2	1	knov/src/system/kvs.esp:125
+requirement	standard_io_buffer	instance	reread	1	1	knov/src/system/fman.esp:160
+requirement	standard_io_buffer	instance	putt	4	1	knov/src/system/fman.esp:157
+requirement	?	unknown	add_first	2	1	knov/src/system/db_m.esp:170
+requirement	?	unknown	get_size	3	1	knov/src/system/eg.esp:95
+requirement	standard_io_buffer	class	create	3	1	knov/src/system/fman.esp:49
+requirement	?	ambiguous	delete	2	1	knov/src/system/db_mm.esp:51
+requirement	standard_superior_window	nature	(inherited)		1	knov/src/system/eg.esp:7
+requirement	date_time	ref	(#ref)		1	knov/src/system/kvs.esp:125
+requirement	list	instance	get_at	3	1	knov/src/system/assum_n.esp:405
+requirement	standard_superior_window	instance	set_title	2	1	knov/src/system/kvs_win.esp:19
+requirement	?	unknown	remove_first	2	1	knov/src/system/good_db.esp:314
+requirement	?	unknown	get_activity	2	1	knov/src/system/kvs_win.esp:201
+requirement	menu	class	create	3	1	knov/src/system/ap.esp:58
+requirement	list	instance	empty	1	1	knov/src/system/assum_n.esp:80
+requirement	standard_io_window	instance	draw_string	5	1	knov/src/system/cg.esp:299
+requirement	?	ambiguous	in	2	1	knov/src/system/ap.esp:278
+requirement	list	instance	get_last	2	1	knov/src/system/var_node.esp:81
+requirement	array	instance	put_contents	2	1	knov/src/system/var_node.esp:137
+requirement	temporary_multiple_select_menu	class	create	3	1	knov/src/system/ap.esp:75
+requirement	temporary_multiple_select_menu	ref	(#ref)		1	knov/src/system/ap.esp:75
+requirement	?	unknown	draw_circle	7	1	knov/src/system/eg.esp:68
+requirement	with_pane	nature	(inherited)		1	knov/src/system/eg.esp:7
+requirement	standard_io_window	instance	get_size	3	1	knov/src/system/cg.esp:107
+requirement	standard_io_window	instance	expose	1	1	knov/src/system/cg.esp:146
+requirement	{with_label|standard_superior_window|with_pane}	instance	create_panes_sharing_width	3	1	knov/src/system/eg.esp:46
+requirement	?	unknown	draw_rectangle	7	1	knov/src/system/eg.esp:316
+requirement	?	unknown	gett	4	1	knov/src/system/fman.esp:200
+requirement	list_bucket	instance	get_contents	2	1	knov/src/system/kb_m.esp:89
+requirement	list_bucket	class	create	2	1	knov/src/system/kb_m.esp:112
+requirement	?	unknown	get_string	3	1	knov/src/system/kvs.esp:126
+requirement	temporary_choice_window_with_no_execute	class	create	3	1	knov/src/system/kvs_menu.esp:211
+requirement	temporary_choice_window_with_no_execute	instance	show	1	1	knov/src/system/kvs_menu.esp:259
+requirement	temporary_choice_window_with_no_execute	instance	read	2	1	knov/src/system/kvs_menu.esp:260
+requirement	standard_superior_window	instance	set_label_font	2	1	knov/src/system/kvs_win.esp:18
+requirement	standard_input_file	slot	!parsing_op_pool	0	1	knov/src/system/trans.esp:27
+requirement	?	unknown	:	0	1	knov/src/system/trans.esp:27
+requirement	temporary_choice_window_with_no_execute	ref	(#ref)		1	knov/src/system/kvs_menu.esp:211

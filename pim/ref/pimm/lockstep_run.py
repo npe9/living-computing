@@ -24,7 +24,12 @@ returns the right answer."
 Checked, per input: H is what the KL1 source gives (by_source below,
 a transcription); NewX is X as a term; the image's twin gives the
 same; no goal is left waiting by the runs; instructions were taken
-inside the module object (428 on the reference model).
+inside the module object (455 on the reference model).
+
+Last, predicate_to_code(Module, hash, 3, Code) on the loaded module
+object: Code is {COD, the place the goals above were started at}, and
+apply(Code, {-11, H, _}) gives H = 11 (added with apply,
+lockstep_apply.py: the only test that applies a code in the heap).
 
 What the test does that the IPL would: it starts the goal.  The
 IPL's linker (ipl_link_table) and a call from one loaded module into
@@ -72,7 +77,7 @@ import lockstep_file as lfile  # noqa: E402
 import lockstep_load as lload  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=1112850, answers=10)
+PINNED = dict(parts=2, lines=1112953, answers=10)
 MIN = 0x80000000
 
 
@@ -193,6 +198,38 @@ def script():
             s.out(1)
             s.out(2)
             s.out(0)
+    # the loaded code by predicate_to_code and apply: the code object
+    # of hash/3 of the module object the IPL made, applied to {X, H, Y}
+    stubs = pimm.Machine().stubs
+    s.setslot(0, mod)
+    s.arg(1, 0)
+    # the name's atom is the number the IPL's atom table gave it at
+    # the load, read back from the module's own entry table (the key
+    # of the pair that leads to the place: atom + arity)
+    a = mod[1]
+    table = a + 2 + m.mem[a + 1][1]
+    keys = []
+    for sl in range(table + 1, table + 2 + m.mem[table][1]):
+        st, sv = m.mem[sl]
+        if st == pimm.INT:
+            for k in range(sv >> 16):
+                p = sl + (sv & 0xffff) + 2 * k
+                if p + 1 + m.mem[p + 1][1] == mod[1] + loc[1]:
+                    keys.append(m.mem[p][1])
+    assert len(keys) == 1 and keys[0] >> 24 == 3, keys
+    s.argc(2, (pimm.ATOM, (keys[0] & 0xffffff) - 3))
+    s.argc(3, (pimm.INT, 3))
+    s.newvar(9)
+    s.arg(4, 9)
+    s.spawn(stubs['predicate_to_code']['addr'], 4)
+    s.run()
+    s.out(9)
+    s.vector(3, 5, [(pimm.INT, 0xfffffff5), None, None])       # -11; H in 6
+    s.arg(1, 9)
+    s.arg(2, 3)
+    s.spawn(stubs['apply']['addr'], 2)
+    s.run()
+    s.out(6)
     return s, dict(left=left, ins=ins, loaded=loaded, waiting=s.live().nsusp,
                    span=(mod[1] - m.load, mod[1] - m.load + info_len(m, mod)))
 
@@ -204,6 +241,10 @@ def info_len(m, mod):
 def check(s, m, want, lines):
     bad, n = [], 0
     outs = [w for label, w in s.outs if label == 'run']
+    code, h = [m.deref(w) for w in outs[-2:]]
+    outs = outs[:-2]
+    if code != (pimm.COD, want['loaded'] + m.load) or h[0] & ~1 != pimm.INT or h[1] != 11:
+        bad.append(('predicate_to_code and apply on the loaded module', code, h))
     if want['left']:
         bad.append(('words not asked for', want['left']))
     if len(outs) != 6 * len(want['ins']):
@@ -264,7 +305,8 @@ def main(argv):
           "IPL's own loader and atom table, RUN from the module object on the Bluespec "
           'core: %d trace lines identical to the reference model, %d instructions taken '
           "in the heap; %d answers, each what the module's KL1 source gives and equal "
-          "to the image's ipl_pool:hash/3)" % (s.counts['lines'], ran, n))
+          "to the image's ipl_pool:hash/3; predicate_to_code gives that code and apply runs "
+          'it)' % (s.counts['lines'], ran, n))
     return 0
 
 

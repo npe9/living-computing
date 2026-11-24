@@ -1,0 +1,419 @@
+class	old_uses	status	new_uses	old_methods	new_methods	methods_old_only	methods_new_only
+_	1	not found by new scan	0	0	0		
+access_status	5	in new set	32	1	4		initialize new status
+alarm_watch	11	in new set	38	1	4		on_after on_at wait
+array	23	in new set	122	1	5		get_at get_contents put_at put_contents
+as_assert_utility	1	in new set	1	0	0		
+as_choice	2	in new set	4	0	0		
+as_class_maker	1	in new set	1	0	0		
+as_class_with_lock	22	in new set	75	0	5		lock locked new refute unlock
+as_debugger_goal_input	1	in new set	1	0	0		
+as_debugger_input_buffer_processing	1	in new set	1	0	0		
+as_esp_parser	2	in new set	6	0	3		gett new refute
+as_esp_unparser	2	in new set	6	0	3		new putt refute
+as_event_handler	4	in new set	4	0	1		new
+as_global_object	6	in new set	9	2	3		owner_name
+as_graphics	23	in new set	28	0	0		
+as_input	54	in new set	44	0	0		
+as_input_buffer	6	in new set	7	0	0		
+as_lasting_resource	4	in new set	2	0	0		
+as_markers	17	in new set	31	0	8		draw_marker erase_marker get_marker_position get_mouse_position move_marker read_sense set_marker_type warp_mouse
+as_menu	18	in new set	24	0	0		
+as_menu_input	37	in new set	29	0	0		
+as_message	1	in new set	3	0	1		create
+as_mouse_input	118	in new set	121	0	0		
+as_multiple_column	11	in new set	13	0	0		
+as_multiple_select	4	in new set	5	0	0		
+as_on_off_menu	6	in new set	10	0	0		
+as_output	21	in new set	26	0	0		
+as_pimos_string_io_device	1	in new set	4	0	2		class_object new
+as_program	141	in new set	713	0	33		class_object create delete_items do_state get get_arguments get_default_class get_inspector get_leash get_slot get_state_switch goal initial_setting initiation_table mam_do_menu method new ordinary parse_arguments refute reset_prompt reset_window select_font_from_menu select_kakari_structure select_
+as_resource	24	in new set	56	0	7		assign class_object get_slot new resign set_slot show_error_winodw
+as_rpc_server_tcp	2	in new set	45	0	7		create err_noproc getargs sendreply set_jis_string_max_length xdr_int xdr_jis_string
+as_scroll	9	in new set	8	0	0		
+as_scrolling_menu	19	in new set	18	0	0		
+as_server_program	2	in new set	27	0	5		convert_con_req get_line get_slot give_answer set_slot
+as_single_select	43	in new set	48	0	0		
+as_standard_io_window	5	in new set	9	0	0		
+as_superior	52	in new set	46	0	0		
+ascii_coder	3	in new set	3	1	1		
+b	1	not found by new scan	0	0	0		
+bag	1	in new set	3	1	3		add get_contents
+binary_file	25	in new set	25	4	4		
+binary_file_marker	4	in new set	7	1	2		set_position
+binary_file_tap	6	in new set	12	1	4		at_end read write
+bitmap	2	in new set	2	1	1		
+bitmap_display	2	in new set	1	1	1		
+call_counter	13	in new set	17	13	17		get_best get_filename get_package get_threshold
+cascade	2	in new set	2	1	1		
+cgs	2	defined in an IFS program (source or ptf)	0	1	0	create	
+channel	4	in new set	16	1	3		receive send
+channel_set	1	in new set	6	1	5		add receive remove try_to_get
+character	9	in new set	54	5	14	is_lower_alphabetic	is_alphabetic is_greek is_hiragana is_kanji is_katakana is_lowercase is_numeric is_russian is_special is_uppercase
+choice_window	13	in new set	18	1	4		activate kill read
+choice_window_with_no_execute	1	in new set	6	1	6		activate deactivate get_size kill set_size
+class	1	not found by new scan	0	0	0		
+cmt_device	1	in new set	1	1	1		
+code_conversion_utility	12	in new set	2	3	2	vector_to_string	
+color_manipulator	9	in new set	9	1	1		
+compiler_error_reporter	1	in new set	1	0	0		
+const_name	1	not found by new scan	0	0	0		
+conv_sem_data	3	in new set	3	1	1		
+correct_natures	2	not found by new scan	0	0	0		
+date	19	in new set	17	4	4		
+date_time	40	in new set	39	3	6		get_string get_value set_count
+debugger_error	12	in new set	12	1	1		
+debugger_error_with_retry	1	in new set	1	1	1		
+debugger_gate	5	in new set	15	1	2		set
+debugger_indicator	1	not found by new scan	0	1	0	create_indicator	
+debugger_recorder	1	in new set	1	1	1		
+debugger_stop_watch	1	in new set	1	1	1		
+debugger_variable_with_name	2	in new set	2	2	2		
+deexpose_notifier	2	in new set	1	0	0		
+directory	207	in new set	188	11	11		
+disk_io_message	3	in new set	3	2	2		
+disk_io_request	2	in new set	2	1	1		
+disk_unit	6	in new set	6	3	3		
+double_key_index	2	in new set	1	1	1		
+dummy_debugger	1	in new set	1	1	1		
+e_string	11	in new set	11	3	3		
+editor_command_interpreter	1	in new set	1	0	0		
+editor_main_window	4	in new set	24	0	9		activate beep clear_echo_area create get_editor get_interpreter get_with_prompt set_font set_title
+editor_text_buffer	89	in new set	90	6	7		reset
+editor_yank_buffer	3	in new set	3	2	2		
+end_of_nature	2	not found by new scan	0	0	0		
+esp_compiler	1	in new set	1	1	1		
+esp_macro_expander	16	in new set	53	1	2		expand_goals
+esp_operator_pool	3	in new set	5	1	1		
+essential_scrolling_menu	18	in new set	56	1	11		activate add_items clear_items get_size read set_font set_label_font set_position set_superior set_title
+essential_scrolling_menu_with_superior_input_buffer	7	in new set	32	1	10		activate add_item clear clear_items deactivate hide kill set_title show
+essential_temporary_window	5	in new set	39	1	8		activate background beep erase_cursor kill put_line read
+essential_window	11	in new set	175	1	32		activate background clear deactivate draw_filled_rectangle draw_line draw_rectangle draw_string erase_cursor get_font get_inside_size get_inside_units get_mouse_dot_position get_mouse_position get_size get_superior kill move_cursor read read_sense refute set_font set_name set_position set_size set_t
+event	2	in new set	2	1	1		
+expandable_array	5	in new set	21	1	7		add_at empty expand get_at put_at size
+extensible_hash_index	6	in new set	8	1	3		add_at clear
+fdd_binary_file	12	in new set	12	3	3		
+fdd_binary_file_tap	6	in new set	19	1	4		at_end read write
+fdd_volume	7	in new set	42	2	7		dismount file_names get_sub_info link mount
+fdd_volume_utility	4	in new set	4	1	1		
+file_utility	28	in new set	25	6	6		
+font	192	in new set	220	1	1		
+font_editor	1	in new set	2	1	2		goal
+format_printer	6	in new set	31	2	6		get_font put_line release set_format_by_operator
+frozen_term	19	in new set	18	1	1		
+ftp_user	1	in new set	14	1	10		connect_command cwd_command dir_command get_command lcwd_command pass_command quit type_command user_command
+fts	4	package name, not a class	0	3	0	cdata fts2 locate	
+get_request	2	in new set	6	1	3		run set
+hash_index	50	in new set	412	1	13		add_at clear get_at get_contents get_contents_at get_contents_with_key get_key get_keys put_contents_with_key remove_at stick_index_tap stick_tap
+hash_set	3	in new set	12	1	5		add get_contents in new
+ict4	12	package name, not a class	0	7	0	adj_frame append data_change frame_data get_strm_bunkatu_ki get_strm_ki_bunkatu laxout_data	
+imi_test	1	in new set	1	1	1		
+inferior_window	129	in new set	431	1	7		deactivate get_position get_size kill set_position set_size
+initiation_table	15	in new set	73	1	4		get_at put_all put_at
+inspector	3	in new set	4	1	2		inspect
+interpreter	17	in new set	6	2	2		
+jo_exk	2	package name, not a class	0	2	0	go go2	
+jo_kaiwa	8	package name, not a class	0	1	0	n	
+jo_outou	1	package name, not a class	0	1	0	mikata	
+k	2	not found by new scan	0	0	0		
+kappa_remote_interface	1	in new set	1	1	1		
+kappa_remote_macro	4	defined in an IFS program (source or ptf)	0	1	0	new	
+kappadbi_error_msg	1	defined in an IFS program (source or ptf)	0	0	0		
+kappap	1	not found by new scan	0	1	0	create	
+kapparep_select_menu	2	not found by new scan	0	1	0	create	
+kappaupt_difference	1	defined in an IFS program (source or ptf)	0	0	0		
+kappaupt_nest	1	defined in an IFS program (source or ptf)	0	0	0		
+kappaupt_unnest	1	defined in an IFS program (source or ptf)	0	0	0		
+kk_init	1	in new set	2	0	1		new
+kk_qsort	9	in new set	9	1	1		
+kk_string_manipulator	2	not found by new scan	0	0	0		
+kl0_compiler	1	in new set	1	1	1		
+labeled_sash	31	in new set	29	0	0		
+labeled_superior_window	7	in new set	67	1	16		activate deactivate get_border_width get_inside_size get_label_height get_margins get_position get_size kill read set_label_flag set_label_font set_position set_size set_title
+lax	18	package name, not a class	0	2	0	get_lex_obj get_sem_obj	
+laxobj	7	package name, not a class	0	1	0	select	
+librarian_catalogue	1	in new set	1	0	0		
+librarian_delete	1	in new set	1	0	0		
+librarian_fdd	1	in new set	1	0	0		
+librarian_package	1	in new set	1	0	0		
+librarian_reference	1	in new set	1	0	0		
+librarian_spy	1	in new set	1	0	0		
+librarian_subroutine	1	in new set	1	0	0		
+librarian_version	1	in new set	1	0	0		
+library	355	in new set	366	25	44		abolish_class_object catalogue_class define_public_classes delete_environment_forcedly delete_package_forcedly get_changed_classes get_direct_referred_classes get_exist_class get_names get_version is_ipl_class_object load_package_template make_class_template make_class_template_from_internal_format 
+library_error	1	in new set	1	1	1		
+list	241	in new set	1080	2	22		add add_before add_first add_last class_object clear count empty get_at get_contents get_first get_last in keyword_count put_contents remove remove_at remove_first remove_last stick_tap
+list_bucket	1	in new set	10	1	5		add_first add_last get_at get_contents
+list_index	106	in new set	523	1	12		add_at clear get_at get_contents get_contents_at get_contents_with_key get_keys put_contents put_contents_with_key remove_at stick_index_tap
+list_stack	11	in new set	41	1	6		clear count get_contents pop push
+ltb_adj	1	defined in an IFS program (source or ptf)	0	0	0		
+ltb_adv	1	defined in an IFS program (source or ptf)	0	0	0		
+ltb_aux	1	defined in an IFS program (source or ptf)	0	0	0		
+ltb_n	1	defined in an IFS program (source or ptf)	0	0	0		
+ltb_r	1	defined in an IFS program (source or ptf)	0	0	0		
+ltb_v	1	defined in an IFS program (source or ptf)	0	0	0		
+macro_preprocessor	1	in new set	1	1	1		
+make_sem_data2	6	in new set	6	2	2		
+mathematical_functions	44	in new set	53	15	15		
+menu	18	in new set	57	1	13		activate change_item deactivate get_size kill read retrieve_item set_font set_label_font set_position set_superior set_title
+menu_with_superior_input_buffer	20	in new set	60	1	11		activate add_item add_items change_item clear_items deactivate delete_item get_size kill set_size
+messenger	115	in new set	120	2	3		comfirm
+monogyny_hash_index	134	in new set	681	1	13		add_at clear count empty get_at get_contents get_contents_with_key get_keys put_at put_contents_with_key remove_at stick_tap
+monogyny_list_index	37	in new set	275	1	12		add_at clear get_at get_contents get_contents_with_key get_keys put_at put_contents put_contents_with_key remove_at stick_tap
+morph_tmp	1	defined in an IFS program (source or ptf)	0	1	0	morph_tmp	
+multi_column_menu	4	in new set	29	1	8		activate deactivate get_size kill read set_size set_superior
+multi_column_menu_with_superior_input_buffer	1	in new set	1	1	1		
+multiple_select_scrolling_menu_with_superior_input_buffer	4	in new set	4	1	1		
+n	1	not found by new scan	0	0	0		
+name	119	in new set	97	7	7		
+named_yank_buffer_subsystem	1	in new set	1	1	1		
+nature	5	not found by new scan	0	0	0		
+natures	8	not found by new scan	0	0	0		
+natures1	4	not found by new scan	0	0	0		
+natures2	4	not found by new scan	0	0	0		
+ndatagram	2	in new set	3	1	1		
+net_spawn_user	6	in new set	12	2	2		
+network_address_table	2	in new set	2	2	2		
+network_listener_buffer	5	in new set	30	1	5		buffer convert data_buffer set_send_data_size
+network_node_name	12	in new set	24	2	2		
+obj	2	not found by new scan	0	0	0		
+paser_class	1	not found by new scan	0	0	0		
+pathname	145	in new set	111	7	7		
+permanent_directory	2	in new set	2	1	1		
+pf	2	in new set	2	1	1		
+pf2	8	in new set	8	1	1		
+pmacs_standard_editor	4	in new set	244	0	17		backward_character clear_input current_buffer cursor_with_mouse exception exchange_point find_file get_window goto_beginning insert mark next_term push_to_yank select_buffer show_menu two_windows write_file
+pmacs_window	73	in new set	506	5	36		activate current_buffer deactivate flash get_editor get_interpreter get_size get_text_window getc getl gett has_been_reshaped input_data kill putb putc putf putl putt read set_font set_input_buffer set_label_font set_name set_position set_size set_title show_buffer unquote_atom view_next_screen view
+pmap_client	2	in new set	2	1	1		
+popup_choice_window	3	in new set	13	1	4		set_font set_label_font set_title
+popup_window	2	in new set	2	0	0		
+port	8	in new set	15	1	4		connect receive send
+port_set	1	in new set	3	1	3		add receive
+printer	4	in new set	8	2	4		set_font set_left_margin
+process	275	in new set	389	4	9		activate exterminate post set_area_limit_execution set_package
+purs_builtin	1	in new set	1	1	1		
+putf	1	not found by new scan	0	0	0		
+q	3	not found by new scan	0	0	0		
+quick_list	2	in new set	2	1	1		
+ras_text_utility	27	in new set	27	5	5		
+ras_with_input_window	1	in new set	10	0	6		ask_what assign_input_window get_derived_rule_data get_inference_rule initialize_input new
+remote_object	2	in new set	12	0	2		g_call r_create
+reshape_notifier	34	in new set	40	0	4		activate get_size set_position set_size
+s_rel	1	defined in an IFS program (source or ptf)	0	1	0	s_rel	
+sash	8	in new set	19	0	0		
+sax	8	package name, not a class	0	2	0	conv parse	
+saxobj	6	package name, not a class	0	3	0	comp_data is_upper_koto is_upper_mono	
+screen	36	in new set	26	1	1		
+scrolling_on_off_menu	2	in new set	4	1	1		
+scrolling_on_off_menu_with_superior_input_buffer	5	in new set	24	1	5		activate add_items kill retrieve_all_items
+search_table	2	in new set	17	1	4		copy get_table set
+select_notifier	2	in new set	3	0	0		
+set	19	in new set	56	1	8		add add_contents clear get_contents in put_contents remove
+simpos	17	package name, not a class	0	5	0	create get_buffer_instance is_builtin user whiteboard	
+solver	3	defined in an IFS program (source or ptf)	0	2	0	cprint pre	
+sorted_sequence	5	in new set	31	1	11		add get_at get_contents get_first new put_contents remove remove_at remove_first stick_tap
+sound_generator	3	in new set	3	1	1		
+sparse_array	3	in new set	5	1	3		get_at put_at
+spec_ds	1	package name, not a class	0	1	0	create	
+spec_ms	328	package name, not a class	0	25	0	cancel_window debug_off debug_on delete end_message error_message free get get_font get_object_from_compiled get_object_from_interpretive get_parent get_state is_debug look_up make prompt register_window reset reset_object save set spy start_message yes	
+standard_choice_window	24	in new set	44	1	9		activate add_items clear_items deactivate kill read set_name set_title
+standard_editor	18	in new set	286	0	21		beginning_of_line carriage_return clear_buffer clear_input create current_buffer exception execute_command get_interface get_slot get_window mark mark_position method other_window refute replace_region see_region select_buffer set_current_buffer view_two_windows
+standard_input_file	144	in new set	467	1	9		close_input end_of_input get_parsing_operator getb getc getl gett set_parsing_operator
+standard_input_text_buffer_accessor	1	in new set	5	1	4		close_input gett set_parsing_operator
+standard_io_buffer	105	in new set	711	1	18		close_output end_of_input get_parsing_operator get_unparsing_operator getb getl gett putb putc putf putl putt reread reset set_max_depth set_max_length size
+standard_io_window	121	in new set	1139	1	48		activate beep clear clear_buffer clear_line deactivate draw_arc draw_circle draw_elliptical_arc draw_filled_circle draw_filled_rectangle draw_graph draw_line draw_rectangle draw_string erase_cursor expose get_activity get_cursor_position get_inside_size get_size getc getl gett input_data kill move_c
+standard_menu	42	in new set	355	1	19		activate add_item clear_buffer deactivate delete_item expose get_size kill read read_with_click set_font set_item_status set_label_font set_name set_position set_superior set_title show
+standard_multi_column_menu	11	in new set	26	1	9		activate deactivate get_item_status kill retrieve_all_items set_item_status set_name set_size
+standard_multi_select_menu	2	in new set	1	0	0		
+standard_multi_select_scrolling_menu	3	in new set	6	1	5		activate add_items kill read
+standard_output_file	104	in new set	649	1	9		close_output putb putc putf putl putt set_unparsing_operator unquote_atom
+standard_output_text_buffer_accessor	11	in new set	5	1	2		set_unparsing_operator
+standard_popup_choice_window	6	in new set	20	1	5		activate change_item deactivate read
+standard_popup_menu	6	in new set	45	1	13		activate add_item add_items clear_items deactivate hide kill read set_font set_item_status set_title show
+standard_popup_multi_select_scrolling_menu	1	in new set	6	1	6		add_items clear_items hide read show
+standard_popup_scrolling_menu	2	in new set	14	1	7		add_items clear_items hide read set_size show
+standard_popup_superior_window	2	in new set	2	1	1		
+standard_scrolling_menu	33	in new set	104	1	14		activate add_item add_items change_item class_object clear_items deactivate enable_menu_help_click kill read retrieve_all_items set_item_status set_name
+standard_superior_window	46	in new set	204	4	23		activate check_window deactivate get_border_width get_inside_size get_inside_units get_label_height get_margins get_position get_size hide kill read set_label_font set_mode set_position set_size set_title show
+standard_temporary_choice_window	11	in new set	42	1	9		activate beep change_item kill read retrieve_item set_font show
+standard_temporary_menu	54	in new set	235	1	13		activate add_item beep clear_items deactivate hide kill read set_font set_label_font set_title show
+standard_temporary_multi_column_menu	2	in new set	6	0	5		create hide kill read show
+standard_temporary_multi_select_menu	1	in new set	6	1	5		activate deactivate read show
+standard_temporary_multi_select_scrolling_menu	1	in new set	1	1	1		
+standard_temporary_scrolling_menu	34	in new set	64	1	8		activate add_items clear_items hide kill read show
+standard_temporary_window	5	in new set	42	1	8		activate beep draw_string erase_cursor kill read write_lines
+standard_window	18	in new set	79	1	21		activate draw_filled_rectangle draw_line draw_rectangle draw_string erase_cursor get_inside_size get_inside_units get_position get_size get_superior kill read read_click_with_position set_label_font set_margins set_position set_size set_title write_line
+std	1	in new set	1	1	1		
+stop_watch	24	in new set	93	1	5		reset show start stop
+str_format	1	in new set	1	1	1		
+str_machine_id	3	in new set	3	1	1		
+stream	13	in new set	74	1	3		get put
+string	921	in new set	1046	2	2		
+string_buffer	18	in new set	31	1	5		data_buffer get_data put_data set_data_buffer
+superior_window	9	in new set	45	1	11		activate get_inside_size get_position get_size hide kill read_click_with_position set_position set_size show
+superuser	2	package name, not a class	0	2	0	create remove_at	
+symbolizer	2068	in new set	2315	25	23	get_floating_number_token get_object_token get_quoted_atom_token get_variable_token	entor_atom_string get_floating_number
+table_file	8	in new set	1	3	1	make open	
+temporary_choice_window	12	in new set	14	1	3		set_font set_label_font
+temporary_choice_window_with_no_execute	1	in new set	3	1	3		read show
+temporary_menu	47	in new set	224	1	13		activate add_items beep clear_items deactivate hide kill read set_font set_label_font set_title show
+temporary_multiple_scrolling_menu	2	in new set	2	0	0		
+temporary_multiple_select_menu	3	in new set	21	1	11		activate add_items clear_items deactivate kill read set_font set_label_font set_title show
+temporary_multiple_select_multi_column_menu	2	in new set	7	1	4		activate read set_item_status
+temporary_scrolling_menu	1	in new set	3	1	3		activate read
+temporary_single_scrolling_menu	5	in new set	4	0	0		
+temporary_standard_io_window	1	in new set	2	1	1		
+temporary_window	8	in new set	35	1	3		activate kill
+throw	13	in new set	12	1	1		
+time	95	in new set	95	5	8		get_string plus set_value
+tjbunmyaku	7	package name, not a class	0	5	0	create execute get_data_pool go set_permission	
+trace	6	in new set	1	2	1	notrace	
+trace_exception_handler	15	in new set	20	4	4		
+travel	1	defined in an IFS program (source or ptf)	0	0	0		
+two_three_tree	110	in new set	94	6	6		
+user	3	in new set	5	2	3		user
+user_window	1	in new set	1	0	0		
+variable_symbolizer	3	in new set	3	1	1		
+vax_file_transfer	1	in new set	1	1	1		
+version	1	in new set	1	1	1		
+wildcard	20	in new set	21	4	4		
+window_subsystem	20	in new set	18	2	2		
+window_without_label	13	in new set	146	1	11		activate background beep erase_cursor kill read set_font set_superior write_line write_lines
+with_bell	9	in new set	20	0	0		
+with_border	73	in new set	66	0	0		
+with_character	1	in new set	1	1	1		
+with_click_information	21	in new set	20	0	0		
+with_cwi	2	in new set	1	0	0		
+with_default_mouse	19	in new set	19	0	0		
+with_icon	24	in new set	31	0	0		
+with_keeping_status	1	in new set	1	0	0		
+with_key_select	13	in new set	11	0	0		
+with_label	20	in new set	23	0	0		
+with_lock	8	in new set	5	0	0		
+with_margin	23	in new set	24	0	0		
+with_mouse_scroll	3	in new set	2	0	0		
+with_no_execute_choice_item	1	in new set	3	0	0		
+with_pane	2	in new set	2	0	0		
+with_pmacs_window	14	in new set	14	0	0		
+with_shared_window	12	in new set	15	0	1		assign_window
+with_superior_input_buffer	62	in new set	78	0	0		
+with_two_labels	8	in new set	5	0	0		
+x	2	not found by new scan	0	0	0		
+abort_handler	0	new only	3	0	0		
+ahp	0	new only	2	0	2		
+area	0	new only	1	0	0		
+as_interrupt_program	0	new only	1	0	0		
+as_network_log	0	new only	1	0	0		
+as_trap_program	0	new only	1	0	0		
+as_turning_menu	0	new only	1	0	0		
+average_tree	0	new only	2	0	2		
+b_in_w	0	new only	1	0	1		
+bool	0	new only	3	0	0		
+boot_process	0	new only	1	0	0		
+builtin	0	new only	8	0	4		
+bup_BUP_BUN	0	new only	0	0	0		
+bup_BUP_BUN2	0	new only	0	0	0		
+bup_BUP_BUN3	0	new only	0	0	0		
+cal_file_menu	0	new only	2	0	1		
+cal_op_menu	0	new only	2	0	1		
+cal_window	0	new only	140	0	16		
+cascade_index	0	new only	3	0	1		
+code_man	0	new only	22	0	12		
+common_network	0	new only	2	0	0		
+condition_split	0	new only	1	0	1		
+connection_reply_packet_v1	0	new only	1	0	0		
+connection_request_packet_v1	0	new only	1	0	0		
+context	0	new only	1	0	0		
+coordinator	0	new only	14	0	4		
+dbg_win	0	new only	1	0	1		
+debug	0	new only	7	0	3		
+debugger	0	new only	5	0	0		
+editor_buffer_window	0	new only	0	0	0		
+error	0	new only	0	0	0		
+esp_macro_expander_for_compiler	0	new only	88	0	0		
+essential_on_off_menu	0	new only	11	0	4		
+failure	0	new only	0	0	0		
+fdd_multi_volume	0	new only	1	0	1		
+file_backup	0	new only	4	0	4		
+focus_pro2	0	new only	6	0	6		
+font_13	0	new only	0	0	0		
+func_index	0	new only	4	0	1		
+fuzzy_clustering	0	new only	2	0	2		
+gen_file_win	0	new only	1	0	1		
+gen_hyoji_win	0	new only	1	0	1		
+gen_menu_win	0	new only	1	0	1		
+gen_mes_win	0	new only	1	0	1		
+gen_summary	0	new only	1	0	1		
+hex_converter	0	new only	2	0	0		
+hitachi_wk	0	new only	11	0	6		
+hyou_sen_win	0	new only	1	0	1		
+if1000_wk	0	new only	11	0	6		
+image_file	0	new only	1	0	0		
+imi_attribute_menu	0	new only	1	0	1		
+imi_attribute_sub_menu	0	new only	1	0	1		
+imi_first_save	0	new only	1	0	1		
+imi_save_child	0	new only	4	0	3		
+imi_set_data	0	new only	10	0	4		
+imi_super_win	0	new only	8	0	6		
+interrupt_process	0	new only	2	0	0		
+ipl	0	new only	1	0	0		
+jyuuyou_win	0	new only	1	0	1		
+kakari_attribute_menu	0	new only	2	0	2		
+kappaP	0	new only	27	0	12		
+kappaREP_select_menu	0	new only	17	0	8		
+kappa_message	0	new only	5	0	3		
+keyed_message	0	new only	1	0	0		
+keyw_in_win	0	new only	1	0	1		
+laser_printer	0	new only	0	0	0		
+lax_sax	0	new only	4	0	1		
+laxinf	0	new only	18	0	2		
+librarian_io	0	new only	0	0	0		
+library_utility	0	new only	424	0	26		
+logical_packet	0	new only	1	0	0		
+mbus_allocator	0	new only	1	0	0		
+memory	0	new only	1	0	0		
+memory_manager	0	new only	1	0	0		
+message	0	new only	12	0	3		
+multiple_select_menu	0	new only	1	0	0		
+multiple_select_multi_column_menu	0	new only	1	0	0		
+multiple_select_scrolling_menu	0	new only	9	0	3		
+net_talk_window	0	new only	15	0	2		
+network_listener	0	new only	6	0	0		
+network_login_user	0	new only	3	0	1		
+network_subsystem	0	new only	4	0	0		
+nline	0	new only	4	0	0		
+outMenu	0	new only	3	0	3		
+outSTDoutManager	0	new only	1	0	1		
+peek	0	new only	4	0	2		
+pmacs_request	0	new only	15	0	0		
+pre	0	new only	1	0	0		
+ras_with_font_key_assignment	0	new only	1	0	0		
+rdg_v26_4	0	new only	0	0	0		
+rs232c	0	new only	12	0	6		
+sax_starter	0	new only	4	0	1		
+sdatagram	0	new only	2	0	1		
+sentence	0	new only	3	0	1		
+simple	0	new only	2	0	1		
+standard_popup_window	0	new only	10	0	5		
+standard_temporary_superior_window	0	new only	0	0	0		
+stream_set	0	new only	10	0	2		
+syntax_error	0	new only	0	0	0		
+table	0	new only	9	0	2		
+tcpip_host_table	0	new only	8	0	0		
+tcpip_network_configuration	0	new only	5	0	0		
+tcpip_network_subsystem	0	new only	2	0	0		
+tcpip_socket	0	new only	7	0	0		
+telnet_terminal	0	new only	1	0	0		
+temporary_multi_column_menu	0	new only	1	0	1		
+trans_buffer	0	new only	15	0	2		
+trap_process	0	new only	1	0	0		
+undefined_method	0	new only	1	0	0		
+uni_sen_win	0	new only	1	0	1		
+unix_file	0	new only	1	0	0		
+user_process_profile	0	new only	6	0	0		
+utls_icon	0	new only	1	0	1		
+vkey4_table	0	new only	13	0	8		
+world	0	new only	3	0	0		
+y_sa_w	0	new only	1	0	1		
+you_hyouji_win	0	new only	1	0	1		
+you_menu_win	0	new only	1	0	1		

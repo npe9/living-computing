@@ -1,0 +1,44 @@
+% TM-065 "An Operating System for Sequential Inference Machine PSI" (Hattori et al., June 1984)
+% PDF page 12, printed folio 10, section 4.1 Simple Class; no figure number.
+% Introduced as: "We take class 'file' as a simple example of a system construct.
+%  This class provides the facilities for accessing a file in disk storage.
+%  Part of the class definition is:"
+% '...' bodies are elided IN THE ORIGINAL.  Printed comment glyph is a stylised '%'.
+% transcribed by eye from 300dpi crops (work/tm0065/p-12_[abc].png)
+
+        class   file    has
+
+        attribute
+                pool_of_files;
+
+        :create(Class, File):- !,
+                :new(Class, File);
+                        % Instantiate an object.
+
+        :make(Class, File, Pathname):- !,  % Create a new file.
+                :new(Class, File),
+                :create_file(File, Pathname);
+
+        :open(Class, File, Pathname):- !,  % Open an existing file.
+                :retrieve(Class, File, Pathname),
+                        % Retrieve the physical file by its pathname.
+                :open(File);
+
+        instance
+
+        attribute
+                region,                 % keeps the physical file region
+                opened := no,           % open/close flag
+                disposed,               % dispose flag
+                io_status;
+
+        :create_file(File, Pathname):- ...;
+                % Create the physical file by the given pathname.
+
+        :open(File):- ...;              % Open the file.
+
+        :close(File):- ...;             % Close the file.
+
+        :dispose(File):- ...;           % Dispose the file.
+
+        end.

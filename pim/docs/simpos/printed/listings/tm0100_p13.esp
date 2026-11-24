@@ -1,0 +1,46 @@
+% TM-100 PDF page 13, printed folio 11. Figure 3.4 "Part of class 'interrupt_process'"
+% (continued from PDF p12). Transcribed by eye from 300dpi crops. "...," lines are
+% printed elisions.
+% Prose after the figure: "As shown above, the interrupt handling mechanism is
+% encapsulated in class 'interrupt_process'.  Anyone who does :resume(Process, ...)
+% need not be concerned at all with whether scheduling or a trap takes place, that is,
+% whether Process is an ordinary process or an interrupt process."
+% "(4) Boot process  A boot process is a sole instance of class 'boot_process', which
+% executes the boot program inheriting class 'as_boot_program'.  After initiation,
+% this boot process goes under control of the supervisor, and acts exactly as an
+% ordinary process.  For this to be possible, class 'boot_process' inherits class
+% 'process' and overrides the predicates, :create and :activate."  (no code printed)
+
+    :suspend(Process, Reason) :-
+                % Add Reason to 'suspend_reasons'.  If Process is ready,
+                % then make it suspended.
+            :inhibit_interrupt(#process),
+            %CHECK REASON
+            (   Process!status == ready, !,
+                (   Reason = stream(Stream), !,
+                    Process!suspend_reason := Stream
+                ;   :add_last(Process!suspend_reasons, Reason),
+                    Process!suspend_flag := on ),
+                Process!status := suspended,
+                %RELEASE PROCESSOR
+                    ...,
+                %ALLOCATE PROCESSOR
+                    ...,
+                %SET REASON PROPERLY
+                Process!suspend_reason := nil,
+                :clear(Process!suspend_reasons),
+                Process!suspend_flag := nil,
+                Process!status := ready,
+                :allow_interrupt(#process)
+            ;   Process!status == suspended, !,
+                (   Reason == stream(Stream), !,
+                    Process!suspend_reason := Stream
+                ;   :add_last(Process!suspend_reasons, Reason),
+                    Process!suspend_flag := on ),
+                :allow_interrupt(#process)
+            ;   :allow_interrupt(#process), !,
+                fail ), ! ;
+
+    end.
+-----------------------------------------------------------------------
+                Figure 3.4  Part of class 'interrupt_process'

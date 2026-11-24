@@ -323,6 +323,122 @@ model, producing a 1e Hobbit kernel image. Gate: the image's `Exec`
 header passes `tools/p9exec.py` and the relocation/symbol checks the
 `zl` sources define; the image is reproducible from a recorded command.
 
+**Status 2026-11-23 (later): linked; the gate as written is closed.**
+The release's `zl` links `9term` on the reference model, from inputs
+every one of which the release's own tools made on the model:
+
+    python3 tools/p9kgen.py --out K                  # term.c, bootterm.root.c, kerndate, ...
+    python3 tools/p9kbuild.py kernel --kgen K        # libram.a, f709cea9...
+    python3 tools/p9kbuild.py link --kgen K --check  # 9term
+
+**End to end, in one go (2026-11-23):** `python3 tools/p9kbuild.py
+all --build DIR` runs the three in one fresh directory, nothing reused
+(p9kgen into DIR/kgen, then `kernel --kgen DIR/kgen`, then `link --kgen
+DIR/kgen --check` on the libram.a just made; DIR/all.log).  Run once,
+from a snapshot of commit a7af5631 (the commit that added `all`), on the
+loaded machine: p9kgen 75 programs, 915,322,786 instructions, 7,828 s;
+kernel 65 programs, 523,036,991 instructions, 1,136 s (8 processes);
+link 4 programs, 421,230,961 instructions, 2,742 s (zl 351,299,086,
+2,270 s).  **In all 144 programs, 1,859,590,738 instructions, 11,706 s
+(3 h 15 min) wall.**  `libram.a` came out
+`f709cea932f1a3694a08a93f4eb013c4a0703499938d0a9cd31ba0d8515b7ea6`
+(`LIBRAM_SHA256`), `9term`
+`002880c011bd7418c36c036b16f450e61d1ed43e1ec963a6f5b4574a2eece1b1`,
+and `--check`'s comparison with `NINETERM_SHA256` ran in a full link for
+the first time and passed; check_kernel passes, p9kcmp exit 0.  At the
+later commit that counts the exec frame's clock hole
+(`docs/plan9_syscalls.md`), `kernel --kgen` on the same kgen products
+gave the same `libram.a` and every object's size and sha256 the same;
+eight compiles retire one instruction fewer (the argument strings sit 4
+bytes lower).  That commit's `link --check` (which now also runs the
+rule's `size 9term`) then gave the same `9term` sha256, zl's same
+351,299,086 instructions, and `size` printed `224160t + 72908d +
+101152b = 398220`: the header's text 224,236 less
+sizeof(struct mipsexec) = 76 (libmach's `hobbitboot`, as for s9term,
+`docs/plan9_port.md`), data and bss the header's; `--check` passed.
+`link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
+raml.s`, `zc -w -Dram -DKERNDATE=721110517 term.c` and `zc -w -Dram
+bootterm.root.c` (the three objects equal the ones p9kgen and the kernel
+target made), then `zl -o 9term -l -R4 -H1 -T0x80004000 -E0x80004000
+raml.z term.z bootterm.root.z libram.a -lgnot -lg -lc` against the
+vendored `libgnot.a`, `libg.a`, `libc.a`.  The log
+(`BUILD/link-term.log`) records every input's sha256.
+
+* **The link**: zl `exits('')`, prints nothing, **351,299,086
+  instructions**, 753 system calls, 2,878 s wall on the loaded machine
+  (the three compiles before it 69.9 M more, about 9 min).  `9term` is
+  562,452 bytes, sha256
+  **`002880c011bd7418c36c036b16f450e61d1ed43e1ec963a6f5b4574a2eece1b1`**
+  (`p9kbuild.NINETERM_SHA256`; `--check` fails on any other).
+* **Reproducible**: the recorded command run twice more (at once), each
+  in its own fresh `--build` directory, gave the same sha256 and the
+  same status, instruction count, system calls, size and sha256 for
+  every one of its four steps as each other, and the same image as the
+  scratch run before them; 3,337 and 3,345 s wall.  (They ran before
+  the sha256 was written into `NINETERM_SHA256`; `--check`'s own
+  comparison was first exercised by a full link in the `all` run
+  above.)
+* **`p9exec` accepts it** as a `-H1` image: every constant header word,
+  the file size (80 + text + data + syms + lcsize), the section bases,
+  `etext/bdata/edata/end` against the header, and every one of its
+  8,287 symbols inside its section (`check_kernel`, the checks asm.c and
+  pass.c's `xdefine`s imply).
+* **zl's own relocation/symbol checks passed**: every check in the
+  vendored `sys/src/cmd/zl` reports through `diag()` (44 call sites --
+  `undefined:` pass.c:302, `undefined external:` span.c:250 and
+  asm.c:544, among them), which counts `nerrors` (list.c:215), and
+  `errorexit()` (obj.c:209-216) removes the output and exits `"error"`
+  when any was counted.  zl exited `''` with nothing on its console (the
+  driver fails otherwise), so it counted none.
+* **`tools/p9kcmp.py 9term`** against s9term: **every MUST item agrees**
+  -- header constants, entry 0x80004000 = `_startup` and its first four
+  instructions, raml.s then term.c, the libraries in link-line order,
+  `kerndate` 721110517, `conffile` "term", `devchar`'s 21 characters,
+  all 21 x 13 `devtab[]` functions by name, `streaminit`'s four
+  `newqinfo` arguments, the 60 `initcode` bytes.  Reported, with the
+  reason (the sources drifted, `docs/s9term.md`):
+
+  | | 9term | s9term | |
+  |---|---|---|---|
+  | text | 224,236 | 219,968 | +4,268 |
+  | data | 72,908 | 70,388 | +2,520 |
+  | bss | 101,152 | 98,476 | +2,676 |
+  | symbols | 232,036 (8,287) | 227,808 (8,136) | +151 records |
+  | pc/line | 33,192 | 32,602 | +590 |
+  | file | 562,452 | 550,846 | +11,606 |
+
+  The text difference is accounted for object by object (35 objects
+  differ in size, summing to exactly +4,268): the largest are `scsi.c`
+  +1,168 (six functions the vendored file has and s9term does not),
+  `kbd.c` +1,018 and `latin1.c` +170 (linked here, absent there: the
+  vendored `screen.c` calls `kbdinit`), `devbit.c` +918, `devip.c` +214,
+  `deveia.c` +200, `raml.s` +164 (`getcpureg`), `devscsi.c` -208,
+  `rune.c` +42 (the January libc).  The functions defined only in one
+  image are exactly the per-file table of `docs/s9term.md`, found there
+  from the sources and here from the two links.  `-lgnot`, `-lg` and
+  `-lc` load the **same members in the same order** as s9term (7, 3,
+  19).  `libram.a`'s order differs in four places (`deviic`, `scsibuf`,
+  `screen`/`devbit` placement) besides `kbd` and `latin1`: here those
+  members keep the relative order of the generated `DEV=` list
+  (`deviic` before `deveia`, `scsibuf` after `scsi`, `devbit screen kbd`
+  before `devkprof`); in s9term they do not (`deviic` after `devwren`,
+  `scsibuf screen devbit` after `fcall`).  Load order is by need (zl
+  scans `__.SYMDEF` from the start each pass), so this says s9term's
+  `libram.a` or its `term` file listed them differently; which, is not
+  known.  The embedded boot program is the 27,108-byte one p9kgen
+  made (s9term's is 26,796; above).
+
+The gate -- "the image's `Exec` header passes `tools/p9exec.py` and the
+relocation/symbol checks ...; the image is reproducible from a recorded
+command" -- holds.  What it does not say, and is **not** shown: that this
+kernel boots (A4), or that it is the bytes Bell Labs would have linked
+from this tree (no oracle: s9term is older).  The link was not
+attempted on the Bluespec core.  In the suite: `p9kcmp`
+on s9term and on corrupted copies (`tests/test_p9kcmp.py`, each MUST
+item injected, plus three injections into the tool itself recorded in
+its header); the link itself is the long run, as `9term` is a build
+product and not committed.
+
 **Status 2026-11-23: the kernel library is built; not closed.**
 `tools/p9kbuild.py` (the recorded command; module doc for the details)
 drives the release's own binaries on the reference model in a staged
@@ -361,6 +477,16 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   * `devtab.h` (`rc ../port/mkdevh $CONFLIST`, included by ~25 objects)
     is a Python transcription of `mkdevh`/`mkextract`: **provisional**
     (`--devtab-h FILE` swaps in a generated one).
+  * **All three are now made by the release's tools** (`tools/p9kgen.py`,
+    below) and `p9kbuild.py kernel --kgen DIR` takes them from its
+    output.  Compared 2026-11-23: the generated `DEV`, `STREAM` and
+    `MISC` lists equal the hand lists, the generated `devtab.h` equals
+    the transcription, and the generated `init.h` (the release's `xd`
+    and `sed`) equals the transcribed one byte for byte.  `p9kbuild.py
+    kernel --kgen DIR` then rebuilds `libram.a` with the same sha256,
+    `f709cea9...`, its `rl` now running its own fork of `ar`
+    (40,944,389 instructions with the child; 478 s for the 63 objects
+    at 8 processes).
   * `init.h` (`rammain.c` includes it): `za initcode` and `zl -l -s -o
     init.out -H2 -T0x1020 -R4 initcode.z` run on the model, but the text
     step `xd -r -1x init.out | sed ...` is transcribed from `xd.c` and
@@ -381,13 +507,25 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   whose `__.SYMDEF` has the same 201 entries -- offsets, names, types,
   order.  212 bytes of the table differ, all after a name's NUL: stack
   residue in libmach `readar()`'s uninitialised `Prog p`
-  (`docs/plan9_syscalls.md`).  Why the model's residue differs from the
-  1993 machine's at those positions is **open** (not traced; the model
-  is the core's oracle, so it matters).  For this `p9run` gained `fstat` and
-  `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` is
-  refused (one process), so `rl` stops at that call with its table
-  written and the driver runs the `ar` command line `writerl()` would
-  have, on the model.
+  (`docs/plan9_syscalls.md`).  **Traced 2026-11-23**
+  (`tools/p9symdef.py`): every one of the table's 2,623 bytes past a
+  NUL is accounted for -- 631 left by earlier names of the same member
+  (the model's `rl` writes all of them identically), 1,992 the stack at
+  readar's entry, which the frames of the release's **`/mips/bin/rl`**
+  predict byte for byte (big-endian: objtype's `i` and Bseek's
+  argument); so do the tables of 22 more shipped Hobbit libraries.  The
+  shipped tables were written by the MIPS `rl` of a cross-building host,
+  and the 212 bytes are where the Hobbit's own `rl` (little-endian `i`,
+  no argument word at `id[5..8]`) must differ: not an exec-environment
+  difference, and nothing to fix in the runner.  For this `p9run` gained `fstat` and
+  `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` was
+  refused (one process), so `rl` stopped at that call with its table
+  written and the driver ran the `ar` command line `writerl()` would
+  have.  **Since the merge with the generated-inputs work (below) the
+  fork is p9run's**: `rl` runs to its end with the clock fixed at the
+  table's date (`run(clock=)`), and `archeck` gives the same result
+  (every member and header identical, the same 212 residue bytes; `rl`
+  with its child 8,592,333 instructions).
 * **libc reproduction is recorded** (`python3 tools/p9kbuild.py libc
   --check`, 260 s at 7 processes): the 102 C files of `libc/hobbit`,
   `port` and `9sys` that have a member in the shipped `libc.a`,
@@ -398,10 +536,8 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   2026-11-20.  A 3-file sample runs in
   `tests/run_tests.sh`.
 
-Next: `cpu.c`/`term.c` (`mkdevc`), `boot$CONF.root`, `KERNDATE`, the
-link with `zl -l -R4 -H1 -T0x80004000 -E0x80004000` against `-lgnot -lg
--lc` (libgnot.a and libg.a are in the release, not vendored yet), and
-the comparison with the shipped `hobbit/s9term`.
+(Then: `term.c`, `boot$CONF.root`, `KERNDATE` (p9kgen, below), the link
+and the comparison with s9term -- done, the status above.)
 
 **Status 2026-11-20 (kept for the record): started, paused.**  What was
 done and what was not:
@@ -463,12 +599,72 @@ Done 2026-11-23:
   predicted path of mispredicted conditional jumps, which PRM p. 2-3
   says the part makes too (`docs/conformance_1to1.md` §1c).
 
-Not done: the kernel's generated inputs (`cpu.c` from `mkdevc`,
-`init.h`, `boot*.root`, `KERNDATE` -- rc pipelines needing fork, exec
-and pipes, which `p9run` refuses); `ar`; the link; and the decision the
-cost implies -- about 100 files at ~8 million instructions each is an
+**Status 2026-11-23: the generated inputs for `term` are made by the
+release's own tools.**  `tools/p9kgen.py --out DIR` lays out a copy of
+the vendored tree under `DIR/root` and runs, on the reference model,
+every command `mk 9term` would run to make the kernel's generated
+inputs, each a shipped Hobbit binary (`awk`, `sed`, `xd`, `grep`,
+`sort`, `tr`, `strip`, `ar`, `rl`, `echo`, `cat`, `za`, `zc`, `zl`).
+Python plays rc only: a pipeline is run a stage at a time, each stage's
+standard output buffered and handed to the next as its standard input;
+the awk and sed programs are taken out of the vendored scripts by an rc
+quote/here-document reader, not retyped.  The system calls this needed
+(stat, fstat, notify, rfork, fork/exec/wait, `#c/pid`, `#e`, create's
+permissions, fd 0/1 redirection) are in `docs/plan9_syscalls.md`.
+
+| product | made by | checked against | result |
+|---|---|---|---|
+| `errstr.h` | `mkerrstr` (sed) | the shipped `hobbit/errstr.h` | **identical** |
+| first half of `systab.h` | `mksystab` up to its first `sam -d` (cat; sed \| tr \| sed; cat) | the first 806 bytes of the shipped `port/systab.h` | **identical**; the sam halves not run |
+| `devtab.h` | `mkdevh cpu term termlocal bart rom` (awk; sort -u; awk) | -- (nothing shipped) | 286 lines |
+| `term.c` | `mkdevc term` (cat, awk, echo, grep) | s9term's `devtab[]` resolved through its symbol table; `devchar`; `conffile` | **all 21 entries x 13 functions in order; devchar's characters; "term"** |
+| `term.z` | `zc -w -Dram -DKERNDATE=721110517 term.c` | -- | compiles |
+| `objlists` | `mkdevlist`/`mkstreamlist`/`mkmisclist term` (sed \| awk) | -- | `DEV=` 31 objects, `STREAM=` 4, `MISC=` none |
+| `init.h` | `za initcode`; `zl -l -s -H2 -T0x1020 -R4`; `xd -r -1x \| sed` | s9term's `initcode[]` | **identical, 60 bytes** |
+| `bootterm.c` | `../boot/mkboot term` (cat, awk) | -- | |
+| `bootterm.root.c` | `zc` x 21, `ar vu`, `rl` (fork+exec of `ar`), `zc print.c`, `zl ... -lauth`, `mkroot` (strip; `xd -1x \| sed`) | s9term's `bootcode[]` (`bootlen` 26,796) | **differs**: see below |
+| `bootterm.root.z` | `zc -w -Dram bootterm.root.c` | -- | |
+| `KERNDATE` | not `date -n`: read back from s9term | -- | **721110517** = 1992-11-07 04:28:37 GMT, the `kerndate` word in s9term's data |
+
+Cost (the recorded full run, 2026-11-23, one process on a loaded
+machine): 74 programs, 908,516,178 instructions, 4,462 s.  Without the
+boot program (`--no-boot`): 36 programs, 30,391,046 instructions,
+217 s.  The long pole is mkroot's `sed` over `xd -1x`'s 1,695 lines of
+the 27,108-byte boot image: **733,075,888 instructions, 3,332 s** (the
+`s/ (..)/0x\1,/g` substitution costs ~27,000 instructions a byte); then
+`zc bootterm.root.c` 60,064,630 (215 s), `xd -1x` 15,258,918, the 21
+boot-library compiles 1.8-7.6 M each, the boot link 10,385,478.  Slow,
+not impractical: the 1e `sed` stays the authority, and no host tool
+stands in for any stage.  The suite runs a sample
+(`tests/test_p9run.py` `KernelInputs`: `mkstreamlist`, `init.h`, 15 s);
+`build/` is not in git: the products are remade by the command.
+
+**The boot program does not reproduce s9term's, and the difference is
+libc's, not the boot code's.**  Our `bootterm.out` (stripped) has text
+0x5e30, data 0xb94, bss 0x4d0; s9term's `bootcode[]` has text 0x5cf8 and
+the same data and bss.  The 2,964 data bytes are identical, function
+pointers included.  Function by function (`bootterm.out`'s symbols laid
+over s9term's bytes): every boot function from `main` to `getpasswd`,
+and libc's `fmtinstall`/`numbconv`/`sconv`/..., sit at the same
+addresses, and are either identical or differ in a few bytes (call
+targets beyond the shift; not checked operand by operand); libc's
+`convS2M` is where the shift starts -- everything after it is 268 bytes
+lower in s9term -- and the rune functions (`chartorune`, `runetochar`,
+`runelen`, `fullrune`, `utflen`) and the libc assembler routines after
+them are not found in s9term at all.  Together with `devchar` (s9term
+holds its `L""` string one byte per character; the shipped `zc` emits
+16-bit runes), this says **s9term (whose `kerndate` is 7 November
+1992) was linked against an earlier libc than the shipped `libc.a` (3
+January 1993)**.  The boot program built here is the one the shipped
+tree builds; s9term is not a byte oracle for anything linked with libc.
+That also bounds the kernel-link gate: the image built from this tree
+will not be byte-identical to s9term.
+
+Not done at the time (the link is now done: the first status of this
+section); the cost decision -- about 100 files at ~8 million instructions each is an
 hour on the reference model and several on the core, so the full build
-belongs in a recorded long run with a sample in the suite.
+belongs in a recorded long run with a sample in the suite; and, for
+the generated inputs, `mksystab`'s sam halves (no sam on the model).
 
 ### A4 — boot to the console
 
@@ -489,6 +685,12 @@ Gate: a shell (`rc`) from `hobbit/bin` runs over the console, `cat`
 reads a file from a modelled disk image, and `za` assembles a program
 *inside* the boot. That is "1e is running", not "the model can run one
 binary".
+
+The file server s9term's `/boot` needs (it is a terminal: root over IL
+17008 after BOOTP) is a 1e 386 machine in QEMU, serving the whole 1e
+release from a kfs made by 1e's own tools; a shipped 9pc terminal boots
+its root from it over the same frame boundary the model's SONIC will
+use. See [`qemu_1e_server.md`](qemu_1e_server.md) and `tools/qemu1e/`.
 
 ## A0 status (2026-11-19): closed — there was no hole
 
@@ -589,6 +791,119 @@ instruction supply has no on-demand fill, so a program that leaves the
 binaries on the reference model -- the core had no little-endian data
 mode, which every 1e program but `cat` depends on (A2's status above;
 added with golden `017`).
+
+## A5 status, reference side (2026-11-23): the gate is met on the reference model
+
+On `sem/hobbit_sem.py` (tools/p9boot.py, the shipped s9term) with its
+root from the 1e 386 file server in QEMU (tools/p9join.py), a scripted
+console session ran: `echo hello`, `ls /hobbit | wc`, `cat
+/lib/ndb/local` (byte-identical to the release's file), `cd /usr/none`,
+**`za hello.s`, `zl hello.z -lc`**, `ls -l`, `sum hello.z z.out` (the
+same sums as the shipped za/zl/sum give under p9run), and `z.out`, which
+printed `hello 1e`.  840,583,000 instructions, 42.2 s of model time,
+732 s of host time.  Transcript, checks and commands: docs/p9boot.md
+"Commands at rc's prompt"; `tests/net/a5_screen.txt`, `a5_uart0.txt`.
+"A modelled disk image" in the gate is the server's kfs, a disk image
+reached over IL: s9term is a diskless terminal (its WD33C93 finds no
+targets), as the 1992 Hobbit terminals were.
+
+What it took, each in docs/p9boot.md:
+
+* **One time base** (ETHER_CHOICES `lockstep`): QEMU paused while the
+  model is busy and run until the server's own tick counter catches up
+  with model time; `-icount shift=4`.  Server IL resends to the prompt
+  fell from 407 to 1-5; six consecutive live runs to `% ` and two more
+  had no failure.
+* **The user**: `none`'s home as 1e's PC install floppy has it
+  (`/usr/none/lib/profile`, empty) on the server's kfs; init's
+  `rc -c` then runs termrc and exits cleanly, and init restarts rc.
+* **The ROM's fpi** (CHOICES `fpi-rom`): za's floating point goes
+  through the unimplemented-instruction vector to the boot ROM's
+  interpreter, which the release ships as source; `tools/p9kbuild.py
+  fpi` builds it with the shipped za/zc/zl on the model (mkfile's
+  `fpi.out` rule, linked in the ROM's segment).
+* `JoinReplayTest` replays the recorded session through `echo hello`
+  without QEMU (~3 min).
+
+Not done: the Bluespec core has not run any of this; 8½ (bitmap and
+mouse) is not modelled; the server's ack-0 IL sync race is a 1e bug,
+not removed, not seen since (0 of 612 probe dials, 0 of 9 live runs).
+
+## A4 status, reference side (2026-11-23): s9term boots to init, root from the 1e server
+
+`tools/p9boot.py` boots the shipped kernel image `s9term` on the
+reference model (`sem/hobbit_sem.py` with a `System`: CPU-prefixed
+control registers, CSP = ISP, the Chapter 2 MMU, the event sequences),
+with a device model for each board register the kernel touches (Quart,
+Irq, WD33C93, SONIC, IIC, LCD, incon), every unknown a stated choice.
+Details, milestones and choices: `docs/p9boot.md`.
+
+* 2,131,084 instructions: pageinit's line, byte-exact on the screen
+  (`screenputs`) and, as `\r\n`, on Quart channel 0:
+  `1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K`.
+  Pinned by `tests/test_p9boot.py` (in the suite).
+* 2,859,426: `touser`, the first CRET to user level (initcode), then
+  `sysexec("/boot")` and `/boot` demand-paging in user mode; the clock
+  interrupt (the Quart counter) is taken.
+* 22,530,554: `/boot`'s prompt on the screen, `root is from (il, tcp, incon, 9600, 19200)[il]: ` (with `--counter-period 0.04`, a stated choice); it waits for a keyboard byte.  Its default transport, `il`, needs the SONIC ethernet and the IIC EEPROM (docs/p9boot.md).
+* Idle skip (CHOICES `idle-skip`): `runproc`'s four-instruction idle
+  loop is retired in whole laps up to the next timed device event, the
+  run otherwise unchanged instruction for instruction (pinned: the 25 Hz
+  prompt run still takes 22,530,554 instructions, now in 29 s instead of
+  6 min).  At the formula's own clock rate the prompt comes after
+  286,970,654 instructions (286,977,189 with the EEPROM), 14.4 s of
+  model time, ~30 s of host time, so
+  `--counter-period` is no longer needed.
+* Console input: s9term's console is a serial terminal on Quart channel
+  0 (`eiaspecial(0, &printq, &kbdq, 19200)`, `kbdq.putc = kbdcr2nl`;
+  the image has no `kbd.c`).  Return typed there (`--type`) takes `il`:
+  287,427,906 instructions (before the EEPROM: `sonic ether: 00 00 00 00 00 00`), then the
+  first BOOTP transmit.
+* EEPROM and SONIC: the PCF8584/PCF8582 answer deviic.c (ether address
+  52:54:00:00:0b:0b, the one the QEMU server's ndb gives the Hobbit), the
+  DP83932 is modelled as devether.c uses it (CAM, RRA/RDA, TDA, isr/imr,
+  IRQ 9; QEMU's dp8393x.c followed where the driver is silent), and
+  /boot's BOOTP request leaves at 287,845,754 instructions, decoding
+  byte for byte (`--pcap`).
+* The join (tools/p9join.py): s9term on the model, its SONIC's frames
+  on QEMU's `-netdev dgram` pair to the 1e 386 file server
+  (docs/qemu_1e_server.md), boots with its root from that server to
+  **`init: starting /bin/rc`** at 310,933,347 instructions (15.6 s of
+  model time, 150 s of host time, 277 frames): BOOTP from the server's
+  ip/bootp, ARP, IL to il!10.9.0.1!17008, user none, the time written to
+  the timekeeper, /hobbit/init from the server.  Its recording
+  (`tests/net/join_init.pcap`) replays without QEMU, byte for byte and
+  to the same instruction (`JoinReplayTest` now replays the longer A5
+  recording, above).  The one device it needed beyond the SONIC: the
+  MK48T02-style timekeeper at IONAK 0x2000/0x3FE0 (CHOICES `rtc`; the
+  first live run stopped at setrtc).  No CRET was clamped on this
+  path; the clamp (a CRET with MSP > SP + 256, notify()'s frames;
+  CHOICES `cret-msp`) is what the no-server path needs: ten BOOTP
+  requests, ten alarm notes, `My IP address[0.0.0.0]: `.  A later live run went on: `/bin/rc` from the server ran on the Hobbit
+  (`Can't cd /usr/none`, `init: rc exit status: rc 9:can't cd`, as the
+  server prints for glenda), and init's restart reached **rc's `% `
+  prompt** at 618,458,635 instructions (31.0 s model time, 456 s host).
+  The live join is not deterministic: one
+  run was rejected by an ack-0 IL sync from the server (docs/p9boot.md).
+
+The gate as written above (the boot banner and prompt on the UART) is
+not met yet: s9term prints no banner of its own; the first text after
+pageinit's line is `/boot`'s prompt.  The Bluespec-side DUART below is
+unchanged.
+
+## A4 status, core side (2026-11-24): s9term on the Bluespec core, record for record, into `/boot`
+
+`bsv/run_p9kern.sh N` boots the same image on `mkHobbitCoreSystem` and
+compares every retirement record with the reference boot's (every field
+but `cyc`), device reads replayed and device writes checked, interrupts
+delivered at the reference's instruction boundary (docs/p9boot.md, "The
+boot on the core").  Every record matches through 2,893,000 on the
+reference as merged 2026-11-23: `main` (125,203), `mmuinit`
+(2,088,445), the console line, the first interrupt (2,848,972),
+`touser` (2,883,341), `/boot` in user mode (2,886,866) and its first
+system call (2,888,578).  The next difference is a write fault on a
+committed store (2,893,033).  Findings: docs/conformance_1to1.md §1d.
+The suite runs the first 300,000 records.
 
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 

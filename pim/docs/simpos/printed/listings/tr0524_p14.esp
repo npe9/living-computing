@@ -1,0 +1,8 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 14, printed folio 13. Section 3.4.2 "Concurrency Rule", in-text example: process P5 at site icpsi200
+% opens the file in output mode (logical file lf52). Transcribed by eye from 300dpi crop (A/work/tr0524/x14b.png).
+
+:open(#binary_file, File, ``>sys>user>gee>humm.txt'', output, immediate),
+:add_data(File, ``That is ''),
+:add_data(File, ``the question! ''),
+:close(File),

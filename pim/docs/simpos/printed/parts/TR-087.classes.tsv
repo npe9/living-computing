@@ -1,0 +1,18 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+pool	-	-	-	put/take (prose)	PROSE	TR-087	4	-	same text as TR-057; cites Saito et al. 1984
+directory	(pool, per prose)	-	-	bind/retrieve by name	PROSE	TR-087	4	-	-
+stream	-	-	-	-	PROSE	TR-087	4	-	cites Shimazu et al. 1984
+channel	(on top of stream)	-	-	send/receive (prose)	PROSE	TR-087	4	-	"message communication among processes"
+port	-	-	-	-	PROSE	TR-087	4	-	"connected to another port with channels"
+process	-	-	-	-	PROSE	TR-087	4	-	execution environment = program, library, world, universe (cites Watanabe et al. 1984)
+node	-	-	-	-	NAMED	TR-087	5	-	-
+socket	-	-	-	-	NAMED	TR-087	5	-	-
+cable	-	-	-	-	NAMED	TR-087	5	-	-
+plug	-	-	-	-	NAMED	TR-087	5	-	-
+event	-	-	-	-	PROSE	TR-087	10	-	"name of the exception in general"; two basic subclasses error and help
+error	event	-	-	-	PROSE	TR-087	10	-	subclasses "such as warning, fatal error, and normal error"
+help	event	-	-	-	PROSE	TR-087	10	-	subclasses "such as help in general, and keyboard help"
+warning	error	-	-	-	NAMED	TR-087	10	-	-
+fatal error	error	-	-	-	NAMED	TR-087	10	-	printed as prose words "fatal error"; class spelling unknown
+normal error	error	-	-	-	NAMED	TR-087	10	-	printed as prose words; class spelling unknown
+situation	-	-	-	-	PROSE	TR-087	10	-	context for exception handling; stack-like; handlers set/deleted per program; sorts multiple handlers, applies nondeterministically

@@ -1,0 +1,36 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 36, printed folio 35. "Table 3: Performance of the SIMPOS file system (ms)" (page printed rotated).
+% Transcribed by eye from 300dpi rotated crops (A/work/tr0524/r36a.png, r36b.png) -- a METHOD TABLE, not source.
+% Columns: Method | Remote Call PSI-NET 1024 | PSI-NET 4200 | TCP/IP 1024 | TCP/IP 4200 | Local Call | comment
+% Empty cells printed empty (shown as -). Suffix /c and /i on method names as printed (class / instance method).
+%
+% Basic cost
+%   simplest local method call                  -     -     -     -      0.01
+%   process switch                              -     -     -     -      1
+%   :get_atom (symbol retrieval)                -     -     -     -      0.35
+%   :get_class_object (class retrieval)         -     -     -     -      3.25
+% Session Layer
+%   round-trip time                             171   428   450   1165   -
+%   initialization (connection)                 -     595   -     1140   -
+% ROAM
+%   :do(#test, Node)                            211   475   503   1214   2      null call
+%   :make(#test, Instance, Node)                220   484   512   1224   2      create instance
+%   :do(Instance)                               207   471   495   1211   1      null call
+% File Methods (class binary_file)
+%   :make/c (create and open file)              -     599   -     1285   114
+%   :open/c (directory info on memory)          -     569   -     1235   76
+%   :open/i (after retrieved)                   -     463   -     1168   7
+%   :close/i (just after sync)                  -     459   -     1122   9
+%   :read/i (data on cache)                     -     510   -     1201   12     1K byte
+%                                               -     747   -     1719   19     4K byte
+%                                               -     7079  -     14499  238    100K byte
+%   :write/i (data on cache)                    -     508   -     1169   13     1K byte
+%                                               -     776   -     1714   19     4K byte
+%                                               -     7672  -     14191  238    100K byte
+% Directory Methods (class directory)
+%   :retrieve/c                                 -     1027  -     2389   69
+%   :make/c (create directory)                  -     981   -     2348   47
+%   :delete/i                                   -     550   -     1254   59
+%   :undelete/i                                 -     541   -     1237   58
+%   :find/i                                     -     553   -     1266   40
+%   :expunge/i                                  -     492   -     1182   24     100 files

@@ -1,0 +1,41 @@
+% TR-046 "Dialogue Management in the PSI", ICOT TR-046 (84.03)
+% PDF page 27 (figure page, no printed folio)
+% Caption: "Figure 3. System-Menu Definition" (text reference: paper p.14, PDF p15:
+%   "Figure 3 shows sample codes that define a system menu.")
+% Transcribed by eye from 300dpi crops (work/tr0046/p-27_*.png), F2 2026-11-23.
+% Convention: ',' vs '.' not reliably distinguishable in the scan's font; ',' written between
+%   goals, ';' and '.' where clearly printed. Centred dots are printed elisions.
+% Note: no "class" section keyword is printed between the slot and the clauses; the
+%   two clauses take System_menu_class as receiver (i.e. they are class predicates).
+%   "component" is the slot-declaration keyword as printed (ESP part-of slot).
+
+class system_menu
+   has
+      component
+         menu_list;
+      :create(System_menu_class, Directory, System_menu) :- !,
+            :new(System_menu_class, System_menu),
+            :get_invariant_part(#system_menu, Menu_list),
+            :new(#list, Experts_list),
+            make_from_to(Directory, Experts_list),
+            :add_first(Menu_list, Experts_list),
+            :create(#multi_column_menu, Menu_list, Menu_window),
+            System_menu!window := Menu_window;
+      :get_invariant_part(System_menu_class, Menu_list) :-
+            #system_menu!menu_list == 0, !,
+            :new(#list, Menu_list),
+            :new(#list, Media_system_list),
+            :create(#menu_item, 'window', common, window, _, Window_item),
+            :add_last(Media_system_list, Window_item),
+            :create(#menu_item, 'file', common, file, _, File_item),
+            :add_last(Media_system_list, File_item),
+                           .
+                           .
+            :add_last(Menu_list, Media_system_list),
+                           .
+                           .
+            #system_menu!menu_list := Menu_list;
+                           .
+                           .
+                           .
+   end.

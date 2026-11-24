@@ -1,0 +1,13 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 27, printed folio 25. Section 4.3(2) 'Linking a volume'.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To link a volume into a directory system
+             :link(Volume,Pathname)
+% "For example, the operation"
+      :link(Volume,">disk1>volume1")
+% "associates the root directory file of 'Volume' with the pathname ">disk1>volume1". Then, a file
+%  with the name "dir1>filename1" on this volume is retrieved by"
+      :retrieve(Object,">disk1>volume1>dir1>filename1")
+% (as printed: :retrieve with two arguments, no #as_global_object receiver; not corrected)

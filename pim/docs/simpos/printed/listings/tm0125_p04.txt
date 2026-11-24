@@ -1,0 +1,79 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (J. Tsuji, S. Uchida, July 1985)
+% PDF page 4, printed "Page 3".
+% transcribed by eye from 300dpi crops (work/tm0125/p-04_[0-3].png, z1.png, z2.png)
+
+== Figure 1. System structure around the Window System  (block diagram, rendered as text)
+
+   [Coordinator]        (Process) - - - (Process)
+         |                  |   \           |   \
+         |                  |    `----------+----+--------.
+   +--------------------------------------------+         |
+   |              Window Subsystem              |----[Kana-Kanji      ]
+   +--------------------------------------------+----[Translation     ]
+         |                  |              |      |  [Module          ]
+   [Bitmap Display    ] [Mouse   ]   [Keyboard          ]
+   [Handler           ] [Handler ]   [Handler           ]
+
+   Reading of the line drawing (by eye): Coordinator and each Process connect down to the
+   Window Subsystem; lines from the Processes also run past the Window Subsystem's right
+   edge to the Kana-Kanji Translation Module and down to the Keyboard Handler (the lines
+   cross with jump-overs). The Window Subsystem connects down to the three handlers.
+   Exact attachment points of the crossing lines are NOT certain at this resolution.
+
+== Figure 2. Display image of PSI  (screen photograph; an EXAMPLE user program, not SIMPOS)
+   Left window labelled 'editor_2'; right top 'debugger_1'; bottom-right a librarian-like
+   dialog. Screen font: comma and period are not distinguishable at this resolution; the
+   separators inside argument lists are read as ',' (INFERENCE from ESP syntax).
+
+   editor_2 contents:
+        class escher has
+        instance
+        attribute  window;
+
+        :init(Obj) :- !,
+            :create(#window,W),
+            :set_size(W,606,630),
+            :set_position(W,58,100),
+            Obj!window := W,
+            :set_title(W,"Escher"),
+            :activate(W);
+
+        :escher(Obj,X1,Y1,X2,Y2) :- !,
+            W = Obj!window,
+            :refresh(W),
+            escher(W,X1,Y1,X2,Y2,0,0,0,0,1);
+
+        local
+
+        escher(W,X1,Y1,X2,Y2,XX1,YY1,XX2,YY2,F) :-
+            F = 0,
+            ( XX1 = 0 , ! ; XX1 = 600 ),
+            ( YY1 = 0 , ! ; YY1 = 600 ),
+            ( XX2 = 0 , ! ; XX2 = 600 ),
+            ( YY2 = 0 , ! ; YY2 = 600 ),
+            !,fail;
+   editor status line:  EDIPS(string)[46,27] escher.esp
+   ('606','630','58','100': digits read at the limit of legibility; '58' could be '52'.)
+
+   debugger_1 trace (partial):
+        6)1 CALL> :init($escher)
+        6)1 EXIT> :init($escher)
+        Success !!
+         :escher(E,1,3,2,4).
+        18)1 CALL> :escher($escher,1,3,2,4)
+        22)2 CALL> escher($window,1,3,2,4,0,0,0,0,
+        49)3 CALL> escher($window,1,3,2,4,1,3,2,4,
+        78)4 CALL> escher($window,1,3,2,4,2,6,4,8,
+        107)5 CALL> escher($window,1,3,2,4,3,9,6,12
+        136)6 CALL> escher($window,1,3,2,4,4,12,8,1«?»
+
+   Dialog (bottom right), menu column partly hidden, visible tails of items:
+        «?»eck / «?»strate / «?»pile / «?»mpile / «?»ve / «?»ad / «?»ete / «?»int / «?»fo /
+        «?»sses / «?»icates
+   Dialog text:
+        Input Class Name.
+        @ escher
+        Input Source File Name.
+        @ escher.esp
+        Registrating...
+        Registrated.

@@ -97,12 +97,14 @@ module mkPimmHBox#(MemPort mem)(PimmHBox);
 
   rule xTab (st == HXTab);
     let c <- mem.data;
-    if ((c.tag & 8'hfe) != tag_REFo) missed;
+    // the field is dereferenced to the module object {MOD, its
+    // descriptor cell}: through the image's module table, or through
+    // the variable the IPL's linker bound in a module it loaded
+    if ((c.tag & 8'hfe) == tag_REFo) mem.read(cellAddr(c));
+    else if (c.tag != tag_MOD) missed;
     else begin
-      // the cell the module table refers to holds {MOD, the next
-      // cell}: the module's descriptor cell follows it
-      ent <= cellAddr(c) + 1;        // the module's descriptor cell
-      mem.read(cellAddr(c) + 2);     // its GC size
+      ent <= cellAddr(c);            // the module's descriptor cell
+      mem.read(cellAddr(c) + 1);     // its GC size
       st <= HXHead;
     end
   endrule

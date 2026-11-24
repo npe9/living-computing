@@ -1,0 +1,16 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 12, printed folio 11. Section 3.4.1 "Interface Primitives Based on Asynchronous-Communication", two in-text
+% examples (no figure numbers). The second continues on PDF p13 (tr0524_p13.esp).
+% Transcribed by eye from 300dpi crops (A/work/tr0524/x12a.png, x12b.png). The quote marks are printed as TeX
+% double quotes `` and '' ; reproduced here as two backquote/apostrophe characters.
+
+% (1) "a program to make a new file, named ``>sys>user>gee>humm.txt'', and append a string ``To be, '' to the file:"
+:make(#binary_file, File, ``>sys>user>gee>humm.txt''),
+:add_data(File, ``To be, ''),
+:close(File),
+
+% (2) "preparing external accessors for overlapping operations as follows:"
+:open(#binary_file, File, ``>sys>user>gee>humm.txt'', shared, immediate),
+:accessor(File, Acc),               % attach an external accessor
+:put_data(File, ``or ''),           % put ``or '' in internal accessor
+:submit_add(File, ID1, suppress),

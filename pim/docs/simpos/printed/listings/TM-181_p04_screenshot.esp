@@ -1,0 +1,46 @@
+% TM-181 「SIMPOSにおけるプログラミング環境」 (石橋弘義 他, 昭和61年電気・情報関連学会連合大会, 1986),
+% PDF page 4 (printed folio -3-), right column, screenshot under (9) ファイル・マニピュレータ.
+% An ESP class shown in a pmacs editor window, partly covered by a file_manipulator window.
+% Transcribed by eye from a 600dpi crop of a halftone screenshot (F4). LOW CONFIDENCE: the right
+% part of every line is hidden under the overlapping window ("«?»" at line ends = hidden text,
+% not illegible ink). Spacing approximated. This is a user program (EXAMPLE), not SIMPOS source,
+% but it shows SIMPOS class/method usage: #font, #standard_io_window, :activate, :putl?, :putt?.
+
+class my_window has
+  :create(Class, Obj) :- !,
+    :new(Class, Obj),
+    :create(#font,
+       "font:ascii_16«?»
+    :create(#font,
+       "font:kanji_2«?»
+    :create(#standard«?»
+       {size(300, 200)«?»
+        position(«?»
+        label_font(«?»
+        title("漢字ウインド«?»
+        font(Font2)},«?»
+     Window),
+    :activate(Window)«?»
+    Obj!window := Wi«?»
+instance
+  attribute window;«?»
+  :test(Obj) :- !,
+    :put«?»(Obj!window,
+      "Pmacsの«?»
+  :write(Obj, Term) :-«?»
+    :put«?»(Obj!window,
+      "~s~s«?»", [Term]«?»
+end.
+
+% Editor mode line (illegible): «?»  my_window.es«?»   Prompt line: "Find File:pmacs.esp«?»: my_window«?»"
+%
+% Overlapping file_manipulator window, title "file_manipulator", directory line ">sys>user>ishibashi>",
+% file list (name..version; middle field = file type, empty for most):
+%   areas..1  bounce..1  debugger.init.1  escher..7  kl0dap..1  lines..1  login.cmd.2
+%   my_window.esp.5  sakai..1  queens..1  redispla..1  reflect..1  terai..1  temp..1
+%   timer..1  watcher..1  window.esp.1
+% Pop-up menu on "my_window.esp.5": delete / rename / copy / copy to fdd / append / describe /
+%   type / dump / word count / pattern search / to whiteboard
+% Librarian window (partly legible): menu "Check", "Catalogue"; text 'Cataloguing "my_window.esp"...',
+%   "Class Name(my_window)", dates "27-Jun-86 17:57:1?".
+% Debugger window menu: Method / Step / Skip / Leap / Fail / Retry / No trace; buttons PREDICATE / clause.

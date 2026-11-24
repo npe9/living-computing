@@ -16,6 +16,23 @@ Both models (reference `ref/pimm/pimm.py`, Bluespec `bsv/Pimm*.bsv`)
 implement the same 54 instructions and agree line for line on seven
 lockstep tests from four IPL modules.
 
+*Note 2026-11-23: the section is a snapshot of 2026-11-20, and its
+table and coverage figures go with the 54; they were not re-measured.
+On 2026-11-23 the two models implement 128 instructions on both and
+agree on 39 lockstep tests. The 39 is the default list of
+`bsv/run_pimm_lockstep.sh` (`grep -o 'for t in.*'`). The 128 is
+`ref/pimm/README.md`'s figure, and a hand count does not reproduce it
+exactly. `ref/pimm/pimm.py` has 131 `def i_` handlers, and none is
+gated whole by `self.alone(` (one case of `merge_in` and one
+built-in case are), so the task's literal recipe gives 131. Less
+`scsi_init` and `scsi_command`, which are on the reference alone (no
+arm in `bsv/Pimm*.bsv`; *since 2026-11-23, later, on the core too,
+`PimmScsiBox.bsv`*), leaves 129 handlers on both models. Two of
+those, `merge_in` and `unify_step`, are this project's stubs
+(`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves 127
+PIM/m instructions. The README's counting rule is not stated; the
+one-off difference is open.*
+
 | | names the models have | of names used | instructions covered |
 |---|---|---|---|
 | IPL image `pimm_ipl.kbn` | 54 | 143 | 11,196 of 13,156 (85.1%) |
@@ -68,7 +85,7 @@ carry no open question.
 |---|---|---|---|
 | B1 | Object-set-only control: `save` 9,605 and `restore` 7,933 uses, `read_variable_without_deref` 20,625, `jump` 1,474, `diff` 791 | `save`/`restore` semantics (flagged since Phase 0); none occurs in the IPL image, so they gate R5 onward, not R4 | compiler source (`library/compiler`), microcode entries `3211`/`3215` once the datapath is read |
 | B2 | Code and module objects: `predicate_to_code` 13, `code`, `module`, `module_element`, `new_module`, `new_instruction`, `new_atom`, `export_entry`, `apply`, `hash`, `merge` | the layout of a `COD`/`MOD` object and of a module built at run time. The IPL *is* a loader: it builds modules in memory with these | TM-662 (module format, agrees with our images), `ipl_module`'s object code, `library/kbn/kbn.kl1` |
-| B3 | The shoen: `create_shoen`, `start_shoen`, `stop_shoen`, `abort_shoen`, `remove_shoen`, `add_shoen_resource`, `shoen_statistics`, `raise`, reports on the report stream, resource (reduction) accounting | record field order is now known for the Pseudo PIM/m console (24 and 14 fields); behaviour is in the PIMOS manual (`e-shoen.tex`) and TR-483; the exact report protocol the kernel expects is in `kernel/builtin/shoen.kl1` (source held) | manual + source; lockstep on `shoen:` predicates |
+| B3 | The shoen. **Stage 1 is on both models since 2026-11-23** (`create_shoen`, `start_shoen`, termination with `started` and `terminated` reported; `lockstep_shoen.py`, `pimm_semantics.md` "Shoen", where what is PIM/m-sourced is told from what is carried over from PDSS and VPIM). **Stage 2 since 2026-11-23**: `shoen_statistics` (twice the reductions, PIMOS manual `e-shoen.tex`:234, a reduction counted per `execute` and `proceed` as the manual's profile and PDSS count them) and `remove_shoen` (`return_resource(0, 0)`, the report stream closed; a remove before the end honoured at termination, VPIM's), so the image's monitors (`ipl_monitor/3`, `bios_monitor/3`, `top_level_monitor/4`) run their whole exchange to `Shut = shut` and a shoen whose code is `shoen:execute/4` now terminates (`lockstep_shoen2.py`). **Stage 3 since 2026-11-23**: the exception path (a goal's reduction failure, `{0, Code, ArgV}`, and `raise`, `{0, Info, Data}`, reported as `{2, Kind, Info, NewCode, NewArgv}` to the innermost shoen whose mask AND the tag is not 0, the goal `apply(NewCode, NewArgv)` replacing the failed one), `stop_shoen` (goals parked, released by `start_shoen`), `abort_shoen` (`aborted` then `terminated`, goals discarded), `current_processor`; through the image's `exception_table:translate/4`, `shoen:raise/3` and monitors (`lockstep_shoen3.py`). Still missing: `add_shoen_resource`, `allow_shoen_resource_report`, `shoen_profile`, a resource LIMIT and `resource_low` (6, never reported; the allowance a shoen starts with and the threshold are not in any held source, PDSS starts every shoen exhausted and VPIM reports with no limit), a unification failure inside a shoen (VPIM reports 10 and carries on) | record field order is now known for the Pseudo PIM/m console (24 and 14 fields); behaviour is in the PIMOS manual (`e-shoen.tex`) and TR-483; the exact report protocol the kernel expects is in `kernel/builtin/shoen.kl1` (source held) | manual + source; lockstep on `shoen:` predicates |
 | B4 | Priorities and placement: `enqueue_goal_with_priority`, `enqueue_goal_to_processor`, `calculate_priority_from_current`/`_from_minimum`, `current_node`, `current_processor` | our ready queue is one LIFO list; the machine has a goal stack per priority (256-entry table in `PIMM.PARAM`). Priority encoding is not known | manual (priority pragmas), `PIMM.PARAM`, microcode at `4c5c` |
 | B5 | Built-in exceptions. Every built-in error stops the model today (`Unimplemented('built-in exception ...')`) | how an exception becomes a report to the shoen (`exception(Info, Goal, NewGoal)`), and the info codes | `kernel/builtin/excpt_tbl.kl1` (source held, partly running already), manual |
 | B6 | Suspension layout: ours is `HOOK` -> suspension record always | the machine's: `HOOK` vs `MHOOK`, record fields, merge on variable-variable binding | microcode at `1c08`, `1d3a`; blocked on the memory datapath fields (`pseudo_pimm_microcode.md` section 13) |
@@ -147,7 +164,11 @@ here is PDSS's, not known to be PIM/m's. The test stands in only for
 the file's buffers. Console output is in (`lockstep_cons.py`): the
 decoder shows the comment of a 5702h file ("PIMM BIOS       :3.600:25-Nov-93"
 for `pimm_bios360E.sav`) and the NAME of a 5502h file, not both
-(object code of `check_magic_num/13`). `ipl_loader:load/4` runs
+(object code of `check_magic_num/13`). *(Note 2026-11-23: 25-Nov-93
+is the base files' comment date. The kernel's compiled
+`pimos_version:date/1` carries "20-May-93", the source's date, which
+is what the banner below shows: two dates of two artefacts, see
+`binary_reverse_engineering.md` §2.)* `ipl_loader:load/4` runs
 whole for a list of one file (`lockstep_link.py`): `load_files/10`,
 the link table (`ipl_link_table`) and `check_link_status/5`, the
 bench answering `open(Name, R)` with `normal(File)`. The unification of two vectors or lists, which a second
@@ -157,11 +178,16 @@ linker's vector unification run 23 times (`lockstep_link.py` part
 2). `new_string` makes 32-bit strings (`lockstep_s32.py`), which
 was all the system files lacked: on the reference model alone the
 IPL loads the twenty files of the held `pimos.ipl` in its order and
-the link is NORMAL; it stops at `predicate_to_code`, looking for
-`pim:go/4`. The IPL's own reader of the list, `ipl:ipl_files/4`,
+the link is NORMAL; `predicate_to_code` gives the code of
+`pim:go/4` (`lockstep_p2c.py`; the whole run is
+`ref/pimm/longrun_ipl.py`, outside the suite) and `apply` runs a
+code (`lockstep_apply.py`). The IPL's own reader of the list, `ipl:ipl_files/4`,
 gives the twenty names from the held file on both models
-(`lockstep_ipll.py`). Next: `predicate_to_code` and the guard `code`; the
-whole list on the Bluespec (a long run, not a suite test); `apply`; and the FEP protocol under `open` (C2).
+(`lockstep_ipll.py`). The whole list runs identically on the Bluespec core, 447,739,516
+trace lines (`bsv/run_pimm_longrun.sh`, 2026-11-23); on the reference
+model alone `pim:go/4` then shows the banner "PIMOS V 3.600
+20-May-93" and stops at `scsi_where` (`longrun_ipl.py --reference
+--go`). Next: `pim:go/4` applied, its stops taken in the order they come; and the FEP protocol under `open` (C2).
 
 ### C. The world outside the processor
 
@@ -169,7 +195,7 @@ whole list on the Bluespec (a long run, not a suite test); `apply`; and the FEP 
 |---|---|---|
 | C1 | Console: `display_console` 61, `put_console` 71, `read_console`, `get_console`, `halt` | the first observable of R4. `display_console` is in since 2026-11-23 (`lockstep_cons.py`): the PDSS manual's meaning, the console being trace lines; the IPL gives it 8-bit strings (after `jis_to_ascii`) and, in `top`, integers. How the machine rendered a value is not known. `put_console`, `read_console`, `get_console`, `halt` are not in |
 | C2 | The front-end processor over SCSI: `scsi_command`, `scsi_init` and the five `scsi_fep_*` modules that speak to it (no source for those modules in `pimos.tar.Z`) | the IPL reads `pimos.ipl` and the `.sav` files *from the FEP*. We must emulate the FEP end: either at the `scsi_command` built-in (need the packet format, from `scsi_fep_module`'s object code and `pimfep.ptf`), or above it by answering the IPL's file requests. This is the largest piece of new design before R4 |
-| C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers. `new_atom` is in since 2026-11-23 with a numbering of OURS (up from 10000h); the server (`top:atom_number_server/7`, `supply_atom_number`) is not |
+| C3 | Atom-number service: `supply_atom_number`, `new_atom`, `top:throw_atom_number_client` | atoms are numbered by a server at boot; `pimm_ipl.sym` gives the IPL's numbers. `new_atom` is in since 2026-11-23 with a numbering of OURS (up from 10000h); the server (`top:atom_number_server/7`) runs on both models since 2026-11-23 (`lockstep_atom.py`), with `supply_atom_number` OURS as to what it does (inputs dropped, Done never bound: the meaning is not sourced, `pimm_semantics.md`), so a processor's atoms are still not the server's blocks |
 | C4 | Timer, date, and the FEP services PIMOS opens after boot (window, file, string_io) | R5-R6. The PIMOS internal file system is not in the released source (`icot_databases.md` section 6) |
 | C5 | A `.sav` loader for tests (R2 as written is met since 2026-11-23 with the IPL's own loader, `lockstep_run.py`; no separate loader was needed) | `asm/unlsav.py` decodes; relocation and atom renumbering are what the IPL's own loader does, so B2 and C3 inform it |
 | C6 | More than one processing element: export/import tables, messages, weighted reference counts | field names known from the console (`pseudo_pimm_firmware.md`); defer: configure one PE. Distributed Pool and multi-node Kappa-P need it |
@@ -196,7 +222,21 @@ on unit 7, then `getb` until end of file, then each `.sav`) and the
 packet format. `fep#ipl` and `fep#symbol` are NOT used by the IPL,
 against the inference above. That note is the specification for the R4
 front-end stand-in; its byte-level derivations are the agent's and
-have not been executed.
+have not been executed. *(Note 2026-11-23: since executed, on the
+reference model alone. `ref/pimm/ref_scsi.py` runs the body of
+`ipl:boot0` against `ref/pimm/fep.py`, which raises on any request it
+does not serve. It serves only 201, 210, 60 and 70, and the run
+completes, so the IPL sent no 400 or 500 (`binary_reverse_engineering.md` §1.4, "Run"). That
+covers our FEP model and the path `boot0` takes, not the real FEP.)*
+*(Note 2026-11-23, later: `scsi_init` and `scsi_command` are on the
+Bluespec core too, `bsv/PimmScsiBox.bsv`, with the device outside the
+core on a port; the lockstep bench answers it from a tape the
+reference recorded, and the bytes the core puts on the bus are
+compared as `B` trace lines (`ref/pimm/lockstep_scsi.py`, at
+`scsi:create/2` and `scsi:command_executer/2`). The IPL's own file
+service (`ref_scsi.py`'s six parts) is in lockstep too, since the
+merger's vector input reached the core (`lockstep_scsi.py --part
+1..6`). `docs/scsi_plan.md` S1-S3.)*
 
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are
@@ -213,6 +253,16 @@ the clauses it uses, as the tests do.
 - It has kept pace one for one, so its gaps are A-C above plus:
 - **Cycle accuracy has not started.** The published numbers are few
   (step counts for `append`, 60 ns cycle, the five pipeline stages);
+  *note 2026-11-23: the sources print both 60 and 65 ns for the PIM/m
+  cycle. 60 ns: TR-564 PDF p. 3 (printed p. 2, "マシン・サイクルは60nsである",
+  read from the page image), FGCS'92 Vol. 1 p. 45 Fig. 7 ("Machine
+  cycle: 60ns"), TR-799 Table 3 (OCR, `literature_gaps.md` App. C 2.1).
+  65 ns: FGCS'92 Vol. 1 p. 426 (`M92`) and p. 62 (`OV92` Table 2),
+  TM-1074 and TR-733 Table 1 (`pim_architecture.md` §7). TM-1159 gives
+  15.4 MHz worst case (64.9 ns) and TR-799 16.7 MHz typical (60 ns), so
+  65 is probably the worst-case system clock and 60 the typical one
+  (INFERENCE, `literature_gaps.md` App. C 2.1). Since no timing is
+  claimed, nothing here depends on the choice.*
   the microprogram, once readable, gives per-instruction step counts.
   No timing claim is made today.
 - Every built-in exception and every unmodelled case is `E unimp`; a
@@ -277,7 +327,13 @@ The dependency chain to the first console line (R4), shortest first:
 3. **B2** — code and module objects, from TM-662 and `ipl_module`.
 4. **B3 (minimum) + B4 (minimum)** — one shoen that can be created,
    started and report termination; priorities as a number carried but
-   one queue. Enough for `ipl:boot/0` to proceed.
+   one queue. Enough for `ipl:boot/0` to proceed. *The shoen part is
+   done on both models (`lockstep_shoen.py`, 2026-11-23): created,
+   started, `started` and `terminated` reported; and (stage 2,
+   `lockstep_shoen2.py`) what the IPL's monitors do next,
+   `[statistics]` then `[]`: `shoen_statistics`, `remove_shoen`, the
+   report stream closed, `Shut = shut`; and (stage 3,
+   `lockstep_shoen3.py`) exceptions, stop and abort.*
 5. **C2 + C3** — the FEP emulation and atom numbers: the IPL can ask
    for `pimos.ipl` and load modules. **R4.**
 6. **B5, B1, A3 long vectors, A5, A6, C4** — what the loaded kernel

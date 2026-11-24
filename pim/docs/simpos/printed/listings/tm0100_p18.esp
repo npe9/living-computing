@@ -1,0 +1,19 @@
+% TM-100 PDF page 18, printed folio 16. End of Figure 3.11 "Class 'bounded_post_queue'"
+% (begun on PDF p17). Transcribed by eye from 300dpi crops.
+% Section 4 (Development History), same page, prose: design begun fall 1982;
+% functional spec end of fiscal 1982; class specification completed end of fiscal 1983;
+% ESP defined and implemented on a cross system.  First PSI produced December 1983,
+% available to the software group March 1984; single-process environment April; "In
+% May, the IPL became operational, so as to allow linking programs directly on PSI";
+% multiple-process environment June.  First window subsystem: "A character input with
+% echoing took a few seconds"; supervisor and window system redesigned and recoded "in
+% a few weeks"; firmware implemented object-oriented calls and slot accessing; character
+% input became 30 ms; "process switching time ... reduced from about 20 ms to 2 ms."
+
+    after
+    :remove_object(Queue, Object) :-
+            :v_operation(Queue!semaphore);
+
+    end.
+-----------------------------------------------------------------------
+                Figure 3.11  Class 'bounded_post_queue'

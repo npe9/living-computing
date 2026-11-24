@@ -1,0 +1,14 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 26, printed folio 24. Section 4.3(1) 'Directory' (directory system): pathname formats and global-object operations.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To specify an object from the system root directory
+        e.g. ">dir1>dir2>name"
+% o To specify an object from the process root directory
+        e.g. "dir1>dir2>name"
+% "A global object has the following operations:"
+% o To bind an object with a pathname
+        :bind(Object,Pathname)
+% o To retrieve an object with a pathname
+        :retrieve(#as_global_object,Object,Pathname)

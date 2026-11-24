@@ -1,0 +1,48 @@
+% TR-046 "Dialogue Management in the PSI", ICOT TR-046 (84.03)
+% PDF page 28 (figure page, no printed folio)
+% Caption: "Figure 4. A Translation Table Program in ESP" (text reference: paper p.15, PDF p16:
+%   "The translation table is actually an ESP program represented as a class.")
+% Transcribed by eye from 300dpi crops (work/tr0046/p-28_*.png), F2 2026-11-23,
+%   independently of TR-061 Fig.2 (TR-061_p13.esp); differences recorded in parts/TR-061.structure.md.
+% Convention: ',' vs '.' not reliably distinguishable in this font; ',' written between
+%   arguments/goals. 'l'/'1' share a glyph: control#"l" and mouse#l are written as printed glyph
+%   could be either; "l" chosen for the lull key by the word, mouse#l is AMBIGUOUS (1 or l).
+% Printed as is: control#"s" appears TWICE (status, and invoke_system_menu); the first matching
+%   clause (status) would shadow the second -- not corrected.
+% «?»: the get_e_process goal of the visit clause is smudged at the end of "E_process".
+
+class default_translation_table
+   has
+   instance
+      :look_up(Table, Window, control#"k", #coordinator,
+               {kill, E_process, _, _}, "kill") :- !,
+         :get_e_process(Window, E_process);
+      :look_up(Table, Window, control#"l", #coordinator,
+               {lull, E_process, _, _}, "lull") :- !,
+         :get_e_process(Window, E_process);
+      :look_up(Table, Window, control#"a", #coordinator,
+               {arouse, E_process, _, _}, "arouse") :- !,
+         :get_e_process(Window, E_process);
+      :look_up(Table, Window, control#"s", #coordinator,
+               {status, E_process, _, _}, "status") :- !,
+         :get_e_process(Window, E_process);
+      :look_up(Table, Window, mouse#l, #coordinator,
+               {visit, E_process, _, _}, "visit") :- !,
+         :get_e_process(Window, E_proce«?»«?»);
+      :look_up(Table, Window, control#"m", #coordinator,
+               {memorize, E_process, _, _}, "memorize") :- !,
+         :get_e_process(Window, E_process);
+      :look_up(Table, Window, control#"b", #coordinator,
+               {broadcast, _, Program_name, Command}, "broadcast") :- !;
+      :look_up(Table, Window, control#"v", #coordinator,
+               {remember, _, _, _}, "remember") :- !;
+      :look_up(Table, Window, control#"s", #coordinator,
+               {invoke_system_menu, _, _, _}, "invoke system menu") :- !;
+      :look_up(Table, Window, mouse#rr, #coordinator,
+               {invoke_system_menu, _, _, _}, "invoke system menu") :- !;
+      :look_up(Table, Window, control#"r", #coordinator,
+               {read, _, Object, _}, "read whiteboard") :- !;
+      :look_up(Table, Window, control#"w", #coordinator,
+               {write, _, Object, _}, "write whiteboard") :- !;
+      :look_up(Table, Window, X, Port, X, "send character as it is") :- !;
+   end.

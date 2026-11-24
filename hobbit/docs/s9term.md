@@ -188,13 +188,18 @@ and C function definitions of the vendored files:
 | file | in the vendored source only | in the image only |
 |---|---|---|
 | `raml.s` | `getcpureg` (raml.s:322) | |
-| `deveia.c` | `eiagetport`, `eiarawprint`, `eiarawput`, `eiarawputc`, `eiarawputs`, `eiasetparity`, `eiasetrts` | |
+| `deveia.c` | `eiagetport`, `eiarawput`, `eiasetparity`, `eiasetrts` | |
 | `scsi.c` | `ctlrreset`, `issue`, `scsiio`, `scsipanic`, `scsiregs`, `scsistatus` | |
 | `scsibuf.c` | `scsialloc` | |
 | `devether.c` | `etherintr` | `interrupt` |
 | `port/devbit.c` | `bitdepth`, `pixreverse` | `bitreverse` |
 | `port/devip.c` | `tcproominq` | |
 | `port/proc.c` | `unbreak` (proc.c:493) | |
+
+(An earlier version of this table also listed `eiarawprint`,
+`eiarawputc` and `eiarawputs` for `deveia.c`; they are inside `#ifdef
+notdef` (deveia.c:117-154), so no build defines them.  Found by the
+link below, whose function sets give this table exactly.)
 
 and the vendored `screen.c` calls `getcpureg` and `kbdinit` (screen.c:
 174-178, 246), neither of which the image has: its `screen.c` predates
@@ -225,5 +230,20 @@ sources, which the release does not contain.
   `initcode`: `tests/test_p9exec.py` (`TestBuildFacts`), at the offsets
   above.
 * Per-file function sets and the library order: the image's `z`/`f`
-  history decoded per function (a scratch script, 2026-11-23); the
-  function-size comparison likewise.  These two are not in the suite.
+  history decoded per function, now `tools/p9kcmp.py` (`Image.objects`;
+  `tests/test_p9kcmp.py` pins the link-order table above).  The
+  function-size comparison was a scratch script and is not in the suite.
+
+## A kernel linked from the vendored tree
+
+`python3 tools/p9kbuild.py link --kgen K` (docs/plan9_boot_plan.md A3)
+links `9term` with the release's `zl` on the reference model, and
+`python3 tools/p9kcmp.py 9term` compares it with s9term: every item the
+format, the link line, the `term` configuration and the generated files
+fix agrees (header, entry `_startup`, object and library order,
+`kerndate`, `conffile`, `devchar`'s characters -- two bytes each there,
+as said above -- `devtab[]`, the stream list, `initcode`); the sizes
+differ (text +4,268 bytes, accounted for object by object) and the
+functions defined only in one of the two images are exactly the
+"Not the shipped sources" table.  `-lgnot`, `-lg` and `-lc` load the same
+members in the same order as s9term.

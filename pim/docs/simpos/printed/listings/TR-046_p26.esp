@@ -1,0 +1,30 @@
+% TR-046 (Tsuji, Kurokawa, Tojo, Iima, Nakazawa, Enomoto, "Dialogue Management in the
+%   Personal Sequential Inference Machine (PSI)", ICOT TR-046, 84.03)
+% PDF page 26 (figure pages follow the paper's numbered pages 1-20; no printed folio on this page)
+% Caption: "Figure 2. Default Translation Table" (referred to in text p.13 of the paper, PDF p14)
+% Transcribed by eye from 300dpi crops (work/tr0046/p-26_*.png), F2 2026-11-23.
+% Convention: in this dot-matrix listing font ',' and '.' are not reliably distinguishable
+%   in the scan; ',' is written for argument separators, '.' only for "end.".
+%   Font 'l' and '1' share a glyph; written as the letter where the word requires it
+%   (kill, lull); control#"l" written "l" (lull key) -- glyph itself is ambiguous.
+% The three centred dots are printed (elision in the original figure).
+% NOTE vs Figure 4 (PDF p28) and TR-061 Fig.2: here the kill/lull clauses have NO '!' after ':-',
+%   and the last clause has no ':- !'.
+
+class default_translation_table
+   has
+   instance
+
+      :look_up(Table, Window, control#"k", #coordinator,
+               {kill, E_process, _, _}, "kill") :-
+         :get_e_process(Window, E_process);
+
+      :look_up(Table, Window, control#"l", #coordinator,
+               {lull, E_process, _, _}, "lull") :-
+         :get_e_process(Window, E_process);
+                         .
+                         .
+                         .
+
+      :look_up(Table, Window, X, Port, X, "send character as it is");
+   end.

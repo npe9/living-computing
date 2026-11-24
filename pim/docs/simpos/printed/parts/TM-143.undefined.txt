@@ -1,0 +1,6 @@
+TM-143	clock management (時計管理)	PROSE	date/time/alarm/stopwatch; no class names
+TM-143	kanji processing (漢字処理)	PROSE	kana-kanji conversion; no interface
+TM-143	call counter (コール・カウンタ)	NAMED	per-predicate call counting tool
+TM-143	me: logical name	PROSE	logical-name mechanism for directories; syntax beyond "me:" absent
+TM-143	generalist?, terminal?, shell?	NAMED	system-menu screenshot items, low-confidence reading
+TM-143	floppy load format	ABSENT	LSI-11 writes floppies, PSI loads them

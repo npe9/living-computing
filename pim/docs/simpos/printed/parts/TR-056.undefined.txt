@@ -1,0 +1,14 @@
+# Names used in TR-056 but never defined there (PDF page)
+:next/2 on pools (only its signature) -- p12
+:position/1, :pool/1, :set_position/1 on tap (used in the :get body only) -- p12
+token (atom put into semaphore streams) -- p13
+dispatcher, scheduler, ready queue (no policy, no priorities) -- p18
+hardware process environment: register set, stack group, heap memory -- p19
+trap handlers, device handlers, garbage collector (as interrupt processes) -- p20
+library class/operations (only "holds a collection of classes") -- p22
+user, group ("must be defined") -- p26
+protection seals, profile, version, object lock -- p26
+instance file, record pointer, directory file, file marker (deferred to the file system report) -- p27-28
+node, network manager, object table, object number, operation identifier -- p29
+timer: clocks and watches (11 classes, 600 lines, "not discussed") -- p31
+i/o medium systems (window, file) -- p04, p17

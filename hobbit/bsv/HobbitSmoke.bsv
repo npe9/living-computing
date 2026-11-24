@@ -43,7 +43,8 @@
 //   cyc_trap_7_plus_a           unimplemented opcode at 0x00BA: 7 + A = 8
 //   cyc_add_imm_one_cycle       three-parcel ADD $100,R0 is ADD: 1
 //                               (Table 4-32 prices the mnemonic, p. 4-3)
-//   addi_opcode_traps           ADDI (opcode 0x01, p. 3-6) is unimplemented
+//   ori_opcode_01_two_cycles    opcode 0x01 is ORI (p. 3-37; ADDI is 0x03,
+//                               p. 3-6), interlocked: 2 (Table 4-32)
 //   cyc_enter_8block_33         ENTER $0xC0 over SP 0x100/MSP 0x180,
 //                               E = 8 blocks: 1 + 4.8 = 33 (Table 4-36)
 //   cyc_enter_flush_32_clocks   a real eight-block write-back takes
@@ -301,17 +302,22 @@ module mkHobbitSmoke(Empty);
 
     // The three-parcel ADD $100,R0 from golden 002 (record insn
     // a3fd0064) is ADD, not ADDI.  Table 4-32 prices the mnemonic at 1
-    // for every parcel count and operand mode (p. 4-3); ADDI is opcode
-    // 0x01 ("Add interlocked", p. 3-6) and traps.
+    // for every parcel count and operand mode (p. 4-3).  The interlocked
+    // forms are opcodes 0x01 ORI (p. 3-37), 0x02 ANDI (p. 3-8) and 0x03
+    // ADDI (p. 3-6), each 2 in Table 4-32.  Until 2026-11-23 this check
+    // read 0x01 as ADDI and required it to trap; the s9term boot needs
+    // all three (docs/conformance_1to1.md 1d, golden 022).
     let addImmD = chkdec.decode(0, mkParcels(16'hA3FD, 16'h0064, 16'h0000,
                                              16'h0000, 16'h0000, 16'h0000));
     Word addImmC = instrCycles(mkDecInstEntry(addImmD), sp0, msp0, mcyc,
                                False, 0);
     chk(addImmC == 1, "cyc_add_imm_one_cycle", addImmC, 1);
 
-    let addiD = chkdec.decode(0, mkParcels(16'h81FF, 16'h0000, 16'h0000,
-                                           16'h0000, 16'h0000, 16'h0000));
-    chkb(addiD.tr == TR_UNIMP, "addi_opcode_traps");
+    let oriD = chkdec.decode(0, mkParcels(16'h81FD, 16'h0001, 16'h0008,
+                                          16'h0000, 16'h0000, 16'h0000));
+    Word oriC = instrCycles(mkDecInstEntry(oriD), sp0, msp0, mcyc, False, 0);
+    chkb((oriD.tr == TR_NONE) && (oriD.op == OP_ORI) && (oriC == 2),
+         "ori_opcode_01_two_cycles");
 
     // An ENTER $imm over SP 0x100/MSP 0x180 empties an eight-block
     // cache: 1 + Q.E with E = 8 and Q = 4 is 33 (Table 4-36).

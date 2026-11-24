@@ -392,6 +392,10 @@
 !     case and settles nothing about inheritance.
 !
 ! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! ASSEMBLER: THREE DEPARTURES FROM THE PRINTED FORM, ALL FLAGGED
 ! ---------------------------------------------------------------
 ! Every statement was handed to strap_asm IN ITS PRINTED FORM first.
@@ -511,7 +515,7 @@ KKSPAC  LCI,2,K REP                  ! line 17   printed name "K K SPAC"
         B,K K EXIT                   ! line 43   -EE  -  SUCCESSFUL END
         B,K K EXIT                   ! line 44   -EOP -  IMPOSSIBLE
 RK1     BZB,$R.63,K SOS              ! line 45   printed name "RK1", closed up
-KSOSSP  CB,2,KKSPAC.32               ! line 46   printed "K SOS SP CB,2,K K SPAC.32" -- BLANKS REMOVED
+KSOSSP  CB,2,K K SPAC.32             ! line 46   NAME printed "K SOS SP"; operand AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         B,K SOS                      ! line 47
 
         END, KKSPAC

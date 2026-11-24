@@ -1,0 +1,18 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 23, printed folio 21. Section 4.2(1) 'Directory file': class 'directory_file' operations and retrieval example.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To bind a record pointer with a name
+             :bind(Directory_File,Record_Pointer,Name)
+% o To find a record pointer with a given name
+             :find(Directory_File,Record_Pointer,Name)
+% o To replace an old record pointer with a new one
+             :replace(Directory_File,Record_Pointer,Name)
+% o To rename a name associated with a record pointer
+             :rename(Directory_File,Name,New_Name)
+% "For example, to retrieve an object with a given name:"
+         :find(Directory_File,Record_Pointer,Name),
+             % Find Record_Pointer with Name.
+         :restore(#as_permanent_object,Object,Record_Pointer).
+             % Restore Object from Record_Pointer.

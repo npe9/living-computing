@@ -1,0 +1,8 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 18, printed folio 17. Section 3.6 "Communication Control", in-text example: process P3 at site icpsi100
+% opens a remote file by global pathname. Transcribed by eye from 300dpi crop (A/work/tr0524/x18b.png).
+
+:open(#binary_file, File, ``icpsi200::>sys>user>gee>humm.txt'',
+                                            exclusive, suppress),
+:read_data(File, String),
+:close(File),

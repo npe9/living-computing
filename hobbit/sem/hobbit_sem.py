@@ -367,6 +367,112 @@ class State:
     # [SP, MSP) are read from and stored to it, ENTER's flush copies
     # 16-byte blocks from it to memory, CATCH's fill copies them back.
     cache: Optional[List[int]] = None
+    # The privileged machine (``System`` below), or None.  None is the
+    # original one-instruction user-level model, unchanged: CSP = ISP,
+    # virtual addressing, the CPU escape and the control registers are
+    # refused.  A ``System`` enables them; see its docstring.
+    system: Optional["System"] = None
+    # Set by step() while it decodes the instruction after a CPU escape
+    # (p. 3-14); False at every instruction boundary.
+    cpu_prefix: bool = False
+
+    @property
+    def csp(self) -> int:
+        """The current stack pointer (PSW bit 9, Table 1-8 p. 1-15).
+
+        Without a ``System`` the model refuses CSP = ISP before decoding,
+        so this is always SP there."""
+        if self.system is not None and not (self.psw & PSW_SP):
+            return self.isp
+        return self.sp
+
+
+# --- The privileged machine ------------------------------------------------
+# CONFIG bits (Table 1-2, pp. 1-9..1-10).
+CONFIG_KL = 1 << 16     # kernel little endian
+CONFIG_PX = 1 << 17     # PC extension of 16-bit absolute addresses
+CONFIG_SE = 1 << 18     # stack cache enable
+CONFIG_T1IE = 1 << 24   # TIMER1 interrupt enable
+CONFIG_T1X = 1 << 23    # TIMER1 counts only in kernel mode
+CONFIG_T1CI = 1 << 22   # TIMER1 counts instructions
+CONFIG_T2IE = 1 << 31
+CONFIG_T2X = 1 << 30
+PSW_IPL_SHIFT = 12      # bits 14:12 (Table 1-8 p. 1-15)
+
+# Table 1-24 (p. 1-26): the register numbers of the CPU-modified mode 7.
+REG_MSP, REG_ISP, REG_SP, REG_CONFIG, REG_PSW, REG_SHAD, REG_VB, \
+    REG_STB, REG_FAULT, REG_ID, REG_TIMER1, REG_TIMER2 = range(1, 13)
+REG_NAMES = {1: "MSP", 2: "ISP", 3: "SP", 4: "CONFIG", 5: "PSW", 6: "SHAD",
+             7: "VB", 8: "STB", 9: "FAULT", 10: "ID", 11: "TIMER1",
+             12: "TIMER2"}
+
+# Table 1-26 (p. 1-38): exception identifiers.
+EXC_ZDIV, EXC_TRACE, EXC_ILLINS, EXC_ALIGN, EXC_PRIV, EXC_REG, \
+    EXC_FETCH, EXC_READ, EXC_WRITE = range(1, 10)
+
+# STE / PTE bits (Tables 2-1, 2-2, 2-3, pp. 2-5..2-7).
+STE_V, STE_W, STE_U, STE_S = 1, 2, 4, 8
+PTE_V, PTE_W, PTE_U, PTE_R, PTE_M = 1, 2, 4, 8, 16
+
+
+@dataclass
+class System:
+    """The privileged state of the part, for running a kernel.
+
+    Everything here is from the printed PRM (January 1993).  It is off
+    (``State.system is None``) for every user-level run, so the original
+    model, its tests and its refusals are unchanged.  With it:
+
+    * the control registers of §1.5 (pp. 1-8..1-20) exist and the CPU
+      escape (p. 3-14) reads and writes them (mode 7, Table 1-22/1-24);
+    * PSW bit 9 = 0 makes ISP the current stack pointer (p. 1-12, p. 1-15);
+    * PSW bit 16 turns on the MMU walk of Chapter 2 (pp. 2-1..2-8);
+    * CONFIG.PX extends 16-bit absolute addresses (Table 1-2, p. 1-10);
+    * the exception, interrupt and unimplemented-instruction sequences of
+      §1.11 (pp. 1-37..1-40) are performed instead of stopping;
+    * physical memory and devices are ``bus``: ``bus.read(pa)`` returns a
+      32-bit word (or raises ``BusError``), ``bus.write(pa, data, mask)``
+      stores the lanes of ``mask`` (bit 3 = bits 31:24, the record's
+      convention), so a device register is never read to be written.
+
+    Not modelled, stated: the TLBs and NPSRs (p. 2-1) -- every access walks
+    the tables, which is the same as the part for software that flushes
+    after changing a table (p. 2-5, FLUSHPTE p. 3-27), and different only
+    for software that relies on a stale entry; the instruction cache and
+    prefetch buffer (FLUSHI/FLUSHP/FLUSHPBE are then no-ops: text is read
+    from memory at every fetch); tracing (PSW bits 7, 8); the Chapter 4
+    timing of anything the printed tables do not price (``untimed``).
+    """
+
+    bus: object = None
+    config: int = 0                 # p. 1-9: 0 on reset
+    shad: int = 0                   # p. 1-35: 0 on an external reset
+    stb: int = 0
+    fault: int = 0
+    timer1: int = 0
+    timer2: int = 0
+    # The JTAG ID (Table 1-4, p. 1-11): version 1 (mask two), part 0,
+    # manufacturer 0x3B.  Which mask the 1993 boards carried is not
+    # printed; mask two is a choice.
+    ident: int = 0x1000003B
+    # Overflowed timers whose interrupt (level 1, Table 1-2) is pending.
+    timer1_pending: bool = False
+    timer2_pending: bool = False
+    # Mnemonics whose Chapter 4 cost could not be resolved (cyc = 0).
+    untimed: Dict[str, int] = field(default_factory=dict)
+    # Set while KCALL and the event sequences make their own accesses
+    # (the interrupt stack, the vector table) at kernel level.
+    kernel_level: bool = False
+    # Events taken, for the harness: (kind, ident, pc) tuples, newest last.
+    events: List[Tuple[str, int, int]] = field(default_factory=list)
+    # A harness choice, off by default: a CRET whose restored MSP is more
+    # than the cache size above SP (p. 1-13: stack-cache results then
+    # "unpredictable") fills the cache to SP + 256 and sets MSP there,
+    # i.e. its CATCH portion stops when the cache is full (p. 3-10)
+    # instead of being refused.  1e's notify() builds such frames, and
+    # its _exception entry (raml.s) resets an MSP above SP + SCSIZE.
+    cret_clamp: bool = False
+    cret_clamps: int = 0
 
 
 @dataclass
@@ -433,6 +539,11 @@ class Unimplemented(Trap):
     """FLUSHD / FLUSHDCE: implemented by the unimplemented sequence."""
 
 
+class TrappedNiladic(Trap):
+    """Niladic 0x200..0x3FF: the same sequence through VB+8 (p. 1-40).
+    Raised only with a ``System``; without one these are refused."""
+
+
 class Refusal(Exception):
     """A legal instruction or state outside this one-instruction subset.
 
@@ -463,6 +574,54 @@ class Unsupported(Refusal):
     pass
 
 
+class MemoryFault(Refusal):
+    """An MMU translation fault (p. 2-3): exception 7 (fetch), 8 (read) or
+    9 (write), with the faulting virtual address for FAULT (p. 1-39)."""
+
+    def __init__(self, reason: str, ident: int, va: int):
+        super().__init__(reason)
+        self.ident = ident
+        self.va = va & MASK32
+
+
+class PrivilegeViolation(Refusal):
+    """Exception 5 (Table 1-26): a privileged operation at user level."""
+
+
+class UnimplementedRegister(Refusal):
+    """Exception 6 (Table 1-26): CPU register 0 or 0xD..0xF (p. 1-27)."""
+
+
+class ZeroDivide(Unsupported):
+    """Exception 1 (Table 1-26, p. 3-17).  Without a ``System`` it is an
+    ``Unsupported`` refusal, as before."""
+
+
+class BusError(Refusal):
+    """The machine model has nothing at a physical address.
+
+    The part would take exception 0xA/0xB (Table 1-26) on an external bus
+    error; the harness instead stops, because an undecoded address in a
+    boot is a gap in the machine model, not a behaviour to emulate."""
+
+
+# Refusals that are architectural exceptions when a ``System`` is present.
+def _exception_ident(exc: Refusal) -> Optional[int]:
+    if isinstance(exc, MemoryFault):
+        return exc.ident
+    if isinstance(exc, AlignmentFault):
+        return EXC_ALIGN
+    if isinstance(exc, IllegalInstruction):
+        return EXC_ILLINS
+    if isinstance(exc, PrivilegeViolation):
+        return EXC_PRIV
+    if isinstance(exc, UnimplementedRegister):
+        return EXC_REG
+    if isinstance(exc, ZeroDivide):
+        return EXC_ZDIV
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Small helpers
 # ---------------------------------------------------------------------------
@@ -474,6 +633,17 @@ def _sx(value: int, bits: int) -> int:
     return (value ^ sign) - sign
 
 
+def _in_cache(state: State, w: int) -> bool:
+    """Does word address ``w`` hit the stack cache (p. 1-5, p. 1-12)?
+
+    With a ``System`` the cache also has to be enabled (CONFIG.SE,
+    Table 1-2 p. 1-10: "A 0 disables the stack cache from accessing")."""
+    if state.cache is None or not (state.sp <= w < state.msp):
+        return False
+    sysm = state.system
+    return sysm is None or bool(sysm.config & CONFIG_SE)
+
+
 def _read_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
                addr: int) -> int:
     """Read the big-endian word containing ``addr`` from overlay or image.
@@ -483,15 +653,75 @@ def _read_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
     README so a trace difference cannot hide behind it.
     """
     w = addr & ~3
-    if state.cache is not None and state.sp <= w < state.msp:
+    if _in_cache(state, w):
         return state.cache[(w >> 2) & 63] & MASK32
     return _memory_word(state, reader, w)
 
 
+def _translate(state: State, va: int, kind: str) -> int:
+    """Chapter 2's walk: virtual word address -> physical (pp. 2-1..2-8).
+
+    ``kind`` is "fetch", "read" or "write" (the three faults of p. 2-3).
+    Physical addressing (PSW bit 16 = 0, Table 1-8 p. 1-14) is the
+    identity.  The STE is at STB[31:12] : va[31:22] (p. 2-4); a nonpaged
+    STE (bit 3 = 1, Table 2-2 p. 2-6) maps base[31:22] : va[21:0] if the
+    page number va[21:12] is within the bound field (bits 21:12, "from
+    4,096 bytes (0x0) to 4 MBs (0x3FF)"); a paged STE (Table 2-1 p. 2-5)
+    points at a page table whose entry is at STE[31:12] : va[21:12]
+    (p. 2-6) and maps PTE[31:12] : va[11:0] (p. 2-8).  The user bit is
+    checked at user level and the writable bit on every store ("all valid
+    segments/pages can be read", "can be accessed by the kernel", Tables
+    2-2 and 2-3).  R and M are set in the memory copy of the PTE (Table
+    2-3, p. 2-7).  There is no TLB (``System`` docstring).
+    """
+    if not (state.psw & PSW_VIRTUAL):
+        return va & MASK32
+    sysm = state.system
+    bus = sysm.bus
+    ident = {"fetch": EXC_FETCH, "read": EXC_READ, "write": EXC_WRITE}[kind]
+    user = bool(state.psw & PSW_USER) and not sysm.kernel_level
+    write = kind == "write"
+    seg = (va >> 22) & 0x3FF
+    ste = bus.read((sysm.stb & 0xFFFFF000) | (seg << 2)) & MASK32
+    if not (ste & STE_V):
+        raise MemoryFault("%s fault: segment 0x%03x of 0x%08x has no valid "
+                          "STE (p. 2-3)" % (kind, seg, va), ident, va)
+    page = (va >> 12) & 0x3FF
+    if ste & STE_S:
+        if page > ((ste >> 12) & 0x3FF):
+            raise MemoryFault("%s fault: 0x%08x is beyond the bound of "
+                              "nonpaged STE 0x%08x (Table 2-2)"
+                              % (kind, va, ste), ident, va)
+        if user and not (ste & STE_U):
+            raise MemoryFault("%s fault: user access to kernel segment "
+                              "0x%08x (Table 2-2)" % (kind, va), ident, va)
+        if write and not (ste & STE_W):
+            raise MemoryFault("write fault: segment of 0x%08x is not "
+                              "writable (Table 2-2)" % va, ident, va)
+        return (ste & 0xFFC00000) | (va & 0x003FFFFF)
+    pte_addr = (ste & 0xFFFFF000) | (page << 2)
+    pte = bus.read(pte_addr) & MASK32
+    if not (pte & PTE_V):
+        raise MemoryFault("%s fault: page of 0x%08x has no valid PTE "
+                          "(p. 2-3)" % (kind, va), ident, va)
+    if user and not (pte & PTE_U):
+        raise MemoryFault("%s fault: user access to kernel page 0x%08x "
+                          "(Table 2-3)" % (kind, va), ident, va)
+    if write and not (pte & PTE_W):
+        raise MemoryFault("write fault: page of 0x%08x is not writable "
+                          "(Table 2-3)" % va, ident, va)
+    want = PTE_R | (PTE_M if write else 0)
+    if pte & want != want:
+        bus.write(pte_addr, pte | want, 0xF)
+    return (pte & 0xFFFFF000) | (va & 0xFFF)
+
+
 def _memory_word(state: State,
                  reader: Optional[Callable[[int], Optional[int]]],
-                 w: int) -> int:
+                 w: int, kind: str = "read") -> int:
     """The word of memory at ``w``, behind the stack cache."""
+    if state.system is not None:
+        return state.system.bus.read(_translate(state, w, kind)) & MASK32
     if w in state.memory:
         return state.memory[w] & MASK32
     if reader is not None:
@@ -501,11 +731,34 @@ def _memory_word(state: State,
     return 0
 
 
-def _store_word(state: State, w: int, value: int) -> None:
+def _store_word(state: State, w: int, value: int, mask: int = 0xF) -> None:
     """Store a whole word: into the stack cache inside [SP, MSP) when the
-    cache is modelled (p. 1-5, p. 1-12), otherwise into memory."""
-    if state.cache is not None and state.sp <= w < state.msp:
+    cache is modelled (p. 1-5, p. 1-12), otherwise into memory.
+
+    With a ``System`` the memory store goes to the bus with its byte
+    lanes (``mask``) and ``value`` carries only those lanes; inside the
+    cache it is merged into the cached word."""
+    if _in_cache(state, w):
+        if state.system is not None and mask != 0xF:
+            expanded = 0
+            for bit in range(4):
+                if mask & (1 << bit):
+                    expanded |= 0xFF << (8 * bit)
+            old = state.cache[(w >> 2) & 63]
+            value = (old & ~expanded) | (value & expanded)
         state.cache[(w >> 2) & 63] = value & MASK32
+    elif state.system is not None:
+        state.system.bus.write(_translate(state, w, "write"),
+                               value & MASK32, mask)
+    else:
+        state.memory[w] = value & MASK32
+
+
+def _memory_store(state: State, w: int, value: int) -> None:
+    """A whole word to memory, behind the stack cache (flushes)."""
+    if state.system is not None:
+        state.system.bus.write(_translate(state, w, "write"),
+                               value & MASK32, 0xF)
     else:
         state.memory[w] = value & MASK32
 
@@ -517,11 +770,13 @@ def cache_flush(state: State,
     below ``top`` downward, are copied from the stack cache to memory."""
     if state.cache is None:
         return
+    if state.system is not None and not (state.system.config & CONFIG_SE):
+        return
     for b in range(blocks):
         base = (top - 16 * (b + 1)) & MASK32
         for k in range(4):
             a = base + 4 * k
-            state.memory[a] = state.cache[(a >> 2) & 63] & MASK32
+            _memory_store(state, a, state.cache[(a >> 2) & 63])
 
 
 def cache_fill(state: State,
@@ -531,6 +786,8 @@ def cache_fill(state: State,
     from memory into the stack cache."""
     if state.cache is None:
         return
+    if state.system is not None and not (state.system.config & CONFIG_SE):
+        return
     for a in range(lo, hi, 4):
         state.cache[(a >> 2) & 63] = _memory_word(state, reader, a)
 
@@ -539,6 +796,8 @@ def _fetch_word(state: State, reader: Optional[Callable[[int], Optional[int]]],
                 addr: int) -> int:
     """Read one instruction word, distinguishing absent memory from zero."""
     w = addr & ~3
+    if state.system is not None:
+        return state.system.bus.read(_translate(state, w, "fetch")) & MASK32
     if w in state.memory:
         return state.memory[w] & MASK32
     if reader is not None:
@@ -557,10 +816,11 @@ def _fetch_parcel(state: State, reader: Optional[Callable[[int], Optional[int]]]
 
 
 def _fetch_instruction(state: State,
-                       reader: Optional[Callable[[int], Optional[int]]]
+                       reader: Optional[Callable[[int], Optional[int]]],
+                       at: Optional[int] = None
                        ) -> Tuple[int, List[int], int]:
     """Fetch and length-decode one instruction (pp. 1-21..1-25)."""
-    pc = state.pc & ~1
+    pc = (state.pc if at is None else at) & ~1
     parcels: List[int] = []
     try:
         p0 = _fetch_parcel(state, reader, pc)
@@ -589,16 +849,26 @@ class Operand:
     ea: int = 0             # effective byte address (memory operands)
     imm: int = 0            # immediate value (mode 0xF / 1-parcel imm5/wai5)
     is_imm: bool = False
+    reg: int = -1           # control register (CPU-prefixed mode 7), or -1
 
 
-def _abs_addr(field_value: int, width: int) -> int:
+def _abs_addr(field_value: int, width: int,
+              state: Optional[State] = None) -> int:
     """Absolute address from a 16- or 32-bit field.
 
     The PRM (p. 1-23) makes the upper half come from CONFIG bit 17 (PC
-    extension) when set.  This model fixes CONFIG at its reset value of
-    zero (p. 1-36), so 16-bit absolute addresses are zero-extended.
+    extension) when set: "bits 28:16 are replaced with 0 and bits 31:29
+    ... are copied from bits 31:29 of the program counter".  Without a
+    ``System`` CONFIG is fixed at its reset value of zero (p. 1-36), so
+    16-bit absolute addresses are zero-extended.
     """
-    return (field_value & 0xFFFF) if width == 16 else (field_value & MASK32)
+    if width != 16:
+        return field_value & MASK32
+    value = field_value & 0xFFFF
+    if (state is not None and state.system is not None
+            and state.system.config & CONFIG_PX):
+        value |= state.pc & 0xE0000000
+    return value
 
 
 def _resolve_general(state: State,
@@ -608,17 +878,36 @@ def _resolve_general(state: State,
 
     ``width`` is 16 for a three-parcel instruction and 32 for a
     five-parcel instruction; it selects the extension rule of p. 1-23.
+
+    After a CPU prefix (``state.cpu_prefix``, System only) Table 1-22
+    (p. 1-26) applies instead: mode 7 is a control register numbered by
+    the field's low four bits (p. 1-27), the word modes 0xC..0xF are
+    unchanged, and no other mode is defined for the pair (an illegal
+    instruction, p. 1-39: "An unimplemented instruction is illegal if it
+    follows a CPU instruction and contains an illegal addressing mode").
     """
+    if state.cpu_prefix:
+        if mode == 0x7:
+            reg = field_value & 0xF
+            if reg == 0 or reg > REG_TIMER2:
+                raise UnimplementedRegister(
+                    "unimplemented register 0x%x (Table 1-24 p. 1-26, "
+                    "p. 1-27)" % reg)
+            return Operand(4, False, reg=reg)
+        if mode < 0xC:
+            raise IllegalInstruction(
+                "illegal: operand mode 0x%x after CPU (Table 1-22, "
+                "p. 1-26)" % mode)
     if mode == 0xF:                                  # $data, immediate
         value = _sx(field_value, 16) if width == 16 else (field_value & MASK32)
         return Operand(4, True, imm=value, is_imm=True)
 
     if mode == 0xC:                                  # *$addr:W
-        return Operand(4, True, ea=_abs_addr(field_value, width))
+        return Operand(4, True, ea=_abs_addr(field_value, width, state))
 
     if mode == 0xD:                                  # Roffset:W
         return Operand(4, True,
-                       ea=(state.sp + _sx(field_value, width)) & MASK32)
+                       ea=(state.csp + _sx(field_value, width)) & MASK32)
 
     if mode == 0xE:                                  # *Roffset:W
         off = _sx(field_value, width)
@@ -626,17 +915,17 @@ def _resolve_general(state: State,
             raise AlignmentFault(
                 "alignment: stack-offset-indirect offset 0x%x is not "
                 "word-aligned (p. 1-27)" % off)
-        pointer = _read_word(state, reader, (state.sp + off) & MASK32)
+        pointer = _read_word(state, reader, (state.csp + off) & MASK32)
         return Operand(4, True, ea=pointer)
 
     if 0 <= mode <= 0xB:
         size = 1 if mode in (0x0, 0x1, 0x4, 0x5, 0x8, 0x9) else 2
         signed = mode in (0x0, 0x2, 0x4, 0x6, 0x8, 0xA)
         if mode < 0x4:                               # *$addr:B/UB/H/UH
-            ea = _abs_addr(field_value, width)
+            ea = _abs_addr(field_value, width, state)
         else:                                        # Roffset or *Roffset
             off = _sx(field_value, width)
-            ea = (state.sp + off) & MASK32
+            ea = (state.csp + off) & MASK32
             if mode >= 0x8:                          # indirect
                 if off & 3:
                     raise AlignmentFault(
@@ -651,14 +940,14 @@ def _resolve_general(state: State,
 
 def _stk5(state: State, field_value: int) -> Operand:
     """One-parcel stk5: zero-extended then multiplied by four (p. 1-21)."""
-    return Operand(4, True, ea=(state.sp + (field_value << 2)) & MASK32)
+    return Operand(4, True, ea=(state.csp + (field_value << 2)) & MASK32)
 
 
 def _istk5(state: State, reader: Optional[Callable[[int], Optional[int]]],
            field_value: int) -> Operand:
     """One-parcel istk5: word stack offset indirect (p. 1-22)."""
     pointer = _read_word(state, reader,
-                         (state.sp + (field_value << 2)) & MASK32)
+                         (state.csp + (field_value << 2)) & MASK32)
     return Operand(4, True, ea=pointer)
 
 
@@ -670,6 +959,93 @@ def _imm5(field_value: int) -> Operand:
 def _wai5(field_value: int) -> Operand:
     """One-parcel wai5: unsigned, multiplied by four (p. 1-22)."""
     return Operand(4, True, imm=(field_value << 2) & MASK32, is_imm=True)
+
+
+def _read_control(state: State, reg: int) -> int:
+    """A control register read through mode 7 (Table 1-24, p. 1-26).
+
+    Reserved bits read 0: bits 3:0 of ISP, MSP, SP, SHAD and VB (Tables
+    1-5, 1-6, 1-9, 1-10, 1-14), bits 15:0 of CONFIG (Table 1-2), bits
+    10:0 of STB (Table 1-11).  Register 0 and 0xD..0xF are the
+    unimplemented-register exception 6 (p. 1-27; p. 3-14 calls register 0
+    an "unimplemented instruction exception", and Table 1-26's
+    identifier 6 is followed)."""
+    sysm = state.system
+    if reg == REG_MSP:
+        return state.msp & ~0xF & MASK32
+    if reg == REG_ISP:
+        return state.isp & ~0xF & MASK32
+    if reg == REG_SP:
+        return state.sp & ~0xF & MASK32
+    if reg == REG_CONFIG:
+        return sysm.config & 0xFFFF0000
+    if reg == REG_PSW:
+        return state.psw & MASK32
+    if reg == REG_SHAD:
+        return sysm.shad & ~0xF & MASK32
+    if reg == REG_VB:
+        return state.vb & ~0xF & MASK32
+    if reg == REG_STB:
+        return sysm.stb & 0xFFFFF800
+    if reg == REG_FAULT:
+        return sysm.fault & MASK32
+    if reg == REG_ID:
+        return sysm.ident & MASK32
+    if reg == REG_TIMER1:
+        return sysm.timer1 & MASK32
+    if reg == REG_TIMER2:
+        return sysm.timer2 & MASK32
+    raise UnimplementedRegister(
+        "unimplemented register 0x%x (Table 1-24 p. 1-26, p. 1-27)" % reg)
+
+
+def _write_control(state: State, reg: int, value: int) -> None:
+    """A control register write through mode 7, at retirement.
+
+    "When the SP is the direct destination ... the MSP is updated with
+    the same value. This defines an empty stack cache" (p. 1-13).  SHAD
+    follows a written CSP (p. 1-16: "any time the CSP is modified"), but
+    not a PSW write that changes which pointer is the CSP (p. 1-15: the
+    program must then MOV the new pointer to SHAD itself).  Writing STB
+    flushes the TLBs (p. 1-18), which this model does not have.  ID
+    writes do nothing (p. 1-11)."""
+    sysm = state.system
+    value &= MASK32
+    if reg == REG_MSP:
+        state.msp = value & ~0xF
+    elif reg == REG_ISP:
+        state.isp = value & ~0xF
+        if not (state.psw & PSW_SP):
+            sysm.shad = state.isp
+    elif reg == REG_SP:
+        state.sp = state.msp = value & ~0xF
+        if state.psw & PSW_SP:
+            sysm.shad = state.sp
+    elif reg == REG_CONFIG:
+        sysm.config = value & 0xFFFF0000
+        state.config_kl = bool(sysm.config & CONFIG_KL)
+    elif reg == REG_PSW:
+        # Bits 3:0 "must be written with 0" and 31:17 are reserved
+        # (Table 1-8, pp. 1-14, 1-16).
+        state.psw = value & 0x0001FFF0
+    elif reg == REG_SHAD:
+        sysm.shad = value & ~0xF
+    elif reg == REG_VB:
+        state.vb = value & ~0xF
+    elif reg == REG_STB:
+        sysm.stb = value & 0xFFFFF800
+    elif reg == REG_FAULT:
+        sysm.fault = value
+    elif reg == REG_ID:
+        pass
+    elif reg == REG_TIMER1:
+        sysm.timer1 = value
+    elif reg == REG_TIMER2:
+        sysm.timer2 = value
+    else:
+        raise UnimplementedRegister(
+            "unimplemented register 0x%x (Table 1-24 p. 1-26, p. 1-27)"
+            % reg)
 
 
 def _little_endian(state: State) -> bool:
@@ -703,6 +1079,8 @@ def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
     """Read and extend an operand (p. 1-3, p. 1-4, p. 1-28)."""
     if op.is_imm:
         return op.imm
+    if op.reg >= 0:
+        return _read_control(state, op.reg)
     if op.size == 4:
         if op.ea & 3:
             raise AlignmentFault(
@@ -767,7 +1145,12 @@ def _prepare_store(state: State,
         mask = 1 << (shift // 8)
         data = (value & 0xFF) << shift
 
-    old = _read_word(state, reader, word_addr)
+    if state.system is not None and not _in_cache(state, word_addr):
+        # The bus takes the lanes; a device register is not read to be
+        # written (``_store_word``).
+        old = 0
+    else:
+        old = _read_word(state, reader, word_addr)
     expanded = 0
     for bit in range(4):
         if mask & (1 << bit):
@@ -844,7 +1227,7 @@ def _divide(dst: int, src: int) -> Tuple[int, int, int]:
     a = _sx(dst & MASK32, 32)
     b = _sx(src & MASK32, 32)
     if b == 0:
-        raise Unsupported(
+        raise ZeroDivide(
             "unsupported: divide-by-zero exception (p. 3-17); the event "
             "sequence is outside this model")
     quotient = abs(a) // abs(b)
@@ -859,7 +1242,7 @@ def _udivide(dst: int, src: int) -> Tuple[int, int]:
     """Unsigned division and remainder (pp. 3-48, 3-49)."""
     a, b = dst & MASK32, src & MASK32
     if b == 0:
-        raise Unsupported(
+        raise ZeroDivide(
             "unsupported: divide-by-zero exception (p. 3-48); the event "
             "sequence is outside this model")
     return a // b, a % b
@@ -1015,6 +1398,35 @@ def _return(state: State, reader: Optional[Callable[[int], Optional[int]]],
     return new_pc, new_sp, new_msp
 
 
+def _isp_enter(state: State, target: int) -> Tuple[int, int]:
+    """ENTER with CSP = ISP: "SHAD = ISP = target", no cache traffic, and
+    "PSW.E = 1" (pp. 3-19, 3-20).  Returns (new_isp, new_psw)."""
+    return target & ~0xF & MASK32, state.psw | PSW_E
+
+
+def _isp_popn(state: State, offset: int) -> int:
+    """POPN with CSP = ISP: ISP += src (p. 3-38), quad-aligned (p. 1-12)."""
+    if offset < 0:
+        raise IllegalInstruction(
+            "illegal: POPN negative offset -0x%x (p. 3-38)" % (-offset))
+    return (state.isp + offset) & ~0xF & MASK32
+
+
+def _isp_return(state: State,
+                reader: Optional[Callable[[int], Optional[int]]],
+                offset: int) -> Tuple[int, int]:
+    """RETURN with CSP = ISP: PC = *(ISP + src), ISP += src (p. 3-40)."""
+    if offset < 0:
+        raise IllegalInstruction(
+            "illegal: RETURN negative offset -0x%x (p. 3-40)" % (-offset))
+    if offset & 3:
+        raise AlignmentFault(
+            "alignment: RETURN PC word offset 0x%x is not word-aligned "
+            "(p. 3-40)" % offset)
+    new_pc = _read_word(state, reader, (state.isp + offset) & MASK32)
+    return new_pc, (state.isp + (offset & ~0xF)) & MASK32
+
+
 # ---------------------------------------------------------------------------
 # word32 and flow32 operands
 # ---------------------------------------------------------------------------
@@ -1029,12 +1441,12 @@ def _word32_value(state: State,
     0xF is the immediate value.
     """
     if mode == 0xD:
-        return (state.sp + _sx(field_value, width)) & MASK32
+        return (state.csp + _sx(field_value, width)) & MASK32
     if mode == 0xF:
         return (_sx(field_value, 16) if width == 16
                 else field_value & MASK32) & MASK32
     if mode == 0xC:
-        addr = _abs_addr(field_value, width)
+        addr = _abs_addr(field_value, width, state)
         if addr & 3:
             raise AlignmentFault(
                 "alignment: word32 absolute address 0x%08x is not "
@@ -1046,7 +1458,7 @@ def _word32_value(state: State,
             raise AlignmentFault(
                 "alignment: stack-offset-indirect offset 0x%x is not "
                 "word-aligned (p. 1-27)" % off)
-        return _read_word(state, reader, (state.sp + off) & MASK32)
+        return _read_word(state, reader, (state.csp + off) & MASK32)
     raise IllegalInstruction(
         "illegal: CATCH/ENTER operand mode 0x%x is not word32 "
         "(Tables 1-21, 3-2, pp. 1-25, 3-4)" % mode)
@@ -1064,7 +1476,7 @@ def _flow_target(state: State,
     out in the README.
     """
     if mode == 0xC:                                  # **$addr
-        addr = _abs_addr(field_value, width)
+        addr = _abs_addr(field_value, width, state)
         if addr & 3:
             raise AlignmentFault(
                 "alignment: %s absolute-indirect address 0x%08x is not "
@@ -1076,11 +1488,11 @@ def _flow_target(state: State,
             raise AlignmentFault(
                 "alignment: %s stack-offset-indirect offset 0x%x is not "
                 "word-aligned (p. 1-27)" % (name, off))
-        return _read_word(state, reader, (state.sp + off) & MASK32)
+        return _read_word(state, reader, (state.csp + off) & MASK32)
     if mode == 0xE:                                  # Label
         return ((state.pc & ~1) + _sx(field_value, width)) & MASK32
     if mode == 0xF:                                  # *$addr
-        return _abs_addr(field_value, width)
+        return _abs_addr(field_value, width, state)
     raise IllegalInstruction(
         "illegal: %s operand mode 0x%x is not flow32 (Table 1-23, p. 1-26)"
         % (name, mode))
@@ -1284,20 +1696,39 @@ def step(state: State,
 
     try:
         # --- state limitations, not instruction semantics -----------------
-        if state.psw & PSW_VIRTUAL:
+        if state.system is None and state.psw & PSW_VIRTUAL:
             raise Unsupported(
                 "unsupported: virtual addressing (PSW bit 16); this model "
                 "implements the physical address space only (p. 2-1)")
-        if not (state.psw & PSW_SP):
+        if state.system is None and not (state.psw & PSW_SP):
             raise Unsupported(
                 "unsupported: CSP is ISP (PSW bit 9 = 0); the interrupt "
                 "stack is outside this model (p. 1-12)")
         _check_stack_state(state)
+        # CSP = ISP (System only): "The ISP is not associated with the
+        # stack cache" (p. 1-12), so ENTER, POPN and RETURN move ISP with
+        # no cache traffic and CATCH is a no-op (pp. 3-10, 3-19..3-20).
+        isp_mode = state.system is not None and not (state.psw & PSW_SP)
 
         pc, parcels, length = _fetch_instruction(state, memory_reader)
         insn0 = parcels[0]
         insn1 = parcels[1] if len(parcels) > 1 else 0
         next_pc = (pc + 2 * length) & MASK32
+        if state.system is not None and length == 1 and parcels[0] == 0x2C00:
+            # The CPU escape (niladic 0x0B/0x0, p. 3-14): "The instruction
+            # following CPU is considered part of the CPU instruction"; an
+            # event saves the CPU's PC, and the PC advances by four or six
+            # parcels.  Only the three- and five-parcel forms have the
+            # mode fields CPU modifies (Table 1-22, p. 1-26).
+            _, parcels, length = _fetch_instruction(state, memory_reader,
+                                                    pc + 2)
+            if length == 1:
+                raise IllegalInstruction(
+                    "illegal: CPU followed by a one-parcel instruction "
+                    "0x%04x (p. 3-14, Table 1-22)" % parcels[0])
+            insn1 = parcels[0]
+            next_pc = (pc + 2 + 2 * length) & MASK32
+            state.cpu_prefix = True
         new_sp = state.sp
         new_msp = state.msp
         new_psw = state.psw
@@ -1348,7 +1779,7 @@ def step(state: State,
                     (Operand(4, True, ea=(frame - 4) & MASK32), state.psw),
                 ]
                 new_isp = (frame - 16) & MASK32
-                next_pc = _read_word(state, memory_reader, state.vb)
+                next_pc = _vector_word(state, memory_reader, state.vb)
                 # "PSW = PSW & 0xFFFF0000": kernel level, ISP selected
                 # as CSP, tracing/interrupts inhibited (p. 3-29).
                 new_psw = state.psw & 0xFFFF0000
@@ -1356,7 +1787,7 @@ def step(state: State,
                 mnemonic = "CALL"
                 return_pc = next_pc
                 target = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
-                store = (Operand(4, True, ea=state.sp), return_pc)
+                store = (Operand(4, True, ea=state.csp), return_pc)
                 next_pc = target
             elif op == 0x02:                          # stack class
                 sub = p0 & 0x3
@@ -1366,21 +1797,32 @@ def step(state: State,
                     # One-filled, not sign-extended: field 0 -> -4096,
                     # field 0xFF -> -16 (p. 1-21, p. 3-20).
                     offset = _sx(((0xFFFFFF00 | stk8) << 4) & MASK32, 32)
-                    target = (state.sp + offset) & MASK32
-                    new_sp, new_msp, new_psw, flush_blocks = _enter_offset(
-                        state, target)
+                    target = (state.csp + offset) & MASK32
+                    if isp_mode:
+                        new_isp, new_psw = _isp_enter(state, target)
+                    else:
+                        new_sp, new_msp, new_psw, flush_blocks = (
+                            _enter_offset(state, target))
                 elif sub == 0x1:                      # CATCH stk8
                     mnemonic = "CATCH"
-                    target = (state.sp + (stk8 << 4)) & MASK32
-                    new_msp = _catch_msp(state, target)
+                    if not isp_mode:
+                        target = (state.sp + (stk8 << 4)) & MASK32
+                        new_msp = _catch_msp(state, target)
                 elif sub == 0x2:                      # RETURN stk8
                     mnemonic = "RETURN"
-                    new_pc, new_sp, new_msp = _return(
-                        state, memory_reader, stk8 << 4)
+                    if isp_mode:
+                        new_pc, new_isp = _isp_return(state, memory_reader,
+                                                      stk8 << 4)
+                    else:
+                        new_pc, new_sp, new_msp = _return(
+                            state, memory_reader, stk8 << 4)
                     next_pc = new_pc
                 else:                                 # POPN stk8
                     mnemonic = "POPN"
-                    new_sp, new_msp = _popn(state, stk8 << 4)
+                    if isp_mode:
+                        new_isp = _isp_popn(state, stk8 << 4)
+                    else:
+                        new_sp, new_msp = _popn(state, stk8 << 4)
             elif op == 0x03:                          # JMP pcrel10
                 mnemonic = "JMP"
                 next_pc = (pc + (_sx(p0 & 0x3FF, 10) << 1)) & MASK32
@@ -1410,6 +1852,10 @@ def step(state: State,
                         "unsupported: CPU register escape (niladic "
                         "0x0B/0x0; p. 3-14); control registers are not "
                         "modelled")
+                elif 0x200 <= sub <= 0x3FF and state.system is not None:
+                    raise TrappedNiladic(
+                        "trapped niladic 0x%03x (VB+8; Table 1-17 p. 1-22, "
+                        "p. 1-40)" % sub)
                 elif 0x200 <= sub <= 0x3FF:
                     raise Unsupported(
                         "unsupported: trapped niladic 0x%03x (VB+8; "
@@ -1421,6 +1867,10 @@ def step(state: State,
                         "sequence is taken (p. 3-22)")
                 elif sub == 0x001:                      # KRET
                     mnemonic = "KRET"
+                    if state.psw & PSW_USER and state.system is not None:
+                        raise PrivilegeViolation(
+                            "privilege violation: KRET at user level "
+                            "(p. 3-30)")
                     if state.psw & PSW_USER:
                         raise Unsupported(
                             "unsupported: privilege violation; KRET is "
@@ -1431,6 +1881,12 @@ def step(state: State,
                     new_psw = _read_word(state, memory_reader,
                                          (state.isp + 12) & MASK32)
                     new_isp = (state.isp + 16) & MASK32
+                elif sub == 0x003 and state.system is not None:
+                    # p. 3-24; no decoded-instruction cache is modelled
+                    # (System docstring), so there is nothing to mark.
+                    mnemonic = "FLUSHI"
+                elif sub == 0x004 and state.system is not None:
+                    mnemonic = "FLUSHP"                 # p. 3-25, likewise
                 elif sub == 0x003:
                     raise Unsupported(
                         "unsupported: FLUSHI (niladic 0x0B/0x3; p. 3-24)")
@@ -1439,6 +1895,10 @@ def step(state: State,
                         "unsupported: FLUSHP (niladic 0x0B/0x4; p. 3-25)")
                 elif sub == 0x005:                      # CRET
                     mnemonic = "CRET"
+                    if state.psw & PSW_USER and state.system is not None:
+                        raise PrivilegeViolation(
+                            "privilege violation: CRET at user level "
+                            "(pp. 3-15, 3-16)")
                     if state.psw & PSW_USER:
                         raise Unsupported(
                             "unsupported: privilege violation; CRET is "
@@ -1452,6 +1912,11 @@ def step(state: State,
                                             state.isp) & ~0xF
                     fetched_msp = _read_word(state, memory_reader,
                                              (state.isp + 4) & MASK32) & ~0xF
+                    if (state.system is not None
+                            and state.system.cret_clamp
+                            and fetched_msp - fetched_sp > SCSIZE):
+                        fetched_msp = fetched_sp + SCSIZE
+                        state.system.cret_clamps += 1
                     if (fetched_msp < fetched_sp
                             or fetched_msp - fetched_sp > SCSIZE):
                         raise Unsupported(
@@ -1493,7 +1958,7 @@ def step(state: State,
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
                     _load(state, memory_reader, _wai5(src5)))
-                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result)
             elif op == 0x0E:                          # AND3 imm5, stk5
                 # p. 3-7: the one-parcel encodings are 0x0E AND3 imm5,stk5
@@ -1502,7 +1967,7 @@ def step(state: State,
                 mnemonic = "AND3"
                 result = (_load(state, memory_reader, _stk5(state, dst5))
                           & _load(state, memory_reader, _imm5(src5)))
-                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result & MASK32)
             elif op == 0x0F:                          # AND stk5, stk5
                 mnemonic = "AND"
@@ -1546,7 +2011,7 @@ def step(state: State,
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
                     _load(state, memory_reader, _imm5(src5)))
-                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result)
             elif op == 0x16:                          # ADD stk5, stk5
                 mnemonic = "ADD"
@@ -1561,7 +2026,7 @@ def step(state: State,
                     state.psw,
                     _load(state, memory_reader, _stk5(state, dst5)),
                     _load(state, memory_reader, _stk5(state, src5)))
-                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result)
             elif op == 0x18:                          # MOV stk5, stk5
                 mnemonic = "MOV"
@@ -1612,7 +2077,7 @@ def step(state: State,
                     result = (dst_value << count) & MASK32
                 else:
                     result = (_sx(dst_value & MASK32, 32) >> count) & MASK32
-                store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result)
             else:
                 raise Unsupported(
@@ -1651,7 +2116,7 @@ def step(state: State,
                     return_pc = next_pc
                     target = _flow_target(state, memory_reader, mono,
                                           smode, 32, "CALL")
-                    store = (Operand(4, True, ea=state.sp), return_pc)
+                    store = (Operand(4, True, ea=state.csp), return_pc)
                     next_pc = target
                 elif sub == 0x2:                        # RETURN
                     mnemonic = "RETURN"
@@ -1659,8 +2124,12 @@ def step(state: State,
                         raise IllegalInstruction(
                             "illegal: RETURN operand mode 0x%x (only "
                             "word stack offset, p. 3-40)" % smode)
-                    new_pc, new_sp, new_msp = _return(
-                        state, memory_reader, _sx(mono, 32))
+                    if isp_mode:
+                        new_pc, new_isp = _isp_return(state, memory_reader,
+                                                      _sx(mono, 32))
+                    else:
+                        new_pc, new_sp, new_msp = _return(
+                            state, memory_reader, _sx(mono, 32))
                     next_pc = new_pc
                 elif sub == 0x3:                        # JMP
                     mnemonic = "JMP"
@@ -1685,7 +2154,8 @@ def step(state: State,
                     mnemonic = "CATCH"
                     target = _word32_value(state, memory_reader,
                                             mono, smode, 32)
-                    new_msp = _catch_msp(state, target)
+                    if not isp_mode:
+                        new_msp = _catch_msp(state, target)
                 elif sub == 0x9:                        # ENTER
                     mnemonic = "ENTER"
                     if smode == 0xD:
@@ -1696,9 +2166,16 @@ def step(state: State,
                                 "negative; ENTER R0 included (p. 3-21)"
                                 % raw)
                         offset = raw & ~0xF
-                        target = (state.sp + offset) & MASK32
-                        new_sp, new_msp, new_psw, flush_blocks = (
-                            _enter_offset(state, target))
+                        target = (state.csp + offset) & MASK32
+                        if isp_mode:
+                            new_isp, new_psw = _isp_enter(state, target)
+                        else:
+                            new_sp, new_msp, new_psw, flush_blocks = (
+                                _enter_offset(state, target))
+                    elif isp_mode:
+                        target = _word32_value(state, memory_reader,
+                                                mono, smode, 32)
+                        new_isp, new_psw = _isp_enter(state, target)
                     else:
                         target = _word32_value(state, memory_reader,
                                                 mono, smode, 32)
@@ -1715,8 +2192,11 @@ def step(state: State,
                         raise IllegalInstruction(
                             "illegal: POPN operand mode 0x%x (only "
                             "word stack offset, p. 3-38)" % smode)
-                    new_sp, new_msp = _popn(
-                        state, _sx(mono, 32))
+                    if isp_mode:
+                        new_isp = _isp_popn(state, _sx(mono, 32))
+                    else:
+                        new_sp, new_msp = _popn(
+                            state, _sx(mono, 32))
                 elif sub == 0x0:                        # KCALL
                     mnemonic = "KCALL"
                     _check_interrupt_stack(state, need_vb=True)
@@ -1732,7 +2212,7 @@ def step(state: State,
                          state.psw),
                     ]
                     new_isp = (frame - 16) & MASK32
-                    next_pc = _read_word(state, memory_reader, state.vb)
+                    next_pc = _vector_word(state, memory_reader, state.vb)
                     new_psw = state.psw & 0xFFFF0000
                 elif sub == 0xA:                        # LDRAA
                     mnemonic = "LDRAA"
@@ -1740,8 +2220,14 @@ def step(state: State,
                     # for a JMP and stored in the accumulator.
                     target = _flow_target(state, memory_reader, mono,
                                           smode, 32, "LDRAA")
-                    store = (Operand(4, True, ea=(state.sp + 4) & MASK32),
+                    store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                              target)
+                elif sub in (0xB, 0xC) and state.system is not None:
+                    # FLUSHPTE (p. 3-27) / FLUSHPBE (p. 3-26): the operand
+                    # is an address; with no TLB, NPSR or prefetch buffer
+                    # modelled there is no entry to mark invalid.
+                    mnemonic = "FLUSHPTE" if sub == 0xB else "FLUSHPBE"
+                    _word32_value(state, memory_reader, mono, smode, 32)
                 elif sub == 0xB:
                     raise Unsupported(
                         "unsupported: FLUSHPTE (monadic 0x00/0xB; p. 3-27)")
@@ -1779,7 +2265,7 @@ def step(state: State,
                     result, new_psw, _ = _add_result(state.psw, dst, src)
                 else:
                     result, new_psw, _ = _sub_result(state.psw, dst, src)
-                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                store = ((Operand(4, True, ea=(state.csp + 4) & MASK32)
                           if to_acc else dst_op), result)
 
             elif opcode in (0x1D, 0x1E, 0x1F):          # CMPGT/CMPHI/CMPEQ
@@ -1815,7 +2301,7 @@ def step(state: State,
                     result = (old + src) & MASK32
                 # pp. 3-6, 3-8, 3-37: the original destination goes to
                 # the accumulator, and carry/overflow are not affected.
-                acc = Operand(4, True, ea=(state.sp + 4) & MASK32)
+                acc = Operand(4, True, ea=(state.csp + 4) & MASK32)
                 if (dst_op.size == 4 and not dst_op.is_imm
                         and dst_op.ea == acc.ea):
                     # p. 3-6 note: "If R4 is the destination, after the
@@ -1854,7 +2340,7 @@ def step(state: State,
                     result = quotient if opcode == 0x2F else remainder
                     # pp. 3-48, 3-49: C is always cleared; V unchanged.
                     new_psw = state.psw & ~PSW_C
-                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                store = ((Operand(4, True, ea=(state.csp + 4) & MASK32)
                           if to_acc else dst_op), result)
 
             elif opcode in (0x26, 0x36):                # MUL/MUL3
@@ -1869,7 +2355,7 @@ def step(state: State,
                 width_bytes = 4 if to_acc else dst_op.size
                 result, new_psw, _ = _mul_result(state.psw, dst, src,
                                                  width_bytes)
-                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                store = ((Operand(4, True, ea=(state.csp + 4) & MASK32)
                           if to_acc else dst_op), result)
 
             elif opcode in (0x0C, 0x0D):                # TADD/TSUB
@@ -1916,7 +2402,7 @@ def step(state: State,
                 else:
                     result = dst ^ src
                 to_acc = opcode in (0x31, 0x32, 0x34)
-                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                store = ((Operand(4, True, ea=(state.csp + 4) & MASK32)
                           if to_acc else dst_op), result & MASK32)
 
             elif opcode in (0x2C, 0x2D, 0x2E, 0x3C, 0x3D, 0x3E):
@@ -1942,7 +2428,7 @@ def step(state: State,
                 else:                                   # USHR[3], logical
                     result = (value & MASK32) >> count
                 to_acc = opcode in (0x3C, 0x3D, 0x3E)
-                store = ((Operand(4, True, ea=(state.sp + 4) & MASK32)
+                store = ((Operand(4, True, ea=(state.csp + 4) & MASK32)
                           if to_acc else dst_op), result & MASK32)
 
             elif opcode == 0x04:                        # MOVA
@@ -2047,9 +2533,47 @@ def step(state: State,
                        25 if length == 5 else 24))
 
         # --- Chapter 4 occupancy, then the one architectural write -------
-        cyc = _retirement_cycles(mnemonic, folded, branch_taken,
-                                 branch_predicted, flush_blocks,
-                                 state.timing, dqm_cycles)
+        sysm = state.system
+        state.cpu_prefix = False
+        if sysm is None:
+            cyc = _retirement_cycles(mnemonic, folded, branch_taken,
+                                     branch_predicted, flush_blocks,
+                                     state.timing, dqm_cycles)
+        else:
+            # A kernel restores PSW.F with KRET/CRET and executes the
+            # privileged instructions; where Chapter 4 prints no cell the
+            # boot must not stop for a timing reason, so cyc is 0 and the
+            # mnemonic is counted in System.untimed.
+            try:
+                cyc = _retirement_cycles(mnemonic, folded, branch_taken,
+                                         branch_predicted, flush_blocks,
+                                         state.timing, dqm_cycles)
+            except (Refusal, RuntimeError):
+                cyc = 0
+                key = mnemonic or "?"
+                sysm.untimed[key] = sysm.untimed.get(key, 0) + 1
+        reg_store: Optional[Tuple[Operand, int]] = None
+        if store is not None and store[0].reg >= 0:
+            # "if there is a register write in user mode, a privilege
+            # violation exception sequence ... is performed" (p. 1-27).
+            if state.psw & PSW_USER:
+                raise PrivilegeViolation(
+                    "privilege violation: write of %s at user level "
+                    "(p. 1-27)" % REG_NAMES[store[0].reg])
+            reg_store, store = store, None
+        if sysm is not None and mnemonic == "KCALL":
+            # KCALL's frame goes to the interrupt stack at kernel level
+            # (a fault there resets the part, p. 3-29), from any level.
+            sysm.kernel_level = True
+        if sysm is not None and extra_stores:
+            # Translate every store before making any, so that a write
+            # fault (p. 2-3) leaves no half-done instruction behind.
+            for op_, _v in ([store] if store else []) + extra_stores:
+                w = op_.ea & ~3 & MASK32
+                if not op_.is_imm and op_.reg < 0 and not _in_cache(state, w):
+                    _translate(state, w, "write")
+        pre_isp = state.isp & MASK32
+        pre_psw = state.psw
 
         mem_we = 0
         mem_addr = 0
@@ -2059,13 +2583,13 @@ def step(state: State,
             store_op, store_value = store
             word_addr, new_word, mem_wdata, mem_wmask = _prepare_store(
                 state, memory_reader, store_op, store_value)
-            _store_word(state, word_addr, new_word)
+            _store_word(state, word_addr, new_word, mem_wmask)
             mem_we = 1
             mem_addr = word_addr
         for extra_op, extra_value in extra_stores:
-            extra_addr, extra_word, _, _ = _prepare_store(
+            extra_addr, extra_word, _, extra_mask = _prepare_store(
                 state, memory_reader, extra_op, extra_value)
-            _store_word(state, extra_addr, extra_word)
+            _store_word(state, extra_addr, extra_word, extra_mask)
 
         # The stack cache's contents, when modelled: ENTER flushes blocks
         # from the top of the window before the pointers move, CATCH fills
@@ -2076,12 +2600,36 @@ def step(state: State,
                 cache_flush(state, memory_reader, pre_msp, flush_blocks)
             elif mnemonic == "CATCH" and (new_msp & MASK32) > pre_msp:
                 cache_fill(state, memory_reader, pre_msp, new_msp & MASK32)
+        if sysm is not None and mnemonic == "ENTER" and not isp_mode:
+            # p. 3-21: "the target address and the new MSP, if the MSP is
+            # updated, are checked to verify that stores are valid at the
+            # current execution level.  If [not], a read fault exception,
+            # exception type 8 ... is flagged for ENTER.  The exception is
+            # processed after any stack flushing is completed."  SP and
+            # MSP are left as they were (the flushed blocks are also still
+            # in the cache), so the ENTER restarts: 1e's trap.c maps the
+            # stack page ("CATCH/ENTER will generate a read fault when
+            # checking the new SP/MSP values") and returns to it.
+            checks = [new_sp & MASK32]
+            if (new_msp & MASK32) != pre_msp:
+                checks.append(new_msp & MASK32)
+            for va in checks:
+                try:
+                    _translate(state, va & ~3, "write")
+                except MemoryFault as fault:
+                    raise MemoryFault(
+                        "read fault: ENTER's check of 0x%08x (p. 3-21): %s"
+                        % (va, fault.reason), EXC_READ, va)
 
         state.pc = next_pc & ~1
         state.sp = new_sp & MASK32
         state.msp = new_msp & MASK32
         state.psw = new_psw & MASK32
         state.isp = new_isp & MASK32
+        if sysm is not None:
+            sysm.kernel_level = False
+            _system_retire(state, mnemonic, reg_store, pre_sp, pre_isp,
+                           pre_psw, cyc, folded)
         record = Record(
             pc=pc, insn0=insn0, insn1=insn1,
             sp_before=pre_sp, sp_after=state.sp,
@@ -2103,6 +2651,10 @@ def step(state: State,
         return record, state
 
     except Trap as exc:
+        state.cpu_prefix = False
+        if state.system is not None:
+            return _system_trap(state, exc, pre_pc, pre_sp, pre_msp,
+                                insn0, insn1), state
         # The unimplemented-instruction sequence (p. 1-39): the opcode's
         # own PC is stored at *(CSP) and the part then vectors through
         # *(VB+12).  The one-instruction model reports that one store as
@@ -2136,9 +2688,272 @@ def step(state: State,
         # A fetch fault, an illegal encoding, an alignment fault, a state
         # limitation, or a legal instruction outside this model's subset.
         # C2: this is a refusal outside the HRI comparison, not trap=1.
+        state.cpu_prefix = False
+        if state.system is not None:
+            state.system.kernel_level = False
         if not exc.parcels and insn0:
             exc.parcels = [insn0, insn1]
+        if state.system is not None:
+            ident = _exception_ident(exc)
+            if ident is not None:
+                return _system_exception(state, exc, ident, pre_pc, pre_sp,
+                                         pre_msp, insn0, insn1), state
         raise
+
+
+# ---------------------------------------------------------------------------
+# The privileged machine's retirement and event sequences (System only)
+# ---------------------------------------------------------------------------
+
+def _system_retire(state: State, mnemonic: str,
+                   reg_store: Optional[Tuple[Operand, int]],
+                   pre_sp: int, pre_isp: int, pre_psw: int,
+                   cyc: int, folded: bool) -> None:
+    """What a retiring instruction does to the System's state.
+
+    * A CPU-prefixed destination register is written last (p. 3-14).
+    * SHAD: CRET and KRET set it to the new CSP, KCALL to the new ISP
+      (pp. 3-15, 3-29, 3-30); otherwise it follows a change of the pointer
+      that was the CSP when the instruction began (p. 1-16, "any time the
+      CSP is modified").
+    * CRET's CATCH portion fills [SP, MSP) "consistently with the restored
+      PSW current stack pointer and virtual/physical addressing mode bits"
+      (p. 3-15): under the new PSW, and only when the new CSP is SP (with
+      CSP = ISP, CATCH is a no-op, p. 3-10).
+    * The timers count (Table 1-2, p. 1-9; Tables 1-12, 1-13 p. 1-19).
+    """
+    sysm = state.system
+    if reg_store is not None:
+        _write_control(state, reg_store[0].reg, reg_store[1])
+    if mnemonic in ("CRET", "KRET"):
+        sysm.shad = state.isp if not (state.psw & PSW_SP) else state.sp
+    elif mnemonic == "KCALL":
+        sysm.shad = state.isp
+    elif pre_psw & PSW_SP:
+        if state.sp != pre_sp:
+            sysm.shad = state.sp
+    elif state.isp != pre_isp:
+        sysm.shad = state.isp
+    if mnemonic == "CRET" and state.psw & PSW_SP and state.msp > state.sp:
+        _cret_catch(state)
+    _count_timers(state, cyc, 0 if folded else 1)
+
+
+def _cret_catch(state: State) -> None:
+    """CRET's CATCH portion (p. 3-15), after SP, PC and PSW are restored.
+
+    "The target MSP is fetched prior to the CATCH portion executing, but
+    the MSP is not updated until the CATCH portion completes"; the
+    portion runs "consistently with the restored PSW", and a CATCH whose
+    stores are not valid flags a read fault, exception 8 (p. 3-11).  So
+    the fill proceeds block by block upward from SP (the cache having
+    been discarded) and, if a block faults, the exception sequence
+    (p. 1-38) is taken there with the *restored* PC and PSW, MSP at the
+    blocks already filled, and SHAD = the restored SP -- the event's
+    ``SP = SHAD`` must not undo the new SP.  The order inside CRET is not
+    printed beyond that; this is the reading 1e's trap.c relies on
+    ("CATCH/ENTER will generate a read fault when checking the new
+    SP/MSP values", handled as a user stack fault)."""
+    sysm = state.system
+    target = state.msp
+    lo = state.sp
+    try:
+        for base in range(lo, target, 16):
+            cache_fill(state, None, base, base + 16)
+            state.msp = base + 16
+    except MemoryFault as exc:
+        state.msp = base
+        sysm.shad = state.sp
+        sysm.fault = exc.va & ~3
+        _event_sequence(state, [(-12, EXC_READ), (-8, state.pc),
+                                (-4, state.psw)], 4)
+        sysm.events.append(("exception", EXC_READ, state.pc))
+        return
+    state.msp = target
+
+
+def _count_timers(state: State, cycles: int, instructions: int) -> None:
+    """Advance TIMER1/TIMER2 by one retirement (Table 1-2, p. 1-9).
+
+    TIMER1: bit 22 selects instructions (1) or clock cycles (0); bit 23
+    restricts counting to kernel level ("If 1, the timer only increments
+    in kernel mode (PSW execution level bit is 0)" -- the kernel's
+    machine.h comments T1X "counts only in user mode"; the printed PRM is
+    followed).  TIMER2: bits 29:25 = 0 cycles, 1 instructions, 0x1F off;
+    the other codes are not printed and leave the timer stopped here.
+    Bit 30 is TIMER2's kernel-only bit.  An overflow from 0xFFFFFFFF to 0
+    with the enable bit (24, 31) set leaves a level-one interrupt pending.
+    Cycles are the record's Chapter 4 ``cyc``.
+    """
+    sysm = state.system
+    cfg = sysm.config
+    kernel = not (state.psw & PSW_USER)
+    if kernel or not (cfg & CONFIG_T1X):
+        n = instructions if cfg & CONFIG_T1CI else cycles
+        if n:
+            total = sysm.timer1 + n
+            if total > MASK32 and cfg & CONFIG_T1IE:
+                sysm.timer1_pending = True
+            sysm.timer1 = total & MASK32
+    sel = (cfg >> 25) & 0x1F
+    if sel in (0, 1) and (kernel or not (cfg & CONFIG_T2X)):
+        n = instructions if sel == 1 else cycles
+        if n:
+            total = sysm.timer2 + n
+            if total > MASK32 and cfg & CONFIG_T2IE:
+                sysm.timer2_pending = True
+            sysm.timer2 = total & MASK32
+
+
+def _vector_word(state: State,
+                 reader: Optional[Callable[[int], Optional[int]]],
+                 addr: int) -> int:
+    """A read of the vector table (KCALL p. 3-29, the event sequences).
+
+    With a ``System`` it is made at kernel level whatever the PSW says:
+    the table "should always be available" (p. 1-20) and a fault reading
+    it resets the part (pp. 1-35, 3-29), so it is not subject to the
+    user-level check.  1e's trap.c depends on this: an unimplemented
+    instruction at user level reads the vector and then takes a *fetch*
+    fault at the kernel handler's address (its "_vector2/_vector3"
+    case), which is possible only if the vector read itself succeeded."""
+    sysm = state.system
+    if sysm is None:
+        return _read_word(state, reader, addr)
+    saved = sysm.kernel_level
+    sysm.kernel_level = True
+    try:
+        return _read_word(state, reader, addr)
+    finally:
+        sysm.kernel_level = saved
+
+
+def _event_word(state: State, addr: int) -> int:
+    """A read during an event sequence; a fault there resets the part
+    (p. 1-35), which this model reports instead of performing."""
+    try:
+        return _vector_word(state, None, addr)
+    except MemoryFault as exc:
+        raise Unsupported("reset: memory fault on 0x%08x during event "
+                          "processing (p. 1-35): %s" % (addr, exc.reason))
+
+
+def _event_push(state: State, words: List[Tuple[int, int]]) -> None:
+    sysm = state.system
+    for off, value in words:
+        addr = (state.isp + off) & MASK32
+        try:
+            word_addr, new_word, _, mask = _prepare_store(
+                state, None, Operand(4, True, ea=addr), value)
+            _store_word(state, word_addr, new_word, mask)
+        except MemoryFault as exc:
+            raise Unsupported("reset: memory fault on the interrupt stack "
+                              "at 0x%08x (p. 1-35): %s" % (addr, exc.reason))
+    del sysm
+
+
+def _event_sequence(state: State, frame: List[Tuple[int, int]],
+                    vector: int) -> None:
+    """The common part of pp. 1-37 and 1-38:
+
+        if (CSP = ISP) ISP = SHAD else SP = SHAD
+        *(ISP-12) = exception identifier    (exceptions only)
+        *(ISP-8) = PC ; *(ISP-4) = PSW
+        ISP -= 16 ; SHAD = ISP
+        PC = *(VB + vector) ; PSW &= 0xFFFF0000
+
+    The frame's values are taken before anything changes; the stores and
+    the vector read are made at kernel level (PSW bits 15:0 already
+    cleared): the sequence's own accesses cannot depend on the level it
+    is leaving.  The PRM does not say this in words; a fault on them
+    resets the part (p. 1-35), which the model reports.
+    """
+    sysm = state.system
+    if not (state.psw & PSW_SP):
+        state.isp = sysm.shad & ~0xF
+    else:
+        state.sp = sysm.shad & ~0xF
+    state.psw &= 0xFFFF0000
+    _event_push(state, frame)
+    state.isp = (state.isp - 16) & MASK32
+    sysm.shad = state.isp
+    new_pc = _event_word(state, (state.vb + vector) & MASK32)
+    state.pc = new_pc & ~1
+
+
+def _system_exception(state: State, exc: Refusal, ident: int, pre_pc: int,
+                      pre_sp: int, pre_msp: int, insn0: int,
+                      insn1: int) -> Record:
+    """The exception sequence (p. 1-38) for Table 1-26's identifiers.
+
+    The PC saved is the instruction's own (for a fetch fault, the target
+    that could not be fetched: the model faults when it fetches there,
+    so ``pre_pc`` is that target, as p. 1-34 requires).  FAULT gets the
+    word-aligned virtual address for identifiers 8 and 9 (p. 1-39)."""
+    sysm = state.system
+    if ident in (EXC_READ, EXC_WRITE) and isinstance(exc, MemoryFault):
+        sysm.fault = exc.va & ~3
+    psw = state.psw
+    _event_sequence(state, [(-12, ident), (-8, pre_pc), (-4, psw)], 4)
+    sysm.events.append(("exception", ident, pre_pc))
+    return Record(pc=pre_pc, insn0=insn0, insn1=insn1,
+                  sp_before=pre_sp, sp_after=state.sp,
+                  msp_before=pre_msp, msp_after=state.msp,
+                  mem_we=0, mem_addr=0, mem_wdata=0, mem_wmask=0,
+                  trap=1, cyc=0,
+                  reason="exception 0x%x: %s" % (ident, exc.reason))
+
+
+def _system_trap(state: State, exc: Trap, pre_pc: int, pre_sp: int,
+                 pre_msp: int, insn0: int, insn1: int) -> Record:
+    """The unimplemented-instruction sequence (p. 1-39), or the trapped
+    niladic one (p. 1-40), completed:
+
+        *(CSP) = PC of unimplemented opcode
+        PC = *(VB + 12)        (VB + 8 for a trapped niladic)
+
+    PSW, ISP and SP are not changed."""
+    sysm = state.system
+    csp = state.csp
+    word_addr, new_word, data, mask = _prepare_store(
+        state, None, Operand(4, True, ea=csp), pre_pc)
+    _store_word(state, word_addr, new_word, mask)
+    vector = 8 if isinstance(exc, TrappedNiladic) else 12
+    state.pc = _event_word(state, (state.vb + vector) & MASK32) & ~1
+    sysm.events.append(("niladic" if vector == 8 else "unimplemented",
+                        vector, pre_pc))
+    return Record(pc=pre_pc, insn0=insn0, insn1=insn1,
+                  sp_before=pre_sp, sp_after=pre_sp,
+                  msp_before=pre_msp, msp_after=pre_msp,
+                  mem_we=1, mem_addr=word_addr, mem_wdata=data,
+                  mem_wmask=mask, trap=1,
+                  cyc=_fixed_cycles("Unimplemented opcode"),
+                  reason=exc.reason)
+
+
+def interrupt_accepted(state: State, level: int) -> bool:
+    """Is an interrupt at ``level`` (0..6, Table 1-25) accepted now?
+
+    "Interrupts are accepted when the requesting device level (IL[2:0])
+    is less than interrupt priority level or equal to 0" (Table 1-8,
+    p. 1-15).  NMI's edge sensitivity (p. 1-37) is the caller's."""
+    ipl = (state.psw >> PSW_IPL_SHIFT) & 7
+    return level == 0 or level < ipl
+
+
+def take_interrupt(state: State, level: int,
+                   vector: Optional[int] = None) -> None:
+    """The interrupt sequence (p. 1-37), between two instructions.
+
+    ``vector`` defaults to VB + 16 + 4 x level; the timers use VB + 44
+    and VB + 48 (Table 1-14, p. 1-20).  The PC saved is the instruction
+    that has not yet executed (``state.pc``)."""
+    sysm = state.system
+    if vector is None:
+        vector = 16 + 4 * level
+    pc = state.pc & ~1
+    _event_sequence(state, [(-8, pc), (-4, state.psw)], vector)
+    sysm.events.append(("interrupt", vector, pc))
 
 
 # ---------------------------------------------------------------------------

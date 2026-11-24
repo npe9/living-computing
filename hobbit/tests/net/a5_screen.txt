@@ -1,0 +1,111 @@
+1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
+root is from (il, tcp, incon, 9600, 19200)[il]: 
+sonic ether: 52 54 00 00 0b 0b
+user[none]: 
+arp: rcvd for 10.9.0.1
+nop...session...time...
+init: starting /bin/rc
+
+init: starting /bin/rc
+% echo hello
+hello
+% ls /hobbit | wc
+      6       6      83
+% cat /lib/ndb/local
+#
+# systems on the local network
+#
+
+sys = kremvax
+	dom=kremvax.kremlin.mos.su
+	bootf=/mips/9magnum
+	ip=1.1.1.1 ether=0123456789AB
+	proto=il
+
+#
+#  tcp services
+#
+tcp=cs		port=1
+tcp=echo	port=7
+tcp=discard	port=9
+tcp=systat	port=11
+tcp=daytime	port=13
+tcp=netstat	port=15
+tcp=ftp-data	port=20
+tcp=ftp		port=21
+tcp=telnet	port=23
+tcp=smtp	port=25
+tcp=time	port=37
+tcp=whois	port=43
+tcp=domain	port=53
+tcp=uucp	port=64
+tcp=rje		port=77
+tcp=finger	port=79
+tcp=link	port=87
+tcp=supdup	port=95
+tcp=hostnames	port=101
+tcp=iso-tsap	port=102
+tcp=x400	port=103
+tcp=x400-snd	port=104
+tcp=csnet-ns	port=105
+tcp=pop-2	port=109
+tcp=sunrpc	port=111
+tcp=uucp-path	port=117
+tcp=nntp	port=119
+tcp=ntp		port=123
+tcp=NeWS	port=144
+tcp=fsb		port=400
+tcp=sysmon	port=401
+tcp=proxy	port=402
+tcp=proxyd	port=404
+tcp=rexec	port=512	restricted
+tcp=login	port=513	restricted
+tcp=shell	port=514	restricted
+tcp=printer	port=515
+tcp=courier	port=530
+tcp=cscan	port=531
+tcp=9fs		port=564
+tcp=whoami	port=565
+tcp=fmclient	port=729
+tcp=ingreslock	port=1524
+tcp=Xdisplay	port=6000
+tcp=face	port=32000
+
+#
+#  il services
+#
+il=cpu		port=17005
+il=cpunote	port=17006
+il=exportfs	port=17007
+il=9fs		port=17008
+il=rexexec	port=17009
+il=fsauth	port=17020
+il=rexauth	port=17021
+il=changekey	port=17022
+il=chal		port=17023
+il=check	port=17024
+il=whoami	port=17025
+il=juke		port=17026
+
+#
+#  udp services
+#
+udp=tftp	port=69
+udp=bootpc	port=68
+udp=bootp	port=67
+% cd /usr/none
+% za hello.s
+% zl hello.z -lc
+% ls -l
+--rw-rw-rw- M 4 sys  sys  183 Jan  3 07:00 hello.s
+--rw-rw-r-- M 4 none sys  255 Jan  3 07:01 hello.z
+d-rwxrwxrwx M 4 sys  sys    0 Jan  3 07:00 lib
+--rwxrwxr-x M 4 none sys 2014 Jan  3 07:01 z.out
+% sum hello.z z.out
+b3769ed2    255 hello.z
+4b4798a2   2014 z.out
+% z.out
+hello 1e
+% echo end of script
+end of script
+% 

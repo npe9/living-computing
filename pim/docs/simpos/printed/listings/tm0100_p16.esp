@@ -1,0 +1,46 @@
+% TM-100 PDF page 16, printed folio 14. Section 3.2 (2)(b) Port: Figure 3.8 "Part of
+% class 'port'". Transcribed by eye from 300dpi crops.
+% Prose: "Class 'port' is easily implemented by inheriting class 'channel'.  A port has
+% an additional slot called 'out_port' which contains a list of connected ports.
+% Class 'port' adds its own predicates such as :connect and :disconnect."
+% (:connect/:disconnect are NOT in the printed figure.)
+% "(c) Bounded-buffer function  A bounded channel, which is a channel with a bounded
+% buffer, is used for buffered message communication.  It has two waiting queues; one
+% is for processes waiting for messages and the other is for processes waiting for
+% buffers.  The slot 'post_queue' in class 'bounded_channel' contains a bounded post
+% queue instead of a post queue by overriding the slot of class 'channel'.  The class
+% relations of a bounded channel is illustrated as follows.  A semaphore which is a
+% component of a bounded post queue inherits a waiting queue."
+% [transcriber] In the local send/4 the recursive call is printed with three arguments,
+% "send(Port, Tap, Message),!" -- as printed (Sender missing).
+% ":stick_tap" -- the 's' carries a speck; reading "stick_tap" (OCR: "Stiok tap").
+
+-----------------------------------------------------------------------
+    class  port  has
+
+    nature      channel;
+
+    instance
+
+    attribute ( out_port    := List :- :create(#list, List) );
+
+    :send(Port, Message, Sender) :- !,
+            :count(Port!out_port, Count),
+            (   Count == 1, !,
+                :get_first(Port!out_port, Out_port),
+                :channel:send(Out_port, Message, Sender)
+            ;   :stick_tap(Port!out_port, Tap),
+                send(Port, Tap, Message, Sender) );
+
+    local
+
+    send(Port, Tap, Message, Sender):-
+            (   :get(Tap, A_port),!,
+                :copy(Message, New_message),
+                :channel:send(A_port, New_message, Sender),
+                send(Port, Tap, Message),!
+            ;   true );
+
+    end.
+-----------------------------------------------------------------------
+                    Figure 3.8  Part of class 'port'

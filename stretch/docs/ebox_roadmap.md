@@ -589,7 +589,7 @@ genuinely unmined, and its goal table calls it *"the first real
 per-cycle source"* for M1. This is not a new discovery; it is two of
 those pages finally read.
 
-**There are nineteen of them**, Figures 3.8.1-3.8.19, one per
+(2026-11-23: all charts, now twenty with 3.8.20 Reciprocal Divide, and the SAU flows 3.11.x are read in `sau_pau_spec.md`.) **There are nineteen of them**, Figures 3.8.1-3.8.19, one per
 arithmetic operation: Load, Add, Add to Magnitude, Compare, Add to
 Fraction, Shift Fraction, Store, Store Rounded, Store Low Order, Store
 Root (2 sheets), Multiply, Load/Store Multiplier Register, **Divide (3

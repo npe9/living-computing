@@ -1,0 +1,941 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	2317	cil/src/INSTALL.esp:53
+builtin		builtin	:=	2	468	cil/src/cil_mta.esp:391
+builtin		builtin	is	2	223	cil/src/cil_esp.esp:70
+builtin		builtin	vector_element	3	218	cil/src/cil_esp.esp:71
+builtin		file-level directive	use_package	1	141	cil/src/cil_esp.esp:32
+builtin		builtin	==	2	109	cil/src/cil_mta.esp:516
+builtin		builtin	atom	1	89	cil/src/cil_kl0.esp:95
+builtin		builtin	stack_vector	2	86	cil/src/cil_esp.esp:55
+builtin		constant a#b	string#str		71	
+builtin		builtin	<	2	70	cil/src/cil_mta.esp:739
+builtin		builtin	first	2	63	cil/src/cil_kl0.esp:127
+builtin		builtin	>	2	62	cil/src/cil_mta.esp:249
+builtin		builtin	set_vector_element	3	61	cil/src/cil_kl0.esp:251
+builtin		builtin	unbound	1	60	cil/src/cil_kl0.esp:275
+builtin		builtin	>=	2	59	cil/src/ds_bep.esp:3495
+builtin		builtin	freeze	2	56	cil/src/cil_kl0.esp:132
+builtin		builtin	melt	2	56	cil/src/cil_kl0.esp:145
+builtin		builtin	=<	2	47	cil/src/es_gin.esp:532
+builtin		builtin	\==	2	46	cil/src/ds_bep.esp:717
+builtin		builtin	string	3	45	cil/src/cil_kl0.esp:258
+builtin		constant a#b	16#str		41	
+builtin		builtin	new_stack_vector	2	31	cil/src/cil_kl0.esp:181
+builtin		builtin	bound	1	30	cil/src/cil_kl0.esp:98
+builtin		builtin	=\=	2	28	cil/src/ds_bep.esp:3220
+builtin		builtin	object	3	27	cil/src/cil_kl0.esp:194
+builtin		builtin	new_heap_vector	2	27	cil/src/cil_kl0.esp:176
+builtin		builtin	second	2	26	cil/src/cil_kl0.esp:229
+builtin		builtin	equal_string	2	25	cil/src/cil_kl0.esp:123
+builtin		builtin	divide_with_remainder	4	21	cil/src/cil_kl0.esp:120
+builtin		builtin	bind_hook	2	15	cil/src/cil_mta.esp:147
+builtin		constant a#b	2#str		15	cil/src/ds_bep.esp:2705
+builtin		builtin	integer	1	14	cil/src/cil_kl0.esp:151
+builtin		builtin	list	1	14	cil/src/cil_kl0.esp:159
+builtin		builtin	substring	4	13	cil/src/cil_kl0.esp:262
+builtin		builtin	vector_tail	3	13	cil/src/cil_kl0.esp:281
+builtin		builtin	level	1	13	cil/src/cil_kl0.esp:158
+builtin		builtin	repeat	0	12	cil/src/cil_kl0.esp:80
+builtin		builtin	heap_vector	2	12	cil/src/cil_kl0.esp:146
+builtin		builtin	=:=	2	10	cil/src/cil_mta.esp:708
+builtin		builtin	set_first	2	10	cil/src/cil_kl0.esp:236
+builtin		builtin	atomic	1	9	cil/src/cil_kl0.esp:96
+builtin		builtin	new_string	3	8	cil/src/cil_esp.esp:60
+builtin		constant a#b	key#lf		8	
+builtin		builtin	subvector	4	7	cil/src/cil_kl0.esp:266
+builtin		builtin	absolute_cut	1	7	cil/src/es_int.esp:392
+builtin		builtin	set_second	2	6	cil/src/cil_kl0.esp:245
+builtin		constant a#b	control#str		6	
+builtin		builtin	search_character	5	5	cil/src/cil_kl0.esp:222
+builtin		builtin	unify	2	5	cil/src/cil_kl0.esp:276
+builtin		builtin	cut_and_fail	0	4	cil/src/es_trc.esp:596
+builtin		builtin	set_string_element	3	4	cil/src/cil_esp.esp:72
+builtin		builtin	string_tail	3	3	cil/src/cil_kl0.esp:260
+builtin		builtin	area_top_pointer	3	3	cil/src/cil_kl0.esp:94
+builtin		builtin	set_slot	3	3	cil/src/cil_kl0.esp:532
+builtin		builtin	add	3	3	cil/src/cil_kl0.esp:81
+builtin		builtin	subtract	3	3	cil/src/cil_kl0.esp:114
+builtin		builtin	set_subvector	4	3	cil/src/cil_kl0.esp:248
+builtin		builtin	floating_point	1	2	cil/src/cil_kl0.esp:129
+builtin		builtin	apply	2	2	cil/src/cil_kl0.esp:90
+builtin		builtin	code	3	2	cil/src/cil_kl0.esp:102
+builtin		builtin	location	1	2	cil/src/cil_kl0.esp:161
+builtin		constant a#b	mouse#mm		2	
+builtin		builtin	and_string_elements	5	2	cil/src/cil_kl0.esp:87
+builtin		builtin	complement	2	2	cil/src/cil_kl0.esp:107
+builtin		builtin	complement_string_elements	3	2	cil/src/cil_kl0.esp:108
+builtin		builtin	divide	3	2	cil/src/cil_kl0.esp:116
+builtin		builtin	equal	2	2	cil/src/cil_kl0.esp:122
+builtin		builtin	identical	2	2	cil/src/cil_kl0.esp:147
+builtin		builtin	multiply	3	2	cil/src/cil_kl0.esp:172
+builtin		builtin	or_string_elements	5	2	cil/src/cil_kl0.esp:198
+builtin		builtin	search_string_difference	3	2	cil/src/cil_kl0.esp:228
+builtin		builtin	xor_string_elements	5	2	cil/src/cil_kl0.esp:285
+builtin		builtin	slot	3	2	cil/src/cil_kl0.esp:539
+builtin		builtin	when	3	2	cil/src/cil_mta.esp:70
+builtin		builtin	set_spec_operators	1	2	cil/src/ms_etl.esp:468
+builtin		constant a#b	control#Char		2	cil/src/cil_esp.esp:161
+builtin		constant a#b	meta#Char		2	cil/src/cil_esp.esp:163
+builtin		constant a#b	control_meta#Char		2	cil/src/cil_esp.esp:165
+builtin		constant a#b	key#Name		2	cil/src/cil_esp.esp:167
+builtin		constant a#b	control#Name		2	cil/src/cil_esp.esp:169
+builtin		constant a#b	meta#Name		2	cil/src/cil_esp.esp:171
+builtin		constant a#b	control_meta#Name		2	cil/src/cil_esp.esp:173
+builtin		constant a#b	pf#Number		2	cil/src/cil_esp.esp:175
+builtin		constant a#b	control_pf#Number		2	cil/src/cil_esp.esp:177
+builtin		constant a#b	meta_pf#Number		2	cil/src/cil_esp.esp:179
+builtin		constant a#b	control_meta_pf#Number		2	cil/src/cil_esp.esp:181
+builtin		constant a#b	keypad#Char		2	cil/src/cil_esp.esp:183
+builtin		constant a#b	control_keypad#Char		2	cil/src/cil_esp.esp:185
+builtin		constant a#b	meta_keypad#Char		2	cil/src/cil_esp.esp:187
+builtin		constant a#b	control_meta_keypad#Char		2	cil/src/cil_esp.esp:189
+builtin		constant a#b	mouse#Click		2	cil/src/cil_esp.esp:191
+builtin		constant a#b	string#String		2	cil/src/cil_esp.esp:193
+builtin		constant a#b	jis#String		2	cil/src/cil_esp.esp:195
+builtin		constant a#b	Radix#String		2	cil/src/cil_esp.esp:207
+builtin		constant a#b	key#enter		2	cil/src/ds_fep.esp:1865
+builtin		builtin	string_element	3	1	cil/src/cil_kl0.esp:259
+builtin		builtin	not_equal_string	2	1	cil/src/cil_kl0.esp:186
+builtin		builtin	new_atom	1	1	cil/src/cil_kl0.esp:175
+builtin		builtin	number	1	1	cil/src/cil_kl0.esp:189
+builtin		builtin	vector_to_list	3	1	cil/src/cil_kl0.esp:282
+builtin		builtin	list_to_vector	3	1	cil/src/cil_kl0.esp:160
+builtin		builtin	trace_on	0	1	cil/src/cil_kl0.esp:271
+builtin		builtin	trace_off	0	1	cil/src/cil_kl0.esp:270
+builtin		builtin	system_register	2	1	cil/src/cil_kl0.esp:269
+builtin		builtin	or	3	1	cil/src/cil_kl0.esp:197
+builtin		builtin	set_system_register	2	1	cil/src/cil_kl0.esp:250
+builtin		builtin	set_word	3	1	cil/src/cil_kl0.esp:252
+builtin		builtin	pcb	3	1	cil/src/cil_kl0.esp:201
+builtin		builtin	and	3	1	cil/src/cil_kl0.esp:86
+builtin		builtin	display_console	1	1	cil/src/cil_kl0.esp:115
+builtin		builtin	module_element	3	1	cil/src/cil_kl0.esp:168
+builtin		builtin	value	2	1	cil/src/cil_kl0.esp:277
+builtin		builtin	set_substring	4	1	cil/src/cil_kl0.esp:247
+builtin		builtin	put_console	1	1	cil/src/cil_kl0.esp:209
+builtin		builtin	new_word	3	1	cil/src/cil_kl0.esp:183
+builtin		builtin	set_module_element	3	1	cil/src/cil_kl0.esp:239
+builtin		builtin	location_element	2	1	cil/src/cil_kl0.esp:162
+builtin		constant a#b	mouse#r		1	
+builtin		constant a#b	mouse#m		1	
+builtin		constant a#b	mouse#l		1	
+builtin		constant a#b	mouse#ll		1	
+builtin		constant a#b	key#abort		1	
+builtin		constant a#b	key#cr		1	
+builtin		builtin	address	2	1	cil/src/cil_kl0.esp:83
+builtin		builtin	add_extended	4	1	cil/src/cil_kl0.esp:84
+builtin		builtin	allow_interrupt	0	1	cil/src/cil_kl0.esp:85
+builtin		builtin	area_flags	3	1	cil/src/cil_kl0.esp:91
+builtin		builtin	area_size	3	1	cil/src/cil_kl0.esp:92
+builtin		builtin	area_size_limit	3	1	cil/src/cil_kl0.esp:93
+builtin		builtin	bus_reset	0	1	cil/src/cil_kl0.esp:99
+builtin		builtin	change_process	1	1	cil/src/cil_kl0.esp:100
+builtin		builtin	code	2	1	cil/src/cil_kl0.esp:101
+builtin		builtin	code_address	1	1	cil/src/cil_kl0.esp:103
+builtin		builtin	collect_free_pages	1	1	cil/src/cil_kl0.esp:104
+builtin		builtin	collect_garbage	1	1	cil/src/cil_kl0.esp:105
+builtin		builtin	collect_stack_garbage	2	1	cil/src/cil_kl0.esp:106
+builtin		builtin	copy_string_elements	5	1	cil/src/cil_kl0.esp:112
+builtin		builtin	create_process	3	1	cil/src/cil_kl0.esp:113
+builtin		builtin	divide_extended	5	1	cil/src/cil_kl0.esp:118
+builtin		builtin	epcb	4	1	cil/src/cil_kl0.esp:121
+builtin		builtin	exception_handler_table	2	1	cil/src/cil_kl0.esp:124
+builtin		builtin	exception_hook	2	1	cil/src/cil_kl0.esp:125
+builtin		builtin	first_location	2	1	cil/src/cil_kl0.esp:128
+builtin		builtin	floating_point_to_integer	2	1	cil/src/cil_kl0.esp:131
+builtin		builtin	frozen	2	1	cil/src/cil_kl0.esp:133
+builtin		builtin	get_byte	2	1	cil/src/cil_kl0.esp:134
+builtin		builtin	get_console	1	1	cil/src/cil_kl0.esp:135
+builtin		builtin	get_double_byte	2	1	cil/src/cil_kl0.esp:136
+builtin		builtin	get_double_byte_swapped	2	1	cil/src/cil_kl0.esp:137
+builtin		builtin	get_string	2	1	cil/src/cil_kl0.esp:138
+builtin		builtin	get_string_swapped	2	1	cil/src/cil_kl0.esp:139
+builtin		builtin	get_vector	2	1	cil/src/cil_kl0.esp:140
+builtin		builtin	get_vector_swapped	2	1	cil/src/cil_kl0.esp:141
+builtin		builtin	get_with_tag	3	1	cil/src/cil_kl0.esp:142
+builtin		builtin	halt	1	1	cil/src/cil_kl0.esp:143
+builtin		builtin	hash	2	1	cil/src/cil_kl0.esp:144
+builtin		builtin	inhibit_interrupt	0	1	cil/src/cil_kl0.esp:149
+builtin		builtin	initialize_process	2	1	cil/src/cil_kl0.esp:150
+builtin		builtin	integer_to_floating_point	2	1	cil/src/cil_kl0.esp:153
+builtin		builtin	interrupt_code	3	1	cil/src/cil_kl0.esp:154
+builtin		builtin	interrupt_stack_top	1	1	cil/src/cil_kl0.esp:155
+builtin		builtin	kill_process	1	1	cil/src/cil_kl0.esp:156
+builtin		builtin	less_than	2	1	cil/src/cil_kl0.esp:157
+builtin		builtin	mask_ecc_correction_interrupt	1	1	cil/src/cil_kl0.esp:164
+builtin		builtin	minus	2	1	cil/src/cil_kl0.esp:166
+builtin		builtin	module	3	1	cil/src/cil_kl0.esp:167
+builtin		builtin	move_page_map	3	1	cil/src/cil_kl0.esp:169
+builtin		builtin	move_string_elements	4	1	cil/src/cil_kl0.esp:171
+builtin		builtin	multiply_extended	4	1	cil/src/cil_kl0.esp:174
+builtin		builtin	new_module	3	1	cil/src/cil_kl0.esp:177
+builtin		builtin	new_module_entry	3	1	cil/src/cil_kl0.esp:178
+builtin		builtin	new_object	2	1	cil/src/cil_kl0.esp:179
+builtin		builtin	new_protected_object	3	1	cil/src/cil_kl0.esp:180
+builtin		builtin	not_equal	2	1	cil/src/cil_kl0.esp:185
+builtin		builtin	not_identical	2	1	cil/src/cil_kl0.esp:187
+builtin		builtin	not_less_than	2	1	cil/src/cil_kl0.esp:188
+builtin		builtin	number_to_single_floating_point	2	1	cil/src/cil_kl0.esp:191
+builtin		builtin	number_to_integer	2	1	cil/src/cil_kl0.esp:193
+builtin		builtin	page_map_base	3	1	cil/src/cil_kl0.esp:200
+builtin		builtin	physical_address	3	1	cil/src/cil_kl0.esp:202
+builtin		builtin	physical_word	3	1	cil/src/cil_kl0.esp:203
+builtin		builtin	pop_interrupt_stack	2	1	cil/src/cil_kl0.esp:204
+builtin		builtin	protected_type	1	1	cil/src/cil_kl0.esp:205
+builtin		builtin	protected_value	3	1	cil/src/cil_kl0.esp:206
+builtin		builtin	protection_key	2	1	cil/src/cil_kl0.esp:207
+builtin		builtin	put_byte	2	1	cil/src/cil_kl0.esp:208
+builtin		builtin	put_double_byte	2	1	cil/src/cil_kl0.esp:210
+builtin		builtin	put_double_byte_swapped	2	1	cil/src/cil_kl0.esp:211
+builtin		builtin	put_string	2	1	cil/src/cil_kl0.esp:212
+builtin		builtin	put_string_swapped	2	1	cil/src/cil_kl0.esp:213
+builtin		builtin	put_vector	2	1	cil/src/cil_kl0.esp:214
+builtin		builtin	put_with_tag	3	1	cil/src/cil_kl0.esp:215
+builtin		builtin	raise	6	1	cil/src/cil_kl0.esp:216
+builtin		builtin	read_console	1	1	cil/src/cil_kl0.esp:217
+builtin		builtin	register	3	1	cil/src/cil_kl0.esp:218
+builtin		builtin	reset_on_backtrack	1	1	cil/src/cil_kl0.esp:220
+builtin		builtin	search_characters_backward	5	1	cil/src/cil_kl0.esp:224
+builtin		builtin	search_characters_forward	5	1	cil/src/cil_kl0.esp:226
+builtin		builtin	second_location	2	1	cil/src/cil_kl0.esp:230
+builtin		builtin	set_area_flags	3	1	cil/src/cil_kl0.esp:231
+builtin		builtin	set_area_size	3	1	cil/src/cil_kl0.esp:232
+builtin		builtin	set_area_size_limit	3	1	cil/src/cil_kl0.esp:233
+builtin		builtin	set_exception_handler_table	2	1	cil/src/cil_kl0.esp:235
+builtin		builtin	set_interrupt_code	3	1	cil/src/cil_kl0.esp:237
+builtin		builtin	set_location_element	2	1	cil/src/cil_kl0.esp:238
+builtin		builtin	set_page_map_base	3	1	cil/src/cil_kl0.esp:240
+builtin		builtin	set_pcb	3	1	cil/src/cil_kl0.esp:241
+builtin		builtin	set_physical_word	3	1	cil/src/cil_kl0.esp:242
+builtin		builtin	set_protected_value	3	1	cil/src/cil_kl0.esp:243
+builtin		builtin	set_register	3	1	cil/src/cil_kl0.esp:244
+builtin		builtin	set_system_clock	2	1	cil/src/cil_kl0.esp:249
+builtin		builtin	shift_left	3	1	cil/src/cil_kl0.esp:253
+builtin		builtin	shift_right	3	1	cil/src/cil_kl0.esp:254
+builtin		builtin	special_function	2	1	cil/src/cil_kl0.esp:255
+builtin		builtin	structure	1	1	cil/src/cil_kl0.esp:261
+builtin		builtin	subtract_extended	4	1	cil/src/cil_kl0.esp:265
+builtin		builtin	succeed	1	1	cil/src/cil_kl0.esp:267
+builtin		builtin	system_clock	2	1	cil/src/cil_kl0.esp:268
+builtin		builtin	trap	2	1	cil/src/cil_kl0.esp:272
+builtin		builtin	type	2	1	cil/src/cil_kl0.esp:274
+builtin		builtin	vector_element_location	3	1	cil/src/cil_kl0.esp:280
+builtin		builtin	word	3	1	cil/src/cil_kl0.esp:283
+builtin		builtin	xor	3	1	cil/src/cil_kl0.esp:284
+builtin		builtin	$$call_method	3	1	cil/src/cil_kl0.esp:515
+builtin		builtin	$$call_overridden_method	4	1	cil/src/cil_kl0.esp:525
+builtin		builtin	decrement	2	1	cil/src/ds_bep.esp:681
+builtin		constant a#b	ascii#String		1	cil/src/cil_esp.esp:197
+builtin		constant a#b	words#Vector		1	cil/src/cil_esp.esp:199
+builtin		constant a#b	double_bytes#Vector		1	cil/src/cil_esp.esp:201
+builtin		constant a#b	bytes#Vector		1	cil/src/cil_esp.esp:203
+builtin		constant a#b	bits#Vector		1	cil/src/cil_esp.esp:205
+builtin		constant a#b	standard#input		1	cil/src/cil_esp.esp:246
+builtin		constant a#b	standard#output		1	cil/src/cil_esp.esp:250
+builtin		constant a#b	standard#message		1	cil/src/cil_esp.esp:254
+builtin		constant a#b	X#Y		1	cil/src/cil_mta.esp:903
+requirement	symbolizer	ref	(#ref)		287	cil/src/INSTALL.esp:35
+requirement	?	unknown	get_at	3	133	cil/src/cil_mta.esp:810
+requirement	symbolizer	class	get_atom_string	3	129	cil/src/cil_mta.esp:214
+requirement	string	class	append	3	114	cil/src/INSTALL.esp:37
+requirement	string	ref	(#ref)		114	cil/src/INSTALL.esp:37
+requirement	?	unknown	put_at	3	113	cil/src/cil_mta.esp:801
+requirement	directory	ref	(#ref)		90	cil/src/INSTALL.esp:140
+requirement	symbolizer	class	get_number_string	3	79	cil/src/INSTALL.esp:35
+requirement	library	ref	(#ref)		79	cil/src/INSTALL.esp:42
+requirement	process	ref	(#ref)		72	cil/src/INSTALL.esp:44
+requirement	pathname	ref	(#ref)		71	cil/src/ds_bep.esp:568
+requirement	monogyny_hash_index	ref	(#ref)		60	cil/src/cil_mta.esp:45
+requirement	monogyny_hash_index	instance	get_at	3	59	cil/src/cil_mta.esp:601
+requirement	monogyny_hash_index	class	create	3	58	cil/src/cil_mta.esp:45
+requirement	?	ambiguous	refute	3	58	cil/src/cil_mta.esp:155
+requirement	symbolizer	class	enter_atom	3	56	cil/src/cil_mta.esp:217
+requirement	process	class	self	2	53	cil/src/INSTALL.esp:44
+requirement	monogyny_hash_index	instance	put_at	3	48	cil/src/cil_mta.esp:598
+requirement	pmacs_standard_editor	instance	get_window	2	46	cil/src/ds_brs.esp:491
+requirement	pmacs_standard_editor	instance	current_buffer	2	45	cil/src/ds_brs.esp:545
+requirement	directory	class	retrieve	4	41	cil/src/INSTALL.esp:140
+requirement	?	ambiguous	get_contents	2	41	cil/src/cil_mta.esp:477
+requirement	initiation_table	instance	get_at	3	40	cil/src/es_trc.esp:1586
+requirement	pathname	class	append	4	38	cil/src/ds_bep.esp:574
+requirement	name	ref	(#ref)		36	cil/src/ds_bep.esp:573
+requirement	?	unknown	add_operator	4	35	cil/src/ds_bep.esp:2245
+requirement	?	ambiguous	clear	1	34	cil/src/cil_mta.esp:619
+requirement	?	unknown	set_item_value	3	34	cil/src/ds_brs.esp:2584
+requirement	symbolizer	class	get_number	3	31	cil/src/ds_brs.esp:2695
+requirement	?	unknown	activate	1	31	cil/src/ds_bep.esp:3348
+requirement	?	unknown	activate	2	30	cil/src/ds_bep.esp:1851
+requirement	?	unknown	get_size	3	30	cil/src/ds_brs.esp:194
+requirement	standard_input_file	instance	close_input	1	29	cil/src/ds_bep.esp:2189
+requirement	?	ambiguous	read	2	28	cil/src/ds_brs.esp:513
+requirement	?	ambiguous	kill	1	27	cil/src/ds_bep.esp:1852
+requirement	monogyny_hash_index	instance	clear	1	26	cil/src/es_wks.esp:713
+requirement	two_three_tree	ref	(#ref)		26	cil/src/es_gin.esp:148
+requirement	?	unknown	deactivate	1	26	cil/src/ds_brs.esp:2676
+requirement	?	unknown	close	1	25	cil/src/ds_bep.esp:2170
+requirement	messenger	ref	(#ref)		24	cil/src/INSTALL.esp:23
+requirement	<root>	class	new	2	23	cil/src/cil_mta.esp:950
+requirement	hash_index	instance	add_at	3	23	cil/src/ds_fep.esp:879
+requirement	inferior_window	nature	(inherited)		22	cil/src/ds_brs.esp:340
+requirement	?	unknown	get_contents_with_key	2	21	cil/src/cil_mta.esp:412
+requirement	as_mouse_input	nature	(inherited)		21	cil/src/ds_brs.esp:340
+requirement	esp_macro_expander	instance	expand_goals	3	21	cil/src/cil_esp.esp:160
+requirement	?	unknown	set_size	3	21	cil/src/ds_brs.esp:195
+requirement	?	unknown	get_item_id	2	21	cil/src/ds_brs.esp:682
+requirement	?	unknown	next_line	2	20	cil/src/ds_brs.esp:776
+requirement	directory	class	make	4	20	cil/src/INSTALL.esp:142
+requirement	monogyny_hash_index	instance	remove_at	3	20	cil/src/es_wks.esp:648
+requirement	as_class_with_lock	class	unlock	1	20	cil/src/ms_cfm.esp:45
+requirement	?	unknown	remove_at	3	19	cil/src/cil_mta.esp:432
+requirement	hash_index	ref	(#ref)		19	cil/src/cil_mta.esp:390
+requirement	as_class_with_lock	class	lock	1	19	cil/src/ms_cfm.esp:40
+requirement	?	ambiguous	reset	1	18	cil/src/ds_bep.esp:194
+requirement	hash_index	class	create	3	18	cil/src/cil_mta.esp:390
+requirement	?	unknown	get_with_prompt	3	18	cil/src/ds_brs.esp:97
+requirement	messenger	class	show	2	18	cil/src/INSTALL.esp:23
+requirement	?	ambiguous	get_string	3	18	cil/src/ds_bep.esp:1483
+requirement	?	unknown	get_all	2	18	cil/src/ds_brs.esp:2657
+requirement	standard_input_file	class	create	3	17	cil/src/ds_bep.esp:2182
+requirement	inferior_window	class	create	3	17	cil/src/es_gin.esp:461
+requirement	hash_index	instance	get_at	3	17	cil/src/ds_fep.esp:1056
+requirement	process	class	get_number	3	17	cil/src/ds_brs.esp:188
+requirement	?	unknown	move	2	17	cil/src/ds_fep.esp:1847
+requirement	standard_input_file	ref	(#ref)		17	cil/src/ds_bep.esp:2182
+requirement	?	unknown	set_position	3	16	cil/src/ds_bep.esp:1849
+requirement	?	unknown	set_font	2	16	cil/src/ds_brs.esp:399
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	transfer	8	16	cil/src/es_gin.esp:855
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_filled_rectangle	6	16	cil/src/es_gin.esp:856
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	transfer	8	16	cil/src/es_gin.esp:1922
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_filled_rectangle	6	16	cil/src/es_gin.esp:1923
+requirement	standard_output_file	class	create	3	15	cil/src/ds_bep.esp:1495
+requirement	?	unknown	current_position	2	15	cil/src/ds_fep.esp:1735
+requirement	standard_output_file	ref	(#ref)		15	cil/src/ds_bep.esp:1495
+requirement	pmacs_standard_editor	instance	exception	2	15	cil/src/ds_brs.esp:845
+requirement	?	unknown	get_optional_data	2	15	cil/src/ds_brs.esp:1013
+requirement	initiation_table	class	create	2	15	cil/src/ds_brs.esp:2522
+requirement	initiation_table	ref	(#ref)		15	cil/src/ds_brs.esp:2522
+requirement	library	class	assign	1	14	cil/src/INSTALL.esp:42
+requirement	?	ambiguous	putf	3	14	cil/src/ds_bep.esp:206
+requirement	?	unknown	delete_package_forcedly	2	14	cil/src/INSTALL.esp:275
+requirement	standard_io_buffer	instance	putf	3	14	cil/src/ds_bep.esp:1484
+requirement	?	unknown	write_margin	3	14	cil/src/ds_brs.esp:775
+requirement	name	class	sort	3	14	cil/src/ds_brs.esp:864
+requirement	initiation_table	instance	put_at	3	14	cil/src/ds_brs.esp:2557
+requirement	pathname	class	last_name	4	14	cil/src/ds_brs.esp:2723
+requirement	?	unknown	get_keys	2	13	cil/src/ds_brs.esp:863
+requirement	?	unknown	new	2	12	cil/src/INSTALL.esp:240
+requirement	?	unknown	show	1	12	cil/src/ds_bep.esp:3342
+requirement	standard_input_file	instance	gett	2	12	cil/src/ds_brs.esp:2555
+requirement	hash_index	instance	remove_at	3	12	cil/src/ds_fep.esp:988
+requirement	hash_index	instance	clear	1	12	cil/src/ds_fep.esp:886
+requirement	with_border	nature	(inherited)		12	cil/src/es_gin.esp:188
+requirement	with_superior_input_buffer	nature	(inherited)		12	cil/src/es_gin.esp:395
+requirement	as_single_select	nature	(inherited)		12	cil/src/es_gin.esp:2478
+requirement	list	ref	(#ref)		12	cil/src/ds_bep.esp:1794
+requirement	?	unknown	open	4	12	cil/src/ms_mdm.esp:1148
+requirement	as_menu_input	nature	(inherited)		12	cil/src/es_gin.esp:2478
+requirement	?	unknown	add_at	3	11	cil/src/cil_mta.esp:384
+requirement	?	ambiguous	get	3	11	cil/src/INSTALL.esp:184
+requirement	?	ambiguous	putf	2	11	cil/src/ds_bep.esp:1523
+requirement	reshape_notifier	nature	(inherited)		11	cil/src/ds_brs.esp:120
+requirement	?	unknown	get_editor	2	11	cil/src/ds_brs.esp:72
+requirement	?	unknown	get_contents_at	3	11	cil/src/cil_mta.esp:192
+requirement	?	ambiguous	add_last	2	11	cil/src/cil_mta.esp:648
+requirement	standard_io_buffer	instance	putf	2	11	cil/src/ds_bep.esp:1508
+requirement	?	unknown	flash	1	11	cil/src/ds_bep.esp:3444
+requirement	?	ambiguous	putt	2	10	cil/src/ds_bep.esp:3472
+requirement	time	class	now	2	10	cil/src/INSTALL.esp:21
+requirement	time	ref	(#ref)		10	cil/src/INSTALL.esp:21
+requirement	?	unknown	put_contents_with_key	2	10	cil/src/cil_mta.esp:414
+requirement	pathname	class	get_last	4	10	cil/src/ds_bep.esp:568
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	mumble	3	10	cil/src/ds_bep.esp:2605
+requirement	pmacs_standard_editor	instance	select_buffer	2	10	cil/src/ds_brs.esp:848
+requirement	hash_index	instance	get_contents_at	3	10	cil/src/es_gin.esp:3147
+requirement	standard_input_file	instance	end_of_input	1	9	cil/src/ds_brs.esp:2560
+requirement	?	unknown	reshape	5	9	cil/src/ds_brs.esp:226
+requirement	?	ambiguous	putc	2	9	cil/src/es_wks.esp:576
+requirement	two_three_tree	class	get_contents	3	9	cil/src/es_gin.esp:148
+requirement	?	unknown	add_items	3	9	cil/src/ds_brs.esp:511
+requirement	library	class	check_class_id	3	9	cil/src/es_wks.esp:417
+requirement	?	unknown	putb	3	9	cil/src/ds_bep.esp:1466
+requirement	?	unknown	clear_items	1	9	cil/src/ds_brs.esp:510
+requirement	?	unknown	get_text_buffer_manager	2	9	cil/src/ds_brs.esp:892
+requirement	?	unknown	get_buffer_instance	3	9	cil/src/ds_brs.esp:893
+requirement	two_three_tree	class	add_at	5	9	cil/src/es_ins.esp:110
+requirement	standard_output_file	instance	close_output	1	8	cil/src/ds_brs.esp:2789
+requirement	?	unknown	move_to_first	1	8	cil/src/ds_brs.esp:855
+requirement	?	ambiguous	create	2	8	cil/src/es_ins.esp:62
+requirement	as_superior	nature	(inherited)		8	cil/src/ds_brs.esp:340
+requirement	file_utility	ref	(#ref)		8	cil/src/INSTALL.esp:271
+requirement	?	unknown	size	2	8	cil/src/ds_bep.esp:2164
+requirement	?	unknown	set_echo_font	2	8	cil/src/ds_brs.esp:400
+requirement	name	class	ident	3	8	cil/src/ds_brs.esp:2724
+requirement	?	unknown	assign_window	1	8	cil/src/es_trc.esp:277
+requirement	directory	class	remove	4	8	cil/src/ms_ist.esp:1234
+requirement	?	unknown	dispose	1	8	cil/src/ms_ist.esp:1235
+requirement	labeled_sash	nature	(inherited)		8	cil/src/es_ins.esp:1088
+requirement	date_time	ref	(#ref)		8	cil/src/ds_bep.esp:1482
+requirement	library	class	get_class_object	3	7	cil/src/INSTALL.esp:250
+requirement	list	class	create	2	7	cil/src/ds_bep.esp:1797
+requirement	list	instance	get_contents	2	7	cil/src/ds_bep.esp:1892
+requirement	?	unknown	close_output	1	7	cil/src/ds_bep.esp:1467
+requirement	with_click_information	nature	(inherited)		7	cil/src/es_ins.esp:874
+requirement	as_input	nature	(inherited)		7	cil/src/ds_brs.esp:340
+requirement	standard_io_buffer	ref	(#ref)		7	cil/src/ds_bep.esp:69
+requirement	standard_choice_window	ref	(#ref)		7	cil/src/ds_brs.esp:2578
+requirement	?	unknown	current_buffer	2	7	cil/src/ds_brs.esp:2183
+requirement	date_time	class	now	2	7	cil/src/ds_bep.esp:1482
+requirement	?	unknown	reset_modify_flag	1	7	cil/src/ds_brs.esp:856
+requirement	standard_choice_window	class	create	3	7	cil/src/ds_brs.esp:2578
+requirement	?	ambiguous	set_parsing_operator	2	7	cil/src/ds_fep.esp:881
+requirement	name	class	ident_type	3	7	cil/src/ds_fep.esp:911
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	clear	1	7	cil/src/es_gin.esp:1533
+requirement	two_three_tree	class	get_at	4	7	cil/src/es_ins.esp:669
+requirement	?	unknown	resign_window	1	7	cil/src/es_trc.esp:285
+requirement	with_icon	nature	(inherited)		7	cil/src/ds_brs.esp:120
+requirement	with_key_select	nature	(inherited)		7	cil/src/ds_brs.esp:120
+requirement	?	unknown	putl	1	6	cil/src/ms_ist.esp:1265
+requirement	standard_io_buffer	class	create	2	6	cil/src/ds_bep.esp:69
+requirement	list	instance	clear	1	6	cil/src/ds_bep.esp:1880
+requirement	inferior_window	instance	get_size	3	6	cil/src/ds_brs.esp:437
+requirement	?	unknown	move_to	2	6	cil/src/ds_fep.esp:1780
+requirement	pathname	class	remote_or_local	6	6	cil/src/ds_bep.esp:2026
+requirement	library	class	check_package	2	6	cil/src/INSTALL.esp:225
+requirement	?	unknown	set_max_depth	2	6	cil/src/es_ins.esp:70
+requirement	?	unknown	set_max_length	2	6	cil/src/es_ins.esp:69
+requirement	with_default_mouse	nature	(inherited)		6	cil/src/ds_brs.esp:340
+requirement	as_multiple_column	nature	(inherited)		6	cil/src/es_gin.esp:2478
+requirement	?	unknown	set_title	2	6	cil/src/ds_bep.esp:3044
+requirement	?	unknown	get_value	5	6	cil/src/INSTALL.esp:34
+requirement	name	class	append_type	4	6	cil/src/ds_bep.esp:573
+requirement	?	unknown	get_inside_size	3	6	cil/src/ds_brs.esp:411
+requirement	?	ambiguous	getl	2	6	cil/src/ds_brs.esp:2405
+requirement	?	unknown	get_count	3	6	cil/src/ds_cmp.esp:117
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	clear	1	6	cil/src/es_gin.esp:499
+requirement	messenger	class	show	3	6	cil/src/es_gin.esp:4251
+requirement	?	unknown	put_all	2	6	cil/src/es_ins.esp:1396
+requirement	?	unknown	set_label_font	2	6	cil/src/es_ins.esp:1642
+requirement	?	unknown	clear_lock	1	6	cil/src/ms_idm.esp:112
+requirement	?	unknown	add_contents_with_key	2	6	cil/src/ms_mdm.esp:1203
+requirement	?	unknown	catch	5	5	cil/src/ds_bep.esp:2007
+requirement	monogyny_list_index	instance	put_at	3	5	cil/src/ds_bep.esp:3234
+requirement	?	unknown	end_of_input	1	5	cil/src/ds_bep.esp:2212
+requirement	?	unknown	class_object	2	5	cil/src/ds_bep.esp:3191
+requirement	?	unknown	add_item	3	5	cil/src/ds_brs.esp:876
+requirement	as_program	nature	(inherited)		5	cil/src/INSTALL.esp:7
+requirement	with_label	nature	(inherited)		5	cil/src/es_gin.esp:188
+requirement	?	unknown	is_directory	1	5	cil/src/ds_bep.esp:2118
+requirement	library	class	check_package	3	5	cil/src/ds_bep.esp:2809
+requirement	?	unknown	get_inside_units	3	5	cil/src/ds_brs.esp:422
+requirement	?	unknown	set_edit_mode	2	5	cil/src/ds_brs.esp:849
+requirement	?	unknown	use_for_listing	2	5	cil/src/ds_brs.esp:850
+requirement	?	unknown	get_buffer_class	2	5	cil/src/ds_brs.esp:999
+requirement	?	unknown	create_with_parameter	5	5	cil/src/ds_brs.esp:1000
+requirement	?	unknown	set_optional_data	2	5	cil/src/ds_brs.esp:1017
+requirement	standard_output_file	instance	putf	3	5	cil/src/ds_brs.esp:2793
+requirement	?	unknown	get_file_name	2	5	cil/src/ds_edt.esp:750
+requirement	as_program	class	whiteboard	2	5	cil/src/es_gin.esp:70
+requirement	?	unknown	resume	2	5	cil/src/es_trc.esp:761
+requirement	inferior_window	instance	set_size	3	5	cil/src/es_trc.esp:1335
+requirement	?	unknown	creation_date	2	5	cil/src/ms_ist.esp:1269
+requirement	?	unknown	make	4	5	cil/src/ms_mdm.esp:1150
+requirement	?	ambiguous	delete	2	5	cil/src/ms_mdm.esp:1219
+requirement	as_resource	nature	(inherited)		5	cil/src/ds_edt.esp:1604
+requirement	as_scrolling_menu	nature	(inherited)		5	cil/src/es_ins.esp:1088
+requirement	as_class_with_lock	nature	(inherited)		5	cil/src/ms_cfm.esp:20
+requirement	list	instance	add_last	2	4	cil/src/ds_bep.esp:2010
+requirement	?	unknown	get_parsing_operator	2	4	cil/src/ds_fep.esp:1040
+requirement	library	class	make_class_object	2	4	cil/src/INSTALL.esp:249
+requirement	standard_output_file	instance	putt	2	4	cil/src/es_wks.esp:2180
+requirement	stop_watch	instance	stop	1	4	cil/src/ds_bep.esp:1635
+requirement	stop_watch	instance	reset	1	4	cil/src/ds_bep.esp:1634
+requirement	?	unknown	get_position	3	4	cil/src/ds_brs.esp:2769
+requirement	screen	class	get_size	3	4	cil/src/ds_brs.esp:258
+requirement	?	unknown	hide	1	4	cil/src/ds_brs.esp:514
+requirement	?	unknown	get_margins	5	4	cil/src/ds_brs.esp:428
+requirement	?	unknown	move_to_last	1	4	cil/src/ds_fep.esp:1734
+requirement	?	unknown	assign	1	4	cil/src/ds_bep.esp:3516
+requirement	?	ambiguous	gett	2	4	cil/src/ds_bep.esp:2202
+requirement	?	unknown	super	2	4	cil/src/ds_brs.esp:442
+requirement	hash_set	instance	add	2	4	cil/src/cil_esp.esp:331
+requirement	with_pmacs_window	nature	(inherited)		4	cil/src/ds_brs.esp:340
+requirement	screen	ref	(#ref)		4	cil/src/ds_brs.esp:258
+requirement	interpreter	ref	(#ref)		4	cil/src/cil_kl0.esp:314
+requirement	interpreter	class	interpret	2	4	cil/src/cil_kl0.esp:314
+requirement	?	unknown	full_pathname	2	4	cil/src/ds_bep.esp:1497
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	add_class_name	2	4	cil/src/ds_bep.esp:1997
+requirement	?	unknown	throwing_hook	7	4	cil/src/ds_bep.esp:2186
+requirement	?	unknown	close_input	1	4	cil/src/ds_bep.esp:2274
+requirement	directory	class	parent_directory	5	4	cil/src/ds_bep.esp:3104
+requirement	?	ambiguous	putl	2	4	cil/src/ds_bep.esp:3442
+requirement	standard_superior_window	instance	get_inside_size	3	4	cil/src/ds_brs.esp:193
+requirement	standard_superior_window	instance	get_size	3	4	cil/src/ds_brs.esp:234
+requirement	standard_superior_window	instance	get_position	3	4	cil/src/ds_brs.esp:235
+requirement	standard_superior_window	instance	set_size	3	4	cil/src/ds_brs.esp:262
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_text_window	2	4	cil/src/ds_brs.esp:410
+requirement	?	unknown	get_line_height	2	4	cil/src/ds_brs.esp:423
+requirement	?	unknown	edit_mode	2	4	cil/src/ds_brs.esp:546
+requirement	?	unknown	get_all_items	2	4	cil/src/ds_brs.esp:795
+requirement	initiation_table	instance	put_all	2	4	cil/src/ds_brs.esp:2550
+requirement	?	unknown	exception	2	4	cil/src/ds_brs.esp:2779
+requirement	as_resource	class	new	2	4	cil/src/ds_edt.esp:1623
+requirement	monogyny_hash_index	instance	get_contents_with_key	2	4	cil/src/ds_fep.esp:1099
+requirement	?	unknown	set	2	4	cil/src/ds_fep.esp:1717
+requirement	?	unknown	see	2	4	cil/src/ds_fep.esp:1842
+requirement	?	ambiguous	set_unparsing_operator	2	4	cil/src/es_ins.esp:850
+requirement	?	unknown	write	2	4	cil/src/es_ins.esp:1798
+requirement	?	unknown	suspend	2	4	cil/src/es_trc.esp:758
+requirement	?	unknown	set_item_status	3	4	cil/src/es_trc.esp:1604
+requirement	?	unknown	catch_for_specified_throw	5	4	cil/src/es_wks.esp:428
+requirement	hash_index	instance	get_contents_with_key	2	4	cil/src/es_wks.esp:716
+requirement	standard_output_file	instance	putf	2	4	cil/src/es_wks.esp:2181
+requirement	with_shared_window	instance	assign_window	1	4	cil/src/ms_cfm.esp:119
+requirement	?	unknown	select_buffer	2	4	cil/src/ms_idm.esp:110
+requirement	?	unknown	show_buffer	1	4	cil/src/ms_idm.esp:111
+requirement	network_node_name	class	get_my_node	2	4	cil/src/ms_ist.esp:428
+requirement	with_margin	nature	(inherited)		4	cil/src/es_gin.esp:395
+requirement	with_border	ref	(#ref)		4	cil/src/ds_brs.esp:442
+requirement	network_node_name	ref	(#ref)		4	cil/src/ms_ist.esp:428
+requirement	?	unknown	command_interpret	1	3	cil/src/ds_brs.esp:91
+requirement	?	unknown	remove_operator	2	3	cil/src/ds_bep.esp:2794
+requirement	stop_watch	class	create	2	3	cil/src/ds_bep.esp:1591
+requirement	stop_watch	instance	show	2	3	cil/src/ds_bep.esp:1612
+requirement	?	ambiguous	save	2	3	cil/src/INSTALL.esp:185
+requirement	stop_watch	instance	start	1	3	cil/src/ds_bep.esp:1639
+requirement	font	class	create	3	3	cil/src/ms_stm.esp:66
+requirement	file_utility	class	copy	3	3	cil/src/ds_bep.esp:2555
+requirement	symbolizer	class	list_to_string	3	3	cil/src/ds_brs.esp:2372
+requirement	?	ambiguous	create	3	3	cil/src/ds_brs.esp:3111
+requirement	throw	class	raise	2	3	cil/src/es_trc.esp:883
+requirement	?	unknown	read	3	3	cil/src/ds_bep.esp:2169
+requirement	directory	class	retrieve	3	3	cil/src/ds_bep.esp:3074
+requirement	?	ambiguous	putt	4	3	cil/src/es_gin.esp:4091
+requirement	?	unknown	set_area_limit_execution	7	3	cil/src/INSTALL.esp:46
+requirement	with_shared_window	nature	(inherited)		3	cil/src/ds_brs.esp:340
+requirement	stop_watch	ref	(#ref)		3	cil/src/ds_bep.esp:1591
+requirement	font	ref	(#ref)		3	cil/src/ms_stm.esp:66
+requirement	throw	ref	(#ref)		3	cil/src/es_trc.esp:883
+requirement	binary_file	ref	(#ref)		3	cil/src/ms_ist.esp:1984
+requirement	standard_menu	ref	(#ref)		3	cil/src/es_wks.esp:1228
+requirement	?	unknown	get_interpreter	2	3	cil/src/ds_brs.esp:64
+requirement	?	unknown	set_input_position	1	3	cil/src/es_trc.esp:147
+requirement	?	unknown	context	2	3	cil/src/INSTALL.esp:45
+requirement	?	unknown	slot	2	3	cil/src/cil_kl0.esp:542
+requirement	?	ambiguous	is_builtin	2	3	cil/src/ds_bep.esp:1028
+requirement	standard_io_buffer	instance	putt	4	3	cil/src/ds_bep.esp:1554
+requirement	?	unknown	get_library_environment	3	3	cil/src/ds_bep.esp:1969
+requirement	library	class	get_class_descriptor	6	3	cil/src/ds_bep.esp:1976
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	add_file_name	2	3	cil/src/ds_bep.esp:2150
+requirement	?	unknown	open	1	3	cil/src/ds_bep.esp:2181
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	class	new	2	3	cil/src/ds_bep.esp:2342
+requirement	?	unknown	add_first	2	3	cil/src/ds_bep.esp:2489
+requirement	standard_input_file	instance	set_parsing_operator	2	3	cil/src/ds_bep.esp:2620
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	add_discordant_class	2	3	cil/src/ds_bep.esp:2968
+requirement	?	ambiguous	get_package	2	3	cil/src/ds_bep.esp:3027
+requirement	standard_temporary_menu	class	create	3	3	cil/src/ds_brs.esp:526
+requirement	?	unknown	set_file_name	2	3	cil/src/ds_edt.esp:761
+requirement	as_resource	instance	assign	1	3	cil/src/ds_edt.esp:1624
+requirement	list_stack	instance	pop	2	3	cil/src/ds_fep.esp:1069
+requirement	search_table	instance	set	2	3	cil/src/ds_fep.esp:1713
+requirement	?	unknown	see	3	3	cil/src/ds_fep.esp:1879
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	paint	5	3	cil/src/es_gin.esp:1761
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	set_input_position	1	3	cil/src/es_trc.esp:1405
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	flash	1	3	cil/src/es_trc.esp:1414
+requirement	?	unknown	resign	1	3	cil/src/es_trc.esp:2833
+requirement	variable_symbolizer	class	merge_variable_tree	4	3	cil/src/es_wks.esp:497
+requirement	standard_menu	class	create	3	3	cil/src/es_wks.esp:1228
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	set_input_position	1	3	cil/src/es_wks.esp:1418
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	flash	1	3	cil/src/es_wks.esp:1427
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	putf	3	3	cil/src/es_wks.esp:1491
+requirement	directory	class	directory	5	3	cil/src/ms_ist.esp:466
+requirement	?	unknown	set_count	3	3	cil/src/ms_ist.esp:1270
+requirement	fdd_binary_file	ref	(#ref)		3	cil/src/ds_bep.esp:2163
+requirement	editor_yank_buffer	ref	(#ref)		3	cil/src/ds_bep.esp:2312
+requirement	standard_temporary_menu	ref	(#ref)		3	cil/src/ds_brs.esp:526
+requirement	syntax_error	ref	(#ref)		3	cil/src/ds_fep.esp:968
+requirement	variable_symbolizer	ref	(#ref)		3	cil/src/es_wks.esp:497
+requirement	process	instance	activate	2	2	cil/src/ms_cdn.esp:349
+requirement	?	unknown	die	1	2	cil/src/ds_brs.esp:501
+requirement	?	unknown	class_name	2	2	cil/src/ds_brs.esp:2717
+requirement	directory	class	current_directory	3	2	cil/src/ds_edt.esp:756
+requirement	list_stack	class	create	2	2	cil/src/ds_fep.esp:843
+requirement	library	class	check_info	3	2	cil/src/ds_bep.esp:1990
+requirement	directory	class	retrieve_with_wildcard	4	2	cil/src/ms_ist.esp:1635
+requirement	?	unknown	set_superior	2	2	cil/src/ms_utl.esp:550
+requirement	standard_io_buffer	instance	reset	1	2	cil/src/ds_bep.esp:1460
+requirement	?	unknown	get_string	2	2	cil/src/ds_bep.esp:1621
+requirement	standard_superior_window	class	create	3	2	cil/src/ds_brs.esp:169
+requirement	?	unknown	operator	4	2	cil/src/ds_bep.esp:2919
+requirement	symbolizer	class	is_object	2	2	cil/src/ds_bep.esp:1930
+requirement	pmacs_window	class	create	3	2	cil/src/ds_bep.esp:3346
+requirement	?	unknown	add	2	2	cil/src/ms_mdm.esp:2370
+requirement	?	ambiguous	goal	1	2	cil/src/ms_cdn.esp:62
+requirement	?	ambiguous	put_contents	2	2	cil/src/cil_mta.esp:983
+requirement	?	unknown	check_info	2	2	cil/src/ds_bep.esp:2085
+requirement	?	unknown	read_sense	2	2	cil/src/ds_bep.esp:3478
+requirement	pmacs_standard_editor	nature	(inherited)		2	cil/src/ds_brs.esp:449
+requirement	as_graphics	nature	(inherited)		2	cil/src/es_gin.esp:395
+requirement	editor_text_buffer	ref	(#ref)		2	cil/src/ms_mdm.esp:1646
+requirement	list_stack	ref	(#ref)		2	cil/src/ds_fep.esp:843
+requirement	pmacs_window	ref	(#ref)		2	cil/src/ds_bep.esp:3346
+requirement	standard_multi_column_menu	ref	(#ref)		2	cil/src/ds_brs.esp:316
+requirement	?	unknown	set_library_environment	3	2	cil/src/INSTALL.esp:48
+requirement	library	class	make_package	2	2	cil/src/INSTALL.esp:227
+requirement	library	class	change_environment_in_package	3	2	cil/src/INSTALL.esp:228
+requirement	?	ambiguous	catalogue	3	2	cil/src/INSTALL.esp:233
+requirement	<root>	instance	refute	3	2	cil/src/cil_mta.esp:151
+requirement	hash_set	class	create	2	2	cil/src/cil_esp.esp:333
+requirement	hash_set	instance	get_contents	2	2	cil/src/cil_esp.esp:356
+requirement	<root>	class	is_builtin	3	2	cil/src/cil_esp.esp:400
+requirement	quick_list	class	create	2	2	cil/src/cil_mta.esp:951
+requirement	<root>	class	start_message	4	2	cil/src/ds_bep.esp:212
+requirement	<root>	class	end_message	4	2	cil/src/ds_bep.esp:215
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	make_all_classes	2	2	cil/src/ds_bep.esp:1947
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	get_package_and_class	4	2	cil/src/ds_bep.esp:1979
+requirement	library	class	is_name_only_class	3	2	cil/src/ds_bep.esp:1981
+requirement	library	class	abolish	2	2	cil/src/ds_bep.esp:1995
+requirement	?	unknown	is_fdd	1	2	cil/src/ds_bep.esp:2114
+requirement	library	class	register	2	2	cil/src/ds_bep.esp:2127
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	term_to_string	3	2	cil/src/ds_bep.esp:2147
+requirement	fdd_binary_file	class	open	3	2	cil/src/ds_bep.esp:2163
+requirement	editor_yank_buffer	class	get_named_yank	3	2	cil/src/ds_bep.esp:2312
+requirement	?	unknown	expunge	1	2	cil/src/ds_bep.esp:2564
+requirement	library	class	get_class_id_in_environment	6	2	cil/src/ds_bep.esp:2828
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	slot	!skipped_classes	0	2	cil/src/ds_bep.esp:2832
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	make_all_classes	3	2	cil/src/ds_bep.esp:2834
+requirement	directory	class	make	3	2	cil/src/ds_bep.esp:3077
+requirement	symbolizer	class	get_interned_atom_string	3	2	cil/src/ds_bep.esp:3424
+requirement	?	unknown	clear_echo_area	1	2	cil/src/ds_brs.esp:92
+requirement	{with_icon|with_key_select|reshape_notifier|standard_superior_window}	instance	activate	2	2	cil/src/ds_brs.esp:170
+requirement	standard_superior_window	instance	set_position	3	2	cil/src/ds_brs.esp:261
+requirement	standard_superior_window	instance	get_border_width	2	2	cil/src/ds_brs.esp:279
+requirement	standard_superior_window	instance	get_label_height	2	2	cil/src/ds_brs.esp:280
+requirement	standard_multi_column_menu	class	create	3	2	cil/src/ds_brs.esp:316
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	class	create_with_input	5	2	cil/src/ds_brs.esp:394
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_label_window_size	3	2	cil/src/ds_brs.esp:424
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_echo_area_window_size	3	2	cil/src/ds_brs.esp:425
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	class_object	2	2	cil/src/ds_brs.esp:441
+requirement	{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_border_width	2	2	cil/src/ds_brs.esp:443
+requirement	?	unknown	get_font	2	2	cil/src/ds_brs.esp:2715
+requirement	pathname	class	check_pathname	3	2	cil/src/ds_edt.esp:746
+requirement	?	unknown	get_activate_window_count	2	2	cil/src/ds_edt.esp:1035
+requirement	pmacs_standard_editor	instance	two_windows	1	2	cil/src/ds_edt.esp:1037
+requirement	?	unknown	exchange_window	1	2	cil/src/ds_edt.esp:1038
+requirement	?	unknown	change_input_window	2	2	cil/src/ds_edt.esp:1114
+requirement	list_stack	instance	push	2	2	cil/src/ds_fep.esp:1082
+requirement	list	instance	add	2	2	cil/src/ds_fep.esp:1458
+requirement	?	unknown	see_position	3	2	cil/src/ds_fep.esp:1922
+requirement	superior_window	class	create	3	2	cil/src/es_gin.esp:250
+requirement	superior_window	instance	get_inside_size	3	2	cil/src/es_gin.esp:281
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	get_inside_size	3	2	cil/src/es_gin.esp:1519
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	get_font	2	2	cil/src/es_gin.esp:1652
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_string	6	2	cil/src/es_gin.esp:1653
+requirement	{with_border|as_multiple_column|as_single_select|as_mouse_input|as_menu_input|with_superior_input_buffer|inferior_window}	instance	set_item_status	3	2	cil/src/es_gin.esp:2545
+requirement	?	unknown	set_mode	2	2	cil/src/es_ins.esp:981
+requirement	{with_superior_input_buffer|labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_label_font	2	2	cil/src/es_ins.esp:1125
+requirement	{with_superior_input_buffer|labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_font	2	2	cil/src/es_ins.esp:1126
+requirement	<root>	slot	!dictionary	0	2	cil/src/es_ins.esp:1472
+requirement	?	ambiguous	interpret	2	2	cil/src/es_int.esp:197
+requirement	?	unknown	get1	2	2	cil/src/es_trc.esp:166
+requirement	?	unknown	execute_command	2	2	cil/src/es_trc.esp:172
+requirement	{with_label|with_border|as_superior|with_key_select|with_click_information|reshape_notifier|as_input|as_mouse_input|with_default_mouse|with_icon|inferior_window}	instance	get_inside_size	3	2	cil/src/es_trc.esp:1261
+requirement	inferior_window	instance	get_position	3	2	cil/src/es_trc.esp:1330
+requirement	inferior_window	instance	set_position	3	2	cil/src/es_trc.esp:1334
+requirement	{with_label|with_border|as_superior|with_key_select|with_click_information|reshape_notifier|as_input|as_mouse_input|with_default_mouse|with_icon|inferior_window}	instance	get_border_width	2	2	cil/src/es_trc.esp:1353
+requirement	{with_label|with_border|as_superior|with_key_select|with_click_information|reshape_notifier|as_input|as_mouse_input|with_default_mouse|with_icon|inferior_window}	instance	get_label_height	2	2	cil/src/es_trc.esp:1354
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_text_window	2	2	cil/src/es_trc.esp:1428
+requirement	{with_margin|with_border|as_single_select|as_multiple_column|with_superior_input_buffer|as_menu_input|as_mouse_input|inferior_window}	instance	set_font	2	2	cil/src/es_trc.esp:1534
+requirement	?	unknown	unlock	1	2	cil/src/es_trc.esp:2831
+requirement	?	unknown	refute_in	5	2	cil/src/es_wks.esp:355
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	slot	!superior	0	2	cil/src/es_wks.esp:1409
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	get_text_window	2	2	cil/src/es_wks.esp:1533
+requirement	process	class	create	3	2	cil/src/ms_cdn.esp:348
+requirement	?	unknown	get_unparsing_operator	2	2	cil/src/ms_etl.esp:472
+requirement	file_utility	class	compress	4	2	cil/src/ms_ist.esp:394
+requirement	directory	class	kill	3	2	cil/src/ms_ist.esp:468
+requirement	net_spawn_user	class	hello	4	2	cil/src/ms_ist.esp:549
+requirement	file_utility	class	decompress	4	2	cil/src/ms_ist.esp:852
+requirement	library	class	delete_package	2	2	cil/src/ms_ist.esp:858
+requirement	?	unknown	change_creation_date	2	2	cil/src/ms_ist.esp:1271
+requirement	?	unknown	directory	5	2	cil/src/ms_ist.esp:1681
+requirement	?	unknown	write_data	2	2	cil/src/ms_ist.esp:1804
+requirement	?	unknown	reread	1	2	cil/src/ms_ist.esp:1810
+requirement	?	unknown	new_buffer	3	2	cil/src/ms_ist.esp:1892
+requirement	?	unknown	read	1	2	cil/src/ms_ist.esp:1893
+requirement	?	unknown	get_data	2	2	cil/src/ms_ist.esp:1894
+requirement	monogyny_hash_index	instance	get_contents	2	2	cil/src/ms_mdm.esp:2041
+requirement	?	unknown	add_contents	2	2	cil/src/ms_mdm.esp:2366
+requirement	?	unknown	clear_lock	2	2	cil/src/ms_msm.esp:666
+requirement	{as_class_with_lock|as_event_handler}	class	unlock	1	2	cil/src/ms_utl.esp:466
+requirement	{as_class_with_lock|as_event_handler}	class	lock	1	2	cil/src/ms_utl.esp:470
+requirement	standard_superior_window	nature	(inherited)		2	cil/src/ds_brs.esp:120
+requirement	superior_window	nature	(inherited)		2	cil/src/es_gin.esp:188
+requirement	with_bell	nature	(inherited)		2	cil/src/es_ins.esp:1651
+requirement	as_menu	nature	(inherited)		2	cil/src/es_ins.esp:1651
+requirement	as_on_off_menu	nature	(inherited)		2	cil/src/es_trc.esp:1877
+requirement	hash_set	ref	(#ref)		2	cil/src/cil_esp.esp:333
+requirement	quick_list	ref	(#ref)		2	cil/src/cil_mta.esp:951
+requirement	librarian_io	ref	(#ref)		2	cil/src/ds_bep.esp:3192
+requirement	network_address_table	ref	(#ref)		2	cil/src/ms_ist.esp:548
+requirement	net_spawn_user	ref	(#ref)		2	cil/src/ms_ist.esp:549
+requirement	?	unknown	set_package	2	1	cil/src/ds_bep.esp:3037
+requirement	?	unknown	exterminate	1	1	cil/src/ms_cdn.esp:267
+requirement	?	ambiguous	gett	4	1	cil/src/ms_msm.esp:608
+requirement	standard_io_window	class	create	3	1	cil/src/ds_bep.esp:3340
+requirement	directory	class	directory	6	1	cil/src/ds_edt.esp:854
+requirement	editor_text_buffer	class	create	4	1	cil/src/ms_mdm.esp:1670
+requirement	?	unknown	insert_string	2	1	cil/src/ms_mdm.esp:1672
+requirement	list	instance	put_contents	2	1	cil/src/es_wks.esp:1464
+requirement	symbolizer	class	string_to_list	3	1	cil/src/ms_msm.esp:236
+requirement	standard_input_file	instance	get_parsing_operator	2	1	cil/src/ds_bep.esp:2621
+requirement	?	unknown	push	2	1	cil/src/ds_bep.esp:2313
+requirement	?	unknown	expand_definition	5	1	cil/src/ds_bep.esp:2717
+requirement	two_three_tree	class	remove_at	5	1	cil/src/es_ins.esp:1312
+requirement	search_table	class	create	2	1	cil/src/ds_fep.esp:1711
+requirement	standard_editor	instance	current_buffer	2	1	cil/src/es_wks.esp:1622
+requirement	?	unknown	move_end_of_line	1	1	cil/src/ds_fep.esp:1846
+requirement	search_table	instance	get_table	3	1	cil/src/ds_fep.esp:1716
+requirement	symbolizer	class	get_variable	5	1	cil/src/es_wks.esp:1779
+requirement	standard_io_buffer	instance	getl	2	1	cil/src/es_ins.esp:864
+requirement	?	unknown	<variable selector>	0	1	cil/src/ds_bep.esp:1535
+requirement	?	unknown	read_with_click	4	1	cil/src/es_ins.esp:658
+requirement	binary_file	class	open	4	1	cil/src/ms_mdm.esp:1663
+requirement	library	class	get_class_id	5	1	cil/src/ms_mdm.esp:2175
+requirement	?	ambiguous	set	3	1	cil/src/es_trc.esp:2542
+requirement	?	unknown	set_warp_item	2	1	cil/src/es_ins.esp:912
+requirement	?	ambiguous	getc	2	1	cil/src/ms_msm.esp:624
+requirement	library	class	get_direct_superclasses	3	1	cil/src/ms_mdm.esp:2136
+requirement	symbolizer	class	get_variable_string	5	1	cil/src/ds_fep.esp:2015
+requirement	symbolizer	class	remove_variable	4	1	cil/src/es_wks.esp:1776
+requirement	temporary_window	class	create	3	1	cil/src/es_ins.esp:1680
+requirement	standard_editor	nature	(inherited)		1	cil/src/es_wks.esp:1575
+requirement	monogyny_list_index	ref	(#ref)		1	cil/src/ds_bep.esp:3175
+requirement	font_13	ref	(#ref)		1	cil/src/ms_stm.esp:71
+requirement	search_table	ref	(#ref)		1	cil/src/ds_fep.esp:1711
+requirement	esp_macro_expander	ref	(#ref)		1	cil/src/cil_esp.esp:105
+requirement	standard_io_window	ref	(#ref)		1	cil/src/ds_bep.esp:3340
+requirement	standard_scrolling_menu	ref	(#ref)		1	cil/src/ms_utl.esp:582
+requirement	as_program	class	create	2	1	cil/src/ms_msm.esp:477
+requirement	file_utility	class	kill	2	1	cil/src/INSTALL.esp:271
+requirement	ascii_coder	class	from_kanji	3	1	cil/src/cil_esp.esp:53
+requirement	<root>	instance	method	3	1	cil/src/cil_mta.esp:180
+requirement	?	ambiguous	get_last	2	1	cil/src/cil_mta.esp:994
+requirement	?	unknown	make_package	3	1	cil/src/ds_bep.esp:181
+requirement	<root>	class	is_builtin	2	1	cil/src/ds_bep.esp:471
+requirement	standard_io_buffer	instance	close_output	1	1	cil/src/ds_bep.esp:1462
+requirement	standard_io_buffer	instance	reread	1	1	cil/src/ds_bep.esp:1488
+requirement	standard_io_buffer	instance	size	2	1	cil/src/ds_bep.esp:1489
+requirement	standard_io_buffer	instance	getb	3	1	cil/src/ds_bep.esp:1491
+requirement	?	unknown	file	2	1	cil/src/ds_bep.esp:1496
+requirement	standard_io_buffer	instance	putc	2	1	cil/src/ds_bep.esp:1553
+requirement	library	class	get_changed_classes	2	1	cil/src/ds_bep.esp:1841
+requirement	?	unknown	create_menu_for_save	2	1	cil/src/ds_bep.esp:1848
+requirement	?	unknown	read_items	4	1	cil/src/ds_bep.esp:1852
+requirement	library_error	class	raise	4	1	cil/src/ds_bep.esp:1856
+requirement	library	class	get_class_id	6	1	cil/src/ds_bep.esp:1921
+requirement	library	class	define_public_classes	2	1	cil/src/ds_bep.esp:1961
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	remove_discordant_class	2	1	cil/src/ds_bep.esp:2087
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	add_class_names	2	1	cil/src/ds_bep.esp:2144
+requirement	string_buffer	class	create	4	1	cil/src/ds_bep.esp:2166
+requirement	binary_file_marker	class	create	2	1	cil/src/ds_bep.esp:2167
+requirement	binary_file_marker	instance	set_position	2	1	cil/src/ds_bep.esp:2168
+requirement	string_buffer	instance	data_buffer	2	1	cil/src/ds_bep.esp:2171
+requirement	{librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	zero_position	4	1	cil/src/ds_bep.esp:2173
+requirement	standard_io_buffer	instance	putl	2	1	cil/src/ds_bep.esp:2176
+requirement	standard_io_buffer	instance	gett	2	1	cil/src/ds_bep.esp:2223
+requirement	standard_io_buffer	instance	get_parsing_operator	2	1	cil/src/ds_bep.esp:2243
+requirement	named_yank_buffer_subsystem	class	named_yank_flag	2	1	cil/src/ds_bep.esp:2294
+requirement	list	instance	add_first	2	1	cil/src/ds_bep.esp:2538
+requirement	?	unknown	delete_with_wildcard	3	1	cil/src/ds_bep.esp:2563
+requirement	macro_preprocessor	class	preprocess	3	1	cil/src/ds_bep.esp:2667
+requirement	library	class	get_class_id_in_package	6	1	cil/src/ds_bep.esp:2720
+requirement	library	class	catalogue_class	2	1	cil/src/ds_bep.esp:2723
+requirement	library	class	abolish_class_object	2	1	cil/src/ds_bep.esp:2729
+requirement	library	class	make_class_template_from_internal_format	4	1	cil/src/ds_bep.esp:2867
+requirement	?	unknown	in	2	1	cil/src/ds_bep.esp:2909
+requirement	?	unknown	check_library_environment	3	1	cil/src/ds_bep.esp:2991
+requirement	library	class	update_class_source_file	4	1	cil/src/ds_bep.esp:3003
+requirement	library	class	get_names	4	1	cil/src/ds_bep.esp:3059
+requirement	?	unknown	display_text_window	4	1	cil/src/ds_bep.esp:3117
+requirement	{librarian_version|librarian_catalogue|as_class_maker|compiler_error_reporter|librarian_delete|librarian_package|librarian_spy|librarian_reference|librarian_fdd|librarian_subroutine|as_assert_utility}	class	new	2	1	cil/src/ds_bep.esp:3139
+requirement	?	unknown	user	2	1	cil/src/ds_bep.esp:3142
+requirement	?	unknown	local_name	2	1	cil/src/ds_bep.esp:3143
+requirement	?	ambiguous	set_name	2	1	cil/src/ds_bep.esp:3146
+requirement	?	ambiguous	create_window	2	1	cil/src/ds_bep.esp:3162
+requirement	{librarian_version|librarian_catalogue|as_class_maker|compiler_error_reporter|librarian_delete|librarian_package|librarian_spy|librarian_reference|librarian_fdd|librarian_subroutine|as_assert_utility}	slot	!subclass_check	0	1	cil/src/ds_bep.esp:3352
+requirement	{librarian_version|librarian_catalogue|as_class_maker|compiler_error_reporter|librarian_delete|librarian_package|librarian_spy|librarian_reference|librarian_fdd|librarian_subroutine|as_assert_utility}	instance	refute	3	1	cil/src/ds_bep.esp:3392
+requirement	editor_yank_buffer	class	add_named_yank	3	1	cil/src/ds_bep.esp:3515
+requirement	<root>	class	debug_on	2	1	cil/src/ds_brs.esp:1336
+requirement	?	unknown	input_window	2	1	cil/src/ds_edt.esp:78
+requirement	standard_window	class	create	3	1	cil/src/ds_edt.esp:81
+requirement	pmacs_standard_editor	instance	write_file	4	1	cil/src/ds_edt.esp:760
+requirement	?	unknown	read_with_prompt	3	1	cil/src/ds_edt.esp:766
+requirement	wildcard	class	check_name	3	1	cil/src/ds_edt.esp:815
+requirement	pmacs_standard_editor	instance	find_file	2	1	cil/src/ds_edt.esp:915
+requirement	name	class	version	3	1	cil/src/ds_edt.esp:919
+requirement	directory	class	delete	4	1	cil/src/ds_edt.esp:997
+requirement	?	unknown	purge	1	1	cil/src/ds_edt.esp:1018
+requirement	?	ambiguous	start	1	1	cil/src/ds_edt.esp:1082
+requirement	list_stack	instance	clear	1	1	cil/src/ds_fep.esp:887
+requirement	monogyny_hash_index	instance	put_contents_with_key	2	1	cil/src/ds_fep.esp:889
+requirement	?	unknown	see_position	4	1	cil/src/ds_fep.esp:902
+requirement	standard_io_buffer	class	create	3	1	cil/src/ds_fep.esp:903
+requirement	?	unknown	catch	8	1	cil/src/ds_fep.esp:967
+requirement	search_table	instance	copy	2	1	cil/src/ds_fep.esp:1712
+requirement	?	unknown	get_table	3	1	cil/src/ds_fep.esp:1721
+requirement	?	unknown	move_to_nonblank	1	1	cil/src/ds_fep.esp:1841
+requirement	?	unknown	move_to_backward_nonblank	3	1	cil/src/ds_fep.esp:1897
+requirement	?	unknown	search_with_kakko	5	1	cil/src/ds_fep.esp:1902
+requirement	?	unknown	read	6	1	cil/src/es_gin.esp:80
+requirement	?	unknown	draw_string	5	1	cil/src/es_gin.esp:312
+requirement	?	unknown	set_inside_units	3	1	cil/src/es_gin.esp:472
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	get_inside_size	3	1	cil/src/es_gin.esp:484
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_elliptical_arc	10	1	cil/src/es_gin.esp:727
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_filled_rectangle	8	1	cil/src/es_gin.esp:1270
+requirement	{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_line	8	1	cil/src/es_gin.esp:1328
+requirement	?	unknown	erase_cursor	1	1	cil/src/es_gin.esp:1505
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	set_font	2	1	cil/src/es_gin.esp:1538
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	get_inside_units	3	1	cil/src/es_gin.esp:1539
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_arc	9	1	cil/src/es_gin.esp:1718
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_elliptical_arc	10	1	cil/src/es_gin.esp:1783
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_filled_circle	5	1	cil/src/es_gin.esp:1806
+requirement	{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	instance	draw_line	8	1	cil/src/es_gin.esp:2300
+requirement	{with_border|with_superior_input_buffer|as_superior|reshape_notifier|inferior_window}	instance	get_inside_size	3	1	cil/src/es_gin.esp:2458
+requirement	{with_border|as_multiple_column|as_single_select|as_mouse_input|as_menu_input|with_superior_input_buffer|inferior_window}	instance	set_font	2	1	cil/src/es_gin.esp:2649
+requirement	?	unknown	beep	1	1	cil/src/es_ins.esp:925
+requirement	superior_window	instance	kill	1	1	cil/src/es_ins.esp:933
+requirement	?	unknown	delete_items	2	1	cil/src/es_ins.esp:1066
+requirement	{with_superior_input_buffer|labeled_sash|as_single_select|as_multiple_column|as_menu_input|as_mouse_input|inferior_window}	instance	set_font	2	1	cil/src/es_ins.esp:1234
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	clear_items	1	1	cil/src/es_ins.esp:1262
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	show	1	1	cil/src/es_ins.esp:1263
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	hide	1	1	cil/src/es_ins.esp:1265
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_label_font	2	1	cil/src/es_ins.esp:1285
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_font	2	1	cil/src/es_ins.esp:1286
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	add_items	3	1	cil/src/es_ins.esp:1298
+requirement	{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	read	2	1	cil/src/es_ins.esp:1299
+requirement	<root>	class	look_up	3	1	cil/src/es_ins.esp:1690
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	clear_items	1	1	cil/src/es_ins.esp:1702
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	add_items	3	1	cil/src/es_ins.esp:1703
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	show	1	1	cil/src/es_ins.esp:1704
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	beep	1	1	cil/src/es_ins.esp:1705
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	read_with_click	3	1	cil/src/es_ins.esp:1706
+requirement	{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	instance	hide	1	1	cil/src/es_ins.esp:1707
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	clear_items	1	1	cil/src/es_ins.esp:1735
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	show	1	1	cil/src/es_ins.esp:1736
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	hide	1	1	cil/src/es_ins.esp:1738
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_label_font	2	1	cil/src/es_ins.esp:1760
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	set_font	2	1	cil/src/es_ins.esp:1761
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	add_items	3	1	cil/src/es_ins.esp:1772
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	read	2	1	cil/src/es_ins.esp:1784
+requirement	{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	instance	get_font	2	1	cil/src/es_ins.esp:1819
+requirement	{with_lock|as_resource}	instance	lock	1	1	cil/src/es_trc.esp:152
+requirement	{with_lock|as_resource}	instance	unlock	1	1	cil/src/es_trc.esp:154
+requirement	{with_lock|as_resource}	class	new	2	1	cil/src/es_trc.esp:235
+requirement	{with_lock|as_resource}	instance	assign	1	1	cil/src/es_trc.esp:236
+requirement	?	unknown	see_buffer	2	1	cil/src/es_trc.esp:635
+requirement	?	unknown	create_with_input	4	1	cil/src/es_trc.esp:1269
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	put_back	2	1	cil/src/es_trc.esp:1402
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_label_window_size	3	1	cil/src/es_trc.esp:1442
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_echo_area_window_size	3	1	cil/src/es_trc.esp:1443
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	class_object	2	1	cil/src/es_trc.esp:1459
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_border_width	2	1	cil/src/es_trc.esp:1461
+requirement	?	unknown	lock	1	1	cil/src/es_trc.esp:2812
+requirement	monogyny_hash_index	instance	add_at	3	1	cil/src/es_wks.esp:791
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	put_back	2	1	cil/src/es_wks.esp:1415
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	class	create_with_input	4	1	cil/src/es_wks.esp:1444
+requirement	?	unknown	set_key_assign	4	1	cil/src/es_wks.esp:1462
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	putf	2	1	cil/src/es_wks.esp:1476
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	beep	1	1	cil/src/es_wks.esp:1503
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	putc	2	1	cil/src/es_wks.esp:1526
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	get_label_window_size	3	1	cil/src/es_wks.esp:1547
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	get_echo_area_window_size	3	1	cil/src/es_wks.esp:1548
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	class_object	2	1	cil/src/es_wks.esp:1564
+requirement	{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	get_border_width	2	1	cil/src/es_wks.esp:1566
+requirement	standard_editor	instance	get_window	2	1	cil/src/es_wks.esp:1591
+requirement	?	unknown	get_insert_code	2	1	cil/src/es_wks.esp:1592
+requirement	standard_editor	instance	carriage_return	1	1	cil/src/es_wks.esp:1627
+requirement	{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	cil/src/es_wks.esp:1756
+requirement	{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	instance	set_label_font	2	1	cil/src/es_wks.esp:1757
+requirement	{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	instance	read_sense	2	1	cil/src/es_wks.esp:1772
+requirement	symbolizer	class	merge_variable_tree	4	1	cil/src/es_wks.esp:1782
+requirement	{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	instance	clear_items	1	1	cil/src/es_wks.esp:1797
+requirement	{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	instance	add_items	3	1	cil/src/es_wks.esp:1801
+requirement	?	unknown	alive	1	1	cil/src/ms_cfm.esp:53
+requirement	?	unknown	set_region	4	1	cil/src/ms_idm.esp:118
+requirement	monogyny_hash_index	instance	get_keys	2	1	cil/src/ms_idm.esp:167
+requirement	library	class	save_package_template	3	1	cil/src/ms_ist.esp:388
+requirement	network_address_table	class	site_psi_names	3	1	cil/src/ms_ist.esp:548
+requirement	network_address_table	class	site_names	2	1	cil/src/ms_ist.esp:591
+requirement	date_time	class	create	2	1	cil/src/ms_ist.esp:735
+requirement	date_time	instance	set_count	3	1	cil/src/ms_ist.esp:736
+requirement	date_time	instance	get_value	8	1	cil/src/ms_ist.esp:742
+requirement	library	class	make_package_forcedly	2	1	cil/src/ms_ist.esp:857
+requirement	library	class	load_package_template	3	1	cil/src/ms_ist.esp:859
+requirement	directory	class	rename	5	1	cil/src/ms_ist.esp:1242
+requirement	vax_file_transfer	class	create	2	1	cil/src/ms_ist.esp:1685
+requirement	?	unknown	set_user	3	1	cil/src/ms_ist.esp:1686
+requirement	?	unknown	receive_file	4	1	cil/src/ms_ist.esp:1696
+requirement	pathname	class	straighten_up	5	1	cil/src/ms_ist.esp:1725
+requirement	fdd_volume_utility	class	initialize	3	1	cil/src/ms_ist.esp:1769
+requirement	fdd_volume	class	create	2	1	cil/src/ms_ist.esp:1772
+requirement	fdd_volume	instance	mount	3	1	cil/src/ms_ist.esp:1774
+requirement	fdd_volume	instance	link	2	1	cil/src/ms_ist.esp:1775
+requirement	fdd_volume	instance	dismount	1	1	cil/src/ms_ist.esp:1780
+requirement	fdd_binary_file	class	make	4	1	cil/src/ms_ist.esp:1803
+requirement	?	unknown	getb	3	1	cil/src/ms_ist.esp:1813
+requirement	fdd_volume	instance	get_sub_info	2	1	cil/src/ms_ist.esp:1856
+requirement	fdd_volume	instance	file_names	2	1	cil/src/ms_ist.esp:1922
+requirement	binary_file	class	open	3	1	cil/src/ms_ist.esp:1984
+requirement	?	unknown	set_size	2	1	cil/src/ms_ist.esp:1985
+requirement	editor_text_buffer	class	get_buffer_instance_list	2	1	cil/src/ms_mdm.esp:1646
+requirement	?	unknown	modified	1	1	cil/src/ms_mdm.esp:1691
+requirement	binary_file	class	make	3	1	cil/src/ms_mdm.esp:1703
+requirement	library	class	write_class_template	2	1	cil/src/ms_mdm.esp:1954
+requirement	library	class	delete	2	1	cil/src/ms_mdm.esp:1960
+requirement	library	class	get_all_predicates_with_information	4	1	cil/src/ms_mdm.esp:2131
+requirement	library	class	get_predicates_with_information	4	1	cil/src/ms_mdm.esp:2133
+requirement	character	class	to_uppercase	3	1	cil/src/ms_msm.esp:243
+requirement	?	unknown	wait	1	1	cil/src/ms_msm.esp:486
+requirement	?	unknown	post	1	1	cil/src/ms_msm.esp:494
+requirement	?	ambiguous	unquote_atom	1	1	cil/src/ms_msm.esp:657
+requirement	?	unknown	class_id	2	1	cil/src/ms_obm.esp:538
+requirement	{as_class_with_lock|as_event_handler}	class	locked	1	1	cil/src/ms_utl.esp:465
+requirement	?	unknown	proceed	3	1	cil/src/ms_utl.esp:474
+requirement	standard_scrolling_menu	class	create	3	1	cil/src/ms_utl.esp:582
+requirement	scrolling_on_off_menu	class	create	3	1	cil/src/ms_utl.esp:590
+requirement	{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}	instance	get_inside_size	3	1	cil/src/ms_utl.esp:618
+requirement	{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}	instance	get_label_height	2	1	cil/src/ms_utl.esp:628
+requirement	{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}	instance	get_border_width	2	1	cil/src/ms_utl.esp:629
+requirement	inferior_window	instance	deactivate	1	1	cil/src/ms_utl.esp:657
+requirement	{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}	instance	read	2	1	cil/src/ms_utl.esp:661
+requirement	librarian_catalogue	nature	(inherited)		1	cil/src/ds_bep.esp:2331
+requirement	as_class_maker	nature	(inherited)		1	cil/src/ds_bep.esp:2331
+requirement	compiler_error_reporter	nature	(inherited)		1	cil/src/ds_bep.esp:2331
+requirement	librarian_version	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_delete	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_package	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_spy	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_reference	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_fdd	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	librarian_subroutine	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	as_assert_utility	nature	(inherited)		1	cil/src/ds_bep.esp:3123
+requirement	as_output	nature	(inherited)		1	cil/src/es_gin.esp:1434
+requirement	standard_io_buffer	nature	(inherited)		1	cil/src/es_ins.esp:843
+requirement	as_multiple_select	nature	(inherited)		1	cil/src/es_ins.esp:1243
+requirement	temporary_window	nature	(inherited)		1	cil/src/es_ins.esp:1651
+requirement	with_lock	nature	(inherited)		1	cil/src/es_trc.esp:2897
+requirement	editor_command_interpreter	nature	(inherited)		1	cil/src/es_wks.esp:1635
+requirement	as_event_handler	nature	(inherited)		1	cil/src/ms_utl.esp:440
+requirement	ascii_coder	ref	(#ref)		1	cil/src/cil_esp.esp:53
+requirement	library_error	ref	(#ref)		1	cil/src/ds_bep.esp:1856
+requirement	string_buffer	ref	(#ref)		1	cil/src/ds_bep.esp:2166
+requirement	binary_file_marker	ref	(#ref)		1	cil/src/ds_bep.esp:2167
+requirement	named_yank_buffer_subsystem	ref	(#ref)		1	cil/src/ds_bep.esp:2294
+requirement	macro_preprocessor	ref	(#ref)		1	cil/src/ds_bep.esp:2667
+requirement	standard_window	ref	(#ref)		1	cil/src/ds_edt.esp:81
+requirement	wildcard	ref	(#ref)		1	cil/src/ds_edt.esp:815
+requirement	vax_file_transfer	ref	(#ref)		1	cil/src/ms_ist.esp:1685
+requirement	fdd_volume_utility	ref	(#ref)		1	cil/src/ms_ist.esp:1769
+requirement	fdd_volume	ref	(#ref)		1	cil/src/ms_ist.esp:1772
+requirement	character	ref	(#ref)		1	cil/src/ms_msm.esp:237
+requirement	scrolling_on_off_menu	ref	(#ref)		1	cil/src/ms_utl.esp:590

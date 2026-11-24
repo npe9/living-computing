@@ -27,12 +27,29 @@ says which statements are measured and which inferred):
                            immediate (ATOM for wait_atom, VECT3o for
                            wait_vector_3, COD for code, ...).
 
-  Microinstruction fields that are established: bits 25..23 (TR-733's
-  JMPF) select the branch kind and bits 15..0 (EM1..EM3) are its
-  operand: JMPF 5 takes bits 15..0 as an absolute address; JMPF 2, 3, 6
-  and 7 take bits 9..0 as an address in the current 1024-word page and
-  bits 15..10 as a 6-bit immediate.  The other field boundaries printed
-  by --dis are TR-733 fig. 4 as measured from the figure: a hypothesis.
+  Field layout (changed 2026-11-23): FIELDS below is the PSI-III
+  microword of Nakashima's 1991 thesis, Fig. 3-25 (printed p.143), not
+  TR-733 fig. 4 as before.  The two agree except in bits 36..23, where
+  the held stores fit the thesis (docs/psi_microword.md sections 4.2
+  and 7): JMPF is 4 bits (26..23), ALF 2 bits (28..27) with EM2 the
+  operation when ALF is 2 or 3, and the order is ADF 36..34, AS1F
+  33..31, AS2F 30..29.  Each field's source is beside it in FIELDS.
+  The passes below were written under TR-733's names; read their
+  "JMPF N" as the low three bits of the 4-bit JMPF (jk(x)), "bits
+  36..34" as ADF, "AS2 = 2 / 3" as AS1F = MDR1/MDR2 / MAR1/MAR2, "bits
+  31..29 = 4 / 1 / 5" as AS1F = XR / AS2F = YR / both, "x17" as TGIF,
+  "x18" as MCF.  Old -> new name map: docs/pseudo_pimm_microcode.md
+  section 21.
+
+  Microinstruction fields that are established: JMPF (its low three
+  bits, TR-733's JMPF 25..23) selects the branch kind and bits 15..0
+  (EM1..EM3) are its operand: JMPF 5 takes bits 15..0 as an absolute
+  address; JMPF 3, 6, 7 and a take bits 9..0 as an address in the
+  current 1024-word page and bits 15..10 as a 6-bit immediate.  4-bit
+  JMPF 2 (26 words of syspsi, 16 of image 2) is NOT page-relative
+  (2026-11-23: its targets land at the baseline rate, and it is the
+  only kind that takes EM2 as an ALU operation or SC2 immediate while
+  carrying a "target"); it was folded into TR-733's 3-bit JMPF 2.
 
   Second pass (docs/pseudo_pimm_microcode.md sections 7-12), each rule
   checked on something it was not fitted to (flow(), below):
@@ -45,7 +62,8 @@ says which statements are measured and which inferred):
                (the next word is the other arm).
     JMPF 4     jump to own address + EM bits 3..0, signed
     JMPF 5, 7  call (absolute, page-relative); JMPF 3, 6 page-relative
-               jump; JMPF 2 page-relative conditional branch.  A JMPF 3,
+               jump; JMPF 2 page-relative conditional branch (4-bit JMPF
+               a only; 4-bit 2 is not, see above).  A JMPF 3,
                4 or 6 word with bits 22..19 non-zero is conditional
                (every word that jumps to itself is one of these).
     EM bits 15..10 are a 6-bit immediate in any word (a tag, a count).
@@ -72,6 +90,14 @@ says which statements are measured and which inferred):
     word is seen by the next; a write stores the MDR as it stood before
     its own word.  Bits 17..16 = 1 stamp the tag immediate on what SD1
     loads, = 2 on the ALU result.
+
+  Thesis layout (2026-11-23, docs/psi_microword.md section 7): ALF 0
+  adds, 1 subtracts (add/subtract entries differ only in bit 27); ALF
+  2 and 3 take the operation from EM2, named by rassy's table (alu_op);
+  a word with ALF 2/3 never carries a branch whose address needs EM2
+  (1 exception in 3,063 syspsi words, 0 in 1,803 of image 2).  In a
+  strobe-free word AS1F = MDR1 has bit 58 and AS1F = MDR2 bit 59 (all
+  but 3 of 3,541 in image 2).
 
 Usage:
     python3 asm/mekbn.py --check            the pinned checks
@@ -102,20 +128,50 @@ DESC2, IMG2, IMG2_LEN = 0xb900, 0xba00, 0x6800
 RUN1 = (0x805, 0x8eb)     # file words holding descriptor 1's index list
 RUN2 = (0xb902, 0xb9a8)
 
-# TR-733 fig. 4, positions measured from the figure (hypothesis), except
-# JMP and EM, which are checked below.
-FIELDS = [('CCF', 62, 58), ('DST', 56, 52), ('SC1', 51, 47), ('SC2', 46, 42),
-          ('SD1', 41, 39), ('SD2', 38, 37), ('AS1', 36, 34), ('AS2', 33, 32),
-          ('AD', 31, 29), ('AL', 28, 26), ('JMP', 25, 23), ('CND', 22, 19),
-          ('x18', 18, 18), ('x17', 17, 16), ('EM', 15, 0)]
-PAGE_RELATIVE = (2, 3, 6, 7)
+# The PSI-III microword: Nakashima 1991 thesis Fig. 3-25 (printed p.143,
+# PDF p.75), widths as printed, leftmost field at bit 63 (the figure
+# prints widths, no bit numbers and no code values).  Source of each
+# field: T = thesis Fig. 3-25 and text pp.143-144; R = TR-733 fig. 4
+# (Mitsubishi Denki Giho 66(6) p.76, the layout used here before
+# 2026-11-23) agrees; M = measured (this file's --check or
+# docs/psi_microword.md); rassy = the firmware's reverse assembler
+# (docs/binary_reverse_engineering.md section 3), names and VALUES only.
+FIELDS = [
+    ('DBGF', 63, 63),   # T. R: an unnamed one-bit strobe. M: zero in 99.6% of words
+    ('CCF', 62, 58),    # T, R. M: read as strobes 62/61/60/59/58 (third pass); rassy
+                        # gives a value table instead (wait_mdr1 ...): conflict open
+    ('WRBF', 57, 57),   # T (a work-register address bit). R: unnamed. M: names the W file
+    ('DSTF', 56, 52),   # T, R
+    ('SC1F', 51, 47),   # T, R
+    ('SC2F', 46, 42),   # T, R. M: 8 / 9 are the immediates EM1 / EM2
+    ('SD1F', 41, 39),   # T, R. Values rassy and M (XR, MDR1, MDR2, MAR1, MAR2)
+    ('SD2F', 38, 37),   # T, R. Values rassy (1 yr, 2 mdr1, 3 mdr2) and M
+    ('ADF', 36, 34),    # T. R prints AS1F here. M: the ALU destination (third pass)
+    ('AS1F', 33, 31),   # T. R: AS2F 33..32 + ADF's top bit. M (psi_microword 4.2, 7)
+    ('AS2F', 30, 29),   # T (label printed "AS1F" [sic], p.144 names AS2F). R: ADF's low bits
+    ('ALF', 28, 27),    # T: 2 bits, add/sub; others in EM2. R prints 3 bits (28..26). M
+    ('JMPF', 26, 23),   # T: 4 bits. R prints 3 bits (25..23). M (bit 26, psi_microword 4.2)
+    ('CNDF', 22, 19),   # T, R. With JMPF 1 the low four address bits (M, second pass)
+    ('MCF', 18, 18),    # T (counter/flag control). R: unnamed. rassy has a predicate mcf
+    ('TGIF', 17, 16),   # T (tag-immediate generation). R: unnamed. rassy tgif. M: stamp rule
+    ('EM1', 15, 10),    # T, R. M: the 6-bit immediate
+    ('EM2', 9, 4),      # T, R. M: the ALU operation when ALF is 2 or 3 (values rassy)
+    ('EM3', 3, 0),      # T, R
+]
+WIDE = {'EM': (15, 0)}  # EM1:EM2:EM3 as one operand (branch addresses; thesis p.117 for PSI-II)
+# JMPF codes (4 bits).  The kinds were fitted on the low three bits
+# (TR-733's JMPF); jk(x) is those bits.  A code and code | 8 have the
+# same addressing mode wherever measured (psi_microword.md 4.2 test 2,
+# section 7), except 2 against a.  Bit 26's own meaning is open.
+PAGE_RELATIVE = (3, 6, 7, 0xa, 0xb, 0xe, 0xf)    # 4-bit codes (TR-733's 2, 3, 6, 7)
 ABSOLUTE = 5
+JMPF2_OPEN = 2          # 4-bit JMPF 2: not page-relative; kind not known (psi_microword.md 7)
 
 # Second pass.  Every constant here is perturbed by a recorded fault
 # injection (docs/pseudo_pimm_microcode.md section 12).
 J1_JUMP, J1_RETURN, J1_COND = 8, 4, 2     # EM bits of a JMPF 1 word
 J1_HIGH = 0x7ff0                          # EM bits that are address bits 14..4
-J1_LOW = 'CND'                            # field holding address bits 3..0
+J1_LOW = 'CNDF'                            # field holding address bits 3..0
 J4_SIGNED = True
 GOTO_COND = True
 CALLS, GOTOS, BRANCH = (5, 7), (3, 6), 2
@@ -129,11 +185,21 @@ GSET_PARAM = ("(gseb,(10:16'B800)),", "(gsesh,16'18),", "%?A:00B800(16'100entry)
 NON_WRITERS = ('put_integer', 'put_atom', 'put_nil', 'put_value', 'put_constant')
 
 
+def jk(x):
+    """The low three bits of JMPF (= TR-733's 3-bit JMPF, bits 25..23).
+    The branch kinds below were fitted on these; the constants CALLS,
+    GOTOS, BRANCH, ABSOLUTE and the "JMPF N" of the docs are values of it."""
+    return field(x, 'JMPF') & 7
+
+
 def flow(a, x):
-    """(kind, target or None, falls_through) of the microinstruction x at a."""
-    j, em = field(x, 'JMP'), field(x, 'EM')
+    """(kind, target or None, falls_through) of the microinstruction x at a.
+    Keyed on jk(x): JMPF k and k | 8 are read alike (bit 26 open)."""
+    j, em = jk(x), field(x, 'EM')
     if j == 0:
         return 'next', None, True
+    if field(x, 'JMPF') == JMPF2_OPEN:
+        return 'jmpf2', None, True
     if j == 1:
         cond = bool(em & J1_COND)
         if em & J1_JUMP:
@@ -152,7 +218,7 @@ def flow(a, x):
 
 def tested(x):
     """A JMPF 3, 4 or 6 word with bits 22..19 non-zero can fall through."""
-    return GOTO_COND and field(x, 'CND') != 0
+    return GOTO_COND and field(x, 'CNDF') != 0
 
 
 def first_end(img, t):
@@ -170,11 +236,11 @@ def flow_measure(img):
     """Numbers that the rules in flow() predict; see the doc, section 8."""
     n = len(img)
     j1 = [(a, x) for a, x in enumerate(img)
-          if x and field(x, 'JMP') == 1 and field(x, 'EM') & J1_JUMP]
+          if x and jk(x) == 1 and field(x, 'EM') & J1_JUMP]
     tg = [flow(a, x)[1] for a, x in j1]
     inside = [t for t in tg if t < n]
     out = {'j1_jump': (len(j1), len(inside), sum(1 for t in inside if img[t]), len(set(tg)))}
-    j4 = [(a, x) for a, x in enumerate(img) if x and field(x, 'JMP') == 4]
+    j4 = [(a, x) for a, x in enumerate(img) if x and jk(x) == 4]
     back = [(a, x) for a, x in j4 if x & 8]
 
     def lands(ws):
@@ -199,22 +265,65 @@ def allocators(img):
 # ---------------------------------------------------------------------------
 # Third pass (docs/pseudo_pimm_microcode.md sections 14-20): the memory
 # datapath.  Every constant is perturbed by a recorded fault injection
-# (section 19).  Bits 36..34 are called AS1 above after the figure; they
-# behave as the ALU's DESTINATION work register, in SD1's numbering.
+# (section 19).  Bits 36..34, which TR-733 calls AS1F, behave as the
+# ALU's DESTINATION work register, in SD1's numbering: the thesis's ADF.
+# (Until 2026-11-23 this file called them AS1, bits 33..32 AS2 and bits
+# 31..29 AD, after TR-733; the constants AS2_MDR, AS2_MAR and SRC_XR,
+# SRC_YR, SRC_SUM of section 19 are now AS1F/AS2F values, see below.)
 RD_BIT, INC_BIT = 61, 60                  # MEM_BIT (62) is the write strobe
 MAR_SEL_BIT, MDR_SEL_BIT = 58, 59         # in a strobe word: MAR2 / MDR2 instead of MAR1 / MDR1
-WRB_BIT = 57                              # DST/SC1/SC2 name the work-register file, not RF
-XR, MDR1, MDR2, MAR1, MAR2 = 1, 4, 5, 6, 7    # work registers as SD1 and bits 36..34 number them
-YR_SD2, MDR1_SD2, MDR2_SD2 = 1, 2, 3      # SD2's numbering
-AS2_MDR, AS2_MAR = 2, 3                   # AS2: the selected MDR, the MAR
-SRC_XR, SRC_YR, SRC_SUM = 4, 1, 5         # bits 31..29 ("AD"): what the ALU passes
-SC2_EM1, SC2_EM2, SC2_WIDE = 8, 9, 0xb    # SC2 codes that are immediates
+WRB_BIT = 57                              # WRBF: DST/SC1/SC2 name the work-register file, not RF
+XR, MDR1, MDR2, MAR1, MAR2 = 1, 4, 5, 6, 7    # work registers as SD1F and ADF number them (M, rassy)
+YR_SD2, MDR1_SD2, MDR2_SD2 = 1, 2, 3      # SD2F's numbering (M, rassy)
+# AS1F (33..31) is in SD1F's numbering (MEASURED, psi_microword.md 4.2 test 3
+# and section 7): what TR-733's layout read as "AS2 = 2" is AS1F = MDR1 or
+# MDR2, "AS2 = 3" is MAR1 or MAR2, "AS2 = 0, AD = 4" is AS1F = XR.
+AS1_MDR, AS1_MAR = (MDR1, MDR2), (MAR1, MAR2)
+# AS2F (30..29): 0 zero, 1 YR, 2 MDR1, 3 MDR2.  Values from rassy only;
+# 1 = YR is also the third pass's (DERIVED, old "AD = 1 / 5").
+AS2_ZERO, AS2_YR = 0, 1
+SC2_EM1, SC2_EM2, SC2_WIDE = 8, 9, 0xb    # SC2F codes that are immediates
 WRITE_SAME_WORD = False                   # a write stores what was loaded BEFORE its word
 SIZED_ALLOC = {0x3331: 3, 0x3334: 4, 0x3337: 5, 0x333a: 6}
 
 
 def bit(x, n):
     return x >> n & 1
+
+
+def plain_add(x):
+    """ALF = 0: the ALU adds AS1 and AS2 (with AS2F = 0, passes AS1).
+    TR-733's 3-bit ALF read this as bits 28..26 = 0, which also required
+    bit 26 (JMPF's top bit) clear; that condition is dropped (2026-11-23,
+    psi_microword.md section 7 has what it moved)."""
+    return field(x, 'ALF') == 0
+
+
+def alu_in(x):
+    """(AS1F, AS2F): the ALU's two inputs."""
+    return field(x, 'AS1F'), field(x, 'AS2F')
+
+
+# The ALU operation.  Thesis p.144: ALF does add/sub only, every other
+# operation is given by EM2.  ALF 0 = add, 1 = subtract: MEASURED on two
+# pairs of entries that differ only in bit 27 (add 3a68 / subtract 3a70,
+# add_extended 29c8 / subtract_extended 29d8).  ALF 2 and 3 take EM2 as
+# the operation; the NAMES of EM2's values are rassy's 16-entry table
+# (binary_reverse_engineering.md section 3), confirmed for 8, 9, 12, 14
+# by the entries and (3b08), or (3b10), shift_left (3af2), shift_right
+# (3afb).  What tells ALF 2 from 3, EM2 1 and EM2 above 15 are open.
+RASSY_ALU = {0: '+', 2: 'add_with_carry', 3: 'add_with_one', 4: '-', 5: 'reverse_sub',
+             6: 'sub_with_carry', 7: 'sub_with_one', 8: 'and', 9: 'or', 10: 'pass_as2',
+             11: 'xor', 12: 'shift_left', 13: 'shift_left_rotate', 14: 'shift_right_32m',
+             15: 'shift_right_arithmetic'}
+
+
+def alu_op(x):
+    alf = field(x, 'ALF')
+    if alf < 2:
+        return '+-'[alf]
+    em2 = field(x, 'EM2')
+    return RASSY_ALU.get(em2, 'em2_%02x' % em2)
 
 
 def strobe(x):
@@ -225,14 +334,14 @@ def strobe(x):
 def falls_to(img, a):
     """The next word, if a is a JMPF 0 word and the next word is non-zero."""
     x = img[a]
-    if x and field(x, 'JMP') == 0 and a + 1 < len(img) and img[a + 1]:
+    if x and jk(x) == 0 and a + 1 < len(img) and img[a + 1]:
         return img[a + 1]
     return None
 
 
 def came_from(img, a):
     p = img[a - 1] if a else 0
-    return p if p and field(p, 'JMP') == 0 else None
+    return p if p and jk(p) == 0 else None
 
 
 def mem_measure(img):
@@ -245,7 +354,7 @@ def mem_measure(img):
     # a read is followed by a use of the MDR
     nxt = [falls_to(img, a) for a, x in nz if bit(x, RD_BIT)]
     nxt = [y for y in nxt if y]
-    out['read_then_mdr'] = (sum(1 for y in nxt if field(y, 'AS2') == AS2_MDR), len(nxt))
+    out['read_then_mdr'] = (sum(1 for y in nxt if field(y, 'AS1F') in AS1_MDR), len(nxt))
     # words without a strobe: bit 58 whenever MDR1 is touched, bit 59 whenever MDR2 is
     quiet = [x for _, x in nz if not strobe(x)]
 
@@ -253,24 +362,23 @@ def mem_measure(img):
         ws = [x for x in quiet if pred(x)]
         return (sum(1 for x in ws if not bit(x, n)), len(ws))
     out['mdr_enable'] = (
-        lacking(lambda x: field(x, 'SD1') == MDR1, MAR_SEL_BIT),
-        lacking(lambda x: field(x, 'AS1') == MDR1, MAR_SEL_BIT),
-        lacking(lambda x: field(x, 'SD2') == MDR1_SD2, MAR_SEL_BIT),
-        lacking(lambda x: field(x, 'SD1') == MDR2, MDR_SEL_BIT),
-        lacking(lambda x: field(x, 'AS1') == MDR2, MDR_SEL_BIT),
-        lacking(lambda x: field(x, 'SD2') == MDR2_SD2, MDR_SEL_BIT),
-        (sum(1 for x in quiet if field(x, 'AS2') == AS2_MDR and not field(x, 'CCF') & 3),
-         sum(1 for x in quiet if field(x, 'AS2') == AS2_MDR)))
+        lacking(lambda x: field(x, 'SD1F') == MDR1, MAR_SEL_BIT),
+        lacking(lambda x: field(x, 'ADF') == MDR1, MAR_SEL_BIT),
+        lacking(lambda x: field(x, 'SD2F') == MDR1_SD2, MAR_SEL_BIT),
+        lacking(lambda x: field(x, 'SD1F') == MDR2, MDR_SEL_BIT),
+        lacking(lambda x: field(x, 'ADF') == MDR2, MDR_SEL_BIT),
+        lacking(lambda x: field(x, 'SD2F') == MDR2_SD2, MDR_SEL_BIT),
+        (sum(1 for x in quiet if field(x, 'AS1F') in AS1_MDR and not field(x, 'CCF') & 3),
+         sum(1 for x in quiet if field(x, 'AS1F') in AS1_MDR)))
     # MDR1 loaded from the register file is written by the next word
-    w = [falls_to(img, a) for a, x in nz if field(x, 'SD1') == MDR1]
+    w = [falls_to(img, a) for a, x in nz if field(x, 'SD1F') == MDR1]
     w = [y for y in w if y]
     out['mdr1_then_write'] = (sum(1 for y in w if bit(y, MEM_BIT)), len(w))
     # a word with no ALU input and source code "XR" passes what SD1 = XR loaded a word earlier
     ps = [came_from(img, a) for a, x in nz
-          if field(x, 'AS1') == 0 and field(x, 'AS2') == 0
-          and field(x, 'AD') == SRC_XR and field(x, 'AL') == 0]
+          if field(x, 'ADF') == 0 and alu_in(x) == (XR, AS2_ZERO) and plain_add(x)]
     ps = [p for p in ps if p]
-    out['xr_pass'] = (sum(1 for p in ps if field(p, 'SD1') == XR), len(ps))
+    out['xr_pass'] = (sum(1 for p in ps if field(p, 'SD1F') == XR), len(ps))
     # a word that jumps to itself and accesses memory steps the address
     loops = [x for a, x in nz if flow(a, x)[:2] == ('jump', a)]
     out['loops'] = (len(loops), sum(1 for x in loops if strobe(x)),
@@ -279,7 +387,7 @@ def mem_measure(img):
     rp = [0, 0, 0, 0]
     for a, x in nz:
         y = falls_to(img, a)
-        if strobe(x) != 'R' or not y or strobe(y) or field(y, 'AS2') != AS2_MDR:
+        if strobe(x) != 'R' or not y or strobe(y) or field(y, 'AS1F') not in AS1_MDR:
             continue
         use = field(y, 'CCF') & 3
         if use in (1, 2):
@@ -292,24 +400,26 @@ def mem_measure(img):
         p = came_from(img, a)
         if len(strobe(x)) != 1 or not p:
             continue
-        if field(p, 'SD1') in (MAR1, MAR2):
-            ap[2 * (field(p, 'SD1') == MAR2) + bit(x, MAR_SEL_BIT)] += 1
-        if field(p, 'AS1') in (MAR1, MAR2):
-            am[2 * (field(p, 'AS1') == MAR2) + bit(x, MAR_SEL_BIT)] += 1
+        if field(p, 'SD1F') in (MAR1, MAR2):
+            ap[2 * (field(p, 'SD1F') == MAR2) + bit(x, MAR_SEL_BIT)] += 1
+        if field(p, 'ADF') in (MAR1, MAR2):
+            am[2 * (field(p, 'ADF') == MAR2) + bit(x, MAR_SEL_BIT)] += 1
     out['addr_port'], out['alu_dst_port'] = tuple(ap), tuple(am)
     # SC2 codes 8, 9, b are immediates: they exclude the branch kinds that need the same EM bits
-    s8 = [x for _, x in nz if field(x, 'SC2') == SC2_EM1]
-    s9 = [x for _, x in nz if field(x, 'SC2') == SC2_EM2]
-    sb = [x for _, x in nz if field(x, 'SC2') == SC2_WIDE]
+    s8 = [x for _, x in nz if field(x, 'SC2F') == SC2_EM1]
+    s9 = [x for _, x in nz if field(x, 'SC2F') == SC2_EM2]
+    sb = [x for _, x in nz if field(x, 'SC2F') == SC2_WIDE]
     out['sc2_immediates'] = (
-        len(s8), sum(1 for x in s8 if field(x, 'JMP') == ABSOLUTE),
-        len(s9), sum(1 for x in s9 if field(x, 'JMP') in (3, 5, 6, 7)),
-        len(sb), sum(1 for x in sb if field(x, 'JMP')))
+        len(s8), sum(1 for x in s8 if jk(x) == ABSOLUTE),
+        len(s9), sum(1 for x in s9 if jk(x) in (3, 5, 6, 7)),
+        len(sb), sum(1 for x in sb if jk(x)))
     # the words the exclusion does not cover: JMPF 1 (all must be ends or returns, which
-    # carry no address) and SC2 = 9 with JMPF 2 (not excluded: 3 words in image 2)
-    j1 = [x for x in s8 + s9 if field(x, 'JMP') == 1]
+    # carry no address) and SC2 = 9 with 4-bit JMPF a (the page-relative branch) or 2
+    # (TR-733's 3-bit JMPF 2 merged the two: 3 words of image 2, all of them 4-bit 2)
+    j1 = [x for x in s8 + s9 if jk(x) == 1]
     out['sc2_other_branches'] = (len(j1), sum(1 for x in j1 if field(x, 'EM') & J1_JUMP),
-                                 sum(1 for x in s9 if field(x, 'JMP') == BRANCH))
+                                 sum(1 for x in s9 if field(x, 'JMPF') == 0xa),
+                                 sum(1 for x in s9 if field(x, 'JMPF') == JMPF2_OPEN))
     # runs of two or more consecutive writes of MDR1: (runs, words before the last one,
     # of those loading MDR1 through SD1, last words loading it).  A write that stored
     # what its own word loads would need the load in the last word as often as before.
@@ -320,39 +430,38 @@ def mem_measure(img):
         return k < len(img) and strobe(img[k]) == 'W' and not bit(img[k], MDR_SEL_BIT)
     while a < len(img):
         b = a
-        while w1(b) and field(img[b], 'JMP') == 0 and w1(b + 1):
+        while w1(b) and jk(img[b]) == 0 and w1(b + 1):
             b += 1
         if b > a:
             runs += 1
             early += b - a
-            early_load += sum(1 for k in range(a, b) if field(img[k], 'SD1') == MDR1)
-            last_load += field(img[b], 'SD1') == MDR1
+            early_load += sum(1 for k in range(a, b) if field(img[k], 'SD1F') == MDR1)
+            last_load += field(img[b], 'SD1F') == MDR1
         a = b + 1
     out['write_runs'] = (runs, early, early_load, last_load)
     # bit 57 qualifies a register select
     wb = [x for _, x in nz if bit(x, WRB_BIT)]
-    out['wrb'] = (len(wb), sum(1 for x in wb if not field(x, 'DST') and not field(x, 'SC1')
-                               and not field(x, 'SC2')),
-                  sum(1 for x in wb if 8 <= field(x, 'SC1') <= 0xb),
-                  sum(1 for x in wb if field(x, 'DST') >= 0x10),
-                  sum(1 for x in wb if field(x, 'DST')))
+    out['wrb'] = (len(wb), sum(1 for x in wb if not field(x, 'DSTF') and not field(x, 'SC1F')
+                               and not field(x, 'SC2F')),
+                  sum(1 for x in wb if 8 <= field(x, 'SC1F') <= 0xb),
+                  sum(1 for x in wb if field(x, 'DSTF') >= 0x10),
+                  sum(1 for x in wb if field(x, 'DSTF')))
     # bits 17..16 = 1 stamp the tag immediate on what SD1 loads
-    x1 = [x for _, x in nz if field(x, 'x17') == 1]
-    out['stamp_sd1'] = (sum(1 for x in x1 if field(x, 'SD1')), len(x1))
+    x1 = [x for _, x in nz if field(x, 'TGIF') == 1]
+    out['stamp_sd1'] = (sum(1 for x in x1 if field(x, 'SD1F')), len(x1))
     # XR <- base, YR <- constant, then MAR1 <- XR + YR: the constants
     cs = []
     for a, x in nz:
         y = falls_to(img, a)
-        if y and field(x, 'SD2') == YR_SD2 and field(x, 'SC2') in (SC2_EM1, SC2_EM2) \
-                and field(y, 'AS1') == MAR1 and field(y, 'AS2') == 0 \
-                and field(y, 'AD') == SRC_SUM and field(y, 'AL') == 0:
+        if y and field(x, 'SD2F') == YR_SD2 and field(x, 'SC2F') in (SC2_EM1, SC2_EM2) \
+                and field(y, 'ADF') == MAR1 and alu_in(y) == (XR, AS2_YR) and plain_add(y):
             cs.append(sc2_immediate(x))
     out['base_plus_constant'] = (len(cs), max(cs) if cs else None)
     return out
 
 
 def sc2_immediate(x):
-    em, c = field(x, 'EM'), field(x, 'SC2')
+    em, c = field(x, 'EM'), field(x, 'SC2F')
     return em >> EM1_SHIFT & 63 if c == SC2_EM1 else em >> 4 & 63 if c == SC2_EM2 else None
 
 
@@ -378,11 +487,11 @@ class Walk:
 
     def step(self, a, x):
         r, old = self.r, dict(self.r)
-        em, x17 = field(x, 'EM'), field(x, 'x17')
+        em, x17 = field(x, 'EM'), field(x, 'TGIF')
         imm = kbn.TAGS.get(em >> EM1_SHIFT & 63, '%02x' % (em >> EM1_SHIFT & 63))
         new = {}
         # phase 1: register file / immediate into the work registers
-        sc1, sd1 = field(x, 'SC1'), field(x, 'SD1')
+        sc1, sd1 = field(x, 'SC1F'), field(x, 'SD1F')
         if sd1:
             name = regname(x, sc1)
             v = self.regs.get(name, (None, name)) if sc1 else None
@@ -394,7 +503,7 @@ class Walk:
                 new[sd1] = v
             elif sd1 in (MAR1, MAR2):
                 new[sd1] = (v[1], 0) if v else None
-        sc2, sd2 = field(x, 'SC2'), field(x, 'SD2')
+        sc2, sd2 = field(x, 'SC2F'), field(x, 'SD2F')
         if sd2 == YR_SD2:
             new['YR'] = sc2_immediate(x)
         elif sd2 in (MDR1_SD2, MDR2_SD2):
@@ -402,16 +511,17 @@ class Walk:
             new[MDR1 if sd2 == MDR1_SD2 else MDR2] = \
                 None if sc2 in (SC2_EM1, SC2_EM2, SC2_WIDE) else self.regs.get(name, (None, name))
         # phase 2: the ALU, from the registers as the previous words left them
-        src, dst, as2, al = field(x, 'AD'), field(x, 'AS1'), field(x, 'AS2'), field(x, 'AL')
+        dst, ins, add = field(x, 'ADF'), alu_in(x), plain_add(x)
         val = None
-        if as2 == 0 and al == 0:
-            if src == SRC_XR and old['XR']:
-                val = old['XR']
-            elif src == SRC_SUM and old['XR'] and old['YR'] is not None:
-                val = (old['XR'][0], old['XR'][1], old['YR'])
-            elif src == 0 and x17 & 2:
-                val = (None, '0')
-        elif as2 == AS2_MAR and al == 0 and src == 0:
+        if add and ins == (XR, AS2_ZERO) and old['XR']:
+            val = old['XR']
+        elif add and ins == (XR, AS2_YR) and old['XR'] and old['YR'] is not None:
+            val = (old['XR'][0], old['XR'][1], old['YR'])
+        elif add and ins == (0, AS2_ZERO) and x17 & 2:
+            val = (None, '0')
+        elif add and ins == (MAR1, AS2_ZERO):
+            # the MAR as the third pass read it (bit 58 in a strobe word);
+            # AS1F's own MAR1/MAR2 distinction is not used here (open)
             m = old[MAR2 if bit(x, MAR_SEL_BIT) and strobe(x) else MAR1]
             val = (None, m[0], m[1]) if m else None
         if val and x17 & 2:
@@ -423,7 +533,7 @@ class Walk:
             new.setdefault(dst, val)
         elif dst == XR:
             new['XR'] = val
-        d = field(x, 'DST')
+        d = field(x, 'DSTF')
         if d:
             self.regs[regname(x, d)] = val if val and len(val) == 2 else \
                 ((val[0], '%s+%d' % (val[1], val[2])) if val else None)
@@ -498,27 +608,30 @@ def rtl(a, x):
     """One line of register transfers for --rtl, under the third-pass rules."""
     if not x:
         return ''
-    out, em, x17 = [], field(x, 'EM'), field(x, 'x17')
+    out, em, x17 = [], field(x, 'EM'), field(x, 'TGIF')
     imm = kbn.TAGS.get(em >> EM1_SHIFT & 63, '%02x' % (em >> EM1_SHIFT & 63))
     wr = {XR: 'XR', MDR1: 'MDR1', MDR2: 'MDR2', MAR1: 'MAR1', MAR2: 'MAR2'}
-    sc1, sd1 = field(x, 'SC1'), field(x, 'SD1')
+    sc1, sd1 = field(x, 'SC1F'), field(x, 'SD1F')
     if sd1:
         v = regname(x, sc1) if sc1 else '?'
         out.append('%s<-%s' % (wr.get(sd1, 'w%d' % sd1), '{%s,%s}' % (imm, v) if x17 & 1 else v))
     elif sc1:
         out.append('read %s' % regname(x, sc1))
-    sc2, sd2 = field(x, 'SC2'), field(x, 'SD2')
+    sc2, sd2 = field(x, 'SC2F'), field(x, 'SD2F')
     if sd2:
         c = sc2_immediate(x)
         v = '#%d' % c if c is not None else '#wide' if sc2 == SC2_WIDE else regname(x, sc2)
         out.append('%s<-%s' % ({YR_SD2: 'YR', MDR1_SD2: 'MDR1', MDR2_SD2: 'MDR2'}[sd2], v))
-    src, dst, as2, al, d = (field(x, n) for n in ('AD', 'AS1', 'AS2', 'AL', 'DST'))
-    if src or dst or as2 or al or d or x17 & 2:
-        e = {0: '', SRC_XR: 'XR', SRC_YR: 'YR', SRC_SUM: 'XR+YR'}.get(src, 'src%d' % src)
-        r = {0: '', 1: 'r1', AS2_MDR: 'MDR', AS2_MAR: 'MAR'}[as2]
-        if src == SRC_XR and as2 and not al:    # seen to pass the AS2 operand (R19<-MDR)
-            e = ''
-        e = ' '.join(t for t in (e, 'op%d' % al if al else '', r) if t) or '0'
+    (as1, as2), alf, dst, d = alu_in(x), field(x, 'ALF'), field(x, 'ADF'), field(x, 'DSTF')
+    if as1 or as2 or alf or dst or d or x17 & 2:
+        a1 = {0: '', XR: 'XR', 2: 'as1_2', 3: 'as1_3', MDR1: 'MDR1', MDR2: 'MDR2',
+              MAR1: 'MAR1', MAR2: 'MAR2'}[as1]
+        a2 = {0: '', AS2_YR: 'YR', 2: 'MDR1', 3: 'MDR2'}[as2]
+        op = alu_op(x)
+        if op == '+':
+            e = '+'.join(t for t in (a1, a2) if t) or '0'
+        else:
+            e = ' '.join(t for t in (a1 or '0', op, a2 or '0'))
         if x17 & 2:
             e = '{%s,%s}' % (imm, e)
         to = [wr.get(dst, 'w%d' % dst)] if dst else []
@@ -552,21 +665,21 @@ PINNED = dict(
     img2_mem={
         'strobes': (2421, 2177, 40), 'read_then_mdr': (854, 1386),
         'mdr_enable': ((0, 833), (0, 918), (0, 355), (0, 327), (1, 483), (0, 300), (3, 3541)),
-        'mdr1_then_write': (393, 628), 'xr_pass': (420, 487), 'loops': (23, 23, 19),
+        'mdr1_then_write': (393, 628), 'xr_pass': (450, 532), 'loops': (23, 23, 19),
         'read_port': (320, 22, 15, 136), 'addr_port': (188, 10, 26, 67),
         'alu_dst_port': (946, 32, 23, 117), 'sc2_immediates': (718, 0, 211, 0, 704, 0),
         'wrb': (6318, 0, 0, 3266, 3373), 'stamp_sd1': (396, 397),
-        'base_plus_constant': (133, 15), 'sc2_other_branches': (33, 0, 3),
+        'base_plus_constant': (141, 15), 'sc2_other_branches': (33, 0, 0, 3),
         'write_runs': (181, 357, 196, 17)},
     syspsi_mem={
         'strobes': (3837, 2337, 512), 'read_then_mdr': (907, 1867),
         'mdr_enable': ((8, 1053), (12, 1142), (10, 607), (0, 466), (15, 967), (0, 390),
                        (43, 4505)),
-        'mdr1_then_write': (258, 721), 'xr_pass': (245, 341), 'loops': (37, 36, 36),
+        'mdr1_then_write': (258, 721), 'xr_pass': (267, 382), 'loops': (37, 36, 36),
         'read_port': (238, 28, 8, 140), 'addr_port': (244, 33, 48, 125),
         'alu_dst_port': (441, 41, 52, 255), 'sc2_immediates': (1339, 0, 426, 0, 747, 0),
         'wrb': (6148, 0, 0, 3500, 3660), 'stamp_sd1': (460, 461),
-        'base_plus_constant': (10, 13), 'sc2_other_branches': (69, 0, 0),
+        'base_plus_constant': (13, 13), 'sc2_other_branches': (69, 0, 0, 0),
         'write_runs': (62, 124, 54, 4)},
     # after a call of the N-cell allocator: (N, offsets written from the new record)
     fill_after_alloc={'1b4a': (3, [0, 1, 2]), '1d3a': (4, [2, 0, 1]), '1f99': (4, [0]),
@@ -584,7 +697,7 @@ PINNED = dict(
                       ('1d77', 'W16+0', 'MHOOK:W17')],
         'suspend_trailer': [('1c32', '?', '?'), ('1c0d', 'W15+12', ':W10'),
                             ('1c0e', 'W15+13', ':R12'), ('1c0f', 'W15+14', ':R13'),
-                            ('1c10', 'W15+15', '?')],
+                            ('1c10', 'W15+15', 'VECT2o:0')],
         'new_vector_descriptor': [('1e86', '?', '?'), ('1e87', '?', 'INTo:W11'),
                                   ('1e88', '?', 'INTo:W11')],
         'builtin_goal_tail': [('3d6d', 'R1b+0', '?'), ('3d6e', 'R1b+1', ':W1a')]},
@@ -598,7 +711,32 @@ PINNED = dict(
     kl1_entries=216, kl1_entries_landing=216,
     sysidat=(1040, 496, 16, 0),
     syspsi_jmp5=(1455, 1455), img2_jmp5=(2127, 1889, 238, 238, 15),
-    img2_page_relative=((2, 532, 525), (3, 246, 246), (6, 1497, 1497), (7, 231, 231)),
+    # 4-bit JMPF codes 3, 6, 7, a, b, e, f (TR-733's 3-bit 2, 3, 6, 7 until 2026-11-23:
+    # (2, 532, 525), (3, 246, 246), (6, 1497, 1497), (7, 231, 231); the 7 misses were 4-bit 2)
+    img2_page_relative=((3, 199, 199), (6, 1091, 1091), (7, 199, 199), (0xa, 516, 516),
+                        (0xb, 47, 47), (0xe, 406, 406), (0xf, 32, 32)),
+    # --- the thesis layout, 2026-11-23 (docs/psi_microword.md section 7)
+    syspsi_dbgf=(86, 24414), img2_dbgf=(57, 18343),
+    # (code, words, targets inside the image, landing on a non-zero word), under flow()
+    syspsi_jmpf_landing=((0, 10461, 0, 0), (1, 6113, 3942, 3888), (2, 26, 0, 0),
+                         (3, 294, 294, 294), (4, 562, 562, 562), (5, 1387, 1387, 1387),
+                         (6, 1628, 1628, 1609), (7, 617, 617, 617), (8, 659, 0, 0),
+                         (9, 68, 31, 30), (0xa, 1203, 1203, 1202), (0xb, 30, 30, 30),
+                         (0xc, 415, 415, 415), (0xd, 68, 68, 68), (0xe, 826, 826, 825),
+                         (0xf, 57, 57, 57)),
+    img2_jmpf_landing=((0, 7857, 0, 0), (1, 4794, 2675, 2664), (2, 16, 0, 0),
+                       (3, 199, 199, 199), (4, 342, 342, 342), (5, 2046, 1830, 1830),
+                       (6, 1091, 1091, 1091), (7, 199, 199, 199), (8, 323, 0, 0),
+                       (9, 124, 46, 46), (0xa, 516, 516, 516), (0xb, 47, 47, 47),
+                       (0xc, 270, 269, 269), (0xd, 81, 59, 59), (0xe, 406, 406, 406),
+                       (0xf, 32, 32, 32)),
+    # 4-bit JMPF 2: (words, page-relative reading lands, with ALF 2/3, with SC2F 9)
+    syspsi_jmpf2=(26, 20, 10, 0), img2_jmpf2=(16, 9, 6, 3),
+    # (ALF 2/3 words, of those with a branch needing EM2, all words with such a branch)
+    syspsi_alf_em2=(3063, 1, 10083), img2_alf_em2=(1803, 0, 7447),
+    # strobe-free words: (AS1F = MDR1 without bit 58, of), (AS1F = MDR2 without bit 59, of)
+    syspsi_as1f_enable=((16, 2829), (27, 1676)), img2_as1f_enable=((2, 2618), (1, 923)),
+    alu_entries=['+', '-', '+', '-', 'and', 'or', 'shift_left', 'shift_right_32m'],
 )
 
 # name -> tag immediate its decode entry must carry.  None of these was
@@ -615,11 +753,15 @@ ENTRY_TAGS = {
 TAG = {v: k for k, v in kbn.TAGS.items()}
 
 
+_SPAN = {n: (hi, lo) for n, hi, lo in FIELDS}
+_SPAN.update(WIDE)
+
+
 def field(x, name):
-    for n, hi, lo in FIELDS:
-        if n == name:
-            return (x >> lo) & ((1 << (hi - lo + 1)) - 1)
-    raise KeyError(name)
+    """A FIELDS field, or a WIDE one ('EM' = EM1:EM2:EM3).  An old
+    TR-733 name (AS1, AS2, AD, AL, JMP, x17, ...) raises KeyError."""
+    hi, lo = _SPAN[name]
+    return (x >> lo) & ((1 << (hi - lo + 1)) - 1)
 
 
 class Firmware:
@@ -678,6 +820,50 @@ def sorted_run(fw, run, image, **kw):
     return descents, landing
 
 
+ALU_ENTRIES = (0x3a68, 0x3a70, 0x29c8, 0x29d8, 0x3b08, 0x3b10, 0x3af2, 0x3afb)
+# add, subtract, add_extended, subtract_extended, and, or, shift_left, shift_right
+
+
+def em2_address(x):
+    """The word's branch takes address bits from EM2 (bits 9..4): a
+    page-relative or absolute target, or a JMPF 1 jump (EM bits 14..4)."""
+    return field(x, 'JMPF') in PAGE_RELATIVE or jk(x) == ABSOLUTE or \
+        jk(x) == 1 and bool(field(x, 'EM') & J1_JUMP)
+
+
+def layout_measure(fw, psi):
+    """Numbers for the thesis layout (docs/psi_microword.md section 7)."""
+    out = {}
+    for name, im in (('syspsi', psi), ('img2', fw.img2)):
+        nz = [(a, x) for a, x in enumerate(im) if x]
+        n = len(im)
+        out[name + '_dbgf'] = (sum(1 for _, x in nz if field(x, 'DBGF')), len(nz))
+        # per 4-bit JMPF: (code, words, targets inside the image, landing on non-zero)
+        land = []
+        for k in range(16):
+            ts = [flow(a, x)[1] for a, x in nz if field(x, 'JMPF') == k]
+            ts2 = [t for t in ts if t is not None and 0 <= t < n]
+            land.append((k, len(ts), len(ts2), sum(1 for t in ts2 if im[t])))
+        out[name + '_jmpf_landing'] = tuple(land)
+        # 4-bit JMPF 2: (words, page-relative "targets" landing, with ALF 2/3, with SC2F 9)
+        j2 = [(a, x) for a, x in nz if field(x, 'JMPF') == JMPF2_OPEN]
+        out[name + '_jmpf2'] = (len(j2), sum(1 for a, x in j2 if im[a & ~0x3ff | x & 0x3ff]),
+                                sum(1 for _, x in j2 if field(x, 'ALF') >= 2),
+                                sum(1 for _, x in j2 if field(x, 'SC2F') == SC2_EM2))
+        # ALF 2/3 takes EM2 as the operation, so it excludes the branches that need EM2
+        a23 = [x for _, x in nz if field(x, 'ALF') >= 2]
+        out[name + '_alf_em2'] = (len(a23), sum(1 for x in a23 if em2_address(x)),
+                                  sum(1 for _, x in nz if em2_address(x)))
+        # the enable rule (section 16 of pseudo_pimm_microcode.md) on AS1F's own values
+        quiet = [x for _, x in nz if not strobe(x)]
+        out[name + '_as1f_enable'] = tuple(
+            (sum(1 for x in quiet if field(x, 'AS1F') == v and not bit(x, b)),
+             sum(1 for x in quiet if field(x, 'AS1F') == v))
+            for v, b in ((MDR1, MAR_SEL_BIT), (MDR2, MDR_SEL_BIT)))
+    out['alu_entries'] = [alu_op(fw.img2[a]) for a in ALU_ENTRIES]
+    return out
+
+
 def measure():
     fw = Firmware()
     psi = syspsi()
@@ -734,18 +920,20 @@ def measure():
             pv.append(n)
     got['put_vector_tags_wrong'] = pv
     # branch kinds
-    j5 = [x & 0xffff for x in psi if x and field(x, 'JMP') == ABSOLUTE]
+    j5 = [x & 0xffff for x in psi if x and jk(x) == ABSOLUTE]
     got['syspsi_jmp5'] = (len(j5), sum(1 for t in j5 if t < len(psi) and psi[t]))
-    j5 = [x & 0xffff for x in fw.img2 if x and field(x, 'JMP') == ABSOLUTE]
+    j5 = [x & 0xffff for x in fw.img2 if x and jk(x) == ABSOLUTE]
     far = [t for t in j5 if t >= IMG2_LEN]
     got['img2_jmp5'] = (len(j5), sum(1 for t in j5 if t < IMG2_LEN and fw.img2[t]),
                         len(far), sum(1 for t in far if t < len(psi) and psi[t]), len(set(far)))
     rel = []
     for j in PAGE_RELATIVE:
-        hits = [(a, x) for a, x in enumerate(fw.img2) if x and field(x, 'JMP') == j]
+        hits = [(a, x) for a, x in enumerate(fw.img2) if x and field(x, 'JMPF') == j]
         rel.append((j, len(hits),
                     sum(1 for a, x in hits if fw.img2[a & ~0x3ff | x & 0x3ff])))
     got['img2_page_relative'] = tuple(rel)
+    # --- 2026-11-23, the thesis layout (docs/psi_microword.md section 7)
+    got.update(layout_measure(fw, psi))
     # sysidat is the class 0/1 half of the decode table, packed: value and
     # tag of the second word, a zero byte, the first word's low 16 bits
     raw = psdpim.member('PMPSI.DIR/sysidat')[256:]
@@ -784,9 +972,9 @@ def measure():
     got['operand_selects'] = [
         im[pi] == im[pv],                               # register operand not in the word
         im[pi] ^ im[pa] == 1 << 52,                     # DST 9 against DST 8
-        (field(im[pi], 'DST'), field(im[pa], 'DST')) == (9, 8),
-        (field(im[wi], 'SC1'), field(im[wa], 'SC1')) == (9, 8),
-        (field(im[wi + 1], 'DST'), field(im[wa + 1], 'DST')) == (9, 8),
+        (field(im[pi], 'DSTF'), field(im[pa], 'DSTF')) == (9, 8),
+        (field(im[wi], 'SC1F'), field(im[wa], 'SC1F')) == (9, 8),
+        (field(im[wi + 1], 'DSTF'), field(im[wa + 1], 'DSTF')) == (9, 8),
     ]
     al = allocators(im)
     got['alloc_sizes'] = [al[a] for a in sorted(al)]
@@ -827,7 +1015,7 @@ def check():
           'entries in start-address order with 0 descents and every start on a non-zero '
           'microinstruction (22 descents, %d landing, if the low 15 bits are taken as the '
           'address throughout); %d entry tag immediates and 7 put_vector_N routines carry '
-          'the tag kbn.TAGS predicts; JMPF 5 absolute %d/%d in syspsi; JMPF 2,3,6,7 '
+          'the tag kbn.TAGS predicts; JMPF 5 absolute %d/%d in syspsi; JMPF 3,6,7,a,b,e,f '
           'page-relative; second pass: JMPF 1 jump targets land %d/%d in image 2 and '
           '%d/%d in syspsi, calls lead to a return %d times and to an instruction end %d, '
           'decode entries to an end %d times and to a return %d, backward JMPF 4 lands '
@@ -851,6 +1039,19 @@ def check():
                                        if o == list(range(n))),
                                    ', '.join('[%s]<-%s' % w[1:]
                                              for w in got['records']['mwait_first']))))
+    print('mekbn: thesis layout (Fig. 3-25): DBGF set in %d/%d (syspsi) and %d/%d (image 2) '
+          'words; ALF 2/3 (EM2 the operation) with a branch that needs EM2 %d/%d and %d/%d '
+          '(%d and %d such branches); 4-bit JMPF 2 page-relative reading lands %d/%d; '
+          'AS1F = MDR1/MDR2 without bit 58/59 in %d of %d strobe-free words; ALU ops of '
+          'add, subtract, add_extended, subtract_extended, and, or, shift_left, shift_right: %s'
+          % (got['syspsi_dbgf'] + got['img2_dbgf']
+             + (got['syspsi_alf_em2'][1], got['syspsi_alf_em2'][0],
+                got['img2_alf_em2'][1], got['img2_alf_em2'][0],
+                got['syspsi_alf_em2'][2], got['img2_alf_em2'][2],
+                got['img2_jmpf2'][1], got['img2_jmpf2'][0],
+                sum(v for v, _ in got['img2_as1f_enable']),
+                sum(n for _, n in got['img2_as1f_enable']),
+                ' '.join(got['alu_entries']))))
     return 0
 
 
@@ -858,8 +1059,9 @@ def fmt(a, x):
     s = '%04x %016x ' % (a, x)
     if not x:
         return s
-    s += ' '.join('%s=%x' % (n, field(x, n)) for n, _, _ in FIELDS if field(x, n))
-    j, em = field(x, 'JMP'), field(x, 'EM')
+    names = [n for n, _, _ in FIELDS if not n.startswith('EM')] + ['EM']
+    s += ' '.join('%s=%x' % (n, field(x, n)) for n in names if field(x, n))
+    j, em = jk(x), field(x, 'EM')
     kind, t, falls = flow(a, x)
     if j == 1:
         s += '   %s%s%s' % (kind, '' if t is None else ' %04x' % t, ' ?' if falls else '')
@@ -868,9 +1070,12 @@ def fmt(a, x):
         s += '   jump %04x' % t
     elif j == ABSOLUTE:
         s += '   call %04x' % em
-    elif j in PAGE_RELATIVE:
+    elif field(x, 'JMPF') in PAGE_RELATIVE:
         s += '   %s %04x' % (kind, t)
-    if j != 1 and (j in PAGE_RELATIVE or field(x, 'x17')) or j == 1 and not em & J1_JUMP and em >> 10:
+    elif kind == 'jmpf2':
+        s += '   jmpf2 (kind open)'
+    if j != 1 and (field(x, 'JMPF') in PAGE_RELATIVE or field(x, 'TGIF')) \
+            or j == 1 and not em & J1_JUMP and em >> 10:
         s += ' imm %02x %s' % (em >> 10, kbn.TAGS.get(em >> 10, ''))
     return s
 
@@ -921,11 +1126,11 @@ def main(argv):
     if '--tag' in argv:
         t = TAG[argv[argv.index('--tag') + 1]]
         for a, x in enumerate(fw.img2):
-            if not x or field(x, 'EM') >> 10 != t or field(x, 'JMP') == 1:
+            if not x or field(x, 'EM') >> 10 != t or jk(x) == 1:
                 continue
-            if field(x, 'x17'):
+            if field(x, 'TGIF'):
                 print('stamp   ' + fmt(a, x))
-            elif field(x, 'JMP') in PAGE_RELATIVE:
+            elif field(x, 'JMPF') in PAGE_RELATIVE:
                 print('branch  ' + fmt(a, x))
         return 0
     if '--alloc' in argv:

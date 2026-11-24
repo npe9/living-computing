@@ -1,0 +1,22 @@
+% TM-061 「逐次型推論マシンPSIのオペレーティング・システム」 (服部 隆 他, May 1984)
+% PDF pages 7-8, printed folios 6-7, section 4.2 (1) 単一継承; no figure number.
+% Intro: 例えば、クラスbinary-file はクラスfileを継承して定義される。
+% '...' bodies are elided IN THE ORIGINAL.
+% transcribed by eye from 300dpi crops (work/tm0061/p-07_2.png, p-07_3.png, p-08_0.png)
+
+        class binary-file has
+        nature
+                file;
+        instance
+% ---- page break (PDF p7 -> p8) ----
+                :read(Binary-file, Buffer, File-marker) :- ... ;
+                        %ファイル・マーカー位置のレコードをバッファに読込む。
+                :write(Binary-file, Buffer, File-marker) :- ... ;
+                        %バッファ中のレコードをファイル・マーカー位置に書出す。
+                :tap(Binary-file, File-tap) :- !,
+                        :create(#binary-file-tap, File-tap, Binary-file) ;
+                        %ファイルのタップを作る。
+% (no 'end.' printed after this listing on p8; the prose follows directly)
+% Prose (p8): このクラスはクラスfileで定義された操作をオーバライドせずに、readやwri-
+%   teなどの新しい操作を追加している。なお、これらの操作は外部的にはむしろク
+%   ラスfileで与えられるべきものである。

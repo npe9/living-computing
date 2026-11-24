@@ -211,7 +211,9 @@ is what the Bluespec testbench has to match next: it runs `za`, `zl`,
 `docs/plan9_boot_plan.md`; `tests/test_p9run.py`).
 
 **Exec** (`sys/src/9/port/sysproc.c` `sysexec`, `sys/src/9/hobbit/trap.c`
-`execregs`): with `nargs` strings totalling `nbytes`,
+`execregs`): with `nargs` strings, `nbytes` = BY2WD (the profiling
+clock's hole at USTKTOP-4; counted since 2026-11-23, below) plus their
+lengths,
 
     ssize = 4*(nargs+1) + roundup(nbytes, 4);  if((ssize+4) & 7) ssize += 4
     argv[] at USTKTOP - ssize, the strings at USTKTOP - nbytes
@@ -248,9 +250,9 @@ Paths resolve inside `--root`, which is both `/` and the working
 directory (`zl` finds `/hobbit/lib/libc.a` there); a path that leaves it
 stops the run.  Any other id stops the run with its number and name.
 This is what `za` and `zl` use; it is not the 1e system-call set
-(`sys.h` has 37 numbers) and nothing here pretends to `fork`, `exec`,
-`stat`, `pipe` or `notify`.  `fstat` and `rfork(RFNOTEG)` were added
-for `ar` (below).
+(`sys.h` has 37 numbers).  (As of 2026-11-20.  `stat`, `fstat`,
+`notify`, `rfork`, `exec` and `wait` were added for A3 on 2026-11-23,
+below; `pipe` is still refused.)
 
 ### Added for `ar` and `rl` (A3, 2026-11-23)
 
@@ -258,12 +260,16 @@ for `ar` (below).
 `armove()` and for its `u` test, and `rfork(RFNOTEG)` in `install()` and
 `qcmd()`.  Both are their own methods in `Kernel` (`ar_fstat`,
 `ar_rfork`, the Dir builder `dir_bytes`), apart from the calls above, so
-other additions merge without touching them.
+other additions merge without touching them.  **Merged 2026-11-23 with
+the A3 generated-inputs work (next section):** one Dir builder
+(`convD2M`, `Kernel.dir_entry`) and one fstat (`sys_fstat`, with this
+section's `evenaddr` check) remain; the bullets below are updated to
+what the merged runner does.
 
 | id | call | arguments | result |
 |---|---|---|---|
 | 11 | `fstat(fd, buf)` | fd, buf | 0; `buf` gets the fd's Dir, 116 bytes (DIRLEN); -1 and "fd out of range or not open" (Ebadfd) for a closed fd |
-| 19 | `rfork(flag)` | flag | 0 for `RFNOTEG` (8); any other flag stops the run |
+| 19 | `rfork(flag)` | flag | 0 for the group flags without RFPROC; with RFPROC a child runs (next section) |
 
 * **fstat** is `sysfstat()` (`sys/src/9/port/sysfile.c:380`): `evenaddr`
   (`hobbit/trap.c:461`) on the buffer -- an address not on a word
@@ -277,7 +283,7 @@ other additions merge without touching them.
   | bytes | field | value |
   |---|---|---|
   | 0-27 | name | the last path element, NUL-padded |
-  | 28-55, 56-83 | uid, gid | `"none"` (a stated choice; the host owner is not a Plan 9 user; ar ignores both) |
+  | 28-55, 56-83 | uid, gid | `"bootes"` (`devcons.c:24` eve; it was `"none"` before the merge; ar ignores both) |
   | 84-91 | qid.path, qid.vers | the host inode (31 bits) \| CHDIR, 0 |
   | 92-95 | mode | host permission bits \| CHDIR (0x80000000) for a directory |
   | 96-103 | atime, mtime | the host's, seconds |
@@ -286,22 +292,20 @@ other additions merge without touching them.
 
   `ar` copies mtime, mode and length into each member header, so a
   reproducible archive needs its inputs' dates and modes set by whoever
-  runs it (`tools/p9kbuild.py` does).  The console's Dir (`devcons`) is
-  refused rather than invented.
-* **rfork** is `sysrfork()` (`sysproc.c:21`) without RFPROC: RFNOTEG
-  gives the process a new note group, which changes nothing here (no
-  notes).  RFPROC -- `fork()` is `rfork(RFPROC|RFFDG)`, 0x14 -- stops the
-  run with `refused rfork(0x14): RFPROC (a new process) is not
-  modelled`; so do RFNAMEG, RFENVG, RFFDG and the rest without RFPROC.
-* **`rl` stops at its fork, by design.**  `rl` (`$RL` in `/hobbit/mkfile`)
-  writes and closes `__.SYMDEF`, then `fexec("/bin/ar", "ar", "rb",
-  first, lib, "__.SYMDEF")` forks and execs `ar` and waits
-  (`rl.c` `writerl`, `fexec`).  There is one process here, so the run
-  stops at exactly that refusal with the table complete; the driver
-  (`tools/p9kbuild.py` `play_rl`) checks that status and runs the same
-  `ar` command lines on the model, then removes `__.SYMDEF`, which is the
-  rest of `writerl()`.  fork, exec and wait themselves are still not
-  modelled (`mk` will need them).
+  runs it (`tools/p9kbuild.py` does), or a fixed clock for the files
+  the run writes (`run(clock=T)`, `--clock T`).  The console's Dir is
+  devcons's `cons` (next section).
+* **rfork** is `sysrfork()` (`sysproc.c:21`): without RFPROC the group
+  flags change nothing here (RFNOTEG: no notes); `fork()` is
+  `rfork(RFPROC|RFFDG)`, 0x14, and runs the child first (next section).
+* **`rl` now runs to its end.**  `rl` (`$RL` in `/hobbit/mkfile`) writes
+  and closes `__.SYMDEF`, then `fexec("/bin/ar", "ar", "rb", first, lib,
+  "__.SYMDEF")` forks, execs `ar` and waits (`rl.c` `writerl`, `fexec`);
+  then it removes `__.SYMDEF`.  Until the merge the run stopped at that
+  fork and `tools/p9kbuild.py` `play_rl` ran the same `ar` lines itself;
+  `play_rl` now runs `rl` with the clock fixed at the table's date, in a
+  directory of mode 0775 so create's 0664 survives, and the fork is the
+  runner's.
 
 Validated against the shipped `hobbit/lib/libc.a` (`p9kbuild.py
 archeck`): `ar t` lists its 141 members; `ar x` extracts all 140 object
@@ -315,10 +319,67 @@ bytes of each name, which come from libmach `obj.c` `readar()`'s local
 `Prog p`, filled by `_readz` only up to the NUL -- past it is stack
 residue, not a property of `ar`, `rl` or the archive.  On this run the
 byte at name[17] is 3 in all 201 entries and 0 in the shipped file, and
-11 more bytes differ at name[7] and name[8] of 10 entries.  **Open:**
-why the model's residue differs from the 1993 machine's has not been
-traced (rl's `Prog p` is on the stack, so the stack cache's contents
-are the first suspect, as for `za` in A2).
+11 more bytes differ at name[7] and name[8] of 10 entries.
+
+**Traced 2026-11-23: the shipped tables were written by the MIPS `rl`,
+so no Hobbit can reproduce those 212 bytes; the exec environment plays
+no part.**  (`tools/p9symdef.py`, `tests/test_p9symdef.py`; libmach is
+the release tarball's `sys/src/libmach`, not vendored.)
+
+* *Where each byte comes from.*  readar()'s `Prog p` is at the same
+  stack address in every call (readrl calls it, and `objtype()` just
+  before it, from one SP).  Replaying readrl/readar/objlookup/_readz
+  (obj.c, zobj.c) with `p.id` tracked byte by byte splits the 2,623
+  bytes past the NULs of the shipped libc.a table into 631 written by an
+  earlier name of the same member in the same call -- all 631 equal the
+  replay, and the model's `rl` writes them identically -- and 1,992
+  that were on the stack when readar was entered.  All 212 differing
+  bytes are of the second kind.
+* *What was on the stack.*  The model's trace of the Hobbit `rl` (word
+  watch at `p.id + 17`): `objtype()`'s `buf[8]` (the member's first 8
+  bytes, read by `Bread`) lies at `id[9..16]`, and its loop variable
+  `i`, stored at `id[17..20]` and left at `ObjHobbit` = 3 (mach.h), is
+  still in that stack-cache slot when readar's ENTER takes the word
+  back into the window: little-endian 03 00 00 00, so `id[17]` = 3.
+  `id[7..8]` (word `id[5..8]`, below `buf`) is not written by objtype
+  on the Hobbit, so it keeps what the previous member's names left.
+* *The 1993 table.*  `/mips/bin/rl` (the release's MIPS binary, from
+  the tarball, sha256 `d4e020cbc5343ad70bf44ad68166c7620f1875b211b62c7b`
+  `eb14affb55155b40`; `tools/p9mipsdis.py rl objtype readar` prints the
+  code read here): readar `SUB $36` puts `p` at S-24 (S = readrl's SP;
+  `Prog`'s kind/type/sym are a byte each, `_readz`'s `sb` at
+  0/1/2/3(p), so `id` is at S-21); objtype `SUB $28` puts `buf` at
+  S-12 = `id[9..16]` (the same place as on the Hobbit), its
+  outgoing-argument words at S-20 and S-16 (`id[1..4]`, `id[5..8]`)
+  hold Bseek's last two arguments, -8 and 1, and it spills `i` at S-4 =
+  `id[17..20]` before each indirect call -- all **big-endian**.  That
+  predicts `id[5..8]` = 00 00 00 01 and `id[17..19]` = 00 00 00 (i's 3
+  is in `id[20]`, outside the name), and every one of the 1,992 stack
+  bytes of the shipped libc.a table agrees.  So do the tables of 22
+  more shipped Hobbit libraries (every `hobbit/lib/*.a` but `c++/libC.a`
+  and `cda/libsim.a`, whose tables are dated July and August 1992, the
+  others 8 October 1992 to 2 January 1993): every byte past a NUL
+  accounted for.  Most of that agreement does not tell MIPS from Hobbit:
+  of the 12,460 stack bytes in the 23 tables, 8,280 are `buf` (both
+  layouts put it at `id[9..16]`) and 2,778 are `id[18..19]` (zero in
+  both).  What only the MIPS frames predict: `id[17]`, 1,389 bytes, all
+  0 (the Hobbit `rl` writes `i` = 3 there), and `id[5..8]`, 13 bytes,
+  all as Bseek's big-endian 1 (no stack byte falls in `id[1..4]`).
+  Hand-read, not checked by anything runnable: the 386 `rl` spills `i`
+  little-endian at `id[17..20]` and the 68020's leaves PEA's 8 in
+  `id[5..8]`, so neither fits; the 386, 68020 and SPARC libc.a tables
+  have `id[17..19]` zero in every entry (counted; their object formats
+  are not transcribed); the five `__.SYMDEF`s are dated within 4.5 hours
+  on 2 January 1993.  The reading: one MIPS machine ran `rl` (`RL=rl`,
+  the host's `/bin/rl`) for every `objtype`.
+* *Consequence.*  The 212 bytes are a property of the build host, not of
+  the Hobbit or of this runner: the residue is not evidence about the
+  1993 exec environment (`#e`, the pid, argv), and nothing in the runner
+  should be changed to chase it.  What it does confirm: the Hobbit
+  model's stack-cache behaviour gives the layout zc's frames imply
+  (`buf` at `id[9..16]`, the in-call bytes), and `rl`, `ar` and the
+  archive format are byte-exact.  `p9kbuild.py archeck` now reports the
+  accounting.
 
 **Floating point** is not a system call: it is the
 unimplemented-instruction sequence (p. 1-39) and a user-level handler,
@@ -335,6 +396,53 @@ over consecutive floating-point instructions.  The arithmetic is host
 IEEE double, not `fpi.c`'s 53+3-bit `Internal`, so FADD/FSUB/FMUL/FDIV
 may round differently from 1e in a last bit; moves, compares and integer
 conversions are exact.  `za` executes one FMOV (0x26d0, `cinit`).
+
+### Added for A3's generated inputs (2026-11-23)
+
+`tools/p9kgen.py` runs `awk`, `sed`, `xd`, `grep`, `sort`, `tr`,
+`strip`, `ar` and `rl` (and `echo`, `cat`, `za`, `zc`, `zl`) as the
+stages of the kernel mkfiles' rc pipelines.  They needed these, each in
+its own `Kernel` method (`call_a3` dispatches; `call` itself only gained
+the `#` branch of `open` and create's permission rule), each tested in
+`tests/test_p9run.py`:
+
+| id | call | source | what the runner does |
+|---|---|---|---|
+| — | fd 0 / fd 1 | rc's `<`, `>` and `\|` | `run(stdin=bytes, stdout=file)` (`--stdin`/`--stdout`): fd 0 reads the bytes, fd 1 writes the file object; fd 2 stays the console.  A redirected fd is a `Stream`: `seek` on it fails `Eisstream` (`sysseek`: devchar `\|`) |
+| 11 | `fstat(fd, buf)` | `sysfile.c sysfstat`; `libc/9sys/convD2M.c`; `sys/include/libc.h` `Dir`, DIRLEN 116 | the 116-byte Dir: name, uid, gid (28 each), qid.path, qid.vers, mode, atime, mtime (LE longs), length (8 bytes, high word 0), type, dev.  A host file is type `M` (devmnt), mode = its permission bits, CHDIR (0x80000000) in mode and qid.path for a directory, length and times from the host.  A redirected fd is a pipe (`devpipe.c pipestat` -> `streamstat(c, db, "pipe", 0666)`, qid `STREAMQID(1, Sdataqid)` = 63, type `\|`); the console is `cons` (`devcons.c` `{Qcons}` = 3, 0660, mtime `kerndate`).  uid = gid = `bootes` (`devcons.c:24` `eve`) |
+| 18 | `stat(name, buf)` | `sysfile.c sysstat` | the same Dir for a path in the tree; a missing file fails "file does not exist" (Enonexist); a `#` name is refused |
+| 14 | `open("#...")` | `devcons.c` Qpid, `devenv.c` | `#c/pid` reads `readnum(pid, NUMSIZE)`: the pid right-aligned in 11 characters and a blank (pid 1; `getpid()`, so `mktemp()` in `ar`); `#e` is an empty directory (OREAD only; reads 0 bytes; Dir `.`, CHDIR\|0700, type `e`), `#e/x` fails Enonexist.  Any other device is refused |
+| 22 | `create` perm | `sys/man/2/open` | a new file gets perm ANDed with its directory's permission bits; an existing file keeps its own.  (`zl` creates with 0775; `strip` refuses a file with no execute bit) |
+| — | the clock | a file server's clock | `run(clock=T)` / `--clock T`: every file the process (or a child) creates or writes gets atime = mtime = T (`Kernel.stamp`), so `rl`'s `__.SYMDEF` header and any archive `ar` builds are reproducible.  Unset, host times stand |
+| 28 | `notify(fn)` | `sysproc.c sysnotify` | the handler is kept; returns 0.  No note is ever posted |
+| 19 | `rfork(flags)` without RFPROC | `sysproc.c sysrfork` | new name/env/note groups of a process that is alone: no effect but the note id; the paired flags (RFNAMEG\|RFCNAMEG, RFENVG\|RFCENVG) and RFMEM/RFNOWAIT fail Ebadarg as there; RFCFDG is refused |
+| 19 | `rfork(RFPROC\|...)` | `sysrfork`, `proc.c pexit` | the child is a deep copy of the process (memory, registers, the stack cache's array), its `rfork` returns 0, and it **runs first, to its `exits`**, before the parent gets the child's pid.  RFFDG copies the fd table (same channels, so shared offsets; the child's `close` does not close the parent's file), no RFFDG shares it.  RFCFDG and RFMEM are refused, and so is any fork while `--record` is on (the Bluespec replayer has one process) |
+| 7 | `exec(file, argv)` | `sysproc.c sysexec`, `lib/namespace` | `/bin/x` is `/hobbit/bin/x` (`bind /$cputype/bin /bin`; `/rc/bin` is not modelled); the Z_MAGIC header is checked (else Ebadexec), the arguments copied out, and a new image built exactly as the first process's; `Proc.text` = the file's last element.  `#!` files are refused |
+| 36 | `wait(Waitmsg*)` | `sysproc.c syswait`, `proc.c pwait`/`pexit` | the first wait record: pid and three times as `readnum` (12 bytes each; the times are 0), then `"text pid:exitstr"` or `""` in msg[ERRLEN 64]; returns the pid.  No record: "no living children" (Enochild) |
+
+What "child runs first" covers: a parent that forks and waits (`rl`'s
+`fexec` of `/bin/ar`, and what rc does for a simple command).  It does
+not cover a parent and child that must run together (the two ends of a
+pipe); `pipe` is still refused, and `tools/p9kgen.py` plays rc's
+pipelines a stage at a time instead.
+
+Not modelled and still refused: `pipe`, `dup`, `bind`, `mount`,
+`chdir`, `wstat`/`fwstat`, `sleep`, `alarm`, `segbrk`/`seg*`,
+`rendezvous`, `noted`, `unmount`.
+
+**Fixed 2026-11-23.**  `sysexec` starts `nbytes = BY2WD` ("hole for
+profiling clock at top of stack", `sysproc.c:286`) before adding the
+string lengths, so the strings end 4 bytes below USTKTOP and `sp[0] =
+USTKTOP-4` points at that hole, which libc's `main9.s` keeps in
+`_clock` (`MOV R0, _clock(SB)`).  `exec_frame` counted only the
+strings, so the last string's tail sat in the hole.  It now starts at
+`BY2WD`: the hole is a zero word, and `ssize` (so `argv[]` and SP)
+moves by 4 for some argument lists (`["ab", "cd"]`: SP USTKTOP-48, not
+-32).  `tests/test_p9run.py` `ExecFrame` pins both; with the old count
+injected only its two tests fail (63 run): nothing else in the suite
+reads the hole or depends on where the strings are.  `p9kbuild archeck`
+gives the same archive as before.  Recordings for the Bluespec run are
+made fresh by `p9run --record` at each run, so they follow.
 
 ## The Bluespec run's kernel entry (`bsv/P9HostTb.bsv`, 2026-11-20)
 

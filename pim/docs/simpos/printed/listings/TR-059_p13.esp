@@ -1,0 +1,26 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 13, printed folio 11. Section 3.1(4) 'Direct access' operations and the write sequence (continues on PDF p14).
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To read a record at the file marker
+             :read(File,Buffer,File_Marker)
+% o To write a record at the file marker
+             :write(File,Buffer,File_Marker)
+% "Some other operations on a file include:"
+% o To add a record at the end of the file
+             :add(File,Buffer)
+% o To delete a record at the file marker
+             :delete(File,Buffer,File_Marker)
+% "In general, writing a record to a file requires the following sequence:"
+      :record_data(Buffer,Record_Data),
+          % Take out a record data vector or string to store the output
+          % record data.
+      :set_data_size(Buffer,Data_size),
+          % Specify the size of the output data.
+      :set_position(File_Marker,Position),
+          % Set the output position.
+      :write(File,Buffer,File_Marker).
+          % Finally issue a write operation on the file.
+% "Reading a record requires the following sequence:"
+      :set_position(File_Marker,Position),

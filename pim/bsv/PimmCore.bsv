@@ -21,6 +21,8 @@ import PimmSBox::*;
 import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
+import PimmShBox::*;
+import PimmScsiBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -28,6 +30,10 @@ interface PimmCore;
   method ActionValue#(Cell) newVarResult;
   method Action setArg(Bit#(8) n, Cell w);      // argument n (from 1) of the goal being built
   method Action spawn(Addr pc, Bit#(8) argn);
+  // the spawned goal's record is written: the bench waits for it, so
+  // that the next argument register it loads is not traced before the
+  // record's cells
+  method ActionValue#(Addr) spawned;
   method Action run;
   method ActionValue#(End) finished;
   // between runs: bind or compare two terms, look at a term
@@ -40,6 +46,13 @@ interface PimmCore;
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
   method Action pokeWord(Cell s, Bit#(32) i, Bit#(32) w);
   method ActionValue#(Cell) stringResult;
+  // the SCSI device, outside the core (PimmScsiBox.bsv): what the core
+  // puts on the bus, the device's answers, and the device's turn when
+  // the machine has run dry (a = the commands that finished)
+  method ActionValue#(ScsiOut) scsiReq;
+  method Action scsiResp(ScsiIn r);
+  method Action scsiPoll;
+  method ActionValue#(Bit#(32)) scsiPolled;
 endinterface
 
 module mkPimmCore#(String image)(PimmCore);
@@ -53,28 +66,39 @@ module mkPimmCore#(String image)(PimmCore);
   PimmVBox  vbox  <- mkPimmVBox(mem.port[6], gbox);
   PimmMBox  mbox  <- mkPimmMBox;
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5]);
+  PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox, regs);
+  PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
   FIFO#(Bool) unifyQ <- mkFIFO;
   Reg#(Bool)  outsideUnify <- mkReg(False);   // a unifyReq is in the data box
   Reg#(Bool)  outsideWake  <- mkReg(False);   // ... and its wake in the goal box
+  Reg#(Addr)  takenPc <- mkRegU;              // a goal of a shoen being checked
 
   rule toExec;
     let f <- fetch.out;
     exec.enq(f);
   endrule
 
-  (* descending_urgency = "advance, begin_run" *)
+  (* descending_urgency = "advance, reduction_ended, begin_run, goal_checked" *)
   rule advance;
     let s <- exec.out;
     case (s) matches
       tagged Next .pc: fetch.enq(pc);
       tagged Stop .e:
-        if (e == EndDone || e == EndSusp) gbox.pickup;   // on to the next goal
+        // the reduction is over: the goal's shoen gets its reductions
+        // and loses one (the shoen box; nothing for the root), then on
+        // to the next goal
+        if (e == EndDone || e == EndSusp) shbox.endReduction(exec.reductions);
         else endQ.enq(e);
     endcase
+  endrule
+
+  rule reduction_ended;
+    shbox.ended;
+    gbox.pickup;
   endrule
 
   rule begin_run;
@@ -86,14 +110,34 @@ module mkPimmCore#(String image)(PimmCore);
     let m <- gbox.picked;
     case (m) matches
       tagged Valid .pc: begin
-        exec.newGoal;
-        fetch.enq(pc);
+        // a goal of a shoen is checked first (shoen stage 3): run,
+        // discarded (its shoen aborted) or parked (stopped)
+        if (gbox.shoen != 0) begin
+          takenPc <= pc;
+          shbox.check(gbox.takenGoal);
+        end
+        else begin
+          exec.newGoal;
+          fetch.enq(pc);
+        end
       end
       tagged Invalid: begin
         $display("Q");
         endQ.enq(EndIdle);
       end
     endcase
+  endrule
+
+  rule goal_checked;
+    let k <- shbox.checked;
+    if (k == 0) begin
+      exec.newGoal;
+      fetch.enq(takenPc);
+    end
+    else begin
+      $display(k == 1 ? "E aborted" : "E park");
+      gbox.pickup;
+    end
   endrule
 
   rule outside_unified (outsideUnify);
@@ -123,7 +167,8 @@ module mkPimmCore#(String image)(PimmCore);
   method ActionValue#(Cell) newVarResult = gbox.newVarResult;
   method Action setArg(Bit#(8) n, Cell w) = regs.wa(n, w);
   method Action spawn(Addr pc, Bit#(8) argn) =
-    gbox.record(fromInteger(lay_READY), pc, argn, True, False);
+    gbox.record(fromInteger(lay_READY), pc, argn, True, True);
+  method ActionValue#(Addr) spawned = gbox.recordResult;
   method Action run = runQ.enq(True);
   method ActionValue#(End) finished;
     endQ.deq;
@@ -146,6 +191,10 @@ module mkPimmCore#(String image)(PimmCore);
     let r <- sbox.result;
     return r.a;
   endmethod
+  method ActionValue#(ScsiOut) scsiReq = scsi.devReq;
+  method Action scsiResp(ScsiIn r) = scsi.devResp(r);
+  method Action scsiPoll = scsi.poll;
+  method ActionValue#(Bit#(32)) scsiPolled = scsi.polled;
 endmodule
 
 endpackage

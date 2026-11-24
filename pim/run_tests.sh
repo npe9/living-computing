@@ -30,11 +30,17 @@ python3 asm/pimm_stubs.py --check
 python3 asm/psdpim.py --check
 python3 asm/mekbn.py --check
 
+echo "=== PSI side: the Librarian's loader, .ptf templates to class objects (TM-388 cases, known plaintext) ==="
+python3 -I psi/test_librarian.py
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
 echo "=== PIM/m reference model: a PIMOS predicate run from the IPL image ==="
 python3 ref/pimm/test_jtoa.py
+
+echo "=== PIM/m reference model alone: the IPL's own SCSI file service (prototype) ==="
+python3 ref/pimm/ref_scsi.py
 
 echo "=== PIM/m core (Bluespec) in lockstep with the reference model ==="
 bsv/run_pimm_lockstep.sh
@@ -62,6 +68,9 @@ bsv/run_mesh_tb.sh
 
 echo "=== Bluesim SDRAM store testbench ==="
 bsv/run_sdram_tb.sh
+
+echo "=== Bluesim FEP emulator against ref/pimm/fep.py (image file and SPI reader) ==="
+bsv/run_fepemu.sh
 
 echo "=== formal BMC (fixed PASS, buggy FAIL) ==="
 bsv/formal/run_formal.sh

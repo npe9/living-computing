@@ -1,0 +1,4 @@
+ESP-manuals	package environment with_simpos	PROSE	semantics given; storage format absent
+ESP-manuals	external (public) class declaration syntax	PROSE	named, syntax not captured in OCR
+misc	System Area / PCB layout	ABSENT	TM-444 says PCBs live there
+misc	PSI/UX interface memory protocol	PROSE	TR-714

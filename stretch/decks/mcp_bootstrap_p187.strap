@@ -183,6 +183,10 @@
 !       the injection above).
 !
 ! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! WHAT HAD TO BE SUBSTITUTED, AND IT IS LOUD
 ! ---------------------------------------------------------------
 ! >>> TWO ROWS ARE NOT WRITTEN AS THE PAGE PRINTS THEM. <<<
@@ -602,9 +606,9 @@ KSEOPT  LCI,1,K REP                  ! line  6   printed name "K SEOP T"
         BZEKJZ,$+1.32                ! line  8 * location-column asterisk
         CB,1,$-1.32                  ! line  9
         B,K REJT                     ! line 10
-        L(BU,6),KWS.19               ! line 11   >>> PRINTED "K WS.19"; blank refused <<<
+        L(BU,6),K WS.19              ! line 11   AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
 KEOPR   BRZ,$                        ! line 12   printed name "K EOP R"
-        BB,KWS.24,K SEOP T           ! line 13   >>> PRINTED "K WS.24"; blank refused <<<
+        BB,K WS.24,K SEOP T          ! line 13   AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         CI0001(BU,6),(.5,2)111101    ! line 14   last digit prints as a C; see GLYPH CALL 1
         BRZ,K EOP R                  ! line 15
         BZB,KWS.21,ZTSEOP            ! line 16   the page prints "KWS.21" closed up

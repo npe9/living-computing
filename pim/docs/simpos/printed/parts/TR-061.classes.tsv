@@ -1,0 +1,22 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+default_translation_table				:look_up/5	PRINTED-SOURCE	TR-061	13		Fig.2 "A Translation Table Program in ESP": same 13 clauses as TR-046 Fig.4 but get_e_process goals printed without ';'. Listing TR-061_p13.esp. Fig.1: translation_table inherits (is-a) default_translation_table.
+coordinator	program (is-a)	has-a: e_process, whiteboard, e_port			PROSE	TR-061	12;3-8		Fig.1 class relation diagram (encircled = defined in the Coordinator). Background process; meta-commands visit/create/kill/lull/arouse/memorize/remember/broadcast/write/read/invoke system menu (p7-8).
+e_process	process (is-a)	e_program; e_window; e_port; name of the expert			PROSE	TR-061	4-5;12		attributes listed p4-5; Fig.1 has-a e_program, e_port, e_window.
+e_program	with_goal_demon; e_program_core (is-a)				PROSE	TR-061	5;12		"a special class of the 'program'"; name derived from the user's e_program_directory.
+e_program_core	program (is-a)	has-a help_info_dictionary			NAMED	TR-061	12		Fig.1 only.
+with_goal_demon					NAMED	TR-061	12		Fig.1 only (superclass of e_program).
+help_info_dictionary					NAMED	TR-061	12		Fig.1 only (has-a from e_program_core).
+e_port	inter_process_port (is-a)				PROSE	TR-061	5;12		"a special class of the Port"; used for communication with the Coordinator.
+inter_process_port	port (is-a)				NAMED	TR-061	12		Fig.1 only.
+e_window	window (is-a)	translation_table; e_process			PROSE	TR-061	6;12		accepts 'key-command_table-change' command (p9); other windows may not.
+translation_table	default_translation_table (is-a)				NAMED	TR-061	12		Fig.1.
+whiteboard					PROSE	TR-061	7;12		buffer in which an object is stored by an expert as directed by the user; no control over process activation.
+e_process_pool	list_index (derived from); later cascade_index				PROSE	TR-061	5		experts indexed by e_program names; active object processing broadcast/remember.
+list_index					NAMED	TR-061	5		pool storing any number of objects retrievable by index.
+cascade_index					NAMED	TR-061	5		planned more efficient replacement.
+program				:goal/0	PROSE	TR-061	5		"The instance of the 'program' has a special method 'goal' to execute the main function"; instance can be "invoked" in the process environment.
+port					PROSE	TR-061	5		"Port is the name of the class of objects that enable communication between processes."
+window					NAMED	TR-061	12		superclass of e_window in Fig.1.
+process					NAMED	TR-061	12		superclass of e_process in Fig.1.
+user		directory of experts (expert directory)			PROSE	TR-061	8		"a class of objects, 'user', for each SIMPOS user"; on login the user's expert directory feeds the system_menu.
+e_program_directory					NAMED	TR-061	5		user-defined directory from which expert names derive.

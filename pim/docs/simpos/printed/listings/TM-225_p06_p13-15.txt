@@ -1,0 +1,57 @@
+% TM-225 「AIワークステーションPSIのプログラミング環境」(Aug 1986; authors not transcribed).
+% 16 PDF pages, Japanese, single column; printed folio = PDF page - 1.
+% Transcribed by eye from 300dpi crops (p6, p14) and a 40dpi contact sheet (p13, p15: box labels only). F4.
+
+%% p6 (folio -5-): process creation, execution and termination through methods of class process
+例えば，プロセスの作成，実行，終了は以下の様に行う。
+  1):create(#process,P)
+     クラスprocess からプロセスPを作成
+  2):activate(P,Program)
+     プロセスPにおいて，プログラムProgram を実行
+  3):terminate(P)
+     プロセスPを終了
+
+%% p5 (folio -4-): 4. オペレーティングシステム (layer list, by eye from a 22% view; small kana «?»-free)
+① 資源管理
+     プロセサ，メモリ，デバイス管理
+     IPL プログラム
+② 実行管理
+     プロセス，ストリーム，プール，ワールド，
+     ユーザ，時計管理
+③ 入出力メディアシステム
+     ウインドウ，ファイル，ネットワークシステム
+ SIMPOSのシステム・サービスの一般的利用手順は，
+     1)クラスよりオブジェクトを作成
+     2)オブジェクトのメソッド呼び出し
+     3)オブジェクトの終了処理メソッドの呼び出し
+
+%% p13 (folio -12-): 図1 SIMPOSの構成 (boxes, from contact sheet)
+   プログラミングシステム: コーディネータ | エディタ | デバッガ/インタプリタ | ライブラリ
+   オペレーティングシステム:
+     入出力メディアシステム: ウインドウ | ファイル | ネットワーク
+     実行管理: プロセス | ストリーム | プール | ワールド | ユーザ | 時計
+     資源管理: プロセサ | メモリ | デバイス | IPL
+
+%% p14 (folio -13-): 図2 ウインドウシステムの構成
+   [ユーザプロセス] . . . [ユーザプロセス]
+          \                  /
+   +------- ウインドウシステム ---------------------+
+   |        [ウインドウマネージャ] --- [ウインドウ   |
+   |                                   オブジェクト] |
+   |                                       |         |
+   |                                  [ウインドウ    |
+   |                                   クラス群]     |
+   +-------------------------------------------------+
+        /            |             \
+   [ビットマップ  [キーボード   [マウス
+    ハンドラ]      ハンドラ]     ハンドラ]
+   (arrows: user processes <-> window manager; window manager <-> each handler)
+
+%% p14: 図3 ウインドウの階層例
+                 [スクリーン]
+          [ウインドウA]     [ウインドウB]
+   [ウインドウC] [ウインドウD]
+
+%% p15 (folio -14-): 図4 表示画面例 (screen with overlapping windows A, B, C, D);
+%% 図5 ウインドウ間の重なりの変更: フレームメモリ (A over B) => フレームメモリ (B over A),
+%%   with 転送 arrows to/from [ウインドウA セーブエリア] [ウインドウB セーブエリア].

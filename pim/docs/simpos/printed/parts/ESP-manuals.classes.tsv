@@ -1,0 +1,11 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+standard_io_window	-	-	:create/2 ({size(..),position(..)} attribute list, Window)	:activate/0	PRINTED-INTERFACE	TM-388	17	-	usage in ESP Guide example "class my_window has nature standard_io_window" (OCR, not eyed)
+list	-	-	:create/1	-	NAMED	TM-388	62	-	":create(#list, L)" in examples; also simpos##list example p94 (OCR)
+symbolizer	-	-	:get_atom_token/2	-	PRINTED-INTERFACE	TM-388	170	-	"SIMPOS basic class symbolizer": :get_atom_token(#symbolizer, atom, Name) gives the JIS 16-bit print name (OCR, not eyed)
+window	-	-	:create/1	-	NAMED	TM-388	94	-	package example: window resolved to package simpos (OCR)
+standard_io_window	-	-	:create/2	:activate/0	PRINTED-INTERFACE	TM-364	74	73	:create(#standard_io_window,{size(300,500)},Window), :activate(Window) (OCR, Japanese manual; not eyed)
+standard_output_file	-	-	:create/2 (File, path string)	:close_output/0	PRINTED-INTERFACE	TM-364	74	73	:create(#standard_output_file, File, "btree.txt"), :close_output(File) (OCR)
+as_standard_io_window	-	-	-	-	NAMED	TM-364	-	-	appears in a nature list in TM-364 (OCR grep only)
+basic_window	-	-	-	-	NAMED	TR-044	19	15	example class object "#basic_window" in ESP Reference Manual syntax section
+general_font	-	-	-	-	NAMED	TM-112	-	-	#general_font in font editor user guide (OCR grep)
+font_executive	-	-	-	-	NAMED	TM-112	-	-	#font_executive (font editor; application)

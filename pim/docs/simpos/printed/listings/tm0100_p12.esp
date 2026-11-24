@@ -1,0 +1,54 @@
+% TM-100 PDF page 12, printed folio 10. Caption of Figure 3.3 (as_program, PDF p11),
+% then Section 3.1 (3) Interrupt process: Figure 3.4 "Part of class 'interrupt_process'"
+% (caption on PDF p13). Transcribed by eye from 300dpi crops. The lines "..." are
+% printed elisions in the original.
+% Prose: "An interrupt process is instantiated from class 'interrupt_process', which
+% inherits class 'process' since an interrupt process is a special kind of process.
+% Unlike an ordinary process, an interrupt process is resumed with an interrupt or a
+% software trap, and when suspended, it releases the processor.  Thus, class
+% 'interrupt_process' overrides the instance predicates :suspend and :resume of class
+% 'process'."
+-----------------------------------------------------------------------
+                Figure 3.3  Part of class 'as_program'
+
+-----------------------------------------------------------------------
+    class  interrupt_process  has
+
+    nature      process ;
+
+    attribute   context_stack,
+                stack_pointer ;
+
+    instance
+
+    attribute   interrupt_index ;
+
+    :resume(Process, Reason) :-
+            :inhibit_interrupt(#process),
+            %CHECK REASON
+            (   Process!status == suspended, !,
+                (   Reason = stream(Stream), !,
+                    Process!suspend_reason := nil,
+                    (   Process!suspend_flag == nil, !,
+                        Process!status := ready,
+                        %TRAP TO PROCESS
+                            ...
+                    ;   true ),
+                    :allow_interrupt(#process)
+                ;   :remove(Process!suspend_reasons, Reason), !,
+                    (   :empty(Process!suspend_reasons), !,
+                        Process!suspend_flag := nil
+                    ;   true ),
+                    (   Process!suspend_reason == nil,
+                        Process!suspend_flag == nil, !,
+                        Process!status := ready,
+                        %TRAP TO PROCESS
+                            ...
+                    ;   true ),
+                    :allow_interrupt(#process)
+                ;   :allow_interrupt(#process), !,
+                    fail )
+            ;   Process!status == ready, !,
+                :allow_interrupt(#process)
+            ;   :allow_interrupt(#process), !,
+                fail ), ! ;

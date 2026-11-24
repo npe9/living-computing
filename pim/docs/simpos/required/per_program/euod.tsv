@@ -1,0 +1,608 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	1606	euod/BUP/bup.esp:32
+builtin		builtin	:=	2	416	euod/BUP/bup.esp:33
+builtin		builtin	vector_element	3	376	euod/BUP/bup.esp:215
+builtin		builtin	string	3	201	euod/BUP/bup.esp:271
+builtin		builtin	set_vector_element	3	182	euod/BUP/bup.esp:867
+builtin		builtin	\==	2	94	euod/BUP/bup.esp:1531
+builtin		builtin	equal_string	2	91	euod/BUP/bup.esp:225
+builtin		builtin	==	2	79	euod/BUP/bup.esp:317
+builtin		builtin	stack_vector	2	79	euod/BUP/bup.esp:214
+builtin		builtin	<	2	76	euod/BUP/bup.esp:415
+builtin		builtin	>=	2	76	euod/DB/db3.esp:708
+builtin		builtin	new_heap_vector	2	48	euod/BUP/bup.esp:866
+builtin		builtin	>	2	42	euod/BUP/bup.esp:416
+builtin		builtin	freeze	2	41	euod/BUP/bup.esp:197
+builtin		builtin	divide_with_remainder	4	41	euod/DEF/def.esp:2350
+builtin		builtin	=<	2	38	euod/BUP/bup.esp:725
+builtin		builtin	heap_vector	2	37	euod/BUP/bup.esp:965
+builtin		builtin	number	1	33	euod/DB/db3.esp:514
+builtin		builtin	is	2	27	euod/DB/db3.esp:314
+builtin		builtin	melt	2	24	euod/BUP/bup.esp:253
+builtin		builtin	repeat	0	24	euod/DB/db1.esp:456
+builtin		builtin	unify	2	23	euod/WFFED/wffed2.esp:574
+builtin		constant a#b	16#str		23	
+builtin		builtin	unbound	1	22	euod/BUP/bup.esp:401
+builtin		builtin	not_equal_string	2	20	euod/DB/db1.esp:476
+builtin		builtin	new_stack_vector	2	17	euod/BUP/bup.esp:597
+builtin		builtin	atomic	1	13	euod/BUP/bup.esp:678
+builtin		builtin	atom	1	11	euod/BUP/bup.esp:212
+builtin		builtin	bound	1	11	euod/BUP/bup.esp:394
+builtin		builtin	equal	2	10	euod/WFFED/wffed2.esp:53
+builtin		constant a#b	control#str		9	
+builtin		builtin	set_string_element	3	7	euod/DB/db3.esp:313
+builtin		constant a#b	mouse#l		7	
+builtin		builtin	substring	4	6	euod/BUP/bup.esp:454
+builtin		builtin	new_string	3	6	euod/DB/db3.esp:305
+builtin		constant a#b	mouse#m		6	
+builtin		constant a#b	mouse#r		5	
+builtin		constant a#b	mouse#ll		5	
+builtin		constant a#b	keypad#str		5	
+builtin		builtin	integer	1	4	euod/BUP/bup.esp:141
+builtin		builtin	string_tail	3	4	euod/DB/db1.esp:819
+builtin		constant a#b	key#lf		4	
+builtin		constant a#b	mouse#mm		4	
+builtin		constant a#b	key#cr		3	
+builtin		builtin	string_element	3	2	euod/WFFED/wffed2.esp:551
+builtin		builtin	set_slot	3	2	euod/WFFED/wffed2.esp:166
+builtin		builtin	read_initiate	3	2	euod/BUP/bup.esp:304
+builtin		builtin	get_key_list	4	2	euod/DEF/def.esp:958
+builtin		constant a#b	meta#str		2	euod/DB/db3.esp:649
+builtin		builtin	list	1	1	euod/BUP/bup.esp:139
+builtin		constant a#b	mouse#rr		1	
+builtin		builtin	less_than	2	1	euod/WFFED/wffed2.esp:479
+builtin		builtin	not_equal	2	1	euod/WFFED/wffed2.esp:1252
+builtin		builtin	get_print_lines2	4	1	euod/DEF/def.esp:877
+builtin		constant a#b	key#esc		1	euod/WFFED/wffed1.esp:641
+requirement	string	class	append	3	148	euod/BUP/bup.esp:160
+requirement	string	ref	(#ref)		148	euod/BUP/bup.esp:160
+requirement	messenger	ref	(#ref)		78	euod/BUP/bup.esp:46
+requirement	symbolizer	ref	(#ref)		77	euod/BUP/bup.esp:21
+requirement	?	unknown	get_contents	2	69	euod/BUP/bup.esp:777
+requirement	messenger	class	show	2	68	euod/BUP/bup.esp:46
+requirement	?	ambiguous	parse	4	67	euod/BUP/bup.esp:1091
+requirement	?	unknown	putl	2	62	euod/BUP/bup.esp:1786
+requirement	?	unknown	get_at	3	59	euod/BUP/bup.esp:1548
+requirement	standard_output_file	instance	putl	2	44	euod/BUP/bup.esp:174
+requirement	list	class	create	2	44	euod/BUP/bup.esp:519
+requirement	list	ref	(#ref)		44	euod/BUP/bup.esp:519
+requirement	two_three_tree	ref	(#ref)		43	euod/PROOF/proof2.esp:1203
+requirement	list_index	instance	get_at	3	40	euod/BUP/bup.esp:221
+requirement	?	unknown	putf	2	34	euod/BUP/bup.esp:1186
+requirement	list_index	instance	add_at	3	34	euod/BUP/bup.esp:213
+requirement	?	ambiguous	get_font	2	32	euod/DB/db2.esp:89
+requirement	?	unknown	get_size	3	32	euod/DB/db3.esp:597
+requirement	two_three_tree	class	get_at	4	28	euod/PROOF/proof2.esp:1203
+requirement	?	ambiguous	activate	1	27	euod/DB/db3.esp:363
+requirement	ras_text_utility	ref	(#ref)		27	euod/DB/db1.esp:22
+requirement	?	unknown	add_last	2	25	euod/BUP/bup.esp:561
+requirement	list_index	class	create	2	22	euod/BUP/bup.esp:235
+requirement	list	instance	add_last	2	22	euod/BUP/bup.esp:810
+requirement	list_index	ref	(#ref)		22	euod/BUP/bup.esp:235
+requirement	code_man	ref	(#ref)		22	euod/DEF/def.esp:348
+requirement	as_program	nature	(inherited)		19	euod/DB/db2.esp:69
+requirement	?	unknown	set_size	3	19	euod/DEF/def.esp:564
+requirement	?	ambiguous	deactivate	1	18	euod/DB/db3.esp:366
+requirement	list	instance	put_contents	2	18	euod/DB/db1.esp:1166
+requirement	list	instance	get_contents	2	18	euod/BUP/bup.esp:807
+requirement	?	unknown	getl	2	17	euod/DB/db2.esp:63
+requirement	symbolizer	class	get_number	3	17	euod/DB/db1.esp:1295
+requirement	?	unknown	put_string	2	17	euod/WFFED/wffed2.esp:1119
+requirement	symbolizer	class	string_to_list	3	16	euod/BUP/bup.esp:21
+requirement	<root>	class	new	2	15	euod/BUP/bup.esp:14
+requirement	?	unknown	remove_at	3	15	euod/DB/db1.esp:945
+requirement	directory	ref	(#ref)		15	euod/BUP/bup.esp:162
+requirement	?	unknown	get_inside_size	3	15	euod/DEF/def.esp:871
+requirement	symbolizer	class	get_atom_string	3	13	euod/BUP/bup.esp:451
+requirement	standard_input_file	instance	getl	2	13	euod/DB/db1.esp:457
+requirement	monogyny_hash_index	instance	get_at	3	13	euod/PROOF/proof2.esp:5783
+requirement	monogyny_list_index	instance	get_at	3	13	euod/DB/db1.esp:206
+requirement	?	unknown	put_contents	2	13	euod/BUP/bup.esp:814
+requirement	?	unknown	ask_what_with_default	3	13	euod/DEF/def.esp:585
+requirement	list_index	instance	remove_at	3	12	euod/BUP/bup.esp:1277
+requirement	list_index	instance	get_keys	2	12	euod/BUP/bup.esp:229
+requirement	ras_text_utility	class	backup	2	12	euod/DB/db1.esp:64
+requirement	?	ambiguous	clear	1	11	euod/BUP/bup.esp:1068
+requirement	essential_scrolling_menu	class	create	3	11	euod/DEF/def.esp:525
+requirement	essential_scrolling_menu	ref	(#ref)		11	euod/DEF/def.esp:525
+requirement	?	unknown	erase_marker	2	11	euod/PROOF/proof1.esp:374
+requirement	?	unknown	add_at	3	10	euod/BUP/bup.esp:460
+requirement	?	unknown	send	2	10	euod/DB/db2.esp:256
+requirement	standard_input_file	class	create	3	10	euod/BUP/bup.esp:340
+requirement	standard_output_file	class	create	3	10	euod/BUP/bup.esp:168
+requirement	messenger	class	confirm	2	10	euod/DB/db1.esp:674
+requirement	?	unknown	set_position	3	10	euod/DEF/def.esp:2340
+requirement	temporary_menu	class	create	3	10	euod/DEF/def.esp:533
+requirement	standard_input_file	ref	(#ref)		10	euod/BUP/bup.esp:340
+requirement	standard_output_file	ref	(#ref)		10	euod/BUP/bup.esp:168
+requirement	monogyny_list_index	ref	(#ref)		10	euod/DB/db1.esp:270
+requirement	temporary_menu	ref	(#ref)		10	euod/DEF/def.esp:533
+requirement	monogyny_list_index	class	create	2	10	euod/DB/db1.esp:270
+requirement	as_program	slot	!code	0	10	euod/DEF/def.esp:309
+requirement	?	unknown	add_after	3	10	euod/PROOF/proof2.esp:628
+requirement	?	unknown	putl	1	9	euod/BUP/bup.esp:1790
+requirement	?	unknown	show	1	9	euod/DEF/def.esp:579
+requirement	standard_output_file	instance	close_output	1	9	euod/BUP/bup.esp:176
+requirement	monogyny_list_index	instance	put_at	3	9	euod/DB/db1.esp:236
+requirement	?	unknown	get_contents_with_key	2	9	euod/BUP/bup.esp:980
+requirement	?	unknown	putt	2	9	euod/BUP/bup.esp:1798
+requirement	standard_superior_window	instance	set_size	3	9	euod/DB/db3.esp:719
+requirement	?	unknown	get_inside_units	3	9	euod/DEF/def.esp:2420
+requirement	two_three_tree	class	add_at	5	9	euod/PROOF/proof2.esp:1208
+requirement	kk_qsort	class	quick_sort	3	9	euod/DEF/def.esp:518
+requirement	essential_window	instance	draw_line	8	9	euod/DEF/def.esp:1071
+requirement	kk_qsort	ref	(#ref)		9	euod/DEF/def.esp:518
+requirement	standard_input_file	instance	close_input	1	8	euod/DB/db1.esp:116
+requirement	symbolizer	class	get_number_string	3	8	euod/DB/db1.esp:1350
+requirement	?	unknown	set_superior	2	8	euod/DEF/def.esp:141
+requirement	?	unknown	add_first	2	8	euod/PROOF/proof2.esp:629
+requirement	standard_superior_window	instance	get_size	3	8	euod/DB/db3.esp:704
+requirement	temporary_menu	instance	show	1	8	euod/DEF/def.esp:825
+requirement	temporary_menu	instance	read	2	8	euod/DEF/def.esp:826
+requirement	standard_editor	instance	other_window	1	8	euod/DB/db2.esp:145
+requirement	?	unknown	read	2	8	euod/DB/db2.esp:244
+requirement	?	unknown	ask_which	4	8	euod/DB/db2.esp:253
+requirement	symbolizer	class	get_number_string	4	8	euod/DEF/def.esp:2208
+requirement	essential_window	class	create	3	7	euod/DEF/def.esp:929
+requirement	pmacs_window	instance	putl	2	7	euod/DEF/def.esp:641
+requirement	editor_text_buffer	ref	(#ref)		7	euod/DB/db2.esp:142
+requirement	directory	class	retrieve	4	7	euod/BUP/bup.esp:393
+requirement	standard_editor	instance	get_window	2	7	euod/DB/db2.esp:118
+requirement	as_program	slot	!selected_key	0	7	euod/DEF/def.esp:268
+requirement	as_program	instance	refute	3	7	euod/PROOF/proof1.esp:89
+requirement	?	ambiguous	draw_string	5	7	euod/PROOF/proof1.esp:154
+requirement	labeled_superior_window	instance	get_size	3	7	euod/PROOF/proof1.esp:735
+requirement	library	class	get_class_object	3	6	euod/BUP/bup.esp:365
+requirement	essential_window	instance	get_inside_units	3	6	euod/DEF/def.esp:1295
+requirement	symbolizer	class	list_to_string	3	6	euod/BUP/bup.esp:29
+requirement	?	unknown	get_border_width	2	6	euod/DB/db3.esp:598
+requirement	standard_editor	instance	current_buffer	2	6	euod/DB/db2.esp:143
+requirement	library	ref	(#ref)		6	euod/BUP/bup.esp:365
+requirement	essential_window	ref	(#ref)		6	euod/PROOF/proof1.esp:152
+requirement	standard_superior_window	instance	get_border_width	2	6	euod/DB/db3.esp:706
+requirement	standard_superior_window	instance	get_label_height	2	6	euod/DB/db3.esp:713
+requirement	?	unknown	erase_cursor	1	6	euod/PROOF/proof1.esp:156
+requirement	name	ref	(#ref)		6	euod/DB/db1.esp:176
+requirement	essential_scrolling_menu	instance	set_superior	2	6	euod/PROOF/proof2.esp:82
+requirement	essential_scrolling_menu	instance	activate	1	6	euod/PROOF/proof2.esp:89
+requirement	monogyny_list_index	instance	get_contents_with_key	2	6	euod/DB/db1.esp:211
+requirement	multi_column_menu	instance	get_size	3	6	euod/DB/db3.esp:578
+requirement	as_program	slot	!selected_code	0	6	euod/DEF/def.esp:284
+requirement	vkey4_table	class	get_pos	4	6	euod/DEF/def.esp:965
+requirement	?	unknown	set_marker_type	3	6	euod/PROOF/proof1.esp:370
+requirement	essential_scrolling_menu	instance	get_size	3	6	euod/PROOF/proof2.esp:75
+requirement	?	unknown	add_before	3	6	euod/PROOF/proof2.esp:627
+requirement	?	unknown	add_operator	4	5	euod/BUP/bup.esp:334
+requirement	hash_index	instance	get_at	3	5	euod/DB/db3.esp:48
+requirement	essential_window	instance	clear	1	5	euod/DEF/def.esp:957
+requirement	symbolizer	class	get_atom	3	5	euod/DB/db3.esp:517
+requirement	standard_io_window	instance	putl	2	5	euod/DEF/def.esp:418
+requirement	pmacs_window	instance	get_interpreter	2	5	euod/DB/db3.esp:584
+requirement	pathname	class	append	4	5	euod/DB/db1.esp:284
+requirement	process	ref	(#ref)		5	euod/DB/db3.esp:874
+requirement	pathname	ref	(#ref)		5	euod/DB/db1.esp:284
+requirement	set	ref	(#ref)		5	euod/BUP/bup.esp:234
+requirement	?	unknown	putc	2	5	euod/BUP/bup.esp:1841
+requirement	?	unknown	set_title	2	5	euod/DEF/def.esp:578
+requirement	?	unknown	get_keys	2	5	euod/BUP/bup.esp:477
+requirement	?	unknown	set_item_status	3	5	euod/DEF/def.esp:337
+requirement	monogyny_hash_index	instance	get_keys	2	5	euod/PROOF/proof2.esp:5771
+requirement	list_index	instance	get_contents_with_key	2	5	euod/DB/db1.esp:30
+requirement	pmacs_window	instance	set_size	3	5	euod/DB/db3.esp:605
+requirement	?	ambiguous	read	3	5	euod/DEF/def.esp:111
+requirement	?	ambiguous	add_item	3	5	euod/DEF/def.esp:561
+requirement	essential_window	instance	draw_string	5	5	euod/DEF/def.esp:1144
+requirement	?	unknown	draw_string	4	5	euod/DEF/def.esp:2427
+requirement	?	unknown	create_marker	2	5	euod/PROOF/proof1.esp:373
+requirement	{as_program|kk_init}	instance	refute	3	5	euod/WFFED/wffed1.esp:133
+requirement	process	class	create	2	4	euod/DB/db3.esp:874
+requirement	pmacs_window	instance	get_editor	2	4	euod/DB/db3.esp:644
+requirement	standard_output_file	instance	putt	2	4	euod/BUP/bup.esp:1141
+requirement	editor_text_buffer	class	get_buffer_instance	3	4	euod/DB/db2.esp:142
+requirement	list	instance	clear	1	4	euod/BUP/bup.esp:1066
+requirement	?	unknown	get_label_height	2	4	euod/DB/db3.esp:602
+requirement	?	ambiguous	set_font	2	4	euod/DB/db2.esp:170
+requirement	set	class	create	2	4	euod/BUP/bup.esp:234
+requirement	?	ambiguous	create	2	4	euod/BUP/bup.esp:368
+requirement	file_utility	ref	(#ref)		4	euod/DB/db1.esp:252
+requirement	library_utility	ref	(#ref)		4	euod/BUP/bup.esp:363
+requirement	standard_scrolling_menu	ref	(#ref)		4	euod/RULED/ruled1.esp:173
+requirement	?	unknown	current_buffer	2	4	euod/DB/db2.esp:189
+requirement	as_program	class	create	2	4	euod/DEF/def.esp:719
+requirement	?	ambiguous	get_string	3	4	euod/DB/db1.esp:165
+requirement	?	unknown	close_input	1	4	euod/BUP/bup.esp:346
+requirement	?	unknown	clear_items	1	4	euod/DEF/def.esp:245
+requirement	name	class	ident	3	4	euod/DB/db1.esp:176
+requirement	standard_output_file	instance	putf	2	4	euod/BUP/bup.esp:175
+requirement	standard_scrolling_menu	class	create	3	4	euod/RULED/ruled1.esp:173
+requirement	?	unknown	modification_date	2	4	euod/BUP/bup.esp:404
+requirement	?	unknown	remove_first	2	4	euod/BUP/bup.esp:1862
+requirement	list_index	instance	put_contents_with_key	2	4	euod/DB/db1.esp:41
+requirement	ras_text_utility	class	save	3	4	euod/DB/db1.esp:65
+requirement	monogyny_list_index	instance	put_contents_with_key	2	4	euod/DB/db1.esp:273
+requirement	?	unknown	find_with_wildcard	3	4	euod/DB/db1.esp:278
+requirement	?	ambiguous	set_key_assign	2	4	euod/DB/db2.esp:119
+requirement	ras_text_utility	class	get_text_from_buffer	3	4	euod/DB/db2.esp:146
+requirement	ras_text_utility	class	set_text_to_buffer	4	4	euod/DB/db2.esp:173
+requirement	multi_column_menu	instance	set_size	3	4	euod/DB/db3.esp:601
+requirement	code_man	class	to_meta	3	4	euod/DEF/def.esp:361
+requirement	?	unknown	delete_item	2	4	euod/DEF/def.esp:567
+requirement	essential_window	instance	set_size	3	4	euod/DEF/def.esp:1013
+requirement	?	unknown	draw_marker	2	4	euod/PROOF/proof1.esp:397
+requirement	?	unknown	draw_line	8	4	euod/PROOF/proof1.esp:539
+requirement	labeled_superior_window	class	create	3	4	euod/PROOF/proof1.esp:718
+requirement	labeled_superior_window	instance	activate	1	4	euod/PROOF/proof1.esp:741
+requirement	labeled_superior_window	instance	get_border_width	2	4	euod/PROOF/proof1.esp:868
+requirement	essential_scrolling_menu	instance	set_position	3	4	euod/PROOF/proof2.esp:86
+requirement	temporary_menu	instance	clear_items	1	4	euod/PROOF/proof2.esp:3056
+requirement	temporary_menu	instance	add_items	3	4	euod/PROOF/proof2.esp:3061
+requirement	?	unknown	get_activity	2	4	euod/PROOF/proof2.esp:3521
+requirement	<root>	instance	get_node_object	4	4	euod/PROOF/proof2.esp:3875
+requirement	labeled_superior_window	ref	(#ref)		4	euod/PROOF/proof1.esp:718
+requirement	process	instance	activate	2	3	euod/DB/db3.esp:1281
+requirement	port	class	create	2	3	euod/DB/db3.esp:812
+requirement	standard_input_file	instance	gett	2	3	euod/DB/db1.esp:115
+requirement	inferior_window	class	create	3	3	euod/DEF/def.esp:842
+requirement	font	class	create	3	3	euod/DEF/def.esp:794
+requirement	library_utility	class	create	2	3	euod/BUP/bup.esp:363
+requirement	standard_output_file	instance	putl	1	3	euod/BUP/bup.esp:1114
+requirement	hash_index	class	create	3	3	euod/DB/db3.esp:20
+requirement	hash_index	instance	add_at	3	3	euod/DB/db3.esp:92
+requirement	?	unknown	refute	3	3	euod/PROOF/proof2.esp:985
+requirement	monogyny_hash_index	class	create	3	3	euod/DB/db3.esp:346
+requirement	monogyny_hash_index	instance	put_at	3	3	euod/DB/db3.esp:373
+requirement	symbolizer	class	enter_atom	3	3	euod/DB/db1.esp:820
+requirement	two_three_tree	class	get_contents	3	3	euod/PROOF/proof2.esp:1492
+requirement	?	unknown	hide	1	3	euod/PROOF/proof2.esp:145
+requirement	?	unknown	add_items	3	3	euod/PROOF/proof2.esp:130
+requirement	?	unknown	class_object	2	3	euod/PROOF/proof2.esp:999
+requirement	set	instance	add	2	3	euod/BUP/bup.esp:198
+requirement	set	instance	get_contents	2	3	euod/BUP/bup.esp:205
+requirement	standard_editor	class	create	4	3	euod/DB/db3.esp:585
+requirement	?	unknown	add	2	3	euod/BUP/bup.esp:817
+requirement	pmacs_window	instance	activate	1	3	euod/DB/db3.esp:615
+requirement	standard_output_file	instance	putc	2	3	euod/BUP/bup.esp:1142
+requirement	port	ref	(#ref)		3	euod/DB/db3.esp:812
+requirement	font	ref	(#ref)		3	euod/DEF/def.esp:794
+requirement	hash_index	ref	(#ref)		3	euod/DB/db3.esp:20
+requirement	monogyny_hash_index	ref	(#ref)		3	euod/DB/db3.esp:346
+requirement	multi_column_menu	ref	(#ref)		3	euod/DB/db3.esp:577
+requirement	?	unknown	write_lines	2	3	euod/DEF/def.esp:891
+requirement	?	unknown	in	2	3	euod/BUP/bup.esp:816
+requirement	?	unknown	flash	1	3	euod/DB/db2.esp:219
+requirement	monogyny_hash_index	instance	remove_at	3	3	euod/DB/db3.esp:378
+requirement	directory	class	rename	5	3	euod/BUP/bup.esp:164
+requirement	?	unknown	gett	2	3	euod/BUP/bup.esp:342
+requirement	?	unknown	reset	1	3	euod/DB/db2.esp:51
+requirement	pmacs_window	instance	deactivate	1	3	euod/DB/db3.esp:619
+requirement	directory	class	delete	3	3	euod/BUP/bup.esp:162
+requirement	ras_text_utility	class	read	3	3	euod/DB/db1.esp:22
+requirement	file_utility	class	delete	3	3	euod/DB/db1.esp:252
+requirement	?	unknown	get_except_void	2	3	euod/DB/db1.esp:521
+requirement	multi_column_menu	class	create	3	3	euod/DB/db3.esp:577
+requirement	?	unknown	get_superior	2	3	euod/DEF/def.esp:132
+requirement	code_man	class	to_shift	3	3	euod/DEF/def.esp:349
+requirement	code_man	class	to_ctrl	3	3	euod/DEF/def.esp:358
+requirement	?	unknown	retrieve_all_items	2	3	euod/DEF/def.esp:562
+requirement	?	unknown	write_line	2	3	euod/DEF/def.esp:892
+requirement	essential_window	instance	get_superior	2	3	euod/DEF/def.esp:982
+requirement	essential_window	instance	erase_cursor	1	3	euod/DEF/def.esp:1309
+requirement	?	unknown	get_mouse_position	3	3	euod/PROOF/proof1.esp:256
+requirement	labeled_superior_window	instance	kill	1	3	euod/PROOF/proof1.esp:763
+requirement	labeled_superior_window	instance	read	3	3	euod/PROOF/proof1.esp:766
+requirement	labeled_superior_window	instance	set_position	3	3	euod/PROOF/proof1.esp:849
+requirement	labeled_superior_window	instance	get_label_height	2	3	euod/PROOF/proof1.esp:869
+requirement	labeled_superior_window	instance	set_size	3	3	euod/PROOF/proof1.esp:924
+requirement	essential_scrolling_menu	instance	clear_items	1	3	euod/PROOF/proof2.esp:120
+requirement	essential_scrolling_menu	instance	add_items	3	3	euod/PROOF/proof2.esp:121
+requirement	<root>	instance	substitute_proof	3	3	euod/PROOF/proof2.esp:3885
+requirement	essential_window	instance	activate	1	3	euod/PROOF/proof2.esp:3996
+requirement	essential_window	instance	get_font	2	3	euod/PROOF/proof2.esp:4027
+requirement	?	ambiguous	get_margins	5	3	euod/RULED/ruled1.esp:687
+requirement	?	unknown	name	2	3	euod/RULED/ruled1.esp:968
+requirement	?	unknown	new	2	2	euod/PROOF/proof2.esp:967
+requirement	?	ambiguous	kill	1	2	euod/RULED/ruled2.esp:134
+requirement	standard_input_file	instance	end_of_input	1	2	euod/DB/db1.esp:468
+requirement	standard_io_buffer	class	create	2	2	euod/BUP/bup.esp:517
+requirement	?	unknown	reshape	5	2	euod/DEF/def.esp:908
+requirement	?	unknown	get_position	3	2	euod/DEF/def.esp:2373
+requirement	editor_text_buffer	class	create	4	2	euod/DB/db2.esp:166
+requirement	library_utility	instance	catalogue	3	2	euod/BUP/bup.esp:364
+requirement	list	instance	remove	2	2	euod/PROOF/proof1.esp:966
+requirement	screen	class	get_size	3	2	euod/DEF/def.esp:2371
+requirement	directory	class	retrieve_with_wildcard	4	2	euod/DB/db1.esp:171
+requirement	?	unknown	close_output	1	2	euod/BUP/bup.esp:1768
+requirement	standard_superior_window	class	create	3	2	euod/DB/db3.esp:576
+requirement	pmacs_window	class	create	3	2	euod/DEF/def.esp:624
+requirement	?	unknown	stick_tap	2	2	euod/DB/db1.esp:515
+requirement	pmacs_window	instance	set_font	2	2	euod/DB/db3.esp:588
+requirement	inferior_window	nature	(inherited)		2	euod/DEF/def.esp:781
+requirement	as_input	nature	(inherited)		2	euod/DEF/def.esp:781
+requirement	standard_io_buffer	ref	(#ref)		2	euod/BUP/bup.esp:517
+requirement	screen	ref	(#ref)		2	euod/DEF/def.esp:2371
+requirement	standard_superior_window	ref	(#ref)		2	euod/DB/db3.esp:576
+requirement	?	unknown	set_input_buffer	2	2	euod/DB/db2.esp:169
+requirement	?	unknown	get_contents_at	3	2	euod/BUP/bup.esp:482
+requirement	standard_superior_window	instance	get_position	3	2	euod/DB/db3.esp:753
+requirement	standard_superior_window	instance	set_position	3	2	euod/DB/db3.esp:761
+requirement	?	unknown	get_count	3	2	euod/BUP/bup.esp:413
+requirement	?	unknown	delete_items	2	2	euod/PROOF/proof1.esp:1283
+requirement	inferior_window	instance	set_size	3	2	euod/DEF/def.esp:2444
+requirement	?	unknown	show_buffer	1	2	euod/DB/db2.esp:171
+requirement	list_index	instance	clear	1	2	euod/WFFED/wffed2.esp:1331
+requirement	list	instance	get_at	3	2	euod/PROOF/proof1.esp:434
+requirement	standard_menu	instance	deactivate	1	2	euod/RULED/ruled1.esp:1309
+requirement	pmacs_window	instance	kill	1	2	euod/DB/db3.esp:624
+requirement	standard_superior_window	instance	kill	1	2	euod/DB/db3.esp:625
+requirement	standard_superior_window	instance	activate	1	2	euod/DB/db3.esp:613
+requirement	standard_multi_column_menu	instance	deactivate	1	2	euod/RULED/ruled1.esp:1313
+requirement	standard_superior_window	instance	deactivate	1	2	euod/DB/db3.esp:620
+requirement	standard_choice_window	instance	deactivate	1	2	euod/RULED/ruled1.esp:1310
+requirement	pmacs_window	instance	getl	2	2	euod/DEF/def.esp:644
+requirement	set	instance	put_contents	2	2	euod/BUP/bup.esp:239
+requirement	?	unknown	add_at	2	2	euod/BUP/bup.esp:533
+requirement	monogyny_list_index	instance	get_keys	2	2	euod/DB/db1.esp:232
+requirement	monogyny_list_index	instance	remove_at	3	2	euod/DB/db1.esp:248
+requirement	name	class	type	3	2	euod/DB/db1.esp:290
+requirement	ras_with_input_window	instance	ask_what	3	2	euod/DB/db1.esp:427
+requirement	?	unknown	get_conclusion	2	2	euod/DB/db3.esp:52
+requirement	ras_with_input_window	slot	!counter	0	2	euod/DB/db3.esp:141
+requirement	?	unknown	create	4	2	euod/DB/db3.esp:630
+requirement	?	unknown	get_name	2	2	euod/DB/db3.esp:647
+requirement	pmacs_window	instance	show_buffer	1	2	euod/DB/db3.esp:650
+requirement	pmacs_window	instance	get_size	3	2	euod/DB/db3.esp:739
+requirement	as_message	class	create	2	2	euod/DB/db3.esp:814
+requirement	?	unknown	replace	2	2	euod/DEF/def.esp:44
+requirement	as_program	slot	!menu	0	2	euod/DEF/def.esp:124
+requirement	code_man	class	to_jis	3	2	euod/DEF/def.esp:355
+requirement	code_man	class	is_jis	2	2	euod/DEF/def.esp:357
+requirement	code_man	class	is_ctrlmeta	2	2	euod/DEF/def.esp:360
+requirement	list	instance	remove_at	3	2	euod/PROOF/proof1.esp:301
+requirement	?	unknown	get_marker_type	3	2	euod/PROOF/proof1.esp:395
+requirement	?	unknown	reshape_marker	7	2	euod/PROOF/proof1.esp:396
+requirement	?	ambiguous	set_position	2	2	euod/PROOF/proof1.esp:463
+requirement	labeled_superior_window	instance	get_position	3	2	euod/PROOF/proof1.esp:847
+requirement	labeled_superior_window	instance	get_margins	5	2	euod/PROOF/proof1.esp:867
+requirement	standard_popup_scrolling_menu	class	create	3	2	euod/PROOF/proof2.esp:30
+requirement	standard_popup_superior_window	class	create	3	2	euod/PROOF/proof2.esp:81
+requirement	standard_popup_scrolling_menu	instance	clear_items	1	2	euod/PROOF/proof2.esp:609
+requirement	standard_popup_scrolling_menu	instance	set_size	3	2	euod/PROOF/proof2.esp:611
+requirement	standard_popup_scrolling_menu	instance	add_items	3	2	euod/PROOF/proof2.esp:612
+requirement	standard_popup_scrolling_menu	instance	show	1	2	euod/PROOF/proof2.esp:613
+requirement	standard_popup_scrolling_menu	instance	read	2	2	euod/PROOF/proof2.esp:614
+requirement	standard_popup_scrolling_menu	instance	hide	1	2	euod/PROOF/proof2.esp:615
+requirement	two_three_tree	class	put_at	5	2	euod/PROOF/proof2.esp:1472
+requirement	<root>	slot	!theory_db	0	2	euod/PROOF/proof2.esp:2951
+requirement	<root>	instance	get_from_click	2	2	euod/PROOF/proof2.esp:3870
+requirement	<root>	instance	get_theory	2	2	euod/PROOF/proof2.esp:3871
+requirement	<root>	instance	get_proof_in_window	2	2	euod/PROOF/proof2.esp:3872
+requirement	<root>	instance	pattern_matching	5	2	euod/PROOF/proof2.esp:3881
+requirement	<root>	instance	subst_check	3	2	euod/PROOF/proof2.esp:3882
+requirement	<root>	instance	delete_dependency	4	2	euod/PROOF/proof2.esp:3901
+requirement	<root>	instance	add_dependency	4	2	euod/PROOF/proof2.esp:3902
+requirement	<root>	instance	replace_node_object	4	2	euod/PROOF/proof2.esp:3903
+requirement	<root>	instance	initialize_command	1	2	euod/PROOF/proof2.esp:3906
+requirement	<root>	instance	is_assumption	3	2	euod/PROOF/proof2.esp:3933
+requirement	<root>	instance	is_leaf	2	2	euod/PROOF/proof2.esp:3941
+requirement	essential_window	instance	set_title	2	2	euod/PROOF/proof2.esp:3970
+requirement	essential_window	instance	write_lines	2	2	euod/PROOF/proof2.esp:3992
+requirement	essential_window	instance	get_size	3	2	euod/PROOF/proof2.esp:4126
+requirement	?	unknown	assign_input_window	2	2	euod/PROOF/proof2.esp:5870
+requirement	standard_scrolling_menu	instance	activate	1	2	euod/RULED/ruled1.esp:135
+requirement	essential_window	instance	set_name	2	2	euod/RULED/ruled1.esp:168
+requirement	standard_scrolling_menu	instance	set_name	2	2	euod/RULED/ruled1.esp:174
+requirement	essential_window	instance	get_mouse_position	3	2	euod/RULED/ruled1.esp:290
+requirement	?	unknown	set_name	2	2	euod/RULED/ruled1.esp:623
+requirement	?	unknown	set_marker_position	4	2	euod/RULED/ruled1.esp:780
+requirement	?	unknown	set_marker_size	4	2	euod/RULED/ruled1.esp:781
+requirement	standard_scrolling_menu	instance	deactivate	1	2	euod/RULED/ruled1.esp:1312
+requirement	labeled_superior_window	instance	deactivate	1	2	euod/RULED/ruled1.esp:1314
+requirement	pmacs_window	instance	has_been_reshaped	1	2	euod/RULED/ruled1.esp:1402
+requirement	<root>	instance	putl	2	2	euod/RULED/ruled2.esp:27
+requirement	{as_program|kk_init}	instance	melt	3	2	euod/WFFED/wffed2.esp:872
+requirement	?	unknown	new_line	1	2	euod/WFFED/wffed2.esp:1068
+requirement	?	unknown	new_page	1	2	euod/WFFED/wffed2.esp:1072
+requirement	?	unknown	get_value	8	2	euod/WFFED/wffed2.esp:1121
+requirement	{as_program|kk_init}	instance	is_defined	6	2	euod/WFFED/wffed2.esp:1354
+requirement	vkey4_table	ref	(#ref)		2	euod/DEF/def.esp:936
+requirement	standard_popup_scrolling_menu	ref	(#ref)		2	euod/PROOF/proof2.esp:30
+requirement	standard_popup_superior_window	ref	(#ref)		2	euod/PROOF/proof2.esp:81
+requirement	process	class	self	2	1	euod/RULED/ruled1.esp:456
+requirement	?	unknown	exterminate	1	1	euod/RULED/ruled1.esp:457
+requirement	as_program	class	new	2	1	euod/DEF/def.esp:806
+requirement	?	unknown	remove	2	1	euod/PROOF/proof2.esp:3905
+requirement	standard_io_window	class	create	3	1	euod/DEF/def.esp:404
+requirement	standard_io_window	instance	activate	1	1	euod/DEF/def.esp:410
+requirement	?	unknown	insert	2	1	euod/DEF/def.esp:468
+requirement	?	unknown	see_current_line	2	1	euod/DEF/def.esp:35
+requirement	file_utility	class	copy	3	1	euod/DB/db1.esp:1030
+requirement	inferior_window	instance	get_size	3	1	euod/DEF/def.esp:2445
+requirement	essential_window	instance	set_font	2	1	euod/DEF/def.esp:1291
+requirement	?	unknown	end_of_input	1	1	euod/DB/db3.esp:199
+requirement	standard_io_buffer	instance	putt	2	1	euod/BUP/bup.esp:748
+requirement	standard_io_buffer	instance	getl	2	1	euod/BUP/bup.esp:749
+requirement	?	unknown	set_item_value	3	1	euod/RULED/ruled1.esp:1177
+requirement	?	unknown	remove_operator	3	1	euod/BUP/bup.esp:338
+requirement	?	ambiguous	getc	2	1	euod/DEF/def.esp:2254
+requirement	?	unknown	method	3	1	euod/PROOF/proof2.esp:984
+requirement	?	unknown	catalogue	3	1	euod/PROOF/proof2.esp:979
+requirement	?	unknown	release	1	1	euod/WFFED/wffed2.esp:1064
+requirement	?	unknown	activate	2	1	euod/DB/db3.esp:875
+requirement	pmacs_window	nature	(inherited)		1	euod/DEF/def.esp:426
+requirement	with_border	nature	(inherited)		1	euod/PROOF/proof1.esp:1169
+requirement	as_superior	nature	(inherited)		1	euod/PROOF/proof1.esp:1169
+requirement	reshape_notifier	nature	(inherited)		1	euod/PROOF/proof1.esp:1169
+requirement	as_graphics	nature	(inherited)		1	euod/DEF/def.esp:781
+requirement	standard_editor	nature	(inherited)		1	euod/DEF/def.esp:457
+requirement	font_13	ref	(#ref)		1	euod/DEF/def.esp:937
+requirement	time	ref	(#ref)		1	euod/DEF/def.esp:968
+requirement	standard_io_window	ref	(#ref)		1	euod/DEF/def.esp:404
+requirement	standard_menu	ref	(#ref)		1	euod/RULED/ruled1.esp:1359
+requirement	standard_multi_column_menu	ref	(#ref)		1	euod/RULED/ruled1.esp:1389
+requirement	standard_choice_window	ref	(#ref)		1	euod/RULED/ruled1.esp:1367
+requirement	superior_window	ref	(#ref)		1	euod/DEF/def.esp:927
+requirement	?	unknown	get_interpreter	2	1	euod/RULED/ruled2.esp:17
+requirement	<root>	instance	refute	3	1	euod/RULED/ruled1.esp:1229
+requirement	?	unknown	put_contents_with_key	2	1	euod/DB/db1.esp:991
+requirement	?	unknown	put_at	3	1	euod/PROOF/proof2.esp:5873
+requirement	date_time	class	now	2	1	euod/WFFED/wffed2.esp:1062
+requirement	list	instance	add_first	2	1	euod/BUP/bup.esp:1267
+requirement	standard_superior_window	instance	get_inside_size	3	1	euod/WFFED/wffed1.esp:450
+requirement	standard_multi_column_menu	class	create	3	1	euod/RULED/ruled1.esp:1389
+requirement	standard_choice_window	class	create	3	1	euod/RULED/ruled1.esp:1367
+requirement	standard_window	class	create	3	1	euod/RULED/ruled2.esp:104
+requirement	monogyny_hash_index	instance	put_contents_with_key	2	1	euod/DB/db3.esp:347
+requirement	monogyny_hash_index	instance	get_contents_with_key	2	1	euod/DB/db3.esp:383
+requirement	superior_window	class	create	3	1	euod/DEF/def.esp:927
+requirement	inferior_window	instance	get_position	3	1	euod/DEF/def.esp:2446
+requirement	inferior_window	instance	set_position	3	1	euod/DEF/def.esp:2455
+requirement	standard_menu	class	create	3	1	euod/RULED/ruled1.esp:1359
+requirement	?	unknown	select_buffer	2	1	euod/DB/db3.esp:656
+requirement	?	unknown	set_region	4	1	euod/DEF/def.esp:39
+requirement	inferior_window	instance	deactivate	1	1	euod/DEF/def.esp:2447
+requirement	as_output	nature	(inherited)		1	euod/DEF/def.esp:781
+requirement	date_time	ref	(#ref)		1	euod/WFFED/wffed2.esp:1062
+requirement	standard_window	ref	(#ref)		1	euod/RULED/ruled2.esp:104
+requirement	wildcard	ref	(#ref)		1	euod/DB/db1.esp:818
+requirement	?	unknown	draw_filled_rectangle	6	1	euod/RULED/ruled2.esp:163
+requirement	standard_menu	instance	activate	1	1	euod/RULED/ruled1.esp:1325
+requirement	standard_io_window	instance	deactivate	1	1	euod/DEF/def.esp:414
+requirement	?	unknown	read_file	4	1	euod/DB/db3.esp:646
+requirement	standard_multi_column_menu	instance	activate	1	1	euod/RULED/ruled1.esp:1329
+requirement	standard_choice_window	instance	activate	1	1	euod/RULED/ruled1.esp:1326
+requirement	<root>	instance	goal	5	1	euod/BUP/bup.esp:60
+requirement	esp_operator_pool	class	create	2	1	euod/BUP/bup.esp:333
+requirement	?	unknown	set_parsing_operator	2	1	euod/BUP/bup.esp:341
+requirement	?	unknown	add_last	3	1	euod/BUP/bup.esp:555
+requirement	set	class	create	3	1	euod/BUP/bup.esp:844
+requirement	<root>	instance	bupl	2	1	euod/BUP/bup.esp:1218
+requirement	<root>	instance	get_operator_data1	10	1	euod/BUP/bup.esp:2087
+requirement	<root>	slot	!wt_kakko_nt	0	1	euod/BUP/bup.esp:2201
+requirement	list_index	instance	remove_at	2	1	euod/DB/db1.esp:58
+requirement	ras_with_input_window	instance	get_derived_rule_data	5	1	euod/DB/db1.esp:229
+requirement	wildcard	class	string	4	1	euod/DB/db1.esp:818
+requirement	ras_with_input_window	class	new	2	1	euod/DB/db1.esp:1388
+requirement	ras_with_input_window	instance	initialize_input	2	1	euod/DB/db1.esp:1407
+requirement	?	ambiguous	activate_window	1	1	euod/DB/db2.esp:94
+requirement	standard_editor	instance	view_two_windows	1	1	euod/DB/db2.esp:172
+requirement	expandable_array	class	create	3	1	euod/DB/db3.esp:19
+requirement	?	unknown	get_conlusion	2	1	euod/DB/db3.esp:49
+requirement	ras_with_input_window	instance	get_inference_rule	5	1	euod/DB/db3.esp:97
+requirement	expandable_array	instance	add_at	3	1	euod/DB/db3.esp:144
+requirement	multi_column_menu	instance	set_superior	2	1	euod/DB/db3.esp:581
+requirement	pmacs_window	class	create_with_input	4	1	euod/DB/db3.esp:583
+requirement	standard_editor	instance	select_buffer	2	1	euod/DB/db3.esp:590
+requirement	multi_column_menu	instance	activate	1	1	euod/DB/db3.esp:614
+requirement	multi_column_menu	instance	deactivate	1	1	euod/DB/db3.esp:618
+requirement	multi_column_menu	instance	kill	1	1	euod/DB/db3.esp:623
+requirement	editor_text_buffer	class	rename_buffer	3	1	euod/DB/db3.esp:648
+requirement	?	unknown	read_only_buffer	1	1	euod/DB/db3.esp:675
+requirement	?	unknown	set_size	1	1	euod/DB/db3.esp:738
+requirement	port	instance	send	2	1	euod/DB/db3.esp:841
+requirement	port_set	class	create	2	1	euod/DB/db3.esp:851
+requirement	port_set	instance	receive	2	1	euod/DB/db3.esp:860
+requirement	port	instance	connect	2	1	euod/DB/db3.esp:866
+requirement	port_set	instance	add	2	1	euod/DB/db3.esp:867
+requirement	ras_with_input_window	instance	assign_input_window	2	1	euod/DB/db3.esp:1280
+requirement	standard_editor	instance	beginning_of_line	1	1	euod/DEF/def.esp:34
+requirement	?	unknown	remove_region	2	1	euod/DEF/def.esp:46
+requirement	symbolizer	class	get_number_token	4	1	euod/DEF/def.esp:185
+requirement	?	unknown	add_items	4	1	euod/DEF/def.esp:254
+requirement	code_man	class	is_nonshift	2	1	euod/DEF/def.esp:348
+requirement	code_man	class	is_shift	2	1	euod/DEF/def.esp:351
+requirement	code_man	class	to_nonshift	3	1	euod/DEF/def.esp:352
+requirement	code_man	class	is_ctrl	2	1	euod/DEF/def.esp:354
+requirement	code_man	class	is_meta	2	1	euod/DEF/def.esp:363
+requirement	standard_io_window	instance	read	2	1	euod/DEF/def.esp:411
+requirement	font_editor	class	create	2	1	euod/DEF/def.esp:412
+requirement	font_editor	instance	goal	1	1	euod/DEF/def.esp:413
+requirement	?	unknown	input_data	2	1	euod/DEF/def.esp:415
+requirement	standard_editor	slot	!overwrite_mode	0	1	euod/DEF/def.esp:467
+requirement	standard_input_text_buffer_accessor	class	create	3	1	euod/DEF/def.esp:851
+requirement	?	unknown	expand	9	1	euod/DEF/def.esp:909
+requirement	?	unknown	hardcopy	2	1	euod/DEF/def.esp:910
+requirement	alarm_watch	class	create	2	1	euod/DEF/def.esp:967
+requirement	time	class	create	2	1	euod/DEF/def.esp:968
+requirement	time	instance	set_value	5	1	euod/DEF/def.esp:969
+requirement	alarm_watch	instance	on_after	2	1	euod/DEF/def.esp:970
+requirement	alarm_watch	instance	wait	1	1	euod/DEF/def.esp:971
+requirement	vkey4_table	class	get_title	3	1	euod/DEF/def.esp:1008
+requirement	essential_window	instance	set_position	3	1	euod/DEF/def.esp:1028
+requirement	?	unknown	get_pos	4	1	euod/DEF/def.esp:1039
+requirement	essential_window	instance	draw_rectangle	8	1	euod/DEF/def.esp:1051
+requirement	essential_window	instance	draw_filled_rectangle	6	1	euod/DEF/def.esp:1191
+requirement	essential_window	instance	get_mouse_dot_position	3	1	euod/DEF/def.esp:1205
+requirement	vkey4_table	class	get_code	3	1	euod/DEF/def.esp:1206
+requirement	code_man	class	to_ctrlmeta	3	1	euod/DEF/def.esp:1253
+requirement	vkey4_table	class	new	2	1	euod/DEF/def.esp:1284
+requirement	vkey4_table	instance	set_key_assign	2	1	euod/DEF/def.esp:1285
+requirement	vkey4_table	instance	set_factor	2	1	euod/DEF/def.esp:1299
+requirement	vkey4_table	instance	initiate	1	1	euod/DEF/def.esp:1300
+requirement	vkey4_table	instance	get_window_size	3	1	euod/DEF/def.esp:1301
+requirement	?	unknown	disable_abort_key	1	1	euod/DEF/def.esp:2247
+requirement	?	unknown	disable_help_key	1	1	euod/DEF/def.esp:2248
+requirement	{as_program|ras_with_font_key_assignment}	instance	assign_loop	2	1	euod/DEF/def.esp:2271
+requirement	?	unknown	retrieve_all_strings	2	1	euod/DEF/def.esp:2395
+requirement	standard_popup_multi_select_scrolling_menu	class	create	3	1	euod/PROOF/proof1.esp:84
+requirement	standard_popup_multi_select_scrolling_menu	instance	clear_items	1	1	euod/PROOF/proof1.esp:103
+requirement	standard_popup_multi_select_scrolling_menu	instance	add_items	3	1	euod/PROOF/proof1.esp:104
+requirement	standard_popup_multi_select_scrolling_menu	instance	show	1	1	euod/PROOF/proof1.esp:105
+requirement	standard_popup_multi_select_scrolling_menu	instance	read	2	1	euod/PROOF/proof1.esp:106
+requirement	standard_popup_multi_select_scrolling_menu	instance	hide	1	1	euod/PROOF/proof1.esp:112
+requirement	list	instance	remove_first	2	1	euod/PROOF/proof1.esp:368
+requirement	labeled_superior_window	instance	get_inside_size	3	1	euod/PROOF/proof1.esp:866
+requirement	?	unknown	ask_what_multi	3	1	euod/PROOF/proof2.esp:1151
+requirement	two_three_tree	class	put_contents	4	1	euod/PROOF/proof2.esp:1494
+requirement	standard_popup_choice_window	class	create	3	1	euod/PROOF/proof2.esp:2451
+requirement	standard_temporary_scrolling_menu	class	create	3	1	euod/PROOF/proof2.esp:2782
+requirement	standard_temporary_scrolling_menu	instance	clear_items	1	1	euod/PROOF/proof2.esp:2863
+requirement	standard_temporary_scrolling_menu	instance	add_items	3	1	euod/PROOF/proof2.esp:2864
+requirement	standard_temporary_scrolling_menu	instance	show	1	1	euod/PROOF/proof2.esp:2865
+requirement	standard_temporary_scrolling_menu	instance	read	2	1	euod/PROOF/proof2.esp:2866
+requirement	standard_temporary_scrolling_menu	instance	hide	1	1	euod/PROOF/proof2.esp:2867
+requirement	<root>	instance	read_proof	4	1	euod/PROOF/proof2.esp:2954
+requirement	<root>	slot	!assume_number	0	1	euod/PROOF/proof2.esp:2955
+requirement	<root>	instance	get_assumption_object	5	1	euod/PROOF/proof2.esp:3919
+requirement	<root>	instance	get_wff_by_number	4	1	euod/PROOF/proof2.esp:3923
+requirement	essential_window	instance	deactivate	1	1	euod/PROOF/proof2.esp:4000
+requirement	essential_window	instance	move_cursor	3	1	euod/PROOF/proof2.esp:4052
+requirement	essential_window	instance	write_line	2	1	euod/PROOF/proof2.esp:4053
+requirement	?	unknown	rename_proof	2	1	euod/PROOF/proof2.esp:5909
+requirement	standard_scrolling_menu	instance	clear_items	1	1	euod/RULED/ruled1.esp:145
+requirement	standard_scrolling_menu	instance	add_items	3	1	euod/RULED/ruled1.esp:146
+requirement	?	unknown	read_with_code	4	1	euod/RULED/ruled1.esp:855
+requirement	as_program	instance	delete_items	2	1	euod/RULED/ruled1.esp:950
+requirement	<root>	instance	write_condition	2	1	euod/RULED/ruled1.esp:1236
+requirement	standard_menu	instance	set_name	2	1	euod/RULED/ruled1.esp:1360
+requirement	standard_choice_window	instance	set_name	2	1	euod/RULED/ruled1.esp:1368
+requirement	pmacs_window	instance	set_name	2	1	euod/RULED/ruled1.esp:1375
+requirement	standard_multi_column_menu	instance	set_name	2	1	euod/RULED/ruled1.esp:1390
+requirement	<root>	instance	deactivate	1	1	euod/RULED/ruled2.esp:29
+requirement	<root>	instance	getl	2	1	euod/RULED/ruled2.esp:42
+requirement	temporary_menu	instance	set_title	2	1	euod/RULED/ruled2.esp:325
+requirement	?	unknown	get_item_status	3	1	euod/RULED/ruled2.esp:528
+requirement	standard_superior_window	instance	read	3	1	euod/WFFED/wffed1.esp:328
+requirement	standard_superior_window	instance	get_margins	5	1	euod/WFFED/wffed1.esp:451
+requirement	{as_program|kk_init}	instance	set_max_level	2	1	euod/WFFED/wffed1.esp:1270
+requirement	?	unknown	move_cursor	3	1	euod/WFFED/wffed1.esp:1983
+requirement	kk_init	class	new	2	1	euod/WFFED/wffed2.esp:1039
+requirement	printer	class	get	2	1	euod/WFFED/wffed2.esp:1061
+requirement	?	unknown	put_line	2	1	euod/WFFED/wffed2.esp:1076
+requirement	list_index	instance	get_contents_at	3	1	euod/WFFED/wffed2.esp:1395
+requirement	ras_with_input_window	nature	(inherited)		1	euod/DB/db1.esp:1367
+requirement	essential_window	nature	(inherited)		1	euod/DEF/def.esp:922
+requirement	ras_with_font_key_assignment	nature	(inherited)		1	euod/DEF/def.esp:2213
+requirement	as_message	nature	(inherited)		1	euod/PROOF/proof1.esp:1133
+requirement	with_two_labels	nature	(inherited)		1	euod/PROOF/proof1.esp:1169
+requirement	kk_init	nature	(inherited)		1	euod/WFFED/wffed2.esp:1032
+requirement	esp_operator_pool	ref	(#ref)		1	euod/BUP/bup.esp:333
+requirement	expandable_array	ref	(#ref)		1	euod/DB/db3.esp:19
+requirement	port_set	ref	(#ref)		1	euod/DB/db3.esp:851
+requirement	font_editor	ref	(#ref)		1	euod/DEF/def.esp:412
+requirement	standard_input_text_buffer_accessor	ref	(#ref)		1	euod/DEF/def.esp:851
+requirement	alarm_watch	ref	(#ref)		1	euod/DEF/def.esp:967
+requirement	inferior_window	ref	(#ref)		1	euod/DEF/def.esp:2293
+requirement	standard_popup_multi_select_scrolling_menu	ref	(#ref)		1	euod/PROOF/proof1.esp:84
+requirement	standard_popup_choice_window	ref	(#ref)		1	euod/PROOF/proof2.esp:2451
+requirement	standard_temporary_scrolling_menu	ref	(#ref)		1	euod/PROOF/proof2.esp:2782
+requirement	printer	ref	(#ref)		1	euod/WFFED/wffed2.esp:1061

@@ -1,0 +1,25 @@
+program	unit(dir)	esp_files	send_keys(raw class form)	builtin_keys	total
+knov	knov	54	3	0	3
+disc	disc/DATA	4	5	6	11
+euod	euod/BUP	1	74	25	99
+kappa2	kappa2/kvif	3	71	28	99
+txtstrct	txtstrct	21	83	30	113
+chal	chal	12	87	39	126
+euod	euod/WFFED	2	95	34	129
+euod	euod/RULED	2	163	22	185
+euod	euod/DEF	1	179	23	202
+utter	utter/source	59	134	68	202
+euod	euod/DB	3	206	26	232
+euod	euod/PROOF	2	256	27	283
+disc	disc	71	262	32	294
+cal-esp	cal-esp/cal2.12	40	290	54	344
+icotext	icotext/src	99	315	38	353
+sum	sum/src	95	267	103	370
+knov	knov/src	53	337	41	378
+fuzclust	fuzclust/fuzclust	65	476	36	512
+cal-esp	cal-esp/deb2.12	26	543	71	614
+papyrus	papyrus_src/demo	149	665	51	716
+kwic-esp	kwic-esp-002/kwic-esp	31	796	93	889
+cil	cil/src	31	781	193	974
+gog-esp	gog-esp	210	987	58	1045
+kappa2	kappa2/kappa2	687	2982	91	3073

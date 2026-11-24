@@ -1,0 +1,1105 @@
+package	selector	arity_cell	cells	source_side_classes_with_same_selector
+pimfep	create	2	80	access_status,alarm_watch,as_message,as_program,binary_file_marker,cal_op_menu,channel,channel_set
+pimfep	self	2	59	process
+pimfep	get_window	2	27	pmacs_standard_editor,standard_editor
+pimfep	unlock	1	25	as_class_with_lock,{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_lasting_resource|with_lock},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
+pimfep	lock	1	24	as_class_with_lock,{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_lasting_resource|with_lock},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{with_lock|as_resource}
+pimfep	append	3	22	string
+pimfep	assign	1	20	as_resource,library,{as_lasting_resource|with_lock},{as_resource|with_lock},{with_lock|as_resource},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimfep	activate	2	16	essential_window,process,standard_choice_window,standard_io_window,standard_menu,standard_multi_select_scrolling_menu,standard_scrolling_menu,window_without_label
+pimfep	class_object	2	16	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimfep	get_my_node	2	14	network_node_name
+pimfep	set_position	3	14	<root>,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,pmacs_window,reshape_notifier
+pimfep	read	2	13	binary_file_tap,choice_window,essential_on_off_menu,essential_scrolling_menu,essential_temporary_window,essential_window,fdd_binary_file_tap,kappaREP_select_menu
+pimfep	putc	2	12	pmacs_window,standard_io_buffer,standard_output_file,{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+pimfep	set_sub_priority	2	11	
+pimfep	exterminate	1	11	process
+pimfep	send	2	10	<root>,channel,port,rs232c
+pimfep	set_receive_timeout	2	10	
+pimfep	get_number	3	10	process,symbolizer
+pimfep	kill	1	10	cal_window,choice_window,choice_window_with_no_execute,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window,imi_super_win,inferior_window
+pimfep	information	3	10	coordinator
+pimfep	set_content	2	9	message
+pimfep	putl	2	9	<root>,cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{with_border|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|temporary_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimfep	tag_catch	9	8	
+pimfep	is_installed	1	7	
+pimfep	shut_down	3	7	
+pimfep	close_socket	3	7	
+pimfep	class_name	2	7	
+pimfep	get_interpreter	2	7	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimfep	resign	1	7	<root>,as_resource,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{as_lasting_resource|with_lock},{as_resource|with_lock},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimfep	get_size	3	7	choice_window_with_no_execute,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,menu_with_superior_input_buffer,multi_column_menu
+pimfep	sub_priority	2	6	
+pimfep	convert	7	6	network_listener_buffer
+pimfep	copy	3	6	file_utility,string
+pimfep	wait	3	6	
+pimfep	flash	1	6	cal_window,pmacs_window,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}
+pimfep	show	1	6	cal_window,essential_scrolling_menu_with_superior_input_buffer,essential_window,standard_io_window,standard_menu,standard_popup_menu,standard_popup_multi_select_scrolling_menu,standard_popup_scrolling_menu
+pimfep	beep	1	6	editor_main_window,essential_temporary_window,standard_io_window,standard_temporary_choice_window,standard_temporary_menu,standard_temporary_window,temporary_menu,window_without_label
+pimfep	move_to	2	6	
+pimfep	check_info	3	6	library
+pimfep	catch	5	6	
+pimfep	set_count	2	5	
+pimfep	data_buffer	2	5	network_listener_buffer,string_buffer
+pimfep	free	1	5	
+pimfep	add_last	2	5	list,list_bucket
+pimfep	set_send_data_size	2	5	network_listener_buffer
+pimfep	get_editor	2	5	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimfep	get_address	4	5	
+pimfep	has_been_reshaped	1	5	pmacs_window
+pimfep	write	3	5	
+pimfep	status	3	5	
+pimfep	set_waiting_time	3	4	
+pimfep	set_receive_completion_timeout	2	4	
+pimfep	send	5	4	
+pimfep	input_data	2	4	pmacs_window,standard_io_window
+pimfep	set_font	2	4	editor_main_window,essential_scrolling_menu,essential_window,kappaREP_select_menu,menu,pmacs_window,popup_choice_window,printer
+pimfep	input_region	2	4	
+pimfep	position	3	4	
+pimfep	retrieve	4	4	directory
+pimfep	close_input	1	4	standard_input_file,standard_input_text_buffer_accessor
+pimfep	get_number_string	3	4	symbolizer
+pimfep	make_only	3	4	binary_file,fdd_binary_file
+pimfep	open	3	4	binary_file,fdd_binary_file
+pimfep	get_parm	4	3	
+pimfep	submit_read	4	3	
+pimfep	disconnect	3	3	
+pimfep	get_user_profile	5	3	
+pimfep	attach_user_profile	3	3	
+pimfep	wait_and_return	2	3	
+pimfep	cancel	1	3	
+pimfep	write_data	5	3	
+pimfep	current_position	2	3	
+pimfep	set_text_size	3	3	
+pimfep	make_class_object	2	3	library
+pimfep	set_send_timeout	2	3	
+pimfep	remove	3	3	
+pimfep	request_data_size	2	3	
+pimfep	write_data	2	3	
+pimfep	write_next	1	3	
+pimfep	invoke	1	3	
+pimfep	putt	2	3	as_esp_unparser,cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file
+pimfep	gett	2	3	as_esp_parser,pmacs_window,standard_input_file,standard_input_text_buffer_accessor,standard_io_buffer,standard_io_window
+pimfep	clear_buffer	1	3	cal_window,standard_editor,standard_io_window,standard_menu
+pimfep	now	2	2	date,date_time,time
+pimfep	on_after	2	2	alarm_watch
+pimfep	password_list	2	2	
+pimfep	set_user	2	2	
+pimfep	set_world	2	2	
+pimfep	see	2	2	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}
+pimfep	local_name	2	2	
+pimfep	network_type	3	2	
+pimfep	me_psi	1	2	str_machine_id
+pimfep	listen	2	2	
+pimfep	sense_receive_completion	4	2	
+pimfep	who_is_connecting_to	2	2	
+pimfep	on_after	5	2	
+pimfep	get_content	2	2	
+pimfep	receive_request	2	2	
+pimfep	hide	1	2	essential_scrolling_menu_with_superior_input_buffer,standard_popup_menu,standard_popup_multi_select_scrolling_menu,standard_popup_scrolling_menu,standard_superior_window,standard_temporary_menu,standard_temporary_multi_column_menu,standard_temporary_scrolling_menu
+pimfep	insert_string	2	2	
+pimfep	get_text_size	3	2	
+pimfep	end_of_buffer	2	2	
+pimfep	unlock_with_hook	1	2	{as_resource|with_lock}
+pimfep	lock_with_hook	1	2	{as_resource|with_lock}
+pimfep	from_kanji	3	2	ascii_coder
+pimfep	putf	3	2	cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+pimfep	is_directory	1	2	
+pimfep	undelete	3	2	
+pimfep	end_of_input	1	2	standard_input_file,standard_io_buffer
+pimfep	parent_directory	5	2	directory
+pimfep	get_string	3	2	date_time
+pimfep	size	2	2	expandable_array,standard_io_buffer
+pimfep	get_contents_at	3	2	func_index,hash_index,list_index
+pimfep	clear_slot	1	2	
+pimfep	node_full_name	3	2	
+pimfep	take	2	2	disk_io_message
+pimfep	split	4	2	e_string
+pimfep	node_name	2	2	
+pimfep	abort	3	2	
+pimfep	shutdown	1	2	
+pimfep	get_program_name	2	2	
+pimfep	set_label_font	2	2	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
+pimfep	get_count	2	1	
+pimfep	on_at	2	1	alarm_watch
+pimfep	locked	1	1	{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
+pimfep	get_keys	2	1	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimfep	default_logical_name	2	1	
+pimfep	root_path	3	1	
+pimfep	remote_or_local	6	1	pathname
+pimfep	set_password_list	2	1	
+pimfep	append	4	1	pathname,std
+pimfep	define	3	1	
+pimfep	set_default_logical_name	2	1	
+pimfep	put_at	3	1	array,expandable_array,initiation_table,monogyny_hash_index,monogyny_list_index,sparse_array
+pimfep	initial_mode	2	1	
+pimfep	set_access_mode	2	1	
+pimfep	passwords	3	1	
+pimfep	set_passwords	2	1	
+pimfep	convert_con_req	6	1	as_server_program
+pimfep	get_line	2	1	as_server_program
+pimfep	give_answer	3	1	as_server_program
+pimfep	connect	3	1	
+pimfep	consult_group_member	4	1	
+pimfep	consult_network_address	3	1	
+pimfep	segment_node_address	5	1	
+pimfep	get_node_name	5	1	
+pimfep	get_name	4	1	
+pimfep	grant_network_group	4	1	
+pimfep	cancel_listen	3	1	
+pimfep	get_font	2	1	essential_window,format_printer,{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}
+pimfep	get_title	2	1	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}
+pimfep	get_name	2	1	
+pimfep	set_input_buffer	2	1	pmacs_window,{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimfep	assigned	1	1	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimfep	search	5	1	
+pimfep	see_position	4	1	
+pimfep	get_buffer_instance	3	1	editor_text_buffer
+pimfep	delete	3	1	directory,file_utility
+pimfep	reshape	5	1	{reshape_notifier|as_input_buffer|as_mouse_input|as_superior},{sash|with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}
+pimfep	get_contents_with_key	2	1	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimfep	show	2	1	messenger,stop_watch
+pimfep	putf	2	1	pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}
+pimfep	to_kanji	3	1	
+pimfep	get_atom	3	1	symbolizer
+pimfep	terminate	1	1	
+pimfep	to_tcpip_address	3	1	
+pimfep	full_pathname	2	1	
+pimfep	getb	3	1	standard_input_file,standard_io_buffer
+pimfep	file	2	1	
+pimfep	at_end	1	1	binary_file_tap,fdd_binary_file_tap
+pimfep	go_to_end	1	1	
+pimfep	owner_name	2	1	as_global_object
+pimfep	update_user_name	2	1	
+pimfep	creation_date	2	1	
+pimfep	modification_date	2	1	
+pimfep	link_counter	2	1	
+pimfep	retrieve	3	1	as_global_object,directory
+pimfep	not_directory	1	1	
+pimfep	find	3	1	
+pimfep	open	5	1	binary_file,fdd_binary_file
+pimfep	enter_atom	3	1	symbolizer
+pimfep	set_scsi_id	2	1	
+pimfep	try_to_get	2	1	channel_set
+pimfep	kill	2	1	editor_text_buffer,file_utility
+pimfep	delete_with_wildcard	3	1	
+pimfep	undelete_with_wildcard	3	1	
+pimfep	expunge	1	1	
+pimfep	purge	2	1	
+pimfep	find_with_wildcard	3	1	
+pimfep	deleted	5	1	
+pimfep	make	4	1	directory,fdd_binary_file
+pimfep	#	3	1	
+pimfep	connect	5	1	
+pimfep	set_request	5	1	
+pimfep	get_message_type	2	1	
+pimfep	get_reply	3	1	
+pimfep	get_status	4	1	
+pimfep	get_additional_message	2	1	
+pimfep	set_process_id	2	1	
+pimfep	set_server_node	2	1	
+pimfep	invocation_stack	2	1	
+pimfep	get_first	2	1	list,sorted_sequence
+pimfep	assign	2	1	
+pimfep	try_to_see	2	1	
+pimfep	set_inside_size	3	1	
+pimfep	get_attribute	8	1	
+pimfep	erase_cursor	1	1	essential_temporary_window,essential_window,standard_io_window,standard_popup_window,standard_temporary_window,standard_window,window_without_label,{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}
+pimfep	load	5	1	
+pimfep	confirm	3	1	messenger
+pimfep	set_item_value	3	1	
+pimfep	trace	1	1	
+pimfep	catch	8	1	
+pimfep	send_data	4	1	
+pimfep	receive_command	3	1	
+pimfep	set_area_limit_execution	7	1	process
+pimfep	set_package	2	1	library_utility,process
+pimfep	children	2	1	
+pimfep	version	2	1	version
+pimfep	user_password	2	1	
+pimfep	connect	2	1	port
+pimfep	connect	6	1	
+pimfep	network_type	2	1	
+pimfep	number_to_hex_string	3	1	
+pimfep	get_profile	2	1	
+pimfep	consult_process_name	3	1	
+pimfep	get_socket_name	4	1	
+pimfep	inhibit_echo	1	1	
+pimfep	permit_echo	1	1	
+pimfep	warp_mouse	3	1	as_markers,{as_markers|standard_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window},{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window},{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimscsi	new	2	13	<root>,access_status,ahp,as_class_with_lock,as_esp_parser,as_esp_unparser,as_event_handler,as_global_object
+pimscsi	class_object	2	9	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimscsi	raise	5	7	debugger_error
+pimscsi	self	2	6	process
+pimscsi	get_at	3	6	array,expandable_array,hash_index,initiation_table,list,list_bucket,list_index,monogyny_hash_index
+pimscsi	put	2	5	stream
+pimscsi	get	2	4	format_printer,printer,sound_generator,stream
+pimscsi	receive	2	4	<root>,channel,channel_set,port,port_set
+pimscsi	add_at	3	4	expandable_array,extensible_hash_index,hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimscsi	write_packet	3	4	
+pimscsi	get_contents	2	4	array,bag,hash_index,hash_set,list,list_bucket,list_index,list_stack
+pimscsi	clear	1	4	essential_scrolling_menu_with_superior_input_buffer,essential_window,extensible_hash_index,hash_index,list,list_index,list_stack,monogyny_hash_index
+pimscsi	read	2	4	binary_file_tap,choice_window,essential_on_off_menu,essential_scrolling_menu,essential_temporary_window,essential_window,fdd_binary_file_tap,kappaREP_select_menu
+pimscsi	assign	1	3	as_resource,library,{as_lasting_resource|with_lock},{as_resource|with_lock},{with_lock|as_resource},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimscsi	assigned	1	3	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimscsi	data_in	2	3	
+pimscsi	data_out	2	3	
+pimscsi	#	3	3	
+pimscsi	get_content	2	3	
+pimscsi	remove_at	3	3	fdd_multi_volume,hash_index,list,list_index,monogyny_hash_index,monogyny_list_index,sorted_sequence
+pimscsi	putf	2	3	pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}
+pimscsi	append	3	2	string
+pimscsi	get_class_object	3	2	library
+pimscsi	remove_first	2	2	list,sorted_sequence
+pimscsi	refute	3	2	<root>,as_class_with_lock,as_esp_parser,as_esp_unparser,as_program,essential_window,pmacs_window,standard_editor
+pimscsi	resign	1	2	<root>,as_resource,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{as_lasting_resource|with_lock},{as_resource|with_lock},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimscsi	throwing_hook	7	2	
+pimscsi	command_complete	2	2	
+pimscsi	save_data_pointer	2	2	
+pimscsi	disconnect	2	2	
+pimscsi	no_operation	2	2	
+pimscsi	identify	3	2	
+pimscsi	method	3	2	<root>,as_program,standard_editor
+pimscsi	send	2	2	<root>,channel,port,rs232c
+pimscsi	set_content	2	2	message
+pimscsi	send	3	2	
+pimscsi	activate	2	2	essential_window,process,standard_choice_window,standard_io_window,standard_menu,standard_multi_select_scrolling_menu,standard_scrolling_menu,window_without_label
+pimscsi	get_name	2	2	
+pimscsi	get_number_string	3	2	symbolizer
+pimscsi	getl	2	2	<root>,pmacs_window,standard_input_file,standard_io_buffer,standard_io_window,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{pmacs_window|standard_io_window},{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}
+pimscsi	standard_output	2	1	
+pimscsi	disassemble	3	1	
+pimscsi	convert	3	1	
+pimscsi	get_device_id	3	1	
+pimscsi	add_last	2	1	list,list_bucket
+pimscsi	sense	2	1	
+pimscsi	trace	2	1	trace
+pimscsi	read_trace	2	1	
+pimscsi	set_sender	2	1	
+pimscsi	message_out	3	1	
+pimscsi	message_in	2	1	
+pimscsi	fail_event	1	1	
+pimscsi	class_id	2	1	
+pimscsi	get_a_code	7	1	library
+pimscsi	activate	4	1	
+pimscsi	wait	1	1	alarm_watch
+pimscsi	read_receive_buffer	2	1	
+pimscsi	port	2	1	
+pimscsi	item	3	1	
+pimscsi	string	4	1	wildcard
+pimscsi	unbound	2	1	
+pimscsi	same	3	1	
+pimscsi	integer	2	1	
+pimscsi	add_history	2	1	
+pimscsi	raise	2	1	throw
+pimscsi	get_contents_with_key	2	1	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimscsi	set_sub_priority	2	1	
+pimscsi	put_at	3	1	array,expandable_array,initiation_table,monogyny_hash_index,monogyny_list_index,sparse_array
+pimscsi	now	2	1	date,date_time,time
+pimscsi	get_string	2	1	time
+pimscsi	activate	1	1	cal_window,choice_window,choice_window_with_no_execute,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window
+pimscsi	set_title	2	1	cal_window,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_window,kappaREP_select_menu,labeled_superior_window,menu
+pimscsi	get_number	3	1	process,symbolizer
+pimscsi	version	2	1	version
+pimscsi	kill	1	1	cal_window,choice_window,choice_window_with_no_execute,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window,imi_super_win,inferior_window
+pimscsi	flash	1	1	cal_window,pmacs_window,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}
+pimscsi	read_sense	2	1	as_markers,essential_window,standard_io_window,{as_markers|standard_window},{as_single_select|as_multiple_column|as_mouse_input|inferior_window},{reshape_notifier|as_input_buffer|as_mouse_input|as_superior},{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier},{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}
+pimscsi	add_first	2	1	list,list_bucket
+pimmcsp	is_object	2	101	symbolizer
+pimmcsp	set_item_value	3	97	
+pimmcsp	self	2	62	process
+pimmcsp	get_item_value	3	53	
+pimmcsp	get_contents	2	50	array,bag,hash_index,hash_set,list,list_bucket,list_index,list_stack
+pimmcsp	enter_atom	3	42	symbolizer
+pimmcsp	class_object	2	41	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmcsp	get_atom_string	3	41	symbolizer
+pimmcsp	get	2	39	format_printer,printer,sound_generator,stream
+pimmcsp	assign	1	31	as_resource,library,{as_lasting_resource|with_lock},{as_resource|with_lock},{with_lock|as_resource},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimmcsp	set_sub_priority	2	31	
+pimmcsp	now	2	30	date,date_time,time
+pimmcsp	get_number_string	3	26	symbolizer
+pimmcsp	add_last	2	24	list,list_bucket
+pimmcsp	get_class_object	3	23	library
+pimmcsp	raise	5	23	debugger_error
+pimmcsp	check_info	3	20	library
+pimmcsp	make_class_object	2	20	library
+pimmcsp	play	2	20	
+pimmcsp	put_contents	2	19	array,list,list_index,monogyny_list_index,set,sorted_sequence
+pimmcsp	close_input	1	18	standard_input_file,standard_input_text_buffer_accessor
+pimmcsp	set_position	3	18	<root>,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,pmacs_window,reshape_notifier
+pimmcsp	copy	3	17	file_utility,string
+pimmcsp	freeze	3	16	frozen_term
+pimmcsp	g_call	4	16	remote_object
+pimmcsp	set_font	2	15	editor_main_window,essential_scrolling_menu,essential_window,kappaREP_select_menu,menu,pmacs_window,popup_choice_window,printer
+pimmcsp	erase_cursor	1	14	essential_temporary_window,essential_window,standard_io_window,standard_popup_window,standard_temporary_window,standard_window,window_without_label,{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}
+pimmcsp	draw_string	6	14	standard_io_window,standard_popup_window,{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+pimmcsp	put_at	3	13	array,expandable_array,initiation_table,monogyny_hash_index,monogyny_list_index,sparse_array
+pimmcsp	get_interpreter	2	13	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmcsp	set_text_size	3	13	
+pimmcsp	:	3	12	
+pimmcsp	melt	2	12	
+pimmcsp	copy	9	12	{as_graphics|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimmcsp	,	3	11	
+pimmcsp	set_label_font	2	11	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
+pimmcsp	set_area_limit_execution	7	11	process
+pimmcsp	add	2	11	bag,channel_set,hash_set,list,port_set,set,sorted_sequence,stream_set
+pimmcsp	move_to	2	11	
+pimmcsp	allow_forced_event	1	10	
+pimmcsp	get_my_node	2	10	network_node_name
+pimmcsp	on_after	2	10	alarm_watch
+pimmcsp	get_editor	2	10	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmcsp	draw_filled_circle	7	10	standard_io_window
+pimmcsp	get_string	2	9	time
+pimmcsp	set_content	2	9	message
+pimmcsp	set_value	5	9	time
+pimmcsp	set_count	2	9	
+pimmcsp	get_text_size	3	9	
+pimmcsp	send	2	8	<root>,channel,port,rs232c
+pimmcsp	inhibit_forced_event	1	8	
+pimmcsp	get_contents_with_key	2	8	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmcsp	resign	1	8	<root>,as_resource,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{as_lasting_resource|with_lock},{as_resource|with_lock},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimmcsp	refute	3	8	<root>,as_class_with_lock,as_esp_parser,as_esp_unparser,as_program,essential_window,pmacs_window,standard_editor
+pimmcsp	input_region	2	8	
+pimmcsp	position	3	8	
+pimmcsp	has_been_reshaped	1	8	pmacs_window
+pimmcsp	remove_first	2	7	list,sorted_sequence
+pimmcsp	close_output	1	7	standard_io_buffer,standard_output_file
+pimmcsp	end_of_input	1	7	standard_input_file,standard_io_buffer
+pimmcsp	information	3	7	coordinator
+pimmcsp	locked	1	7	{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
+pimmcsp	catch	8	7	
+pimmcsp	reread	1	7	standard_io_buffer
+pimmcsp	get_size	3	7	choice_window_with_no_execute,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,menu_with_superior_input_buffer,multi_column_menu
+pimmcsp	class_name	2	6	
+pimmcsp	is_installed	1	6	
+pimmcsp	on_at	2	6	alarm_watch
+pimmcsp	set_inside_units	3	6	{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+pimmcsp	append	4	6	pathname,std
+pimmcsp	draw_string	5	6	essential_window,standard_io_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{sash|as_output|as_graphics|inferior_window},{sash|as_output|as_graphics|temporary_window}
+pimmcsp	exit	2	6	
+pimmcsp	current_position	2	6	
+pimmcsp	add_first	2	5	list,list_bucket
+pimmcsp	plus	3	5	time
+pimmcsp	node_full_name	3	5	
+pimmcsp	try_to_get	2	5	channel_set
+pimmcsp	draw_line	5	5	{as_graphics|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimmcsp	push	2	5	list_stack
+pimmcsp	set_receive_timeout	2	5	
+pimmcsp	get_process	3	5	process
+pimmcsp	size	2	5	expandable_array,standard_io_buffer
+pimmcsp	shut_down	3	4	
+pimmcsp	close_socket	3	4	
+pimmcsp	minus	3	4	
+pimmcsp	make_only	3	4	binary_file,fdd_binary_file
+pimmcsp	open	3	4	binary_file,fdd_binary_file
+pimmcsp	draw_filled_ellipse	8	4	{as_graphics|inferior_window}
+pimmcsp	draw_filled_rectangle	8	4	standard_io_window,{as_graphics|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmcsp	get_item_status	3	4	standard_multi_column_menu,{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}
+pimmcsp	pop	2	4	list_stack
+pimmcsp	get_contents_at	3	4	func_index,hash_index,list_index
+pimmcsp	set_waiting_time	3	4	
+pimmcsp	set_receive_completion_timeout	2	4	
+pimmcsp	end_of_buffer	2	4	
+pimmcsp	insert_string	2	4	
+pimmcsp	throw_goal_and_read	5	4	
+pimmcsp	broadcast_start_pe	3	4	
+pimmcsp	disconnect	3	3	
+pimmcsp	data_buffer	2	3	network_listener_buffer,string_buffer
+pimmcsp	set_send_data_size	2	3	network_listener_buffer
+pimmcsp	write_data	5	3	
+pimmcsp	send	5	3	
+pimmcsp	get_user_profile	5	3	
+pimmcsp	attach_user_profile	3	3	
+pimmcsp	remove	3	3	
+pimmcsp	request_data_size	2	3	
+pimmcsp	write_data	2	3	
+pimmcsp	write_next	1	3	
+pimmcsp	last_name	4	3	pathname
+pimmcsp	append_type	4	3	name
+pimmcsp	set_max_length	2	3	<root>,standard_io_buffer
+pimmcsp	get_title	2	3	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}
+pimmcsp	set1	2	3	
+pimmcsp	process1	2	3	
+pimmcsp	set2	2	3	
+pimmcsp	process2	2	3	
+pimmcsp	set_echo_font	2	3	
+pimmcsp	draw_filled_rectangle	6	3	essential_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmcsp	suspend	2	3	
+pimmcsp	submit_read	4	3	
+pimmcsp	convert	7	3	network_listener_buffer
+pimmcsp	putl	1	3	cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file
+pimmcsp	+	2	3	
+pimmcsp	++	2	3	
+pimmcsp	me_psi	1	3	str_machine_id
+pimmcsp	unlock_with_hook	1	3	{as_resource|with_lock}
+pimmcsp	lock_with_hook	1	3	{as_resource|with_lock}
+pimmcsp	get_name	2	3	
+pimmcsp	get_count	2	3	
+pimmcsp	get_inside_size	3	3	essential_window,labeled_superior_window,standard_io_window,standard_superior_window,standard_window,superior_window,{as_superior|with_label|with_border|inferior_window},{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}
+pimmcsp	copy_from_string	11	3	{as_graphics|inferior_window}
+pimmcsp	current_program	2	3	
+pimmcsp	class_id	2	3	
+pimmcsp	current_buffer	2	3	pmacs_standard_editor,pmacs_window,standard_editor,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmcsp	submit	3	3	
+pimmcsp	context	2	3	
+pimmcsp	get_keys	2	3	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmcsp	get_quoted_atom_string	3	3	
+pimmcsp	alive	1	3	
+pimmcsp	status	3	3	
+pimmcsp	get_atom	3	2	symbolizer
+pimmcsp	parent_directory	5	2	directory
+pimmcsp	accessor	2	2	
+pimmcsp	file	2	2	
+pimmcsp	get_describe_info	2	2	
+pimmcsp	retrieve	4	2	directory
+pimmcsp	is_directory	1	2	
+pimmcsp	open	5	2	binary_file,fdd_binary_file
+pimmcsp	activate	4	2	
+pimmcsp	get_predicates	4	2	
+pimmcsp	to_hankaku	3	2	
+pimmcsp	set	2	2	get_request,search_table
+pimmcsp	do_it	2	2	
+pimmcsp	address	2	2	
+pimmcsp	get_variable	5	2	symbolizer
+pimmcsp	putt	4	2	as_esp_unparser,standard_io_buffer,standard_io_window,standard_output_file
+pimmcsp	password_list	2	2	
+pimmcsp	set_user	2	2	
+pimmcsp	set_world	2	2	
+pimmcsp	add_operator	4	2	
+pimmcsp	packet	4	2	
+pimmcsp	node_name	2	2	
+pimmcsp	draw_string	4	2	standard_io_window,standard_popup_window,standard_temporary_window,{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmcsp	children	2	2	
+pimmcsp	pathname	2	2	
+pimmcsp	find_with_wildcard	3	2	
+pimmcsp	deleted	5	2	
+pimmcsp	get_address	4	2	
+pimmcsp	get_parm	4	2	
+pimmcsp	local_name	2	2	
+pimmcsp	sense_receive_completion	4	2	
+pimmcsp	who_is_connecting_to	2	2	
+pimmcsp	on_after	5	2	
+pimmcsp	wait_and_return	2	2	
+pimmcsp	get_content	2	2	
+pimmcsp	cancel	1	2	
+pimmcsp	receive_request	2	2	
+pimmcsp	network_type	3	2	
+pimmcsp	show_buffer	3	2	
+pimmcsp	search	5	2	
+pimmcsp	see_position	4	2	
+pimmcsp	create_local	4	2	
+pimmcsp	draw_tree	2	2	
+pimmcsp	set_input_buffer	2	2	pmacs_window,{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmcsp	get_buffer_instance	3	2	editor_text_buffer
+pimmcsp	set_a_process	2	2	
+pimmcsp	get_font	2	2	essential_window,format_printer,{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}
+pimmcsp	stop_pe	3	2	
+pimmcsp	broadcast_step_pe	3	2	
+pimmcsp	resume	2	2	
+pimmcsp	empty	1	2	expandable_array,list,monogyny_hash_index
+pimmcsp	draw_line	7	2	standard_io_window
+pimmcsp	abort	3	2	
+pimmcsp	listen	4	2	
+pimmcsp	command_interpret	1	2	
+pimmcsp	see_position	3	2	
+pimmcsp	get_data_element	2	2	
+pimmcsp	set_data_element	2	2	
+pimmcsp	total_number	2	2	
+pimmcsp	listen	2	2	
+pimmcsp	draw_circle	7	2	standard_io_window,{as_graphics|inferior_window}
+pimmcsp	add_at	5	2	two_three_tree
+pimmcsp	get_number	2	2	
+pimmcsp	set_option_value	4	2	
+pimmcsp	set_icon	2	2	{reshape_notifier|standard_superior_window|with_icon},{with_icon|standard_superior_window|reshape_notifier}
+pimmcsp	rename_buffer	3	2	editor_text_buffer
+pimmcsp	draw_line	8	2	essential_window,standard_popup_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}
+pimmcsp	/	3	1	
+pimmcsp	get_version	2	1	
+pimmcsp	go_to_end	1	1	
+pimmcsp	at_end	1	1	binary_file_tap,fdd_binary_file_tap
+pimmcsp	find	3	1	
+pimmcsp	inhibit_echo	1	1	
+pimmcsp	permit_echo	1	1	
+pimmcsp	clear_buffer	1	1	cal_window,standard_editor,standard_io_window,standard_menu
+pimmcsp	warp_mouse	3	1	as_markers,{as_markers|standard_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window},{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window},{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimmcsp	config	1	1	
+pimmcsp	create	9	1	
+pimmcsp	set_pes_obj	2	1	
+pimmcsp	default_logical_name	2	1	
+pimmcsp	root_path	3	1	
+pimmcsp	remote_or_local	6	1	pathname
+pimmcsp	string	4	1	wildcard
+pimmcsp	get_unparsing_operator	2	1	standard_io_buffer
+pimmcsp	set_max_depth	2	1	<root>,standard_io_buffer
+pimmcsp	set_password_list	2	1	
+pimmcsp	try_to_see	2	1	
+pimmcsp	remove_operator	3	1	
+pimmcsp	get_number_string	4	1	symbolizer
+pimmcsp	control	2	1	
+pimmcsp	from	2	1	
+pimmcsp	to	2	1	
+pimmcsp	tag	2	1	
+pimmcsp	value	2	1	
+pimmcsp	search_character_dif	6	1	
+pimmcsp	search_character_dif_back	6	1	
+pimmcsp	to_kanji	3	1	
+pimmcsp	spawn	7	1	net_spawn_user
+pimmcsp	get_label_flag	2	1	
+pimmcsp	register	2	1	library
+pimmcsp	memory	2	1	
+pimmcsp	address1	2	1	
+pimmcsp	address2	2	1	
+pimmcsp	instruction1	2	1	
+pimmcsp	instruction2	2	1	
+pimmcsp	opcode1	2	1	
+pimmcsp	opcode2	2	1	
+pimmcsp	convert_con_req	6	1	as_server_program
+pimmcsp	get_line	2	1	as_server_program
+pimmcsp	give_answer	3	1	as_server_program
+pimmcsp	set_output	2	1	file_backup,library_utility
+pimmcsp	delete_with_wildcard	3	1	
+pimmcsp	undelete_with_wildcard	3	1	
+pimmcsp	purge	2	1	
+pimmcsp	expunge	1	1	
+pimmcsp	cause	5	1	
+pimmcsp	user_password	2	1	
+pimmcsp	connect	2	1	port
+pimmcsp	connect	6	1	
+pimmcsp	connect	4	1	
+pimmcsp	show_buffer	2	1	
+pimmcsp	push_to_yank	3	1	pmacs_standard_editor
+pimmcsp	time	3	1	
+pimmcsp	get_value	5	1	
+pimmcsp	$maxdepth	3	1	
+pimmcsp	$maxlength	3	1	
+pimmcsp	$maxlength	2	1	
+pimmcsp	$maxref	3	1	
+pimmcsp	$maxref	2	1	
+pimmcsp	$kl1data	3	1	
+pimmcsp	send_goal	2	1	
+pimmcsp	+	3	1	
+pimmcsp	++	3	1	
+pimmcsp	read_click_with_position	4	1	standard_io_window,standard_window
+pimmcsp	which	2	1	
+pimmcsp	define	3	1	
+pimmcsp	set_default_logical_name	2	1	
+pimmcsp	initial_mode	2	1	
+pimmcsp	set_access_mode	2	1	
+pimmcsp	passwords	3	1	
+pimmcsp	set_passwords	2	1	
+pimmcsp	other	2	1	
+pimmcsp	trace	2	1	trace
+pimmcsp	built	2	1	
+pimmcsp	dcode	2	1	
+pimmcsp	from_kanji	3	1	ascii_coder
+pimmcsp	module	2	1	
+pimmcsp	pred	2	1	
+pimmcsp	arity	2	1	
+pimmcsp	assigned	1	1	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimmcsp	reshape	5	1	{reshape_notifier|as_input_buffer|as_mouse_input|as_superior},{sash|with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}
+pimmcsp	fail_event	1	1	
+pimmcsp	start_pe	3	1	
+pimmcsp	see_buffer	2	1	{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}
+pimmcsp	super	2	1	
+pimmcsp	tag_catch	9	1	
+pimmcsp	access_status	2	1	
+pimmcsp	save_wcs	6	1	
+pimmcsp	network_type	2	1	
+pimmcsp	number_to_hex_string	3	1	
+pimmcsp	get_profile	2	1	
+pimmcsp	consult_process_name	3	1	
+pimmcsp	get_socket_name	4	1	
+pimmcsp	var_mode	2	1	
+pimmcsp	netinitialize	1	1	
+pimmcsp	step_kl1	1	1	
+pimmcsp	execute	2	1	
+pimmcsp	trace_flag	2	1	
+pimmcsp	set_trace_flag	2	1	
+pimmcsp	get_area_limit_execution	7	1	
+pimmcsp	get_common_heap_area	3	1	
+pimmcsp	release_common_heap_environment	2	1	
+pimmcsp	set_total_number	1	1	
+pimmcsp	bind	4	1	
+pimmcsp	cancel_listen	3	1	
+pimmcsp	get_your_address	2	1	
+pimmcsp	get_node_name	5	1	
+pimmcsp	grant_network_group	4	1	
+pimmcsp	grant	2	1	
+pimmcsp	:	2	1	
+pimmcsp	merge_variable_tree	4	1	symbolizer,variable_symbolizer
+pimmcsp	get_variable_string	5	1	symbolizer
+pimmcsp	#	3	1	
+pimmcsp	request	3	1	
+pimmcsp	add_program	2	1	
+pimmcsp	create_name	1	1	
+pimmcsp	is_terminal_process	1	1	
+pimmcsp	create_for_pseudo_pe_process	7	1	
+pimmcsp	create_core	4	1	
+pimmcsp	remove_child	2	1	
+pimmcsp	remove_only	2	1	
+pimmcsp	connect	3	1	
+pimmcsp	get_icon_keys	3	1	
+pimmcsp	add_icon	4	1	window_subsystem
+pimmcsp	draw_font	6	1	
+pimmcsp	draw_rectangle	8	1	essential_window,standard_popup_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmcsp	get_direct_referred_classes	3	1	library
+pimmcsp	is_ipl_class_object	2	1	library
+pimmcsp	new_buffer	3	1	
+pimmcsp	read	1	1	
+pimmcsp	open	4	1	binary_file
+pimmcsp	set_value	4	1	
+pimmutil	putf	2	210	pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}
+pimmutil	putf	3	103	cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+pimmutil	flash	1	67	cal_window,pmacs_window,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}
+pimmutil	add_operator	4	56	
+pimmutil	getl	2	42	<root>,pmacs_window,standard_input_file,standard_io_buffer,standard_io_window,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{pmacs_window|standard_io_window},{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}
+pimmutil	get_at	3	31	array,expandable_array,hash_index,initiation_table,list,list_bucket,list_index,monogyny_hash_index
+pimmutil	activate	1	30	cal_window,choice_window,choice_window_with_no_execute,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window
+pimmutil	is_object	2	24	symbolizer
+pimmutil	g_call	3	24	remote_object
+pimmutil	add_at	3	21	expandable_array,extensible_hash_index,hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmutil	show	1	20	cal_window,essential_scrolling_menu_with_superior_input_buffer,essential_window,standard_io_window,standard_menu,standard_popup_menu,standard_popup_multi_select_scrolling_menu,standard_popup_scrolling_menu
+pimmutil	dec_to_hex	4	17	
+pimmutil	kill	1	16	cal_window,choice_window,choice_window_with_no_execute,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window,imi_super_win,inferior_window
+pimmutil	close_input	1	16	standard_input_file,standard_input_text_buffer_accessor
+pimmutil	hex_to_dec	3	13	
+pimmutil	putc	2	12	pmacs_window,standard_io_buffer,standard_output_file,{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+pimmutil	close_output	1	12	standard_io_buffer,standard_output_file
+pimmutil	get	4	12	
+pimmutil	put_at	3	11	array,expandable_array,initiation_table,monogyny_hash_index,monogyny_list_index,sparse_array
+pimmutil	get	3	10	as_program,disk_unit,printer
+pimmutil	get_atom_string	3	9	symbolizer
+pimmutil	get_io	2	9	
+pimmutil	now	2	8	date,date_time,time
+pimmutil	new	2	8	<root>,access_status,ahp,as_class_with_lock,as_esp_parser,as_esp_unparser,as_event_handler,as_global_object
+pimmutil	enter_atom	3	8	symbolizer
+pimmutil	remove_operator	2	8	
+pimmutil	class_object	2	8	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmutil	set_label_font	2	7	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
+pimmutil	draw_string	5	7	essential_window,standard_io_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{sash|as_output|as_graphics|inferior_window},{sash|as_output|as_graphics|temporary_window}
+pimmutil	put	2	7	stream
+pimmutil	dec_to_hex	3	7	
+pimmutil	class_name	2	7	
+pimmutil	self	2	6	process
+pimmutil	get_contents	2	6	array,bag,hash_index,hash_set,list,list_bucket,list_index,list_stack
+pimmutil	get_number	3	6	process,symbolizer
+pimmutil	copy	9	6	{as_graphics|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimmutil	draw_line	8	6	essential_window,standard_popup_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}
+pimmutil	gett	2	6	as_esp_parser,pmacs_window,standard_input_file,standard_input_text_buffer_accessor,standard_io_buffer,standard_io_window
+pimmutil	key_sort_bags	3	6	
+pimmutil	end_of_input	1	6	standard_input_file,standard_io_buffer
+pimmutil	get_contents_with_key	2	6	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmutil	reset	1	6	editor_text_buffer,standard_io_buffer,stop_watch
+pimmutil	refute	3	6	<root>,as_class_with_lock,as_esp_parser,as_esp_unparser,as_program,essential_window,pmacs_window,standard_editor
+pimmutil	get_exec_obj	2	6	
+pimmutil	get	2	6	format_printer,printer,sound_generator,stream
+pimmutil	write_ad	2	6	
+pimmutil	activate	2	5	essential_window,process,standard_choice_window,standard_io_window,standard_menu,standard_multi_select_scrolling_menu,standard_scrolling_menu,window_without_label
+pimmutil	set_echo_font	2	5	
+pimmutil	get_path_table	3	5	
+pimmutil	beep	1	5	editor_main_window,essential_temporary_window,standard_io_window,standard_temporary_choice_window,standard_temporary_menu,standard_temporary_window,temporary_menu,window_without_label
+pimmutil	,	3	5	
+pimmutil	remove_at	3	5	fdd_multi_volume,hash_index,list,list_index,monogyny_hash_index,monogyny_list_index,sorted_sequence
+pimmutil	get_csp	2	5	
+pimmutil	check_abort	2	5	
+pimmutil	put	3	5	
+pimmutil	putt	2	4	as_esp_unparser,cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file
+pimmutil	hide	1	4	essential_scrolling_menu_with_superior_input_buffer,standard_popup_menu,standard_popup_multi_select_scrolling_menu,standard_popup_scrolling_menu,standard_superior_window,standard_temporary_menu,standard_temporary_multi_column_menu,standard_temporary_scrolling_menu
+pimmutil	g_call	4	4	remote_object
+pimmutil	put_contents_with_key	2	4	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmutil	set_title	2	4	cal_window,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_window,kappaREP_select_menu,labeled_superior_window,menu
+pimmutil	add_items	3	4	essential_scrolling_menu,kappaREP_select_menu,menu_with_superior_input_buffer,scrolling_on_off_menu_with_superior_input_buffer,standard_choice_window,standard_multi_select_scrolling_menu,standard_popup_menu,standard_popup_multi_select_scrolling_menu
+pimmutil	get_pes	2	4	
+pimmutil	putb	3	4	cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}
+pimmutil	integer_to_mnemonic	3	4	
+pimmutil	write_pe_num	2	4	
+pimmutil	get_contents_at	3	4	func_index,hash_index,list_index
+pimmutil	physical_to_logical	3	3	
+pimmutil	erase_cursor	1	3	essential_temporary_window,essential_window,standard_io_window,standard_popup_window,standard_temporary_window,standard_window,window_without_label,{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}
+pimmutil	get_number_string	3	3	symbolizer
+pimmutil	get_ch_num	3	3	
+pimmutil	string	2	3	
+pimmutil	id	2	3	
+pimmutil	get_value	5	3	
+pimmutil	melt	2	3	
+pimmutil	reread	1	3	standard_io_buffer
+pimmutil	hosei	5	3	
+pimmutil	draw_rectangle	8	3	essential_window,standard_popup_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmutil	read_sense	2	3	as_markers,essential_window,standard_io_window,{as_markers|standard_window},{as_single_select|as_multiple_column|as_mouse_input|inferior_window},{reshape_notifier|as_input_buffer|as_mouse_input|as_superior},{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier},{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}
+pimmutil	=	3	3	
+pimmutil	wait_getl_and_go	3	3	
+pimmutil	one_of_pe	2	3	
+pimmutil	get_size	5	3	
+pimmutil	standard_line_and_base	3	3	
+pimmutil	free	1	3	
+pimmutil	reshape	5	3	{reshape_notifier|as_input_buffer|as_mouse_input|as_superior},{sash|with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}
+pimmutil	add_last	2	3	list,list_bucket
+pimmutil	close	1	3	imi_super_win,kappaP,rs232c,{with_icon|as_input|as_mouse_input|standard_superior_window|reshape_notifier}
+pimmutil	put_data	2	3	string_buffer
+pimmutil	write_next	1	3	
+pimmutil	set_mouse_marker	2	2	
+pimmutil	is_fep	1	2	
+pimmutil	catch	8	2	
+pimmutil	select	1	2	
+pimmutil	exterminate	1	2	process
+pimmutil	type	2	2	
+pimmutil	document	2	2	
+pimmutil	status	2	2	access_status
+pimmutil	abscissa	2	2	
+pimmutil	ordinate	2	2	
+pimmutil	line	2	2	
+pimmutil	demo	2	2	
+pimmutil	parameter	3	2	
+pimmutil	generate	2	2	
+pimmutil	change_top_item	2	2	
+pimmutil	get_string	2	2	time
+pimmutil	freeze	3	2	frozen_term
+pimmutil	set_item_value	3	2	
+pimmutil	set_value	5	2	time
+pimmutil	get_pe_numbers	2	2	
+pimmutil	start_through	1	2	
+pimmutil	read_kl1_heap_limit	3	2	
+pimmutil	draw_filled_rectangle	8	2	standard_io_window,{as_graphics|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmutil	plus	3	2	time
+pimmutil	on_at	2	2	alarm_watch
+pimmutil	wait	1	2	alarm_watch
+pimmutil	set_standard_output	2	2	
+pimmutil	get_unparsing_operator	2	2	standard_io_buffer
+pimmutil	tgt	2	2	
+pimmutil	add_first	2	2	list,list_bucket
+pimmutil	;	3	2	
+pimmutil	!=	3	2	
+pimmutil	draw_filled_rectangle	6	2	essential_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmutil	get_mouse_position	3	2	as_markers,essential_window,{as_graphics|as_mouse_input},{as_markers|standard_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window},{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier},{with_border|as_superior|as_input|as_mouse_input|inferior_window}
+pimmutil	set_bottom_title	2	2	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+pimmutil	defined	3	2	
+pimmutil	get_inside_units	3	2	essential_window,standard_superior_window,standard_window,{with_border|as_graphics|as_input|as_mouse_input|inferior_window},{with_border|as_output|as_mouse_input|temporary_window},{with_border|as_superior|as_input|as_mouse_input|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}
+pimmutil	new_buffer	3	2	
+pimmutil	unquote_atom	1	2	pmacs_window,standard_output_file,{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}
+pimmutil	load_wcs	3	2	
+pimmutil	move	2	2	
+pimmutil	get_my_obj	2	2	
+pimmutil	deref	4	2	
+pimmutil	collect_vars	5	2	
+pimmutil	quick_sort	3	2	kk_qsort
+pimmutil	add	2	2	bag,channel_set,hash_set,list,port_set,set,sorted_sequence,stream_set
+pimmutil	get_superior	2	1	essential_window,standard_window,{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window},{with_border|as_superior|as_input|as_mouse_input|inferior_window},{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window},{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}
+pimmutil	make_path_table	1	1	
+pimmutil	get_atom	3	1	symbolizer
+pimmutil	traveling_path	3	1	
+pimmutil	take_path_table	4	1	
+pimmutil	get_path_table	2	1	
+pimmutil	minus	3	1	
+pimmutil	draw_rectangle	5	1	standard_io_window,{as_graphics|inferior_window}
+pimmutil	path_table	2	1	
+pimmutil	read_config_file	3	1	
+pimmutil	pe	3	1	
+pimmutil	time	2	1	
+pimmutil	pt	4	1	
+pimmutil	pt	5	1	
+pimmutil	travel	2	1	
+pimmutil	get_number_string	4	1	symbolizer
+pimmutil	stat	2	1	
+pimmutil	statistics	2	1	
+pimmutil	remote_or_local	6	1	pathname
+pimmutil	:	3	1	
+pimmutil	draw_string	4	1	standard_io_window,standard_popup_window,standard_temporary_window,{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+pimmutil	catalogue	3	1	library_utility
+pimmutil	get_class_object	3	1	library
+pimmutil	standard_output	2	1	
+pimmutil	get_number_token	4	1	symbolizer
+pimmutil	is_numeric	2	1	character
+pimmutil	to_uppercase	3	1	character
+pimmutil	get_field	4	1	
+pimmutil	set_field	5	1	
+pimmutil	condition	3	1	
+pimmutil	action	3	1	
+pimmutil	gett	4	1	as_esp_parser,cal_window,standard_input_file,standard_io_buffer
+pimmutil	get_parsing_operator	2	1	cal_window,standard_input_file,standard_io_buffer
+pimmutil	set_parsing_operator	2	1	standard_input_file,standard_input_text_buffer_accessor
+pimmutil	set_max_depth	2	1	<root>,standard_io_buffer
+pimmutil	set_max_length	2	1	<root>,standard_io_buffer
+pimmutil	remove_operator	3	1	
+pimmutil	get_non_abort	5	1	
+pimmutil	set_sub_priority	2	1	
+pimmutil	bomb	1	1	
+pimmutil	stop	1	1	stop_watch
+pimmutil	obj	16	1	
+pimmutil	get_pe_number	2	1	
+pimmutil	get_character_font	2	1	with_character
+pimmutil	copy	3	1	file_utility,string
+pimmutil	read	3	1	labeled_superior_window,ras_text_utility,standard_superior_window,temporary_menu,{as_superior|with_label|with_border|inferior_window},{reshape_notifier|select_notifier|with_label|with_border|as_superior|with_pane|with_click_information|as_input_buffer|with_icon|inferior_window},{with_label|with_border|as_superior|as_input|as_mouse_input|inferior_window|reshape_notifier}
+pimmutil	background	2	1	essential_temporary_window,essential_window,window_without_label,{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window},{with_border|as_output|as_mouse_input|temporary_window},{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}
+pimmutil	+	3	1	
+pimmutil	-	3	1	
+pimmutil	*	3	1	
+pimmutil	/	3	1	
+pimmutil	>>	3	1	
+pimmutil	<<	3	1	
+pimmutil	/\	3	1	
+pimmutil	\/	3	1	
+pimmutil	\	2	1	
+pimmutil	initiation_table	2	1	as_program
+pimmutil	csbreak_on	1	1	
+pimmutil	set_step_break	1	1	
+pimmutil	set_instruction_step	1	1	
+pimmutil	start	1	1	stop_watch
+pimmutil	reset_step_break	1	1	
+pimmutil	csbreak_off	1	1	
+pimmutil	pathname	2	1	
+pimmutil	get_last	4	1	pathname
+pimmutil	ident	3	1	name
+pimmutil	world	2	1	
+pimmutil	define	3	1	
+pimmutil	add_item	3	1	essential_scrolling_menu_with_superior_input_buffer,menu_with_superior_input_buffer,standard_menu,standard_popup_menu,standard_scrolling_menu,standard_temporary_menu,{as_menu_input|with_click_information|temporary_single_scrolling_menu},{temporary_menu|inferior_window|as_menu_input}
+pimmutil	set_top_label_font	2	1	
+pimmutil	set_bottom_label_font	2	1	
+pimmutil	set_top_title	2	1	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmutil	string_to_list	3	1	symbolizer
+pimmutil	get_message	2	1	
+pimmutil	set_size	2	1	
+pimmutil	get_entire_message	2	1	
+pimmutil	bu	2	1	
+pimmutil	set_inside_units	3	1	{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+pimmutil	get_inside_pixel_size	3	1	{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window}
+pimmutil	at_end	1	1	binary_file_tap,fdd_binary_file_tap
+pimmutil	stick_tap	2	1	hash_index,list,monogyny_hash_index,monogyny_list_index,sorted_sequence
+pimmutil	transfer	8	1	essential_window,{as_graphics|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}
+pimmutil	draw_line	6	1	standard_io_window
+pimmutil	draw_line	5	1	{as_graphics|inferior_window},{with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+pimmutil	draw_line	7	1	standard_io_window
+pimmutil	last_name	4	1	pathname
+pimmutil	append_type	4	1	name
+pimmutil	append	4	1	pathname,std
+pimmutil	open	3	1	binary_file,fdd_binary_file
+pimmutil	size	2	1	expandable_array,standard_io_buffer
+pimmutil	read	1	1	
+pimmutil	get_data	2	1	rs232c,string_buffer
+pimmutil	getb	3	1	standard_input_file,standard_io_buffer
+pimmutil	remove	2	1	channel_set,list,set,sorted_sequence
+pimmutil	deactivate	1	1	<root>,choice_window_with_no_execute,essential_on_off_menu,essential_scrolling_menu_with_superior_input_buffer,essential_window,inferior_window,labeled_superior_window,menu
+pimmutil	get_item_box_size	3	1	
+pimmutil	put	4	1	
+pimmutil	begin	3	1	
+pimmutil	modified	5	1	
+pimmutil	counted	5	1	
+pimmutil	all_pe	2	1	
+pimmutil	from_to	4	1	
+pimmutil	make	3	1	binary_file,directory,fdd_binary_file,permanent_directory
+pimmutil	set_area_limit_execution	7	1	process
+pimmutil	current_buffer	2	1	pmacs_standard_editor,pmacs_window,standard_editor,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+pimmutil	get_pe	3	1	
+pimmutil	get_keys	2	1	hash_index,list_index,monogyny_hash_index,monogyny_list_index
+pimmutil	area_address	3	1	
+pimmutil	get_music	2	1	
+pimmutil	michi	2	1	
+pimmutil	rename_buffer	3	1	editor_text_buffer
+pimmutil	is_ref	2	1	
+pimmutil	convert_kl1	6	1	
+pimmutil	term_to_string	5	1	
+pimmutil	get_goal_record	4	1	
+mpsicspR	g_call	4	16	remote_object
+mpsicspR	activate	1	15	cal_window,choice_window,choice_window_with_no_execute,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window
+mpsicspR	is_object	2	12	symbolizer
+mpsicspR	put	2	12	stream
+mpsicspR	kill	1	12	cal_window,choice_window,choice_window_with_no_execute,essential_scrolling_menu_with_superior_input_buffer,essential_temporary_window,essential_window,imi_super_win,inferior_window
+mpsicspR	beep	1	12	editor_main_window,essential_temporary_window,standard_io_window,standard_temporary_choice_window,standard_temporary_menu,standard_temporary_window,temporary_menu,window_without_label
+mpsicspR	assign	1	11	as_resource,library,{as_lasting_resource|with_lock},{as_resource|with_lock},{with_lock|as_resource},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+mpsicspR	background	2	10	essential_temporary_window,essential_window,window_without_label,{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window},{with_border|as_output|as_mouse_input|temporary_window},{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}
+mpsicspR	new	2	9	<root>,access_status,ahp,as_class_with_lock,as_esp_parser,as_esp_unparser,as_event_handler,as_global_object
+mpsicspR	class_object	2	9	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+mpsicspR	append	3	9	string
+mpsicspR	self	2	8	process
+mpsicspR	get_atom_string	3	8	symbolizer
+mpsicspR	set_area_limit_execution	7	7	process
+mpsicspR	erase_cursor	1	7	essential_temporary_window,essential_window,standard_io_window,standard_popup_window,standard_temporary_window,standard_window,window_without_label,{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}
+mpsicspR	now	2	7	date,date_time,time
+mpsicspR	add_at	3	7	expandable_array,extensible_hash_index,hash_index,list_index,monogyny_hash_index,monogyny_list_index
+mpsicspR	set_sub_priority	2	6	
+mpsicspR	putf	3	6	cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+mpsicspR	get	2	5	format_printer,printer,sound_generator,stream
+mpsicspR	gett	2	5	as_esp_parser,pmacs_window,standard_input_file,standard_input_text_buffer_accessor,standard_io_buffer,standard_io_window
+mpsicspR	get_contents	2	5	array,bag,hash_index,hash_set,list,list_bucket,list_index,list_stack
+mpsicspR	get_window	2	5	pmacs_standard_editor,standard_editor
+mpsicspR	activate	2	5	essential_window,process,standard_choice_window,standard_io_window,standard_menu,standard_multi_select_scrolling_menu,standard_scrolling_menu,window_without_label
+mpsicspR	enter_atom	3	4	symbolizer
+mpsicspR	read	2	4	binary_file_tap,choice_window,essential_on_off_menu,essential_scrolling_menu,essential_temporary_window,essential_window,fdd_binary_file_tap,kappaREP_select_menu
+mpsicspR	set_count	2	4	
+mpsicspR	plus	3	4	time
+mpsicspR	on_at	2	4	alarm_watch
+mpsicspR	close_input	1	4	standard_input_file,standard_input_text_buffer_accessor
+mpsicspR	get_contents_at	3	4	func_index,hash_index,list_index
+mpsicspR	get_at	3	4	array,expandable_array,hash_index,initiation_table,list,list_bucket,list_index,monogyny_hash_index
+mpsicspR	get_editor	2	4	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+mpsicspR	get_interpreter	2	4	editor_main_window,pmacs_window,{as_input|with_superior_input_buffer|editor_main_window},{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+mpsicspR	check_info	3	4	library
+mpsicspR	putf	2	4	pmacs_window,standard_io_buffer,standard_io_window,standard_output_file,{pmacs_window|standard_io_window},{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window},{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}
+mpsicspR	get_my_node	2	3	network_node_name
+mpsicspR	deactivate	1	3	<root>,choice_window_with_no_execute,essential_on_off_menu,essential_scrolling_menu_with_superior_input_buffer,essential_window,inferior_window,labeled_superior_window,menu
+mpsicspR	set_inside_units	3	3	{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+mpsicspR	get_inside_size	3	3	essential_window,labeled_superior_window,standard_io_window,standard_superior_window,standard_window,superior_window,{as_superior|with_label|with_border|inferior_window},{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}
+mpsicspR	copy_from_string	11	3	{as_graphics|inferior_window}
+mpsicspR	get_size	3	3	choice_window_with_no_execute,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,menu_with_superior_input_buffer,multi_column_menu
+mpsicspR	set_position	3	3	<root>,essential_scrolling_menu,essential_window,inferior_window,labeled_superior_window,menu,pmacs_window,reshape_notifier
+mpsicspR	append	4	3	pathname,std
+mpsicspR	unlock	1	3	as_class_with_lock,{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_lasting_resource|with_lock},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
+mpsicspR	resign	1	3	<root>,as_resource,{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{as_lasting_resource|with_lock},{as_resource|with_lock},{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}
+mpsicspR	locked	1	3	{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
+mpsicspR	lock	1	3	as_class_with_lock,{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_lasting_resource|with_lock},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{with_lock|as_resource}
+mpsicspR	current_program	2	3	
+mpsicspR	class_id	2	3	
+mpsicspR	input_region	2	3	
+mpsicspR	position	3	3	
+mpsicspR	move_to	2	3	
+mpsicspR	set_text_size	3	3	
+mpsicspR	make_class_object	2	3	library
+mpsicspR	exterminate	1	3	process
+mpsicspR	get_class_object	3	3	library
+mpsicspR	add	2	2	bag,channel_set,hash_set,list,port_set,set,sorted_sequence,stream_set
+mpsicspR	catch	8	2	
+mpsicspR	draw_filled_rectangle	6	2	essential_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+mpsicspR	draw_string	5	2	essential_window,standard_io_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{sash|as_output|as_graphics|inferior_window},{sash|as_output|as_graphics|temporary_window}
+mpsicspR	draw_line	7	2	standard_io_window
+mpsicspR	get_title	2	2	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}
+mpsicspR	putt	2	2	as_esp_unparser,cal_window,pmacs_window,standard_io_buffer,standard_io_window,standard_output_file
+mpsicspR	set_label_font	2	2	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
+mpsicspR	set_font	2	2	editor_main_window,essential_scrolling_menu,essential_window,kappaREP_select_menu,menu,pmacs_window,popup_choice_window,printer
+mpsicspR	set_echo_font	2	2	
+mpsicspR	load	2	2	library_utility
+mpsicspR	end_of_buffer	2	2	
+mpsicspR	current_position	2	2	
+mpsicspR	current_buffer	2	2	pmacs_standard_editor,pmacs_window,standard_editor,{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+mpsicspR	try_to_get	2	2	channel_set
+mpsicspR	get_string	2	2	time
+mpsicspR	see_position	3	2	
+mpsicspR	add_last	2	2	list,list_bucket
+mpsicspR	set_option_value	4	2	
+mpsicspR	set_icon	2	2	{reshape_notifier|standard_superior_window|with_icon},{with_icon|standard_superior_window|reshape_notifier}
+mpsicspR	get_pes	2	1	
+mpsicspR	get_default	2	1	
+mpsicspR	get_pe	3	1	
+mpsicspR	directory	6	1	directory
+mpsicspR	getb	3	1	standard_input_file,standard_io_buffer
+mpsicspR	get_count	2	1	
+mpsicspR	get_label_flag	2	1	
+mpsicspR	get_process	3	1	process
+mpsicspR	melt	2	1	
+mpsicspR	access_status	2	1	
+mpsicspR	status	2	1	access_status
+mpsicspR	freeze	3	1	frozen_term
+mpsicspR	set_title	2	1	cal_window,editor_main_window,essential_scrolling_menu,essential_scrolling_menu_with_superior_input_buffer,essential_window,kappaREP_select_menu,labeled_superior_window,menu
+mpsicspR	set_output	2	1	file_backup,library_utility
+mpsicspR	last_name	4	1	pathname
+mpsicspR	append_type	4	1	name
+mpsicspR	/	3	1	
+mpsicspR	show_buffer	2	1	
+mpsicspR	delete	3	1	directory,file_utility
+mpsicspR	insert_string	2	1	
+mpsicspR	show_buffer	3	1	
+mpsicspR	search	5	1	
+mpsicspR	see_position	4	1	
+mpsicspR	push_to_yank	3	1	pmacs_standard_editor
+mpsicspR	get_remote_stream	2	1	
+mpsicspR	remove_at	3	1	fdd_multi_volume,hash_index,list,list_index,monogyny_hash_index,monogyny_list_index,sorted_sequence
+mpsicspR	read_click_with_position	4	1	standard_io_window,standard_window
+mpsicspR	hide	1	1	essential_scrolling_menu_with_superior_input_buffer,standard_popup_menu,standard_popup_multi_select_scrolling_menu,standard_popup_scrolling_menu,standard_superior_window,standard_temporary_menu,standard_temporary_multi_column_menu,standard_temporary_scrolling_menu
+mpsicspR	put_contents	2	1	array,list,list_index,monogyny_list_index,set,sorted_sequence
+mpsicspR	get_my_obj	2	1	
+mpsicspR	get_remote_csp	2	1	
+mpsicspR	wake_up_csp	1	1	
+mpsicspR	node_full_name	3	1	
+mpsicspR	get_predicates	4	1	
+mpsicspR	to_hankaku	3	1	
+mpsicspR	get_icon_keys	3	1	
+mpsicspR	add_icon	4	1	window_subsystem
+mpsicspR	get_name	2	1	
+mpsicspR	rename_buffer	3	1	editor_text_buffer
+mpsicspR	command_interpret	1	1	
+paragraph	draw_filled_rectangle	8	161	standard_io_window,{as_graphics|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+paragraph	get_number_string	3	142	symbolizer
+paragraph	get_at	3	104	array,expandable_array,hash_index,initiation_table,list,list_bucket,list_index,monogyny_hash_index
+paragraph	set_color_pair	3	88	standard_io_window,{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+paragraph	execute_graphics_command	2	58	{as_graphics|inferior_window}
+paragraph	get_atom_string	3	53	symbolizer
+paragraph	new	2	43	<root>,access_status,ahp,as_class_with_lock,as_esp_parser,as_esp_unparser,as_event_handler,as_global_object
+paragraph	set_color	2	42	
+paragraph	transfer	8	33	essential_window,{as_graphics|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}
+paragraph	clear	5	22	
+paragraph	add_at	3	20	expandable_array,extensible_hash_index,hash_index,list_index,monogyny_hash_index,monogyny_list_index
+paragraph	remove_operator	2	20	
+paragraph	set_color	3	19	
+paragraph	copy	9	12	{as_graphics|inferior_window},{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}
+paragraph	get_plane_count	2	9	bitmap
+paragraph	get_number	3	9	process,symbolizer
+paragraph	save_image	6	8	
+paragraph	remove_at	3	8	fdd_multi_volume,hash_index,list,list_index,monogyny_hash_index,monogyny_list_index,sorted_sequence
+paragraph	restore_full_color_image	6	7	
+paragraph	get_label_height	2	6	labeled_superior_window,standard_superior_window,{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window},{with_label|with_border|as_superior|with_key_select|with_click_information|reshape_notifier|as_input|as_mouse_input|with_default_mouse|with_icon|inferior_window}
+paragraph	confirm	2	6	messenger
+paragraph	enter_atom	3	6	symbolizer
+paragraph	assign_window	1	5	with_shared_window
+paragraph	get_position	3	5	inferior_window,labeled_superior_window,standard_superior_window,standard_window,superior_window,{reshape_notifier|as_input_buffer|as_mouse_input|as_superior}
+paragraph	close_output	1	5	standard_io_buffer,standard_output_file
+paragraph	set_permission	2	4	standard_io_window
+paragraph	erase_cursor	1	4	essential_temporary_window,essential_window,standard_io_window,standard_popup_window,standard_temporary_window,standard_window,window_without_label,{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}
+paragraph	add_last	2	4	list,list_bucket
+paragraph	put_at	3	3	array,expandable_array,initiation_table,monogyny_hash_index,monogyny_list_index,sparse_array
+paragraph	draw_rectangle	8	3	essential_window,standard_popup_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+paragraph	put	2	3	stream
+paragraph	restore_image	6	3	
+paragraph	read	6	3	{with_border|as_superior|as_mouse_input|with_default_mouse|inferior_window|reshape_notifier}
+paragraph	string	4	3	wildcard
+paragraph	resign_window	1	3	{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}
+paragraph	set_inside_units	3	3	{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window},{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}
+paragraph	close_input	1	2	standard_input_file,standard_input_text_buffer_accessor
+paragraph	freeze	3	2	frozen_term
+paragraph	plot	7	2	
+paragraph	plot	5	2	
+paragraph	plot	6	2	
+paragraph	size	3	2	
+paragraph	position	3	2	
+paragraph	cycle	2	2	
+paragraph	display	2	2	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}
+paragraph	title	2	2	
+paragraph	palette	2	2	
+paragraph	method	3	2	<root>,as_program,standard_editor
+paragraph	add_first	2	2	list,list_bucket
+paragraph	end_of_input	1	2	standard_input_file,standard_io_buffer
+paragraph	exterminate	1	2	process
+paragraph	self	2	2	process
+paragraph	set_sub_priority	2	2	
+paragraph	send	4	2	
+paragraph	draw_line	6	2	standard_io_window
+paragraph	draw_filled_circle	7	2	standard_io_window
+paragraph	draw_filled_rectangle	6	2	essential_window,standard_window,{as_graphics|as_mouse_input},{as_graphics|inferior_window},{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window},{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window},{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window},{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}
+paragraph	standard_line_and_base	3	2	
+paragraph	get_max_size	3	2	
+paragraph	open	4	1	binary_file
+paragraph	save_full_color_image	6	1	
+paragraph	beep	1	1	editor_main_window,essential_temporary_window,standard_io_window,standard_temporary_choice_window,standard_temporary_menu,standard_temporary_window,temporary_menu,window_without_label
+paragraph	catalogue	2	1	
+paragraph	melt	2	1	
+paragraph	number	2	1	
+paragraph	put_contents	2	1	array,list,list_index,monogyny_list_index,set,sorted_sequence
+paragraph	get_parsing_operator	2	1	cal_window,standard_input_file,standard_io_buffer
+paragraph	add_operator	4	1	
+paragraph	input_data	2	1	pmacs_window,standard_io_window
+paragraph	terminate	1	1	
+paragraph	catalogue	3	1	library_utility
+paragraph	get_my_node	2	1	network_node_name
+paragraph	die	1	1	
+paragraph	get_address	4	1	
+paragraph	connect	4	1	
+paragraph	set_receive_timeout	2	1	
+paragraph	set_send_timeout	2	1	
+paragraph	close_socket	3	1	
+paragraph	set_label_font	2	1	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
+paragraph	get_number_string	5	1	
+paragraph	background	2	1	essential_temporary_window,essential_window,window_without_label,{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window},{with_border|as_output|as_mouse_input|temporary_window},{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window},{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}
+paragraph	get_parameter	3	1	
+paragraph	get_label_font	2	1	
+paragraph	get_text_window	2	1	pmacs_window,{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window},{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}
+paragraph	reset_cwi	2	1	
+paragraph	refresh	3	1	
+paragraph	confirm	3	1	messenger
+paragraph	class_object	2	1	<root>,as_pimos_string_io_device,as_program,as_resource,list,standard_scrolling_menu,{as_debugger_goal_input|as_debugger_input_buffer_processing},{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}

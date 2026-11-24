@@ -1,0 +1,19 @@
+% TM-125, PDF page 8, printed "Page 7". Section 3 Window Manipulator: menu items as printed.
+% transcribed from OCR draft, checked by eye against work/tm0125/p-08_*.png (section 4 head seen).
+"When the window manipulator is selected in the system menu, the menu for window
+manipulator is shown. User select one of the items on the menu and the associated
+function is invoked. Each item and its function is as follows:"
+ 1) SHOW        Show the whole part of the partially shown window.
+ 2) HIDE        Put the partially shown window to the bottom of the list of windows.
+ 3) RESHAPE     Reset the position and size by pointing the top-left corner and the
+                bottom-right corner with mouse.
+ 4) MOVE        Reset the position of window by mouse.
+ 5) EXPAND      Expand the window size as large as possible but not hide another fully
+                shown window.
+ 6) MENU        Select the window using the submenu of windows list.
+ 7) PERMISSION  Reset the window output permission by sub-menu.
+ 8) ATTRIBUTE   Change the window's attribute by choice window.
+ 9) HARDCOPY    Take the window's hardcopy.
+10) SUPERIOR    Change the windows editing base to superior window.
+11) INFERIOR    Change the windows editing base to inferior window.
+12) EXIT        Exit from window manipulator.

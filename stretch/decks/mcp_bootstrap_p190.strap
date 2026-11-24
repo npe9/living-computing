@@ -175,6 +175,10 @@
 ! page reads all four and they are consecutive.
 !
 ! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! >>> ONE SUBSTITUTION, AND IT IS LOUD <<<
 ! ---------------------------------------------------------------
 ! LINE 34 PRINTS      K SOS TM  CB,2,K R WEF.32
@@ -351,7 +355,7 @@ KRWEF   LCI,2,K REP                  ! line  4   printed name "K R WEF"
         B,K SOS                      ! line 31   -EE - VERY SHORT TAPE
         B,K K EXIT                   ! line 32   -SUCCESSFUL END
 RK2     BZB,$R.63,K SOS              ! line 33   printed name "RK2"
-KSOSTM  CB,2,KRWEF.32                ! line 34   printed "K SOS TM CB,2,K R WEF.32" -- SUBSTITUTED, see ONE SUBSTITUTION
+KSOSTM  CB,2,K R WEF.32              ! line 34   NAME printed "K SOS TM"; operand AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20), see ONE SUBSTITUTION
         B,K SOS                      ! line 35
 KKDENS  L(BU,1),S U DENS($11),46     ! line 43   printed name "K K DENS"  -TEST IF UNIT SET TO DESIRED DEN
         KV,1,$R                      ! line 44

@@ -9,9 +9,10 @@
 ! printed, except:
 !  * its "BEW, $" is "B, RET", so a driver can run it on twelve
 !    instructions in one program;
-!  * "TEST KFI(BU, 2), (2) 10,4" is written "(2)10,4": strap_asm
-!    refuses the printed blank.  That is an assembler finding,
-!    repro_radix_blank.strap / tests/check_radix_blank.py;
+!  * (none now for TEST: "KFI(BU, 2), (2) 10,4" carries the printed
+!    blank since 2026-11-23, when strap_asm stopped refusing it --
+!    repro_radix_blank.strap / tests/check_radix_blank.py; the second
+!    copy, TEST2, is the deck's and writes "(2)10,4";)
 !  * NOTVFL and KMINUS are NOTVF and KMINU (six characters with the
 !    second copy's suffix); ' comments are written !'.
 ! The driver (START .. INST), the test instructions and the second
@@ -116,7 +117,7 @@ EFFADR  L(BU, 32), INST
 SV     SV, $0, 17.0                    !'index value field now in $1
         B, TEST
 NOX    Z, 17.0
-TEST   KFI(BU, 2), (2)10,4             !'test if floating-point
+TEST   KFI(BU, 2), (2) 10,4            !'test if floating-point
         BZAE, NOTFP
 FP     -(BU, 32-18), $R.32 + 0.18      !'floating-point measure
 MPLUS  M+(B, 25, 1), 17.0, 32-24       !'25-bit add

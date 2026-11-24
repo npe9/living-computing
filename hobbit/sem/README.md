@@ -950,7 +950,12 @@ this model ever disagree, the README is the tie-breaker for the checker.
 ## What the model deliberately is not
 
 It is not a pipeline model, a cache/fetch-delay model, a cycle-by-cycle
-simulator, an MMU, an event processor, an assembler, a disassembler or a
+simulator, an MMU or an event processor *by default*: those last two
+exist only when a `State` carries a `System` (the CPU-prefixed control
+registers, CSP = ISP, the Chapter 2 MMU, the exception, interrupt and
+trap sequences), which is how `tools/p9boot.py` boots the shipped kernel
+(`docs/p9boot.md`, tests in `tests/test_sem_system.py`).  Without one,
+every such construct is still refused as below.  It is not an assembler, a disassembler or a
 second copy of the Bluespec core.  Its `cyc` is a retirement-spacing
 account from the printed Chapter 4 base tables, not a simulation of the
 EU, the prefetch buffer or the bus.  It knows one instruction at a time

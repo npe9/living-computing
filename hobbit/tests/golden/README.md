@@ -142,7 +142,11 @@ Identical for all six programs -- and for every later golden except
 little-endian data, CSP = SP) because the byte order it pins is selected
 by that PSW (pp. 1-3, 1-4); `017.md` states its own pre-state and the
 harnesses pass it (`sem/hobbit_sem.py --psw 0x8600`,
-`bsv/run_golden.sh 017`). Reset leaves SP and MSP undefined and PSW
+`bsv/run_golden.sh 017`).  `023` is derived, and run on `sem/`, with this
+pre-state, but the *core* runs it with PSW `0x00010200` (V = 1) and MMU
+tables that map only page 0, so that a wrong-path read faults
+(`023.md` "Pre-state"; `bsv/run_golden.sh 023` builds that harness); its
+architectural trace is the same either way. Reset leaves SP and MSP undefined and PSW
 = 0 (p. 1-35, p. 1-36), and PSW bit 9 = 0 would make the *ISP* the CSP
 (Table 1-8 sheet 2, p. 1-15); the traces therefore need an explicit pre-state,
 and this is it:
@@ -270,6 +274,13 @@ addresses above `0x0000ffff` (CONFIG bit 17), the interlocked `ADDI`/`ANDI`/
 `ORI` (two architectural writes per instruction, but the fixed line carries
 one), interrupts, exceptions other than the unimplemented-instruction trap,
 the MMU, and any run with `CSP = ISP`.
+
+Later goldens took some of these in (each `.md` says what it covers and
+what found it): `009` `ADDI` and `022` `ORI`/`ANDI` (the accumulator's
+second write made visible by a following `MOV R4, R12`, and R4 as the
+destination), `023` a wrong-path operand read that faults under the MMU
+(the core-only harness above), `024` `CATCH` (no earlier golden executes
+it) with absolute and stack-offset-indirect targets.
 
 ## What `check_golden.py` enforces
 

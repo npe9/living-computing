@@ -29,8 +29,14 @@ is not used.)
 The same address check is made at every execute_external of the image
 that can be entered today: the goal is started at the instruction
 itself with unbound arguments (a use of the driver, not something the
-machine does), 59 of the 76 sites, 18 of the 23 predicates
-called.  The others' targets begin with an instruction not modelled.
+machine does), all 76 sites, all 23 predicates called (74 and 21
+until shoen stage 3 modelled current_processor, which the two left,
+exception_table:translate/2 and translate/4, begin with after
+current_node: found by running this script on the model before and
+after; 59 and 18 until the gates of read_eagerly, not_equal and
+wait_vector_1/4/6 were removed with lockstep_alt.py; which of them
+opened which site was not looked at).  Re-pinned then (2026-11-23),
+87 -> 89 parts, 3670 -> 3848 lines: the two new calls.
 
 wait_constant.  ipl_pool:hash_int/2 (object code):
 
@@ -71,7 +77,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=72, lines=3325, entered=59, targets=18)
+PINNED = dict(parts=89, lines=3848, entered=76, targets=23)
 SIZES = (3, 5, 2, 6)
 INTS = (-(1 << 31), 0, 5, -7, -(1 << 31) + 1, (1 << 31) - 1)
 

@@ -1,0 +1,5 @@
+TM-401	LIA protocol	CITED	ICOT LIA interface spec 1985 (ref [3]); not given
+TM-401	NCP protocol	ABSENT	frame/packet formats not given
+TM-401	32-bit process address layout	ABSENT	-
+TM-401	process symbolic name file	PROSE	format absent
+TM-401	message object	PROSE	class name/slots absent

@@ -1,0 +1,42 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (Tsuji, Uchida, July 1985)
+% PDF page 23, printed folio "Page 22". Inside screenshot "Figure 6. Debugger system's state window".
+% EXAMPLE user program in window editor_2; RIGHT-HAND PART OF EVERY LINE IS HIDDEN by debugger_2 windows.
+% transcribed by eye from 300dpi crop (work/tm0125/p-23_fig6_editor.png). '.'/',' indistinguishable in
+% the screen font; transcribed as ',' between arguments (INFERENCE). Truncation marked «…hidden».
+% Low-resolution reads marked «?».
+
+class fact has
+:create(Class,F) :-«…hidden»
+     :new(Class,F),«…hidden»
+     :create(#list_«…hidden»
+     :stick_index_t«…hidden»
+     F!base := LI,«…hidden»
+     F!base_tap := «…hidden»
+
+instance
+
+attribute
+     base,
+     base_tap;
+
+:read(Obj,W) :-
+     :read_term(W,F«…hidden»
+     ( atom( Fact),«…hidden»
+        :add_«?»t(Obj«…hidden»
+       :create(#list«…hidden»
+        stack_vector«…hidden»
+        first(Fact,F«…hidden»
+        make_list(F«…hidden»
+        :add_«?»t(Obj«…hidden»
+     ) ;
+
+local
+% editor status: EDIPS(string)[46,27]   message area: reading... / fact.esp >read end
+% debugger_2 shows:  :- X = 1 + 3 .  > Success !!  /  :- :create(#window,(si«…hidden» 40)],W).  > Success !!
+%                    :- L = [1,2,3,4,5].  > Success !!   Variable Window: L = [1,2,3,4,5], W = «…hidden»
+% State window (4 subwindows): mode: trace [no trace] no debug / print depth: 5 / length: 7 / State Menu
+%  [Trace] CALL unify [pick] exit [EXIT] / [FAIL] next miss redo [REDO] / [Leash] CALL unify [pick] exit EXIT /
+%  [FAIL] next miss redo REDO / [Trace] [CALL] [EXIT] [REDO] [FAIL] / [Leash] CALL EXIT REDO FAIL /
+%  [ ] New [Method] Compiled Builtin / Spy Points        ([x] = inverse video)
+% status bar: USER : «?» SIMPOS Version 1.00 [debugger_choice_menu_without_label] 17-Jul-85 Wednesday 15:39:48 («?» low-res)
+% ':add_«?»t' : the letter before 't' is unreadable at screen-font resolution in both lines (a/c/e?).

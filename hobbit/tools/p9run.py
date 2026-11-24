@@ -11,6 +11,8 @@ Everything the kernel does here is taken from the release, not guessed:
 
   exec frame     sys/src/9/port/sysproc.c sysexec() and
                  sys/src/9/hobbit/trap.c execregs():
+                     nbytes = BY2WD + the strings (the profiling
+                              clock's hole at USTKTOP-4, sysproc.c:286)
                      ssize = 4*(nargs+1) + roundup(nbytes, 4)
                      if((ssize+4) & 7) ssize += 4
                      argv[] at USTKTOP-ssize, the strings at USTKTOP-nbytes
@@ -59,9 +61,10 @@ working directory); a path that would leave it is refused.
 
 import argparse
 import collections
+import copy
+import io
 import os
 import pathlib
-import stat
 import struct
 import sys
 
@@ -73,6 +76,7 @@ import p9exec          # noqa: E402
 import hobbit_sem      # noqa: E402
 
 USTKTOP = 0x80000000
+BY2WD = 4                   # mem.h
 USTKSIZE = 4 * 1024 * 1024  # mem.h: size of the user stack
 
 # The kernel's page.  Page 0 is below UTZERO (0x1000) and no 1e process
@@ -98,6 +102,31 @@ SYSCALLS = {
     29: "noted", 30: "segattach", 31: "segdetach", 32: "segfree",
     33: "segflush", 34: "rendezvous", 35: "unmount", 36: "wait",
 }
+
+CHDIR = 0x80000000          # libc.h: mode bit for directories
+DIRLEN = 116                # libc.h: the machine-independent Dir
+NAMELEN = 28
+EVE = "bootes"              # devcons.c:24 eve[]; devdir()'s uid and gid
+PID = 1                     # the one process's pid (#c/pid)
+RFNAMEG, RFENVG, RFFDG, RFNOTEG, RFPROC, RFMEM, RFNOWAIT = \
+    1, 2, 4, 8, 16, 32, 64  # libc.h rfork flags
+RFCNAMEG, RFCENVG, RFCFDG = 1 << 10, 1 << 11, 1 << 12
+ERRLEN = 64                 # libc.h: Waitmsg.msg
+EXEC = object()             # Kernel.call's "a new image" result
+KERNDATE = 721110517        # `kerndate` in the shipped s9term; devdir's mtime
+
+
+def convD2M(name, uid, gid, qpath, qvers, mode, atime, mtime, length,
+            typ, dev):
+    """sys/src/libc/9sys/convD2M.c, for a Dir with hlength 0."""
+    def string(x):
+        return x.encode("latin-1")[:NAMELEN - 1].ljust(NAMELEN, b"\0")
+    out = string(name) + string(uid) + string(gid) + struct.pack(
+        "<IIIIIIIHH", qpath & 0xFFFFFFFF, qvers, mode & 0xFFFFFFFF,
+        atime & 0xFFFFFFFF, mtime & 0xFFFFFFFF, length & 0xFFFFFFFF, 0,
+        typ, dev)
+    assert len(out) == DIRLEN
+    return out
 
 
 class Stop(Exception):
@@ -184,7 +213,7 @@ def build_stubs():
 #: arguments each system call reads (the Bluespec run compares that many)
 NARGS = {"exits": 1, "errstr": 1, "brk_": 1, "open": 2, "create": 3,
          "close": 1, "read": 3, "write": 3, "seek": 3, "remove": 1,
-         "fstat": 2, "rfork": 1}
+         "fstat": 2, "rfork": 1, "stat": 2, "notify": 1}
 
 
 class Recorder:
@@ -286,7 +315,11 @@ def exec_frame(state, argv):
     m = Machine(state)
     strings = [a.encode("latin-1") + b"\0" for a in argv]
     nargs = len(strings)
-    nbytes = sum(len(s) for s in strings)
+    # sysproc.c:286: "nbytes = BY2WD; /* hole for profiling clock at top
+    # of stack */": the strings end a word below USTKTOP.  That word (a
+    # fresh stack page, so zero) is what sp[0] points at, and libc's
+    # main9.s keeps the pointer in _clock (`MOV R0, _clock(SB)`).
+    nbytes = BY2WD + sum(len(s) for s in strings)
     ssize = 4 * (nargs + 1) + ((nbytes + 3) & ~3)
     if (ssize + 4) & 7:
         ssize += 4
@@ -304,19 +337,62 @@ def exec_frame(state, argv):
     return sp, USTKTOP
 
 
+class Stream:
+    """Standard input or output when the caller redirects it (rc's `<`
+    and `>`, or one end of a pipeline that `tools/p9kgen.py` runs a
+    stage at a time).  Reads come from `data`; writes go to `sink`."""
+
+    def __init__(self, name, data=b"", sink=None, dirent=None):
+        self.name = name
+        self.buf = io.BytesIO(data)
+        self.sink = sink
+        self.dirent = dirent    # what fstat says, for a device file
+
+    def read(self, n):
+        return self.buf.read(n)
+
+    def write(self, data):
+        self.sink.write(data)
+
+    def close(self):
+        pass
+
+
 class Kernel:
-    def __init__(self, root, machine, bss_end, console):
+    def __init__(self, root, machine, bss_end, console, stdin=None,
+                 stdout=None):
         self.root = os.path.realpath(root)
         self.cwd = ""           # the working directory, relative to root
         self.m = machine
         self.brk = bss_end
         self.console = console
-        self.fds = {0: None, 1: "console", 2: "console"}
+        # fd 0 reads as end of file unless stdin is given; fd 1 is the
+        # console unless stdout is given; fd 2 is always the console.
+        self.fds = {0: None if stdin is None else Stream("stdin", stdin),
+                    1: "console" if stdout is None
+                    else Stream("stdout", sink=stdout),
+                    2: "console"}
         self.max_brk = bss_end
         self.errstr = b""
         self.trace = []
         self.fp_traps = []      # (pc, [mnemonics]) per handler entry
         self.exit_msg = None
+        self.noteid = 1
+        self.notify = 0
+        # processes (sys_rfork with RFPROC, sys_exec, sys_wait)
+        self.pid = PID
+        self.pids = [PID]       # the last pid handed out, shared
+        self.text = ""          # Proc.text: the program's name
+        self.inherited = set()  # ids of fd objects a parent still holds
+        self.waitq = []         # Waitmsg bytes of children that exited
+        self.entry = None       # (ISP, PSW) at this kernel entry
+        self.new_state = None   # the image sys_exec built
+        self.max_steps = 0
+        self.verbose = False
+        self.recording = False
+        self.child_steps = 0    # instructions retired by children
+        self.children = []      # (pid, text, steps, trace, status)
+        self.clock = None       # a fixed time for the files it writes
 
     def host_path(self, name):
         # An absolute path is under --root; a relative one is under the
@@ -357,6 +433,8 @@ class Kernel:
             return 0
         if name == "open":
             path = m.cstring(a[0]).decode("latin-1")
+            if path.startswith("#"):
+                return self.open_device(path, a[1])
             # libc.h: OREAD 0, OWRITE 1, ORDWR 2, OEXEC 3 (read, checking
             # execute permission); OTRUNC 16.  OCEXEC and ORCLOSE are not
             # modelled, and a mode with any other bit is refused rather
@@ -378,19 +456,27 @@ class Kernel:
             path = m.cstring(a[0]).decode("latin-1")
             # create(name, mode, perm): the file is made (or truncated) and
             # opened.  The same mode rule as open; a directory (CHDIR in
-            # perm, 0x80000000) is refused.  The permission bits have no
-            # effect here.
+            # perm, 0x80000000) is refused.  A new file's permissions are
+            # perm ANDed with the containing directory's, an existing
+            # file's are unchanged (sys/man/2/open, `create`); strip
+            # refuses a file without execute bits, so zl's 0775 matters.
             if (a[1] & ~(3 | 16)) or (a[2] & 0x80000000):
                 raise Stop("p9run: refused create(%r, 0x%x, 0x%x)"
                            % (path, a[1], a[2]))
+            host = self.host_path(path)
+            new = not os.path.exists(host)
             try:
-                f = open(self.host_path(path), "w+b")
+                f = open(host, "w+b")
             except OSError as e:
                 return self.fail("%s: %s" % (path, e.strerror))
+            if new:
+                dirmode = os.stat(os.path.dirname(host)).st_mode
+                os.chmod(host, a[2] & dirmode & 0o777)
+            self.stamp(host)
             return self.new_fd(f)
         if name == "close":
             f = self.fds.pop(a[0], None)
-            if f not in (None, "console"):
+            if f not in (None, "console") and id(f) not in self.inherited:
                 f.close()
             return 0
         if name == "read":
@@ -405,20 +491,23 @@ class Kernel:
             if f == "absent" or f is None:
                 return self.fail("fd %d not open for writing" % a[0])
             data = m.bytes(a[1], a[2])
-            if f == "console":
+            if f == "console" or isinstance(f, Stream):
                 if m.rec is not None:
                     m.rec.output("-", 0, a[1], a[2])
-                self.console.write(data)
+                (self.console if f == "console" else f).write(data)
             else:
                 if m.rec is not None:
                     m.rec.output(os.path.relpath(f.name, self.root),
                                  f.tell(), a[1], a[2])
                 f.write(data)
+                self.stamp(f.name, f)
             return len(data)
         if name == "seek":
             f = self.fds.get(a[0], "absent")
             if f in ("absent", None, "console"):
                 return self.fail("fd %d cannot seek" % a[0])
+            if isinstance(f, Stream):       # sysseek: a pipe is Eisstream
+                return self.fail("seek on a stream")
             off = a[1] - (1 << 32) if a[1] & 0x80000000 else a[1]
             f.seek(off, a[2])
             return f.tell()
@@ -429,93 +518,290 @@ class Kernel:
             except OSError as e:
                 return self.fail("%s: %s" % (path, e.strerror))
             return 0
-        # ar's calls (A3); their own methods, below, kept apart from the
-        # calls above so that other additions merge cleanly.
-        if name == "fstat":
-            return self.ar_fstat(a)
-        if name == "rfork":
-            return self.ar_rfork(a)
+        res = self.call_a3(name, a)
+        if res is not None:
+            return res
         raise Stop("p9run: refused syscall %d (%s) args %s"
                    % (num, name, " ".join("%08x" % x for x in a)))
 
     # ----------------------------------------------------------------
-    # The system calls 1e's `ar` needs (sys/src/cmd/ar.c): fstat for
-    # dirfstat() in armove() and the `u` test, and rfork(RFNOTEG) in
-    # install() and qcmd().  Transcribed from sys/src/9/port/sysfile.c
-    # sysfstat() and sysproc.c sysrfork(); the Dir is convD2M's layout
-    # (sys/src/libc/9sys/convD2M.c, sys/include/libc.h Dir, DIRLEN 116).
+    # System calls added for A3's generated kernel inputs (awk, sed,
+    # xd, grep, sort, strip run as rc's pipeline stages by
+    # tools/p9kgen.py).  Kept apart from `call` so that other additions
+    # merge cleanly.  Returns None for a call it does not do.
     # ----------------------------------------------------------------
 
-    DIRLEN = 116
-    NAMELEN = 28
-    CHDIR = 0x80000000
-    RFNOTEG = 1 << 3
-    RFPROC = 1 << 4
+    def call_a3(self, name, a):
+        if name == "fstat":
+            return self.sys_fstat(a)
+        if name == "stat":
+            return self.sys_stat(a)
+        if name == "notify":
+            return self.sys_notify(a)
+        if name == "rfork":
+            return self.sys_rfork(a)
+        if name == "exec":
+            return self.sys_exec(a)
+        if name == "wait":
+            return self.sys_wait(a)
+        return None
 
-    @classmethod
-    def dir_bytes(cls, name, st, dev_type=ord("M"), dev=0):
-        """convD2M() of the Dir a file server returns for host file `st`.
+    def open_device(self, path, mode):
+        """open of a `#` name.  Two device files are modelled, because
+        libc and APE startup code open them; any other is refused.
 
-        The host is the file server, so the fields are its answer:
-          name    the last path element (NAMELEN bytes, NUL-padded)
-          uid,gid "none" -- the host's owner is not a Plan 9 user; ar
-                  and every caller seen so far ignore both
-          qid     path = the host inode (31 bits) | CHDIR for a
-                  directory, vers = 0
-          mode    the host permission bits (& 0777) | CHDIR
-          atime, mtime   the host's, in seconds
-          length  the host size, as convD2M's VLONG (high word 0)
-          type, dev      mntdirfix() (devmnt.c) stamps the mount driver's
-                  devchar 'M' and the mount's id; the id is not
-                  modelled and is 0
+          #c/pid  devcons.c Qpid: readnum(offset, buf, n, pid, NUMSIZE),
+                  the pid right-aligned in 11 characters and a blank
+                  (libc getpid(), used by mktemp() in ar).  The pid is
+                  PID.
+          #e      devenv.c: the environment directory, read OREAD only;
+                  the environment is empty here, so envgen() has no
+                  entry and a read returns 0 bytes (APE _envsetup()
+                  opendir()s it; libc getenv() opens #e/name).
         """
-        chdir = cls.CHDIR if stat.S_ISDIR(st.st_mode) else 0
+        if path == "#c/pid":
+            if mode & 3 != 0:
+                return self.fail("permission denied")   # consdir 0444
+            text = ("%11d " % PID).encode()
+            return self.new_fd(Stream(path, text, dirent=convD2M(
+                "pid", EVE, EVE, 16, 0, 0o444, 0, KERNDATE, 12,
+                ord("c"), 0)))
+        if path in ("#e", "#e/"):
+            if mode != 0:
+                return self.fail("permission denied")   # Eperm
+            # devstat with no entry and a CHDIR qid:
+            # devdir(c, c->qid, ".", 0, eve, CHDIR|0700)
+            return self.new_fd(Stream(path, b"", dirent=convD2M(
+                ".", EVE, EVE, CHDIR, 0, CHDIR | 0o700, 0, KERNDATE, 0,
+                ord("e"), 0)))
+        if path.startswith("#e/"):
+            return self.fail("file does not exist")     # Enonexist
+        raise Stop("p9run: refused open(%r, %d): device not modelled"
+                   % (path, mode))
 
-        def text(s):
-            b = s.encode("latin-1")[:cls.NAMELEN - 1]
-            return b + b"\0" * (cls.NAMELEN - len(b))
-        out = (text(name) + text("none") + text("none")
-               + struct.pack("<IIIii", (st.st_ino & 0x7FFFFFFF) | chdir, 0,
-                             (st.st_mode & 0o777) | chdir,
-                             int(st.st_atime), int(st.st_mtime))
-               + struct.pack("<II", st.st_size & 0xFFFFFFFF, 0)
-               + struct.pack("<HH", dev_type, dev))
-        assert len(out) == cls.DIRLEN
-        return out
-
-    def ar_fstat(self, a):
-        """sysfstat(): fstat(fd, buf) writes the fd's Dir (DIRLEN bytes)."""
-        fd, buf = a[0], a[1]
-        # evenaddr() (sys/src/9/hobbit/trap.c): a buffer not on a word
-        # boundary posts "sys: odd address" and fails; notes are not
-        # modelled, so the run stops.
-        if buf & 3:
-            raise Stop("p9run: fstat buffer 0x%08x: odd address" % buf)
-        f = self.fds.get(fd, "absent")
-        if f == "absent":
-            return self.fail("fd out of range or not open")   # Ebadfd
-        if f in (None, "console"):
-            raise Stop("p9run: refused fstat(%d): the console's Dir "
-                       "(devcons) is not modelled" % fd)
-        st = os.fstat(f.fileno())
-        self.m.set_bytes(buf, self.dir_bytes(os.path.basename(f.name), st))
+    def sys_rfork(self, a):
+        """sysproc.c sysrfork without RFPROC: new name, environment, fd
+        or note groups for this process, then return 0.  This process is
+        alone, so a new group is the old one (RFCFDG would close every
+        fd and is refused; so is RFPROC, a new process)."""
+        flag = a[0]
+        if (flag & (RFNAMEG | RFCNAMEG)) == (RFNAMEG | RFCNAMEG) or \
+                (flag & (RFENVG | RFCENVG)) == (RFENVG | RFCENVG):
+            return self.fail("bad arg in system call")  # Ebadarg
+        if flag & RFPROC:
+            return self.fork(flag)
+        if flag & RFCFDG:
+            raise Stop("p9run: refused rfork(0x%x): RFCFDG not modelled"
+                       % flag)
+        if flag & (RFMEM | RFNOWAIT):
+            return self.fail("bad arg in system call")  # Ebadarg
+        if flag & RFNOTEG:
+            self.noteid += 1
         return 0
 
-    def ar_rfork(self, a):
-        """sysrfork() without RFPROC: only RFNOTEG is modelled.
+    def fork(self, flag):
+        """sysrfork with RFPROC.  The child is a copy of this process
+        (dupseg of every segment: a copy of the memory, the registers and
+        the stack cache's array) that returns 0 from the call; the parent
+        gets the child's pid.  The child runs first, to its exits, before
+        the parent goes on: one processor and no clock here, and a parent
+        that waits (rl's fexec, rc) sees what it would have seen.  A
+        program whose parent and child must run interleaved (a pipe
+        between them) is outside that and will stop or deadlock loudly
+        on its own refused call.
 
-        RFNOTEG gives the process a new note group (`p->noteid =
-        incref(&noteidalloc)`); this runner has no notes, so it changes
-        nothing observable.  Every other flag -- RFPROC above all, a new
-        process -- is refused, loudly, rather than half done.
-        """
-        flag = a[0]
-        if flag & self.RFPROC:
-            raise Stop("p9run: refused rfork(0x%x): RFPROC (a new process) "
-                       "is not modelled" % flag)
-        if flag != self.RFNOTEG:
-            raise Stop("p9run: refused rfork(0x%x): only RFNOTEG is "
+        Fd groups: RFFDG gives the child a copy of the table that holds
+        the same channels (so the same offsets, dupfgrp); without it the
+        table itself is shared.  RFCFDG and RFMEM are refused."""
+        if flag & (RFCFDG | RFMEM):
+            raise Stop("p9run: refused rfork(0x%x): RFCFDG/RFMEM not "
                        "modelled" % flag)
+        if self.recording:
+            raise Stop("p9run: refused rfork(0x%x): a second process "
+                       "cannot be recorded for the Bluespec run" % flag)
+        isp, saved_psw = self.entry
+        cstate = copy.deepcopy(self.m.state)
+        cm = Machine(cstate)
+        cm.set_word(cstate.sp + 4, 0)           # the child's rfork() = 0
+        cstate.pc = cm.word(isp - 8)
+        cstate.psw = saved_psw
+        cstate.isp = isp
+        ck = Kernel(self.root, cm, self.brk, self.console)
+        ck.cwd = self.cwd
+        ck.brk, ck.max_brk = self.brk, self.max_brk
+        self.pids[0] += 1
+        ck.pid = self.pids[0]
+        ck.pids = self.pids
+        ck.text = self.text
+        ck.noteid = self.noteid if not flag & RFNOTEG else self.noteid + 1
+        ck.max_steps, ck.verbose = self.max_steps, self.verbose
+        ck.clock = self.clock
+        if flag & RFFDG:
+            ck.fds = dict(self.fds)
+            ck.inherited = self.inherited | {id(f) for f in self.fds.values()}
+        else:
+            ck.fds = self.fds
+            ck.inherited = self.inherited
+        status, steps = process_loop(cstate, cm, ck, self.max_steps, None,
+                                     None, False, self.verbose,
+                                     collections.Counter())
+        self.child_steps += steps + ck.child_steps
+        self.children.append((ck.pid, ck.text, steps, ck.trace, status))
+        if not status.startswith("exits("):
+            raise Stop("p9run: child %d (%s) stopped: %s"
+                       % (ck.pid, ck.text, status))
+        if flag & RFFDG:
+            for f in ck.fds.values():
+                if f not in (None, "console") and id(f) not in ck.inherited:
+                    f.close()
+        # proc.c pexit(): the Waitmsg -- pid and three times by readnum
+        # (NUMSIZE 12 each), then "text pid:exitstr" or "" in msg[ERRLEN]
+        if not flag & RFNOWAIT:
+            msg = ("%s %d:%s" % (ck.text, ck.pid, ck.exit_msg)
+                   if ck.exit_msg else "").encode("latin-1")[:ERRLEN - 1]
+            self.waitq.append(("%11d " % ck.pid).encode()
+                              + ("%11d " % 0).encode() * 3
+                              + msg.ljust(ERRLEN, b"\0"))
+        return ck.pid
+
+    def ns_path(self, name):
+        """The 1e name space for exec: lib/namespace binds /$cputype/bin
+        on /bin and unions /rc/bin after it.  Only /hobbit/bin is in a
+        tree here; /rc/bin (rc scripts) is not modelled."""
+        if name.startswith("/bin/"):
+            return self.host_path("/hobbit" + name)
+        return self.host_path(name)
+
+    def sys_exec(self, a):
+        """sysproc.c sysexec(file, argv): namec(file, OEXEC), the Exec
+        header checked (Z_MAGIC, entry within the text), the arguments
+        copied out of the old image, a new image built (`process_image`:
+        the same exec frame as the first process's) and the old one
+        discarded; Proc.text = the file's last element.  `#!` files are
+        refused (rc is not run here)."""
+        path = self.m.cstring(a[0]).decode("latin-1")
+        argv = []
+        p = a[1]
+        while self.m.word(p):
+            argv.append(self.m.cstring(self.m.word(p)).decode("latin-1"))
+            p += 4
+        host = self.ns_path(path)
+        if not os.path.isfile(host):
+            return self.fail("file does not exist")     # Enonexist
+        with open(host, "rb") as f:
+            head = f.read(32)
+        if head[:2] == b"#!":
+            raise Stop("p9run: refused exec(%r): #! scripts not modelled"
+                       % path)
+        if len(head) < 32 or int.from_bytes(head[:4], "big") not in \
+                p9exec.MAGIC:
+            return self.fail("exec header invalid")     # Ebadexec
+        state, bss_end = process_image(host, argv)
+        self.brk = self.max_brk = bss_end
+        self.text = os.path.basename(path)[:NAMELEN - 1]
+        self.new_state = state
+        return EXEC
+
+    def sys_wait(self, a):
+        """sysproc.c syswait -> proc.c pwait: no children and no wait
+        records is Enochild; otherwise the first record is copied out
+        and its pid returned.  Children have all run to completion."""
+        if not self.waitq:
+            return self.fail("no living children")      # Enochild
+        w = self.waitq.pop(0)
+        if a[0]:
+            self.m.set_bytes(a[0], w)
+        return int(w[:12])
+
+    def stamp(self, host, f=None):
+        """The file server's clock.  With `clock` set (run(clock=T),
+        --clock T), a file this process creates or writes gets atime =
+        mtime = T, as a server whose clock read T would give it; ar
+        copies that into a member header (rl's __.SYMDEF), so a fixed
+        clock makes an archive reproducible.  Unset, the host's times
+        stand."""
+        if self.clock is not None:
+            if f is not None:           # the bytes first, then the time
+                f.flush()
+            os.utime(host, (self.clock, self.clock))
+
+    def sys_notify(self, a):
+        """sysproc.c sysnotify: u->notify = arg[0]; return 0.  No note is
+        ever posted to a process here, so the handler is only kept."""
+        self.notify = a[0]
+        return 0
+
+    def dir_entry(self, f):
+        """The 116-byte machine-independent Dir that a device's stat
+        routine writes (sys/include/libc.h struct Dir, DIRLEN 116;
+        sys/src/libc/9sys/convD2M.c: three NAMELEN strings, then
+        qid.path, qid.vers, mode, atime, mtime as little-endian longs,
+        the length as eight bytes with the high word zero, type and dev
+        as shorts).  `f` is an open file's host object, a host path, a
+        Stream, or "console"."""
+        if f == "console":
+            # devcons.c consstat: devstat(c, dp, consdir, NCONS, devgen)
+            # finds "cons", {Qcons} = 3, length 0, perm 0660; dev.c
+            # devdir() sets type = devchar ('c') and mtime = kerndate.
+            return convD2M("cons", EVE, EVE, 3, 0, 0o660, 0, KERNDATE, 0,
+                           ord("c"), 0)
+        if isinstance(f, Stream) and f.dirent is not None:
+            return f.dirent
+        if isinstance(f, Stream):
+            # devpipe.c pipestat -> stream.c streamstat(c, db, "pipe",
+            # 0666) -> devdir with the channel's qid, STREAMQID(id,
+            # Sdataqid) = (id<<5)|31 (portdat.h), and the bytes queued.
+            # The length is 0 here: what a reader sees before the
+            # writer has written.
+            return convD2M("pipe", EVE, EVE, (1 << 5) | 31, 0, 0o666, 0,
+                           KERNDATE, 0, ord("|"), 0)
+        # A host file is what the file server says through devmnt (type
+        # 'M'): the name, the permission bits with CHDIR for a
+        # directory, the length and the times.
+        path = f if isinstance(f, str) else f.name
+        st = os.stat(path)
+        isdir = os.path.isdir(path)
+        qpath = (st.st_ino & 0x7FFFFFFF) | (CHDIR if isdir else 0)
+        mode = (st.st_mode & 0o777) | (CHDIR if isdir else 0)
+        name = "/" if os.path.realpath(path) == self.root \
+            else os.path.basename(path)
+        return convD2M(name, EVE, EVE, qpath, 0, mode,
+                       int(st.st_atime), int(st.st_mtime),
+                       0 if isdir else st.st_size, ord("M"), 0)
+
+    @staticmethod
+    def evenaddr(buf):
+        """sysfstat/sysstat call evenaddr(arg[1]) (sys/src/9/hobbit/
+        trap.c): a buffer not on a word boundary posts "sys: odd
+        address"; notes are not modelled, so the run stops."""
+        if buf & 3:
+            raise Stop("p9run: stat buffer 0x%08x: odd address" % buf)
+
+    def sys_fstat(self, a):
+        """sysfile.c sysfstat(fd, buf): the device's stat of the fd's
+        channel into buf (DIRLEN bytes)."""
+        self.evenaddr(a[1])
+        f = self.fds.get(a[0], "absent")
+        if f == "absent":
+            return self.fail("fd out of range or not open")   # Ebadfd
+        if f is None:                   # fd 0 with no stdin given
+            raise Stop("p9run: refused fstat(0): standard input is not "
+                       "redirected (give stdin=)")
+        self.m.set_bytes(a[1], self.dir_entry(f))
+        return 0
+
+    def sys_stat(self, a):
+        """sysfile.c sysstat(name, buf): namec, then the device's stat.
+        Only the file tree is modelled; a `#` device name is refused."""
+        self.evenaddr(a[1])
+        path = self.m.cstring(a[0]).decode("latin-1")
+        if path.startswith("#"):
+            raise Stop("p9run: refused stat(%r): devices are not modelled"
+                       % path)
+        host = self.host_path(path)
+        if not os.path.exists(host):
+            return self.fail("file does not exist")     # Enonexist
+        self.m.set_bytes(a[1], self.dir_entry(host))
         return 0
 
 
@@ -668,10 +954,47 @@ def mnemonic_key(parcels):
 
 
 def run(binary, argv, root, max_steps, console, census=False, verbose=False,
-        record=None, hri=None, cwd=""):
+        record=None, hri=None, cwd="", stdin=None, stdout=None, clock=None):
     """Run `binary`; optionally write the Bluespec run's recording and
     the HRI trace (one line per retirement, the comparison's reference).
+
+    `stdin` (bytes) is what fd 0 reads, end of file when None; `stdout`
+    (a binary file object) receives fd 1, which is otherwise the console.
+    `clock` (seconds) fixes the times of the files the process writes
+    (Kernel.stamp).
     """
+    state, bss_end = process_image(binary, argv)
+    m = Machine(state)
+    k = Kernel(root, m, bss_end, console, stdin, stdout)
+    k.cwd = cwd.strip("/")
+    k.text = os.path.basename(binary)
+    k.max_steps = max_steps
+    k.verbose = verbose
+    k.recording = bool(record)
+    k.clock = clock
+    recorder = Recorder() if record else None
+    boot_memory = dict(state.memory) if record else None
+    start = (state.pc, state.sp, state.psw, state.isp, state.vb)
+    hri_file = open(hri, "w") if hri else None
+    ops = collections.Counter()
+    status, steps = process_loop(state, m, k, max_steps, recorder, hri_file,
+                                 census, verbose, ops)
+    for f in k.fds.values():
+        if f not in (None, "console"):
+            f.close()
+    if hri_file:
+        hri_file.close()
+    if recorder:
+        page = lambda a: (a + 0xFFF) & ~0xFFF
+        recorder.write(record, boot_memory, start,
+                       [KPAGE, (0x1000, page(max(k.max_brk, bss_end))),
+                        (USTKTOP - USTKSIZE, USTKTOP)])
+    return status, steps, k, ops
+
+
+def process_image(binary, argv):
+    """A new process image for `binary` (the file attached, the exec
+    frame built, the kernel page's stubs laid out): (state, bss_end)."""
     exe = p9exec.read(binary)
     state = hobbit_sem.State(pc=exe["entry"], psw=PSW_USER, isp=ISP0, vb=VB0,
                              config_kl=True)    # l.s sets CONFIG.KL
@@ -690,14 +1013,13 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
     state.cache = [0] * 64
     stubs, _labels = build_stubs()
     state.memory.update(stubs)
-    m = Machine(state)
-    k = Kernel(root, m, bss_end, console)
-    k.cwd = cwd.strip("/")
-    recorder = Recorder() if record else None
-    boot_memory = dict(state.memory) if record else None
-    start = (state.pc, state.sp, state.psw, state.isp, state.vb)
-    hri_file = open(hri, "w") if hri else None
-    ops = collections.Counter()
+    return state, bss_end
+
+
+def process_loop(state, m, k, max_steps, recorder, hri_file, census,
+                 verbose, ops):
+    """Run the process in `state` until it exits or stops: (status,
+    instructions retired).  An exec replaces the image and goes on."""
     steps = 0
     status = "max-steps"
     try:
@@ -745,10 +1067,16 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
                                    [m.word(state.sp + 4 + 4 * i)
                                     for i in range(4)])
                     m.rec = recorder
+                k.entry = (isp, saved_psw)
                 try:
                     res = k.call(num, state.sp)
                 finally:
                     m.rec = None
+                if res is EXEC:                     # sysexec: a new image
+                    k.trace.append(("exec", 0))
+                    state = k.new_state
+                    m.state = state
+                    continue
                 k.trace.append((SYSCALLS.get(num, "?"), res))
                 if verbose:
                     print("p9run: %s -> %s" % k.trace[-1], file=sys.stderr)
@@ -764,17 +1092,7 @@ def run(binary, argv, root, max_steps, console, census=False, verbose=False,
                 state.isp = isp
     except Stop as exc:
         status = str(exc)
-    for f in k.fds.values():
-        if f not in (None, "console"):
-            f.close()
-    if hri_file:
-        hri_file.close()
-    if recorder:
-        page = lambda a: (a + 0xFFF) & ~0xFFF
-        recorder.write(record, boot_memory, start,
-                       [KPAGE, (0x1000, page(max(k.max_brk, bss_end))),
-                        (USTKTOP - USTKSIZE, USTKTOP)])
-    return status, steps, k, ops
+    return status, steps
 
 
 def main(argv):
@@ -790,18 +1108,33 @@ def main(argv):
                     help="write the recording bsv/P9HostTb.bsv replays")
     ap.add_argument("--hri", metavar="FILE",
                     help="write the HRI trace, one line per retirement")
+    ap.add_argument("--stdin", metavar="FILE",
+                    help="a host file for fd 0 (default: end of file)")
+    ap.add_argument("--stdout", metavar="FILE",
+                    help="a host file for fd 1 (default: the console)")
+    ap.add_argument("--clock", type=int, metavar="SECONDS",
+                    help="the time of every file the process writes")
     ap.add_argument("binary")
     ap.add_argument("args", nargs=argparse.REMAINDER)
     args = ap.parse_args(argv)
     name = os.path.basename(args.binary)
+    stdin = pathlib.Path(args.stdin).read_bytes() if args.stdin else None
+    stdout = open(args.stdout, "wb") if args.stdout else None
     status, steps, k, ops = run(args.binary, [name] + args.args, args.root,
                                 args.max_steps, sys.stdout.buffer,
                                 args.census, args.verbose,
                                 record=args.record, hri=args.hri,
-                                cwd=args.cwd)
+                                cwd=args.cwd, stdin=stdin, stdout=stdout,
+                                clock=args.clock)
+    if stdout:
+        stdout.close()
     sys.stdout.flush()
     print("p9run: %s after %d instructions, %d syscalls"
           % (status, steps, len(k.trace)), file=sys.stderr)
+    for pid, text, csteps, ctrace, cstatus in k.children:
+        print("p9run:   child %d (%s): %s after %d instructions, %d "
+              "syscalls" % (pid, text, cstatus, csteps, len(ctrace)),
+              file=sys.stderr)
     if args.census:
         for key, n in sorted(ops.items(), key=lambda kv: -kv[1]):
             print("  %8d  %s" % (n, key), file=sys.stderr)

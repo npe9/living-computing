@@ -1,0 +1,15 @@
+% TM-100 (Hattori, Yoshida, Fujisaki, "Constructing the SIMPOS Supervisor in an
+% Object-oriented Approach", Feb 1985), PDF page 7, printed folio 5.
+% Section 3.1 (1) Process. Figure 3.1 "Part of class 'process'" (caption on PDF p10),
+% listing begins here, continues on PDF p8, p9, p10.
+% Text before listing: "Although we give several ESP codes as examples, they are not complete."
+% Transcribed by eye from 300dpi crops. A dashed rule precedes the listing.
+-----------------------------------------------------------------------
+
+    class  process  has
+
+    nature      with_link,
+                waiting_frame ;
+
+    attribute   ready_queue,
+                instance_array ;

@@ -437,6 +437,10 @@
 !      "KOPOK".  The page itself prints the closed-up spelling on
 !      lines 49, 50 and 52, so the substitution is to a spelling
 !      THIS PAGE ALSO PRINTS, not to an invention.
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! (S2) LINE 15 IS PRINTED "B,R 1+1.0" and (S3) LINE 16 IS PRINTED
 !      "B,R 1+2.0" -- a blank inside a name INSIDE AN EXPRESSION,
 !      which strap_asm refuses ("undefined symbol 'R'").  Written
@@ -593,8 +597,8 @@ KOPOK   V+I,2,2.0                    ! line  2  >>> SUBSTITUTED (S1): printed NA
         B,M OP CI                    ! line 12  -INVALID OP
         B,E ELG                      ! line 13  -ERASE LONG GAP
         B,R 1                        ! line 14  -SPACE BLOCK   (printed blank KEPT: it assembles)
-        B,R1+1.0                     ! line 15  -BACKSPACE BLOCK  >>> SUBSTITUTED (S2): printed "B,R 1+1.0"
-        B,R1+2.0                     ! line 16  -SPACE FILE       >>> SUBSTITUTED (S3): printed "B,R 1+2.0"
+        B,R 1+1.0                    ! line 15  -BACKSPACE BLOCK  (S2) AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
+        B,R 1+2.0                    ! line 16  -SPACE FILE       (S3) AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         B,R2-.32                     ! line 17
         B,E WT1                      ! line 18  -WRITE TAPE MARK
         B,Z REW ST                   ! line 19  -REWIND

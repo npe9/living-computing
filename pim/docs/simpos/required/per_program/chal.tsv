@@ -1,0 +1,148 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	100	chal/alg.esp:183
+builtin		builtin	==	2	22	chal/alg.esp:84
+builtin		builtin	:=	2	20	chal/alg.esp:489
+builtin		builtin	<	2	20	chal/alg.esp:251
+builtin		constant a#b	string#str		9	
+builtin		builtin	>	2	8	chal/alg.esp:253
+builtin		builtin	>=	2	8	chal/long.esp:185
+builtin		file-level directive	add_operator	3	7	
+builtin		builtin	unbound	1	6	chal/alg.esp:284
+builtin		builtin	atomic	1	5	chal/alg.esp:626
+builtin		builtin	integer	1	4	chal/alg.esp:294
+builtin		builtin	vector_element	3	4	chal/alg.esp:679
+builtin		builtin	is	2	4	chal/chal.esp:41
+builtin		builtin	add_op	1	3	chal/control.esp:122
+builtin		builtin	=:=	2	3	chal/long.esp:948
+builtin		builtin	\==	2	2	chal/alg.esp:88
+builtin		builtin	=<	2	2	chal/alg.esp:452
+builtin		builtin	repeat	0	2	chal/control.esp:107
+builtin		builtin	consult	1	2	chal/control.esp:192
+builtin		builtin	bound	1	2	chal/alg.esp:674
+builtin		builtin	new_stack_vector	2	2	chal/alg.esp:686
+builtin		builtin	`	1	2	chal/long.esp:607
+builtin		builtin	unify	2	2	chal/long.esp:981
+builtin		builtin	stack_vector	2	2	chal/alg.esp:675
+builtin		builtin	heap_to_stack_vector	2	2	chal/chal.esp:21
+builtin		builtin	stack_to_heap_vector	2	2	chal/chal.esp:23
+builtin		builtin	string	3	1	chal/menu.esp:55
+builtin		builtin	ask_size	3	1	chal/control.esp:73
+builtin		builtin	atom	1	1	chal/control.esp:168
+builtin		builtin	trans_list	2	1	chal/control.esp:220
+builtin		builtin	exe_end	2	1	chal/control.esp:226
+builtin		builtin	=\=	2	1	chal/menu.esp:26
+builtin		builtin	search_character	5	1	chal/menu.esp:56
+builtin		builtin	substring	4	1	chal/menu.esp:59
+builtin		builtin	number	1	1	chal/alg.esp:549
+builtin		builtin	del_list	3	1	chal/translate.esp:53
+builtin		builtin	del_path	2	1	chal/translate.esp:54
+builtin		builtin	pub_write	4	1	chal/translate.esp:62
+builtin		builtin	trns_body	3	1	chal/translate.esp:68
+builtin		constant a#b	pf#11		1	
+builtin		builtin	exe_init	2	1	chal/control.esp:221
+builtin		builtin	exe_goal	5	1	chal/control.esp:225
+requirement	?	unknown	add_operator	4	31	chal/control.esp:246
+requirement	?	unknown	putt	2	25	chal/alg.esp:148
+requirement	?	unknown	putb	3	20	chal/alg.esp:495
+requirement	?	unknown	putc	2	14	chal/alg.esp:580
+requirement	?	unknown	putl	1	12	chal/alg.esp:150
+requirement	cal_window	instance	putl	1	10	chal/control.esp:172
+requirement	library	ref	(#ref)		9	chal/control.esp:57
+requirement	symbolizer	ref	(#ref)		9	chal/alg.esp:576
+requirement	?	unknown	write_lines	2	6	chal/long.esp:146
+requirement	library	class	get_class_object	3	5	chal/control.esp:125
+requirement	cal_window	instance	putl	2	5	chal/control.esp:128
+requirement	symbolizer	class	get_atom_string	3	4	chal/control.esp:170
+requirement	cal_window	instance	putb	3	4	chal/control.esp:172
+requirement	process	ref	(#ref)		4	chal/cal_pmacs.esp:30
+requirement	process	class	create	2	3	chal/cal_pmacs.esp:30
+requirement	process	instance	activate	2	3	chal/cal_pmacs.esp:30
+requirement	string	class	append	3	3	chal/control.esp:171
+requirement	?	unknown	remove_operator	2	3	chal/control.esp:244
+requirement	cal_window	slot	!solver	0	3	chal/control.esp:126
+requirement	standard_input_file	class	create	3	3	chal/control.esp:106
+requirement	standard_input_file	instance	close_input	1	3	chal/control.esp:112
+requirement	library	class	make_class_object	2	3	chal/control.esp:124
+requirement	as_program	nature	(inherited)		3	chal/cal_start.esp:7
+requirement	string	ref	(#ref)		3	chal/control.esp:171
+requirement	standard_input_file	ref	(#ref)		3	chal/control.esp:106
+requirement	cal_window	class	create	3	2	chal/control.esp:68
+requirement	cal_window	slot	!cal_menu	0	2	chal/control.esp:76
+requirement	stop_watch	class	create	2	2	chal/control.esp:81
+requirement	cal_window	instance	activate	1	2	chal/control.esp:80
+requirement	standard_io_buffer	class	create	2	2	chal/control.esp:186
+requirement	stop_watch	instance	stop	1	2	chal/control.esp:227
+requirement	symbolizer	class	enter_atom	3	2	chal/menu.esp:63
+requirement	symbolizer	class	string_to_list	3	2	chal/alg.esp:576
+requirement	standard_input_file	instance	get_parsing_operator	2	2	chal/translate.esp:60
+requirement	?	unknown	end_of_input	1	2	chal/translate.esp:233
+requirement	func_index	class	get_contents_at	3	2	chal/translate.esp:278
+requirement	cal_window	instance	set_input_position	1	2	chal/control.esp:129
+requirement	cal_window	instance	putt	2	2	chal/control.esp:189
+requirement	cal_window	instance	set_title	2	2	chal/control.esp:172
+requirement	cal_window	instance	get_fullpath_name	3	2	chal/control.esp:182
+requirement	bool	nature	(inherited)		2	chal/boolgb.esp:7
+requirement	cal_window	ref	(#ref)		2	chal/control.esp:68
+requirement	stop_watch	ref	(#ref)		2	chal/control.esp:81
+requirement	standard_io_buffer	ref	(#ref)		2	chal/control.esp:186
+requirement	as_program	class	create	2	2	chal/cal_start.esp:11
+requirement	process	instance	set_package	2	2	chal/cal_start.esp:13
+requirement	cal_file_menu	class	create_menu	3	2	chal/control.esp:75
+requirement	?	unknown	set_title	2	2	chal/menu.esp:68
+requirement	cal_file_menu	ref	(#ref)		2	chal/control.esp:75
+requirement	list_index	class	create	2	1	chal/translate.esp:20
+requirement	cal_op_menu	class	create	2	1	chal/cal_pmacs.esp:30
+requirement	?	unknown	get_file_menu	2	1	chal/cal_pmacs.esp:47
+requirement	?	unknown	get_pmacs_window	2	1	chal/cal_pmacs.esp:49
+requirement	?	unknown	goto_beginning	1	1	chal/cal_pmacs.esp:53
+requirement	?	unknown	command_interpret	1	1	chal/cal_pmacs.esp:57
+requirement	?	unknown	add_operator	2	1	chal/control.esp:262
+requirement	process	class	self	2	1	chal/control.esp:48
+requirement	?	unknown	exterminate	1	1	chal/control.esp:49
+requirement	?	unknown	die	1	1	chal/control.esp:49
+requirement	library	class	assign	1	1	chal/control.esp:57
+requirement	?	unknown	putl	2	1	chal/chal.esp:27
+requirement	cal_window	slot	!solver_menu	0	1	chal/control.esp:78
+requirement	cal_window	instance	show	1	1	chal/control.esp:79
+requirement	standard_input_file	instance	gett	2	1	chal/control.esp:108
+requirement	standard_input_file	instance	end_of_input	1	1	chal/control.esp:111
+requirement	cal_window	instance	get_parsing_operator	2	1	chal/control.esp:121
+requirement	cal_window	slot	!cur_window	0	1	chal/control.esp:123
+requirement	stop_watch	instance	show	2	1	chal/control.esp:148
+requirement	?	unknown	get_count	2	1	chal/control.esp:149
+requirement	stop_watch	instance	reset	1	1	chal/control.esp:215
+requirement	stop_watch	instance	start	1	1	chal/control.esp:216
+requirement	{with_click_information|temporary_single_scrolling_menu}	class	create	3	1	chal/menu.esp:14
+requirement	directory	class	directory	6	1	chal/menu.esp:20
+requirement	{with_click_information|temporary_single_scrolling_menu}	instance	activate	1	1	chal/menu.esp:24
+requirement	{with_click_information|temporary_single_scrolling_menu}	instance	read_with_click	3	1	chal/menu.esp:25
+requirement	{with_click_information|temporary_single_scrolling_menu}	instance	clear_items	1	1	chal/menu.esp:36
+requirement	{with_click_information|temporary_single_scrolling_menu}	instance	add_item	3	1	chal/menu.esp:46
+requirement	symbolizer	class	list_to_string	3	1	chal/translate.esp:55
+requirement	?	unknown	pre	1	1	chal/translate.esp:923
+requirement	cal_window	instance	flash	1	1	chal/control.esp:138
+requirement	cal_window	instance	clear_buffer	1	1	chal/control.esp:140
+requirement	cal_window	instance	gett	4	1	chal/control.esp:141
+requirement	pmacs_window	nature	(inherited)		1	chal/cal_pmacs.esp:12
+requirement	pmacs_standard_editor	nature	(inherited)		1	chal/cal_pmacs.esp:23
+requirement	with_click_information	nature	(inherited)		1	chal/menu.esp:7
+requirement	temporary_single_scrolling_menu	nature	(inherited)		1	chal/menu.esp:7
+requirement	list_index	ref	(#ref)		1	chal/translate.esp:20
+requirement	cal_op_menu	ref	(#ref)		1	chal/cal_pmacs.esp:30
+requirement	directory	ref	(#ref)		1	chal/menu.esp:20
+requirement	{pre|bool}	class	pre	3	1	chal/alg.esp:305
+requirement	?	unknown	load_file_to_buffer	3	1	chal/cal_pmacs.esp:48
+requirement	?	unknown	set_input_buffer	2	1	chal/cal_pmacs.esp:50
+requirement	?	unknown	get_interpreter	2	1	chal/cal_pmacs.esp:51
+requirement	?	unknown	get_editor	2	1	chal/cal_pmacs.esp:52
+requirement	?	unknown	set_input_position	1	1	chal/cal_pmacs.esp:55
+requirement	?	unknown	activate	1	1	chal/cal_pmacs.esp:56
+requirement	?	unknown	deactivate	1	1	chal/cal_pmacs.esp:58
+requirement	?	unknown	current_buffer	2	1	chal/cal_pmacs.esp:60
+requirement	?	unknown	save_buffer	3	1	chal/cal_pmacs.esp:61
+requirement	cal_window	instance	putf	3	1	chal/control.esp:153
+requirement	?	unknown	get_current_dir	2	1	chal/menu.esp:18
+requirement	?	unknown	add_operator	314	1	chal/translate.esp:97
+requirement	?	unknown	gett	3	1	chal/translate.esp:248
+requirement	?	unknown	putt	3	1	chal/translate.esp:250
+requirement	pre	nature	(inherited)		1	chal/solver.slv:7

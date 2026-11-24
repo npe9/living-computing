@@ -1,0 +1,27 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+file	(none printed); comment: real file inherits as-permanent-object, as-resource, with-lock	class: pool-of-files; instance: region, opened:=no, disposed, io-status	:create/1; :make/2; :open/2	:create-file/1 (...); :open/0 (...); :close/0 (...); :dispose/0 (...)	PRINTED-SOURCE	TM-061	6-7	5-6	hyphenated identifiers; see VARIANTS_tm0061_vs_tm0065.txt
+binary-file	file			:read/2 (...); :write/2 (...); :tap/1	PRINTED-SOURCE	TM-061	7	6	no 'end.' printed
+binary-file-tap					NAMED	TM-061	7	6	#binary-file-tap
+bare-window	with-display, as-inside, *	instance: width, height	:create/2	:refresh/0; :initialize/1	PRINTED-SOURCE	TM-061	8	7	':ge«?»-size' (t degraded)
+with-border	as-inside, *	component: border-x, border-y, border-area-width, border-area-height; attribute: border-flag:=on, border-width:=2		:draw-border/0 (...); after :refresh/0 (two clauses)	PRINTED-SOURCE	TM-061	8	7	first demon tests == off (TM-065: == 0); second demon has no cut
+with-label	as-inside, *, as-label			:draw-label/0; :clear-label/0; :refresh-label/0; after :refresh/0	PRINTED-SOURCE	TM-061	8	7	
+window-with-border-and-label	bare-window, with-border, with-label				PRINTED-SOURCE	TM-061	8	7	
+with-display					NAMED	TM-061	8	7	nature only
+as-inside					NAMED	TM-061	8	7	nature only
+as-label					NAMED	TM-061	8	7	nature only
+as-permanent-object					NAMED	TM-061	6	5	comment in listing
+as-resource					NAMED	TM-061	6	5	
+with-lock					NAMED	TM-061	6	5	
+process					PROSE	TM-061	5	4	実行主体
+stream					PROSE	TM-061	5	4	オブジェクトの流れ(プロセス間通信)
+pool					PROSE	TM-061	5	4	オブジェクトの収納
+world					PROSE	TM-061	5	4	実行環境
+processor					NAMED	TM-061	5	4	
+area					NAMED	TM-061	5	4	
+disk					NAMED	TM-061	5	4	
+keyboard					NAMED	TM-061	5	4	
+a					PROSE	TM-061	4	3	EXAMPLE
+b					PROSE	TM-061	4	3	EXAMPLE
+c					PROSE	TM-061	4	3	EXAMPLE
+with-b	(has an instance of b)				PROSE	TM-061	4	3	EXAMPLE
+a-having-b	a, with-b				PROSE	TM-061	4	3	EXAMPLE

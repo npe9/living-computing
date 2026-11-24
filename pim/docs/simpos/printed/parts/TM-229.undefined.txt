@@ -1,0 +1,6 @@
+TM-229	wildcard function	NAMED	supervisor component, no interface
+TM-229	user management	NAMED	supervisor component
+TM-229	magnetic tape, printer subsystems	NAMED	I/O media, no interface
+TM-229	text buffer	NAMED	figure label only
+TM-229	system debug tool, inspector	NAMED	figure label only
+TM-229	Escher, Oekaki, Queens, Squares, Bounce	NAMED	demo programs in system menu

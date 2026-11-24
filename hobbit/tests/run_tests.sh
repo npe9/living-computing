@@ -22,14 +22,33 @@ python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/bin/echo" >/dev
 # The shipped kernel image (-H1) and the facts docs/s9term.md reads from it.
 python3 "$hobbit/tools/p9exec.py" "$hobbit/tools/plan9-1e/hobbit/s9term" >/dev/null
 python3 "$here/test_p9exec.py"
+# A3's link is compared with s9term by tools/p9kcmp.py (the linked 9term
+# is a build product, made by `p9kbuild.py link` in the long run); here
+# the comparison runs on s9term itself and on corrupted copies of it.
+python3 "$hobbit/tools/p9kcmp.py" "$hobbit/tools/plan9-1e/hobbit/s9term" >/dev/null
+python3 "$here/test_p9kcmp.py"
 
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
+python3 "$here/test_cyc_classify.py"
 python3 "$here/test_sem_extended.py"
+# The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
+# events -- what tools/p9boot.py boots the shipped kernel with.
+python3 "$here/test_sem_system.py"
+# A4: the shipped kernel s9term boots on the reference model: pageinit's
+# console line, /boot's prompt, the BOOTP request, the no-server path,
+# and a replay of the join with the 1e file server through init, rc's
+# prompt and `echo hello` at it (A5, ~3 min of it); the idle skip is
+# checked against a run without it (tools/p9boot.py, docs/p9boot.md;
+# ~6-7 min on a loaded machine).
+python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
 python3 "$here/test_p9run.py"
+# A3: every byte of the shipped __.SYMDEF tables past a name's NUL is
+# accounted for (libmach's readar replayed; /mips/bin/rl's stack frames).
+python3 "$here/test_p9symdef.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in
@@ -39,6 +58,12 @@ python3 "$here/test_p9run.py"
 # exited 1; an --only name with no libc.a member stops the run.
 python3 "$hobbit/tools/p9kbuild.py" libc --check -j 3 --build "$tmp/p9kbuild" \
     --only port/toupper,hobbit/getfcr,9sys/fork
+# A5: the boot ROM's fpi, rebuilt from the release's sources with the
+# shipped za/zc/zl on the model, must equal tools/p9kbuild/fpi.rom (what
+# p9boot loads; ~30 s).  Observed 2026-11-23 with one byte of the
+# committed fpi.rom changed in a scratch copy: "FAILED: fpi.rom differs",
+# exit 1.
+python3 "$hobbit/tools/p9kbuild.py" fpi --check -j 3 --build "$tmp/p9kbuild"
 python3 "$here/golden/check_golden.py"
 
 "$hobbit/bsv/run_smoke.sh"
@@ -145,9 +170,73 @@ for n in 018 019 020 021; do
         --spec-lines "$here/golden/$n.trace"
 done
 
+# 009 (ADDI) now runs on the core too: the interlocked forms were
+# implemented for the s9term boot.  022: ORI/ANDI's accumulator write and
+# R4 as the destination (the kernel's tas).  023: a wrong-path operand
+# read that would fault must not raise the exception (the kernel's
+# netadd); the core runs it with PSW.V = 1 and only page 0 mapped
+# (023.md "Pre-state"), the reference physically -- the architectural
+# trace is the same.  024: CATCH with an absolute and a stack-offset-
+# indirect target (the kernel's interrupt return).  Each three ways.
+for n in 009 022 023 024; do
+    "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
+    grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
+        --spec-lines "$here/golden/$n.trace"
+
+    python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/$n.hex" \
+        --sp 0x100 --msp 0x180 2>/dev/null | grep '^HRI ' > "$tmp/$n.sem"
+    python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
+        --spec-lines "$here/golden/$n.trace"
+done
+
+# The kernel boot on the core, a short sample (docs/p9boot.md, "The boot
+# on the core"): the shipped s9term from the ROM hand-off, physical
+# addressing, the first CRET into virtual mode (record 2,064), `main`
+# (125,203) and the kernel's first interlocked ORI (tas, 126,600), every
+# record compared with the reference boot and every device access
+# replayed from it.  300,000 records; the long run is the documented
+# `bsv/run_p9kern.sh 2893000`, through `/boot`'s first system call.
+"$hobbit/bsv/run_p9kern.sh" 300000 "$tmp/p9kern" > "$tmp/p9kern.out" 2>&1 || {
+    tail -20 "$tmp/p9kern.out"
+    echo "hobbit: the s9term boot on the core diverged" >&2
+    exit 1
+}
+grep '^P9KERN\|^MATCH' "$tmp/p9kern.out"
+grep -q '^125203 main$' "$tmp/p9kern/rec/functions" || {
+    echo "hobbit: the s9term boot sample did not reach main" >&2
+    exit 1
+}
+
 # A2 on the Bluespec core: the shipped 1e za and zl run on the model,
 # every retirement compared with the reference run (bsv/run_p9host.sh);
 # za's object is compared with the shipped libc.a member.
-"$here/run_p9host_tests.sh"
+P9HOST_SIM=bluesim "$here/run_p9host_tests.sh"
+
+# The Verilator build of the same testbench (bsv/build_p9host_vl.sh) on
+# the recording the last step left, zc frexp.c: its whole output --
+# 1,652,549 HRI lines, cyc included, and the P9HOST lines -- must be
+# byte-identical to Bluesim's, and so must the files it wrote
+# (docs/bluespec_architecture.md, "Simulators").  About 30 s to build and
+# 35 s to run, against Bluesim's 135 s for the same run (2026-11-23,
+# heavily loaded machine).  Skipped, loudly, where Verilator is missing.
+if command -v "${VERILATOR:-verilator}" > /dev/null 2>&1; then
+    work=${P9HOST_WORK:-$hobbit/bsv/p9work}
+    "$hobbit/bsv/build_p9host_vl.sh" > "$tmp/vl_build.log" 2>&1 || {
+        tail -30 "$tmp/vl_build.log"; echo "hobbit: the Verilator build failed" >&2; exit 1; }
+    mkdir -p "$tmp/vl/out"
+    P9REC="$work/p9.rec" P9OUT="$tmp/vl/out" "$hobbit/bsv/sim_p9host_vl" \
+        > "$tmp/vl/core.log" 2>&1 || {
+        tail -5 "$tmp/vl/core.log"; echo "hobbit: the Verilator run failed" >&2; exit 1; }
+    # run_p9host.sh touches out/console after the Bluesim run.
+    touch "$tmp/vl/out/console"
+    if ! cmp "$work/core.log" "$tmp/vl/core.log" || ! diff -r "$work/out" "$tmp/vl/out"; then
+        echo "hobbit: Verilator and Bluesim differ on zc frexp.c" >&2
+        exit 1
+    fi
+    echo "verilator: zc frexp.c, $(grep -c '^HRI ' "$tmp/vl/core.log") HRI records and the files written, identical to Bluesim's"
+else
+    echo "hobbit: SKIPPED the Verilator cross-check (verilator not installed)"
+fi
 
 echo "hobbit: all tests passed"

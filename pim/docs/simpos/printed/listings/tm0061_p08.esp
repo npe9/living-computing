@@ -1,0 +1,72 @@
+% TM-061 「逐次型推論マシンPSIのオペレーティング・システム」 (服部 隆 他, May 1984)
+% PDF pages 8-9, printed folios 7-8, section 4.2 (2) 多重継承; no figure numbers.
+% Listings: bare-window (p8), with-border, with-label, window-with-border-and-label (p9).
+% Nature glyph '*' is clearly an asterisk in this edition.
+% '...' bodies are elided IN THE ORIGINAL.
+% transcribed by eye from 300dpi crops (work/tm0061/p-08_[123].png, p-09_[012].png)
+% Intro (p8): クラスbare-window はすべてのウィンドウ・クラスが直接・間接に継承すべき
+%   基本クラスである。
+
+        class bare-window has
+        nature
+                with-display, as-inside, * ;
+        :create(Class, Parameters, Window) :-
+                :new(Class, Window),
+                :initialize(Window, Parameters),
+                :start(Window) ;
+        instance
+        attribute
+                width, height ;
+        :refresh(Window) :- !,
+                :ge«?»-size(Window, Width, Height),
+                :clear-rectangle(Window, 0, 0, Width, Height) ;
+        :initialize(Window, size(Width, Height)) :- !,
+                Window!width := Width,
+                Window!height := Height ;
+        end.
+% «?»: third letter of ':ge?-size' lacks its crossbar in the print (reads 'l');
+% TM-065 has ':get_size'.
+
+% ---- page break (PDF p8 -> p9) ----
+% Intro (p9): クラスwith-border がウィンドウのボーダを描く機能をサポートする。ボーダ
+%   はウィンドウの外枠を示す４本の線から成る。
+
+        class with-border has
+        nature
+                as-inside, * ;
+        instance
+        component
+                border-x, border-y,
+                border-area-width, border-area-height ;
+        attribute
+                border-flag := on,
+                border-width := 2 ;
+        :draw-border(Window) :- ... ;       %ボーダを描く。
+        after :refresh(Window) :-
+                Window!border-flag == off, ! ;
+        after :refresh(Window) :-
+                :draw-border(Window) ;
+        end.
+
+% Intro (p9): クラスwith-labelはラベルを描く機能をウィンドウに与える。
+
+        class with-label has
+        nature
+                as-inside, *, as-label ;
+        instance
+        :draw-label(Window) :- ... ;        %ラベルを描く。
+        :clear-label(Window) :- ... ;       %ラベルを消す。
+        :refresh-label(Window) :-
+                :clear-label(Window),
+                :draw-label(Window) ;
+        after :refresh(Window) :-
+                :refresh-label(Window) ;
+        end.
+
+% Prose (p9): なお、ラベルの実体はクラスas-labelに定義されているが省略する。
+%   ボーダもラベルももつウィンドウは次のクラス定義で定義される。
+
+        class window-with-border-and-label has
+        nature
+                bare-window, with-border, with-label ;
+        end.

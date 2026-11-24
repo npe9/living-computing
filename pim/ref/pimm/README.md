@@ -19,7 +19,14 @@ State: all machine state is registers and memory cells (goal records,
 the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
-stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.
+stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.  The shoen in its
+first three stages: `create_shoen`, `start_shoen`, termination,
+`shoen_statistics` (twice the reductions, counted per shoen) and
+`remove_shoen`; a goal's reduction failure and `raise` reported as
+the exception message to the innermost shoen whose mask accepts it,
+`stop_shoen` (goals parked until `start`) and `abort_shoen` (goals
+discarded) (shoen records in the heap, a goal's shoen in its record's
+status cell; `docs/pimm_semantics.md` "Shoen").
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
@@ -52,11 +59,51 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 `lockstep_link.py` the IPL's whole `load/4` with its linker,
 `lockstep_unif.py` the unification of two vectors or lists,
 `lockstep_s32.py` 32-bit strings, `lockstep_ipll.py` the IPL reading
-the real `pimos.ipl`; 112
-instructions now. No
+the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
+`code`, `lockstep_apply.py` `apply`, `lockstep_where.py` `scsi_where`, `lockstep_shoen.py` the shoen
+(`create_shoen`, `start_shoen`, termination, through the image's own
+`shoen:execute/4`), `lockstep_shoen2.py` its second stage
+(`shoen_statistics`, `remove_shoen`, through the image's three
+monitors, the statistics checked against the reductions counted on
+the trace), `lockstep_shoen3.py` its third stage (the exception
+path, `raise`, `stop_shoen`, `abort_shoen`, `current_processor`,
+through the image's `exception_table:translate/4`, `shoen:raise/3`
+and its monitors), `lockstep_alt.py` `read_eagerly`
+(`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`,
+`lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
+`enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
+waiting on an element of its vector, `lockstep_reuse.py`
+`put_reused_structure` of a vector of seven or more,
+`lockstep_prio.py` `current_node` and `calculate_priority_from_current`,
+`lockstep_atom.py` `top:go1/4`'s atom-number server
+(`supply_atom_number`, ours as to what it does) with a merger input
+bound to a vector, `lockstep_xmod.py` an external call between two
+loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
+`restore` at the sites of `scsi_fep` in a loaded patch file,
+`lockstep_rdvc.py` the guard `diff` at a site in another,
+`lockstep_pvec.py` the guard `X = Y` on two vectors (the IPL's pool
+with vector keys), `lockstep_tproc.py` `Goal@processor(P)` waiting
+for an unbound P, `lockstep_timer.py` `system_timer` and `set_timer`
+(the clock at 0, ours), `lockstep_wint.py` `write_integer -1`,
+`lockstep_bignum.py` `multiply_bignum_by_word` (after VPIM),
+`lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
+against a small model of the front-end processor (`fep.py`), the
+device on the bench a tape the reference recorded (`driver.py` "The
+device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
+IPL parts (the IPL reading its list and files through its own SCSI
+stack) on both models;
+`longrun_ipl.py` is the long run (not in the suite); 152
+instructions on both models (counted 2026-11-24: 152 `i_` handlers in
+`pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
+`current_processor`, `jump`, `set_marked_variable`, `wait_vector` and `multiply_bignum_word` among them; 149 without our three stubs
+`merge_in`, `unify_step` and `to_processor`).
+`ref_scsi.py` runs the same IPL body on the reference alone
+(`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
-(`docs/pimm_semantics.md` "The MRB"), no shoen, no exceptions.
+(`docs/pimm_semantics.md` "The MRB"), of the shoen no resource or
+profile instructions (refused: what they change is unsourced), no
+unification failure inside a shoen, no built-in exceptions.
 
     python3 ref/pimm/test_jtoa.py
 

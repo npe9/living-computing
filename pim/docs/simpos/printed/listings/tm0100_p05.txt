@@ -1,0 +1,29 @@
+TM-100 PDF page 5, printed folio 3. Figure 2.1 "Layered Structure of SIMPOS" (boxed
+text diagram, reproduced as printed). Transcribed by eye from 300dpi crops.
+Preceding prose (PDF p4): "SIMPOS is largely divided into the programming system and the
+operating system.  The programming system provides users with programming tools,
+including editors, an interpreter/debugger, and a librarian.  The operating system [5]
+provides basic execution environments and input/output facilities.  It is further
+divided into three layers: the i/o medium systems, the supervisor, and the kernel."
+
+ ----------------------------------------------
+| Programming system                           |
+|   Coordinator                                |
+|   Editor Interpreter/Debugger Librarian      |
+|______________________________________________|
+| Operating system                             |
+|   ...........................................|
+|   : I/O medium systems                       |
+|   :     Window Network File Printer          |
+|   :..........................................|
+|   : Supervisor                               |
+|   :     Process Pool Stream World Timer      |
+|   :..........................................|
+|   : Kernel                                   |
+|   :     Processor Memory Device              |
+|   :..........................................|
+|==============================================|
+| Hardware                                     |
+|______________________________________________|
+
+            Figure 2.1  Layered Structure of SIMPOS

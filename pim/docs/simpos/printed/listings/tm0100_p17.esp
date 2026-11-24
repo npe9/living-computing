@@ -1,0 +1,61 @@
+% TM-100 PDF page 17, printed folio 15. Figure 3.9 "Class relations os class
+% 'bounded_channel'" (diagram, sic "os"), Figure 3.10 "Class 'bounded_channel'",
+% start of Figure 3.11 (class bounded_post_queue; caption on PDF p18).
+% Transcribed by eye from 300dpi crops. Diagram reproduced in ASCII as printed:
+% '|' (broken vertical) = inheritance; dotted ':' / '....' = "has" (slot holds an
+% instance of).
+% Prose: "The definitions of class 'bounded_channel' and class 'bounded_post_queue' are
+% shown in Figure 3.10 and Figure 3.11.  The latter is an example of using demon
+% predicates."
+
+% ---- Figure 3.9 (diagram) ----
+                                        waiting_queue
+                                        ^    ^
+          post_queue          semaphore______|    :
+              ^               ^                   :
+              |       ........: has               :
+              |       :                           :
+          bounded_post_queue                      : has
+                      ^                           :
+                 has  :       ....................:
+                      :       :
+                      bounded_channel
+        Figure 3.9  Class relations os class 'bounded_channel'
+
+% ---- Figure 3.10 ----
+-----------------------------------------------------------------------
+    class  bounded_channel  has
+
+    nature      channel;
+
+    :create(Class, Channel, Limit) :-
+            :create(Class, Channel),
+            :create(#bounded_post_queue, Queue, Limit),
+            Channel!post_queue := Queue;
+
+    instance
+
+    attribute   post_queue;
+
+    end.
+-----------------------------------------------------------------------
+                    Figure 3.10  Class 'bounded_channel'
+
+% ---- Figure 3.11 (begins) ----
+-----------------------------------------------------------------------
+    class  bounded_post_queue  has
+
+    nature      post_queue;
+
+    :create(Class, Queue, Limit) :-
+            :create(Class, Queue),
+            :create(#semaphore, Semaphore, Limit),
+            Queue!semaphore := Semaphore;
+
+    instance
+
+    attribute   semaphore;
+
+    before
+    :add_object(Queue, Object) :-
+            :p_operation(Queue!semaphore);

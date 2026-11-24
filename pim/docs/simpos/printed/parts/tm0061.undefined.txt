@@ -1,0 +1,10 @@
+# TM-061: names used in the printed listings but not defined in the report
+:new/1 (class method, called as :new(Class,Obj))       PDF p6, p8   -- built-in object creation (ESP; INFERENCE)
+:retrieve/2 (class, called :retrieve(Class,File,Pathname)) PDF p6
+:get-size/2 (printed :ge«?»-size)  (:get-size(Window,Width,Height))           PDF p8
+:clear-rectangle/4                                       PDF p8
+:start/0                                                 PDF p8
+#binary-file-tap  (class)                                PDF p7
+with-display, as-inside, as-label  (natures)             PDF p8
+as-permanent-object, as-resource, with-lock (natures of real file) PDF p6 (listing comment)
+bodies of :create-file, :open/0, :close, :dispose, :read, :write, :draw-border, :draw-label, :clear-label  ('...' in original)

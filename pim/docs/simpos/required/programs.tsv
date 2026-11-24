@@ -1,0 +1,16 @@
+program	esp_files	classes_defined	items	items_unparsed	items_token_fallback	sends_all	sends_external_rows	system_classes_named	methods_on_named_classes	methods_on_nature_sets(collapsed)	slots	selectors_unattributed_or_ambiguous	builtin_predicates	total_simpos_keys	needs_classes_of_other_ifs_apps
+txtstrct	21	30	3252	0	0	627	566	31	29	7	4	34	30	138	
+chal	12	13	676	4	2	275	247	20	43	6	4	32	39	146	cal-esp
+utter	59	74	3995	21	3	1734	574	23	93	2	1	35	68	233	
+knov	54	55	2451	59	5	3162	3006	29	123	1	2	80	41	289	
+disc	71	90	5126	12	12	6806	1975	48	180	5	1	72	34	343	
+icotext	99	110	9044	13	7	2535	1664	65	143	35	1	64	38	352	disc
+sum	95	109	2981	0	0	2410	1782	61	106	45	1	94	103	421	gog-esp
+papyrus	149	150	4812	42	29	4298	3353	56	143	12	0	166	51	444	
+fuzclust	65	79	2611	0	0	3915	3707	65	219	12	8	140	36	488	
+gog-esp	210	234	9413	4	3	7868	6406	68	234	14	2	145	58	547	
+euod	11	140	3455	16	9	4183	3005	72	320	5	9	144	42	607	
+kwic-esp	31	112	4706	15	15	3124	2577	93	251	51	2	235	93	743	
+cal-esp	66	72	4952	9	5	3605	2942	105	299	36	16	212	91	782	
+cil	31	137	7418	3	3	6028	4421	109	251	61	1	230	193	889	
+kappa2	690	869	31169	15	15	33413	26473	169	615	78	33	335	93	1359	

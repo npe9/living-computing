@@ -1,0 +1,435 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	474	sum/src/add_list.wkm:27
+builtin		constant a#b	string#str		223	
+builtin		builtin	:=	2	216	sum/src/atrobj_list.wkm:15
+builtin		builtin	==	2	198	sum/src/atrdel.wkm:18
+builtin		builtin	vector_element	3	178	sum/src/add_list.wkm:20
+builtin		builtin	set_vector_element	3	125	sum/src/atrobj_list.wkm:21
+builtin		builtin	<	2	115	sum/src/atrdisp.wkm:16
+builtin		builtin	dynamic	1	59	sum/src/cog_eval.v32:81
+builtin		builtin	new_heap_vector	2	36	sum/src/atrobj_list.wkm:14
+builtin		builtin	string	3	31	sum/src/add_list.wkm:22
+builtin		builtin	unbound	1	29	sum/src/cprolog.v32:59
+builtin		builtin	\==	2	27	sum/src/count.v32:70
+builtin		builtin	equal_string	2	27	sum/src/atrreg.wkm:27
+builtin		builtin	copy_string_elements	5	24	sum/src/add_list.wkm:24
+builtin		builtin	=<	2	22	sum/src/cprolog.v32:207
+builtin		builtin	new_string	3	22	sum/src/add_list.wkm:23
+builtin		builtin	>	2	20	sum/src/cog_eval.v32:84
+builtin		constant a#b	16#str		20	
+builtin		builtin	is	2	18	sum/src/cog_eval.v32:55
+builtin		builtin	equal	2	18	sum/src/atrupdate.wkm:60
+builtin		builtin	repeat	0	17	sum/src/atrval_apd.wkm:36
+builtin		builtin	set_substring	4	17	sum/src/gen.v32:131
+builtin		constant a#b	key#lf		12	
+builtin		builtin	bound	1	9	sum/src/atrdisp.wkm:42
+builtin		builtin	string_element	3	9	sum/src/main.wkm:162
+builtin		builtin	atom	1	7	sum/src/cprolog.v32:94
+builtin		constant a#b	mouse#l		6	
+builtin		builtin	list	1	5	sum/src/cprolog.v32:65
+builtin		builtin	integer	1	4	sum/src/cprolog.v32:96
+builtin		builtin	atomic	1	4	sum/src/cprolog.v32:114
+builtin		builtin	>=	2	4	sum/src/evaltest.v32:114
+builtin		builtin	stack_vector	2	4	sum/src/cprolog.v32:69
+builtin		builtin	set_string_element	3	3	sum/src/you_edit.v32:1644
+builtin		builtin	divide_with_remainder	4	3	sum/src/cprolog.v32:359
+builtin		constant a#b	key#del		3	
+builtin		file-level directive	add_operator	3	3	
+builtin		builtin	stack_to_heap_vector	2	3	sum/src/cog_eval.v32:94
+builtin		builtin	new_stack_vector	2	2	sum/src/cprolog.v32:75
+builtin		builtin	list_to_vector	3	2	sum/src/cprolog.v32:438
+builtin		meta-call (variable goal)	call	1	2	sum/src/cprolog.v32:38
+builtin		builtin	heap_vector	2	2	sum/src/cprolog.v32:122
+builtin		builtin	first	2	2	sum/src/cprolog.v32:69
+builtin		builtin	set_slot	3	2	sum/src/cprolog.v32:14
+builtin		constant a#b	key#cr		2	
+builtin		builtin	heap_to_stack_vector	2	2	sum/src/you_edit.v32:508
+builtin		builtin	less_than	2	2	sum/src/cprolog.v32:188
+builtin		constant a#b	key#enter		2	
+builtin		builtin	setof	3	2	sum/src/cprolog.v32:38
+builtin		builtin	morph_result	4	2	sum/src/mor_result.v32:10
+builtin		builtin	`	1	1	sum/src/nwindow.v32:46
+builtin		builtin	unify	2	1	sum/src/un_reg.wkm:38
+builtin		builtin	number	1	1	sum/src/cprolog.v32:474
+builtin		constant a#b	key#esc		1	
+builtin		constant a#b	key#tab		1	
+builtin		builtin	eval_result	2	1	sum/src/cog_eval.v32:74
+builtin		builtin	bagof	3	1	sum/src/cprolog.v32:40
+builtin		builtin	method_call	3	1	sum/src/cwindow.v32:95
+builtin		builtin	method_call	4	1	sum/src/cwindow.v32:97
+builtin		builtin	method_call	5	1	sum/src/cwindow.v32:99
+builtin		builtin	method_call	6	1	sum/src/cwindow.v32:101
+builtin		builtin	method_call	7	1	sum/src/cwindow.v32:103
+builtin		builtin	method_call	8	1	sum/src/cwindow.v32:105
+builtin		builtin	method_call	9	1	sum/src/cwindow.v32:107
+builtin		builtin	method_call	10	1	sum/src/cwindow.v32:109
+builtin		builtin	method_call	11	1	sum/src/cwindow.v32:111
+builtin		builtin	prohibit	1	1	sum/src/data.wkm:14
+builtin		builtin	textname	1	1	sum/src/dynamic.v32:16
+builtin		builtin	start_ss	1	1	sum/src/dynamic.v32:23
+builtin		builtin	end_ss	1	1	sum/src/dynamic.v32:24
+builtin		builtin	max_ss	1	1	sum/src/dynamic.v32:25
+builtin		builtin	css	1	1	sum/src/dynamic.v32:26
+builtin		builtin	start_p	1	1	sum/src/dynamic.v32:27
+builtin		builtin	end_p	1	1	sum/src/dynamic.v32:28
+builtin		builtin	meaning	4	1	sum/src/dynamic.v32:35
+builtin		builtin	topic	2	1	sum/src/dynamic.v32:36
+builtin		builtin	meaning2	4	1	sum/src/dynamic.v32:43
+builtin		builtin	frame	7	1	sum/src/dynamic.v32:44
+builtin		builtin	pred_type	1	1	sum/src/dynamic.v32:45
+builtin		builtin	pred	1	1	sum/src/dynamic.v32:46
+builtin		builtin	caseinfo2	1	1	sum/src/dynamic.v32:47
+builtin		builtin	jyunjyo	1	1	sum/src/dynamic.v32:48
+builtin		builtin	temp_anaphora	9	1	sum/src/dynamic.v32:55
+builtin		builtin	temp_type1	5	1	sum/src/dynamic.v32:62
+builtin		builtin	temp_type2	5	1	sum/src/dynamic.v32:63
+builtin		builtin	temp_type3	5	1	sum/src/dynamic.v32:64
+builtin		builtin	temp_type4	5	1	sum/src/dynamic.v32:65
+builtin		builtin	anaphora	9	1	sum/src/dynamic.v32:72
+builtin		builtin	coherence	5	1	sum/src/dynamic.v32:73
+builtin		builtin	dep	3	1	sum/src/dynamic.v32:74
+builtin		builtin	paragraph	5	1	sum/src/dynamic.v32:81
+builtin		builtin	tanbun	2	1	sum/src/dynamic.v32:82
+builtin		builtin	text_theme	1	1	sum/src/dynamic.v32:89
+builtin		builtin	theme	3	1	sum/src/dynamic.v32:90
+builtin		builtin	focus	3	1	sum/src/dynamic.v32:91
+builtin		builtin	bunrui	3	1	sum/src/dynamic.v32:98
+builtin		builtin	eval	3	1	sum/src/dynamic.v32:105
+builtin		builtin	record	3	1	sum/src/dynamic.v32:112
+builtin		builtin	temp	1	1	sum/src/dynamic.v32:113
+builtin		builtin	temp	2	1	sum/src/dynamic.v32:114
+builtin		builtin	temp	3	1	sum/src/dynamic.v32:115
+builtin		builtin	temp	4	1	sum/src/dynamic.v32:116
+builtin		builtin	temp	5	1	sum/src/dynamic.v32:117
+builtin		builtin	temp	6	1	sum/src/dynamic.v32:118
+builtin		builtin	temp	7	1	sum/src/dynamic.v32:119
+builtin		builtin	temp	8	1	sum/src/dynamic.v32:120
+builtin		builtin	temp	9	1	sum/src/dynamic.v32:121
+builtin		builtin	until	1	1	sum/src/dynamic.v32:128
+builtin		builtin	abort	1	1	sum/src/dynamic.v32:129
+builtin		builtin	debug	1	1	sum/src/dynamic.v32:130
+builtin		builtin	no_warning	0	1	sum/src/dynamic.v32:131
+builtin		builtin	unit_tbl	8	1	sum/src/dynamic.v32:138
+builtin		builtin	no	1	1	sum/src/gen.v32:39
+builtin		builtin	end	1	1	sum/src/gen.v32:41
+builtin		builtin	instan	2	1	sum/src/wk.v32:17
+requirement	library_utility	ref	(#ref)		251	sum/src/anaphora.v32:25
+requirement	symbolizer	ref	(#ref)		122	sum/src/add_list.wkm:21
+requirement	library_utility	class	assert	3	73	sum/src/atrreg.wkm:47
+requirement	library_utility	class	retract_all	4	69	sum/src/anaphora.v32:25
+requirement	?	unknown	putb	3	66	sum/src/anawindow.v32:26
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	heap	2	65	sum/src/nwindow.v32:152
+requirement	library_utility	class	retract	3	63	sum/src/atrdel.wkm:25
+requirement	?	unknown	read	2	52	sum/src/atrdel.wkm:17
+requirement	?	unknown	show	1	47	sum/src/atrdel.wkm:16
+requirement	symbolizer	class	get_atom_string	3	47	sum/src/add_list.wkm:21
+requirement	?	unknown	kill	1	47	sum/src/main.wkm:39
+requirement	?	unknown	get_at	3	45	sum/src/you_edit.v32:343
+requirement	?	unknown	putt	2	45	sum/src/anawindow.v32:26
+requirement	library_utility	class	assertz	3	43	sum/src/anaphora.v32:54
+requirement	symbolizer	class	enter_atom	3	42	sum/src/add_list.wkm:26
+requirement	?	unknown	draw_filled_rectangle	6	42	sum/src/you_edit.v32:340
+requirement	?	unknown	change_item	3	36	sum/src/atrupdate.wkm:88
+requirement	?	unknown	get_item_value	3	33	sum/src/atrdel.wkm:21
+requirement	?	unknown	flash	1	32	sum/src/atrdisp.wkm:26
+requirement	?	unknown	move_cursor	3	30	sum/src/nwindow.v32:26
+requirement	?	unknown	putl	2	28	sum/src/atrdisp.wkm:13
+requirement	?	unknown	hide	1	27	sum/src/orgwindow.v32:14
+requirement	?	unknown	putf	3	26	sum/src/anawindow.v32:27
+requirement	?	unknown	draw_string	5	23	sum/src/atrdel.wkm:11
+requirement	?	unknown	put_line_at	2	20	sum/src/you_edit.v32:353
+requirement	?	unknown	clear	1	19	sum/src/fwindow.v32:25
+requirement	?	unknown	activate	1	18	sum/src/error.v32:25
+requirement	?	unknown	write_line	2	18	sum/src/context.v32:179
+requirement	?	unknown	putf	2	17	sum/src/anawindow.v32:26
+requirement	?	ambiguous	numeric	4	17	sum/src/atrdisp.wkm:24
+requirement	?	ambiguous	val	3	16	sum/src/atrdisp.wkm:23
+requirement	?	ambiguous	deactivate	1	15	sum/src/error.v32:36
+requirement	font	class	create	3	15	sum/src/inp.v32:99
+requirement	symbolizer	class	get_number_string	3	15	sum/src/anawindow.v32:59
+requirement	font	ref	(#ref)		15	sum/src/inp.v32:99
+requirement	?	unknown	put_at	3	15	sum/src/you_edit.v32:580
+requirement	?	unknown	write_lines	2	14	sum/src/context.v32:181
+requirement	?	ambiguous	is_a	3	14	sum/src/everyw_mv.wkm:34
+requirement	?	ambiguous	part_of	3	13	sum/src/everyw_mv.wkm:40
+requirement	?	unknown	move_to_last	1	12	sum/src/you_edit.v32:529
+requirement	?	unknown	current_position	2	12	sum/src/you_edit.v32:394
+requirement	?	ambiguous	rel	3	12	sum/src/atrdel.wkm:26
+requirement	hitachi_wk	ref	(#ref)		11	sum/src/comp_pro.v32:14
+requirement	if1000_wk	ref	(#ref)		11	sum/src/if_pro.v32:14
+requirement	inferior_window	nature	(inherited)		10	sum/src/main_win.wkm:5
+requirement	?	unknown	putc	2	10	sum/src/evaltest.v32:88
+requirement	?	unknown	move_to_first	1	9	sum/src/you_edit.v32:662
+requirement	character	ref	(#ref)		9	sum/src/you_edit.v32:1619
+requirement	?	unknown	warp_mouse	3	9	sum/src/atrval_apd.wkm:21
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	asserta	2	9	sum/src/nwindow.v32:143
+requirement	?	unknown	command_interpret	1	8	sum/src/you_edit.v32:533
+requirement	standard_editor	class	create	4	8	sum/src/you_edit.v32:531
+requirement	as_program	nature	(inherited)		8	sum/src/inherit.v32:5
+requirement	as_mouse_input	nature	(inherited)		8	sum/src/main_win.wkm:5
+requirement	?	unknown	set_editor	2	8	sum/src/you_edit.v32:532
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	slot	!cwindow	0	8	sum/src/nwindow.v32:80
+requirement	?	unknown	insert_string	2	7	sum/src/you_edit.v32:834
+requirement	?	unknown	insert	2	7	sum/src/you_edit.v32:808
+requirement	list	class	create	2	7	sum/src/cog_eval.v32:23
+requirement	symbolizer	class	list_to_string	3	7	sum/src/cprolog.v32:101
+requirement	?	unknown	move_to	2	7	sum/src/you_edit.v32:635
+requirement	list	ref	(#ref)		7	sum/src/cog_eval.v32:23
+requirement	?	unknown	set_font	2	7	sum/src/main.wkm:132
+requirement	?	unknown	reset	1	7	sum/src/you_edit.v32:658
+requirement	debug	ref	(#ref)		7	sum/src/anaphora.v32:242
+requirement	standard_input_file	class	create	3	6	sum/src/inp.v32:45
+requirement	inferior_window	class	create	3	6	sum/src/main_win.wkm:23
+requirement	list	instance	get_contents	2	6	sum/src/cog_eval.v32:118
+requirement	?	unknown	getl	2	6	sum/src/cwindow.v32:31
+requirement	?	unknown	move_end_of_line	1	6	sum/src/you_edit.v32:832
+requirement	symbolizer	class	get_number	3	6	sum/src/cprolog.v32:105
+requirement	with_border	nature	(inherited)		6	sum/src/main_win.wkm:5
+requirement	standard_input_file	ref	(#ref)		6	sum/src/inp.v32:45
+requirement	?	unknown	set_region	4	6	sum/src/you_edit.v32:636
+requirement	?	unknown	remove_region	2	6	sum/src/you_edit.v32:555
+requirement	?	ambiguous	unique	2	6	sum/src/atrdisp.wkm:29
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	move_cursor	3	6	sum/src/title.v32:40
+requirement	focus_pro2	ref	(#ref)		6	sum/src/nwindow.v32:123
+requirement	?	unknown	putl	1	5	sum/src/main.wkm:125
+requirement	symbolizer	class	string_to_list	3	5	sum/src/cprolog.v32:97
+requirement	?	unknown	close_output	1	5	sum/src/michigo.v32:80
+requirement	<root>	class	gets	2	5	sum/src/nwindow.v32:27
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	write_line	2	5	sum/src/title.v32:41
+requirement	standard_output_file	class	create	3	4	sum/src/backup.v32:12
+requirement	editor_text_buffer	class	create	4	4	sum/src/you_edit.v32:2101
+requirement	essential_window	instance	clear	1	4	sum/src/windows.v32:29
+requirement	?	unknown	move_begin_of_line	1	4	sum/src/you_edit.v32:2339
+requirement	with_label	nature	(inherited)		4	sum/src/main_win.wkm:5
+requirement	standard_output_file	ref	(#ref)		4	sum/src/backup.v32:12
+requirement	editor_text_buffer	ref	(#ref)		4	sum/src/you_edit.v32:2101
+requirement	?	unknown	set_input_buffer	2	4	sum/src/you_edit.v32:2103
+requirement	?	unknown	get_editor	2	4	sum/src/main.wkm:115
+requirement	with_icon	nature	(inherited)		4	sum/src/pwindows.v32:5
+requirement	essential_window	instance	write_lines	2	4	sum/src/title_win.v32:46
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	display	2	4	sum/src/nwindow.v32:134
+requirement	?	unknown	get_regions_list	2	4	sum/src/you_edit.v32:523
+requirement	?	unknown	set_left_margin	2	4	sum/src/you_edit.v32:1392
+requirement	?	unknown	set_line_pitch	2	4	sum/src/you_edit.v32:1393
+requirement	peek	ref	(#ref)		4	sum/src/top_menu.v32:109
+requirement	?	unknown	see_current_line	2	3	sum/src/you_edit.v32:2009
+requirement	?	unknown	next_line	2	3	sum/src/you_edit.v32:838
+requirement	?	unknown	parse_pattern	3	3	sum/src/you_edit.v32:1565
+requirement	?	unknown	read_sense	2	3	sum/src/mn2window.v32:53
+requirement	as_graphics	nature	(inherited)		3	sum/src/main_win.wkm:116
+requirement	with_superior_input_buffer	nature	(inherited)		3	sum/src/main_win.wkm:85
+requirement	?	unknown	get_interpreter	2	3	sum/src/you_edit.v32:2058
+requirement	?	unknown	size	2	3	sum/src/you_edit.v32:1394
+requirement	?	unknown	clear_items	1	3	sum/src/main.wkm:54
+requirement	?	unknown	see_position	4	3	sum/src/you_edit.v32:1421
+requirement	list	instance	add	2	3	sum/src/cog_eval.v32:193
+requirement	?	unknown	write	2	3	sum/src/you_edit.v32:1964
+requirement	with_margin	nature	(inherited)		3	sum/src/main_win.wkm:5
+requirement	as_output	nature	(inherited)		3	sum/src/main_win.wkm:116
+requirement	?	unknown	draw_cursor	1	3	sum/src/error.v32:34
+requirement	as_standard_io_window	nature	(inherited)		3	sum/src/title_win.v32:11
+requirement	array	class	create	3	3	sum/src/you_edit.v32:2044
+requirement	array	ref	(#ref)		3	sum/src/you_edit.v32:2044
+requirement	debug	class	deb	2	3	sum/src/anaphora.v32:242
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	ttynl	1	3	sum/src/nwindow.v32:138
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	abolish	3	3	sum/src/nwindow.v32:141
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	see	2	3	sum/src/nwindow.v32:163
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	seen	1	3	sum/src/nwindow.v32:164
+requirement	debug	class	activate_window	1	3	sum/src/top_menu.v32:109
+requirement	peek	class	activate_window	1	3	sum/src/top_menu.v32:109
+requirement	<root>	class	new	2	2	sum/src/dummy.wkm:34
+requirement	library_utility	class	create	2	2	sum/src/main.wkm:66
+requirement	list	instance	put_contents	2	2	sum/src/count.v32:38
+requirement	monogyny_list_index	instance	get_at	3	2	sum/src/freq_count.v32:29
+requirement	monogyny_list_index	instance	put_at	3	2	sum/src/freq_count.v32:30
+requirement	search_table	class	create	2	2	sum/src/you_edit.v32:1562
+requirement	search_table	instance	get_table	3	2	sum/src/you_edit.v32:1563
+requirement	?	unknown	add_item	3	2	sum/src/atrreg.wkm:43
+requirement	pmacs_window	instance	activate	1	2	sum/src/pwindows.v32:22
+requirement	?	unknown	release	1	2	sum/src/you_edit.v32:1405
+requirement	as_superior	nature	(inherited)		2	sum/src/main_win.wkm:5
+requirement	as_single_select	nature	(inherited)		2	sum/src/main_win.wkm:85
+requirement	standard_editor	nature	(inherited)		2	sum/src/you_edit.v32:2406
+requirement	as_input	nature	(inherited)		2	sum/src/main_win.wkm:105
+requirement	search_table	ref	(#ref)		2	sum/src/you_edit.v32:1562
+requirement	?	unknown	set_title	2	2	sum/src/menu_win.wkm:14
+requirement	?	unknown	set_label_font	2	2	sum/src/menu_win.wkm:13
+requirement	character	class	to_uppercase	3	2	sum/src/you_edit.v32:1653
+requirement	?	unknown	gett	2	2	sum/src/evaltest.v32:112
+requirement	list	instance	in	2	2	sum/src/count.v32:48
+requirement	essential_window	instance	move_cursor	3	2	sum/src/windows.v32:56
+requirement	essential_window	instance	write_line	2	2	sum/src/windows.v32:57
+requirement	printer	class	get	2	2	sum/src/you_edit.v32:1390
+requirement	?	unknown	new_page	1	2	sum/src/you_edit.v32:1402
+requirement	essential_window	nature	(inherited)		2	sum/src/uwindow.v32:11
+requirement	printer	ref	(#ref)		2	sum/src/you_edit.v32:1390
+requirement	?	unknown	previous_line	2	2	sum/src/you_edit.v32:2479
+requirement	?	unknown	unquote_atom	1	2	sum/src/objatr_src.wkm:71
+requirement	hitachi_wk	class	rel	3	2	sum/src/comp_pro.v32:14
+requirement	hitachi_wk	class	val	3	2	sum/src/comp_pro.v32:16
+requirement	hitachi_wk	class	numeric	4	2	sum/src/comp_pro.v32:18
+requirement	hitachi_wk	class	is_a	3	2	sum/src/comp_pro.v32:20
+requirement	hitachi_wk	class	part_of	3	2	sum/src/comp_pro.v32:21
+requirement	if1000_wk	class	rel	3	2	sum/src/if_pro.v32:14
+requirement	if1000_wk	class	val	3	2	sum/src/if_pro.v32:16
+requirement	if1000_wk	class	numeric	4	2	sum/src/if_pro.v32:18
+requirement	if1000_wk	class	is_a	3	2	sum/src/if_pro.v32:20
+requirement	if1000_wk	class	part_of	3	2	sum/src/if_pro.v32:21
+requirement	library_utility	instance	get_class_id_atom_list	4	2	sum/src/main.wkm:68
+requirement	<root>	class	focus_value	2	2	sum/src/michigo.v32:206
+requirement	<root>	class	read_slots	4	2	sum/src/mn2window.v32:42
+requirement	<root>	class	focus_inst	2	2	sum/src/nwindow.v32:118
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	spy	2	2	sum/src/nwindow.v32:136
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	nl	1	2	sum/src/nwindow.v32:137
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	snl	1	2	sum/src/nwindow.v32:139
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	consult	2	2	sum/src/nwindow.v32:148
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	equalsh	3	2	sum/src/nwindow.v32:149
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	listing	2	2	sum/src/nwindow.v32:153
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	retract	2	2	sum/src/nwindow.v32:159
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	tell	2	2	sum/src/nwindow.v32:165
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	told	1	2	sum/src/nwindow.v32:166
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	get0	2	2	sum/src/nwindow.v32:167
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	textname	1	2	sum/src/owindow.v32:30
+requirement	{pmacs_window|with_icon|inferior_window|esp_operator_pool}	instance	deactivate	1	2	sum/src/pwindows.v32:24
+requirement	<root>	slot	!window	0	2	sum/src/run.v32:63
+requirement	simple	class	simple	1	2	sum/src/run.v32:87
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	instance	deactivate	1	2	sum/src/windows.v32:26
+requirement	character	class	is_uppercase	2	2	sum/src/you_edit.v32:1648
+requirement	character	class	to_lowercase	3	2	sum/src/you_edit.v32:1649
+requirement	character	class	is_lowercase	2	2	sum/src/you_edit.v32:1652
+requirement	simple	ref	(#ref)		2	sum/src/run.v32:87
+requirement	list	instance	add_last	2	1	sum/src/freq_count.v32:33
+requirement	?	unknown	goto_beginning	1	1	sum/src/main.wkm:116
+requirement	pmacs_window	instance	set_title	2	1	sum/src/pwindows.v32:18
+requirement	standard_input_file	instance	close_input	1	1	sum/src/owindow.v32:51
+requirement	library	class	get_class_object	3	1	sum/src/main.wkm:62
+requirement	standard_output_file	instance	putt	2	1	sum/src/backup.v32:32
+requirement	standard_output_file	instance	close_output	1	1	sum/src/backup.v32:29
+requirement	standard_input_file	instance	getl	2	1	sum/src/owindow.v32:48
+requirement	?	unknown	refute	3	1	sum/src/michigo.v32:200
+requirement	?	unknown	end_of_input	1	1	sum/src/inp.v32:129
+requirement	?	unknown	add_items	3	1	sum/src/add_list.wkm:16
+requirement	temporary_menu	class	create	3	1	sum/src/menu_win.wkm:11
+requirement	?	unknown	read	3	1	sum/src/main.wkm:129
+requirement	pmacs_window	instance	set_font	2	1	sum/src/pwindows.v32:17
+requirement	temporary_window	class	create	3	1	sum/src/messg_win.wkm:22
+requirement	pmacs_window	nature	(inherited)		1	sum/src/pwindows.v32:5
+requirement	with_default_mouse	nature	(inherited)		1	sum/src/main_win.wkm:105
+requirement	as_input_buffer	nature	(inherited)		1	sum/src/main_win.wkm:5
+requirement	with_pmacs_window	nature	(inherited)		1	sum/src/main_win.wkm:105
+requirement	library	ref	(#ref)		1	sum/src/main.wkm:62
+requirement	monogyny_list_index	ref	(#ref)		1	sum/src/freq_count.v32:8
+requirement	?	unknown	close_input	1	1	sum/src/inp.v32:132
+requirement	?	unknown	erase_cursor	1	1	sum/src/wait.v32:11
+requirement	standard_output_file	instance	putf	2	1	sum/src/backup.v32:32
+requirement	as_menu	nature	(inherited)		1	sum/src/main_win.wkm:95
+requirement	temporary_window	nature	(inherited)		1	sum/src/messg_win.wkm:5
+requirement	monogyny_list_index	class	create	2	1	sum/src/freq_count.v32:8
+requirement	library_utility	instance	load	2	1	sum/src/main.wkm:69
+requirement	?	unknown	read_file	4	1	sum/src/you_edit.v32:2256
+requirement	multi_column_menu	class	create	3	1	sum/src/top_menu.v32:55
+requirement	?	unknown	delete_item	2	1	sum/src/atrdel.wkm:28
+requirement	essential_window	instance	erase_cursor	1	1	sum/src/windows.v32:46
+requirement	essential_window	instance	activate	1	1	sum/src/windows.v32:25
+requirement	?	unknown	put_line	2	1	sum/src/you_edit.v32:2010
+requirement	?	unknown	put_string	2	1	sum/src/you_edit.v32:1432
+requirement	?	unknown	get_mouse_dot_position	3	1	sum/src/you_edit.v32:150
+requirement	library_utility	instance	save	2	1	sum/src/main.wkm:143
+requirement	?	unknown	cursor_with_mouse	1	1	sum/src/you_edit.v32:392
+requirement	?	unknown	mark	1	1	sum/src/main.wkm:117
+requirement	popup_choice_window	class	create	3	1	sum/src/menu_win.wkm:23
+requirement	character	class	is_alphabetic	2	1	sum/src/you_edit.v32:1619
+requirement	essential_window	instance	show	1	1	sum/src/windows.v32:47
+requirement	temporary_menu	nature	(inherited)		1	sum/src/menu_win.wkm:5
+requirement	pmacs_window	instance	unquote_atom	1	1	sum/src/pwindows.v32:20
+requirement	esp_operator_pool	nature	(inherited)		1	sum/src/pwindows.v32:5
+requirement	hitachi_wk	class	unique	2	1	sum/src/comp_pro.v32:29
+requirement	if1000_wk	class	unique	2	1	sum/src/if_pro.v32:29
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	get_slot	3	1	sum/src/cprolog.v32:158
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	set_slot	3	1	sum/src/cprolog.v32:159
+requirement	library_utility	class	asserta	3	1	sum/src/cprolog.v32:160
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	refute	3	1	sum/src/cprolog.v32:439
+requirement	monogyny_list_index	instance	put_contents	2	1	sum/src/freq_count.v32:23
+requirement	<root>	instance	scroll	2	1	sum/src/main.wkm:44
+requirement	?	unknown	goto_end	1	1	sum/src/main.wkm:118
+requirement	?	unknown	kill_region	1	1	sum/src/main.wkm:119
+requirement	{with_margin|with_label|with_border|as_mouse_input|as_superior|as_input_buffer|inferior_window}	instance	get_inside_size	3	1	sum/src/main_win.wkm:24
+requirement	{with_margin|with_label|with_border|as_mouse_input|as_superior|as_input_buffer|inferior_window}	instance	set_label_font	2	1	sum/src/main_win.wkm:25
+requirement	{with_margin|with_label|with_border|as_mouse_input|as_superior|as_input_buffer|inferior_window}	instance	set_title	2	1	sum/src/main_win.wkm:26
+requirement	{with_pmacs_window|as_superior|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	class	create_with_input	4	1	sum/src/main_win.wkm:60
+requirement	{with_pmacs_window|as_superior|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	instance	set_font	2	1	sum/src/main_win.wkm:73
+requirement	{with_margin|with_label|with_border|as_output|as_graphics|as_mouse_input|temporary_window}	instance	set_title	2	1	sum/src/messg_win.wkm:23
+requirement	{with_margin|with_label|with_border|as_output|as_graphics|as_mouse_input|temporary_window}	instance	set_font	2	1	sum/src/messg_win.wkm:24
+requirement	?	unknown	putt	1	1	sum/src/michigo.v32:210
+requirement	?	unknown	putc	1	1	sum/src/michigo.v32:210
+requirement	focus_pro2	class	focus_rel2	4	1	sum/src/nwindow.v32:123
+requirement	focus_pro2	class	focus_is_a2	3	1	sum/src/nwindow.v32:124
+requirement	focus_pro2	class	focus_part_of2	3	1	sum/src/nwindow.v32:125
+requirement	focus_pro2	class	focus_obj2	2	1	sum/src/nwindow.v32:126
+requirement	focus_pro2	class	focus_attr2	2	1	sum/src/nwindow.v32:127
+requirement	focus_pro2	class	focus_inst2	2	1	sum/src/nwindow.v32:128
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	display_ind	3	1	sum/src/nwindow.v32:135
+requirement	<root>	class	gen_all	2	1	sum/src/orgwindow.v32:21
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	slot	!display	0	1	sum/src/owindow.v32:43
+requirement	{pmacs_window|with_icon|inferior_window|esp_operator_pool}	class	create	3	1	sum/src/pwindows.v32:16
+requirement	{pmacs_window|with_icon|inferior_window|esp_operator_pool}	instance	kill	1	1	sum/src/pwindows.v32:27
+requirement	gen_summary	class	gen_suymmary	1	1	sum/src/run.v32:108
+requirement	<root>	class	max_css	2	1	sum/src/sub.v32:110
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	clear	1	1	sum/src/title.v32:34
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	show	1	1	sum/src/title.v32:35
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	erase_cursor	1	1	sum/src/title.v32:39
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	write_lines	2	1	sum/src/title.v32:190
+requirement	?	unknown	create	3	1	sum/src/title.v32:201
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	draw_line	8	1	sum/src/title.v32:209
+requirement	{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	class	draw_arc	9	1	sum/src/title.v32:211
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon|screen}	class	create	3	1	sum/src/title_win.v32:31
+requirement	{multi_column_menu|with_icon}	instance	set_font	2	1	sum/src/top_menu.v32:57
+requirement	{multi_column_menu|with_icon}	instance	set_label_font	2	1	sum/src/top_menu.v32:58
+requirement	{multi_column_menu|with_icon}	instance	set_title	2	1	sum/src/top_menu.v32:59
+requirement	debug	class	deactivate_window	1	1	sum/src/top_menu.v32:130
+requirement	peek	class	deactivate_window	1	1	sum/src/top_menu.v32:130
+requirement	<root>	class	outer_anaphora	2	1	sum/src/top_menu.v32:138
+requirement	<root>	class	outer_conflict	2	1	sum/src/top_menu.v32:142
+requirement	{with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	create	3	1	sum/src/uwindow.v32:23
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	slot	!input	0	1	sum/src/uwindow.v32:26
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	slot	!output	0	1	sum/src/uwindow.v32:27
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	instance	kill	1	1	sum/src/windows.v32:23
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	class	create	3	1	sum/src/windows.v32:38
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	instance	unquote_atom	1	1	sum/src/windows.v32:40
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	instance	draw_cursor	1	1	sum/src/windows.v32:53
+requirement	{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	instance	getl	2	1	sum/src/windows.v32:59
+requirement	dbg_win	class	dbg_opn	2	1	sum/src/you_edit.v32:75
+requirement	?	unknown	dbg_cls	1	1	sum/src/you_edit.v32:80
+requirement	?	unknown	put_string_with_underline	2	1	sum/src/you_edit.v32:1422
+requirement	?	unknown	string_search	5	1	sum/src/you_edit.v32:1589
+requirement	?	unknown	write_file	3	1	sum/src/you_edit.v32:1980
+requirement	gen_menu_win	class	gen_menu_win	3	1	sum/src/you_edit.v32:2050
+requirement	gen_hyoji_win	class	gen_hyoji_win	2	1	sum/src/you_edit.v32:2054
+requirement	jyuuyou_win	class	jyuuyou_win	2	1	sum/src/you_edit.v32:2061
+requirement	you_hyouji_win	class	you_hyouji_win	2	1	sum/src/you_edit.v32:2064
+requirement	you_menu_win	class	you_menu_win	2	1	sum/src/you_edit.v32:2072
+requirement	hyou_sen_win	class	hyou_sen_win	2	1	sum/src/you_edit.v32:2075
+requirement	gen_file_win	class	gen_file_win	2	1	sum/src/you_edit.v32:2078
+requirement	keyw_in_win	class	keyw_in_win	2	1	sum/src/you_edit.v32:2081
+requirement	uni_sen_win	class	uni_sen_win	2	1	sum/src/you_edit.v32:2088
+requirement	gen_mes_win	class	gen_mes_win	2	1	sum/src/you_edit.v32:2092
+requirement	y_sa_w	class	y_sa_w	2	1	sum/src/you_edit.v32:2095
+requirement	b_in_w	class	b_in_w	2	1	sum/src/you_edit.v32:2098
+requirement	as_turning_menu	nature	(inherited)		1	sum/src/main_win.wkm:85
+requirement	popup_choice_window	nature	(inherited)		1	sum/src/menu_win.wkm:17
+requirement	screen	nature	(inherited)		1	sum/src/title_win.v32:11
+requirement	multi_column_menu	nature	(inherited)		1	sum/src/top_menu.v32:190
+requirement	gen_summary	ref	(#ref)		1	sum/src/run.v32:108
+requirement	dbg_win	ref	(#ref)		1	sum/src/you_edit.v32:75
+requirement	gen_menu_win	ref	(#ref)		1	sum/src/you_edit.v32:2050
+requirement	gen_hyoji_win	ref	(#ref)		1	sum/src/you_edit.v32:2054
+requirement	jyuuyou_win	ref	(#ref)		1	sum/src/you_edit.v32:2061
+requirement	you_hyouji_win	ref	(#ref)		1	sum/src/you_edit.v32:2064
+requirement	you_menu_win	ref	(#ref)		1	sum/src/you_edit.v32:2072
+requirement	hyou_sen_win	ref	(#ref)		1	sum/src/you_edit.v32:2075
+requirement	gen_file_win	ref	(#ref)		1	sum/src/you_edit.v32:2078
+requirement	keyw_in_win	ref	(#ref)		1	sum/src/you_edit.v32:2081
+requirement	uni_sen_win	ref	(#ref)		1	sum/src/you_edit.v32:2088
+requirement	gen_mes_win	ref	(#ref)		1	sum/src/you_edit.v32:2092
+requirement	y_sa_w	ref	(#ref)		1	sum/src/you_edit.v32:2095
+requirement	b_in_w	ref	(#ref)		1	sum/src/you_edit.v32:2098

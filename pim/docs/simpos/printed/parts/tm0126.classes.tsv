@@ -1,0 +1,5 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+denwa				instance: :number/2; :stay/2; :visit/2; :denwa/2 (facts)	PRINTED-SOURCE	TM-126	6	5	EXAMPLE user program shown in editor_1 screenshot (tm0126_p06.esp); separators read as ',' (INFERENCE)
+parent-window part class (親ウィンドウとしての機能を提供する部品クラス)					PROSE	TM-126	5	4	no identifier given; INFERENCE: corresponds to TM-125 as_superior
+child-window part class (子ウィンドウとしての機能を提供する部品クラス)					PROSE	TM-126	5	4	no identifier; INFERENCE: TM-125 as_inferior
+debugger_choice_menu_without_label					NAMED	TM-126	6	5	shown on status line in Fig 4 (selected-window name; whether a class is not stated)

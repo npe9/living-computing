@@ -1,0 +1,37 @@
+% TM-126 (内田, 辻, June 1985) PDF page 6, printed folio 5.
+% Captions: 図3 ディバッガの子ウィンドウの例(1) ディバッガウィンドウ, 変数ウィンドウ, ディバッガメニュー
+%   ウィンドウの3つが表示されている.
+%  図4 ディバッガの子ウィンドウの例(2) ディバッガのモードや, トレース情報のどれを出力するか等の指定をする
+%   場合で, 4つの子ウィンドウから成るパラメータ設定用ウィンドウが表示されている.
+% transcribed by eye from 300dpi crops (work/tm0126/p-6_fig3_dbg.png, p-6_fig4_dbg.png, p-6.png).
+% Screen text only; the ESP program in editor_1 is in tm0126_p06.esp. [x] = shown inverse video.
+
+Fig 3 windows (labels as shown):
+  editor_1   status line: EDIPS(string)[61,28] >sys>user>demo>
+             message area: reading...
+                           >sys>user>demo>test.esp >read end
+  file_manipulator_1   path: >user..1>demo..   files (partly hidden): «?».esp.1  «?».grm.1  «?».tst.2  «?».tst.1
+             menu: abort / parent / refresh / make / undelete / expunge / purge / print / ^ / v
+  debugger_1 (child windows: debugger, Variable Window, Debugger Menu)
+  Debugger Menu: Change State / [Variable Window] / Control Menu / From Last Input /
+                 From Whiteboard / To Whiteboard / Help
+  partly hidden window: "«?»xt >>", "«?»e.", "«?»le Name.", "«?»>test.esp"
+  bottom line: USER : tsuji   SIMPOS Version I.00   [Debugger Menu]   23-May-85 Thursday 11:19:27
+
+Fig 4 debugger_1 parameter window (4 child windows):
+  mode: [trace] no trace  no debug
+  print depth: 5
+        length: 7
+  State Menu
+  [Trace]  [CALL] unify pick exit [EXIT]
+           [FAIL] next  miss redo REDO
+  [Leash]  CALL   unify pick exit EXIT
+           [FAIL] next  miss redo REDO
+  [Trace]  [CALL] [EXIT] REDO [FAIL]
+  [Leash]  CALL   EXIT   REDO FAIL
+  [ ] New [Method] Compiled Builtin
+  Spy Points
+  bottom line: USER : tsuji   SIMPOS Version I.00   [debugger_choice_menu_without_label]   23-May-85 Thursday 11:21:39
+% The lower-case port names (unify pick exit next miss redo) beside upper-case CALL/EXIT/REDO/FAIL
+% are consistent with TM-079 p15's "procedure/clause box control flow model" (INFERENCE: the
+% two [Trace]/[Leash] row pairs = clause-level and procedure-level ports; not stated in TM-126).

@@ -1,0 +1,24 @@
+TM-430 (bundle of conference papers; trtm_table date 88.01), paper "AIワークステーションPSIのネットワーク化 / PSIにおける
+TCP/IP機能の実現方式" (長谷川隆之, 多々良浩司 (Mitsubishi), ICOT), PDF pages 3-4. PDF p4: 図2 タスク構成図(概略図)
+(task structure, outline). Read by eye from a 250 dpi render. These are tasks in the LAN controller's FIRMWARE,
+not SIMPOS classes.
+
+ +---------------- Cバス LSI ----------------------+
+ |  (モニタ)    [送信バッファ]  [受信バッファ]        |
+ |   (monitor)          ( HLIF )                    |
+ |              /    |    |     \      \            |
+ |           (SI)  (SO)  (SA)   (CI)   (CO)         |
+ |             \    |    /        |      |          |
+ |        (RC tcp/ip)  (SC tcp/ip)  |      |          |
+ |               \      |         /      /           |
+ |                    ( MAC )                       |
+ +---------------- LAN LSI (82586) -----------------+
+ 矢印はデータの流れを表わす (arrows = data flow; drawn here approximately; the exact arrow set is not reproduced)
+
+Task list (p4, printed): (1) SC, RC -- TCP/IP protocol tasks; SC output side, RC input side.
+(2) SI, SO, SA -- take user requests from HLIF and pass them to SC/RC; SI input, SO output, SA asynchronous;
+one SO/SI/SA task per socket ("a socket is a virtual communication endpoint"); 32 of each.
+(3) HLIF -- interface between the C bus and the CI, CO, SI, SO, SA tasks; parses the serial data stream from
+the C bus and sends messages to the task concerned. (4) MAC -- LAN control (10 Mbps, CSMA/CD, IEEE 802.3).
+(5) モニタ -- own multitask monitor: task switching, inter-task messages, memory management.
+(TRANSLATION, mine.) CI/CO are drawn but not described.

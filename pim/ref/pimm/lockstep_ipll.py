@@ -17,7 +17,8 @@ are OpenRequests, which ipl_loader:load/4 then uses.
 The list is the REAL one: object/pimos.ipl in
 docs/nonlocal/pimosobj.tar.Z, 1678 bytes of two-byte JIS, read out of
 the archive when the test runs.  The test stands in for what answers
-the requests (the IPL's SCSI file service, not run); a getb is
+the requests (the IPL's SCSI file service, not run here; on the
+reference model alone ref/pimm/ref_scsi.py runs it); a getb is
 answered with 256 words, which is OURS.
 
 Two parts:

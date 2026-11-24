@@ -1,0 +1,36 @@
+% TR-057 "Overall Design of SIMPOS", PDF page 8, right column.
+% Fig. 4-1. Procedure and Clause Box Control Flow Model for interpretive code.
+% Transcribed by eye from 300dpi crops (F4); drawing rendered as ASCII.
+% The figure shows one procedure box containing three identical clause rows;
+% each clause row is a head box followed by a body box.
+
+                         procedure
+            +-----------------------------------------+
+            |                 clause                  |
+            |          head             body          |
+            |  Unify  +------+  Pick  +------+  Exit  |
+            |  -->    |  ->  |  -->   |  ->  |  -->   |
+            |         |  |   |        |  |   |        |
+            |  <--    |  <-  |  <--   |  <-  |  <--   |
+            |  Next   +------+  Miss  +------+  Redo  |
+   Call     |                                         |   Exit
+   -->      |  Unify  +------+  Pick  +------+  Exit  |   -->
+            |  -->    |  ->  |  -->   |  ->  |  -->   |
+            |         |  |   |        |  |   |        |
+   <--      |  <--    |  <-  |  <--   |  <-  |  <--   |   <--
+   Fail     |  Next   +------+  Miss  +------+  Redo  |   Redo
+            |                                         |
+            |  Unify  +------+  Pick  +------+  Exit  |
+            |  -->    |  ->  |  -->   |  ->  |  -->   |
+            |         |  |   |        |  |   |        |
+            |  <--    |  <-  |  <--   |  <-  |  <--   |
+            |  Next   +------+  Miss  +------+  Redo  |
+            +-----------------------------------------+
+
+     Fig. 4-1.  Procedure and Clause
+            Box Control Flow Model
+            for interpretive code
+
+% Ports as printed: procedure level Call / Exit / Fail / Redo;
+% clause head: Unify (in) / Next (out on failure); head->body: Pick (in) / Miss (back);
+% body: Exit / Redo.

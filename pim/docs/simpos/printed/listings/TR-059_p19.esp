@@ -1,0 +1,17 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 19, printed folio 17. Figure 3.5 Index File (record = links | key | data); Section 3.2(4) index buffer and index file marker.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% "An index buffer has additional predicates which deal with the key field:"
+% o To get the record key
+             :record_key(Buffer,Key)
+% o To set the record key
+             :set_record_key(Buffer,Key)
+% "Operations on an index file marker include:"
+% o To set a key
+             :key(File_Marker,Key)
+% o To get a key
+             :set_key(File_Marker,Key)
+% (as printed: the descriptions are swapped -- ":key" is under "To set a key" and ":set_key"
+%  under "To get a key"; not corrected)

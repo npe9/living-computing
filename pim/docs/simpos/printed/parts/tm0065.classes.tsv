@@ -1,0 +1,27 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+file	(none printed in listing); prose: real class file inherits as_permanent_object, as_resource, with_lock	class: pool_of_files; instance: region, opened:=no, disposed, io_status	:create/1; :make/2; :open/2	:create_file/1 (body ...); :open/0 (...); :close/0 (...); :dispose/0 (...)	PRINTED-SOURCE	TM-065	12-13	10-11	bodies of instance methods elided '...' in original; listing is 'part of the class definition'; class methods call :new/:retrieve (not defined here); real natures stated in prose PDF p13
+binary_file	file			:read/2 (...); :write/2 (...); :tap/1	PRINTED-SOURCE	TM-065	13-14	11-12	read/write bodies elided; :tap creates #binary_file_tap
+binary_file_tap					NAMED	TM-065	13	11	only as #binary_file_tap in :tap body
+bare_window	with_display, as_inside, *	instance: width, height	:create/2 (calls :new,:initialize,:start)	:refresh/0; :initialize/1 (arg size(W,H))	PRINTED-SOURCE	TM-065	15	13	'*' = own position in nature list (TM-061 p4 prose: 自クラスの位置も指定できる); :get_size/:clear_rectangle/:start not defined here
+with_border	as_inside, *	instance component: border_x, border_y, border_area_width, border_area_height; attribute: border_flag:=on, border_width:=2		:draw_border/0 (...); after :refresh/0 (two clauses)	PRINTED-SOURCE	TM-065	15	13	first after-demon tests border_flag == 0 although initial value is 'on' (as printed; TM-061 has == off)
+with_label	as_inside, *, as_label			:draw_label/0 (...); :clear_label/0 (...); :refresh_label/0; after :refresh/0	PRINTED-SOURCE	TM-065	15	13	
+window_with_border_and_label	bare_window, with_border, with_label				PRINTED-SOURCE	TM-065	15	13	prose PDF p16: refresh clears area then redraws border and label (after-demons)
+with_display					NAMED	TM-065	15	13	nature of bare_window only
+as_inside					NAMED	TM-065	15	13	nature only
+as_label					NAMED	TM-065	15	13	nature only
+as_permanent_object					NAMED	TM-065	13	11	prose: natures of the real class file
+as_resource					NAMED	TM-065	13	11	prose
+with_lock					NAMED	TM-065	13	11	prose
+process					PROSE	TM-065	10	8	elementary class: execution entity
+stream					PROSE	TM-065	10	8	elementary class: inter-process communication
+pool					PROSE	TM-065	10	8	elementary class: object storage
+world					PROSE	TM-065	10	8	elementary class: execution environment
+processor					NAMED	TM-065	10	8	hardware-resource class, not used by applications
+area					NAMED	TM-065	10	8	hardware-resource class
+disk					NAMED	TM-065	10	8	physical I/O device class
+keyboard					NAMED	TM-065	10	8	physical I/O device class
+a					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)
+b					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)
+c					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)
+with_b	(has an instance of b)				PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)
+a_having_b	a, with_b				PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)

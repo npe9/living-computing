@@ -1,0 +1,17 @@
+% TM-065 "An Operating System for Sequential Inference Machine PSI" (Hattori et al., June 1984)
+% PDF page 6, printed folio 4, section 2.1 (1) Object. Caption: Figure 2.1 Representation of Object
+% transcribed by eye from the 300dpi render viewed at HALF SCALE (work/tm0065/s-05.png), not from crops.
+% Typewriter-drawn figure; dash/colon pattern of the slot column approximated.
+
+    object      object
+    pointer   ____________
+    =======> |____________|+------->|‾‾‾‾‾‾‾‾‾‾|
+             |_          _|         |   code   |
+             |_          _|         |          |
+             :    slots   :         |__________|
+             |_          _|
+             |____________|
+
+% Prose (same page): "An object is represented as a (heap) vector in KL0, and is identified by its
+% location, used as an object pointer. The first element of the vector holds the KL0 code that is
+% executed when an operation is called. The other elements are used for slots."

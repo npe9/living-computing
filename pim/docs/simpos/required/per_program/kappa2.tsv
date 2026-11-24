@@ -1,0 +1,1458 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		user-macro	=	2	16424	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:60
+builtin		builtin	==	2	5689	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:148
+builtin		builtin	:=	2	5090	kappa2/kappa2/kernel/bcm/BCM.ESP:72
+builtin		builtin	vector_element	3	3898	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:129
+builtin		builtin	set_vector_element	3	1802	kappa2/kappa2/kernel/bcm/BCMPOLTBL.ESP:96
+builtin		builtin	string_element	3	1312	kappa2/kappa2/kernel/bfm/KP_BFMBSC.ESP:589
+builtin		constant a#b	string#str		1140	
+builtin		builtin	set_string_element	3	882	kappa2/kappa2/kernel/bfm/KP_BFMBSC.ESP:427
+builtin		builtin	stack_vector	2	807	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:128
+builtin		builtin	string	3	753	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:341
+builtin		user-macro	<	2	621	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:480
+builtin		builtin	set_substring	4	602	kappa2/kappa2/kernel/bfm/KP_BFMMM.ESP:310
+builtin		user-macro	=<	2	537	kappa2/kappa2/kernel/dbo/KP_DBO.ESP:433
+builtin		builtin	substring	4	528	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:217
+builtin		builtin	equal_string	2	511	kappa2/kappa2/kernel/flm/FILEM1.ESP:59
+builtin		file-level directive	add_operator	3	499	
+builtin		user-macro	>	2	409	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:472
+builtin		builtin	new_string	3	374	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:229
+builtin		builtin	heap_vector	2	303	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:389
+builtin		builtin	integer	1	287	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:357
+builtin		user-macro	>=	2	286	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:13
+builtin		builtin	new_heap_vector	2	278	kappa2/kappa2/kernel/bcm/BCMPOLTBL.ESP:87
+builtin		builtin	melt	2	270	kappa2/kappa2/kernel/bcm/BCMREADOBJ.ESP:754
+builtin		builtin	=\=	2	267	kappa2/kappa2/kernel/bfm/KP_BFMBHT.ESP:434
+builtin		builtin	atom	1	257	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:144
+builtin		builtin	new_stack_vector	2	247	kappa2/kappa2/kernel/bcm/BCMMAKVAL.ESP:50
+builtin		builtin	\==	2	238	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:386
+builtin		builtin	unbound	1	234	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:408
+builtin		builtin	vector_tail	3	224	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:169
+builtin		constant a#b	16#str		221	
+builtin		builtin	subvector	4	205	kappa2/kappa2/kernel/bcm/BCMLOGSEQ.ESP:536
+builtin		builtin	system_clock	2	205	kappa2/kappa2/kernel/flm/VOL1.ESP:170
+builtin		builtin	and	3	170	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:205
+builtin		builtin	freeze	2	164	kappa2/kappa2/kernel/bcm/BCMREADOBJ.ESP:565
+builtin		builtin	list	1	160	kappa2/kappa2/kernel/bcm/BCMGETREC.ESP:184
+builtin		builtin	first	2	151	kappa2/kappa2/kernel/cnv/CONVERTER.ESP:54
+builtin		builtin	bound	1	145	kappa2/kappa2/kernel/hlc/HLCANACOM.ESP:269
+builtin		builtin	or	3	136	kappa2/kappa2/kernel/cnv/CNVJISAS.ESP:120
+builtin		constant a#b	2#str		130	
+builtin		builtin	divide_with_remainder	4	129	kappa2/kappa2/kernel/bfm/KP_BFMBHT.ESP:506
+builtin		builtin	shift_left	3	112	kappa2/kappa2/kernel/cnv/CNVJISAS.ESP:119
+builtin		builtin	repeat	0	104	kappa2/kappa2/kernel/mdm/KP_MDMART.ESP:46
+builtin		builtin	shift_right	3	102	kappa2/kappa2/kernel/cnv/CNVASJIS.ESP:60
+builtin		builtin	string_tail	3	77	kappa2/kappa2/kernel/ixm/IXMELE.ESP:175
+builtin		builtin	list_to_vector	3	69	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:146
+builtin		constant a#b	key#lf		68	
+builtin		builtin	search_character	5	63	kappa2/kappa2/kernel/flm/FREEEXT.ESP:93
+builtin		builtin	second	2	46	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:14
+builtin		builtin	move_string_elements	4	44	kappa2/kappa2/kernel/dbo/KP_DBOFE.ESP:153
+builtin		builtin	not_equal	2	43	kappa2/kappa2/kernel/dbo/KP_DBORA.ESP:77
+builtin		builtin	vector_to_list	3	41	kappa2/kappa2/kernel/bcm/BCMANARED.ESP:170
+builtin		builtin	copy_string_elements	5	41	kappa2/kappa2/kernel/bfm/KP_BFMBSC.ESP:607
+builtin		builtin	object	3	40	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:42
+builtin		builtin	is	2	39	kappa2/kappa2/kernel/rdo/RDOCATTR.ESP:303
+builtin		constant a#b	double_bytes#brace		39	kappa2/kappa2/kernel/cnv/CNVASJIS.ESP:110
+builtin		builtin	and_string	4	36	kappa2/kappa2/kernel/flm/FILEM2.ESP:216
+builtin		builtin	set_subvector	4	35	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:297
+builtin		builtin	pcb	3	32	kappa2/kappa2/utility/bck/BCKTIME.ESP:105
+builtin		builtin	floating_point	1	29	kappa2/kappa2/kernel/hlc/HLCANASEL.ESP:413
+builtin		builtin	equal	2	23	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:786
+builtin		constant a#b	control#str		15	
+builtin		builtin	put_console	1	13	kappa2/kappa2/kernel/flm/VOL1.ESP:189
+builtin		constant a#b	key#bell		12	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:197
+builtin		constant a#b	mouse#ll		11	
+builtin		constant a#b	ascii#str		11	
+builtin		builtin	display_console	1	10	kappa2/kappa2/kernel/flm/VOL1.ESP:190
+builtin		builtin	atomic	1	9	kappa2/kappa2/kernel/rdo/RDOTERM.ESP:523
+builtin		builtin	unify	2	9	kappa2/kvif/esp/kap_serv.esp:634
+builtin		constant a#b	key#del		8	
+builtin		file-level directive	include	1	8	kappa2/kappa2/kernel/hlc/HLC.ESP:203
+builtin		builtin	not_equal_string	2	7	kappa2/kappa2/kernel/ixm/IXMSERDAT.ESP:431
+builtin		builtin	set_word	3	7	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:214
+builtin		builtin	value	2	7	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:207
+builtin		constant a#b	key#cr		7	
+builtin		builtin	reset_on_backtrack	1	7	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:202
+builtin		builtin	on_backtrack	2	7	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:183
+builtin		constant a#b	ascii#10		7	kappa2/kappa2/kernel/flm/VOL1.ESP:195
+builtin		builtin	cut_and_fail	0	6	kappa2/kappa2/kernel/mdm/KP_MDMHLT.ESP:53
+builtin		builtin	hash	2	6	kappa2/kappa2/kernel/mdm/KP_MDMTBL.ESP:17
+builtin		builtin	not_less_than	2	6	kappa2/kappa2/kernel/hlc/HLCEXTSEL.ESP:459
+builtin		builtin	search_string_difference	3	6	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:262
+builtin		constant a#b	meta#str		6	
+builtin		builtin	increment	2	6	kappa2/kappa2/user_if/pb/hash.esp:163
+builtin		builtin	allow_interrupt	0	5	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:209
+builtin		builtin	inhibit_interrupt	0	5	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:206
+builtin		constant a#b	ascii#7		5	kappa2/kappa2/kernel/flm/VOL1.ESP:189
+builtin		constant a#b	mouse#r		4	
+builtin		builtin	divide	3	4	kappa2/kappa2/kernel/rdm/RDMCOPY.ESP:99
+builtin		builtin	first_location	2	4	kappa2/kappa2/kernel/cnv/CONVERTER.ESP:52
+builtin		builtin	less_than	2	4	kappa2/kappa2/kernel/hlc/HLCEXTSEL.ESP:447
+builtin		builtin	substring	7	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:2470
+builtin		builtin	complement	2	3	kappa2/kappa2/kernel/dbo/KP_DBOCA.ESP:210
+builtin		builtin	word	3	3	kappa2/kappa2/kernel/bfm/KP_BFMOM.ESP:208
+builtin		builtin	complement_string	3	3	kappa2/kappa2/kernel/flm/KPCONV.ESP:67
+builtin		builtin	relative_cut_and_fail	1	3	kappa2/kappa2/kernel/mdm/KP_MDMART.ESP:58
+builtin		builtin	number	1	2	kappa2/kappa2/utility/fmp/KMACS.ESP:190
+builtin		builtin	system_register	2	2	kappa2/kappa2/user_if/pb/pcn.esp:70
+builtin		builtin	location_element	2	2	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:22
+builtin		constant a#b	mouse#l		2	
+builtin		constant a#b	mouse#mm		2	
+builtin		builtin	heap_to_stack_vector	2	2	kappa2/kappa2/utility/tgt/TGTCON.ESP:377
+builtin		builtin	stack_to_heap_vector	2	2	kappa2/kappa2/utility/tgt/TGTCON.ESP:383
+builtin		builtin	floating_point_to_integer	2	2	kappa2/kappa2/kernel/rdo/RDOCATTR.ESP:912
+builtin		builtin	integer_to_floating_point	2	2	kappa2/kappa2/kernel/rdo/RDOCATTR.ESP:945
+builtin		builtin	multiply	3	2	kappa2/kappa2/utility/tgt/TGTCON.ESP:370
+builtin		builtin	type	2	2	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:20
+builtin		constant a#b	bytes#brace		2	
+builtin		builtin	set_slot	3	1	kappa2/kappa2/user_if/pb/pbm.esp:753
+builtin		constant a#b	mouse#m		1	
+builtin		constant a#b	mouse#rr		1	
+builtin		builtin	frozen	2	1	kappa2/kappa2/user_if/pb/pcn.esp:3956
+builtin		builtin	identical	2	1	kappa2/kappa2/kernel/rdo/RDOTERM.ESP:685
+builtin		builtin	or_string_elements	5	1	kappa2/kvif/esp/retrieve2.esp:200
+builtin		builtin	structure	1	1	kappa2/kappa2/kernel/rdo/RDOTERM.ESP:518
+builtin		builtin	subtract_extended	4	1	kappa2/kappa2/kernel/time/KP_TIMER.ESP:59
+builtin		user-macro	$	1	1	kappa2/kappa2/kernel/hlc/HLCEXE.MAC:28
+builtin		builtin	length	3	1	kappa2/kappa2/kernel/net/SRVNODE2.ESP:66
+builtin		builtin	number	2	1	kappa2/kappa2/utility/fmp/FCWIN.ESP:159
+builtin		builtin	put_classes	3	1	kappa2/kappa2/utility/tool/LOADCH.ESP:69
+builtin		builtin	loaded_classes	3	1	kappa2/kappa2/utility/tool/LOADCH.ESP:75
+builtin		builtin	write_bar	2	1	kappa2/kappa2/utility/tool/LOADCH.ESP:77
+requirement	symbolizer	ref	(#ref)		1005	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:252
+requirement	string	ref	(#ref)		411	kappa2/kappa2/kernel/flm/FILE.ESP:184
+requirement	string	class	append	3	408	kappa2/kappa2/kernel/flm/FILE.ESP:184
+requirement	symbolizer	class	get_atom_string	3	372	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:252
+requirement	?	ambiguous	end_transaction	1	356	kappa2/kappa2/kernel/hlc/HLCCARTES.ESP:97
+requirement	?	ambiguous	begin_transaction	2	320	kappa2/kappa2/kernel/hlc/HLCCARTES.ESP:95
+requirement	?	ambiguous	reset	1	314	kappa2/kappa2/kernel/hlc/HLCRECNEST.ESP:80
+requirement	symbolizer	class	enter_atom	3	270	kappa2/kappa2/kernel/dbo/KP_DBO.ESP:333
+requirement	?	ambiguous	write_line	2	257	kappa2/kappa2/kernel/net/REMAITR.ESP:878
+requirement	?	unknown	putl	2	230	kappa2/kappa2/kernel/hlc/HLCRECNEST.ESP:75
+requirement	symbolizer	class	get_number_string	3	225	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:258
+requirement	<root>	class	new	2	199	kappa2/kappa2/kernel/bcm/BCM.ESP:44
+requirement	?	ambiguous	get_at	3	194	kappa2/kappa2/kernel/flm/FILEM2.ESP:229
+requirement	?	ambiguous	add_at	3	169	kappa2/kappa2/kernel/flm/FILE.ESP:162
+requirement	?	ambiguous	create_tap	4	161	kappa2/kappa2/kernel/hlc/HLC.ESP:267
+requirement	?	ambiguous	get	3	148	kappa2/kappa2/tool/kappa_pool/KP_POOLMEM.ESP:308
+requirement	?	unknown	beep	1	147	kappa2/kappa2/kernel/itr/ITRERI.ESP:119
+requirement	standard_io_buffer	instance	putf	3	136	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:94
+requirement	library	ref	(#ref)		133	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:29
+requirement	?	ambiguous	activate	1	128	kappa2/kappa2/kernel/itr/ITRERI.ESP:122
+requirement	list	ref	(#ref)		117	kappa2/kappa2/kernel/bcm/BCMPOLTBL.ESP:110
+requirement	?	ambiguous	read	2	116	kappa2/kappa2/kernel/net/SRVMNT.ESP:57
+requirement	list	class	create	2	115	kappa2/kappa2/kernel/bcm/BCMPOLTBL.ESP:110
+requirement	standard_editor	instance	get_window	2	111	kappa2/kappa2/user_if/pb/pbedit.esp:55
+requirement	process	ref	(#ref)		109	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:30
+requirement	?	ambiguous	kill	1	107	kappa2/kappa2/kernel/net/createsrv.esp:38
+requirement	?	ambiguous	deactivate	1	103	kappa2/kappa2/kernel/itr/ITRERI.ESP:124
+requirement	list	instance	add_last	2	100	kappa2/kappa2/kernel/hlc/HLCCARTES.ESP:206
+requirement	?	ambiguous	read_record	4	98	kappa2/kappa2/kernel/hlc/HLCCARTES.ESP:284
+requirement	?	ambiguous	get_contents	2	90	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:145
+requirement	process	class	self	2	89	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:30
+requirement	symbolizer	class	get_number	3	86	kappa2/kappa2/kernel/hlc/HLCJOINRTP.ESP:167
+requirement	?	ambiguous	getl	2	83	kappa2/kappa2/kernel/itr/ITRERI.ESP:123
+requirement	?	unknown	putf	3	81	kappa2/kappa2/kernel/itr/ITRERI.ESP:192
+requirement	standard_io_buffer	instance	getl	2	79	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:95
+requirement	standard_io_buffer	ref	(#ref)		79	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:93
+requirement	standard_io_buffer	class	create	2	77	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:93
+requirement	list	instance	get_contents	2	70	kappa2/kappa2/kernel/hlc/HLCCARTES.ESP:164
+requirement	?	ambiguous	write_lines	2	67	kappa2/kappa2/kernel/net/REMAITR.ESP:877
+requirement	library	class	get_class_object	3	65	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:77
+requirement	?	unknown	insert_string	2	62	kappa2/kappa2/utility/fmp/DUMP.ESP:32
+requirement	?	ambiguous	delete_tap	2	62	kappa2/kappa2/kernel/hlc/HLC.ESP:272
+requirement	?	ambiguous	flash	1	59	kappa2/kappa2/kernel/itr/ITRERI.ESP:121
+requirement	standard_io_buffer	instance	putt	2	59	kappa2/kappa2/kernel/hlc/HLCSETOBJ.ESP:444
+requirement	editor_text_buffer	ref	(#ref)		57	kappa2/kappa2/user_if/pb/inwin.esp:478
+requirement	standard_output_file	instance	putf	3	56	kappa2/kappa2/user_if/pb/pcn.esp:254
+requirement	?	unknown	set_item_status	3	56	kappa2/kappa2/user_if/pb/som.esp:637
+requirement	monogyny_hash_index	instance	get_at	3	54	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:904
+requirement	?	unknown	reset_modify_flag	1	54	kappa2/kappa2/user_if/pb/typewin.esp:328
+requirement	?	ambiguous	clear	1	53	kappa2/kappa2/kernel/bcm/BCMPOLTBL.ESP:138
+requirement	inferior_window	class	create	3	51	kappa2/kappa2/kernel/net/SRVMNT.ESP:34
+requirement	list	instance	clear	1	48	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:284
+requirement	monogyny_hash_index	instance	put_at	3	48	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:843
+requirement	?	unknown	putf	2	48	kappa2/kappa2/kernel/itr/ITRERI.ESP:143
+requirement	as_program	nature	(inherited)		47	kappa2/kappa2/kernel/itr/ITRKAPDMY.ESP:6
+requirement	monogyny_hash_index	instance	remove_at	3	47	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:820
+requirement	?	unknown	background	2	47	kappa2/kappa2/user_if/pb/pbm.esp:242
+requirement	?	unknown	add_operator	4	45	kappa2/kappa2/kernel/hlc/HLCTR.ESP:297
+requirement	?	ambiguous	size	2	45	kappa2/kappa2/kernel/bfm/KP_BFMBSC.ESP:54
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	write_line	2	42	kappa2/kappa2/user_if/pb/pdim.esp:602
+requirement	temporary_menu	class	create	3	41	kappa2/kappa2/kernel/itr/ITRAPP.ESP:68
+requirement	standard_io_buffer	instance	reset	1	41	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:96
+requirement	standard_io_buffer	instance	putl	2	41	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:183
+requirement	?	unknown	move_to_first	1	40	kappa2/kappa2/user_if/pb/typewin.esp:327
+requirement	?	ambiguous	set_title	2	39	kappa2/kappa2/user_if/pb/menus.esp:88
+requirement	standard_io_buffer	instance	gett	2	39	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:184
+requirement	?	ambiguous	set_position	3	39	kappa2/kappa2/kernel/ixm/IXMELE.ESP:116
+requirement	?	unknown	move_to	2	38	kappa2/kappa2/utility/fmp/DUMP.ESP:60
+requirement	monogyny_hash_index	ref	(#ref)		38	kappa2/kappa2/kernel/hlc/HLC.MAC:562
+requirement	monogyny_hash_index	class	create	3	37	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:40
+requirement	?	unknown	close_output	1	37	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:240
+requirement	name	ref	(#ref)		37	kappa2/kappa2/utility/bck/BCKCMN.ESP:164
+requirement	time	ref	(#ref)		35	kappa2/kappa2/kernel/bfm/KP_BFOBJE.ESP:1348
+requirement	?	ambiguous	read_record	5	35	kappa2/kappa2/kernel/hlc/HLC.ESP:279
+requirement	list_index	class	create	2	34	kappa2/kappa2/kernel/flm/FILE.ESP:55
+requirement	?	unknown	die	1	34	kappa2/kappa2/kernel/net/SRVMNT.ESP:121
+requirement	?	unknown	add_items	3	34	kappa2/kappa2/user_if/pb/menus.esp:113
+requirement	inferior_window	nature	(inherited)		34	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	?	unknown	add_last	2	34	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:119
+requirement	standard_temporary_menu	instance	kill	1	34	kappa2/kappa2/user_if/pb/kcm.esp:1325
+requirement	standard_temporary_menu	class	create	3	33	kappa2/kappa2/user_if/pb/kcm.esp:1315
+requirement	standard_temporary_menu	ref	(#ref)		33	kappa2/kappa2/user_if/pb/kcm.esp:1315
+requirement	?	unknown	get_except_void	2	33	kappa2/kappa2/kernel/hlc/HLCUNIHSTB.ESP:127
+requirement	font	class	create	3	32	kappa2/kappa2/kernel/net/SRVMNT.ESP:40
+requirement	monogyny_hash_index	instance	clear	1	32	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:63
+requirement	standard_editor	instance	current_buffer	2	32	kappa2/kappa2/user_if/pb/typewin.esp:324
+requirement	as_mouse_input	nature	(inherited)		32	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	font	ref	(#ref)		32	kappa2/kappa2/kernel/net/SRVMNT.ESP:40
+requirement	?	unknown	slot	2	32	kappa2/kappa2/user_if/pb/exwin.esp:32
+requirement	?	unknown	get_inside_size	3	32	kappa2/kappa2/user_if/pb/basewin.esp:155
+requirement	?	ambiguous	close	1	32	kappa2/kappa2/kernel/itr/ITRAPC.ESP:88
+requirement	?	ambiguous	delete_set	2	32	kappa2/kappa2/kernel/hlc/HLC.ESP:253
+requirement	hash_index	instance	get_at	3	31	kappa2/kappa2/kernel/itr/ITRSET.ESP:101
+requirement	hash_index	class	create	3	30	kappa2/kappa2/kernel/hlc/HLCRECCOM.ESP:22
+requirement	?	ambiguous	set_font	2	30	kappa2/kappa2/kernel/net/SRVMNT.ESP:159
+requirement	?	unknown	increment_path	2	30	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:779
+requirement	standard_temporary_menu	instance	read	2	29	kappa2/kappa2/user_if/pb/kcm.esp:1324
+requirement	standard_temporary_menu	instance	activate	1	29	kappa2/kappa2/user_if/pb/kcm.esp:1322
+requirement	editor_text_buffer	class	create	4	28	kappa2/kappa2/user_if/pb/inwin.esp:480
+requirement	?	unknown	putt	2	28	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:515
+requirement	list	instance	add	2	28	kappa2/kappa2/kernel/pcm/PCSRTSTAP.ESP:339
+requirement	?	ambiguous	remove_at	3	28	kappa2/kappa2/kernel/flm/FILEM2.ESP:58
+requirement	?	ambiguous	search_index	5	28	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:144
+requirement	monogyny_hash_index	instance	stick_tap	2	28	kappa2/kappa2/kernel/svm/SVMSG.ESP:102
+requirement	?	unknown	reshape	5	27	kappa2/kappa2/user_if/pb/basewin.esp:51
+requirement	editor_text_buffer	class	get_buffer_instance	3	27	kappa2/kappa2/user_if/pb/inwin.esp:478
+requirement	?	ambiguous	erase_cursor	1	27	kappa2/kappa2/user_if/pb/msm.esp:126
+requirement	list_index	instance	add_at	3	27	kappa2/kappa2/kernel/flm/FILEM1.ESP:299
+requirement	list	instance	remove_first	2	27	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:758
+requirement	with_border	nature	(inherited)		26	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	pmacs_window	instance	putf	3	26	kappa2/kappa2/kernel/net/SRVMNT.ESP:392
+requirement	?	ambiguous	initialize	3	26	kappa2/kappa2/kernel/hlc/HLC.ESP:50
+requirement	window_without_label	instance	write_line	2	26	kappa2/kappa2/kernel/net/SRVMNT.ESP:425
+requirement	library	class	check_info	3	25	kappa2/kappa2/kernel/svm/SVINI.ESP:1097
+requirement	temporary_menu	ref	(#ref)		25	kappa2/kappa2/kernel/itr/ITRAPP.ESP:68
+requirement	?	ambiguous	get_contents_at	3	25	kappa2/kappa2/kernel/flm/FILEM1.ESP:351
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	putl	2	25	kappa2/kappa2/utility/tgt/TGTWIN.ESP:48
+requirement	list_index	instance	get_at	3	24	kappa2/kappa2/kernel/flm/FILE.ESP:136
+requirement	list	instance	put_contents	2	24	kappa2/kappa2/kernel/hlc/HLCEXTSEL.ESP:1112
+requirement	hash_index	instance	clear	1	24	kappa2/kappa2/kernel/hlc/HLCRECCOM.ESP:103
+requirement	?	unknown	write	2	24	kappa2/kappa2/user_if/pb/pcn.esp:4841
+requirement	?	unknown	move_cursor	3	24	kappa2/kappa2/user_if/pb/som.esp:819
+requirement	<root>	instance	get_transaction_user	7	24	kappa2/kappa2/kernel/net/REMAPC.ESP:418
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	set_font	2	24	kappa2/kappa2/user_if/pb/pdim.esp:601
+requirement	hash_index	instance	add_at	3	23	kappa2/kappa2/kernel/itr/ITRSET.ESP:113
+requirement	time	class	now	2	23	kappa2/kappa2/kernel/bfm/KP_BFOBJE.ESP:1348
+requirement	?	unknown	get_size	3	23	kappa2/kappa2/user_if/pb/attr_menu.esp:292
+requirement	with_superior_input_buffer	nature	(inherited)		22	kappa2/kappa2/user_if/pb/attr_menu.esp:6
+requirement	?	ambiguous	put_at	3	22	kappa2/kappa2/kernel/hlc/HLCSETOBJ.ESP:511
+requirement	standard_temporary_menu	instance	beep	1	22	kappa2/kappa2/utility/bck/BCKPROC.ESP:36
+requirement	pmacs_window	instance	activate	1	21	kappa2/kappa2/kernel/net/SRVMNT.ESP:238
+requirement	pmacs_window	instance	putl	2	21	kappa2/kappa2/kernel/net/SRVMNT.ESP:239
+requirement	standard_io_buffer	instance	putf	2	21	kappa2/kappa2/utility/rep/REPDB.ESP:254
+requirement	?	unknown	retrieve_all_items	2	21	kappa2/kappa2/user_if/pb/attr_menu.esp:231
+requirement	standard_temporary_scrolling_menu	class	create	3	21	kappa2/kappa2/utility/mdu/ACCESS.ESP:182
+requirement	standard_temporary_scrolling_menu	ref	(#ref)		21	kappa2/kappa2/utility/mdu/ACCESS.ESP:182
+requirement	?	ambiguous	get_contents_with_key	2	21	kappa2/kappa2/kernel/hlc/HLCAPROUT.ESP:560
+requirement	access_status	class	new	2	21	kappa2/kappa2/kernel/itr/ITRAIC.ESP:530
+requirement	?	ambiguous	get_position	3	21	kappa2/kappa2/kernel/ixm/IXMINSISR.ESP:40
+requirement	?	unknown	remove_operator	2	20	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:172
+requirement	pmacs_window	class	create	3	20	kappa2/kappa2/kernel/itr/ITRERI.ESP:174
+requirement	hash_index	ref	(#ref)		20	kappa2/kappa2/kernel/itr/ITRSET.ESP:27
+requirement	binary_file	ref	(#ref)		20	kappa2/kappa2/kernel/net/SRVCNF.ESP:399
+requirement	standard_editor	instance	set_current_buffer	2	20	kappa2/kappa2/utility/mdu/ACCESS.ESP:653
+requirement	?	unknown	show	1	19	kappa2/kappa2/user_if/pb/pbm.esp:36
+requirement	font_13	ref	(#ref)		19	kappa2/kappa2/user_if/pb/pbm.esp:291
+requirement	standard_io_window	ref	(#ref)		19	kappa2/kappa2/kernel/net/createsrv.esp:49
+requirement	?	unknown	putc	2	19	kappa2/kappa2/user_if/pb/pcn.esp:4907
+requirement	date_time	ref	(#ref)		19	kappa2/kappa2/kernel/flm/FILEM2.ESP:348
+requirement	wildcard	ref	(#ref)		19	kappa2/kappa2/kernel/ixm/IXMVAGSER.ESP:383
+requirement	standard_menu	instance	activate	1	19	kappa2/kappa2/user_if/pb/tam.esp:136
+requirement	window_without_label	instance	beep	1	19	kappa2/kappa2/kernel/net/SRVMNT.ESP:427
+requirement	?	unknown	retrieve_item	3	19	kappa2/kappa2/user_if/pb/tam.esp:201
+requirement	?	ambiguous	open	2	18	kappa2/kappa2/kernel/net/REMAPC.ESP:327
+requirement	list_index	ref	(#ref)		18	kappa2/kappa2/kernel/mdm/KP_MDMTCR.ESP:24
+requirement	pmacs_window	ref	(#ref)		18	kappa2/kappa2/kernel/itr/ITRERI.ESP:174
+requirement	?	ambiguous	get_string	3	18	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:326
+requirement	temporary_menu	instance	set_font	2	18	kappa2/kappa2/user_if/pb/menus.esp:790
+requirement	temporary_menu	instance	set_label_font	2	18	kappa2/kappa2/user_if/pb/menus.esp:791
+requirement	?	ambiguous	open	4	18	kappa2/kappa2/kernel/flm/FILEM1.ESP:316
+requirement	window_without_label	instance	write_lines	2	18	kappa2/kappa2/utility/bck/BCKCMN.ESP:297
+requirement	as_rpc_server_tcp	instance	sendreply	3	18	kappa2/kvif/esp/kap_serv.esp:48
+requirement	standard_io_window	class	create	3	17	kappa2/kappa2/kernel/net/createsrv.esp:49
+requirement	standard_io_window	instance	putl	2	17	kappa2/kappa2/user_if/pb/kcm.esp:2878
+requirement	directory	ref	(#ref)		17	kappa2/kappa2/kernel/net/SRVCNF.ESP:394
+requirement	list	instance	add_first	2	17	kappa2/kappa2/kernel/pcm/PCPSETOPE.ESP:453
+requirement	monogyny_hash_index	instance	get_contents_with_key	2	17	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:928
+requirement	menu_with_superior_input_buffer	class	create	3	17	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1251
+requirement	temporary_menu	instance	read	2	17	kappa2/kappa2/kernel/itr/ITRAPP.ESP:75
+requirement	menu_with_superior_input_buffer	ref	(#ref)		17	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1251
+requirement	?	ambiguous	add_set	4	17	kappa2/kappa2/kernel/hlc/HLC.ESP:306
+requirement	symbolizer	class	is_object	2	16	kappa2/kappa2/kernel/ixm/IXMCPLDMN.ESP:246
+requirement	?	unknown	activate	2	16	kappa2/kappa2/user_if/pb/attr_menu.esp:79
+requirement	?	unknown	set_size	3	16	kappa2/kappa2/user_if/pb/attr_menu.esp:324
+requirement	?	unknown	clear_items	1	16	kappa2/kappa2/user_if/pb/menus.esp:112
+requirement	name	class	ident	3	16	kappa2/kappa2/utility/bck/BCKCMN.ESP:164
+requirement	string_buffer	ref	(#ref)		16	kappa2/kappa2/kernel/net/SRVCNF.ESP:405
+requirement	pmacs_window	instance	getl	2	16	kappa2/kappa2/kernel/net/SRVMNT.ESP:409
+requirement	name	class	type	3	16	kappa2/kappa2/utility/bck/BCKCMN.ESP:165
+requirement	window_without_label	class	create	3	16	kappa2/kappa2/kernel/net/SRVMNT.ESP:418
+requirement	window_without_label	ref	(#ref)		16	kappa2/kappa2/kernel/net/SRVMNT.ESP:418
+requirement	window_without_label	instance	kill	1	16	kappa2/kappa2/kernel/net/SRVMNT.ESP:430
+requirement	?	ambiguous	get_string	2	16	kappa2/kappa2/utility/bck/BCKTIME.ESP:424
+requirement	process	instance	activate	2	15	kappa2/kappa2/kernel/itr/ITRSES.ESP:115
+requirement	standard_output_file	instance	putl	2	15	kappa2/kappa2/kernel/net/SRVCNF.ESP:78
+requirement	?	unknown	set_area_limit_execution	7	15	kappa2/kappa2/utility/bck/BCKPROC.ESP:80
+requirement	monogyny_list_index	ref	(#ref)		15	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:28
+requirement	date_time	class	now	2	15	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:325
+requirement	fdd_volume	instance	dismount	1	15	kappa2/kappa2/utility/bck/BCKCMN.ESP:546
+requirement	as_class_with_lock	nature	(inherited)		15	kappa2/kappa2/kernel/net/REMLOG.ESP:6
+requirement	monogyny_list_index	class	create	2	15	kappa2/kappa2/kernel/flm/FILEM1.ESP:98
+requirement	pmacs_window	instance	kill	1	15	kappa2/kappa2/kernel/net/SRVMNT.ESP:243
+requirement	?	ambiguous	release	1	15	kappa2/kappa2/kernel/net/REMLOG.ESP:46
+requirement	standard_input_file	instance	close_input	1	14	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:31
+requirement	library	class	make_class_object	2	14	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:76
+requirement	standard_output_file	class	create	3	14	kappa2/kappa2/kernel/net/SRVCNF.ESP:69
+requirement	standard_output_file	instance	close_output	1	14	kappa2/kappa2/kernel/net/SRVCNF.ESP:71
+requirement	?	unknown	set_superior	2	14	kappa2/kappa2/user_if/pb/sheet_obj.esp:168
+requirement	?	unknown	current_position	2	14	kappa2/kappa2/utility/fmp/DUMP.ESP:58
+requirement	as_superior	nature	(inherited)		14	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	standard_output_file	ref	(#ref)		14	kappa2/kappa2/kernel/net/SRVCNF.ESP:69
+requirement	string_buffer	class	create	4	14	kappa2/kappa2/kernel/net/SRVCNF.ESP:405
+requirement	?	unknown	gett	2	14	kappa2/kappa2/kernel/hlc/HLCRECNEST.ESP:76
+requirement	list_index	instance	clear	1	14	kappa2/kappa2/kernel/mdm/KP_MDMTCR.ESP:1366
+requirement	menu	class	create	3	14	kappa2/kappa2/kernel/net/SRVMNT.ESP:151
+requirement	?	ambiguous	open	5	14	kappa2/kappa2/kernel/bcm/BCMPRCTL.ESP:68
+requirement	temporary_menu	instance	activate	1	14	kappa2/kappa2/kernel/itr/ITRAPP.ESP:74
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	set_bottom_title	2	14	kappa2/kappa2/user_if/pb/inwin.esp:149
+requirement	?	unknown	allow_input	1	14	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:1362
+requirement	?	unknown	command_interpret	1	13	kappa2/kappa2/user_if/pb/exwin.esp:75
+requirement	pmacs_window	instance	flash	1	13	kappa2/kappa2/utility/tool/MSTPR.ESP:268
+requirement	hash_index	instance	remove_at	3	13	kappa2/kappa2/kernel/itr/ITRSET.ESP:125
+requirement	library	class	get_class_id	5	13	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:92
+requirement	pmacs_window	instance	set_font	2	13	kappa2/kappa2/kernel/net/SRVMNT.ESP:236
+requirement	menu	ref	(#ref)		13	kappa2/kappa2/kernel/net/SRVMNT.ESP:151
+requirement	pmacs_window	instance	deactivate	1	13	kappa2/kappa2/utility/tool/CCTPR.ESP:167
+requirement	?	ambiguous	set_slot	3	13	kappa2/kappa2/kernel/mdm/KP_MDMTCR.ESP:1388
+requirement	?	ambiguous	get	2	13	kappa2/kappa2/kernel/svm/SVMSG.ESP:329
+requirement	standard_superior_window	class	create	3	12	kappa2/kappa2/user_if/pb/attr_menu.esp:106
+requirement	date	ref	(#ref)		12	kappa2/kappa2/kernel/flm/FILEM2.ESP:349
+requirement	?	ambiguous	add	2	12	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:235
+requirement	window_without_label	instance	activate	1	12	kappa2/kappa2/kernel/net/SRVMNT.ESP:426
+requirement	temporary_choice_window	class	create	3	12	kappa2/kappa2/user_if/pb/menus.esp:24
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	set_color_pair	3	12	kappa2/kappa2/user_if/pb/pdim.esp:590
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	erase_cursor	1	12	kappa2/kappa2/user_if/pb/pdim.esp:594
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	draw_string	6	12	kappa2/kappa2/user_if/pb/pdim.esp:598
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	activate	1	12	kappa2/kappa2/user_if/pb/pdim.esp:617
+requirement	standard_editor	instance	clear_input	1	12	kappa2/kappa2/user_if/pb/typewin.esp:325
+requirement	{with_margin|with_border|as_scroll|as_output|as_input|inferior_window}	instance	write	2	12	kappa2/kappa2/utility/fmp/FCWIN.ESP:53
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	putb	3	12	kappa2/kappa2/utility/tgt/TGTWIN.ESP:49
+requirement	temporary_choice_window	ref	(#ref)		12	kappa2/kappa2/user_if/pb/menus.esp:24
+requirement	process	class	create	2	11	kappa2/kappa2/kernel/svm/SVCTL.ESP:272
+requirement	pmacs_window	instance	set_title	2	11	kappa2/kappa2/kernel/net/SRVMNT.ESP:237
+requirement	?	unknown	get_count	2	11	kappa2/kappa2/kernel/bfm/KP_BFOBJE.ESP:1349
+requirement	monogyny_list_index	instance	clear	1	11	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:83
+requirement	?	ambiguous	create	3	11	kappa2/kappa2/kernel/itr/ITRMAN.ESP:35
+requirement	symbolizer	class	get_atom	3	11	kappa2/kappa2/kernel/ixm/IXMUPDTMN.ESP:742
+requirement	?	ambiguous	create	2	11	kappa2/kappa2/user_if/pb/pcn.esp:136
+requirement	messenger	ref	(#ref)		11	kappa2/kappa2/user_if/pb/kcm.esp:1013
+requirement	choice_window	ref	(#ref)		11	kappa2/kappa2/utility/dbi/DBIPR.ESP:439
+requirement	directory	class	retrieve	4	11	kappa2/kappa2/utility/bck/BCKCMN.ESP:702
+requirement	?	unknown	close_input	1	11	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:239
+requirement	with_margin	nature	(inherited)		11	kappa2/kappa2/user_if/pb/cmwin.esp:14
+requirement	menu_with_superior_input_buffer	instance	activate	1	11	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1286
+requirement	?	ambiguous	draw_string	5	11	kappa2/kappa2/user_if/pb/fcell.esp:599
+requirement	temporary_menu	instance	set_title	2	11	kappa2/kappa2/user_if/pb/bcell.esp:1327
+requirement	choice_window	class	create	3	11	kappa2/kappa2/utility/dbi/DBIPR.ESP:439
+requirement	?	ambiguous	send	2	11	kappa2/kappa2/kernel/flm/VOL1.ESP:161
+requirement	?	ambiguous	create	4	11	kappa2/kappa2/kernel/itr/ITRMAN.ESP:64
+requirement	?	ambiguous	set_type	2	11	kappa2/kappa2/kernel/itr/ITRTCM.ESP:92
+requirement	?	unknown	standard_input	2	11	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:32
+requirement	?	unknown	clear_buffer	3	11	kappa2/kappa2/user_if/pb/exwin.esp:68
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	set_size	3	11	kappa2/kappa2/user_if/pb/menus.esp:182
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	paint	5	11	kappa2/kappa2/user_if/pb/pdim.esp:606
+requirement	{as_program|as_class_with_lock}	class	new	2	11	kappa2/kappa2/utility/bck/BCKPROC.ESP:45
+requirement	?	ambiguous	confirm	2	11	kappa2/kappa2/utility/mop/MOPCOM.ESP:102
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	flash	1	11	kappa2/kappa2/utility/tgt/TGTWIN.ESP:52
+requirement	e_string	ref	(#ref)		11	kappa2/kappa2/kernel/net/SRVCNF.ESP:431
+requirement	?	unknown	refute	3	10	kappa2/kappa2/kernel/hlc/HLCEXE.ESP:133
+requirement	reshape_notifier	nature	(inherited)		10	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	as_single_select	nature	(inherited)		10	kappa2/kappa2/user_if/pb/cmwin.esp:14
+requirement	standard_superior_window	ref	(#ref)		10	kappa2/kappa2/user_if/pb/attr_menu.esp:106
+requirement	as_program	class	create	2	10	kappa2/kappa2/utility/mop/MOPKAPPA.ESP:20
+requirement	as_resource	class	new	2	10	kappa2/kappa2/kernel/itr/ITRAPP.ESP:63
+requirement	?	unknown	see	3	10	kappa2/kappa2/utility/mdu/ACCESS.ESP:899
+requirement	?	unknown	set_label_font	2	10	kappa2/kappa2/user_if/pb/menus.esp:87
+requirement	as_output	nature	(inherited)		10	kappa2/kappa2/user_if/pb/basewin.esp:70
+requirement	fdd_binary_file	ref	(#ref)		10	kappa2/kappa2/utility/bck/BCKCMN.ESP:630
+requirement	wildcard	class	string	4	10	kappa2/kappa2/kernel/ixm/IXMVAGSER.ESP:383
+requirement	window_without_label	instance	read	2	10	kappa2/kappa2/kernel/net/SRVMNT.ESP:429
+requirement	as_program	instance	get_arguments	2	10	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:41
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	set_top_title	2	10	kappa2/kappa2/user_if/pb/inwin.esp:162
+requirement	?	ambiguous	get_number	3	10	kappa2/kappa2/user_if/pb/pcn.esp:621
+requirement	format_printer	instance	put_line	2	10	kappa2/kappa2/user_if/pb/typewin.esp:372
+requirement	?	unknown	put_data	2	10	kappa2/kappa2/utility/bck/BCKFIF.ESP:1021
+requirement	{as_program|as_class_with_lock}	class	locked	1	10	kappa2/kappa2/utility/bck/BCKPROC.ESP:32
+requirement	{as_program|as_class_with_lock}	class	lock	1	10	kappa2/kappa2/utility/bck/BCKPROC.ESP:43
+requirement	{as_program|as_class_with_lock}	class	unlock	1	10	kappa2/kappa2/utility/bck/BCKPROC.ESP:49
+requirement	as_rpc_server_tcp	instance	xdr_jis_string	2	10	kappa2/kvif/esp/kap_serv.esp:115
+requirement	?	unknown	exterminate	1	9	kappa2/kappa2/kernel/itr/ITRSES.ESP:58
+requirement	standard_input_file	class	create	3	9	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:29
+requirement	standard_input_file	instance	gett	2	9	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:30
+requirement	monogyny_list_index	instance	put_at	3	9	kappa2/kappa2/kernel/hlc/HLCRECCOM.ESP:309
+requirement	?	unknown	assign	1	9	kappa2/kappa2/kernel/svm/SVCTL.ESP:50
+requirement	?	unknown	set_item_value	3	9	kappa2/kappa2/utility/bck/BCKUIF2.ESP:400
+requirement	standard_io_window	instance	kill	1	9	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:59
+requirement	as_input	nature	(inherited)		9	kappa2/kappa2/user_if/pb/pdim.esp:10
+requirement	standard_input_file	ref	(#ref)		9	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:29
+requirement	inferior_window	instance	deactivate	1	9	kappa2/kappa2/user_if/pb/exwin.esp:76
+requirement	as_menu_input	nature	(inherited)		9	kappa2/kappa2/user_if/pb/attr_menu.esp:6
+requirement	temporary_menu	instance	kill	1	9	kappa2/kappa2/user_if/pb/pcn.esp:5988
+requirement	alarm_watch	instance	on_after	2	9	kappa2/kappa2/kernel/svm/SVTIMER.ESP:70
+requirement	alarm_watch	instance	wait	1	9	kappa2/kappa2/kernel/svm/SVTIMER.ESP:71
+requirement	?	unknown	get_activity	2	9	kappa2/kappa2/utility/bck/BCKUIF2.ESP:556
+requirement	?	unknown	see_key	2	9	kappa2/kappa2/kernel/svm/SVUSJST.ESP:232
+requirement	?	unknown	get_color_pairs_list	2	9	kappa2/kappa2/user_if/pb/pcn.esp:2892
+requirement	color_manipulator	class	call_color_manipulator	2	9	kappa2/kappa2/user_if/pb/pcn.esp:3210
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	set_size	3	9	kappa2/kappa2/user_if/pb/savedmenu.esp:61
+requirement	?	unknown	define	2	9	kappa2/kappa2/utility/bck/BCKFIF.ESP:893
+requirement	?	unknown	tap	2	9	kappa2/kappa2/utility/bck/BCKFIF.ESP:1000
+requirement	color_manipulator	ref	(#ref)		9	kappa2/kappa2/user_if/pb/pcn.esp:3210
+requirement	as_program	class	new	2	8	kappa2/kappa2/kernel/net/SERVER.ESP:25
+requirement	list	instance	remove	2	8	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:438
+requirement	as_graphics	nature	(inherited)		8	kappa2/kappa2/user_if/pb/basewin.esp:70
+requirement	file_utility	ref	(#ref)		8	kappa2/kappa2/utility/bck/BCKFIF.ESP:1512
+requirement	standard_scrolling_menu	ref	(#ref)		8	kappa2/kappa2/utility/bck/BCKCMN.ESP:138
+requirement	?	unknown	current_buffer	2	8	kappa2/kappa2/kernel/itr/ITRERI.ESP:113
+requirement	?	unknown	see_position	3	8	kappa2/kappa2/user_if/pb/typewin.esp:352
+requirement	messenger	class	show	3	8	kappa2/kappa2/user_if/pb/kcm.esp:1013
+requirement	standard_scrolling_menu	class	create	3	8	kappa2/kappa2/utility/bck/BCKCMN.ESP:138
+requirement	as_resource	nature	(inherited)		8	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:7
+requirement	network_node_name	ref	(#ref)		8	kappa2/kappa2/kernel/itr/ITRAPP.ESP:248
+requirement	alarm_watch	class	create	2	8	kappa2/kappa2/kernel/svm/SVTIMER.ESP:47
+requirement	time	instance	set_value	5	8	kappa2/kappa2/kernel/svm/SVTIMER.ESP:49
+requirement	?	unknown	get_item_status	3	8	kappa2/kappa2/utility/bck/BCKUIF2.ESP:563
+requirement	alarm_watch	ref	(#ref)		8	kappa2/kappa2/kernel/svm/SVTIMER.ESP:47
+requirement	standard_scrolling_menu	instance	read	2	8	kappa2/kappa2/utility/bck/BCKCMN.ESP:155
+requirement	standard_scrolling_menu	instance	kill	1	8	kappa2/kappa2/utility/bck/BCKCMN.ESP:156
+requirement	?	unknown	inhibit_input	1	8	kappa2/kappa2/utility/mop/MOPMON.ESP:44
+requirement	?	ambiguous	mount	3	8	kappa2/kappa2/kernel/flm/FILEM1.ESP:383
+requirement	?	unknown	set_status	4	8	kappa2/kappa2/kernel/icm/ICM.ESP:1003
+requirement	e_string	class	split	4	8	kappa2/kappa2/kernel/net/SRVCNF.ESP:494
+requirement	standard_io_window	instance	beep	1	8	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:31
+requirement	?	ambiguous	count	2	8	kappa2/kappa2/kernel/svm/SVRSC.ESP:192
+requirement	hash_index	instance	stick_tap	2	8	kappa2/kappa2/kernel/svm/SVUSTAP.ESP:103
+requirement	?	unknown	standard_output	2	8	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:33
+requirement	?	unknown	standard_message	2	8	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:34
+requirement	?	ambiguous	term_to_string	3	8	kappa2/kappa2/user_if/pb/exwin.esp:88
+requirement	?	unknown	multi_volume	4	8	kappa2/kappa2/utility/bck/BCKFIF.ESP:2736
+requirement	standard_temporary_window	instance	beep	1	8	kappa2/kappa2/utility/dbi/DBIPR.ESP:122
+requirement	as_rpc_server_tcp	instance	getargs	3	8	kappa2/kvif/esp/kap_serv.esp:149
+requirement	date	class	now	2	7	kappa2/kappa2/kernel/itr/ITRTIM.ESP:27
+requirement	?	unknown	method	3	7	kappa2/kappa2/kernel/hlc/HLCEXE.ESP:123
+requirement	with_click_information	nature	(inherited)		7	kappa2/kappa2/user_if/pb/menus.esp:1168
+requirement	with_label	nature	(inherited)		7	kappa2/kappa2/user_if/pb/exwin.esp:12
+requirement	standard_editor	nature	(inherited)		7	kappa2/kappa2/user_if/pb/pbedit.esp:18
+requirement	coordinator	ref	(#ref)		7	kappa2/kappa2/kernel/net/REMAITR.ESP:230
+requirement	pathname	ref	(#ref)		7	kappa2/kappa2/utility/bck/BCKCMN.ESP:699
+requirement	standard_menu	ref	(#ref)		7	kappa2/kappa2/user_if/pb/tam.esp:107
+requirement	?	unknown	get_value	5	7	kappa2/kappa2/kernel/itr/ITRTIM.ESP:28
+requirement	standard_superior_window	instance	get_inside_size	3	7	kappa2/kappa2/utility/mdu/MDU.ESP:91
+requirement	standard_menu	class	create	3	7	kappa2/kappa2/user_if/pb/tam.esp:106
+requirement	with_icon	nature	(inherited)		7	kappa2/kappa2/user_if/pb/exwin.esp:12
+requirement	as_menu	nature	(inherited)		7	kappa2/kappa2/user_if/pb/cmwin.esp:14
+requirement	?	unknown	change_item	3	7	kappa2/kappa2/user_if/pb/pcn.esp:2617
+requirement	?	unknown	draw_filled_rectangle	6	7	kappa2/kappa2/user_if/pb/fcell.esp:487
+requirement	list	instance	get_at	3	7	kappa2/kappa2/kernel/pcm/KP_PCPPTAP.ESP:295
+requirement	menu_with_superior_input_buffer	instance	kill	1	7	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1295
+requirement	as_markers	nature	(inherited)		7	kappa2/kappa2/user_if/pb/pdim.esp:48
+requirement	standard_editor	instance	select_buffer	2	7	kappa2/kappa2/utility/fmp/KMACS.ESP:209
+requirement	?	ambiguous	read	3	7	kappa2/kappa2/kernel/net/SRVCNF.ESP:407
+requirement	time	class	create	2	7	kappa2/kappa2/kernel/svm/SVTIMER.ESP:48
+requirement	standard_scrolling_menu	instance	add_items	3	7	kappa2/kappa2/utility/bck/BCKCMN.ESP:153
+requirement	{as_superior|with_label|with_border|inferior_window}	instance	activate	1	7	kappa2/kappa2/kernel/net/SRVMNT.ESP:44
+requirement	standard_io_window	instance	activate	2	7	kappa2/kappa2/user_if/pb/kcm.esp:2875
+requirement	?	ambiguous	clear_buffer	1	7	kappa2/kappa2/user_if/pb/pbm.esp:823
+requirement	?	ambiguous	read_sense	2	7	kappa2/kappa2/user_if/pb/pcn.esp:1257
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	write_lines	2	7	kappa2/kappa2/user_if/pb/pdim.esp:978
+requirement	wildcard	class	name	4	7	kappa2/kappa2/utility/bck/BCKCMN.ESP:135
+requirement	window_without_label	instance	background	2	7	kappa2/kappa2/utility/bck/BCKCMN.ESP:295
+requirement	?	ambiguous	dismount	1	7	kappa2/kappa2/utility/bck/BCKCMN.ESP:625
+requirement	standard_temporary_window	instance	kill	1	7	kappa2/kappa2/utility/dbi/DBIPR.ESP:127
+requirement	?	unknown	goto_beginning	1	6	kappa2/kappa2/user_if/pb/exwin.esp:72
+requirement	?	unknown	set_package	2	6	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:43
+requirement	library	class	assign	1	6	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:29
+requirement	standard_io_window	instance	putl	1	6	kappa2/kappa2/user_if/pb/kcm.esp:2880
+requirement	inferior_window	instance	get_size	3	6	kappa2/kappa2/user_if/pb/attr_menu.esp:144
+requirement	standard_io_buffer	instance	putb	3	6	kappa2/kappa2/kernel/hlc/HLCTR.ESP:51
+requirement	?	ambiguous	put_contents	2	6	kappa2/kappa2/kernel/pcm/PCPSETOBJ.ESP:329
+requirement	standard_choice_window	ref	(#ref)		6	kappa2/kappa2/utility/bck/BCKCMN.ESP:498
+requirement	?	unknown	set_input_position	1	6	kappa2/kappa2/kernel/itr/ITRERI.ESP:118
+requirement	standard_choice_window	class	create	3	6	kappa2/kappa2/utility/bck/BCKCMN.ESP:498
+requirement	hash_index	instance	get_contents_at	3	6	kappa2/kappa2/kernel/hlc/HLCSETHASH.ESP:72
+requirement	fdd_volume	instance	mount	3	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1760
+requirement	labeled_sash	nature	(inherited)		6	kappa2/kappa2/utility/bck/BCKUIF1.ESP:18
+requirement	as_scrolling_menu	nature	(inherited)		6	kappa2/kappa2/user_if/pb/attr_menu.esp:6
+requirement	fdd_volume	ref	(#ref)		6	kappa2/kappa2/utility/bck/BCKCMN.ESP:471
+requirement	character	ref	(#ref)		6	kappa2/kappa2/tool/update_tool/KP_UPTFUN.ESP:303
+requirement	list_index	instance	remove_at	3	6	kappa2/kappa2/kernel/flm/FILEM1.ESP:401
+requirement	frozen_term	class	freeze	3	6	kappa2/kappa2/kernel/flm/FREEEXT.ESP:27
+requirement	standard_menu	instance	read	2	6	kappa2/kappa2/utility/lvm/LVM.ESP:91
+requirement	standard_menu	instance	kill	1	6	kappa2/kappa2/utility/lvm/LVM.ESP:92
+requirement	temporary_menu	instance	show	1	6	kappa2/kappa2/utility/bck/BCKCMN.ESP:946
+requirement	frozen_term	ref	(#ref)		6	kappa2/kappa2/kernel/flm/FREEEXT.ESP:27
+requirement	file_utility	class	delete	3	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1512
+requirement	?	unknown	free	1	6	kappa2/kappa2/kernel/net/REMTCM.ESP:123
+requirement	?	unknown	read_with_click	3	6	kappa2/kappa2/user_if/pb/menus.esp:1422
+requirement	?	unknown	getc	2	6	kappa2/kappa2/utility/bck/BCKUIF2.ESP:196
+requirement	list	instance	remove_last	2	6	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:659
+requirement	list_index	instance	get_contents	2	6	kappa2/kappa2/kernel/mdm/KP_MDMTCR.ESP:1385
+requirement	channel	class	create	2	6	kappa2/kappa2/kernel/flm/VOL1.ESP:52
+requirement	?	ambiguous	get_keys	2	6	kappa2/kappa2/kernel/hlc/HLCAPROUT.ESP:520
+requirement	<root>	instance	get_attribute_path_list	4	6	kappa2/kappa2/kernel/hlc/HLCRECINT2.ESP:25
+requirement	<root>	slot	!litr	0	6	kappa2/kappa2/kernel/net/REMAPC.ESP:327
+requirement	<root>	instance	set_transaction_mode	5	6	kappa2/kappa2/kernel/net/REMAPC.ESP:382
+requirement	hash_index	slot	!vector	0	6	kappa2/kappa2/kernel/net/SRVCNF.ESP:884
+requirement	?	ambiguous	get_contents	3	6	kappa2/kappa2/kernel/pcm/PCPROPCP.ESP:132
+requirement	process	instance	exterminate	1	6	kappa2/kappa2/kernel/svm/SVCTL.ESP:800
+requirement	?	unknown	tag_catch	5	6	kappa2/kappa2/user_if/pb/inwin.esp:301
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_interpreter	2	6	kappa2/kappa2/user_if/pb/inwin.esp:352
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	putl	2	6	kappa2/kappa2/user_if/pb/inwin.esp:391
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	add_items	3	6	kappa2/kappa2/user_if/pb/savedmenu.esp:85
+requirement	fdd_binary_file_tap	class	create	3	6	kappa2/kappa2/utility/bck/BCKCMN.ESP:631
+requirement	binary_file_tap	class	create	3	6	kappa2/kappa2/utility/bck/BCKCMN.ESP:680
+requirement	?	unknown	get_data	3	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1075
+requirement	binary_file	class	open	5	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1519
+requirement	?	ambiguous	get_data	2	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1556
+requirement	fdd_binary_file_tap	instance	write	2	6	kappa2/kappa2/utility/bck/BCKFIF.ESP:1883
+requirement	kappaP	instance	create_tap	4	6	kappa2/kvif/esp/kap_serv.esp:189
+requirement	disk_unit	ref	(#ref)		6	kappa2/kappa2/kernel/flm/FILEM1.ESP:367
+requirement	as_global_object	ref	(#ref)		6	kappa2/kappa2/kernel/net/SRVCNF.ESP:43
+requirement	format_printer	ref	(#ref)		6	kappa2/kappa2/user_if/pb/typewin.esp:353
+requirement	fdd_binary_file_tap	ref	(#ref)		6	kappa2/kappa2/utility/bck/BCKCMN.ESP:631
+requirement	binary_file_tap	ref	(#ref)		6	kappa2/kappa2/utility/bck/BCKCMN.ESP:680
+requirement	pmacs_window	instance	putt	2	5	kappa2/kappa2/user_if/pb/typewin.esp:79
+requirement	?	unknown	insert	2	5	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:415
+requirement	screen	class	get_size	3	5	kappa2/kappa2/user_if/pb/pbm.esp:214
+requirement	?	unknown	class_object	2	5	kappa2/kappa2/tool/kappa_pool/KP_POOL.ESP:295
+requirement	standard_editor	class	create	4	5	kappa2/kappa2/user_if/pb/inwin.esp:474
+requirement	temporary_window	class	create	3	5	kappa2/kappa2/utility/bck/BCKUIF1.ESP:242
+requirement	with_pmacs_window	nature	(inherited)		5	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	screen	ref	(#ref)		5	kappa2/kappa2/user_if/pb/pbm.esp:214
+requirement	extensible_hash_index	ref	(#ref)		5	kappa2/kappa2/kernel/hlc/HLCJOINHSH.ESP:190
+requirement	?	unknown	putb	3	5	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:524
+requirement	?	unknown	local_name	2	5	kappa2/kappa2/kernel/itr/ITRAPP.ESP:249
+requirement	?	unknown	clear_echo_area	1	5	kappa2/kappa2/utility/fmp/KMACS.ESP:138
+requirement	inferior_window	instance	get_position	3	5	kappa2/kappa2/user_if/pb/pbwin.esp:62
+requirement	hash_index	instance	get_contents_with_key	2	5	kappa2/kappa2/kernel/itr/ITRSET.ESP:60
+requirement	process	class	create	3	5	kappa2/kappa2/kernel/itr/ITRSES.ESP:114
+requirement	fdd_volume	instance	get_sub_info	2	5	kappa2/kappa2/utility/bck/BCKCMN.ESP:540
+requirement	binary_file	class	make	3	5	kappa2/kappa2/kernel/net/SRVCNF.ESP:417
+requirement	with_bell	nature	(inherited)		5	kappa2/kappa2/user_if/pb/pdim.esp:132
+requirement	temporary_window	nature	(inherited)		5	kappa2/kappa2/utility/bck/BCKUIF1.ESP:18
+requirement	list	instance	in	2	5	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:547
+requirement	standard_superior_window	instance	kill	1	5	kappa2/kappa2/utility/mdu/MDU.ESP:163
+requirement	?	unknown	set_editor	2	5	kappa2/kappa2/user_if/pb/inwin.esp:475
+requirement	standard_superior_window	instance	activate	1	5	kappa2/kappa2/utility/mdu/MDU.ESP:126
+requirement	?	unknown	remove_first	2	5	kappa2/kappa2/kernel/svm/SVUSLOG.ESP:470
+requirement	standard_temporary_scrolling_menu	instance	add_items	3	5	kappa2/kappa2/utility/mdu/TABLE.ESP:954
+requirement	standard_temporary_scrolling_menu	instance	read	2	5	kappa2/kappa2/utility/mdu/TABLE.ESP:957
+requirement	standard_scrolling_menu	instance	activate	1	5	kappa2/kappa2/utility/bck/BCKCMN.ESP:154
+requirement	?	unknown	draw_rectangle	8	5	kappa2/kappa2/user_if/pb/fcell.esp:658
+requirement	hash_index	instance	put_contents_with_key	2	5	kappa2/kappa2/kernel/itr/ITRSET.ESP:61
+requirement	?	unknown	draw_filled_rectangle	8	5	kappa2/kappa2/user_if/pb/fcell.esp:590
+requirement	list_index	slot	!first	0	5	kappa2/kappa2/kernel/flm/KPPOOL.ESP:14
+requirement	?	ambiguous	define_set	5	5	kappa2/kappa2/kernel/hlc/HLC.ESP:303
+requirement	channel	instance	receive	2	5	kappa2/kappa2/kernel/itr/ITRTCM.ESP:43
+requirement	channel	instance	send	2	5	kappa2/kappa2/kernel/itr/ITRTCM.ESP:93
+requirement	?	unknown	get_value	4	5	kappa2/kappa2/kernel/itr/ITRTIM.ESP:29
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	activate	1	5	kappa2/kappa2/user_if/pb/inwin.esp:275
+requirement	?	unknown	mark	1	5	kappa2/kappa2/user_if/pb/inwin.esp:298
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_slot	3	5	kappa2/kappa2/user_if/pb/inwin.esp:476
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	set_input_buffer	2	5	kappa2/kappa2/user_if/pb/inwin.esp:482
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	class	create	3	5	kappa2/kappa2/user_if/pb/menus.esp:162
+requirement	format_printer	class	create	2	5	kappa2/kappa2/user_if/pb/typewin.esp:353
+requirement	format_printer	instance	set_format_by_operator	1	5	kappa2/kappa2/user_if/pb/typewin.esp:354
+requirement	format_printer	instance	get_font	2	5	kappa2/kappa2/user_if/pb/typewin.esp:355
+requirement	format_printer	instance	release	1	5	kappa2/kappa2/user_if/pb/typewin.esp:363
+requirement	character	class	is_special	2	5	kappa2/kappa2/user_if/pb/typewin.esp:382
+requirement	character	class	is_numeric	2	5	kappa2/kappa2/user_if/pb/typewin.esp:384
+requirement	character	class	is_alphabetic	2	5	kappa2/kappa2/user_if/pb/typewin.esp:386
+requirement	character	class	is_hiragana	2	5	kappa2/kappa2/user_if/pb/typewin.esp:394
+requirement	character	class	is_katakana	2	5	kappa2/kappa2/user_if/pb/typewin.esp:396
+requirement	character	class	is_kanji	2	5	kappa2/kappa2/user_if/pb/typewin.esp:398
+requirement	character	class	is_greek	2	5	kappa2/kappa2/user_if/pb/typewin.esp:400
+requirement	character	class	is_russian	2	5	kappa2/kappa2/user_if/pb/typewin.esp:402
+requirement	?	unknown	get	1	5	kappa2/kappa2/utility/bck/BCKFIF.ESP:884
+requirement	?	unknown	at_eov	1	5	kappa2/kappa2/utility/bck/BCKFIF.ESP:945
+requirement	?	unknown	multi_volume	1	5	kappa2/kappa2/utility/bck/BCKFIF.ESP:1026
+requirement	?	unknown	at_eof	1	5	kappa2/kappa2/utility/bck/BCKFIF.ESP:1144
+requirement	fdd_binary_file_tap	instance	read	2	5	kappa2/kappa2/utility/bck/BCKFIF.ESP:1899
+requirement	?	unknown	find	3	5	kappa2/kappa2/utility/fmp/KFILMP.ESP:698
+requirement	scrolling_on_off_menu_with_superior_input_buffer	class	create	3	5	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1264
+requirement	scrolling_on_off_menu_with_superior_input_buffer	instance	add_items	3	5	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1285
+requirement	scrolling_on_off_menu_with_superior_input_buffer	instance	activate	1	5	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1287
+requirement	scrolling_on_off_menu_with_superior_input_buffer	instance	kill	1	5	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1296
+requirement	essential_temporary_window	class	create	3	5	kappa2/kappa2/utility/lvm/LVM.ESP:358
+requirement	essential_temporary_window	instance	erase_cursor	1	5	kappa2/kappa2/utility/lvm/LVM.ESP:366
+requirement	essential_temporary_window	instance	activate	1	5	kappa2/kappa2/utility/lvm/LVM.ESP:367
+requirement	essential_temporary_window	instance	put_line	2	5	kappa2/kappa2/utility/lvm/LVM.ESP:368
+requirement	essential_temporary_window	instance	beep	1	5	kappa2/kappa2/utility/lvm/LVM.ESP:369
+requirement	essential_temporary_window	instance	read	2	5	kappa2/kappa2/utility/lvm/LVM.ESP:370
+requirement	essential_temporary_window	instance	kill	1	5	kappa2/kappa2/utility/lvm/LVM.ESP:371
+requirement	standard_temporary_scrolling_menu	instance	kill	1	5	kappa2/kappa2/utility/mdu/TABLE.ESP:958
+requirement	string_buffer	instance	set_data_buffer	2	5	kappa2/kappa2/utility/tgt/TGTSDIS.ESP:63
+requirement	window_without_label	instance	write_line	3	5	kappa2/kappa2/utility/tool/KSTPR.SHELL:108
+requirement	channel	ref	(#ref)		5	kappa2/kappa2/kernel/flm/VOL1.ESP:52
+requirement	user	ref	(#ref)		5	kappa2/kappa2/kernel/svm/SVCTL.ESP:1703
+requirement	scrolling_on_off_menu_with_superior_input_buffer	ref	(#ref)		5	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1264
+requirement	essential_temporary_window	ref	(#ref)		5	kappa2/kappa2/utility/lvm/LVM.ESP:358
+requirement	?	unknown	at_end	1	4	kappa2/kappa2/kernel/hlc/HLCDELDUP.ESP:80
+requirement	list	instance	count	2	4	kappa2/kappa2/kernel/svm/SVRSC.ESP:430
+requirement	symbolizer	class	get_atom_token	3	4	kappa2/kappa2/kernel/hlc/HLCAPROUT.ESP:479
+requirement	symbolizer	class	string_to_list	3	4	kappa2/kvif/esp/kap_serv.esp:677
+requirement	symbolizer	class	list_to_string	3	4	kappa2/kappa2/kernel/hlc/HLCPRPRJ.ESP:255
+requirement	?	unknown	push	2	4	kappa2/kappa2/user_if/pb/cem.esp:221
+requirement	?	unknown	pop	2	4	kappa2/kappa2/user_if/pb/cem.esp:335
+requirement	list_stack	class	create	2	4	kappa2/kappa2/user_if/pb/cem.esp:23
+requirement	process	class	get_number	3	4	kappa2/kappa2/kernel/net/REMAITR.ESP:35
+requirement	library	class	check_package	2	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:56
+requirement	directory	class	retrieve	3	4	kappa2/kappa2/kernel/net/SRVCNF.ESP:394
+requirement	extensible_hash_index	class	create	3	4	kappa2/kappa2/kernel/hlc/HLCJOINHSH.ESP:190
+requirement	with_default_mouse	nature	(inherited)		4	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	with_shared_window	nature	(inherited)		4	kappa2/kappa2/kernel/net/SRVWD1.ESP:16
+requirement	list_stack	ref	(#ref)		4	kappa2/kappa2/user_if/pb/cem.esp:23
+requirement	two_three_tree	ref	(#ref)		4	kappa2/kappa2/kernel/flm/FILE.ESP:167
+requirement	window_subsystem	ref	(#ref)		4	kappa2/kappa2/user_if/pb/pbm.esp:340
+requirement	throw	ref	(#ref)		4	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:416
+requirement	?	unknown	user	2	4	kappa2/kappa2/kernel/itr/ITRAPP.ESP:246
+requirement	?	unknown	catch	8	4	kappa2/kappa2/kernel/itr/ITRAIC.ESP:145
+requirement	monogyny_hash_index	instance	add_at	3	4	kappa2/kappa2/kernel/hlc/HLCOPEMOD.ESP:597
+requirement	as_class_with_lock	class	lock	1	4	kappa2/kappa2/kernel/net/REMLOG.ESP:17
+requirement	as_class_with_lock	class	unlock	1	4	kappa2/kappa2/kernel/net/REMLOG.ESP:19
+requirement	network_node_name	class	get_my_node	2	4	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:38
+requirement	?	unknown	reread	1	4	kappa2/kappa2/tool/kappa_pool/KP_POOLDSK.ESP:608
+requirement	binary_file	class	open	3	4	kappa2/kappa2/kernel/net/SRVCNF.ESP:399
+requirement	monogyny_hash_index	instance	get_contents	2	4	kappa2/kappa2/kernel/svm/SVUSSET.ESP:424
+requirement	essential_scrolling_menu_with_superior_input_buffer	class	create	3	4	kappa2/kappa2/user_if/pb/wsmenu.esp:87
+requirement	standard_io_window	instance	getl	2	4	kappa2/kappa2/utility/bck/BCKCMN.ESP:556
+requirement	standard_temporary_menu	instance	set_font	2	4	kappa2/kappa2/user_if/pb/pcn.esp:3121
+requirement	as_scroll	nature	(inherited)		4	kappa2/kappa2/utility/fmp/FCWIN.ESP:6
+requirement	monogyny_list_index	instance	get_contents_with_key	2	4	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:80
+requirement	standard_temporary_scrolling_menu	instance	show	1	4	kappa2/kappa2/utility/mdu/TABLE.ESP:956
+requirement	?	unknown	put_line	2	4	kappa2/kappa2/kernel/net/REMLOG.ESP:42
+requirement	network_listener_buffer	instance	data_buffer	2	4	kappa2/kappa2/kernel/net/MSGCMD.ESP:51
+requirement	standard_temporary_window	class	create	3	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:117
+requirement	standard_temporary_window	instance	erase_cursor	1	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:121
+requirement	sorted_sequence	instance	get_contents	2	4	kappa2/kappa2/kernel/hlc/HLCSTRUCT.ESP:931
+requirement	standard_temporary_window	ref	(#ref)		4	kappa2/kappa2/utility/dbi/DBIPR.ESP:117
+requirement	standard_io_window	instance	write_lines	2	4	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:34
+requirement	window_subsystem	class	add_icon	4	4	kappa2/kappa2/user_if/pb/pbm.esp:340
+requirement	standard_io_window	instance	putf	3	4	kappa2/kappa2/utility/bck/BCKCMN.ESP:554
+requirement	?	unknown	set_color_pair	3	4	kappa2/kappa2/user_if/pb/pbm.esp:1393
+requirement	?	unknown	draw_font	6	4	kappa2/kappa2/user_if/pb/scroll.esp:44
+requirement	?	ambiguous	in	2	4	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:95
+requirement	expandable_array	instance	put_at	3	4	kappa2/kappa2/kernel/rdm/RDMCOPY.ESP:35
+requirement	symbolizer	class	get_number_token	3	4	kappa2/kappa2/kernel/hlc/HLCAPROUT.ESP:490
+requirement	date_time	class	present	3	4	kappa2/kappa2/kernel/flm/FILEM2.ESP:348
+requirement	date	class	make_value	5	4	kappa2/kappa2/kernel/flm/FILEM2.ESP:349
+requirement	time	class	make_value	6	4	kappa2/kappa2/kernel/flm/FILEM2.ESP:350
+requirement	?	ambiguous	get_key	2	4	kappa2/kappa2/kernel/hlc/HLCDELDUP.ESP:84
+requirement	<root>	instance	unnest_attribute	5	4	kappa2/kappa2/kernel/hlc/HLCRECINT2.ESP:26
+requirement	sorted_sequence	class	create	2	4	kappa2/kappa2/kernel/hlc/HLCSTRUCT.ESP:928
+requirement	standard_io_buffer	instance	gett	4	4	kappa2/kappa2/kernel/hlc/HLCTR.ESP:54
+requirement	temporary_menu	instance	beep	1	4	kappa2/kappa2/kernel/itr/ITRAPP.ESP:72
+requirement	temporary_menu	instance	deactivate	1	4	kappa2/kappa2/kernel/itr/ITRAPP.ESP:76
+requirement	network_node_name	class	node_type	3	4	kappa2/kappa2/kernel/itr/ITRAPP.ESP:248
+requirement	remote_object	instance	g_call	3	4	kappa2/kappa2/kernel/itr/RITRAPP.ESP:34
+requirement	?	unknown	set_status	6	4	kappa2/kappa2/kernel/mdm/KP_MDMART.ESP:56
+requirement	<root>	instance	child_path2	4	4	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:969
+requirement	<root>	instance	clear_error	1	4	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:1346
+requirement	<root>	instance	expand_goals	3	4	kappa2/kappa2/kernel/net/NSVCMD.ESP:80
+requirement	?	unknown	send_dgm	3	4	kappa2/kappa2/kernel/net/NSVCMD.ESP:104
+requirement	<root>	slot	!tcm	0	4	kappa2/kappa2/kernel/net/REMAITR.ESP:240
+requirement	{as_superior|with_label|with_border|inferior_window}	instance	set_title	2	4	kappa2/kappa2/kernel/net/SRVMNT.ESP:43
+requirement	kappaREP_select_menu	instance	add_items	3	4	kappa2/kappa2/kernel/net/SRVMNT.ESP:448
+requirement	?	unknown	initial_mode	2	4	kappa2/kappa2/kernel/svm/SVCTL.ESP:1706
+requirement	?	ambiguous	empty	1	4	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:100
+requirement	standard_io_buffer	instance	get_unparsing_operator	2	4	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:164
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	flash	1	4	kappa2/kappa2/user_if/pb/inwin.esp:273
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	clear	1	4	kappa2/kappa2/user_if/pb/inwin.esp:274
+requirement	symbolizer	class	get_string_token	3	4	kappa2/kappa2/user_if/pb/mcd.esp:161
+requirement	standard_temporary_menu	instance	set_label_font	2	4	kappa2/kappa2/user_if/pb/pcn.esp:3122
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	putf	3	4	kappa2/kappa2/user_if/pb/stwin.esp:46
+requirement	standard_editor	instance	exception	2	4	kappa2/kappa2/user_if/pb/typewin.esp:261
+requirement	window_without_label	instance	erase_cursor	1	4	kappa2/kappa2/utility/bck/BCKCMN.ESP:296
+requirement	?	unknown	multi_volume	3	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:1027
+requirement	access_status	class	create	2	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:1454
+requirement	access_status	instance	status	2	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:1572
+requirement	?	ambiguous	open	3	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:1845
+requirement	?	unknown	unconditional_mount	4	4	kappa2/kappa2/utility/bck/BCKFIF.ESP:2331
+requirement	?	unknown	add_data	2	4	kappa2/kappa2/utility/dbc/DBCOUWIN.ESP:192
+requirement	standard_temporary_window	instance	write_lines	2	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:120
+requirement	standard_temporary_window	instance	activate	1	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:124
+requirement	standard_temporary_window	instance	read	2	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:126
+requirement	window_without_label	instance	activate	2	4	kappa2/kappa2/utility/dbi/DBIPR.ESP:600
+requirement	editor_main_window	instance	get_interpreter	2	4	kappa2/kappa2/utility/fmp/KMACS.ESP:575
+requirement	scrolling_on_off_menu_with_superior_input_buffer	instance	retrieve_all_items	2	4	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1518
+requirement	essential_temporary_window	instance	background	2	4	kappa2/kappa2/utility/lvm/LVM.ESP:365
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	get_interpreter	2	4	kappa2/kappa2/utility/mdu/MDU.ESP:144
+requirement	multiple_select_scrolling_menu_with_superior_input_buffer	class	create	3	4	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:545
+requirement	kappaP	instance	read_record	4	4	kappa2/kvif/esp/kap_serv.esp:250
+requirement	editor_main_window	nature	(inherited)		4	kappa2/kappa2/utility/fmp/KMACS.ESP:452
+requirement	access_status	ref	(#ref)		4	kappa2/kappa2/utility/bck/BCKFIF.ESP:1454
+requirement	multiple_select_scrolling_menu_with_superior_input_buffer	ref	(#ref)		4	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:545
+requirement	stop_watch	instance	show	2	3	kappa2/kappa2/kernel/svm/SVCTL.ESP:972
+requirement	stop_watch	instance	stop	1	3	kappa2/kappa2/kernel/svm/SVCTL.ESP:971
+requirement	standard_io_window	instance	putt	2	3	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:44
+requirement	library_utility	class	create	2	3	kappa2/kappa2/kernel/svm/SVINI.ESP:52
+requirement	string	class	copy	3	3	kappa2/kappa2/kernel/net/MSGCMD.ESP:57
+requirement	essential_window	class	create	3	3	kappa2/kappa2/utility/dbc/DBCINT.ESP:44
+requirement	throw	class	raise	2	3	kappa2/kappa2/user_if/pb/pbedit.esp:63
+requirement	esp_macro_expander	class	new	2	3	kappa2/kappa2/utility/fmp/KMACS.ESP:51
+requirement	standard_io_window	instance	getc	2	3	kappa2/kappa2/user_if/pb/kcm.esp:2884
+requirement	?	unknown	add_item	3	3	kappa2/kappa2/user_if/pb/tam.esp:252
+requirement	?	unknown	stick_tap	2	3	kappa2/kappa2/kernel/hlc/HLCDELDUP.ESP:60
+requirement	?	unknown	set_max_depth	2	3	kappa2/kappa2/user_if/pb/inwin.esp:56
+requirement	as_input_buffer	nature	(inherited)		3	kappa2/kappa2/user_if/pb/pbwin.esp:20
+requirement	sash	nature	(inherited)		3	kappa2/kappa2/user_if/pb/attr_menu.esp:6
+requirement	library_utility	ref	(#ref)		3	kappa2/kappa2/kernel/svm/SVINI.ESP:52
+requirement	essential_window	ref	(#ref)		3	kappa2/kappa2/utility/dbc/DBCINT.ESP:44
+requirement	?	unknown	get_interpreter	2	3	kappa2/kappa2/user_if/pb/pbedit.esp:72
+requirement	esp_macro_expander	instance	expand_goals	3	3	kappa2/kappa2/utility/fmp/KMACS.ESP:189
+requirement	standard_io_buffer	instance	getb	3	3	kappa2/kappa2/kernel/hlc/HLCTR.ESP:194
+requirement	standard_io_buffer	instance	putc	2	3	kappa2/kappa2/utility/fmp/KFILMP.ESP:241
+requirement	?	unknown	is_directory	1	3	kappa2/kappa2/utility/fmp/KFILMP.ESP:700
+requirement	standard_io_buffer	instance	get_parsing_operator	2	3	kappa2/kappa2/kernel/hlc/HLCTR.ESP:296
+requirement	?	unknown	add_first	2	3	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:97
+requirement	monogyny_hash_index	instance	put_contents_with_key	2	3	kappa2/kappa2/kernel/itr/ITRTAP.ESP:369
+requirement	?	unknown	set_inside_units	3	3	kappa2/kappa2/user_if/pb/scroll.esp:41
+requirement	?	unknown	assign_window	1	3	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:129
+requirement	inferior_window	instance	set_position	3	3	kappa2/kappa2/user_if/pb/pdim.esp:194
+requirement	?	unknown	refute_in	5	3	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:217
+requirement	?	unknown	get_unparsing_operator	2	3	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:35
+requirement	fdd_volume_utility	class	initialize	3	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:1008
+requirement	fdd_volume	class	create	2	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:473
+requirement	as_on_off_menu	nature	(inherited)		3	kappa2/kappa2/user_if/pb/attr_menu.esp:19
+requirement	net_spawn_user	ref	(#ref)		3	kappa2/kappa2/kernel/net/REMTCM.ESP:77
+requirement	fdd_volume_utility	ref	(#ref)		3	kappa2/kappa2/utility/bck/BCKCMN.ESP:1008
+requirement	standard_menu	instance	deactivate	1	3	kappa2/kappa2/utility/tool/CCTPR.ESP:132
+requirement	library_utility	instance	load	2	3	kappa2/kappa2/kernel/svm/SVINI.ESP:1100
+requirement	standard_choice_window	instance	kill	1	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:507
+requirement	standard_choice_window	instance	read	2	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:506
+requirement	?	unknown	find_with_wildcard	3	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:736
+requirement	symbolizer	class	get_number_string	4	3	kappa2/kappa2/utility/mdu/MDUCONV.ESP:142
+requirement	?	unknown	draw_string	4	3	kappa2/kappa2/user_if/pb/fcell.esp:724
+requirement	labeled_superior_window	class	create	3	3	kappa2/kappa2/utility/bck/BCKUIF1.ESP:104
+requirement	menu	instance	activate	1	3	kappa2/kappa2/kernel/net/SRVMNT.ESP:182
+requirement	menu	instance	read	2	3	kappa2/kappa2/kernel/net/SRVMNT.ESP:183
+requirement	net_spawn_user	class	spawn	7	3	kappa2/kappa2/kernel/net/REMTCM.ESP:77
+requirement	messenger	class	confirm	3	3	kappa2/kappa2/utility/bck/BCKPROC.ESP:146
+requirement	standard_scrolling_menu	instance	add_item	3	3	kappa2/kappa2/utility/tool/CCTPR.ESP:149
+requirement	standard_menu	instance	activate	2	3	kappa2/kappa2/utility/lvm/LVM.ESP:90
+requirement	pmacs_window	instance	getc	2	3	kappa2/kappa2/kernel/net/SRVMNT.ESP:242
+requirement	disk_unit	class	get	3	3	kappa2/kappa2/kernel/flm/FILEM1.ESP:367
+requirement	str_machine_id	class	me_psi	1	3	kappa2/kappa2/kernel/flm/VOL1.ESP:119
+requirement	symbolizer	class	in	2	3	kappa2/kappa2/kernel/hlc/HLCAPROUT.ESP:494
+requirement	sorted_sequence	instance	add	2	3	kappa2/kappa2/kernel/hlc/HLCSTRUCT.ESP:1003
+requirement	coordinator	class	login_user	2	3	kappa2/kappa2/kernel/net/REMAITR.ESP:230
+requirement	<root>	instance	set_user_id	3	3	kappa2/kappa2/kernel/net/REMAPC.ESP:328
+requirement	<root>	instance	search_table	5	3	kappa2/kappa2/kernel/net/REMAPC.ESP:474
+requirement	<root>	instance	seach_table	5	3	kappa2/kappa2/kernel/net/REMAPC.ESP:562
+requirement	kappa_message	class	create	2	3	kappa2/kappa2/kernel/net/REMTCM.ESP:26
+requirement	<root>	instance	send	2	3	kappa2/kappa2/kernel/net/SRVTCM.ESP:52
+requirement	<root>	instance	receive	2	3	kappa2/kappa2/kernel/net/SRVTCM.ESP:53
+requirement	as_global_object	class	retrieve	3	3	kappa2/kappa2/kernel/net/SRVCNF.ESP:43
+requirement	kappaREP_select_menu	instance	activate	1	3	kappa2/kappa2/kernel/net/SRVMNT.ESP:452
+requirement	sorted_sequence	instance	remove_first	2	3	kappa2/kappa2/kernel/svm/SVCMD.ESP:329
+requirement	as_resource	instance	resign	1	3	kappa2/kappa2/kernel/svm/SVCTL.ESP:804
+requirement	standard_io_window	instance	write_line	2	3	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:36
+requirement	{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_superior_input_buffer|inferior_window}	instance	set_color_pair	3	3	kappa2/kappa2/user_if/pb/pbm.esp:1505
+requirement	{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_superior_input_buffer|inferior_window}	instance	set_font	2	3	kappa2/kappa2/user_if/pb/pbm.esp:1539
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	add_item	3	3	kappa2/kappa2/user_if/pb/pcn.esp:5628
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	activate	1	3	kappa2/kappa2/user_if/pb/pcn.esp:5629
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	read	2	3	kappa2/kappa2/user_if/pb/pcn.esp:5630
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	kill	1	3	kappa2/kappa2/user_if/pb/pcn.esp:5631
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	clear_items	1	3	kappa2/kappa2/user_if/pb/savedmenu.esp:57
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	warp_mouse	3	3	kappa2/kappa2/user_if/pb/sheet_obj.esp:2285
+requirement	{temporary_menu|inferior_window|as_menu_input}	instance	add_item	3	3	kappa2/kappa2/user_if/pb/sldmenu.esp:60
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	getl	2	3	kappa2/kappa2/user_if/pb/stwin.esp:66
+requirement	standard_editor	instance	method	3	3	kappa2/kappa2/user_if/pb/typewin.esp:258
+requirement	standard_editor	instance	refute	3	3	kappa2/kappa2/user_if/pb/typewin.esp:259
+requirement	window_without_label	instance	set_font	2	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:312
+requirement	<root>	slot	!device	0	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:331
+requirement	<root>	slot	!file_name	0	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:333
+requirement	fdd_volume	class	get_physical_units	2	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:471
+requirement	standard_choice_window	instance	activate	2	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:505
+requirement	fdd_binary_file	class	make	3	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:639
+requirement	?	unknown	find	4	3	kappa2/kappa2/utility/bck/BCKCMN.ESP:709
+requirement	binary_file	class	make_only	3	3	kappa2/kappa2/utility/bck/BCKFIF.ESP:1501
+requirement	?	ambiguous	get_command	3	3	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:278
+requirement	as_global_object	class	new	2	3	kappa2/kappa2/utility/fmp/FMP.ESP:425
+requirement	as_global_object	instance	owner_name	2	3	kappa2/kappa2/utility/fmp/FMP.ESP:426
+requirement	sparse_array	class	create	3	3	kappa2/kappa2/utility/ivt/IVTFILE.ESP:400
+requirement	name	class	check_name	3	3	kappa2/kappa2/utility/ivt/IVTMENU.ESP:249
+requirement	{as_superior|with_label|with_border|inferior_window}	instance	get_inside_size	3	3	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1246
+requirement	{as_superior|with_label|with_border|inferior_window}	instance	read	3	3	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1288
+requirement	string_buffer	instance	put_data	2	3	kappa2/kappa2/utility/tgt/TGTSDIS.ESP:108
+requirement	?	unknown	ask_status	4	3	kappa2/kappa2/utility/tgt/TGTSMT.ESP:209
+requirement	standard_scrolling_menu	instance	activate	2	3	kappa2/kappa2/utility/tool/CCTPR.ESP:150
+requirement	pmacs_window	instance	read	2	3	kappa2/kappa2/utility/tool/MSTPR.ESP:269
+requirement	temporary_menu	nature	(inherited)		3	kappa2/kappa2/user_if/pb/menus.esp:1337
+requirement	essential_scrolling_menu_with_superior_input_buffer	nature	(inherited)		3	kappa2/kappa2/user_if/pb/wsmenu.esp:36
+requirement	labeled_superior_window	nature	(inherited)		3	kappa2/kappa2/utility/bck/BCKUIF1.ESP:428
+requirement	disk_io_message	ref	(#ref)		3	kappa2/kappa2/kernel/flm/VOL1.ESP:53
+requirement	str_machine_id	ref	(#ref)		3	kappa2/kappa2/kernel/flm/VOL1.ESP:119
+requirement	error	ref	(#ref)		3	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:217
+requirement	failure	ref	(#ref)		3	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:217
+requirement	sorted_sequence	ref	(#ref)		3	kappa2/kappa2/kernel/hlc/HLCSTRUCT.ESP:928
+requirement	kappa_message	ref	(#ref)		3	kappa2/kappa2/kernel/net/REMTCM.ESP:26
+requirement	sparse_array	ref	(#ref)		3	kappa2/kappa2/utility/ivt/IVTFILE.ESP:400
+requirement	pmacs_window	instance	get_editor	2	2	kappa2/kappa2/user_if/pb/typewin.esp:62
+requirement	stop_watch	class	create	2	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:220
+requirement	?	unknown	class_name	2	2	kappa2/kappa2/tool/kappa_pool/KP_POOL.ESP:296
+requirement	stop_watch	instance	reset	1	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:956
+requirement	stop_watch	instance	start	1	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:957
+requirement	inferior_window	instance	kill	1	2	kappa2/kappa2/user_if/pb/pcn.esp:3391
+requirement	editor_text_buffer	class	kill	2	2	kappa2/kappa2/utility/mdu/MDU.ESP:213
+requirement	?	unknown	see_current_line	2	2	kappa2/kappa2/utility/fmp/KMACS.ESP:336
+requirement	monogyny_list_index	instance	get_at	3	2	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:118
+requirement	two_three_tree	class	get_contents	3	2	kappa2/kappa2/kernel/flm/FILE.ESP:167
+requirement	?	unknown	hide	1	2	kappa2/kappa2/user_if/pb/pbm.esp:918
+requirement	directory	class	retrieve_with_wildcard	4	2	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:28
+requirement	coordinator	class	get_instance	2	2	kappa2/kappa2/kernel/net/createsrv.esp:26
+requirement	?	unknown	get_whiteboard	2	2	kappa2/kappa2/kernel/net/createsrv.esp:27
+requirement	pathname	class	append	4	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:779
+requirement	temporary_window	instance	kill	1	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:44
+requirement	pmacs_window	nature	(inherited)		2	kappa2/kappa2/user_if/pb/typewin.esp:11
+requirement	stop_watch	ref	(#ref)		2	kappa2/kappa2/kernel/svm/SVCTL.ESP:220
+requirement	esp_macro_expander	ref	(#ref)		2	kappa2/kappa2/utility/fmp/KMACS.ESP:51
+requirement	standard_temporary_choice_window	ref	(#ref)		2	kappa2/kappa2/utility/mdu/TABLE.ESP:286
+requirement	ascii_coder	class	from_kanji	3	2	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:94
+requirement	standard_io_buffer	instance	size	2	2	kappa2/kappa2/kernel/hlc/HLCTR.ESP:192
+requirement	standard_window	class	create	3	2	kappa2/kappa2/utility/tool/LOADCH.ESP:97
+requirement	pathname	class	check_pathname	3	2	kappa2/kappa2/utility/bck/BCKCMN.ESP:699
+requirement	name	class	version	3	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:766
+requirement	?	unknown	purge	1	2	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:21
+requirement	?	ambiguous	start	1	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:1121
+requirement	as_resource	instance	assign	1	2	kappa2/kappa2/kernel/itr/ITRAPP.ESP:106
+requirement	standard_io_buffer	class	create	3	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:240
+requirement	?	unknown	read	6	2	kappa2/kappa2/user_if/pb/pbm.esp:824
+requirement	two_three_tree	class	add_at	5	2	kappa2/kappa2/kernel/flm/FILE.ESP:186
+requirement	?	unknown	delete_items	2	2	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:379
+requirement	?	unknown	resign_window	1	2	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:133
+requirement	standard_output_file	instance	putf	2	2	kappa2/kappa2/user_if/pb/pcn.esp:5091
+requirement	?	unknown	show_buffer	1	2	kappa2/kappa2/user_if/pb/msm.esp:72
+requirement	fdd_volume	instance	link	2	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:2083
+requirement	fdd_volume	instance	file_names	2	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1989
+requirement	?	ambiguous	delete	2	2	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:237
+requirement	?	unknown	modified	1	2	kappa2/kappa2/utility/fmp/KMACS2.ESP:167
+requirement	scrolling_on_off_menu	class	create	3	2	kappa2/kappa2/user_if/pb/pcn.esp:6125
+requirement	with_key_select	nature	(inherited)		2	kappa2/kappa2/user_if/pb/pdim.esp:10
+requirement	standard_superior_window	nature	(inherited)		2	kappa2/kappa2/utility/mdu/MDU.ESP:487
+requirement	as_multiple_select	nature	(inherited)		2	kappa2/kappa2/user_if/pb/attr_menu.esp:6
+requirement	ascii_coder	ref	(#ref)		2	kappa2/kappa2/kernel/cnv/TERMCODE.ESP:94
+requirement	standard_window	ref	(#ref)		2	kappa2/kappa2/utility/tool/LOADCH.ESP:97
+requirement	?	unknown	melt	2	2	kappa2/kappa2/kernel/flm/FILEM2.ESP:525
+requirement	standard_io_window	instance	putf	2	2	kappa2/kappa2/user_if/pb/menus.esp:385
+requirement	standard_choice_window	instance	add_items	3	2	kappa2/kappa2/utility/lvm/LVM.ESP:148
+requirement	list_index	instance	get_contents_with_key	2	2	kappa2/kappa2/kernel/pcm/PCPCLDAP.ESP:102
+requirement	list_index	instance	put_contents_with_key	2	2	kappa2/kappa2/kernel/pcm/PCPCLDAP.ESP:121
+requirement	monogyny_list_index	instance	remove_at	3	2	kappa2/kappa2/kernel/flm/MONOPOOL.ESP:36
+requirement	expandable_array	class	create	3	2	kappa2/kappa2/kernel/rdm/RDMCOPY.ESP:33
+requirement	?	unknown	replace	2	2	kappa2/kappa2/utility/fmp/DUMP.ESP:310
+requirement	?	unknown	get_superior	2	2	kappa2/kappa2/user_if/pb/basewin.esp:129
+requirement	essential_window	instance	erase_cursor	1	2	kappa2/kappa2/utility/tool/CCTPR.ESP:330
+requirement	labeled_superior_window	instance	get_inside_size	3	2	kappa2/kappa2/utility/bck/BCKUIF1.ESP:452
+requirement	essential_window	instance	write_line	2	2	kappa2/kappa2/utility/tool/CCTPR.ESP:331
+requirement	labeled_superior_window	instance	deactivate	1	2	kappa2/kappa2/utility/tgt/TGTWIN.ESP:87
+requirement	expandable_array	ref	(#ref)		2	kappa2/kappa2/kernel/rdm/RDMCOPY.ESP:33
+requirement	printer	ref	(#ref)		2	kappa2/kappa2/kernel/net/REMLOG.ESP:40
+requirement	stream	class	create	2	2	kappa2/kappa2/kernel/itr/ITRSES.ESP:112
+requirement	stream	instance	get	2	2	kappa2/kappa2/kernel/itr/ITRSES.ESP:116
+requirement	?	unknown	put	2	2	kappa2/kappa2/utility/mop/MOPKAPPA.ESP:34
+requirement	menu	instance	kill	1	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:184
+requirement	?	ambiguous	receive	2	2	kappa2/kappa2/kernel/net/REMCMD.ESP:117
+requirement	?	unknown	receive_dgm	4	2	kappa2/kappa2/kernel/net/NSVCMD.ESP:118
+requirement	network_listener_buffer	instance	set_send_data_size	2	2	kappa2/kappa2/kernel/net/MSGCMD.ESP:71
+requirement	?	unknown	get_cursor_position	3	2	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:94
+requirement	ndatagram	class	get_dgm_port	3	2	kappa2/kappa2/kernel/net/SERVER.ESP:57
+requirement	pmacs_window	instance	putc	2	2	kappa2/kappa2/user_if/pb/typewin.esp:80
+requirement	stream	ref	(#ref)		2	kappa2/kappa2/kernel/itr/ITRSES.ESP:112
+requirement	ndatagram	ref	(#ref)		2	kappa2/kappa2/kernel/net/SERVER.ESP:57
+requirement	?	unknown	set_count	2	2	kappa2/kappa2/utility/mop/MOPUSER.ESP:118
+requirement	message	class	create	2	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:91
+requirement	?	ambiguous	remove_at	2	2	kappa2/kappa2/user_if/pb/kcm.esp:181
+requirement	?	ambiguous	stop	1	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:1125
+requirement	expandable_array	instance	get_at	3	2	kappa2/kappa2/kernel/rdm/RDMCPST.ESP:35
+requirement	?	ambiguous	delete	3	2	kappa2/kappa2/kernel/net/SRVCNF.ESP:56
+requirement	pmacs_window	instance	set_label_font	2	2	kappa2/kappa2/utility/ivt/IVTMENU.ESP:42
+requirement	{as_resource|with_lock}	instance	assign	1	2	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:61
+requirement	{as_resource|with_lock}	instance	lock_with_hook	1	2	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:62
+requirement	{as_resource|with_lock}	instance	unlock_with_hook	1	2	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:86
+requirement	{as_resource|with_lock}	instance	resign	1	2	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:87
+requirement	?	unknown	get_pages	2	2	kappa2/kappa2/kernel/flm/FILEM1.ESP:381
+requirement	disk_io_message	class	take	2	2	kappa2/kappa2/kernel/flm/VOL1.ESP:156
+requirement	?	unknown	set_request	2	2	kappa2/kappa2/kernel/flm/VOL1.ESP:159
+requirement	?	unknown	set_sender	2	2	kappa2/kappa2/kernel/flm/VOL1.ESP:160
+requirement	?	unknown	get_request	2	2	kappa2/kappa2/kernel/flm/VOL1.ESP:180
+requirement	<root>	instance	make_hash_table	4	2	kappa2/kappa2/kernel/hlc/HLCRECINT2.ESP:32
+requirement	<root>	instance	make_key_table	4	2	kappa2/kappa2/kernel/hlc/HLCRECINT2.ESP:33
+requirement	?	unknown	node	2	2	kappa2/kappa2/kernel/itr/ITRAPP.ESP:247
+requirement	?	unknown	user_password	2	2	kappa2/kappa2/kernel/itr/ITRAPP.ESP:262
+requirement	remote_object	class	g_call	4	2	kappa2/kappa2/kernel/itr/RITRAPP.ESP:11
+requirement	remote_object	class	r_create	2	2	kappa2/kappa2/kernel/itr/RITRAPP.ESP:15
+requirement	remote_object	slot	!x_id	0	2	kappa2/kappa2/kernel/itr/RITRAPP.ESP:26
+requirement	<root>	slot	!other_function	0	2	kappa2/kappa2/kernel/ixm/IXM.ESP:181
+requirement	<root>	instance	parse_daisuu_option	3	2	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:945
+requirement	<root>	instance	parse_mojiretsu_option	3	2	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:1064
+requirement	network_listener_buffer	class	buffer	3	2	kappa2/kappa2/kernel/net/MSGCMD.ESP:39
+requirement	symbolizer	class	entor_atom_string	3	2	kappa2/kappa2/kernel/net/REMAIC.ESP:185
+requirement	<root>	instance	resign	1	2	kappa2/kappa2/kernel/net/REMAITR.ESP:246
+requirement	<root>	instance	create_line	5	2	kappa2/kappa2/kernel/net/REMAITR.ESP:992
+requirement	<root>	instance	get_table_list	5	2	kappa2/kappa2/kernel/net/REMAPC.ESP:324
+requirement	<root>	instance	get_open_user	5	2	kappa2/kappa2/kernel/net/REMAPC.ESP:354
+requirement	<root>	instance	get_transaction_table	6	2	kappa2/kappa2/kernel/net/REMAPC.ESP:380
+requirement	as_resource	instance	show_error_winodw	1	2	kappa2/kappa2/kernel/net/REMAPC.ESP:824
+requirement	?	unknown	get_set_id	3	2	kappa2/kappa2/kernel/net/REMSET.ESP:48
+requirement	access_status	instance	initialize	1	2	kappa2/kappa2/kernel/net/REMUSR.ESP:170
+requirement	permanent_directory	class	make	3	2	kappa2/kappa2/kernel/net/SRVCNF.ESP:45
+requirement	e_string	class	replace	5	2	kappa2/kappa2/kernel/net/SRVCNF.ESP:431
+requirement	menu	instance	set_font	2	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:181
+requirement	kappaREP_select_menu	class	create	3	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:437
+requirement	kappaREP_select_menu	instance	set_title	2	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:445
+requirement	kappaREP_select_menu	instance	read	2	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:453
+requirement	kappaREP_select_menu	instance	kill	1	2	kappa2/kappa2/kernel/net/SRVMNT.ESP:454
+requirement	?	unknown	set_operation_level	3	2	kappa2/kappa2/kernel/pcm/PCADCOND.ESP:369
+requirement	sorted_sequence	instance	get_at	3	2	kappa2/kappa2/kernel/svm/SVCMD.ESP:301
+requirement	sorted_sequence	instance	get_first	2	2	kappa2/kappa2/kernel/svm/SVCMD.ESP:317
+requirement	sorted_sequence	instance	remove	2	2	kappa2/kappa2/kernel/svm/SVCMD.ESP:344
+requirement	?	unknown	show	2	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:1126
+requirement	user	class	user	2	2	kappa2/kappa2/kernel/svm/SVCTL.ESP:1703
+requirement	channel_set	instance	add	2	2	kappa2/kappa2/kernel/svm/SVMSG.ESP:92
+requirement	<root>	slot	!leaf_id_table	0	2	kappa2/kappa2/kernel/tbo/KP_JSCHE.ESP:37
+requirement	<root>	instance	get_attribute_element	3	2	kappa2/kappa2/kernel/tbo/KP_TBOOBJ.ESP:488
+requirement	?	unknown	:	1	2	kappa2/kappa2/tool/update_tool/KP_UPTCON.ESP:52
+requirement	{sash|as_scrolling_menu|with_superior_input_buffer|as_on_off_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	retrieve_all_items	2	2	kappa2/kappa2/user_if/pb/attr_menu.esp:234
+requirement	{sash|as_scrolling_menu|with_superior_input_buffer|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	activate	1	2	kappa2/kappa2/user_if/pb/attr_menu.esp:329
+requirement	{sash|as_scrolling_menu|with_superior_input_buffer|as_on_off_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	activate	1	2	kappa2/kappa2/user_if/pb/attr_menu.esp:330
+requirement	{sash|as_scrolling_menu|with_superior_input_buffer|as_on_off_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	clear_items	1	2	kappa2/kappa2/user_if/pb/attr_menu.esp:331
+requirement	{sash|as_scrolling_menu|with_superior_input_buffer|as_on_off_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	instance	add_items	3	2	kappa2/kappa2/user_if/pb/attr_menu.esp:332
+requirement	{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	instance	clear	1	2	kappa2/kappa2/user_if/pb/basewin.esp:203
+requirement	{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	instance	background	2	2	kappa2/kappa2/user_if/pb/basewin.esp:204
+requirement	{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	instance	write_line	2	2	kappa2/kappa2/user_if/pb/basewin.esp:214
+requirement	<root>	slot	!bck_cell_id	0	2	kappa2/kappa2/user_if/pb/bcell.esp:348
+requirement	temporary_menu	instance	read	3	2	kappa2/kappa2/user_if/pb/bcell.esp:1329
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_editor	2	2	kappa2/kappa2/user_if/pb/exwin.esp:66
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	current_buffer	2	2	kappa2/kappa2/user_if/pb/exwin.esp:67
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	flash	1	2	kappa2/kappa2/user_if/pb/exwin.esp:69
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	clear	1	2	kappa2/kappa2/user_if/pb/exwin.esp:70
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	activate	1	2	kappa2/kappa2/user_if/pb/exwin.esp:71
+requirement	{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_interpreter	2	2	kappa2/kappa2/user_if/pb/exwin.esp:74
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	parse	3	2	kappa2/kappa2/user_if/pb/inwin.esp:609
+requirement	?	unknown	get_atom_string	3	2	kappa2/kappa2/user_if/pb/kcm.esp:2263
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	set_title	2	2	kappa2/kappa2/user_if/pb/menus.esp:172
+requirement	standard_editor	instance	execute_command	2	2	kappa2/kappa2/user_if/pb/pbedit.esp:69
+requirement	?	unknown	set_icon	2	2	kappa2/kappa2/user_if/pb/pbm.esp:341
+requirement	?	ambiguous	sort	3	2	kappa2/kappa2/user_if/pb/pcn.esp:2058
+requirement	coordinator	class	whiteboard	2	2	kappa2/kappa2/user_if/pb/pcn.esp:4840
+requirement	{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	background	2	2	kappa2/kappa2/user_if/pb/pdim.esp:116
+requirement	{with_superior_input_buffer|with_border|with_bell|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	clear	1	2	kappa2/kappa2/user_if/pb/pdim.esp:205
+requirement	{with_superior_input_buffer|with_border|with_bell|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	write_lines	2	2	kappa2/kappa2/user_if/pb/pdim.esp:206
+requirement	<root>	slot	!resrouceType	0	2	kappa2/kappa2/user_if/pb/rob.esp:182
+requirement	<root>	slot	!tableObjectStatus	0	2	kappa2/kappa2/user_if/pb/robj.esp:152
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	class	create	3	2	kappa2/kappa2/user_if/pb/savedmenu.esp:29
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	activate	1	2	kappa2/kappa2/user_if/pb/savedmenu.esp:127
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	read_with_code	3	2	kappa2/kappa2/user_if/pb/savedmenu.esp:128
+requirement	{as_menu_input|temporary_multiple_scrolling_menu}	instance	deactivate	1	2	kappa2/kappa2/user_if/pb/savedmenu.esp:129
+requirement	?	unknown	catch	4	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:119
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	slot	!font	0	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:791
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	slot	!border	0	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:792
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	slot	!line_type	0	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:793
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	slot	!line_width	0	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:794
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	get_mouse_dot_position	3	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:927
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	draw_rectangle	8	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:1691
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	draw_filled_rectangle	6	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:2580
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	draw_string	4	2	kappa2/kappa2/user_if/pb/sheet_obj.esp:2582
+requirement	?	unknown	get_message	4	2	kappa2/kappa2/user_if/pb/stwin.esp:45
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	show_buffer	1	2	kappa2/kappa2/user_if/pb/stwin.esp:47
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	putf	2	2	kappa2/kappa2/user_if/pb/stwin.esp:93
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	flash	1	2	kappa2/kappa2/user_if/pb/stwin.esp:133
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	do_set_item_status	3	2	kappa2/kappa2/user_if/pb/tam.esp:30
+requirement	<root>	slot	!base_window	0	2	kappa2/kappa2/utility/bck/BCKCMN.ESP:291
+requirement	<root>	slot	!bck_date	0	2	kappa2/kappa2/utility/bck/BCKCMN.ESP:347
+requirement	<root>	slot	!start_time	0	2	kappa2/kappa2/utility/bck/BCKCMN.ESP:349
+requirement	<root>	slot	!end_time	0	2	kappa2/kappa2/utility/bck/BCKCMN.ESP:351
+requirement	wildcard	class	rename	5	2	kappa2/kappa2/utility/bck/BCKDSAV.ESP:175
+requirement	binary_file_tap	instance	write	2	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1544
+requirement	binary_file_tap	instance	read	2	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1555
+requirement	file_utility	class	delete_file	3	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1593
+requirement	binary_file_tap	instance	at_end	1	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1603
+requirement	fdd_binary_file	class	make_only	3	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1821
+requirement	fdd_binary_file	class	open	5	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1849
+requirement	?	unknown	get_path_name	3	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1949
+requirement	fdd_binary_file_tap	instance	at_end	1	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:1972
+requirement	?	unknown	read_with_length	4	2	kappa2/kappa2/utility/bck/BCKFIF.ESP:2767
+requirement	?	unknown	clear_line	1	2	kappa2/kappa2/utility/dbc/DBCCOMW.ESP:300
+requirement	{as_superior|with_label|with_border|inferior_window}	instance	set_label_font	2	2	kappa2/kappa2/utility/dbi/DBIPR.ESP:108
+requirement	{with_margin|with_border|as_scroll|as_output|as_input|inferior_window}	instance	write_lines	2	2	kappa2/kappa2/utility/fmp/FCWIN.ESP:52
+requirement	{with_margin|with_border|as_scroll|as_output|as_input|inferior_window}	instance	read	2	2	kappa2/kappa2/utility/fmp/FCWIN.ESP:84
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_click_information|as_mouse_input|inferior_window}	instance	add_items	3	2	kappa2/kappa2/utility/fmp/FMP.ESP:263
+requirement	?	unknown	children	2	2	kappa2/kappa2/utility/fmp/FMP.ESP:623
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	beep	1	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:37
+requirement	?	ambiguous	open	1	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:619
+requirement	pathname	class	last	4	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:696
+requirement	{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	instance	write_line	2	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:891
+requirement	{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	instance	write_lines	2	2	kappa2/kappa2/utility/fmp/KFILMP.ESP:893
+requirement	editor_main_window	class	create	3	2	kappa2/kappa2/utility/fmp/KMACS.ESP:556
+requirement	editor_main_window	instance	set_title	2	2	kappa2/kappa2/utility/fmp/KMACS.ESP:564
+requirement	editor_main_window	instance	set_font	2	2	kappa2/kappa2/utility/fmp/KMACS.ESP:567
+requirement	editor_main_window	instance	activate	1	2	kappa2/kappa2/utility/fmp/KMACS.ESP:568
+requirement	editor_main_window	instance	get_editor	2	2	kappa2/kappa2/utility/fmp/KMACS.ESP:569
+requirement	editor_main_window	instance	clear_echo_area	1	2	kappa2/kappa2/utility/fmp/KMACS.ESP:594
+requirement	editor_main_window	instance	get_with_prompt	3	2	kappa2/kappa2/utility/fmp/KMACS.ESP:595
+requirement	editor_main_window	instance	beep	1	2	kappa2/kappa2/utility/fmp/KMACS.ESP:610
+requirement	disk_unit	class	get_free_map_with_unit	2	2	kappa2/kappa2/utility/lvm/LVM.ESP:110
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	class	create	3	2	kappa2/kappa2/utility/mdu/MDU.ESP:92
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	activate	1	2	kappa2/kappa2/utility/mdu/MDU.ESP:128
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	get_editor	2	2	kappa2/kappa2/utility/mdu/MDU.ESP:139
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	clear_echo_area	1	2	kappa2/kappa2/utility/mdu/MDU.ESP:156
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	get_with_prompt	3	2	kappa2/kappa2/utility/mdu/MDU.ESP:157
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	kill	1	2	kappa2/kappa2/utility/mdu/MDU.ESP:162
+requirement	{as_input|with_superior_input_buffer|editor_main_window}	instance	beep	1	2	kappa2/kappa2/utility/mdu/MDU.ESP:187
+requirement	standard_temporary_choice_window	class	create	3	2	kappa2/kappa2/utility/mdu/TABLE.ESP:286
+requirement	standard_temporary_choice_window	instance	activate	1	2	kappa2/kappa2/utility/mdu/TABLE.ESP:291
+requirement	standard_temporary_choice_window	instance	read	2	2	kappa2/kappa2/utility/mdu/TABLE.ESP:292
+requirement	user	class	user_list	2	2	kappa2/kappa2/utility/mdu/USER.ESP:452
+requirement	menu	instance	set_superior	2	2	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:852
+requirement	string_buffer	class	create	2	2	kappa2/kappa2/utility/tgt/TGTSDIS.ESP:20
+requirement	string_buffer	instance	get_data	2	2	kappa2/kappa2/utility/tgt/TGTSDIS.ESP:65
+requirement	?	unknown	record_length	2	2	kappa2/kappa2/utility/tgt/TGTSMT.ESP:118
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	getl	2	2	kappa2/kappa2/utility/tgt/TGTWIN.ESP:86
+requirement	essential_window	instance	activate	2	2	kappa2/kappa2/utility/tool/CCTPR.ESP:332
+requirement	essential_window	instance	background	2	2	kappa2/kappa2/utility/tool/CCTPR.ESP:353
+requirement	?	unknown	set_value	5	2	kappa2/kappa2/utility/tool/LOADCH.ESP:122
+requirement	{as_class_with_lock|as_program}	class	create	2	2	kappa2/kappa2/utility/tool/LOADER.ESP:52
+requirement	as_rpc_server_tcp	class	create	4	2	kappa2/kvif/esp/kap_serv.esp:14
+requirement	pmap_client	class	unset	3	2	kappa2/kvif/esp/kap_serv.esp:15
+requirement	?	unknown	register	5	2	kappa2/kvif/esp/kap_serv.esp:16
+requirement	as_rpc_server_tcp	instance	err_noproc	1	2	kappa2/kvif/esp/kap_serv.esp:110
+requirement	as_rpc_server_tcp	instance	set_jis_string_max_length	2	2	kappa2/kvif/esp/kap_serv.esp:125
+requirement	as_rpc_server_tcp	instance	xdr_int	2	2	kappa2/kvif/esp/kap_serv.esp:128
+requirement	kappaP	instance	begin_transaction	2	2	kappa2/kvif/esp/kap_serv.esp:153
+requirement	kappaP	instance	search_index	5	2	kappa2/kvif/esp/kap_serv.esp:181
+requirement	kappaP	instance	delete_tap	2	2	kappa2/kvif/esp/kap_serv.esp:305
+requirement	kappaP	instance	delete_set	2	2	kappa2/kvif/esp/kap_serv.esp:310
+requirement	kappaP	instance	end_transaction	1	2	kappa2/kvif/esp/kap_serv.esp:314
+requirement	kappaP	instance	close	1	2	kappa2/kvif/esp/kap_serv.esp:327
+requirement	get_request	class	create	2	2	kappa2/kvif/esp/kap_serv.esp:794
+requirement	get_request	instance	set	2	2	kappa2/kvif/esp/kap_serv.esp:795
+requirement	get_request	instance	run	1	2	kappa2/kvif/esp/kap_serv.esp:796
+requirement	remote_object	nature	(inherited)		2	kappa2/kappa2/kernel/itr/RITRAPP.ESP:6
+requirement	network_listener_buffer	nature	(inherited)		2	kappa2/kappa2/kernel/net/MSGCMD.ESP:16
+requirement	select_notifier	nature	(inherited)		2	kappa2/kappa2/user_if/pb/basewin.esp:11
+requirement	temporary_multiple_scrolling_menu	nature	(inherited)		2	kappa2/kappa2/user_if/pb/savedmenu.esp:10
+requirement	as_choice	nature	(inherited)		2	kappa2/kappa2/utility/mop/MOPCHICE.ESP:15
+requirement	disk_io_request	ref	(#ref)		2	kappa2/kappa2/kernel/flm/VOL1.ESP:158
+requirement	permanent_directory	ref	(#ref)		2	kappa2/kappa2/kernel/net/SRVCNF.ESP:45
+requirement	kappaREP_select_menu	ref	(#ref)		2	kappa2/kappa2/kernel/net/SRVMNT.ESP:437
+requirement	pmap_client	ref	(#ref)		2	kappa2/kvif/esp/kap_serv.esp:15
+requirement	get_request	ref	(#ref)		2	kappa2/kvif/esp/kap_serv.esp:794
+requirement	?	unknown	new	2	1	kappa2/kappa2/kernel/pcm/PCPDSOMC.ESP:20
+requirement	standard_input_file	instance	end_of_input	1	1	kappa2/kappa2/user_if/pb/pcn.esp:4593
+requirement	?	unknown	catch	5	1	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:220
+requirement	?	ambiguous	initiate	1	1	kappa2/kappa2/kernel/net/SERVER.ESP:27
+requirement	?	unknown	remove	2	1	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:101
+requirement	standard_io_window	instance	clear	1	1	kappa2/kappa2/utility/lvm/LVM.ESP:578
+requirement	standard_io_window	instance	activate	1	1	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:33
+requirement	essential_window	instance	set_font	2	1	kappa2/kappa2/utility/dbc/DBCINT.ESP:69
+requirement	?	unknown	get_package	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:31
+requirement	standard_temporary_multi_select_menu	class	create	3	1	kappa2/kappa2/utility/mdu/TABLE.ESP:193
+requirement	?	unknown	select	1	1	kappa2/kappa2/utility/fmp/FCWIN.ESP:31
+requirement	?	unknown	get_border_width	2	1	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:132
+requirement	?	unknown	get_label_flag	2	1	kappa2/kappa2/user_if/pb/pcn.esp:3407
+requirement	?	unknown	get_label_height	2	1	kappa2/kappa2/user_if/pb/pcn.esp:3411
+requirement	?	unknown	set_standard_input	2	1	kappa2/kappa2/user_if/pb/inwin.esp:379
+requirement	?	unknown	set_standard_output	2	1	kappa2/kappa2/user_if/pb/inwin.esp:378
+requirement	?	unknown	set_standard_message	2	1	kappa2/kappa2/user_if/pb/inwin.esp:377
+requirement	?	unknown	get_with_prompt	3	1	kappa2/kappa2/user_if/pb/pcn.esp:170
+requirement	standard_io_buffer	instance	set_max_depth	2	1	kappa2/kappa2/kernel/svm/SVCML.ESP:71
+requirement	standard_io_buffer	instance	set_max_length	2	1	kappa2/kappa2/kernel/svm/SVCML.ESP:70
+requirement	?	unknown	<variable selector>	0	1	kappa2/kappa2/kernel/itr/RITRMACRO.ESP:16
+requirement	?	unknown	read_with_click	4	1	kappa2/kappa2/utility/fmp/FMP.ESP:493
+requirement	?	unknown	super	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:941
+requirement	set	class	create	2	1	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:171
+requirement	set	instance	add	2	1	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:223
+requirement	set	instance	get_contents	2	1	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:178
+requirement	library	class	get_a_name	8	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:101
+requirement	?	ambiguous	goal	1	1	kappa2/kappa2/kernel/net/createsrv.esp:33
+requirement	inspector	class	create	2	1	kappa2/kappa2/user_if/pb/pcn.esp:4834
+requirement	symbolizer	class	get_variable_string	5	1	kappa2/kappa2/kernel/itr/ITRERI.ESP:148
+requirement	temporary_window	instance	activate	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:36
+requirement	?	unknown	initiation_table	2	1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:410
+requirement	temporary_single_scrolling_menu	nature	(inherited)		1	kappa2/kappa2/user_if/pb/menus.esp:1168
+requirement	as_multiple_column	nature	(inherited)		1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:6
+requirement	standard_editor	ref	(#ref)		1	kappa2/kappa2/user_if/pb/inwin.esp:81
+requirement	standard_temporary_multi_select_menu	ref	(#ref)		1	kappa2/kappa2/utility/mdu/TABLE.ESP:193
+requirement	inspector	ref	(#ref)		1	kappa2/kappa2/user_if/pb/pcn.esp:4834
+requirement	set	ref	(#ref)		1	kappa2/kappa2/kernel/hlc/HLCERADUP.ESP:171
+requirement	superior_window	ref	(#ref)		1	kappa2/kappa2/user_if/pb/tam.esp:122
+requirement	?	unknown	get_editor	2	1	kappa2/kappa2/user_if/pb/pcn.esp:150
+requirement	?	unknown	putt	3	1	kappa2/kappa2/kernel/itr/ITRERI.ESP:156
+requirement	library	class	make_package	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:33
+requirement	standard_io_buffer	instance	putt	4	1	kappa2/kappa2/utility/tgt/TGTCON.ESP:362
+requirement	?	unknown	is_fdd	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:682
+requirement	fdd_binary_file	class	open	3	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:630
+requirement	binary_file_marker	class	create	2	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:406
+requirement	string_buffer	instance	data_buffer	2	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:408
+requirement	?	unknown	expunge	1	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:57
+requirement	standard_superior_window	instance	set_size	3	1	kappa2/kappa2/user_if/pb/attr_menu.esp:165
+requirement	?	unknown	set_echo_font	2	1	kappa2/kappa2/user_if/pb/pbm.esp:1555
+requirement	?	unknown	get_item_id	2	1	kappa2/kappa2/user_if/pb/tam.esp:27
+requirement	pathname	class	last_name	4	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:700
+requirement	?	unknown	get_count	3	1	kappa2/kappa2/kernel/svm/SVCTL.ESP:167
+requirement	superior_window	class	create	3	1	kappa2/kappa2/user_if/pb/tam.esp:122
+requirement	?	unknown	suspend	2	1	kappa2/kappa2/utility/mop/MOPCOM.ESP:93
+requirement	?	unknown	resume	2	1	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:57
+requirement	?	unknown	write_data	2	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:423
+requirement	?	unknown	new_buffer	3	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:500
+requirement	?	unknown	read	1	1	kappa2/kappa2/kernel/net/createsrv.esp:37
+requirement	library	class	write_class_template	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:95
+requirement	library	class	delete	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:61
+requirement	?	unknown	wait	1	1	kappa2/kappa2/utility/tool/LOADCH.ESP:130
+requirement	?	unknown	class_id	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:59
+requirement	with_lock	nature	(inherited)		1	kappa2/kappa2/kernel/dbo/KP_DBOBF.ESP:7
+requirement	as_event_handler	nature	(inherited)		1	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:411
+requirement	binary_file_marker	ref	(#ref)		1	kappa2/kappa2/kernel/net/SRVCNF.ESP:406
+requirement	<root>	class	refute	3	1	kappa2/kappa2/kernel/net/SERVER.ESP:129
+requirement	standard_menu	instance	set_title	2	1	kappa2/kappa2/user_if/pb/tam.esp:119
+requirement	standard_io_window	instance	deactivate	1	1	kappa2/kappa2/utility/lvm/LVM.ESP:552
+requirement	standard_superior_window	instance	set_title	2	1	kappa2/kappa2/user_if/pb/attr_menu.esp:164
+requirement	as_standard_io_window	nature	(inherited)		1	kappa2/kappa2/user_if/pb/sheet_obj.esp:24
+requirement	essential_scrolling_menu_with_superior_input_buffer	ref	(#ref)		1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:705
+requirement	?	ambiguous	activate_window	1	1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:47
+requirement	standard_io_window	instance	read	2	1	kappa2/kappa2/kernel/svm/SVERRWIN.ESP:58
+requirement	?	unknown	delete_item	2	1	kappa2/kappa2/user_if/pb/tam.esp:209
+requirement	temporary_menu	instance	clear_items	1	1	kappa2/kappa2/user_if/pb/sldmenu.esp:54
+requirement	essential_window	instance	set_title	2	1	kappa2/kappa2/utility/dbc/DBCINT.ESP:53
+requirement	printer	class	get	2	1	kappa2/kappa2/kernel/net/REMLOG.ESP:40
+requirement	?	unknown	new_page	1	1	kappa2/kappa2/kernel/net/REMLOG.ESP:45
+requirement	?	unknown	put_string	2	1	kappa2/kappa2/utility/dbc/DBCOUWIN.ESP:210
+requirement	list_index	instance	get_contents_at	3	1	kappa2/kappa2/kernel/flm/FILEM1.ESP:457
+requirement	with_two_labels	nature	(inherited)		1	kappa2/kappa2/user_if/pb/inwin.esp:13
+requirement	inferior_window	ref	(#ref)		1	kappa2/kappa2/user_if/pb/pcn.esp:3384
+requirement	labeled_superior_window	instance	set_title	2	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:40
+requirement	essential_window	instance	kill	1	1	kappa2/kappa2/utility/dbc/DBCINT.ESP:76
+requirement	menu	instance	deactivate	1	1	kappa2/kappa2/user_if/pb/srhmenu.esp:117
+requirement	monogyny_list_index	instance	get_contents	2	1	kappa2/kappa2/kernel/hlc/HLCSETHASH.ESP:85
+requirement	monogyny_list_index	instance	add_at	3	1	kappa2/kappa2/kernel/bcm/BCMANAPFM.ESP:123
+requirement	network_listener_buffer	class	create	4	1	kappa2/kappa2/kernel/net/SRVCMD.ESP:22
+requirement	list	instance	empty	1	1	kappa2/kappa2/utility/luu/LUULOAD1.ESP:784
+requirement	list	instance	add_before	3	1	kappa2/kappa2/utility/ivt/IVTSRT.ESP:259
+requirement	as_server_program	instance	give_answer	3	1	kappa2/kappa2/kernel/net/REMUSR.ESP:66
+requirement	as_server_program	instance	convert_con_req	6	1	kappa2/kappa2/kernel/net/REMUSR.ESP:64
+requirement	array	class	create	3	1	kappa2/kappa2/tool/kappa_pool/KP_POOLMEM.ESP:22
+requirement	hash_index	instance	get_keys	2	1	kappa2/kappa2/user_if/pb/pool.esp:177
+requirement	as_server_program	instance	get_line	2	1	kappa2/kappa2/kernel/net/REMUSR.ESP:72
+requirement	as_server_program	nature	(inherited)		1	kappa2/kappa2/kernel/net/REMUSR.ESP:17
+requirement	sorted_sequence	nature	(inherited)		1	kappa2/kappa2/kernel/svm/SVCMTSQ.ESP:20
+requirement	list_index	nature	(inherited)		1	kappa2/kappa2/kernel/flm/KPPOOL.ESP:7
+requirement	network_listener_buffer	ref	(#ref)		1	kappa2/kappa2/kernel/net/SRVCMD.ESP:22
+requirement	array	ref	(#ref)		1	kappa2/kappa2/tool/kappa_pool/KP_POOLMEM.ESP:22
+requirement	bitmap	class	get_plane_count	2	1	kappa2/kappa2/user_if/pb/pbm.esp:212
+requirement	choice_window	instance	activate	1	1	kappa2/kappa2/utility/dbi/DBIPR.ESP:450
+requirement	expandable_array	instance	size	2	1	kappa2/kappa2/kernel/rdm/RDMCPST.ESP:53
+requirement	menu	nature	(inherited)		1	kappa2/kappa2/user_if/pb/srhmenu.esp:66
+requirement	bitmap	ref	(#ref)		1	kappa2/kappa2/user_if/pb/pbm.esp:212
+requirement	temporary_multiple_select_menu	instance	read	2	1	kappa2/kappa2/utility/fmp/FMP.ESP:980
+requirement	temporary_multiple_select_menu	class	create	3	1	kappa2/kappa2/utility/fmp/FMP.ESP:972
+requirement	popup_window	nature	(inherited)		1	kappa2/kappa2/utility/tgt/TGTSWIN.ESP:36
+requirement	temporary_multiple_select_menu	ref	(#ref)		1	kappa2/kappa2/utility/fmp/FMP.ESP:972
+requirement	?	unknown	reflesh	2	1	kappa2/kappa2/kernel/bfm/KP_BFMMM.ESP:353
+requirement	{as_resource|with_lock}	class	new	2	1	kappa2/kappa2/kernel/dbo/KP_DBO.ESP:23
+requirement	version	class	version	2	1	kappa2/kappa2/kernel/flm/FILEM1.ESP:57
+requirement	monogyny_list_index	slot	!first	0	1	kappa2/kappa2/kernel/flm/MONOPOOL.ESP:14
+requirement	disk_io_message	class	create	2	1	kappa2/kappa2/kernel/flm/VOL1.ESP:53
+requirement	disk_io_request	class	take	3	1	kappa2/kappa2/kernel/flm/VOL1.ESP:158
+requirement	disk_io_request	class	take	7	1	kappa2/kappa2/kernel/flm/VOL1.ESP:167
+requirement	?	unknown	register_exec	3	1	kappa2/kappa2/kernel/hlc/HLCIFT.ESP:62
+requirement	library	class	get_version	6	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:90
+requirement	library	class	make_class_template	2	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:91
+requirement	library	class	make_class_template_from_source	3	1	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:94
+requirement	as_event_handler	class	new	2	1	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:29
+requirement	throw	class	raise	1	1	kappa2/kappa2/kernel/hlc/HLCMNG.ESP:416
+requirement	extensible_hash_index	class	create	7	1	kappa2/kappa2/kernel/hlc/HLCPROJECT.ESP:151
+requirement	monogyny_list_index	instance	stick_tap	2	1	kappa2/kappa2/kernel/hlc/HLCUNIHSTB.ESP:49
+requirement	?	unknown	get_registred_table	3	1	kappa2/kappa2/kernel/icm/ICM_COPY.ESP:279
+requirement	?	unknown	get_oroginal_table_mode	2	1	kappa2/kappa2/kernel/icm/ICM_COPY.ESP:569
+requirement	?	unknown	g_call	3	1	kappa2/kappa2/kernel/itr/RITRMACRO.ESP:17
+requirement	temporary_scrolling_menu	class	create	3	1	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:48
+requirement	temporary_scrolling_menu	instance	activate	1	1	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:52
+requirement	temporary_scrolling_menu	instance	read	2	1	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:53
+requirement	<root>	slot	!meke_isr	0	1	kappa2/kappa2/kernel/ixm/IXM.ESP:284
+requirement	?	unknown	set_status_pth	3	1	kappa2/kappa2/kernel/ixm/IXMISRHV.ESP:119
+requirement	?	unknown	greater_equal_set_HV	11	1	kappa2/kappa2/kernel/ixm/IXMREADMN.ESP:478
+requirement	?	unknown	greater_equal_set_STR	11	1	kappa2/kappa2/kernel/ixm/IXMREADMN.ESP:503
+requirement	?	unknown	less_equal_set_STR	11	1	kappa2/kappa2/kernel/ixm/IXMREADMN.ESP:516
+requirement	?	unknown	get_MDB_area_info	2	1	kappa2/kappa2/kernel/mdm/KP_MDM.ESP:151
+requirement	<root>	instance	parse_mojiretsu_generation_attr	3	1	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:791
+requirement	<root>	instance	parse_mojiretsu_generation_term	3	1	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:792
+requirement	<root>	instance	parse_search_value_list	3	1	kappa2/kappa2/kernel/mdm/KP_MDMPAS.ESP:1363
+requirement	<root>	slot	!tap	0	1	kappa2/kappa2/kernel/mdm/KP_MDMSCT.ESP:239
+requirement	<root>	instance	pre_open	2	1	kappa2/kappa2/kernel/net/REMAPC.ESP:39
+requirement	<root>	instance	tran_open	2	1	kappa2/kappa2/kernel/net/REMAPC.ESP:60
+requirement	<root>	instance	check_open_mode	5	1	kappa2/kappa2/kernel/net/REMAPC.ESP:394
+requirement	<root>	instance	get_transaction	7	1	kappa2/kappa2/kernel/net/REMAPC.ESP:487
+requirement	?	unknown	seach_table	5	1	kappa2/kappa2/kernel/net/REMAPC.ESP:550
+requirement	?	unknown	get_cardinality	4	1	kappa2/kappa2/kernel/net/REMAPC.ESP:618
+requirement	?	unknown	get_stsobj	2	1	kappa2/kappa2/kernel/net/REMAPC.ESP:834
+requirement	<root>	instance	get_domain_database	5	1	kappa2/kappa2/kernel/net/REMAPC.ESP:871
+requirement	<root>	class	server_node	3	1	kappa2/kappa2/kernel/net/SRVTCM.ESP:41
+requirement	kappa_message	instance	set_stsobj	2	1	kappa2/kappa2/kernel/net/SRVTCM.ESP:73
+requirement	kappa_message	instance	set_type	2	1	kappa2/kappa2/kernel/net/SRVTCM.ESP:74
+requirement	kappa_remote_interface	class	error	3	1	kappa2/kappa2/kernel/net/SRVTCM.ESP:76
+requirement	<root>	slot	!ltcm	0	1	kappa2/kappa2/kernel/net/REMUITR.ESP:253
+requirement	?	unknown	set_waiting_time	3	1	kappa2/kappa2/kernel/net/REMUSR.ESP:40
+requirement	<root>	class	method	3	1	kappa2/kappa2/kernel/net/SERVER.ESP:128
+requirement	double_key_index	class	create	3	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:145
+requirement	e_string	class	nonspace	3	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:507
+requirement	?	unknown	put_at	4	1	kappa2/kappa2/kernel/net/SRVCNF.ESP:528
+requirement	?	unknown	set_receive_timer	2	1	kappa2/kappa2/kernel/net/SRVITR.ESP:113
+requirement	?	unknown	set_satatus_path	3	1	kappa2/kappa2/kernel/pcm/KP_PCPCTAP.ESP:125
+requirement	?	unknown	reset_attribute_name	3	1	kappa2/kappa2/kernel/pcm/KP_PCPPTAP.ESP:410
+requirement	<root>	instance	read_long_record	4	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:78
+requirement	?	unknown	set_status_path	5	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:88
+requirement	<root>	instance	get_long_record_nil_value_list	3	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:118
+requirement	<root>	instance	next_page	1	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:195
+requirement	<root>	instance	get_long_record_string_value	4	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:196
+requirement	<root>	instance	add_long_record	7	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:245
+requirement	<root>	instance	add_nil_value_list	3	1	kappa2/kappa2/kernel/pcm/KP_PCSRBL.ESP:277
+requirement	?	unknown	set_setatus	5	1	kappa2/kappa2/kernel/pcm/PCAACCA.ESP:118
+requirement	<root>	slot	!mata_data_manager	0	1	kappa2/kappa2/kernel/pcm/PCM.ESP:120
+requirement	<root>	slot	!analyzer	0	1	kappa2/kappa2/kernel/pcm/PCM.ESP:137
+requirement	?	unknown	check_condition	4	1	kappa2/kappa2/kernel/pcm/PCMREADMN.ESP:400
+requirement	?	unknown	get_primitive_table_name	3	1	kappa2/kappa2/kernel/pcm/PCPCONT.ESP:538
+requirement	?	unknown	get_primitive_table	3	1	kappa2/kappa2/kernel/pcm/PCPCONT.ESP:539
+requirement	<root>	instance	get_registed_table	4	1	kappa2/kappa2/kernel/pcm/PCPDIFOPE.ESP:921
+requirement	?	unknown	expand_ele	6	1	kappa2/kappa2/kernel/pcm/PCPDSOMG.ESP:832
+requirement	<root>	instance	unnest	8	1	kappa2/kappa2/kernel/pcm/PCPNUNNEST.ESP:79
+requirement	<root>	instance	nest	7	1	kappa2/kappa2/kernel/pcm/PCPNUNNEST.ESP:81
+requirement	?	ambiguous	put_contents	4	1	kappa2/kappa2/kernel/pcm/PCPROPMG.ESP:257
+requirement	?	unknown	get_SDBbuffer	4	1	kappa2/kappa2/kernel/pcm/PCPSETNCNV.ESP:253
+requirement	expandable_array	instance	expand	2	1	kappa2/kappa2/kernel/rdm/RDMCPST.ESP:55
+requirement	<root>	instance	set_status	3	1	kappa2/kappa2/kernel/rdo/ROEDIT.ESP:36
+requirement	sorted_sequence	instance	put_contents	2	1	kappa2/kappa2/kernel/svm/SVCMD.ESP:111
+requirement	sorted_sequence	instance	remove_at	3	1	kappa2/kappa2/kernel/svm/SVCMD.ESP:305
+requirement	list	instance	get_first	2	1	kappa2/kappa2/kernel/svm/SVCMD.ESP:445
+requirement	<root>	instance	register_resource_copy	3	1	kappa2/kappa2/kernel/svm/SVCTL.ESP:493
+requirement	message	class	new	2	1	kappa2/kappa2/kernel/svm/SVCTL.ESP:1163
+requirement	hash_index	slot	!size	0	1	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:91
+requirement	channel_set	class	create	2	1	kappa2/kappa2/kernel/svm/SVMSG.ESP:91
+requirement	channel_set	instance	receive	2	1	kappa2/kappa2/kernel/svm/SVMSG.ESP:113
+requirement	channel_set	instance	try_to_get	2	1	kappa2/kappa2/kernel/svm/SVMSG.ESP:132
+requirement	channel_set	instance	remove	2	1	kappa2/kappa2/kernel/svm/SVMSG.ESP:200
+requirement	?	unknown	load	6	1	kappa2/kappa2/kernel/svm/SVOPC.ESP:1173
+requirement	monogyny_hash_index	instance	empty	1	1	kappa2/kappa2/kernel/svm/SVRSC.ESP:549
+requirement	<root>	slot	!stauts_object	0	1	kappa2/kappa2/kernel/svm/SVUSOBJ.ESP:689
+requirement	?	ambiguous	status	2	1	kappa2/kappa2/kernel/svm/SVUSOBJ.ESP:716
+requirement	monogyny_hash_index	instance	count	2	1	kappa2/kappa2/kernel/svm/SVUSR.ESP:260
+requirement	<root>	slot	!key_type	0	1	kappa2/kappa2/tool/kappa_pool/KP_POOLDSK.ESP:174
+requirement	<root>	class	create	4	1	kappa2/kappa2/tool/kappa_pool/KP_POOLDSK.ESP:186
+requirement	character	class	is_upper_alphabetic	2	1	kappa2/kappa2/tool/update_tool/KP_UPTFUN.ESP:303
+requirement	{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}	instance	reshape	5	1	kappa2/kappa2/user_if/pb/basewin.esp:39
+requirement	{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	instance	get_superior	2	1	kappa2/kappa2/user_if/pb/basewin.esp:128
+requirement	{sash|as_markers|as_graphics|reshape_notifier|with_superior_input_buffer|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/user_if/pb/bcell.esp:1687
+requirement	symbolizer	class	get_floating_number_string	4	1	kappa2/kappa2/user_if/pb/ddopt.esp:624
+requirement	symbolizer	class	get_floating_number_string	3	1	kappa2/kappa2/user_if/pb/ddopt.esp:673
+requirement	<root>	instance	set_position	3	1	kappa2/kappa2/user_if/pb/fcell.esp:224
+requirement	<root>	slot	!fwd_cell_id	0	1	kappa2/kappa2/user_if/pb/fcell.esp:421
+requirement	<root>	slot	!fwd_cell_unit	0	1	kappa2/kappa2/user_if/pb/fcell.esp:422
+requirement	?	unknown	set_bottom_label_flag	2	1	kappa2/kappa2/user_if/pb/inwin.esp:54
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	putf	3	1	kappa2/kappa2/user_if/pb/inwin.esp:299
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	putf	2	1	kappa2/kappa2/user_if/pb/inwin.esp:343
+requirement	?	unknown	mark_whole_buffer	1	1	kappa2/kappa2/user_if/pb/inwin.esp:356
+requirement	?	unknown	see_region	2	1	kappa2/kappa2/user_if/pb/inwin.esp:357
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	end	1	1	kappa2/kappa2/user_if/pb/inwin.esp:615
+requirement	user	class	login_user	2	1	kappa2/kappa2/user_if/pb/kcm.esp:78
+requirement	?	unknown	utl_modify_table	3	1	kappa2/kappa2/user_if/pb/kcm.esp:1477
+requirement	?	unknown	get_number_string	3	1	kappa2/kappa2/user_if/pb/kcm.esp:2268
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	set_font	2	1	kappa2/kappa2/user_if/pb/menus.esp:170
+requirement	{as_menu_input|with_click_information|temporary_single_scrolling_menu}	instance	set_label_font	2	1	kappa2/kappa2/user_if/pb/menus.esp:171
+requirement	standard_io_window	instance	set_superior	2	1	kappa2/kappa2/user_if/pb/menus.esp:382
+requirement	temporary_choice_window	instance	set_font	2	1	kappa2/kappa2/user_if/pb/menus.esp:472
+requirement	temporary_choice_window	instance	set_label_font	2	1	kappa2/kappa2/user_if/pb/menus.esp:473
+requirement	popup_choice_window	class	create	3	1	kappa2/kappa2/user_if/pb/menus.esp:1095
+requirement	standard_editor	slot	!window	0	1	kappa2/kappa2/user_if/pb/pbedit.esp:70
+requirement	?	unknown	input_region	2	1	kappa2/kappa2/user_if/pb/pbedit.esp:73
+requirement	?	unknown	position	3	1	kappa2/kappa2/user_if/pb/pbedit.esp:74
+requirement	{as_program|as_resource|as_class_with_lock}	class	locked	1	1	kappa2/kappa2/user_if/pb/pbm.esp:34
+requirement	{as_program|as_resource|as_class_with_lock}	class	lock	1	1	kappa2/kappa2/user_if/pb/pbm.esp:49
+requirement	{as_program|as_resource|as_class_with_lock}	class	new	2	1	kappa2/kappa2/user_if/pb/pbm.esp:50
+requirement	{as_program|as_resource|as_class_with_lock}	class	unlock	1	1	kappa2/kappa2/user_if/pb/pbm.esp:54
+requirement	?	ambiguous	put_contents_with_key	2	1	kappa2/kappa2/user_if/pb/pbm.esp:237
+requirement	{as_program|as_resource|as_class_with_lock}	instance	slot	2	1	kappa2/kappa2/user_if/pb/pbm.esp:752
+requirement	?	ambiguous	get_mouse_position	3	1	kappa2/kappa2/user_if/pb/pbm.esp:825
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	class	create_with_input	4	1	kappa2/kappa2/user_if/pb/pbm.esp:1429
+requirement	{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_superior_input_buffer|inferior_window}	instance	activate	1	1	kappa2/kappa2/user_if/pb/pbm.esp:1552
+requirement	{reshape_notifier|select_notifier|with_label|with_border|as_superior|with_pane|with_click_information|as_input_buffer|with_icon|inferior_window}	instance	get_inside_size	3	1	kappa2/kappa2/user_if/pb/pbwin.esp:54
+requirement	{reshape_notifier|select_notifier|with_label|with_border|as_superior|with_pane|with_click_information|as_input_buffer|with_icon|inferior_window}	instance	read	3	1	kappa2/kappa2/user_if/pb/pbwin.esp:83
+requirement	?	unknown	command	6	1	kappa2/kappa2/user_if/pb/pcn.esp:137
+requirement	symbolizer	class	get_floating_number	3	1	kappa2/kappa2/user_if/pb/pcn.esp:815
+requirement	printer	class	get	3	1	kappa2/kappa2/user_if/pb/pcn.esp:3041
+requirement	?	unknown	hard_copy	9	1	kappa2/kappa2/user_if/pb/pcn.esp:3045
+requirement	?	unknown	get_label_position	2	1	kappa2/kappa2/user_if/pb/pcn.esp:3409
+requirement	inspector	instance	inspect	2	1	kappa2/kappa2/user_if/pb/pcn.esp:4835
+requirement	{with_superior_input_buffer|with_border|with_bell|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/user_if/pb/pdim.esp:208
+requirement	<root>	slot	!dummyTapW	0	1	kappa2/kappa2/user_if/pb/rob.esp:249
+requirement	<root>	slot	!dummytapW	0	1	kappa2/kappa2/user_if/pb/rob.esp:257
+requirement	{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	instance	activate	1	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:251
+requirement	{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}	instance	activate	1	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:253
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	draw_string	6	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:431
+requirement	?	unknown	put_cell_value	2	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:511
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	instance	draw_filled_rectangle	8	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:1510
+requirement	?	unknown	replace_value	4	1	kappa2/kappa2/user_if/pb/sheet_obj.esp:2387
+requirement	{temporary_menu|inferior_window|as_menu_input}	class	create	3	1	kappa2/kappa2/user_if/pb/sldmenu.esp:33
+requirement	{temporary_menu|inferior_window|as_menu_input}	instance	deactivate	1	1	kappa2/kappa2/user_if/pb/sldmenu.esp:82
+requirement	?	unknown	node_holophrast	2	1	kappa2/kappa2/user_if/pb/som.esp:749
+requirement	?	unknown	depth_holophrast	2	1	kappa2/kappa2/user_if/pb/som.esp:751
+requirement	?	unknown	move	5	1	kappa2/kappa2/user_if/pb/som.esp:766
+requirement	?	unknown	close_sheet	3	1	kappa2/kappa2/user_if/pb/som.esp:776
+requirement	{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	class	create	7	1	kappa2/kappa2/user_if/pb/som.esp:884
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	read	2	1	kappa2/kappa2/user_if/pb/stwin.esp:48
+requirement	{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	instance	show	1	1	kappa2/kappa2/user_if/pb/stwin.esp:142
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	set_label_font	2	1	kappa2/kappa2/user_if/pb/tam.esp:116
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	set_title	2	1	kappa2/kappa2/user_if/pb/tam.esp:117
+requirement	standard_menu	instance	set_label_font	2	1	kappa2/kappa2/user_if/pb/tam.esp:118
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	get_size	3	1	kappa2/kappa2/user_if/pb/tam.esp:120
+requirement	standard_menu	instance	get_size	3	1	kappa2/kappa2/user_if/pb/tam.esp:121
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	set_superior	2	1	kappa2/kappa2/user_if/pb/tam.esp:128
+requirement	standard_menu	instance	set_superior	2	1	kappa2/kappa2/user_if/pb/tam.esp:129
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	set_position	3	1	kappa2/kappa2/user_if/pb/tam.esp:130
+requirement	standard_menu	instance	set_position	3	1	kappa2/kappa2/user_if/pb/tam.esp:131
+requirement	{as_menu_input|with_click_information|scrolling_on_off_menu}	instance	activate	1	1	kappa2/kappa2/user_if/pb/tam.esp:135
+requirement	?	unknown	read_with_code	3	1	kappa2/kappa2/user_if/pb/tam.esp:165
+requirement	standard_editor	instance	clear_buffer	1	1	kappa2/kappa2/user_if/pb/typewin.esp:326
+requirement	?	unknown	get	6	1	kappa2/kappa2/user_if/pb/vrmj.esp:339
+requirement	<root>	slot	!msg_window	0	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:298
+requirement	<root>	slot	!font	0	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:312
+requirement	?	unknown	link	2	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:586
+requirement	?	unknown	file_names	2	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:595
+requirement	binary_file	class	open_	3	1	kappa2/kappa2/utility/bck/BCKCMN.ESP:769
+requirement	<root>	slot	!bck	0	1	kappa2/kappa2/utility/bck/BCKDRES.ESP:455
+requirement	cmt_device	class	release	1	1	kappa2/kappa2/utility/bck/BCKFIF.ESP:2369
+requirement	<root>	instance	write_buffer	3	1	kappa2/kappa2/utility/bck/BCKTRES.ESP:861
+requirement	essential_window	instance	show	1	1	kappa2/kappa2/utility/dbc/DBCINT.ESP:54
+requirement	essential_window	instance	read_sense	2	1	kappa2/kappa2/utility/dbc/DBCINT.ESP:218
+requirement	format_printer	class	get	2	1	kappa2/kappa2/utility/dbc/DBCOUWIN.ESP:57
+requirement	?	unknown	set_format_by_operator	1	1	kappa2/kappa2/utility/dbc/DBCOUWIN.ESP:58
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_superior_input_buffer|with_click_information|as_mouse_input|inferior_window}	instance	clear_items	1	1	kappa2/kappa2/utility/fmp/FMP.ESP:196
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_superior_input_buffer|with_click_information|as_mouse_input|inferior_window}	instance	add_items	3	1	kappa2/kappa2/utility/fmp/FMP.ESP:198
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_click_information|as_mouse_input|inferior_window}	instance	clear_items	1	1	kappa2/kappa2/utility/fmp/FMP.ESP:261
+requirement	{as_program|as_class_with_lock}	instance	refute	3	1	kappa2/kappa2/utility/fmp/FMP.ESP:507
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_click_information|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/utility/fmp/FMP.ESP:596
+requirement	{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_click_information|as_mouse_input|inferior_window}	instance	read	2	1	kappa2/kappa2/utility/fmp/FMP.ESP:597
+requirement	temporary_multiple_select_menu	instance	activate	1	1	kappa2/kappa2/utility/fmp/FMP.ESP:978
+requirement	temporary_multiple_select_menu	instance	kill	1	1	kappa2/kappa2/utility/fmp/FMP.ESP:985
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	get_inside_units	3	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:32
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	set_size	3	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:33
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	background	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:34
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	write_line	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:35
+requirement	{with_border|as_output|as_mouse_input|temporary_window}	instance	read	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:40
+requirement	{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	instance	show	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:231
+requirement	{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	instance	erase_cursor	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:244
+requirement	{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	instance	read	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:245
+requirement	date	class	make_string	5	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:260
+requirement	time	class	make_string	6	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:261
+requirement	?	unknown	read_next	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:538
+requirement	?	unknown	extent_size	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:558
+requirement	?	unknown	set_data_buffer	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:593
+requirement	?	unknown	write_next	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:594
+requirement	fdd_binary_file	class	make_only	4	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:737
+requirement	?	unknown	file_type	2	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:816
+requirement	?	unknown	is_open	1	1	kappa2/kappa2/utility/fmp/KFILMP.ESP:931
+requirement	sparse_array	instance	get_at	3	1	kappa2/kappa2/utility/ivt/IVTFILE.ESP:519
+requirement	sparse_array	instance	put_at	3	1	kappa2/kappa2/utility/ivt/IVTFILE.ESP:550
+requirement	{as_resource|as_program|as_class_with_lock}	class	locked	1	1	kappa2/kappa2/utility/ivt/IVTMNG.ESP:43
+requirement	{as_resource|as_program|as_class_with_lock}	class	lock	1	1	kappa2/kappa2/utility/ivt/IVTMNG.ESP:54
+requirement	{as_resource|as_program|as_class_with_lock}	class	new	2	1	kappa2/kappa2/utility/ivt/IVTMNG.ESP:55
+requirement	{as_resource|as_program|as_class_with_lock}	class	unlock	1	1	kappa2/kappa2/utility/ivt/IVTMNG.ESP:59
+requirement	?	unknown	unlock	2	1	kappa2/kappa2/utility/luu/LUUKPIF.ESP:95
+requirement	?	unknown	free_control_extent	2	1	kappa2/kappa2/utility/luu/LUULOAD2.ESP:949
+requirement	standard_choice_window	instance	set_title	2	1	kappa2/kappa2/utility/lvm/LVM.ESP:140
+requirement	standard_menu	instance	delete_item	2	1	kappa2/kappa2/utility/lvm/LVM.ESP:508
+requirement	disk_unit	class	create	5	1	kappa2/kappa2/utility/lvm/LVM.ESP:589
+requirement	{reshape_notifier|standard_superior_window|with_icon}	instance	set_icon	2	1	kappa2/kappa2/utility/mdu/MDU.ESP:97
+requirement	standard_temporary_multi_select_scrolling_menu	class	create	3	1	kappa2/kappa2/utility/mdu/TABLE.ESP:209
+requirement	standard_temporary_choice_window	instance	kill	1	1	kappa2/kappa2/utility/mdu/TABLE.ESP:293
+requirement	?	ambiguous	deactivate_window	1	1	kappa2/kappa2/utility/mop/MOPCOM.ESP:92
+requirement	?	unknown	set_stage	2	1	kappa2/kappa2/utility/mop/MOPLOGSW.ESP:31
+requirement	as_class_with_lock	class	locked	2	1	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:55
+requirement	?	unknown	draw_circle	7	1	kappa2/kappa2/utility/mop/MOPMANAGER.ESP:154
+requirement	{with_icon|with_shared_window|with_label|with_border|as_superior|as_input_buffer|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/utility/mop/MOPMWIN.ESP:63
+requirement	{with_icon|with_shared_window|with_label|with_border|as_superior|as_input_buffer|as_mouse_input|inferior_window}	instance	show	1	1	kappa2/kappa2/utility/mop/MOPMWIN.ESP:77
+requirement	as_class_with_lock	class	new	2	1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:39
+requirement	temporary_standard_io_window	class	create	3	1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:821
+requirement	kappaREP_select_menu	instance	set_label_font	2	1	kappa2/kappa2/utility/rcopy/RCPMNG.ESP:297
+requirement	kappaREP_select_menu	instance	set_font	2	1	kappa2/kappa2/utility/rcopy/RCPMNG.ESP:298
+requirement	{with_icon|standard_superior_window|reshape_notifier}	instance	set_icon	2	1	kappa2/kappa2/utility/rep/REPPROCESS.ESP:82
+requirement	{as_program|as_class_with_lock}	instance	get_e_window	2	1	kappa2/kappa2/utility/rep/REPPROCESS.ESP:214
+requirement	standard_temporary_scrolling_menu	instance	activate	1	1	kappa2/kappa2/utility/rep/REPTABLE.ESP:246
+requirement	standard_editor	instance	get_interface	2	1	kappa2/kappa2/utility/rep/REPTABLE.ESP:799
+requirement	<root>	instance	set_record_current_extent	2	1	kappa2/kappa2/utility/rep/UTLTBD.ESP:143
+requirement	{as_program|as_resource}	class	new	2	1	kappa2/kappa2/utility/tgt/TGTMAIN.ESP:27
+requirement	string_buffer	instance	get_data	3	1	kappa2/kappa2/utility/tgt/TGTSMT.ESP:198
+requirement	<root>	instance	close_file	1	1	kappa2/kappa2/utility/tgt/TGTSMT.ESP:335
+requirement	{labeled_sash|as_scroll|as_output|as_graphics|as_input|as_mouse_input|popup_window}	class	create	3	1	kappa2/kappa2/utility/tgt/TGTSWIN.ESP:59
+requirement	<root>	instance	get_result_window	2	1	kappa2/kappa2/utility/tgt/TGTUSER.ESP:533
+requirement	<root>	instance	get_top_window	2	1	kappa2/kappa2/utility/tgt/TGTUSER.ESP:539
+requirement	{as_single_select|as_multiple_column|as_mouse_input|inferior_window}	instance	set_superior	2	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:38
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	set_superior	2	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:39
+requirement	{as_single_select|as_multiple_column|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:41
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	activate	1	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:42
+requirement	{as_single_select|as_multiple_column|as_mouse_input|inferior_window}	instance	read_sense	2	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:68
+requirement	{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	read	2	1	kappa2/kappa2/utility/tgt/TGTWIN.ESP:124
+requirement	{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_bell|temporary_window}	instance	clear_items	1	1	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:64
+requirement	{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_bell|temporary_window}	instance	add_item	3	1	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:65
+requirement	?	unknown	set_system_sub_priority	2	1	kappa2/kappa2/utility/tool/LOADCH.ESP:89
+requirement	?	unknown	on_after	2	1	kappa2/kappa2/utility/tool/LOADCH.ESP:129
+requirement	?	unknown	draw_font	5	1	kappa2/kappa2/utility/tool/LOADCH.ESP:138
+requirement	{as_class_with_lock|as_program}	class	locked	1	1	kappa2/kappa2/utility/tool/LOADER.ESP:134
+requirement	{as_class_with_lock|as_program}	class	lock	1	1	kappa2/kappa2/utility/tool/LOADER.ESP:140
+requirement	{as_class_with_lock|as_program}	class	unlock	1	1	kappa2/kappa2/utility/tool/LOADER.ESP:147
+requirement	standard_multi_select_scrolling_menu	class	create	3	1	kappa2/kappa2/utility/tool/SDTPR.ESP:180
+requirement	standard_multi_select_scrolling_menu	instance	add_items	3	1	kappa2/kappa2/utility/tool/SDTPR.ESP:183
+requirement	standard_multi_select_scrolling_menu	instance	activate	2	1	kappa2/kappa2/utility/tool/SDTPR.ESP:184
+requirement	standard_multi_select_scrolling_menu	instance	read	2	1	kappa2/kappa2/utility/tool/SDTPR.ESP:185
+requirement	standard_multi_select_scrolling_menu	instance	kill	1	1	kappa2/kappa2/utility/tool/SDTPR.ESP:186
+requirement	condition_split	class	new	2	1	kappa2/kvif/esp/kap_serv.esp:363
+requirement	kappaP	instance	read_record	5	1	kappa2/kvif/esp/kap_serv.esp:399
+requirement	kappaP	instance	define_set	5	1	kappa2/kvif/esp/kap_serv.esp:652
+requirement	kappaP	instance	add_set	4	1	kappa2/kvif/esp/kap_serv.esp:653
+requirement	kappaP	class	create	3	1	kappa2/kvif/esp/kap_servP.esp:118
+requirement	kappaP	instance	open	2	1	kappa2/kvif/esp/kap_servP.esp:122
+requirement	monogyny_list_index	nature	(inherited)		1	kappa2/kappa2/kernel/flm/MONOPOOL.ESP:7
+requirement	access_status	nature	(inherited)		1	kappa2/kappa2/kernel/sto/STSOBJ.ESP:22
+requirement	hash_index	nature	(inherited)		1	kappa2/kappa2/kernel/svm/SVHSH_IDX.ESP:9
+requirement	message	nature	(inherited)		1	kappa2/kappa2/kernel/svm/SVMSOBJ.ESP:25
+requirement	with_pane	nature	(inherited)		1	kappa2/kappa2/user_if/pb/pbwin.esp:20
+requirement	scrolling_on_off_menu	nature	(inherited)		1	kappa2/kappa2/user_if/pb/tam.esp:10
+requirement	user_window	nature	(inherited)		1	kappa2/kappa2/utility/fmp/UTL_WIND.ESP:6
+requirement	with_no_execute_choice_item	nature	(inherited)		1	kappa2/kappa2/utility/mop/MOPCHONO.ESP:15
+requirement	esp_macro_expander	nature	(inherited)		1	kappa2/kappa2/utility/tool/LDTPR.SHELL:6
+requirement	as_rpc_server_tcp	nature	(inherited)		1	kappa2/kvif/esp/kap_serv.esp:9
+requirement	version	ref	(#ref)		1	kappa2/kappa2/kernel/flm/FILEM1.ESP:57
+requirement	temporary_scrolling_menu	ref	(#ref)		1	kappa2/kappa2/kernel/itr/RITRUINFO.ESP:48
+requirement	kappa_remote_interface	ref	(#ref)		1	kappa2/kappa2/kernel/net/SRVTCM.ESP:76
+requirement	double_key_index	ref	(#ref)		1	kappa2/kappa2/kernel/net/SRVCNF.ESP:145
+requirement	channel_set	ref	(#ref)		1	kappa2/kappa2/kernel/svm/SVMSG.ESP:91
+requirement	popup_choice_window	ref	(#ref)		1	kappa2/kappa2/user_if/pb/menus.esp:1095
+requirement	laser_printer	ref	(#ref)		1	kappa2/kappa2/user_if/pb/pcn.esp:3038
+requirement	cmt_device	ref	(#ref)		1	kappa2/kappa2/utility/bck/BCKFIF.ESP:2369
+requirement	standard_temporary_multi_select_scrolling_menu	ref	(#ref)		1	kappa2/kappa2/utility/mdu/TABLE.ESP:209
+requirement	temporary_standard_io_window	ref	(#ref)		1	kappa2/kappa2/utility/mop/MOPWINDOW.ESP:821
+requirement	standard_multi_select_scrolling_menu	ref	(#ref)		1	kappa2/kappa2/utility/tool/SDTPR.ESP:180
+requirement	condition_split	ref	(#ref)		1	kappa2/kvif/esp/kap_serv.esp:363
+requirement	kappaP	ref	(#ref)		1	kappa2/kvif/esp/kap_servP.esp:118

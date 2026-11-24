@@ -1,0 +1,147 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 38, printed folio 37. Appendix "A  Class Definitions" (continued from PDF p37; this is the last page of the report).
+% Transcribed by eye from 300dpi crops (pdftoppm -r 300; crops in A/work/tr0524/c38*.png).
+% Layout: two printed columns; left column first, then right column after a "%%%% COLUMN" marker (ours, not printed).
+% "..." elisions are printed in the original.
+% Transcriber notes:
+%  - binary_file_accessor :read_data/1 body passes "Buffer" (not "String") to :read_data/3, as printed.
+%  - remote_binary_file: a lone "%" line stands before :set_buffer_marker, as printed.
+%  - file_accessor: ":create(Class, Accessor, File)" appears before "instance" with no "class"-part keyword printed;
+%    it is a class method by position (ESP class part), as printed.
+
+------------------------------------------------------
+class  binary_file_accessor  has
+    nature   file_accessor ;
+
+instance
+%==================================================%
+% Higher Level Interface Methods                   %
+%==================================================%
+:read_data(Accessor, String) :- !,
+    :read_data(Accessor, Buffer, immediate) ;
+:read_data(Accessor, Buffer, RequestMode) :- !,
+    :read(Accessor, RequestMode),
+    :get_data(Accessor, Buffer) ;
+
+:read(Accessor, RequestMode) :- !,
+    :buffer(Accessor, Buffer),
+    :file_marker(Accessor, Marker),
+    :read(Accessor!file, Buffer, Marker, RequestMode) ;
+
+:add_data(Accessor, String) :- !,
+    :add_data(Accessor, String, immediate) ;
+:add_data(Accessor, String, RequestMode) :- !,
+    :put_data(Accessor, String),
+    :add(Accessor, RequestMode) ;
+
+:add(Accessor) :- !,
+    :add(Accessor, immediate) ;
+:add(Accessor, RequestMode) :- !, ... ,
+    :file_marker(Accessor, Marker),
+    :add(Accessor!file, Accessor!buffer, Marker,
+                                         RequestMode) ;
+
+:submit_add(Accessor, MsgID) :- !,
+    :submit_add(Accessor, MsgID, suppress) ;
+:submit_add(Accessor, MsgID, RequestMode) :- !, ... ,
+    :submit_add(Accessor!file, Accessor!buffer,
+            Accessor!file_marker, MsgID, RequestMode) ;
+
+:wait(Accessor, MsgID) :- !,
+    :wait(Accessor!file, Accessor!buffer,
+          Accessor!file_marker, MsgID) ;
+
+          ...
+end.
+------------------------------------------------------
+class  file_accessor  has
+
+:create(Class, Accessor, File) :- !,
+        unbound(Accessor),
+        :new(Class, Accessor),
+        :set_accessor(Accessor, File) ;
+
+
+          ...
+instance
+    attribute   file, file_marker, buffer ;
+
+:put_data(Accessor, StringOrVector) :- !, ... ,
+    :put_data(Accessor!buffer, StringOrVector), ... ;
+
+:get_data(Accessor, StringOrVector) :- !, ... ,
+    :get_data(Accessor!buffer, StringOrVector), ... ;
+
+          ...
+end.
+------------------------------------------------------
+%%%% COLUMN (right column of PDF p38 follows; marker not printed)
+------------------------------------------------------
+class  remote_binary_file  has
+
+         ...
+instance
+%==================================================%
+% Specification of Extra Information Delivery      %
+%==================================================%
+:set_parameters(Robj, read,
+            {Buffer, Marker, RequestMode}, Packet) :- !,
+    :set_buffer_marker(Robj, request_input,
+                       Buffer, Marker, Packet) ;
+
+:get_parameters(Lobj, read,
+             {Buffer, Marker, RequestMode}, Packet) :- !,
+    :get_buffer_marker(Lobj, request_input,
+                       Buffer, Marker, Packet) ;
+
+:set_returns(Lobj, read,
+             {Buffer, Marker, RequestMode}, Packet) :- !,
+    :set_buffer_marker(Lobj, reply_input,
+                       Buffer, Marker, Packet) ;
+
+:get_returns(Robj, read,
+             {Buffer, Marker, RequestMode}, Packet) :- !,
+    :get_buffer_marker(Robj, reply_input,
+                       Buffer, Marker, Packet) ;
+
+
+         ...
+%
+:set_buffer_marker(Obj, Type, Buffer, Marker, Packet) :- !,
+    :get_attributes(Buffer, Type, BufferAttributes),
+    :set_data_element(Packet, BufferAttributes), ... ;
+
+:get_buffer_marker(Obj, Type, Buffer, Marker, Packet) :- !,
+    :get_data_element(Packet, BufferAttributes),
+    :set_attributes(Buffer, Type, BufferAttributes), ... ;
+         ...
+end.
+------------------------------------------------------
+class  buffer  has
+   nature
+       as_remote_object ;    %% inherit ROAM %%
+          ...
+
+instance
+%==================================================%
+% Specification of Delivered Attributes            %
+%==================================================%
+:get_attributes(Buffer, request_input,
+                             [ByteSize, ElementSize]):- !,
+    :get_io_buffer(Buffer, ElementSize, ByteSize) ;
+
+:set_attributes(Buffer, request_input,
+                             [ByteSize, ElementSize]):- !,
+    :set_io_buffer(Buffer, ElementSize, ByteSize) ;
+
+:get_attributes(Buffer, reply_input,
+                     [Buffer!data_size, ReadBuffer]):- !,
+    :get_data(Buffer, ReadBuffer) ;
+
+:set_attributes(Buffer, reply_input,
+                             [DataSize, ReadBuffer]):- !,
+    :copy_data_buffer(Buffer, DataSize, ReadBuffer) ;
+
+          ...
+end.
+------------------------------------------------------

@@ -18,14 +18,14 @@ interface MemPort;
   method ActionValue#(Cell) data;        // the answer to a read, in order
 endinterface
 
-typedef 8 MemClients;
+typedef 10 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;
 endinterface
 
 typedef struct {
-  Bit#(3) who;
+  Bit#(4) who;
   Bool wr;
   Addr addr;
   Cell data;
@@ -49,7 +49,7 @@ module mkPimmMem#(String file)(PimmMem);
   // an earlier write from another box.
   FIFO#(MemReq) reqs <- mkFIFO;
   Vector#(MemClients, FIFO#(Cell)) resps <- replicateM(mkFIFO);
-  FIFO#(Bit#(3)) who <- mkSizedFIFO(4);
+  FIFO#(Bit#(4)) who <- mkSizedFIFO(4);
 
   rule issue;
     let r = reqs.first;
