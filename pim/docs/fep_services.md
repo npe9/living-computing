@@ -1209,6 +1209,10 @@ is around it:
    and is offered the command again, which is right, but has no source
    of events: a scripted login needs a trigger there too (a tape entry
    "at idle, queue this packet"), and the tapes a record kind for it.
+   DONE 2026-11-24: the emulator's `idle` input takes the next entry
+   of a script on the card (`tools/mkfepcard.py` writes
+   `fep.Fep().script`), the tapes have `idle` and `ticks` records, and
+   `kernel.tape` runs to the prompt (`bsv/PimmFepEmu.bsv`'s header).
 6. **A clock** is not needed for the prompt (the BIOS timer is local,
    step 3 of §3), but a 303 alarm would be a third kind of held
    reply, by the same table.
