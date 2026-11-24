@@ -358,7 +358,13 @@ completes, and MCP runs a job card through UNCODE, its loader and job end
 (`boot_plan.md`; `NEXT.md` "THE BSS PROCESSOR, RECONSTRUCTED"). The run
 leans on stubs: the dispatcher, `$RET`, and `$SCR`/`$FETCH` over core
 images instead of the disk.
-- **M-a.** Replace `$FETCH`'s core-image stub with MCP's own fetch from
+- **M-a. DONE 2026-11-24.** `check_bss_mcp_go.py` passes with the stub
+  deleted. Every `$FETCH` is now DISK FETCH (pp.311-318), run against the
+  disk saved by the same post-IPL run. BSS, PCBSS and the LB areas are on
+  the tape (PROSA_EXTRA, RECONSTRUCTION). TWS's words are planted
+  (SCAFFOLD). The remaining stubs are listed in the test header. As
+  first written:
+  Replace `$FETCH`'s core-image stub with MCP's own fetch from
   the 353. The simulated disk now holds what IPL writes (D2, merged
   `19b7234`: P1 writes arcs 0-32, 33 arcs, measured), so the stub's
   reason is gone. Exit: `check_bss_mcp_go.py` passes with the stub
