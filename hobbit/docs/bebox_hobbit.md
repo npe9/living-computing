@@ -149,10 +149,9 @@ One encoding matters for any decoder: MetaWare's code uses mode 7
 *without* a CPU escape, which is `Roffset:UH`, the unsigned half-word
 stack operand (PRM Table 1-21), e.g. `_memcpy+0x4e` (0x080DC9A6)
 `MOV R12:UH,*R8:H`; 43 instructions in the Nov 1994 kernel use it.
-`sem/hobbit_sem.py` executes it. `beelf.py` formats it itself because
-this branch's `asm/hobbit_asm.py` declines the form; the ISA work's
-commit b7dc9341 teaches `hobbit_asm` to print it, after which beelf's
-formatter can go.
+`sem/hobbit_sem.py` executes it, and `asm/hobbit_asm.py` prints it (the
+ISA work's commit b7dc9341; `beelf.py` had its own formatter until then,
+and a sweep of the kernel and app_server is identical either way).
 
 ## Booting it: `tools/beboot.py`
 

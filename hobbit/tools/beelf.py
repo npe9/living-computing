@@ -142,8 +142,6 @@ class Elf:
             # the instruction after one with the escape in front.
             lines = hobbit_asm.disassemble_parcels(([CPU_PARCEL] if cpu else []) + ps)
             line = lines[-1]
-            if not cpu and n == 3 and "(CPU prefix required for mode 7)" in line:
-                line = ".3 " + _mode7_uh(ps)
             cpu = p0 == CPU_PARCEL
             # PC-relative targets are printed as the instruction's own
             # offset in the list given (pc 2 after an escape): relocate.
@@ -154,28 +152,6 @@ class Elf:
             out.append((pc, line))
             pc += 2 * n
         return out
-
-
-def _mode7_uh(ps):
-    """A three-parcel dyadic with mode 7 and no CPU escape.
-
-    Without the escape, mode 7 is `Roffset:UH`, the unsigned half-word
-    stack offset (PRM Table 1-21 p. 1-25; docs/isa_inventory.md); only
-    after CPU is it the register mode (p. 3-14).  asm/hobbit_asm.py's
-    disassembler declines that form (Plan 9's compilers never emit it);
-    MetaWare's hc does, in memcpy, strcmp and others, so it is formatted
-    here.  hobbit_sem.py executes it."""
-    p0, src, dst = ps
-    opcode = (p0 >> 8) & 0x3F
-    name = [k for k, (code, _) in hobbit_asm.DYADICS.items() if code == opcode]
-
-    def fmt(mode, v):
-        if mode == 7:
-            off = v - 0x10000 if v & 0x8000 else v
-            return "R%d:UH" % off
-        return hobbit_asm._format_general_operand(mode, v, 16)
-    return "%s %s,%s" % (name[0] if name else "op%02x" % opcode,
-                         fmt((p0 >> 4) & 0xF, src), fmt(p0 & 0xF, dst))
 
 
 def _name_consts(elf, text):
