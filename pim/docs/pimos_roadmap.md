@@ -351,8 +351,15 @@ wherever the dialects differ. In dependency order:
    4050"); the shoen's first stage (`create_shoen`, `start_shoen`,
    termination) is on both models, `ref/pimm/lockstep_shoen.py`, and
    its second (`shoen_statistics`, `remove_shoen`, the image's monitors
-   to `Shut = shut`), `ref/pimm/lockstep_shoen2.py`; stop, abort,
-   resource limits and exceptions are not;
+   to `Shut = shut`), `ref/pimm/lockstep_shoen2.py`, and its third
+   (a reduction failure and `raise` reported as `exception(..)` to the
+   innermost shoen whose mask accepts, the handler's NewCode/NewArgv
+   run as the replacing goal; `stop_shoen`, start after stop,
+   `abort_shoen`; `current_processor`), `ref/pimm/lockstep_shoen3.py`;
+   resource limits (`add_shoen_resource`,
+   `allow_shoen_resource_report`, `resource_low`), profiling and the
+   unification failure are not, the resource part for want of a source
+   for the allowance and the threshold;
 6. garbage collection - only when a run exhausts memory; until then
    size memory to avoid it and record that.
 

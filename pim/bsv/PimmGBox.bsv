@@ -39,6 +39,11 @@
 //               is not counted (the new record's count starts at 1)
 //   unpark      a goal parked that way becomes READY and goes on the
 //               ready queue, as a woken goal does
+//   applyGoal   (stage 3) a READY goal of apply's stub with arguments
+//               a, b, of the current shoen and counted there, as
+//               unifyGoal makes its goal: the goal that waits for an
+//               exception's handler; answered through done
+//   takenGoal   the record of the goal the last pickup took
 //
 // The heap only grows; running out of memory stops the simulation.
 package PimmGBox;
@@ -68,6 +73,8 @@ interface PimmGBox;
   method Addr shoen;                            // the current shoen's record, 0 = the root
   method Action recordFor(Addr sh, Addr code, Bit#(8) argn);   // answered by recordResult
   method Action unpark(Addr g);                // answered by done
+  method Action applyGoal(Cell a, Cell b);     // answered by done
+  method Addr takenGoal;
 endinterface
 
 typedef union tagged {
@@ -75,6 +82,7 @@ typedef union tagged {
   struct { Bit#(2) status; Addr code; Bit#(8) argn; Bool fromArgv; Bool want; } Record;
   struct { Addr code; Bit#(3) argn; Vector#(7, Bit#(8)) operands; Bit#(7) outs; } WaitRecord;
   struct { Cell a; Cell b; } UnifyGoal;
+  struct { Cell a; Cell b; } ApplyGoal;
   Addr Alloc;
   struct { Addr g; Addr v; } Hook;
   Bit#(32) Wake;
@@ -113,6 +121,7 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)    cur   <- mkReg(0);    // the current shoen's record, 0 = the root
   Reg#(Addr)    rSh   <- mkRegU;      // the shoen of the record being written
   Reg#(Bool)    rCount <- mkRegU;     // ... and whether the record is counted there
+  Reg#(Bool)    ugApply <- mkReg(False);   // the goal of unifyGoal is applyGoal's
 
   FIFO#(GReq)          reqQ  <- mkFIFO;
   FIFO#(Cell)          varQ  <- mkFIFO;
@@ -216,6 +225,16 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         take(gArgs + 3);
         ugA <= q.a;
         ugB <= q.b;
+        ugApply <= False;
+        mem.write(hp + gLink, intC(linkOf(rq)));
+        st <= GUg1;
+      end
+      tagged ApplyGoal .q: begin
+        g <= hp;
+        take(gArgs + 2);
+        ugA <= q.a;
+        ugB <= q.b;
+        ugApply <= True;
         mem.write(hp + gLink, intC(linkOf(rq)));
         st <= GUg1;
       end
@@ -273,29 +292,35 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
     st <= GUg2;
   endrule
   rule ug2 (st == GUg2);
-    mem.write(g + gCode, intC(absAddr(unifyStepStub)));
+    mem.write(g + gCode, intC(absAddr(ugApply ? applyStub : unifyStepStub)));
     st <= GUg3;
   endrule
   rule ug3 (st == GUg3);
-    mem.write(g + gArgn, intC(3));
+    mem.write(g + gArgn, intC(ugApply ? 2 : 3));
     st <= GUg4;
   endrule
   rule ug4 (st == GUg4);
     mem.write(g + gArgs, ugA);
     st <= GUg5;
   endrule
+  function Action ugEnd();
+    action
+      rq <= g;
+      if (cur != 0) st <= GUgCnt0;
+      else begin
+        doneQ.enq(True);
+        st <= GIdle;
+      end
+    endaction
+  endfunction
   rule ug5 (st == GUg5);
     mem.write(g + gArgs + 1, ugB);
-    st <= GUg6;
+    if (ugApply) ugEnd;          // apply's goal has two arguments
+    else st <= GUg6;
   endrule
   rule ug6 (st == GUg6);
     mem.write(g + gArgs + 2, intC(0));
-    rq <= g;
-    if (cur != 0) st <= GUgCnt0;
-    else begin
-      doneQ.enq(True);
-      st <= GIdle;
-    end
+    ugEnd;
   endrule
 
   rule ugCount (st == GUgCnt0);
@@ -519,6 +544,8 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method Action waitRecord(Addr c, Bit#(3) argn, Vector#(7, Bit#(8)) operands, Bit#(7) outs) =
     reqQ.enq(tagged WaitRecord { code: c, argn: argn, operands: operands, outs: outs });
   method Action unifyGoal(Cell a, Cell b) = reqQ.enq(tagged UnifyGoal { a: a, b: b });
+  method Action applyGoal(Cell a, Cell b) = reqQ.enq(tagged ApplyGoal { a: a, b: b });
+  method Addr takenGoal = g;
   method Action alloc(Addr cells) = reqQ.enq(tagged Alloc cells);
   method ActionValue#(Addr) allocResult;
     allocQ.deq;

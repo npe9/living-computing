@@ -1,7 +1,8 @@
-// PIM/m core: the shoen box.  Stages 1 and 2 of the shoen:
-// create_shoen, start_shoen, termination, shoen_statistics and
-// remove_shoen, nothing more (no stop, abort, resource, profile or
-// exception: the exec stage refuses those built-ins).
+// PIM/m core: the shoen box.  Stages 1 to 3 of the shoen:
+// create_shoen, start_shoen, termination, shoen_statistics,
+// remove_shoen; (stage 3) the exception path, stop_shoen, abort_shoen
+// and the check of a goal taken from the ready queue.  No resource or
+// profile: the exec stage refuses those built-ins.
 //
 // What is PIM/m-sourced here: the handle's tag (38h SHREC, PIMOS
 // debugger/inspector/tagtbl.kl1) and the report stream's codes (8
@@ -52,6 +53,30 @@
 //                 f_shoen_with_fp.psl.c:69-71); one removed already:
 //                 ok = False
 //
+//
+// Stage 3 (docs/pimm_semantics.md "Shoen"; ref/pimm/pimm.py exception,
+// taken_check, i_stop_shoen, i_abort_shoen say what is sourced where):
+//   create(mask)  as above, the mask kept in SH_MASK after SH_REMOVE
+//   start(h)      also a STOPPED shoen; every goal of its parked list
+//                 (SH_GOAL, linked through G_LINK) is released, then the
+//                 list is emptied (SH_GOAL := 0)
+//   exception     the innermost shoen from the current one up whose
+//                 mask AND tag is not 0 (none: ok = False, before any
+//                 write); NewCode, NewArgv fresh; a READY goal
+//                 apply(NewCode, NewArgv) of the current shoen; for a
+//                 reduction failure (argn > 0) ArgV, a vector of
+//                 r[0..argn); Info {0, b, c}; the message {2, num, Info,
+//                 NewCode, NewArgv} on the found shoen's stream
+//   stop(h)       11, then STARTED becomes STOPPED
+//   abort(h)      a shoen at or above the current one: ok = False; 1,
+//                 then, unless it has terminated, it terminates as at an
+//                 ordinary end (12, the removal, the parent's reductions
+//                 and count)
+//   check(g)      the goal just taken: 0 run, 1 aborted (a TERMINATED or
+//                 REMOVED shoen at or above its own), 2 parked (on the
+//                 list of the innermost STOPPED one: status SUSPENDED,
+//                 G_LINK := the list, SH_GOAL := g).  Answered by checked
+//
 // Reporting a message: two new cells {INT, code}{UNDF}; the stream's
 // tail (the record's reference, followed through references by the
 // data box) is unified with the list cell, the goal box waking the
@@ -66,25 +91,36 @@ import PimmTypes::*;
 import PimmMem::*;
 import PimmDBox::*;
 import PimmGBox::*;
+import PimmRegs::*;
 
 typedef struct { Cell a; Cell b; Bool ok; } ShResult deriving (Bits);
 
 interface PimmShBox;
-  method Action create;
+  method Action create(Cell mask);
   method Action start(Cell handle);
   method ActionValue#(ShResult) result;
   method Action endReduction(Bit#(32) n);
   method Action ended;
   method Action statistics(Cell handle);
   method Action remove(Cell handle);
+  // stage 3
+  method Action exception(Bit#(32) num, Bit#(32) tag, Cell b, Cell c, Bit#(8) argn);
+  method Action stop(Cell handle);
+  method Action abort(Cell handle);
+  method Action check(Addr g);
+  method ActionValue#(Bit#(2)) checked;
 endinterface
 
 typedef union tagged {
-  void Create;
+  Cell Create;
   Cell Start;
   Bit#(32) EndReduction;
   Cell Stats;
   Cell Remove;
+  struct { Bit#(32) num; Bit#(32) tag; Cell b; Cell c; Bit#(8) argn; } Exception;
+  Cell Stop;
+  Cell Abort;
+  Addr Check;
 } ShReq deriving (Bits);
 
 typedef enum { ShIdle, ShC1, ShC2, ShC3, ShC4, ShC5, ShC6, ShC7,
@@ -92,9 +128,14 @@ typedef enum { ShIdle, ShC1, ShC2, ShC3, ShC4, ShC5, ShC6, ShC7,
                ShE1, ShE2, ShE3, ShE4,
                ShR1, ShR2, ShR3, ShR4, ShR5, ShR6, ShR7, ShR8,
                ShC8, ShC9, ShE0, ShE0b, ShT1, ShT2, ShQ1, ShQ2, ShQ3, ShM1, ShM2,
-               ShV1, ShV2, ShV3, ShV4, ShK1, ShK2, ShK3, ShK4, ShK5 } ShState deriving (Bits, Eq);
+               ShV1, ShV2, ShV3, ShV4, ShK1, ShK2, ShK3, ShK4, ShK5,
+               ShC10, ShS6,
+               ShX1, ShX2, ShX3, ShX4, ShX5, ShX6, ShX7, ShX8, ShX9, ShX10, ShX11, ShX12,
+               ShX13, ShX14, ShX15, ShX16,
+               ShP1, ShP2, ShA1, ShA2, ShA3, ShA4,
+               ShH1, ShH2, ShH3, ShH4, ShH5, ShH6 } ShState deriving (Bits, Eq);
 
-module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
+module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(PimmShBox);
   Reg#(ShState)  st     <- mkReg(ShIdle);
   Reg#(Addr)     sh     <- mkRegU;     // the shoen record in hand
   Reg#(Addr)     parent <- mkRegU;
@@ -109,6 +150,22 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   Reg#(ShState)  vnext  <- mkRegU;     // ... where to go on from
   Reg#(Addr)     vaddr  <- mkRegU;     // ... its three cells
   Reg#(ShState)  afterK <- mkRegU;     // where to go on from a removal
+  // stage 3
+  Reg#(Cell)     mask   <- mkRegU;     // create: the exception mask
+  Reg#(Addr)     g      <- mkRegU;     // start: the parked goal in hand; check: the goal
+  Reg#(Bit#(32)) xnum   <- mkRegU;     // an exception: its number, tag, Info's b and c
+  Reg#(Bit#(32)) xtag   <- mkRegU;
+  Reg#(Cell)     xb     <- mkRegU;
+  Reg#(Cell)     xc     <- mkRegU;
+  Reg#(Bit#(8))  xn     <- mkRegU;     // ... ArgV's size (0: c as given)
+  Reg#(Bit#(8))  xi     <- mkRegU;
+  Reg#(Addr)     xt     <- mkRegU;     // ... the shoen it goes to
+  Reg#(Cell)     xnc    <- mkRegU;     // ... NewCode, NewArgv
+  Reg#(Cell)     xna    <- mkRegU;
+  Reg#(Addr)     xa     <- mkRegU;     // ... a vector being written
+  Reg#(Addr)     park   <- mkRegU;     // check: the innermost stopped shoen, or 0
+  Reg#(Bool)     aborting <- mkReg(False);  // the end of a termination answers abort
+  FIFO#(Bit#(2))  chkQ <- mkFIFO;
   FIFO#(ShReq)    reqQ <- mkFIFO;
   FIFO#(ShResult) resQ <- mkFIFO;
   FIFO#(Bool)     endQ <- mkFIFO;
@@ -120,11 +177,28 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   Addr shGoal   = fromInteger(lay_SH_GOAL);
   Addr shRed    = fromInteger(lay_SH_REDUCTIONS);
   Addr shRemove = fromInteger(lay_SH_REMOVE);
+  Addr shMask   = fromInteger(lay_SH_MASK);
+  Addr gLink    = fromInteger(lay_G_LINK);
+  Addr gStatus  = fromInteger(lay_G_STATUS);
 
   function Action answer(Cell a, Cell b, Bool ok);
     action
       resQ.enq(ShResult { a: a, b: b, ok: ok });
       st <= ShIdle;
+    endaction
+  endfunction
+
+  // the end of a termination cascade: answers endReduction, or abort
+  function Action endOf();
+    action
+      if (aborting) begin
+        aborting <= False;
+        answer(?, ?, True);
+      end
+      else begin
+        endQ.enq(True);
+        st <= ShIdle;
+      end
     endaction
   endfunction
 
@@ -159,7 +233,8 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   rule accept (st == ShIdle);
     reqQ.deq;
     case (reqQ.first) matches
-      tagged Create: begin
+      tagged Create .m: begin
+        mask <= m;
         parent <= gbox.shoen;
         gbox.alloc(fromInteger(lay_SH_SIZE));
         st <= ShC1;
@@ -187,6 +262,42 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
         sh <= cellAddr(h);
         mem.read(cellAddr(h) + shStatus);
         st <= ShM1;
+      end
+      tagged Exception .q: begin
+        xnum <= q.num;
+        xtag <= q.tag;
+        xb <= q.b;
+        xc <= q.c;
+        xn <= q.argn;
+        if (gbox.shoen == 0) answer(?, ?, False);    // outside every shoen
+        else begin
+          xt <= gbox.shoen;
+          mem.read(gbox.shoen + shMask);
+          st <= ShX1;
+        end
+      end
+      tagged Stop .h: begin
+        sh <= cellAddr(h);
+        report(fromInteger(lay_REPORT_STOPPED), ShP1);
+      end
+      tagged Abort .h: begin
+        sh <= cellAddr(h);
+        if (gbox.shoen == cellAddr(h)) answer(?, ?, False);
+        else if (gbox.shoen == 0) begin
+          mem.read(cellAddr(h) + shStatus);
+          st <= ShA2;
+        end
+        else begin
+          mem.read(gbox.shoen + shParent);     // walking up from the current shoen
+          st <= ShA1;
+        end
+      end
+      tagged Check .q: begin
+        g <= q;
+        park <= 0;
+        sh <= gbox.shoen;
+        mem.read(gbox.shoen + shStatus);
+        st <= ShH1;
       end
     endcase
   endrule
@@ -232,6 +343,12 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
 
   rule create9 (st == ShC9);
     mem.write(sh + shRemove, intC(0));
+    st <= ShC10;
+  endrule
+
+  // stage 3: the exception mask
+  rule create10 (st == ShC10);
+    mem.write(sh + shMask, intC(mask.val));
     if (parent == 0) answer(var_, mkCell(tag_SHREC, absAddr(sh)), True);
     else st <= ShC6;
   endrule
@@ -251,7 +368,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   // ---- start -------------------------------------------------------
   rule start1 (st == ShS1);
     let c <- mem.data;
-    if (c.val != fromInteger(lay_DORMANT)) answer(?, ?, False);
+    if (c.val != fromInteger(lay_DORMANT) && c.val != fromInteger(lay_STOPPED)) answer(?, ?, False);
     else report(fromInteger(lay_REPORT_STARTED), ShS2);
   endrule
 
@@ -265,15 +382,39 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
     st <= ShS4;
   endrule
 
+  // the parked list, in its order: the next goal's link is read before
+  // the goal box rewrites it; then the list is emptied
   rule start4 (st == ShS4);
     let c <- mem.data;
-    gbox.unpark(cellAddr(c));
+    if (c.val == 0) begin
+      mem.write(sh + shGoal, intC(0));
+      answer(?, ?, True);
+    end
+    else begin
+      g <= cellAddr(c);
+      mem.read(cellAddr(c) + gLink);
+      st <= ShS6;
+    end
+  endrule
+
+  rule start6 (st == ShS6);
+    let c <- mem.data;
+    code <= c;                     // the next on the list
+    gbox.unpark(g);
     st <= ShS5;
   endrule
 
   rule start5 (st == ShS5);
     gbox.done;
-    answer(?, ?, True);
+    if (code.val == 0) begin
+      mem.write(sh + shGoal, intC(0));
+      answer(?, ?, True);
+    end
+    else begin
+      g <= cellAddr(code);
+      mem.read(cellAddr(code) + gLink);
+      st <= ShS6;
+    end
   endrule
 
   // ---- the end of a reduction ----------------------------------------
@@ -295,10 +436,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
     let c <- mem.data;
     mem.write(sh + shCount, intC(c.val - 1));
     if (c.val == 1) st <= ShE2;
-    else begin
-      endQ.enq(True);
-      st <= ShIdle;
-    end
+    else endOf;
   endrule
 
   rule end2 (st == ShE2);
@@ -325,10 +463,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
 
   rule end4 (st == ShE4);
     let c <- mem.data;
-    if (c.val == 0) begin
-      endQ.enq(True);
-      st <= ShIdle;
-    end
+    if (c.val == 0) endOf;
     else begin
       sh <= cellAddr(c);
       mem.read(cellAddr(c) + shRed);     // red: the child's total
@@ -365,6 +500,229 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
 
   rule remove2 (st == ShM2);
     answer(?, ?, True);
+  endrule
+
+  // ---- stage 3: an exception ------------------------------------------
+  // the shoen that takes it: the innermost whose mask AND the tag is not 0
+  rule exc1 (st == ShX1);
+    let c <- mem.data;
+    if ((c.val & xtag) != 0) begin
+      gbox.newVar;
+      st <= ShX3;
+    end
+    else begin
+      mem.read(xt + shParent);
+      st <= ShX2;
+    end
+  endrule
+
+  rule exc2 (st == ShX2);
+    let c <- mem.data;
+    if (c.val == 0) answer(?, ?, False);      // none: refused
+    else begin
+      xt <= cellAddr(c);
+      mem.read(cellAddr(c) + shMask);
+      st <= ShX1;
+    end
+  endrule
+
+  // NewCode, NewArgv, and the goal apply(NewCode, NewArgv) of the current
+  // shoen, which waits for the handler
+  rule exc3 (st == ShX3);
+    let v <- gbox.newVarResult;
+    xnc <= v;
+    gbox.newVar;
+    st <= ShX4;
+  endrule
+
+  rule exc4 (st == ShX4);
+    let v <- gbox.newVarResult;
+    xna <= v;
+    gbox.applyGoal(xnc, v);
+    st <= ShX5;
+  endrule
+
+  rule exc5 (st == ShX5);
+    gbox.done;
+    if (xn == 0) gbox.alloc(3);
+    else gbox.alloc(zeroExtend(xn));
+    st <= xn == 0 ? ShX8 : ShX6;
+  endrule
+
+  // a reduction failure's ArgV: r[0..xn) as they stand
+  rule exc6 (st == ShX6);
+    let a <- gbox.allocResult;
+    xa <= a;
+    mem.write(a, regs.r(0));
+    xi <= 1;
+    st <= ShX7;
+  endrule
+
+  rule exc7 (st == ShX7);
+    if (xi == xn) begin
+      xc <= mkCell(tag_VECT0o + (xn << 1), absAddr(xa));
+      gbox.alloc(3);
+      st <= ShX8;
+    end
+    else begin
+      mem.write(xa + zeroExtend(xi), regs.r(xi));
+      xi <= xi + 1;
+    end
+  endrule
+
+  // Info {Pe, b, c}: one processor, Pe = 0
+  rule exc8 (st == ShX8);
+    let a <- gbox.allocResult;
+    xa <= a;
+    mem.write(a, intC(0));
+    st <= ShX9;
+  endrule
+
+  rule exc9 (st == ShX9);
+    mem.write(xa + 1, xb);
+    st <= ShX10;
+  endrule
+
+  rule exc10 (st == ShX10);
+    mem.write(xa + 2, xc);
+    gbox.alloc(5);
+    st <= ShX11;
+  endrule
+
+  // the message {2, num, Info, NewCode, NewArgv}
+  rule exc11 (st == ShX11);
+    let a <- gbox.allocResult;
+    vaddr <= a;
+    mem.write(a, intC(fromInteger(lay_REPORT_EXCEPTION)));
+    st <= ShX12;
+  endrule
+
+  rule exc12 (st == ShX12);
+    mem.write(vaddr + 1, intC(xnum));
+    st <= ShX13;
+  endrule
+
+  rule exc13 (st == ShX13);
+    mem.write(vaddr + 2, mkCell(tag_VECT0o + 6, absAddr(xa)));
+    st <= ShX14;
+  endrule
+
+  rule exc14 (st == ShX14);
+    mem.write(vaddr + 3, xnc);
+    st <= ShX15;
+  endrule
+
+  rule exc15 (st == ShX15);
+    mem.write(vaddr + 4, xna);
+    sh <= xt;
+    code <= mkCell(tag_VECT0o + 10, absAddr(vaddr));
+    after <= ShX16;
+    st <= ShR1;
+  endrule
+
+  rule exc16 (st == ShX16);
+    answer(?, ?, True);
+  endrule
+
+  // ---- stage 3: stop (11 reported first) --------------------------------
+  rule stop1 (st == ShP1);
+    mem.read(sh + shStatus);
+    st <= ShP2;
+  endrule
+
+  rule stop2 (st == ShP2);
+    let c <- mem.data;
+    if (c.val == fromInteger(lay_STARTED)) mem.write(sh + shStatus, intC(fromInteger(lay_STOPPED)));
+    answer(?, ?, True);
+  endrule
+
+  // ---- stage 3: abort ----------------------------------------------------
+  // a shoen at or above the current one is refused
+  rule abort1 (st == ShA1);
+    let c <- mem.data;
+    if (c.val == 0) begin
+      mem.read(sh + shStatus);
+      st <= ShA2;
+    end
+    else if (cellAddr(c) == sh) answer(?, ?, False);
+    else mem.read(cellAddr(c) + shParent);
+  endrule
+
+  rule abort2 (st == ShA2);
+    let c <- mem.data;
+    xnum <= c.val;
+    report(fromInteger(lay_REPORT_ABORTED), ShA3);
+  endrule
+
+  rule abort3 (st == ShA3);
+    if (xnum == fromInteger(lay_TERMINATED)) answer(?, ?, True);
+    else begin
+      mem.read(sh + shRed);
+      st <= ShA4;
+    end
+  endrule
+
+  // it terminates now: the end of a reduction's termination, answering abort
+  rule abort4 (st == ShA4);
+    let c <- mem.data;
+    red <= c.val;
+    aborting <= True;
+    st <= ShE2;
+  endrule
+
+  // ---- stage 3: the goal just taken ----------------------------------------
+  rule check1 (st == ShH1);
+    let c <- mem.data;
+    if (c.val == fromInteger(lay_TERMINATED) || c.val == fromInteger(lay_REMOVED)) begin
+      chkQ.enq(1);
+      st <= ShIdle;
+    end
+    else begin
+      if (c.val == fromInteger(lay_STOPPED) && park == 0) park <= sh;
+      mem.read(sh + shParent);
+      st <= ShH2;
+    end
+  endrule
+
+  rule check2 (st == ShH2);
+    let c <- mem.data;
+    if (c.val != 0) begin
+      sh <= cellAddr(c);
+      mem.read(cellAddr(c) + shStatus);
+      st <= ShH1;
+    end
+    else if (park == 0) begin
+      chkQ.enq(0);
+      st <= ShIdle;
+    end
+    else begin
+      mem.read(g + gStatus);
+      st <= ShH3;
+    end
+  endrule
+
+  // parked: SUSPENDED, on the stopped shoen's list
+  rule check3 (st == ShH3);
+    let c <- mem.data;
+    mem.write(g + gStatus, intC({c.val[31:2], 2'd1}));
+    st <= ShH4;
+  endrule
+
+  rule check4 (st == ShH4);
+    mem.read(park + shGoal);
+    st <= ShH5;
+  endrule
+
+  rule check5 (st == ShH5);
+    let c <- mem.data;
+    mem.write(g + gLink, c);
+    st <= ShH6;
+  endrule
+
+  rule check6 (st == ShH6);
+    mem.write(park + shGoal, intC(absAddr(g)));
+    chkQ.enq(2);
+    st <= ShIdle;
   endrule
 
   // ---- a message {vcode, vhi, vlo} -------------------------------------
@@ -493,7 +851,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
     st <= after;
   endrule
 
-  method Action create = reqQ.enq(tagged Create);
+  method Action create(Cell m) = reqQ.enq(tagged Create m);
   method Action start(Cell handle) = reqQ.enq(tagged Start handle);
   method ActionValue#(ShResult) result;
     resQ.deq;
@@ -503,6 +861,15 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   method Action ended = endQ.deq;
   method Action statistics(Cell handle) = reqQ.enq(tagged Stats handle);
   method Action remove(Cell handle) = reqQ.enq(tagged Remove handle);
+  method Action exception(Bit#(32) num, Bit#(32) tag, Cell b, Cell c, Bit#(8) argn) =
+    reqQ.enq(tagged Exception { num: num, tag: tag, b: b, c: c, argn: argn });
+  method Action stop(Cell handle) = reqQ.enq(tagged Stop handle);
+  method Action abort(Cell handle) = reqQ.enq(tagged Abort handle);
+  method Action check(Addr goal) = reqQ.enq(tagged Check goal);
+  method ActionValue#(Bit#(2)) checked;
+    chkQ.deq;
+    return chkQ.first;
+  endmethod
 endmodule
 
 endpackage
