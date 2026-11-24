@@ -14,12 +14,16 @@ Labels used below:
 Each section separates **REIMPLEMENTABLE** material (printed precisely enough to code from) from
 **SKETCHED** material (described only).
 
-How each report was read:
-- Read by eye at 300 dpi throughout: TM-100, TR-524, TR-283, TR-046, TR-061, TR-056, TR-059, TM-061,
-  TM-065, TM-079, TM-125 and TM-126. For TR-046/056/059/061 the prose was read from OCR text and every
-  code, table and figure page by eye.
-- Read from OCR text, with figures and tables by eye: the remaining SIMPOS reports. Coverage is in
-  `coverage.tsv`.
+How each report was read (per-report detail in `coverage.tsv`):
+- **Every code, table and figure page by eye at 250-300 dpi.**
+  - TM-100: PDF p4-18 eyed in overlapping crops; p1-3 and p19 from OCR.
+  - TR-524 and TR-283: prose from OCR plus contact sheets; code, table and figure pages from 300 dpi crops.
+  - TR-046, TR-056, TR-059 and TR-061: prose from OCR; code, table and figure pages eyed.
+  - TM-061, TM-065, TM-079, TM-125 and TM-126: every page eyed.
+- **Remaining reports:** OCR triage, with selected pages eyed. TM-388, TM-364, TM-444 and the other
+  OCR-only items are labelled as such where cited.
+- **Prose quotations** are mostly OCR text corrected against the page image where it was viewed. Where
+  a page was not viewed, the quote is OCR.
 
 The papers themselves say their code is partial. For example, TM-100 p7: "Although we give several ESP
 codes as examples, they are not complete."
@@ -132,6 +136,8 @@ Points that are consistent across reports:
     (warning, fatal, normal) and help.
   - Recovery options: resume, fail, return to a resumption point, or kill the process. An error menu
     offers them.
+  - Process termination calls one cleanup method on each held resource object (TR-285 p11; method not
+    named). INFERENCE: this is the `resources` slot of `process` (TM-100 p8).
   - No method names are printed. TM-785 p3 shows such an error menu as text.
 
 ## 3. Memory, heap and GC (SKETCHED; mostly firmware)
@@ -163,7 +169,10 @@ Points that are consistent across reports:
 - **`bounded_channel` / `bounded_post_queue`** (TM-100 p17-18). A semaphore guards the post queue
   through before and after demons.
 - **`semaphore` and `event`** (TR-056 p13, bodies printed). A semaphore is a stream of the atom
-  `token`. An event is post = put and wait = get.
+  `token`, with `:p`, `:v`, `:init` and `:init(S, Count)`. An event is post = put and wait = get.
+  VARIANT: TM-100 p17 instead calls `:create(#semaphore, S, Limit)`, `:p_operation` and `:v_operation`,
+  and Fig. 3.9 has semaphore inherit `waiting_queue`. The names differ between the 1984 and 1985 papers and
+  are recorded as printed.
 - **Pools** (TR-056 p6-12, interfaces printed; `as_bucket` :get body and generic `tap` :get body
   printed):
   - `as_pool`; `sequence` with subclasses `array` and `list`;
@@ -333,9 +342,19 @@ Points that are consistent across reports:
     file-manipulator remote access built on ROAM.
 - **Network layering.** user-user (ROAM), then manager-manager, then handler-handler (session layer),
   then LIA/LIB (TR-283 p10-11).
-- **TCP/IP.** Available from spring 1989 (TR-524 p2-3). Planned in TM-401 p12.
-- **TELNET and FTP.** No held report describes them. TM-181 p5 mentions PSI-PSI and PSI-VAX file
-  transfer, without protocol.
+- **TCP/IP.** Planned in TM-401 p12 (Oct 1987).
+  - TM-430 p3-4 (1988; Hasegawa and Tatara, Mitsubishi/ICOT; read by eye; TRANSLATION):
+    - TCP/IP is implemented as a SIMPOS extension (software) plus firmware on a CIOP/XVLAN LAN board.
+    - A "socket interface ... provides each TCP/IP function in the form of methods": 32 sockets per
+      user, connection and connectionless, with routing via gateways. There is also a CIOP handler.
+    - The firmware tasks are listed in `listings/tm0430_p04.txt`.
+  - Available from spring 1989 (TR-524 p2-3).
+- **TELNET and FTP.** TM-430 p3 says ftp (file transfer program) and telnet (remote terminal program)
+  are "being prototyped as extensions of SIMPOS". No design is given.
+  - No other report found names them; this is based on a grep of all OCR text, so it rests on OCR.
+  - TM-181 p5 mentions PSI-PSI and PSI-VAX file transfer, without protocol.
+  - IPSJ papers on SIMPOS TELNET/FTP are held under `nonlocal/lit/ipsj/` (psi_acquisition.md section 5)
+    but were outside this pass's trtm/ scope and are not read here.
 - **Not printed:** the 14 other ROAM classes, field widths, byte order, the controller protocol and the
   network manager classes.
 
@@ -353,7 +372,8 @@ Points that are consistent across reports:
   auto-loaded.
 - **Package name resolution.** Own package first, then public classes of inherited packages in ESP
   inheritance order. The usual environment is `with_simpos` (TM-388 pp93-94, OCR only, not eyed).
-- **Librarian usage** (TM-785 p3; prior notes on IFS `.COM` files):
+- **Librarian usage** (TM-785 p3; prior notes on IFS `.COM` files). INFERENCE: the error menu shown there
+  is the situation/event recovery menu of section 2.
   - The librarian runs as a process `librarian_<n>`.
   - Command files run with `fdd("x.com")` from floppy.
   - Packages have a "package template file". The error menu offers "Erase existing package and

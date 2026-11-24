@@ -1,6 +1,7 @@
 # One row per (class, report). arity = arguments as printed EXCLUDING the receiver (class or instance) argument, written :name/N.
 # tier: PRINTED-SOURCE body printed; PRINTED-INTERFACE signature/table only; PROSE described in text; NAMED name only.
 # pdf_page = PDF page index of trtm/<report>.pdf (not printed folio). notes: EXAMPLE = tutorial/test class, not SIMPOS.
+# Class counts fold "-" to "_" in names and exclude names that occur only in EXAMPLE rows. Rows are as transcribed.
 class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes	source_part
 (any I/O destination)	-	-	-	:putc/1	PRINTED-INTERFACE	TR-285	11	8	"the character output method (:putc in SIMPOS)"; arity INFERENCE (one character argument)	TR-285.classes.tsv
 (measurement window, unnamed "ordinary window")	labeled_sash, as_scroll, as_output, as_graphics, as_markers, as_input, as_mouse_input, user_window				PRINTED-INTERFACE	TM-125	20-21	19-20	nature list used for the 6.1 speed measurements (tm0125_p20.txt); no class name, no order semantics stated	tm0125.classes.tsv
@@ -122,6 +123,7 @@ channel pool					PROSE	TR-056	17	15	defined like a stream pool; no send operatio
 child-window part class (子ウィンドウとしての機能を提供する部品クラス)					PROSE	TM-126	5	4	no identifier; INFERENCE: TM-125 as_inferior	tm0126.classes.tsv
 choice_item					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice item.	tm0125.classes.tsv
 choice_window			:create/2 (choice item vector {item_string,item_type,elements_list,initial_element,documentation})		PRINTED-INTERFACE	TM-125	8-13	7-12	stand-alone: the class for making a standard choice window	tm0125.classes.tsv
+CIOP handler					PROSE	TM-430	3	1	device handler for the LAN controller via CIOP	tm0430.classes.tsv
 context			:create/3 (Context_number, Stack_number, Context) (called)	:get_number/1, :set_entry_point/1, :activate/0, :set_priority/1 (called)	NAMED	TM-100	8-9	6-7	hardware context object used by process (comment: "% Hardware PC«?»").	tm0100.classes.tsv
 coordinator					PROSE	TR-046	11;14-16		manager of experts; destination '#coordinator' in translation-table clauses (p26,p28). ~20,000 characters of ESP (p17).	TR-046.classes.tsv
 coordinator	-	-	-	-	PROSE	TR-057	7-8	-	work-behind process managing experts; system_menu; whiteboard; key command table	TR-057.classes.tsv
@@ -271,7 +273,7 @@ pool	-	-	-	put/take (prose)	PROSE	TR-087	4	-	same text as TR-057; cites Saito et
 pool	-	-	-	-	NAMED	TR-086	4	-	same sentence	TR-086.classes.tsv
 pool (generic)				:tap/1; :next/2; :get_at/2	PRINTED-INTERFACE	TR-056	11-12	9-10	operations any pool must provide for a generic tap.	TR-056.classes.tsv
 popup_choice_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice window with popup feature.	tm0125.classes.tsv
-port	channel	instance: out_port(list)		:send/2 (body); local send/4; prose: :receive/2, :connect/1, :disconnect/1	PRINTED-SOURCE	TM-100	16	14	Figure 3.8; :connect/:disconnect named in prose (PDF p7, p16), not printed.	tm0100.classes.tsv
+port	channel	instance: out_port(list)		:send/2 (body); local send/4; signatures printed p7 (no body): :receive/2, :connect/1, :disconnect/1	PRINTED-SOURCE	TM-100	16	14	Figure 3.8; :connect/:disconnect named in prose (PDF p7, p16), not printed.	tm0100.classes.tsv
 port	channel (for its input channel)	list of output channels		:connect/1; :disconnect/0; :disconnect/1	PRINTED-INTERFACE	TR-056	15-16	13-14	virtual-circuit; send broadcasts to all connected ports. Listings TR-056_p15.esp, p16.	TR-056.classes.tsv
 port	-	-	-	send/receive (prose)	PROSE	TM-009	8	Page 7	channel created by connecting two ports	TM-009.classes.tsv
 port					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
@@ -281,7 +283,7 @@ port					PROSE	TR-061	5		"Port is the name of the class of objects that enable c
 port	-	-	-	-	PROSE	TR-087	4	-	"connected to another port with channels"	TR-087.classes.tsv
 post_queue				:add_object/1, :remove_object/1 (called)	PROSE	TM-100	14	12	"Any class of objects, including integers, atoms, and strings, can be put into the queue."	tm0100.classes.tsv
 post_queue_for_message				must be compatible with post_queue	PROSE	TM-100	15	13		tm0100.classes.tsv
-process	with_link, waiting_frame	class: ready_queue, instance_array; instance: context, priority, sub_priority, mask_count:=0, suspend_reason:=nil, suspend_reasons(list), suspend_flag:=nil, status:=nil, parent_process, children_processes(list), killer_process, invocation_stack(list), resources(list), world, user, interpreter_instance, clock(process_clock)	:create/1, :create_core/2	:activate/1, :resume/1, :suspend/1 (bodies); prose also :terminate/0; called on process: :status/2, :clear_masks/0, :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0	PRINTED-SOURCE	TM-100	7-10	5-8	Figure 3.1 "Part of class 'process'" (partial: "they are not complete"). status values nil(=dead), dormant, suspended, ready, (active) "and some others".	tm0100.classes.tsv
+process	with_link, waiting_frame	class: ready_queue, instance_array; instance: context, priority, sub_priority, mask_count:=0, suspend_reason:=nil, suspend_reasons(list), suspend_flag:=nil, status:=nil, parent_process, children_processes(list), killer_process, invocation_stack(list), resources(list), world, user, interpreter_instance, clock(process_clock)	:create/1, :create_core/2	:activate/1, :resume/1, :suspend/1 (bodies p8-9); signatures printed p5 (tm0100_p05-07_signatures.esp): :activate(Process,Program), :suspend(Process,Reason), :resume(Process,Reason), :terminate(Process) i.e. :terminate/0 (no body); called on process: :status/2, :clear_masks/0, :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0	PRINTED-SOURCE	TM-100	7-10	5-8	Figure 3.1 "Part of class 'process'" (partial: "they are not complete"). status values nil(=dead), dormant, suspended, ready, (active) "and some others".	tm0100.classes.tsv
 process	-	(management table held inside the class)	:create/1 (written :create(#process,P))	:activate/1 (Program), :terminate/0	PRINTED-INTERFACE	TM-225	6	-5-	call forms printed; arity excludes receiver; "process management consists only of the class called process; the class contains the management table data structure and the program operating on it" (p5)	TM-225.classes.tsv
 process		invocation stack; working world (instance slot)	:world/1	:activate/2; :suspend/1; :resume/1; :terminate/0	PRINTED-INTERFACE	TR-056	18-20;25	16-18;23	states running/ready/suspended/dormant; max 63 hardware processes, ~50 ordinary. :world(#process,World) is a class predicate returning the caller's world. Also :activate(Process,#program,Goal) (p20).	TR-056.classes.tsv
 process	-	-	-	initialization; termination; suspension; resumption (prose)	PROSE	TM-009	8	Page 7	"a meta-object ... instance of the class 'process'"; fork (::, !!) and remote call (@ world) creation; surrogate process	TM-009.classes.tsv
@@ -329,6 +331,7 @@ situation stack	-	-	-	-	PROSE	TR-285	10	7	"a table associated with the computati
 socket	-	-	-	-	PROSE	TR-055	20	17	connection point in a node	TR-055.classes.tsv
 socket	-	-	-	-	NAMED	TR-057	7	-	network subsystem class	TR-057.classes.tsv
 socket	-	-	-	-	NAMED	TR-087	5	-	-	TR-087.classes.tsv
+socket interface (TCP/IP)				"each TCP/IP function in the form of methods" (names not given)	PROSE	TM-430	3	1	32 sockets per user; connection and connectionless. Class name not given.	tm0430.classes.tsv
 sorted sequence	sequence				PROSE	TR-056	10	8	planned.	TR-056.classes.tsv
 source channel	channel				PROSE	TR-056	17	15	e.g. input character stream from a keyboard.	TR-056.classes.tsv
 source/sink port	(port)	-	-	-	PROSE	TM-009	8	Page 7	hole to the outer world; pseudo-process; open-ended channel	TM-009.classes.tsv

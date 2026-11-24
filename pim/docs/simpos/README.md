@@ -84,8 +84,10 @@ Add one to compare.
 
 ## 2. What is printed (the parts we can reimplement from the source)
 
-From `printed/STRUCTURE.md`: 100 transcriptions in `printed/listings/`,
-2,467 lines of ESP. The reports themselves warn that the code is
+From `printed/STRUCTURE.md`: 102 transcriptions in `printed/listings/`
+from 23 reports, read by eye at 250-300 dpi: 75 ESP files (1,166 code
+lines, comments and blanks not counted) and 27 figure or table
+transcriptions. The reports themselves warn that the code is
 partial (TM-100 p7: "they are not complete").
 
 | Area | What is printed | Source |
@@ -96,11 +98,21 @@ partial (TM-100 p7: "they are not complete").
 | ROAM, remote object access | wire tags; semantics complete | TR-283 |
 | Windows | mixin source for 4 classes, about 45 method signatures; the rest names | TM-065, TM-125 |
 | Coordinator | translation table and system menu source | TR-046, TR-061 |
-| GC, boot, IPL, librarian formats, scheduler, device handlers, disk format, TELNET/FTP | prose only, or absent | |
+| TCP/IP, TELNET, FTP | prose: prototyped as SIMPOS extensions on a socket interface giving TCP/IP functions as methods, 32 sockets per user; no class or method names | TM-430 p3 |
+| GC, boot, IPL, librarian formats, scheduler, device handlers, disk format | prose only, or absent | |
 
-By class (rows of `printed/classes.tsv`, one per class and report): 44
-with PRINTED-SOURCE (body printed), 45 with PRINTED-INTERFACE
-(signature or table), 252 with PROSE, 113 NAMED only.
+By class: 255 distinct classes (`printed/classes.tsv`, 456 rows of class
+and report; `-` folded to `_`, example-only names excluded), by best
+tier **28 PRINTED-SOURCE** (body printed), 30 PRINTED-INTERFACE, 140
+PROSE, 57 NAMED. The 28: process, interrupt_process, as_program,
+stream, channel, port, bounded_channel, bounded_post_queue, semaphore,
+event, tap, buffer; file, file_accessor, binary_file,
+binary_file_accessor, logical_file, local_ and remote_binary_file,
+local_logical_file, as_permanent_object, as_bucket; bare_window,
+with_border, with_label, window_with_border_and_label, system_menu,
+default_translation_table. Variants are recorded, not resolved
+(semaphore's methods in TM-100 against TR-056; `:invoke` class or
+instance in TM-100; `listings/VARIANTS_tm0061_vs_tm0065.txt`).
 `printed/NAMED_NOT_DEFINED.md` lists everything the reports name and
 never define.
 
@@ -161,7 +173,9 @@ Labelled OURS whenever built:
    screen machinery.
 4. **The file system's on-disk format** (prose only) and the device
    handlers.
-5. **The network's TELNET/FTP** and the PSI-NET layers (prose).
+5. **The network's TCP/IP socket classes, TELNET and FTP** (TM-430:
+   prose, no names) and the PSI-NET layers; the IPSJ TELNET/FTP papers
+   (`nonlocal/lit/ipsj/`) are not yet read.
 6. **The boot**: `boot_process` is described; the IPL is "written in
    ESP" and loaded from floppies; no byte layout is held.
 7. **KL0's opcode table**: it is to be named from known plaintext

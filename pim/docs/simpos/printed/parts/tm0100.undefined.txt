@@ -12,9 +12,10 @@ process_clock (p8)
 window (p10) -- :create :activate :read :write; etx character
 boot_process (p13), as_boot_program (p13) -- prose only
 Pool, World, Timer, Printer, Network subsystems (p5, Figure 2.1)
-process methods called but not printed: :status/3 ":status(Process, dormant, on_activate)", :entry_of_invoke/2,
-  :clear_masks/1, :inhibit_interrupt/1, :allow_interrupt/1 (class methods on #process), :self(#process, P),
-  :add_child/2, :add_program/2, :remove_program/2, :no_program/1, :die/1, :terminate/1
-set_vector_element/3 (p8) -- a built-in (no colon), not defined
-port :connect/:disconnect (p7,p16) -- prose only
+process methods called but not printed: :status/2 ":status(Process, dormant, on_activate)", :entry_of_invoke/1,
+  :clear_masks/0, :inhibit_interrupt/0, :allow_interrupt/0 (class methods on #process), :self(#process, P),
+  :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0 (arity excludes receiver).
+  :terminate(Process): signature printed p5, body not printed
+set_vector_element/3 (p8; plain predicate, all args) -- a built-in (no colon), not defined
+port :connect/:disconnect (p7) -- signatures printed p7, bodies not printed; p16 port class has no connect body
 "priority control" stream variation (p7)

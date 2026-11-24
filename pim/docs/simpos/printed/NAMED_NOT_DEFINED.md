@@ -3,7 +3,11 @@
 Part 1 is a synthesis grouped by subsystem; each entry carries the report and PDF page where the name occurs.
 Part 2 gives each report's raw list as its transcriber wrote it (from parts/*.undefined.txt), unedited.
 "Not defined" means no held report prints a body, an interface or a format for it. Names that one report leaves
-undefined but another defines are not listed here (for example semaphore: TM-100 uses it, TR-056 p13 prints it).
+undefined but another defines are not listed here (for example `stream` and `channel`: TR-056 uses them, TM-100 prints them).
+Caution: a definition in one report may not match usage in another. `semaphore` is the clearest case. TM-100 p17 uses
+`:create(#semaphore, S, Limit)`, `:p_operation` and `:v_operation`, and its Fig. 3.9 has it inherit `waiting_queue`.
+TR-056 p13 prints `:p`, `:v`, `:init` and `:init(S, Count)` over a stream of `token` atoms. The method names differ
+(VARIANT), so TM-100's `semaphore` interface is effectively undefined.
 
 ## Part 1 -- synthesis
 
@@ -14,8 +18,8 @@ undefined but another defines are not listed here (for example semaphore: TM-100
   (TR-055 p6, TR-057 p5); the `collect-garbage/1` built-in, firmware only (TR-213 p4).
 - Interrupt-process internals: the "%TRAP TO PROCESS ...", "%RELEASE PROCESSOR ...", "%ALLOCATE PROCESSOR ..."
   steps are elided in the print (TM-100 p12-13).
-- `:inhibit_interrupt/:allow_interrupt(#process)`, `:clear_masks`, `:status/3`, `:entry_of_invoke`, `:die`,
-  `:terminate` (TM-100 p8-11): called, but no body is printed.
+- `:inhibit_interrupt/:allow_interrupt(#process)`, `:clear_masks`, `:status/2`, `:entry_of_invoke`, `:die`,
+  `:terminate` (TM-100 p8-11): called, but no body is printed (`:terminate(Process)` signature printed p5).
 - `set_vector_element/3` and other KL0 built-ins (TM-100 p8).
 - Device handlers (bitmap, mouse, keyboard, disk): interrupt processes with handler channels (TR-059 p30;
   TM-125 p4, p20-21). No interface is given.
@@ -86,7 +90,11 @@ undefined but another defines are not listed here (for example semaphore: TM-100
   channel (TR-055 p20-21, TR-057 p7); `as_pervasive_object` (TR-056 p28-31).
 - LIA and NCP protocols, the 32-bit process-address layout, the process symbolic-name file format, the
   "message object" class (TM-401 p5-8).
-- TELNET and FTP: not named in any held report. File transfer (PSI-PSI, PSI-VAX), the DDX gateway and mail
+- TELNET and FTP: TM-430 p3 (status "fetched", not "held") says ftp and telnet were being prototyped as SIMPOS
+  extensions on a TCP/IP socket interface that "provides each TCP/IP function in the form of methods". It gives
+  no class or method names. No other report found names them, judging from a grep of all OCR text plus the eyed
+  pages. IPSJ papers on TELNET and FTP are held in `nonlocal/lit/ipsj/` (psi_acquisition.md section 5), but they
+  are outside the trtm/ scope of this pass and were not read. File transfer (PSI-PSI, PSI-VAX), the DDX gateway and mail
   are prose only (TM-181 p5, TM-401 p9-10).
 
 ### Boot and programming system
@@ -219,7 +227,7 @@ IPL bootstrap; firmware GC support                 p9-10
 ```
 
 ### tm0100
-```
+
 # TM-100: names used but never defined in the report (PDF page)
 with_link (p7,p10) -- role stated, no definition
 waiting_frame (p7,p10,p14) -- role stated
@@ -234,13 +242,19 @@ process_clock (p8)
 window (p10) -- :create :activate :read :write; etx character
 boot_process (p13), as_boot_program (p13) -- prose only
 Pool, World, Timer, Printer, Network subsystems (p5, Figure 2.1)
-process methods called but not printed: :status/3 ":status(Process, dormant, on_activate)", :entry_of_invoke/2,
-  :clear_masks/1, :inhibit_interrupt/1, :allow_interrupt/1 (class methods on #process), :self(#process, P),
-  :add_child/2, :add_program/2, :remove_program/2, :no_program/1, :die/1, :terminate/1
-set_vector_element/3 (p8) -- a built-in (no colon), not defined
-port :connect/:disconnect (p7,p16) -- prose only
+process methods called but not printed: :status/2 ":status(Process, dormant, on_activate)", :entry_of_invoke/1,
+  :clear_masks/0, :inhibit_interrupt/0, :allow_interrupt/0 (class methods on #process), :self(#process, P),
+  :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0 (arity excludes receiver).
+  :terminate(Process): signature printed p5, body not printed
+set_vector_element/3 (p8; plain predicate, all args) -- a built-in (no colon), not defined
+port :connect/:disconnect (p7) -- signatures printed p7, bodies not printed; p16 port class has no connect body
 "priority control" stream variation (p7)
-```
+
+### tm0430
+
+TM-430	ftp, telnet (SIMPOS extensions)	PROSE	prototyped; no design given (p3)
+TM-430	socket interface class and methods	PROSE	names absent (p3)
+TM-430	CIOP, XVLAN, C bus	PROSE	hardware named only
 
 ### tm0125
 ```
