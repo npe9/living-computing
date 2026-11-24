@@ -102,6 +102,17 @@ files run; observed):
     behaviour census does not see it);
   - put_variable_t (pmi a1) with A != X binds only A_A: only
     test_step3d_cells fails; the FEP census totals are unchanged.
+Step 3e's pmi ca, if_not_constant (2026-11-24, injected into kl0.py with
+the session's inject.py: backup, patch, both test files run, restored with
+cp and checked with cmp; observed):
+  - always jump (equal falls through no more): test_if_not_constant and
+    test_census fail here; test_espc test_census (behaviour) and
+    test_fep_census fail;
+  - never jump: only test_if_not_constant here (set_all/5 has no try chain,
+    so set_all_at fails); test_espc test_fep_census fails;
+  - an unbound A0 jumps: test_if_not_constant and test_census here;
+    test_espc test_fep_census;
+  - the jump base cell + 2 instead of + 3: only test_if_not_constant.
 """
 import os
 import sys
@@ -142,8 +153,56 @@ class Table(unittest.TestCase):
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
-        # 109 before step 3d's four (blt 6e 34, pmi b0 b4)
-        self.assertEqual(len(rows), 113)
+        # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
+        # step 3e's pmi ca
+        self.assertEqual(len(rows), 114)
+
+    def test_if_not_constant(self):
+        # pmi ca (step 3e, 2026-11-24): the first-clause guard.  The handler
+        # on its operands: unbound and equal fall through (cell + 2), any
+        # other bound value jumps (cell + 3 + s16), R != 0 refuses
+        m = machine()
+        code = types.SimpleNamespace(id='test', cells={1: (1, 0x00, 0, 256)},
+                                     t=types.SimpleNamespace(symbols=[]))
+        for x, want in ((K.Var(), 2), (256, 2), (255, 3 + 5), (K.Atom('nil'), 3 + 5),
+                        (K.Cons(1, K.NIL), 3 + 5)):
+            m.reset()
+            m.x[0] = x
+            m.op_if_not_constant(code, 0, 0, 0, 5, 5)
+            self.assertEqual(m.pc[1], want, x)
+        with self.assertRaises(K.Refusal):
+            m.op_if_not_constant(code, 0, 1, 0, 5, 0x01000005)
+        lib = m.lib
+        # no try chain: c_grade_ex.esp-style `set_all(0,P,H,N,M):-!;
+        # set_all(C,...) :- ..., set_all(C-1,...);` (p_buf4.esp:98-102),
+        # array_index_buffer set_all/5 @18a `ca 00 00 01`, integer 0,
+        # `27 00 00 00`, `f0`.  set_all_at(B, 2) on a 3 x 4 buffer sets
+        # element 2 of every row (p_buf4.esp:41-42)
+        cid = 'paragraph##array_index_buffer'
+        m.reset()
+        b = K.make_instance(m, cid)
+        co = lib.build(cid)
+        rows = [K.Vec([0] * 4, heap=True) for _ in range(3)]
+        b.slots[lib.slot_number(co, 'instance', 'root')] = K.Vec(rows, heap=True)
+        b.slots[lib.slot_number(co, 'instance', 'size')] = 3
+        self.assertEqual(len(send(m, b, 'set_all_at', 2)), 1)
+        self.assertEqual([repr(K.resolve(r)) for r in rows], ['{0,0,1,0}'] * 3)
+        # with a try chain: h draw_string/6 @122 (h.esp:189-190
+        # `draw_string(nil,X,Y,List,List,Win):-!; draw_string(S,...) :-
+        # type_check(S,S1),!, Font = Win!font, ...`).  nil and an unbound
+        # first argument take clause 1 (List = List2, S bound to nil); a
+        # string jumps to clause 2, which reads the unbound window's font
+        cid = 'paragraph##h'
+        code = m.code(cid)
+        (p,) = [p for p in lib.templates[cid].locals if (p.name, p.arity) == ('draw_string', 6)]
+        for s in (K.Atom('nil'), K.Var()):
+            L, L2 = K.Var(), K.Var()
+            args = [s, 1, 2, L, L2, K.Var()]
+            sols = [(K.resolve(L) is K.resolve(L2), K.resolve(args[0])) for _ in m.solve((code, p.offset), args)]
+            self.assertEqual(sols, [(True, K.Atom('nil'))], s)
+        with self.assertRaises(K.Refusal) as e:
+            list(m.solve((code, p.offset), [K.Str('ab'), 1, 2, K.Var(), K.Var(), K.Var()]))
+        self.assertEqual(e.exception.cause, 'unbound receiver')
 
     def test_step3d_cells(self):
         # step 3d's rows on their witness operands, handlers alone
@@ -447,7 +506,10 @@ class Census(unittest.TestCase):
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual(out, {'refused': 216, 'success': 303, 'failure': 11})
+        # step 3e's pmi ca: 4 refused methods now succeed (array_index_buffer
+        # and wshell_buffer set_all_at/2, reset_all_at/2) and 1 fails
+        # (csp_fep_main_program get/4); was 216 / 303 / 11
+        self.assertEqual(out, {'refused': 211, 'success': 307, 'failure': 12})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -470,7 +532,7 @@ class Census(unittest.TestCase):
             # unwitnessed) and up_down_icon code/4 at an unbound argument
             'receiver not an object': 8, 'unbound argument': 21, 'operand': 16,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
-            'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
+            'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,

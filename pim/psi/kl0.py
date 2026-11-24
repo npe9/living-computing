@@ -985,6 +985,18 @@ class Machine:
         else:
             self.pc = (code, off + 2)
 
+    def op_if_not_constant(self, code, off, a, b, c, v):
+        # pmi ca (2026-11-24): a first-clause guard; every held use has R = 0
+        if a != 0 or b != 0:
+            raise Refusal('operand', '%s @%x: pmi ca %02x %02x: only R = 0 is witnessed' % (code.id, off, a, b))
+        t = deref(self.x[a])
+        k = self.const_cell(code, self.operand(code, off))
+        if isinstance(t, Var) or (isinstance(k, int) and isinstance(t, int) and t == k) or \
+                (isinstance(k, Atom) and t is k):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
     def op_hash_constant(self, code, off, cell):
         mask, miss, ents = cell[3]
         t = deref(self.x[self.switch_reg(code, off)])

@@ -339,10 +339,12 @@ class Behaviour(unittest.TestCase):
         # code succeeds.  Step 3d (`{}`, four-element vectors,
         # set_subvector): 92 / 86 / 42 / 7 before; array_index_buffer's and
         # wshell_buffer's put_contents_with_key/2 now compile and succeed
-        # on both sides
-        self.assertEqual(dict(self.r['census']), {'same outcome': 94, 'both refused': 86,
+        # on both sides.  Step 3e's pmi ca (kl0): 94 / 86 / 40 / 7 before;
+        # array_index_buffer's and wshell_buffer's set_all_at/2 and
+        # reset_all_at/2 now run the held code too, and agree
+        self.assertEqual(dict(self.r['census']), {'same outcome': 98, 'both refused': 86,
                                                   'refused compiled only': 40,
-                                                  'refused held only': 7})
+                                                  'refused held only': 3})
 
 
 class MacroBank(unittest.TestCase):
@@ -918,12 +920,14 @@ end.''', 'simpos')
         # pmacs_window): 1,265 (36 inherited lock/unlock/locked methods,
         # 32 success, 4 locked/1 failure), 665 success (26 that refused),
         # 113 failure (8 that refused: tables empty after lock/1), 487
-        # refused; no method moved out of success.
+        # refused; no method moved out of success.  Step 3e's pmi ca: 666
+        # success (remote_pimfep_executor check_status/3), 486 refused; 22
+        # more refused methods stop later.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1265, {'success': 665, 'failure': 113, 'refused': 487}))
+        self.assertEqual((len(rows), out), (1265, {'success': 666, 'failure': 113, 'refused': 486}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

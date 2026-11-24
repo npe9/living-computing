@@ -304,8 +304,8 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 113 rows
-(100 at step 2, nine more at step 3c, four at step 3d)
+**Opcodes are named only from known plaintext.** Each of the 114 rows
+(100 at step 2, nine more at step 3c, four at step 3d, one at step 3e)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
@@ -313,7 +313,7 @@ An opcode without a row is refused loudly (`Refusal`, cause
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand (where no
 witness shows it). The rows are
-72 class-0 (`pmi`), 37 class-1 (`blt`) built-ins, 3 atom-cell forms
+73 class-0 (`pmi`), 37 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -1030,6 +1030,52 @@ of success):
   9, `network_node_name:node_name/2` 6, `get_my_node/2` 4,
   `pimos_file:create/2` 4, `pmacs_window:activate/1` 3, ...), unbound
   argument 60, unbound receiver 46.
+
+### Step 3e: pmi ca, the first-clause guard (2026-11-24)
+
+pmi ca was the first missing opcode of the FEP census (23 methods). Its
+row is witnessed in paragraph, with source:
+
+- `h draw_string/6` @122, `ca 00 00 05`, atom `nil`, then a try chain
+  (h.esp:189-190 `draw_string(nil,...):-!; draw_string(S,...):- ...`);
+- `color_grade_example set_pattern/4`, `ca 00 00 01`, integer 256, then
+  `get_integer`, `proceed` and no try chain (c_grade_ex.esp:125-126
+  `set_pattern(256,_,_,_):-!; set_pattern(N,S,P1,P2):- ...`);
+- `what_manipulator_shell show/2` (p_wshell.esp:370-374, `[]` against a
+  list).
+
+The reading: if A0 is bound and not the constant, jump to cell + 3 +
+s16, which is the second clause; if it is the constant, or unbound, fall
+through into the first clause. The unbound case is INFERENCE from the
+source: both witnesses must bind an unbound first argument to the
+constant, and a jump would skip that. MEASURED over the eleven packages
+(a scratch survey, 2026-11-24): 1,025 uses, all with R = 0. The target
+is always the cell after the first clause's last instruction. kl0 runs
+only R = 0 and refuses any other register.
+
+Tests (`test_kl0.py` `test_if_not_constant`): the handler on its
+operands; `array_index_buffer set_all_at/2`, through `set_all/5`, the
+form with no try chain (p_buf4.esp:98-102), sets one element of every
+row; `h draw_string/6` takes clause 1 for `nil` and for an unbound
+argument, and clause 2 for a string.
+
+Effect, compared method by method:
+
+- Six-package census: 303 / 11 / 216 becomes 307 / 12 / 211.
+  `array_index_buffer` and `wshell_buffer` `set_all_at/2` and
+  `reset_all_at/2` succeed. `csp_fep_main_program get/4` fails.
+- `espc.py behave`: those four methods now agree with the compiled code
+  (same outcome 94 -> 98). `espc.py check` is unchanged: espc does not
+  emit ca.
+- FEP census: 1,265 methods, 665 / 113 / 487 becomes 666 / 113 / 486.
+  - `remote_pimfep_executor check_status/3` succeeds.
+  - 22 refused methods stop later: 10 at "receiver not an object" (8
+    in the `scsi_communicator` family, `cmt` and `scsi`, which send to a
+    0 slot), 3 at blt 51, 3 at blt 3e, 2 at blt 50, 2 at `string/3` on
+    0, 1 at an unbound receiver, and `pimos_window
+    create_pimos_window/3` at the slot `activity` of the window, which
+    is not in the `pmacs_window` stand-in.
+  - No method moved out of success.
 
 ## Open
 
