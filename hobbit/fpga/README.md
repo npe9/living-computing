@@ -250,6 +250,269 @@ counts are 0 to 8, one decimal digit), and the whole stream took 11,548,517
 clocks (about 462 ms at 25 MHz). The pre-`cyc` build was checked the same way
 (41 lines, 4797 bytes, 10,414,387 clocks).
 
+## The SoC: the privileged core on SDRAM (2026-11-24)
+
+This is the Plan 9 board build. The `smoke.hex` build above is the
+earlier one and still works.
+
+| file | role |
+|---|---|
+| `bsv/HobbitSocCpu.bsv` | `mkHobbitSocCpu`: `mkHobbitCoreSystem` with its three memory faces turned into ports |
+| `rtl/hobbit_soc_mem.v` | the core's clock gate, write/read service, the combinational window |
+| `rtl/sdram_word.v` | one-word SDRAM controller for the W9825G6KH, written here. The board facts (CL2, the ODDRX1F clock, the DQ input register) follow the Flute ULX3S tree, which had no licence file when this was written; see `IP_PROVENANCE.md` |
+| `rtl/hostlink.v`, `rtl/uart8n1.v` | the framed host link on the FTDI UART: loader, start, I/O forwarding |
+| `rtl/hobbit_soc.v` | the SoC: address map, backend router, ROM block, I/O bus |
+| `rtl/ulx3s_hobbit_top.v` | pins, power-on reset, DCCA, SDRAM clock ODDRX1F, DQ I/O register |
+| `ulx3s_soc.lpf` | clock, button, LEDs, UART, WiFi enable, SDRAM |
+| `build_soc.sh` | bsc, yosys, nextpnr, ecppack into `build/soc/`; `build_soc.sh stub` builds the periphery alone into `build/soc-stub/` |
+| `rtl/cpu_stub.v` | same-ported stand-in for the core, for `build_soc.sh stub` only |
+| `area_cpu.sh` | synthesis-only area of `mkHobbitSocCpu`, optionally from a variant source tree |
+| `sim/run_soc.sh` | Verilator co-simulation: the SoC boots s9term against the reference |
+| `sim/sdram_model.v`, `sim/soc_sim_top.v`, `sim/soc_main.cpp` | its SDRAM model, top and driver |
+
+### The core's clock and its memory
+
+The core is written against three memory faces:
+
+* `HobbitMem`, which is synchronous. `readReq` registers an address and
+  `readData` returns that word on the next clock.
+* The MMU's table walk (`MmuTables.read`), which is combinational.
+* The event unit's vector memory (`HobbitEventMem.read`), also combinational.
+
+An SDRAM can answer none of them in time. The core also has no stall
+input. The SoC therefore stalls it from outside: the core runs on a gated
+copy of the system clock (an ECP5 `DCCA` whose CE changes on the falling
+edge). Between two core edges the core's registers hold. Its
+combinational logic meanwhile shows what the next edge will do: the read
+it will register, the writes it will make, and the words its walks and
+event sequence will read. `hobbit_soc_mem` makes memory agree with that
+before it allows the edge:
+
+1. On a core edge it captures the edge's writes (memory face, PTE R/M
+   writeback, event frame) and its read request.
+2. It performs the writes in that order and then the read. The read's
+   word stays on `rdData`, and a later write to the same address updates
+   it, because `mkHobbitMem`'s `readData` reads the array as it stands.
+3. It registers the core's **combinational probes** and fills a
+   16-entry associative window until every probe in RAM or ROM hits. A
+   probe at any other address is entered as 0.
+4. Then it sets `fire`, and the next rising edge is a core edge.
+
+The probes are computed in the core (`HobbitCore.combProbes`,
+`HobbitMmu.walkProbe`/`walkProbes`, `HobbitEvents.combProbes`). They
+replicate the walk's predicate (translation on, no TLB hit, no NPSR hit)
+for the four noted face translations. They also cover the event unit's
+frame and vector translations and the vector word, plus VB, which KCALL
+reads in EU_S2. Nothing in the machine reads them, so every simulation
+is unchanged.
+
+A probe that depends on a word just fetched (a page entry selected by a
+segment entry) settles in a second round. The window is read through
+`winRead`, so a walk that a probe failed to name would read 0. The
+co-simulation below would catch that as a record mismatch.
+
+The core counts its own clocks, so its retirements, and its `cyc`, do
+not depend on how many system clocks each core clock took.
+nextpnr times the gated domain and every crossing at the full system
+clock period. It derives the gated clock's constraint through the DCCA
+(checked on a two-register prototype before this design: "Derived
+frequency constraint of 25.0 MHz for net gclk", with both crossings
+reported and timed).
+
+### Memory map
+
+From `tools/p9boot.py`, which follows `io.h`:
+
+| physical | SoC |
+|---|---|
+| 0x00000000-0x00003FFF | ROM block RAM, 16 KB, loaded by the host (the fpi image is 13 KB at +0x20) |
+| 0x00004000-0x0007FFFF | rest of PROMBASE: forwarded |
+| 0x80000000-0x81FFFFFF | SDRAM, 32 MB (the kernel is told 8 MB in PPage0, as in p9boot) |
+| 0xB0000000 + | IOACK: incon +0x000, iic +0x080, quart +0x100, lcd +0x3000 |
+| 0xB8000000 + | IONAK: ioctl +0x000, irq +0x080, scsi +0x100, rtc +0x2000-0x3FFF |
+| 0xA4400000 | SONIC |
+| anything else | forwarded |
+
+Until a device's RTL lands in `rtl/hobbit_soc.v`'s I/O bus, every I/O
+access is forwarded over the host link. That includes the ROM above
+16 KB and any unmapped address.
+
+### The host link
+
+`rtl/hostlink.v` runs on the FTDI UART (8N1, 1 Mbaud by default, CPB =
+25 at 25 MHz). Multi-byte fields are big-endian.
+
+| host → board | | board → host |
+|---|---|---|
+| `P` | ping | `p` st clk5 ret4 |
+| `W` a4 d4 | write a word | `w` |
+| `R` a4 | read a word | `r` d4 |
+| `B` a4 n2 d4×n | write n words | `b` |
+| `G` e4 | start at the entry (the ROM's hand-off: SP = MSP = PSW = 0) | `g` |
+| `D` d4 | answer to `F` | |
+| `I` l1 | interrupt level from the host's models (7 = none) | |
+| | | `F` k1 a4 d4 clk5: a forwarded access (k = 0 read, 1 write); the board waits for `D` |
+| | | `T` clk5: every 2^18 core clocks |
+
+`clk5` is the core's own clock count, which is the host models' time base.
+The loader (step 3) is `B` over RAM and the ROM block, then `W`s for
+PPage0, then `G`. The forwarding mode (step 2) has the host answer `F`
+from `tools/p9boot.py`'s device models.
+
+### Verification of the SoC
+
+`fpga/sim/run_soc.sh RECORDS` boots the shipped kernel (s9term) on the
+whole SoC in Verilator. That covers the gated core, the adapter,
+`sdram_word.v` against a behavioural W9825G6KH model with timing checks
+(`sim/sdram_model.v`), and the host link at the UART pins. Every retirement
+record is compared with the reference boot by `tools/p9coreboot.py`, as
+`bsv/run_p9kern.sh` does for the bare core. The driver (`sim/soc_main.cpp`)
+plays the host. It answers every forwarded access from the recording
+(`bsv/p9kern.c`) and replays the recorded interrupt.
+
+Result of `run_soc.sh 2893000` on 2026-11-24:
+
+```
+SOC end: the reference's last record; 2893027 records, 9920333 core clocks,
+  104939750 system clocks (10.58 per core clock), 16497 forwarded reads,
+  16526 forwarded writes
+P9KERN devices: 181 of 181 recorded reads replayed, 0 repeated, 16316
+  unrecorded (mispredicted path), ...; 16526 of 16526 writes matched, 0 differed
+MATCH: 2893000 records agree in every field but cyc (2865913 also agree in cyc)
+SOC console: 74 bytes, identical to the reference boot's
+```
+
+An earlier run of the same core compared the SoC's HRI lines with the bare
+core's `run_p9kern.sh` lines for the same 2,893,000 records. They were
+byte-identical, `cyc` included, so the gating is invisible to the core. That
+run used the parallel probe matcher, which is the same logic as the serial
+scan below.
+
+The test is discriminating. Dropping the page-entry probe makes the run fail
+at record 2849643, the first access to a paged stack address. The observed
+lines are in `run_soc.sh`'s header.
+
+**Wrong-path I/O reads.** The 16,316 unrecorded reads are reads the core
+issues on a path it then discards. Of them, 16,256 are `b0003004` and 58 are
+`b0003000`: one read of the LCD before each LCD write, because `HobbitMem`
+writes whole words. Two are reads of the SONIC `cr`. Forwarding answers them
+harmlessly. A device whose reads have side effects cannot accept them,
+though: the Quart's RX FIFO pop is one example. The core needs a
+non-speculative I/O read, one that drains before an I/O-space operand read,
+before the Quart's RTL is put behind the bus. In this prefix every Quart read
+was architectural.
+
+### Area, Fmax and the clock (step 1)
+
+`./build_soc.sh` (seed 1) on 2026-11-24:
+
+```
+yosys:   LUT4 97461   CCU2C 4167   TRELLIS_DPR16X4 1508   TRELLIS_FF 12480
+         DP16KD 8   MULT18X18D 11
+nextpnr: TRELLIS_COMB: 115955/83640   138%
+         TRELLIS_FF:    12480/83640    14%
+         TRELLIS_RAMW:   1508/10455    14%
+         DP16KD:            8/  208     3%
+         MULT18X18D:       11/  156     7%
+ERROR: Unable to place cell '...LUT4_Z_27', no BELs remaining to implement
+       cell type 'TRELLIS_COMB'
+```
+
+**The SoC does not fit the LFE5U-85F.** The privileged core alone is the
+overrun. `./area_cpu.sh` synthesises `mkHobbitSocCpu` (the core plus its
+port glue) by itself:
+
+| variant | LUT4 | CCU2C | DPR16X4 | FF | DP16KD | MULT18 | COMB est. |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| as built (`probes`) | 95,215 | 4,183 | 1,530 | 12,002 | 9 | 11 | 112,761 |
+| probe port tied Invalid (`noprobe`) | 95,634 | 4,189 | 1,530 | 12,002 | 9 | 11 | 113,192 |
+| prefetch ways stubbed to 0 (`nopf`, a lower bound) | 90,907 | 4,217 | 90 | 11,724 | 9 | 11 | 99,881 |
+| bsc `-opt-undetermined-vals -unspecified-to X` (`unspecx`) | 93,827 | 4,243 | 1,530 | 11,994 | 9 | 11 | 111,493 |
+| `synth_ecp5 -abc9` | 95,215 | 4,183 | 1,530 | 12,002 | 9 | 11 | 112,761 |
+
+"COMB est." is LUT4 + 2 x CCU2C + 6 x DPR16X4. That formula reproduces
+nextpnr's "Total LUT4s: 114843" for the full build exactly. The device has
+83,640.
+
+The abc9 row is identical because yosys 0.51's `synth_ecp5` already uses
+abc9 by default. Even the two real savings together (the whole prefetch
+store, about 12.9k, and the don't-care folding, about 1.3k) leave about
+98k, still 18% over before any device is added. Fitting the privileged core
+needs a redesign of its area, not a flag.
+
+The smoke build above (11,367 LUT4) is no measure of this core. Its program
+was a fixed 256-word image and the MMU and event unit were never enabled.
+Synthesis therefore folded most of the privileged machine away.
+
+The combinational probes cost nothing measurable. The variant whose probe
+port is tied to Invalid (`build/noprobe_bsv`) came out no smaller. Name-based
+attribution (`yosys` cell names) puts 19.8k LUT4 under `probes`, but those
+are the walk and TLB logic that the probe nets merely name.
+
+The adapter's 16-entry window now uses a serial scan, one probe per system
+clock. A parallel 22 x 16 matcher cost 26k LUT4 and is gone.
+
+**The periphery places and meets 25 MHz.** `./build_soc.sh stub` replaces
+the core with `rtl/cpu_stub.v`, a same-ported shift register that keeps every
+adapter input and output live:
+
+```
+nextpnr: TRELLIS_COMB: 9998/83640 11%   TRELLIS_FF: 3550   DP16KD: 8   DCCA: 2
+         Max frequency for clock '$glbnet$CLK$TRELLIS_IO_IN': 34.70 MHz (PASS at 25.00 MHz)
+         Max frequency for clock 'gclk': 328.30 MHz
+         CLK -> gclk 92.11 MHz, gclk -> CLK 296.47 MHz
+ecppack: build/soc-stub/hobbit_soc.bit, 461,434 bytes
+```
+
+The critical path is the adapter's probe scan (`pi` into the window compare).
+
+**The clock is the 25 MHz board oscillator, with no PLL.** The periphery
+closes there with 39% slack. The core's own Fmax is unknown until it places.
+nextpnr times the gated domain at the system clock's period, so the core
+must also meet 40 ns, a whole core clock in one system clock. At 10.58
+system clocks per core clock in the boot above, the core clock averages
+about 2.4 MHz. Wall-clock speed is not a goal (see "Building"),
+and nothing depends on it except the host models' time base, which is the
+core's own clock count.
+
+What would make it fit (not done here):
+
+* Move the prefetch ways (combinational-read `RegFile`s, replicated per
+  read port into DPR16X4 plus mux trees) into DP16KD. The gated clock
+  allows this: a block RAM read on the free-running clock settles inside
+  the ~10 system clocks between core edges. The bound above is at most
+  12.9k COMB.
+* The remaining ~87k COMB is spread across the pipeline's datapath:
+  stack cache, operand and result muxes, MMU, event unit. It has to
+  shrink by about a third, for example by multi-cycling the rare paths on
+  the gated clock or by moving the stack cache to block RAM. That is core
+  work, and it needs the lead's decision on scope.
+
+### Hardware window: run procedure (not yet runnable)
+
+No board action has been taken. The board is in use by the Linux Flute
+session. There is no bitstream of the full SoC because it does not place.
+The stub bitstream computes nothing and must not be loaded. When a
+full-SoC bitstream exists, the procedure for an owner-approved window is:
+
+1. Confirm with the owner that the Flute session has released the board.
+   Use only the FTDI port named for the window. Do not touch the microSD.
+2. `openFPGALoader -b ulx3s build/soc/hobbit_soc.bit`. This writes volatile
+   SRAM; never use `-f` (flash) in a shared window.
+3. LEDs: `led[5]` (SDRAM initialised) lights within 1 ms of reset.
+   `led[7:6]` (stopped, running) stay dark until `G`.
+4. Host: open the FTDI port at 1,000,000 baud, 8N1. Send `P`; expect
+   `p` (status byte, core clock count, retired count 0).
+5. Load: send `B` frames of the kernel image into 0x80000000+ and the fpi
+   ROM into 0x20+. Then send `W` frames for PPage0 (memsize 8 MB, argc 0,
+   env 0, the fpi vector, as `tools/p9boot.py` builds it). Read back a
+   sample with `R`.
+6. `G 80004000`. Answer every `F` with `D` from `tools/p9boot.py`'s device
+   models (the step-3 loader). The console is the Quart's channel-0 output,
+   which the models print.
+7. Afterwards: `openFPGALoader -b ulx3s -r` to restore the board to its
+   flash image for the Flute session.
+
 ## Credits
 
 **Flute: a free and open-source RISC-V CPU and SoC.**
