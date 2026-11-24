@@ -321,3 +321,49 @@ and ALF 2/3 (EM2 the operation) occurs with a branch that needs EM2 in
 Appendix A (pp.237-263) is the ESP object model and KL0 execution
 control (exceptions, remote cut, `on_backtrack`, `bind_hook`), not an
 instruction list; Appendix C (pp.278-285) a WAM instruction list.
+
+## 12. The window, Librarian and shell web search (2026-11-24)
+
+This search was delegated. Its record is
+`simpos/subsystems/web_search_2026-11-24.md`, which lists every source
+with its URL, whether it was opened or only located, and the negative
+results. It went into Japanese sources (IPSJ 全国大会 and SIG papers,
+CiNii, NDL) and wider (Common ESP, code hosts, Wayback, Usenet, museums).
+
+**No SIMPOS or CESP code or binaries were found.**
+
+Fifteen IPSJ papers were added to the manifest (`nonlocal/lit/ipsj/`).
+What they add:
+
+- **Window system.**
+  - IPSJ 118569 (AIR, 1990) says Common ESP's window system follows the
+    SIMPOS window specification. Its classes are `#window` and `#menu`,
+    the mixins `as_*` and `with_*`, and `#event`.
+  - IPSJ 122601 (ETL, 1992) ported an application from SIMPOS to CESP.
+    It lists the SIMPOS window classes the application used
+    (`standard_scrolling_menu`, `standard_io_window`, `labeled_sash`,
+    `as_scroll`, ...) and an ESP-to-CESP method table with arities
+    (`:kill`, `:draw_line/8`, `:read_with_click/3`, ...).
+- **Librarian.**
+  - IPSJ 118681 (1990) was already held but had not been read. Its
+    Fig. 1 shows the Librarian window's whole menu tree. Fig. 2 is the
+    menu definition from the Librarian's initialisation file.
+    Customisation arrived in SIMPOS 5.0.
+  - IPSJ 117623 describes CESP's equivalent.
+- **Shell.** The CESP papers (117622, 118567, 118568, 120512 and 4663)
+  show an environment based on Emacs, not SIMPOS's system menu. CESP's
+  "system coordinator" is a system-generation tool, not SIMPOS's
+  Coordinator.
+
+New leads, not contacted (contacting anyone needs the owner):
+
+1. CESP was given out as source code with four manual volumes on a
+   cartridge (comp.lang.prolog, 1992), so recipient institutions may
+   still hold copies.
+2. Some CESP manuals have entries in CiNii, but no library holding one
+   was found.
+3. Institutions that used CESP: ETL, 拓殖大学, 港湾短大, ASTEM and Oki.
+4. The AIR and MECS(Tokyo) authors are named in the record.
+5. Five SIMPOS manual titles that no known library holds, among them
+   「ESPプログラミング説明書－入出力管理編」 and
+   「小型化PSI/SIMPOS操作説明書 基本編 (SIMPOS5.0版)」.
