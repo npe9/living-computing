@@ -11,7 +11,7 @@ where a source says so -- its JTAG ID -- and is refused
   must be;
 * a FLUSHPBE whose own address and target differ in bit 10, which Be's
   November 1994 kernel avoids on the 020 (_flushpbe_020, _pbe_off,
-  _pbe_on), and a FLUSHPBE with a stack-offset-indirect operand, whose
+  _pbe_on; the March kernel pairs the bits the other way), and a FLUSHPBE with a stack-offset-indirect operand, whose
   target address the PRM leaves ambiguous;
 * a CONFIG write that sets the 92010's reserved bits 15:0;
 * every step, unless the run opts in to the 92010's Chapter 4 timing.

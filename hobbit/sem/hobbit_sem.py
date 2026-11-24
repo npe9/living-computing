@@ -82,8 +82,9 @@ CLI (fixed contract)::
 ``--part`` selects the part (``PARTS``; default 92010, unchanged).  The
 92020S differs only where a source says so (docs/att92020.md): its ID
 register, and refusals (``Unsourced92020``) where no source says what it
-does -- the encodings its Wait For Interrupt may occupy, a FLUSHPBE Be's
-020 workaround avoids, and its timing unless --borrow-92010-timing.
+does -- the encodings its Wait For Interrupt may occupy, a FLUSHPBE
+whose address and target differ in bit 10 (Be's two 1994 kernels
+disagree there), and its timing unless --borrow-92010-timing.
 
 IMAGE is text, one 32-bit word per line, eight hex digits, ascending
 addresses from 0.  The parcel at an even address is in bits 31:16 and the
@@ -668,7 +669,8 @@ class Unsourced92020(Unsupported):
     The reserved encodings are where the 92020's Wait For Interrupt
     instruction (MPR 7:14 p. 1; AT&T press release 18 Oct 1993) must
     live, and its encoding is not known; a FLUSHPBE whose own address
-    and target disagree in bit 10 is what Be's kernel avoids on the 020
+    and target disagree in bit 10 is what Be's November 1994 kernel
+    avoids on the 020, while its March kernel does exactly that
     (docs/att92020.md)."""
 
 
@@ -2372,16 +2374,19 @@ def step(state: State,
                             "(docs/att92020.md)")
                     if (sub == 0xC and state.part == "92020S"
                             and ((pc ^ target) >> 10) & 1):
-                        # Be's kernels run FLUSHPBE on the 020 only from
-                        # an address whose bit 10 equals the target's
-                        # (_flushpbe_020 picks the copy at _pbe_off or
-                        # _pbe_on, and _main1 checks they have not
-                        # moved).  What the part does otherwise is not
-                        # documented anywhere found (docs/att92020.md).
+                        # Be's November 1994 kernel runs FLUSHPBE on the
+                        # 020 only from an address whose bit 10 equals
+                        # the target's (_flushpbe_020 picks the copy at
+                        # _pbe_off or _pbe_on, and _main1 checks they
+                        # have not moved); its March kernel pairs them
+                        # the other way.  The model follows the later
+                        # kernel and refuses the other case; no document
+                        # found settles it (docs/att92020.md).
                         raise Unsourced92020(
                             "unsourced (92020S): FLUSHPBE at 0x%08x of "
                             "0x%08x, address bit 10 differs; Be's 020 "
-                            "workaround avoids this and no 92020 document "
+                            "workarounds disagree (November avoids this, "
+                            "March does only this) and no 92020 document "
                             "says what happens (docs/att92020.md)"
                             % (pc, target & MASK32))
                 elif sub == 0xB:
