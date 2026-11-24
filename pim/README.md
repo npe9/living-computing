@@ -18,6 +18,10 @@ diagram and descriptions — see the historical-accuracy rule in
 subset and stand-ins are tabulated in
 [`docs/kl1_model_status.md`](docs/kl1_model_status.md).
 
+PSI side (SIMPOS reconstruction, OURS): [`psi/`](psi/README.md) holds
+the Librarian's loader, which turns `.ptf` templates into class objects
+(2026-11-23).
+
 See [`plan.md`](plan.md) for the evidence gates and staged model.
 The primary-source acquisition manifest is [`docs/README.md`](docs/README.md).
 
