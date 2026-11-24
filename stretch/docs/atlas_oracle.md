@@ -297,9 +297,12 @@ The report echoes this list in its header:
   - I-box operands rotate over $X0-$X3 (PDF 114).
 - **I-box page.** External operands are at 10000₈ and 50000₈. Internal
   operands are 7.0, 8.0 and 9.0.
-- **Transmit.** The I-box block is 18.0 ($X2 up) for both source and
-  destination, so ibox_ibox transmits onto itself. The count is in
-  $X1.
+- **Transmit.** The I-box block starts at 18.0 ($X2). I-BOX TO I-BOX
+  sends from 18.0 to 19.0, one word apart. This is DERIVED from the row
+  extents (2026-11-23; "Where the model is furthest off" item 2).
+  Until then both blocks were 18.0, a transmit onto itself. The count
+  is in $X1. TI rows above 1WD with an I-box source are not run,
+  because PDF 106 prints them flat in the word count.
 - **Branch success.** Each copy branches to the next copy. The
   condition is set once in the set-up and stays set.
 - **VFL INTERNL** (forwarding pages only; the no-forwarding pages print
@@ -2284,15 +2287,187 @@ untouched.
      throughput the page measured, and there M+ sits 7-11 clocks low
      on every row. Why the budget does not survive in sequence is not
      diagnosed here.
-2. **Transmit is missing a fixed cost of about 30 clocks.** T and TI
-   are low by roughly 30 clocks at one word. The external-to-external
-   per-word slope roughly matches (about 10 clocks a word in both). To
-   and from the I-box, the model moves a word in about 2 clocks where
-   the 7030 takes about 14 (T ibox_ibox 11WD: 35 against 187). That
-   last figure rests on an assumption: the generator's I-box block is
-   18.0 for both source and destination, so ibox_ibox transmits a block
-   onto itself. PDF 105 says only that the index operands were in
-   $2-$14, and no self-test checks the transmit generator.
+2. **Transmit: the model charges the source, the 7030 charges the
+   destination, and the model has no fixed cost (diagnosed 2026-11-23,
+   the diagnosis half of `fidelity_plan.md` A7).** Measured on master
+   that day: T has 30 cells, median −48, down to −152. TI has 28 cells,
+   median −29. None of the 58 is within 3 clocks. The earlier text here
+   ("a fixed cost of about 30 clocks", "about 14 clocks a word to and
+   from the I-box") was half right. The "from the I-box" half is wrong:
+   a word FROM index storage costs the 7030 the same as one from core.
+
+   **What the pages measured** (read on the page images, Vol. 2 PDF
+   105-107; PDF 102-104 are the environmental pages, not transmit).
+   - PDF 105 (printed 98) is the whole commentary. External operands
+     are "in the two lowest memory boxes". Internal operands are in
+     4.0-9.0. "The index operands were in $2 through $14 (18.0 through
+     30.0)". And: "LA is emptied before the actual transmission of
+     information."
+   - Every T column on PDF 107 is a straight line in the word count n,
+     to within 0.13 clock. Least squares, in clocks:
+
+     | PDF 107, T | per word | fixed |
+     |---|---|---|
+     | ext_ext (n = 1-100), ext_int, ibox_ext, ibox_int | 10.03-10.05 | 38.15-38.21 |
+     | ext_ibox, ibox_ibox | 14.06 | 32.13-32.17 |
+     | int_int, int_ext | 22.05-22.07 | 28.09-28.18 |
+     | int_ibox | 18.07 | 28.18 |
+
+   - **The destination sets the rate, and the source does not**, unless
+     the source is an internal register. I-BOX TO EXTERNAL equals
+     EXTERNAL TO EXTERNAL on every row, to 0.03 µs. I-BOX TO I-BOX
+     equals EXTERNAL TO I-BOX to 0.01 µs. This is Vol. 1 Table 9
+     exactly (printed p.3-14, PDF 32, read on the image). Its loop times
+     are 3.0 µs (10 clocks) for EM→EM and XS→EM, and 4.2 µs (14 clocks)
+     for EM→XS and XS→XS. Its note: "Transmit to EM and IR identical in
+     time." Table 9 gives IR→EM and IR→XS 7.2 µs (24 clocks); the page
+     measures 22 and 18.
+   - **TI is 2 clocks (0.6 µs) cheaper than T.** The fixed parts are
+     36.15 against 38.19 to EM, and 30.19 against 32.17 to XS. The
+     slopes are the same. Table 9's continuation (printed p.3-15, PDF
+     33) says the opposite: "The immediate/direct and the
+     forward/backward options do not affect the timing of either
+     transmit or swap." The measurement is taken over the table here.
+     DERIVED: the 0.6 µs is the one I-box cycle that fetches the index
+     word holding the count. That is Blosk's Fig. 9 c5 "XF/ZJ", and
+     printed p.36: "the first cycle fetches the index word that
+     contains the count". An immediate count has no such word.
+   - **On PDF 106, every TI column whose source is internal or I-box is
+     flat in n.** That is six columns, not only the two the
+     transcription NOTE names. Each row equals its own 1WD cell. For
+     an I-box source, that cell equals the EXTERNAL-source 1WD cell for
+     the same destination: 13.28 to the I-box, and 13.85 against
+     13.84 / 13.85 to external and internal. So these rows timed one
+     word whatever their label says. UNEXPLAINED: PDF 105 is silent.
+     Since 2026-11-23 the generator does not run the I-box-source rows
+     above 1WD; there are 11 such cells. The internal-source columns
+     were never generated.
+
+   **The generator, checked against the pages.** It was wrong in one
+   place, and fixing that does not move the model.
+   - I-BOX TO I-BOX transmitted 18.0 onto 18.0. The row extents say the
+     two blocks are apart, if GENER ran every row that fitted.
+     EXTERNAL TO I-BOX and I-BOX TO EXTERNAL run to 13WD, exactly $2-$14.
+     I-BOX TO I-BOX stops at 11WD on both pages, which an offset of 0
+     would not explain. INTERNAL TO INTERNAL runs to 5WD in the six
+     words 4.0-9.0, so there the offset is at most 1. One offset fits
+     both: the receiving block starts one word on, 18.0 → 19.0, with at
+     most 12 words. This is DERIVED. Which way round is not printed,
+     and neither the 7030 (row for row, I-BOX TO I-BOX = EXTERNAL TO
+     I-BOX) nor the model cares.
+   - Re-run (PDF 106-107, `--tsv`). Every one of the 47 cells still
+     generated gives a model figure identical to before. T is
+     unchanged: 30 cells, median −48.35. TI goes from 28 cells, median
+     −29.35, to 17 cells, median −31.55. That is because the 11
+     flat-column rows are no longer run, and their small residuals (−7
+     to −27) were artifacts of an n-word program against a one-word
+     measurement.
+   - Everything else checked holds. The count is $X1's count field for
+     T (J = 1) and the immediate field for TI. The transmit is
+     forward, not a swap. External blocks are at 10000/50000 octal.
+     I-box blocks stay inside $2-$14, and no written word is $X1 or
+     $X15. `--selftest`'s new check 0b decodes every case for these;
+     its header gives the two injections that fail it.
+   - Not a generator fix, but recorded. "The two lowest memory boxes" is
+     not expressible in the model's map: `StretchMemory.unitOf` puts the
+     four-way boxes first, and Vol. 1 printed p.3-17 (PDF 35) has the
+     "two lower memory boxes" two-way. In the model, 10000₈+k and
+     50000₈+k are always the SAME unit.
+
+   **The model, read and probed** (`bsv/` read only; probes are
+   custom bodies through this script's binary).
+   - **Fixed cost: 15 clocks**, from any source to any destination
+     (1WD I-BOX TO EXTERNAL and I-BOX TO I-BOX are both 15.02). This is
+     `budgetClocks` = 2·`iboxCycles`(Transmit) = 2·7 = 14, plus the
+     dispatch clock (`StretchCore.startExecute`'s `ibusy`). The 7 is
+     commented "Blosk fig.9: 2 set-up + 5 per word". Blosk's cycles
+     are 0.5 µs (p.37: "one word per five cycles or 2.5
+     microseconds"; "two cycles or 1.0 microseconds"). In 7030 units
+     Table 9 gives 1.2 µs (4 clocks) of set-up and 3.0 µs (10 clocks) a
+     word. So 14 is about right for set-up plus one word to core, and
+     everything else is missing: decode, the LA drain, termination,
+     and the sequence costs.
+   - **The LA drain costs nothing in GENER's sequence.**
+     `StretchIBox.iboxHazard` does make a Transmit wait for the levels
+     (its default arm, "drain first"). But the model's transmit writes
+     storage directly and leaves no store levels behind it, so
+     back-to-back transmits find the look-ahead already empty.
+   - **Per word, the model charges the SOURCE read.** `rl_xmit` does a
+     serial read, waits for the response, then writes, one word at a
+     time, the first word moved by the Transmit arm in
+     `StretchExecute`. Measured slope: 2 clocks a word from index
+     storage, to either destination, and 10 a word from core.
+   - **The 10 from core matches the page by accident.** With the
+     generator's placement, destination word k is in the same unit as
+     source word k. Probed with the destination one word on (50001₈),
+     or in the two-way region (200000₈ → 220001₈), the slope is 17
+     clocks a word: the next source read waits out the previous write's
+     unit cycle (`memCycleClocks` 7, `memReadClocks` 5). The 1WD
+     EXTERNAL TO EXTERNAL cell is 20, not 15, for the same reason
+     (15.5 with the destination moved). The model's rate is the
+     memory's. The 7030's is the I-box loop: Fig. 9 starts the next
+     fetch (c12) before the previous store has left, and Table 9's 3.0
+     µs is longer than a box's 2.2 µs recycle.
+
+   **The residual, by part** (model − page, T; n words):
+
+   | column | model | page | residual |
+   |---|---|---|---|
+   | ibox_ext | 15 + 2(n−1) | 48.2 + 10.05(n−1) | −33.2 − 8.05(n−1) |
+   | ibox_ibox | 15 + 2(n−1) | 46.2 + 14.06(n−1) | −31.2 − 12.06(n−1) |
+   | ext_ibox | 15 + 10(n−1) | 46.2 + 14.06(n−1) | −31.2 − 4.06(n−1) |
+   | ext_ext | about 20 + 10(n−1) | 48.2 + 10.05(n−1) | about −28 to −38, flat |
+
+   These reproduce the TSV: ibox_ibox 11WD comes out at −151.8, ibox_ext
+   11WD at −113.7, ext_ibox 13WD at −79.9. TI is the same with the
+   page 2 clocks lower and the model unchanged, which is why TI's
+   residuals sit 2 clocks above T's. So:
+   - the **fixed part is −31 to −33 on every column**;
+   - the **per-word part is 0** to core from core (by the accident
+     above), **−4** to index storage from core, **−8** to core from
+     index storage, and **−12** to index storage from index storage.
+
+   **The change A7 should make** (`bsv/`, not built here). A transmit
+   of n words in GENER's sequence should cost F(dest) + n·L(dest).
+   - **L, per word, by destination, the source's place ignored.** It is
+     10 clocks to core storage or an internal register (Table 9, V1 PDF
+     32: 3.0 µs, EM→EM and XS→EM; "to EM and IR identical"), and 14 to
+     index storage (Table 9: 4.2 µs, EM→XS and XS→XS). PDF 107's slopes
+     are 10.05 and 14.06. An internal-register source is 22 to core
+     and 18 to index storage on PDF 107, against Table 9's 24 for both.
+     These are not generated; cite both. In `rl_xmit`, pace each word
+     at L clocks with the source read issued inside the period, as in
+     Fig. 9's loop (fetch c7, Y→CHKR c11, next fetch c12). Then
+     neither the read latency nor the unit collisions above set the
+     rate.
+   - **F, fixed, by destination: 38 clocks to core or internal, 32 to
+     index storage, for T.** Composition:
+     - set-up 1.2 µs = 4 (Table 9);
+     - dec 0.6 µs = 2 (Table 9's "+ dec"; V1 printed p.3-18, PDF 36:
+       "The decoding time of I-box instructions is 0.6 microsecond");
+     - termination 3.6 µs = 12 to core, 0.6 µs = 2 to index storage
+       (Table 9);
+     - a remainder of 20 (core) / 24 (index storage), which is FITTED
+       to PDF 107. It holds Table 9's "LA dr", which the table prints
+       with no number, and whatever else a back-to-back sequence costs.
+       The remainders differ, so Table 9's terminations are not wholly
+       serial in sequence (DERIVED).
+     This replaces `iboxCycles`' Transmit 7. A7 should charge the
+     remainder as a constant marked FIT. If the model's transmit
+     instead puts its words through look-ahead store levels and a
+     final IC level (Blosk p.37: "a final lookahead level is loaded
+     with the advanced IC value and any final indicators"), part of
+     the remainder becomes a real drain, and the constant must shrink
+     by whatever that drain measures.
+   - **TI: F − 2** (PDF 106 against 107; the count-word fetch, DERIVED
+     above). The model charges T and TI alike.
+   - **Prediction.** The fit's worst row is 0.13 clock, so built this
+     way the 47 generated cells should land within about 0.2 clock of
+     the page. That is a fit of two documented slopes and three fitted
+     constants to the same two pages, not a held-out test.
+   - **Still open:** the internal-operand columns (30 cells, PDF 105's
+     4.0-9.0 are the boundary and accumulator registers; not
+     generated), and PDF 106's flat columns.
 3. **Comparison with an inverted sign.** The 7030 ends early (K…
    INVERT (DU,64,4) prints 3.61 µs, 12 clocks); the model runs the
    whole field (41 clocks). This gives the only large *positive*
