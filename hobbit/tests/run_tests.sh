@@ -233,6 +233,21 @@ python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/026.hex" \
 python3 "$here/hri_check.py" --dut-lines "$tmp/026.sem" \
     --spec-lines "$here/golden/026.trace"
 
+# 027: a fetch fault is an instruction's own (s9term join record
+# 287,416,554): two NOPs at the end of a mapped page retire although the
+# prefetch window reaches the unmapped page after it.  025's tables.
+"$hobbit/bsv/run_golden.sh" 027 > "$tmp/027.model.raw"
+grep '^HRI ' "$tmp/027.model.raw" > "$tmp/027.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/027.model" \
+    --spec-lines "$here/golden/027.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/027.hex" \
+    --sp 0x100 --msp 0x180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000020 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 200c=00003001 2>/dev/null \
+    | grep '^HRI ' > "$tmp/027.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/027.sem" \
+    --spec-lines "$here/golden/027.trace"
+
 # The kernel boot on the core, a short sample (docs/p9boot.md, "The boot
 # on the core"): the shipped s9term from the ROM hand-off, physical
 # addressing, the first CRET into virtual mode (record 2,064), `main`

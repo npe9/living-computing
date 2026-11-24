@@ -44,7 +44,7 @@ esac
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024|025|026) ;;
+    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024|025|026|027) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -61,7 +61,7 @@ run_one() {
   # PSW 0x8600 = UL | X | S, as 017.md's "Pre-state" says.
   case "$stem" in
     017) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00008600);' ;;
-    023|025) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
+    023|025|027) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
     026) startcall='core.startPsw(32'"'"'h00005100, 32'"'"'h00005180, 32'"'"'h00010200);' ;;
     *)   startcall='core.start(32'"'"'h00000100, 32'"'"'h00000180);' ;;
   esac
@@ -91,8 +91,9 @@ run_one() {
     # run: the handler's two NOPs retire and the image ends.
     # 026 (026.md "Pre-state"): the same harness, page 5 writable (the
     # stack) instead of page 3 read-only, the handler at 0x8.
-    025|026)
-      if [ "$stem" = 025 ]; then
+    # 027 (027.md): 025's tables and vector.
+    025|026|027)
+      if [ "$stem" != 026 ]; then
         pte2=200c pte2v=00003001 vector=00000020
       else
         pte2=2014 pte2v=00005003 vector=00000008
