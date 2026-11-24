@@ -27,24 +27,32 @@
 //   control write with neither R nor W: the held set is dropped.
 //   clock register write without W: fault (the model's BusError).
 //
-// The counters run from `startBcd` at reset and tick every `ticksPerSec`
-// cycles of CLK.  The ULX3S path has no battery: time and NVRAM restart
-// from their initial values at every configuration.
+// The counters tick every `ticksPerSec` cycles of CLK.  Their time at
+// reset comes from the board's battery-backed MCP7940N over I2C when
+// mcpMode bit 0 is set, else (or when the chip does not answer, its
+// oscillator is not running, or it holds no valid time) from `startBcd`.
+// With mcpMode bit 1 set, every load (setrtc) is written back to the
+// MCP7940N.  The sequence and its sources are in rtc.md "The MCP7940N";
+// the NVRAM is not backed (rtc.md "A persistent NVRAM").
 //
 // Fail loud: `fault` is sticky and non-zero from the first access the
 // model refuses (or that the RTL cannot reproduce: a load of a value that
 // is not a valid calendar time).  The response is still given (data 0).
 package Rtc;
 
-import RegFile :: *;
-import FIFOF   :: *;
+import RegFile  :: *;
+import FIFOF    :: *;
+import Vector   :: *;
+import StmtFSM  :: *;
+import RtcI2c   :: *;
 
 export RtcIfc(..);
 export RtcTime(..);
 export mkRtc;
 export mkRtcCore;
 export rtcFaultNone, rtcFaultRegWriteNoW, rtcFaultBadLoad, rtcFaultLane,
-       rtcFaultNoHeld;
+       rtcFaultNoHeld, rtcFaultMcpWrite;
+export McpSeed(..);
 
 typedef struct {
    Bit#(8) year;  Bit#(8) mon;  Bit#(8) mday;  Bit#(8) wday;
@@ -58,13 +66,35 @@ interface RtcIfc;
    method ActionValue#(Bit#(32)) response;
    (* always_ready *) method Bool irq;                    // the MK48T02 has no interrupt pin
    (* always_ready *) method Bit#(8) fault;               // 0, or the first fault's code
+   // The MCP7940N link: open-drain pins (1 = pull low) and the lines as
+   // read back, then what the seed found and how many write-backs
+   // completed.
+   (* always_ready *) method Bit#(1) i2cSclLow;
+   (* always_ready *) method Bit#(1) i2cSdaLow;
+   (* always_ready, always_enabled *) method Action i2cPins(Bit#(1) scl,
+                                                            Bit#(1) sda);
+   (* always_ready *) method Bit#(4) mcpSeed;
+   (* always_ready *) method Bit#(8) mcpWrites;
 endinterface
+
+// mcpSeed values: how the counters got their time at reset.
+typedef enum {
+   SeedPending,      // 0  still seeding (requests wait)
+   SeedDisabled,     // 1  mcpMode bit 0 clear: startBcd
+   SeedFromChip,     // 2  the MCP7940N's time
+   SeedNoAck,        // 3  fallback: no ACK at 0x6F
+   SeedOscStopped,   // 4  fallback: ST or OSCRUN clear
+   SeedInvalid,      // 5  fallback: not a calendar time
+   SeedNoTick,       // 6  fallback: seconds never changed in 1.5 s
+   SeedBusStuck      // 7  fallback: SCL held low (stretch timeout)
+} McpSeed deriving (Bits, Eq);
 
 Bit#(8) rtcFaultNone        = 0;
 Bit#(8) rtcFaultRegWriteNoW = 1;   // clock register written without W
 Bit#(8) rtcFaultBadLoad     = 2;   // W cleared with a non-calendar value
 Bit#(8) rtcFaultLane        = 3;   // write without byte lane 0
 Bit#(8) rtcFaultNoHeld      = 4;   // W cleared with nothing held
+Bit#(8) rtcFaultMcpWrite    = 5;   // a write-back to the MCP7940N failed
 
 // ---- BCD calendar arithmetic -------------------------------------------
 
@@ -167,9 +197,51 @@ function RtcTime setField(RtcTime t, Bit#(3) i, Bit#(8) v);
    return t;
 endfunction
 
+// ---- the MCP7940N's registers (rtc.md "The MCP7940N") ------------------
+//   0x00 RTCSEC  ST 7, BCD 6:0        0x04 RTCDATE BCD 5:0
+//   0x01 RTCMIN  BCD 6:0              0x05 RTCMTH  LPYR 5 (r/o), BCD 4:0
+//   0x02 RTCHOUR 12/24 6, BCD 5:0     0x06 RTCYEAR BCD 7:0
+//   0x03 RTCWKDAY OSCRUN 5, PWRFAIL 4, VBATEN 3, weekday 2:0
+
+function Bit#(8) binToBcd(Bit#(7) v);   // 0..99
+   Bit#(4) t = 0;
+   Bit#(7) r = v;
+   for (Integer k = 9; k >= 1; k = k - 1)
+      if (t == 0 && v >= fromInteger(k * 10)) begin
+         t = fromInteger(k);
+         r = v - fromInteger(k * 10);
+      end
+   return {t, r[3:0]};
+endfunction
+
+function Bool mcpRunning(Vector#(7, Bit#(8)) m) =
+   m[0][7] == 1 && m[3][5] == 1;
+
+function Maybe#(RtcTime) fromMcp(Vector#(7, Bit#(8)) m);
+   RtcTime t = ?;
+   t.sec  = m[0] & 8'h7F;
+   t.min  = m[1] & 8'h7F;
+   Bool ok = True;
+   if (m[2][6] == 0)
+      t.hour = m[2] & 8'h3F;
+   else begin                               // 12-hour mode: AM/PM in 5
+      Bit#(8) h = {3'b0, m[2][4:0]};
+      Bit#(7) hb = bcdToBin(h);
+      ok = bcdValid(h) && hb >= 1 && hb <= 12;
+      Bit#(7) h24 = ((hb == 12) ? 0 : hb) + ((m[2][5] == 1) ? 12 : 0);
+      t.hour = binToBcd(h24);
+   end
+   t.mday = m[4] & 8'h3F;
+   t.mon  = m[5] & 8'h1F;
+   t.year = m[6];
+   t.wday = weekDay(t.year, t.mon, t.mday);
+   return (ok && timeValid(t)) ? tagged Valid t : tagged Invalid;
+endfunction
+
 // ---- the device ---------------------------------------------------------
 
-module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile)
+module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
+                 Bit#(2) mcpMode, Bit#(16) i2cQuarter)
                  (RtcIfc);
    // NVRAM: one block RAM; the read address is registered (rdAddr), so
    // yosys maps it to a DP16KD (docs/area_analysis.md).
@@ -187,8 +259,141 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile)
    RWire#(RtcTime) loadW <- mkRWire;
    FIFOF#(Bit#(32)) resp <- mkFIFOF;
 
+   // ---- the MCP7940N link ----
+   RtcI2cIfc i2c <- mkRtcI2c(i2cQuarter, 20'hFFFFF);
+   Reg#(Bit#(32)) cyc       <- mkReg(0);       // free-running
+   // Without the chip the device takes requests from the first cycle.
+   Reg#(Bool)     seeded    <- mkReg(mcpMode[0] == 0);
+   Reg#(McpSeed)  seedR     <- mkReg((mcpMode[0] == 0) ? SeedDisabled
+                                                       : SeedPending);
+   Reg#(Bit#(8))  wbCount   <- mkReg(0);
+   Reg#(Bool)     wbFault   <- mkReg(False);
+   Reg#(Bit#(8))  wbSeq     <- mkReg(0);       // loads to write back
+   Reg#(Bit#(8))  wbDone    <- mkReg(0);       // ... and written
+   Reg#(RtcTime)  wbTime    <- mkRegU;
+   Reg#(RtcTime)  wt        <- mkRegU;
+   Vector#(7, Reg#(Bit#(8))) mb <- replicateM(mkRegU);
+   Reg#(Bool)     ok        <- mkReg(True);
+   Reg#(Bool)     stuck     <- mkReg(False);
+   Reg#(Bit#(3))  i         <- mkReg(0);
+   Reg#(Bit#(8))  b         <- mkReg(0);
+   Reg#(Bit#(8))  firstSec  <- mkReg(0);
+   Reg#(Bit#(32)) pollStart <- mkReg(0);
+   Reg#(Bool)     done      <- mkReg(False);
+   Bit#(32) pollLimit = ticksPerSec + (ticksPerSec >> 1);
+
+   Vector#(7, Bit#(8)) mbv = readVReg(mb);
+
+   function Action send(I2cKind k, Bit#(8) d, Bool a) =
+      i2c.cmd(I2cCmd { kind: k, data: d, ack: a });
+   Action take = action
+      let r <- i2c.resp;
+      b <= r[7:0];
+      if (r[8] == 1) begin ok <= False; stuck <= True; end
+   endaction;
+   // START, STOP: always sent (a STOP frees the bus after an error).
+   Stmt startC = seq send(Start, 0, False); take; endseq;
+   Stmt stopC  = seq send(Stop, 0, False);  take; endseq;
+   // A byte out, skipped once anything failed; a NACK fails.
+   function Stmt wr(Bit#(8) d) = seq
+      if (ok) seq
+         send(Write, d, False);
+         action
+            let r <- i2c.resp;
+            if (r != 0) ok <= False;
+            if (r[8] == 1) stuck <= True;
+         endaction
+      endseq
+   endseq;
+   function Stmt rd(Bool ack) = seq
+      if (ok) seq send(Read, 0, ack); take; endseq
+   endseq;
+   // Register `r` onward into mb[0..n-1] (b is overwritten by the STOP).
+   function Stmt readRegs(Bit#(8) r, Bit#(3) n) = seq
+      action ok <= True; stuck <= False; endaction
+      startC;
+      wr(8'hDE);                  // 0x6F, write
+      wr(r);
+      startC;                     // repeated START
+      wr(8'hDF);                  // 0x6F, read
+      for (i <= 0; i < n; i <= i + 1) seq
+         rd(i != n - 1);          // ACK all but the last byte
+         mb[i] <= b;
+      endseq
+      stopC;
+   endseq;
+
+   Stmt seed = seq
+      readRegs(0, 7);
+      if (!ok) seedR <= (stuck ? SeedBusStuck : SeedNoAck);
+      else if (!mcpRunning(mbv)) seedR <= SeedOscStopped;
+      else if (!isValid(fromMcp(mbv))) seedR <= SeedInvalid;
+      else seq
+         // Wait for the chip's next second, then read it all again: the
+         // counters start in phase with the chip (to within one read).
+         action firstSec <= mb[0]; pollStart <= cyc; done <= False; endaction
+         while (ok && !done && cyc - pollStart < pollLimit) seq
+            readRegs(0, 1);
+            done <= (mb[0] & 8'h7F) != (firstSec & 8'h7F);
+         endseq
+         if (!ok) seedR <= (stuck ? SeedBusStuck : SeedNoAck);
+         else if (!done) seedR <= SeedNoTick;
+         else seq
+            readRegs(0, 7);
+            if (!ok) seedR <= (stuck ? SeedBusStuck : SeedNoAck);
+            else if (isValid(fromMcp(mbv))) action
+               loadW.wset(validValue(fromMcp(mbv)));
+               seedR <= SeedFromChip;
+            endaction
+            else seedR <= SeedInvalid;
+         endseq
+      endseq
+   endseq;
+
+   // setrtc's time to the chip: stop the oscillator (ST = 0), wait for
+   // OSCRUN to clear, write min..year (24-hour, VBATEN on), then sec with
+   // ST = 1 last, so the chip's second starts as close to the load as the
+   // bus allows.
+   Stmt writeBack = seq
+      action wt <= wbTime; wbDone <= wbSeq; ok <= True; stuck <= False; endaction
+      startC; wr(8'hDE); wr(8'h00); wr(8'h00); stopC;
+      action pollStart <= cyc; done <= False; endaction
+      while (ok && !done && cyc - pollStart < pollLimit) seq
+         readRegs(3, 1);
+         done <= mb[0][5] == 0;          // OSCRUN
+      endseq
+      if (!done) ok <= False;
+      startC; wr(8'hDE); wr(8'h01);
+      wr(wt.min); wr(wt.hour); wr(wt.wday | 8'h08); wr(wt.mday);
+      wr(wt.mon); wr(wt.year);
+      stopC;
+      startC; wr(8'hDE); wr(8'h00); wr(wt.sec | 8'h80); stopC;
+      if (ok) wbCount <= wbCount + 1;
+      else action
+         wbFault <= True;
+         $display("RTC FAULT %0d: MCP7940N write-back failed", rtcFaultMcpWrite);
+      endaction
+   endseq;
+
+   Stmt link = seq
+      if (mcpMode[0] == 1) seed;
+      else seedR <= SeedDisabled;
+      seeded <= True;
+      while (True) seq
+         await(mcpMode[1] == 1 && wbSeq != wbDone);
+         writeBack;
+      endseq
+   endseq;
+   FSM linkFsm <- mkFSM(link);
+   Reg#(Bool) linkStarted <- mkReg(False);
+   rule startLink (!linkStarted);
+      linkFsm.start;
+      linkStarted <= True;
+   endrule
+
    (* fire_when_enabled, no_implicit_conditions *)
    rule step;
+      cyc <= cyc + 1;
       if (loadW.wget matches tagged Valid .t) begin
          now <= t;
          div <= 1;            // the load cycle counts as the first
@@ -212,7 +417,7 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile)
    endaction;
 
    method Action request(Bit#(13) addr, Bit#(32) wdata, Bit#(4) be,
-                         Bool write) if (!rdPend);
+                         Bool write) if (!rdPend && seeded);
       Bit#(11) idx = addr[12:2];
       Bit#(8)  v   = wdata[7:0];
       Bool     isNv = idx < 2040;
@@ -255,7 +460,11 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile)
                   // has no held set to load (Timekeeper.write fails).
                   failWith(rtcFaultNoHeld,
                            "RTCWRITE cleared with no registers held");
-               else if (timeValid(t)) loadW.wset(t);
+               else if (timeValid(t)) begin
+                  loadW.wset(t);
+                  wbTime <= t;
+                  wbSeq <= wbSeq + 1;
+               end
                else failWith(rtcFaultBadLoad,
                              "RTCWRITE cleared with an invalid time");
                isHeld <= False;
@@ -272,17 +481,27 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile)
    endmethod
 
    method Bool irq = False;
-   method Bit#(8) fault = faultR;
+   method Bit#(8) fault =
+      (faultR != 0) ? faultR : (wbFault ? rtcFaultMcpWrite : 0);
+   method Bit#(1) i2cSclLow = i2c.sclLow;
+   method Bit#(1) i2cSdaLow = i2c.sdaLow;
+   method Action i2cPins(Bit#(1) scl, Bit#(1) sda) = i2c.pins(scl, sda);
+   method Bit#(4) mcpSeed = zeroExtend(pack(seedR));
+   method Bit#(8) mcpWrites = wbCount;
 endmodule
 
 // The synthesised device.  ticksPerSec is the CLK frequency; startBcd is
 // {year, mon, mday, wday, hour, min, sec} in BCD (rtc.md "Start time";
 // the default build value is 1993-01-03 12:00:00, a Sunday, the model's
-// RTC_BASE).  The NVRAM's initial contents are rtc_nvram.hex.
+// RTC_BASE).  mcpMode: bit 0 seeds from the MCP7940N, bit 1 writes loads
+// back to it.  i2cQuarter: CLK cycles per quarter SCL bit (63 at 25 MHz
+// is 99 kHz).  The NVRAM's initial contents are rtc_nvram.hex.
 (* synthesize *)
-module mkRtc#(parameter Bit#(32) ticksPerSec, parameter Bit#(56) startBcd)
+module mkRtc#(parameter Bit#(32) ticksPerSec, parameter Bit#(56) startBcd,
+              parameter Bit#(2) mcpMode, parameter Bit#(16) i2cQuarter)
              (RtcIfc);
-   let m <- mkRtcCore(ticksPerSec, unpack(startBcd), "rtc_nvram.hex");
+   let m <- mkRtcCore(ticksPerSec, unpack(startBcd), "rtc_nvram.hex",
+                      mcpMode, i2cQuarter);
    return m;
 endmodule
 

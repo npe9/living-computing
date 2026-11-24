@@ -140,6 +140,26 @@ def start_bcd():
     return v
 
 
+MCP_TICKS = 100000          # RTL cycles per second in the MCP7940N builds
+I2C_QUARTER = 2             # cycles per quarter SCL bit in the test builds
+
+
+def rtc_params(ticks, mode):
+    return {"ticksPerSec": str(ticks), "startBcd": "56'h%014x" % start_bcd(),
+            "mcpMode": str(mode), "i2cQuarter": str(I2C_QUARTER)}
+
+
+# Verilator builds: the mcpMode 0 build runs the model-compare sequences;
+# the MCP7940N sequences run on mode 1 (seed only) and mode 3 (seed and
+# write back), at MCP_TICKS so a bus transfer is a small part of a second.
+VARIANTS = {
+    "mkRtc":    ("mkRtc", rtc_params(TICKS_PER_SEC, 0), ""),
+    "mkRtc_m1": ("mkRtc", rtc_params(MCP_TICKS, 1), ""),
+    "mkRtc_m3": ("mkRtc", rtc_params(MCP_TICKS, 3), ""),
+    "mkIic":    ("mkIic", {}, "-DDEV_IIC"),
+}
+
+
 def build(quiet=True):
     bsc, lib = bsc_paths()
     os.makedirs(BUILD, exist_ok=True)
@@ -152,38 +172,47 @@ def build(quiet=True):
                        stderr=out)
     libv = [os.path.join(lib, "Verilog", m) for m in
             ("RegFileLoad.v", "FIFO2.v")]
-    for top, extra in (("mkRtc", ["-GticksPerSec=%d" % TICKS_PER_SEC,
-                                  "-GstartBcd=56'h%014x" % start_bcd()]),
-                       ("mkIic", ["-DDEV_IIC"])):
-        mdir = os.path.join(BUILD, "obj_" + top)
-        cflags = ["-CFLAGS", "-DDEV_IIC"] if top == "mkIic" else []
+    for name, (top, params, cflags) in VARIANTS.items():
+        mdir = os.path.join(BUILD, "obj_" + name)
         subprocess.run(["verilator", "--cc", "--exe", "--build", "-j", "4",
                         "-Wno-fatal", "-Wno-lint", "-Wno-style", "--no-timing",
                         "--top-module", top, "-Mdir", mdir,
-                        "-o", "tb_" + top,
+                        "-o", "tb_" + name,
+                        "-CFLAGS", "-I" + HERE + " " + cflags,
                         os.path.join(BUILD, top + ".v")] + libv
                        + [os.path.join(HERE, "rtc_iic_tb.cpp")]
-                       + [e for e in extra if e.startswith("-G")] + cflags,
+                       + ["-G%s=%s" % kv for kv in params.items()],
                        cwd=HERE, check=True, stdout=out,
                        stderr=subprocess.DEVNULL if quiet else None)
 
 
-def run_rtl(top, accesses):
+def run_rtl(top, accesses, args=(), mcp=None):
+    """Replay `accesses`; with `mcp` (a dict) also parse the harness's MCP
+    line into it."""
     tb = os.path.join(BUILD, "obj_" + top, "tb_" + top)
     text = "".join("%d %s %x %x %x\n" % a for a in accesses)
-    p = subprocess.run([tb], input=text, cwd=HERE, capture_output=True,
-                       text=True)
+    p = subprocess.run([tb] + list(args), input=text, cwd=HERE,
+                       capture_output=True, text=True)
     if p.returncode:
         raise SystemExit("%s harness failed: %s" % (top, p.stderr))
     rows = []
     for line in p.stdout.split("\n"):
-        if line:
+        if line.startswith("MCP "):
+            if mcp is not None:
+                for kv in line.split()[1:]:
+                    k, v = kv.split("=", 1)
+                    if k == "note":
+                        mcp.setdefault("notes", []).append(v)
+                    else:
+                        mcp[k] = v
+        elif line and " FAULT " not in line:      # $display lines
             a, d, f, led, n = line.split()
             rows.append((int(a), int(d, 16), int(f, 16), int(led, 16),
                          int(n, 16)))
-    if len(rows) != len(accesses):
+    nacc = sum(1 for a in accesses if a[1] != "N")
+    if len(rows) != nacc:
         raise SystemExit("%s harness: %d results for %d accesses"
-                         % (top, len(rows), len(accesses)))
+                         % (top, len(rows), nacc))
     return rows
 
 
@@ -659,9 +688,13 @@ def iic_faults():
 
 def compare(seq, cov, verbose):
     top = "mkRtc" if seq.dev == "rtc" else "mkIic"
-    rows = run_rtl(top, seq.acc)
+    mcp = {}
+    rows = run_rtl(top, seq.acc, mcp=mcp)
     model = RtcModel() if seq.dev == "rtc" else IicModel()
     errs = []
+    if seq.dev == "rtc" and (mcp.get("drove") != "0" or mcp.get("seed") != "1"):
+        errs.append("mcpMode 0 build: I2C driven %s cycles, seed status %s "
+                    "(want 0, 1)" % (mcp.get("drove"), mcp.get("seed")))
     for i, ((_, op, addr, data, be), (acc, rdata, fault, led, ledn)) in \
             enumerate(zip(seq.acc, rows)):
         want, exc = model.access(acc, op, addr, data, be)
@@ -735,6 +768,253 @@ def compare(seq, cov, verbose):
     return not errs
 
 
+# ---- the MCP7940N link (rtc.md "The MCP7940N") ------------------------------
+
+SEED = {"disabled": 1, "chip": 2, "noack": 3, "oscstopped": 4,
+        "invalid": 5, "notick": 6, "stuck": 7}
+RTC_MCP_WRITE = 5
+PHASE_BOUND = 2000          # cycles from the chip's second to the seed load
+WB_BOUND = 3000             # bus cycles from a load to the chip's restart,
+                            # on top of the chip's OSCRUN delay
+
+
+def mcp_epoch(regs):
+    """Seconds since 1970 of the chip's RTCSEC..RTCYEAR (24- or 12-hour)."""
+    import calendar
+    b = lambda x: (x >> 4) * 10 + (x & 15)
+    sec, mn, hr = b(regs[0] & 0x7F), b(regs[1] & 0x7F), regs[2]
+    if hr & 0x40:
+        h = b(hr & 0x1F)
+        hour = (0 if h == 12 else h) + (12 if hr & 0x20 else 0)
+    else:
+        hour = b(hr & 0x3F)
+    y = b(regs[6])
+    return calendar.timegm((y + (2000 if y < 70 else 1900), b(regs[5] & 0x1F),
+                            b(regs[4] & 0x3F), hour, mn, sec, 0, 0, 0))
+
+
+def mcp_regs_of(t):
+    """The seven registers mkRtc's write-back leaves for epoch t, as the
+    model chip shows them: ST, 24-hour, OSCRUN|VBATEN|weekday, LPYR."""
+    import time as _t
+    g = _t.gmtime(t)
+    wd = (g.tm_wday + 1) % 7 + 1
+    yy = g.tm_year % 100
+    return [0x80 | bcd(g.tm_sec), bcd(g.tm_min), bcd(g.tm_hour),
+            0x20 | 0x08 | wd, bcd(g.tm_mday),
+            bcd(g.tm_mon) | (0x20 if yy % 4 == 0 else 0), bcd(yy)]
+
+
+class McpSeq(Seq):
+    def __init__(self, name, variant, args, seed, writes=0, fault=0,
+                 run_to=0):
+        Seq.__init__(self, name, "rtc")
+        self.variant, self.args = variant, list(args)
+        self.seed, self.writes, self.fault = seed, writes, fault
+        self.run_to = run_to
+        self.gapc = 4
+
+
+def chip(regs):
+    return "--mcp-regs=" + "".join("%02x" % v for v in regs)
+
+
+DEFAULT_CHIP = [0x80, 0x00, 0x12, 0x23, 0x03, 0x01, 0x93]
+
+
+def mcp_sequences():
+    T = MCP_TICKS
+    seqs = []
+
+    def reads(s, at):
+        s.at(at)
+        read_all(s)
+
+    for ph in (0, 1, 40000, T - 1):
+        s = McpSeq("seed from the chip, phase %d" % ph, "mkRtc_m1",
+                   ["--mcp-phase=%d" % ph], "chip")
+        reads(s, 0)                       # taken once the seed is done
+        reads(s, 2 * T + 10)
+        reads(s, 4 * T)
+        rtctime(s)
+        seqs.append(s)
+
+    for hr, name in ((0x40 | 0x20 | 0x02, "2 PM"), (0x40 | 0x12, "12 AM"),
+                     (0x40 | 0x20 | 0x12, "12 PM"), (0x40 | 0x09, "9 AM")):
+        regs = [0x80, 0x15, hr, 0x23, 0x28, 0x02, 0x96]
+        s = McpSeq("seed from a 12-hour chip, %s" % name, "mkRtc_m1",
+                   [chip(regs)], "chip")
+        reads(s, 0)
+        reads(s, 3 * T)
+        seqs.append(s)
+
+    s = McpSeq("seed across the chip's year end", "mkRtc_m1",
+               [chip([0x80 | 0x59, 0x59, 0x23, 0x25, 0x31, 0x12, 0x99]),
+                "--mcp-phase=%d" % (T - 300000 % T + 5)], "chip")
+    reads(s, 0)
+    reads(s, 3 * T)
+    seqs.append(s)
+
+    s = McpSeq("seed with the chip stretching SCL 37 cycles", "mkRtc_m1",
+               ["--mcp-stretch=37", "--mcp-phase=20000"], "chip")
+    reads(s, 0)
+    reads(s, 2 * T)
+    seqs.append(s)
+
+    fallbacks = [
+        ("no chip at 0x6F", ["--mcp-absent"], "noack"),
+        ("ST clear", [chip([0x00, 0, 0x12, 0x23, 3, 1, 0x93])], "oscstopped"),
+        ("OSCRUN clear", [chip([0x80, 0, 0x12, 0x03, 3, 1, 0x93])],
+         "oscstopped"),
+        ("month 0x13", [chip([0x80, 0, 0x12, 0x23, 3, 0x13, 0x93])],
+         "invalid"),
+        ("hour 0x24", [chip([0x80, 0, 0x24, 0x23, 3, 1, 0x93])], "invalid"),
+        ("12-hour 0x13", [chip([0x80, 0, 0x53, 0x23, 3, 1, 0x93])],
+         "invalid"),
+        ("Feb 30", [chip([0x80, 0, 0x12, 0x23, 0x30, 2, 0x93])], "invalid"),
+        ("a chip whose second never ends", ["--mcp-tick=1000000000"],
+         "notick"),
+        ("SCL held low", ["--mcp-stuck"], "stuck"),
+    ]
+    for name, args, why in fallbacks:
+        s = McpSeq("fallback to startBcd: " + name, "mkRtc_m3", args, why)
+        reads(s, 0)
+        reads(s, 2 * T + 1)
+        seqs.append(s)
+
+    s = McpSeq("write-back: setrtc, then 3.5 s", "mkRtc_m3",
+               ["--mcp-phase=12345"], "chip", writes=1, run_to=6 * T + T // 2)
+    s.at(2 * T + 77)
+    setrtc(s, 1993, 1, 3, 12, 0, 48)
+    reads(s, 3 * T)
+    rtctime(s)
+    seqs.append(s)
+
+    s = McpSeq("write-back: two setrtc, the second during the first's "
+               "write-back", "mkRtc_m3", [], "chip", writes=2,
+               run_to=7 * T)
+    s.at(2 * T)
+    setrtc(s, 2001, 2, 28, 23, 59, 50)
+    s.at(s.t + 200)
+    setrtc(s, 2004, 2, 28, 23, 59, 57)
+    reads(s, 5 * T)
+    seqs.append(s)
+
+    s = McpSeq("write-back waits for a slow OSCRUN (50000 cycles)",
+               "mkRtc_m3", ["--mcp-oscstop=50000"], "chip", writes=1,
+               run_to=5 * T)
+    s.at(T)
+    setrtc(s, 1999, 12, 31, 23, 59, 59)
+    reads(s, 3 * T)
+    seqs.append(s)
+
+    s = McpSeq("write-back fails: OSCRUN never clears", "mkRtc_m3",
+               ["--mcp-oscstop=100000000"], "chip", writes=0,
+               fault=RTC_MCP_WRITE, run_to=5 * T)
+    s.at(T)
+    setrtc(s, 1999, 12, 31, 23, 59, 59)
+    seqs.append(s)
+
+    s = McpSeq("write-back fails: no chip (seeded from startBcd)",
+               "mkRtc_m3", ["--mcp-absent"], "noack", writes=0,
+               fault=RTC_MCP_WRITE, run_to=3 * T)
+    s.at(T)
+    setrtc(s, 1993, 1, 3, 12, 0, 48)
+    seqs.append(s)
+
+    s = McpSeq("mode 1 (seed only): setrtc leaves the chip alone",
+               "mkRtc_m1", ["--mcp-phase=500"], "chip", writes=0,
+               run_to=5 * T)
+    s.at(T)
+    setrtc(s, 1993, 1, 3, 12, 0, 48)
+    reads(s, 2 * T)
+    seqs.append(s)
+    return seqs
+
+
+def compare_mcp(seq, cov, verbose):
+    import time as _t
+    T = MCP_TICKS
+    acc = list(seq.acc)
+    if seq.run_to:
+        acc.append((seq.run_to, "N", 0, 0, 0))
+    mcp = {}
+    rows = run_rtl(seq.variant, acc, seq.args, mcp)
+    errs = []
+    seed = int(mcp["seed"])
+    want = SEED[seq.seed]
+    if seed != want:
+        errs.append("seed status %d, want %d" % (seed, want))
+    m = RtcModel()
+    m.m = p9boot.Timekeeper(lambda: Fraction(m.now, T), p9boot.RTC_BASE)
+    seedcyc = int(mcp["seedcyc"])
+    snap = [int(mcp["snap"][2 * k:2 * k + 2], 16) for k in range(7)]
+    if seed == SEED["chip"]:
+        base = mcp_epoch(snap)
+        m.m.offset = base - Fraction(seedcyc, T)
+        lag = seedcyc - int(mcp["lasttick"])
+        if not 0 < lag <= PHASE_BOUND:
+            errs.append("seed loaded %d cycles after the chip's second "
+                        "(bound %d)" % (lag, PHASE_BOUND))
+        cov["mcp seeds from the chip"] += 1
+        cov["mcp seed lag, max cycles"] = max(cov["mcp seed lag, max cycles"],
+                                              lag)
+    else:
+        cov["mcp fallbacks to startBcd"] += 1
+    loads = []
+    for i, ((_, op, addr, data, be), (a, rdata, fault, _l, _n)) in \
+            enumerate(zip(seq.acc, rows)):
+        want_v, exc = m.access(a, op, addr, data, be)
+        what = "#%d %s rtc+%x" % (i, op, addr)
+        if exc is not None:
+            errs.append("%s: the model refused: %s" % (what, exc[1]))
+            break
+        if op == "R":
+            if rdata != want_v:
+                errs.append("%s at cycle %d: RTL %08x, model %08x"
+                            % (what, a, rdata, want_v))
+            cov["mcp rtc reads"] += 1
+        if op == "W" and addr == CTL and data & 0x80 == 0 and \
+                len(m.m.sets) > len(loads):
+            loads.append(a)
+    regs = [int(mcp["regs"][2 * k:2 * k + 2], 16) for k in range(7)]
+    if int(mcp["writes"]) != seq.writes:
+        errs.append("%s write-backs, want %d" % (mcp["writes"], seq.writes))
+    if int(mcp["fault"], 16) != seq.fault:
+        errs.append("fault %s, want %02x" % (mcp["fault"], seq.fault))
+    if int(mcp["viol"]) or int(mcp["twr"]):
+        errs.append("I2C violations %s, time written while running %s: %s"
+                    % (mcp["viol"], mcp["twr"], mcp.get("notes")))
+    end = int(mcp["end"])
+    if seq.writes:
+        restart = int(mcp["restart"])
+        lag = restart - loads[-1]
+        # the last write-back carries the last set; the chip counts from
+        # its restart (rtc_mcp7940n.h [M])
+        t = m.m.sets[-1][1]
+        exp = mcp_regs_of(t + (end - 1 - restart) // T)
+        if regs != exp:
+            errs.append("chip at the end %s, want %s"
+                        % (bytes(regs).hex(), bytes(exp).hex()))
+        osc = 3000                       # rtc_mcp7940n.h oscStopDelay
+        for a in seq.args:
+            if a.startswith("--mcp-oscstop="):
+                osc = int(a.split("=")[1])
+        if not 0 < lag <= seq.writes * (osc + WB_BOUND):
+            errs.append("chip restarted %d cycles after the load" % lag)
+        cov["mcp write-backs checked"] += 1
+    elif seq.run_to and seq.fault == 0:
+        # untouched: the chip's own time, counted from power-on
+        if mcp.get("restart") != "0":
+            errs.append("the chip was restarted (mode 1 must not write)")
+    if verbose or errs:
+        print("mcp  %-66s %5d accesses  %s"
+              % (seq.name, len(seq.acc), "ok" if not errs else "FAIL"))
+    for e in errs[:8]:
+        print("     " + e)
+    return not errs
+
+
 def main():
     verbose = "-v" in sys.argv
     if not shutil.which("verilator"):
@@ -745,9 +1025,13 @@ def main():
     seqs = [load_trace(os.path.join(HERE, "rtc_join.trace"), "rtc"),
             load_trace(os.path.join(HERE, "iic_join.trace"), "iic")]
     seqs += rtc_sequences() + rtc_faults() + iic_sequences() + iic_faults()
+    mseqs = mcp_sequences()
     ok = 0
     for s in seqs:
         ok += compare(s, cov, verbose)
+    for s in mseqs:
+        ok += compare_mcp(s, cov, verbose)
+    seqs += mseqs
     print()
     for k in sorted(cov):
         print("  %-48s %7d" % (k, cov[k]))
