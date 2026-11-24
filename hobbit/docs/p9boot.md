@@ -498,6 +498,19 @@ assemble and link a program inside the boot, which then runs.  The
 assembler needed the ROM's fpi (above); 1e's `zl` wants `-lc` given (no
 default library), as under p9run.
 
+The whole session replays without QEMU: `tests/net/a5_session.pcap`
+is the run's `--pcap` (1108 frames), and replaying it with the same
+script (`build/a5/rep_all.py`, scratch, or `p9boot.py --ether-replay
+hobbit/tests/net/a5_session.pcap` with the twelve `--type` answers and
+`--until 'end of script\n% '`) stopped at the same 840,583,000
+instructions, every model frame as recorded, with a screen
+byte-identical to `tests/net/a5_screen.txt` (536 s of CPU, 2026-11-24;
+too long for `tests/run_tests.sh`, which replays the first 615 frames).
+The same replay with `--no-fpi` (FP traps to the bare ROM vector) stops
+at `% za hello.s` with "read of the boot ROM at physical 0x00000f00",
+784,817,814 instructions, the screen 1784 bytes long: the ROM fpi is
+what lets za run.
+
 ### The ack-0 sync (the server's IL race)
 
 Read against the server's own `sys/src/9/port/stil.c` (1e tarball), the
