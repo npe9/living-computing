@@ -43,6 +43,23 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   mode ignored: test_screen_paging_mode_doubles_the_pitch.
 - Processor reset register accepting bit 7 as well as the DSP bits, or
   not logging a DSP's release: test_dsp_reset_bits_are_kept only.
+- DSP emulation hooks (CHOICES['dsp'] emulated, DspEmulationTest with
+  FakeDsp), each failing only the named tests: the shadow RAM not aliased
+  to RAM: test_shadow_ram_is_low_ram (error); little-endian lanes on the
+  DSP bus: test_shadow_ram_is_low_ram, test_dsp_reaches_the_board_
+  registers; no on-chip check: test_off_window_stops_name_the_dsp; the
+  interrupt bits not forwarded: test_interrupt_is_a_level; one DSP clock
+  per cycle: test_release_starts_at_the_cpu_time, test_two_dsp_clocks_
+  per_cpu_cycle; no idle-skip guard: test_no_idle_skip_while_a_dsp_runs;
+  release() or hold() not called: test_release_and_hold; an emulator
+  exception not wrapped: test_emulator_error_is_a_dsp_stop (error); a
+  release starting at clock 0: test_release_starts_at_the_cpu_time; Who
+  Am I giving the CPU number to a DSP: test_dsp_reaches_the_board_
+  registers; inert mode creating DSPs: test_inert_creates_nothing; an
+  idle DSP stepped: test_idle_dsp_jumps_to_the_cpu_time; idle DSPs
+  counted busy: that test and test_no_idle_skip_while_a_dsp_runs; the
+  outside-window log dropped: test_dsp_reaches_the_board_registers; a
+  stop without the access: test_off_window_stops_name_the_dsp.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -296,6 +313,207 @@ MOUNT = (SCAN + b" 4096K bytes\n\rRecal floppy drive 1, attempt 1\n\r"
          + b"Cache I/O error\n\r" + NO_DISKETTE
          + b"Volume 'be' w/size 332487 sectors mounted as id 0 on "
            b"/dev/scsi_disk_driver_000")
+
+
+class FakeElf:
+    """Just enough of a kernel ELF for a Machine with no code in RAM."""
+    blob = b""
+    entry = 0x08001000
+    sections = {".text": (0, 0, 0, 0x08001000, 0, 0x10)}
+
+    def words(self):
+        return {}
+
+    def func(self, pc):
+        return "fake", 0
+
+    def where(self, pc):
+        return "fake+0x%x" % pc
+
+
+class FakeDsp:
+    """A stand-in for tools/dsp3210.py's Dsp3210: each step runs the next
+    scripted bus operation and takes `clocks` DSP clocks."""
+
+    def __init__(self, n, bus):
+        self.n, self.bus = n, bus
+        self.pc = 0x60000000
+        self.log = []
+        self.irq = None
+        self.ops = []
+        self.steps = 0
+        self.clocks = 1
+        self.idle = False
+
+    def release(self):
+        self.log.append("release")
+
+    def hold(self):
+        self.log.append("hold")
+
+    def set_interrupt(self, level):
+        self.irq = level
+
+    def step(self):
+        if self.ops:
+            self.ops.pop(0)(self.bus)
+        self.steps += 1
+        return self.clocks
+
+
+class DspEmulationTest(unittest.TestCase):
+    """CHOICES['dsp'] emulated, with FakeDsp: the board side only."""
+
+    RESET, INTERNAL = 0x00800018, 0x0080001C    # words of 0x80001B, 0x80001F
+
+    def setUp(self):
+        self.m = beboot.Machine(FakeElf())
+        self.m.dsp_mode = "emulated"
+        self.m.dsp_class = FakeDsp
+
+    def reset(self, value):
+        self.m.board.write(self.RESET, value, 0x1)
+
+    def internal(self, value):
+        self.m.board.write(self.INTERNAL, value, 0x1)
+
+    def test_release_and_hold(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        self.assertEqual((d.n, d.log), (1, ["release"]))
+        self.assertEqual(self.m.dsps_running(), [1])
+        self.reset(0x00)
+        self.assertEqual(d.log, ["release", "hold"])
+        self.assertEqual(self.m.dsps_running(), [])
+        self.reset(0x50)                        # DSP1 again, and DSP3
+        self.assertIs(self.m.dsps[1], d)
+        self.assertEqual(d.log, ["release", "hold", "release"])
+        self.assertEqual(self.m.dsps_running(), [1, 3])
+
+    def test_inert_creates_nothing(self):
+        self.m.dsp_mode = "inert"
+        self.reset(0x70)
+        self.assertEqual(self.m.dsps, {})
+        self.assertEqual(self.m.regs.reset, 0x70)
+
+    def test_shadow_ram_is_low_ram(self):
+        self.reset(0x10)
+        bus = self.m.dsps[1].bus
+        bus.write(0x60000010, 0xDEADBEEF, 4)
+        self.assertEqual(self.m.board.ram[0x08000010], 0xDEADBEEF)
+        bus.write(0x60000013, 0x55, 1)          # big-endian: bits 7:0
+        bus.write(0x60000010, 0x1234, 2)        # bits 31:16
+        self.assertEqual(self.m.board.ram[0x08000010], 0x1234BE55)
+        self.assertEqual(bus.read(0x60000010, 1), 0x12)
+        self.assertEqual(bus.read(0x60000012, 2), 0xBE55)
+        bus.write(0x601FFFFC, 7, 4)
+        self.assertEqual(self.m.board.ram[0x081FFFFC], 7)
+        with self.assertRaises(beboot.DspStop):
+            bus.read(0x60200000, 4)             # past the 2 MB
+
+    def test_off_window_stops_name_the_dsp(self):
+        self.reset(0x20)
+        bus = self.m.dsps[2].bus
+        for f, says in (
+                (lambda: bus.read(0x0000E000, 4), "on-chip"),
+                (lambda: bus.write(0x50000000, 0x1234, 2),
+                 "write of size 2 value 0x1234 at 0x50000000: nothing "
+                 "modelled"),
+                (lambda: bus.write(0x60000001, 0, 2), "aligned"),
+                (lambda: bus.pins("bio0", 1), "bio0")):
+            with self.assertRaises(beboot.DspStop) as cm:
+                f()
+            self.assertEqual(cm.exception.n, 2)
+            self.assertIn("DSP2 at pc 60000000", str(cm.exception))
+            self.assertIn(says, str(cm.exception))
+        self.assertIsNone(self.m.board.dsp_master)
+
+    def test_interrupt_is_a_level(self):
+        self.internal(0x10)                     # before release
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        self.assertIs(d.irq, True)
+        self.internal(0x30)
+        self.assertIs(d.irq, True)
+        self.internal(0x00)
+        self.assertIs(d.irq, False)
+        self.assertEqual(self.m.regs.internal, 0)
+
+    def test_dsp_reaches_the_board_registers(self):
+        # Appendix A page 4: from 0x10000 up is Be machine memory, so the
+        # internal interrupt register is at its own address.
+        self.reset(0x40)
+        bus = self.m.dsps[3].bus
+        self.assertEqual(bus.read(0x00800DC3, 1) & 15, 3)    # Who Am I
+        bus.write(0x0080001F, 0x01, 1)                       # Hobbit A
+        self.assertEqual(self.m.regs.internal, 0x01)
+        self.assertEqual(dict(bus.outside), {("read", 1, 0x00800DC3): 1,
+                                             ("write", 1, 0x0080001F): 1})
+
+    def test_two_dsp_clocks_per_cpu_cycle(self):
+        self.reset(0x30)
+        self.m.dsps[2].clocks = 3
+        self.m.cpus[0].cycles = 10
+        self.m.step_dsps()
+        self.assertEqual((self.m.dsps[1].steps, self.m.dsp_clock[1]), (20, 20))
+        self.assertEqual((self.m.dsps[2].steps, self.m.dsp_clock[2]), (7, 21))
+        self.reset(0x10)                        # DSP2 held: it stops
+        self.m.cpus[0].cycles = 20
+        self.m.step_dsps()
+        self.assertEqual(self.m.dsp_clock[1], 40)
+        self.assertEqual(self.m.dsp_clock[2], 21)
+
+    def test_idle_dsp_jumps_to_the_cpu_time(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        d.idle = True
+        self.m.cpus[0].cycles = 1000
+        self.m.step_dsps()
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (0, 2000))
+        self.assertEqual(self.m.dsp_idle_clocks[1], 2000)
+        self.assertEqual(self.m.dsps_busy(), [])
+        d.idle = False
+        self.assertEqual(self.m.dsps_busy(), [1])
+
+    def test_release_starts_at_the_cpu_time(self):
+        self.m.cpus[0].cycles = 100
+        self.reset(0x10)
+        self.assertEqual(self.m.dsp_clock[1], 200)
+
+    def test_emulator_error_is_a_dsp_stop(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+
+        def bad(bus):
+            raise RuntimeError("opcode 0x12345678 not implemented")
+        d.ops.append(bad)
+        self.m.cpus[0].cycles = 1
+        with self.assertRaises(beboot.DspStop) as cm:
+            self.m.step_dsps()
+        self.assertEqual(cm.exception.n, 1)
+        self.assertIn("RuntimeError: opcode", str(cm.exception))
+
+    def test_no_idle_skip_while_a_dsp_runs(self):
+        cpu = self.m.cpus[0]
+        called = []
+
+        def next_event():
+            called.append(1)
+            return None
+        self.m.next_event = next_event
+        for running, idle in ((False, False), (True, False), (True, True)):
+            self.reset(0x10 if running else 0x00)
+            if running:
+                self.m.dsps[1].idle = idle
+            running = running and not idle
+            here = (cpu.steps, cpu.cycles, cpu.sysm.timer1, cpu.sysm.timer2)
+            lap = (5, 10, 10, 10)
+            cpu.idle_last = (tuple(h - d for h, d in zip(here, lap)), lap,
+                             True)
+            del called[:]
+            self.assertEqual(self.m.try_idle_skip(cpu, 1000), 0)
+            # A steady lap reaches the event horizon unless a DSP runs.
+            self.assertEqual(called, [] if running else [1])
 
 
 def boot_machine(skip=True):

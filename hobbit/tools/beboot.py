@@ -57,6 +57,13 @@ MEMSIZE_WORD = RAM_BASE + 0x48
 
 # CHOICES['clock']
 CPU_HZ = 25e6
+# CHOICES['dsp']: vcos.cfg's DspClock= 50000000; two DSP clocks per Hobbit
+# cycle, counted in integers.
+DSP_HZ = 50e6
+DSP_CLOCKS_PER_CYCLE = 2
+assert DSP_CLOCKS_PER_CYCLE * CPU_HZ == DSP_HZ
+DSP_OFF_CHIP = 0x10000                            # Appendix A page 4
+DSP_SHADOW_SIZE = 0x200000
 # CHOICES['scsi-timing']: cycles from a 53C94 command to its interrupt.
 NCR_IRQ_DELAY = 2500
 # CHOICES['idle-skip']: the kernel whose idle loop was read.
@@ -192,16 +199,37 @@ CHOICES = {
                "would show as 0x3F and 0x1D; which DAC mode the card was "
                "in is not documented (video_init's own ramp tops out at "
                "56, a 6-bit-looking scale, before Color_map replaces it).",
-    "dsp": "The three DSP3210s are not modelled (no DSP3210 manual was "
-           "found: docs/devices/MANIFEST.md).  Their reset bits in the "
-           "processor reset register (bits 4-6, DSP1-3; Appendix A) and "
-           "their bits in the internal interrupt register are kept as "
-           "written, so a DSP can be 'released' (vcas_server's "
-           "_veDspStart ORs bit 4 in), but it never runs and never "
-           "answers; the run prints each release.  Appendix A's 2 MB DSP "
-           "shadow RAM at physical 0x60000000 is not modelled, so any "
-           "access there stops (vcas_server's own 0x60000000 is a "
-           "virtual clone of RAM at 0x08000000, not this range).",
+    "dsp": "--dsp inert (the default) or emulated.  Inert: the three "
+           "DSP3210s never run.  Their reset bits in the processor reset "
+           "register (bits 4-6, DSP1-3; Appendix A) and their bits in the "
+           "internal interrupt register are kept as written, so a DSP can "
+           "be 'released' (vcas_server's _veDspStart ORs bit 4 in), but "
+           "it never answers; the run prints each release.  Emulated: "
+           "tools/dsp3210.py's Dsp3210 runs each released DSP (a missing "
+           "emulator stops the run at startup, it never falls back).  A "
+           "rising reset bit calls release(), a falling one hold(); "
+           "internal-interrupt bits 4-6 are a level passed to "
+           "set_interrupt() whenever the register is written, never "
+           "cleared by the board.  The DSPs run 2 clocks per Hobbit cycle "
+           "(50 MHz, vcos.cfg DspClock, against 25 MHz), each released "
+           "DSP stepped up to the slower CPU's time after every CPU "
+           "instruction.  The DSP bus (DspBus): below 0x10000 is the "
+           "DSP's own on-chip space and never reaches the board; from "
+           "0x10000 up is 'Be machine memory' (Appendix A page 4), i.e. "
+           "the Hobbit's physical map, except that the 2 MB shadow RAM "
+           "at 0x60000000 is RAM from 0x08000000: vcas_server clones the "
+           "kernel's whole-RAM area at 0x60000000 and its "
+           "_veLogToDspPhys is the identity, so the VCOS image it writes "
+           "at 0x60000000+x is in RAM at 0x08000000+x.  Bytes and "
+           "half-words sit in the word's lanes big-endian, as the "
+           "Hobbit's do.  Who Am I reads 1-3 during a DSP's access.  "
+           "Arbitration: the DSPs win the bus and may keep it (Appendix "
+           "ch. 1, the draft's least reliable chapter, with no cycle "
+           "counts), so a DSP access costs the CPUs nothing here; no "
+           "stall is modelled.  The idle skip is not taken while an "
+           "emulated DSP runs and is not idle (the emulator's .idle: an idle "
+           "DSP's clock jumps to the CPUs' time).  The Hobbit's own accesses to physical "
+           "0x60000000 still stop (none has been seen).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -354,7 +382,8 @@ class BoardRegs:
                     self.dsp_log.append((n, bool(value & bit)))
             self.board.reset_changed(old, value)
         elif reg == 7:
-            self.internal = value
+            old, self.internal = self.internal, value
+            self.board.internal_changed(old, value)
         else:
             raise Stop("write of 0x%02x to the read-only %s register"
                        % (value, self.NAMES[reg]))
@@ -370,6 +399,9 @@ class WhoAmI:
         self.board = board
 
     def read(self, reg):
+        dsp = getattr(self.board, "dsp_master", None)
+        if dsp:
+            return dsp                        # DSP n -> n (CHOICES['dsp'])
         return 3 + self.board.current_cpu     # CPU 1 -> 4, CPU 2 -> 5
 
     def write(self, reg, value):
@@ -1556,6 +1588,11 @@ class Board:
         if self.on_reset is not None:
             self.on_reset(old, new)
 
+    def internal_changed(self, old, new):
+        f = getattr(self, "on_internal", None)
+        if f is not None:
+            f(old, new)
+
     def where(self):
         return "physical"
 
@@ -1619,6 +1656,96 @@ class Board:
 # The machine
 # ---------------------------------------------------------------------------
 
+class DspStop(Stop):
+    """A stop raised while DSP n was running (CHOICES['dsp'])."""
+
+    def __init__(self, n, pc, what):
+        Stop.__init__(self, what)
+        self.n, self.pc = n, pc
+
+
+class DspBus:
+    """CHOICES['dsp']: what DSP n reaches over the BeBus.  The emulator
+    calls read(addr, size) and write(addr, value, size), size 1, 2 or 4,
+    with DSP bus addresses, and pins(name, level) for any output pin it
+    drives (none is wired: every pin stops).  Every access outside the
+    shadow-RAM window is logged (CHOICES['dsp']), and every stop names
+    the DSP, its pc, the access, its size and value."""
+
+    def __init__(self, machine, n):
+        self.m = machine
+        self.n = n
+        self.outside = collections.Counter()   # (what, size, addr) -> count
+
+    def _stop(self, what):
+        d = self.m.dsps.get(self.n)
+        pc = getattr(d, "pc", None)
+        raise DspStop(self.n, pc, "DSP%d at pc %s: %s" % (
+            self.n, "%08x" % pc if pc is not None else "?", what))
+
+    def _map(self, addr, size, what):
+        if size not in (1, 2, 4) or addr & (size - 1):
+            self._stop("%s: not a naturally aligned byte, half-word or "
+                       "word" % what)
+        if addr < DSP_OFF_CHIP:
+            self._stop("%s: the DSP's own on-chip space, which the "
+                       "emulator handles; it never reaches the bus" % what)
+        if DSP_SHADOW <= addr < DSP_SHADOW + DSP_SHADOW_SIZE:
+            return RAM_BASE + addr - DSP_SHADOW
+        self.outside[(what.split()[0], size, addr)] += 1
+        return addr
+
+    def _access(self, f, what):
+        board = self.m.board
+        board.dsp_master = self.n
+        try:
+            return f()
+        except DspStop:
+            raise
+        except Stop as exc:
+            self._stop("%s: %s" % (what, exc))
+        finally:
+            board.dsp_master = None
+            board.read_mask = 0xF
+
+    def read(self, addr, size):
+        what = "read of size %d at 0x%08x" % (size, addr)
+        pa = self._map(addr, size, what)
+        off = 4 - size - (addr & 3)
+        board = self.m.board
+
+        def go():
+            board.read_mask = ((1 << size) - 1) << off
+            return board.read(pa)
+        word = self._access(go, what)
+        return (word >> (8 * off)) & ((1 << (8 * size)) - 1)
+
+    def write(self, addr, value, size):
+        what = "write of size %d value 0x%x at 0x%08x" % (size, value, addr)
+        pa = self._map(addr, size, what)
+        off = 4 - size - (addr & 3)
+        data = (value & ((1 << (8 * size)) - 1)) << (8 * off)
+        self._access(lambda: self.m.board.write(
+            pa, data, ((1 << size) - 1) << off), what)
+
+    def pins(self, name, level):
+        self._stop("drives its %s pin to %r: no DSP pin is wired in this "
+                   "model" % (name, level))
+
+
+def load_dsp_class():
+    """CHOICES['dsp'] emulated: tools/dsp3210.py's Dsp3210, or stop."""
+    try:
+        import dsp3210
+    except ImportError as exc:
+        raise SystemExit("beboot: --dsp emulated needs tools/dsp3210.py "
+                         "(%s)" % exc)
+    cls = getattr(dsp3210, "Dsp3210", None)
+    if cls is None:
+        raise SystemExit("beboot: tools/dsp3210.py has no Dsp3210 class")
+    return cls
+
+
 class Cpu:
     def __init__(self, n, board, entry, stack):
         self.n = n
@@ -1667,6 +1794,13 @@ class Machine:
         self.elf = elf
         self.board = Board(memsize)
         self.board.on_reset = self.reset_changed
+        self.board.on_internal = self.internal_changed
+        self.dsp_mode = "inert"     # CHOICES['dsp']
+        self.dsp_class = None
+        self.dsps = {}              # n -> emulator, once first released
+        self.dsp_clock = {}         # n -> DSP clocks (50 MHz)
+        self.dsp_steps = {}
+        self.dsp_idle_clocks = {}
         self.regs = BoardRegs(self.board)
         io = self.board.io
         for n in range(8):
@@ -1748,6 +1882,74 @@ class Machine:
             self.events.append((self.cpus[0].steps, "CPU 2 released"))
         elif old & 2 and not new & 2 and len(self.cpus) == 2:
             raise Stop("CPU 2 put back into reset (not modelled)")
+        if self.dsp_mode != "emulated":
+            return
+        for n in (1, 2, 3):
+            bit = 1 << (n + 3)
+            if not (old ^ new) & bit:
+                continue
+            d = self.dsps.get(n)
+            if new & bit:
+                if d is None:
+                    d = self.dsps[n] = self.dsp_class(n, DspBus(self, n))
+                    self.dsp_clock[n] = 0
+                    self.dsp_steps[n] = 0
+                    self.dsp_idle_clocks[n] = 0
+                self.dsp_clock[n] = max(self.dsp_clock[n],
+                                        self.cpu_frontier()
+                                        * DSP_CLOCKS_PER_CYCLE)
+                d.release()
+                d.set_interrupt(bool(self.regs.internal & bit))
+            elif d is not None:
+                d.hold()
+
+    def internal_changed(self, old, new):
+        """CHOICES['dsp']: bits 4-6 of the internal interrupt register
+        are each DSP's interrupt input, a level."""
+        if self.dsp_mode != "emulated":
+            return
+        for n, d in self.dsps.items():
+            bit = 1 << (n + 3)
+            if (old ^ new) & bit:
+                d.set_interrupt(bool(new & bit))
+
+    def cpu_frontier(self):
+        return min(c.cycles for c in self.cpus)
+
+    def dsps_running(self):
+        return [n for n in sorted(self.dsps)
+                if self.regs.reset & (1 << (n + 3))]
+
+    def dsps_busy(self):
+        """Released DSPs that are not idle (the emulator's .idle: in
+        waiti with nothing that can wake it but the board)."""
+        return [n for n in self.dsps_running()
+                if not getattr(self.dsps[n], "idle", False)]
+
+    def step_dsps(self):
+        """CHOICES['dsp']: each released DSP runs until its clock reaches
+        two DSP clocks per cycle of the slower CPU."""
+        target = self.cpu_frontier() * DSP_CLOCKS_PER_CYCLE
+        for n in self.dsps_running():
+            d = self.dsps[n]
+            while self.dsp_clock[n] < target:
+                if getattr(d, "idle", False):
+                    # Nothing changes until the board acts, and the board
+                    # acts only between CPU instructions.
+                    self.dsp_idle_clocks[n] += target - self.dsp_clock[n]
+                    self.dsp_clock[n] = target
+                    break
+                try:
+                    clocks = d.step()
+                except DspStop:
+                    raise
+                except Exception as exc:
+                    pc = getattr(d, "pc", None)
+                    raise DspStop(n, pc, "DSP%d at pc %s: %s: %s" % (
+                        n, "%08x" % pc if pc is not None else "?",
+                        type(exc).__name__, exc))
+                self.dsp_clock[n] += max(int(clocks), 1)
+                self.dsp_steps[n] += 1
 
     def deliver(self, cpu):
         """CHOICES['interrupts']: one interrupt per instruction boundary,
@@ -1787,6 +1989,8 @@ class Machine:
         not computed: its steps, model cycles and the two timers' own
         increments (which differ from model cycles where an instruction
         retires in 0 cycles), between two visits to the head."""
+        if self.dsps_busy():
+            return 0                # CHOICES['dsp']: a DSP shares the time
         sysm = cpu.sysm
         here = (cpu.steps, cpu.cycles, sysm.timer1, sysm.timer2)
         last = cpu.idle_last
@@ -1881,6 +2085,8 @@ class Machine:
                 total += 1
                 cpu.cycles += max(rec.cyc, 1)
                 self.deliver(cpu)
+                if self.dsps:
+                    self.step_dsps()
                 if self.idle_skip and cpu.state.pc == self.idle_head:
                     total += self.try_idle_skip(cpu, start + max_steps - total)
                 if cpu.sysm.events:
@@ -1896,6 +2102,10 @@ class Machine:
             status = "REFUSED on CPU %d at %s (pc %08x, parcels %s): %s" % (
                 cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc,
                 " ".join("%04x" % p for p in exc.parcels), exc.reason)
+        except DspStop as exc:
+            status = "STOP on DSP%d (CPU %d at %s, pc %08x): %s" % (
+                exc.n, cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc,
+                exc)
         except Stop as exc:
             status = "STOP on CPU %d at %s (pc %08x): %s" % (
                 cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc, exc)
@@ -1927,6 +2137,8 @@ def main(argv):
                     "to this PNG file when the run ends")
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every idle lap (CHOICES['idle-skip'])")
+    ap.add_argument("--dsp", choices=("inert", "emulated"), default="inert",
+                    help="the DSP3210s (CHOICES['dsp'])")
     args = ap.parse_args(argv)
     if args.resume:
         import pickle
@@ -1935,6 +2147,18 @@ def main(argv):
         elf, prior = m.elf, m.steps
         if not hasattr(m.regs, "dsp_log"):     # saved before CHOICES['dsp']
             m.regs.dsp_log = []
+        if not hasattr(m, "dsps"):              # saved before DSP emulation
+            m.board.on_internal = m.internal_changed
+            m.dsp_mode, m.dsp_class = "inert", None
+            m.dsps, m.dsp_clock, m.dsp_steps = {}, {}, {}
+        if not hasattr(m, "dsp_idle_clocks"):
+            m.dsp_idle_clocks = {n: 0 for n in m.dsps}
+        if (args.dsp == "emulated" and m.regs.reset & 0x70
+                and m.dsp_mode != "emulated"):
+            raise SystemExit("beboot: %s was saved with a DSP already "
+                             "released (reset register 0x%02x) and inert "
+                             "DSPs; an emulated DSP cannot start mid-run"
+                             % (args.resume, m.regs.reset))
         print("beboot: resumed %s at %d steps" % (args.resume, prior))
     else:
         if not args.disk and not args.kernel:
@@ -1947,6 +2171,9 @@ def main(argv):
                                                    args.memsize))
     if args.no_idle_skip:
         m.idle_skip = False
+    m.dsp_mode = args.dsp
+    if args.dsp == "emulated":
+        m.dsp_class = load_dsp_class()
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
     status = m.run(args.max_steps,
@@ -1960,8 +2187,18 @@ def main(argv):
               % (i, d.reads, d.writes))
     print("interrupts taken: %d" % m.interrupts)
     for n, run in m.regs.dsp_log:
-        print("DSP%d %s (CHOICES['dsp']: not modelled, it never runs)"
-              % (n, "released from reset" if run else "put back into reset"))
+        print("DSP%d %s (CHOICES['dsp'] %s)"
+              % (n, "released from reset" if run else "put back into reset",
+                 m.dsp_mode))
+    for n in sorted(m.dsps):
+        d = m.dsps[n]
+        print("DSP%d: %d steps, %d clocks (%d of them idle), pc %s%s" % (
+            n, m.dsp_steps[n], m.dsp_clock[n], m.dsp_idle_clocks[n],
+            "%08x" % d.pc if getattr(d, "pc", None) is not None else "?",
+            ", idle" if getattr(d, "idle", False) else ""))
+        for (what, size, addr), k in sorted(d.bus.outside.items()):
+            print("DSP%d %s of size %d at 0x%08x (outside the shadow RAM): "
+                  "%d times" % (n, what, size, addr, k))
     if m.skips:
         print("idle skip: %d skips, %d steps not executed"
               % (m.skips, m.skipped_steps))
