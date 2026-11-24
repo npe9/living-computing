@@ -7,6 +7,11 @@ Bluespec FEP emulator's bench (bsv/PimmFepEmuTb.bsv, bsv/run_fepemu.sh).
     python3 ref/pimm/record_fep.py --part odd one part
     python3 ref/pimm/record_fep.py --check    the tapes on disk are what a
                                               recording gives now
+    python3 ref/pimm/record_fep.py --kernel PKL [--check]
+                                              the "kernel" tape only, from
+                                              PIMOS's start (PKL: a machine
+                                              longrun_ipl.py --reference
+                                              --save wrote; seconds)
 
 ALL OURS (a test tool).  What a tape holds: the device options of the
 part and every call the reference model made of Fep.command, in order,
@@ -38,6 +43,30 @@ in the CDB, an unknown CDB, getb on a device not open, a second open,
 close not open, a packet flag 2).  An error ends fep.py's use (the
 caller raises); the tape starts a new section ("config" again) after
 each.
+
+"direct kernel": a direct sequence of OURS (no machine) for the
+answers fep.py has for PIMOS's start, and their edges: INQUIRY to unit
+7 (and while a reply is queued, and under lag: it is not a RECEIVE),
+TEST UNIT READY to each absent unit 0-5 (Result NO_DEVICE, also with a
+LUN and CDB bytes fep.py does not look at), append_open (203) with the
+kernel's own message, with an integer path, then read_open, getb and
+close on the appending device; and as one section each, every FepError
+nearby: INQUIRY of another length, LUN or direction, or to an absent
+unit; TEST UNIT READY to unit 6, to an absent unit with a direction,
+length or CDB length; append_open twice, on a device with a file open,
+with three arguments; getb, close and putb (111) on a device that only
+appends.
+
+"kernel": recorded from the real PIMOS start, `longrun_ipl.go` on a
+machine `longrun_ipl.py --reference --save PKL` wrote, with
+fepm.Fep replaced as above (go() makes its device as fepm.Fep at call
+time).  Not made by a plain run (it needs PKL, ~1.1 GB, 15-50 min to
+make); `--kernel PKL --check` checks it.  Its last commands move as
+PIMOS's start goes further (the stop is another agent's work): its
+check is that the replay gives the run's answers and that the first
+ten answered commands are the conversation of
+docs/binary_reverse_engineering.md 1.4 (TEST UNIT READY and INQUIRY
+to unit 7, TEST UNIT READY to 5..0, the append_open SEND, its RECEIVE).
 """
 import os
 import struct
@@ -52,7 +81,8 @@ import fep as fepm  # noqa: E402
 
 ORIGINAL = fepm.Fep
 SLUG = {'one file': 'one_file', 'two files': 'two_files', 'characters': 'characters',
-        'late': 'late', 'odd': 'odd', 'small buffer': 'small_buffer', 'direct': 'direct'}
+        'late': 'late', 'odd': 'odd', 'small buffer': 'small_buffer', 'direct': 'direct',
+        'direct kernel': 'direct_kernel', 'kernel': 'kernel'}
 
 
 class Recording(ORIGINAL):
@@ -199,6 +229,101 @@ def direct_sections():
     return s
 
 
+# ---- the direct kernel section, OURS ---------------------------------
+def inquiry(n=255, lun=0, unit=7, direction=2, clen=None):
+    c = bytes([fepm.INQUIRY, lun << 5, 0, 0, n if clen is None else clen])
+    return (unit, lun, c, n, direction, b'')
+
+
+def tur_at(unit, lun=0, c=bytes(5), length=0, direction=0):
+    return (unit, lun, c, length, direction, b'')
+
+
+def append_msg(path):
+    return fepm.pack_message([fepm.APPEND_OPEN, b'', 0, 0, path])
+
+
+def direct_kernel_sections():
+    std = dict(getb_unit=1, getb_bytes=0, lag=0, max_buffer=16000)
+    syslog = jis('pimos:pimos.syslog')
+    getb = lambda n: fepm.pack_message([fepm.GETB, n])         # noqa: E731
+    close = fepm.pack_message([fepm.CLOSE])
+    s = []
+    # 1. the kernel's bus scan and its first message, then the edges
+    # that are answered
+    s.append((std, [
+        tur_at(7), inquiry()] + [tur_at(u) for u in (5, 4, 3, 2, 1, 0)] + [
+        tur_at(3, lun=2, c=bytes([0, 0x40, 0, 0, 9])),        # LUN, CDB bytes: not looked at
+        tur_at(0, lun=1, c=bytes([0, 0x1f, 1, 2, 3])),
+        send(pkt(16, 0, append_msg(syslog))),
+        inquiry(),                                          # a reply queued: INQUIRY answers
+        receive(16384), receive(16384),                     # the reply; then nothing
+        send(pkt(17, 0, fepm.pack_message([fepm.APPEND_OPEN, b'', 0, 0, 5]))),  # an integer path
+        receive(64),
+        send(pkt(16, 0, open_msg(rs.LIST))), receive(64),   # read_open on an appending device
+        send(pkt(16, 0, getb(40))), receive(200), send(pkt(16, 0, close)), receive(64),
+        tur_at(5), inquiry()]))
+    # 2. lag: INQUIRY is not held back
+    s.append((dict(std, lag=1), [
+        send(pkt(16, 0, append_msg(syslog))), inquiry(), receive(64), inquiry(), receive(64)]))
+    # 3. an odd-length path (read_open would raise; append_open does not look)
+    s.append((std, [send(pkt(16, 0, append_msg(b'abc'))), receive(64)]))
+    # 4. each FepError, one a section
+    errs = [
+        [inquiry(36)],                                      # another length
+        [inquiry(255, clen=254)],                           # the CDB's length not the length
+        [inquiry(lun=1)],                                   # LUN 1
+        [inquiry(direction=0)],                             # no data in
+        [inquiry(unit=3)],                                  # INQUIRY to an absent unit
+        [tur_at(6)],                                        # PIM/m's own unit
+        [tur_at(0xffffffff)],                               # unit -1 (not absent: not 0..5)
+        [tur_at(2, direction=2)],                           # absent, a direction
+        [tur_at(2, length=4)],                              # absent, a length
+        [tur_at(2, c=bytes(6))],                            # absent, a 6-byte CDB
+        [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, append_msg(syslog)))],  # twice
+        [send(pkt(16, 0, open_msg(rs.LIST))), send(pkt(16, 0, append_msg(syslog)))],   # file open
+        [send(pkt(16, 0, fepm.pack_message([fepm.APPEND_OPEN, b'', 0, syslog])))],     # 3 args
+        [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, getb(10)))],            # getb
+        [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, close))],               # close
+        [send(pkt(16, 0, append_msg(syslog))),
+         send(pkt(16, 0, fepm.pack_message([111, b'log line'])))],                     # putb
+    ]
+    for e in errs:
+        s.append((std, e))
+    return s
+
+
+# ---- the kernel part: PIMOS's start ----------------------------------
+# the first ten answered commands (docs/binary_reverse_engineering.md 1.4)
+KERNEL_FIRST = [(7, 0x00), (7, 0x12)] + [(u, 0x00) for u in (5, 4, 3, 2, 1, 0)] + \
+    [(7, fepm.SEND), (7, fepm.RECEIVE)]
+
+
+def record_kernel(pkl):
+    import pickle
+    import longrun_ipl as lr
+    with open(pkl, 'rb') as f:
+        m, loaded, info = pickle.load(f)
+    Recording.calls = []
+    fepm.Fep = Recording
+    try:
+        lr.go(m, loaded, info, [], True)
+    finally:
+        fepm.Fep = ORIGINAL
+    opts = options({})
+    cmds = [c for c, _ in Recording.calls]
+    seen = [('N',) if g is None else ('D', g[0], bytes(g[1])) for _, g in Recording.calls]
+    if replay([(opts, cmds)], []) != seen:
+        raise SystemExit('record_fep: kernel: a replay into a fresh fep.Fep differs')
+    done = [c for c, a in zip(cmds, seen) if a[0] == 'D']
+    if [(c[0], c[2][0]) for c in done[:10]] != KERNEL_FIRST:
+        raise SystemExit('record_fep: kernel: the first answered commands are %r'
+                         % [(c[0], c[2][:1].hex()) for c in done[:10]])
+    print('%-12s %3d calls (%d answered, %d not ready); go stopped: %s'
+          % ('kernel', len(cmds), len(done), len(cmds) - len(done), info['go']['stop']))
+    return [(opts, cmds)]
+
+
 # ---- tapes -----------------------------------------------------------
 def write_tape(path, label, files, sections):
     lines = ['# %s: recorded by ref/pimm/record_fep.py (OURS); the commands only' % label,
@@ -291,14 +416,23 @@ def most_queued(opts, cmds, files):
 
 
 def main(argv):
-    parts = list(rs.PARTS) + [('direct', [rs.HASH], {})]
-    if '--part' in argv:
+    parts = list(rs.PARTS) + [('direct', [rs.HASH], {}), ('direct kernel', [rs.HASH], {})]
+    if '--kernel' in argv:
+        parts = [('kernel', [], {})]
+    elif '--part' in argv:
         want = argv[argv.index('--part') + 1]
         parts = [p for p in parts if p[0] == want or SLUG[p[0]] == want]
     os.makedirs(TAPES, exist_ok=True)
     bad = 0
     for label, files, device in parts:
-        sections = direct_sections() if label == 'direct' else record(label, files, device)
+        if label == 'direct':
+            sections = direct_sections()
+        elif label == 'direct kernel':
+            sections = direct_kernel_sections()
+        elif label == 'kernel':
+            sections = record_kernel(argv[argv.index('--kernel') + 1])
+        else:
+            sections = record(label, files, device)
         path = os.path.join(TAPES, SLUG[label] + '.tape')
         if '--check' in argv:
             if write_tape(None, label, files, sections) != open(path).read():
