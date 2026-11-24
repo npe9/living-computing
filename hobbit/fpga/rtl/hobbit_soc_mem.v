@@ -22,11 +22,22 @@
 //      else is entered as 0 (a device register is never walked).
 //   4. Only then does it set fire.
 //
-// So a core clock costs at least five system clocks, plus the memory's.
-// The core counts its own clocks, so its cycle counts do not change.
+// So a core clock costs at least four system clocks plus SETTLE, plus the
+// memory's.  The core counts its own clocks, so its cycle counts do not
+// change.
+//
+// SETTLE is how many system clocks the core's logic is given, after the
+// last change to its inputs (a core edge, rdData, the window), before the
+// probes are sampled.  The core's arrays read on the system clock
+// (rtl/hobbit_sysregfile.v), one clock per array a value passes through
+// on its way to a probe, so SETTLE must be at least the longest such
+// chain.  HOBBIT_SIM checks it at every core edge: a valid probe in RAM
+// or ROM that the window does not hold prints PROBE STALE and stops the
+// run (fpga/README.md, "The core's arrays on the system clock").
 module hobbit_soc_mem #(
     parameter NWIN = 16,
-    parameter NPROBE = 22
+    parameter NPROBE = 22,
+    parameter SETTLE = 1
 ) (
     input  wire                 clk,
     input  wire                 rst,
@@ -71,6 +82,7 @@ module hobbit_soc_mem #(
     reg        rnew;             // a read was captured at this edge
     reg [1:0]  wi;               // write in flight
     reg [NPROBE*33-1:0] pq;      // probes, registered
+    reg [3:0]  settle_n;         // system clocks spent in S_SETTLE
 
     reg        win_v [0:NWIN-1];
     reg [31:0] win_a [0:NWIN-1];
@@ -124,7 +136,8 @@ module hobbit_soc_mem #(
     always @(posedge clk) begin
         aux_done <= 1'b0;
         if (rst) begin
-            st <= S_SETTLE; fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0;
+            st <= S_SETTLE; settle_n <= 0;
+            fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0;
             bk_valid <= 1'b0; core_clocks <= 0; wptr <= 0; ra <= 0;
             cpu_rdData <= 0;
             for (i = 0; i < NWIN; i = i + 1) begin
@@ -168,7 +181,11 @@ module hobbit_soc_mem #(
                     cpu_rdData <= bk_rdata;
                     st <= S_SETTLE;
                 end
-            S_SETTLE: st <= S_PROBE;     // the probes settle on the new state
+            S_SETTLE:                    // the probes settle on the new state
+                if (settle_n + 1 >= SETTLE) begin
+                    settle_n <= 0;
+                    st <= S_PROBE;
+                end else settle_n <= settle_n + 1'b1;
             S_PROBE: begin pq <= cpu_probes; pi <= 0; st <= S_CHECK; end
             S_CHECK:
                 if (aux_valid) begin
@@ -218,4 +235,52 @@ module hobbit_soc_mem #(
             endcase
         end
     end
+
+`ifdef HOBBIT_SIM
+    // Probe freshness: on a core edge every valid probe in RAM or ROM must
+    // be in the window, as the probes the core shows *now* (not the ones
+    // sampled in S_PROBE) -- a probe that moved after the sample, because
+    // an array read had not settled, would otherwise be walked as 0.
+    // Window uniqueness: HobbitSocCpu's winRead ORs the words of every
+    // matching valid entry, which is the priority select only while no
+    // two valid entries hold one address (a fill is made on a miss only).
+    integer pp, ww, w2;
+    reg hit_now;
+    // Out of reset two core edges are never in consecutive system clocks
+    // (S_WR, S_RD, S_SETTLE, S_PROBE and S_CHECK lie between them), which
+    // rtl/hobbit_sysregfile.v's check relies on to tell reset's edges from
+    // the run's.
+    reg edge_q;
+    always @(posedge clk) begin
+        edge_q <= !rst && edge_now;
+        if (!rst && edge_now && edge_q) begin
+            $display("EDGE STALE at core clock %0d: two core edges in consecutive system clocks",
+                     core_clocks);
+            $finish;
+        end
+        if (!rst && edge_now) begin
+            for (ww = 0; ww < NWIN; ww = ww + 1)
+                for (w2 = ww + 1; w2 < NWIN; w2 = w2 + 1)
+                    if (win_v[ww] && win_v[w2] && win_a[ww] == win_a[w2]) begin
+                        $display("WINDOW DUPLICATE at core clock %0d: entries %0d and %0d both hold %08x",
+                                 core_clocks, ww, w2, win_a[ww]);
+                        $finish;
+                    end
+            for (pp = 0; pp < NPROBE; pp = pp + 1) begin
+                if (cpu_probes[pp*33 + 32] &&
+                    is_mem({cpu_probes[pp*33+2 +: 30], 2'b00})) begin
+                    hit_now = 1'b0;
+                    for (ww = 0; ww < NWIN; ww = ww + 1)
+                        if (win_v[ww] && win_a[ww] == {cpu_probes[pp*33+2 +: 30], 2'b00})
+                            hit_now = 1'b1;
+                    if (!hit_now) begin
+                        $display("PROBE STALE at core clock %0d: probe %0d %08x not in the window",
+                                 core_clocks, pp, {cpu_probes[pp*33+2 +: 30], 2'b00});
+                        $finish;
+                    end
+                end
+            end
+        end
+    end
+`endif
 endmodule

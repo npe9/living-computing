@@ -8,6 +8,7 @@
 // (the 16-entry window, the 22 probes, the three write ports) and the
 // gated-clock crossings.  It computes nothing; it is never simulated.
 module mkHobbitSocCpu(
+  input          SYSCLK,
   input          CLK,
   input          RST_N,
   output         rdReq,

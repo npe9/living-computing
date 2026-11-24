@@ -237,6 +237,8 @@ int main(int argc, char **argv) {
         bool edge = top->cpu_ce;      // the coming rising edge is a core edge
         top->clk = 1; top->eval();
         clocks++;
+        // A freshness check's $finish (HOBBIT_SIM) ends the run here.
+        if (Verilated::gotFinish()) { printf("SOC FAIL: the simulation called $finish\n"); why = 1; break; }
         if (edge && arming && top->arm_en) armed = true;
         if (edge && taking) {
             uint32_t want = pk_irq_pc();

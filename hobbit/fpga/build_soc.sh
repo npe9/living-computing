@@ -42,15 +42,18 @@ if grep -q 'G0021' "$B/bsc.log"; then
   exit 1
 fi
 
+# The core's arrays read on the system clock (sysram_filter.py).
+python3 sysram_filter.py "$B/mkHobbitSocCpu.v" "$B/mkHobbitSocCpu.sys.v"
+
 # The bsc library cells the netlist instantiates (build.sh does the same).
 LIBREADS=""
-for m in $(sed -n 's/^  \([A-Z][A-Za-z0-9_]*\)[ #(].*/\1/p' "$B/mkHobbitSocCpu.v" | sort -u); do
+for m in $(sed -n 's/^  \([A-Z][A-Za-z0-9_]*\)[ #(].*/\1/p' "$B/mkHobbitSocCpu.sys.v" | sort -u); do
   if [ -f "$BLUESPECDIR/Verilog/$m.v" ]; then
     LIBREADS="$LIBREADS read_verilog $BLUESPECDIR/Verilog/$m.v;"
   fi
 done
 
-CPUREADS="read_verilog $B/mkHobbitSocCpu.v; $LIBREADS"
+CPUREADS="read_verilog $B/mkHobbitSocCpu.sys.v; read_verilog rtl/hobbit_sysregfile.v; $LIBREADS"
 fi
 
 yosys -p "$CPUREADS \

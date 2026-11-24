@@ -36,6 +36,21 @@
 # addr, mask differ (last function reached before it: _startup)" (the
 # core fetched insn 00000000 at 80004004); rc=1.  Reverted by the reverse
 # patch; identical to the pre-injection copy.
+#
+# The core's arrays read on the system clock (fpga/README.md, "The core's
+# arrays on the system clock"): the run is built from sysram_filter.py's
+# netlist, and the HOBBIT_SIM checks (SYSRAM STALE, PROBE STALE, WINDOW
+# DUPLICATE, EDGE STALE) fail it.  With the area milestones of
+# docs/fpga_area.md, 2026-11-24: the same MATCH, all 2,893,027 HRI lines
+# byte-identical to the run before them, 9,920,333 core clocks.
+# Discriminating, each in a scratch copy of the tree, run_soc.sh 300000,
+# OBSERVED: hobbit_sysregfile.v's read register clocked on CLK instead of
+# SYSCLK, "SYSRAM STALE TOP.soc_sim_top.soc.cpu.core_c_pf_way0 at system
+# clock 5106: a 2/1/0/1/0", 0 records, rc=1; hobbit_soc_mem.v's S_CHECK
+# counting every probe a hit, "PROBE STALE at core clock 0: probe 21
+# 00000000 not in the window", rc=1; S_CHECK treating a hit as a miss
+# when wptr is 3, "WINDOW DUPLICATE at 0: entries 2 and 3 both hold
+# 80000000", 2245 records, rc=1.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 fpga=$(dirname "$here")
@@ -58,15 +73,19 @@ if [ "${SOC_KEEP_SIM:-0}" != 1 ] || [ ! -x "$work/obj/Vsoc_sim_top" ]; then
       -vdir "$work/bsc" -bdir "$work/bsc" -info-dir "$work/bsc" \
       -p "$hobbit/bsv:$BLUESPECDIR/Libraries" "$hobbit/bsv/HobbitSocCpu.bsv" \
       > "$work/bsc.log" 2>&1 || { tail -30 "$work/bsc.log"; exit 1; }
+  # The core's arrays read on the system clock, as on the board.
+  python3 "$fpga/sysram_filter.py" "$work/bsc/mkHobbitSocCpu.v" \
+      "$work/bsc/mkHobbitSocCpu.sys.v"
   ${CC:-cc} -O2 -c "$hobbit/bsv/p9kern.c" -o "$work/p9kern.o"
   rm -f "$work/obj/Vsoc_sim_top"
   verilator --cc --exe --build -j "${VL_JOBS:-4}" -O3 \
       --x-assign fast --x-initial fast --no-timing \
       -Wno-fatal -Wno-lint -Wno-style -Wno-STMTDLY -Wno-MULTIDRIVEN \
-      -DHOBBIT_SIM \
+      -DHOBBIT_SIM ${SOC_SETTLE:+-DHOBBIT_SOC_SETTLE=$SOC_SETTLE} \
       --top-module soc_sim_top -y "$BLUESPECDIR/Verilog" -Mdir "$work/obj" \
       -CFLAGS "-O2" \
-      "$work/bsc/mkHobbitSocCpu.v" "$fpga/rtl/uart8n1.v" "$fpga/rtl/hostlink.v" \
+      "$work/bsc/mkHobbitSocCpu.sys.v" "$fpga/rtl/hobbit_sysregfile.v" \
+      "$fpga/rtl/uart8n1.v" "$fpga/rtl/hostlink.v" \
       "$fpga/rtl/sdram_word.v" "$fpga/rtl/hobbit_soc_mem.v" "$fpga/rtl/hobbit_soc.v" \
       "$here/sdram_model.v" "$here/soc_sim_top.v" "$here/soc_main.cpp" \
       "$work/p9kern.o" > "$work/verilator.log" 2>&1 || { tail -30 "$work/verilator.log"; exit 1; }
@@ -83,7 +102,14 @@ simstatus=0
 (cd "$work" && SOC_LOAD="$loadfile" P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
     SOC_ROM="$hobbit/tools/p9kbuild/fpi.rom" SOC_IOLOG="$work/io.log" \
     ./obj/Vsoc_sim_top > "$work/core.log" 2>&1) || simstatus=$?
-grep '^SOC\|^P9KERN' "$work/core.log" || true
+grep '^SOC\|^P9KERN\|STALE\|DUPLICATE' "$work/core.log" || true
+# The arrays' and the probes' freshness checks (HOBBIT_SIM in
+# rtl/hobbit_sysregfile.v and rtl/hobbit_soc_mem.v) stop the run.
+stale=0
+if grep -q 'STALE\|DUPLICATE' "$work/core.log"; then
+  echo "run_soc.sh: a core edge came before the core's logic had settled" >&2
+  stale=1
+fi
 
 fail=0
 python3 "$hobbit/tools/p9coreboot.py" compare "$work/rec/ref.hri" \
@@ -96,4 +122,5 @@ else
   fail=1
 fi
 [ "$simstatus" = 0 ] || { echo "run_soc.sh: the simulator stopped with status $simstatus" >&2; fail=1; }
+[ "$stale" = 0 ] || fail=1
 exit $fail
