@@ -87,7 +87,8 @@ directory (the tree itself was not edited):
         KeyError)
   pimm.py scsi_do: TransferredLength is the buffer's length
         caught ONLY by the pinned heap cells (458,899 for 388,311 in
-        "one file"); Files and Loaded are the same.  The IPL cuts a
+        "one file", under the merger timing before 2026-11-24); Files
+        and Loaded are the same.  The IPL cuts a
         reply by its own length words
   pimm.py: a merger input bound to a vector refused (as before)
         Unimplemented in the first part: the path is run
@@ -171,9 +172,14 @@ PARTS = [('one file', [HASH], {}),
          ('small buffer', [HASH], dict(max_buffer=512))]
 # part "odd", as observed 2026-11-23: the loader's answer
 ODD = ('abnormal', (8, [ord(c) for c in 'internal error while reading unloaded file']))
-# pinned, as observed 2026-11-23: (commands on the bus, heap cells)
-PINNED = {'one file': (19, 388311), 'two files': (31, 684498), 'characters': (29, 664477),
-          'late': (31, 684648), 'odd': (21, 218326), 'small buffer': (13, 35968)}
+# pinned, as observed 2026-11-24: (commands on the bus, heap cells).
+# Re-pinned for the merger timing change (2026-11-24, docs/
+# pimm_semantics.md merge: a woken merge_in runs before other goals);
+# the heap moved (388,311 684,498 664,477 684,648 218,326 35,968
+# before), the commands did not, and every part's wire and FEP
+# messages are identical before and after (compared by hash).
+PINNED = {'one file': (19, 388339), 'two files': (31, 686310), 'characters': (29, 666351),
+          'late': (31, 686718), 'odd': (21, 218229), 'small buffer': (13, 35849)}
 
 
 FILES = {}          # the .sav files read so far, by path

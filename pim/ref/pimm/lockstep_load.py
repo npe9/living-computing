@@ -67,6 +67,12 @@ Not caught: change_element_size leaving the padding count 0 (the IPL
 only widens to 32 bits, whose padding is 0).  Not run: the other 15
 string operations as the IPL's code (only 3), narrowing, the forms of
 string_operation with a vector of four or three, a file read error.
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 331636 -> 331660 trace
+lines, both models identical and every check passing; the line
+numbers of the injections above are as observed before it.
 """
 import os
 import sys
@@ -83,7 +89,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=331636, cells=366, interned=13)
+PINNED = dict(parts=2, lines=331660, cells=366, interned=13)
 FILE = 'pimm_patch_hash360E.sav'
 BUFFER = 97
 MUST_RUN = ('read_32/8', 'read_str/9', 'sum_check/5', 'double_buffer/4', 'decode_atom/5')

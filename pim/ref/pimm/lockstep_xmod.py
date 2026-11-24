@@ -78,6 +78,11 @@ NOT caught here: a dereference limited to the image's depth (one REF
 met in xTab, then a miss): the bench's chain is no deeper than the
 image's;
 the field's MRB; a cache field that is not 0 (refused, never met).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 7421731 -> 7431633
+trace lines, both models identical and every check passing.
 """
 import os
 import sys
@@ -90,7 +95,7 @@ import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=7421731)
+PINNED = dict(parts=2, lines=7431633)
 FILE = 'pimm_patch_mkdir360E.sav'
 SITE = (674183, 0x66, 586110, 586151)   # pc, opcode, called module, target
 DEPTH = 2                   # references from the module field to {MOD, ..}

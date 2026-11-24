@@ -87,6 +87,11 @@ tried on the reference model alone:
   hash always 7            passes, as it must: any function is correct
 A count on the reference model: 22 string comparisons equal, 16
 unequal, 64 float guards, in the run before the abc pair was added.
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 2058423 -> 2058801
+trace lines, both models identical and every check passing.
 """
 import os
 import sys
@@ -103,7 +108,7 @@ import lockstep_load as lload  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 import lockstep_newm as newm  # noqa: E402
 
-PINNED = dict(parts=2, lines=2058423, names=11, cells=366)
+PINNED = dict(parts=2, lines=2058801, names=11, cells=366)
 
 
 def jis(text):

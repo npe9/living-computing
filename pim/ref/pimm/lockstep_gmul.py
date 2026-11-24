@@ -65,6 +65,11 @@ NOT run: an overflow (no site of this file can overflow: |((L+3)/4)*4|
 is at most |L+3|, and an overflow of L+3 fails the add first), a
 non-integer operand and an unbound one (the guards before it, L >= 0
 and the add, take those first).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 2065776 -> 2067292
+trace lines, both models identical and every check passing.
 """
 import os
 import sys
@@ -76,7 +81,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 
-PINNED = dict(parts=16, lines=2065776)
+PINNED = dict(parts=16, lines=2067292)
 FILE = 'pimm_patch_scsifep360E.sav'
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 NIL = (pimm.ATOM, 0)

@@ -123,7 +123,12 @@ whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
 `ipl_pool:keyed_set/2`, against a dictionary; the merger is a waiting
-goal here, `PimmNBox.bsv`, not the machine's merger cell) and `load` (`ipl_loader:load_file/9`
+goal here, `PimmNBox.bsv`, not the machine's merger cell) and `merge`
+(the same pool's merger with two and three inputs bound in one step:
+they reach the pool in the order they were bound, as VPIM, KLIC and
+PDSS pass them on at the unification; a woken `merge_in` goes on the
+goal box's merger's list, `PimmGBox.bsv`, taken before the ready
+queue, 2026-11-24) and `load` (`ipl_loader:load_file/9`
 loads a real object file with the IPL's own buffer reader, checksum
 and atom-number pool; a file with its checksum altered is refused;
 `string_operation`, `change_element_size`, 32-bit strings) and `mrb`
@@ -228,7 +233,8 @@ fail none (every string has zero pad).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
-identical): the IPL's `load/4` on the whole held `pimos.ipl`,
+identical, before the merger timing change of 2026-11-24, which moves
+the count; not run again since): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).

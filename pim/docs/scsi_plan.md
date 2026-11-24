@@ -51,14 +51,19 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   and the window's `getl`; `longrun_ipl.py` gives the device its
   scripted event (the login of §7.5) when PIMOS idles; eleven more
   instructions on both models (`lockstep_login.py`,
-  `lockstep_shoen3.py`, `lockstep_alt.py`). 8,586,110 instructions:
+  `lockstep_shoen3.py`, `lockstep_alt.py`). 8,587,092 instructions
+  (8,586,110 before the merger timing change of 2026-11-24):
   the local login service starts, the tcpip one is refused, the login
   `pimos` (user `pmpsi`) is accepted, the window `PIMOS CONSOLE` is
   made and the shell writes `Shell>> ` to it; the run ends with its
   `getl` held, 1,220 goals waiting (1.4). With `--type shutdown`
-  the line is taken and the command starts, then stops in a wait cycle
-  that the model's merger timing makes (1.4, "A command typed").)* On the Bluespec core the whole
-  IPL load is identical (447,739,516 trace lines); `--go` has not been
+  the line is taken and the command starts; with the merger acting in
+  the order of the unifications on both models (2026-11-24,
+  `pimm_semantics.md` merge) it reaches `shutdown_body`'s string-I/O
+  window, `pimos_standard_io_window`, whose 601 `fep.py` refuses (1.4,
+  "A command typed").)* On the Bluespec core the whole
+  IPL load is identical (447,739,516 trace lines, 2026-11-23, before
+  the merger timing change); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
   **reference model only** (`pimm.py` `i_scsi_init`, `i_scsi_command`,

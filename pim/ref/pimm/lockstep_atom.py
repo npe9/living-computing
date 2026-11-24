@@ -126,6 +126,12 @@ value changed: the shoen record has one more cell, SH_MASK, written at
 create (1 shoen made: 1 lines), and start_shoen empties the parked
 list, SH_GOAL := 0 (1 starts: 1 lines); counted on the reference's
 trace (both writes, nothing else new).
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 1257 -> 1300 trace
+lines, both models identical and every check passing (the server
+still asked exactly the two requests).  The goals run in another
+order, and each pickup that splices the list writes one link more.
 """
 import os
 import sys
@@ -137,7 +143,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=4, lines=1257)
+PINNED = dict(parts=4, lines=1300)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 GO1 = 17391                 # top:go1/4, its first instruction current_node 4, 5
 MERGE = GO1 + 2             # merge 6, 6

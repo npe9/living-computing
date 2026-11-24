@@ -510,7 +510,7 @@ the device are given it again whenever the machine runs dry.
   | guard `bignum_not_less_than` (and `bignum_less_than`) | implemented, after VPIM (`lockstep_login.py`) | 8,247,127 |
   | `create_shoen` with `{MinPrio, MaxPrio}`, `{MinNode, NumNode}` (`shoen:execute1/7`) | accepted and dropped as the integers are (`lockstep_shoen3.py`) | 8,256,632 |
   | `enqueue_goal` of 17 arguments | the spread of a vector of 7 or more (`lockstep_login.py`) | 8,463,929 |
-  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,586,110, 1,220 goals waiting |
+  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,587,092, 1,220 goals waiting (8,586,110 before the merger timing change of 2026-11-24) |
 
   The counts after the login are those of the run with `getb_unit=2`;
   the two before it (139,747 and 6,675,822) are from runs before that
@@ -550,7 +550,8 @@ the device are given it again whenever the machine runs dry.
   the shell resolves `get_code pimos shutdown go 0` and the job runs
   `shutdown:go`, `privilege:execute(shutdown_body:go, ..)`, a task by
   `execute_super`, and `shutdown_body:go` asks
-  `getenv(task:make_window)`. The run then stops: 8,673,642
+  `getenv(task:make_window)`. Under the merger timing before
+  2026-11-24 the run then stopped: 8,673,642
   instructions, nothing left to run, 1,388 goals waiting, the second
   line never asked for. Nothing was refused. The cause is a wait
   cycle (traced with probes outside the tree):
@@ -585,10 +586,18 @@ the device are given it again whenever the machine runs dry.
   `top_task` both absent from the job's environment,
   `shutdown_b.kl1`:39-53) and asks for a string-I/O device
   `pimos_standard_io_window` (601), which `fep.py` refuses (FepError,
-  8,689,393 instructions with (a)). So R6's second half needs the
-  merger made to act at the unification on BOTH models (a change of
-  semantics, every count after the first merger moves), then the
-  601/620 answers of that branch (`io(104)`, `io(130,"SHUTDOWN")`,
+  8,689,393 instructions with (a)). **Changed on both models
+  (2026-11-24)**: a woken `merge_in` goes on a merger's list taken
+  before the ready queue, in the order the goals were woken
+  (`pimm_semantics.md`, merge; `lockstep_merge.py`); every count after
+  the first merger moved (the lockstep pins, `ref_scsi.py`'s heap
+  cells; the wire is the same). The untyped run (a cache made afresh
+  under the new rule) now ends at 8,587,092 instructions, 1,220 goals
+  waiting, the same console and device log; with `--type shutdown
+  --type yes` the cycle does not form, `shutdown_body` takes its third
+  branch and the run stops at the 601 of `pimos_standard_io_window`
+  (FepError, 8,690,718 instructions). Next, the 601/620 answers of
+  that branch (`io(104)`, `io(130,"SHUTDOWN")`,
   `io(141)`, `io(111,"Really(yes/no)?")`, `io(110)` answered "yes",
   `shutdown_b.kl1`:46-53, 71-73). That branch prints no
   "Shutdown procedure starts." and its prompt differs from
