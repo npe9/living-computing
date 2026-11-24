@@ -13,5 +13,5 @@ wait ^% 60
 type rc /serve 10.0.2.15 255.255.255.0\n
 wait ^serving 120
 screen
-host python3 ../../tools/qemu1e/p9probe.py 127.0.0.1 ${P9PORT:-5640} src/plan9-1e lib/ndb/local hobbit/s9term 386/9pc rc/bin/termrc
+host python3 ../../tools/qemu1e/p9probe.py 127.0.0.1 ${P9PORT:-5640} src/plan9-1e --walk release.list lib/ndb/local hobbit/s9term 386/9pc rc/bin/termrc adm/mkext.log
 screen

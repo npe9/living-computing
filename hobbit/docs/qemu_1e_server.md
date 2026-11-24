@@ -12,14 +12,18 @@ port from the same `plan9-1e.tar.bz2`, run in `qemu-system-i386`.
 |---|---|
 | 1. how 1e PC was started; what QEMU must present | worked out from the sources, below |
 | 2. boot a shipped kernel to its console | **yes**: the distribution floppy's `9dos` boots to `rc` |
-| 3. a kfs with the 1e release on it, made by 1e's tools | **yes**: 1e's `disk/kfs -r` + `disk/mkext`, whole release (12,097 files, 390,693,466 bytes), 10m41s |
+| 3. a kfs with the 1e release on it, made by 1e's tools | **yes**: 1e's `disk/kfs -r` + `disk/mkext`, whole release (12,131 files, 391,570,750 bytes, every path and length checked over 9P), 11m24s |
 | 4. serve it; probe it from the host | **yes over TCP 564**: `p9probe.py` Tnop/Tsession/Tattach/walk/read, four files byte-identical to the tarball |
 | 4'. the terminal boot path over IL 17008 | **yes**: the shipped `9pc` in a second QEMU, joined by a `dgram` netdev, gets BOOTP from 1e's `ip/bootp`, mounts its root over IL 17008, runs `/386/init` and the release's `termrc` from the kfs, and lists `/hobbit` at its `%` prompt |
 | 5. CPU server | not done; what it takes is below |
 
 Three bytes-level patches to the shipped kernels were needed for QEMU's
-devices, each found with a QEMU trace (below).  Everything else is the
-release as shipped.
+devices, each found with a QEMU trace (below).  The programs and files
+served are the release's, byte for byte, but the kfs is not a copy of
+the 1993 file server's metadata: the mkfs archive format has no time
+field, so every file is dated at provisioning; owner and group are all
+`sys`; and modes are the tarball's owner bits copied to group and other
+(section 3).
 
 Everything is reproduced by `tools/qemu1e/build.sh` (tarball to
 provisioned disks) and checked by `tools/qemu1e/probe-tcp.sh` and
@@ -122,8 +126,14 @@ d-rwxrwxrwx M 5 bill   trog      0 Dec 22 12:25 /386
 ### 2a. Three QEMU differences, patched in the kernel
 
 `tools/qemu1e/patch_kernel.py` applies each as a byte-pattern match on
-8c's code for one source line, requiring exactly one match; it matches
-in the floppy `9dos`, `386/9dos` and `386/9pc`.
+8c's code for one source line, requiring exactly one match; all three match once each in the floppy
+`9dos`, `386/9dos` and `386/9pc` (`386/9dos`: file offsets 0x23ae7/
+0x23af1, 0x1ef49, 0x1e44b, the same as `9pc`).  The patched kernels
+exist only under `build/qemu/`; `tools/qemu1e/SHA256SUMS` pins the four
+inputs and the three patched outputs, and `build.sh` checks it.  The
+floppy images and disks are not pinned: `mcopy` stamps files with the
+host time, and `fs.img` is written by a running kfs (and both depend on
+those dates).
 
 1. **NE2000 PROM** (`ether2000.c reset`).  The probe reads the station
    PROM with 16-bit DMA into `ushort buf[16]` and requires
@@ -136,9 +146,11 @@ in the floppy `9dos`, `386/9dos` and `386/9pc`.
    ends IDENTIFY with `cp->cmd = Cident2` and a `wakeup`; `hardident`
    sleeps on `cmddone` (`cp->cmd == 0`).  QEMU completes IDENTIFY and
    raises IRQ 14 inside the `outb` of the command, before the process is
-   asleep, so the wakeup is lost and the sleep never ends (`-trace
-   ide_*,pic_*`: one IRQ 14, 256 data words read, no further command;
-   boot stops at `fs...`).  Patch: store 0 instead of Cident2.
+   asleep (`-trace ide_*,pic_*`: one IRQ 14, 256 data words read, no
+   further command; boot stops at `fs...`).  That the wakeup is lost
+   because it comes first is *inferred* from the source; the trace shows
+   only the IRQ, the data, and then nothing.  Patch: store 0 instead of
+   Cident2, so `cmddone` is already true when `hardident` sleeps.
 3. **Undrained probe sector** (`devhard.c hardprobe`).  hardprobe
    smallocs `buf` but never sets `cp->buf`, so `hardintr` skips the
    `inss` and the sector stays in the drive.  QEMU ignores commands
@@ -170,7 +182,15 @@ anyway (the archive, below).  No patch.
   `disk/mkfs -a` archive, in mkfs's header format
   (`mkfs.c:395-399`: `"%s %luo %s %s %d\n"`, owner/group `sys` as mkfs
   defaults, data after each file header, `end of archive`), attached raw
-  as the second drive.  `/adm` comes first.
+  as the second drive.  `/adm` comes first.  It is read from the
+  tarball, not from the host extraction: the release has 33 names that
+  differ from another only in case (`sys/src/cda/lde` and `LDE`,
+  `devpost/Hb` and `hb`, `*/bin/cda/lde`, `rc/bin/ape/cc`, ...), and the
+  case-insensitive macOS extraction silently keeps one of each pair (35
+  tarball entries lost; the first provisioning, from the extraction, had
+  12,097 files).  The files `floppies.sh` takes from the extraction are
+  not among them (`SHA256SUMS`).
+  `--list` writes every path and length for the probe's walk (section 4).
 * On the floppy system, `/kfsinit` (`kfsinit.rc`): `disk/kfs -r -f
   /dev/hd0fs`, `disk/kfscmd allow`, `disk/mkext -u -d /n/kfs /adm`,
   `disk/kfscmd user` (load the release's `/adm/users`; after a ream kfs
@@ -178,9 +198,13 @@ anyway (the archive, below).  No patch.
 
 The writer of the archive is a host script; the file system, its
 format, and every write into it are 1e's kfs and mkext from the floppy.
-Result (`build.out`): 733 dirs, 12,097 files, 390,693,466 data bytes;
+Result (`build.out`, 2026-11-23, 11m24s for the whole build):
+734 dirs, 12,131 files, 391,570,750 data bytes (the release plus the
+three overlay entries);
 `ls -l /n/kfs` shows the release's top level owned by `sys`; mkext's
-stderr is kept in the kfs as `/adm/mkext.log`.  kfs's block size is its
+stderr is kept in the kfs as `/adm/mkext.log`, which holds only
+`done` (5 bytes): no errors.  The probe's `--walk` (section 4) checks
+the result from the guest side.  kfs's block size is its
 default after a ream, 1024 bytes (`devwren.c:71`), which allows files up
 to about 65.8 MB; the largest in the release is under 60 MB.
 
@@ -238,8 +262,18 @@ lib/ndb/local: Tstat local sys sys mode 666 length 1414; read 1414 bytes; identi
 hobbit/s9term: Tstat s9term sys sys mode 777 length 550846; read 550846 bytes; identical to host copy
 386/9pc: Tstat 9pc sys sys mode 777 length 583255; read 583255 bytes; identical to host copy
 rc/bin/termrc: Tstat termrc sys sys mode 777 length 1781; read 1781 bytes; identical to host copy
+adm/mkext.log: Tstat mkext.log none none mode 666 length 5; not in the release; contents b'done\n'
+walk: server has 13419 paths, list 12865; missing 0, length differs 0, extra 554
 PASS
 ```
+
+The walk (`p9probe.py --walk build/qemu/release.list`) reads every
+directory of the served tree over 9P and compares every path and length
+with what `mkarchive.py` wrote: none missing, none differing.  The 554
+extra paths are what the `tcp564` service binds in (the 386 and rc
+binaries unioned on `/bin`, `#c` on `/dev`, `#Itcp` on `/net`) plus
+`/adm/mkext.log` and `/adm/tcp564.err`, both written by the server.
+Both test machines run with `-snapshot`, so `fs.img` stays as built.
 
 ### Transport for the Hobbit terminal: Ethernet, IL 17008
 
@@ -253,8 +287,14 @@ s9term's boot methods are `il tcp incon 9600 19200`
 * **IL** (`boot/ip.c connectil`): BOOTP broadcast to UDP 67, ARP, then
   `il!fs!17008` with no line discipline; 9P messages are IL messages.
   If the user is not `none`, `/boot` first dials `il!auth!17024`
-  (`userpasswd.c`); with no listener there it times out (~20 s,
-  `stil.c`) and prints `password not checked!`; a `none` boot skips it.
+  (`userpasswd.c`); a `none` boot skips it.  Observed with user
+  `glenda` (`TERMUSER=glenda il_term_test.py`): this server's
+  `aux/listen il` accepts the call and refuses it, logging `il: unknown
+  service 'il17024' from '10.9.0.3!5000': file does not exist` (there is
+  no auth server); `/boot` prints `boot: password not checked!: file does
+  not exist` and goes on: 2 s from the user prompt to `init: starting`,
+  `/dev/user` is `glenda`, and the same `ls` passes.  (With nothing at
+  all listening on IL, the dial would instead wait for IL's timeout.)
   An unanswered ARP for the fs, auth or gateway address hangs `/boot`
   for ever (`ip.c arp`, no retry bound).
 * **TCP** (`connecttcp`): port 564 with `fcall` pushed.  Also served.
@@ -290,6 +330,15 @@ appended to the floppy's `/lib/ndb/local`: the network, `fs9`
 (10.9.0.1, ether 525400123456), `hobbit` (10.9.0.2, ether
 **525400000b0b, a placeholder** for the model's SONIC address,
 `bootf=/hobbit/s9term`), `term386` (10.9.0.3, ether 525400123457).
+After the root is mounted, `/boot` calls `newkernel()` on a terminal
+(`boot.c:115-116`, `cpuflag == 0`), not with the BOOTP file but with
+`/<cputype>/9<conffile>` against the first 128 bytes of
+`<bootdisk>boot` (`newkernel.c`; `bootdisk` defaults to `#w/hd0`,
+`mkboot:66`).  It returns silently if either cannot be opened; for the
+Hobbit, `/hobbit/9term` is not in the release, so nothing happens.  On a
+mismatch it would ask `This kernel is out of date.  Copy a new one to
+disk?` and, on `y`, overwrite the boot partition.  `bootf=` is needed
+only because `bootp` will not answer without it.
 
 ### IL: a 9pc terminal boots from the server
 

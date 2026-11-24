@@ -29,10 +29,13 @@ S=$Q/src/plan9-1e
 [ -d "$S/386" ] || tar -xjf "$TAR" -C "$Q/src"
 
 sh "$here/floppies.sh"
+(cd "$Q" && shasum -a 256 -c "$here/SHA256SUMS")
 
-# /adm first: kfsinit's first pass reads only it
-python3 "$here/mkarchive.py" "$S" "$Q/release.arch" --overlay "$here/overlay" \
-	adm $(cd "$S" && ls | grep -v '^adm$')
+# from the tarball, not the extraction: the release has names that
+# differ only in case, which a case-insensitive host folds together.
+# /adm first: kfsinit's first pass reads only it.
+python3 "$here/mkarchive.py" "$TAR" "$Q/release.arch" --overlay "$here/overlay" \
+	--list "$Q/release.list" adm
 python3 "$here/mkdisk.py" "$Q/arch.img" --data "$Q/release.arch"
 python3 "$here/mkdisk.py" "$Q/fs.img" --fs "$FSMB"
 

@@ -15,8 +15,15 @@ NOTAG, then the kernel mount driver's Tattach (devmnt.c mattach: uname
 = the user, aname "", auth all zero) -- and then reads a directory and a
 file and compares the file with the host's copy of the release.
 
-usage: p9probe.py HOST PORT TREE [path ...]
+With --walk LIST (mkarchive.py --list), it then walks the whole served
+tree -- Tclone/Twalk/Topen/Tread of every directory -- and compares
+every path and length with LIST; paths the server has beyond LIST are
+counted under the service's bind points (/bin, /dev, /net) and listed
+elsewhere (files the server itself wrote, e.g. /adm/mkext.log).
+
+usage: p9probe.py HOST PORT TREE [--walk LIST] [path ...]
 """
+import os
 import socket
 import struct
 import sys
@@ -98,9 +105,72 @@ def dirent(b):
     return name, uid, gid, path, mode, mtime, length
 
 
+def readdir(c, fid):
+    out, off = [], 0
+    while True:
+        m, r = c.rpc(Tread, struct.pack('<HIIH', fid, off, 0, 8192 // DIRLEN * DIRLEN))
+        data = r[8:]
+        if not data:
+            return out
+        for i in range(0, len(data), DIRLEN):
+            out.append(dirent(data[i:i + DIRLEN]))
+        off += len(data)
+
+
+def walk(c, listfile):
+    want = {}
+    for line in open(listfile):
+        p, n = line.rsplit(' ', 1)
+        want[p] = int(n)
+    got = {}
+
+    def visit(path):
+        # a fresh fid from the root for each directory: 9P clones only
+        # unopened fids
+        c.rpc(Tclone, struct.pack('<HH', 1, 999))
+        for comp in path.split('/')[1:]:
+            c.rpc(Twalk, struct.pack('<H', 999) + s(comp, NAMELEN))
+        c.rpc(Topen, struct.pack('<HB', 999, 0))
+        ents = readdir(c, 999)
+        c.rpc(Tclunk, struct.pack('<H', 999))
+        for name, uid, gid, qpath, mode, mtime, length in ents:
+            p = path + '/' + name
+            got[p] = -1 if mode & CHDIR else length
+        for name, uid, gid, qpath, mode, mtime, length in ents:
+            if mode & CHDIR:
+                visit(path + '/' + name)
+
+    visit('')
+    missing = sorted(p for p in want if p not in got)
+    wrong = sorted(p for p in want if p in got and got[p] != want[p])
+    extra = sorted(p for p in got if p not in want)
+    print('walk: server has %d paths, list %d; missing %d, length differs %d, extra %d'
+          % (len(got), len(want), len(missing), len(wrong), len(extra)))
+    for p in missing[:20]:
+        print('  missing', p)
+    for p in wrong[:20]:
+        print('  length', p, 'server', got[p], 'list', want[p])
+    # extras: the service's binds (/bin, /dev, /net) and files the
+    # server wrote; list files outside the bind points, count the rest
+    groups = {}
+    for p in extra:
+        top = p.split('/')[1]
+        if top in ('bin', 'dev', 'net'):
+            groups[top] = groups.get(top, 0) + 1
+        else:
+            print('  extra', p, got[p])
+    for top in sorted(groups):
+        print('  extra under /%s (bound in by the service): %d' % (top, groups[top]))
+    return not missing and not wrong
+
+
 def main():
     host, port, tree = sys.argv[1], int(sys.argv[2]), sys.argv[3]
-    paths = sys.argv[4:] or ['lib/ndb/local']
+    args = sys.argv[4:]
+    walklist = None
+    if args[:1] == ['--walk']:
+        walklist, args = args[1], args[2:]
+    paths = args or ['lib/ndb/local']
     c = Conn(host, port)
 
     def show(name, m, r):
@@ -150,12 +220,20 @@ def main():
                 break
             got += r[8:]
         c.rpc(Tclunk, struct.pack('<H', fid))
-        want = open('%s/%s' % (tree, p), 'rb').read()
+        hp = '%s/%s' % (tree, p)
+        if not os.path.exists(hp):
+            # written by the server (e.g. adm/mkext.log): show it
+            print('%s: Tstat %s %s %s mode %o length %d; not in the release; contents %r'
+                  % (p, st[0], st[1], st[2], st[4], st[6], got[:400]))
+            continue
+        want = open(hp, 'rb').read()
         same = got == want
         ok &= same
         print('%s: Tstat %s %s %s mode %o length %d; read %d bytes; %s host copy'
               % (p, st[0], st[1], st[2], st[4], st[6], len(got),
                  'identical to' if same else 'DIFFERS FROM'))
+    if walklist:
+        ok &= walk(c, walklist)
     c.rpc(Tclunk, struct.pack('<H', 1))
     print('PASS' if ok else 'FAIL')
     sys.exit(0 if ok else 1)

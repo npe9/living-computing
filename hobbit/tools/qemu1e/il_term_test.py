@@ -52,6 +52,7 @@ def main():
         hd2=os.path.join(Q, 'arch.img'),
         net=(dgram(PS, PT) + ' ' + nic + ',mac=52:54:00:12:34:56'
              + ' -object filter-dump,id=f0,netdev=n0,file=server.pcap').split(),
+        extra=['-snapshot'],        # leave fs.img as built
         log=os.path.join(wd, 'server.log'))
     term = None
     try:
@@ -62,7 +63,7 @@ def main():
         srv.type('password\n')
         srv.wait('^%', 60)
         srv.type('rc /serve 10.9.0.1 255.255.255.0\n')
-        s = srv.wait('tcp: announced', 120)   # 'serving' can be split by syslog lines
+        s = srv.wait('tcp: announce', 120)   # 'serving', even 'announced', can be split by the prompt or syslog lines
         srv._log(s)
         print('--- server\n' + s.rstrip())
 
@@ -78,8 +79,18 @@ def main():
         term._log(s)
         if 'My IP address' in s:
             raise SystemExit('no BOOTP reply:\n' + s)
-        term.type('\n')
+        user = os.environ.get('TERMUSER', 'none')
+        t0 = time.time()
+        if user == 'none':
+            term.type('\n')
+        else:
+            # not none: /boot asks a password and checks it with the
+            # auth server, il!auth!17024 (boot/userpasswd.c)
+            term.type(user + '\n')
+            term.wait('password', 30)
+            term.type('password\n')
         s = term.wait('init: starting', 300)
+        print('--- user %s: user prompt to init in %.0fs' % (user, time.time() - t0))
         term._log(s)
         try:
             s = term.wait('^% *$', 60)
