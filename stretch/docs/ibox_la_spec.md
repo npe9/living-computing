@@ -24,7 +24,7 @@ No model file was changed. Every reading is from a page image. OCR
 - **Who read what.**
   - **The author, first-hand:** Figs 3.2.12, 3.2.13, 3.2.14, 3.2.22-3.2.27 (PDF
     104-106, 114-119); §4 Procedure 1 (PDF 272-279), including Figs
-    4.1.1-4.1.4; Table 3.4.1's STORE WAIT and recovery rows (PDF 183). These
+    4.1.1-4.1.4; Table 3.4.1's STORE WAIT and recovery rows (PDF 183) and its updated-index indicator rows (PDF 179). These
     are the figures A6 and A9 build from.
   - **Six parallel readers**, whose transcriptions are Appendices A-F, nearly
     verbatim:
@@ -41,9 +41,9 @@ No model file was changed. Every reading is from a page image. OCR
     - B: Fig 3.1.13 sheet 3, the ZOAR / STORE WAIT / PROGRAM STORE COMPARE
       cluster (PDF 77, tile `t077_3100_2050`);
     - C: Fig 3.1.21, "NOT IC FETCH PRIORITY" and the unconditional "BLOCK
-      TYPE 2 LD TO LA" (PDF 85, tile `t085_3050_1150`);
+      TYPE 2 LD TO LA" (PDF 85, tile `t085_3050_1150`), and the unconditional "COND FPL2E TON" on column A (tile `t085_2700_900`);
     - D: Fig 3.2.2 sheet 2, the LAAR 1/LAAR 2 assignment (PDF 94, whole page),
-      and Fig 3.2.5 (PDF 97, whole page). Fig 3.2.4 (PDF 96) was also viewed;
+      and Fig 3.2.5 (PDF 97, whole page). Fig 3.2.4 (PDF 96, whole page: four RESET TBC AES completions);
     - E: Fig 3.2.19's LAOP legend (PDF 111, 400 dpi, tile `t111_5750_3250`);
     - F: Perf. Char. printed 3-21 (PDF 39), the LAAR and index-store
       paragraphs.
@@ -176,8 +176,16 @@ trigger is a TON/TOF box. In order of an instruction's progress:
    28.26.11.1, on ZL MOD R, phase M, Fig 3.1.6). It is also gated by "FPR BLOCK
    Y-Z" and by the I checker ("NOT CHKR SING ERR", "CHK M CORR").
 2. **Index fetch, in the same phase as the transfer.** At phase E of the
-   transfer sequencers, "XS READ P" (24.00.09.1) is drawn unconditionally (Figs
-   3.1.6, 3.1.8). The index address goes straight from the Y register to the
+   transfer sequencers, "XS READ P" (24.00.09.1) is drawn as follows:
+   - unconditionally on Figs 3.1.6 (YR-ZL; the author confirmed it on the
+     image) and 3.1.8 (YL-ZL);
+   - under "CD 2Y - ZR" (28.15.51.1) on Fig 3.1.9 (YR-ZR);
+   - **not at all on Fig 3.1.7 (YL-ZR)**, per reader A, although that sheet
+     does gate the index address to XAB at E.
+
+   No sheet says where the YL-ZR transfer's index read happens, so A8 should
+   re-read PDF 69 before relying on one rule for all four sequencers. The
+   index address goes straight from the Y register to the
    index address bus: "GT 1Y 28-30 TO XAB 1-3", "GT 1Y 31 TO XAB 4" (28.27.52.1)
    for a left half-word, and "GT 1Y 60-63 TO XAB 1-4" for a right one. **So the
    index word is read while the half-word moves Y to Z, before decode.** That
@@ -319,7 +327,7 @@ DERIVED: X stands for any first digit.
 | 05 | VFL FETCH (1 OF 1) (3.2.17, 3.2.20) | VFL only operand |
 | 06 | PX PSEUDO STORE NOOP'D (3.2.19, ditto expanded); "06 PS STORES" (3.2.27) | pseudo-store, no-op'd |
 | 07 | VFL FETCH (2 OF 2) (3.2.17, 3.2.20) | VFL second operand |
-| 11 | "RAC RCY (NOOP RCY REQ)" (3.2.19 legend; "RAC" at 600 dpi, "BAC" not excluded); Fig 3.2.24's title is "ABC ACTION ON BAC (LAOP 11)" | branch-on-indicator recovery level |
+| 11 | "RAC RCY (NOOP RCY REQ)" (3.2.19 legend; "RAC" at 600 dpi by reader E, agreed at 400 dpi by the author; "BAC" not excluded); Fig 3.2.24's title is "ABC ACTION ON BAC (LAOP 11)" | branch-on-indicator recovery level |
 | 13 | STORE / FP STORE (3.2.16, 3.2.21); "13 ARITH STORE" (3.2.27) | FP store |
 | 15 | FETCH (SPECIAL) (3.2.17); the VFL multiplicand (3.2.10) | VFL special operand |
 | 17 | STORE (1ST) / VFL (1ST) (3.2.17, 3.2.21); "17 ARITH STORE" (3.2.27) | VFL store, first word |
@@ -756,7 +764,7 @@ say what turns it off.
 |---|---|
 | "NOT IC FETCH PRIORITY" (28.20.23.1) | COND FPL2E TON (28.13.21.1). No NO exit drawn |
 | (unconditional, off the same column line, below the hexagon) | BLOCK TYPE 2 LD TO LA (28.13.33.1) |
-| (unconditional, column A of the "ZL FP4 OR ZL FP6" bus) | a second COND FPL2E TON (28.13.21.1) |
+| (unconditional, column A of the "ZL FP4 OR ZL FP6" bus) | a second COND FPL2E TON (28.13.21.1), confirmed by the author (tile `t085_2700_900`) |
 | FPL3E | ZO-17 TO MAB; GT ZLOC TO LAOC (28.21.60.1) |
 | FPL4E | Z0-17 TO MAB; SET ADR 13 ON MAB; BLOCK XFER OF ZLOC TO LAOC; SET LAOC 6, 8 & 9; SET LAOP TAG |
 | FPL3E AND NO CANCEL • SBC / • FPL3M | TYPE 3 LOAD TO LA; T3LD TO BCU WAIT FOR ACCEPT (28.21.74.1); MODIFIED TYPE 3 LOAD TO LA (28.21.75.1) |
@@ -1588,7 +1596,7 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
 |---|---|---|---|
 | Fig 6 FP instruction preparation (p.29, PDF 31) | "8 CYCLES" for 4 FP instructions | 4.0 / 4.8 µs; 1 FP per 1.2 µs at 0.6 = Perf. Char. 3-17 | Y-Z transfer + index fetch in one cycle (Fig 3.1.6 XS READ P at phase E); MOD; FP triggers; TYPE 2/3 load |
 | Fig 7 VFL instruction preparation (p.32, PDF 34) | "8 CYCLES" | 4.0 / 4.8 µs | VFL loaders, WBC + DEC (Fig 3.1.23), WBC trigger (Fig 3.1.24) |
-| Fig 8 Count and branch (p.34, PDF 36) | "6 CYCLES" | 3.0 / 3.6 µs; Perf. Char. Table 8 CB unsuccessful 3.6 + dec | not in 3.1.6-3.1.24 (I-box execution figures) |
+| Fig 8 Count and branch (p.34, PDF 36) | "6 CYCLES" | 3.0 / 3.6 µs. The chart draws a taken branch (Z->ICR, IF/Z->Y, reader F), so it compares with Table 8's CB **successful**, 4.2 µs + dec, and is one 0.6 µs cycle short. That agrees with `spec_lookahead.md` §3.1 "off by one cycle" | not in 3.1.6-3.1.24 (I-box execution figures) |
 | Fig 9 Transmit (p.36, PDF 38) | "SET UP 2 CYCLES", "WORD 1 5 CYCLES" | set-up 1.0 / 1.2 µs; 2.5 / 3.0 µs per word | not in these figures |
 | Fig 10 Branch on indicator (p.38, PDF 40) | "5 CYCLES" | 2.5 / 3.0 µs | LAOP 11 level, ABC action on BAC (Fig 3.2.24) |
 
@@ -1682,8 +1690,8 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
 - **Stages, in the order the sequencers run:**
   1. Y-Z start;
   2. one of four transfer sequencers (YR-ZL, YL-ZR, YL-ZL, YR-ZR), each M,
-     E·M, E. At E it does the index-storage read, "XS READ P", with the index
-     address gated from the Y register;
+     E·M, E. At E it gates the index
+     address from the Y register to XAB, and reads index storage ("XS READ P") on 3.1.6, 3.1.8 and 3.1.9 (gated by CD 2Y - ZR); none is drawn on 3.1.7 (§2.1);
   3. the MOD sequencer (E: X to the adder; E·M: sum to Z);
   4. decode (ZL DEC; XF + DEC; WBC + DEC);
   5. the FP or VFL loader triggers, which make TYPE 1/2/3 loads.
@@ -1813,6 +1821,7 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
 9. **Illegible items.** Each is listed in its reader's "Could not read"
    section (Appendices A-E). None changes a structural reading above:
    - the bar over "2" in Fig 3.1.13 sh.2's "ZR 1+~2+3";
+   - one faded word on Fig 3.1.8 (box M8, "XSF1" or "YSFI"), and the overbar spans on Figs 3.1.6, 3.1.7, 3.1.10 and 3.1.12 (reader A);
    - several ALD digits on Figs 3.1.10, 3.1.12 and 3.2.2 sh.1;
    - Fig 3.2.19's LAOP 11 gloss, "RAC" against "BAC";
    - the crossing YES/NO lines into the two recovery boxes on Fig 3.2.24
@@ -1851,8 +1860,11 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
    - `microarchitecture_plan.md` line 74's "FPL2E only under 'NOT IC FETCH
      PRIORITY'" is contradicted by reader C's reading of the same sheet. That
      reading has a second "COND FPL2E TON" (28.13.21.1), unconditional, on
-     column A of the "ZL FP4 OR ZL FP6" bus. The author's spot-check tile did
-     not cover column A, so this point rests on reader C alone.
+     column A of the "ZL FP4 OR ZL FP6" bus. The author confirmed it on the
+     image (PDF 85, tile `t085_2700_900`). The box hangs off the column-A line
+     with no hexagon above it, while the "NOT IC FETCH PRIORITY" hexagon and
+     its own "COND FPL2E TON" are on the next column. So on the FP4/FP6 path,
+     FPL2E is turned on without the priority test.
 6. **STORE WAIT citations:**
    - `microarchitecture_plan.md` line 85 cites Fig 3.1.24 for the recovery
      request. Fig 3.1.24 (PDF 88) has no IRCY/PIRCY box. The request is on
@@ -1861,12 +1873,12 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
    - `NEXT.md` line 931 says Fig 3.1.24's hexagon "tests 'W', the word
      address". The sheet has two hexagons, "W EQ 11 + 12 + 16 - 31" and "ZL 11
      + 12 + 16 - 31", feeding the same box.
-   - `StretchIBox.bsv`'s STORE WAIT note says the pages draw no release and
-     that "no box takes it as a condition". Fig 3.1.20 does have "BLOCK STORE
-     WAIT TGR TOF". That box blocks the TOF while the test holds, and is still
-     not a release.
+   - (A note, not a contradiction.) `StretchIBox.bsv`'s STORE WAIT note says
+     the pages draw only the turn-on. Fig 3.1.20 also has "BLOCK STORE WAIT TGR
+     TOF". That box acts on the turn-off but is not a release, so the model's
+     note stands, and it could cite the box.
 7. **The memory cycle.** The model's `memCycleClocks = 7` (2.1 µs) matches
-   Buchholz's printed 2.1 µs (PDF 28, 42). It does not match the CE manual's
+   Buchholz's 2.1 µs ("read-write cycle time of 2.1 microseconds"; located in the OCR, PDF 28 and 42, page images not viewed). It does not match the CE manual's
    Busy trigger, "on for 1800 nanosec" = 6 clocks (printed 1-3, PDF 274), or
    Perf. Char.'s "recycle time of 2.2 µs" (printed 3-15, PDF 33).
    - `memReadClocks = 5` is one number. The CE prints the 5th SP pulse for an
@@ -1876,7 +1888,7 @@ Blosk designs to a 0.5 µs I-unit cycle ("one machine cycle of approximately
 8. **Dates.** Index 3-2 lists Figs 3.2.16-3.2.21 as 1/1/63. Every sheet's foot
    prints 2/1/62.
 9. **LAOP 11's name.** Fig 3.2.19's legend glosses it "RAC RCY (NOOP RCY REQ)"
-   (as read at 600 dpi). Fig 3.2.24's caption is "ABC ACTION ON BAC (LAOP 11)".
+   (reader E at 600 dpi; the author at 400 dpi agreed). Fig 3.2.24's caption is "ABC ACTION ON BAC (LAOP 11)".
    One of the two is DERIVED to be a misprint or a poor reproduction.
 10. **Perf. Char. Table 6's "11.2 µsec"** (EX fetch, printed 3-12) is the only
     Tables 4-8 entry that is not a multiple of 0.6 µs. This is already noted in
@@ -2167,12 +2179,17 @@ G22 YES and G23 YES join (OR) -> G24.
   LAM 1; EMF 1, EMF5; XSF3; ADD 1, ADD 3; LARCY; BROK TOR; FP 3 M, FP 4 M, VFL 5 M (TOF).
 - Registers/data paths: Y (1Y, 2Y; YL, YR; 1YR, 2YR), ZL, ZR, AOB (GT AOB TO ZL), XAB (bits 1-4),
   ABB, X 0-63 (PREP RST X 0-63), SAD-LID DCDR (decoder), Y DCD, XS (XS READ P), DATA SELECT (HOLD DATA SELECT PREP).
-- Counters: none named. Timers: none named. LAOP codes: none.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC printed. Candidate abbreviations whose expansion is
+  unverified: IDC / NIDC (INH NIDC SET IDC CR XAC; ZL IDC), WBC (TOF FW WBC TGRS), XAC.
+  Timers: none named. LAOP codes: none.
 
 ##### 5. TIME
 
-PRINTS NO TIME. Only phase names (M, E • M, E, and the line label "E • M̄") appear; no clock, cycle,
-A/B pulse or duration.
+PRINTS NO TIME as a number: no cycle count, duration or timer value. Clock-pulse NAMES do appear as
+gating terms: SBC (a controlled clock pulse -- PDF p.197 text, image-checked: "terminates the
+distribution of controlled clock pulses to the CPU after the next SBC pulse") and SAC (presumably a
+sibling A/B clock-pulse name; meaning NOT verified). Phase names M, E • M, E and the line label
+"E • M̄" are the only sequencing printed.
 
 ##### 6. [KEY] items
 
@@ -2192,11 +2209,14 @@ A/B pulse or duration.
   error / check-M correction gate the transfer).
 - **[KEY]** BLOCK YR-ZL M TGR TOF (28.15.30.1) on IHW RDY - ZR.
 - **[KEY]** ALLOW LARCY TON (28.42.81.1) on BE + BEW + BD + SIC - BL - BEW - BD (28.89.32.1) or EX + RN (28.89.37.1).
+  Printed "LARCY" as one word (600 dpi). DERIVED, unverified: possibly "LA RCY" = look-ahead recovery.
 - **[KEY]** PRE - DSAB (37.51.03.1) on BD + SIC - BD (28.70.84.1).
 - **[KEY]** BLOCK ZR IHW TON; BLOCK ZR FP TGR TON; BLOCK SETTING/RESET OF ZR FP 1..4, FP6; BLOCK TOF OF FPR CL 1•2•3•4 —
   the full-word-not-store (FW NOT S) block set at E.
-- Not printed on this sheet: STORE WAIT, LA full, IAUC, LAAR, pseudo-store, houseclean, store-address compare,
-  IC FETCH PRIORITY, "updated indicator", index recovery.
+- Not printed on this sheet (image reading, confirmed by an OCR grep of PDF pp.68-74 for STORE/WAIT/
+  IAUC/FULL/RECOV/UPDAT/PRIOR/LAAR/HOUSE/PSEUDO/COMPARE, which found only "STORE TAG" on p.74): STORE
+  WAIT, LA full, IAUC, LAAR, pseudo-store, houseclean, store-address compare, IC FETCH PRIORITY,
+  "updated indicator", index recovery (unless "LARCY" above is a recovery term).
 
 ##### 7. Could not read / uncertain
 
@@ -2436,11 +2456,19 @@ E48 YES on a line labelled "E • M̄" -> E49. E50 YES -> E51. E52 YES -> E53.
   ZR FL PT TGR, ZR IHW, FPL 3M, FPL 4M, VFL 5M TGRS, ZR ICC TGR, ZRAD, ZRIF, ZDS, ZDF TGRS.
 - Registers/paths: Y (1Y, 2Y, 1YL, 2YL; bits 28-31), ZR, ZL, AOB (to ZR; "AOB 32"), XAB 1-4, ABB,
   X 0-63, SA (GENERATE SA PULSES), DATA SELECT, XAC (INH NIDC SET IX FR XAC).
-- Counters, timers, LAOP codes: none named.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC. Candidates, expansion unverified: NIDC, XAC, ICC ("TOF ZR ICC TGR").
+  Timers, LAOP codes: none.
+- DERIVED cross-reference to fig 3.1.11: on this sheet the 1YL branch box "TON ZR SPND TGR" cites
+  28.42.43.1, which fig 3.1.11 gives to ZR SPND 2Y TGR, and the "BR Y-Z XFER TON ZR SPND 1Y" box
+  (in the E42 "CD 1Y-ZR3" chain, gated by IND BR 2YL) cites 28.42.42.1, which fig 3.1.11 gives to
+  ZR SPND TGR 1Y. Fig 3.1.11's SPND 2Y TON hexagon also reads "BR Y-Z XFER TON ZR SPND 2 Y".
 
 ##### 5. TIME
 
-PRINTS NO TIME. Only phase names M, E • M, E and the line label "E • M̄".
+PRINTS NO TIME as a number: no cycle count, duration or timer value. Clock-pulse NAMES appear as
+gating terms: SBC (a controlled clock pulse -- PDF p.197 text, image-checked: "...after the next SBC
+pulse"); and the action "GENERATE SA PULSES (24.00.09.1)" at phase E (SA presumably a pulse family;
+unverified). Phase names M, E • M, E and the label "E • M̄" are the only sequencing printed.
 
 ##### 6. [KEY] items
 
@@ -2507,8 +2535,8 @@ S1 YES and S2 YES join (OR) -> "TON" -> S3. Phase lines: M (top), E • M, E.
 | M4 | rect | COND WBC + DEC TON | (28.15.80.1) |
 | M5 | hexagon | ZL MOD R | (28.15.71.1) |
 | M6 | rect | BLOCK GEN OF ZL + ZR PREP NOT BUSY | (28.20.21.1) |
-| M7 | hexagon | ¯(ZR WAS IHW) (faded; bar faint) | (28.15.71.1) |
-| M8 | rect | BLOCK XSF1 E TON (faded; "XSF1" partly legible, last char like "!"/"1") | (28.70.42.1) |
+| M7 | hexagon | ZR WAS IHW, with an overbar that is ILLEGIBLE: faded, a faint bar may be present | (28.15.71.1) (faded) |
+| M8 | rect | BLOCK ILLEGIBLE: faded, ~4 chars, candidate "XSF1" or "YSFI" (fig 3.1.9 prints "BLOCK YSFI E TON" with the same ALD) E TON | (28.70.42.1) (faded) |
 
 M3 YES -> M4. M5 YES -> node -> M6, and the line continues to M7; M7 YES -> M8 (so M8 is gated
 by ZL MOD R and ¯(ZR WAS IHW)).
@@ -2536,6 +2564,10 @@ by ZL MOD R and ¯(ZR WAS IHW)).
 | EM17 | rect | TON YR - ZR M TGR | (28.15.60.1) |
 | EM18 | hexagon | SBC | (28.26.58.1) |
 | EM19 | rect | TOF FPL CL 1• 2•3•4•6 | (28.26.52.1) |
+
+Anomaly, as drawn: EM4-EM13 (ZL IDC/ZLAD/ZL IF/ZDS-ZDF TOF, TOF BROK, BLOCK GEN OF INH NIDC, Y-ZL + MOD ZR
+RST ZL TAGS, TOF VFL/FPL) hang on the E • M line here, whereas the equivalent boxes on figs 3.1.6, 3.1.7
+and 3.1.9 hang on E. Recorded as drawn, not corrected.
 
 EM14 YES -> EM15, EM16, EM17 and the same line runs on to the node where EM18 YES enters, then
 -> EM19. As drawn EM19 is reached from EM18 (SBC); EM14's line also reaches that node.
@@ -2624,11 +2656,14 @@ both GT ..31 TO XAB 4 and GT ..28-30 TO XAB 1-3 hang directly on CD 1Y-ZL / CD 2
   1,2,3,4,6, ZLNA, ZLXA, ZL SA TGRS, ZL ADDR 8 TGR, ZL BLOCK 1Y / 2Y, MOD ZR M.
 - Registers/paths: Y (1Y, 2Y, YL; bits 0-17, 18, 19-23, 24-27, 28-31), ZL, ZR, AOB, ABB, XAB 1-4,
   XS (XS READ P), XAC, DATA SELECT, ZL TAGS.
-- Counters, timers, LAOP codes: none.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC. Candidates, expansion unverified: IDC / NIDC, WBC, XAC.
+  Timers, LAOP codes: none.
 
 ##### 5. TIME
 
-PRINTS NO TIME.
+PRINTS NO TIME as a number: no cycle count, duration or timer value. Clock-pulse NAMES appear as
+gating terms: SBC (a controlled clock pulse -- PDF p.197 text, image-checked) and SAC (presumably a
+sibling clock-pulse name; unverified). Phase names M, E • M, E are the only sequencing printed.
 
 ##### 6. [KEY] items
 
@@ -2827,11 +2862,15 @@ E47 YES -> E48, E49. No footnote for "*" found on the sheet.
   MOD ZL M, VFL 5 M, FPR 4 M, FPR 3 M, FPR-CL1 TGR, FPR CL 2,3,4,6 TGRS.
 - Registers/paths: Y (1Y, 2Y, 1YR, 2YR; bits 24-27, 60-62, 63), ZR, ZL, AOB (to ZR; 18, 19, 32),
   ABB, XAB 1-4, X 0-63, XS (XS READ P), XAC, DATA (HOLD DATA PREP), ZR TAGS.
-- Counters, timers, LAOP codes: none.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC. Candidates, expansion unverified: ZRIDC / IDC, NIDS, WBC, XAC.
+  Timers, LAOP codes: none.
 
 ##### 5. TIME
 
-PRINTS NO TIME.
+PRINTS NO TIME as a number: no cycle count, duration or timer value. Clock-pulse NAMES appear as
+gating terms: SBC (a controlled clock pulse -- PDF p.197 text, image-checked) and SAC (presumably a
+sibling clock-pulse name; unverified). Phase names M, E • M, E and the label "E • M̄" are the only
+sequencing printed.
 
 ##### 6. [KEY] items
 
@@ -3012,11 +3051,16 @@ E3 YES -> E4. E8 YES -> E9. E10 YES -> E11, E12, E13. Others unconditional.
   MOD ZR, YL-ZL (TON), YR-ZL (BLOCK).
 - Registers/paths: X (bits 0-23, 24-27) to ABB, Z (bits 32-49, 50, 50-55) to ABB (0-17, 18, P2),
   AOB (18, 19) to ZR, ZR MA TAGS, ZR TAGS, Y (1Y bits 28-31, 1YL, 1YR), DATA SELECT.
-- Counters, timers, LAOP codes: none.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC. Candidate, expansion unverified: WBC (COND WBC + DEC TON CKT).
+  Timers, LAOP codes: none.
+- R11-R14 and fig 3.1.9-style boxes re-checked at full 300 dpi resolution.
 
 ##### 5. TIME
 
-PRINTS NO TIME.
+PRINTS NO TIME as a number: no cycle count, duration or timer value. Clock-pulse NAMES appear as
+gating terms: SBC (a controlled clock pulse -- PDF p.197 text, image-checked) and SAC (presumably a
+sibling clock-pulse name; unverified). Phase names M, E • M, E (MOD ZR SEQUENCER only) are the only
+sequencing printed; the ZR MOD REQ TGR bus has no phase lines.
 
 ##### 6. [KEY] items
 
@@ -3159,11 +3203,16 @@ S2-19). No TOF condition is drawn for any of the four on this sheet. No phase li
 - Triggers: ZR BLOCK 2Y, ZR SPND 2Y, ZR BLOCK 1Y, ZR SPND 1Y (TGR), SUSPEND TGR, 2Y SPND TGR (E1 TON),
   IF1Y, IF1YE, IF2Y (IND, TOF), ICADV E1/E2, ICFO1Y / IC F02Y, ICBC1Y / ICBC2Y, IWC1, IWC2.
 - Registers/paths: ICR 0-16 and ICA 0-16 to MAB, MAB 15 ("ONE TO MAB 15"), RETURN ADR, 1Y, 2Y.
-- Counters, timers, LAOP codes: none.
+- Counters: the instruction counter appears through ICR 0-16, ICA 0-16, ICADV (E1, E2), IC FTH
+  (fetch), ICFO1Y / IC F02Y, ICBC1Y / ICBC2Y (DERIVED: IC = instruction counter; expansions of ICR,
+  ICA, ICADV, ICFO, ICBC unverified). IWC1 / IWC2 also appear (expansion unverified). No IAUC, OCC,
+  TBC, ABC or SCC. Timers, LAOP codes: none.
 
 ##### 5. TIME
 
-PRINTS NO TIME.
+PRINTS NO TIME as a number. No phase lines. Clock-pulse NAMES appear in the TON hexagons: SBC (a
+controlled clock pulse -- PDF p.197 text, image-checked) and SAR (presumably a sibling clock-pulse
+name; unverified).
 
 ##### 6. [KEY] items (whole sheet is block/suspend)
 
@@ -3389,11 +3438,14 @@ C7-6 YES -> C7-7. C7-8 exit (no YES label printed) -> C7-9.
 - Registers/paths: Z (32-49, 45-49) to ABB / MAB / XAB, X 0-63 to XY ICIB, ZROC to LAOC, ABB P2,
   AOB 18 to ZR, LA (DF, NOP bit 17, EXT STORE TAG, INT STORE TAG, INT FETCH), BCU, FPR IND.
 - LA operation names: LANOP (PRE CND LANOP FR ALARM; DF SET LANOP), TYPE 1 LD, TYPE 3LD (to LA, to BCU).
-- Counters, timers: none.
+- Counters: none of IAUC, OCC, TBC, ABC, SCC. Candidates, expansion unverified: XOF1 (TON XOF1,
+  XOF1 NM/E/M), WBC, ZROC -> LAOC (DERIVED: Z-register / look-ahead operation code?). Timers: none.
 
 ##### 5. TIME
 
-PRINTS NO TIME. No phase lines, clocks or durations on this sheet.
+PRINTS NO TIME as a number. No phase lines. Clock-pulse NAMES appear as gating terms: SBC (a
+controlled clock pulse -- PDF p.197 text, image-checked) and SAC (presumably a sibling clock-pulse
+name; unverified).
 
 ##### 6. [KEY] items
 
