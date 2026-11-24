@@ -23,7 +23,8 @@ Container, 16-bit big-endian words (MEASURED on all six files; see
     01aa sym              atom; aa != 0: a method selector of arity aa
     0000 + 32 bits        integer;  0a00 + 32 bits  float
     2400 + 32 bits        predicate head: arity << 24 | offset
-    a000 op mask n size, n * (key cell, index, target)   hash table
+    a000 op mask n size, n * (key cell, index, target)   hash table,
+                          spanning mask+1 + 2n + 2 cells (table_span)
   A predicate is: atom name, integer (kind << 8 | arity), head, 0,
   then code at the head's offset.  kind 0x25 class method, 0x35
   instance method, 0x11/0x12 local (INFERENCE from the trailer vectors).
@@ -58,13 +59,15 @@ PKGS = {'pimfep': ('psdpim.tar.Z', 'INSTALL.DIR/pimfep.ptf'),
         'mpsicspR': ('psdpim.tar.Z', 'INSTALL.DIR/mpsicspR.ptf'),
         'paragraph': ('pimosobj.tar.Z', 'object/paragraph.ptf')}
 # (classes, classes whose cells tokenize to exactly L, cells stored,
-#  class-0 instructions, class-1 instructions), observed 2026-11-20.
-PINNED = {'pimfep': (47, 47, 28832, 18574, 1764),
-          'pimscsi': (24, 24, 12979, 8311, 1147),
-          'pimmcsp': (281, 279, 149954, 99066, 8877),
-          'pimmutil': (51, 51, 53639, 39720, 3161),
-          'mpsicspR': (30, 30, 14897, 9148, 674),
-          'paragraph': (121, 121, 89204, 53717, 14429)}
+#  class-0 instructions, class-1 instructions), observed 2026-11-24 with
+#  table_span (2026-11-20 with the size-word span: 552 of 554 exact,
+#  and fewer cells, because the drifted count reached L early).
+PINNED = {'pimfep': (47, 47, 28935, 18658, 1765),
+          'pimscsi': (24, 24, 12977, 8311, 1147),
+          'pimmcsp': (281, 281, 156090, 103403, 9158),
+          'pimmutil': (51, 51, 54615, 40312, 3223),
+          'mpsicspR': (30, 30, 15616, 9629, 723),
+          'paragraph': (121, 121, 93582, 56580, 14804)}
 PINNED_FEP = (100, 400, 620)     # distinct names; codes of ipl and io
 
 PUNCT = {0x21: ' ', 0x24: ',', 0x25: '.', 0x27: ':', 0x28: ';', 0x29: '?', 0x2a: '!',
@@ -157,6 +160,20 @@ def parse_bytes(d):
     return name, pattrs, out
 
 
+def table_span(mask, keys):
+    """Cells a hash table occupies: mask+1 index cells, two per key, and
+    two more (MEASURED 2026-11-24 on all eleven held packages, 1,455
+    classes: numbered this way, 32,901 of 32,901 predicate heads sit at
+    their code offset - 2 and 35,542 of 35,542 local-call targets of
+    opcodes 60/61/62 land on a head; numbered by the table's size word
+    + 1, as before, 3,662 heads in 91 classes were displaced).  The
+    "size" word is the miss offset (psi/fepread/ptfread.py): a key not
+    found goes to cell + 2 + the word, which is the cell after the table
+    (word = mask+2*keys+1) in 149 of 212 tables and a later cell in the
+    rest."""
+    return mask + 1 + 2 * keys + 2
+
+
 def cells(c):
     """(cells, words used, cell count reached, L, h1, h2).  A cell is
     (index, tag, low byte, value)."""
@@ -183,7 +200,7 @@ def cells(c):
                 ents.append((key, b[i], b[i + 1]))
                 i += 2
             out.append((n, 0xa0, op, (mask, size, ents)))
-            n += size + 1
+            n += table_span(mask, cnt)
             continue
         cell, j = one(i)
         if cell is None:
