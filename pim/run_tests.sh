@@ -30,6 +30,9 @@ python3 asm/pimm_stubs.py --check
 python3 asm/psdpim.py --check
 python3 asm/mekbn.py --check
 
+echo "=== PSI side: the Librarian's loader, .ptf templates to class objects (TM-388 cases, known plaintext) ==="
+python3 -I psi/test_librarian.py
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 

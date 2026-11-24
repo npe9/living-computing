@@ -144,6 +144,11 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   
   Recommendation: implement reverse order (two sources, one of them a worked example), and keep
   it switchable until a running SIMPOS trace or loader code settles it.
+
+  *2026-11-23:* the TM-388 page image (PDF p.54) settles the in-TM-388 point. It continues:
+  "After-demon means post-processing, and what is first inherited is executed last." So TM-388
+  is consistent. The conflict is TM-388 and TR-044 against the thesis. Implemented as a switch,
+  default reverse, in `pim/psi/librarian.py`.
 - **Cut.**
   - An after-demon may prune the remaining primary alternatives with `relative_cut(1)`.
   - `!` = `relative_cut(0)`, and cut prunes only to the enclosing OR, unlike Prolog (TM-388 ch.4).
@@ -307,6 +312,10 @@ Prolog) is the working assumption. Read the TM-388 pdf 154 image to settle it.
     unqualified, so they are resolved through the package environment.
   - So qualification is **not** complete in the `.ptf`, and the loader must also implement
     environment lookup.
+  - *Corrected 2026-11-23 (`pim/psi/README.md`):* those two names are slot names
+    (`node_manager 16 self my_node_manager 16 none`), read by the probe as natures. All 1,455
+    held nature vectors are fully qualified. The loader still does environment lookup for
+    unqualified names (own package first, then the loaded packages), but no held nature needs it.
 
 ## 10. What the compiler must emit (for a compatible ESP compiler)
 
