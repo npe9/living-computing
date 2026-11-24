@@ -76,6 +76,18 @@ interface HobbitSocCpu;
   (* always_ready *) method Maybe#(Tuple2#(Word, Word)) memWr;
   (* always_ready *) method Maybe#(Tuple2#(Word, Word)) tblWr;
   (* always_ready *) method Maybe#(Tuple2#(Word, Word)) evWr;
+  // memWr's byte enables (byte i = data[8i+7:8i]; memWr's word is
+  // merge-complete), and whether rdReq's word is wanted only to merge a
+  // byte or half-word store into, so that a device need not be read
+  // (HobbitStackCache memReq; fpga/README.md "Byte enables").
+  (* always_ready *) method Bit#(4) memWrBe;
+  (* always_ready *) method Bool rdMerge;
+  // rdReq's read is speculative (an older instruction may yet squash the
+  // one that wants it), and the top's answer, during the clock rdData
+  // holds that read's word, that it did not make the read (a device is
+  // not read speculatively): the core then asks again once it is not.
+  (* always_ready *) method Bool rdSpec;
+  (* always_ready, always_enabled *) method Action rdNack(Bool n);
   // The combinational faces.
   (* always_ready, always_enabled *) method Action window(Window w);
   (* always_ready *) method Probes probes;
@@ -148,6 +160,15 @@ module mkHobbitSocCpu(HobbitSocCpu);
   // commit (bsc G0095).
   Wire#(Probes) probesW <- mkDWire(replicate(tagged Invalid));
   Wire#(Word) vbW <- mkDWire(0);
+  Wire#(Bit#(4)) beW <- mkDWire(4'hF);
+  Wire#(Bool) mergeW <- mkDWire(False);
+  Wire#(Bool) specW <- mkDWire(False);
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule sampleBe;
+    beW <= core.memWrBe;
+    mergeW <= core.memRdMerge;
+    specW <= core.memRdSpec;
+  endrule
   (* fire_when_enabled, no_implicit_conditions *)
   rule sampleVb;
     vbW <= core.vbProbe;
@@ -175,6 +196,12 @@ module mkHobbitSocCpu(HobbitSocCpu);
   method Maybe#(Tuple2#(Word, Word)) memWr = memWrW;
   method Maybe#(Tuple2#(Word, Word)) tblWr = tblWrW;
   method Maybe#(Tuple2#(Word, Word)) evWr = evWrW;
+  method Bit#(4) memWrBe = beW;
+  method Bool rdMerge = mergeW;
+  method Bool rdSpec = specW;
+  method Action rdNack(Bool n);
+    core.setRdNack(n);
+  endmethod
   method Action window(Window w);
     winW <= w;
   endmethod

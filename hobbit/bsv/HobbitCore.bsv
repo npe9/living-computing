@@ -139,6 +139,16 @@ interface HobbitCore;
   // probe, separate because it is read before EU_S3's commit writes VB
   // and the other probes after the commit's wires.
   method Word vbProbe();
+  // This clock's data-memory write's byte enables and whether its read is
+  // a merge word (HobbitStackCache memWrBe/memRdMerge): for a bus with
+  // byte lanes (HobbitSocCpu).  Memories that store whole words ignore
+  // them, the write's word being merge-complete.
+  method Bit#(4) memWrBe();
+  method Bool memRdMerge();
+  // The operand read's speculation and the memory's refusal of it
+  // (HobbitStackCache memRdSpec/rdNack).
+  method Bool memRdSpec();
+  method Action setRdNack(Bool n);
 endinterface
 
 // One architectural write.  `addr` is the word address and `mask` the byte
@@ -454,6 +464,7 @@ typedef struct {
   // External-memory operands (see "Memory operands" in mkHobbitEuS1).
   Bool   memMiss;      // a needed word is still in memory: not ready
   Word   memMissAddr;  // the first such word's address
+  Bool   memMissMerge; // ... wanted only to merge a byte or half store into
   Bool   ptMem;        // the pointed-to word lies outside the stack cache
   Word   ptWord;       // ... and this is it, in-flight writers applied
   Bool   pt2Mem;       // the same for the destination's pointed-to word
@@ -854,6 +865,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      base: base, nextPc: npc, sinceCmp: dcmp,
                      extra: extra, bad: bad,
                      memMiss: memMiss, memMissAddr: memMissAddr,
+                     memMissMerge: False,
                      ptMem: ptMem, ptWord: ptWord,
                      pt2Mem: pt2Mem, pt2Word: pt2Word };
   endfunction
@@ -902,6 +914,11 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Bool bad = False;
       Bool miss = False;
       Word missAddr = 0;
+      // The missing word is wanted only as the merge word of a byte or
+      // half-word store the instruction does not read (mergeStore): its
+      // bytes outside the store's lanes are all it contributes, and a
+      // byte-enabled write needs none of them (HobbitStackCache memReq).
+      Bool missMerge = False;
       Bool ptMem = False;
       Word ptWord = 0;
       Bool pt2Mem = False;
@@ -968,6 +985,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                       (!modeIsImm(d.dst.mode) && (modeSize(d.dst.mode) < 4));
           if (need && !r.ok && !miss) begin
             miss = True; missAddr = r.wa;
+            missMerge = !opReadsDst(d.op) && !modeIsIndirect(d.dst.mode);
           end
         end
         // The pointed-to word, exactly when EU_S2 will want one (the same
@@ -984,6 +1002,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           ptMem = fromS1; ptWord = r.w;
           if (!r.ok) begin
             miss = True; missAddr = pa;
+            missMerge = !srcInd && !opReadsDst(d.op);
           end
         end
         // Both operands indirect: the destination's pointed-to word as
@@ -995,6 +1014,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           pt2Mem = fromS1b; pt2Word = r2.w;
           if (!r2.ok) begin
             miss = True; missAddr = pa2;
+            missMerge = !opReadsDst(d.op);
           end
         end
         // CRET (p. 3-15) and KRET (p. 3-30) read the interrupt stack's
@@ -1029,6 +1049,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       EuS1Out o = mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
                         retPc, bad, sinceCmp, miss, missAddr, ptMem, ptWord,
                         pt2Mem, pt2Word);
+      o.memMissMerge = miss && missMerge;
       o.dqmMem  = dqmM;
       o.dqmIdx  = dqmM ? dqmIdx : 0;
       o.dqmLast = dqmLast;
@@ -1110,7 +1131,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // empties anyway.
   rule fetchOperand (active && !squash && fullR && !eventActive &&
                      !s2Taken && curOut().memMiss && sc.memIdle());
-    sc.memReq(curOut().memMissAddr);
+    sc.memReq(curOut().memMissAddr, curOut().memMissMerge, !drained);
   endrule
 
   // The single writer of the latches.  The word on the memory port is
@@ -1787,6 +1808,7 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
     ScCmd cmd = ScCmd { op: (trap || fatal || i.ispMode) ? BX_NONE
                                                          : boxOpOf(d.op),
                         we: wr.we, waddr: wr.addr, wdata: wr.wdata,
+                        wbe: wr.mask[3:0],
                         spBefore: i.spBefore, mspBefore: i.mspBefore,
                         spAfter: after.sp,
                         mspAfter: cretCatch ? after.sp : after.msp,
@@ -2875,6 +2897,12 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Vector#(21, Maybe#(Word)) combProbes() =
     append(mmu.walkProbes, events.combProbes);
   method Word vbProbe() = vbR;
+  method Bit#(4) memWrBe() = sc.memWrBe;
+  method Bool memRdMerge() = sc.memRdMerge;
+  method Bool memRdSpec() = sc.memRdSpec;
+  method Action setRdNack(Bool n);
+    sc.rdNack(n);
+  endmethod
 
   method Bit#(32) dbgBoundary() =
     { 4'b0, s3.dbgStop,

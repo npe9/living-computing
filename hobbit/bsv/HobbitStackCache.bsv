@@ -74,6 +74,9 @@ typedef struct {
   Bool  we;          // the instruction's architectural word write
   Word  waddr;
   Word  wdata;
+  Bit#(4) wbe;       // the write's byte enables (byte i = wdata[8i+7:8i]);
+                     // wdata is merge-complete, so a memory that writes
+                     // whole words may ignore them
   Word  spBefore;
   Word  mspBefore;
   Word  spAfter;
@@ -83,7 +86,7 @@ typedef struct {
 } ScCmd deriving (Bits);
 
 function ScCmd noScCmd() =
-  ScCmd { op: BX_NONE, we: False, waddr: 0, wdata: 0,
+  ScCmd { op: BX_NONE, we: False, waddr: 0, wdata: 0, wbe: 4'hF,
           spBefore: 0, mspBefore: 0, spAfter: 0, mspAfter: 0,
           target: 0, stackMode: False };
 
@@ -134,10 +137,31 @@ interface HobbitStackCache;
   // box names the word whose data is on the port in the next clock with
   // memLive/memData.  One word per clock, so a memory operand costs the
   // model's A = 1 cycle per word fetched (the p. 4-2 choice, HobbitTypes).
-  method Action memReq(Word addr);
+  // `merge`: the word is wanted only to merge a byte or half-word store
+  // into (mergeStore), so its value matters only in the lanes the store
+  // leaves alone; memWrBe/memRdMerge below tell the memory so.
+  // `spec`: an older instruction is still in flight and may squash the
+  // one asking (EU_S1's `drained` is false), so the read is speculative.
+  method Action memReq(Word addr, Bool merge, Bool spec);
   method Maybe#(Word) memLive();
   method Word memData();
   method Bool memIdle();
+  // This clock's memory write's byte enables (with mem.write), and whether
+  // this clock's memory read (mem.readReq) is a merge word (memReq's
+  // `merge`).  The SoC (HobbitSocCpu) passes them to the bus: a byte or
+  // half-word store to a device is written with its byte enables, and
+  // its merge word is not read from the device at all (a device read
+  // is a side effect; fpga/README.md "Byte enables").
+  method Bit#(4) memWrBe();
+  method Bool memRdMerge();
+  // Whether this clock's read is speculative (memReq's `spec`), and the
+  // memory's answer, in the clock the word is on the port, that it did not
+  // make the read: a device is not read speculatively (a register read is
+  // a side effect), so the SoC declines and the word is not live; EU_S1
+  // asks again, no longer speculatively, once the older instructions are
+  // done.  A memory that never declines leaves rdNack False.
+  method Bool memRdSpec();
+  method Action rdNack(Bool n);
 
   // The same read port, lent to the prefetch buffer's fill (instruction
   // words).  The prefetch buffer translates the address itself (a text
@@ -228,6 +252,12 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   // memory read port this clock (Invalid when the port carried a refill
   // word or nothing).
   Wire#(Maybe#(Word)) memReqW <- mkDWire(tagged Invalid);
+  Wire#(Bool) memReqMergeW <- mkDWire(False);
+  Wire#(Bit#(4)) memWrBeW <- mkDWire(4'hF);
+  Wire#(Bool) memRdMergeW <- mkDWire(False);
+  Wire#(Bool) memReqSpecW <- mkDWire(False);
+  Wire#(Bool) memRdSpecW <- mkDWire(False);
+  Wire#(Bool) rdNackW <- mkDWire(False);
   Reg#(Maybe#(Word)) memLiveR <- mkReg(tagged Invalid);
   // The prefetch buffer's request, and whether the word on the port this
   // clock is the one it asked for.
@@ -428,6 +458,7 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     Bool doMemWr = False;
     Word mwAddr = 0;
     Word mwData = 0;
+    Bit#(4) mwBe = 4'hF;
     Maybe#(ScCmd) nPend = pendingMemWr;
     if (doReset) begin
       nPend = tagged Invalid;
@@ -440,14 +471,19 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
       doMemWr = True;
       mwAddr  = p.waddr;
       mwData  = p.wdata;
+      mwBe    = p.wbe;
       nPend   = tagged Invalid;
     end else if (euMemWr) begin
       doMemWr = True;
       mwAddr  = c.waddr;
       mwData  = c.wdata;
+      mwBe    = c.wbe;
     end
     pendingMemWr <= nPend;
-    if (doMemWr) mem.write(mwAddr, mwData);
+    if (doMemWr) begin
+      mem.write(mwAddr, mwData);
+      memWrBeW <= mwBe;
+    end
     // One memory read port: the refill wins (EU_S1 only asks while the
     // box is idle, so the two do not meet outside a reset).
     Bool opReq = !doReset && !refillReq && isValid(memReqW);
@@ -457,6 +493,8 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     // would build two translations (docs/fpga_area.md).
     Word rdAddr = refillReq ? refillReqAddr : validValue(memReqW);
     if (refillReq || opReq) mem.readReq(rdAddr);
+    if (opReq && memReqMergeW) memRdMergeW <= True;
+    if (opReq && memReqSpecW) memRdSpecW <= True;
     else if (pfGrant) tmem.readReq(validValue(pfReqW));
     memLiveR <= opReq ? memReqW : tagged Invalid;
     pfLiveR  <= pfGrant;
@@ -504,14 +542,22 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   method Bool cached(Word addr) = inRange(addr, spR, fillR);
   method Word fillWatermark() = fillR;
 
-  method Action memReq(Word addr);
+  method Action memReq(Word addr, Bool merge, Bool spec);
     memReqW <= tagged Valid addr;
+    memReqMergeW <= merge;
+    memReqSpecW <= spec;
   endmethod
-  method Maybe#(Word) memLive() = memLiveR;
+  method Maybe#(Word) memLive() = rdNackW ? tagged Invalid : memLiveR;
   method Word memData() = mem.readData();
   // No flush or refill owns the port, and no EU write to memory is still
   // parked behind a flush: memory holds every committed word.
   method Bool memIdle() = (state == SC_IDLE) && !isValid(pendingMemWr);
+  method Bit#(4) memWrBe() = memWrBeW;
+  method Bool memRdMerge() = memRdMergeW;
+  method Bool memRdSpec() = memRdSpecW;
+  method Action rdNack(Bool n);
+    rdNackW <= n;
+  endmethod
 
   interface MemPort textPort;
     method Action req(Word addr);

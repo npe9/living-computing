@@ -31,6 +31,7 @@ uint32_t pk_start(void);
 uint32_t pk_end(void);
 uint32_t pk_fetch(uint32_t addr, uint32_t fresh);
 void pk_write(uint32_t addr, uint32_t v);
+void pk_write_be(uint32_t addr, uint32_t v, uint32_t be);
 uint32_t pk_peek(uint32_t addr);
 void pk_retired(uint32_t n);
 uint32_t pk_failed(void);
@@ -122,10 +123,12 @@ static bool frames(void) {
                       c == 'r' ? 5 : 1;
         if (rxbuf.size() < need) return true;
         if (c == 'F') {
+            // Byte 1: {3'b0, be[3:0], we} (rtl/hostlink.v).
             int we = rxbuf[1] & 1;
+            uint32_t be = (rxbuf[1] >> 1) & 0xF;
             uint32_t a = get32(&rxbuf[2]), d = get32(&rxbuf[6]);
             uint32_t v = 0;
-            if (we) { pk_write(a, d); fwd_writes++; }
+            if (we) { pk_write_be(a, d, be); fwd_writes++; }
             else { v = pk_fetch(a, 1); fwd_reads++; }
             if (iolog)
                 fprintf(iolog, "%c %08x %08x %u\n", we ? 'W' : 'R', a,

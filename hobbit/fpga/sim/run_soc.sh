@@ -51,6 +51,20 @@
 # 00000000 not in the window", rc=1; S_CHECK treating a hit as a miss
 # when wptr is 3, "WINDOW DUPLICATE at 0: entries 2 and 3 both hold
 # 80000000", 2245 records, rc=1.
+#
+# Byte enables and device reads (fpga/README.md, "Byte enables and device
+# reads"), 2026-11-24: run_soc.sh 2893000 gave the same MATCH and HRI lines
+# byte-identical, with "181 of 181 recorded reads replayed, 0 repeated, 0
+# unrecorded" (16,316 unrecorded before: 16,314 merge reads of LCD
+# registers and 2 speculative SONIC reads), 181 forwarded reads (was
+# 16,497), and 9,920,614 core clocks (was 9,920,333: the declined
+# speculative reads wait for the instructions ahead).  Discriminating,
+# OBSERVED: the adapter's write enables forced to 4'hF, "P9KERN FAIL:
+# device write 00000000 to b0003000 after record 2474518 has byte enables
+# f; the recording's mask is 3", rc=1; EU_S1's speculation flag forced
+# False (HobbitCore fetchOperand `!drained` made `False`), "2 unrecorded"
+# and "run_soc.sh: the SoC read a device register the reference boot did
+# not read", rc=1.  Each in a scratch copy, the tree itself untouched.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 fpga=$(dirname "$here")
@@ -119,6 +133,14 @@ if cmp -s "$work/console" "$work/rec/console"; then
   echo "SOC console: $(wc -c < "$work/console" | tr -d ' ') bytes, identical to the reference boot's"
 else
   echo "run_soc.sh: the console differs from the reference boot's" >&2
+  fail=1
+fi
+# A device register read is a side effect (a FIFO pops, a status bit
+# clears), so the SoC reads a device exactly when the reference boot does:
+# never twice for one record, never on a path the core then squashes
+# (fpga/README.md "Byte enables and device reads").
+if ! grep -q '^P9KERN devices: .* 0 repeated, 0 unrecorded' "$work/core.log"; then
+  echo "run_soc.sh: the SoC read a device register the reference boot did not read" >&2
   fail=1
 fi
 [ "$simstatus" = 0 ] || { echo "run_soc.sh: the simulator stopped with status $simstatus" >&2; fail=1; }

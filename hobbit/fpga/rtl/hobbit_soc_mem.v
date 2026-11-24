@@ -48,6 +48,16 @@ module hobbit_soc_mem #(
     input  wire [64:0]          cpu_memWr,
     input  wire [64:0]          cpu_tblWr,
     input  wire [64:0]          cpu_evWr,
+    // cpu_memWr's byte enables, and whether cpu_rdReq's word is only the
+    // merge word of a byte or half-word store (HobbitSocCpu memWrBe,
+    // rdMerge): such a read is not made of a device, whose register reads
+    // are side effects; the store's byte-enabled write needs none of it.
+    input  wire [3:0]           cpu_memWrBe,
+    input  wire                 cpu_rdMerge,
+    // cpu_rdReq's read is speculative; cpu_rdNack says, until the next
+    // core edge, that this adapter declined it (a device read only).
+    input  wire                 cpu_rdSpec,
+    output reg                  cpu_rdNack,
     output wire [NWIN*65-1:0]   cpu_window,
     input  wire [NPROBE*33-1:0] cpu_probes,
     // Gating.
@@ -80,6 +90,9 @@ module hobbit_soc_mem #(
     reg        rpend;
     reg [31:0] ra;               // address of the word on rdData
     reg        rnew;             // a read was captured at this edge
+    reg        rmerge;           // ... and it is a merge word (cpu_rdMerge)
+    reg        rspec;            // ... or speculative (cpu_rdSpec)
+    reg [3:0]  wbe0;             // the memory write's byte enables
     reg [1:0]  wi;               // write in flight
     reg [NPROBE*33-1:0] pq;      // probes, registered
     reg [3:0]  settle_n;         // system clocks spent in S_SETTLE
@@ -137,7 +150,9 @@ module hobbit_soc_mem #(
         aux_done <= 1'b0;
         if (rst) begin
             st <= S_SETTLE; settle_n <= 0;
-            fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0;
+            fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0; rmerge <= 0;
+            rspec <= 0; cpu_rdNack <= 1'b0;
+            wbe0 <= 4'hF;
             bk_valid <= 1'b0; core_clocks <= 0; wptr <= 0; ra <= 0;
             cpu_rdData <= 0;
             for (i = 0; i < NWIN; i = i + 1) begin
@@ -150,17 +165,24 @@ module hobbit_soc_mem #(
                 fire <= 1'b0;
                 wpend <= {cpu_evWr[64], cpu_tblWr[64], cpu_memWr[64]};
                 wa[0] <= cpu_memWr[63:32]; wd[0] <= cpu_memWr[31:0];
+                wbe0 <= cpu_memWrBe;
                 wa[1] <= cpu_tblWr[63:32]; wd[1] <= cpu_tblWr[31:0];
                 wa[2] <= cpu_evWr[63:32];  wd[2] <= cpu_evWr[31:0];
                 rpend <= cpu_rdReq;
                 rnew <= cpu_rdReq;
+                rmerge <= cpu_rdReq && cpu_rdMerge;
+                rspec <= cpu_rdReq && cpu_rdSpec;
+                cpu_rdNack <= 1'b0;
                 if (cpu_rdReq) ra <= cpu_rdAddr;
                 st <= S_WR;
             end else case (st)
             S_WR: if (!bk_valid) begin
                 if (wpend != 0) begin
                     wi <= wpend[0] ? 2'd0 : wpend[1] ? 2'd1 : 2'd2;
-                    bk_valid <= 1'b1; bk_we <= 1'b1; bk_be <= 4'hF;
+                    // The memory face's write keeps its byte lanes; the
+                    // PTE writeback and the event frame are whole words.
+                    bk_valid <= 1'b1; bk_we <= 1'b1;
+                    bk_be <= wpend[0] ? wbe0 : 4'hF;
                     bk_addr <= wpend[0] ? wa[0] : wpend[1] ? wa[1] : wa[2];
                     bk_wdata <= wpend[0] ? wd[0] : wpend[1] ? wd[1] : wd[2];
                 end else st <= S_RD;
@@ -173,7 +195,25 @@ module hobbit_soc_mem #(
                     cpu_rdData <= bk_wdata;
             end
             S_RD: if (!rpend) st <= S_SETTLE;
-                else if (!bk_valid) begin
+                else if (rmerge && !is_mem(ra)) begin
+                    // A device's merge word is not read: the store that
+                    // wants it writes its own lanes only (bk_be), and a
+                    // device register read is a side effect.  The core
+                    // sees 0 in the other lanes, which nothing it records
+                    // or stores depends on (HobbitStackCache memReq).
+                    rpend <= 1'b0; rnew <= 1'b0; rmerge <= 1'b0;
+                    cpu_rdData <= 32'd0;
+                    st <= S_SETTLE;
+                end else if (rspec && !is_mem(ra)) begin
+                    // A speculative device read is declined, not made:
+                    // the core drops the word and asks again when the
+                    // instructions ahead of the one that wants it are
+                    // done (HobbitStackCache rdNack).
+                    rpend <= 1'b0; rnew <= 1'b0; rspec <= 1'b0;
+                    cpu_rdNack <= 1'b1;
+                    cpu_rdData <= 32'd0;
+                    st <= S_SETTLE;
+                end else if (!bk_valid) begin
                     bk_valid <= 1'b1; bk_we <= 1'b0; bk_be <= 4'hF;
                     bk_addr <= ra;
                 end else if (bk_done) begin

@@ -276,6 +276,29 @@ pk_write(uint32_t addr, uint32_t v)
 	}
 }
 
+/*
+ * A device write with its byte enables (the SoC's host link, fpga/sim
+ * soc_main.cpp): the recording's mask must be the write's, as well as its
+ * word.  A whole-word write is mask 0xF.
+ */
+void
+pk_write_be(uint32_t addr, uint32_t v, uint32_t be)
+{
+	init();
+	addr &= ~3u;
+	if (!ram(addr) && retired < end_n && wr_next < nwr &&
+	    wr_rec[wr_next].pa == addr && wr_rec[wr_next].mask != be) {
+		wr_bad++;
+		if (!failed)
+			printf("P9KERN FAIL: device write %08x to %08x after record "
+			    "%u has byte enables %x; the recording's mask is %x "
+			    "(record %u)\n", v, addr, retired, be,
+			    wr_rec[wr_next].mask, wr_rec[wr_next].n);
+		failed = 1;
+	}
+	pk_write(addr, v);
+}
+
 /* The testbench tells the board, every clock, how many records retired. */
 void
 pk_retired(uint32_t n)

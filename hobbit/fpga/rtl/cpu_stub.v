@@ -17,6 +17,10 @@ module mkHobbitSocCpu(
   output [64:0]  memWr,
   output [64:0]  tblWr,
   output [64:0]  evWr,
+  output [3:0]   memWrBe,
+  output         rdMerge,
+  output         rdSpec,
+  input          rdNack_n,
   input  [1039:0] window_w,
   output [725:0] probes,
   input  [31:0]  go_entry,
@@ -48,6 +52,7 @@ module mkHobbitSocCpu(
     fold[16:0] = fold[16:0] ^ window_w[1039:1024];
     fold[2:0] = fold[2:0] ^ il_level ^ armInterrupt_level;
     fold[3] = fold[3] ^ EN_go ^ EN_armInterrupt ^ EN_takenInterrupt;
+    fold[4] = fold[4] ^ rdNack_n;
   end
 
   reg [767:0] s;
@@ -60,6 +65,9 @@ module mkHobbitSocCpu(
   assign memWr = s[200:136];
   assign tblWr = s[300:236];
   assign evWr = s[400:336];
+  assign memWrBe = s[404:401];
+  assign rdMerge = s[405];
+  assign rdSpec = s[406];
   assign probes = s[725:0];
   assign RDY_go = s[1];
   assign running = s[2];
