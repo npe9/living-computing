@@ -1,0 +1,7 @@
+# Held on disk, not in git: the data books and data sheets here come from
+# bitsavers.org mirrors of 1990-1997 vendor publications, and none of them
+# shows redistribution terms (the repository is public).  MANIFEST.md and
+# SHA256SUMS list every file with its URL, size and SHA-256; fetch.sh
+# fetches them again and checks them.
+*.pdf
+*.pdf.part
