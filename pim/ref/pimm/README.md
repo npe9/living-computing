@@ -73,11 +73,12 @@ waiting on an element of its vector, `lockstep_reuse.py`
 (`supply_atom_number`, ours as to what it does) with a merger input
 bound to a vector, `lockstep_xmod.py` an external call between two
 loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
-`restore` at the sites of `scsi_fep` in a loaded patch file;
-`longrun_ipl.py` is the long run (not in the suite); 137
-instructions on both models (counted 2026-11-23: 139 `i_` handlers in
+`restore` at the sites of `scsi_fep` in a loaded patch file,
+`lockstep_rdvc.py` the guard `diff` at a site in another;
+`longrun_ipl.py` is the long run (not in the suite); 138
+instructions on both models (counted 2026-11-23: 140 `i_` handlers in
 `pimm.py`, less `scsi_init` and `scsi_command`, on the reference alone;
-135 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
+136 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`) (refused unless
 `Machine.ahead` is set); `ref_scsi.py` runs the body of `ipl:boot0` on

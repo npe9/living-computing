@@ -984,6 +984,23 @@ class Machine:
         if (a[0] & ~1, a[1]) != (b[0] & ~1, b[1]):
             return self.guard_fail()
 
+    def i_diff(self, pc, x, y, z, c16):
+        # the guard diff(X, Y), X \= Y, 23:F9 r_r (inst_tab.kl1:212;
+        # both inputs, blt.kl1:239-244): "Succeeds if it is assured
+        # that X is not equal to Y ... X or Y must be an atomic term";
+        # suspends on an unbound one, fails if they are equal (PIMOS
+        # manual, e-builtin.tex:114-143).  A term that is not atomic
+        # is "Illegal DIFF!!!" on the CSP (the same page): refused.
+        # Atomic here: an integer or an atom (the manual's empty
+        # vector is refused, not met)
+        a, b = self.g_word(x), self.g_word(y)
+        if a is None or b is None:
+            return self.guard_fail()
+        if not (self.atomic(a) and self.atomic(b)):
+            raise Unimplemented('diff on a term that is not atomic')
+        if (a[0] & ~1, a[1]) == (b[0] & ~1, b[1]):
+            return self.guard_fail()
+
     def i_wait_constant(self, pc, x, y, z, c16):
         # two cells: the constant is the whole next cell (r_c40), as
         # put_constant's.  Atomic values only

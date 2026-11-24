@@ -239,7 +239,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
                       || op == op_add || op == op_exclusive_or || op == op_string_element
                       || op == op_mark_element || op == op_divide || op == op_shift_left
-                      || op == op_not_equal || op == op_multiply;
+                      || op == op_not_equal || op == op_multiply || op == op_diff;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -812,6 +812,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (!isAtomic(a) || !isAtomic(b)) stop(EndUnimp);
       else if (sameAtomic(a, b)) next;
       else guardFail;
+    end
+    else if (op == op_diff) begin
+      // diff(X, Y), X \= Y: fails if they are equal (manual); a term
+      // that is not atomic ("Illegal DIFF!!!") is refused
+      if (!isAtomic(a) || !isAtomic(b)) stop(EndUnimp);
+      else if (sameAtomic(a, b)) guardFail;
+      else next;
     end
     else if (op == op_vector_element) begin
       // guard vector_element(Vector, Position, ^Element)

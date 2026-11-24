@@ -193,6 +193,9 @@ dereference of the module field), about 7.4 M trace lines.
 spill `save`/`restore` (work slots in `PimmRegs.bsv`, ours), at the
 four multiply sites of `scsi_fep` in `pimm_patch_scsifep360E.sav`
 loaded through `ipl_loader:load/4`, about 2.1 M trace lines.
+`rdvc`: the guard `diff`, at `file_request_device:driver_0/10` of
+`pimm_patch_mkdir360E.sav` (loaded as for `xmod`), about 7.4 M trace
+lines.
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -200,9 +203,9 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 137
-instructions (a recount, 2026-11-23: 139 handlers in `pimm.py` less the
-two SCSI built-ins on the reference alone; 135 without our two stubs; the
+State: 138
+instructions (a recount, 2026-11-23: 140 handlers in `pimm.py` less the
+two SCSI built-ins on the reference alone; 136 without our two stubs; the
 earlier 128 and 130 were increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
