@@ -35,6 +35,13 @@ Top level: `pimos/` with `README`, `README.j`, `protocol/`, `src/`,
 - `src/` (559 entries; 502 `.kl1` files): `bios/` (39), `debugger/` (122),
   `etc/`, `kernel/` (48), `library/` (103), `macro/` (22), `server/` (116),
   `shell/` (48), `utility/` (49), `vm/` (10).
+  *Corrected 2026-11-23: 502 is the `.kl1` count of the whole archive.
+  `src/` has 485 (bios 35, debugger 116, kernel 42, library 95,
+  macro 3, server 97, shell 45, utility 43, vm 9) and `src_util/` 17
+  (`gzip -dc pimos.tar.Z | tar -tf - | grep '\.kl1$'`, counted by
+  second path component). The numbers in parentheses above are
+  entries, not `.kl1` files. The object set's 502 modules (`asm/census.py`)
+  count a different thing; they are not these 502 files.*
 - `src/library/` contains the whole KL1 toolchain: `compiler/` (44 `.kl1`
   files: `preproc.kl1`, `reader.kl1`, `comp.kl1`, `macroDisp.kl1`,
   `mactbl.kl1`, `optimize.kl1`, `regass.kl1`, `outp.kl1`, `pack.kl1`,
@@ -191,6 +198,8 @@ Under `https://www.airc.aist.go.jp/aitec-icot/ICOT/ifs/` (HEAD 200 on
 `natural-lang/pimos/` (`pax`, `laputa`), `exper-apps/pimos/`
 (`gog-kl1`, `helic2`, `aligndp`, `celplace`, `lsirout`, `logisim`,
 `pmonitor`, `cohlex`, `rodin`). The smallest is MGTP (20,229 bytes).
+*(Note 2026-11-23: all of these are held as data since 2026-11-20, under
+`ifs/<same path>`; see `IFS_MANIFEST.md`. Nothing was unpacked or run.)*
 
 ## 2. PIM/m-specific documents downloaded from the Museum
 
@@ -233,6 +242,18 @@ and its nine full-size JPEGs in `pim-m/photos/`:
 Checked by HTTP HEAD on 2026-11-19. None is PIM/m-exclusive (or it would
 have been downloaded above); they matter to KL1 implementation and PIM/m
 context but cover several models.
+
+*Note 2026-11-23: the heading was true on 2026-11-19. Since then every
+row is held except `pim-spec-J.html`, which is still recorded only.
+TR-246, TR-389, TR-460 and TR-659 are in this directory
+(`tr0246.pdf` and the others; `LIT_MANIFEST.md` §8, "Already held
+before this acquisition"). TR-373, TM-140, TM-1067 and TM-1203 are in `lit/trtm/`, with
+the two index pages `TRlist.html` and `TMlist.html`
+(`LIT_MANIFEST.md`). The FGCS'92 PIM papers are in
+`lit/fgcs/1992/FGCS92en-proc1/`. `pim-spec-E.html` is in
+`lit/web/www.airc.aist.go.jp/...` and in `lit/web/www.uedalab.jp/...`.
+The three `-J` abstracts are in `ifs/_catalogue/abst/`
+(`IFS_MANIFEST.md`).*
 
 | Candidate | URL | Status | Size |
 |---|---|---|---|

@@ -38,6 +38,18 @@ p. 426, Figure 2):
 The machine cycle is 65 ns, improved from 200 ns on Multi-PSI/v2 (`M92`
 p. 426; `OV92` p. 62; `TR659` p. 6).
 
+*Note 2026-11-23: other sources print 60 ns for PIM/m. TR-564 PDF p. 3
+(printed p. 2) says the PE's machine cycle is 60 ns, read from the page
+image. FGCS'92 Vol. 1 p. 45, Fig. 7 ("PIM model M") says "Machine cycle:
+60ns". TR-799 Table 3 says "PU 60nsec" (OCR, `literature_gaps.md`
+App. C 2.1). The same volume's p. 43 Table 2, "Target cycle time",
+prints 50 nsec in the PIM/m column. TM-1159 gives 15.4 MHz worst case
+and TR-799 16.7 MHz typical (App. C 2.1, OCR), so 65 ns is probably the
+worst-case clock and 60 ns the typical one (INFERENCE). 65 ns stays the
+figure here: it is the one the PIM/m paper itself gives. A timing claim
+should cite which figure it uses. `gap_analysis.md` §D's "60 ns" is the
+other figure, not an error.*
+
 The NU switches four adjacent-PE channel pairs plus the CPU pair. A packet
 byte is 9 bits: 8 data bits plus a mark bit for header/trailer. Routing uses
 a RAM path table indexed by destination PE number; each entry holds a 2-bit
@@ -165,6 +177,20 @@ the acquired corpus; the only assembler in the repository is the model's own
 `asm/pimasm.py`. The absence is recorded in `docs/README.md`. Consequently
 the decode-table and microinstruction contents above are the mechanism, not
 an encoding.
+
+*Corrected 2026-11-23: the row "Microinstruction" was true of the
+sources this note read (`M92`, `OV92`, `TR659`). The field layout IS
+printed elsewhere: TR-733 (Mitsubishi Denki Giho 66(6), 1992) fig. 4,
+"要素プロセッサのマイクロ命令フォーマット", journal p. 76(684), TR PDF
+p. 4, read from the page image. It shows bits 63..0 as CCF<5>, DSTF<5>,
+SC1F<5>, SC2F<5>, SD1F<3>, SD2F<2>, AS1F<3>, AS2F<2>, ADF<3>, ALF<3>,
+JMPF<3>, CNDF<4>, EM1<6>, EM2<6>, EM3<4> and five one-bit strobes
+(`*`). The transcription and legend are in `literature_gaps.md`
+App. C 2.3. The same page's text says one microinstruction is read
+every cycle from a 32 K-word control memory, and that a tag test
+through to the completed branch takes two cycles. The field
+assignments within each field (the values) are still not printed;
+`pseudo_pimm_microcode.md` reads them from the Pseudo PIM/m binary.*
 
 The instruction set is KL1-B: the PU executes "WAM-like instructions for
 KL1, named KL1-B" (`M92` p. 427). `OV92` p. 62 adds that the PIM/m
@@ -353,7 +379,9 @@ Everything above is a model choice, not a documented PIM/m encoding.
    are stated in `M92` p. 426, `TR659` p. 7 and `OV92` p. 63. The model
    implements only a 64 K-word memory, a deliberate simulation scaling, and
    no caches; see item 6 under contradictions.
-8. **65 ns cycle.** `M92` p. 426 and `OV92` p. 62 state it. The model
+8. **65 ns cycle.** `M92` p. 426 and `OV92` p. 62 state it (other
+   sources say 60 ns, and one table gives a 50 ns target; see the note
+   in §1). The model
    currently does not attach time to steps; that is acceptable only if it
    does not claim cycle accuracy.
 
@@ -455,6 +483,8 @@ Everything above is a model choice, not a documented PIM/m encoding.
   (`M92` p. 427 names KL1-B but does not encode it).
 - The 64-bit microinstruction field layout, nano-code width, decode-table
   size/index, jump-table size and offset encoding (`M92` pp. 426–429).
+  *(Corrected 2026-11-23: the field layout is printed in TR-733 fig. 4;
+  see the note after the §5 table. The rest of this item stands.)*
 - Cache-hit latency, memory latency, branch penalty, load-use interlock,
   write policy and per-stage latencies (`M92` pp. 428–433).
 - Whether every tag test or only tag-check jumps cost two cycles (`M92`

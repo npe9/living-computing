@@ -92,6 +92,18 @@ and 1(2), 1983; the SLP'87 PSI-II paper; the full ICCD'90 paper.
   undocumented, and which file holds KL0 is not yet determined
   (`binary_reverse_engineering.md` section 5 has `syspsi` as the
   KL0/SIMPOS control store, from its size and INSTALL's wording).
+  *Note 2026-11-23, to agree with that note: probable, not proven.
+  What the files say: `README` calls `PMPSI.DIR` "KL0 and KL1
+  firmware"; `boot.init` loads `pimm.MEkbn` as the KL1 `impl` file; and
+  `INSTALL` copies `syspsi`, `sysinit` and `sysidat` to SIMPOS's
+  `/usr/psi/simpos/csp`. So KL0 is in the `sys*` trio. What was
+  measured: `syspsi` is 32,768 eight-byte records, a full 32K x 64-bit
+  store, and its words `0..57ff` equal image 1 of `pimm.MEkbn`
+  (`pseudo_pimm_microcode.md` §2); `sysidat` is the KL0 decode table
+  (`binary_reverse_engineering.md` §4.2); `sysinit` is not
+  characterised. No document names `syspsi`'s role. The CSP's micro
+  loader read out of `pimmcsp.ptf`, or a PSI-III document, would
+  settle it.*
   Nothing for PSI-I or PSI-II.
 - Hardware: the JAIST Collection of Symbolic Processing Computers
   lists "PSI (ICOT)" and says "Related manuals and materials are also

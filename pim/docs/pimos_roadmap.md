@@ -62,6 +62,12 @@ the per-opcode table in `pimos_boot_requirements.md`, reproduced by
 | distinct (tag, opcode) pairs used | 197, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
 | of those, with any arm in `PimKL1B.bsv` | 51 |
 
+*(Note 2026-11-23: the 51 is the BENCH model, `bsv/PimKL1B.bsv`, by a
+text match on its arms. The two models of the current work, the
+reference `ref/pimm/pimm.py` and the core `bsv/Pimm*.bsv`, implement
+128 instructions on both (`ref/pimm/README.md`, `bsv/README.md`
+"State"). The counts are of different models, not a disagreement.)*
+
 The 51 cover 73.4% of instruction words by static count, but that
 figure flatters the model: several of the arms are stand-ins
 (`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
@@ -447,12 +453,18 @@ addressing rule on a layout known from elsewhere.*
   `psdpim`). Still wanted: any PSI-III emulator or microcode listing.
 - TR-373 "KL1 no jitsugen houshiki to heiretsu OS no kijutsu" and
   TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
-  `nonlocal/MANIFEST.md` §3).
+  `nonlocal/MANIFEST.md` §3). *Held since 2026-11-20:
+  `nonlocal/lit/trtm/tr0373.pdf`, `tm1203.pdf` (`LIT_MANIFEST.md`;
+  note 2026-11-23).*
 - `pimosman.ps.Z` (the typeset manual; we hold only the LaTeX).
   *`icot_software_survey.md` (2026-11-20) found it on the AIST mirror,
   with the PIMOS 1.5 and 3.0 manuals, the primer and the ESP manuals;
   that survey is the full inventory of ICOT software held, public and
   lost, and its section 5 is the acquisition list. Not fetched yet.*
+  *Corrected 2026-11-23: all of these were fetched as data on
+  2026-11-20 with the whole IFS tree, `nonlocal/ifs/symbolic-proc/pim-psi/pimosman.ps.Z`,
+  `nonlocal/ifs/manuals/pimos/`, `nonlocal/ifs/manuals/esp/`
+  (`nonlocal/IFS_MANIFEST.md`).*
 - Multi-PSI KL1 implementation reports (the distributed
   implementation, export/import tables, weighted reference counts) for
   §7.
@@ -464,6 +476,9 @@ addressing rule on a layout known from elsewhere.*
   node with pages kept by the front end, which needs a host shim for an
   8-operation page-file protocol and the PIMOS KL1 compiler, since it
   ships as source for PIMOS 3.4/3.45. Not fetched; nothing tried.
+  *(Note 2026-11-23: now held as data, nothing tried:
+  `nonlocal/ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz`,
+  `nonlocal/ifs/kbms-clp/pimos/kappa-p.tar.Z`.)*
 - Period KL1 applications for R9: the benchmarks the FGCS'92 PIM/m
   paper reports, and the IFS KL1 programs (theorem provers, puzzle
   and search benchmarks) once the IFS index is reachable.

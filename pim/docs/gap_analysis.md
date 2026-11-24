@@ -16,6 +16,18 @@ Both models (reference `ref/pimm/pimm.py`, Bluespec `bsv/Pimm*.bsv`)
 implement the same 54 instructions and agree line for line on seven
 lockstep tests from four IPL modules.
 
+*Note 2026-11-23: the section is a snapshot of 2026-11-20, and its
+table and coverage figures go with the 54; they were not re-measured.
+On 2026-11-23 the two models implement 128 instructions on both and
+agree on 39 lockstep tests. The 39 is the default list of
+`bsv/run_pimm_lockstep.sh` (`grep -o 'for t in.*'`). The 128 is
+`ref/pimm/README.md`'s count, checked by hand: 131 `def i_` handlers
+in `ref/pimm/pimm.py`, less `scsi_init` and `scsi_command`, which
+are on the reference alone and have no arm in `bsv/Pimm*.bsv`, less
+`unify_step`, which is this project's stub (`asm/pimm_stubs.py`), not
+a PIM/m instruction. No handler is gated whole by `self.alone(`; one
+case of `merge_in` and one built-in case are.*
+
 | | names the models have | of names used | instructions covered |
 |---|---|---|---|
 | IPL image `pimm_ipl.kbn` | 54 | 143 | 11,196 of 13,156 (85.1%) |
@@ -201,7 +213,12 @@ on unit 7, then `getb` until end of file, then each `.sav`) and the
 packet format. `fep#ipl` and `fep#symbol` are NOT used by the IPL,
 against the inference above. That note is the specification for the R4
 front-end stand-in; its byte-level derivations are the agent's and
-have not been executed.
+have not been executed. *(Note 2026-11-23: since executed, on the
+reference model alone. `ref/pimm/ref_scsi.py` runs the body of
+`ipl:boot0` against `ref/pimm/fep.py`, which raises on any request it
+does not serve. It serves only 201, 210, 60 and 70, and the run
+completes, so the IPL sent no 400 or 500 (`binary_reverse_engineering.md` §1.4, "Run"). That
+covers our FEP model and the path `boot0` takes, not the real FEP.)*
 
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are
@@ -218,6 +235,16 @@ the clauses it uses, as the tests do.
 - It has kept pace one for one, so its gaps are A-C above plus:
 - **Cycle accuracy has not started.** The published numbers are few
   (step counts for `append`, 60 ns cycle, the five pipeline stages);
+  *note 2026-11-23: the sources print both 60 and 65 ns for the PIM/m
+  cycle. 60 ns: TR-564 PDF p. 3 (printed p. 2, "マシン・サイクルは60nsである",
+  read from the page image), FGCS'92 Vol. 1 p. 45 Fig. 7 ("Machine
+  cycle: 60ns"), TR-799 Table 3 (OCR, `literature_gaps.md` App. C 2.1).
+  65 ns: FGCS'92 Vol. 1 p. 426 (`M92`) and p. 62 (`OV92` Table 2),
+  TM-1074 and TR-733 Table 1 (`pim_architecture.md` §7). TM-1159 gives
+  15.4 MHz worst case (64.9 ns) and TR-799 16.7 MHz typical (60 ns), so
+  65 is probably the worst-case system clock and 60 the typical one
+  (INFERENCE, `literature_gaps.md` App. C 2.1). Since no timing is
+  claimed, nothing here depends on the choice.*
   the microprogram, once readable, gives per-instruction step counts.
   No timing claim is made today.
 - Every built-in exception and every unmodelled case is `E unimp`; a

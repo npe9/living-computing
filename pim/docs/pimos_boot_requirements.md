@@ -88,7 +88,9 @@ the opcode byte. Some
 opcodes are shared by several built-ins that a sub-function byte tells
 apart (`f_r_r`, `f_r_r_r` types); those are not yet broken out.
 
-**Against the bench model.** `bsv/PimKL1B.bsv` has an arm for 51 of the
+**Against the bench model.** *(Note 2026-11-23: this is the bench
+model only. The reference model and the `Pimm*` core implement 128 on
+both, `ref/pimm/README.md`.)* `bsv/PimKL1B.bsv` has an arm for 51 of the
 197, covering 533,088 instruction words (73.4%) by static count. The
 match is textual, so stand-in arms count. The most used opcodes with no
 arm at all:

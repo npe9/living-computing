@@ -565,6 +565,13 @@ Appendix C):
   | console help text (`CSP`) | - | - | `2000` (Multi-PSI), `200` (Pseudo MPSI) |
   | PIMOS 3.0 primer, CSP auto-boot panel (Appendix D item 8) | `pmpsi:kl1kp.kbn`, patch `pmpsi:kl1pat.com` | `pimos:pimos.kbn` + `pimos.sym` | `202` |
 
+  *Note 2026-11-23: these start values do not compete with the `.kbn`
+  header's `0xE0001E81`. That value is the image's own entry,
+  `ipl:boot/0` at cell 7,809 of an image loaded at `0xE0000000`; the
+  values in the table are arguments to the CSP's `GO`. `20c` is not an
+  offset into the IPL image (cell `0x20c` is inside
+  `ipl_file_decoder:check_GC_element/8`). What `20c` addresses is
+  open; see `icot_software_survey.md` §7.*
   `$IPL` loads the program "on the boot PE". File kinds: `.mbn` for
   microcode, `.kbn` for 40-bit-word images (both the IPL image and the
   pseudo system's IMPL file), `.com` for patches, `.sym` for symbols.
