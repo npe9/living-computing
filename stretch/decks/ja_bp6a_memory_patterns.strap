@@ -1,0 +1,182 @@
+! ja_bp6a_memory_patterns.strap -- IBM 7030 "MEMORY PATTERN TESTS",
+! File No. JA BP6A, May 5, 1961 (docs/ja_bp6a_memory_patterns_test.pdf,
+! 6 PDF pages; the listing is PDF pp.3-6, the writeup pp.1-2).
+! PRNID: "MEMORY PATTERN (6 BOX) A. BROWN".  The writeup calls the two
+! halves "MPT 06 I and II".
+!
+! TRANSCRIBED VERBATIM from the page images rendered at 300 and 600 dpi
+! (no OCR).  The listing's print chain is restored as elsewhere in this
+! repo: "%" prints "(", the box glyph prints ")", "&" prints "+".  The
+! listing marks every remark with "@"; here the remark follows "! @".
+!
+! GLYPHS READ AGAINST THE MACHINE-CODE COLUMN, not from the source alone:
+!   - MPAXW1's operation prints as "%W" (an overstruck X; heavy ink).
+!     The printed word "0.00 03 777760.02 0B" is an XW (count 65535,
+!     refill = MPAXW1's own 001013) -- XW.
+!   - The second CW's refill prints "$&1.0" = "$+1.0" (refill 000777,
+!     the printed ".01 FF").
+!   - FINM2's "NOP,0.0" has a smudged P; printed 0.30 00.
+!   - MPTDD2 (p.5's last line) is TORN after "0 525 252"; the rest of
+!     the operand and its whole machine-code row (100016.00) are lost.
+!     The operand below is RECONSTRUCTED from MPTDD1, its twin on p.4
+!     (every other A/B pair is identical), and is NOT checked by the
+!     listing oracle.  Marked [RECONSTRUCTED] on its line.
+!
+! LISTING-ORACLE RESULT (tests/verify_ja_bp6a_listing.py): every printed
+! row on pp.4-6 is reproduced bit-for-bit by strap_asm.py: 97 checks,
+! all PASS -- 70 machine-code rows, 24 symbol addresses, the two DR
+! reservation lengths (printed 31.00 and 1062.00) and END's 1000.00.
+! The one torn row (100016.00, MPTDD2) is the only row not checked.
+!
+! WHAT THE PROGRAM DOES (writeup p.1-2, read with the code):
+!   "Part I checks four 16K B memory boxes starting in location 100000
+!   (octal).  Part II checks two 16K A memory boxes, starting in
+!   location 40 (octal)."  Six pattern words: all zeros, all ones,
+!   1010..., 0101..., "Zeros ECC word" and "Ones ECC word".
+!   MPATA (low core, 1000) saves the upper program (50 words from MPATB)
+!   into MPST1, then for each pattern: TI puts the pattern in 100000,
+!   and "T,$X1,32768.,32769." with count 65535 ripples it word by word
+!   through 100000-277777 (each word is read and written into the next).
+!   It restores MPATB and branches there.  MPATB does the same for the
+!   A boxes: saves 562 words from 100 (octal) into MPST2, ripples each
+!   pattern through 40-77777 (count 32735), restores, and branches back
+!   to MPATA.  Forever.
+!   "This program operates continuously with no error indications.  It
+!   relies on scoping to detect errors." (writeup p.1, section 2).
+!   It COMPARES NOTHING.  The harness stands in for the scope: see
+!   "HOW IT IS RUN" below.
+!
+! SENSE SWITCHES (maintenance bits, word 4; writeup PDF p.1, section
+! 3.2, read at 600 dpi): typed, "35 Cycle on one pattern word. / 36
+! Cycle on test of upper memories / 37 Cycle through patterns
+! repetitively in lower memories".  BY ADDRESS the typed table matches
+! the code: 4.36 loops MPATA1, Part I, the B boxes at 100000-277777;
+! 4.37 loops MPATB2, Part II, the A boxes at 40-77777.  A pen
+! annotation circles 36 and 37 and draws CROSSING arrows (36 -> lower,
+! 37 -> upper).  That matches the LISTING'S vocabulary, where "upper
+! test" means the code that LIVES in upper core (MPATB: "SAVE UPPER
+! TEST", "TURN SW 37 ON FOR UPPER MEM TEST") and tests the LOWER boxes.
+! Both are consistent; they name different things.  A handwritten
+! "38  LOOP-T-LOOP" below the table has no counterpart in this listing
+! (no BB on 4.38).  All switches are 0 in the runs here (the model's
+! word 4 reads 0), so no BB is taken.
+!
+! MEMORY-TIMING STATEMENTS: none about unit busy, cycle or recycle
+! time, in the writeup or the listing.  The one statement bearing on
+! the memory organisation is writeup PDF p.1, section 1: "Part I checks
+! four 16K B memory boxes starting in location 100000 (octal).  Part II
+! checks two 16K A memory boxes, starting in location 40 (octal)."
+!
+! THE ADDRESS MAP, AND A DISAGREEMENT WITH THE MODEL.  So on this
+! machine the two A boxes hold 0-77777 and the four B boxes 100000-
+! 277777.  StretchMemory.bsv follows Buchholz s14.1: "The first four
+! units share a block of 65,536 addresses ... The next two units share
+! a block of 32,768", i.e. units 0-3 over 0-177777, units 4-5 over
+! 200000-277777.  The test states only box counts per address block;
+! that the low pair is two-way and the high four four-way interleaved
+! is an INFERENCE from Buchholz's description of interleaving, not
+! something this document says.  The total is the same 98,304 words,
+! so the program runs identically on either map.  Recorded, not
+! changed: the .bsv is owned elsewhere.
+!
+! HOW IT IS RUN (tests/run_ja_bp6a.sh STAGE, tests/check_ja_bp6a_dump.py).
+!   WHAT IS STUBBED: the IPL.  The deck is "PUNFUL Binary, 7 cards"
+!   loaded by Initial Program Load from the card reader (writeup p.1,
+!   1.1-1.2.6).  THE PRINTED "PUNFUL," CARD IS COMMENTED OUT BELOW, the
+!   one departure from the listing: strap_asm keeps PUNFUL output out of
+!   the loaded image (right for MCP's header cards, which are punch
+!   control, not storage), and STRAP II's punched full cards for a whole
+!   program do not decode as loader cards (check_strap2_punch.py read
+!   them as "card 1: sequence 1536, check sum"), so with it this deck
+!   would load nothing.  gen_tb PRE-LOADS the assembled image, starting
+!   at END's MPATA.  The control words at 775-777 are loaded as data and never
+!   run as a load chain.  The counts do not fit 7 cards of 15 words
+!   (CW 776 reads 53 words, CW 777 589 including MPST2's 562 reserved
+!   ones), so how the real deck was 7 cards is not settled here.  The
+!   sense switches are the model's word 4 at reset, 0.  Nothing else:
+!   the program does no I/O.
+!   THE SCOPE: the run is stopped behind a CB at a chosen pattern
+!   (gen_tb STOPAT), all of core from word 32 to 98303 is dumped, and
+!   every word the program has reached is compared with the image
+!   computed from the program's own steps.  Five stages are in the
+!   suite: B3 and B4 (1010 and 0101 through the B boxes), A3 and A4
+!   (the same through the A boxes), and LOOP (a whole loop and the next
+!   pass's first pattern).  ALL PASS on the model (2026-11-24): every
+!   reached word matches, 65,536 in the B boxes and up to 32,736 in the
+!   A boxes per stage.
+!   MEASURED, NOT A TIMING CLAIM: the model's ripple "T,$X1,32768.,
+!   32769." takes about 1,114,000 clocks for 65,535 words, ~17 clocks
+!   (5.1 us at 0.3 us) a word (B3 stops at 3,342,998 clocks, B4 at
+!   4,457,141).  Nothing in this document gives the real figure.
+!   A HARNESS HAZARD FOUND HERE: a stop while a multi-word T is still
+!   draining hands the dump's first read the transmit's in-flight
+!   response (run_ja_bp6a.sh says how it was seen), so every stop is
+!   placed behind a CB, which cannot execute until the drain is over.
+!   DISCRIMINATING: see tests/run_tests.sh's JA BP6A block for the
+!   injected fault and the failures observed.
+
+        PRNID,MEMORY PATTERN (6 BOX) A. BROWN
+        PRNID,MAY 5, 1961, JA BP6A
+        SEM,6,G
+!       PUNFUL,                    ! PRINTED (PDF p.4 line 2): COMMENTED OUT, see HOW IT IS RUN
+        SLC,509.
+        CW(CDSC),510.,2,510
+        CW(CDSC),512.,FINM1-MPATA,$+1.0
+        CW(CD),32768.,FINM2-MPATB,$
+        SLC,512.
+MPATA   LCI,$X2,50
+        NOP,0.0                    ! @SET UP TO PROTECT LOW MEM TEST
+        T,$X2,MPATB,MPST1          ! @PUT LOW MEM TEST IN STORAGE
+MPATA1  LX,$X1,MPAXW1
+        LCI,$X2,6                  ! @SET UP TMT CNT & PATTERN CNT
+MPAT1   TI,1,MPTDA1($X1),32768.    ! @PLACE PATTERN IN TEST AREA
+        T,$X1,32768.,32769.        ! @TMT PATTERN THROUGH MEM
+        BB,4.35,MPAT1              ! @TURN SW 35 ON TO LOOP PATTERN
+        V+I,$X1,1.0
+        CB,$X2,MPAT1               ! @CHANGE PTRN, & BR TO USE
+        BB,4.36,MPATA1             ! @TURN SW 36 ON TO LOOP
+        LCI,$X2,50.
+        NOP,0.                     ! @SET UP TO TMT LOW MEM TEST
+        T,$X2,MPST1,MPATB          ! @RESTORE LOW MEM TEST
+        B,MPATB
+        NOP,0                      ! @BRANCH TO LOW MEM TEST
+MPAXW1  XW,0,65535,$
+MPTDA1  (8)DD(BU,64,8),0                                ! @0S
+MPTDB1  (8)DD(BU,64,8),1 777 777 777 777 777 777 777    ! @1S
+MPTDC1  (8)DD(BU,64,8),1 252 525 252 525 252 525 252    ! @1010 PATTERN
+MPTDD1  (8)DD(BU,64,8),0 525 252 525 252 525 252 525    ! @0101 PATTERN
+MPTDE1  (8)DD(BU,64,8),0 000 000 000 060 000 000 001    ! @0S ECC
+MPTDF1  (8)DD(BU,64,8),1 777 777 777 757 777 777 777    ! @1S ECC
+        (8)DD(BU,64,8),0,0,0,0,0,0,0,0,0,0              ! @BUFFER
+MPST1   DR(BU,64,8),25             ! @STORAGE
+        CNOP,0.0
+FINM1   NOP,0
+        NOP,0
+        SLC,32768.0
+MPATB   LCI,$X2,562
+        T,$X2,64.0,MPST2           ! @SAVE UPPER TEST
+MPATB2  LX,$X1,MPAXW2
+        LCI,$X2,6                  ! @SET UP TMT CNT & PETTERN CNT
+MPAT2   TI,1,MPTDA2($X1),32.0      ! @PLACE PATTERN IN TEST AREA
+        T,$X1,32.,33.              ! @TMT PATTERN THROUGH MEM
+        BB,4.35,MPAT2              ! @TURN SW 35 ON TO LOOP PATTERN
+        V+I,$X1,1.0
+        CB,$X2,MPAT2               ! @CHANGE PATTERN & BR TO USE
+        BB,4.37,MPATB2             ! @TURN SW 37 ON FOR UPPER MEM TEST
+        LCI,$X2,562
+        T,$X2,MPST2,64.0           ! @REPLACE UPPER TEST
+        B,MPATA
+        NOP                        ! @BRANCH TO HI MEM TEST
+MPAXW2  XW,0,32735,$
+MPTDA2  (8)DD(BU,64,8),0                                ! @0S
+MPTDB2  (8)DD(BU,64,8),1 777 777 777 777 777 777 777    ! @1S
+MPTDC2  (8)DD(BU,64,8),1 252 525 252 525 252 525 252    ! @1010 PATTERN
+MPTDD2  (8)DD(BU,64,8),0 525 252 525 252 525 252 525    ! [RECONSTRUCTED past "0 525 252"; torn]
+MPTDE2  (8)DD(BU,64,8),0 000 000 000 060 000 000 001    ! @0S ECC
+MPTDF2  (8)DD(BU,64,8),1 777 777 777 757 777 777 777    ! @1S ECC
+        (8)DD(BU,64,8),0,0,0,0,0,0,0,0,0,0              ! @BUFFER
+MPST2   DR(BU,64,8),562
+        CNOP,0.0
+FINM2   NOP,0.0
+        NOP,0.0
+        END,MPATA
