@@ -121,11 +121,15 @@ def main():
         except TimeoutError:
             term.type('\x7f')      # termrc stuck after ipconfig: DEL
             s = net1e.wait_prompt(term, r'^% *$', 60)
-        term.type('cat /dev/user; echo; cat /dev/sysname; echo\n')
+        # keyfs must not show through the served root (serve.rc)
+        term.type('cat /dev/user; echo; cat /dev/sysname; echo; ls /mnt/keys; echo keys end\n')
         time.sleep(5)
         s = net1e.screen_log(term, 'terminal logged in')
         if 'not checked' in s or '\nglenda\n' not in s + '\n':
             print('FAIL: login')
+            ok = False
+        if '\nterm386\nkeys end' not in s:
+            print('FAIL: /mnt/keys on the terminal is not empty')
             ok = False
         s = net1e.screen_log(fs9, 'fs9 after the login')
         if 'user glenda ok' not in s:

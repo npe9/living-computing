@@ -36,7 +36,7 @@ python3 -u "$here/qemu1e.py" --workdir "$C/run-mk" --fd "$Q/fd.img" \
 # the a.out header (sys/include/a.out.h): eight big-endian longs, magic
 # text data bss syms entry spsz pcsz; the file is the header, text,
 # data, then syms, spsz and pcsz bytes of tables
-python3 - "$C/out.img" "$C/9pccpu" <<'EOF'
+python3 - "$C/out.img" "$C/9pccpu" "$here/cpukernel.sum" <<'EOF'
 import struct, sys
 b = open(sys.argv[1], 'rb').read()[48 * 1024 * 1024:]     # partition out
 magic, text, data, bss, syms, entry, spsz, pcsz = struct.unpack('>8I', b[:32])
@@ -46,6 +46,27 @@ n = 32 + text + data + syms + spsz + pcsz
 open(sys.argv[2], 'wb').write(b[:n])
 print('%s: %d bytes (text %d data %d bss %d syms %d spsz %d pcsz %d, entry %#x)'
       % (sys.argv[2], n, text, data, bss, syms, spsz, pcsz, entry))
+# the one thing that differs between builds is `ulong kerndate =
+# KERNDATE` (port/mkdevc; the mkfile's `date -n` at link time), and the
+# guest's clock starts at 1993-01-03 12:00 (qemu1e.py -rtc): so the
+# check is a sha256 of the kernel with the data word holding a time in
+# that hour zeroed, against cpukernel.sum
+import hashlib
+k = bytearray(b[:n])
+T0 = 726062400                      # 1993-01-03 12:00:00 UTC
+hits = [o for o in range(32 + text, 32 + text + data - 3)
+        if T0 <= struct.unpack('<I', k[o:o+4])[0] < T0 + 3600]
+if len(hits) != 1:
+    sys.exit('kerndate: %d candidates in the data segment' % len(hits))
+o = hits[0]
+print('kerndate at file %#x: %d' % (o, struct.unpack('<I', k[o:o+4])[0]))
+k[o:o+4] = bytes(4)
+h = hashlib.sha256(k).hexdigest()
+want = open(sys.argv[3]).read().split()[0]
+print('sha256 (kerndate zeroed) %s: %s' % (h, 'OK' if h == want else
+      'MISMATCH, cpukernel.sum has ' + want))
+if h != want:
+    sys.exit(1)
 EOF
 python3 "$here/patch_kernel.py" "$C/9pccpu" "$C/9pccpu.q"
 python3 "$here/patch_kernel.py" --strip "$C/9pccpu" "$C/9pccpu.qs"

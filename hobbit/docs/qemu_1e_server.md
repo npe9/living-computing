@@ -574,8 +574,10 @@ which runs `/rc/bin/cpurc` and then locks the console with the host key
 (`init.c pass`).  The `port` line `int cpuserver = 1` changes the
 kernel: eve stays `bootes` (no take-over by the first user), eve may
 read `#c/key` and `#r/nvram`, `^P` on the console exits, swap
-handling differs.  Every 1e CPU configuration has both (`hobbit/cpu`,
-`magnum/magnumcpu`, `ss/sscpu`); no `pc` configuration has either.
+handling differs.  The 1e CPU configurations have both (`hobbit/cpu`,
+`hobbit/cpulocal`, `magnum/magnumcpu`, `ss/sscpu`); `cpuserver = 1`
+also appears in `hobbit/bart`, `hobbit/rom`, `magnum/magnumboot`,
+`power/power`, `power/powerboot`.  No `pc` configuration has either.
 `tools/qemu1e/overlay/sys/src/9/pc/pccpu` is the release's `pc` with
 exactly those two changes (and `boot cpu`: `il`, `tcp`).
 
@@ -606,9 +608,12 @@ mkcpu done
 The text is exactly as long as the shipped `386/9pc`'s (260,633 bytes;
 data 76,152 against 79,352), and `patch_kernel.py`'s three QEMU patches
 each match once, at the same offsets as in `9pc` (0x23ae7/0x23af1,
-0x1ef49, 0x1e44b).  The built kernel differs from build to build only by
-`KERNDATE`, so it is not pinned; its inputs are (the tarball and
-`overlay/.../pccpu`).  `9pccpu.qs` (stripped, 336,817 bytes) replaces
+0x1ef49, 0x1e44b).  Three builds were byte-identical except for one word,
+`ulong kerndate = KERNDATE` (`port/mkdevc`; the mkfile's `date -n`),
+at file offset 0x3fbad: 726062441, ...443, ...444, seconds after the
+guest clock's 1993-01-03 12:00 start.  `cpukernel.sh` finds that word
+(the one data word holding a time in that hour), zeroes it, and checks
+the sha256 against `tools/qemu1e/cpukernel.sum`.  `9pccpu.qs` (stripped, 336,817 bytes) replaces
 9DOS on a copy of the distribution floppy, `build/qemu-cpu/fd-cpu.img`.
 
 **Booting it** (`net_test.py`), cpu9's console:
