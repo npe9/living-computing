@@ -141,11 +141,15 @@ class HubReplayTest(unittest.TestCase):
             self.assertEqual(self.boot.steps, STEPS["init"])
 
 
-# the live run's (build/hub/live4, 2026-11-24): the steps each line was
-# typed at, init's first line, and the stop at `end of cpu`
-STEPS = {"typed": [286977195, 288647338, 289407297, 313565409, 313927179,
-                   1054675769, 1211181842, 1508419483],
-         "init": 408307318, "end": 1580420168}
+# the steps each line was typed at, init's first line, and the stop at
+# `end of cpu`.  Recorded live (build/hub/live4, 2026-11-24) as typed
+# 286977195 ... 1508419483, init 408307318, end 1580420168; re-measured by
+# replay on 2026-11-24 after the exception-record cost 9 + D + A
+# (sem/hobbit_timing.py, docs/cycle_accuracy_plan.md) landed: every frame
+# still as recorded, only the step counts moved (by 84..8696).
+STEPS = {"typed": [286977111, 288647254, 289407213, 313565313, 313927083,
+                   1054669193, 1211175266, 1508410843],
+         "init": 408307222, "end": 1580411472}
 # at init's first line: frames on the wire, the model's among them
 FRAMES = {"init": 197, "init-tx": 94}
 

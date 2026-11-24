@@ -1,0 +1,47 @@
+% SCAFFOLDING stand-in for SIMPOS's class `string`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `string` is printed.  Its two methods are the only ones held programs
+% send (docs/simpos/required/classes.tsv: append/3, 1,039 call sites in
+% 14 programs; copy/3, 7), and each is INTERPOLATED (labelled).
+% Built-ins used (KL0, each with a known-plaintext row in
+% psi/kl0_opcodes.tsv): string/3 (blt 0b), new_string/3 (blt 1c),
+% string_element/3 (blt 23), set_string_element/3 (blt 2b).
+% Model (OURS): the elements of a new string are 16-bit (type 16, as
+% p_tgraph.esp's `new_string(N,L,16)`); lengths are counted one by one,
+% because adding two registers has no witnessed opcode.
+
+class string has
+
+% :append(#string, [S1, S2, ...], S) -- S is a new string holding the
+% elements of S1, S2, ... in order.
+% INTERPOLATED from: the call sites, e.g. paragraph p_what.esp
+% `:append(#string,[S1,"::",S2,":",S3],S0)` and kappa2 inwin.esp
+% `:append(#string,["INPUT WINDOW ","<TYPE : ",Type,">"],Title)` (a list
+% of strings in, a string out; 1,039 sites, requirements.tsv).  Only
+% strings are taken as elements (OURS).
+:append(Class, List, S) :-
+        total(List, 0, L),
+        new_string(S, L, 16),
+        fill(List, S, 0, _);
+
+% :copy(#string, S, C) -- C is a new string with S's elements and type.
+% INTERPOLATED from: the call sites (cal-esp grmenu.esp:186, kappa2 x3,
+% kwic-esp x3; requirements.tsv) and the name.
+:copy(Class, S, C) :-
+        string(S, N, T),
+        new_string(C, N, T),
+        copy(S, 0, N, C, 0, _);
+
+local
+total([], L, L);
+total([X|R], L0, L) :- string(X, N, _), count(N, L0, L1), total(R, L1, L);
+count(0, L, L) :- !;
+count(N, L0, L) :- count(N-1, L0+1, L);
+fill([], S, P, P);
+fill([X|R], S, P0, P) :- string(X, N, _), copy(X, 0, N, S, P0, P1), fill(R, S, P1, P);
+copy(X, N, N, S, P, P) :- !;
+copy(X, I, N, S, P0, P) :-
+        string_element(X, I, E),
+        set_string_element(S, P0, E),
+        copy(X, I+1, N, S, P0+1, P);
+end.

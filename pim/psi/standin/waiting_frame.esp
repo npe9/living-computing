@@ -1,0 +1,9 @@
+% SCAFFOLDING stand-in for SIMPOS's class `waiting_frame`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS.  INTERPOLATED,
+% and empty: TM-100 says the frames of a waiting_queue "must be instances
+% of class 'waiting_frame'" and that process inherits it (PDF p14,
+% tm0100_p14.esp); what it holds is not printed.  It exists so that the
+% printed nature list of process (TM-100 Fig. 3.1) names a loaded class.
+
+class waiting_frame has
+end.

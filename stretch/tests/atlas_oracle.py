@@ -238,20 +238,31 @@ def _tb_text():
             os.chdir(here)
 
 
+BDIR = "build-atlas"      # not the suite's bsv/build: see build()
+SIMDIR = "simbuild-atlas"
+
+
 def build(verbose=True):
     """Generate and compile the one testbench.  Several minutes."""
     t0 = time.time()
     with open(os.path.join(BSV, MODULE + ".bsv"), "w") as f:
         f.write(_tb_text())
     bsc = BSC_HOME + "/bin/bsc"
-    os.makedirs(os.path.join(BSV, "build"), exist_ok=True)
-    os.makedirs(os.path.join(BSV, "simbuild"), exist_ok=True)
+    # Own build directories (2026-11-24).  With -u, bsc recompiles every
+    # package the testbench imports, mkStretchCore included, into -bdir.
+    # Sharing the suite's bsv/build left a mkStretchCore there without the
+    # schedule file the smoke test's check_schedule.py reads, and the next
+    # suite run in that tree failed its smoke section (the transmit
+    # diagnosis, 2026-11-23; docs/fidelity_plan.md "Tooling").
+    os.makedirs(os.path.join(BSV, BDIR), exist_ok=True)
+    os.makedirs(os.path.join(BSV, SIMDIR), exist_ok=True)
     cmds = [
-        [bsc, "-sim", "-simdir", "simbuild", "-bdir", "build", "-info-dir",
-         "build", "-g", "mk" + MODULE, "-u", MODULE + ".bsv",
+        [bsc, "-sim", "-simdir", SIMDIR, "-bdir", BDIR, "-info-dir",
+         BDIR, "-p", BDIR + ":%/Libraries:.", "-g", "mk" + MODULE,
+         "-u", MODULE + ".bsv", "+RTS", "-K512m", "-RTS"],
+        [bsc, "-sim", "-simdir", SIMDIR, "-bdir", BDIR, "-p",
+         BDIR + ":%/Libraries:.", "-e", "mk" + MODULE, "-o", MODULE + "_sim",
          "+RTS", "-K512m", "-RTS"],
-        [bsc, "-sim", "-simdir", "simbuild", "-bdir", "build", "-e",
-         "mk" + MODULE, "-o", MODULE + "_sim", "+RTS", "-K512m", "-RTS"],
     ]
     if verbose:
         print("building %s (several minutes the first time) ..." % MODULE,

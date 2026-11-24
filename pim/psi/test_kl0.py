@@ -7,6 +7,8 @@
 
 1. The opcode table (psi/kl0_opcodes.tsv) is the dispatch: one handler per
    witnessed row, no handler without a row, every row with a witness.
+   The four string rows (blt 0b, 1c, 23, 2b) run on their witness
+   operands, new_string with S != T included (view_select_menu change/3).
 2. pimfep##fep_command_code_table:convert/3, both ways, against the
    `fep#name => code` macros of PIMOS's pimos.vmac (measured 2026-11-24):
    96 names agree, 4 only in the FEP table, 8 only in PIMOS; code -> name
@@ -21,7 +23,12 @@
    and time_graph_window:go/1 refuses at its first SIMPOS send.  (The
    104 classes have no before- or after-demons: 14 methods have more
    than one primary, none has a demon.)
-4. The census of the 104 classes that need no SIMPOS (103 with methods):
+4. Slot initialisation (TM-388 §3.5 pp.49-50), on kappa alone against its
+   held source: new/2 runs the slot-initialisation predicates (all 424
+   held ones have arity 1, pinned), nested creation (an initialiser that
+   creates a class with its own initialiser), two-goal initialisers, and
+   `slot is Class` as a new instance (TM-388 p.49 (3)).
+5. The census of the 104 classes that need no SIMPOS (103 with methods):
    each method called once with unbound arguments; totals and the refusal
    ranking pinned.
 
@@ -42,8 +49,44 @@ copy, the observed failures recorded, the file restored from the backup):
     instead of the barrier in A_A: only test_census fails (success 304,
     failure 10: pimmcsp##pseudo_csp_csbreak_address_table csp_mm_reg/3,
     whose source is not held, succeeds instead of failing).
+Slot initialisation (2026-11-24, injected into kl0.py from a backup in the
+session scratchpad, restored with cp and checked with cmp; both test files
+run; observed):
+  - a failing initialiser ignored (new/2 succeeds, the slot 0): only
+    test_espc test_failure_fails_new fails;
+  - the initialiser's value taken from A1, not A0: errors in
+    test_hash_table, test_nested_new, test_two_goals, and in test_espc
+    test_class_slot, test_instance_slots_and_after_demon,
+    test_printed_process_slots, test_self, test_stream_runs; failures in
+    test_fep_census and test_on_after_gets_further;
+  - class slots initialised by code left 0: only test_espc test_class_slot;
+  - one initial value per slot, shared by every instance: only
+    test_nested_new;
+  - `slot is Class` stores the class object: only test_slot_is_class
+    (an error).
   (Rerun with the session's injection script after any change to the
   tests; the set above was observed on the final tests.)
+String built-ins and :refute (2026-11-24, injected the same way into
+kl0.py, and into espc.py for the last; both test files run; observed):
+  - new_string puts the string in the T register: only
+    test_string_cells (an error);
+  - string_element reads element I+1: test_string_cells and test_espc
+    test_string fail;
+  - set_string_element does not store: test_string_cells and test_string
+    fail;
+  - string/3 gives the type as the length: test_string_cells fails,
+    test_string errors;
+  - :refute leaves the receiver in A0: only test_espc test_refute (an
+    error);
+  - espc's head-save fix reverted: test_espc test_string errors and
+    test_counts fails;
+  - espc emits new_string with L and S swapped: only test_espc
+    test_string (an error);
+  - espc gives string/3's two outputs one register: the compiler raises
+    (not a refusal) on paragraph and kappa2, so every test_espc test
+    that compiles them errors: two setUpClass,
+    test_no_internal_refusal, test_only_witnessed_opcodes, test_kappa2,
+    test_aspect_differences, test_counts, test_named_exact.
 """
 import os
 import sys
@@ -82,7 +125,24 @@ class Table(unittest.TestCase):
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
-        self.assertEqual(len(rows), 96)
+        self.assertEqual(len(rows), 100)
+
+    def test_string_cells(self):
+        # the string rows' witness operands, run on the handlers alone:
+        # view_select_menu change/3 `a7 00 00 03`, `a7 01 00 10`,
+        # `1c 04 00 01` (new_string(S,3,16), S out in A4); then
+        # set_string_element / string_element / string on it
+        m = machine()
+        m.reset()
+        m.x[0], m.x[1] = 3, 16
+        m.op_new_string(None, 0, 4, 0, 1, None)
+        s = m.x[4]
+        self.assertEqual((type(s), s.type, s.codes(), m.x[1]), (K.Str, 16, [0, 0, 0], 16))
+        m.x[2], m.x[3] = 1, 0x2121
+        m.op_set_string_element(None, 0, 4, 2, 3, None)
+        m.op_string_element(None, 0, 4, 2, 5, None)
+        m.op_string(None, 0, 4, 6, 7, None)
+        self.assertEqual((s.codes(), m.x[5], m.x[6], m.x[7]), ([0, 0x2121, 0], 0x2121, 3, 16))
 
 
 class Convert(unittest.TestCase):
@@ -183,6 +243,89 @@ class Paragraph(unittest.TestCase):
         self.assertEqual(sol[0], K.Str('3500'))     # version.esp: "3200"
 
 
+class SlotInit(unittest.TestCase):
+    """new/2 runs slot-initialisation predicates (TM-388 §3.5 pp.49-50).
+    Held code, package kappa loaded alone, against its held source."""
+
+    @classmethod
+    def setUpClass(cls):
+        lib = K.LB.Librarian()
+        lib.load_held(pkgs=['kappa'])
+        cls.m = K.Machine(lib)
+
+    def new(self, cid):
+        m = self.m
+        sols = []
+        for _ in m.solve_send(K.ClassRef(cid), 'new', [K.Var(), K.ClassRef(cid)]):
+            sols.append(K.resolve(m.x[0]))
+        self.assertEqual(len(sols), 1, cid)
+        inst = sols[0]
+        co = m.lib.build(cid)
+        return {e.name: v for e, v in zip(co.instance_slots, inst.slots)}
+
+    def test_arity_one(self):
+        # MEASURED: every slot-initialisation predicate (kind 0x22/0x32) of
+        # the eleven packages has arity 1: the value, no receiver
+        lib = K.LB.Librarian()
+        lib.load_held()
+        kinds = {}
+        for t in lib.templates.values():
+            for p in t.preds():
+                if p is not None and p.kind in (0x22, 0x32):
+                    kinds[(p.kind, p.arity)] = kinds.get((p.kind, p.arity), 0) + 1
+        self.assertEqual(kinds, {(0x22, 1): 33, (0x32, 1): 391})
+
+    def test_hash_table(self):
+        # KP_MDMTBL.ESP: ( table := Table :- new_heap_vector(Table,128) )
+        s = self.new('kappa##kappaMDM_hash_table')
+        t = s['table']
+        self.assertIsInstance(t, K.Vec)
+        self.assertTrue(t.heap)
+        self.assertEqual(t.args, [0] * 128)
+
+    def test_nested_new(self):
+        # KP_MDMAR.ESP: (work_hash1 := HT :- :create(#kappaMDM_hash_table,HT)),
+        # (work_hash2 := ...same...), access_right_table,
+        # (faot := FAOT :- new_heap_vector(FAOT,@max_faot_entry+1)), and
+        # KP_MDM.MAC @max_faot_entry => 20.  create/2 (:new(Class,OBJ)) runs
+        # the hash table's own initialiser: two distinct tables.
+        s = self.new('kappa##kappaMDM_access_right')
+        h1, h2 = s['work_hash1'], s['work_hash2']
+        for h in (h1, h2):
+            self.assertIsInstance(h, K.Instance)
+            self.assertEqual(h.cid, 'kappa##kappaMDM_hash_table')
+            self.assertEqual(h.slots[0].args, [0] * 128)
+        self.assertIsNot(h1, h2)
+        self.assertIsNot(h1.slots[0], h2.slots[0])
+        self.assertEqual(s['faot'].args, [0] * 21)
+        self.assertEqual(s['access_right_table'], 0)
+
+    def test_two_goals(self):
+        # KP_TBOSRUC.ESP: (ruc_table := RUCT :- new_heap_vector(RUCT,
+        # @sdb_ruc_table_max_entry*2+1), set_vector_element(RUCT,0,1)), and
+        # KAPPATBO.MAC @sdb_ruc_table_max_entry => 10
+        s = self.new('kappa##kappaTBO_SDB_RUC_control')
+        self.assertEqual(s['ruc_table'].args, [1] + [0] * 20)
+        self.assertEqual((s['dbo'], s['bfm'], s['rct_lpn']), (0, 0, 0))
+
+
+    def test_slot_is_class(self):
+        # `slot is Class` stores a new instance (TM-388 p.49, (3)), made by
+        # new/2, which runs that class's own initialisers.  HLCSELECT.ESP:
+        # component ..., search_info_tree is kappaHLC_search_information_tree,
+        # practice is kappaHLC_selection_practice; HLCSELSIT.ESP: attribute
+        # ..., sit_hv_table is kappaHLC_SIT_HV_table, ...
+        s = self.new('kappa##kappaHLC_selection')
+        tree = s['kappa##kappaHLC_selection$search_info_tree']
+        self.assertEqual(tree.cid, 'kappa##kappaHLC_search_information_tree')
+        self.assertEqual(s['kappa##kappaHLC_selection$practice'].cid,
+                         'kappa##kappaHLC_selection_practice')
+        self.assertEqual(repr(s['kappa##kappaHLC_selection$supervisor']), 'nil')
+        co = self.m.lib.build(tree.cid)
+        t = {e.name: v for e, v in zip(co.instance_slots, tree.slots)}
+        self.assertEqual(t['sit_hv_table'].cid, 'kappa##kappaHLC_SIT_HV_table')
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -202,16 +345,18 @@ class Census(unittest.TestCase):
             if r[3] == 'refused':
                 k = K.refusal_key(r[4], r[5])
                 rank[k] = rank.get(k, 0) + 1
+        # the string built-ins (blt 0b, 2b) take two methods further:
+        # csp_default_write write/2 to string/3 on an unbound argument,
+        # state_pe reflesh/3 to a draw_string/6 sent to an unbound receiver
         self.assertEqual(rank, {
-            'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 13,
-            'receiver not an object': 8, 'unbound argument': 17, 'operand': 17,
+            'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
+            'receiver not an object': 8, 'unbound argument': 18, 'operand': 17,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3, 'missing opcode blt 10': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,
-            'missing opcode blt 0b': 1, 'missing opcode pmi c3': 1,
-            'missing opcode blt 2b': 1})
+            'missing opcode pmi c3': 1})
 
 
 if __name__ == '__main__':

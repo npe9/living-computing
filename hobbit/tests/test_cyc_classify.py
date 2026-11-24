@@ -13,6 +13,12 @@ Injections (observed 2026-11-24, each reverted by its exact reverse):
 * `T435_INCORRECT = {0: 3, 1: 1, 2: 1}` (distance 1 priced as distance
   2): test_folded_mispredict_dist1 and test_all_known_classes_exit_0
   fail; the other four pass.
+* (2026-11-24, when JMP was added) `COND` without 0x03: FAIL
+  test_five_parcel_host_unconditional_jmp ("cyc differs on 1" not found
+  in "... 0, cyc differs on 0") and FAIL test_all_known_classes_exit_0
+  ("cyc differs on 5" not found; 4); the other five pass.  The JMP
+  disagreement is then invisible, not "unexplained": this is the gap
+  that hid zc's 11,772 JMPs folded into five-parcel hosts.
 
 Revert an injection and then delete `tools/__pycache__/cyc_classify.*`:
 the second injection keeps the file's size, and a restore within the
@@ -56,6 +62,9 @@ TRAP = [(0x500, 0x9ff5, 1, 1, 0),          # CMPEQ, then three others
         (0x50a, 0xd9f5, 8, 8, 1),          # an unimplemented five-parcel
         (0x514, 0x1009, 1, 3, 0),          # JMPFN, taken: mispredict
         (0x600, 0x5043, 1, 1, 0)]
+FIVE_JMP = [(0x900, 0xdffb, 1, 1, 0),      # five-parcel host
+            (0x90a, 0x0c10, 1, 0, 0),      # JMP, folded by the core
+            (0x92a, 0x5043, 1, 1, 0)]
 ODD = [(0x700, 0x5043, 1, 1, 0),
        (0x702, 0x5043, 1, 1, 0),
        (0x800, 0x1401, 1, 2, 0),           # JMPFY reached by a transfer
@@ -83,6 +92,12 @@ class Classes(unittest.TestCase):
         self.assertEqual(rc, 0, out)
         self.assertIn("ref 1 core 0      1  five-parcel host", out)
 
+    def test_five_parcel_host_unconditional_jmp(self):
+        rc, out = run(FIVE_JMP)
+        self.assertEqual(rc, 0, out)
+        self.assertIn("cyc differs on 1", out)
+        self.assertIn("ref 1 core 0      1  five-parcel host", out)
+
     def test_folded_mispredict_dist1(self):
         rc, out = run(DIST1)
         self.assertEqual(rc, 0, out)
@@ -104,9 +119,9 @@ class Classes(unittest.TestCase):
         self.assertIn("unexplained", out)
 
     def test_all_known_classes_exit_0(self):
-        rc, out = run(FIVE + DIST1 + DIST2 + TRAP, ["--all"])
+        rc, out = run(FIVE + DIST1 + DIST2 + TRAP + FIVE_JMP, ["--all"])
         self.assertEqual(rc, 0, out)
-        self.assertIn("cyc differs on 4", out)
+        self.assertIn("cyc differs on 5", out)
 
 
 if __name__ == "__main__":

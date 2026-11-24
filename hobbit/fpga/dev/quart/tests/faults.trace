@@ -1,0 +1,91 @@
+# Directed: fail loud.  ERR = the Python model stops the run (p9boot.Stop
+# or hobbit_sem.BusError) and the RTL must raise exactly one fault on that
+# access.  RTLERR = the model accepts the access but the RTL does not
+# implement it (HobbitQuart.bsv header, "Faults"), so the RTL must fault
+# while the model answers normally.  Ordinary accesses in between check
+# that a faulting access changed nothing.
+
+# ---- Quart: what p9boot.Quart stops on
+a quart r 8 = ERR                # cr is write-only
+a quart r 28 = ERR               # channel 1 cr
+a quart r 90 = ERR               # pwrdn: write-only
+a quart r b4 = ERR               # brg: write-only
+a quart r c0 = ERR               # reserved 0x30
+a quart w 3c 0 f = ERR           # stop is read-only
+a quart w a0 0 f = ERR           # cir is read-only
+a quart w fc 0 f = ERR           # reserved 0x3f
+a quart w c 41 1 = ERR           # a partial write (byte lane 0)
+a quart w 0 13 3 = ERR
+a quart r 4 = 0                  # sr: nothing enabled, and the partial
+                                 # write left the mr pointer alone:
+a quart r 0 = 0
+
+# ---- Quart: accepted by the model, not implemented by the RTL
+a quart w 80 1 f = RTLERR        # bcr non-zero: bids assume 0
+a quart w 80 0 f = ok
+a quart r 80 = 0
+a quart w b0 3f f = RTLERR       # icr threshold non-zero
+a quart w b0 0 f = ok
+a quart w 90 0 f = RTLERR        # power down
+a quart w b8 0 f = RTLERR        # X1/CLK divided by 2
+a quart w bc 0 f = ok            # X1/CLK normal
+a quart w 94 0 f = ok            # power up
+a quart w 98 0 f = ok            # nak
+a quart w b4 0 f = ok            # brg
+a quart w 8 60 f = RTLERR        # BrkStart
+a quart w 8 b0 f = RTLERR        # set the MR pointer to MR0
+a quart w 8 40 f = ok            # ErrReset
+a quart w 8 70 f = ok            # BrkStop
+a quart w c 41 f = RTLERR        # txfifo with the transmitter disabled
+a quart w 48 4 f = ok            # channel 2 TxEnable
+a quart w 4c 42 f = ok           # a byte out on channel 2
+a quart w 8 4 f = ok             # channel 0 TxEnable, mr1/mr2 still 0
+a quart w c 43 f = RTLERR        # channel 0 is 8N1 only
+a quart w 8 10 f = ok
+a quart w 0 13 f = ok
+a quart w 0 7 f = ok
+a quart w c 44 f = ok            # now it goes out
+a quart w 8 8 f = ok             # TxDisable
+a quart r 4 = 0
+
+# ---- the counter: started in a mode the model does not have
+a quart w 10 80 f = ok           # acr = BRGSet2 (eiasetup), no timer
+a quart w 18 ff f = ok
+a quart w 1c ff f = ok
+a quart r 38 = ERR               # start: not timer mode
+a quart w 10 f0 f = ok
+a quart w 18 0 f = ok
+a quart w 1c 0 f = ok
+a quart r 38 = ERR               # start: count 0
+a quart r 14 = 0                 # isr: no CtrRDY
+
+# ---- Irq (p9boot.Irq raises BusError)
+a irq w 8 1 f = ERR              # status0 is read-only
+a irq w c 1 f = ERR
+a irq w 0 2 1 = ERR              # partial write of mask0
+a irq r 10 = ERR                 # beyond status1
+a irq w 0 2 f = ok
+a irq w 4 3 f = ok
+a irq r 0 = 2
+a irq r 4 = 3
+e 600
+a irq r 8 = 0
+a irq r c = 6                    # status1: SONIC (9) and SCSI (10)
+s 0 1
+a irq w 4 0 f = ok
+s 0 0
+e 0
+
+# ---- IOCTL (p9boot.Register raises BusError)
+a ioctl r 4 = ERR
+a ioctl w 0 5 3 = ERR            # partial write
+a ioctl w 4 5 f = ERR
+a ioctl w 0 5 f = ok
+a ioctl r 0 = 5
+
+# ---- incon (p9boot's Latch stops on every read)
+a incon r 4 = ERR
+a incon r 0 = ERR
+a incon w 4 0 f = ok             # csr = INCON_STOP (inconreset)
+a incon w 0 80 f = ok
+a incon w 10 12 1 = ok           # the Latch takes any write

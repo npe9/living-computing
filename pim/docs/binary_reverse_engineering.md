@@ -620,10 +620,11 @@ the device are given it again whenever the machine runs dry.
   | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, T]`, OURS, the same on every run. The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`). T, milliseconds from midnight (`utility/timer/time.kl1`), follows the machine's clock (`pimm.py` `timer()`, 2026-11-24; it was 0): midnight is the moment the processor booted. PIMOS keeps the difference of the two as its time equation (`server/fep/fep/time_sv.kl1` `wait_date_time/2`, `compare/4`). In the long run T = 28,927: the cached machine's clock includes the whole IPL load |
   | 15-16 | 7, 0 then 1 | SEND and RECEIVE, device 17: `close` (60), `{17, 60}`, the timer device's end when its stream ends (`time_dvc.kl1` `device_io1/13`, then `device_terminate/5`) | accepted, `[1]`, OURS, as a file's close (2026-11-24) |
 
-  New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
-  on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
-  packets `append_open` (203), `create_timer` (310),
-  `get_date_time` (304) and the timer's `close` (60).
+  The FEP commands of this table are all on the FEP emulator's tapes
+  (`bsv/PimmFepEmu.bsv`; 2026-11-24, below): INQUIRY to unit 7; TEST
+  UNIT READY to units 0-5; the packets `append_open` (203),
+  `create_timer` (310), `get_date_time` (304) and the timer's `close`
+  (60).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
   The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
@@ -633,6 +634,23 @@ the device are given it again whenever the machine runs dry.
   PKL`), and `direct_kernel.tape` its edges. `putb` (111), which the
   syslog sends next by the source, is refused there as `fep.py` refuses
   it today.
+  2026-11-24, later: the emulator follows `fep.py` to the shell's
+  prompt. Every answer of the login run above (240, the pimos: files
+  and the 5s for `autoload.tbl`, `me:` and the home, 601/620 for the
+  replier, the servers and `simpos_user_device`, the window calls, 110
+  held, 60 on string-I/O and windows, 70 on a held request [6], 112 on
+  a read file, getb counted in characters) and the event: the held
+  io(1) is a RECEIVE that stays outstanding (not ready at every poll)
+  until `Fep.idle()`'s scripted login, which the emulator takes from
+  the card's script (`tools/mkfepcard.py` writes `fep.Fep().script`
+  and `fep.ATTRIBUTES` there, and `--held` the held object directory as
+  pimos:NAME). `kernel.tape` re-recorded to the prompt (175 calls, 126
+  answered, the clock and 2 events on the tape: 8,586,110 instructions,
+  the same as `longrun_ipl.py --load ... --go --fep`); `direct_kernel`
+  holds every new answer's edges. All equal on the three benches
+  (`bsv/run_fepemu.sh`); the design and the recipe for the next answer
+  (a scripted line for the held 110 is a new card, not new hardware):
+  `bsv/PimmFepEmu.bsv`'s header.
 - **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
   lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
   labelled "carried over from VPIM, agreeing with KLIC; the PIM/m
