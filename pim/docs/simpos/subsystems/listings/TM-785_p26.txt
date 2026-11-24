@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p26 (folio -21-) ====
+3.2 使用方法: the attribute window of Fig. 3-1 appears; do_it generates, abort aborts.
+       +Drawing Class Generator--------------+
+       | data file                            |
+       | base X        0                      |
+       | base Y        0                      |
+       | class name    drawing_class          |
+       | method        class  instance        |   (instance boxed)
+       | method name   draw                   |
+       | output        file  buffer           |   (file selected)
+       | output name   drawing_class.esp      |
+       |     do_it          abort             |
+       図3-1 属性設定ウインドウ
+ (1) data file: path name of the figure file; 'draw' added if no extension; if missing, an error
+     message is shown and the window is shown again.
+ (2) base X: added to every X coordinate; default 0.
+

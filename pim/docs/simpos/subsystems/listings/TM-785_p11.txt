@@ -1,0 +1,12 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p11 (folio -6-) ====
+       +grid--------------+
+       | grid  on  off    |
+       | unit  dot grid   |   (selected values underlined/boxed: off, grid)
+       | size  20         |
+       |  do_it   abort   |
+       図2-4 グリッド設定ウインドウ
+2.5 描画図形選択操作: drawing is by the combination of inverse-video items in the figure window and the
+attribute window. Fig. 2-5 is the figure window: ① line figures (circle ... polygon), ② filled figures
+(fill header, filled circle ... filled polygon), ③ 文字 (characters), then 取り消し (undo).
+

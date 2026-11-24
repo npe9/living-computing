@@ -1,0 +1,14 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p23 (folio -18-) ====
+   With mouse input, the mouse marker changes to "┏" and the region is chosen by mouse; with key input
+   Fig. 2-16 appears:
+       +Image Size+
+       |  X      0 |
+       |  Y      0 |
+       |  Width  1280 |
+       |  Height 944  |
+       | do_it abort  |
+   Then a file-name input window; extension 'image', added by the system if missing.
+ (2) Image program: 'save' makes an image data file, as above.
+2.9 データファイル再編集: re-edit is via 'load'. Figure data files have extension 'draw' ... (cont.)
+

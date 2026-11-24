@@ -1,0 +1,23 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p8 (folio -5-) (3)回答閲覧 ====
+View own SIM照 and answers, and those issued by other users on the same PSI.
+ ① select "回答閲覧": list of SIM照 returned to this PSI ("SIMPOS照会書一覧" screen); items are
+   「登録件名+分類+日付」 (registered subject + class + date).
+ ② choose a file  ③ "SIMPOS照会書（問い合せ）" screen shows the user's inquiry:
+   S I M P O S 照 会 書                                      (終了 = ^x^z)
+   ユーザ識別番号 : [000001]             連絡員名   : [ICOT 太郎]
+   事  由         : クレーム [問い合せ] その他   使用者名 : [ICOT 花子]
+   件  名         : [オンライン・SIM照の使用方法]  Phone : [03-453-9350]
+   発生日付       : [29-May-89]          SIMPOS版名 : [5.0]
+   サイト名       : [ICOT]               Firm版名   : [1.02]
+   PSI No.        : [icpsi116]           CSP版名    : [2.23]   (first digit blurred)
+                                         添付資料   : 有り [無し]
+   text: オンライン・SIM照の詳しい使い方がわからないのですが.....
+ ④ C-x C-z leaves the screen. ⑤ "SIMPOS照会書（回答）" screen:
+   S I M P O S 照 会 書 （回答）                             (終了 = ^x^z)
+   left: answer text (オンライン・SIM照操作説明書を読んで…)
+   right: 登録件名 [オンライン・SIM照] 登録番号 [UT9001] 回答日付 [29-May-89] 回答者 [..] 責任者 [..]
+          --- 分 類 ---  ハード/ファーム/ネットワーク/ソフト/説明書 : Yes No ; その他 [ ]
+          --- 対 処 ---  バグ改修予定 [ ] 再現待ち Yes No  説明書不備 ・説明書名 [ ] ・ページ [ ]
+                         将来仕様 Yes No  ユーザの誤解 Yes No  その他 [..]
+

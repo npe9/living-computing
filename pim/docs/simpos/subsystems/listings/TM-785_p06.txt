@@ -1,0 +1,21 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p06 (folio -1-) ====
+1. 概要 (TRANSLATION, summary). The tool edits figures (図形: circle, rectangle, line...) or images
+(イメージ: dot data on a window) with mouse and keyboard. It has a figure program and an image program.
+Figure data can be re-edited, or used as image data. A utility (section 3) generates an ESP program
+that draws the figure. Figure processing keeps per-figure data (position, size, drawing attributes)
+and edits by figure: move, erase. Image processing keeps a plain bitmap and edits by region: move,
+erase, enlarge/reduce, rotate.
+2. 操作 / 2.1 起動方法 (how to start)  [400dpi crop]
+ (1) メソッド呼び出しによる起動 (start by method call)
+       :drawing(#drawing##psi_drawing_tool)
+     メソッドを呼び出したプロセス上で実行する。  [runs in the process that called the method]
+ (2) システム・メニューからの起動 (start from the system menu)
+     ログインファイルのmenu項目のitems_listにpsi_drawing_toolを追加する。
+     [add psi_drawing_tool to items_list in the login file's menu item]
+     例) menu:-
+             items_list([
+                         {'debugger', debugger},
+                                   .
+                         {'PsiDraw', drawing##psi_drawing_tool}]).
+

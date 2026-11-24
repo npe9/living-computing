@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p10 (folio -5-) ====
+ ... the values shown are the current ones and can be changed. If the new size is smaller than the edit
+ window's default (start-up) size, a rectangle of the new size appears on the tool window. Clicking at a
+ suitable place sets the edit window's position.
+       +SIZE-------------+
+       | Width  -> 1280  |
+       | Height -> 944   |
+       |  do_it   abort  |
+       図2-3 サイズ設定ウインドウ
+   (1280 × 944 = the default and the screen size, per p09 "既定値はスクリーンサイズ". INFERENCE: the
+    PSI-II screen was 1280×944 dots or larger; the default edit window is probably full screen.)
+ (2) スクロール機能 (scroll): via →, ←, ↑, ↓ or show. In show, one left click outlines the current region
+     with a rectangle; a second left click frees the rectangle to move; a click places it.
+ (3) グリッド表示 (grid): 'grid' opens Fig. 2-4, which sets grid on/off (grid), grid size (size) and the
+     mouse input unit (unit). Grid size is in dots, 1-99. With unit=grid a mouse input snaps to the
+     upper-left of the four surrounding grid points.
+

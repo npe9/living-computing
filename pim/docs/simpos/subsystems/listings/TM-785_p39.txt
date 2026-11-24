@@ -1,0 +1,3 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p39 (folio -34-) ==== copy_element/3 (copy elements of one stack vector into another by
+   unification, only into unbound elements; uses vector_element/3).

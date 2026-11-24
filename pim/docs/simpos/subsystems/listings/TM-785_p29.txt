@@ -1,0 +1,20 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p29 (folio -24-) ==== [300dpi crop]
+   % インスタンス述語
+   % :get_window/2
+   %   Initialise the window. If arg 2 is unbound, create the window object, set colours and return
+   %   it. If arg 2 is a window object, only set colours. (underlined:) If a colour number is given
+   %   as the drawing Operation, colours must be set before calling the drawing method (:draw/2).
+   :get_window(Object, Window) :-
+       get_window(Window)
+       ;
+   % :draw/2   draw the figure on the window; arg 2 is the window object.
+   :draw(Object, Window) :-
+       draw(Window, Object!base_x, Object!base_y, Object)
+       ;
+   % :reset_base/3   change slots base_x, base_y.
+   :reset_base(Object, X, Y) :-
+       Object!base_x := X,
+       Object!base_y := Y
+       ;
+

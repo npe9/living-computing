@@ -1,0 +1,269 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+WINDOW	window	class				stand-alone: the class for make a standard window	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_without_label	class				stand-alone: the class for making a window which has no labels.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_with_two_labels	class				stand-alone: the class for making a window with two labels, top label and bottom label. user can use one of the labels for his own usage.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	superior_window	class				stand-alone: the class for making the superior window, the window which can have the sub-windows.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	labeled_superior_window	class				stand-alone: the class for making the superior window with label.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	menu	class				stand-alone: the class for making the standard menu, single select single column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	multi_column_menu	class				stand-alone: the class for making the multi column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	temporary_menu	class				stand-alone: the class for making the single select single column temporary menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	temporary_multi_column_menu	class				stand-alone: the class for making the single select multi column temporary menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	multiple_select_menu	class				stand-alone: the class for making the multi select single column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	multiple_select_multi_column_menu	class				stand-alone: the class for making the multi select multi column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	temporary_multiple_select_menu	class				stand-alone: the class for making the temporary multi select single column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	temporary_multiple_select_multi_column_menu	class				stand-alone: the class for making the temporary multi select multi column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	submenu	class				stand-alone: the class for making the sub menu which is the sub window of another window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	menu_item	class				stand-alone: the class for making the menu item. It has the slots, item string, the value to be returned when selected, item type, the documentation for that item.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	choice_window	class				stand-alone: the class for making a standard choice window	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	choice_item	class				stand-alone: the class for making the choice item.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	marker	class				stand-alone: the class for making the marker.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	popup_choice_window	class				stand-alone: the class for making the choice window with popup feature.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_region	class				stand-alone: the class for defining the window region.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	basic_window	class				mixin/primitive: the class supplying the function as a window. Every window must inherit this class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	user_window	class				mixin/primitive: the class for making the standard window which can be used by the user.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_inferior	class				mixin/primitive: the class supplying the function as a sub window. All the window class which is defined by the user must inherit this class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_superior	class			as_relation	mixin/primitive: the class for supplying the function as superior window. If the user want to use the sub windows, The window must inherit this class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_inside	class				mixin/primitive: the class for managing the inside area of the window.  The inside area is the part of window which does not include the border, label, and the margins.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	bare_window	class				mixin/primitive: the class for supplying the basic function of the window.  For example, making the object, allocating the bitmap area, etc.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_border	class				mixin/primitive: the class for supplying the function to have a border of the window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_label	class				mixin/primitive: the class for supplying the function to have a label.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_two_labels	class				mixin/primitive: the class for supplying the function to have two labels, top label and bottom label.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_margin	class				mixin/primitive: the class for supplying the function to have the margins.  The margin is the blank area at the outside of windows. "This is Label" (callout 'label'); inside it a dashed rectangle; callouts 'margin' and 'border' point at the band between the outer rectangle and the dashed one; centre text 'window inside'.]	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_relation	class				mixin/primitive: the class for managing the allocation of the sub windows in the superior window. This class is inherited by the class as_superior.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	external	class				mixin/primitive: the class for supplying the function to access to the window from outside of window  manager. In other words, it supply the function to communication between the user process and window manager process.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_temporary_window	class				mixin/primitive: the class for supplying the function as temporary window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_popup_window	class				mixin/primitive: the class for supplying the function as a popup window.  Popup window is the temporary window which is not hidden by the exit of mouse cursor.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	sash	class				mixin/primitive: the class for making a window which has border and margins.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	labeled_sash	class				mixin/primitive: the class for making a window which has border, margins and label.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	two_labeled_sash	class				mixin/primitive: the class for making a window which has border, margins and two labels.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_output	class				mixin/output control: the class for supplying the function of output.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_cursor	class				mixin/output control: the class to manage the cursor which shows the position where the output is done.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_string_output	class				mixin/output control: the class for supplying the function to output a string.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_scroll	class				mixin/output control: the class for supplying the function to scroll the window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_dot_scroll	class				mixin/output control: the class for supplying the function to scroll the window by dot bases.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_mouse_scroll	class				mixin/output control: the class for supplying the function to cause  scrolling by the mouse. this class support the  two kind of mouse scroll, by the movement of mouse, and by the click of mouse buttons.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_graphics	class				mixin/output control: the class for supplying the function to output the graphic primitives.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_markers	class				mixin/output control: the class for suppling the function to have markers in the window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_input	class				mixin/input control: the class for supplying the function of input from keyboard.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_mouse_input	class				mixin/input control: the class for supplying the function of input from mouse.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_default_mouse	class				mixin/input control: the class for supplying the basic function  about mouse control, to detect the mouse  movement and to show the mouse cursor in the window, etc.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_translation_table	class				mixin/input control: the class for supplying the function to have translation table.  The translation table is used  for customization and translation the input code to users own character code.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_superior_input_buffer	class				mixin/input control: the class for supplying the function to share the input buffer with its own superior window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_mouse_scroll	class				mixin/input control: the class for supplying the function to scroll the contents of the window by mouse. [listed twice in TM-125]	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_window_region	class				mixin/input control: the class for supplying the function to define a mouse sensitive area in that window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	with_line_selection	class				mixin/input control: the class  for making  the window  whose each  line can  be selected  by mouse like to item of menu window.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_notification	class				mixin/input control: the class  for supplying  the function  to have  the output  permission type  of "notify".  If the window inherits  this  class  and  the  window  output  permission is set to "notify", the notify window is appeared  to show  thuser that  the output  request is  occured, when  the output is requested during the window is unshown.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_single_select	class				mixin/menus-choice: the class for supplying the function of single select. [print shows a gap: as«?»single_select]	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_multiple_select	class				mixin/menus-choice: the class for supplying the function of multi select.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_select	class				mixin/menus-choice: the class for supplying the function for selecting the item by mouse.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_multiple_column	class				mixin/menus-choice: the class for making the multi column menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_menu	class				mixin/menus-choice: the class for making the menu window. Every menu window must inherit this class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_on_off_menu	class				mixin/menus-choice: the class for making the on-off menu. When  the window inherit this class, the item with  type of on_off is reversed when selected. [print shows a gap: as_on«?»off_menu]	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_submenu	class				mixin/menus-choice: the class for supplying the function as a sub menu. In the multi_column menu, each column is defined as sub menu using this class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	as_choice	class				mixin/menus-choice: the class for supplying the basic function as a choice window.  This class manages the choice items defined at this window. [print shows a gap: as«?»choice]	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_manager	class				internal: the internal class for window manager process.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	display	class				internal: the class for defining the bitmap display.  The bitmap display is constructed by the  screen and status_line.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	screen	class				internal: the class for managing the  logical screen on the display.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	status_line	class				internal: the class for managing the status line. The status line is located at the bottom of the display and it shows some system statuses, date, time, user name, selected window, etc..	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	logical_mouse	class			single_object	internal: the class for the mouse device.  This class must have only one object and inherits the class single_object.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_message	class				internal: the class for making the message for the inter process communication between the user  process and window manager process.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	single_object	class				internal: the class to limit the number of object of the class.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	class				internal: the class for the window_manipulator. This class control the window manipulator menu.	PROSE	TM-125 PDF p8-13 (folio 7-12)	1985 SIMPOS 1.0
+WINDOW	window	cmethod	create	2		:create(Class,^Window) create a window with defaults [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p13 (folio 12)	1985 SIMPOS 1.0
+WINDOW	window	cmethod	create	3		:create(Class,Initiation,^Window) Initiation = Prolog list of Table 1 options (later code uses a vector {...}, TM-153 p26) [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p13	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_size	3		:set_size(W,Width,Height) [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15 (folio 14)	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_position	3		:set_position(W,X,Y) position relative to superior [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_superior	2		:set_superior(W,Superior_window) [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	add_item	3		:add_item(Menu,Item,Position) single-column menu; Item = item vector; Position 0..number of items [possible defining mixin: menu -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	add_item	4		:add_item(Menu,Item,Column,Position) multi-column menu [possible defining mixin: multi_column_menu -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	delete_item	2		:delete_item(Menu,Item_string) delete item whose item_string matches [possible defining mixin: menu -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_border_width	2		:set_border_width(W,Width) dots; default 2 (print shows a space instead of underscore after set) [possible defining mixin: with_border -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_label_position	2		:set_label_position(W,Position) Position = atom top or bottom [possible defining mixin: with_label -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_title	2		:set_title(W,String) label string [possible defining mixin: with_label -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_top_title	2		:set_top_title(W,String) [possible defining mixin: with_two_labels -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_bottom_title	2		:set_bottom_title(W,String) [possible defining mixin: with_two_labels -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p15	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_margins	5		:set_margins(W,Left,Right,Head,Tail) dots [possible defining mixin: with_margin -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16 (folio 15)	1985 SIMPOS 1.0
+WINDOW	window	imethod	activate	1		:activate(W) schedule the window to be displayed on its superior [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	show	1		:show(W) show the window on the screen [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	deactivate	1		:deactivate(W) remove from scheduling on superior; not killed; image kept as displayed [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	hide	1		:hide(W) hide on superior; parts not covered by other windows stay as displayed [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	write	2		:write(W,Character) output at cursor, cursor one char forward [possible defining mixin: as_output -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	move_cursor	3		:move_cursor(W,X,Y) [possible defining mixin: as_cursor -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	insert	2		:insert(W,Character) insert at cursor [possible defining mixin: as_output -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	delete	2		:delete(W,Character) delete at cursor; cursor not moved [possible defining mixin: as_output -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	clear_line	1		:clear_line(W) delete from cursor to end of line [possible defining mixin: as_output -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	scroll	2		:scroll(W,Offset) positive = scroll up, negative = scroll down [possible defining mixin: as_scroll -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	open_rows	3		:open_rows(W,Row,Offset) insert Offset lines at Row [possible defining mixin: as_scroll -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16	1985 SIMPOS 1.0
+WINDOW	window	imethod	move_rows	4		:move_rows(W,Row1,Row2,Offset) move lines Row1..Row2 by Offset [possible defining mixin: as_scroll -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p16-17	1985 SIMPOS 1.0
+WINDOW	window	imethod	get_point_value	4		:get_point_value(W,X,Y,^Value) pixel 0/1 [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17 (folio 16)	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_point_value	4		:set_point_value(W,X,Y,Value) [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_line	5		:draw_line(W,X1,Y1,X2,Y2) [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_line	8		:draw_line(W,X1,Y1,X2,Y2,Line_width,Line_type,Alu) defaults width 1, fixed line, exclusive or (printed X1,X2,X2,Y2 = misprint) [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_rectangle	5		:draw_rectangle(W,X,Y,Width,Hight) [sic] [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_rectangle	8		:draw_rectangle(W,X,Y,Width,Hight,Line_width,Line_type,Alu) [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_string	4		:draw_string(W,X,Y,String) (X,Y) = top-left of first letter [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_string	5		:draw_string(W,X,Y,String,Alu) [possible defining mixin: as_graphics -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	create_marker	2		:create_marker(W,^Marker) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	draw_marker	2		:draw_marker(W,Marker) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	erase_marker	2		:erase_marker(W,Marker) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	move_marker	4		:move_marker(W,Marker,X,Y) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_marker_type	3		:set_marker_type(W,Marker,Type) Type box or line [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	set_marker_size	4		:set_marker_size(W,Marker,Width,Hight) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	get_marker_list	2		:get_marker_list(W,^Markers_list) [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p17	1985 SIMPOS 1.0
+WINDOW	window	imethod	read	2		:read(W,^Code) waits; Code = char code, mouse click code, translated code, scroll_request(Offset), menu item_id, abort [possible defining mixin: as_input -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	window	imethod	read_sense	2		:read_sense(W,^Code) like read but returns atom $$nil if no input [possible defining mixin: as_input -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p18	1985 SIMPOS 1.0
+WINDOW	window	imethod	kill	1		:kill(W) delete window, release bitmap area; windows are registered to the creating process and killed with it [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PRINTED-INTERFACE	TM-125 p18	1985 SIMPOS 1.0
+WINDOW	window	imethod	select	1		:select(W) make W the selected window by program [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class]	PROSE	TM-125 p22 (folio 21)	1985 SIMPOS 1.0
+WINDOW	window	option	superior(Superior)			superior window; default screen	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	position(X,Y)			position in superior; default (0,0)	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	size(Width,Height)			window size; default inside size of superior	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	title(String)			label title; default blank	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	top_title(String)			top label title; default blank	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	bottom_title(String)			bottom label title; default blank	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	margins(Left,Right,Head,Tail)			margins; default 1 dot (printed TAil)	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	units(Width,Height)			inside units (grid size); default 1 dot	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	items_list(Menu_items_list)			menu creation: list of {item_string,item_type,item_id,documentation}	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	window	option	choice_list(Choice_items_list)			choice-window creation: list of {item_string,item_type,elements_list,initial_element,documentation}	PRINTED-INTERFACE	TM-125 p14 Table 1 (folio 13)	1985 SIMPOS 1.0
+WINDOW	as_input	event	<character code>			keyboard input returns the character code (16-bit, JIS-based per TR-061)	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	mouse$r			mouse right button single click (glyph S-like; held code and 1984 reports write mouse#r)	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	mouse$m			mouse middle button single click	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	mouse$l			mouse left button single click	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	mouse$rr			mouse right button double click	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	scroll_request(Offset)			returned by :read when with_mouse_scroll and user requests scroll by mouse	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	<item_id>			menu selection returns the selected item_id	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	abort			temporary menu: mouse exited the menu	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	$$nil			read_sense: no input pending	PRINTED-INTERFACE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	as_input	event	<translated code>			with_translation_table: keyboard and mouse input translated by the table	PROSE	TM-125 p18 (folio 17)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	SHOW			1) show whole of partially shown window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	HIDE			2) put partially shown window to bottom of window list	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	RESHAPE			3) reset position+size by pointing top-left and bottom-right corners with mouse	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	MOVE			4) reset position by mouse	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	EXPAND			5) enlarge as much as possible without hiding another fully shown window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	MENU			6) select a window from a submenu of windows	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	PERMISSION			7) reset output permission via submenu	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE			8) change attributes via choice window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	HARDCOPY			9) hardcopy of window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	SUPERIOR			10) move editing base to superior window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	INFERIOR			11) move editing base to inferior window	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	EXIT			12) exit window manipulator	PRINTED-INTERFACE	TM-125 p8 (folio 7)	1985 SIMPOS 1.0
+WINDOW	window	option	permission:WAIT			output permission type: wait until fully shown	PROSE	TM-125 p6 (folio 5)	1985 SIMPOS 1.0
+WINDOW	as_notification	option	permission:NOTIFY			output permission type: notify user via NOTIFY WINDOW (needs as_notification)	PROSE	TM-125 p6 (folio 5)	1985 SIMPOS 1.0
+WINDOW	window	option	permission:OUTPUT			output permission type: output immediately to saved bitmap; shown part displayed	PROSE	TM-125 p6 (folio 5)	1985 SIMPOS 1.0
+WINDOW	window	option	permission:SHOW			output permission type: force window shown, then output (changes selected window)	PROSE	TM-125 p6 (folio 5)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:SIZE(WIDTH)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:SIZE(HEIGHT)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:POSITION(X)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:POSITION(Y)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:MOUSE_MARKER			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:LABEL			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:NAME			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:MARGIN(LEFT)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:MARGIN(RIGHT)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:MARGIN(HEAD)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:MARGIN(TAIL)			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:BORDER			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:PERMISSION			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:FONT			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:LABEL_FONT			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:LABEL_POSITION			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:BACKGROUND			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:do_it			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	window_manipulator	menu_item	ATTRIBUTE:abort			window attribute choice window item (Fig 4); PERMISSION out/wait/show/notify; FONT,LABEL_FONT ?/ank_24/kanji_24; LABEL_POSITION top/bottom; BACKGROUND white/black	SCREENSHOT	TM-125 p7 Fig 4 (folio 6)	1985 SIMPOS 1.0
+WINDOW	menu_item	slot	item string / return value / item type / documentation			menu_item slots (names not given)	PROSE	TM-125 p9 (folio 8)	1985 SIMPOS 1.0
+WINDOW	with_border	slot	border_width		attribute border_width := 2	default 2 dots	PRINTED	TM-065 p15 (folio 13)	1984 design
+WINDOW	with_border	slot	border_flag		attribute border_flag := on	border on/off	PRINTED	TM-065 p15	1984 design
+WINDOW	with_border	slot	border_x,border_y,border_area_width,border_area_height		component	border geometry	PRINTED	TM-065 p15	1984 design
+WINDOW	bare_window	slot	width,height		attribute	window size	PRINTED	TM-065 p15	1984 design
+WINDOW	bare_window	class			with_display, as_inside, *	elementary class all windows inherit (1984 design)	PRINTED	TM-065 p15; TM-061 p8	1984 design
+WINDOW	with_border	class			as_inside, *	draws the 4-line border; after :refresh demon	PRINTED	TM-065 p15	1984 design
+WINDOW	with_label	class			as_inside, *, as_label	draws the label; after :refresh -> :refresh_label	PRINTED	TM-065 p16	1984 design
+WINDOW	window_with_border_and_label	class			bare_window, with_border, with_label	example composite	PRINTED	TM-065 p16	1984 design
+WINDOW	bare_window	cmethod	create	3		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	bare_window	imethod	refresh	1		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	bare_window	imethod	initialize	2		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	with_border	imethod	draw_border	1		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	with_label	imethod	draw_label	1		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	with_label	imethod	clear_label	1		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	with_label	imethod	refresh_label	1		TM-065 4.2 listing (bodies partly elided)	PRINTED	TM-065 p15-16	1984 design
+WINDOW	my_window1	class			with_margin, with_label, with_border, as_superior, as_input_buffer, inferior_window	WINCS-generated parent window (split into children)	PRINTED	WINCS p12 (j.65) Fig 5	1989-91 PSI II (WINCS)
+WINDOW	my_window2	class			with_margin, with_label, with_border, as_scroll, as_output, as_graphics, as_markers, as_input, as_mouse_input, inferior_window	WINCS-generated output/graphics child window	PRINTED	WINCS p12 Fig 5	1989-91 PSI II (WINCS)
+WINDOW	my_window3	class			with_margin, with_label, with_border, as_menu, as_single_select, as_mouse_input, inferior_window	WINCS-generated menu child window	PRINTED	WINCS p12 Fig 5	1989-91 PSI II (WINCS)
+WINDOW	my_window	class			as_output, as_graphics, inferior_window	minimal output+graphics window example	PRINTED	WINCS p2 (j.55)	1989-91 PSI II (WINCS)
+WINDOW	inferior_window	class				basic class: ordinary overlapping window (階層ウィンドウ); one of inferior_window/popup_window/temporary_window required	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	popup_window	class				basic class (ポップアップウィンドウ)	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	temporary_window	class				basic class (テンポラリウィンドウ)	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_input_buffer	class				used by parent (as_superior) window in Fig 5	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_menu	class				requires as_mouse_input; excludes as_graphics; excludes as_output in one window	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_single_select	class				requires as_menu	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_superior	class				「子ウィンドウを持つための機能を提供する」 (manual text quoted)	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	with_label	class				inheritance order: before as_output and before inferior_window	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_output	class				order(as_output,[with_label,...],[inferior_window,...])	PROSE	WINCS p3,p5,p7-11	1989-91 PSI II (WINCS)
+WINDOW	as_graphics	imethod	draw_circle	7		:draw_circle(W,X,Y,R,1,solid,set): centre, radius, line width, Line_type solid, Alu set	PRINTED	WINCS p3 (j.56)	1989-91 PSI II (WINCS)
+WINDOW	as_graphics	imethod	draw_line	5		class_method(as_graphics,draw_line,[5,object,x1,y1,x2,y2])	PRINTED	WINCS p12 (j.65)	1989-91 PSI II (WINCS)
+WINDOW	as_graphics	imethod	draw_rectangle			named as an as_graphics method (arity not given)	PROSE	WINCS p12	1989-91 PSI II (WINCS)
+WINDOW	WINCS-menu	menu_item	基本クラス: 階層ウィンドウ / テンポラリウィンドウ / ポップアップウィンドウ			attribute menu column 1 (= inferior_window, temporary_window, popup_window)	SCREENSHOT	WINCS p5 Fig 2	1989-91 PSI II (WINCS)
+WINDOW	WINCS-menu	menu_item	親ウィンドウクラス: プロセス間共有 / 子ウィンドウを持つ / 子ウインドウのサイズを設定 / アイコンを表示する			parent-window classes (as_superior + 3 others, names not given; with_shared_window?/with_pane?/with_icon? INFERENCE)	SCREENSHOT	WINCS p5 Fig 2	1989-91 PSI II (WINCS)
+WINDOW	WINCS-menu	menu_item	サッシクラス: ボーダー / ラベル / 2ラベル / マージン			sash classes = with_border, with_label, with_two_labels, with_margin (INFERENCE)	SCREENSHOT	WINCS p5 Fig 2	1989-91 PSI II (WINCS)
+WINDOW	window	event	state:SELECTED			keyboard=done mouse=done output=done	PRINTED-INTERFACE	TR-046 p23 Table 2; TR-057 p6 Table 3-1	1984 design
+WINDOW	window	event	state:SHOWN			keyboard=waiting mouse=done output=done	PRINTED-INTERFACE	TR-046 p23; TR-057 p6	1984 design
+WINDOW	window	event	state:EXPOSED			keyboard=waiting mouse=waiting output=done (TR-046) / wait (TR-057)	PRINTED-INTERFACE	TR-046 p23; TR-057 p6	1984 design
+WINDOW	window	event	state:OVERLAPPED			keyboard=waiting mouse=waiting output=waiting/done (TR-046); TR-057 row named Deexposed: wait	PRINTED-INTERFACE	TR-046 p23; TR-057 p6	1984 design
+WINDOW	window	event	state:DEACTIVATED			keyboard=not available mouse=not available output=not available (TR-046) / fail (TR-057)	PRINTED-INTERFACE	TR-046 p23; TR-057 p6	1984 design
+WINDOW	window	event	state:exposed/deexposed, shown/unshown			1985 model: exposed = not hidden among siblings; shown = self and all ancestors exposed; output governed by per-window permission WAIT/NOTIFY/OUTPUT/SHOW	PROSE	TM-125 p5-6	1985 SIMPOS 1.0
+WINDOW	window	event	state:shown/de-exposed/de-activated (+selected)			1984 TR-055 model: de-exposed accepts no input, output with restrictions	PROSE	TR-055 PDF p18-19 (folio 15-16)	1984 design
+WINDOW	window	option	hidden-output option ①			process waits until unhidden (DEFAULT)	PROSE	TM-225 p10-11 (folio 9-10)	1986 SIMPOS 2.5
+WINDOW	window	option	hidden-output option ②			write to save area; visible part shown	PROSE	TM-225 p10-11 (folio 9-10)	1986 SIMPOS 2.5
+WINDOW	window	option	hidden-output option ③			force unhidden then output	PROSE	TM-225 p10-11 (folio 9-10)	1986 SIMPOS 2.5
+WINDOW	window	option	hidden-output option ④			temporary notify window; user chooses ① or ③ by mouse	PROSE	TM-225 p10-11 (folio 9-10)	1986 SIMPOS 2.5
+WINDOW	as_superior	slot	inferiors			list of inferior window pointers	PROSE	TR-046 p13 (folio 12)	1984 design
+WINDOW	as_inferior	slot	superior			superior window pointer	PROSE	TR-046 p13	1984 design
+WINDOW	window_manager	slot	selected_window			window manager slot (named in prose)	PROSE	TR-057 p6	1984 design
+WINDOW	e_window	slot	translation_table			translation table instance in a slot of e_window; rewrite slot to change table	PROSE	TR-046 p14; TR-061 p6	1984 design
+WINDOW	e_window	class			window	expert window; has-a translation_table	PRINTED (figure)	TR-061 p12 Fig 1	1984 design
+WINDOW	translation_table	class			default_translation_table	user table inherits the default one	PRINTED (figure)	TR-061 p12 Fig 1	1984 design
+WINDOW	default_translation_table	imethod	look_up	6		:look_up(Table,Window,KeyCode,Destination,Command,HelpString)	PRINTED	TR-046 p28 Fig 4; TR-061 p13 Fig 2	1984 design
+WINDOW	default_translation_table	keycode	control#"k"			kill -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"l"			lull -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"a"			arouse -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"s"			status (and invoke_system_menu, duplicate) -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	mouse#l			visit (glyph l/1 ambiguous) -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"m"			memorize -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"b"			broadcast -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"v"			remember -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	mouse#rr			invoke_system_menu -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"r"			read whiteboard -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	control#"w"			write whiteboard -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	default_translation_table	keycode	X (any)			send character as it is -> #coordinator	PRINTED	TR-046 p28; TR-061 p13	1984 design
+WINDOW	window	event	mouse movement			mouse device reports relative movement; window system computes position, checks mouse_owning window, draws that window's cursor pattern	PROSE	TR-046 p14 (folio 13)	1984 design
+WINDOW	window	event	mouse click outside shown windows			default meaning applies; clicks go to shown windows only	PROSE	TR-046 p11, p14	1984 design
+WINDOW	window	event	select by mouse left click			click the mouse LEFT button on a partially or fully shown window to select it; fully hidden ones via manipulator MENU; or :select(W)	PROSE	TM-125 p22 (folio 21)	1985 SIMPOS 1.0
+WINDOW	menu	event	menu placement			menu appears at current mouse position; size from item count and longest item string; temporary menu disappears without input when mouse leaves	PROSE	TR-046 p14; TR-055 PDF p20 (folio 17)	1984 design
+WINDOW	system_menu	class				component slot menu_list; class predicates :create/3, :get_invariant_part/2; builds #multi_column_menu from menu_list	PRINTED	TR-046 p27 Fig 3	1984 design
+WINDOW	system_menu	cmethod	create	3		:create(System_menu_class,Directory,System_menu)	PRINTED	TR-046 p27	1984 design
+WINDOW	system_menu	cmethod	get_invariant_part	2		:get_invariant_part(System_menu_class,Menu_list)	PRINTED	TR-046 p27	1984 design
+WINDOW	menu_item	cmethod	create	6		:create(#menu_item,'window',common,window,_,Item) = (string,type,id,doc?,^Item)	PRINTED	TR-046 p27	1984 design
+WINDOW	system_menu	menu_item	Experts: debugger			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	pmacs			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	librarian			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	file_manipulator			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	spooler			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	font_editor			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	edips			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	MEDIA SYSTEMS: user process list			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	window manipulator			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	network			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	shell			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	whiteboard			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	kanakan initiate			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	garbage collection			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	login			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	system_menu	menu_item	shut down			SYSTEM MENU item (screenshot)	SCREENSHOT	TM-181 p3	1986 SIMPOS 2.19
+WINDOW	font	cmethod	create	3		:create(#font,"font:ascii_16...",F) / "font:kanji_2..." (truncated in photo)	SCREENSHOT	TM-181 p4	1986 SIMPOS 2.x
+WINDOW	window	option	label_font(Font)			creation option seen in screenshot	SCREENSHOT	TM-181 p4	1986
+WINDOW	window	option	font(Font)			creation option seen in screenshot	SCREENSHOT	TM-181 p4	1986
+WINDOW	window	option	font names ank_24, kanji_24			alternatives in the ATTRIBUTE choice window FONT/LABEL_FONT items	SCREENSHOT	TM-125 p7 Fig 4	1985 SIMPOS 1.0
+WINDOW	display	event	screen geometry			bitmap display 1280x864 pixels (TM-224 p11, 1986); 1200x912 or 1280x864 (TR-046 p6, 1984); 1200*900 monochrome (TM-153 p23 handwritten, 1986). Default font cell 13x19 dots (TM-125 p20) -> ~98x45 cells at 1280x864 INFERENCE	PROSE	TM-224 p11; TR-046 p6; TM-153 p23; TM-125 p20	1984-86
+WINDOW	display	event	keyboard/mouse attachment			keyboard and mouse attach to the console processor (console bus); bitmap display on Multibus IEEE-796	PRINTED (figure)	TM-153 p23	1986
+WINDOW	status_line	event	status line layout			2-row inverse bar at bottom: "USER : name" / "SIMPOS Version x"; middle "[selected window name]"; right date "17-Jul-85 Wednesday 15:39:48"; 1986 adds "SWAPPED" and "spool" boxes	SCREENSHOT	TM-125 p23 Fig 6; TM-126 p6; TM-153 p28	1985-86
+WINDOW	window	imethod	putc	2		:putc(Dest,Char) character output method; windows, files, counters all accept it (polymorphic unparser output)	PROSE	TR-285 p11	1987
+WINDOW	process	cmethod	create	2		:create(#process,P)	PRINTED	TM-225 p6	1986

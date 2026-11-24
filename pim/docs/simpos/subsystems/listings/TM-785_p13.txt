@@ -1,0 +1,15 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p13 (folio -8-) ====
+Colour window, TRANSLATION summary: clicking a registered colour sets the drawing colour. Ten colours
+are shown at once; → / ← page to colour number 10 and up (no effect with 10 or fewer). 'add' shows the
+カラー・ボード (colour board) for free addition of colours: see
+   「操作説明書（II）I-2.2.4 カラー・ボード」
+   [a SIMPOS manual cross-reference: "Operating manual (II), section I-2.2.4, Colour board"].
+'change' opens a window to enter the number to change; then a colour board for that number appears.
+'exit' ends colour selection.
+2.6 描画操作. "取消" (undo) in the figure window returns the edit window to the previous state. A single
+RIGHT click cancels the operation in progress.
+   circle: first left click = centre, second left click = radius.
+   rectangle: left click = upper-left, left click = lower-right.
+   fan: left = centre, left = arc start, left = arc end; the arc is drawn anticlockwise.
+

@@ -1,0 +1,15 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p09 (folio -4-) ====
+   (4) ↑ scroll up
+   (5) show   show a window with the whole image reduced to 1/3; mouse in it moves the displayed region
+   (6) grid   show a grid
+   (7) size   change the drawing size; default is the screen size; max 2000×2000 dots
+   (8) load   re-edit an existing data file (2.9)
+   (9) save   store the current drawing as a data file on the fixed disk (2.8)
+   (10) clear  erase the drawing
+   (11) close  PSI図形ツール・ウインドウを消去しアイコンを表示する。  [erase the window and show an ICON]
+   (12) exit   end the program
+ (The prose order show, grid, size differs from the on-screen order show, size, grid.)
+2.4 編集ウインドウ操作. (1) Size change: max 2000×2000. If the drawing is larger than the edit window,
+the window shows part of it; if smaller, the window shrinks to it. 'size' opens Fig. 2-3 ... (cont.)
+

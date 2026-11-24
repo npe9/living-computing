@@ -1,0 +1,27 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p37 (folio -32-) ==== [300dpi crop]
+   % get_font/4   Make a font object from a font path name. Keep the font objects in the font bank
+   %   (an instance of class list_index).
+   get_font(0, Font_name, Font, Object) :- !,
+       :create(#list_index, Font_bank),
+       Object!font_bank := Font_bank,
+       :create(#font, Font_name, Font),
+       :add_at(Font_bank, Font, Font_name)
+       ;
+   get_font(Font_bank, Font_name, Font, Object) :-
+       :get_at(Font_bank, Font, Font_name), !
+       ;
+   get_font(Font_bank, Font_name, Font, Object) :-
+       :create(#font, Font_name, Font),
+       :add_at(Font_bank, Font, Font_name)
+       ;
+   % adjust/4  (add Base to element Position of Args, unify with element Position of Arguments;
+   %            nothing if Base is 0)
+   adjust(0, Position, Args, Arguments) :- ! ;
+   adjust(Base, Position, Args, Arguments) :-
+       vector_element(Args, Position, Current),
+       New = Current + Base,
+       vector_element(Arguments, Position, New)
+       ;
+   (NOTE: an unset slot reads as 0: get_font's first clause matches font_bank = 0.)
+

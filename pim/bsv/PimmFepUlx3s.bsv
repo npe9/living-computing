@@ -111,6 +111,18 @@ module mkPimmFepSelfTest#(SdBlockServer sd, Bool cardReady, Bool cardFailed,
    Reg#(Bit#(8))   bt     <- mkReg(0);
    Reg#(UInt#(32)) timer  <- mkReg(0);
 
+   // the FEP's clock (setTime, get_date_time's time of day): a counter in
+   // 1/16 msec, one tick every 1,563 cycles (1/16 msec at 25 MHz, OURS).
+   // The self-test does not ask the time; the clock is driven so that the
+   // board's build holds the emulator's time path
+   Reg#(Bit#(48))  ticks  <- mkReg(0);
+   Reg#(UInt#(11)) pre    <- mkReg(0);
+   rule rl_clock;
+      if (pre == 1562) begin pre <= 0; ticks <= ticks + 1; end
+      else pre <= pre + 1;
+      emu.setTime(ticks);
+   endrule
+
    // the card, shared: the self-test's direct reads first, then the emulator
    FIFOF#(SdBlockByte) direct <- mkFIFOF;
    rule rl_emu_req (phaseEmu);

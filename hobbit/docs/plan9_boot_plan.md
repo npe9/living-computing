@@ -829,6 +829,20 @@ Not done: the Bluespec core has not run any of this; 8½ (bitmap and
 mouse) is not modelled; the server's ack-0 IL sync race is a 1e bug,
 not removed, not seen since (0 of 612 probe dials, 0 of 9 live runs).
 
+## The Hobbit on the 1e network (2026-11-24): authenticated log-in, `cpu`, 8½ as glenda
+
+On the reference model, s9term joins the three-machine 1e network of
+`tools/qemu1e` (fs9: file and auth server; cpu9: a CPU server) through
+`tools/qemu1e/hub.py` (`tools/p9join.py --hub`, one lockstep time base
+over both QEMUs): glenda's wrong password is refused and her right one
+accepted by fs9's check service (no `password not checked!`), and
+`cpu -h cpu9` from the Hobbit's rc runs commands on cpu9 with the
+Hobbit's name space on `/mnt/term`; with her profile's 8½ gate, 8½
+starts for glenda as it does for tor.  `tests/test_p9hub.py` replays
+the log-in in the suite (and `cpu`, with `P9HUB_CPU=1`).  Details:
+docs/p9boot.md "On the 1e network", "8½ as glenda";
+docs/qemu_1e_server.md 5d, 5e.
+
 ## A4/A5 status, our 9term (2026-11-24): the kernel built here boots and passes the A5 script
 
 The `9term` A3 linked (sha256 `002880c0...`) boots on the reference

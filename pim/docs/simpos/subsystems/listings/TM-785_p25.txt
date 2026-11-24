@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p25 (folio -20-) ====
+3. 図形描画プログラム作成ユーティリティ: makes an ESP source program that draws the figure from the figure
+data, so that a class drawing on a window is easily made.
+3.1 起動方法
+ (1) メソッド呼び出しによる起動
+       :generate(#drawing##drawing_class_generator)
+     メソッドを呼び出したプロセス上で実行する。
+ (2) システム・メニューからの起動
+     ログインファイルのmenu項目の items_listに drawing_class_generator をクラス名として項目を追加する。
+     例) menu :-
+             items_list([
+                     {'debugger', debugger},
+                     {'pmacs', pmacs},
+                              .
+                     {'DrawGen', drawing##drawing_class_generator} ]   (this item underlined)
+             ).
+

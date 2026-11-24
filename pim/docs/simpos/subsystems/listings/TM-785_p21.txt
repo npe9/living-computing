@@ -1,0 +1,13 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p21 (folio -16-) ====
+   ... a right click stops it. A left double click sets the thickness, 1 (1*1 dots) to 8 (8*8 dots),
+   default 5.
+   曲線: the mouse becomes a pencil; hold the left button to draw; right click stops; thickness 1-8, default 5.
+2.8 データファイル作成 (400dpi crop of the FDD lines). TRANSLATION: data files are stored on the fixed
+disk only; the tool cannot write to the FDD directly. To put them on FDD, store on the fixed disk first,
+then use the file manipulator (ファイル・マニピュレータ). When copying a data file from FDD to the fixed
+disk with the file manipulator, figure data files must use 'copy_text' (printed 'copy __test' in this
+face; reading «?», since 'x' and 's' look alike here) and image data files 'copy'.
+Figure data files are named '***.draw'; image data files '***.image'. An image file can also be drawn
+on a window with a method the window system provides.
+

@@ -1,0 +1,11 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p08 (folio -3-) ====
+TRANSLATION, summary: the window is common to both programs. Its lower right shows which program is
+running ("* 図形 *" in Fig. 2-2). It has four sub-windows: edit window, command menu, figure-selection
+window and attribute window (Fig. 2-2). Figures and attributes are chosen by clicking where they are shown.
+2.3 Mouse on the edit window:
+   左クリック ・・・ draw a figure (2.6)
+   中クリック ・・・ edit a figure or image; differs between the figure and image programs (2.7)
+   右クリック ・・・ cancel the drawing or edit operation
+Command menu items: (1) →  scroll the edit window right  (2) ←  left  (3) ↓  down  (4) ↑ (cont. p09)
+

@@ -1,0 +1,13 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p18 (folio -13-) ====
+   A single MIDDLE click selects a figure; its rectangle blinks. Further middle clicks cycle through
+   overlapping figures. A MIDDLE DOUBLE click on a selected figure opens Fig. 2-12:
+       +-----+
+       | 消去 |  erase the selected figure
+       | 移動 |  move: the mouse becomes a rectangle the size of the dotted frame; click to place
+       | 変更 |  change line type/width or fill pattern/border to the current attribute settings
+       | コピー|  copy: the mouse marker becomes the rectangle; click to place the copy
+       +-----+
+       図2-12 図形処理編集メニュー  (no title bar)
+   A left click while a figure is selected changes the attribute window's settings.
+

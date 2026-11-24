@@ -1,0 +1,9 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p27 (folio -22-) ====
+ (3) base Y: likewise; default 0.  (4) class name: default drawing_class.
+ (5) method: class method or instance method for the start method; default instance.
+ (6) method name.  (7) output: ファイル or テキスト・バッファ (text buffer); default file.
+ (8) output name: file path name, or the buffer name. If the file exists, a new file is made with the
+     version raised by one (バージョンを一つ増やして). If a buffer of that name exists, a warning is
+     shown and the window is shown again. Default drawing_class; 'esp' is added for files.
+

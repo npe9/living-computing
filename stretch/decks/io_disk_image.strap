@@ -1,0 +1,65 @@
+! io_disk_image.strap -- READS the disk and writes nothing to it, so
+! that what it finds can only have come from the image file the host
+! build loaded (STRETCH_DISK, bsv/host_tape.c; docs/disk_subsystem.md
+! §9c).  Driven by tests/gen_disk_image_tb.py and
+! tests/run_disk_image_test.sh, which run it three ways: on the image
+! MCP's P1 IPL saved, on a short synthetic image, and on no image.
+!
+! FOUR READS, each from the first word of an arc (printed p.161: READ
+! starts at the arc the arc address register holds):
+!
+!   arc 0     8 words  the first arc MCP's IPL writes (printed p.16
+!                      line 13, "W(SEOP),0.0,X PRO WR -WRITE PROSA")
+!   arc 32    8 words  the LAST arc MCP's P1 run writes (33 arcs,
+!                      measured; tests/check_disk_image.py)
+!   arc 33    2 words  the first arc it does not write
+!   arc 4095  2 words  the last arc of a 353 (2^21 words, printed p.157)
+!
+! Every destination is pre-filled with all-ones, so a word that reads
+! back zero was really transferred as zero.  The run is a READ-ONLY
+! deck on purpose: a WRITE would make the words the deck finds its own.
+!
+! CONTROL WORDS are zero placeholders patched by the generator, the
+! mechanism io_disk.strap uses.
+
+START   LVI, $1, 0         !X1 = disk channel 0, as in io_disk.strap
+
+        LOC(SEOP), 0($1), 0
+        RD,  0($1), CTLW0      !8 words of arc 0 -> DEST0
+        LOC(SEOP), 0($1), 32
+        RD,  0($1), CTLW1      !8 words of arc 32 -> DEST1
+        LOC(SEOP), 0($1), 33
+        RD,  0($1), CTLW2      !2 words of arc 33 -> DEST2
+        LOC(SEOP), 0($1), 4095
+        RD,  0($1), CTLW3      !2 words of arc 4095 -> DEST3
+
+        BEW, $
+                            !1 + 2*8 + 1 = 18 half-words: even, so the
+                            !first DD lands on a word boundary.
+
+CTLW0   DD(BU,64), 0        !patched: dataAddr=DEST0, count=8
+CTLW1   DD(BU,64), 0        !patched: dataAddr=DEST1, count=8
+CTLW2   DD(BU,64), 0        !patched: dataAddr=DEST2, count=2
+CTLW3   DD(BU,64), 0        !patched: dataAddr=DEST3, count=2
+
+DEST0   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST1   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST2   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+DEST3   DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        DD(BU,64), (16)FFFFFFFFFFFFFFFF
+        END, START

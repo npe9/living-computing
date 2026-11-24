@@ -60,7 +60,7 @@ echo "== yosys: synth_ecp5"
 V="$BLUESPECDIR/Verilog"
 yosys -l "$BUILD/yosys.log" -p "
   read_verilog $BUILD/verilog/mkPimmFepUlx3s.v $BUILD/verilog/mkPimmFepEmu.v PimmFepTop.v
-  read_verilog $V/FIFO2.v $V/FIFO1.v $V/SizedFIFO.v $V/BRAM1.v
+  read_verilog $V/FIFO2.v $V/FIFO20.v $V/FIFO1.v $V/SizedFIFO.v $V/BRAM1.v
   hierarchy -top ulx3s_fep_top
   synth_ecp5 -top ulx3s_fep_top -json $BUILD/top.json
 " > "$BUILD/yosys.console" 2>&1 || { tail -30 "$BUILD/yosys.console" >&2; die "yosys failed"; }
