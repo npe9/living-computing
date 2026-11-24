@@ -357,6 +357,10 @@ With the lockstep the kernel's 1 s alarms still take 14.2 s of model
 time (the counter period, below): that is model time, and the server now
 agrees with it, so it no longer costs anything but idle laps.
 
+With more than one QEMU (`p9join.py --hub`: fs9 and cpu9) the peer clock
+is a group of these, one per QEMU; "On the 1e network" below says how
+it runs them and what it measured.
+
 ### The user: `none`, with 1e's PC-floppy home
 
 s9term's `/boot` asks `user[none]:`, and Return takes `none`, the
@@ -393,8 +397,11 @@ a proper user's directory should be set up"); its `lib/profile` binds
 (`/dev/bitblt`) and the mouse on Quart channel 3.  Both are modelled
 since 2026-11-24 ("The terminal", below), and `p9join.py --user tor`
 boots into 8½ ("8½ as `tor`").  `none` stays the default, for the plain
-rc console; `glenda` (the server's own console user) would fail as
-`none` did, with no `/usr/glenda`.
+rc console; `glenda` (the server's own console user) failed as `none`
+did while the release's tree had no `/usr/glenda`.  Since
+`tools/qemu1e`'s auth server she has a home, a key and a profile, and
+logs in with her password, checked by fs9 ("On the 1e network" below;
+"8½ as glenda").
 
 ### The ROM's fpi (CHOICES `fpi-rom`)
 
@@ -566,6 +573,166 @@ and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
 skip that costs nothing, so the override is no longer needed to get
 anywhere.
 
+### On the 1e network: glenda, the auth server, `cpu` (2026-11-24)
+
+`tools/qemu1e/build.sh` builds a three-machine 1e network
+(`docs/qemu_1e_server.md` section 5): fs9 (file server and
+authentication server), cpu9 (a CPU-server kernel built in the guest)
+and a terminal.  `p9join.py --hub` puts s9term on it in the terminal's
+place, beside fs9 and cpu9:
+
+```sh
+# after tools/qemu1e/build.sh (~14 min); host ~8 min on a loaded machine
+python3 -u hobbit/tools/p9join.py --hub --port-base 10941 \
+    --user glenda --password glenda93 --password-first wrongpw1 \
+    --type '% =ip/ipconfig\r' --type '% =cpu -h cpu9\r' \
+    --type 'cpu9% =ls /mnt/term/hobbit; cat /dev/sysname; echo; cat /dev/user; echo; echo end of cpu\r' \
+    --until '\nend of cpu\n' --max-steps 3000000000 --out build/hub/live4
+```
+
+**The wiring.**  `tools/qemu1e/hub.py` gets three ports: fs9 (machine
+end B, hub end B+1), the Hobbit (B+2, B+3), cpu9 (B+4, B+5), as
+`net_test.py` lays them out.  fs9 boots and runs `/serve`, then cpu9
+boots as `net_test.py` boots it (host key at `/boot` and at init's
+console lock, then `ip/ipconfig; aux/listen il`), both free-running;
+only then are the Hobbit's socket bound and both clocks attached at
+model time 0, so no boot-time frame reaches the model late.  The
+Hobbit's hub port has a destination filter (its own address, and
+broadcast or multicast): cpu9's root is on fs9, so most of the
+segment's traffic is between them (2158 frames filtered in the run
+below, against 1457 on the Hobbit's wire), and the SONIC's CAM would
+drop those frames anyway (SONIC_CHOICES `filter`); the filter keeps
+them out of the lockstep's wait and out of the recording.  `hub.pcap`
+in `--out` has every frame of the segment.
+
+**Several QEMUs, one time base** (`ClockGroup` in `p9join.py`).  Each
+QEMU has its own `ServerClock`: its `MACHP(0)->ticks`, found by the same
+`clock()` pattern, once in each kernel (`9dos.q`: `m` at 0x8003b004;
+cpu9's `9pccpu.qs`: 0x80041004).  The group stands for one peer clock
+to the lockstep (ETHER_CHOICES `lockstep`): its time is the laggard's;
+the busy-time catch-up and the idle wait run every QEMU that is short of
+the target, stop each one as its own clock reaches it, and stop all of
+them when a datagram waits at the Hobbit's socket.  A stopped QEMU's
+ticks are cached (they cannot move while it is stopped), so the polling
+loop reads only the running ones.  What changes with two QEMUs: while
+both run they are not locked to each other.  Each follows its own
+`-icount shift=4` pace, so between two stops one may be up to the
+catch-up window ahead; the stops bound it.  Measured on the run below
+(`build/hub/skew.py`: each QEMU's filter-dump pcap is stamped with its
+virtual clock, aligned to model time by the median over the Hobbit's
+frames): a frame between fs9 and cpu9 after the attach arrives between
+-0.32 and +0.51 s (fs9 to cpu9, median +0.08 s) and between -0.46 and
++0.43 s (cpu9 to fs9, median -0.05 s) of its sending, on the shared
+time base; the Hobbit's frames against each QEMU skew -0.41 .. +0.66 s
+(fs9) and -0.41 .. +0.51 s (cpu9), of the same order as the
+two-machine lockstep's -0.63 .. +0.12 s.  Neither IL nor the auth
+protocols minded.
+
+**The log-in** (run `live4`, 2026-11-24, on a fresh `build.sh`): the
+Hobbit's console
+
+```
+root is from (il, tcp, incon, 9600, 19200)[il]:
+sonic ether: 52 54 00 00 0b 0b
+user[none]: glenda
+password:                          <- wrongpw1
+arp: rcvd for 10.9.0.1
+user[glenda]:
+password:                          <- glenda93
+arp: rcvd for 10.9.0.1
+arp: rcvd for 10.9.0.1
+nop...session...time...
+init: starting /bin/rc
+
+init: starting /bin/rc
+% 
+```
+
+and fs9's
+
+```
+fs9: Jan  3 07:02:10: glenda: /n/kfs/386/bin/ip/bootp: reply to 10.9.0.2 525400000b0b /hobbit/s9term p9  255.255.255.0 10.9.0.1 10.9.0.1 10.9.0.1
+fs9: Jan  3 07:02:11: glenda: /n/kfs/386/bin/aux/listen: il call for il17024 on chan /net/il/2
+fs9: Jan  3 07:02:11: glenda: check: bad user response
+fs9: Jan  3 07:02:11: glenda: /n/kfs/386/bin/aux/listen: il call for il17024 on chan /net/il/2
+fs9: Jan  3 07:02:11: glenda: check: user glenda ok
+fs9: Jan  3 07:02:11: glenda: /n/kfs/386/bin/aux/listen: il call for il17008 on chan /net/il/2
+```
+
+s9term's `/boot` does what the 9pc terminal's does (`boot/userpasswd.c`
+as `docs/qemu_1e_server.md` 5a reads it): the password's key to
+`#c/key`, `il!$auth!17024` dialled (`$auth` from the BOOTP vendor
+field, 10.9.0.1), check's challenge answered through `#c/crypt`; `NO`
+for the wrong password, and `/boot` asks `user[glenda]` again; `OK` for
+glenda93.  No `password not checked!`.  The key, the DES encryption and
+the response are all computed by the model (s9term's own `crypt`), and
+fs9's check accepted them.
+
+**`cpu -h cpu9`** needs one line first: termrc's `*hobbit*` case
+starts no `ip/ipconfig` (unlike its `ss`, `magnum` and `indigo`
+cases), so after `/boot`'s ARP answerer has died with `/boot` nothing on
+the Hobbit resolves addresses.  Without it (run `live1`) `cpu` printed
+`arp: No server, packet dropped 10.9.0.4` and got no further.  With
+`ip/ipconfig` typed (it forks `ip/arpd`, as on cpu9), the Hobbit ARPs
+for 10.9.0.4 and answers cpu9's ARP.  The kernel still prints `arp: No
+server, packet dropped 10.9.0.4` once; on the wire the ARP request
+(68.408 s) is answered at 68.450 s and the IL sync to cpu9 leaves at
+68.450 s, so no resend of it is visible, and which packet the message
+is about was not traced:
+
+```
+% ip/ipconfig
+% cpu -h cpu9
+arp: No server, packet dropped 10.9.0.4
+cpu9% ls /mnt/term/hobbit; cat /dev/sysname; echo; cat /dev/user; echo; echo end of cpu
+/mnt/term/hobbit/bin
+/mnt/term/hobbit/include
+/mnt/term/hobbit/init
+/mnt/term/hobbit/lib
+/mnt/term/hobbit/mkfile
+/mnt/term/hobbit/s9term
+cpu9
+glenda
+end of cpu
+```
+
+and fs9: `rexauth: user glenda to cpu9 ok` twice (07:03:06, the call on
+il17005, and 07:03:14, the note channel on il17006).  The commands ran
+on cpu9 as glenda (the ticket set the process's user, `srvauth.c`), and
+`/mnt/term` is the Hobbit's name space served back by the Hobbit's own
+`exportfs` (`cpu.c`: the client execs `/bin/exportfs` on the
+connection): cpu9 listed `/hobbit` as the Hobbit sees it, read over IL
+from fs9 by the model and served to cpu9 by the model.  The remote rc
+reads its input from the Hobbit's `/dev/cons` the same way; the typed
+line came in on Quart channel 0.
+
+1,580,420,168 instructions (1,546,188,552 idle-skipped), 79.15 s of
+model time, 481 s of host time; 1457 frames on the Hobbit's wire; hub
+frames received from fs9, the Hobbit, cpu9: 1889, 661, 1067; the QEMUs
+ran 11 s of wall time in 752 lockstep runs.  Earlier runs on the same
+code: `live1` (no `ip/ipconfig`) as above; `live2` and `live3`
+(incremental disks, glenda's profile then empty or the first version of
+5d's) reached `end of cpu` the same way, `live3` also printing `init:
+rc exit status: rc 9:test 16:false`, which the profile's last line now
+prevents.
+
+**The replay** (`tests/test_p9hub.py`, `HubReplayTest`):
+`tests/net/hub_cpu.pcap` is `live4`'s `--pcap` (1457 frames).  The
+suite's run replays it to init's first line after the log-in (408,307,318
+instructions, 197 frames, ~76 s): the wrong password refused, the right
+one accepted, every frame the model sends equal to the recording, so the
+key and the check response are pinned to what the live auth server
+accepted.  `P9HUB_CPU=1` replays the whole recording, through
+`ip/ipconfig`, `cpu -h cpu9` and the commands' output, to the same
+1,580,420,168 instructions (OK in 412 s of host time on the loaded
+machine, over the suite's budget):
+
+```sh
+P9HUB_CPU=1 python3 hobbit/tests/test_p9hub.py
+```
+
+The injections and what they failed are in the test's header.
+
 ## The terminal: screen, keyboard, mouse (2026-11-24)
 
 `tools/p9term.py` holds the terminal's display and input devices
@@ -703,9 +870,9 @@ python3 -u tools/p9join.py --user tor --ports 10931,10932 \
 `--password` (default `password`); `/boot` then prints `boot: password
 not checked!: file does not exist` (the auth dial fails: the server
 the recording used, `build/qemu` built before `tools/qemu1e`'s auth
-server landed, ran none) and goes on as `tor`.  With master's auth
-server (`docs/qemu_1e_server.md` 5a) `tor` has no key and `glenda`
-(password `glenda93`) would be checked; neither has been run here.  The profile binds
+server landed, ran none) and goes on as `tor`.  With the auth server
+(`docs/qemu_1e_server.md` 5a) `tor` has no key; `glenda` is checked,
+and 8½ as glenda is below ("8½ as glenda").  The profile binds
 `$home/tmp` and `$home/bin` and execs `8½ -i 8½start -s -f
 /lib/font/bit/pelm/euro.9.font`; `8½start` is `window '0 0 785 602'
 rc`.  The input script (live2, 2026-11-24, on the Quart of
@@ -764,6 +931,55 @@ since 400 M) at 345 s of host time, 700 M (the screen cleared white)
 at 401 s, 807 M (q1's screen) at 682 s, and the stop at 684 s: after
 8½ has drawn, the idle skip covers the minute of model time to `q1` in
 about two seconds.
+
+### 8½ as glenda
+
+The release gives `glenda` nothing (she is the test network's user,
+made by `authinit.rc`); her profile comes from the qemu1e overlay
+(`docs/qemu_1e_server.md` 5d).  It starts 8½ the way tor's does only
+when `/usr/glenda/lib/8half` exists, so the console log-ins of the
+tests (`net_test.py`, `p9join.py --hub`) still end at rc's `% `.  A run
+makes that file on fs9's console (fs9 runs `-snapshot`, so the disk
+keeps the default) with `p9join.py --fs9-cmd`:
+
+```sh
+python3 -u hobbit/tools/p9join.py --ports 10971,10972 --user glenda \
+    --password glenda93 \
+    --fs9-cmd '> /n/kfs/usr/glenda/lib/8half; ls -l /n/kfs/usr/glenda/lib' \
+    --until NEVER-MATCHES --max-steps 4000000000 \
+    --input tests/net/8half_glenda.input --out build/hub/g8half
+```
+
+with the input script
+
+```
+screen 'init: starting /bin/rc' screen build/hub/g8half/init.png
+after 50 screen build/hub/g8half/a50.png
+quiet 30 screen build/hub/g8half/q1.png
+after 0.1 stop
+```
+
+Observed 2026-11-24 (two-machine lockstep, fs9 alone: it is the auth
+server): `user[none]: glenda`, `password:`, `nop...session...time...`,
+`init: starting /bin/rc`, no `password not checked!`; fs9 logged
+`check: user glenda ok`; 8½ drew 8½start's window with `term% `.  The
+screen at `q1` (step 2,161,090,685; 2,163,090,685 instructions, of
+which 2,115,334,416 idle-skipped, 108.6 s of model time, 488 s of host
+time, 1176 frames) is `tests/net/8half_glenda.png`, and its pixels'
+sha256, `7a182d44…`, is that of tor's `q1` in the table above: the same
+window and prompt, drawn by the same 8½ with the same font.  Already
+at `a50` (step 1,561,111,523) the screen had that checksum.  A first try
+with `quiet 30` straight after init's line fired at step 1,051,932,582
+with the console text still on the screen and nothing of 8½ drawn: no
+LCD write in the 30 model seconds after init's line, and 8½'s window
+was there by 50 s (why 8½ was that slow to draw was not traced; that
+run's artifacts were overwritten), hence the `after 50`.  The run before
+it, on the earlier profile below, had used a plain `quiet 30` and got
+8½'s window.  An earlier profile also bound
+`$home/bin/$cputype` as tor's does; `kfscmd newuser` makes no
+`bin/hobbit`, so the console showed `bind /usr/glenda/bin/hobbit /bin:
+file does not exist`; that line is gone from the profile.  This run is
+not replayed by a test (EightHalfReplayTest covers 8½ itself, as tor).
 
 ## The idle skip (CHOICES `idle-skip`)
 
