@@ -30,7 +30,8 @@ python3 "$here/test_sem_extended.py"
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
 # A4: the shipped kernel s9term boots on the reference model as far as
-# pageinit's console line (tools/p9boot.py, docs/p9boot.md; ~25 s).
+# pageinit's console line and /boot's prompt; the idle skip is checked
+# against a run without it (tools/p9boot.py, docs/p9boot.md; ~1.5 min).
 python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py

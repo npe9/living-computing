@@ -682,6 +682,13 @@ Details, milestones and choices: `docs/p9boot.md`.
   `sysexec("/boot")` and `/boot` demand-paging in user mode; the clock
   interrupt (the Quart counter) is taken.
 * 22,530,554: `/boot`'s prompt on the screen, `root is from (il, tcp, incon, 9600, 19200)[il]: ` (with `--counter-period 0.04`, a stated choice); it waits for a keyboard byte.  Its default transport, `il`, needs the SONIC ethernet and the IIC EEPROM (docs/p9boot.md).
+* Idle skip (CHOICES `idle-skip`): `runproc`'s four-instruction idle
+  loop is retired in whole laps up to the next timed device event, the
+  run otherwise unchanged instruction for instruction (pinned: the 25 Hz
+  prompt run still takes 22,530,554 instructions, now in 29 s instead of
+  6 min).  At the formula's own clock rate the prompt comes after
+  286,970,654 instructions, 14.4 s of model time, ~30 s of host time, so
+  `--counter-period` is no longer needed.
 
 The gate as written above (the boot banner and prompt on the UART) is
 not met yet: s9term prints no banner of its own; the first text after

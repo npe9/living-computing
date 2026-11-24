@@ -15,13 +15,13 @@ not only against the C.
 # The first console line (the regression test, ~2.1 M instructions, 25 s):
 python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
     --max-steps 4000000 --until '\n'
-# On to the boot program (see "How far it gets"):
+# On to the boot program's prompt (see "How far it gets"; ~30 s):
 python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
-    --max-steps 80000000 --progress 5000000 --counter-period 0.04 \
-    --until 'root is from' --out console.txt
+    --max-steps 400000000 --progress 20000000 \
+    --until 'root is from' --out console
 ```
 
-`--out FILE` writes the console bytes; `--until TEXT` stops once the
+`--out DIR` writes the console bytes, one file per channel; `--until TEXT` stops once the
 screen has shown TEXT; `--progress N` prints where the PC is every N
 instructions.  The run prints each first-reached function with its
 instruction number, every exception and interrupt the model takes (the
@@ -76,9 +76,18 @@ The first console line, byte for byte, on both channels:
 
 ## How far it gets
 
-With `--counter-period 0.04` (QUART_CHOICES `counter-period`) the run
-reaches `/boot`'s prompt after **22,530,554 instructions** (1.145 s of
-model time, 26 clock interrupts; about 6 minutes of host time):
+At the counter rate the hardware formula gives (one tick per 0.569 s,
+QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
+**286,970,654 instructions** and 14.367 s of model time, 26 clock
+interrupts, in about 30 s of host time: 284,013,188 of those
+instructions are laps of the idle loop that the idle skip (below)
+retires without executing.
+
+With `--counter-period 0.04` (25 Hz) the same prompt comes after
+**22,530,554 instructions** (1.145 s of model time, 26 clock
+interrupts).  That count was measured first without the idle skip (6
+minutes of host time) and is reproduced exactly with it (29 s), which
+`tests/test_p9boot.py` `PromptTest` pins:
 
 | instructions | reached |
 |---:|---|
@@ -99,8 +108,61 @@ The prompt goes to `#c/cons`, which s9term writes to the screen only;
 Quart channel 0 carries the kernel's own `print` output (the first line).
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
-and `sleep(1000)` needs ~14 s of model time (~280 M instructions); the
-run has not been taken that far.
+and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
+skip that costs nothing, so the override is no longer needed to get
+anywhere.
+
+## The idle skip (CHOICES `idle-skip`)
+
+s9term's idle loop is `runproc`'s `while(runhiq.head==0 &&
+runloq.head==0);` after `spllo()` (port/proc.c), which in the image is
+four instructions at `runproc+0x08..+0x1e` (0x8000649a):
+
+```
++0x08  dffc 0000 0000 8004 d300   compare $0 with runhiq.head (runhiq+8)
++0x12  1007                       JMPFN +0x20: a process is ready, leave
++0x14  dffc 0000 0000 8004 d418   compare $0 with runloq.head (runloq+8)
++0x1e  1ff5                       JMPTY +0x08: both empty, again
+```
+
+It stores nothing, so only an interrupt can end it.  `find_idle_loop`
+checks these parcels in the loaded image and refuses to run otherwise.
+With the PC at the head, both heads 0, IPL 7, no interrupt asserted, no
+timer interrupt enabled, and the last two laps of equal cost, the
+harness retires N laps at once: `steps += 4N`, `cycles += N x lap`,
+with N the largest number that still ends *before* the next timed
+device event (the Quart counter, a scripted console byte, an inbound
+frame).  The laps executed after that, the interrupt and everything
+after it are the unskipped run's, instruction for instruction:
+
+| run | instructions | cycles | host time |
+|---|---:|---:|---:|
+| to the prompt, 25 Hz, no skip (before the skip existed) | 22,530,554 | | ~6 min |
+| the same with the skip (19,573,088 retired by 25 skips) | 22,530,554 | 22,890,723 | 29 s |
+| 3.4 M instructions at a 4 ms tick, no skip / skip (7 skips) | 3,400,000 | 3,757,855 | 34 s / 27 s |
+
+and in the last row the two runs end with the same PC, PSW, stacks,
+interrupt and exception lists, functions reached, console bytes, Quart
+state and every RAM word (`IdleSkipEquivalenceTest`).  The Hobbit has no
+idle, halt or wait instruction (none of Table 3-1's 46 mnemonics, pp.
+3-1..3-2, `docs/isa_inventory.md` §2), and s9term spins, so this loop is
+the only idle state there is.  With
+nothing timed pending, the loop could never end, and the run stops
+saying so.
+
+### The clock rate (QUART_CHOICES `counter-period`), reconsidered
+
+s9term's `clockinit` (0x8000f780) loads the counter with a constant:
+`acr = 0xF0` (BRGSet2|TimerD16), `ctu:ctl = 0xFFFF` (`MOV $0xffff`,
+then `>>8` and `&0xff` into ctu and ctl), where the shipped source
+computes `Crystal/(2*16*HZ)` = 4608.  Its HZ is 25 (`tsleep` divides by
+MS2HZ = 40; mem.h `HZ 25`).  So the image's software assumes 25 ticks a
+second and programs a count that, by the 68C94's timer formula with the
+3.6864 MHz crystal deveia.c names, gives 1.76 a second.  Nothing in the
+release says which is wrong (a different crystal on the 1992 board, a
+counter clock not divided by 16, or a kernel whose clock ran slow); the
+default stays the formula, and `--counter-period 0.04` stays a stated
+deviation, now needed for nothing but shorter model time.
 
 ## The root file system: what `/boot` asks the machine for
 
@@ -254,10 +316,6 @@ sensitivity, bus errors other than "no device".
 2. **The network** for `il`: the IIC EEPROM's ethernet address and the
    SONIC's descriptor-driven transmit and receive (above), then a frame
    bridge to the file server.
-3. **Speed.** The reference model runs ~62,000 instructions/s; the
-   prompt takes 6 minutes, most of it `runproc` idling in `sleep(1000)`.
-   An idle-skip (advance model time to the next counter tick when the
-   kernel is in its idle loop) would be a harness choice to state.
-4. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
+3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
-   assumes is not settled by anything in the release.
+   assumes is not settled by anything in the release (above).

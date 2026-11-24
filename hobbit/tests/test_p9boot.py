@@ -22,6 +22,18 @@ reverted by the reverse edit, the file's sha256 checked equal):
 * p9boot: MEMSIZE 16 MB in ppage0: FAIL test_instruction_count,
   test_stops_at_the_first_line (pageinit prints other numbers).
 
+The idle skip (CHOICES['idle-skip']; IdleSkipEquivalenceTest, PromptTest),
+observed 2026-11-23, each injection made in a scratch copy of
+tools/p9boot.py (the real file untouched):
+
+* skip one lap too many (N = floor(...) + 1, the guard that keeps the
+  last skipped lap before the event removed): FAIL test_same_run
+  (cycles 3757855 != 3757854), test_prompt (22530558 != 22530554),
+  test_mostly_idle.
+* retire the skipped laps' cycles but not their instructions (steps not
+  advanced): FAIL test_same_run (cycles), test_the_skip_was_taken (1816
+  skips, not 7), test_prompt (2957466 instructions).
+
 Not covered by this test (each left it green): the nonpaged STE base
 ignored (the kernel's segments are identity-mapped), the stack cache on
 with CONFIG.SE = 0, and the Quart sr never showing TxRDY (the UART line
@@ -41,6 +53,7 @@ import p9boot  # noqa: E402
 S9TERM = os.path.join(HOBBIT, "tools", "plan9-1e", "hobbit", "s9term")
 LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
         b"headroom 340K\n")
+PROMPT = b"root is from (il, tcp, incon, 9600, 19200)[il]: "
 
 
 class FirstLineTest(unittest.TestCase):
@@ -86,7 +99,73 @@ class FirstLineTest(unittest.TestCase):
         self.assertTrue(st.psw & p9boot.hobbit_sem.PSW_VIRTUAL)
 
 
-STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084}
+class IdleSkipEquivalenceTest(unittest.TestCase):
+    """CHOICES['idle-skip'] retires whole idle-loop laps without executing
+    them; the run must be the run without the skip, instruction for
+    instruction.  A counter period of 4 ms puts seven clock interrupts
+    into the first 3.4 M instructions (the idle loop starts at ~2.9 M)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.runs = []
+        for skip in (False, True):
+            boot = p9boot.Boot(S9TERM)
+            boot.quart.period_override = 0.004
+            boot.idle_skip = skip
+            status = boot.run(3400000)
+            cls.runs.append((boot, status))
+
+    def summary(self, boot, status):
+        st = boot.state
+        return dict(status=status, steps=boot.steps, cycles=boot.cycles,
+                    pc=st.pc, psw=st.psw, sp=st.sp, isp=st.isp,
+                    interrupts=boot.interrupts, exceptions=boot.exceptions,
+                    reached=boot.reached, ram=sorted(boot.board.ram.items()),
+                    console=dict(boot.console),
+                    quart=repr(boot.quart.duarts))
+
+    def test_same_run(self):
+        (plain, s0), (skipped, s1) = self.runs
+        a, b = self.summary(plain, s0), self.summary(skipped, s1)
+        for key in a:
+            self.assertEqual(a[key], b[key], key)
+
+    def test_the_skip_was_taken(self):
+        plain, skipped = self.runs[0][0], self.runs[1][0]
+        self.assertEqual(plain.skipped_steps, 0)
+        self.assertEqual(skipped.skips, 7)
+        self.assertEqual(skipped.skipped_steps, IDLE["equiv-skipped"])
+        self.assertEqual(plain.interrupts, 8)
+
+
+class PromptTest(unittest.TestCase):
+    """To /boot's prompt with the 25 Hz override, in ~30 s with the idle
+    skip; the instruction count is the one measured without the skip
+    (22,530,554, 6 minutes, docs/p9boot.md, before the skip existed)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+        cls.boot.quart.period_override = 0.04
+        cls.boot.until = b"root is from"
+        cls.status = cls.boot.run(30000000)
+
+    def test_prompt(self):
+        self.assertIn("screenputs printed", self.status)
+        self.assertEqual(self.boot.steps, STEPS["prompt"])
+        self.assertEqual(self.boot.cycles, IDLE["prompt-cycles"])
+        self.assertEqual(self.boot.interrupts, 26)
+        self.assertEqual(bytes(self.boot.console["screenputs"]),
+                         LINE + PROMPT)
+
+    def test_mostly_idle(self):
+        self.assertEqual(self.boot.skipped_steps, IDLE["prompt-skipped"])
+
+
+STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
+         "prompt": 22530554}
+IDLE = {"equiv-skipped": 490000, "prompt-skipped": 19573088,
+        "prompt-cycles": 22890723}
 
 
 if __name__ == "__main__":

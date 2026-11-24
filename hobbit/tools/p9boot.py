@@ -96,6 +96,24 @@ CHOICES = {
            "(clock.c: ms *= 1000*ROUNDUP(eeprom.clock, 2)/2).",
     "lcd": "Bart's LCD (io.h Lcdisp at IOACK 0x3000) accepts and counts "
            "writes; it is never read by the kernel.",
+    "idle-skip": "A harness shortcut, on by default (--no-idle-skip turns "
+                 "it off).  s9term's idle loop is runproc+0x8..+0x1e (proc.c "
+                 "`while(runhiq.head==0 && runloq.head==0);` with spllo): "
+                 "two compares of the run-queue heads with 0 and two "
+                 "conditional jumps, no stores.  When the PC is at its head "
+                 "with both heads 0, IPL 7 and no interrupt asserted, and "
+                 "the last two iterations cost the same cycles, the harness "
+                 "retires N whole iterations at once: steps += 4N, cycles "
+                 "+= N x (cycles per iteration), with N the largest count "
+                 "that ends before the next timed device event (the Quart "
+                 "counter, a scripted byte, a frame).  The iterations "
+                 "executed afterwards, the interrupt and everything after "
+                 "it are the run without the skip, instruction for "
+                 "instruction (tests/test_p9boot.py compares the two).  "
+                 "TIMER1/TIMER2 are advanced by the same cycles and "
+                 "instructions; the skip is not taken while a timer "
+                 "interrupt is enabled.  With nothing timed pending the "
+                 "loop could never end, and the run stops.",
 }
 
 CPU_HZ = 20000000                   # CHOICES['clock']
@@ -278,6 +296,16 @@ class Quart:
         # deveia.c clockinit: x = Crystal/(2*16*HZ), acr = TimerD16; one
         # CtrRDY per square-wave period, i.e. every 2*x clocks of X1/16.
         return 2.0 * count / (3686400 / 16.0)
+
+    def next_event(self):
+        """The next time a running counter expires (CHOICES['idle-skip'])."""
+        times = []
+        for d in (0, 1):
+            self._tick(d)
+            du = self.duarts[d]
+            if du["running"] and du["next_tick"] is not None:
+                times.append(du["next_tick"])
+        return min(times) if times else None
 
     def isr(self, d):
         self._tick(d)
@@ -485,6 +513,44 @@ class Symbols:
     def where(self, pc):
         name, base = self.func(pc)
         return "%s+0x%x" % (name, pc - base)
+
+
+IDLE_LAP_STEPS = 4
+
+
+def text_parcel(board, addr):
+    """The parcel at a text address as loaded: the high half of a word is
+    the earlier parcel (docs/s9term.md)."""
+    w = board.ram.get(addr & ~3, 0)
+    return (w & 0xFFFF) if addr & 2 else (w >> 16)
+
+
+def find_idle_loop(boot):
+    """CHOICES['idle-skip']: the idle loop of runproc, checked parcel for
+    parcel in the image (a different image makes this fail loudly rather
+    than skip the wrong code).  s9term, runproc = 0x80006492:
+
+      +0x08  dffc 0000 0000 <runhiq+8>   compare $0 with runhiq.head
+      +0x12  1007                        JMPFN +0x20 (a process: leave)
+      +0x14  dffc 0000 0000 <runloq+8>   compare $0 with runloq.head
+      +0x1e  1ff5                        JMPTY +0x08 (both empty: again)
+
+    Returns the head's address and the two words the loop reads."""
+    by = boot.syms.by_name
+    base = by["runproc"]
+    hi, lo = by["runhiq"] + 8, by["runloq"] + 8
+    want = [(base + 0x08, [0xdffc, 0, 0, hi >> 16, hi & 0xFFFF]),
+            (base + 0x12, [0x1007]),
+            (base + 0x14, [0xdffc, 0, 0, lo >> 16, lo & 0xFFFF]),
+            (base + 0x1e, [0x1ff5])]
+    for addr, parcels in want:
+        got = [text_parcel(boot.board, addr + 2 * i)
+               for i in range(len(parcels))]
+        if got != parcels:
+            raise SystemExit("p9boot: runproc+0x%x is %s, not the idle loop "
+                             "CHOICES['idle-skip'] was written for"
+                             % (addr - base, " ".join("%04x" % p for p in got)))
+    return base + 0x08, (hi, lo)
 
 
 def load_kernel(path, board):
@@ -723,6 +789,60 @@ class Boot:
         sp = self.syms.by_name.get("screenputs")
         if sp is not None:
             self.taps[sp] = self.tap_screenputs
+        # CHOICES['idle-skip']
+        self.idle_skip = True
+        self.idle_head, self.idle_words = find_idle_loop(self)
+        self.idle_last = None       # (steps, cycles, cycles of last lap)
+        self.skipped_steps = 0
+        self.skipped_cycles = 0
+        self.skips = 0
+
+    def next_event(self):
+        """The earliest model time (seconds) after now at which a device
+        changes state by itself, or None."""
+        times = [t for t in (self.quart.next_event(),) if t is not None]
+        return min(times) if times else None
+
+    def try_idle_skip(self, max_steps):
+        """CHOICES['idle-skip']: called with the PC at the idle loop's
+        head, after the interrupt check."""
+        st = self.state
+        sysm = self.sysm
+        last = self.idle_last
+        lap = None
+        if last is not None and self.steps - last[0] == IDLE_LAP_STEPS:
+            lap = self.cycles - last[1]
+        self.idle_last = (self.steps, self.cycles, lap)
+        if lap is None or last[2] != lap or lap <= 0:
+            return
+        if (st.psw & hobbit_sem.PSW_USER
+                or (st.psw >> hobbit_sem.PSW_IPL_SHIFT) & 7 != 7):
+            return
+        if any(self.board.read(a) for a in self.idle_words):
+            return
+        if (sysm.config & (hobbit_sem.CONFIG_T1IE | hobbit_sem.CONFIG_T2IE)
+                or sysm.timer1_pending or sysm.timer2_pending):
+            return
+        if self.irq.asserted():
+            return
+        nxt = self.next_event()
+        if nxt is None:
+            raise Stop("idle in runproc with nothing runnable and no timed "
+                       "device event pending: the loop would never end")
+        hz = float(CPU_HZ)
+        n = int((nxt * hz - self.cycles) / lap)
+        while n > 0 and (self.cycles + n * lap) / hz >= nxt:
+            n -= 1
+        n = min(n, (max_steps - self.steps) // IDLE_LAP_STEPS)
+        if n <= 0:
+            return
+        self.steps += IDLE_LAP_STEPS * n
+        self.cycles += lap * n
+        self.skipped_steps += IDLE_LAP_STEPS * n
+        self.skipped_cycles += lap * n
+        self.skips += 1
+        hobbit_sem._count_timers(st, lap * n, IDLE_LAP_STEPS * n)
+        self.idle_last = (self.steps, self.cycles, lap)
 
     def arg(self, n):
         """Argument n (0-based) at a function's entry: the CALL left the
@@ -756,6 +876,7 @@ class Boot:
         syms = self.syms
         status = "max-steps"
         cur_lo, cur_hi = 0, 0
+        next_progress = self.progress or 0
         try:
             while self.steps < max_steps:
                 pc = st.pc
@@ -782,15 +903,20 @@ class Boot:
                     tap()
                 rec, st = hobbit_sem.step(st)
                 self.steps += 1
-                if self.progress and self.steps % self.progress == 0:
-                    print("p9boot: %d steps, at %s" % (
-                        self.steps, syms.where(st.pc)), file=sys.stderr)
                 self.cycles += rec.cyc
                 if (st.psw >> 12) & 7 == 7 and self.irq.asserted():
                     # IL 6 (CHOICES['irq-level']) is below IPL 7 only.
                     hobbit_sem.take_interrupt(st, 6)
                     self.interrupts += 1
                     del sysm.events[:]
+                elif st.pc == self.idle_head and self.idle_skip:
+                    self.try_idle_skip(max_steps)
+                if self.progress and self.steps >= next_progress:
+                    next_progress = (self.steps // self.progress + 1) \
+                        * self.progress
+                    print("p9boot: %d steps, at %s, model time %.3f s" % (
+                        self.steps, syms.where(st.pc),
+                        self.cycles / float(CPU_HZ)), file=sys.stderr)
                 if sysm.events:
                     for kind, ident, epc in sysm.events:
                         self.log_event(kind, ident, epc,
@@ -825,11 +951,15 @@ def main(argv):
                          "(QUART_CHOICES['counter-period'])")
     ap.add_argument("--until", metavar="TEXT",
                     help="stop once screenputs has printed TEXT")
+    ap.add_argument("--no-idle-skip", action="store_true",
+                    help="execute every iteration of the idle loop "
+                         "(CHOICES['idle-skip'])")
     ap.add_argument("--progress", type=int, default=0, metavar="N",
                     help="report the current function every N steps")
     args = ap.parse_args(argv)
     boot = Boot(args.image, args.memsize, args.out)
     boot.progress = args.progress
+    boot.idle_skip = not args.no_idle_skip
     if args.counter_period is not None:
         boot.quart.period_override = args.counter_period
     if args.until:
@@ -839,7 +969,9 @@ def main(argv):
     status = boot.run(args.max_steps)
     dt = time.time() - t0
     print("p9boot: %s" % status)
-    print("p9boot: %d instructions in %.1f s" % (boot.steps, dt))
+    print("p9boot: %d instructions in %.1f s (%d of them idle-loop "
+          "iterations retired by %d idle skips)"
+          % (boot.steps, dt, boot.skipped_steps, boot.skips))
     print("p9boot: functions reached, in order (step: name):")
     for stepno, name in boot.reached:
         print("  %10d  %s" % (stepno, name))
