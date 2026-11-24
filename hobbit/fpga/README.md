@@ -585,6 +585,13 @@ Max frequency for clock '$glbnet$CLK$TRELLIS_IO_IN': 5.24 MHz (FAIL at 25.00 MHz
 It places; the frequencies are the post-placement estimate. Routing
 (256,662 arcs) is the open step, as above.
 
+The devices are all in the netlist (the yosys log elaborates
+mkHobbitSocDevs with DEV_RTL = 31: incon, ioctl, irq, RTC, IIC,
+Lcdisp). But the Lcdisp frame RAM is pruned: without the HDMI top
+nothing reads its scan port, so the DP16KD count (59) is the core's
+alone. The HDMI build adds that block RAM and the scan-out logic, which
+this count leaves out.
+
 #### Before the area work
 
 `./build_soc.sh` (seed 1) on 2026-11-24:
