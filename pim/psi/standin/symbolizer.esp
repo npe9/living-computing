@@ -1,0 +1,49 @@
+% SCAFFOLDING stand-in for SIMPOS's class `symbolizer`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `symbolizer` is printed.  It is PARTIAL: of the 27 selectors held
+% programs send (docs/simpos/required/classes.tsv), only the two that
+% the four witnessed string built-ins can express are here, each
+% INTERPOLATED (labelled).  The rest (enter_atom/3, get_atom/3,
+% get_number/3, get_number_string/3, ...) convert atoms or numbers and
+% strings: no witnessed built-in makes an atom from a string or back,
+% and number conversion needs X/Y and a remainder, which espc refuses.
+% kl0 refuses a send of one of them as SIMPOS (not in the stand-in).
+% Built-ins used (KL0, rows in psi/kl0_opcodes.tsv): string/3 (blt 0b),
+% new_string/3 (blt 1c), string_element/3 (blt 23),
+% set_string_element/3 (blt 2b).
+% Model (OURS): a new string's elements are 16-bit (type 16).
+
+class symbolizer has
+
+% :string_to_list(#symbolizer, List, String) -- List is the list of
+% String's element codes, in order.
+% INTERPOLATED from: the call sites, which give the argument order (the
+% string last, the list out): kappa2 kvif/esp/kap_serv.esp:677
+% `:string_to_list(#symbolizer,List,Condition), delete_list(8481,List,
+% List1)` (8481 = the JIS space, an element code), motif.esp:92,
+% retrieve2.esp:186 (the list then made a vector); utter
+% source/Tour/tour_sit.esp:61.
+:string_to_list(Class, List, S) :-
+        string(S, N, _),
+        to_list(S, 0, N, List);
+
+% :list_to_string(#symbolizer, List, String) -- String is a new string
+% whose elements are List's codes, in order.
+% INTERPOLATED from: the call sites (the list in, the string out):
+% kappa2 kvif/esp/kap_serv.esp:681 (the inverse of the call above, after
+% deleting codes from the list), kernel/net/SRVCNF.ESP:633, kvif/esp/
+% retrieve2.esp:219 `RL = [0,3,0,1,0,RidNum], :list_to_string(#symbolizer,
+% RL,Rid)`.
+:list_to_string(Class, List, S) :-
+        count(List, 0, L),
+        new_string(S, L, 16),
+        fill(List, S, 0);
+
+local
+to_list(S, N, N, []) :- !;
+to_list(S, I, N, [E|R]) :- string_element(S, I, E), to_list(S, I+1, N, R);
+count([], L, L);
+count([X|R], L0, L) :- count(R, L0+1, L);
+fill([], S, P);
+fill([E|R], S, P) :- set_string_element(S, P, E), fill(R, S, P+1);
+end.

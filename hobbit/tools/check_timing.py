@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Validate docs/timing.csv against Chapter 4 of the ATT92010 Programmer's
-Reference Manual (January 1993) and against Table 3-1's mnemonic census.
+"""Validate docs/timing.csv against Chapter 4 (and Table 2-4) of the ATT92010
+Programmer's Reference Manual (January 1993) and against Table 3-1's
+mnemonic census.
 
 Usage:  python3 hobbit/tools/check_timing.py [CSV]
 
@@ -32,30 +33,41 @@ Checks, all of which must pass:
   8. Table 3-1 coverage: 46/46 entries, 60/60 spellings, each spelling
      exactly once.
 
-Observed injected-defect runs (2026-11-19, baseline exit 0):
+  9. Table 2-4 (PRM §2.6, printed p. 2-9, the MMU's address-translation
+     penalties) is a table too: 13 printed rows, kind `translation`,
+     cited "p. 2-9 Table 2-4", and its cells may use only A (p. 2-9
+     defines no other symbol).
+
+Observed injected-defect runs (2026-11-24, after Table 2-4 was added;
+baseline exit 0).  Defects A and B are the 2026-11-19 ones, re-run:
 
   python3 tools/check_timing.py            -> exit 0
-      timing.csv: 87 rows
-        70 instruction/table rows, 17 delay rows, 29 note references
+      timing.csv: 100 rows
+        70 instruction/table rows, 17 delay rows, 13 translation rows, 30 note references
       Table 3-1 coverage: 46/46 entries, 60/60 spellings
         4-32 38, 4-33 8, 4-34 10, 4-35 7, 4-36 7, 4-37 6, 4-38 6,
-        4-39 2, 4-40 3
+        4-39 2, 4-40 3, 2-4 13
       OK
 
   defect A -- deleted the row t432_add (Table 4-32, ADD):
-      defect_a.csv: 86 rows
-        69 instruction/table rows, 17 delay rows, 29 note references
+      defect_a.csv: 99 rows
       Table 3-1 coverage: 45/46 entries, 59/60 spellings
-        4-32 37, ...
       FAIL: Table 4-32 (p. 4-3) has 37 rows, printed lines: 38
       FAIL: UNCOVERED spelling ADD (entry ADD[3])
       2 violation(s)                                       exit 1
 
   defect B -- blanked the source of row t439_dt1:
-      defect_b.csv: 87 rows
-      Table 3-1 coverage: 46/46 entries, 60/60 spellings
-      FAIL: t439_dt1: missing source (need "p. 4-N Table 4-M")
+      FAIL: t439_dt1: missing source (need "p. 4-N Table 4-M" or "p. 2-9 Table 2-4")
       FAIL: Table 4-39 (p. 4-7) has 1 rows, printed lines: 2
+      2 violation(s)                                       exit 1
+
+  defect C -- t24_read_nonpaged's cell A + 3 changed to D + 3:
+      FAIL: t24_read_nonpaged: symbol 'D' in Table 2-4, which defines only A (p. 2-9)
+      1 violation(s)                                       exit 1
+
+  defect D -- t24_text_tlb_hit cited "p. 2-8 Table 2-4":
+      FAIL: t24_text_tlb_hit: malformed source 'p. 2-8 Table 2-4'
+      FAIL: Table 2-4 (p. 2-9) has 12 rows, printed lines: 13
       2 violation(s)                                       exit 1
 """
 import csv
@@ -132,7 +144,14 @@ TABLES = {
     "4-38": ("4-6", 6, "delay", "Operand Access"),
     "4-39": ("4-7", 2, "delay", "Data Type"),
     "4-40": ("4-7", 3, "delay", "Miscellaneous"),
+    # PRM §2.6, printed p. 2-9: Table 2-4, Address Translation Performance
+    # (13 printed rows, read from the page image; no text layer is
+    # trusted).  Its cells use only A, "the I/O delay for a single word
+    # access" (p. 2-9).
+    "2-4": ("2-9", 13, "translation", "Address Translation Performance"),
 }
+# Symbols each table outside Chapter 4 may use: p. 2-9 defines only A.
+TABLE_SYMBOLS = {"2-4": {"A"}}
 
 # p. 4-2 defines IC PDU A D Q M N SC E EU.  A, D, Q, N and E are used in
 # cycle expressions; S is not defined and appears only in Table 4-34's
@@ -146,18 +165,20 @@ DELAY_CITING_ROWS = {
     "t436_catch",
 }
 
-SOURCE_RE = re.compile(r"^p\. (4-[1-7]) Table 4-(3[2-9]|40|[1-9])$")
+SOURCE_RE = re.compile(
+    r"^p\. ((?:4-[1-7])|(?:2-9)) Table (4-(?:3[2-9]|40|[1-9])|2-4)$")
 ID_RE = re.compile(r"^[a-z0-9_]+$")
 REF_RE = re.compile(r"@([a-z0-9_]+)")
 EXPR_RE = re.compile(r"^[0-9A-Za-z+*()\u00b7 ]+$")
 
 
-def normalise_table(number):
-    """Map a cited table number to the printed caption (4-32 .. 4-40)."""
-    n = int(number)
-    if n <= 9:
-        return f"4-{n + 31}"
-    return f"4-{n}"
+def normalise_table(cited):
+    """Map a cited table to its printed caption: Chapter 4's body names
+    4-1 .. 4-9 become 4-32 .. 4-40; Table 2-4 is itself."""
+    chapter, n = cited.split("-")
+    if chapter == "4" and int(n) <= 9:
+        return f"4-{int(n) + 31}"
+    return cited
 
 
 def parse_expr(cell):
@@ -213,6 +234,7 @@ def main(argv):
     per_table = {t: 0 for t in TABLES}
     covers = {}
     delays = set()
+    translations = set()
 
     for lineno, row in enumerate(body, start=2):
         if len(row) != len(HEADER):
@@ -232,7 +254,7 @@ def main(argv):
         m = SOURCE_RE.match(rec["source"])
         if not rec["source"]:
             errors.append(f"{rid}: missing source (need "
-                          f"\"p. 4-N Table 4-M\")")
+                          f"\"p. 4-N Table 4-M\" or \"p. 2-9 Table 2-4\")")
         elif not m:
             errors.append(f"{rid}: malformed source {rec['source']!r}")
         else:
@@ -255,6 +277,13 @@ def main(argv):
         # 6. timing cells
         if rec["kind"] == "delay":
             delays.add(rid)
+        if rec["kind"] == "translation":
+            translations.add(rid)
+            allowed = TABLE_SYMBOLS["2-4"]
+            for word in re.findall(r"[A-Za-z]+", rec["time"]):
+                if word not in allowed:
+                    errors.append(f"{rid}: symbol {word!r} in Table 2-4, "
+                                  f"which defines only A (p. 2-9)")
         if rec["kind"] == "instruction" and rec["group"] in (
                 "Simple", "Multi-Cycle Arithmetic"):
             try:
@@ -315,8 +344,9 @@ def main(argv):
         if entry_ok:
             entries_ok += 1
 
-    print(f"  {len(body) - len(delays)} instruction/table rows, "
-          f"{len(delays)} delay rows, {refs} note references")
+    print(f"  {len(body) - len(delays) - len(translations)} "
+          f"instruction/table rows, {len(delays)} delay rows, "
+          f"{len(translations)} translation rows, {refs} note references")
     print(f"Table 3-1 coverage: {entries_ok}/{len(TABLE31)} entries, "
           f"{spellings_ok}/{len(SPELLINGS)} spellings")
     print("  " + ", ".join(f"{t} {per_table[t]}" for t in TABLES))

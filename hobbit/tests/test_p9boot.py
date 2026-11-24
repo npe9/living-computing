@@ -277,7 +277,10 @@ class PromptTest(unittest.TestCase):
     """To /boot's prompt with the 25 Hz override, in ~30 s with the idle
     skip.  Before the EEPROM answered (CHOICES['iic'] then), this run took
     22,530,554 instructions both without the skip (6 minutes) and with it
-    (29 s); reading the EEPROM in iicreset adds 6,535 (22,537,089)."""
+    (29 s); reading the EEPROM in iicreset adds 6,535 (22,537,089).  Since
+    2026-11-24 an exception's record costs Table 4-36's 9 + D + A, not 0:
+    22,537,005 (the clock runs ahead, the idle loop is left sooner);
+    22,537,007 with the Quart bids of the same day as well."""
 
     @classmethod
     def setUpClass(cls):
@@ -435,7 +438,7 @@ class JoinReplayTest(unittest.TestCase):
             b"nop...session...time...\ninit: starting /bin/rc\n"
             b"\ninit: starting /bin/rc\n% echo hello\nhello\n% "))
         self.assertEqual([s for s, _w, _r in boot.typed],
-                         [286977195, 288647342, 711879442])
+                         [286977111, 288647258, 711874390])
         self.assertEqual(boot.steps, STEPS["echo"])
 
     def test_every_frame_as_recorded(self):
@@ -462,10 +465,10 @@ class JoinReplayTest(unittest.TestCase):
 
 
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
-         "prompt": 22537091, "bootp": 287845766,
-         "no-server": 3131202770, "echo": 715866474}
-IDLE = {"equiv-skipped": 426968, "prompt-skipped": 19555704,
-        "prompt-cycles": 22890721, "frame-time": 0.175}
+         "prompt": 22537007, "bootp": 287845682,
+         "no-server": 3131202422, "echo": 715861422}
+IDLE = {"equiv-skipped": 426968, "prompt-skipped": 19555620,
+        "prompt-cycles": 22890757, "frame-time": 0.175}
 
 
 if __name__ == "__main__":

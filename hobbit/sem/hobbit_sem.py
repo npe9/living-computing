@@ -2889,7 +2889,13 @@ def _system_exception(state: State, exc: Refusal, ident: int, pre_pc: int,
     The PC saved is the instruction's own (for a fetch fault, the target
     that could not be fetched: the model faults when it fetches there,
     so ``pre_pc`` is that target, as p. 1-34 requires).  FAULT gets the
-    word-aligned virtual address for identifiers 8 and 9 (p. 1-39)."""
+    word-aligned virtual address for identifiers 8 and 9 (p. 1-39).
+
+    The record costs Table 4-36's Exception row, ``9 + D + A`` (p. 4-5).
+    It was 0 until 2026-11-24; the timing twin (``hobbit_timing.py``)
+    found the difference on the s9term boot's first 3,000,000 records
+    (7 exceptions).  An interrupt has no record of its own and stays
+    uncharged (Table 4-36 prints no interrupt row)."""
     sysm = state.system
     if ident in (EXC_READ, EXC_WRITE) and isinstance(exc, MemoryFault):
         sysm.fault = exc.va & ~3
@@ -2900,7 +2906,7 @@ def _system_exception(state: State, exc: Refusal, ident: int, pre_pc: int,
                   sp_before=pre_sp, sp_after=state.sp,
                   msp_before=pre_msp, msp_after=state.msp,
                   mem_we=0, mem_addr=0, mem_wdata=0, mem_wmask=0,
-                  trap=1, cyc=0,
+                  trap=1, cyc=9 + D_CYC + A_CYC,
                   reason="exception 0x%x: %s" % (ident, exc.reason))
 
 

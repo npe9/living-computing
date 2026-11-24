@@ -145,6 +145,19 @@ class ControlRegisterTest(unittest.TestCase):
         self.assertEqual(ram.m[0x400 - 8], 0x1000)   # the CPU's PC
         self.assertEqual(st.isp, 0x3F0)
 
+    def test_exception_record_costs_table_4_36(self):
+        # Table 4-36 (p. 4-5) prints Exception 9 + D + A; the exception's
+        # record carries it (it was 0 until 2026-11-24, found by the timing
+        # twin, sem/hobbit_timing.py, on the s9term boot).  Observed with
+        # the model's old `cyc=0` in _system_exception: this test fails
+        # (0 != 12) and nothing else in this file.
+        ram, sysm, st = machine(psw=h.PSW_SP | h.PSW_USER)
+        ram.m[0x104] = 0x2000
+        code(ram, 0x1000, [CPU, 0x86F7, 0x0000, 0x0005])
+        rec, st = h.step(st)
+        self.assertEqual(rec.trap, 1)
+        self.assertEqual(rec.cyc, 9 + h.D_CYC + h.A_CYC)
+
     def test_register_0_is_exception_6(self):
         ram, sysm, st = machine()
         ram.m[0x104] = 0x2000
