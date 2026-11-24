@@ -84,9 +84,13 @@ of this module can check, on either model, and injections confirm it:
 | `predicate_to_code` | `22:F3 x y z`, a fourth register in the next cell | `r[w]` := the code of predicate `r[y]`/`r[z]` in the module object `r[x]`, or the vector `{Module, Name, Arity}` if the module has none (PIMOS manual `e-builtin.tex`; PDSS differs). A code is `{COD, first instruction}`: the target is assumed (`lockstep_p2c.py` header) | checked on the image's 349 predicates (`lockstep_p2c.py`) |
 | `apply` | `22:F1 x y` | `apply(Code, Args)`: a new ready goal of the code `r[x]` with the elements of the vector `r[y]` as its arguments; waits for either (PIMOS manual `e-builtin.tex`). The goal is made as PDSS makes it (`emulator/blt_system.c` `blt_b_apply`): each element taken with its MRB on if the vector's is. The manual's exceptions (not a code, not a vector, the count differs from the predicate's) are refused, as is a vector of seven or more | checked, with the IPL's own `apply` site (`lockstep_apply.py`) |
 | `create_shoen` | `22:E0 x y z`, four more registers in the next cell | `create_shoen(MinPrio, MaxPrio, ExcepMask, Code, Argv, ^Report, ^Shoen)`, format `r7`. **PIM/m-sourced**: the encoding and the directions (`assembler/inst_tab.kl1`:332-362, `klb_opr.kl1`:144-154, `compiler/blt.kl1`:567-569), and that the outputs may be the input registers (the image's `shoen:execute/4`, cell 15553, is `22:e0040506 / 00:00010001`: Code and Report both `r0`, Argv and Shoen both `r1`), so every input is read before an output is written. The manual does not document it. **What it does is not PIM/m-sourced** ("Shoen" below): the three first operands are waited for, must be integers and are dropped; a shoen record, a fresh Report variable, the handle `{SHREC, record}`, and one parked goal `apply(Code, Argv)` of the new shoen. Code and Argv are not waited for. Refused: a priority or mask that is not an integer (`shoen:execute1/7` passes vectors) | checked (`lockstep_shoen.py`, through the image's `execute/4` and through its stub); the refusal is not in the suite (observed by hand on both models, the test's header) |
-| `start_shoen` | `22:E1 x y` | `start_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2`, cell 15755). A dormant shoen: 8 is reported first, then it is started and its parked goal goes on the ready queue (the order is VPIM's, **carried over**); `r[y]` := the same handle (**ours**). Refused: a shoen that is not dormant, anything but a handle | checked (`lockstep_shoen.py`); a second start is refused on both models, observed by hand (the test's header), not in the suite |
+| `start_shoen` | `22:E1 x y` | `start_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2`, cell 15755). A dormant shoen: 8 is reported first, then it is started and its parked goal goes on the ready queue (the order is VPIM's, **carried over**); `r[y]` := the same handle (**ours**). Stage 3: a STOPPED shoen likewise, 8, started, and every goal parked on it back on the queue (PDSS `shoen.c`, **carried over**). Refused: a shoen that is neither dormant nor stopped, anything but a handle | checked (`lockstep_shoen.py`; start after stop `lockstep_shoen3.py`); a second start is refused on both models, observed by hand (the test's header), not in the suite |
 | `shoen_statistics` | `22:E6 x y` | `shoen_statistics(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2` for `statistics`). 10 on the report stream, then `{9, H, L}`: twice the shoen's reductions, its descendants' included, as 64 bits (the value **PIM/m-sourced**, manual `e-shoen.tex`:234; 10 then 9 at once is VPIM's, **carried over**; what a reduction is and where the count lives, "Shoen" below). `r[y]` := the same handle (**ours**). On a running shoen the count as it stands (**ours**). Refused: anything but a handle | checked (`lockstep_shoen2.py`: through the image's `control/2` and three monitors, H, L from the trace's own count of reductions) |
 | `remove_shoen` | `22:E4 x` | `remove_shoen(Shoen)` (encoding and direction **PIM/m-sourced**; the image's `control/2` for `[]`). A terminated shoen: `{14, 0, 0}` (`return_resource`; 0, 0 **ours**, no resource model), then the report stream closed with `[]`, status removed; one not yet terminated is marked and removed at its termination (VPIM's, **carried over**). Refused: a shoen removed already, anything but a handle | checked (`lockstep_shoen2.py`, both cases); the refusal not in the suite |
+| `stop_shoen` | `22:E2 x y` | `stop_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-552; the image's `control/2` for `stop`). 11 `stopped` on the report stream, then a started shoen is stopped (11 first: VPIM's, **carried over**); its goals and its descendants' are parked when taken from the queue (PDSS's, **carried over**; "Shoen" below). `r[y]` := the same handle (**ours**). Refused: anything but a handle | checked (`lockstep_shoen3.py`: through the image's `control/2`, a woken goal parked, then released by `start`) |
+| `abort_shoen` | `22:E3 x y` | `abort_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**; the image's `control/2` for `abort`). 1 `aborted` on the report stream, then the shoen terminates at once (12, its reductions and one off its parent's count: **ours**; the manual has `terminated` follow `aborted`); its goals and its descendants' are discarded when taken from the queue (PDSS's, **carried over**). A terminated shoen: 1 only (VPIM's). Refused: the current goal's own shoen or one above it, anything but a handle | checked (`lockstep_shoen3.py`: an inner shoen by its control stream, an outer one by `top_level_monitor/4`) |
+| `raise` | `22:F2 x y z` | `raise(Tag, Info, Data)` (encoding and directions **PIM/m-sourced**, `blt.kl1`; the image's `shoen:raise/3`). Waits for Tag only (VPIM's, **carried over**); the exception 16 `raised`, Info `{0, Info, Data}` (the firmware's format **PIM/m-sourced**, `excpt_tbl.kl1`; Pe 0 **ours**) reported to the innermost shoen whose mask AND Tag is not 0 ("Shoen" below), and the goal `apply(NewCode, NewArgv)` in the current shoen. Refused: a Tag that is not an integer, a tag no shoen accepts | checked (`lockstep_shoen3.py`: the image's `raise/3`, and `control/2`'s raise for an illegal message) |
+| `current_processor` | `22:EB x y z` | `current_processor(^Processor, ^X, ^Y)` (encoding **PIM/m-sourced**, `inst_tab.kl1`); no input, never waits. **One processor here**: 0, 1, 1, PDSS's values (`blt_system.c`) | checked inside `exception_table:translate/4` (`lockstep_shoen3.py`; `lockstep_ext.py` enters `translate/2` and `/4`) |
 | `code` (guard) | `23:FA x y z`, a fourth register in the next cell | succeeds if `r[x]` is a code (whole tag 26h), with `r[y]` := arity, `r[z]` := its module, the fourth := its offset from the module's descriptor cell; anything else fails (PIMOS manual) | checked, outputs from the trace (`lockstep_p2c.py`) |
 | `atom` (guard) | `23:E1 x` | "If X is an atom, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted | run succeeding only (`lockstep_link.py`: the IPL's link table); a non-atom is not run |
 | `floating_point` (guard) | `23:E6 x` | "If X is a floating point, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted. The type test only | run failing only (`lockstep_run.py`) |
@@ -102,7 +106,7 @@ of this module can check, on either model, and injections confirm it:
 | `set_atom` N | `23:00`..`0F`, atom in the low 24 bits | goal argument N := the atom (`assembler/inst_tab.kl1`) | checked (`lockstep_file.py`) |
 | `calculate_priority_from_minimum` | `22:ED x y` | `r[y]` := the logical priority for the relative priority `r[x]`, 0..4096, in the shoen's range (manual). No shoen here: the range is taken as 0..4096, so the result is the operand. **The range is ours** | both models agree; nothing reads the value |
 | `calculate_priority_from_current` | `22:EC x y` | `r[y]` := the logical priority for the self-relative priority `r[x]`, -4096..4096, "calculated from the logical priority of this predicate" (manual, `e-builtin.tex`); waits for X. The manual gives no formula: **PDSS's** (`emulator/blt_system.c` `blt_b_rltv`: for X >= 0 the current priority plus X/4096 of the way to the shoen's maximum, for X < 0 minus -X/4096 of the way to its minimum), with the range 0..4096 as for `_from_minimum` and the current priority at its top, 4096 (**both ours**; PDSS starts a shoen's goals at its maximum, `emulator/shoen.c`:100,166). So `r[y]` = 4096 + X for X < 0, 4096 for X >= 0, and `shoen:execute/7`'s `C - 4096` gives C back. Outside -4096..4096 (the manual's exception) is refused | checked (`lockstep_prio.py`): at its stub on the ends and middle of the range, one input bound late, and at `shoen:execute/7`, where both its uses wait for their input; nothing reads the value there (`create_shoen` drops it), so it is checked in the trace |
-| `current_node` | `22:EE x y` | `current_node(^NodeNumber, ^TotalNode)`: "The node number will be a value between 0 and (TotalNode - 1) inclusive" (manual, `e-builtin.tex`); no input (`compiler/blt.kl1`:655), so it never waits and has no stub. **One node here (ours)**: `r[x]` := 0, then `r[y]` := 1, PDSS's values (`emulator/blt_system.c` `blt_b_current_node`) | checked on code of the bench (`lockstep_prio.py`) and at `top:go1/4` (`lockstep_atom.py`: TotalNode 1 throws one atom-number client); `exception_table:translate/2,4` go on to `current_processor`, not modelled |
+| `current_node` | `22:EE x y` | `current_node(^NodeNumber, ^TotalNode)`: "The node number will be a value between 0 and (TotalNode - 1) inclusive" (manual, `e-builtin.tex`); no input (`compiler/blt.kl1`:655), so it never waits and has no stub. **One node here (ours)**: `r[x]` := 0, then `r[y]` := 1, PDSS's values (`emulator/blt_system.c` `blt_b_current_node`) | checked on code of the bench (`lockstep_prio.py`) and at `top:go1/4` (`lockstep_atom.py`: TotalNode 1 throws one atom-number client); `exception_table:translate/2,4` go on to `current_processor` (shoen stage 3) |
 | `supply_atom_number` | `22:B9 x y z` | `supply_atom_number(X, Y, ^Done)`: encoding `r_r_r` and directions (in, in, out) **PIM/m-sourced** (`assembler/inst_tab.kl1`:249, `compiler/blt.kl1`:747-750; the debugger's `excpt_tbl.kl1`:639 names `2B9`). **No manual entry; nothing in PDSS, VPIM, the PIMOS source or these docs says what it does** (searched 2026-11-23: PDSS has no such built-in; VPIM's `new_atom` takes a counter initialized to atom 0 and puts the cluster number in the top byte, `interpreter/klb_body_blt_cont.psl.c` `kblt_b_new_atom`, `init_vpim.psl.c`, and nothing supplies it a range). What its callers force (`top:throw_atom_number_client/7`, `atom_number_client/5`, decompiled in `lockstep_atom.py`): X and Y are integers, a block of atom numbers from the server in `pimos::top` (first call `(512, 15872)`; the server answers `(Next + 8192, 8192)` from Next = 16384 to the limit 2^24); Done is waited for, and each binding makes the client ask for another block, so the machine binds it LATER, not at once (at once, the client would ask to the limit). NOT forced: whether X is a block's first number or its end (the first call fits the one, the server's answers the other, its near-limit answer neither), so which numbers a processor hands out is not inferred. **OURS, the narrowest**: the inputs are waited for, must be integers and are dropped; Done is a fresh variable no model binds, consistent with `new_atom` (ours, a counter from 10000h that draws on no block). So `top:go1/4`'s clients never start unless something binds Done | checked (`lockstep_atom.py`: `top:go1/4`, the bench binding Done twice in the machine's place; three calls with the values above); a non-integer is refused, NOT run |
 | `enqueue_goal_with_priority` | `23:64 x`, label; arity in the next cell's top byte | as `enqueue_goal`, two cells (`assembler/klb_opr.kl1` `p(r_c16_c8_exe)`; the image's five sites agree with their `set_*` count). `r[x]` must be an integer and is **dropped**: one ready queue here, a goal stack per priority on the machine, so the order goals run in is not the machine's. More than 11 arguments is refused | checked (`lockstep_file.py`) |
 | `enqueue_goal_to_processor` | `23:65 x`, label; arity in the next cell's top byte | `Goal@processor(N)`: as `enqueue_goal_with_priority`'s operands (`assembler/klb_opr.kl1` `p(r_c16_c8_exe)`), `r[x]` the processor (TM-1044 `enqueue_to_processor(.., Rprocessor, ARITY)`, as listed in `literature_gaps.md`). **One processor here, number 0 (ours)**: for 0 the goal is made as `enqueue_goal` makes it; any other number is refused | checked (`lockstep_body.py`, `scsi_fep_module:create/7`: the goal runs `$bar2/2` into `scsi:create/2`, which waits for its first argument and fails on a non-integer); the refusal is NOT run |
@@ -397,7 +401,7 @@ those are its fields is not established.
   its `dc_*` pseudo-code (`body_builtin_suspend`). Because a stub is
   ordinary code, a test can also spawn one directly.
 
-### Shoen (stages 1 and 2: create, start, terminate; statistics, remove)
+### Shoen (stages 1 to 3: create, start, terminate; statistics, remove; exceptions, stop, abort)
 
 Three tiers, kept apart:
 
@@ -423,6 +427,25 @@ Three tiers, kept apart:
   what a reduction is: dequeues and executes less suspensions
   (`e-shoen.tex`:388-395, the profile's counts), i.e. one per
   `execute`/`execute_external` and one per `proceed`.
+  Stage 3: the encodings and directions of `stop_shoen` (22:E2),
+  `abort_shoen` (22:E3), `raise` (22:F2) and `current_processor`
+  (22:EB) (`inst_tab.kl1`:334-351, `blt.kl1`:537-552); the report
+  codes 1 `aborted`, 11 `stopped` and the message `{2, Kind, Info,
+  NewCode, NewArgv}` (`pimos.vmac`:177-199, the image's `report/2`);
+  Kind the firmware's exception number, 9 `reduction_failure`, 16
+  `raised` (`pimos.vmac`:331-349), Info `{Pe, Code, ArgV}` for 9 and
+  `{Pe, Info, Data}` for 16 (`kernel/builtin/excpt_tbl.kl1`, its
+  "FIRMWARE FORMAT"; the image's own `exception_table:translate/4`,
+  cell 1997, is a different text from that held source but reads Info's
+  element 0 the same way, via `current_node`/`current_processor`); the
+  tag of exception n, bit 16 + n (manual, `e-shoen.tex`, the tag table;
+  `reduction_failure` 1 << 25); the mask rule, the report goes to the
+  innermost shoen whose mask AND the tag is not 0 (`e-shoen.tex`:57;
+  the `raise` entry at :776 says "is 0", taken as a slip); the failing
+  goal (or `raise`) replaced by the goal NewCode(NewArgv), the shoen not
+  ending before the handler binds them (`e-shoen.tex`:59-60, 773);
+  start restarting a stopped shoen, abort final and `terminated`
+  following `aborted` (`e-shoen.tex`:136-158, 212-218).
 - **Carried over from the siblings, not PIM/m-sourced**: counting a
   shoen's goals and its child shoen and ending it at zero (PDSS
   `emulator/emulate.c`:340, `shoen.c`:123-178 and 280-309); the first
@@ -441,19 +464,44 @@ Three tiers, kept apart:
   marking it, the removal then happening at its termination
   (`terminated`, `return_resource`, the close: VPIM
   `f_shoen_control.psl.c`:547-575, `f_shoen_with_fp.psl.c`:69-71).
-- **Ours**: everything below about records and cells.
+  Stage 3, from VPIM (`functions/f_reduce_exception_handler.psl.c`,
+  `f_Failure_Sub`, `f_Raise_Sub`): NewCode and NewArgv made as two new
+  variables first, the goal `apply(NewCode, NewArgv)` enqueued in the
+  CURRENT shoen, then Info, then the report; `raise` waiting for Tag
+  only (`klb_body_blt_shoen.psl.c`, `kblt_b_raise`); `stopped` and
+  `aborted` reported before the status changes, stop and abort of a
+  terminated shoen only reporting (`f_shoen_control.psl.c`:392-530).
+  From PDSS (`goal.c`:302-335, `shoen.c`:185-267): a goal of an aborted
+  shoen discarded, and one of a stopped shoen parked on the shoen,
+  when taken from the ready queue; start releasing the parked goals;
+  abort removing one from the parent's count; `current_processor` = 0,
+  1, 1 (`blt_system.c`).
+- **Ours**: everything below about records and cells; in stage 3 also
+  Pe = 0, Code the failing predicate's entry (the label of its
+  `suspend`), ArgV its argument registers r0..r(arity-1); a failure
+  counted as one reduction (as a `proceed`); the check of every goal
+  taken inside a shoen by a walk up its shoen's parents; an aborted
+  shoen terminated at once (`terminated` at once after `aborted`, its
+  reductions and one off its parent's count then; VPIM terminates it
+  when its last goal is gone, PDSS never reports it); abort of the
+  goal's own shoen or one above it refused; an exception no shoen
+  accepts refused.
 
 The design:
 
-- **Shoen record**, 7 cells in the heap (`asm/pimm_layout.py`):
+- **Shoen record**, 8 cells in the heap (`asm/pimm_layout.py`):
   `{INT, count}` the shoen's live goals plus its live child shoen;
   `{INT, status}` 0 dormant, 1 started, 2 terminated, 3 removed;
   `{INT, the parent's record, or 0}` (the root has no record); a
   reference to the report stream's unbound tail; `{INT, the goal
   record of the first goal}`; (stage 2) `{INT, reductions}`, the
   shoen's and its terminated descendants', 32 bits (it wraps at 2^32
-  reductions, not checked); `{INT, 1 if a remove is pending}`. The
-  handle is `{SHREC, the record's address}`.
+  reductions, not checked); `{INT, 1 if a remove is pending}`; (stage
+  3) `{INT, mask}`, `create_shoen`'s Mask (-1 for `execute/4`). In
+  stage 3 status 4 is stopped, and the first-goal cell is the head of
+  the list of PARKED goals (linked through their records' link cells),
+  0 once the shoen is started. The handle is `{SHREC, the record's
+  address}`.
 - **A goal's shoen** is in its record's status cell (above). The
   machine has a register, the current shoen: that of the goal last
   taken from the ready queue, and the root's (0) once the queue is
@@ -510,15 +558,63 @@ The design:
   the ordinary wake of the goals waiting on it; the record's tail
   becomes the new cell. A tail someone has bound to a value is
   refused.
+- **The exception path** (stage 3). A goal of a shoen with no clause
+  that applies (its `suspend` with nothing noted), or `raise(Tag, Info,
+  Data)` (Tag an integer; it waits on Tag only): from the current
+  shoen up, the first whose mask AND the tag is not 0 is the target
+  (none: refused). Two new variables NewCode, NewArgv; the goal
+  `apply(NewCode, NewArgv)` in the CURRENT shoen (one on its count);
+  ArgV (a failure: a vector of the arity's registers; 0 or more than 6
+  arguments refused) and Info `{0, Code, ArgV}` (failure, Kind 9, tag
+  1 << 25) or `{0, Info, Data}` (raise, Kind 16, tag Tag); then `{2,
+  Kind, Info, NewCode, NewArgv}` on the target's report stream. The
+  failing goal ends, counted as one reduction; `raise` proceeds. So the
+  shoen ends only after its handler binds NewCode/NewArgv and the
+  applied goal runs (the image's monitors answer their own `dummy/2`
+  and `{{Kind, Info}, Shut}`). A UNIFICATION failure (`unify` of two
+  values) is still refused: VPIM reports it as 10 and goes on with the
+  reduction, which we do not model.
+- **`stop_shoen(Shoen, ^NewShoen)`** (stage 3): 11 on the report
+  stream, then a started shoen becomes stopped (any other status
+  unchanged); NewShoen := Shoen. A goal taken from the ready queue
+  whose shoen, or an ancestor, is stopped is parked on the innermost
+  stopped one (`E park` on the trace) and counts as suspended.
+  `start_shoen` of a stopped shoen: 8, started, every parked goal back
+  on the queue (a `W` line each), the list emptied.
+- **`abort_shoen(Shoen, ^NewShoen)`** (stage 3): 1 on the report
+  stream; then, unless the shoen has terminated already, it terminates
+  at once: 12, the removal if pending, its reductions to its parent
+  and one off the parent's count (cascading). Its goals, and those of
+  every shoen inside it, are discarded when taken from the queue (`E
+  aborted`); goals still suspended stay so. Its inner shoen are not
+  reported to (theirs stay `started`). Refused: abort of the current
+  goal's own shoen or an ancestor, anything but a handle.
+- **`current_processor(^P, ^X, ^Y)`** (stage 3): 0, 1, 1, never waits.
 - **No resource model: 6 (`resource_low`) is never reported.** Ours,
   and probably not the machine's: VPIM reports it for a shoen with no
   limit left, and every caller of `execute/4` in the image grants
   resource only when it is told `resource_low`.
 - **Refused, loudly** (the reference model raises `Unimplemented`,
-  the Bluespec ends `E unimp`): `stop_shoen`, `abort_shoen`,
-  `add_shoen_resource`, `allow_shoen_resource_report`,
-  `shoen_profile`, `create_profiling_shoen`, `raise`, and a goal that
-  FAILS inside a shoen (that is the exception path).
+  the Bluespec ends `E unimp`): `add_shoen_resource`,
+  `allow_shoen_resource_report`, `shoen_profile`,
+  `create_profiling_shoen`, a unification failure inside a shoen, an
+  exception no shoen's mask accepts. The resource instructions stay
+  refused because what they change is not sourced: the allowance a
+  new shoen starts with (PDSS starts every shoen exhausted, VPIM
+  reports `resource_low` with no limit; the manual gives none), the
+  `resource_low` threshold, and how a shoen is suspended on
+  exhaustion and resumed by `add_shoen_resource` (VPIM's code for it
+  is per-processor and asynchronous). Any model of them would be ours,
+  and every caller of `execute/4` in the image grants resource only
+  when it is told `resource_low`, which nothing here would make true.
+- **Tested** (stage 3): `lockstep_shoen3.py`, through the image's
+  `execute/4`, `execute/7`, `control/2`, `report/2`,
+  `exception_table:translate/4`, `shoen:raise/3` and its three
+  monitors. Not run: an inner shoen whose mask does NOT accept (it
+  needs `execute/7` inside a shoen, an `apply` of a 7-element Argv,
+  over the bench's 6), so innermost-first and not reading the mask at
+  all are not discriminated; the manual's mask rule against VPIM's is
+  (Tag 3 under mask 1; see the test's header).
 - **What follows for the image's own `execute/4`** (observed,
   `lockstep_shoen.py`, `lockstep_shoen2.py`): its `control/2` and
   `report/2` belong to the shoen that called it, and end only through
