@@ -253,6 +253,13 @@ interface HobbitEvents;
   // saved frame).  The machine's only writer is the sequence rule.
   method Word memRead(Word addr);
   method Action memWrite(Word addr, Word val);
+  // Every physical word this clock's step could read combinationally:
+  // the walks of the frame and vector translations it evaluates
+  // (HobbitMmu walkProbe) and the vector word itself.  Over-approximate
+  // (the frame candidates of a raise are listed whatever the class), and
+  // read by nothing in the machine: the ULX3S top prefetches them
+  // (fpga/README.md, "The core's combinational reads").
+  method Vector#(13, Maybe#(Word)) combProbes();
 endinterface
 
 // `cspInCore`: the unit is inside the core, which applies the
@@ -597,6 +604,40 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
 
   method Action ack();
     ackW <= True;
+  endmethod
+
+  method Vector#(13, Maybe#(Word)) combProbes();
+    Vector#(13, Maybe#(Word)) v = replicate(tagged Invalid);
+    function Vector#(2, Maybe#(Word)) wp(Word va, Bool wr, Word psw) =
+      mmu.walkProbe(MmuReq { va: va, isText: False, isWrite: wr,
+                             user: !atKernel && (psw[10] == 1'b1),
+                             enabled: (psw[16] == 1'b1) });
+    Word isp = isValid(setIspW) ? validValue(setIspW) : ispR;
+    Word shad = isValid(setShadW) ? validValue(setShadW) : shadR;
+    case (state)
+      EVS_IDLE:
+        if (raiseW matches tagged Valid .c) begin
+          Word base = (c.psw[9] == 1'b0) ? shad : isp;
+          Word cspA = (c.psw[9] == 1'b1) ? c.sp : isp;
+          let a = wp(base - 4, True, c.psw);
+          let b = wp(base - 8, True, c.psw);
+          let d = wp(base - 12, True, c.psw);
+          let e = wp(cspA, True, c.psw);
+          v[0] = a[0]; v[1] = a[1]; v[2] = b[0]; v[3] = b[1];
+          v[4] = d[0]; v[5] = d[1]; v[6] = e[0]; v[7] = e[1];
+        end
+      EVS_WRITE: begin
+        let a = wp(wrAddr[wrIdxR], True, cR.psw);
+        v[8] = a[0]; v[9] = a[1];
+      end
+      EVS_VECTOR: begin
+        let a = wp(vecAddrR, False, cR.psw);
+        v[10] = a[0]; v[11] = a[1];
+        let x = xlate(vecAddrR, False, cR.psw);
+        if (x.fault == MMU_OK) v[12] = tagged Valid x.pa;
+      end
+    endcase
+    return v;
   endmethod
 
   method Word memRead(Word addr) = mem.read(addr);
