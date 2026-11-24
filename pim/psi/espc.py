@@ -39,9 +39,12 @@ component, `:= constant`, `is Class`, `(S := V :- Goals)`), natures with
 predicates, body disjunctions (as `$or$N` local predicates, kind 0x12),
 cut, method sends `:m(R,...)`, slot access `O!s` and `O!s := V`, the
 comparison macros, immediate arithmetic, and the constant macros `#C`,
-`#"c"` and `R#"digits"`.  Not compiled (refused by name): macro banks and
-`with_macro`, `->`, `not`/`\\+`, `Class:m(...)` and `:Class:m(...)`, other
-constant macros (`key#`, `mouse#`, ...), floats.
+`#"c"` and `R#"digits"`, and `with_macro` banks' plain clause-level rules
+`Pattern => Expansion` (TM-388 §3.7.3; see "macro banks" below).  Not
+compiled (refused by name): bank rules with when/where/with/by/`:-`, `==>`
+and inserta/insertz (refused per predicate, 'macro rule'), `->`,
+`not`/`\\+`, `Class:m(...)` and `:Class:m(...)`, other constant macros
+(`key#`, `mouse#`, ...), floats.
 
 CODE SHAPE (OURS, shaped on the held code; see psi/README.md "The ESP
 compiler" for what was measured)
@@ -230,6 +233,176 @@ def var_count(t, acc):
 
 
 # --------------------------------------------------------------------------
+# macro banks (TM-388 §3.7.3 pp.72-75, PDF pp.84-87)
+#
+# SOURCED: a class `with_macro Bank` has its clauses expanded by the bank's
+# clause-level macros, which apply "for an argument of the head part ...
+# and for a goal and its argument of the body part" (p.72); a rule is
+# `Pattern => Expansion [when G] [where T] [with Clauses] [by Obj] [:- Cond]`
+# (p.73); with no when/where the pattern is simply replaced (p.62, p.74);
+# a bank inherits the banks of its `nature` (p.74).  Expansion is top-down
+# (TM-388 §3.7, layers/ESP.md §7): a term is tried before its arguments.
+# MEASURED (kappa2, 2026-11-24): 3,895 of its rules are plain `P => E`
+# (3,811 of them `@name => constant`); 15 carry `:-` and one is `==>`.
+# OURS: rules are tried in the bank's own order, then its natures'
+# (depth first, first rule wins); a matched term's expansion is expanded
+# again; variables of an expansion that the pattern does not bind are
+# renamed apart per use; slot initial values and slot-initialisation
+# bodies are expanded like clause arguments.  A rule with a tail (when,
+# where, with, by, `:-`) or a class-level `==>` rule is not modelled: a
+# predicate whose clause matches one is refused ('macro rule'); so is a
+# back-quoted term (expansion suppressed, p.71: unmodelled).
+
+MACRO_TAILS = ('when', 'where', 'with', 'by', ':-')
+
+
+def term_key(t):
+    """The principal functor of a source term, for rule lookup."""
+    k = t[0]
+    if k == 'cmp':
+        return ('cmp', t[1], len(t[2]))
+    if k in ('atom', 'qatom'):
+        return ('atom', t[1])
+    if k in ('num', 'str'):
+        return (k, t[1])
+    if k == 'list':
+        return ('list',)
+    if k == 'brace':
+        return ('brace',)
+    return None
+
+
+def macro_match(p, t, b):
+    """One-way match of rule pattern P against term T, binding P's
+    variables in B (a dict).  -> True/False."""
+    k = p[0]
+    if k == 'var':
+        if p[1] == '_':
+            return True
+        if p[1] in b:
+            return strip_lines(b[p[1]]) == strip_lines(t)
+        b[p[1]] = t
+        return True
+    if t[0] == 'var':
+        return False
+    if k in ('atom', 'qatom'):
+        return t[0] in ('atom', 'qatom') and t[1] == p[1]
+    if k in ('num', 'str'):
+        return t[0] == k and t[1] == p[1]
+    if k == 'cmp':
+        return (t[0] == 'cmp' and t[1] == p[1] and len(t[2]) == len(p[2])
+                and all(macro_match(x, y, b) for x, y in zip(p[2], t[2])))
+    if k == 'list':
+        if t[0] != 'list' or len(t[1]) != len(p[1]):
+            return False
+        if not all(macro_match(x, y, b) for x, y in zip(p[1], t[1])):
+            return False
+        if p[2] is None or t[2] is None:
+            return p[2] is None and t[2] is None
+        return macro_match(p[2], t[2], b)
+    if k == 'brace':
+        return t[0] == 'brace' and macro_match(p[1], t[1], b)
+    return False
+
+
+def strip_lines(t):
+    k = t[0]
+    if k == 'cmp':
+        return ('cmp', t[1], tuple(strip_lines(a) for a in t[2]))
+    if k == 'list':
+        return ('list', tuple(strip_lines(a) for a in t[1]),
+                None if t[2] is None else strip_lines(t[2]))
+    if k == 'brace':
+        return ('brace', strip_lines(t[1]))
+    return (k, t[1])
+
+
+def macro_subst(t, b, fresh):
+    k = t[0]
+    if k == 'var':
+        if t[1] == '_':
+            return t
+        if t[1] in b:
+            return b[t[1]]
+        if t[1] not in fresh:
+            fresh[t[1]] = ['var', '_M%d_%s' % (len(fresh) + MacroBank.serial[0], t[1]), t[-1]]
+        return fresh[t[1]]
+    if k == 'cmp':
+        return ['cmp', t[1], [macro_subst(a, b, fresh) for a in t[2]], t[-1]]
+    if k == 'list':
+        return ['list', [macro_subst(a, b, fresh) for a in t[1]],
+                None if t[2] is None else macro_subst(t[2], b, fresh), t[-1]]
+    if k == 'brace':
+        return ['brace', macro_subst(t[1], b, fresh), t[-1]]
+    return t
+
+
+class MacroBank:
+    """The clause-level rules of a bank and its natures, in lookup order."""
+    serial = [0]
+
+    def __init__(self, name, banks):
+        self.name = name
+        self.rules = collections.defaultdict(list)    # key -> [(pattern, expansion, plain, where)]
+        seen = []
+
+        def visit(n):
+            if n in seen:
+                return
+            seen.append(n)
+            d = banks.get(n)
+            if d is None:
+                if n != 'esp_macro_expander':
+                    raise CompileRefusal('with_macro', 'macro bank %s not held' % n)
+                return
+            for r in d.get('macros', []):
+                self.add(r, n)
+            for _pkg, nat in d.get('natures') or []:
+                visit(nat)
+            if d.get('macro_bank'):
+                visit(d['macro_bank'][1])
+        visit(name)
+        self.banks = seen
+
+    def add(self, r, bank):
+        t, tails = r, []
+        while t[0] == 'cmp' and t[1] in MACRO_TAILS and len(t[2]) == 2:
+            tails.append(t[1])
+            t = t[2][0]
+        if t[0] == 'cmp' and t[1] in ('=>', '==>') and len(t[2]) == 2:
+            pat, exp = t[2]
+            plain = t[1] == '=>' and not tails
+            key = term_key(pat)
+            if key is not None:
+                self.rules[key].append((pat, exp, plain, bank))
+
+    def expand(self, t, depth=0):
+        """T with every rule applied top-down -> new term (CompileRefusal
+        for an unmodelled rule form)."""
+        if depth > 60:
+            raise CompileRefusal('macro rule', 'expansion over 60 deep at %s' % (term_key(t),))
+        k = t[0]
+        if k == 'cmp' and t[1] in ('`', '``'):
+            raise CompileRefusal('macro rule', 'back-quoted term (expansion suppressed)')
+        for pat, exp, plain, bank in self.rules.get(term_key(t), ()):
+            b = {}
+            if macro_match(pat, t, b):
+                if not plain:
+                    raise CompileRefusal('macro rule', '%s rule with when/where/:- (bank %s)' % (
+                        '%s/%d' % term_key(t)[1:] if term_key(t)[0] == 'cmp' else term_key(t)[-1], bank))
+                MacroBank.serial[0] += 100
+                return self.expand(macro_subst(exp, b, {}), depth + 1)
+        if k == 'cmp':
+            return ['cmp', t[1], [self.expand(a, depth) for a in t[2]], t[-1]]
+        if k == 'list':
+            return ['list', [self.expand(a, depth) for a in t[1]],
+                    None if t[2] is None else self.expand(t[2], depth), t[-1]]
+        if k == 'brace':
+            return ['brace', self.expand(t[1], depth), t[-1]]
+        return t
+
+
+# --------------------------------------------------------------------------
 # source terms to values
 
 ARITH = ('+', '-', '*', '/')
@@ -238,10 +411,18 @@ ARITH = ('+', '-', '*', '/')
 class Unit:
     """A compile unit: the classes of one package (for name qualification)."""
 
-    def __init__(self, package, known=None):
+    def __init__(self, package, known=None, banks=None):
         self.package = package
         self.local_classes = set()
         self.known = dict(known or {})    # unqualified name -> qualified id (other packages)
+        self.banks = dict(banks or {})    # macro bank name -> its parsed definition
+        self.bank_cache = {}
+
+    def bank(self, name):
+        b = self.bank_cache.get(name)
+        if b is None:
+            b = self.bank_cache[name] = MacroBank(name, self.banks)
+        return b
 
     def qualify(self, pkg, name):
         if name == '*':
@@ -379,6 +560,10 @@ BUILTINS = {
     ('set_vector_element', 3): ('28', ('in', 'in', 'in')),
     ('set_first', 2): ('29', ('in', 'in')),
     ('set_second', 2): ('2a', ('in', 'in')),
+    ('string', 3): ('0b', ('in', 'out', 'out')),
+    ('new_string', 3): ('1c', ('out', 'in', 'in')),     # emitted with S = T
+    ('string_element', 3): ('23', ('in', 'in', 'out')),
+    ('set_string_element', 3): ('2b', ('in', 'in', 'in')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -730,7 +915,14 @@ class ClauseCompiler:
             elif k == 'var':
                 name = v[1]
                 if name in self.y:
-                    if name not in self.seen:
+                    if name not in self.seen and self.env:
+                        # the environment was allocated by an earlier
+                        # argument's structure: save now (before this fix
+                        # the save was lost, e.g. `t([X|R],A,B) :- ...`)
+                        self.seen.add(name)
+                        self.asm.pmi(0x20, i, self.y[name])
+                        self.R.set(i, ('perm', name))
+                    elif name not in self.seen:
                         self.seen.add(name)
                         self.pending_perm[name] = i
                         self.R.set(i, ('pvar', name))
@@ -1083,6 +1275,10 @@ class ClauseCompiler:
                         a.pmi(0x41, t)
                         self.use(name)
                     else:
+                        if name not in R.where:
+                            # the temporary's register was reused (two kappa2
+                            # PCM classes, met once with_macro compiled)
+                            raise CompileRefusal('internal', 'temporary %s lost its register' % name)
                         a.pmi(0x45, R.where[name])
                         self.use(name)
             elif ek == 'atom':
@@ -1148,6 +1344,22 @@ class ClauseCompiler:
             r = self.dest(n, t, self.R.pending)
             self.asm.blt(0x19, r, r, 0)
             return self.bind_out(out, r)
+        if g.name == 'new_string':
+            # emitted in the form of p_tgraph.esp make_num_string/3
+            # (`a7 03 00 10`, `1c 03 01 03`): the type is put in a register,
+            # which becomes the string (S = T).  The held code also has
+            # S != T (view_select_menu change/3, `1c 04 00 01`); which
+            # form ICOT's compiler picks is not settled
+            out, n, ty = g.args
+            ln = self.to_reg(n, scratch=True)
+            keep = self.R.holder.get(ln)
+            self.R.set(ln, ('val', 'in'))
+            t = self.targets.get(out[1]) if out[0] == 'var' and out[1] not in self.seen else None
+            r = self.dest(ty, t if t != ln else None, self.R.pending | {ln})
+            self.R.set(ln, keep)
+            self.consume(n, ln)
+            self.asm.blt(0x1c, r, ln, r)
+            return self.bind_out(out, r)
         for v, role in zip(g.args, roles):
             if role == 'in':
                 r = self.to_reg(v, scratch=True)
@@ -1162,9 +1374,15 @@ class ClauseCompiler:
             if role == 'in':
                 self.consume(v, r)
         outs = [i for i, ro in enumerate(roles) if ro == 'out']
+        held_outs = []
         for i in outs:
             v = g.args[i]
             regs[i] = self.out_reg(v)
+            # two outputs (string/3) take distinct registers
+            held_outs.append((regs[i], self.R.holder.get(regs[i])))
+            self.R.set(regs[i], ('val', 'out'))
+        for r, h in held_outs:
+            self.R.set(r, h)
         ops = regs + [0] * (3 - len(regs))
         self.asm.blt(int(op, 16), *ops[:3])
         for i in outs:
@@ -1644,13 +1862,21 @@ class ClassCompiler:
         listed in .refusals."""
         cd = self.cdef
         if cd.get('macro_bank'):
-            raise CompileRefusal('with_macro', 'class uses macro bank %s' % (cd['macro_bank'],))
+            cd = self.cdef = self.expand_macros(cd, self.unit.bank(cd['macro_bank'][1]))
         # locals first, so calls can tell them from built-ins
         for it in cd['clauses']:
             if it['section'] == 'local':
                 self.locals_.add((it['name'], len(it['head'])))
         for it in cd['clauses']:
             if it['kind'] == 'slot_init':
+                continue
+            if it.get('refusal'):
+                # a clause that met an unmodelled macro rule refuses its predicate
+                kind = 0x11 if it['section'] == 'local' else SECTION_KIND[(it['section'], it['role'])]
+                key = (it['name'], len(it['head']), kind)
+                if key not in self.preds:
+                    self.preds[key] = PredDef(it['name'], len(it['head']), kind)
+                self.preds[key].refusal = it['refusal']
                 continue
             self.add_clause(it['section'], it['role'], it['name'], it['head'], it['body'],
                             it['section'] != 'local')
@@ -1692,11 +1918,54 @@ class ClassCompiler:
                 self.refusals.append((k, p.refusal.construct, p.refusal.detail))
         return self.layout(bodies, slots)
 
+    def expand_macros(self, cd, bank):
+        """CD with BANK's clause-level macros applied (TM-388 §3.7.3) to
+        each clause's head arguments and body, and to slot values.  A
+        clause that meets an unmodelled rule is kept with its refusal."""
+        cd = dict(cd)
+        clauses = []
+        for it in cd['clauses']:
+            it = dict(it)
+            try:
+                it['head'] = [bank.expand(a) for a in it['head']]
+                if it['body'] is not None:
+                    it['body'] = bank.expand(it['body'])
+            except CompileRefusal as e:
+                it['refusal'] = e
+            clauses.append(it)
+        cd['clauses'] = clauses
+        slots = {}
+        for sec, sl in cd['slots'].items():
+            out = []
+            for sd in sl:
+                sd = dict(sd)
+                try:
+                    if sd['init'] is not None:
+                        sd['init'] = bank.expand(sd['init'])
+                    if sd['body'] is not None:
+                        sd['body'] = bank.expand(sd['body'])
+                except CompileRefusal as e:
+                    sd['refusal'] = e
+                out.append(sd)
+            slots[sec] = out
+        cd['slots'] = slots
+        return cd
+
     def slot(self, sec, s):
         name, init, body, attr = s['name'], s['init'], s['body'], s['attribute']
         u = self.unit
         flag = 0x10 if attr else 0
         full = name if attr else '%s$%s' % (self.cid, name)
+        if s.get('refusal'):
+            # the slot's value or body met an unmodelled macro rule
+            e = s['refusal']
+            if body is not None:
+                pred = PredDef(name, 1, SECTION_KIND[(sec, 'slot_init')])
+                self.preds[pred.key] = pred
+                pred.refusal = e
+                return dict(name=full, flag=flag | LB.BY_CODE, init=('code', pred), term=None)
+            self.refusals.append(((name, 1, 'slot'), e.construct, e.detail))
+            return dict(name=full, flag=flag, init=('const', 0), term=('int', 0))
         if body is not None or (init is not None and init[0] == 'cmp' and init[1] == '#'
                                 and len(init[2]) == 1 and init[2][0][0] != 'str'):
             # by code: an init predicate of kind 0x22/0x32 named after the slot, arity 1
@@ -1892,7 +2161,7 @@ def class_defs(segs, file=None):
         _, kw, header, items, line = seg
         name, pkg, mb = espscan.header_info(header)
         d = dict(name=name, pkg=pkg, kw=kw, macro_bank=mb, file=file, line=line, natures=None,
-                 slots={'class': [], 'instance': []}, clauses=[], unparsed=[], skipped=[])
+                 slots={'class': [], 'instance': []}, clauses=[], unparsed=[], skipped=[], macros=[])
         for section, toks, term, err in items:
             if term is None:
                 d['unparsed'].append((toks[0][2] if toks else line, err))
@@ -1926,6 +2195,7 @@ def class_defs(segs, file=None):
             role, k, nm, head, body = c
             if role == 'macro':
                 d['skipped'].append(('macro', nm))
+                d['macros'].append(term)
                 continue
             if k == 'method' and section == 'local':
                 d['unparsed'].append((line, 'method head in the local part'))
@@ -1960,10 +2230,19 @@ def parse_program(name, files):
     return out
 
 
+def banks_of(defs):
+    """{macro bank name: definition}, the first definition of a name."""
+    out = {}
+    for d in defs:
+        if d['kw'] == 'macro_bank':
+            out.setdefault(d['name'], d)
+    return out
+
+
 def compile_classes(defs, package, known=None):
     """-> (templates, failures) where failures is {class name: CompileRefusal}.
     A class defined twice keeps its first definition."""
-    unit = Unit(package, known)
+    unit = Unit(package, known, banks_of(defs))
     for d in defs:
         if d['kw'] == 'class':
             unit.local_classes.add(d['name'])
@@ -2256,6 +2535,7 @@ def check(program, held_lib=None):
     for d in defs:
         if d['kw'] == 'class':
             by_name[d['name']].append(d)
+    banks = banks_of(defs)
     c = collections.Counter()
     rows = []
     refusals = collections.Counter()
@@ -2273,7 +2553,7 @@ def check(program, held_lib=None):
         d = ds[0]
         if d['macro_bank']:
             c['macro bank class'] += 1
-        unit = Unit(ht.package)
+        unit = Unit(ht.package, banks=banks)
         unit.local_classes = {n for n in by_name}
         try:
             cc_ = ClassCompiler(unit, d)
@@ -2341,8 +2621,6 @@ def check(program, held_lib=None):
             if cls in ('other', 'indexing and other') and any(
                     x[0] in ('pmi', 'blt') and (x[0], '%02x' % x[1]) not in WITNESSED for x in nh):
                 cls = 'held uses an unwitnessed opcode'
-            if cls not in ('exact',) and d['macro_bank']:
-                cls = 'macro bank'
             c['pred compared'] += 1
             c['pred ' + cls] += 1
             rows.append((cid, label, cls, ''))
@@ -2364,7 +2642,7 @@ def summary(program, r):
                    cmp_, c['pred exact'], 100.0 * c['pred exact'] / cmp_ if cmp_ else 0,
                    100.0 * c['pred exact'] / hp if hp else 0, hp))
     for k in ('registers', 'moves and environment', 'indexing', 'clause order', 'indexing and other',
-              'macro bank', 'held uses an unwitnessed opcode', 'other'):
+              'held uses an unwitnessed opcode', 'other'):
         out.append('    %-32s %d' % (k if k != 'other' else 'other (unclassified)', c['pred ' + k]))
     out.append('  predicates not compared: refused %d, $or$ of a refused predicate %d, '
                'held $or$ with no compiled counterpart %d, unparsed source %d, held only %d, '

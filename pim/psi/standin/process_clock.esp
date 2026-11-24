@@ -1,0 +1,20 @@
+% SCAFFOLDING stand-in for SIMPOS's class `process_clock`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: only its name
+% is printed, in process's slot `( clock := Clock :- :create(
+% #process_clock, Clock) )` with the comment "The elapse time of this
+% process" (TM-100 Fig. 3.1, PDF p8).  No method of it is sent by the
+% printed code beyond create/2.
+
+class process_clock has
+
+% INTERPOLATED from: the printed slot initialiser above (TM-100 Fig.
+% 3.1, PDF p8), the same shape as the printed stream:create/2.
+:create(Class, Clock) :- :new(Class, Clock);
+
+instance
+
+% INTERPOLATED: "the elapse time" (TM-100 Fig. 3.1 PDF p8); the unit is
+% not printed.  Nothing advances it yet.
+attribute elapsed := 0;
+
+end.

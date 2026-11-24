@@ -165,6 +165,10 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   `search_character(s)_*` family, `search_string_difference`, `type(?X,^Tag)`, `value`,
   `location*`, `vector_element_location`, `raise`, `on_backtrack`, `exception_hook`, `apply`,
   `code`, `hash`, `protected_*`.
+- Witnessed encodings (2026-11-24, `psi/kl0_opcodes.tsv`, known
+  plaintext in paragraph): `string(S,^L,^T)` is blt 0b, `new_string(^S,L,T)`
+  blt 1c (S out in the first operand, `view_select_menu change/3`),
+  `string_element(S,I,^E)` blt 23, `set_string_element(S,I,E)` blt 2b.
 - OVW (lines 2662–2704) states that categories (7) system control and (8) language-processing
   support are **not described** in the user manuals.
 
