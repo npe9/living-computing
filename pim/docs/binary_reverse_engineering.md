@@ -517,12 +517,13 @@ the device are given it again whenever the machine runs dry.
   `get_date_time` (304).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
-  The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) replays
-  the tapes of `ref/pimm/fep_tapes/`, which are the IPL's parts and the
-  "direct" sequence only: it still passes, and covers none of the
-  kernel's commands above (INQUIRY to unit 7, TEST UNIT READY to the
-  absent units 0-5, `append_open`); it refuses another unit or CDB
-  (`whyUnitCdb`). Not changed here (another agent's file).
+  The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
+  every command of the table above as `fep.py` does, byte for byte
+  (2026-11-24): the tape `ref/pimm/fep_tapes/kernel.tape` is this
+  conversation recorded from the run (`ref/pimm/record_fep.py --kernel
+  PKL`), and `direct_kernel.tape` its edges. `putb` (111), which the
+  syslog sends next by the source, is refused there as `fep.py` refuses
+  it today.
 - **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
   lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
   labelled "carried over from VPIM, agreeing with KLIC; the PIM/m

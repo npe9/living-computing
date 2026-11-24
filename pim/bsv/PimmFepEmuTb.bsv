@@ -44,8 +44,33 @@
 //                                          block-addressed)
 //   MISO bits taken LSB first              all 7 on S and B (mount fails)
 // Nothing injected passed unnoticed.  NOT tested: the OURS limits
-// (BodyMax, FileSlots, ReplySlots, one continued message at a time):
-// no tape reaches one.
+// (BodyMax, FileSlots, ReplySlots, AppendSlots, one continued message at
+// a time): no tape reaches one.
+//
+// Observed fault injections, 2026-11-24, the paths for PIMOS's start
+// (INQUIRY, absent units, append_open), the same way, with all 9 tapes
+// on disk; every one fails on F, S and B, and only the tapes named:
+//   noDevice 400h for 800h                 direct_kernel, kernel (command
+//                                          2, the first absent unit:
+//                                          done 1024)
+//   INQUIRY's byte 2 6 for 7               direct_kernel, kernel
+//                                          (command 1)
+//   the absent test also needs LUN 0       direct_kernel (command 8: LUN 2
+//                                          refused, fep.py answers 800h)
+//   absent units 0..6                      direct, direct_kernel (unit 6
+//                                          answered 800h; fep.py raises)
+//   INQUIRY of any length                  direct_kernel (command 31,
+//                                          36 bytes answered)
+//   append_open answered status 5          direct_kernel (command 12),
+//                                          kernel (command 9): the
+//                                          reply's status word
+//   the "not appending" test dropped       direct_kernel (append_open twice
+//                                          answered)
+//   configure keeps the appending devices  direct_kernel (command 24, the
+//                                          next section's append_open
+//                                          refused)
+//   append_open on a device with a file    direct_kernel (answered; fep.py
+//     open accepted                        raises)
 //
 // The card is reached through `card` (a module argument in
 // mkPimmFepEmuBench), so the same bench runs the emulator over the

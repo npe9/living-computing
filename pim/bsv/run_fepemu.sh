@@ -7,7 +7,8 @@
 # module the board synthesizes, and a card model, PimmSdCardModel.bsv,
 # block- and byte-addressed); then bsv/fepemu_check.py replays
 # every tape in ref/pimm/fep_tapes/ (the commands ref_scsi.py's parts gave
-# fep.py, and the "direct" sequence) into each, and compares each answer
+# fep.py, the "direct" and "direct kernel" sequences, and the "kernel"
+# tape of PIMOS's start) into each, and compares each answer
 # with fep.py's, byte for byte.  Everything is written to
 # bsv/build_fepemu/ (FEPEMU_BUILD to override); nothing outside it.
 # Use BSC_BIN to pin a compiler, as in run_sdram_tb.sh.
@@ -46,8 +47,10 @@ build mkPimmFepEmuSpiTb PimmFepEmuSpiTb.bsv sim_fepemu_spi
 build mkPimmFepEmuSpiSdscTb PimmFepEmuSpiTb.bsv sim_fepemu_spi_sdsc
 SIMS="$SIMS $B/sim_fepemu_spi $B/sim_fepemu_spi_sdsc"
 
-echo "== the direct tape is what record_fep.py makes now"
+echo "== the direct tapes are what record_fep.py makes now (the kernel tape needs"
+echo "   a saved machine: record_fep.py --kernel PKL --check, by hand)"
 python3 ../ref/pimm/record_fep.py --check --part direct
+python3 ../ref/pimm/record_fep.py --check --part direct_kernel
 
 status=0
 for sim in $SIMS; do
