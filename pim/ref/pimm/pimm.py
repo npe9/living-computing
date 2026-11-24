@@ -788,6 +788,17 @@ class Machine:
             return self.guard_fail()
         self.reg[z] = (INT, (a + b) & 0xffffffff)
 
+    def i_multiply(self, pc, x, y, z, c16):      # guard arithmetic
+        # multiply(Integer1, Integer2, ^NewInteger), 23:F6 r_r_r
+        # (inst_tab.kl1:209; directions iio, blt.kl1:29-30): "Fail,
+        # Exception: if either ... is not an integer; if an overflow
+        # occurs" (PIMOS manual, e-builtin.tex:268-283): as a guard,
+        # the guard fails; an unbound operand is noted
+        a, b = self.g_int(x), self.g_int(y)
+        if a is None or b is None or not -(1 << 31) <= a * b < 1 << 31:
+            return self.guard_fail()
+        self.reg[z] = (INT, (a * b) & 0xffffffff)
+
     def i_switch_on_non_list(self, pc, x, y, z, c16):
         # a list: the structure pointer is set to its car, for read_*
         w = self.g_word(x)
@@ -1126,6 +1137,32 @@ class Machine:
 
     def i_put_value(self, pc, x, y, z, c16):
         self.reg[x] = self.reg[y]
+
+    # save r, POS and restore r, POS, 23:19 and 23:1A r_c16
+    # (inst_tab.kl1:23, 25): the KL1 compiler's spill of a register it
+    # has run out of (library/compiler/regass.kl1 outputCode/6,
+    # saveRegisters, restoreRegisters: save(Y, W) after the register Y
+    # is written, restore(Y, W) before it is read again, W the virtual
+    # register).  TM-1044 names them save(Reg, POS) and restore(POS,
+    # Reg) on "work memory" (作業用メモリ, TM-1044.j_s3.tex:1559-1567, as
+    # listed in docs/literature_gaps.md), in each processor's local
+    # fixed area.  HERE (OURS) that area is 256 slots of its own,
+    # traced as V lines; a POS of 256 or more is refused
+    def work(self):
+        if 'wk' not in self.__dict__:
+            self.wk = _Regs([(INT, 0)] * 256)
+            self.wk.machine, self.wk.letter = self, 'V'
+        return self.wk
+
+    def i_save(self, pc, x, y, z, c16):
+        if c16 >= 256:
+            raise Unimplemented('save to work slot %d' % c16)
+        self.work()[c16] = self.reg[x]
+
+    def i_restore(self, pc, x, y, z, c16):
+        if c16 >= 256:
+            raise Unimplemented('restore from work slot %d' % c16)
+        self.reg[x] = self.work()[c16]
 
     def i_put_marked_value(self, pc, x, y, z, c16):
         # "the same functions as those without it except that the MRB

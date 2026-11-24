@@ -82,7 +82,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
-               XProc, XBDiv, XBSInfo, XBSInfo2,
+               XProc, XBDiv, XBSInfo, XBSInfo2, XGMul,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XReuse3 } XState deriving (Bits, Eq);
@@ -239,7 +239,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
                       || op == op_add || op == op_exclusive_or || op == op_string_element
                       || op == op_mark_element || op == op_divide || op == op_shift_left
-                      || op == op_not_equal;
+                      || op == op_not_equal || op == op_multiply;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -313,6 +313,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_put_value) begin
       regs.wr(x, regs.r(y));
       next;
+    end
+    else if (op == op_save || op == op_restore) begin
+      // the compiler's register spill to the work slots (PimmRegs.bsv);
+      // a slot of 256 or more is refused
+      if (c16 >= 256) stop(EndUnimp);
+      else begin
+        if (op == op_save) regs.wv(truncate(c16), regs.r(x));
+        else regs.wr(x, regs.v(truncate(c16)));
+        next;
+      end
     end
     else if (op == op_put_marked_value || op == op_set_marked_value || op == op_write_marked_value) begin
       // "the MRB of the destination is always set.  They are for
@@ -853,6 +863,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         next;
       end
     end
+    else if (op == op_multiply) begin
+      // guard multiply in the multiply box; an overflow fails the
+      // guard (manual, multiply: "Fail, Exception")
+      mbox.multiply(a.val, b.val);
+      st <= XGMul;
+    end
     else if (op == op_add) begin
       // an overflow fails the guard (manual)
       Int#(33) sum = signExtend(ia) + signExtend(ib);
@@ -880,6 +896,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else begin
       regs.wr(z, intC(p.value));
       finish(tagged Next afterBuiltin);
+    end
+  endrule
+
+  // guard multiply: the product, or the guard fails on an overflow
+  rule gMultiplied (st == XGMul);
+    let p <- mbox.product;
+    if (p.overflow) guardFail;
+    else begin
+      regs.wr(z, intC(p.value));
+      next;
     end
   endrule
 
