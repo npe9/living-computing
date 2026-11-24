@@ -52,25 +52,40 @@ alone (bsv/run_pimm_lockstep.sh merge) and restored from a copy:
                                         other input's goal linked)
   the ready queue taken before the      two senders: the inputs bound,
     merger's list                       line 55: G 32798 for G 32833
-NOT caught: the woken goals spliced on with the list's earlier goals
-dropped (the link written 0 for the old head).  It changes nothing
-unless a merge_in is woken while the merger's list holds goals, which
-needs a merger's output to reach another merger's input; with the one
-merger here it cannot happen, and in ref_scsi.py's six IPL parts it
-never does (2,051 splices, every one onto an empty list, counted on
-the reference 2026-11-24).  Also passed by lockstep_atom, lockstep_pool
-and lockstep_scsi --part 1 with it injected.  Three of four caught.
-The case IS met in PIMOS: in the typed-shutdown run from the cached
-machine (longrun_ipl.py --type shutdown --type yes), 300 of 5,859
-splices go onto a non-empty list (counted on the reference,
-2026-11-24).  So the front-splice order is live there and checked on
-the reference model only, not in lockstep.
+The splice onto a list that is not empty (2026-11-24): two parts,
+`chained` and `chained, the second input first`, put two mergers in a
+chain (code in heap cells: merge 1, 2; merge 2, 3; get_value 0, 3;
+proceed, so M1's output is M2's input) and bind M1's two inputs in one
+step. The first woken goal passes its message to M2's input and wakes
+M2's goal while the second is still on the merger's list, so the
+pickup splices M2's goal in front of it, its link the second's
+address. The messages reach the output in the order the inputs were
+bound: [1, 2], and [2, 1] the other way (worked by hand from the rule
+above). On the reference these two parts make 2 of the script's 18
+splices, the only ones onto a non-empty list (lockstep_shell.py's
+counter).
+Observed fault injection, 2026-11-24 (bsv/PimmGBox.bsv, restored from
+a copy, its checksum compared after):
+  the woken goals spliced on with the   chained: the inputs bound, line
+    list's earlier goals dropped (the   41: M 33138 0000000000 for
+    link written 0 for the old head)    00e0008193 (the link to the
+                                        second goal)
+Before these parts it was caught by no lockstep test (it was also passed by
+lockstep_atom, lockstep_pool and lockstep_scsi --part 1; in
+ref_scsi.py's six IPL parts all 2,051 splices are onto an empty list).
+It is also caught by the lockstep from the shell's prompt
+(lockstep_shell.py, bsv/run_pimm_shell.sh, outside the suite): FAIL at
+line 8,429, 1,609 instructions after the prompt, M 77708415 0000000000
+for 00e4a3cf57. In that window 88 of 804 splices are onto a non-empty
+list (in the whole typed-shutdown run from the cached machine, 300 of
+5,859).
 
 The real site whose order this changes is the user table of PIMOS's
 task layer (utility/pool/k_bag.kl1, under kernel/task/int_hdl.kl1's
 env_check), met only in the whole IPL after the login: the reference's
-longrun (ref/pimm/longrun_ipl.py) shows it, the Bluespec is not run
-that far (docs/pimos_roadmap.md R6).
+longrun (ref/pimm/longrun_ipl.py) shows it, and the Bluespec meets it
+in the lockstep from a saved machine (lockstep_shell.py, outside the
+suite; docs/pimos_roadmap.md R6).
 """
 import os
 import sys
@@ -81,7 +96,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=6, lines=1614)
+PINNED = dict(parts=12, lines=2168)
 I = lambda v: (pimm.INT, v & 0xffffffff)       # noqa: E731
 
 # (label, the vector's size, [(element, key, value)] in the order bound,
@@ -131,8 +146,65 @@ def script():
             s.unifyc(7, (pimm.ATOM, 0))
         s.run()
         answers.append((label, len(binds)))
+    for label, order in CHAINED:
+        chained(s, label, order)
     del m
     return s, answers
+
+
+# Two mergers in a chain, M1's output M2's input: two inputs of M1
+# bound in one step (in this order: the elements), each to [message |
+# an unbound tail]; then the tails closed (in the order given too).
+CHAINED = [('chained', (0, 1)), ('chained, the second input first', (1, 0))]
+KLB, GMI = 0x23, 0x22
+
+
+def chained(s, label, order):
+    """The splice onto a list that is not empty (pimm.py pick, the
+    Bluespec's GBox Pickup): the first of M1's two woken goals passes
+    its message to M2's input and wakes M2's goal while the second is
+    still on the merger's list; M2's goal goes in front of it, its
+    link the second's.  Code in heap cells (OURS):
+        merge 1, 2; merge 2, 3; get_value 0, 3; proceed
+    i.e. chain(A, O): merge(O) gives M2's input in r2, merge(r2) M1's
+    in r3, and A is M1's input."""
+    s.label(label + ': the chain')
+    code = [(GMI, 0xf0 << 24 | 1 << 16 | 2 << 8),     # merge 1, 2
+            (GMI, 0xf0 << 24 | 2 << 16 | 3 << 8),     # merge 2, 3
+            (KLB, 0xbc << 24 | 0 << 16 | 3 << 8),     # get_value 0, 3
+            (KLB, 0x60 << 24)]                        # proceed
+    for k in range(len(code)):
+        s.newvar(k)
+    m = s.live()
+    a0 = s.live_slot[0][1]
+    assert [s.live_slot[k][1] for k in range(len(code))] == list(range(a0, a0 + len(code)))
+    for k, c in enumerate(code):
+        s.unifyc(k, c)
+    m = s.live()
+    at = a0 - m.load
+    assert [m.opname(at + i) for i in range(4)] == ['merge', 'merge', 'get_value', 'proceed']
+    s.newvar(4)                                   # A, M1's input
+    s.newvar(5)                                   # O, M2's output
+    s.arg(1, 4)
+    s.arg(2, 5)
+    s.spawn(at, 2)
+    s.run()
+    s.vector(6, 7, [None, None])                  # {I1, I2} in slots 7, 8
+    s.unify(4, 6)
+    s.run()
+    s.label(label + ': the inputs bound')
+    tails = {}
+    for e in order:
+        s.cons(9, 10 + 2 * e, I(e + 1), None)     # [e + 1 | T] in slots 10.., 11..
+        tails[e] = 11 + 2 * e
+        s.unify(7 + e, 9)
+    s.run()
+    s.out(5)
+    s.label(label + ': the tails closed')
+    for e in order:
+        s.unifyc(tails[e], (pimm.ATOM, 0))
+    s.run()
+    s.out(5)
 
 
 def check(s, m):
@@ -140,6 +212,14 @@ def check(s, m):
     got = {}
     for label, w in s.outs:
         got.setdefault(label.split(':')[0], []).append(w)
+    # chained: O after the inputs are bound, then after the tails are
+    # closed; the messages in the order the inputs were bound
+    for label, order in CHAINED:
+        a, b = (e + 1 for e in order)
+        want = [[a, b], [a, b]]       # read at the end: the same list
+        t = [m.term(w) for w in got.get(label, [])]
+        if t != want:
+            bad.append((label, t, want))
     for label, _n, _binds, want in PARTS:
         ws = got.get(label, [])
         t = []
