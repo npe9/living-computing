@@ -74,19 +74,22 @@ What was measured about these fields:
 - **Code references.** Each one names the predicate whose header
   `(atom, kind<<8|arity, predh, 0)` points at that offset. Every
   reference resolves, and no header is left unreferenced.
-- **Cell numbering.** `asm/ptfdump.py` numbers cells wrongly after some
-  hash tables. Headers that follow such a table sit at cell indices
-  that disagree with the offsets their predh cells carry. A scratch
-  probe (2026-11-23, not in the repo) suggests that every table spans
-  `mask+1 + 2*keys + 2` cells and that its size word is unreliable.
-  That is a hypothesis: the probe measured drift from the class start,
-  so it accumulated over several tables.
-  - Test, for step 2: renumber cells with that span and count the
-    headers whose head cell is not at offset - 2.
-  - ptfdump's "552 of 554 tokenize exactly" is not evidence either way.
-  - The loader therefore never uses a token's cell number across
-    predicates. It finds each predicate by its header and renumbers that
-    predicate's cells from the header's offset.
+- **Cell numbering (settled 2026-11-24).** A hash table spans
+  `mask+1 + 2*keys + 2` cells (`ptfdump.table_span`), not its size
+  word + 1 as ptfdump counted before.
+  - The test: renumber every cell of the eleven packages with that span
+    and count the headers whose head (predh) cell is not at offset - 2.
+    Result: **0 of 32,901**. With the size word, 3,662 heads in 91
+    classes were displaced.
+  - Every local call (pmi `60`/`61`/`62`, target cell + 2 + signed 16
+    bits) lands on a predicate's code: 35,542 of 35,542 (pinned by
+    `test_cell_numbering`; with the old span that test fails).
+  - Every class's code now ends exactly at `L` (554 of 554 in the six
+    psdpim/paragraph packages; `ptfdump.py --check`, pins updated).
+  - The size word's meaning is UNKNOWN: in 149 of 212 tables it is
+    `mask + 2*keys + 1`, in the other 63 larger.
+  - The loader still finds each predicate by its header and renumbers
+    from the header's offset; that is now the identity.
 - **Term tags.** The trailer's term tags confirm more of the tag pairing
   in `layers/KL0.md` §2: list 2, strg 3, flt 10, svct 23, hvct 24 and
   mod 27, with code references as loc/cod plus a GC bit.
@@ -281,8 +284,5 @@ sides are NFKC-normalised.
   SIMPOS or firmware. They are not held and not modelled.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
   not modelled. No held nature needs it.
-- **Within a predicate, cells after a hash table are still numbered as
-  ptfdump numbers them.** This matters for local-call targets in the KL0
-  interpreter.
 - **The descriptor's word layout and the atom numbering** are not held.
   They are UNKNOWN beyond Fig. A-1.

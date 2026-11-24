@@ -238,12 +238,13 @@ def _value(t):
 def _tokens(rec, stop):
     """The code cells of a record up to word STOP (the trailer anchor), as
     asm/ptfdump.py cells() reads them, without its stop at cell L.
-    ptfdump's cell numbering drifts after some hash tables (MEASURED: in
-    84 of 162 tables followed by a header the table spans
-    mask+1 + 2*keys + 2 cells, one more than ptfdump counts; other cases
-    vary), so nothing here relies on a token's own cell number across
-    predicates: each predicate is found by its header, whose predh cell
-    carries the true offset."""
+    A hash table spans ptfdump.table_span(mask, keys) = mask+1 + 2*keys
+    + 2 cells (MEASURED 2026-11-24: numbered so, every one of the 32,901
+    predicate heads in the eleven packages sits at its code offset - 2;
+    the table's size word, used before, displaced 3,662 of them).  Each
+    predicate is still found by its header, and its cells are renumbered
+    from the header's offset, which is now the identity (pinned in
+    test_librarian.py)."""
     b = rec['body']
     i, n, out = 5, b[4], []
 
@@ -267,7 +268,7 @@ def _tokens(rec, stop):
                 ents.append((key, b[i], b[i + 1]))
                 i += 2
             out.append((n, 0xa0, op, (mask, size, ents)))
-            n += size + 1
+            n += P.table_span(mask, cnt)
             continue
         cell, j = one(i)
         if cell is None:
