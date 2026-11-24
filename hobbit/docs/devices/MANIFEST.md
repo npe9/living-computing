@@ -1,0 +1,102 @@
+# Device documentation for the Hobbit board: acquisition manifest
+
+Collected 2026-11-24 so that the board's device models (`tools/p9boot.py`,
+`docs/p9boot.md` "Modelling choices") can rest on the vendors' data sheets
+instead of inference.  `README.md` checks each modelling choice against
+these documents.
+
+The PDFs are held on disk in this directory but kept **out of git**
+(`.gitignore`).  They are bitsavers.org mirrors of 1990-1997 vendor data
+books, and none of them shows redistribution terms; the repository is
+public.  This is the pattern of `pim/docs/nonlocal/LIT_MANIFEST.md`.
+`sh fetch.sh` downloads whatever is missing and checks every file against
+`SHA256SUMS` (`sh fetch.sh --check` only checks).  The files were fetched with
+plain `curl` (generic user agent) from `bitsavers.trailing-edge.com`, and
+re-fetched fresh by `fetch.sh` to confirm the checksums.  The same paths are
+on `bitsavers.org` and its mirrors (e.g. `bitsavers.mirrorservice.org`).
+Nothing downloaded was executed.
+
+Page numbers: "PDF p." is the page index in the file (what `pdftotext -f`
+takes); "p." is the number printed on the page.  Every book has a fixed
+offset between the two, given per row.  The text layers are OCR of scans and
+wrong in places (O for 0, "IRON" for IRQN, "AST" for RST), so values that
+matter were read from the page image (`pdftoppm -r 120 -f N -l N`).
+
+## Held
+
+| File | What is in it | Part / data sheet, date | Where in the file | Bytes | SHA-256 |
+|---|---|---|---|---|---|
+| `1992_National_Local_Area_Network_Databook.pdf` | National Semiconductor *Local Area Network Databook*, 1992 ed. | **DP83932B SONIC** data sheet, "Preliminary", TL/F/10492; AN-745 *DP83932 SONIC Bus Operations Guide*; AN-746 *Software Driver Programmer's Guide for the DP83932 SONIC* | data sheet p. 1-288..1-383 = PDF p. 297..392 (book p. 1-N = PDF p. N+9); AN-745 p. 1-384, AN-746 p. 1-396 | 31,700,590 | `b659e0e4a11ecc9506c9fce86660408eca18f003e7d7fa391b55b50688f60908` |
+| `AN-0746.pdf` | National AN-746, *Software Driver Programmer's Guide for the DP83932 SONIC*, Wesley Lee and Mike Lui, March 1991 (standalone copy) | DP83932 | whole file | 834,639 | `e43eb0f3057136524303119ed4ae22f5e5d52353a09ba4c803cf27634050e56d` |
+| `1991_Signetics_IC019_Data_Communication_Products.pdf` | Philips Components-Signetics *Data Communication Products* (IC19), 1991 | **SC26C94/SC68C94 QUART**, Preliminary Specification, **12 November 1990** | PDF p. 228..253 = p. 221..246 (p. = PDF p. − 7) | 37,588,060 | `a3db1b7ceddb24ce0203920a6fbff8af83db0ae64882c8a5c646db0d7f7712f1` |
+| `1994_Signetics_Data_Communications.pdf` | Philips Semiconductors *Data Communications Products*, 1994 | **SC68C94 QUART**, Product specification, **27 April 1994**; then the article reprint *SC26C94 and SC68C94 (QUARTs) interrupt system and processor interface* (Peter Narvaez) | spec PDF p. 303..333 = p. 302..332; reprint from PDF p. 334 = p. 333 (p. = PDF p. − 1) | 77,460,303 | `c615686bc20100c71c27f5b1a5877cb8f88d22bf4b66810a4ad6fdf3dc3b3b04` |
+| `WD33C93A_Data_Sheet_and_Application_Notes_Nov1990.pdf` | Western Digital *WD33C93A Data Sheet and Application Notes*, November 1990 | **WD33C93A** SCSI Bus Interface Controller | whole file, 91 pages; cited by PDF p. | 6,683,877 | `1513852c994336439ecca41c7111d7ea18e9fb5241a9d571d87f7489b0edda18` |
+| `1997_IC12_Philips_I2C_Peripherals.pdf` | Philips Semiconductors *I2C Peripherals* (IC12), 1997 | **PCF8584** I2C-bus controller, Product specification, 1997 Mar 19; **PCF85xxC-2** family (PCF8582C-2 256 x 8 EEPROM), 1997 Feb 13 | PCF8584 PDF p. 556..587 = p. 555..586; PCF85xxC-2 PDF p. 631..643 = p. 630..642 (p. = PDF p. − 1) | 36,547,171 | `994ab97ef1d2801707930c868314e0a318f5b30c18ba0113b0c88c9770cff1bc` |
+| `1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf` | SGS-Thomson *Memory Products* data book, 2nd ed., 1992 | **MK48T02/MK48T12** CMOS 2K x 8 TIMEKEEPER SRAM, February 1992 | PDF p. 1024..1037 = data sheet pp. 1/14..14/14 (p. 1023.. in the book) | 52,674,118 | `f7a440d4fcaf36a14fef1f675be413a867e5d476c11595bc71a3fd02e4653d39` |
+
+URLs (all under `https://bitsavers.trailing-edge.com/components/`):
+
+- `national/_dataBooks/1992_National_Local_Area_Network_Databook.pdf`
+- `national/_appNotes/AN-0746.pdf`
+- `signetics/_dataBooks/1991_Signetics_IC019_Data_Communication_Products.pdf`
+- `signetics/_dataBooks/1994_Signetics_Data_Communications.pdf`
+- `westernDigital/WD33C93A_Data_Sheet_and_Application_Notes_Nov1990.pdf`
+- `philips/_dataBooks/1997_IC12_Philips_I2C_Peripherals.pdf`
+- `sgs/_dataBooks/1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf`
+
+### Dates against the board
+
+The kernel `s9term` was built 1992-11-07 (`docs/s9term.md`), so the board is
+1992 or a little older.
+
+- The QUART has two editions here, and they disagree (see README §Quart).
+  `io.h` follows the **1994** register map at 0x2D..0x2F, and `eiaintr`'s byte
+  loop only works with the 1994 byte-count coding.  So the 1994 product
+  specification describes the part the kernel was written for, and the 1990
+  preliminary is kept as the earlier reading.
+- The SONIC sheet is the "B" revision, marked Preliminary, in a 1992 book. It
+  is the right date for the board.
+- The WD33C93A sheet (Nov 1990) and the MK48T02 sheet (Feb 1992) are
+  contemporary with the board.
+- The PCF8584 and PCF8582 sheets are from **1997**. The PCF8582 sheet covers
+  the later C-2 revision, not the PCF8582(A) a 1992 board would carry.  No
+  1990-1992 Philips I2C data book is on bitsavers.
+
+## Looked at, not taken
+
+- `national/_dataBooks/1993_National_Local_Area_Networks.pdf` (74,877,887
+  bytes) and `1995_National_Ethernet_Databook.pdf` (71,978,411 bytes).  These
+  are later editions of the SONIC material.  The 1992 book is the closest in
+  date to the board.  `national/_appNotes/AN-0745.pdf` (July 1995 revision),
+  AN-0691 (a 68030 SONIC adapter), AN-0859 and AN-0877 (EISA SONIC boards)
+  are on bitsavers too.
+- `westernDigital/WD33C93A_SCSI_Bus_Controller_1991.pdf` (4,222,321 bytes,
+  © 1991) and `westernDigital/79_000199_WDC_WD33C93A_SCSI_Bus_Interface_Controller.pdf`
+  (3,594,215 bytes, undated) are other editions of the WD33C93A sheet.
+- `sgs/_dataBooks/1994_SGS-THOMSON_Memory_Products_Databook_3rd_Ed.pdf`
+  (later edition) and `1989_SGS-THOMSON_Zero_Power_Memories_Application_Notes.pdf`
+  (2,113,433 bytes).
+- `att/1993_ATT_Microelectronic_Products_Selection_Guide.pdf` (12,575,995
+  bytes).  The text layer has no Hobbit, 9201x or CRISP entry.  Its
+  "Mobile Personal Comm." section lists no Hobbit parts.  The OCR is poor, so
+  a page-by-page image check would be needed to call this final.
+
+## Not found
+
+- **The board.** No manual, schematic or name survives online (README
+  §The board).
+- **The AT&T Hobbit companion chips (ATT92011 system management, 92012
+  PCMCIA, 92013 ISA bridge, 92014 video).** Their data sheets existed: a
+  BeBox history page cites them as December 1992.  No copy was found on
+  bitsavers (`components/att/`, `components/att/hobbit/`), archive.org
+  (metadata search) or by web search.  The kernel does not use them anyway
+  (README §The board).
+- **The "Bart's LCD" interface** (`io.h` `Lcdisp`).  It is a 768 x 1024,
+  2-bit display fed one row-group at a time through two byte ports
+  (`screen.c`).  No controller part is named anywhere in the release, and
+  none was identified.
+- **The keyboard.** It is serial, on a Quart port at 600 baud with odd parity
+  (`kbd.c` `kbdinit`), and takes a "no click" command byte and LED bits back.
+  No keyboard model or protocol document was found.  `deviic.c`'s header
+  plans a later "keyboard and finger-mouse" on the IIC bus.
+- **A 1990-1992 PCF8582(A) / PCF8584 data sheet** (see "Dates" above).
