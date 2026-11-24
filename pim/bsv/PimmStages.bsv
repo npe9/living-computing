@@ -278,6 +278,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       alt <= tagged Valid labelOf(pc, c16);
       next;
     end
+    else if (op == op_jump) begin
+      // an unconditional branch (VPIM klb_jump, PDSS KL1B_JUMP)
+      finish(tagged Next labelOf(pc, c16));
+    end
     else if (op == op_otherwise) begin
       // clauses below apply only if none above can
       if (nNoted != 0) suspendGoal;

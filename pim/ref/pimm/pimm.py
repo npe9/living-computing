@@ -826,6 +826,15 @@ class Machine:
     def i_try_me_else(self, pc, x, y, z, c16):
         self.alt = pc + 2 + sx16(c16)
 
+    def i_jump(self, pc, x, y, z, c16):
+        # 23:67 c16_exe: an unconditional branch to the label, the
+        # label as try_me_else's (assembler/klb_opr.kl1 p(c16_exe),
+        # cal_location_address: Label - (pc + 2)).  The compiler puts
+        # it after a branch of register shortage (compiler/regass.kl1
+        # insertBranch); VPIM klb_control.psl.c klb_jump and PDSS
+        # emulate.c KL1B_JUMP branch with nothing else
+        return pc + 2 + sx16(c16)
+
     def i_otherwise(self, pc, x, y, z, c16):
         # Clauses after `otherwise` apply only when none before can:
         # if an earlier guard was waiting on a variable, suspend instead.
