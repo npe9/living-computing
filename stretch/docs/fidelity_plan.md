@@ -235,9 +235,14 @@ entries split** (`ebox_roadmap.md` steps 5 and 7).
   meet the rule.
 
 **A7. Transmit and branches.**
-- Transmit's fixed cost of about 30 clocks, and its 14-clock word to
-  and from the I-box (`atlas_oracle.md` "furthest off" 2). First check
-  the generator's I-box block assumption, which no self-test covers.
+- Transmit. DIAGNOSED 2026-11-23 (`atlas_oracle.md` "furthest off"
+  2, which gives the change with a citation for each term). Per word,
+  charge by destination: 10 clocks to core or internal, 14 to index
+  storage (Table 9; PDF 107). The model now charges the source read
+  instead (2 from index storage, 10 or 17 from core). Fixed cost:
+  F = 38 / 32 clocks for T, F − 2 for TI, where the model has 15. The
+  generator's I-BOX TO I-BOX block is fixed (18.0 → 19.0), and
+  `--selftest` check 0b now covers the transmit generator.
 - CB 16/15 clocks, and BXL/BAL.
 - Exit: PDF 102-112 meet the rule, or the BAL environment the page
   does not spell out is recorded as the reason.
