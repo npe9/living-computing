@@ -16487,9 +16487,38 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # fails the six reel checks.
 run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card; a second job card is read, announced and its TYPE card decoded" python3 check_bss_mcp_go.py
 
+# IBM's JA BP6A "MEMORY PATTERN TESTS" (May 5, 1961), the first of the
+# three memory diagnostics fidelity_plan.md names as A11a's oracle.
+# The listing oracle checks all 65 lines against the printed code (97
+# checks; one torn row, MPTDD2 at 100016, unchecked).  The program
+# compares nothing -- "It relies on scoping to detect errors" (writeup
+# PDF p.1) -- so run_ja_bp6a.sh stops it behind a CB at a chosen
+# pattern, dumps core from word 32 to 98303 and compares EVERY word the
+# program has reached against the image computed from its own steps
+# (check_ja_bp6a_dump.py).  Stages: the complementary 1010 and 0101
+# patterns through the B boxes (B3, B4) and the A boxes (A3, A4), and
+# one whole loop (LOOP: Part II's ones-ECC word left in the A boxes,
+# the next pass's zeros in the B boxes, both programs restored).
+# MEASURED in a scratch tree (2026-11-24), StretchMemory with bit 20
+# stuck at 0 on every store to 200000-200777, then reverted:
+#   B3   FAIL  B boxes: 32768 of 65536 words differ, 200000-277777 (the
+#              bad word at 200000 ripples to the top)
+#   B4   PASS  (0101 has bit 20 = 0; a stuck-at-0 cannot show)
+#   A3   FAIL  B boxes: 32768 of 65032, 200000-277777 -- Part I's last
+#   A4   FAIL  pattern, the ones-ECC word, is still in the B boxes
+#   LOOP PASS  (the B boxes hold zeros again)
+# The A boxes passed in every stage, and nothing else failed.
+run "JA BP6A memory patterns listing bit-exact comparison" python3 verify_ja_bp6a_listing.py
+run "JA BP6A memory patterns: 1010 through the B boxes (B3)" ./run_ja_bp6a.sh B3
+run "JA BP6A memory patterns: 0101 through the B boxes (B4)" ./run_ja_bp6a.sh B4
+run "JA BP6A memory patterns: 1010 through the A boxes (A3)" ./run_ja_bp6a.sh A3
+run "JA BP6A memory patterns: 0101 through the A boxes (A4)" ./run_ja_bp6a.sh A4
+run "JA BP6A memory patterns: one whole loop (LOOP)" ./run_ja_bp6a.sh LOOP
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
 rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
+rm -f "$BSV_DIR"/StretchJaBp6a*Tb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 
