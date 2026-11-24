@@ -35,6 +35,16 @@ class run alone:
   test_refused_then_logged_in (no `nop...session...time...`: check's OK
   never comes), FAIL test_steps (409,307,318 steps: max-steps).
 
+The cpu stage (P9HUB_CPU=1), observed 2026-11-24: the SONIC refusing
+broadcast frames (SONIC_CHOICES['filter'], a scratch copy of
+tools/p9boot.py, build/hub/inj/C): the suite's run to init stays green
+(OK, skipped=1: no broadcast reaches the Hobbit before init), and the
+full run fails test_every_frame_as_recorded (model frame 533 differs:
+an IL frame to cpu9 where the recording has the Hobbit's ARP reply to
+cpu9's broadcast who-has 10.9.0.2, the only broadcast in the
+recording), test_cpu_on_cpu9 (max-steps) and test_steps (seven lines
+typed of eight); test_refused_then_logged_in stays green.
+
 So the test checks the key the model derives from the typed password
 (passtokey), its DES encryption of the server's challenge (#c/crypt),
 and the console path that carries the password, against what fs9's

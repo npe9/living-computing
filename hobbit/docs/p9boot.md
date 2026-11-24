@@ -674,8 +674,11 @@ cases), so after `/boot`'s ARP answerer has died with `/boot` nothing on
 the Hobbit resolves addresses.  Without it (run `live1`) `cpu` printed
 `arp: No server, packet dropped 10.9.0.4` and got no further.  With
 `ip/ipconfig` typed (it forks `ip/arpd`, as on cpu9), the Hobbit ARPs
-for 10.9.0.4 and answers cpu9's ARP; the kernel still prints `arp: No
-server, packet dropped 10.9.0.4` for the first packet, which IL resends:
+for 10.9.0.4 and answers cpu9's ARP.  The kernel still prints `arp: No
+server, packet dropped 10.9.0.4` once; on the wire the ARP request
+(68.408 s) is answered at 68.450 s and the IL sync to cpu9 leaves at
+68.450 s, so no resend of it is visible, and which packet the message
+is about was not traced:
 
 ```
 % ip/ipconfig
@@ -967,9 +970,12 @@ sha256, `7a182d44…`, is that of tor's `q1` in the table above: the same
 window and prompt, drawn by the same 8½ with the same font.  Already
 at `a50` (step 1,561,111,523) the screen had that checksum.  A first try
 with `quiet 30` straight after init's line fired at step 1,051,932,582
-with the console text still on the screen and nothing of 8½ drawn: 8½
-had not started drawing yet (the screen is "quiet" while a program is
-read over IL), hence the `after 50`.  An earlier profile also bound
+with the console text still on the screen and nothing of 8½ drawn: no
+LCD write in the 30 model seconds after init's line, and 8½'s window
+was there by 50 s (why 8½ was that slow to draw was not traced; that
+run's artifacts were overwritten), hence the `after 50`.  The run before
+it, on the earlier profile below, had used a plain `quiet 30` and got
+8½'s window.  An earlier profile also bound
 `$home/bin/$cputype` as tor's does; `kfscmd newuser` makes no
 `bin/hobbit`, so the console showed `bind /usr/glenda/bin/hobbit /bin:
 file does not exist`; that line is gone from the profile.  This run is

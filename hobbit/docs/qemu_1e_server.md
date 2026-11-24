@@ -19,7 +19,7 @@ port from the same `plan9-1e.tar.bz2`, run in `qemu-system-i386`.
 | 5b. CPU-server kernel | **yes**: `9pccpu` (the release's `pc` config with `cpuserver = 1`, `boot cpu`) built *in the guest* by 1e's `mk`/`8c`/`8l`, booted in a third QEMU with its root from fs9 |
 | 5c. `cpu` | **yes**: `cpu -h cpu9` from the terminal; rexauth on fs9 says `user glenda to cpu9 ok`; on the remote side `/dev/sysname` is `cpu9` and the terminal's tree is on `/mnt/term` |
 | 5d. glenda's profile | **yes**: from the overlay; rc on the console by default, 8½ when `/usr/glenda/lib/8half` exists |
-| 5e. the Hobbit on the network | **yes**: s9term on the model, on the hub beside fs9 and cpu9 (`p9join.py --hub`), logs in as glenda (a wrong password refused), runs `cpu -h cpu9`, and starts 8½ as glenda (`docs/p9boot.md` "On the 1e network") |
+| 5e. the Hobbit on the network | **yes**: s9term on the model, on the hub beside fs9 and cpu9 (`p9join.py --hub`), logs in as glenda (a wrong password refused) and runs `cpu -h cpu9` (`docs/p9boot.md` "On the 1e network"); in a separate two-machine run with fs9 alone, 8½ starts for glenda ("8½ as glenda") |
 
 Three bytes-level patches to the shipped kernels were needed for QEMU's
 devices, each found with a QEMU trace (below).  Every path and length
@@ -735,8 +735,19 @@ a choice of this network, not 1e's: the file is made per run on fs9's
 Verified 2026-11-24: `build.sh` from the tarball into an empty
 `build/qemu` (`overlay: /sys/lib/qemu1e/glenda/profile`, authinit PASS,
 the cpu kernel's sum OK), then `net_test.py` PASS on it (the terminal's
-log-in screen as before, no `rc exit status`).  `il_term_test.py` was
-not re-run on it.
+log-in screen as before, no `rc exit status`); `P9PORT=10985
+probe-tcp.sh` PASS (`walk: server has 13447 paths, list 12878; missing
+0, length differs 0, extra 569`: three paths more than in 5a, the
+overlay's `/sys/lib/qemu1e`, `.../glenda` and `.../glenda/profile`);
+`il_term_test.py` PASS as `none` and as `TERMUSER=glenda` (`check: user
+glenda ok`).
+
+On an existing build, `overlay.sh` puts a changed profile at
+`/sys/lib/qemu1e/glenda/profile` but does not install it in her home:
+`authinit.py` runs once (a second run stops at `user glenda already
+exists`).  Copy it on the floppy system (`cp /n/kfs/sys/lib/qemu1e/
+glenda/profile /n/kfs/usr/glenda/lib/profile`, after `disk/kfs` and
+`kfscmd allow` as `overlay.script` does), or rebuild.
 
 ### 5e. The Hobbit on the network
 

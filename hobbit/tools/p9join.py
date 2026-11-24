@@ -26,9 +26,14 @@ wrong password first, to show the auth server refusing it.
 The model types Return at `root is from` (il) and at `user[none]`, then
 each --type TEXT=REPLY in order.  The run ends at TEXT on the Hobbit's
 screen (--until, default `init: starting`), at a stop of the model, or at
---max-steps.  Needs tools/qemu1e/build.sh to have been run.  Writes
-build/a4net/join/{hobbit.pcap,server.pcap,server.log,console,uart0}
-(--out).
+--max-steps.  --fs9-cmd LINE is typed at fs9's rc (it runs -snapshot)
+before the Hobbit starts, e.g. to make /usr/glenda/lib/8half (glenda's
+profile then starts 8½, docs/qemu_1e_server.md 5d).  Needs
+tools/qemu1e/build.sh to have been run.  Writes, in --out (default
+build/a4net/join): hobbit.pcap, server.pcap, server.log, console,
+uart0, screen.png, screens.log (every QEMU's screen at each scripted
+reply and at the end), and with --hub cpu9.pcap, cpu9.log and hub.pcap
+(the whole segment).
 """
 import argparse
 import os
