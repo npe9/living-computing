@@ -70,6 +70,11 @@ answers for the bus scan, make_boot_info): 12,912 instructions, 8 SCSI
 commands (the bus scan: unit 7 found, 5..0 absent), no FEP packet, the
 console the banner alone; the stop enqueue_goal_to_processor with an
 unbound node number in scsi_manager:check_lpid_pool/7 (1.4).
+2026-11-24 (that goal waits, from VPIM; system_timer, set_timer,
+signed write_integer, wait_vector_0, apply with {}, diff of a
+structure; fep.py's append_open): 23,348 instructions, 10 SCSI
+commands, the first FEP message (append_open of pimos:pimos.syslog),
+the console the banner alone; the stop jump, not implemented.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).

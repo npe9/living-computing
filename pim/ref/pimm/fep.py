@@ -39,6 +39,8 @@ OURS, each for want of the FEP's own code:
     The IPL does not then ask for the rest (ref_scsi.py, "small
     buffer"), so in practice a reply must fit;
   - close is answered with status 1;
+  - append_open (203) is accepted, the bytes appended kept in
+    Fep.appended (OURS; the kernel's syslog, Fep.request);
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -50,16 +52,16 @@ raises FepError: nothing is guessed.
 
 The kernel's FEP conversation (rung S0 of docs/scsi_plan.md;
 longrun_ipl.py --reference --go --fep, or --load FILE --go --fep), as
-far as it goes (2026-11-23): TEST UNIT READY and INQUIRY to unit 7,
-then TEST UNIT READY to units 5, 4, 3, 2, 1, 0; no packet has been
-sent yet (the model stops before the kernel's first FEP message,
+far as it goes (2026-11-24): TEST UNIT READY and INQUIRY to unit 7,
+then TEST UNIT READY to units 5, 4, 3, 2, 1, 0, then the kernel's
+first FEP message, append_open of pimos:pimos.syslog (accepted;
 docs/binary_reverse_engineering.md 1.4, "The kernel's FEP
 conversation").
 """
 import struct
 
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
-READ_OPEN, GETB, CLOSE, ABORT = 201, 210, 60, 70
+READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
 NORMAL, EOD, ABNORMAL = 1, 2, 5
 # scsi_command's Result for a unit with no device (OURS, Fep.command)
 NO_DEVICE = 8 << 8
@@ -127,6 +129,8 @@ class Fep:
         self.messages = []      # ('>' or '<', device id, [command or status, args...])
         self.partial = {}       # device id -> the pieces of a continued message
         self.files = {}         # device id -> [bytes, position]
+        self.appending = {}     # device id -> the path it appends to
+        self.appended = {}      # path -> the bytes appended to it (OURS)
         self.replies = []       # packets to give, in order
         self.stopped = False
 
@@ -226,6 +230,22 @@ class Fep:
             if data is None:
                 return [ABNORMAL]
             self.files[dev] = [data, 0]
+            return [NORMAL]
+        if cmd == APPEND_OPEN and len(msg) == 5 and dev not in self.files \
+                and dev not in self.appending:
+            # {Id, 203, "", User, Password, Path}: fep#append_open
+            # (macro/pimos/pimos/pimos.vmac:69; bios/fep_module/
+            # file_dvc.kl1 device_create/5, the reply as read_open's).
+            # The kernel's syslog (bios/boot/syslog.kl1 wait_status1/3)
+            # opens pimos:pimos.syslog so on every boot; a real FEP
+            # appends to that file.  Accepted, OURS: the stand-in keeps
+            # what is appended in memory (Fep.appended), so the boot
+            # goes the way it does with a FEP that holds the file (an
+            # ABNORMAL answer is also taken by PIMOS, with "SYSLOG
+            # ERROR: reason / cannot open file pimos:pimos.syslog" on
+            # the console).
+            self.appending[dev] = msg[4]
+            self.appended.setdefault(msg[4], bytearray())
             return [NORMAL]
         if cmd == GETB and len(msg) == 2 and dev in self.files:
             f = self.files[dev]

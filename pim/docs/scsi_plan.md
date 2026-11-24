@@ -23,7 +23,14 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   commands, 12,912 instructions; no FEP packet yet. The stop is
   `enqueue_goal_to_processor` with an unbound node number, a choice
   about the firmware recorded in 1.4 with VPIM's and KLIC's reading
-  (wait for the number) and PDSS's (ignore it).)* On the Bluespec core the whole
+  (wait for the number) and PDSS's (ignore it).)* *(2026-11-24: the
+  wait implemented from VPIM, as the session lead decided; then
+  `system_timer`/`set_timer` (the clock at 0, ours), signed
+  `write_integer`, `wait_vector_0`, `apply` with `{}`, `diff` of a
+  structure and an atom, all on both models; `fep.py` answers the
+  kernel's FIRST FEP MESSAGE, `append_open` of `pimos:pimos.syslog`
+  (accepted, ours). 23,348 instructions, 10 SCSI commands, the console
+  still the banner alone; the stop `jump`, not implemented (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
