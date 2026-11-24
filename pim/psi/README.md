@@ -75,12 +75,18 @@ What was measured about these fields:
   `(atom, kind<<8|arity, predh, 0)` points at that offset. Every
   reference resolves, and no header is left unreferenced.
 - **Cell numbering.** `asm/ptfdump.py` numbers cells wrongly after some
-  hash tables. MEASURED: 84 of the 162 tables followed by a header span
-  `mask+1 + 2*keys + 2` cells, one more than ptfdump counts. For the same
-  reason its "552 of 554 tokenize exactly" is not evidence. So the
-  loader never uses a token's cell number across predicates. It finds
-  each predicate by its header and renumbers that predicate's cells
-  from the header's offset.
+  hash tables. Headers that follow such a table sit at cell indices
+  that disagree with the offsets their predh cells carry. A scratch
+  probe (2026-11-23, not in the repo) suggests that every table spans
+  `mask+1 + 2*keys + 2` cells and that its size word is unreliable.
+  That is a hypothesis: the probe measured drift from the class start,
+  so it accumulated over several tables.
+  - Test, for step 2: renumber cells with that span and count the
+    headers whose head cell is not at offset - 2.
+  - ptfdump's "552 of 554 tokenize exactly" is not evidence either way.
+  - The loader therefore never uses a token's cell number across
+    predicates. It finds each predicate by its header and renumbers that
+    predicate's cells from the header's offset.
 - **Term tags.** The trailer's term tags confirm more of the tag pairing
   in `layers/KL0.md` §2: list 2, strg 3, flt 10, svct 23, hvct 24 and
   mod 27, with code references as loc/cod plus a GC bit.
@@ -96,7 +102,7 @@ What was measured about these fields:
   primary, 0x26/0x36 before-demon, 0x27/0x37 after-demon, 0x22/0x32
   slot initialisation, 0x11 local, 0x12 `$or$N`. Kind 0x26, a class
   before-demon, occurs once, in kappa. Kind 0x37 is matched to source
-  119 times in kappa.
+  119 times in kappa (ad hoc count over plaintext.py's matches, 2026-11-23).
 - **The dynamic-predicate field.** It is 0 in every class but one,
   `tour##tt_belief_system`. There it is 19 pairs of (local offset, flag),
   and the source declares 19 `:- dynamic(P/N);`. What the flag means is
@@ -139,7 +145,7 @@ App. A, Fig. A-1 p.241 and p.242).
 - OURS: the table size (the smallest power of two that holds the keys),
   the atom numbers (interned in load order, 28,399 atoms), counting the
   receiver in `n` (the template's arity does), and the layout in words.
-  With these choices the longest synonym chain is 6. The thesis reports
+  With these choices the longest synonym chain is 6 (ad hoc probe over all class objects, 2026-11-23). The thesis reports
   1-2 for its own sizes, so its sizing rule is not ours.
 - `Librarian.send` looks up a selector through the table.
 
@@ -160,7 +166,7 @@ The TM-388 page images (PDF pp.54-55) were read for this.
 the "in the order of the inheritance" sentence describes the AND
 operation, and the next paragraph states the order explicitly. The
 conflict is TM-388 and TR-044 against the thesis. In the held code it
-matters for 11 combined methods, those with two or more after-demons.
+matters for 11 combined methods, those with two or more after-demons (ad hoc count over `build_all()`, 2026-11-23).
 
 ## Results (2026-11-23)
 
@@ -228,8 +234,30 @@ natures plus references.
 | kappa2 | 739 of 797 | 734 | 739/739 | 2,957/2,957 | 5,539/5,693 | 206/206 | 7,562/7,570 |
 | utter | 69 of 104 | 67 | 69/69 | 109/109 | 382/382 | 3/3 | 874/878 |
 
-The 168 disagreements, each listed with its cause in
-`plaintext_disagreements.tsv`:
+**Why "with source" is 739 for kappa.** Of kappa's 797 templates, 739
+match an ESP class by name. 55 more are macro banks whose source is
+held: their natures include `simpos##esp_macro_expander_for_compiler`,
+and `plaintext.py` does not compare macro banks. The other 3 have no
+source.
+
+The earlier figures count differently:
+
+- `required/NOTES.md`'s 794 is 739 + 55.
+- The 696 in `archive_search_notes.md` is a case-folded file-level
+  count.
+
+utter has 69 matched templates, 6 macro banks with source, 3 more
+classes with the macro-expander nature, and 26 with no source.
+
+Five kappa classes and one paragraph class are defined more than once
+in the source. Each is compared with its closest definition, which
+biases those six toward agreement.
+
+The 168 disagreements, each listed in `plaintext_disagreements.tsv`.
+Their causes were **assigned by rule (INFERENCE), not checked row by
+row**. A method or local row in a class that uses a macro bank is
+attributed to the bank. A row in a class with an unparsed source item
+is attributed to the parser.
 
 - **159 in classes that use a macro bank.** The bank's generated
   clauses are not modelled. 153 of these are in two kappa
@@ -239,7 +267,9 @@ The 168 disagreements, each listed with its cause in
 - **1 from the version skew**: `paragraph_version` has `"3200"` in the
   source and `"3500"` in the object.
 
-No disagreement is left unexplained, and the test pins that.
+No row falls outside these rules, and the test pins that. The rules
+are coarse, though: a real disagreement inside a macro-bank class would
+be attributed to the bank too.
 Template names in two-byte JIS are decoded before comparison, and both
 sides are NFKC-normalised.
 
