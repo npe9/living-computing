@@ -128,7 +128,6 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import pimm  # noqa: E402
 
-pimm.Machine.ahead = True       # this bench runs what only the reference model has
 import fep as fepm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 import lockstep_file as lfile  # noqa: E402

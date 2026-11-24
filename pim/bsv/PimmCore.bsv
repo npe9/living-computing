@@ -30,6 +30,10 @@ interface PimmCore;
   method ActionValue#(Cell) newVarResult;
   method Action setArg(Bit#(8) n, Cell w);      // argument n (from 1) of the goal being built
   method Action spawn(Addr pc, Bit#(8) argn);
+  // the spawned goal's record is written: the bench waits for it, so
+  // that the next argument register it loads is not traced before the
+  // record's cells
+  method ActionValue#(Addr) spawned;
   method Action run;
   method ActionValue#(End) finished;
   // between runs: bind or compare two terms, look at a term
@@ -142,7 +146,8 @@ module mkPimmCore#(String image)(PimmCore);
   method ActionValue#(Cell) newVarResult = gbox.newVarResult;
   method Action setArg(Bit#(8) n, Cell w) = regs.wa(n, w);
   method Action spawn(Addr pc, Bit#(8) argn) =
-    gbox.record(fromInteger(lay_READY), pc, argn, True, False);
+    gbox.record(fromInteger(lay_READY), pc, argn, True, True);
+  method ActionValue#(Addr) spawned = gbox.recordResult;
   method Action run = runQ.enq(True);
   method ActionValue#(End) finished;
     endQ.deq;

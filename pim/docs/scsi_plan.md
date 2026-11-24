@@ -143,18 +143,21 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   "the machine has run dry" point of its own) and the tape; a long
   vector (seven elements) is built from `NEWVAR`/`UNIFY`/`PTR`, no new
   operation.
-- **S3 in part.** `ref/pimm/lockstep_scsi.py` runs `scsi_init` and
+- **S3 done.** `ref/pimm/lockstep_scsi.py` runs `scsi_init` and
   `scsi_command` in lockstep at their sites (`scsi:create/2`,
   `scsi:command_executer/2`): TEST UNIT READY, SEND, RECEIVE, a reply
   cut in two, both waiting paths, an element waited for; injections
   in its header. `scsi_command`'s `Machine.ahead` gate (waiting on an
-  element) is removed. `ref_scsi.py`'s six IPL parts are written as
-  scripts and pass `ref_scsi.check` and the bus check under
-  `lockstep_scsi.py --reference`, but are NOT on the core: the IPL
-  binds a merger input to a vector (`scsi_fep_general:
-  request_device_io/5`), which the core refuses. The suite's run FAILS
-  once the reference stops refusing it without `Machine.ahead`, so
-  that they are moved in and pinned then.
+  element) is removed, and `ref_scsi.py` no longer sets
+  `Machine.ahead`. `ref_scsi.py`'s six IPL parts are on both models
+  (`lockstep_scsi.py --part 1..6`, `run_pimm_lockstep.sh`'s
+  `scsi@1..6`, since the merger's vector input reached the core in
+  master's d1beeb7b): 1,458,322 / 2,683,031 / 2,654,349 / 2,683,403 /
+  324,652 / 71,735 trace lines identical, `ref_scsi.check` and the
+  bus check on each. The bench now waits for a spawned goal's record
+  before its next operation (the IPL parts load an argument register
+  right after a SPAWN, and the register's A line was traced before the
+  record's M lines).
 
 ## 4. Order and dependencies
 

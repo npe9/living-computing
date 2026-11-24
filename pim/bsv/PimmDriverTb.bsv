@@ -61,7 +61,7 @@ module mkPimmDriverTb(Empty);
       // a slot keeps what it gives: MRB on
       Arg:    core.setArg(a, marked(slot.sub(sb)));
       ArgC:   core.setArg(a, cell_);
-      Spawn:  core.spawn(truncate(cell_.val), a);
+      Spawn:  begin core.spawn(truncate(cell_.val), a); answer = True; end
       Run:    begin core.run; answer = True; end
       Out:    begin core.derefReq(marked(slot.sub(sa))); answer = True; end
       Unify:  begin core.unifyReq(marked(slot.sub(sa)), marked(slot.sub(sb))); answer = True; end
@@ -118,6 +118,12 @@ module mkPimmDriverTb(Empty);
 
   rule unified (awaited && (kind == Unify || kind == UnifyC));
     let ok <- core.unifyDone;
+    awaited <= False;
+    ip <= ip + 1;
+  endrule
+
+  rule spawnedGoal (awaited && kind == Spawn);
+    let g <- core.spawned;
     awaited <= False;
     ip <= ip + 1;
   endrule

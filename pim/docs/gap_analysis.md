@@ -234,8 +234,9 @@ core on a port; the lockstep bench answers it from a tape the
 reference recorded, and the bytes the core puts on the bus are
 compared as `B` trace lines (`ref/pimm/lockstep_scsi.py`, at
 `scsi:create/2` and `scsi:command_executer/2`). The IPL's own file
-service (`ref_scsi.py`'s parts) is not on the core yet: it binds a
-merger input to a vector. `docs/scsi_plan.md` S1-S3.)*
+service (`ref_scsi.py`'s six parts) is in lockstep too, since the
+merger's vector input reached the core (`lockstep_scsi.py --part
+1..6`). `docs/scsi_plan.md` S1-S3.)*
 
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are

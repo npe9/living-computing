@@ -3,6 +3,7 @@
 
     python3 ref/pimm/lockstep_scsi.py --script FILE     write the script and its tape
     sim_pimm_driver | python3 ref/pimm/lockstep_scsi.py compare
+    python3 ref/pimm/lockstep_scsi.py --part N ...      the same for IPL part N (1..6)
     python3 ref/pimm/lockstep_scsi.py --reference       the reference alone, and
                                                         ref_scsi.py's IPL parts
 
@@ -57,22 +58,29 @@ the B lines against the commands this test meant to send, written out
 here, the device's finished commands in order, two commands that
 waited, the trace pinned.
 
-With --reference also ref_scsi.py's six IPL parts (one file, two files,
-characters, late, odd, small buffer), played as driver.Script scripts
-with ref_scsi.check and the B lines against the device's own record.
-They are NOT on the Bluespec yet: the IPL binds a merger input to a
-vector (scsi_fep_general:request_device_io/5), which the core refuses
-(Machine.ahead's 'a merger input bound to a vector').  The compare run
-checks that the reference still refuses it without Machine.ahead, and
-FAILS when it does not, so that the parts are moved into the script
-and pinned once the core has the merger's vectors.
+With --part N, ref_scsi.py's IPL part N (1 one file, 2 two files, 3
+characters, 4 late, 5 odd, 6 small buffer), each its own script on a
+fresh machine and device (bsv/run_pimm_lockstep.sh's scsi@N): the body
+of ipl:boot0/0 as ref_scsi.boot makes it, through driver.Script, the
+IPL reading its list and files through its own SCSI stack; RUN, then
+POLL and RUN while a poll finishes a command (built with Script.live),
+then a last POLL.  Checked: ref_scsi.check (the files opened, Files,
+Loaded, the console, the first commands against
+docs/binary_reverse_engineering.md 1.3, the requests per device, the
+heap cells), the B lines against the device's own record, the trace
+pinned (PINNED_IPL).  They need the merger's vector input
+(scsi_fep_general:request_device_io/5), on both models since master's
+d1beeb7b.
 
 On the reference, 2026-11-23: the script leaves 3 goals waiting
 (scsi:create/2's merger input, command_executer/2 and
 request_manager/3 on their streams, as read from the code; not
 checked); the six IPL parts as scripts pass ref_scsi.check and
-the bus check, with 1,458,298 / 2,683,003 / 2,654,321 / 2,683,375 /
-324,628 / 71,711 trace lines (late: 47 B lines, 7 polls that finish).
+the bus check; after the merge of d1beeb7b (24 to 28 lines more each
+than before it, where the reference took the merger's vectors under
+Machine.ahead; the cause is not traced line by line) 1,458,322 /
+2,683,031 / 2,654,349 / 2,683,403 / 324,652 / 71,735 trace lines
+(late: 47 B lines, 7 polls that finish), the pins.
 
 Observed fault injections into bsv/PimmScsiBox.bsv (the last but three
 into the exec stage's hook in PimmStages.bsv), 2026-11-23, each from a
@@ -106,8 +114,7 @@ at a time is the most run, here and in ref_scsi.py's "late").
 Not run: a vector not of seven, a seventh element not 0, a length over
 the buffer, a CDB or buffer not of 8-bit elements, the device giving
 more bytes than asked (refusals, which the driver cannot play);
-scsi_init without a device; a fifth waiting command; the IPL parts on
-the core (above).
+scsi_init without a device; a fifth waiting command.
 """
 import os
 import struct
@@ -122,6 +129,9 @@ import fep as fepm  # noqa: E402
 import pimm  # noqa: E402
 
 PINNED = dict(parts=7, lines=1553)
+# the IPL parts (--part 1..6): trace lines, one part each
+PINNED_IPL = {'one file': 1458322, 'two files': 2683031, 'characters': 2654349,
+              'late': 2683403, 'odd': 324652, 'small buffer': 71735}
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 NIL = (pimm.ATOM, 0)
 BUFFER = 61
@@ -425,12 +435,15 @@ def ipl_script(files, device):
     return s, v
 
 
-def ipl_part(label, files, device):
-    """Build the part's script live (the polls), then play it on a
-    fresh machine with a counting trace; ref_scsi.check and the B
-    lines against the device's record."""
+def ipl_build(n):
+    """IPL part n (1..6, ref_scsi.PARTS' order) as a script, built live
+    (Script.live): RUN, then POLL and RUN again while the device
+    finishes a waiting command, then a POLL that finishes none (where
+    the reference ran dry for good)."""
     import ref_scsi
+    label, files, device = ref_scsi.PARTS[n - 1]
     s, v = ipl_script(files, device)
+    s.ops.insert(0, ('label', label))
     s.run()
     polls = 0
     while True:
@@ -444,20 +457,18 @@ def ipl_part(label, files, device):
             break
         polls += 1
         s.run()
-    t = time.time()
-    m = s.make()
-    m.tr = Counted()
-    slot = [(0, 0)] * 16
-    outs = []
-    for o in s.ops:
-        if o[0] != 'label':
-            driver.Script._do(m, slot, o, outs, label)
-    m.polls, m.seconds = polls, time.time() - t
+    s.polls = polls
+    return s, v, label, files, device
+
+
+def ipl_check(s, v, label, files, device, m, slot, trace):
+    """ref_scsi.check, and the B lines against the device's record."""
+    import ref_scsi
+    m.polls = s.polls
     words = {k: slot[i] for k, i in v.items()}
     bad = ref_scsi.check(label, files, device, m, words, m.fep.opened)
-    # the bus: a B line per device call, the finished ones as the
-    # device recorded them
-    lines = [ln for ln in m.tr if ln.startswith('B ') and ln != 'B init']
+    # a B line per device call, the finished ones as the device recorded them
+    lines = [ln for ln in trace if ln.startswith('B ') and ln != 'B init']
     calls = [e for e in m.scsi_tape if not (e and e[0] == 'init')]
     done = [ln for ln, e in zip(lines, calls) if e is not None]
     wire = ['B 7 %d %s %d %d%s' % (cdb_[1] >> 5, cdb_.hex(), 1 if out else 2 if back else 0,
@@ -467,24 +478,22 @@ def ipl_part(label, files, device):
     if len(lines) != len(calls) or done != wire:
         bad.append(('the bus', len(lines), len(calls),
                     [(a, b) for a, b in zip(done, wire) if a != b][:1]))
-    return bad, m
+    return bad
 
 
-def merger_still_refused():
-    """True while the reference refuses, without Machine.ahead, the
-    merger input bound to a vector that the IPL parts need."""
-    import ref_scsi
-    s, _v = ipl_script([ref_scsi.HASH], {})
-    s.run()
-    ahead = pimm.Machine.ahead
-    pimm.Machine.ahead = False
-    try:
-        s.live()
-    except pimm.Unimplemented as e:
-        return 'merger input bound to a vector' in str(e) and 'Machine.ahead' in str(e)
-    finally:
-        pimm.Machine.ahead = ahead
-    return False
+def ipl_reference(n):
+    """Part n on the reference alone, a counting trace."""
+    s, v, label, files, device = ipl_build(n)
+    t = time.time()
+    m = s.make()
+    m.tr = Counted()
+    slot = [(0, 0)] * 16
+    outs = []
+    for o in s.ops:
+        if o[0] != 'label':
+            driver.Script._do(m, slot, o, outs, label)
+    m.seconds = time.time() - t
+    return ipl_check(s, v, label, files, device, m, slot, m.tr), m, s
 
 
 def reference(argv):
@@ -493,20 +502,41 @@ def reference(argv):
     bad = check(s, s.machine, want, bus, parts)
     print('direct: %r, %d parts, %d lines, %d goals left waiting'
           % (bad, len(parts), sum(len(p) for p in parts.values()), s.machine.nsusp))
-    import ref_scsi
-    pimm.Machine.ahead = True              # the merger's vectors: see the header
-    for label, files, device in ref_scsi.PARTS:
-        b, m = ipl_part(label, files, device)
-        print('%-12s %r: %d commands, %d B lines, %d trace lines, %d polls, %.0f s'
-              % (label, b, len(m.fep.wire), sum(1 for ln in m.tr if ln[0] == 'B'),
-                 m.tr.n, m.polls, m.seconds))
+    for n in range(1, 7):
+        b, m, si = ipl_reference(n)
+        print('%d %-12s %r: %d commands, %d B lines, %d trace lines, %d polls, %.0f s'
+              % (n, si.ops[0][1], b, len(m.fep.wire), sum(1 for ln in m.tr if ln[0] == 'B'),
+                 m.tr.n, si.polls, m.seconds))
         bad += b
     return 1 if bad else 0
+
+
+def ipl_main(argv, n):
+    s, v, label, files, device = ipl_build(n)
+    if '--script' in argv:
+        s.write(argv[argv.index('--script') + 1], tape=s.record_tape())
+        return 0
+    name = 'pimm lockstep scsi@%d (%s)' % (n, label)
+    ok, m = driver.compare(s, sys.stdin, name, dict(parts=1, lines=PINNED_IPL[label]))
+    if not ok:
+        return 1
+    bad = ipl_check(s, v, label, files, device, m, s.slots, m.tr)
+    if bad:
+        print('%s: FAIL %r' % (name, bad[:3]))
+        return 1
+    print("%s: PASS (ref_scsi.py's part on the Bluespec core: the IPL's own SCSI file "
+          'service, the device on a tape; %d trace lines identical to the reference model, '
+          '%d B lines, %d commands finished, %d polls; ref_scsi.py\'s checks)'
+          % (name, s.counts['lines'], sum(1 for ln in m.tr if ln.startswith('B ')),
+             len(m.fep.wire), s.polls))
+    return 0
 
 
 def main(argv):
     if '--reference' in argv:
         return reference(argv)
+    if '--part' in argv:
+        return ipl_main(argv, int(argv[argv.index('--part') + 1]))
     s, want, bus = script()
     if '--script' in argv:
         s.write(argv[argv.index('--script') + 1], tape=s.record_tape())
@@ -524,9 +554,6 @@ def main(argv):
     if not ok:
         return 1
     bad = check(s, m, want, bus, kept)
-    if not merger_still_refused():
-        bad.append(("the reference runs ref_scsi.py's IPL parts without Machine.ahead: "
-                    'move them into this script and pin them',))
     if bad:
         print('pimm lockstep scsi: FAIL %r' % (bad[:3],))
         return 1
@@ -535,8 +562,8 @@ def main(argv):
           '%d device calls (B lines) of %d commands compared byte for byte; scsi:create/2 and '
           'scsi:command_executer/2 at their sites: TEST UNIT READY, SEND, RECEIVE, a reply '
           'cut in two, two commands that waited (one finished inside a SEND, one at a '
-          "poll), an element waited for.  ref_scsi.py's IPL parts NOT on the core: the "
-          'merger input bound to a vector)' % (s.counts['parts'], s.counts['lines'], len(bus) - 1, m.scsi_commands))
+          "poll), an element waited for; ref_scsi.py's IPL parts are scsi@1..6)"
+          % (s.counts['parts'], s.counts['lines'], len(bus) - 1, m.scsi_commands))
     return 0
 
 
