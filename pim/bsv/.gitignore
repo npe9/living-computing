@@ -15,3 +15,9 @@ sim_*
 generated/
 build_pimm/
 fpga_build/
+# the FEP emulator benches (run_fepemu.sh, run_fepemu_fpga.sh); bsc puts
+# the BDPI C objects beside their sources
+build_fepemu*/
+PimmSdBlockFile.o
+PimmFepEmuTb.o
+fpga_build_fepemu/
