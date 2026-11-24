@@ -54,8 +54,12 @@ OURS, each for want of the FEP's own code:
     240, the string-I/O programs (601, 620), the window calls, close
     (60) on every kind, a request the FEP holds (the login server's
     io(1), a window's getl) answered by an event the bench asks for
-    when the machine is idle (Fep.idle: the scripted login of 7.5),
-    and abort (70) answering a held request with status 6 (6.7).
+    when the machine is idle (Fep.idle: the scripted login of 7.5,
+    then the lines typed, Fep(lines=..): each the answer
+    [1, the line in JIS] to the next held getl, in order, with no
+    newline (whether the FEP sends one is not known, 7.5; the shell
+    took "shutdown" without one); the event list is OURS, its reply's form is
+    bios/fep_module/win_dvc.kl1:307-312), and abort (70) answering a held request with status 6 (6.7).
     Each answer's marks (SOURCED, READ, HELD FILE, OURS) are at its
     constant below;
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
@@ -197,13 +201,15 @@ class Fep:
     ABSENT = (0, 1, 2, 3, 4, 5)
 
     def __init__(self, open_file, getb_unit=1, limit=None, max_buffer=None, lag=False,
-                 getb_bytes=None):
+                 getb_bytes=None, lines=()):
         """open_file(path bytes) -> the file's bytes, or None.  For
         tests: limit, the number of commands after which the device
         stops answering; max_buffer, another buffer size; lag, every
         RECEIVE is refused once before it is answered (a reply that
         is not ready when it is asked for); getb_bytes, the bytes a
-        getb gives whatever it asks for."""
+        getb gives whatever it asks for; lines, the lines typed after
+        the login, one per held getl (110), in order (OURS, the event
+        list: fep_services.md 7.5)."""
         self.open_file = open_file
         self.getb_unit = getb_unit
         self.limit = limit
@@ -222,7 +228,9 @@ class Fep:
         self.windows = set()    # device ids of windows made (104)
         self.listening = set()  # login server devices whose io(0, "local") was answered
         self.held = {}          # device id -> 'login' or 'getl': a request the FEP holds
-        self.script = [('login', LOGIN)]   # the events Fep.idle takes, in order (OURS)
+        # the events Fep.idle takes, in order (OURS): the login, then
+        # each line typed, the answer to the next held getl
+        self.script = [('login', LOGIN)] + [('getl', line) for line in lines]
         self.log = []           # (device id, text): the replier's texts, a window's putb
         self.ticks = 0          # the machine's clock (1/16 msec), set by pimm.py
         self.appended = {}      # path -> the bytes appended to it (OURS)
