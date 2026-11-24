@@ -36,7 +36,10 @@ On BOTH models (bsv/run_pimm_longrun.sh), 2026-11-23: the whole list,
 on a machine shared with other runs (668 s of it making the script).
 That run's simulator was built from the tree of b7187d59, before the
 merger timing change of 2026-11-24 (docs/pimm_semantics.md, merge),
-which moves the count; not run again since.
+which moved the count.  Run again 2026-11-24 under the merger rule
+(the simulator built from the tree of 3712bdd9): 448,194,526 trace
+lines identical, every check passing, 7,435 s to the compare on a
+shared machine (546 s of it making the script).
 
 --go (reference model alone, with what only it has: Machine.ahead):
 after the link, top:go_pimos1(Loaded, BootInfo) is started as the IPL
@@ -146,11 +149,11 @@ import lockstep_ipll as ipll  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-# lines: the Bluesim run of 2026-11-23, BEFORE the merger timing change
-# of 2026-11-24, which moves it (every lockstep count after a merger
-# moved); bsv/run_pimm_longrun.sh will fail this count until it is run
-# again and re-pinned.  The other values are the reference's, unchanged
-PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=447739516)
+# lines: the Bluesim run of 2026-11-24 under the merger rule (the merger
+# acts at unification, docs/pimm_semantics.md merge), 448,194,526; it was
+# 447,739,516 before that change, which moved it (every lockstep count
+# after a merger moved).  The other values are the reference's, unchanged
+PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=448194526)
 T0 = time.time()
 BANNER = 'PIMOS V 3.600 20-May-93'
 

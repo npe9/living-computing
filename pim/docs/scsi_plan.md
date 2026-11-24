@@ -63,8 +63,8 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   string-I/O window, `pimos_standard_io_window`, it runs to `PIMOS
   END********` (8,766,339 instructions); `cat <= file("pimos:pimos.groups")`
   reads that file through `pimos:` (1.4, "A command typed").)* On the Bluespec core the whole
-  IPL load is identical (447,739,516 trace lines, 2026-11-23, before
-  the merger timing change); `--go` has not been
+  IPL load is identical (448,194,526 trace lines, re-run
+  2026-11-24 under the merger rule; 447,739,516 before it); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
   **reference model only** (`pimm.py` `i_scsi_init`, `i_scsi_command`,

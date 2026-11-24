@@ -232,9 +232,10 @@ a command not ready at a poll; the copy's pad bytes from old memory
 fail none (every string has zero pad).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
-hours; run whole on both models 2026-11-23: 447,739,516 trace lines
-identical, before the merger timing change of 2026-11-24, which moves
-the count; not run again since): the IPL's `load/4` on the whole held `pimos.ipl`,
+hours; run whole on both models 2026-11-24, under the merger rule:
+448,194,526 trace lines identical, every check passing, 7,435 s to the
+compare on a shared machine; 447,739,516 on 2026-11-23, before the
+merger timing change, which moved the count): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
