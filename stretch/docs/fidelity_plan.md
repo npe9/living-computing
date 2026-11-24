@@ -378,7 +378,14 @@ images instead of the disk.
 
 **IBM's own diagnostics as oracles, not yet run** (`archival_inventory.md`):
 - The three memory tests, `ja_bp6a` (6 pp), `ja_bm6a` and `ja_bb6b`,
-  gate A11a, the memory cycle.
+  gate A11a, the memory cycle. `ja_bp6a` is RUN (2026-11-24,
+  `decks/ja_bp6a_memory_patterns.strap`, bit-exact against
+  `verify_ja_bp6a_listing.py`; details in `archival_inventory.md`). It
+  gives A11a no timing: the document states no unit-busy or cycle time.
+  Its PDF p.1 puts the two A boxes at 40 (octal) and the four B boxes at
+  100000, the reverse of `StretchMemory.bsv`'s map. That is open for
+  A11a, and the model is not changed yet. `ja_bm6a` and `ja_bb6b` are
+  next.
 - I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
 - BX-0 (`ka_ex1`) gates A11.
 
