@@ -68,8 +68,10 @@ the trace), `lockstep_alt.py` `read_eagerly`
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
 waiting on an element of its vector, `lockstep_reuse.py`
 `put_reused_structure` of a vector of seven or more;
-`longrun_ipl.py` is the long run (not in the suite); 130
-instructions on both models.  On the reference model ALONE, a
+`longrun_ipl.py` is the long run (not in the suite); 131
+instructions on both models (counted 2026-11-23: 133 `i_` handlers in
+`pimm.py`, less `scsi_init` and `scsi_command`, on the reference alone;
+129 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with
 a merger input bound to a vector

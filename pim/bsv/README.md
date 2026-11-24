@@ -184,8 +184,10 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 130
-instructions; goals as
+State: 131
+instructions (a recount, 2026-11-23: 133 handlers in `pimm.py` less the
+two SCSI built-ins on the reference alone; 129 without our two stubs; the
+earlier 128 and 130 were increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
