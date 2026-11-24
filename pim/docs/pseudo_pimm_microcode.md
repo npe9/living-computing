@@ -212,6 +212,10 @@ Entry points of interest for the runtime (from `--entries`):
 
 ## 4. Microinstruction fields
 
+*Note 2026-11-23: `mekbn.py` now decodes by Nakashima's Fig. 3-25,
+not TR-733 fig. 4; this section and those after it keep the old field
+names. Map and consequences: section 21.*
+
 MEASURED:
 
 - Bits 25..23 select the branch kind and bits 15..0 are its operand.
@@ -1135,7 +1139,7 @@ has a conditional exit: to `1c21`, `1c18`, `1c12`).
 | 12 | `{COD, the instruction's operand}`, made at `1c08` | DERIVED. INFERENCE: the operand is the label, so this is the predicate's code address |
 | 13 | `R12` | DERIVED; what `R12` holds is not known |
 | 14 | `R13` | DERIVED. `1c12` stamps `FPREC` on `R13`, so INFERENCE: the goal's parent (foster-parent record) |
-| 15 | a value made at `1c0f` that the tracer cannot name | not recovered |
+| 15 | a value made at `1c0f` that the tracer cannot name | not recovered. *2026-11-23 (section 21): traces as `{VECT2o, 0}`, on an unverified reading of TGIF = 3* |
 
 `enqueue_goal` (`4c00`) agrees where it can be read, and uses the
 other port:
@@ -1150,7 +1154,10 @@ other port:
   again.
 - `4c06`: `R14 := {HOOKo, f(old R10)}`, the record just filled (f is
   an ALU operation, `AL` = 1, that was not identified), and the last
-  value loaded for the trailer is the old `R14`.
+  value loaded for the trailer is the old `R14`. *Corrected
+  2026-11-23 (section 21): `AL` = 1 is ALF 0 plus JMPF's bit 26, a
+  plain pass, so f is the identity: `R14 := {HOOKo, old R10}`; and at
+  `216e` below, `R10 := R14`.*
 
 INFERENCE, not DERIVED: **cell 15 is the link, and `R14` is the head
 of a list of goal records linked through cell 15, newest first.** It
@@ -1264,3 +1271,52 @@ its EM1 codes (minimal pair: `set_value` `3187` against `write_value`
 priority and code from the record, which names `R12` and cell 15, and
 it is the place the Goal Stack Entry Table has to appear if this
 firmware uses it per priority.
+
+## 21. The field names after 2026-11-23 (Nakashima's Fig. 3-25)
+
+`asm/mekbn.py` now decodes the word by the PSI-III layout of
+Nakashima's 1991 thesis, Fig. 3-25, instead of TR-733 fig. 4 as
+measured from the figure. Sections 1-20 above, their quoted `--dis` /
+`--rtl` lines and the fault-injection constants of sections 12 and 19
+keep the old names. The measurements, the per-field sources and the
+changed pins are in `psi_microword.md` section 7. Old to new:
+
+| Old (TR-733 geometry) | New | Note |
+|---|---|---|
+| bit 63 (not decoded) | DBGF | zero in 99.6% |
+| `CCF` 62-58, `DST`, `SC1`, `SC2`, `SD1`, `SD2`, `CND` | `CCF`, `DSTF`, `SC1F`, `SC2F`, `SD1F`, `SD2F`, `CNDF` | same bits |
+| bit 57 (`WRB_BIT`) | `WRBF` | same bit |
+| `AS1` 36-34 ("bits 36..34", the ALU destination) | `ADF` | same bits; the thesis's name agrees with what section 16 found |
+| `AS2` 33-32 = 2 ("the MDR") / 3 ("the MAR") / 1 ("r1") | `AS1F` 33-31 = 4 or 5 (MDR1 / MDR2) / 6 or 7 (MAR1 / MAR2) / 2 or 3 | the old `AD`'s top bit (31) is AS1F's low bit, and it says which MDR (enable rule, `psi_microword.md` 7) |
+| `AD` 31-29 ("bits 31..29") = 4 XR / 1 YR / 5 XR + YR / 0 | AS1F = 1 (XR) with AS2F 30-29 = 0 / AS1F even with AS2F = 1 (YR) / AS1F = 1 and AS2F = 1 / AS1F even, AS2F = 0 | "5 = XR + YR" is AS1F = XR, AS2F = YR, ALF = 0 (add): the thesis layout gives that rule its operands, which section 16 had to fit |
+| `AL` 28-26 ("op N") | `ALF` 28-27, and bit 26 is JMPF's top bit | old `AL` = 2 x ALF + bit 26. ALF 0 add, 1 subtract, 2 / 3 operation in EM2 |
+| `JMP` 25-23 ("JMPF N") | `JMPF` 26-23; "JMPF N" above is its low three bits (`jk`) | k and k + 8 read alike except 4-bit 2, not page-relative |
+| `x18` | `MCF` | |
+| `x17` ("bits 17..16") | `TGIF` | |
+| `EM` 15-0 | `EM1`, `EM2`, `EM3`; `EM` still accepted by `field()` | |
+| constants `AS2_MDR`, `AS2_MAR`, `SRC_XR`, `SRC_YR`, `SRC_SUM` (section 19) | `AS1_MDR`, `AS1_MAR`, `alu_in(x)` = (AS1F, AS2F), `AS2_ZERO`, `AS2_YR`, `plain_add(x)` | those injections cannot be re-run as written |
+
+What the new layout changed in the readings above (MEASURED / DERIVED,
+pinned by `--check`):
+
+- **Section 18's "unidentified ALU operation, `AL` = 1"** at `4c06`
+  and `216e` is not an operation: `AL` = 1 is ALF 0 with bit 26 set,
+  i.e. a plain pass of AS1F = XR, and bit 26 belongs to the branch
+  (JMPF a). So `4c06` is `R14 := {HOOKo, XR}` with XR = the old `R10`
+  (loaded at `4c05`), and `216e` is `R10 := XR` with XR = `R14`
+  (loaded at `216d`). DERIVED: `R14` becomes the record just filled,
+  and `proceed` takes `R10` from `R14`. This removes the weakest of the
+  three steps under section 18's INFERENCE that `R14` heads a list of
+  goal records; the other two (the MAR2 address form at `4c03`, the
+  bit-59 writes) stand.
+- **Cell 15 of `suspend`'s goal record** (`1c10`, section 18's table:
+  "not recovered") now traces as `{VECT2o, 0}`: `1c0f` passes zero
+  into MDR1 with TGIF = 3 and EM1 = `VECT2o`. DERIVED on the
+  unverified reading of TGIF = 3 as both stamps (section 16: "3 not
+  understood"); what the value means is not established.
+- `xr_pass` and `base_plus_constant` (section 16) gain the words with
+  bit 26 set: 450 of 532 and 141 uses with the constant still never
+  above 15 (were 420 of 487 and 133).
+- The three words with `SC2` = 9 and `JMPF` 2 (section 16, "not
+  excluded") are all 4-bit JMPF 2, the kind that is not page-relative,
+  so the exclusion now has no exception in image 2.

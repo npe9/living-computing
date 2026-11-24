@@ -310,7 +310,13 @@ conflict as printed. `sysidat` is not microcode but a decode table:
 `sysinit` is mostly text and data. Strength: strong for bit 26, ALF
 and bits 36-29; moderate for MCF, TGIF, DBGF; code values only from
 `rassy`. Next: move `mekbn.py`'s FIELDS to this layout and rerun its
-`--check`.
+`--check`. *Done 2026-11-23 (`psi_microword.md` section 7): FIELDS
+follow Fig. 3-25; `--check` passes, with `xr_pass`,
+`base_plus_constant`, `sc2_other_branches` (both images), one record
+cell and `img2_page_relative` re-pinned and new layout pins added. 4-bit JMPF 2 turned out not to be page-relative,
+and ALF 2/3 (EM2 the operation) occurs with a branch that needs EM2 in
+1 of 3,063 words of `syspsi` and 0 of 1,803 of the KL1 image (about
+1,265 and 732 by chance).*
 
 Appendix A (pp.237-263) is the ESP object model and KL0 execution
 control (exceptions, remote cut, `on_backtrack`, `bind_hook`), not an
