@@ -5,8 +5,9 @@ Two parts.  The device tests need no image: they pin the board's
 registers and the 53C94's sequences to the pages they come from.  The
 boot tests run Be's Nov 23 1994 kernel and skip, loudly, with the fetch
 command, when the disk image (held out of git: docs/bebox/MANIFEST.md)
-is not on disk or not the recorded one.  No byte of Be's software is in
-this file: the tests pin console text, step counts and function names.
+is not on disk or not the recorded one.  No Be code or data is in this
+file; the tests pin the kernel's console lines (short quotations of its
+messages), step counts and function names.
 
 Discriminating checks, observed 2026-11-24 (each injection one edit to
 tools/beboot.py, reverted by the reverse edit, the file compared byte for

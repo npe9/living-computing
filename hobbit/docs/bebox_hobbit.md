@@ -219,16 +219,22 @@ sheet and the kernel's driver, and the run went on:
 8. The kernel starts user space: "Starting be:/system/debug_server...",
    "Starting be:/system/app_server...", "Waiting for picasso 59"
    (910 disk blocks read by then).
-9. **Current stop**, at about 40.2M instructions: a user-mode store of
-   0x01 (byte lane 3) at physical 0xD10003C0, PC 0x100410F8. That is the
-   display card's register window at 0xD1000000 in BeBus slot 6
-   (`bebox_hardware.md` §12; offset 0x3C0 is the VGA attribute port's
-   number). The card is reported to be a Trident-type VGA with an
-   accelerator, and no Be document describes it (§12 there); modelling it
-   means reading the window server's driver the way this file reads the
-   kernel. Not done yet.
+9. **Current stop**, at 40,282,356 instructions (rerun on the committed
+   model, 2026-11-24; 910 disk blocks read, 1,866 interrupts): CPU 2, in
+   user mode in `/system/app_server`, at `_video_init1+0x2`
+   (0x100410F8), stores the byte 0x01 at physical 0xD10003C3. The bus
+   word is 0xD10003C0 (lane 3) in BeBus slot 6, the display card's
+   register window at 0xD1000000 (`bebox_hardware.md` §12). app_server's
+   own code shows the card's layout: its helpers `_t_writecrtc` store to
+   0xD10003D4/0xD10003D5, `_t_writeext` to 0xD10003C4/0xD10003C5, so
+   VGA port p is the byte at 0xD1000000 + p, and 0x3C3 is the VGA
+   enable register. The driver is compiled from `vgatri800600.c`
+   (app_server's .comment), a Trident VGA at 800x600. No Be document
+   describes the card; modelling it means reading `_video_init` and the
+   `_t_*` helpers the way this file reads the kernel. Not done yet: this
+   is the frontier, not the end of the boot.
 
-The run reaches 29M instructions in about 10 minutes (CPU-bound Python,
+The run reaches the mount (29M instructions) in about 10 minutes (CPU-bound Python,
 ~50k instructions/s). An idle skip (CHOICES `idle-skip`) jumps whole
 laps of `_null_thread` when both CPUs are idle; `tests/test_beboot.py`
 checks that a run with it ends in the same state, register for register
@@ -237,4 +243,6 @@ and word for word, as a run without it.
 **Tests.** `tests/test_beboot.py`: device tests against the data-sheet
 pages (no image needed), a boot test to "Disk cache is" (~2 min, skipped
 with the fetch command when the disk image is absent), and, with
-`BEBOOT_LONG=1`, the boot to the mount and the idle-skip check.
+`BEBOOT_LONG=1`, the boot to the mount and the idle-skip check (the
+default run to "Disk cache is" ends before the first skip is taken, so
+the skip is checked only under `BEBOOT_LONG=1`).

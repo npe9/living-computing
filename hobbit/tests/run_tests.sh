@@ -72,7 +72,7 @@ python3 "$here/test_p9symdef.py"
 # when build/bebox is not on disk).  BEBOOT_LONG=1 boots on to the root
 # volume's mount and checks the idle skip against a run without it
 # (~20 min).
-python3 "$here/test_beboot.py"
+python3 -I "$here/test_beboot.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in

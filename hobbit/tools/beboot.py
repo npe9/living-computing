@@ -101,6 +101,17 @@ CHOICES = {
            "register D's VRT bit clear (battery dead), so the kernel "
            "initialises its RAM and time; the time then runs with model "
            "time (Mc146818).",
+    "uart": "SER1 and SER2 are 16C450-type UARTs (Uart): a byte written "
+            "to the THR is sent at once (LSR always reports THR and "
+            "transmitter empty), the modem lines read CTS, DSR and DCD "
+            "asserted (MSR 0xB0), nothing is received unless fed.  The "
+            "interrupt output is gated by MCR bit 3 (OUT2) as the VL16C452 "
+            "sheet has it (p. 6-58); the VL82C106 brings -OUT2 out as a "
+            "pin, so on Be's board the gate may be outside the chip, but "
+            "the kernel sets it either way (_ser_init+0x266 ORs 0x0B into "
+            "the MCR).",
+    "who-am-i": "Who Am I's bits 7:4 (joystick buttons) read 0: no button "
+                "pressed, an assumption.",
     "printer": "Nothing is attached to the printer port: its status "
                "register reads 0x7F (no interrupt is ever raised).",
     "scsi-timing": "A 53C94 command's interrupt asserts 2,500 cycles "
@@ -626,7 +637,16 @@ class Ncr53c94:
     accepted: p. 33.  Reset SCSI bus: p. 29 (RSTO tied to RSTI, so a SCSI
     reset interrupt unless Config 1 bit 6 disables it).  The INT output
     is the board's I/O interrupt bit 7 (Appendix A).  A command the
-    driver does not use stops the run."""
+    driver does not use stops the run.
+
+    "Data sheet" is NCR's 53C94/95/96 sheet of Feb 1990
+    (docs/bebox/MANIFEST.md).  The board's part is AMD's Am53C94; its
+    sheet (Pub. 16506 Rev. C, docs/devices/am53c94.pdf) was checked for
+    the three things the model leans on and agrees: "Initiator Select
+    without ATN Steps" (0x20 / step 0 on time-out, 0x18 / step 4 when
+    fully executed), the Information Transfer command's service interrupt
+    when the target asserts REQ after the transfer, and register 07H read
+    as IS 2:0 in bits 7:5 and the FIFO count in bits 4:0."""
 
     def __init__(self, targets, irq_delay, clock):
         self.targets = targets          # id -> ScsiDisk
@@ -1288,7 +1308,7 @@ class Machine:
             io.add(port_addr(0x378 + n), 3, self.par, n, "printer " + name)
         # SER1 on bit 1, SER2 on bit 2: both kernels' _ser_init
         # (_io_int_set(1, _sera_inth)); the 1993 draft has them the other
-        # way round (docs/bebox_hardware.md section 5).
+        # way round (docs/bebox_hardware.md section 6).
         self.regs.io_sources[1] = self.ser1.irq
         self.regs.io_sources[2] = self.ser2.irq
         for addr, word in elf.words().items():

@@ -50,6 +50,7 @@ machines whose differences must remain explicit.
 | synchronous bus | `bsv/HobbitBus.bsv` | PRM Appendix A: `START`/`DTACK` one-clock transactions, `BE[3:0]`, double/quad block transfers, `IOC[1:0]`, `RETRY`, `BERR`, `HOLD`, `BREQ`/`BGRANT`/`BGACK`, `NCACHE`, `LOCK`; memory sits behind the bus; 76-check `run_bus.sh` |
 | TIMER1/TIMER2 | `bsv/HobbitTimers.bsv` | p. 1-19 counters, CONFIG[31:22] event/enable fields, level-one overflow interrupts, CPU-escape reads 0xB/0xC; 31-check `run_timer.sh` |
 | board UART end to end | `bsv/BoardUartTb.bsv`, `bsv/run_board_tb.sh` | the board datapath's `txd` decoded as 8N1 at 217 clocks/bit yields the smoke's 41 HRI lines byte for byte (5,042 characters) |
+| Hobbit BeBox board (Be, 1993-94) | `tools/beboot.py`, `docs/bebox_hobbit.md` | Be's Nov 1994 kernel from the surviving `be` disk image boots on two reference-model CPUs through the SCSI scan, the floppy driver, the root mount and the start of user space; stops at the unmodelled display card; `tests/test_beboot.py` (images held out of git, `docs/bebox/MANIFEST.md`) |
 
 The goal for this machine is **full functional completeness and
 provability** (`docs/plan9_formal_plan.md`): every documented feature
