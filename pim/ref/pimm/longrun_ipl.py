@@ -85,6 +85,22 @@ subtract_bignum, the timer's close (fep.py), get_constant, body
 vector/3, code_to_predicate, the unification of long vectors,
 add_shoen_resource: 92,797 instructions, the console the banner alone;
 the stop fep_attributes (240) on a file device (FepError).
+2026-11-24, the login (docs/fep_services.md §6, §7): fep.py answers
+240, the pimos: files (kernel_file below: the held object's, 5 for
+what is not there and for me: and the home directory), the
+string-I/O devices of the login service and the window calls.  When
+the machine has run dry and no waiting command moves, the device is
+asked for its next scripted event (Fep.idle()): the first is the
+login of §7.5, the answer to the local server's held io(1); the run
+stops when the script is empty.  With search_character, unbound,
+extended_floating_point, module, the double-precision integers,
+allow_shoen_resource_report, the bignum guards, apply and
+enqueue_goal of more than 16, and create_shoen's distributed form, on
+both models: 8,586,110 instructions; the console "LOCAL  LOGIN
+SERVICE STARTS ***", 0, "CANNOT MAKE A TCPIP LOGIN SERVICE!!", 0; the
+replier's texts and the window's "Shell>> " in the device's log; the
+stop "nothing left to run, 1,220 goals waiting", the window's getl
+(110) held.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -246,12 +262,50 @@ class GoTrace(list):
             list.append(self, line)
 
 
+# The files of pimosobj.tar.Z's object/ (docs/nonlocal, not in git):
+# its object/INSTALL (lines 8-9) copies object/* to pimos:, so
+# pimos:NAME is served as object/NAME, byte for byte (the held text
+# files are 16-bit JIS, as SIMPOS keeps text; the file server widens
+# what getb gives, server/fep/file/file_dvcb.kl1 return_values_buffer).
+# A name the set does not hold is answered abnormal (5), as for
+# pimos:autoload.tbl, which the shipped set does not have
+# (docs/fep_services.md 7.2).  me: is user:pmpsi, which holds only
+# SIMPOS's init.com and login.com (INSTALL:9), and a home directory
+# (">sys>user>" ++ RN, the string fep.py's simpos_user_device gives)
+# holds nothing INSTALL puts there: both answered 5 (fep_services.md
+# 7.2, 7.5), so the shell takes its default prompt.  Other names
+# still raise.
+PIMOSOBJ = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimosobj.tar.Z')
+_held = {}
+
+
+def held_object(name):
+    """object/NAME of pimosobj.tar.Z, or None."""
+    if not _held:
+        import io
+        import subprocess
+        import tarfile
+        raw = subprocess.run(['uncompress', '-c', PIMOSOBJ], capture_output=True,
+                             check=True).stdout
+        with tarfile.open(fileobj=io.BytesIO(raw)) as t:
+            for e in t.getmembers():
+                if e.isfile() and e.name.startswith('object/'):
+                    _held[e.name[len('object/'):]] = t.extractfile(e).read()
+    return _held.get(name)
+
+
 def kernel_file(path):
-    """--fep: the file the kernel asks the FEP to open.  None is held
-    yet (S0 meets them one at a time), so an open raises, as any
-    request fep.py does not know does."""
-    raise fepm.FepError('read_open of %r: no such file is served' % (text_of(
-        struct.unpack('>%dH' % (len(path) // 2), path)),))
+    """--fep: the file the kernel asks the FEP to open (the path is
+    16-bit JIS, fep.ATTRIBUTES' Code 0): pimos:NAME from the held
+    object/ set, None (abnormal) for a name it lacks and for me: and
+    the home directory; any other
+    name raises, as any request fep.py does not know does."""
+    name = text_of(struct.unpack('>%dH' % (len(path) // 2), path))
+    if name.startswith('pimos:'):
+        return held_object(name[len('pimos:'):])
+    if name.startswith('me:') or name.startswith('>sys>user>'):
+        return None
+    raise fepm.FepError('read_open of %r: no such file is served' % (name,))
 
 
 def go(m, loaded, info, bad, with_fep):
@@ -274,7 +328,16 @@ def go(m, loaded, info, bad, with_fep):
     m.tr = GoTrace()
     dev = None
     if with_fep:
-        dev = m.fep = fepm.Fep(kernel_file)
+        # getb counts 16-bit characters here (getb_unit 2, OURS,
+        # 2026-11-24): the kernel's file device asks for Size*2+1
+        # (server/fep/file/file_dvcb.kl1:301, 400), and a reply of an
+        # odd number of bytes is widened with a zero byte at its end
+        # (binary_reverse_engineering.md 1.4, "Widening"), so counted
+        # in bytes every reply is odd and pimos.conf reached the
+        # reader shifted by a byte after its first 1,471 bytes
+        # (observed: with_console read, then end_of_file, the system/4
+        # line lost).  Counted in characters every reply is even
+        dev = m.fep = fepm.Fep(kernel_file, getb_unit=2)
     try:
         while True:
             try:
@@ -282,8 +345,15 @@ def go(m, loaded, info, bad, with_fep):
                 stop = 'nothing left to run, %d goals waiting' % m.nsusp
             except pimm.Suspend:
                 stop = 'nothing left to run, %d goals waiting' % m.nsusp
-            if dev is None or not m.scsi_poll():
+            if dev is None:
                 break
+            if m.scsi_poll():
+                continue
+            # PIMOS idles: the FEP's next scripted event, if a held
+            # request waits for one (fep_services.md 7.5, 7.7 item 1)
+            if not dev.idle():
+                break
+            say('fep: a scripted event at %d instructions' % m.tr.instructions)
     except pimm.Unimplemented as e:
         stop = 'refused: %s' % e
     except pimm.Fail as e:
@@ -297,6 +367,9 @@ def go(m, loaded, info, bad, with_fep):
                                  messages=dev.messages)
         for d, i, msg in dev.messages:
             say('fep %s device %d: %r' % (d, i, msg))
+        for i, text in dev.log:
+            say('fep text, device %d: %r' % (i, text))
+        info['go']['fep']['held'] = dict(dev.held)
     say('go: %d instructions, console %r, stop %s' % (m.tr.instructions, shown, stop))
     if shown[:1] != [BANNER]:
         bad.append(('the console after go', shown))

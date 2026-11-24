@@ -495,11 +495,52 @@ the device are given it again whenever the machine runs dry.
   | `code_to_predicate` | implemented (`lockstep_alt.py`) | 74,724 |
   | unification of two vectors of seven or more | the `unify_step` goal, the sizes compared in its steps (`lockstep_alt.py`) | 74,759 |
   | `add_shoen_resource` | implemented, `resource_added` reported (`lockstep_shoen3.py`) | 75,014 |
-  | `FepError`: device 18, `fep_attributes` (240) | **the stop now** (below) | 92,797 |
+  | `FepError`: device 18, `fep_attributes` (240) | answered (`docs/fep_services.md` §6.3, §7.8; below) | 92,797 |
+  | `search_character`, reading `pimos.conf` | implemented (`lockstep_alt.py`) | 139,747 |
+  | `FepError`: device 20, `flush` (112) of a read file | answered `[1]` (`file_dvc.kl1`:314) | 6,675,822 |
+  | nothing left to run, no login: `pimos.conf` read as `with_console` then `end_of_file` | the kernel asks `getb` for `Size*2+1` bytes and a reply of an odd count is widened by a zero byte, so the data came one byte late; the stand-in now counts the kernel's `getb` in characters (`Fep(getb_unit=2)`, OURS, from this observation; the IPL works either way) | 7,754,386 |
+  | the login: PIMOS idles with the server's `io(1)` pending | the scripted login of §7.5 at the idle (`Fep.idle()`, `longrun_ipl.py` `go()`) | 8,067,269 (the event) |
+  | `enqueue_goal_external` of 12 arguments | the vector spread as `enqueue_goal`'s (`lockstep_load.py`'s instruction; the spread `lockstep_login.py`) | 8,144,967 |
+  | `unbound` | implemented, after VPIM (`lockstep_login.py`) | 8,145,997 |
+  | guard `extended_floating_point` | implemented, a type test (`lockstep_login.py`) | 8,146,451 |
+  | guard `module` | implemented (`lockstep_login.py`) | 8,147,246 |
+  | `apply` of a vector of 7 or more | implemented (`lockstep_login.py`) | 8,192,723 |
+  | `add_extended` (and the three others) | implemented, after VPIM (`lockstep_login.py`) | 8,194,757 |
+  | `allow_shoen_resource_report` | implemented, `resource_report_allowed` reported (`lockstep_shoen3.py`) | 8,194,822 |
+  | guard `bignum_not_less_than` (and `bignum_less_than`) | implemented, after VPIM (`lockstep_login.py`) | 8,247,127 |
+  | `create_shoen` with `{MinPrio, MaxPrio}`, `{MinNode, NumNode}` (`shoen:execute1/7`) | accepted and dropped as the integers are (`lockstep_shoen3.py`) | 8,256,632 |
+  | `enqueue_goal` of 17 arguments | the spread of a vector of 7 or more (`lockstep_login.py`) | 8,463,929 |
+  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,586,110, 1,220 goals waiting |
+
+  The counts after the login are those of the run with `getb_unit=2`;
+  the two before it (139,747 and 6,675,822) are from runs before that
+  change.
 
   The clock (2026-11-24, the session lead's decision): one tick of the system timer (1/16 msec, 48 bits, manual `e-builtin.tex`:1537-1549) every 423 instructions executed. The rate is 615 KLIPS on `append` (`M92` p. 425) at this image's 11 instructions per `append/3` reduction (`scsi_fep_module`); equal cost per instruction is OURS. `get_date_time` keeps the date 20-May-1993; its time of day follows the same clock, so midnight is the boot.
 
-  The stop now: device 18 is a file device made by `fep_file_device:device_create/5` (`bios/fep_module/file_dvc.kl1`:43-52) with `{DevID, 240, Node}`, `fep#fep_attributes` (`pimos.vmac`:87). The reply `normal(Value)` is read by `fep_util:set_value/2` as `{DevID, Status, Code, OS, Host, FepVer, Dir, FileVer, Comment}`. PIMOS keeps the seven values (`server/fep/fep/fep_sv.kl1` `get_fep_attributes5`). It reads Dir to choose UNIX (`"/"`) or SIMPOS (`">"`) pathnames (`shell/utils/pathname.kl1`, `shell/main/utils.kl1` `check_attribute`, `">"` its default), and Dir and FileVer as the notation's characters (`library/utility/fileutil.kl1`). The values are the front-end's own: PIM/m's FEP is a PSI under SIMPOS (`pimfep.ptf`). VPIM, KLIC and PDSS do not have them, and `pimfep.ptf`'s answer is not decoded. Not answered: a decision is needed between decoding the FEP's answer and OURS values (Dir `">"`, PIMOS's own default).
+  240 (device 18, a file device made by `fep_file_device:device_create/5`, `bios/fep_module/file_dvc.kl1`:43-52, `{DevID, 240, Node}`, `fep#fep_attributes`, `pimos.vmac`:87; the reply read by `fep_util:set_value/2` as `{DevID, Status, Code, OS, Host, FepVer, Dir, FileVer, Comment}`, the seven values kept by `server/fep/fep/fep_sv.kl1` `get_fep_attributes5`) is answered `[1, 0, "SIMPOS V7", "PSI", "V0.45", ">", ".", ""]` in JIS (`fep.py` `ATTRIBUTES`): the fifth value is the path delimiter, `">"` for SIMPOS (`docs/fep_services.md` §7.8, `fileRdvc.kl1`:124-126); OS must begin `"SIMPOS"` (§7.8, `file_dvcb.kl1`:557-562); `"V0.45"` is `pimfep.ptf`'s `pimos_scsi_front_end` version; `"V7"` and `"PSI"` are OURS (§6.3).
+
+  The FEP answers added for the login (`ref/pimm/fep.py`, 2026-11-24, following `docs/fep_services.md` §6 and §7.5; the commands the run gave are in `longrun_ipl.py`'s log):
+
+  | Command | Answer | Source |
+  |---|---|---|
+  | 201 `read_open` of `pimos:NAME` | the held `pimosobj.tar.Z` `object/NAME` (`longrun_ipl.py` `kernel_file`; held and read: `pimos.conf`, `pimos.logins`, `pimos.groups`), 5 when not there (`autoload.tbl`) | §7.2 |
+  | 201 of `me:NAME` or of the home `>sys>user>RN>NAME` | 5 (`me:pimos.init`, `shell.com`, `pimos.com`: INSTALL puts none there, so the prompt is the default) | §7.2, §7.8 |
+  | 210 `getb` of the kernel | the count read in characters (`getb_unit=2`): OURS, from the run (above) | the run |
+  | 112 `flush` of a read file | `[1]` | `file_dvc.kl1`:314 |
+  | 601 `create` of a string-I/O device `pimos_remote_login_replier`, `pimos_remote_login_server`, `simpos_user_device` | `[1]`; any other name refused | §6.4, §7.5 |
+  | 620 `io(0, ..)`, `io(2, ..)` on the replier | `[1, ""]` | §6.4, §7.5 |
+  | 620 `io(1, Text)` on the replier | `[1, "\0"]` (one character, 0: sent), the text written to the stand-in's log. §7.5 has `""`; §6.4's reading of `pimfep.ptf` is kept, and PIMOS reads neither | §6.4 |
+  | 620 `io(0, "local")` / `io(0, "tcpip")` on the server | `[1, ""]` / `[5]` (the tcpip service refused, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`) | §7.5 |
+  | 620 `io(1, ..)` on the local server | held; answered at the idle with `[1, NI]`, the login record: Node `"local"`, RN `"pmpsi"` (SOURCED, INSTALL's user), RP `""`, UN `"pimos"`, UP `""` (HELD FILE: `pimos.logins`, all six with empty passwords), ID 1 (OURS, §7.5; §6.5 has 0 for a first login) | §6.5, §7.5 |
+  | 620 `io(0, ..)` on `simpos_user_device` | `[1, ">sys>user>" ++ RN]` | §7.5, `login_p.kl1`:63 |
+  | 104 `create` of a window | `[1]` | §6.8, §7.5 |
+  | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
+  | 110 `getl` on a window | held (the run ends there) | §7.5 |
+  | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
+  | 70 on a held request | `[6]` (none has been met; a 70 on anything else has no reply) | §6.7, §7.1 |
+
+  What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
