@@ -91,10 +91,10 @@ device on the bench a tape the reference recorded (`driver.py` "The
 device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
 IPL parts (the IPL reading its list and files through its own SCSI
 stack) on both models;
-`longrun_ipl.py` is the long run (not in the suite); 147
-instructions on both models (counted 2026-11-24: 147 `i_` handlers in
+`longrun_ipl.py` is the long run (not in the suite); 148
+instructions on both models (counted 2026-11-24: 148 `i_` handlers in
 `pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
-`current_processor` among them; 144 without our three stubs
+`current_processor` among them; 145 without our three stubs
 `merge_in`, `unify_step` and `to_processor`).
 `ref_scsi.py` runs the same IPL body on the reference alone
 (`python3 ref/pimm/ref_scsi.py`, about a minute).  No

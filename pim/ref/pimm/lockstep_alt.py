@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_1/4/6.
+"""Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6.
 
     python3 ref/pimm/lockstep_alt.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_alt.py compare
@@ -63,6 +63,14 @@ gives it, not from either model:
                 read_variable 2, get_value 1 2, proceed, suspend):
                 {5} gives 5; a variable waits and {7} gives 7; a
                 vector of two fails.
+  vector 0      wait_vector_0, 23:A8, the same way (2026-11-24; a stop
+                of pim:go/4 with the device, scsi_fep:receive_packet2_1/8
+                `receive_packet2_1({}, ..)`, not playable here): five
+                cells, p({}, Y) :- true | Y = {} (try_me_else,
+                wait_vector_0 0, get_value 1 0, proceed, suspend): {}
+                gives {}; a variable waits and {} gives {}; {5} fails.
+                Pins 9 parts / 1801 lines -> 10 / 1897: this part's 96
+                lines, the other parts unchanged.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -74,6 +82,8 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
   wait_vector_6 always fails                 vector 6, line 36
   wait_vector_1 takes any vector             vector 1, line 105
   wait_vector_4 leaves the structure pointer vector 4, line 48
+  wait_vector_0 takes any vector             vector 0, line 93 (2026-11-24:
+                                             get_value for the suspend)
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -94,7 +104,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=9, lines=1801)
+PINNED = dict(parts=10, lines=1897)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -296,20 +306,62 @@ def script():
     s.run()
     s.out(1)
     part('vector 1', [5, None, 7, None])
+
+    # 9. wait_vector_0: no site in the image either (scsi_fep's
+    #    receive_packet2_1/8 and receive_packet3/8, `({}, ...)`, are in
+    #    the bios and patch files and go on into builtin#substring, a
+    #    module those files do not hold).  p({}, Y) :- true | Y = 0,
+    #    OURS, five cells the bench puts in the heap
+    s.label('vector 0')
+    code = [(KLB, 0x68 << 24 | 2),                 # try_me_else @4
+            (KLB, 0xa8 << 24 | 0 << 16),           # wait_vector_0 0
+            (KLB, 0xbc << 24 | 1 << 16 | 0 << 8),  # get_value 1, 0
+            (KLB, 0x60 << 24),                     # proceed
+            (KLB, 0x69 << 24 | 2 << 16 | 0xfffa)]  # suspend 2, @0
+    s.vector(15, 8, code)
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    assert [m.opname(at + i) for i in range(5)] == [
+        'try_me_else', 'wait_vector_0', 'get_value', 'proceed', 'suspend']
+    EMPTY = (pimm.VECT0, 0)
+    s.argc(1, EMPTY)
+    s.newvar(1)
+    s.arg(2, 1)
+    s.spawn(at, 2)
+    s.run()
+    s.out(1)
+    s.newvar(0)
+    s.newvar(1)
+    s.arg(1, 0)
+    s.arg(2, 1)
+    s.spawn(at, 2)
+    s.run()
+    s.out(1)
+    s.unifyc(0, EMPTY)
+    s.run()
+    s.out(1)
+    s.vector(0, 8, [I(5)])
+    s.newvar(1)
+    s.arg(1, 0)
+    s.arg(2, 1)
+    s.spawn(at, 2)
+    s.run()
+    s.out(1)
+    part('vector 0', [(), None, (), None])
     return s, want
 
 
 # part: (reductions that end in a failure, in a suspension)
 ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal': (0, 0),
         'alternatively': (0, 2), 'vector 4': (0, 0), 'vector 4 of three': (1, 0),
-        'vector 6': (2, 1), 'vector 1': (1, 1)}
+        'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
          'alternatively': ('read_eagerly', 4), 'vector 4': ('wait_vector_4', 4),
          'vector 4 of three': ('wait_vector_4', 1), 'vector 6': ('wait_vector_6', 3),
-         'vector 1': ('wait_vector_1', 4)}
-OPCODE = {'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'vector 1': ('wait_vector_1', 4), 'vector 0': ('wait_vector_0', 4)}
+OPCODE = {'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 
@@ -361,7 +413,7 @@ def main(argv):
     if bad:
         print('pimm lockstep alt: FAIL %r' % (bad[:3],))
         return 1
-    print('pimm lockstep alt: PASS (read_eagerly, not_equal and wait_vector_1, _4, _6 on the '
+    print('pimm lockstep alt: PASS (read_eagerly, not_equal and wait_vector_0, _1, _4, _6 on the '
           'Bluespec core: %d parts, %d trace lines identical to the reference model; '
           '`alternatively` in scsi_fep_util and scsi_fep_file:reply_with_attention/4, a goal '
           'suspending past it, scsi:request_manager/3 on its info vector, '

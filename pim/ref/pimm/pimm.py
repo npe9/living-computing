@@ -1513,6 +1513,10 @@ class Machine:
     def i_wait_vector_5(self, pc, x, y, z, c16):
         return self.wait_vector(5, x)
 
+    def i_wait_vector_0(self, pc, x, y, z, c16):
+        # the empty vector {} (no element is read after it)
+        return self.wait_vector(0, x)
+
     def i_wait_vector_1(self, pc, x, y, z, c16):
         return self.wait_vector(1, x)
 

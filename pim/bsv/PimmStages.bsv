@@ -235,8 +235,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                 || op == op_stop_shoen || op == op_abort_shoen || op == op_raise;
   Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
 
-  // wait_vector_N, N = 1..6
-  Bool isWaitVector = op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5
+  // wait_vector_N, N = 0..6
+  Bool isWaitVector = op == op_wait_vector_0 || op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5
                    || op == op_wait_vector_1 || op == op_wait_vector_4 || op == op_wait_vector_6;
   Bit#(8) waitN = ins.val[31:24] - op_wait_vector_0[7:0];
   Bool oneOperandGuard = op == op_switch_on_non_integer || op == op_hash_on_constant
