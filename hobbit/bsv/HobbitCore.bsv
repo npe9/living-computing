@@ -262,7 +262,27 @@ endfunction
 // p. 3-34: C is set when the unsigned product overflows the destination's
 // width, V when the signed product does; the stored product is the low
 // 32 bits, truncated again by the store.
+//
+// One 32 x 32 product serves both flags (docs/fpga_area.md): the signed
+// 64-bit product of the sign-extended operands is the unsigned one less
+// b * 2^32 when a is negative and less a * 2^32 when b is negative,
+// modulo 2^64.  mulArithRef is the former two-product form, which
+// HobbitArithTb compares this one with.
 function Arith mulArith(Word a, Word b, Word sizeBytes);
+  Bit#(64) up = zeroExtend(a) * zeroExtend(b);
+  Bit#(64) corr = ((a[31] == 1'b1) ? {b, 32'd0} : 64'd0) +
+                  ((b[31] == 1'b1) ? {a, 32'd0} : 64'd0);
+  Int#(64) sp = unpack(up - corr);
+  Bit#(6) bits = truncate(sizeBytes << 3);
+  Bit#(64) umax = (64'd1 << bits) - 1;
+  Int#(64) smax = unpack((64'd1 << (bits - 1)) - 1);
+  Int#(64) smin = -unpack(64'd1 << (bits - 1));
+  return Arith { r: truncate(up),
+                 c: up > umax,
+                 v: (sp > smax) || (sp < smin) };
+endfunction
+
+function Arith mulArithRef(Word a, Word b, Word sizeBytes);
   Bit#(64) up = zeroExtend(a) * zeroExtend(b);
   Int#(64) sa = unpack(signExtend(a));
   Int#(64) sb = unpack(signExtend(b));
@@ -279,6 +299,36 @@ endfunction
 // Two's-complement division truncating toward zero, remainder carrying the
 // dividend's sign (p. 3-17, p. 3-39; the rounding rule is a named choice in
 // sem/README.md).  `ovf` is the 0x80000000 / -1 case (p. 3-17).
+//
+// The datapath computes all four divide instructions on one 32-bit
+// unsigned restoring divider (divUnit), on the operands' magnitudes for
+// the signed forms (docs/fpga_area.md).  divSigned is the former 64-bit
+// form, kept as the reference HobbitArithTb compares divUnit with.
+function Tuple2#(Word, Word) udivmod32(Word n, Word d);
+  Bit#(33) r = 0;
+  Word q = n;
+  for (Integer i = 0; i < 32; i = i + 1) begin
+    r = { r[31:0], q[31] };
+    q = q << 1;
+    Bit#(34) t = { 1'b0, r } - { 2'b0, d };
+    if (t[33] == 1'b0) begin
+      r = truncate(t);
+      q[0] = 1'b1;
+    end
+  end
+  return tuple2(q, truncate(r));
+endfunction
+
+// Quotient and remainder of a / b: signed (truncating toward zero, the
+// remainder carrying the dividend's sign) or unsigned.  b == 0 is the
+// callers' case (the exception, and a result of 0).
+function Tuple2#(Word, Word) divUnit(Bool sgn, Word a, Word b);
+  Bool na = sgn && (a[31] == 1'b1);
+  Bool nb = sgn && (b[31] == 1'b1);
+  match { .uq, .ur } = udivmod32(na ? -a : a, nb ? -b : b);
+  return tuple2((na != nb) ? -uq : uq, na ? -ur : ur);
+endfunction
+
 function Tuple3#(Word, Word, Bool) divSigned(Word a, Word b);
   Int#(64) x = unpack(signExtend(a));
   Int#(64) y = unpack(signExtend(b));
@@ -1473,6 +1523,10 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
     Bool hasTag = False;
     Bool ilToAcc = !modeIsImm(d.dst.mode) && (sz == 4) &&
                    (i.dstEa == i.csp + 4);
+    // The one divider of the four divide instructions (divUnit).
+    Bool divSgn = (d.op == OP_DIV) || (d.op == OP_DIV3) ||
+                  (d.op == OP_REM) || (d.op == OP_REM3);
+    match { .divQuo, .divRem } = divUnit(divSgn, dst, src);
 
     case (d.op)
       OP_MOV: res = src;
@@ -1507,22 +1561,22 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
       end
       OP_DIV, OP_DIV3: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = divQ(dst, src);
+        res = (src == 0) ? 0 : divQuo;
         pu = pswCVKeepC((dst == 32'h80000000) && (src == 32'hFFFFFFFF));
       end
       OP_REM, OP_REM3: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = divR(dst, src);
+        res = (src == 0) ? 0 : divRem;
         pu = pswCVKeepC(False);              // V always cleared, C unchanged
       end
       OP_UDIV: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = (src == 0) ? 0 : (dst / src);
+        res = (src == 0) ? 0 : divQuo;
         pu = pswCKeepV(False);               // C cleared, V unchanged
       end
       OP_UREM: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = (src == 0) ? 0 : (dst % src);
+        res = (src == 0) ? 0 : divRem;
         pu = pswCKeepV(False);
       end
       OP_TADD, OP_TSUB: begin

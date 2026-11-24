@@ -111,6 +111,8 @@ python3 "$here/golden/check_golden.py"
 "$hobbit/bsv/run_mmu.sh"
 "$hobbit/bsv/run_event.sh"
 "$hobbit/bsv/run_core_mmu.sh"
+# The EU's divider and multiplier against the forms they replaced.
+"$hobbit/bsv/run_arith.sh"
 # The bus face and the timers behind it.
 "$hobbit/bsv/run_bus.sh"
 "$hobbit/bsv/run_timer.sh"
