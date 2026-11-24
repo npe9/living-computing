@@ -16430,9 +16430,15 @@ run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS 
 # patterns through the B boxes (B3, B4) and the A boxes (A3, A4), and
 # one whole loop (LOOP: Part II's ones-ECC word left in the A boxes,
 # the next pass's zeros in the B boxes, both programs restored).
-# MEASURED in a scratch tree, StretchMemory with bit 20 stuck at 0 on
-# stores to 200000-200777 (see the deck header): B3 FAILS (32768 words,
-# the fault ripples to the top) and B4 PASSES, since 0101 has bit 20 = 0.
+# MEASURED in a scratch tree (2026-11-24), StretchMemory with bit 20
+# stuck at 0 on every store to 200000-200777, then reverted:
+#   B3   FAIL  B boxes: 32768 of 65536 words differ, 200000-277777 (the
+#              bad word at 200000 ripples to the top)
+#   B4   PASS  (0101 has bit 20 = 0; a stuck-at-0 cannot show)
+#   A3   FAIL  B boxes: 32768 of 65032, 200000-277777 -- Part I's last
+#   A4   FAIL  pattern, the ones-ECC word, is still in the B boxes
+#   LOOP PASS  (the B boxes hold zeros again)
+# The A boxes passed in every stage, and nothing else failed.
 run "JA BP6A memory patterns listing bit-exact comparison" python3 verify_ja_bp6a_listing.py
 run "JA BP6A memory patterns: 1010 through the B boxes (B3)" ./run_ja_bp6a.sh B3
 run "JA BP6A memory patterns: 0101 through the B boxes (B4)" ./run_ja_bp6a.sh B4

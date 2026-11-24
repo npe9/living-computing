@@ -112,8 +112,12 @@
 !   draining hands the dump's first read the transmit's in-flight
 !   response (run_ja_bp6a.sh says how it was seen), so every stop is
 !   placed behind a CB, which cannot execute until the drain is over.
-!   DISCRIMINATING: see tests/run_tests.sh's JA BP6A block for the
-!   injected fault and the failures observed.
+!   DISCRIMINATING, measured in a scratch tree with StretchMemory's
+!   stores to 200000-200777 given bit 20 stuck at 0: B3 FAILS (32768
+!   B-box words, 200000-277777), B4 PASSES (0101 has bit 20 = 0), A3
+!   and A4 FAIL on the same 32768 words (Part I's ones-ECC word is still
+!   there), LOOP PASSES (zeros in the B boxes).  The A boxes pass in
+!   every stage.  Recorded in tests/run_tests.sh's JA BP6A block too.
 
         PRNID,MEMORY PATTERN (6 BOX) A. BROWN
         PRNID,MAY 5, 1961, JA BP6A
