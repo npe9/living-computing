@@ -1034,3 +1034,59 @@ archives; tables and scripts kept outside git).
   `mdllibrary.exe`); then MGTP (`mgtpNS7.sav` with a problem file),
   whose expected output is recorded (`H9-07/nseq/pim/aitec19980402.log`:
   "Number of Failed Branches = 43782", "unsat", 64,089,346 reductions).
+
+## 8. Status on 2026-11-24: held, lost, and what we have rebuilt
+
+Sections 2-7 are as written on 2026-11-23; this section supersedes
+their "Our status" column. Counts: `grep -c '    def i_'
+ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
+
+### 8.1 Held as source (we read it; nothing to recreate)
+
+| What | Where it is used |
+|---|---|
+| PIMOS 3.6 (485 `.kl1`, the patched May-1994 text) | every semantic question about the kernel, servers, shell, BIOS; the FEP protocol (`fep_services.md`, 63 wire commands from `bios/fep_module/*_dvc.kl1`) |
+| PIMOS's KL1 toolchain (compiler, assembler, loader, unloader) | the encoding (`kl1_encoding.md`); not yet run on a model (R7) |
+| `pimos.h` (from dpool, 1995) | the build configuration of PIM/m (`mpsi` branch, SCSI FEP) |
+| PDSS (C), VPIM (PSL), KLIC | instruction and runtime semantics where the PIM/m firmware is lost; every borrowed rule is labelled with its source |
+| ESP source for three `.ptf` programs (paragraph, kappa2, utter) | known plaintext for the loader and the KL0 interpreter |
+| SIMPOS classes printed in ICOT reports (28 of 255 printed classes with source) | the stand-in `simpos##` classes, verbatim where printed |
+| PIMOS, KL1, ESP manuals; 385 TR/TM; theses (Nakashima: the PSI microword) | citations throughout |
+
+### 8.2 Held as binary only (we run or decode it)
+
+| What | State |
+|---|---|
+| `pimm_ipl.kbn` and the 20 PIMOS `.sav` object files with the 1994 patches | the IPL loads and links all of them on both models; PIMOS's start runs 65,482 instructions on the reference model (banner, SCSI bus scan, first FEP messages), 42242945 |
+| Pseudo PIM/m microcode | read for field layouts and the decode table (`pseudo_pimm_microcode.md`); not executed |
+| PSI-III control store (`syspsi`, `sysidat`, `sysinit`) | decoded by the thesis's microword layout (`asm/mekbn.py`, 5f3651ee); not executed |
+| Eleven `.ptf` ESP packages (pimfep, pimscsi, pimmcsp, pimmutil, mpsicspR, kappa, paragraph, fts, qxt, sancho2, tour) | all 1,455 classes load into class objects (`psi/librarian.py`, 220e33bc); method bodies not yet executed |
+| IFS application object files (25 whole, 5 damaged) | decoded (`asm/unlsav.py`); none run yet |
+
+### 8.3 Lost, and what stands in for it
+
+| Lost | What we have instead | Still missing |
+|---|---|---|
+| **PIM/m KL1-B firmware** (the machine's instruction semantics and runtime) | the reference model `ref/pimm/pimm.py` and the Bluespec core, run in lockstep: 152 instruction handlers (149 without three stubs of ours), all on both models; SCSI on the core (cbcfd1cd); shoen stages 1-3: create/start/terminate, statistics, remove, exceptions, `raise`, stop, abort (11cefe3a) | shoen resource limits (no source gives the allowance or threshold); unification failure inside a shoen; garbage collection; priorities beyond what the boot uses; multiple PEs; the instructions PIMOS's start has not reached yet (found one stop at a time) |
+| **PIM/m CSP software and manual; `pimm_patch.com`** | `longrun_ipl.py` does the CSP's part (load, link, `make_boot_info`, start) | the real console procedure |
+| **The FEP as software** (the PSI-side program's source; it ran on SIMPOS) | `ref/pimm/fep.py` (OURS), answering from PIMOS's own protocol source; the SD-card FEP emulator in Bluespec (`PimmFepEmu.bsv`), byte-identical to `fep.py` on 9 tapes and 293 commands (c57a2260) | window, socket, directory and most timer services; withheld and unsolicited replies (the login); the PSI's own answer values (being read from `pimfep.ptf`) |
+| **SIMPOS** (all forms) | a measured specification (`simpos/README.md`: 367 system classes, 1,436+706 methods, 353 built-ins); route step 1, the Librarian's loader, done | step 2 the KL0 interpreter (in progress), step 3 an ESP compiler and the stand-in `simpos##` classes, step 4 the PSI-III microcode emulator |
+| **The ESP compiler, runtime and Librarian** | the loader (step 1) | the compiler (step 3); the runtime is the KL0 interpreter (step 2) |
+| **KL0's definition** (opcode names, built-ins) | opcodes named only from known-plaintext witnesses (`docs/simpos/layers/KL0.md`) | most opcodes; settled as the interpreter meets them |
+| **PIM/m hardware detail** (stage latencies, caches, network packet format) | papers; model choices labelled OURS | cycle accuracy; multi-PE |
+| **Disks, tapes, the PIMOS internal file system** | the held object directory served as `pimos:` by the FEP stand-in | any installation image |
+| **Other PIMs' firmware, the PSL translator, their PIMOS object sets** | VPIM source (held) | everything for the third phase |
+| **IFS QUTE and SAM** | none | both |
+
+### 8.4 What gates the next rungs
+
+- **R5/R6 (PIMOS to a login and a shell):** the FEP services the start
+  asks for next (`fep_services.md` §3), then a login the stand-in
+  originates. PIMOS prints no login prompt: the dialogue ran on the PSI,
+  so the FEP answers PIMOS's pending read with a login record. How PIMOS
+  learns that a withheld reply has arrived decides what the SCSI
+  built-ins must support.
+- **R7 (compiling under PIMOS):** the toolchain is held as source and
+  object; it needs the runtime above, and probably GC.
+- **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes,
+  then `pimfep.ptf` itself as the front end in place of `fep.py`.

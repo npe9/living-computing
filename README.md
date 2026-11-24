@@ -129,7 +129,7 @@ recorded as a survival with an expiry date.
 | `vax/` | DEC VAX-11/780 (1977) | stub; plan + sources |
 | `whirlwind/` | Whirlwind I (1951) | stub; plan + sources |
 | `z3/` | Zuse Z3 (1941) | stub; plan + sources |
-| `alto/` | Xerox Alto | stub; Computer Structures inventory |
+| `alto/` | Xerox Alto II (1976) | Bluesim model imported from alto-bluespec; boots diags.dsk to the Executive; regression smoke test only, no primary oracle yet |
 | `aloha/` | ALOHA packet-broadcast system | stub; Computer Structures inventory |
 | `am2900/` | AMD Am2900 bit-sliced family | stub; Computer Structures inventory |
 | `cmmp/` | C.mmp/Hydra experimental multiprocessor | stub; Computer Structures inventory |
