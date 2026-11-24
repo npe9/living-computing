@@ -137,6 +137,8 @@ class Recorder:
         if self.ram(pa):
             if self.dev_depth or not self.in_step:
                 self.dma_writes += 1
+                # made before record n+1 retires; inside a device call in
+                # a step it is that step's (n+1), between steps after n
                 self.rec.write("R %x %x %x %x\n" % (
                     self.n + 1 if self.in_step else self.n,
                     pa & ~3 & MASK32, data & MASK32, mask))
@@ -163,9 +165,15 @@ class Recorder:
         return rec, st
 
     def take_interrupt(self, st, level, *a, **k):
+        # The interrupt sequence's own frame writes are the CPU's (the
+        # core makes them), not a device's: counted as a step.
         self.interrupts += 1
         self.rec.write("I %x %x %x\n" % (self.n, level, st.pc & MASK32))
-        return self._take(st, level, *a, **k)
+        self.in_step = True
+        try:
+            return self._take(st, level, *a, **k)
+        finally:
+            self.in_step = False
 
     def close(self):
         hobbit_sem.step = self._step

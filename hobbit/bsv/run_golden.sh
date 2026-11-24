@@ -44,7 +44,7 @@ esac
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024|025) ;;
+    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024|025|026) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -62,6 +62,7 @@ run_one() {
   case "$stem" in
     017) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00008600);' ;;
     023|025) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
+    026) startcall='core.startPsw(32'"'"'h00005100, 32'"'"'h00005180, 32'"'"'h00010200);' ;;
     *)   startcall='core.start(32'"'"'h00000100, 32'"'"'h00000180);' ;;
   esac
   # 023 runs on the MMU core with PSW.V = 1 (023.md "Pre-state"): segment
@@ -88,7 +89,14 @@ run_one() {
     # the fault vector: VB = 0x40, *(VB+4) = 0x20, the handler (p. 1-38),
     # in the event unit's memory.  The exception record does not end the
     # run: the handler's two NOPs retire and the image ends.
-    025)
+    # 026 (026.md "Pre-state"): the same harness, page 5 writable (the
+    # stack) instead of page 3 read-only, the handler at 0x8.
+    025|026)
+      if [ "$stem" = 025 ]; then
+        pte2=200c pte2v=00003001 vector=00000020
+      else
+        pte2=2014 pte2v=00005003 vector=00000008
+      fi
       coredecl='MmuTables tbl <- mkMmuTableMem;
   HobbitCore core <- mkHobbitCoreMmu(phys, imageLength() << 2,
                                      defaultMemCycles(), tbl);'
@@ -101,14 +109,14 @@ run_one() {
     case (tl)
       0: tbl.write(32'"'"'h1000, 32'"'"'h00002001);
       1: tbl.write(32'"'"'h2000, 32'"'"'h00000003);
-      2: tbl.write(32'"'"'h200c, 32'"'"'h00003001);
+      2: tbl.write(32'"'"'h'"$pte2"', 32'"'"'h'"$pte2v"');
     endcase
     tl <= tl + 1;
   endrule
   rule loadStb (tl == 3);
     core.setStb(32'"'"'h00001000);
     core.setVb(32'"'"'h00000040);
-    core.eventMemWrite(32'"'"'h00000044, 32'"'"'h00000020);
+    core.eventMemWrite(32'"'"'h00000044, 32'"'"'h'"$vector"');
     tl <= 4;
   endrule'
       tblready='(tl == 4) && ' ;;

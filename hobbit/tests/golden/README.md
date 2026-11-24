@@ -284,7 +284,8 @@ it) with absolute and stack-offset-indirect targets.
 
 ## The privileged harness (2026-11-24)
 
-Golden `025` is the first to run on a privileged machine: virtual
+Goldens `025` (a store's write fault) and `026` (ENTER's store check)
+run on it.  Golden `025` is the first to run on a privileged machine: virtual
 addressing, translation tables and a fault vector, so that an exception
 is recorded and followed by its handler's records instead of ending the
 run.  Its `.md` states its own pre-state (PSW, STB, the table entries,

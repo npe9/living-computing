@@ -206,6 +206,20 @@ python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/025.hex" \
 python3 "$here/hri_check.py" --dut-lines "$tmp/025.sem" \
     --spec-lines "$here/golden/025.trace"
 
+# 026: ENTER's store check (p. 3-21; boot record 22,533,287): exception 8
+# with SP and MSP unchanged, the handler's records after it.
+"$hobbit/bsv/run_golden.sh" 026 > "$tmp/026.model.raw"
+grep '^HRI ' "$tmp/026.model.raw" > "$tmp/026.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/026.model" \
+    --spec-lines "$here/golden/026.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/026.hex" \
+    --sp 0x5100 --msp 0x5180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000008 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 2014=00005003 2>/dev/null \
+    | grep '^HRI ' > "$tmp/026.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/026.sem" \
+    --spec-lines "$here/golden/026.trace"
+
 # The kernel boot on the core, a short sample (docs/p9boot.md, "The boot
 # on the core"): the shipped s9term from the ROM hand-off, physical
 # addressing, the first CRET into virtual mode (record 2,064), `main`

@@ -901,9 +901,14 @@ boot on the core").  Every record matches through 2,893,000 on the
 reference as merged 2026-11-23: `main` (125,203), `mmuinit`
 (2,088,445), the console line, the first interrupt (2,848,972),
 `touser` (2,883,341), `/boot` in user mode (2,886,866) and its first
-system call (2,888,578).  The next difference is a write fault on a
-committed store (2,893,033).  Findings: docs/conformance_1to1.md §1d.
-The suite runs the first 300,000 records.
+system call (2,888,578).  Since 2026-11-24 every record matches through
+**22,537,089**, where `/boot` prints `root is from` (PromptTest's
+choices), after three fixes: precise store faults (2,893,033), no
+retirement during an event sequence (3,298,054), ENTER's store check
+(22,533,287).  Next: the join (BOOTP, `init: starting /bin/rc`, the
+prompt), with SONIC's DMA replayed and the core on Verilator.  Findings:
+docs/conformance_1to1.md §1d.  The suite runs the first 300,000
+records, on Bluesim and on Verilator.
 
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 

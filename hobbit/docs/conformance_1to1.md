@@ -329,8 +329,27 @@ rather than row 2's 2,658,001):
 | 7 | **KCALL from user level faulted on its own frame**: the first frame word is written in KCALL's commit clock and was translated under the caller's PSW, so the kernel's interrupt stack refused it (a write fault, exception 9) | record 2,888,578, `/boot`'s first system call | EU_S3 tells the data face to translate that write at kernel level (`kernelNow`); the other two words drain under the kernel's PSW.  p. 3-29 says a fault on these writes resets the part and does not say at which level they are made; the kernel level is the reference's reading (`hobbit_sem.System`) and the only one under which 1e's system calls work | the boot only |
 | 8 | **An exception's record carried a write**: on the privileged machine every trap's record had the unimplemented sequence's `*(CSP) = PC`; the reference's exception record (`_system_exception`) has none | record 2,886,867, `/boot`'s first fetch fault | only `TR_UNIMP` writes in `mkHobbitCoreSystem` (the other cores unchanged); an operand read fault, which the core takes before the instruction commits, now makes its own `trap=1` record (`evRecPend`, counted in `instrs`) | the write: the boot only.  The operand-fault record: no case before 2,893,000, untested |
 
+Past 2,893,000 (2026-11-24; the reference as merged then, recorded with
+the idle skip off, to `root is from` with the PromptTest's 25 Hz counter
+override, `--counter-period 0.04`; record numbers to 2,893,033 are the
+same in both recordings):
+
+| # | what | found at | fixed in | pinned by |
+|---|---|---|---|---|
+| 9 | **A store whose translation faults retired.**  The data face reports a write fault when the box makes the write, after EU_S3 committed the store and its record (with the write) had gone out; the exception then came at the same PC.  The reference takes exception 9 at the store, which does not complete: a `trap=1` record, no write.  p. 1-38 saves "PC of faulted instruction" for 0x9; p. 2-3 signals the write fault "during an address translation"; p. 1-39's imprecise case ("the *unhinged* nature of the stores") is the data write *bus error*, 0xA (all three read from the page images) | record 2,893,033, `evenaddr` storing to the user address `0xffbfffec` | EU_S3 checks a store before it commits (`storeFaults`): the box says whether the word goes to memory (`toMemory`, its own window test), the data face makes the write's own translation without side effects (`writeFaults`); a faulting store retires as a `trap=1` record with no write and no other effect (`TR_WRITE_FAULT`), and the exception is taken at its PC with FAULT = the address | golden 025 (L07); KCALL's frame, the unimplemented sequence's `*(CSP)` and the drain words (DQM's tail, the interlocked accumulator) are not checked this way, and a late write fault on them now prints `CORE late write fault` |
+| 10 | **An instruction retired during the event sequence.**  `startEvent` stops EU_S1, but `stop` leaves a full slot full, and `deliver`/`move2to3` were guarded only by `eventWanted`, which is False once the sequence has started: the instruction EU_S1 held, looked up in the decoded store `startEvent` had just emptied, went on as an all-zero entry and retired as a record of PC 0 before the handler.  The first interrupt (2,848,972) had found EU_S1 empty | record 3,298,054, the boot's second interrupt (a host/fold boundary in the idle loop, `splitHere`, which this exercised for the first time and which worked) | `deliver` and `move2to3` also wait for `!eventActiveR` | golden 025 (L08: an extra all-zero record with the guard removed) |
+| 11 | **ENTER did not check its target.**  p. 3-21 (page image): with virtual addressing "the target address and the new MSP, if the MSP is updated, are checked to verify that stores are valid at the current execution level ... a read fault exception, exception type 8 ... The exception is processed after any stack flushing is completed."  The core moved SP and MSP into an unmapped user stack page; the reference takes exception 8 with SP and MSP unchanged, and the kernel maps the page and the ENTER restarts | record 22,533,287, `/boot`'s `ENTER` lowering SP by 0x1020, 3,800 records before `root is from` | EU_S3's `enterFault` (CSP = SP, new SP then new MSP, as stores at the current level): the box's ENTER command is issued with the pointers unchanged (the flush is made, the blocks stay cached), a `trap=1` record, `TR_ENTER_FAULT`, taken once the box is idle; nothing commits behind a trap not yet taken (`commit` waits on `trapPendR`) | golden 026 (L01; the commit hold and the wait for the flush are not pinned by it) |
+
+Rows 9 and 10 were found in that order: the store fault moved the first
+difference from 2,893,033 to 3,298,054, the event hold to 22,533,287.
+
 Injections, each reverted by its exact reverse and the diff checked:
 
+* golden 025 (`tests/golden/025.md` has the table): `storeFaults` off
+  fails L07 (`we`); the event hold removed fails L08 (an all-zero
+  record); the box's `toMemory` test dropped still passes -- 025 has no
+  cache-resident store to a read-only page, so that half rests on the
+  reference's `_store_word` (only memory-bound stores translate).
 * `xw: False && ...` (no accumulator write): golden 022 fails at L03,
   `data` 0 for 5.  Nothing else ran past the first failure (hri_check
   stops there).
