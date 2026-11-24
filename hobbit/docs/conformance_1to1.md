@@ -305,9 +305,14 @@ Traced 2026-11-24 (`docs/cycle_accuracy_plan.md` §2.1,
 *five-parcel* host, which p. 4-7 excludes ("a previous one- or
 three-parcel instruction"); the second and third are *folded*
 mispredicts, which the core prices at a flat 3 whatever the compare
-distance, where Table 4-35 prints 2 and 1.  `zc frexp.c` adds a fourth
-(16 records: a jump after a trap's return, where the core's compare
-distance is reset by the redirect).  The core is to be fixed (plan
+distance, where Table 4-35 prints 2 and 1.  `zc frexp.c` (1,651,700
+records, 20,343 differing in `cyc`, re-run 2026-11-24) has the same
+three, 18,588, 1,298 and 441, and adds a fourth (16 records: a jump
+after a trap's return, where the core's compare distance is reset by
+the redirect).  Of zc's first class, 11,772 are the *unconditional*
+one-parcel `JMP` (opcode 0x03) folded into a five-parcel host: so "every
+remaining difference is a conditional jump" holds for `za` but not for
+`zc`.  The core is to be fixed (plan
 milestone C3); until then a cycle-accuracy claim for the core does not
 extend to them.
 
