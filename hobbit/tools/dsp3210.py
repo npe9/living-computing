@@ -30,7 +30,10 @@ What is modelled, with the page each rule comes from:
   - interrupts: emr bit n enables the source whose vector is r22 + 8n (the
     boot ROM's table, p. A-3, and emr, Table 10-7); entry saves pc into
     pcsh and the DAU state into shadows, ireturn restores them (7.5.1);
-    waiti stops execution until an enabled interrupt (3.2.3);
+    entry takes two cycles (goto evtp + 8n, nop; Figure 7-6); none is
+    taken right after a branch or a load (p. 7-7), so delay slots run
+    first; IR0N/IR1N are levels; waiti stops execution until an enabled
+    interrupt (3.2.3);
   - the timer (tcon 0x413, timer 0x414; Table 10-11), counting CKI/2 or
     CKI/4 at four CKI per instruction (Figure 1-3: 60 ns at 66 MHz);
   - the DAU: DSP32 floating point (N = M * 2^(e-128), M = (-2)^s + 0.f,
@@ -38,8 +41,10 @@ What is modelled, with the page each rule comes from:
     special functions of format 5 (Tables 4-2, 4-4), the IEEE conversions
     of 8.2.4.1, and three latencies of 4.4.2: a DA memory write becomes
     visible four instructions later, an accumulator used as a multiplier
-    input is the value of three instructions before, and a DAU condition
-    is the flags of four instructions before.
+    input (X, or aM in format 1) is the value computed three instructions
+    before, and a DAU condition is the flags of four instructions before;
+  - idle skipping for a board: cycles_until_event() / skip(n) jump a
+    DSP waiting in waiti to its next timer tick.
 
 Not modelled (each fails loud where reachable, or is documented as a
 stand-in): the 40-bit accumulator's exact rounding (accumulators hold a
@@ -204,7 +209,49 @@ class DSP3210:
         if not self.running:
             return True
         return (self.waiting and not self.mmio.get(0x413, 0) & 1
-                and not self.irq_latched & self.ior[EMR] & 0xFF00)
+                and not self._pending())
+
+    def cycles_until_event(self):
+        """Instruction cycles that will pass with nothing happening but the
+        timer counting: 0 when the DSP is executing (or an interrupt is
+        pending), None when nothing but the board can wake it (in reset, or
+        in waiti with the timer stopped or its interrupt masked).  VCOS's
+        frame scheduler (mml/schedule) sits in waiti between timer ticks,
+        so this is what lets a board skip its idle time."""
+        if not self.running:
+            return None
+        if not self.waiting or self._pending() or self.pending:
+            return 0
+        tcon = self.mmio.get(0x413, 0)
+        div = {0: 2, 1: 4}.get(tcon >> 5)
+        if (not tcon & 1 or div is None or self.timer_count == 0
+                or not self.ior[EMR] & (1 << VEC_TIMER)):
+            return None
+        need = self.timer_count * div - self.timer_frac   # CKI to reach zero
+        return max(0, -(-need // self.CKI_PER_INSN) - 1)
+
+    def skip(self, n):
+        """Advance n idle instruction cycles at once; n must not exceed
+        cycles_until_event() (None: any n).  Equivalent to n step()s."""
+        lim = self.cycles_until_event()
+        if lim is not None and n > lim:
+            raise DspError("%s: skip(%d) past the next event (%d)" % (self.name, n, lim))
+        self.cycles += n
+        if not self.running or n == 0:
+            return
+        tcon = self.mmio.get(0x413, 0)
+        div = {0: 2, 1: 4}.get(tcon >> 5)
+        if tcon & 1 and div is not None and self.timer_count:
+            total = self.timer_frac + n * self.CKI_PER_INSN
+            dec = total // div
+            if dec >= self.timer_count:          # wraps only when masked
+                return self._skip_slow(n)
+            self.timer_count -= dec
+            self.timer_frac = total % div
+
+    def _skip_slow(self, n):
+        self.cycles -= n
+        self.run(n)
 
     # -------------------------------------------------- reset and boot ROM
 
@@ -235,6 +282,8 @@ class DSP3210:
         self.in_interrupt = False
         self.shadow = None
         self.waiting = False
+        self.stall = 0             # cycles of interrupt entry still to run
+        self.nointr = False        # the last instruction locks out interrupts
         self.loops = []            # [start, end, remaining]
         self.pc = 0
         self.npc = 4
@@ -389,15 +438,46 @@ class DSP3210:
     # -------------------------------------------------- interrupts
 
     def set_irq(self, pin, level):
-        """Drive IREQ0 (pin 0) or IREQ1 (pin 1); 1 = asserted."""
+        """Drive IREQ0 (pin 0) or IREQ1 (pin 1) as a level; 1 = asserted.
+        An external request is pending for as long as its pin is asserted
+        (the manual gives no edge latch for IR0N/IR1N; Table 7-2 calls them
+        "request"s): the board must drop it, or it is taken again after
+        ireturn."""
         if level:
             self.irq_pins |= 1 << pin
-            self.irq_latched |= 1 << (VEC_EXT0 if pin == 0 else VEC_EXT1)
         else:
             self.irq_pins &= ~(1 << pin)
 
+    def _pending(self):
+        ext = ((self.irq_pins & 1) << VEC_EXT0) | ((self.irq_pins >> 1 & 1) << VEC_EXT1)
+        return (self.irq_latched | ext) & self.ior[EMR] & 0xFF00
+
+    @staticmethod
+    def _uninterruptible(w):
+        """p. 7-7: no interrupt is taken after a branch (goto, conditional
+        goto, call, return, and so the loop counter's conditional goto), a
+        CAU register or I/O register load from memory or I/O register, or
+        a sp increment; ireturn is a goto, so the base-level instruction
+        after it runs before another interrupt (the quick-interrupt
+        example, 7.5.1.1).  A sp increment that is not a load (e.g.
+        `sp = (long) sp++`) is NOT yet treated as uninterruptible."""
+        top3 = w >> 29
+        if top3 in (5, 7):                       # 8a goto, 8c call
+            return True
+        if top3 in (1, 2, 3, 6):                 # DA, 8b set
+            return False
+        e = w >> 31
+        op = (w >> 25) & 0x3F
+        if op >> 2 == 0:
+            return bool(e)                       # 0b/1b conditional goto
+        if op >> 1 in (3, 4):
+            return not e                         # 3a loop counter, 4a call
+        if op in (0b001110, 0b001111):
+            return not (w >> 24) & 1             # T = 0: a load
+        return False
+
     def _take_interrupt(self):
-        pend = self.irq_latched & self.ior[EMR] & 0xFF00
+        pend = self._pending()
         if not pend or self.in_interrupt:
             return False
         for vec in range(8, 16):       # EXT0 highest ... EXT1 lowest
@@ -413,7 +493,10 @@ class DSP3210:
         self.shadow = (list(self.acc), dict(self.dflags), self.ior[DAUC],
                        [list(l) for l in self.loops], self.npc)
         self.loops = []
+        # 7.5.1, Figure 7-6: entry is a `goto evtp + 8n` and a nop, two
+        # instruction cycles (this one and the stall).
         self._jump(self.r[26] + 8 * vec)
+        self.stall = 1
         return True
 
     def _ireturn(self):
@@ -494,19 +577,21 @@ class DSP3210:
             s = ra + rb
             c = s >> bits & 1
             r = int(format(s & mask, "0%db" % bits)[::-1], 2)
-        elif f == 1:
+        elif f == 1:                    # SHIFT LEFT p. 4-73: nz, v=c=0
             r = (a << (b & 31))
-            c = (r >> bits) & 1 if b & 31 else 0
         elif f == 12:
             r = (a & mask) >> (b & 31)
         elif f == 13:
             r = sx(a, bits) >> (b & 31)
-        elif f == 9:                    # rotate right by 1 through... (no carry)
-            r = ((a & mask) >> 1) | ((a & 1) << (bits - 1))
+        elif f == 9:                    # ROTATE RIGHT p. 4-67: through carry, nzc
+            r = ((a & mask) >> 1) | (self.flags["c"] << (bits - 1))
             c = a & 1
-        elif f == 11:
-            r = ((a << 1) & mask) | ((a >> (bits - 1)) & 1)
+        elif f == 11:                   # ROTATE LEFT p. 4-66: through carry, nzvc
+            r = ((a << 1) & mask) | self.flags["c"]
             c = (a >> (bits - 1)) & 1
+            # Table 4-1: v = carry into the MSB ^ carry out of it (INFERRED
+            # for a rotate, read as a + a + c)
+            v = c ^ ((a >> (bits - 2)) & 1)
         elif f == 6:
             r = a & ~b
         elif f == 8:
@@ -519,7 +604,9 @@ class DSP3210:
             raise DspError("%s: ALU function %d at 0x%x" % (self.name, f, addr))
         res = r & mask
         flags = dict(n=int(bool(res & sign)), z=int(res == 0), v=v, c=c)
-        if not e:
+        if not e and f not in (1, 12):
+            # (short) results sign-extend from bit 15, except the logical
+            # shifts, whose upper 16 bits are zero (pp. 4-73, 4-76)
             res = sx(res, 16) & M32
         if f in (7, 15):
             return None, flags
@@ -533,12 +620,18 @@ class DSP3210:
             return False
         self._tick()
         self._drain_writes()
-        if self._take_interrupt():
-            pass
+        if self.stall:
+            self.stall -= 1
+            self.steps += 1
+            return True
+        if not self.nointr and self._take_interrupt():
+            self.steps += 1
+            return True
         if self.waiting:
             return False
         addr = self.pc
         word = self.fetch(addr)
+        self.nointr = self._uninterruptible(word)
         nxt = self.npc
         self.pc, self.npc = nxt, (nxt + 4) & M32
         self._dflag_new = None
@@ -814,7 +907,9 @@ class DSP3210:
         if p == 0:
             if i > 3:
                 raise DspError("%s: DA operand 0x%x" % (self.name, f))
-            v = (self.acc_hist[-2] if mult else self.acc)[i]
+            # Latency 2 (p. 4-14): the value computed three instructions
+            # before; acc_hist[-1] is the state after the previous one.
+            v = (self.acc_hist[-3] if mult else self.acc)[i]
             return v, float_to_dsp(v)
         if p == 15:
             raise DspError("%s: DA operand p=1111 (undocumented)" % self.name)
@@ -863,7 +958,8 @@ class DSP3210:
             if fmt == 1:                        # aN = [-]Y +- aM*X
                 y, _ = self._da_read(yf, False)
                 x, _ = self._da_read(xf, True)
-                mx = am if m > 3 else dsp_to_float(float_to_dsp(am))
+                # aM is a multiplier input here: Latency 2 applies
+                mx = am if m > 3 else dsp_to_float(float_to_dsp(self.acc_hist[-3][m]))
                 res = neg * y + sgn * mx * x
                 if zf != 7:
                     self._da_write(zf, float_to_dsp(res))
@@ -1005,6 +1101,18 @@ class Dsp3210:
     @property
     def idle(self):
         return self.core.idle
+
+    def clocks_until_event(self):
+        """DSP clocks beboot may skip with skip(): 0 while executing, None
+        while only the board can wake the DSP (see DSP3210.cycles_until_event)."""
+        n = self.core.cycles_until_event()
+        return None if n is None else n * self.CLOCKS_PER_STEP
+
+    def skip(self, clocks):
+        """Advance `clocks` idle DSP clocks (a multiple of 4) at once."""
+        if clocks % self.CLOCKS_PER_STEP:
+            raise DspError("skip(%d): not a whole instruction cycle" % clocks)
+        self.core.skip(clocks // self.CLOCKS_PER_STEP)
 
 
 if __name__ == "__main__":

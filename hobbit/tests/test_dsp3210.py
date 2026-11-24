@@ -23,22 +23,44 @@ failures:
 - dsp3210dis, B and M of the do formats swapped:
   test_do_forms, test_os_boot_mover.
 - dsp3210, the delayed branch made immediate (_branch calls _jump):
-  test_call_return, test_dau_condition_latency, test_delayed_branch,
+  test_call_absolute, test_call_return, test_dau_condition_latency,
+  test_delayed_branch, test_interrupt_after_branch, test_loop_counter,
+  test_os_boot_standalone, test_reset_release_run.
+- dsp3210, the pc read as address + 4 instead of + 8: test_call_return,
+  test_dau_condition_latency, test_delayed_branch,
+  test_interrupt_after_branch, test_interrupt_is_a_level,
   test_loop_counter, test_os_boot_standalone, test_reset_release_run.
-- dsp3210, the pc read as address + 4 instead of + 8: the same six.
 - dsp3210, do-loop body one instruction short (end = start + 4*K):
-  test_do_loop, test_os_boot_standalone.
+  test_do_loop, test_do_register_count_and_direct,
+  test_interrupt_in_do_loop, test_os_boot_standalone.
+- dsp3210, `do K, rM` taking the count from the L field:
+  test_do_register_count_and_direct, test_os_boot_standalone.
 - dsp3210, DA memory write committed at once (countdown 1, not 4):
   test_da_write_latency.
 - dsp3210, DAU condition from the current flags (dflag_hist[-1]):
   test_dau_condition_latency.
+- dsp3210, multiplier input from two instructions back, not three (the
+  first draft's bug): test_multiplier_latency.
 - dsp3210, float_to_dsp's negative mantissa as sign-magnitude:
   test_float_format.
+- dsp3210, int16 storing 32 bits: test_float16_int16.
 - dsp3210, SHIFT-OR keeping only rS's low half: test_shift_or.
+- dsp3210, (short) logical shifts sign-extended: test_ca_alu.
+- dsp3210, rotate right not through the carry: test_ca_alu.
 - dsp3210, BRC=1 boot taking the address from header bytes 4-7: every
-  test that boots the model (17), test_alu_flags .. test_wrapper.
-- dsp3210, interrupt vector r22 + 8*(n-1):
-  test_bio_and_irq, test_timer_interrupt.
+  test that boots the model (26), test_alu_flags .. test_wrapper.
+- dsp3210, interrupt vector r22 + 8*(n-1): test_bio_and_irq,
+  test_idle_skip, test_interrupt_after_branch, test_interrupt_in_do_loop,
+  test_interrupt_is_a_level, test_timer_interrupt.
+- dsp3210, interrupts taken right after a branch (no p. 7-7 lockout):
+  test_interrupt_after_branch, test_interrupt_is_a_level.
+- dsp3210, interrupt entry one cycle instead of two (goto + nop):
+  test_interrupt_in_do_loop.
+- dsp3210, IREQ latched on its rising edge instead of a level:
+  test_interrupt_is_a_level.
+- dsp3210, cycles_until_event one cycle long (skips onto the tick):
+  test_idle_skip.
+- dsp3210, skip() not counting the timer down: test_idle_skip.
 
 Tried and not discriminating: doblock taking K from its field instead
 of forcing 0.  Every doblock in the code has K = 0 encoded.
@@ -373,6 +395,55 @@ class ModelTest(unittest.TestCase):
         run(d, 1)
         self.assertEqual(d.r[1], 0x08345678)
 
+    # F, long, rS1, rS2, carry in -> rD, (n, z, v, c); rD None: not stored.
+    # Pages: ADD 4-21, ADD-CARRY REV 4-24, AND 4-25, AND-COMPLEMENT 4-26,
+    # BIT TEST 4-27, COMPARE 4-30, EXCLUSIVE OR 4-34, OR 4-64, ROTATE
+    # LEFT/RIGHT 4-66/4-67, SHIFT LEFT 4-73, SHIFT RIGHT 4-76, SHIFT
+    # RIGHT-ARITH 4-78, SUBTRACT 4-83; flag rules Table 4-1 (p. 4-3).
+    ALU_CASES = [
+        (0, 1, 0x7FFFFFFF, 1, 0, 0x80000000, (1, 0, 1, 0)),
+        (0, 1, 0xFFFFFFFF, 1, 0, 0, (0, 1, 0, 1)),
+        (0, 0, 0x7FFF, 1, 0, 0xFFFF8000, (1, 0, 1, 0)),     # short: sign-extends
+        (4, 1, 0, 1, 0, 0xFFFFFFFF, (1, 0, 0, 1)),          # borrow
+        (3, 1, 7, 7, 0, 3, (0, 0, 0, 1)),                   # rS1 = rS2: >> 1, LSB to c
+        (14, 1, 0xF0F0, 0xFF00, 1, 0xF000, (0, 0, 0, 0)),
+        (6, 1, 0xF0F0, 0xFF00, 1, 0x00F0, (0, 0, 0, 0)),
+        (10, 1, 0xF0F0, 0xFF00, 1, 0xFFF0, (0, 0, 0, 0)),
+        (8, 1, 0xF0F0, 0xFF00, 1, 0x0FF0, (0, 0, 0, 0)),
+        (1, 1, 0x40000000, 1, 0, 0x80000000, (1, 0, 0, 0)), # v = c = 0
+        (1, 0, 0x4001, 1, 0, 0x00008002, (1, 0, 0, 0)),     # short: upper 16 zero
+        (12, 0, 0xFFFF8000, 4, 0, 0x00000800, (0, 0, 0, 0)),
+        (13, 0, 0x8000, 4, 0, 0xFFFFF800, (1, 0, 0, 0)),
+        (13, 1, 0x80000000, 31, 0, 0xFFFFFFFF, (1, 0, 0, 0)),
+        (9, 1, 2, 0, 1, 0x80000001, (1, 0, 0, 0)),          # through carry
+        (11, 1, 0x80000000, 0, 1, 1, (0, 0, 1, 1)),
+        (15, 1, 0x10, 0x01, 0, None, (0, 1, 0, 0)),         # btst: flags only
+        (7, 1, 5, 5, 0, None, (0, 1, 0, 0)),                # compare
+    ]
+
+    def test_ca_alu(self):
+        for f, e, a, b, cin, want, flags in self.ALU_CASES:
+            with self.subTest(f=f, long=e, a=hex(a), b=hex(b)):
+                d, _ = machine([alu(f, "r3", "r1", "r2", long=bool(e))])
+                d.r[1], d.r[2], d.r[3] = a, b, 0x5A5A5A5A
+                d.flags["c"] = cin
+                run(d, 1)
+                self.assertEqual(d.r[3], 0x5A5A5A5A if want is None else want)
+                self.assertEqual(tuple(d.flags[k] for k in "nzvc"), flags)
+
+    def test_ca_conditional_and_immediate(self):
+        # p. 4-21: a false COND changes neither rD nor the flags
+        d, _ = machine([alu(0, "r3", "r1", "r2", "eq"),
+                        alui(12, "r1", 4),                  # r1 = r1 >> 4 (6c)
+                        alui(14, "r2", 0xFF0F)])            # r2 = r2 & N, N sign-extended
+        d.r[1], d.r[2] = 0x100, 0x1234
+        d.flags.update(n=1, z=0, v=1, c=1)
+        run(d, 1)
+        self.assertEqual(d.r[3], 0)
+        self.assertEqual(tuple(d.flags[k] for k in "nzvc"), (1, 0, 1, 1))
+        run(d, 2)
+        self.assertEqual((d.r[1], d.r[2]), (0x10, 0x1204))
+
     def test_load_store(self):
         # 7c, Table 10-1; W = 1 char (sign-extends), 2 ushort, 3 short
         prog = [set24("r1", 0xE000),
@@ -404,6 +475,81 @@ class ModelTest(unittest.TestCase):
         self.assertEqual(d.acc[0], -1.125)
         self.assertEqual(text(prog[2]), "a0 = *r1 * *r2")
 
+    def test_multiplier_latency(self):
+        # Latency 2, p. 4-14, the manual's example:
+        #   I1 a0 = a0 + *r1 * *r2;  I2 a0 = a0 + a1;  I3;  I4 a2 = a0 * a0;
+        #   I5 a1 = a2 + a0.  I4's multiplier sees a0 from I1.  In I5, a2
+        #   feeds the adder (no latency: I4's value) and a0 is in the X
+        #   field, a multiplier input, so it is I2's value.
+        A0, A1, A2 = daop(0, 0), daop(0, 1), daop(0, 2)
+        prog = [set24("r1", 0xE000), set24("r2", 0xE004),
+                da(3, 0, 0, 0, 0, daop(2), daop(1), NOWRITE),    # I1: a0 += 2 * 3
+                da(1, 5, 0, 0, 0, A1, A0, NOWRITE),             # I2: a0 = a0 + 1.0*a1
+                NOP,                                             # I3
+                da(3, 4, 0, 0, 2, A0, A0, NOWRITE),             # I4: a2 = 0 + a0*a0
+                da(1, 5, 0, 0, 1, A0, A2, NOWRITE)]             # I5: a1 = a2 + 1.0*a0
+        d, _ = machine(prog)
+        d.store(0xE000, 4, dsp3210.float_to_dsp(2.0))
+        d.store(0xE004, 4, dsp3210.float_to_dsp(3.0))
+        d.acc[0], d.acc[1] = 1.0, 100.0
+        run(d, 2)
+        run(d, 1)
+        self.assertEqual(d.acc[0], 7.0)                 # I1
+        run(d, 1)
+        self.assertEqual(d.acc[0], 107.0)               # I2 (adder: current a1)
+        run(d, 2)
+        self.assertEqual(d.acc[2], 49.0)                # I4: a0 of I1, not 107
+        run(d, 1)
+        self.assertEqual(d.acc[1], 49.0 + 107.0)        # I5: a2 of I4, a0 of I2
+
+    def test_float16_int16(self):
+        # FLOAT16 p. 4-38, INT16 p. 4-56 (16-bit memory operands)
+        prog = [set24("r1", 0xE000), set24("r2", 0xE010),
+                special(2, 0, daop(1), NOWRITE),            # a0 = float16(*r1)
+                special(3, 1, daop(0, 3), daop(2))]         # *r2 = a1 = int16(a3)
+        self.assertEqual(text(prog[2]), "a0 = float16(*r1)")
+        self.assertEqual(text(prog[3]), "*r2 = a1 = int16(a3)")
+        d, _ = machine(prog + [NOP] * 4)
+        d.store(0xE000, 2, 0xFFFD)                      # -3
+        d.acc[3] = -1234.25
+        d.store(0xE010, 4, 0x11112222)
+        run(d, 4 + 4)
+        self.assertEqual(d.acc[0], -3.0)
+        self.assertEqual(d.load(0xE010, 2), (-1234) & 0xFFFF)
+        self.assertEqual(d.load(0xE012, 2), 0x2222)     # a 16-bit store
+
+    def test_do_register_count_and_direct(self):
+        # do K, rM (format 3c, p. 4-31): the body runs rM + 1 times;
+        # 7a direct *L loads and stores (pp. 4-59, 4-80)
+        def direct(t, w, rh, l):
+            return (0b001110 << 25) | (t << 24) | (w << 21) | (R[rh] << 16) | l
+        prog = [add3("r5", "r0", 2),
+                (0b1000111 << 25) | (0 << 11) | R["r5"],    # do 0, r5
+                add3("r1", "r1", 1),
+                direct(0, 3, "r3", 0xE010),                  # r3 = (short) *0xE010
+                direct(1, 7, "r3", 0xE014)]                  # *0xE014 = (long) r3
+        self.assertEqual(text(prog[1]), "do 0, r5")
+        self.assertEqual(text(prog[3]), "r3 = (short) *0xe010")
+        d, _ = machine(prog)
+        d.store(0xE010, 2, 0x8001)
+        run(d, 2 + 3 + 2)
+        self.assertEqual(d.r[1], 3)
+        self.assertEqual(d.load(0xE014, 4), 0xFFFF8001)
+
+    def test_call_absolute(self):
+        # 8c call M (rM), M zero-extended 24 bits (CALL p. 4-28); code
+        # on-chip so that M can reach it
+        d, _ = machine([NOP])
+        prog = [(0b111 << 29) | (0 << 21) | (R["r18"] << 16) | 0xE110,   # call 0xE110 (r18)
+                add3("r1", "r0", 1), add3("r2", "r0", 2), NOP,
+                br("true", "r18"), add3("r3", "r0", 3)]
+        for i, w in enumerate(prog):
+            d.store(0xE100 + 4 * i, 4, w)
+        d._jump(0xE100)
+        run(d, 5)
+        self.assertEqual(d.r[R["r18"]], 0xE108)
+        self.assertEqual((d.r[1], d.r[2], d.r[3]), (1, 2, 3))
+
     def test_da_write_latency(self):
         # p. 4-14 Latency 1: a DA write is readable four instructions later
         z = daop(3)                              # *r3
@@ -434,6 +580,65 @@ class ModelTest(unittest.TestCase):
         run(d, 7)
         self.assertEqual((d.r[1], d.r[2]), (0, 2))
 
+    HANDLER = [add3("r9", "r9", 1), 0x803E0000]       # r9 += 1; ireturn
+
+    def irq_machine(self, body):
+        prog = [set24("r22", 0xE800), set24("r1", 0x100),
+                iomov(1, 3, "r1", 8)] + body           # emr: EXT0 (bit 8)
+        d, _ = machine(prog)
+        for i, w in enumerate(self.HANDLER):
+            d.store(0xE800 + 8 * 8 + 4 * i, 4, w)
+        run(d, 3)
+        return d
+
+    def test_interrupt_after_branch(self):
+        # p. 7-7: a branch is not interruptible, so the delay slot runs
+        # before the interrupt, and the return goes to the target.
+        d = self.irq_machine([br("true", "pc", 8),          # c: goto 0x1c
+                              add3("r5", "r0", 5),          # 10: delay slot
+                              add3("r2", "r0", 2),          # 14: skipped
+                              add3("r3", "r0", 3),          # 18: skipped
+                              add3("r4", "r0", 4), NOP, NOP])
+        run(d, 1)                                    # the branch
+        d.set_irq(0, 1)
+        run(d, 1)                                    # delay slot, not the interrupt
+        self.assertEqual((d.r[5], d.in_interrupt), (5, False))
+        run(d, 1)                                    # entry
+        self.assertTrue(d.in_interrupt)
+        self.assertEqual(d.pcsh, CODE + 0x1C)
+        d.set_irq(0, 0)
+        run(d, 4)                                    # nop, r9, ireturn, r4
+        self.assertEqual((d.r[2], d.r[3], d.r[4], d.r[9]), (0, 0, 4, 1))
+
+    def test_interrupt_in_do_loop(self):
+        # 7.5.1: do-loop state is shadowed; the loop finishes its count
+        d = self.irq_machine([do_imm(1, 4),
+                              add3("r1", "r1", 1),
+                              add3("r2", "r2", 2),
+                              add3("r3", "r3", 3)])
+        d.r[1] = 0
+        run(d, 4)                                    # do, then mid-body
+        d.set_irq(0, 1)
+        run(d, 1)
+        self.assertTrue(d.in_interrupt)
+        d.set_irq(0, 0)
+        run(d, 11)                                   # 16 in all: 12 + entry 2 + handler 2
+        self.assertEqual((d.r[1], d.r[2], d.r[3], d.r[9]), (5, 10, 3, 1))
+
+    def test_interrupt_is_a_level(self):
+        # IR0N held: taken again after ireturn and one base instruction
+        d = self.irq_machine([add3("r1", "r1", 1), br("true", "pc", -12), NOP])
+        d.r[1] = 0
+        d.set_irq(0, 1)
+        run(d, 20)
+        self.assertGreaterEqual(d.r[9], 3)
+        self.assertGreaterEqual(d.r[1], 1)
+        d.set_irq(0, 0)
+        run(d, 5)                                    # finish a handler in progress
+        n = d.r[9]
+        run(d, 20)
+        self.assertEqual(d.r[9], n)
+
     def test_timer_interrupt(self):
         # The timer (p. 9-?) counts down at CKI/2 with tcon = 1; at zero it
         # latches vector 9 (Table 9-?), enabled by emr bit 9; waiti stops
@@ -457,7 +662,7 @@ class ModelTest(unittest.TestCase):
         run(d, 15)                                   # 2 counts per insn
         self.assertTrue(d.waiting)
         self.assertEqual(d.r[9], 0)
-        run(d, 6)
+        run(d, 8)                                    # entry (2), handler (2), r7
         self.assertEqual(d.r[9], 9)
         self.assertEqual(d.r[7], 7)
         self.assertFalse(d.in_interrupt)
@@ -525,6 +730,42 @@ class BoardBus:
 
 class BeBootTest(unittest.TestCase):
     """The Dsp3210 wrapper beboot drives, and that a run pickles."""
+
+    def test_idle_skip(self):
+        # mml/schedule's shape: timer interrupt enabled, waiti between
+        # ticks.  skip(clocks_until_event()) then stepping must reach the
+        # interrupt on the same cycle as stepping all the way.
+        def build():
+            bus = BoardBus()
+            prog = [set24("r22", 0xE800), set24("r1", 0x200),
+                    iomov(1, 3, "r1", 8), WAITI, add3("r7", "r0", 7), NOP, NOP]
+            bus.b.words(CODE, prog)
+            for i, b in enumerate(CODE.to_bytes(4, "big")):
+                bus.b.write(0x60000000 + 4 * i, 4, b)
+            d = dsp3210.Dsp3210(1, bus)
+            d.release()
+            d.core.store(0xE800 + 72, 4, add3("r9", "r0", 9))
+            d.core.store(0xE800 + 76, 4, 0x803E0000)
+            for _ in range(3):
+                d.step()
+            d.core.store(0x414, 4, 1001)
+            d.core.store(0x413, 1, 0x23)              # enable, reload, CKI/4
+            d.step()                                  # waiti
+            return d
+        a, b = build(), build()
+        self.assertEqual(a.clocks_until_event(), 4 * 999)
+        clocks = 0
+        while a.core.r[9] != 9:
+            clocks += a.step()
+        b.skip(b.clocks_until_event())
+        self.assertEqual(b.clocks_until_event(), 0)  # the tick lands next cycle
+        n = 0
+        while b.core.r[9] != 9:
+            n += b.step()
+        self.assertEqual(n + 4 * 999, clocks)
+        self.assertEqual(a.core.timer_count, b.core.timer_count)
+        with self.assertRaises(dsp3210.DspError):
+            build().skip(4 * 1000)
 
     def test_wrapper(self):
         import pickle
