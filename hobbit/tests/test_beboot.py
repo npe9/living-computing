@@ -9,9 +9,26 @@ is not on disk or not the recorded one.  No byte of Be's software is in
 this file: the tests pin console text, step counts and function names.
 
 Discriminating checks, observed 2026-11-24 (each injection one edit to
-tools/beboot.py, reverted by the reverse edit; `git diff` clean after):
+tools/beboot.py, reverted by the reverse edit, the file compared byte for
+byte with a copy taken before; the default tests, BEBOOT_LONG unset):
 
-INJECTIONS
+- WhoAmI returns 4 + current_cpu (CPU 1 reads 5): test_who_am_i,
+  BootTest.test_banner, test_cpu2_started, test_scsi_initialised,
+  test_steps.
+- SER1/SER2 interrupt bits swapped back to the 1993 draft's order:
+  BootTest.test_interrupt_wiring.
+- 53C94 selection completes with interrupt 0x08 instead of 0x18 (no bus
+  service bit): test_read_through_pseudo_dma only (the kernel's boot to
+  "Disk cache is" does not tell them apart).
+- ScsiDisk answers every LUN as LUN 0: test_other_luns,
+  BootTest.test_banner, test_steps (the console lists LUNs 1-7).
+- MCS3201 seek-end ST0 without the drive number: test_recalibrate_then_
+  sense, test_interrupt_gated_by_dor.
+- I/O window accepts a store on any lane: test_wrong_lane_stops.
+- Keyboard controller self test answers 0x54: test_kb_init.
+- A read of the IIR does not clear the THRE interrupt: test_thre_interrupt.
+- With BEBOOT_LONG=1: the idle skip leaves R16 of _null_thread unchanged:
+  see MountTest's header.
 """
 import hashlib
 import os
@@ -230,6 +247,234 @@ class Mcs3201Test(unittest.TestCase):
         fdc = beboot.Mcs3201({}, self.clock)
         with self.assertRaises(beboot.Stop):
             fdc.write(2, 0x08)                  # DOR bit 2 low: a reset
+
+
+BANNER = (b"\n\rBe Labradors Kernel version of Nov 23 1994 time 12:11:01\n\r"
+          b"(C) Copyright, Be Incorporated, 1991-1994\n\r\n\r"
+          b"Kernel running from RAM in MULTIPROCESSOR mode\n\r"
+          b"01000000 bytes of RAM (16 MBytes)\n\r")
+
+
+# Instructions executed (both CPUs, skipped idle laps included) when the
+# text appears on SER1, observed 2026-11-24.
+STEPS = {"cache": 6081674, "mount": 29180553}
+SCAN = (b"starting cpu 1\n\rpath 0 target 0 lun 0 inqdata "
+        b"'BEBOOT  HOBBIT DISK     1994'\n\rDisk cache is")
+NO_DISKETTE = (b"DiskChanged returned TRUE\n\r"
+               b"PrepareMedia: DiskChanged TRUE twice (i.e. no disk in drive)\n\r"
+               b"flo_read: err was -27\n\rReadPhySector -1\n\r")
+MOUNT = (SCAN + b" 4096K bytes\n\rRecal floppy drive 1, attempt 1\n\r"
+         + NO_DISKETTE + b"fsmount failure\n\r" + NO_DISKETTE
+         + b"Cache I/O error\n\r" + NO_DISKETTE
+         + b"Volume 'be' w/size 332487 sectors mounted as id 0 on "
+           b"/dev/scsi_disk_driver_000")
+
+
+def boot_machine(skip=True):
+    import befs1
+    import beelf
+    vol = befs1.Volume(disk_or_skip())
+    work = os.path.join(HOBBIT, "build", "bebox", "beboot")
+    os.makedirs(work, exist_ok=True)
+    path = os.path.join(work, "kernel-test")
+    with open(path, "wb") as f:
+        f.write(vol.read(vol.lookup("/system/kernel")))
+    vol.f.close()
+    m = beboot.Machine(beelf.Elf(path))
+    m.disks[0] = beboot.ScsiDisk(DISK, "target 0")
+    m.idle_skip = skip
+    return m
+
+
+class UartTest(unittest.TestCase):
+    """VL16C452 pp. 6-57..6-60: the THRE interrupt."""
+
+    def test_thre_interrupt(self):
+        u = beboot.Uart("t")
+        u.write(4, 0x08)                        # OUT2: INT enabled
+        self.assertFalse(u.irq())
+        u.write(1, 0x02)                        # ETBEI with the THR empty
+        self.assertTrue(u.irq())
+        self.assertEqual(u.read(2), 0x02)       # IIR: THRE ...
+        self.assertFalse(u.irq())               # ... which clears it
+        self.assertEqual(u.read(2), 0x01)
+        u.write(0, 0x41)                        # a byte: THR empties again
+        self.assertTrue(u.irq())
+        u.write(4, 0x00)                        # OUT2 low gates INT
+        self.assertFalse(u.irq())
+        self.assertEqual(bytes(u.out), b"A")
+
+
+class KeyboardControllerTest(unittest.TestCase):
+    """VL82C106 pp. 6-197..6-202; the sequences of _kb_init and
+    _mouse_init."""
+
+    def setUp(self):
+        self.kbc = beboot.Vl82c106Kbc()
+
+    def answer(self):
+        self.assertTrue(self.kbc.read(4) & 1)           # OBF
+        return self.kbc.read(0)
+
+    def test_kb_init(self):
+        k = self.kbc
+        k.write(4, 0xAA)
+        self.assertEqual(self.answer(), 0x55)
+        k.write(4, 0xAB)
+        self.assertEqual(self.answer(), 0x00)
+        k.write(4, 0xAE)
+        k.write(0, 0xEE)
+        self.assertEqual(self.answer(), 0xEE)
+        k.write(0, 0xED)
+        self.assertEqual(self.answer(), 0xFA)
+        k.write(0, 0x02)
+        self.assertEqual(self.answer(), 0xFA)
+        self.assertFalse(k.read(4) & 1)
+
+    def test_mode_and_interrupts(self):
+        k = self.kbc
+        k.write(4, 0x60)
+        k.write(0, 0x41)                        # EKI, KCC
+        k.write(4, 0x20)
+        self.assertTrue(k.kbd_irq())            # mode byte in the buffer
+        self.assertFalse(k.mouse_irq())
+        self.assertEqual(k.read(0), 0x41)
+        self.assertFalse(k.kbd_irq())
+
+    def test_mouse(self):
+        k = self.kbc
+        k.write(4, 0x60)
+        k.write(0, 0x02)                        # EMI only
+        k.write(4, 0xD4)
+        k.write(0, 0xF2)                        # READ ID
+        self.assertEqual(k.read(4) & 0x21, 0x21)    # OBF, from the mouse
+        self.assertTrue(k.mouse_irq())
+        self.assertEqual((k.read(0), k.read(0)), (0xFA, 0x00))
+
+    def test_unmodelled_stops(self):
+        with self.assertRaises(beboot.Stop):
+            self.kbc.write(4, 0xC0)             # read input port
+
+
+class ScsiDiskLunTest(unittest.TestCase):
+    """CHOICES['disks']: one LUN; LUNs 1-7 answer as SCSI-2 has it."""
+
+    def setUp(self):
+        import tempfile
+        self.f = tempfile.NamedTemporaryFile()
+        self.f.write(bytes(512 * 4))
+        self.f.flush()
+        self.disk = beboot.ScsiDisk(self.f.name, "t")
+
+    def tearDown(self):
+        self.disk.f.close()
+        self.f.close()
+
+    def test_lun0_inquiry(self):
+        st, data, _, _ = self.disk.execute(bytes([0x12, 0, 0, 0, 36, 0]))
+        self.assertEqual((st, data[0], data[8:14]), (0, 0, b"BEBOOT"))
+
+    def test_other_luns(self):
+        st, data, _, _ = self.disk.execute(bytes([0x12, 0x20, 0, 0, 36, 0]))
+        self.assertEqual((st, data[0]), (0, 0x7F))
+        st, data, _, _ = self.disk.execute(bytes([0x00, 0xE0, 0, 0, 0, 0]))
+        self.assertEqual(st, 2)
+        st, data, _, _ = self.disk.execute(bytes([0x03, 0xE0, 0, 0, 18, 0]))
+        self.assertEqual((data[2], data[12]), (5, 0x25))
+
+
+class BootTest(unittest.TestCase):
+    """The Nov 23 1994 kernel from the `be` disk, from entry to SER1's
+    'Disk cache is' (about 6M instructions, ~2-3 min): the banner, CPU 2
+    released, the SCSI scan finding one LUN on target 0."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.m = boot_machine()
+        cls.status = cls.m.run(STEPS["cache"] + 1000, b"Disk cache is")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.m.disks[0].f.close()
+
+    def test_banner(self):
+        self.assertIn("until", self.status)
+        self.assertEqual(bytes(self.m.ser1.out), BANNER + SCAN)
+
+    def test_steps(self):
+        self.assertEqual(self.m.steps, STEPS["cache"])
+
+    def test_cpu2_started(self):
+        self.assertEqual(len(self.m.cpus), 2)
+        names = [n for _, c, n in self.m.reached if c == 2]
+        self.assertIn("_null_thread", names)
+        self.assertEqual(self.m.regs.reset, 0x02)
+
+    def test_interrupt_wiring(self):
+        # docs/bebox_hardware.md section 6: SER1 bit 1, SER2 bit 2 (the
+        # kernels' _ser_init), floppy 0, RTC 4, keyboard 5, mouse 6, SCSI 7.
+        m = self.m
+        self.assertEqual(m.regs.io_sources,
+                         {0: m.fdc.irq, 1: m.ser1.irq, 2: m.ser2.irq,
+                          4: m.rtc_irq, 5: m.kbc.kbd_irq,
+                          6: m.kbc.mouse_irq, 7: m.ncr.irq})
+
+    def test_scsi_initialised(self):
+        names = [n for _, _, n in self.m.reached]
+        for name in ("_init_vector_table", "_spin_init", "_init_53c94",
+                     "_start_cpu"):
+            self.assertIn(name, names)
+
+
+@unittest.skipUnless(os.environ.get("BEBOOT_LONG"),
+                     "SKIPPED: BEBOOT_LONG=1 runs the boot to the mount "
+                     "(~29M instructions, ~10 min, twice)")
+class MountTest(unittest.TestCase):
+    """On to the root volume: the SCSI scan (LUN 0 only), the floppy
+    driver finding no diskette in drive 1 (the kernel's own messages),
+    and 'be' mounted from target 0."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.m = boot_machine()
+        cls.status = cls.m.run(STEPS["mount"] + 1000, b"/dev/scsi_disk_driver_000")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.m.disks[0].f.close()
+
+    def test_console(self):
+        self.assertIn("until", self.status)
+        self.assertEqual(bytes(self.m.ser1.out), BANNER + MOUNT)
+
+    def test_steps(self):
+        self.assertEqual(self.m.steps, STEPS["mount"])
+
+    def test_idle_skip_changes_nothing(self):
+        """CHOICES['idle-skip']: the same run with every idle lap executed
+        ends in the same state, register for register and word for word."""
+        self.assertGreater(self.m.skips, 0)
+        ref = boot_machine(skip=False)
+        try:
+            status = ref.run(STEPS["mount"] + 1000,
+                             b"/dev/scsi_disk_driver_000")
+        finally:
+            ref.disks[0].f.close()
+        self.assertEqual(status, self.status)
+        self.assertEqual(ref.steps, self.m.steps)
+        self.assertEqual(bytes(ref.ser1.out), bytes(self.m.ser1.out))
+
+        def cpu_state(c):
+            st, s = c.state, c.sysm
+            return (c.steps, c.cycles, st.pc, st.sp, st.msp, st.psw, st.isp,
+                    list(st.cache), s.timer1, s.timer2, s.config)
+        self.assertEqual([cpu_state(c) for c in ref.cpus],
+                         [cpu_state(c) for c in self.m.cpus])
+        self.assertEqual(ref.board.ram, self.m.board.ram)
+
+    def test_floppy_commands(self):
+        self.assertEqual(self.m.fdc.log[:3],
+                         [(0x03, 0x3F, 0x10), (0x07, 0x01), (0x08,)])
 
 
 if __name__ == "__main__":

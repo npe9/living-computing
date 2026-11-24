@@ -59,6 +59,10 @@ MEMSIZE_WORD = RAM_BASE + 0x48
 CPU_HZ = 25e6
 # CHOICES['scsi-timing']: cycles from a 53C94 command to its interrupt.
 NCR_IRQ_DELAY = 2500
+# CHOICES['idle-skip']: the kernel whose idle loop was read.
+IDLE_KERNEL_SHA256 = ("450716b22c33ed105684cdbe660b73e1843f2308b66fa76f2a153be1"
+                      "12167b0b")
+
 # CHOICES['floppy']: seconds from a seek's last step (or a recalibrate
 # on cylinder 0) to its interrupt.
 FDC_SETTLE = 100e-6
@@ -83,10 +87,12 @@ CHOICES = {
                    "them).  The ROM's real state at its jump is unknown.",
     "ram-init": "RAM not loaded from the kernel reads as 0.",
     "cpu-id": "The ID register (CPU escape, ID) reads 0x1000003B, "
-              "hobbit_sem.System's default (92010 mask two).  The Nov 1994 "
-              "kernel compares it with 0x0E33D03B (its 92020 value) to "
-              "choose its '020' code; the board's real part is a 92010 "
-              "(docs/bebox_hobbit.md).",
+              "hobbit_sem.System's default, on the default 92010 part.  "
+              "No Be kernel holds the 92010's value: both compare the "
+              "register only with 0x0E33D03B (a 92020) to choose their "
+              "'020' code, so any other value takes the 92010 path, which "
+              "is the board's (Be's introduction of 15 Sep 1993: two "
+              "92010s; docs/bebox_hobbit.md).",
     "clock": "Model time is CPU 1's Chapter 4 cycles at 25 MHz, the clock "
              "of the prototype's two 92010s as johnrash/bebox's "
              "design/hardware.md gives it (docs/bebox_hobbit.md; not yet "
@@ -113,9 +119,18 @@ CHOICES = {
               "on a level-triggered line would never end.  A seek or "
               "recalibrate interrupts (16 - SRT) ms per step after the "
               "command, plus 100 us.",
+    "keyboard": "An AT keyboard and a PS/2 mouse are attached to the "
+                "VL82C106's controller (typewritten.org's machine 0058 has "
+                "both; bebox_hardware.md section 7); no key is pressed and "
+                "the mouse does not move.  The controller's mode register "
+                "starts at 0x00 (what the ROM left there is not known; the "
+                "kernel reads and rewrites it) and its status reads SYS = 1 "
+                "and the keyboard switch enabled.",
     "disks": "--disk images are SCSI targets 0, 1, ... in order (the "
              "first holds /system/kernel unless --kernel is given).  "
-             "INQUIRY answers 'BEBOOT HOBBIT DISK'.",
+             "INQUIRY answers 'BEBOOT HOBBIT DISK'.  Each target has "
+             "one logical unit, LUN 0; the kernel probes LUNs 0-7 and is "
+             "answered for 1-7 as a SCSI-2 disk would (ScsiDisk.execute).",
     "disk-writes": "Writes to a disk go to an in-memory overlay; the image "
                    "file is never modified.",
     "interrupts": "Levels as the kernel's vector table uses them "
@@ -131,6 +146,21 @@ CHOICES = {
                   "interrupt.  An interrupt is taken when its level is "
                   "below the PSW's IPL (Table 1-8, hobbit_sem."
                   "interrupt_accepted).",
+    "idle-skip": "A harness shortcut, on by default (--no-idle-skip turns "
+                 "it off), written for the Nov 23 1994 kernel only "
+                 "(IDLE_KERNEL_SHA256; off for any other).  The idle thread "
+                 "_null_thread loops at +0x4: CALL _fix_3_minute_bug (which "
+                 "disables interrupts, reads TIMER1, restores them), ADD "
+                 "$1,R16, JMP back -- no memory or device access but its "
+                 "own stack.  When every running CPU is at that head, has "
+                 "taken two laps of equal steps and cycles, may take an "
+                 "interrupt (IPL > 3) and has none pending, the laps up to "
+                 "just before the next timed event (a timer overflow, a "
+                 "53C94 or MCS3201 interrupt) are not executed: each CPU's "
+                 "steps, cycles and timers advance by whole laps and its "
+                 "R16 by the lap count.  The run is otherwise the same "
+                 "instruction for instruction (BootTest checks it against "
+                 "a run without the skip).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -305,7 +335,15 @@ class Uart:
     family UART as the PC ports are (the kernel's _scc_init/_scc_out/
     _scc_in touch +0, +1, +3, +4, +5).  Transmission is immediate (THR
     empty and transmitter empty always set in LSR); received bytes come
-    from `feed`."""
+    from `feed`.
+
+    Interrupts as the VL16C452 sheet gives them (VTI manual pp. 6-57..
+    6-60): the THRE interrupt is raised when the THR empties and when
+    IER bit 1 is set with the THR empty ("When interrupts are
+    subsequently enabled, an interrupt occurs due to THRE", p. 6-60),
+    and cleared by a read of the IIR that reports it or by a write to
+    the THR (p. 6-57); the INT output is enabled by MCR bit 3, OUT2
+    (p. 6-58, Figure 3 p. 6-59)."""
 
     NAMES = ["RBR/THR/DLL", "IER/DLM", "IIR/FCR", "LCR", "MCR", "LSR",
              "MSR", "SCR"]
@@ -317,12 +355,20 @@ class Uart:
         self.ier = self.lcr = self.mcr = self.scr = 0
         self.dll = self.dlm = 0
         self.fcr = 0
+        self.thre = False           # THRE interrupt pending
 
     def feed(self, data):
         self.rx.extend(data)
 
+    def _source(self):
+        if self.ier & 1 and self.rx:
+            return 0x04
+        if self.ier & 2 and self.thre:
+            return 0x02
+        return 0x01
+
     def irq(self):
-        return bool((self.ier & 1 and self.rx) or self.ier & 2)
+        return bool(self.mcr & 0x08) and self._source() != 0x01
 
     def read(self, reg):
         dlab = self.lcr & 0x80
@@ -333,11 +379,10 @@ class Uart:
         if reg == 1:
             return self.dlm if dlab else self.ier
         if reg == 2:
-            if self.ier & 1 and self.rx:
-                return 0x04
-            if self.ier & 2:
-                return 0x02
-            return 0x01
+            iir = self._source()
+            if iir == 0x02:
+                self.thre = False
+            return iir
         if reg == 3:
             return self.lcr
         if reg == 4:
@@ -355,10 +400,13 @@ class Uart:
                 self.dll = value
             else:
                 self.out.append(value)
+                self.thre = True        # sent at once: the THR is empty
         elif reg == 1:
             if dlab:
                 self.dlm = value
             else:
+                if value & 2 and not self.ier & 2:
+                    self.thre = True
                 self.ier = value & 0x0F
         elif reg == 2:
             self.fcr = value
@@ -517,6 +565,17 @@ class ScsiDisk:
         """Returns (status, data in or None, bytes expected out or 0,
         callback for the data out)."""
         op = cdb[0]
+        if cdb[1] >> 5 and op != 0x03:
+            # CHOICES['disks']: one logical unit.  The LUN is CDB byte 1
+            # bits 7:5 (selection without ATN sends no IDENTIFY).  As
+            # SCSI-2 has it: INQUIRY answers peripheral qualifier 3,
+            # type 0x1F (byte 0 = 0x7F); anything else is CHECK CONDITION,
+            # ILLEGAL REQUEST, LOGICAL UNIT NOT SUPPORTED (0x25).
+            if op == 0x12:
+                return 0, bytes([0x7F, 0, 1, 1, 31, 0, 0, 0]
+                                + [0x20] * 28)[:cdb[4]], 0, None
+            self.sense = (5, 0x25)
+            return 2, None, 0, None
         if op == 0x00:                                  # TEST UNIT READY
             return 0, None, 0, None
         if op == 0x03:                                  # REQUEST SENSE
@@ -945,6 +1004,136 @@ class Mcs3201:
 
 
 # ---------------------------------------------------------------------------
+# The keyboard controller: the VL82C106's 8042-compatible controller at
+# ports 0x60/0x64 (docs/bebox_hardware.md section 7; VTI Computer Products
+# data manual 1990, VL82C106 pp. 6-197..6-202, PDF pp. 452-457).
+# ---------------------------------------------------------------------------
+
+class Vl82c106Kbc:
+    """The programmer interface of p. 6-197: status (0x64 read), command
+    (0x64 write), output buffer (0x60 read), input buffer (0x60 write).
+
+    Controller commands modelled (p. 6-202): 0x20 read mode, 0x60 write
+    mode, 0xA7/0xA8 disable/enable mouse, 0xA9 mouse interface test,
+    0xAA self test, 0xAB keyboard interface test, 0xAD/0xAE disable/enable
+    keyboard, 0xD4 write to mouse.  The keyboard and mouse at the other
+    end answer the PS/2 commands the kernel sends (_kb_init, _SetLEDs,
+    _mouse_init): CHOICES['keyboard'].  Anything else stops the run.
+    The controller answers at once: IBF never reads 1."""
+
+    KBD, MOUSE = 0, 1
+
+    def __init__(self):
+        self.mode = 0x00            # CHOICES['keyboard']
+        self.out = collections.deque()   # (byte, source)
+        self.last = 0
+        self.cd = 0                 # status bit 3: last write was a command
+        self.expect = None          # what the next 0x60 write is for
+        self.log = []
+
+    def _put(self, source, *bs):
+        for b in bs:
+            self.out.append((b & 0xFF, source))
+
+    def status(self):
+        """Figure 5 (PS/2 status, p. 6-202): 0 OBF, 1 IBF, 2 SYS, 3 C/D,
+        4 keyboard enable switch, 5 output buffer source (1 = mouse)."""
+        st = 0x10 | 0x04 | (self.cd << 3)     # not inhibited; SYS: the ROM ran
+        if self.out:
+            st |= 0x01
+            if self.out[0][1] == self.MOUSE:
+                st |= 0x20
+        return st
+
+    def kbd_irq(self):
+        return bool(self.out) and self.out[0][1] == self.KBD and bool(self.mode & 1)
+
+    def mouse_irq(self):
+        return bool(self.out) and self.out[0][1] == self.MOUSE and bool(self.mode & 2)
+
+    def read(self, reg):
+        if reg == 4:
+            return self.status()
+        if self.out:
+            self.last = self.out.popleft()[0]
+        return self.last                    # an empty buffer: the last byte
+
+    def write(self, reg, value):
+        if reg == 4:
+            self.cd = 1
+            self._command(value)
+        else:
+            self.cd = 0
+            self._data(value)
+
+    def _command(self, c):
+        self.log.append(("cmd", c))
+        if c == 0x20:
+            self._put(self.KBD, self.mode)
+        elif c in (0x60, 0xD4):
+            self.expect = c
+        elif c == 0xA7:
+            self.mode |= 0x20
+        elif c == 0xA8:
+            self.mode &= ~0x20
+        elif c in (0xA9, 0xAB):
+            self._put(self.KBD, 0x00)           # interface test passed
+        elif c == 0xAA:
+            self._put(self.KBD, 0x55)           # self test passed
+        elif c == 0xAD:
+            self.mode |= 0x10
+        elif c == 0xAE:
+            self.mode &= ~0x10
+        else:
+            raise Stop("VL82C106 keyboard controller command 0x%02x not "
+                       "modelled" % c)
+
+    def _data(self, b):
+        expect, self.expect = self.expect, None
+        if expect == 0x60:
+            self.log.append(("mode", b))
+            self.mode = b
+        elif expect == 0xD4:
+            self.log.append(("mouse", b))
+            self._mouse(b)
+        elif expect == "led":
+            self.log.append(("kbd", b))
+            self._put(self.KBD, 0xFA)
+        else:
+            self.log.append(("kbd", b))
+            self._keyboard(b)
+
+    def _keyboard(self, b):
+        """An AT (MF2) keyboard: ECHO answers 0xEE; SET LEDS (0xED, then
+        the LED byte), ENABLE (0xF4) and SET DEFAULT (0xF6) acknowledge
+        with 0xFA; RESET (0xFF) acknowledges and passes its test (0xAA)."""
+        if b == 0xEE:
+            self._put(self.KBD, 0xEE)
+        elif b == 0xED:
+            self._put(self.KBD, 0xFA)
+            self.expect = "led"
+        elif b in (0xF4, 0xF5, 0xF6):
+            self._put(self.KBD, 0xFA)
+        elif b == 0xFF:
+            self._put(self.KBD, 0xFA, 0xAA)
+        else:
+            raise Stop("keyboard command 0x%02x not modelled" % b)
+
+    def _mouse(self, b):
+        """A PS/2 mouse: READ ID (0xF2) answers 0xFA then ID 0x00;
+        ENABLE (0xF4), DISABLE (0xF5), SET DEFAULT (0xF6) acknowledge;
+        RESET (0xFF) answers 0xFA, 0xAA, 0x00."""
+        if b == 0xF2:
+            self._put(self.MOUSE, 0xFA, 0x00)
+        elif b in (0xF4, 0xF5, 0xF6):
+            self._put(self.MOUSE, 0xFA)
+        elif b == 0xFF:
+            self._put(self.MOUSE, 0xFA, 0xAA, 0x00)
+        else:
+            raise Stop("mouse command 0x%02x not modelled" % b)
+
+
+# ---------------------------------------------------------------------------
 # The bus
 # ---------------------------------------------------------------------------
 
@@ -1023,6 +1212,24 @@ class Cpu:
             system=self.sysm)
         self.cycles = 0
         self.steps = 0
+        self.idle_last = None       # ((steps, cycles, T1, T2), lap, steady)
+
+
+def find_idle_head(elf):
+    """CHOICES['idle-skip']: _null_thread+0x4, checked instruction by
+    instruction; None (no skip) for any other kernel."""
+    import hashlib
+    if hashlib.sha256(elf.blob).hexdigest() != IDLE_KERNEL_SHA256:
+        return None
+    base = elf.by_name["_null_thread"]
+    head = base + 4
+    got = [t for _, t in elf.disassemble(head, head + 10)]
+    want = [".3 CALL 0x%08x" % elf.by_name["_fix_3_minute_bug"],
+            "ADD $1,R16", "JMP 0x%08x" % head]
+    if got != want:
+        raise SystemExit("beboot: _null_thread+0x4 is %r, not the idle loop "
+                         "CHOICES['idle-skip'] was written for" % got)
+    return head
 
 
 def read_kernel(args):
@@ -1071,6 +1278,11 @@ class Machine:
             io.add(port_addr(0x370 + n), 3, self.fdc, n,
                    "MCS3201 " + Mcs3201.NAMES[n])
         self.regs.io_sources[0] = self.fdc.irq
+        self.kbc = Vl82c106Kbc()
+        io.add(port_addr(0x60), 3, self.kbc, 0, "keyboard data")
+        io.add(port_addr(0x64), 3, self.kbc, 4, "keyboard status/command")
+        self.regs.io_sources[5] = self.kbc.kbd_irq
+        self.regs.io_sources[6] = self.kbc.mouse_irq
         self.par = Parallel()
         for n, name in enumerate(("data", "status", "control")):
             io.add(port_addr(0x378 + n), 3, self.par, n, "printer " + name)
@@ -1093,6 +1305,9 @@ class Machine:
         self.events = collections.deque(maxlen=200)
         self.interrupts = 0
         self.trace = None           # deque of pre-states (--trace N)
+        self.idle_head = find_idle_head(elf)
+        self.idle_skip = self.idle_head is not None
+        self.skips = self.skipped_steps = 0
         text = elf.sections[".text"]
         self.text_lo, self.text_hi = text[3], text[3] + text[5]
 
@@ -1132,6 +1347,85 @@ class Machine:
             return
         self.interrupts += 1
 
+    def next_event(self):
+        """The model cycle (CPU 1's clock) of the next timed device event,
+        or None."""
+        due = []
+        if self.ncr.int_at is not None:
+            due.append(self.ncr.int_at)
+        due.extend(t * CPU_HZ for t, _, _ in self.fdc.pending)
+        return min(due) if due else None
+
+    def try_idle_skip(self, cpu, budget):
+        """CHOICES['idle-skip']: called with `cpu` at the idle head after
+        its interrupt check; returns the steps skipped.  A lap is measured,
+        not computed: its steps, model cycles and the two timers' own
+        increments (which differ from model cycles where an instruction
+        retires in 0 cycles), between two visits to the head."""
+        sysm = cpu.sysm
+        here = (cpu.steps, cpu.cycles, sysm.timer1, sysm.timer2)
+        last = cpu.idle_last
+        lap = None
+        if last is not None:
+            lap = tuple((x - y) & MASK32 if i >= 2 else x - y
+                        for i, (x, y) in enumerate(zip(here, last[0])))
+        steady = lap is not None and last[1] == lap and lap[1] > 0
+        cpu.idle_last = (here, lap, steady)
+        if not steady:
+            return 0
+        horizon = self.next_event()
+        limits = {}
+        for c in self.cpus:
+            st = c.state
+            sysm = c.sysm
+            if (st.pc != self.idle_head or c.idle_last is None
+                    or c.idle_last[0][0] != c.steps or not c.idle_last[2]):
+                return 0
+            if (st.psw & hobbit_sem.PSW_USER
+                    or (st.psw >> hobbit_sem.PSW_IPL_SHIFT) & 7 <= 3):
+                return 0
+            if (sysm.timer1_pending or sysm.timer2_pending
+                    or self.regs.internal & (1 << (c.n - 1))
+                    or self.regs.io_status() & self.regs.io_mask[c.n - 1]):
+                return 0
+            if not hobbit_sem._in_cache(st, (st.sp + 16) & ~3):
+                return 0
+            steps, cyc, d1, d2 = c.idle_last[1]
+            # Laps before an enabled timer would overflow; that overflow
+            # is an event for every CPU, so it bounds the model time.
+            for ie, value, d in ((hobbit_sem.CONFIG_T1IE, sysm.timer1, d1),
+                                 (hobbit_sem.CONFIG_T2IE, sysm.timer2, d2)):
+                if sysm.config & ie and d:
+                    laps = ((1 << 32) - 1 - value) // d
+                    t = c.cycles + laps * cyc
+                    horizon = t if horizon is None else min(horizon, t)
+        if horizon is None:
+            raise Stop("idle on every CPU with no timer running and no "
+                       "device event pending: the loop would never end")
+        plan = []
+        for c in self.cpus:
+            steps, cyc, d1, d2 = c.idle_last[1]
+            n = (int(horizon) - 1 - c.cycles) // cyc
+            plan.append((c, n, steps, cyc, d1, d2))
+        # Each CPU laps on its own until just before the horizon, as it
+        # would unskipped: the two laps need not be the same length.
+        total = sum(p[1] * p[2] for p in plan)
+        if any(p[1] <= 0 for p in plan) or total > budget:
+            return 0
+        for c, n, steps, cyc, d1, d2 in plan:
+            st = c.state
+            w = (st.sp + 16) & ~3
+            st.cache[(w >> 2) & 63] = (st.cache[(w >> 2) & 63] + n) & MASK32
+            c.steps += n * steps
+            c.cycles += n * cyc
+            c.sysm.timer1 = (c.sysm.timer1 + n * d1) & MASK32
+            c.sysm.timer2 = (c.sysm.timer2 + n * d2) & MASK32
+            c.idle_last = ((c.steps, c.cycles, c.sysm.timer1, c.sysm.timer2),
+                           (steps, cyc, d1, d2), True)
+        self.skips += 1
+        self.skipped_steps += total
+        return total
+
     def run(self, max_steps, until=None):
         status = "max-steps"
         cpu = self.cpus[0]
@@ -1162,6 +1456,8 @@ class Machine:
                 total += 1
                 cpu.cycles += max(rec.cyc, 1)
                 self.deliver(cpu)
+                if self.idle_skip and cpu.state.pc == self.idle_head:
+                    total += self.try_idle_skip(cpu, max_steps - total)
                 if cpu.sysm.events:
                     for kind, ident, epc in cpu.sysm.events:
                         self.events.append((total, "CPU %d %s 0x%x at %s %s" % (
@@ -1198,11 +1494,15 @@ def main(argv):
     ap.add_argument("--show", type=int, default=40,
                     help="print the last N first-reached functions")
     ap.add_argument("--until", help="stop once SER1 has printed this text")
+    ap.add_argument("--no-idle-skip", action="store_true",
+                    help="execute every idle lap (CHOICES['idle-skip'])")
     args = ap.parse_args(argv)
     if not args.disk and not args.kernel:
         ap.error("give --disk or --kernel")
     elf, source = read_kernel(args)
     m = Machine(elf, args.memsize << 20)
+    if args.no_idle_skip:
+        m.idle_skip = False
     for i, path in enumerate(args.disk):
         m.disks[i] = ScsiDisk(path, "target %d" % i)
     print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
@@ -1219,6 +1519,9 @@ def main(argv):
         print("SCSI target %d: %d blocks read, %d written (overlay)"
               % (i, d.reads, d.writes))
     print("interrupts taken: %d" % m.interrupts)
+    if m.skips:
+        print("idle skip: %d skips, %d steps not executed"
+              % (m.skips, m.skipped_steps))
     print("SER1: %r" % bytes(m.ser1.out).decode("latin-1"))
     if m.ser2.out:
         print("SER2: %r" % bytes(m.ser2.out).decode("latin-1"))
