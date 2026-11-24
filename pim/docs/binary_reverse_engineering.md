@@ -498,7 +498,7 @@ the device are given it again whenever the machine runs dry.
   | `FepError`: device 18, `fep_attributes` (240) | answered (`docs/fep_services.md` §6.3, §7.8; below) | 92,797 |
   | `search_character`, reading `pimos.conf` | implemented (`lockstep_alt.py`) | 139,747 |
   | `FepError`: device 20, `flush` (112) of a read file | answered `[1]` (`file_dvc.kl1`:314) | 6,675,822 |
-  | nothing left to run, no login: `pimos.conf` read as `with_console` then `end_of_file` | the kernel asks `getb` for `Size*2+1` bytes and a reply of an odd count is widened by a zero byte, so the data came one byte late; the stand-in now counts the kernel's `getb` in characters (`Fep(getb_unit=2)`, OURS, from this observation; the IPL works either way) | 7,754,386 |
+  | nothing left to run, no login: `pimos.conf` read as `with_console` then `end_of_file` | the kernel asks `getb` for `Size*2+1` bytes and a reply of an odd count is widened by a zero byte, so the data came one byte late; the stand-in now counts the kernel's `getb` in characters (`Fep(getb_unit=2)`, OURS from this observation, since READ from `pimfep##pimos_file` getb/4, row below; the IPL works either way) | 7,754,386 |
   | the login: PIMOS idles with the server's `io(1)` pending | the scripted login of §7.5 at the idle (`Fep.idle()`, `longrun_ipl.py` `go()`) | 8,067,269 (the event) |
   | `enqueue_goal_external` of 12 arguments | the vector spread as `enqueue_goal`'s (`lockstep_load.py`'s instruction; the spread `lockstep_login.py`) | 8,144,967 |
   | `unbound` | implemented, after VPIM (`lockstep_login.py`) | 8,145,997 |
@@ -526,7 +526,7 @@ the device are given it again whenever the machine runs dry.
   |---|---|---|
   | 201 `read_open` of `pimos:NAME` | the held `pimosobj.tar.Z` `object/NAME` (`longrun_ipl.py` `kernel_file`; held and read: `pimos.conf`, `pimos.logins`, `pimos.groups`), 5 when not there (`autoload.tbl`) | §7.2 |
   | 201 of `me:NAME` or of the home `>sys>user>RN>NAME` | 5 (`me:pimos.init`, `shell.com`, `pimos.com`: INSTALL puts none there, so the prompt is the default) | §7.2, §7.8 |
-  | 210 `getb` of the kernel | the count read in characters (`getb_unit=2`): OURS, from the run (above) | the run |
+  | 210 `getb` of the kernel | the count read in characters (`getb_unit=2`): first OURS, from the run (above); READ 2026-11-24 from the held PSI side: `pimfep##pimos_file` local `getb/4` @259-25a makes `new_string(S, Size, 16)` (`a7 00 00 10`, `1c 00 03 00`; A3 is the message's Size by the arity rule of `fep_services.md` §6.1, its one INFERENCE), sends `:getb/3` to the SIMPOS file and replies `substring(S, 0, N)` (@263): at most Size 16-bit characters (`docs/simpos/source_check_2026-11-24.md` §4) | the run; `pimfep.ptf` |
   | 112 `flush` of a read file | `[1]` | `file_dvc.kl1`:314 |
   | 601 `create` of a string-I/O device `pimos_remote_login_replier`, `pimos_remote_login_server`, `simpos_user_device` | `[1]`; any other name refused | §6.4, §7.5 |
   | 620 `io(0, ..)`, `io(2, ..)` on the replier | `[1, ""]` | §6.4, §7.5 |
@@ -645,27 +645,57 @@ the device are given it again whenever the machine runs dry.
   a window of its own is the third, and the manual's "displayed in the
   window" fits it as well as the others.
 
-  Against the manual (`e-sysman.tex`:121-144), line by line:
+  Against the manual (`e-sysman.tex`:121-144), line by line
+  (re-checked against the primary sources 2026-11-24,
+  `docs/simpos/source_check_2026-11-24.md` §3):
+  - **Which versions.** The manual is PIMOS V3.0 (`Eman/e-v30.tex`:4,
+    `e-cover1.tex`:5; its boot log prints `V 3.000`,
+    `e-sysman.tex`:106; files dated 17 Mar 1993). The held source and
+    object are 3.600 of 20-May-93 (`kernel/init/version.kl1`:15-21;
+    files dated 1994). The Japanese V3.0 manual (`ifs/manuals/pimos/
+    man30.j.ps.Z`) prints the same transcript, `login Server End` and
+    `000954C2` included, so it is not a slip of the English
+    translation. No V3.0 source is held.
   - "Reply yes to the shutdown confirmation message that is displayed
-    in the window": the third branch's window. The prompt printed is
-    `Really(yes/no) ?`; the source's third branch writes
-    `Really(yes/no)?` (no space before `?`; its parentheses are the
-    16-bit string's), the first branch `Really(yes/no)? ` (a space
-    after). Neither is the manual's exactly: a difference between the
-    manual and the held source, not met by the model.
+    in the window": the third branch's window. The manual prints
+    `\keyin{Really(yes/no) ?}{yes}` (the PostScript of the V1.5 manual,
+    `man15.ps`, and of the Japanese V3.0 manual typeset the same space
+    before `?`). The source's third branch writes `Really(yes/no)?`
+    (`server/user/shutdown_b.kl1`:51; no space before `?`), the first
+    and second `Really(yes/no)? ` (:23, :36). The two PIMOS primers
+    print the source's form: `Really(yes/no)? yes` (`ifs/manuals/pimos/
+    primer25.tex.Z`:460, `primer15.j.tex.Z`:524). So the space before
+    `?` is the manual's own typesetting, CONTRADICTED by the primers and
+    the source; the model writes the held source's string.
   - `Shutdown started`: the same (`kernel/init/init.kl1`:313).
   - `login Server End`: ours `User Server End`, the held source's
-    (`server/login/init/usersvman.kl1`:195). The manual's string is
-    not in the held source at all (searched); that it is another
-    version's is INFERENCE.
+    (`server/login/init/usersvman.kl1`:195, outside any machine switch)
+    and the held object's (`pimm_server360E.sav`, the only `Server End`
+    string in `pimosobj`). `login Server End` is in no held source,
+    object or archive (`pimos`, `pimosobj`, `psdpim`, `vpim`, `pdss`,
+    `klic`, searched as bytes). The held source does name the job the
+    user server runs "Login Server" (`server/user/user_sv.kl1`:29-31,
+    `name("Login Server")`), so a V3.0 message naming it is plausible;
+    that the string changed between 3.0 and 3.6 stays INFERENCE.
   - `Statistics in PIMOS:` then two integers: the same line
-    (`bios/boot/bios.kl1`:145-147); the values are the report's
-    `statistics(ResH, ResL)`, high and low words: the manual's 0 and
-    000954C2h (611,522), ours 0 and 790,104 (C0E58h), the model's own
-    count (not traced further).
+    (`bios/boot/bios.kl1`:144-147); the values are the report's
+    `statistics(ResH, ResL)`, high and low words (`e-task.tex`:84
+    `statistics(High_resoc, Low_resoc)`), counting two per reduction
+    (`e-shoen.tex`:42, "1 for goal creation and 1 for termination of
+    the reduction"): the manual's 0 and 000954C2h (611,522 = 2 x
+    305,761, a V3.0 Multi-PSI run), ours 0 and 790,104 (C0E58h, 2 x
+    395,052, `ref/pimm/pimm.py` `i_shoen_statistics`, which reports
+    twice the shoen's reductions). Both are run counts of different
+    runs, versions and machines: no source makes them comparable.
   - `PIMOS END********`: the same (`bios.kl1`:167).
-  - The prefix `PE00(00) @ DC> ` and the `(  INTo) 00 ` form of an
-    integer are the console's display, not in PIMOS's strings; this
+  - The prefix `DC> ` and the `(  INTo) 00 00000000` form of an integer
+    are the CSP's display, not PIMOS's strings: HELD in the PSI's CSP
+    package `pimmcsp.ptf`, class `csp_halt_messages`
+    (`python3 -I psi/fepread/ptfread.py pimmcsp --strings`: `'DC> '`
+    for `display_console_word/3`, the format `'(\6s) \s \s'` for
+    `display_console_word/2`, a tag right-aligned in six, then two
+    words; the tag names `INTo`, `ATOMo`, ... in `csp_help_command`).
+    The `PE00(00) @ ` part is not a literal there (not traced). This
     model's console list has the bare strings and integers.
 
   **A second command: a file read through `pimos:` (2026-11-24).**

@@ -684,7 +684,7 @@ values are read by the program, as with `csp_break_choice_menu` (ptf.md W8).
   newipsj.md);
 - released to users in 2.0 (IPSJ 114007 §7).
 
-**The objects** (USAGE: disc/exshow.esp:23-35; pimfep##pimos_window_editor, ptf.md W6):
+**The objects** (USAGE: disc/exshow.esp:23-35, which sends create/3, `:create(#pmacs_window,[title(Buf)|Init],W)` at :24, then `:get_editor(W,E)` at :28; create/4 is kwic-esp src/inEditor1.esp:151 and mendels comp_win.esp:54-62, with `nature([with_superior_input_buffer])` and `superior(..)` in Opts; corrected 2026-11-24, `../source_check_2026-11-24.md`; pimfep##pimos_window_editor, ptf.md W6):
 
 ```
 :create(#pmacs_window, Opts, _, W)    % create/4; 3rd argument always unbound (INFERENCE: editor out-arg)
@@ -970,7 +970,7 @@ only)" are mixins and bases known only from nature lists; §1.3 gives what is kn
 | class family | form | grade, cite |
 |---|---|---|
 | any window | c:`create(#C, Options, ^W)` or c:`create(#C, ^W)` | PRINTED-INTERFACE TM-125 p13; USAGE |
-| `pmacs_window` | c:`create(#pmacs_window, Options, _, ^W)`; the 3rd argument is always unbound | USAGE disc/exshow.esp:23; pimfep##pimos_window_editor (ptf) |
+| `pmacs_window` | c:`create(#pmacs_window, Options, _, ^W)`; the 3rd argument is always unbound | USAGE kwic-esp src/inEditor1.esp:151, mendels comp_win.esp:54 (create/4; disc/exshow.esp:24 is create/3, corrected 2026-11-24); pimfep##pimos_window_editor (ptf) |
 | frames with input superior | c:`create_with_input(#C, Options, [_], InputSup, ^W)` | USAGE txtstrct/ctx_system.esp:408 |
 | `editor_text_buffer` | c:`create(#.., ^Buf, Name, Size)`; c:`create(#.., ^Buf, Size)` | USAGE cal-esp/deb2.12/dmenu.esp:1214 |
 | `standard_input_file`, `standard_output_file` | c:`create(#.., ^Stream, Path)` | USAGE cal-esp/cal2.12/control.esp:190, :356 |
@@ -1478,7 +1478,7 @@ meaning.
 | `close_output/1` | i | 88 | close (and write out) a standard_output_file (USAGE: cal-esp/cal2.12/control.esp:360) | USAGE | (in meaning) | — |
 | `create/2` | c | 127 | class-method constructor without options (PRINTED-INTERFACE TM-125 p13); see §3.1 (window), §2.8 (standard_io_buffer) | PRINTED-INTERFACE | (in meaning) | — |
 | `create/3` | c | 1499 | class-method constructor (PRINTED-INTERFACE TM-125 p13-14); per-class argument order in §3.1 (windows: options list first; files/buffers/fonts differ) | PRINTED-INTERFACE | (in meaning) | — |
-| `create/4` | c | 64 | pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE disc/exshow.esp:23, cal-esp/deb2.12/dmenu.esp:1214); see §2.11, §3.1 | USAGE | (in meaning) | — |
+| `create/4` | c | 64 | pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE kwic-esp src/inEditor1.esp:151 for pmacs_window, cal-esp/deb2.12/dmenu.esp:1214; disc/exshow.esp:23-25 sends pmacs_window create/3 and editor_text_buffer create/4, corrected 2026-11-24); see §2.11, §3.1 | USAGE | (in meaning) | — |
 | `create_menu/3` | c | 2 | **UNSPECIFIED** | — | first use chal/control.esp:75 | — |
 | `create_window/2` | c | 3 | **UNSPECIFIED** | — | first use icotext/src/imi_main.esp:251 | — |
 | `create_with_input/4` | c | 1 | [pmacs_window] :create_with_input(#C,Init,Superior,W) (txtstrct form); after:create_with_input/5 demon exists in cal | USAGE | txtstrct/ctx_system.esp:408 (ifs_window) | held 3.x-7.x |
