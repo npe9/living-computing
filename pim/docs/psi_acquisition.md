@@ -371,3 +371,57 @@ New leads, not contacted (contacting anyone needs the owner):
 5. Five SIMPOS manual titles that no known library holds, among them
    「ESPプログラミング説明書－入出力管理編」 and
    「小型化PSI/SIMPOS操作説明書 基本編 (SIMPOS5.0版)」.
+
+## 13. The second window, Librarian and shell web search (2026-11-24)
+
+This search was also delegated. Its record is
+`simpos/subsystems/web_search2_2026-11-24.md`, which lists every source
+with its URL, whether it was opened or only located, and the negatives.
+It covered section 12's unsearched list:
+
+- fj.* and comp.* Usenet, through the Internet Archive's mailbox items;
+- Wayback CDX for about twenty Japanese FTP hosts;
+- GitLab, J-STAGE, KAKEN, CiNii, NDL and the IPSJ repository.
+
+Five sources were not reachable, and no challenge was bypassed:
+
+- Google Books: the API quota was exhausted, then the site showed a
+  CAPTCHA;
+- HathiTrust, Software Heritage and IEICE: bot challenges;
+- WorldCat: it needs OCLC's terms accepted.
+
+**Still no SIMPOS or CESP code or binary anywhere**, and no software
+archive to record.
+
+- **IPSJ 51390.** 青柳龍也 (1987) studied the names in the whole SIMPOS
+  2.52 source. It was added to `nonlocal/lit/ipsj/`, on disk only.
+  - The source has 1,450 system classes, 15,064 methods and 4,412
+    distinct method names, about 750,000 words in all.
+  - It cites a manual title not otherwise recorded,
+    「SIMPOS総合説明書（第一版）」 (ICOT 1986).
+  - Chikayama (fj.comp.misc, 1987) put SIMPOS at about 270,000 lines.
+- **CESP V3.3's release notice** (AIR, fj.lang.prolog, 6 April 1992).
+  - AIR had distributed CESP since November 1990, to about 200 sites.
+  - It was free for research use, under a contract.
+  - Sites got **object code** for Sun-4 on a cartridge they supplied,
+    with seven manuals.
+  - This corrects section 12's lead 1, which said "source code" on the
+    strength of one 1992 user post, unless that user meant library
+    source.
+- **By March 1994 CESP was sold by 三菱電機東部コンピュータシステム**
+  (MTC), per the held `ifs/_catalogue/INFO/cesp-J.html`. MTC's staff
+  wrote the SIMPOS Librarian customisation paper (IPSJ 118681).
+- **Who to ask for CESP.** The record ranks these; nobody was contacted.
+  1. Mitsubishi Electric's IT group. MTC's successor was not identified;
+     the group's IT companies became 三菱電機デジタルイノベーション in
+     2025.
+  2. AIST, formerly ETL. CESP's research head 実近憲昭 came from ETL
+     and returned to it, and 田島守彦 (ETL) ported RLS to CESP.
+  3. The ICOT archive at AIST.
+  4. Universities with CESP projects in 1992-96: Fukui, UEC, Tsukuba,
+     Tohoku, 成蹊/港湾短大 and 拓殖.
+  5. ASTEM.
+  6. Oki.
+  7. Former AIR staff at universities, such as 川越恭二 (Ritsumeikan).
+
+  AIR's founding and fate were not established.
