@@ -13,6 +13,11 @@ Injections (observed 2026-11-24, each reverted by its exact reverse):
 * `T435_INCORRECT = {0: 3, 1: 1, 2: 1}` (distance 1 priced as distance
   2): test_folded_mispredict_dist1 and test_all_known_classes_exit_0
   fail; the other four pass.
+
+Revert an injection and then delete `tools/__pycache__/cyc_classify.*`:
+the second injection keeps the file's size, and a restore within the
+same second is then served from the injected bytecode (it happened
+once: the suite failed after a byte-identical restore).
 """
 
 import io
