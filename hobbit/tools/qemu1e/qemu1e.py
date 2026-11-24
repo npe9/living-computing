@@ -39,7 +39,7 @@ QEMU = os.environ.get('QEMU', '/opt/homebrew/bin/qemu-system-i386')
 
 # US keyboard: character -> (qcode, shift)
 KEYS = {' ': ('spc', 0), '\n': ('ret', 0), '\t': ('tab', 0),
-        '\b': ('backspace', 0), '\x1b': ('esc', 0)}
+        '\b': ('backspace', 0), '\x1b': ('esc', 0), '\x7f': ('delete', 0)}
 for c in 'abcdefghijklmnopqrstuvwxyz':
     KEYS[c] = (c, 0)
     KEYS[c.upper()] = (c, 1)
@@ -61,11 +61,15 @@ for c, k, s in [('-', 'minus', 0), ('_', 'minus', 1), ('=', 'equal', 0),
 
 
 class Machine:
+    n = 0
+
     def __init__(self, workdir, fd=None, hd=None, hd2=None, net=None,
                  mem=16, serial=None, extra=(), log=None, boot='a'):
         self.workdir = workdir
         os.makedirs(workdir, exist_ok=True)
-        self.sock = 'qmp.%d.sock' % os.getpid()
+        Machine.n += 1
+        self.id = '%d.%d' % (os.getpid(), Machine.n)    # one QMP socket per QEMU
+        self.sock = 'qmp.%s.sock' % self.id
         args = [QEMU, '-M', 'isapc', '-cpu', '486', '-m', str(mem),
                 '-display', 'none', '-vga', 'std',
                 '-qmp', 'unix:%s,server=on,wait=off' % self.sock,
@@ -90,14 +94,14 @@ class Machine:
         self._log('# ' + ' '.join(args))
         self.p = subprocess.Popen(args, cwd=workdir,
                                   stdout=subprocess.DEVNULL,
-                                  stderr=open(os.path.join(workdir, 'qemu.stderr'), 'w'))
+                                  stderr=open(os.path.join(workdir, 'qemu.%s.stderr' % self.id), 'w'))
         path = os.path.join(workdir, self.sock)
         for _ in range(100):
             if os.path.exists(path):
                 break
             if self.p.poll() is not None:
                 raise RuntimeError('qemu exited: ' + open(os.path.join(
-                    workdir, 'qemu.stderr')).read())
+                    workdir, 'qemu.%s.stderr' % self.id)).read())
             time.sleep(0.1)
         cwd = os.getcwd()
         os.chdir(workdir)
@@ -127,7 +131,7 @@ class Machine:
                 return r['return']
 
     def screen(self):
-        fn = os.path.join(self.workdir, 'cga.%d.bin' % os.getpid())
+        fn = os.path.join(self.workdir, 'cga.%s.bin' % self.id)
         self.cmd('pmemsave', val=0xB8000, size=4000, filename=os.path.abspath(fn))
         b = open(fn, 'rb').read()
         rows = []
@@ -168,7 +172,7 @@ class Machine:
             self.p.wait(5)
         except subprocess.TimeoutExpired:
             self.p.kill()
-        for fn in (self.sock, 'cga.%d.bin' % os.getpid()):
+        for fn in (self.sock, 'cga.%s.bin' % self.id):
             try:
                 os.unlink(os.path.join(self.workdir, fn))
             except OSError:

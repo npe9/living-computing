@@ -28,19 +28,7 @@ echo "$SHA  $TAR" | shasum -a 256 -c -
 S=$Q/src/plan9-1e
 [ -d "$S/386" ] || tar -xjf "$TAR" -C "$Q/src"
 
-python3 "$here/patch_kernel.py" "$S/sys/lib/pc/9dos" "$Q/9dos.q"
-python3 "$here/patch_kernel.py" "$S/386/9pc" "$Q/9pc.q"
-python3 "$here/mkfloppy.py" "$S/sys/lib/pcdisk" "$S/sys/lib/pc/b.com" "$Q/fd.img" "$Q/9dos.q"
-mmd -i "$Q/fd.img" ::/N/KFS
-mcopy -i "$Q/fd.img" "$here/kfsinit.rc" ::/KFSINIT
-mcopy -i "$Q/fd.img" "$here/serve.rc" ::/SERVE
-mtype -i "$Q/fd.img" ::/LIB/NDB/LOCAL > "$Q/ndb.local"
-cat "$here/ndb.local" >> "$Q/ndb.local"
-mcopy -o -i "$Q/fd.img" "$Q/ndb.local" ::/LIB/NDB/LOCAL
-
-# a second floppy: the shipped 9pc (a terminal kernel), patched, stripped
-python3 "$here/patch_kernel.py" --strip "$S/386/9pc" "$Q/9pc.qs"
-python3 "$here/mkfloppy.py" "$S/sys/lib/pcdisk" "$S/sys/lib/pc/b.com" "$Q/fd-term.img" "$Q/9pc.qs"
+sh "$here/floppies.sh"
 
 # /adm first: kfsinit's first pass reads only it
 python3 "$here/mkarchive.py" "$S" "$Q/release.arch" --overlay "$here/overlay" \

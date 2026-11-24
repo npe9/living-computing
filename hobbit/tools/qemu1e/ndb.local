@@ -7,6 +7,10 @@
 # lookup); its reply's vendor field is "p9  ipmask fs auth ipgw"
 # (bootp.c doreply), which is what /boot reads (boot/ip.c ipconfig).
 #
+# 10/8 is class A: ipinfo (sys/src/libndb/ipinfo.c) first looks up the
+# class network, ip=10.0.0.0, for an ipmask, then the subnet that mask
+# gives for fs=, auth=, ipgw=.
+ip=10.0.0.0 ipmask=255.255.255.0
 ip=10.9.0.0 ipmask=255.255.255.0
 	fs=fs9 auth=fs9 ipgw=fs9
 
