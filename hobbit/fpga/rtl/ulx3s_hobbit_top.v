@@ -9,7 +9,9 @@
 // DQ is captured in the I/O register on the system clock's rising edge
 // (both are the board practice of the Flute tree's Top.v; this file is
 // written here, fpga/IP_PROVENANCE.md).
-module ulx3s_hobbit_top (
+module ulx3s_hobbit_top #(
+    parameter [7:0] DEV_RTL = 8'h00     // build_soc.sh: SOC_RTL
+) (
     input  wire        CLK,
     input  wire        BTN1,
     output wire [7:0]  led,
@@ -27,13 +29,14 @@ module ulx3s_hobbit_top (
     output wire [1:0]  sdram_dqm,
     inout  wire [15:0] sdram_dq,
     // The MCP7940N's I2C, shared with the GPDI DDC: reserved for the RTC
-    // (fpga/dev/rtc.md, "The MCP7940N").  Released (open drain, not
-    // driven) until mkRtc's i2cPins are wired here.
+    // (fpga/dev/rtc.md, "The MCP7940N"), open drain, driven by mkRtc
+    // when the RTC is RTL (hobbit_soc's DEV_RTL bit 2), released otherwise.
     inout  wire        gpdi_sda,
     inout  wire        gpdi_scl
 );
-    assign gpdi_sda = 1'bz;
-    assign gpdi_scl = 1'bz;
+    wire scl_low, sda_low;
+    assign gpdi_scl = scl_low ? 1'b0 : 1'bz;
+    assign gpdi_sda = sda_low ? 1'b0 : 1'bz;
     assign wifi_en = 1'b0;           // the ESP32 stays in reset
     assign sdram_cke = 1'b1;
 
@@ -57,13 +60,15 @@ module ulx3s_hobbit_top (
     always @(posedge CLK) dq_iob <= sdram_dq;
     assign sdram_dq = dq_oe ? dq_out : 16'hzzzz;
 
-    hobbit_soc soc (
+    hobbit_soc #(.DEV_RTL(DEV_RTL)) soc (
         .clk(CLK), .rst(rst), .gclk(gclk), .cpu_ce(cpu_ce),
         .rxd(ftdi_txd), .txd(ftdi_rxd),
         .sd_cs_n(sdram_cs_n), .sd_ras_n(sdram_ras_n), .sd_cas_n(sdram_cas_n),
         .sd_we_n(sdram_we_n), .sd_ba(sdram_ba), .sd_a(sdram_a),
         .sd_dqm(sdram_dqm), .sd_dq_out(dq_out), .sd_dq_oe(dq_oe),
         .sd_dq_in(dq_iob),
+        .i2c_scl_low(scl_low), .i2c_sda_low(sda_low),
+        .i2c_scl_in(gpdi_scl), .i2c_sda_in(gpdi_sda), .dev_faults(),
         .leds(led), .retired(), .running(), .stopped(), .core_clocks(),
         .hri_valid(), .hri(),
         .arm_en(1'b0), .arm_n(32'd0), .arm_level(3'd0), .arm_rdy(),

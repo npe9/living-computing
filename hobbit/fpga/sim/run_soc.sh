@@ -13,6 +13,26 @@
 # SOC_LOAD=1 loads RAM and the ROM block through the UART pins with
 # tools/p9link.py's stream (B frames, then G) instead of the back door, so
 # the host link's load path and the adapter's aux port are exercised too.
+# SOC_HOST=1 is the forwarding mode end to end: the simulator's UART pins
+# are bridged to a pseudo-terminal (soc_main.cpp, SOC_PTY) and
+# tools/p9host.py is the host on it -- it loads the SoC, starts it and
+# answers every forwarded access from p9boot's live device models, with
+# the live interrupt level.  Nothing is replayed, so the records are
+# compared only for information (they part where the live timing first
+# differs from the reference's); the check is the console.
+# SOC_RTL=N (with SOC_HOST=1) builds the SoC with HobbitSocDevs's `rtl`
+# bits N (fpga/socdev/HobbitSocDevs.bsv): those devices are RTL in the
+# simulator and the rest are forwarded to p9host.py.  Give each setting its
+# own WORKDIR (the value is built in).
+#
+# SOC_HOST=1, 2026-11-24, 2893000 records: SOC_RTL 0, 3 and 31 each print
+# "SOC console: 74 bytes, identical to the reference boot's", rc=0
+# (fpga/README.md, "Devices", has the table).  Discriminating: the Quart's
+# offset injected as `truncate(pa - 32'hB0000100) ^ 12'h010` in
+# socdev/HobbitSocDevs.bsv, SOC_RTL=3, OBSERVED "console 0 bytes" and
+# "the host's console differs from the reference boot's" (cmp: EOF on
+# console), rc=1; reverted by the reverse patch, identical to the
+# pre-injection copy.
 #
 # Result, 2026-11-24: `run_soc.sh 2893000` prints "MATCH: 2893000 records
 # agree in every field but cyc (2865913 also agree in cyc)" and "SOC
@@ -58,13 +78,19 @@ if [ "${SOC_KEEP_SIM:-0}" != 1 ] || [ ! -x "$work/obj/Vsoc_sim_top" ]; then
       -vdir "$work/bsc" -bdir "$work/bsc" -info-dir "$work/bsc" \
       -p "$hobbit/bsv:$BLUESPECDIR/Libraries" "$hobbit/bsv/HobbitSocCpu.bsv" \
       > "$work/bsc.log" 2>&1 || { tail -30 "$work/bsc.log"; exit 1; }
+  "$BSC" +RTS -K512M -RTS -verilog -g mkHobbitSocDevs -u \
+      -vdir "$work/bsc" -bdir "$work/bsc" -info-dir "$work/bsc" \
+      -p "$fpga/socdev:$fpga/dev:$fpga/dev/quart:$fpga/dev/intc:$BLUESPECDIR/Libraries" \
+      "$fpga/socdev/HobbitSocDevs.bsv" \
+      > "$work/bsc_devs.log" 2>&1 || { tail -30 "$work/bsc_devs.log"; exit 1; }
   ${CC:-cc} -O2 -c "$hobbit/bsv/p9kern.c" -o "$work/p9kern.o"
   rm -f "$work/obj/Vsoc_sim_top"
   verilator --cc --exe --build -j "${VL_JOBS:-4}" -O3 \
       --x-assign fast --x-initial fast --no-timing \
       -Wno-fatal -Wno-lint -Wno-style -Wno-STMTDLY -Wno-MULTIDRIVEN \
       -DHOBBIT_SIM \
-      --top-module soc_sim_top -y "$BLUESPECDIR/Verilog" -Mdir "$work/obj" \
+      --top-module soc_sim_top -y "$BLUESPECDIR/Verilog" -y "$work/bsc" \
+      -GDEV_RTL=$((${SOC_RTL:-0})) -Mdir "$work/obj" \
       -CFLAGS "-O2" \
       "$work/bsc/mkHobbitSocCpu.v" "$fpga/rtl/uart8n1.v" "$fpga/rtl/hostlink.v" \
       "$fpga/rtl/sdram_word.v" "$fpga/rtl/hobbit_soc_mem.v" "$fpga/rtl/hobbit_soc.v" \
@@ -79,7 +105,41 @@ if [ "${SOC_LOAD:-0}" = 1 ]; then
   loadfile="$work/load.bin"
 fi
 
+# The RTC's NVRAM and the IIC's EEPROM images are read from the working
+# directory (fpga/dev/rtc.md, iic.md).
+cp "$fpga/dev/rtc_nvram.hex" "$fpga/dev/iic_eeprom.hex" "$work/"
+
 simstatus=0
+if [ "${SOC_HOST:-0}" = 1 ]; then
+  rm -f "$work/pty" "$work/console"
+  (cd "$work" && SOC_PTY="$work/pty" P9KREC="$work/rec/boot.rec" \
+      ./obj/Vsoc_sim_top > "$work/core.log" 2>&1) &
+  simpid=$!
+  i=0
+  while [ ! -s "$work/pty" ] && [ $i -lt 120 ]; do sleep 1; i=$((i + 1)); done
+  hoststatus=0
+  PYTHONDONTWRITEBYTECODE=1 python3 "$hobbit/tools/p9host.py" "$(cat "$work/pty")" \
+      --sparse --baud 0 --rtl $((${SOC_RTL:-0})) --console "$work/console" --iolog "$work/host_io.log" \
+      > /dev/null 2> "$work/host.log" || hoststatus=$?
+  wait $simpid || simstatus=$?
+  grep '^SOC' "$work/core.log" || true
+  cat "$work/host.log"
+  python3 "$hobbit/tools/p9coreboot.py" compare "$work/rec/ref.hri" \
+      "$work/core.log" --functions "$work/rec/functions" \
+      | sed 's/^/(information) /' || true
+  fail=0
+  touch "$work/console"
+  if cmp -s "$work/console" "$work/rec/console"; then
+    echo "SOC console: $(wc -c < "$work/console" | tr -d ' ') bytes, identical to the reference boot's"
+  else
+    echo "run_soc.sh: the host's console differs from the reference boot's:" >&2
+    cmp "$work/console" "$work/rec/console" >&2 || true
+    fail=1
+  fi
+  [ "$hoststatus" = 0 ] || { echo "run_soc.sh: p9host.py exited $hoststatus" >&2; fail=1; }
+  [ "$simstatus" = 0 ] || { echo "run_soc.sh: the simulator stopped with status $simstatus" >&2; fail=1; }
+  exit $fail
+fi
 (cd "$work" && SOC_LOAD="$loadfile" P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
     SOC_ROM="$hobbit/tools/p9kbuild/fpi.rom" SOC_IOLOG="$work/io.log" \
     ./obj/Vsoc_sim_top > "$work/core.log" 2>&1) || simstatus=$?

@@ -22,6 +22,9 @@
 #include <cstring>
 #include <deque>
 #include <vector>
+#include <fcntl.h>
+#include <unistd.h>
+#include <termios.h>
 #include "verilated.h"
 #include "Vsoc_sim_top.h"
 #include "svdpi.h"
@@ -100,6 +103,35 @@ static uint32_t get32(const uint8_t *p) {
 }
 
 static unsigned long fwd_reads, fwd_writes;
+// $SOC_PTY: the UART pins are bridged to a pseudo-terminal whose slave
+// name is written to that file; a host program (tools/p9host.py) is the
+// host, exactly as on the board's FTDI port.  No recording is consulted
+// for device values and no interrupt is replayed.
+static int pty_fd = -1;
+static void pty_open(const char *namefile) {
+    pty_fd = posix_openpt(O_RDWR | O_NOCTTY);
+    if (pty_fd < 0 || grantpt(pty_fd) || unlockpt(pty_fd)) { perror("soc: pty"); exit(1); }
+    struct termios t;
+    tcgetattr(pty_fd, &t); cfmakeraw(&t); tcsetattr(pty_fd, TCSANOW, &t);
+    fcntl(pty_fd, F_SETFL, O_NONBLOCK);
+    FILE *f = fopen(namefile, "w");
+    if (!f) { perror(namefile); exit(1); }
+    fprintf(f, "%s\n", ptsname(pty_fd));
+    fclose(f);
+    printf("SOC pty: %s\n", ptsname(pty_fd));
+    fflush(stdout);
+}
+static void pty_step(void) {
+    uint8_t b[256];
+    if (txq.size() < 64) {
+        ssize_t n = read(pty_fd, b, sizeof b);
+        for (ssize_t i = 0; i < n; i++) txq.push_back(b[i]);
+    }
+    if (!rxbuf.empty()) {
+        ssize_t n = write(pty_fd, rxbuf.data(), rxbuf.size());
+        if (n > 0) rxbuf.erase(rxbuf.begin(), rxbuf.begin() + n);
+    }
+}
 // $SOC_LOAD: tools/p9link.py's load stream, sent one frame at a time, each
 // after the board's reply to the one before ('b' for B, 'g' for G).
 static std::deque<std::vector<uint8_t>> loadq;
@@ -178,7 +210,10 @@ int main(int argc, char **argv) {
     uint32_t endN = pk_end();
     unsigned long words = 0;
     const char *load = getenv("SOC_LOAD");
-    if (load && *load) {
+    const char *ptyname = getenv("SOC_PTY");
+    if (ptyname && *ptyname) {
+        pty_open(ptyname);                 // the host loads and starts it
+    } else if (load && *load) {
         // Everything through the UART pins: no back door.
         FILE *f = fopen(load, "rb");
         if (!f) { fprintf(stderr, "soc: no %s\n", load); exit(1); }
@@ -226,7 +261,7 @@ int main(int argc, char **argv) {
         // The replayed interrupts: one in the queue at a time.
         uint32_t n = pk_irq_at();
         top->arm_en = 0;
-        if (!armed && n != 0xFFFFFFFFu && n < endN && top->arm_rdy) {
+        if (pty_fd < 0 && !armed && n != 0xFFFFFFFFu && n < endN && top->arm_rdy) {
             top->arm_en = 1; top->arm_n = n; top->arm_level = pk_irq_level();
             arming = true;
         }
@@ -250,15 +285,19 @@ int main(int argc, char **argv) {
         arming = false;
         uint32_t r = top->retired;
         pk_retired(r);
-        frames();
+        if (pty_fd >= 0) { if ((clocks & 63) == 0) pty_step(); }
+        else frames();
         if (r != last_ret) { last_ret = r; last_change = clocks; }
         if (r >= endN) { why = 0; break; }
         if (pk_failed()) { why = 1; break; }
         if (top->stopped) { why = 2; break; }
-        if (clocks - last_change > 20000000ull) { why = 3; break; }
+        if (clocks - last_change > (pty_fd >= 0 ? 400000000ull : 20000000ull)) { why = 3; break; }
     }
     // Drain: let the last records print.
-    for (int i = 0; i < 4000; i++) { uart_step(); tick(); pk_retired(top->retired); frames(); }
+    for (int i = 0; i < 4000; i++) {
+        uart_step(); tick(); pk_retired(top->retired);
+        if (pty_fd >= 0) pty_step(); else frames();
+    }
     if (load && *load) {
         printf("SOC load: %lu replies, %zu frames unsent%s\n", load_replies,
                loadq.size(), load_wait ? ", one unanswered" : "");

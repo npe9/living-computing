@@ -133,3 +133,17 @@ Apache-2.0 and may be copied in with attribution.
   `FIFO2.v`, `FIFO20.v`, `RegFile.v` and `SizedFIFO.v`
   (`$BLUESPECDIR/Verilog/`), and the ECP5 primitives `DCCA` and `ODDRX1F`
   from yosys's cell library.
+
+## Device integration and the forwarding host (`fpga/socdev/`, `tools/p9host.py`), 2026-11-24
+
+**Copied: nothing.** The following were written for this project:
+* `fpga/socdev/HobbitSocDevs.bsv`;
+* `tools/p9host.py` and `tools/p9link.py`;
+* the console tunnel and the `S`/`K`/`C` frames in `rtl/hostlink.v` and
+  `rtl/hobbit_soc.v`;
+* the pseudo-terminal bridge in `sim/soc_main.cpp`.
+
+`HobbitSocDevs.bsv` imports the device packages under `fpga/dev/`
+unchanged, and their own entries above cover them. bsc's library cells
+(`RegFileLoad.v`, `BRAM2.v`, `FIFO2.v`, `SizedFIFO.v`) are read from the
+bsc 2026.01 installation at build time and are not copied.

@@ -28,7 +28,15 @@
 module hobbit_soc #(
     parameter CPB = 25,              // host link: 25 MHz / 1 Mbaud
     parameter SD_T_PWR = 5000,
-    parameter SD_T_REFI = 180
+    parameter SD_T_REFI = 180,
+    // Which devices are RTL (fpga/socdev/HobbitSocDevs.bsv's `rtl` bits:
+    // 0 incon/ioctl/irq, 1 Quart, 2 RTC, 3 IIC, 4 Lcdisp); the rest forward.
+    parameter [7:0]  DEV_RTL = 8'h00,
+    parameter [31:0] RTC_TICKS = 25000000,
+    parameter [55:0] RTC_START = 56'h93010301120000,
+    parameter [1:0]  RTC_MCP = 2'd3,
+    parameter [15:0] RTC_I2CQ = 16'd63,
+    parameter QUART_CPB = 1302                  // the console tunnel's rate
 ) (
     input  wire        clk,
     input  wire        rst,          // synchronous, active high
@@ -45,6 +53,12 @@ module hobbit_soc #(
     output wire [15:0] sd_dq_out,
     output wire        sd_dq_oe,
     input  wire [15:0] sd_dq_in,
+    // The RTC's MCP7940N I2C (open drain: *_low = 1 pulls the line low).
+    output wire        i2c_scl_low,
+    output wire        i2c_sda_low,
+    input  wire        i2c_scl_in,
+    input  wire        i2c_sda_in,
+    output wire [7:0]  dev_faults,
     // State.
     output wire [7:0]  leds,
     output wire [31:0] retired,
@@ -76,6 +90,7 @@ module hobbit_soc #(
     wire        go_valid;
     wire [31:0] go_entry;
     wire [2:0]  host_il;
+    wire        dev_il6;
     wire        fire;
 
     mkHobbitSocCpu cpu (
@@ -85,7 +100,7 @@ module hobbit_soc #(
         .window_w(c_window), .probes(c_probes),
         .go_entry(go_entry), .EN_go(go_valid && c_rdy_go), .RDY_go(c_rdy_go),
         .running(running),
-        .il_level(host_il),
+        .il_level(dev_il6 && host_il > 3'd6 ? 3'd6 : host_il),
         .armInterrupt_n(arm_n), .armInterrupt_level(arm_level),
         .EN_armInterrupt(arm_en && arm_rdy), .RDY_armInterrupt(arm_rdy),
         .irqArmable(),
@@ -173,6 +188,11 @@ module hobbit_soc #(
                 end else begin
                     rom_busy <= 1'b0; bk_done <= 1'b1; bk_rdata <= rom_q;
                 end
+            end else if (dev_claims) begin
+                if (!io_issued && dev_rdy_req) io_issued <= 1'b1;
+                if (io_issued && dev_rdy_resp) begin
+                    bk_done <= 1'b1; bk_rdata <= dev_resp; io_issued <= 1'b0;
+                end
             end else begin
                 if (!io_issued) io_issued <= 1'b1;
                 if (io_issued && io_done) begin
@@ -182,7 +202,55 @@ module hobbit_soc #(
         end
     end
 
-    // ---- I/O bus: every window forwards until its device lands ---------
+    // ---- RTL devices (fpga/socdev/HobbitSocDevs.bsv) -----------------------
+    // A claimed access is sent once (EN_req on the clock io_issued rises)
+    // and completes with the device's one response.
+    wire        dev_claims, dev_rdy_req, dev_rdy_resp;
+    wire [31:0] dev_resp;
+    wire [15:0] host_src;
+    wire        q_txd;
+    reg         q_rxd;
+    wire        dev_take_req = bk_valid && !bk_done && !is_ram && !is_rom &&
+                               dev_claims && !io_issued && dev_rdy_req;
+    wire        dev_take_resp = bk_valid && !bk_done && !is_ram && !is_rom &&
+                                dev_claims && io_issued && dev_rdy_resp;
+    mkHobbitSocDevs #(.rtl(DEV_RTL), .ticksPerSec(RTC_TICKS),
+                      .startBcd(RTC_START), .mcpMode(RTC_MCP),
+                      .i2cQuarter(RTC_I2CQ)) devs (
+        .CLK(clk), .RST_N(!rst),
+        .claims_pa(bk_addr), .claims(dev_claims),
+        .req_pa(bk_addr), .req_wdata(bk_wdata), .req_be(bk_be),
+        .req_write(bk_we), .EN_req(dev_take_req), .RDY_req(dev_rdy_req),
+        .EN_resp(dev_take_resp), .resp(dev_resp), .RDY_resp(dev_rdy_resp),
+        .hostSources_s(host_src), .il6(dev_il6),
+        .quartTxd(q_txd), .quartRxd_v(q_rxd),
+        .i2cSclLow(i2c_scl_low), .i2cSdaLow(i2c_sda_low),
+        .i2cPins_scl(i2c_scl_in), .i2cPins_sda(i2c_sda_in),
+        .faults(dev_faults), .iicLed());
+
+    // The RTL Quart's channel 0 is the console: its serial line is turned
+    // into bytes and carried by the host link ('C' out, 'K' in), because
+    // the FTDI port is the host link.
+    wire [7:0] con_rx_b; wire con_rx_v; wire con_rx_ferr;
+    uart_rx #(.CPB(QUART_CPB)) con_rx (.clk(clk), .rst(rst), .rxd(q_txd),
+        .valid(con_rx_v), .data(con_rx_b), .ferr(con_rx_ferr));
+    reg        con_valid;
+    reg  [7:0] con_byte;
+    wire       con_taken;
+    always @(posedge clk) begin
+        if (rst) con_valid <= 1'b0;
+        else if (con_rx_v) begin con_valid <= 1'b1; con_byte <= con_rx_b; end
+        else if (con_taken) con_valid <= 1'b0;
+    end
+    wire       key_valid;
+    wire [7:0] key_byte;
+    wire       key_ready;
+    wire       key_txd;
+    uart_tx #(.CPB(QUART_CPB)) con_tx (.clk(clk), .rst(rst),
+        .valid(key_valid), .data(key_byte), .ready(key_ready), .txd(key_txd));
+    always @(posedge clk) q_rxd <= rst ? 1'b1 : key_txd;
+
+    // ---- I/O bus: an unclaimed window forwards ---------------------------
     wire        fwd_done;
     wire [31:0] fwd_rdata;
     assign io_done = fwd_done;
@@ -193,9 +261,12 @@ module hobbit_soc #(
         .mem_valid(aux_valid), .mem_we(aux_we), .mem_addr(aux_addr),
         .mem_wdata(aux_wdata), .mem_done(aux_done), .mem_rdata(aux_rdata),
         .go_valid(go_valid), .go_entry(go_entry), .go_taken(go_taken),
-        .fwd_valid(bk_valid && !is_ram && !is_rom && io_issued),
+        .fwd_valid(bk_valid && !is_ram && !is_rom && !dev_claims && io_issued),
         .fwd_we(bk_we), .fwd_addr(bk_addr), .fwd_wdata(bk_wdata),
         .fwd_done(fwd_done), .fwd_rdata(fwd_rdata), .host_il(host_il),
+        .host_src(host_src),
+        .con_valid(con_valid), .con_byte(con_byte), .con_taken(con_taken),
+        .key_valid(key_valid), .key_byte(key_byte),
         .running(running), .stopped(stopped), .core_clocks(core_clocks),
         .retired(retired));
 

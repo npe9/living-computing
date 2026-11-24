@@ -266,6 +266,8 @@ earlier one and still works.
 | `rtl/ulx3s_hobbit_top.v` | pins, power-on reset, DCCA, SDRAM clock ODDRX1F, DQ I/O register |
 | `ulx3s_soc.lpf` | clock, button, LEDs, UART, WiFi enable, SDRAM |
 | `build_soc.sh` | bsc, yosys, nextpnr, ecppack into `build/soc/`; `build_soc.sh stub` builds the periphery alone into `build/soc-stub/` |
+| `socdev/HobbitSocDevs.bsv` | the `fpga/dev/` devices behind one bus port, a per-device RTL-or-forwarded switch (`DEV_RTL`) |
+| `../tools/p9link.py`, `../tools/p9host.py` | the host: the load stream; the forwarding host that answers `F` from p9boot's models |
 | `rtl/cpu_stub.v` | same-ported stand-in for the core, for `build_soc.sh stub` only |
 | `area_cpu.sh` | synthesis-only area of `mkHobbitSocCpu`, optionally from a variant source tree |
 | `sim/run_soc.sh` | Verilator co-simulation: the SoC boots s9term against the reference |
@@ -352,6 +354,8 @@ access is forwarded over the host link. That includes the ROM above
 | `G` e4 | start at the entry (the ROM's hand-off: SP = MSP = PSW = 0) | `g` |
 | `D` d4 | answer to `F` | |
 | `I` l1 | interrupt level from the host's models (7 = none) | |
+| `S` s2 | the host models' interrupt sources, for an RTL Irq | |
+| `K` c1 | a byte typed on the console, for an RTL Quart | `C` c1: a byte an RTL Quart's channel 0 sent |
 | | | `F` k1 a4 d4 clk5: a forwarded access (k = 0 read, 1 write); the board waits for `D` |
 | | | `T` clk5: every 2^18 core clocks |
 
@@ -538,47 +542,129 @@ address step injected as +8, it failed at record 3 in `_startup`, where
 the core fetched 00000000; the header of `run_soc.sh` has the details. This exercises `hostlink.v`'s `B`/`G` path and the
 adapter's aux port, which the back-door load never touches.
 
-Not done: the host session that sends the stream over the serial port and
-then answers `F` from `tools/p9boot.py`'s device models. The models need
-the board's `clk5` as their time base. Until that exists, the run
-procedure below cannot be carried out.
+### The forwarding mode: `tools/p9host.py` (step 2's bring-up)
 
-### Device integration (pending)
+`tools/p9host.py DEVICE` is the host end of the link on a serial device:
+the FTDI port in a hardware window, or a pseudo-terminal in simulation.
 
-The device modules are on master under `fpga/dev/`: Quart and intc, RTC and
-IIC, and Lcdisp/HDMI. They are not yet in `rtl/hobbit_soc.v`'s I/O bus.
-Three things block them:
+1. It sends `P`, then the load stream (`p9link.load_stream`), then `G`.
+2. It answers every `F` from `tools/p9boot.py`'s device models, which are
+   `p9boot.Boot`'s and are mapped as in p9boot.
+3. Their time base is the board's core clock count, taken from each `F`
+   and `T` frame (`Boot.cycles`).
+4. It sends the interrupt level (`I` 6 while the Irq model asserts, else
+   7) whenever it changes.
+5. Quart channel 0's output is the console, written to stdout and
+   `--console`. `--interactive` types stdin into it.
+6. `--ether-peer`/`--ether-local` connect the SONIC model to a UDP peer
+   such as `tools/qemu1e/hub.py`, as in p9boot.
 
-* the fit (above);
-* byte-enabled stores and no repeated I/O reads ("Unrecorded I/O reads"
-  above), because Quart reads pop its FIFO;
-* an oracle for live interrupts. Once the intc drives the core's IL, the
-  recorded-interrupt replay (`armInterrupt`) no longer applies.
+A model that refuses an access (`BusError`) is answered with 0 and
+counted. This happens 16,314 times in the boot: the read halves of
+halfword-store read-modify-writes to the write-only LCD.
 
-The parameters for when they are wired, as given by the device agents on
-2026-11-24:
+`SOC_HOST=1 fpga/sim/run_soc.sh N` is the end-to-end check. The Verilator
+SoC's UART pins are bridged to a pseudo-terminal (`sim/soc_main.cpp`,
+`SOC_PTY`), and `p9host.py` runs on it as the board's host would. Nothing
+is replayed: no recorded device values and no recorded interrupt. Result
+on 2026-11-24:
 
-* `Irq.sources`, driven every clock: bit 1 = Quart `irq`; bits 5, 8, 9 and
-  10 = incon, SCSI DMA, SONIC and SCSI.
-* Quart: tie the unused `txOut` streams (channels 1-3) to always-ready
-  sinks. At 25 MHz, `clksPerBit` = 1302 (19200 baud) and `ctNum`/`ctDen` =
-  1152/125000.
-* RTC: `mkRtc#(ticksPerSec, startBcd, mcpMode, i2cQuarter)`. `ticksPerSec`
-  and `startBcd` default to 0 and must be set. The board setting is
-  `mcpMode` 3 and `i2cQuarter` 63 at 25 MHz. Its window is 8 KB
-  (`0xB8002000`-`0xB8003FFF`), so the bus offset must be 13 bits; the
-  contract's 12 is too narrow.
-* The I2C pins `gpdi_sda` B19 and `gpdi_scl` E12 are reserved in
-  `ulx3s_soc.lpf` and released in `rtl/ulx3s_hobbit_top.v`. The RTC assumes
-  it is alone on the DDC bus.
-* IIC: EEPROM byte 12 is the CPU MHz (`iic_eeprom.py --clock 25`).
-  `rtc_nvram.hex` and `iic_eeprom.hex` are resolved against the working
-  directory.
-* yosys must read bsc's `RegFileLoad.v` with `read_verilog -defer`.
-* The LCD/HDMI build uses a 65/325 MHz PLL (`dev/hdmi_lcd.md`), and its
-  shift clock is seed-sensitive.
+```
+p9host: loading 1582 ROM and 70953 RAM words, then G 80004000
+SOC end: the reference's last record; 2893027 records, 11686929 core clocks,
+  132471463 system clocks (11.34 per core clock)
+p9host: the link went quiet or closed; 183 forwarded reads, 16526 writes,
+  16314 bus errors, console 74 bytes
+MATCH: 2893000 records agree in every field but cyc (2865913 also agree in cyc)
+SOC console: 74 bytes, identical to the reference boot's
+```
 
-### Hardware window: run procedure (not yet runnable)
+The record comparison is reported for information only. With live
+models, the records match until the live timing first differs from the
+reference's. Here they never differ: the one interrupt came at the same
+retirement. The check is the console.
+
+### Devices: RTL or forwarded, one switch each
+
+`socdev/HobbitSocDevs.bsv` (`mkHobbitSocDevs`) holds the device modules
+from `fpga/dev/` unchanged:
+* `mkHobbitIncon`, `mkHobbitIoctl` and `mkHobbitIrq`;
+* `mkHobbitQuart(1302, 1152, 125000)`;
+* `mkRtc`;
+* `mkIic`;
+* `mkLcdisp`.
+
+It decodes p9boot's map, with offsets of up to 13 bits (the device
+contract, `docs/ulx3s_plan.md`). `hobbit_soc`'s `DEV_RTL` parameter
+(`SOC_RTL` for `run_soc.sh` and `build_soc.sh`) has one bit per device:
+
+| bit | device | window |
+|---|---|---|
+| 0 | incon, ioctl, Irq | 0xB0000000, 0xB8000000, 0xB8000080 |
+| 1 | Quart | 0xB0000100-0xB00001FF |
+| 2 | RTC + NVRAM | 0xB8002000-0xB8003FFF |
+| 3 | IIC + EEPROM | 0xB0000080-0xB0000087 |
+| 4 | Lcdisp | 0xB0003000-0xB0003007 |
+
+An access to a window whose bit is set goes to the RTL device: one
+request, then one response. Any other access is forwarded as before.
+The wiring:
+
+* **Irq sources** are driven every clock. Bit 1 is the RTL Quart's `irq`.
+  The other bits are the host models' sources (`S`). The core's level is
+  6 while the RTL Irq asserts.
+* **The console.** The RTL Quart's channel 0 serial line is decoded at
+  1302 clocks per bit (19200 baud) into `C` frames, and `K` bytes are sent
+  into its receive line, because the FTDI port is the host link. Channels
+  1-3 have always-ready sinks.
+* **The RTC.** `RTC_TICKS` 25,000,000 and `RTC_START`
+  `56'h93010301120000` (the model's RTC_BASE). On the board `RTC_MCP` is 3
+  and `RTC_I2CQ` 63. The I2C lines `gpdi_sda`/`gpdi_scl` are open drain,
+  driven only when the RTC is RTL. The simulation has no MCP7940N, so it
+  uses mcpMode 0.
+* `rtc_nvram.hex` and `iic_eeprom.hex` are copied into the working
+  directory of the simulator and of yosys. yosys reads `RegFileLoad.v`
+  with `-defer`.
+
+**Results on 2026-11-24**, `SOC_HOST=1 SOC_RTL=N run_soc.sh 2893000`:
+
+| `SOC_RTL` | RTL | forwarded accesses | console | records |
+|---|---|---|---|---|
+| 0 | none | 183 reads, 16,526 writes | 74 bytes, identical | MATCH, all 2,893,000 |
+| 3 | incon, ioctl, Irq, Quart | 69 reads, 16,357 writes | 74 bytes, identical | part at record 2,621,735 (see below) |
+| 31 | all five | 9 reads, 32 writes | 74 bytes, identical | part at record 2,621,735 |
+
+No device raised a fault (`FAULT` lines: 0).
+
+The records part in `getc`, right after the kernel writes a byte to TX0
+(`b000010c`) and reads the channel's status (`b0000104`). p9boot's Quart
+reports TxRDY at once. The RTL Quart's transmitter is busy for one
+character time at 19200 baud, so the status bit (4) reads 0 and the
+kernel's poll takes a different number of laps. This is the RTL being the
+more faithful timing. From that point the records cannot be compared,
+which is why the oracle for an RTL device set is the console, checked
+against the reference boot's.
+
+The check is discriminating. With the Quart's offset injected wrong in
+`HobbitSocDevs.bsv` (`truncate(pa - 32'hB0000100) ^ 12'h010`),
+`SOC_RTL=3` OBSERVED "console 0 bytes" from p9host, "run_soc.sh: the
+host's console differs from the reference boot's" (`cmp: EOF on
+.../console`), and rc=1. The injection was reverted by the reverse patch,
+and the file compared identical to its pre-injection copy.
+
+The LCD's 196 KB frame store is removed by synthesis until the HDMI
+scan-out (`dev/hdmi_*`, with its 65/325 MHz PLL, `dev/hdmi_lcd.md`) reads
+its `scan` port. That top-level wiring is the next device step.
+`SOC_RTL=31 ./build_soc.sh stub` gave TRELLIS_COMB 14,774/83,640 (17%),
+DP16KD 9 and a 34.70 MHz system clock (PASS at 25).
+
+What is still forwarded with every bit set:
+* the SONIC, whose DMA reads the host's copy of RAM, not the SDRAM, so
+  frames need the RTL SONIC/EspLink, which is not on master yet;
+* the SCSI;
+* the ROM above 16 KB.
+
+### Hardware window: run procedure (runnable once the SoC places)
 
 No board action has been taken. The board is in use by the Linux Flute
 session. There is no bitstream of the full SoC because it does not place.
@@ -597,9 +683,11 @@ full-SoC bitstream exists, the procedure for an owner-approved window is:
    per reply (`b`), as `sim/soc_main.cpp` does with `SOC_LOAD`. Its last
    frame is `G 80004000`, answered `g`. To check the load, send `R` for a
    sample of addresses before that last frame.
-6. Answer every `F` with `D` from `tools/p9boot.py`'s device models. The
-   host session that does this has not been written ("The kernel load").
-   The console is the Quart's channel-0 output, which the models print.
+6. Steps 4-6 are one command: `python3 tools/p9host.py /dev/cu.usbserial-XXXX
+   --rtl N --console console.txt --interactive`, with the port named for the
+   window and N the bitstream's `SOC_RTL`. It pings, loads (every word,
+   without `--sparse`), starts, and answers every `F` from the p9boot
+   models. The console appears on the terminal.
 7. Afterwards: `openFPGALoader -b ulx3s -r` to restore the board to its
    flash image for the Flute session.
 
