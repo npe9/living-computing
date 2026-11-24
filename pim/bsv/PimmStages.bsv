@@ -79,7 +79,7 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -124,6 +124,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
+  // multiply_bignum_by_word: the word in hand, the length, Y, the carry,
+  // the pass (False: the carry only; True: the words written), whether
+  // the product is one word longer, the new string
+  Reg#(Bit#(32))     bnI     <- mkRegU;
+  Reg#(Bit#(32))     bnN     <- mkRegU;
+  Reg#(Bit#(32))     bnY     <- mkRegU;
+  Reg#(Bit#(32))     bnCarry <- mkRegU;
+  Reg#(Bool)         bnPass2 <- mkRegU;
+  Reg#(Bool)         bnExtra <- mkRegU;
+  Reg#(Cell)         bnDst   <- mkRegU;
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
   Reg#(ScsiResult)   scR     <- mkRegU;     // scsi_command's outputs, being written
   // the reductions of the goal in hand: one per execute and one for its
@@ -163,7 +173,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
-                  || op == op_scsi_command || op == op_set_timer;
+                  || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1468,6 +1478,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XSo1;
       end
     end
+    else if (op == op_multiply_bignum_word) begin
+      // multiply_bignum_by_word(BigX, Y, ^BigZ): rules bn1..bn8.  Not a
+      // string, or Y not an integer: the built-in's exception, refused
+      if (!isStrg(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        opA <= a;
+        bnY <= b.val;
+        sbox.info(a);
+        st <= XBn1;
+      end
+    end
     else if (op == op_new_string) begin
       // new_string(Length, Bits, ^S)
       if (!isInt(a) || !isInt(b)) stop(EndUnimp);
@@ -1635,6 +1656,107 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule bWait2 (st == XBWait2);
     gbox.done;
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // multiply_bignum_by_word (pimm.py i_multiply_bignum_word, after
+  // VPIM): the empty X is the answer; a leading zero word is the
+  // exception; Y = 0 gives the empty string.  Two passes from the least
+  // significant word: the first finds the last carry (so the length),
+  // the second writes the product into a new string of zeros, the
+  // carry last at word 0
+  rule bn1 (st == XBn1);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else if (r.a.val == 0) begin
+      regs.wr(z, opA);
+      finish(tagged Next afterBuiltin);
+    end
+    else begin
+      bnN <= r.a.val;
+      sbox.element(opA, 0);
+      st <= XBn2;
+    end
+  endrule
+
+  rule bn2 (st == XBn2);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bnY == 0) begin
+      sbox.newStr(0, 32);
+      st <= XBn7;
+    end
+    else begin
+      bnPass2 <= False;
+      bnCarry <= 0;
+      bnI <= bnN - 1;
+      sbox.element(opA, bnN - 1);
+      st <= XBn3;
+    end
+  endrule
+
+  rule bn3 (st == XBn3);
+    let r <- sbox.result;
+    mbox.multiplyAdd(r.a.val, bnY, bnCarry);
+    st <= XBn4;
+  endrule
+
+  rule bn4 (st == XBn4);
+    let p <- mbox.wide;
+    bnCarry <= p[63:32];
+    if (bnPass2) begin
+      sbox.poke(bnDst, bnI + (bnExtra ? 1 : 0), p[31:0]);
+      st <= XBn5;
+    end
+    else if (bnI == 0) begin
+      Bool extra = p[63:32] != 0;
+      bnExtra <= extra;
+      sbox.newStr(bnN + (extra ? 1 : 0), 32);
+      st <= XBn6;
+    end
+    else begin
+      bnI <= bnI - 1;
+      sbox.element(opA, bnI - 1);
+      st <= XBn3;
+    end
+  endrule
+
+  rule bn5 (st == XBn5);
+    let r <- sbox.result;
+    if (bnI != 0) begin
+      bnI <= bnI - 1;
+      sbox.element(opA, bnI - 1);
+      st <= XBn3;
+    end
+    else if (bnExtra) begin
+      sbox.poke(bnDst, 0, bnCarry);
+      st <= XBn8;
+    end
+    else begin
+      regs.wr(z, bnDst);
+      finish(tagged Next afterBuiltin);
+    end
+  endrule
+
+  rule bn6 (st == XBn6);
+    let r <- sbox.result;
+    bnDst <= r.a;
+    bnPass2 <= True;
+    bnCarry <= 0;
+    bnI <= bnN - 1;
+    sbox.element(opA, bnN - 1);
+    st <= XBn3;
+  endrule
+
+  rule bn7 (st == XBn7);
+    let r <- sbox.result;
+    regs.wr(z, r.a);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  rule bn8 (st == XBn8);
+    let r <- sbox.result;
+    regs.wr(z, bnDst);
     finish(tagged Next afterBuiltin);
   endrule
 

@@ -1994,6 +1994,41 @@ class Machine:
             self.unbound_elements(v) if self.vsize(v) == 5 else []))
         return pc + 2
 
+    def i_multiply_bignum_word(self, pc, x, y, z, c16):
+        # multiply_bignum_by_word(BigX, Y, ^BigZ), 22:B8 r_r_r
+        # (assembler/inst_tab.kl1:247; compiler/blt.kl1 the inputs X, Y,
+        # the output Z): "The result of multiplying BigX by Y seen as a
+        # 32-bit unsigned integer"; a bignum is a 32-bit string read as
+        # unsigned, "The MSB is the zeroth element and is zero
+        # suppressed" (PIMOS manual e-builtin.tex 703-741).  As VPIM
+        # (interpreter/klb_body_blt_bignum.psl.c
+        # kblt_b_multiply_bignum_by_word, functions/f_reduce_bignum.psl.c
+        # f_Multiply_BIGNUM_By_Word_Sub, structures/str_bignum.psl.c
+        # s_Multiply_BIGNUM_By_Word): the empty X is the answer itself;
+        # Y = 0 gives the empty string; otherwise the product, one word
+        # longer only when the last carry is not 0.  A leading zero word,
+        # or BigX not a 32-bit string, or Y not an integer: the
+        # built-in's exception (VPIM's too), refused.  The words are
+        # written from the least significant up into a new string of
+        # zeros (OURS: the Bluespec's order)
+        def f(big, w):
+            size, elems = self.need_string(big)
+            yv = self.need_int(w) & 0xffffffff
+            if size != 32 or (elems and elems[0] == 0):
+                raise Unimplemented('built-in exception: multiply_bignum_word of %r' % (elems[:2],))
+            if not elems:
+                return [big]
+            v = 0
+            for e in elems:
+                v = (v << 32) | e
+            p = v * yv
+            n = 0 if yv == 0 else len(elems) + (1 if p >> (32 * len(elems)) else 0)
+            out = self.new_string(n, 32)
+            for i in reversed(range(n)):
+                self.mem[out[1] + 1 + i] = (INT, (p >> (32 * (n - 1 - i))) & 0xffffffff)
+            return [out]
+        self.builtin('multiply_bignum_word', [x, y, z], f)
+
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
