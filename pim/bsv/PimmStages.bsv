@@ -83,6 +83,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2,
                XSoW,
+               XNode,
                XReuse3 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
@@ -146,7 +147,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_new_module || op == op_calculate_priority_from_minimum
                   || op == op_change_element_size || op == op_string_operation
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
-                  || op == op_b_divide || op == op_b_modulo || op == op_b_string;
+                  || op == op_b_divide || op == op_b_modulo || op == op_b_string
+                  || op == op_calculate_priority_from_current;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -347,6 +349,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // the list cell, in one allocation of six cells
       gbox.alloc(6);
       st <= XSWh1;
+    end
+    else if (op == op_current_node) begin
+      // current_node(^NodeNumber, ^TotalNode): no input, never waits.
+      // One node here (ours): 0, then 1 (nodeTotal)
+      regs.wr(x, intC(0));
+      st <= XNode;
     end
     else if (op == op_new_atom) begin
       // new_atom(^Atom): the next of a counter; which numbers is ours
@@ -891,6 +899,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     st <= XBOut2;
   endrule
 
+  // current_node: the second output, the total number of nodes
+  rule nodeTotal (st == XNode);
+    regs.wr(y, intC(1));
+    next;
+  endrule
+
   rule note2 (st == XNote2);
     note(opA);
     guardFail;
@@ -1276,6 +1290,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if (!isInt(a) || a.val > 4096) stop(EndUnimp);
       else begin
         regs.wr(y, intC(a.val));
+        finish(tagged Next afterBuiltin);
+      end
+    end
+    else if (op == op_calculate_priority_from_current) begin
+      // calculate_priority_from_current(X, ^Y), X in -4096..4096
+      // (manual).  PDSS's formula (blt_b_rltv) with the range 0..4096
+      // and the current priority 4096 (both ours): Y = 4096 + X for
+      // X < 0, 4096 for X >= 0.  The range test is signed
+      if (!isInt(a) || ia < -4096 || ia > 4096) stop(EndUnimp);
+      else begin
+        regs.wr(y, intC(ia < 0 ? 4096 + a.val : 4096));
         finish(tagged Next afterBuiltin);
       end
     end

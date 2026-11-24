@@ -63,8 +63,9 @@ the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
 waiting on an element of its vector, `lockstep_reuse.py`
-`put_reused_structure` of a vector of seven or more;
-`longrun_ipl.py` is the long run (not in the suite); 128
+`put_reused_structure` of a vector of seven or more,
+`lockstep_prio.py` `current_node` and `calculate_priority_from_current`;
+`longrun_ipl.py` is the long run (not in the suite); 130
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with

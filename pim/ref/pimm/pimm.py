@@ -1303,6 +1303,39 @@ class Machine:
             return [(INT, v)]
         self.builtin('calculate_priority_from_minimum', [x, y], f)
 
+    def i_calculate_priority_from_current(self, pc, x, y, z, c16):
+        # calculate_priority_from_current(X, ^Y), 22:EC r_r: "the
+        # logical priority corresponding to X is calculated from the
+        # logical priority of this predicate"; X is -4096..4096
+        # (PIMOS manual, e-builtin.tex calculate_priority_from_current).
+        # The manual gives no formula; this is PDSS's (emulator/
+        # blt_system.c blt_b_rltv): for X >= 0 the current priority
+        # plus X/4096 of the way to the shoen's maximum, for X < 0
+        # minus -X/4096 of the way to its minimum.  There is no shoen
+        # here: the range is 0..4096, as for _from_minimum (ours), and
+        # the current priority is the range's top, 4096 (ours; PDSS
+        # starts a shoen's goals at its maximum, emulator/shoen.c:100,
+        # 166).  So Y = 4096 + X for X < 0, 4096 for X >= 0, and
+        # shoen:execute/7's X = C - 4096 gives C.
+        def f(v):
+            v = self.need_int(v)
+            if not -4096 <= v <= 4096:
+                raise Unimplemented('calculate_priority_from_current of %d' % v)
+            return [(INT, 4096 + v if v < 0 else 4096)]
+        self.builtin('calculate_priority_from_current', [x, y], f)
+
+    def i_current_node(self, pc, x, y, z, c16):
+        # current_node(^NodeNumber, ^TotalNode), 22:EE r_r: "NodeNumber
+        # is unified with the number of node on which this predicate is
+        # running and TotalNode is unified with the total number of
+        # nodes.  The node number will be a value between 0 and
+        # (TotalNode - 1) inclusive" (PIMOS manual, e-builtin.tex
+        # current_node).  One node here (ours), so 0 and 1, the values
+        # PDSS gives (emulator/blt_system.c blt_b_current_node).  No
+        # input: it never waits (no stub), and r[x] is written first.
+        self.reg[x] = (INT, 0)
+        self.reg[y] = (INT, 1)
+
     def i_enqueue_goal_with_priority(self, pc, x, y, z, c16):
         # two cells: the priority's register, the label; the arity in
         # the next cell's top byte (assembler/klb_opr.kl1
