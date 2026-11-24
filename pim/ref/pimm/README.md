@@ -58,13 +58,19 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `code`, `lockstep_apply.py` `apply`, `lockstep_where.py` `scsi_where`, `lockstep_shoen.py` the shoen
 (`create_shoen`, `start_shoen`, termination, through the image's own
-`shoen:execute/4`); `longrun_ipl.py` is the long run (not in the suite); 119
+`shoen:execute/4`), `lockstep_alt.py` `read_eagerly`
+(`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`,
+`lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
+`enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
+waiting on an element of its vector, `lockstep_reuse.py`
+`put_reused_structure` of a vector of seven or more;
+`longrun_ipl.py` is the long run (not in the suite); 128
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with
-`enqueue_goal_to_processor`, `read_eagerly` (`alternatively`),
-`b_string`, `b_divide`, `b_modulo`, `not_equal` and a merger input
-bound to a vector; `ref_scsi.py` runs the body of `ipl:boot0` on
+a merger input bound to a vector
+(refused unless `Machine.ahead` is set; the core cannot yet make its
+goals as the reference does, see `pimm.py`'s header); `ref_scsi.py` runs the body of `ipl:boot0` on
 them, the IPL reading its list and its files through its own SCSI
 stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on

@@ -20,13 +20,22 @@ it; the shoen in its first stage only (create_shoen, start_shoen
 and termination: "the shoen" below); no exceptions.  An instruction
 this file does not implement raises Unimplemented: it never guesses.
 
-On this model ALONE (the Bluespec core has none of it yet), a
-prototype: the SCSI built-ins scsi_init and scsi_command against a
+On this model ALONE (the Bluespec core has none of what this
+paragraph lists as not given), a prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
-what the IPL's SCSI stack needs besides (enqueue_goal_to_processor,
-read_eagerly, b_string, b_divide, b_modulo, not_equal, a merger
-input bound to a vector, built-ins waiting on a vector's element).
-ref/pimm/ref_scsi.py runs them.
+what the IPL's SCSI stack needs besides (a merger input bound to a
+vector, scsi_command waiting on its vector's elements).
+ref/pimm/ref_scsi.py runs them.  The core has since been given
+read_eagerly, not_equal and wait_vector_1/4/6 (lockstep_alt.py),
+b_divide, b_modulo, b_string and enqueue_goal_to_processor
+(lockstep_body.py), string_operation waiting on an element of its
+vector (lockstep_elw.py) and put_reused_structure of a long vector
+(lockstep_reuse.py).  The merger input bound to a vector is NOT
+given: the reference makes its goals' records from cells, with no
+register written, and the core's goal box makes a record only from
+the registers or the argument registers (whose writes are traced),
+so one model or the goal box has to change: a design decision, left
+with the gate in place.
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -602,7 +611,7 @@ class Machine:
         wait = [w[1] for k, w in enumerate(vals) if self.unbound(w) and k not in nowait]
         if not wait and elements is not None:
             wait = elements(*vals)
-            if wait:
+            if wait and name != 'string_operation':
                 self.alone(name + ' waiting on a vector element')
         if not wait:
             for r, w in zip(outs, f(*vals)):
@@ -943,7 +952,6 @@ class Machine:
         return self.compare(x, y, lambda a, b: a == b)
 
     def i_not_equal(self, pc, x, y, z, c16):
-        self.alone('not_equal')
         # guard not_equal(Integer1, Integer2), X =\= Y: "Succeeds if
         # Integer1 is not equal to Integer2"; suspends on an
         # uninstantiated one, fails on a non-integer (PIMOS manual,
@@ -1225,15 +1233,12 @@ class Machine:
         return self.wait_vector(5, x)
 
     def i_wait_vector_1(self, pc, x, y, z, c16):
-        self.alone('wait_vector_1')
         return self.wait_vector(1, x)
 
     def i_wait_vector_4(self, pc, x, y, z, c16):
-        self.alone('wait_vector_4')
         return self.wait_vector(4, x)
 
     def i_wait_vector_6(self, pc, x, y, z, c16):
-        self.alone('wait_vector_6')
         return self.wait_vector(6, x)
 
     def i_read_variable(self, pc, x, y, z, c16):
@@ -1259,7 +1264,8 @@ class Machine:
         # new one gets its own.
         w = self.deref(self.reg[y])
         if w[0] & ~1 == VECT0 + 14:
-            self.alone('put_reused_structure of a long vector')
+            if z < 7:       # a long vector's tag on fewer than seven cells
+                raise Unimplemented('put_reused_structure of %d cells from a long vector' % z)
             new, self.sp = self.vnew(z)
             self.reg[x] = (w[0], new[1])
             return
@@ -1456,7 +1462,6 @@ class Machine:
         self.builtin('b_multiply', [x, y, z], f)
 
     def i_b_divide(self, pc, x, y, z, c16):
-        self.alone('b_divide')
         # divide(Integer1, Integer2, ^NewInteger), guard and body:
         # "Divides Integer1 by Integer2 and unifies the quotient with
         # NewInteger" (PIMOS manual, e-builtin.tex line 285).  As the
@@ -1472,7 +1477,6 @@ class Machine:
         self.builtin('b_divide', [x, y, z], f)
 
     def i_b_modulo(self, pc, x, y, z, c16):
-        self.alone('b_modulo')
         # modulo(Integer1, Integer2, ^NewInteger), guard and body:
         # "unifies the remainder with NewInteger" (PIMOS manual,
         # e-builtin.tex line 303).  As the guard here (the remainder
@@ -1605,7 +1609,6 @@ class Machine:
         self.builtin('new_string', [x, y, z], f)
 
     def i_b_string(self, pc, x, y, z, c16):
-        self.alone('b_string')
         # body string(X, ^Size, ^ElementSize, ^NewString): "The size
         # of string X is unified with Size, the element bit width is
         # unified with ElementSize, and X is unified with NewString"
@@ -1694,6 +1697,10 @@ class Machine:
             if n == 0:
                 self.unify(self.mem[rec], NIL)
         elif self.vsize(w) is not None:
+            # Still on this model alone: the records below are made
+            # from cells, and the Bluespec goal box makes one only
+            # from the registers or the argument registers (traced
+            # writes).  Which side changes is not decided.
             self.alone('a merger input bound to a vector')
             # "When a vector is unified to an MHV, as many input
             # streams (MHVs) as the arity of the vector are added to
@@ -2089,7 +2096,6 @@ class Machine:
 
     # ---- one processor ------------------------------------------------
     def i_enqueue_goal_to_processor(self, pc, x, y, z, c16):
-        self.alone('enqueue_goal_to_processor')
         # Goal@processor(N).  Two cells, as enqueue_goal_with_priority
         # (assembler/klb_opr.kl1 p(r_c16_c8_exe)): the processor's
         # register, the label; the arity in the next cell's top byte.
@@ -2105,7 +2111,6 @@ class Machine:
         return pc + 2
 
     def i_read_eagerly(self, pc, x, y, z, c16):
-        self.alone('read_eagerly')
         # What the compiler writes for `alternatively.` (library/
         # compiler/indexornot.kl1 compile_one_block: "&code <<=
         # [read_eagerly]").  The clauses after it are tried "not only

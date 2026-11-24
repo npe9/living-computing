@@ -34,7 +34,7 @@ mkdir -p build_pimm
 # Each test writes its script, the driver executes it, the test
 # compares the trace with the reference model's.
 # With arguments: only those tests (a fault injection's quick run).
-for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm file file3 pool load mrb atab cons run link unif s32 ipll p2c apply where shoen}; do
+for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm file file3 pool load mrb atab cons run link unif s32 ipll p2c apply where shoen alt body elw reuse}; do
   python3 ../ref/pimm/lockstep_$t.py --script generated/pimm_script.hex
   ./build_pimm/sim_pimm_driver | python3 ../ref/pimm/lockstep_$t.py
 done
