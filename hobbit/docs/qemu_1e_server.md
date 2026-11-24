@@ -702,22 +702,29 @@ terminal's tree is on `/mnt/term`, served back by the terminal's
 
 ### Reproducing
 
-From `build.sh`'s disks (or an `fs.img` with the overlay refreshed by
-`overlay.sh`):
+`build.sh` now ends with the two new steps, `authinit.py` and
+`cpukernel.sh`, so from the tarball:
 
 ```sh
-sh hobbit/tools/qemu1e/floppies.sh          # /authinit, /mkcpu, /lib/ndb/served on fd.img
-sh hobbit/tools/qemu1e/overlay.sh           # services, pccpu into fs.img
-python3 hobbit/tools/qemu1e/authinit.py     # once: /adm/keys, glenda (writes fs.img)
-sh hobbit/tools/qemu1e/cpukernel.sh         # build/qemu-cpu/fd-cpu.img (~1 min)
-PORT_BASE=13901 python3 hobbit/tools/qemu1e/net_test.py    # 68 s; PASS
+P9TAR=.../plan9-1e.tar.bz2 sh hobbit/tools/qemu1e/build.sh   # 13m53s, 2026-11-24
+P9PORT=13640 sh hobbit/tools/qemu1e/probe-tcp.sh             # PASS
+PORT_BASE=13901 python3 hobbit/tools/qemu1e/net_test.py      # ~70 s; PASS
 ```
 
-`net_test.py --login-only` leaves cpu9 out.  It is not in `tests/run_tests.sh`: it needs the built disks and three QEMUs.  Everything runs
-`-snapshot` except `overlay.sh` and `authinit.py`.  This was run on an
-`fs.img` from a 2026-11-23 `build.sh` run (cloned; the tarball had
-gone from `/tmp` meanwhile), with the new steps applied incrementally;
-a fresh `build.sh` with them, end to end, has not been run.
+Run so on 2026-11-24 into an empty `build/qemu` (tarball sha256 OK,
+the seven pinned inputs and patched kernels OK, `kfsinit done`,
+authinit PASS, `sha256 (kerndate zeroed) 9726b19c...: OK`); then the
+probe (`walk: ... missing 0, length differs 0, extra 569`, PASS) and
+`net_test.py` (`check: bad user response`, `check: user glenda ok`,
+the terminal's `ls /mnt/keys` empty, two `rexauth: user glenda to cpu9
+ok`, remote `/dev/sysname` `cpu9`; hub frames 2068, 817, 1058; PASS).
+On an existing build, `floppies.sh`, `overlay.sh`, `authinit.py`
+(once) and `cpukernel.sh` do the same incrementally.
+`net_test.py --login-only` leaves cpu9 out.  It is not in
+`tests/run_tests.sh`: it needs the built disks and three QEMUs.
+Everything runs `-snapshot` except `build.sh`, `overlay.sh` and
+`authinit.py`.  `il_term_test.py` (both `none` and
+`TERMUSER=glenda`) passed on the earlier, incrementally updated disks.
 
 ### What is left
 

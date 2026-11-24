@@ -17,7 +17,9 @@
 #   build/qemu/fd-term.img        the same floppy with 9pc.qs (9pc, patched, stripped) as 9DOS
 #   build/qemu/release.arch       the whole release as a mkfs archive
 #   build/qemu/arch.img           that archive as a raw IDE disk
-#   build/qemu/fs.img             the kfs disk, reamed and filled by 1e in QEMU
+#   build/qemu/fs.img             the kfs disk, reamed and filled by 1e in QEMU,
+#                                 with /adm/keys and glenda (authinit.py)
+#   build/qemu-cpu/fd-cpu.img     the CPU server floppy (cpukernel.sh)
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 hob=$(cd "$here/../.." && pwd)
@@ -49,3 +51,8 @@ python3 "$here/mkdisk.py" "$Q/fs.img" --fs "$FSMB"
 cd "$Q"
 python3 -u "$here/qemu1e.py" --workdir run --fd fd.img --hd fs.img --hd2 arch.img \
 	--log run/provision.log "$here/provision.script"
+
+# section 5: the auth database and glenda (writes fs.img), then the
+# CPU-server kernel built in the guest (build/qemu-cpu/fd-cpu.img)
+python3 -u "$here/authinit.py"
+sh "$here/cpukernel.sh"
