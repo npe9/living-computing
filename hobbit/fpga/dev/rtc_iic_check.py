@@ -879,8 +879,11 @@ def mcp_sequences():
         rtctime(s)
         seqs.append(s)
 
-    for hr, name in ((0x40 | 0x20 | 0x02, "2 PM"), (0x40 | 0x12, "12 AM"),
-                     (0x40 | 0x20 | 0x12, "12 PM"), (0x40 | 0x09, "9 AM")):
+    # every 12-hour value, 12 AM .. 11 PM (Rtc.bsv hour24 is a table)
+    for h24 in range(24):
+        h12 = h24 % 12 or 12
+        hr = 0x40 | (0x20 if h24 >= 12 else 0) | bcd(h12)
+        name = "%d %s" % (h12, "PM" if h24 >= 12 else "AM")
         regs = [0x80, 0x15, hr, 0x23, 0x28, 0x02, 0x96]
         s = McpSeq("seed from a 12-hour chip, %s" % name, "mkRtc_m1",
                    [chip(regs)], "chip")
