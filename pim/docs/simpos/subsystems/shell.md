@@ -121,10 +121,15 @@ as_server_program               started by a network connection request (§2.3)
 as_interrupt_program            nature of pimscsi classes (ptf); no source user
 as_trap_program                 nature of pimmcsp##yield_trap_handler (ptf)
 as_boot_program                 the program run by the boot process (TM-100 p6, p13; STRUCTURE §10)
-as_resource                     "inherits simpos##as_program due to SIMPOS rules"; window and filter
-                                classes inherit as_resource (PIMOS manual Eman/e-strio.tex:25-27,
-                                PROSE; sweep_2026-11-24.md §2.6)
 ```
+
+- **`as_resource` and `as_program`: the sources conflict** (`sweep_2026-11-24.md` §2.6). The PIMOS
+  manual's English text says `simpos##as_resource` "inherits simpos##as_program due to SIMPOS rules",
+  and that window and filter classes inherit `as_resource` (`Eman/e-strio.tex:25-27`). The Japanese
+  original, left commented out at `:20-23`, says instead that by SIMPOS's rule `as_resource` must not
+  be inherited together with `as_program`. Usage contradicts the Japanese rule: kappa2 has classes
+  with natures `{as_program|as_resource|as_class_with_lock}` (`../required/classes.tsv:282,311,461`).
+  Neither reading is settled. `as_resource` is not placed in the tree above.
 
 - **Census** (USAGE). 170 IFS user classes in 14 programs reach a program nature: 164
   `as_program`, 6 `as_server_program`, plus 4 `as_event_handler` handlers (notes: ifs_libshell §1.4).
@@ -248,6 +253,24 @@ Slots read on as_program receivers (`!code`, `!selected_key`, `!menu`, `!debugge
 **Role.** A program started on a PSI when a remote node asks for a connection by service name. The
 requester uses `:spawn(#net_spawn_user,Node,"talk_output",Line,nil,_,Status)`. The server's
 `:goal/1` first accepts the request, then reads who asked. USAGE (fuzclust talk, 7.1).
+
+**Service table** (HELD-SOURCE, application-carried copy; `sweep_2026-11-24.md` §2.6). The service
+names map to classes in SIMPOS's `>sys>tcpip>net_config.dat`. fuzclust ships a 52-line copy of that
+file as its install sample, headed "version SIMPOS 7_han 91/07/19" (`fuzclust/fuzclust/install/net_config.dat:1-52`).
+It holds:
+- the `@spawn` / `@@process` table: 5 `simpos##talk_input`, 6 `talk_output`, 8 `x_server`, 9
+  `remote_printer`, 2000 `spawn` and 2001 `sline`, plus site additions (2010
+  `pimos_remote_login_server`, and 3000-3003 for GRAPE);
+- the `@tcpip_menu` tools and manipulators: FTP `simpos##ftp`, TELNET `telnet`, MAIL `tcpip_mail`,
+  TALK `talk`, BROADCAST `tcpip_network_broadcasting`, CONFIG `tcpip_configuration_manipulator`,
+  `tcpip_controler` and `tool_main`;
+- the `@boot` classes initiated, `tcpip_host_table`, `tcpip_mail_route_table`, `nline`,
+  `gateway_table` and `talk`;
+- the servers activated, each with 5: `ftp_spawn_server`, `tcpip_mail_receiver`,
+  `tcpip_mail_awaker` and `tcpip_spawn`;
+- the `@FTP`, `@broadcast` and `@gateway` sections.
+
+The PIMOS manual prints the same `@spawn` excerpt (`pimosman/Eman/e-network.tex:22-56`).
 
 | kind | method/arity | uses | args and meaning | grade | citation |
 |---|---|---|---|---|---|

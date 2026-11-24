@@ -177,11 +177,15 @@ treated as documentary, like PRINTED.
    - "Down-sized PSI/SIMPOS TCP/IP Network System Manual" and "… PSI Network System Manual"
      (`pimosman/Eman/e-network.tex:56,80`).
    - None of these is held. No copy or table of contents of 「入出力管理編」 was found.
-6. **The PIMOS manual's SIMPOS set-up steps** (PRINTED/PROSE). `Eman/e-network.tex:22-56` prints
-   SIMPOS's `>sys>tcpip>net_config.dat` spawn table: services 5, 6, 8 and 9 are
-   `simpos##talk_input`, `talk_output`, `x_server` and `remote_printer`. `e-strio.tex:25-27` says
-   `as_resource` inherits `as_program`, and that windows and filters inherit `as_resource`
-   (`sweep_2026-11-24.md` §2.6).
+6. **SIMPOS's TCP/IP configuration file** (HELD-SOURCE, application-carried copy). fuzclust's
+   `install/net_config.dat` (52 lines, "version SIMPOS 7_han 91/07/19") is a sample copy of
+   `>sys>tcpip>net_config.dat`. It holds the TCP/IP menu classes, the boot and server classes, and
+   the spawn table, in which services 5, 6, 8 and 9 are `simpos##talk_input`, `talk_output`,
+   `x_server` and `remote_printer`. Transcribed in `shell.md` §2.3. The PIMOS manual
+   (`Eman/e-network.tex:22-56`, PRINTED) prints the spawn excerpt. `e-strio.tex:25-27` says in
+   English that `as_resource` inherits `as_program`, and that windows and filters inherit
+   `as_resource`. The commented-out Japanese original (`:20-23`) says instead that the two must not
+   be inherited together. This is an open conflict (`sweep_2026-11-24.md` §2.6).
 
 ## 6. Checked and not found
 
