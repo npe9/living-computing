@@ -44,7 +44,10 @@ python3 "$here/test_sem_system.py"
 python3 "$here/test_p9boot.py"
 # The terminal (tools/p9term.py): the screen bitmap, the LCD panel built
 # from screenupdate's writes, the Mouse Systems mouse on Quart channel 3
-# and timed input, at /boot's prompt (~1 min).
+# and timed input, at /boot's prompt (~1 min); s9term's gtexture alone;
+# and a replay of a live 8½ session as tor to 8½'s first settled screen
+# (EightHalfReplayTest, the longest part; P9TERM_8HALF=ls replays the
+# mouse-swept window and `ls` in it as well).
 python3 "$here/test_p9term.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py

@@ -389,11 +389,12 @@ The alternative, `tor`, is the release's demonstration account
 (install.ms: "a stub account we put on the distribution to show you how
 a proper user's directory should be set up"); its `lib/profile` binds
 `$home/tmp` and `$home/bin` and, for `service=terminal`, ends in `exec
-8½ -i 8½start -s -f $font`: the window system, which wants the
-bitmap device (`/dev/bitblt`) and the mouse on Quart channel 3, neither
-of which is modelled beyond the LCD's write counter.  So the console
-stays plain rc as `none`; `glenda` (the server's own console user)
-would fail the same way as `none` did, with no `/usr/glenda`.
+8½ -i 8½start -s -f $font`: the window system, on the bitmap device
+(`/dev/bitblt`) and the mouse on Quart channel 3.  Both are modelled
+since 2026-11-24 ("The terminal", below), and `p9join.py --user tor`
+boots into 8½ ("8½ as `tor`").  `none` stays the default, for the plain
+rc console; `glenda` (the server's own console user) would fail as
+`none` did, with no `/usr/glenda`.
 
 ### The ROM's fpi (CHOICES `fpi-rom`)
 
@@ -670,6 +671,7 @@ after 0.5 mouse -30 200 L         # 0.5 s of model time later, left down
 quiet 30 screen out.png           # once the LCD has been still for 30 s
 after 0.2 type 'ls\r'             # on the console line
 at-cycle 123456789 buttons -      # at a model cycle (--input-log writes these)
+screen 'init: starting' mark      # nothing: only times the next line
 step 50000000 stop
 ```
 
@@ -681,6 +683,75 @@ moves, then its own sum of deltas).  `TerminalTest`
 (25 Hz): `mouse.xy` becomes (70, 250), `mouse.buttons` 1, ten bytes
 arrive on channel 3, the arrow is drawn there, the panel equals the
 bitmap, and the bitmap's checksum is pinned.
+
+### 8½ as `tor`
+
+```
+# live, with the 1e file server in QEMU (lockstep; host ~10 min):
+python3 -u tools/p9join.py --user tor --ports 10931,10932 \
+    --out build/gfx/8half --until NEVER-MATCHES --max-steps 4000000000 \
+    --input tests/net/8half.input
+```
+
+`--user tor` answers `user[none]:` with `tor` and `password:` with
+`--password` (default `password`); `/boot` then prints `boot: password
+not checked!: file does not exist` (the auth dial fails: no auth server
+in the release's setup) and goes on as `tor`.  The profile binds
+`$home/tmp` and `$home/bin` and execs `8½ -i 8½start -s -f
+/lib/font/bit/pelm/euro.9.font`; `8½start` is `window '0 0 785 602'
+rc`.  The input script (live2, 2026-11-24, on the Quart of
+`docs/devices/README.md`) waited for the screen to settle, opened the
+button-3 menu at (400, 800), swept a New window from (60, 640) to
+(700, 1000) with button 3 held, and typed `ls` into it:
+
+| moment | step | pixels sha256 |
+|---|---|---|
+| 8½ settled, `term% ` in 8½start's window (`q1`) | 1,388,344,680 | `7a182d44…` |
+| button 3 held: New Reshape Move Delete Hide (`menu`) | 2,063,875,593 | `e143bf51…` |
+| the swept window, its rc's `term% ` (`new`) | 2,767,523,950 | `c3b1cc7f…` |
+| `ls` in it: `bin lib tmp`, `term% ` (`ls`) | 2,983,469,493 | `a908ac29…` |
+
+2,985,469,493 instructions of which 2,941,421,084 idle-skipped, 149.4 s
+of model time, 1311 frames, 618 s of host time.  The last screen is
+`tests/net/8half_ls.png` (768 × 1024, 2.8 KB): the 8½start window at the
+top, the new window below with `term% ls`, `bin`, `lib`, `tmp` and the
+prompt, and the arrow at (700, 1000).  `EightHalfReplayTest`
+(`tests/test_p9term.py`) replays it (below).
+
+**The background is white, not grey, and the scroll bars are empty.**
+8½ paints its background and scroll-bar thumbs with 1-bit textures
+(`lightgrey`, `darkgrey`) through `/dev/bitblt`'s `texture`, i.e. the
+kernel's `gtexture`.  s9term's `gtexture` (0x80035430) is older than
+`libgnot/gtexture.c`: for a texture narrower than a word it replicates
+the row only to `wneed` = 32 >> ldepth = 16 bits (+0x5aa..+0x5d8, the
+compare with R232) and then converts the row to 2 bits a pixel with the
+`tab01` table indexed by the row's top 16 bits (+0x654..), which that
+replication never filled: every texture word comes out 0, i.e. white.
+`build/gfx/gtex.py` calls s9term's `gtexture` alone on the reference
+model (a 32 × 4 2-bit destination, the 4 × 4 lightgrey rows 8 2 8 2 as
+the kernel held them in the live run, f = S) and gets all-zero words;
+the shipped source replicates while `x < 32` and would give the grey.
+So the white is s9term's own behaviour on this screen, not the model's;
+a kernel built from the shipped source would draw grey.  `GtextureTest`
+(`tests/test_p9term.py`) makes the same call, and as a control the same
+rows already 32 pixels wide, which come out as the expected 2-bit
+pattern.
+
+**The replay.**  `EightHalfReplayTest` replays the live run from
+`tests/net/8half.pcap` (its `--pcap`, 1311 frames) and its `--input-log`
+less the screenshots, with no QEMU: every frame the model sends equals
+the recording.  The suite's run stops at `q1` (1,388,344,680 steps)
+and pins the pixels, 8½start's window border and the white below it;
+`P9TERM_8HALF=ls` replays to the end (2,985,469,493 steps) and also
+compares the screen with `tests/net/8half_ls.png`.  The full replay
+reproduced all four checksums of the table above (build/gfx/rep2,
+2026-11-24).  Half of the host time is 8½ starting up: a replay to `q1`
+with screenshots every 50 M steps (build/gfx/rep3.py, beside another
+replay on a loaded machine) reached step 652 M (the console, unchanged
+since 400 M) at 345 s of host time, 700 M (the screen cleared white)
+at 401 s, 807 M (q1's screen) at 682 s, and the stop at 684 s: after
+8½ has drawn, the idle skip covers the minute of model time to `q1` in
+about two seconds.
 
 ## The idle skip (CHOICES `idle-skip`)
 
@@ -1006,10 +1077,11 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **8½ and the rest of a terminal**: `tor`'s profile (the release's
-   model user) execs 8½, which wants `/dev/bitblt` and the mouse (Quart
-   channel 3); neither is modelled beyond the LCD's write counter, so
-   the console stays plain rc as `none`.
+1. **The rest of a terminal**: 8½ runs as `tor`, with a mouse-swept
+   window and `ls` in it ("8½ as `tor`").  Left: s9term's blank 1-bit
+   textures (its own `gtexture`, above); the Quart's transmit timing
+   (the transmitter is always empty, no per-character delay); the LCD
+   panel is a reading of the driver, not checked against hardware.
 2. **The ack-0 IL sync** (above): a 1e bug in the server's `stil.c`,
    not removed.  It has not been seen since (0 of 612 probe dials, 0 of
    9 live runs); whether `-icount` changes its rate could not be

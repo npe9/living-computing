@@ -1,0 +1,16 @@
+# The live 8½ session of docs/p9boot.md "8½ as `tor`" (run as build/gfx/live2)
+screen 'init: starting /bin/rc' screen build/gfx/8half/init.png
+quiet 30 screen build/gfx/8half/q1.png
+quiet 30 screen build/gfx/8half/q2.png
+after 0.2 move 400 800
+after 0.5 buttons R
+quiet 3 screen build/gfx/8half/menu.png
+after 0.2 buttons -
+quiet 3 move 60 640
+after 0.5 buttons R
+after 0.5 move 700 1000 R
+after 0.5 buttons -
+quiet 30 screen build/gfx/8half/new.png
+after 0.2 type 'ls\r'
+quiet 10 screen build/gfx/8half/ls.png
+after 0.1 stop

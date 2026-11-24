@@ -111,7 +111,8 @@ TERM_CHOICES = {
              "mouse.xy when the script first moves, then its own sum of "
              "deltas, clamped as mouseupdate clamps), `buttons B` (a "
              "packet with no motion), `screen FILE` (dump the bitmap), "
-             "`lcd FILE` (dump the panel) or `stop`.  BUTTONS is a set of "
+             "`lcd FILE` (dump the panel), `mark` (nothing: a point the next "
+             "item's time counts from) or `stop`.  BUTTONS is a set of "
              "L, M, R or `-` for none.  The model is deterministic, so a "
              "script fires at the same instructions in a replay; "
              "--input-log FILE writes what fired as `at-cycle` lines.",
@@ -320,7 +321,7 @@ class InputScript:
         elif act in ("screen", "lcd"):
             if len(args) != 1:
                 raise ValueError("input line %d: %s FILE" % (n, act))
-        elif act != "stop":
+        elif act not in ("stop", "mark"):
             raise ValueError("input line %d: unknown action %r" % (n, act))
         return dict(when=when, arg=arg, act=act, args=args, line=line)
 
@@ -400,6 +401,7 @@ class InputScript:
             b.dump_lcd(args[0])
         elif act == "stop":
             raise Stop("input script: stop (%s)" % it["line"])
+        # "mark": nothing; the item only times the next one
 
     def log_lines(self):
         """The fired items as `at-cycle` lines (--input-log)."""

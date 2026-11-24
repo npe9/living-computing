@@ -9,7 +9,11 @@ Quart channel 3 with the left button down on the second packet, and
 dumps the screen: the bitmap's geometry, the LCD panel equal to the
 bitmap, the kernel's mouse state and the cursor where the mouse went,
 and the pixels' checksum.  ~45 M instructions (most retired by the idle
-skip), ~1 min.
+skip), ~1 min.  GtextureTest calls s9term's own gtexture alone (why 8½'s
+background is white).  EightHalfReplayTest replays a live session as
+tor into 8½ (tests/net/8half.pcap) and pins its screen; the longest
+test here: 742 s of wall time, 315 s of CPU, on a loaded machine
+(2026-11-24; P9TERM_8HALF=ls, to the end: 1082 s, 470 s of CPU).
 
 Discriminating checks, observed 2026-11-24, each injection made in a
 scratch copy of tools/p9term.py put first on the path
@@ -28,6 +32,17 @@ the whole file run:
   test_panel, test_panel_is_the_bitmap.
 * the dump's pixels taken from the high bits of a byte first: FAIL
   test_panel_is_the_bitmap, test_cursor_moved, test_checksum.
+
+EightHalfReplayTest, observed 2026-11-24 the same way
+(build/gfx/inject_half.sh), the class alone:
+
+* the LCD's address shifted 4 bits a write: FAIL test_panel_is_the_bitmap.
+* the dump's pixel order reversed: FAIL test_checksum,
+  test_panel_is_the_bitmap.
+* dy not negated, with P9TERM_8HALF=ls: FAIL test_checksum,
+  test_stopped_by_the_script (2,985,362,639 steps, not 2,985,469,493:
+  the window swept elsewhere), test_the_live_screenshot; every frame
+  still as recorded (the sweep and `ls` touch only the terminal).
 """
 
 import os
@@ -146,6 +161,172 @@ class TerminalTest(unittest.TestCase):
     def test_checksum(self):
         self.assertEqual(p9boot.screen_digest(self.pix), DIGEST)
 
+
+class GtextureTest(unittest.TestCase):
+    """s9term's own gtexture (0x80035430), called alone on the reference
+    model: why 8½'s background and scroll-bar thumbs are white
+    (docs/p9boot.md "8½ as `tor`").  The destination is 32 x 4 at
+    ldepth 1, the source 8½'s lightgrey texture at ldepth 0 (rows 8 2 8 2,
+    as the kernel held them in the live run), f = S.  A 4-pixel-wide
+    texture comes out all zero (white): the image replicates the row only
+    to 16 bits and then reads its top 16.  The same rows already
+    replicated to 32 pixels come out as the grey (a control: the call and
+    the reading of the result work)."""
+
+    DST, DB, SRC, SB, STK, RET = (0x80700000, 0x80700100, 0x80700200,
+                                  0x80700300, 0x80780000, 0x80004000)
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+
+    def gtexture(self, tex_w, rows):
+        boot, hs = self.boot, p9boot.hobbit_sem
+        put = lambda a, v: boot.board.set_word(a, v & 0xFFFFFFFF)
+        for a, base, width, ld, r in (
+                (self.DST, self.DB, 2, 1, (0, 0, 32, 4)),
+                (self.SRC, self.SB, 1, 0, (0, 0, tex_w, 4))):
+            for i, v in enumerate([base, 0, width, ld] + list(r) * 2):
+                put(a + 4 * i, v)
+        for i in range(8):
+            put(self.DB + 4 * i, 0)
+        for i, v in enumerate(rows):
+            put(self.SB + 4 * i, v)
+        for i, v in enumerate([self.RET, self.DST, 0, 0, 32, 4, self.SRC,
+                               12]):                    # f = S
+            put(self.STK + 4 * i, v)
+        st = hs.State(pc=boot.syms.by_name["gtexture"], sp=self.STK,
+                      msp=self.STK, psw=0, isp=self.STK, vb=0,
+                      config_kl=True, cache=[0] * 64, system=boot.sysm)
+        n = 0
+        while st.pc != self.RET and n < 100000:
+            _rec, st = hs.step(st)
+            n += 1
+        self.assertEqual(st.pc, self.RET)
+        return [boot.board.read(self.DB + 4 * i) for i in range(8)]
+
+    def test_narrow_texture_is_white(self):
+        self.assertEqual(self.gtexture(4, (8, 2, 8, 2)), [0] * 8)
+
+    def test_word_wide_texture_is_grey(self):
+        # each 1 bit becomes the 2-bit pixel 3 (black): one in four
+        self.assertEqual(self.gtexture(32, (0x88888888, 0x22222222) * 2),
+                         [0xC0C0C0C0] * 2 + [0x0C0C0C0C] * 2 +
+                         [0xC0C0C0C0] * 2 + [0x0C0C0C0C] * 2)
+
+
+class EightHalfReplayTest(unittest.TestCase):
+    """8½ as tor, replayed (docs/p9boot.md "8½ as `tor`").
+    tests/net/8half.pcap is the --pcap of the live tools/p9join.py run of
+    2026-11-24 (--user tor, --input tests/net/8half.input; the command
+    is in the doc), 1311 frames; HALF_INPUT is that run's --input-log less
+    its screenshots.  The replay boots s9term from the 1e file server's
+    recorded answers, logs in as tor (`password not checked!`), runs
+    tor's profile and 8½, and stops where the live run took its
+    screenshot `q1`: 8½ settled, 8½start's window with rc's `term% `,
+    the background white (s9term's gtexture: GtextureTest).
+
+    P9TERM_8HALF=ls replays the rest of the recording too: button 3's
+    menu, a New window swept from (60, 640) to (700, 1000), `ls` typed
+    in it, and the screen compared with tests/net/8half_ls.png, the live
+    run's last screenshot."""
+
+    FULL = os.environ.get("P9TERM_8HALF") == "ls"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+        cls.boot.script = [(b"il]: ", b"\r"), (b"user[none]: ", b"tor\r"),
+                           (b"password: ", b"password\r")]
+        cls.replay = p9boot.Replay(HALF_PCAP, p9boot.EEPROM_EA)
+        cls.boot.attach(p9boot.Wire(cls.boot.sonic.clock,
+                                    replay=cls.replay))
+        cls.boot.set_inputs(HALF_INPUT if cls.FULL else
+                            ["at-cycle %d stop" % HALF["q1"][0]])
+        cls.status = cls.boot.run(4000000000)
+        cls.info, cls.pix = cls.boot.screen_pixels()
+        cls.at = HALF["ls" if cls.FULL else "q1"]
+
+    def test_stopped_by_the_script(self):
+        self.assertIn("input script: stop", self.status)
+        self.assertEqual((self.boot.cycles, self.boot.steps), self.at[:2])
+
+    def test_every_frame_as_recorded(self):
+        self.assertIsNone(self.replay.mismatch)
+        self.assertEqual(self.boot.sysm.cret_clamps, 0)
+        # the stop at q1 comes 60 s of model time before the next frame
+        self.assertEqual(self.replay.pos, 583 if self.FULL else 542)
+        self.assertEqual(len(self.replay.steps), 583)
+
+    def test_logged_in_as_tor(self):
+        screen = bytes(self.boot.console["screenputs"])
+        self.assertIn(b"user[none]: tor\npassword: \n", screen)
+        self.assertIn(b"boot: password not checked!", screen)
+        self.assertTrue(screen.endswith(b"init: starting /bin/rc\n"))
+
+    def test_panel_is_the_bitmap(self):
+        bad, _written = self.boot.panel_check()
+        self.assertEqual(bad, 0)
+
+    def test_window(self):
+        """8½start's window (0 0 785 602, clipped by the screen): its
+        bottom border, y = 601, black from x = 0 to the screen's edge;
+        below it white, but for the arrow (and, with `ls`, the new
+        window)."""
+        pix, W = self.pix, 768
+        self.assertEqual(set(pix[601 * W:602 * W]), {3})
+        if not self.FULL:
+            self.assertEqual(set(pix[602 * W:]), {0})
+
+    def test_checksum(self):
+        self.assertEqual(p9boot.screen_digest(self.pix), self.at[2])
+
+    def test_the_live_screenshot(self):
+        if not self.FULL:
+            self.skipTest("P9TERM_8HALF=ls")
+        w, h, grey = read_png(os.path.join(HERE, "net", "8half_ls.png"))
+        self.assertEqual((w, h), (768, 1024))
+        self.assertEqual(grey, bytes(255 - 85 * v for v in self.pix))
+
+
+def read_png(path):
+    """(w, h, grey bytes) of an 8-bit grey PNG as p9term.write_image
+    writes it (filter 0 on every row)."""
+    import struct
+    import zlib
+    with open(path, "rb") as f:
+        d = f.read()
+    off, idat, w, h = 8, b"", 0, 0
+    while off < len(d):
+        n, = struct.unpack(">I", d[off:off + 4])
+        kind, body = d[off + 4:off + 8], d[off + 8:off + 8 + n]
+        if kind == b"IHDR":
+            w, h = struct.unpack(">II", body[:8])
+        elif kind == b"IDAT":
+            idat += body
+        off += 12 + n
+    raw = zlib.decompress(idat)
+    return w, h, b"".join(raw[y * (w + 1) + 1:(y + 1) * (w + 1)]
+                          for y in range(h))
+
+
+HALF_PCAP = os.path.join(HERE, "net", "8half.pcap")
+# the live run's --input-log, less its screenshots
+HALF_INPUT = [
+    "at-cycle 1995163610 move 400 800",
+    "at-cycle 2005163610 buttons R",
+    "at-cycle 2070787649 buttons -",
+    "at-cycle 2132006774 move 60 640",
+    "at-cycle 2142006774 buttons R",
+    "at-cycle 2152006774 move 700 1000 R",
+    "at-cycle 2162006774 buttons -",
+    "at-cycle 2774578184 type 'ls\\r'",
+    "at-cycle 2988614887 stop"]
+# (cycles, steps, sha256 of the pixels) at the live run's q1 and its end
+HALF = {"q1": (1391163610, 1388344680,
+               "7a182d449ee765366d511f50fca9861cdc070ed44bf9e41ca48881ae932892cb"),
+        "ls": (2988614887, 2985469493,
+               "a908ac2986d9e6b3457b6d90922a3d8f1a338f8f2b6fb4090e2f0092734d9f63")}
 
 STEPS = {"fired": [22537091, 32506729, 42502279]}
 BASE = 0x805B7968       # xalloc(198656) + 2048 (screeninit+0x4c..+0x68)
