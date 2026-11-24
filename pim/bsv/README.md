@@ -79,7 +79,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test (with arguments, only the tests named). Forty-one tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Forty-two tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -177,6 +177,10 @@ ours). `atom`: `top:go1/4`'s atom-number server, with
 its output never bound, ours; the bench binds it) and a merger input
 bound to a vector (`throw_atom_number_client/4`'s `{E, F}`; the merger
 box's `spread`, the goals made through the argument registers).
+`xmod`: an external call between two modules the IPL loaded
+(`pimm_patch_mkdir360E.sav` through `ipl_loader:load/4`, the bench
+binding the module variable as the linker would; the hash box's
+dereference of the module field), about 7.4 M trace lines.
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines

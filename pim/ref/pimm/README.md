@@ -67,7 +67,8 @@ waiting on an element of its vector, `lockstep_reuse.py`
 `lockstep_prio.py` `current_node` and `calculate_priority_from_current`,
 `lockstep_atom.py` `top:go1/4`'s atom-number server
 (`supply_atom_number`, ours as to what it does) with a merger input
-bound to a vector;
+bound to a vector, `lockstep_xmod.py` an external call between two
+loaded modules;
 `longrun_ipl.py` is the long run (not in the suite); 131
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
