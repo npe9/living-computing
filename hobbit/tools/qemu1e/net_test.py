@@ -137,12 +137,12 @@ def main():
             net1e.wait_prompt(term, r'% *$', 300)
             time.sleep(3)
             net1e.screen_log(term, 'cpu connected?')
-            term.type('cat /dev/sysname; echo; cat /dev/user; echo; ls /mnt/term; echo end of cpu\n')
+            term.type('ls /mnt/term/hobbit; cat /dev/sysname; echo; cat /dev/user; echo; echo end of cpu\n')
             term.wait('^end of cpu', 120)
             time.sleep(3)
             s = net1e.screen_log(term, 'terminal running cpu')
-            if '\ncpu9\n' not in s:
-                print('FAIL: remote /dev/sysname is not cpu9')
+            if '\ncpu9\nglenda\n' not in s or '/mnt/term/hobbit/s9term' not in s:
+                print('FAIL: remote /dev/sysname, /dev/user or /mnt/term')
                 ok = False
             net1e.screen_log(cpu9, 'cpu9 after cpu')
             net1e.screen_log(fs9, 'fs9 after cpu')
