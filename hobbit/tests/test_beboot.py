@@ -59,7 +59,14 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   idle DSP stepped: test_idle_dsp_jumps_to_the_cpu_time; idle DSPs
   counted busy: that test and test_no_idle_skip_while_a_dsp_runs; the
   outside-window log dropped: test_dsp_reaches_the_board_registers; a
-  stop without the access: test_off_window_stops_name_the_dsp.
+  stop without the access: test_off_window_stops_name_the_dsp.  A DSP in
+  waiti not skipped to its timer, or its tick not a timed event:
+  test_waiting_dsp_skips_to_its_timer; a watched store not reported, a
+  DSP's own store reported, a watch accepted on a device register, or a
+  DSP's old watch kept: test_watched_words_report_other_writes.
+- Typing (CHOICES['typing']): no break code: test_scan_codes,
+  test_keys_are_paced_and_bound_the_idle_skip; no pacing, or keys not
+  timed events: test_keys_are_paced_and_bound_the_idle_skip.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -344,6 +351,10 @@ class FakeDsp:
         self.steps = 0
         self.clocks = 1
         self.idle = False
+        self.notified = []
+
+    def notify_write(self, addr, size=4):
+        self.notified.append((addr, size))
 
     def release(self):
         self.log.append("release")
@@ -359,6 +370,37 @@ class FakeDsp:
             self.ops.pop(0)(self.bus)
         self.steps += 1
         return self.clocks
+
+
+class TypingTest(unittest.TestCase):
+    """CHOICES['typing']: --type presses set-2 keys, one every 50 ms."""
+
+    def test_scan_codes(self):
+        self.assertEqual(beboot.scan_codes("a"), [0x1C, 0xF0, 0x1C])
+        self.assertEqual(beboot.scan_codes("\n"), [0x5A, 0xF0, 0x5A])
+        self.assertEqual(beboot.scan_codes("S"),
+                         [0x12, 0x1B, 0xF0, 0x1B, 0xF0, 0x12])
+        self.assertEqual(beboot.scan_codes("_"),
+                         [0x12, 0x4E, 0xF0, 0x4E, 0xF0, 0x12])
+        with self.assertRaises(SystemExit):
+            beboot.scan_codes("\t")
+
+    def test_keys_are_paced_and_bound_the_idle_skip(self):
+        m = beboot.Machine(FakeElf())
+        m.type_text("ls", 100)
+        gap = int(beboot.KEY_INTERVAL * beboot.CPU_HZ)
+        self.assertEqual(m.next_event(), 100)
+        m.cpus[0].cycles = 99
+        m.press_due_keys()
+        self.assertFalse(m.kbc.out)
+        m.cpus[0].cycles = 100
+        m.press_due_keys()
+        self.assertEqual([b for b, _ in m.kbc.out], [0x4B, 0xF0, 0x4B])
+        self.assertEqual(m.next_event(), 100 + gap)
+        m.cpus[0].cycles = 100 + gap
+        m.press_due_keys()
+        self.assertEqual([b for b, _ in m.kbc.out][3:], [0x1B, 0xF0, 0x1B])
+        self.assertIsNone(m.next_event())
 
 
 class DspEmulationTest(unittest.TestCase):
@@ -474,6 +516,39 @@ class DspEmulationTest(unittest.TestCase):
         self.assertEqual(self.m.dsps_busy(), [])
         d.idle = False
         self.assertEqual(self.m.dsps_busy(), [1])
+
+    def test_waiting_dsp_skips_to_its_timer(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        skipped = []
+        d.wait = 12                             # clocks to its next tick
+        d.clocks_until_event = lambda: d.wait
+        d.skip = lambda k: (skipped.append(k), setattr(d, "wait", d.wait - k))
+        self.assertEqual(self.m.next_event(), 6)    # 12 clocks = 6 cycles
+        self.m.cpus[0].cycles = 5               # 10 clocks: 8 skipped, then
+        self.m.step_dsps()                      # less than 4 left: steps
+        self.assertEqual(skipped, [8])
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (2, 10))
+        self.assertEqual(self.m.dsp_idle_clocks[1], 8)
+        d.wait = 0
+        self.assertEqual(self.m.dsps_busy(), [1])
+
+    def test_watched_words_report_other_writes(self):
+        self.reset(0x30)
+        d1, d2 = self.m.dsps[1], self.m.dsps[2]
+        self.assertFalse(d1.bus.watch([(0x60000100, 4), (0x0080001C, 4)]))
+        self.assertTrue(d1.bus.watch([(0x60000100, 4), (0x60000106, 2)]))
+        self.m.board.write(0x08000100, 1, 0xF)          # a CPU's store
+        self.m.board.write(0x08000104, 2, 0x1)
+        self.m.board.write(0x08000108, 3, 0xF)          # not watched
+        d1.bus.write(0x60000100, 4, 4)                  # its own store
+        d2.bus.write(0x60000104, 5, 4)                  # another DSP's
+        self.assertEqual(d1.notified, [(0x60000100, 4), (0x60000104, 4),
+                                       (0x60000104, 4)])
+        self.assertTrue(d1.bus.watch([(0x60000200, 4)]))  # a new spin
+        self.m.board.write(0x08000100, 1, 0xF)
+        self.assertEqual(len(d1.notified), 3)
+        self.assertEqual(sorted(self.m.board.watch), [0x08000200])
 
     def test_release_starts_at_the_cpu_time(self):
         self.m.cpus[0].cycles = 100

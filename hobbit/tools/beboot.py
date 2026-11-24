@@ -70,6 +70,40 @@ NCR_IRQ_DELAY = 2500
 IDLE_KERNEL_SHA256 = ("450716b22c33ed105684cdbe660b73e1843f2308b66fa76f2a153be1"
                       "12167b0b")
 
+# CHOICES['typing']: an AT keyboard's scan code set 2 (the controller's
+# mode byte, 0x03, leaves translation off, and the kernel's _kb_inth reads
+# 0xE0, 0xE1 and 0xF0 prefixes), US layout, for the characters --type
+# accepts; and the model time between two keys.
+SET2 = dict(zip("abcdefghijklmnopqrstuvwxyz",
+                (0x1C, 0x32, 0x21, 0x23, 0x24, 0x2B, 0x34, 0x33, 0x43, 0x3B,
+                 0x42, 0x4B, 0x3A, 0x31, 0x44, 0x4D, 0x15, 0x2D, 0x1B, 0x2C,
+                 0x3C, 0x2A, 0x1D, 0x22, 0x35, 0x1A)))
+SET2.update(zip("1234567890", (0x16, 0x1E, 0x26, 0x25, 0x2E, 0x36, 0x3D,
+                                0x3E, 0x46, 0x45)))
+SET2.update({" ": 0x29, "\n": 0x5A, "/": 0x4A, ".": 0x49, "-": 0x4E,
+             ",": 0x41, "=": 0x55, ";": 0x4C, "'": 0x52, "\b": 0x66})
+SET2_SHIFTED = {"_": "-", "+": "=", ":": ";", '"': "'", "?": "/", ">": ".",
+                "<": ","}
+SET2_SHIFT = 0x12
+KEY_INTERVAL = 0.05         # seconds of model time between two keys
+
+
+def scan_codes(ch):
+    """CHOICES['typing']: the make and break codes for one character."""
+    shift = False
+    if ch.isupper():
+        ch, shift = ch.lower(), True
+    elif ch in SET2_SHIFTED:
+        ch, shift = SET2_SHIFTED[ch], True
+    if ch not in SET2:
+        raise SystemExit("beboot: --type: no scan code for %r" % ch)
+    c = SET2[ch]
+    codes = [c, 0xF0, c]
+    if shift:
+        codes = [SET2_SHIFT] + codes + [0xF0, SET2_SHIFT]
+    return codes
+
+
 # CHOICES['floppy']: seconds from a seek's last step (or a recalibrate
 # on cylinder 0) to its interrupt.
 FDC_SETTLE = 100e-6
@@ -227,9 +261,23 @@ CHOICES = {
            "ch. 1, the draft's least reliable chapter, with no cycle "
            "counts), so a DSP access costs the CPUs nothing here; no "
            "stall is modelled.  The idle skip is not taken while an "
-           "emulated DSP runs and is not idle (the emulator's .idle: an idle "
-           "DSP's clock jumps to the CPUs' time).  The Hobbit's own accesses to physical "
+           "emulated DSP executes (clocks_until_event() == 0); a DSP that "
+           "only the board can wake jumps to the CPUs' time, one in waiti "
+           "skips to its timer tick (skip()), and that tick bounds the "
+           "CPUs' idle skip.  A spinning DSP (the emulator's spin proof) asks "
+           "to have the words it reads watched (DspBus.watch): only "
+           "shadow-RAM words are accepted, and any later store to one by "
+           "a CPU or another DSP is reported (notify_write), which ends "
+           "the spin.  Who clears bits 4-6 of the internal "
+           "interrupt register is not known (vcas_server clears them only "
+           "in _veDspHalt): the level stays until something writes it.  The Hobbit's own accesses to physical "
            "0x60000000 still stop (none has been seen).",
+    "typing": "--type TEXT presses keys on the keyboard, one character "
+              "(make code, then break code, with a shift around capitals "
+              "and shifted punctuation) every 50 ms of model time, from "
+              "--type-at steps on, each byte queued in the VL82C106's "
+              "output buffer: scan code set 2, US layout (SET2).  A typed "
+              "key is a timed event, so the idle skip stops short of it.",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -1574,6 +1622,10 @@ class TridentVga:
 
 
 class Board:
+    # CHOICES['dsp']: RAM words a spinning DSP reads, word -> {n: DSP}
+    # (DspBus.watch); None until a DSP asks.
+    watch = None
+
     def __init__(self, memsize):
         self.ram = {}
         self.ram_hi = RAM_BASE + memsize
@@ -1583,6 +1635,7 @@ class Board:
         self.on_reset = None        # callable(old, new) for the run loop
         self.read_mask = 0xF        # set by hobbit_sem._read_lanes
         self.vga = None             # the display card, when fitted
+        self.dsp_master = None      # DSP n during its bus access
 
     def reset_changed(self, old, new):
         if self.on_reset is not None:
@@ -1621,6 +1674,10 @@ class Board:
                         expanded |= 0xFF << (8 * bit)
                 old = self.ram.get(pa, 0)
                 self.ram[pa] = (old & ~expanded) | (data & expanded)
+            if self.watch and pa in self.watch:
+                for n, d in list(self.watch[pa].items()):
+                    if n != self.dsp_master:
+                        d.notify_write(pa - RAM_BASE + DSP_SHADOW, 4)
             return
         if IO_BASE <= pa < IO_BASE + IO_SIZE:
             self.io.write(pa - IO_BASE, data & MASK32, mask)
@@ -1676,6 +1733,7 @@ class DspBus:
         self.m = machine
         self.n = n
         self.outside = collections.Counter()   # (what, size, addr) -> count
+        self.watched = ()           # RAM words this DSP's spin reads
 
     def _stop(self, what):
         d = self.m.dsps.get(self.n)
@@ -1727,6 +1785,34 @@ class DspBus:
         data = (value & ((1 << (8 * size)) - 1)) << (8 * off)
         self._access(lambda: self.m.board.write(
             pa, data, ((1 << size) - 1) << off), what)
+
+    def watch(self, ranges):
+        """The emulator has proven a spin that reads these (addr, size)
+        bus ranges: promise to report later writes to them by anyone
+        else (notify_write), or refuse.  Only shadow-RAM words can be
+        promised; a device register may change on its own."""
+        board = self.m.board
+        if board.watch is None:
+            board.watch = {}
+        for pa in self.watched:
+            board.watch.get(pa, {}).pop(self.n, None)
+            if not board.watch.get(pa, True):
+                del board.watch[pa]
+        self.watched = ()
+        words = []
+        for addr, size in ranges:
+            if not (DSP_SHADOW <= addr
+                    and addr + size <= DSP_SHADOW + DSP_SHADOW_SIZE):
+                return False
+            lo = (addr - DSP_SHADOW) & ~3
+            words.extend(RAM_BASE + a
+                         for a in range(lo, addr + size - DSP_SHADOW, 4))
+        d = self.m.dsps[self.n]
+        for pa in words:
+            board.watch.setdefault(pa, {})[self.n] = d
+        self.watched = tuple(words)
+        self.m.dsp_watches[self.n] = self.m.dsp_watches.get(self.n, 0) + 1
+        return True
 
     def pins(self, name, level):
         self._stop("drives its %s pin to %r: no DSP pin is wired in this "
@@ -1800,7 +1886,9 @@ class Machine:
         self.dsps = {}              # n -> emulator, once first released
         self.dsp_clock = {}         # n -> DSP clocks (50 MHz)
         self.dsp_steps = {}
+        self.typing = collections.deque()   # (model cycle, [scan codes])
         self.dsp_idle_clocks = {}
+        self.dsp_watches = {}       # n -> spins the board agreed to watch
         self.regs = BoardRegs(self.board)
         io = self.board.io
         for n in range(8):
@@ -1913,6 +2001,20 @@ class Machine:
             if (old ^ new) & bit:
                 d.set_interrupt(bool(new & bit))
 
+    def type_text(self, text, start_cycle):
+        """CHOICES['typing']: queue `text` from model cycle `start_cycle`."""
+        step = int(KEY_INTERVAL * CPU_HZ)
+        for i, ch in enumerate(text):
+            self.typing.append((start_cycle + i * step, scan_codes(ch)))
+
+    def press_due_keys(self):
+        now = self.cpu_frontier()
+        while self.typing and self.typing[0][0] <= now:
+            _, codes = self.typing.popleft()
+            self.kbc._put(self.kbc.KBD, *codes)
+            self.events.append((sum(c.steps for c in self.cpus),
+                                "key %s" % " ".join("%02x" % b for b in codes)))
+
     def cpu_frontier(self):
         return min(c.cycles for c in self.cpus)
 
@@ -1920,11 +2022,19 @@ class Machine:
         return [n for n in sorted(self.dsps)
                 if self.regs.reset & (1 << (n + 3))]
 
+    def dsp_until(self, d):
+        """DSP clocks until `d` can change on its own: 0 while it executes,
+        None while only the board can wake it (the emulator's
+        clocks_until_event(); an emulator without it reports .idle)."""
+        f = getattr(d, "clocks_until_event", None)
+        if f is not None:
+            return f()
+        return None if getattr(d, "idle", False) else 0
+
     def dsps_busy(self):
-        """Released DSPs that are not idle (the emulator's .idle: in
-        waiti with nothing that can wake it but the board)."""
+        """Released DSPs that are executing (not in waiti or reset)."""
         return [n for n in self.dsps_running()
-                if not getattr(self.dsps[n], "idle", False)]
+                if self.dsp_until(self.dsps[n]) == 0]
 
     def step_dsps(self):
         """CHOICES['dsp']: each released DSP runs until its clock reaches
@@ -1933,12 +2043,22 @@ class Machine:
         for n in self.dsps_running():
             d = self.dsps[n]
             while self.dsp_clock[n] < target:
-                if getattr(d, "idle", False):
+                wait = self.dsp_until(d)
+                if wait is None:
                     # Nothing changes until the board acts, and the board
                     # acts only between CPU instructions.
                     self.dsp_idle_clocks[n] += target - self.dsp_clock[n]
                     self.dsp_clock[n] = target
                     break
+                if wait:
+                    # In waiti until its timer: skip whole instruction
+                    # cycles (4 clocks) up to the event or the CPUs' time.
+                    k = min(wait, target - self.dsp_clock[n]) & ~3
+                    if k:
+                        d.skip(k)
+                        self.dsp_idle_clocks[n] += k
+                        self.dsp_clock[n] += k
+                        continue
                 try:
                     clocks = d.step()
                 except DspStop:
@@ -1981,6 +2101,13 @@ class Machine:
         if self.ncr.int_at is not None:
             due.append(self.ncr.int_at)
         due.extend(t * CPU_HZ for t, _, _ in self.fdc.pending)
+        if getattr(self, "typing", None):
+            due.append(self.typing[0][0])
+        for n in self.dsps_running() if getattr(self, "dsps", None) else ():
+            wait = self.dsp_until(self.dsps[n])
+            if wait:                # a DSP timer tick, in CPU cycles
+                due.append((self.dsp_clock[n] + wait)
+                           // DSP_CLOCKS_PER_CYCLE)
         return min(due) if due else None
 
     def try_idle_skip(self, cpu, budget):
@@ -2087,6 +2214,8 @@ class Machine:
                 self.deliver(cpu)
                 if self.dsps:
                     self.step_dsps()
+                if self.typing:
+                    self.press_due_keys()
                 if self.idle_skip and cpu.state.pc == self.idle_head:
                     total += self.try_idle_skip(cpu, start + max_steps - total)
                 if cpu.sysm.events:
@@ -2137,6 +2266,10 @@ def main(argv):
                     "to this PNG file when the run ends")
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every idle lap (CHOICES['idle-skip'])")
+    ap.add_argument("--type", help="keys to press (CHOICES['typing']); "
+                    "\\n is Return")
+    ap.add_argument("--type-at", type=int, default=0,
+                    help="start typing once this many steps have run")
     ap.add_argument("--dsp", choices=("inert", "emulated"), default="inert",
                     help="the DSP3210s (CHOICES['dsp'])")
     args = ap.parse_args(argv)
@@ -2147,12 +2280,18 @@ def main(argv):
         elf, prior = m.elf, m.steps
         if not hasattr(m.regs, "dsp_log"):     # saved before CHOICES['dsp']
             m.regs.dsp_log = []
+        if not hasattr(m, "typing"):            # saved before --type
+            m.typing = collections.deque()
         if not hasattr(m, "dsps"):              # saved before DSP emulation
             m.board.on_internal = m.internal_changed
             m.dsp_mode, m.dsp_class = "inert", None
             m.dsps, m.dsp_clock, m.dsp_steps = {}, {}, {}
         if not hasattr(m, "dsp_idle_clocks"):
             m.dsp_idle_clocks = {n: 0 for n in m.dsps}
+        if not hasattr(m, "dsp_watches"):
+            m.dsp_watches = {}
+        if not hasattr(m.board, "dsp_master"):
+            m.board.dsp_master = None
         if (args.dsp == "emulated" and m.regs.reset & 0x70
                 and m.dsp_mode != "emulated"):
             raise SystemExit("beboot: %s was saved with a DSP already "
@@ -2176,8 +2315,20 @@ def main(argv):
         m.dsp_class = load_dsp_class()
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
-    status = m.run(args.max_steps,
-                   args.until.encode("latin-1") if args.until else None)
+    until = args.until.encode("latin-1") if args.until else None
+    budget = args.max_steps
+    status = "max-steps"
+    if args.type:
+        text = args.type.replace("\\n", "\n").replace("\\b", "\b")
+        ahead = args.type_at - getattr(m, "steps", 0)
+        if ahead > 0:
+            status = m.run(min(ahead, budget), until)
+            budget -= min(ahead, budget)
+        if status == "max-steps" and budget > 0:
+            m.type_text(text, m.cpu_frontier())
+            print("beboot: typing %r from step %d" % (text, m.steps))
+    if status == "max-steps" and budget > 0:
+        status = m.run(budget, until)
     for step, cpu, name in m.reached[-args.show:]:
         print("reached %9d CPU %d %s" % (step, cpu, name))
     for step, what in list(m.events)[-20:]:
@@ -2192,8 +2343,10 @@ def main(argv):
                  m.dsp_mode))
     for n in sorted(m.dsps):
         d = m.dsps[n]
-        print("DSP%d: %d steps, %d clocks (%d of them idle), pc %s%s" % (
+        print("DSP%d: %d steps, %d clocks (%d of them skipped, %d spins "
+              "watched), pc %s%s" % (
             n, m.dsp_steps[n], m.dsp_clock[n], m.dsp_idle_clocks[n],
+            m.dsp_watches.get(n, 0),
             "%08x" % d.pc if getattr(d, "pc", None) is not None else "?",
             ", idle" if getattr(d, "idle", False) else ""))
         for (what, size, addr), k in sorted(d.bus.outside.items()):
