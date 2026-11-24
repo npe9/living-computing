@@ -3,7 +3,7 @@
 # build/qemu/fs.img, with 1e's mkext, without re-running build.sh.
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
-Q=$(cd "$here/../.." && pwd)/build/qemu
+Q=${QEMU1E_Q:-$(cd "$here/../.." && pwd)/build/qemu}
 python3 "$here/mkarchive.py" "$here/overlay" "$Q/overlay.arch" rc
 python3 "$here/mkdisk.py" "$Q/overlay.img" --data "$Q/overlay.arch"
 cd "$Q"

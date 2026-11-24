@@ -277,6 +277,8 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
 
 ### 1.4 The packet and message format the IPL speaks (READ from `scsi_fep_module`, `scsi_fep_file`, `scsi_processor`)
 
+*(The whole command set and the order of the start, from the PIMOS source: `docs/fep_services.md`.)*
+
 **SCSI level.** One built-in, `scsi_command(Obj, {Unit, LUN, CDB,
 Length, Dir, Buffer, 0}, ^Data, ^TransferredLength, ^Id, ^Result,
 ^NewObj)` (operand directions from `compiler/blt.kl1`). The IPL uses

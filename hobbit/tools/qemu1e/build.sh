@@ -5,6 +5,9 @@
 #
 #   tools/qemu1e/build.sh [/path/to/plan9-1e.tar.bz2] [fs-size-MB]
 #
+# The tarball: the argument, else $P9TAR, else hobbit/build/dist/ (the
+# durable copy), else /tmp/p9/ (where it first was; /tmp gets cleaned).
+#
 # Produces
 #   build/qemu/src/plan9-1e/      the release, extracted
 #   build/qemu/9dos.q, 9pc.q      shipped kernels, patched for QEMU (patch_kernel.py)
@@ -14,12 +17,18 @@
 #   build/qemu/fd-term.img        the same floppy with 9pc.qs (9pc, patched, stripped) as 9DOS
 #   build/qemu/release.arch       the whole release as a mkfs archive
 #   build/qemu/arch.img           that archive as a raw IDE disk
-#   build/qemu/fs.img             the kfs disk, reamed and filled by 1e in QEMU
+#   build/qemu/fs.img             the kfs disk, reamed and filled by 1e in QEMU,
+#                                 with /adm/keys and glenda (authinit.py)
+#   build/qemu-cpu/fd-cpu.img     the CPU server floppy (cpukernel.sh)
 set -e
 here=$(cd "$(dirname "$0")" && pwd)
 hob=$(cd "$here/../.." && pwd)
 Q=$hob/build/qemu
-TAR=${1:-/tmp/p9/plan9-1e.tar.bz2}
+TAR=${1:-$P9TAR}
+if [ -z "$TAR" ]; then
+	TAR=$hob/build/dist/plan9-1e.tar.bz2
+	[ -f "$TAR" ] || TAR=/tmp/p9/plan9-1e.tar.bz2
+fi
 FSMB=${2:-1024}
 SHA=8718e279aa35b10a9391f330976d31c177bad00de40e7f0f67232ffa54fb7d77
 
@@ -42,3 +51,8 @@ python3 "$here/mkdisk.py" "$Q/fs.img" --fs "$FSMB"
 cd "$Q"
 python3 -u "$here/qemu1e.py" --workdir run --fd fd.img --hd fs.img --hd2 arch.img \
 	--log run/provision.log "$here/provision.script"
+
+# section 5: the auth database and glenda (writes fs.img), then the
+# CPU-server kernel built in the guest (build/qemu-cpu/fd-cpu.img)
+python3 -u "$here/authinit.py"
+sh "$here/cpukernel.sh"
