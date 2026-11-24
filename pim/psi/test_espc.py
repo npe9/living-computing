@@ -131,7 +131,14 @@ restored with cp and checked with cmp):
     get_sender/2 reading the receiver slot: only test_step3d_message
     fails; pmacs_window create/3 not setting the editor's window: only
     test_step3d_window_and_timer fails; common_network is_installed/1
-    failing: only test_fep_census fails.
+    failing: only test_fep_census fails; with_lock's instance :lock
+    without its :unlock alternative: only test_step3d_lock fails;
+    message get_content/2 reading the sender slot: only
+    test_step3d_message fails; alarm_watch wait/1 failing, and time
+    set_count/2 failing: each only test_on_after_gets_further fails;
+    network_listener_buffer create/4 failing, and trace trace/1
+    failing: each test_step3d_window_and_timer and test_fep_census
+    fail.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
@@ -846,6 +853,13 @@ end.''', 'simpos')
         t = K.make_instance(m, 'pimfep##fep_device_table')
         self.assertTrue(any(True for _ in m.solve_send(t, 'lock', [t])))
         self.assertTrue(any(True for _ in m.solve_send(t, 'locked', [t])))
+        # backtracking into an instance's :lock unlocks it (the alternative
+        # clause, INFERENCE from the class form): exhaust lock/1, then the
+        # table is no longer locked
+        m.reset()
+        t = K.make_instance(m, 'pimfep##fep_device_table')
+        self.assertEqual(sum(1 for _ in m.solve_send(t, 'lock', [t])), 1)
+        self.assertFalse(any(True for _ in m.solve_send(t, 'locked', [t])))
 
     def test_step3d_message(self):
         # as_message and message (INTERPOLATED from TR-056 p.12 and TM-100
@@ -869,8 +883,9 @@ end.''', 'simpos')
         self.assertEqual(self.send(e[0], 'get_window', K.Var()), [[w]])
         cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
         self.assertIn('simpos##pmacs_window:activate/1', detail)
-        # trace, common_network, network_listener_buffer: the pimfep
-        # callers run to a solution (no tracer, no network: OURS)
+        # trace and network_listener_buffer: the pimfep callers run to a
+        # solution (no tracer: OURS).  common_network's callers are
+        # covered by test_fep_census only
         for cid, sel in (('pimfep##simpos_user_device', 'trace_string_io'),
                          ('pimfep##pimos_login_requester', 'buffer')):
             o = K.make_instance(m, cid)
