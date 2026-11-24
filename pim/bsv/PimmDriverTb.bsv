@@ -4,15 +4,25 @@
 // generated/pimm_script.hex, written by a lockstep test through
 // ref/pimm/driver.py, which documents the operations and plays the
 // same script on the reference model for comparison.
+//
+// The SCSI device is a tape (ref/pimm/driver.py "The device tape"): the
+// answers the reference model's device gave, in order, after the
+// script's END.  Each command the core puts on its port is printed as a
+// B line from what the core sent, then answered from the tape.
 package PimmDriverTb;
 
 import RegFile::*;
 import PimmGen::*;
 import PimmTypes::*;
 import PimmCore::*;
+import PimmScsiBox::*;
 
 typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
-               NewStr, SetEl, Ptr, Slot, SetW } Kind deriving (Bits, Eq);
+               NewStr, SetEl, Ptr, Slot, SetW, Poll, Tape } Kind deriving (Bits, Eq);
+
+// the device: idle, printing a command's CDB, printing a SEND's bytes,
+// giving an answer's bytes
+typedef enum { DevIdle, DevCdb, DevData, DevAnswer } DevState deriving (Bits, Eq);
 
 module mkPimmDriverTb(Empty);
   PimmCore core <- mkPimmCore("generated/pimm_ipl.hex");
@@ -35,6 +45,14 @@ module mkPimmDriverTb(Empty);
   Bit#(4) sa = truncate(a);
   Bit#(4) sb = truncate(b);
 
+  // the device tape: where the next entry is; none, no device
+  Reg#(Bool)     hasTape <- mkReg(False);
+  Reg#(Bit#(24)) tp      <- mkRegU;
+  Reg#(DevState) dev     <- mkReg(DevIdle);
+  Reg#(Bit#(32)) left    <- mkRegU;     // bytes still to print, or to give
+  Reg#(ScsiCmd)  cmd     <- mkRegU;
+  Reg#(Bool)     low     <- mkRegU;     // the answer: the tape word's low half next
+
   rule request (!awaited);
     Bool answer = False;
     case (kind)
@@ -54,6 +72,8 @@ module mkPimmDriverTb(Empty);
       SetW:   begin core.pokeWord(slot.sub(sa), zeroExtend({b, cell_.tag}), cell_.val); answer = True; end
       Ptr:    slot.upd(sa, mkCell(cell_.tag, slot.sub(sb).val));
       Slot:   slot.upd(sa, cell_);
+      Poll:   begin core.scsiPoll; answer = True; end
+      Tape:   begin hasTape <= True; tp <= truncate(cell_.val); end
       default: fatal("driver: operation not implemented");
     endcase
     if (answer) awaited <= True;
@@ -100,6 +120,117 @@ module mkPimmDriverTb(Empty);
     let ok <- core.unifyDone;
     awaited <= False;
     ip <= ip + 1;
+  endrule
+
+  rule polled (awaited && kind == Poll);
+    let n <- core.scsiPolled;
+    awaited <= False;
+    ip <= ip + 1;
+  endrule
+
+  // ---- the device ----------------------------------------------------------
+  // the top `n` bytes of a word, in hex
+  function Action hexBytes(Bit#(32) w, Bit#(32) n);
+    action
+      case (n)
+        1: $write("%02x", w[31:24]);
+        2: $write("%04x", w[31:16]);
+        3: $write("%06x", w[31:8]);
+        default: $write("%08x", w);
+      endcase
+    endaction
+  endfunction
+
+  function Bit#(32) min4(Bit#(32) v) = v < 4 ? v : 4;
+  Bit#(64) entry = script.sub(tp);
+  Bit#(8)  entryKind = entry[63:56];
+
+  function Action noTape(String why);
+    action
+      $display("X device tape: %s at word %0d", why, tp);
+      $finish(1);
+    endaction
+  endfunction
+
+  // the line ends; the tape's answer
+  function Action answerCommand;
+    action
+      $display("");
+      if (entryKind == 2) begin
+        core.scsiResp(tagged Answer { ready: False, result: 0, n: 0 });
+        tp <= tp + 1;
+        dev <= DevIdle;
+      end
+      else if (entryKind == 3) begin
+        Bit#(32) nb = zeroExtend(entry[55:32]);
+        core.scsiResp(tagged Answer { ready: True, result: entry[31:0], n: nb });
+        tp <= tp + 1;
+        left <= nb;
+        low <= False;
+        dev <= nb == 0 ? DevIdle : DevAnswer;
+      end
+      else noTape("not a command's answer");
+    endaction
+  endfunction
+
+  // after the CDB: direction and length, then a SEND's bytes
+  function Action afterCdb(ScsiCmd c);
+    action
+      $write(" %0d %0d", c.dir, c.length);
+      if (c.dir == 1 && c.length != 0) begin
+        $write(" ");
+        left <= pack(c.length);
+        dev <= DevData;
+      end
+      else answerCommand;
+    endaction
+  endfunction
+
+  rule devRequest (dev == DevIdle);
+    let r <- core.scsiReq;
+    case (r) matches
+      tagged Init: begin
+        $display("B init");
+        if (!hasTape) noTape("none");
+        else if (entryKind != 1) noTape("not scsi_init's answer");
+        else begin
+          core.scsiResp(tagged Size entry[31:0]);
+          tp <= tp + 1;
+        end
+      end
+      tagged Command .c: begin
+        if (!hasTape) noTape("none");
+        $write("B %0d %0d ", c.unit, c.lun);
+        cmd <= c;
+        if (c.cdbLen == 0) afterCdb(c);
+        else begin
+          left <= c.cdbLen;
+          dev <= DevCdb;
+        end
+      end
+      default: fatal("driver: a word from the core where a command was expected");
+    endcase
+  endrule
+
+  rule devWord (dev == DevCdb || dev == DevData);
+    let r <- core.scsiReq;
+    if (r matches tagged Word .w) begin
+      hexBytes(w, min4(left));
+      if (left > 4) left <= left - 4;
+      else if (dev == DevCdb) afterCdb(cmd);
+      else answerCommand;
+    end
+    else fatal("driver: a command from the core where a word was expected");
+  endrule
+
+  rule devAnswer (dev == DevAnswer);
+    Bit#(64) d = script.sub(tp);
+    core.scsiResp(tagged Data (low ? d[31:0] : d[63:32]));
+    left <= left - min4(left);
+    low <= !low;
+    // the last word's other half, if it is not used, is padding
+    if (low || left <= 4) tp <= tp + 1;
+    if (left <= 4) dev <= DevIdle;
   endrule
 endmodule
 

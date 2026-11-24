@@ -120,6 +120,35 @@ under a SIMPOS reconstruction (or its stubs) on a PSI model and
 replace `fep.py` behind the same port. Its answers then check every
 OURS answer of `fep.py`; differences are recorded, not smoothed.
 
+### Status (2026-11-23)
+
+- **S1 done.** `bsv/PimmScsiBox.bsv`: `init`/`initInfo`/`command`/
+  `result` from the exec stage (a small hook in `PimmStages.bsv`),
+  `poll`/`polled` from the bench; the device on `mkPimmCore`'s port
+  `scsiReq`/`scsiResp`. The buffer size is the device's (asked by
+  `scsi_init`, `B init`), as on the reference.
+- **S2 done.** The reference records each device answer
+  (`Machine.scsi_tape`); `driver.py` writes them after the script's
+  END (`TAPE` word, "The device tape"); the script's new `POLL` is the
+  dry-machine poll. Both models print a `B` line per try (unit, LUN,
+  CDB, direction, length, a SEND's bytes); the bench's from what the
+  core sent. Extension needed and taken: `POLL` (the flow had no
+  "the machine has run dry" point of its own) and the tape; a long
+  vector (seven elements) is built from `NEWVAR`/`UNIFY`/`PTR`, no new
+  operation.
+- **S3 in part.** `ref/pimm/lockstep_scsi.py` runs `scsi_init` and
+  `scsi_command` in lockstep at their sites (`scsi:create/2`,
+  `scsi:command_executer/2`): TEST UNIT READY, SEND, RECEIVE, a reply
+  cut in two, both waiting paths, an element waited for; injections
+  in its header. `scsi_command`'s `Machine.ahead` gate (waiting on an
+  element) is removed. `ref_scsi.py`'s six IPL parts are written as
+  scripts and pass `ref_scsi.check` and the bus check under
+  `lockstep_scsi.py --reference`, but are NOT on the core: the IPL
+  binds a merger input to a vector (`scsi_fep_general:
+  request_device_io/5`), which the core refuses. The suite's run FAILS
+  once the reference stops refusing it without `Machine.ahead`, so
+  that they are moved in and pinned then.
+
 ## 4. Order and dependencies
 
 S0 and S1 are independent and go first, in parallel. S2 needs S1.

@@ -63,16 +63,20 @@ the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
 waiting on an element of its vector, `lockstep_reuse.py`
-`put_reused_structure` of a vector of seven or more;
-`longrun_ipl.py` is the long run (not in the suite); 128
-instructions on both models.  On the reference model ALONE, a
-prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
-a small model of the front-end processor (`fep.py`), with
+`put_reused_structure` of a vector of seven or more,
+`lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
+against a small model of the front-end processor (`fep.py`), the
+device on the bench a tape the reference recorded (`driver.py` "The
+device tape"; the bus compared as `B` lines);
+`longrun_ipl.py` is the long run (not in the suite); 130
+instructions on both models.  On the reference model ALONE:
 a merger input bound to a vector
 (refused unless `Machine.ahead` is set; the core cannot yet make its
 goals as the reference does, see `pimm.py`'s header); `ref_scsi.py` runs the body of `ipl:boot0` on
-them, the IPL reading its list and its files through its own SCSI
-stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
+the SCSI built-ins, the IPL reading its list and its files through its own SCSI
+stack (`python3 ref/pimm/ref_scsi.py`, about a minute), which needs
+that merger; `lockstep_scsi.py --reference` plays its six parts as
+scripts, ready for the core.  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
 (`docs/pimm_semantics.md` "The MRB"), of the shoen only its first

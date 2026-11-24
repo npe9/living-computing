@@ -72,14 +72,15 @@ instruction and is tested by trace comparison with it.
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element |
 | `PimmShBox.bsv` | shoen box (stage 1): the shoen record, the report stream, start, the count at the end of a reduction and termination |
+| `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
-| `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`) |
+| `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`), and answers the core's SCSI port from the script's device tape, printing a `B` line per command from what the core sent |
 | `generated/PimmGen.bsv`, `generated/pimm_ipl.hex` | tags, opcodes, predicate addresses, record layouts, and the image followed by the built-in stubs, written by `../asm/gen_pimm_bsv.py`; no tag or opcode is typed by hand |
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test (with arguments, only the tests named). Thirty-nine tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Forty tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -168,7 +169,15 @@ only). `elw`: `string_operation` waits on an element of its vector
 that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
 `b_string`'s real sites, and `builtin_utility:append_string/2`).
 `reuse`: `put_reused_structure` of a vector of seven
-(`scsi_fep_file:request_device_io/6`).
+(`scsi_fep_file:request_device_io/6`). `scsi`: `scsi_init` and
+`scsi_command` (`PimmScsiBox.bsv`) at their sites
+(`scsi:create/2`, `scsi:command_executer/2`), the device on the
+tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE,
+a reply cut in two, a command that waits finished inside a SEND and
+one at a poll, an element waited for; the bus bytes compared as `B`
+lines. `ref_scsi.py`'s IPL parts are not on the core yet (a merger
+input bound to a vector; `lockstep_scsi.py --reference` runs them as
+scripts on the reference).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -176,7 +185,7 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 128
+State: 130
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

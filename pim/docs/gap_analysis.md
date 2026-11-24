@@ -227,6 +227,14 @@ reference model alone. `ref/pimm/ref_scsi.py` runs the body of
 does not serve. It serves only 201, 210, 60 and 70, and the run
 completes, so the IPL sent no 400 or 500 (`binary_reverse_engineering.md` §1.4, "Run"). That
 covers our FEP model and the path `boot0` takes, not the real FEP.)*
+*(Note 2026-11-23, later: `scsi_init` and `scsi_command` are on the
+Bluespec core too, `bsv/PimmScsiBox.bsv`, with the device outside the
+core on a port; the lockstep bench answers it from a tape the
+reference recorded, and the bytes the core puts on the bus are
+compared as `B` trace lines (`ref/pimm/lockstep_scsi.py`, at
+`scsi:create/2` and `scsi:command_executer/2`). The IPL's own file
+service (`ref_scsi.py`'s parts) is not on the core yet: it binds a
+merger input to a vector. `docs/scsi_plan.md` S1-S3.)*
 
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are

@@ -22,6 +22,7 @@ import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
 import PimmShBox::*;
+import PimmScsiBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -41,6 +42,13 @@ interface PimmCore;
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
   method Action pokeWord(Cell s, Bit#(32) i, Bit#(32) w);
   method ActionValue#(Cell) stringResult;
+  // the SCSI device, outside the core (PimmScsiBox.bsv): what the core
+  // puts on the bus, the device's answers, and the device's turn when
+  // the machine has run dry (a = the commands that finished)
+  method ActionValue#(ScsiOut) scsiReq;
+  method Action scsiResp(ScsiIn r);
+  method Action scsiPoll;
+  method ActionValue#(Bit#(32)) scsiPolled;
 endinterface
 
 module mkPimmCore#(String image)(PimmCore);
@@ -55,7 +63,8 @@ module mkPimmCore#(String image)(PimmCore);
   PimmMBox  mbox  <- mkPimmMBox;
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
   PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox);
+  PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -155,6 +164,10 @@ module mkPimmCore#(String image)(PimmCore);
     let r <- sbox.result;
     return r.a;
   endmethod
+  method ActionValue#(ScsiOut) scsiReq = scsi.devReq;
+  method Action scsiResp(ScsiIn r) = scsi.devResp(r);
+  method Action scsiPoll = scsi.poll;
+  method ActionValue#(Bit#(32)) scsiPolled = scsi.polled;
 endmodule
 
 endpackage
