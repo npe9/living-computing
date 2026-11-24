@@ -2750,9 +2750,27 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     if (sysOn && df && dataFace.faultWrite())
       $fwrite(stderr, "CORE late write fault: va 0x%08x after its store committed (last pc 0x%08x)\n",
               dataFace.faultAddr(), s3.lastPc());
+    // A byte or half-word store is made here as read, merge, write: EU_S1
+    // reads the word its destination lives in.  The part writes the lanes
+    // (BE strobes); no read is made, and a store to a page that cannot be
+    // written is a write fault, exception 9 (p. 2-3, Table 1-26), as the
+    // reference's `_store` translates it.  So a read fault on that word,
+    // for an instruction that writes its destination without reading it,
+    // is the store's write fault.  Found at record 308,543,068 of the
+    // s9term join: /boot's `MOV *R24:UB,*R8:B` into a page not yet mapped
+    // (the kernel's handler stored ID 8 where the reference's stored 9).
+    let fo = s1.out;
+    let fd = fo.e.d;
+    Bool mergeRead = df && dfOperand &&
+      opWritesDst(fd.op) && !opReadsDst(fd.op) &&
+      !modeIsImm(fd.dst.mode) && (modeSize(fd.dst.mode) < 4) &&
+      ((dataFace.faultAddr() & 32'hFFFFFFFC) ==
+       (fo.dstEa & 32'hFFFFFFFC)) &&
+      !(opReadsSrc(fd.op) &&
+        ((fo.srcEa & 32'hFFFFFFFC) == (fo.dstEa & 32'hFFFFFFFC)));
     if (df) begin
-      if (dataFace.faultWrite()) c.writeFault = True;
-      else                       c.readFault  = True;
+      if (dataFace.faultWrite() || mergeRead) c.writeFault = True;
+      else                                    c.readFault  = True;
       c.va = dataFace.faultAddr();
     end
     if (iw) begin

@@ -87,6 +87,9 @@ python3 "$here/golden/check_golden.py"
 "$hobbit/bsv/run_mmu.sh"
 "$hobbit/bsv/run_event.sh"
 "$hobbit/bsv/run_core_mmu.sh"
+# A byte store into an unmapped page: exception 9 at the store (s9term join
+# record 308,543,068).
+"$hobbit/bsv/run_core_mmu_store.sh"
 # The bus face and the timers behind it.
 "$hobbit/bsv/run_bus.sh"
 "$hobbit/bsv/run_timer.sh"
