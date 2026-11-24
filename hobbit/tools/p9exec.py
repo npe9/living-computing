@@ -403,7 +403,11 @@ def kernel_main(path, ndecode):
         print("  entry is %s" % ", ".join(at))
     if ndecode:
         parcels = parcel_stream(k)
-        for item in decode(parcels, k["textbase"], k["entry"], ndecode):
+        # a ROM image's entry is physical (9rom: -E0x0, text at
+        # VROMBASE): decode from the text base then
+        start = (k["entry"] if k["textbase"] <= k["entry"] <
+                 k["textbase"] + k["text"] else k["textbase"])
+        for item in decode(parcels, k["textbase"], start, ndecode):
             print("  %08x  %04x  %s" % (item[0], item[1],
                                         " ".join(map(str, item[2:]))))
     problems = check_kernel(k, syms)

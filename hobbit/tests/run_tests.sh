@@ -47,6 +47,10 @@ python3 "$here/test_p9boot.py"
 # product: the image tests skip, printing the command, when
 # build/p9kbuild/9term (or $HOBBIT_9TERM) is not the recorded image.
 python3 "$here/test_own9term.py"
+# The boot ROM (docs/boot_rom.md): the 9rom rule and mkrom.c, the
+# committed tools/p9kbuild/9rom, and that image run from reset to its
+# `>>>` monitor and `e` on tools/p9rom.py (~30 s).
+python3 "$here/test_p9rom.py"
 # The terminal (tools/p9term.py): the screen bitmap, the LCD panel built
 # from screenupdate's writes, the Mouse Systems mouse on Quart channel 3
 # and timed input, at /boot's prompt (~1 min); s9term's gtexture alone;

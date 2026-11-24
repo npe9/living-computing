@@ -555,6 +555,12 @@ LINK_LIBS = ["-lgnot", "-lg", "-lc"]
 ROM_LINK_FLAGS = ["-l", "-H1", "-T0xC0000000", "-D0xC0604000", "-E0x0"]
 ROM_LINK_LIBS = ["-lc"]
 ROM_DATA, ROM_ENTRY = 0xC0604000, 0x0
+#: The sha256 of `9rom` as `link --conf rom` made it once (2026-11-24,
+#: docs/boot_rom.md) from p9kgen --conf rom's inputs and librom.a
+#: 4a19874b...; tools/p9kbuild/9rom is that image.  `link --conf rom
+#: --check` fails on any other.
+NINEROM_SHA256 = ("b83c5f86d7fedac49faca067cef8c458"
+                  "654fdf897f02bbc781fe33912744ae85")
 #: The sha256 of `9term` as the recorded command makes it from the
 #: generated inputs of tools/p9kgen.py and libram.a f709cea9...
 #: (docs/plan9_boot_plan.md A3).  `link --check` fails on any other.
@@ -699,6 +705,12 @@ def target_link(a):
     if problems or status:
         print("p9kbuild: FAILED: " + "; ".join(problems))
         return 1
+    if a.check and conf == "rom":
+        if digest != NINEROM_SHA256:
+            print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
+                  % (target, digest, NINEROM_SHA256))
+            return 1
+        print("p9kbuild: %s is the recorded image" % target)
     if a.check and conf == "term":
         if digest != NINETERM_SHA256:
             print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
