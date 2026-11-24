@@ -1205,7 +1205,8 @@ hobbit/bsv/run_p9kern.sh 300000 WORKDIR
 # to `root is from` (tests/test_p9boot.py PromptTest's choices), the
 # trace compressed and streamed, the recording kept between runs:
 # 22,537,089 records, 11.6 min on Bluesim, 5.9 min with
-# P9KERN_SIM=verilator (build included; the same 49,455,865 clocks),
+# P9KERN_SIM=verilator (build included; the same 49,455,865 clocks);
+# 22,537,091 on the reference with the Quart bids (49,454,593 clocks),
 # 2026-11-24 on a loaded machine
 P9KERN_STREAM=1 P9KERN_KEEP_REC=1 hobbit/bsv/run_p9kern.sh 23000000 WORKDIR \
     --counter-period 0.04 --until 'root is from'
@@ -1364,11 +1365,13 @@ one commit rule:
 
 ### How far it gets
 
-**Every record matches through 22,537,089, the record at which `/boot`'s
-`root is from` reaches `screenputs`** (2026-11-24; the PromptTest's
-choices, `--counter-period 0.04`; 49,455,865 clocks, 26 interrupts
-taken, 481 device reads replayed, 16,576 device writes matched, the
-console identical; 12,730,799 records also agree in `cyc`).  Before
+**Every record matches through 22,537,091, the record at which `/boot`'s
+`root is from` reaches `screenputs`** (2026-11-24, re-pinned on the
+reference with the Quart's SC68C94 FIFOs and bids; the PromptTest's
+choices, `--counter-period 0.04`; on Verilator 49,454,593 clocks, 26
+interrupts taken, 481 device reads replayed, 16,576 device writes
+matched, the console identical; 12,730,803 records also agree in `cyc`.
+Before the Quart change: 22,537,089, also on Bluesim).  Before
 that, through **2,893,000** on the reference as merged
 2026-11-23 (EEPROM, rtc and SONIC models; the idle skip off for the
 recording).  The record numbers are that reference's; on the one before
@@ -1416,7 +1419,7 @@ and the console is the reference's, byte for byte:
    replay of SONIC's DMA (written, unexercised), and Verilator for the
    core's part (`P9KERN_SIM=verilator`, ~3x Bluesim).
 2. **The operand-fault record** (§1d #8) has met no case before record
-   22,537,089: no operand read faults there.  It is untested.
+   22,537,091: no operand read faults there.  It is untested.
 3. **ENTER's check** (§1d #11) has no golden; the boot is its only test.
    The store-fault check does not cover KCALL's frame, the
    unimplemented sequence's `*(CSP)` or the drain words (§1d #9).
