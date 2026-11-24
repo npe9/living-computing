@@ -76,16 +76,18 @@ loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
 `restore` at the sites of `scsi_fep` in a loaded patch file,
 `lockstep_rdvc.py` the guard `diff` at a site in another,
 `lockstep_pvec.py` the guard `X = Y` on two vectors (the IPL's pool
-with vector keys);
-`longrun_ipl.py` is the long run (not in the suite); 138
+with vector keys),
+`lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
+against a small model of the front-end processor (`fep.py`), the
+device on the bench a tape the reference recorded (`driver.py` "The
+device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
+IPL parts (the IPL reading its list and files through its own SCSI
+stack) on both models;
+`longrun_ipl.py` is the long run (not in the suite); 140
 instructions on both models (counted 2026-11-23: 140 `i_` handlers in
-`pimm.py`, less `scsi_init` and `scsi_command`, on the reference alone;
-136 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
-prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
-a small model of the front-end processor (`fep.py`) (refused unless
-`Machine.ahead` is set); `ref_scsi.py` runs the body of `ipl:boot0` on
-them, the IPL reading its list and its files through its own SCSI
-stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
+`pimm.py`; 138 without our two stubs `merge_in` and `unify_step`).
+`ref_scsi.py` runs the same IPL body on the reference alone
+(`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
 (`docs/pimm_semantics.md` "The MRB"), of the shoen only its first

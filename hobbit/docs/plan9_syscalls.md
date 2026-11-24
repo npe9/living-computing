@@ -211,7 +211,9 @@ is what the Bluespec testbench has to match next: it runs `za`, `zl`,
 `docs/plan9_boot_plan.md`; `tests/test_p9run.py`).
 
 **Exec** (`sys/src/9/port/sysproc.c` `sysexec`, `sys/src/9/hobbit/trap.c`
-`execregs`): with `nargs` strings totalling `nbytes`,
+`execregs`): with `nargs` strings, `nbytes` = BY2WD (the profiling
+clock's hole at USTKTOP-4; counted since 2026-11-23, below) plus their
+lengths,
 
     ssize = 4*(nargs+1) + roundup(nbytes, 4);  if((ssize+4) & 7) ssize += 4
     argv[] at USTKTOP - ssize, the strings at USTKTOP - nbytes
@@ -317,10 +319,67 @@ bytes of each name, which come from libmach `obj.c` `readar()`'s local
 `Prog p`, filled by `_readz` only up to the NUL -- past it is stack
 residue, not a property of `ar`, `rl` or the archive.  On this run the
 byte at name[17] is 3 in all 201 entries and 0 in the shipped file, and
-11 more bytes differ at name[7] and name[8] of 10 entries.  **Open:**
-why the model's residue differs from the 1993 machine's has not been
-traced (rl's `Prog p` is on the stack, so the stack cache's contents
-are the first suspect, as for `za` in A2).
+11 more bytes differ at name[7] and name[8] of 10 entries.
+
+**Traced 2026-11-23: the shipped tables were written by the MIPS `rl`,
+so no Hobbit can reproduce those 212 bytes; the exec environment plays
+no part.**  (`tools/p9symdef.py`, `tests/test_p9symdef.py`; libmach is
+the release tarball's `sys/src/libmach`, not vendored.)
+
+* *Where each byte comes from.*  readar()'s `Prog p` is at the same
+  stack address in every call (readrl calls it, and `objtype()` just
+  before it, from one SP).  Replaying readrl/readar/objlookup/_readz
+  (obj.c, zobj.c) with `p.id` tracked byte by byte splits the 2,623
+  bytes past the NULs of the shipped libc.a table into 631 written by an
+  earlier name of the same member in the same call -- all 631 equal the
+  replay, and the model's `rl` writes them identically -- and 1,992
+  that were on the stack when readar was entered.  All 212 differing
+  bytes are of the second kind.
+* *What was on the stack.*  The model's trace of the Hobbit `rl` (word
+  watch at `p.id + 17`): `objtype()`'s `buf[8]` (the member's first 8
+  bytes, read by `Bread`) lies at `id[9..16]`, and its loop variable
+  `i`, stored at `id[17..20]` and left at `ObjHobbit` = 3 (mach.h), is
+  still in that stack-cache slot when readar's ENTER takes the word
+  back into the window: little-endian 03 00 00 00, so `id[17]` = 3.
+  `id[7..8]` (word `id[5..8]`, below `buf`) is not written by objtype
+  on the Hobbit, so it keeps what the previous member's names left.
+* *The 1993 table.*  `/mips/bin/rl` (the release's MIPS binary, from
+  the tarball, sha256 `d4e020cbc5343ad70bf44ad68166c7620f1875b211b62c7b`
+  `eb14affb55155b40`; `tools/p9mipsdis.py rl objtype readar` prints the
+  code read here): readar `SUB $36` puts `p` at S-24 (S = readrl's SP;
+  `Prog`'s kind/type/sym are a byte each, `_readz`'s `sb` at
+  0/1/2/3(p), so `id` is at S-21); objtype `SUB $28` puts `buf` at
+  S-12 = `id[9..16]` (the same place as on the Hobbit), its
+  outgoing-argument words at S-20 and S-16 (`id[1..4]`, `id[5..8]`)
+  hold Bseek's last two arguments, -8 and 1, and it spills `i` at S-4 =
+  `id[17..20]` before each indirect call -- all **big-endian**.  That
+  predicts `id[5..8]` = 00 00 00 01 and `id[17..19]` = 00 00 00 (i's 3
+  is in `id[20]`, outside the name), and every one of the 1,992 stack
+  bytes of the shipped libc.a table agrees.  So do the tables of 22
+  more shipped Hobbit libraries (every `hobbit/lib/*.a` but `c++/libC.a`
+  and `cda/libsim.a`, whose tables are dated July and August 1992, the
+  others 8 October 1992 to 2 January 1993): every byte past a NUL
+  accounted for.  Most of that agreement does not tell MIPS from Hobbit:
+  of the 12,460 stack bytes in the 23 tables, 8,280 are `buf` (both
+  layouts put it at `id[9..16]`) and 2,778 are `id[18..19]` (zero in
+  both).  What only the MIPS frames predict: `id[17]`, 1,389 bytes, all
+  0 (the Hobbit `rl` writes `i` = 3 there), and `id[5..8]`, 13 bytes,
+  all as Bseek's big-endian 1 (no stack byte falls in `id[1..4]`).
+  Hand-read, not checked by anything runnable: the 386 `rl` spills `i`
+  little-endian at `id[17..20]` and the 68020's leaves PEA's 8 in
+  `id[5..8]`, so neither fits; the 386, 68020 and SPARC libc.a tables
+  have `id[17..19]` zero in every entry (counted; their object formats
+  are not transcribed); the five `__.SYMDEF`s are dated within 4.5 hours
+  on 2 January 1993.  The reading: one MIPS machine ran `rl` (`RL=rl`,
+  the host's `/bin/rl`) for every `objtype`.
+* *Consequence.*  The 212 bytes are a property of the build host, not of
+  the Hobbit or of this runner: the residue is not evidence about the
+  1993 exec environment (`#e`, the pid, argv), and nothing in the runner
+  should be changed to chase it.  What it does confirm: the Hobbit
+  model's stack-cache behaviour gives the layout zc's frames imply
+  (`buf` at `id[9..16]`, the in-call bytes), and `rl`, `ar` and the
+  archive format are byte-exact.  `p9kbuild.py archeck` now reports the
+  accounting.
 
 **Floating point** is not a system call: it is the
 unimplemented-instruction sequence (p. 1-39) and a user-level handler,
@@ -371,14 +430,19 @@ Not modelled and still refused: `pipe`, `dup`, `bind`, `mount`,
 `chdir`, `wstat`/`fwstat`, `sleep`, `alarm`, `segbrk`/`seg*`,
 `rendezvous`, `noted`, `unmount`.
 
-**A finding, not fixed here.**  `sysexec` starts `nbytes = BY2WD`
-("hole for profiling clock at top of stack") before adding the string
-lengths, so the strings end 4 bytes below USTKTOP and `sp[0] =
-USTKTOP-4` points at that hole.  `exec_frame` (above, and the A2 runs)
-counts only the strings, so the last string's tail overlaps the hole.
-It changes `ssize` (and so possibly `sp`) by 4 for some argument
-lists; fixing it moves every recorded frame, so it is left for a change
-of its own with the Bluespec recordings re-made.
+**Fixed 2026-11-23.**  `sysexec` starts `nbytes = BY2WD` ("hole for
+profiling clock at top of stack", `sysproc.c:286`) before adding the
+string lengths, so the strings end 4 bytes below USTKTOP and `sp[0] =
+USTKTOP-4` points at that hole, which libc's `main9.s` keeps in
+`_clock` (`MOV R0, _clock(SB)`).  `exec_frame` counted only the
+strings, so the last string's tail sat in the hole.  It now starts at
+`BY2WD`: the hole is a zero word, and `ssize` (so `argv[]` and SP)
+moves by 4 for some argument lists (`["ab", "cd"]`: SP USTKTOP-48, not
+-32).  `tests/test_p9run.py` `ExecFrame` pins both; with the old count
+injected only its two tests fail (63 run): nothing else in the suite
+reads the hole or depends on where the strings are.  `p9kbuild archeck`
+gives the same archive as before.  Recordings for the Bluespec run are
+made fresh by `p9run --record` at each run, so they follow.
 
 ## The Bluespec run's kernel entry (`bsv/P9HostTb.bsv`, 2026-11-20)
 

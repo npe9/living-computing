@@ -39,6 +39,39 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          left unbound, and names it here.  The address
                          holds on the Bluespec because the traces,
                          which show every memory write, are compared.
+    POLL                 the device's turn: the SCSI commands that wait
+                         for it (pimm.Machine.scsi_poll) are given to it
+                         again, oldest first.  What the reference model
+                         does when the machine has run dry; a script
+                         puts it after a RUN, where the reference ran
+                         dry with a command waiting (Script.live)
+
+The device tape.  The bench has no device: scsi_init and scsi_command
+(bsv/PimmScsiBox.bsv) put each command on the core's port, and the
+bench answers it from a tape the reference model recorded while playing
+the same script (pimm.Machine.scsi_tape, Script.record_tape).  The bench
+prints a B line for each command from what the CORE sent (unit, LUN,
+CDB, direction, length, and a SEND's bytes), and the reference prints
+the same line at the same point (pimm.Machine.scsi_do): so what goes on
+the bus is compared, and only the answers are replayed.  In the file
+the tape follows the script's END word; a first word
+
+    TAPE      val        the tape begins at word val of the file
+
+tells the bench where (a script without a device has no TAPE word and
+no tape).  One entry per device call, in order; the first word of an
+entry is kind << 56 | n << 32 | value:
+
+    kind 1    scsi_init asked the buffer size: value
+    kind 2    the command cannot finish yet (the device's None): the
+              built-in's "not finished yet" path, or, for a command
+              asked again by a poll, still waiting
+    kind 3    the command finished: value = Result, n = the number of
+              bytes received; then (n + 7) / 8 words of those bytes,
+              eight a word from the top, the last one padded with zeros
+
+A tape that runs out, or an entry of the wrong kind, stops the bench
+with an X line, which no reference trace has.
 """
 import os
 import sys
@@ -48,7 +81,7 @@ sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
 (END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT,
- SETW) = range(14)
+ SETW, POLL, TAPE) = range(16)
 SCRIPT_BITS = 24            # the driver's script memory holds 1 << 24 operations
 # The script file holds the operations only, so the simulator's first
 # line is its warning that the rest of the memory is not given.
@@ -58,6 +91,9 @@ GAP = "Warning: file 'generated/pimm_script.hex' for memory 'script' has a gap"
 class Script:
     def __init__(self):
         self.ops = []       # (kind, a, b, (tag, val)) or ('label', text)
+        # what play() and live() run on: a test with a device gives a
+        # function that makes a machine with its Machine.fep attached
+        self.make = pimm.Machine
 
     def _op(self, kind, a=0, b=0, cell=(0, 0)):
         self.ops.append((kind, a, b, cell))
@@ -103,11 +139,14 @@ class Script:
     def setslot(self, a, cell):
         self._op(SLOT, a, 0, cell)
 
+    def poll(self):
+        self._op(POLL)
+
     def live(self):
         """Perform the operations added since the last call on a private
         reference machine and return it; live_slot is its slots."""
         if not hasattr(self, '_live'):
-            self._live = (pimm.Machine(), [(0, 0)] * 16, [0], [])
+            self._live = (self.make(), [(0, 0)] * 16, [0], [])
         m, slot, done, outs = self._live
         m.tr = []
         for o in self.ops[done[0]:]:
@@ -160,16 +199,28 @@ class Script:
             if w:
                 self.setw(a, i // per, w)
 
-    def words(self):
+    def words(self, tape=None):
         out = [k << 56 | a << 48 | b << 40 | c[0] << 32 | c[1]
                for k, a, b, c in (o for o in self.ops if o[0] != 'label')]
+        if tape is not None:
+            # TAPE first, the script, END, then the tape
+            out = [TAPE << 56 | len(out) + 2] + out + [0] + tape_words(tape)
+        else:
+            out += [0]
         assert len(out) < 1 << SCRIPT_BITS
-        return out + [0]
+        return out
 
-    def write(self, path):
+    def write(self, path, tape=None):
         with open(path, 'w') as f:
-            words = self.words()
+            words = self.words(tape)
             f.write(''.join('%016x\n' % w for w in words))
+
+    def record_tape(self):
+        """Play the script on a machine of self.make() and return the
+        device's answers (pimm.Machine.scsi_tape), for write()."""
+        for _ in self.play():
+            pass
+        return self.machine.scsi_tape
 
     @staticmethod
     def _do(m, slot, o, outs, label):
@@ -207,12 +258,14 @@ class Script:
             slot[a] = (c[0], slot[b][1])
         elif k == SLOT:
             slot[a] = c
+        elif k == POLL:
+            m.scsi_poll()
         else:
             raise ValueError(k)
 
     def play(self, m=None):
         """Yield (label, [trace lines]) for each labelled part."""
-        m = m or pimm.Machine()
+        m = m or self.make()
         self.machine = m
         self.outs = []      # (label, word) of every OUT, in order
         slot = [(0, 0)] * 16
@@ -227,6 +280,24 @@ class Script:
             self._do(m, slot, o, self.outs, label)
         self.slots = slot
         yield label, m.tr
+
+
+def tape_words(tape):
+    """The device tape (pimm.Machine.scsi_tape) as the bench reads it:
+    see the module's header."""
+    out = []
+    for e in tape:
+        if e is None:
+            out.append(2 << 56)
+        elif e[0] == 'init':
+            out.append(1 << 56 | e[1] & 0xffffffff)
+        else:
+            result, data = e
+            assert len(data) < 1 << 24
+            out.append(3 << 56 | len(data) << 32 | result & 0xffffffff)
+            padded = bytes(data) + bytes(-len(data) % 8)
+            out += [int.from_bytes(padded[i:i + 8], 'big') for i in range(0, len(padded), 8)]
+    return out
 
 
 def compare(script, stream, name, pinned=None):

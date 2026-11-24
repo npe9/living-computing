@@ -120,6 +120,21 @@ no injection table of its own: the injection that matters for it is the
 Bluespec comparison, where running the reference model without the
 array (`state.cache = None` in tools/p9run.py) makes `za main9.s` differ
 from the core at record 29,664 (docs/conformance_1to1.md 1c).
+
+The profiling clock's hole and `size` (later still, 2026-11-23; 64
+tests, P9RUN_MAX_STEPS=1700000, each injection reversed by its exact
+patch and the file run green after):
+
+  exec_frame: nbytes without sysproc.c's BY2WD (the old count)
+      2 tests: ExecFrame test_frame_is_sysexec_and_execregs,
+      test_profiling_clock_hole_at_the_top.  No program here reads the
+      hole or depends on where its strings are.
+  the system call's result not stored (as above, re-run with this
+      file's later tests)
+      24 failures and 1 error: Programs size and cat, Redirection cat,
+      Toolchain za main9, za 12 (each source), za->zl->run and zl
+      undefined, Ar x4, ArAndRl, KernelInputs mkstreamlist and (the
+      error) init.h
 """
 
 import io
@@ -137,6 +152,7 @@ sys.path.insert(0, str(HOBBIT / "tools"))
 sys.path.insert(0, str(HOBBIT / "sem"))
 import build_zl_inferno   # noqa: E402
 import hobbit_sem as sem  # noqa: E402
+import p9exec             # noqa: E402
 import p9kgen             # noqa: E402
 import p9run              # noqa: E402
 
@@ -262,22 +278,60 @@ class Programs(Tree):
         status, _c, _k, _n = run(self.root, BIN / "cat", "../../etc/passwd")
         self.assertIn("outside --root", status)
 
+    def test_size_of_the_shipped_kernel(self):
+        """The 9term rule's last step, `size 9term`, on s9term.  size.c
+        prints crackhdr()'s txtsz - hdrsz; for a -H1 image ("hobbit plan
+        9 boot image", libmach executable.c) txtsz is the header's tsize
+        and hdrsz is sizeof(struct mipsexec) = 76 (bootexec.h), so the
+        text printed is the header's less 76; data and bss are the
+        header's."""
+        shutil.copy(REL / "hobbit" / "s9term", self.root / "s9term")
+        status, console, _k, _n = run(self.root, BIN / "size", "s9term")
+        k = p9exec.read_kernel(str(REL / "hobbit" / "s9term"))
+        text = k["text"] - 76
+        self.assertEqual(status, "exits('')")
+        self.assertEqual(console, b"%dt + %dd + %db = %d\ts9term\n" % (
+            text, k["data"], k["bss"], text + k["data"] + k["bss"]))
+        self.assertEqual(console, b"219892t + 70388d + 98476b = 388756"
+                                  b"\ts9term\n")
+
 
 class ExecFrame(unittest.TestCase):
     def test_frame_is_sysexec_and_execregs(self):
         st = sem.State()
         sp, msp = p9run.exec_frame(st, ["za", "main9.s"])
         m = p9run.Machine(st)
-        # nbytes = 3 + 8 = 11 -> 12; ssize = 4*3 + 12 = 24; (24+4)&7 -> 28
+        # nbytes = BY2WD + 3 + 8 = 15 -> 16; ssize = 4*3 + 16 = 28;
+        # (28+4)&7 == 0, so 28
         self.assertEqual(msp, 0x80000000)
         self.assertEqual(sp, 0x80000000 - 48)       # QUADALIGN(28 + 12)
         self.assertEqual(m.word(sp), 0x80000000 - 4)
         self.assertEqual(m.word(sp + 4), 2)         # argc, the accumulator
         vec = m.word(sp + 8)
         self.assertEqual(vec, 0x80000000 - 28)
+        self.assertEqual(m.word(vec), 0x80000000 - 15)
         self.assertEqual(m.cstring(m.word(vec)), b"za")
         self.assertEqual(m.cstring(m.word(vec + 4)), b"main9.s")
         self.assertEqual(m.word(vec + 8), 0)
+
+    def test_profiling_clock_hole_at_the_top(self):
+        """sysproc.c:286 starts nbytes at BY2WD, "hole for profiling clock
+        at top of stack": the strings end at USTKTOP-4 and sp[0] (main9.s:
+        `MOV R0, _clock(SB)`) points at a zero word.  Here the hole also
+        moves argv and SP: without it nbytes = 6 -> 8, ssize = 20, sp =
+        USTKTOP - 32."""
+        st = sem.State()
+        sp, _msp = p9run.exec_frame(st, ["ab", "cd"])
+        m = p9run.Machine(st)
+        # nbytes = 4 + 6 = 10 -> 12; ssize = 12 + 12 = 24; (24+4)&7 -> 28
+        self.assertEqual(sp, 0x80000000 - 48)       # QUADALIGN(28 + 12)
+        vec = m.word(sp + 8)
+        self.assertEqual(vec, 0x80000000 - 28)
+        self.assertEqual(m.word(vec), 0x80000000 - 10)
+        self.assertEqual(m.word(vec + 4), 0x80000000 - 7)
+        self.assertEqual(m.bytes(0x80000000 - 10, 6), b"ab\0cd\0")
+        self.assertEqual(m.word(sp), 0x80000000 - 4)
+        self.assertEqual(m.word(0x80000000 - 4), 0)  # *_clock
 
 
 class Fpi(unittest.TestCase):

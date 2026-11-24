@@ -25,6 +25,7 @@ import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
 import PimmShBox::*;
+import PimmScsiBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -85,12 +86,13 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
-               XReuse3 } XState deriving (Bits, Eq);
+               XReuse3,
+               XScI1, XScI2, XScC, XScW, XScO1, XScO2, XScO3, XScO4 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
                    MemPort smem,
-                   PimmShBox shbox)(PimmExec);
+                   PimmShBox shbox, PimmScsiBox scsi)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -121,6 +123,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
+  Reg#(ScsiResult)   scR     <- mkRegU;     // scsi_command's outputs, being written
   // the reductions of the goal in hand: one per execute and one for its
   // proceed (the shoen's statistics, PimmShBox.bsv)
   Reg#(Bit#(32))     nRed    <- mkReg(0);
@@ -157,7 +160,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_change_element_size || op == op_string_operation
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
-                  || op == op_calculate_priority_from_current || op == op_supply_atom_number;
+                  || op == op_calculate_priority_from_current || op == op_supply_atom_number
+                  || op == op_scsi_command;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -370,6 +374,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // the list cell, in one allocation of six cells
       gbox.alloc(6);
       st <= XSWh1;
+    end
+    else if (op == op_scsi_init) begin
+      // scsi_init(^Obj, ^TargetInterruptVector, ^Info): Obj = 1, then
+      // the SCSI box (PimmScsiBox.bsv): the device's buffer size, the
+      // two vectors.  The values are OURS (bios/scsi/scsi_blt.kl1)
+      regs.wr(x, intC(1));
+      scsi.init;
+      st <= XScI1;
     end
     else if (op == op_current_node) begin
       // current_node(^NodeNumber, ^TotalNode): no input, never waits.
@@ -1461,6 +1473,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBVec;
       end
     end
+    else if (op == op_scsi_command) begin
+      // scsi_command(Obj, Vector, ^Data, ^TransferredLength, ^Id,
+      // ^Result, ^NewObj): the SCSI box, for a vector of seven (a long
+      // vector; anything else is refused)
+      if (!isLongVec(b)) stop(EndUnimp);
+      else begin
+        scsi.command(a, b);
+        st <= XScC;
+      end
+    end
     else begin
       // set_string_element(S, I, E, ^S1)
       if (!isStrg(a) || !isInt(b) || !isInt(c)) stop(EndUnimp);
@@ -2026,6 +2048,59 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule bVec2 (st == XBVec2);
     regs.wr(operand[4], vnew);
     finish(tagged Next afterBuiltin);
+  endrule
+
+  // ---- the SCSI built-ins (PimmScsiBox.bsv) ---------------------------------
+  rule scsiInit1 (st == XScI1);
+    let r <- scsi.result;
+    if (r matches tagged Vector .v) regs.wr(y, v);
+    scsi.initInfo;
+    st <= XScI2;
+  endrule
+
+  rule scsiInit2 (st == XScI2);
+    let r <- scsi.result;
+    if (r matches tagged Vector .v) regs.wr(z, v);
+    next;
+  endrule
+
+  // an element of the vector unbound: the stub's goal waits on it, as
+  // string_operation's; refused: not modelled; done: the five outputs
+  rule scsiCommand (st == XScC);
+    let r <- scsi.result;
+    case (r) matches
+      tagged Wait .at: begin
+        gbox.waitRecord(stub.addr, stub.n, operand, stub.outs);
+        opA <= mkCell(tag_REFo, absAddr(at));
+        st <= XScW;
+      end
+      tagged Done .d: begin
+        regs.wr(operand[2], d.data);
+        scR <= r;
+        st <= XScO1;
+      end
+      default: stop(EndUnimp);
+    endcase
+  endrule
+
+  rule scsiWait (st == XScW);
+    let g <- gbox.recordResult;
+    gbox.hook(g, cellAddr(opA));
+    st <= XBWait2;
+  endrule
+
+  rule scsiOut (st == XScO1 || st == XScO2 || st == XScO3 || st == XScO4);
+    if (scR matches tagged Done .d) begin
+      case (st)
+        XScO1: begin regs.wr(operand[3], d.tl);     st <= XScO2; end
+        XScO2: begin regs.wr(operand[4], d.id);     st <= XScO3; end
+        XScO3: begin regs.wr(operand[5], d.result); st <= XScO4; end
+        default: begin
+          regs.wr(operand[6], vals[0]);              // NewObj: Obj
+          finish(tagged Next afterBuiltin);
+        end
+      endcase
+    end
   endrule
 
   rule bOut2 (st == XBOut2);

@@ -21,11 +21,11 @@ start_shoen, termination, shoen_statistics, remove_shoen: "the shoen"
 below); no exceptions.  An instruction
 this file does not implement raises Unimplemented: it never guesses.
 
-On this model ALONE (the Bluespec core has none of what this
-paragraph lists as not given), a prototype: the SCSI built-ins scsi_init and scsi_command against a
-device that is a Python object (Machine.fep, ref/pimm/fep.py), and
-what the IPL's SCSI stack needs besides (scsi_command waiting on its
-vector's elements).  ref/pimm/ref_scsi.py runs them.  The core has
+The SCSI built-ins scsi_init and scsi_command run against a device
+that is a Python object (Machine.fep, ref/pimm/fep.py); on the core
+they are bsv/PimmScsiBox.bsv, the device on a port answered from the
+tape this model records (lockstep_scsi.py, with ref_scsi.py's IPL
+parts).  Nothing is on this model alone now.  The core has
 since been given read_eagerly, not_equal and wait_vector_1/4/6
 (lockstep_alt.py), b_divide, b_modulo, b_string and
 enqueue_goal_to_processor (lockstep_body.py), string_operation
@@ -187,6 +187,10 @@ class Machine:
         self.scsi_waiting = []
         self.scsi_commands = 0
         self.scsi_deferred = 0
+        # every answer the device gave, in order: what driver.py writes
+        # into a script as the bench's device tape (docs/pimm_semantics.md
+        # "Trace", the B line)
+        self.scsi_tape = []
 
     def event(self, text):
         if self.tr is not None:
@@ -659,7 +663,7 @@ class Machine:
         wait = [w[1] for k, w in enumerate(vals) if self.unbound(w) and k not in nowait]
         if not wait and elements is not None:
             wait = elements(*vals)
-            if wait and name != 'string_operation':
+            if wait and name not in ('string_operation', 'scsi_command'):
                 self.alone(name + ' waiting on a vector element')
         if not wait:
             for r, w in zip(outs, f(*vals)):
@@ -2392,7 +2396,8 @@ class Machine:
     # scsi_processor.kl1) and the stand-in for a machine without the
     # built-ins, bios/scsi/scsi_blt.kl1, which is also in the IPL image
     # (scsi_builtin:scsi_init/3 at cell 13952).  The device is a Python
-    # object, Machine.fep (ref/pimm/fep.py): NOT machine state.
+    # object, Machine.fep (ref/pimm/fep.py): NOT machine state.  On the
+    # core: bsv/PimmScsiBox.bsv, the device on a port (lockstep_scsi.py).
     def i_scsi_init(self, pc, x, y, z, c16):
         # scsi_init(^Obj, ^TargetInterruptVector, ^Info): three
         # outputs, so it never waits.  OURS, all three values, taken
@@ -2405,7 +2410,11 @@ class Machine:
         if getattr(self, 'fep', None) is None:
             raise Unimplemented('scsi_init: no device attached')
         self.reg[x] = (INT, 1)
-        for r, elems in ((y, (0, 0, 0)), (z, (self.fep.MAX_BUFFER, 8, 4, 0))):
+        # the buffer size is the device's: asked here (a bench's tape)
+        size = self.fep.MAX_BUFFER
+        self.event('B init')
+        self.scsi_tape.append(('init', size))
+        for r, elems in ((y, (0, 0, 0)), (z, (size, 8, 4, 0))):
             w, a = self.vnew(len(elems))
             for k, e in enumerate(elems):
                 self.mem[a + k] = (INT, e)
@@ -2423,9 +2432,9 @@ class Machine:
         # here; the same string for a command that receives nothing).
         # OURS:
         #  - it waits for every element of the vector, as
-        #    string_operation waits for its vector's.  NOT run: in
-        #    every run so far the elements were all bound when the
-        #    command was made (taking the wait out changes nothing);
+        #    string_operation waits for its vector's.  Run only by
+        #    lockstep_scsi.py ("element"): in the IPL's runs the
+        #    elements were all bound when the command was made;
         #  - Id is the count of commands so far (no caller reads it);
         #  - NewObj is Obj;
         #  - a command the device cannot finish yet (a RECEIVE with no
@@ -2488,9 +2497,16 @@ class Machine:
 
     def scsi_do(self, cmd):
         """Give the command to the device: (Data, TransferredLength,
-        Result) words, or None if the device cannot finish it yet."""
+        Result) words, or None if the device cannot finish it yet.
+        Each call is one B line in the trace (what the core puts on the
+        bus) and one entry of the device tape (what it is answered)."""
+        out = bytes(cmd['buf'][:cmd['length']])
+        self.event('B %d %d %s %d %d%s' % (cmd['unit'], cmd['lun'], bytes(cmd['cdb']).hex(),
+                                           cmd['dir'], cmd['length'],
+                                           ' ' + out.hex() if cmd['dir'] == 1 and out else ''))
         got = self.fep.command(cmd['unit'], cmd['lun'], bytes(cmd['cdb']), cmd['length'],
-                               cmd['dir'], bytes(cmd['buf'][:cmd['length']]))
+                               cmd['dir'], out)
+        self.scsi_tape.append(got)
         if got is None:
             return None
         result, data = got

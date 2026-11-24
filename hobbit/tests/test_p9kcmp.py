@@ -303,6 +303,16 @@ class TestLinkCommand(unittest.TestCase):
         self.assertIn("CFLAGS=-w -D$TYPE", mk)
         self.assertEqual(p9kbuild.CFLAGS, ["-w", "-Dram"])
 
+    def test_size_is_the_rules_last_command(self):
+        import p9kbuild
+        mk = (p9kbuild.REL / "sys/src/9/hobbit/mkfile").read_text()
+        rule = mk.split("9bart 9term 9termlocal:", 1)[1].split("\n\n", 1)[0]
+        self.assertEqual(rule.splitlines()[-1].strip(), "size 9$CONF")
+        # what the shipped size prints for s9term (tests/test_p9run.py
+        # runs it): the header's text less sizeof(struct mipsexec)
+        self.assertEqual(p9kbuild.size_line(REF.k, "s9term"),
+                         "219892t + 70388d + 98476b = 388756\ts9term\n")
+
 
 class TestChars(unittest.TestCase):
     def test_bytes(self):

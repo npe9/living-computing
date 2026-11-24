@@ -331,10 +331,32 @@ every one of which the release's own tools made on the model:
     python3 tools/p9kbuild.py kernel --kgen K        # libram.a, f709cea9...
     python3 tools/p9kbuild.py link --kgen K --check  # 9term
 
-(The first two were run once, on the p9kgen branch; their products --
-`term.c`, `bootterm.root.c`, `kerndate`, `libram.a` f709cea9... -- were
-copied and the third run on them, so the three have not yet been run
-end to end in one sitting.)  `link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
+**End to end, in one go (2026-11-23):** `python3 tools/p9kbuild.py
+all --build DIR` runs the three in one fresh directory, nothing reused
+(p9kgen into DIR/kgen, then `kernel --kgen DIR/kgen`, then `link --kgen
+DIR/kgen --check` on the libram.a just made; DIR/all.log).  Run once,
+from a snapshot of commit a7af5631 (the commit that added `all`), on the
+loaded machine: p9kgen 75 programs, 915,322,786 instructions, 7,828 s;
+kernel 65 programs, 523,036,991 instructions, 1,136 s (8 processes);
+link 4 programs, 421,230,961 instructions, 2,742 s (zl 351,299,086,
+2,270 s).  **In all 144 programs, 1,859,590,738 instructions, 11,706 s
+(3 h 15 min) wall.**  `libram.a` came out
+`f709cea932f1a3694a08a93f4eb013c4a0703499938d0a9cd31ba0d8515b7ea6`
+(`LIBRAM_SHA256`), `9term`
+`002880c011bd7418c36c036b16f450e61d1ed43e1ec963a6f5b4574a2eece1b1`,
+and `--check`'s comparison with `NINETERM_SHA256` ran in a full link for
+the first time and passed; check_kernel passes, p9kcmp exit 0.  At the
+later commit that counts the exec frame's clock hole
+(`docs/plan9_syscalls.md`), `kernel --kgen` on the same kgen products
+gave the same `libram.a` and every object's size and sha256 the same;
+eight compiles retire one instruction fewer (the argument strings sit 4
+bytes lower).  That commit's `link --check` (which now also runs the
+rule's `size 9term`) then gave the same `9term` sha256, zl's same
+351,299,086 instructions, and `size` printed `224160t + 72908d +
+101152b = 398220`: the header's text 224,236 less
+sizeof(struct mipsexec) = 76 (libmach's `hobbitboot`, as for s9term,
+`docs/plan9_port.md`), data and bss the header's; `--check` passed.
+`link` (the mkfile's `9term` rule) stages a fresh tree, runs `za
 raml.s`, `zc -w -Dram -DKERNDATE=721110517 term.c` and `zc -w -Dram
 bootterm.root.c` (the three objects equal the ones p9kgen and the kernel
 target made), then `zl -o 9term -l -R4 -H1 -T0x80004000 -E0x80004000
@@ -353,8 +375,9 @@ vendored `libgnot.a`, `libg.a`, `libc.a`.  The log
   same status, instruction count, system calls, size and sha256 for
   every one of its four steps as each other, and the same image as the
   scratch run before them; 3,337 and 3,345 s wall.  (They ran before
-  the sha256 was written into `NINETERM_SHA256`, so `--check`'s own
-  comparison has not yet been exercised by a full link.)
+  the sha256 was written into `NINETERM_SHA256`; `--check`'s own
+  comparison was first exercised by a full link in the `all` run
+  above.)
 * **`p9exec` accepts it** as a `-H1` image: every constant header word,
   the file size (80 + text + data + syms + lcsize), the section bases,
   `etext/bdata/edata/end` against the header, and every one of its
@@ -484,9 +507,17 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   whose `__.SYMDEF` has the same 201 entries -- offsets, names, types,
   order.  212 bytes of the table differ, all after a name's NUL: stack
   residue in libmach `readar()`'s uninitialised `Prog p`
-  (`docs/plan9_syscalls.md`).  Why the model's residue differs from the
-  1993 machine's at those positions is **open** (not traced; the model
-  is the core's oracle, so it matters).  For this `p9run` gained `fstat` and
+  (`docs/plan9_syscalls.md`).  **Traced 2026-11-23**
+  (`tools/p9symdef.py`): every one of the table's 2,623 bytes past a
+  NUL is accounted for -- 631 left by earlier names of the same member
+  (the model's `rl` writes all of them identically), 1,992 the stack at
+  readar's entry, which the frames of the release's **`/mips/bin/rl`**
+  predict byte for byte (big-endian: objtype's `i` and Bseek's
+  argument); so do the tables of 22 more shipped Hobbit libraries.  The
+  shipped tables were written by the MIPS `rl` of a cross-building host,
+  and the 212 bytes are where the Hobbit's own `rl` (little-endian `i`,
+  no argument word at `id[5..8]`) must differ: not an exec-environment
+  difference, and nothing to fix in the runner.  For this `p9run` gained `fstat` and
   `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` was
   refused (one process), so `rl` stopped at that call with its table
   written and the driver ran the `ar` command line `writerl()` would

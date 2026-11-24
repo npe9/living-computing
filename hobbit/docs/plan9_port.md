@@ -28,6 +28,22 @@ what `sys/src/9/port/mk*`, `sys/src/9/boot/mkboot`, `hobbit/mkfile`'s
 program links `-lauth`; `rl` makes the `__.SYMDEF` that `zl` requires).
 `date` was not vendored: `KERNDATE` is read back from `s9term`.
 
+**`size` vendored (2026-11-23)**, for the `9term` rule's last command
+(`size 9term`): `hobbit/bin/size` (31,562 bytes, sha256
+`95ab9e1d2642780d662112a85d14dd4075b0188049924769abac640a4ec77831`)
+and its source `sys/src/cmd/size.c` (sha256 `9a671504...`), from the
+same tarball (sha256 above, re-verified that day; extracted with `tar
+-xjf plan9-1e.tar.bz2 plan9-1e/hobbit/bin/size
+plan9-1e/sys/src/cmd/size.c`, dates 3 January 1993 kept), both in
+`tools/SHA256SUMS`.  It prints libmach `crackhdr()`'s `txtsz - hdrsz`,
+`datsz`, `bsssz` and their sum.  For a `-H1` image ("hobbit plan 9 boot
+image", `executable.c` `hobbitboot`) `txtsz` is the header's `tsize`
+alone while `hdrsz` is still `sizeof(struct mipsexec)` = 76
+(`bootexec.h`), so its text figure is the header's less 76: on s9term,
+`219892t + 70388d + 98476b = 388756` against the header's text 219,968
+(`tests/test_p9run.py`, 6,029 instructions).  That is the release's
+behaviour, kept, not corrected.
+
 So the port exists twice over: as binaries that were built at the time,
 and as the kernel and library sources that produced them. The proof of
 concept uses the binaries as the oracle and the sources as the rules.

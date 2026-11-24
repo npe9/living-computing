@@ -92,6 +92,31 @@ methods, its own rules), owning `scsi_init` and `scsi_command`:
   (`scsiReq`/`scsiResp`), so that the same core can later face a
   live FEP.
 
+**S1h. The FEP emulator on the ULX3S** (asked for 2026-11-23: "a
+scsi emulator on the ulx3s using either sdram, qspi flash or the sd
+card"). `fep.py` in hardware, `bsv/PimmFepEmu.bsv`, serving files from
+the board's **SD card**, chosen because the SDRAM already holds the
+PIM/m local store (`PimUlx3s.bsv`), the QSPI flash holds the bitstream
+and is small and awkward to rewrite from the host, and the card is
+large, removable and written by the host like the FEP's own disk. The
+card image format and its builder are OURS (`tools/mkfepcard.py`); the
+reader is SPI mode and read-only by construction (`bsv/PimmSdBlock.bsv`).
+STATUS 2026-11-23: verified in Bluesim only. Every command
+`ref_scsi.py`'s six parts gave `fep.py` (recorded,
+`ref/pimm/record_fep.py`, `ref/pimm/fep_tapes/`), plus a direct sequence
+of OURS for what the parts never do (a failed open, abort, a request in
+two packets, a reply cut three times, each `FepError`), answered equal to
+`fep.py` byte for byte: 7 tapes, 230 commands, over the image file and
+over the SPI reader with a card model (`bsv/run_fepemu.sh`, in
+`run_tests.sh`); injected faults caught (`bsv/PimmFepEmuTb.bsv` header).
+The board top with a self-test synthesizes (10,039 LUT4, 3 DP16KD,
+40.39 MHz; `bsv/run_fepemu_fpga.sh`) and its self-test passes in
+Bluesim; it has NOT run on a board (the board is in use; programming it
+and writing a card are the owner's steps, `bsv/README.md`). Not yet
+connected to the core: the adapter to S1's `scsiReq`/`scsiResp` port is
+described in `bsv/README.md`; it is the hardware twin of S2's tape and
+S6's live FEP, behind the same port.
+
 **S2. The device on the bench: a replay of the reference's device.**
 The lockstep bench is scripted, not live. So the reference model,
 playing the script, records each SCSI command and the device's answer
@@ -135,9 +160,42 @@ under a SIMPOS reconstruction (or its stubs) on a PSI model and
 replace `fep.py` behind the same port. Its answers then check every
 OURS answer of `fep.py`; differences are recorded, not smoothed.
 
+### Status (2026-11-23)
+
+- **S1 done.** `bsv/PimmScsiBox.bsv`: `init`/`initInfo`/`command`/
+  `result` from the exec stage (a small hook in `PimmStages.bsv`),
+  `poll`/`polled` from the bench; the device on `mkPimmCore`'s port
+  `scsiReq`/`scsiResp`. The buffer size is the device's (asked by
+  `scsi_init`, `B init`), as on the reference.
+- **S2 done.** The reference records each device answer
+  (`Machine.scsi_tape`); `driver.py` writes them after the script's
+  END (`TAPE` word, "The device tape"); the script's new `POLL` is the
+  dry-machine poll. Both models print a `B` line per try (unit, LUN,
+  CDB, direction, length, a SEND's bytes); the bench's from what the
+  core sent. Extension needed and taken: `POLL` (the flow had no
+  "the machine has run dry" point of its own) and the tape; a long
+  vector (seven elements) is built from `NEWVAR`/`UNIFY`/`PTR`, no new
+  operation.
+- **S3 done.** `ref/pimm/lockstep_scsi.py` runs `scsi_init` and
+  `scsi_command` in lockstep at their sites (`scsi:create/2`,
+  `scsi:command_executer/2`): TEST UNIT READY, SEND, RECEIVE, a reply
+  cut in two, both waiting paths, an element waited for; injections
+  in its header. `scsi_command`'s `Machine.ahead` gate (waiting on an
+  element) is removed, and `ref_scsi.py` no longer sets
+  `Machine.ahead`. `ref_scsi.py`'s six IPL parts are on both models
+  (`lockstep_scsi.py --part 1..6`, `run_pimm_lockstep.sh`'s
+  `scsi@1..6`, since the merger's vector input reached the core in
+  master's d1beeb7b): 1,458,322 / 2,683,031 / 2,654,349 / 2,683,403 /
+  324,652 / 71,735 trace lines identical, `ref_scsi.check` and the
+  bus check on each. The bench now waits for a spawned goal's record
+  before its next operation (the IPL parts load an argument register
+  right after a SPAWN, and the register's A line was traced before the
+  record's M lines).
+
 ## 4. Order and dependencies
 
-S0 and S1 are independent and go first, in parallel. S2 needs S1.
+S0 and S1 are independent and go first, in parallel. S1h needs
+nothing; joining it to the core needs S1. S2 needs S1.
 S3 needs S2. S4 needs S3. S5 needs S0 and S4. S6 needs S5. S7 needs
 the PSI and SIMPOS rungs (roadmap §9). R6 of the roadmap (the
 listener's prompt) is reached inside S5.
