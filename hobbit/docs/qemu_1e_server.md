@@ -18,8 +18,9 @@ port from the same `plan9-1e.tar.bz2`, run in `qemu-system-i386`.
 | 5. CPU server | not done; what it takes is below |
 
 Three bytes-level patches to the shipped kernels were needed for QEMU's
-devices, each found with a QEMU trace (below).  The programs and files
-served are the release's, byte for byte, but the kfs is not a copy of
+devices, each found with a QEMU trace (below).  Every path and length
+of the release is served (checked over 9P, section 4; eight files also
+byte-compared against the tarball), but the kfs is not a copy of
 the 1993 file server's metadata: the mkfs archive format has no time
 field, so every file is dated at provisioning; owner and group are all
 `sys`; and modes are the tarball's owner bits copied to group and other
@@ -185,7 +186,7 @@ anyway (the archive, below).  No patch.
   as the second drive.  `/adm` comes first.  It is read from the
   tarball, not from the host extraction: the release has 33 names that
   differ from another only in case (`sys/src/cda/lde` and `LDE`,
-  `devpost/Hb` and `hb`, `*/bin/cda/lde`, `rc/bin/ape/cc`, ...), and the
+  `devpost/Hb` and `HB`, `*/bin/cda/lde`, `rc/bin/ape/cc`, ...), and the
   case-insensitive macOS extraction silently keeps one of each pair (35
   tarball entries lost; the first provisioning, from the extraction, had
   12,097 files).  The files `floppies.sh` takes from the extraction are
@@ -262,10 +263,23 @@ lib/ndb/local: Tstat local sys sys mode 666 length 1414; read 1414 bytes; identi
 hobbit/s9term: Tstat s9term sys sys mode 777 length 550846; read 550846 bytes; identical to host copy
 386/9pc: Tstat 9pc sys sys mode 777 length 583255; read 583255 bytes; identical to host copy
 rc/bin/termrc: Tstat termrc sys sys mode 777 length 1781; read 1781 bytes; identical to host copy
+sys/lib/troff/font/devpost/Hb: Tstat Hb sys sys mode 666 length 1777; read 1777 bytes; identical to host copy
+sys/lib/troff/font/devpost/HB: Tstat HB sys sys mode 666 length 1775; read 1775 bytes; identical to host copy
+sys/src/cda/lde/main.c: Tstat main.c sys sys mode 666 length 2705; read 2705 bytes; identical to host copy
+sys/src/cda/LDE/main.c: Tstat main.c sys sys mode 666 length 2907; read 2907 bytes; identical to host copy
 adm/mkext.log: Tstat mkext.log none none mode 666 length 5; not in the release; contents b'done\n'
 walk: server has 13419 paths, list 12865; missing 0, length differs 0, extra 554
+  extra /adm/mkext.log 5
+  extra /adm/tcp564.err 0
+  extra under /bin (bound in by the service): 507
+  extra under /dev (bound in by the service): 22
+  extra under /net (bound in by the service): 23
 PASS
 ```
+
+The "host copy" is the tarball member (`p9probe.py` reads the tarball
+when given one), so the two case-collision pairs are compared with the
+release, not with the folded extraction.
 
 The walk (`p9probe.py --walk build/qemu/release.list`) reads every
 directory of the served tree over 9P and compares every path and length
@@ -334,8 +348,10 @@ After the root is mounted, `/boot` calls `newkernel()` on a terminal
 (`boot.c:115-116`, `cpuflag == 0`), not with the BOOTP file but with
 `/<cputype>/9<conffile>` against the first 128 bytes of
 `<bootdisk>boot` (`newkernel.c`; `bootdisk` defaults to `#w/hd0`,
-`mkboot:66`).  It returns silently if either cannot be opened; for the
-Hobbit, `/hobbit/9term` is not in the release, so nothing happens.  On a
+`mkboot:66`).  It returns silently if either cannot be opened.  `conffile` is the
+second word of `$terminal` (`aux.c getconffile`), but whatever it is,
+the release's `/hobbit` holds no `9*` file (only `s9term`, `init`,
+`mkfile` and directories), so for the Hobbit nothing happens.  On a
 mismatch it would ask `This kernel is out of date.  Copy a new one to
 disk?` and, on `y`, overwrite the boot partition.  `bootf=` is needed
 only because `bootp` will not answer without it.

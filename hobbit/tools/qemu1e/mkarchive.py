@@ -16,7 +16,7 @@ bytes (the rest of a raw disk) are ignored.
 The source is either the release tarball itself (SRC ending in .tar.bz2,
 members under its top directory `plan9-1e/`) or a host directory.  Use
 the tarball: the release has names that differ only in case
-(sys/src/cda/lde and sys/src/cda/LDE, devpost/Hb and hb, ...), and an
+(sys/src/cda/lde and sys/src/cda/LDE, devpost/Hb and HB, ...), and an
 extraction onto a case-insensitive host file system silently keeps one
 of each pair (33 colliding names, 35 tarball entries lost).
 

@@ -21,12 +21,13 @@ every path and length with LIST; paths the server has beyond LIST are
 counted under the service's bind points (/bin, /dev, /net) and listed
 elsewhere (files the server itself wrote, e.g. /adm/mkext.log).
 
-usage: p9probe.py HOST PORT TREE [--walk LIST] [path ...]
+usage: p9probe.py HOST PORT TREE|TARBALL [--walk LIST] [path ...]
 """
 import os
 import socket
 import struct
 import sys
+import tarfile
 
 NAMELEN, DIRLEN, ERRLEN = 28, 116, 64
 NOTAG = 0xFFFF
@@ -172,6 +173,12 @@ def main():
         walklist, args = args[1], args[2:]
     paths = args or ['lib/ndb/local']
     c = Conn(host, port)
+    # TREE is the host copy of the release: a directory, or the tarball
+    # itself (needed for names that differ only in case)
+    tar = tar_top = None
+    if tree.endswith('.tar.bz2'):
+        tar = tarfile.open(tree, 'r:bz2')
+        tar_top = tar.next().name.split('/')[0]
 
     def show(name, m, r):
         print('%-8s T %s' % (name, m.hex()[:64] + ('...' if len(m) > 32 else '')))
@@ -220,13 +227,19 @@ def main():
                 break
             got += r[8:]
         c.rpc(Tclunk, struct.pack('<H', fid))
-        hp = '%s/%s' % (tree, p)
-        if not os.path.exists(hp):
+        if tar:
+            try:
+                want = tar.extractfile('%s/%s' % (tar_top, p)).read()
+            except KeyError:
+                want = None
+        else:
+            hp = '%s/%s' % (tree, p)
+            want = open(hp, 'rb').read() if os.path.exists(hp) else None
+        if want is None:
             # written by the server (e.g. adm/mkext.log): show it
             print('%s: Tstat %s %s %s mode %o length %d; not in the release; contents %r'
                   % (p, st[0], st[1], st[2], st[4], st[6], got[:400]))
             continue
-        want = open(hp, 'rb').read()
         same = got == want
         ok &= same
         print('%s: Tstat %s %s %s mode %o length %d; read %d bytes; %s host copy'
