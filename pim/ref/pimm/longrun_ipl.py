@@ -14,6 +14,11 @@
     python3 ref/pimm/longrun_ipl.py --load FILE --go --fep --type LINE [--type LINE ...]
                                     ... and the lines typed into the shell's
                                     window after the login, in order
+    python3 ref/pimm/longrun_ipl.py --load FILE --go --fep --save-prompt FILE2 [--type ..]
+                                    ... and the machine at the shell's prompt
+                                    (run dry after the login, the window's getl
+                                    held) saved to FILE2, for lockstep_shell.py
+                                    (~85 s; FILE2 ~1.2 GB)
 
 Run by bsv/run_pimm_longrun.sh.  NOT part of run_tests.sh.
 
@@ -338,7 +343,24 @@ def kernel_file(path):
     raise fepm.FepError('read_open of %r: no such file is served' % (name,))
 
 
-def go(m, loaded, info, bad, with_fep, lines=()):
+def save_prompt(path, m, loaded, info):
+    """--save-prompt FILE: the machine at the shell's prompt (run dry,
+    no SCSI command moving, the window's getl held), with its device,
+    for lockstep_shell.py.  The device's file server (a function of
+    this module) is not pickled: lockstep_shell.py gives it back."""
+    dev = m.fep
+    tr, m.tr = m.tr, None
+    of, dev.open_file = dev.open_file, None
+    lines, dev.script = dev.script, []
+    info = dict(info, prompt=dict(instructions=tr.instructions, steps=m.steps,
+                                  console=cons.console(tr)))
+    with open(path, 'wb') as f:
+        _pickler(f).dump((m, loaded, info))
+    m.tr, dev.open_file, dev.script = tr, of, lines
+    say('saved the machine at the prompt (%d instructions) to %s' % (tr.instructions, path))
+
+
+def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
     """top:go_pimos1(Loaded, BootInfo), run until the model refuses
     something.  with_fep: the device ref/pimm/fep.py is attached
     (Machine.fep, as ref_scsi.py attaches it), and when the machine
@@ -381,6 +403,10 @@ def go(m, loaded, info, bad, with_fep, lines=()):
                 continue
             # PIMOS idles: the FEP's next scripted event, if a held
             # request waits for one (fep_services.md 7.5, 7.7 item 1)
+            if save_at and 'getl' in dev.held.values() and \
+                    (not dev.script or dev.script[0][0] == 'getl'):
+                save_prompt(save_at, m, loaded, info)
+                save_at = None
             if not dev.idle():
                 break
             say('fep: a scripted event at %d instructions' % m.tr.instructions)
@@ -456,7 +482,8 @@ def main(argv):
             m, loaded, info = pickle.load(f)
         say('loaded the machine after the link')
         bad = []
-        go(m, loaded, info, bad, '--fep' in argv, typed(argv))
+        go(m, loaded, info, bad, '--fep' in argv, typed(argv),
+           argv[argv.index('--save-prompt') + 1] if '--save-prompt' in argv else None)
         print('pimm longrun ipl --load: %s %r' % ('FAIL' if bad else 'PASS', info['go']))
         return 1 if bad else 0
     n = int(argv[-1]) if argv[-1].isdigit() else None

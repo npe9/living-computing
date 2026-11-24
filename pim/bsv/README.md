@@ -239,6 +239,50 @@ merger timing change, which moved the count): the IPL's `load/4` on the whole he
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
+
+### The lockstep from a saved machine (`run_pimm_shell.sh`)
+
+`run_pimm_shell.sh PKL [--type LINE ...]` runs PIMOS on the core from
+a machine the reference saved, compared line by line with the
+reference model (`../ref/pimm/lockstep_shell.py`). It is outside the
+suite because the saved machines are ~1.1 GB pickles, not in git, that
+the IPL's link takes 15-50 minutes to make. How they are made:
+
+    python3 ref/pimm/longrun_ipl.py --reference --save LINK.pkl
+    python3 ref/pimm/longrun_ipl.py --load LINK.pkl --go --fep --save-prompt PROMPT.pkl
+
+The second command takes about 85 s and saves the machine at the
+shell's prompt: run dry after the login, the window's `getl` held by
+`fep.py`, one RECEIVE waiting in the SCSI box. The core is given the
+saved heap as a file (`PimmMem.bsv`: the heap RAM loads it on the
+bench `mkPimmShellTb`, so nothing is traced). It is also given what of
+the machine is not in memory, by the script's RESTORE operations
+(`PimmCore.restore`): the heap pointer, `new_atom`'s counter, the clock
+(ticks and the instructions since the last one), the SCSI box's command
+count and its waiting commands. The run queue, the merger's lists and
+the current shoen are empty between runs; `lockstep_shell.py` asserts
+this. The reference runs with `Machine.ahead` off. After the RESTOREs
+the script is `go()`'s loop as RUN and POLL; the device is the tape of
+`fep.py`'s answers, and `Fep.idle()`, the scripted events, belongs to
+the reference alone.
+
+Measured 2026-11-24, every line identical (`PINNED` in
+`lockstep_shell.py`), on a shared machine:
+
+| From | Typed | Instructions of `go()` | Trace lines | Ends |
+|---|---|---|---|---|
+| the prompt | `shutdown`, `yes` | 8,587,092 to 8,766,339 (179,247) | 878,180 | `PIMOS END********`, nothing left to run, 253 goals waiting |
+| the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,092 to 8,760,685 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
+| the link | `shutdown`, `yes` | 0 to 8,766,339 | 20,107,047 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
+
+The last row is the first time PIMOS's start, the login and the shell
+have run on the Bluespec core: everything `longrun_ipl.py --go --fep`
+does after the link, 221 device answers on the tape, 5,859 splices of
+the merger's list (300 onto a list that is not empty). No divergence was found, so nothing in the
+core was changed. The splice-order injection into the goal box (the
+merger's list) fails the first row at line 8,429
+(`lockstep_merge.py`'s header).
+
 State: 168
 instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
 both models; 165 without our three stubs; the earlier 128 and 130 were

@@ -3275,8 +3275,11 @@ class Machine:
             bs, buf = self.need_string(e[5])
             if cs != 8 or bs != 8 or self.need_int(e[6]) != 0 or not 0 <= length <= len(buf):
                 raise Unimplemented('scsi_command arguments %r' % (e,))
+            # cdbw: the CDB's string, kept for a checkpoint of a waiting
+            # command (lockstep_shell.py gives it to the core, whose
+            # waiting list holds the cells); not read here
             cmd = dict(unit=unit, lun=lun, cdb=cdb, length=length, dir=direction, buf=buf,
-                       word=e[5])
+                       word=e[5], cdbw=e[2])
             ident = (INT, self.scsi_commands)
             self.scsi_commands += 1
             done = self.scsi_do(cmd)

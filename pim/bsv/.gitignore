@@ -21,3 +21,5 @@ build_fepemu*/
 PimmSdBlockFile.o
 PimmFepEmuTb.o
 fpga_build_fepemu/
+# the lockstep from a saved machine (run_pimm_shell.sh)
+build_shell/
