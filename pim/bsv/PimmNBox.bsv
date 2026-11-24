@@ -19,6 +19,10 @@
 //   close(rec)        an input ends: the count goes down.  a = the
 //                     output, ok = the count reached 0 (the exec stage
 //                     then unifies the output with [])
+//   spread(rec, n)    an input bound to a vector of n: it ends and n
+//                     begin, the count goes up by n - 1; answered as
+//                     close (ok only for the empty vector at a count
+//                     of 1).  The exec stage makes the n goals
 //
 // A car or cdr cell that is an unbound variable is taken as a
 // reference to it.
@@ -36,10 +40,11 @@ interface PimmNBox;
   method Action create(Cell out);
   method Action cons(Cell list, Cell rec);
   method Action close(Cell rec);
+  method Action spread(Cell rec, Bit#(32) n);
   method ActionValue#(NResult) result;
 endinterface
 
-typedef enum { NKCreate, NKCons, NKClose } NKind deriving (Bits, Eq);
+typedef enum { NKCreate, NKCons, NKClose, NKSpread } NKind deriving (Bits, Eq);
 typedef struct { NKind k; Cell v; Cell rec; } NReq deriving (Bits);
 typedef enum { NIdle, NCr1, NCr2, NCr3, NCo1, NCo2, NCo3, NCo4, NCo5, NCo5b, NCo6, NCl1, NCl1b, NCl2 }
   NState deriving (Bits, Eq);
@@ -78,7 +83,7 @@ module mkPimmNBox#(MemPort mem, PimmGBox gbox)(PimmNBox);
         mem.read(cellAddr(q.rec));
         st <= NCo1;
       end
-      NKClose: begin
+      NKClose, NKSpread: begin
         mem.read(cellAddr(q.rec) + 1);
         st <= NCl1;
       end
@@ -147,8 +152,10 @@ module mkPimmNBox#(MemPort mem, PimmGBox gbox)(PimmNBox);
   // ---- an input ends
   rule close1 (st == NCl1);
     let c <- mem.data;
-    cnt <= c.val - 1;
-    mem.write(rec + 1, intC(c.val - 1));
+    // spread: rq.v holds the vector's size
+    Bit#(32) n = c.val - 1 + (rq.k == NKSpread ? rq.v.val : 0);
+    cnt <= n;
+    mem.write(rec + 1, intC(n));
     st <= NCl1b;
   endrule
 
@@ -165,6 +172,7 @@ module mkPimmNBox#(MemPort mem, PimmGBox gbox)(PimmNBox);
   method Action create(Cell o) = reqQ.enq(NReq { k: NKCreate, v: o, rec: ? });
   method Action cons(Cell l, Cell r) = reqQ.enq(NReq { k: NKCons, v: l, rec: r });
   method Action close(Cell r) = reqQ.enq(NReq { k: NKClose, v: ?, rec: r });
+  method Action spread(Cell r, Bit#(32) n) = reqQ.enq(NReq { k: NKSpread, v: intC(n), rec: r });
   method ActionValue#(NResult) result;
     resQ.deq;
     return resQ.first;

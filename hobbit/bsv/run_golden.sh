@@ -31,6 +31,16 @@ export PATH
 GEN=generated
 mkdir -p "$GEN"
 
+# HOBBIT_SIM=verilator runs the testbench on Verilator instead of
+# Bluesim (sim_golden_vl_NNN; docs/bluespec_architecture.md,
+# "Simulators").  The output is the same either way.
+sim=${HOBBIT_SIM:-bluesim}
+case "$sim" in
+  bluesim|verilator) ;;
+  *) echo "run_golden: HOBBIT_SIM must be bluesim or verilator, not $sim" >&2
+     exit 2 ;;
+esac
+
 run_one() {
   stem=$1
   case "$stem" in
@@ -145,10 +155,28 @@ endpackage
 EOF
 
   log="$GEN/build_$stem.log"
-  "$BSC" +RTS -K512M -RTS -sim -g mkGoldenTb_$stem -u "$tb.bsv" >"$log" 2>&1
-  "$BSC" +RTS -K512M -RTS -sim -e mkGoldenTb_$stem -o "sim_golden_$stem" >>"$log" 2>&1
-
-  out=$(./sim_golden_"$stem")
+  if [ "$sim" = verilator ]; then
+    # The same testbench through bsc -verilog and Verilator
+    # (build_p9host_vl.sh explains the flags; there are no C calls here).
+    vb=../build/verilator/golden
+    mkdir -p "$vb"
+    "$BSC" +RTS -K512M -RTS -verilog -g mkGoldenTb_$stem -u \
+        -vdir "$vb" -bdir "$vb" -info-dir "$vb" "$tb.bsv" >"$log" 2>&1
+    rm -f "$vb/obj_$stem/VmkGoldenTb_$stem"
+    "${VERILATOR:-verilator}" --cc --exe --build -j "${VL_JOBS:-4}" -O3 \
+        --x-assign fast --x-initial fast --no-timing \
+        -Wno-fatal -Wno-lint -Wno-style -Wno-STMTDLY \
+        --top-module mkGoldenTb_$stem -y "$BLUESPECDIR/Verilog" \
+        -Mdir "$vb/obj_$stem" \
+        -CFLAGS "-O2 -DVL_TOP=VmkGoldenTb_$stem -DVL_TOP_H='\"VmkGoldenTb_$stem.h\"' -DVL_USER_FINISH" \
+        "$vb/mkGoldenTb_$stem.v" "$(pwd)/vl_main.cpp" >>"$log" 2>&1
+    cp "$vb/obj_$stem/VmkGoldenTb_$stem" "sim_golden_vl_$stem"
+    out=$(./sim_golden_vl_"$stem")
+  else
+    "$BSC" +RTS -K512M -RTS -sim -g mkGoldenTb_$stem -u "$tb.bsv" >"$log" 2>&1
+    "$BSC" +RTS -K512M -RTS -sim -e mkGoldenTb_$stem -o "sim_golden_$stem" >>"$log" 2>&1
+    out=$(./sim_golden_"$stem")
+  fi
   printf '%s\n' "$out"
   self_check "$stem" "$out"
 }

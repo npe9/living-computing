@@ -79,7 +79,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test (with arguments, only the tests named). Forty tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Forty-three tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -176,7 +176,19 @@ only). `elw`: `string_operation` waits on an element of its vector
 that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
 `b_string`'s real sites, and `builtin_utility:append_string/2`).
 `reuse`: `put_reused_structure` of a vector of seven
-(`scsi_fep_file:request_device_io/6`).
+(`scsi_fep_file:request_device_io/6`). `prio`: `current_node` (one
+node: 0 of 1) on code the bench writes, and
+`calculate_priority_from_current` at its stub and at the image's
+`shoen:execute/7` (PDSS's formula, the range and the current priority
+ours). `atom`: `top:go1/4`'s atom-number server, with
+`supply_atom_number` (what it does is not sourced: its inputs dropped,
+its output never bound, ours; the bench binds it) and a merger input
+bound to a vector (`throw_atom_number_client/4`'s `{E, F}`; the merger
+box's `spread`, the goals made through the argument registers).
+`xmod`: an external call between two modules the IPL loaded
+(`pimm_patch_mkdir360E.sav` through `ipl_loader:load/4`, the bench
+binding the module variable as the linker would; the hash box's
+dereference of the module field), about 7.4 M trace lines.
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -184,9 +196,9 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 131
-instructions (a recount, 2026-11-23: 133 handlers in `pimm.py` less the
-two SCSI built-ins on the reference alone; 129 without our two stubs; the
+State: 134
+instructions (a recount, 2026-11-23: 136 handlers in `pimm.py` less the
+two SCSI built-ins on the reference alone; 132 without our two stubs; the
 earlier 128 and 130 were increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
@@ -232,6 +244,102 @@ with `--timing-allow-fail`, and `ecppack --compress`, all in a fresh
 Fmax and the WP2 gate; a timing miss is not a build failure, but missing
 tools or a failed synthesis/place/route/bitstream step exits nonzero.
 
+## The FEP emulator on the ULX3S (`../docs/scsi_plan.md` S1h)
+
+The owner asked for "a scsi emulator on the ulx3s using either sdram,
+qspi flash or the sd card". It uses the **SD card**: the 32 MB SDRAM
+already holds the PIM/m local store (`PimUlx3s.bsv`, `PimSdramStore`);
+the QSPI flash holds the bitstream, is a few MB, and is awkward to
+rewrite from the host; the SD card is large, removable, and written by
+the host, as the FEP's own disk was. The emulator plays the FEP's part
+(`../ref/pimm/fep.py`, put in hardware): a processor-type SCSI target at
+unit 7 (SEND on LUN 0, RECEIVE on LUN 1, TEST UNIT READY), the packet
+layer and the IPL's file service (read_open 201, getb 210, close 60,
+abort 70; statuses 1, 2, 5), answering as `fep.py` does byte for byte,
+with its OURS choices. Each file's header says what is OURS and what
+comes from `fep.py` and the PIMOS source.
+
+| file | what it is |
+|---|---|
+| `PimmFepEmu.bsv` | `mkPimmFepEmu`: the FEP. `Server#(FepCmd, FepAnswer)` (unit, LUN, CDB, direction, length; answer done / not ready / refused), `sendData` / `recvData` byte streams, `configure` (`fep.py`'s test options), `maxBuffer` (16000, for `scsi_init`), and an `SdBlockClient` for the card |
+| `PimmSdTypes.bsv` | the block interface: 512-byte block reads, an `err` byte on failure, no write |
+| `PimmSdBlock.bsv` | `mkPimmSdBlock`: the microSD slot in SPI mode (our own design; read-only by construction; no tristate) |
+| `PimmSdBlockFile.bsv`, `.c` | the card as a host image file through BDPI (Bluesim only, opened `rb`) |
+| `PimmSdCardModel.bsv` | an SPI-mode card model over the image (Bluesim only), so `mkPimmSdBlock` runs before any board |
+| `PimmFepEmuTb.bsv`, `.c` | the bench: replays a tape's commands, prints each answer |
+| `PimmFepEmuSpiTb.bsv` | the same bench over `mkPimmSdBlock` and the card model (block-addressed v2 and byte-addressed v1 cards) |
+| `fepemu_check.py` | makes the card and vectors, runs a bench, compares every answer with `fep.py`'s |
+| `run_fepemu.sh` | builds the three benches and runs every tape on each (in `../run_tests.sh`; about a minute) |
+| `PimmFepUlx3s.bsv`, `PimmFepTop.v`, `ulx3s_fep.lpf` | the board: `mkPimmFepSelfTest` (reads the directory, then opens, reads to the end and closes entry 0 through the emulator's command interface, checks length and sum, reports over the UART) over `mkPimmSdBlock` |
+| `PimmFepUlx3sTb.bsv` | the self-test in Bluesim over the SPI reader and card model |
+| `run_fepemu_fpga.sh` | the self-test in Bluesim, then yosys / nextpnr-ecp5 / ecppack |
+| `../tools/mkfepcard.py` | builds a card image (format in its header), `--list` reads one |
+| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py` (and a direct sequence of OURS for what they never do) |
+
+**Verification.** `run_fepemu.sh`: each tape (one file, two files,
+characters, late, odd, small buffer: every call `ref_scsi.py`'s machine
+run made of `Fep.command`, retries and unanswered RECEIVEs included; and
+`direct`: a failed open, abort, a request in two packets, a reply cut
+three times, two devices, each `FepError`) is replayed into a fresh
+`fep.Fep` for the expected answers and into the emulator, over a card
+with decoy entries (a prefix and an extension of each real name, ahead of
+it), on three benches (the image file; the SPI reader with a
+block-addressed card; with a byte-addressed card). 7 tapes, 230 commands,
+all answers equal on all three. Injected faults and what each was
+observed to fail: the header of `PimmFepEmuTb.bsv`.
+
+**Synthesis** (`run_fepemu_fpga.sh`, yosys 0.51, nextpnr-ecp5 --85k,
+2026-11-23): 10,039 LUT4 (7,553 logic, 2,276 carry, 140 RAM), 3,099
+TRELLIS_FF, 3 DP16KD, 19 I/O; **40.39 MHz** (PASS at 25 MHz). The
+self-test passes in Bluesim on the `--held` image (entry 0,
+`pimos:pimos.ipl`: 1,678 bytes, sum 00019246h). No board has run it.
+
+**Pins** (`ulx3s_fep.lpf`): sd_clk H2, sd_cmd J1 (MOSI), sd_d0 J3 (MISO),
+sd_d3 K2 (CS), sd_d1 H1 and sd_d2 K1 inputs, LVCMOS33, pull-up, from
+`~/src/ulx3s-experiments/flute-lx50/constraints/ulx3s_85f.lpf`
+lines 45-57 (verified on this board by that project) and the same as
+prjtrellis `ulx3s_v20.lpf` lines 112-128. The UART is `ftdi_rxd` (L4),
+the line the FPGA transmits on ("FPGA transmits to ftdi",
+`ulx3s_v20.lpf` line 17). `wifi_en` is held low (the ESP32 shares the
+SD pins).
+
+**On a board: the owner's steps, none run here.** The board on this
+machine runs the Flute Linux core for another session (2026-11-23):
+loading this bitstream replaces it, so it waits for a window arranged
+with the session lead. Use a card of your own, not the one holding the
+Flute Linux boot (that card is read-only for everyone): `dd` overwrites
+everything on the card it is given.
+```
+python3 tools/mkfepcard.py /tmp/fep.img --held        # from pim/
+python3 tools/mkfepcard.py --list /tmp/fep.img
+diskutil list                                          # find the card: /dev/diskN
+diskutil unmountDisk /dev/diskN
+sudo dd if=/tmp/fep.img of=/dev/rdiskN bs=1m           # check N twice
+openFPGALoader -b ulx3s bsv/fpga_build_fepemu/ulx3s_fep.bit   # SRAM, not flash
+screen /dev/tty.usbserial-* 115200
+```
+Expected: LEDs 0, 2 and 3 on (card ready, mounted, PASS), and every
+1.3 s `PIMFEP PASS n=0000068e s=00019246 want n=0000068e s=00019246`.
+FIRE1 starts again. LED 1 is a card that did not initialize; LED 4 FAIL,
+with the step in LEDs 7..5 and on the line.
+
+**The adapter to the core.** `bsv/PimmScsiBox.bsv` (being written
+elsewhere) puts the device on a port of `mkPimmCore` (`scsiReq` /
+`scsiResp`). The adapter between that port and this emulator, a thin
+module of rules, must: (1) turn a request into a `FepCmd` (unit and LUN
+as 32 bits, the CDB string's bytes and length, the direction, the
+length), and for direction 1 put exactly `length` bytes of the buffer on
+`sendData`, whatever the answer (pimm.py `scsi_do` hands `fep.py`
+`buf[:length]`); (2) on `FepDone` give the core result 0, the
+transferred length (`count` for direction 2, `length` otherwise, as
+`scsi_do`) and, for direction 2, the `count` bytes from `recvData` to
+write into the buffer string; (3) on `FepNotReady` keep the command and
+offer it again later, as `Machine.scsi_poll` does (after any command
+that finishes, and when the core has nothing to run), binding Id and
+NewObj at once and the rest when it finishes; (4) on `FepRefused` stop
+loudly (the reference raises `FepError`); (5) give `scsi_init` Info[0]
+from `maxBuffer`.
+
 ## Regression
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
@@ -240,6 +348,7 @@ the Bluesim smoke test (`run_smoke.sh`), the negative-opcode testbench
 network-unit testbench
 (`run_nu_tb.sh`), the link testbench (`run_link_tb.sh`), the routed
 crossbar testbench (`run_nu_routed_tb.sh`), the mesh testbench
-(`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`) and
-the formal BMC (`formal/run_formal.sh`). The board build check is
-`run_fpga_build.sh`.
+(`run_mesh_tb.sh`), the SDRAM-store testbench (`run_sdram_tb.sh`), the
+FEP emulator against `fep.py` (`run_fepemu.sh`) and
+the formal BMC (`formal/run_formal.sh`). The board build checks are
+`run_fpga_build.sh` and `run_fepemu_fpga.sh`.

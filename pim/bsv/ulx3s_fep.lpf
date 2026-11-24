@@ -1,0 +1,58 @@
+# ulx3s_fep.lpf -- pins for the FEP emulator self-test (PimmFepTop.v).
+# A copy, not an edit, of ulx3s_85f.lpf's clock, FIRE1, FTDI, wifi_en and
+# LED lines (the PIM top's file is left as it is), plus the microSD slot.
+#
+# The microSD pins: ~/src/ulx3s-experiments/flute-lx50/
+# constraints/ulx3s_85f.lpf lines 45-57, verified on this board by that
+# project (it boots Linux from the card), "microSD slot in SPI mode";
+# the same sites as prjtrellis examples/ulx3s/ulx3s_v20.lpf lines 112-128
+# (cited in stretch/docs/tape_data_path.md §1.1).  From that file's
+# comments: sd_d1 (H1) and sd_d2 (K1) are inputs in SPI mode; sd_d2 is
+# the ESP32's MTDI (GPIO12) strap, ignored on that board (efuse
+# XPD_SDIO_FORCE); sd_d0 also drives the ESP32's GPIO2 strap.  wifi_en
+# low holds the ESP32 in reset, as both files do.
+# The FTDI line: ftdi_rxd (L4) is the one the FPGA transmits on
+# (ulx3s_v20.lpf line 17: "FPGA transmits to ftdi").
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+
+LOCATE COMP "CLK" SITE "G2";
+IOBUF PORT "CLK" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "CLK" 25 MHZ;
+
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+LOCATE COMP "BTN1" SITE "R1";
+IOBUF PORT "BTN1" PULLMODE=DOWN IO_TYPE=LVCMOS33;
+
+LOCATE COMP "ftdi_rxd" SITE "L4";
+IOBUF PORT "ftdi_rxd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "ftdi_txd" SITE "M1";
+IOBUF PORT "ftdi_txd" PULLMODE=UP IO_TYPE=LVCMOS33;
+LOCATE COMP "wifi_en" SITE "F1";
+IOBUF PORT "wifi_en" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+
+LOCATE COMP "led[7]" SITE "H3";
+LOCATE COMP "led[6]" SITE "E1";
+LOCATE COMP "led[5]" SITE "E2";
+LOCATE COMP "led[4]" SITE "D1";
+LOCATE COMP "led[3]" SITE "D2";
+LOCATE COMP "led[2]" SITE "C1";
+LOCATE COMP "led[1]" SITE "C2";
+LOCATE COMP "led[0]" SITE "B2";
+IOBUF PORT "led[*]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+
+# microSD, SPI mode
+LOCATE COMP "sd_clk" SITE "H2";
+LOCATE COMP "sd_cmd" SITE "J1";
+LOCATE COMP "sd_d0"  SITE "J3";
+LOCATE COMP "sd_d3"  SITE "K2";
+LOCATE COMP "sd_d1"  SITE "H1";
+LOCATE COMP "sd_d2"  SITE "K1";
+IOBUF PORT "sd_clk" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "sd_cmd" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "sd_d0"  PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "sd_d3"  PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "sd_d1"  PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "sd_d2"  PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;

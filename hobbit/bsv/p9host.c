@@ -152,13 +152,19 @@ next_line(void)
 static void
 init(void)
 {
-	const char *path = getenv("P9REC");
-	const char *out = getenv("P9OUT");
+	const char *path, *out;
 	uint32_t a, b;
 
+	/*
+	 * Every entry point calls this, several times a clock, so the
+	 * getenv calls come after the test: before it they were a third of
+	 * the Verilator run's time (sampled 2026-11-23).
+	 */
 	if (initialised)
 		return;
 	initialised = 1;
+	path = getenv("P9REC");
+	out = getenv("P9OUT");
 	if (!path)
 		path = "p9.rec";
 	if (out)

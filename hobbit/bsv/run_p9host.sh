@@ -25,6 +25,13 @@
 #
 # Everything is left in p9work/ (gitignored).  P9HOST_KEEP_SIM=1 reuses
 # an existing simulator (the testbench does not depend on the program).
+#
+# P9HOST_SIM picks the simulator of step 2: `bluesim` (the default,
+# sim_p9host) or `verilator` (sim_p9host_vl: bsc -verilog, then
+# Verilator; run_p9host_vl.sh sets it).  Both print the same core.log
+# byte for byte (docs/bluespec_architecture.md, "Simulators").
+# P9HOST_WORK overrides the work directory (default p9work/), which is
+# deleted and remade on every run.
 set -eu
 cd "$(dirname "$0")"
 here=$(pwd)
@@ -51,7 +58,20 @@ export BLUESPECDIR
 PATH=$(dirname "$BSC"):$PATH
 export PATH
 
-work=$here/p9work
+sim=${P9HOST_SIM:-bluesim}
+case "$sim" in
+  bluesim|verilator) ;;
+  *) echo "run_p9host.sh: P9HOST_SIM must be bluesim or verilator, not $sim" >&2
+     exit 2 ;;
+esac
+
+work=${P9HOST_WORK:-$here/p9work}
+# The work directory is deleted and remade; refuse one that holds
+# anything but an earlier run's (no p9.rec in a non-empty directory).
+if [ -d "$work" ] && [ -n "$(ls -A "$work")" ] && [ ! -e "$work/p9.rec" ]; then
+  echo "run_p9host.sh: $work is not an earlier run's work directory; not deleting it" >&2
+  exit 2
+fi
 rm -rf "$work"
 mkdir -p "$work/out"
 cp -R "$tree" "$work/ref"
@@ -74,15 +94,25 @@ if ! grep -q '^p9run: exits(' "$work/ref.status"; then
 fi
 echo "P9HOST reference: $(wc -l < "$work/ref.hri" | tr -d ' ') retirements, $(grep -c '^E ' "$work/p9.rec" || true) kernel entries"
 
-if [ "${P9HOST_KEEP_SIM:-0}" != 1 ] || [ ! -x sim_p9host ]; then
-  "$BSC" +RTS -K512M -RTS -sim -g mkP9HostTb -u P9HostTb.bsv > "$work/build.log" 2>&1 || {
-      tail -30 "$work/build.log"; exit 1; }
-  "$BSC" +RTS -K512M -RTS -sim -e mkP9HostTb -o sim_p9host p9host.c >> "$work/build.log" 2>&1 || {
-      tail -30 "$work/build.log"; exit 1; }
+if [ "$sim" = verilator ]; then
+  simbin=sim_p9host_vl
+else
+  simbin=sim_p9host
+fi
+if [ "${P9HOST_KEEP_SIM:-0}" != 1 ] || [ ! -x "$simbin" ]; then
+  if [ "$sim" = verilator ]; then
+    "$here/build_p9host_vl.sh" > "$work/build.log" 2>&1 || {
+        tail -30 "$work/build.log"; exit 1; }
+  else
+    "$BSC" +RTS -K512M -RTS -sim -g mkP9HostTb -u P9HostTb.bsv > "$work/build.log" 2>&1 || {
+        tail -30 "$work/build.log"; exit 1; }
+    "$BSC" +RTS -K512M -RTS -sim -e mkP9HostTb -o sim_p9host p9host.c >> "$work/build.log" 2>&1 || {
+        tail -30 "$work/build.log"; exit 1; }
+  fi
 fi
 
 simstatus=0
-P9REC="$work/p9.rec" P9OUT="$work/out" ./sim_p9host > "$work/core.log" 2>&1 || simstatus=$?
+P9REC="$work/p9.rec" P9OUT="$work/out" "./$simbin" > "$work/core.log" 2>&1 || simstatus=$?
 grep '^P9HOST' "$work/core.log" || true
 grep -v '^HRI \|^P9HOST' "$work/core.log" | head -20 || true
 
