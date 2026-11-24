@@ -153,7 +153,11 @@ STILL OPEN, in order:
    (div 866 -> 891, dec 859 -> 867, vfl 945 -> 949, values passing).
    Elsewhere int_recovery_undo moved 558 -> 550 (the divider's; RDIV gives
    it back) and two unpinned MCP runs one clock each (the decimal adder's;
-   RDEC gives both back). LEFT:
+   RDEC gives both back). THE ATLAS (2026-11-24, all 27,644 cases against
+   master) holds: 347 VFL decimal cases move, all the decimal adder's
+   (RDEC gives every one back), none by more than 0.0063 clocks, sum of
+   |residual| 819.769 -> 819.745; the divider and VFL multiplier move no
+   case; so all three releases are kept. LEFT:
    the radix converter (DCV, boxKind 2) is still confined -- no deck of
    its own and no measurement; the VFL divide holds the divider only 4
    clocks (96 bits at 24 a clock) and the decimal adder and VFL

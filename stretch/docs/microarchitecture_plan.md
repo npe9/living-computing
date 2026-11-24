@@ -6466,7 +6466,19 @@ Staged, each step green and committed:
      walk and the BD came in the two clocks after the level, NEXT.md item
      3. A switch refusing BE/BD/BEW beside a held level was tried and moved
      nothing there (the BD was not beside the level), so it was backed out.
-     @ATLAS@
+     THE ATLAS DECIDES EACH BOX (`tests/atlas_oracle.py --tsv`, all 27,644
+     cases, on the merged tree, against master 3997745's bsv/ with the same
+     generator; 2026-11-24): 347 cases move, all on the VFL decimal pages
+     (PDF 116-121, 127-131, 143-158, 171-181), none by more than 0.0063
+     clocks a copy; 175 come closer to the printed time and 172 go farther,
+     the sum of |residual| over them 819.769 -> 819.745 clocks, the mean
+     over the atlas 3.6984 unchanged, the exact count 10,989 unchanged.
+     Per box (one switch False, the 26 pages re-run, real file, exact
+     inverse edit, cmp IDENTICAL): RDEC gives all 347 back to master's
+     value; RDIV and RVFL give back none and move nothing else there.  So
+     the divider's and the VFL multiplier's releases leave the atlas where
+     it was, and the decimal adder's holds it (a net 0.024 clocks closer);
+     all three are kept.
      MOVED PINS (MODEL; each given back by its switch's injection, real
      file, exact inverse edit, cmp IDENTICAL, values passing):
      int_recovery_undo CYCLES 558 -> 550, MEMREADS 48 -> 46 (RDIV gives
