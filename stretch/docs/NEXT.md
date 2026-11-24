@@ -2140,6 +2140,27 @@ size.
 
 ## printed p.166 PRINTS ONE LABEL TWICE -- OPEN, and strap_asm cannot represent it
 
+**2026-11-23: NOT BUILT, AND A PRINTED RULE NOW STANDS AGAINST THE PAGE.**
+C22-6729 printed p.127 (MULTI, read in the ink): a label defined twice at
+different values is "an illegal multiply-defined-with-contradictions
+symbol", MULTI leaves the dictionary on the first vle, and "The symbol
+table entry for the first 'B' is used in all references to this symbol."
+Printed p.25 Box 54: "multiply-defined" is one of the error flags OR'ed
+into the unit -- and line 30 carries a LOCATION-COLUMN ASTERISK
+(`220272.00 *`) where line 27 does not, which fits MULTI flagging the
+second definition.  But by p.127 line 20 must compile `220267.34`, and
+the page prints `220272.34`.  Measured: strap2 (which builds MULTI,
+pass1.py `_multi`) takes the deck with both labels written `ZFRO5` and
+gives line 18 `220267.34 04` (printed) and line 20 `220267.34 02` (the
+page prints `220272.34 02`).  So the printed form CAN now be carried
+under ASM=strap2 with line 20 failing, the house rule's failing row;
+under strap_asm it cannot without (1) accepting a duplicate label
+silently in every deck (it has no message channel, and the refusal is
+the corpus's only guard against a doubled transcription) and (2) an
+expected-failure mark in `verify_mcp_page.py`.  Neither was built for
+an optional item; the stand-in `ZFRO5DUP` stays.  The question is now
+narrower: why a March 1963 assembler resolved line 20 against p.127.
+
 MCP printed p.166 carries `ZFRO5` on **line 27 (220267.00) and line
 30 (220272.00)**, and two references that both PRECEDE both
 definitions resolve to DIFFERENT ones: line 18's `BZBZ,TMFREJ,ZFRO5`

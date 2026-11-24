@@ -1295,3 +1295,12 @@ until one has.
       No deck in decks/ writes an integer index (searched 2026-11-12: symbols and
       constants; the only hits are UNTAIL's tail level), so refusing it would cost
       no deck.  Array subscripts and 75-77: tests/check_strap2_subscripts.py.
+    - **printed p.166's label printed twice (`ZFRO5`): NOT BUILT, and
+      why.** C22-6729 printed p.127 (MULTI) is a printed rule for it --
+      the first definition serves "all references" -- and the page
+      contradicts it on line 20 (`220272.34` printed; the rule, and
+      strap2, give `220267.34`).  Representing the page faithfully
+      means carrying the printed label and letting line 20 fail, which
+      strap_asm can do only by accepting duplicates silently corpus-wide
+      and by an expected-failure mark in `verify_mcp_page.py`.  The
+      `ZFRO5DUP` stand-in stays; `docs/NEXT.md` has the measurement.
