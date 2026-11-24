@@ -22,7 +22,8 @@
 //   faultinfo the code of the last fault names its kind
 //
 // Output: FAIL lines and  UNIT pass=P fail=F
-// Discrimination: see run_tests.sh's header (observed failures).
+// Discrimination: README.md "Discrimination" lists the injected bugs and
+// the failures observed for each.
 
 package QuartUnitTb;
 
@@ -149,7 +150,7 @@ module mkQuartUnitTb(Empty);
   function Stmt settle = seq noAction; noAction; noAction; endseq;
   function Bit#(10) frame(Bit#(8) b, Bit#(1) stop) = {stop, b, 1'b0};
 
-  // expected txd for 0xA5: start 0, 1 0 1 0 0 1 0 1 (LSB first), stop 1
+  // expected txd for a byte: start 0, data LSB first, stop 1 (0x31 is used: not a bit palindrome, so bit order shows; 0xA5 would not)
   function Bit#(64) wave(Bit#(8) b);
     Bit#(10) bits = {1'b1, b, 1'b0};
     Bit#(64) w = 0;
@@ -163,10 +164,10 @@ module mkQuartUnitTb(Empty);
     wr(12'h008, 8'h10); wr(12'h000, 8'h13); wr(12'h000, 8'h07);
     wr(12'h008, 8'h05);                       // TxEnable | RxEnable
     expectRd(12'h004, 32'h0c, "pin-tx sr before");
-    wr(12'h00c, 8'ha5);
+    wr(12'h00c, 8'h31);
     await(capN == fromInteger(10 * cpb) && !capOn);
-    check(cap == wave(8'ha5), $format("pin-tx txd waveform %b, want %b",
-                                      cap[39:0], wave(8'ha5)[39:0]));
+    check(cap == wave(8'h31), $format("pin-tx txd waveform %b, want %b",
+                                      cap[39:0], wave(8'h31)[39:0]));
     await(q.dbg.txIdle);
     expectRd(12'h004, 32'h0c, "pin-tx sr after");
 

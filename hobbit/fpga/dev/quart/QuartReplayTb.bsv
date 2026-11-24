@@ -27,8 +27,8 @@
 // Output: one MISMATCH line per difference (run_tests.sh counts them),
 // then  SUMMARY records=N accesses=A cycles=C
 //
-// Discrimination (observed, see run_tests.sh's header for the commands and
-// the injected patches): recorded in the header of run_tests.sh.
+// Discrimination: README.md "Discrimination" lists the injected bugs and
+// the failures observed for each.
 
 package QuartReplayTb;
 
