@@ -76,7 +76,9 @@ matches the disk.  WHAT IS FETCHED, and from where:
   The disk dictionary as IPL wrote it (measured, disk_dir()): LBSIN at disk
   word 16723 (45), LBUST* 16768 (30), LBFISIP* 16798 (45), LBIOCS* 16843
   (105), PCBSS 16948 (15), BSS 16963 (2100), )))))))) 20480 (512, arc 40),
-  22$EOJ 15031 (1692), 22LOADER 12948 (1057).
+  22$EOJ 15031 (1692), 22LOADER 12948 (1057).  In arcs (512 words):
+  22LOADER 25-27, 22$EOJ 29-32, the LB areas 32-33, PCBSS 33, BSS 33-37
+  (IPL's last written arc), TWS 40.
   An in-run tamper of BSS, TWS or 22$EOJ patches the bench's disk copy
   (the program's `disk`); the IPL stays the control's.
 THE STUBS THAT REMAIN on this path (each still SCAFFOLD unless named):
@@ -150,11 +152,13 @@ STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
   -> YRESLD, l.50; see stage 7), and from YRESLD it is IBM's code: LX,$1,YXWRLD / B,YMPFCH (ll.50-51); YMPFCH
   (p.269) finds YMPSAV holding $EOJ (the post-IPL image: JC4 was in core),
   saves LOADER and fetches 22LOADER into YMPBUF -- the overlay area holds
-  22SCOMD after IPL -- through the stub's LFETCH (SCAFFOLD for DFETCH, a
-  core image of the landed pp.320-334 at 264000); YFHBR's BE,YRESL1 (p.269
+  22SCOMD after IPL -- through MCP's DISK FETCH from the disk IPL wrote
+  (M-a; before 2026-11-24 the stub's LFETCH over a core image of the
+  landed pp.320-334 at 264000); YFHBR's BE,YRESL1 (p.269
   l.56) enters YRESL1 (p.332 l.2): SCORG = 1 -> YRESL2, YRLDTA <- YDFCS, the PP clear
-  (ll.13-17), then per card YRDISK (ll.27-41) -> $FETCH (stub, reads the
-  type-area image at 240000 by YDFRDA) -> YLOAD -> ALOADR (pp.320-331) ->
+  (ll.13-17), then per card YRDISK (ll.27-41) -> $FETCH (DISK FETCH, the
+  area BSS on the disk, RELFWA 15k; before M-a a stub over a core image
+  at 240000) -> YLOAD -> ALOADR (pp.320-331) ->
   ... -> the branch card -> YBCENC (p.332 l.53) -> p.333 -> $RET with
   SICBU = 200000.  140 cards since the deck's $SPR/$EOJ code (137 before),
   143 $MCP calls (142 before YMPFCH's fetch was run).  SCAFFOLD/RECONSTRUCTION:
@@ -181,9 +185,13 @@ STAGE 3: entered at YC4INT (p.396 l.30) with stage 1a's KSILO, SCORG and
   - $RET to the loaded BSS processor: the stub's ENTER branches to SICBU
     (SCAFFOLD: stage 4 runs BSS under ITAB and 32/33 bounds, because the
     reconstructed BSS writes KSILO in MCP's area).
-  - The stub serves calls by state: the first is WJC4G's $RET; while SICBU
-    holds its sentinel (only p.333 l.2 writes it) a call is a $FETCH of the
-    area YRLDTA names; after, it is $RET (p.333 ll.4-5).
+  - Before M-a the stub served calls by state: the first was WJC4G's $RET;
+    while SICBU held its sentinel (only p.333 l.2 writes it) a call was a
+    $FETCH of the area YRLDTA names; after, $RET (p.333 ll.4-5).  Since
+    M-a every $FETCH goes to DISK FETCH, and the stub plays only the $RET
+    from the LOADER's range (ENTER) and WJC4G's (to SIFAE, after QSNAP).
+    Stage 3's fetches are checked as one list: 22LOADER, then BSS at
+    RELFWA 15k for k = 0..139 (the three old fetch checks, merged).
 STAGE 4: the deck with SPRSW = 1 (its PRINT goes to PRSPR, one 17-word
   $SPR line a call: byte 0 single space, LINE in bytes 1-120, blanks to
   135; C22-6678-1 p.20).  The stub enters BSS (SCAFFOLD for MCP's $RET to
@@ -235,12 +243,11 @@ STAGE 6, $EOJ past YC4B3 (2026-11-18).  YMPFCH, "SPECIAL PACKAGE TO PULL
   takes YXWEJM (l.40, XW,YEOJTA,YPPMEM: name $EOJ, FWA 020000), saves the
   name in YMPSAV, sets YFHBR to YEOJTA's BE,YPPMEM and calls B,DMCP /
   ,DFETCH with the name 22$EOJ, RELFWA 0, FWA 020000, N 0, M (C22-6678-1
-  p.21).  B,DMCP traps IF as the PP's calls do; STUBIF serves $FETCH
-  (DFETCH SYN,66.32, p.105 l.36), SCAFFOLD for MCP's disk fetch: it checks
-  the name and FWA, copies the type area "22$EOJ" -- planted at 260000 as
-  the core image of the landed pp.381-439, 020000-023233, unwritten words 0
-  (CHOSEN) -- sets M = 1692, restores registers 8-31 from STLR and returns
-  enabled to the normal return.  The fetch is needed: word 020000 was 0 at
+  p.21).  B,DMCP traps IF as the PP's calls do; since M-a STUBIF sends the
+  $FETCH (DFETCH SYN,66.32, p.105 l.36) to SIFAE+2.0, and MCP's DISK
+  FETCH reads the 22$EOJ area IPL wrote (1692 words) to 020000 and
+  returns to the normal return.  (Before M-a STUBIF copied a core image
+  of it planted at 260000, SCAFFOLD.)  The fetch is needed: word 020000 was 0 at
   the call (resume load's PP clear, "PP memory is cleared from location
   41.(8) TO SBAPP", C22-6728-1 p.86, PDF 86, read in the ink).  Then IBM's code: p.381 (PDF 131) l.11
   $14 = 65.0, not SJC4; ll.13-14 SIT+20..47 <- FWIT (MARKER: SIT+20..47
@@ -272,8 +279,9 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
   disk" for a Compile and Go run.  For the BSS chain the last link is BSS,
   and its input is the subprogram decks on TWS (C22-6728-1 p.86, PDF 86:
   resume load is "the last phase of the Fortran BSS Loader").  So the
-  type area '))))))))' is served (SCAFFOLD for TWS on the disk, the stub's
-  generic $FETCH over a table of disk images) as the very cards the
+  type area '))))))))' is served (SCAFFOLD for TWS on the disk: since M-a
+  its words are planted in the bench's disk copy and DISK FETCH reads
+  them; before, the stub's $FETCH over core images) as the very cards the
   reconstructed BSS read as its input (tws_cards, checked equal to the
   deck's TWS words): Example 4's six subprogram decks and the FORTRAN
   branch card, in the loader's arc geometry -- arc n's two header words at
@@ -282,8 +290,8 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
   LIM or IOD card ahead of the program (none is printed for this job).
   The library decks are LB areas, "LB" + the first entry name (CHOSEN,
   spec G7), as check_bss_mcp_load has them.
-  THE RUN, IBM's code but the fetches (and, before 2026-11-19, the
-  dispatcher):
+  THE RUN, IBM's code (before M-a, 2026-11-24, all but the fetches;
+  before 2026-11-19, all but the dispatcher too):
   - p.385 (PDF 135, read in the ink) ll.1-5: the card (*MAIN*'s first
     binary card) is not the pattern l.4 tests, so YIO (l.6) sends it to
     UNCODE (l.8), whose error return (l.13) is YIDCER.
@@ -307,7 +315,8 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     BSS postprocessor (C22-6728-1 p.86): limits from KSILO, MRNRM5, and
     the loader reads all 33 subprogram cards on TWS once, in order, never
     the branch card, then the three library decks the calls bring in
-    (UST*, IOCS*, FISIP*: 3, 8 and 4 cards, each ended by $FETCH's end
+    (UST*, IOCS*, FISIP*: 3, 8 and 4 fetches -- 2, 7 and 3 cards, each
+    deck then one fetch at RELFWA = its area's size, DISK FETCH's end
     return, YLERR), and p.333 ll.4-5 give $RET with SICBU = 000051.0,
     *MAIN*'s entry on p.17's map.  That $RET goes the same way to MDRET;
     the prime queue is empty now, so MUP1 -> MPP1 (p.142 l.18) -> JMPP1
@@ -339,7 +348,7 @@ dispatcher, *MAIN* and the end of job 2026-11-19).
     on, STUBIF sends every trap but $FETCH to SIFAE (l.7); SIFAE's PP half
     ll.20-28 now runs as printed (MCP's bounds and mask, STLR -> SLRBU).
     Then IBM's code: MIF6 -> YJC4TT -> YC4NO -> YC4B3 -> YMPFCH, whose
-    $FETCH of 22$EOJ is the stub's (the 51st fetch) -> p.381 (PDF 131):
+    $FETCH of 22$EOJ is DISK FETCH's (the 51st fetch) -> p.381 (PDF 131):
     SCORG 0, so ll.19-21 B,DMCP / ,SKOM ,1.32 "EJSCAN" (input commands:
     MIFTTT 79.32 VVSKM, p.121 l.45), the spooler's VSSKOM gives $RET from
     224147.40; ll.25-27 ,SLOG2 (81.0, MIFTTT l.48: UNDEF), JUNDEF's $RET
@@ -655,20 +664,24 @@ its six passed under R2G_ONLY8=1):
   diskksilo9 -- ONE FETCHED AREA CORRUPTED ON THE DISK ONLY: p.397 l.3
     LX,$14,KSILO+8 reassembled as KSILO+9 in the 22$EOJ type area of the
     bench's disk copy; core untouched.  PREDICTED: ksilo9's set; coreksilo9
-    nothing.  OBSERVED: 10 fail -- stage 6's YL1 limits; stage 7's "one
-    fetch past the end of each library deck ... no other past an area's
-    end" and "no fetch of anything else but 22$EOJ" (YFDO's second
-    22$EOJ fetch asks for a garbage name, ?0202536424444720), the first
-    trap, the $EOJ path, the seven operations, the reel's layout, the stop
-    (none: the 12M step cap), judge7_units' trap list, and "YLJSLT
-    unchanged".  The last three, and the library-end check, were not
-    predicted.  So the 22$EOJ the run executes is the disk's, as DISK FETCH
+    nothing.  OBSERVED: 10 fail -- stage 6's YL1 limits; stage 7's "no
+    fetch of anything else but 22$EOJ" and "one fetch past the end of
+    each library deck ... no other past an area's end" (one root: FLOG
+    logged, from YFDO's call site, a fetch whose name word is
+    ?0202536424444720 where 22$EOJ was expected; an unknown name counts as
+    past its end; the cause is NOT isolated, and it is not shown that MCP
+    asked for that name), the first trap, the $EOJ path, the seven
+    operations, the reel's layout, the stop (none: the 12M step cap),
+    judge7_units' trap list, and "YLJSLT unchanged".  Not predicted: the
+    library-end check (the same root as "no other fetch"), the 7u trap
+    list and YLJSLT; the rest were.  So the 22$EOJ the run executes is the disk's, as DISK FETCH
     read it.
   coreksilo9 -- the same statement in core only, the disk untouched: 0
     fail (88 PASS).  Resume load's PP clear and the fetch replace the core
     copy, so a core-only change cannot reach the run any more.
   ksilo9 -- core and disk: the same 10 as diskksilo9.
-UNIT SELECT (2026-11-19, later): the control now passes 121 PASS lines
+UNIT SELECT (2026-11-19, later; before M-a, which merged stage 3's
+three fetch checks into one, so 119 now): the control passed 121 PASS lines
 (the 113 below, judge7_units' two, and stage 8's six); stage 7 stops at
 ZJOBC1 at 2,559,405 cycles, stage 8 at 224526.40 at 2,683,602.
   allready (own build) -- every tape unit ready from the start and the
@@ -701,7 +714,7 @@ not discriminating ones:
 - judge6, under every injection except overlap: "YTSP still 0" and
   "SCNFCG 1, WJCW 0", which are the image's values when p.397 is not
   reached.
-- judge7: "YLJSLT unchanged".
+- judge7: "YLJSLT unchanged" (before M-a; it fails under M-a's ksilo9).
 "The stage-6 eleven" means judge6's other eleven checks.
 THE OPERATOR PATH'S OWN INJECTIONS (2026-11-19):
   nooper (own build) -- no channel signal, the old stop at KCHOPN: 7 fail,
