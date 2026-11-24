@@ -1,0 +1,135 @@
+id	status	class	title
+TR-005	held	SIMPOS/ESP/PSI related	ESP as Preliminary Kernel Language of Fifth Generation Computers | T.Chikayama | 83.04 | 29
+TR-013	held	SIMPOS/ESP/PSI related	The Personal Sequential Inference Machine (PSI) : Its Design Philosophy N.Nishikawa, et al. 83.06 | 22
+TR-014	held	SIMPOS/ESP/PSI related	逐次型パーソナル推論マシンψの設計思想とそのアーキテクチャ | 西川 | 宏，他 | 83.06 | 13
+TR-032	served, not fetched	keyword match, not PSI-specific	逐次型Prologプログラムの静的解析 | 尾内理紀夫，他 | 83.11 | 33
+TR-044	held	SIMPOS/ESP/PSI related	ESP Reference Manual「ＥＳＰマニュアル」 | 近山 | 隆 | 84.02 | 59
+TR-045	held	SIMPOS/ESP/PSI related	The Design and Implementation of a Personal Sequential Inference | M.Yokota, et al. | 84.02 | 24
+TR-046	held	SIMPOS/ESP/PSI related	Dialog Management in the Personal Sequential Inference Machine (PSI) | J.Tsuji, et al. | 84.03 | 28
+TR-048	served, not fetched	keyword match, not PSI-specific	逐次型Prologプログラムの解析 | 尾内理紀夫，他 | 84.03 | 13
+TR-052	held	SIMPOS/ESP/PSI related	パーソナル逐次型推論マシンＰＳＩのハードウェア設計 | 瀧 | 和男，他 | 84.03 | 16
+TR-055	held	SIMPOS/ESP/PSI related	SIMPOS : An Operating System for a Personal Prolog Machime PSI | T.Hattori, et al. | 84.04 | 23
+TR-056	held	SIMPOS/ESP/PSI related	The Concepts and Facilities of SIMPOS Supervisor | T.Hattori, et al. | 84.04 | 32
+TR-057	held	SIMPOS/ESP/PSI related	Overall Design of SIMPOS | S.Takagi, et al. | 84.04 | 13
+TR-059	held	SIMPOS/ESP/PSI related	The Concepts and Facilities of SIMPOS File System | Hattori, et al. | 84.04 | 34
+TR-061	held	SIMPOS/ESP/PSI related	Coordinator-the Kernel of the Programming System for the Personal | T.Kurokawa, et al. | 84.04 | 13
+TR-075	held	SIMPOS/ESP/PSI related	Hardware Design and Implementation of the Personal Sequential Inference K.Taki, et al. | 84.08 | 13
+TR-079	held	SIMPOS/ESP/PSI related	逐次型推論マシンψのマイクロインタプリタ | 山本 | 明，他 | 84.09 | 19
+TR-082	fetched 2026-11-23	keyword match, not PSI-specific	Overview of the Compound Local Area Network ; Bridge Protocol for | A.Taguchi | 84.10 | 17
+TR-086	held	SIMPOS/ESP/PSI related	Sequential Inference Machine : SIM Progress Report | S.Uchida, et al. | 84.10 | 13
+TR-087	held	SIMPOS/ESP/PSI related	Sequential Inference Machine : SIM Its Programming and Operating System T.Yokoi, et al. | 84.10 | 13
+TR-112	held	SIMPOS/ESP/PSI related	論理型言語ＥＳＰのプログラム特性評価 | 山下 | 明，他 | 85.07 | 13
+TR-142	held	SIMPOS/ESP/PSI related	Evaluation of PSI Micro-Interpreter | H.Nakashima, et al. 85.11 | 6
+TR-171	fetched 2026-11-23	keyword match, not PSI-specific	論理式エディタ | 南 | 俊朗，他 | 86.04 | 11
+TR-185	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Algorithmic Debugging of GHC Programs and its Implementation in GHC | A.Takeuchi | 86.06 | 17
+TR-186	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	A Framework for Debugging GHC | J.Lloyd, et al. | 86.06 | 12
+TR-189	fetched 2026-11-23	SIMPOS/ESP/PSI related	Ｍｕｌｔｉ−ＰＳＩにおけるＦｌａｔ | ＧＨＣの実現方式 | 宮崎敏彦，他 | 86.06 | 11
+TR-213	held	SIMPOS/ESP/PSI related	ＰＳＩのガーベッジコレクタ | 西川 | 宏，他 | 86.10 | 9
+TR-219	held	SIMPOS/ESP/PSI related	パーソナル逐次型推論マシンＰＳＩの評価 | 中島 | 浩，他 | 86.12 | 10
+TR-226	fetched 2026-11-23	SIMPOS/ESP/PSI related	−ＰＲＯＴＯＮ− Expert System Too on the PSI Machine | Y.Nagai, et al. | 87.06 | 21
+TR-227	fetched 2026-11-23	SIMPOS/ESP/PSI related	Fact/Model Representation Environment in an Expert System Tool on PSI | H.Kubono, et al. | 86.06 | 5
+TR-230	fetched 2026-11-23	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	A Distributed Implementation of Flat GHC on the Muiti-PSI | N.Ichiyoshi, et al. 87.05 | 20
+TR-236	held	SIMPOS/ESP/PSI related	ＰＳＩへのコンパイラ向きProlog命令の試験実装と評価 | 中島 | 浩，他 | 87.03 | 8
+TR-237	held	SIMPOS/ESP/PSI related	The Parallel Software Research and Development Tool : Multi-PSI System | K.Taki | 87.03 | 18
+TR-251	served, not fetched	false-positive keyword	Basic Method for Mutual Utilization of Distributed Personal Knowledge | M.Oba, et al. | 87.04 | 21
+TR-253	served, not fetched	false-positive keyword	知識獲得支援システム（ＥＰＳＩＬＯＮ）における専門家モデル | 滝 | 寛和，他 | 87.04 | 7
+TR-265	held	SIMPOS/ESP/PSI related	Hardware Architecture of the Sequential Inference Machine : PSI-11 | H.Nakashima, et al. 87.06 | 11
+TR-274	held	SIMPOS/ESP/PSI related	Performance and Architectual Evaluation of the PSI Machine | K.Taki, et al. | 87.07 | 12
+TR-281	fetched 2026-11-23	SIMPOS/ESP/PSI related	PROTON : An Expert System Tool on the PSI | S.Sindo, et al. | 87.07 | 16
+TR-283	held	SIMPOS/ESP/PSI related	Remote Object Accessing Mechanism in SIMPOS | K.Yoshida | 87.07 | 21
+TR-285	held	SIMPOS/ESP/PSI related	Programming in ESP | −Experiences with SIMPOS − | T.Chikayama | 87.07 | 15
+TR-356	served, not fetched	false-positive keyword	Nonmonotonic Parallel Inheritance Network | C.Sakama, et al. | 88.03 | 17
+TR-367	served, not fetched	keyword match, not PSI-specific	構文解析システム SAXのデバッグ環境 | 山崎重一郎，他 | 88.04 | 7
+TR-370	fetched 2026-11-23	SIMPOS/ESP/PSI related	Measurements and Evaluation for the Multi-PSI / V1 System | K.Taki | 88.04 | 28
+TR-393	fetched 2026-11-23	SIMPOS/ESP/PSI related	Preliminary Evaluation of the Connection Network for the Multi-PSI | K.Masuda, et al. | 88.06 | 7
+TR-428	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩにおける実験的負荷分散メカニズム | 武田保孝，他 | 88.10 | 9
+TR-439	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Distributed Implementation of KL1 on the Multi-PSI / V2 | K.Nakajima, et al. | 88.12 | 13
+TR-469	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Tracing Garbage Collection for KL1 on the Multi-PSI / V2 System | N.Miyauchi, et al. | 89.06 | 21
+TR-478	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩ／Ｖ２におけるＭＲＢ方式を用いた最適化手法とその評価 | 稲村 | 雄，他 | 89.06 | 12
+TR-483	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Overview of the Parallel Inference Machine Operating System(PIMOS) | K.Chikayama,et al. | 89.10 | 33
+TR-487	fetched 2026-11-23	SIMPOS/ESP/PSI related	Parallel Logic Programming on the Multi-PSI | N.Ichiyoshi | 89.10 | 24
+TR-520	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩ上の最短経路問題の実現と評価 | 和田久美子、他 | 89.11 | 10
+TR-521	served, not fetched	keyword match, not PSI-specific	Language Tool Box(LTB) A Program Library of NLP Tools | K.Akasaka, et al. | 89.11 | 30
+TR-524	held	SIMPOS/ESP/PSI related	The SIMPOS Distributed File System-Its Design and Implementation | K.Yoshida | 89.11 | 38
+TR-533	fetched 2026-11-23	SIMPOS/ESP/PSI related	Lin-Kernighan partitioning algorithm on Multi-PSI | Daniel Dure | 90.02 | 37
+TR-563	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	疎結合並列マシンMulti-PSI 上でのＫＬ１分散処理系におけるプロセッサ間通 | 中島克人他 | 90.05 | 9
+TR-585	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Evaluation of the KL1 Language System on the Multi-PSI | S.Onishi | 91.01 | 11
+TR-608	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	A Debugger for AND/OR Parallel Logic Programming Language ANDOR- | K.Takahashi et al | 91.01 | 29
+TR-664	served, not fetched	false-positive keyword	Upside-Down Meta-Interpretation of the Model Elimination Theorem | Mark.E.Stickel | 91.07 | 22
+TR-700	served, not fetched	false-positive keyword	A Forward-Chaining Hypothetical Reasoner Based on Upside-Down | Y.Ohta et al | 91.10 | 17
+TR-714	held	SIMPOS/ESP/PSI related	ＡＩワークステーションＰＳＩ／ＵＸのアーキテクチャ | 益田嘉直 | 他 | 91.11 | 9
+TR-715	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Distributed Implementation of KL1 on the Multi-PSI | K.Nakajima | 91.11 | 25
+TR-776	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩにおける並列処理とその評価−小粒度高並列オブジェクトモデル | 瀧 | 和男 | 他 | 92.05 | 18
+TR-785	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	並列プログラムの知的プログラミング環境 MENDELS ZONE | 本位田真一 | 他 | 92.07 | 7
+TR-792	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	A Petri-Net-Based Programming Environment and its Design Methodology | N.Uchihira et al | 92.08 | 29
+TR-839	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	Programming Environment of PIMOS | S.Ishida et al | 93.04 | 8
+TR-840	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	PIMOS のプログラミング環境 | 石田 | 茂 | 他 | 93.04 | 8
+TR-844	served, not fetched	keyword match, not PSI-specific	ParaGraph:A Graphical Tuning Tool for Multiprocessor Systems | S.Aikawa et al | 93.04 | 13
+TR-877	served, not fetched	false-positive keyword	Multiple Sequence Alignment Editor Featured by Constraint-Based Para- | M.Ishikawa et al | 94.05 | 13
+TM-001	held	SIMPOS/ESP/PSI related	The Personal Sequential Inference Machine, Outline of Its Architecture | S.Uchida, et al. | 82.11 | 8
+TM-005	held	SIMPOS/ESP/PSI related	Outline of the Personal Seqential Inference Machine : PSI | S.Uchida, et al. | 83.04 | 8
+TM-009	held	keyword match, not PSI-specific	Basic Constructs of the SIM Operating System | T.Hattori, et al. | 83.06 | 9
+TM-025	fetched 2026-11-23	keyword match, not PSI-specific	GP-PRO Graphic Display Control Library Written in Prolog | H.Shimizu | 83.08 | 195
+TM-044	served, not fetched	false-positive keyword	Impact of the FGCS on Future Communication Network | A.Taguchi, et al. | 84.02 | 36
+TM-053	held	SIMPOS/ESP/PSI related	Object-Orinted Parser in the Logic Programming Language ESP | H.Miyoshi, et al. | 84.04 | 11
+TM-055	held	SIMPOS/ESP/PSI related	Unique Features of ESP | T.Chikayama | 84.04 | 9
+TM-061	held	SIMPOS/ESP/PSI related	逐次型推論マシンＰＳＩのオペレーティング・システム | 服部 | 隆，他 | 84.05 | 11
+TM-065	held	SIMPOS/ESP/PSI related	An Operating System for Sequential Inference Machine PSI | T.Hattori, et al. | 84.06 | 19
+TM-075	held	SIMPOS/ESP/PSI related	ESP An Object Oriented Logic Programming Language | K.Takei, et al. | 84.09 | 11
+TM-077	served, not fetched	false-positive keyword	A Personal Perspective on Some Aspects of the FGCS | A.Taguchi | 84.09 | 35
+TM-079	held	SIMPOS/ESP/PSI related	逐次型推論マシンのＯＳ | 服部 | 隆 | 84.11 | 18
+TM-099	served, not fetched	false-positive keyword	Some Aspects of Future Knowledge-Communication Networks as | A.Taguchi | 85.02 | 16
+TM-100	held	SIMPOS/ESP/PSI related	Constructing the SIMPOS Supervisor in an Object-oriented Approach | T.Hattori, et al. | 85.02 | 19
+TM-104	held	SIMPOS/ESP/PSI related	ＫＬ０機械語へのif-then-else制御構造の導入によるプログラム実行効率の向 | 高木茂行，他 | 85.04 | 10
+TM-112	held	SIMPOS/ESP/PSI related	PSI Font Editor User Guide | Herve Touati | 85.05 | 25
+TM-115	held	SIMPOS/ESP/PSI related	PSI Font Editor Implementaion Notes | Herve Touati | 85.05 | 119
+TM-125	held	SIMPOS/ESP/PSI related	The Concepts and Facilities of SIMPOS Window System | J.Tsuji, et al. | 85.07 | 25
+TM-126	held	keyword match, not PSI-specific	マルチウィンドウシステムを通して見たインターフェースの考察 | 辻順一郎，他 | 85.06 | 8
+TM-128	held	SIMPOS/ESP/PSI related	知識情報処理用ワークステーションの研究開発 | 内田俊一 | 85.07 | 9
+TM-134	held	SIMPOS/ESP/PSI related	ＥＳＰプログラミング | 紺田茂寶，他 | 85.09 | 76
+TM-143	held	SIMPOS/ESP/PSI related	ＳＩＭＰＯＳ（逐次型推論マシンＰＳＩのＯＳ） | 石橋弘義，他 | 85.11 | 8
+TM-146	held	SIMPOS/ESP/PSI related	ＥＳＰプログラミング・ヒント集 | 近山 | 隆，他 | 85.11 | 43
+TM-153	held	SIMPOS/ESP/PSI related	ＩＣＯＴのワークステーション | 上田尚純，他 | 86.01 | 29
+TM-161	held	SIMPOS/ESP/PSI related	汎用型アセンブラのＰＳＩへの移植 | 立野裕和，他 | 86.03 | 21
+TM-181	held	SIMPOS/ESP/PSI related	ＳＩＭＰＯＳにおけるプログラミング環境 | 石橋弘義，他 | 86.07 | 5
+TM-189	fetched 2026-11-23	SIMPOS/ESP/PSI related	ＰＳＩ上のエキスパートシステム開発支援ツール（１）〜（４） | 澤本 | 潤，他 | 86.08 | 9
+TM-224	held	SIMPOS/ESP/PSI related	ＡＩワークステーションＰＳＩのアーキテクチャ | 山本 | 明，他 | 86.08 | 16
+TM-225	held	SIMPOS/ESP/PSI related	ＡＩワークステーションＰＳＩのプログラミング環境 | 中澤 | 修，他 | 86.08 | 16
+TM-229	held	SIMPOS/ESP/PSI related	ＳＩＭＰＯＳ（逐次型推論マシンＰＳＩのＯＳ） | 佐藤裕幸，他 | 86.09 | 9
+TM-236	served, not fetched	keyword match, not PSI-specific	並列論理型言語に基くオペレーティング・システム | 岸下 | 誠，他 | 86.10 | 5
+TM-299	held	SIMPOS/ESP/PSI related	Co-operative High Performance Sequential Inference Machine : CHI | S.Habata, et al. | 87.05 | 5
+TM-305	held	SIMPOS/ESP/PSI related	マルチPSI のベンチマーク方式 | 高木茂行 | 87.06 | 81
+TM-306	held	SIMPOS/ESP/PSI related	マルチPSI における接続ネットワークの構成とその評価 | 益田嘉直，他 | 87.06 | 9
+TM-364	held	SIMPOS/ESP/PSI related	ＥＳＰ入門 | 近山 | 隆，他 | 87.07 | 88
+TM-388	held	SIMPOS/ESP/PSI related	ESP Guide | S.Uchida | 87.09 | 184
+TM-392	held	SIMPOS/ESP/PSI related	逐次型推論マシン： CHI | 幅田伸一，他 | 87.10 | 9
+TM-399	held	SIMPOS/ESP/PSI related	ICOT-WG Workshop on Parallel Inference Machines and Multi-PSI Systems | H.Tanaka, et al. | 87.10 | 115
+TM-401	held	SIMPOS/ESP/PSI related	逐次型推論マシンPSI のネットワークシステム概要 | 東 | 吉郎，他 | 87.10 | 13
+TM-404	fetched 2026-11-23	SIMPOS/ESP/PSI related	ネットワークニュース使用手引き | 横塚 | 実，他 | 87.10 | 39
+TM-426	held	SIMPOS/ESP/PSI related	Co-operative High Performance Sequential Inference Machine :CHI- | S.Habata, et al. | 87.12 | 12
+TM-430	fetched 2026-11-23	SIMPOS/ESP/PSI related	他 | 学会発表論文（PSI PIM ）第４研究室 | 88.01 | 4
+TM-444	held	SIMPOS/ESP/PSI related	小型化 PSIにおける論理型言語 KLOの処理系実装方式 | 中島克人 | 88.01 | 36
+TM-472	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	GHCによる実験的ネットワークプログラミング | 奥村 | 晃 | 88.03 | 15
+TM-634	fetched 2026-11-23	SIMPOS/ESP/PSI related	自動カスタマイズ構造エディタについて | 高田裕志，他 | 88.12 | 12
+TM-639	fetched 2026-11-23	SIMPOS/ESP/PSI related	ESPを用いて開発した汎用構造エディタSEMACS | 吉武 | 淳 | 88.12 | 9
+TM-658	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩにおける並列詰め碁プログラムの実現と評価 | 沖 | 廣明，他 | 89.06 | 8
+TM-661	held	SIMPOS/ESP/PSI related	ＰＳＩ−の機械命令セット評価 | 立野裕和，他 | 89.06 | 9
+TM-696	held	SIMPOS/ESP/PSI related	マルチＰＳＩの基本構成と今後の展開 | 益田嘉直，他 | 89.06 | 12
+TM-734	held	SIMPOS/ESP/PSI related	逐次型推論マシンＣＨＩ−の性能評価 | 幅田伸一，他 | 89.10 | 9
+TM-746	served, not fetched	false-positive keyword	知識獲得支援システムＥＰＳＩＬＯＮ／Ｏｎｅ操作マニュアル | 大崎 | 宏，他 | 89.10 | 52
+TM-785	held	SIMPOS/ESP/PSI related	ＰＳＩ図形ツールのインストール方法 | 東 | 吉郎 | 89.08 | 40
+TM-786	held	SIMPOS/ESP/PSI related	オンラインＳＩＭＰＯＳ照会書 | 操作説明書 | 東 | 吉郎 | 89.08 | 12
+TM-800	served, not fetched	keyword match, not PSI-specific	色効果を利用したＧＨＣデバッガ | 前田宗則 | 89.09 | 10
+TM-859	held	SIMPOS/ESP/PSI related	ＰＳＩ−のメモリ・アーキテクチャ評価 | 中島 | 浩、他 | 90.02 | 9
+TM-976	served, not fetched	keyword match, not PSI-specific	メタライブラリ・マニュアル | 越村三幸 | 他 | 91.01 | 64
+TM-986	served, not fetched	keyword match, not PSI-specific	ＧＨＣ上のプロセス指向デバッガ | 前田宗則 | 他 | 91.01 | 11
+TM-991	served, not fetched	keyword match, not PSI-specific	プロセス指向プログラムのためのＧＨＣデバッガ | 前田宗則 | 他 | 91.01 | 13
+TM-1050	fetched 2026-11-23	SIMPOS/ESP/PSI related	制御用エキスパートシステムのマルチＰＳＩ上での実現 | 鈴木淳三 | 他 | 91.05 | 9
+TM-1123	served, not fetched	keyword match, not PSI-specific	逐次的解析における音声情報の利用 | 新納浩幸 | 他 | 91.10 | 9
+TM-1146	fetched 2026-11-23	SIMPOS/ESP/PSI related	マルチＰＳＩを利用したタンパク質の配列モチーフ抽出 | 小柳 | 敏 | 他 | 92.01 | 5
+TM-1172	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	A Process and Stream Oriented Debugger for GHC Programs | M.Maeda et al | 92.04 | 22
+TM-1203	held	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	並列論理型言語ＫＬ１によるオペレーティングシステムPIMOS の実現について | 藤瀬哲郎 | 他 | 92.08 | 9
+TM-1205	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	並列論理型言語ＫＬ１のデバッグ環境 | 中尾浩一 | 他 | 92.08 | 9
+TM-1241	served, not fetched	excluded: KL1/GHC/PIMOS/other-language system, not SIMPOS	高レベルペトリネットに基づく並行プログラミング環境 MENDELS ZONE の評価 | 内平直志 | 他 | 92.12 | 9
+TM-1254	held	keyword match, not PSI-specific	ＰＩＭＯＳファイルシステムのディレクトリ管理方式 | 森 | 健 | 93.03 | 14
+TM-1287	served, not fetched	keyword match, not PSI-specific	Constraint Based Alignment Editor with Automatic Alinger and Motif | M.Hirosawa et al | 93.10 | 8

@@ -141,3 +141,124 @@ not transcription. P4 (SIMPOS) cannot be reached with what is public:
 it needs media from one of the holders in section 6, or a
 reconstruction of the SIMPOS classes the held `.ptf` files call, from
 the manuals and reports above (roadmap section 9).
+
+## 9. The SIMPOS-only search (2026-11-23, second pass)
+
+Made because the owner asked for more on SIMPOS. Delegated, like
+section 1-8's search; its working notes are `simpos/source_notes.md`
+(page by page, opened versus only located), its outputs
+`simpos/class_census.tsv` and `simpos/trtm_table.tsv`.
+
+**SIMPOS itself: still NOT FOUND** (no source, binary, tape, disk
+image or emulator). What it adds:
+
+- **SIMPOS source printed in ICOT reports** (opened; PDF page
+  indices): TM-100 pp4-17, the supervisor's own classes (`process`
+  with its whole attribute list and `:create`, `as_program`,
+  `interrupt_process`, `channel`, `bounded_channel`); TR-524 pp37-38,
+  the distributed file system's classes with method bodies, p21 its
+  remote-call protocol; TR-046 pp27-28 and TR-061 p13, the
+  Coordinator's `default_translation_table` and `system_menu`; TR-056
+  p13, p21-22 (streams, semaphores, events, `boot_process`, library
+  and directory slots); TR-059 p12, p22 (buffers, `as_permanent_object`);
+  TM-065 pp12-16 (file and window class skeletons); TM-125 p17 (window
+  graphics methods). Not described anywhere found: the `.ptf` package
+  format, the boot image, the disk format.
+- **The interface the applications use**: a census of the 1,351 ESP
+  files of the held IFS SIMPOS applications (`simpos/class_census.tsv`):
+  about 300 classes used and not defined there, each with the methods
+  called (`symbolizer`, `library`, `process`, `directory`, `pathname`,
+  windows, menus, ...). By pattern, so a few entries may be
+  application classes. With the reports above, this is the
+  specification a reconstruction of SIMPOS's classes would be built
+  to; it is usage, not a definition, and is labelled so.
+- **Librarian practice**: 55 Librarian command files in the IFS
+  applications (`make_environment(E,[simpos])`, `make_package`,
+  `save_package`, `use_package`, `fxds`), a complete login file
+  (`gog-esp/login.com`), TM-785 p3's install-from-floppy session.
+- **Versions**: 1.5 (1985), 2.19 (TM-181 screenshot), 3.0 to 7.1 and
+  "6.2 OKI-PSI-II" (IFS READMEs), "SIMPOS II B00" for PSI-II (Giho
+  63(7), 1989), "PSI-III and SIMPOS A22" (`kappa2`).
+- **Moving pictures**: the ICOT museum's PSI video, seven segments;
+  `simpos.wmv` shows SIMPOS's structure and its system menu on a real
+  screen (Execute, debugger, editor, file_manipulator, librarian,
+  spooler, font_editor). On disk only.
+- **Every ICOT TR/TM on SIMPOS, ESP or the PSI is now held**: of 135
+  title matches, 87 are related; 67 were held, 20 more fetched today
+  (with 9 PSI-keyword rows, 29 files: `simpos/trtm_table.tsv`); none
+  unavailable.
+
+**Who holds manuals** (CiNii Books, opened): the JAIST library, call
+number C42.4, one copy each: SIMPOS使用説明書 (MP3001-1, 1985.4),
+SIMPOS操作説明書 (MP3002-1, 1985.4), SIMPOS 1.5版 changes
+(SIM-I-U-GEN021, 1985.9), KL0組込述語説明書 2nd ed. (MP7002-1,
+1985.4), CSP操作説明書 (MP7003-1, 1985.4): the PSI-I system's user
+and operations manuals, the KL0 built-in predicate manual and the
+console processor's, in the institution that keeps a PSI. No ESP,
+PSI-II or PSI/UX product manual is in CiNii; the NDL refused several
+queries (HTTP 429): not searched, not negative. WorldCat not searched.
+
+**Leads added** (not contacted): JAIST (manuals and machine together);
+Argonne and Lawrence Berkeley, which each received a pair of PSI-II
+(an NIH grant record, Z01-CT000237-01: "installed two of the PSI-II
+... in October 1990. Similar pairs of machines have been installed at
+Argonne ... and Lawrence Berkeley"; ICOT Journal No. 30, 1991, "The
+Struggle to Installing PSIs at Argonne"); Oki (an Oki PSI-II ran
+SIMPOS 6.2); Mitsubishi's PSI/UX 350 and 400 (B2150, B2151; Giho
+1991-03 p107).
+
+For P4 this changes the method, not the verdict: SIMPOS cannot be
+booted from anything public, but its supervisor, file and window
+classes are partly printed, and the classes the surviving
+applications call are now listed, so a reconstruction can be built
+against both and tested by running those applications. Media remain
+the better path, and the JAIST manuals are the nearest known primary
+source.
+
+## 10. The second broad search (2026-11-23): the PSI microinstruction formats
+
+A delegated search of places sections 1-9 did not reach (Software
+Heritage, the whole Wayback index of the ICOT hosts, the CMU AI
+Repository walked whole, code hosts, Japanese and foreign mirrors,
+university repositories, vendor journals). Its one primary find:
+
+- **Hiroshi Nakashima's doctoral thesis**, 論理型言語向きプロセッサの
+  アーキテクチャに関する研究 (Kyoto University, 1991; KURENAI
+  hdl:2433/168749, open access; `nonlocal/lit/theses/`, on disk
+  only). Chapter 3 is the PSI-I, PSI-II and PSI-III: instructions,
+  tags, memory and the **microinstruction architecture**. By the
+  agent's reading of the page images: Fig. 3-11 (printed p.74) the
+  PSI-I microword, 63 bits; Fig. 3-19 (p.113) the PSI-II, 53 bits;
+  Fig. 3-25 (p.143) the PSI-III, 64 bits, field by field (DBGF, CCF,
+  WRBF, DSTF, SC1F, SC2F, SD1F, SD2F, ADF, AS1F, AS2F, ALF, JMPF, CNDF,
+  MCF, TGIF, EM1-3), each with its width and explained in the text.
+  The thesis's own text layer confirms the field names (TYPF, EM1,
+  WRBF, MCF, TGIF and the 2-bit TYPF interpretation of PSI-I); the
+  figures' widths are not yet read by the project itself. Appendix A
+  is ESP/KL0 (not opened).
+
+So section 3's "no microinstruction-format document found" is
+**corrected: found, a primary source, for all three PSIs**. Since the
+PSI-III and the PIM/m element processor are one chip (TM-862), it is
+the strongest document for P1 and for the PIM/m microword; checking it
+against the held `syspsi` control store is the next step.
+
+Also fetched (on disk only, no redistribution terms stated): four IPSJ
+papers on IP1704, the PIM/k element chip (wanted by
+`literature_gaps.md`); K. Ohno's 1998 Kyoto thesis on KL1 static
+analysis; the summary of Rokusawa's 1998 Waseda thesis; Mitsubishi
+Denki Giho 1988-05, 1988-10 (MELCOM PSI II, ESP, SIMPOS) and 1989-01.
+CITED-ONLY at the NDL (library access): theses by K. Nakajima (Kyoto
+1996, KL1 on Multi-PSI and PIM/m), Y. Kimura (Tokyo 1993), K. Shimada
+(Tokyo 1993), K. Hirata, Hidaka, Naganuma.
+
+Negative (queries in the search's log): no `ifs/` file, no
+`pimm_patch.com` and no FTP capture among all 1,180 Wayback URLs of
+`ftp.icot.or.jp`; nothing new among 37,619 URLs of `icot.or.jp`; the CMU
+copy of ICOT's software is the same 1995 tree as held (audit §5 item
+11 closed); `air.co.jp` was another company from its first capture
+(1998), so the CESP distributor's site is not there; Software
+Heritage, GitLab, SourceForge, the OSDN mirror, Ring Server, some 34
+mirrors, Hitachi Hyoron 1985-95 (no PIM/c article): nothing.
+Refused or not searched: HathiTrust, scholar.archive.org, Codeberg,
+SourceHut, Usenet, Oki Technical Review, FUJITSU magazine.
