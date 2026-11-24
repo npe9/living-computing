@@ -258,6 +258,15 @@ conflicts** (Blosk p.15; Perf. Char. p.3-19). Exit: a deck that
 injects a single-bit error in a storage word, sees it corrected and
 the indicator set, and a double-bit error detected.
 
+**A11a. The memory cycle, before the exchange.** `memCycleClocks = 7`
+(2.1 µs, Buchholz) against the CE procedure's Busy trigger of 1800 ns =
+6 clocks (§4 Procedure 1, PDF 274) and Perf. Char.'s 2.2 µs recycle and
+1 µs readout (p.3-15); `memReadClocks = 5` against the CE's 5th sample
+pulse for an LA level and 5th-6th for 1Y/2Y (`ibox_la_spec.md` §12 item
+7). `NEXT.md` §5f measured the cycle at 2.4 µs once. Settle which
+figure the shipped machine had, with the atlas as the arbiter only
+between readings the sources allow; every pin will move.
+
 **A11. The exchange as a bus requester with real overlap.**
 - Memory-cycle stealing, the priority order and the byte-demand weights
   (`exchange_and_io.md` §4, Buchholz ch.16).
@@ -304,7 +313,10 @@ recommendation is built behind a switch until it is decided.
    Table 2's `/` + 6; the chart draws no wait for the remainder's store.
 2. **The shipped machine's two LAARs** (`NEXT.md` 2026-10-25):
    *recommend:* model the shipped machine, the one MCP ran on. Keep
-   the one-LAAR reading of Perf. Char. as a switch.
+   the one-LAAR reading of Perf. Char. as a switch. Read 2026-11-23 (`ibox_la_spec.md`): Fig 3.2.2
+   sheet 2 (PDF 94, printed 2-4) assigns LAAR 1 if free, else LAAR 2
+   (spot-checked on the image), and the level's FROM bit picks which LAAR
+   the TBC sends (Fig 3.2.12). Perf. Char. p.3-21 (PDF 39) says one.
 3. **One parallel multiplier or two: SETTLED BY THE SOURCES, one**
    (`sau_pau_spec.md` §6, 2026-11-23). Fig. 3.8.18 says the SAU multiply
    is "IDENTICAL TO FLOATING POINT MULTIPLY"; Figs. 3.11.1 and 3.11.10
