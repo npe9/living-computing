@@ -240,6 +240,28 @@ twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
 
+State: 168
+instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
+both models; 165 without our three stubs; the earlier 128 and 130 were
+increments; the eleven since 157 are those met between the login and
+the shell's prompt, `ref/pimm/lockstep_login.py`); goals as
+records in memory on a ready queue; a goal that cannot choose a clause
+is written back, hooked on the variables it waits for, and woken when
+one is bound; a body built-in with an unbound input becomes a goal of
+its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
+`../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
+instruction before it), no timing claimed. The MRB is kept, and `set_vector_element`
+updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are always copied
+(`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
+(a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
+`terminated`, `statistics_started`, `statistics`, `return_resource` and its close),
+the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`,
+`add_shoen_resource` and `allow_shoen_resource_report` (acknowledged, no resource counted);
+its profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
+Not modelled: garbage collection, priorities, built-in
+exceptions (they stop the model). The bench model and its benches are
+untouched and still run.
+
 ### The lockstep from a saved machine (`run_pimm_shell.sh`)
 
 `run_pimm_shell.sh PKL [--type LINE ...]` runs PIMOS on the core from
@@ -283,27 +305,26 @@ core was changed. The splice-order injection into the goal box (the
 merger's list) fails the first row at line 8,429
 (`lockstep_merge.py`'s header).
 
-State: 168
-instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
-both models; 165 without our three stubs; the earlier 128 and 130 were
-increments; the eleven since 157 are those met between the login and
-the shell's prompt, `ref/pimm/lockstep_login.py`); goals as
-records in memory on a ready queue; a goal that cannot choose a clause
-is written back, hooked on the variables it waits for, and woken when
-one is bound; a body built-in with an unbound input becomes a goal of
-its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
-`../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
-instruction before it), no timing claimed. The MRB is kept, and `set_vector_element`
-updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are always copied
-(`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
-(a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
-`terminated`, `statistics_started`, `statistics`, `return_resource` and its close),
-the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`,
-`add_shoen_resource` and `allow_shoen_resource_report` (acknowledged, no resource counted);
-its profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
-Not modelled: garbage collection, priorities, built-in
-exceptions (they stop the model). The bench model and its benches are
-untouched and still run.
+Which RESTOREs the first row checks (2026-11-24): each RESTORE word of
+its script replaced in turn by a silent SLOT, the same length, and the
+run compared again.
+
+| RESTORE dropped | Result |
+|---|---|
+| 0, the heap pointer | FAIL at line 4, instruction 0: `M 77959241` on the reference, `M 32768` on the core (the reset value) |
+| 1, `new_atom`'s counter | PASS: not caught |
+| 2, the clock's ticks | PASS: not caught |
+| 3, the instructions since the last tick | PASS: not caught |
+| 4, the SCSI command count | FAIL at line 6,231, instruction 718: `R 11 0000000080` on the reference, `R 11 0000000000` on the core |
+| 31, the waiting RECEIVE's push | FAIL at line 1, instruction 0: `B 7 1 0820004000 2 16384` on the reference, `Q` on the core |
+
+So the window from the prompt runs no `new_atom` and no instruction
+that reads the clock (`system_timer` and the timer instructions write
+the clock's bits to a register, which the trace shows: INFERENCE from
+the PASS, not counted). RESTOREs 1-3 are
+unchecked by this window; a window that reads them is still to be
+found. RESTOREs 16-26 (the waiting command's fields) were not dropped
+one by one; dropping the push (31) removes them all.
 
 ## FPGA flow (ULX3S / ECP5)
 

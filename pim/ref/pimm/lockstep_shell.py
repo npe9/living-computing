@@ -50,6 +50,19 @@ changes only what the next POLL's answer is.
 
 Pinned (PINNED below, measured on both models, bsv/run_pimm_shell.sh):
 see bsv/README.md "The lockstep from a saved machine".
+
+Observed injections (2026-11-24, from the prompt, shutdown / yes; each
+RESTORE word of the script replaced by a silent SLOT 15):
+  0 (heap pointer)  FAIL at line 4, instruction 0: M 77959241 / M 32768
+  1, 2, 3 (new_atom's counter, the clock)  PASS: not caught.  The
+    window runs no new_atom and nothing that reads the clock (each
+    would write a register the trace shows: inferred, not counted)
+  4 (SCSI command count)  FAIL at line 6231, instruction 718:
+    R 11 0000000080 / R 11 0000000000
+  31 (the waiting RECEIVE)  FAIL at line 1, instruction 0:
+    B 7 1 0820004000 2 16384 / Q
+The splice-order injection into PimmGBox (lockstep_merge.py's header)
+fails the same run at line 8429.
 """
 import json
 import os

@@ -657,18 +657,18 @@ the device are given it again whenever the machine runs dry.
      line, `login:go([{0,local,0},{0,tcpip,0},{0,telnet(5023),0}],[],off)`,
      but it is commented out (its first character is the JIS `%`,
      21:73, read from the bytes); the live line is local and tcpip
-     only (`fep_services.md` §6 step 8). Serving another `pimos.conf`
+     only (`fep_services.md` §3, step 8). Serving another `pimos.conf`
      would be OURS in place of the held file;
   2. the FEP's socket service. The telnet server
      (`server/telnet/tel_sv.kl1`) asks the kernel for a `socket`
      and sends `listen({Port}, 5)`, `set_option([reuseaddr,
      keepalive])`, `receive_timeout(0)`, then `accept` (63, 72, 81, 192). On the wire these
      are the FEP commands 800-812 (`pimos.vmac`:104-118) of
-     `bios/fep_module/soc_dvc.kl1`. `fep.py` has none of them, and the
-     PSI's answers (class `pimos_tcpip_socket`) are not held as source.
-     The request forms could be read from `soc_dvc.kl1`, as the other
-     services were (`fep_services.md`), but the answer values would be
-     OURS;
+     `bios/fep_module/soc_dvc.kl1`, whose request and normal-reply forms are
+     tabulated in `fep_services.md` §2.7. `fep.py` implements none of
+     them, and the PSI's own answers (class `pimos_tcpip_socket`) are
+     not held as source, so the values (an accepted connection's
+     address, what a client sends) would be OURS;
   3. a telnet client's byte stream. `tel_ses.kl1` (1,233 lines) does the
      telnet negotiation over the accepted socket. The session's
      `get_attributes` must answer `normal(telnet, [ip_address(Add), _])`
@@ -676,9 +676,8 @@ the device are given it again whenever the machine runs dry.
   4. the TELNET USER FILE `pimos:pimos.telnet`. It is opened after the
      password is accepted (`tlogin.kl1`:156-158), and without it the
      session answers "Sorry! Please make a TELNET USER FILE." (175) and ends.
-     It is not in `pimosobj.tar.Z`'s `object/` (the archive was searched
-     for `telnet` in ASCII and JIS: only the code of
-     `pimm_server360E.sav` and `pimm_patch_tel360E.sav` matched). Its
+     It is not in `pimosobj.tar.Z`: the archive's listing has no member
+     named `pimos.telnet` (nor any with `telnet` in its name). Its
      grammar is in the source (`io_node_check2`, `tlogin.kl1`:198-230:
      `user(UN, Fep, IONODE, RUN[, Dir])` or `user(UN, [ionode(Add,
      Node, UN, Dir) ..])`), so a file would be OURS.

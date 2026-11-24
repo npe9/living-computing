@@ -297,6 +297,14 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   only (no IPL part has a command not ready at a poll: counted on the
   tapes); the copy's pad from old memory fails none (unobservable:
   every string's pad is zero).
+- **S5 reached (2026-11-24).** `pim:go/4`'s whole FEP conversation
+  on the Bluespec core through the tape, past S0's reach: from the
+  machine after the link through the login, the shell and a typed
+  `shutdown`/`yes` to PIMOS END, 221 device answers, 20,107,047 trace
+  lines identical (`bsv/run_pimm_shell.sh`, `lockstep_shell.py`;
+  outside the suite, the saved machines not in git; `bsv/README.md`,
+  "The lockstep from a saved machine"). Not done: a lockstep part of
+  its own for each new device's first exchange.
 
 ## 4. Order and dependencies
 
