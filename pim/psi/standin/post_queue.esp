@@ -1,0 +1,37 @@
+% SCAFFOLDING stand-in for SIMPOS's class `post_queue`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `post_queue` is printed.  Every method is INTERPOLATED (labelled) from
+% TM-100 section 3.2 (1) (PDF p13-14, docs/simpos/printed/listings/
+% tm0100_p14.esp): "a queue of objects which are waiting to be taken out
+% by processes ... Any class of objects, including integers, atoms, and
+% strings, can be put into the queue", and from the printed stream:put/2
+% and get/2 that call it (Fig. 3.6).  A stream is first in, first out
+% (TR-056 pp.12-13, printed interface of stream).
+% Model (OURS): the objects as a Prolog list in one slot, oldest first.
+
+class post_queue has
+
+% INTERPOLATED from: stream's printed slot initialiser
+% `( post_queue := Queue :- :create(#post_queue, Queue) )` (TM-100
+% Fig. 3.6, PDF p14).
+:create(Class, Queue) :- :new(Class, Queue);
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute objects := [];
+
+% INTERPOLATED from: the printed stream:put/2, `:add_object(Stream!
+% post_queue, Object)` (TM-100 Fig. 3.6, PDF p14): appends.
+:add_object(Queue, Object) :-
+        append(Queue!objects, [Object], E), Queue!objects := E;
+% INTERPOLATED from: the printed stream:get/2, `(:remove_object(Stream!
+% post_queue, Object), ! ; ...suspend...)` (TM-100 Fig. 3.6, PDF p14-15):
+% takes the oldest object, and fails when the queue is empty.
+:remove_object(Queue, Object) :-
+        [Object|E] = Queue!objects, Queue!objects := E;
+
+local
+append([], L, L);
+append([X|A], B, [X|C]) :- append(A, B, C);
+end.
