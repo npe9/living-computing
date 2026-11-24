@@ -1,0 +1,25 @@
+% TM-153 「ICOTのワークステーション」 (Jan 1986; handwritten manuscript, vertical Japanese; OCR useless).
+% Re-read by eye: PDF p23 at 150dpi (h-23.png), PDF p28 at 300dpi (h-28.png, z1/z2 crops).
+
+== PDF p23, 図1 PSIのシステム構成 (handwritten block diagram)
+  本体部: 制御メモリ 64ビット*16k語 | 演算部 | キャッシュ 8K語 + アドレス変換部 | 主記憶 max 16M語 ; 内部バス ; IOバス制御部 ;
+          コンソール・バス
+  コンソール・プロセサ (on the console bus) with: キーボード, マウス, シリアル・プリンタ, CRT*
+  マルチバス (IEEE796) with: 固定ディスク 200MB * max 8台; ビット・マップ・ディスプレイ "モノクロ 1200*900 ドット";
+          FDD; 磁気テープ* 1600BPI; レーザ・プリンタ*; LAN*; GPIB*/RS232C/RS232C          (* = オプション装置)
+  -> keyboard and MOUSE hang off the CONSOLE PROCESSOR, the bitmap display off the Multibus. Display "1200*900"
+     (handwritten; TR-046 p6 prints 1200x912 or 1280x864).
+
+== PDF p28, 図7 PSIのウィンドウの表示例 (screen photo, SIMPOS 2.00, 25-Jan-86) -- corrections to TM-153_p28_screenshot.esp
+  * the create call is printed with a SQUARE bracket:   :create(#window,[size(416,430),position(manip«…hidden»
+    (existing listing has '{'). Argument separators render as '.'/',' ambiguously; '416,430' read by ESP syntax.
+  * status line (2 rows, inverse video, bottom of screen):
+        row1 left  "USER : <user name>"            row1 right: "SWAPPED" (inverse box) "spool" (boxed)
+        row2 left  "SIMPOS Version 2.00"           row2 right: "25-Jan-86 Saturday 13:01:36"
+    (no selected-window name visible in this photo; TM-125 Fig 6 1985 shows "[name]" in the middle)
+  * labels: "English-Japanese" (label strip top-left), "network" (menu, label top-left), "editor_1" label at the
+    BOTTOM-left of the editor window (below the ARG> prompt pane) -- the editor uses a bottom label;
+    EDIPS mode line "EDIPS(string)[53,15] >sys>user>graphic>escher.esp" sits between text pane and ARG> pane.
+  * "network" menu: three column heads TOOLS / MANIPULATOR / DEMO; items terminal, talk, netcp, mail /
+    ncp_manipulator / renju, hanoi (a multi-column menu whose columns have titles).
+  * graphics windows: sphere wireframe, Escher-like pattern, a window with text "Radius(2,3, .. 180)= 100".

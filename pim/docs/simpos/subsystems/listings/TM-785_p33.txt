@@ -1,0 +1,19 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF pp33-36 (folios -28- to -31-) ==== (read by eye at 130dpi; boilerplate, summarised)
+   modify/6 clauses with the same body shape (adjust X at 0, Y at 1, then copy_element) for
+   draw_rectangle (p33: adjusts positions 0 and 1 only, unlike draw_line), draw_circle, draw_arc, draw_fan (p33);
+   draw_ellipse, draw_elliptical_arc (p34); draw_graph uses
+       adjusts(Base_x, 0, 1, Args, Arguments0), adjusts(Base_y, 0, 2, Arguments0, Arguments)   (p34)
+   draw_polygon likewise (p35); draw_filled_rectangle, draw_filled_circle, draw_filled_ellipse (p35);
+   draw_filled_fan uses adjusts like draw_graph (p36, as printed); draw_characters (p36):
+       adjusts(Base_x, 2, 1, Args, Arguments0),
+       adjusts(Base_y, 2, 2, Arguments0, Arguments1),
+       stack_vector(Args, Length),
+       new_stack_vector(Arguments, Length),
+       vector_element(Args, 2, Font_name),
+       get_font(Object!font_bank, Font_name, Font, Object),
+       vector_element(Arguments, 2, Font),
+       copy_element(Length-1, Arguments1, Arguments)
+   (Element 0 of draw_characters' arg vector is a list of {Code, X, Y, W, H}; elements 1 and 2 are
+    a size/count and a font NAME; the program replaces the font name by a font object before the call.)
+

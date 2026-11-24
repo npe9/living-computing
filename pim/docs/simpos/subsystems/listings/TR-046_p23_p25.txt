@@ -1,0 +1,28 @@
+% TR-046 Tsuji, Kurokawa, Tojo, Iima, Nakazawa, Enomoto, "Dialogue Management in the PSI" (84.03).
+% PDF pages 23 and 25 (figure/table pages after the text; no folio). Read by eye at 130dpi
+% (work/trtm_window/tr0046/m-22.png, m-24.png). Table 1 (PDF 22) and Table 3 (PDF 24) are design-criteria
+% tables (not window-system facts) and are not transcribed.
+
+== Table 2. Window status and input/output   (PDF p23)
++-------------+-----------------------+--------------+
+|             |         Input         |   Output     |
+|             | Keyboard  |  Mouse    |              |
++-------------+-----------+-----------+--------------+
+| SELECTED    |   done    |   done    |   done       |
+| SHOWN       |  waiting  |   done    |   done       |
+| EXPOSED     |       waiting         |   done       |
+| OVERLAPPED  |       waiting         | waiting/done |
+| DEACTIVATED |          not   available             |
++-------------+-----------------------+--------------+
+(EXPOSED and OVERLAPPED: one "waiting" cell spans Keyboard+Mouse; DEACTIVATED: one cell spans all three.)
+
+== Figure 1. Window Statuses   (PDF p25)  -- nested rectangles in a screen frame:
+   A (top-left, on top), C (large, behind A and B) containing C1 (exposed) and C2 (overlapped),
+   B (lower right) containing B1 and B2 (B2 partly under B1).
+   Legend as printed:  A: selected   B: shown   B1: shown   B2: overlapped
+                       C: overlapped C1: exposed C2: overlapped
+
+== Table 3 (PDF p24) row of window interest: Principal Elements / command language =
+   "single-key commands and/or mouse button clicks"; hardware = "bit-mapped display, mouse";
+   Advanced Functions / HELP = "under construction"; feedback = "multi-window"; undo/redo = "future
+   implementation"; customization = "yes, using the class mechanism".

@@ -1,0 +1,170 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+shell	as_program	class	as_program			nature to inherit so a class runs as an independent process	PRINTED-INTERFACE	TM-134 p69-70; TM-115 p109	1.0 1985
+shell	as_program	cmethod	create	2		:create(Class,Obj); added by inheriting as_program; calls :new(Class,Obj)	PRINTED-INTERFACE	TM-134 p69	1.0 1985
+shell	as_program	imethod	goal	1		:goal(Obj); user-defined entry point run in the new process; process ends when it ends (success or failure)	PRINTED-INTERFACE	TM-134 p69-72; TM-115 p109	1.0 1985
+shell	as_e_program	class	as_e_program			class to inherit for a program added to the system menu (per TM-115 recommendation)	PROSE	TM-115 p109	1.0 1985
+shell	process	class	process			process object; created then given an object to run	PRINTED	TM-134 p71	1.0 1985
+shell	process	cmethod	create	2		:create(#process,P) creates a process instance	PRINTED	TM-134 p71	1.0 1985
+shell	process	imethod	activate	2		:activate(P,Obj) hands Obj to process P, calls :goal(Obj) there, returns at once	PRINTED	TM-134 p71	1.0 1985
+shell		menu_item	generalist			system menu EXPERTS	SCREENSHOT	TM-143 p3	1.x 1985-11
+shell		menu_item	debugger			system menu EXPERTS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	editor			system menu EXPERTS	SCREENSHOT	TM-143 p3	1.x 1985-11
+shell		menu_item	file_manipulator			system menu EXPERTS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	librarian			system menu EXPERTS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	terminal			system menu EXPERTS	SCREENSHOT	TM-143 p3	1.x 1985-11
+shell		menu_item	pmacs			system menu EXPERTS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	spooler			system menu EXPERTS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	font_editor			system menu EXPERTS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	edips			system menu EXPERTS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	Debugger			system menu Experts (capitalised)	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Pmacs			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	File			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Librarian			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Font_editor			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Edips			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Spooler			system menu Experts	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Escher			system menu Experts demo column (also Oekaki, Queens, Squares, Bounce)	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	window_manipulator			system menu MEDIA SYSTEMS	SCREENSHOT	TM-143 p3	1.x 1985-11
+shell		menu_item	window manipulator			system menu MEDIA SYSTEMS	SCREENSHOT	TM-181 p3; TM-229 p5	2.10 1986
+shell		menu_item	network			system menu MEDIA SYSTEMS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	shell			system menu MEDIA SYSTEMS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	whiteboard			system menu MEDIA SYSTEMS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	login			system menu MEDIA SYSTEMS	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		menu_item	shut down			system menu MEDIA SYSTEMS; ends all windows and programs	SCREENSHOT	TM-143 p3; TM-181 p3; TM-134 p67	1.0 1985; 2.10 1986
+shell		menu_item	user process list			system menu MEDIA SYSTEMS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	kanakan initiate			system menu MEDIA SYSTEMS; image TM-181 p3 reads kanakan (3rd letter a or s), TM-229 OCR kanaken	SCREENSHOT	TM-181 p3; TM-229 p5	2.10 1986-06
+shell		menu_item	garbage collection			system menu MEDIA SYSTEMS	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		menu_item	kill			offered on selecting a running expert in the system menu	PROSE	TM-134 p67	1.0 1985
+shell		option	menu			login file clause menu :- items_list([{Label,[Pkg##]Class},...]). sets system menu EXPERTS	PRINTED	TM-785 p6 p25; TM-786 p5	1989
+shell		command	call	1		shell command $ call pkg##class runs a program; shell prompt $	PRINTED	TM-786 p5	1989
+shell		message	Error occurred in <name>( process <n> )			error window title line	SCREENSHOT	TM-181 p5; TM-785 p3	2.10 1986; 1989
+shell		message	Error handling menu:			error window menu title	SCREENSHOT	TM-181 p5; TM-785 p3	2.10 1986; 1989
+shell		menu_item	Continue			Error handling menu item (error in debugger)	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		menu_item	Cancel this input			Error handling menu item (error in debugger)	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		menu_item	Kill this process			Error handling menu item (error in debugger)	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		message	USER : me			footer after login as unregistered user me/me	SCREENSHOT	TM-134 p66 p68	1.0 1985
+shell	debugger	class	debugger			ESP listener/command interpreter; class name in login-file items_list	PRINTED	TM-785 p6 p25; TM-181 p4	1989; 2.10 1986
+shell		message	:-			goal prompt	SCREENSHOT	TM-134 p67-71	1.0 1985
+shell		message	> Success !!			reply after a goal succeeds	SCREENSHOT	TM-134 p68 p71	1.0 1985
+shell		message	Variable Window			sub-window listing bindings Var = $class, ... ;	SCREENSHOT	TM-134 p68 p71	1.0 1985
+shell		message	Variable			sub-window name	SCREENSHOT	TM-181 p4; TM-143 p3	2.10 1986; 1.x 1985
+shell		message	(<inv>)<depth> <PORT>> <goal> ? <answer>			trace line format, e.g. (17)1 CALL> :test($my_window) ? step	SCREENSHOT	TM-181 p4-5	2.10 1986-06
+shell		command	step			leash answer	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		command	skip_predicate			leash answer	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		command	no_trace			leash answer	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		menu_item	Method			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	Step			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	Skip			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	Leap			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	Fail			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	Retry			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	No trace			debugger command menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	PREDICATE			debugger trace mode menu (vs clause)	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		menu_item	clause			debugger trace mode menu	SCREENSHOT	TM-181 p4	2.10 1986-06
+shell		event	CALL			procedure box port	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	EXIT			procedure box port	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	FAIL			procedure box port	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	REDO			procedure box port	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	unify			clause box port (into head)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	next			clause box port (head fails to next clause)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	pick			clause box port (head to body)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	miss			clause box port (body back to head)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	exit			clause box port (body out)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		event	redo			clause box port (into body)	PROSE	TR-057 p8; TM-229 p7	1984; 1986
+shell		command	ancestor	2		KL0 debugging built-in ancestor(N,^Clause)	PRINTED-INTERFACE	TR-044 p42	1984-02
+shell		command	frame	3		KL0 debugging built-in frame(N,Stack,^Frame)	PRINTED-INTERFACE	TR-044 p42	1984-02
+shell		command	read_console	1		KL0 debugging built-in read_console(^X)	PRINTED-INTERFACE	TR-044 p42	1984-02
+shell		command	display_console	1		KL0 debugging built-in display_console(?X)	PRINTED-INTERFACE	TR-044 p42	1984-02
+librarian	librarian	class	librarian			library user interface; windows/processes librarian_<n>	SCREENSHOT	TM-181 p4; TM-785 p3	2.10 1986; 1989
+librarian		menu_item	Check			librarian command menu	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		menu_item	Catalogue			librarian command menu; register class from source	SCREENSHOT	TM-143 p3; TM-181 p4; TM-134 p66	1.0 1985; 2.10 1986
+librarian		menu_item	Compile			librarian command menu	SCREENSHOT	TM-143 p3; TM-181 p4; TM-134 p66	1.0 1985; 2.10 1986
+librarian		menu_item	Uncompile			librarian command menu	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		menu_item	Save			librarian command menu; save template file	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		menu_item	Load			librarian command menu; load template file	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		menu_item	Delete			librarian command menu	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		menu_item	Execute			librarian command menu; batch command execution, prompt Command>	SCREENSHOT	TM-143 p3; TM-181 p4; TM-786 p4	1.x 1985; 2.10 1986; 1989
+librarian		menu_item	Print			librarian command menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+librarian		menu_item	Info			librarian command menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+librarian		menu_item	Classes			librarian command menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+librarian		menu_item	Predicates			librarian command menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+librarian		menu_item	Utility			librarian command menu; search info on OS and user classes	SCREENSHOT	TM-181 p4; TM-229 p6	TM-181 p4
+librarian		message	<< Librarian Text >>			librarian text window title	SCREENSHOT	TM-143 p3; TM-134 p71	1.x 1985
+librarian		message	File Name:			prompt for source file	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		message	Cataloguing "<file>.esp"...			progress, then each class indented, then <class> end.	SCREENSHOT	TM-143 p3; TM-181 p4	1.x 1985; 2.10 1986
+librarian		message	Class Name(<class>)			Check output header; then source/template/object dates, interpretive/compiled	SCREENSHOT	TM-181 p4	2.10 1986-06
+librarian		message	Input Class Name.			prompt; answer echoed as @ <name>	SCREENSHOT	TM-134 p71	1.0 1985
+librarian		message	Printed.			message after Print	SCREENSHOT	TM-134 p71	1.0 1985
+librarian		message	Command>			Execute prompt	PRINTED	TM-786 p4; TM-785 p3	1989
+librarian		command	fdd	1		batch command fdd("x.com") installs from floppy; asks FDD mount ok? / Input unit No.(0):	PRINTED	TM-786 p4; TM-785 p3	1989
+librarian		menu_item	Erase existing package and continue			Error handling menu item (package exists)	SCREENSHOT	TM-785 p3	1989
+librarian		menu_item	Inspect the information of this event			Error handling menu item	SCREENSHOT	TM-785 p3	1989
+librarian		menu_item	Return to librarian top level			Error handling menu item	SCREENSHOT	TM-785 p3	1989
+librarian		option	with_simpos			standard package environment inheriting system package simpos	PROSE	TM-388 p93-95	1987-88
+librarian		option	use_package	1		file declaration use_package(package-name).	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian		option	use_macro	1		file declaration use_macro([pkg##]class).	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian		option	include	1		file declaration include("file-name").	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian		option	add_operator	3		file declaration add_operator(Op,Type,Pre).	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian		option	remove_operator	2		file declaration remove_operator(Op,Type). (also /1)	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian	esp_macro_expander	class	esp_macro_expander			class inherited by macro banks; also reports macro errors	PRINTED-INTERFACE	TM-388 p102-105; TM-181 p5	1987-88; 2.10 1986
+librarian	esp_macro_expander	imethod	expand_clause	5		:expand_clause(Obj,Head0,Body0,^Head,^Body)	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+librarian	esp_macro_expander	imethod	expand_goals	3		:expand_goals(Obj,Goals0,^Goals)	PRINTED-INTERFACE	TM-388 p102-105	1987-88
+other	pmacs	class	pmacs			Emacs-like editor; class name in login-file items_list; 93 classes ~14300 lines	PRINTED	TM-785 p25; TM-639 p9	1989; 1988
+other		menu_item	ABORT			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	List Buffers			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	Save All Files			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	Set Font			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	Set Same Font			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	Set Window Size			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		menu_item	To Whiteboard			Pmacs pop-up menu	SCREENSHOT	TM-229 p6	2.x 1986-09
+other		message	Find File:			Pmacs echo-line prompt	SCREENSHOT	TM-181 p4	2.10 1986-06
+other		message	<file> > write end			Pmacs file-write message	SCREENSHOT	TM-134 p71	1.0 1985
+other		menu_item	kill			Edips menu (pair meta_kill)	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	meta_kill			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	duplicate			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	meta_duplicate			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	move			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	meta_move			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	insert_file			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	write_file			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	from_whiteboard			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	to_whiteboard			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		menu_item	file_name			Edips menu	SCREENSHOT	TM-143 p3	1.x 1985-11
+other		message	reading...			Edips status message; then <path> >read end	SCREENSHOT	TM-126 p6	1.0 1985
+other	symbolizer	cmethod	get_number_string	3		:get_number_string(#symbolizer,N,String) used in user code	USAGE	TM-134 p70	1.0 1985
+window	window	imethod	set_title	2		used in as_program example; on #window instance (TM-143 escher) and Obj!window (TM-134)	USAGE	TM-134 p70; TM-143 p3	1.0 1985
+window	window	imethod	set_size	3		used in as_program example; on #window instance (TM-143 escher) and Obj!window (TM-134)	USAGE	TM-134 p70; TM-143 p3	1.0 1985
+window		imethod	activate	1		used in as_program example; receiver is Obj!window from nature with_user_window, its class is not printed	USAGE	TM-134 p70	1.0 1985
+window		imethod	write_lines	2		used in as_program example; receiver is Obj!window from nature with_user_window, its class is not printed	USAGE	TM-134 p70	1.0 1985
+window		imethod	read	2		:read(W,control#"z") used in as_program example; receiver is Obj!window from nature with_user_window, its class is not printed	USAGE	TM-134 p70	1.0 1985
+window		imethod	kill	1		used in as_program example; receiver is Obj!window from nature with_user_window, its class is not printed	USAGE	TM-134 p70	1.0 1985
+shell		menu_item	Oekaki			system menu Experts demo column	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Queens			system menu Experts demo column	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Squares			system menu Experts demo column	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		menu_item	Bounce			system menu Experts demo column	SCREENSHOT	TM-229 p5	2.x 1986-09
+shell		message	Experts			system menu left column header (2.10 screen; MEDIA SYSTEMS right)	SCREENSHOT	TM-181 p3	2.10 1986-06
+shell		message	SYSTEM MENU			system menu title	SCREENSHOT	TM-143 p3; TM-181 p3	1.x 1985; 2.10 1986
+shell		message	Error found by esp_macro_expander:			error window message line	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		message	illegal slot assignment: A := A			error text for X := W typed at the debugger	SCREENSHOT	TM-181 p5	2.10 1986-06
+shell		command	me			unregistered user logs in with user name me and password me	PROSE	TM-134 p66	1.0 1985
+shell	as_program	cmethod	new	2		:new(Class,Obj) called by as_program :create; also typed at the debugger :- :new(#c,O).	PRINTED	TM-134 p67 p69	1.0 1985
+shell		message	Debugger Menu			debugger pop-up menu title	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	Change State			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	Variable Window			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	Control Menu			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	From Last Input			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	From Whiteboard			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	To Whiteboard			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+shell		menu_item	Help			Debugger Menu	SCREENSHOT	TM-126 p6	1.0 1985
+librarian		message	Package <p> already exists			error message (e.g. Package drawing already exists)	SCREENSHOT	TM-785 p3	1989
+librarian		message	Cannot load package_template_file			error message	SCREENSHOT	TM-785 p3	1989
+librarian		message	FDD mount ok?			fdd batch command prompt	PRINTED	TM-786 p4; TM-785 p3	1989
+librarian		message	Input unit No.(0):			fdd batch command prompt (TM-786 prints input unit No.)	PRINTED	TM-785 p3; TM-786 p4	1989
+librarian		message	Regist...			progress line during Catalogue (registration); text cut off in screenshot	SCREENSHOT	TM-134 p71	1.0 1985
+librarian		message	Compil...			progress line during Compile; text cut off in screenshot	SCREENSHOT	TM-134 p71	1.0 1985
+librarian		menu_item	DO IT			librarian class-selection pop-up (multiple select)	SCREENSHOT	TM-229 p6	2.x 1986-09
+librarian		menu_item	EXIT			librarian class-selection pop-up	SCREENSHOT	TM-229 p6	2.x 1986-09
+librarian		menu_item	ALL BUT SELECTED			librarian class-selection pop-up	SCREENSHOT	TM-229 p6	2.x 1986-09
+librarian		menu_item	FROM WHITE BOARD			librarian class-selection pop-up	SCREENSHOT	TM-229 p6	2.x 1986-09
+window	window	cmethod	create	2		:create(#window,W); on #window instance (TM-143 escher) and Obj!window (TM-134)	USAGE	TM-143 p3	1.x 1985-11
+window	window	imethod	set_position	3		:set_position(W,50,120) on a #window instance; on #window instance (TM-143 escher) and Obj!window (TM-134)	USAGE	TM-143 p3	1.x 1985-11

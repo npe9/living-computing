@@ -1,0 +1,7 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p12 (folio -9-) 4. ファイルの削除方法 ====
+No delete function; delete unneeded files with the ファイルマニピュレータ (file manipulator).
+Directories:
+   ・自PIS[sic]で作成したSIM照   >sys>simshow>Qbox>*.*
+   ・回答SIM照                    >sys>simshow>Abox>*.*
+ (注意) answer file names look like:   icpsi116-01-May-89-12-00-00.sim.1

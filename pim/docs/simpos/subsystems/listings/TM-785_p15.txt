@@ -1,0 +1,12 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p15 (folio -10-) ====
+       +楕円描画方法+
+       | 右上1/4 楕円 |
+       | 右下1/4 楕円 |
+       | 左上1/4 楕円 |
+       | 左下1/4 楕円 |
+   polyline: left clicks give the points; a LEFT DOUBLE click gives the end point and ends. A single
+   MIDDLE click during the operation cancels the previous click.
+   polygon: the same; it is closed at the double-clicked end point.
+   filled circle, filled rectangle, filled fan (anticlockwise): as the line versions. Filled ellipse (cont.)
+

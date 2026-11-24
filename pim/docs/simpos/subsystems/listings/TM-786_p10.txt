@@ -1,0 +1,27 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p10 (folio -7-) 3.2 サブメニュー ====
+Shown when SIM照 input ends:
+   +SIMPOS照会書+
+   | 送  信 | (1). send the SIM照
+   | 印  刷 | (2). print
+   | 再編集 | (3). back to input screen
+   | セーブ | (4). save SIM照 in own directory
+   | 終  了 | (5). quit system
+ (1)送信: send to the server. ① select "送信".
+    ◆ To change (or confirm) the destination node name (server): マウス左2回クリック (mouse LEFT
+      double click) ... type the node name in the node-name input screen:
+        +-------------------------------------------+
+        |  ノード名を入力して下さい  : icpsi203      |    ["Please enter node name"]
+        +-------------------------------------------+
+    ② message "送信されました" (sent) if sent, otherwise "セーブできません" (cannot save) [sic as printed].
+ (2)印刷: output to printer:
+        +----- プ リ ン タ 設 定 -----+   (printer settings)
+        | ノード     [自PSI]   他PSI   |   (own PSI / other PSI; selected shaded)
+        | プリンタ    シリアル [レーザ] |   (serial / laser)
+        |    do_it          abort      |
+        +------------------------------+
+    own PSI: ① set "自PSI", select "do_it" ② printing starts.
+    other PSI: ① set "他PSI", "do_it" ② node-name screen ③ type node of PSI with the printer, Return:
+        | レーザプリンタのノード名を入力して下さい  : icpsi???  |
+      ④ printing starts.
+

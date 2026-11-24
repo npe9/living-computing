@@ -1,0 +1,10 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p16 (folio -11-) ====
+   filled ellipse; filled polygon (as polygon; middle click cancels the previous click).
+   文字 (characters): two methods, size (サイズ指定: give one character's height and width) or rectangle
+   (矩形指定: scale into a given rectangle). Size: a left click sets the upper-left; a string-input window
+   appears; Return closes it and draws. Rectangle: left click upper-left, left click lower-right, then
+   the string-input window. A left double click on 文字 opens Fig. 2-10 (font, method, direction; for
+   size: width and height in dots, and the maximum number of characters before wrapping to the next
+   line or column; "*" = no maximum).
+

@@ -1,0 +1,10 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p9 (folio -6-) ====
+ ⑥ C-x C-z leaves.  ⑦ "閲覧" menu:
+   +閲覧+
+   | 再閲覧 | ..a. back to "SIMPOS照会書（問い合せ）" screen
+   | 印刷   | ..b. print the viewed SIM照 (see 3.2(2))
+   | 終了   | ..c. back to initial menu
+ ⑧ select "終了" to go back.
+ (4)終了: quit online SIM照: ① select "終了" in the initial menu.
+

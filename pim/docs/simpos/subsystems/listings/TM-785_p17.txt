@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p17 (folio -12-) ====
+       +文字列描画属性---------------+   [300/400dpi crop of the font line]
+       | フォント   font:kanji_16     |
+       | 指定       サイズ   領域     |   (サイズ selected)
+       | 形式       横書き   縦書き   |   (横書き selected)
+       | (サイズ指定の場合)           |
+       |      横（ドット）   16       |
+       |      縦（ドット）   16       |
+       |      最大文字数     *        |
+       |  do_it          abort        |
+       図2-10 文字列描画属性ウインドウ
+   NOTE: the font is named by a LOGICAL pathname "font:kanji_16". The generated program on p40 names
+   the same font by a physical path ">sys>font>kanji_16.font", and names another as "font_13".
+2.7 編集操作: a single right click during an edit cancels it, in both programs.
+ (1) Figure editing: each drawn figure is managed by its bounding rectangle (Fig. 2-11: a line inside a
+     dotted rectangle).
+

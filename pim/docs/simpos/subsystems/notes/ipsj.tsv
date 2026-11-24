@@ -1,0 +1,242 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+window	standard_io_window	cmethod	create	3	options size(W,H) position(X,Y) title(Str)	create a window instance; held: MATCH standard_io_window create/3 (11 programs)	PRINTED	Giho 8609 p20 Fig.8 (folio 606); p19 prose	1986-04 (2.0)
+window	standard_io_window	imethod	activate	1		display the window on screen; held: MATCH	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	standard_io_window	imethod	select	1		make it the input window; held: only unattributed select/1 (3 programs)	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	standard_io_window	imethod	putl	2		write a string (line); held: MATCH	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	standard_io_window	imethod	gett	2		read a term from the window; held: MATCH	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	standard_io_window	imethod	set_position	3		move the window to X,Y; held: set_position/3 on inferior_window, standard_superior_window (not standard_io_window): VARIANT of class	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	standard_io_window	imethod	putc	2		write one character (#">"); held: putc/2 on pmacs_window, standard_io_buffer, unattributed; not on standard_io_window	PRINTED	Giho 8609 p19-20	1986-04 (2.0)
+window	window	cmethod	create	3	options size(manipulator) position(manipulator) title(Str)	create window; manipulator = choose by mouse (INFERENCE); held: class window not created by held programs; inferior_window create/3 exists	SCREENSHOT	36239 p5 (Pmacs buffer, app code)	1986-09 v2.50
+window	window	imethod	erase_cursor	1		hide the text cursor; held: erase_cursor/1 on essential_window, standard_io_window, as_graphics nature sets	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	set_inside_units	3		set coordinate units of the inside area; held: set_inside_units/3 on nature sets with as_graphics (MATCH as mixin method)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	activate	1		display the window; held: activate/1 on standard_io_window etc.	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	refresh	1		redraw/clear the window; held: ABSENT (no refresh/1 in requirements)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	get_inside_size	3		inside size Sx,Sy; held: get_inside_size/3 on many window nature sets	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	get_mouse_position	3		mouse X,Y in window; held: get_mouse_position/3 on as_markers / as_mouse_input nature sets	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	imethod	draw_rectangle	8		(W,X,Y,Wd,Ht,1,filled,exclusive_or) draw rectangle with fill and ALU op; held: MATCH draw_rectangle/8 on {as_graphics,inferior_window}; VARIANT standard_io_window draw_rectangle/5 and /7	SCREENSHOT	36239 p5	1986-09 v2.50
+window	window	slot	dependency		value none	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	window	slot	echo_buffer		value $list	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	window	slot	employers		value $extensive_list	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	window	slot	error_report_window		value nil	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	window	slot	error_status		value normal	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	window	slot	exposed_flag		(value cut off)	window slot shown by inspector	SCREENSHOT	36239 p6	1986-09 v2.50
+window	bare_window	class				base window mixin (same as TM-065)	PRINTED	26580 p7	1984-06
+window	with_border	class				border mixin; TM-061 variant (border_flag == off, !)	PRINTED	26580 p8	1984-06
+window	with_label	class				label mixin	PRINTED	26580 p8	1984-06
+window	window_with_border_and_label	class			bare_window with_border with_label	combined window	PRINTED	26580 p8	1984-06
+window	moving_window	class			standard_io_window	example class (application code) defining :move/1	PRINTED	Giho 8609 p20 Fig.8	1986-04
+window	font	class				font object made by window subsystem from a font file	PROSE	114008 (4D-3) p1	1986
+window	font_editor	menu_item	EXIT		selection mode	font editor char-selection menu	SCREENSHOT	114008 p1 Fig.2	1986 (2.0+)
+window	font_editor	menu_item	LOAD			load font file	SCREENSHOT	114008 p1 Fig.2	1986
+window	font_editor	menu_item	SAVE			save font file	SCREENSHOT	114008 p1 Fig.2	1986
+window	font_editor	menu_item	ATTRBT			change all-character parameters	SCREENSHOT	114008 p1 Fig.2	1986
+window	font_editor	menu_item	EDIT			enter pattern edit mode	SCREENSHOT	114008 p1 Fig.2	1986
+window	font_editor	command	Draw		pattern mode	draw with pen	SCREENSHOT	114008 p2 Fig.3; 36239 p6	1986
+window	font_editor	command	Draw Line		pattern mode	line by endpoints	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Clear		pattern mode	clear pattern	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Move		pattern mode	translate pattern	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Set Sample		pattern mode	set sample	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Real Size		pattern mode	real-size image	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Circle		pattern mode	circle by centre+radius	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Scale		pattern mode	grid magnification	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Add		pattern mode	add grey pattern to main	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Swap		pattern mode	swap main and grey patterns	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Reflect		pattern mode	mirror	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Box		pattern mode	box	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	command	Cut		pattern mode	cut to pattern register (INFERENCE)	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	black		pen colour	pen mode	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	white		pen colour	pen mode	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	inverse		pen colour	pen mode	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	dot		pen tip	pen tip	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	line		pen tip	pen tip	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	square		pen tip	pen tip	SCREENSHOT	114008 p2 Fig.3	1986
+window	font_editor	option	Width		glyph params	character size and bias	SCREENSHOT	114008 p2 Fig.3; 36239 p6 (90/70/0 icon)	1986
+window	font_editor	option	Height		glyph params	character size and bias	SCREENSHOT	114008 p2 Fig.3; 36239 p6 (90/70/0 icon)	1986
+window	font_editor	option	Bias		glyph params	character size and bias	SCREENSHOT	114008 p2 Fig.3; 36239 p6 (90/70/0 icon)	1986
+window	window_manipulator	class				change window state/position/size by mouse	PROSE	36239 p7; Giho 9106 Table 2	1986-1991
+window	color_window	option	color palette			colour number per palette; one pair = monochrome window; palette shared parent-child	PROSE	Giho 8907 p35 Fig.5	1989 SIMPOS II B00
+window	color_window	option	color pair			colour number per palette; one pair = monochrome window; palette shared parent-child	PROSE	Giho 8907 p35 Fig.5	1989 SIMPOS II B00
+window	screen	message	USER : <user> / SIMPOS Version <v> / screen / <window name> / SWAPPED / spool / DD-Mon-YY Weekday hh:mm:ss			bottom status line fields	SCREENSHOT	36239 p5-7; Giho 8609 p16,p20; FSTJ 26(1) p99	1986 v2.50; 1989 v4.2
+window	editor_main_window	class				window label editor_main_window/5 in document system; label seen on screen, class attribution INFERENCE	INFERENCE	114012 (4D-7) p2 Fig.2	1986
+window	editor_buffer_window	class				window label editor_buffer_window/19 in status line; label seen on screen, class attribution INFERENCE	INFERENCE	FSTJ 26(1) p99	1989 v4.2
+window	pmacs_window	message	PMACS(esp)[l,c] *-n* FILE.EXT.v --n%--			Pmacs mode line (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	Giho 8609 p16; 36239 p5-6; 114012 p2	1986
+window	pmacs_window	message	Read: >sys>user>demo>8PZL.ESP.7			Pmacs echo line after reading a file (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	Giho 8609 p16	1986-04
+window	pmacs_window	menu_item	ABORT		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	List Buffers		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	Save All Files		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	Set Font		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	Set Echo Font		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	Set Window Size		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	From Whiteboard		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	menu_item	To Whiteboard		EDITOR MENU	editor popup menu (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p5	1986-09 v2.50
+window	pmacs_window	keycode	M-\		kana-kanji	conversion command key shown in echo line (INFERENCE) (class attribution INFERENCE; seen in Pmacs windows)	SCREENSHOT	36239 p6	1986-09 v2.50
+window	kanakan	message	>MENU(PF16) PF10=ON_OFF, PF0-PF6=MANAGE_KEY, PF7=CANCEL.			kana-kanji key help line (PF0 digit blurred)	SCREENSHOT	36239 p6	1986-09 v2.50
+window	kanakan	keycode	PF0..PF16			PSI keyboard function keys	SCREENSHOT	36239 p6	1986-09 v2.50
+librarian	librarian	menu_item	Check			librarian_1 command	SCREENSHOT	Giho 8609 p16 Fig.8; 36239 p5	1986 (2.0, 2.50)
+librarian	librarian	menu_item	Catalogue			register classes from a source file	SCREENSHOT	Giho 8609 p16; 36239 p5	1986
+librarian	librarian	menu_item	Compile			make directly-executed code	SCREENSHOT	Giho 8609 p16; 36239 p5	1986
+librarian	librarian	menu_item	Uncompile			back to interpreted code (INFERENCE from 36239 prose)	SCREENSHOT	Giho 8609 p16; 36239 p5	1986
+librarian	librarian	menu_item	Save			save template file	SCREENSHOT	Giho 8609 p16; 36239 p5; 118681 Fig.1	1986; 1990 v5
+librarian	librarian	menu_item	Load			load template file	SCREENSHOT	Giho 8609 p16; 36239 p5; 118681 Fig.1	1986; 1990 v5
+librarian	librarian	menu_item	Delete			delete class (submenu in v5)	SCREENSHOT	Giho 8609 p16; 36239 p5; 118681 Fig.1	1986; 1990 v5
+librarian	librarian	menu_item	Execute			execute batch command (INFERENCE)	SCREENSHOT	Giho 8609 p16; 36239 p5; 118681 Fig.1	1986; 1990 v5
+librarian	librarian	menu_item	Utility			search info on classes	SCREENSHOT	36239 p5; 118681 Fig.1	1986-09 v2.50; 1990 v5
+librarian	librarian	menu_item	Set up			submenu set_up_menu	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Package			submenu package	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	ESP tool			submenu	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	[Close]			close librarian	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Save state		set_up_menu	save librarian state	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Check menu item		set_up_menu	check menu definition	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Set default package		package	set default package	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Define package		package	define package	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Define environment		package	define package environment	SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Delete package		package		SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Delete environment		package		SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Retrieve		package		SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	menu_item	Other command		package		SCREENSHOT	118681 Fig.1	1990 v5
+librarian	librarian	command	set_up_menu			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	set_up			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	save_state			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	check_menu_item			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	check			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	catalogue			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	save			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	load			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	delete_menu			submenu name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	delete			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	abolish			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	forget			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	delete_resource			command name in menu_list	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	command	up			return to parent menu	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	option	menu_list		list of (label, command[, submenu list])	librarian initialization file menu definition	PRINTED	118681 Fig.2	1990 v5.0
+librarian	librarian	message	File Name>			prompt for source file	SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	message	Class Name>[default]			prompt for class name with default	SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	message	Catalogging "<file>"...			(sic) start of cataloguing	SCREENSHOT	36239 p5; Giho 8609 p16	1986
+librarian	librarian	message	<class> end.			class registered	SCREENSHOT	36239 p5; Giho 8609 p16	1986
+librarian	librarian	message	<class> auto loaded.			dependent class auto-loaded	SCREENSHOT	Giho 8609 p16	1986-04
+librarian	librarian	menu_item	DO IT		CLASS NAME popup	confirm selection	SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	menu_item	EXIT		CLASS NAME popup		SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	menu_item	ALL BUT SELCTED		CLASS NAME popup	(sic) invert selection	SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	menu_item	FROM WHITE BOARD		CLASS NAME popup	take operand from whiteboard	SCREENSHOT	36239 p5	1986-09 v2.50
+librarian	librarian	message	librarian <n> ( default: <package> )			librarian window title	SCREENSHOT	118681 Fig.1, Fig.3	1990 v5
+librarian	library	class				registry of all classes and packages; source->template->class object	PROSE	36239 p5; Giho 8810; 118681	1986-1990
+librarian	library_utility	class			librarian_version librarian_class_generator librarian_delete librarian_package librarian_spy librarian_reference librarian_fdd librarian_subroutine	probably real Librarian part class (author link Kodama Yasuko)	INFERENCE	118681 + cil UT.esp stamp	1988-90
+shell	system_menu	menu_item	Debugger		EXPERTS	start debugger	SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	Pmacs		EXPERTS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	File		EXPERTS	file manipulator	SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	Librarian		EXPERTS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	Font_editor		EXPERTS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	Edips		EXPERTS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	Spooler		EXPERTS	spooler manipulator	SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	user process list		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	window manipulator		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	network		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	shell		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	whiteboard		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	kanakan initiate		MEDIA SYSTEMS	KANAKAN_INITIATE	SCREENSHOT	36239 p4; 114012 p2	1986-09 v2.50
+shell	system_menu	menu_item	garbage collection		MEDIA SYSTEMS	force GC	SCREENSHOT	36239 p4; Giho 9106 Table 2	1986-1991
+shell	system_menu	menu_item	login		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	menu_item	shut down		MEDIA SYSTEMS		SCREENSHOT	36239 p4	1986-09 v2.50
+shell	system_menu	option	EXPERTS / MEDIA SYSTEMS		two columns	EXPERTS = multi-instance user-extensible; MEDIA SYSTEMS = single instance	PROSE	36239 p4	1986-09 v2.50
+shell	login	option	initialization file		system menu items; directory logical names; default directory; initial program; auto-created PSs and window positions	per-user login environment	PROSE	36239 p4	1986-09 v2.50
+shell	debugger	menu_item	Method			debugger menu	SCREENSHOT	Giho 8609 p16 Fig.8	1986-04
+shell	debugger	menu_item	Step			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	Skip			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	Leap			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	Fail			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	Retry			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	No trace			debugger menu	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	PREDICATE			debugger menu (separate box; highlighted)	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	menu_item	clause			debugger menu (separate box)	SCREENSHOT	Giho 8609 p16	1986-04
+shell	debugger	message	(n)d CALL/EXIT [new>/builtin>/none]> goal ? step			trace line format	SCREENSHOT	Giho 8609 p16; 36239 p6	1986
+shell	debugger	message	(n)d unify> / pick>			clause-box ports in trace	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	debugger	command	step			typed at trace prompt	SCREENSHOT	Giho 8609 p16; 36239 p6	1986
+shell	debugger	message	?- goal. / Var= value / $class / #class			top-level prompt and binding display	SCREENSHOT	Giho 8609 p16,p20	1986-04
+shell	inspector	command	exit			inspector Command pane	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	inspector	command	parameters			inspector Command pane	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	inspector	command	break			inspector Command pane	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	inspector	command	from_WB			inspector Command pane (from whiteboard)	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	inspector	message	$class@1:hex			object print form, e.g. $window@1:4087FC	SCREENSHOT	36239 p6	1986-09 v2.50
+shell	process	cmethod	create	2		held: MATCH	SCREENSHOT	Giho 8609 p16 (pmacs buffer, demo code)	1986-04
+shell	process	imethod	set_sub_priority	2		held: only unattributed set_sub_priority/2 (1 program)	SCREENSHOT	Giho 8609 p16	1986-04
+shell	process	imethod	activate	2		start process running Program; held: MATCH process activate/2 (12 programs)	SCREENSHOT	Giho 8609 p16	1986-04
+shell	as_demo_program	imethod	goal	1		program entry protocol; held: as_demo_program absent; goal/1 unattributed	SCREENSHOT	36239 p5	1986-09 v2.50
+shell	as_demo_program	imethod	initiation_end	1		signal end of initiation; held: ABSENT	SCREENSHOT	36239 p5	1986-09 v2.50
+other	list	slot	first		entry object	list object slot	PRINTED	114009 (4D-4) Fig.2	1986
+other	list	slot	last		entry object	list object slot	PRINTED	114009 Fig.2	1986
+other	entry	slot	next		entry or list	entry object slot	PRINTED	114009 Fig.2	1986
+other	entry	slot	object		data	entry object slot	PRINTED	114009 Fig.2	1986
+other	file_manipulator	menu_item	delete		file popup		SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	rename		file popup		SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	copy		file popup		SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	copy to fdd		file popup		SCREENSHOT	36239 p7	1986-09 v2.50
+other	file_manipulator	menu_item	append		file popup	merge files	SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	describe		file popup	creation date, creator	SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	type		file popup	output to window or printer	SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	dump		file popup	hex dump	SCREENSHOT	36239 p7; 114016 table	1986
+other	file_manipulator	menu_item	word count		file popup		SCREENSHOT	36239 p7	1986-09 v2.50
+other	file_manipulator	menu_item	pattern search		file popup		SCREENSHOT	36239 p7	1986-09 v2.50
+other	file_manipulator	menu_item	to whiteboard		file popup		SCREENSHOT	36239 p7	1986-09 v2.50
+other	spooler_manipulator	menu_item	Direct			direct mode	SCREENSHOT	36239 p7; 114017	1986-09 v2.50
+other	spooler_manipulator	menu_item	Spool			spool mode	SCREENSHOT	36239 p7	1986-09 v2.50
+other	spooler_manipulator	menu_item	Test			test print	SCREENSHOT	36239 p7	1986-09 v2.50
+other	spooler_manipulator	menu_item	Manipulate			(blurred) operate queue	SCREENSHOT	36239 p7	1986-09 v2.50
+other	spooler_manipulator	menu_item	Cancel			cancel current job	SCREENSHOT	36239 p7	1986-09 v2.50
+other	spooler_manipulator	menu_item	EXIT				SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	initialize volume		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	show volume label		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	show file label		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	save to MT		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	restore from MT		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	attribute		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	mt_utility_window	menu_item	exit		tape menu		SCREENSHOT	36239 p7	1986-09 v2.50
+other	talk	menu_item	BYE		talk input window	end talk	SCREENSHOT	36239 p7	1986-09 v2.50
+other	talk	menu_item	MODE		talk input window		SCREENSHOT	36239 p7	1986-09 v2.50
+other	talk	message	TALK INPUT / TO <node> :: <user> ; TALK OUTPUT / FROM <node> :: <user>			talk window headers	SCREENSHOT	36239 p7	1986-09 v2.50
+other	virtual_printer	class				user print object; spool file; node name for remote print	PROSE	114017 (4D-12) p1-2	1986 v2.5
+other	printer_spooler	class			as_spooler	spooler output to printer device	PROSE	114017 p1	1986 v2.5
+other	as_spooler	class				generic spooling nature	PROSE	114017 p1	1986 v2.5
+other	node	class				NCP node object	PROSE	114014 (4D-9) p1	1986
+other	socket	class				NCP socket object	PROSE	114014 p1	1986
+other	cable	class				NCP logical circuit object	PROSE	114014 p1	1986
+other	plug	class				NCP user interface object with receive queue	PROSE	114014 p1	1986
+other	file	command	open		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	file	command	make		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	file	command	close		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	file	command	dispose		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	file	command	read		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	file	command	write		file server protocol requests	remote file access	PRINTED-INTERFACE	114016 (4D-11) table	1986
+other	netcp	command	DIR-REQ		NETCP protocol	heterogeneous file copy	PRINTED-INTERFACE	114016 p2	1986
+other	netcp	command	DEL-REQ		NETCP protocol	heterogeneous file copy	PRINTED-INTERFACE	114016 p2	1986
+other	netcp	command	XMT-REQ		NETCP protocol	heterogeneous file copy	PRINTED-INTERFACE	114016 p2	1986
+other	netcp	command	RCV-REQ		NETCP protocol	heterogeneous file copy	PRINTED-INTERFACE	114016 p2	1986
+other	tcpip_socket	class				socket interface for TCP/IP (TELNET, FTP)	PROSE	115246 (4E-7) p1	1988
+other	(network class)	imethod	connect			network class message (arity unknown); source names only a network class; tcpip_socket attribution is INFERENCE; held programs use connect/send/receive arity 2 on port/channel	PROSE	Giho 8907 p35	1989
+other	(network class)	imethod	send			network class message (arity unknown); source names only a network class; tcpip_socket attribution is INFERENCE; held programs use connect/send/receive arity 2 on port/channel	PROSE	Giho 8907 p35	1989
+other	(network class)	imethod	receive			network class message (arity unknown); source names only a network class; tcpip_socket attribution is INFERENCE; held programs use connect/send/receive arity 2 on port/channel	PROSE	Giho 8907 p35	1989
+other	telnet	option	echo		NVT options	TELNET options	PROSE	115246 p2	1988
+other	telnet	option	suppress-go-ahead		NVT options	TELNET options	PROSE	115246 p2	1988
+other	ftp	message	FTP>		command interpreter mode prompt	FTP prompt	SCREENSHOT	115248 (4E-9) Fig.2	1988
+other	remote_access	message	user_name : node!user / file_name : node::>dir>file.ext.v			ROAM access log	PRINTED	115247 (4E-8) p2	1988
+other	file	option	>sys>user>NAME>file.ext.version ; node::path			pathname syntax	PRINTED	115247 p2; Giho 8609 p16; 118591	1986-1990
+window	inferior_window	class				hierarchical window; one of 3 mandatory base classes; last in nature list	PRINTED	WINCS p2, p7-8, p12 Fig.5	1989-91 (PSI II)
+window	popup_window	class				popup window base class	PROSE	WINCS p7-8; Fig.2	1989-91
+window	temporary_window	class				temporary window base class	PROSE	WINCS p7-8; Fig.2	1989-91
+window	shared_window	class				window shared between processes (INFERENCE from Fig.2 item)	PROSE	WINCS p7	1989-91
+window	as_superior	class				provides child windows (split one window)	PRINTED	WINCS p5, p12	1989-91
+window	as_output	class				output window	PRINTED	WINCS p2, p12	1989-91
+window	as_input	class				input	PRINTED	WINCS p12	1989-91
+window	as_input_buffer	class				input buffer	PRINTED	WINCS p12	1989-91
+window	as_graphics	class				graphics output (draw_line, draw_circle, draw_rectangle); excludes as_menu	PRINTED	WINCS p2-3, p12	1989-91
+window	as_markers	class				markers	PRINTED	WINCS p12	1989-91
+window	as_scroll	class				scrolling	PRINTED	WINCS p12	1989-91
+window	as_menu	class				menu window; requires as_mouse_input; conflicts with as_graphics and as_output	PRINTED	WINCS p3, p12	1989-91
+window	as_single_select	class				single-selection menu (with as_menu)	PRINTED	WINCS p8, p12	1989-91
+window	as_mouse_input	class				mouse input	PRINTED	WINCS p3, p12	1989-91
+window	with_border	class				sash: show border; before as_* and base	PRINTED	WINCS p12; Fig.2	1989-91
+window	with_label	class				sash: show label; must precede inferior_window	PRINTED	WINCS p3, p12	1989-91
+window	with_margin	class				sash: set margin; first in nature list	PRINTED	WINCS p12; Fig.2	1989-91
+window	my_window2	class			with_margin with_label with_border as_scroll as_output as_graphics as_markers as_input as_mouse_input inferior_window	generated example showing canonical nature order	PRINTED	WINCS p12 Fig.5	1989-91
+window	as_graphics	imethod	draw_line	5		(Obj,X1,Y1,X2,Y2); held: VARIANT standard_io_window draw_line/7 and /8	PRINTED	WINCS p12 class_method fact	1989-91
+window	as_graphics	imethod	draw_circle	7		(Obj,X,Y,R,1,solid,set): width, line style, ALU op	PRINTED	WINCS p3	1989-91
+window	window	option	about 40 window classes			count of SIMPOS window classes	PROSE	WINCS p3	1989-91
