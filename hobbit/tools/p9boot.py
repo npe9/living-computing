@@ -49,6 +49,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "sem"))
 import p9exec          # noqa: E402
+import p9scancode      # noqa: E402
 import hobbit_sem      # noqa: E402
 
 MASK32 = 0xFFFFFFFF
@@ -152,6 +153,19 @@ CHOICES = {
                      "while the prompt is still being drawn and its echo "
                      "reaches Quart channel 0 before the prompt does "
                      "(putstrn draws, then calls uartputs).",
+    "console-keyboard": "An image that defines kbdinit (the release's "
+                        "kbd.c, linked into a 9term built from the "
+                        "release, docs/s9term.md) has screeninit call "
+                        "kbdinit(2): kbdq.putc is rawkbdputc, a scan-code "
+                        "keyboard on Quart channel 2 at 600 baud with odd "
+                        "parity.  For such an image --type REPLY goes to "
+                        "channel 2 as scan codes, each character a press "
+                        "and a release (code | 0x80), Lshift around the "
+                        "skeymap characters, CR as the Return key; the "
+                        "tables are read out of kbd.c (tools/p9scancode.py). "
+                        "The keyboard's own timing (key rate, its answer "
+                        "to the Noclick byte) is not modelled: the codes "
+                        "arrive at the line's character rate.",
     "idle-skip": "A harness shortcut, on by default (--no-idle-skip turns "
                  "it off).  s9term's idle loop is runproc+0x8..+0x1e (proc.c "
                  "`while(runhiq.head==0 && runloq.head==0);` with spllo): "
@@ -1786,6 +1800,13 @@ class Boot:
         self.script_from = 0
         self.think = 0.0            # seconds from TEXT to the first byte
         self.typed = []
+        # CHOICES['console-keyboard']
+        if "kbdinit" in self.syms.by_name:
+            self.console_channel = 2
+            self.console_encode = p9scancode.Encoder().encode
+        else:
+            self.console_channel = CONSOLE_CHANNEL
+            self.console_encode = bytes
 
     def next_event(self):
         """The earliest model time (seconds) after now at which a device
@@ -1884,7 +1905,8 @@ class Boot:
             self.script.pop(0)
             self.script_from = at + len(wait)
             self.typed.append((self.steps, wait, reply))
-            self.quart.feed(CONSOLE_CHANNEL, reply, self.think)
+            self.quart.feed(self.console_channel,
+                            self.console_encode(reply), self.think)
         if self.until is not None and self.until in screen:
             raise Stop("screenputs printed %r" % self.until)
 

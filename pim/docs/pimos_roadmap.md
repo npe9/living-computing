@@ -395,6 +395,8 @@ request.
 
 ### Phase 4 - A usable PIMOS
 
+*(What the FEP must answer from the banner to a shell, sourced from PIMOS: `docs/fep_services.md`.)*
+
 1. The rest of the FEP services: login, files, the window/terminal the
    shell wants (`pimos.logins`, `login.com`, `shell.com`).
 2. Whatever the shell, the servers and the library hit next in the

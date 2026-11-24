@@ -1,0 +1,6 @@
+#!/bin/rc
+# qemu1e addition: the release's /rc/bin/service.auth/il17022 (#!/bin/aux/changekey),
+# the changekey authentication service (auth(6); sys/src/auth/changekey.srv.c), with
+# the kfs's path: this listener's /bin is the floppy's.  It reads the
+# keys from keyfs on /mnt/keys, started by /serve.
+exec /n/kfs/386/bin/aux/changekey
