@@ -87,6 +87,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XTq1, XTq2, XTq3, XTq4, XTp0, XTp1, XTp2, XTpE,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
+               XShF, XCPr1, XCPr2,
                XReuse3,
                XScI1, XScI2, XScC, XScW, XScO1, XScO2, XScO3, XScO4 } XState deriving (Bits, Eq);
 
@@ -230,7 +231,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // the shoen built-ins of stages 1 and 2 (PimmShBox.bsv); the inputs
   // that are waited for: MinPrio, MaxPrio, ExcepMask, or the handle
   Bool shoenHere = op == op_create_shoen || op == op_start_shoen
-                || op == op_shoen_statistics || op == op_remove_shoen;
+                || op == op_shoen_statistics || op == op_remove_shoen
+                || op == op_stop_shoen || op == op_abort_shoen || op == op_raise;
   Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
 
   // wait_vector_N, N = 1..6
@@ -286,6 +288,18 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_suspend) begin
       if (nNoted != 0) suspendGoal;
+      // no clause applies inside a shoen: the exception
+      // reduction_failure, 9, tag 1 << 25, Info {Pe, Code, ArgV}, Code
+      // the label as a code, ArgV r[0..x) (PimmShBox.bsv; ref/pimm/
+      // pimm.py i_suspend).  An arity of 0 or above 6 is refused
+      else if (gbox.shoen != 0) begin
+        if (x == 0 || x > 6) stop(EndUnimp);
+        else begin
+          shbox.exception(fromInteger(lay_EXC_REDUCTION_FAILURE), 32'h02000000,
+                          mkCell(tag_COD, absAddr(labelOf(pc, c16))), ?, x);
+          st <= XShF;
+        end
+      end
       else stop(EndFail);
     end
     // read_eagerly, what the compiler writes for `alternatively.`: an
@@ -383,6 +397,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       regs.wr(x, intC(1));
       scsi.init;
       st <= XScI1;
+    end
+    else if (op == op_current_processor) begin
+      // current_processor(^Current, ^X, ^Y): no input, never waits.  One
+      // processor here: 0, 1, 1 (PDSS's values), written in that order
+      regs.wr(x, intC(0));
+      st <= XCPr1;
     end
     else if (op == op_current_node) begin
       // current_node(^NodeNumber, ^TotalNode): no input, never waits.
@@ -1985,7 +2005,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   rule shGo (st == XShGo);
-    if (waitsOn(0) || waitsOn(1) || waitsOn(2)) begin
+    // raise waits for its Tag only (stage 3): Info and Data are not read
+    if (waitsOn(0) || (op != op_raise && (waitsOn(1) || waitsOn(2)))) begin
       gbox.waitRecord(stub.addr, stub.n, operand, stub.outs);
       st <= XBWait1;
     end
@@ -2007,6 +2028,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShS;
       end
     end
+    // stage 3: stop_shoen(Shoen, ^NewShoen), 22:E2, abort_shoen(Shoen,
+    // ^NewShoen), 22:E3: anything but a handle is refused
+    else if (op == op_stop_shoen || op == op_abort_shoen) begin
+      if (vals[0].tag != tag_SHREC) stop(EndUnimp);
+      else begin
+        if (op == op_stop_shoen) shbox.stop(vals[0]);
+        else shbox.abort(vals[0]);
+        st <= XShS;
+      end
+    end
+    // raise(Tag, Info, Data), 22:F2: a `raised` exception, 16, the tag
+    // Tag; Info and Data as the registers hold them.  A Tag that is no
+    // integer is refused
+    else if (op == op_raise) begin
+      if (!isInt(vals[0])) stop(EndUnimp);
+      else begin
+        shbox.exception(fromInteger(lay_EXC_RAISED), vals[0].val,
+                        regs.r(operand[1]), regs.r(operand[2]), 0);
+        st <= XShS;
+      end
+    end
     // MinPrio, MaxPrio and ExcepMask must be integers (shoen:execute1/7
     // passes vectors: refused) and are then dropped: no priorities and
     // no exceptions here
@@ -2024,7 +2066,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule shCreate1 (st == XShC1);
     regs.wa(2, regs.r(operand[4]));
-    shbox.create;
+    shbox.create(vals[2]);
     st <= XShC2;
   endrule
 
@@ -2045,11 +2087,34 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule shStarted (st == XShS);
     let r <- shbox.result;
     if (!r.ok) stop(EndUnimp);
-    else if (op == op_remove_shoen) next;
+    else if (op == op_remove_shoen || op == op_raise) next;
     else begin
       regs.wr(y, vals[0]);
       next;
     end
+  endrule
+
+  // a reduction failure reported (stage 3): the goal ends, one
+  // reduction, as at a proceed; refused if no shoen took it
+  rule shFailed (st == XShF);
+    let r <- shbox.result;
+    if (!r.ok) stop(EndUnimp);
+    else begin
+      nRed <= nRed + 1;
+      $display("E fail");
+      finish(tagged Stop EndDone);
+    end
+  endrule
+
+  // current_processor: the second and third outputs
+  rule cProc1 (st == XCPr1);
+    regs.wr(y, intC(1));
+    st <= XCPr2;
+  endrule
+
+  rule cProc2 (st == XCPr2);
+    regs.wr(z, intC(1));
+    next;
   endrule
 
   rule bVectorElement (st == XBVEl);

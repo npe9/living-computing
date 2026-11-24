@@ -30,6 +30,15 @@ Targets
   libc     every C source of sys/src/libc/{hobbit,port,9sys} that has a
            member in the shipped hobbit/lib/libc.a, compiled with `zc` in
            its own directory and compared with that member
+  fpi      the floating-point interpreter the boot ROM carries (raml.s
+           copies the ROM's PPage0+0x74, `fprt0`, into the niladic and
+           unimplemented-instruction vectors): mkfile's `fpi.out` rule,
+           `za fprt0.s`, `zc -w -Dram fpihobbit.c fpi.c`, `zl -l -R4
+           -T<addr> fprt0.z fpihobbit.z fpi.z`, with the rule's
+           -T0xE0000020 replaced by FPI_TEXT (0xC0000020: the same offset
+           in VROMBASE's segment, which raml.s maps user-executable onto
+           the ROM at PROMBASE); writes BUILD/fpi.rom, --check compares
+           it with tools/p9kbuild/fpi.rom (docs/p9boot.md "The ROM's fpi")
   archeck  `ar` and `rl` validated against the shipped libc.a: `ar x`
            every member, give each file the date and mode its header
            records, `ar vu` them back in the archive's order, `rl`, and
@@ -642,6 +651,49 @@ def target_link(a):
     return 0
 
 
+#: tools/p9kbuild/fpi.rom: the fpi target's product, as tools/p9boot.py
+#: loads it into the boot ROM.
+FPI_TEXT = 0xC0000020
+FPI_ROM = LISTS / "fpi.rom"
+
+
+def target_fpi(a):
+    build = pathlib.Path(a.build)
+    build.mkdir(parents=True, exist_ok=True)
+    root = stage(build, "fpi")
+    cwd = "sys/src/9/hobbit"
+    hdir, pdir = root / cwd, root / "sys/src/9/port"
+    log = Log(build / "fpi.log")
+    log.note("p9kbuild fpi; columns: step, command, status, instructions, "
+             "syscalls, seconds, size, sha256, note, console")
+    names = ["fprt0", "fpihobbit", "fpi"]
+    specs = [(n, cwd) + kernel_command(n, hdir, pdir) for n in names]
+    res = run_many(root, a.jobs, specs, a.max_steps)
+    for n in names:
+        log.line(n, res[n], hdir / (n + ".z"))
+        if not ok(res[n]) or not (hdir / (n + ".z")).exists():
+            raise SystemExit("p9kbuild: %s failed: %s" % (n, res[n]["status"]))
+    r = run_tool(root, cwd, "zl", ["-l", "-R4", "-T0x%08X" % FPI_TEXT,
+                                   "-o", "fpi.out"] +
+                 [n + ".z" for n in names], a.max_steps)
+    report("zl", r)
+    out = hdir / "fpi.out"
+    log.line("zl", r, out)
+    if not ok(r) or not out.exists() or r["console"]:
+        raise SystemExit("p9kbuild: zl: %s %r" % (r["status"], r["console"]))
+    shutil.copy2(out, build / "fpi.rom")
+    digest = sha(out)
+    msg = "fpi.rom %d bytes sha256 %s" % (out.stat().st_size, digest)
+    log.note(msg)
+    print("p9kbuild: " + msg)
+    if a.check:
+        if out.read_bytes() != FPI_ROM.read_bytes():
+            print("p9kbuild: FAILED: fpi.rom differs from %s" % FPI_ROM)
+            return 1
+        print("p9kbuild: fpi.rom is %s" % FPI_ROM)
+    return 0
+
+
 # --------------------------------------------------------------------
 # libc: the compiler against the shipped archive
 # --------------------------------------------------------------------
@@ -914,7 +966,7 @@ def target_all(a):
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("target", choices=["all", "kernel", "link", "libc",
-                                       "archeck"])
+                                       "archeck", "fpi"])
     ap.add_argument("--build", default=str(HOBBIT / "build" / "p9kbuild"),
                     help="build directory (each target's staged tree is "
                     "BUILD/<target>/root)")
@@ -940,7 +992,8 @@ def main(argv):
                     help="kernel: compile only; no ar/rl")
     a = ap.parse_args(argv)
     return {"all": target_all, "kernel": target_kernel, "link": target_link,
-            "libc": target_libc, "archeck": target_archeck}[a.target](a)
+            "libc": target_libc, "archeck": target_archeck,
+            "fpi": target_fpi}[a.target](a)
 
 
 if __name__ == "__main__":

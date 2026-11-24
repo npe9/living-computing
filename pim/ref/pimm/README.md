@@ -20,10 +20,13 @@ the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
 stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.  The shoen in its
-first two stages: `create_shoen`, `start_shoen`, termination,
+first three stages: `create_shoen`, `start_shoen`, termination,
 `shoen_statistics` (twice the reductions, counted per shoen) and
-`remove_shoen` (shoen records in the heap, a goal's shoen in its
-record's status cell; `docs/pimm_semantics.md` "Shoen").
+`remove_shoen`; a goal's reduction failure and `raise` reported as
+the exception message to the innermost shoen whose mask accepts it,
+`stop_shoen` (goals parked until `start`) and `abort_shoen` (goals
+discarded) (shoen records in the heap, a goal's shoen in its record's
+status cell; `docs/pimm_semantics.md` "Shoen").
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
@@ -62,7 +65,10 @@ the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `shoen:execute/4`), `lockstep_shoen2.py` its second stage
 (`shoen_statistics`, `remove_shoen`, through the image's three
 monitors, the statistics checked against the reductions counted on
-the trace), `lockstep_alt.py` `read_eagerly`
+the trace), `lockstep_shoen3.py` its third stage (the exception
+path, `raise`, `stop_shoen`, `abort_shoen`, `current_processor`,
+through the image's `exception_table:translate/4`, `shoen:raise/3`
+and its monitors), `lockstep_alt.py` `read_eagerly`
 (`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`,
 `lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
@@ -84,16 +90,18 @@ device on the bench a tape the reference recorded (`driver.py` "The
 device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
 IPL parts (the IPL reading its list and files through its own SCSI
 stack) on both models;
-`longrun_ipl.py` is the long run (not in the suite); 141
-instructions on both models (counted 2026-11-24: 141 `i_` handlers in
-`pimm.py`; 138 without our three stubs `merge_in`, `unify_step` and
-`to_processor`).
+`longrun_ipl.py` is the long run (not in the suite); 145
+instructions on both models (counted 2026-11-24: 145 `i_` handlers in
+`pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
+`current_processor` among them; 142 without our three stubs
+`merge_in`, `unify_step` and `to_processor`).
 `ref_scsi.py` runs the same IPL body on the reference alone
 (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
-(`docs/pimm_semantics.md` "The MRB"), of the shoen only its first
-two stages (no stop, abort, resource, profile), no exceptions.
+(`docs/pimm_semantics.md` "The MRB"), of the shoen no resource or
+profile instructions (refused: what they change is unsourced), no
+unification failure inside a shoen, no built-in exceptions.
 
     python3 ref/pimm/test_jtoa.py
 

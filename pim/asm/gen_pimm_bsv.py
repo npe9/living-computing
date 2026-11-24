@@ -86,7 +86,9 @@ def main(argv):
               'SH_COUNT', 'SH_STATUS', 'SH_PARENT', 'SH_REPORT', 'SH_GOAL', 'SH_SIZE',
               'DORMANT', 'STARTED', 'TERMINATED', 'REPORT_STARTED', 'REPORT_TERMINATED',
               'SH_REDUCTIONS', 'SH_REMOVE', 'REMOVED', 'REPORT_STATISTICS_STARTED',
-              'REPORT_STATISTICS', 'REPORT_RETURN_RESOURCE'):
+              'REPORT_STATISTICS', 'REPORT_RETURN_RESOURCE',
+              'SH_MASK', 'STOPPED', 'REPORT_ABORTED', 'REPORT_EXCEPTION', 'REPORT_STOPPED',
+              'EXC_REDUCTION_FAILURE', 'EXC_RAISED'):
         lines.append('Integer lay_%s = %d;' % (k, getattr(L, k)))
     lines.append('')
     for m in im.mods:

@@ -74,9 +74,22 @@ CHOICES = {
               "else 0, except the word at 0x74 (below).",
     "fpi-vector": "PPage0+0x74, which s9term's _virtual copies into the "
                   "niladic-trap and unimplemented-instruction vectors "
-                  "(VB+8, VB+12), holds ROM_SENTINEL: the release ships "
-                  "no ROM image (fpi lives there), so reaching it stops "
-                  "the run.",
+                  "(VB+8, VB+12), holds the entry of the ROM's fpi "
+                  "(CHOICES['fpi-rom']), as roml.s's `MOV $fprt0(SB), "
+                  "*$PPAGE0(0x74)` leaves it; with no fpi image "
+                  "(--no-fpi), ROM_SENTINEL, and reaching it stops the run.",
+    "fpi-rom": "The release ships no ROM image.  The boot ROM's floating-"
+               "point interpreter is rebuilt from the release's own "
+               "sources with its own tools (tools/p9kbuild.py fpi: "
+               "mkfile's fpi.out rule, za fprt0.s, zc fpihobbit.c fpi.c, "
+               "zl -l -R4, run on this model) and linked at 0xC0000020 "
+               "instead of the rule's 0xE0000020: VROMBASE's segment, "
+               "which raml.s maps user-executable (STE_U) onto PROMBASE, "
+               "the same 0x20 offset.  tools/p9kbuild/fpi.rom is loaded "
+               "at PROMBASE + 0x20 (text words as the kernel's); nothing "
+               "else of the ROM is modelled, and a read outside the image "
+               "stops the run.  Where the real ROM placed fprt0 is not "
+               "known; the kernel only uses the address PPage0+0x74 gives.",
     "reset": "The kernel starts at its entry with the PRM reset state "
              "(p. 1-35: PSW = 0, CONFIG = 0, SHAD = 0, PC = entry instead "
              "of 0) and SP = MSP = ISP = VB = STB = 0 (undefined after an "
@@ -705,12 +718,45 @@ def load_kernel(path, board):
     return k
 
 
-def rom_handoff(board, memsize):
+def rom_handoff(board, memsize, fpi_entry=None):
     """CHOICES['ppage0'] / ['fpi-vector']."""
     board.set_word(RAMBASE + PPAGE0_MEMSIZE, memsize)
     board.set_word(RAMBASE + PPAGE0_ARGC, 0)
     board.set_word(RAMBASE + PPAGE0_ENV, 0)
-    board.set_word(RAMBASE + PPAGE0_FPI, ROM_SENTINEL)
+    board.set_word(RAMBASE + PPAGE0_FPI, fpi_entry or ROM_SENTINEL)
+
+
+FPI_ROM = str(HERE / "p9kbuild" / "fpi.rom")
+
+
+class Rom:
+    """The boot ROM at PROMBASE: only the fpi image (CHOICES['fpi-rom'])."""
+
+    def __init__(self, path):
+        with open(path, "rb") as f:
+            blob = f.read()
+        (magic, text, data, _bss, _syms, entry, _sp,
+         _pc) = struct.unpack(">8I", blob[:32])
+        if magic != 0x197 or data:
+            raise SystemExit("%s: not a Hobbit -l image with no data" % path)
+        self.entry = entry
+        base = entry - VROMBASE + PROMBASE
+        self.words = {}
+        for i in range(text // 4):
+            self.words[base + 4 * i] = int.from_bytes(
+                blob[32 + 4 * i:36 + 4 * i], "little")
+        self.lo, self.hi = base, base + text
+
+    def read(self, off):
+        pa = PROMBASE + off
+        if pa not in self.words:
+            raise Stop("read of the boot ROM at physical 0x%08x, outside "
+                       "the fpi image (CHOICES['fpi-rom'])" % pa)
+        return self.words[pa]
+
+    def write(self, off, data, mask):
+        raise hobbit_sem.BusError("bus: write to the boot ROM at physical "
+                                  "0x%08x" % (PROMBASE + off))
 
 
 class Timekeeper:
@@ -1524,6 +1570,7 @@ class Wire:
         self.log = []               # (t, "tx"/"rx", frame)
         self.sock = None
         self.peer = None
+        self.peer_clock = None      # ETHER_CHOICES['lockstep']
         if peer:
             host, port = peer.rsplit(":", 1)
             self.peer = (host, int(port))
@@ -1569,9 +1616,13 @@ class Wire:
     def poll_peer(self, timeout, base):
         """Datagrams from the peer; with a timeout, wait up to that many
         wall-clock seconds for the first.  Each is stamped base + the
-        wall-clock seconds waited (ETHER_CHOICES['peer'])."""
+        wall-clock seconds waited (ETHER_CHOICES['peer']).  With a
+        `peer_clock`, the time is the peer's own (ETHER_CHOICES
+        ['lockstep'])."""
         if self.sock is None:
             return 0
+        if self.peer_clock is not None:
+            return self._poll_lockstep(timeout, base)
         got = 0
         t0 = time.time()
         if timeout > 0:
@@ -1588,6 +1639,35 @@ class Wire:
         finally:
             self.sock.setblocking(False)
         return got
+
+    def _drain(self, t):
+        got = 0
+        while True:
+            try:
+                data, _ = self.sock.recvfrom(65536)
+            except (BlockingIOError, socket.timeout):
+                return got
+            self.schedule(data, t)
+            got += 1
+
+    def _poll_lockstep(self, timeout, base):
+        """ETHER_CHOICES['lockstep'].  `base` is the model time now.
+        Busy (timeout 0): if the peer is a quantum or more behind, run it
+        until its clock reaches `base`.  Idle (timeout > 0, the model has
+        nothing to do for that long): run the peer until its clock
+        reaches base + timeout or a datagram comes; the model waits for
+        it.  A datagram is stamped with the peer's time when it was read,
+        never earlier than `base`."""
+        pc = self.peer_clock
+        if timeout <= 0:
+            if base - pc.now() >= pc.quantum:
+                pc.run_until(base)
+            return self._drain(base)
+        got = self._drain(base)
+        if got:
+            return got
+        got = pc.run_until(base + timeout, sock=self.sock)
+        return self._drain(max(base, pc.now())) if got else 0
 
 
 ETHER_CHOICES = {
@@ -1608,6 +1688,22 @@ ETHER_CHOICES = {
             "attached; busy time runs at the reference model's speed, "
             "~100,000 instructions a second, ~200 times slower than a "
             "20 MHz part).  A datagram gets the model time it is read at.",
+    "lockstep": "With a peer clock (tools/p9join.py: the 1e server's own "
+                "tick counter, read through QEMU's monitor, QEMU paused "
+                "with `stop` and resumed with `cont`), the two machines "
+                "share one time base instead: while the model is busy the "
+                "server is paused, and every PEER_POLL instructions it is "
+                "run until its clock has caught up with model time, if it "
+                "is a quantum (one of its ticks) or more behind; while the "
+                "model is idle the server runs and the model waits for "
+                "it, up to the model's next timed event or the server's "
+                "next datagram, which is stamped with the server's time.  "
+                "Neither side sees the other run slow: the model's busy "
+                "time costs the server nothing, and the server's time "
+                "costs the model only its idle laps.  By design the server "
+                "is ahead by at most one of its ticks plus a monitor round "
+                "trip; measured skews run from -0.63 to +0.12 s, the "
+                "negative ones unexplained (docs/p9boot.md).",
     "replay": "--ether-replay PCAP answers the model's frames with a "
               "recorded live session's (--pcap of a run joined to the 1e "
               "server in QEMU): when the model transmits the next "
@@ -1622,8 +1718,12 @@ PEER_IDLE_MAX = 1.0
 
 
 class Boot:
-    def __init__(self, image, memsize=MEMSIZE, out=None, ea=EEPROM_EA):
+    def __init__(self, image, memsize=MEMSIZE, out=None, ea=EEPROM_EA,
+                 fpi=FPI_ROM):
         self.board = Board(memsize)
+        self.rom = Rom(fpi) if fpi else None
+        if self.rom is not None:
+            self.board.add(PROMBASE, PROMBASE + 0x80000, self.rom)
         self.cycles = 0
         self.ioctl = Register("IOCTL")
         self.irq = Irq()
@@ -1651,7 +1751,8 @@ class Boot:
         self.board.add(IOBASE + 0x0100, IOBASE + 0x0200, self.quart)
         self.board.add(IOBASE + 0x3000, IOBASE + 0x3008, self.lcd)
         self.k = load_kernel(image, self.board)
-        rom_handoff(self.board, memsize)
+        rom_handoff(self.board, memsize,
+                    self.rom.entry if self.rom is not None else None)
         self.syms = Symbols(p9exec.kernel_symbols(self.k))
         self.out = out
         self.sysm = hobbit_sem.System(bus=self.board)
@@ -1725,8 +1826,10 @@ class Boot:
             # ETHER_CHOICES['peer']: idle time runs at the wall clock.
             now = self.cycles / float(CPU_HZ)
             wait = PEER_IDLE_MAX if nxt is None else nxt - now
+            if w.peer_clock is None:
+                wait = min(wait, PEER_IDLE_MAX)
             if wait > 0:
-                w.poll_peer(min(wait, PEER_IDLE_MAX), now)
+                w.poll_peer(wait, now)
                 nxt = self.next_event()
             if nxt is None:
                 return
@@ -1907,13 +2010,16 @@ def main(argv):
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every iteration of the idle loop "
                          "(CHOICES['idle-skip'])")
+    ap.add_argument("--no-fpi", action="store_true",
+                    help="no fpi in the boot ROM (CHOICES['fpi-rom'])")
     ap.add_argument("--progress", type=int, default=0, metavar="N",
                     help="report the current function every N steps")
     args = ap.parse_args(argv)
     ea = EEPROM_EA
     if args.ea:
         ea = bytes(int(x, 16) for x in args.ea.split(":"))
-    boot = Boot(args.image, args.memsize, args.out, ea=ea)
+    boot = Boot(args.image, args.memsize, args.out, ea=ea,
+                fpi=None if args.no_fpi else FPI_ROM)
     if (args.pcap or args.ether_replay or args.ether_script
             or args.ether_peer):
         replay = Replay(args.ether_replay, ea) if args.ether_replay else None

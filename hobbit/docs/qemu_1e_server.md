@@ -201,7 +201,9 @@ The writer of the archive is a host script; the file system, its
 format, and every write into it are 1e's kfs and mkext from the floppy.
 Result (`build.out`, 2026-11-23, 11m24s for the whole build):
 734 dirs, 12,131 files, 391,570,750 data bytes (the release plus the
-three overlay entries);
+three overlay entries of that build; the `usr/none` entries came
+later and were put on the built image with `overlay.sh`, so these
+counts predate them, and a fresh `build.sh` with them has not been run);
 `ls -l /n/kfs` shows the release's top level owned by `sys`; mkext's
 stderr is kept in the kfs as `/adm/mkext.log`, which holds only
 `done` (5 bytes): no errors.  The probe's `--walk` (section 4) checks
@@ -224,6 +226,13 @@ The two services are qemu1e additions to the served tree
   `#c` onto its `/dev`, the kfs onto `/`, `exec /bin/exportfs -s`.
   `-s` serves `/` with no preamble, and `exportsrv.c` answers Tnop and
   Tsession with 3-byte replies, which `boot/nopsession.c` requires.
+* `usr/none/lib/profile` (empty) and `usr/none/hello.s`: the user
+  `none`'s home, as 1e's own PC install floppy has it
+  (`sys/lib/pc/usr/none/lib/profile`, a 0-byte file; the release's
+  `/usr` has only `tor`), plus the test program of `tests/p9/hello.s`
+  for the Hobbit's `za` (docs/p9boot.md "The user").  mkarchive.py
+  makes the directories mode 777 (owner bits copied), so `none` can
+  write there through exportfs.
 * `tcp564`: the same plus `#Itcp` on `/net` and `-c $3/ctl`, which
   pushes the `fcall` line discipline on the server's end of the TCP
   connection (`exportfs.c pushfcall`; the terminal's `connecttcp`
