@@ -274,7 +274,11 @@ only prepares to be interrupted by them.
     0x09DD, with section names `__ModH`, `__boot` and `__vcos` in its
     header. `os.ldf` describes it as "_boot sPROG /* this is the boot
     mover */" and "_vcos sPROG" (the code).
-  - `os_doblock` (same size) and `os_nodoblock` are variants. The DSP
+  - `os_doblock` is byte-identical to `os` (both sha256
+    ce8e43f9...2b67); `os_nodoblock` (4,038 bytes) differs. The image
+    in RAM is `os`: of the 16-byte windows found only in `os`, 286 occur
+    in the run's RAM image, and of those found only in `os_nodoblock`,
+    none. The DSP
     task modules (`audio`, `daa`, ...) and their `.ldf`/`.tbd`
     descriptions are under `be.oem/` and `mml/`.
 - `_vcLoadArmVCOS` then patches the loaded image through `_veDspWrMem`,
@@ -287,7 +291,9 @@ only prepares to be interrupted by them.
   Boot line, `_vcSetDspTable+0x592`) it writes a 32-byte **boot block at
   vcas 0x60000000, i.e. physical RAM 0x08000000**. The block is four
   words each holding one byte of `_vcLoad`'s address, most significant
-  first, then four zero words. It then calls `_veDspStart`.
+  first, then four zero words. With `_bootmode` = 0 it writes only the
+  4-byte address itself, to DSP address 0. Both paths then call
+  `_veDspStart`.
 - In the run, RAM 0x08000000-0x0800000C reads 0x60, 0x0B, 0xE5, 0x68: a
   start address of 0x600BE568, i.e. physical 0x080BE568. The loaded VCOS
   image occupies 0x080BE4EC-0x080BFF2C, just below the kernel's text at
@@ -332,7 +338,11 @@ only prepares to be interrupted by them.
   `_acquire_sem` with **no timeout**. `_get_cpu_mailbox` (KCALL 328)
   returns the mailbox's address. Every user binary read carries the
   stubs: app_server, ansi_server, vcas_server, storage_server, Phone.
-  None of them calls either; the clients reach the DSPs through
+  No call to either was found. `beelf.py --refs` on each stub address
+  lists nothing; the same search lists both `_veDspStart` calls of
+  `_ori_byte`. Each stub address occurs once as a word in its file, and
+  that is in the symbol table, past the loaded segments, so no data
+  table holds it either. `libvcos.a` names neither. Instead, the clients reach the DSPs through
   vcas_server and shared-memory FIFOs (`libvcos.a`: `_vcReadFifo`,
   `_vcGetFifoReadCount`, ...).
 
@@ -343,6 +353,13 @@ only prepares to be interrupted by them.
 - vcas_server's errors (2003 "Dsp%d is invalid or unavailable", 6001
   "Unable to reset it") are about configuration and ids, not a silent
   part.
+- The one configuration route is the DSP count. `_vcConfig` adds each
+  `[dspN]` section to `_LTR`'s count, and if the count is 0 it prints
+  "Error 2005: vcos.cfg: No DSP Memory Expressions entry found" and
+  fails. `_vcBootDsp` then returns -1, and `_main` calls
+  `_vcResetDsp(0)` and returns, so vcas_server exits without releasing
+  anything. This was read, not run, and it needs an edited vcos.cfg on
+  the disk.
 - Model choice (CHOICES `dsp`): the reset and interrupt bits are kept as
   written and no DSP runs. That is equivalent, from the host's side, to
   leaving the DSPs in reset. With it the boot goes on with no stop:

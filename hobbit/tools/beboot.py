@@ -198,8 +198,10 @@ CHOICES = {
            "their bits in the internal interrupt register are kept as "
            "written, so a DSP can be 'released' (vcas_server's "
            "_veDspStart ORs bit 4 in), but it never runs and never "
-           "answers; the run prints each release.  Their 2 MB shadow RAM "
-           "at 0x60000000 is not modelled, so any access there stops.",
+           "answers; the run prints each release.  Appendix A's 2 MB DSP "
+           "shadow RAM at physical 0x60000000 is not modelled, so any "
+           "access there stops (vcas_server's own 0x60000000 is a "
+           "virtual clone of RAM at 0x08000000, not this range).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
