@@ -96,3 +96,40 @@ Flute: Apache License 2.0. LICENSE was added to its main branch as commit
 631c88b. Files from that repository that earlier sections recorded as having
 no licence line (for example `flute-m50/src/Uart_Pins.bsv`) are therefore
 Apache-2.0 and may be copied in with attribution.
+
+## The SoC: core adapter, SDRAM controller, host link (`fpga/rtl/`, `fpga/sim/`, `ulx3s_soc.lpf`), 2026-11-24
+
+* **Copied: nothing.** `rtl/sdram_word.v`, `rtl/hobbit_soc_mem.v`,
+  `rtl/hobbit_soc.v`, `rtl/hostlink.v`, `rtl/uart8n1.v`,
+  `rtl/ulx3s_hobbit_top.v`, `rtl/cpu_stub.v`, `sim/sdram_model.v`,
+  `sim/soc_sim_top.v`, `sim/soc_main.cpp`, `sim/run_soc.sh`,
+  `build_soc.sh`, `area_cpu.sh` and `bsv/HobbitSocCpu.bsv` were written for
+  this project. They were written before the owner's licence statement
+  above, while the Flute tree's terms were unknown. Now that it is
+  Apache-2.0, its controller could be adopted with attribution; it has not
+  been.
+* **Consulted, read-only, for board facts** (facts about the ULX3S and its
+  W9825G6KH, not code):
+  * `~/src/ulx3s-experiments/flute-lx50/src/Sdram_Controller.bsv`;
+  * `flute-lx50/src/Top.v`;
+  * `flute-lx50/constraints/ulx3s_85f.lpf`.
+
+  These are the same checkout as the `hdmi_tmds.v` entry (npe9/flute-ulx3s,
+  branch `lx50`). The facts taken:
+  * the SDRAM clock through an ODDRX1F with D0 = 0, D1 = 1;
+  * DQ in an input register on the rising edge;
+  * CL 2;
+  * eight AUTO REFRESH at power-up;
+  * a refresh that falls due is held, not dropped;
+  * the SDRAM pin sites in `ulx3s_soc.lpf`.
+
+  The clock, button, UART, LED and WiFi sites are this directory's own
+  `ulx3s_85f.lpf`.
+* **Not used:** Micron's and Winbond's SDRAM simulation models. Their terms
+  do not allow redistribution. `sim/sdram_model.v` is a model of our own,
+  written from the W9825G6KH timing parameters that the controller relies
+  on.
+* **Library cells read at build time, not copied:** bsc 2026.01's
+  `FIFO2.v`, `FIFO20.v`, `RegFile.v` and `SizedFIFO.v`
+  (`$BLUESPECDIR/Verilog/`), and the ECP5 primitives `DCCA` and `ODDRX1F`
+  from yosys's cell library.

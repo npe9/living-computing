@@ -2,8 +2,9 @@
 // (Winbond W9825G6KH-6: 4 banks x 8192 rows x 512 columns x 16 bits, 32 MB).
 //
 // Written for the Hobbit SoC (fpga/README.md, "The SoC").  It is not a
-// copy of the Flute tree's mkSdram_Controller (no licence is stated in
-// that tree, fpga/IP_PROVENANCE.md); it follows that design's board
+// copy of the Flute tree's mkSdram_Controller (no licence was stated in
+// that tree when this was written; it is Apache-2.0 since 2026-11-24,
+// fpga/IP_PROVENANCE.md); it follows that design's board
 // facts, which are the board's, not the code's: the SDRAM clock is the
 // system clock forwarded through an ODDRX1F with D0 = 0, D1 = 1 (so the
 // part samples on the system clock's falling edge), DQ is captured in
