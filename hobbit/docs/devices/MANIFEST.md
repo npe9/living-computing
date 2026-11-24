@@ -6,13 +6,14 @@ instead of inference.  `README.md` checks each modelling choice against
 these documents.
 
 The PDFs are held on disk in this directory but kept **out of git**
-(`.gitignore`).  They are bitsavers.org mirrors of 1990-1997 vendor data
-books, and none of them shows redistribution terms; the repository is
+(`.gitignore`).  They are 1990-1997 vendor data books and sheets, all from
+bitsavers.org except the two 53C94 sheets (MIT SIPB and hackaday.io, URLs
+below), and none of them shows redistribution terms; the repository is
 public.  This is the pattern of `pim/docs/nonlocal/LIT_MANIFEST.md`.
 `sh fetch.sh` downloads whatever is missing and checks every file against
 `SHA256SUMS` (`sh fetch.sh --check` only checks).  The files were fetched with
-plain `curl` (generic user agent) from `bitsavers.trailing-edge.com`, and
-re-fetched fresh by `fetch.sh` to confirm the checksums.  The same paths are
+plain `curl` (generic user agent) from `bitsavers.trailing-edge.com` (the
+53C94 sheets from their own hosts), and re-fetched fresh by `fetch.sh` to confirm the checksums.  The same paths are
 on `bitsavers.org` and its mirrors (e.g. `bitsavers.mirrorservice.org`).
 Nothing downloaded was executed.
 
@@ -33,6 +34,10 @@ matter were read from the page image (`pdftoppm -r 120 -f N -l N`).
 | `WD33C93A_Data_Sheet_and_Application_Notes_Nov1990.pdf` | Western Digital *WD33C93A Data Sheet and Application Notes*, November 1990 | **WD33C93A** SCSI Bus Interface Controller | whole file, 91 pages; cited by PDF p. | 6,683,877 | `1513852c994336439ecca41c7111d7ea18e9fb5241a9d571d87f7489b0edda18` |
 | `1997_IC12_Philips_I2C_Peripherals.pdf` | Philips Semiconductors *I2C Peripherals* (IC12), 1997 | **PCF8584** I2C-bus controller, Product specification, 1997 Mar 19; **PCF85xxC-2** family (PCF8582C-2 256 x 8 EEPROM), 1997 Feb 13 | PCF8584 PDF p. 556..587 = p. 555..586; PCF85xxC-2 PDF p. 631..643 = p. 630..642 (p. = PDF p. − 1) | 36,547,171 | `994ab97ef1d2801707930c868314e0a318f5b30c18ba0113b0c88c9770cff1bc` |
 | `1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf` | SGS-Thomson *Memory Products* data book, 2nd ed., 1992 | **MK48T02/MK48T12** CMOS 2K x 8 TIMEKEEPER SRAM, February 1992 | PDF p. 1024..1037 = data sheet pp. 1/14..14/14 (p. 1023.. in the book) | 52,674,118 | `f7a440d4fcaf36a14fef1f675be413a867e5d476c11595bc71a3fd02e4653d39` |
+| `1990_VTI_Computer_Products.pdf` | VLSI Technology *Computer Products* data manual, 1990 | **VL82C106** PC/AT Combo I/O (Hobbit BeBox, `../bebox_hardware.md` §7); **VL16C452** dual UART | VL82C106 p. 6-185..6-220 = PDF p. 440..475 (keyboard controller p. 6-197 = PDF p. 452; parallel port pp. 6-192..193 = PDF p. 447..448); VL16C452 p. 6-60/6-61 = PDF p. 315/316 (p. 6-N = PDF p. N+255 in chapter 6) | 30,319,538 | `70b0860b28d64988d8715bba51197e557e341a260e191eaab52af30eb65ad38e` |
+| `MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf` | Motorola **MCS3201** floppy disk controller data sheet, 1991 | Hobbit BeBox floppy controller (§8) | whole file, 26 pages | 1,209,745 | `ae038594d5423c585c1d752c678712904f97e0f5f2aa49f2f806e5bf9e3c7b5d` |
+| `am53c94.pdf` | AMD **Am53C94/Am53C96** data sheet, Publication 16506 Rev. C, 1993 | Hobbit BeBox SCSI (§9). Printed page numbers match the Be draft's cites: p. 17 transfer counter, p. 22 internal state, p. 29 clock factor, p. 32 data alignment | whole file, 63 pages | 593,862 | `b24f3de1560b7880f984bdd5026da2f522022bf754dc5e19273fed2e2a195335` |
+| `NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf` | NCR 53C94/95/96 data sheet, February 1990 (image-only scan) | The original of the Am53C94's register set | whole file, 64 pages | 3,002,374 | `b084320157a0684955a4ab2f8587a776179dd8e7c15a1fce855d08af116cbdd1` |
 
 URLs (all under `https://bitsavers.trailing-edge.com/components/`):
 
@@ -43,6 +48,14 @@ URLs (all under `https://bitsavers.trailing-edge.com/components/`):
 - `westernDigital/WD33C93A_Data_Sheet_and_Application_Notes_Nov1990.pdf`
 - `philips/_dataBooks/1997_IC12_Philips_I2C_Peripherals.pdf`
 - `sgs/_dataBooks/1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf`
+- `vti/databook/1990_VTI_Computer_Products.pdf`
+- `motorola/_dataSheets/MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf`
+
+Not on bitsavers: `am53c94.pdf` from
+<https://stuff.mit.edu/afs/sipb/contrib/doc/specs/ic/scsi/am53c94.pdf>, and the
+NCR sheet from
+<https://cdn.hackaday.io/files/18974811783616/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf>.
+The Hobbit BeBox rows were added 2026-11-24 for `../bebox_hardware.md`.
 
 ### Dates against the board
 
@@ -100,3 +113,6 @@ The kernel `s9term` was built 1992-11-07 (`docs/s9term.md`), so the board is
   No keyboard model or protocol document was found.  `deviic.c`'s header
   plans a later "keyboard and finger-mouse" on the IIC bus.
 - **A 1990-1992 PCF8582(A) / PCF8584 data sheet** (see "Dates" above).
+- **AT&T DSP3210 Information Manual** (for the Hobbit BeBox's three DSPs,
+  `../bebox_hardware.md` §13).  Not on bitsavers (`components/att/dsp/` has
+  DSP16 and DSP32C material only) and not found by web search.

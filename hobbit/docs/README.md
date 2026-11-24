@@ -44,8 +44,10 @@ cannot currently make, and each is an acquisition target:
 * EO's product documentation for the 440 and 880 — for the shipped
   board's clock, memory and part numbers, which no local document
   states;
-* Be's own Hobbit BeBox hardware documentation, and the DSP3210 data
-  book — for the dual-CPU/three-DSP board;
+* the DSP3210 data book — for the dual-CPU/three-DSP BeBox board, now
+  reconstructed in [`bebox_hardware.md`](bebox_hardware.md) from Be Labs'
+  September 1993 hardware-documentation drafts, the surviving kernels and
+  board photographs (no boot ROM dump survives);
 * the COMPCON'93 paper "Hobbit: a high-performance, low-power
   microprocessor" and the 1987 CRISP papers (ISCA/COMPCON) — for the
   design history and for the branch-folding and instruction-frequency

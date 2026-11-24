@@ -1,0 +1,7 @@
+# Held on disk, not in git: photographs and book scans of the Hobbit BeBox
+# boards with no redistribution terms (Flickr "All rights reserved"; a scanned
+# Japanese book).  MANIFEST.md and SHA256SUMS list each with its source URL;
+# fetch.sh fetches them again and checks them.
+*.jpg
+*.jpeg
+*.part
