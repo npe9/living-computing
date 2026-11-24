@@ -21,7 +21,9 @@ the whole file run:
 * dy not negated (`my = dy`): FAIL test_packet, test_long_move,
   test_mouse ((70, 0): the second move clamped at the top),
   test_cursor_moved, test_checksum, test_stopped_by_the_script (the
-  cursor redrawn elsewhere: 32,506,699 instead of 32,506,727).
+  cursor redrawn elsewhere: 32,506,699 instead of 32,506,727; both
+  numbers 2 lower than now, measured before the Quart's interrupt bids
+  were corrected the same day).
 * the LCD's row-group address shifted 4 bits a write, not 6: FAIL
   test_panel, test_panel_is_the_bitmap.
 * the dump's pixels taken from the high bits of a byte first: FAIL
@@ -145,7 +147,7 @@ class TerminalTest(unittest.TestCase):
         self.assertEqual(p9boot.screen_digest(self.pix), DIGEST)
 
 
-STEPS = {"fired": [22537089, 32506727, 42502277]}
+STEPS = {"fired": [22537091, 32506729, 42502279]}
 BASE = 0x805B7968       # xalloc(198656) + 2048 (screeninit+0x4c..+0x68)
 DIGEST = "183d08cc55bda49eb4fdd3ee7a213b18623a0d70fc18340f1b38a5abe9546eea"
 

@@ -110,7 +110,7 @@ retires without executing.  (Before the EEPROM answered, CHOICES
 `iic`, it was 286,970,654: `iicreset`'s read adds 6,535.)
 
 With `--counter-period 0.04` (25 Hz) the same prompt comes after
-**22,537,089 instructions** (1.145 s of model time, 26 clock
+**22,537,091 instructions** (22,537,089 before the Quart bids of 2026-11-24; 1.145 s of model time, 26 clock
 interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
 the EEPROM answered it was 22,530,554, measured first without the idle
 skip (6 minutes of host time) and reproduced exactly with it (29 s);
@@ -144,7 +144,7 @@ root is from (il, tcp, incon, 9600, 19200)[il]:
 sonic ether: 52 54 00 00 0b 0b
 ```
 
-At **287,845,754** instructions (14.4 s of model time) `/boot` sends
+At **287,845,766** instructions (287,845,754 before the Quart bids) (14.4 s of model time) `/boot` sends
 its BOOTP request through the SONIC (`tests/test_p9boot.py`
 `NetworkTest`, with `--pcap`):
 
@@ -161,7 +161,7 @@ which checks the SONIC's byte lanes and CAM order at once.
 With nobody answering (a Wire with no peer), `/boot` sends the request
 ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
 0.569 s), each wait ended by an alarm note, and then asks
-`My IP address[0.0.0.0]: ` at 3,131,202,766 instructions (156.6 s of
+`My IP address[0.0.0.0]: ` at 3,131,202,770 instructions (156.6 s of
 model time, ~55 s of host time; `NoServerTest`).  Each note's return is
 a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
 
@@ -255,7 +255,7 @@ It is kept as the record of the first join.  `JoinReplayTest` now
 replays `tests/net/join_echo.pcap` instead: the first 615 frames of the
 lockstep run of "Commands at rc's prompt" below, through init, termrc,
 init's restart of rc, and `echo hello` typed at `% ` and run, to
-715,867,166 instructions (700,303,728 idle-skipped), 35.9 s of model
+715,866,474 instructions (715,867,166 before the Quart bids of 2026-11-24, whose transmit interrupts take up to 7 bytes; 700,303,728 idle-skipped then), 35.9 s of model
 time, ~3 min of CPU (174 s measured):
 
 ```sh
@@ -268,7 +268,7 @@ python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
 A lockstep recording replays like a free-running one: the model's
 frames carry model time and the console bytes are typed at screen text,
 so the run is reproduced instruction for instruction (the replay typed
-`echo hello` at step 711,879,422, as the live run did).
+`echo hello` at step 711,879,422, as the live run did; 711,879,442 with the Quart bids, the recording still matching frame for frame).
 
 Live and free-running (`p9join.py --free-run`, the only mode until
 2026-11-23's lockstep), busy model time runs ~200 times slower than the
@@ -830,12 +830,23 @@ such.
 
 ### Quart (`QUART_CHOICES`, `io.h` `Quart`/`Duart`, `deveia.c`)
 
+The part is the Signetics SC68C94; `docs/devices/README.md` checks every
+device choice here against its data sheets (the 1994 product
+specification is the one the kernel follows).  The FIFO depth and the
+interrupt bids below were corrected from it on 2026-11-24.  That changed
+the boot's instruction stream by a few instructions up to the prompt and
+by hundreds later (a transmit interrupt now takes up to 7 bytes): the
+counts the regression suite pins were re-measured (the recorded pcaps
+still replay frame for frame), and the other counts in this document
+are from before unless they say otherwise; the A5 session replay
+(`a5_session.pcap`) has not been re-run since.
+
 * **sr** — TxRDY|TxEMT while the transmitter is enabled: a byte written
   leaves at once.  RxRDY while the receive FIFO holds a byte, FFULL at
-  three.
+  eight (the part's FIFOs are 8 deep).
 * **rx** — typed bytes arrive one character time apart (1 start bit,
   mr1's data and parity bits, mr2's stop bits at csr's rate under
-  BRGSet2: 0.52 ms at 19200 8N1) into a three-byte FIFO; a byte that
+  BRGSet2: 0.52 ms at 19200 8N1) into the eight-byte FIFO; a byte that
   finds it full, or the receiver disabled, waits on the line (no overrun
   is modelled).  grxfifo/rxfifo pop; an empty FIFO reads 0.
 * **cr** — the enable/disable bits and MrReset/RxReset/TxReset change
@@ -851,12 +862,18 @@ such.
   default follows the count; `--counter-period 0.04` gives the 25 Hz the
   software assumes, a stated deviation that makes `sleep(1000)` in
   `/boot` last 25 ticks of 0.04 s instead of 25 of 0.569 s.
-* **cir** — a write of `update` latches the highest pending enabled
-  source: the counter (cir 0x14, gicr = 2·duart), then a receiver (cir
-  0x0C RxAvail, gicr = channel, gibcr = bytes in its FIFO), then a
-  transmitter (cir 0x08, gicr = channel, gibcr = 1); nothing pending
-  reads 0.  The order is a choice: the bidding registers (bcr) that set
-  it on the part are written by eiasetup but not modelled.
+* **cir** — a write of `update` latches the winning bid, the
+  numerically largest of the pending enabled sources' (1994 spec p. 321,
+  the bidding-format table): a receiver holding n bytes bids
+  (n<<5)|0x0C|ch (RxAvail, gibcr = n, 8 coded as 7); an enabled
+  transmitter, its FIFO always empty in the model, 0x78|ch (TxAvail1,
+  gibcr = 7 free, so `eiaintr` writes up to 7 bytes); an expired counter
+  0x15 or 0x17 (channel b or d, the lowest bid).  So a receiver with 4 or
+  more bytes beats a transmitter, which beats a receiver with 1..3, which
+  beats the counter.  gicr is the bid's channel.  Nothing pending reads
+  0.  The bidding registers (bcr) stay at their reset value 0: s9term
+  writes no global register but `ack` and `icr` (observed: the write
+  counts of a boot to `main`), and the shipped `eiasetup` the same.
 * **irq** — IRQ 1 while any isr bit is enabled in its DUART's imr.
 
 ### WD33C93 (`WD_CHOICES`, `scsi.c`)
@@ -891,7 +908,7 @@ the behaviour is inferred from `deviic.c`'s code and comments.
   clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
   with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
   are not in the release.  Reading it adds 6,535 instructions before the
-  prompt (22,537,089 at 25 Hz).
+  prompt (22,537,089 at 25 Hz, 22,537,091 with the Quart bids).
 
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 

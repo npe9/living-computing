@@ -452,30 +452,43 @@ class Quart:
     def irq(self):
         return any(self.isr(d) & self.duarts[d]["imr"] for d in (0, 1))
 
-    def _update(self):
-        """A write to `update` latches the current interrupt into cir,
-        gicr and gibcr (deveia.c eiaintr).  QUART_CHOICES['cir']."""
-        self.glob["cir"] = 0
-        self.glob["gicr"] = 0
-        self.glob["gibcr"] = 0
+    def bids(self):
+        """The interrupt bids of every pending, enabled source
+        (QUART_CHOICES['cir']): (bid, channel, count).  SC68C94 1994
+        product spec p. 321 and the bidding-format table (docs/devices/
+        README.md "Quart"), with the bidding registers at reset (s9term
+        never writes bcr): a receiver holding n bytes bids
+        [n 7:5][0][1][1][ch], n = 8 coded as 7; an empty transmitter
+        [0][free 6:4][1][0][ch] (the model's transmit FIFO is always
+        empty: 8 free, coded 7, i.e. 0x78|ch); the counter of DUART ab or
+        cd [00][0][1][0][1][ch] with ch = b or d (0x15, 0x17)."""
+        out = []
         for d in (0, 1):
             pend = self.isr(d) & self.duarts[d]["imr"]
             if pend & 0x08:
-                self.glob.update(cir=0x14, gicr=2 * d, gibcr=0)
-                return
-        for d in (0, 1):
-            pend = self.isr(d) & self.duarts[d]["imr"]
+                ch = 2 * d + 1
+                out.append((0x14 | ch, ch, 0))
             for bit, ch in ((0x02, 2 * d), (0x20, 2 * d + 1)):
                 if pend & bit:
                     n = min(len(self.ports[ch]["fifo"]), 7)
-                    self.glob.update(cir=0x0C, gicr=ch, gibcr=n)
-                    return
-        for d in (0, 1):
-            pend = self.isr(d) & self.duarts[d]["imr"]
+                    out.append(((n << 5) | 0x0C | ch, ch, n))
             for bit, ch in ((0x01, 2 * d), (0x10, 2 * d + 1)):
                 if pend & bit:
-                    self.glob.update(cir=0x08, gicr=ch, gibcr=1)
-                    return
+                    free = min(TX_FIFO, 7)
+                    out.append(((free << 4) | 0x08 | ch, ch, free))
+        return out
+
+    def _update(self):
+        """A write to `update` latches the winning bid into cir, its
+        channel into gicr and its byte count into gibcr (deveia.c
+        eiaintr): the numerically largest bid wins (QUART_CHOICES['cir']);
+        nothing pending reads 0."""
+        bids = self.bids()
+        if not bids:
+            self.glob.update(cir=0, gicr=0, gibcr=0)
+            return
+        bid, ch, n = max(bids)
+        self.glob.update(cir=bid, gicr=ch, gibcr=n)
 
     def read(self, off):
         idx = off // 4
@@ -610,17 +623,19 @@ class Quart:
 
 CSR_BAUD = {0x11: 110, 0x22: 38400, 0x44: 300, 0x55: 600, 0x66: 1200,
             0x88: 2400, 0x99: 4800, 0xBB: 9600, 0xCC: 19200}
-RX_FIFO = 3
+RX_FIFO = 8              # SC68C94: 8-byte receive and transmit FIFOs
+TX_FIFO = 8
 
 QUART_CHOICES = {
     "sr": "sr reads TxRDY|TxEMT (0x0C) while the channel's transmitter is "
           "enabled and 0 otherwise: a byte written to txfifo leaves at "
           "once. RxRDY (0x01) while the receive FIFO holds a byte, FFULL "
-          "(0x02) while it holds three.",
+          "(0x02) while it holds eight (SC68C94 1994 p. 317: 'all eight "
+          "FIFO positions are occupied').",
     "rx": "Input (--type) arrives on a channel's receive line one "
           "character time apart (1 start bit, mr1's data and parity bits, "
           "mr2's stop bits, at csr's rate under BRGSet2: 19200 baud 8N1 = "
-          "0.52 ms on channel 0) into a three-byte receive FIFO.  A byte "
+          "0.52 ms on channel 0) into the eight-byte receive FIFO.  A byte "
           "that finds the FIFO full or the receiver disabled waits on the "
           "line (no overrun is modelled) and follows one character time "
           "after the next byte is read.  isr RxRDYa (0x02) / RxRDYb (0x20) "
@@ -647,13 +662,20 @@ QUART_CHOICES = {
                       "hardware as documented); --counter-period 0.04 "
                       "gives the 25 Hz the software assumes, a stated "
                       "deviation for reaching the boot program sooner.",
-    "cir": "A write of `update` latches the highest pending, enabled "
-           "source: the counter (cir 0x14 CtAvail, gicr = 2*duart), then "
-           "a receiver (cir 0x0C RxAvail, gicr = channel, gibcr = bytes in "
-           "its FIFO), then a transmitter (cir 0x08 TxAvail0, gicr = "
-           "channel, gibcr = 1); the order is a choice (the part's bidding "
-           "registers bcr are written by eiasetup but not modelled).  "
-           "With nothing pending cir reads 0, which ends eiaintr's loop.",
+    "cir": "A write of `update` latches the winning interrupt bid: the "
+           "numerically largest of the pending, enabled sources' bids "
+           "(SC68C94 product spec 1994 p. 321; bidding format, reprint "
+           "p. 333; docs/devices/README.md 'Quart'), with the bidding "
+           "registers at their reset value 0 (s9term writes only ack and "
+           "icr of the global registers, observed).  A receiver holding n "
+           "bytes bids (n<<5)|0x0C|ch (8 coded as 7; type RxAvail); an "
+           "enabled transmitter, whose FIFO the model keeps empty, bids "
+           "0x78|ch (type TxAvail1, 7 free); a counter that has expired "
+           "bids 0x15 (DUART ab, channel b) or 0x17 (cd, channel d), the "
+           "lowest.  cir is the bid, gicr its channel, gibcr its count "
+           "(the bytes held, 7 free, or 0), so eiaintr reads every byte "
+           "held and writes up to 7.  With nothing pending cir reads 0, "
+           "which ends eiaintr's loop.",
     "irq": "The Quart requests IRQ 1 (io.h IRQQUART) while any isr bit "
            "is enabled in its DUART's imr.",
 }
