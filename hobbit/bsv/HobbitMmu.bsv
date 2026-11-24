@@ -318,7 +318,11 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   // noting rule from the same state `translate` reads (the clock's TLBs,
   // NPSRs and tables), so the step rule and walkProbes use them instead
   // of translating each noted reference twice more (docs/fpga_area.md).
-  Wire#(Maybe#(MmuNote)) noteTextW <- mkDWire(tagged Invalid);
+  // The text note is the exception: it is made from more call sites than
+  // translate is (the prefetch's noteFetch has two callers that translate
+  // nothing), so it is carried as the reference and translated once, here,
+  // on the wire.
+  Wire#(Maybe#(MmuReq)) noteTextW <- mkDWire(tagged Invalid);
   Wire#(Maybe#(MmuNote)) noteText2W <- mkDWire(tagged Invalid);
   Wire#(Maybe#(MmuNote)) noteDataW <- mkDWire(tagged Invalid);
   Wire#(Maybe#(MmuNote)) noteData2W <- mkDWire(tagged Invalid);
@@ -422,29 +426,13 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
     return MmuNote { req: r, resp: translateFnW(r, w), walk: w };
   endfunction
 
-  function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r);
-    Vector#(2, Maybe#(Word)) v = replicate(tagged Invalid);
-    if (r.enabled) begin
-      let hitE = r.isText
-                   ? findTlb(tlbText, r.va[31:22], r.va[21:12])
-                   : findTlb(tlbData, r.va[31:22], r.va[21:12]);
-      let n = r.isText ? npsrText : npsrData;
-      Bool npsrHit = n.valid && (n.seg == r.va[31:22]);
-      if (!isValid(hitE) && !npsrHit) begin
-        Word vs = steAddr(r.va);
-        v[0] = tagged Valid vs;
-        Word ste0 = tbl.read(vs);
-        if ((ste0[0] == 1'b1) && (ste0[3] == 1'b0))
-          v[1] = tagged Valid pteAddr(ste0, r.va);
-      end
-    end
-    return v;
-  endfunction
-
-  // walkProbeFn of a noted reference, from its note: a walk is evaluated
-  // exactly when the translation is not a hit (translation off, a TLB hit
-  // and an NPSR hit all return hit), and its page entry is read only when
-  // the segment entry it read (walk.ste) is valid and paged.
+  // The physical words a walk reads for a translation, from the
+  // translation itself: a walk is evaluated exactly when the translation
+  // is not a hit (translation off, a TLB hit and an NPSR hit all return
+  // hit), and its page entry is read only when the segment entry it read
+  // (walk.ste) is valid and paged.  Built on noteOf, the expression
+  // `translate` is, so a probe of a reference some rule also translates
+  // shares that rule's logic (docs/fpga_area.md).
   function Vector#(2, Maybe#(Word)) noteProbe(Maybe#(MmuNote) m);
     Vector#(2, Maybe#(Word)) v = replicate(tagged Invalid);
     if (m matches tagged Valid .n &&& !n.resp.hit) begin
@@ -454,6 +442,13 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
     end
     return v;
   endfunction
+
+  function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r) =
+    noteProbe(tagged Valid noteOf(r));
+
+  Maybe#(MmuNote) noteTextN = isValid(noteTextW)
+                                ? tagged Valid noteOf(validValue(noteTextW))
+                                : tagged Invalid;
 
   rule step;
     Vector#(32, MmuTlbEntry) nt = tlbText;
@@ -508,8 +503,8 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
       end
 
       // ---- text note ------------------------------------------------
-      if (isValid(noteTextW)) begin
-        let nText = validValue(noteTextW);
+      if (isValid(noteTextN)) begin
+        let nText = validValue(noteTextN);
         let r = nText.req;
         let resp = nText.resp;
         if (resp.fault != MMU_OK)
@@ -681,11 +676,11 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   method MmuResp translate(MmuReq r) = translateFn(r);
   method Vector#(2, Maybe#(Word)) walkProbe(MmuReq r) = walkProbeFn(r);
   method Vector#(8, Maybe#(Word)) walkProbes() =
-    append(append(noteProbe(noteTextW), noteProbe(noteText2W)),
+    append(append(noteProbe(noteTextN), noteProbe(noteText2W)),
            append(noteProbe(noteDataW), noteProbe(noteData2W)));
 
   method Action noteText(MmuReq r);
-    noteTextW <= tagged Valid noteOf(r);
+    noteTextW <= tagged Valid r;
   endmethod
 
   method Action noteText2(MmuReq r);

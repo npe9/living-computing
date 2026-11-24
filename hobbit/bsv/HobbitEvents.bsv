@@ -392,6 +392,14 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
             // SP = SHAD (p. 1-37/1-38).
             Word base = (c.psw[9] == 1'b0) ? shad : isp;
             Word spNew = (c.psw[9] == 1'b0) ? c.sp : shad;
+            // The frame words' translations.  A translation is a function
+            // of va[31:12] alone (HobbitMmu translateFn), and base - 8 is
+            // on base - 4's page unless base[11:0] < 8, when it is on
+            // base - 12's: two translations serve the three words.  The
+            // same requests as combProbes', so the two share their logic.
+            Bool okM12 = xlateOk(base - 12, True, c.psw);
+            Bool okM4  = xlateOk(base - 4, True, c.psw);
+            Bool okM8  = (base[11:0] >= 12'd8) ? okM4 : okM12;
             Word vAddr = 0;
             Word nPsw = c.psw;
             Word id = 0;
@@ -418,8 +426,7 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
               nShad = nIsp;
               vAddr = c.vb + 16 + (zeroExtend(c.il) << 2);
               nPsw  = c.psw & 32'hFFFF0000;
-              ok    = xlateOk(as[0], True, c.psw) &&
-                      xlateOk(as[1], True, c.psw);
+              ok    = okM8 && okM4;              // as[0], as[1]
             end else if (isFrameException(cls0)) begin
               id    = zeroExtend(classId(cls0));
               as[0] = base - 12; ds[0] = id;
@@ -433,9 +440,7 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
               // "the word-aligned virtual address" (p. 1-39).
               if (id == 32'h8 || id == 32'h9)
                 nFl = c.va & 32'hFFFFFFFC;
-              ok    = xlateOk(as[0], True, c.psw) &&
-                      xlateOk(as[1], True, c.psw) &&
-                      xlateOk(as[2], True, c.psw);
+              ok    = okM12 && okM8 && okM4;     // as[0], as[1], as[2]
             end else if (cls0 == EV_UNIMP) begin
               // *(CSP) = PC; PC = *(VB+12) or *(VB+8) (pp. 1-39/1-40).
               Word cspAddr = (c.psw[9] == 1'b1) ? c.sp : isp;
@@ -620,8 +625,10 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
           Word base = (c.psw[9] == 1'b0) ? shad : isp;
           Word cspA = (c.psw[9] == 1'b1) ? c.sp : isp;
           let a = wp(base - 4, True, c.psw);
-          let b = wp(base - 8, True, c.psw);
           let d = wp(base - 12, True, c.psw);
+          // base - 8's page is base - 4's or base - 12's (step), and a
+          // walk's words depend on the page alone.
+          let b = (base[11:0] >= 12'd8) ? a : d;
           let e = wp(cspA, True, c.psw);
           v[0] = a[0]; v[1] = a[1]; v[2] = b[0]; v[3] = b[1];
           v[4] = d[0]; v[5] = d[1]; v[6] = e[0]; v[7] = e[1];
