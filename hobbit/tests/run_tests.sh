@@ -247,6 +247,25 @@ grep -q '^125203 main$' "$tmp/p9kern/rec/functions" || {
     echo "hobbit: the s9term boot sample did not reach main" >&2
     exit 1
 }
+# The same sample on Verilator (P9KERN_SIM=verilator, bsv/build_p9kern_vl.sh):
+# its core.log -- every HRI line with cyc, every P9KERN line -- must be
+# byte-identical to Bluesim's (docs/bluespec_architecture.md,
+# "Simulators").  About 40 s to build and 15 s to run (2026-11-24).
+if command -v "${VERILATOR:-verilator}" > /dev/null 2>&1; then
+    P9KERN_SIM=verilator "$hobbit/bsv/run_p9kern.sh" 300000 "$tmp/p9kern_vl" \
+        > "$tmp/p9kern_vl.out" 2>&1 || {
+        tail -20 "$tmp/p9kern_vl.out"
+        echo "hobbit: the s9term boot sample failed on Verilator" >&2
+        exit 1
+    }
+    cmp "$tmp/p9kern/core.log" "$tmp/p9kern_vl/core.log" || {
+        echo "hobbit: Verilator and Bluesim differ on the s9term boot sample" >&2
+        exit 1
+    }
+    echo "verilator: s9term boot sample, $(grep -c '^HRI ' "$tmp/p9kern_vl/core.log") HRI records, core.log identical to Bluesim's"
+else
+    echo "hobbit: SKIPPED the Verilator s9term cross-check (verilator not installed)"
+fi
 
 # A2 on the Bluespec core: the shipped 1e za and zl run on the model,
 # every retirement compared with the reference run (bsv/run_p9host.sh);

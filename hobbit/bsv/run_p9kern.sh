@@ -14,6 +14,12 @@
 # Everything is built in WORKDIR (default build/coreboot/run), with its
 # own -bdir and -simdir, so this never shares .bo files with the suite.
 # P9KERN_KEEP_SIM=1 reuses the simulator already built there.
+#
+# P9KERN_SIM picks the simulator: `bluesim` (the default, WORKDIR/sim_p9kern)
+# or `verilator` (WORKDIR/sim_p9kern_vl, built by build_p9kern_vl.sh in
+# WORKDIR/vl, its own -bdir).  Both print the same core.log byte for byte
+# and exit with the same status (docs/bluespec_architecture.md,
+# "Simulators").
 set -eu
 cd "$(dirname "$0")"
 here=$(pwd)
@@ -37,11 +43,29 @@ export BLUESPECDIR
 PATH=$(dirname "$BSC"):$PATH
 export PATH
 
+sim=${P9KERN_SIM:-bluesim}
+case "$sim" in
+  bluesim|verilator) ;;
+  *) echo "run_p9kern.sh: P9KERN_SIM must be bluesim or verilator, not $sim" >&2
+     exit 2 ;;
+esac
+
 mkdir -p "$work/bo" "$work/sim" "$work/rec"
+work=$(cd "$work" && pwd)
 PYTHONDONTWRITEBYTECODE=1 python3 "$here/../tools/p9coreboot.py" record \
     "$work/rec" --max-steps "$n"
 
-if [ "${P9KERN_KEEP_SIM:-0}" != 1 ] || [ ! -x "$work/sim_p9kern" ]; then
+if [ "$sim" = verilator ]; then
+  simbin=sim_p9kern_vl
+else
+  simbin=sim_p9kern
+fi
+if [ "${P9KERN_KEEP_SIM:-0}" = 1 ] && [ -x "$work/$simbin" ]; then
+  :
+elif [ "$sim" = verilator ]; then
+  "$here/build_p9kern_vl.sh" "$work" > "$work/build.log" 2>&1 || {
+      tail -30 "$work/build.log"; exit 1; }
+else
   "$BSC" +RTS -K512M -RTS -sim -u -bdir "$work/bo" -simdir "$work/sim" \
       -p "$work/bo:$here:%/Libraries" -g mkP9KernTb P9KernTb.bsv \
       > "$work/build.log" 2>&1 || { tail -30 "$work/build.log"; exit 1; }
@@ -53,7 +77,7 @@ fi
 
 simstatus=0
 (cd "$work" && P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
-    ./sim_p9kern > "$work/core.log" 2>&1) || simstatus=$?
+    "./$simbin" > "$work/core.log" 2>&1) || simstatus=$?
 grep '^P9KERN' "$work/core.log" || true
 grep -v '^HRI \|^P9KERN' "$work/core.log" | head -20 || true
 
