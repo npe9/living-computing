@@ -60,6 +60,11 @@ merger here it cannot happen, and in ref_scsi.py's six IPL parts it
 never does (2,051 splices, every one onto an empty list, counted on
 the reference 2026-11-24).  Also passed by lockstep_atom, lockstep_pool
 and lockstep_scsi --part 1 with it injected.  Three of four caught.
+The case IS met in PIMOS: in the typed-shutdown run from the cached
+machine (longrun_ipl.py --type shutdown --type yes), 300 of 5,859
+splices go onto a non-empty list (counted on the reference,
+2026-11-24).  So the front-splice order is live there and checked on
+the reference model only, not in lockstep.
 
 The real site whose order this changes is the user table of PIMOS's
 task layer (utility/pool/k_bag.kl1, under kernel/task/int_hdl.kl1's

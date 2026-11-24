@@ -542,7 +542,7 @@ the device are given it again whenever the machine runs dry.
   | 601 `create` of the string-I/O device `pimos_standard_io_window` (added 2026-11-24 for `shutdown`) | `[1]` | §6.4, `shutdown_b.kl1`:41-42 |
   | 620 `io(104, ..)`, `io(130, ..)`, `io(141, ..)`, `io(111, Text)` on it (added 2026-11-24) | `[1, ""]`, OURS: the PSI's class is not held; the window device's own 104/130/141/111 answer `{Id, 1}` (§2.6) and a 620 reply carries a string (§6.4). A 111's text to the log | §2.6, §6.4 |
   | 620 `io(110, "")` on it (added 2026-11-24) | held, as a window's 110; answered at the idle by the next typed line, `[1, LINE]` | §7.5 |
-  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended` | §2.2 |
+  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended`. The FEP emulator (`bsv/PimmFepEmu.bsv`) still refuses it: `bsv/run_fepemu.sh`'s `direct_kernel` tape, whose command 49 is this 60 on device 16, FAILs there ("emulator refused (why 7); fep.py done") until the emulator follows; with `fep.py` as before this row every tape passes (checked 2026-11-24) | §2.2 |
   | `{-1, 80}`, `fep#terminate`, when the link's stream closes at PIMOS's end (added 2026-11-24) | no reply (none is read); noted as `Fep.terminated` | §1, `scsi_fep.kl1`:234 |
   | the typed line's characters (2026-11-24) | `"`, `(`, `)`, `=` added to `fep.py`'s JIS table, from PIMOS's own `server/telnet/code_cv.kl1`:154-182 (`table_ascii_to_jis`) | `code_cv.kl1` |
 
@@ -599,7 +599,13 @@ the device are given it again whenever the machine runs dry.
   the first merger moved (the lockstep pins, `ref_scsi.py`'s heap
   cells; the wire is the same). The untyped run (a cache made afresh
   under the new rule) now ends at 8,587,092 instructions, 1,220 goals
-  waiting, the same console and device log; with `--type shutdown
+  waiting, the same console and device log, but NOT the same FEP
+  conversation: 119 messages for 118 (old rule run from its own
+  cache, compared line by line): the timer's 304 answers another time
+  (it is counted from the instructions), a 70 on the timer device
+  (17) is new, the closes of devices 20, 21, 22 come in another order
+  and the `Shell>> ` write (111) comes earlier. A tape recorded from
+  the login before this change does not match it; with `--type shutdown
   --type yes` the cycle does not form, `shutdown_body` takes its third
   branch and the run stops at the 601 of `pimos_standard_io_window`
   (FepError, 8,690,718 instructions).
@@ -625,7 +631,19 @@ the device are given it again whenever the machine runs dry.
   has neither, and `shutdown_body` takes the third branch, a window of
   its own titled SHUTDOWN. The first branch (`make_window = no`,
   "Shutdown procedure starts." then "Really(yes/no)? " on the job's
-  own I/O) is a telnet login's. READ from the code; not run.
+  own I/O) is a telnet login's: READ from the code, not run. The
+  second (`top_task` set) is the login as the user `shutdown`, the
+  manual's footnote (held `pimos.logins`: program
+  `pimos::shutdown:go`): `login_p:top` sets `top_task` and applies the
+  program with no shell between. A probe outside the tree (`fep.py`'s
+  login record with UN `shutdown`, then the line `yes`) gave "Shutdown
+  procedure starts." and "Really(yes/no)? " on the `PIMOS CONSOLE`
+  window, then the same console lines to `PIMOS END********` (769,710
+  for the count): the second branch, run once, not in the suite.
+  The earlier reading here, that the manual's transcript is the first
+  branch's (a window made for the job), is WITHDRAWN: the branch with
+  a window of its own is the third, and the manual's "displayed in the
+  window" fits it as well as the others.
 
   Against the manual (`e-sysman.tex`:121-144), line by line:
   - "Reply yes to the shutdown confirmation message that is displayed
@@ -637,8 +655,9 @@ the device are given it again whenever the machine runs dry.
     manual and the held source, not met by the model.
   - `Shutdown started`: the same (`kernel/init/init.kl1`:313).
   - `login Server End`: ours `User Server End`, the held source's
-    (`server/login/init/usersvman.kl1`:195); the manual's is another
-    version's text.
+    (`server/login/init/usersvman.kl1`:195). The manual's string is
+    not in the held source at all (searched); that it is another
+    version's is INFERENCE.
   - `Statistics in PIMOS:` then two integers: the same line
     (`bios/boot/bios.kl1`:145-147); the values are the report's
     `statistics(ResH, ResL)`, high and low words: the manual's 0 and

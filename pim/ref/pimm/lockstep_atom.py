@@ -132,6 +132,7 @@ merger's list, taken before the ready queue), 1257 -> 1300 trace
 lines, both models identical and every check passing (the server
 still asked exactly the two requests).  The goals run in another
 order, and each pickup that splices the list writes one link more.
+The injections' line numbers above are as observed before it.
 """
 import os
 import sys

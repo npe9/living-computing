@@ -84,7 +84,7 @@ NOT run: another processor number (a refusal), an arity over 11
 Re-pinned for the merger timing change (2026-11-24, docs/
 pimm_semantics.md merge: a woken goal of merge_in goes on the
 merger's list, taken before the ready queue), 2064868 -> 2066384
-trace lines, both models identical and every check passing.
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys

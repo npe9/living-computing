@@ -61,7 +61,8 @@ pimm_semantics.md merge: a woken goal of merge_in goes on the
 merger's list, taken before the ready queue), 9113 -> 9134 trace
 lines, both models identical and all 38 answers unchanged: one input,
 so the order of the requests cannot change; the goals run in another
-order and each pickup that splices the list writes one link more.
+order and each pickup that splices the list writes one link more.  The
+injections' line numbers above are as observed before it.
 (lockstep_merge.py is the test of the order itself.)
 
 Not caught: merge_in accepted outside its stub (no code holds it),

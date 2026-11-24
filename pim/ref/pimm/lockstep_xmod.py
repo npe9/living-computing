@@ -86,7 +86,7 @@ the field's MRB; a cache field that is not 0 (refused, never met).
 Re-pinned for the merger timing change (2026-11-24, docs/
 pimm_semantics.md merge: a woken goal of merge_in goes on the
 merger's list, taken before the ready queue), 7421731 -> 7431633
-trace lines, both models identical and every check passing.
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
