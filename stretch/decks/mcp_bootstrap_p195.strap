@@ -380,6 +380,10 @@
 ! situation in another costume -- so the whole page would check
 ! nothing.  Both are recorded here and in the statement text.
 !
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! (A) LINE 3 IS PRINTED "SV,0,J WKOM+1.0" AND IS WRITTEN HERE
 !     "SV,0,JWKOM+1.0".  A blank inside a name INSIDE AN EXPRESSION
 !     is refused -- "line N: undefined symbol 'J'" -- which the
@@ -498,7 +502,7 @@ JRWRIT  SYN, (8)221644.40            ! landed; line 27 B prints 221644.50
         SLC, (8)221651.40            ! NOT PRINTED.  CHECKED by the merge -- see THE JOIN
         B,JTRYLG                     ! line  1
         LVE,0,RV4                    ! line  2   byte B0, not 80 -- glyph call 2
-        SV,0,JWKOM+1.0               ! line  3   PRINTED "SV,0,J WKOM+1.0", indented two
+        SV,0,J WKOM+1.0              ! line  3   AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20), indented two
 !                                    !           columns (two-statement card with line 2).
 !                                    !           THE BLANK IS DROPPED HERE because a blank
 !                                    !           inside a name in an EXPRESSION is refused

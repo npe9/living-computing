@@ -120,6 +120,10 @@
 ! check passes untouched.
 !
 ! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! A SECOND, NARROWER GAP: A BLANK INSIDE A NAME INSIDE AN
 ! EXPRESSION
 ! ---------------------------------------------------------------
@@ -339,7 +343,7 @@ PCSRD   LV,$1,SUNA($10)                 ! line 21   217071.00
         C0011(BU),SCW($13),0            ! line 22   217071.40
         BB,SL,PMCP                      ! line 23   217072.40
         LVI,$2,PPPBF                    ! line 24   217073.40
-        CM0000(BU,1),SCNSSG+1.0($1),0   ! line 25   217074.00
+        CM0000(BU,1), S CNS SG+1.0($1),0 ! line 25   217074.00  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
 PCSRD1  BZB,2.63($2),P3WD               ! line 26   217075.00
         LV,$3,POUT                      ! line 27   217076.00
 PCSRD2  LVI,$15,$+1.0                   ! line 28   217076.40

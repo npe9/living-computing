@@ -337,7 +337,11 @@ KSEOUL  LCI,1,K REP                  ! line  3 * -CHECK FOR END OP OF REL
         BZEKJZ,$+1.32                ! line  5
         CB,1,$-1.32                  ! line  6
         B,K REJT                     ! line  7   -IF 3 EKJ, GIVE UP
-        BB,KKCCW+.24,K SEOUL         ! line  8   -IF SEOP BIT ON, LOOP
+        BB,K K CCW+.24,K SEOUL       ! line  8   -IF SEOP BIT ON, LOOP  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 !   >>> PRINTED "BB,K K CCW+.24,K SEOUL".  strap_asm REFUSES a blank
 !   inside a name INSIDE AN EXPRESSION ("undefined symbol K"), and
 !   the refusal aborts the WHOLE assembly, so the blanks are closed
@@ -357,7 +361,11 @@ KKLOOP  LCI,1,K REP                  ! line 24   -WAIT FOR UNIT TO BECOME READY
         BZEKJZ,$+1.32                ! line 26 *
         CB,1,$-1.32                  ! line 27
         B,K REJT                     ! line 28   -IF REPEATED EKJ, GIVE UP
-        BZB,KKCCW.18,K K LOOP        ! line 29   -CHECK UNR STATUS BIT
+        BZB,K K CCW.18,K K LOOP      ! line 29   -CHECK UNR STATUS BIT  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 !   >>> PRINTED "BZB,K K CCW.18,K K LOOP".  Same refusal, same
 !   closing-up, same bits.
 KUNRR   B,$                          ! line 30   -IF UNR ON, ALLS WELL

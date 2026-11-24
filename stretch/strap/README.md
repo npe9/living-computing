@@ -1144,3 +1144,26 @@ until one has.
       strap_asm (a two's complement) and `0058` under STRAP II (5, then
       the sign byte 1000), as p.15's mode-B paragraph says.  Open;
       `docs/NEXT.md` has the entry.
+    - ~~A blanked name breaks the moment anything follows it
+      (`CB,2,K REPET.32` refused, "undefined symbol 'K'").~~
+      **Fixed.** Same rule as the radix blank: C22-6729 printed p.20,
+      GETCHA gives main flow no blanks.  `tokenize_expr` now reads a
+      name on across blanks while the next non-blank character is a
+      letter or digit (`_symbol_across_blanks`), and a blank before a
+      point no longer hides it.  Every path that reads names goes
+      through the tokenizer, so `referenced_symbols`, `inherited_dds`,
+      `_names_an_address`, the SYN pre-pass and the register and index
+      fields all see one name; a statement with no dds of its own still
+      inherits the symbol's (`inherit_dds`).  A side effect, and it is
+      a fix: `B, A B` with A and B defined and AB not was SUMMED (A+B)
+      and is now refused.  NEXT.md's specified fix (rewrite only when the
+      closed-up name is already defined) was not used: the symtab guard
+      cannot fire on a forward reference, and p.20 has no such guard.
+      `tests/check_blanked_name.py`, 9 of 9: six printed MCP rows
+      through `listing_oracle.py`, dds inheritance, a forward reference,
+      the two-names refusal; the injection (stop at the first blank)
+      fails all 9 and refuses all 14 decks.  25 operands on 14 MCP decks
+      restored to the printed spelling (NEXT.md had counted seven
+      decks); no image moved under either assembler (825 hashed).
+      STILL OPEN, a different gap: a blank in the NAME (label) field
+      (`C CHEX` in column 1), which the deck reader splits on.

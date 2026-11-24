@@ -181,6 +181,10 @@
 ! WHAT strap_asm REFUSED -- THE PRINTED FORM WAS HANDED TO IT FIRST
 ! ---------------------------------------------------------------
 ! THREE CARDS WERE REFUSED AS PRINTED, all the same defect, the one
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! the brief lists as a known gap: A BLANK INSIDE A NAME INSIDE AN
 ! EXPRESSION.  The bare name resolves; the name plus "+n." or "-.32"
 ! does not.  Measured, verbatim:
@@ -374,15 +378,15 @@ KFRONT  KVI,3,32.0                   ! line  5  NAME printed "K FRONT"
         V+I,2,.32                    ! line  8  as printed
         SVA,2,K IOD RN               ! line  9  as printed
         V+I,2,.32                    ! line 10  as printed
-        SVA,2,KIODRN-.32             ! line 11  SUBSTITUTED: printed "SVA,2,K IOD RN-.32"; a blank inside a name inside an expression is refused
+        SVA,2,K IOD RN-.32           ! line 11  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         KVI,3,2.0                    ! line 12  as printed  -TEST IF RD, W OR CCW PSEUDO OP
-        SWAPI,2,$2,STLR+15.          ! line 13  SUBSTITUTED: printed "SWAPI,2,$2,S TLR+15."
+        SWAPI,2,$2,S TLR+15.         ! line 13  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         BXH,K IOD RN                 ! line 14  as printed  -IF NOT, COMPUTE ONE PARAMETER
         LVE,0,$                      ! line 15  as printed
 KIODRN  LVE,1,$                      ! line 16  NAME printed "K IOD RN"
         BUSAZ,$+.32                  ! line 17  as printed; the Z is VISIBLE on a branch (BUSA prints C2, BUSAZ C6)
         BADZ,$+.32                   ! line 18  as printed; BAD prints 42, BADZ 46
-        SWAPI,2,STLR+15.,$2          ! line 19  SUBSTITUTED: printed "SWAPI,2,S TLR+15.,$2"
+        SWAPI,2,S TLR+15.,$2         ! line 19  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         BXVZ,Z  IODH                 ! line 20  as printed, TWO blanks after the Z
         BB,S L,K MCP                 ! line 21  as printed
         KV,1,S MAX RN                ! line 22  as printed

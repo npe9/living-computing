@@ -359,6 +359,10 @@
 !       pages and this deck cannot settle it.
 !
 ! ---------------------------------------------------------------
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! THE NAME FIELD AND THE BLANK -- TWO ASSEMBLER REFUSALS, MEASURED
 ! ---------------------------------------------------------------
 ! The printed form was handed to strap_asm FIRST, as rule 2 says, and
@@ -462,7 +466,7 @@ KREPET  LCI,2,K REP                  ! line 19  printed name "K REPET" -OTHERWIS
         B,K COUNT                    ! line 27  -UK
         B,K SOS                      ! line 28 * location-column asterisk  -EE  -  IMPOSSIBLE
         B,K K EXIT                   ! line 29  -SUCCESSFUL END
-KCOUNT  CB,2,KREPET.32               ! line 30  >>> SUBSTITUTED: printed "K COUNT  CB,2,K REPET.32"; the blanks are REFUSED inside an expression, see THE NAME FIELD AND THE BLANK
+KCOUNT  CB,2,K REPET.32              ! line 30  NAME printed "K COUNT"; operand AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20), see THE NAME FIELD AND THE BLANK
         B,K SOS                      ! line 31  (same card as 30)  -TRY KREP TIMES BEFORE GIVING UP
 KRREAD  LCI,2,K REP                  ! line 32  printed name "K R READ"
         SIC,J BSP X                  ! line 33
@@ -479,7 +483,7 @@ KRNEW   LX,0,S IO INS($12)           ! line 35  printed name "K R NEW"
         B,K R UK                     ! line 44  -UK
         B,K R EE                     ! line 45  -EE
         B,K K EXIT                   ! line 46  -SUCCESSFUL END
-KRUK    CB,2,KRREAD.32               ! line 47  >>> SUBSTITUTED: printed "K R UK  CB,2,K R READ.32"; same refusal as line 30  -TRY KREP TIMES BEFORE GIVING UP
+KRUK    CB,2,K R READ.32             ! line 47  NAME printed "K R UK"; operand AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)  -TRY KREP TIMES BEFORE GIVING UP
 
 ! ---------------------------------------------------------------
 ! THE PRINTED LISTING, AS READ

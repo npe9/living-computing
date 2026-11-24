@@ -520,6 +520,48 @@ def _is_radix_digit(ch, radix):
         return False
 
 
+_ALNUM_RUN = re.compile(r'[A-Za-z0-9]+')
+
+
+def _symbol_across_blanks(s, i):
+    """The symbol starting at s[i], its blanks closed up, and where it
+    ends.  >>> A BLANK IS NOT PART OF THE STATEMENT, SO IT CANNOT END A
+    NAME. <<<  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA
+    does not give blanks to main flow unless main flow has turned on the
+    indicator, Gcaz" -- and the guide turns Gcaz on for an
+    alphabetic DD's datum and the ID field, never for an address
+    field.  So "K REPET.32" reaches the
+    field scanner as "KREPET.32" (MCP printed p.188 line 30), and
+    "S T LR + 0.57" as "STLR+0.57" (printed p.169 line 11).
+
+    The name runs on across blanks while the next non-blank character
+    is a letter or a digit.  Before 2026-11-23 only a WHOLE field of
+    letters, digits and blanks was closed up (_BLANKED_SYMBOL, the rule
+    eval_expr and eval_addr_field still try first), and "K REPET.32"
+    was refused with "undefined symbol 'K'"; two blank-separated
+    symbols that were both defined were SUMMED, silently.
+    tests/check_blanked_name.py."""
+    m = _TERM_SYM.match(s, i)
+    name, j, n = m.group(0), m.end(), len(s)
+    while True:
+        k = j
+        while k < n and s[k] in ' \t':
+            k += 1
+        if k == j or k >= n:
+            break
+        m2 = _ALNUM_RUN.match(s, k)
+        if not m2:
+            break
+        name, j = name + m2.group(0), m2.end()
+    return name, j
+
+
+def _next_nonblank(s, j):
+    while j < len(s) and s[j] in ' \t':
+        j += 1
+    return j
+
+
 def tokenize_expr(s, lineno=None):
     # A TAIL WRITTEN ON A SYMBOL, "Q GO$A" (MCP printed p.43 line 6,
     # p.261 line 7).  C28-6129 printed p.37 says what it is; TAIL is
@@ -554,9 +596,9 @@ def tokenize_expr(s, lineno=None):
             # FIELD's units, which in the 19-bit field of p.221's
             # "V+ICR,V T3,.V H" is 32 half words (000020.17 for the
             # printed 000000.57).
-            m = _TERM_SYM.match(s, i + 1)
-            tokens.append((sign, 'bitsym', m.group(0)))
-            i = m.end(); sign = 1; continue
+            name, j = _symbol_across_blanks(s, i + 1)
+            tokens.append((sign, 'bitsym', name))
+            i = j; sign = 1; continue
         if c == '.':
             m = _TERM_NUM.match(s, i + 1)
             b = int(m.group(0)) if m else 0
@@ -658,7 +700,7 @@ def tokenize_expr(s, lineno=None):
                 i = j
             sign = 1; continue
         if c.isalpha():
-            m = _TERM_SYM.match(s, i)
+            name, j = _symbol_across_blanks(s, i)
             # A POINT BEHIND A SYMBOL: "M." / "M.M" / "K FUNLD.32".
             # C22-6578 printed p.64, A4.8.2(c): "A 'point' placed in
             # front of or behind a symbolized INTEGER converts it into a
@@ -667,9 +709,11 @@ def tokenize_expr(s, lineno=None):
             # latter."  So the word part of an integer counts words
             # ('wordsym'); a bit address is left as it is.  The point
             # itself is left for the '.' branch, which reads what follows.
-            kind = 'wordsym' if m.end() < n and s[m.end()] == '.' else 'sym'
-            tokens.append((sign, kind, m.group(0)))
-            i = m.end(); sign = 1; continue
+            # A blank before the point is not seen either (p.20).
+            k = _next_nonblank(s, j)
+            kind = 'wordsym' if k < n and s[k] == '.' else 'sym'
+            tokens.append((sign, kind, name))
+            i = k if kind == 'wordsym' else j; sign = 1; continue
         raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
     if not tokens:
         raise AssemblerError("empty expression", lineno)

@@ -2349,45 +2349,15 @@ two is unknown and is the thread to pull.
 > exactly as printed. An earlier reading of the GARBLED RefMan OCR had
 > suggested 117 was not a code at all; the curated table says it is.
 
-## A BLANKED NAME BREAKS THE MOMENT ANYTHING FOLLOWS IT -- open, 7 decks affected
+## A BLANKED NAME BREAKS THE MOMENT ANYTHING FOLLOWS IT -- fixed 2026-11-23
 
-STRAP ignores blanks inside a symbol and `_BLANKED_SYMBOL` honours
-that -- but only when the name is the WHOLE field. Measured, with
-`KREPET` defined:
-
-```
-  CB,2,KREPET        OK
-  CB,2,K REPET       OK          <- blanked name alone resolves
-  CB,2,KREPET.32     OK
-  CB,2,K REPET.32    REFUSED     undefined symbol 'K'
-  CB,2,K REPET+.32   REFUSED     undefined symbol 'K'
-```
-
-**It is not the operator.** A bare `.NN` breaks it just as an operator
-does; what matters is that the name stops being the entire field.
-printed p.188 established that (the brief had cited only operator
-cases, which made it look like an operator problem), and printed
-p.187 found a third shape, `K WS.19`.
-
-**SEVEN landed decks carry a flagged substitution for this**: printed
-pp.138, 169, 171, 177, 187, 188, 190. Every one closes the blanks up
-and records the printed form beside it.
-
-**THIS IS A FIDELITY GAP, NOT A CORRECTNESS ONE** -- which is why it
-has not been fixed under time pressure. Closing up the blanks is
-bit-identical, so no image is wrong today; what is lost is the decks
-carrying the page's own spelling.
-
-**The fix, specified:** before tokenising an address field or an
-expression, if it matches `^([A-Za-z][A-Za-z0-9 ]*?)\s*([.+-].*)$`,
-the first group CONTAINS A BLANK, and its closed-up spelling is
-already a defined symbol, rewrite the field with that name closed up.
-Both guards matter: without the blank test every expression goes
-through the path for nothing, and without the symtab test the rule
-could change the meaning of an expression that works today. Apply it
-in the same two places the existing rule lives, `eval_expr` and
-`eval_addr_field`, and keep the existing whole-field rule as the
-first case.
+`CB,2,K REPET.32` and every other blanked name followed by an operator,
+a point or a bit offset now assemble; 25 operands on 14 MCP decks
+(pp.138, 164, 166, 169, 171, 177, 178, 186, 187, 188, 189, 190, 195,
+335) carry the printed spelling again, bit-identically.  Rule: C22-6729
+printed p.20, GETCHA drops blanks.  Record:
+`tests/check_blanked_name.py`'s header and `strap/README.md` "Next
+steps" item 10.
 
 ## ONE CONFUSION CAUSED THREE BUGS: IS THE OPERAND A VALUE OR AN ADDRESS?
 
