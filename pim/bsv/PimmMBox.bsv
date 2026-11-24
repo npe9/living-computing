@@ -19,6 +19,11 @@
 // s_Multiply_BIGNUM_By_Word: b_Multiply_ExtendedInt, then the carry
 // added).
 //
+// divideWide (2026-11-24) is the divider unsigned, the 64-bit hi:lo by
+// a 32-bit divisor, for divide_extended; the caller sees that hi is
+// below the divisor (VPIM's exception otherwise), so 32 steps from a
+// remainder of hi give the 32-bit quotient.
+//
 // The step counts are ours: no source gives the machine's.
 package PimmMBox;
 
@@ -33,6 +38,7 @@ interface PimmMBox;
   method Action multiply(Bit#(32) a, Bit#(32) b);
   method ActionValue#(MulResult) product;
   method Action multiplyAdd(Bit#(32) a, Bit#(32) b, Bit#(32) c);
+  method Action divideWide(Bit#(32) hi, Bit#(32) lo, Bit#(32) divisor);
   method ActionValue#(Bit#(64)) wide;
 endinterface
 
@@ -99,6 +105,16 @@ module mkPimmMBox(PimmMBox);
     rem <= 0;
     negQ <= na != nb;
     negR <= na;
+    left <= 32;
+    busy <= True;
+  endmethod
+
+  method Action divideWide(Bit#(32) hi, Bit#(32) lo, Bit#(32) divisor) if (!busy);
+    quot <= lo;
+    den <= divisor;
+    rem <= zeroExtend(hi);
+    negQ <= False;
+    negR <= False;
     left <= 32;
     busy <= True;
   endmethod

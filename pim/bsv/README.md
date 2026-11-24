@@ -232,10 +232,11 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 152
-instructions (a recount, 2026-11-24: 152 handlers in `pimm.py`, all on
-both models; 149 without our three stubs; the earlier 128 and 130 were
-increments); goals as
+State: 168
+instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
+both models; 165 without our three stubs; the earlier 128 and 130 were
+increments; the eleven since 157 are those met between the login and
+the shell's prompt, `ref/pimm/lockstep_login.py`); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
@@ -246,8 +247,9 @@ updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are al
 (`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
 (a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
 `terminated`, `statistics_started`, `statistics`, `return_resource` and its close),
-the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`;
-its resource and profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
+the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`,
+`add_shoen_resource` and `allow_shoen_resource_report` (acknowledged, no resource counted);
+its profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
 Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.

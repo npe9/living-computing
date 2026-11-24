@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lockstep: system_timer and set_timer, the model's clock at 0.
+"""Lockstep: system_timer and set_timer, the model's clock advancing.
 
     python3 ref/pimm/lockstep_timer.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_timer.py compare
@@ -11,14 +11,18 @@ system_timer(^X1, ^X2), 23:78 r_r, a guard with no input
 predicate is running was booted is unified with X1, and the lower 32
 bits are unified with X2.  Suspend, Exception: None" (PIMOS manual,
 e-builtin.tex:1537-1549).  VPIM gives X1 = 0 and X2 the current time
-(src/interpreter/klb_pimos.psl.c kblt_system_timer).  THE CLOCK IS
-OURS: no time passes on this model, it stands at 0, so X1 = 0, X2 = 0.
+(src/interpreter/klb_pimos.psl.c kblt_system_timer).  THE CLOCK
+(2026-11-24; it stood at 0 before): one tick every 423 instructions
+executed, counted before the instruction that reads it (pimm.py
+INSTRUCTIONS_PER_TICK: 615 KLIPS on append, M92 p. 425, at this image's
+11 instructions an append reduction; equal cost per instruction is
+OURS), 48 bits.
 
 set_timer(Time, ^Wakeup), 22:FF r_r, a body built-in, Time the input
 (blt.kl1:702-704).  VPIM's account (the comment before
 kblt_system_timer): if the time asked for (a system timer value) has
 come, Wakeup is unified at once with the timer's value, else at the
-earliest time after; "T2 is after T1 :- T2 &- T1 < 2^(W-1)", &-
+earliest time after (so Wakeup is now, the timer's low 32 bits); "T2 is after T1 :- T2 &- T1 < 2^(W-1)", &-
 unsigned mod 2^W.  With the clock at 0 a time reached, (0 - Time) mod
 2^32 < 2^31, gives Wakeup = 0; a time still to come is refused (it
 would never come).  22:FF is ALSO modname_to_module in the PIMOS
@@ -38,6 +42,16 @@ Parts:
   set_timer      at its stub, Time 0, -1, -16, -2147483647 (all
                  reached): Wakeup 0 each; then Time unbound: the
                  built-in waits, and answers 0 when Time = -5.
+                 (These two parts run fewer than 423 instructions:
+                 the clock is still 0.)
+  later          (2026-11-24) the image's append/3 (scsi_fep_module)
+                 over a list of 107 integers, ~1,180 instructions
+  system_timer, later   the same four cells: X1 = 0, X2 = the
+                 instructions before it (counted in the trace) // 423
+                 = 2 (1,204 // 423; 1,204 // 400 would be 3)
+  set_timer, later      Time 1, reached: Wakeup = now, 2, not 1.
+                 Pins 2 parts / 166 lines -> 5 / 2805, these parts'
+                 lines; the first two unchanged.
 The real sites are in pimm_bios360E.sav (96,474 words; sysTman
 create/3 and physical_alarm_timer_device's do_set_alarm/4 and
 check_and_set_alarm/6) and each goes on into a module that file does
@@ -50,6 +64,12 @@ run alone (bsv/run_pimm_lockstep.sh timer) and restored from a copy,
   system_timer X1 written to r[y]   system_timer, line 23: R 3 for R 2
   set_timer Wakeup = Time           set_timer, line 35: R 2 ffffffff
                                     for 0 (Time -1)
+  (2026-11-24, the clock advancing)
+  the clock stands still            system_timer, later, line 16: R 3 0
+                                    for 2
+  a tick every 400 instructions     system_timer, later, line 16: R 3 3
+                                    for 2
+  set_timer answers the time asked  set_timer, line 35 (as above)
 NOT run: a time still to come (refused), a non-integer Time.
 """
 import os
@@ -61,11 +81,13 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=2, lines=166)
+PINNED = dict(parts=5, lines=2805)
+TIMER_AT = []
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 KLB = 0x23
 REACHED = (0, -1, -16, -2147483647)
 LATE = -5
+LONG = 107
 # the outputs as they end (the waiting one is bound by then); the wait
 # itself is checked by the stub taken twice for it
 EXPECT = {'system_timer': [0, 0], 'set_timer': [0] * len(REACHED) + [0, 0]}
@@ -88,6 +110,8 @@ def script():
     s.newvar(1)
     s.arg(1, 0)
     s.arg(2, 1)
+    s.timer_code = at
+    TIMER_AT[:] = [at]
     s.spawn(at, 2)
     s.run()
     s.out(0)
@@ -111,12 +135,68 @@ def script():
     s.unifyc(1, I(LATE))
     s.run()
     s.out(0)
+    # the clock advances (2026-11-24): the image's append/3
+    # (scsi_fep_module, 11 instructions an element) over a list of
+    # LONG integers, then system_timer again on the same four cells,
+    # then set_timer to time 1, reached: Wakeup is now, not 1
+    s.label('later')
+    s.setslot(4, pimm.NIL)
+    for k in range(LONG):
+        a, b = (5, 4) if k % 2 == 0 else (4, 5)
+        s.cons(a, 6, I(k), ('slot', b))
+    lst = 5 if LONG % 2 else 4
+    s.newvar(8)
+    s.arg(1, lst)
+    s.argc(2, pimm.NIL)
+    s.arg(3, 8)
+    s.spawn(pimm.predicate(pimm.kbndis.Image(), 'scsi_fep_module', 'append/3'), 3)
+    s.run()
+    s.label('system_timer, later')
+    s.newvar(0)
+    s.newvar(1)
+    s.arg(1, 0)
+    s.arg(2, 1)
+    s.spawn(s.timer_code, 2)
+    s.run()
+    s.out(0)
+    s.out(1)
+    s.label('set_timer, later')
+    s.argc(1, I(1))                     # a time reached, before now
+    s.newvar(2)
+    s.arg(2, 2)
+    s.spawn(stub, 2)
+    s.run()
+    s.out(2)
     return s
+
+
+def clock_at(parts, label, addr):
+    """The clock as the source of the rule gives it (pimm.py
+    INSTRUCTIONS_PER_TICK): the instructions before the first one at
+    addr in part `label`, counted over the parts in the order run."""
+    n = 0
+    for lab, lines in parts.items():
+        for ln in lines:
+            if ln.startswith('I '):
+                if lab == label and ln.startswith('I %d ' % addr):
+                    return n // pimm.INSTRUCTIONS_PER_TICK
+                n += 1
+    return None
 
 
 def check(m, outs, parts):
     bad = []
+    t = clock_at(parts, 'system_timer, later', TIMER_AT[0])
+    w = clock_at(parts, 'set_timer, later', m.stubs['set_timer']['addr'])
+    got = {k: [m.term(w) for lab, w in outs if lab == k]
+           for k in ('system_timer, later', 'set_timer, later')}
+    if not t or got['system_timer, later'] != [0, t]:
+        bad.append(('system_timer, later', got['system_timer, later'], t))
+    if got['set_timer, later'] != [w]:
+        bad.append(('set_timer, later', got['set_timer, later'], w))
     for k, want in EXPECT.items():
+        if k.endswith('later'):
+            continue
         got = [None if m.unbound(m.deref(w)) else m.term(w) for lab, w in outs if lab == k]
         if got != want:
             bad.append((k, got, want))
@@ -155,7 +235,8 @@ def main(argv):
         print('pimm lockstep timer: FAIL %r' % (bad[:3],))
         return 1
     print('pimm lockstep timer: PASS (system_timer and set_timer on the Bluespec core, %d '
-          'trace lines identical to the reference model: the clock at 0, X1 = X2 = 0; '
+          'trace lines identical to the reference model: the clock at 0 and then 2 ticks '
+          'after 1,204 instructions; '
           'set_timer to a time reached wakes at once with 0, and waits for its input)'
           % s.counts['lines'])
     return 0

@@ -85,24 +85,36 @@ loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
 with vector keys), `lockstep_tproc.py` `Goal@processor(P)` waiting
 for an unbound P, `lockstep_timer.py` `system_timer` and `set_timer`
 (the clock at 0, ours), `lockstep_wint.py` `write_integer -1`,
-`lockstep_bignum.py` `multiply_bignum_by_word` (after VPIM),
+`lockstep_bignum.py` `multiply_bignum_by_word` and `subtract_bignum`
+(after VPIM), `lockstep_login.py` the instructions met between the
+login and the shell's prompt (`unbound`, the four double-precision
+integer built-ins, the guards `module`, `extended_floating_point`,
+`bignum_less_than` and `bignum_not_less_than`, `apply` of seven or
+more, `enqueue_goal` of more than 16),
 `lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The
 device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
 IPL parts (the IPL reading its list and files through its own SCSI
 stack) on both models;
-`longrun_ipl.py` is the long run (not in the suite); 152
-instructions on both models (counted 2026-11-24: 152 `i_` handlers in
+`longrun_ipl.py` is the long run (not in the suite); with `--load
+--go --fep` it runs `pim:go/4` through the scripted login to the
+shell's `Shell>> ` (`docs/fep_services.md` §7).  168
+instructions on both models (counted 2026-11-24: 168 `i_` handlers in
 `pimm.py`, shoen stage 3's `stop_shoen`, `abort_shoen`, `raise`,
-`current_processor`, `jump`, `set_marked_variable`, `wait_vector` and `multiply_bignum_word` among them; 149 without our three stubs
-`merge_in`, `unify_step` and `to_processor`).
+`current_processor`, `jump`, `set_marked_variable`, `wait_vector`, `multiply_bignum_word`, `subtract_bignum`, `get_constant`, `b_vector`, `code_to_predicate` and `add_shoen_resource` among them, then
+`search_character`, `unbound`, `extended_floating_point`, `module`,
+`add_extended`, `subtract_extended`, `multiply_extended`,
+`divide_extended`, `allow_shoen_resource_report`, `bignum_less_than`
+and `bignum_not_less_than` on the way to the prompt; 165 without our
+three stubs `merge_in`, `unify_step` and `to_processor`).
 `ref_scsi.py` runs the same IPL body on the reference alone
 (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
-(`docs/pimm_semantics.md` "The MRB"), of the shoen no resource or
-profile instructions (refused: what they change is unsourced), no
+(`docs/pimm_semantics.md` "The MRB"), of the shoen no profile
+instructions (refused: what they change is unsourced) and the
+resource ones acknowledged with nothing counted, no
 unification failure inside a shoen, no built-in exceptions.
 
     python3 ref/pimm/test_jtoa.py
