@@ -53,9 +53,9 @@ import "BDPI" function ActionValue#(Bit#(32)) p9h_unmapped_reads();
 // which inlines this module into mkP9HostTb.  In Verilog, bsc puts each
 // module's C calls in that module's own `always @(negedge CLK)` block,
 // and the order between two such blocks is the simulator's choice, not
-// the schedule's: with two modules, writes were lost (the testbench's
-// block had not yet computed the core's write enable when the memory's
-// called p9h_write; observed 2026-11-23).  In one module every C call is
+// the schedule's: with two modules, 24 of echo's 296 writes never reached
+// p9h_write (observed 2026-11-23; inferred cause: the memory's block
+// tested the write enable before the testbench's block had computed it).  In one module every C call is
 // in one block, in schedule order -- poll, fetch, ..., commit, as Bluesim
 // runs them.  Bluesim builds without the flag, so nothing changes there.
 `ifndef P9HOST_FLAT

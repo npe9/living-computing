@@ -165,7 +165,8 @@ The model runs on two simulators, built from the same BSV:
 
 `run_p9host_vl.sh` is `run_p9host.sh` with `P9HOST_SIM=verilator`: the
 same arguments, environment (`P9CWD`, `P9HOST_KEEP_SIM`, `P9KCLOCKS`,
-`P9UNMAPPED`), work directory, comparison and exit status.
+`P9UNMAPPED`, but see below), work directory, comparison and exit
+status.
 `P9HOST_WORK` moves the work directory for either, so the two can run
 side by side.  Toolchain: Verilator 5.052 (Homebrew), bsc 2026.01.
 
@@ -199,9 +200,10 @@ too (the Bluesim figure above is with the fix).
    `p9h_poll`, ...) and `$display`s in that module's own
    `always @(negedge CLK)` block, in schedule order *within* the block;
    the order *between* two blocks is the simulator's.  With
-   `mkP9HostMem` synthesized separately, memory writes were lost (the
-   memory's block called `p9h_write` before the testbench's block had
-   computed the write enable).  `-D P9HOST_FLAT` drops that module's
+   `mkP9HostMem` synthesized separately, 24 of echo's 296 memory writes
+   never reached `p9h_write` -- inferred cause: the memory's block tested
+   the write enable before the testbench's block had computed it (the
+   flat build computes `mem_wrW$whas` inside the one block).  `-D P9HOST_FLAT` drops that module's
    `(* synthesize *)` (`P9HostTb.bsv`), so every C call is in one block,
    in the order Bluesim runs them (poll, fetch, ..., commit).  Bluesim
    builds without the flag.  The rule for later testbenches: C state
@@ -209,7 +211,8 @@ too (the Bluesim figure above is with the fix).
    inline them.
 2. *`--no-timing`.*  bsc follows each C call with `#0` and computes,
    inside the block, every value a later statement needs, so ignoring
-   the `#0`s changes nothing.  Honouring them (`--timing`) did not work:
+   the `#0`s changed nothing on every run checked (the zc gate in
+   `tests/run_tests.sh` guards it).  Honouring them (`--timing`) did not work:
    Verilator then did not re-evaluate continuous assignments that read
    what the block wrote after a resumption (the stack cache's CATCH test
    saw a stale MSP comparison and a refill never started).  Found by
@@ -227,6 +230,13 @@ too (the Bluesim figure above is with the fix).
 5. `bsc -verilog -use-dpi` emits the BDPI imports as `import "DPI-C"`;
    `Bit#(32)` is `int unsigned`, i.e. `p9host.c`'s `uint32_t`, so no
    signature changes.
+
+One visible difference: with `P9UNMAPPED=n`, each `P9HOST unmapped
+read` line (a `printf` in `p9h_request`) lands one line later on
+Verilator, after the HRI line of the same clock instead of before it
+(za main9.s, `P9UNMAPPED=5`: the same two lines, the same HRI lines,
+each pair swapped).  The count, and everything without `P9UNMAPPED`, is
+identical.
 
 Differences that remain, none visible in any output: register values
 that are don't-cares in BSV can differ (the payload of an `Invalid`

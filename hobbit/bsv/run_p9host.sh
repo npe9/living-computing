@@ -30,7 +30,8 @@
 # sim_p9host) or `verilator` (sim_p9host_vl: bsc -verilog, then
 # Verilator; run_p9host_vl.sh sets it).  Both print the same core.log
 # byte for byte (docs/bluespec_architecture.md, "Simulators").
-# P9HOST_WORK overrides the work directory (default p9work/).
+# P9HOST_WORK overrides the work directory (default p9work/), which is
+# deleted and remade on every run.
 set -eu
 cd "$(dirname "$0")"
 here=$(pwd)
@@ -65,6 +66,12 @@ case "$sim" in
 esac
 
 work=${P9HOST_WORK:-$here/p9work}
+# The work directory is deleted and remade; refuse one that holds
+# anything but an earlier run's (no p9.rec in a non-empty directory).
+if [ -d "$work" ] && [ -n "$(ls -A "$work")" ] && [ ! -e "$work/p9.rec" ]; then
+  echo "run_p9host.sh: $work is not an earlier run's work directory; not deleting it" >&2
+  exit 2
+fi
 rm -rf "$work"
 mkdir -p "$work/out"
 cp -R "$tree" "$work/ref"
