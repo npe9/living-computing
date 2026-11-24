@@ -30,6 +30,7 @@ are the ones documented in `bsv/HobbitSmoke.bsv` and `bsv/HobbitCore.bsv`:
 | `fpga/ulx3s_85f.lpf` | only the pins this design uses, plus `FREQUENCY PORT "CLK" 25 MHZ` |
 | `fpga/build.sh` | image regeneration, bsc, yosys, nextpnr, ecppack |
 | `fpga/build/` | every build product (gitignored) |
+| `fpga/dev/Sonic.bsv`, `fpga/dev/EspLink.bsv` | the SONIC-subset descriptor engine (register port, DMA master port) and the UART link to the ESP32, replayed against p9boot.Sonic and relay.c (`fpga/dev/sonic.md`) |
 | `fpga/esp32_ethrelay/` | ESP32 firmware (ESP-IDF v5.3; not yet built for the target) relaying the board's Ethernet frames over WiFi to `tools/qemu1e/hub.py`; the link protocol is tested on the host by `tests/test_ethrelay.py` (`docs/ulx3s_ethernet.md`) |
 
 ## Board behaviour
