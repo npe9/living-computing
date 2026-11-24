@@ -881,10 +881,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else guardFail;
     end
     else if (op == op_diff) begin
-      // diff(X, Y), X \= Y: fails if they are equal (manual); a term
-      // that is not atomic ("Illegal DIFF!!!") is refused
-      if (!isAtomic(a) || !isAtomic(b)) stop(EndUnimp);
-      else if (sameAtomic(a, b)) guardFail;
+      // diff(X, Y), X \= Y: fails if they are equal (manual); one
+      // atomic and the other not: never equal (KLIC gblt_diff, PDSS
+      // g_diff); two that are not atomic are refused
+      if (!isAtomic(a) && !isAtomic(b)) stop(EndUnimp);
+      else if (isAtomic(a) && isAtomic(b) && sameAtomic(a, b)) guardFail;
       else next;
     end
     else if (op == op_vector_element) begin

@@ -47,6 +47,10 @@ unbound.  Parts (Req; expected, from the source, not either model):
   {close, 1, 2}   A1 unbound     the second diff fails
   {M, 1}          A1 unbound, then, M bound to another atom, A1 = [Req|_]
                                  diff waits for M
+  {{1, 2}, 1}     A1 = [Req|_]   MsgName a vector: diff of a
+                                 structure and an atom succeeds
+                                 (2026-11-24; KLIC gblt_diff, PDSS
+                                 g_diff; a stop of pim:go/4)
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv, the
 diff branch of rule deref2), each run alone (bsv/run_pimm_lockstep.sh
@@ -57,9 +61,13 @@ rdvc) and restored from a copy, 2026-11-23:
   the values compared, not the tags  part 2 ({N, 1}), line 81: the same
   diff always succeeds               part 3 ({reset, 1, 2}), line 77:
                                      the second diff for the next clause
+  (2026-11-24) a structure against an atom fails     part 7
+                                     ({{1, 2}, 1}), line 85: the next
+                                     clause for the second diff
+  (2026-11-24) ... refused (the old rule)   part 7, line 85: E unimp
 
-NOT run: a term that is not atomic (refused), the manual's empty
-vector (refused here).
+NOT run: two terms that are not atomic (refused), the manual's empty
+vector against an atom (it succeeds, as any structure does).
 """
 import os
 import sys
@@ -72,7 +80,7 @@ import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=7, lines=7422314)
+PINNED = dict(parts=8, lines=7422450)
 FILE = 'pimm_patch_mkdir360E.sav'
 MODULE = 'file2request2device'      # the file's spelling of file_request_device
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
@@ -125,10 +133,13 @@ def script():
         ('{reset, 1, 2}', [reset, I(1), I(2)], None, False),
         ('{close, 1, 2}', [close, I(1), I(2)], None, False),
         ('{M, 1}', [None, I(1)], other, False),
+        ('{{1, 2}, 1}', [('slot', 11), I(1)], None, True),
     ]
     want = []
     for label, req, later, bound in parts:
         s.label(label)
+        if ('slot', 11) in req:
+            s.vector(11, 12, [I(1), I(2)])      # MsgName a vector
         s.vector(0, 1, req)                     # Req in slot 0, elements in 1..
         s.newvar(5)                             # Rest
         s.cons(6, 7, ('slot', 0), ('slot', 5))  # DRS = [Req|Rest]

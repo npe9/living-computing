@@ -1172,8 +1172,16 @@ class Machine:
         a, b = self.g_word(x), self.g_word(y)
         if a is None or b is None:
             return self.guard_fail()
+        if not self.atomic(a) and not self.atomic(b):
+            raise Unimplemented('diff on two terms that are not atomic')
         if not (self.atomic(a) and self.atomic(b)):
-            raise Unimplemented('diff on a term that is not atomic')
+            # one atomic (one word), the other a structure, string or
+            # the like: never equal, diff succeeds.  The manual: "X or
+            # Y must be an atomic term"; KLIC (include/klic/gb.h
+            # gblt_diff: "isatomic(y) || isatomic(x) ? (x) == (y)")
+            # and PDSS (emulator/emulate.c KL1B_G_DIFF, passive_unify)
+            # agree.  Met in pim:go/4 (task_handler)
+            return None
         if (a[0] & ~1, a[1]) == (b[0] & ~1, b[1]):
             return self.guard_fail()
 
