@@ -66,7 +66,10 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   fewer than 4 clocks are due, as the first emulated boot did):
   test_waiting_dsp_skips_to_its_timer; a watched store not reported, a
   DSP's own store reported, a watch accepted on a device register, or a
-  DSP's old watch kept: test_watched_words_report_other_writes.
+  DSP's old watch kept: test_watched_words_report_other_writes.  BIO
+  pins stopping like unknown pins: test_bio_pins_are_latched (error); a
+  BIO level not kept: test_bio_pins_are_latched; an unknown pin latched:
+  test_off_window_stops_name_the_dsp.
 - Typing (CHOICES['typing']): no break code: test_scan_codes,
   test_keys_are_paced_and_bound_the_idle_skip; no pacing, or keys not
   timed events: test_keys_are_paced_and_bound_the_idle_skip.
@@ -465,13 +468,21 @@ class DspEmulationTest(unittest.TestCase):
                  "write of size 2 value 0x1234 at 0x50000000: nothing "
                  "modelled"),
                 (lambda: bus.write(0x60000001, 0, 2), "aligned"),
-                (lambda: bus.pins("bio0", 1), "bio0")):
+                (lambda: bus.pins("iack0", 1), "iack0")):
             with self.assertRaises(beboot.DspStop) as cm:
                 f()
             self.assertEqual(cm.exception.n, 2)
             self.assertIn("DSP2 at pc 60000000", str(cm.exception))
             self.assertIn(says, str(cm.exception))
         self.assertIsNone(self.m.board.dsp_master)
+
+    def test_bio_pins_are_latched(self):
+        self.reset(0x40)
+        bus = self.m.dsps[3].bus
+        bus.pins("bio0", 1)
+        bus.pins("bio7", 0)
+        self.assertEqual(bus.bio, {"bio0": 1, "bio7": 0})
+        self.assertIn("DSP3 bio0 = 1", self.m.events[-2][1])
 
     def test_interrupt_is_a_level(self):
         self.internal(0x10)                     # before release

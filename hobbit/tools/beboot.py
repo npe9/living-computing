@@ -261,7 +261,8 @@ CHOICES = {
            "ch. 1, the draft's least reliable chapter, with no cycle "
            "counts), so a DSP access costs the CPUs nothing here; no "
            "stall is modelled.  The idle skip is not taken while an "
-           "emulated DSP executes (clocks_until_event() == 0); a DSP that "
+           "emulated DSP executes (clocks_until_event() == 0).  BIO outputs "
+           "are latched and logged, wired to nothing (DspBus.pins); a DSP that "
            "only the board can wake jumps to the CPUs' time, one in waiti "
            "skips to its timer tick (skip()), and that tick bounds the "
            "CPUs' idle skip.  A spinning DSP (the emulator's spin proof) asks "
@@ -1814,9 +1815,24 @@ class DspBus:
         self.m.dsp_watches[self.n] = self.m.dsp_watches.get(self.n, 0) + 1
         return True
 
+    BIO = tuple("bio%d" % i for i in range(8))
+
     def pins(self, name, level):
-        self._stop("drives its %s pin to %r: no DSP pin is wired in this "
-                   "model" % (name, level))
+        """CHOICES['dsp']: BIO7..0 reach the DSP's slot connector (slot 1,
+        3 or 5), whose pin table is blank in the Sep 1993 draft and whose
+        cards (the audio codec, the telephone relays) are not modelled:
+        their levels are latched and logged, and drive nothing.  Any
+        other pin stops."""
+        if name not in self.BIO:
+            self._stop("drives its %s pin to %r: not a pin this model "
+                       "knows" % (name, level))
+        if not hasattr(self, "bio"):
+            self.bio = {}
+        self.bio[name] = level
+        self.m.events.append((sum(c.steps for c in self.m.cpus),
+                              "DSP%d %s = %d (pc %08x)" % (
+                                  self.n, name, level,
+                                  self.m.dsps[self.n].pc)))
 
 
 def load_dsp_class():
@@ -2351,6 +2367,9 @@ def main(argv):
             m.dsp_watches.get(n, 0),
             "%08x" % d.pc if getattr(d, "pc", None) is not None else "?",
             ", idle" if getattr(d, "idle", False) else ""))
+        if getattr(d.bus, "bio", None):
+            print("DSP%d BIO outputs latched: %s" % (n, " ".join(
+                "%s=%d" % kv for kv in sorted(d.bus.bio.items()))))
         for (what, size, addr), k in sorted(d.bus.outside.items()):
             print("DSP%d %s of size %d at 0x%08x (outside the shadow RAM): "
                   "%d times" % (n, what, size, addr, k))
