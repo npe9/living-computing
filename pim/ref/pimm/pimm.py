@@ -2049,6 +2049,53 @@ class Machine:
             return [out]
         self.builtin('multiply_bignum_word', [x, y, z], f)
 
+    def i_subtract_bignum(self, pc, x, y, z, c16):
+        # subtract_bignum(BigX, BigY, ^Borrow, ^BigZ), 22:B7 r4
+        # (assembler/inst_tab.kl1:246; compiler/blt.kl1 inputs X, Y,
+        # outputs Borrow, Z): "The difference between BigX and BigY is
+        # calculated and the absolute value of that result is unified
+        # with BigZ.  If the result was non-negative 0, otherwise 1, is
+        # unified with Borrow" (manual e-builtin.tex 720-727; bignums as
+        # multiply_bignum_word's).  The edges as VPIM's
+        # (klb_body_blt_bignum.psl.c kblt_b_subtract_bignum,
+        # f_reduce_bignum.psl.c f_Subtract_BIGNUM_Sub, str_bignum.psl.c
+        # s_Subtract_BIGNUM): a leading zero word in either (checked X
+        # then Y), or either not a 32-bit string, is the exception,
+        # refused; Y empty gives X itself and 0; X empty, Y itself and 1;
+        # equal, the empty string and 0; otherwise the difference of the
+        # larger and the smaller, its leading zero words dropped.  The
+        # kept words are written from the least significant up into a
+        # new string of zeros (OURS: the Bluespec's order)
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(bx, by):
+            sx, ex = self.need_string(bx)
+            sy, ey = self.need_string(by)
+            if sx != 32 or sy != 32 or (ex and ex[0] == 0) or (ey and ey[0] == 0):
+                raise Unimplemented('built-in exception: subtract_bignum of %r, %r' % (ex[:2], ey[:2]))
+            if not ey:
+                return [(INT, 0), bx]
+            if not ex:
+                return [(INT, 1), by]
+            vx = vy = 0
+            for e in ex:
+                vx = (vx << 32) | e
+            for e in ey:
+                vy = (vy << 32) | e
+            if vx == vy:
+                return [(INT, 0), self.new_string(0, 32)]
+            borrow = 1 if vx < vy else 0
+            n = len(ey) if borrow else len(ex)
+            d = abs(vx - vy)
+            words = [(d >> (32 * (n - 1 - i))) & 0xffffffff for i in range(n)]
+            k = next(i for i, w in enumerate(words) if w)
+            out = self.new_string(n - k, 32)
+            for i in reversed(range(k, n)):
+                self.mem[out[1] + 1 + i - k] = (INT, words[i])
+            return [(INT, borrow), out]
+        self.builtin('subtract_bignum', [x, y, z, w4], f)
+        return pc + 2
+
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):

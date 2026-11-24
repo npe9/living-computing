@@ -79,7 +79,8 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -141,6 +142,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bool)         bnPass2 <- mkRegU;
   Reg#(Bool)         bnExtra <- mkRegU;
   Reg#(Cell)         bnDst   <- mkRegU;
+  // subtract_bignum (with bnN = X's length, bnI, bnCarry the borrow,
+  // bnPass2, bnDst): Y, its length, whether Y is the larger, the most
+  // significant word not 0 (pass 1), the word in hand, the outputs
+  Reg#(Cell)         bsY     <- mkRegU;
+  Reg#(Bit#(32))     bsM     <- mkRegU;
+  Reg#(Bool)         bsSwap  <- mkRegU;
+  Reg#(Bit#(32))     bsLast  <- mkRegU;
+  Reg#(Bit#(32))     bsW     <- mkRegU;
+  Reg#(Cell)         bsZ     <- mkRegU;
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
   Reg#(ScsiResult)   scR     <- mkRegU;     // scsi_command's outputs, being written
   // the reductions of the goal in hand: one per execute and one for its
@@ -180,7 +190,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
-                  || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word;
+                  || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word
+                  || op == op_subtract_bignum;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1491,6 +1502,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XSo1;
       end
     end
+    else if (op == op_subtract_bignum) begin
+      // subtract_bignum(BigX, BigY, ^Borrow, ^BigZ): rules bs1..bsOut.
+      // Either not a string: the built-in's exception, refused
+      if (!isStrg(a) || !isStrg(b)) stop(EndUnimp);
+      else begin
+        opA <= a;
+        bsY <= b;
+        sbox.info(a);
+        st <= XBs1;
+      end
+    end
     else if (op == op_multiply_bignum_word) begin
       // multiply_bignum_by_word(BigX, Y, ^BigZ): rules bn1..bn8.  Not a
       // string, or Y not an integer: the built-in's exception, refused
@@ -1770,6 +1792,179 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule bn8 (st == XBn8);
     let r <- sbox.result;
     regs.wr(z, bnDst);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // subtract_bignum (pimm.py i_subtract_bignum, after VPIM): both
+  // 32-bit strings with no leading zero word (else the exception); Y
+  // empty: X and 0; X empty: Y and 1; then the larger is found (the
+  // lengths, else the words from the most significant), equal gives the
+  // empty string and 0; else two passes from the least significant
+  // word, the first finding the most significant word not 0 (so the
+  // length), the second writing the kept words into a new string
+  Cell bsL = bsSwap ? bsY : opA;
+  Cell bsS = bsSwap ? opA : bsY;
+  Bit#(32) bsNL = bsSwap ? bsM : bnN;
+  Bit#(32) bsOff = bsSwap ? bsM - bnN : bnN - bsM;
+
+  function Action bsOut(Bit#(32) borrow, Cell zc);
+    action
+      regs.wr(z, intC(borrow));
+      bsZ <= zc;
+      st <= XBsOut;
+    endaction
+  endfunction
+
+  function Action bsStart(Bool swap);
+    action
+      Bit#(32) nl = swap ? bsM : bnN;
+      bsSwap <= swap;
+      bnPass2 <= False;
+      bnCarry <= 0;
+      bsLast <= nl;
+      bnI <= nl - 1;
+      sbox.element(swap ? bsY : opA, nl - 1);
+      st <= XBs7;
+    endaction
+  endfunction
+
+  function Action bsStep(Bit#(32) lw, Bit#(32) sw);
+    action
+      Bit#(33) d = zeroExtend(lw) - zeroExtend(sw) - zeroExtend(bnCarry[0]);
+      Bit#(32) w = d[31:0];
+      bnCarry <= zeroExtend(d[32]);
+      if (!bnPass2) begin
+        Bit#(32) last = w != 0 ? bnI : bsLast;
+        bsLast <= last;
+        if (bnI == 0) begin
+          sbox.newStr(bsNL - last, 32);
+          st <= XBs9;
+        end
+        else begin
+          bnI <= bnI - 1;
+          sbox.element(bsL, bnI - 1);
+          st <= XBs7;
+        end
+      end
+      else begin
+        sbox.poke(bnDst, bnI - bsLast, w);
+        st <= XBs10;
+      end
+    endaction
+  endfunction
+
+  rule bs1 (st == XBs1);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bnN <= r.a.val;
+      sbox.info(bsY);
+      st <= XBs2;
+    end
+  endrule
+
+  rule bs2 (st == XBs2);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bsM <= r.a.val;
+      if (bnN != 0) begin
+        sbox.element(opA, 0);
+        st <= XBs3;
+      end
+      else if (r.a.val != 0) begin
+        sbox.element(bsY, 0);
+        st <= XBs4;
+      end
+      else bsOut(0, opA);
+    end
+  endrule
+
+  rule bs3 (st == XBs3);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bsM != 0) begin
+      sbox.element(bsY, 0);
+      st <= XBs4;
+    end
+    else bsOut(0, opA);
+  endrule
+
+  rule bs4 (st == XBs4);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bnN == 0) bsOut(1, bsY);
+    else if (bnN != bsM) bsStart(bsM > bnN);
+    else begin
+      bnI <= 0;
+      sbox.element(opA, 0);
+      st <= XBs5;
+    end
+  endrule
+
+  rule bs5 (st == XBs5);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    sbox.element(bsY, bnI);
+    st <= XBs6;
+  endrule
+
+  rule bs6 (st == XBs6);
+    let r <- sbox.result;
+    if (bsW != r.a.val) bsStart(r.a.val > bsW);
+    else if (bnI + 1 == bnN) begin
+      sbox.newStr(0, 32);
+      st <= XBs11;
+    end
+    else begin
+      bnI <= bnI + 1;
+      sbox.element(opA, bnI + 1);
+      st <= XBs5;
+    end
+  endrule
+
+  rule bs7 (st == XBs7);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    if (bnI >= bsOff) begin
+      sbox.element(bsS, bnI - bsOff);
+      st <= XBs8;
+    end
+    else bsStep(r.a.val, 0);
+  endrule
+
+  rule bs8 (st == XBs8);
+    let r <- sbox.result;
+    bsStep(bsW, r.a.val);
+  endrule
+
+  rule bs9 (st == XBs9);
+    let r <- sbox.result;
+    bnDst <= r.a;
+    bnPass2 <= True;
+    bnCarry <= 0;
+    bnI <= bsNL - 1;
+    sbox.element(bsL, bsNL - 1);
+    st <= XBs7;
+  endrule
+
+  rule bs10 (st == XBs10);
+    let r <- sbox.result;
+    if (bnI == bsLast) bsOut(bsSwap ? 1 : 0, bnDst);
+    else begin
+      bnI <= bnI - 1;
+      sbox.element(bsL, bnI - 1);
+      st <= XBs7;
+    end
+  endrule
+
+  rule bs11 (st == XBs11);
+    let r <- sbox.result;
+    bsOut(0, r.a);
+  endrule
+
+  rule bsWrite (st == XBsOut);
+    regs.wr(operand[3], bsZ);
     finish(tagged Next afterBuiltin);
   endrule
 
