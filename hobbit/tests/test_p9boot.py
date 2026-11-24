@@ -364,6 +364,7 @@ class JoinReplayTest(unittest.TestCase):
 
     def test_every_frame_as_recorded(self):
         self.assertIsNone(self.replay.mismatch)
+        self.assertEqual(self.boot.sysm.cret_clamps, 0)
         self.assertEqual(self.replay.pos, len(self.replay.steps))
         recorded = p9boot.read_pcap(JOIN_PCAP)
         self.assertEqual([f for _, _, f in self.boot.wire.log],

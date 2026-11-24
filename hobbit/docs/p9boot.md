@@ -100,16 +100,18 @@ The first console line, byte for byte, on both channels:
 
 At the counter rate the hardware formula gives (one tick per 0.569 s,
 QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
-**286,970,654 instructions** and 14.367 s of model time, 26 clock
-interrupts, in about 30 s of host time: 284,013,188 of those
+**286,977,189 instructions** and 14.367 s of model time, 26 clock
+interrupts, in 30-60 s of host time: 283,995,808 of those
 instructions are laps of the idle loop that the idle skip (below)
-retires without executing.
+retires without executing.  (Before the EEPROM answered, CHOICES
+`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.)
 
 With `--counter-period 0.04` (25 Hz) the same prompt comes after
-**22,530,554 instructions** (1.145 s of model time, 26 clock
-interrupts).  That count was measured first without the idle skip (6
-minutes of host time) and is reproduced exactly with it (29 s), which
-`tests/test_p9boot.py` `PromptTest` pins:
+**22,537,089 instructions** (1.145 s of model time, 26 clock
+interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
+the EEPROM answered it was 22,530,554, measured first without the idle
+skip (6 minutes of host time) and reproduced exactly with it (29 s);
+the table is from those runs (add 6,535 from `iicreset` on):
 
 | instructions | reached |
 |---:|---|
@@ -195,6 +197,47 @@ the server sent.  No CRET was clamped on this path.
 
 The first run stopped at `setrtc` (no device at IONAK+0x3FE0): the
 timekeeper was added for the second.
+
+The live join is not deterministic: the server runs at QEMU's speed and
+the wall clock.  A third run (on the committed code, while the
+regression suite loaded the host) printed `error dialing
+10.9.0.1!17008` and `panic: boot process died`.  The server's own pcap
+shows why: 8.7 ms after the Hobbit's IL sync (id 26000) it sent a sync
+with **ack 0**, and only 0.14 ms later the proper one (ack 26000).
+s9term's `stil.c`, in Ilsyncer, hangs up on a sync whose ack is not its
+start ("connection rejected"), as the source says it should.  The
+ack-0 sync matches the server's `stil.c` timer path (`ilackproc`
+resends `Ilsync, ic->start, ic->recvd` for a conversation in Ilsyncee,
+whose `recvd` is 0 until `ilprocess` has handled the incoming sync);
+that it is this race is an inference from the code, not traced.
+Replaying that run's pcap reproduces the failure exactly (the replay
+is also a debugging tool).
+
+A fourth run (committed code, `--until` that never matches, 360 M
+instructions) went past init: `/bin/rc` from the server ran on the
+Hobbit and printed, as the server's own console does for glenda,
+
+```
+init: starting /bin/rc
+Can't cd /usr/none
+lib/profile: rc: .: can't open
+init: rc exit status: rc 9:can't cd
+```
+
+(1515 frames, 18.1 s of model time, 389 s of host time; `/usr/none`
+does not exist on the release's file system).  A fifth run, `--until
+'% '`, went on to init's restart and **rc's prompt**:
+
+```
+init: rc exit status: rc 9:can't cd
+
+init: starting /bin/rc
+% 
+```
+
+at 618,458,635 instructions (601,206,616 retired idle laps), 31.0 s of
+model time, 456 s of host time, 1455 frames: an interactive rc on the
+Hobbit with its root from the 1e file server.
 
 `tests/net/join_init.pcap` is that run's `--pcap` (nanosecond stamps, so
 whole cycles).  `JoinReplayTest` re-runs the model with
@@ -530,10 +573,11 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **After `init: starting /bin/rc`**: `init` execs `/bin/rc` from the
-   server and `termrc`; not yet run.  The likely next stops are the
-   floating-point sentinel (CHOICES `fpi-vector`: the release ships no
-   ROM and its interpreter) and devices `termrc` opens.
-2. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
+1. **Past rc's prompt**: commands typed at `% ` (`--type`) are not yet
+   tried; termrc was not run (init ran rc without it: no /usr/none).
+2. **The live join's reliability**: a 1e server IL race (the ack-0
+   sync, above) can reject the connection; the busy model is ~200
+   times slower than the wall clock the server runs on.
+3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).

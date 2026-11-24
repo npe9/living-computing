@@ -783,7 +783,8 @@ Details, milestones and choices: `docs/p9boot.md`.
   run otherwise unchanged instruction for instruction (pinned: the 25 Hz
   prompt run still takes 22,530,554 instructions, now in 29 s instead of
   6 min).  At the formula's own clock rate the prompt comes after
-  286,970,654 instructions, 14.4 s of model time, ~30 s of host time, so
+  286,970,654 instructions (286,977,189 with the EEPROM), 14.4 s of
+  model time, ~30 s of host time, so
   `--counter-period` is no longer needed.
 * Console input: s9term's console is a serial terminal on Quart channel
   0 (`eiaspecial(0, &printq, &kbdq, 19200)`, `kbdq.putc = kbdcr2nl`;
@@ -804,9 +805,17 @@ Details, milestones and choices: `docs/p9boot.md`.
   ip/bootp, ARP, IL to il!10.9.0.1!17008, user none, the time written to
   the timekeeper, /hobbit/init from the server.  `JoinReplayTest`
   replays the recorded session without QEMU, byte for byte and to the
-  same instruction.  Two harness choices it needed: a CRET with MSP >
-  SP + 256 clamped (notify()'s frames; CHOICES `cret-msp`) and the
-  MK48T02-style timekeeper at IONAK 0x2000/0x3FE0 (CHOICES `rtc`).
+  same instruction.  The one device it needed beyond the SONIC: the
+  MK48T02-style timekeeper at IONAK 0x2000/0x3FE0 (CHOICES `rtc`; the
+  first live run stopped at setrtc).  No CRET was clamped on this
+  path; the clamp (a CRET with MSP > SP + 256, notify()'s frames;
+  CHOICES `cret-msp`) is what the no-server path needs: ten BOOTP
+  requests, ten alarm notes, `My IP address[0.0.0.0]: `.  A later live run went on: `/bin/rc` from the server ran on the Hobbit
+  (`Can't cd /usr/none`, `init: rc exit status: rc 9:can't cd`, as the
+  server prints for glenda), and init's restart reached **rc's `% `
+  prompt** at 618,458,635 instructions (31.0 s model time, 456 s host).
+  The live join is not deterministic: one
+  run was rejected by an ack-0 IL sync from the server (docs/p9boot.md).
 
 The gate as written above (the boot banner and prompt on the UART) is
 not met yet: s9term prints no banner of its own; the first text after
