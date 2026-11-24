@@ -367,6 +367,112 @@ of which is modelled beyond the LCD's write counter.  So the console
 stays plain rc as `none`; `glenda` (the server's own console user)
 would fail the same way as `none` did, with no `/usr/glenda`.
 
+### The ROM's fpi (CHOICES `fpi-rom`)
+
+The first live run of the command script (step 3 below) stopped at `za
+hello.s`: za's start-up executes a five-parcel opcode 0x11 (a floating-
+point instruction; the Hobbit has no FPU), the unimplemented-instruction
+sequence (p. 1-39) vectored through VB+12, and the PC went to
+0xC0000F00, the sentinel the harness had put in PPage0+0x74.  raml.s's
+`_virtual` copies that word into the niladic and unimplemented vectors
+("fpi"); roml.s, the boot ROM, stores `$fprt0(SB)` there.  So the 1e
+Hobbit's floating point is interpreted by code in the boot ROM, entered
+in the trapping process's own mode (the sequence does not change the
+PSW) through VROMBASE, which raml.s maps user-executable onto the ROM at
+PROMBASE (`NPSTE(PROMBASE, 128, STE_U|STE_V)`).  The release ships no
+ROM image, but it ships the interpreter's sources (`fprt0.s`,
+`fpihobbit.c`, `fpi.c`) and the mkfile's own rule for a standalone one:
+
+```
+fpi.out:	fprt0.$O fpihobbit.$O fpi.$O
+	$LD -l -R4 -T0xE0000020 $prereq
+```
+
+`tools/p9kbuild.py fpi` follows it with the shipped `za`, `zc` and `zl`
+run on the reference model (`za fprt0.s`, `zc -w -Dram fpihobbit.c`,
+`zc -w -Dram fpi.c`, 7.0 M instructions; `zl -l -R4 -T0xC0000020
+-o fpi.out fprt0.z fpihobbit.z fpi.z`, 2.3 M), with the one change that
+the text goes to 0xC0000020 -- the rule's offset in the ROM's segment --
+instead of 0xE0000020, which no kernel mapping covers.  The product,
+`tools/p9kbuild/fpi.rom` (13,070 bytes, text 6,328, no data or bss,
+entry `fprt0` = 0xC0000020, sha256 7905396250041775...), is loaded at
+PROMBASE+0x20 and its entry put in PPage0+0x74; nothing else of the ROM
+is modelled (`--no-fpi` restores the sentinel).  `p9kbuild.py fpi
+--check` rebuilds it and compares.  Where the real ROM put fprt0 is not
+known and does not matter: the kernel takes the address from PPage0.
+With it, za's FMOV is interpreted and za goes on (one unimplemented
+event, then its own page faults).
+
+### Commands at rc's prompt: the A5 gate
+
+`p9join.py` with `--type` scripts the console; each line is typed (on
+Quart channel 0, CR made NL by the kernel's `kbdcr2nl`) once the screen
+shows the next `% `:
+
+```sh
+python3 hobbit/tools/p9join.py --until 'end of script\n% ' \
+    --max-steps 6000000000 --out DIR \
+    --type '% =echo hello\r' --type '% =ls /hobbit | wc\r' \
+    --type '% =cat /lib/ndb/local\r' --type '% =cd /usr/none\r' \
+    --type '% =za hello.s\r' --type '% =zl hello.z -lc\r' \
+    --type '% =ls -l\r' --type '% =sum hello.z z.out\r' \
+    --type '% =z.out\r' --type '% =echo end of script\r'
+```
+
+Live, 2026-11-23 (lockstep, icount 4): **840,583,000 instructions**
+(789,666,868 retired idle laps), 42.2 s of model time, 732 s of host
+time, 1108 frames.  The screen, byte for byte (`tests/net/a5_screen.txt`,
+2127 bytes, sha256 9437c51b...; the serial line's copy, `\n` as `\r\n`
+and the echo interleaved as described in "The console", is
+`tests/net/a5_uart0.txt`, 2235 bytes), with the middle of `cat` cut here:
+
+```
+init: starting /bin/rc
+
+init: starting /bin/rc
+% echo hello
+hello
+% ls /hobbit | wc
+      6       6      83
+% cat /lib/ndb/local
+#
+# systems on the local network
+...
+udp=bootp	port=67
+% cd /usr/none
+% za hello.s
+% zl hello.z -lc
+% ls -l
+--rw-rw-rw- M 4 sys  sys  183 Jan  3 07:00 hello.s
+--rw-rw-r-- M 4 none sys  255 Jan  3 07:01 hello.z
+d-rwxrwxrwx M 4 sys  sys    0 Jan  3 07:00 lib
+--rwxrwxr-x M 4 none sys 2014 Jan  3 07:01 z.out
+% sum hello.z z.out
+b3769ed2    255 hello.z
+4b4798a2   2014 z.out
+% z.out
+hello 1e
+% echo end of script
+end of script
+% 
+```
+
+Each output was checked against an independent source:
+
+| command | checked against | result |
+|---|---|---|
+| `echo hello` | `p9run.py echo hello` (the shipped echo on the reference model, no kernel): `hello\n` | same |
+| `ls /hobbit \| wc` | the release's `/hobbit` has 6 entries (`bin include init lib mkfile s9term`, release.list); the shipped `wc` under p9run on those six as `/hobbit/NAME` lines prints `      6       6      83` (p9run cannot run `ls` on a directory, so the path form is ls(1)'s, not measured) | same |
+| `cat /lib/ndb/local` | the release's `lib/ndb/local` (1414 bytes; the kfs is the release, the qemu1e additions went to the floppy's copy) | byte-identical |
+| `za hello.s`, `zl hello.z -lc` | `p9run.py za hello.s` and `zl hello.z -lc` on the same file, then the shipped `sum` under p9run on their outputs: `b3769ed2 255 hello.z`, `4b4798a2 2014 z.out` | same sums and sizes |
+| `z.out` | `p9run.py z.out`: `hello 1e` | same |
+
+So on the Hobbit, with its root on the 1e file server, rc reads the
+console, `cat` reads a file from the server's disk, and `za` and `zl`
+assemble and link a program inside the boot, which then runs.  The
+assembler needed the ROM's fpi (above); 1e's `zl` wants `-lc` given (no
+default library), as under p9run.
+
 ### The ack-0 sync (the server's IL race)
 
 Read against the server's own `sys/src/9/port/stil.c` (1e tarball), the
