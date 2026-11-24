@@ -900,7 +900,9 @@ P9KERN_SIM=verilator hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
 hobbit/bsv/run_p9kern.sh 300000 WORKDIR
 # to `root is from` (tests/test_p9boot.py PromptTest's choices), the
 # trace compressed and streamed, the recording kept between runs:
-# 22,537,089 records, 11.6 min on Bluesim (2026-11-24)
+# 22,537,089 records, 11.6 min on Bluesim, 5.9 min with
+# P9KERN_SIM=verilator (build included; the same 49,455,865 clocks),
+# 2026-11-24 on a loaded machine
 P9KERN_STREAM=1 P9KERN_KEEP_REC=1 hobbit/bsv/run_p9kern.sh 23000000 WORKDIR \
     --counter-period 0.04 --until 'root is from'
 ```
