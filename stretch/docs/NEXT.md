@@ -139,11 +139,46 @@ STILL OPEN, in order:
    611. `uncountRefused` is reached by NO deck (injected off, nothing
    moves): kept because counting an instruction that did nothing is wrong
    in kind, recorded as unreached. New deck `decks/fp_box_hold_store.strap`.
+2a. **THE DIVIDER, DECIMAL ADDER AND VFL MULTIPLIER RELEASE THEIR LEVEL
+   TOO -- DONE 2026-11-23** (plan §1c 5f, stage 3): mkEBox's
+   `laBoxWaiting()` names the box a look-ahead level waits on, and
+   StretchCore's `boxReleases` lets rl_prepare start beside it, in the
+   answer clock and the hold clocks, for the FP box (as before) and for
+   `releaseDivBox`, `releaseDecBox` and `releaseVflBox`, one switch each.
+   Perf. Char. Vol. 1 pp.3-16..3-18 make no exception by unit; no page was
+   found that says the serial, VFL or decimal unit does not overlap. Decks
+   `div_box_release`, `dec_box_release`, `vfl_box_release` (an
+   interrupting level, an SX started in its hold clocks, independent I-box
+   work, the interlock); each switch moves only its own deck's CYCLES
+   (div 866 -> 891, dec 859 -> 867, vfl 945 -> 949, values passing).
+   Elsewhere int_recovery_undo moved 558 -> 550 (the divider's; RDIV gives
+   it back) and two unpinned MCP runs one clock each (the decimal adder's;
+   RDEC gives both back). THE ATLAS (2026-11-24, all 27,644 cases against
+   master) holds: 347 VFL decimal cases move, all the decimal adder's
+   (RDEC gives every one back), none by more than 0.0063 clocks, sum of
+   |residual| 819.769 -> 819.745; the divider and VFL multiplier move no
+   case; so all three releases are kept. LEFT:
+   the radix converter (DCV, boxKind 2) is still confined -- no deck of
+   its own and no measurement; the VFL divide holds the divider only 4
+   clocks (96 bits at 24 a clock) and the decimal adder and VFL
+   multiplier 3, against the I-box's ~10-clock charge per instruction, so
+   what the release gives there is at most a clock or two an operation
+   (the bulk of a VFL divide's time is the E-box budget after the box
+   answers, which no release reaches); a BE/BD/BEW started beside a held
+   level would change the enable state before the level's interruption
+   (Ref. Manual printed p.40, p.48) -- a switch refusing it there was
+   tried and backed out, because with it no deck moved: the BD the
+   divider deck reached came AFTER the level, in item 3's clocks.
 3. **A BD IN THE LATCH CLOCKS.** interruptDue() is two clocks behind the
    indicator; an unconditional branch prepared in those clocks drains the
    (empty) look-ahead and, if it disables, the interruption is lost
    (`int_recovery_resume` case F's slack note; int_timing_bracket's).
    p.48 allows no such window. The latch is StretchStorage's.
+   REACHED BY A SHORT TRAIL since the divider's release (2026-11-23):
+   decks/div_box_release case L with no NOPs before DONEL's BD lost XPL's
+   interruption (WHEREL 0, X7 = X8 = 1; measured), because the trail ran
+   beside the 17-clock walk and the BD arrived in those clocks. The deck
+   carries two NOPs; a fix should take them out and watch case L hold.
 4. **OTHER SOURCES.** An interruption due for any reason other than the
    level that just completed (an I/O report, the timer, an I-box
    instruction's own indicator, one due before the level completed) is

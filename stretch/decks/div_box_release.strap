@@ -1,0 +1,135 @@
+! THE DIVIDER (mkDivBox: FP and VFL divide) RELEASES ITS LEVEL, 2026-11-23
+! (docs/microarchitecture_plan.md §1c step 5f stage 3; StretchCore's
+! releaseDivBox, boxReleases, liftHoldClocks, deferIboxStores).
+!
+! THE PAGES.  Perf. Char. Vol. 1 printed p.3-16 (PDF 34), the units'
+! "local autonomy"; printed p.3-18 (PDF 36), "The processing time of I-box
+! instructions can be largely overlapped by concurrent E-box action".  An
+! interruption is taken "before execution of the next instruction" (Ref.
+! Manual printed p.48, PDF 51), what the I-box did ahead is undone (Perf.
+! Char. Vol. 1 printed p.3-24, PDF 42; Buchholz §15.6), and an I-box store
+! prepared after the interrupting level is never made (printed p.3-20, PDF
+! 38; Table A-2, PDF 69).
+! The interrupting indicator (mask bit 12.31, entry 31):
+!   XPL, printed pp.85-86: a result exponent of 64 or more and under 512
+!   (not flagged) -- 0.5 over 0.75 x 2**-100 is 0.667 x 2**100 (the LOAD
+!   of a negative exponent turns on no range indicator).  The divide is an
+!   FP one so the box's walk (17 clocks here, against the VFL divide's
+!   four) is long enough to hold the SX
+!
+!   L: the box's level interrupts; the trail X7, X8 stays 0 and WHEREL is
+!      the instruction after it.
+!      2 NOPs before DONEL's (and DONES's) BD keep it out of the clocks after the
+!      level completes (docs/NEXT.md item 3): with none the trail ran
+!      beside the walk, the BD came in them, disabled first, and the
+!      interruption was lost (WHEREL 0, X7 = X8 = 1; measured).
+!   S: the same, then 3 NOP(s) and an SX into STWS: the NOPs run ahead
+!      of the box's level (it is not yet held); the SX starts in the
+!      box's hold clocks (seen with a temporary $display, removed),
+!      waits in a store level, and is cancelled.  STWS = 0, X9 = 0,
+!      WHERES is the first NOP, the instruction after the box's.
+!   T: disabled; an ST level and an SX into its word (the SX waits in a
+!      store level, ahead of the box's level), then 24 LVIs that do not
+!      depend on the box: those the I-box reaches while the box holds its
+!      level run beside it (the release's time: with the box's switch
+!      off they wait for the answer).
+!   I: disabled, no interruption: an LX of the accumulator ($L) and a Z
+!      of it must each wait for the box's answer (the interlock).
+! CYCLES/MEMREADS are MODEL behaviour.  The run line in tests/run_tests.sh
+! has the observed injections.
+        SLC, (8)4100.0
+START   BD,  $+.32                   ! disable while IA and the mask are set
+        LVI, $X13, TBL
+        SV,  $X13, $IA
+        BBZ, $XPL,  $+1.0
+        BB1, 12.31, $+1.0            ! the mask bit := ONE
+        LVI, $X6,  1                 ! the value the SX stores
+        BE,  $+.32                   ! ENABLE
+! CASE L: the box's level interrupts.
+        L(N), FA
+        /(N), FD                    ! XPL on: the interruption
+NEXTL   LVI, $X7, 1                  ! the trail
+        LVI, $X8, 1
+        NOP                          ! keeps the BD out of the latch clocks
+        NOP                          ! keeps the BD out of the latch clocks
+DONEL   BD,  $+.32                   ! entry 31 branches here
+        BBZ, $XPL,  $+1.0
+        LVI, $X13, TBL2
+        SV,  $X13, $IA
+        BE,  $+.32
+! CASE S: an SX in the box's hold clocks.
+        L(N), FA
+        /(N), FD                    ! XPL on: the interruption
+NEXTS   NOP
+        NOP
+        NOP
+        SX,  $X6, STWS               ! must leave no trace
+        LVI, $X9, 1
+        NOP                          ! keeps the BD out of the latch clocks
+        NOP                          ! keeps the BD out of the latch clocks
+DONES   BD,  $+.32                   ! entry 31 branches here
+        BBZ, $XPL,  $+1.0
+! CASE T: disabled; I-box work that does not depend on the box.
+        L(N), FA
+        ST(BU,64), TMPT, 64           ! a level storing TMPT
+        /(N), FB                    ! an FP divide: the box's walk
+        SX,  $X3, TMPT               ! a store level, behind it
+        LVI, $X10, 1                 ! beside the held level
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        LVI, $X10, 1
+        LVI, $X11, 1
+        LVI, $X12, 1
+        LVI, $X14, 1
+        ST(BU,64), TOUT, 64
+! CASE I: disabled; the interlock.
+        L(N), FA
+        /(N), FB                    ! an FP divide: the box's walk
+        LX,  $X1, $L                 ! must wait for the answer
+        SX,  $X1, OUTL
+        L(N), FA
+        /(N), FB                    ! an FP divide: the box's walk
+        Z,   $L                      ! must come after the answer
+        ST(BU,64), ZOUT, 64
+        B,   PASS
+PASS    BEW, $
+        SLC, (8)6300.0
+FA      DD(BU,64), 2251799813685248  ! fraction 2**47, exponent 0
+FB      DD(BU,64), 3377699720527872  ! fraction 3*2**46 (0.75), exponent 0
+FD      DD(BU,64), 908601224821997568  ! fraction 3*2**46 (0.75), exponent -100
+        SLC, (8)6400.0
+WHEREL  DD, 0                        ! the counter case L's interruption left
+WHERES  DD, 0                        ! ... case S's
+STWS    DD, 0
+OUTL    DD, 0
+ZOUT    DD, 0
+TOUT    DD, 0
+TMPT    DD, 0
+        SLC, (8)6500.0
+TBL     DD, 0
+        SLC, (8)6537.0
+RTNL    SIC, WHEREL
+        B,   DONEL
+        SLC, (8)6600.0
+TBL2    DD, 0
+        SLC, (8)6637.0
+RTNS    SIC, WHERES
+        B,   DONES
+        END, START

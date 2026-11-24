@@ -146,6 +146,9 @@
 // interlock is unchanged: the level stays in the look-ahead until the
 // resume retires it, so iboxHazard holds back an instruction that reads or
 // writes what it writes (decks/fp_box_release_interlock.strap).
+// The divider, the decimal adder and the VFL multiplier release their
+// level the same way since 2026-11-23 (StretchCore boxReleases, plan §1c 5f
+// stage 3).
 //
 // NOT YET IN THE BOX: MULTIPLY AND ADD's sum (`*+`: its product comes
 // from here, its fpAddDouble still runs in the arm, because a re-run
