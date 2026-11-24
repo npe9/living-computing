@@ -96,6 +96,22 @@ CHOICES = {
            "(clock.c: ms *= 1000*ROUNDUP(eeprom.clock, 2)/2).",
     "lcd": "Bart's LCD (io.h Lcdisp at IOACK 0x3000) accepts and counts "
            "writes; it is never read by the kernel.",
+    "console-input": "The console's input is Quart channel 0: s9term's "
+                     "screeninit calls eiaspecial(0, &printq, &kbdq, 19200) "
+                     "and eiaspecial(3, 0, &mouseq, 1200) (observed at the "
+                     "calls, step 127,557 and 127,705) and never kbdinit "
+                     "-- its screen.c predates kbd.c (docs/s9term.md), so "
+                     "there are no scan codes: kbdq.putc is kbdcr2nl, "
+                     "ASCII with CR made NL, as from a serial terminal.  "
+                     "--type TEXT=REPLY types REPLY on that line once the "
+                     "screen has shown TEXT (after the previous match), "
+                     "--think seconds later (default 0), at the line's "
+                     "character rate (QUART_CHOICES['rx']).  TEXT is seen "
+                     "at screenputs' entry, before the ~0.4 M instructions "
+                     "that draw it, so with no think time the reply arrives "
+                     "while the prompt is still being drawn and its echo "
+                     "reaches Quart channel 0 before the prompt does "
+                     "(putstrn draws, then calls uartputs).",
     "idle-skip": "A harness shortcut, on by default (--no-idle-skip turns "
                  "it off).  s9term's idle loop is runproc+0x8..+0x1e (proc.c "
                  "`while(runhiq.head==0 && runloq.head==0);` with spllo): "
@@ -262,7 +278,9 @@ class Quart:
     def __init__(self, ticks_per_second, clock):
         self.clock = clock          # callable() -> model time in seconds
         self.ports = [dict(mr=[0, 0], mrp=0, csr=0, tx=False, rx=False,
-                           out=bytearray()) for _ in range(4)]
+                           out=bytearray(), fifo=collections.deque(),
+                           pending=collections.deque(), next_rx=None,
+                           received=0) for _ in range(4)]
         self.duarts = [dict(acr=0, imr=0, ctu=0, ctl=0, opr=0, iopcra=0,
                             iopcrb=0, running=False, ready=False,
                             next_tick=None) for _ in range(2)]
@@ -297,9 +315,62 @@ class Quart:
         # CtrRDY per square-wave period, i.e. every 2*x clocks of X1/16.
         return 2.0 * count / (3686400 / 16.0)
 
+    # --- the receivers: QUART_CHOICES['rx'], ['rx-line'] -----------------
+    def char_time(self, ch):
+        """Seconds per character on channel ch: 1 start bit, the mr1 data
+        bits and parity, the mr2 stop bits, at the csr's rate (deveia.c's
+        BD* codes, BRGSet2)."""
+        port = self.ports[ch]
+        baud = CSR_BAUD.get(port["csr"])
+        if baud is None:
+            raise Stop("Quart: input on channel %d at csr 0x%02x, a rate "
+                       "the model does not know" % (ch, port["csr"]))
+        mr1, mr2 = port["mr"]
+        bits = 1 + 5 + (mr1 & 3) + (0 if mr1 & 0x10 else 1)
+        bits += 2 if (mr2 & 0x0F) == 0x0F else 1
+        return bits / float(baud)
+
+    def feed(self, ch, data, delay=0.0):
+        """Bytes on channel ch's receive line, one character time apart,
+        the first `delay` seconds and one character time from now."""
+        port = self.ports[ch]
+        if not port["pending"] and port["next_rx"] is None:
+            port["next_rx"] = self.clock() + delay + self.char_time(ch)
+        port["pending"].extend(data)
+
+    def _rx(self, ch):
+        port = self.ports[ch]
+        now = self.clock()
+        while (port["pending"] and port["next_rx"] is not None
+               and now >= port["next_rx"]):
+            if len(port["fifo"]) >= RX_FIFO or not port["rx"]:
+                port["next_rx"] = None      # held: QUART_CHOICES['rx']
+                break
+            arrived = port["next_rx"]
+            port["fifo"].append(port["pending"].popleft())
+            port["received"] += 1
+            port["next_rx"] = (arrived + self.char_time(ch)
+                               if port["pending"] else None)
+
+    def _rx_pop(self, ch):
+        self._rx(ch)
+        port = self.ports[ch]
+        if not port["fifo"]:
+            return 0
+        c = port["fifo"].popleft()
+        if port["pending"] and port["next_rx"] is None:
+            port["next_rx"] = self.clock() + self.char_time(ch)
+        return c
+
+    def rx_ready(self, ch):
+        self._rx(ch)
+        return bool(self.ports[ch]["fifo"])
+
     def next_event(self):
-        """The next time a running counter expires (CHOICES['idle-skip'])."""
-        times = []
+        """The next time a counter expires or a byte arrives
+        (CHOICES['idle-skip'])."""
+        times = [p["next_rx"] for p in self.ports
+                 if p["pending"] and p["next_rx"] is not None]
         for d in (0, 1):
             self._tick(d)
             du = self.duarts[d]
@@ -318,6 +389,10 @@ class Quart:
             v |= 0x10                       # TxRDYb
         if du["ready"]:
             v |= 0x08                       # CtrRDY
+        if self.rx_ready(2 * d):
+            v |= 0x02                       # RxRDYa
+        if self.rx_ready(2 * d + 1):
+            v |= 0x20                       # RxRDYb
         return v
 
     def irq(self):
@@ -334,6 +409,13 @@ class Quart:
             if pend & 0x08:
                 self.glob.update(cir=0x14, gicr=2 * d, gibcr=0)
                 return
+        for d in (0, 1):
+            pend = self.isr(d) & self.duarts[d]["imr"]
+            for bit, ch in ((0x02, 2 * d), (0x20, 2 * d + 1)):
+                if pend & bit:
+                    n = min(len(self.ports[ch]["fifo"]), 7)
+                    self.glob.update(cir=0x0C, gicr=ch, gibcr=n)
+                    return
         for d in (0, 1):
             pend = self.isr(d) & self.duarts[d]["imr"]
             for bit, ch in ((0x01, 2 * d), (0x10, 2 * d + 1)):
@@ -353,9 +435,15 @@ class Quart:
                 port["mrp"] = 1
                 return v
             if rr == 1:                     # sr: QUART_CHOICES['sr']
-                return 0x0C if port["tx"] else 0x00
-            if rr == 3:                     # rxfifo: nothing ever arrives
-                return 0
+                pn = 2 * d + (1 if r >= 8 else 0)
+                v = 0x0C if port["tx"] else 0x00
+                if self.rx_ready(pn):
+                    v |= 0x01               # RxRDY
+                    if len(port["fifo"]) >= RX_FIFO:
+                        v |= 0x02           # FFULL
+                return v
+            if rr == 3:                     # rxfifo
+                return self._rx_pop(2 * d + (1 if r >= 8 else 0))
             if r == 4:
                 return 0                    # ipcr
             if r == 5:
@@ -382,6 +470,8 @@ class Quart:
             return g["gicr"]
         if idx == 0x2A:
             return g["gibcr"]
+        if idx == 0x2B:                     # grxfifo: the latched channel
+            return self._rx_pop(g["gicr"] & 3)
         if idx == 0x2C:
             return g["icr"]
         if 0x20 <= idx < 0x24:
@@ -411,6 +501,8 @@ class Quart:
             if rr == 2:                     # cr: QUART_CHOICES['cr']
                 if data & 0x03 == 0x01:
                     port["rx"] = True
+                    if port["pending"] and port["next_rx"] is None:
+                        port["next_rx"] = self.clock() + self.char_time(pn)
                 elif data & 0x03 == 0x02:
                     port["rx"] = False
                 if data & 0x0C == 0x04:
@@ -462,10 +554,25 @@ class Quart:
                    "not modelled" % (data, off, idx))
 
 
+CSR_BAUD = {0x11: 110, 0x22: 38400, 0x44: 300, 0x55: 600, 0x66: 1200,
+            0x88: 2400, 0x99: 4800, 0xBB: 9600, 0xCC: 19200}
+RX_FIFO = 3
+
 QUART_CHOICES = {
     "sr": "sr reads TxRDY|TxEMT (0x0C) while the channel's transmitter is "
           "enabled and 0 otherwise: a byte written to txfifo leaves at "
-          "once. RxRDY is never set: nothing is connected.",
+          "once. RxRDY (0x01) while the receive FIFO holds a byte, FFULL "
+          "(0x02) while it holds three.",
+    "rx": "Input (--type) arrives on a channel's receive line one "
+          "character time apart (1 start bit, mr1's data and parity bits, "
+          "mr2's stop bits, at csr's rate under BRGSet2: 19200 baud 8N1 = "
+          "0.52 ms on channel 0) into a three-byte receive FIFO.  A byte "
+          "that finds the FIFO full or the receiver disabled waits on the "
+          "line (no overrun is modelled) and follows one character time "
+          "after the next byte is read.  isr RxRDYa (0x02) / RxRDYb (0x20) "
+          "while the FIFO is not empty (mr1 bit 6, FFULL interrupts, is 0 "
+          "in deveia.c's uartsetup); grxfifo and rxfifo pop it, an empty "
+          "FIFO reads 0.",
     "cr": "cr's enable/disable bits (deveia.c RxEnable 0x01, RxDisable "
           "0x02, TxEnable 0x04, TxDisable 0x08) and the reset commands "
           "MrReset 0x10 (mr pointer to mr1), RxReset 0x20, TxReset 0x30 "
@@ -473,7 +580,7 @@ QUART_CHOICES = {
           "accepted and ignored.",
     "isr": "isr is TxRDYa (0x01) / TxRDYb (0x10) while the transmitter "
            "is enabled and CtrRDY (0x08) once the counter has expired "
-           "until a read of `stop`; RxRDY never.",
+           "until a read of `stop`; RxRDYa/b as QUART_CHOICES['rx'].",
     "counter": "The counter of each DUART, started by a read of `start`, "
                "sets CtrRDY every 2*count/(3.6864 MHz/16) seconds of "
                "model time (deveia.c clockinit's formula gives HZ = 25 "
@@ -488,7 +595,10 @@ QUART_CHOICES = {
                       "deviation for reaching the boot program sooner.",
     "cir": "A write of `update` latches the highest pending, enabled "
            "source: the counter (cir 0x14 CtAvail, gicr = 2*duart), then "
-           "a transmitter (cir 0x08 TxAvail0, gicr = channel, gibcr = 1). "
+           "a receiver (cir 0x0C RxAvail, gicr = channel, gibcr = bytes in "
+           "its FIFO), then a transmitter (cir 0x08 TxAvail0, gicr = "
+           "channel, gibcr = 1); the order is a choice (the part's bidding "
+           "registers bcr are written by eiasetup but not modelled).  "
            "With nothing pending cir reads 0, which ends eiaintr's loop.",
     "irq": "The Quart requests IRQ 1 (io.h IRQQUART) while any isr bit "
            "is enabled in its DUART's imr.",
@@ -516,6 +626,7 @@ class Symbols:
 
 
 IDLE_LAP_STEPS = 4
+CONSOLE_CHANNEL = 0     # s9term: eiaspecial(0, &printq, &kbdq, 19200)
 
 
 def text_parcel(board, addr):
@@ -796,6 +907,11 @@ class Boot:
         self.skipped_steps = 0
         self.skipped_cycles = 0
         self.skips = 0
+        # CHOICES['console-input']: (text to wait for, bytes to type)
+        self.script = []
+        self.script_from = 0
+        self.think = 0.0            # seconds from TEXT to the first byte
+        self.typed = []
 
     def next_event(self):
         """The earliest model time (seconds) after now at which a device
@@ -867,7 +983,18 @@ class Boot:
         s, n = self.arg(0), self.arg(1)
         data = bytes(self.vbyte(s + i) for i in range(max(0, min(n, 4096))))
         self.console["screenputs"] += data
-        if self.until is not None and self.until in self.console["screenputs"]:
+        screen = self.console["screenputs"]
+        while self.script:
+            wait, reply = self.script[0]
+            at = screen.find(wait, self.script_from)
+            if at < 0:
+                break
+            # CHOICES['console-input']
+            self.script.pop(0)
+            self.script_from = at + len(wait)
+            self.typed.append((self.steps, wait, reply))
+            self.quart.feed(CONSOLE_CHANNEL, reply, self.think)
+        if self.until is not None and self.until in screen:
             raise Stop("screenputs printed %r" % self.until)
 
     def run(self, max_steps):
@@ -940,6 +1067,10 @@ class Boot:
         return status
 
 
+def unescape(text):
+    return text.encode("latin-1").decode("unicode_escape").encode("latin-1")
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("image")
@@ -951,6 +1082,15 @@ def main(argv):
                          "(QUART_CHOICES['counter-period'])")
     ap.add_argument("--until", metavar="TEXT",
                     help="stop once screenputs has printed TEXT")
+    ap.add_argument("--type", action="append", default=[],
+                    metavar="TEXT=REPLY",
+                    help="once the screen shows TEXT, type REPLY on the "
+                         "console line (Quart channel 0); backslash escapes "
+                         "as in Python, e.g. 'il]: =\\r'; repeatable, in "
+                         "order (CHOICES['console-input'])")
+    ap.add_argument("--think", type=float, default=0.0, metavar="SECONDS",
+                    help="model time between the screen showing TEXT and "
+                         "the first byte of REPLY (default 0)")
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every iteration of the idle loop "
                          "(CHOICES['idle-skip'])")
@@ -960,11 +1100,16 @@ def main(argv):
     boot = Boot(args.image, args.memsize, args.out)
     boot.progress = args.progress
     boot.idle_skip = not args.no_idle_skip
+    boot.think = args.think
     if args.counter_period is not None:
         boot.quart.period_override = args.counter_period
     if args.until:
-        boot.until = args.until.encode("latin-1").decode(
-            "unicode_escape").encode("latin-1")
+        boot.until = unescape(args.until)
+    for item in args.type:
+        wait, sep, reply = item.partition("=")
+        if not sep:
+            ap.error("--type wants TEXT=REPLY, not %r" % item)
+        boot.script.append((unescape(wait), unescape(reply)))
     t0 = time.time()
     status = boot.run(args.max_steps)
     dt = time.time() - t0
@@ -975,7 +1120,12 @@ def main(argv):
     print("p9boot: functions reached, in order (step: name):")
     for stepno, name in boot.reached:
         print("  %10d  %s" % (stepno, name))
+    for stepno, wait, reply in boot.typed:
+        print("p9boot: step %d: typed %r after %r" % (stepno, reply, wait))
     for n, port in enumerate(boot.quart.ports):
+        if port["pending"] or port["fifo"]:
+            print("p9boot: uart%d input not yet read: %r" % (
+                n, bytes(port["fifo"]) + bytes(port["pending"])))
         if port["out"]:
             boot.console["uart%d" % n] = port["out"]
     print("p9boot: %d interrupts taken, model time %.3f s" % (

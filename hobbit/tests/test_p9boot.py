@@ -34,6 +34,22 @@ tools/p9boot.py (the real file untouched):
   advanced): FAIL test_same_run (cycles), test_the_skip_was_taken (1816
   skips, not 7), test_prompt (2957466 instructions).
 
+Console input (CHOICES['console-input']; the typed byte in
+IdleSkipEquivalenceTest, KeyboardTest), observed 2026-11-23, same method:
+
+* the idle skip ignores pending input (Quart.next_event without the
+  receive line): FAIL test_same_run (the functions reached differ:
+  kbdcr2nl at 2,971,368 instead of 2,954,365); KeyboardTest stays green
+  (the reply is late, but the prompt was not idle).
+* every character takes 1 s on the line: FAIL test_the_byte_arrived
+  (0 != 1), test_the_skip_was_taken (490000 != 450896),
+  test_typed_and_taken (307,168,375 instructions).
+* the console on channel 2, as the shipped screen.c's kbdinit(2) would
+  have it: FAIL test_the_byte_arrived, test_the_skip_was_taken (8
+  skips), test_typed_and_taken (max-steps: /boot never gets a byte).
+* (Not used: cir never reporting RxAvail leaves s9term's `interrupt()`
+  polling a request nobody clears -- a hang, not a failure.)
+
 Not covered by this test (each left it green): the nonpaged STE base
 ignored (the kernel's segments are identity-mapped), the stack cache on
 with CONFIG.SE = 0, and the Quart sr never showing TxRDY (the UART line
@@ -54,6 +70,7 @@ S9TERM = os.path.join(HOBBIT, "tools", "plan9-1e", "hobbit", "s9term")
 LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
         b"headroom 340K\n")
 PROMPT = b"root is from (il, tcp, incon, 9600, 19200)[il]: "
+ETHERLINE = b"sonic ether: 00 00 00 00 00 00\n"
 
 
 class FirstLineTest(unittest.TestCase):
@@ -103,7 +120,10 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
     """CHOICES['idle-skip'] retires whole idle-loop laps without executing
     them; the run must be the run without the skip, instruction for
     instruction.  A counter period of 4 ms puts seven clock interrupts
-    into the first 3.4 M instructions (the idle loop starts at ~2.9 M)."""
+    into the first 3.4 M instructions (the idle loop starts at ~2.9 M),
+    and a byte typed 50 ms after pageinit's line arrives on Quart channel
+    0 during the first idle stretch (0.1656 s), so a skip has to stop for
+    it as well (CHOICES['console-input'])."""
 
     @classmethod
     def setUpClass(cls):
@@ -112,6 +132,8 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
             boot = p9boot.Boot(S9TERM)
             boot.quart.period_override = 0.004
             boot.idle_skip = skip
+            boot.script = [(b"headroom 340K\n", b"x")]
+            boot.think = 0.05
             status = boot.run(3400000)
             cls.runs.append((boot, status))
 
@@ -136,6 +158,11 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
         self.assertEqual(skipped.skips, 7)
         self.assertEqual(skipped.skipped_steps, IDLE["equiv-skipped"])
         self.assertEqual(plain.interrupts, 8)
+
+    def test_the_byte_arrived(self):
+        for boot, _ in self.runs:
+            self.assertEqual(boot.quart.ports[0]["received"], 1)
+            self.assertEqual(bytes(boot.console["screenputs"]), LINE + b"x")
 
 
 class PromptTest(unittest.TestCase):
@@ -162,9 +189,33 @@ class PromptTest(unittest.TestCase):
         self.assertEqual(self.boot.skipped_steps, IDLE["prompt-skipped"])
 
 
+class KeyboardTest(unittest.TestCase):
+    """Return typed at /boot's prompt on the console line, Quart channel 0
+    (CHOICES['console-input']): kbdcr2nl makes it NL, it is echoed, and
+    /boot takes its default, il, as far as etherattach's line."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+        cls.boot.script = [(b"il]: ", b"\r")]
+        cls.boot.until = b"sonic ether"
+        cls.status = cls.boot.run(400000000)
+
+    def test_typed_and_taken(self):
+        boot = self.boot
+        self.assertIn("screenputs printed", self.status)
+        self.assertEqual(boot.quart.ports[0]["received"], 1)
+        self.assertEqual(bytes(boot.console["screenputs"]),
+                         LINE + PROMPT + b"\n" + ETHERLINE)
+        self.assertEqual(boot.steps, STEPS["ether-line"])
+        names = [n for _, n in boot.reached]
+        for name in ("kbdcr2nl", "echo", "etherattach"):
+            self.assertIn(name, names)
+
+
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
-         "prompt": 22530554}
-IDLE = {"equiv-skipped": 490000, "prompt-skipped": 19573088,
+         "prompt": 22530554, "ether-line": 287427906}
+IDLE = {"equiv-skipped": 450896, "prompt-skipped": 19573088,
         "prompt-cycles": 22890723}
 
 

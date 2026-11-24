@@ -689,6 +689,11 @@ Details, milestones and choices: `docs/p9boot.md`.
   6 min).  At the formula's own clock rate the prompt comes after
   286,970,654 instructions, 14.4 s of model time, ~30 s of host time, so
   `--counter-period` is no longer needed.
+* Console input: s9term's console is a serial terminal on Quart channel
+  0 (`eiaspecial(0, &printq, &kbdq, 19200)`, `kbdq.putc = kbdcr2nl`;
+  the image has no `kbd.c`).  Return typed there (`--type`) takes `il`:
+  287,427,906 instructions, `sonic ether: 00 00 00 00 00 00`, then the
+  first BOOTP transmit.
 
 The gate as written above (the boot banner and prompt on the UART) is
 not met yet: s9term prints no banner of its own; the first text after

@@ -40,13 +40,35 @@ The kernel prints to two places, and both are captured:
   `uartputs` path, `\n` as `\r\n`), which is what a serial console would
   show.  These are the bytes the device model collected.
 
-**Bitmap screen and keyboard, the minimum chosen.**  The screen is plain
-RAM plus a write-only LCD register pair that counts writes; no pixels are
-interpreted.  The keyboard is Quart channel 2 (`kbdinit(2)`, 600 baud)
-and the mouse channel 3 (`eiaspecial(3, ..., 1200)`); nothing is
-connected to either, so they never receive a byte (QUART_CHOICES `sr`,
-`isr`).  A typed reply to the boot prompt would be the next device
-feature (RxRDY on channel 2 with scan codes, `kbd.c`).
+**Bitmap screen, the minimum chosen.**  The screen is plain RAM plus a
+write-only LCD register pair that counts writes; no pixels are
+interpreted.
+
+**The console's input is Quart channel 0, not a scan-code keyboard.**
+The shipped `screen.c` calls `kbdinit(2)` (the `kbd.c` scan-code
+keyboard on channel 2 at 600 baud), but s9term has no `kbdinit` and no
+`kbd.c` (`docs/s9term.md`: its `screen.c` predates `kbd.c`).  Tapping
+`eiaspecial` in the run shows what the image does instead:
+
+| step | call |
+|---:|---|
+| 127,557 | `eiaspecial(0, &printq, &kbdq.IOQ (0x8004fdfc), 19200)` |
+| 127,705 | `eiaspecial(3, 0, &mouseq, 1200)` |
+
+and `kbdq.putc` (kbdq+0x1034) then holds `kbdcr2nl`.  So the console is a
+serial terminal on channel 0 at 19200 baud 8N1 -- output and input --
+taking ASCII, CR made NL; channel 2 is never set up.  `--type
+TEXT=REPLY` (CHOICES `console-input`) types REPLY on that line once the
+screen has shown TEXT: `--type 'il]: =\r'` answers the prompt with
+Return.  The mouse (channel 3) gets nothing.
+
+Text reaches the screen ~0.4-0.5 M instructions before the serial line:
+s9term's `putstrn` draws it first (`screenputs`, the font blitted in
+software) and then calls `uartputs` (from `putstrn+0x96` / `+0xd0`):
+pageinit's line is at `screenputs` at 2,131,084 and at `uartputs` at
+2,621,219.  A reply typed with no `--think` delay arrives while the
+prompt is still being drawn, so on channel 0 its echo (`\r\n`) comes
+before the prompt; on the screen the order is the prompt, then `\n`.
 
 ## Milestones (2026-11-23)
 
@@ -104,8 +126,22 @@ The screen then holds, byte for byte (`--out` writes it):
 root is from (il, tcp, incon, 9600, 19200)[il]: 
 ```
 
-The prompt goes to `#c/cons`, which s9term writes to the screen only;
-Quart channel 0 carries the kernel's own `print` output (the first line).
+The prompt goes to `#c/cons`, which s9term writes to the screen and then
+(0.44 M instructions later, see the console above) to Quart channel 0.
+
+Typing Return at it (`--type 'il]: =\r'`, the default counter rate) takes
+`il`: `kbdcr2nl` at 286,979,756, the echo, `etherattach` starting the
+SONIC's kproc, and at **287,427,906** instructions (14.4 s of model time,
+~48 s of host time) the screen shows
+
+```
+1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
+root is from (il, tcp, incon, 9600, 19200)[il]: 
+sonic ether: 00 00 00 00 00 00
+```
+
+after which `/boot` sends its first BOOTP request and the run stops at
+the transmit (`tests/test_p9boot.py` `KeyboardTest`).
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
@@ -199,9 +235,8 @@ From `sys/src/9/boot/ip.c` and `async.c`, and the strings in the image:
 
 So the shortest path to a QEMU 1e file server is **il over the SONIC**:
 an IIC EEPROM with an ethernet address, SONIC transmit/receive, and a
-frame bridge.  Answering the prompt itself needs a keyboard byte on
-Quart channel 2 — or none at all: pressing return takes the default,
-`il`.
+frame bridge.  Answering the prompt itself needs only Return on the
+console line (Quart channel 0): the default is `il`.
 
 ## Modelling choices
 
@@ -237,15 +272,27 @@ such.
 * **lcd** — `Lcdisp` at IOACK 0x3000 accepts and counts writes.
 * **incon, IOCTL** — latches that record writes; an unexpected read
   stops the run.
+* **idle-skip** — `runproc`'s idle loop retired in whole laps up to the
+  next timed device event (section above); `--no-idle-skip` turns it off.
+* **console-input** — the console line is Quart channel 0 (section "The
+  console"); `--type TEXT=REPLY` types REPLY there once the screen shows
+  TEXT, `--think SECONDS` after it.
 
 ### Quart (`QUART_CHOICES`, `io.h` `Quart`/`Duart`, `deveia.c`)
 
 * **sr** — TxRDY|TxEMT while the transmitter is enabled: a byte written
-  leaves at once.  RxRDY never: nothing is connected.
+  leaves at once.  RxRDY while the receive FIFO holds a byte, FFULL at
+  three.
+* **rx** — typed bytes arrive one character time apart (1 start bit,
+  mr1's data and parity bits, mr2's stop bits at csr's rate under
+  BRGSet2: 0.52 ms at 19200 8N1) into a three-byte FIFO; a byte that
+  finds it full, or the receiver disabled, waits on the line (no overrun
+  is modelled).  grxfifo/rxfifo pop; an empty FIFO reads 0.
 * **cr** — the enable/disable bits and MrReset/RxReset/TxReset change
   state; the rest are accepted and ignored.
 * **isr** — TxRDYa/TxRDYb while enabled; CtrRDY once the counter expires,
-  until a read of `stop`.
+  until a read of `stop`; RxRDYa/RxRDYb while the FIFO is not empty
+  (uartsetup's mr1 has bit 6, FFULL interrupts, clear).
 * **counter** — started by a read of `start`; CtrRDY every
   2·count/(3.6864 MHz/16) s.
 * **counter-period** — s9term's `clockinit` is older than the release's:
@@ -255,8 +302,11 @@ such.
   software assumes, a stated deviation that makes `sleep(1000)` in
   `/boot` last 25 ticks of 0.04 s instead of 25 of 0.569 s.
 * **cir** — a write of `update` latches the highest pending enabled
-  source: the counter (cir 0x14, gicr = 2·duart), then a transmitter
-  (cir 0x08, gicr = channel, gibcr = 1); nothing pending reads 0.
+  source: the counter (cir 0x14, gicr = 2·duart), then a receiver (cir
+  0x0C RxAvail, gicr = channel, gibcr = bytes in its FIFO), then a
+  transmitter (cir 0x08, gicr = channel, gibcr = 1); nothing pending
+  reads 0.  The order is a choice: the bidding registers (bcr) that set
+  it on the part are written by eiasetup but not modelled.
 * **irq** — IRQ 1 while any isr bit is enabled in its DUART's imr.
 
 ### WD33C93 (`WD_CHOICES`, `scsi.c`)
@@ -310,12 +360,9 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **Input.**  `/boot` now reads the reply from `#c/cons`: the keyboard
-   is Quart channel 2 (`kbd.c` scan codes at 600 baud).  A return key
-   (RxRDY/RxAvail on channel 2 and `kbd.c`'s code for it) takes `il`.
-2. **The network** for `il`: the IIC EEPROM's ethernet address and the
+1. **The network** for `il`: the IIC EEPROM's ethernet address and the
    SONIC's descriptor-driven transmit and receive (above), then a frame
    bridge to the file server.
-3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
+2. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).
