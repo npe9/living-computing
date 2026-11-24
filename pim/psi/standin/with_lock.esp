@@ -1,0 +1,49 @@
+% SCAFFOLDING stand-in for SIMPOS's class `with_lock`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: TM-065 p.13
+% (and TM-061 p.7) name it only as a class that the real class `file`
+% inherits, with `as_permanent_object` and `as_resource`; no method of it
+% is printed or held.  Every method is INTERPOLATED (labelled) from:
+%   - pimfep's fep_device_table and fep_node_table (natures `as_resource,
+%     with_lock`): each table method sends `:lock(Table)`, does its work,
+%     and ends with a last call `:unlock(Table)`;
+%   - kappa2 `kernel/dbo/KP_DBOBF.ESP` (natures `as_resource, with_lock`,
+%     ICOT Free Software, held), which brackets its work the same way with
+%     `:lock_with_hook/1` and `:unlock_with_hook/1` (not stood in);
+%   - the instance-level counterpart of as_class_with_lock (this
+%     directory), whose :lock has :unlock as its alternative (kappa2
+%     LOADER.ESP:145-146).  That with_lock's :lock does the same is an
+%     INFERENCE.
+%   - docs/simpos/required/classes.tsv:193, 267, 296: lock/1, locked/1 and
+%     unlock/1 are sent through this nature.
+% Model (OURS): a count in an instance slot; one process, so no wait.
+
+class with_lock has
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute lock_count := 0;
+
+% INTERPOLATED from: the fep_device_table brackets and LOADER.ESP:145-146
+% (see above).
+:lock(Object) :-
+        N = Object!lock_count,
+        Object!lock_count := N + 1;
+:lock(Object) :-
+        :unlock(Object),
+        fail;
+
+% INTERPOLATED from: fep_device_table's last call `:unlock(Table)`.
+% Unlocking an object that is not locked succeeds (OURS).
+:unlock(Object) :-
+        N = Object!lock_count,
+        0 < N, !,
+        Object!lock_count := N - 1;
+:unlock(Object);
+
+% INTERPOLATED from: the class-level :locked/1 (LOADER.ESP:134).
+:locked(Object) :-
+        N = Object!lock_count,
+        0 < N;
+
+end.

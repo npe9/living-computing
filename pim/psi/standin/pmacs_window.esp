@@ -1,0 +1,43 @@
+% SCAFFOLDING stand-in for SIMPOS's class `pmacs_window` (the Pmacs editor
+% window), compiled by psi/espc.py into the package `simpos`.  It is NOT
+% SIMPOS: no part of it is printed or held, and NO DISPLAY IS MODELLED.
+% It is MINIMAL: creation and get_editor/2 only.  The window protocol
+% (activate/1, putl/2, putf/3, getl/2, ...; docs/simpos/subsystems/
+% window.md §2.4, §2.11) is not stood in, so a caller stops at its first
+% window method.  INTERPOLATED (labelled) from:
+%   - window.md §2.11, from disc/exshow.esp:23-35 (held IFS source):
+%     `:create(#pmacs_window, Opts, _, W)` (the third argument always
+%     unbound), `:get_editor(W, E)` (window -> its editor, a
+%     standard_editor), `:get_window(E, W)` (editor -> window);
+%   - pimfep##pimfep_message_log dump_log/1, sorted_log/1,
+%     sorted_log_string/1 and pimos_fep_superviser log_window/2 (held
+%     .ptf): `:create(#pmacs_window, Opts, W)`, then `:activate(W)` and
+%     `:putl(W, ...)`;
+%   - docs/simpos/required/classes.tsv (row `pmacs_window`): class methods
+%     create/3, create/4, create_with_input/4,5.
+% Model (OURS): the window and its editor are made together and point at
+% each other; the options are ignored.
+
+class pmacs_window has
+
+% INTERPOLATED from: the pimfep `:create(#pmacs_window, Opts, W)` sends.
+:create(Class, Options, Window) :-
+        :new(Class, Window),
+        :new(#standard_editor, Editor),
+        Window!editor := Editor,
+        Editor!window := Window;
+% INTERPOLATED from: exshow.esp:23 `:create(#pmacs_window, Opts, _, W)`;
+% the third argument is left unbound, as every held caller leaves it.
+:create(Class, Options, Unused, Window) :-
+        :create(Class, Options, Window);
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute editor := 0;
+
+% INTERPOLATED from: window.md §2.11 `:get_editor(W, E)`.
+:get_editor(Window, Editor) :-
+        Editor = Window!editor;
+
+end.
