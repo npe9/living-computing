@@ -34,6 +34,10 @@
 //      kernel now reaches it, `--kernel PKL` again for the kernel tape.
 //   3. bsv/run_fepemu.sh; one injection into the new branch, its observed
 //      failures in PimmFepEmuTb.bsv's header.
+//   direct_kernel's error sections hold putb (111), and getb and close
+//   on a device that only appends, as tripwires: when fep.py answers one,
+//   run_fepemu.sh fails on that line until the emulator follows; move
+//   that line out of the error sections then.
 //
 // FROM PIMOS SOURCE (through fep.py, whose header cites each):
 //   the CDBs (TEST UNIT READY 00h, RECEIVE 08h, SEND 0Ah; group 0, the

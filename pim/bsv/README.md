@@ -334,7 +334,8 @@ observed to fail: the header of `PimmFepEmuTb.bsv`.
 LUT4 (8,011 logic, 2,278 carry, 140 RAM), 3,165 TRELLIS_FF, 3 DP16KD,
 19 I/O; **42.50 MHz** (PASS at 25 MHz). Before them (2026-11-23):
 10,039 LUT4 (7,553 logic), 3,099 FF, 3 DP16KD, 40.39 MHz: +460 LUT4,
-+66 FF (the 32-bit Result, two appending slots), no BRAM; the Fmax
++66 FF, no BRAM (not broken down among the 32-bit Result, the two
+appending slots and the new branches); the Fmax
 rose although nothing was made shorter (place-and-route's spread from
 build to build, presumably: not measured). The
 self-test passes in Bluesim on the `--held` image (entry 0,
