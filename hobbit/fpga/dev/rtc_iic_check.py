@@ -33,55 +33,60 @@ Exit status 0 iff every comparison holds.
 
 Bug injection (AGENTS.md "proven discriminating"): rtc_iic_inject.py
 injects each bug into the BSV, runs this check, and reverts by reverse
-patch.  OBSERVED failures, 2026-11-24 (R and I: 84 sequences, before
-the 25 MCP7940N sequences were added; M: all 109.  Run from an empty
-build/; every sequence not listed still agreed):
+patch.  OBSERVED failures, 2026-11-24, all 29 injections against the
+current code (109 sequences; every sequence not listed still agreed).
+The R and I sets are the same as in the first run, made against 84
+sequences before the MCP7940N link; R7 now also fails all 25 MCP
+sequences:
 
-  R1 divider not restarted on a load (div <= 0)            75/84
+  R1 divider not restarted on a load (div <= 0)            100/109
      phase after a load, sec at load+1000 and load+2000, all 4 skews;
      on the wrap cycle, sec at load+1000 (load+999/+1001 agree: the
      second comes one cycle late).  The first run, before the phase
      probes were one per sequence, passed 52/52.
-  R2 leap year from the units digit only                   82/84
+  R2 leap year from the units digit only                   107/109
      rollover Feb 28 1996, rollover Feb 29 1996
-  R3 a new snapshot on every R/W control write             81/84
+  R3 a new snapshot on every R/W control write             106/109
      W cleared with R still set loads and unfreezes; R then W without a
      new snapshot; fault: W cleared with nothing held
-  R4 weekday table, March 2 -> 3                           83/84
+  R4 weekday table, March 2 -> 3                           108/109
      300 random dates
-  R5 clock-register reads ignore the held set              79/84
+  R5 clock-register reads ignore the held set              104/109
      freeze with R; held set visible while W is set; R then W; fault:
      a load of month 0x13; RTL-only fault: Feb 30
-  R6 April has 31 days                                     83/84
+  R6 April has 31 days                                     108/109
      rollover Apr 30
-  R7 NVRAM index from addr[11:1]                           18/84
-     66 RTC sequences: all but phase at reset at cycles 0, 998, 999
-     and the RTL-only lane-1 fault (which faults before the index)
-  R8 clock-register write without W accepted               82/84
+  R7 NVRAM index from addr[11:1]                           18/109
+     all 25 MCP sequences, and 66 RTC sequences: all but phase at reset
+     at cycles 0, 998, 999 and the RTL-only lane-1 fault (which faults
+     before the index)
+  R8 clock-register write without W accepted               107/109
      fault: written without RTCWRITE; fault: written with R only
-  R9 RTC write without byte lane 0 accepted                83/84
+  R9 RTC write without byte lane 0 accepted                108/109
      RTL-only fault: write on byte lane 1 only
-  R10 every loaded value taken as a calendar time          82/84
-     fault: a load of month 0x13; RTL-only fault: Feb 30
-  I1 repeated START's address taken as a data byte         79/84
+  R10 every loaded value taken as a calendar time          107/109
+     fault: a load of month 0x13; RTL-only fault: Feb 30.  Its pattern
+     had stopped matching when the load path grew the write-back queue;
+     fixed, then run.
+  I1 repeated START's address taken as a data byte         104/109
      iic_join.trace; EEPROM reads from 5, from 250, from 0; two EEPROM
      reads around ledputbyte
-  I2 LRB inverted                                          77/84
+  I2 LRB inverted                                          102/109
      as I1, plus ledputbyte x3 and the no-acknowledge slave
-  I3 BB reads busy, not free                               76/84
+  I3 BB reads busy, not free                               101/109
      as I2, plus PIN set and STA|STO together
-  I4 0xC0 does not complete the byte in progress           79/84
+  I4 0xC0 does not complete the byte in progress           104/109
      as I1
-  I5 LED latch write count not kept                        82/84
+  I5 LED latch write count not kept                        107/109
      ledputbyte x3; two EEPROM reads around ledputbyte
-  I6 S0 read with ACK does not advance the pointer         79/84
+  I6 S0 read with ACK does not advance the pointer         104/109
      as I1
-  I7 S0 readable with ESO off                              83/84
+  I7 S0 readable with ESO off                              108/109
      fault: S0 read with ESO off
-  I8 a write START to the EEPROM keeps ptr_set             83/84
+  I8 a write START to the EEPROM keeps ptr_set             108/109
      two EEPROM reads around ledputbyte (before that sequence was added
      the injection passed 79/79: every EEPROM read started from reset)
-  I9 IIC write without byte lane 0 accepted                83/84
+  I9 IIC write without byte lane 0 accepted                108/109
      RTL-only fault: write on byte lane 2 only
 
   The MCP7940N link (Rtc.bsv seed/write-back, RtcI2c.bsv master), against
@@ -1023,6 +1028,13 @@ def compare_mcp(seq, cov, verbose):
     if int(mcp["viol"]) or int(mcp["twr"]):
         errs.append("I2C violations %s, time written while running %s: %s"
                     % (mcp["viol"], mcp["twr"], mcp.get("notes")))
+    # SCL timing as the chip saw it: low and high each at least two
+    # quarters (rtc.md "Start time and clock": 5.04 us at i2cQuarter 63)
+    if int(mcp["minhigh"]) < 2**63:          # some SCL edge was seen
+        if min(int(mcp["minhigh"]), int(mcp["minlow"])) < 2 * I2C_QUARTER:
+            errs.append("SCL high %s / low %s cycles, under %d"
+                        % (mcp["minhigh"], mcp["minlow"], 2 * I2C_QUARTER))
+        cov["mcp SCL min low, cycles"] = int(mcp["minlow"])
     end = int(mcp["end"])
     if seq.writes and not loads:
         errs.append("no setrtc load reached the model")

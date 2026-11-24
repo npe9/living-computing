@@ -46,8 +46,8 @@ INJ = [
      "         if (be[0] == 0)\n            failWith(rtcFaultLane,",
      "         if (False)\n            failWith(rtcFaultLane,"),
     ("R10", "every loaded value taken as a calendar time", "Rtc.bsv",
-     "               else if (timeValid(t)) loadW.wset(t);",
-     "               else if (True) loadW.wset(t);"),
+     "               else if (timeValid(t)) begin",
+     "               else if (True) begin"),
     ("M1", "seed without waiting for the chip's next second", "Rtc.bsv",
      "            done <= (mb[0] & 8'h7F) != (firstSec & 8'h7F);",
      "            done <= True;"),
@@ -122,7 +122,7 @@ def clean():
 def main():
     only = sys.argv[1:]
     if not clean():
-        raise SystemExit("Rtc.bsv / Iic.bsv have uncommitted changes")
+        raise SystemExit(", ".join(FILES) + ": uncommitted changes")
     for ident, what, f, old, new in INJ:
         if only and ident not in only:
             continue
@@ -150,7 +150,7 @@ def main():
             if line.endswith("FAIL"):
                 print("    " + " ".join(line.split()[:-3]))
         sys.stdout.flush()
-    print("Rtc.bsv and Iic.bsv clean:", clean())
+    print(", ".join(FILES), "clean:", clean())
 
 
 if __name__ == "__main__":
