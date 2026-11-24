@@ -26,7 +26,8 @@ exactly. `ref/pimm/pimm.py` has 131 `def i_` handlers, and none is
 gated whole by `self.alone(` (one case of `merge_in` and one
 built-in case are), so the task's literal recipe gives 131. Less
 `scsi_init` and `scsi_command`, which are on the reference alone (no
-arm in `bsv/Pimm*.bsv`), leaves 129 handlers on both models. Two of
+arm in `bsv/Pimm*.bsv`; *since 2026-11-23, later, on the core too,
+`PimmScsiBox.bsv`*), leaves 129 handlers on both models. Two of
 those, `merge_in` and `unify_step`, are this project's stubs
 (`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves 127
 PIM/m instructions. The README's counting rule is not stated; the
@@ -227,6 +228,15 @@ reference model alone. `ref/pimm/ref_scsi.py` runs the body of
 does not serve. It serves only 201, 210, 60 and 70, and the run
 completes, so the IPL sent no 400 or 500 (`binary_reverse_engineering.md` §1.4, "Run"). That
 covers our FEP model and the path `boot0` takes, not the real FEP.)*
+*(Note 2026-11-23, later: `scsi_init` and `scsi_command` are on the
+Bluespec core too, `bsv/PimmScsiBox.bsv`, with the device outside the
+core on a port; the lockstep bench answers it from a tape the
+reference recorded, and the bytes the core puts on the bus are
+compared as `B` trace lines (`ref/pimm/lockstep_scsi.py`, at
+`scsi:create/2` and `scsi:command_executer/2`). The IPL's own file
+service (`ref_scsi.py`'s six parts) is in lockstep too, since the
+merger's vector input reached the core (`lockstep_scsi.py --part
+1..6`). `docs/scsi_plan.md` S1-S3.)*
 
 Also from it: `asm/kbndis.py` names function-numbered opcodes by their
 first table entry, so the image's 9 "`export_entry`" are
