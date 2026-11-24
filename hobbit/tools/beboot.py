@@ -172,6 +172,26 @@ CHOICES = {
                  "R16 by the lap count.  The run is otherwise the same "
                  "instruction for instruction (BootTest checks it against "
                  "a run without the skip).",
+    "display": "Slot 6 holds a Trident TGUI9420-family VGA (TridentVga; "
+               "docs/bebox_hobbit.md 'The display card'): a 1 MB frame "
+               "buffer at 0xD0000000 and its registers at 0xD1000000, VGA "
+               "port p at byte 0xD1000000 + p.  The chip-version register "
+               "reads 0xC3 (TGUI9420DGi in VGADOC's table; app_server "
+               "reads it but does not test it).  The graphics engine "
+               "does app_server's two commands, a fill and a blit, at "
+               "once, so its busy bit never reads set; what the blit's "
+               "direction byte and the unnamed source registers mean is "
+               "read from app_server's _tri_blit1, not from a Trident "
+               "document (none for the 9420's engine was found), and the "
+               "engine stops the run if the linear and x/y addresses it "
+               "is given disagree.  Input status 1 runs from model time "
+               "and the programmed CRTC and clock.  The DAC is taken as "
+               "8 bits per colour: app_server loads /system/Color_map "
+               "through an 8-bit gamma table (_gamma, 0x05..0xFF), so its "
+               "white is 0xFF and its desktop grey 0xDD, which a 6-bit DAC "
+               "would show as 0x3F and 0x1D; which DAC mode the card was "
+               "in is not documented (video_init's own ramp tops out at "
+               "56, a 6-bit-looking scale, before Color_map replaces it).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -565,6 +585,17 @@ class ScsiDisk:
         self.overlay = {}
         self.sense = (0, 0)             # (key, additional sense code)
         self.reads = self.writes = 0
+
+    def __getstate__(self):
+        # A snapshot (--save) keeps the path and the overlay; the image
+        # is reopened, read only, on --resume.
+        state = dict(self.__dict__)
+        state["f"] = self.f.name
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.f = open(state["f"], "rb")
 
     def read_block(self, lba):
         if lba in self.overlay:
@@ -1157,6 +1188,344 @@ class Vl82c106Kbc:
 # The bus
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# The display card in slot 6: a Trident TGUI9420-family VGA
+# (docs/bebox_hobbit.md "The display card").  Frame buffer at 0xD0000000
+# (1 MB), registers at 0xD1000000 (0x6000 bytes; bebox_hardware.md
+# section 12).  VGA port p is the byte at 0xD1000000 + p, a register per
+# byte, so the bus's byte lanes pick the port (lane 0 = the lowest
+# address) and a sub-word read names its lanes through ``read_mask``
+# (hobbit_sem._read_lanes).  What is modelled is the register file
+# app_server's vgatri800600.c driver touches and nothing else: any other
+# port, index or graphics-engine command stops the run.
+# ---------------------------------------------------------------------------
+
+VGA_FB, VGA_FB_SIZE = 0xD0000000, 1 << 20
+VGA_REGS, VGA_REGS_SIZE = 0xD1000000, 0x6000
+# CHOICES['display']: the chip-version value (3C4 index 0Bh) read back.
+TRIDENT_ID = 0xC3           # TGUI9420DGi (VGADOC TRIDENT.TXT)
+# VGADOC TRIDENT.TXT, 3C4h index 0Dh: the clock table, MHz.
+TRIDENT_CLOCKS = (25.175, 28.322, 44.9, 36, 57.272, 65, 50.35, 40,
+                  88, 98, 118.8, 108, 72, 77, 80, 75)
+# The old graphics engine's register file, by index (XFree86
+# trident_regs.h "Graphics Engine for 9420/9430": STATUS 0x90, MWIDTH
+# 0xB8, MFORMAT 0xBC, STYLE 0xC4, FMIX/BMIX 0xC8, FCOLOUR 0xD8, BCOLOUR
+# 0xDC, DIMXY 0xE0, DESTLINEAR 0xE4, DESTXY 0xF8, COMMAND 0xFC).  0x94,
+# 0x98, 0x9C, 0xE8 and 0xF0 have no name there; app_server writes them
+# as the source side of a blit (0x98/0x9C the same values as 0xB8/0xBC,
+# 0xE8 a linear address, 0xF0 an x/y pair).
+GE_WRITABLE = (0x90, 0x94, 0x98, 0x9C, 0xB8, 0xBC, 0xC4, 0xC8, 0xD8, 0xDC,
+               0xE0, 0xE4, 0xE8, 0xF0, 0xF8, 0xFC)
+GE_INDEX, GE_DATA = 0x217A, 0x217C
+SEQ_MODELLED = (0, 1, 2, 3, 4, 0x0B, 0x0C, 0x0D, 0x0E)
+
+
+class TridentVga:
+    """The VGA register file, the old-style graphics engine and the
+    frame buffer of the BeBox's Trident card (CHOICES['display'])."""
+
+    PORTS = {0x3C0: "attribute index/data", 0x3C1: "attribute data read",
+             0x3C2: "miscellaneous output", 0x3C3: "video enable",
+             0x3C4: "sequencer index", 0x3C5: "sequencer data",
+             0x3C6: "DAC pixel mask", 0x3C7: "DAC read index",
+             0x3C8: "DAC write index", 0x3C9: "DAC data",
+             0x3CC: "miscellaneous output read",
+             0x3CE: "graphics controller index",
+             0x3CF: "graphics controller data", 0x3D4: "CRTC index",
+             0x3D5: "CRTC data", 0x3D6: "enhancement index",
+             0x3D7: "enhancement data", 0x3DA: "input status 1",
+             GE_INDEX: "graphics engine index",
+             GE_DATA: "graphics engine data byte 0",
+             GE_DATA + 1: "graphics engine data byte 1",
+             GE_DATA + 2: "graphics engine data byte 2",
+             GE_DATA + 3: "graphics engine data byte 3"}
+
+    def __init__(self, clock):
+        self.clock = clock              # () -> model seconds
+        self.fb = bytearray(VGA_FB_SIZE)
+        self.enable = 0
+        self.misc = 0
+        self.seq = [0] * 256
+        self.old_mode = {0x0D: 0, 0x0E: 0}     # 3C4 0Dh/0Eh, old mode
+        self.new_mode = True            # VGADOC: reading 0Bh selects new
+        self.crtc = [0] * 256
+        self.gc = [0] * 256
+        self.attr = [0] * 32
+        self.indices = {0x3C4: 0, 0x3CE: 0, 0x3D4: 0, 0x3D6: 0}
+        self.attr_index = 0
+        self.attr_flip = False          # False: 3C0 takes an index next
+        self.pel_mask = 0xFF
+        self.dac = [[0, 0, 0] for _ in range(256)]
+        self.dac_write = [0, 0]         # entry, component
+        self.ge = bytearray(256)
+        self.ge_index = 0
+        self.ops = collections.Counter()
+
+    # -- the bus --------------------------------------------------------
+    def fb_read(self, off):
+        return int.from_bytes(self.fb[off:off + 4], "big")
+
+    def fb_write(self, off, data, mask):
+        if mask == 0xF:
+            self.fb[off:off + 4] = data.to_bytes(4, "big")
+            return
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                self.fb[off + lane] = (data >> (8 * (3 - lane))) & 0xFF
+
+    def reg_read(self, off, mask):
+        value = 0
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                value |= self.read_port(off + lane) << (8 * (3 - lane))
+        return value
+
+    def reg_write(self, off, data, mask):
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                self.write_port(off + lane, (data >> (8 * (3 - lane))) & 0xFF)
+
+    def _stop(self, what):
+        raise Stop("display card (slot 6): %s" % what)
+
+    # -- VGA ports ------------------------------------------------------
+    def read_port(self, port):
+        if port in self.indices:
+            return self.indices[port]
+        if port == 0x3C5:
+            i = self.indices[0x3C4]
+            if i == 0x0B:
+                self.new_mode = True
+                return TRIDENT_ID
+            if i in (0x0D, 0x0E) and not self.new_mode:
+                return self.old_mode[i]
+            if i in SEQ_MODELLED:
+                return self.seq[i]
+            self._stop("read of sequencer/extended index 0x%02x" % i)
+        if port == 0x3D5:
+            return self.crtc[self.indices[0x3D4]]
+        if port == 0x3CF:
+            return self.gc[self.indices[0x3CE]]
+        if port == 0x3DA:
+            self.attr_flip = False
+            return self.input_status()
+        if port == 0x3C3:
+            return self.enable
+        if port == 0x3CC:
+            return self.misc
+        if port == 0x3C6:
+            return self.pel_mask
+        if port == GE_INDEX:
+            return self.ge_index
+        if GE_DATA <= port < GE_DATA + 4:
+            i = self.ge_index + port - GE_DATA
+            if self.ge_index != 0x90:
+                self._stop("read of graphics engine index 0x%02x" % i)
+            # Operations complete at once (CHOICES['display']), so the
+            # status byte's busy bit 7 always reads clear.
+            return 0 if i == 0x90 else self.ge[i]
+        self._stop("read of %s" % self._port_name(port))
+
+    def write_port(self, port, value):
+        if port in self.indices:
+            self.indices[port] = value
+        elif port == 0x3C5:
+            i = self.indices[0x3C4]
+            if i == 0x0B:
+                self.new_mode = False   # writing 0Bh selects old mode
+            elif i in (0x0D, 0x0E) and not self.new_mode:
+                self.old_mode[i] = value
+            elif i in SEQ_MODELLED:
+                self.seq[i] = value
+            else:
+                self._stop("write of 0x%02x to sequencer/extended index "
+                           "0x%02x" % (value, i))
+        elif port == 0x3D5:
+            self.crtc[self.indices[0x3D4]] = value
+        elif port == 0x3CF:
+            self.gc[self.indices[0x3CE]] = value
+        elif port == 0x3C0:
+            if not self.attr_flip:
+                self.attr_index = value
+            elif self.attr_index & 0x1F < 0x15:
+                self.attr[self.attr_index & 0x1F] = value
+            else:
+                self._stop("write of 0x%02x to attribute index 0x%02x"
+                           % (value, self.attr_index))
+            self.attr_flip = not self.attr_flip
+        elif port == 0x3C2:
+            self.misc = value
+        elif port == 0x3C3:
+            self.enable = value
+        elif port == 0x3C6:
+            self.pel_mask = value
+        elif port == 0x3C8:
+            self.dac_write = [value, 0]
+        elif port == 0x3C9:
+            entry, comp = self.dac_write
+            self.dac[entry][comp] = value
+            comp += 1
+            if comp == 3:
+                entry, comp = (entry + 1) & 0xFF, 0
+            self.dac_write = [entry, comp]
+        elif port == GE_INDEX:
+            self.ge_index = value
+        elif GE_DATA <= port < GE_DATA + 4:
+            i = self.ge_index + port - GE_DATA
+            if self.ge_index not in GE_WRITABLE or i > 0xFF:
+                self._stop("write of 0x%02x to graphics engine index 0x%02x"
+                           % (value, i))
+            self.ge[i] = value
+            if i == 0xFF:
+                self.ge_command()
+        else:
+            self._stop("write of 0x%02x to %s" % (value,
+                                                  self._port_name(port)))
+
+    def _port_name(self, port):
+        if port in self.PORTS:
+            return "%s (port 0x%03x)" % (self.PORTS[port], port)
+        return "port 0x%04x (not modelled)" % port
+
+    # -- timing ---------------------------------------------------------
+    def timing(self):
+        """(pixel clock MHz, horizontal total in pixels, vertical total
+        in lines, retrace start line, retrace end line): the standard
+        VGA CRTC fields and the Trident clock select (misc output bits
+        3:2, new mode control 2 bits 0 and 6; VGADOC's table)."""
+        c = self.crtc
+        sel = (((self.misc >> 2) & 3) | (self.seq[0x0D] & 1) << 2 |
+               ((self.seq[0x0D] >> 6) & 1) << 3)
+        htotal = (c[0] + 5) * 8
+        vtotal = (c[6] | (c[7] & 1) << 8 | ((c[7] >> 5) & 1) << 9) + 2
+        vrs = c[0x10] | ((c[7] >> 2) & 1) << 8 | ((c[7] >> 7) & 1) << 9
+        vre = (vrs & ~0xF) | (c[0x11] & 0xF)
+        if vre <= vrs:
+            vre += 16
+        return TRIDENT_CLOCKS[sel], htotal, vtotal, vrs, vre
+
+    def input_status(self):
+        """3DA: bit 3 vertical retrace, bit 0 display disabled, from
+        model time and the programmed timing."""
+        mhz, htotal, vtotal, vrs, vre = self.timing()
+        if htotal <= 40 or vtotal <= 2:
+            self._stop("input status read before the CRTC is programmed")
+        pixel = int(self.clock() * mhz * 1e6) % (htotal * vtotal)
+        line, col = divmod(pixel, htotal)
+        status = 0
+        if vrs <= line < vre:
+            status |= 0x08
+        if line >= self.height() or col >= self.width():
+            status |= 0x01
+        return status
+
+    # -- the graphics engine --------------------------------------------
+    def _ge32(self, i):
+        return int.from_bytes(self.ge[i:i + 4], "little")
+
+    def ge_command(self):
+        cmd = self._ge32(0xFC)
+        pitch = (self._ge32(0xB8) & 0xFFFF) + 1
+        dims = self._ge32(0xE0)
+        w, h = (dims & 0xFFFF) + 1, (dims >> 16) + 1
+        dest = self._ge32(0xE4)
+        dxy = self._ge32(0xF8)
+        if self.ge[0xBC] != 3 or self.ge[0xC8] != 3:
+            self._stop("command 0x%08x with format 0x%02x, mix 0x%02x "
+                       "(only 3 and 3, app_server's, are modelled)"
+                       % (cmd, self.ge[0xBC], self.ge[0xC8]))
+        if cmd == 0x0A000000:           # app_server's area fill
+            if dest != (dxy >> 16) * pitch + (dxy & 0xFFFF):
+                self._stop("fill: linear 0x%x is not y*%d+x for x/y 0x%08x"
+                           % (dest, pitch, dxy))
+            colour = bytes([self.ge[0xD8]]) * w
+            for y in range(h):
+                a = dest + y * pitch
+                self._span(a, w)
+                self.fb[a:a + w] = colour
+            self.ops["fill"] += 1
+        elif cmd & ~0xFF == 0xA8000000 and cmd & 0xFF in (1, 2, 4, 7):
+            # app_server's blit (_tri_blit1): the low byte is 1, 2, 4 or
+            # 7 as the copy runs right/down, right/up, left/down or
+            # left/up, and 0xE8/0xE4 hold the source and destination
+            # corner it starts from.
+            d = cmd & 0xFF
+            xneg, yneg = d in (4, 7), d in (2, 7)
+            src = self._ge32(0xE8)
+            sxy = self._ge32(0xF0)
+            spitch = (self._ge32(0x98) & 0xFFFF) + 1
+            if spitch != pitch or self.ge[0x9C] != 3:
+                self._stop("blit with source pitch %d format 0x%02x, "
+                           "destination pitch %d"
+                           % (spitch, self.ge[0x9C], pitch))
+            for name, lin, xy in (("source", src, sxy),
+                                  ("destination", dest, dxy)):
+                corner = (((xy >> 16) + (h - 1 if yneg else 0)) * pitch +
+                          (xy & 0xFFFF) + (w - 1 if xneg else 0))
+                if lin != corner:
+                    self._stop("blit %s: linear 0x%x is not the corner of "
+                               "x/y 0x%08x, %dx%d, direction %d"
+                               % (name, lin, xy, w, h, d))
+            if xneg:
+                src, dest = src - (w - 1), dest - (w - 1)
+            step = -pitch if yneg else pitch
+            for y in range(h):
+                s, t = src + y * step, dest + y * step
+                self._span(s, w)
+                self._span(t, w)
+                self.fb[t:t + w] = self.fb[s:s + w]
+            self.ops["blit"] += 1
+        else:
+            self._stop("graphics engine command 0x%08x" % cmd)
+
+    def _span(self, a, n):
+        if a < 0 or a + n > VGA_FB_SIZE:
+            self._stop("graphics engine access 0x%x+%d beyond the 1 MB "
+                       "frame buffer" % (a, n))
+
+    # -- the picture ----------------------------------------------------
+    def width(self):
+        return (self.crtc[1] + 1) * 8
+
+    def height(self):
+        c = self.crtc
+        return (c[0x12] | ((c[7] >> 1) & 1) << 8 |
+                ((c[7] >> 6) & 1) << 9) + 1
+
+    def png(self):
+        """The visible picture as a PNG (8-bit RGB): each frame-buffer
+        byte through the pixel mask and the DAC's 8-bit entries
+        (CHOICES['display']).  The
+        geometry is the CRTC's: width (CR01 + 1) * 8, the vertical
+        display end, pitch CR13 * 8 (double-word mode, CR14 bit 6) and
+        the start address CR0C:CR0D in double words, both doubled when
+        old mode control 2 (3C4 0Dh, old) bit 4 turns on paging mode
+        (VGADOC: "the CRTC offset ... should be multiplied by 2, and the
+        Display Start Address ... is in units of 8 bytes")."""
+        import struct
+        import zlib
+        if not self.crtc[0x14] & 0x40:
+            self._stop("screen dump: CRTC 0x14 is not in double-word mode")
+        w, h = self.width(), self.height()
+        paged = 2 if self.old_mode[0x0D] & 0x10 else 1
+        pitch = self.crtc[0x13] * 8 * paged
+        base = ((self.crtc[0x0C] << 8) | self.crtc[0x0D]) * 4 * paged
+        lut = [bytes(self.dac[i]) for i in range(256)]
+        rows = []
+        for y in range(h):
+            a = base + y * pitch
+            rows.append(b"\0" + b"".join(lut[p & self.pel_mask]
+                                         for p in self.fb[a:a + w]))
+
+        def chunk(kind, data):
+            return (struct.pack(">I", len(data)) + kind + data +
+                    struct.pack(">I", zlib.crc32(kind + data) & MASK32))
+        return (b"\x89PNG\r\n\x1a\n" +
+                chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) +
+                chunk(b"IDAT", zlib.compress(b"".join(rows), 6)) +
+                chunk(b"IEND", b""))
+
+
 class Board:
     def __init__(self, memsize):
         self.ram = {}
@@ -1165,6 +1534,8 @@ class Board:
         self.io = IoWindow(self)
         self.current_cpu = 1
         self.on_reset = None        # callable(old, new) for the run loop
+        self.read_mask = 0xF        # set by hobbit_sem._read_lanes
+        self.vga = None             # the display card, when fitted
 
     def reset_changed(self, old, new):
         if self.on_reset is not None:
@@ -1179,6 +1550,11 @@ class Board:
             return self.ram.get(pa, 0)
         if IO_BASE <= pa < IO_BASE + IO_SIZE:
             return self.io.read(pa - IO_BASE)
+        if self.vga is not None:
+            if VGA_FB <= pa < VGA_FB + VGA_FB_SIZE:
+                return self.vga.fb_read(pa - VGA_FB)
+            if VGA_REGS <= pa < VGA_REGS + VGA_REGS_SIZE:
+                return self.vga.reg_read(pa - VGA_REGS, self.read_mask)
         raise Stop(self._nothing(pa, "read"))
 
     def write(self, pa, data, mask):
@@ -1197,6 +1573,13 @@ class Board:
         if IO_BASE <= pa < IO_BASE + IO_SIZE:
             self.io.write(pa - IO_BASE, data & MASK32, mask)
             return
+        if self.vga is not None:
+            if VGA_FB <= pa < VGA_FB + VGA_FB_SIZE:
+                self.vga.fb_write(pa - VGA_FB, data & MASK32, mask)
+                return
+            if VGA_REGS <= pa < VGA_REGS + VGA_REGS_SIZE:
+                self.vga.reg_write(pa - VGA_REGS, data & MASK32, mask)
+                return
         raise Stop(self._nothing(pa, "write of 0x%08x mask %x"
                                  % (data & MASK32, mask)))
 
@@ -1281,19 +1664,18 @@ class Machine:
                    "SER1 " + Uart.NAMES[n])
             io.add(port_addr(0x2F8 + n), 3, self.ser2, n,
                    "SER2 " + Uart.NAMES[n])
-        self.rtc = Mc146818(lambda: self.cpus[0].cycles / CPU_HZ)
+        self.rtc = Mc146818(self.seconds)
         io.add(port_addr(0x70), 3, self.rtc, 0, "RTC index")
         io.add(port_addr(0x71), 3, self.rtc, 1, "RTC data")
         self.regs.io_sources[4] = self.rtc_irq
         self.disks = {}
-        self.ncr = Ncr53c94(self.disks, NCR_IRQ_DELAY,
-                            lambda: self.cpus[0].cycles)
+        self.ncr = Ncr53c94(self.disks, NCR_IRQ_DELAY, self.cycles_now)
         for n in range(16):
             io.add(NCR_BASE + 4 * n, 2, self.ncr, n, "53C94 register %d" % n)
         io.add_word(NCR_PDMA, PdmaPort(self.ncr), "53C94 pseudo-DMA")
         self.regs.io_sources[7] = self.ncr.irq
         self.fdc = Mcs3201({1: {"medium": None, "cyl": 0}},
-                           lambda: self.cpus[0].cycles / CPU_HZ)
+                           self.seconds)
         for n in (2, 4, 5, 7):
             io.add(port_addr(0x370 + n), 3, self.fdc, n,
                    "MCS3201 " + Mcs3201.NAMES[n])
@@ -1303,6 +1685,7 @@ class Machine:
         io.add(port_addr(0x64), 3, self.kbc, 4, "keyboard status/command")
         self.regs.io_sources[5] = self.kbc.kbd_irq
         self.regs.io_sources[6] = self.kbc.mouse_irq
+        self.vga = self.board.vga = TridentVga(self.seconds)
         self.par = Parallel()
         for n, name in enumerate(("data", "status", "control")):
             io.add(port_addr(0x378 + n), 3, self.par, n, "printer " + name)
@@ -1330,6 +1713,13 @@ class Machine:
         self.skips = self.skipped_steps = 0
         text = elf.sections[".text"]
         self.text_lo, self.text_hi = text[3], text[3] + text[5]
+
+    def seconds(self):
+        """Model time (CHOICES['clock'])."""
+        return self.cpus[0].cycles / CPU_HZ
+
+    def cycles_now(self):
+        return self.cpus[0].cycles
 
     def rtc_irq(self):
         return False            # no periodic, alarm or update interrupt yet
@@ -1450,8 +1840,8 @@ class Machine:
         status = "max-steps"
         cpu = self.cpus[0]
         try:
-            total = 0
-            while total < max_steps:
+            total = start = getattr(self, "steps", 0)   # a resumed run counts on
+            while total < start + max_steps:
                 cpu = min(self.cpus, key=lambda c: c.cycles)
                 self.board.current_cpu = cpu.n
                 st = cpu.state
@@ -1477,7 +1867,7 @@ class Machine:
                 cpu.cycles += max(rec.cyc, 1)
                 self.deliver(cpu)
                 if self.idle_skip and cpu.state.pc == self.idle_head:
-                    total += self.try_idle_skip(cpu, max_steps - total)
+                    total += self.try_idle_skip(cpu, start + max_steps - total)
                 if cpu.sysm.events:
                     for kind, ident, epc in cpu.sysm.events:
                         self.events.append((total, "CPU %d %s 0x%x at %s %s" % (
@@ -1514,19 +1904,32 @@ def main(argv):
     ap.add_argument("--show", type=int, default=40,
                     help="print the last N first-reached functions")
     ap.add_argument("--until", help="stop once SER1 has printed this text")
+    ap.add_argument("--save", help="write the machine to this file when "
+                    "the run ends (a snapshot of this model, for --resume)")
+    ap.add_argument("--resume", help="continue a run saved with --save "
+                    "(the snapshot must come from this checkout's beboot)")
+    ap.add_argument("--screen", help="write the display card's picture "
+                    "to this PNG file when the run ends")
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every idle lap (CHOICES['idle-skip'])")
     args = ap.parse_args(argv)
-    if not args.disk and not args.kernel:
-        ap.error("give --disk or --kernel")
-    elf, source = read_kernel(args)
-    m = Machine(elf, args.memsize << 20)
+    if args.resume:
+        import pickle
+        with open(args.resume, "rb") as f:
+            m = pickle.load(f)
+        elf, prior = m.elf, m.steps
+        print("beboot: resumed %s at %d steps" % (args.resume, prior))
+    else:
+        if not args.disk and not args.kernel:
+            ap.error("give --disk or --kernel")
+        elf, source = read_kernel(args)
+        m = Machine(elf, args.memsize << 20)
+        for i, path in enumerate(args.disk):
+            m.disks[i] = ScsiDisk(path, "target %d" % i)
+        print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
+                                                   args.memsize))
     if args.no_idle_skip:
         m.idle_skip = False
-    for i, path in enumerate(args.disk):
-        m.disks[i] = ScsiDisk(path, "target %d" % i)
-    print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
-                                               args.memsize))
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
     status = m.run(args.max_steps,
@@ -1556,6 +1959,26 @@ def main(argv):
             print("trace %9d CPU %d %08x %-26s sp %08x msp %08x isp %08x "
                   "psw %08x shad %08x  %s" % (n, c, pc, elf.where(pc), sp, msp,
                                               isp, psw, shad, text))
+    if m.vga.ops or any(m.vga.crtc):
+        mhz, ht, vt, _, _ = m.vga.timing()
+        print("display: %dx%d, %.3f MHz, %.1f kHz, %.1f Hz; engine %s"
+              % (m.vga.width(), m.vga.height(), mhz, mhz * 1e3 / ht,
+                 mhz * 1e6 / ht / vt, dict(m.vga.ops) or "unused"))
+    if args.screen:
+        try:
+            data = m.vga.png()
+        except Stop as exc:
+            print("beboot: no screen: %s" % exc)
+        else:
+            with open(args.screen, "wb") as f:
+                f.write(data)
+            print("beboot: screen written to %s" % args.screen)
+    if args.save:
+        import pickle
+        m.trace = None
+        with open(args.save, "wb") as f:
+            pickle.dump(m, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("beboot: machine saved to %s" % args.save)
     print("beboot: " + status)
     return 0
 

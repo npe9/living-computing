@@ -1177,6 +1177,26 @@ def _lane_shift(state: State, ea: int, size: int) -> int:
     return 8 * (4 - size - off)
 
 
+def _read_lanes(state: State,
+                reader: Optional[Callable[[int], Optional[int]]],
+                op: Operand) -> int:
+    """A byte or half-word operand's word.  The bus still returns the
+    whole word; a bus with a ``read_mask`` attribute is told, for the
+    length of the read, which byte lanes the operand uses (the mask as
+    for a store, bit 3 = bits 31:24), so a device with a register per
+    byte (tools/beboot.py's display card) reads only the one addressed.
+    A hook for the board models; the processor's behaviour is unchanged."""
+    bus = state.system.bus if state.system is not None else None
+    if bus is None or not hasattr(bus, "read_mask"):
+        return _read_word(state, reader, op.ea)
+    bus.read_mask = (((1 << op.size) - 1)
+                     << (_lane_shift(state, op.ea, op.size) // 8))
+    try:
+        return _read_word(state, reader, op.ea)
+    finally:
+        bus.read_mask = 0xF
+
+
 def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
           op: Operand) -> int:
     """Read and extend an operand (p. 1-3, p. 1-4, p. 1-28)."""
@@ -1190,7 +1210,7 @@ def _load(state: State, reader: Optional[Callable[[int], Optional[int]]],
                 "alignment: word access to 0x%08x is not word-aligned "
                 "(p. 1-4)" % op.ea)
         return _read_word(state, reader, op.ea)
-    word = _read_word(state, reader, op.ea)
+    word = _read_lanes(state, reader, op)
     off = op.ea & 3
     if op.size == 2:
         if op.ea & 1:

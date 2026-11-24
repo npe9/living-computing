@@ -153,6 +153,82 @@ stack operand (PRM Table 1-21), e.g. `_memcpy+0x4e` (0x080DC9A6)
 ISA work's commit b7dc9341; `beelf.py` had its own formatter until then,
 and a sweep of the kernel and app_server is identical either way).
 
+### The display card
+
+No Be document describes the card in slot 6 (`bebox_hardware.md` §12:
+frame buffer 0xD0000000, 1 MB; registers 0xD1000000, 0x6000 bytes). Its
+driver is app_server's `vgatri800600.c`, and what follows is read from
+that code (`tools/beelf.py build/bebox/beboot/system/app_server --dis
+_video_init1`, and the `_t_*`, `_write_*`, `_tri_*` helpers) against
+two outside sources: VGADOC's Trident chapter and XFree86's Trident
+register header (`docs/devices/MANIFEST.md`). No Trident data sheet for
+the part was found.
+
+- **Port layout.** VGA port p is the byte at 0xD1000000 + p:
+  `_t_writecrtc` stores to 0xD10003D4/0xD10003D5, `_t_writeseq` and
+  `_t_writeext` to 0xD10003C4/0xD10003C5, `_t_writegr` to 0x3CE/0x3CF,
+  `_t_writeatr` reads 0x3DA (to reset the attribute flip-flop) and
+  stores index and data to 0x3C0, `_t_writepel` stores the DAC index to
+  0x3C8 and three components to 0x3C9.
+- **Which chip.** The graphics engine is reached through an index byte at
+  0xD100217A and data bytes at 0xD100217C-F, and app_server polls index
+  0x90, bit 7, for busy. That is XFree86's "Graphics Engine for
+  9420/9430" register file, an index port plus four data bytes, with
+  STATUS 0x90, MWIDTH 0xB8, MFORMAT 0xBC, STYLE 0xC4, mixes 0xC8, colours
+  0xD8/0xDC, DIMXY 0xE0, DESTLINEAR 0xE4, DESTXY 0xF8 and COMMAND 0xFC.
+  XFree86 puts that index port at 0x210A, and VGADOC cites Ferraro for
+  "accelerator registers at 21xAh", so 0x217A is the same family with
+  x = 7. The TGUI9440 and later have a different, directly addressed
+  engine at 0x2120. app_server never uses a hardware cursor, which the
+  9430 added (VGADOC). So the card is a **TGUI9420DGi or a TGUI9430**.
+  The code cannot tell the two apart. `_video_init1+0x42` reads the
+  chip-version register (3C4 index 0Bh), but only to switch to the new
+  mode registers, and does nothing with the value. OSNews's "Trident
+  TGUI9430 C" (`bebox_hardware.md` §12) is consistent with this.
+- **Mode.** `_video_init(2)` programs 800×600 in 256 colours.
+  - CRTC: horizontal total 0x7E, display end 0x63 (800 pixels), vertical
+    display end 0x257 (600 lines), offset 0x32 in double-word mode, start
+    address 0. Old mode control 2 is 0x38. Its bit 4 is VGADOC's paging
+    mode, which doubles the offset: 0x32 × 8 × 2 = 800 bytes, the pitch
+    the engine code uses (`_tri_hline`: y × 800 + x).
+  - Sequencer 4 = 0x0E (chain 4), GC 5 = 0x40 (256-colour shift), GC 6 =
+    0x05, attribute 0x10 = 0x41.
+  - Trident: old-mode 0Dh/0Eh, then new-mode 0Dh/0Eh, CRTC 0x1E-0x29, GC
+    0x0F = 4.
+  - DAC: pixel mask 0xFF, then a 3-3-2 ramp with components up to 56.
+    `_init_system_cs` then loads `/system/Color_map` through `_set_pel`
+    and an 8-bit gamma table (`_gamma`, 0x05..0xFF), so white is 0xFF and
+    the desktop grey 0xDD. The model takes the DAC as 8 bits per colour
+    (CHOICES `display`); the card's DAC mode is not documented.
+- **The engine as app_server drives it.** There are two commands, both
+  set up through `_write_long` (index byte, then a 32-bit word with its
+  bytes reversed, so the little-endian register gets its low byte at
+  0x217C).
+  - Fill: 0x0A000000, from `_rect_fill_copy_tri` and `_tri_hline`.
+    Destination x/y in 0xF8 and as a linear address in 0xE4, size
+    (w-1, h-1) in 0xE0, colour in 0xD8, style 0xFFFF, mix 0x303.
+  - Blit: 0xA8000000 + d, from `_tri_blit1` and `_copy_to_hidden`.
+    Source x/y in 0xF0 and linear in 0xE8 (0x98/0x9C repeat
+    0xB8/0xBC). d is 1, 2, 4 or 7 as `_tri_blit1` chooses it for a copy
+    running right/down, right/up, left/down or left/up, and the two
+    linear addresses are then the corner the copy starts from.
+  - XFree86's `OLDGE_FILL` is 0x000A0000, one byte lower than
+    app_server's 0x0A000000. app_server's value is the one modelled; the
+    difference is unexplained.
+
+`TridentVga` in `tools/beboot.py` models exactly this and stops on
+anything else: any other port, sequencer index, engine index or command,
+an engine format or mix other than app_server's, and an engine access
+beyond 1 MB. A blit or fill whose linear and x/y addresses disagree also
+stops, since that would mean the reading above is wrong. Operations
+complete at once, so the busy bit never reads set. Input status 1's
+retrace bit runs from model time and the programmed CRTC and clock
+(VGADOC's clock table). A byte read from the register window reads only
+that port: `sem/hobbit_sem.py`'s `_read_lanes` hook tells the bus which
+lanes a byte or half-word operand uses. Without it, `_t_readsts1`'s read
+of 0x3DA would also read 0x3D8, a port that is not modelled. `--screen
+FILE` writes the visible picture, through the DAC, as a PNG.
+
 ## Booting it: `tools/beboot.py`
 
 The Hobbit BeBox board shares nothing with the Plan 9 terminal that
@@ -163,7 +239,13 @@ open is a named entry in its `CHOICES`; any access to something not
 modelled stops the run with the PC, the device and the access.
 
     python3 -I tools/beboot.py --disk build/bebox/hdd-hobbit-9308000058/hobbit-9308000058.img \
-        [--max-steps N] [--until TEXT] [--trace N] [--no-idle-skip]
+        [--max-steps N] [--until TEXT] [--trace N] [--no-idle-skip] \
+        [--screen FILE.png] [--save SNAP] [--resume SNAP]
+
+`--screen` writes the display card's picture when the run ends.
+`--save` pickles the whole machine; `--resume SNAP` continues it with
+the current code. It is a development aid for the long runs, and a
+snapshot is only as good as the code that wrote it.
 
 With no ROM, the run does the ROM's job: it takes `/system/kernel` from
 the disk (`tools/befs1.py`), loads its segments at their physical
@@ -184,6 +266,7 @@ the data sheets in `docs/devices/`, and the kernel's code above):
 | MCS3201 floppy controller, drive 1 empty | `Mcs3201` | MCS3201 data sheet §§5.2-5.6, 7.9-7.12 |
 | VL82C106 keyboard controller, AT keyboard, PS/2 mouse | `Vl82c106Kbc` | VTI manual pp. 6-197..6-202 |
 | printer port | `Parallel`, nothing attached | — |
+| slot 6: Trident TGUI9420-family VGA, 1 MB | `TridentVga`: VGA/Trident registers, DAC, the old graphics engine's fill and blit, `--screen` | "The display card" above |
 
 **How far it boots** (Nov 23 1994 kernel, `be` disk; 2026-11-24). Each
 stop below was a device the model lacked; each was added from its data
@@ -218,20 +301,28 @@ sheet and the kernel's driver, and the run went on:
 8. The kernel starts user space: "Starting be:/system/debug_server...",
    "Starting be:/system/app_server...", "Waiting for picasso 59"
    (910 disk blocks read by then).
-9. **Current stop**, at 40,282,356 instructions (rerun on the committed
-   model, 2026-11-24; 910 disk blocks read, 1,866 interrupts): CPU 2, in
-   user mode in `/system/app_server`, at `_video_init1+0x2`
-   (0x100410F8), stores the byte 0x01 at physical 0xD10003C3. The bus
-   word is 0xD10003C0 (lane 3) in BeBus slot 6, the display card's
-   register window at 0xD1000000 (`bebox_hardware.md` §12). app_server's
-   own code shows the card's layout: its helpers `_t_writecrtc` store to
-   0xD10003D4/0xD10003D5, `_t_writeext` to 0xD10003C4/0xD10003C5, so
-   VGA port p is the byte at 0xD1000000 + p, and 0x3C3 is the VGA
-   enable register. The driver is compiled from `vgatri800600.c`
-   (app_server's .comment), a Trident VGA at 800x600. No Be document
-   describes the card; modelling it means reading `_video_init` and the
-   `_t_*` helpers the way this file reads the kernel. Not done yet: this
-   is the frontier, not the end of the boot.
+9. Stop at `_video_init1+0x2` (40,282,356 instructions): CPU 2, in user
+   mode in `/system/app_server`, stores 0x01 at 0xD10003C3, the display
+   card's VGA enable port, in BeBus slot 6. The card is modelled as
+   described in "The display card" above.
+10. With the card, app_server sets 800x600 and loads `/system/Color_map`.
+    It clears the screen with an engine fill and draws its hand cursor at
+    0,0 (`build/bebox/beboot/screens/desktop-80M.png`, at 80M
+    instructions: a plain light-grey desktop). The console adds "Mouse
+    responds with correct device type" and "Mouse enabled successfully".
+    `_sysinit2` had printed "Waiting for picasso 59" and snoozed a second
+    for app_server's `picasso` thread. It then starts ansi_server,
+    vcas_server ("area_for error 03000000") and storage_server. It tries
+    `/system/Browser` twice ("failed", "No Boot Browser"; the disk has
+    only a lower-case `/system/browser`), and starts `/bin/newsh`, whose
+    console prints "lseek(0, 0, 0) ->eof -1Failed-- subid 2 localid 0".
+    app_server opens a window "Terminal 1": "Welcome to the new improved
+    console / Running on a Hobbit / $ _"
+    (`build/bebox/beboot/screens/terminal-103M.png`).
+11. **Current stop**, at 102,819,522 instructions: CPU 1, in user mode
+    in vcas_server, at `_ori_byte` (0x1001CB20), called from
+    `_veDspStart+0x36`, ORs 0x10 into the processor reset register
+    (0x0080001B), which releases DSP1. The DSP3210s are not modelled.
 
 The run reaches the mount (29M instructions) in about 10 minutes (CPU-bound Python,
 ~50k instructions/s). An idle skip (CHOICES `idle-skip`) jumps whole

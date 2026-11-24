@@ -28,6 +28,19 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
 - I/O window accepts a store on any lane: test_wrong_lane_stops.
 - Keyboard controller self test answers 0x54: test_kb_init.
 - A read of the IIR does not clear the THRE interrupt: test_thre_interrupt.
+- Display card (TridentVga), each failing only the named tests:
+  3DA read not resetting the attribute flip-flop: test_attribute_flip_flop;
+  the DAC index not advancing after blue: test_dac_write_auto_increments;
+  engine registers read big-endian: test_fill, test_overlapping_blit_down,
+  test_overlapping_blit_right (errors: the linear/x-y check stops);
+  an upward blit copied top row first: test_overlapping_blit_down;
+  reading index 0Bh not selecting the new-mode registers:
+  test_old_and_new_mode_registers; the board ignoring the read lanes
+  (every port of the word read): test_port_is_the_byte,
+  test_old_and_new_mode_registers, test_attribute_flip_flop (errors: the
+  unmodelled neighbour port stops); the DAC read as 6-bit (x4):
+  test_screen_png, test_screen_paging_mode_doubles_the_pitch; paging
+  mode ignored: test_screen_paging_mode_doubles_the_pitch.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -355,6 +368,209 @@ class KeyboardControllerTest(unittest.TestCase):
     def test_unmodelled_stops(self):
         with self.assertRaises(beboot.Stop):
             self.kbc.write(4, 0xC0)             # read input port
+
+
+class TridentVgaTest(unittest.TestCase):
+    """The display card's register file (VGADOC TRIDENT.TXT for the
+    Trident registers, the IBM VGA layout for the rest) and the old
+    graphics engine as app_server's driver programs it (XFree86
+    trident_regs.h for the register names; docs/bebox_hobbit.md "The
+    display card")."""
+
+    REGS = 0xD1000000
+
+    def setUp(self):
+        self.board = beboot.Board(8 << 20)
+        self.clock = Clock()
+        self.vga = self.board.vga = beboot.TridentVga(self.clock)
+
+    def out(self, port, value):
+        """A byte store to VGA port ``port``, as app_server's _t_* helpers
+        do it: the byte at 0xD1000000 + port."""
+        lane = port & 3
+        self.board.write(self.REGS + port, value << (8 * (3 - lane)),
+                         beboot.lane_mask(lane))
+
+    def inp(self, port):
+        lane = port & 3
+        self.board.read_mask = beboot.lane_mask(lane)
+        try:
+            return (self.board.read(self.REGS + port) >> (8 * (3 - lane))) & 0xFF
+        finally:
+            self.board.read_mask = 0xF
+
+    def ge(self, index, value):
+        """_write_long: the index byte to 0xD100217A, then the value with
+        its bytes reversed as one word to 0xD100217C, so the card's
+        little-endian register gets its low byte first."""
+        self.out(0x217A, index)
+        self.board.write(self.REGS + 0x217C,
+                         int.from_bytes(value.to_bytes(4, "little"), "big"),
+                         0xF)
+
+    def test_port_is_the_byte(self):
+        self.out(0x3C3, 1)
+        self.assertEqual(self.vga.enable, 1)
+        self.out(0x3D4, 0x13)
+        self.out(0x3D5, 0x64)
+        self.assertEqual(self.vga.crtc[0x13], 0x64)
+        self.assertEqual(self.inp(0x3D5), 0x64)
+        self.assertEqual(self.inp(0x3D4), 0x13)
+
+    def test_old_and_new_mode_registers(self):
+        # VGADOC: writing index 0Bh selects the old mode registers,
+        # reading it selects the new ones and returns the chip version.
+        self.out(0x3C4, 0x0B)
+        self.out(0x3C5, 0)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x38)
+        self.assertEqual(self.vga.old_mode[0x0D], 0x38)
+        self.assertEqual(self.vga.seq[0x0D], 0)
+        self.out(0x3C4, 0x0B)
+        self.assertEqual(self.inp(0x3C5), beboot.TRIDENT_ID)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x01)
+        self.assertEqual(self.vga.seq[0x0D], 0x01)
+        self.assertEqual(self.vga.old_mode[0x0D], 0x38)
+
+    def test_attribute_flip_flop(self):
+        self.out(0x3D4, 0x00)
+        self.out(0x3D5, 0x7E)
+        self.out(0x3D4, 0x06)
+        self.out(0x3D5, 0x99)
+        self.inp(0x3DA)                 # resets the flip-flop
+        self.out(0x3C0, 0x10)
+        self.out(0x3C0, 0x41)
+        self.out(0x3C0, 0x11)
+        self.out(0x3C0, 0x00)
+        self.assertEqual(self.vga.attr[0x10], 0x41)
+        self.out(0x3C0, 0x20)           # index with palette access off
+        self.assertEqual(self.vga.attr_index, 0x20)
+        self.inp(0x3DA)
+        self.assertFalse(self.vga.attr_flip)
+
+    def test_dac_write_auto_increments(self):
+        self.out(0x3C8, 254)
+        for v in (1, 2, 3, 4, 5, 6):
+            self.out(0x3C9, v)
+        self.assertEqual(self.vga.dac[254], [1, 2, 3])
+        self.assertEqual(self.vga.dac[255], [4, 5, 6])
+
+    def setup_engine(self):
+        self.ge(0xB8, (599 << 16) | 799)    # MWIDTH: pitch 800
+        self.ge(0xBC, 3)
+        self.ge(0x98, (599 << 16) | 799)
+        self.ge(0x9C, 3)
+
+    def test_fill(self):
+        self.setup_engine()
+        self.ge(0xF8, (2 << 16) | 5)        # x 5, y 2
+        self.ge(0xE4, 2 * 800 + 5)
+        self.ge(0xE0, (1 << 16) | 3)        # 4 wide, 2 high
+        self.ge(0xC8, 0x303)
+        self.ge(0xD8, 0x2A)
+        self.ge(0xDC, 0x2A)
+        self.ge(0xC4, 0xFFFF)
+        self.ge(0xFC, 0x0A000000)
+        fb = self.vga.fb
+        self.assertEqual(fb[2 * 800 + 4:2 * 800 + 10], b"\0" + b"\x2a" * 4 + b"\0")
+        self.assertEqual(fb[3 * 800 + 5:3 * 800 + 9], b"\x2a" * 4)
+        self.assertEqual(fb[4 * 800 + 5], 0)
+        self.assertEqual(fb[1 * 800 + 5], 0)
+        # Status (index 0x90) reads idle: _wait_graphic_engine's word
+        # read of 0xD100217C, bit 31.
+        self.out(0x217A, 0x90)
+        self.assertEqual(self.board.read(self.REGS + 0x217C) & 0x80000000, 0)
+
+    def blit(self, sx, sy, dx, dy, w, h, d, src=None, dest=None):
+        """As _tri_blit1 programs it: direction d, start corners."""
+        xneg, yneg = d in (4, 7), d in (2, 7)
+        corner = lambda x, y: ((y + (h - 1 if yneg else 0)) * 800 +
+                               x + (w - 1 if xneg else 0))
+        self.ge(0xF0, (sy << 16) | sx)
+        self.ge(0xE8, corner(sx, sy) if src is None else src)
+        self.ge(0xF8, (dy << 16) | dx)
+        self.ge(0xE4, corner(dx, dy) if dest is None else dest)
+        self.ge(0xE0, ((h - 1) << 16) | (w - 1))
+        self.ge(0xC8, 3)
+        self.ge(0xFC, 0xA8000000 | d)
+
+    def test_overlapping_blit_down(self):
+        # Rows 0-2 copied one row down, bottom row first (direction 2),
+        # as copy_to_hidden moves the screen: an overlapping copy that
+        # must read each source row before it is overwritten.
+        self.setup_engine()
+        fb = self.vga.fb
+        for y in range(3):
+            fb[y * 800:y * 800 + 4] = bytes([y + 1]) * 4
+        self.blit(0, 0, 0, 1, 4, 3, 2)
+        self.assertEqual([fb[y * 800] for y in range(4)], [1, 1, 2, 3])
+
+    def test_overlapping_blit_right(self):
+        self.setup_engine()
+        fb = self.vga.fb
+        fb[0:4] = b"\x01\x02\x03\x04"
+        self.blit(0, 0, 2, 0, 4, 1, 4)
+        self.assertEqual(fb[0:6], b"\x01\x02\x01\x02\x03\x04")
+
+    def test_blit_with_inconsistent_addresses_stops(self):
+        self.setup_engine()
+        with self.assertRaises(beboot.Stop):
+            self.blit(0, 0, 0, 1, 4, 3, 2, src=0)     # top corner, not bottom
+
+    def test_unmodelled_stops(self):
+        for action in (lambda: self.out(0x3D7, 1),           # enhancement
+                       lambda: self.out(0x3B4, 1),           # mono CRTC
+                       lambda: self.ge(0x80, 1),             # unnamed index
+                       lambda: self.ge(0xFC, 0x12345678)):   # other command
+            with self.assertRaises(beboot.Stop):
+                self.setup_engine()
+                action()
+        self.out(0x217A, 0x94)
+        with self.assertRaises(beboot.Stop):
+            self.board.read(self.REGS + 0x217C)
+        with self.assertRaises(beboot.Stop):
+            self.board.read(0xD0100000)                  # past 1 MB
+
+    def test_screen_png(self):
+        import zlib
+        for i, v in ((0x01, 1), (0x07, 0), (0x12, 1), (0x13, 2),
+                     (0x14, 0x40), (0x0C, 0), (0x0D, 0)):
+            self.out(0x3D4, i)
+            self.out(0x3D5, v)
+        self.out(0x3C8, 7)
+        for v in (255, 0, 0xDD):
+            self.out(0x3C9, v)
+        self.board.write(0xD0000000, 0x07000000, 0xF)    # pixel (0,0) = 7
+        png = self.vga.png()
+        self.assertEqual(png[:8], b"\x89PNG\r\n\x1a\n")
+        self.assertEqual(png[16:24], (16).to_bytes(4, "big") +
+                         (2).to_bytes(4, "big"))
+        n = int.from_bytes(png[33:37], "big")
+        raw = zlib.decompress(png[41:41 + n])
+        self.assertEqual(len(raw), 2 * (1 + 16 * 3))
+        self.assertEqual(raw[:7], b"\0" + bytes([255, 0, 0xDD]) + b"\0\0\0")
+
+    def test_screen_paging_mode_doubles_the_pitch(self):
+        # VGADOC, old mode control 2 bit 4: the CRTC offset counts double.
+        # app_server sets it (old 0Dh = 0x38) with CR13 = 50 for 800 bytes.
+        import zlib
+        self.out(0x3C4, 0x0B)
+        self.out(0x3C5, 0)
+        self.out(0x3C4, 0x0D)
+        self.out(0x3C5, 0x10)
+        for i, v in ((0x01, 1), (0x07, 0), (0x12, 1), (0x13, 1),
+                     (0x14, 0x40)):
+            self.out(0x3D4, i)
+            self.out(0x3D5, v)
+        self.out(0x3C8, 5)
+        for v in (1, 2, 3):
+            self.out(0x3C9, v)
+        self.vga.fb[16] = 5                  # row 1, pitch 16 not 8
+        png = self.vga.png()
+        n = int.from_bytes(png[33:37], "big")
+        raw = zlib.decompress(png[41:41 + n])
+        self.assertEqual(raw[49:53], b"\0\x01\x02\x03")
 
 
 class ScsiDiskLunTest(unittest.TestCase):
