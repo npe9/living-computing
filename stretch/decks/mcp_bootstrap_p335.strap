@@ -140,7 +140,7 @@ YDBBEG  LV,$2,SICBU                                          ! line  9
         LVI,$12,$+1.0                                        ! line 10  - TOK DISPLAY IC
         B,PD4                                                ! line 11
 ! line 12  -        -ANY DEBUGGING ACTIONS DEFINED
-        CT0011(BU,5),PNSLIN+GDELK                            ! line 13  -IS ANY OF THE 5 KEYS ON
+        CT0011(BU,5),P NSLIN+G DELK                          ! line 13  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20);  -IS ANY OF THE 5 KEYS ON
         BZRZ,PDB1                                            ! line 14
         BB,PNSLIN+PSICK,PDB1                                 ! line 15
         CT1100(BU,2),PNSLIN+PDKLS,0                          ! line 16  -ARE BOTH ENTER FROM BINARY

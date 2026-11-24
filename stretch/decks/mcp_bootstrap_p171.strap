@@ -376,6 +376,10 @@ KCAB    V+I,2,1.0
         SV,2,S TIC
         V-I,2,.32
         SVA,2,$+1.32
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! >>> PRINTED "SWAPI,3,$1,S TLR+14." -- the blank in "S TLR" has to
 ! come out HERE and only here.  strap_asm resolves a blanked symbol
 ! only when the WHOLE field is letters, digits and blanks
@@ -386,13 +390,17 @@ KCAB    V+I,2,1.0
 ! refused.  Reported, and the printed form is in the listing block.
 ! Every landed deck closes this up the same way (p.145 line 10 has
 ! the identical card).
-        SWAPI,3,$1,STLR+14.
+        SWAPI,3,$1,S TLR+14.             ! AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         LVE,9,$
-        SWAPI,3,$1,STLR+14.0
+        SWAPI,3,$1,S TLR+14.0            ! AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         BUSAZ,K GOOF
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! >>> PRINTED "BADZ,K GOOF+.32" -- closed up for the same reason as
 ! the SWAPIs above, and for no other.
-        BADZ,KGOOF+.32
+        BADZ,K GOOF+.32                  ! AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
         KV,9,SLOWER
         BXL,KGOOF
         V+I,9,KQUANT

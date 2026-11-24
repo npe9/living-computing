@@ -245,6 +245,9 @@ interface HobbitEvents;
   method Word faultReg();
   method Action setIsp(Word isp);
   method Action setShad(Word shad);
+  // The FAULT control register (Table 1-24 reg 9, p. 1-26): a CPU write
+  // from the core.  The unit sets it itself on a read or write fault.
+  method Action setFault(Word v);
   method Action ack();
   // Testbench access to the model event memory (load vectors, read the
   // saved frame).  The machine's only writer is the sequence rule.
@@ -261,17 +264,29 @@ endinterface
 // vector the sequence reads next.  The standalone testbenches keep the
 // write (their memory *is* the stack).
 module mkHobbitEvents#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
-  HobbitEvents e <- mkHobbitEventsP(mem, mmu, False);
+  HobbitEvents e <- mkHobbitEventsP(mem, mmu, False, False);
   return e;
 endmodule
 
 module mkHobbitEventsCore#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
-  HobbitEvents e <- mkHobbitEventsP(mem, mmu, True);
+  HobbitEvents e <- mkHobbitEventsP(mem, mmu, True, False);
+  return e;
+endmodule
+
+// The privileged machine's event unit (mkHobbitCoreSystem): the frame and
+// the vector are the kernel's, so they are translated at kernel level
+// whatever the level of the PSW the event interrupts -- the reference
+// model's rule (hobbit_sem.System: "KCALL's frame and every vector read
+// are made at kernel level whatever the PSW's level"); p. 1-37/1-38
+// put both on the interrupt stack and the vector table, which a
+// user-level translation of a kernel page would refuse.
+module mkHobbitEventsSys#(HobbitEventMem mem, HobbitMmu mmu)(HobbitEvents);
+  HobbitEvents e <- mkHobbitEventsP(mem, mmu, True, True);
   return e;
 endmodule
 
 module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
-                        Bool cspInCore)(HobbitEvents);
+                        Bool cspInCore, Bool atKernel)(HobbitEvents);
   Reg#(EvState) state <- mkReg(EVS_IDLE);
   Reg#(EventCauses) cR <- mkRegU;
   Reg#(EventClass) clsR <- mkReg(EV_NONE);
@@ -303,13 +318,14 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
   Wire#(Bool) ackW <- mkDWire(False);
   Wire#(Maybe#(Word)) setIspW <- mkDWire(tagged Invalid);
   Wire#(Maybe#(Word)) setShadW <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(Word)) setFaultW <- mkDWire(tagged Invalid);
 
   // Translate an event address; PSW.V selects (p. 1-20, p. 2-1).
   function MmuResp xlate(Word va, Bool wr, Word psw);
     return mmu.translate(MmuReq { va: va,
                                   isText: False,
                                   isWrite: wr,
-                                  user: (psw[10] == 1'b1),
+                                  user: !atKernel && (psw[10] == 1'b1),
                                   enabled: (psw[16] == 1'b1) });
   endfunction
 
@@ -337,7 +353,8 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
     Word nVec = vecR;
     Word nSavedPc = savedPcR;
     Word nSavedPsw = savedPswR;
-    Word nFault = faultR;
+    Word fault0 = fromMaybe(faultR, setFaultW);
+    Word nFault = fault0;
     Word nCspAddr = cspAddrR;
     Word nCspData = cspDataR;
     Bool nHaveCsp = haveCspR;
@@ -371,7 +388,7 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
             Word vAddr = 0;
             Word nPsw = c.psw;
             Word id = 0;
-            Word nFl = faultR;
+            Word nFl = fault0;
             Vector#(3, Word) as = replicate(0);
             Vector#(3, Word) ds = replicate(0);
             Bit#(2) nw = 0;
@@ -406,8 +423,9 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
               nShad = nIsp;
               vAddr = c.vb + 4;
               nPsw  = c.psw & 32'hFFFF0000;
+              // "the word-aligned virtual address" (p. 1-39).
               if (id == 32'h8 || id == 32'h9)
-                nFl = c.va;
+                nFl = c.va & 32'hFFFFFFFC;
               ok    = xlateOk(as[0], True, c.psw) &&
                       xlateOk(as[1], True, c.psw) &&
                       xlateOk(as[2], True, c.psw);
@@ -571,6 +589,10 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
 
   method Action setShad(Word v);
     setShadW <= tagged Valid v;
+  endmethod
+
+  method Action setFault(Word v);
+    setFaultW <= tagged Valid v;
   endmethod
 
   method Action ack();

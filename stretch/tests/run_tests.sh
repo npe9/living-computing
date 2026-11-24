@@ -15308,14 +15308,14 @@ run "C22-6578 Problem 2.8 -- KOMF as meant, KF(BU,8): halts, 36/8/44 by the prin
 run "C22-6578 Problem 2.8 -- KOMF and ADD as meant: the statement's 375, 80, 455" ./run_program.sh ../decks/problem_2_8_corrected.strap StretchP28CTb ASM=strap2 STEPS=6000 PC=2031 \
     "F1_375:1203=0x0000000307054941" "F2_80:1207=0x0000000008003547" \
     "FT_455:14=0x40505" "RM:13=0"
-# Transcribing 2.8 found that strap_asm assembles a DD in a decimal mode as a
-# BINARY integer (C22-6531 printed pp.28-29 says digits, one per byte).  Two
-# runs of the one reproducer: strap_asm, pinning the wrong words, and the
-# host STRAP II, which is right.  docs/NEXT.md has the section.
-run "strap_asm: a decimal-mode DD is assembled binary (PINNED WRONG)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
-    "DU8_WRONG_want_0102:1010=0x000C000000000000" "DU4_WRONG_want_1234:1011=0x04D2000000000000" \
-    "DUE_WRONG_want_000000010205:1012=0x00000000007D0000" \
-    "DS4_WRONG_want_1238:1013=0xFF85000000000000" "BU_control:1014=0x000C000000000000"
+# Transcribing 2.8 found that strap_asm assembled a DD in a decimal mode as a
+# BINARY integer.  Fixed 2026-11-23 (C28-6129 printed p.15: one decimal digit
+# a byte; check_dd_decimal_mode.py).  Two runs of the one reproducer, strap_asm
+# and the host STRAP II, now pinned to the same words.
+run "strap_asm: a decimal-mode DD is decimal (C28-6129 printed p.15)" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDecTb "PC=2000" \
+    "DU8:1010=0x0102000000000000" "DU4:1011=0x1234000000000000" "DUE:1012=0x0000000102050000" \
+    "DS4:1013=0x1238000000000000" "BU_control:1014=0x000C000000000000"
+run "strap_asm and STRAP II agree on a D/DU DD (C28-6129 printed pp.15, 29-30)" python3 check_dd_decimal_mode.py
 # The same deck through the host STRAP II: the rule's own values.
 run "host STRAP II: a decimal-mode DD is decimal" ./run_program.sh ../decks/repro_dd_decimal_mode.strap StretchReproDdDec2Tb "ASM=strap2" "PC=2000" \
     "DU8:1010=0x0102000000000000" "DU4:1011=0x1234000000000000" "DUE:1012=0x0000000102050000" \
@@ -15342,9 +15342,15 @@ run "C22-6578 Problem 2.9 -- effective address from the bits; hand traces" ./run
     "printed_10_NOT_the_EA_701p1:1160=0x00AFC30000000000" \
     "kminus_10_NOT_the_EA_701p1:1180=0x00AFC30000000000" \
     "printed_11_NOT_the_EA_802p2:1161=0x00C88C0000000000" "kminus_11_ok:1181=0x00C8820000000000"
-# 2.9's statement TEST is printed "(2) 10,4", with a blank strap_asm refuses
-# and the host STRAP II ignores.  One of the three checks PINS the refusal.
-run "strap_asm refuses the blank in (2) 10, STRAP II ignores it (C22-6578 printed p.21)" python3 check_radix_blank.py
+# 2.9's statement TEST is printed "(2) 10,4".  A blank is not seen by the
+# grammar (C22-6729 printed p.20, GETCHA); both assemblers ignore it.
+run "a blank in (2) 10 is ignored by both assemblers (C22-6578 printed p.21, C22-6729 printed p.20)" python3 check_radix_blank.py
+# A name written with blanks and something after it, "K REPET.32": six
+# printed MCP rows through listing_oracle (C22-6729 printed p.20, GETCHA).
+run "a blanked name inside an expression (C22-6729 printed p.20; six MCP rows)" python3 check_blanked_name.py
+# An integer in parentheses after a datum is a subscript, not an index
+# (C28-6129 printed pp.11, 32; C22-6729 printed p.203): strap_asm refuses it.
+run "an integer in an index's parentheses is refused as a subscript (C28-6129 printed pp.11, 32)" python3 check_integer_subscript.py
 # 2.10: element (p,q) of a 4 x 5 matrix, twice (3,4 and 1,1).  VFL multiply,
 # the product stored into an index register's value field, two V+.
 run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../decks/problem_2_10.strap StretchP210Tb "PC=2029" \

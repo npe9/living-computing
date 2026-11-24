@@ -25,10 +25,14 @@
 ! 7030 number form at all.
 !
 ! THE HOST STRAP II (strap/strap2, "ASM=strap2") ASSEMBLES ALL FIVE AS
-! THE RULE SAYS -- OBSERVED 0102, 1234, 0000 0001 0205, 1238, 000C.  So
-! the registered run is two runs of this one deck: under ASM=strap2 the
-! checks are the right values; under strap_asm they PIN THE WRONG ONES,
-! each label carrying what it must become.  The program is one BEW, $.
+! THE RULE SAYS -- OBSERVED 0102, 1234, 0000 0001 0205, 1238, 000C.
+!
+! FIXED IN strap_asm 2026-11-23 (the "strap_asm ..." column above is the
+! before).  The STRAP II rule is C28-6129 printed p.15 (PDF 19), which
+! prints "DD(DU, 12, 4),12 / 000000010010", and printed pp.29-30.  The
+! registered run is two runs of this one deck, strap_asm and ASM=strap2,
+! with the same five values; tests/check_dd_decimal_mode.py has the
+! rows and the injections.  The program is one BEW, $.
 
         SLC, 1000.0
 START   BEW, $
