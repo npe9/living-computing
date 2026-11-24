@@ -31,6 +31,9 @@ the working file, reverted by the reverse edit, `git diff` checked):
   test_il_taken ('max-steps': rawkbdputc never gets a code).
 * p9scancode: skeymap characters sent without Lshift around them: FAIL
   test_known_codes, test_round_trip (`|` typed as `\\`).
+* p9boot: MEMSIZE 16 MB in ppage0: FAIL test_the_line (`2795 free
+  pages, 11180K bytes, ...`), test_il_taken (the same line), and
+  test_typed_at_the_prompt (step 22,562,886, not 22,515,681).
 """
 import hashlib
 import os

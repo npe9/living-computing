@@ -707,6 +707,10 @@ such.
 * **console-input** — the console line is Quart channel 0 (section "The
   console"); `--type TEXT=REPLY` types REPLY there once the screen shows
   TEXT, `--think SECONDS` after it.
+* **console-keyboard** — an image that defines `kbdinit` (a 9term
+  linked from the release) gets `--type` as `kbd.c` scan codes on Quart
+  channel 2 (section "Our 9term"); the keyboard's own timing is not
+  modelled, the codes come at the line's character rate.
 
 ### Quart (`QUART_CHOICES`, `io.h` `Quart`/`Duart`, `deveia.c`)
 
@@ -906,23 +910,31 @@ press/release codes using `keymap[]`/`skeymap[]` read out of the vendored
 `kbd.c`, `Lshift` around shifted characters, CR as the Return key.
 s9term runs are unchanged (it has no `kbdinit`).
 
-Every difference from the s9term boot, diagnosed from the sources (all
+The device rows below count every access to a device register from reset
+to `/boot`'s prompt, both images run the same way (a scratch wrapper
+around `Board.read`/`write`; equal counts are not listed).  Every
+difference from the s9term boot, diagnosed from the sources (all
 expected from the drift in docs/s9term.md; no bug in our build or in the
 reference model was found):
 
 | | s9term | our 9term | why |
 |---|---|---|---|
 | first line | `1364 free pages, 5456K bytes, swap 27856K, ...` | `1362 free pages, 5448K bytes, swap 27848K, ...` | `end` 0x80062ee0 vs 0x800653d8 (text +4,268, data +2,520, bss +2,676): rammain.c `confinit` gives npage = (8 MB top - PGROUND(end))/4K = 1949 vs 1946; page.c prints upages = npage*70/100 = 1364 vs 1362; swap is pmem + nswap pages |
-| `main` reached | step 125,203 | 128,548 | +3,345 = 669 more BSS words cleared by raml.s `_virtual`'s 5-instruction loop (bss +2,676 bytes) |
+| `main` reached | step 125,203 | 128,548 | +3,345 = 669 more BSS words cleared by raml.s `_virtual`'s loop (raml.s:91-97, five instructions a word: CMPHI, JMPT, MOV, ADD, JMP; bss +2,676 bytes) |
 | first line on the screen | step 2,131,084 | 2,135,886 | the above plus the screeninit row |
 | `screeninit` | `eiaspecial(0, &printq, &kbdq, 19200)`, `eiaspecial(3, ...)`, `bitreverse` | `kbdinit(2)`: `eiaspecial(2, &liteq, &kbdq, 600)`, `eiasetrts`, `eiasetparity(2, 'o')`, `eiarawput(2, Noclick)`, then `eiaspecial(3, ...)`, `pixreverse` | s9term's screen.c predates kbd.c; devbit.c's `bitreverse` became `pixreverse` (docs/s9term.md table) |
 | Quart channel 2 out | nothing | `0x08` once | `eiarawput(portno, Noclick)` (kbd.c:282) |
 | serial console (channel 0) | every console line, `\n` as `\r\n` (`a5_uart0.txt`, 2235 bytes) | **nothing** | only rommain.c sets `printq` (rommain.c:41); `putstrn` skips the serial line when `printq.puts == 0` |
 | console input | ASCII on channel 0, `kbdcr2nl` | scan codes on channel 2, `rawkbdputc` | kbd.c `kbdinit` |
 | clock | ctu = ctl = 0xFF: a tick every 0.569 s (QUART_CHOICES `counter-period`) | deveia.c `clockinit`'s `Crystal/(2*16*HZ)`: 25 Hz | s9term's clockinit is older |
+| Quart channel 0 registers to the prompt | 75 `sr` reads, 74 `txfifo` writes (pageinit's line and `\r\n`) | none | no printq (above) |
+| Quart channel 2 registers to the prompt | | 2 `sr` reads, writes to its mr/csr/cr and the global registers | kbdinit's `uartsetup` of channel 2, `eiasetparity`, `eiasetrts`, `eiarawput` |
+| Irq registers to the prompt (26 interrupts each) | mask0/1 read 57 times, status0/1 52 (twice per interrupt) | mask0/1 read 5 times (setvector's or-assignments), status0/1 26 (once per interrupt) | s9term's dispatcher is `interrupt` in its devether.c (docs/s9term.md); the release's is trap.c `interrupt`, which keeps the mask in `irqmask` and reads the status once |
+| WD33C93 | 2 reads of its register to the prompt | 3 | the release's scsi.c (`ctlrreset`, `issue`: docs/s9term.md) |
+| LCD to the prompt | 58 control and 16,256 data writes | 42 and 16,128 | screen.c drift (updates of the same two lines of text); pixels are not modelled |
 | `/boot`'s prompt | 286,977,189 instructions, 14.367 s | **22,515,681, 1.144 s** | the clock: `/boot`'s `sleep(1000)` is 25 ticks either way (s9term at `--counter-period 0.04`: 22,537,089, 1.145 s) |
 | A5 script | 840,583,000 instructions, 42.2 s model, 1108 frames | 603,242,715, 30.3 s, 1221 frames | the clock again, for every sleep and alarm |
-| IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state | stil.c `ilackproc` sleeps `Iltickms` (100 ms) and resends as Dataquery once `fasttime` (400 ms at the minimum rtt) passes; at 25 Hz that is real time, and the lockstep's server lags the model by up to ~0.6 s ("One time base"), while s9term's 0.569 s ticks make the same timer ~2.3 s.  All resends were answered; nothing was lost |
+| IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state; the server 48 state (s9term's run: 0) | measured from the pcap (types per `ipdat.h`'s enum; IP fragments skipped): 12 Dataqueries are the Hobbit's own retransmit timer (stil.c `ilackproc`: `tsleep(Iltickms)`, resend once `fasttime`, 400 ms at the minimum rtt, has passed), each after the server had been silent on that connection for 240 ms or more (the longest 1.1 s); at 25 Hz those 100 ms ticks are real, while s9term's 0.569 s ticks stretch the same timer past anything the server took.  The other 36 come within 2 ms of a server State: stil.c's `Ilstate` case calls `ilrexmit` whenever anything is unacked, and the server answers every Dataquery with a State (`Ildataquery` case), whose ack is one message behind when the Hobbit has sent another in the meantime, so once started the exchange repeats until the Hobbit is idle.  Both paths are the source's; every message was delivered and the run's output is s9term's.  Whether the timer-driven waits are the server's own time or the lockstep's lag (up to ~0.6 s, "One time base") is not separated |
 
 The run replays without QEMU: `p9boot.py build/p9kbuild/9term
 --ether-replay DIR/hobbit.pcap` with the twelve `--type` answers and
