@@ -142,6 +142,14 @@ agree check):
       every row (74): HEAD's "QI SYN, N*2" is refused
   control: PASS 113
 
+2026-11-23: AN INTEGER INDEX IS A SUBSCRIPT.  strap_asm now refuses an index
+parenthetical with no bit-address term (C28-6129 printed pp.11, 32; C22-6729
+printed p.203; tests/check_integer_subscript.py).  Rows "index N/4" and the
+control "(N) alone is an index" left CASES for SUBSCRIPT_ROWS, which pin
+strap_asm's refusal and strap2's disagreement; "(SAM) alone is an index" is
+the new control; the mixed-SYN index row's reference became "SAM(1.0)".
+The injection notes above were measured on the old rows.  Control: PASS 114.
+
 NOT ALIGNED, probed: an index written with a bit and an integer part and no
 arithmetic, "B, SAM($1+1)", is index 2 in strap_asm and 1 in strap2 (its
 S/X rule drops the integer part).  This difference was there before G3.
@@ -199,14 +207,26 @@ CASES = [
     ("transmit J 1.0*2 (a bit part)", "T, 1.0*2, SAM, SAM", "T, 2, SAM, SAM"),
     ("register field N/4", "LV, N/4, SAM", "LV, 2, SAM"),
     ("register field, mixed SYN 1.0+2", "LV, QS, SAM", "LV, 3, SAM"),
-    ("index N/4", "B, SAM(N/4)", "B, SAM(2)"),
-    ("index, mixed SYN 1.0+2 (strap2: B's word)", "B, SAM(QS)", "B, SAM(1)"),
+    ("index, mixed SYN 1.0+2 (strap2: B's word)", "B, SAM(QS)", "B, SAM(1.0)"),
     ("(N+1) alone is arithmetic", "B, (N+1)", "B, 4.32"),
     ("(-N) alone is arithmetic", "B, (-N)", "B, -N"),
     ("(N.) alone is arithmetic", "B, (N.)", "B, 8.0"),
     ("($1+1) alone is arithmetic", "B, ($1+1)", "B, 17.32"),
     ("($1) alone is an index (p.126, control)", "KV,2,($1)", "KV,2,0($1)"),
-    ("(N) alone is an index (control)", "B, (N)", "B, 0(N)"),
+    ("(SAM) alone is an index (control)", "B, (SAM)", "B, 0(SAM)"),
+]
+
+# AN INTEGER IN AN INDEX'S PARENTHESES IS A SUBSCRIPT (2026-11-23): C28-6129
+# printed p.11 and p.32 restriction 3 ("The I or K fields ... must contain at
+# least one STRAP bit address term"); C22-6729 printed p.203.  strap_asm
+# refuses these (tests/check_integer_subscript.py); strap2 still reads them
+# as an index (getfld _paren, CHOSEN), so each row PINS that disagreement.
+# Until 2026-11-23 they were rows above: "index N/4" (SAM(N/4) as SAM(2))
+# and the control "(N) alone is an index" (B, (N) as B, 0(N)); the mixed-SYN
+# row's reference "SAM(1)" became "SAM(1.0)", its bit-address spelling.
+SUBSCRIPT_ROWS = [
+    ("index N/4 (no bit-address term)", "B, SAM(N/4)"),
+    ("(N) alone (an integer, no bit-address term)", "B, (N)"),
 ]
 
 fails = 0
@@ -247,6 +267,12 @@ for name, card, means in CASES:
         check(f"{name}: {asm}: '{card}' assembles as '{means}'",
               not isinstance(a, str) and a == b, f"{show(a)} vs {show(b)}")
     check(f"{name}: strap_asm and strap2 agree", got["strap_asm"] == got["strap2"])
+
+for name, card in SUBSCRIPT_ROWS:
+    a, b = words("strap_asm", card), words("strap2", card)
+    check(f"{name}: strap_asm refuses '{card}' (C28-6129 p.11)",
+          isinstance(a, str) and "SUBSCRIPT" in a, show(a))
+    check(f"{name}: strap2 PINNED: still assembles '{card}'", not isinstance(b, str), show(b))
 
 for asm in ("strap_asm", "strap2"):
     w = words(asm, "B, N**2")

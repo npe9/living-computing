@@ -1379,6 +1379,38 @@ def eval_reg(expr, symtab, lineno=None):
     return v & 0xF
 
 
+def _has_bit_address_term(expr, symtab, lineno=None):
+    """Does this parenthetical carry at least one STRAP bit-address term?
+
+    C28-6129 printed p.32 (PDF 36), restriction 3: 'The "I" or "K"
+    fields ... must contain at least one STRAP bit address term.'
+    Printed p.11 (PDF 15), "Address Field": "STRAP bit addresses, system
+    symbols and programmer symbols that are defined as bit addresses are
+    all legal entries in an index field ... If an integer is written in
+    the index field, the meaning is entirely different.  The integer
+    tells STRAP that the symbol in the address field proper has been
+    defined as an array and the integer is addressing an element in that
+    array."  C22-6729 printed p.203 (Appendix E): "Dimension or
+    Subscript -- This is an integer specified within parentheses after a
+    symbol to refer to an item within an array."  So a term is a bit
+    address if it is written with a point (W.B, .B, M.), is a system
+    symbol ($N, $X1, $R ...), or is a programmer symbol not classified
+    as an integer (SymTab.sym_int); a bare integer or an integer-
+    classified symbol is not.  An integer term BESIDE a bit-address term,
+    "($1+1)", is p.34 item 8's case and stays an index."""
+    texts = ([t[1] for t in _arith_tokens(expr, lineno) if isinstance(t, tuple)]
+             if _is_arith_field(expr) else [expr])
+    ints = getattr(symtab, 'sym_int', ())
+    alias = getattr(symtab, 'sys_alias', {})
+    for text in texts:
+        for _s, kind, val in tokenize_expr(text, lineno):
+            if kind in ('bitaddr', 'bitsym', 'wordsym', 'sys'):
+                return True
+            if kind == 'sym' and (val.upper() not in ints or val.upper() in alias):
+                return True
+    return False
+
+
 def eval_index(expr, symtab, lineno=None):
     """An index (S/X) field.  As eval_reg, except that a field with
     arithmetic or a mixed SYN takes strap2's index rule (value.py, its
@@ -1386,6 +1418,18 @@ def eval_index(expr, symtab, lineno=None):
     integer part -- not their sum.  That rule is strap2's CHOSEN one; no
     page gives the S/X of a mixed value.  "B, SAM($1+1)" is index 1 in
     strap2, and strap_asm gave 2."""
+    if expr is not None and expr.strip() and not _has_bit_address_term(expr, symtab, lineno):
+        raise AssemblerError(
+            f"({expr.strip()}) after a datum has no bit-address term, so it is "
+            f"a SUBSCRIPT, not an index (C28-6129 printed p.11: 'If an integer "
+            f"is written in the index field, the meaning is entirely "
+            f"different ... addressing an element in that array'; printed p.32 "
+            f"restriction 3; C22-6729 printed p.203, 'Dimension or Subscript').  "
+            f"Subscripts are not implemented, and what STRAP II assembles after "
+            f"messages 72/74 (C22-6729 p.177) is not printed; and C28-6129 "
+            f"printed p.26 reads the (7) of 'INFO(7)(.30)1265' as a RADIX, a "
+            f"third reading, also not built.  Write an index as a bit "
+            f"address, e.g. ($3)", lineno)
     if expr is not None and expr.strip() and (
             _is_arith_field(expr) or (
                 getattr(symtab, 'sym_ipart', None)

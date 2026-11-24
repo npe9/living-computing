@@ -15348,6 +15348,9 @@ run "a blank in (2) 10 is ignored by both assemblers (C22-6578 printed p.21, C22
 # A name written with blanks and something after it, "K REPET.32": six
 # printed MCP rows through listing_oracle (C22-6729 printed p.20, GETCHA).
 run "a blanked name inside an expression (C22-6729 printed p.20; six MCP rows)" python3 check_blanked_name.py
+# An integer in parentheses after a datum is a subscript, not an index
+# (C28-6129 printed pp.11, 32; C22-6729 printed p.203): strap_asm refuses it.
+run "an integer in an index's parentheses is refused as a subscript (C28-6129 printed pp.11, 32)" python3 check_integer_subscript.py
 # 2.10: element (p,q) of a 4 x 5 matrix, twice (3,4 and 1,1).  VFL multiply,
 # the product stored into an index register's value field, two V+.
 run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../decks/problem_2_10.strap StretchP210Tb "PC=2029" \
