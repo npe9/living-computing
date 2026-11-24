@@ -1709,6 +1709,15 @@ class Machine:
         self.argv[x] = var
         self.reg[y] = var
 
+    def i_set_marked_variable(self, pc, x, y, z, c16):
+        # as set_variable, the argument and the register with the MRB
+        # on (23:15 c8_r, assembler/inst_tab.kl1:18; PDSS emulate.c
+        # KL1B_SET_MARKED_VARIABLE: SetAll(arg, REF, undef, MRBON), the
+        # register a copy), as put_marked_variable
+        var = self.new_var()
+        self.argv[x] = (REF + 1, var[1])
+        self.reg[y] = (REF + 1, var[1])
+
     def i_enqueue_goal(self, pc, x, y, z, c16):
         # A goal has 11 argument slots; the compiler packs the
         # arguments from the 11th on into a vector, which is the 11th

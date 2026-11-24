@@ -177,6 +177,7 @@ of this module can check, on either model, and injections confirm it:
 | `put_variable` | `23:33 x y` | `r[x]` and `r[y]` := one fresh unbound variable | checked |
 | `set_value` | `23:14 x y` | argument `x` (from 1) of the goal being built := `r[y]` | checked |
 | `set_variable` | `23:13 x y` | argument `x` of the goal being built and `r[y]` := one fresh variable | inferred from `ipl:boot/0`; not yet executed |
+| `set_marked_variable` | `23:15 x y` (c8_r, `inst_tab.kl1`:18) | as `set_variable`, a new variable for goal argument x and r[y], both references with the MRB on (PDSS `emulate.c` `KL1B_SET_MARKED_VARIABLE`: `SetAll(arg, REF, undef, MRBON)`, the register a copy), as `put_marked_variable` | checked on six cells of the bench (`lockstep_alt.py` part marked variable, 2026-11-24) |
 | `enqueue_goal` | `23:63 x c16` | make a goal of the predicate at the label with the `x` built arguments and put it on the ready queue | checked. That the newest goal runs first is the model's choice, not established |
 | `execute` | `23:61 x c16` | continue as a reduction of the predicate at the label, arguments already in `r[0..x)` | checked |
 | `new_string` | `22:D4 x y z` | `r[z]` := a new string of `r[x]` elements of `r[y]` bits: 8, 16 or 32 (the manual allows 1 to 32; others are refused) | checked (`lockstep_s32.py` for 32) |

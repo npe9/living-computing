@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6, jump.
+"""Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6, jump,
+set_marked_variable.
 
     python3 ref/pimm/lockstep_alt.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_alt.py compare
@@ -77,6 +78,11 @@ gives it, not from either model:
                 proceed; @3: put_integer 1, 7; jump @1, a branch forward
                 and one back: p(X) gives X = 7.  Pins 10 / 1897 ->
                 11 / 1927, this part's 30 lines.
+  marked variable  set_marked_variable, 23:15 (2026-11-24; the next
+                stop of pim:go/4; none in the image): six cells, OURS,
+                p(X) :- true | q(Y), X = Y. q(5).  X = 5, the goal's
+                argument and r1 written with the MRB on.  Pins 11 /
+                1927 -> 12 / 1972, this part's 45 lines.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -94,6 +100,8 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
                                              for put_integer)
   (2026-11-24) jump to the label + 1         jump, line 21 (the second
                                              jump for put_integer)
+  (2026-11-24) set_marked_variable unmarked  marked variable, line 24:
+                                             A 1 06.. for 07..
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -114,7 +122,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=11, lines=1927)
+PINNED = dict(parts=12, lines=1972)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -379,21 +387,45 @@ def script():
     s.run()
     s.out(0)
     part('jump', [7])
+    # 11. set_marked_variable (2026-11-24, met in pim:go/4 after jump;
+    #    none in the image).  OURS, six cells: p(X) :- true | q(Y),
+    #    X = Y. q(5).  set_marked_variable 1, 1; enqueue_goal 1, @4;
+    #    get_value 0, 1; proceed; @4: get_integer 0, 5; proceed.  The
+    #    argument and r1 are written with the MRB on (the A and R lines)
+    s.label('marked variable')
+    code = [(KLB, 0x15 << 24 | 1 << 16 | 1 << 8),  # set_marked_variable 1, 1
+            (KLB, 0x63 << 24 | 1 << 16 | 1),       # enqueue_goal 1, @4
+            (KLB, 0xbc << 24 | 0 << 16 | 1 << 8),  # get_value 0, 1
+            (KLB, 0x60 << 24),                     # proceed
+            (KLB, 0xb9 << 24 | 0 << 16 | 5),       # @4: get_integer 0, 5
+            (KLB, 0x60 << 24)]                     # proceed
+    s.vector(15, 8, code)
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    assert [m.opname(at + i) for i in range(6)] == [
+        'set_marked_variable', 'enqueue_goal', 'get_value', 'proceed', 'get_integer', 'proceed']
+    s.newvar(0)
+    s.arg(1, 0)
+    s.spawn(at, 1)
+    s.run()
+    s.out(0)
+    part('marked variable', [5])
     return s, want
 
 
 # part: (reductions that end in a failure, in a suspension)
 ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal': (0, 0),
         'alternatively': (0, 2), 'vector 4': (0, 0), 'vector 4 of three': (1, 0),
-        'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0)}
+        'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0),
+        'marked variable': (0, 0)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
          'alternatively': ('read_eagerly', 4), 'vector 4': ('wait_vector_4', 4),
          'vector 4 of three': ('wait_vector_4', 1), 'vector 6': ('wait_vector_6', 3),
          'vector 1': ('wait_vector_1', 4), 'vector 0': ('wait_vector_0', 4),
-         'jump': ('jump', 2)}
-OPCODE = {'jump': '2367', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'jump': ('jump', 2), 'marked variable': ('set_marked_variable', 1)}
+OPCODE = {'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 

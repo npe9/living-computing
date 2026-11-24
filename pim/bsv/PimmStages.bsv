@@ -362,7 +362,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       opA <= marked(regs.r(src));
       st <= XMark;
     end
-    else if (op == op_put_variable || op == op_set_variable || op == op_put_marked_variable) begin
+    else if (op == op_put_variable || op == op_set_variable || op == op_put_marked_variable
+             || op == op_set_marked_variable) begin
       gbox.newVar;
       st <= XVar1;
     end
@@ -1128,8 +1129,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ---- variables and goals -------------------------------------------------
   rule var1 (st == XVar1);
     let v0 <- gbox.newVarResult;
-    // put_marked_variable: both references with the MRB on (PDSS)
-    let v = op == op_put_marked_variable ? marked(v0) : v0;
+    // put_/set_marked_variable: both references with the MRB on (PDSS)
+    let v = (op == op_put_marked_variable || op == op_set_marked_variable) ? marked(v0) : v0;
     opA <= v;
     if (op == op_put_variable || op == op_put_marked_variable) regs.wr(x, v);
     else regs.wa(x, v);
