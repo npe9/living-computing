@@ -103,14 +103,20 @@ The first console line, byte for byte, on both channels:
 
 At the counter rate the hardware formula gives (one tick per 0.569 s,
 QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
-**286,977,189 instructions** and 14.367 s of model time, 26 clock
+**286,977,111 instructions** and 14.367 s of model time, 26 clock
 interrupts, in 30-60 s of host time: 283,995,808 of those
 instructions are laps of the idle loop that the idle skip (below)
-retires without executing.  (Before the EEPROM answered, CHOICES
-`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.)
+retires without executing (that count measured before the exception
+record was charged, below).  (Before the EEPROM answered, CHOICES
+`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.  Before
+2026-11-24 an exception's record cost 0 and the prompt came at
+286,977,189; Table 4-36's `9 + D + A` per exception moves the model's
+clock ahead, and the prompt comes 84 instructions sooner: 286,977,105
+alone, 286,977,111 with the Quart bids of the same day, which alone
+gave 286,977,195.)
 
 With `--counter-period 0.04` (25 Hz) the same prompt comes after
-**22,537,091 instructions** (22,537,089 before the Quart bids of 2026-11-24; 1.145 s of model time, 26 clock
+**22,537,007 instructions** (22,537,089 before 2026-11-24; 22,537,091 with the Quart bids of that day alone, 22,537,005 with the exception record's cost alone; 1.145 s of model time, 26 clock
 interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
 the EEPROM answered it was 22,530,554, measured first without the idle
 skip (6 minutes of host time) and reproduced exactly with it (29 s);
@@ -144,7 +150,7 @@ root is from (il, tcp, incon, 9600, 19200)[il]:
 sonic ether: 52 54 00 00 0b 0b
 ```
 
-At **287,845,766** instructions (287,845,754 before the Quart bids) (14.4 s of model time) `/boot` sends
+At **287,845,682** instructions (287,845,754 before 2026-11-24: 287,845,766 with the Quart bids alone, 287,845,670 with the exception record's cost alone) (14.4 s of model time) `/boot` sends
 its BOOTP request through the SONIC (`tests/test_p9boot.py`
 `NetworkTest`, with `--pcap`):
 
@@ -161,7 +167,7 @@ which checks the SONIC's byte lanes and CAM order at once.
 With nobody answering (a Wire with no peer), `/boot` sends the request
 ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
 0.569 s), each wait ended by an alarm note, and then asks
-`My IP address[0.0.0.0]: ` at 3,131,202,770 instructions (156.6 s of
+`My IP address[0.0.0.0]: ` at 3,131,202,422 instructions (3,131,202,766 before 2026-11-24; 3,131,202,770 with the Quart bids alone, 3,131,202,418 with the exception record's cost alone) (156.6 s of
 model time, ~55 s of host time; `NoServerTest`).  Each note's return is
 a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
 
@@ -255,7 +261,7 @@ It is kept as the record of the first join.  `JoinReplayTest` now
 replays `tests/net/join_echo.pcap` instead: the first 615 frames of the
 lockstep run of "Commands at rc's prompt" below, through init, termrc,
 init's restart of rc, and `echo hello` typed at `% ` and run, to
-715,866,474 instructions (715,867,166 before the Quart bids of 2026-11-24, whose transmit interrupts take up to 7 bytes; 700,303,728 idle-skipped then), 35.9 s of model
+715,861,422 instructions (715,867,166 before 2026-11-24; 715,866,474 with the Quart bids alone, whose transmit interrupts take up to 7 bytes, and 715,862,114 with the exception record's cost alone; 700,303,728 idle-skipped before both), 35.9 s of model
 time, ~3 min of CPU (174 s measured):
 
 ```sh
@@ -268,7 +274,7 @@ python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
 A lockstep recording replays like a free-running one: the model's
 frames carry model time and the console bytes are typed at screen text,
 so the run is reproduced instruction for instruction (the replay typed
-`echo hello` at step 711,879,422, as the live run did; 711,879,442 with the Quart bids, the recording still matching frame for frame).
+`echo hello` at step 711,879,422, as the live run did; 711,879,442 with the Quart bids, 711,874,370 with the exception record's cost alone, and 711,874,390 with both, the recording still matching frame for frame and the console unchanged).
 
 Live and free-running (`p9join.py --free-run`, the only mode until
 2026-11-23's lockstep), busy model time runs ~200 times slower than the
@@ -718,13 +724,14 @@ prevents.
 
 **The replay** (`tests/test_p9hub.py`, `HubReplayTest`):
 `tests/net/hub_cpu.pcap` is `live4`'s `--pcap` (1457 frames).  The
-suite's run replays it to init's first line after the log-in (408,307,318
-instructions, 197 frames, ~76 s): the wrong password refused, the right
+suite's run replays it to init's first line after the log-in (408,307,222
+instructions since the exception-record cost 9 + D + A; 408,307,318 live, 197 frames, ~76 s): the wrong password refused, the right
 one accepted, every frame the model sends equal to the recording, so the
 key and the check response are pinned to what the live auth server
 accepted.  `P9HUB_CPU=1` replays the whole recording, through
-`ip/ipconfig`, `cpu -h cpu9` and the commands' output, to the same
-1,580,420,168 instructions (OK in 412 s of host time on the loaded
+`ip/ipconfig`, `cpu -h cpu9` and the commands' output, to
+1,580,411,472 instructions (the live run's 1,580,420,168 less what the
+exception-record cost moved; every frame still as recorded) (OK in 412 s of host time on the loaded
 machine, over the suite's budget):
 
 ```sh
@@ -882,7 +889,7 @@ button-3 menu at (400, 800), swept a New window from (60, 640) to
 
 | moment | step | pixels sha256 |
 |---|---|---|
-| 8½ settled, `term% ` in 8½start's window (`q1`) | 1,388,344,680 | `7a182d44…` |
+| 8½ settled, `term% ` in 8½start's window (`q1`) | 1,388,344,680 (1,388,330,026 in the replay since an exception's record costs `9 + D + A`, 2026-11-24) | `7a182d44…` |
 | button 3 held: New Reshape Move Delete Hide (`menu`) | 2,063,875,593 | `e143bf51…` |
 | the swept window, its rc's `term% ` (`new`) | 2,767,523,950 | `c3b1cc7f…` |
 | `ls` in it: `bin lib tmp`, `term% ` (`ls`) | 2,983,469,493 | `a908ac29…` |
@@ -919,9 +926,12 @@ pattern.
 **The replay.**  `EightHalfReplayTest` replays the live run from
 `tests/net/8half.pcap` (its `--pcap`, 1311 frames) and its `--input-log`
 less the screenshots, with no QEMU: every frame the model sends equals
-the recording.  The suite's run stops at `q1` (1,388,344,680 steps)
+the recording.  The suite's run stops at `q1` (1,388,330,026 steps;
+1,388,344,680 before an exception's record cost `9 + D + A`)
 and pins the pixels, 8½start's window border and the white below it;
-`P9TERM_8HALF=ls` replays to the end (2,985,469,493 steps) and also
+`P9TERM_8HALF=ls` replays to the end (2,985,453,059 steps; the live
+run's 2,985,469,493 before an exception's record cost `9 + D + A`,
+every frame and both screens unchanged, 2026-11-24) and also
 compares the screen with `tests/net/8half_ls.png`.  The full replay
 reproduced all four checksums of the table above (build/gfx/rep2,
 2026-11-24).  Half of the host time is 8½ starting up: a replay to `q1`
@@ -1211,7 +1221,7 @@ the behaviour is inferred from `deviic.c`'s code and comments.
   clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
   with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
   are not in the release.  Reading it adds 6,535 instructions before the
-  prompt (22,537,089 at 25 Hz, 22,537,091 with the Quart bids).
+  prompt (22,537,089 at 25 Hz; 22,537,007 with the Quart bids and the exception record's cost of 2026-11-24).
 
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 
@@ -1368,7 +1378,7 @@ reference model was found):
 | Irq registers to the prompt (26 interrupts each) | mask0/1 read 57 times, status0/1 52 (twice per interrupt) | mask0/1 read 5 times (setvector's or-assignments), status0/1 26 (once per interrupt) | s9term's dispatcher is `interrupt` in its devether.c (docs/s9term.md); the release's is trap.c `interrupt`, which keeps the mask in `irqmask` and reads the status once |
 | WD33C93 | 2 reads of its register to the prompt | 3 | the release's scsi.c (`ctlrreset`, `issue`: docs/s9term.md) |
 | LCD to the prompt | 58 control and 16,256 data writes | 42 and 16,128 | screen.c drift (updates of the same two lines of text); pixels are not modelled |
-| `/boot`'s prompt | 286,977,189 instructions, 14.367 s | **22,515,681, 1.144 s** | the clock: `/boot`'s `sleep(1000)` is 25 ticks either way (s9term at `--counter-period 0.04`: 22,537,089, 1.145 s).  Both measured before the Quart's interrupt bids were corrected (`docs/devices/README.md`); since then 22,515,687 and 22,537,091 (`tests/test_own9term.py`, `TerminalTest`).  The A5 numbers below were not re-measured |
+| `/boot`'s prompt | 286,977,189 instructions, 14.367 s | **22,515,681, 1.144 s** | the clock: `/boot`'s `sleep(1000)` is 25 ticks either way (s9term at `--counter-period 0.04`: 22,537,089, 1.145 s).  Both measured before the Quart's interrupt bids were corrected (`docs/devices/README.md`); since then 22,515,687 and 22,537,091, and with an exception's record costing Table 4-36's `9 + D + A` (also 2026-11-24) 22,515,615 and 22,537,007 (`tests/test_own9term.py`, `TerminalTest`).  The A5 numbers below were not re-measured |
 | A5 script | 840,583,000 instructions, 42.2 s model, 1108 frames | 603,242,715, 30.3 s, 1221 frames | the clock again, for every sleep and alarm |
 | IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state; the server 48 state (s9term's run: 0) | measured from the pcap (types per `ipdat.h`'s enum; IP fragments skipped): 12 Dataqueries are the Hobbit's own retransmit timer (stil.c `ilackproc`: `tsleep(Iltickms)`, resend once `fasttime`, 400 ms at the minimum rtt, has passed), each after the server had been silent on that connection for 240 ms or more (the longest 1.1 s); at 25 Hz those 100 ms ticks are real, while s9term's 0.569 s ticks stretch the same timer past anything the server took.  The other 36 come within 2 ms of a server State: stil.c's `Ilstate` case calls `ilrexmit` whenever anything is unacked, and the server answers every Dataquery with a State (`Ildataquery` case), whose ack is one message behind when the Hobbit has sent another in the meantime, so once started the exchange repeats until the Hobbit is idle.  Both paths are the source's; every message was delivered and the run's output is s9term's.  Whether the timer-driven waits are the server's own time or the lockstep's lag (up to ~0.6 s, "One time base") is not separated |
 

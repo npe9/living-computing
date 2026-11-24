@@ -1,0 +1,93 @@
+% SCAFFOLDING stand-in for SIMPOS's class `hash_index`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `hash_index` is printed.  Every method is INTERPOLATED (labelled).
+%
+% The representation is evidenced, not ours.  kappa2's
+% kernel/svm/SVHSH_IDX.ESP (`kappaSVM_hash_index`, nature hash_index;
+% ICOT Free Software) reads hash_index's own slots: `Hash!size` and
+% `Hash!vector`, a vector of `size` buckets, each one a list_index
+% (`vector_element(Hash!vector,Pos,List_index)`, then `:add_at`,
+% `:remove_at`, `:empty` and `List_index!first` on it), the bucket of a
+% key being `hash(Key,V)`, `Pos = V mod (Hash!size)` (get_list_index/4).
+% kappa2 kernel/net/SRVCNF.ESP:884-930 also walks `Domain!vector` and
+% sends :get_contents to each element.  The size is create/3's third
+% argument (`:create(#hash_index,Hash,20)`, REMAITR.ESP:84;
+% `:create(#hash_index,T,63)`, user_if/pb/tam.esp:147).
+%
+% OURS: the bucket.  get_list_index/4 compiles to blt 6b (hash) and
+% blt 44 (mod, with an extra integer cell) in kappa.ptf, but the PSI's
+% hash function is firmware and lost, so the bucket of a key cannot be
+% reproduced; every key goes to bucket 0.  What a key finds, and every
+% answer but the order of get_contents/2 and its kin, does not depend on
+% the bucket.  The buckets are the list_index stand-in (list_index.esp).
+
+class hash_index has
+
+% INTERPOLATED from: `:create(#hash_index, H, Size)` (above), and the
+% slots SVHSH_IDX.ESP reads: size, and a vector of Size list_indexes.
+:create(Class, Hash, Size) :-
+        :new(Class, Hash),
+        Hash!size := Size,
+        new_heap_vector(V, Size),
+        fill(0, Size, V),
+        Hash!vector := V;
+
+instance
+
+% INTERPOLATED: the slots SVHSH_IDX.ESP reads (above).
+attribute size := 0,
+          vector := 0;
+
+% INTERPOLATED from: TR-056 p8 `:add_at(Pool,Object,Key)` and
+% SVHSH_IDX.ESP add_at/3 (the bucket's :add_at).
+:add_at(Hash, Object, Key) :-
+        bucket(Hash, Key, L), :add_at(L, Object, Key);
+% INTERPOLATED from: TR-056 p8 `:get_at(Pool,Object,Key)`; the bucket's
+% :get_at (as SVHSH_IDX.ESP does for add_at/remove_at).
+:get_at(Hash, Object, Key) :-
+        bucket(Hash, Key, L), :get_at(L, Object, Key);
+% INTERPOLATED from: SVHSH_IDX.ESP remove_at/3 (the bucket's
+% :remove_at).
+:remove_at(Hash, Object, Key) :-
+        bucket(Hash, Key, L), :remove_at(L, Object, Key);
+% INTERPOLATED from: the selector get_contents_at/3 (classes.tsv); the
+% bucket's :get_contents_at.
+:get_contents_at(Hash, List, Key) :-
+        bucket(Hash, Key, L), :get_contents_at(L, List, Key);
+% INTERPOLATED from: the selector clear/1 (classes.tsv): every bucket
+% cleared (SVHSH_IDX.ESP's after-demon of :clear clears its own list).
+:clear(Hash) :- clear_all(0, Hash!size, Hash!vector);
+% INTERPOLATED from: SVHSH_IDX.ESP get_contents/2 and SRVCNF.ESP
+% get_all_info/4: the buckets' contents in bucket order.
+:get_contents(Hash, List) :-
+        collect(0, Hash!size, Hash!vector, objects, List);
+% INTERPOLATED from: SVHSH_IDX.ESP get_contents_with_key/2: {Object,Key}
+% pairs, in bucket order.
+:get_contents_with_key(Hash, List) :-
+        collect(0, Hash!size, Hash!vector, pairs, List);
+% INTERPOLATED from: the selector get_keys/2 (classes.tsv).
+:get_keys(Hash, List) :-
+        collect(0, Hash!size, Hash!vector, keys, List);
+
+local
+fill(N, N, _) :- !;
+fill(I, N, V) :-
+        :create(#list_index, L),
+        set_vector_element(V, I, L),
+        fill(I+1, N, V);
+bucket(Hash, Key, L) :- vector_element(Hash!vector, 0, L);
+clear_all(N, N, _) :- !;
+clear_all(I, N, V) :-
+        vector_element(V, I, L), :clear(L), clear_all(I+1, N, V);
+collect(N, N, _, _, []) :- !;
+collect(I, N, V, How, List) :-
+        vector_element(V, I, L),
+        part(How, L, A),
+        collect(I+1, N, V, How, B),
+        append(A, B, List);
+part(objects, L, A) :- :get_contents(L, A);
+part(pairs, L, A) :- :get_contents_with_key(L, A);
+part(keys, L, A) :- :get_keys(L, A);
+append([], L, L);
+append([X|A], B, [X|C]) :- append(A, B, C);
+end.

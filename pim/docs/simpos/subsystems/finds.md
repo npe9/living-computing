@@ -187,6 +187,27 @@ treated as documentary, like PRINTED.
    `as_resource`. The commented-out Japanese original (`:20-23`) says instead that the two must not
    be inherited together. This is an open conflict (`sweep_2026-11-24.md` §2.6).
 
+## 5b. Added by the fixed-point search (`fixpoint_2026-11-24.md`)
+
+No new SIMPOS method body (HELD-SOURCE) was found. Provenance and usage only:
+- **CIL's 4.0 manual names MTC as its author.** `cil/man/manual.tex:3-5` is 「CIL第4.0版説明書」,
+  author line 三菱電機株東部コンピュータシステム株式会社, dated 平成3年3月 (March 1991). That MTC
+  also wrote (or ported) CIL itself, the program that carries the SIMPOS 6.1 Librarian copy (§1), is
+  an INFERENCE. If so, the copy came through the same company as 児玉泰子's Librarian
+  customisation paper (IPSJ 118681) and CESP's 1994 seller, which would strengthen §1's
+  inference that "yasuko" is 児玉泰子. The `mkpsi` host prefix of her stamps (`mkpsi000`) recurs only on CAL
+  (`mkpsi124`, `mkpsi221`: tajima, cal, machida) and on cbcdss and kappa2 user files; that `mk`
+  names an MTC machine is an INFERENCE.
+- **SIMPOS's pool subsystem** (プールサブシステム) is named in held code: cal's
+  `cal2.12/translate.esp:22-33` (1990) calls `list_index` "the pool subsystem's list index" and stores
+  stack vectors converted to heap vectors. IPSJ 113884 (1986, PROSE) says the same of the PSI port of
+  ICOT's microprogram assembler, and IPSJ 114360 (EXTKERNEL on MELCOM PSI) represents its working
+  memory with "the pool's lists that SIMPOS provides". So `list`, `list_index`, `hash_index`,
+  `monogyny_*_index` and `cascade_index` belong to one subsystem, "pool" (INFERENCE from the names).
+- **Front-end usage census** (`tools/fe_census.py`, `notes/fixpoint_fe.tsv`): the ESP front ends of
+  the PIMOS applications send 285 class/method/arity keys to SIMPOS classes (files selected by content,
+  after a recursive unpack), 46 of them not sent by the 15 census programs. The curated rows with meanings are `notes/fixpoint.tsv`.
+
 ## 6. Checked and not found
 
 - **Held compiled packages** (`notes/ptf.md`):

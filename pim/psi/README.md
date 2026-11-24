@@ -24,8 +24,8 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`: `process.esp` (ours) and `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections). |
-| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, the stand-ins. It is in `../run_tests.sh` and takes about 8 s. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`). |
+| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
 
@@ -40,6 +40,7 @@ From `pim/`:
     python3 -I psi/test_kl0.py                    # the interpreter's tests (~2 s)
     python3 -I psi/kl0.py convert                 # convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv FILE]     # every method of the 104 classes
+    python3 -I psi/kl0.py census --fep [--tsv FILE]   # every method of pimfep and pimscsi, stand-ins loaded
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
@@ -303,14 +304,14 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 96 rows
+**Opcodes are named only from known plaintext.** Each of the 100 rows
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
 `opcode`). So is an operand pattern the witnesses never showed, such
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand. The rows are
-70 class-0 (`pmi`), 22 class-1 (`blt`) built-ins, 3 atom-cell forms
+70 class-0 (`pmi`), 26 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -323,6 +324,24 @@ come from it: `pmi 37` (get_vector of n), and blt `25` (class object),
 142) agrees with the cell numbering above. Its finding that a `0308`
 string's count is in bytes, not words, is now applied in
 `librarian._term`.
+
+**The string rows** (2026-11-24): blt `0b` string/3 (S, ^L, ^T),
+`1c` new_string/3 (^S, L, T), `23` string_element/3 (S, I, ^E) and `2b`
+set_string_element/3 (S, I, E), from paragraph's `time_graph_window`,
+`g_dev`, `history_manipulator` and `view_select_menu`. new_string's
+witnesses include S != T (`view_select_menu change/3`: `1c 04 00 01`,
+the string out in A4), which settles which operand is the output. The
+elements of a new string are 0 and their type is what T says (OURS:
+neither is witnessed beyond the type). kl0's string object keeps its
+type. In the six-package census, two methods get further:
+`csp_default_write write/2` stops at `string/3` on an unbound argument,
+and `state_pe reflesh/3` at a `draw_string/6` sent to an unbound
+receiver.
+
+**`:refute(Object, Method, Args)`** (TM-388 p.46, PDF p.58: class
+`class`'s dynamic call) is modelled (OURS): the vector's elements become
+the arguments after the receiver, and the method is sent to Object. It
+is the second class-`class` method kl0 runs, after `new/2`.
 
 MEASURED facts the witnesses settled:
 
@@ -346,10 +365,56 @@ no test discriminates it.
 **Method dispatch** goes through `Librarian.send` and runs TM-388
 §3.4's combined method: before-demons, then the primaries as
 alternatives, then after-demons. Class `class`'s `new/2` is OURS. It
-builds an instance from the slots' constant or `is Class` initial
-values. A slot initialised by code refuses. The loader's `Slot.term`
-now keeps a constant's pool tag, so a string initial value stays a
-string (`paragraph_version` answers `string#"3500"`).
+builds an instance whose slots take their constant initial values. The
+loader's `Slot.term` keeps a constant's pool tag, so a string initial
+value stays a string (`paragraph_version` answers `string#"3500"`).
+
+**Slots initialised by code** (2026-11-24). `new/2` runs them.
+
+- The calling convention is MEASURED. All 424 slot-initialisation
+  predicates of the eleven packages (kind 0x22: 33, kind 0x32: 391)
+  have arity 1 and no receiver argument, and the value comes back in
+  A0. The witness is `paragraph##time_graph_window display_pos/1`,
+  compiled from p_tgraph.esp `(display_pos:=L :- :create(#list_index,L))`:
+  `a9 01 ..` puts the class into A1, then `blt 25` and `pmi 74 01 02`
+  send `create/2` with L still in A0. `espc.py` compiles this
+  predicate cell for cell.
+- The semantics are SOURCED from TM-388 §3.5, pp.49-50 (PDF pp.61-62,
+  page images read).
+  - An instance slot's value is computed when `new` makes the instance.
+    A class slot's value is computed "when the class is generated".
+  - If the predicate fails, `new` fails, or the class is not generated.
+  - The order "is uncertain".
+  - The predicate cannot use the object being made.
+  - A slot may not hold an unbound variable (p.48).
+  - `slot is Class` stores "an instance object for the class" (p.49,
+    (3)). kl0 used to store the class object. It now makes the instance
+    with `new/2`. Only kappa has such slots (102).
+- OURS choices:
+  - Each predicate runs on its own sub-machine, to its first solution.
+    The sub-machine shares the code and the class slots.
+  - The slots are filled in template order (the held templates list them
+    in reverse source order).
+  - Class slots are computed at the class's first class-slot access,
+    standing in for load time.
+  - An unbound value refuses (`slot init unbound`). A failing class-slot
+    predicate refuses (`class not generated`).
+- Tests are in `test_kl0.py` on kappa alone, against its source.
+  - `kappaMDM_hash_table`'s `new_heap_vector(Table,128)` gives 128
+    zeros.
+  - `kappaMDM_access_right` makes two distinct hash tables, each with its
+    own vector (a nested initialiser), and `faot` is
+    `@max_faot_entry+1` = 21 long.
+  - `kappaTBO_SDB_RUC_control`'s two-goal initialiser gives
+    `{1,0,...}` of 21.
+  - `kappaHLC_selection`'s `is` slots are instances, one with its own
+    `is` slot.
+  - `test_espc.py` checks the failure, unbound, class-slot and
+    after-demon cases on compiled classes.
+- No new opcode was needed. Of the 424 held predicates, 308 use only
+  opcodes in the table. The other 116 use opcodes with no row: blt 1c
+  (84), blt 3e (31), blt 35 (2), blt 54 and blt 2b (1 each). This is an
+  ad hoc count, 2026-11-24.
 
 **Results** (pinned in `test_kl0.py`):
 
@@ -418,11 +483,30 @@ chains and cut operands, each measured on the held code.
 **What it may emit.** Only opcodes with a row in `kl0_opcodes.tsv`.
 Anything else is refused as `CompileRefusal(construct, detail)`, and a
 predicate that calls a refused local is refused with it. The largest
-refusals over paragraph are: calls a refused local (208), `X+Y` on two
-registers (141), `heap_vector/2` (101), `string/3` (59), the
-`double_bytes#` macro (37), `X/Y` (36) and `=\=` (33). Over kappa2,
-404 of the 739 classes with source are refused whole, all for
-`with_macro`.
+refusals over paragraph are: calls a refused local (215), `X+Y` on two
+registers (157), `heap_vector/2` (101), `X/Y` (41), the
+`double_bytes#` macro (37), a head term (35) and `=\=` (34). Over kappa2,
+all 739 classes with source compile now that `with_macro` is expanded
+(below); before, 404 were refused whole for it.
+
+**Macro banks (`with_macro`, TM-388 §3.7.3 pp.72-75, page images).** A
+class `with_macro B` has its clauses rewritten by bank B's clause-level
+rules, `Pattern => Expansion`, before compilation: head arguments, body
+goals and their arguments, top-down, the result expanded again. A bank
+inherits its `nature` banks' rules; its own are tried first
+(INFERENCE: TM-388 states the inheritance, not the order).
+`esp_macro_expander`, which every bank inherits, is SIMPOS and not
+held; its standard macros are the compiler's own. Not modelled, and
+refused by name as `macro rule` for the predicate that meets one: a
+rule with a `when`/`where`/`with`/`by`/`:-` tail (15 in kappa2's
+banks), `==>` (one), and a backquote. Measured over kappa2's banks:
+about 3,811 rules, nearly all `@name => constant`. A bank whose source
+is not held refuses the class as `with_macro` (utter: `cil_macro`,
+`travel_fts_macro`, 10 classes). The structural witness: of kappa2's
+1,323 exact predicates (measured when `with_macro` landed, before the
+string built-ins), 822 are in the 406 classes with a bank, and 109
+have source clauses a bank rule changed, so the expansion meets
+`kappa.ptf` cell for cell.
 
 **Structure** (`espc.py check`, against the held `.ptf`). Each class is
 checked for natures, slots with their flags, the declared method and
@@ -435,20 +519,34 @@ its `$or$N`. The held numbering does not follow source order: in
 
 | | paragraph | kappa2 | utter |
 |---|---|---|---|
-| classes with source / compiled | 109 / 109 | 739 / 335 | 69 / 52 |
-| natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 334, 334, 334, 335, 333 | 52, 52, 52, 52, 51 |
-| predicates compared | 991 | 3,387 | 464 |
-| exact | 243 (24.5%) | 501 (14.8%) | 94 (20.3%) |
-| registers only | 32 | 49 | 11 |
-| moves and environment only | 189 | 916 | 95 |
-| clause order | 72 | 132 | 8 |
-| held indexes (switch tables), and other | 106 | 122 | 11 |
-| held uses an opcode with no row | 212 | 1,164 | 179 |
-| other (unclassified) | 137 | 503 | 66 |
-| exact / all held predicates of the classes with source | 11.4% of 2,123 | 2.4% of 21,027 | 6.5% of 1,454 |
+| classes with source / compiled | 109 / 109 | 739 / 739 | 69 / 59 |
+| natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 738, 738, 736, 739, 736 | 59, 59, 59, 59, 58 |
+| predicates compared | 1,051 | 10,641 | 521 |
+| exact | 247 (23.5%) | 1,361 (12.8%) | 101 (19.4%) |
+| registers only | 36 | 171 | 13 |
+| moves and environment only | 196 | 2,651 | 107 |
+| clause order | 73 | 313 | 9 |
+| held indexes (switch tables), and other | 114 | 701 | 19 |
+| held uses an opcode with no row | 245 | 3,828 | 193 |
+| other (unclassified) | 140 | 1,616 | 79 |
+| exact / all held predicates of the classes with source | 11.6% of 2,123 | 6.5% of 21,027 | 6.9% of 1,454 |
+
+(Before `with_macro`, 2026-11-24: kappa2 335 classes compiled, 3,387
+compared, 501 exact; utter 52, 464, 94. With `with_macro`, before the
+string built-ins below: paragraph 991, 243; kappa2 9,971, 1,323; utter
+515, 101.)
+
+**The string built-ins** (2026-11-24): `string/3`, `new_string/3`,
+`string_element/3` and `set_string_element/3` now have rows (below)
+and are emitted. `new_string(S,L,T)` is emitted with S and T in one
+register, the form of `make_num_string/3`. Adding them exposed an
+older bug, now fixed: a permanent head variable met after a structured
+head argument had already allocated the environment was never saved
+(e.g. `total([X|R],L0,L)`). The fix alone moves paragraph from 246 to
+247 exact.
 
 There are no key collisions and no `$or$` paired with another arity in
-paragraph or utter. Kappa2 has 3 pairs with another arity. The two
+paragraph or utter. Kappa2 has 14 pairs with another arity. The two
 paragraph aspect misses are `paragraph_version`'s version slot
 ("3200" in the source, "3500" in the `.ptf`) and `h_grade`'s methods
 (two items of `h_grade_n.esp` do not parse). The "other" class was
@@ -489,22 +587,313 @@ the manuals). This is the owner's rule of 2026-11-24, so that any
 method can be replaced if real source turns up. `test_espc.py` checks
 that every method carries a label.
 
-- `process`: `self/2` is INTERPOLATED. `:self(#process,P)` gives one
-  instance, made on first use and kept in a class slot. It was
-  interpolated from the call sites in the printed `stream:get/2` and
-  `process:create_core/3` and from 46 pimfep senders. The printed
-  part of `process` (TM-100 Fig. 3.1) is not included yet. Its
-  natures are unprinted, and five of its slots are initialised by
-  code, which kl0's `new/2` refuses. This is recorded as a gap in
-  the file header.
+- `process`:
+  - PRINTED: TM-100 Fig. 3.1, verbatim. That is the natures, the two
+    class slots, `create/2`, `create_core/3`, the 18 instance slots
+    (five of them initialised by code), `activate/2`, `resume/2` and
+    `suspend/2`.
+  - The printed `create/2` passes `PROCESS` in capitals, as printed. It
+    is a fresh variable, and it is kept that way.
+  - INTERPOLATED: the class slot `current`, and `self/2`. `:self(
+    #process,P)` gives one instance, made with `:new` on first use and
+    kept in `current`. It was interpolated from the call sites in the
+    printed `stream:get/2` and `process:create_core/3`, and from 46
+    pimfep senders.
+  - INTERPOLATED: `inhibit_interrupt/1` and `allow_interrupt/1`, which do
+    nothing. One process is modelled, with no interrupts. They come from
+    the paired call sites in Figs. 3.1 and 3.6 and from the slot
+    `mask_count`.
 - `stream`: every method and slot is PRINTED, from TM-100 Fig. 3.6.
   Three printing errors are corrected and marked, since without the
   corrections it is not ESP.
+- The classes the printed code creates or inherits are INTERPOLATED:
+  - `list`: 13 methods, from the call forms in TM-100, TM-388 p.50 and
+    the selectors in `required/classes.tsv`. Its elements are one
+    Prolog list (OURS).
+  - `post_queue` (`add_object`, `remove_object`) and `waiting_queue`
+    (`empty`, `hook`, `unhook`), from TM-100 §3.2 (1)'s prose (PDF
+    p13-14) and the printed `stream`. Both are first in, first out, as
+    TR-056 pp.12-13 says a stream is. The waiting queue is a list, not
+    the printed doubly-linked list through `waiting_frame`.
+  - `process_clock` (`create/2`).
+  - `with_link` and `waiting_frame`: empty. TM-100 says only what they
+    are for.
+- `process`'s `tag_catch/5`, `/6` and `/9` are INTERPOLATED: each sends
+  the method to the object through `:refute` (above) and catches
+  nothing. The call forms come from kappa2 `inwin.esp:301` (/5), cal-esp
+  `cm.esp:320` (/6) and pimfep's `on_after/4` registers (/9: object,
+  method, arguments, tag, then a second object, method, arguments and
+  tag for the abort path, then `pimos_abort`). TR-285 §4.2 (PDF p9-10)
+  says catch/throw is multiple-level cut plus enforced failure; with no
+  `throw` modelled, catching is the plain call.
+- `string` (INTERPOLATED): `append/3` (a list of strings in, a new
+  string out; 1,039 call sites in 14 programs) and `copy/3` (7), on the
+  four string built-ins. Lengths are counted one by one, since `X+Y` on
+  two registers has no witness.
+- `symbolizer` (INTERPOLATED, PARTIAL): `string_to_list/3` and
+  `list_to_string/3`, on the four string built-ins; their argument
+  order (`List` before the string) comes from the call sites (kappa2
+  `kap_serv.esp:677/681`, `motif.esp`, `retrieve2.esp`, `SRVCNF.ESP`;
+  utter `tour_sit.esp:61`). The other 25 selectors are not stood in:
+  most convert atoms or numbers and strings (`enter_atom/3`,
+  `get_atom/3`, `get_number/3`, ...), and no witnessed built-in makes
+  an atom from a string or back, while number conversion needs `X/Y`
+  and a remainder, which espc refuses. The rest (`in/2`,
+  `is_object/2`, the variable-tree methods) have no source or
+  specification held. No pimfep or pimscsi method reaches
+  `symbolizer` first in the census.
 
-With them loaded, `pimfep##pimos_timer:on_after/4` gets past
-`simpos##process:self/2` and refuses at `simpos##process:tag_catch/9`.
-`pimos_timer:stream/2` refuses in kl0's `new/2`, at the printed
-`post_queue` slot, which is initialised by code.
+**Step 3c stand-ins** (2026-11-24), for the next blockers of the
+census below:
+
+- `channel` (PRINTED, TM-100 Fig. 3.7, verbatim): nature `stream`,
+  the code-initialised slot `post_queue` that overrides stream's, and
+  `send/3`, `receive/3`. Its `create/2` is the printed `stream`'s,
+  inherited. Not stood in: TR-056 p14's `send/2`, `receive/2`, and class
+  `message`'s `set_sender/2`, `get_sender/2`, which the printed bodies
+  call.
+- `bounded_channel` and `bounded_post_queue` (PRINTED, Figs. 3.10 and
+  3.11, verbatim; no held code sends to them). The plain `attribute
+  post_queue;` overrides channel's initialiser; `bounded_post_queue`'s
+  before- and after-demons run on stand-ins (a third `put/2` on a channel
+  bounded at 2 fails until a `get/2`). With `post_queue_for_message`
+  (INTERPOLATED: nature `post_queue`, from TM-100 p15's "must be
+  compatible") and `semaphore` (INTERPOLATED: nature `waiting_queue`
+  from Fig. 3.9; tokens from TR-056 p11; `p_operation/1` fails at none,
+  since one process could not be woken).
+- `list_index` and `hash_index` (INTERPOLATED). Their representation is
+  evidenced: kappa2's `kernel/flm/KPPOOL.ESP` (`kappa_list_index`, nature
+  `list_index`) and `kernel/svm/SVHSH_IDX.ESP` (`kappaSVM_hash_index`,
+  nature `hash_index`) read the base classes' slots directly. A
+  list_index holds `first`, `'$$void'` or an entry `{Next, Object, Key}`;
+  a hash_index holds `size` and `vector`, a vector of `size`
+  list_indexes. The interface is TR-056 p8's `(3) Index` (object before
+  key). `get_contents_with_key/2` gives `{Object, Key}`, as
+  SVHSH_IDX.ESP builds and paragraph's `p_wshell.esp` reads. OURS: new
+  entries go last, keys match by unification, and every key goes to
+  bucket 0 (kappa.ptf's `get_list_index/4` compiles `hash/2` and `mod` to
+  blt 6b and blt 44, but the firmware hash is lost).
+- `process` (INTERPOLATED additions): `create/3` (a dormant child of
+  the calling process; the four-atom area list, e.g.
+  `[free,default,free,small]`, is ignored), from kappa2's `ITRSES.ESP`,
+  `LOADER.ESP` and pimfep's `as_pimos_device process/4`, and the printed
+  `create_core/3`; `allow_forced_event/1` and `inhibit_forced_event/1`
+  (no-ops: one process, no abort); the accessors `sub_priority/2`,
+  `user/2`, `world/2`, `password_list/2` and their setters, read off
+  `as_pimos_device`'s `setup_process/3` (`password_list` is not a
+  printed slot).
+- `standard_editor` (INTERPOLATED, minimal): `pimos_window_editor`'s
+  natures are `simpos##standard_editor, pimfep##as_pimos_device`, so
+  `get_window/2` is standard_editor's (window.md §2.11). It gives a
+  `window` slot that stays 0, since `pmacs_window` is not stood in: the 21
+  methods now refuse at their next send, to 0.
+- **An espc bug fixed on the way.** In a call, an argument computed into
+  a register in step 1 was read from that register after a later
+  argument's move had cleared it, so `fill(I+1, N, V)` passed N for
+  I+1. `clear_way` now updates the placed argument. `espc.py check` of
+  paragraph, kappa2 and utter is the same with or without the fix, so
+  no pin moved; the hash_index stand-in's `fill/3` found it.
+
+With them loaded:
+
+- `pimfep##pimos_timer:on_after/4` gets past `simpos##process:self/2`
+  and, through `tag_catch/9` and `:refute`, into the timer's own
+  `do_on_after/3`; it refuses at
+  `simpos##process:allow_forced_event/1`.
+- `pimos_timer:stream/2`, which used to stop in kl0's `new/2` at the
+  printed `post_queue` slot, now succeeds.
+- The printed `put/2` and `get/2` run first in, first out
+  (`test_espc.py`). `get/2` on an empty stream fails. The printed
+  `suspend/2` fails for a process whose status is `nil`, and the
+  stand-in's one process is never activated.
+
+### The census of pimfep and pimscsi (`kl0.py census --fep`)
+
+Every method of the 71 pimfep and pimscsi classes is called once, as
+the census above calls the 104. The stand-ins are loaded. Before is
+the tree at a214477a; after is the slot initialisation and the
+stand-ins above. Both were run 2026-11-24 and compared method by
+method.
+
+| | methods | success | failure | refused | `slot init by code` |
+|---|---|---|---|---|---|
+| before | 1,215 | 486 | 50 | 679 | 195 |
+| after | 1,228 | 501 | 50 | 677 | 0 |
+| after the string built-ins, `string`, `:refute`, `tag_catch` | 1,228 | 515 | 51 | 662 | 0 |
+
+- The 13 new methods are `list`'s, now inherited by
+  `pimscsi##scsi_device`, which has `simpos##list` as a nature. All 13
+  refuse, because its instances stop at a slot initialiser's SIMPOS
+  call.
+- Of the 195 that stopped at `new/2`:
+  - 14 now succeed: the `stream/2` class method of 14 pimfep classes;
+  - 112 reach a SIMPOS call;
+  - 69 reach an opcode with no row.
+- `pimfep##remote_stream`: `message_buffer/2` succeeds, and `get/2`
+  now refuses on a receiver that is not an object (`receive/2` sent to
+  `none`).
+- No method changed between success and failure.
+- After, the refusals rank: SIMPOS calls 301, receiver not an object
+  81, missing opcodes 257 (blt 1c 78, blt 06 53, blt 0b 27, pmi b0
+  19, ...), unbound receiver 24.
+- The SIMPOS calls they stop at, by class and selector, name the next
+  blockers:
+  - `simpos##channel:create/2` (69);
+  - `simpos##hash_index:create/3` (58);
+  - `simpos##list_index:create/2` (20);
+  - `simpos##process:create/3` (14);
+  - `simpos##process:allow_forced_event/1` (6);
+  - `simpos##process:tag_catch/9` (4).
+- With the string built-ins, `string`, `:refute` and `tag_catch`
+  (third row): 14 methods that stopped at `new_string/3` in a slot
+  initialiser or body now succeed (`pimscsi##packet`'s four getters,
+  `packet32`'s, `pseudo_scsi_handler:create/4`, ...); `packet32
+  is_used/1` now fails cleanly. No method changed between success and
+  failure. Of the 105 that stopped at blt 1c (78) or 0b (27), 50 reach
+  a SIMPOS call, 23 an unbound argument and 9 another unnamed opcode. The refusals now rank: SIMPOS calls
+  349, missing opcodes 161 (blt 06 53, pmi b0 19, blt 9a 12, pmi b4
+  10, ...), receiver not an object 82, unbound receiver 25, unbound
+  argument 24. The next blockers, by methods stopped:
+  - `simpos##channel:create/2` (114);
+  - `simpos##hash_index:create/3` (58);
+  - `pimfep##pimos_window_editor:get_window/2` (21, a partial class);
+  - `simpos##list_index:create/2` (20);
+  - `simpos##process:create/3` (14);
+  - `simpos##process:allow_forced_event/1` (9).
+  
+  21 more stop at `pimfep##pimos_window_editor:get_window/2`. That class
+  is partial, so the method is in an unloaded ancestor.
+- With step 3c's stand-ins (fourth row, 2026-11-24; each step rerun and
+  compared method by method, nothing changed between success and
+  failure):
+
+  | step | methods | success | failure | refused |
+  |---|---|---|---|---|
+  | before (third row) | 1,228 | 515 | 51 | 662 |
+  | `channel` | 1,228 | 558 | 51 | 619 |
+  | `list_index`, `hash_index`, `process` `create/3`, `allow_forced_event/1` | 1,228 | 590 | 63 | 575 |
+  | `process` accessors | 1,228 | 604 | 63 | 561 |
+  | `standard_editor` | 1,229 | 605 | 63 | 561 |
+
+  - 90 methods moved from refused to success, 12 from refused to
+    failure (`scsi_device`'s `get_first/2`, `remove/2`, ... on an empty
+    index; `pimos_socket_manager`'s `get_at/3`, `remove_at/3`;
+    `as_pimos_string_io_device do_io/6`, `pimos_tcpip_socket accept/4`,
+    `do_accept/3`), and `pimos_window_editor get_window/2` is a new method
+    (it is the stand-in's, inherited).
+  - `pimos_timer on_after/4` now gets through `allow_forced_event/1` and
+    stops at blt 01.
+  - The refusals now rank: SIMPOS calls 128, receiver not an object
+    107, missing opcodes (blt 06 65, pmi b0 29, pmi b4 21, blt 9a 12,
+    pmi ca 12, blt 54 12, blt 01 11, ...), unbound receiver 39, unbound
+    argument 27.
+  - The SIMPOS calls rank: the `lock/1` of four pimfep tables (7, 6, 5,
+    5; partial classes: the method is in a `simpos##` ancestor),
+    `trace:trace/1`, `common_network:is_installed/1`,
+    `network_listener_buffer:create/4` (5 each), `library:assign/1`,
+    `network_node_name:get_my_node/2`, `pimos_file:create/2`,
+    `pmacs_window:create/3` (4 each), and class `message`'s
+    `get_sender/2` (6, from pimscsi's `cmt` and `scsi`).
+  - "Receiver not an object" grew by 21: the `pimos_window_editor`
+    methods, whose window is 0 until `pmacs_window` is stood in.
+- With step 3c's opcode rows and HELD-SOURCE classes (2026-11-24, the
+  next section): 1,229 methods, 607 success, 101 failure, 521 refused.
+  - 2 moved from refused to success: `pimscsi##packet` and `packet32`
+    `get_message/2`, through `substring/4`.
+  - 38 moved from refused to failure. Of these, 27 stopped at blt 06: the
+    `reply_message/2`s and `assemble/3` in `fep_message_assembler`, and
+    the `scsi_communicator` family. The other 11 stopped at blt 01: `pimos_timer`
+    `on_after/4`, the `pimos_fep_initiation_table` setters, and others.
+  - Every one of the 38 fails because the census passes unbound
+    arguments: `integer/1` and `stack_vector/2` fail on an unbound
+    variable. They are tests, so this is their answer, not a refusal. `on_after/4` given
+    an integer gets to `alarm_watch:create/2`, which is not stood in.
+  - No method moved between success and failure.
+  - The refusals now rank: SIMPOS calls 128, receiver not an object
+    108, unbound receiver 39, missing opcodes: blt 6e 38
+    (`fep_message_assembler @50`, right after the `stack_vector`), pmi b0
+    29, pmi b4 21, blt 9a 12, pmi ca 12, blt 54 12, ...; unbound
+    argument 35.
+  - The SIMPOS calls rank as in the fourth row: the four tables'
+    `lock/1`, `trace:trace/1`, `common_network:is_installed/1`, and so on.
+
+### Step 3c's opcode rows and HELD-SOURCE classes (2026-11-24)
+
+- **Nine rows** (`kl0_opcodes.tsv`). Each comes from a single-construct
+  held predicate whose only unrowed opcode is the one named, found by a
+  miner over paragraph, kappa2 and utter:
+  - blt 40 `add`;
+  - blt 01 `integer`, blt 10 `unbound`, blt 16 `bound`: tests that fail;
+  - blt 06 `stack_vector`;
+  - blt 68 `equal_string`;
+  - blt 33 `string_tail`;
+  - blt 32 `substring` and blt 5c `search_character`. These two are two
+    cells long: the fourth and fifth operands are the high bytes of the
+    `integer` cell that follows.
+- **Effect on `espc.py check`.**
+
+  | Program | Compared / exact | Before |
+  |---|---|---|
+  | paragraph | 1,234 / 256 | 1,051 / 247 |
+  | kappa2 | 12,479 / 1,485 | 10,641 / 1,361 |
+  | utter | 559 / 109 | 521 / 101 |
+
+  Compared method by method, no exact predicate was lost.
+  - Two kappa2 `pic_up_log_data` clauses, reached now that `substring/4`
+    compiles, refuse as `internal` (`temporary ... lost its register`). This is the
+    same known weakness as the PCM pair, and it is there with the fixes
+    below reverted.
+  - kl0's census of the six held packages (530 methods) keeps 303 / 11
+    / 216.
+- **Two more espc register bugs**, found by `substring(S,H,T-H,P)` and
+  `(S+1)-S`. `builtin()` and `arith()` marked a variable's register as a
+  value while later operands were put, so a later operand reading the
+  same variable raised KeyError. A variable's register now stays the
+  variable's; its uncounted uses keep it live.
+- **pmi b0**: no witness. Only two held predicates with source use it
+  (sancho5 `sancho_connective/2`, kappa `kappaPCM_occ_analyzer`), and
+  neither settles its operands.
+- **HELD-SOURCE stand-ins.** `standin/name.esp`, `e_string.esp` and
+  `pathname.esp` are morphana's `_simpos/` files: ICOT Free Software,
+  (C)1992 ICOT, `ifs/natural-lang/cesp/morphana.tar.Z`.
+  - Their stamps name SIMPOS's `world` directory, so they are SIMPOS's
+    own classes as copied for Common ESP.
+  - They are byte for byte as held except for:
+    - the character set (EUC-JP to UTF-8);
+    - one `% HELD-SOURCE: file:line` label above each method;
+    - in `pathname`, the CESP port's changes undone where SIMPOS's form
+      is evidenced, each marked `% [SIMPOS form restored N]`: the `/`
+      separator back to `>`, and three commented-out clauses (logical
+      names, `]`, Patch 6.13).
+  - Kept and labelled `% [CESP, kept]`: `use_package(lax).` and
+    `append/4`'s `convert_to_8(#cesp##string, ...)`. Its SIMPOS form is
+    not evidenced, and kl0 refuses the send.
+  - What runs:
+    - `name`'s `ident/3`, `type/3`, `version/3` and `ident_type/3`;
+    - `e_string`'s `split/4`.
+  - What does not:
+    - `pathname`'s `get_last/4` refuses. It searches backwards (B > E),
+      which no witness shows.
+    - The `qsort`/`partition` pair (`->`) and `set_names/3`
+      (`set_substring/4`) are refused, and pinned.
+- **Symbolizer** (INTERPOLATED). `get_number/3` (number out, string in)
+  and `get_number_string/3` (number in, string out) work on integers,
+  in decimal with a leading `-`, from their call sites (cil
+  `ms_cdn.esp:613`, morphana `name.esp:138`, ...).
+  - A `.`, or a number that is not an integer, sends `float_number/3`,
+    which kl0 refuses.
+  - The atom methods (`enter_atom/3`, `get_atom/3`, ...) stay unstood:
+    cil's KL0 list (`cil/src/cil_kl0.esp`) has only `new_atom/1` for
+    atoms.
+- **Next blockers**, by methods stopped:
+  - blt 6e (38; `fep_message_assembler @50`, no source);
+  - pmi b0 (29) and pmi b4 (21);
+  - the `simpos##` `lock/1` of four pimfep tables;
+  - `trace:trace/1`, `common_network:is_installed/1`,
+    `network_listener_buffer:create/4`;
+  - `message` `get_sender/2`;
+  - `pmacs_window`;
+  - `alarm_watch:create/2`.
 
 ## Open
 
@@ -514,12 +903,12 @@ With them loaded, `pimfep##pimos_timer:on_after/4` gets past
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
-  SIMPOS or firmware. They are not held and not modelled. kl0's
-  `new/2` stand-in refuses slots initialised by code. That stops
-  the printed `stream` and 179 pimfep and pimscsi methods.
+  SIMPOS or firmware. They are not held. Only `new/2` (slot
+  initialisation included) and `refute/3` are modelled (OURS).
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
-  more elements built in a body, `with_macro`, `->` and `not`.
+  more elements built in a body, `->` and `not`; of `with_macro`, the
+  rules with a tail and `==>`.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
   not modelled. No held nature needs it.

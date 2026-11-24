@@ -1,0 +1,24 @@
+% SCAFFOLDING stand-in for SIMPOS's class `post_queue_for_message`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS:
+% no part of it is printed.  It is INTERPOLATED (labelled) from TM-100
+% section 3.2 (2)(a) (PDF p15, docs/simpos/printed/listings/
+% tm0100_p15.esp): the printed channel's slot initialiser creates it,
+% and "all the predicates of class 'post_queue_for_message' which are
+% called by a channel must be compatible to those of class 'post_queue'
+% called by a stream".
+% Model (OURS): it inherits the INTERPOLATED post_queue stand-in
+% (post_queue.esp) unchanged, so add_object/2 and remove_object/2 are
+% post_queue's.  The "more efficient" message handling TM-100 mentions
+% is not modelled.
+
+class post_queue_for_message has
+
+% INTERPOLATED from: TM-100 p15 (compatible with post_queue; see above).
+nature post_queue;
+
+% INTERPOLATED from: the printed channel slot initialiser
+% `( post_queue := Queue :- :create(#post_queue_for_message, Queue) )`
+% (TM-100 Fig. 3.7, PDF p15), the same shape as post_queue's create/2.
+:create(Class, Queue) :- :new(Class, Queue);
+
+end.

@@ -39,7 +39,7 @@ below was read from the rendered page image, not from the OCR layer.
 | PRM §1.9 | "call, allocate, deallocate, and return … can be as little as four clock cycles" | p. 1-31 |
 | PRM §1.10 | aggressive prefetch "in quad-word pieces consisting of two double-word I/O requests"; prefetch follows predicted and non-indirect branches and stops at indirect ones; demand fetch on a mispredicted or indirect branch; a demand request lets the PDU's I/O in progress complete first | p. 1-32 |
 | PRM §1.10.1–1.10.2 | the PDU prefetches down the predicted path "without any discontinuity"; "The pipeline runs more efficiently if three instructions, which do not reference off-chip memory, are sandwiched between the compare instructions and the jump" | p. 1-33 |
-| **PRM §2.6, Table 2-4** | **Address Translation Performance**: text micro-TLB hit 0; micro-TLB miss with TLB/NPSR hit 1; nonpaged walk A + 1 (text) or A + 3 (data); paged walk 2A + 3, or 3A + 3 when R (or M) must be written back. "These performance numbers do not include the time required to access the actual item." "An A represents the I/O delay for a single word access." | p. 2-9. **Not in `timing.csv`** before this plan |
+| **PRM §2.6, Table 2-4** | **Address Translation Performance**: text micro-TLB hit 0; micro-TLB miss with TLB/NPSR hit 1; nonpaged walk A + 1 (text) or A + 3 (data); paged walk 2A + 3, or 3A + 3 when R (or M) must be written back. "These performance numbers do not include the time required to access the actual item." "An A represents the I/O delay for a single word access." | p. 2-9. In `timing.csv` since C1 (13 rows, `t24_*`; `timing_tables.md` §11) |
 | PRM §2.1 | the micro-TLB "contains the last translation used by the prefetch unit and provides zero-cycle address translation. If the micro-TLB misses, one cycle is required for update if the address translation hits in the text TLB or text NPSR"; a TLB/NPSR miss walks the tables in hardware | p. 2-1 |
 | PRM Appendix A | the bus: A.1 arbitration (the new master owns the bus the cycle after BGRANT; the arbiter inserts a dead cycle), A.3 transactions (START begins, DTACK ends; "Text reads are always double-word transfers"; loopback after a read), A.3.3 RMW (a dead cycle after it), A.3.4 block transfers ("a series of single-word bus transfers"), A.4 retry and error. Figures A-2 (read) and A-3 (write) | pp. A-1…A-8. The text calls the read figure "Figure A-1"; the caption reads "Figure A-2" |
 | PRM Appendix B | two 1× clocks in quadrature (CLK23, CLK34), four internal phases per clock; period 50–100 ns at 3.3 V, 33.2–50 ns at 5 V; setup, hold and valid times | pp. B-5…B-9 |
@@ -71,11 +71,13 @@ None of these documents prints any of the following:
 
 ### 1.2 The 1st Edition release
 
-`/tmp/p9/plan9-1e.tar.bz2` was **not on disk** on 2026-11-24 (`/tmp/p9`
-holds only `plan9-1e/hobbit` and `tree`). The kernel sources read here
-are the copies vendored from that tarball in
-`tools/plan9-1e/sys/src/9/hobbit/`; `docs/plan9_port.md` gives the
-tarball's sha256. What they say about timing:
+The kernel sources read here are the copies vendored from the release
+tarball in `tools/plan9-1e/sys/src/9/hobbit/`. When this plan was first
+written the tarball was not on disk; since then it is at
+`hobbit/build/dist/plan9-1e.tar.bz2` in the main checkout (git-ignored;
+`/tmp/p9/plan9-1e.tar.bz2` links to it), and its sha256,
+`8718e279aa35b10a…7d77`, was re-checked on 2026-11-24 against the one
+`docs/plan9_port.md` gives. What they say about timing:
 
 | item | where | what it says |
 |---|---|---|
@@ -101,14 +103,21 @@ prediction, outcome, compare distance), gives each disagreement a cause,
 and exits 1 if any disagreement is unexplained. Runs on 2026-11-24
 (Verilator, this branch):
 
-| run | records | conditional jumps | `cyc` differs |
+| run | records | one-parcel jumps (JMP and conditional) | `cyc` differs |
 |---|---:|---:|---:|
-| `za main9.s` | 125,572 | 20,146 | 462 |
-| `zc frexp.c` | 1,651,700 | 238,194 | 8,571 |
+| `za main9.s` | 125,572 | 24,030 | 462 |
+| `zc frexp.c` | 1,651,700 | 269,412 | 20,343 |
+
+(Re-run 2026-11-24 after `cyc_classify` learned the unconditional
+one-parcel `JMP`: the first version looked only at the four conditional
+jumps, and zc's 8,571 was a count of those. zc's 11,772 `JMP`s folded
+into a five-parcel host were invisible to it, not "unexplained". The
+total now equals `p9trace_cmp --cyc`'s: 1,651,700 - 1,631,357 = 20,343.
+za has no such `JMP`, so its 462 is unchanged.)
 
 | class | ref | core | za | zc | cause |
 |---|---:|---:|---:|---:|---|
-| 1 | 1 | 0 | 224 | 6,816 | **the core folds a branch into a five-parcel instruction** |
+| 1 | 1 | 0 | 224 | 18,588 | **the core folds a branch into a five-parcel instruction** (zc: 6,816 conditional, 11,772 `JMP`) |
 | 2 | 2 | 3 | 161 | 1,298 | a folded, mispredicted branch whose compare is two instructions back |
 | 3 | 1 | 3 | 77 | 441 | the same with the compare three instructions back |
 | 4 | 1 | 3 | 0 | 16 | an unfolded mispredict that is the first instruction after a trap's return |
@@ -123,7 +132,8 @@ and exits 1 if any disagreement is unexplained. Runs on 2026-11-24
   three-parcel instruction". DS p. 26 likewise names only "selected
   single-parcel instructions or a three-parcel instruction".
 * So a jump after a five-parcel instruction is unfolded, and costs 1 when
-  correctly predicted (Table 4-35).
+  correctly predicted (Table 4-35), or 1 if it is a `JMP` (Table 4-32,
+  p. 4-3: 0 folded, 1 otherwise).
 * This is visible beyond `cyc`. A TIMER counting "completed instructions
   (folded branches are not counted)" (DS pp. 32–33) would count these
   jumps on the part and not on the core.
@@ -141,12 +151,13 @@ reading.**
   folded branch *earlier* than an unfolded one, never later.
 * The reference reads the unqualified rows as covering folded branches
   too (`_conditional_jump_cycles`).
-* `docs/timing_tables.md` §6 and §7 item 9 instead say that no folded
-  incorrect row is printed for 1–3 instructions. Read strictly, that
-  means *no* printed value at all. **The two documents contradict each
-  other.** The plan adopts the reference's reading as the only one that
-  gives these cases a number, and asks for it to be recorded as a reading
-  (milestone C1).
+* `docs/timing_tables.md` §6 and §7 item 9 used to say that no folded
+  incorrect row is printed for 1–3 instructions, which read strictly
+  means *no* printed value at all, and contradicted the reference.
+  **Decided in C1 (2026-11-24) from the page image of p. 4-5:** only the
+  "4 or more" row is split into folded and unfolded; the three
+  unqualified rows apply to folded and unfolded jumps alike.
+  `timing_tables.md` §6, §7 item 9 and §8 now say so.
 * Under either reading the core's 3 at distances 2 and 3 has no printed
   row.
 
@@ -227,7 +238,10 @@ uses that to justify A = 1. The figure, re-read at 300 dpi, has START
 low in cycles **4, 11 and 14** only, and DTACK across the 6|7, 13|14 and
 15|16 boundaries. A = 1 is therefore a model choice with no figure
 behind it. The comment should say so. It is **not edited here**, because
-`bsv/` is in flight; see milestone C0.
+`bsv/` is in flight; the correction is in `timing_tables.md` §11 and is
+listed for C3. Figure A-2 (p. A-3) has the same START cycles (4, 11, 14),
+so the module's interface comment (lines 289–293, "the zero-wait-state
+case of the printed protocol") needs the same correction.
 
 ### 2.3 What is charged outside `cyc`, measured
 
@@ -432,7 +446,93 @@ it.
 * The twin is host-side only. The board's UART HRI stream feeds it
   unchanged.
 
-## 5. Corrections this plan records, not yet applied
+### 4.2 C1 and C2 as done (2026-11-24)
+
+**C1.** The readings are recorded: Table 4-35's unqualified rows cover
+folded jumps too (`timing_tables.md` §7 item 9); Table 2-4 is 13 rows of
+`timing.csv` (`t24_*`) with `check_timing.py` extended (kind
+`translation`, page 2-9, A only; four injected defects observed, in its
+docstring); the 2100's `4 + Q` is evidence beside the kept `4 + D`
+(§7 item 4); A = 1 is a choice with no figure (§11; Figures A-2 and A-3
+both have START in 4, 11 and 14). `bsv/` was not touched.
+
+**C2.** `sem/hobbit_timing.py`, with `sem/hobbit_timing_board.txt` and
+`tests/test_hobbit_timing.py`. Agreement of the twin's base `cyc` with
+the other account, record by record:
+
+| stream | records | twin = other | twin ≠ other | undetermined |
+|---|---:|---:|---:|---:|
+| the 24 goldens (hand-derived `cyc`) | 209 | 209 | 0 | 0 |
+| `za main9.s` (reference) | 125,572 | 125,572 | 0 | 0 |
+| `zc frexp.c` (reference) | 1,651,700 | 1,651,684 | 0 | 16 |
+| s9term boot, first 3,000,000 records (reference before the exception fix) | 3,000,000 | 2,999,989 | 7 | 4 |
+| the same, re-recorded after it | 3,000,000 | 2,999,996 | 0 | 4 |
+
+* zc's 16 undetermined are class 4 of §2.1: a mispredicted `JMPFN` at
+  0x6f52, the first instruction after an unimplemented-instruction trap
+  (1e's floating point). The trap's handler is not in the stream, so
+  the twin cannot say where PSW.F came from, and Table 4-35 prices a
+  misprediction only from a compare. The reference charges 1, by the
+  last compare it saw before the trap. Neither number has a printed
+  row; the twin reports the case rather than choose.
+* The kernel prefix (`hobbit_timing.py ref.hri --boot-rec boot.rec`,
+  the s9term boot's reference recording, one interrupt in it; the first
+  300,000 records agree on every record):
+  * the 7 disagreements are all exception records, which the reference
+    wrote with `cyc = 0` (`_system_exception`) and the twin prices at
+    Table 4-36's Exception row, `9 + D + A` = 12: four instruction-fetch
+    faults (records 2,886,866, 2,901,427, 2,916,311, 2,923,430) and three
+    operand-read faults of a MOV (2,893,032, 2,900,895, 2,908,152). The
+    reference is the one without a printed number here: Table 4-36
+    prints the Exception row (p. 4-5). **Fixed 2026-11-24 in the
+    reference** (`_system_exception` now writes `9 + D_CYC + A_CYC`;
+    `tests/test_sem_system.py`
+    `test_exception_record_costs_table_4_36`, which fails 0 != 12 on
+    the old line and nothing else does). Re-recorded, the 3,000,000
+    records are unchanged in every field but `cyc`, `cyc` changes on
+    exactly those 7, `boot.rec` is byte-identical, and the twin agrees
+    on all 2,999,996 determined records. p9boot paces model time by
+    the summed `cyc`, so `tests/test_p9boot.py`'s step pins moved
+    (the 25 Hz prompt 22,537,089 -> 22,537,005, and 22,537,007 with master's Quart bids merged; the join replay's
+    typed steps and `echo` count likewise); its console, frames and
+    replay assertions are unchanged. Interrupts and CRET's CATCH fault
+    have no record of their own and stay uncharged in both accounts.
+    Whether the core's exception records carry 12 is for C3/C4 to
+    check (`bsv/` not touched here).
+  * 3 undetermined are a mispredicted `JMPFY` at 0x800042fa whose PSW.F
+    came from a CPU-prefixed write of PSW (`CPU; MOV ...,%PSW` at
+    0x800042f2, the record before), not a compare. Table 4-35 prints
+    no row. The reference does not see the PSW write as a flag source:
+    it prices the jump by the `CMPEQ` four records back as "folded, 4
+    or more" = 0 (checked 2026-11-24: `p9boot.py --max-steps 3000000
+    --no-idle-skip` reports no `untimed` record). Had it tracked the
+    write it would refuse, and a `System` run would write the same 0
+    as untimed, so the number cannot move; the reading differs. It is
+    the same gap as TADD/TSUB (pp. 3-42, 3-47), which also write PSW.F
+    and which the reference does not track either. The fourth is the
+    last record, whose direction the stream does not show.
+  * **A shared choice, not independent agreement:** the board's
+    `fold_into_cpu_prefixed = yes` lets a one-parcel jump fold into a
+    CPU-prefixed host (the prefix costs 0 and is "part of the CPU
+    instruction", p. 3-14; Table 4-37 prices the prefixed forms). With
+    `no`, 19 kernel records disagree. The reference makes the same
+    choice, so on those records the two accounts agree by construction.
+  * The I-line of `boot.rec` (`I n level pc`) counts records: the
+    interrupt follows record n - 1 (on this boot `I 2b78cc` follows
+    record 2,848,971, pc 0x800041e4). `test_hobbit_timing.py` pins it
+    (injection I5).
+* The compare-distance choice (`distance = retired` or `slots`, i.e.
+  whether a folded branch between the compare and the jump counts)
+  changes nothing on za or zc: both settings give the same 0
+  disagreements.
+
+## 5. Corrections this plan records
+
+Applied in C1 (2026-11-24), except the first, which waits for `bsv/`
+(C3): the `timing_tables.md` items are §7 items 4, 6, 9 and 12 and the
+new §11; `timing.csv` has the 13 Table 2-4 rows and the 2100's 4 + Q in
+`t434_scm_qw_msc_qw`'s note; `sem/hobbit_sem.py`'s docstring already had
+the reading C1 adopted, so only the tables document changed.
 
 * `bsv/HobbitBus.bsv` header: Figure A-3 does not show START in
   consecutive cycles. START is in 4, 11 and 14 (p. A-5, re-read at

@@ -1,0 +1,46 @@
+% SCAFFOLDING stand-in for SIMPOS's class `channel`, compiled by
+% psi/espc.py into the package `simpos`.  The class text is PRINTED
+% SOURCE, not ours: TM-100 Figure 3.7 "Part of class 'channel'" (PDF p15,
+% printed folio 13), as transcribed in
+% docs/simpos/printed/listings/tm0100_p15.esp, verbatim (layout as
+% printed).  The figure is "part of" the class: SIMPOS's full `channel`
+% is lost.
+%
+% The figure prints no :create.  `:create(#channel, C)` (held callers:
+% kappa2 kernel/flm/VOL1.ESP:52; pimscsi's slot initialisers) is the
+% PRINTED stream:create/2 (TM-100 Fig. 3.6), inherited through the
+% printed nature.  The printed slot `post_queue` overrides stream's slot
+% of the same name (TM-100 p15 prose: "the slot 'post_queue' is
+% overridden in the channel"); its class, post_queue_for_message, is an
+% INTERPOLATED stand-in (post_queue_for_message.esp).
+%
+% Not stood in: the 2-argument send/2 and receive/2 of TR-056 p14's
+% printed interface (docs/simpos/printed/listings/TR-056_p14.esp), which
+% kappa2 kernel/itr/ITRTCM.ESP sends; and set_sender/2, get_sender/2 of
+% class `message` ("A message is defined by class 'message'", TM-100
+% p15), which the printed send/3 and receive/3 call.  kl0 refuses them
+% as SIMPOS calls.
+
+    class  channel  has
+
+    % PRINTED: TM-100 Fig. 3.7, PDF p15 (the nature)
+    nature      stream;
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.7, PDF p15 (the overriding slot)
+    attribute ( post_queue  :=
+                        Queue :- :create(#post_queue_for_message, Queue) );
+                    % Overrides 'post_queue' of class 'stream'
+
+    % PRINTED: TM-100 Fig. 3.7, PDF p15
+    :send(Channel, Message, Sender) :-
+            :set_sender(Message, Sender),
+            :put(Channel, Message);
+
+    % PRINTED: TM-100 Fig. 3.7, PDF p15
+    :receive(Channel, Message, Sender) :-
+            :get(Channel, Message),
+            :get_sender(Message, Sender);
+
+    end.

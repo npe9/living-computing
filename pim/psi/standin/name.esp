@@ -1,0 +1,431 @@
+% SCAFFOLDING stand-in for SIMPOS's class `name` (file names
+% `ident.type.version`), compiled by psi/espc.py into the package
+% `simpos`.  HELD-SOURCE: below the line of dashes is the file
+% `_simpos/name.esp` of LAX, the morphological analyser for Common ESP
+% (ifs/natural-lang/cesp/morphana.tar.Z, (C)1992 ICOT, ICOT Free
+% Software), byte for byte but for the label lines described here and the
+% character set (EUC-JP read, written as UTF-8).  Its stamp (line 6)
+% says it was copied from `icpsi900::>sys>user>tateishi>world>NAM1.esp.2`
+% (1988), a user copy of SIMPOS's `world` directory
+% (docs/simpos/subsystems/sweep_2026-11-24.md §2.1, finds.md §5a).
+% CESP-specific: only `use_package(lax).` (line 5), the port's package
+% directive; espc.py ignores it.  Nothing else in the file is CESP's
+% (sweep §2.1), so nothing is undone.
+% Each method's first clause has a label line `% HELD-SOURCE: name.esp:N`
+% above it (N the line in the held file).  espc.py refuses the methods
+% that use a construct with no witnessed compiled form; kl0 then refuses
+% a send of one as SIMPOS (`(not in the stand-in)`).  The refused set is
+% pinned in psi/test_espc.py.
+% ----------------------------------------------------------------------
+% (C)1992 Institute for New Generation Computer Technology
+% 配付その他はCOPYRIGHTファイルを参照して下さい
+% (Read COPYRIGHT for detailed information.)
+
+use_package(lax).   % [CESP, kept]
+% icpsi900::>sys>user>tateishi>world>NAM1.esp.2, 17-Feb-88 16:48:02, Edit by tateishi
+
+        %%%%%%%%%%%%%%%%%%%%
+        %   class   name   %
+        %%%%%%%%%%%%%%%%%%%%
+
+class   name  has
+
+
+% beginning of class name -----
+
+%/------------------------------------------------------------
+%/      class   name
+%/
+%/         nature
+%/              no class
+%/         alternative(s)
+%/              none
+%/
+
+
+% :ident/3
+% HELD-SOURCE: name.esp:28
+:ident(_,Name,Ident):-
+        unbound(Ident),
+        string(Name,Length,_),
+        Length \== 0,
+        ident(Name,Length - 1,Ident) ;
+
+% :type/3
+% HELD-SOURCE: name.esp:35
+:type(_,Name,Type):-
+        unbound(Type),
+        string(Name,Length,_),
+        Length \== 0,
+        type(Name,Length - 1,Type) ;
+
+% :type_string/3
+% HELD-SOURCE: name.esp:42
+:type_string(_,Name,Type_string):-
+        string(Name,Length,_),
+        Length \== 0,
+        type_string(Name,Length - 1,Type_string) ;
+
+% :type_version/3
+% HELD-SOURCE: name.esp:48
+:type_version(_,Name,Type_version):-
+        string(Name,Length,_),
+        Length \== 0,
+        type_version(Name,Length - 1,Type_version) ;
+
+% :ident_type/3
+% HELD-SOURCE: name.esp:54
+:ident_type(_,Name,Ident_type):-
+        unbound(Ident_type),
+        string(Name,Length,_),
+        Length \== 0,
+        ident_type(Name,Length - 1,Ident_type) ;
+
+% :version/3
+% HELD-SOURCE: name.esp:61
+:version(_,Name,Version):-
+        unbound(Version),
+        string(Name,Length,_),
+        Length \== 0,
+        version(Name,Length - 1,Version) ;
+
+% :version_string/3
+% HELD-SOURCE: name.esp:68
+:version_string(_,Name,Version_string):-
+        string(Name,Length,_),
+        Length \== 0,
+        version_string(Name,Length - 1,Version_string) ;
+
+
+%-------        CHECK    NAME           -------%
+
+% :check_name/3
+% HELD-SOURCE: name.esp:77
+:check_name(Class,Name,Checked_name):-
+        unbound(Checked_name),
+        :cut_space(#e_string,Name,Name0),
+        check_name(Class,Name0,Checked_name) ;
+
+% :check_ident/2
+% HELD-SOURCE: name.esp:83
+:check_ident(Class,Ident):-
+        string(Ident,Length,_),
+        0 < Length ,
+        Length =<  44 ,
+        :allowed_characters(Class,Ident,[]),
+        :not_element(#e_string,Ident,[ #"." ]) ;
+
+% :check_type/2
+% HELD-SOURCE: name.esp:91
+:check_type(Class,Type):-
+        string(Type,Length,_),
+        0 =< Length ,
+        Length =<  10 ,
+        :allowed_characters(Class,Type,[]),
+        :not_element(#e_string,Type,[ #"." ]) ;
+
+        %---   OTHER OPERATION   ---%
+
+% :append_type/4 
+% HELD-SOURCE: name.esp:101
+:append_type(Class,Name,Type,Newname):-
+        unbound(Newname),
+        :check_type(Class,Type),
+        :check_name(Class,Name,_),
+        string(Name,Length,_),
+        :cut_space(#e_string,Name,Name0),
+     (  search_character(Name,0,Length - 1,#".",_),!,
+           Newname = Name0 ;
+        :cut_space(#e_string,Type,Type0),
+           :append(#string,[Name0,string#".",Type0],Newname) ) ;
+
+% :sort/3
+% HELD-SOURCE: name.esp:113
+:sort(Class,Namelist,Sorted_namelist):-
+        bound(Namelist),
+        unbound(Sorted_namelist),
+        convert(Namelist,Converted_namelist,Class),
+        qsort(Converted_namelist,[],Sorted_list),
+        get_names(Sorted_list,Sorted_namelist) ;
+
+
+% :key/3
+% HELD-SOURCE: name.esp:122
+:key(Class,Name,Ident_type):-
+        :cut_space(#e_string,Name,Name0),
+        :ident_type(Class,Name0,Ident_type) ;
+
+% :version_number/3
+% HELD-SOURCE: name.esp:127
+:version_number(Class,Name,Version_number):- 
+        :version(Class,Name,Version),
+      ( :get_number(#symbolizer,Version_number,Version) ,! ;
+        Version_number = -1 ) ;
+
+% :make_name/4
+% HELD-SOURCE: name.esp:133
+:make_name(Class,Key,Version,Name):- 
+        make_name(Class,Key,Version,Name) ;
+
+% :full_name/4
+% HELD-SOURCE: name.esp:137
+:full_name(Class,Key,Version,Name):- 
+        :get_number_string(#symbolizer,Version,Version_string),
+        :append(#string,[Key,string#".",Version_string],Name);
+
+% :key_version/4
+% HELD-SOURCE: name.esp:142
+:key_version(Class,Name,Ident_type,Version):- 
+        :check_name(Class,Name,Checked_name),
+        :ident_type(Class,Checked_name,Ident_type),
+      ( :version_number(Class,Checked_name,Version),!,
+           Version > 0 ;
+        true    ) ;     %  If Name doesn't have version , Version is unbound.
+
+% :legal_characters/3
+% HELD-SOURCE: name.esp:150
+:legal_characters(Class,Name,Allowed):-
+        :string_to_list(#symbolizer,List,Name),
+        legal_characters(List,Allowed) ;
+
+
+% :allowed_characters/3
+% HELD-SOURCE: name.esp:156
+:allowed_characters(Class,Name,Allowed):-
+        :illegal_character(Class,Illegal_character),
+        remove(Allowed,Illegal_character,Not_allowed),
+        :not_element(#e_string,Name,Not_allowed) ;
+
+
+% :illegal_character/1
+% HELD-SOURCE: name.esp:163
+:illegal_character(_,
+        [ #">" , #"*" , #"?" , #":" , #" " ]):- !;
+
+
+local
+
+% remove/3
+remove([],Not_allowed,Not_allowed):- !;
+remove([Char|Allowed],Illegal_character,Not_allowed):-
+        remove1(Illegal_character,Char,Illegal_character1),
+        remove(Allowed,Illegal_character1,Not_allowed) ;
+
+% remove1/2
+remove1([],_,[]):- !;
+remove1([Char|Illegal_character],Char,Illegal_character):- !;
+remove1([Char1|Illegal_character],Char,[Char1|Illegal_character1]):-
+        remove1(Illegal_character,Char,Illegal_character1) ;
+
+
+
+% legal_characters/2
+legal_characters([],_):-!;
+legal_characters([Char|List],Allowed):-
+        legal_character(Char,Allowed),
+        legal_characters(List,Allowed) ;
+
+% legal_character/2
+legal_character( #"-" ,_):- !;
+legal_character( #"_" ,_):- !;
+legal_character( #"$" ,_):- !;
+legal_character(Char,_):- 
+        :is_numeric(#character,Char),!;
+legal_character(Char,_):- 
+        :is_alphabetic(#character,Char),!;
+legal_character(Char,_):- 
+        :is_hiragana(#character,Char),!;
+legal_character(Char,_):- 
+        :is_katakana(#character,Char),!;
+legal_character(Char,_):- 
+        :is_kanji(#character,Char),!;
+legal_character(Char,Allowed):-
+        member(Allowed,Char) ;
+
+% member/2
+member([Char|_],Char):- !;
+member([_|Allowed],Char):-
+        member(Allowed,Char) ;
+
+% ident/3
+ident(Name,End,Ident):-
+        search_character(Name,0,End,#".",First),!,
+        First \== 0,
+        substring(Name,0,First,Ident) ;
+ident(Ident,_,Ident):- !;               % No period
+
+% type/3
+type(Name,End,Type):-
+        search_character(Name,0,End,#".",First),
+        First \== 0 ,
+        First < End ,   % If First == End , Name = <ident>.
+        get_type(Name,First + 1,End,Type) ;
+
+% type_string/3
+type_string(Name,End,Type):-
+        search_character(Name,0,End,#".",First),
+        First \== 0 ,
+     (  First == End ,!,
+           Type = string#"" ;
+        First1 = First + 1 ,
+        (  search_character(Name,First1,End,#".",Second),!,
+              substring(Name,First1,Second - First1,Type) ;
+           string_tail(Name,First1,Type)     )    )  ;
+
+% type_version/3
+type_version(Name,End,Type_version):-
+        search_character(Name,0,End,#".",First),
+        string_tail(Name,First + 1,Type_version) ;
+
+% get_type/4
+get_type(Name,Position1,End,Type):-
+        search_character(Name,Position1,End,#".",Second),!,  
+         % Name = <ident>.<type>.<version>
+        Position1 <  Second ,          
+         % If Position1 == End , Name = <ident>..<version>
+        substring(Name,Position1,Second - Position1,Type) ;
+get_type(Name,Position1,End,Type):-
+        string_tail(Name,Position1,Type) ;  % Name = <ident>.<type>
+
+% ident_type/3
+ident_type(Name,End,Ident_type):-
+        search_character(Name,0,End,#".",First),!,
+        First \== 0,
+        get_ident_type(Name,First,End,Ident_type) ;
+ident_type(Name,_,Ident_type):- 
+        :append(#string,[Name,string#"."],Ident_type) ;
+                    %  Name = <ident>
+
+% get_ident_type/4
+get_ident_type(Ident_type,End,End,Ident_type):- !;     % Name = <ident>.
+get_ident_type(Name,First,End,Ident_type):-            
+        search_character(Name,First + 1,End,#".",Second),!,
+        substring(Name,0,Second,Ident_type) ;
+                % Name = <ident>.<type>.<version>
+get_ident_type(Ident_type,_,_,Ident_type):- !;
+                % Name = <ident>.<type>
+
+% version/3
+version(Name,End,Version):-
+        search_character(Name,0,End,#".",First),
+        First \== 0,
+        Position1 = First + 1 ,
+        Position1 < End ,
+        search_character(Name,Position1,End,#".",Second),
+        Second < End ,
+        string_tail(Name,Second + 1,Version) ;
+
+% version_string/3
+version_string(Name,End,Version_string):-
+        search_character(Name,0,End,#".",First),
+        First \== 0,
+        Position1 = First + 1 ,
+        Position1 < End ,
+        search_character(Name,Position1,End,#".",Second),
+     (  Second < End ,!,
+           string_tail(Name,Second + 1,Version_string) ;
+        Version_string = string#"" ) ;
+
+% period_position/2
+period_position(Name,Position_list):-
+        string(Name,Length,_),
+        :character_position(#e_string,Name,#".",Position_list),
+        check_position_list(Position_list,Length) ;
+
+% check_position_list/2
+check_position_list([],Length):- !,
+        Length =< 44 ;
+check_position_list([Position1],Length):- !,
+        Position1 \== 0 ,
+        Position1 =< 44 ,               % MAX ident length = 44
+        Length - Position1 - 1 =< 10 ;  % MAX type length = 10
+check_position_list([Position1,Position2],_):- 
+        Position1 \== 0 ,
+        Position1 =< 44 ,                       % MAX ident length = 44
+        Position2 - Position1 - 1 =< 10 ;       % MAX type length = 10
+
+% check_name/3
+check_name(_,Parent_directory,Parent_directory):-
+        equal_string(Parent_directory,string#".."),!;
+check_name(_,Current_directory,Current_directory):-
+        equal_string(Current_directory,string#"."),!;
+check_name(Class,Name,Checked_name):-
+        :allowed_characters(Class,Name,[#"."]),
+        period_position(Name,List),
+        checked_name(List,Name,Checked_name) ;
+
+
+% checked_name/3
+checked_name([],Checked_name,Checked_name):- !;             % [1]
+checked_name([Position],Name0,Checked_name):- !,
+        string(Name0,Length,_),
+     (  Position + 1 == Length ,!,
+           substring(Name0,0,Position,Checked_name) ;       % [1]
+        Checked_name = Name0    ) ;                         % [2]
+checked_name([Position1,Position2],Name0,Checked_name):-
+        string(Name0,Length,_),
+        Head = Position2 + 1 ,
+     (  Head == Length ,!,                      
+             (  Position1 + 1 == Position2 ,!,  
+                  substring(Name0,0,Position1,Checked_name)  ; % [1]
+                substring(Name0,0,Position2,Checked_name)  )   % [2]
+      ;
+        string_tail(Name0,Position2 + 1,Version),
+           :get_number(#symbolizer,Version_number,Version),
+           Version_number > 0 ,
+           Checked_name = Name0  ) ;                            % [3]
+
+        % [1]   <ident> 
+        % [2]   <ident>.<type>
+        % [3]   <ident>.<type>.<version>
+
+        %---  SORT NAME  ---%
+% convert/3
+convert([],[],_):- !;
+convert([Name|Namelist],[{Key1,Version,Name}|Converted_namelist],Class):-
+        :key(Class,Name,Key),
+        :replace(#e_string,Key,#".",0,Key1),
+     (  :version_number(Class,Name,Version),!;
+        Version = 0     ),
+        convert(Namelist,Converted_namelist,Class) ;    
+
+% qsort/
+qsort([],L,L):- !;
+qsort([One|Tail],List,Sort):-
+        partition(Tail,One,List1,List2),
+        qsort(List2,List,Temp),
+        qsort(List1,[One|Temp],Sort) ;
+
+% partition/
+partition([],_,[],[]):- !;
+partition([X2|List],X1,L1,L2):-
+     (  X2 < X1 ->
+           L1 = [X2|List1] ,
+           partition(List,X1,List1,L2) ;
+        L2 = [X2|List2] ,
+           partition(List,X1,L1,List2)  ) ;
+
+
+% get_names/2
+get_names([],[]):- !;
+get_names([{_,_,Name}|Sorted_list],[Name|Sorted_namelist]):-
+        get_names(Sorted_list,Sorted_namelist) ;
+
+% make_name/4
+make_name(_,_,_,Name_with_version):- 
+        bound(Name_with_version) ,!;
+make_name(Class,Key,0,Key):- 
+        :type(Class,Key,_),! ;
+make_name(Class,Key,0,Name):- !,
+        :ident(Class,Key,Name) ;
+make_name(Class,Key,Version,Name):- 
+        Version > 0 ,
+        :get_number_string(#symbolizer,Version,Version_string),
+        :append(#string,[Key,string#".",Version_string],Name);
+
+
+end.
+
+% end of class name ----------------------------------------
+
+

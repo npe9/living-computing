@@ -233,11 +233,17 @@ and stand-in `simpos##` classes. In order:
      all 109 classes with source compile. Natures and demon sets agree
      in 109 of 109, slots and the method sets in 108. The two misses
      are the 3200/3500 version slot and two unparsed items of
-     `h_grade`. Of 991 predicates compared, 243 are cell for cell
-     identical. That is 24.5% of the compared predicates and 11.4% of
-     all 2,123 held predicates of those classes. Kappa2 compares 3,387
-     predicates, 501 exact (14.8%); 404 of its 739 classes are refused
-     whole for `with_macro`. Utter compares 464, 94 exact (20.3%). The
+     `h_grade`. Of 1,051 predicates compared, 247 are cell for cell
+     identical (991 and 243 before the string built-ins, step 3b).
+     That is 23.5% of the compared predicates and 11.6% of all 2,123
+     held predicates of those classes. Kappa2: all 739
+     classes compile now that macro banks are expanded (`with_macro`,
+     TM-388 §3.7.3; before, 404 were refused whole); 9,971 predicates
+     compared, 1,323 exact (13.3%), and 10,641 and 1,361 with the
+     string built-ins. 109 of the exact ones have source clauses a
+     bank rule changed: the structural witness of the expansion.
+     Utter compares 521, 101 exact (19.4%); 10 of its
+     classes use banks whose source is not held. The
      differences are classified in `../../psi/README.md`. The largest
      classes are held code using opcodes not in the table (212 in
      paragraph) and differences of moves and environment only (189).
@@ -263,9 +269,82 @@ and stand-in `simpos##` classes. In order:
      `string:append/3` 24 times and `symbolizer:get_number/3` 10 times.
      `pimfep##pimos_timer:on_after/4` used to refuse at
      `simpos##process:self/2`. It now refuses at
-     `simpos##process:tag_catch/9`. `pimos_timer:stream/2` gets into
-     the printed `stream` and stops at kl0's `new/2`, because the
-     printed slots are initialised by code.
+     `simpos##process:tag_catch/9`.
+   - *2026-11-24, later:* kl0's `new/2` runs slots initialised by
+     code. The calling convention is measured: all 424 held
+     initialisers have arity 1, with the value in A0. The semantics
+     are TM-388 §3.5 pp.49-50. `process` now carries the printed
+     TM-100 Fig. 3.1 body. The classes that body and `stream` create
+     or inherit are interpolated stand-ins: `list`, `post_queue`,
+     `waiting_queue`, `process_clock`, `with_link` and
+     `waiting_frame`.
+     - `pimos_timer:stream/2` now succeeds, and the printed
+       `put/2`/`get/2` run first in, first out.
+     - Over pimfep and pimscsi (`kl0.py census --fep`), 195 methods
+       stopped at `new/2`. Now none do: 14 more succeed, 112 reach a
+       SIMPOS call and 69 reach an unnamed opcode.
+     - The next blocking classes are `channel:create/2` (69 methods),
+       `hash_index:create/3` (58), `list_index:create/2` (20) and
+       `process:create/3` (14). See `../../psi/README.md`.
+   - *2026-11-24, step 3b:* the compiler expands `with_macro` macro
+     banks (TM-388 §3.7.3; above). Four string built-ins have
+     known-plaintext rows (blt 0b, 1c, 23, 2b), and class `class`'s
+     `:refute` (TM-388 p.46) is modelled. New interpolated stand-ins:
+     `string` (`append/3`, `copy/3`) and `process`'s `tag_catch/5`,
+     `/6`, `/9`, which call through `:refute` (TR-285 §4.2: catch is
+     a multiple-level cut; no throw is modelled), and a partial
+     `symbolizer` (`string_to_list/3`, `list_to_string/3`). Its other
+     25 selectors are not stood in: no witnessed built-in converts
+     atoms and strings, and number conversion needs `X/Y`.
+     - `pimos_timer:on_after/4` now gets through `tag_catch/9` into
+       its own `do_on_after/3` and stops at
+       `process:allow_forced_event/1`.
+     - Census of pimfep and pimscsi: 515 of 1,228 methods succeed (501
+       before), 51 fail cleanly, 662 refuse; none changed between
+       success and failure. The next blockers: `channel:create/2` (114
+       methods), `hash_index:create/3` (58), `list_index:create/2`
+       (20), `process:create/3` (14),
+       `process:allow_forced_event/1` (9).
+   - *2026-11-24, step 3c:* stand-ins for those blockers. PRINTED,
+     verbatim: `channel` (TM-100 Fig. 3.7), `bounded_channel` and
+     `bounded_post_queue` (Figs. 3.10, 3.11; their demons run).
+     INTERPOLATED: `post_queue_for_message`, `semaphore`, `list_index`
+     and `hash_index` (on the entry layout that kappa2's
+     `KPPOOL.ESP` and `SVHSH_IDX.ESP` read from the base classes),
+     `process:create/3`, `allow_forced_event/1` and slot accessors, and
+     a minimal `standard_editor` (`get_window/2`, the unloaded ancestor
+     of `pimfep##pimos_window_editor`). An espc argument-placement bug
+     found on the way is fixed (no `check` count moved).
+     - Census of pimfep and pimscsi: 605 of 1,229 methods succeed (515
+       before), 63 fail cleanly (12 on an empty index or queue), 561
+       refuse; none changed between success and failure.
+     - The next blockers: missing opcodes (blt 06 65 methods, pmi b0
+       29, pmi b4 21, ...); the `lock/1` of four pimfep tables, in a
+       `simpos##` ancestor; `trace:trace/1`,
+       `common_network:is_installed/1`,
+       `network_listener_buffer:create/4` (5 each); and class
+       `pmacs_window`, without which `pimos_window_editor`'s window is 0.
+   - *2026-11-24, step 3c, second part:* nine opcode rows from known
+     plaintext:
+     - `add` (blt 40);
+     - `integer`, `unbound`, `bound` (blt 01, 10, 16);
+     - `stack_vector` (blt 06);
+     - `equal_string` (blt 68), `string_tail` (blt 33);
+     - `substring` (blt 32) and `search_character` (blt 5c), two cells
+       long.
+
+     Three HELD-SOURCE classes: morphana's `_simpos/` `name`,
+     `e_string` and `pathname`, SIMPOS's own as copied for Common ESP
+     (ICOT Free Software). In `pathname`, the port's `/` is restored to
+     `>`, and its commented-out clauses are restored, each marked. The
+     symbolizer's `get_number/3` and `get_number_string/3` work on
+     integers.
+     - Census: 607 succeed, 101 fail (38 more, the census's unbound
+       arguments failing a type test), 521 refuse.
+     - pmi b0 has no witness.
+     - The next blockers: blt 6e (38, in `fep_message_assembler`, no
+       source), pmi b0 29, pmi b4 21, the SIMPOS calls above, and
+       `alarm_watch:create/2`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

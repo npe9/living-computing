@@ -1,0 +1,41 @@
+% SCAFFOLDING stand-in for SIMPOS's class `waiting_queue`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `waiting_queue` is printed.  Every method is INTERPOLATED (labelled)
+% from TM-100 section 3.2 (1) (PDF p13-14, docs/simpos/printed/listings/
+% tm0100_p14.esp): "a queue of processes waiting for events ... This
+% queue is constructed on a doubly-linked list, and frames (entries) in
+% the queue must be instances of class 'waiting_frame'.  Class 'process'
+% inherits class 'waiting_frame'", and from the printed stream:put/2 and
+% get/2 that call it (Fig. 3.6).
+% Model (OURS): the processes as a Prolog list in one slot, first hooked
+% first; not the printed doubly-linked list through waiting_frame.
+
+class waiting_queue has
+
+% INTERPOLATED from: stream's printed slot initialiser
+% `( waiting_queue := Queue :- :create(#waiting_queue, Queue) )` (TM-100
+% Fig. 3.6, PDF p14).
+:create(Class, Queue) :- :new(Class, Queue);
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute frames := [];
+
+% INTERPOLATED from: the printed stream:put/2, `:empty(Stream!
+% waiting_queue), !` (TM-100 Fig. 3.6, PDF p14).
+:empty(Queue) :- Queue!frames == [];
+% INTERPOLATED from: the printed stream:get/2, `:hook(Stream!
+% waiting_queue, Process)` before `:suspend(Process, ...)` (PDF p15).
+:hook(Queue, Frame) :-
+        append(Queue!frames, [Frame], E), Queue!frames := E;
+% INTERPOLATED from: the printed stream:put/2, `:unhook(Stream!
+% waiting_queue, Process)` before `:resume(Process, ...)` (PDF p14): Process
+% is an output, the first frame hooked; fails when the queue is empty.
+:unhook(Queue, Frame) :-
+        [Frame|E] = Queue!frames, Queue!frames := E;
+
+local
+append([], L, L);
+append([X|A], B, [X|C]) :- append(A, B, C);
+end.
