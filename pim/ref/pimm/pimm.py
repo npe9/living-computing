@@ -1598,6 +1598,37 @@ class Machine:
             return [(INT, 4096 + v if v < 0 else 4096)]
         self.builtin('calculate_priority_from_current', [x, y], f)
 
+    def i_system_timer(self, pc, x, y, z, c16):  # guard, no input
+        # system_timer(^X1, ^X2), 23:78 r_r (blt.kl1:287-288, both
+        # outputs): "The upper 16 bits of the time (in 1/16 msec units)
+        # that has passed since the processor ... was booted is unified
+        # with X1, and the lower 32 bits ... with X2. Suspend,
+        # Exception: None" (manual, e-builtin.tex:1537-1549).  VPIM
+        # gives X1 = 0 and X2 the current time (klb_pimos.psl.c
+        # kblt_system_timer, "just for PIM/s").  The CLOCK IS OURS: no
+        # time passes on this model, it stands at 0 (X1 = 0, X2 = 0),
+        # written r[x] then r[y]; set_timer agrees with it.
+        self.reg[x] = (INT, 0)
+        self.reg[y] = (INT, 0)
+
+    def i_set_timer(self, pc, x, y, z, c16):
+        # set_timer(Time, ^Wakeup), 22:FF r_r (blt.kl1:702-704: input
+        # X1, output X2; class pimos).  VPIM's account (klb_pimos.psl.c,
+        # the comment before kblt_system_timer, for its three-argument
+        # form): an alarm; "if the specified time (in system timer
+        # values) has already come, Wakeup is unified at once with the
+        # system timer's value", else at the earliest time after; "T2
+        # is after T1 :- T2 &- T1 < 2^(W-1)" (&- unsigned, mod 2^W).
+        # With this model's clock at 0 (system_timer, OURS) a time
+        # reached gives Wakeup = 0; a time still to come would never
+        # come, and is refused rather than left waiting silently.
+        def f(t):
+            t = self.need_int(t)
+            if (0 - t) & 0xffffffff >= 1 << 31:
+                raise Unimplemented('set_timer to a time still to come (%d)' % t)
+            return [(INT, 0)]
+        self.builtin('set_timer', [x, y], f)
+
     def i_current_node(self, pc, x, y, z, c16):
         # current_node(^NodeNumber, ^TotalNode), 22:EE r_r: "NodeNumber
         # is unified with the number of node on which this predicate is

@@ -209,7 +209,8 @@ lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`), the
 IPL's pool `ipl_pool:keyed_set/2` given vector keys. `tproc`:
 `Goal@processor(P)` with P unbound waits (rules `tq1`..`tq4`, the
 stub `to_processor`, rules `tp0`..`tpE`; from VPIM), at the one site
-of `pimm_patch_scsifep360E.sav`.
+of `pimm_patch_scsifep360E.sav`. `timer`: `system_timer` and
+`set_timer`, the model's clock at 0 (ours).
 `scsi`: `scsi_init` and `scsi_command` (`PimmScsiBox.bsv`) at their
 sites (`scsi:create/2`, `scsi:command_executer/2`), the device on the
 tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE, a
@@ -224,9 +225,9 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 145
-instructions (a recount, 2026-11-24: 145 handlers in `pimm.py`, all on
-both models; 142 without our three stubs; the earlier 128 and 130 were
+State: 147
+instructions (a recount, 2026-11-24: 147 handlers in `pimm.py`, all on
+both models; 144 without our three stubs; the earlier 128 and 130 were
 increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

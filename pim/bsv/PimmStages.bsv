@@ -84,7 +84,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
-               XTq1, XTq2, XTq3, XTq4, XTp0, XTp1, XTp2, XTpE,
+               XTq1, XTq2, XTq3, XTq4, XSTim, XTp0, XTp1, XTp2, XTpE,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XShF, XCPr1, XCPr2,
@@ -163,7 +163,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
-                  || op == op_scsi_command;
+                  || op == op_scsi_command || op == op_set_timer;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -403,6 +403,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // processor here: 0, 1, 1 (PDSS's values), written in that order
       regs.wr(x, intC(0));
       st <= XCPr1;
+    end
+    else if (op == op_system_timer) begin
+      // system_timer(^X1, ^X2), a guard with no input: the model's
+      // clock stands at 0 (ours), r[x] then r[y]
+      regs.wr(x, intC(0));
+      st <= XSTim;
     end
     else if (op == op_current_node) begin
       // current_node(^NodeNumber, ^TotalNode): no input, never waits.
@@ -1056,6 +1062,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   // current_node: the second output, the total number of nodes
+  rule sysTimerLow (st == XSTim);
+    regs.wr(y, intC(0));
+    next;
+  endrule
+
   rule nodeTotal (st == XNode);
     regs.wr(y, intC(1));
     next;
@@ -1533,6 +1544,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         gbox.newVar;
         st <= XSan;
+      end
+    end
+    else if (op == op_set_timer) begin
+      // set_timer(Time, ^Wakeup): with the clock at 0 (ours) a time
+      // reached, (0 - Time) mod 2^32 < 2^31, gives Wakeup = 0; a time
+      // still to come is refused
+      Bit#(32) d = 0 - a.val;
+      if (!isInt(a) || d[31] == 1) stop(EndUnimp);
+      else begin
+        regs.wr(y, intC(0));
+        finish(tagged Next afterBuiltin);
       end
     end
     else if (op == op_new_instruction) begin
