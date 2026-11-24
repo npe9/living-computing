@@ -646,10 +646,10 @@ The programmatic equivalent is `:create(#library_utility,U,W)` or `:create_windo
 
 | version | items, in order | grade, source |
 |---|---|---|
-| 1.x (Nov 1985) | Check, Catalogue, Compile, Uncompile, Save, Load, Delete, Print, Info, Classes, Predicates, Execute (12) | SCREENSHOT TM-143 p3 (Print/Info/Classes/Predicates medium confidence) |
+| 1.x (Nov 1985) | Check, Catalogue, Compile, Uncompile, Save, Load, Delete, Print, Info, Classes, Predicates, Execute (12) | SCREENSHOT TM-143 p3 (all 12 legible on a re-check at high resolution; status line "SIMPOS Version 1.5x", 17-Nov-85) |
 | ~2.0 (Apr 1986) | Check, Catalogue, Compile, Uncompile, Save, Load, Delete, Execute, … (rest hidden) | SCREENSHOT Giho 8609 p16 |
-| 2.10 (Jun 1986) | Check, Catalogue, Compile, Uncompile, Save, Load, Delete, Execute, Utility (9) | SCREENSHOT TM-181 p4; = TM-229 p6 |
-| 2.50 (Sep 1986) | same 9 | SCREENSHOT IPSJ 36239 p5 |
+| 2.10 (Jun 1986) | Check, Catalogue, Compile, Uncompile, Save, Load, Delete, Execute, Utility (9) | SCREENSHOT TM-181 p4 |
+| 2.50 (Sep 1986) | same 9 | SCREENSHOT IPSJ 36239 p5 = TM-229 p6 (same paper; checked by eye 2026-11-24) |
 | video (status "A00" in esp.wmv) | same 9, labels `librarian_1` / `librarian_2` | SCREENSHOT simpos.wmv@0-5, @117-122; esp.wmv@117 |
 | 5.0 (1988-90), standard | Set up, Check, Catalogue, Save, Load, Delete, Package, Execute, Utility, ESP tool, [Close] (11). Set up, Delete, Package, Utility and ESP tool have submenus | SCREENSHOT IPSJ 118681 p1 Fig.1 |
 

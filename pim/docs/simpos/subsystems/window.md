@@ -91,6 +91,16 @@ with its version. The main variants are collected in Appendix B.
 | 4 | IPSJ 122601 (1992) | which SIMPOS classes an ESP-to-CESP port had to re-create, and the ESP-to-CESP method table | newipsj.md (supersedes the `web_search_2026-11-24.md` items 1-2) |
 | — | IPSJ 118569 (CESP window library, 1990) | names CESP classes only. It says the CESP spec is "based on" SIMPOS's, but its Fig. 2 is **not** a SIMPOS class list | newipsj.md, correction 1 |
 
+**How far the kl0 runs can be trusted.** The "(kl0 run)" facts come from the ptf reader's harness
+(`tools/ptf_stubrun.py`). It uses `../../../psi/kl0.py` read-only, stubs every SIMPOS send, and adds
+five opcode handlers that kl0 lacks:
+- `pmi b4`, `pmi b7` and `blt 40` are witnessed against paragraph source.
+- `pmi b5` and `pmi b6` (taken as put_vector_5/6) are INFERENCE from the opcode series.
+
+So a 5- or 6-element vector recovered by a run is INFERENCE in its *shape* unless held source shows
+the same shape. One example is the choice item `{Label,string,Name,Width,Default,_}`. Choice items
+are also seen in held source (§3), and there they are USAGE.
+
 **Missing.** No SIMPOS window-system source or binary is held: no `simpos##` class is defined in any of the 1,662
 compiled templates (notes: ptf.md "POSSIBLE SIMPOS CODE"). The nearest material is:
 - printed mixin bodies from 1984: `bare_window`, `with_border`, `with_label` (TM-065 p15-16);

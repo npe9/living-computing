@@ -207,7 +207,7 @@ terminates and the instance's slots are lost (PROSE, 1.0).
 | instance | `initial_setting/2` | 1/1 | `:initial_setting(Prog,T)`: apply that table. Defined by the CAL debugger; whether SIMPOS calls it is UNSPECIFIED | USAGE (COPY) | cal-esp/deb2.12/init.esp:658 |
 | instance | `class_object/2` | 8/3 | `:class_object(Obj,Class)`: the class object of an instance. A root-object method (INFERENCE) | USAGE | cal-esp/deb2.12/deb.esp:179; kwic-esp-002/kwic-esp/src/kwMan.esp:222 |
 | instance | `refute/3` | 7/1 | `:refute(Obj,Method,ArgVector)`: send Method with the vector's elements as arguments. A generic method on objects, printed for windows in TM-785 | PRINTED-INTERFACE (unowned) | TM-785 p32; euod/PROOF/proof1.esp:89; TM-388 App. G |
-| instance | `method/3` | 1/1 | `:method(Obj,Name,Arity)`: succeeds if Obj has that method. papyrus uses `:method(Object,show,1)` to test whether a slot holds a live object (USAGE) | USAGE | papyrus_src/demo/EDITOR/editor_def.esp.1:38 (scratchpad/simposspec/B/x/); cil/src/ds_bep.esp:3189-3203 |
+| instance | `method/3` | 1/1 | `:method(Obj,Name,Arity)`: succeeds if Obj has that method. papyrus uses `:method(Object,show,1)` to test whether a slot holds a live object (USAGE) | USAGE | papyrus_src/demo/EDITOR/editor_def.esp.1:38 (papyrus inner source.tar); cil/src/ds_bep.esp:3189-3203 |
 | instance | `delete_items/2` | 1/1 | a menu or window method, sent to a window (`:delete_items(Window,Id)`). misattributed; see window.md | USAGE | euod/RULED/ruled1.esp:950 |
 | instance | `do_state/3` | 9/1 | CAL-debugger internal (`as_state_menu_processing`). misattributed | COPY | cal-esp/deb2.12/purs.esp:621; stat.esp:23 |
 | instance | `get_state_switch/4` | 7/1 | CAL-debugger internal. misattributed | COPY | cal-esp/deb2.12/purs.esp:637 |
@@ -730,8 +730,8 @@ Window and process names, by version:
   video). `Debugger_4` is capitalised in IPSJ 36239 p6. In 2.10 n is **not** the process number:
   `debugger_4( process «?»7 )` (TM-181 p5).
 - 5.0 and later: n equals the process number, `librarian_59( process 59 )` (TM-785 p3). The 5.0
-  Librarian window is titled `librarian 40 (default: user)`, i.e. name, number and default package
-  (IPSJ 118681 p1 Fig 1; notes: web_search_2026-11-24.md). The CAL copy appends the process number
+  Librarian window is titled `librarian 49 (default: user)`, i.e. name, number and default package
+  (IPSJ 118681 p1 Fig 1, read by eye at high resolution; web_search_2026-11-24.md reads 40). The CAL copy appends the process number
   to its labels (cal-esp/deb2.12/winpar.esp:104-131, COPY). INFERENCE: the rule changed between
   2.50 and 5.0.
 - Unnamed windows show `<class>/<k>` for the k-th instance, e.g. `pattern_display_window/2`

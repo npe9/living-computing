@@ -6,6 +6,35 @@ unknowns are ranked by how much the held programs depend on them: use counts are
 compiled packages. Each row names what would settle it. The three tables were drafted by the
 writers of the three specs and are kept as they wrote them; this head ranks across them.
 
+## How much is specified, read strictly
+
+The required surface is the class and instance methods that `../required/requirements.tsv`
+attributes to each partition's classes (`coverage/partition_*.tsv`). Each is compared with the
+notes' fact rows by `tools/coverage.py` and `tools/class_coverage.py`.
+
+| partition | methods | on their class, documented | name/arity documented elsewhere | meaning from use only | nothing |
+|---|---|---|---|---|---|
+| window | 676 | 10 | 365 | 221 | 80 |
+| librarian | 114 | 1 | 14 | 78 | 21 |
+| shell | 115 | 4 | 11 | 41 | 59 |
+
+| partition | classes | some method documented on the class | name documented elsewhere | use only | nothing | no methods required (nature-only or reference) |
+|---|---|---|---|---|---|---|
+| window | 135 | 4 | 68 | 5 | 10 | 48 |
+| librarian | 32 | 1 | 8 | 7 | 2 | 14 |
+| shell | 38 | 2 | 8 | 9 | 7 | 12 |
+
+Read the "documented elsewhere" column with care. It counts a name/arity documented on *any* class
+in a documentary source. Some of those classes are the TM-115 font editor's own, and some are demo
+code shown on screen. TM-125 lists about 45 methods without saying which class owns them.
+`coverage.py` also does not read `../printed/classes.tsv`, so a few printed methods count as
+use-only. One example is `process self/2` (TM-100).
+
+The specs add meaning, from reading call sites, that the fact rows do not record:
+- `librarian.md` §8 moves 18 rows from "nothing" to argument-level use.
+- `shell.md` §8 counts 49% of methods, and 84% of uses, as documented or from use.
+- `window.md` §8 lists the 56 selectors still without meaning.
+
 ## Across the three subsystems: the ten that matter most
 
 | rank | unknown | subsystem | dependence | settles it |

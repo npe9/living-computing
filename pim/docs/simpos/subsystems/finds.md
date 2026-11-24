@@ -13,8 +13,12 @@ system code. **DATA** means a file in a SIMPOS format, not code.
 
 **Where:** `cil/src/ds_bep.esp:1773-3518`, inside `ifs/natural-lang/simpos/cil.tar.gz`.
 
-**What:** three Librarian classes, copied from SIMPOS 6.1 by ICOT's CIL team, patched, and
-catalogued into CIL's own package `spec_ds`:
+**What:** three Librarian classes that the file calls a "patch class for library_utility on SIMPOS
+6.1". CIL's team took them from SIMPOS's own sources (the stamps are SIMPOS developers' files),
+patched them, and catalogued them into CIL's own package `spec_ds`. Apart from the four stubbed
+methods below, it is not known how far the bodies differ from stock 6.1. They may be stock, a
+vendor patch, or CIL's edits. Read them as SIMPOS 6.1-era Librarian code, possibly modified.
+The classes are:
 - `library_utility`, the programmatic Librarian (`:3123-3518`);
 - `librarian_class_generator`, the template and object generator (`:1777-2326`);
 - `librarian_read_term`, the source reader and cataloguer (`:2331-3121`).

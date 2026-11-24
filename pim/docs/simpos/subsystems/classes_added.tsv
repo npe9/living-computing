@@ -15,3 +15,4 @@ virtual_printer	shell	SIMPOS			PROSE	IPSJ 114017 p1-2	2.5 (1986)	user print obje
 mt_utility_window	shell	UI-NAME		menu: initialize volume, show volume label, show file label, save to MT, restore from MT, attribute, exit	SCREENSHOT	IPSJ 36239 p7	2.50 (1986)	magnetic-tape utility window as seen on screen
 file_manipulator	shell	UI-NAME		system-menu program; top menu in video and IPSJ 36239 p7	SCREENSHOT	IPSJ 36239 p7; simpos.wmv	2.50 (1986)	program name on the system menu; class name not certain
 spooler_manipulator	shell	UI-NAME		system-menu program	SCREENSHOT	IPSJ 36239 p7; gog-esp/login.com	2.50 (1986) .. 7.x	program name on the system menu and in login.com items lists
+librarian_menu	librarian	SIMPOS		c:new/2; create_menu_for_save/2, read_items/4	COPY	cil/src/ds_bep.esp:1845-1851	6.1 (copy)	reached as simpos##librarian_menu through :get_class_object(#library,...); builds the Librarian's save-selection menu
