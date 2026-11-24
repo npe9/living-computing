@@ -343,28 +343,35 @@ the release tarball's `sys/src/libmach`, not vendored.)
   back into the window: little-endian 03 00 00 00, so `id[17]` = 3.
   `id[7..8]` (word `id[5..8]`, below `buf`) is not written by objtype
   on the Hobbit, so it keeps what the previous member's names left.
-* *The 1993 table.*  `/mips/bin/rl` (the release's MIPS binary, read
-  instruction by instruction): readar `SUB $36` puts `p` at S-24 (S =
-  readrl's SP; `Prog`'s kind/type/sym are a byte each, so `id` is at
-  S-21); objtype `SUB $28` puts `buf` at S-12 = `id[9..16]` (the same
-  place as on the Hobbit), its outgoing-argument words at S-20 and S-16
-  (`id[1..4]`, `id[5..8]`) holding Bseek's last two arguments, -8 and
-  1, and spills `i` at S-4 = `id[17..20]` before each indirect call --
-  all **big-endian**.  That predicts `id[5..8]` = 00 00 00 01 and
-  `id[17..19]` = 00 00 00 (i's 3 is in `id[20]`, outside the name), and
-  every one of the 1,992 stack bytes of the shipped libc.a table agrees.
-  So do the tables of 22 more shipped Hobbit libraries (every
-  `hobbit/lib/*.a` but `c++/libC.a` and `cda/libsim.a`, whose tables
-  are dated July and August 1992, the others October 1992 to January
-  1993): every byte past a NUL accounted for.  The release's other
-  `rl`s, read the same way, do not fit: the 386's spills `i`
-  little-endian at `id[17..20]`, the 68020's leaves PEA's 8 in
-  `id[5..8]`, the SPARC's writes nothing there.  The 386, 68020 and
-  SPARC libc.a tables show the same mark (`id[17..19]` zero in every
-  entry, whatever `i` was; counted, not replayed: their object formats
-  are not transcribed), and the five `__.SYMDEF`s are
-  dated within 4.5 hours on 2 January 1993: one MIPS machine ran `rl`
-  (`RL=rl`, the host's `/bin/rl`) for every `objtype`.
+* *The 1993 table.*  `/mips/bin/rl` (the release's MIPS binary, from
+  the tarball, sha256 `d4e020cbc5343ad70bf44ad68166c7620f1875b211b62c7b`
+  `eb14affb55155b40`; `tools/p9mipsdis.py rl objtype readar` prints the
+  code read here): readar `SUB $36` puts `p` at S-24 (S = readrl's SP;
+  `Prog`'s kind/type/sym are a byte each, `_readz`'s `sb` at
+  0/1/2/3(p), so `id` is at S-21); objtype `SUB $28` puts `buf` at
+  S-12 = `id[9..16]` (the same place as on the Hobbit), its
+  outgoing-argument words at S-20 and S-16 (`id[1..4]`, `id[5..8]`)
+  hold Bseek's last two arguments, -8 and 1, and it spills `i` at S-4 =
+  `id[17..20]` before each indirect call -- all **big-endian**.  That
+  predicts `id[5..8]` = 00 00 00 01 and `id[17..19]` = 00 00 00 (i's 3
+  is in `id[20]`, outside the name), and every one of the 1,992 stack
+  bytes of the shipped libc.a table agrees.  So do the tables of 22
+  more shipped Hobbit libraries (every `hobbit/lib/*.a` but `c++/libC.a`
+  and `cda/libsim.a`, whose tables are dated July and August 1992, the
+  others 8 October 1992 to 2 January 1993): every byte past a NUL
+  accounted for.  Most of that agreement does not tell MIPS from Hobbit:
+  of the 12,460 stack bytes in the 23 tables, 8,280 are `buf` (both
+  layouts put it at `id[9..16]`) and 2,778 are `id[18..19]` (zero in
+  both).  What only the MIPS frames predict: `id[17]`, 1,389 bytes, all
+  0 (the Hobbit `rl` writes `i` = 3 there), and `id[5..8]`, 13 bytes,
+  all as Bseek's big-endian 1 (no stack byte falls in `id[1..4]`).
+  Hand-read, not checked by anything runnable: the 386 `rl` spills `i`
+  little-endian at `id[17..20]` and the 68020's leaves PEA's 8 in
+  `id[5..8]`, so neither fits; the 386, 68020 and SPARC libc.a tables
+  have `id[17..19]` zero in every entry (counted; their object formats
+  are not transcribed); the five `__.SYMDEF`s are dated within 4.5 hours
+  on 2 January 1993.  The reading: one MIPS machine ran `rl` (`RL=rl`,
+  the host's `/bin/rl`) for every `objtype`.
 * *Consequence.*  The 212 bytes are a property of the build host, not of
   the Hobbit or of this runner: the residue is not evidence about the
   1993 exec environment (`#e`, the pid, argv), and nothing in the runner
