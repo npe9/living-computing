@@ -11,6 +11,9 @@
     python3 ref/pimm/longrun_ipl.py --load FILE --go [--fep]
                                     from that machine straight to --go (seconds,
                                     not the IPL's ~15-50 min; FILE ~1.1 GB)
+    python3 ref/pimm/longrun_ipl.py --load FILE --go --fep --type LINE [--type LINE ...]
+                                    ... and the lines typed into the shell's
+                                    window after the login, in order
 
 Run by bsv/run_pimm_longrun.sh.  NOT part of run_tests.sh.
 
@@ -101,6 +104,13 @@ SERVICE STARTS ***", 0, "CANNOT MAKE A TCPIP LOGIN SERVICE!!", 0; the
 replier's texts and the window's "Shell>> " in the device's log; the
 stop "nothing left to run, 1,220 goals waiting", the window's getl
 (110) held.
+With --type LINE (any number): each line answers the next held getl
+(fep.py's event list, OURS).  --type shutdown --type yes: the shell
+takes "shutdown" and the job starts shutdown_body:go, then the run
+stops at 8,673,642 instructions, 1,388 goals waiting, the second line
+never asked for: a wait cycle through the user table that the model's
+merger timing makes (docs/binary_reverse_engineering.md 1.4, "A
+command typed").
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -308,7 +318,7 @@ def kernel_file(path):
     raise fepm.FepError('read_open of %r: no such file is served' % (name,))
 
 
-def go(m, loaded, info, bad, with_fep):
+def go(m, loaded, info, bad, with_fep, lines=()):
     """top:go_pimos1(Loaded, BootInfo), run until the model refuses
     something.  with_fep: the device ref/pimm/fep.py is attached
     (Machine.fep, as ref_scsi.py attaches it), and when the machine
@@ -337,7 +347,7 @@ def go(m, loaded, info, bad, with_fep):
         # reader shifted by a byte after its first 1,471 bytes
         # (observed: with_console read, then end_of_file, the system/4
         # line lost).  Counted in characters every reply is even
-        dev = m.fep = fepm.Fep(kernel_file, getb_unit=2)
+        dev = m.fep = fepm.Fep(kernel_file, getb_unit=2, lines=lines)
     try:
         while True:
             try:
@@ -412,6 +422,12 @@ def save(path, m, loaded, info):
     say('saved the machine after the link to %s' % path)
 
 
+def typed(argv):
+    """The lines of every --type LINE, in order: what the operator
+    types into the shell's window after the login (fep.py, OURS)."""
+    return [argv[i + 1] for i, a in enumerate(argv) if a == '--type']
+
+
 def main(argv):
     if '--load' in argv:
         # --load FILE --go [--fep]: from a machine --save wrote (its
@@ -420,7 +436,7 @@ def main(argv):
             m, loaded, info = pickle.load(f)
         say('loaded the machine after the link')
         bad = []
-        go(m, loaded, info, bad, '--fep' in argv)
+        go(m, loaded, info, bad, '--fep' in argv, typed(argv))
         print('pimm longrun ipl --load: %s %r' % ('FAIL' if bad else 'PASS', info['go']))
         return 1 if bad else 0
     n = int(argv[-1]) if argv[-1].isdigit() else None
@@ -443,7 +459,7 @@ def main(argv):
     if '--save' in argv and not bad:
         save(argv[argv.index('--save') + 1], m, [w for _l, w in s.outs][-3], info)
     if '--go' in argv and '--reference' in argv and not bad:
-        go(m, [w for _l, w in s.outs][-3], info, bad, '--fep' in argv)
+        go(m, [w for _l, w in s.outs][-3], info, bad, '--fep' in argv, typed(argv))
     say('compared')
     whole = n is None
     if bad or (whole and any(info.get(k) != PINNED[k] for k in ('modules', 'atoms', 'replaced', 'stay'))) \

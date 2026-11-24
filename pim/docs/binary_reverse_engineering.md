@@ -536,11 +536,64 @@ the device are given it again whenever the machine runs dry.
   | 620 `io(0, ..)` on `simpos_user_device` | `[1, ">sys>user>" ++ RN]` | §7.5, `login_p.kl1`:63 |
   | 104 `create` of a window | `[1]` | §6.8, §7.5 |
   | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
-  | 110 `getl` on a window | held (the run ends there) | §7.5 |
+  | 110 `getl` on a window | held; answered at the idle by the next typed line, `[1, LINE]` in JIS with no newline (`Fep(lines=..)`, `longrun_ipl.py --type LINE`; the event list OURS, the reply's form `bios/fep_module/win_dvc.kl1`:307-312; whether the FEP sends a newline is not known, §7.5). Without `--type` the run ends there | §7.5 |
   | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
   | 70 on a held request | `[6]` (none has been met; a 70 on anything else has no reply) | §6.7, §7.1 |
 
   What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
+
+  **A command typed (2026-11-24, rung R6's second half, NOT reached).**
+  `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`
+  (`shutdown` is the one command whose run the manual prints whole:
+  `e-sysman.tex`:121-144). The held 110 is answered `[1, "shutdown"]`;
+  the window device then sends a 70 with nothing held (no reply, §6.7);
+  the shell resolves `get_code pimos shutdown go 0` and the job runs
+  `shutdown:go`, `privilege:execute(shutdown_body:go, ..)`, a task by
+  `execute_super`, and `shutdown_body:go` asks
+  `getenv(task:make_window)`. The run then stops: 8,673,642
+  instructions, nothing left to run, 1,388 goals waiting, the second
+  line never asked for. Nothing was refused. The cause is a wait
+  cycle (traced with probes outside the tree):
+  - the privilege task's `getenv` waits behind that task's
+    `internal_handler:env_check/5` (`kernel/task/int_hdl.kl1`:481,
+    493-499), which sent `get_info(Uid, _)` to the user table with Uid
+    UNBOUND: the task's Info is not yet built, because
+    `param_check3`'s `node_check` waits for the parent's
+    `task:io_node` (336-340);
+  - the parent (the job's task) holds its environment in its own
+    `env_check`, waiting for its `get_info(101, _)`;
+  - in the user table's `keyed_set` (`utility/pool/k_bag.kl1`:479)
+    the unbound-key request is AHEAD of the 101 one: the guard
+    `Key >= 0` suspends with the table, and the 101 request waits on
+    its output. The job's request was issued at about 8,656,499
+    instructions, the privilege task's at about 8,663,512: the table
+    took them in the other order.
+  The order is the model's merger: a merger input here is a goal
+  (`merge_in`), so a message reaches the output only when that goal
+  runs, and on the LIFO ready queue it runs after everything its
+  waker's reduction spawned (docs/pimm_semantics.md, the merger,
+  "after a goal switch, not at the unification": OURS). VPIM
+  (`f_reduce_merger_unify.psl.c`: the MGHOK cell, a vector's elements
+  connected in the same unification), KLIC (`runtime/gmerge.c`: the
+  merger object's unify method appends the message during the
+  unification) and PDSS (`emulator/unify.c` `active_unify_stream_*`)
+  agree: the merger acts AT the unification. Two probes, the tree not
+  edited: (a) the woken `merge_in` goals lifted to the top of the
+  ready queue at the end of each reduction, and (b) a merger vector's
+  elements readied first-element-first: either way the cycle does not
+  form, `shutdown_body` takes its third branch (`make_window` and
+  `top_task` both absent from the job's environment,
+  `shutdown_b.kl1`:39-53) and asks for a string-I/O device
+  `pimos_standard_io_window` (601), which `fep.py` refuses (FepError,
+  8,689,393 instructions with (a)). So R6's second half needs the
+  merger made to act at the unification on BOTH models (a change of
+  semantics, every count after the first merger moves), then the
+  601/620 answers of that branch (`io(104)`, `io(130,"SHUTDOWN")`,
+  `io(141)`, `io(111,"Really(yes/no)?")`, `io(110)` answered "yes",
+  `shutdown_b.kl1`:46-53, 71-73). That branch prints no
+  "Shutdown procedure starts." and its prompt differs from
+  `e-sysman.tex`:132 ("Really(yes/no) ?"): the printed transcript is
+  the first branch's (a window made for the job).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

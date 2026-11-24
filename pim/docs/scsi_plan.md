@@ -55,7 +55,9 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   the local login service starts, the tcpip one is refused, the login
   `pimos` (user `pmpsi`) is accepted, the window `PIMOS CONSOLE` is
   made and the shell writes `Shell>> ` to it; the run ends with its
-  `getl` held, 1,220 goals waiting (1.4).)* On the Bluespec core the whole
+  `getl` held, 1,220 goals waiting (1.4). With `--type shutdown`
+  the line is taken and the command starts, then stops in a wait cycle
+  that the model's merger timing makes (1.4, "A command typed").)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
