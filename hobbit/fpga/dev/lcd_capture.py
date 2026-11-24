@@ -15,7 +15,8 @@ Output (all in OUT, default hobbit/fpga/build/lcd):
   lcd_model.png    the same panel as grey (level 3 white): LcdPanel.grey()
   screen.png       the kernel bitmap (gscreen), p9boot --screen's dump
 
-The record format is what fpga/dev/lcd_tb.cpp replays.  The run also
+The record format is what lcd_test.py reads (gzip -9 of it is the committed
+lcd_writes_8half.bin.gz).  The run also
 replays lcd_writes.bin into a fresh LcdPanel and checks it reproduces
 the live panel, so the recording is complete.
 

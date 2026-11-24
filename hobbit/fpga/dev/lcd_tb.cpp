@@ -37,7 +37,7 @@
 
 static Vlcd_sim_top *top;
 static int fails = 0;
-#define CHECK(c, ...) do { if (!(c)) { fails++; printf("FAIL: " __VA_ARGS__); printf("\n"); } } while (0)
+#define CHECK(c, ...) do { if (!(c)) { if (++fails < 20) { printf("FAIL: " __VA_ARGS__); printf("\n"); } } } while (0)
 
 static void tick_sys() {
     top->CLK = 0; top->eval();
@@ -279,7 +279,6 @@ int main(int argc, char **argv) {
                 CHECK(!de[s + HA], "frame %zu line %d: DE run longer than %d", k, y, HA);
                 CHECK(hs[s + HA + HFP - 1] && !hs[s + HA + HFP],
                       "frame %zu line %d: HSYNC does not fall %d clocks after DE", k, y, HFP);
-                if (fails > 20) break;
             }
             // no DE in vertical blanking
             for (uint64_t t = start + (uint64_t)VA * HT; t < start + (uint64_t)VT * HT && t < total; t++)

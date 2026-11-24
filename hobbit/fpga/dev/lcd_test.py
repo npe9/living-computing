@@ -36,14 +36,48 @@ lcd_tb also checks the raster of every scanned frame (totals, sync widths
 and polarities, porches, red = green = blue).  Exit status 0 only if every
 comparison holds.
 
-Discrimination (bug injected in the RTL, the test run, the patch reversed;
-OBSERVED failures, 2026-11-24, recorded in hdmi_lcd.md "Bug injections"):
-see that section; each injection is listed with the exact lines that
-failed.
+Discrimination: OBSERVED failures, 2026-11-24, the full run (not --quick),
+one bug at a time in the RTL, the exact patch reversed after each (file
+sha256 checked, git diff clean).  S = synthetic, P = pattern, R =
+recorded; "panel" = the whole-buffer comparisons, "frame" = the scanned
+frame vs LcdPanel.grey(), "png" = vs tests/net/8half_ls.png, "tb" =
+lcd_tb's own raster/TMDS checks.  Nothing else failed in any of them.
+
+  LcdLcdisp.bsv, quad shifted 4 bits, not 6:
+      S panel x4; P panel, frame; R panel x4, frame, png        (12)
+  LcdLcdisp.bsv, ctl does not reset col:
+      S overruns 19591 != 332, panel x4; P panel, frame;
+      R overruns 1428328 != 0, panel x4, frame, png             (14)
+  LcdLcdisp.bsv, col counts on and wraps at 1024 (no saturation):
+      S overruns 256 != 332, panel after 1237, 11237, end       (4)
+  LcdLcdisp.bsv, data honours byte enable 0:
+      S panel x4 (after 120: 302 cells)                         (4)
+  LcdLcdisp.bsv, data decoded from addr[2] alone:
+      S panel x4 (after 120: 20 cells)                          (4)
+  hdmi_scan.v, the four rows of a byte in reverse order:
+      P frame (24064); R frame, png (4022)                      (3)
+  hdmi_scan.v, grey inverted:
+      P frame; R frame, png (786432 each)                       (3)
+  hdmi_scan.v, rotation the other way (px = vc):
+      P frame (418176); R frame, png (13082)                    (3)
+  hdmi_scan.v, cell index one pixel clock early (r1, not r2):
+      P frame (18048); R frame, png (3950)                      (3)
+  hdmi_scan.v, HSYNC active high:
+      P tb, R tb (HSYNC period 1184/160, 6987 checks each)      (2)
+  hdmi_tmds.v, tmds_enc's DC-balance branch never taken:
+      P tb, R tb (TMDS word != the reference encoder's)         (2)
+  hdmi_tmds.v, tmds_enc's xnor tie-break on d[0] inverted:
+      P tb only (376865 words).  R does not fail: the 8½ screen
+      has only levels 0 and 3, bytes 0x00/0xFF, never 4 ones,
+      so only the pattern's greys reach the tie-break.          (1)
+
+The decoded frames stayed equal under both encoder bugs: only the
+word-exact reference-encoder check sees them.  lcd_inject.py --full
+holds the exact patches and reproduces this list.
 
 --writes defaults to build/lcd/lcd_writes.bin (lcd_capture.py makes it,
-~11 min, or fetch the committed lcd_writes_8half.bin.gz, which this script
-uses when the build copy is missing).  --quick skips the recorded run.
+~18 min) when present, else the committed lcd_writes_8half.bin.gz (the
+same bytes, gzip -9).  --quick skips the recorded run.
 """
 
 import gzip
