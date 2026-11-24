@@ -39,6 +39,10 @@ python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
+# The part switch: --part 92020S (docs/att92020.md) -- its ID, its
+# refusals where no source speaks, every golden program identical to the
+# 92010's; 92020M/MX refused.
+python3 "$here/test_sem_part.py"
 # A4: the shipped kernel s9term boots on the reference model: pageinit's
 # console line, /boot's prompt, the BOOTP request, the no-server path,
 # and a replay of the join with the 1e file server through init, rc's
@@ -74,6 +78,13 @@ python3 "$here/test_p9run.py"
 # A3: every byte of the shipped __.SYMDEF tables past a name's NUL is
 # accounted for (libmach's readar replayed; /mips/bin/rl's stack frames).
 python3 "$here/test_p9symdef.py"
+# The Hobbit BeBox board (tools/beboot.py, docs/bebox_hobbit.md): device
+# tests against the data-sheet pages, and Be's Nov 1994 kernel from the
+# `be` disk to "Disk cache is" (~2 min; skips, printing the fetch command,
+# when build/bebox is not on disk).  BEBOOT_LONG=1 boots on to the root
+# volume's mount and checks the idle skip against a run without it
+# (~20 min).
+python3 -I "$here/test_beboot.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in
