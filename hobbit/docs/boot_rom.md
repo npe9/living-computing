@@ -489,13 +489,19 @@ the 0'th argument is", `9/boot/romboot.c:530-538`), and the
 NVRAM's Env at 0x200.
 
 The run ended at its 400,000,000-instruction limit (20.0 s of model
-time, several hours of host time with QEMU in lockstep)
-with s9term idling in `runproc`: at the Quart counter's hardware rate
-s9term needs about 14.4 s of model time to its own `root is from`
-prompt (`docs/p9boot.md`, "How far it gets"), and this harness has no
-idle skip.  From there on it is the s9term boot `tools/p9boot.py` and
-`tools/p9join.py` already run.  This path is a live run (QEMU, wall
-clock); it is not in the regression suite.
+time, several hours of host time with QEMU in lockstep) with s9term
+idling in `runproc`, before its `root is from` prompt.  That is a
+matter of time, not a fault: the hand-off came at 6.997 s of model time
+(`build/rom/join1.out`), and at the Quart counter's hardware rate s9term
+reaches that prompt 14.367 s after its own start (`docs/p9boot.md`,
+"How far it gets"), so about 21.4 s here; this harness has no idle skip
+to get there sooner.  The prompt would show on uart0 as well as the
+screen (`docs/p9boot.md`, "The console"), so `--until 'root is from'`
+can match given a higher `--max-steps`.  Not run further.  What s9term
+gets from the ROM differs from `tools/p9boot.py`'s PPage0: argv[0] is
+`b`, fpi points into the ROM (`fprt0`) rather than at a stand-in, and
+the Env is the NVRAM's.  This path is a live run (QEMU, wall clock); it
+is not in the regression suite.
 
 ## 6. What the ULX3S port needs from this
 
@@ -594,6 +600,10 @@ memsize and the fpi word; `e`'s output and the Env in NVRAM; memsize for
 4 and 16 MB; the bus error without aliasing.  Four injections (ROM
 words big-endian; mkrom without the swap; no aliasing; aliasing over the
 SONIC's range) and the failures observed are in the test's header.
+Not covered: the hand-off capture and the loaded-image comparison
+(`record_handoff`, `compare_loaded` in `tools/p9rom.py`) run only on the
+live join path; their result above was observed once, and no test shows
+the comparison failing on a corrupted image.
 
 ## 9. Open questions
 
@@ -610,3 +620,10 @@ SONIC's range) and the failures observed are in the test's header.
   here implements.
 * The 9rom build was run once; a second build to show it reproducible
   (as was done for 9term) has not been run.
+* Found here, not fixed here: `tools/p9boot.py`'s `PPAGE0_ARGC` and
+  `PPAGE0_ENV` follow `rom.h`'s wrong comments (section 4); `roml.s`'s
+  softreset saves PSW/CONFIG/R0 inside `argbuf` (section 4), which
+  clobbers the arguments if a crash comes back to the ROM; and `_copy`
+  reads one halfword past the data image (section 5), harmless only if
+  the EPROM decodes past its end.  Whether the real boards relied on
+  that last read returning anything in particular is unknown.
