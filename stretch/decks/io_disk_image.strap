@@ -10,8 +10,9 @@
 !
 !   arc 0     8 words  the first arc MCP's IPL writes (printed p.16
 !                      line 13, "W(SEOP),0.0,X PRO WR -WRITE PROSA")
-!   arc 23    8 words  the LAST of the 24 arcs IPL writes
-!   arc 24    2 words  the first arc IPL does not write
+!   arc 32    8 words  the LAST arc MCP's P1 run writes (33 arcs,
+!                      measured; tests/check_disk_image.py)
+!   arc 33    2 words  the first arc it does not write
 !   arc 4095  2 words  the last arc of a 353 (2^21 words, printed p.157)
 !
 ! Every destination is pre-filled with all-ones, so a word that reads
@@ -25,10 +26,10 @@ START   LVI, $1, 0         !X1 = disk channel 0, as in io_disk.strap
 
         LOC(SEOP), 0($1), 0
         RD,  0($1), CTLW0      !8 words of arc 0 -> DEST0
-        LOC(SEOP), 0($1), 23
-        RD,  0($1), CTLW1      !8 words of arc 23 -> DEST1
-        LOC(SEOP), 0($1), 24
-        RD,  0($1), CTLW2      !2 words of arc 24 -> DEST2
+        LOC(SEOP), 0($1), 32
+        RD,  0($1), CTLW1      !8 words of arc 32 -> DEST1
+        LOC(SEOP), 0($1), 33
+        RD,  0($1), CTLW2      !2 words of arc 33 -> DEST2
         LOC(SEOP), 0($1), 4095
         RD,  0($1), CTLW3      !2 words of arc 4095 -> DEST3
 

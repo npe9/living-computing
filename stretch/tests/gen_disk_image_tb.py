@@ -20,7 +20,7 @@ from gen_disk_tb import pack_cw, word_addr
 PROGRAM = "../decks/io_disk_image.strap"
 
 # (label, arc, words) in the deck's order; the DESTs are contiguous.
-READS = [("DEST0", 0, 8), ("DEST1", 23, 8), ("DEST2", 24, 2),
+READS = [("DEST0", 0, 8), ("DEST1", 32, 8), ("DEST2", 33, 2),
          ("DEST3", 4095, 2)]
 
 

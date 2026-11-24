@@ -12,9 +12,9 @@ The format is the tape's: 8 bytes per word, big-endian, word i at byte
       that sees a save which drops the last arc: P1's IPL leaves arc
       4095 zero, so its contents cannot tell.
   check_disk_image.py ipl   IMAGE TAPE
-      The 24 arcs MCP's IPL wrote hold the words of the IPL tape they
-      came from, at the tape offset pinned below, and every other arc
-      is zero.  The expected words come from the TAPE, never from an
+      The 33 arcs MCP's P1 run wrote hold the words of the IPL tape
+      they came from, at the tape offsets pinned below, and every other
+      arc is zero.  The expected words come from the TAPE, never from an
       earlier save.
   check_disk_image.py dump  LOG [IMAGE]
       What decks/io_disk_image.strap read (the MEMDUMP lines in LOG)
@@ -29,18 +29,26 @@ import sys
 DISK_WORDS = 1 << 21
 ARC = 512
 
-# MCP's IPL disk WRITE: 24 arcs, 12,288 words (docs/disk_subsystem.md
-# §9b; run_mcp_p1deck_test.sh).  PINNED below from the IPL tape.
-IPL_ARCS = 24
-TAPE_OFFSET = None   # word of the tape image that lands in arc 0 word 0
+# WHAT MCP'S P1 RUN LEAVES ON THE DISK, MEASURED 2026-11-24 from a
+# saved image: arcs 0-32 (33 arcs, not only the 24 of IPL's first
+# 12,288-word WRITE), each one a 512-word run of the IPL tape, and
+# nothing else.  Arc a is tape words TAPE_BASE + TAPE_STRIDE*a onward:
+# the PROSA part of the tape is prosa.tape_words()'s 513-word records
+# (gen_mcp_boot_tb.py, "IT IS WRITTEN IN prosa.tape_words()'s CHUNKED
+# FORM"), so successive arcs sit 513 tape words apart.  Arcs 16, 22 and
+# 23 are zero ON THE TAPE too, which is why no single arc is required
+# to be non-zero; 10,805 words of the 33 arcs are.
+IPL_ARCS = 33
+TAPE_BASE = 370
+TAPE_STRIDE = 513
 
 # io_disk_image.strap's reads, in its order: (arc, words).
-READS = [(0, 8), (23, 8), (24, 2), (4095, 2)]
+READS = [(0, 8), (32, 8), (33, 2), (4095, 2)]
 
-# THE SHORT IMAGE: arcs 0..22 whole, 5 words of arc 23, then 3 bytes of
-# a sixth.  So arc 23 word 5 is a PARTIAL word (its last 5 bytes are
-# zero-filled) and words 6-7, arc 24 and arc 4095 lie past the end.
-SHORT_WORDS = 23 * ARC + 5
+# THE SHORT IMAGE: arcs 0..31 whole, 5 words of arc 32, then 3 bytes of
+# a sixth.  So arc 32 word 5 is a PARTIAL word (its last 5 bytes are
+# zero-filled) and words 6-7, arc 33 and arc 4095 lie past the end.
+SHORT_WORDS = 32 * ARC + 5
 SHORT_TAIL = bytes([0xA5, 0x5A, 0xC3])
 
 
@@ -73,21 +81,24 @@ def cmd_ipl(image, tape):
     disk = words_of(open(image, "rb").read())
     tw = words_of(open(tape, "rb").read())
     bad = 0
+    nonzero = 0
     for arc in range(IPL_ARCS):
         got = disk[arc * ARC:(arc + 1) * ARC]
-        want = [word_at(tw, TAPE_OFFSET + arc * ARC + w) for w in range(ARC)]
-        if not any(want):
-            bad += fail(f"disk_image_ipl_arc{arc}: the pinned tape words "
-                        "are all zero, so the check proves nothing")
+        base = TAPE_BASE + TAPE_STRIDE * arc
+        want = [word_at(tw, base + w) for w in range(ARC)]
+        nonzero += sum(1 for v in want if v)
         diff = [w for w in range(ARC) if got[w] != want[w]]
         if diff:
             w = diff[0]
             bad += fail(f"disk_image_ipl_arc{arc}: {len(diff)} words differ "
-                        f"from tape words {TAPE_OFFSET + arc * ARC}.., first "
+                        f"from tape words {base}.., first "
                         f"at word {w}: {got[w]:016x}, expected {want[w]:016x}")
+    if nonzero != 10805:
+        bad += fail(f"disk_image_ipl_nonzero: the pinned tape words hold "
+                    f"{nonzero} non-zero words, measured 10805")
     print(f"{'PASS' if not bad else 'FAIL'} disk_image_ipl_arcs: arcs 0-"
-          f"{IPL_ARCS - 1} = tape words {TAPE_OFFSET}.."
-          f"{TAPE_OFFSET + IPL_ARCS * ARC - 1}")
+          f"{IPL_ARCS - 1} = tape words {TAPE_BASE} + {TAPE_STRIDE}*arc, "
+          f"{nonzero} of them non-zero")
     rest = [i for i in range(IPL_ARCS * ARC, DISK_WORDS) if disk[i]]
     if rest:
         bad += fail(f"disk_image_rest_zero: {len(rest)} non-zero words past "

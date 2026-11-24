@@ -15,11 +15,12 @@
 #
 #   1. SAVE.  MCP's P1 IPL (run_mcp_p1deck_test.sh, all its own checks)
 #      with STRETCH_DISK_SAVE set.  The file is exactly one 353 long, and
-#      the 24 arcs IPL wrote hold the IPL tape's words at the offset
-#      check_disk_image.py pins; every other arc is zero.
+#      the 33 arcs the run wrote (arcs 0-32, measured) hold the IPL tape's
+#      words at the offsets check_disk_image.py pins; every other arc is
+#      zero.
 #   2. LOAD.  decks/io_disk_image.strap, which only READS, run on that
-#      saved image: it finds the saved words in arcs 0 and 23 and zeros in
-#      arcs 24 and 4095.
+#      saved image: it finds the saved words in arcs 0 and 32 and zeros in
+#      arcs 33 and 4095.
 #   3. ZERO-FILL.  The same deck on a short image whose last word is
 #      partial (check_disk_image.py short): the missing bytes and every
 #      word past the end read zero.  Loading it and saving again gives the
@@ -31,14 +32,9 @@
 # INJECTIONS, measured 2026-11-24 (bsv/host_tape.c, each reverted by its
 # exact inverse patch, git diff clean after):
 #   - host_disk_save's loop bound DISK_WORDS - 512 (the last arc dropped):
-#     exactly "FAIL disk_image_size: ... is 16773120 bytes, expected
-#     16777216" and the part-3 resave check failed; P1, the IPL arcs and
-#     every read passed (P1 leaves arc 4095 zero, so only the length sees
-#     it).
-#   - the load's memset of a short read removed (no zero-fill): part 3's
-#     reads of arc 23 words 5-7, arc 24 and arc 4095 failed -- the stale
-#     buffer repeated the file's last bytes -- and the resave check; parts
-#     1, 2 and 4 passed (a full-size image never reaches the fill).
+#     MEASURED_SAVE
+#   - the load's memset of a short read removed (no zero-fill):
+#     MEASURED_LOAD
 set -e
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 BSV_DIR="$TESTS_DIR/../bsv"
