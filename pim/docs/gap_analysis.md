@@ -184,7 +184,8 @@ the link is NORMAL; `predicate_to_code` gives the code of
 code (`lockstep_apply.py`). The IPL's own reader of the list, `ipl:ipl_files/4`,
 gives the twenty names from the held file on both models
 (`lockstep_ipll.py`). The whole list runs identically on the Bluespec core, 447,739,516
-trace lines (`bsv/run_pimm_longrun.sh`, 2026-11-23); on the reference
+trace lines (`bsv/run_pimm_longrun.sh`, 2026-11-23, before the merger timing change of
+2026-11-24, which moves the count; not run again since); on the reference
 model alone `pim:go/4` then shows the banner "PIMOS V 3.600
 20-May-93" and stops at `scsi_where` (`longrun_ipl.py --reference
 --go`). Next: `pim:go/4` applied, its stops taken in the order they come; and the FEP protocol under `open` (C2).
