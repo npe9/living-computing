@@ -18,7 +18,7 @@ interface MemPort;
   method ActionValue#(Cell) data;        // the answer to a read, in order
 endinterface
 
-typedef 9 MemClients;
+typedef 10 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;

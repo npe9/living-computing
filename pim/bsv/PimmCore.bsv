@@ -22,6 +22,7 @@ import PimmVBox::*;
 import PimmMBox::*;
 import PimmNBox::*;
 import PimmShBox::*;
+import PimmScsiBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -29,6 +30,10 @@ interface PimmCore;
   method ActionValue#(Cell) newVarResult;
   method Action setArg(Bit#(8) n, Cell w);      // argument n (from 1) of the goal being built
   method Action spawn(Addr pc, Bit#(8) argn);
+  // the spawned goal's record is written: the bench waits for it, so
+  // that the next argument register it loads is not traced before the
+  // record's cells
+  method ActionValue#(Addr) spawned;
   method Action run;
   method ActionValue#(End) finished;
   // between runs: bind or compare two terms, look at a term
@@ -41,6 +46,13 @@ interface PimmCore;
   method Action setElement(Cell s, Bit#(32) i, Bit#(32) e);
   method Action pokeWord(Cell s, Bit#(32) i, Bit#(32) w);
   method ActionValue#(Cell) stringResult;
+  // the SCSI device, outside the core (PimmScsiBox.bsv): what the core
+  // puts on the bus, the device's answers, and the device's turn when
+  // the machine has run dry (a = the commands that finished)
+  method ActionValue#(ScsiOut) scsiReq;
+  method Action scsiResp(ScsiIn r);
+  method Action scsiPoll;
+  method ActionValue#(Bit#(32)) scsiPolled;
 endinterface
 
 module mkPimmCore#(String image)(PimmCore);
@@ -55,7 +67,8 @@ module mkPimmCore#(String image)(PimmCore);
   PimmMBox  mbox  <- mkPimmMBox;
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
   PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox);
+  PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -133,7 +146,8 @@ module mkPimmCore#(String image)(PimmCore);
   method ActionValue#(Cell) newVarResult = gbox.newVarResult;
   method Action setArg(Bit#(8) n, Cell w) = regs.wa(n, w);
   method Action spawn(Addr pc, Bit#(8) argn) =
-    gbox.record(fromInteger(lay_READY), pc, argn, True, False);
+    gbox.record(fromInteger(lay_READY), pc, argn, True, True);
+  method ActionValue#(Addr) spawned = gbox.recordResult;
   method Action run = runQ.enq(True);
   method ActionValue#(End) finished;
     endQ.deq;
@@ -156,6 +170,10 @@ module mkPimmCore#(String image)(PimmCore);
     let r <- sbox.result;
     return r.a;
   endmethod
+  method ActionValue#(ScsiOut) scsiReq = scsi.devReq;
+  method Action scsiResp(ScsiIn r) = scsi.devResp(r);
+  method Action scsiPoll = scsi.poll;
+  method ActionValue#(Bit#(32)) scsiPolled = scsi.polled;
 endmodule
 
 endpackage

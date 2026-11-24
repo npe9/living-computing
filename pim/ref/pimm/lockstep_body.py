@@ -73,7 +73,7 @@ Not run:
   enqueue_goal_to_processor to another processor, a zero divisor, the
   least integer divided by -1, b_string of a non-string: refusals,
   which the lockstep driver cannot play; scsi:create/2 with an integer
-  (scsi_init is on the reference model alone).
+  (scsi_init: lockstep_scsi.py runs scsi:create/2 with 0).
 """
 import os
 import sys

@@ -55,7 +55,7 @@ Not tried: the operation checked before the elements are waited for
 Not run: the vector's forms of four and three elements, an operation
 outside 0..15, an element of the wrong type (refused by both models;
 the driver cannot play a refusal); scsi_command's wait on ITS vector
-(the reference model alone).
+(run by lockstep_scsi.py, "element").
 """
 import os
 import sys
