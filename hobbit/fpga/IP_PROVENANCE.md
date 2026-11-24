@@ -25,3 +25,16 @@ Add new sections at the end. Do not edit other sections.
   is 2040 zero bytes. The two `*_join.trace` files were captured from this
   repository's own model run of the release's `s9term`
   (`rtc_iic_capture.py`).
+
+## Step 5 addendum: the MCP7940N link (`fpga/dev/RtcI2c.bsv`, `fpga/dev/rtc_mcp7940n.h`), 2026-11-24
+
+* **Copied: nothing.** The I2C master (`RtcI2c.bsv`) and the behavioural
+  MCP7940N (`rtc_mcp7940n.h`) are new. The Flute tree's `src/Board_IO.v`
+  (an OpenCores-style I2C master) was not used.
+* **Consulted, read-only:**
+  * `~/src/ulx3s-experiments/flute-lx50/constraints/ulx3s_85f.lpf`
+    lines 149-162, for the `gpdi_sda`/`gpdi_scl` sites (B19, E12) and their
+    IO settings, quoted in `rtc.md`;
+  * `flute-lx50/test/rtc_test.c` and `flute-lx50/linux-sw/dts-fp/flute-ulx3s.dts`,
+    for the chip's address and register bits, marked `[T]` in
+    `rtc_mcp7940n.h`.

@@ -3,7 +3,7 @@
 IIC bus (Iic.bsv, mkIic) against the Python models they replicate
 (tools/p9boot.py Timekeeper and Iic), access for access.
 
-    python3 hobbit/fpga/dev/rtc_iic_check.py          (~20 s)
+    python3 hobbit/fpga/dev/rtc_iic_check.py          (~70 s)
     python3 hobbit/fpga/dev/rtc_iic_check.py -v       (list every sequence)
 
 bsc 2026.01 compiles the two packages to Verilog; Verilator builds each
@@ -33,7 +33,8 @@ Exit status 0 iff every comparison holds.
 
 Bug injection (AGENTS.md "proven discriminating"): rtc_iic_inject.py
 injects each bug into the BSV, runs this check, and reverts by reverse
-patch.  OBSERVED failures, 2026-11-24 (84 sequences, run from an empty
+patch.  OBSERVED failures, 2026-11-24 (R and I: 84 sequences, before
+the 25 MCP7940N sequences were added; M: all 109.  Run from an empty
 build/; every sequence not listed still agreed):
 
   R1 divider not restarted on a load (div <= 0)            75/84
@@ -82,6 +83,37 @@ build/; every sequence not listed still agreed):
      the injection passed 79/79: every EEPROM read started from reset)
   I9 IIC write without byte lane 0 accepted                83/84
      RTL-only fault: write on byte lane 2 only
+
+  The MCP7940N link (Rtc.bsv seed/write-back, RtcI2c.bsv master), against
+  the behavioural chip in rtc_mcp7940n.h:
+  M1 seed without waiting for the chip's next second      93/109
+     all 10 seeds from the chip (phases 0, 1, 40000, 99999; 12-hour 2 PM,
+     12 AM, 12 PM, 9 AM; across the year end; stretch 37); fallback: a
+     chip whose second never ends; all 5 write-back sequences that run
+     (setrtc then 3.5 s; two setrtc; slow OSCRUN; OSCRUN never clears;
+     mode 1 leaves the chip alone)
+  M2 OSCRUN not checked at the seed                      108/109
+     fallback: OSCRUN clear
+  M3 12-hour PM not added                                107/109
+     12-hour 2 PM, 12-hour 12 PM
+  M4 the chip's time accepted unchecked                  105/109
+     fallbacks: month 0x13, hour 0x24, 12-hour 0x13, Feb 30.  The first
+     run crashed the checker (mcp_epoch on month 13); compare_mcp now
+     reports a non-calendar seed as a failure.
+  M5 write-back does not wait for OSCRUN to clear        105/109
+     setrtc then 3.5 s; two setrtc; slow OSCRUN; OSCRUN never clears
+  M6 write-back leaves VBATEN off                        106/109
+     setrtc then 3.5 s; two setrtc; slow OSCRUN
+  M7 write-back writes sec without ST                    106/109
+     as M6
+  M8 write-back never stops the oscillator               105/109
+     as M5
+  M9 the master never ACKs a byte it reads                92/109
+     as M1, plus fallback: OSCRUN clear (17 in all)
+  M10 the master ignores clock stretching                107/109
+     seed with the chip stretching SCL 37 cycles; fallback: SCL held low.
+     The first run crashed the checker's parser (free-text notes with
+     spaces); run_rtl now splits notes off first.
 """
 import os
 import random
@@ -199,12 +231,12 @@ def run_rtl(top, accesses, args=(), mcp=None):
     for line in p.stdout.split("\n"):
         if line.startswith("MCP "):
             if mcp is not None:
-                for kv in line.split()[1:]:
+                # notes are free text with spaces, so split them off first
+                head, *notes = line.split(" note=")
+                mcp.setdefault("notes", []).extend(notes)
+                for kv in head.split()[1:]:
                     k, v = kv.split("=", 1)
-                    if k == "note":
-                        mcp.setdefault("notes", []).append(v)
-                    else:
-                        mcp[k] = v
+                    mcp[k] = v
         elif line and " FAULT " not in line:      # $display lines
             a, d, f, led, n = line.split()
             rows.append((int(a), int(d, 16), int(f, 16), int(led, 16),
@@ -949,8 +981,14 @@ def compare_mcp(seq, cov, verbose):
     m.m = p9boot.Timekeeper(lambda: Fraction(m.now, T), p9boot.RTC_BASE)
     seedcyc = int(mcp["seedcyc"])
     snap = [int(mcp["snap"][2 * k:2 * k + 2], 16) for k in range(7)]
+    base = None
     if seed == SEED["chip"]:
-        base = mcp_epoch(snap)
+        try:
+            base = mcp_epoch(snap)
+        except ValueError as e:     # the RTL loaded a non-calendar time
+            errs.append("seeded from %s, not a calendar time: %s"
+                        % (mcp["snap"], e))
+    if base is not None:
         m.m.offset = base - Fraction(seedcyc, T)
         lag = seedcyc - int(mcp["lasttick"])
         if not 0 < lag <= PHASE_BOUND:
@@ -986,7 +1024,9 @@ def compare_mcp(seq, cov, verbose):
         errs.append("I2C violations %s, time written while running %s: %s"
                     % (mcp["viol"], mcp["twr"], mcp.get("notes")))
     end = int(mcp["end"])
-    if seq.writes:
+    if seq.writes and not loads:
+        errs.append("no setrtc load reached the model")
+    elif seq.writes:
         restart = int(mcp["restart"])
         lag = restart - loads[-1]
         # the last write-back carries the last set; the chip counts from

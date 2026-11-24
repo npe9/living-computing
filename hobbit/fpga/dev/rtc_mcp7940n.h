@@ -4,7 +4,8 @@
 // SOURCES.  The data sheet (Microchip DS20005010) is NOT on disk, so no
 // page is cited; every statement below is marked by where it comes from:
 //   [T]  ~/src/ulx3s-experiments/flute-lx50/test/rtc_test.c, a program
-//        that ran against the chip on this board's design and cites
+//        written for the chip on this board design (not yet run on the
+//        board, its notes say) that cites
 //        DS20005010J: address 0x6F; RTCSEC 0x00 bit 7 ST; RTCWKDAY 0x03
 //        bit 3 VBATEN (off at the chip's power-on) and bit 4 PWRFAIL
 //        (cleared by writing RTCWKDAY); CONTROL 0x07; register-pointer

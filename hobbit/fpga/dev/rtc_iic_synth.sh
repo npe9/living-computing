@@ -1,7 +1,8 @@
 #!/bin/sh
 # yosys synth_ecp5 of mkRtc and mkIic alone (ULX3S 85F cell counts for
 # rtc.md / iic.md).  mkRtc is synthesised at the board's 25 MHz with the
-# model's start time.  Products in ./build (gitignored).  Run from any
+# model's start time, the MCP7940N seed and write-back on (mcpMode 3)
+# and a 99 kHz SCL (i2cQuarter 63).  Products in ./build (gitignored).  Run from any
 # directory; the $readmemh files resolve against this one.
 set -eu
 cd "$(dirname "$0")"
@@ -15,7 +16,7 @@ LIB="read_verilog -defer $BLUESPECDIR/Verilog/RegFileLoad.v; read_verilog -defer
 # -defer: RegFileLoad's default file="" must not be elaborated (yosys
 # would try to $readmemh it); only the instance's parameters are.
 yosys -q -l build/synth_rtc.log -p "read_verilog -defer build/mkRtc.v; $LIB;
-  chparam -set ticksPerSec 25000000 -set startBcd 56'h93010301120000 mkRtc;
+  chparam -set ticksPerSec 25000000 -set startBcd 56'h93010301120000 -set mcpMode 3 -set i2cQuarter 63 mkRtc;
   synth_ecp5 -top mkRtc -json build/mkRtc.json; tee -o build/stat_rtc.txt stat"
 yosys -q -l build/synth_iic.log -p "read_verilog -defer build/mkIic.v; $LIB;
   synth_ecp5 -top mkIic -json build/mkIic.json; tee -o build/stat_iic.txt stat"

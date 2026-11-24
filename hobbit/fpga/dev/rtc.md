@@ -21,6 +21,12 @@ method Action request(Bit#(13) addr, Bit#(32) wdata, Bit#(4) be, Bool write);
 method ActionValue#(Bit#(32)) response;   // one per request, writes too (0)
 method Bool    irq;                       // always False: no interrupt pin
 method Bit#(8) fault;                     // sticky, 0 = none
+// the MCP7940N link ("The MCP7940N" below)
+method Bit#(1) i2cSclLow;                 // 1 = pull SCL low, 0 = release
+method Bit#(1) i2cSdaLow;
+method Action  i2cPins(Bit#(1) scl, Bit#(1) sda);   // the lines as read
+method Bit#(4) mcpSeed;                   // where the time came from
+method Bit#(8) mcpWrites;                 // write-backs completed
 ```
 
 * **The address is 13 bits, not 12.** The window is 8 KB: 2048 byte-wide
@@ -35,7 +41,8 @@ method Bit#(8) fault;                     // sticky, 0 = none
 * Latency: a register read or any write responds on the next cycle. An NVRAM
   read responds one cycle later, because the block RAM's address is
   registered. A new request is taken only after the previous response has
-  been queued.
+  been queued. With the MCP7940N enabled, no request is taken until the
+  seed has finished (up to about 1.5 s after reset; see below).
 
 | offset | register |
 |---|---|
@@ -76,19 +83,140 @@ method Bit#(8) fault;                     // sticky, 0 = none
 
 ### Start time and clock
 
-`mkRtc#(parameter Bit#(32) ticksPerSec, parameter Bit#(56) startBcd)`
-takes two Verilog parameters. `ticksPerSec` is the CLK frequency (at
-least 2). `startBcd` is `{year, mon, mday, wday, hour, min, sec}`. The
-model's start, 1993-01-03 12:00:00 UTC (a Sunday, `RTC_BASE`), is
-`56'h93010301120000`. `rtc_iic_check.py` derives that value from
-`Timekeeper._regs(RTC_BASE)` on each run, so the two cannot drift.
+`mkRtc#(parameter Bit#(32) ticksPerSec, parameter Bit#(56) startBcd,
+parameter Bit#(2) mcpMode, parameter Bit#(16) i2cQuarter)` takes four
+Verilog parameters:
 
-**No battery on this path.** The ULX3S does carry an MCP7940N on its I2C bus
-(the Flute tree's `test/rtc_test.c`). This module does not use it. Time
-restarts from `startBcd` at every configuration, and the NVRAM restarts from
-`rtc_nvram.hex` (2040 zero bytes, as in the model). Seeding the time from the
-MCP7940N would need the board's I2C bus, which is shared with the HDMI DDC,
-so it is left to the SoC top.
+* `ticksPerSec` is the CLK frequency (at least 2).
+* `startBcd` is `{year, mon, mday, wday, hour, min, sec}`. The model's
+  start, 1993-01-03 12:00:00 UTC (a Sunday, `RTC_BASE`), is
+  `56'h93010301120000`. `rtc_iic_check.py` derives that value from
+  `Timekeeper._regs(RTC_BASE)` on each run, so the two cannot drift.
+* `mcpMode` switches the board's battery-backed clock in: bit 0 seeds the
+  counters from it at reset, bit 1 writes every `setrtc` back to it. 0 is
+  the device as before: requests are taken from cycle 0 and the I2C lines
+  are never pulled (the check verifies both). 3 is the board setting; 1
+  reads the chip but never writes it, for a first hardware window.
+* `i2cQuarter` is CLK cycles per quarter of an SCL bit: 63 at 25 MHz gives
+  99.2 kHz, with SCL low for 5.04 us and high for at least 5.04 us.
+  The I2C standard-mode minima are 4.7 us and 4.0 us; those two figures
+  are from memory of the I2C specification, not from a document here.
+
+`startBcd` is still the fallback. The counters run from it whenever
+`mcpMode` bit 0 is clear, or the seed fails (`mcpSeed` says why).
+
+## The MCP7940N
+
+The ULX3S carries a Microchip MCP7940N real-time clock with a battery
+holder (the owner's board has the battery fitted), at I2C address 0x6F on
+the `gpdi_sda`/`gpdi_scl` lines, which it shares with the HDMI connector's
+DDC (EEPROM at 0x50). Pins, from the ULX3S LPF in the Flute tree
+(`~/src/ulx3s-experiments/flute-lx50/constraints/ulx3s_85f.lpf`, lines
+149-162): **`gpdi_sda` B19, `gpdi_scl` E12**, both `IO_TYPE=LVCMOS33
+PULLMODE=UP DRIVE=4`. They are not in this tree's `fpga/ulx3s_85f.lpf`
+yet; the SoC top adds them. Each pin is open drain: output 0 with the
+tristate enable `i2cSclLow`/`i2cSdaLow`, and the pad's input to
+`i2cPins` (in Verilog, `assign gpdi_scl = sclLow ? 1'b0 : 1'bz;`). If the HDMI
+work reads the monitor's EDID over the DDC, the SoC top has to arbitrate
+between the two; otherwise the RTC can own the two pins. The RTC uses the
+bus only at reset and after a `setrtc`. This
+master assumes it is alone on the bus: it has no arbitration-loss
+detection.
+
+**Sources.** The MCP7940N data sheet (DS20005010) is not on disk, so no
+page is cited. `rtc_mcp7940n.h` marks where each fact comes from.
+`~/src/ulx3s-experiments/flute-lx50/test/rtc_test.c`, written for
+this chip on this board design (its notes say it has not yet run on the
+board) and citing DS20005010J, gives the address,
+ST (RTCSEC bit 7), VBATEN (RTCWKDAY bit 3, off at the chip's power-on),
+PWRFAIL (bit 4, cleared by writing RTCWKDAY), and the pointer-then-
+repeated-START read. The following are **inference**, from memory of the
+part, not checked against the data sheet:
+
+* OSCRUN is RTCWKDAY bit 5;
+* the 12/24 bit is RTCHOUR bit 6, with AM/PM in bit 5;
+* LPYR is RTCMTH bit 5;
+* the SRAM is 64 bytes at 0x20..0x5F;
+* the register pointer auto-increments;
+* the recommended way to set the time is to clear ST, wait for OSCRUN to
+  clear, write, then set ST.
+
+Check these against the data sheet before the first hardware window.
+
+**Seed (mcpMode bit 0), at reset.**
+
+1. Read RTCSEC..RTCYEAR (pointer 0, repeated START, seven bytes).
+2. Fall back if there is no ACK at 0x6F (`mcpSeed` 3), if ST or OSCRUN is
+   clear (4), or if the registers are not a calendar time (5). A 12-hour
+   chip is converted to 24-hour.
+3. Poll RTCSEC until it changes (up to 1.5 s; 6 if it never does).
+4. Read all seven again and load them. The divider restarts on that cycle,
+   as on a `setrtc` load, so the counters start in phase with the chip's
+   second, behind it by one burst read at most. In the tests the lag was
+   at most 1,625 cycles at 8 cycles a bit. At 99 kHz the same reads take
+   about 1.7 ms.
+5. Recompute the weekday from the date, as on every load.
+
+An SCL held low past 2^20 cycles of stretching gives 7. Any fallback leaves
+the counters running from `startBcd` since reset. `mcpSeed` = 2 means the
+time came from the chip. The seed only reads; it does not turn VBATEN on.
+
+**Write-back (mcpMode bit 1), after every load.** A `setrtc` load (W
+cleared with a valid time) queues the loaded time. The link then:
+
+1. writes RTCSEC = 0 (ST off);
+2. polls RTCWKDAY until OSCRUN clears (up to 1.5 s);
+3. writes RTCMIN..RTCYEAR in one burst: 24-hour, weekday with VBATEN set,
+   so the battery keeps the time;
+4. writes RTCSEC with ST set, last, so the chip's second starts as close to
+   the load as the bus allows. In the tests this happened within 3,000 bus
+   cycles of the load, plus the chip's OSCRUN delay.
+
+A second `setrtc` during a write-back is written after it, with the newer
+time. Any failure (no ACK, OSCRUN never clears, stuck SCL) is fault 5; the
+counters are unaffected.
+
+## A persistent NVRAM (proposal, not built)
+
+The NVRAM is 2040 bytes, and the board's backing for it is wanted only by
+the ROM's world: romboot's `Env` (712 bytes at 0) and key.c's `Nvrsafe` (31
+bytes at 1924). The MCP7940N's SRAM is 64 bytes (inference, above), so it
+cannot hold the `Env`.
+
+**The `Env`: a sector of the configuration SPI flash.** The SPI flash is
+the one place on the board that keeps 2 KB without power. The plan:
+
+* Keep the NVRAM in its block RAM as now.
+* At reset, copy a flash area into the NVRAM before the first request is
+  taken, like the seed.
+* Write it back after the NVRAM goes quiet, for example 2 s after the last
+  NVRAM write. A rewrite is an erase of one 4 KB sector and 8 page programs
+  of 256 bytes.
+* Use two sectors in turn, each with a sequence number and a checksum, so
+  that a power cut during a write leaves the previous copy. At reset, take
+  the valid copy with the higher number.
+* Writes are rare (`envput` from the ROM's console), so wear (on the order
+  of 100,000 erase cycles per sector for common parts, from memory) is not
+  a concern.
+
+That needs:
+
+* an SPI flash master behind the RTC, its pins driven through `USRMCLK`
+  (the Flute tree's plan, `notes/ulx3s-peripherals-plan.md`);
+* the flash's size, read by JEDEC ID on the board;
+* an area agreed with the other users of the flash: the bitstream at 0,
+  and the Flute session's boot images. This board is shared, so the
+  sectors have to be chosen with that session, not assumed. The top of
+  the flash is the natural place.
+
+**What the 64-byte SRAM covers.** The 31-byte `Nvrsafe` fits, with 33 bytes
+to spare. Mapping NVRAM 1924..1954 onto MCP SRAM 0x20..0x3E (read at seed
+time, written through on every write in that range) would keep the
+machine key across power cycles on the battery alone, without the flash.
+That is only worth doing if a boot program that calls `key()` runs on the
+board. s9term's boot does not open `#r/nvram` (the traced run has no NVRAM
+access). The flash scheme covers the `Nvrsafe` anyway, so the SRAM is the
+cheaper first step, not the whole answer.
 
 ## What the NVRAM holds
 
@@ -120,6 +248,21 @@ and simulation prints `RTC FAULT n: ...`.
 | 2 | W cleared with a held set that is not a calendar time (non-BCD, month not 1..12, day past the month's end, hour > 23, min/sec > 59) | `ValueError` from `timegm` for a bad month. For a bad day `timegm` silently normalises, so the RTL faults where the model does not (tested as RTL-only) |
 | 3 | write without byte lane 0 | accepted (the model ignores the mask), RTL-only |
 | 4 | W cleared with nothing held (W set again after a load that left R set) | `TypeError` (the model crashes) |
+| 5 | an MCP7940N write-back failed (no ACK, OSCRUN never cleared, SCL stuck) | no model: the model has no chip |
+
+`mcpSeed` is not a fault. A fallback to `startBcd` is the designed
+behaviour when the chip is absent, and it reports which case it was:
+
+| mcpSeed | meaning |
+|---|---|
+| 0 | seeding (requests wait) |
+| 1 | mcpMode bit 0 clear: `startBcd` |
+| 2 | the chip's time |
+| 3 | no ACK at 0x6F |
+| 4 | ST or OSCRUN clear: the chip's oscillator is not running |
+| 5 | the chip's registers are not a calendar time |
+| 6 | the chip's second never changed within 1.5 s |
+| 7 | SCL held low (stretch timeout) |
 
 ## Integration notes for the SoC top
 
@@ -133,16 +276,29 @@ and simulation prints `RTC FAULT n: ...`.
   it, yosys elaborates the module's default `file = ""` and stops with
   "Can not open file `` for $readmemh". `fpga/build.sh` reads its library
   cells without `-defer` today.
-* bsc's generated Verilog gives the two parameters a default of 0, so
-  override `ticksPerSec` and `startBcd` at instantiation (or `chparam`).
+* bsc's generated Verilog gives the four parameters a default of 0, so
+  override `ticksPerSec`, `startBcd`, `mcpMode` and `i2cQuarter` at
+  instantiation (or `chparam`).
+* The I2C pins: see "The MCP7940N". The SoC top adds `gpdi_sda` (B19) and
+  `gpdi_scl` (E12) to its LPF, and wires them open drain. With `mcpMode` 0
+  they can be left unconnected (`i2cPins` tied to 1).
 * `rtc_iic_check.py` is not wired into `tests/run_tests.sh`. It needs bsc
-  and Verilator, and it runs in about 20 s.
+  and Verilator, and it runs in about 70 s.
 
 ## Area (yosys 0.51 `synth_ecp5`, `rtc_iic_synth.sh`, 25 MHz)
 
 | LUT4 | PFUMX | L6MUX21 | CCU2C | TRELLIS_FF | DP16KD |
 |---:|---:|---:|---:|---:|---:|
-| 555 | 51 | 15 | 99 | 219 | 1 |
+| 1674 | 253 | 56 | 222 | 600 | 1 |
+
+That is with `mcpMode 3`, `i2cQuarter 63`. With `mcpMode 0` it is still
+1594 LUT4 and 480 TRELLIS_FF: the mode is a run-time guard, so yosys does not
+remove the link. Before the MCP7940N link (commit 821a5c62) it was 555
+LUT4, 219 TRELLIS_FF. The link (the I2C master, the seed and write-back
+FSM, the seven-byte buffer, the BCD/12-hour conversion and the second
+validity check, and the poll counters) costs about 1,100 LUT4, about 1.3%
+of the 85F. It has not been optimised; the BCD conversion and a second
+`timeValid` are the first places to look.
 
 The NVRAM is one DP16KD. The counters, the held set, the weekday and the
 validity check make up the rest. The tens digit is multiplied by 10 with
@@ -151,7 +307,7 @@ for the SoC top's build.
 
 ## Test
 
-`python3 hobbit/fpga/dev/rtc_iic_check.py` (about 20 s) compiles both
+`python3 hobbit/fpga/dev/rtc_iic_check.py` (about 70 s) compiles both
 packages with bsc 2026.01 and builds each with Verilator and
 `rtc_iic_tb.cpp`. It then replays every access sequence into the RTL and
 into a fresh model at the cycle the RTL took each access. The model's clock
@@ -177,16 +333,40 @@ is `Fraction(cycle, 1000)`, exact, with the RTL built at `ticksPerSec =
   (including wday);
 * all 2040 NVRAM bytes, with romboot's `Env` at 0 and an `Nvrsafe` at 1924
   written first;
-* the faults above.
+* the faults above;
+* 25 MCP7940N sequences. Two more builds are used, `mkRtc_m1` and
+  `mkRtc_m3` (`mcpMode` 1 and 3, `ticksPerSec` 100000, `i2cQuarter` 2).
+  Their I2C lines go to `rtc_mcp7940n.h`, a cycle-level behavioural chip
+  written for this test (its own source tags say which facts are
+  inference). The sequences cover:
+  * seeds at four phases of the chip's second;
+  * four 12-hour times;
+  * a seed across the year end;
+  * a chip that stretches SCL;
+  * the nine fallbacks;
+  * five write-back cases;
+  * mode 1, which must leave the chip alone.
 
-Last run, from an empty `build/`: 84 of 84 sequences agree (RTC and IIC
-together). The RTC reads compared per register were control 1137, sec
+  Each sequence checks the seed status, every clock read against the model
+  offset to the chip's time at the seed (the seed lag is bounded at 2,000
+  cycles), the write-back count and fault, the chip's registers at the
+  end against the time last set, and that the chip saw no I2C protocol
+  violation and no time write while its oscillator ran.
+
+Last run, from an empty `build/`, 2026-11-24 (71 s): 109 of 109 sequences
+agree (RTC, IIC and MCP7940N together). 15 seeds came from the chip, with
+a lag of at most 1,625 cycles; 10 fell back; 422 clock reads were compared
+after a seed; 3 write-back sequences were checked to the chip's
+registers. The RTC reads compared per register were control 1137, sec
 473, min 436, hour 436, wday 433, mday 437, mon 437, year 436 and NVRAM
 2040, with 3571 writes. 4 model refusals were matched by the RTL's fault
 code, and 2 RTL-only faults came where expected.
 
-Discrimination (`rtc_iic_inject.py`) injected 10 RTC bugs. Every one made
-the check fail. The observed failure sets are in `rtc_iic_check.py`'s header.
+Discrimination (`rtc_iic_inject.py`) injected 10 RTC bugs and 10
+MCP7940N-link bugs (M1-M10: the seed alignment, the OSCRUN check, 12-hour
+PM, the calendar check, the write-back's OSCRUN wait, VBATEN, ST, the
+oscillator stop, the master's read ACK, and clock stretching). Every one
+made the check fail. The observed failure sets are in `rtc_iic_check.py`'s header.
 The first run of the divider injection (R1) passed: the phase probes had
 been spaced by the access gap. They are now one per sequence, checked to
 land on their exact cycle.

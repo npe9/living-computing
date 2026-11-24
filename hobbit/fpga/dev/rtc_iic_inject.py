@@ -15,7 +15,7 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FILES = ["Rtc.bsv", "Iic.bsv"]
+FILES = ["Rtc.bsv", "Iic.bsv", "RtcI2c.bsv"]
 
 INJ = [
     ("R1", "the divider does not restart on a load", "Rtc.bsv",
@@ -48,6 +48,33 @@ INJ = [
     ("R10", "every loaded value taken as a calendar time", "Rtc.bsv",
      "               else if (timeValid(t)) loadW.wset(t);",
      "               else if (True) loadW.wset(t);"),
+    ("M1", "seed without waiting for the chip's next second", "Rtc.bsv",
+     "            done <= (mb[0] & 8'h7F) != (firstSec & 8'h7F);",
+     "            done <= True;"),
+    ("M2", "OSCRUN not checked at the seed", "Rtc.bsv",
+     "   m[0][7] == 1 && m[3][5] == 1;",
+     "   m[0][7] == 1;"),
+    ("M3", "12-hour PM not added", "Rtc.bsv",
+     "((m[2][5] == 1) ? 12 : 0);",
+     "((m[2][5] == 1) ? 0 : 0);"),
+    ("M4", "the chip's time accepted unchecked", "Rtc.bsv",
+     "   return (ok && timeValid(t)) ? tagged Valid t : tagged Invalid;",
+     "   return tagged Valid t;"),
+    ("M5", "write-back does not wait for OSCRUN to clear", "Rtc.bsv",
+     "         done <= mb[0][5] == 0;          // OSCRUN",
+     "         done <= True;                   // OSCRUN"),
+    ("M6", "write-back leaves VBATEN off", "Rtc.bsv",
+     "wr(wt.wday | 8'h08);", "wr(wt.wday);"),
+    ("M7", "write-back writes sec without ST", "Rtc.bsv",
+     "wr(wt.sec | 8'h80); stopC;", "wr(wt.sec); stopC;"),
+    ("M8", "write-back never stops the oscillator", "Rtc.bsv",
+     "startC; wr(8'hDE); wr(8'h00); wr(8'h00); stopC;",
+     "startC; wr(8'hDE); wr(8'h00); wr(8'h80); stopC;"),
+    ("M9", "the master never ACKs a byte it reads", "RtcI2c.bsv",
+     "low = (s == 8) ? pack(c.ack) : 0;", "low = 0;"),
+    ("M10", "the master ignores clock stretching", "RtcI2c.bsv",
+     "         if (q == 1 && sclS == 0) begin     // a slave holds SCL low",
+     "         if (False) begin     // a slave holds SCL low"),
     ("I1", "the repeated START's address taken as a data byte", "Iic.bsv",
      "                  if (slave[7:1] == devEeprom && ptrSet)",
      "                  if (False)"),
