@@ -480,7 +480,20 @@ the device are given it again whenever the machine runs dry.
   | `apply(Code, {})`, a predicate of no argument | implemented (`lockstep_apply.py`) | 17,501 |
   | `diff` of a structure and an atom, `task_handler` | succeeds, as KLIC and PDSS have it (`lockstep_rdvc.py`) | 22,630 |
   | `enqueue_goal_to_processor` waiting, 10 arguments | the stub's limit raised from 9 to 11 | 22,902 |
-  | `jump` (not implemented) at 4838147 | **the stop now**, not looked into | 23,348 |
+  | `jump`, in a module the boot loads | implemented (`lockstep_alt.py`) | 23,348 |
+  | `set_marked_variable` | implemented (`lockstep_alt.py`) | 23,498 |
+  | `wait_vector`, the general form for 7 or more | implemented (`lockstep_alt.py`) | 28,156 |
+  | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
+  | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
+  | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
+  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+
+  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
+
+  The counts from `jump` on are from a cached machine made afresh with
+  `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
+  it gives 23,348 at `jump`, as the earlier cache patched with the new
+  stubs did).
 
   The console is still the banner alone, `PIMOS V 3.600 20-May-93`.
   With the BootInfo string the cluster of `create_os_device/3` is bound
@@ -498,6 +511,13 @@ the device are given it again whenever the machine runs dry.
 
   | 9 | 7, 0 | SEND, the packet of device 16: `append_open` (203, `macro/pimos/pimos/pimos.vmac`:69), `{16, 203, "", 0, 0, "pimos:pimos.syslog"}` in JIS, the kernel's syslog (`bios/boot/syslog.kl1` `wait_status1/3`, on every boot) | accepted, `[1]` (normal), OURS: the stand-in keeps what is appended in memory (`Fep.appended`), as a FEP holding the file would append to it. PIMOS also takes an abnormal answer, with "SYSLOG ERROR: reason / cannot open file pimos:pimos.syslog" on the console (`syslog.kl1`); the real FEP's answer is not held |
   | 10 | 7, 1 | RECEIVE, the reply | as before |
+  | 11-12 | 7, 0 then 1 | SEND and RECEIVE, device 17: `create_timer` (310, `pimos.vmac`:146), `{17, 310, Node, User, Password}`, the kernel's timer device (`bios/fep_module/time_dvc.kl1` `device_create/5`) | accepted, `[1]`, OURS: a FEP that has a timer. `reply/9` goes on to `device_process`, the timer's requests; an abnormal answer would end the device |
+  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, 0]`, OURS: a fixed clock, so every run is the same (`fep.py` `DATE`, `TIME`). The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`); the time is 00:00:00 (milliseconds from midnight, `utility/timer/time.kl1`) |
+
+  New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
+  on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
+  packets `append_open` (203), `create_timer` (310) and
+  `get_date_time` (304).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
   The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers

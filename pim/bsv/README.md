@@ -226,9 +226,9 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 148
-instructions (a recount, 2026-11-24: 148 handlers in `pimm.py`, all on
-both models; 145 without our three stubs; the earlier 128 and 130 were
+State: 152
+instructions (a recount, 2026-11-24: 152 handlers in `pimm.py`, all on
+both models; 149 without our three stubs; the earlier 128 and 130 were
 increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

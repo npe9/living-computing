@@ -826,6 +826,15 @@ class Machine:
     def i_try_me_else(self, pc, x, y, z, c16):
         self.alt = pc + 2 + sx16(c16)
 
+    def i_jump(self, pc, x, y, z, c16):
+        # 23:67 c16_exe: an unconditional branch to the label, the
+        # label as try_me_else's (assembler/klb_opr.kl1 p(c16_exe),
+        # cal_location_address: Label - (pc + 2)).  The compiler puts
+        # it after a branch of register shortage (compiler/regass.kl1
+        # insertBranch); VPIM klb_control.psl.c klb_jump and PDSS
+        # emulate.c KL1B_JUMP branch with nothing else
+        return pc + 2 + sx16(c16)
+
     def i_otherwise(self, pc, x, y, z, c16):
         # Clauses after `otherwise` apply only when none before can:
         # if an earlier guard was waiting on a variable, suspend instead.
@@ -1512,6 +1521,20 @@ class Machine:
         self.sp = w[1]
         self.sp_single = not w[0] & 1
 
+    def i_wait_vector(self, pc, x, y, z, c16):
+        # the general form, 23:AF r_vector: a vector of 7 or more, the
+        # length in the low bits (assembler klb_opr.kl1 p(r_vector, ..)
+        # Length>6: Op \/ Reg<<16 \/ Length; read as 16 bits, as
+        # put_vector's).  Below 7 the assembler writes wait_vector_N
+        n = c16
+        if n < 7:
+            raise Unimplemented('wait_vector of %d' % n)
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != VECT0 + 14 or self.vsize(w) != n:
+            return self.guard_fail()
+        self.sp = self.vbase(w)
+        self.sp_single = not w[0] & 1
+
     def i_wait_vector_2(self, pc, x, y, z, c16):
         return self.wait_vector(2, x)
 
@@ -1699,6 +1722,15 @@ class Machine:
         var = self.new_var()
         self.argv[x] = var
         self.reg[y] = var
+
+    def i_set_marked_variable(self, pc, x, y, z, c16):
+        # as set_variable, the argument and the register with the MRB
+        # on (23:15 c8_r, assembler/inst_tab.kl1:18; PDSS emulate.c
+        # KL1B_SET_MARKED_VARIABLE: SetAll(arg, REF, undef, MRBON), the
+        # register a copy), as put_marked_variable
+        var = self.new_var()
+        self.argv[x] = (REF + 1, var[1])
+        self.reg[y] = (REF + 1, var[1])
 
     def i_enqueue_goal(self, pc, x, y, z, c16):
         # A goal has 11 argument slots; the compiler packs the
@@ -1961,6 +1993,41 @@ class Machine:
         self.builtin('string_operation', [x, y, z, w4], f, elements=lambda op, v: (
             self.unbound_elements(v) if self.vsize(v) == 5 else []))
         return pc + 2
+
+    def i_multiply_bignum_word(self, pc, x, y, z, c16):
+        # multiply_bignum_by_word(BigX, Y, ^BigZ), 22:B8 r_r_r
+        # (assembler/inst_tab.kl1:247; compiler/blt.kl1 the inputs X, Y,
+        # the output Z): "The result of multiplying BigX by Y seen as a
+        # 32-bit unsigned integer"; a bignum is a 32-bit string read as
+        # unsigned, "The MSB is the zeroth element and is zero
+        # suppressed" (PIMOS manual e-builtin.tex 703-741).  As VPIM
+        # (interpreter/klb_body_blt_bignum.psl.c
+        # kblt_b_multiply_bignum_by_word, functions/f_reduce_bignum.psl.c
+        # f_Multiply_BIGNUM_By_Word_Sub, structures/str_bignum.psl.c
+        # s_Multiply_BIGNUM_By_Word): the empty X is the answer itself;
+        # Y = 0 gives the empty string; otherwise the product, one word
+        # longer only when the last carry is not 0.  A leading zero word,
+        # or BigX not a 32-bit string, or Y not an integer: the
+        # built-in's exception (VPIM's too), refused.  The words are
+        # written from the least significant up into a new string of
+        # zeros (OURS: the Bluespec's order)
+        def f(big, w):
+            size, elems = self.need_string(big)
+            yv = self.need_int(w) & 0xffffffff
+            if size != 32 or (elems and elems[0] == 0):
+                raise Unimplemented('built-in exception: multiply_bignum_word of %r' % (elems[:2],))
+            if not elems:
+                return [big]
+            v = 0
+            for e in elems:
+                v = (v << 32) | e
+            p = v * yv
+            n = 0 if yv == 0 else len(elems) + (1 if p >> (32 * len(elems)) else 0)
+            out = self.new_string(n, 32)
+            for i in reversed(range(n)):
+                self.mem[out[1] + 1 + i] = (INT, (p >> (32 * (n - 1 - i))) & 0xffffffff)
+            return [out]
+        self.builtin('multiply_bignum_word', [x, y, z], f)
 
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros

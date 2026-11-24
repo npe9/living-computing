@@ -41,6 +41,8 @@ OURS, each for want of the FEP's own code:
   - close is answered with status 1;
   - append_open (203) is accepted, the bytes appended kept in
     Fep.appended (OURS; the kernel's syslog, Fep.request);
+  - create_timer (310) is accepted (OURS, Fep.request), and
+    get_date_time (304) answered with a fixed clock (DATE, TIME);
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -62,6 +64,14 @@ import struct
 
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
 READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
+CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
+GET_DATE_TIME = 304                # pimos.vmac:95 fep#get_date_time
+# the FEP's clock, OURS: fixed, so every run is the same.  The date
+# the banner's, 20-May-1993, as PIMOS counts dates (days from
+# 01-Jan-1901: utility/timer/date.kl1 get_date_count, check_input),
+# the time 00:00:00 (milliseconds from midnight: utility/timer/
+# time.kl1 get_time_count)
+DATE, TIME = 33742, 0
 NORMAL, EOD, ABNORMAL = 1, 2, 5
 # scsi_command's Result for a unit with no device (OURS, Fep.command)
 NO_DEVICE = 8 << 8
@@ -130,6 +140,7 @@ class Fep:
         self.partial = {}       # device id -> the pieces of a continued message
         self.files = {}         # device id -> [bytes, position]
         self.appending = {}     # device id -> the path it appends to
+        self.timers = set()     # device ids of timers made
         self.appended = {}      # path -> the bytes appended to it (OURS)
         self.replies = []       # packets to give, in order
         self.stopped = False
@@ -247,6 +258,20 @@ class Fep:
             self.appending[dev] = msg[4]
             self.appended.setdefault(msg[4], bytearray())
             return [NORMAL]
+        if cmd == CREATE_TIMER and len(msg) == 4 and dev not in self.timers:
+            # {Id, 310, Node, User, Password}: fep#create_timer
+            # (bios/fep_module/time_dvc.kl1 device_create/5; reply/9
+            # takes [normal(Value)|_] with fep#normal in Value and goes
+            # on to device_process, the timer's requests).  Accepted,
+            # OURS: a FEP that has a timer.  ABNORMAL would also be
+            # taken (the timer device ends, its stream answered with the
+            # status)
+            self.timers.add(dev)
+            return [NORMAL]
+        if cmd == GET_DATE_TIME and len(msg) == 1 and dev in self.timers:
+            # {Id, 304}: the reply {Status, Date, Time}
+            # (bios/fep_module/time_dvc.kl1 device_io1/13)
+            return [NORMAL, DATE, TIME]
         if cmd == GETB and len(msg) == 2 and dev in self.files:
             f = self.files[dev]
             chunk = f[0][f[1]:f[1] + (self.getb_bytes or msg[1] * self.getb_unit)]

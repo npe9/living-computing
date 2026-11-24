@@ -14,6 +14,11 @@
 // bits (the built-in's exception, PIMOS manual, multiply: "If an
 // overflow occurs").
 //
+// multiplyAdd (2026-11-24) is the same multiplier unsigned, a * b + c
+// in 64 bits, for multiply_bignum_by_word's word step (VPIM's
+// s_Multiply_BIGNUM_By_Word: b_Multiply_ExtendedInt, then the carry
+// added).
+//
 // The step counts are ours: no source gives the machine's.
 package PimmMBox;
 
@@ -27,6 +32,8 @@ interface PimmMBox;
   method ActionValue#(DivResult) result;
   method Action multiply(Bit#(32) a, Bit#(32) b);
   method ActionValue#(MulResult) product;
+  method Action multiplyAdd(Bit#(32) a, Bit#(32) b, Bit#(32) c);
+  method ActionValue#(Bit#(64)) wide;
 endinterface
 
 module mkPimmMBox(PimmMBox);
@@ -46,6 +53,8 @@ module mkPimmMBox(PimmMBox);
   Reg#(Bit#(32)) mplier <- mkRegU;
   Reg#(Bool)     negP   <- mkRegU;
   FIFO#(MulResult) prodQ <- mkFIFO;
+  Reg#(Bool)     mWide  <- mkRegU;      // multiplyAdd: unsigned, the 64 bits
+  FIFO#(Bit#(64)) wideQ <- mkFIFO;
 
   rule mulStep (mBusy && mLeft != 0);
     if (mplier[0] == 1) acc <= acc + mcand;
@@ -54,7 +63,12 @@ module mkPimmMBox(PimmMBox);
     mLeft <= mLeft - 1;
   endrule
 
-  rule mulDone (mBusy && mLeft == 0);
+  rule mulDone (mBusy && mLeft == 0 && mWide);
+    wideQ.enq(acc);
+    mBusy <= False;
+  endrule
+
+  rule mulDoneSigned (mBusy && mLeft == 0 && !mWide);
     Bit#(64) p = negP ? -acc : acc;
     // it fits when bits 63..31 are all the sign
     Bit#(33) top = p[63:31];
@@ -101,8 +115,24 @@ module mkPimmMBox(PimmMBox);
     mplier <= nb ? -b : b;
     acc <= 0;
     negP <= na != nb;
+    mWide <= False;
     mLeft <= 32;
     mBusy <= True;
+  endmethod
+
+  method Action multiplyAdd(Bit#(32) a, Bit#(32) b, Bit#(32) c) if (!mBusy);
+    mcand <= zeroExtend(a);
+    mplier <= b;
+    acc <= zeroExtend(c);
+    negP <= False;
+    mWide <= True;
+    mLeft <= 32;
+    mBusy <= True;
+  endmethod
+
+  method ActionValue#(Bit#(64)) wide;
+    wideQ.deq;
+    return wideQ.first;
   endmethod
 
   method ActionValue#(MulResult) product;
