@@ -63,9 +63,22 @@ run alone (bsv/run_pimm_lockstep.sh tproc) and restored from a copy,
   P and the code address swapped              P unbound, line 89 (A 10
                                               for A 9)
   the waiting goal hooked on its own record   P unbound, line 107
-NOT run: another processor number (a refusal), arities 10 and 11 (the
-limit was 9 until a goal of 10 arguments was met in pim:go/4,
-2026-11-24; the stubs for 10 and 11 are appended), an arity over 11
+  (2026-11-24) the limit at the site back to 9  10 arguments, P unbound,
+                                              line 49: E unimp
+  (2026-11-24) the limit at the stub back to 9  10 arguments, P = 0,
+                                              line 19: E unimp
+
+Arities 10 and 11 (2026-11-24; the limit was 9 until a goal of 10
+arguments was met in pim:go/4; the stubs for 10 and 11 are appended):
+four cells of the bench, OURS (enqueue_goal_to_processor rN, @3;
+the arity; proceed; @3: proceed), spawned with N arguments 100.. and
+P unbound, then P = 0: the goal runs with its N arguments.  Its
+arguments are the argument registers the bench's ARG ops wrote (a
+vector holds at most six cells, too few for N set_values).  Pins 5
+parts / 2,064,615 lines -> 9 / 2,064,868, these four parts' 253 lines,
+the others unchanged.
+
+NOT run: another processor number (a refusal), an arity over 11
 (refused), the waiting goal inside a shoen.
 """
 import os
@@ -78,10 +91,12 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 
-PINNED = dict(parts=5, lines=2064615)
+PINNED = dict(parts=9, lines=2064868)
 FILE = 'pimm_patch_scsifep360E.sav'
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 ARGS = [None, 7, 8, 0, 1, 1, 5, 13]                 # r0 is the vector
+WIDE = (10, 11)
+KLB = 0x23
 
 
 def sites(m):
@@ -140,6 +155,33 @@ def script():
     s.label('Q = 0')
     s.unifyc(2, I(0))
     s.run()
+    # arities 10 and 11 (2026-11-24): four cells of the bench, OURS,
+    #   enqueue_goal_to_processor rN, @3; (arity N); proceed; @3: proceed
+    # spawned with N + 1 arguments, the last P.  The goal's arguments
+    # are the argument registers the bench's ARG ops wrote (what N
+    # set_values would write: a vector holds at most six cells of code);
+    # the goal's pickup leaves them.
+    s.wide = {}
+    for n in WIDE:
+        code = [(KLB, 0x65 << 24 | n << 16 | 1),        # enqueue_goal_to_processor rN, @3
+                (KLB, n << 24),                         # its arity
+                (KLB, 0x60 << 24),                      # proceed
+                (KLB, 0x60 << 24)]                      # @3: proceed
+        s.label('%d arguments, P unbound' % n)
+        s.vector(15, 4, code)
+        m = s.live()
+        at = s.live_slot[15][1] - m.load
+        assert m.opname(at) == 'enqueue_goal_to_processor', m.opname(at)
+        s.wide[n] = (at, at + 3, m.stubs['$to_processor%d' % n]['addr'])
+        s.newvar(3)
+        for k in range(n):
+            s.argc(k + 1, I(100 + k))
+        s.arg(n + 1, 3)
+        s.spawn(at, n + 1)
+        s.run()
+        s.label('%d arguments, P = 0' % n)
+        s.unifyc(3, I(0))
+        s.run()
     return s
 
 
@@ -174,6 +216,24 @@ def check(s, parts):
                     ok = got == '00%08x' % v
                 if not ok:
                     bad.append((label, 'r%d' % k, got, v))
+    for n in WIDE:
+        site, target, stub = s.wide[n]
+        lines = parts.get('%d arguments, P unbound' % n, [])
+        if not at(lines, site) or at(lines, target):
+            bad.append((n, 'the site not reached, or the goal ran unwaited'))
+        lines = parts.get('%d arguments, P = 0' % n, [])
+        st, tg = at(lines, stub), at(lines, target)
+        if len(st) != 1 or len(tg) != 1 or tg[0] < st[0]:
+            bad.append((n, 'stub %d target %d' % (len(st), len(tg))))
+            continue
+        regs = {}
+        for ln in lines[st[0] + 1:tg[0]]:
+            f = ln.split()
+            if f[0] == 'R':
+                regs[int(f[1])] = f[2]
+        for k in range(n):
+            if regs.get(k) != '00%08x' % (100 + k):
+                bad.append((n, 'r%d' % k, regs.get(k)))
     if 'E done' not in parts.get('P unbound', []):
         bad.append(('P unbound', 'no E done'))
     return bad
