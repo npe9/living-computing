@@ -165,23 +165,36 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   // is the address the refill has reached: below it the cache is valid,
   // at or above it the access goes to memory.
   Reg#(Word) fillR <- mkReg(0);
-  // One write port and a combinational 64:1 read (the EU reads an
-  // operand every clock).  The printed shape is 64x32x2 (Figure 1-1,
-  // p. 1-2): two read ports and one write.  bsc's mkRegFile* caps
-  // *statically reachable* read ports at five and counts call sites, so
-  // the two EU stages plus the probe exceed it even though the stages
-  // never read in the same clock; a Vector of Regs makes the reads
-  // combinational muxes with no structural cap.  The cost is LUTs, not
-  // ports: docs/area_analysis.md measured 12,107 LUT4 for this shape
-  // against 132 LUT4 for a RegFile.  That is the declared shape kept
-  // architecturally, not a netlist claim.  The array has no reset value:
-  // only [SP, MSP) is valid, and the flush/refill rules write every word
-  // before it can be read.
-  Vector#(64, Reg#(Word)) cache <- replicateM(mkRegU);
-  // mkRegU has no reset value, so Bluesim leaves the array undetermined
-  // until a word is stored.  The flush/refill engines and the EU all
-  // write through the one vector-write site below, so one written bit
-  // per word (64 bits) defines every read the machine or a harness can
+  // The array: 64 words with combinational reads (the EU reads an
+  // operand every clock), the printed 64x32x2 (Figure 1-1, p. 1-2).  It
+  // has no reset value: only [SP, MSP) is valid, and the flush/refill
+  // rules write every word before it can be read.
+  //
+  // Until 2026-11-24 it was a Vector of 64 Regs, a 64:1 x 32-bit mux at
+  // every read site: removing those reads saved 18k LUT4 of the
+  // privileged core (docs/fpga_area.md).  It is now RegFiles, which bsc
+  // emits as an array with one write port and combinational reads (block
+  // RAM on the SoC, fpga/sysram_filter.py).  Two writers can store in one
+  // clock (the EU and the refill, at different words), so there are two
+  // banks, one per writer, and `lvt` (a live-value table, one bit per
+  // word) says which bank holds the word's latest value; the EU wins a
+  // same-word clock, as before.  Each bank is two RegFile copies with
+  // identical writes, because bsc caps a RegFile at five read sites and
+  // counts every call site: copy A serves `read` and the flush, copy B
+  // `read2`.  Copy C serves only `cacheWord`, the harnesses' view
+  // (P9BootTb reads three argument words with it, which overflowed copy
+  // B); nothing reads it in the SoC, so synthesis drops it.
+  RegFile#(Bit#(6), Word) bankEA <- mkRegFileFull;
+  RegFile#(Bit#(6), Word) bankEB <- mkRegFileFull;
+  RegFile#(Bit#(6), Word) bankEC <- mkRegFileFull;
+  RegFile#(Bit#(6), Word) bankRA <- mkRegFileFull;
+  RegFile#(Bit#(6), Word) bankRB <- mkRegFileFull;
+  RegFile#(Bit#(6), Word) bankRC <- mkRegFileFull;
+  Reg#(Bit#(64)) lvt <- mkReg(0);
+  // A RegFile has no reset value, so the array is undetermined until a
+  // word is stored.  The flush/refill engines and the EU all write
+  // through the two write sites below, so one written bit per word (64
+  // bits) defines every read the machine or a harness can
   // make: a word never stored reads as zero, not 0xaa..., which is the
   // only value the model's memory contract allows.
   Reg#(Bit#(64)) written <- mkReg(0);
@@ -227,17 +240,19 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     return (a >= lo) && (a < hi);
   endfunction
 
-  // The array read: a combinational mux, shared by the EU's operand
-  // reads, the testbench probe and the flush engine, with the written
-  // mask supplying the zero for a word never stored.
-  function Word cacheAt(Word addr);
+  // The array read on copy A (`a`) or copy B: the live bank's word, with
+  // the written mask supplying the zero for a word never stored.
+  // Copy `k`: 0 is A, 1 is B, 2 is C.
+  function Word cacheAt(Bit#(2) k, Word addr);
     let i = cidx(addr);
-    return (written[i] == 1'b1) ? cache[i] : 32'd0;
+    Word e = (k == 0) ? bankEA.sub(i) : (k == 1) ? bankEB.sub(i) : bankEC.sub(i);
+    Word r = (k == 0) ? bankRA.sub(i) : (k == 1) ? bankRB.sub(i) : bankRC.sub(i);
+    return (written[i] == 1'b1) ? ((lvt[i] == 1'b1) ? e : r) : 32'd0;
   endfunction
 
-  function Word readWord(Word addr, Word lo, Word hi);
+  function Word readWord(Bit#(2) k, Word addr, Word lo, Word hi);
     return (inRange(addr, lo, hi) && (addr < fillR))
-             ? cacheAt(addr) : 0;
+             ? cacheAt(k, addr) : 0;
   endfunction
 
   rule boxStep;
@@ -382,20 +397,29 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     // reference reg_64x32 has no parallel reset); only [SP, MSP) is
     // architecturally valid, and the flush/refill rules fill it.  Each
     // word has one next value per clock: the EU's store wins over the
-    // refill's word for the same address.
+    // refill's word for the same address: the EU writes its bank and
+    // the refill its own, and `lvt` records which bank is live.
+    Bool ewAny = !doReset && euCacheWr;
+    Bool rwAny = !doReset && refillWr &&
+                 !(ewAny && (cidx(euWrAddr) == cidx(refCap)));
     Bit#(64) nWritten = written;
-    for (Integer i = 0; i < 64; i = i + 1) begin
-      Bool ew = !doReset && euCacheWr && (cidx(euWrAddr) == fromInteger(i));
-      Bool rw = !doReset && refillWr && (cidx(refCap) == fromInteger(i));
-      if (ew) begin
-        cache[i] <= euWrData;
-        nWritten[i] = 1'b1;
-      end else if (rw) begin
-        cache[i] <= mem.readData();
-        nWritten[i] = 1'b1;
-      end
+    Bit#(64) nLvt = lvt;
+    if (ewAny) begin
+      bankEA.upd(cidx(euWrAddr), euWrData);
+      bankEB.upd(cidx(euWrAddr), euWrData);
+      bankEC.upd(cidx(euWrAddr), euWrData);
+      nWritten[cidx(euWrAddr)] = 1'b1;
+      nLvt[cidx(euWrAddr)] = 1'b1;
+    end
+    if (rwAny) begin
+      bankRA.upd(cidx(refCap), mem.readData());
+      bankRB.upd(cidx(refCap), mem.readData());
+      bankRC.upd(cidx(refCap), mem.readData());
+      nWritten[cidx(refCap)] = 1'b1;
+      nLvt[cidx(refCap)] = 1'b0;
     end
     written <= nWritten;
+    lvt <= nLvt;
 
     // ---- the single memory write port ------------------------------
     // The flush wins; a non-cached EU write waits in memWrQ.
@@ -410,7 +434,7 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     end else if (flushStep) begin
       doMemWr = True;
       mwAddr  = flushAddr;
-      mwData  = cacheAt(flushAddr);
+      mwData  = cacheAt(0, flushAddr);
       if (euMemWr) nPend = tagged Valid c;
     end else if (pendingMemWr matches tagged Valid .p) begin
       doMemWr = True;
@@ -456,8 +480,8 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   method Word csp() = spR;
   method Word shad() = shadR;
 
-  method Word read(Word addr, Word lo, Word hi) = readWord(addr, lo, hi);
-  method Word read2(Word addr, Word lo, Word hi) = readWord(addr, lo, hi);
+  method Word read(Word addr, Word lo, Word hi) = readWord(0, addr, lo, hi);
+  method Word read2(Word addr, Word lo, Word hi) = readWord(1, addr, lo, hi);
 
   method Action commit(ScCmd c);
     cmdW <= tagged Valid c;
@@ -473,7 +497,7 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   method Bit#(32) refills() = refillCnt;
   method Word minSpSeen() = minSpR;
   method Word maxSpSeen() = maxSpR;
-  method Word cacheWord(Word addr) = readWord(addr, spR, fillR);
+  method Word cacheWord(Word addr) = readWord(2, addr, spR, fillR);
   method Bool cached(Word addr) = inRange(addr, spR, fillR);
   method Word fillWatermark() = fillR;
 
