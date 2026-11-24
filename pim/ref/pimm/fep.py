@@ -30,8 +30,12 @@ OURS, each for want of the FEP's own code:
   - an open of a file that is not there is answered with status 5;
   - the unit of getb's count: `getb_unit` bytes per unit, 1 by
     default.  The IPL does not determine it; the kernel's file
-    device counts bytes (server/fep/file/file_dvcb.kl1: getb(Size)
-    asks for Size*2+1).  docs/binary_reverse_engineering.md 1.4;
+    device asks for Size*2+1 (server/fep/file/file_dvcb.kl1:
+    getb(Size)), and counted in bytes every reply is odd, widened by a
+    zero byte, the data a byte late (pimos.conf read as with_console,
+    then end_of_file): longrun_ipl.py gives the kernel 2, the count in
+    characters (2026-11-24, from that run).
+    docs/binary_reverse_engineering.md 1.4;
   - a getb at the end of the data is answered with status 2 every
     time it is asked (the loader asks more than once);
   - a reply longer than the RECEIVE's length is cut into continued
@@ -41,8 +45,19 @@ OURS, each for want of the FEP's own code:
   - close is answered with status 1;
   - append_open (203) is accepted, the bytes appended kept in
     Fep.appended (OURS; the kernel's syslog, Fep.request);
-  - create_timer (310) is accepted (OURS, Fep.request), and
-    get_date_time (304) answered with a fixed clock (DATE, TIME);
+  - create_timer (310) is accepted (OURS, Fep.request),
+    get_date_time (304) answered with a fixed date and the machine's
+    clock as the time of day (DATE, Fep.ticks), and the timer's close
+    (60) accepted;
+  - from fep_attributes (240) on, the kernel's start and a local
+    login as docs/fep_services.md 6 and 7 lay them out (2026-11-24):
+    240, the string-I/O programs (601, 620), the window calls, close
+    (60) on every kind, a request the FEP holds (the login server's
+    io(1), a window's getl) answered by an event the bench asks for
+    when the machine is idle (Fep.idle: the scripted login of 7.5),
+    and abort (70) answering a held request with status 6 (6.7).
+    Each answer's marks (SOURCED, READ, HELD FILE, OURS) are at its
+    constant below;
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -65,13 +80,75 @@ import struct
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
 READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
 CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
+# docs/fep_services.md 2 (the commands, from pimos.vmac):
+FEP_ATTRIBUTES, CREATE_STRING_IO, IO = 240, 601, 620
+CREATE_WINDOW, GETL, PUTB, FLUSH = 104, 110, 111, 112
+WINDOW_ANSWERED = (127, 130, 132, 141, 142, 143, PUTB, FLUSH)  # reshape, set_title,
+# set_font, activate, deactivate, show, putb, flush: {Id, 1}
+# (fep_services.md 6.8, READ for 127, 132, 143; 7.5)
+ABORTED = 6                        # fep#aborted (pimos.vmac)
+# Text as the PSI keeps it: 16-bit JIS X 0208, two bytes a character,
+# the high byte first (fep_services.md 7.5): the letters and digits in
+# row 23, the punctuation of asm/psdpim.py's table in row 21
+_PUNCT = {' ': 0x21, ',': 0x24, '.': 0x25, ':': 0x27, '_': 0x32, '/': 0x3f,
+          '-': 0x5d, '<': 0x63, '>': 0x64, '!': 0x2a, '?': 0x29, '*': 0x76}
+
+
+def jis(text):
+    out = b''
+    for ch in text:
+        out += bytes([0x23, ord(ch)]) if ch.isalnum() else bytes([0x21, _PUNCT[ch]])
+    return out
+
+
+def unjis(data):
+    """16-bit JIS bytes as text (another code as <hex>)."""
+    back = {v: k for k, v in _PUNCT.items()}
+    out = ''
+    for i in range(0, len(data) - 1, 2):
+        hi, lo = data[i], data[i + 1]
+        out += chr(lo) if hi == 0x23 else back[lo] if hi == 0x21 and lo in back \
+            else '<%02x%02x>' % (hi, lo)
+    return out
+
+
+# 240's answer {Id, 1, Code, OS, Host, FepVer, Dir, FileVer, Comment},
+# as the PSI's refute_server_command/3 makes it (fep_services.md 6.3):
+# Code 0 (fep#jiskanji), FepVer "V0.45", Dir ">" (the path delimiter,
+# 7.8), FileVer ".", Comment "" READ FROM CONSTANTS; OS is "SIMPOS "
+# ++ SIMPOS's version and Host the node name, neither held: "V7" and
+# "PSI" are OURS
+ATTRIBUTES = [0, jis('SIMPOS V7'), jis('PSI'), jis('V0.45'), jis('>'), jis('.'), b'']
+# the string-I/O programs 601 makes (fep_services.md 6.4)
+REPLIER, SERVER, USER_DEVICE = ('pimos_remote_login_replier', 'pimos_remote_login_server',
+                                'simpos_user_device')
+# The scripted login (fep_services.md 7.5): Node "local" (SOURCED,
+# login.kl1:1256), RN "pmpsi" and RP "" (OURS; the name HELD in
+# login.com), UN "pimos" and UP "" (HELD FILE, pimos.logins), the ID 1
+# (OURS)
+LOGIN = dict(id=1, node='local', rn='pmpsi', rp='', un='pimos', up='')
+
+
+def login_record(id, node, rn, rp, un, up):
+    """NI, the answer to the server's held io(1): [ID, the lengths of
+    Node, RN, RP, UN, UP] then the five strings, 16-bit elements
+    (fep_services.md 6.5, 7.5; login.kl1 get_node_info/3)."""
+    strs = [node, rn, rp, un, up]
+    head = b''.join(n.to_bytes(2, 'big') for n in [id] + [len(x) for x in strs])
+    return head + b''.join(jis(x) for x in strs)
+
+
 GET_DATE_TIME = 304                # pimos.vmac:95 fep#get_date_time
-# the FEP's clock, OURS: fixed, so every run is the same.  The date
-# the banner's, 20-May-1993, as PIMOS counts dates (days from
-# 01-Jan-1901: utility/timer/date.kl1 get_date_count, check_input),
-# the time 00:00:00 (milliseconds from midnight: utility/timer/
-# time.kl1 get_time_count)
-DATE, TIME = 33742, 0
+# the FEP's clock, OURS, the same on every run.  The date the
+# banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901:
+# utility/timer/date.kl1 get_date_count, check_input); the time of
+# day (milliseconds from midnight: utility/timer/time.kl1
+# get_time_count) follows the machine's clock (pimm.py timer(), set
+# into Fep.ticks before each command, 1/16 msec), so midnight is the
+# moment the processor booted (2026-11-24; it was a fixed 0).  PIMOS
+# takes the difference of the two as its time equation (server/fep/
+# fep/time_sv.kl1 wait_date_time/2, compare/4)
+DATE = 33742
 NORMAL, EOD, ABNORMAL = 1, 2, 5
 # scsi_command's Result for a unit with no device (OURS, Fep.command)
 NO_DEVICE = 8 << 8
@@ -141,9 +218,51 @@ class Fep:
         self.files = {}         # device id -> [bytes, position]
         self.appending = {}     # device id -> the path it appends to
         self.timers = set()     # device ids of timers made
+        self.strio = {}         # device id -> the string-I/O program's name (601)
+        self.windows = set()    # device ids of windows made (104)
+        self.listening = set()  # login server devices whose io(0, "local") was answered
+        self.held = {}          # device id -> 'login' or 'getl': a request the FEP holds
+        self.script = [('login', LOGIN)]   # the events Fep.idle takes, in order (OURS)
+        self.log = []           # (device id, text): the replier's texts, a window's putb
+        self.ticks = 0          # the machine's clock (1/16 msec), set by pimm.py
         self.appended = {}      # path -> the bytes appended to it (OURS)
         self.replies = []       # packets to give, in order
         self.stopped = False
+
+    def known(self, dev):
+        return (dev in self.files or dev in self.appending or dev in self.timers
+                or dev in self.strio or dev in self.windows)
+
+    def string_io(self, dev, name, command, data):
+        """620 io(Command, Data) on a string-I/O device (fep_services.md
+        6.4, 6.10, 7.5)."""
+        if name == REPLIER and command in (0, 2):
+            return [NORMAL, b'']
+        if name == REPLIER and command == 1:
+            # a text for the user; its element 0 is the login's ID.  The
+            # PSI answers one character, 0 when it was sent (6.4)
+            self.log.append((dev, unjis(data[2:])))
+            return [NORMAL, bytes(2)]
+        if name == SERVER and command == 0:
+            kind = unjis(data)
+            if kind == 'local':
+                self.listening.add(dev)
+                return [NORMAL, b'']
+            if kind == 'tcpip':
+                # no network here (fep_services.md 7.5, OURS): PIMOS
+                # shows CANNOT MAKE A TCPIP LOGIN SERVICE!! and goes on
+                return [ABNORMAL]
+        if name == SERVER and command == 1 and dev in self.listening:
+            # waits for a login: held (fep_services.md 7.3 row 1)
+            self.held[dev] = 'login'
+            return None
+        if name == USER_DEVICE and command == 0:
+            # [len Name, len Pass] ++ Name ++ Pass: the user's home,
+            # ">sys>user>" ++ Name, PIMOS's own default (SOURCED,
+            # login_p.kl1:63; fep_services.md 7.5)
+            n = int.from_bytes(data[:2], 'big')
+            return [NORMAL, jis('>sys>user>') + data[4:4 + 2 * n]]
+        raise FepError('device %d: io(%r, %r) on %s' % (dev, command, data, name))
 
     def command(self, unit, lun, cdb, length, direction, data):
         """One scsi_command.  Returns (result, bytes received), or None
@@ -217,6 +336,32 @@ class Fep:
         raise FepError('command %s on LUN %d, direction %d, length %d'
                        % (cdb.hex(), lun, direction, length))
 
+    def answer(self, dev, reply):
+        """Queue a reply packet for the device."""
+        self.messages.append(('<', dev, reply))
+        self.replies.append(struct.pack('>ii', dev, 0) + pack_message(reply))
+
+    def idle(self):
+        """The bench's question when the machine has nothing to run and
+        no SCSI command finishes (fep_services.md 7.5, 7.7 item 1): the
+        next scripted event answers a held request.  True if a reply
+        was queued.  OURS: the idle test and the script."""
+        if not self.script:
+            return False
+        kind, what = self.script[0]
+        for dev, k in sorted(self.held.items()):
+            if k == kind == 'login':
+                self.script.pop(0)
+                del self.held[dev]
+                self.answer(dev, [NORMAL, login_record(**what)])
+                return True
+            if k == kind == 'getl':
+                self.script.pop(0)
+                del self.held[dev]
+                self.answer(dev, [NORMAL, jis(what)])
+                return True
+        return False
+
     def packet(self, data):
         if len(data) < 8:
             raise FepError('a packet of %d bytes' % len(data))
@@ -230,8 +375,7 @@ class Fep:
         self.messages.append(('>', dev, msg))
         reply = self.request(dev, msg)
         if reply is not None:
-            self.messages.append(('<', dev, reply))
-            self.replies.append(struct.pack('>ii', dev, 0) + pack_message(reply))
+            self.answer(dev, reply)
 
     def request(self, dev, msg):
         cmd = msg[0]
@@ -268,10 +412,48 @@ class Fep:
             # status)
             self.timers.add(dev)
             return [NORMAL]
+        if cmd == FEP_ATTRIBUTES and len(msg) == 2 and not self.known(dev):
+            # {Id, 240, Node}: the device ends with the reply, no close
+            # (fep_services.md 2.2, 6.3)
+            return [NORMAL] + ATTRIBUTES
+        if cmd == CREATE_STRING_IO and len(msg) == 5 and not self.known(dev):
+            # {C, 601, Node, User, Password, Name}: an object of the
+            # program named (fep_services.md 6.4); the three a login
+            # uses
+            name = unjis(msg[4])
+            if name not in (REPLIER, SERVER, USER_DEVICE):
+                raise FepError('device %d: create_string_io of %r' % (dev, name))
+            self.strio[dev] = name
+            return [NORMAL]
+        if cmd == IO and len(msg) == 3 and dev in self.strio and dev not in self.held:
+            return self.string_io(dev, self.strio[dev], msg[1], msg[2])
+        if cmd == CREATE_WINDOW and len(msg) == 4 and not self.known(dev):
+            # {W, 104, Node, User, Password} (fep_services.md 7.3 row 7)
+            self.windows.add(dev)
+            return [NORMAL]
+        if cmd in WINDOW_ANSWERED and dev in self.windows and dev not in self.held:
+            if cmd == PUTB:
+                self.log.append((dev, unjis(msg[1])))
+            return [NORMAL]
+        if cmd == GETL and dev in self.windows and dev not in self.held:
+            # held until a scripted line (fep_services.md 7.5)
+            self.held[dev] = 'getl'
+            return None
+        if cmd == CLOSE and len(msg) == 1 and (dev in self.strio or dev in self.windows):
+            # fep_services.md 6.10: one reply [1]
+            self.strio.pop(dev, None)
+            self.windows.discard(dev)
+            self.listening.discard(dev)
+            return [NORMAL]
+        if cmd == ABORT and len(msg) == 1 and dev in self.held:
+            # no reply to the 70; the request it interrupts gets 6
+            # (fep_services.md 6.7)
+            del self.held[dev]
+            return [ABORTED]
         if cmd == GET_DATE_TIME and len(msg) == 1 and dev in self.timers:
             # {Id, 304}: the reply {Status, Date, Time}
             # (bios/fep_module/time_dvc.kl1 device_io1/13)
-            return [NORMAL, DATE, TIME]
+            return [NORMAL, DATE, (self.ticks // 16) % 86400000]
         if cmd == GETB and len(msg) == 2 and dev in self.files:
             f = self.files[dev]
             chunk = f[0][f[1]:f[1] + (self.getb_bytes or msg[1] * self.getb_unit)]
@@ -279,6 +461,19 @@ class Fep:
                 return [EOD]
             f[1] += len(chunk)
             return [NORMAL, chunk]
+        if cmd == CLOSE and len(msg) == 1 and dev in self.timers:
+            # {Id, 60}: the timer device's end (bios/fep_module/
+            # time_dvc.kl1 device_io1/13 at the stream's end, then
+            # device_terminate/5: normal goes on to read the reply).
+            # Accepted, OURS, as a file's close
+            self.timers.discard(dev)
+            return [NORMAL]
+        if cmd == FLUSH and len(msg) == 1 and dev in self.files:
+            # {Id, 112} on a file read-opened: {Id, 1} (bios/fep_module/
+            # file_dvc.kl1:314; docs/fep_services.md 2.2, 6.2: the
+            # PSI's pimos_file flush/3).  PIMOS flushes pimos.conf
+            # after its last getb
+            return [NORMAL]
         if cmd == CLOSE and len(msg) == 1 and dev in self.files:
             del self.files[dev]
             return [NORMAL]

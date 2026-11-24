@@ -9,8 +9,10 @@
 //                atoms.  Binding a hooked variable answers UWake with
 //                its suspension list: the caller has the goal box wake
 //                it.  Two lists or two vectors of the same size (up to
-//                six) answer UGoal: they are not unified here, a goal
-//                of the stub unify_step does it (asm/pimm_stubs.py).
+//                six), or two vectors of seven or more (their sizes are
+//                compared in the goal, 2026-11-24), answer UGoal: they
+//                are not unified here, a goal of the stub unify_step
+//                does it (asm/pimm_stubs.py).
 //                Anything else is UUnimp.
 //   step(a, b, i)  that goal's step: unify element i of a and of b,
 //                each taken with its MRB on if its structure's is.
@@ -165,7 +167,7 @@ module mkPimmDBox#(MemPort mem)(PimmDBox);
       else if ((a.tag | 1) != (b.tag | 1)) r = tagged UFail;
       else if (isInt(a) || isAtom(a)) r = (a.val == b.val) ? tagged UOk : tagged UFail;
       else if ((a.tag & 8'hfe) == tag_LISTo
-               || ((a.tag & 8'hfe) >= tag_VECT0o + 2 && (a.tag & 8'hfe) <= tag_VECT0o + 12))
+               || ((a.tag & 8'hfe) >= tag_VECT0o + 2 && (a.tag & 8'hfe) <= tag_VECT0o + 14))
         r = tagged UGoal { a: a, b: b };
       else r = tagged UUnimp;
       unifyQ.enq(r);

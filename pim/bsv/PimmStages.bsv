@@ -79,8 +79,9 @@ endinterface
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
-               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
-               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
+               XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
+               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
@@ -124,6 +125,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
+  Reg#(Bit#(32))     exLo    <- mkRegU;     // the *_extended built-ins' second output
+  Reg#(Bit#(8))      apN     <- mkRegU;     // apply: the number of arguments
+  Reg#(Addr)         apAt    <- mkRegU;     // ... and the first one's cell
+  // the clock (pimm.py INSTRUCTIONS_PER_TICK): the system timer in 1/16
+  // msec, one tick per 423 instructions decoded (OURS rate from 615
+  // KLIPS on append), counted before the instruction; clk holds the
+  // value for the instruction in hand
+  Reg#(Bit#(9))      tickSub <- mkReg(0);
+  Reg#(Bit#(48))     ticks   <- mkReg(0);
+  Reg#(Bit#(48))     clk     <- mkReg(0);
   // multiply_bignum_by_word: the word in hand, the length, Y, the carry,
   // the pass (False: the carry only; True: the words written), whether
   // the product is one word longer, the new string
@@ -134,6 +145,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bool)         bnPass2 <- mkRegU;
   Reg#(Bool)         bnExtra <- mkRegU;
   Reg#(Cell)         bnDst   <- mkRegU;
+  // subtract_bignum (with bnN = X's length, bnI, bnCarry the borrow,
+  // bnPass2, bnDst): Y, its length, whether Y is the larger, the most
+  // significant word not 0 (pass 1), the word in hand, the outputs
+  Reg#(Cell)         bsY     <- mkRegU;
+  Reg#(Bit#(32))     bsM     <- mkRegU;
+  Reg#(Bool)         bsSwap  <- mkRegU;
+  Reg#(Bit#(32))     bsLast  <- mkRegU;
+  Reg#(Bit#(32))     bsW     <- mkRegU;
+  Reg#(Cell)         bsZ     <- mkRegU;
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
   Reg#(ScsiResult)   scR     <- mkRegU;     // scsi_command's outputs, being written
   // the reductions of the goal in hand: one per execute and one for its
@@ -173,7 +193,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
-                  || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word;
+                  || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word
+                  || op == op_subtract_bignum || op == op_b_vector
+                  || op == op_code_to_predicate || op == op_search_character
+                  || op == op_add_extended || op == op_subtract_extended
+                  || op == op_multiply_extended || op == op_divide_extended;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -181,6 +205,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // opcode FC likewise: 3 is the guard floating_point_not_less_than(F1,
   // F2), registers y and z
   Bool isFloatGE = op == 16'h23fc && x == 3;
+  // opcode 6E likewise: 8 is the guard extended_floating_point(X,
+  // ^NewX), registers y and z
+  Bool isExtFloat = op == 16'h236e && x == 8;
   // a vector pointer, short (0..6 elements, the size in the tag) or long
   function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
   function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
@@ -196,7 +223,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
-  function Action next() = finish(tagged Next (pc + 1));
+  // get_constant's constant is the next cell: its unification goes on two on
+  function Action next() = finish(tagged Next (pc + (op == op_get_constant ? 2 : 1)));
 
   function Action stop(End e0);
     action
@@ -242,8 +270,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // that are waited for: MinPrio, MaxPrio, ExcepMask, or the handle
   Bool shoenHere = op == op_create_shoen || op == op_start_shoen
                 || op == op_shoen_statistics || op == op_remove_shoen
-                || op == op_stop_shoen || op == op_abort_shoen || op == op_raise;
-  Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
+                || op == op_stop_shoen || op == op_abort_shoen || op == op_raise
+                || op == op_add_shoen_resource || op == op_allow_shoen_resource_report;
+  Bit#(3) shoenIns = (op == op_create_shoen || op == op_add_shoen_resource) ? 3 : 1;
 
   // wait_vector_N, N = 0..6
   Bool isWaitVector = op == op_wait_vector_0 || op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5
@@ -253,7 +282,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_switch_on_constant
                       || op == op_wait || op == op_wait_integer || op == op_string
                       || op == op_integer || op == op_wait_constant || op == op_floating_point
-                      || op == op_atom || op == op_code
+                      || op == op_atom || op == op_code || op == op_module
                       || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
                       || op == op_switch_on_non_vector || op == op_vector || op == op_wait_vector;
@@ -262,7 +291,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
                       || op == op_add || op == op_exclusive_or || op == op_string_element
                       || op == op_mark_element || op == op_divide || op == op_shift_left
-                      || op == op_not_equal || op == op_multiply || op == op_diff;
+                      || op == op_not_equal || op == op_multiply || op == op_diff
+                      || op == op_bignum_less_than || op == op_bignum_not_less_than;
   function Bool isAtomic(Cell c) = (c.tag & 8'hfe) == tag_INTo || (c.tag & 8'hfe) == tag_ATOMo;
   function Bool sameAtomic(Cell p, Cell q) = (p.tag & 8'hfe) == (q.tag & 8'hfe) && p.val == q.val;
   // an atom instruction is one cell: opcode byte = base | register, the
@@ -280,8 +310,34 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_put_vector_4 || op == op_put_vector_5 || op == op_put_vector_6;
   Bit#(8) vectorN = ins.val[31:24] - op_put_vector_0[7:0];
 
+  // the vector of the arguments from the 11th: a short one of exactly
+  // those, or a long one (7 or more) whose size the vector box gives
+  function Action spreadStart;
+    action
+      Cell v = regs.a(11);
+      opA <= v;
+      packK <= 0;
+      if (isLongVec(v)) begin
+        vbox.info(v);
+        st <= XPackInfo;
+      end
+      else if (x > 16 || (v.tag & 8'hfe) != tag_VECT0o + ((truncate(x) - 10) << 1))
+        stop(EndUnimp);
+      else begin
+        vbox.element(v, 0);
+        st <= XPack;
+      end
+    endaction
+  endfunction
+
   rule decode (st == XDecode);
     traceI(pc, ins);
+    clk <= ticks;
+    if (tickSub == 422) begin
+      tickSub <= 0;
+      ticks <= ticks + 1;
+    end
+    else tickSub <= tickSub + 1;
     if (ins.tag != tag_GMI && ins.tag != tag_KLB) stop(EndError);
     // ---- clause selection
     else if (op == op_try_me_else) begin
@@ -324,7 +380,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;
     end
-    else if (isTagAndValue || isFloatGE) begin
+    else if (isTagAndValue || isFloatGE || isExtFloat) begin
       dbox.deref(regs.r(y));
       st <= XDeref1;
     end
@@ -381,6 +437,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.unify(regs.r(x), intCell(c16));
       st <= XUnify;
     end
+    else if (op == op_get_constant) begin
+      // get_constant(X, C): r[x] unified with the whole next cell
+      dbox.unify(regs.r(x), ins2);
+      st <= XUnify;
+    end
     else if (isGetAtom) begin
       dbox.unify(regs.r(zeroExtend(ins.val[28:24])), atomHere);
       st <= XUnify;
@@ -420,10 +481,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XCPr1;
     end
     else if (op == op_system_timer) begin
-      // system_timer(^X1, ^X2), a guard with no input: the model's
-      // clock stands at 0 (ours), r[x] then r[y]
-      regs.wr(x, intC(0));
+      // system_timer(^X1, ^X2), a guard with no input: the clock's
+      // upper 16 bits, then (sysTimerLow) its lower 32
+      regs.wr(x, intC(zeroExtend(ticks[47:32])));
       st <= XSTim;
+    end
+    else if (op == op_unbound) begin
+      // unbound(X, ^Result): never waits (pimm.py i_unbound, after
+      // VPIM): X dereferenced, then {0, address, X} or {X}
+      dbox.deref(regs.r(x));
+      st <= XUnb1;
     end
     else if (op == op_current_node) begin
       // current_node(^NodeNumber, ^TotalNode): no input, never waits.
@@ -550,15 +617,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // here, as the goal is made (where the firmware does it is not
       // known), and the record holds every argument.
       if (x > 11) begin
-        // a short vector of exactly the arguments left over
-        if (x > 16 || (regs.a(11).tag & 8'hfe) != tag_VECT0o + ((truncate(x) - 10) << 1))
-          stop(EndUnimp);
-        else begin
-          opA <= regs.a(11);
-          packK <= 0;
-          vbox.element(regs.a(11), 0);
-          st <= XPack;
-        end
+        // a vector of exactly the arguments left over
+        spreadStart;
       end
       else begin
         gbox.record(fromInteger(lay_READY), labelOf(pc, c16), x, True, True);
@@ -580,8 +640,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_enqueue_goal_external) begin
       // enqueue_goal with the predicate found as execute_external
-      // finds it (the same operand type, klb_opr.kl1 p(c8_c16_ext))
-      if (x > 11) stop(EndUnimp);
+      // finds it (the same operand type, klb_opr.kl1 p(c8_c16_ext));
+      // more than 11 arguments: their vector spread first, as for
+      // enqueue_goal (rule spread)
+      if (x > 11) begin
+        spreadStart;
+      end
       else begin
         hbox.external(labelOf(pc, c16));
         st <= XExt;
@@ -618,6 +682,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       Bit#(32) size = ((sa.tag & 8'hfe) == tag_LISTo) ? 2 : zeroExtend(((sa.tag & 8'hfe) - tag_VECT0o) >> 1);
       let ix = regs.r(z).val;
       if (pc != unifyStepStub) stop(EndUnimp);
+      else if (isLongVec(sa)) begin
+        // vectors of seven or more: sizes and elements from the
+        // descriptors (rules uLong1, uLong2)
+        vbox.info(sa);
+        st <= XUL1;
+      end
       else if (ix == size) next;
       else begin
         regs.wr(z, intC(ix + 1));
@@ -646,7 +716,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ---- guards ----------------------------------------------------------
   rule deref1 (st == XDeref1);
     let a <- dbox.derefResult;
-    if (isTagAndValue) begin
+    if (isExtFloat) begin
+      // the type test (pimm.py i_extended_floating_point): tag 3Fh;
+      // anything else fails, an unbound X noted; an extended float is
+      // refused (none can be made here)
+      if (isRef(a)) note(a);
+      if (a.tag == 8'h3f) stop(EndUnimp);
+      else guardFail;
+    end
+    else if (isTagAndValue) begin
       // the tag as it stands (whether an MRB bit is returned is not
       // established), then the value
       if (isRef(a)) begin
@@ -668,6 +746,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShow;
       end
       else next;
+    end
+    else if (op == op_module) begin
+      // guard module(X, ^Size): the count in the module's descriptor
+      // (pimm.py i_module)
+      if (isRef(a)) note(a);
+      if (a.tag != tag_MOD) guardFail;
+      else begin
+        smem.read(cellAddr(a));
+        st <= XModG;
+      end
     end
     else if (op == op_code) begin
       // guard code(X, ^Arity, ^Module, ^Position): the whole tag is
@@ -871,6 +959,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       note(isRef(a) ? a : b);
       guardFail;
     end
+    else if (op == op_bignum_less_than || op == op_bignum_not_less_than) begin
+      // two 32-bit strings, unsigned bignums (pimm.py bignum_order,
+      // after VPIM): anything else fails; rules bc1..bc6
+      if (!isStrg(a) || !isStrg(b)) guardFail;
+      else begin
+        opA <= a;
+        bsY <= b;
+        sbox.info(a);
+        st <= XBc1;
+      end
+    end
     else if (isFloatGE) begin
       // "If both are floating points and ... succeeds.  Otherwise it
       // fails": no floating point here, so two floats are refused
@@ -1061,6 +1160,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     next;
   endrule
 
+  // the double-precision integers: the high word (or borrow, or
+  // quotient) is written, then the low one (or remainder) here
+  rule mulX (st == XMulX);
+    let p <- mbox.wide;
+    regs.wr(z, intC(p[63:32]));
+    exLo <= p[31:0];
+    st <= XExtLo;
+  endrule
+
+  rule divX (st == XDivX);
+    let d <- mbox.result;
+    regs.wr(operand[3], intC(d.quotient));
+    exLo <= d.remainder;
+    st <= XExtLo;
+  endrule
+
+  rule extLow (st == XExtLo);
+    regs.wr(op == op_divide_extended ? operand[4] : operand[3], intC(exLo));
+    finish(tagged Next afterBuiltin);
+  endrule
+
   rule bDivided (st == XBDiv);
     let d <- mbox.result;
     regs.wr(z, intC(op == op_b_divide ? d.quotient : d.remainder));
@@ -1089,7 +1209,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   // current_node: the second output, the total number of nodes
   rule sysTimerLow (st == XSTim);
-    regs.wr(y, intC(0));
+    regs.wr(y, intC(clk[31:0]));
     next;
   endrule
 
@@ -1127,6 +1247,26 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   // an element of two structures unified: the instruction is taken again
+  rule uLong1 (st == XUL1);
+    let r <- vbox.result;
+    opA <= mkCell(regs.r(x).tag, r.b.val);    // a's first element
+    opB <= r.a;                               // a's size
+    vbox.info(regs.r(y));
+    st <= XUL2;
+  endrule
+
+  rule uLong2 (st == XUL2);
+    let r <- vbox.result;
+    let ix = regs.r(z).val;
+    if (r.a.val != opB.val) stop(EndFail);
+    else if (ix == opB.val) next;
+    else begin
+      regs.wr(z, intC(ix + 1));
+      dbox.step(mkCell(opA.tag, opA.val + ix), mkCell(regs.r(y).tag, r.b.val + ix), 0);
+      st <= XUStep;
+    end
+  endrule
+
   rule unifyStepped (st == XUStep || st == XMiU);
     let r <- dbox.unifyResult;
     case (r) matches
@@ -1258,12 +1398,25 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     next;
   endrule
 
+  rule spreadInfo (st == XPackInfo);
+    let r <- vbox.result;
+    if (r.a.val != zeroExtend(x) - 10) stop(EndUnimp);
+    else begin
+      vbox.element(opA, 0);
+      st <= XPack;
+    end
+  endrule
+
   rule spread (st == XPack);
     let r <- vbox.result;
     if (!r.ok) stop(EndUnimp);          // the vector is too short
     else begin
       regs.wa(11 + packK, r.a);
-      if (packK + 11 == x) begin
+      if (packK + 11 == x && op == op_enqueue_goal_external) begin
+        hbox.external(labelOf(pc, c16));
+        st <= XExt;
+      end
+      else if (packK + 11 == x) begin
         gbox.record(fromInteger(lay_READY), labelOf(pc, c16), x, True, True);
         st <= XEnq;
       end
@@ -1478,6 +1631,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XSo1;
       end
     end
+    else if (op == op_subtract_bignum) begin
+      // subtract_bignum(BigX, BigY, ^Borrow, ^BigZ): rules bs1..bsOut.
+      // Either not a string: the built-in's exception, refused
+      if (!isStrg(a) || !isStrg(b)) stop(EndUnimp);
+      else begin
+        opA <= a;
+        bsY <= b;
+        sbox.info(a);
+        st <= XBs1;
+      end
+    end
     else if (op == op_multiply_bignum_word) begin
       // multiply_bignum_by_word(BigX, Y, ^BigZ): rules bn1..bn8.  Not a
       // string, or Y not an integer: the built-in's exception, refused
@@ -1525,8 +1689,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // but a code and a vector of up to six is the built-in's
       // exception or not modelled; the count is checked against the
       // predicate head, two cells before the code
-      if (a.tag != tag_COD || !isVec(b) || (b.tag & 8'hfe) > tag_VECT0o + 12) stop(EndUnimp);
+      // a vector of 7 to 16: its size and first element from the
+      // vector box
+      if (a.tag != tag_COD || !isVec(b)) stop(EndUnimp);
+      else if (isLongVec(b)) begin
+        vbox.info(b);
+        st <= XApInfo;
+      end
       else begin
+        apN <= zeroExtend(((b.tag & 8'hfe) - tag_VECT0o) >> 1);
+        apAt <= cellAddr(b);
         smem.read(cellAddr(a) - 2);
         st <= XAp1;
       end
@@ -1584,13 +1756,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_set_timer) begin
-      // set_timer(Time, ^Wakeup): with the clock at 0 (ours) a time
-      // reached, (0 - Time) mod 2^32 < 2^31, gives Wakeup = 0; a time
+      // set_timer(Time, ^Wakeup): a time reached, (now - Time) mod 2^32
+      // < 2^31, gives Wakeup = now (the clock's lower 32 bits); a time
       // still to come is refused
-      Bit#(32) d = 0 - a.val;
+      Bit#(32) d = clk[31:0] - a.val;
       if (!isInt(a) || d[31] == 1) stop(EndUnimp);
       else begin
-        regs.wr(y, intC(0));
+        regs.wr(y, intC(clk[31:0]));
         finish(tagged Next afterBuiltin);
       end
     end
@@ -1609,6 +1781,70 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         vbox.markElement(a, b.val);     // V1 still holds the element
         st <= XBVEl;
+      end
+    end
+    else if (op == op_add_extended || op == op_subtract_extended) begin
+      // add_extended(X, Y, ^Carry, ^Zl), subtract_extended(X, Y,
+      // ^Borrow, ^Z), unsigned (pimm.py i_add_extended): the carry or
+      // borrow, then the low word (rule extLow)
+      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        Bit#(33) s = op == op_add_extended ? zeroExtend(a.val) + zeroExtend(b.val)
+                                           : zeroExtend(a.val) - zeroExtend(b.val);
+        regs.wr(z, intC(zeroExtend(s[32])));
+        exLo <= s[31:0];
+        st <= XExtLo;
+      end
+    end
+    else if (op == op_multiply_extended) begin
+      // multiply_extended(X, Y, ^Zh, ^Zl): the multiply box, unsigned
+      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        mbox.multiplyAdd(a.val, b.val, 0);
+        st <= XMulX;
+      end
+    end
+    else if (op == op_divide_extended) begin
+      // divide_extended(Xh, Xl, Y, ^Z, ^Mod): the divide box, 64 by 32
+      // bits unsigned; Y = 0 or Xh >= Y is the exception: not modelled
+      if (!isInt(a) || !isInt(b) || !isInt(c) || c.val == 0 || a.val >= c.val) stop(EndUnimp);
+      else begin
+        mbox.divideWide(a.val, b.val, c.val);
+        st <= XDivX;
+      end
+    end
+    else if (op == op_search_character) begin
+      // search_character(String, Start, End, Code, ^Position,
+      // ^NewString): the string box searches; anything but a string
+      // and three integers is the exception: not modelled
+      if (!isStrg(a) || !isInt(b) || !isInt(c) || !isInt(vals[3])) stop(EndUnimp);
+      else begin
+        sbox.search(a, b.val, c.val, vals[3].val);
+        st <= XBStr;
+      end
+    end
+    else if (op == op_code_to_predicate) begin
+      // code_to_predicate(Code, ^Module, ^Name, ^Arity, ^Info): the
+      // predicate head two cells before the code, as the guard code's;
+      // anything but a code is the exception: not modelled
+      if (a.tag != tag_COD) stop(EndUnimp);
+      else begin
+        opA <= a;
+        smem.read(cellAddr(a) - 2);
+        st <= XC2P1;
+      end
+    end
+    else if (op == op_b_vector) begin
+      // body vector(X, ^Size, ^NewVector): r[y] := the size, then r[z]
+      // := X.  Anything but a vector is the exception: not modelled
+      if (!isVec(a)) stop(EndUnimp);
+      else if (isLongVec(a)) begin
+        vbox.info(a);
+        st <= XVInfo;
+      end
+      else begin
+        regs.wr(y, intC(sizeOf(a)));
+        st <= XBVOut;
       end
     end
     else if (op == op_new_vector) begin
@@ -1760,6 +1996,256 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     finish(tagged Next afterBuiltin);
   endrule
 
+  // subtract_bignum (pimm.py i_subtract_bignum, after VPIM): both
+  // 32-bit strings with no leading zero word (else the exception); Y
+  // empty: X and 0; X empty: Y and 1; then the larger is found (the
+  // lengths, else the words from the most significant), equal gives the
+  // empty string and 0; else two passes from the least significant
+  // word, the first finding the most significant word not 0 (so the
+  // length), the second writing the kept words into a new string
+  Cell bsL = bsSwap ? bsY : opA;
+  Cell bsS = bsSwap ? opA : bsY;
+  Bit#(32) bsNL = bsSwap ? bsM : bnN;
+  Bit#(32) bsOff = bsSwap ? bsM - bnN : bnN - bsM;
+
+  function Action bsOut(Bit#(32) borrow, Cell zc);
+    action
+      regs.wr(z, intC(borrow));
+      bsZ <= zc;
+      st <= XBsOut;
+    endaction
+  endfunction
+
+  function Action bsStart(Bool swap);
+    action
+      Bit#(32) nl = swap ? bsM : bnN;
+      bsSwap <= swap;
+      bnPass2 <= False;
+      bnCarry <= 0;
+      bsLast <= nl;
+      bnI <= nl - 1;
+      sbox.element(swap ? bsY : opA, nl - 1);
+      st <= XBs7;
+    endaction
+  endfunction
+
+  function Action bsStep(Bit#(32) lw, Bit#(32) sw);
+    action
+      Bit#(33) d = zeroExtend(lw) - zeroExtend(sw) - zeroExtend(bnCarry[0]);
+      Bit#(32) w = d[31:0];
+      bnCarry <= zeroExtend(d[32]);
+      if (!bnPass2) begin
+        Bit#(32) last = w != 0 ? bnI : bsLast;
+        bsLast <= last;
+        if (bnI == 0) begin
+          sbox.newStr(bsNL - last, 32);
+          st <= XBs9;
+        end
+        else begin
+          bnI <= bnI - 1;
+          sbox.element(bsL, bnI - 1);
+          st <= XBs7;
+        end
+      end
+      else begin
+        sbox.poke(bnDst, bnI - bsLast, w);
+        st <= XBs10;
+      end
+    endaction
+  endfunction
+
+  // bignum_less_than, bignum_not_less_than (bnN, bsM the lengths, bnI,
+  // bsW the word of B1 in hand): element size 32 and no leading zero
+  // word, else the guard fails; the longer is the larger, then word by
+  // word from element 0
+  function Action bcDone(Bool lt);
+    action
+      if (lt == (op == op_bignum_less_than)) next;
+      else guardFail;
+    endaction
+  endfunction
+
+  rule bc1 (st == XBc1);
+    let r <- sbox.result;
+    if (r.b.val != 32) guardFail;
+    else begin
+      bnN <= r.a.val;
+      sbox.info(bsY);
+      st <= XBc2;
+    end
+  endrule
+
+  rule bc2 (st == XBc2);
+    let r <- sbox.result;
+    if (r.b.val != 32) guardFail;
+    else begin
+      bsM <= r.a.val;
+      if (bnN != 0) begin
+        sbox.element(opA, 0);
+        st <= XBc3;
+      end
+      else if (r.a.val != 0) begin
+        sbox.element(bsY, 0);
+        st <= XBc4;
+      end
+      else bcDone(False);
+    end
+  endrule
+
+  rule bc3 (st == XBc3);
+    let r <- sbox.result;
+    if (r.a.val == 0) guardFail;
+    else if (bsM != 0) begin
+      sbox.element(bsY, 0);
+      st <= XBc4;
+    end
+    else bcDone(False);
+  endrule
+
+  rule bc4 (st == XBc4);
+    let r <- sbox.result;
+    if (r.a.val == 0) guardFail;
+    else if (bnN != bsM) bcDone(bnN < bsM);
+    else begin
+      bnI <= 0;
+      sbox.element(opA, 0);
+      st <= XBc5;
+    end
+  endrule
+
+  rule bc5 (st == XBc5);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    sbox.element(bsY, bnI);
+    st <= XBc6;
+  endrule
+
+  rule bc6 (st == XBc6);
+    let r <- sbox.result;
+    if (bsW != r.a.val) bcDone(bsW < r.a.val);
+    else if (bnI + 1 == bnN) bcDone(False);
+    else begin
+      bnI <= bnI + 1;
+      sbox.element(opA, bnI + 1);
+      st <= XBc5;
+    end
+  endrule
+
+  rule bs1 (st == XBs1);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bnN <= r.a.val;
+      sbox.info(bsY);
+      st <= XBs2;
+    end
+  endrule
+
+  rule bs2 (st == XBs2);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bsM <= r.a.val;
+      if (bnN != 0) begin
+        sbox.element(opA, 0);
+        st <= XBs3;
+      end
+      else if (r.a.val != 0) begin
+        sbox.element(bsY, 0);
+        st <= XBs4;
+      end
+      else bsOut(0, opA);
+    end
+  endrule
+
+  rule bs3 (st == XBs3);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bsM != 0) begin
+      sbox.element(bsY, 0);
+      st <= XBs4;
+    end
+    else bsOut(0, opA);
+  endrule
+
+  rule bs4 (st == XBs4);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bnN == 0) bsOut(1, bsY);
+    else if (bnN != bsM) bsStart(bsM > bnN);
+    else begin
+      bnI <= 0;
+      sbox.element(opA, 0);
+      st <= XBs5;
+    end
+  endrule
+
+  rule bs5 (st == XBs5);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    sbox.element(bsY, bnI);
+    st <= XBs6;
+  endrule
+
+  rule bs6 (st == XBs6);
+    let r <- sbox.result;
+    if (bsW != r.a.val) bsStart(r.a.val > bsW);
+    else if (bnI + 1 == bnN) begin
+      sbox.newStr(0, 32);
+      st <= XBs11;
+    end
+    else begin
+      bnI <= bnI + 1;
+      sbox.element(opA, bnI + 1);
+      st <= XBs5;
+    end
+  endrule
+
+  rule bs7 (st == XBs7);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    if (bnI >= bsOff) begin
+      sbox.element(bsS, bnI - bsOff);
+      st <= XBs8;
+    end
+    else bsStep(r.a.val, 0);
+  endrule
+
+  rule bs8 (st == XBs8);
+    let r <- sbox.result;
+    bsStep(bsW, r.a.val);
+  endrule
+
+  rule bs9 (st == XBs9);
+    let r <- sbox.result;
+    bnDst <= r.a;
+    bnPass2 <= True;
+    bnCarry <= 0;
+    bnI <= bsNL - 1;
+    sbox.element(bsL, bsNL - 1);
+    st <= XBs7;
+  endrule
+
+  rule bs10 (st == XBs10);
+    let r <- sbox.result;
+    if (bnI == bsLast) bsOut(bsSwap ? 1 : 0, bnDst);
+    else begin
+      bnI <= bnI - 1;
+      sbox.element(bsL, bnI - 1);
+      st <= XBs7;
+    end
+  endrule
+
+  rule bs11 (st == XBs11);
+    let r <- sbox.result;
+    bsOut(0, r.a);
+  endrule
+
+  rule bsWrite (st == XBsOut);
+    regs.wr(operand[3], bsZ);
+    finish(tagged Next afterBuiltin);
+  endrule
+
   rule bStr (st == XBStr);
     let r <- sbox.result;
     if (op == op_new_string || op == op_change_element_size) begin
@@ -1768,6 +2254,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_b_string_element) begin
       regs.wr(z, r.a);
+      st <= XBOut2;
+    end
+    else if (op == op_search_character) begin
+      regs.wr(operand[4], r.a);     // Position, then NewString (bOut2)
       st <= XBOut2;
     end
     else begin
@@ -1885,6 +2375,44 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
   endrule
 
+  // unbound(X, ^Result): the vector made, its elements written in
+  // order, then Result
+  rule unb1 (st == XUnb1);
+    let v <- dbox.derefResult;
+    opB <= v;
+    gbox.alloc(isRef(v) ? 3 : 1);
+    st <= XUnb2;
+  endrule
+
+  rule unb2 (st == XUnb2);
+    let at <- gbox.allocResult;
+    if (isRef(opB)) begin
+      opA <= mkCell(tag_VECT0o + 7, absAddr(at));
+      smem.write(at, intC(0));
+      st <= XUnb3;
+    end
+    else begin
+      opA <= mkCell(tag_VECT0o + 3, absAddr(at));
+      smem.write(at, opB);
+      st <= XUnb4;
+    end
+  endrule
+
+  rule unb3 (st == XUnb3);
+    smem.write(cellAddr(opA) + 1, intC(opB.val));
+    st <= XUnb5;
+  endrule
+
+  rule unb5 (st == XUnb5);
+    smem.write(cellAddr(opA) + 2, opB);
+    st <= XUnb4;
+  endrule
+
+  rule unb4 (st == XUnb4);
+    regs.wr(y, opA);
+    next;
+  endrule
+
   rule p2cAlloc (st == XP2Ca);
     let at <- gbox.allocResult;
     opA <= mkCell(tag_VECT0o + 7, absAddr(at));
@@ -1910,19 +2438,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // apply: the head's arity must be the vector's size; then each
   // element is taken (its MRB on if the vector's is) into an argument
   // register, and the goal is made as enqueue_goal makes one
-  Bit#(8) applyN = zeroExtend(((vals[1].tag & 8'hfe) - tag_VECT0o) >> 1);
+  rule applyInfo (st == XApInfo);
+    let r <- vbox.result;
+    if (r.a.val > 16) stop(EndUnimp);
+    else begin
+      apN <= truncate(r.a.val);
+      apAt <= cellAddr(r.b);
+      smem.read(cellAddr(vals[0]) - 2);
+      st <= XAp1;
+    end
+  endrule
 
   rule apply1 (st == XAp1);
     let h <- smem.data;
-    if (h.tag != tag_PREDH || h.val[31:24] != applyN) stop(EndUnimp);
-    else if (applyN == 0) begin
+    if (h.tag != tag_PREDH || h.val[31:24] != apN) stop(EndUnimp);
+    else if (apN == 0) begin
       // the empty vector: a goal of no argument
       gbox.record(fromInteger(lay_READY), cellAddr(vals[0]), 0, True, True);
       st <= XEnq;
     end
     else begin
       packK <= 0;
-      smem.read(cellAddr(vals[1]));
+      smem.read(apAt);
       st <= XAp2;
     end
   endrule
@@ -1930,11 +2467,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule apply2 (st == XAp2);
     let c <- smem.data;
     Bool on = vals[1].tag[0] == 1;
-    Addr at = cellAddr(vals[1]) + zeroExtend(packK);
+    Addr at = apAt + zeroExtend(packK);
     regs.wa(packK + 1, isUnboundCell(c) ? mkCell(on ? tag_REFx : tag_REFo, absAddr(at))
                                         : (on ? marked(c) : c));
-    if (packK + 1 == applyN) begin
-      gbox.record(fromInteger(lay_READY), cellAddr(vals[0]), applyN, True, True);
+    if (packK + 1 == apN) begin
+      gbox.record(fromInteger(lay_READY), cellAddr(vals[0]), apN, True, True);
       st <= XEnq;
     end
     else begin
@@ -1969,6 +2506,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   // the guard code: the head, then the module's descriptor cell
+  rule moduleSize (st == XModG);
+    let d <- smem.data;
+    if (d.tag != tag_CDESC) stop(EndUnimp);
+    else begin
+      regs.wr(y, intC(zeroExtend(d.val[23:0])));
+      next;
+    end
+  endrule
+
   rule code1 (st == XCode1);
     let h <- smem.data;
     if (h.tag != tag_PREDH) stop(EndUnimp);
@@ -1998,6 +2544,51 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule code4 (st == XCode4);
     regs.wr(operand[3], intC(2 + zeroExtend(opB.val[23:0])));
     finish(tagged Next (pc + 2));
+  endrule
+
+  // code_to_predicate: the head, the module's descriptor cell, then
+  // the name (Code - 4) and Info (Code - 3) (assemble.kl1 make_pred_head)
+  rule c2p1 (st == XC2P1);
+    let h <- smem.data;
+    if (h.tag != tag_PREDH) stop(EndUnimp);
+    else begin
+      opB <= h;
+      Bit#(32) back = zeroExtend(h.val[23:0]);
+      smem.read(cellAddr(opA) - 2 - truncate(back));
+      st <= XC2P2;
+    end
+  endrule
+
+  rule c2p2 (st == XC2P2);
+    let d <- smem.data;
+    if (d.tag != tag_CDESC) stop(EndUnimp);
+    else begin
+      regs.wr(y, mkCell(tag_MOD, opA.val - 2 - zeroExtend(opB.val[23:0])));
+      smem.read(cellAddr(opA) - 4);
+      st <= XC2P3;
+    end
+  endrule
+
+  rule c2p3 (st == XC2P3);
+    let n <- smem.data;
+    if ((n.tag & 8'hfe) != tag_ATOMo) stop(EndUnimp);
+    else begin
+      regs.wr(z, mkCell(tag_ATOMo, n.val));
+      smem.read(cellAddr(opA) - 3);
+      st <= XC2P4;
+    end
+  endrule
+
+  rule c2p4 (st == XC2P4);
+    let i <- smem.data;
+    regs.wr(operand[3], intC(zeroExtend(opB.val[31:24])));
+    opA <= i;
+    st <= XC2P5;
+  endrule
+
+  rule c2p5 (st == XC2P5);
+    regs.wr(operand[4], opA);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule bModule (st == XBMod);
@@ -2184,16 +2775,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     // shoen_statistics(Shoen, ^NewShoen), 22:E6, and remove_shoen(Shoen),
     // 22:E4 (stage 2): anything but a handle is refused
-    else if (op == op_shoen_statistics || op == op_remove_shoen) begin
+    // allow_shoen_resource_report(Shoen, ^NewShoen), 22:E7 (2026-11-24)
+    else if (op == op_shoen_statistics || op == op_remove_shoen
+             || op == op_allow_shoen_resource_report) begin
       if (vals[0].tag != tag_SHREC) stop(EndUnimp);
       else begin
         if (op == op_shoen_statistics) shbox.statistics(vals[0]);
+        else if (op == op_allow_shoen_resource_report) shbox.allowReport(vals[0]);
         else shbox.remove(vals[0]);
         st <= XShS;
       end
     end
     // stage 3: stop_shoen(Shoen, ^NewShoen), 22:E2, abort_shoen(Shoen,
     // ^NewShoen), 22:E3: anything but a handle is refused
+    // add_shoen_resource(Shoen, High, Low, ^NewShoen), 22:E5 (2026-11-24):
+    // anything but a handle and two integers is refused
+    else if (op == op_add_shoen_resource) begin
+      if (vals[0].tag != tag_SHREC || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
+      else begin
+        shbox.addResource(vals[0]);
+        st <= XShS;
+      end
+    end
     else if (op == op_stop_shoen || op == op_abort_shoen) begin
       if (vals[0].tag != tag_SHREC) stop(EndUnimp);
       else begin
@@ -2213,10 +2816,14 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShS;
       end
     end
-    // MinPrio, MaxPrio and ExcepMask must be integers (shoen:execute1/7
-    // passes vectors: refused) and are then dropped: no priorities and
+    // MinPrio, MaxPrio and ExcepMask must be integers and are then dropped: no priorities and
     // no exceptions here
-    else if (!isInt(vals[0]) || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
+    // or two 2-vectors, {MinPrio, MaxPrio} and {MinNode, NumNode}
+    // (shoen:execute1/7), their elements not read (pimm.py)
+    else if (!((isInt(vals[0]) && isInt(vals[1]))
+               || (isVec(vals[0]) && !isLongVec(vals[0]) && sizeOf(vals[0]) == 2
+                   && isVec(vals[1]) && !isLongVec(vals[1]) && sizeOf(vals[1]) == 2))
+             || !isInt(vals[2])) stop(EndUnimp);
     else begin
       // Code and Argv as they are (apply waits for them itself), to
       // the argument registers of the first goal.  They are read
@@ -2252,6 +2859,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     let r <- shbox.result;
     if (!r.ok) stop(EndUnimp);
     else if (op == op_remove_shoen || op == op_raise) next;
+    else if (op == op_add_shoen_resource) begin
+      regs.wr(operand[3], vals[0]);
+      finish(tagged Next afterBuiltin);
+    end
     else begin
       regs.wr(y, vals[0]);
       next;
@@ -2340,10 +2951,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       spSingle <= False;
       finish(tagged Next (pc + 2));
     end
+    else if (op == op_b_vector) begin
+      regs.wr(y, r.a);
+      st <= XBVOut;
+    end
     else begin
       regs.wr(y, r.a);
       next;
     end
+  endrule
+
+  // body vector/3: NewVector, after the size
+  rule bVOut (st == XBVOut);
+    regs.wr(z, vals[0]);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule bVec (st == XBVec);
@@ -2419,7 +3040,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   rule bOut2 (st == XBOut2);
-    regs.wr(operand[3], vals[0]);
+    regs.wr(op == op_search_character ? operand[5] : operand[3], vals[0]);
     finish(tagged Next afterBuiltin);
   endrule
 

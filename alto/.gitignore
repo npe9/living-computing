@@ -1,0 +1,11 @@
+# Held locally, not in git: Xerox PROM dumps and PARC disk images
+# (no redistribution terms recorded; see rom/MANIFEST.md, disks/MANIFEST.md).
+rom/*
+!rom/MANIFEST.md
+!rom/SHA256SUMS
+disks/*
+!disks/MANIFEST.md
+!disks/SHA256SUMS
+# BDPI object bsc writes next to host.c
+sim/host.o
+*.pbm

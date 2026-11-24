@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Lockstep: multiply_bignum_by_word, the multiple precision built-in.
+"""Lockstep: multiply_bignum_by_word and subtract_bignum, multiple precision.
 
     python3 ref/pimm/lockstep_bignum.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_bignum.py compare
@@ -29,8 +29,26 @@ answers the product's words, MSB first:
   X unbound, * 16               waits (the stub taken twice); X :=
                                 32#{3}: 32#{48}
 
-Not run: a leading zero word, X not a 32-bit string, Y not an integer
-(the exception; refused by both models).
+subtract_bignum(BigX, BigY, ^Borrow, ^BigZ), 22:B7 r4 (2026-11-24):
+"the absolute value of [the difference] is unified with BigZ.  If the
+result was non-negative 0, otherwise 1, is unified with Borrow"
+(e-builtin.tex 720-727); VPIM's edges (kblt_b_subtract_bignum,
+f_Subtract_BIGNUM_Sub, s_Subtract_BIGNUM): Y empty gives X and 0, X
+empty gives Y and 1, equal gives 32#{} and 0, leading zero words of
+the difference dropped.  The next stop of pim:go/4 (server/fep/fep/
+time_sv.kl1 compare/4, the time equation).  Parts at its stub:
+  {5} - {3}            0, {2}
+  {3} - {5}            1, {2}
+  {1, 0} - {1}         0, {16#ffffffff}   a borrow, a word dropped
+  {1, 2, 3} - {1, 2, 2}  0, {1}           equal lengths, two dropped
+  {2} - {1, 0}         1, {16#fffffffe}   Y the longer
+  {7} - {}             0, {7}
+  {} - {7}             1, {7}
+  {4, 9} - {4, 9}      0, {}
+  {10} - Y unbound     waits (the stub taken twice); Y := {4}: 0, {6}
+
+Not run: a leading zero word, a string not of 32 bits, Y not an
+integer (multiply), the exception; refused by both models.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv rules
 bn1..bn8, bsv/PimmMBox.bsv multiplyAdd), each run alone
@@ -41,6 +59,17 @@ bn1..bn8, bsv/PimmMBox.bsv multiplyAdd), each run alone
                                      words for 3
   Y = 0 not special                  Y = 0, line 20: the descriptor of 1
                                      word for 0
+  subtract_bignum (rules bs1..bsWrite):
+  the borrow not carried             sub a borrow, line 29: the
+                                     descriptor of 2 words for 1
+  leading zero words kept            sub a borrow, line 29: the same
+  the longer Y not taken as larger   sub Y longer, line 31: M .. 2 for
+                                     fffffffe
+  equal lengths compared wrongly     sub 5 - 3, line 29: M .. fffffffe
+                                     for 2
+  the empty X with borrow 0          sub empty X, line 25: R 4 0 for 1
+Pins 7 parts / 244 lines -> 16 / 651 (2026-11-24, the subtract parts'
+lines; the multiply parts unchanged).
 """
 import os
 import sys
@@ -51,7 +80,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=7, lines=244)
+PINNED = dict(parts=16, lines=651)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 M = 0xffffffff
 CASES = [
@@ -96,10 +125,57 @@ def script():
     s.unify(0, 2)
     s.run()
     s.out(1)
+    sub_script(s)
     return s
 
 
+# subtract_bignum (2026-11-24): (label, X, Y, (Borrow, Z's words))
+SUB = [
+    ('5 - 3', [5], [3], (0, [2])),
+    ('3 - 5', [3], [5], (1, [2])),
+    ('a borrow', [1, 0], [1], (0, [0xffffffff])),
+    ('equal lengths', [1, 2, 3], [1, 2, 2], (0, [1])),
+    ('Y longer', [2], [1, 0], (1, [0xfffffffe])),
+    ('empty Y', [7], [], (0, [7])),
+    ('empty X', [], [7], (1, [7])),
+    ('equal', [4, 9], [4, 9], (0, [])),
+]
+
+
+def sub_script(s):
+    stub = pimm.Machine().stubs['subtract_bignum']['addr']
+    for label, x, y, _want in SUB:
+        s.label('sub ' + label)
+        bignum(s, 0, x)
+        bignum(s, 1, y)
+        s.newvar(2)
+        s.newvar(3)
+        for k in range(4):
+            s.arg(k + 1, k)
+        s.spawn(stub, 4)
+        s.run()
+        s.out(2)
+        s.out(3)
+    s.label('sub Y unbound')
+    bignum(s, 0, [10])
+    s.newvar(1)
+    s.newvar(2)
+    s.newvar(3)
+    for k in range(4):
+        s.arg(k + 1, k)
+    s.spawn(stub, 4)
+    s.run()
+    bignum(s, 4, [4])
+    s.unify(1, 4)
+    s.run()
+    s.out(2)
+    s.out(3)
+
+
 EXPECT = dict([(label, [want]) for label, _x, _y, want in CASES])
+for _l, _x, _y, (_b, _z) in SUB:
+    EXPECT['sub ' + _l] = [_b, (32, _z)]
+EXPECT['sub Y unbound'] = [0, (32, [6])]
 # the outs are read at the end (driver.Script), so both are the answer;
 # that the built-in waited is the stub taken twice in that part
 EXPECT['X unbound'] = [(32, [48]), (32, [48])]
@@ -112,11 +188,14 @@ def check(m, outs, parts=None):
         n = sum(ln.startswith(at) for ln in parts.get('X unbound', []))
         if n != 2:
             bad.append(('X unbound: the stub taken %d times' % n,))
+        at = 'I %d ' % m.stubs['subtract_bignum']['addr']
+        n = sum(ln.startswith(at) for ln in parts.get('sub Y unbound', []))
+        if n != 2:
+            bad.append(('sub Y unbound: the stub taken %d times' % n,))
     for k, want in EXPECT.items():
         got = [None if m.unbound(m.deref(w)) else m.term(w) for lab, w in outs if lab == k]
-        got = [tuple(g) if isinstance(g, (list, tuple)) and len(g) == 2 and g[0] == 32 else g for g in got]
-        want = [None if v is None else (v[0], v[1]) for v in want]
-        if [None if g is None else (g[0], list(g[1])) for g in got] != want:
+        norm = lambda v: v if v is None or isinstance(v, int) else (v[0], list(v[1]))  # noqa: E731
+        if [norm(g) for g in got] != [norm(v) for v in want]:
             bad.append((k, got, want))
     if m.nsusp:
         bad.append(('%d goals left waiting' % m.nsusp,))
@@ -148,9 +227,10 @@ def main(argv):
     if bad:
         print('pimm lockstep bignum: FAIL %r' % (bad[:3],))
         return 1
-    print('pimm lockstep bignum: PASS (multiply_bignum_by_word on the Bluespec core, %d '
-          'trace lines identical to the reference model: products with and without a '
-          'last carry, Y unsigned, the empty X, Y = 0, and an unbound X waited for)'
+    print('pimm lockstep bignum: PASS (multiply_bignum_by_word and subtract_bignum on the '
+          'Bluespec core, %d trace lines identical to the reference model: products with '
+          'and without a last carry, Y unsigned, the empty X, Y = 0; differences either way, '
+          'with a borrow, leading words dropped, the empty operands, equal; inputs waited for)'
           % s.counts['lines'])
     return 0
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6, wait_vector,
-jump, set_marked_variable.
+jump, set_marked_variable, get_constant, b_vector,
+code_to_predicate, the unification of two vectors of seven or more.
 
     python3 ref/pimm/lockstep_alt.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_alt.py compare
@@ -92,6 +93,35 @@ gives it, not from either model:
                 gives its first element 5; {5} fails; a variable waits
                 and the vector of 7 gives 5; a vector of 8 fails.
                 Pins 12 / 1972 -> 13 / 2121, this part's 149 lines.
+  constant      get_constant, 23:B8 r_c40 (2026-11-24; the next stop of
+                pim:go/4; none in the image): three cells, OURS,
+                get_constant 0, 100000 (more than 16 bits, so the next
+                cell); proceed.  X unbound: 100000; X = 100000:
+                succeeds; X = 7: fails.  Pins 13 / 2121 -> 14 / 2173,
+                this part's 52 lines.
+  body vector   body vector/3, 22:CA (2026-11-24; the next stop of
+                pim:go/4), at its stub: {1, 2, 3} gives 3 and itself,
+                {} gives 0, the vector of 8 (part vector 7's layout) 8,
+                an unbound X waits, then {4, 5} gives 2.  Pins 14 /
+                2173 -> 15 / 2349, this part's 176 lines.
+  code to predicate  code_to_predicate, 22:F4 r5 (2026-11-24; the next
+                stop), at its stub: scsi_fep_util:set_attention/1 gives
+                its module, set_attention, 1 and Info 0; an unbound
+                Code waits, then close_device/2 gives close_device, 2.
+  long unify    get_value of two vectors of 8 (2026-11-24; the next
+                stop): {5, ..} and {_, _, 9, ..} both become {5, _, 9,
+                ..}; 5 against 6 fails; sizes 8 and 9 fail.  With part
+                code to predicate, pins 15 / 2349 -> 17 / 2697 (139 and
+                209 lines).
+  search        search_character, 22:D9 r6 (2026-11-24; the stop of
+                pim:go/4 reading pimos.conf), at its stub: in the 8-bit
+                {1, 2, 3, 1, 2}, 1 from 1 to 4 at 3; 2 from 4 back to 0
+                at 4; 9 from 0 to 2 nowhere, -1, NewString the string;
+                3 from 4 back to 0 at 2 (two steps back); in the 16-bit
+                {2164h, 2127h, 2164h}, 2127h from 0 to 2 at 1, 2164h
+                from 2 back to 0 at 2; Start unbound waits, then 0
+                gives 1.  Pins 17 / 2697 -> 18 / 3006, this part's 309
+                lines.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -116,6 +146,33 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
   (2026-11-24) wait_vector's elements at the descriptor  vector 7,
                                              line 42: R 2 0d.. for 5
   (2026-11-24) wait_vector notes no variable  vector 7, line 86: E fail
+  (2026-11-24) get_constant goes on one cell  constant, line 18: the
+                                             constant's cell for proceed
+  (2026-11-24) get_constant takes the 16-bit field  constant, line 17:
+                                             M .. 0 for 186a0
+  (2026-11-24) b_vector's NewVector not written  body vector, line 25:
+                                             R 4 0 for the vector
+  (2026-11-24) b_vector sizes a long vector by its tag  body vector,
+                                             line 99: R 3 7 for 8
+  (2026-11-24) a long vector's size one too many  body vector, line 99:
+                                             R 3 9 for 8
+  (2026-11-24) code_to_predicate's name from Code - 3  code to
+                                             predicate, line 29: E unimp
+  (2026-11-24) code_to_predicate's Info from the head  code to
+                                             predicate, line 31: R 8
+                                             2401000085 for 0
+  (2026-11-24) long unify, the sizes not compared  long unify, line
+                                             208: R 2 1 for E fail
+  (2026-11-24) long unify, elements from the descriptor cell  long
+                                             unify, line 63
+  (2026-11-24) long unify, two long vectors not a goal  long unify,
+                                             line 47: E unimp
+  (2026-11-24, bsv/PimmSBox.bsv and PimmStages.bsv) search_character
+    always forward                           search, line 144: R 6 b for 2
+    a miss gives 0                           search, line 106: R 6 0 for -1
+    NewString to the wrong register          search, line 33: R 0 for R 7
+    (always forward PASSED until the case 3 from 4 back to 0 was
+    added: the other backward searches find at their first element)
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -136,7 +193,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=13, lines=2121)
+PINNED = dict(parts=18, lines=3006)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -497,6 +554,193 @@ def script():
     s.run()
     s.out(11)
     part('vector 7', [5, None, None, 5, None])
+    # 13. get_constant (2026-11-24, met in pim:go/4; none in the image):
+    #    three cells, OURS: get_constant 0, 100000; proceed.  p(X) gives
+    #    X = 100000 (more than 16 bits: the constant is the next cell);
+    #    X = 100000 already succeeds; X = 7 fails
+    s.label('constant')
+    code = [(KLB, 0xb8 << 24 | 0 << 16),           # get_constant 0, ..
+            I(100000),                              # .. the constant
+            (KLB, 0x60 << 24)]                      # proceed
+    s.vector(15, 8, code)
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    assert [m.opname(at), m.opname(at + 2)] == ['get_constant', 'proceed']
+    for given in (None, 100000, 7):
+        s.newvar(0)
+        if given is not None:
+            s.unifyc(0, I(given))
+        s.arg(1, 0)
+        s.spawn(at, 1)
+        s.run()
+        s.out(0)
+    part('constant', [100000, 100000, 7])
+    # 14. body vector(X, ^Size, ^NewVector), 22:CA (2026-11-24, met in
+    #    pim:go/4), at its stub: {1, 2, 3} gives 3 and itself; {} gives
+    #    0; the vector of 8 (as part 12 lays it out) gives 8; X unbound
+    #    waits (Size still unbound), then {4, 5} gives 2 (the stub taken
+    #    five times).  Outs: Size, then NewVector as a term
+    s.label('body vector')
+    stub = m.stubs['b_vector']['addr']
+
+    def bvec(slot, out=True):
+        s.newvar(13)
+        s.newvar(14)
+        s.arg(1, slot)
+        s.arg(2, 13)
+        s.arg(3, 14)
+        s.spawn(stub, 3)
+        s.run()
+        if out:
+            s.out(13)
+            s.out(14)
+    s.vector(10, 0, [I(1), I(2), I(3)])
+    bvec(10)
+    s.newvar(10)
+    s.unifyc(10, (pimm.VECT0, 0))
+    bvec(10)
+    for k in range(11):
+        s.newvar(k)
+    m = s.live()
+    a0 = s.live_slot[0][1]
+    assert [s.live_slot[k][1] for k in range(11)] == list(range(a0, a0 + 11))
+    s.unifyc(0, (pimm.VDESC, a0 + 3))
+    s.unifyc(1, I(8))
+    s.unifyc(2, I(8))
+    s.unifyc(3, I(5))
+    s._op(driver.PTR, 12, 0, (pimm.VECT0 + 15, 0))
+    bvec(12)
+    s.newvar(12)
+    bvec(12, out=False)
+    s.out(13)
+    s.vector(10, 0, [I(4), I(5)])
+    s.unify(12, 10)
+    s.run()
+    s.out(13)
+    s.out(14)
+    part('body vector', [3, (1, 2, 3), 0, (), 8, (5,) + (None,) * 7, None, 2, (4, 5)])
+    # 15. code_to_predicate (2026-11-24, met in pim:go/4), at its stub:
+    #    the code of scsi_fep_util:set_attention/1 gives its module, the
+    #    atom set_attention, 1 and Info, the word at Code - 3 (0, as the
+    #    assembler writes it); an unbound Code waits, then the code of
+    #    close_device/2 gives close_device, 2
+    s.label('code to predicate')
+    stub = m.stubs['code_to_predicate']['addr']
+
+    def c2p(slot):
+        for k in range(4):
+            s.newvar(11 + k)
+        s.arg(1, slot)
+        for k in range(4):
+            s.arg(2 + k, 11 + k)
+        s.spawn(stub, 5)
+        s.run()
+    m = s.live()
+    s.newvar(10)
+    s.unifyc(10, (pimm.COD, m.load + P('scsi_fep_util', 'set_attention/1')))
+    c2p(10)
+    for k in range(4):
+        s.out(11 + k)
+    s.newvar(10)
+    c2p(10)
+    s.out(12)
+    s.newvar(9)
+    s.unifyc(9, (pimm.COD, m.load + P('scsi_fep_util', 'close_device/2')))
+    s.unify(10, 9)
+    s.run()
+    for k in range(4):
+        s.out(11 + k)
+    mod = ('MOD', 174)          # scsi_fep_util, as the guard code finds it
+    part('code to predicate', [mod, 'set_attention', 1, 0, None, mod, 'close_device', 2, 0])
+    # 16. unify of two vectors of seven or more (2026-11-24, met in
+    #    pim:go/4): three cells, OURS: get_value 0, 1; proceed.  Vectors
+    #    of 8 laid out as part 12's: {5, _, _, ..} and {_, _, 9, ..}
+    #    unify, both then {5, _, 9, ..}; {5, ..} and {6, ..} fail at the
+    #    first element; vectors of 8 and 9 fail at the first step
+    s.label('long unify')
+    code = [(KLB, 0xbc << 24 | 0 << 16 | 1 << 8),   # get_value 0, 1
+            (KLB, 0x60 << 24)]                      # proceed
+    s.vector(15, 8, code)
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    assert [m.opname(at), m.opname(at + 1)] == ['get_value', 'proceed']
+
+    def long_vec(slot, n, elems):
+        for k in range(n + 3):
+            s.newvar(k)
+        m = s.live()
+        a0 = s.live_slot[0][1]
+        assert [s.live_slot[k][1] for k in range(n + 3)] == list(range(a0, a0 + n + 3))
+        s.unifyc(0, (pimm.VDESC, a0 + 3))
+        s.unifyc(1, I(n))
+        s.unifyc(2, I(n))
+        for i, e in elems.items():
+            s.unifyc(3 + i, I(e))
+        s._op(driver.PTR, slot, 0, (pimm.VECT0 + 15, 0))
+
+    def unify_long():
+        s.arg(1, 12)
+        s.arg(2, 13)
+        s.spawn(at, 2)
+        s.run()
+    long_vec(12, 8, {0: 5})
+    long_vec(13, 8, {2: 9})
+    unify_long()
+    s.out(12)
+    s.out(13)
+    long_vec(12, 8, {0: 5})
+    long_vec(13, 8, {0: 6})
+    unify_long()
+    long_vec(12, 8, {})
+    long_vec(13, 9, {})
+    unify_long()
+    v = (5, None, 9) + (None,) * 5
+    part('long unify', [v, v])
+    # 17. search_character (2026-11-24, met in pim:go/4 reading
+    #    pimos.conf), at its stub: in the 8-bit {1, 2, 3, 1, 2}, 1 from
+    #    1 to 4 is at 3, 2 from 4 back to 0 at 4 (End < Start: from the
+    #    rear), 9 from 0 to 2 nowhere, -1, and NewString is the string;
+    #    in the 16-bit {2164h, 2127h, 2164h}, 2127h from 0 to 2 at 1,
+    #    2164h from 2 back to 0 at 2; an unbound Start waits, then 0
+    #    gives 2127h at 1 again
+    s.label('search')
+    stub = m.stubs['search_character']['addr']
+
+    def search(slot, a, b, c):
+        s.newvar(11)
+        s.newvar(12)
+        s.arg(1, slot)
+        for k, v in enumerate((a, b, c)):
+            if isinstance(v, int):
+                s.argc(2 + k, I(v & 0xffffffff))
+            else:
+                s.arg(2 + k, v[1])
+        s.arg(5, 11)
+        s.arg(6, 12)
+        s.spawn(stub, 6)
+        s.run()
+    s.string(10, 8, [1, 2, 3, 1, 2])
+    search(10, 1, 4, 1)
+    s.out(11)
+    search(10, 4, 0, 2)
+    s.out(11)
+    search(10, 0, 2, 9)
+    s.out(11)
+    s.out(12)
+    search(10, 4, 0, 3)
+    s.out(11)
+    s.string(9, 16, [0x2164, 0x2127, 0x2164])
+    search(9, 0, 2, 0x2127)
+    s.out(11)
+    search(9, 2, 0, 0x2164)
+    s.out(11)
+    s.newvar(8)
+    search(9, ('slot', 8), 2, 0x2127)
+    s.out(11)
+    s.unifyc(8, I(0))
+    s.run()
+    s.out(11)
+    part('search', [3, 4, -1, (8, [1, 2, 3, 1, 2]), 2, 1, 2, None, 1])
     return s, want
 
 
@@ -504,7 +748,9 @@ def script():
 ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal': (0, 0),
         'alternatively': (0, 2), 'vector 4': (0, 0), 'vector 4 of three': (1, 0),
         'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0),
-        'marked variable': (0, 0), 'vector 7': (2, 1)}
+        'marked variable': (0, 0), 'vector 7': (2, 1),
+        'constant': (1, 0), 'body vector': (0, 0), 'code to predicate': (0, 0),
+        'long unify': (2, 0), 'search': (0, 0)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
@@ -512,8 +758,10 @@ TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'vector 4 of three': ('wait_vector_4', 1), 'vector 6': ('wait_vector_6', 3),
          'vector 1': ('wait_vector_1', 4), 'vector 0': ('wait_vector_0', 4),
          'jump': ('jump', 2), 'marked variable': ('set_marked_variable', 1),
-         'vector 7': ('wait_vector', 5)}
-OPCODE = {'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'vector 7': ('wait_vector', 5), 'constant': ('get_constant', 3),
+         'body vector': ('b_vector', 5), 'code to predicate': ('code_to_predicate', 3),
+         'long unify': ('get_value', 3), 'search': ('search_character', 8)}
+OPCODE = {'search_character': '22d9', 'code_to_predicate': '22f4', 'b_vector': '22ca', 'get_value': '23bc', 'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 

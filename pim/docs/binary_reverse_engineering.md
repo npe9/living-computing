@@ -277,6 +277,8 @@ end-of-stream value `scsi_fep_general:request_device_io/5` waits for.
 
 ### 1.4 The packet and message format the IPL speaks (READ from `scsi_fep_module`, `scsi_fep_file`, `scsi_processor`)
 
+*(The whole command set and the order of the start, from the PIMOS source: `docs/fep_services.md`.)*
+
 **SCSI level.** One built-in, `scsi_command(Obj, {Unit, LUN, CDB,
 Length, Dir, Buffer, 0}, ^Data, ^TransferredLength, ^Id, ^Result,
 ^NewObj)` (operand directions from `compiler/blt.kl1`). The IPL uses
@@ -486,9 +488,59 @@ the device are given it again whenever the machine runs dry.
   | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
   | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
   | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
-  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+  | `subtract_bignum(32#{}, 32#{0})`, the `32#{0}` from the clock at 0 (`timeSdvc.kl1`) | the clock now advances with the instructions (`pimm.py` `INSTRUCTIONS_PER_TICK`, `lockstep_timer.py`), so the bignum is not `{0}`; `subtract_bignum` implemented, after VPIM (`lockstep_bignum.py`) | 65,482 |
+  | `FepError`: device 17, `close` (60), the timer device's end | answered (the table of FEP answers) | 66,016 |
+  | `get_constant` | implemented (`lockstep_alt.py`) | 72,642 |
+  | body `vector/3` (`b_vector`) | implemented (`lockstep_alt.py`) | 74,704 |
+  | `code_to_predicate` | implemented (`lockstep_alt.py`) | 74,724 |
+  | unification of two vectors of seven or more | the `unify_step` goal, the sizes compared in its steps (`lockstep_alt.py`) | 74,759 |
+  | `add_shoen_resource` | implemented, `resource_added` reported (`lockstep_shoen3.py`) | 75,014 |
+  | `FepError`: device 18, `fep_attributes` (240) | answered (`docs/fep_services.md` §6.3, §7.8; below) | 92,797 |
+  | `search_character`, reading `pimos.conf` | implemented (`lockstep_alt.py`) | 139,747 |
+  | `FepError`: device 20, `flush` (112) of a read file | answered `[1]` (`file_dvc.kl1`:314) | 6,675,822 |
+  | nothing left to run, no login: `pimos.conf` read as `with_console` then `end_of_file` | the kernel asks `getb` for `Size*2+1` bytes and a reply of an odd count is widened by a zero byte, so the data came one byte late; the stand-in now counts the kernel's `getb` in characters (`Fep(getb_unit=2)`, OURS, from this observation; the IPL works either way) | 7,754,386 |
+  | the login: PIMOS idles with the server's `io(1)` pending | the scripted login of §7.5 at the idle (`Fep.idle()`, `longrun_ipl.py` `go()`) | 8,067,269 (the event) |
+  | `enqueue_goal_external` of 12 arguments | the vector spread as `enqueue_goal`'s (`lockstep_load.py`'s instruction; the spread `lockstep_login.py`) | 8,144,967 |
+  | `unbound` | implemented, after VPIM (`lockstep_login.py`) | 8,145,997 |
+  | guard `extended_floating_point` | implemented, a type test (`lockstep_login.py`) | 8,146,451 |
+  | guard `module` | implemented (`lockstep_login.py`) | 8,147,246 |
+  | `apply` of a vector of 7 or more | implemented (`lockstep_login.py`) | 8,192,723 |
+  | `add_extended` (and the three others) | implemented, after VPIM (`lockstep_login.py`) | 8,194,757 |
+  | `allow_shoen_resource_report` | implemented, `resource_report_allowed` reported (`lockstep_shoen3.py`) | 8,194,822 |
+  | guard `bignum_not_less_than` (and `bignum_less_than`) | implemented, after VPIM (`lockstep_login.py`) | 8,247,127 |
+  | `create_shoen` with `{MinPrio, MaxPrio}`, `{MinNode, NumNode}` (`shoen:execute1/7`) | accepted and dropped as the integers are (`lockstep_shoen3.py`) | 8,256,632 |
+  | `enqueue_goal` of 17 arguments | the spread of a vector of 7 or more (`lockstep_login.py`) | 8,463,929 |
+  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,586,110, 1,220 goals waiting |
 
-  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
+  The counts after the login are those of the run with `getb_unit=2`;
+  the two before it (139,747 and 6,675,822) are from runs before that
+  change.
+
+  The clock (2026-11-24, the session lead's decision): one tick of the system timer (1/16 msec, 48 bits, manual `e-builtin.tex`:1537-1549) every 423 instructions executed. The rate is 615 KLIPS on `append` (`M92` p. 425) at this image's 11 instructions per `append/3` reduction (`scsi_fep_module`); equal cost per instruction is OURS. `get_date_time` keeps the date 20-May-1993; its time of day follows the same clock, so midnight is the boot.
+
+  240 (device 18, a file device made by `fep_file_device:device_create/5`, `bios/fep_module/file_dvc.kl1`:43-52, `{DevID, 240, Node}`, `fep#fep_attributes`, `pimos.vmac`:87; the reply read by `fep_util:set_value/2` as `{DevID, Status, Code, OS, Host, FepVer, Dir, FileVer, Comment}`, the seven values kept by `server/fep/fep/fep_sv.kl1` `get_fep_attributes5`) is answered `[1, 0, "SIMPOS V7", "PSI", "V0.45", ">", ".", ""]` in JIS (`fep.py` `ATTRIBUTES`): the fifth value is the path delimiter, `">"` for SIMPOS (`docs/fep_services.md` §7.8, `fileRdvc.kl1`:124-126); OS must begin `"SIMPOS"` (§7.8, `file_dvcb.kl1`:557-562); `"V0.45"` is `pimfep.ptf`'s `pimos_scsi_front_end` version; `"V7"` and `"PSI"` are OURS (§6.3).
+
+  The FEP answers added for the login (`ref/pimm/fep.py`, 2026-11-24, following `docs/fep_services.md` §6 and §7.5; the commands the run gave are in `longrun_ipl.py`'s log):
+
+  | Command | Answer | Source |
+  |---|---|---|
+  | 201 `read_open` of `pimos:NAME` | the held `pimosobj.tar.Z` `object/NAME` (`longrun_ipl.py` `kernel_file`; held and read: `pimos.conf`, `pimos.logins`, `pimos.groups`), 5 when not there (`autoload.tbl`) | §7.2 |
+  | 201 of `me:NAME` or of the home `>sys>user>RN>NAME` | 5 (`me:pimos.init`, `shell.com`, `pimos.com`: INSTALL puts none there, so the prompt is the default) | §7.2, §7.8 |
+  | 210 `getb` of the kernel | the count read in characters (`getb_unit=2`): OURS, from the run (above) | the run |
+  | 112 `flush` of a read file | `[1]` | `file_dvc.kl1`:314 |
+  | 601 `create` of a string-I/O device `pimos_remote_login_replier`, `pimos_remote_login_server`, `simpos_user_device` | `[1]`; any other name refused | §6.4, §7.5 |
+  | 620 `io(0, ..)`, `io(2, ..)` on the replier | `[1, ""]` | §6.4, §7.5 |
+  | 620 `io(1, Text)` on the replier | `[1, "\0"]` (one character, 0: sent), the text written to the stand-in's log. §7.5 has `""`; §6.4's reading of `pimfep.ptf` is kept, and PIMOS reads neither | §6.4 |
+  | 620 `io(0, "local")` / `io(0, "tcpip")` on the server | `[1, ""]` / `[5]` (the tcpip service refused, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`) | §7.5 |
+  | 620 `io(1, ..)` on the local server | held; answered at the idle with `[1, NI]`, the login record: Node `"local"`, RN `"pmpsi"` (SOURCED, INSTALL's user), RP `""`, UN `"pimos"`, UP `""` (HELD FILE: `pimos.logins`, all six with empty passwords), ID 1 (OURS, §7.5; §6.5 has 0 for a first login) | §6.5, §7.5 |
+  | 620 `io(0, ..)` on `simpos_user_device` | `[1, ">sys>user>" ++ RN]` | §7.5, `login_p.kl1`:63 |
+  | 104 `create` of a window | `[1]` | §6.8, §7.5 |
+  | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
+  | 110 `getl` on a window | held (the run ends there) | §7.5 |
+  | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
+  | 70 on a held request | `[6]` (none has been met; a 70 on anything else has no reply) | §6.7, §7.1 |
+
+  What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
@@ -512,12 +564,13 @@ the device are given it again whenever the machine runs dry.
   | 9 | 7, 0 | SEND, the packet of device 16: `append_open` (203, `macro/pimos/pimos/pimos.vmac`:69), `{16, 203, "", 0, 0, "pimos:pimos.syslog"}` in JIS, the kernel's syslog (`bios/boot/syslog.kl1` `wait_status1/3`, on every boot) | accepted, `[1]` (normal), OURS: the stand-in keeps what is appended in memory (`Fep.appended`), as a FEP holding the file would append to it. PIMOS also takes an abnormal answer, with "SYSLOG ERROR: reason / cannot open file pimos:pimos.syslog" on the console (`syslog.kl1`); the real FEP's answer is not held |
   | 10 | 7, 1 | RECEIVE, the reply | as before |
   | 11-12 | 7, 0 then 1 | SEND and RECEIVE, device 17: `create_timer` (310, `pimos.vmac`:146), `{17, 310, Node, User, Password}`, the kernel's timer device (`bios/fep_module/time_dvc.kl1` `device_create/5`) | accepted, `[1]`, OURS: a FEP that has a timer. `reply/9` goes on to `device_process`, the timer's requests; an abnormal answer would end the device |
-  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, 0]`, OURS: a fixed clock, so every run is the same (`fep.py` `DATE`, `TIME`). The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`); the time is 00:00:00 (milliseconds from midnight, `utility/timer/time.kl1`) |
+  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, T]`, OURS, the same on every run. The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`). T, milliseconds from midnight (`utility/timer/time.kl1`), follows the machine's clock (`pimm.py` `timer()`, 2026-11-24; it was 0): midnight is the moment the processor booted. PIMOS keeps the difference of the two as its time equation (`server/fep/fep/time_sv.kl1` `wait_date_time/2`, `compare/4`). In the long run T = 28,927: the cached machine's clock includes the whole IPL load |
+  | 15-16 | 7, 0 then 1 | SEND and RECEIVE, device 17: `close` (60), `{17, 60}`, the timer device's end when its stream ends (`time_dvc.kl1` `device_io1/13`, then `device_terminate/5`) | accepted, `[1]`, OURS, as a file's close (2026-11-24) |
 
   New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
   on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
-  packets `append_open` (203), `create_timer` (310) and
-  `get_date_time` (304).
+  packets `append_open` (203), `create_timer` (310),
+  `get_date_time` (304) and the timer's `close` (60).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
   The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
@@ -839,19 +892,19 @@ big-endian words:
 
 | Check | Result |
 |---|---|
-| classes whose cells land exactly on `L` | 552 of 554 (`csp_compare_break_menu`, `csp_mpsi_data_converter` overshoot; not investigated) |
-| predicate headers with code two cells after the head | 8,230 of 9,839 candidates; 1,609 not understood |
-| header kinds | `11` local 3,559; `12` local 1,904; `35` instance method 3,256; `25` class method 589; five other kinds, 156, unidentified |
-| local call target = cell + 2 + signed 16 bits | opcode `60`: 4,131 of 5,214 land on a head; `61`: 1,949 of 2,556; `62`: 1,384 of 1,851 |
+| classes whose cells land exactly on `L` | 554 of 554 (2026-11-24, once a hash table is counted as `mask+1 + 2*keys + 2` cells, `ptfdump.table_span`; with the table's size word + 1, as before, 552, and the two `pimmcsp` classes overshot) |
+| predicate headers with code two cells after the head | 9,815 of 9,815 (2026-11-24, same numbering; the earlier "8,230 of 9,839, 1,609 not understood" was the size-word numbering drifting after hash tables) |
+| header kinds | `11` local 3,609; `12` local 2,205; `35` instance method 3,256; `25` class method 589; the other five kinds 156 (`22` 15, `27` 16, `32` 57, `36` 22, `37` 46; named in `simpos/layers/FORMATS.md` §2). Recounted 2026-11-24 with the fixed numbering; before it, 3,559 and 1,904 |
+| local call target = cell + 2 + signed 16 bits | every one lands on a head (2026-11-24): opcode `60` 5,390 of 5,390, `61` 2,646 of 2,646, `62` 1,916 of 1,916 (before the numbering fix: 4,131/5,214, 1,949/2,556, 1,384/1,851) |
 
 | Package | Classes | Cells | Class-0 instr. | Class-1 instr. | Symbols |
 |---|---|---|---|---|---|
-| `pimfep` | 47 | 28,832 | 18,574 | 1,764 | 2,747 |
-| `pimscsi` | 24 | 12,979 | 8,311 | 1,147 | 1,086 |
-| `pimmcsp` | 281 | 149,954 | 99,066 | 8,877 | 14,217 |
-| `pimmutil` | 51 | 53,639 | 39,720 | 3,161 | 3,085 |
-| `mpsicspR` | 30 | 14,897 | 9,148 | 674 | 2,124 |
-| `paragraph` | 121 | 89,204 | 53,717 | 14,429 | 5,705 |
+| `pimfep` | 47 | 28,935 | 18,658 | 1,765 | 2,747 |
+| `pimscsi` | 24 | 12,977 | 8,311 | 1,147 | 1,086 |
+| `pimmcsp` | 281 | 156,090 | 103,403 | 9,158 | 14,217 |
+| `pimmutil` | 51 | 54,615 | 40,312 | 3,223 | 3,085 |
+| `mpsicspR` | 30 | 15,616 | 9,629 | 723 | 2,124 |
+| `paragraph` | 121 | 93,582 | 56,580 | 14,804 | 5,705 |
 
 (`icot_software_survey.md` says 23 classes for `pimscsi` and 50 for
 `pimmutil`; the files hold 24 and 51.) *Note 2026-11-23: for `pimscsi`
@@ -864,8 +917,8 @@ undercount; the survey is corrected to 51 in place.*
 - **The opcode set: yes** (MEASURED, `ptfdump.py --opcodes`).
   `PMPSI.DIR/sysidat` is the KL0 decode table, 1,024 entries indexed
   by class x 256 + opcode, 214 populated in class 0 and 241 in class
-  1. Every opcode the six packages use has an entry: 228,536 class-0
-  and 30,052 class-1 instructions, 101 and 111 distinct opcodes, none
+  1. Every opcode the six packages use has an entry: 236,893 class-0
+  and 30,820 class-1 instructions (2026-11-24, fixed numbering; 228,536 and 30,052 before), 101 and 111 distinct opcodes, none
   missing.
 - `sysidat`'s classes 0-1 are the table at the head of `pimm.MEkbn`'s
   classes 0-1 (496 of 512 entries byte-identical): the "PMI"/"BLT"
@@ -999,21 +1052,22 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - **Container, class and method listing, fact tables: done.**
 - **KL0 disassembler: mechanical with a research tail.** To build:
   names and operand formats for 212 opcodes (101 class 0, 111 class
-  1). Material: the `paragraph` pair (68,146 instructions with
+  1). Material: the `paragraph` pair (71,384 instructions with
   source), and the microcode entry of each opcode as a tie-breaker.
   The ten commonest class-0 opcodes (`a2 20 73 a0 a4 a7 a3 27 5f f0`)
-  are 118,126 of 228,536 uses, so a few dozen paired clauses settle
+  are 121,668 of 236,893 uses, so a few dozen paired clauses settle
   most of the volume (INFERENCE); the 111 built-in opcodes are the
   tail, each needing a source witness or a document (TM-444, TR-265,
   TM-261/353/354; a KL0 built-in manual is catalogued and not
-  obtained, `literature_gaps.md`). Also to settle: the 1,609
-  irregular headers, `h1`, the trailer's slot definitions.
+  obtained, `literature_gaps.md`). Also to settle: `h1`. (The 1,609
+  "irregular headers" were a cell-numbering error, fixed 2026-11-24, 4.1;
+  the trailer is decoded by `psi/librarian.py`.)
 - **Decompiling the FEP services for a faithful stand-in: mechanical
   after that.** For boot: `fep_message_assembler` (503 cells),
   `pimos_scsi_front_end` `command_type/2` + `refute_command/3`
   (1,708), `pimos_file` (1,157), `scsi_stream` (1,296): about 4,700
   cells, each checkable against the PIMOS client source and section
-  1.4. All services: 47 classes, 28,832 cells. The SIMPOS classes
+  1.4. All services: 47 classes, 28,935 cells. The SIMPOS classes
   they call (`simpos##...`) are not held, so a decompiled FEP is a
   specification to re-implement against, not something to run.
 - **Unblocks:** C2 and C4 from the server's side; the command numbers
@@ -1061,8 +1115,9 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - Which `ipl_parameter` branch `pimm_bios360E.sav` was built with
   (harmless either way, 1.3 step 11).
 - Clause-level identity of any `.sav` module with its source.
-- KL0 opcode names beyond the ten rows of 4.2; `h1`; 1,609 irregular
-  predicate headers; two overshooting `pimmcsp` classes.
+- KL0 opcode names beyond the ten rows of 4.2; `h1`;
+  the hash table's size word (the irregular headers and the two
+  overshooting classes were a cell-numbering error, 4.1).
 - The FEP's own message header code (names only).
 - `rassy`'s bit positions and the numbering of its memory commands
   and conditions; whether its 1989 date matches the PIM/m chips in

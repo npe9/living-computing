@@ -493,7 +493,7 @@ the other account, record by record:
     exactly those 7, `boot.rec` is byte-identical, and the twin agrees
     on all 2,999,996 determined records. p9boot paces model time by
     the summed `cyc`, so `tests/test_p9boot.py`'s step pins moved
-    (the 25 Hz prompt 22,537,089 -> 22,537,005; the join replay's
+    (the 25 Hz prompt 22,537,089 -> 22,537,005, and 22,537,007 with master's Quart bids merged; the join replay's
     typed steps and `echo` count likewise); its console, frames and
     replay assertions are unchanged. Interrupts and CRET's CATCH fault
     have no record of their own and stay uncharged in both accounts.

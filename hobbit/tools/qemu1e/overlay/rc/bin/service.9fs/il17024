@@ -1,0 +1,8 @@
+#!/bin/rc
+# qemu1e addition: the release's /rc/bin/service.auth/il17024 (#!/bin/aux/check),
+# the terminal log-in check that a terminal's /boot dials as
+# il!$auth!17024 (sys/src/9/boot/userpasswd.c; sys/src/auth/check.srv.c,
+# "temporary checking for terminal log on"; auth(6) does not list it),
+# with the kfs's path: this listener's /bin is the floppy's.  It reads
+# the keys from keyfs on /mnt/keys, started by /serve.
+exec /n/kfs/386/bin/aux/check

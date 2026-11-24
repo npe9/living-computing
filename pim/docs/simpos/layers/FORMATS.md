@@ -53,7 +53,9 @@ code (`pmi`/`blt` instruction cells, constants, hash-switch tables).
 
 > (name atom, integer `qual<<16 | kind<<8 | arity`, `predh` cell `arity<<24 | code offset`, 0)
 
-The integer field reads as follows (probe `C/tools/kinds.py`, census over all six packages):
+The integer field reads as follows (probe `C/tools/kinds.py`, census over all six packages; the
+0x11 and 0x12 counts recounted 2026-11-24 after the cell-numbering fix, `../../../psi/README.md`,
+which they were 3,559 and 1,904 before):
 
 | Kind | Meaning | Count | Evidence |
 |---|---|---|---|
@@ -64,8 +66,8 @@ The integer field reads as follows (probe `C/tools/kinds.py`, census over all si
 | 0x37 | instance after-demon | 46 | INFERENCE, from the io/4 triple; no paragraph source witness |
 | 0x22 | class slot-init predicate | 15 | `register/1` in as_pg_color_window |
 | 0x32 | instance slot-init or generated predicate | 57 | `display_pos/1` = p_tgraph.esp:81 `(display_pos:=L :- ...)`; also `$tail/1`, `$header/1` |
-| 0x11 | local predicate | 3,559 | |
-| 0x12 | compiler-generated `$or$N` (body disjunction) | 1,904 | |
+| 0x11 | local predicate | 3,609 | |
+| 0x12 | compiler-generated `$or$N` (body disjunction) | 2,205 | |
 
 From the bit pattern, 0x2x appears to mean class, 0x3x instance and 0x1x local. In the low nibble,
 5 = primary, 6 = before, 7 = after and 2 = slot init (INFERENCE).

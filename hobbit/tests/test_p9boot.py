@@ -61,6 +61,18 @@ EEPROM and SONIC (IIC_CHOICES, SONIC_CHOICES; NetworkTest), observed
   dummy byte: FAIL test_bootp_request, test_console ("sonic ether: 54 00
   00 0b 0b 00"), test_eeprom_read, test_sonic_set_up.
 
+The Quart's FIFOs and interrupt bids (QuartBidTest; the SC68C94 1994
+spec, docs/devices/README.md), observed 2026-11-24, each injection in a
+scratch copy of tools/p9boot.py (build/gfx/inject.py):
+
+* the first pending bid wins, not the largest: FAIL
+  test_rx_against_tx_and_counter (0x15 where the transmitter's 0x78 wins).
+* RX_FIFO back at 3: FAIL test_rx_against_tx_and_counter (0x78: the
+  receiver holds 3 and bids 0x6C, below the transmitter).
+* the counter on channel a/c (0x14/0x16): FAIL both tests.
+* the transmitter bidding with no free count (0x08|ch): FAIL
+  test_rx_against_tx_and_counter (the counter's 0x15 wins).
+
 CRET with MSP > SP + 256 (CHOICES['cret-msp']; NoServerTest), observed
 2026-11-23: p9boot not setting System.cret_clamp: FAIL
 test_ten_requests_then_the_prompt only, the run REFUSED at _cret+0x0
@@ -115,6 +127,50 @@ LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
 FRAME = b"\xff" * 6 + b"\x02\x00\x00\x00\x00\xfe\x08\x06" + bytes(46)
 PROMPT = b"root is from (il, tcp, incon, 9600, 19200)[il]: "
 ETHERLINE = b"sonic ether: 52 54 00 00 0b 0b\n"
+
+
+class QuartBidTest(unittest.TestCase):
+    """QUART_CHOICES['cir'] and ['sr'] against the SC68C94 1994 product
+    specification (docs/devices/README.md "Quart"): the numerically
+    largest bid wins; a receiver with n bytes bids (n<<5)|0x0C|ch, an
+    empty transmitter 0x78|ch, the counter 0x15/0x17; FIFOs 8 deep.
+    Pure Python, no boot."""
+
+    def quart(self):
+        self.t = 0.0
+        q = p9boot.Quart(25, lambda: self.t)
+        for ch in range(4):
+            q.ports[ch].update(csr=0xCC, mr=[0x13, 0x07], rx=True)
+        return q
+
+    def latch(self, q):
+        q.write(0x2A * 4, 0, 0xF)
+        return q.glob["cir"], q.glob["gicr"], q.glob["gibcr"]
+
+    def test_rx_against_tx_and_counter(self):
+        q = self.quart()
+        q.duarts[0]["imr"] = 0x0A | 0x01     # RxRDYa, CtrRDY, TxRDYa
+        q.duarts[0].update(acr=0xF0, ctu=0, ctl=1, running=True,
+                           next_tick=0.0)
+        self.assertEqual(self.latch(q), (0x15, 1, 0))   # counter alone
+        q.ports[0]["tx"] = True
+        self.assertEqual(self.latch(q), (0x78, 0, 7))   # tx beats counter
+        q.feed(0, b"ab")
+        self.t = 1.0
+        self.assertEqual(self.latch(q), (0x78, 0, 7))   # tx beats rx (2)
+        q.feed(0, b"cdefghij")
+        self.t = 2.0
+        self.assertEqual(self.latch(q), (0xEC, 0, 7))   # rx (8, as 7) wins
+        self.assertEqual(len(q.ports[0]["fifo"]), 8)    # 8 deep
+        self.assertEqual(bytes(q.ports[0]["pending"]), b"ij")
+        self.assertEqual(q.read(1 * 4) & 0x02, 0x02)    # sr FFULL at 8
+
+    def test_counter_of_duart_cd(self):
+        q = self.quart()
+        q.duarts[1]["imr"] = 0x08
+        q.duarts[1].update(acr=0xF0, ctu=0, ctl=1, running=True,
+                           next_tick=0.0)
+        self.assertEqual(self.latch(q), (0x17, 3, 0))
 
 
 class FirstLineTest(unittest.TestCase):
@@ -223,7 +279,8 @@ class PromptTest(unittest.TestCase):
     22,530,554 instructions both without the skip (6 minutes) and with it
     (29 s); reading the EEPROM in iicreset adds 6,535 (22,537,089).  Since
     2026-11-24 an exception's record costs Table 4-36's 9 + D + A, not 0:
-    22,537,005 (the clock runs ahead, the idle loop is left sooner)."""
+    22,537,005 (the clock runs ahead, the idle loop is left sooner);
+    22,537,007 with the Quart bids of the same day as well."""
 
     @classmethod
     def setUpClass(cls):
@@ -381,7 +438,7 @@ class JoinReplayTest(unittest.TestCase):
             b"nop...session...time...\ninit: starting /bin/rc\n"
             b"\ninit: starting /bin/rc\n% echo hello\nhello\n% "))
         self.assertEqual([s for s, _w, _r in boot.typed],
-                         [286977105, 288647246, 711874370])
+                         [286977111, 288647258, 711874390])
         self.assertEqual(boot.steps, STEPS["echo"])
 
     def test_every_frame_as_recorded(self):
@@ -408,9 +465,9 @@ class JoinReplayTest(unittest.TestCase):
 
 
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
-         "prompt": 22537005, "bootp": 287845670,
-         "no-server": 3131202418, "echo": 715862114}
-IDLE = {"equiv-skipped": 426976, "prompt-skipped": 19555624,
+         "prompt": 22537007, "bootp": 287845682,
+         "no-server": 3131202422, "echo": 715861422}
+IDLE = {"equiv-skipped": 426968, "prompt-skipped": 19555620,
         "prompt-cycles": 22890757, "frame-time": 0.175}
 
 

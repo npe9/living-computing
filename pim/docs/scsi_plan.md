@@ -37,7 +37,25 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   kernel's timer device, `create_timer` and `get_date_time` (a fixed
   clock, ours). 65,482 instructions, the console the banner alone; the
   stop `subtract_bignum` on a `32#{0}` made from our clock at 0, a
-  decision about the clock (1.4).)* On the Bluespec core the whole
+  decision about the clock (1.4).)* *(Later 2026-11-24: the clock
+  advances with the instructions, one tick every 423 (1.4);
+  `subtract_bignum`, `get_constant`, body `vector/3`,
+  `code_to_predicate`, the unification of long vectors and
+  `add_shoen_resource` on both models; `fep.py` answers the timer's
+  `close`. 92,797 instructions, the console the banner alone; the stop
+  `fep_attributes` (240) on a file device, whose values only the FEP
+  has (1.4).)* *(Later 2026-11-24, the login and the shell (2026-11-24, following
+  `docs/fep_services.md` §6 and §7): `fep.py` answers 240 (Dir `">"`),
+  the `pimos:` files from the held object, the string-I/O devices of
+  the login service, the window calls, and holds the server's `io(1)`
+  and the window's `getl`; `longrun_ipl.py` gives the device its
+  scripted event (the login of §7.5) when PIMOS idles; eleven more
+  instructions on both models (`lockstep_login.py`,
+  `lockstep_shoen3.py`, `lockstep_alt.py`). 8,586,110 instructions:
+  the local login service starts, the tcpip one is refused, the login
+  `pimos` (user `pmpsi`) is accepted, the window `PIMOS CONSOLE` is
+  made and the shell writes `Shell>> ` to it; the run ends with its
+  `getl` held, 1,220 goals waiting (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
@@ -219,7 +237,15 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   bus check on each. The bench now waits for a spawned goal's record
   before its next operation (the IPL parts load an argument register
   right after a SPAWN, and the register's A line was traced before the
-  record's M lines).
+  record's M lines). Injections re-done against the six IPL parts
+  (2026-11-24, eleven, each against `scsi` and `scsi@1..6`, observed
+  sets in `lockstep_scsi.py`'s header): the CDB byte order, unit/LUN
+  swapped, the last received byte dropped, TransferredLength, Result,
+  two Info elements and the init hook's registers fail all seven; a
+  command not ready at a poll dropped or taken as ready fail `scsi`
+  only (no IPL part has a command not ready at a poll: counted on the
+  tapes); the copy's pad from old memory fails none (unobservable:
+  every string's pad is zero).
 
 ## 4. Order and dependencies
 

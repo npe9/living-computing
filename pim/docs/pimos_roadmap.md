@@ -119,7 +119,7 @@ longer `run_boot.sh` once runs exceed a few minutes).
 | R3 | The same, for a predicate that suspends and is resumed | same |
 | R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
 | R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs. *Note 2026-11-23: the version module at least agrees with the source. "20-May-93" occurs once in `pimm_kernel360E.sav` as a two-byte JIS string, and the reference model's run prints it. The objects' "3.600:25-Nov-93" is the base files' comment date, a different artefact (`binary_reverse_engineering.md` §2)* |
-| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`). *Status 2026-11-24: not reached; `pim:go/4` with the FEP device (reference model) gets past the bus scan and the kernel's first FEP message (the syslog's `append_open`) and the timer device's `create_timer` and `get_date_time`, and stops at 65,482 instructions at `subtract_bignum` on a `32#{0}` that our clock at 0 made (`binary_reverse_engineering.md` 1.4)* |
+| R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`). *Status 2026-11-24: the first half reached on the reference model: `longrun_ipl.py --load FILE --go --fep` logs in through the stand-in's scripted login (`fep_services.md` §7.5: Node "local", user `pimos` of the held `pimos.logins`) and the shell writes `Shell>> ` to the window `PIMOS CONSOLE`, 8,586,110 instructions, its `getl` held (`binary_reverse_engineering.md` 1.4). Not yet: a command typed (the script's second event), and the run on the Bluespec core (S5)* |
 | R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
 | R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
 | R9 | A period application (candidates in §6) | its published result |
@@ -341,7 +341,22 @@ yet given by its pool), `docs/binary_reverse_engineering.md` 1.4.*
 stops passed (1.4's table): 23,348 instructions, the syslog's
 `append_open` the first FEP message, the stop `jump`.  Then (a fresh
 cache) six more: 65,482 instructions, the timer device made, the stop
-`subtract_bignum` on a bignum our clock at 0 made.*
+`subtract_bignum` on a bignum our clock at 0 made.  Then, the clock
+advancing (one tick every 423 instructions), seven more: 92,797
+instructions, the stop `fep_attributes` (240), whose values only the
+FEP has.  Then the login and the shell (2026-11-24, following
+`docs/fep_services.md` §6 and §7): `fep.py` answers 240 (Dir `">"`),
+the `pimos:` files from the held object, the string-I/O devices of
+the login service, the window calls, and holds the server's `io(1)`
+and the window's `getl`; `longrun_ipl.py` gives the device its
+scripted event (the login of §7.5) when PIMOS idles; eleven more
+instructions on both models (`lockstep_login.py`,
+`lockstep_shoen3.py`, `lockstep_alt.py`). 8,586,110 instructions:
+the local login service starts, the tcpip one is refused, the login
+`pimos` (user `pmpsi`) is accepted, the window `PIMOS CONSOLE` is
+made and the shell writes `Shell>> ` to it; the run ends with its
+`getl` held, 1,220 goals waiting (1.4): R5's console lines and the first half of
+R6.*
 The linker reports ONE
 undefined module, the first it meets: a normal link needs every
 module the files name.*
@@ -394,6 +409,8 @@ request.
 *Gates:* R4, then R5.
 
 ### Phase 4 - A usable PIMOS
+
+*(What the FEP must answer from the banner to a shell, sourced from PIMOS: `docs/fep_services.md`.)*
 
 1. The rest of the FEP services: login, files, the window/terminal the
    shell wants (`pimos.logins`, `login.com`, `shell.com`).

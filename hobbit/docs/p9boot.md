@@ -40,9 +40,10 @@ The kernel prints to two places, and both are captured:
   `uartputs` path, `\n` as `\r\n`), which is what a serial console would
   show.  These are the bytes the device model collected.
 
-**Bitmap screen, the minimum chosen.**  The screen is plain RAM plus a
-write-only LCD register pair that counts writes; no pixels are
-interpreted.
+**The bitmap and the LCD** are modelled since 2026-11-24 ("The
+terminal: screen, keyboard, mouse" below): `--screen FILE` writes the
+bitmap as an image, and the LCD is a panel built from the kernel's
+writes, checked equal to the bitmap.
 
 **The console's input is Quart channel 0, not a scan-code keyboard.**
 The shipped `screen.c` calls `kbdinit(2)` (the `kbd.c` scan-code
@@ -60,7 +61,9 @@ serial terminal on channel 0 at 19200 baud 8N1 -- output and input --
 taking ASCII, CR made NL; channel 2 is never set up.  `--type
 TEXT=REPLY` (CHOICES `console-input`) types REPLY on that line once the
 screen has shown TEXT: `--type 'il]: =\r'` answers the prompt with
-Return.  The mouse (channel 3) gets nothing.
+Return.  The calls are in s9term's `main` (+0x8a, +0xa4), not in
+`screeninit` as in the shipped `screen.c`.  The mouse on channel 3 is
+below ("The terminal").
 
 Text reaches the screen ~0.4-0.5 M instructions before the serial line:
 s9term's `putstrn` draws it first (`screenputs`, the font blitted in
@@ -100,7 +103,7 @@ The first console line, byte for byte, on both channels:
 
 At the counter rate the hardware formula gives (one tick per 0.569 s,
 QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
-**286,977,105 instructions** and 14.367 s of model time, 26 clock
+**286,977,111 instructions** and 14.367 s of model time, 26 clock
 interrupts, in 30-60 s of host time: 283,995,808 of those
 instructions are laps of the idle loop that the idle skip (below)
 retires without executing (that count measured before the exception
@@ -108,10 +111,12 @@ record was charged, below).  (Before the EEPROM answered, CHOICES
 `iic`, it was 286,970,654: `iicreset`'s read adds 6,535.  Before
 2026-11-24 an exception's record cost 0 and the prompt came at
 286,977,189; Table 4-36's `9 + D + A` per exception moves the model's
-clock ahead, and the prompt comes 84 instructions sooner.)
+clock ahead, and the prompt comes 84 instructions sooner: 286,977,105
+alone, 286,977,111 with the Quart bids of the same day, which alone
+gave 286,977,195.)
 
 With `--counter-period 0.04` (25 Hz) the same prompt comes after
-**22,537,005 instructions** (1.145 s of model time, 26 clock
+**22,537,007 instructions** (22,537,089 before 2026-11-24; 22,537,091 with the Quart bids of that day alone, 22,537,005 with the exception record's cost alone; 1.145 s of model time, 26 clock
 interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
 the EEPROM answered it was 22,530,554, measured first without the idle
 skip (6 minutes of host time) and reproduced exactly with it (29 s);
@@ -145,7 +150,7 @@ root is from (il, tcp, incon, 9600, 19200)[il]:
 sonic ether: 52 54 00 00 0b 0b
 ```
 
-At **287,845,670** instructions (14.4 s of model time) `/boot` sends
+At **287,845,682** instructions (287,845,754 before 2026-11-24: 287,845,766 with the Quart bids alone, 287,845,670 with the exception record's cost alone) (14.4 s of model time) `/boot` sends
 its BOOTP request through the SONIC (`tests/test_p9boot.py`
 `NetworkTest`, with `--pcap`):
 
@@ -162,7 +167,7 @@ which checks the SONIC's byte lanes and CAM order at once.
 With nobody answering (a Wire with no peer), `/boot` sends the request
 ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
 0.569 s), each wait ended by an alarm note, and then asks
-`My IP address[0.0.0.0]: ` at 3,131,202,418 instructions (156.6 s of
+`My IP address[0.0.0.0]: ` at 3,131,202,422 instructions (3,131,202,766 before 2026-11-24; 3,131,202,770 with the Quart bids alone, 3,131,202,418 with the exception record's cost alone) (156.6 s of
 model time, ~55 s of host time; `NoServerTest`).  Each note's return is
 a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
 
@@ -256,8 +261,7 @@ It is kept as the record of the first join.  `JoinReplayTest` now
 replays `tests/net/join_echo.pcap` instead: the first 615 frames of the
 lockstep run of "Commands at rc's prompt" below, through init, termrc,
 init's restart of rc, and `echo hello` typed at `% ` and run, to
-715,862,114 instructions (700,303,728 idle-skipped, counted before the
-exception record was charged), 35.9 s of model
+715,861,422 instructions (715,867,166 before 2026-11-24; 715,866,474 with the Quart bids alone, whose transmit interrupts take up to 7 bytes, and 715,862,114 with the exception record's cost alone; 700,303,728 idle-skipped before both), 35.9 s of model
 time, ~3 min of CPU (174 s measured):
 
 ```sh
@@ -270,9 +274,7 @@ python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
 A lockstep recording replays like a free-running one: the model's
 frames carry model time and the console bytes are typed at screen text,
 so the run is reproduced instruction for instruction (the replay typed
-`echo hello` at step 711,879,422, as the live run did; 711,874,370
-since an exception's record costs Table 4-36's `9 + D + A`, which moves
-the replay's steps but not its frames or console).
+`echo hello` at step 711,879,422, as the live run did; 711,879,442 with the Quart bids, 711,874,370 with the exception record's cost alone, and 711,874,390 with both, the recording still matching frame for frame and the console unchanged).
 
 Live and free-running (`p9join.py --free-run`, the only mode until
 2026-11-23's lockstep), busy model time runs ~200 times slower than the
@@ -393,11 +395,12 @@ The alternative, `tor`, is the release's demonstration account
 (install.ms: "a stub account we put on the distribution to show you how
 a proper user's directory should be set up"); its `lib/profile` binds
 `$home/tmp` and `$home/bin` and, for `service=terminal`, ends in `exec
-8½ -i 8½start -s -f $font`: the window system, which wants the
-bitmap device (`/dev/bitblt`) and the mouse on Quart channel 3, neither
-of which is modelled beyond the LCD's write counter.  So the console
-stays plain rc as `none`; `glenda` (the server's own console user)
-would fail the same way as `none` did, with no `/usr/glenda`.
+8½ -i 8½start -s -f $font`: the window system, on the bitmap device
+(`/dev/bitblt`) and the mouse on Quart channel 3.  Both are modelled
+since 2026-11-24 ("The terminal", below), and `p9join.py --user tor`
+boots into 8½ ("8½ as `tor`").  `none` stays the default, for the plain
+rc console; `glenda` (the server's own console user) would fail as
+`none` did, with no `/usr/glenda`.
 
 ### The ROM's fpi (CHOICES `fpi-rom`)
 
@@ -569,6 +572,208 @@ and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
 skip that costs nothing, so the override is no longer needed to get
 anywhere.
 
+## The terminal: screen, keyboard, mouse (2026-11-24)
+
+`tools/p9term.py` holds the terminal's display and input devices
+(`TERM_CHOICES`, summarized in `CHOICES` `framebuffer`, `lcd`, `mouse`,
+`input`).  Every fact below is read from s9term's own code, by function
+and offset (`python3 tools/p9kdis.py screeninit`, `^eiaspecial` for
+callers: `asm/hobbit_asm.py` on the image), because the image is older than the shipped
+`screen.c` (`docs/s9term.md`) and differs from it where it matters.
+
+### The bitmap
+
+s9term's `screeninit` (0x800265dc):
+
+| offset | does | so |
+|---|---|---|
+| +0x4c..+0x5e | `xalloc(198656)` | 2048 + 768·1024·2/8 bytes |
+| +0x68 | `gscreen.base += 2048` | base 0x805b7968 in the runs below (the shipped source adds 512) |
+| +0x72 | `width = 48` | words a row: 192 bytes |
+| +0x7c | `ldepth = 1` | 2 bits a pixel |
+| +0x86..+0xa4 | `r = (0, 0, 768, 1024)` | portrait, 768 wide |
+| +0x1e8..+0x222 | `gbitblt(&gscreen, ..., flipD[0])` | the whole screen to ones |
+
+`--screen FILE` (PNG, or PGM for `.pgm`; zlib only, no dependencies)
+writes it at the end of the run, `--screen-at STEP:FILE` once STEP
+instructions have run, and the input action `screen FILE` (below) at a
+chosen moment.  The dump reads `gscreen` (base, width, ldepth, r) at
+that moment; pixel 4k+j of a row is bits 2j+1..2j of byte k (islittle,
+`screen.c:24`; s9term bit-reverses its font and cursor into that order),
+the bytes in the address order of the little-endian kernel.  The report
+gives the sha256 of the pixel values (one byte per pixel, row major).
+
+**Shade.**  s9term's `getcolor` (0x80026aa0) gives pixel 0 the colour ~0
+(white) and every other value 0 (black); `bitreset` (+0x5c..+0x62) reads
+it and so leaves `flipping` 0: `/dev/bitblt` draws with 0 white.  The
+dump draws value v as grey 255 − 85v.  The kernel's own console does
+not follow that: `screeninit` fills the screen with `flipD[0]` (ones)
+and `screenputs` draws glyphs with `flipD[S]`, as for a screen whose 1
+is bright, so with getcolor's shade **the console is white text on
+black**.  The cursor confirms the shade: `bitinit` draws the arrow at
+(0, 0) with `D&~clr` and `S|D` (flipping 0), and the dump shows Plan 9's
+black arrow with a white border, over the corner of the first line's
+`1` (a zoom of the first-line dump).  Values 1 and 2 are
+drawn as greys; nothing in the image tells them apart, and 8½'s
+textures and fonts are 1-bit.
+
+### The LCD (`TERM_CHOICES` `lcd`)
+
+`screenupdate` (0x80026368) copies the rows that changed (`mbb`, rounded
+to groups of 4 rows and 32 rows) to Bart's LCD (io.h `Lcdisp`, IOACK
+0x3000): per group of rows y..y+3, `ctl = y>>8`, `ctl = (y>>2)&0x3f`
+(+0x78..+0xa0), then from x = 0 four `data` writes per bitmap byte
+(+0x134..+0x17c), word j holding pixel 4k+j of the four rows (row r in
+bits 2r+1..2r: its `swiz13` table, which s9term's `lcdscsion` builds
+without the shipped source's `((m<<2)|m)>>1` step), inverted (`~m`).
+`LcdPanel` takes that as a 768 × 1024 panel: each `ctl` write shifts its
+low 6 bits into an 8-bit row-group address and resets the column, each
+`data` write fills one column of four rows and moves right.  The run
+reports `LCD panel == framebuffer: yes (0 of N written cells differ)`
+when every cell written equals 3 − the bitmap's pixel; `--lcd FILE`
+writes the panel.  At the first line (3 M instructions): 58 `ctl` and
+16,256 `data` writes, 49,152 cells, all equal.  Nothing in the release
+documents the LCD, so the panel is a reading of the driver, which the
+equality makes consistent with the bitmap; it is not checked against
+the hardware.
+
+### The keyboard (`TERM_CHOICES` `keyboard`)
+
+s9term has no scan-code keyboard: no `kbd.c`, no `kbdinit`.  Its
+keyboard is the serial console, Quart channel 0 at 19200 baud, ASCII,
+CR made NL by `kbdcr2nl` (the console section above).  `--type
+TEXT=REPLY` still types there once `screenputs` has shown TEXT; under
+8½ the screen is drawn through `/dev/bitblt`, not `screenputs`, so the
+input script's timed `type` is the way to type into a window.  8½ reads
+the same bytes from `/dev/cons` in raw mode.
+
+Our own 9term, linked from the release, does have `kbd.c`:
+`CHOICES['console-keyboard']` (above) puts its console on channel 2 as
+`kbd.c` scan codes when the image defines `kbdinit`.  `--type` and the
+input script's `type` both go through `Boot.console_channel` and
+`Boot.console_encode`, so one script types on either image.
+
+### The mouse (`TERM_CHOICES` `mouse`)
+
+`main+0xa4` calls `eiaspecial(3, 0, &mouseq, 1200)`, and `printinit+0x6e`
+sets `mouseq.putc = mouseputc` (0x8002c926).  `m3mouseputc` (the
+Microsoft 3-byte decoder) is in the image, but nothing installs it and
+nothing writes `mousetype`.  `mouseputc` is devbit.c's "Logitech 5 byte
+packed binary" decoder, the Mouse Systems protocol, 1200 baud 8N1:
+
+| byte | bits |
+|---|---|
+| 0 | `1000 0LMR`: a byte with high nibble 8 starts a packet; buttons active low (left bit 2, middle bit 1, right bit 0: `b[] = {0,4,2,6,1,5,3,7}` after `^7`, Plan 9's 1, 2, 4) |
+| 1, 3 | dx1, dx2, signed: dx = dx1 + dx2 |
+| 2, 4 | dy1, dy2, signed, y up: dy = −(dy1 + dy2) |
+
+A delta byte 0x80..0x8F would restart the packet, so `mouse_packet`
+keeps each in −100..100 and `mouse_packets` splits a larger move.
+`mouseupdate` adds the delta to `mouse.xy` (mouse+0x10, +0x14), clamped
+to [0, 768] × [0, 1024], one count one pixel, and redraws the cursor.
+
+### Timed input (`TERM_CHOICES` `input`)
+
+`--input SCRIPT` (or `--input-line LINE`, repeatable; `p9join.py` takes
+both) is a list of `WHEN ACTION` lines, each waiting for the one before:
+
+```
+screen 'il]: ' mouse 100 50       # once screenputs shows "il]: "
+after 0.5 mouse -30 200 L         # 0.5 s of model time later, left down
+quiet 30 screen out.png           # once the LCD has been still for 30 s
+after 0.2 type 'ls\r'             # on the console line
+at-cycle 123456789 buttons -      # at a model cycle (--input-log writes these)
+screen 'init: starting' mark      # nothing: only times the next line
+step 50000000 stop
+```
+
+Timed items are device events for the idle skip (`Boot.next_event`),
+so a wait costs idle laps, not instructions.  `move X Y` moves to a
+position the script tracks (the kernel's `mouse.xy` when it first
+moves, then its own sum of deltas).  `TerminalTest`
+(`tests/test_p9term.py`) runs the first two lines at /boot's prompt
+(25 Hz): `mouse.xy` becomes (70, 250), `mouse.buttons` 1, ten bytes
+arrive on channel 3, the arrow is drawn there, the panel equals the
+bitmap, and the bitmap's checksum is pinned.
+
+### 8½ as `tor`
+
+```
+# live, with the 1e file server in QEMU (lockstep; host ~10 min):
+python3 -u tools/p9join.py --user tor --ports 10931,10932 \
+    --out build/gfx/8half --until NEVER-MATCHES --max-steps 4000000000 \
+    --input tests/net/8half.input
+```
+
+`--user tor` answers `user[none]:` with `tor` and `password:` with
+`--password` (default `password`); `/boot` then prints `boot: password
+not checked!: file does not exist` (the auth dial fails: the server
+the recording used, `build/qemu` built before `tools/qemu1e`'s auth
+server landed, ran none) and goes on as `tor`.  With master's auth
+server (`docs/qemu_1e_server.md` 5a) `tor` has no key and `glenda`
+(password `glenda93`) would be checked; neither has been run here.  The profile binds
+`$home/tmp` and `$home/bin` and execs `8½ -i 8½start -s -f
+/lib/font/bit/pelm/euro.9.font`; `8½start` is `window '0 0 785 602'
+rc`.  The input script (live2, 2026-11-24, on the Quart of
+`docs/devices/README.md`) waited for the screen to settle, opened the
+button-3 menu at (400, 800), swept a New window from (60, 640) to
+(700, 1000) with button 3 held, and typed `ls` into it:
+
+| moment | step | pixels sha256 |
+|---|---|---|
+| 8½ settled, `term% ` in 8½start's window (`q1`) | 1,388,344,680 (1,388,330,026 in the replay since an exception's record costs `9 + D + A`, 2026-11-24) | `7a182d44…` |
+| button 3 held: New Reshape Move Delete Hide (`menu`) | 2,063,875,593 | `e143bf51…` |
+| the swept window, its rc's `term% ` (`new`) | 2,767,523,950 | `c3b1cc7f…` |
+| `ls` in it: `bin lib tmp`, `term% ` (`ls`) | 2,983,469,493 | `a908ac29…` |
+
+2,985,469,493 instructions of which 2,941,421,084 idle-skipped, 149.4 s
+of model time, 1311 frames, 618 s of host time.  The last screen is
+`tests/net/8half_ls.png` (768 × 1024, 2.8 KB): the 8½start window at the
+top, the new window below with `term% ls`, `bin`, `lib`, `tmp` and the
+prompt, and the arrow at (700, 1000).  `EightHalfReplayTest`
+(`tests/test_p9term.py`) replays it (below).
+
+**The background is white, not grey, and the scroll bars are empty.**
+8½ paints its background and scroll-bar thumbs with 1-bit textures
+(`lightgrey`, `darkgrey`) through `/dev/bitblt`'s `texture`, i.e. the
+kernel's `gtexture`.  s9term's `gtexture` (0x80035430) is older than
+`libgnot/gtexture.c`: for a texture narrower than a word it replicates
+the row only to `wneed` = 32 >> ldepth = 16 bits (+0x5aa..+0x5d8, the
+compare with R232) and then converts the row to 2 bits a pixel with the
+`tab01` table indexed by the row's top 16 bits (+0x654..), which that
+replication never filled: every texture word comes out 0, i.e. white.
+`build/gfx/gtex.py` calls s9term's `gtexture` alone on the reference
+model (a 32 × 4 2-bit destination, the 4 × 4 lightgrey rows 8 2 8 2 as
+the kernel held them in the live run, f = S) and gets all-zero words;
+the shipped source replicates while `x < 32` and would give the grey.
+So the white follows from s9term's code as read above, not from the
+board or from 8½'s calls; the test runs that code on the same CPU model,
+so it does not by itself rule out a mis-executed instruction in those
+few lines (the reading of +0x5aa..+0x654 is the evidence).  A kernel
+built from the shipped source would draw grey.  `GtextureTest`
+(`tests/test_p9term.py`) makes the same call, and as a control the same
+rows already 32 pixels wide, which come out as the expected 2-bit
+pattern.
+
+**The replay.**  `EightHalfReplayTest` replays the live run from
+`tests/net/8half.pcap` (its `--pcap`, 1311 frames) and its `--input-log`
+less the screenshots, with no QEMU: every frame the model sends equals
+the recording.  The suite's run stops at `q1` (1,388,330,026 steps;
+1,388,344,680 before an exception's record cost `9 + D + A`)
+and pins the pixels, 8½start's window border and the white below it;
+`P9TERM_8HALF=ls` replays to the end (2,985,453,059 steps; the live
+run's 2,985,469,493 before an exception's record cost `9 + D + A`,
+every frame and both screens unchanged, 2026-11-24) and also
+compares the screen with `tests/net/8half_ls.png`.  The full replay
+reproduced all four checksums of the table above (build/gfx/rep2,
+2026-11-24).  Half of the host time is 8½ starting up: a replay to `q1`
+with screenshots every 50 M steps (build/gfx/rep3.py, beside another
+replay on a loaded machine) reached step 652 M (the console, unchanged
+since 400 M) at 345 s of host time, 700 M (the screen cleared white)
+at 401 s, 807 M (q1's screen) at 682 s, and the stop at 684 s: after
+8½ has drawn, the idle skip covers the minute of model time to `q1` in
+about two seconds.
+
 ## The idle skip (CHOICES `idle-skip`)
 
 s9term's idle loop is `runproc`'s `while(runhiq.head==0 &&
@@ -714,15 +919,30 @@ such.
 * **console-input** — the console line is Quart channel 0 (section "The
   console"); `--type TEXT=REPLY` types REPLY there once the screen shows
   TEXT, `--think SECONDS` after it.
+* **console-keyboard** — an image that defines `kbdinit` (a 9term
+  linked from the release) gets `--type` as `kbd.c` scan codes on Quart
+  channel 2 (section "Our 9term"); the keyboard's own timing is not
+  modelled, the codes come at the line's character rate.
 
 ### Quart (`QUART_CHOICES`, `io.h` `Quart`/`Duart`, `deveia.c`)
 
+The part is the Signetics SC68C94; `docs/devices/README.md` checks every
+device choice here against its data sheets (the 1994 product
+specification is the one the kernel follows).  The FIFO depth and the
+interrupt bids below were corrected from it on 2026-11-24.  That changed
+the boot's instruction stream by a few instructions up to the prompt and
+by hundreds later (a transmit interrupt now takes up to 7 bytes): the
+counts the regression suite pins were re-measured (the recorded pcaps
+still replay frame for frame), and the other counts in this document
+are from before unless they say otherwise; the A5 session replay
+(`a5_session.pcap`) has not been re-run since.
+
 * **sr** — TxRDY|TxEMT while the transmitter is enabled: a byte written
   leaves at once.  RxRDY while the receive FIFO holds a byte, FFULL at
-  three.
+  eight (the part's FIFOs are 8 deep).
 * **rx** — typed bytes arrive one character time apart (1 start bit,
   mr1's data and parity bits, mr2's stop bits at csr's rate under
-  BRGSet2: 0.52 ms at 19200 8N1) into a three-byte FIFO; a byte that
+  BRGSet2: 0.52 ms at 19200 8N1) into the eight-byte FIFO; a byte that
   finds it full, or the receiver disabled, waits on the line (no overrun
   is modelled).  grxfifo/rxfifo pop; an empty FIFO reads 0.
 * **cr** — the enable/disable bits and MrReset/RxReset/TxReset change
@@ -738,12 +958,18 @@ such.
   default follows the count; `--counter-period 0.04` gives the 25 Hz the
   software assumes, a stated deviation that makes `sleep(1000)` in
   `/boot` last 25 ticks of 0.04 s instead of 25 of 0.569 s.
-* **cir** — a write of `update` latches the highest pending enabled
-  source: the counter (cir 0x14, gicr = 2·duart), then a receiver (cir
-  0x0C RxAvail, gicr = channel, gibcr = bytes in its FIFO), then a
-  transmitter (cir 0x08, gicr = channel, gibcr = 1); nothing pending
-  reads 0.  The order is a choice: the bidding registers (bcr) that set
-  it on the part are written by eiasetup but not modelled.
+* **cir** — a write of `update` latches the winning bid, the
+  numerically largest of the pending enabled sources' (1994 spec p. 321,
+  the bidding-format table): a receiver holding n bytes bids
+  (n<<5)|0x0C|ch (RxAvail, gibcr = n, 8 coded as 7); an enabled
+  transmitter, its FIFO always empty in the model, 0x78|ch (TxAvail1,
+  gibcr = 7 free, so `eiaintr` writes up to 7 bytes); an expired counter
+  0x15 or 0x17 (channel b or d, the lowest bid).  So a receiver with 4 or
+  more bytes beats a transmitter, which beats a receiver with 1..3, which
+  beats the counter.  gicr is the bid's channel.  Nothing pending reads
+  0.  The bidding registers (bcr) stay at their reset value 0: s9term
+  writes no global register but `ack` and `icr` (observed: the write
+  counts of a boot to `main`), and the shipped `eiasetup` the same.
 * **irq** — IRQ 1 while any isr bit is enabled in its DUART's imr.
 
 ### WD33C93 (`WD_CHOICES`, `scsi.c`)
@@ -778,7 +1004,7 @@ the behaviour is inferred from `deviic.c`'s code and comments.
   clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
   with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
   are not in the release.  Reading it adds 6,535 instructions before the
-  prompt (22,537,005 at 25 Hz).
+  prompt (22,537,089 at 25 Hz; 22,537,007 with the Quart bids and the exception record's cost of 2026-11-24).
 
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 
@@ -874,12 +1100,92 @@ Not modelled: the TLBs and their flushes (no-ops; the walk is made on
 every access), the instruction cache and prefetch, tracing, NMI edge
 sensitivity, bus errors other than "no device".
 
+## Our 9term: the kernel linked from the release (2026-11-24)
+
+A3 links `9term` from the release's own sources with the release's own
+tools on the reference model (docs/plan9_boot_plan.md A3; 562,452
+bytes, sha256 `002880c0...`, `p9kbuild.NINETERM_SHA256`).  It boots the
+same way as s9term, through the join, and runs A5's whole command
+script:
+
+```sh
+# the image: python3 hobbit/tools/p9kbuild.py all --build hobbit/build/p9kbuild
+#   (3 h 15 min; leaves build/p9kbuild/9term), or `link --kgen K`
+python3 hobbit/tools/p9join.py --image hobbit/build/p9kbuild/9term \
+    --until 'end of script\n% ' --max-steps 6000000000 --out DIR \
+    --type '% =echo hello\r' ... (the ten lines of "Commands at rc's prompt")
+```
+
+Live, 2026-11-24 (lockstep, icount 4, `--ports 11931,11932`):
+**603,242,715 instructions** (553,710,484 idle-skipped), 30.3 s of model
+time, 839 s of host time, 1221 frames.  **The screen is s9term's
+`tests/net/a5_screen.txt` byte for byte except its first line** (2127
+bytes both): `hello`, `6 6 83`, `/lib/ndb/local` whole, `za` and `zl`
+inside the boot, the same `ls -l`, the same sums (`b3769ed2 255
+hello.z`, `4b4798a2 2014 z.out`), `hello 1e`.  `/boot` is a different
+binary from s9term's (built against the shipped libc, text 0x5e30 vs
+0x5cf8, plan9_boot_plan.md A3) and behaves the same: the same prompt,
+`il` taken, the BOOTP request and the ARP exchange byte-identical to
+s9term's recording (frames 0-3 of `a5_session.pcap`), user `none`, the
+attach and the time, init.
+
+The run needed one harness change: our 9term's console is a keyboard.
+The release's `screen.c` calls `kbdinit(2)`, so input is `kbd.c`'s
+scan codes on Quart channel 2 at 600 baud, odd parity, decoded by
+`rawkbdputc`; there is no serial console at all.  p9boot types on that
+keyboard when the image defines `kbdinit` (CHOICES
+`console-keyboard`): `tools/p9scancode.py` turns the typed text into
+press/release codes using `keymap[]`/`skeymap[]` read out of the vendored
+`kbd.c`, `Lshift` around shifted characters, CR as the Return key.
+s9term runs are unchanged (it has no `kbdinit`).
+
+The device rows below count every access to a device register from reset
+to `/boot`'s prompt, both images run the same way (a scratch wrapper
+around `Board.read`/`write`; equal counts are not listed).  Every
+difference from the s9term boot, diagnosed from the sources (all
+expected from the drift in docs/s9term.md; no bug in our build or in the
+reference model was found):
+
+| | s9term | our 9term | why |
+|---|---|---|---|
+| first line | `1364 free pages, 5456K bytes, swap 27856K, ...` | `1362 free pages, 5448K bytes, swap 27848K, ...` | `end` 0x80062ee0 vs 0x800653d8 (text +4,268, data +2,520, bss +2,676): rammain.c `confinit` gives npage = (8 MB top - PGROUND(end))/4K = 1949 vs 1946; page.c prints upages = npage*70/100 = 1364 vs 1362; swap is pmem + nswap pages |
+| `main` reached | step 125,203 | 128,548 | +3,345 = 669 more BSS words cleared by raml.s `_virtual`'s loop (raml.s:91-97, five instructions a word: CMPHI, JMPT, MOV, ADD, JMP; bss +2,676 bytes) |
+| first line on the screen | step 2,131,084 | 2,135,886 | the above plus the screeninit row |
+| `screeninit` | `eiaspecial(0, &printq, &kbdq, 19200)`, `eiaspecial(3, ...)`, `bitreverse` | `kbdinit(2)`: `eiaspecial(2, &liteq, &kbdq, 600)`, `eiasetrts`, `eiasetparity(2, 'o')`, `eiarawput(2, Noclick)`, then `eiaspecial(3, ...)`, `pixreverse` | s9term's screen.c predates kbd.c; devbit.c's `bitreverse` became `pixreverse` (docs/s9term.md table) |
+| Quart channel 2 out | nothing | `0x08` once | `eiarawput(portno, Noclick)` (kbd.c:282) |
+| serial console (channel 0) | every console line, `\n` as `\r\n` (`a5_uart0.txt`, 2235 bytes) | **nothing** | only rommain.c sets `printq` (rommain.c:41); `putstrn` skips the serial line when `printq.puts == 0` |
+| console input | ASCII on channel 0, `kbdcr2nl` | scan codes on channel 2, `rawkbdputc` | kbd.c `kbdinit` |
+| clock | ctu = ctl = 0xFF: a tick every 0.569 s (QUART_CHOICES `counter-period`) | deveia.c `clockinit`'s `Crystal/(2*16*HZ)`: 25 Hz | s9term's clockinit is older |
+| Quart channel 0 registers to the prompt | 75 `sr` reads, 74 `txfifo` writes (pageinit's line and `\r\n`) | none | no printq (above) |
+| Quart channel 2 registers to the prompt | | 2 `sr` reads, writes to its mr/csr/cr and the global registers | kbdinit's `uartsetup` of channel 2, `eiasetparity`, `eiasetrts`, `eiarawput` |
+| Irq registers to the prompt (26 interrupts each) | mask0/1 read 57 times, status0/1 52 (twice per interrupt) | mask0/1 read 5 times (setvector's or-assignments), status0/1 26 (once per interrupt) | s9term's dispatcher is `interrupt` in its devether.c (docs/s9term.md); the release's is trap.c `interrupt`, which keeps the mask in `irqmask` and reads the status once |
+| WD33C93 | 2 reads of its register to the prompt | 3 | the release's scsi.c (`ctlrreset`, `issue`: docs/s9term.md) |
+| LCD to the prompt | 58 control and 16,256 data writes | 42 and 16,128 | screen.c drift (updates of the same two lines of text); pixels are not modelled |
+| `/boot`'s prompt | 286,977,189 instructions, 14.367 s | **22,515,681, 1.144 s** | the clock: `/boot`'s `sleep(1000)` is 25 ticks either way (s9term at `--counter-period 0.04`: 22,537,089, 1.145 s).  Both measured before the Quart's interrupt bids were corrected (`docs/devices/README.md`); since then 22,515,687 and 22,537,091, and with an exception's record costing Table 4-36's `9 + D + A` (also 2026-11-24) 22,515,615 and 22,537,007 (`tests/test_own9term.py`, `TerminalTest`).  The A5 numbers below were not re-measured |
+| A5 script | 840,583,000 instructions, 42.2 s model, 1108 frames | 603,242,715, 30.3 s, 1221 frames | the clock again, for every sleep and alarm |
+| IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state; the server 48 state (s9term's run: 0) | measured from the pcap (types per `ipdat.h`'s enum; IP fragments skipped): 12 Dataqueries are the Hobbit's own retransmit timer (stil.c `ilackproc`: `tsleep(Iltickms)`, resend once `fasttime`, 400 ms at the minimum rtt, has passed), each after the server had been silent on that connection for 240 ms or more (the longest 1.1 s); at 25 Hz those 100 ms ticks are real, while s9term's 0.569 s ticks stretch the same timer past anything the server took.  The other 36 come within 2 ms of a server State: stil.c's `Ilstate` case calls `ilrexmit` whenever anything is unacked, and the server answers every Dataquery with a State (`Ildataquery` case), whose ack is one message behind when the Hobbit has sent another in the meantime, so once started the exchange repeats until the Hobbit is idle.  Both paths are the source's; every message was delivered and the run's output is s9term's.  Whether the timer-driven waits are the server's own time or the lockstep's lag (up to ~0.6 s, "One time base") is not separated |
+
+The run replays without QEMU: `p9boot.py build/p9kbuild/9term
+--ether-replay DIR/hobbit.pcap` with the twelve `--type` answers and
+`--until 'end of script\n% '` stopped at the same 603,242,715
+instructions, every one of the 1221 model frames as recorded, the
+screen byte-identical to the live run's (597 s of CPU, 2026-11-24).
+The pcap is a build product and is not committed: it carries the
+release's binaries as the server sent them.  `tests/test_own9term.py`
+(in the suite) runs our
+9term to its first line and to Return at `/boot`'s prompt typed as scan
+codes; the image is a build product, not committed, so the test looks
+for it at `$HOBBIT_9TERM` or `build/p9kbuild/9term`, uses it only if its
+sha256 is the recorded one, and otherwise skips its image tests,
+printing the command that makes it.
+
 ## What blocks next
 
-1. **8½ and the rest of a terminal**: `tor`'s profile (the release's
-   model user) execs 8½, which wants `/dev/bitblt` and the mouse (Quart
-   channel 3); neither is modelled beyond the LCD's write counter, so
-   the console stays plain rc as `none`.
+1. **The rest of a terminal**: 8½ runs as `tor`, with a mouse-swept
+   window and `ls` in it ("8½ as `tor`").  Left: s9term's blank 1-bit
+   textures (its own `gtexture`, above); the Quart's transmit timing
+   (the transmitter is always empty, no per-character delay); the LCD
+   panel is a reading of the driver, not checked against hardware.
 2. **The ack-0 IL sync** (above): a 1e bug in the server's `stil.c`,
    not removed.  It has not been seen since (0 of 612 probe dials, 0 of
    9 live runs); whether `-icount` changes its rate could not be

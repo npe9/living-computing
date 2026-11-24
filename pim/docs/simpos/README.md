@@ -208,11 +208,64 @@ and stand-in `simpos##` classes. In order:
    `fep_command_code_table:convert/3` against PIMOS's command-code
    names, then on the paragraph classes against their source. Name
    each opcode only from a known-plaintext witness.
+   *Status 2026-11-24: started, OURS, `../../psi/kl0.py` (tested in
+   `run_tests.sh` by `test_kl0.py`).* Witnesses name 96 opcodes
+   (`../../psi/kl0_opcodes.tsv`); any other opcode is refused.
+   - `convert/3` agrees with `pimos.vmac` on 96 names. 4 names are
+     only in the FEP table and 8 only in PIMOS; none disagrees.
+   - Two paragraph classes (`predicate_num_switch_icon`,
+     `list_index_buffer`) give the answers their source predicts.
+   - Of the 530 methods of the 104 classes, 303 run to a solution, 11
+     fail cleanly and 216 are refused. The causes are ranked in
+     `../../psi/README.md`. 52 of the refusals come from 13 opcodes
+     not yet named.
+   Cell numbering inside `.ptf` code was settled for this step: a hash
+   table spans mask+1+2*keys+2 cells.
 3. **An ESP compiler** producing KL0, checked structurally against
    `paragraph.ptf`. Use it to write the stand-in `simpos##` classes,
    in the order of §1 and in reference-count order (`symbolizer`,
    `string`, `process`, `font`, ...), labelled as scaffolding, with
    the printed source of §2 used verbatim wherever it exists.
+   *Status 2026-11-24: started, OURS, `../../psi/espc.py` (tested in
+   `run_tests.sh` by `test_espc.py`).* It emits only opcodes with a
+   row in `kl0_opcodes.tsv` and refuses any other construct by name.
+   - Structure, against the held `.ptf` (`espc.py check`). Paragraph:
+     all 109 classes with source compile. Natures and demon sets agree
+     in 109 of 109, slots and the method sets in 108. The two misses
+     are the 3200/3500 version slot and two unparsed items of
+     `h_grade`. Of 991 predicates compared, 243 are cell for cell
+     identical. That is 24.5% of the compared predicates and 11.4% of
+     all 2,123 held predicates of those classes. Kappa2 compares 3,387
+     predicates, 501 exact (14.8%); 404 of its 739 classes are refused
+     whole for `with_macro`. Utter compares 464, 94 exact (20.3%). The
+     differences are classified in `../../psi/README.md`. The largest
+     classes are held code using opcodes not in the table (212 in
+     paragraph) and differences of moves and environment only (189).
+   - Behaviour (`espc.py behave`). The compiled paragraph classes run
+     alone in a library, so every class a call reaches was compiled
+     here. They give the same answers as `paragraph.ptf` to every call
+     `test_kl0.py` makes. The exception is `paragraph_version`, which
+     gives the source's "3200". Over kl0's census of `paragraph.ptf`,
+     88 methods have the same outcome, and none has a different
+     outcome.
+   - Stand-ins, in `../../psi/standin/` and labelled scaffolding.
+     The owner allowed interpolating SIMPOS (2026-11-24). Each method
+     is labelled PRINTED (verbatim) or INTERPOLATED (with its sources:
+     the interface, the call sites, the manuals). The stand-ins are:
+     `process` (ours; its `self/2` is called by the printed
+     `stream`, but its body is not printed) and `stream` (TM-100
+     Fig. 3.6 printed source, with three marked corrections to the
+     print). They were chosen by what pimfep's methods reach first,
+     not by reference count. Called with unbound arguments, the
+     pimfep methods refuse at `process:self/2` (46 methods),
+     `stream:create/2` (15) and `process:create/3` (14). None of them
+     reaches `symbolizer` or `string` first, although their code sends
+     `string:append/3` 24 times and `symbolizer:get_number/3` 10 times.
+     `pimfep##pimos_timer:on_after/4` used to refuse at
+     `simpos##process:self/2`. It now refuses at
+     `simpos##process:tag_catch/9`. `pimos_timer:stream/2` gets into
+     the printed `stream` and stops at kl0's `new/2`, because the
+     printed slots are initialised by code.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

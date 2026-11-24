@@ -46,6 +46,18 @@ python3 "$here/test_sem_system.py"
 # checked against a run without it (tools/p9boot.py, docs/p9boot.md;
 # ~6-7 min on a loaded machine).
 python3 "$here/test_p9boot.py"
+# Our 9term (A3's link) to its first line and to Return at /boot's
+# prompt, typed as kbd.c scan codes (~1.5 min); the image is a build
+# product: the image tests skip, printing the command, when
+# build/p9kbuild/9term (or $HOBBIT_9TERM) is not the recorded image.
+python3 "$here/test_own9term.py"
+# The terminal (tools/p9term.py): the screen bitmap, the LCD panel built
+# from screenupdate's writes, the Mouse Systems mouse on Quart channel 3
+# and timed input, at /boot's prompt (~1 min); s9term's gtexture alone;
+# and a replay of a live 8½ session as tor to 8½'s first settled screen
+# (EightHalfReplayTest, the longest part; P9TERM_8HALF=ls replays the
+# mouse-swept window and `ls` in it as well).
+python3 "$here/test_p9term.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.

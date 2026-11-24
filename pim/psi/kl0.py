@@ -1,0 +1,1406 @@
+#!/usr/bin/env python3
+"""A KL0 interpreter for compiled ESP (.ptf) code, step 2 of the SIMPOS
+route (docs/simpos/README.md §5).  OURS throughout: the PSI's own KL0
+firmware is the authority and is not emulated here.
+
+    python3 -I psi/kl0.py convert            fep_command_code_table:convert/3 against pimos.vmac
+    python3 -I psi/kl0.py census [--tsv F]   trivial calls on every method of the 104 classes
+    python3 -I psi/kl0.py call PKG##CLASS SEL/N [ARG ...]   one class-method call (ints and atoms)
+
+WHAT DRIVES IT
+
+Every opcode the interpreter executes has a row in psi/kl0_opcodes.tsv
+with a known-plaintext witness: compiled code next to the held ESP source
+of the same clause.  Handlers are installed only for rows with a witness
+(`Machine.handlers` against the table is pinned in test_kl0.py).  An opcode
+without a row is refused loudly (`Refusal`), never guessed; so is an
+operand pattern a row says was never witnessed (e.g. an immediate with
+the top bit set, or a three-register built-in whose result register
+differs from its first operand).
+
+THE MACHINE (OURS, WAM-shaped as layers/KL0.md §3 describes KL0)
+
+- One register file A/X (MEASURED: the compiled code moves arguments
+  and temporaries in one numbering; `a3 05 01` puts X1 into A5).
+- Method calls put the receiver in register n-1 and the other
+  arguments in A0..A(n-2) (MEASURED on paragraph##icon_button: `:draw(
+  Icon,X,Y,W,H,Win)` is sent with Icon in A5, X..Win in A0..A4).
+- Environments hold the permanent variables, the continuation and the
+  cut barrier; choice points copy the register file.  Terms are Python
+  objects (Var, Atom, int, Cons, Vec, Str, ClassRef, Instance), all on
+  one heap, so the safe/unsafe distinctions of the put/unify variants do
+  not arise here.
+- Cut: a predicate's entry barrier is kept in B0 and also put in register
+  A_arity (MEASURED: kappa##kappaDBC_interface pic/1 saves A1 with
+  `20 01 00` and cuts with `dd 01 01`; pmi dd/de take the register).
+  A `$or$N` (kind 0x12) keeps its caller's barrier, so a cut inside a
+  disjunction cuts the clause (OURS reading, consistent with
+  pic/1's `$or$3/1`, whose `!` is d0 with A1 overwritten).
+- Slot assignment is not undone on backtracking (ESP's semantics, TM-388
+  §3.5 slots are object state).
+- Method dispatch goes through the loader's Fig. A-1 tables
+  (Librarian.send), and runs the combined method of TM-388 §3.4:
+  before-demons, the primaries as alternatives, after-demons.
+- Class `class` (TM-388 §3.6) is not held.  Its `new/2` is OURS here: an
+  instance whose slots take their constant or `is Class` initial values;
+  a slot initialised by code refuses (cause 'slot init by code').  Any
+  other method of class `class` refuses.
+- A send to a `simpos##` class, or one that finds no method in a class
+  with a `simpos##` ancestor, refuses naming the class and selector
+  (stand-in SIMPOS classes are step 3).
+"""
+import collections
+import csv
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(HERE, '..', 'asm'))
+sys.path.insert(0, HERE)
+import ptfdump as P  # noqa: E402
+import librarian as LB  # noqa: E402
+
+TSV = os.path.join(HERE, 'kl0_opcodes.tsv')
+
+
+class Refusal(Exception):
+    """Execution reached something not witnessed or not modelled."""
+
+    def __init__(self, cause, detail):
+        Exception.__init__(self, '%s: %s' % (cause, detail))
+        self.cause, self.detail = cause, detail
+
+
+class StepLimit(Exception):
+    pass
+
+
+# --------------------------------------------------------------------------
+# terms
+
+class Var:
+    __slots__ = ('ref', 'name')
+    n = 0
+
+    def __init__(self):
+        self.ref = None
+        Var.n += 1
+        self.name = '_G%d' % Var.n
+
+    def __repr__(self):
+        return self.name if self.ref is None else repr(deref(self))
+
+
+class Atom:
+    table = {}
+    __slots__ = ('name',)
+
+    def __new__(cls, name):
+        a = Atom.table.get(name)
+        if a is None:
+            a = object.__new__(cls)
+            a.name = name
+            Atom.table[name] = a
+        return a
+
+    def __repr__(self):
+        return self.name
+
+
+NIL = Atom('[]')
+
+
+class Cons:
+    __slots__ = ('args',)
+
+    def __init__(self, car, cdr):
+        self.args = [car, cdr]
+
+    def __repr__(self):
+        out, t = [], self
+        while isinstance(t, Cons):
+            out.append(repr(deref(t.args[0])))
+            t = deref(t.args[1])
+        return '[%s%s]' % (','.join(out), '' if t is NIL else '|%r' % (t,))
+
+
+class Vec:
+    __slots__ = ('args', 'heap')
+
+    def __init__(self, args, heap=False):
+        self.args, self.heap = list(args), heap
+
+    def __repr__(self):
+        return '{%s}' % ','.join(repr(deref(a)) for a in self.args)
+
+
+class Str:
+    __slots__ = ('text',)
+
+    def __init__(self, text):
+        self.text = text
+
+    def __eq__(self, o):
+        return isinstance(o, Str) and o.text == self.text
+
+    def __hash__(self):
+        return hash(self.text)
+
+    def __repr__(self):
+        return 'string#%r' % self.text
+
+
+class ClassRef:
+    __slots__ = ('cid',)
+
+    def __init__(self, cid):
+        self.cid = cid
+
+    def __eq__(self, o):
+        return isinstance(o, ClassRef) and o.cid == self.cid
+
+    def __hash__(self):
+        return hash(self.cid)
+
+    def __repr__(self):
+        return '#' + self.cid
+
+
+class Instance:
+    __slots__ = ('cid', 'slots')
+
+    def __init__(self, cid, slots):
+        self.cid, self.slots = cid, slots
+
+    def __repr__(self):
+        return '<%s>' % self.cid
+
+
+class Barrier:
+    """The cut barrier a predicate finds in register A_arity on entry
+    (kappa##kappaDBC_interface pic/1: `20 01 00` saves A1, `dd 01 01`
+    cuts to it, `a2 01 00` reloads it after a call, `de 01 01` cuts again).
+    B is the choice-point stack height: OURS representation."""
+    __slots__ = ('b',)
+
+    def __init__(self, b):
+        self.b = b
+
+    def __repr__(self):
+        return '<barrier %d>' % self.b
+
+
+def deref(t):
+    while isinstance(t, Var) and t.ref is not None:
+        t = t.ref
+    return t
+
+
+def is_atomic(t):
+    return isinstance(t, (Atom, int, Str, ClassRef, Instance))
+
+
+# --------------------------------------------------------------------------
+# code
+
+def s16(v):
+    v &= 0xffff
+    return v - 0x10000 if v & 0x8000 else v
+
+
+def u16(rowmn, v):
+    v &= 0xffff
+    if v & 0x8000:
+        raise Refusal('operand', '%s with immediate %04x: the sign of a 16-bit immediate is unwitnessed' % (rowmn, v))
+    return v
+
+
+class Code:
+    """One class's code: its cells by offset, its predicates by offset,
+    and its constant pool (cells 13.., one per constant: MEASURED, all
+    pool references of the eleven packages but 25 land in the pool)."""
+
+    def __init__(self, lib, t):
+        self.t, self.id = t, t.id
+        self.cells, self.preds = {}, {}
+        for p in t.preds():
+            if p is None:
+                continue
+            self.preds[p.offset] = p
+            for c in p.cells:
+                self.cells[c[0]] = c
+        # a template compiled by psi/espc.py carries its own pool; a loaded
+        # one is read from its held record on first use
+        self.pool = getattr(t, 'pool', None)
+        self.lib = lib
+
+    def sym(self, n):
+        return P.sym(dict(syms=self.t.symbols), n)
+
+    def pool_term(self, cell):
+        if self.pool is None:
+            self.pool = read_pool(self.t)
+        k = cell - 13
+        if not 0 <= k < len(self.pool):
+            raise Refusal('pool', '%s: pool cell %d outside the %d constants read' % (self.id, cell, len(self.pool)))
+        return build(self, self.pool[k])
+
+
+def read_pool(t):
+    """The constants after the 13 trailer terms, as raw terms."""
+    rec = _record(t)
+    b = rec['body']
+    si, ti = rec['syms'].index(t.id), rec['syms'].index('template')
+    i = [k for k in range(5, len(b) - 3)
+         if b[k] == 0x100 and b[k + 1] == si and b[k + 2] == 0x100 and b[k + 3] == ti][0]
+    for _ in range(13):
+        _x, i = LB._term(rec, b, i)
+    out = []
+    while i < len(b):
+        try:
+            x, i = _pterm(rec, b, i)
+        except IndexError:
+            break
+        out.append(x)
+    return out
+
+
+_RECORDS = {}
+
+
+def _record(t):
+    """The ptfdump record of template T (the loader keeps no raw words)."""
+    if t.id not in _RECORDS:
+        import held
+        for label, (arch, mem) in held.PTF.items():
+            _n, _a, recs = P.parse_bytes(held.ptf_bytes(label))
+            if _n != t.package:
+                continue
+            for r in recs:
+                _RECORDS[r['id']] = r
+    return _RECORDS[t.id]
+
+
+def _pterm(rec, b, i):
+    w = b[i]
+    if w >> 8 == 0x8b and b[i + 1] >> 8 == 0x0d:
+        # MEASURED: 3,447 of 3,447 such cells carry the symbol number of a
+        # `pkg##class` name: a class-object constant (#Class)
+        return ('classref', P.sym(rec, b[i + 2])), i + 3
+    if w in (0x1800, 0x1700):
+        n, i, el = b[i + 1], i + 2, []
+        for _ in range(n):
+            e, i = _pterm(rec, b, i)
+            el.append(e)
+        return ('vec' if w == 0x1800 else 'svec', el), i
+    if w == 0x0200:
+        a, i = _pterm(rec, b, i + 1)
+        d, i = _pterm(rec, b, i)
+        return ('list', a, d), i
+    return LB._term(rec, b, i)
+
+
+def build(code, x):
+    k = x[0]
+    if k == 'int':
+        v = x[1]
+        return v - (1 << 32) if v & 0x80000000 else v
+    if k == 'atom':
+        return Atom(x[1])
+    if k == 'str':
+        return Str(x[1])
+    if k == 'classref':
+        return ClassRef(code.lib.resolve(x[1], code.t.package)[1])
+    if k in ('vec', 'svec'):
+        return Vec([build(code, e) for e in x[1]])
+    if k == 'list':
+        return Cons(build(code, x[1]), build(code, x[2]))
+    raise Refusal('pool', '%s: constant of kind %r not modelled' % (code.id, k))
+
+
+# --------------------------------------------------------------------------
+# the opcode table
+
+def load_table(path=TSV):
+    with open(path) as f:
+        return [r for r in csv.DictReader(f, delimiter='\t')]
+
+
+class Frame:
+    __slots__ = ('y', 'prev', 'cont', 'b0')
+
+    def __init__(self, n, prev, cont, b0):
+        self.y = [Var() for _ in range(n)]
+        self.prev, self.cont, self.b0 = prev, cont, b0
+
+
+class Choice:
+    __slots__ = ('alt', 'x', 'env', 'cont', 'b0', 'trail', 'cur')
+
+    def __init__(self, alt, m):
+        self.alt = alt
+        self.x = dict(m.x)
+        self.env, self.cont, self.b0 = m.env, m.cont, m.b0
+        self.trail = len(m.trail)
+        self.cur = None
+
+
+class Syn:
+    """Synthetic code for a combined method (TM-388 §3.4), OURS: a list of
+    pseudo-instructions run by the same machine."""
+
+    def __init__(self, label, ops):
+        self.id, self.ops = label, ops
+
+
+class Machine:
+    def __init__(self, lib, table=None, max_steps=200000):
+        self.lib = lib
+        self.rows = table if table is not None else load_table()
+        self.codes = {}
+        self.class_slots = {}
+        self.max_steps = max_steps
+        self.handlers = {}
+        for r in self.rows:
+            if not r['witness'].strip():
+                continue
+            fn = getattr(self, 'op_' + r['mnemonic'], None)
+            if fn is None:
+                raise ValueError('table row without an implementation: %r' % r['mnemonic'])
+            self.handlers[(r['class'], r['opcode'])] = fn
+        self.trace = None
+
+    # -- code --------------------------------------------------------------
+    def code(self, cid):
+        c = self.codes.get(cid)
+        if c is None:
+            t = self.lib.templates[cid]
+            c = self.codes[cid] = Code(self.lib, t)
+        return c
+
+    # -- unification -------------------------------------------------------
+    def bind(self, v, t):
+        v.ref = t
+        self.trail.append(v)
+
+    def unify(self, a, b):
+        a, b = deref(a), deref(b)
+        if a is b:
+            return True
+        if isinstance(a, Var):
+            self.bind(a, b)
+            return True
+        if isinstance(b, Var):
+            self.bind(b, a)
+            return True
+        if isinstance(a, int) and isinstance(b, int):
+            return a == b and not isinstance(a, bool)
+        if isinstance(a, (Cons, Vec)) and type(a) is type(b):
+            if len(a.args) != len(b.args):
+                return False
+            return all(self.unify(x, y) for x, y in zip(a.args, b.args))
+        if isinstance(a, (Str, ClassRef)) and a == b:
+            return True
+        return False
+
+    # -- running -----------------------------------------------------------
+    def reset(self):
+        self.x = collections.defaultdict(Var)
+        self.env = None
+        self.cont = None
+        self.b0 = 0
+        self.stack = []
+        self.trail = []
+        self.S = None
+        self.steps = 0
+
+    def fail(self):
+        if not self.stack:
+            self.pc = None
+            return
+        ch = self.stack[-1]
+        while len(self.trail) > ch.trail:
+            self.trail.pop().ref = None
+        self.x = collections.defaultdict(Var, ch.x)
+        self.env, self.cont, self.b0 = ch.env, ch.cont, ch.b0
+        self.pc = ch.alt
+
+    def cut_to(self, b):
+        del self.stack[b:]
+
+    def solve(self, start, args, limit=None):
+        """Generator of solutions: START is (code, offset) or a Syn; ARGS
+        go to A0... ; yields after each success (the caller reads ARGS)."""
+        self.reset()
+        for i, a in enumerate(args):
+            self.x[i] = a
+        self.pc = (start, 0) if isinstance(start, Syn) else start
+        self.cont = ('halt',)
+        self.b0 = 0
+        while True:
+            if self.pc is None:
+                return
+            if self.pc == ('halt',):
+                yield True
+                self.fail()
+                continue
+            self.steps += 1
+            if self.steps > self.max_steps:
+                raise StepLimit(self.steps)
+            self.exec1()
+
+    def exec1(self):
+        code, off = self.pc
+        if isinstance(code, Syn):
+            return self.syn(code, off)
+        c = code.cells.get(off)
+        if c is None:
+            raise Refusal('code', '%s: no cell at @%x' % (code.id, off))
+        tag = c[1]
+        if self.trace:
+            self.trace(code, c)
+        if tag in (0x20, 0x21):
+            key = ('pmi' if tag == 0x20 else 'blt', '%02x' % (c[3] >> 24))
+            fn = self.handlers.get(key)
+            if fn is None:
+                raise Refusal('opcode', '%s %s (%s @%x)' % (key[0], key[1], code.id, off))
+            v = c[3]
+            return fn(code, off, (v >> 16) & 255, (v >> 8) & 255, v & 255, v)
+        if tag == 0x60:
+            lo = c[2]
+            if lo & 0x80:
+                key = ('atom', 'put')
+            elif lo == 0x4c:
+                key = ('atom', 'unify')
+            else:
+                key = ('atom', 'get')
+            fn = self.handlers.get(key)
+            if fn is None:
+                raise Refusal('opcode', 'atom cell %s (%s @%x)' % (key[1], code.id, off))
+            return fn(code, off, lo, Atom(code.sym(c[3])))
+        if tag == 0xa0:
+            fn = self.handlers.get(('table', '%04x' % c[2]))
+            if fn is None:
+                raise Refusal('opcode', 'hash table %04x (%s @%x)' % (c[2], code.id, off))
+            return fn(code, off, c)
+        raise Refusal('code', '%s @%x: execution reached a data cell (%s)' % (
+            code.id, off, P.show(dict(syms=code.t.symbols), c)))
+
+    def nxt(self, code, off, k=1):
+        self.pc = (code, off + k)
+
+    def operand(self, code, off):
+        c = code.cells.get(off + 1)
+        if c is None:
+            raise Refusal('code', '%s: no operand cell at @%x' % (code.id, off + 1))
+        return c
+
+    def const_cell(self, code, c):
+        if c[1] == 0x00:
+            v = c[3]
+            return v - (1 << 32) if v & 0x80000000 else v
+        if c[1] == 0x01 and c[2] == 0:
+            return Atom(code.sym(c[3]))
+        raise Refusal('operand', '%s: constant cell %s' % (code.id, P.show(dict(syms=code.t.symbols), c)))
+
+    # -- calls -------------------------------------------------------------
+    def call_local(self, code, off, target, last, dealloc=False):
+        p = code.preds.get(target)
+        if p is None:
+            raise Refusal('code', '%s @%x: local call to @%x, not a predicate' % (code.id, off, target))
+        if dealloc:
+            self.cont, self.env = self.env.cont, self.env.prev
+        elif not last:
+            self.cont = (code, off + 1, self.env, self.b0)
+        if p.kind != 0x12:
+            # a $or$N (kind 0x12) keeps the caller's barrier: OURS
+            self.enter_pred(p)
+        self.pc = (code, target)
+
+    def enter_pred(self, p):
+        """A predicate's entry barrier: in B0, and in register A_arity."""
+        self.b0 = len(self.stack)
+        self.x[p.arity] = Barrier(self.b0)
+
+    def proceed(self):
+        k = self.cont
+        if k == ('halt',):
+            self.pc = ('halt',)
+            return
+        code, off, env, b0 = k
+        # the caller's own continuation is held in its environment
+        self.env, self.b0 = env, b0
+        self.cont = env.cont if env is not None else ('halt',)
+        self.pc = (code, off)
+
+    # -- method dispatch ---------------------------------------------------
+    def send(self, code, off, R, n, sel_cell, last, dealloc=False):
+        if sel_cell[1] != 0x01 or sel_cell[2] == 0:
+            raise Refusal('code', '%s @%x: no selector after the send' % (code.id, off))
+        name, arity = code.sym(sel_cell[3]), sel_cell[2]
+        recv = deref(self.x[R])
+        if dealloc:
+            self.cont, self.env = self.env.cont, self.env.prev
+        elif not last:
+            self.cont = (code, off + 2, self.env, self.b0)
+        self.dispatch(recv, name, arity)
+
+    def dispatch(self, recv, name, arity):
+        if isinstance(recv, ClassRef):
+            cid, section = recv.cid, 'class'
+        elif isinstance(recv, Instance):
+            cid, section = recv.cid, 'instance'
+        elif isinstance(recv, Var):
+            raise Refusal('unbound receiver', 'send %s/%d to an unbound receiver' % (name, arity))
+        else:
+            raise Refusal('receiver not an object', 'send %s/%d to %r' % (name, arity, recv))
+        if cid not in self.lib.templates:
+            raise Refusal('simpos', 'send %s:%s/%d (%s class not loaded)' % (cid, name, arity, section))
+        co = self.lib.build(cid)
+        m = self.lib.send(co, section, name, arity)
+        if m is None or not m.primaries:
+            if section == 'class' and (name, arity) == ('new', 2):
+                # class `class`'s new/2 (TM-388 §3.6), OURS, as the primary
+                return self.run_combined(co, m, ('new',))
+            if not co.complete:
+                raise Refusal('simpos', 'send %s:%s/%d (not in the held classes; ancestors %s)' % (
+                    cid, name, arity, ' '.join(r for r, _s in co.opaque)))
+            if m is None and getattr(self.lib.templates.get(cid), 'standin', False):
+                # a stand-in (psi/standin/, OURS) has only some of the
+                # lost class's methods: the rest is still SIMPOS
+                raise Refusal('simpos', 'send %s:%s/%d (not in the stand-in)' % (cid, name, arity))
+            if m is None:
+                # not in the class's own table: a method of class `class`
+                # (not held, other than new/2), or one a mixin leaves to
+                # the class it is mixed into
+                raise Refusal('no method', '%s %s:%s/%d is not in the class' % (section, cid, name, arity))
+        return self.run_combined(co, m, None)
+
+    def run_combined(self, co, m, prim):
+        """TM-388 §3.4: b1..bn, (p1;...;pk;fail), a.. as synthetic code."""
+        before = m.before if m else []
+        after = m.after if m else []
+        primaries = [('class', None)] if prim == ('new',) else list(m.primaries)
+        if not before and not after and len(primaries) == 1 and primaries[0][0] != 'class':
+            cid, p = primaries[0]
+            self.enter_pred(p)
+            self.pc = (self.code(cid), p.offset)
+            return
+        n = m.selector[1] if m else 2
+        ops = [('save', n)]
+        for cid, p in before:
+            ops += [('restore', n), ('call', cid, p.offset)]
+        if not primaries:
+            ops.append(('fail',))
+        heads, jumps = [], []
+        for k, (cid, p) in enumerate(primaries):
+            heads.append(len(ops))
+            if len(primaries) > 1:
+                ops.append(('try', None) if k == 0 else (('retry', None) if k + 1 < len(primaries) else ('trust',)))
+            ops.append(('restore', n))
+            ops.append(('new', co.id) if cid == 'class' else ('call', cid, p.offset))
+            jumps.append(len(ops))
+            ops.append(('jump', None))
+        for k in range(len(primaries) - 1):
+            ops[heads[k]] = (ops[heads[k]][0], heads[k + 1])
+        for j in jumps:
+            ops[j] = ('jump', len(ops))
+        for cid, p in after:
+            ops += [('restore', n), ('call', cid, p.offset)]
+        ops.append(('return',))
+        self.pc = (Syn('%s:%s/%d' % (co.id, m.selector[0] if m else 'new', n), ops), 0)
+
+    def syn(self, code, off):
+        op = code.ops[off]
+        k = op[0]
+        if k == 'save':
+            self.env = Frame(op[1], self.env, self.cont, len(self.stack))
+            for i in range(op[1]):
+                self.env.y[i] = self.x[i]
+            return self.nxt(code, off)
+        if k == 'restore':
+            for i in range(op[1]):
+                self.x[i] = self.env.y[i]
+            return self.nxt(code, off)
+        if k == 'call':
+            self.cont = (code, off + 1, self.env, self.b0)
+            c = self.code(op[1])
+            self.enter_pred(c.preds[op[2]])
+            self.pc = (c, op[2])
+            return
+        if k == 'new':
+            self.cont = (code, off + 1, self.env, self.b0)
+            self.class_new(op[1])
+            return
+        if k == 'try':
+            ch = Choice((code, op[1]), self)
+            self.stack.append(ch)
+            return self.nxt(code, off)
+        if k == 'retry':
+            self.stack[-1].alt = (code, op[1])
+            return self.nxt(code, off)
+        if k == 'trust':
+            self.stack.pop()
+            return self.nxt(code, off)
+        if k == 'jump':
+            self.pc = (code, op[1])
+            return
+        if k == 'fail':
+            return self.fail()
+        if k == 'return':
+            env = self.env
+            self.env = env.prev
+            self.cont = env.cont
+            return self.proceed()
+        raise Refusal('code', 'synthetic op %r' % (op,))
+
+    def class_new(self, cid):
+        """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
+        instance, with constant and `is Class` slot values; A0 := it."""
+        if not self.unify(self.x[0], new_instance(self.lib, cid)):
+            return self.fail()
+        self.proceed()
+
+    def slot_index(self, obj, name):
+        if isinstance(obj, Instance):
+            co, sec = self.lib.build(obj.cid), 'instance'
+        elif isinstance(obj, ClassRef):
+            if obj.cid not in self.lib.templates:
+                raise Refusal('simpos', 'slot %s of %s' % (name, obj.cid))
+            co, sec = self.lib.build(obj.cid), 'class'
+        else:
+            raise Refusal('unbound receiver' if isinstance(obj, Var) else 'receiver not an object',
+                          'slot %s of %r' % (name, obj))
+        k = self.lib.slot_number(co, sec, name)
+        if k is None:
+            raise Refusal('simpos' if not co.complete else 'no slot', 'slot %s of %s' % (name, co.id))
+        return co, sec, k
+
+    def slot_store(self, obj, co, sec):
+        if sec == 'instance':
+            return obj.slots
+        s = self.class_slots.get(co.id)
+        if s is None:
+            s = []
+            for e in co.class_slots:
+                s.append(None if e.slot.init[0] == 'code' else slot_value(e.slot))
+            self.class_slots[co.id] = s
+        return s
+
+    # -- structure cursor (read and write modes are one here) ---------------
+    def enter(self, term, args):
+        self.S = [term.args, 0] if args is None else [args, 0]
+
+    def next_elem(self):
+        if self.S is None or self.S[1] >= len(self.S[0]):
+            raise Refusal('code', 'unify instruction with no structure element left')
+        el, i = self.S
+        self.S[1] += 1
+        return el, i
+
+    def get_struct(self, A, kind, n):
+        t = deref(self.x[A])
+        if isinstance(t, Var):
+            new = Cons(Var(), Var()) if kind == 'list' else Vec([Var() for _ in range(n)])
+            self.bind(t, new)
+            self.S = [new.args, 0]
+            return True
+        if kind == 'list' and isinstance(t, Cons):
+            self.S = [t.args, 0]
+            return True
+        if kind == 'vec' and isinstance(t, Vec) and len(t.args) == n:
+            self.S = [t.args, 0]
+            return True
+        return False
+
+    # =====================================================================
+    # handlers, one per row of kl0_opcodes.tsv (named op_<mnemonic>)
+
+    # control
+    def op_allocate(self, code, off, a, b, c, v):
+        self.env = Frame(a, self.env, self.cont, self.b0)
+        self.nxt(code, off)
+
+    def op_deallocate_proceed(self, code, off, a, b, c, v):
+        env = self.env
+        self.cont, self.env = env.cont, env.prev
+        self.proceed()
+
+    def op_proceed(self, code, off, a, b, c, v):
+        self.proceed()
+
+    def op_cut_proceed(self, code, off, a, b, c, v):
+        self.cut_to(self.b0)
+        self.proceed()
+
+    def op_neck_cut(self, code, off, a, b, c, v):
+        self.cut_to(self.b0)
+        self.nxt(code, off)
+
+    def op_cut(self, code, off, a, b, c, v):
+        self.cut_to(self.b0)
+        self.nxt(code, off)
+
+    def op_cut_env(self, code, off, a, b, c, v):
+        self.cut_to(self.env.b0)
+        self.nxt(code, off)
+
+    def op_cut_deallocate_proceed(self, code, off, a, b, c, v):
+        self.cut_to(self.env.b0)
+        self.op_deallocate_proceed(code, off, a, b, c, v)
+
+    def _barrier(self, code, off, a, b, what):
+        if self.env is None or b != len(self.env.y):
+            # the second operand is the environment's size (`5f 02` .. `dd 03 02`)
+            raise Refusal('operand', '%s %02x %02x: second operand is not the environment size' % (what, a, b))
+        t = deref(self.x[a])
+        if not isinstance(t, Barrier):
+            raise Refusal('code', '%s @%x: %s finds %r in A%d, not a barrier' % (code.id, off, what, t, a))
+        return t.b
+
+    def op_cut_register(self, code, off, a, b, c, v):
+        self.cut_to(self._barrier(code, off, a, b, 'pmi dd'))
+        self.nxt(code, off)
+
+    def op_cut_register_de(self, code, off, a, b, c, v):
+        self.cut_to(self._barrier(code, off, a, b, 'pmi de'))
+        self.nxt(code, off)
+
+    def op_cut_env_d3(self, code, off, a, b, c, v):
+        self.cut_to(self.env.b0)
+        self.nxt(code, off)
+
+    def op_deallocate(self, code, off, a, b, c, v):
+        env = self.env
+        self.cont, self.env = env.cont, env.prev
+        self.nxt(code, off)
+
+    def op_fail(self, code, off, a, b, c, v):
+        self.fail()
+
+    def op_cut_fail(self, code, off, a, b, c, v):
+        self.cut_to(self.b0)
+        self.fail()
+
+    def op_call_local(self, code, off, a, b, c, v):
+        self.call_local(code, off, off + 2 + s16(v), last=False)
+
+    def op_execute_local(self, code, off, a, b, c, v):
+        self.call_local(code, off, off + 2 + s16(v), last=True)
+
+    def op_deallocate_execute_local(self, code, off, a, b, c, v):
+        self.call_local(code, off, off + 2 + s16(v), last=True, dealloc=True)
+
+    def op_call_method(self, code, off, a, b, c, v):
+        self.send(code, off, a, b, self.operand(code, off), last=False)
+
+    def op_execute_method(self, code, off, a, b, c, v):
+        self.send(code, off, a, b, self.operand(code, off), last=True)
+
+    def op_deallocate_execute_method(self, code, off, a, b, c, v):
+        self.send(code, off, a, b, self.operand(code, off), last=True, dealloc=True)
+
+    # choice points
+    def op_try_me_else(self, code, off, a, b, c, v):
+        self.stack.append(Choice((code, off + 3 + s16(v)), self))
+        self.nxt(code, off)
+
+    def op_retry_me_else(self, code, off, a, b, c, v):
+        self.stack[-1].alt = (code, off + 2 + s16(v))
+        self.nxt(code, off)
+
+    def op_trust_me(self, code, off, a, b, c, v):
+        self.stack.pop()
+        self.nxt(code, off)
+
+    def op_try(self, code, off, a, b, c, v):
+        self.stack.append(Choice((code, off + 1), self))
+        self.pc = (code, off + 2 + s16(v))
+
+    def op_retry(self, code, off, a, b, c, v):
+        self.stack[-1].alt = (code, off + 1)
+        self.pc = (code, off + 2 + s16(v))
+
+    def op_trust(self, code, off, a, b, c, v):
+        self.stack.pop()
+        self.pc = (code, off + 2 + s16(v))
+
+    # indexing
+    def op_switch_on_list(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        w = self.operand(code, off)[3]
+        if isinstance(t, Var):
+            self.pc = (code, off + 2 + s16(w))
+        elif isinstance(t, Cons):
+            self.pc = (code, off + 2)
+        elif is_atomic(t):
+            self.pc = (code, off + 2 + s16(v))
+        else:
+            self.pc = (code, off + 2 + s16(w >> 16))
+
+    def op_switch_on_constant(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        w = self.operand(code, off)[3]
+        if isinstance(t, Var):
+            self.pc = (code, off + 2 + s16(w))
+        elif isinstance(t, (Atom, int)):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
+    def op_if_constant(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        k = self.const_cell(code, self.operand(code, off))
+        if (isinstance(k, int) and isinstance(t, int) and t == k) or (isinstance(k, Atom) and t is k):
+            self.pc = (code, off + 3 + s16(v))
+        else:
+            self.pc = (code, off + 2)
+
+    def op_hash_constant(self, code, off, cell):
+        mask, miss, ents = cell[3]
+        t = deref(self.x[self.switch_reg(code, off)])
+        for key, _idx, tgt in ents:
+            k = self.const_cell(code, (0,) + key)
+            if (isinstance(k, int) and isinstance(t, int) and k == t) or (isinstance(k, Atom) and t is k):
+                self.pc = (code, tgt + 1)
+                return
+        # not found: cell + 2 + the header word ptfdump calls `size` (the cell
+        # after the table, or a catch-all clause; psi/fepread/ptfread.py)
+        self.pc = (code, off + 2 + miss)
+
+    def switch_reg(self, code, off):
+        c = code.cells.get(off - 2)
+        if c is None or c[1] != 0x20 or c[3] >> 24 != 0xc7:
+            raise Refusal('code', '%s @%x: hash table not after switch_on_constant' % (code.id, off))
+        return (c[3] >> 16) & 255
+
+    def op_if_unbound(self, code, off, a, b, c, v):
+        if isinstance(deref(self.x[a]), Var):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + s16(v))
+
+    def identical(self, a, b):
+        x, y = deref(self.x[a]), deref(self.x[b])
+        return x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
+            (isinstance(x, (Str, ClassRef)) and x == y)
+
+    def op_identical(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.identical(a, b) else self.fail()
+
+    op_identical_64 = op_identical
+
+    def op_not_identical(self, code, off, a, b, c, v):
+        self.fail() if self.identical(a, b) else self.nxt(code, off)
+
+    def op_class_object(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        if not isinstance(t, ClassRef):
+            raise Refusal('built-in', 'class_object of %r' % (t,))
+        self.x[b] = t
+        self.nxt(code, off)
+
+    def op_get_vector_n(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.get_struct(a, 'vec', c) else self.fail()
+
+    def op_if_identical(self, code, off, a, b, c, v):
+        if self.identical(a, b):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
+    def op_less_than(self, code, off, a, b, c, v):
+        x, y = deref(self.x[a]), deref(self.x[b])
+        if not (isinstance(x, int) and isinstance(y, int)):
+            raise Refusal('built-in', 'less_than on %r, %r' % (x, y))
+        if x < y:
+            self.nxt(code, off)
+        else:
+            self.fail()
+
+    def op_not_less_than(self, code, off, a, b, c, v):
+        x, y = deref(self.x[a]), deref(self.x[b])
+        if not (isinstance(x, int) and isinstance(y, int)):
+            raise Refusal('unbound argument' if isinstance(x, Var) or isinstance(y, Var) else 'built-in',
+                          'not_less_than on %r, %r' % (x, y))
+        if x >= y:
+            self.nxt(code, off)
+        else:
+            self.fail()
+
+    # get
+    def op_get_variable_p(self, code, off, a, b, c, v):
+        self.env.y[b] = self.x[a]
+        self.nxt(code, off)
+
+    op_get_variable_p_24 = op_get_variable_p
+
+    def op_get_variable_t(self, code, off, a, b, c, v):
+        self.x[b] = self.x[a]
+        self.nxt(code, off)
+
+    def op_get_value_p(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.unify(self.x[a], self.env.y[b]) else self.fail()
+
+    def op_get_value_t(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.unify(self.x[a], self.x[b]) else self.fail()
+
+    def op_get_variable_p_block(self, code, off, a, b, c, v):
+        if a != b:
+            raise Refusal('operand', 'pmi 25 %02x %02x %02x: block with A != Y unwitnessed' % (a, b, c))
+        for i in range(c):
+            self.env.y[b + i] = self.x[a + i]
+        self.nxt(code, off)
+
+    def op_get_nil(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.unify(self.x[a], NIL) else self.fail()
+
+    def op_get_integer(self, code, off, a, b, c, v):
+        k = u16('get_integer', v)
+        self.nxt(code, off) if self.unify(self.x[a], k) else self.fail()
+
+    def op_get_constant(self, code, off, a, b, c, v):
+        k = code.pool_term(off + s16(v))
+        self.nxt(code, off) if self.unify(self.x[a], k) else self.fail()
+
+    def op_get_list(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.get_struct(a, 'list', 2) else self.fail()
+
+    def op_get_list_vars(self, code, off, a, b, c, v):
+        if not self.get_struct(a, 'list', 2):
+            return self.fail()
+        el = self.S[0]
+        self.x[b], self.x[c] = el[0], el[1]
+        self.nxt(code, off)
+
+    def op_get_vector_2(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.get_struct(a, 'vec', 2) else self.fail()
+
+    def op_get_vector_3(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.get_struct(a, 'vec', 3) else self.fail()
+
+    # unify
+    def _uvar(self, store, i, code, off):
+        el, k = self.next_elem()
+        store[i] = el[k]
+        self.nxt(code, off)
+
+    def _uval(self, val, code, off):
+        el, k = self.next_elem()
+        self.nxt(code, off) if self.unify(el[k], val) else self.fail()
+
+    def op_unify_variable_p(self, code, off, a, b, c, v):
+        self._uvar(self.env.y, a, code, off)
+
+    op_unify_variable_p_46 = op_unify_variable_p
+
+    def op_unify_variable_t(self, code, off, a, b, c, v):
+        self._uvar(self.x, a, code, off)
+
+    def op_unify_value_p(self, code, off, a, b, c, v):
+        self._uval(self.env.y[a], code, off)
+
+    op_unify_value_p_42 = op_unify_value_p
+
+    def op_unify_value_t(self, code, off, a, b, c, v):
+        self._uval(self.x[a], code, off)
+
+    op_unify_value_t_43 = op_unify_value_t
+
+    def op_unify_integer(self, code, off, a, b, c, v):
+        self._uval(u16('unify_integer', v), code, off)
+
+    def op_unify_constant(self, code, off, a, b, c, v):
+        self._uval(code.pool_term(off + s16(v)), code, off)
+
+    def op_unify_void(self, code, off, a, b, c, v):
+        for _ in range(u16('unify_void', v)):
+            self.next_elem()
+        self.nxt(code, off)
+
+    def op_unify_list(self, code, off, a, b, c, v):
+        el, k = self.next_elem()
+        t = deref(el[k])
+        if isinstance(t, Var):
+            new = Cons(Var(), Var())
+            self.bind(t, new)
+            t = new
+        if not isinstance(t, Cons):
+            return self.fail()
+        self.S = [t.args, 0]
+        self.nxt(code, off)
+
+    # put
+    def op_put_variable_p(self, code, off, a, b, c, v):
+        nv = Var()
+        self.env.y[b] = nv
+        self.x[a] = nv
+        self.nxt(code, off)
+
+    def op_put_value_p(self, code, off, a, b, c, v):
+        self.x[a] = self.env.y[b]
+        self.nxt(code, off)
+
+    op_put_value_p_a4 = op_put_value_p
+    op_put_value_p_a5 = op_put_value_p
+
+    def op_put_variable_t(self, code, off, a, b, c, v):
+        if a != b:
+            raise Refusal('operand', 'pmi a1 %02x %02x: A != X unwitnessed' % (a, b))
+        self.x[a] = Var()
+        self.nxt(code, off)
+
+    def op_put_value_p_block(self, code, off, a, b, c, v):
+        if a != b:
+            raise Refusal('operand', 'pmi a6 %02x %02x %02x: block with A != Y unwitnessed' % (a, b, c))
+        for i in range(c):
+            self.x[a + i] = self.env.y[b + i]
+        self.nxt(code, off)
+
+    def op_put_vector_3(self, code, off, a, b, c, v):
+        new = Vec([Var(), Var(), Var()])
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    def op_put_value_t(self, code, off, a, b, c, v):
+        self.x[a] = self.x[b]
+        self.nxt(code, off)
+
+    def op_put_integer(self, code, off, a, b, c, v):
+        self.x[a] = u16('put_integer', v)
+        self.nxt(code, off)
+
+    def op_put_constant(self, code, off, a, b, c, v):
+        self.x[a] = code.pool_term(off + s16(v))
+        self.nxt(code, off)
+
+    def op_put_list(self, code, off, a, b, c, v):
+        new = Cons(Var(), Var())
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    def op_put_vector_2(self, code, off, a, b, c, v):
+        new = Vec([Var(), Var()])
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    # atom cells
+    def op_get_atom(self, code, off, lo, atom):
+        self.nxt(code, off) if self.unify(self.x[lo], atom) else self.fail()
+
+    def op_unify_atom(self, code, off, lo, atom):
+        self._uval(atom, code, off)
+
+    def op_put_atom(self, code, off, lo, atom):
+        self.x[lo & 0x7f] = atom
+        self.nxt(code, off)
+
+    # built-ins
+    def op_slot_get(self, code, off, a, b, c, v):
+        obj, name = deref(self.x[a]), deref(self.x[b])
+        co, sec, k = self.slot_index(obj, name.name)
+        val = self.slot_store(obj, co, sec)[k]
+        if val is None:
+            raise Refusal('slot init by code', '%s class slot %s' % (co.id, name.name))
+        self.x[c] = val
+        self.nxt(code, off)
+
+    def op_slot_set(self, code, off, a, b, c, v):
+        obj, name = deref(self.x[a]), deref(self.x[b])
+        co, sec, k = self.slot_index(obj, name.name)
+        self.slot_store(obj, co, sec)[k] = self.resolve_value(self.x[c])
+        self.nxt(code, off)
+
+    def resolve_value(self, t):
+        return deref(t)
+
+    def _int(self, t, what):
+        t = deref(t)
+        if not isinstance(t, int):
+            raise Refusal('unbound argument' if isinstance(t, Var) else 'built-in', '%s on %r' % (what, t))
+        return t
+
+    def _arith(self, code, off, a, b, c, val, what):
+        if c != a:
+            raise Refusal('operand', '%s with result register %d != %d: unwitnessed' % (what, c, a))
+        self.x[c] = val
+        self.nxt(code, off)
+
+    def op_subtract(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
+                    'subtract')
+
+    def op_add_immediate(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'add') + b, 'add_immediate')
+
+    def op_subtract_immediate(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - b, 'subtract_immediate')
+
+    def op_multiply_immediate(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_immediate')
+
+    def op_divide_immediate(self, code, off, a, b, c, v):
+        x = self._int(self.x[a], 'divide')
+        if x < 0 or b == 0:
+            raise Refusal('operand', 'divide_immediate %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
+        self._arith(code, off, a, b, c, x // b, 'divide_immediate')
+
+    def op_vector_element(self, code, off, a, b, c, v):
+        vec = self._vec(self.x[a], 'vector_element').args
+        i = self._int(self.x[b], 'vector_element')
+        if not 0 <= i < len(vec):
+            raise Refusal('built-in', 'vector_element index %d of %d' % (i, len(vec)))
+        self.x[c] = vec[i]
+        self.nxt(code, off)
+
+    def op_new_heap_vector(self, code, off, a, b, c, v):
+        if a != b:
+            raise Refusal('operand', 'new_heap_vector with V != N unwitnessed')
+        self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
+        self.nxt(code, off)
+
+    def _vec(self, t, what):
+        t = deref(t)
+        if not isinstance(t, Vec):
+            raise Refusal('unbound argument' if isinstance(t, Var) else 'built-in', '%s on %r' % (what, t))
+        return t
+
+    def op_first(self, code, off, a, b, c, v):
+        self.x[b] = self._vec(self.x[a], 'first').args[0]
+        self.nxt(code, off)
+
+    def op_second(self, code, off, a, b, c, v):
+        self.x[b] = self._vec(self.x[a], 'second').args[1]
+        self.nxt(code, off)
+
+    def op_set_vector_element(self, code, off, a, b, c, v):
+        self._vec(self.x[a], 'set_vector_element').args[self._int(self.x[b], 'index')] = deref(self.x[c])
+        self.nxt(code, off)
+
+    def op_set_first(self, code, off, a, b, c, v):
+        self._vec(self.x[a], 'set_first').args[0] = deref(self.x[b])
+        self.nxt(code, off)
+
+    def op_set_second(self, code, off, a, b, c, v):
+        self._vec(self.x[a], 'set_second').args[1] = deref(self.x[b])
+        self.nxt(code, off)
+
+
+# --------------------------------------------------------------------------
+# driving
+
+def load_six():
+    lib = LB.Librarian()
+    lib.load_held(pkgs=['pimfep', 'pimscsi', 'pimmcsp', 'pimmutil', 'mpsicspR', 'paragraph'])
+    return lib
+
+
+def call_class_method(m, cid, name, args, limit=50):
+    """All solutions (up to LIMIT) of :name(#cid, args...): each a list of
+    the argument values.  The receiver goes last (register n-1)."""
+    co = m.lib.build(cid)
+    meth = m.lib.send(co, 'class', name, len(args) + 1)
+    if meth is None:
+        raise Refusal('no method', '%s:%s/%d' % (cid, name, len(args) + 1))
+    out = []
+    regs = list(args) + [ClassRef(cid)]
+    for sol in m.solve_send(ClassRef(cid), name, regs):
+        out.append([resolve(a) for a in args])
+        if len(out) >= limit:
+            break
+    return out
+
+
+def resolve(t):
+    t = deref(t)
+    if isinstance(t, Cons):
+        return Cons(resolve(t.args[0]), resolve(t.args[1]))
+    if isinstance(t, Vec):
+        return Vec([resolve(a) for a in t.args], t.heap)
+    return t
+
+
+def _solve_send(self, recv, name, regs):
+    """Generator: send NAME/len(REGS) to RECV with REGS in A0..; yields per solution."""
+    self.reset()
+    for i, a in enumerate(regs):
+        self.x[i] = a
+    self.cont = ('halt',)
+    self.b0 = 0
+    self.pc = None
+    self.dispatch(recv, name, len(regs))
+    while True:
+        if self.pc is None:
+            return
+        if self.pc == ('halt',):
+            yield True
+            self.fail()
+            continue
+        self.steps += 1
+        if self.steps > self.max_steps:
+            raise StepLimit(self.steps)
+        self.exec1()
+
+
+Machine.solve_send = _solve_send
+
+
+def pimos_fep_codes():
+    """{name: code} from PIMOS's pimos.vmac `fep#Name => N` (comments dropped)."""
+    import re
+    import held
+    raw = held._cached('pimos.tar.Z').extractfile('pimos/src/macro/pimos/pimos/pimos.vmac').read()
+    text = raw.decode('euc_jp', 'replace')
+    out = {}
+    for line in text.split('\n'):
+        line = line.split('%', 1)[0]
+        for mm in re.finditer(r'fep#(\w+)\s*=>\s*(-?\d+)', line):
+            out.setdefault(mm.group(1), []).append(int(mm.group(2)))
+    return out
+
+
+def convert_report(m=None):
+    """Run fep_command_code_table:convert/3 both ways and compare with PIMOS."""
+    if m is None:
+        m = Machine(load_six())
+    cid = 'pimfep##fep_command_code_table'
+    pimos = pimos_fep_codes()
+    by_code = {}
+    for code in sorted({v for vs in pimos.values() for v in vs} | set(range(0, 1000))):
+        sols = call_class_method(m, cid, 'convert', [code, Var()])
+        if sols:
+            by_code[code] = [s[1].name for s in sols]
+    by_name = {}
+    names = set(pimos) | {n for ns in by_code.values() for n in ns}
+    for name in sorted(names):
+        sols = call_class_method(m, cid, 'convert', [Var(), Atom(name)])
+        if sols:
+            by_name[name] = [s[0] for s in sols]
+    both_unbound = call_class_method(m, cid, 'convert', [Var(), Var()])
+    # the table's entries, read name -> code (convert(_, Name)); code -> name
+    # answers one name per code, because every clause ends in a cut
+    fep = {n: set(cs) for n, cs in by_name.items()}
+    shadowed = sorted(n for n, cs in by_name.items()
+                      if any(n not in by_code.get(c, ()) for c in cs))
+    rows = []
+    for name in sorted(set(fep) | set(pimos)):
+        f, p = sorted(fep.get(name, ())), sorted(set(pimos.get(name, ())))
+        status = 'equal' if f == p else ('fep only' if not p else ('pimos only' if not f else 'differ'))
+        rows.append((name, f, p, status))
+    return dict(by_code=by_code, by_name=by_name, both_unbound=both_unbound, rows=rows,
+                shadowed=shadowed)
+
+
+def slot_value(slot):
+    """A slot's constant or `is Class` initial value as a term."""
+    k, v = slot.init
+    if k == 'is':
+        return ClassRef(v)
+    if k != 'const':
+        raise Refusal('slot init by code', 'slot %s' % slot.name)
+    tag = slot.term[0] if slot.term else None
+    if tag == 'int':
+        return v
+    if tag == 'atom':
+        return Atom(v)
+    if tag == 'str':
+        return Str(v)
+    raise Refusal('operand', 'slot %s: initial value %r' % (slot.name, slot.term))
+
+
+def new_instance(lib, cid):
+    """An instance as the OURS new/2 makes it (Refusal for code-initialised slots)."""
+    co = lib.build(cid)
+    slots = []
+    for e in co.instance_slots:
+        if e.slot.init[0] == 'code':
+            raise Refusal('slot init by code', '%s slot %s' % (cid, e.name))
+        slots.append(slot_value(e.slot))
+    return Instance(cid, slots)
+
+
+def make_instance(m, cid):
+    m.reset()
+    return new_instance(m.lib, cid)
+
+
+def census(m=None, max_steps=20000):
+    """Every method of the classes that need no SIMPOS, called once with
+    unbound arguments (the receiver: the class, or a fresh instance).
+    -> list of (class, section, selector, outcome, cause, detail).  Outcome:
+    'success' (a first solution), 'failure' (clean, no solution), 'refused',
+    'step limit'.  Success and failure count as running to completion."""
+    if m is None:
+        m = Machine(load_six(), max_steps=max_steps)
+    six = list(m.lib.templates)
+    rows = []
+    for cid in m.lib.free_of_simpos(six, 'union'):
+        co = m.lib.build(cid)
+        for section, table in (('class', co.class_methods), ('instance', co.instance_methods)):
+            for (name, n), meth in table.items():
+                sel = '%s/%d' % (name, n)
+                try:
+                    recv = ClassRef(cid) if section == 'class' else make_instance(m, cid)
+                    regs = [Var() for _ in range(n - 1)] + [recv]
+                    ok = any(True for _ in m.solve_send(recv, name, regs))
+                    rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
+                except Refusal as e:
+                    rows.append((cid, section, sel, 'refused', e.cause, e.detail))
+                except StepLimit:
+                    rows.append((cid, section, sel, 'step limit', '', ''))
+    return rows
+
+
+def refusal_key(cause, detail):
+    """The ranking key: the opcode for a missing opcode, else the cause."""
+    if cause == 'opcode':
+        return 'missing opcode ' + ' '.join(detail.split()[:2])
+    if cause == 'simpos':
+        return 'simpos## call'
+    return cause
+
+
+def main(argv):
+    if argv and argv[0] == 'convert':
+        r = convert_report()
+        c = collections.Counter(x[3] for x in r['rows'])
+        for name, f, p, st in r['rows']:
+            if st != 'equal':
+                print('%-20s fep %-10s pimos %-10s %s' % (name, f, p, st))
+        print('codes answered: %d; names answered: %d; against pimos.vmac: %s; (_,_) gives %d solutions' % (
+            len(r['by_code']), len(r['by_name']), dict(c), len(r['both_unbound'])))
+        print('names a code -> name call does not return (an earlier clause with the same code cuts): %s'
+              % ' '.join(r['shadowed']))
+        return 0
+    if argv and argv[0] == 'census':
+        rows = census()
+        c = collections.Counter(r[3] for r in rows)
+        print('%d methods of %d classes: %s' % (len(rows), len({r[0] for r in rows}), dict(c)))
+        rk = collections.Counter(refusal_key(r[4], r[5]) for r in rows if r[3] == 'refused')
+        for k, v in rk.most_common():
+            print('  %5d  %s' % (v, k))
+        if '--tsv' in argv:
+            with open(argv[argv.index('--tsv') + 1], 'w') as f:
+                f.write('class\tsection\tselector\toutcome\tcause\tdetail\n')
+                for r in rows:
+                    f.write('\t'.join(r) + '\n')
+        return 0
+    if argv and argv[0] == 'call':
+        m = Machine(load_six())
+        cid, sel = argv[1], argv[2]
+        name, n = sel.split('/')
+        args = []
+        for a in argv[3:]:
+            args.append(int(a) if a.lstrip('-').isdigit() else (Var() if a == '_' else Atom(a)))
+        for s in call_class_method(m, cid, name, args):
+            print(s)
+        return 0
+    print(__doc__)
+    return 2
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))

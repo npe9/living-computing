@@ -26,6 +26,7 @@ import time
 here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, here)
 import qemu1e  # noqa: E402
+import net1e   # noqa: E402
 
 Q = os.path.normpath(os.path.join(here, '..', '..', 'build', 'qemu'))
 PS, PT = int(os.environ.get('PORT_S', 10901)), int(os.environ.get('PORT_T', 10902))
@@ -85,10 +86,12 @@ def main():
             term.type('\n')
         else:
             # not none: /boot asks a password and checks it with the
-            # auth server, il!auth!17024 (boot/userpasswd.c)
+            # auth server, il!auth!17024 (boot/userpasswd.c), which is
+            # fs9 itself since docs/qemu_1e_server.md section 5a
             term.type(user + '\n')
             term.wait('password', 30)
-            term.type('password\n')
+            # glenda's, from fs9's /adm/keys (authinit.rc, net1e.py)
+            term.type(net1e.GLENDA_PW + '\n')
         s = term.wait('init: starting', 300)
         print('--- user %s: user prompt to init in %.0fs' % (user, time.time() - t0))
         term._log(s)
