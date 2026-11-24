@@ -724,13 +724,14 @@ prevents.
 
 **The replay** (`tests/test_p9hub.py`, `HubReplayTest`):
 `tests/net/hub_cpu.pcap` is `live4`'s `--pcap` (1457 frames).  The
-suite's run replays it to init's first line after the log-in (408,307,318
-instructions, 197 frames, ~76 s): the wrong password refused, the right
+suite's run replays it to init's first line after the log-in (408,307,222
+instructions since the exception-record cost 9 + D + A; 408,307,318 live, 197 frames, ~76 s): the wrong password refused, the right
 one accepted, every frame the model sends equal to the recording, so the
 key and the check response are pinned to what the live auth server
 accepted.  `P9HUB_CPU=1` replays the whole recording, through
-`ip/ipconfig`, `cpu -h cpu9` and the commands' output, to the same
-1,580,420,168 instructions (OK in 412 s of host time on the loaded
+`ip/ipconfig`, `cpu -h cpu9` and the commands' output, to
+1,580,411,472 instructions (the live run's 1,580,420,168 less what the
+exception-record cost moved; every frame still as recorded) (OK in 412 s of host time on the loaded
 machine, over the suite's budget):
 
 ```sh

@@ -98,7 +98,11 @@ Verilog parameters:
   are never pulled (the check verifies both). 3 is the board setting; 1
   reads the chip but never writes it, for a first hardware window.
 * `i2cQuarter` is CLK cycles per quarter of an SCL bit: 63 at 25 MHz gives
-  99.2 kHz, with SCL low for 5.04 us and high for at least 5.04 us.
+  at most 99.2 kHz, with SCL low for 5.04 us and high for at least 5.04 us
+  (two quarters each). The check measures both at the chip model: at
+  `i2cQuarter` 2 the shortest low was 4 cycles and the shortest high 6
+  (the release waits on the two-flop synchroniser), and it fails below two
+  quarters.
   The I2C standard-mode minima are 4.7 us and 4.0 us; those two figures
   are from memory of the I2C specification, not from a document here.
 
@@ -291,14 +295,16 @@ behaviour when the chip is absent, and it reports which case it was:
 |---:|---:|---:|---:|---:|---:|
 | 1674 | 253 | 56 | 222 | 600 | 1 |
 
-That is with `mcpMode 3`, `i2cQuarter 63`. With `mcpMode 0` it is still
-1594 LUT4 and 480 TRELLIS_FF: the mode is a run-time guard, so yosys does not
-remove the link. Before the MCP7940N link (commit 821a5c62) it was 555
+That is with `mcpMode 3`, `i2cQuarter 63`. **Switching the link off does
+not get the area back**: with `mcpMode 0` it is still 1594 LUT4 and 480
+TRELLIS_FF. Presumably yosys cannot prove the FSM's state registers
+constant once the mode is fixed, but that is a hypothesis, not checked. Before the MCP7940N link (commit 821a5c62) it was 555
 LUT4, 219 TRELLIS_FF. The link (the I2C master, the seed and write-back
 FSM, the seven-byte buffer, the BCD/12-hour conversion and the second
 validity check, and the poll counters) costs about 1,100 LUT4, about 1.3%
-of the 85F. It has not been optimised; the BCD conversion and a second
-`timeValid` are the first places to look.
+of the 85F. It has not been optimised. The first thing to try: `fromMcp` recomputes the
+weekday and the calendar check that the load path already computes, so the
+seed could hand raw BCD to the load path's own check.
 
 The NVRAM is one DP16KD. The counters, the held set, the weekday and the
 validity check make up the rest. The tens digit is multiplied by 10 with

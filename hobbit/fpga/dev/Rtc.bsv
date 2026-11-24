@@ -79,14 +79,15 @@ endinterface
 
 // mcpSeed values: how the counters got their time at reset.
 typedef enum {
-   SeedPending,      // 0  still seeding (requests wait)
+   SeedPending,      // 0  still seeding (requests see startBcd's time)
    SeedDisabled,     // 1  mcpMode bit 0 clear: startBcd
    SeedFromChip,     // 2  the MCP7940N's time
    SeedNoAck,        // 3  fallback: no ACK at 0x6F
    SeedOscStopped,   // 4  fallback: ST or OSCRUN clear
    SeedInvalid,      // 5  fallback: not a calendar time
    SeedNoTick,       // 6  fallback: seconds never changed in 1.5 s
-   SeedBusStuck      // 7  fallback: SCL held low (stretch timeout)
+   SeedBusStuck,     // 7  fallback: SCL held low (stretch timeout)
+   SeedSuperseded    // 8  a setrtc came first: the chip's time dropped
 } McpSeed deriving (Bits, Eq);
 
 Bit#(8) rtcFaultNone        = 0;
@@ -256,14 +257,15 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
    Reg#(RtcTime)  held    <- mkRegU;
    Reg#(Bit#(8))  faultR  <- mkReg(0);
 
-   RWire#(RtcTime) loadW <- mkRWire;
+   RWire#(RtcTime) loadW <- mkRWire;     // a setrtc load (request)
+   RWire#(RtcTime) seedW <- mkRWire;     // the seed's load (link FSM)
+   Reg#(Bool)     kernelSet  <- mkReg(False);   // a setrtc has loaded
+   Reg#(Bool)     superseded <- mkReg(False);   // ... before the seed
    FIFOF#(Bit#(32)) resp <- mkFIFOF;
 
    // ---- the MCP7940N link ----
    RtcI2cIfc i2c <- mkRtcI2c(i2cQuarter, 20'hFFFFF);
    Reg#(Bit#(32)) cyc       <- mkReg(0);       // free-running
-   // Without the chip the device takes requests from the first cycle.
-   Reg#(Bool)     seeded    <- mkReg(mcpMode[0] == 0);
    Reg#(McpSeed)  seedR     <- mkReg((mcpMode[0] == 0) ? SeedDisabled
                                                        : SeedPending);
    Reg#(Bit#(8))  wbCount   <- mkReg(0);
@@ -342,7 +344,7 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
             readRegs(0, 7);
             if (!ok) seedR <= (stuck ? SeedBusStuck : SeedNoAck);
             else if (isValid(fromMcp(mbv))) action
-               loadW.wset(validValue(fromMcp(mbv)));
+               seedW.wset(validValue(fromMcp(mbv)));
                seedR <= SeedFromChip;
             endaction
             else seedR <= SeedInvalid;
@@ -378,7 +380,6 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
    Stmt link = seq
       if (mcpMode[0] == 1) seed;
       else seedR <= SeedDisabled;
-      seeded <= True;
       while (True) seq
          await(mcpMode[1] == 1 && wbSeq != wbDone);
          writeBack;
@@ -394,9 +395,18 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
    (* fire_when_enabled, no_implicit_conditions *)
    rule step;
       cyc <= cyc + 1;
+      // Requests are served from reset, so a setrtc can come before the
+      // seed lands; the kernel's time then wins and the seed is dropped.
+      Bool kernel = isValid(loadW.wget) || kernelSet;
+      if (isValid(loadW.wget)) kernelSet <= True;
+      if (isValid(seedW.wget) && kernel) superseded <= True;
       if (loadW.wget matches tagged Valid .t) begin
          now <= t;
          div <= 1;            // the load cycle counts as the first
+      end
+      else if (seedW.wget matches tagged Valid .t &&& !kernel) begin
+         now <= t;
+         div <= 1;
       end
       else if (div == ticksPerSec - 1) begin
          now <= nextSecond(now);
@@ -417,7 +427,7 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
    endaction;
 
    method Action request(Bit#(13) addr, Bit#(32) wdata, Bit#(4) be,
-                         Bool write) if (!rdPend && seeded);
+                         Bool write) if (!rdPend);
       Bit#(11) idx = addr[12:2];
       Bit#(8)  v   = wdata[7:0];
       Bool     isNv = idx < 2040;
@@ -486,7 +496,8 @@ module mkRtcCore#(Bit#(32) ticksPerSec, RtcTime start, String nvramFile,
    method Bit#(1) i2cSclLow = i2c.sclLow;
    method Bit#(1) i2cSdaLow = i2c.sdaLow;
    method Action i2cPins(Bit#(1) scl, Bit#(1) sda) = i2c.pins(scl, sda);
-   method Bit#(4) mcpSeed = zeroExtend(pack(seedR));
+   method Bit#(4) mcpSeed = superseded ? pack(SeedSuperseded)
+                                       : zeroExtend(pack(seedR));
    method Bit#(8) mcpWrites = wbCount;
 endmodule
 
