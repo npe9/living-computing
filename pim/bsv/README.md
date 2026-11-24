@@ -286,8 +286,15 @@ the host, as the FEP's own disk was. The emulator plays the FEP's part
 (`../ref/pimm/fep.py`, put in hardware): a processor-type SCSI target at
 unit 7 (SEND on LUN 0, RECEIVE on LUN 1, TEST UNIT READY), the packet
 layer and the IPL's file service (read_open 201, getb 210, close 60,
-abort 70; statuses 1, 2, 5), answering as `fep.py` does byte for byte,
-with its OURS choices. Each file's header says what is OURS and what
+abort 70; statuses 1, 2, 5), and what `fep.py` has for PIMOS's start
+(INQUIRY 12h to unit 7, five bytes `03 00 07 00 00`; TEST UNIT READY to
+the absent units 0-5, Result `800h`, decided in `Fep.command` as in
+`fep.py`, so in the emulator and not the adapter; `append_open` 203,
+answered `[1]`), answering as `fep.py` does byte for byte, with its OURS
+choices. `fep.py` on master (2026-11-24) serves no `putb` (111) and no
+close of an appending device: both raise there, so both are refused
+here, and the emulator keeps no log yet (the card stays read-only; an
+in-memory log is to come with `fep.py`'s `putb`). Each file's header says what is OURS and what
 comes from `fep.py` and the PIMOS source.
 
 | file | what it is |
@@ -305,23 +312,31 @@ comes from `fep.py` and the PIMOS source.
 | `PimmFepUlx3sTb.bsv` | the self-test in Bluesim over the SPI reader and card model |
 | `run_fepemu_fpga.sh` | the self-test in Bluesim, then yosys / nextpnr-ecp5 / ecppack |
 | `../tools/mkfepcard.py` | builds a card image (format in its header), `--list` reads one |
-| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py` (and a direct sequence of OURS for what they never do) |
+| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py`, two direct sequences of OURS (`direct`: what the IPL never does; `direct_kernel`: the answers for PIMOS's start and their edges), and `kernel`, recorded from PIMOS's start (`--kernel PKL`, a machine `longrun_ipl.py --reference --save` wrote) |
 
 **Verification.** `run_fepemu.sh`: each tape (one file, two files,
 characters, late, odd, small buffer: every call `ref_scsi.py`'s machine
-run made of `Fep.command`, retries and unanswered RECEIVEs included; and
+run made of `Fep.command`, retries and unanswered RECEIVEs included;
 `direct`: a failed open, abort, a request in two packets, a reply cut
-three times, two devices, each `FepError`) is replayed into a fresh
+three times, two devices, each `FepError`; `direct_kernel`: INQUIRY,
+the absent units, `append_open` and every `FepError` next to them;
+`kernel`: every call PIMOS's start made of `Fep.command`) is replayed into a fresh
 `fep.Fep` for the expected answers and into the emulator, over a card
 with decoy entries (a prefix and an extension of each real name, ahead of
 it), on three benches (the image file; the SPI reader with a
-block-addressed card; with a byte-addressed card). 7 tapes, 230 commands,
+block-addressed card; with a byte-addressed card). 9 tapes, 293 commands
+(2026-11-24; 7 and 230 before the kernel's two),
 all answers equal on all three. Injected faults and what each was
 observed to fail: the header of `PimmFepEmuTb.bsv`.
 
 **Synthesis** (`run_fepemu_fpga.sh`, yosys 0.51, nextpnr-ecp5 --85k,
-2026-11-23): 10,039 LUT4 (7,553 logic, 2,276 carry, 140 RAM), 3,099
-TRELLIS_FF, 3 DP16KD, 19 I/O; **40.39 MHz** (PASS at 25 MHz). The
+2026-11-24, with INQUIRY, the absent units and `append_open`): 10,499
+LUT4 (8,011 logic, 2,278 carry, 140 RAM), 3,165 TRELLIS_FF, 3 DP16KD,
+19 I/O; **42.50 MHz** (PASS at 25 MHz). Before them (2026-11-23):
+10,039 LUT4 (7,553 logic), 3,099 FF, 3 DP16KD, 40.39 MHz: +460 LUT4,
++66 FF (the 32-bit Result, two appending slots), no BRAM; the Fmax
+rose although nothing was made shorter (place-and-route's spread from
+build to build, presumably: not measured). The
 self-test passes in Bluesim on the `--held` image (entry 0,
 `pimos:pimos.ipl`: 1,678 bytes, sum 00019246h). No board has run it.
 
@@ -361,7 +376,8 @@ module of rules, must: (1) turn a request into a `FepCmd` (unit and LUN
 as 32 bits, the CDB string's bytes and length, the direction, the
 length), and for direction 1 put exactly `length` bytes of the buffer on
 `sendData`, whatever the answer (pimm.py `scsi_do` hands `fep.py`
-`buf[:length]`); (2) on `FepDone` give the core result 0, the
+`buf[:length]`); (2) on `FepDone` give the core the answer's `result` (0, or `800h`
+for an absent unit's TEST UNIT READY: 32 bits, as `scsiResp`'s), the
 transferred length (`count` for direction 2, `length` otherwise, as
 `scsi_do`) and, for direction 2, the `count` bytes from `recvData` to
 write into the buffer string; (3) on `FepNotReady` keep the command and

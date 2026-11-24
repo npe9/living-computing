@@ -113,11 +113,26 @@ STATUS 2026-11-23: verified in Bluesim only. Every command
 `ref/pimm/record_fep.py`, `ref/pimm/fep_tapes/`), plus a direct sequence
 of OURS for what the parts never do (a failed open, abort, a request in
 two packets, a reply cut three times, each `FepError`), answered equal to
-`fep.py` byte for byte: 7 tapes, 230 commands, over the image file and
-over the SPI reader with a card model (`bsv/run_fepemu.sh`, in
-`run_tests.sh`); injected faults caught (`bsv/PimmFepEmuTb.bsv` header).
-The board top with a self-test synthesizes (10,039 LUT4, 3 DP16KD,
-40.39 MHz; `bsv/run_fepemu_fpga.sh`) and its self-test passes in
+`fep.py` byte for byte, over the image file and over the SPI reader
+with a card model (`bsv/run_fepemu.sh`, in `run_tests.sh`); injected
+faults caught (`bsv/PimmFepEmuTb.bsv` header).
+STATUS 2026-11-24: it follows `fep.py` into PIMOS's start. Covered, as
+`fep.py` on master has them: INQUIRY to unit 7 (`03 00 07 00 00`), TEST
+UNIT READY to the absent units 0-5 (Result `800h`, decided in the
+emulator because `fep.py` decides it in `Fep.command`, not in the
+device port), and `append_open` (203) answered `[1]`. Tapes: `kernel`,
+recorded from the real start (`record_fep.py --kernel PKL` on a machine
+`longrun_ipl.py --reference --save` wrote: 11 calls, 10 answered, the
+start stopping at `jump`), and `direct_kernel`, a direct sequence of
+OURS for those answers' edges and every `FepError` next to them (52
+commands). 9 tapes, 293 commands, all equal; nine injections into the
+new paths each caught. NOT covered, because `fep.py` does not answer
+them yet: `putb` (111) and `close` of an appending device (both refused,
+as `fep.py` raises); no log is kept, and the card stays read-only. How
+to add the next command: the recipe in `bsv/PimmFepEmu.bsv`'s header.
+The board top with a self-test synthesizes (10,499 LUT4, 3 DP16KD,
+42.50 MHz, 2026-11-24; 10,039 LUT4 and 40.39 MHz before;
+`bsv/run_fepemu_fpga.sh`) and its self-test passes in
 Bluesim; it has NOT run on a board (the board is in use; programming it
 and writing a card are the owner's steps, `bsv/README.md`). Not yet
 connected to the core: the adapter to S1's `scsiReq`/`scsiResp` port is
