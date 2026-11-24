@@ -67,16 +67,19 @@ the trace), `lockstep_alt.py` `read_eagerly`
 `lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
 waiting on an element of its vector, `lockstep_reuse.py`
-`put_reused_structure` of a vector of seven or more;
-`longrun_ipl.py` is the long run (not in the suite); 131
-instructions on both models (counted 2026-11-23: 133 `i_` handlers in
+`put_reused_structure` of a vector of seven or more,
+`lockstep_prio.py` `current_node` and `calculate_priority_from_current`,
+`lockstep_atom.py` `top:go1/4`'s atom-number server
+(`supply_atom_number`, ours as to what it does) with a merger input
+bound to a vector, `lockstep_xmod.py` an external call between two
+loaded modules;
+`longrun_ipl.py` is the long run (not in the suite); 134
+instructions on both models (counted 2026-11-23: 136 `i_` handlers in
 `pimm.py`, less `scsi_init` and `scsi_command`, on the reference alone;
-129 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
+132 without our two stubs `merge_in` and `unify_step`).  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
-a small model of the front-end processor (`fep.py`), with
-a merger input bound to a vector
-(refused unless `Machine.ahead` is set; the core cannot yet make its
-goals as the reference does, see `pimm.py`'s header); `ref_scsi.py` runs the body of `ipl:boot0` on
+a small model of the front-end processor (`fep.py`) (refused unless
+`Machine.ahead` is set); `ref_scsi.py` runs the body of `ipl:boot0` on
 them, the IPL reading its list and its files through its own SCSI
 stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
