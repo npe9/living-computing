@@ -103,6 +103,7 @@ interface PimmShBox;
   method Action ended;
   method Action statistics(Cell handle);
   method Action remove(Cell handle);
+  method Action addResource(Cell handle);   // 2026-11-24
   // stage 3
   method Action exception(Bit#(32) num, Bit#(32) tag, Cell b, Cell c, Bit#(8) argn);
   method Action stop(Cell handle);
@@ -117,6 +118,7 @@ typedef union tagged {
   Bit#(32) EndReduction;
   Cell Stats;
   Cell Remove;
+  Cell AddRes;
   struct { Bit#(32) num; Bit#(32) tag; Cell b; Cell c; Bit#(8) argn; } Exception;
   Cell Stop;
   Cell Abort;
@@ -279,6 +281,11 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
       tagged Stop .h: begin
         sh <= cellAddr(h);
         report(fromInteger(lay_REPORT_STOPPED), ShP1);
+      end
+      // add_resource: resource_added; no resource is counted (OURS)
+      tagged AddRes .h: begin
+        sh <= cellAddr(h);
+        report(fromInteger(lay_REPORT_RESOURCE_ADDED), ShQ3);
       end
       tagged Abort .h: begin
         sh <= cellAddr(h);
@@ -860,6 +867,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
   method Action endReduction(Bit#(32) n) = reqQ.enq(tagged EndReduction n);
   method Action ended = endQ.deq;
   method Action statistics(Cell handle) = reqQ.enq(tagged Stats handle);
+  method Action addResource(Cell handle) = reqQ.enq(tagged AddRes handle);
   method Action remove(Cell handle) = reqQ.enq(tagged Remove handle);
   method Action exception(Bit#(32) num, Bit#(32) tag, Cell b, Cell c, Bit#(8) argn) =
     reqQ.enq(tagged Exception { num: num, tag: tag, b: b, c: c, argn: argn });

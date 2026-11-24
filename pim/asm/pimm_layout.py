@@ -73,6 +73,9 @@ REPORT_STATISTICS_STARTED, REPORT_STATISTICS, REPORT_RETURN_RESOURCE = 10, 9, 14
 # of number n is 1 << (16 + n) (manual e-shoen.tex table "Exception Tag
 # Bit Positions"; VPIM f_ConvertExceptionNumberToTag agrees)
 REPORT_ABORTED, REPORT_EXCEPTION, REPORT_STOPPED = 1, 2, 11
+# add_shoen_resource (2026-11-24): 5 `resource_added` (pimos.vmac, the
+# same table; manual e-shoen.tex, the ACK of add_resource)
+REPORT_RESOURCE_ADDED = 5
 EXC_REDUCTION_FAILURE, EXC_RAISED = 9, 16
 
 ADDR_BITS = 27                  # memory size in cells = 1 << ADDR_BITS

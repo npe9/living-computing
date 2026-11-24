@@ -86,7 +86,7 @@ from pimm_layout import (SH_REDUCTIONS, SH_REMOVE, REMOVED,  # noqa: E402
                          REPORT_RETURN_RESOURCE)
 from pimm_layout import (SH_MASK, STOPPED, REPORT_ABORTED,  # noqa: E402
                          REPORT_EXCEPTION, REPORT_STOPPED,
-                         EXC_REDUCTION_FAILURE, EXC_RAISED)
+                         EXC_REDUCTION_FAILURE, EXC_RAISED, REPORT_RESOURCE_ADDED)
 
 
 class Unimplemented(Exception):
@@ -2599,6 +2599,33 @@ class Machine:
             self.report3(sh, REPORT_STATISTICS, red >> 31, red << 1)
             return [h]
         self.builtin('shoen_statistics', [x, y], f)
+
+    def i_add_shoen_resource(self, pc, x, y, z, c16):
+        # add_shoen_resource(Shoen, High, Low, ^NewShoen), 22:E5 r4
+        # (inst_tab.kl1:337; blt.kl1 active_builtin(add_shoen_resource(
+        # X1,X2,X3,X4)), class pimos): the shoen's add_resource(H, L),
+        # "A value of which the upper 32 bits are expressed in Amount_h
+        # and the lower 32 bits ... in Amount_l is added to the upper
+        # bound value of the resource consumption amount", acknowledged
+        # by resource_added (manual e-shoen.tex:166-172, 254-262), 5
+        # (pimos.vmac).  VPIM (f_shoen_control.psl.c
+        # f_AddShoenResource_Sub) reports 5 first, then adds, and
+        # reports return_resource only when the bound passes 2^63;
+        # NewShoen is the handle.  No resource is counted here (as at
+        # create_shoen, OURS): the amount is checked and not kept, so
+        # nothing is returned.  Refused: anything but a handle, High or
+        # Low not an integer (the exception); a closed report stream
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(h, hi, lo):
+            if h[0] != SHREC:
+                raise Unimplemented('add_shoen_resource(%r)' % (h,))
+            self.need_int(hi)
+            self.need_int(lo)
+            self.report(h[1], REPORT_RESOURCE_ADDED)
+            return [h]
+        self.builtin('add_shoen_resource', [x, y, z, w4], f)
+        return pc + 2
 
     def i_remove_shoen(self, pc, x, y, z, c16):
         # remove_shoen(Shoen), 22:E4, r (inst_tab.kl1, blt.kl1: PIM/m-

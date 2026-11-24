@@ -262,8 +262,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // that are waited for: MinPrio, MaxPrio, ExcepMask, or the handle
   Bool shoenHere = op == op_create_shoen || op == op_start_shoen
                 || op == op_shoen_statistics || op == op_remove_shoen
-                || op == op_stop_shoen || op == op_abort_shoen || op == op_raise;
-  Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
+                || op == op_stop_shoen || op == op_abort_shoen || op == op_raise
+                || op == op_add_shoen_resource;
+  Bit#(3) shoenIns = (op == op_create_shoen || op == op_add_shoen_resource) ? 3 : 1;
 
   // wait_vector_N, N = 0..6
   Bool isWaitVector = op == op_wait_vector_0 || op == op_wait_vector_2 || op == op_wait_vector_3 || op == op_wait_vector_5
@@ -2504,6 +2505,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     // stage 3: stop_shoen(Shoen, ^NewShoen), 22:E2, abort_shoen(Shoen,
     // ^NewShoen), 22:E3: anything but a handle is refused
+    // add_shoen_resource(Shoen, High, Low, ^NewShoen), 22:E5 (2026-11-24):
+    // anything but a handle and two integers is refused
+    else if (op == op_add_shoen_resource) begin
+      if (vals[0].tag != tag_SHREC || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
+      else begin
+        shbox.addResource(vals[0]);
+        st <= XShS;
+      end
+    end
     else if (op == op_stop_shoen || op == op_abort_shoen) begin
       if (vals[0].tag != tag_SHREC) stop(EndUnimp);
       else begin
@@ -2562,6 +2572,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     let r <- shbox.result;
     if (!r.ok) stop(EndUnimp);
     else if (op == op_remove_shoen || op == op_raise) next;
+    else if (op == op_add_shoen_resource) begin
+      regs.wr(operand[3], vals[0]);
+      finish(tagged Next afterBuiltin);
+    end
     else begin
       regs.wr(y, vals[0]);
       next;

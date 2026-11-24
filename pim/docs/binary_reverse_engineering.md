@@ -486,9 +486,18 @@ the device are given it again whenever the machine runs dry.
   | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
   | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
   | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
-  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+  | `subtract_bignum(32#{}, 32#{0})`, the `32#{0}` from the clock at 0 (`timeSdvc.kl1`) | the clock now advances with the instructions (`pimm.py` `INSTRUCTIONS_PER_TICK`, `lockstep_timer.py`), so the bignum is not `{0}`; `subtract_bignum` implemented, after VPIM (`lockstep_bignum.py`) | 65,482 |
+  | `FepError`: device 17, `close` (60), the timer device's end | answered (the table of FEP answers) | 66,016 |
+  | `get_constant` | implemented (`lockstep_alt.py`) | 72,642 |
+  | body `vector/3` (`b_vector`) | implemented (`lockstep_alt.py`) | 74,704 |
+  | `code_to_predicate` | implemented (`lockstep_alt.py`) | 74,724 |
+  | unification of two vectors of seven or more | the `unify_step` goal, the sizes compared in its steps (`lockstep_alt.py`) | 74,759 |
+  | `add_shoen_resource` | implemented, `resource_added` reported (`lockstep_shoen3.py`) | 75,014 |
+  | `FepError`: device 18, `fep_attributes` (240) | **the stop now** (below) | 92,797 |
 
-  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
+  The clock (2026-11-24, the session lead's decision): one tick of the system timer (1/16 msec, 48 bits, manual `e-builtin.tex`:1537-1549) every 423 instructions executed. The rate is 615 KLIPS on `append` (`M92` p. 425) at this image's 11 instructions per `append/3` reduction (`scsi_fep_module`); equal cost per instruction is OURS. `get_date_time` keeps the date 20-May-1993; its time of day follows the same clock, so midnight is the boot.
+
+  The stop now: device 18 is a file device made by `fep_file_device:device_create/5` (`bios/fep_module/file_dvc.kl1`:43-52) with `{DevID, 240, Node}`, `fep#fep_attributes` (`pimos.vmac`:87). The reply `normal(Value)` is read by `fep_util:set_value/2` as `{DevID, Status, Code, OS, Host, FepVer, Dir, FileVer, Comment}`. PIMOS keeps the seven values (`server/fep/fep/fep_sv.kl1` `get_fep_attributes5`). It reads Dir to choose UNIX (`"/"`) or SIMPOS (`">"`) pathnames (`shell/utils/pathname.kl1`, `shell/main/utils.kl1` `check_attribute`, `">"` its default), and Dir and FileVer as the notation's characters (`library/utility/fileutil.kl1`). The values are the front-end's own: PIM/m's FEP is a PSI under SIMPOS (`pimfep.ptf`). VPIM, KLIC and PDSS do not have them, and `pimfep.ptf`'s answer is not decoded. Not answered: a decision is needed between decoding the FEP's answer and OURS values (Dir `">"`, PIMOS's own default).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

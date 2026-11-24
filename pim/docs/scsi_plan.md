@@ -37,7 +37,14 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   kernel's timer device, `create_timer` and `get_date_time` (a fixed
   clock, ours). 65,482 instructions, the console the banner alone; the
   stop `subtract_bignum` on a `32#{0}` made from our clock at 0, a
-  decision about the clock (1.4).)* On the Bluespec core the whole
+  decision about the clock (1.4).)* *(Later 2026-11-24: the clock
+  advances with the instructions, one tick every 423 (1.4);
+  `subtract_bignum`, `get_constant`, body `vector/3`,
+  `code_to_predicate`, the unification of long vectors and
+  `add_shoen_resource` on both models; `fep.py` answers the timer's
+  `close`. 92,797 instructions, the console the banner alone; the stop
+  `fep_attributes` (240) on a file device, whose values only the FEP
+  has (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the

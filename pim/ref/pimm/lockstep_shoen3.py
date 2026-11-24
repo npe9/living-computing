@@ -10,7 +10,8 @@
 Stage 3 of the shoen (stages 1, 2: lockstep_shoen.py, lockstep_shoen2.py):
 a goal's reduction failure inside a shoen and raise (22:F2) reported
 as the exception message, stop_shoen (22:E2) with start after stop,
-abort_shoen (22:E3), and current_processor (22:EB), which the image's
+abort_shoen (22:E3), add_shoen_resource (22:E5, 2026-11-24), and
+current_processor (22:EB), which the image's
 exception_table:translate/4 calls.  Everything runs through the
 IMAGE'S OWN code: shoen:execute/4 and execute/7, control/2, report/2,
 which hands {2, Kind, Info, NewCode, NewArgv} to exception_table:
@@ -118,7 +119,22 @@ the same either way.
   raise/3, tag 3, mask 1   raise/3 again, Tag 3, under execute/7 with
                   mask 1: the manual's rule (1 AND 3 is not 0) takes it,
                   VPIM's (mask AND tag = tag) would refuse.
-Five goals are left waiting (WAITING, by hand).
+  add_resource    (2026-11-24) add_shoen_resource, 22:E5, through the
+                  image's control/2: hash/3 suspended in a shoen,
+                  Control [start, add_resource(0, 1000) | C]: the Report
+                  [started, resource_added | _] (5, pimos.vmac), the
+                  shoen still started with count 1.  Its hash/3 goal,
+                  control/2 and report/2 are left waiting.  Pins 15 /
+                  8375 -> 16 / 8671, this part's 296 lines.
+Eight goals are left waiting (WAITING, by hand; five before
+add_resource).
+
+Observed fault injections into add_shoen_resource, 2026-11-24 (the
+trace's part numbers count from 0, so add_resource is part 15):
+  resource_added not reported        add_resource, line 142: R 1 .. for
+                                     M .. 5
+  reported as stopped (11)           add_resource, line 142: M .. b for 5
+  NewShoen to the second operand     add_resource, line 146: R 5 for R 1
 
 Observed fault injections into the Bluespec, 2026-11-23, one at a time
 in a private copy of pim/ (the restore is the copy; the clean copy then
@@ -185,7 +201,7 @@ import lockstep_shoen as stage1  # noqa: E402
 import lockstep_shoen2 as stage2  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=15, lines=8375)
+PINNED = dict(parts=16, lines=8671)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 STATUS = {L.DORMANT: 'dormant', L.STARTED: 'started', L.TERMINATED: 'terminated',
           L.REMOVED: 'removed', L.STOPPED: 'stopped'}
@@ -401,6 +417,19 @@ def script():
     s.run()
     for k in (8, 9, 6):
         s.out(k)
+
+    # (h) add_shoen_resource (2026-11-24): hash/3 suspended in a shoen,
+    # Control [start, add_resource(0, 1000) | C], C left unbound
+    s.label('add_resource')
+    code('ipl_pool', 'hash/3', 0)
+    s.vector(2, 12, [None, None, None])            # X in 12
+    s.vector(9, 4, [A('add_resource'), I(0), I(1000)])
+    s.cons(10, 6, ('slot', 9), None)               # C in 7
+    s.cons(3, 13, A('start'), ('slot', 10))
+    s.newvar(8)                                    # Report
+    goal(execute4, 0, 2, 3, 8)
+    s.run()
+    s.out(8)
     return s
 
 
@@ -490,12 +519,15 @@ EXPECT = [
       'shut', None],
      ['EXCEPTION WAS OCCURRED in BIOS : error code:', 'raised', 'vector'],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1)]),
+    ('add_resource', [STREAM('started', 'resource_added')], [],
+     AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
+                                                                   (1, 'started', None, 0, -1)]),
 ]
 # The goals left waiting, by hand: `stop` and `abort inner` leave their
 # root shoen's control/2 and report/2 (no monitor closes them); `abort
 # outer` the inner's report/2, a goal of the aborted outer that waits on
 # the inner's report stream.  The goals discarded were woken first.
-WAITING = 5
+WAITING = 8
 # the lines that say a goal was discarded or parked, per part
 TAKEN = {'stop: woken, parked': ['E park'], 'abort inner: woken': ['E aborted'],
          'abort outer: woken': ['E aborted', 'E aborted']}

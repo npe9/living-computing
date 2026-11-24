@@ -80,6 +80,11 @@ again): jump, set_marked_variable, wait_vector, the timer device's
 create_timer and get_date_time (fep.py), multiply_bignum_by_word:
 65,482 instructions, the console the banner alone; the stop
 subtract_bignum(32#{}, 32#{0}), the 32#{0} from the clock at 0.
+2026-11-24, the clock advancing (one tick every 423 instructions):
+subtract_bignum, the timer's close (fep.py), get_constant, body
+vector/3, code_to_predicate, the unification of long vectors,
+add_shoen_resource: 92,797 instructions, the console the banner alone;
+the stop fep_attributes (240) on a file device (FepError).
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
