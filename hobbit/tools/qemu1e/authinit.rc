@@ -23,9 +23,11 @@ disk/kfscmd 'newuser glenda'
 # the kfs was attached before glenda was a kfs user: let this console
 # write in glenda's new 775 directories
 disk/kfscmd allow
-# glenda's profile: empty, like none's on 1e's PC floppy
-# (sys/lib/pc/usr/none/lib/profile)
-> /n/kfs/usr/glenda/lib/profile
+# glenda's profile, from the overlay (tools/qemu1e/overlay/sys/lib/
+# qemu1e/glenda/profile): it does nothing, like none's empty one on 1e's
+# PC floppy (sys/lib/pc/usr/none/lib/profile), unless
+# /usr/glenda/lib/8half exists; then a terminal starts 8½
+cp /n/kfs/sys/lib/qemu1e/glenda/profile /n/kfs/usr/glenda/lib/profile
 echo authinit: adduser glenda
 /n/kfs/386/bin/auth/adduser glenda
 echo authinit: adduser -h cpu9

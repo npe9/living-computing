@@ -54,6 +54,11 @@ python3 "$here/test_own9term.py"
 # (EightHalfReplayTest, the longest part; P9TERM_8HALF=ls replays the
 # mouse-swept window and `ls` in it as well).
 python3 "$here/test_p9term.py"
+# The Hobbit on the three-machine 1e network (fs9, cpu9, the model on
+# tools/qemu1e/hub.py), replayed: glenda's wrong password refused and the
+# right one accepted by fs9's auth server, every frame as recorded (~80 s;
+# P9HUB_CPU=1 replays on through `cpu -h cpu9` and its output, ~8 min).
+python3 "$here/test_p9hub.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.

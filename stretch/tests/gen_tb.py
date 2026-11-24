@@ -137,6 +137,13 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append("import StretchCore::*;")
     if fast_load:
         lines.append("import RegFile::*;")
+    # THE DISK IMAGE IS SAVED HERE, AT THE END OF THE RUN, in a host
+    # build only (STRETCH_DISK_SAVE, bsv/host_tape.c host_disk_save).
+    # Behind `ifdef for the BDPI reason StretchIO.bsv gives: a build
+    # without -D HOST_TAPE preprocesses to the text it always had.
+    lines.append("`ifdef HOST_TAPE")
+    lines.append("import StretchDiskSourceFile::*;")
+    lines.append("`endif")
     lines.append("")
     lines.append("(* synthesize *)")
     lines.append(f"module mk{module_name}(Empty);")
@@ -685,6 +692,10 @@ def generate(module_name, prog, checks, step_cap=30000, reader_image=None,
     lines.append('      $display("ALL TESTS PASSED");')
     lines.append("    else")
     lines.append('      $display("%0d TEST(S) FAILED", fails);')
+    # A no-op unless STRETCH_DISK_SAVE names a file (host_tape.c).
+    lines.append("`ifdef HOST_TAPE")
+    lines.append("    host_disk_save();")
+    lines.append("`endif")
     lines.append("    $finish(0);")
     lines.append("  endrule")
     lines.append("")

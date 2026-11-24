@@ -16342,6 +16342,16 @@ run "THE DISK: LOCATE, arcs, the zero-filled tail, and flags discarded" ./run_di
 # 0), the source logs 1,154 lost writes, and the wrapper's
 # disk_write_lost fails.  The control passes all 18 checks.
 run "THE DISK, with write back-pressure: nothing is lost while the source refuses" ./run_disk_stall_test.sh StretchIoDiskStallTb
+# THE DISK HAS AN IMAGE FILE (docs/disk_subsystem.md §9c; disk plan D2).
+# STRETCH_DISK loads one, STRETCH_DISK_SAVE writes the whole unit at the
+# testbench's finish.  MCP's P1 run is saved and checked against the IPL
+# tape (33 arcs, measured), a read-only deck finds the saved words after
+# a reload, a short image is zero-filled, and with neither variable set
+# nothing is read, written or printed.  The script sets both variables
+# itself, per command; this suite never exports them.  Its header records
+# the two measured injections (a save that drops the last arc, a load that
+# skips the zero-fill).
+run "THE DISK IMAGE FILE: save after MCP's P1 IPL, reload, zero-fill, control" ./run_disk_image_test.sh StretchDiskImageTb
 
 # MCP'S OWN LOADER READS STRAP II'S CARDS.  The JOB CONTROL BINARY LOADER
 # (printed pp.320-334, transcribed) loads a six-card absolute deck that

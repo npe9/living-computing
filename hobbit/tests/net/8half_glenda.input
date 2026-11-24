@@ -1,0 +1,8 @@
+# 8½ as glenda (docs/p9boot.md "8½ as glenda"): her profile's 8½ branch,
+# enabled by $home/lib/8half (made on fs9's -snapshot console).  A first
+# `quiet 30` right after init fired before 8½ had drawn (8½ was still
+# being read over IL): wait 50 model seconds first.
+screen 'init: starting /bin/rc' screen build/hub/g8half/init.png
+after 50 screen build/hub/g8half/a50.png
+quiet 30 screen build/hub/g8half/q1.png
+after 0.1 stop

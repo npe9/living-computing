@@ -15,12 +15,25 @@ own tick counter has caught up with model time; while the model idles,
 the server runs and the model waits for it.  --free-run gives the old
 behaviour (the server on the wall clock, the busy model ~200 times slow).
 
+--hub puts the Hobbit on the three-machine 1e network of
+docs/qemu_1e_server.md section 5 instead: tools/qemu1e/hub.py joins fs9
+(the file and auth server), cpu9 (the CPU server, booted from
+build/qemu-cpu/fd-cpu.img as net_test.py boots it, listening on il) and
+the Hobbit, each on its own hub port; the lockstep then runs both QEMUs
+by their own tick counters (ClockGroup).  --password-first WRONG types a
+wrong password first, to show the auth server refusing it.
+
 The model types Return at `root is from` (il) and at `user[none]`, then
 each --type TEXT=REPLY in order.  The run ends at TEXT on the Hobbit's
 screen (--until, default `init: starting`), at a stop of the model, or at
---max-steps.  Needs tools/qemu1e/build.sh to have been run.  Writes
-build/a4net/join/{hobbit.pcap,server.pcap,server.log,console,uart0}
-(--out).
+--max-steps.  --fs9-cmd LINE is typed at fs9's rc (it runs -snapshot)
+before the Hobbit starts, e.g. to make /usr/glenda/lib/8half (glenda's
+profile then starts 8½, docs/qemu_1e_server.md 5d).  Needs
+tools/qemu1e/build.sh to have been run.  Writes, in --out (default
+build/a4net/join): hobbit.pcap, server.pcap, server.log, console,
+uart0, screen.png, screens.log (every QEMU's screen at each scripted
+reply and at the end), and with --hub cpu9.pcap, cpu9.log and hub.pcap
+(the whole segment).
 """
 import argparse
 import os
@@ -36,8 +49,12 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "qemu1e"))
 import p9boot   # noqa: E402
 import qemu1e   # noqa: E402
+import net1e    # noqa: E402
+from hub import Hub  # noqa: E402
 
 Q = os.path.join(HOBBIT, "build", "qemu")
+QC = os.path.join(HOBBIT, "build", "qemu-cpu")
+HOBBIT_MAC = bytes.fromhex("525400000b0b")     # p9boot.EEPROM_EA
 S9TERM = os.path.join(HERE, "plan9-1e", "hobbit", "s9term")
 PS, PH = 10901, 10902
 
@@ -70,6 +87,7 @@ class ServerClock:
         self.runs = 0
         self.wall = 0.0         # wall seconds the server ran
         self.running = True
+        self.held = None        # ticks while stopped (they cannot move)
 
     def _read(self, pa, n):
         self.m.cmd("pmemsave", val=pa, size=n,
@@ -78,9 +96,13 @@ class ServerClock:
             return f.read()
 
     def ticks(self):
+        if not self.running and self.held is not None:
+            return self.held
         mach, = struct.unpack("<I", self._read(self.mptr, 4))
-        return struct.unpack("<I", self._read((mach & 0x7FFFFFFF) + 12,
-                                              4))[0]
+        t = struct.unpack("<I", self._read((mach & 0x7FFFFFFF) + 12, 4))[0]
+        if not self.running:
+            self.held = t
+        return t
 
     def attach(self, model_time):
         """Pause the server and make its clock read model_time now."""
@@ -98,6 +120,7 @@ class ServerClock:
 
     def cont(self):
         if not self.running:
+            self.held = None
             self.m.cmd("cont")
             self.running = True
 
@@ -125,6 +148,67 @@ class ServerClock:
             self.wall += time.time() - w0
 
 
+class ClockGroup:
+    """Several QEMUs as the model's one peer clock (ETHER_CHOICES
+    ['lockstep'] on the hub, docs/p9boot.md "On the 1e network").  Each
+    member is a ServerClock on its own machine's ticks.  The group's time
+    is the laggard's, so the model's busy-time check (a quantum behind)
+    runs whichever QEMU is behind; run_until resumes every member whose
+    clock is short of t, stops each as its own clock reaches t, and
+    stops them all when a datagram waits at the Hobbit's socket.  While
+    they run together the QEMUs are not locked to each other: each
+    follows its own -icount pace, and the faster is held at t until the
+    other catches up."""
+
+    def __init__(self, clocks):
+        self.clocks = clocks
+        self.quantum = min(c.quantum for c in clocks)
+        self.runs = 0
+        self.wall = 0.0
+
+    def attach(self, model_time):
+        for c in self.clocks:
+            c.attach(model_time)
+
+    def now(self):
+        return min(c.now() for c in self.clocks)
+
+    def stop(self):
+        for c in self.clocks:
+            c.stop()
+
+    def cont(self):
+        for c in self.clocks:
+            c.cont()
+
+    def run_until(self, t, sock=None):
+        behind = [c for c in self.clocks if c.now() < t]
+        if not behind:
+            return bool(sock is not None
+                        and select.select([sock], [], [], 0)[0])
+        w0 = time.time()
+        self.runs += 1
+        for c in behind:
+            c.runs += 1
+            c.cont()
+        try:
+            while True:
+                if sock is not None:
+                    if select.select([sock], [], [], 0.002)[0]:
+                        return True
+                else:
+                    time.sleep(0.002)
+                for c in behind:
+                    if c.running and c.now() >= t:
+                        c.stop()
+                if not any(c.running for c in behind):
+                    return False
+        finally:
+            for c in behind:
+                c.stop()
+            self.wall += time.time() - w0
+
+
 def start_server(wd, extra=(), ps=PS, ph=PH):
     net = ("-netdev dgram,id=n0,local.type=inet,local.host=127.0.0.1,"
            "local.port=%d,remote.type=inet,remote.host=127.0.0.1,"
@@ -148,6 +232,40 @@ def start_server(wd, extra=(), ps=PS, ph=PH):
     srv.type("rc /serve 10.9.0.1 255.255.255.0\n")
     srv.wait("tcp: announce", 120)
     return srv
+
+
+def start_cpu9(wd, extra, local, remote):
+    """cpu9 as net_test.py boots it: 9pccpu.qs from fd-cpu.img, its root
+    from fs9 over IL; the host key typed at /boot (boot/key.c, no nvram)
+    and at init's console lock; then what cpurc's kremvax case does,
+    `ip/ipconfig` (ip/arpd, the ARP answerer) and `aux/listen il`."""
+    m = qemu1e.Machine(wd, fd=os.path.join(QC, "fd-cpu.img"),
+                       net=net1e.net("cpu9", local, remote, pcap="cpu9.pcap"),
+                       extra=["-snapshot"] + list(extra),
+                       log=os.path.join(wd, "cpu9.log"))
+    net1e.boot(m, "il")
+    m.wait("password", 120)
+    m.type(net1e.CPU9_PW + "\n")
+    net1e.wait_prompt(m, r"cpu9 password: *$", 900)
+    m.type(net1e.CPU9_PW + "\n")
+    net1e.wait_prompt(m, r"% *$", 300)
+    m.type("ip/ipconfig; aux/listen il; echo cpu9 listening\n")
+    m.wait("^cpu9 listening", 60)
+    time.sleep(3)
+    return m
+
+
+class LoggedBoot(p9boot.Boot):
+    """p9boot.Boot that calls on_typed() after each scripted reply."""
+    on_typed = None
+
+    def tap_screenputs(self):
+        n = len(self.typed)
+        try:
+            super().tap_screenputs()
+        finally:
+            if self.on_typed is not None and len(self.typed) > n:
+                self.on_typed(self.typed[n:])
 
 
 def main(argv):
@@ -189,22 +307,82 @@ def main(argv):
     ap.add_argument("--ports", default="%d,%d" % (PS, PH),
                     metavar="SERVER,HOBBIT",
                     help="the UDP ports of the two ends of the wire")
+    ap.add_argument("--hub", action="store_true",
+                    help="the three-machine network: fs9, cpu9 and the "
+                         "Hobbit on tools/qemu1e/hub.py (needs "
+                         "build/qemu-cpu/fd-cpu.img, cpukernel.sh)")
+    ap.add_argument("--port-base", type=int, default=10941, metavar="B",
+                    help="with --hub: fs9 B/B+1, the Hobbit B+2/B+3, cpu9 "
+                         "B+4/B+5 (machine/hub), as net_test.py's "
+                         "PORT_BASE (default 10941)")
+    ap.add_argument("--password-first", metavar="WRONG",
+                    help="type WRONG at the first password:, then Return "
+                         "at /boot's user[USER]: and --password")
+    ap.add_argument("--fs9-cmd", action="append", default=[],
+                    metavar="LINE",
+                    help="type LINE at fs9's rc (it runs -snapshot) after "
+                         "/serve, before the Hobbit starts")
     args = ap.parse_args(argv)
     os.makedirs(args.out, exist_ok=True)
     extra = ([] if args.icount == "off"
              else ["-icount", "shift=%s" % args.icount])
-    ps, ph = (int(x) for x in args.ports.split(","))
-    srv = start_server(args.out, extra, ps, ph)
+    hub = cpu9 = None
+    machines = []
+    slog = open(os.path.join(args.out, "screens.log"), "w")
+
+    def screens(tag):
+        for name, m in machines:
+            try:
+                sc = m.screen()
+            except Exception as e:     # a dead QEMU must not stop the log
+                sc = "(%s)" % e
+            slog.write("--- %s: %s\n%s\n" % (tag, name, sc.rstrip()))
+        slog.flush()
+
+    if args.hub:
+        B = args.port_base
+        ps, ph = B + 3, B + 2       # the Hobbit's hub port, its own end
+        hub = Hub([(B + 1, B), (B + 3, B + 2), (B + 5, B + 4)],
+                  filters={1: [HOBBIT_MAC]},
+                  pcap=os.path.join(args.out, "hub.pcap"))
+        hub.start()
+        srv = start_server(args.out, extra, B, B + 1)
+        machines.append(("fs9", srv))
+        try:
+            for line in args.fs9_cmd:
+                srv.type(line + "\n")
+                time.sleep(2)
+            cpu9 = start_cpu9(args.out, extra, B + 4, B + 5)
+        except BaseException:
+            srv.quit()
+            hub.stop()
+            raise
+        machines.append(("cpu9", cpu9))
+        screens("before the Hobbit")
+    else:
+        ps, ph = (int(x) for x in args.ports.split(","))
+        srv = start_server(args.out, extra, ps, ph)
+        machines.append(("fs9", srv))
+        for line in args.fs9_cmd:
+            srv.type(line + "\n")
+            time.sleep(2)
     clock = None
     t0 = time.time()
     try:
-        boot = p9boot.Boot(args.image)
+        boot = LoggedBoot(args.image)
+        boot.on_typed = lambda items: screens(
+            "after typing %r at step %d" % (items[-1][2], items[-1][0]))
         boot.script = [(b"il]: ", b"\r")]
         if args.user == "none":
             boot.script.append((b"user[none]: ", b"\r"))
         else:
             boot.script.append((b"user[none]: ",
                                 args.user.encode() + b"\r"))
+            if args.password_first:
+                boot.script.append((b"password: ",
+                                    args.password_first.encode() + b"\r"))
+                boot.script.append((("user[%s]: " % args.user).encode(),
+                                    b"\r"))
             boot.script.append((b"password: ",
                                 args.password.encode() + b"\r"))
         for item in args.type:
@@ -230,6 +408,9 @@ def main(argv):
             peer="127.0.0.1:%d" % ps, local="127.0.0.1:%d" % ph)
         if not args.free_run:
             clock = ServerClock(srv, os.path.join(Q, "9dos.q"))
+            if cpu9 is not None:
+                clock = ClockGroup([clock, ServerClock(
+                    cpu9, os.path.join(QC, "9pccpu.qs"))])
             clock.attach(0.0)
             wire.peer_clock = clock
         boot.attach(wire)
@@ -237,14 +418,26 @@ def main(argv):
         if clock is not None:
             print("p9join: lockstep: server clock %.3f s, %d runs, %.0f s "
                   "of wall time" % (clock.now(), clock.runs, clock.wall))
+            for c in getattr(clock, "clocks", ()):
+                print("p9join: lockstep: %s clock %.3f s, %d runs" % (
+                    c.m.id, c.now(), c.runs))
             clock.cont()
     finally:
         try:
-            s = srv.screen()
-            srv._log(s)
-            print("--- server screen\n" + s.rstrip())
+            screens("at the end")
+            for name, m in machines:
+                s = m.screen()
+                m._log(s)
+                print("--- %s screen\n%s" % (name, s.rstrip()))
         finally:
-            srv.quit()
+            for name, m in machines:
+                m.quit()
+            if hub is not None:
+                hub.stop()
+                print("p9join: hub frames received per port (fs9, hobbit, "
+                      "cpu9): %s; not repeated to the Hobbit (filtered): %d"
+                      % (hub.counts, hub.filtered[1]))
+            slog.close()
     print("p9join: %s" % status)
     for t, secs in boot.rtc.sets:
         print("p9join: rtc set at %.3f s to %s" % (t, time.strftime(
