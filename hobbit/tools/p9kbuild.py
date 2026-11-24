@@ -10,6 +10,10 @@ one zc run is ~8 million instructions, ~35 s), and records what came out.
 
 Targets
 -------
+  all      the whole chain in one fresh --build directory, nothing reused:
+           tools/p9kgen.py (into BUILD/kgen), then `kernel --kgen
+           BUILD/kgen`, then `link --kgen BUILD/kgen --check` on the
+           libram.a just made; BUILD/all.log sums each stage
   kernel   sys/src/9/hobbit/mkfile for one CONF (default `term`): every
            object of $OBJ (`zc -w -Dram`, port files `-I. ../port/X.c`,
            `fcall` without -I., fprt0.s through za), raml.s through za,
@@ -69,6 +73,7 @@ What is not the release's tooling, and why
   to mode 0664 (what every shipped libc.a member records) and mtime
   726010682 (the shipped libc.a's __.SYMDEF date) before ar runs.
 
+    python3 tools/p9kbuild.py all --build B     # p9kgen+kernel+link, ~3 h
     python3 tools/p9kbuild.py kernel            # everything, 8 processes
     python3 tools/p9kgen.py --out K             # ~75 min (mkroot's sed)
     python3 tools/p9kbuild.py kernel --kgen K
@@ -318,12 +323,21 @@ def kernel_command(name, hobbit_dir, port_dir):
     raise SystemExit("p9kbuild: no source for %s.z" % name)
 
 
+#: every Log opened in this process (target_all sums their steps)
+LOGS = []
+
+
 class Log:
     def __init__(self, path):
         self.path = path
         self.f = open(path, "w")
+        self.steps = 0          # instructions of every step logged
+        self.runs = 0
+        LOGS.append(self)
 
     def line(self, key, r, out=None, note=""):
+        self.steps += r["steps"]
+        self.runs += 1
         size = digest = "-"
         if out is not None and pathlib.Path(out).exists():
             size = str(pathlib.Path(out).stat().st_size)
@@ -494,6 +508,11 @@ def target_kernel(a):
 # The link: 9$CONF
 # --------------------------------------------------------------------
 
+#: The sha256 of libram.a for `term` as the kernel target makes it
+#: (docs/plan9_boot_plan.md A3).  Reported by `all`, not enforced here:
+#: its __.SYMDEF carries rl's stack residue (target_archeck).
+LIBRAM_SHA256 = ("f709cea932f1a3694a08a93f4eb013c4"
+                 "a0703499938d0a9cd31ba0d8515b7ea6")
 #: sys/src/9/hobbit/mkfile, rule `9term 9bart 9termlocal`.
 LINK_FLAGS = ["-l", "-R4", "-H1", "-T0x80004000", "-E0x80004000"]
 LINK_LIBS = ["-lgnot", "-lg", "-lc"]
@@ -777,9 +796,83 @@ def symdef_residue_only(got, want):
     return True, detail
 
 
+# --------------------------------------------------------------------
+# all: the whole chain from the vendored tree
+# --------------------------------------------------------------------
+
+def target_all(a):
+    """p9kgen, then `kernel --kgen`, then `link --kgen --check`, in one
+    fresh build directory: BUILD/kgen (tools/p9kgen.py's products and
+    log), BUILD/kernel-CONF{,.log}, BUILD/link-CONF{,.log}; nothing is
+    taken from an earlier run.  BUILD/all.log records each stage's
+    programs, instructions and wall time, and the products' sha256."""
+    import p9kgen
+    build = pathlib.Path(a.build)
+    if build.exists() and any(build.iterdir()):
+        raise SystemExit("p9kbuild: all wants a fresh --build directory; "
+                         "%s is not empty" % build)
+    build.mkdir(parents=True, exist_ok=True)
+    kg = build / "kgen"
+    kg.mkdir()
+    summary = open(build / "all.log", "w")
+
+    def note(text):
+        print("p9kbuild all: " + text, flush=True)
+        summary.write(text + "\n")
+        summary.flush()
+
+    t_all = time.time()
+    stages = []
+    t0 = time.time()
+    with open(kg / "p9kgen.log", "w") as klog:
+        products, rc = p9kgen.generate(kg, a.conf, True, klog)
+        report = p9kgen.check(products, a.conf)
+        for what, good in report:
+            klog.write("%s: %s\n" % ("same" if good else "DIFFERENT", what))
+    ksteps = sum(r[2] for r in rc.runs)
+    stages.append(("p9kgen", len(rc.runs), ksteps, time.time() - t0))
+    note("p9kgen: %d programs, %d instructions, %.0f s"
+         % stages[-1][1:])
+    for what, good in report:
+        note("  %s: %s" % ("same" if good else "DIFFERENT", what))
+    if not all(good for what, good in report
+               if not what.startswith("bootterm.root.c")):
+        note("FAILED: p9kgen's checks")
+        return 1
+    a.kgen = str(kg)
+    for name, fn in (("kernel", target_kernel), ("link", target_link)):
+        if name == "link":
+            a.libram = str(build / "libram.a")
+            a.check = True
+        t0 = time.time()
+        n0 = len(LOGS)
+        status = fn(a)
+        logs = LOGS[n0:]
+        stages.append((name, sum(lg.runs for lg in logs),
+                       sum(lg.steps for lg in logs), time.time() - t0))
+        note("%s: %d programs, %d instructions, %.0f s" % stages[-1])
+        if status:
+            note("FAILED: %s exited %d" % (name, status))
+            return status
+    lib = build / "libram.a"
+    img = build / ("9" + a.conf)
+    note("libram.a %d bytes sha256 %s (%s LIBRAM_SHA256)"
+         % (lib.stat().st_size, sha(lib),
+            "=" if sha(lib) == LIBRAM_SHA256 else "DIFFERENT from"))
+    note("%s %d bytes sha256 %s%s" % (
+        img.name, img.stat().st_size, sha(img),
+        " (= NINETERM_SHA256, link --check passed)"
+        if a.conf == "term" else ""))
+    note("total: %d programs, %d instructions, %.0f s wall"
+         % (sum(s[1] for s in stages), sum(s[2] for s in stages),
+            time.time() - t_all))
+    return 0
+
+
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("target", choices=["kernel", "link", "libc", "archeck"])
+    ap.add_argument("target", choices=["all", "kernel", "link", "libc",
+                                       "archeck"])
     ap.add_argument("--build", default=str(HOBBIT / "build" / "p9kbuild"),
                     help="build directory (each target's staged tree is "
                     "BUILD/<target>/root)")
@@ -804,7 +897,7 @@ def main(argv):
     ap.add_argument("--no-library", action="store_true",
                     help="kernel: compile only; no ar/rl")
     a = ap.parse_args(argv)
-    return {"kernel": target_kernel, "link": target_link,
+    return {"all": target_all, "kernel": target_kernel, "link": target_link,
             "libc": target_libc, "archeck": target_archeck}[a.target](a)
 
 
