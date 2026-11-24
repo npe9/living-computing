@@ -247,3 +247,9 @@ differ (text +4,268 bytes, accounted for object by object) and the
 functions defined only in one of the two images are exactly the
 "Not the shipped sources" table.  `-lgnot`, `-lg` and `-lc` load the same
 members in the same order as s9term.
+
+It boots: `tools/p9join.py --image` runs it on the reference model with
+its root from the 1e server through A5's command script, the screen
+s9term's except for pageinit's line; what the drift above changes at run
+time (the kbd.c keyboard on Quart channel 2, no serial console, the 25
+Hz clock) is tabled in docs/p9boot.md, "Our 9term".
