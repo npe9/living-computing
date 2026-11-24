@@ -701,8 +701,11 @@ python3 -u tools/p9join.py --user tor --ports 10931,10932 \
 
 `--user tor` answers `user[none]:` with `tor` and `password:` with
 `--password` (default `password`); `/boot` then prints `boot: password
-not checked!: file does not exist` (the auth dial fails: no auth server
-in the release's setup) and goes on as `tor`.  The profile binds
+not checked!: file does not exist` (the auth dial fails: the server
+the recording used, `build/qemu` built before `tools/qemu1e`'s auth
+server landed, ran none) and goes on as `tor`.  With master's auth
+server (`docs/qemu_1e_server.md` 5a) `tor` has no key and `glenda`
+(password `glenda93`) would be checked; neither has been run here.  The profile binds
 `$home/tmp` and `$home/bin` and execs `8½ -i 8½start -s -f
 /lib/font/bit/pelm/euro.9.font`; `8½start` is `window '0 0 785 602'
 rc`.  The input script (live2, 2026-11-24, on the Quart of
@@ -737,8 +740,11 @@ replication never filled: every texture word comes out 0, i.e. white.
 model (a 32 × 4 2-bit destination, the 4 × 4 lightgrey rows 8 2 8 2 as
 the kernel held them in the live run, f = S) and gets all-zero words;
 the shipped source replicates while `x < 32` and would give the grey.
-So the white is s9term's own behaviour on this screen, not the model's;
-a kernel built from the shipped source would draw grey.  `GtextureTest`
+So the white follows from s9term's code as read above, not from the
+board or from 8½'s calls; the test runs that code on the same CPU model,
+so it does not by itself rule out a mis-executed instruction in those
+few lines (the reading of +0x5aa..+0x654 is the evidence).  A kernel
+built from the shipped source would draw grey.  `GtextureTest`
 (`tests/test_p9term.py`) makes the same call, and as a control the same
 rows already 32 pixels wide, which come out as the expected 2-bit
 pattern.
