@@ -115,7 +115,8 @@
 | `get_with_prompt/3` | i | 2 | [editor_main_window] prompt in echo area and read answer | USAGE | cal-esp/deb2.12/dedit.esp:318 (ifs_window) | held 3.x-7.x |
 | `getb/3` | i | 6 | [standard_io_buffer] :getb(Buf,String,Size) whole contents | USAGE | cil/src/ms_ist.esp:1813 (ifs_window) | held 3.x-7.x |
 | `getc/2` | i | 15 | read one character code (USAGE: fdd_utility on screen, simpos.wmv esp@143; gog-esp/CGS_UTIL.ESP:393) | USAGE | (in meaning) | — |
-| `getl/2` | i | 153 | [standard_io_window] read a line as a string | USAGE | cal-esp/deb2.12/dmenu.esp:796 (ifs_window) | held 3.x-7.x |
+| `getl/2` | i | 153 | [standard_io_buffer] read a line as a string (printed "get1"; read as getl, INFERENCE) | PRINTED | ESPtex/program-e.tex:6736-6745; ESPtex-j/program-j.tex:6470-6480 (sweep2) | 1990 manual |
+| ″ |  |  | [standard_io_window] read a line as a string | USAGE | cal-esp/deb2.12/dmenu.esp:796 (ifs_window) | held 3.x-7.x |
 | `gett/2` | i | 138 | [standard_io_window] read a term from the window; held: MATCH | PRINTED | Giho 8609 p19-20 (ipsj) | 2.0 (1986) |
 | ″ |  |  | [standard_io_window] read a term (after the user types it, terminated by full stop/return) | USAGE | cal-esp/cal2.12/control.esp:197 (ifs_window) | held 3.x-7.x |
 | `gett/4` | i | 13 | [standard_io_window] :gett(W,Term,VarInfoIn,VarInfoOut) term plus variable-name table; class column is the defining nature by usage; requirements.tsv… | USAGE | cal-esp/cal2.12/control.esp:245 (ifs_window) | held 3.x-7.x |
@@ -150,7 +151,8 @@
 | `putl/1` | i | 70 | [standard_io_window] newline only | USAGE | cal-esp/cal2.12/control.esp:246 (ifs_window) | held 3.x-7.x |
 | `putl/2` | i | 428 | [standard_io_window] write a string (line); held: MATCH | PRINTED | Giho 8609 p19-20 (ipsj) | 2.0 (1986) |
 | ″ |  |  | [{with_superior_input_buffer\|with_pmacs_window\|with_border\|as_superior\|reshape_notifier\|as_mouse_input\|with_default_mouse\|inferior_window}] af… | USAGE | kappa.ptf class kappa##pb_status_window (ptf) | ptf 1992 |
-| `putt/2` | i | 148 | [standard_io_window] write a term (honours unparsing operators and unquote_atom) | USAGE | cal-esp/cal2.12/ccwindow.esp:65 (ifs_window) | held 3.x-7.x |
+| `putt/2` | i | 148 | [standard_io_buffer] write a term with no separator: putt [1,2] then putt p(1,2) reads back as "[1,2]p(1,2)" | PRINTED | ESPtex/program-e.tex:6736-6745; ESPtex-j/program-j.tex:6470-6480 (sweep2) | 1990 manual |
+| ″ |  |  | [standard_io_window] write a term (honours unparsing operators and unquote_atom) | USAGE | cal-esp/cal2.12/ccwindow.esp:65 (ifs_window) | held 3.x-7.x |
 | `putt/4` | i | 33 | [standard_io_window] :putt(W,Term,VarInfoIn,VarInfoOut): term with variable-name table threaded | USAGE | cal-esp/deb2.12/output.esp:516 (ifs_window) | held 3.x-7.x |
 | `read/2` | i | 258 | [window] :read(W,^Code) waits; Code = char code, mouse click code, translated code, scroll_request(Offset), menu item_id, abort [possible defining mi… | PRINTED-INTERFACE | TM-125 p18 (folio 17) (trtm_window) | 1.0 (1985) |
 | ″ |  |  | [{with_click_information\|with_key_select\|superior_window}] before-demon in held pimmcsp##csp_break_superior_window with no held primary: SIMPOS sup… | USAGE | pimmcsp.ptf class pimmcsp##csp_break_superior_window (ptf) | ptf 1991 |
