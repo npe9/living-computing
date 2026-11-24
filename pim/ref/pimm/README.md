@@ -74,7 +74,9 @@ waiting on an element of its vector, `lockstep_reuse.py`
 bound to a vector, `lockstep_xmod.py` an external call between two
 loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
 `restore` at the sites of `scsi_fep` in a loaded patch file,
-`lockstep_rdvc.py` the guard `diff` at a site in another;
+`lockstep_rdvc.py` the guard `diff` at a site in another,
+`lockstep_pvec.py` the guard `X = Y` on two vectors (the IPL's pool
+with vector keys);
 `longrun_ipl.py` is the long run (not in the suite); 138
 instructions on both models (counted 2026-11-23: 140 `i_` handlers in
 `pimm.py`, less `scsi_init` and `scsi_command`, on the reference alone;

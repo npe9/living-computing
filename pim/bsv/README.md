@@ -195,7 +195,8 @@ four multiply sites of `scsi_fep` in `pimm_patch_scsifep360E.sav`
 loaded through `ipl_loader:load/4`, about 2.1 M trace lines.
 `rdvc`: the guard `diff`, at `file_request_device:driver_0/10` of
 `pimm_patch_mkdir360E.sav` (loaded as for `xmod`), about 7.4 M trace
-lines.
+lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`), the
+IPL's pool `ipl_pool:keyed_set/2` given vector keys.
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines

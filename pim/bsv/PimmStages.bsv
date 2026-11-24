@@ -82,7 +82,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
-               XProc, XBDiv, XBSInfo, XBSInfo2, XGMul,
+               XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XReuse3 } XState deriving (Bits, Eq);
@@ -101,6 +101,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(XState)       st      <- mkReg(XDecode);
   Reg#(Cell)         opA     <- mkRegU;
   Reg#(Cell)         opB     <- mkRegU;
+  // wait_value on two vectors: the vectors, the element of X, the index
+  Reg#(Cell)         pvA     <- mkRegU;
+  Reg#(Cell)         pvB     <- mkRegU;
+  Reg#(Cell)         pvX     <- mkRegU;
+  Reg#(Bit#(32))     pvI     <- mkRegU;
   Reg#(Addr)         sGoal   <- mkRegU;     // suspending: the record
   Reg#(Bit#(5))      sI      <- mkRegU;     // suspending: the variable being hooked
   // a body built-in: its inputs, dereferenced, by operand position
@@ -163,6 +168,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // a vector pointer, short (0..6 elements, the size in the tag) or long
   function Bool isVec(Cell c) = (c.tag & 8'hf0) == tag_VECT0o;
   function Bool isLongVec(Cell c) = (c.tag & 8'hfe) == 8'h1e;
+  function Bool isList(Cell c) = (c.tag & 8'hfe) == tag_LISTo;
   function Bit#(32) sizeOf(Cell c) = zeroExtend(vectorSize(c));
   Addr afterBuiltin = pc + (stub.n > 3 ? 2 : 1);
 
@@ -798,6 +804,22 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       if ((a.tag & 8'hfe) == tag_FLTo && (b.tag & 8'hfe) == tag_FLTo) stop(EndUnimp);
       else guardFail;
     end
+    else if (op == op_wait_value && (isVec(a) || isVec(b) || isList(a) || isList(b))) begin
+      // two vectors of 0..6 elements, element by element (PDSS's
+      // passive unification as far as docs/pimm_semantics.md takes
+      // it); a vector against anything else fails; a list or a long
+      // vector is refused
+      if (isList(a) || isList(b) || isLongVec(a) || isLongVec(b)) stop(EndUnimp);
+      else if (!isVec(a) || !isVec(b) || sizeOf(a) != sizeOf(b)) guardFail;
+      else if (sizeOf(a) == 0) next;
+      else begin
+        pvA <= a;
+        pvB <= b;
+        pvI <= 0;
+        vbox.element(a, 0);
+        st <= XPv1;
+      end
+    end
     else if (op == op_wait_value && isStrg(a) && isStrg(b)) begin
       // two strings: the same when every word is
       sbox.equal(a, b);
@@ -913,6 +935,49 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else begin
       regs.wr(z, intC(p.value));
       next;
+    end
+  endrule
+
+  // wait_value on two vectors: element i of X, then of Y, each
+  // dereferenced; an unbound one is noted (X's first), an element of X
+  // that is not atomic is refused
+  rule pv1 (st == XPv1);
+    let r <- vbox.result;
+    dbox.deref(r.a);
+    st <= XPv2;
+  endrule
+
+  rule pv2 (st == XPv2);
+    let x <- dbox.derefResult;
+    pvX <= x;
+    vbox.element(pvB, pvI);
+    st <= XPv3;
+  endrule
+
+  rule pv3 (st == XPv3);
+    let r <- vbox.result;
+    dbox.deref(r.a);
+    st <= XPv4;
+  endrule
+
+  rule pv4 (st == XPv4);
+    let y <- dbox.derefResult;
+    let x = pvX;
+    if (isRef(x)) begin
+      note(x);
+      guardFail;
+    end
+    else if (!isAtomic(x)) stop(EndUnimp);
+    else if (isRef(y)) begin
+      note(y);
+      guardFail;
+    end
+    else if (!sameAtomic(x, y)) guardFail;
+    else if (pvI + 1 == sizeOf(pvA)) next;
+    else begin
+      pvI <= pvI + 1;
+      vbox.element(pvA, pvI + 1);
+      st <= XPv1;
     end
   endrule
 

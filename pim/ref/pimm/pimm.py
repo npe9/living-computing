@@ -962,8 +962,8 @@ class Machine:
         # atomic values and strings: two strings are equal when their
         # descriptors and all their words are (PDSS emulator/passive.c
         # passive_unify, case STRING), a string and an atomic value
-        # are not.  Lists and vectors, or one variable twice, need the
-        # general passive unification and are refused
+        # are not.  Vectors as below; lists, and one variable twice,
+        # need the general passive unification and are refused
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
             raise Unimplemented('wait_value of a variable with itself')
@@ -979,10 +979,54 @@ class Machine:
             return
         if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):
             return self.guard_fail()
+        if self.structure(a) or self.structure(b):
+            # vectors: PDSS's passive unification (emulator/emulate.c
+            # KL1B_WAIT_VALUE, emulator/passive.c passive_unify) as far
+            # as both models take it: two vectors of 0..6 elements are
+            # equal when the sizes are and each pair of elements is the
+            # same atomic value; in order, the first unbound element met
+            # is noted and the guard fails there (X's; or Y's opposite
+            # an atomic element of X).  A vector against anything else
+            # bound fails.  Refused: a list, a vector of seven or more,
+            # an element of X that is a structure or a string
+            if not self.passive(a, b):
+                return self.guard_fail()
+            return
         if not (self.atomic(a) and self.atomic(b)):
             raise Unimplemented('wait_value on a structure')
         if (a[0] & ~1, a[1]) != (b[0] & ~1, b[1]):
             return self.guard_fail()
+
+    def structure(self, w):
+        return w[0] & ~1 == LIST or self.vsize(w) is not None
+
+    def passive(self, a, b):
+        """Two bound words, at least one a list or a vector: whether
+        they are equal (wait_value).  An unbound element met is noted
+        and answers False."""
+        short = lambda w: VECT0 <= w[0] & ~1 <= VECT0 + 12      # noqa: E731
+        for w in (a, b):
+            if w[0] & ~1 == LIST or (self.vsize(w) is not None and not short(w)):
+                raise Unimplemented('wait_value on %r' % (w,))
+        if not (short(a) and short(b)):
+            return False
+        n = self.vsize(a)
+        if n != self.vsize(b):
+            return False
+        for i in range(n):
+            x = self.deref(self.taken(self.vbase(a) + i))
+            y = self.deref(self.taken(self.vbase(b) + i))
+            if self.unbound(x):
+                self.waiting.append(x[1])
+                return False
+            if not self.atomic(x):
+                raise Unimplemented('wait_value: an element %r' % (x,))
+            if self.unbound(y):
+                self.waiting.append(y[1])
+                return False
+            if (x[0] & ~1, x[1]) != (y[0] & ~1, y[1]):
+                return False
+        return True
 
     def i_diff(self, pc, x, y, z, c16):
         # the guard diff(X, Y), X \= Y, 23:F9 r_r (inst_tab.kl1:212;
