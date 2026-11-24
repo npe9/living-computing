@@ -175,13 +175,13 @@ others passed) and the mismatch counts observed on 2026-11-24.
 | transmitter bids 0x08\|ch with GIBC 1 (the old model) | contradiction 3 | bids_fifo 3; kernel_echo 44 (cir 0x08 vs 0x78, gibcr 1 vs 7) |
 | the counter bids channel a/c (0x14) | contradiction 4 | bids_fifo 2 (cir 0x16, gicr 2); kernel_echo 124 (cir 0x14, gicr 0 at every clock tick) |
 | counter reload one tick long (`ctr <= rl`) | period in clocks | unit 2 (22 clocks between expiries, want 20; 1281 for 9 fractional periods, want 1260). The replay passes: it is event-driven, which is why the unit test exists |
-| channel 0 transmits MSB first | the 8N1 pin | faults 1, kernel_echo 287 (every console byte). The unit waveform check also fails, but as reported it shows only the summary of the first failing test |
+| channel 0 transmits MSB first | the 8N1 pin | unit 1 (the txd waveform); faults 1; kernel_echo 287 (every console byte). In the first run the unit test passed: its byte was 0xA5, a bit palindrome. With 0x31 it fails, re-run after the fix |
 | IL6 ignores the Irq masks (`HobbitIntc.bsv`) | the interrupt level | faults 1 (IL6 1 with SONIC/SCSI requesting and mask1 cleared) |
 | IOCTL accepts any offset | fail-loud | faults 2 (read and write of +0x004 did not fault; the model stopped) |
 
-The kernel trace alone catches five of the eight injections. The directed
-traces catch the other three, and the unit test catches the timing bug
-that no trace can.
+The kernel trace alone catches five of the eight injections, and the
+directed traces catch the other three. The unit test catches the timing
+bug, which no trace can.
 
 ## Synthesis (yosys 0.51 `synth_ecp5`, each module alone, no place and route)
 
