@@ -8,7 +8,14 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
 - PIMOS reaches its banner on the reference model ("PIMOS V 3.600
   20-May-93", `longrun_ipl.py --reference --go`), runs on through
   `scsi_where` and stops 1,722 instructions into `pim:go/4` at
-  `scsi_init`: no device attached. On the Bluespec core the whole
+  `scsi_init`: no device attached. *(2026-11-23, S0 begun: with the
+  device, `longrun_ipl.py --reference --go --fep`, `scsi_init` passes
+  and the model stops after 3,612 instructions at the guard
+  instruction `multiply`, not implemented, in `scsi:check_lun/4`,
+  during the kernel's bus scan, before any `scsi_command`. So the FEP
+  conversation is still empty. `docs/binary_reverse_engineering.md`
+  1.4, "The kernel's FEP conversation". `--save`/`--load` cache the
+  machine after the link.)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the

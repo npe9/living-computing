@@ -41,6 +41,16 @@ OURS, each for want of the FEP's own code:
   - close is answered with status 1.
 Anything else (another unit or LUN, another CDB, another command)
 raises FepError: nothing is guessed.
+
+The kernel's FEP conversation (rung S0 of docs/scsi_plan.md;
+longrun_ipl.py --reference --go --fep, or --load FILE --go --fep):
+EMPTY so far.  Observed 2026-11-23: pim:go/4 passes scsi_init and
+stops, after 3,612 instructions, at the guard instruction multiply
+(not implemented in pimm.py) in scsi:check_lun/4, before any
+scsi_command: this device was given no command, so no answer has been
+added for the kernel.  The order of commands the PIMOS source says
+comes next is READ, not run, in docs/binary_reverse_engineering.md
+1.4, "The kernel's FEP conversation".
 """
 import struct
 

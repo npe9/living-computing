@@ -5,6 +5,12 @@
     sim_pimm_driver | python3 ref/pimm/longrun_ipl.py compare [N]
     python3 ref/pimm/longrun_ipl.py --reference [N]     reference model alone
     python3 ref/pimm/longrun_ipl.py --reference --go    ... and then PIMOS is entered
+    python3 ref/pimm/longrun_ipl.py --reference --go --fep   ... with the device attached
+    python3 ref/pimm/longrun_ipl.py --reference --save FILE [--go [--fep]]
+                                    the machine after the (checked) link, pickled
+    python3 ref/pimm/longrun_ipl.py --load FILE --go [--fep]
+                                    from that machine straight to --go (seconds,
+                                    not the IPL's ~15-50 min; FILE ~1.1 GB)
 
 Run by bsv/run_pimm_longrun.sh.  NOT part of run_tests.sh.
 
@@ -36,12 +42,32 @@ is given "PIMOS V 3.600 20-May-93" (display_console; the text the
 source's default branch gives, bios/boot/bios.kl1 and
 kernel/init/version.kl1), and it stops at scsi_where (22:A0, not
 implemented).  The check is the banner; the stop is printed, since it
-moves as the model grows.
+moves as the model grows.  Later (scsi_where implemented): 1,722
+instructions, the stop scsi_init: no device attached.
+
+--fep (rung S0 of docs/scsi_plan.md): the device ref/pimm/fep.py is
+attached as ref_scsi.py attaches it (Machine.fep), and when the
+machine has nothing left to run the SCSI commands that wait for the
+device are given it again (Machine.scsi_poll), until neither moves.
+Each run is given limit 10**12 (both with and without --fep); a run
+that ends with goals suspended is reported "nothing left to run, N
+goals waiting".  The FEP's messages are printed in order.  Observed
+2026-11-23 (--save, then --load ... --go --fep, the same): 3,612
+instructions; scsi_init passed; NO scsi_command issued, so the FEP
+conversation is empty; console the banner only; the stop is the
+guard instruction multiply (23:F6) at cell 62160538, in
+scsi:check_lun/4 (bios/scsi/scsi_handler.kl1:119-122, LUN =<
+ExtLUN*2040+7; ExtLUN = 4, scsi_init's Info element 2, OURS), for
+unit 0 LUN 0 of the kernel's bus scan.  docs/binary_reverse_
+engineering.md 1.4, "The kernel's FEP conversation".
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
 """
+import copyreg
 import os
+import pickle
+import struct
 import sys
 import time
 
@@ -49,6 +75,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
+import fep as fepm  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 import lockstep_ipll as ipll  # noqa: E402
@@ -181,7 +208,116 @@ def check(s, m, want, files):
     return bad, info
 
 
+class GoTrace(list):
+    """The trace of --go: the console's lines (C, S) are kept, the
+    instructions counted, nothing else kept (a long run's trace would
+    not fit)."""
+    instructions = 0
+
+    def append(self, line):
+        if line[0] == 'I':
+            self.instructions += 1
+        elif line[0] in 'CS':
+            list.append(self, line)
+
+
+def kernel_file(path):
+    """--fep: the file the kernel asks the FEP to open.  None is held
+    yet (S0 meets them one at a time), so an open raises, as any
+    request fep.py does not know does."""
+    raise fepm.FepError('read_open of %r: no such file is served' % (text_of(
+        struct.unpack('>%dH' % (len(path) // 2), path)),))
+
+
+def go(m, loaded, info, bad, with_fep):
+    """top:go_pimos1(Loaded, BootInfo), run until the model refuses
+    something.  with_fep: the device ref/pimm/fep.py is attached
+    (Machine.fep, as ref_scsi.py attaches it), and when the machine
+    has nothing left to run the commands that wait for the device are
+    given it again (Machine.scsi_poll, as ref_scsi.boot does)."""
+    im = m.im
+    m.ahead = True
+    m.argv[1], m.argv[2] = pimm.marked(loaded), pimm.marked(m.new_var())
+    m.record(pimm.READY, pimm.predicate(im, 'top', 'go_pimos1/2'), m.argv[1:3])
+    m.tr = GoTrace()
+    dev = None
+    if with_fep:
+        dev = m.fep = fepm.Fep(kernel_file)
+    try:
+        while True:
+            try:
+                m.run(limit=10 ** 12)
+                stop = 'nothing left to run, %d goals waiting' % m.nsusp
+            except pimm.Suspend:
+                stop = 'nothing left to run, %d goals waiting' % m.nsusp
+            if dev is None or not m.scsi_poll():
+                break
+    except pimm.Unimplemented as e:
+        stop = 'refused: %s' % e
+    except pimm.Fail as e:
+        stop = 'Fail %s' % e
+    except fepm.FepError as e:
+        stop = 'FepError: %s' % e
+    shown = cons.console(m.tr)
+    info['go'] = dict(instructions=m.tr.instructions, console=shown, stop=stop)
+    if dev is not None:
+        info['go']['fep'] = dict(commands=len(dev.wire), waiting=len(m.scsi_waiting),
+                                 messages=dev.messages)
+        for d, i, msg in dev.messages:
+            say('fep %s device %d: %r' % (d, i, msg))
+    say('go: %d instructions, console %r, stop %s' % (m.tr.instructions, shown, stop))
+    if shown[:1] != [BANNER]:
+        bad.append(('the console after go', shown))
+
+
+def _pickler(f):
+    """A pickler for the machine: its memory, code and registers are
+    dict and list subclasses whose writes are traced through
+    .machine, which a plain pickle sets only after their items."""
+    # the rebuilders by an importable name, not __main__'s
+    import longrun_ipl as here
+    p = pickle.Pickler(f, protocol=5)
+    p.dispatch_table = copyreg.dispatch_table.copy()
+    p.dispatch_table[pimm._Mem] = lambda o: (here._mem, (dict.copy(o), o.machine))
+    for c in (pimm._Code, pimm._Regs):
+        p.dispatch_table[c] = lambda o: (here._seq, (type(o), list(o), o.__dict__))
+    return p
+
+
+def _mem(d, machine):
+    x = pimm._Mem()
+    dict.update(x, d)
+    x.machine = machine
+    return x
+
+
+def _seq(cls, items, state):
+    x = cls(items)
+    x.__dict__.update(state)
+    return x
+
+
+def save(path, m, loaded, info):
+    """--save FILE: the machine after the load and link (checked),
+    the answer of load/4 and the counts, for --load."""
+    tr, m.tr = m.tr, None
+    with open(path, 'wb') as f:
+        _pickler(f).dump((m, loaded, info))
+    m.tr = tr
+    say('saved the machine after the link to %s' % path)
+
+
 def main(argv):
+    if '--load' in argv:
+        # --load FILE --go [--fep]: from a machine --save wrote (its
+        # checks passed when it was saved), straight to --go
+        with open(argv[argv.index('--load') + 1], 'rb') as f:
+            m, loaded, info = pickle.load(f)
+        say('loaded the machine after the link')
+        bad = []
+        go(m, loaded, info, bad, '--fep' in argv)
+        print('pimm longrun ipl --load: %s %r' % ('FAIL' if bad else 'PASS', info['go']))
+        return 1 if bad else 0
     n = int(argv[-1]) if argv[-1].isdigit() else None
     files = names()[:n]
     s, want = script(files)
@@ -199,25 +335,10 @@ def main(argv):
         if not ok:
             return 1
     bad, info = check(s, m, want, files)
+    if '--save' in argv and not bad:
+        save(argv[argv.index('--save') + 1], m, [w for _l, w in s.outs][-3], info)
     if '--go' in argv and '--reference' in argv and not bad:
-        loaded = [w for _l, w in s.outs][-3]
-        im = pimm.kbndis.Image()
-        m.ahead = True
-        m.argv[1], m.argv[2] = pimm.marked(loaded), pimm.marked(m.new_var())
-        m.record(pimm.READY, pimm.predicate(im, 'top', 'go_pimos1/2'), m.argv[1:3])
-        m.tr = []
-        try:
-            m.run()
-            stop = 'nothing left to run, %d goals waiting' % m.nsusp
-        except pimm.Unimplemented as e:
-            stop = 'refused: %s' % e
-        except (pimm.Suspend, pimm.Fail) as e:
-            stop = type(e).__name__
-        shown = cons.console(m.tr)
-        info['go'] = dict(instructions=sum(1 for ln in m.tr if ln[0] == 'I'), console=shown,
-                          stop=stop)
-        if shown[:1] != [BANNER]:
-            bad.append(('the console after go', shown))
+        go(m, [w for _l, w in s.outs][-3], info, bad, '--fep' in argv)
     say('compared')
     whole = n is None
     if bad or (whole and any(info.get(k) != PINNED[k] for k in ('modules', 'atoms', 'replaced', 'stay'))) \
