@@ -446,6 +446,91 @@ answer `read_open` with `{Id, 1}`, `getb` with `{Id, 1, bytes}` then
 `.sav` files under the names `pimos.ipl` gives. No window, timer or
 string I/O is touched before `pim:go/4`.
 
+**The kernel's FEP conversation** (rung S0 of `docs/scsi_plan.md`;
+EXECUTED on the reference model alone, 2026-11-23:
+`python3 ref/pimm/longrun_ipl.py --reference --save FILE --go --fep`,
+then `--load FILE --go --fep`, the same result).
+`pim:go/4` is run after the whole link with `ref/pimm/fep.py`
+attached as `ref_scsi.py` attaches it, and the commands that wait for
+the device are given it again whenever the machine runs dry.
+
+- **The conversation is empty.** `scsi_init` passes (OURS values,
+  `docs/pimm_semantics.md`), and no `scsi_command` is issued before the
+  model stops: the device is given 0 commands, raises no `FepError`, and
+  no answer for the kernel has been added to `fep.py`. The console
+  shows the banner only: `PIMOS V 3.600 20-May-93`. 3,612 instructions
+  run, against 1,722 without the device, which stop at `scsi_init`.
+- **The stop is not a FEP command.** It is the guard instruction
+  `multiply` (`23:F6`, `r_r_r`, `docs/kl1_encoding.md`; only the body
+  form `b_multiply` is in `pimm.py`) at cell 62160538. The cell is in the
+  loaded module `scsi`, predicate `check_lun/4`, which is
+  `bios/scsi/scsi_handler.kl1`:119-122, `LUN =< ((ExtLUN * 2040) + 7)`.
+  The trace has `put_integer 2040` just before it. The registers at the
+  stop are LUN 0, ExtLUN 4 and Unit 0. ExtLUN is element 2 of
+  `scsi_init`'s Info, the 4 that is OURS (the stand-in `scsi_blt.kl1`).
+  The call chain is `scsi:request_manager/3` on
+  `processor(Unit, LUN, Result)` (lines 49-53), then `check/4`
+  (107-111), then `check_lun/4`. The sender is the kernel's bus scan,
+  `scsi_manager:check_unit_without_myself/6` (`bios/boot/scsi_man.kl1`:
+  198-207), which asks for a processor device on every unit but its
+  own, unit 0 first. The model stops here: instructions are being
+  added to `pimm.py` by other work, and this one is recorded, not
+  implemented.
+
+What the source says comes next (READ, not run; to be confirmed by
+the run once guard `multiply` exists; the build switches of the
+held object were not checked):
+
+1. The bus scan sends TEST UNIT READY to each unit 0-7 except its own,
+   6 (`scsi_where`'s answer). That is `scsi_man.kl1`:198-216 and
+   `test_unit_ready/7` (218-227), with the CDB from
+   `scsi_common.kl1`:35-42. A unit that answers gets an INQUIRY:
+   CDB `12 00 00 00 ff`, 255 bytes in (`scsi_common.kl1`:60-70,
+   `scsi#inquiry_data_max` 255, `macro/pimos/scsi/scsi.vmac`:42). The
+   device type must be 3, processor (`scsi.vmac`:82,
+   `scsi_man.kl1`:409-411). `fep.py` today refuses every unit but 7
+   and every CDB but TEST UNIT READY, SEND and RECEIVE. The answer for
+   an absent unit is a choice about the lost built-in, not about the
+   FEP. In the source, a completion code with bit 3 set is `no_status`
+   (`scsi_common.kl1`:197-199), and the unit is then skipped
+   (`test_unit_ready/7`'s last clause).
+2. `scsi_fep:create/2` (`bios/fep_module/scsi_fep.kl1`) uses device
+   ids from 16 (`create(16, ...)`, line 23), not the IPL's 0. It makes
+   its two packet buffers as long as `scsi_manager`'s `get_info`
+   answer, `normal(8, 16384)` (`scsi_man.kl1`:138-141): 16,384 bytes,
+   not `scsi_init`'s 16,000. Its receiver keeps one RECEIVE
+   outstanding at all times (lines 476-558). It leaves a received
+   string 8-bit (`str8_to_msg3`, 606-611), with no widening as in the
+   IPL. It sends `{-1, 80}` (`fep#terminate`) when its stream closes
+   (232-235).
+3. The first device messages, by `bios.kl1`:383-394
+   (`create_os_device1/2`): the console is a dummy that sends nothing
+   (`bios/boot/console.kl1`). The system timer
+   (`bios/boot/sysTman.kl1`) either uses `system_timer`/`current_node`
+   or, for the boot FEP timer, `timer:create/3`
+   (`bios/boot/timer.kl1`): `fep#create` then on_after, that is
+   `{Id, 310, Node, 0, 0}` `create_timer` (`time_dvc.kl1`:34) and
+   `{Id, 303, Count}`. The syslog is opened with
+   `{Id, 203, Node, 0, 0, "pimos:pimos.syslog"}` `append_open`
+   (`bios/boot/syslog.kl1`:33, `file_dvc.kl1`:39), then `putb` (111).
+   This is not the plan's expected "`conf_dvc` first". A `normal`
+   reply must carry exactly the results the caller's vector has
+   (`fep_utility:set_value/2`, `fep_util.kl1`), or the results are set
+   to `fep#nil`.
+
+`pimfep.ptf` was not needed: no constant had to be chosen, since no
+FEP command was reached. What was extracted for the next run
+(`python3 asm/ptfdump.py pimfep CLASS`):
+
+- `pimos_scsi_front_end`: version "V0.45", "14-Jan-94", comment
+  "mkdir/rmdir, all_device_end", title "PIM-FEP".
+- The string literals of `pimos_fep_superviser` (log and menu texts,
+  "pimos:pimfep.image") and of `scsi_stream` (its error texts).
+- No buffer size, configuration answer or time was found among
+  `pimos_file`, `pimos_timer`, `scsi_stream` and `pimscsi_fep`'s
+  literals. Their large integers, 1001-1265 and 33950, are not yet
+  read.
+
 ### 1.5 Feasibility, effort, order
 
 - **Feasibility: done as a prototype, mechanical to finish.**
