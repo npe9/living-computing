@@ -186,8 +186,10 @@ class IicModel:
 class Seq:
     """An access list; `t` is the target cycle of the next access."""
 
-    def __init__(self, name, dev, expect_rtl_fault=None, recorded=None):
+    def __init__(self, name, dev, expect_rtl_fault=None, recorded=None,
+                 exact=False):
         self.name, self.dev = name, dev
+        self.exact = exact
         self.acc = []
         self.t = 0
         self.gapc = 4
@@ -255,22 +257,26 @@ def rtc_sequences():
     T = TICKS_PER_SEC
     seqs = []
 
-    s = Seq("phase at reset", "rtc")
+    # One probe read per sequence, so it is taken at exactly its cycle
+    # (`exact`: the harness's accept cycle must equal the target).
     for c in (0, T - 2, T - 1, T, T + 1, 2 * T - 1, 2 * T, 2 * T + 1):
+        s = Seq("phase at reset: sec at cycle %d" % c, "rtc", exact=True)
         s.at(c)
         s.r(SEC)
-    seqs.append(s)
-
-    # A load at a known cycle, then reads at load+T-1, load+T, load+T+1.
-    for skew in (0, 1, T // 2, T - 1):
-        s = Seq("phase after a load (skew %d)" % skew, "rtc")
-        s.at(3 * T + skew)
-        setrtc(s, 1993, 5, 17, 8, 30, 15)
-        load = s.acc[-1][0]
-        for k in (1, 2, T - 2, T - 1, T, T + 1, 2 * T - 1, 2 * T):
-            s.at(load + k)
-            s.r(SEC)
         seqs.append(s)
+
+    # A load (the control write clearing W) at a known cycle, then one read
+    # at load+k: the next second must come at exactly load+T.
+    for skew in (0, 1, T // 2, T - 1):
+        for k in (2, T - 1, T, T + 1, 2 * T - 1, 2 * T):   # 2: the earliest
+            s = Seq("phase after a load at skew %d: sec at load+%d"
+                    % (skew, k), "rtc", exact=True)
+            s.at(3 * T + skew)
+            setrtc(s, 1993, 5, 17, 8, 30, 15)
+            load = s.acc[-1][0]
+            s.t = load + k
+            s.r(SEC)
+            seqs.append(s)
 
     s = Seq("freeze with R across seconds", "rtc")
     s.at(T - 20)
@@ -578,6 +584,9 @@ def compare(seq, cov, verbose):
             enumerate(zip(seq.acc, rows)):
         want, exc = model.access(acc, op, addr, data, be)
         what = "#%d %s %s+%x" % (i, op, seq.dev, addr)
+        if seq.exact and acc != seq.acc[i][0]:
+            errs.append("%s: taken at cycle %d, not at its target %d"
+                        % (what, acc, seq.acc[i][0]))
         if exc is not None:
             if not seq.name.startswith("fault:") or i != len(seq.acc) - 1:
                 errs.append("%s: the model refused an access the sequence "
