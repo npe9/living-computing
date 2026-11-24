@@ -32,9 +32,18 @@
 # INJECTIONS, measured 2026-11-24 (bsv/host_tape.c, each reverted by its
 # exact inverse patch, git diff clean after):
 #   - host_disk_save's loop bound DISK_WORDS - 512 (the last arc dropped):
-#     MEASURED_SAVE
+#     exactly three FAILs: disk_image_size ("16773120 bytes, expected
+#     16777216"), disk_image_loaded_line (the reload reported "512 words
+#     zero-filled") and disk_image_resave.  P1 itself, the 33 IPL arcs,
+#     the rest-zero check, every read and the control passed: the run
+#     leaves arc 4095 zero, so only the length can see it.
 #   - the load's memset of a short read removed (no zero-fill):
-#     MEASURED_LOAD
+#     part 3's reads of arc 32 words 5-7, arc 33 words 0-1 and arc 4095
+#     words 0-1 failed, each reading a55ac34055555515 -- the file's 3 tail
+#     bytes over the stale bytes of the word before, repeated to the end
+#     of the unit -- plus the part-3 disk_image_read summary and
+#     disk_image_resave.  Parts 1, 2 and 4 passed: a full-size image
+#     never reaches the fill.
 set -e
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 BSV_DIR="$TESTS_DIR/../bsv"

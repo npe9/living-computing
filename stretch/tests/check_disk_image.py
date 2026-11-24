@@ -83,7 +83,7 @@ def cmd_ipl(image, tape):
     bad = 0
     nonzero = 0
     for arc in range(IPL_ARCS):
-        got = disk[arc * ARC:(arc + 1) * ARC]
+        got = [word_at(disk, arc * ARC + w) for w in range(ARC)]
         base = TAPE_BASE + TAPE_STRIDE * arc
         want = [word_at(tw, base + w) for w in range(ARC)]
         nonzero += sum(1 for v in want if v)
@@ -99,7 +99,7 @@ def cmd_ipl(image, tape):
     print(f"{'PASS' if not bad else 'FAIL'} disk_image_ipl_arcs: arcs 0-"
           f"{IPL_ARCS - 1} = tape words {TAPE_BASE} + {TAPE_STRIDE}*arc, "
           f"{nonzero} of them non-zero")
-    rest = [i for i in range(IPL_ARCS * ARC, DISK_WORDS) if disk[i]]
+    rest = [i for i in range(IPL_ARCS * ARC, len(disk)) if disk[i]]
     if rest:
         bad += fail(f"disk_image_rest_zero: {len(rest)} non-zero words past "
                     f"arc {IPL_ARCS - 1}, first at word {rest[0]}")
