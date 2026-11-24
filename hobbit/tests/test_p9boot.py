@@ -50,6 +50,17 @@ IdleSkipEquivalenceTest, KeyboardTest), observed 2026-11-23, same method:
 * (Not used: cir never reporting RxAvail leaves s9term's `interrupt()`
   polling a request nobody clears -- a hang, not a failure.)
 
+EEPROM and SONIC (IIC_CHOICES, SONIC_CHOICES; NetworkTest), observed
+2026-11-23, same method:
+
+* CAM address bytes taken high byte first: FAIL test_sonic_set_up only
+  (the BOOTP request is a broadcast, so it still goes out).
+* the SONIC's DMA reading the packet in the other byte-lane order: FAIL
+  test_bootp_request only (destination ff ff ff ff 54 52).
+* the PCF8584's first read after the address returning data, not the
+  dummy byte: FAIL test_bootp_request, test_console ("sonic ether: 54 00
+  00 0b 0b 00"), test_eeprom_read, test_sonic_set_up.
+
 Not covered by this test (each left it green): the nonpaged STE base
 ignored (the kernel's segments are identity-mapped), the stack cache on
 with CONFIG.SE = 0, and the Quart sr never showing TxRDY (the UART line
@@ -69,8 +80,9 @@ import p9boot  # noqa: E402
 S9TERM = os.path.join(HOBBIT, "tools", "plan9-1e", "hobbit", "s9term")
 LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
         b"headroom 340K\n")
+FRAME = b"\xff" * 6 + b"\x02\x00\x00\x00\x00\xfe\x08\x06" + bytes(46)
 PROMPT = b"root is from (il, tcp, incon, 9600, 19200)[il]: "
-ETHERLINE = b"sonic ether: 00 00 00 00 00 00\n"
+ETHERLINE = b"sonic ether: 52 54 00 00 0b 0b\n"
 
 
 class FirstLineTest(unittest.TestCase):
@@ -134,6 +146,8 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
             boot.idle_skip = skip
             boot.script = [(b"headroom 340K\n", b"x")]
             boot.think = 0.05
+            boot.attach(p9boot.Wire(boot.sonic.clock,
+                                    script=[(0.175, FRAME)]))
             status = boot.run(3400000)
             cls.runs.append((boot, status))
 
@@ -155,9 +169,15 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
     def test_the_skip_was_taken(self):
         plain, skipped = self.runs[0][0], self.runs[1][0]
         self.assertEqual(plain.skipped_steps, 0)
-        self.assertEqual(skipped.skips, 7)
+        self.assertEqual(skipped.skips, 8)
         self.assertEqual(skipped.skipped_steps, IDLE["equiv-skipped"])
         self.assertEqual(plain.interrupts, 8)
+
+    def test_the_frame_arrived(self):
+        for boot, _ in self.runs:
+            # etherattach has not enabled the receiver yet.
+            self.assertEqual([(t, o) for t, _, o in boot.sonic.received],
+                             [(IDLE["frame-time"], "receiver off")])
 
     def test_the_byte_arrived(self):
         for boot, _ in self.runs:
@@ -167,8 +187,9 @@ class IdleSkipEquivalenceTest(unittest.TestCase):
 
 class PromptTest(unittest.TestCase):
     """To /boot's prompt with the 25 Hz override, in ~30 s with the idle
-    skip; the instruction count is the one measured without the skip
-    (22,530,554, 6 minutes, docs/p9boot.md, before the skip existed)."""
+    skip.  Before the EEPROM answered (CHOICES['iic'] then), this run took
+    22,530,554 instructions both without the skip (6 minutes) and with it
+    (29 s); reading the EEPROM in iicreset adds 6,535 (22,537,089)."""
 
     @classmethod
     def setUpClass(cls):
@@ -189,34 +210,72 @@ class PromptTest(unittest.TestCase):
         self.assertEqual(self.boot.skipped_steps, IDLE["prompt-skipped"])
 
 
-class KeyboardTest(unittest.TestCase):
+class NetworkTest(unittest.TestCase):
     """Return typed at /boot's prompt on the console line, Quart channel 0
     (CHOICES['console-input']): kbdcr2nl makes it NL, it is echoed, and
-    /boot takes its default, il, as far as etherattach's line."""
+    /boot takes its default, il.  iicreset has read the EEPROM
+    (IIC_CHOICES), etherattach prints its address, and /boot broadcasts
+    BOOTP through the SONIC (SONIC_CHOICES): the first frame on the wire
+    ends the run."""
 
     @classmethod
     def setUpClass(cls):
         cls.boot = p9boot.Boot(S9TERM)
         cls.boot.script = [(b"il]: ", b"\r")]
-        cls.boot.until = b"sonic ether"
+        cls.boot.attach(p9boot.Wire(cls.boot.sonic.clock))
+        cls.boot.until_frames = 1
         cls.status = cls.boot.run(400000000)
 
-    def test_typed_and_taken(self):
+    def test_console(self):
         boot = self.boot
-        self.assertIn("screenputs printed", self.status)
+        self.assertIn("1 frames on the wire", self.status)
         self.assertEqual(boot.quart.ports[0]["received"], 1)
         self.assertEqual(bytes(boot.console["screenputs"]),
                          LINE + PROMPT + b"\n" + ETHERLINE)
-        self.assertEqual(boot.steps, STEPS["ether-line"])
         names = [n for _, n in boot.reached]
-        for name in ("kbdcr2nl", "echo", "etherattach"):
+        for name in ("kbdcr2nl", "echo", "etherattach", "etherkproc",
+                     "eepromread"):
             self.assertIn(name, names)
+        self.assertEqual(boot.steps, STEPS["bootp"])
+
+    def test_bootp_request(self):
+        t, way, f = self.boot.wire.log[0]
+        self.assertEqual(way, "tx")
+        self.assertEqual(f[:6], b"\xff" * 6)
+        self.assertEqual(f[6:12], p9boot.EEPROM_EA)
+        self.assertEqual(f[12:14], b"\x08\x00")
+        ip = f[14:34]
+        self.assertEqual(p9boot.ip_checksum(ip), 0)
+        self.assertEqual((ip[9], ip[12:16], ip[16:20]),
+                         (17, b"\0\0\0\0", b"\xff\xff\xff\xff"))
+        udp = f[34:42]
+        self.assertEqual(udp[:4], b"\x00\x44\x00\x43")   # 68 > 67
+        bootp = f[42:]
+        self.assertEqual(bootp[:3], b"\x01\x01\x06")
+        self.assertEqual(bootp[28:34], p9boot.EEPROM_EA)
+        self.assertEqual(bootp[236:240], b"p9  ")
+        self.assertEqual(len(f), 14 + 20 + 372)   # UDP length 372
+
+    def test_eeprom_read(self):
+        boot = self.boot
+        ee = boot.syms.by_name["eeprom"]
+        got = bytes(boot.board.byte(ee + i) for i in range(17))
+        self.assertEqual(got, p9boot.eeprom_image()[:17])
+        self.assertEqual(got[11:13], b"\x00\x14")       # mask, clock 20
+
+    def test_sonic_set_up(self):
+        sonic = self.boot.sonic
+        self.assertEqual(sonic.cam, {0: p9boot.EEPROM_EA})
+        self.assertEqual(sonic.regs[sonic.CE], 1)
+        self.assertEqual(sonic.regs[sonic.RCR], 0xE000)
+        self.assertEqual(sonic.regs[sonic.IMR], 0x7771)
+        self.assertTrue(sonic.regs[sonic.CR] & sonic.RXEN)
 
 
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
-         "prompt": 22530554, "ether-line": 287427906}
-IDLE = {"equiv-skipped": 450896, "prompt-skipped": 19573088,
-        "prompt-cycles": 22890723}
+         "prompt": 22537089, "bootp": 287845754}
+IDLE = {"equiv-skipped": 426976, "prompt-skipped": 19555708,
+        "prompt-cycles": 22890721, "frame-time": 0.175}
 
 
 if __name__ == "__main__":

@@ -790,6 +790,12 @@ Details, milestones and choices: `docs/p9boot.md`.
   the image has no `kbd.c`).  Return typed there (`--type`) takes `il`:
   287,427,906 instructions, `sonic ether: 00 00 00 00 00 00`, then the
   first BOOTP transmit.
+* EEPROM and SONIC: the PCF8584/PCF8582 answer deviic.c (ether address
+  52:54:00:00:0b:0b, the one the QEMU server's ndb gives the Hobbit), the
+  DP83932 is modelled as devether.c uses it (CAM, RRA/RDA, TDA, isr/imr,
+  IRQ 9; QEMU's dp8393x.c followed where the driver is silent), and
+  /boot's BOOTP request leaves at 287,845,754 instructions, decoding
+  byte for byte (`--pcap`).
 
 The gate as written above (the boot banner and prompt on the UART) is
 not met yet: s9term prints no banner of its own; the first text after

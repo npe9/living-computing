@@ -130,18 +130,28 @@ The prompt goes to `#c/cons`, which s9term writes to the screen and then
 (0.44 M instructions later, see the console above) to Quart channel 0.
 
 Typing Return at it (`--type 'il]: =\r'`, the default counter rate) takes
-`il`: `kbdcr2nl` at 286,979,756, the echo, `etherattach` starting the
-SONIC's kproc, and at **287,427,906** instructions (14.4 s of model time,
-~48 s of host time) the screen shows
+`il`: `kbdcr2nl`, the echo, `etherattach` starting the
+SONIC's kproc, and the screen shows
 
 ```
 1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
 root is from (il, tcp, incon, 9600, 19200)[il]: 
-sonic ether: 00 00 00 00 00 00
+sonic ether: 52 54 00 00 0b 0b
 ```
 
-after which `/boot` sends its first BOOTP request and the run stops at
-the transmit (`tests/test_p9boot.py` `KeyboardTest`).
+At **287,845,754** instructions (14.4 s of model time) `/boot` sends
+its BOOTP request through the SONIC (`tests/test_p9boot.py`
+`NetworkTest`, with `--pcap`):
+
+```
+52:54:00:00:0b:0b > ff:ff:ff:ff:ff:ff IP 0.0.0.0 > 255.255.255.255
+UDP 68 > 67 len 372 BOOTP request htype 1 hlen 6 xid 00000000
+chaddr 52:54:00:00:0b:0b file '' vend 'p9  '
+```
+
+406 bytes, IP header checksum good: the destination, the EEPROM's
+address as source and in `chaddr`, type 0x0800 and `p9  ` all decode,
+which checks the SONIC's byte lanes and CAM order at once.
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
@@ -267,8 +277,8 @@ such.
 * **clock** — model time is the sum of the records' Chapter 4 cycles at
   20 MHz, the lower of the data sheet's two rated clocks.  It paces the
   Quart counter, the kernel's clock interrupt.
-* **iic** — the PCF8584 never reports the bus free, so the EEPROM (ether
-  address, `eeprom.clock`) stays zero and `delay()` waits for nothing.
+* **iic** — the PCF8584 and the PCF8582 EEPROM answer `deviic.c`
+  (IIC_CHOICES, below): `iicreset` reads `io.h`'s `Eeprom`.
 * **lcd** — `Lcdisp` at IOACK 0x3000 accepts and counts writes.
 * **incon, IOCTL** — latches that record writes; an unexpected read
   stops the run.
@@ -316,11 +326,87 @@ such.
 * **no-targets** — every selection ends in selection timeout (0x42).
 * **irq** — IRQ 10 while Intrpend is set.
 
+### IIC and the EEPROM (`IIC_CHOICES`, `deviic.c`)
+
+No PCF8584 or PCF8582 data sheet is in the release or the repository;
+the behaviour is inferred from `deviic.c`'s code and comments.
+
+* **bus** — S1 reads PIN (clear once a byte has gone or come), LRB
+  ("Nak", set when no slave acknowledged), BB ("Busfree", set with no
+  START outstanding); S0' and S2 are written through the ES1 select
+  before ESO; transfers complete at once.  On the bus: the EEPROM (0xA4)
+  and the LED latch (0x40); other addresses are not acknowledged.
+* **repeated-start** — `eepromread` writes the read address 0xA5 to S0
+  after the word address, reads S1, waits, then sets STA: the byte is
+  taken as the repeated START's address, not written to the EEPROM.
+* **receive** — the first S0 read after the address returns the address
+  byte (the driver: "We get some junk back"); each S0 read with ACK set
+  starts the next byte; the control write 0xC0 (ACK off) completes the
+  byte in progress.  So `eepromread` stores 17 bytes: the 16 of
+  `Eeprom` and one past it, into `rtclock` (EEPROM byte 16 = 0).
+* **eeprom** — magic `a6 00 d9 20 10` (`EEPROMMAGIC "A600D92010"` read as
+  hex digits; nothing checks it), ether address **52:54:00:00:0b:0b**
+  (`--ea`; locally administered, and the address `tools/qemu1e/ndb.local`
+  gives the Hobbit, so the 1e server's `ip/bootp` answers it), mask 0,
+  clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
+  with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
+  are not in the release.  Reading it adds 6,535 instructions before the
+  prompt (22,537,089 at 25 Hz).
+
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 
-* **no-network** — the commands `reset()` waits on (Rrra, Lcam) complete
-  at once and read back clear; nothing is received, `isr` stays 0; a
-  transmit command stops the run.
+No DP83932 data sheet is in the release or the repository.  Every point
+is what s9term's `devether.c` relies on; where the driver leaves a
+detail open, QEMU's model of the same part (`hw/net/dp8393x.c`, read
+2026-11-23 from qemu master) is followed, and each such point says so.
+
+* **registers** — io.h's words, 16 bits wide; reset state `cr =
+  Rst|Stp|Rxdis`; writing `cr` with Rst clear while in reset only leaves
+  reset (QEMU), which `reset()`'s `cr = Rst; dcr = ...; cr = 0` needs.
+* **isr** — write-one-to-clear (the driver writes back what it read);
+  IRQ 9 while `isr & imr`.
+* **rra** — Rrra (and each used-up buffer) reads the 4-word resource at
+  `urra:rrp`, advances `rrp` by 16 and wraps it at `rea`; completes at
+  once.
+* **cam** — Lcam reads `cdc` entries of (cep, cap0..2) at `urra:cdp`
+  (the upper half from urra: QEMU), each cap two address bytes low byte
+  first (the driver's `cap0 = ea[1]<<8|ea[0]`), then the enable word;
+  isr Lcd.
+* **transmit** — Txp sends from `utda:ctda` (size, fragment count, per
+  fragment ptr0/ptr1/size, link), at once (no line time, no collisions),
+  writes status 0x0001 (PTX: neither Host 0 nor Interface ~0, as the
+  driver tests), sets `ctda` to the link and goes on unless the link has
+  EOL; then isr Txdn.  `ctda` keeping the EOL link makes the next bare
+  `cr = Txp` (etheroput) start at the next descriptor (QEMU does the
+  same).  No FCS on transmit.
+* **receive** — an accepted frame goes into the current buffer with its
+  CRC-32 FCS, padded to 4 bytes; the descriptor at `urda:crda` gets
+  status Prx (|Bc, |Lpkt when fewer than `eobc` words remain), byte count
+  (+4, which etherkproc subtracts), buffer address, sequence number;
+  then, unless its link has EOL, `in_use = 0` (Host), `crda = link`, isr
+  Pktrx; with EOL the descriptor is kept (isr Rde) and its link re-read
+  at the next frame (QEMU).  Lpkt reads the next resource, so with
+  `eobc` = buffer words − 2 each frame has its own buffer and buffers
+  advance with descriptors, as `etherkproc`'s `rb[rh]` needs.
+  Descriptor words are written zero-extended (QEMU's 32-bit mode; the
+  driver compares the whole word with Host = 0).
+* **filter** — Pro (unicast), Brd (broadcast), an enabled CAM entry;
+  transmitted frames are not looped back.
+* **dma** — physical addresses (PADDR is the identity) through the
+  board's RAM, bytes in the little-endian lanes the kernel uses
+  (CONFIG.KL); the first frame checks it.
+
+### The wire (`ETHER_CHOICES`)
+
+`--pcap FILE` writes every frame both ways, stamped with model time.
+`--ether-peer HOST:PORT --ether-local HOST:PORT` exchanges frames with
+a UDP peer, one raw ethernet frame per datagram (QEMU's `-netdev dgram`
+framing); idle model time then runs at the wall clock (the idle skip
+waits on the socket for as long as the model time to the next event),
+busy time at the model's ~100,000 instructions/s.  `--ether-replay
+PCAP` answers with a recorded session's frames; `--ether-script PCAP`
+delivers frames at their timestamps.  With nothing attached, a transmit
+stops the run.
 
 ## What the reference model gained (`hobbit_sem.System`)
 
@@ -360,9 +446,8 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **The network** for `il`: the IIC EEPROM's ethernet address and the
-   SONIC's descriptor-driven transmit and receive (above), then a frame
-   bridge to the file server.
+1. **The join** with the 1e file server in QEMU (`tools/p9join.py`,
+   below).
 2. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).
