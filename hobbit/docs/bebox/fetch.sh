@@ -44,6 +44,10 @@ if [ "${1:-}" != "--check" ]; then
     awk '$2 ~ /^docscans\// {print $2}' "$here/SHA256SUMS" | while read -r p; do
         get "$D/${p#docscans/}" "$p"
     done
+    # The NCR 53C94/95/96 data sheet (Feb 1990), which tools/beboot.py's
+    # 53C94 model cites by page; bitsavers, no redistribution terms.
+    get "https://bitsavers.trailing-edge.com/components/ncr_symbios/scsi/53C94/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf" \
+        datasheets/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf
 fi
 
 shasum -a 256 -c "$here/SHA256SUMS" | grep -v ': OK$' || true

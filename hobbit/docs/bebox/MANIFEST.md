@@ -8,7 +8,7 @@ proprietary software and a draft hardware manual marked "CONFIDENTIAL : Be
 Labs, Inc."; the archive states no licence or redistribution terms, and the
 repository is public, so **none of it is committed**. `fetch.sh` fetches it
 again into `hobbit/build/bebox/` (gitignored by `hobbit/.gitignore`'s
-`build/`) and checks every file against `SHA256SUMS` (193 files).
+`build/`) and checks every file against `SHA256SUMS` (194 files).
 Provenance and what each file holds are in [`../bebox_hobbit.md`](../bebox_hobbit.md).
 
 Each archive has its own directory. The contents are untrusted data: no
@@ -29,7 +29,9 @@ them runs with `python3 -I` (`tools/befs1.py`, `tools/beboot.py`).
 | `docscans/letter.jpg`, `intro1.jpg`, `intro2.jpg` | 2,885,733 | cover letter (Paula Butler & Ctein to Dan Dahle, Be Labs, 16 Sep 1993) and introduction |
 | `docscans/chapter1/` … `chapter9/`, `appendix/` | 176 files, 135,603,692 | "Be machine hardware documentation", interim drafts of 15/16 Sep 1993: 1 Slots, 2 I/O, 3 Joysticks, 4-6, 7 Floppy, 8 Printer, 9 SCSI, Appendix A Memory Map (page scans, JPEG) |
 
-Total about 711 MB.
+| `datasheets/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf` | 3,002,374 | NCR 53C94/95/96 data sheet, Feb 1990, from bitsavers `components/ncr_symbios/scsi/53C94/` (not from fsck.technology): `tools/beboot.py`'s 53C94 model cites its Table 8 (p. 18) and p. 33 |
+
+Total about 714 MB.
 
 What does **not** exist publicly (as of 2026-11-24, see `../bebox_hobbit.md`,
 "Searches"): any dump of the Hobbit BeBox boot ROM (flash), or of the
