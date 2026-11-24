@@ -71,6 +71,12 @@ Six of six caught.
 
 NOT caught: a value outside -4096..4096 (refused on both models, not
 run); the formula for any priority but 4096 (there is no other).
+Re-pinned at the merge with shoen stage 2 (2026-11-23), 1077 -> 1087
+trace lines, both models still identical and every check passing.
+Part 3 runs shoen:execute/7, and the only change merged under this
+test is shoen stage 2, whose record has two more cells (SH_REDUCTIONS,
+SH_REMOVE) and writes its reduction count at the end of each run; that
+the 10 lines are those writes is expected, not counted line by line.
 """
 import os
 import sys
@@ -82,7 +88,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=3, lines=1077)
+PINNED = dict(parts=3, lines=1087)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 KLB, BLT = 0x23, 0x22
 TEXT = 'abc'

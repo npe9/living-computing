@@ -115,6 +115,12 @@ NOT caught (both injected, both PASSED):
     the merger's goal on H runs, the client has bound E and the
     recursion F (newest goal first), so no element is unbound.
 Five of seven caught.
+Re-pinned at the merge with shoen stage 2 (2026-11-23), 1251 -> 1255
+trace lines, both models still identical and every check passing.
+top:go1/4 starts the BIOS's shoen (shoen:execute/4), and the only
+change merged under this test is shoen stage 2, whose record has two
+more cells and writes its reduction count at the end of each run; that
+the 4 lines are those writes is expected, not counted line by line.
 """
 import os
 import sys
@@ -126,7 +132,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=4, lines=1251)
+PINNED = dict(parts=4, lines=1255)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 GO1 = 17391                 # top:go1/4, its first instruction current_node 4, 5
 MERGE = GO1 + 2             # merge 6, 6
