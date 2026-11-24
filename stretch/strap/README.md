@@ -1104,3 +1104,17 @@ until one has.
    instead of needing a companion Python patcher like `gen_io_tb.py`/
    `gen_tape_tb.py` — worth doing generally, not just for I-O, if more
    programs end up needing label-valued `DD` fields.
+10. **The STRAP II grammar gaps that `docs/NEXT.md` carried (G3),
+    worked 2026-11-23.** Each is closed or recorded here; `NEXT.md`
+    keeps a pointer.
+    - ~~A blank after a radix specifier, `(2) 10`, refused.~~ **Fixed.**
+      C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA does
+      not give blanks to main flow unless main flow has turned on the
+      indicator, Gcaz", and Gcaz is on only for an alphabetic DD's
+      datum (printed p.102) and the ID field.  `_TERM_RADIX` now takes
+      blanks inside and after the parentheses.  C22-6578 printed p.21's
+      `KFI(BU, 2), (2) 10,4` assembles to `(2)10,4`'s word, as the
+      host STRAP II's does; `decks/problem_2_9.strap` writes the
+      printed blank.  `tests/check_radix_blank.py`, 5 of 5; the
+      injection (the old pattern) fails two of them.  No other deck's
+      image moved (825 hashed).

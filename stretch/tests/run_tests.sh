@@ -15342,9 +15342,9 @@ run "C22-6578 Problem 2.9 -- effective address from the bits; hand traces" ./run
     "printed_10_NOT_the_EA_701p1:1160=0x00AFC30000000000" \
     "kminus_10_NOT_the_EA_701p1:1180=0x00AFC30000000000" \
     "printed_11_NOT_the_EA_802p2:1161=0x00C88C0000000000" "kminus_11_ok:1181=0x00C8820000000000"
-# 2.9's statement TEST is printed "(2) 10,4", with a blank strap_asm refuses
-# and the host STRAP II ignores.  One of the three checks PINS the refusal.
-run "strap_asm refuses the blank in (2) 10, STRAP II ignores it (C22-6578 printed p.21)" python3 check_radix_blank.py
+# 2.9's statement TEST is printed "(2) 10,4".  A blank is not seen by the
+# grammar (C22-6729 printed p.20, GETCHA); both assemblers ignore it.
+run "a blank in (2) 10 is ignored by both assemblers (C22-6578 printed p.21, C22-6729 printed p.20)" python3 check_radix_blank.py
 # 2.10: element (p,q) of a 4 x 5 matrix, twice (3,4 and 1,1).  VFL multiply,
 # the product stored into an index register's value field, two V+.
 run "C22-6578 Problem 2.10 -- fetch the (p,q)th element" ./run_program.sh ../decks/problem_2_10.strap StretchP210Tb "PC=2029" \

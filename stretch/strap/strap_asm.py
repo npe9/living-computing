@@ -497,7 +497,14 @@ _TERM_NUM = re.compile(r'\d+')
 # never read as hexadecimal: the letters are only reachable after the
 # prefix has already been matched.
 _TERM_NUM16 = re.compile(r'[0-9A-F]+')
-_TERM_RADIX = re.compile(r'\((\d+)\)(?=[\dA-F.])')
+# A BLANK IS NOT A CHARACTER OF THE STATEMENT FIELD, so "(2) 10" is
+# "(2)10".  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA
+# does not give blanks to main flow unless main flow has turned on the
+# indicator, Gcaz" -- and Gcaz is on only for an alphabetic DD (p.102,
+# MQDALF) and the ID field (MPUNID).  C22-6578 printed p.21 prints the
+# case, Problem 2.9's "KFI(BU, 2), (2) 10,4", and says the same thing
+# (Problem 2.8 comment (d)).  tests/check_radix_blank.py.
+_TERM_RADIX = re.compile(r'\(\s*(\d+)\s*\)\s*(?=[\dA-F.])')
 
 _WRITTEN_TAIL = re.compile(r'(?<![$A-Za-z0-9])([A-Za-z][A-Za-z0-9 ]*)\$[A-Za-z0-9$]*')
 

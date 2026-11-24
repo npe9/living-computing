@@ -1541,21 +1541,13 @@ the drop covers p.356's own form: `decks/repro_cm_indicator_bit.strap`,
 on the model, 2026-11-16.  So MCP's $DUMP line 33 ("-SET NOISY MODE")
 would be lost on the model as it stands.
 
-## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- open, 2026-11-15
+## `strap_asm` REFUSES A BLANK AFTER A RADIX SPECIFIER, `(2) 10` -- fixed 2026-11-23
 
-`C22-6578` printed p.21 (PDF 22), Problem 2.9, prints
-`TEST KFI(BU, 2), (2) 10,4`.  `strap_asm` raises "cannot parse
-expression '(2) 10'"; the same page says "Normally the STRAP assembler
-ignores all blanks in instructions and pseudo-instructions" (Problem 2.8
-comment (d)), and its other KFI lines, printed `(2)0000`, assemble.
-**The host STRAP II takes both spellings and gives the same word.**
-
-Reproducer `decks/repro_radix_blank.strap`; registered check
-`tests/check_radix_blank.py`, 3 of 3, one of which PINS the refusal and
-fails, on purpose, the day `strap_asm` is fixed (its docstring says what
-to change it to).  `decks/problem_2_9.strap` writes the statement
-without the blank and says so.  Not fixed here: `strap/` was out of
-bounds for the task that found it.
+C22-6578 printed p.21's `KFI(BU, 2), (2) 10,4` assembles, to the word of
+`(2)10,4`, under both assemblers.  Rule: C22-6729 printed p.20, Chart
+MAIN Box 5, GETCHA gives no blanks unless Gcaz is on.  Record:
+`tests/check_radix_blank.py`'s header and `strap/README.md` "Next steps"
+item 10.
 
 ## `strap_asm` ASSEMBLES A DECIMAL-MODE `DD` AS A BINARY INTEGER -- open, 2026-11-15
 
