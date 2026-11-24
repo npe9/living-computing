@@ -199,6 +199,21 @@ thirteenth (the user device's length word, high byte) after a section
 for it was added (`bsv/PimmFepEmuTb.bsv`). The board top synthesizes
 at 14,799 LUT4, 4,243 FF, 3 DP16KD, 36.69 MHz (PASS at 25 MHz), its
 self-test passing in Bluesim on the new `--held` card (54 entries).
+STATUS 2026-11-24, after the merger change (the merger acts at
+unification) and the typed shutdown: it follows `fep.py` to PIMOS END.
+New: 601 of `pimos_standard_io_window`, its 620 io 104/130/141/111
+(`[1, ""]`) and 110 (held, answered by the event), 60 on the
+append-opened file (`[1]`), `{-1, 80}` (no reply). Tapes: `kernel`
+re-recorded from a machine saved under the merger rule and on through
+`--type shutdown --type yes` (`record_fep.py --kernel PKL --type ...`:
+220 calls, 155 answered, 4 events, 8,766,339 instructions); `late`
+re-recorded (its RECEIVE retries move under the merger rule); the other
+IPL parts re-recorded for their clock lines only; `direct_kernel` with
+the new answers' edges and errors (377 commands, 14 events). 9 tapes,
+827 commands and 18 events, all equal on the three benches; fourteen
+injections into the new paths (`bsv/PimmFepEmuTb.bsv`). The board top
+re-synthesized: 14,816 LUT4, 4,259 FF, 3 DP16KD, 35.03 MHz (PASS at 25
+MHz).
 
 **S2. The device on the bench: a replay of the reference's device.**
 The lockstep bench is scripted, not live. So the reference model,
