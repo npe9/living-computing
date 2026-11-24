@@ -272,6 +272,10 @@
 !     not significant: line 22 references the same symbol as
 !     "E WT31".)
 !
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! (B) "E WT31-1.0" IS REJECTED, because eval_addr_field's blanked-
 !     symbol rule requires the WHOLE field to be letters, digits
 !     and blanks, and this one carries a "-" and a ".":
@@ -443,7 +447,7 @@ EWT1    V-I,2,.32                    ! line  5  >>> printed name is "E WT1" -- a
         BZXVZ,$+1.32                 ! line 19
         SIC,S SCR PM($12)            ! line 20
         B,RS1 FLK                    ! line 21  same card as 20
-        BZBZ,S ELG($11),EWT31-1.0    ! line 22  >>> printed "E WT31-1.0" -- blanked symbol in an expression is rejected, see (B)
+        BZBZ,S ELG($11),E WT31-1.0   ! line 22  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20); see (B)
         CNOP                         ! line 23  spelling is ink-only at this half word
         LX,0,$+1.0                   ! line 24  (second asterisk)
         SX,0,S IO INS($12)           ! line 25  same card as 24

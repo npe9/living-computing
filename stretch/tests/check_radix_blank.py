@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A blank between a radix specifier and its number: "(2) 10".
+r"""A blank between a radix specifier and its number: "(2) 10".
 
 C22-6578 printed p.21 (PDF 22), Problem 2.9, prints
 
@@ -11,23 +11,36 @@ assembler ignores all blanks in instructions and pseudo-instructions."
 ../decks/repro_radix_blank.strap holds the statement twice, NOB without
 the blank and WITHB with it.
 
+THE RULE.  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5, read in
+the ink 2026-11-23: "GETCHA does not give blanks to main flow unless
+main flow has turned on the indicator, Gcaz."  The guide's text turns
+Gcaz on for an alphabetic DD's datum (printed pp.26, 102, MQDALF) and
+the ID field (printed p.27, MPUNID); strap/strap2 also turns it on to
+read an entry mode.  None of these is an address field, so a blank in
+one is not seen at all, and "(2) 10" is "(2)10".  C28-6129 prints the
+same spelling in DD data: "(8) 77760" (printed p.29, PDF 33) and
+"(8) 77241" (printed p.30, PDF 34).
+
 CHECKS
   strap2_withb_equals_nob   the host STRAP II (strap/strap2) assembles
                             both, to the same word.
-  strap_asm_PINNED_refuses_the_blank
-                            strap_asm raises AssemblerError on WITHB.
-                            THIS PINS A DEFECT (found 2026-11-15, see
-                            docs/NEXT.md).  When strap_asm is fixed this
-                            check FAILS, on purpose: change it then to
-                            "strap_asm assembles WITHB to NOB's word",
-                            do not delete it.
-  strap_asm_nob_assembles   with WITHB's line removed strap_asm
-                            assembles, and NOB's word is STRAP II's.
+  strap_asm_withb_equals_nob
+                            strap_asm assembles WITHB to NOB's word.
+                            (Until 2026-11-23 this check PINNED the
+                            refusal, "cannot parse expression '(2) 10'".)
+  strap_asm_nob_assembles   NOB's word is STRAP II's.
+  inner_blanks_strap_asm / inner_blanks_strap2
+                            "( 8 ) 17" in a KFI, blanks inside the
+                            parentheses too, gives "(8)17"'s word under
+                            each assembler.
 
-MEASURED (2026-11-15): 3 of 3.  The blank removed from WITHB in a copy
-of the deck: strap_asm_PINNED_refuses_the_blank FAILS (strap_asm then
-assembles it) and the other two pass -- the pin is on the blank and
-nothing else.  Run with --inject to repeat that.
+MEASURED (2026-11-15): 3 of 3 before the fix, with the pin.
+MEASURED (2026-11-23, after the fix): 5 of 5.
+
+INJECTION (2026-11-23, tests/inject.py): _TERM_RADIX restored to its
+old pattern r'\((\d+)\)(?=[\dA-F.])' (no blank allowed) makes
+strap_asm_withb_equals_nob and inner_blanks_strap_asm FAIL; the other
+three PASS.  The file was restored from its copy and cmp'd.
 """
 import os
 import sys
@@ -46,8 +59,6 @@ BLANK = 'KFI(BU, 2), (2) 10,4'
 def main():
     src = open(DECK).read()
     assert src.count('\nWITHB   ' + BLANK) == 1, 'the deck no longer holds the printed statement'
-    if '--inject' in sys.argv[1:]:
-        src = src.replace('\nWITHB   ' + BLANK, '\nWITHB   KFI(BU, 2), (2)10,4')
     failed = 0
 
     def check(name, ok, detail=''):
@@ -61,11 +72,12 @@ def main():
           'NOB %016x WITHB %016x' % (nob or 0, withb or 0))
 
     try:
-        assemble(src)
-        refused, msg = False, 'strap_asm assembled it'
+        p1 = assemble(src)
+        check('strap_asm_withb_equals_nob',
+              p1.words.get(1002) is not None and p1.words.get(1002) == p1.words.get(1001),
+              'NOB %016x WITHB %016x' % (p1.words.get(1001) or 0, p1.words.get(1002) or 0))
     except AssemblerError as e:
-        refused, msg = "'(2) 10'" in str(e), str(e)
-    check('strap_asm_PINNED_refuses_the_blank', refused, msg)
+        check('strap_asm_withb_equals_nob', False, str(e))
 
     without = '\n'.join(l for l in src.split('\n') if not l.startswith('WITHB'))
     try:
@@ -74,6 +86,17 @@ def main():
               'strap_asm %016x' % (p1.words.get(1001) or 0))
     except AssemblerError as e:
         check('strap_asm_nob_assembles', False, str(e))
+
+    inner = ('        SLC, 1000.0\nSTART   BEW, $\n        CNOP\n'
+             'A       KFI(BU,8),( 8 ) 17\nB       KFI(BU,8),(8)17\n        END, START\n')
+    for name, asm in (('strap_asm', assemble), ('strap2', gen_tb.strap2_program)):
+        try:
+            p = asm(inner)
+            a, b = p.words.get(1001), p.words.get(1002)
+            check('inner_blanks_' + name, a is not None and a == b,
+                  '( 8 ) 17 %016x  (8)17 %016x' % (a or 0, b or 0))
+        except AssemblerError as e:
+            check('inner_blanks_' + name, False, str(e))
 
     if failed:
         print('%d TEST(S) FAILED' % failed)

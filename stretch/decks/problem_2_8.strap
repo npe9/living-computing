@@ -118,10 +118,11 @@
 ! grand total 455 -- which problem_2_8_corrected.strap gets, digits one a
 ! byte with zone 0000.
 !
-! A SECOND REASON IT CANNOT RUN ON THIS ASSEMBLER: strap_asm assembles
-! "DD(DU,48,8), 000125" as the BINARY integer 125, not as six decimal
-! digit bytes.  That is an assembler finding with its own reproducer,
-! repro_dd_decimal_mode.strap, and a section in docs/NEXT.md.
+! strap_asm assembled "DD(DU,48,8), 000125" as the BINARY integer 125
+! until 2026-11-23; it now gives six decimal digit bytes, as STRAP II
+! does (C28-6129 printed p.15; repro_dd_decimal_mode.strap,
+! tests/check_dd_decimal_mode.py).  The registered runs still use
+! ASM=strap2, and the two assemblers' images of this deck now agree.
 
         SLC, 1000.0
 START   Z, $FT

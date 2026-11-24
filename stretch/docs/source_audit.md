@@ -2037,9 +2037,12 @@ section in `docs/NEXT.md`, neither fixed.**  The host STRAP II
 
 1. A `DD` in mode `D`/`DU` is assembled as a binary integer
    (`decks/repro_dd_decimal_mode.strap`; C22-6531 printed pp.28-29).
+   **Fixed 2026-11-23** (C28-6129 printed p.15; `strap/README.md` "Next
+   steps" item 10).
 2. A blank after a radix specifier, `(2) 10`, is refused
    (`decks/repro_radix_blank.strap`, `tests/check_radix_blank.py`;
-   C22-6578 printed p.21).
+   C22-6578 printed p.21).  **Fixed 2026-11-23** (C22-6729 printed
+   p.20, GETCHA drops blanks; `strap/README.md` "Next steps" item 10).
 
 Not findings: `strap_asm`'s comment mark is `!`, so the printed `'`
 comments are written `!'`; a symbol in a `DD` data field (2.10's

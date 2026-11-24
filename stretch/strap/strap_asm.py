@@ -497,7 +497,15 @@ _TERM_NUM = re.compile(r'\d+')
 # never read as hexadecimal: the letters are only reachable after the
 # prefix has already been matched.
 _TERM_NUM16 = re.compile(r'[0-9A-F]+')
-_TERM_RADIX = re.compile(r'\((\d+)\)(?=[\dA-F.])')
+# A BLANK IS NOT A CHARACTER OF THE STATEMENT FIELD, so "(2) 10" is
+# "(2)10".  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA
+# does not give blanks to main flow unless main flow has turned on the
+# indicator, Gcaz" -- and the guide turns Gcaz on for an alphabetic DD's
+# datum (pp.26, 102, MQDALF) and the ID field (p.27, MPUNID), never for
+# an address field.  C22-6578 printed p.21 prints the
+# case, Problem 2.9's "KFI(BU, 2), (2) 10,4", and says the same thing
+# (Problem 2.8 comment (d)).  tests/check_radix_blank.py.
+_TERM_RADIX = re.compile(r'\(\s*(\d+)\s*\)\s*(?=[\dA-F.])')
 
 _WRITTEN_TAIL = re.compile(r'(?<![$A-Za-z0-9])([A-Za-z][A-Za-z0-9 ]*)\$[A-Za-z0-9$]*')
 
@@ -510,6 +518,48 @@ def _is_radix_digit(ch, radix):
         return int(ch, radix) >= 0
     except ValueError:
         return False
+
+
+_ALNUM_RUN = re.compile(r'[A-Za-z0-9]+')
+
+
+def _symbol_across_blanks(s, i):
+    """The symbol starting at s[i], its blanks closed up, and where it
+    ends.  >>> A BLANK IS NOT PART OF THE STATEMENT, SO IT CANNOT END A
+    NAME. <<<  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA
+    does not give blanks to main flow unless main flow has turned on the
+    indicator, Gcaz" -- and the guide turns Gcaz on for an
+    alphabetic DD's datum and the ID field, never for an address
+    field.  So "K REPET.32" reaches the
+    field scanner as "KREPET.32" (MCP printed p.188 line 30), and
+    "S T LR + 0.57" as "STLR+0.57" (printed p.169 line 11).
+
+    The name runs on across blanks while the next non-blank character
+    is a letter or a digit.  Before 2026-11-23 only a WHOLE field of
+    letters, digits and blanks was closed up (_BLANKED_SYMBOL, the rule
+    eval_expr and eval_addr_field still try first), and "K REPET.32"
+    was refused with "undefined symbol 'K'"; two blank-separated
+    symbols that were both defined were SUMMED, silently.
+    tests/check_blanked_name.py."""
+    m = _TERM_SYM.match(s, i)
+    name, j, n = m.group(0), m.end(), len(s)
+    while True:
+        k = j
+        while k < n and s[k] in ' \t':
+            k += 1
+        if k == j or k >= n:
+            break
+        m2 = _ALNUM_RUN.match(s, k)
+        if not m2:
+            break
+        name, j = name + m2.group(0), m2.end()
+    return name, j
+
+
+def _next_nonblank(s, j):
+    while j < len(s) and s[j] in ' \t':
+        j += 1
+    return j
 
 
 def tokenize_expr(s, lineno=None):
@@ -546,9 +596,9 @@ def tokenize_expr(s, lineno=None):
             # FIELD's units, which in the 19-bit field of p.221's
             # "V+ICR,V T3,.V H" is 32 half words (000020.17 for the
             # printed 000000.57).
-            m = _TERM_SYM.match(s, i + 1)
-            tokens.append((sign, 'bitsym', m.group(0)))
-            i = m.end(); sign = 1; continue
+            name, j = _symbol_across_blanks(s, i + 1)
+            tokens.append((sign, 'bitsym', name))
+            i = j; sign = 1; continue
         if c == '.':
             m = _TERM_NUM.match(s, i + 1)
             b = int(m.group(0)) if m else 0
@@ -650,7 +700,7 @@ def tokenize_expr(s, lineno=None):
                 i = j
             sign = 1; continue
         if c.isalpha():
-            m = _TERM_SYM.match(s, i)
+            name, j = _symbol_across_blanks(s, i)
             # A POINT BEHIND A SYMBOL: "M." / "M.M" / "K FUNLD.32".
             # C22-6578 printed p.64, A4.8.2(c): "A 'point' placed in
             # front of or behind a symbolized INTEGER converts it into a
@@ -659,9 +709,11 @@ def tokenize_expr(s, lineno=None):
             # latter."  So the word part of an integer counts words
             # ('wordsym'); a bit address is left as it is.  The point
             # itself is left for the '.' branch, which reads what follows.
-            kind = 'wordsym' if m.end() < n and s[m.end()] == '.' else 'sym'
-            tokens.append((sign, kind, m.group(0)))
-            i = m.end(); sign = 1; continue
+            # A blank before the point is not seen either (p.20).
+            k = _next_nonblank(s, j)
+            kind = 'wordsym' if k < n and s[k] == '.' else 'sym'
+            tokens.append((sign, kind, name))
+            i = k if kind == 'wordsym' else j; sign = 1; continue
         raise AssemblerError(f"cannot parse expression {s!r} at {s[i:]!r}", lineno)
     if not tokens:
         raise AssemblerError("empty expression", lineno)
@@ -1327,6 +1379,38 @@ def eval_reg(expr, symtab, lineno=None):
     return v & 0xF
 
 
+def _has_bit_address_term(expr, symtab, lineno=None):
+    """Does this parenthetical carry at least one STRAP bit-address term?
+
+    C28-6129 printed p.32 (PDF 36), restriction 3: 'The "I" or "K"
+    fields ... must contain at least one STRAP bit address term.'
+    Printed p.11 (PDF 15), "Address Field": "STRAP bit addresses, system
+    symbols and programmer symbols that are defined as bit addresses are
+    all legal entries in an index field ... If an integer is written in
+    the index field, the meaning is entirely different.  The integer
+    tells STRAP that the symbol in the address field proper has been
+    defined as an array and the integer is addressing an element in that
+    array."  C22-6729 printed p.203 (Appendix E): "Dimension or
+    Subscript -- This is an integer specified within parentheses after a
+    symbol to refer to an item within an array."  So a term is a bit
+    address if it is written with a point (W.B, .B, M.), is a system
+    symbol ($N, $X1, $R ...), or is a programmer symbol not classified
+    as an integer (SymTab.sym_int); a bare integer or an integer-
+    classified symbol is not.  An integer term BESIDE a bit-address term,
+    "($1+1)", is p.34 item 8's case and stays an index."""
+    texts = ([t[1] for t in _arith_tokens(expr, lineno) if isinstance(t, tuple)]
+             if _is_arith_field(expr) else [expr])
+    ints = getattr(symtab, 'sym_int', ())
+    alias = getattr(symtab, 'sys_alias', {})
+    for text in texts:
+        for _s, kind, val in tokenize_expr(text, lineno):
+            if kind in ('bitaddr', 'bitsym', 'wordsym', 'sys'):
+                return True
+            if kind == 'sym' and (val.upper() not in ints or val.upper() in alias):
+                return True
+    return False
+
+
 def eval_index(expr, symtab, lineno=None):
     """An index (S/X) field.  As eval_reg, except that a field with
     arithmetic or a mixed SYN takes strap2's index rule (value.py, its
@@ -1334,6 +1418,18 @@ def eval_index(expr, symtab, lineno=None):
     integer part -- not their sum.  That rule is strap2's CHOSEN one; no
     page gives the S/X of a mixed value.  "B, SAM($1+1)" is index 1 in
     strap2, and strap_asm gave 2."""
+    if expr is not None and expr.strip() and not _has_bit_address_term(expr, symtab, lineno):
+        raise AssemblerError(
+            f"({expr.strip()}) after a datum has no bit-address term, so it is "
+            f"a SUBSCRIPT, not an index (C28-6129 printed p.11: 'If an integer "
+            f"is written in the index field, the meaning is entirely "
+            f"different ... addressing an element in that array'; printed p.32 "
+            f"restriction 3; C22-6729 printed p.203, 'Dimension or Subscript').  "
+            f"Subscripts are not implemented, and what STRAP II assembles after "
+            f"messages 72/74 (C22-6729 p.177) is not printed; and C28-6129 "
+            f"printed p.26 reads the (7) of 'INFO(7)(.30)1265' as a RADIX, a "
+            f"third reading, also not built.  Write an index as a bit "
+            f"address, e.g. ($3)", lineno)
     if expr is not None and expr.strip() and (
             _is_arith_field(expr) or (
                 getattr(symtab, 'sym_ipart', None)
@@ -4145,7 +4241,12 @@ def emit_statement(stmt, symtab, image):
             t = f.strip()
             if rad is not None and t[:1].isdigit():
                 t = "(%d)%s" % (rad, t)
-            image.deposit(pos, length, parse_dd_literal(t, stmt.lineno, dmode))
+            if dmode in ('D', 'DU'):
+                val = _dd_decimal_mode(t, length, stmt.mods[0], dmode,
+                                       symtab, stmt.lineno)
+            else:
+                val = parse_dd_literal(t, stmt.lineno, dmode)
+            image.deposit(pos, length, val)
             pos += length
         return
 
@@ -5404,6 +5505,60 @@ def _dd_normalized(field, lineno=None):
         e = xexp
     return ((abs(e) << 53) | ((1 if e < 0 else 0) << 52)
             | (frac << 4) | sbyte)
+
+
+def _dd_decimal_mode(field, length, dds_text, mode, symtab, lineno=None):
+    """A numeric DD in use mode D or DU: one decimal digit a byte.
+
+    C28-6129 printed p.15 (PDF 19), read in the ink 2026-11-23: "When use
+    mode D is specified, a character-by-character type of conversion is
+    called for, wherein each decimal digit in the numeric entry is
+    converted to the four bit binary coded decimal form.  If the byte
+    size specified in the dds is greater than 4, high order zeros are
+    added. ... If use mode DU is specified, the conversion process is
+    the same.  However, no sign byte is compiled", with the printed
+    example "DD(DU, 12, 4),12  000000010010".  The sign byte is "the low
+    order byte of the converted number, equal in size to the byte size"
+    (the same page, mode B), and minus is S10 at byte size 4 (printed
+    p.29, PDF 33).  Printed p.30 (PDF 34), "Decimal Signed VFL": the
+    radix entry mode gives the radix the number is WRITTEN in ("it is
+    possible to write an integer in binary or octal and have it
+    converted to decimal"), E multiplies by powers of ten, and an
+    omitted field length or byte size is FL = 64, BS = 4.
+
+    So the value is read as parse_dd_literal reads a B/BU entry (an
+    integer, a radix literal, or E notation; an S or X suffix and a
+    fraction are refused there) and its decimal digits are laid out
+    right-justified, one per byte, the sign byte last for D.
+
+    REFUSED, LOUD, as the host STRAP II (strap/strap2 dnum.py) refuses
+    them with message 45: a byte size under 4 (p.15 says "truncation
+    occurs", and which bits go is not printed), and more digits than the
+    field holds (p.15 prints no rule for D; for B it discards high-order
+    bits).  CHOSEN, as the host does: a minus sign on a DU entry is
+    dropped, the entry being unsigned (p.15).
+    """
+    _, _, bs_expr = parse_dds(dds_text, lineno)
+    bs = 4 if bs_expr is None or not bs_expr.strip() else \
+        eval_expr(bs_expr, symtab, 0, lineno=lineno)
+    if bs < 4:
+        raise AssemblerError(
+            f"DD({mode}) byte size {bs}: a decimal byte under four bits "
+            f"is 'truncated' (C28-6129 printed p.15) by a rule the page "
+            f"does not print", lineno)
+    v = parse_dd_literal(field, lineno, None)
+    digits = str(abs(v))
+    data = length if mode == 'DU' else length - bs
+    if len(digits) > data // bs:
+        raise AssemblerError(
+            f"DD({mode}) entry {field!r} has {len(digits)} digits; a "
+            f"{length}-bit field of {bs}-bit bytes holds {data // bs}", lineno)
+    out = 0
+    for ch in digits:
+        out = (out << bs) | int(ch)
+    if mode == 'DU':
+        return out
+    return (out << bs) | (0b1000 if v < 0 else 0)
 
 
 def parse_dd_literal(field, lineno=None, mode=None):

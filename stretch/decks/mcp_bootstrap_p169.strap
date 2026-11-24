@@ -345,6 +345,10 @@
 !   C CHEX  SWAPI,15,...     ->  REFUSED, "unknown mnemonic
 !                                 'CHEXSWAPI'"
 !
+! >>> RESOLVED 2026-11-23: strap_asm now reads a name on across blanks
+! wherever it stands (C22-6729 printed p.20, GETCHA drops blanks;
+! tests/check_blanked_name.py), and the operand below carries the
+! PRINTED spelling.  Bits unchanged.  The note is kept as the record.
 ! GAP A -- A BLANK IN A NAME INSIDE AN EXPRESSION.  A blank-bearing
 ! name used BARE as an operand resolves correctly; the same name with
 ! "+14." or "-.32" or "+0.57" after it does not, because the
@@ -481,13 +485,13 @@ KIODRN  SYN, (8)220706.40            ! FORWARD, printed pp.146/159; this page pi
 ! measurement that forced each substitution is in the section above.
 ! ---------------------------------------------------------------
         SLC, (8)220377.00            ! line  4  SUBSTITUTED for the printed "SLC,$" at 220377.00 * -- see the hard-SLC note above
-CCHEX   SWAPI,15,STLR+14.,$1         ! line  5  SUBSTITUTED twice: printed NAME "C CHEX", printed operand "S TLR+14."  -COMPUTE 3RD PARAMETER
-        LVE,0,KIODRN-.32             ! line  6  SUBSTITUTED: printed "LVE,0,K IOD RN-.32"
-        SWAPI,15,STLR+14.,$1         ! line  7  SUBSTITUTED: printed "SWAPI,15,S TLR+14.,$1"; otherwise the identical card to line 5, unnamed
+CCHEX   SWAPI,15,S TLR+14.,$1        ! line  5  SUBSTITUTED in the NAME only: printed "C CHEX"; operand AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)  -COMPUTE 3RD PARAMETER
+        LVE,0,K IOD RN-.32           ! line  6  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)
+        SWAPI,15,S TLR+14.,$1        ! line  7  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20); otherwise the identical card to line 5, unnamed
         BUSAZ,$+.32                  ! line  8  as printed
         BADZ,$+.32                   ! line  9  as printed (the page indents the statement two characters; same card serial as line 8)
         LC,0,$0                      ! line 10  as printed; "$0" is index register 0, word 0o20
-        BZB,STLR+0.57, C CHEKT       ! line 11  SUBSTITUTED in the first operand only: printed "BZB, S T LR + 0.57, C CHEKT"  -BRANCH IF MCP NEXIT
+        BZB, S T LR + 0.57, C CHEKT  ! line 11  AS PRINTED since 2026-11-23 (closed up before; C22-6729 p.20)  -BRANCH IF MCP NEXIT
         KC, 0, S UPPER               ! line 12  as printed  -IF IN PP, CHECK THAT NEXIT
         BZXL, C NX OUT               ! line 13  as printed  -IS WITHIN PP BOUNDARIES
         KC, 0, S LOWER               ! line 14  as printed

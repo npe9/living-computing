@@ -51,16 +51,12 @@ KNOWN = {"mcp_bootstrap_p131.strap", "mcp_bootstrap_p210.strap",
          # (11.60, BU, length 3, op 001101), settled 2026-11-16 (NEXT.md "DD(N)
          # 1.0 IS 1 - 2^-48 UNDER STRAP II, AND A VFL STORE TO $AL").
          "problem_3_9_method1_equal.strap", "problem_3_9_method1_greater.strap",
-         "problem_3_vfl_store_to_indicators.strap",
-         # strap_asm assembles a mode D/DU DD as a binary integer; C22-6531
-         # pp.28-29 says decimal digits, and strap2 gives them (NEXT.md,
-         # "DD in decimal mode").  The difference is strap_asm's bug.
-         "problem_2_8.strap", "problem_2_8_komf8.strap",
-         "problem_2_8_corrected.strap", "repro_dd_decimal_mode.strap"}
-# strap_asm refuses what strap2 accepts: a blank after a radix specifier,
-# "(2) 10", printed in C22-6578 p.21 (NEXT.md, the radix-blank entry).
-KNOWN_REFUSE = {"repro_radix_blank.strap",
-                # C22-6578 ch.3/ch.4 reproducers of strap_asm's refusals
+         "problem_3_vfl_store_to_indicators.strap"}
+# (2026-11-23: problem_2_8*.strap and repro_dd_decimal_mode.strap left
+# KNOWN when strap_asm gave a D/DU DD its decimal digits, C28-6129 printed
+# p.15; repro_radix_blank.strap left KNOWN_REFUSE when strap_asm stopped
+# refusing "(2) 10", C22-6729 printed p.20.  Both now agree with strap2.)
+KNOWN_REFUSE = {# C22-6578 ch.3/ch.4 reproducers of strap_asm's refusals
                 # (NEXT.md "C22-6578 CHAPTER 3" and the ch.4 refusal entries)
                 "problem_3_bare_op_symbol_dds.strap", "problem_3_dd_zero_fraction.strap",
                 "problem_3_fp_add_low_half_zero.strap",
