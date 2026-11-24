@@ -452,8 +452,11 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     // box is idle, so the two do not meet outside a reset).
     Bool opReq = !doReset && !refillReq && isValid(memReqW);
     Bool pfGrant = !refillReq && !opReq && isValid(pfReqW);
-    if (refillReq) mem.readReq(refillReqAddr);
-    else if (opReq) mem.readReq(validValue(memReqW));
+    // One call of mem.readReq with the address chosen first: the face
+    // translates its argument (HobbitMmu mkHobbitMmuMem), so two calls
+    // would build two translations (docs/fpga_area.md).
+    Word rdAddr = refillReq ? refillReqAddr : validValue(memReqW);
+    if (refillReq || opReq) mem.readReq(rdAddr);
     else if (pfGrant) tmem.readReq(validValue(pfReqW));
     memLiveR <= opReq ? memReqW : tagged Invalid;
     pfLiveR  <= pfGrant;
