@@ -35,6 +35,10 @@ python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
+# The part switch: --part 92020S (docs/att92020.md) -- its ID, its
+# refusals where no source speaks, every golden program identical to the
+# 92010's; 92020M/MX refused.
+python3 "$here/test_sem_part.py"
 # A4: the shipped kernel s9term boots on the reference model: pageinit's
 # console line, /boot's prompt, the BOOTP request, the no-server path,
 # and a replay of the join with the 1e file server through init, rc's
