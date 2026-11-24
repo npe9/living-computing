@@ -851,7 +851,8 @@ Details, milestones and choices: `docs/p9boot.md`.
   run otherwise unchanged instruction for instruction (pinned: the 25 Hz
   prompt run still takes 22,530,554 instructions, now in 29 s instead of
   6 min).  At the formula's own clock rate the prompt comes after
-  286,970,654 instructions (286,977,189 with the EEPROM), 14.4 s of
+  286,970,654 instructions (286,977,189 with the EEPROM; 286,977,105
+  since the exception record costs `9 + D + A`, 2026-11-24), 14.4 s of
   model time, ~30 s of host time, so
   `--counter-period` is no longer needed.
 * Console input: s9term's console is a serial terminal on Quart channel
@@ -863,7 +864,8 @@ Details, milestones and choices: `docs/p9boot.md`.
   52:54:00:00:0b:0b, the one the QEMU server's ndb gives the Hobbit), the
   DP83932 is modelled as devether.c uses it (CAM, RRA/RDA, TDA, isr/imr,
   IRQ 9; QEMU's dp8393x.c followed where the driver is silent), and
-  /boot's BOOTP request leaves at 287,845,754 instructions, decoding
+  /boot's BOOTP request leaves at 287,845,754 instructions (287,845,670
+  since the exception record's cost, 2026-11-24), decoding
   byte for byte (`--pcap`).
 * The join (tools/p9join.py): s9term on the model, its SONIC's frames
   on QEMU's `-netdev dgram` pair to the 1e 386 file server

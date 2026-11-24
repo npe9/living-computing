@@ -100,14 +100,18 @@ The first console line, byte for byte, on both channels:
 
 At the counter rate the hardware formula gives (one tick per 0.569 s,
 QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
-**286,977,189 instructions** and 14.367 s of model time, 26 clock
+**286,977,105 instructions** and 14.367 s of model time, 26 clock
 interrupts, in 30-60 s of host time: 283,995,808 of those
 instructions are laps of the idle loop that the idle skip (below)
-retires without executing.  (Before the EEPROM answered, CHOICES
-`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.)
+retires without executing (that count measured before the exception
+record was charged, below).  (Before the EEPROM answered, CHOICES
+`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.  Before
+2026-11-24 an exception's record cost 0 and the prompt came at
+286,977,189; Table 4-36's `9 + D + A` per exception moves the model's
+clock ahead, and the prompt comes 84 instructions sooner.)
 
 With `--counter-period 0.04` (25 Hz) the same prompt comes after
-**22,537,089 instructions** (1.145 s of model time, 26 clock
+**22,537,005 instructions** (1.145 s of model time, 26 clock
 interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
 the EEPROM answered it was 22,530,554, measured first without the idle
 skip (6 minutes of host time) and reproduced exactly with it (29 s);
@@ -141,7 +145,7 @@ root is from (il, tcp, incon, 9600, 19200)[il]:
 sonic ether: 52 54 00 00 0b 0b
 ```
 
-At **287,845,754** instructions (14.4 s of model time) `/boot` sends
+At **287,845,670** instructions (14.4 s of model time) `/boot` sends
 its BOOTP request through the SONIC (`tests/test_p9boot.py`
 `NetworkTest`, with `--pcap`):
 
@@ -158,7 +162,7 @@ which checks the SONIC's byte lanes and CAM order at once.
 With nobody answering (a Wire with no peer), `/boot` sends the request
 ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
 0.569 s), each wait ended by an alarm note, and then asks
-`My IP address[0.0.0.0]: ` at 3,131,202,766 instructions (156.6 s of
+`My IP address[0.0.0.0]: ` at 3,131,202,418 instructions (156.6 s of
 model time, ~55 s of host time; `NoServerTest`).  Each note's return is
 a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
 
@@ -252,7 +256,8 @@ It is kept as the record of the first join.  `JoinReplayTest` now
 replays `tests/net/join_echo.pcap` instead: the first 615 frames of the
 lockstep run of "Commands at rc's prompt" below, through init, termrc,
 init's restart of rc, and `echo hello` typed at `% ` and run, to
-715,867,166 instructions (700,303,728 idle-skipped), 35.9 s of model
+715,862,114 instructions (700,303,728 idle-skipped, counted before the
+exception record was charged), 35.9 s of model
 time, ~3 min of CPU (174 s measured):
 
 ```sh
@@ -265,7 +270,9 @@ python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
 A lockstep recording replays like a free-running one: the model's
 frames carry model time and the console bytes are typed at screen text,
 so the run is reproduced instruction for instruction (the replay typed
-`echo hello` at step 711,879,422, as the live run did).
+`echo hello` at step 711,879,422, as the live run did; 711,874,370
+since an exception's record costs Table 4-36's `9 + D + A`, which moves
+the replay's steps but not its frames or console).
 
 Live and free-running (`p9join.py --free-run`, the only mode until
 2026-11-23's lockstep), busy model time runs ~200 times slower than the
@@ -771,7 +778,7 @@ the behaviour is inferred from `deviic.c`'s code and comments.
   clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
   with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
   are not in the release.  Reading it adds 6,535 instructions before the
-  prompt (22,537,089 at 25 Hz).
+  prompt (22,537,005 at 25 Hz).
 
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 

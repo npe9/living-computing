@@ -465,7 +465,8 @@ the other account, record by record:
 | the 24 goldens (hand-derived `cyc`) | 209 | 209 | 0 | 0 |
 | `za main9.s` (reference) | 125,572 | 125,572 | 0 | 0 |
 | `zc frexp.c` (reference) | 1,651,700 | 1,651,684 | 0 | 16 |
-| s9term boot, first 3,000,000 records (reference) | 3,000,000 | 2,999,989 | 7 | 4 |
+| s9term boot, first 3,000,000 records (reference before the exception fix) | 3,000,000 | 2,999,989 | 7 | 4 |
+| the same, re-recorded after it | 3,000,000 | 2,999,996 | 0 | 4 |
 
 * zc's 16 undetermined are class 4 of §2.1: a mispredicted `JMPFN` at
   0x6f52, the first instruction after an unimplemented-instruction trap
@@ -483,7 +484,22 @@ the other account, record by record:
     faults (records 2,886,866, 2,901,427, 2,916,311, 2,923,430) and three
     operand-read faults of a MOV (2,893,032, 2,900,895, 2,908,152). The
     reference is the one without a printed number here: Table 4-36
-    prints the Exception row (p. 4-5). See §4.3 for its fix.
+    prints the Exception row (p. 4-5). **Fixed 2026-11-24 in the
+    reference** (`_system_exception` now writes `9 + D_CYC + A_CYC`;
+    `tests/test_sem_system.py`
+    `test_exception_record_costs_table_4_36`, which fails 0 != 12 on
+    the old line and nothing else does). Re-recorded, the 3,000,000
+    records are unchanged in every field but `cyc`, `cyc` changes on
+    exactly those 7, `boot.rec` is byte-identical, and the twin agrees
+    on all 2,999,996 determined records. p9boot paces model time by
+    the summed `cyc`, so `tests/test_p9boot.py`'s step pins moved
+    (the 25 Hz prompt 22,537,089 -> 22,537,005; the join replay's
+    typed steps and `echo` count likewise); its console, frames and
+    replay assertions are unchanged. Interrupts and CRET's CATCH fault
+    have no record of their own and stay uncharged in both accounts.
+    Whether the core's exception records carry 12 is for C3/C4 to
+    check (`bsv/` not
+    touched here).
   * 3 undetermined are a mispredicted `JMPFY` at 0x800042fa whose PSW.F
     came from a CPU-prefixed write of PSW, not a compare. Table 4-35
     prints no row; the reference agrees that none applies (its

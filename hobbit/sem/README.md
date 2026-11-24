@@ -399,9 +399,10 @@ it is computed per ENTER (below).
 | `JMPFN`, `JMPFY`, `JMPTN`, `JMPTY` | Table 4-35 rows | 0..3 | Table 4-35, p. 4-5 (below) |
 | `FLUSHD`, `FLUSHDCE` (trap) | `Unimplemented opcode = 7 + A` | 8 | Table 4-36, p. 4-5; the sequence both take (pp. 3-22, 3-23) |
 
-The code's `CHAPTER4` tuple still transcribes the `Exception` row
-(`9 + D + A`, p. 4-5), which the model refuses because event processing
-is outside it, and the `DQM M quad-word to M quad-word = 8·S` cell, which
+The code's `CHAPTER4` tuple also transcribes the `Exception` row
+(`9 + D + A` = 12, p. 4-5), which an exception's record (`System` runs)
+carries since 2026-11-24 (it was 0 before; the timing twin found it), and
+the `DQM M quad-word to M quad-word = 8·S` cell, which
 has no encoded value in the tuple because `S` is not defined on p. 4-2
 (`step()` resolves it with the model's `S_CYC`).  The one
 MUL row keeps its printed `Min 3/Max 20` range in the tuple; the named
@@ -515,10 +516,11 @@ Where it differs from this model by construction:
   *undetermined* (no Table 4-35 row), where this model tracks only
   compares and TESTC/TESTV.
 * **Exceptions.** A trap record with no write is an exception, priced
-  at Table 4-36's Exception row (`9 + D + A`, p. 4-5); this model's
-  `_system_exception` writes `cyc = 0`. Those are the only records of
-  the s9term boot's first 3,000,000 on which the two disagree (7 of
-  them; `docs/cycle_accuracy_plan.md` §4.2).
+  at Table 4-36's Exception row (`9 + D + A`, p. 4-5). This model's
+  `_system_exception` wrote `cyc = 0` until 2026-11-24: those were the
+  only records of the s9term boot's first 3,000,000 on which the two
+  disagreed (7 of them; `docs/cycle_accuracy_plan.md` §4.2), and they
+  agree since the fix.
 
 Because the CPU-prefix host choice is the one this model makes, the
 records it decides (19 on the kernel prefix) agree by construction, not
