@@ -542,7 +542,7 @@ the device are given it again whenever the machine runs dry.
   | 601 `create` of the string-I/O device `pimos_standard_io_window` (added 2026-11-24 for `shutdown`) | `[1]` | §6.4, `shutdown_b.kl1`:41-42 |
   | 620 `io(104, ..)`, `io(130, ..)`, `io(141, ..)`, `io(111, Text)` on it (added 2026-11-24) | `[1, ""]`, OURS: the PSI's class is not held; the window device's own 104/130/141/111 answer `{Id, 1}` (§2.6) and a 620 reply carries a string (§6.4). A 111's text to the log | §2.6, §6.4 |
   | 620 `io(110, "")` on it (added 2026-11-24) | held, as a window's 110; answered at the idle by the next typed line, `[1, LINE]` | §7.5 |
-  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended`. The FEP emulator (`bsv/PimmFepEmu.bsv`) still refuses it: `bsv/run_fepemu.sh`'s `direct_kernel` tape, whose command 49 is this 60 on device 16, FAILs there ("emulator refused (why 7); fep.py done") until the emulator follows; with `fep.py` as before this row every tape passes (checked 2026-11-24) | §2.2 |
+  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended`. The FEP emulator (`bsv/PimmFepEmu.bsv`) follows it, and the 601/620 rows above and the `{-1, 80}` row below, since 2026-11-24 (until then it refused this 60: `bsv/run_fepemu.sh`'s `direct_kernel` tape FAILed at its command 49, "emulator refused (why 7); fep.py done") | §2.2 |
   | `{-1, 80}`, `fep#terminate`, when the link's stream closes at PIMOS's end (added 2026-11-24) | no reply (none is read); noted as `Fep.terminated` | §1, `scsi_fep.kl1`:234 |
   | the typed line's characters (2026-11-24) | `"`, `(`, `)`, `=` added to `fep.py`'s JIS table, from PIMOS's own `server/telnet/code_cv.kl1`:154-182 (`table_ascii_to_jis`) | `code_cv.kl1` |
 
@@ -735,6 +735,17 @@ the device are given it again whenever the machine runs dry.
   (`bsv/run_fepemu.sh`); the design and the recipe for the next answer
   (a scripted line for the held 110 is a new card, not new hardware):
   `bsv/PimmFepEmu.bsv`'s header.
+  2026-11-24, after the merger change and the typed shutdown: the
+  emulator also answers 601 of `pimos_standard_io_window`, its 620
+  io 104/130/141/111 (`[1, ""]`) and 110 (held, answered by the event),
+  60 on the append-opened file (`[1]`) and `{-1, 80}` (no reply).
+  `kernel.tape` re-recorded under the merger rule and on to PIMOS END
+  (`record_fep.py --kernel PKL --type shutdown --type yes`: 220 calls,
+  155 answered, 4 events; 8,766,339 instructions), `late.tape`
+  re-recorded (its RECEIVE retries move under the merger rule), the
+  other IPL parts re-recorded for the clock lines alone, and
+  `direct_kernel` given the new answers' edges and errors (377 commands,
+  14 events). 9 tapes, all equal on the three benches.
 - **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
   lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
   labelled "carried over from VPIM, agreeing with KLIC; the PIM/m
