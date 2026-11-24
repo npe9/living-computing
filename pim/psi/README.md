@@ -24,8 +24,8 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), and the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs. |
-| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, the stand-ins. It is in `../run_tests.sh` and takes about 8 s. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`). |
+| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 25 s. |
 
 ## How to run
 
@@ -304,14 +304,14 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 96 rows
+**Opcodes are named only from known plaintext.** Each of the 100 rows
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
 `opcode`). So is an operand pattern the witnesses never showed, such
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand. The rows are
-70 class-0 (`pmi`), 22 class-1 (`blt`) built-ins, 3 atom-cell forms
+70 class-0 (`pmi`), 26 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -324,6 +324,24 @@ come from it: `pmi 37` (get_vector of n), and blt `25` (class object),
 142) agrees with the cell numbering above. Its finding that a `0308`
 string's count is in bytes, not words, is now applied in
 `librarian._term`.
+
+**The string rows** (2026-11-24): blt `0b` string/3 (S, ^L, ^T),
+`1c` new_string/3 (^S, L, T), `23` string_element/3 (S, I, ^E) and `2b`
+set_string_element/3 (S, I, E), from paragraph's `time_graph_window`,
+`g_dev`, `history_manipulator` and `view_select_menu`. new_string's
+witnesses include S != T (`view_select_menu change/3`: `1c 04 00 01`,
+the string out in A4), which settles which operand is the output. The
+elements of a new string are 0 and their type is what T says (OURS:
+neither is witnessed beyond the type). kl0's string object keeps its
+type. In the six-package census, two methods get further:
+`csp_default_write write/2` stops at `string/3` on an unbound argument,
+and `state_pe reflesh/3` at a `draw_string/6` sent to an unbound
+receiver.
+
+**`:refute(Object, Method, Args)`** (TM-388 p.46, PDF p.58: class
+`class`'s dynamic call) is modelled (OURS): the vector's elements become
+the arguments after the receiver, and the method is sent to Object. It
+is the second class-`class` method kl0 runs, after `new/2`.
 
 MEASURED facts the witnesses settled:
 
@@ -465,9 +483,9 @@ chains and cut operands, each measured on the held code.
 **What it may emit.** Only opcodes with a row in `kl0_opcodes.tsv`.
 Anything else is refused as `CompileRefusal(construct, detail)`, and a
 predicate that calls a refused local is refused with it. The largest
-refusals over paragraph are: calls a refused local (208), `X+Y` on two
-registers (141), `heap_vector/2` (101), `string/3` (59), the
-`double_bytes#` macro (37), `X/Y` (36) and `=\=` (33). Over kappa2,
+refusals over paragraph are: calls a refused local (215), `X+Y` on two
+registers (157), `heap_vector/2` (101), `X/Y` (41), the
+`double_bytes#` macro (37), a head term (35) and `=\=` (34). Over kappa2,
 all 739 classes with source compile now that `with_macro` is expanded
 (below); before, 404 were refused whole for it.
 
@@ -485,7 +503,8 @@ banks), `==>` (one), and a backquote. Measured over kappa2's banks:
 about 3,811 rules, nearly all `@name => constant`. A bank whose source
 is not held refuses the class as `with_macro` (utter: `cil_macro`,
 `travel_fts_macro`, 10 classes). The structural witness: of kappa2's
-1,323 exact predicates, 822 are in the 406 classes with a bank, and 109
+1,323 exact predicates (measured when `with_macro` landed, before the
+string built-ins), 822 are in the 406 classes with a bank, and 109
 have source clauses a bank rule changed, so the expansion meets
 `kappa.ptf` cell for cell.
 
@@ -502,21 +521,32 @@ its `$or$N`. The held numbering does not follow source order: in
 |---|---|---|---|
 | classes with source / compiled | 109 / 109 | 739 / 739 | 69 / 59 |
 | natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 738, 738, 736, 739, 736 | 59, 59, 59, 59, 58 |
-| predicates compared | 991 | 9,971 | 515 |
-| exact | 243 (24.5%) | 1,323 (13.3%) | 101 (19.6%) |
-| registers only | 32 | 103 | 13 |
-| moves and environment only | 189 | 2,469 | 103 |
-| clause order | 72 | 287 | 9 |
-| held indexes (switch tables), and other | 106 | 657 | 19 |
-| held uses an opcode with no row | 212 | 3,605 | 191 |
-| other (unclassified) | 137 | 1,527 | 79 |
-| exact / all held predicates of the classes with source | 11.4% of 2,123 | 6.3% of 21,027 | 6.9% of 1,454 |
+| predicates compared | 1,051 | 10,641 | 521 |
+| exact | 247 (23.5%) | 1,361 (12.8%) | 101 (19.4%) |
+| registers only | 36 | 171 | 13 |
+| moves and environment only | 196 | 2,651 | 107 |
+| clause order | 73 | 313 | 9 |
+| held indexes (switch tables), and other | 114 | 701 | 19 |
+| held uses an opcode with no row | 245 | 3,828 | 193 |
+| other (unclassified) | 140 | 1,616 | 79 |
+| exact / all held predicates of the classes with source | 11.6% of 2,123 | 6.5% of 21,027 | 6.9% of 1,454 |
 
 (Before `with_macro`, 2026-11-24: kappa2 335 classes compiled, 3,387
-compared, 501 exact; utter 52, 464, 94.)
+compared, 501 exact; utter 52, 464, 94. With `with_macro`, before the
+string built-ins below: paragraph 991, 243; kappa2 9,971, 1,323; utter
+515, 101.)
+
+**The string built-ins** (2026-11-24): `string/3`, `new_string/3`,
+`string_element/3` and `set_string_element/3` now have rows (below)
+and are emitted. `new_string(S,L,T)` is emitted with S and T in one
+register, the form of `make_num_string/3`. Adding them exposed an
+older bug, now fixed: a permanent head variable met after a structured
+head argument had already allocated the environment was never saved
+(e.g. `total([X|R],L0,L)`). The fix alone moves paragraph from 246 to
+247 exact.
 
 There are no key collisions and no `$or$` paired with another arity in
-paragraph or utter. Kappa2 has 12 pairs with another arity. The two
+paragraph or utter. Kappa2 has 14 pairs with another arity. The two
 paragraph aspect misses are `paragraph_version`'s version slot
 ("3200" in the source, "3500" in the `.ptf`) and `h_grade`'s methods
 (two items of `h_grade_n.esp` do not parse). The "other" class was
@@ -588,11 +618,37 @@ that every method carries a label.
   - `process_clock` (`create/2`).
   - `with_link` and `waiting_frame`: empty. TM-100 says only what they
     are for.
+- `process`'s `tag_catch/5`, `/6` and `/9` are INTERPOLATED: each sends
+  the method to the object through `:refute` (above) and catches
+  nothing. The call forms come from kappa2 `inwin.esp:301` (/5), cal-esp
+  `cm.esp:320` (/6) and pimfep's `on_after/4` registers (/9: object,
+  method, arguments, tag, then a second object, method, arguments and
+  tag for the abort path, then `pimos_abort`). TR-285 §4.2 (PDF p9-10)
+  says catch/throw is multiple-level cut plus enforced failure; with no
+  `throw` modelled, catching is the plain call.
+- `string` (INTERPOLATED): `append/3` (a list of strings in, a new
+  string out; 1,039 call sites in 14 programs) and `copy/3` (7), on the
+  four string built-ins. Lengths are counted one by one, since `X+Y` on
+  two registers has no witness.
+- `symbolizer` (INTERPOLATED, PARTIAL): `string_to_list/3` and
+  `list_to_string/3`, on the four string built-ins; their argument
+  order (`List` before the string) comes from the call sites (kappa2
+  `kap_serv.esp:677/681`, `motif.esp`, `retrieve2.esp`, `SRVCNF.ESP`;
+  utter `tour_sit.esp:61`). The other 25 selectors are not stood in:
+  most convert atoms or numbers and strings (`enter_atom/3`,
+  `get_atom/3`, `get_number/3`, ...), and no witnessed built-in makes
+  an atom from a string or back, while number conversion needs `X/Y`
+  and a remainder, which espc refuses. The rest (`in/2`,
+  `is_object/2`, the variable-tree methods) have no source or
+  specification held. No pimfep or pimscsi method reaches
+  `symbolizer` first in the census.
 
 With them loaded:
 
 - `pimfep##pimos_timer:on_after/4` gets past `simpos##process:self/2`
-  and refuses at `simpos##process:tag_catch/9`.
+  and, through `tag_catch/9` and `:refute`, into the timer's own
+  `do_on_after/3`; it refuses at
+  `simpos##process:allow_forced_event/1`.
 - `pimos_timer:stream/2`, which used to stop in kl0's `new/2` at the
   printed `post_queue` slot, now succeeds.
 - The printed `put/2` and `get/2` run first in, first out
@@ -612,6 +668,7 @@ method.
 |---|---|---|---|---|---|
 | before | 1,215 | 486 | 50 | 679 | 195 |
 | after | 1,228 | 501 | 50 | 677 | 0 |
+| after the string built-ins, `string`, `:refute`, `tag_catch` | 1,228 | 515 | 51 | 662 | 0 |
 
 - The 13 new methods are `list`'s, now inherited by
   `pimscsi##scsi_device`, which has `simpos##list` as a nature. All 13
@@ -636,6 +693,22 @@ method.
   - `simpos##process:create/3` (14);
   - `simpos##process:allow_forced_event/1` (6);
   - `simpos##process:tag_catch/9` (4).
+- With the string built-ins, `string`, `:refute` and `tag_catch`
+  (third row): 14 methods that stopped at `new_string/3` in a slot
+  initialiser or body now succeed (`pimscsi##packet`'s four getters,
+  `packet32`'s, `pseudo_scsi_handler:create/4`, ...); `packet32
+  is_used/1` now fails cleanly. No method changed between success and
+  failure. Of the 105 that stopped at blt 1c (78) or 0b (27), 50 reach
+  a SIMPOS call, 23 an unbound argument and 9 another unnamed opcode. The refusals now rank: SIMPOS calls
+  349, missing opcodes 161 (blt 06 53, pmi b0 19, blt 9a 12, pmi b4
+  10, ...), receiver not an object 82, unbound receiver 25, unbound
+  argument 24. The next blockers, by methods stopped:
+  - `simpos##channel:create/2` (114);
+  - `simpos##hash_index:create/3` (58);
+  - `pimfep##pimos_window_editor:get_window/2` (21, a partial class);
+  - `simpos##list_index:create/2` (20);
+  - `simpos##process:create/3` (14);
+  - `simpos##process:allow_forced_event/1` (9).
   
   21 more stop at `pimfep##pimos_window_editor:get_window/2`. That class
   is partial, so the method is in an unloaded ancestor.
@@ -648,8 +721,8 @@ method.
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
-  SIMPOS or firmware. They are not held. Only `new/2` is modelled
-  (OURS), slot initialisation included.
+  SIMPOS or firmware. They are not held. Only `new/2` (slot
+  initialisation included) and `refute/3` are modelled (OURS).
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
   more elements built in a body, `->` and `not`; of `with_macro`, the

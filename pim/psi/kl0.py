@@ -156,10 +156,37 @@ class Vec:
 
 
 class Str:
-    __slots__ = ('text',)
+    """A string.  TEXT is the elements as ptfdump.ch decodes their 16-bit
+    JIS codes; TYPE the element type (16: OURS for every string here).
+    Strings are mutable (set_string_element/3)."""
+    __slots__ = ('text', 'type')
 
-    def __init__(self, text):
+    def __init__(self, text, type=16):
         self.text = text
+        self.type = type
+
+    def codes(self):
+        """The elements as codes: the inverse of ptfdump.ch (a `<xxxx>`
+        token is one code; OURS where a literal '<' could be read so)."""
+        out, t, i = [], self.text, 0
+        while i < len(t):
+            c = t[i]
+            if c == "<" and t[i + 5:i + 6] == ">" and all(
+                    x in '0123456789abcdef' for x in t[i + 1:i + 5]):
+                out.append(int(t[i + 1:i + 5], 16))
+                i += 6
+                continue
+            if c in _PUNCT_CODE:
+                out.append(0x2100 | _PUNCT_CODE[c])
+            elif '!' <= c <= '~':
+                out.append(0x2300 | ord(c))
+            else:
+                raise Refusal('built-in', 'string element %r has no code here' % c)
+            i += 1
+        return out
+
+    def set_codes(self, codes):
+        self.text = ''.join(P.ch(x) for x in codes)
 
     def __eq__(self, o):
         return isinstance(o, Str) and o.text == self.text
@@ -169,6 +196,9 @@ class Str:
 
     def __repr__(self):
         return 'string#%r' % self.text
+
+
+_PUNCT_CODE = {v: k for k, v in P.PUNCT.items()}
 
 
 class ClassRef:
@@ -579,6 +609,8 @@ class Machine:
             raise Refusal('simpos', 'send %s:%s/%d (%s class not loaded)' % (cid, name, arity, section))
         co = self.lib.build(cid)
         m = self.lib.send(co, section, name, arity)
+        if m is None and (name, arity) == ('refute', 3):
+            return self.refute()
         if m is None or not m.primaries:
             if section == 'class' and (name, arity) == ('new', 2):
                 # class `class`'s new/2 (TM-388 §3.6), OURS, as the primary
@@ -596,6 +628,23 @@ class Machine:
                 # the class it is mixed into
                 raise Refusal('no method', '%s %s:%s/%d is not in the class' % (section, cid, name, arity))
         return self.run_combined(co, m, None)
+
+    def refute(self):
+        """Class `class`'s :refute(Object, Method, ArgVector) (TM-388 p.46,
+        PDF p.58): the dynamic method call.  OURS: the vector's elements
+        are the arguments after the receiver, in order."""
+        name, args, obj = deref(self.x[0]), deref(self.x[1]), deref(self.x[2])
+        if not isinstance(name, Atom):
+            raise Refusal('unbound argument' if isinstance(name, Var) else 'built-in',
+                          'refute method name %r' % (name,))
+        if not isinstance(args, Vec):
+            raise Refusal('unbound argument' if isinstance(args, Var) else 'built-in',
+                          'refute argument vector %r' % (args,))
+        n = len(args.args)
+        for i, a in enumerate(args.args):
+            self.x[i] = a
+        self.x[n] = obj
+        return self.dispatch(obj, name.name, n + 1)
 
     def run_combined(self, co, m, prim):
         """TM-388 §3.4: b1..bn, (p1;...;pk;fail), a.. as synthetic code."""
@@ -1237,6 +1286,47 @@ class Machine:
         if a != b:
             raise Refusal('operand', 'new_heap_vector with V != N unwitnessed')
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
+        self.nxt(code, off)
+
+    def _str(self, t, what):
+        t = deref(t)
+        if not isinstance(t, Str):
+            raise Refusal('unbound argument' if isinstance(t, Var) else 'built-in', '%s on %r' % (what, t))
+        return t
+
+    def op_string(self, code, off, a, b, c, v):
+        s = self._str(self.x[a], 'string')
+        self.x[b] = len(s.codes())
+        self.x[c] = s.type
+        self.nxt(code, off)
+
+    def op_new_string(self, code, off, a, b, c, v):
+        n = self._int(self.x[b], 'new_string')
+        if n < 0:
+            raise Refusal('built-in', 'new_string of %d elements' % n)
+        s = Str('')
+        s.type = self._int(self.x[c], 'new_string')
+        s.set_codes([0] * n)
+        self.x[a] = s
+        self.nxt(code, off)
+
+    def op_string_element(self, code, off, a, b, c, v):
+        cs = self._str(self.x[a], 'string_element').codes()
+        i = self._int(self.x[b], 'string_element')
+        if not 0 <= i < len(cs):
+            raise Refusal('built-in', 'string_element index %d of %d' % (i, len(cs)))
+        self.x[c] = cs[i]
+        self.nxt(code, off)
+
+    def op_set_string_element(self, code, off, a, b, c, v):
+        s = self._str(self.x[a], 'set_string_element')
+        cs = s.codes()
+        i = self._int(self.x[b], 'set_string_element')
+        e = self._int(self.x[c], 'set_string_element')
+        if not 0 <= i < len(cs):
+            raise Refusal('built-in', 'set_string_element index %d of %d' % (i, len(cs)))
+        cs[i] = e
+        s.set_codes(cs)
         self.nxt(code, off)
 
     def _vec(self, t, what):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests of the ESP compiler (psi/espc.py).  OURS.
 
-    python3 -I psi/test_espc.py        (about twenty seconds; reads the held
+    python3 -I psi/test_espc.py        (about 25 seconds; reads the held
                                         source and .ptf files in memory,
                                         extracts nothing)
 
@@ -23,7 +23,8 @@
 5. Macro banks (`with_macro`, TM-388 §3.7.3): expansion on a compiled
    example (own rules before the natures', a `:-` rule refusing its
    predicate), and kappa2's structure against kappa.ptf pinned (all 739
-   classes compile; 1,323 predicates cell for cell).
+   classes compile; 1,361 predicates cell for cell, 1,323 before the
+   string built-ins).
 6. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
    pp.48-50): instance and class slots, a failing initialiser fails new,
    an unbound value refuses, an after-demon of new sees the slots.
@@ -32,7 +33,11 @@
    gives one process instance, made by :new, which runs the printed
    slot initialisers of TM-100 Fig. 3.1 (four lists and a clock);
    pimfep##pimos_timer on_after/4, which refused at
-   simpos##process:self/2, now refuses at simpos##process:tag_catch/9;
+   simpos##process:self/2, gets through the interpolated tag_catch/9
+   (:refute, TM-388 p.46) and refuses at process:allow_forced_event/1;
+   the interpolated string append/3 and copy/3, and the partial
+   symbolizer's string_to_list/3 and list_to_string/3, run on the four
+   string built-ins; tag_catch/5 sends put/2 to a stream through :refute;
    pimos_timer's class stream/2, which stopped at kl0's new/2 (the
    printed stream's slots are initialised by code), succeeds, and the
    printed put/2 and get/2 run first in, first out; kl0's census of
@@ -65,7 +70,8 @@ restored with cp and checked with cmp):
     test_expansion fails;
   - stand-in label (injected into standin/stream.esp): get/2's PRINTED
     label reworded: only test_methods_labelled fails.
-  The injections into kl0.py's slot initialisation, and what they fail
+  The injections into kl0.py's slot initialisation, the string
+  built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
 """
 import os
@@ -154,7 +160,11 @@ class Structure(unittest.TestCase):
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [109, 108, 108, 109])
         self.assertEqual(c['demon sets agree'], 109)
-        self.assertEqual((c['pred compared'], c['pred exact']), (991, 243))
+        # 991 compared, 243 exact before the string built-ins (string/3,
+        # new_string/3, string_element/3, set_string_element/3) and the
+        # head-save fix (a permanent head variable after a structured
+        # argument: 246 -> 247), 2026-11-24
+        self.assertEqual((c['pred compared'], c['pred exact']), (1051, 247))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -260,7 +270,8 @@ end.'''
         r = espc.check('kappa2')
         c = r['counts']
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
-        self.assertEqual((c['pred compared'], c['pred exact']), (9971, 1323))
+        # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
+        self.assertEqual((c['pred compared'], c['pred exact']), (10641, 1361))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 2))
@@ -351,8 +362,8 @@ class Standins(unittest.TestCase):
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##list', 'simpos##post_queue', 'simpos##process', 'simpos##process_clock',
-            'simpos##stream', 'simpos##waiting_frame', 'simpos##waiting_queue',
-            'simpos##with_link'])
+            'simpos##stream', 'simpos##string', 'simpos##symbolizer',
+            'simpos##waiting_frame', 'simpos##waiting_queue', 'simpos##with_link'])
         for t in self.ts:
             self.assertEqual(t.refusals, [], t.id)
 
@@ -390,7 +401,55 @@ class Standins(unittest.TestCase):
         self.assertIn('simpos##process:self/2', detail)
         cause, detail = self.refusal(self.m, cid, 'instance', sel)
         self.assertEqual(cause, 'simpos')
-        self.assertIn('simpos##process:tag_catch/9 (not in the stand-in)', detail)
+        # tag_catch/9 (interpolated, :refute) now runs the timer's
+        # do_on_after/3, which stops at the next lost method
+        self.assertIn('simpos##process:allow_forced_event/1 (not in the stand-in)', detail)
+
+    def strs(self, *xs):
+        t = K.NIL
+        for x in reversed(xs):
+            t = K.Cons(K.Str(x), t)
+        return t
+
+    def test_string(self):
+        # the interpolated string stand-in on the four witnessed string
+        # built-ins (blt 0b, 1c, 23, 2b)
+        m = self.m
+        (r,) = K.call_class_method(m, 'simpos##string', 'append',
+                                   [self.strs('ab', '::', 'c d'), K.Var()])
+        s = r[1]
+        self.assertEqual((repr(s), s.type, len(s.codes())), ("string#'ab::c d'", 16, 7))
+        (r,) = K.call_class_method(m, 'simpos##string', 'append', [self.strs(), K.Var()])
+        self.assertEqual(repr(r[1]), "string#''")
+        (c,) = K.call_class_method(m, 'simpos##string', 'copy', [s, K.Var()])
+        self.assertEqual(repr(c[1]), "string#'ab::c d'")
+        self.assertIsNot(c[1], s)
+        # the partial symbolizer: string_to_list/3 and list_to_string/3
+        # (kap_serv.esp's space_delete/2 deletes 8481, the JIS space, from
+        # the list between the two)
+        (r,) = K.call_class_method(m, 'simpos##symbolizer', 'string_to_list', [K.Var(), s])
+        codes = [K.resolve(x) for x in s.codes()]
+        self.assertEqual(repr(r[0]), repr(codes).replace(' ', ''))
+        lst = K.NIL
+        for x in reversed([x for x in codes if x != 8481]):
+            lst = K.Cons(x, lst)
+        (r,) = K.call_class_method(m, 'simpos##symbolizer', 'list_to_string', [lst, K.Var()])
+        self.assertEqual((repr(r[1]), r[1].type), ("string#'ab::cd'", 16))
+        (r,) = K.call_class_method(m, 'simpos##symbolizer', 'list_to_string', [K.NIL, K.Var()])
+        self.assertEqual(repr(r[1]), "string#''")
+
+    def test_refute(self):
+        # tag_catch/5 (interpolated) calls :refute(Object, Method, Args)
+        # (TM-388 p.46): a put/2 sent to a stream through it
+        m = self.m
+        (p,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        (st,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+        proc, st = p[0], st[0]
+        m.reset()
+        args = [st, K.Atom('put'), K.Vec([K.Atom('hello'), ]), K.Atom('abort'), proc]
+        self.assertEqual(sum(1 for _ in m.solve_send(proc, 'tag_catch', args)), 1)
+        regs = [K.Var(), st]
+        self.assertEqual([repr(K.resolve(regs[0])) for _ in m.solve_send(st, 'get', regs)], ['hello'])
 
     def test_stream_runs(self):
         # pimos_timer's class stream/2 used to stop at kl0's new/2 (the
@@ -436,11 +495,15 @@ class Standins(unittest.TestCase):
         # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
         # Before slot initialisation by code ran: 1,215 methods, 486
         # success, 50 failure, 679 refused (195 'slot init by code').
+        # After it: 1,228, 501, 50, 677.  After the string built-ins
+        # (blt 0b, 1c, 23, 2b), :refute and tag_catch: 515 success (14
+        # methods that stopped at new_string/3), 51 failure (packet32
+        # is_used/1, no longer refused), 662 refused.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1228, {'success': 501, 'failure': 50, 'refused': 677}))
+        self.assertEqual((len(rows), out), (1228, {'success': 515, 'failure': 51, 'refused': 662}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

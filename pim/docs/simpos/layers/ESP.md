@@ -161,7 +161,7 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   | `:m(Obj,A...)` | Dispatch on the first argument: a class object selects class methods, an instance selects instance methods |
   | `Class:m(ClassObj,...)` | Class method of a named ancestor |
   | `:Class:m(Inst,...)` | Instance method of a named ancestor |
-  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46) |
+  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46). Modelled in `psi/kl0.py` (OURS, 2026-11-24): the vector's elements become the arguments after the receiver; `psi/test_espc.py` test_refute sends `put/2` to a stream through it |
   
   Built-ins `method_call` and `overridden_method_call` exist (TM-388 App D).
 - **Missing method or slot.** The call goes to `:undefined_method(Obj,Name,ArgVec,Addr)` or

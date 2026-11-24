@@ -7,6 +7,8 @@
 
 1. The opcode table (psi/kl0_opcodes.tsv) is the dispatch: one handler per
    witnessed row, no handler without a row, every row with a witness.
+   The four string rows (blt 0b, 1c, 23, 2b) run on their witness
+   operands, new_string with S != T included (view_select_menu change/3).
 2. pimfep##fep_command_code_table:convert/3, both ways, against the
    `fep#name => code` macros of PIMOS's pimos.vmac (measured 2026-11-24):
    96 names agree, 4 only in the FEP table, 8 only in PIMOS; code -> name
@@ -64,6 +66,27 @@ run; observed):
     (an error).
   (Rerun with the session's injection script after any change to the
   tests; the set above was observed on the final tests.)
+String built-ins and :refute (2026-11-24, injected the same way into
+kl0.py, and into espc.py for the last; both test files run; observed):
+  - new_string puts the string in the T register: only
+    test_string_cells (an error);
+  - string_element reads element I+1: test_string_cells and test_espc
+    test_string fail;
+  - set_string_element does not store: test_string_cells and test_string
+    fail;
+  - string/3 gives the type as the length: test_string_cells fails,
+    test_string errors;
+  - :refute leaves the receiver in A0: only test_espc test_refute (an
+    error);
+  - espc's head-save fix reverted: test_espc test_string errors and
+    test_counts fails;
+  - espc emits new_string with L and S swapped: only test_espc
+    test_string (an error);
+  - espc gives string/3's two outputs one register: the compiler raises
+    (not a refusal) on paragraph and kappa2, so every test_espc test
+    that compiles them errors: two setUpClass,
+    test_no_internal_refusal, test_only_witnessed_opcodes, test_kappa2,
+    test_aspect_differences, test_counts, test_named_exact.
 """
 import os
 import sys
@@ -102,7 +125,24 @@ class Table(unittest.TestCase):
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
-        self.assertEqual(len(rows), 96)
+        self.assertEqual(len(rows), 100)
+
+    def test_string_cells(self):
+        # the string rows' witness operands, run on the handlers alone:
+        # view_select_menu change/3 `a7 00 00 03`, `a7 01 00 10`,
+        # `1c 04 00 01` (new_string(S,3,16), S out in A4); then
+        # set_string_element / string_element / string on it
+        m = machine()
+        m.reset()
+        m.x[0], m.x[1] = 3, 16
+        m.op_new_string(None, 0, 4, 0, 1, None)
+        s = m.x[4]
+        self.assertEqual((type(s), s.type, s.codes(), m.x[1]), (K.Str, 16, [0, 0, 0], 16))
+        m.x[2], m.x[3] = 1, 0x2121
+        m.op_set_string_element(None, 0, 4, 2, 3, None)
+        m.op_string_element(None, 0, 4, 2, 5, None)
+        m.op_string(None, 0, 4, 6, 7, None)
+        self.assertEqual((s.codes(), m.x[5], m.x[6], m.x[7]), ([0, 0x2121, 0], 0x2121, 3, 16))
 
 
 class Convert(unittest.TestCase):
@@ -305,16 +345,18 @@ class Census(unittest.TestCase):
             if r[3] == 'refused':
                 k = K.refusal_key(r[4], r[5])
                 rank[k] = rank.get(k, 0) + 1
+        # the string built-ins (blt 0b, 2b) take two methods further:
+        # csp_default_write write/2 to string/3 on an unbound argument,
+        # state_pe reflesh/3 to a draw_string/6 sent to an unbound receiver
         self.assertEqual(rank, {
-            'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 13,
-            'receiver not an object': 8, 'unbound argument': 17, 'operand': 17,
+            'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
+            'receiver not an object': 8, 'unbound argument': 18, 'operand': 17,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3, 'missing opcode blt 10': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,
-            'missing opcode blt 0b': 1, 'missing opcode pmi c3': 1,
-            'missing opcode blt 2b': 1})
+            'missing opcode pmi c3': 1})
 
 
 if __name__ == '__main__':

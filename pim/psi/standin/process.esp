@@ -26,7 +26,7 @@
 % for (PDF p10, p14), not what they hold.
 %
 % Added (INTERPOLATED, labelled below): the class slot `current`,
-% self/2, inhibit_interrupt/1 and allow_interrupt/1.
+% self/2, inhibit_interrupt/1, allow_interrupt/1 and tag_catch/5, /6, /9.
 % Model (INTERPOLATED): one process (the machine runs one), made on
 % first use and kept in a class slot.
 
@@ -90,6 +90,7 @@
     % INTERPOLATED: see inhibit_interrupt/1 just above.
     :allow_interrupt(Class) ;
 
+
     instance
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (all instance slots)
@@ -115,6 +116,47 @@
                         % Interpreter instance which runs on this process
               ( clock     := Clock :- :create(#process_clock, Clock) ) ;
                         % The elapse time of this process
+
+    % :tag_catch(Process, Object, Method, Args, Tag) and its 6- and
+    % 9-argument forms run the goal :Method(Object, Args...) as a catch
+    % point for Tag; a throw of Tag returns control here (and, in the
+    % 9-argument form, runs :Abort_method(Abort_object, Abort_args...)).
+    % INTERPOLATED from:
+    %   - the call forms in held source: kappa2 inwin.esp:301
+    %     `:tag_catch(Process,INwin,getl,{Value0},abort_input)`; cal-esp
+    %     deb2.12/cm.esp:320 `:tag_catch(Proc, nil, D_obj,
+    %     get_goal_with_cancel_situation, {Proc,Args}, break)`; kwic-esp
+    %     search_F.esp:142 `:tag_catch(Me, Me, catch, {ItemString, Search,
+    %     Method, Args}, Tag)`, thrown by `:raise(#throw, quit_search)`;
+    %   - the held compiled call in pimfep##pimos_timer on_after/4 and
+    %     on_at/4 (registers read 2026-11-24): `:tag_catch(Process, "",
+    %     Timer, do_on_after, {X,Z,Process}, Timer, abort_timer,
+    %     {X,Process}, pimos_abort)`, X and Z on_after's first and third
+    %     arguments; the abort side is fep_services.md
+    %     §6.7 (70 sends :abort(Handler, pimos_abort, DeviceProcess); the
+    %     interrupted request is answered {Id, 6} by abort_timer/3);
+    %   - TR-285 §4.2 (PDF p9-10): catch and throw are built on the
+    %     multiple-level cut and enforced failure; resumption points are
+    %     recorded in the process's situation stack;
+    %   - TM-388 p.46: the goal is a dynamic call, :refute(Object, Method,
+    %     ArgVector), a method of class `class` (kl0's refute/3);
+    %   - TM-100 was checked (the transcribed listings
+    %     docs/simpos/printed/listings/tm0100_p04-p18): it is silent on
+    %     tag_catch, catch, throw and abort.
+    % What the second argument of the 6- and 9-argument forms is (nil, "")
+    % is not known; it is ignored.  No throw is modelled (one process,
+    % nothing sends :abort), so the catch point is never used: each form
+    % just runs the goal.
+    :tag_catch(Process, Object, Method, Args, Tag) :-
+        :refute(Object, Method, Args);
+    % INTERPOLATED: the 6-argument form; see tag_catch/5 just above.
+    :tag_catch(Process, Name, Object, Method, Args, Tag) :-
+        :refute(Object, Method, Args);
+    % INTERPOLATED: the 9-argument form; see tag_catch/5 above.  The abort
+    % goal (Abort_object, Abort_method, Abort_args) is not run: no throw.
+    :tag_catch(Process, Name, Object, Method, Args,
+               Abort_object, Abort_method, Abort_args, Tag) :-
+        :refute(Object, Method, Args);
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8-9
     :activate(Process, Program) :-

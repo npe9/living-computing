@@ -560,6 +560,10 @@ BUILTINS = {
     ('set_vector_element', 3): ('28', ('in', 'in', 'in')),
     ('set_first', 2): ('29', ('in', 'in')),
     ('set_second', 2): ('2a', ('in', 'in')),
+    ('string', 3): ('0b', ('in', 'out', 'out')),
+    ('new_string', 3): ('1c', ('out', 'in', 'in')),     # emitted with S = T
+    ('string_element', 3): ('23', ('in', 'in', 'out')),
+    ('set_string_element', 3): ('2b', ('in', 'in', 'in')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -911,7 +915,14 @@ class ClauseCompiler:
             elif k == 'var':
                 name = v[1]
                 if name in self.y:
-                    if name not in self.seen:
+                    if name not in self.seen and self.env:
+                        # the environment was allocated by an earlier
+                        # argument's structure: save now (before this fix
+                        # the save was lost, e.g. `t([X|R],A,B) :- ...`)
+                        self.seen.add(name)
+                        self.asm.pmi(0x20, i, self.y[name])
+                        self.R.set(i, ('perm', name))
+                    elif name not in self.seen:
                         self.seen.add(name)
                         self.pending_perm[name] = i
                         self.R.set(i, ('pvar', name))
@@ -1333,6 +1344,22 @@ class ClauseCompiler:
             r = self.dest(n, t, self.R.pending)
             self.asm.blt(0x19, r, r, 0)
             return self.bind_out(out, r)
+        if g.name == 'new_string':
+            # emitted in the form of p_tgraph.esp make_num_string/3
+            # (`a7 03 00 10`, `1c 03 01 03`): the type is put in a register,
+            # which becomes the string (S = T).  The held code also has
+            # S != T (view_select_menu change/3, `1c 04 00 01`); which
+            # form ICOT's compiler picks is not settled
+            out, n, ty = g.args
+            ln = self.to_reg(n, scratch=True)
+            keep = self.R.holder.get(ln)
+            self.R.set(ln, ('val', 'in'))
+            t = self.targets.get(out[1]) if out[0] == 'var' and out[1] not in self.seen else None
+            r = self.dest(ty, t if t != ln else None, self.R.pending | {ln})
+            self.R.set(ln, keep)
+            self.consume(n, ln)
+            self.asm.blt(0x1c, r, ln, r)
+            return self.bind_out(out, r)
         for v, role in zip(g.args, roles):
             if role == 'in':
                 r = self.to_reg(v, scratch=True)
@@ -1347,9 +1374,15 @@ class ClauseCompiler:
             if role == 'in':
                 self.consume(v, r)
         outs = [i for i, ro in enumerate(roles) if ro == 'out']
+        held_outs = []
         for i in outs:
             v = g.args[i]
             regs[i] = self.out_reg(v)
+            # two outputs (string/3) take distinct registers
+            held_outs.append((regs[i], self.R.holder.get(regs[i])))
+            self.R.set(regs[i], ('val', 'out'))
+        for r, h in held_outs:
+            self.R.set(r, h)
         ops = regs + [0] * (3 - len(regs))
         self.asm.blt(int(op, 16), *ops[:3])
         for i in outs:

@@ -233,14 +233,16 @@ and stand-in `simpos##` classes. In order:
      all 109 classes with source compile. Natures and demon sets agree
      in 109 of 109, slots and the method sets in 108. The two misses
      are the 3200/3500 version slot and two unparsed items of
-     `h_grade`. Of 991 predicates compared, 243 are cell for cell
-     identical. That is 24.5% of the compared predicates and 11.4% of
-     all 2,123 held predicates of those classes. Kappa2: all 739
+     `h_grade`. Of 1,051 predicates compared, 247 are cell for cell
+     identical (991 and 243 before the string built-ins, step 3b).
+     That is 23.5% of the compared predicates and 11.6% of all 2,123
+     held predicates of those classes. Kappa2: all 739
      classes compile now that macro banks are expanded (`with_macro`,
      TM-388 §3.7.3; before, 404 were refused whole); 9,971 predicates
-     compared, 1,323 exact (13.3%). 109 of the exact ones have source
-     clauses a bank rule changed: the structural witness of the
-     expansion. Utter compares 515, 101 exact (19.6%); 10 of its
+     compared, 1,323 exact (13.3%), and 10,641 and 1,361 with the
+     string built-ins. 109 of the exact ones have source clauses a
+     bank rule changed: the structural witness of the expansion.
+     Utter compares 521, 101 exact (19.4%); 10 of its
      classes use banks whose source is not held. The
      differences are classified in `../../psi/README.md`. The largest
      classes are held code using opcodes not in the table (212 in
@@ -284,6 +286,25 @@ and stand-in `simpos##` classes. In order:
      - The next blocking classes are `channel:create/2` (69 methods),
        `hash_index:create/3` (58), `list_index:create/2` (20) and
        `process:create/3` (14). See `../../psi/README.md`.
+   - *2026-11-24, step 3b:* the compiler expands `with_macro` macro
+     banks (TM-388 §3.7.3; above). Four string built-ins have
+     known-plaintext rows (blt 0b, 1c, 23, 2b), and class `class`'s
+     `:refute` (TM-388 p.46) is modelled. New interpolated stand-ins:
+     `string` (`append/3`, `copy/3`) and `process`'s `tag_catch/5`,
+     `/6`, `/9`, which call through `:refute` (TR-285 §4.2: catch is
+     a multiple-level cut; no throw is modelled), and a partial
+     `symbolizer` (`string_to_list/3`, `list_to_string/3`). Its other
+     25 selectors are not stood in: no witnessed built-in converts
+     atoms and strings, and number conversion needs `X/Y`.
+     - `pimos_timer:on_after/4` now gets through `tag_catch/9` into
+       its own `do_on_after/3` and stops at
+       `process:allow_forced_event/1`.
+     - Census of pimfep and pimscsi: 515 of 1,228 methods succeed (501
+       before), 51 fail cleanly, 662 refuse; none changed between
+       success and failure. The next blockers: `channel:create/2` (114
+       methods), `hash_index:create/3` (58), `list_index:create/2`
+       (20), `process:create/3` (14),
+       `process:allow_forced_event/1` (9).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
