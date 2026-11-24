@@ -387,6 +387,10 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
 | The window calls and their parameters | What a window is: where `putb` text goes, where a `getl` line comes from, echo and line editing |
 | The date and time units | The clock |
 
+Since §6 the right-hand column is smaller: five of 240's seven
+values, the replies to `io(0, ..)` and to the replier's commands, and
+NI's ID and Node are read from the PSI's code (§6.3-6.5), not OURS.
+
 **A minimal honest FEP for R6.** R6 is "Login and a shell prompt; a
 shell command that only needs the kernel runs" (`pimos_roadmap.md`
 §2), so it needs all of A-D. In order: 203 (done); 310, 304 (done),
@@ -454,7 +458,7 @@ branch), the other window calls.
 | U2 | **SETTLED (§6.5).** NI is `[ID, len Node, n1..n4] ++ Node ++ RN ++ RP ++ UN ++ UP`, 16-bit; ID is the smallest free integer from 0; Node `"local"`; RN, RP are the SIMPOS user's local name and password, never null. Still open: nothing in the layout; H and L of the requester's own message rest on unwitnessed arithmetic opcodes (they do not reach PIMOS) | A document giving the KL0 built-in numbers, or the interpreter run against `paragraph`'s source |
 | U3 | **SETTLED (§6.4).** `io(0, "")` on the replier and `io(0, "local")` on the server answer `""`; replier command 1 answers one character 0 (sent) or 1; `simpos_user_device` answers the user's directory from SIMPOS's `pathname`, or `">"`. Still open: the directory string a real SIMPOS user gets (SIMPOS's `remote_or_local/6`, not held) | P5 (pimfep under SIMPOS); a stand-in may answer `">"`, the PSI's own fallback |
 | U4 | **SETTLED (§6.2, §6.8).** 127, 132, 143 are `pimos_window_editor` `reshape/7`, `set_font/4`, `show/3`; all 63 codes have a PSI handler. Still open: `refute/3` (SIMPOS's, not held) is taken to call the method named, from the arities; the 8-element `get_max_size` has no PSI clause | The `refute` method of SIMPOS's object class; a grep of the patch files' objects for a sender of the 8-element 103 (U8) |
-| U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. The direction of one test rests on `blt 65` read as `\==` by its pair | A witness for `blt 65` |
+| U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. Grade: READ FROM CONSTANTS, with the clause chaining of `fep_scsi_output put/4` (unwitnessed `c2`/`d3`) as the one INFERENCE under "903 is dropped" | A KL0 opcode document, or the first close on the real link |
 | U6 | **PARTLY (§6.7).** PSI half settled: no reply to 70; the interrupted timer, `io`, `getl`, socket `getb`/`accept` request is answered `{Id, 6}`; nothing found for a file or directory request. Still open: whether the kernel's client expects a reply to 70 (the PIMOS half), and what `tag_catch/9` does to a file request in progress | Tracing `receive(Vars, Result)` after `device_abort0` in `file_dvc.kl1` and `scsi_fep.kl1`'s sender; SIMPOS's `tag_catch` |
 | U7 | The form of `File_names` (237, 238) and of `Attributes` (222) | `server/fep/file/dir_dvc.kl1`, `file_dvcb.kl1` (held, not read for this) and `pimos_directory` |
 | U8 | Whether the held object asks for `pimos:autoload.tbl`, and whether its Fep and SCSI modules equal this source (the patch files) | The run itself; `asm/kl1decomp.py` on `pimm_patch_fepsv360E.sav` and `pimm_patch_scsifep360E.sav` |
@@ -471,7 +475,7 @@ executed: there is no KL0 interpreter in this tree, and no SIMPOS.
 
 **How it was read, and the grades.** No held document gives KL0 opcode
 numbers, so an instruction is named only where a witness shows what it
-does: 35 readings stand beside the held ESP source of the same clause
+does: 36 readings stand beside the held ESP source of the same clause
 in `paragraph.ptf`, 4 beside the PIMOS source for the other end of the
 same message (`psi/fepread/witness.py`, checked). The opcodes used
 without a witness are listed there too.
@@ -759,9 +763,16 @@ over the network).
 | 901 `all_device_end` | `delete_remote_stream/2` (`{0, 901}` to a node's stream); `check_fep_end/4` | to another FEP, or on a `remote_fep`; a received `{_, 901}` is taken in silence |
 | 902 `remote_echo_check` | `pimfep_message_receiver receive_first_message/2` | to another FEP; a `remote_fep` echoes a received `{_, 902}` |
 
-READ FROM CONSTANTS for the codes, the type atoms and the tests; that
-`blt 65` is "not equal" is INFERENCE (its pair `64` is witnessed as
-`==`). So on the PIM/m's own link none of the four is sent, and §5's
+READ FROM CONSTANTS for the codes, the type atoms and the tests. The
+test that drops 903 is `put/4`'s second clause: type `\==`
+`remote_fep` (`blt 65`, witnessed as `\==` in `paragraph`'s
+`color_line_v draw_std/2`), the command `==` 903 (`blt 62`,
+witnessed), a cut, `log/2`; the third clause is the one with `put/2`.
+What is left as INFERENCE is only that a failed test goes on to the
+next clause (`c2`, `d3`: the unwitnessed clause-chain opcodes every
+multi-clause predicate here uses). In support, not proof: PIMOS has
+no name and no receiver clause for 900-903 (§2.8). So on the PIM/m's
+own link none of the four is sent, and §5's
 question about PIMOS's receiver does not arise. (The 900 and 901 in
 `remote_pimfep_executor` number its own console texts, not commands.)
 
@@ -862,6 +873,6 @@ are in PIMOS's source (§3), not in `pimfep.ptf`.
   password, OURS), not zeros. So PIMOS will confirm them through
   `simpos_user_device` (§3 step 14), which answers `[1, Dir]`; `">"`
   is the PSI's own fallback.
-- 60: one reply `[1]`; no 903. 70: no reply; a pending timer, `io`
+- 60: one reply `[1]`; no 903 (§6.6, with its one INFERENCE). 70: no reply; a pending timer, `io`
   or `getl` on that device is answered `[6]`. 80: `[11]`.
 - No 900-903 ever.

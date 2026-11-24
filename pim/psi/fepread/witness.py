@@ -142,6 +142,10 @@ W = [
     ('1:64 A B', '== (the last alternative of a disjunction)', 'SOURCE', P, 'profiler_ux_patch',
      '$or$0/2', ['pmi a7  02 00 08', 'blt 64  01 02 00', 'pmi d0  00 00 00',
                  'pmi 27  00 1f ff'], 'p_ux_patch.esp', 'N==8,!,Dev=16#"1FFF");'),
+    ('1:65 A B', '\\== (the first goal of a clause, before its cut)', 'SOURCE', P,
+     'color_line_v', 'draw_std/2',
+     ['blt 27  01 03 01', 'pmi-atom put r3, invisible', 'blt 65  01 03 00'], 'c_line_v.esp',
+     'Obj!draw_flag\\==invisible,!,'),
     ('0:f1 n / 62 n rel', 'deallocate and proceed / deallocate and local execute', 'SOURCE', P,
      'profiler_ux_patch', 'get_parameter/2', ['pmi a5  01 01 00', 'pmi a2  00 00 00',
                                               'pmi 62  0a 00 03'], 'p_ux_patch.esp',
@@ -179,7 +183,7 @@ UNWITNESSED = [
     ('1:40 41 42 43 / 48 49', 'add, subtract, multiply, divide of two registers / multiply, '
      'divide by an immediate.  Assumed from hex_string/5 and create_message/3, where '
      'they rebuild a 16-bit character from two bytes and a length from two characters'),
-    ('1:65 / 67 / 68', '\\== / an ordering test / string equality.  Assumed from use'),
+    ('1:67 / 68', 'an ordering test / string equality.  Assumed from use'),
     ('1:35, 30, 1a, 06, 0d, 01, e6, f5, f0, f2', 'not read; no result depends on them'),
 ]
 

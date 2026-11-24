@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
-"""Self-check of psi/fepread: pins every fact docs/fep_services.md §6
-reports about pimfep.ptf.  OURS.
+"""Self-check of psi/fepread: pins the facts listed below, which
+docs/fep_services.md §6 reports about pimfep.ptf.  OURS.
+
+Read for §6 but NOT pinned here: the inheritance lines of the window
+classes, the login window's creation arguments, that no method writes
+the `version` attribute, that no abort answer was found for a file or
+directory request, and that 400 and 710 have no handler.
 
     python3 -I psi/fepread/check.py          (under a second; pimfep and the
                                               paragraph witnesses only)

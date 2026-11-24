@@ -16,7 +16,7 @@ holds. It is not yet in `run_tests.sh`; it should be.
 | File | What it is |
 |---|---|
 | `ptfread.py` | Lists a predicate cell by cell with its constant pool, class references, selectors, local calls and hash-switch tables resolved. `ptfread.py PKG [CLASS [NAME[/N]]] [--skel]`, `PKG --strings`, `PKG --keys` |
-| `witness.py` | The 39 opcode readings §6 rests on, each beside the source that shows it (35 from `paragraph.ptf` against its held ESP source, 4 from PIMOS's source for the other end of a message), and the opcodes used with no witness. `witness.py --check` |
+| `witness.py` | The 40 opcode readings §6 rests on, each beside the source that shows it (36 from `paragraph.ptf` against its held ESP source, 4 from PIMOS's source for the other end of a message), and the opcodes used with no witness. `witness.py --check` |
 | `fepfacts.py` | The facts of §6 computed from the cells. `fepfacts.py handlers` prints §6.2's 63-row table, `extra` what the PSI handles and PIMOS never sends, `strings` the login classes' strings, `facts` the rest |
 | `check.py` | Pins all of it |
 
