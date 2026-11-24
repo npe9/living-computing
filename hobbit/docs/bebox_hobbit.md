@@ -229,6 +229,136 @@ lanes a byte or half-word operand uses. Without it, `_t_readsts1`'s read
 of 0x3DA would also read 0x3D8, a port that is not modelled. `--screen
 FILE` writes the visible picture, through the DAC, as a PNG.
 
+### DSP3210 contract (the host's side)
+
+This section is read from the binaries only: the Nov 1994 kernel,
+`/system/vcas_server` and the VCOS files on the `be` disk. The DSP3210's
+own instruction set and the VCOS kernel's DSP code are out of scope. The
+VCOS files are AT&T's: `os.ldf` is "Copyright(c) 1990 AT&T Bell
+Laboratories".
+
+**Who releases the DSPs.** vcas_server does, not the kernel. The kernel
+only prepares to be interrupted by them.
+
+- `_main` → `_vcBootDsp(0)` → `_vcInit` reads the VCOS configuration:
+  - `/system/vcos/system/vcos.ini`: `VcosOem= be`, `MaxDsps= 3`.
+  - `/system/vcos/be.oem/vcos.cfg`: board "Rev3", `DspType= 3210_F12`,
+    `DspClock= 50000000`, 8 KB on-chip memory per DSP at 0xE000.
+    `[dspN] Boot= 0x3d80 HostMem onchipDSPN 1`, and `StoreMem=
+    HostMem`, so the DSPs' program store is host RAM.
+- Then, for each DSP, `_vcLoadArmVCOS` → `_vcArmDsp` → `_veDspStart`.
+- `_veInit` maps two kernel areas into vcas_server:
+  - The kernel's `phram` area (all physical RAM, kernel virtual
+    0xF8000000; `_kernel_asr_init+0x406`) is cloned at vcas virtual
+    **0x60000000** as "dsp ram area". So vcas address 0x60000000 + x is
+    physical RAM 0x08000000 + x. `_veLogToDspPhys` is the identity, which
+    means a DSP-side address *is* that 0x6000_0000-based address.
+  - The area holding the board registers is cloned as "io clone"; its
+    base is kept in `_io_offset`.
+- `_veDspStart(n)` (n = 1..3) takes the mask from `_dsp_control_bits`:
+  0x10, 0x20, 0x40 (Appendix A: reset register bits 4-6 = DSP1-3). It
+  ORs the mask into **both**:
+  - the processor reset register 0x0080001B (1 = run), and
+  - the internal interrupt register 0x0080001F (bits 6-4: an interrupt
+    to DSP3-1).
+
+  Both go through `_ori_byte` (`ORI R8,*R4:UB`, an interlocked byte OR).
+  `_veDspHalt` clears both with `_andi_byte`.
+- After the observed run the reset register holds 0x72 (CPU 2 and all
+  three DSPs) and the internal interrupt register 0x70.
+
+**What is written before release.**
+- `_vcLoadArmVCOS` reads the VCOS kernel module with `_vcReadRelocMod`
+  and relocates it into host RAM (StoreMem = HostMem).
+  - The module is `/system/vcos/mml/os`: 4,352 bytes, first halfword
+    0x09DD, with section names `__ModH`, `__boot` and `__vcos` in its
+    header. `os.ldf` describes it as "_boot sPROG /* this is the boot
+    mover */" and "_vcos sPROG" (the code).
+  - `os_doblock` (same size) and `os_nodoblock` are variants. The DSP
+    task modules (`audio`, `daa`, ...) and their `.ldf`/`.tbd`
+    descriptions are under `be.oem/` and `mml/`.
+- `_vcLoadArmVCOS` then patches the loaded image through `_veDspWrMem`,
+  which is a plain `memcpy` into the 0x60000000 window. It writes the
+  addresses of the VCOS symbols `_global` and `_pcw` and a 204-byte
+  descriptor. `_vcFixupVCOSSymtab` checks the symbols, and a missing one
+  gives "Error 5000: File 'os'(the vcos kernel) is corrupted or the wrong
+  version".
+- `_vcArmDsp` looks up `_vcLoad`. With `_bootmode` set (from vcos.cfg's
+  Boot line, `_vcSetDspTable+0x592`) it writes a 32-byte **boot block at
+  vcas 0x60000000, i.e. physical RAM 0x08000000**. The block is four
+  words each holding one byte of `_vcLoad`'s address, most significant
+  first, then four zero words. It then calls `_veDspStart`.
+- In the run, RAM 0x08000000-0x0800000C reads 0x60, 0x0B, 0xE5, 0x68: a
+  start address of 0x600BE568, i.e. physical 0x080BE568. The loaded VCOS
+  image occupies 0x080BE4EC-0x080BFF2C, just below the kernel's text at
+  0x080C0100.
+- So the bottom of RAM is shared with the DSPs, and a DSP's address
+  0x6000_0000 + x is host RAM 0x0800_0000 + x. That would explain
+  Appendix A's "2 MB DSP shadow RAM at 0x60000000". This is inferred:
+  the 32-byte block's byte-per-word layout reads like a byte-wide boot
+  fetch, but how a DSP3210 boots is for the DSP manual to settle.
+- The same low memory holds the boot ROM's memory-size word 0x08000048
+  and vcas_server's DSP heap descriptor: `_dspmorecore` writes 0x60000074
+  and frees from 0x60000078.
+
+**What the host waits for.**
+- **Nothing, at boot.** `_vcArmDsp` sets its "armed" flag (`OR $1`) right
+  after `_veDspStart` and returns. `_vcBootDsp` and `_main` go on to
+  `_vrmInit` and the message server loop (`_msg_session_init_server`).
+  No code in the boot path polls DSP memory, reads a mailbox or waits
+  for an interrupt, and there is no timeout because there is no wait.
+- The **DSP → CPU path** is the kernel's. `_main1` calls `_dsp_int_init`:
+  - It creates three semaphores, "dsp sem" (`_dsp_sems`).
+  - It registers `_interrupted_by_dsp` with `_cpu_int_set(n)` for
+    message types n = 1, 2, 3.
+  - The handler table is at 0x080E4CF0. Types 4 and 5 are CPU A and B:
+    `_interrupt_cpu` stores `get_cpu_id() + 4`.
+- A message arrives through `_mailbox` (kernel data 0x080FC098, 24
+  bytes, physical RAM):
+  - +0: a spinlock word.
+  - +4: a "pending" byte.
+  - +5: an acknowledge byte. The receiver sets it to 1.
+  - +6: the source/type byte.
+  - +7: an argument byte.
+  - +8..+0x17: 16 bytes of payload.
+- The receiving CPU is interrupted through its bit (0 = Hobbit A, 1 =
+  Hobbit B) of the internal interrupt register 0x0080001F. The model
+  takes that at **level 1**, VB+20 → `_cpu_inth`.
+- `_cpu_inth` clears its bit (`_reset_cpu_int`: an interlocked AND on
+  0x0080001F) and dispatches on the type byte. For a DSP it calls
+  `_interrupted_by_dsp`, which releases `_dsp_sems[n-1]` if nothing is
+  already posted.
+- The waiting side is the `_wait_dsp_int(n)` kernel call (KCALL 324): an
+  `_acquire_sem` with **no timeout**. `_get_cpu_mailbox` (KCALL 328)
+  returns the mailbox's address. Every user binary read carries the
+  stubs: app_server, ansi_server, vcas_server, storage_server, Phone.
+  None of them calls either; the clients reach the DSPs through
+  vcas_server and shared-memory FIFOs (`libvcos.a`: `_vcReadFifo`,
+  `_vcGetFifoReadCount`, ...).
+
+**If the DSPs never answer.**
+- No code path tests for a missing DSP. There is no "no DSP" message, no
+  probe and no read-back of the reset register beyond the
+  read-modify-write.
+- vcas_server's errors (2003 "Dsp%d is invalid or unavailable", 6001
+  "Unable to reset it") are about configuration and ids, not a silent
+  part.
+- Model choice (CHOICES `dsp`): the reset and interrupt bits are kept as
+  written and no DSP runs. That is equivalent, from the host's side, to
+  leaving the DSPs in reset. With it the boot goes on with no stop:
+  - All three DSPs are released at about 103M instructions.
+  - By 162,819,522 instructions both CPUs are idle in `_null_thread`
+    with the "Terminal 1" shell window up.
+  - 8,248 interrupts and 2,419 disk blocks read; no "dsp" message on the
+    console.
+- What would hang is the first client that waits on a DSP: a `vcRead*`
+  FIFO poll, or a `_wait_dsp_int` with no timeout. Phone and audio, for
+  example, were not run.
+- The console line "area_for error 03000000" printed while the servers
+  start is not the DSPs. It is `_sh_init` (ansi_server, storage_server)
+  probing for the shared heap at 0x03000000 before it exists, through
+  the kernel's `_area_for`.
+
 ## Booting it: `tools/beboot.py`
 
 The Hobbit BeBox board shares nothing with the Plan 9 terminal that
@@ -319,10 +449,15 @@ sheet and the kernel's driver, and the run went on:
     app_server opens a window "Terminal 1": "Welcome to the new improved
     console / Running on a Hobbit / $ _"
     (`build/bebox/beboot/screens/terminal-103M.png`).
-11. **Current stop**, at 102,819,522 instructions: CPU 1, in user mode
-    in vcas_server, at `_ori_byte` (0x1001CB20), called from
-    `_veDspStart+0x36`, ORs 0x10 into the processor reset register
-    (0x0080001B), which releases DSP1. The DSP3210s are not modelled.
+11. At 102,819,522 instructions: CPU 1, in user mode in vcas_server, at
+    `_ori_byte` (0x1001CB20), called from `_veDspStart+0x36`, ORs 0x10
+    into the processor reset register (0x0080001B), which releases DSP1.
+    This was a stop until CHOICES `dsp`: the bits are now kept and no DSP
+    runs (see "DSP3210 contract" above). vcas_server releases all three.
+12. **Current state**: no stop through 162,819,522 instructions. Both
+    CPUs are idle in `_null_thread`, with the "Terminal 1" shell window
+    up; 8,248 interrupts and 2,419 disk blocks read. The next step is
+    input: keys to the shell through the VL82C106.
 
 The run reaches the mount (29M instructions) in about 10 minutes (CPU-bound Python,
 ~50k instructions/s). An idle skip (CHOICES `idle-skip`) jumps whole

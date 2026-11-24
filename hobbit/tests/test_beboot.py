@@ -41,6 +41,8 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   unmodelled neighbour port stops); the DAC read as 6-bit (x4):
   test_screen_png, test_screen_paging_mode_doubles_the_pitch; paging
   mode ignored: test_screen_paging_mode_doubles_the_pitch.
+- Processor reset register accepting bit 7 as well as the DSP bits, or
+  not logging a DSP's release: test_dsp_reset_bits_are_kept only.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -120,6 +122,18 @@ class BoardTest(unittest.TestCase):
             with self.assertRaises(beboot.Stop) as cm:
                 self.board.read(pa)
             self.assertIn(region, str(cm.exception))
+
+    def test_dsp_reset_bits_are_kept(self):
+        # Page 2: reset register bits 6..4 = DSP3..1 (vcas_server's
+        # _veDspStart ORs 0x10 in for DSP1).  CHOICES['dsp']: kept, logged,
+        # nothing runs.  A bit the page does not name stops.
+        self.board.write(0x00800018, 0x00000012, 0x1)
+        self.assertEqual(self.regs.reset, 0x12)
+        self.assertEqual(self.regs.dsp_log, [(1, True)])
+        self.board.write(0x00800018, 0x00000002, 0x1)
+        self.assertEqual(self.regs.dsp_log, [(1, True), (1, False)])
+        with self.assertRaises(beboot.Stop):
+            self.board.write(0x00800018, 0x00000082, 0x1)
 
     def test_ram(self):
         self.board.write(0x08000048, 0x01000000, 0xF)

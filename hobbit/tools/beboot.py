@@ -192,6 +192,14 @@ CHOICES = {
                "would show as 0x3F and 0x1D; which DAC mode the card was "
                "in is not documented (video_init's own ramp tops out at "
                "56, a 6-bit-looking scale, before Color_map replaces it).",
+    "dsp": "The three DSP3210s are not modelled (no DSP3210 manual was "
+           "found: docs/devices/MANIFEST.md).  Their reset bits in the "
+           "processor reset register (bits 4-6, DSP1-3; Appendix A) and "
+           "their bits in the internal interrupt register are kept as "
+           "written, so a DSP can be 'released' (vcas_server's "
+           "_veDspStart ORs bit 4 in), but it never runs and never "
+           "answers; the run prints each release.  Their 2 MB shadow RAM "
+           "at 0x60000000 is not modelled, so any access there stops.",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -295,6 +303,7 @@ class BoardRegs:
         self.internal = 0
         self.slot_steer = None
         self.io_sources = {}        # bit -> callable() -> bool
+        self.dsp_log = []           # (DSP n, released?) in order
 
     def io_status(self):
         st = 0
@@ -332,11 +341,15 @@ class BoardRegs:
             # known, so a read still stops.
             self.slot_steer = value
         elif reg == 6:
-            if value & ~0x02 & 0xFF:
+            if value & ~0x72 & 0xFF:
                 raise Stop("processor reset register written 0x%02x: "
-                           "a DSP released from reset (not modelled)"
-                           % value)
+                           "a bit Appendix A does not name" % value)
             old, self.reset = self.reset, value
+            for n in (1, 2, 3):
+                bit = 1 << (n + 3)
+                if (value ^ old) & bit:
+                    # CHOICES['dsp']: the bit is kept, no DSP runs.
+                    self.dsp_log.append((n, bool(value & bit)))
             self.board.reset_changed(old, value)
         elif reg == 7:
             self.internal = value
@@ -1918,6 +1931,8 @@ def main(argv):
         with open(args.resume, "rb") as f:
             m = pickle.load(f)
         elf, prior = m.elf, m.steps
+        if not hasattr(m.regs, "dsp_log"):     # saved before CHOICES['dsp']
+            m.regs.dsp_log = []
         print("beboot: resumed %s at %d steps" % (args.resume, prior))
     else:
         if not args.disk and not args.kernel:
@@ -1942,6 +1957,9 @@ def main(argv):
         print("SCSI target %d: %d blocks read, %d written (overlay)"
               % (i, d.reads, d.writes))
     print("interrupts taken: %d" % m.interrupts)
+    for n, run in m.regs.dsp_log:
+        print("DSP%d %s (CHOICES['dsp']: not modelled, it never runs)"
+              % (n, "released from reset" if run else "put back into reset"))
     if m.skips:
         print("idle skip: %d skips, %d steps not executed"
               % (m.skips, m.skipped_steps))
