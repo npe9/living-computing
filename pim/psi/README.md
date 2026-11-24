@@ -304,14 +304,16 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 100 rows
+**Opcodes are named only from known plaintext.** Each of the 113 rows
+(100 at step 2, nine more at step 3c, four at step 3d)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
 `opcode`). So is an operand pattern the witnesses never showed, such
 as a 16-bit immediate with its top bit set, or a three-register
-built-in whose result register is not its first operand. The rows are
-70 class-0 (`pmi`), 26 class-1 (`blt`) built-ins, 3 atom-cell forms
+built-in whose result register is not its first operand (where no
+witness shows it). The rows are
+72 class-0 (`pmi`), 37 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -850,9 +852,10 @@ method.
   value while later operands were put, so a later operand reading the
   same variable raised KeyError. A variable's register now stays the
   variable's; its uncounted uses keep it live.
-- **pmi b0**: no witness. Only two held predicates with source use it
-  (sancho5 `sancho_connective/2`, kappa `kappaPCM_occ_analyzer`), and
-  neither settles its operands.
+- **pmi b0**: this step reported no witness, naming only two held
+  predicates with source. That was wrong: 12 kappa predicates use it, and
+  `typewin.esp:259` and `PCAACCA.ESP:93` settle it as `{}` (step 3d,
+  below).
 - **HELD-SOURCE stand-ins.** `standin/name.esp`, `e_string.esp` and
   `pathname.esp` are morphana's `_simpos/` files: ICOT Free Software,
   (C)1992 ICOT, `ifs/natural-lang/cesp/morphana.tar.Z`.
@@ -895,6 +898,74 @@ method.
   - `pmacs_window`;
   - `alarm_watch:create/2`.
 
+### Step 3d's opcode rows (2026-11-24)
+
+The step 3c blockers blt 6e, pmi b0 and pmi b4 all have witnesses in
+kappa2, paragraph and utter. They were found by listing every held use
+of each opcode (43, 85 and 346 uses) and reading the source of the
+predicates in packages with source. Four rows were added, and three
+rows gained a witnessed operand pattern:
+
+- **blt 6e `vector_to_list(V, Tail, ^L)`.**
+  - Witness: utter `dict_io.esp:53-56` (`sancho_dict get_value/4`,
+    `6e 00 03 00` after `put r3, []`).
+  - The operand roles are settled by kappa2 `BCMSEQUEN.ESP:432`
+    (`devide_value/5`, `6e 03 00 00`: the vector in X3, the list out in
+    A0).
+  - TR-044 App A.8 (p.A-4) lists the 1984 two-argument form
+    `vector_to_list(Vector, ^List)`. The held code's middle argument is
+    the tail. That is INFERENCE: every call site passes `[]` or `_`.
+  - Only `[]` is run. Another tail, and a heap vector, refuse.
+  - The pimfep use, `fep_message_assembler @50`, passes `[]`.
+- **blt 34 `set_subvector(V, P, L; S)`.** Two cells long, as substring.
+  - Witness: `p_tgraph.esp:299` `set_subvector(Hv,0,4,{X,Y,W,H})`.
+  - The argument order is TR-044 App A.4 (p.A-3).
+- **pmi b0: put `{}`.** Witnesses: `typewin.esp:259`
+  `:refute(PBEDIT,Item,{})` (`b0 01`) and `PCAACCA.ESP:93`
+  `set_status(...,{})` (`b0 03`). Two more kappa uses agree.
+  - sancho5's `b0 02` sits beside a `bind_hook/2` (blt 8a, no row) with
+    no `{}` in its source. It neither confirms nor contradicts.
+  - espc now puts `{}` with b0, not as a pool constant (OURS: only in a
+    body put position).
+- **pmi b4: put a four-element vector.** Witness: the same
+  `p_tgraph.esp:299` goal, `b4 03` and four unify_value_p. espc now
+  builds four-element vectors.
+- **Wider operand patterns on old rows:**
+  - blt 45 add_immediate with R != A: `bar_v.esp:384`, `45 00 01 06`.
+  - blt 46 subtract_immediate with R != A: `as_pred.esp:254-256`,
+    `46 04 0b 00`.
+  - pmi a1 put_variable_t with A != X: `p_tgraph.esp:70-72`, `a1 00 02`.
+    The one new variable goes into both registers.
+- **Not extended by analogy.** pmi b1, b5, b6 and b7 have no row; each
+  needs its own witness. Neither does `list_to_vector` (blt 6f).
+- **Effect on `espc.py check`** (compared predicate by predicate, no
+  exact predicate lost):
+
+  | Program | Compared / exact | Before |
+  |---|---|---|
+  | paragraph | 1,241 / 258 | 1,234 / 256 |
+  | kappa2 | 12,816 / 1,513 | 12,479 / 1,485 |
+  | utter | 568 / 110 | 559 / 109 |
+
+  - In `espc.py behave`, `array_index_buffer` and `wshell_buffer`
+    `put_contents_with_key/2` now compile and agree with the held code.
+  - The six-package census keeps 303 / 11 / 216. Six methods stop
+    later: five at divide_immediate with R != A, still unwitnessed.
+- **Effect on the FEP census.** The totals stay 607 / 101 / 521, but
+  93 refused methods get further:
+  - Of the 38 that stopped at blt 6e, 25 now run `assemble/3` to the
+    string built-ins. They stop there on the census's own unbound
+    message elements (`set_string_element` on an unbound argument). The
+    other 13 get through `assemble/3` (after subtract_immediate with
+    R != A) and stop at a `put/2` sent to 0, an unset stream slot.
+  - The 29 that stopped at pmi b0: 16 reach
+    `simpos##undefined_method:raise/2`, 3
+    `process:throwing_hook/7`, 8 pmi ca and 2 an unbound receiver.
+  - The 21 that stopped at pmi b4: 11 reach pmi c6, 3 pmi ca, 6 a
+    `check_arguments/2` that is not in their class, 1
+    `standard_temporary_menu:create/3`.
+  - The 5 that stopped at pmi a1 with A != X reach an unbound receiver.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -906,8 +977,8 @@ method.
   SIMPOS or firmware. They are not held. Only `new/2` (slot
   initialisation included) and `refute/3` are modelled (OURS).
 - **The compiler's unwitnessed constructs.** These have no witnessed
-  compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
-  more elements built in a body, `->` and `not`; of `with_macro`, the
+  compiled form yet: `=\=`, vectors of one, or of five or more,
+  elements built in a body, `->` and `not`; of `with_macro`, the
   rules with a tail and `==>`.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is

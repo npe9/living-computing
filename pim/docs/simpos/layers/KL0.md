@@ -139,7 +139,8 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   These are the most promising held sources for an opcode-name table, but they serve the
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
 - MEASURED 2026-11-24, from known plaintext:
-  - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) are named in
+  - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) were named
+    at first; 113 now (72 class-0, 37 class-1, after steps 3c and 3d). They are in
     `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
     ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows. 44 rows are
     witnessed independently by `../../../psi/fepread/witness.py`, and both are cited.
@@ -184,10 +185,19 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     falls through after it.
   - Not witnessed: a backward `search_character`, with B > E, as morphana
     `_simpos/pathname.esp:53` uses it. kl0 refuses it.
-- `pmi b0`, 29 refusals in the FEP census, has **no witness yet**. Only two held predicates
-  with source use it (sancho5 `sancho_connective/2` and kappa `kappaPCM_occ_analyzer`), and
-  neither settles its operands. The census's top unrowed opcode is now `blt 6e` (38 refusals,
-  `fep_message_assembler @50`, right after a `stack_vector`). There is no source for pimfep.
+- Step 3c said `pmi b0` had **no witness**, from two held predicates. That was wrong: 12 kappa
+  predicates use it. Step 3d (2026-11-24, same table) witnesses:
+  - `{}` is pmi b0 (`typewin.esp:259` `:refute(PBEDIT,Item,{})` gives `b0 01`;
+    `PCAACCA.ESP:93` `set_status(...,{})` gives `b0 03`);
+  - a four-element vector `{X,Y,W,H}` is pmi b4 with four unify instructions
+    (`p_tgraph.esp:299`);
+  - `vector_to_list(V,Tail,^L)` is blt 6e (`dict_io.esp:55`, `6e 00 03 00`; operand roles from
+    `BCMSEQUEN.ESP:432`, `6e 03 00 00`). TR-044 App A.8 has the 1984 form
+    `vector_to_list(Vector,^List)`. The middle argument is the tail (INFERENCE); only `[]` is run;
+  - `set_subvector(V,P,L,S)` is blt 34, two cells long (`p_tgraph.esp:299`; the argument order is
+    TR-044 App A.4);
+  - add_immediate and subtract_immediate with the result in another register (`bar_v.esp:384`,
+    `as_pred.esp:254`), and `put_variable_t A, X` with A != X (`p_tgraph.esp:70-72`).
 - OVW (lines 2662–2704) states that categories (7) system control and (8) language-processing
   support are **not described** in the user manuals.
 

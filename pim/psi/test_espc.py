@@ -59,6 +59,8 @@
    string_tail/3, their remaining refusals pinned; pathname get_last/4's
    backward search refuses; on_after/4 now fails at integer/1 on an
    unbound argument and, given an integer, reaches alarm_watch.
+10. Step 3d's rows (2026-11-24): `{}` compiles to pmi b0, a four-element
+   vector to pmi b4, and vector_to_list/3 and set_subvector/4 run.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -113,6 +115,10 @@ restored with cp and checked with cmp):
     test_step3c_cells errors (test_kl0.py);
   - stand-in label (standin/name.esp): ident/3's HELD-SOURCE label
     reworded: only test_methods_labelled fails.
+  - `{}` (step 3d): espc's pmi b0 branch disabled, so `{}` is put as a
+    pool constant: only test_step3d_vectors fails.  `espc.py check` does
+    not see it (no predicate whose only difference is a `{}` is exact
+    either way).
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
@@ -185,6 +191,24 @@ instance
 :foo(O) :- frob(O);
 end.'''
 
+    def test_step3d_vectors(self):
+        # step 3d (2026-11-24): `{}` is pmi b0 (typewin.esp:259
+        # `:refute(PBEDIT,Item,{})` gives `b0 01`), not a pool constant; a
+        # four-element vector is pmi b4 and four unify instructions
+        # (p_tgraph.esp:299); vector_to_list/3 and set_subvector/4 run
+        t = compile_one('''class v has
+:r(C,P,I) :- :refute(P,I,{});
+:four(C,A,B,D,E,L) :- vector_to_list({A,B,D,E},[],L);
+:put(C,H) :- new_heap_vector(H,4), set_subvector(H,0,4,{1,2,3,4});
+end.''')
+        self.assertIn((0x20, 0xb0, 1, 0), code(t, 'r'))
+        self.assertIn(0xb4, [c[1] for c in code(t, 'four') if c[0] == 0x20])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##v', 'four', [1, 2, 3, 4, K.Var()])
+        self.assertEqual(repr(r[4]), '[1,2,3,4]')
+        (r,) = K.call_class_method(m, 'user##v', 'put', [K.Var()])
+        self.assertEqual([K.deref(e) for e in r[0].args], [1, 2, 3, 4])
+
     def test_compare(self):
         t = compile_one(self.T)
         # receiver last: X in A0, Y in A1.  X =< Y is `67 Y X`
@@ -230,8 +254,10 @@ class Structure(unittest.TestCase):
         # head-save fix (a permanent head variable after a structured
         # argument: 246 -> 247), 2026-11-24.  1051 / 247 before the step 3c
         # rows (add, type tests, string_tail, equal_string, substring,
-        # search_character, stack_vector): no exact predicate lost
-        self.assertEqual((c['pred compared'], c['pred exact']), (1234, 256))
+        # search_character, stack_vector): no exact predicate lost.
+        # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
+        # `{}` and four-element vectors): none lost
+        self.assertEqual((c['pred compared'], c['pred exact']), (1241, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -290,9 +316,12 @@ class Behaviour(unittest.TestCase):
         # step 3c (X+Y compiled): 88 / 87 / 46 / 6 before.  The new
         # `refused held only` is graph_status_element set/2: the held
         # code stops at pmi 36 (a 6-element vector, no row), the compiled
-        # code succeeds
-        self.assertEqual(dict(self.r['census']), {'same outcome': 92, 'both refused': 86,
-                                                  'refused compiled only': 42,
+        # code succeeds.  Step 3d (`{}`, four-element vectors,
+        # set_subvector): 92 / 86 / 42 / 7 before; array_index_buffer's and
+        # wshell_buffer's put_contents_with_key/2 now compile and succeed
+        # on both sides
+        self.assertEqual(dict(self.r['census']), {'same outcome': 94, 'both refused': 86,
+                                                  'refused compiled only': 40,
                                                   'refused held only': 7})
 
 
@@ -343,7 +372,8 @@ end.'''
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
         # with the step 3c rows: 12,479 compared, 1,485 exact
-        self.assertEqual((c['pred compared'], c['pred exact']), (12479, 1485))
+        # with the step 3d rows: 12,816 compared, 1,513 exact (none lost)
+        self.assertEqual((c['pred compared'], c['pred exact']), (12816, 1513))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
         # internal: 2 before step 3c (the PCM add_to_ele_by_search/10

@@ -341,10 +341,22 @@ and stand-in `simpos##` classes. In order:
      integers.
      - Census: 607 succeed, 101 fail (38 more, the census's unbound
        arguments failing a type test), 521 refuse.
-     - pmi b0 has no witness.
+     - pmi b0 has no witness. (Corrected at step 3d: it has, below.)
      - The next blockers: blt 6e (38, in `fep_message_assembler`, no
        source), pmi b0 29, pmi b4 21, the SIMPOS calls above, and
        `alarm_watch:create/2`.
+   - *2026-11-24, step 3d, opcodes:* all three blockers have witnesses
+     in kappa2, paragraph and utter (`../../psi/README.md` "Step 3d").
+     - `vector_to_list` (blt 6e; only the tail `[]` runs),
+       `set_subvector` (blt 34, two cells), `{}` (pmi b0) and a
+       four-element vector (pmi b4);
+     - add_immediate, subtract_immediate and put_variable_t with the
+       result in a second register.
+     - espc puts `{}` and four-element vectors; `check` gains 31 exact
+       predicates and loses none.
+     - Census: still 607 / 101 / 521, but 93 refused methods get
+       further. They now stop at the census's unbound arguments, at
+       pmi ca and c6, and at SIMPOS (`undefined_method:raise/2`, 16).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
