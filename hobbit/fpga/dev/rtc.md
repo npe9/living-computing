@@ -40,7 +40,7 @@ method Bit#(8) fault;                     // sticky, 0 = none
 | offset | register |
 |---|---|
 | 0x0000..0x1FDF | NVRAM byte `off>>2`, 0..2039 (io.h NVRAMLEN 2040) |
-| 0x1FE0 | control: W 0x80 (devrtc.c RTCWRITE), R 0x40 (RTCREAD); S and calibration 5:0 are stored but have no effect |
+| 0x1FE0 | control: W 0x80 (devrtc.c RTCWRITE), R 0x40 (RTCREAD); S and calibration 4:0 are stored but have no effect |
 | 0x1FE4..0x1FFC | sec, min, hour, wday, mday, mon, year, in BCD (data sheet register map 7F9..7FF) |
 
 ## Behaviour (`Timekeeper`, branch for branch)
@@ -54,15 +54,17 @@ method Bit#(8) fault;                     // sticky, 0 = none
   Fields the driver did not write keep their snapshot values. The
   one-second divider restarts, so the next second comes exactly
   `ticksPerSec` cycles after the load. That is what the model's
-  `offset = t - clock()` does. The data sheet only promises it "within one
-  second".
+  `offset = t - clock()` does. The quotations in `docs/devices/README.md`
+  do not say how the part's divider behaves after a load.
 * **Drop.** A control write with neither R nor W drops the held set.
 * **Day of week.** `setrtc` never writes `wday`. The model recomputes it
   from the date at every load (it goes through `calendar.timegm`), and the
   RTL does the same: `weekDay` is Sakamoto's rule with the century folded
-  in, 1 = Sunday, the model's `(tm_wday + 1) % 7 + 1`. The real part keeps
-  an independent day counter, so a real board would show the old weekday
-  after a set. Nothing in the kernel reads `wday` (`rtctime` skips it). The
+  in, 1 = Sunday, the model's `(tm_wday + 1) % 7 + 1`. On the real part
+  the day is one more counter register (the README's register map lists
+  "day 01-07" next to the others). By inference, not from a quotation, it
+  is not recomputed from the date, so a real board would show the old
+  weekday after a set. Nothing in the kernel reads `wday` (`rtctime` skips it). The
   RTL follows the model here, the behaviour reference, so that every read
   compares. The 300-date sequence pins this choice.
 * **Counting.** BCD counters run from the start time and tick once every
@@ -119,6 +121,23 @@ and simulation prints `RTC FAULT n: ...`.
 | 3 | write without byte lane 0 | accepted (the model ignores the mask), RTL-only |
 | 4 | W cleared with nothing held (W set again after a load that left R set) | `TypeError` (the model crashes) |
 
+## Integration notes for the SoC top
+
+* `rtc_nvram.hex` and `iic_eeprom.hex` are named without a directory in
+  the generated Verilog (`RegFileLoad #(.file(...))`). They resolve against
+  the working directory of the simulator or of yosys. In simulation a
+  missing file is only a warning, and the memory then reads as zeros. For
+  the EEPROM that means ether address 0 and `clock` 0. Copy the files next
+  to the build, or run from `fpga/dev/` as the scripts here do.
+* yosys must read bsc's `RegFileLoad.v` with `read_verilog -defer`. Without
+  it, yosys elaborates the module's default `file = ""` and stops with
+  "Can not open file `` for $readmemh". `fpga/build.sh` reads its library
+  cells without `-defer` today.
+* bsc's generated Verilog gives the two parameters a default of 0, so
+  override `ticksPerSec` and `startBcd` at instantiation (or `chparam`).
+* `rtc_iic_check.py` is not wired into `tests/run_tests.sh`. It needs bsc
+  and Verilator, and it runs in about 20 s.
+
 ## Area (yosys 0.51 `synth_ecp5`, `rtc_iic_synth.sh`, 25 MHz)
 
 | LUT4 | PFUMX | L6MUX21 | CCU2C | TRELLIS_FF | DP16KD |
@@ -132,7 +151,7 @@ for the SoC top's build.
 
 ## Test
 
-`python3 hobbit/fpga/dev/rtc_iic_check.py` (about 15 s) compiles both
+`python3 hobbit/fpga/dev/rtc_iic_check.py` (about 20 s) compiles both
 packages with bsc 2026.01 and builds each with Verilator and
 `rtc_iic_tb.cpp`. It then replays every access sequence into the RTL and
 into a fresh model at the cycle the RTL took each access. The model's clock
@@ -147,7 +166,9 @@ is `Fraction(cycle, 1000)`, exact, with the RTL built at `ticksPerSec =
   exist. Cycles are scaled 20 MHz / 20000, so model seconds stay seconds.
 * phase: one read per sequence at an exact cycle, at reset (cycles 0, T-2,
   T-1, T, T+1, 2T-1, 2T, 2T+1) and after a load at four skews
-  (load+2, +T-1, +T, +T+1, +2T-1, +2T);
+  (load+2, +T-1, +T, +T+1, +2T-1, +2T), and after a load on the cycle
+  where the divider wraps (load % T == T-1), where the load must win over
+  the tick;
 * the freeze, held-set, R-with-W, W-cleared-with-R-set and control-bit
   corners; devrtc.c `setrtc` then `rtctime`;
 * 19 rollovers: minute, hour, day, the ends of 31- and 30-day months, Feb 28
@@ -158,14 +179,14 @@ is `Fraction(cycle, 1000)`, exact, with the RTL built at `ticksPerSec =
   written first;
 * the faults above.
 
-Last run: 79 of 79 sequences agree (RTC and IIC together). The RTC reads
-compared per register were control 1129, sec 469, min 436, hour 436,
-wday 433, mday 437, mon 437, year 436 and NVRAM 2040, with 3539 writes.
-4 model refusals were matched by the RTL's fault code, and 2 RTL-only
-faults came where expected.
+Last run, from an empty `build/`: 84 of 84 sequences agree (RTC and IIC
+together). The RTC reads compared per register were control 1137, sec
+473, min 436, hour 436, wday 433, mday 437, mon 437, year 436 and NVRAM
+2040, with 3571 writes. 4 model refusals were matched by the RTL's fault
+code, and 2 RTL-only faults came where expected.
 
-Discrimination (`rtc_iic_inject.py`) injected 8 RTC bugs. Every one made the
-check fail. The observed failure sets are in `rtc_iic_check.py`'s header.
+Discrimination (`rtc_iic_inject.py`) injected 10 RTC bugs. Every one made
+the check fail. The observed failure sets are in `rtc_iic_check.py`'s header.
 The first run of the divider injection (R1) passed: the phase probes had
 been spaced by the access gap. They are now one per sequence, checked to
 land on their exact cycle.

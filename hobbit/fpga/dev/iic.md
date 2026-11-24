@@ -129,11 +129,18 @@ rebuild.
 * `master()` to an address with no slave (0x90), then release;
 * EEPROM reads from word 5, from word 250 across 255 → 0, and 40 bytes from
   word 0;
+* two EEPROM reads in one run, from words 3 and 9, with a `ledputbyte`
+  between them, so the START with a write address must clear `ptr_set`;
 * PIN, STA together with STO, and ESO off;
 * the faults above.
 
-The IIC reads compared were S0 88 and S1 159, with 78 writes. 5 model
+The IIC reads compared were S0 104 and S1 192, with 100 writes. 5 model
 `Stop`s were matched by the RTL's fault code, and 1 RTL-only fault came
-where expected. Discrimination (`rtc_iic_inject.py`) injected 7 IIC bugs,
+where expected. Discrimination (`rtc_iic_inject.py`) injected 9 IIC bugs,
 and every one made the check fail. The observed failure sets are in
-`rtc_iic_check.py`'s header.
+`rtc_iic_check.py`'s header. One injection, START not clearing `ptr_set`
+(I8), passed until the two-read sequence was added.
+
+The EEPROM's contents come from `iic_eeprom.hex`, which is resolved
+against the working directory. A missing file reads as zeros in
+simulation. See `rtc.md` "Integration notes for the SoC top".

@@ -3,7 +3,7 @@
 IIC bus (Iic.bsv, mkIic) against the Python models they replicate
 (tools/p9boot.py Timekeeper and Iic), access for access.
 
-    python3 hobbit/fpga/dev/rtc_iic_check.py          (~1 min)
+    python3 hobbit/fpga/dev/rtc_iic_check.py          (~20 s)
     python3 hobbit/fpga/dev/rtc_iic_check.py -v       (list every sequence)
 
 bsc 2026.01 compiles the two packages to Verilog; Verilator builds each
@@ -33,44 +33,55 @@ Exit status 0 iff every comparison holds.
 
 Bug injection (AGENTS.md "proven discriminating"): rtc_iic_inject.py
 injects each bug into the BSV, runs this check, and reverts by reverse
-patch.  OBSERVED failures, 2026-11-24 (79 sequences; every other sequence
-still agreed):
+patch.  OBSERVED failures, 2026-11-24 (84 sequences, run from an empty
+build/; every sequence not listed still agreed):
 
-  R1 divider not restarted on a load (div <= 0)            71/79
-     phase after a load, sec at load+1000 and load+2000, all 4 skews
-     (load+999/+1001 agree: the second comes one cycle late).  The first
-     run, before the phase probes were one per sequence, passed 52/52.
-  R2 leap year from the units digit only                   77/79
+  R1 divider not restarted on a load (div <= 0)            75/84
+     phase after a load, sec at load+1000 and load+2000, all 4 skews;
+     on the wrap cycle, sec at load+1000 (load+999/+1001 agree: the
+     second comes one cycle late).  The first run, before the phase
+     probes were one per sequence, passed 52/52.
+  R2 leap year from the units digit only                   82/84
      rollover Feb 28 1996, rollover Feb 29 1996
-  R3 a new snapshot on every R/W control write             76/79
+  R3 a new snapshot on every R/W control write             81/84
      W cleared with R still set loads and unfreezes; R then W without a
      new snapshot; fault: W cleared with nothing held
-  R4 weekday table, March 2 -> 3                           78/79
+  R4 weekday table, March 2 -> 3                           83/84
      300 random dates
-  R5 clock-register reads ignore the held set              74/79
+  R5 clock-register reads ignore the held set              79/84
      freeze with R; held set visible while W is set; R then W; fault:
      a load of month 0x13; RTL-only fault: Feb 30
-  R6 April has 31 days                                     78/79
+  R6 April has 31 days                                     83/84
      rollover Apr 30
-  R7 NVRAM index from addr[11:1]                           17/79
-     62 RTC sequences: all but phase at reset at cycles 0, 998, 999
+  R7 NVRAM index from addr[11:1]                           18/84
+     66 RTC sequences: all but phase at reset at cycles 0, 998, 999
      and the RTL-only lane-1 fault (which faults before the index)
-  R8 clock-register write without W accepted               77/79
+  R8 clock-register write without W accepted               82/84
      fault: written without RTCWRITE; fault: written with R only
-  I1 repeated START's address taken as a data byte         75/79
-     iic_join.trace; EEPROM reads from 5, from 250, from 0
-  I2 LRB inverted                                          73/79
-     iic_join.trace; ledputbyte; no-acknowledge slave; EEPROM x3
-  I3 BB reads busy, not free                               72/79
+  R9 RTC write without byte lane 0 accepted                83/84
+     RTL-only fault: write on byte lane 1 only
+  R10 every loaded value taken as a calendar time          82/84
+     fault: a load of month 0x13; RTL-only fault: Feb 30
+  I1 repeated START's address taken as a data byte         79/84
+     iic_join.trace; EEPROM reads from 5, from 250, from 0; two EEPROM
+     reads around ledputbyte
+  I2 LRB inverted                                          77/84
+     as I1, plus ledputbyte x3 and the no-acknowledge slave
+  I3 BB reads busy, not free                               76/84
      as I2, plus PIN set and STA|STO together
-  I4 0xC0 does not complete the byte in progress           75/79
-     iic_join.trace; EEPROM x3
-  I5 LED latch write count not kept                        78/79
-     ledputbyte x3
-  I6 S0 read with ACK does not advance the pointer         75/79
-     iic_join.trace; EEPROM x3
-  I7 S0 readable with ESO off                              78/79
+  I4 0xC0 does not complete the byte in progress           79/84
+     as I1
+  I5 LED latch write count not kept                        82/84
+     ledputbyte x3; two EEPROM reads around ledputbyte
+  I6 S0 read with ACK does not advance the pointer         79/84
+     as I1
+  I7 S0 readable with ESO off                              83/84
      fault: S0 read with ESO off
+  I8 a write START to the EEPROM keeps ptr_set             83/84
+     two EEPROM reads around ledputbyte (before that sequence was added
+     the injection passed 79/79: every EEPROM read started from reset)
+  I9 IIC write without byte lane 0 accepted                83/84
+     RTL-only fault: write on byte lane 2 only
 """
 import os
 import random
@@ -314,6 +325,23 @@ def rtc_sequences():
             s.r(SEC)
             seqs.append(s)
 
+    # The load on the cycle where the divider wraps (cycle % T == T-1, a
+    # tick the load must override).
+    probe = Seq("", "rtc")
+    probe.at(3 * T)
+    setrtc(probe, 1993, 5, 17, 8, 30, 15)
+    shift = (T - 1 - probe.acc[-1][0] % T) % T
+    for k in (2, T - 1, T, T + 1):
+        s = Seq("phase after a load on the wrap cycle: sec at load+%d" % k,
+                "rtc", exact=True)
+        s.at(3 * T + shift)
+        setrtc(s, 1993, 5, 17, 8, 30, 15)
+        load = s.acc[-1][0]
+        assert load % T == T - 1
+        s.t = load + k
+        s.r(SEC)
+        seqs.append(s)
+
     s = Seq("freeze with R across seconds", "rtc")
     s.at(T - 20)
     s.w(CTL, 0x40)
@@ -523,6 +551,26 @@ def iic_reset(s):
     s.r(S1)
 
 
+def eeprom_read(s, start, n):
+    """deviic.c eepromread from word `start`, n bytes before the 0xC0."""
+    iic_master(s, 0xA4)
+    s.w(S0, start)
+    s.r(S1)
+    s.w(S0, 0xA5)
+    s.r(S1)
+    s.w(S1, 0xC5)
+    s.r(S1)
+    s.r(S1)
+    s.r(S0)                             # the dummy read
+    for _ in range(n):
+        s.r(S1)
+        s.r(S0)
+    s.w(S1, 0xC0)
+    s.r(S1)
+    s.r(S0)
+    iic_release(s)
+
+
 def iic_sequences():
     seqs = []
     s = Seq("ledputbyte x3 after iicreset", "iic")
@@ -547,23 +595,21 @@ def iic_sequences():
     for start, n in ((5, 12), (250, 12), (0, 40)):
         s = Seq("EEPROM read from %d, %d bytes" % (start, n), "iic")
         iic_reset(s)
-        iic_master(s, 0xA4)
-        s.w(S0, start)
-        s.r(S1)
-        s.w(S0, 0xA5)
-        s.r(S1)
-        s.w(S1, 0xC5)
-        s.r(S1)
-        s.r(S1)
-        s.r(S0)                         # the dummy read
-        for _ in range(n):
-            s.r(S1)
-            s.r(S0)
-        s.w(S1, 0xC0)
-        s.r(S1)
-        s.r(S0)
-        iic_release(s)
+        eeprom_read(s, start, n)
         seqs.append(s)
+
+    # A second transaction must set the pointer again (the START with a
+    # write address clears ptr_set), with a LED write in between.
+    s = Seq("two EEPROM reads (from 3, then from 9) around ledputbyte",
+            "iic")
+    iic_reset(s)
+    eeprom_read(s, 3, 6)
+    iic_master(s, 0x40)
+    s.w(S0, 0x81)
+    s.r(S1)
+    iic_release(s)
+    eeprom_read(s, 9, 6)
+    seqs.append(s)
 
     s = Seq("PIN set and STA|STO together", "iic")
     iic_reset(s)
