@@ -139,7 +139,8 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   These are the most promising held sources for an opcode-name table, but they serve the
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
 - MEASURED 2026-11-24, from known plaintext:
-  - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) are named in
+  - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) were named
+    at first; 113 now (72 class-0, 37 class-1, after steps 3c and 3d). They are in
     `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
     ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows. 44 rows are
     witnessed independently by `../../../psi/fepread/witness.py`, and both are cited.
@@ -169,6 +170,34 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   plaintext in paragraph): `string(S,^L,^T)` is blt 0b, `new_string(^S,L,T)`
   blt 1c (S out in the first operand, `view_select_menu change/3`),
   `string_element(S,I,^E)` blt 23, `set_string_element(S,I,E)` blt 2b.
+- Witnessed encodings, step 3c (2026-11-24, same table; each row's
+  witness cites the held cells and the source line):
+  - `X + Y` is blt 40 (`40 01 00 01`, h.esp:186, the result over the first operand).
+  - `integer(X)` is blt 01, `unbound(X)` blt 10 and `bound(X)` blt 16. Each is a test
+    that fails.
+  - `stack_vector(V,^N)` is blt 06 (FMT_CONV.ESP:13 `sv_to_hv`).
+  - `equal_string(S,T)` is blt 68, and `string_tail(S,P,^T)` is blt 33.
+  - `substring(S,P,L,^R)` is blt 32 and `search_character(S,B,E,C,^P)` is blt 5c. These two
+    are **two cells long**: the operands past the third are the high bytes of an `integer` cell
+    after the instruction. Seen in p_wshell.esp:467 `32 00 03 02` + `integer 0`, and in
+    PCPSDSTR.ESP:155 `5c 02 00 01` + `integer 06070000`.
+  - INFERENCE: `stack_vector` fails on anything but a stack vector, going by the clause that
+    falls through after it.
+  - Not witnessed: a backward `search_character`, with B > E, as morphana
+    `_simpos/pathname.esp:53` uses it. kl0 refuses it.
+- Step 3c said `pmi b0` had **no witness**, from two held predicates. That was wrong: 12 kappa
+  predicates use it. Step 3d (2026-11-24, same table) witnesses:
+  - `{}` is pmi b0 (`typewin.esp:259` `:refute(PBEDIT,Item,{})` gives `b0 01`;
+    `PCAACCA.ESP:93` `set_status(...,{})` gives `b0 03`);
+  - a four-element vector `{X,Y,W,H}` is pmi b4 with four unify instructions
+    (`p_tgraph.esp:299`);
+  - `vector_to_list(V,Tail,^L)` is blt 6e (`dict_io.esp:55`, `6e 00 03 00`; operand roles from
+    `BCMSEQUEN.ESP:432`, `6e 03 00 00`). TR-044 App A.8 has the 1984 form
+    `vector_to_list(Vector,^List)`. The middle argument is the tail (INFERENCE); only `[]` is run;
+  - `set_subvector(V,P,L,S)` is blt 34, two cells long (`p_tgraph.esp:299`; the argument order is
+    TR-044 App A.4);
+  - add_immediate and subtract_immediate with the result in another register (`bar_v.esp:384`,
+    `as_pred.esp:254`), and `put_variable_t A, X` with A != X (`p_tgraph.esp:70-72`).
 - OVW (lines 2662–2704) states that categories (7) system control and (8) language-processing
   support are **not described** in the user manuals.
 
@@ -216,6 +245,6 @@ from instances in memory.
 | WAM semantics, stack frames, choice points, cut, indexing | Enough: TH App C, TM-444 |
 | Tag set | Names MEASURED; pairing INFERENCE with 6 anchors (§2) |
 | Instruction field format | KNOWN |
-| Opcode ↔ mnemonic | 96 MEASURED from known plaintext (`../../../psi/kl0_opcodes.tsv`, 2026-11-24), of 101 class-0 and 111 class-1 opcodes used. The rest are refused by `psi/kl0.py`; its census ranks them by use |
+| Opcode ↔ mnemonic | 109 rows MEASURED from known plaintext (`../../../psi/kl0_opcodes.tsv`, 2026-11-24; 100 before step 3c's nine), of 101 class-0 and 111 class-1 opcodes used. The rest are refused by `psi/kl0.py`; its census ranks them by use |
 | Built-in opcode ↔ name and modes | Largely UNKNOWN |
 | Object-descriptor layout and loader behaviour | UNKNOWN beyond TH App A |

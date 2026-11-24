@@ -25,8 +25,9 @@ Only opcodes with a row in psi/kl0_opcodes.tsv, and only in the operand
 patterns those rows say were witnessed (`Asm` checks every cell
 against the table).  A construct that would need anything else is refused
 with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X+Y`
-on two registers (no witnessed register add), a vector of four or more
-elements built in a body (no witnessed put_vector_n), `=\\=` (no witness of
+on two registers (no witnessed register add), a vector of one, or of five or
+more, elements built in a body (no witnessed put_vector_n; `{}`, two, three
+and four are pmi b0, b2, b3, b4), `=\\=` (no witness of
 what it compiles to), a negative integer immediate (sign unwitnessed).
 
 THE LANGUAGE (layers/ESP.md; TM-388 App. A grammar)
@@ -564,6 +565,20 @@ BUILTINS = {
     ('new_string', 3): ('1c', ('out', 'in', 'in')),     # emitted with S = T
     ('string_element', 3): ('23', ('in', 'in', 'out')),
     ('set_string_element', 3): ('2b', ('in', 'in', 'in')),
+    # step 3c (2026-11-24)
+    ('stack_vector', 2): ('06', ('in', 'out')),
+    ('integer', 1): ('01', ('in',)),
+    ('unbound', 1): ('10', ('in',)),
+    ('bound', 1): ('16', ('in',)),
+    ('equal_string', 2): ('68', ('in', 'in')),
+    ('string_tail', 3): ('33', ('in', 'in', 'out')),
+    # two cells: the fourth and fifth operands are the high bytes of an
+    # integer cell after the instruction (rows 32 and 5c)
+    ('substring', 4): ('32', ('in', 'in', 'in', 'out')),
+    ('search_character', 5): ('5c', ('in', 'in', 'in', 'in', 'out')),
+    # step 3d (2026-11-24); set_subvector is two cells, as substring
+    ('vector_to_list', 3): ('6e', ('in', 'in', 'out')),
+    ('set_subvector', 4): ('34', ('in', 'in', 'in', 'in')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -1098,7 +1113,7 @@ class ClauseCompiler:
             if name not in self.seen:
                 raise CompileRefusal('unbound input', 'variable %s used before it is bound, as a built-in input' % name)
             return R.where[name]
-        if k == 'atom':
+        if k == 'atom' and v[1] != '{}':
             r = pick()
             a.atom('put', r, v[1])
             R.set(r, ('val', id(v)))
@@ -1112,6 +1127,15 @@ class ClauseCompiler:
             r = pick()
             a.pool(0xa9, r, pool_term(v))
             self.cc.ref(v[1])
+            R.set(r, ('val', id(v)))
+            return r
+        if (k == 'vec' and not v[1]) or v == ('atom', '{}'):
+            # `{}` (which the reader gives as the atom '{}') put in a body
+            # is pmi b0, the empty vector (typewin.esp:259, PCAACCA.ESP:93;
+            # kl0_opcodes.tsv row b0, step 3d).  OURS: only this position;
+            # `{}` in a head or inside a structure stays as it was
+            r = pick()
+            a.pmi(0xb0, r)
             R.set(r, ('val', id(v)))
             return r
         if ground(v):
@@ -1172,13 +1196,18 @@ class ClauseCompiler:
             r = self.dest(x, prefer, avoid)
             self.asm.blt(imm[op], r, y[1], r)
             return r
-        if op == '-':
+        if op in ('-', '+'):
+            # blt 41 subtract and blt 40 add (step 3c), both witnessed
+            # with the result over the first operand
             yr = self.to_reg(y, scratch=False)
             held = self.R.holder.get(yr)
-            self.R.set(yr, ('val', 'rhs'))
+            # as in builtin(): a variable's register stays the variable's,
+            # so X may read it too (`S - (S + 1)`)
+            if not (y[0] == 'var' and held == ('var', y[1])):
+                self.R.set(yr, ('val', 'rhs'))
             r = self.dest(x, prefer, avoid)
             self.R.set(yr, held)
-            self.asm.blt(0x41, r, yr, r)
+            self.asm.blt(0x41 if op == '-' else 0x40, r, yr, r)
             self.consume(y, yr)
             return r
         raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (no witnessed opcode)')
@@ -1219,7 +1248,7 @@ class ClauseCompiler:
             items, tail = v[1], v[2]
         else:
             n = len(v[1])
-            if n not in (2, 3):
+            if n not in (2, 3, 4):
                 raise CompileRefusal('vector of %d elements built in a body' % n,
                                      'no witnessed put_vector_n')
         # nested structures (not the list's cdr chain) first, into temporaries
@@ -1245,7 +1274,7 @@ class ClauseCompiler:
         if k == 'list':
             self.asm.pmi(0xaa, r)
         else:
-            self.asm.pmi(0xb2 if len(els) == 2 else 0xb3, r)
+            self.asm.pmi({2: 0xb2, 3: 0xb3, 4: 0xb4}[len(els)], r)
         R.set(r, ('val', id(v)))
         a = self.asm
         for idx, e in enumerate(els):
@@ -1364,7 +1393,11 @@ class ClauseCompiler:
             if role == 'in':
                 r = self.to_reg(v, scratch=True)
                 keep.append((r, self.R.holder.get(r)))
-                self.R.set(r, ('val', 'in'))
+                # a variable's register stays the variable's (its uses not
+                # yet consumed keep it live), so a later input that reads
+                # the same variable (`substring(S, H, T - H, P)`) finds it
+                if not (v[0] == 'var' and self.R.holder.get(r) == ('var', v[1])):
+                    self.R.set(r, ('val', 'in'))
                 regs.append(r)
             else:
                 regs.append(None)
@@ -1385,6 +1418,9 @@ class ClauseCompiler:
             self.R.set(r, h)
         ops = regs + [0] * (3 - len(regs))
         self.asm.blt(int(op, 16), *ops[:3])
+        if len(regs) > 3:
+            ext = regs[3:] + [0]
+            self.asm.items.append(('cell', 0x00, 0, ext[0] << 24 | ext[1] << 16))
         for i in outs:
             self.bind_out(g.args[i], regs[i], emitted=True)
 
@@ -1550,7 +1586,7 @@ class ClauseCompiler:
         if self.need_env:
             self.ensure_env()
         # 1. expressions and structures that are arguments, left to right
-        placed = {}
+        placed = self.placed = {}
         for i, v in enumerate(args):
             if v[0] in ('slot', 'arith', 'list', 'vec') and not ground(v):
                 r = self.to_reg(v, prefer=i)
@@ -1623,6 +1659,7 @@ class ClauseCompiler:
                 if R.where.get(('x',)) is None:
                     pass
             R.set(i, ('val', 'arg'))
+        self.placed = {}
         # 3. the call
         if g.kind == 'send':
             if last:
@@ -1655,6 +1692,13 @@ class ClauseCompiler:
             self.asm.pmi(0xa3, r, i)
             R.set(r, h)
             R.holder[i] = None
+            # an argument already placed in I (step 1 of call) now lives in
+            # R: without this, `fill(I+1, N, V)` put N for I+1 (found
+            # 2026-11-24 by the hash_index stand-in's fill/3)
+            placed = getattr(self, 'placed', {})
+            for k in placed:
+                if placed[k] == i:
+                    placed[k] = r
             return r
         if R.holder.get(i) and R.holder[i][0] == 'perm':
             R.drop(i)

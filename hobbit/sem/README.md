@@ -41,6 +41,32 @@ turns it off).  Execution also stops on the unimplemented-instruction
 `trap=1` line, or on a `Refusal`, which is reported on stderr with no
 HRI line (convention C2).
 
+### The part: ATT92010 or ATT92020S
+
+`--part` (`State.part`) selects the part; the default, `92010`, is the
+model described in the rest of this file and is unchanged.  `--part
+92020S` is the ATT92020S as far as the sources establish it; the
+evidence, graded, is in [`../docs/att92020.md`](../docs/att92020.md).
+
+- **ID register**: with a `System`, it reads `0x0E33D03B`.  That is the
+  value Be's 1994 kernels compare it with before taking their "020"
+  path.
+- **Refusals**: the model raises `Unsourced92020`, a subclass of
+  `Unsupported`, wherever no source says what the part does:
+  - the encodings the 92010 leaves unassigned, where the 92020's Wait
+    For Interrupt (sourced to exist, encoding unknown) must be;
+  - a FLUSHPBE whose own address and target differ in bit 10;
+  - a CONFIG write that sets bits 15:0;
+  - every step, unless `--borrow-92010-timing` (`borrow_92010_timing`)
+    accepts the 92010's Chapter 4 tables for `cyc`.  No 92020 timing is
+    published, and the CLI says on stderr when the 92010 tables are
+    borrowed.
+- **Refused parts**: `92020M` and `92020MX` (multiplexed bus, no timing),
+  and every other name.
+
+`tests/test_sem_part.py` checks each of these, and runs every golden
+program under both parts with identical output.
+
 ### Image format
 
 Text, one 32-bit word per line, eight hex digits, ascending addresses

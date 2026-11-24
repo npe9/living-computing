@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests of the ESP compiler (psi/espc.py).  OURS.
 
-    python3 -I psi/test_espc.py        (about 25 seconds; reads the held
+    python3 -I psi/test_espc.py        (about 17 s of CPU; reads the held
                                         source and .ptf files in memory,
                                         extracts nothing)
 
@@ -23,8 +23,8 @@
 5. Macro banks (`with_macro`, TM-388 §3.7.3): expansion on a compiled
    example (own rules before the natures', a `:-` rule refusing its
    predicate), and kappa2's structure against kappa.ptf pinned (all 739
-   classes compile; 1,361 predicates cell for cell, 1,323 before the
-   string built-ins).
+   classes compile; 1,485 predicates cell for cell, 1,361 before step
+   3c's rows, 1,323 before the string built-ins).
 6. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
    pp.48-50): instance and class slots, a failing initialiser fails new,
    an unbound value refuses, an after-demon of new sees the slots.
@@ -42,6 +42,31 @@
    printed stream's slots are initialised by code), succeeds, and the
    printed put/2 and get/2 run first in, first out; kl0's census of
    pimfep and pimscsi is pinned.
+8. Step 3c's stand-ins (2026-11-24): the printed channel's code-
+   initialised post_queue slot overrides stream's, and the printed
+   bounded_channel's plain slot overrides channel's, its printed
+   bounded_post_queue's before- and after-demons taking and giving back
+   the interpolated semaphore's tokens (a third put on a channel bounded
+   at 2 fails until a get); list_index and hash_index on the entry
+   layout kappa2's KPPOOL.ESP and SVHSH_IDX.ESP read; process create/3
+   makes a dormant child of the calling process, and pimfep's own
+   process/4 runs; the minimal standard_editor's get_window/2.
+9. Step 3c's rows and HELD-SOURCE classes (2026-11-24): X+Y compiles
+   (blt 40) and `(X+1)-X` reads X twice; the symbolizer's interpolated
+   get_number/3 and get_number_string/3 on integers (a `.` refuses);
+   morphana's _simpos/ name, e_string and pathname (ICOT Free Software,
+   labelled HELD-SOURCE) run on substring/4, search_character/5 and
+   string_tail/3, their remaining refusals pinned; pathname get_last/4's
+   backward search refuses; on_after/4 now fails at integer/1 on an
+   unbound argument and, given an integer, reaches alarm_watch (step
+   3d: past it, to set_string_element on an unbound argument).
+10. Step 3d's rows (2026-11-24): `{}` compiles to pmi b0, a four-element
+   vector to pmi b4, and vector_to_list/3 and set_subvector/4 run.
+   Step 3d's ten INTERPOLATED stand-ins: a class lock is undone on
+   backtracking and nests; fep_device_table add_at/5 runs between
+   :lock and :unlock; pimscsi cmt keeps a sender and a body;
+   pmacs_window and its standard_editor point at each other; the FEP
+   census is 1,265 methods, 665 success.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -70,11 +95,56 @@ restored with cp and checked with cmp):
     test_expansion fails;
   - stand-in label (injected into standin/stream.esp): get/2's PRINTED
     label reworded: only test_methods_labelled fails.
+  - argument placement (step 3c, 2026-11-24): espc's clear_way fix
+    reverted (an argument placed in a register that a later argument's
+    move clears is read from the old register): only test_hash_index
+    errors (its fill/3 loop stops after one bucket); `espc.py check` of
+    paragraph, kappa2 and utter is unchanged with or without the fix;
+  - list_index (injected into standin/list_index.esp): add_at/3 prepends
+    instead of appending: test_list_index and test_hash_index fail;
+  - semaphore (injected into standin/semaphore.esp): p_operation/1 takes
+    a token without checking that one is left: only test_channel fails.
+  - built-in inputs (step 3c): builtin() marks a variable's register as
+    a value while later inputs are put, so `substring(S,H,T-H,P)` loses
+    H: reverted, espc raises KeyError compiling e_string and paragraph:
+    setUpClass of Behaviour and of Standins, test_counts,
+    test_named_exact, test_aspect_differences, test_kappa2 and both
+    Emission tests error;
+  - arithmetic (step 3c): arith() does the same to Y in X-Y: reverted,
+    the setUpClass of Behaviour, test_counts, test_named_exact,
+    test_aspect_differences and both Emission tests error (KeyError) and,
+    with `(X+1)-X` in Language's class, every Language test errors;
+  - search_character (injected into kl0.py): the search starts one past
+    B: only test_held_source fails (split of `ab>>c` and `>a`);
+  - integer/1 (kl0.py): refuses an unbound argument instead of failing:
+    test_on_after_gets_further errors and test_fep_census fails (here),
+    test_step3c_cells errors (test_kl0.py);
+  - stand-in label (standin/name.esp): ident/3's HELD-SOURCE label
+    reworded: only test_methods_labelled fails.
+  - `{}` (step 3d): espc's pmi b0 branch disabled, so `{}` is put as a
+    pool constant: only test_step3d_vectors fails.  `espc.py check` does
+    not see it (no predicate whose only difference is a `{}` is exact
+    either way).
+  - step 3d's stand-ins (each injected into standin/, restored by cp
+    from a backup and cmp-checked): as_class_with_lock's :lock without
+    its :unlock alternative: only test_step3d_lock fails; as_message
+    get_sender/2 reading the receiver slot: only test_step3d_message
+    fails; pmacs_window create/3 not setting the editor's window: only
+    test_step3d_window_and_timer fails; common_network is_installed/1
+    failing: only test_fep_census fails; with_lock's instance :lock
+    without its :unlock alternative: only test_step3d_lock fails;
+    message get_content/2 reading the sender slot: only
+    test_step3d_message fails; alarm_watch wait/1 failing, and time
+    set_count/2 failing: each only test_on_after_gets_further fails;
+    network_listener_buffer create/4 failing, and trace trace/1
+    failing: each test_step3d_window_and_timer and test_fep_census
+    fail.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
 """
 import os
+import re
 import sys
 import unittest
 
@@ -135,9 +205,29 @@ class Language(unittest.TestCase):
 :add(C,X,Y,Z) :- Z = X+Y;
 :ne(C,X,Y) :- X =\\= Y;
 :inc(C,X,Z) :- Z = X+1;
+:mul(C,X,Y,Z) :- Z = X*Y;
+:sub(C,X,Z) :- Z = (X+1)-X;
 instance
 :foo(O) :- frob(O);
 end.'''
+
+    def test_step3d_vectors(self):
+        # step 3d (2026-11-24): `{}` is pmi b0 (typewin.esp:259
+        # `:refute(PBEDIT,Item,{})` gives `b0 01`), not a pool constant; a
+        # four-element vector is pmi b4 and four unify instructions
+        # (p_tgraph.esp:299); vector_to_list/3 and set_subvector/4 run
+        t = compile_one('''class v has
+:r(C,P,I) :- :refute(P,I,{});
+:four(C,A,B,D,E,L) :- vector_to_list({A,B,D,E},[],L);
+:put(C,H) :- new_heap_vector(H,4), set_subvector(H,0,4,{1,2,3,4});
+end.''')
+        self.assertIn((0x20, 0xb0, 1, 0), code(t, 'r'))
+        self.assertIn(0xb4, [c[1] for c in code(t, 'four') if c[0] == 0x20])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##v', 'four', [1, 2, 3, 4, K.Var()])
+        self.assertEqual(repr(r[4]), '[1,2,3,4]')
+        (r,) = K.call_class_method(m, 'user##v', 'put', [K.Var()])
+        self.assertEqual([K.deref(e) for e in r[0].args], [1, 2, 3, 4])
 
     def test_compare(self):
         t = compile_one(self.T)
@@ -149,8 +239,27 @@ end.'''
     def test_refusals_name_the_construct(self):
         t = compile_one(self.T)
         got = {r[0][0]: r[1] for r in t.refusals}
-        self.assertEqual(got, {'add': 'arithmetic X+Y', 'ne': 'comparison =\\=',
+        # X+Y compiles since step 3c (blt 40, 2026-11-24); X*Y is still
+        # refused
+        self.assertEqual(got, {'mul': 'arithmetic X*Y', 'ne': 'comparison =\\=',
                                'foo': 'built-in frob/1'})
+
+    def test_add_and_shared_operand(self):
+        t = compile_one(self.T)
+        # Z = X+Y: X (A0) copied to a free register, `40 r Y r`, the
+        # result over the first operand as in h.esp:186 `40 01 00 01`
+        self.assertIn(0x40, [c[1] for c in code(t, 'add') if c[0] == 0x21])
+        # (X+1) - X: the right operand X stays X's register while the
+        # left one reads it too (espc's arith(), step 3c; before the fix
+        # it raised KeyError, so compiling T fails and with it every
+        # Language test: injection, observed 2026-11-24)
+        ops = [c[1] for c in code(t, 'sub') if c[0] == 0x21]
+        self.assertEqual(ops[:2], [0x45, 0x41])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##t', 'add', [3, 4, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 7)
+        (r,) = K.call_class_method(m, 'user##t', 'sub', [5, K.Var()])
+        self.assertEqual(K.resolve(r[1]), 1)
 
 
 class Structure(unittest.TestCase):
@@ -163,8 +272,12 @@ class Structure(unittest.TestCase):
         # 991 compared, 243 exact before the string built-ins (string/3,
         # new_string/3, string_element/3, set_string_element/3) and the
         # head-save fix (a permanent head variable after a structured
-        # argument: 246 -> 247), 2026-11-24
-        self.assertEqual((c['pred compared'], c['pred exact']), (1051, 247))
+        # argument: 246 -> 247), 2026-11-24.  1051 / 247 before the step 3c
+        # rows (add, type tests, string_tail, equal_string, substring,
+        # search_character, stack_vector): no exact predicate lost.
+        # 1234 / 256 before step 3d's rows (vector_to_list, set_subvector,
+        # `{}` and four-element vectors): none lost
+        self.assertEqual((c['pred compared'], c['pred exact']), (1241, 258))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -220,9 +333,16 @@ class Behaviour(unittest.TestCase):
         self.assertEqual(h['paragraph_version get_version/1'], "[[string#'3500']]")
 
     def test_census(self):
-        self.assertEqual(dict(self.r['census']), {'same outcome': 88, 'both refused': 87,
-                                                  'refused compiled only': 46,
-                                                  'refused held only': 6})
+        # step 3c (X+Y compiled): 88 / 87 / 46 / 6 before.  The new
+        # `refused held only` is graph_status_element set/2: the held
+        # code stops at pmi 36 (a 6-element vector, no row), the compiled
+        # code succeeds.  Step 3d (`{}`, four-element vectors,
+        # set_subvector): 92 / 86 / 42 / 7 before; array_index_buffer's and
+        # wshell_buffer's put_contents_with_key/2 now compile and succeed
+        # on both sides
+        self.assertEqual(dict(self.r['census']), {'same outcome': 94, 'both refused': 86,
+                                                  'refused compiled only': 40,
+                                                  'refused held only': 7})
 
 
 class MacroBank(unittest.TestCase):
@@ -271,10 +391,16 @@ end.'''
         c = r['counts']
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
-        self.assertEqual((c['pred compared'], c['pred exact']), (10641, 1361))
+        # with the step 3c rows: 12,479 compared, 1,485 exact
+        # with the step 3d rows: 12,816 compared, 1,513 exact (none lost)
+        self.assertEqual((c['pred compared'], c['pred exact']), (12816, 1513))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
-        self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 2))
+        # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
+        # pair); with substring/4 two IXM pic_up_log_data clauses reach the
+        # same `temporary ... lost its register` (it is there with the
+        # step 3c register fixes reverted too, so not theirs)
+        self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 4))
         self.assertNotIn('with_macro', r['refusals'])
 
 
@@ -361,17 +487,41 @@ class Standins(unittest.TestCase):
 
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
-            'simpos##list', 'simpos##post_queue', 'simpos##process', 'simpos##process_clock',
-            'simpos##stream', 'simpos##string', 'simpos##symbolizer',
-            'simpos##waiting_frame', 'simpos##waiting_queue', 'simpos##with_link'])
+            'simpos##alarm_watch', 'simpos##as_class_with_lock', 'simpos##as_message',
+            'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
+            'simpos##common_network',
+            'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
+            'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
+            'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
+            'simpos##semaphore', 'simpos##standard_editor',
+            'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
+            'simpos##trace', 'simpos##waiting_frame', 'simpos##waiting_queue',
+            'simpos##with_link', 'simpos##with_lock'])
+        # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
+        # predicates espc refuses; every other stand-in compiles whole
+        held = {
+            'simpos##e_string': {('string_sort', 3): 'calls a refused local',
+                                 ('string_sort', 2): 'calls a refused local',
+                                 ('qsort', 3): 'calls a refused local',
+                                 ('partition', 4): 'if-then-else ->'},
+            'simpos##name': {('sort', 3): 'calls a refused local',
+                             ('qsort', 3): 'calls a refused local',
+                             ('partition', 4): 'if-then-else ->'},
+            'simpos##pathname': {('append_names', 3): 'calls a refused local',
+                                 ('set_names', 3): 'built-in set_substring/4'},
+        }
         for t in self.ts:
-            self.assertEqual(t.refusals, [], t.id)
+            got = {r[0][:2]: r[1] for r in t.refusals}
+            self.assertEqual(got, held.get(t.id, {}), t.id)
 
     def test_methods_labelled(self):
         # owner's rule (2026-11-24): each stand-in method is labelled
         # PRINTED or INTERPOLATED in the comment block just above it (its
         # first clause: a head indented at most 4, as the files are laid out;
-        # a body goal is indented further).  Locals are not methods.
+        # a body goal is indented further).  Locals are not methods.  A
+        # class carried over from held ICOT source (step 3c) labels each
+        # method `HELD-SOURCE: file:line`.
         for t in self.ts:
             with open(os.path.join(espc.STANDIN, t.name + '.esp')) as f:
                 lines = f.read().splitlines()
@@ -385,7 +535,8 @@ class Standins(unittest.TestCase):
                 while j >= 0 and lines[j].strip().startswith('%'):
                     block.append(lines[j])
                     j -= 1
-                self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x for x in block),
+                self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x
+                                    or re.search(r'HELD-SOURCE: \w+\.esp:\d+', x) for x in block),
                                 (t.id, p.name))
 
     def test_self(self):
@@ -399,11 +550,24 @@ class Standins(unittest.TestCase):
         cause, detail = self.refusal(self.plain, cid, 'instance', sel)
         self.assertEqual(cause, 'simpos')
         self.assertIn('simpos##process:self/2', detail)
-        cause, detail = self.refusal(self.m, cid, 'instance', sel)
-        self.assertEqual(cause, 'simpos')
-        # tag_catch/9 (interpolated, :refute) now runs the timer's
-        # do_on_after/3, which stops at the next lost method
-        self.assertIn('simpos##process:allow_forced_event/1 (not in the stand-in)', detail)
+        # tag_catch/9 (interpolated, :refute) runs the timer's
+        # do_on_after/3; with allow_forced_event/1 stood in (2026-11-24,
+        # step 3c) it gets through to `01 02` @112, integer/1 on the third
+        # argument (row blt 01, step 3c): unbound, it fails; an integer
+        # took it on to alarm_watch:create/2, stood in at step 3d
+        # (INTERPOLATED), and it now gets through to fep_message_assembler
+        # @5b, set_string_element (blt 32) on an unbound argument
+        m = self.m
+        m.reset()
+        recv = K.make_instance(m, cid)
+        self.assertFalse(any(True for _ in m.solve_send(recv, 'on_after',
+                                                        [K.Var(), K.Var(), K.Var(), recv])))
+        m.reset()
+        recv = K.make_instance(m, cid)
+        with self.assertRaises(K.Refusal) as e:
+            any(True for _ in m.solve_send(recv, 'on_after', [K.Var(), K.Var(), 10, recv]))
+        self.assertEqual(e.exception.cause, 'unbound argument')
+        self.assertIn('set_string_element', e.exception.detail)
 
     def strs(self, *xs):
         t = K.NIL
@@ -491,6 +655,245 @@ class Standins(unittest.TestCase):
         self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'nil'))
         self.assertTrue(co.complete)
 
+    def send(self, obj, name, *args):
+        m = self.m
+        m.reset()
+        regs = list(args) + [obj]
+        return [[K.resolve(a) for a in args] for _ in m.solve_send(obj, name, regs)]
+
+    def test_channel(self):
+        # the printed channel (TM-100 Fig. 3.7): its post_queue slot, code-
+        # initialised, overrides stream's code-initialised slot of the same
+        # name; create/2 and put/get are the printed stream's
+        (c,) = K.call_class_method(self.m, 'simpos##channel', 'create', [K.Var()])
+        ch = c[0]
+        self.assertEqual([x.cid for x in ch.slots],
+                         ['simpos##post_queue_for_message', 'simpos##waiting_queue'])
+        self.assertEqual(len(self.send(ch, 'put', K.Atom('m1'))), 1)
+        self.assertEqual(len(self.send(ch, 'put', K.Atom('m2'))), 1)
+        self.assertEqual(repr(self.send(ch, 'get', K.Var())), '[[m1]]')
+        # the printed bounded_channel (Fig. 3.10): a plain `attribute
+        # post_queue;` overrides channel's initialiser, and create/3 fills
+        # it with the printed bounded_post_queue (Fig. 3.11), whose
+        # before-demon on add_object takes a token from the interpolated
+        # semaphore and whose after-demon on remove_object gives it back
+        (b,) = K.call_class_method(self.m, 'simpos##bounded_channel', 'create', [K.Var(), 2])
+        bc = b[0]
+        q = bc.slots[0]
+        sem = q.slots[0]
+        co = self.m.lib.build('simpos##semaphore')
+        tokens = {e.name: v for e, v in zip(co.instance_slots, sem.slots)}['tokens']
+        self.assertEqual((q.cid, sem.cid, tokens), ('simpos##bounded_post_queue', 'simpos##semaphore', 2))
+        self.assertEqual(len(self.send(bc, 'put', K.Atom('a'))), 1)
+        self.assertEqual(len(self.send(bc, 'put', K.Atom('b'))), 1)
+        self.assertEqual(self.send(bc, 'put', K.Atom('c')), [])
+        self.assertEqual(repr(self.send(bc, 'get', K.Var())), '[[a]]')
+        self.assertEqual(len(self.send(bc, 'put', K.Atom('c'))), 1)
+        self.assertEqual(repr(self.send(bc, 'get', K.Var())), '[[b]]')
+        self.assertEqual(repr(self.send(bc, 'get', K.Var())), '[[c]]')
+
+    def index_battery(self, ix):
+        a, b, c, k1, k2 = (K.Atom(x) for x in ('a', 'b', 'c', 'k1', 'k2'))
+        for o, k in ((a, k1), (b, k2), (c, k1)):
+            self.assertEqual(len(self.send(ix, 'add_at', o, k)), 1)
+        got = {}
+        for sel, args in (('get_at', (K.Var(), k1)), ('get_contents', (K.Var(),)),
+                          ('get_contents_with_key', (K.Var(),)), ('get_keys', (K.Var(),)),
+                          ('get_contents_at', (K.Var(), k1)), ('remove_at', (K.Var(), k1)),
+                          ('get_contents', (K.Var(),)), ('get_at', (K.Var(), k1)),
+                          ('remove_at', (K.Var(), k1)), ('remove_at', (K.Var(), k1)),
+                          ('get_at', (K.Var(), k2)), ('clear', ()), ('get_contents', (K.Var(),))):
+            got.setdefault(sel, []).append(repr(self.send(ix, sel, *args)).replace(' ', ''))
+        return got
+
+    def test_list_index(self):
+        # the interpolated list_index on the layout kappa2's KPPOOL.ESP and
+        # SVHSH_IDX.ESP read: entries {Next,Object,Key} from `first`
+        (r,) = K.call_class_method(self.m, 'simpos##list_index', 'create', [K.Var()])
+        got = self.index_battery(r[0])
+        self.assertEqual(got, {
+            'get_at': ['[[a,k1]]', '[[c,k1]]', '[[b,k2]]'],
+            'get_contents': ['[[[a,b,c]]]', '[[[b,c]]]', '[[[]]]'],
+            'get_contents_with_key': ['[[[{a,k1},{b,k2},{c,k1}]]]'],
+            'get_keys': ['[[[k1,k2,k1]]]'],
+            'get_contents_at': ['[[[a,c],k1]]'],
+            'remove_at': ['[[a,k1]]', '[[c,k1]]', '[]'],
+            'clear': ['[[]]']})
+        self.assertEqual(repr(r[0].slots[0]), '$$void')
+
+    def test_hash_index(self):
+        # the interpolated hash_index: a vector of `size` list_indexes
+        # (SVHSH_IDX.ESP); the bucket of a key is OURS (bucket 0)
+        (r,) = K.call_class_method(self.m, 'simpos##hash_index', 'create', [K.Var(), 5])
+        h = r[0]
+        co = self.m.lib.build('simpos##hash_index')
+        slots = {e.name: v for e, v in zip(co.instance_slots, h.slots)}
+        self.assertEqual((slots['size'], [x.cid for x in slots['vector'].args]),
+                         (5, ['simpos##list_index'] * 5))
+        got = self.index_battery(h)
+        self.assertEqual(got['get_contents'], ['[[[a,b,c]]]', '[[[b,c]]]', '[[[]]]'])
+        self.assertEqual(got['get_contents_with_key'], ['[[[{a,k1},{b,k2},{c,k1}]]]'])
+        self.assertEqual(got['remove_at'], ['[[a,k1]]', '[[c,k1]]', '[]'])
+
+    def test_process_create(self):
+        # the interpolated process create/3 (as pimfep's as_pimos_device
+        # process/4 sends it) makes a dormant process whose parent is the
+        # calling one; the slot accessors read and set it
+        m = self.m
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        areas = K.NIL
+        for x in reversed(['free', 'default', 'free', 'small']):
+            areas = K.Cons(K.Atom(x), areas)
+        (r,) = K.call_class_method(m, 'simpos##process', 'create', [K.Var(), areas])
+        p = r[0]
+        co = m.lib.build('simpos##process')
+        got = {e.name: v for e, v in zip(co.instance_slots, p.slots)}
+        self.assertEqual((repr(got['status']), got['parent_process']), ('dormant', s[0]))
+        self.assertIsNot(p, s[0])
+        self.assertEqual(len(self.send(p, 'set_sub_priority', 3)), 1)
+        self.assertEqual(self.send(p, 'sub_priority', K.Var()), [[3]])
+        self.assertEqual(len(self.send(p, 'allow_forced_event')), 1)
+        # pimfep's own process/4 now runs to a solution
+        regs = [K.Var(), K.Var(), K.Var(), K.ClassRef('pimfep##pimos_timer')]
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(regs[-1], 'process', regs)))
+
+    def test_get_window(self):
+        # the minimal standard_editor: get_window/2 gives the window slot,
+        # 0 for an editor made with new/2, as the census makes it (step
+        # 3d's pmacs_window:create/3 sets it; test_step3d_window_and_timer)
+        cid = 'pimfep##pimos_window_editor'
+        cause, detail = self.refusal(self.plain, cid, 'instance', 'get_window/2')
+        self.assertIn('ancestors simpos##standard_editor', detail)
+        m = self.m
+        e = K.make_instance(m, cid)
+        self.assertEqual(self.send(e, 'get_window', K.Var()), [[0]])
+        cause, detail = self.refusal(m, cid, 'instance', 'show/3')
+        self.assertEqual(cause, 'receiver not an object')
+
+    def call(self, cid, sel, args):
+        m = self.m
+        m.reset()
+        return [[repr(K.resolve(a)) for a in r] for r in K.call_class_method(m, cid, sel, args)]
+
+    def test_symbolizer_numbers(self):
+        # get_number/3 and get_number_string/3 (INTERPOLATED, step 3c) on
+        # integer/1, X+Y and the immediate arithmetic rows
+        sy = 'simpos##symbolizer'
+        for s, n in (('0', 0), ('42', 42), ('-305', -305), ('1990', 1990)):
+            self.assertEqual(self.call(sy, 'get_number', [K.Var(), K.Str(s)]),
+                             [[str(n), "string#'%s'" % s]])
+            self.assertEqual(self.call(sy, 'get_number_string', [n, K.Var()]),
+                             [[str(n), "string#'%s'" % s]])
+        for s in ('', '12a', '-'):
+            self.assertEqual(self.call(sy, 'get_number', [K.Var(), K.Str(s)]), [])
+        # a `.` or a number that is not an integer: not modelled, refused
+        for sel, args in (('get_number', [K.Var(), K.Str('3.5')]),
+                          ('get_number_string', [K.Atom('x'), K.Var()])):
+            with self.assertRaises(K.Refusal) as e:
+                self.call(sy, sel, args)
+            self.assertIn('symbolizer:float_number/3', e.exception.detail)
+
+    def test_held_source(self):
+        # morphana's _simpos/ classes (HELD-SOURCE), on substring/4,
+        # search_character/5 and string_tail/3 (step 3c rows)
+        nm = 'simpos##name'
+        f = K.Str('abc.esp.3')
+        for sel, want in (('ident', 'abc'), ('type', 'esp'), ('version', '3'),
+                          ('ident_type', 'abc.esp')):
+            self.assertEqual(self.call(nm, sel, [f, K.Var()]),
+                             [["string#'abc.esp.3'", "string#'%s'" % want]])
+        sep = espc.jis_code('>')
+        for s, want in (('a>bc>d', "'a',string#'bc',string#'d'"),
+                        ('ab>>c', "'ab',string#'',string#'c'"), ('>a', "'',string#'a'")):
+            # (the last two have the element at a search's first position)
+            self.assertEqual(self.call('simpos##e_string', 'split', [K.Str(s), sep, K.Var()]),
+                             [["string#'%s'" % s, str(sep), '[string#%s]' % want]])
+        # pathname get_last/4 searches backwards (pathname.esp:53,
+        # search_character from End down to 0): the direction is not
+        # witnessed, so kl0 refuses rather than guess
+        with self.assertRaises(K.Refusal) as e:
+            self.call('simpos##pathname', 'get_last', [K.Str('a>b>c'), K.Var(), K.Var()])
+        self.assertIn('backwards', e.exception.detail)
+
+    def test_step3d_lock(self):
+        # as_class_with_lock (INTERPOLATED from kappa2 LOADER.ESP:133-153):
+        # :lock has :unlock as its alternative, so backtracking into it
+        # unlocks; locks nest (OURS: a count)
+        ts, failed = espc.compile_text('''class lock_driver has
+nature as_class_with_lock;
+:held(C) :- :lock(C), :locked(C);
+:failed_after(C) :- :lock(C), fail;
+:nested(C,N) :- :lock(C), :lock(C), :unlock(C), :locked(C), N = C!lock_count;
+end.''', 'simpos')
+        self.assertFalse(failed)
+        lib = K.load_six()
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib)
+        cid = 'simpos##lock_driver'
+        c = K.ClassRef(cid)
+
+        def sols(sel, *args):
+            m.reset()
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(c, sel, list(args) + [c])]
+        self.assertEqual(len(sols('held')), 1)
+        self.assertEqual(sols('locked'), [])        # held/1's lock undone on backtracking
+        self.assertEqual(sols('failed_after'), [])
+        self.assertEqual(sols('locked'), [])
+        self.assertEqual(sols('nested', K.Var())[0], [1])
+        # with_lock, the instance form, brackets fep_device_table's methods
+        # (:lock first, a last-call :unlock): add_at/5 now runs to a solution
+        m = self.m
+        m.reset()
+        t = K.make_instance(m, 'pimfep##fep_device_table')
+        regs = [K.Var() for _ in range(4)] + [t]
+        self.assertTrue(any(True for _ in m.solve_send(t, 'add_at', regs)))
+        m.reset()
+        t = K.make_instance(m, 'pimfep##fep_device_table')
+        self.assertTrue(any(True for _ in m.solve_send(t, 'lock', [t])))
+        self.assertTrue(any(True for _ in m.solve_send(t, 'locked', [t])))
+        # backtracking into an instance's :lock unlocks it (the alternative
+        # clause, INFERENCE from the class form): exhaust lock/1, then the
+        # table is no longer locked
+        m.reset()
+        t = K.make_instance(m, 'pimfep##fep_device_table')
+        self.assertEqual(sum(1 for _ in m.solve_send(t, 'lock', [t])), 1)
+        self.assertFalse(any(True for _ in m.solve_send(t, 'locked', [t])))
+
+    def test_step3d_message(self):
+        # as_message and message (INTERPOLATED from TR-056 p.12 and TM-100
+        # Fig. 3.7): pimscsi##cmt, whose natures include simpos##message,
+        # keeps a sender and a body
+        m = self.m
+        msg = K.make_instance(m, 'pimscsi##cmt')
+        self.assertEqual(len(self.send(msg, 'set_sender', K.Atom('reply_channel'))), 1)
+        self.assertEqual(repr(self.send(msg, 'get_sender', K.Var())), '[[reply_channel]]')
+        self.assertEqual(len(self.send(msg, 'set_content', 42)), 1)
+        self.assertEqual(repr(self.send(msg, 'get_content', K.Var())), '[[42]]')
+
+    def test_step3d_window_and_timer(self):
+        # pmacs_window (minimal): the window and its standard_editor point
+        # at each other; the window protocol is not stood in
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.NIL, K.Var()])
+        w = r[1]
+        (e,) = self.send(w, 'get_editor', K.Var())
+        self.assertEqual(self.send(e[0], 'get_window', K.Var()), [[w]])
+        cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
+        self.assertIn('simpos##pmacs_window:activate/1', detail)
+        # trace and network_listener_buffer: the pimfep callers run to a
+        # solution (no tracer: OURS).  common_network's callers are
+        # covered by test_fep_census only
+        for cid, sel in (('pimfep##simpos_user_device', 'trace_string_io'),
+                         ('pimfep##pimos_login_requester', 'buffer')):
+            o = K.make_instance(m, cid)
+            n = 1 if sel == 'trace_string_io' else 2
+            regs = [K.Var() for _ in range(n - 1)] + [o]
+            m.reset()
+            self.assertTrue(any(True for _ in m.solve_send(o, sel, regs)), cid)
+
     def test_fep_census(self):
         # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
         # Before slot initialisation by code ran: 1,215 methods, 486
@@ -498,12 +901,29 @@ class Standins(unittest.TestCase):
         # After it: 1,228, 501, 50, 677.  After the string built-ins
         # (blt 0b, 1c, 23, 2b), :refute and tag_catch: 515 success (14
         # methods that stopped at new_string/3), 51 failure (packet32
-        # is_used/1, no longer refused), 662 refused.
+        # is_used/1, no longer refused), 662 refused.  After step 3c's
+        # stand-ins (channel, list_index, hash_index, process create/3 and
+        # the rest, standard_editor): 1,229 (pimos_window_editor's
+        # get_window/2 is now a method), 605 success, 63 failure (12 that
+        # refused now fail on an empty index or queue), 561 refused.  After
+        # step 3c's rows (blt 01 integer, 06 stack_vector, 10, 16, 32, 33,
+        # 40, 5c, 68) and the HELD-SOURCE classes: 607 success (packet and
+        # packet32 get_message/2 through substring/4), 101 failure (38 that
+        # refused now fail: the census's unbound arguments meet integer/1
+        # or stack_vector/2, which fail on them), 521 refused.  Step 3d's
+        # rows (blt 6e, 34, pmi b0, b4) left the totals alone (93 refused
+        # methods stop later).  Step 3d's ten INTERPOLATED stand-ins
+        # (as_class_with_lock, with_lock, as_message, message, trace,
+        # common_network, network_listener_buffer, alarm_watch, time,
+        # pmacs_window): 1,265 (36 inherited lock/unlock/locked methods,
+        # 32 success, 4 locked/1 failure), 665 success (26 that refused),
+        # 113 failure (8 that refused: tables empty after lock/1), 487
+        # refused; no method moved out of success.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1228, {'success': 515, 'failure': 51, 'refused': 662}))
+        self.assertEqual((len(rows), out), (1265, {'success': 665, 'failure': 113, 'refused': 487}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

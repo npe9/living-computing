@@ -413,6 +413,29 @@ class TestRoundTripAndErrors(unittest.TestCase):
         self.assertIn("unimplemented", text[0])
         self.assertIn("opcode 0x10", text[0])
 
+    def test_mode_7_without_cpu_is_unsigned_half_stack_offset(self):
+        # Table 1-21 (p. 1-25): mode 0x7 is Roffset:UH unless a CPU
+        # prefix makes it the register mode (Table 1-22, p. 1-26).
+        # MetaWare High C emits it (43 sites in Be's 1994 kernels; these
+        # are three of them and one five-parcel form).  Injection,
+        # observed 2026-11-24: restoring the old "mode 7 needs CPU"
+        # refusal in both operand() helpers failed this test only.
+        cases = [
+            ([0xA1F7, 0x0004, 0x002A], ".3 OR $4,R42:UH"),
+            ([0x867A, 0x000E, 0x0008], ".3 MOV R14:UH,*R8:H"),
+            ([0x9F7B, 0x000C, 0x0014], ".3 CMPEQ R12:UH,*R20:UH"),
+            ([0xC67D, 0x0000, 0x0084, 0x0000, 0x0040],
+             ".5 MOV R132:UH,R64"),
+        ]
+        for parcels, text in cases:
+            with self.subTest(text=text):
+                self.assertEqual(disassemble(parcels), [text])
+                again, _, _ = assemble(text + "\n")
+                self.assertEqual(again, parcels)
+        # With the prefix, 0x7 is still a register (Table 1-22).
+        self.assertEqual(disassemble([0x2C00, 0x867D, 0x000A, 0x0004])[1],
+                         ".3 MOV %ID,R4")
+
     def test_allow_unimplemented_flag_marks_listing(self):
         with tempfile.TemporaryDirectory() as td:
             td = Path(td)

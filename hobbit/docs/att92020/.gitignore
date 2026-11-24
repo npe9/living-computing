@@ -1,0 +1,6 @@
+# Held on disk, not in git: Microprocessor Report articles (c) MicroDesign
+# Resources, mirrored without redistribution terms (the repository is
+# public).  MANIFEST.md and SHA256SUMS list each with its URL, size and
+# SHA-256; fetch.sh fetches them again and checks them.
+*.pdf
+*.pdf.part

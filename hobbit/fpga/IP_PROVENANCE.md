@@ -96,3 +96,73 @@ Flute: Apache License 2.0. LICENSE was added to its main branch as commit
 631c88b. Files from that repository that earlier sections recorded as having
 no licence line (for example `flute-m50/src/Uart_Pins.bsv`) are therefore
 Apache-2.0 and may be copied in with attribution.
+## Step 5 addendum 2: secondary sources for the MCP7940N's registers, 2026-11-24
+
+* **Copied: nothing.** The MCP7940N data sheet is still not on disk. Its
+  download waits for the owner's approval. Two drivers written against the
+  part were read, outside this repository and read-only, to check the
+  register facts `rtc.md` had marked as inference:
+  * Linux 6.17-rc7 `drivers/rtc/rtc-ds1307.c` (GPL-2.0), its `mcp794xx`
+    paths, at `~/src/linux-cursor/linux`;
+  * RTEMS `bsps/shared/dev/rtc/mcp7940m.c` (BSD-2-Clause), at `~/src/rtems`.
+* Only bit positions and register addresses are cited (tags `[L]`, `[R]` in
+  `fpga/dev/rtc_mcp7940n.h`). No code from either driver is used.
+
+## Step 6: SONIC subset and ESP32 link (`fpga/dev/Sonic.bsv`, `fpga/dev/EspLink.bsv`), 2026-11-24
+
+* **Copied: nothing.** `Sonic.bsv`, `EspLink.bsv`, their testbenches
+  (`SonicReplayTb.bsv`, `EspLinkTb.bsv`), `esplink_ref.c` and the Python
+  and shell scripts beside them are new. The behaviour reference is this
+  repository's own `tools/p9boot.py` (`Sonic`, `SONIC_CHOICES`). The link
+  protocol is this repository's `fpga/esp32_ethrelay/main/relay.c`, which
+  `esplink_run_tests.sh` compiles in place, not from a copy.
+* **Library cells:** bsc's own FIFO2, SizedFIFO, RegFile, RegFileLoad
+  (testbench only), BRAM2 (under `mkSizedBRAMFIFOF`) and StmtFSM
+  (BSD-3-Clause / Apache-2.0, part of the bsc installation), read at
+  build time and not copied into the tree.
+* **Consulted, read-only, nothing taken:**
+  * LiteEth (BSD-2-Clause), for the general shape of a MAC's frame stream;
+  * emard's ULX3S `ulx3s_v20.lpf`, for the ESP32 pin sites (L1, N3, H1).
+    The pin sites are facts about the board, cited in
+    `docs/ulx3s_ethernet.md` §2.
+* **Traces:** `fpga/dev/sonic_tests/*.trace.gz` were generated here, from
+  the reference model running the recorded join of `tests/test_p9boot.py`.
+  The frames in them are that session's own: the 1st Edition kernel's and
+  the recorded 1e file server's.
+
+## The SoC: core adapter, SDRAM controller, host link (`fpga/rtl/`, `fpga/sim/`, `ulx3s_soc.lpf`), 2026-11-24
+
+* **Copied: nothing.** `rtl/sdram_word.v`, `rtl/hobbit_soc_mem.v`,
+  `rtl/hobbit_soc.v`, `rtl/hostlink.v`, `rtl/uart8n1.v`,
+  `rtl/ulx3s_hobbit_top.v`, `rtl/cpu_stub.v`, `sim/sdram_model.v`,
+  `sim/soc_sim_top.v`, `sim/soc_main.cpp`, `sim/run_soc.sh`,
+  `build_soc.sh`, `area_cpu.sh` and `bsv/HobbitSocCpu.bsv` were written for
+  this project. They were written before the owner's licence statement
+  above, while the Flute tree's terms were unknown. Now that it is
+  Apache-2.0, its controller could be adopted with attribution; it has not
+  been.
+* **Consulted, read-only, for board facts** (facts about the ULX3S and its
+  W9825G6KH, not code):
+  * `~/src/ulx3s-experiments/flute-lx50/src/Sdram_Controller.bsv`;
+  * `flute-lx50/src/Top.v`;
+  * `flute-lx50/constraints/ulx3s_85f.lpf`.
+
+  These are the same checkout as the `hdmi_tmds.v` entry (npe9/flute-ulx3s,
+  branch `lx50`). The facts taken:
+  * the SDRAM clock through an ODDRX1F with D0 = 0, D1 = 1;
+  * DQ in an input register on the rising edge;
+  * CL 2;
+  * eight AUTO REFRESH at power-up;
+  * a refresh that falls due is held, not dropped;
+  * the SDRAM pin sites in `ulx3s_soc.lpf`.
+
+  The clock, button, UART, LED and WiFi sites are this directory's own
+  `ulx3s_85f.lpf`.
+* **Not used:** Micron's and Winbond's SDRAM simulation models. Their terms
+  do not allow redistribution. `sim/sdram_model.v` is a model of our own,
+  written from the W9825G6KH timing parameters that the controller relies
+  on.
+* **Library cells read at build time, not copied:** bsc 2026.01's
+  `FIFO2.v`, `FIFO20.v`, `RegFile.v` and `SizedFIFO.v`
+  (`$BLUESPECDIR/Verilog/`), and the ECP5 primitives `DCCA` and `ODDRX1F`
+  from yosys's cell library.
