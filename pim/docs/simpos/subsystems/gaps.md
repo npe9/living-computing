@@ -85,7 +85,7 @@ MP1002-1 (ICOT 1986; reported by a delegated NDL search, not re-opened), 「ESP 
 MP1005-2 (ICOT 1987, IPSJ 115299 ref. [2], read on the page image), 「SIMPOS使用操作説明書（第2版）」
 MP3003-2 (ICOT 1986; reported, not re-opened), and the CESP 2.0 manuals 「CESP言語マニュアル
 2.0版」 and 「CESPライブラリマニュアル2.0版」 (IPSJ 120508), and 「CESP言語2.0版」 (三菱電機東部
-コンピュータシステム, 1994). A delegated NDL search also reported (not re-opened) that MITI's gazette 通産省公報 registers
+コンピュータシステム, 1994; reported, not re-opened). A delegated NDL search also reported (not re-opened) that MITI's gazette 通産省公報 registers
 SIMPOS releases as national-project deliverables (2.0 in 1987, V4.0 in 1988, 6.0 as 5G-02-002 in
 1990), at NDL only.
 Still no copy or table of contents of the I/O volume. On rank 5, the class-id form of the

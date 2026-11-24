@@ -445,8 +445,9 @@ fact.
   - the PSI/UX display-depth patch, which four PIMOS front-end files call in place of
     `#ipl`'s `bmm_size`;
   - `editor_text_buffer` navigation.
-- **Screen widths by machine** (DISC, `window.md` §2.13): 1600 dots on "O-PSI" (the Oki PSI-II),
-  1280 on PSI-UX and on "M-PSI"; kl1graph's full screen is 1280 x 944.
+- **Screen widths by machine** (DISC, `window.md` §2.13): 1600 dots on "O-PSI" (read as the Oki
+  PSI-II from DISC's INSTALL), 1280 on PSI-UX and on "M-PSI" (ambiguous: elsewhere in the held code
+  M-PSI is the Multi-PSI); kl1graph's full screen is 1280 x 944. The heights are INFERENCE.
 - **Provenance.** CIL, which carries the SIMPOS 6.1 Librarian copy, names
   三菱電機東部コンピュータシステム (MTC) as the author of its 1991 4.0 manual; that MTC wrote CIL is
   INFERENCE. MTC is also reported as CESP's 1994 publisher (「CESP言語2.0版」). AIR's CESP leads came
