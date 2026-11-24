@@ -23,8 +23,8 @@
 5. Macro banks (`with_macro`, TM-388 §3.7.3): expansion on a compiled
    example (own rules before the natures', a `:-` rule refusing its
    predicate), and kappa2's structure against kappa.ptf pinned (all 739
-   classes compile; 1,361 predicates cell for cell, 1,323 before the
-   string built-ins).
+   classes compile; 1,485 predicates cell for cell, 1,361 before step
+   3c's rows, 1,323 before the string built-ins).
 6. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
    pp.48-50): instance and class slots, a failing initialiser fails new,
    an unbound value refuses, an after-demon of new sees the slots.
@@ -51,6 +51,14 @@
    layout kappa2's KPPOOL.ESP and SVHSH_IDX.ESP read; process create/3
    makes a dormant child of the calling process, and pimfep's own
    process/4 runs; the minimal standard_editor's get_window/2.
+9. Step 3c's rows and HELD-SOURCE classes (2026-11-24): X+Y compiles
+   (blt 40) and `(X+1)-X` reads X twice; the symbolizer's interpolated
+   get_number/3 and get_number_string/3 on integers (a `.` refuses);
+   morphana's _simpos/ name, e_string and pathname (ICOT Free Software,
+   labelled HELD-SOURCE) run on substring/4, search_character/5 and
+   string_tail/3, their remaining refusals pinned; pathname get_last/4's
+   backward search refuses; on_after/4 now fails at integer/1 on an
+   unbound argument and, given an integer, reaches alarm_watch.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -88,11 +96,29 @@ restored with cp and checked with cmp):
     instead of appending: test_list_index and test_hash_index fail;
   - semaphore (injected into standin/semaphore.esp): p_operation/1 takes
     a token without checking that one is left: only test_channel fails.
+  - built-in inputs (step 3c): builtin() marks a variable's register as
+    a value while later inputs are put, so `substring(S,H,T-H,P)` loses
+    H: reverted, espc raises KeyError compiling e_string and paragraph:
+    setUpClass of Behaviour and of Standins, test_counts,
+    test_named_exact, test_aspect_differences, test_kappa2 and both
+    Emission tests error;
+  - arithmetic (step 3c): arith() does the same to Y in X-Y: reverted,
+    the setUpClass of Behaviour, test_counts, test_named_exact,
+    test_aspect_differences and both Emission tests error (KeyError) and,
+    with `(X+1)-X` in Language's class, every Language test errors;
+  - search_character (injected into kl0.py): the search starts one past
+    B: only test_held_source fails (split of `ab>>c` and `>a`);
+  - integer/1 (kl0.py): refuses an unbound argument instead of failing:
+    test_on_after_gets_further errors and test_fep_census fails (here),
+    test_step3c_cells errors (test_kl0.py);
+  - stand-in label (standin/name.esp): ident/3's HELD-SOURCE label
+    reworded: only test_methods_labelled fails.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
 """
 import os
+import re
 import sys
 import unittest
 
@@ -153,6 +179,8 @@ class Language(unittest.TestCase):
 :add(C,X,Y,Z) :- Z = X+Y;
 :ne(C,X,Y) :- X =\\= Y;
 :inc(C,X,Z) :- Z = X+1;
+:mul(C,X,Y,Z) :- Z = X*Y;
+:sub(C,X,Z) :- Z = (X+1)-X;
 instance
 :foo(O) :- frob(O);
 end.'''
@@ -167,8 +195,27 @@ end.'''
     def test_refusals_name_the_construct(self):
         t = compile_one(self.T)
         got = {r[0][0]: r[1] for r in t.refusals}
-        self.assertEqual(got, {'add': 'arithmetic X+Y', 'ne': 'comparison =\\=',
+        # X+Y compiles since step 3c (blt 40, 2026-11-24); X*Y is still
+        # refused
+        self.assertEqual(got, {'mul': 'arithmetic X*Y', 'ne': 'comparison =\\=',
                                'foo': 'built-in frob/1'})
+
+    def test_add_and_shared_operand(self):
+        t = compile_one(self.T)
+        # Z = X+Y: X (A0) copied to a free register, `40 r Y r`, the
+        # result over the first operand as in h.esp:186 `40 01 00 01`
+        self.assertIn(0x40, [c[1] for c in code(t, 'add') if c[0] == 0x21])
+        # (X+1) - X: the right operand X stays X's register while the
+        # left one reads it too (espc's arith(), step 3c; before the fix
+        # it raised KeyError, so compiling T fails and with it every
+        # Language test: injection, observed 2026-11-24)
+        ops = [c[1] for c in code(t, 'sub') if c[0] == 0x21]
+        self.assertEqual(ops[:2], [0x45, 0x41])
+        m = K.Machine(espc.library([t]))
+        (r,) = K.call_class_method(m, 'user##t', 'add', [3, 4, K.Var()])
+        self.assertEqual(K.resolve(r[2]), 7)
+        (r,) = K.call_class_method(m, 'user##t', 'sub', [5, K.Var()])
+        self.assertEqual(K.resolve(r[1]), 1)
 
 
 class Structure(unittest.TestCase):
@@ -181,8 +228,10 @@ class Structure(unittest.TestCase):
         # 991 compared, 243 exact before the string built-ins (string/3,
         # new_string/3, string_element/3, set_string_element/3) and the
         # head-save fix (a permanent head variable after a structured
-        # argument: 246 -> 247), 2026-11-24
-        self.assertEqual((c['pred compared'], c['pred exact']), (1051, 247))
+        # argument: 246 -> 247), 2026-11-24.  1051 / 247 before the step 3c
+        # rows (add, type tests, string_tail, equal_string, substring,
+        # search_character, stack_vector): no exact predicate lost
+        self.assertEqual((c['pred compared'], c['pred exact']), (1234, 256))
         self.assertEqual(c['key collisions'], 0)
         self.assertEqual(c['$or$ paired with another arity'], 0)
         self.assertEqual(c['pred compiled only'], 0)
@@ -238,9 +287,13 @@ class Behaviour(unittest.TestCase):
         self.assertEqual(h['paragraph_version get_version/1'], "[[string#'3500']]")
 
     def test_census(self):
-        self.assertEqual(dict(self.r['census']), {'same outcome': 88, 'both refused': 87,
-                                                  'refused compiled only': 46,
-                                                  'refused held only': 6})
+        # step 3c (X+Y compiled): 88 / 87 / 46 / 6 before.  The new
+        # `refused held only` is graph_status_element set/2: the held
+        # code stops at pmi 36 (a 6-element vector, no row), the compiled
+        # code succeeds
+        self.assertEqual(dict(self.r['census']), {'same outcome': 92, 'both refused': 86,
+                                                  'refused compiled only': 42,
+                                                  'refused held only': 7})
 
 
 class MacroBank(unittest.TestCase):
@@ -289,10 +342,15 @@ end.'''
         c = r['counts']
         self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
         # with the string built-ins (step 3b): 10,641 compared, 1,361 exact
-        self.assertEqual((c['pred compared'], c['pred exact']), (10641, 1361))
+        # with the step 3c rows: 12,479 compared, 1,485 exact
+        self.assertEqual((c['pred compared'], c['pred exact']), (12479, 1485))
         self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
                          [738, 738, 736, 736])
-        self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 2))
+        # internal: 2 before step 3c (the PCM add_to_ele_by_search/10
+        # pair); with substring/4 two IXM pic_up_log_data clauses reach the
+        # same `temporary ... lost its register` (it is there with the
+        # step 3c register fixes reverted too, so not theirs)
+        self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 4))
         self.assertNotIn('with_macro', r['refusals'])
 
 
@@ -380,19 +438,36 @@ class Standins(unittest.TestCase):
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
-            'simpos##hash_index', 'simpos##list', 'simpos##list_index', 'simpos##post_queue',
+            'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##name', 'simpos##pathname', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer',
             'simpos##waiting_frame', 'simpos##waiting_queue', 'simpos##with_link'])
+        # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
+        # predicates espc refuses; every other stand-in compiles whole
+        held = {
+            'simpos##e_string': {('string_sort', 3): 'calls a refused local',
+                                 ('string_sort', 2): 'calls a refused local',
+                                 ('qsort', 3): 'calls a refused local',
+                                 ('partition', 4): 'if-then-else ->'},
+            'simpos##name': {('sort', 3): 'calls a refused local',
+                             ('qsort', 3): 'calls a refused local',
+                             ('partition', 4): 'if-then-else ->'},
+            'simpos##pathname': {('append_names', 3): 'calls a refused local',
+                                 ('set_names', 3): 'built-in set_substring/4'},
+        }
         for t in self.ts:
-            self.assertEqual(t.refusals, [], t.id)
+            got = {r[0][:2]: r[1] for r in t.refusals}
+            self.assertEqual(got, held.get(t.id, {}), t.id)
 
     def test_methods_labelled(self):
         # owner's rule (2026-11-24): each stand-in method is labelled
         # PRINTED or INTERPOLATED in the comment block just above it (its
         # first clause: a head indented at most 4, as the files are laid out;
-        # a body goal is indented further).  Locals are not methods.
+        # a body goal is indented further).  Locals are not methods.  A
+        # class carried over from held ICOT source (step 3c) labels each
+        # method `HELD-SOURCE: file:line`.
         for t in self.ts:
             with open(os.path.join(espc.STANDIN, t.name + '.esp')) as f:
                 lines = f.read().splitlines()
@@ -406,7 +481,8 @@ class Standins(unittest.TestCase):
                 while j >= 0 and lines[j].strip().startswith('%'):
                     block.append(lines[j])
                     j -= 1
-                self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x for x in block),
+                self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x
+                                    or re.search(r'HELD-SOURCE: \w+\.esp:\d+', x) for x in block),
                                 (t.id, p.name))
 
     def test_self(self):
@@ -420,11 +496,22 @@ class Standins(unittest.TestCase):
         cause, detail = self.refusal(self.plain, cid, 'instance', sel)
         self.assertEqual(cause, 'simpos')
         self.assertIn('simpos##process:self/2', detail)
-        cause, detail = self.refusal(self.m, cid, 'instance', sel)
         # tag_catch/9 (interpolated, :refute) runs the timer's
         # do_on_after/3; with allow_forced_event/1 stood in (2026-11-24,
-        # step 3c) it gets through and stops at an unnamed opcode
-        self.assertEqual((cause, detail), ('opcode', 'blt 01 (pimfep##pimos_timer @112)'))
+        # step 3c) it gets through to `01 02` @112, integer/1 on the third
+        # argument (row blt 01, step 3c): unbound, it fails; an integer
+        # takes it on to alarm_watch:create/2, not stood in
+        m = self.m
+        m.reset()
+        recv = K.make_instance(m, cid)
+        self.assertFalse(any(True for _ in m.solve_send(recv, 'on_after',
+                                                        [K.Var(), K.Var(), K.Var(), recv])))
+        m.reset()
+        recv = K.make_instance(m, cid)
+        with self.assertRaises(K.Refusal) as e:
+            any(True for _ in m.solve_send(recv, 'on_after', [K.Var(), K.Var(), 10, recv]))
+        self.assertEqual(e.exception.cause, 'simpos')
+        self.assertIn('simpos##alarm_watch:create/2', e.exception.detail)
 
     def strs(self, *xs):
         t = K.NIL
@@ -627,6 +714,51 @@ class Standins(unittest.TestCase):
         cause, detail = self.refusal(m, cid, 'instance', 'show/3')
         self.assertEqual(cause, 'receiver not an object')
 
+    def call(self, cid, sel, args):
+        m = self.m
+        m.reset()
+        return [[repr(K.resolve(a)) for a in r] for r in K.call_class_method(m, cid, sel, args)]
+
+    def test_symbolizer_numbers(self):
+        # get_number/3 and get_number_string/3 (INTERPOLATED, step 3c) on
+        # integer/1, X+Y and the immediate arithmetic rows
+        sy = 'simpos##symbolizer'
+        for s, n in (('0', 0), ('42', 42), ('-305', -305), ('1990', 1990)):
+            self.assertEqual(self.call(sy, 'get_number', [K.Var(), K.Str(s)]),
+                             [[str(n), "string#'%s'" % s]])
+            self.assertEqual(self.call(sy, 'get_number_string', [n, K.Var()]),
+                             [[str(n), "string#'%s'" % s]])
+        for s in ('', '12a', '-'):
+            self.assertEqual(self.call(sy, 'get_number', [K.Var(), K.Str(s)]), [])
+        # a `.` or a number that is not an integer: not modelled, refused
+        for sel, args in (('get_number', [K.Var(), K.Str('3.5')]),
+                          ('get_number_string', [K.Atom('x'), K.Var()])):
+            with self.assertRaises(K.Refusal) as e:
+                self.call(sy, sel, args)
+            self.assertIn('symbolizer:float_number/3', e.exception.detail)
+
+    def test_held_source(self):
+        # morphana's _simpos/ classes (HELD-SOURCE), on substring/4,
+        # search_character/5 and string_tail/3 (step 3c rows)
+        nm = 'simpos##name'
+        f = K.Str('abc.esp.3')
+        for sel, want in (('ident', 'abc'), ('type', 'esp'), ('version', '3'),
+                          ('ident_type', 'abc.esp')):
+            self.assertEqual(self.call(nm, sel, [f, K.Var()]),
+                             [["string#'abc.esp.3'", "string#'%s'" % want]])
+        sep = espc.jis_code('>')
+        for s, want in (('a>bc>d', "'a',string#'bc',string#'d'"),
+                        ('ab>>c', "'ab',string#'',string#'c'"), ('>a', "'',string#'a'")):
+            # (the last two have the element at a search's first position)
+            self.assertEqual(self.call('simpos##e_string', 'split', [K.Str(s), sep, K.Var()]),
+                             [["string#'%s'" % s, str(sep), '[string#%s]' % want]])
+        # pathname get_last/4 searches backwards (pathname.esp:53,
+        # search_character from End down to 0): the direction is not
+        # witnessed, so kl0 refuses rather than guess
+        with self.assertRaises(K.Refusal) as e:
+            self.call('simpos##pathname', 'get_last', [K.Str('a>b>c'), K.Var(), K.Var()])
+        self.assertIn('backwards', e.exception.detail)
+
     def test_fep_census(self):
         # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
         # Before slot initialisation by code ran: 1,215 methods, 486
@@ -638,12 +770,17 @@ class Standins(unittest.TestCase):
         # stand-ins (channel, list_index, hash_index, process create/3 and
         # the rest, standard_editor): 1,229 (pimos_window_editor's
         # get_window/2 is now a method), 605 success, 63 failure (12 that
-        # refused now fail on an empty index or queue), 561 refused.
+        # refused now fail on an empty index or queue), 561 refused.  After
+        # step 3c's rows (blt 01 integer, 06 stack_vector, 10, 16, 32, 33,
+        # 40, 5c, 68) and the HELD-SOURCE classes: 607 success (packet and
+        # packet32 get_message/2 through substring/4), 101 failure (38 that
+        # refused now fail: the census's unbound arguments meet integer/1
+        # or stack_vector/2, which fail on them), 521 refused.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1229, {'success': 605, 'failure': 63, 'refused': 561}))
+        self.assertEqual((len(rows), out), (1229, {'success': 607, 'failure': 101, 'refused': 521}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

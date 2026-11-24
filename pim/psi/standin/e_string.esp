@@ -1,0 +1,219 @@
+% SCAFFOLDING stand-in for SIMPOS's class `e_string` (string utilities),
+% compiled by psi/espc.py into the package `simpos`.  HELD-SOURCE: below
+% the line of dashes is the file `_simpos/e_string.esp` of LAX
+% (ifs/natural-lang/cesp/morphana.tar.Z, (C)1992 ICOT, ICOT Free
+% Software), byte for byte but for the label lines described here and the
+% character set (EUC-JP read, written as UTF-8).  Its stamp (line 6) says
+% it was copied from `icpsi900::>sys>user>tateishi>world>EST1.esp.5`
+% (1988), a user copy of SIMPOS's `world` directory
+% (docs/simpos/subsystems/sweep_2026-11-24.md §2.1, finds.md §5a).
+% CESP-specific: only `use_package(lax).` (line 5); espc.py ignores it.
+% Nothing else is CESP's (sweep §2.1), so nothing is undone.
+% Each method's first clause has a label line `% HELD-SOURCE:
+% e_string.esp:N` above it.  The methods espc.py refuses are pinned in
+% psi/test_espc.py.
+% ----------------------------------------------------------------------
+% (C)1992 Institute for New Generation Computer Technology
+% 配付その他はCOPYRIGHTファイルを参照して下さい
+% (Read COPYRIGHT for detailed information.)
+
+use_package(lax).   % [CESP, kept]
+% icpsi900::>sys>user>tateishi>world>EST1.esp.5, 17-Feb-88 16:43:35, Edit by tateishi
+
+
+        %%%%%%%%%%%%%%%%%%%%%%%%
+        %    class e_string	%
+        %%%%%%%%%%%%%%%%%%%%%%%%%
+    
+
+class   e_string   has
+
+
+% beginning of class e_string -----
+
+
+% :cut_space/3
+% HELD-SOURCE: e_string.esp:21
+:cut_space(Class,String,String0):-
+        cut_space(Class,String,String0) ;
+
+% :nonspace/3
+% HELD-SOURCE: e_string.esp:25
+:nonspace(Class,String,Position):-
+        string(String,Length,_),
+        nonspace(String,0,Length,Position) ;
+
+% :nonspace_from_tail/3
+% HELD-SOURCE: e_string.esp:30
+:nonspace_from_tail(Class,String,Position):-
+        string(String,Length,_),
+        nonspace_from_tail(String,Length - 1,Position) ;
+
+
+% :not_element/3
+% HELD-SOURCE: e_string.esp:36
+:not_element(Class,String,Code_list):-
+        string(String,Length,_),
+     (  Length == 0 ,!;
+        not_element(Code_list,String,Length - 1) ) ;
+
+% :character_position/4
+% HELD-SOURCE: e_string.esp:42
+:character_position(_,String,Code,Position_list):-
+        string(String,Length,_),
+        Length > 0,!,
+        character_position(0,Length - 1,String,Code,Position_list) ;
+:character_position(_,_,_,[]):- !;
+
+% :count/3
+% HELD-SOURCE: e_string.esp:49
+:count(Class,String,Code,Number):-
+        :character_position(Class,String,Code,Position_list),
+        number_of_elements(Position_list,0,Number) ;
+
+% :split/4
+% HELD-SOURCE: e_string.esp:54
+:split(Class,String,Code,Each_part):-
+        :character_position(Class,String,Code,Position_list),
+        split(Position_list,0,String,Each_part) ;
+
+% :separate/4
+% HELD-SOURCE: e_string.esp:59
+:separate(_,String,Separator,List):-
+        string(String,Length,_),
+        string(Separator,Lsep,_),
+        Lsep \== 0 ,
+        string_element(Separator,0,First),
+        separate(String,0,Length - 1,Separator,First,Lsep,List) ;
+
+% :replace/4
+% HELD-SOURCE: e_string.esp:67
+:replace(Class,String,Old_code,New_code,Copy):-
+        :character_position(Class,String,Old_code,Position_list),
+        :copy(#string,String,Copy),
+        replace(Position_list,Copy,New_code) ;
+
+% :string_sort/3
+% HELD-SOURCE: e_string.esp:73
+:string_sort(Class,String_list,Sorted_string_list):- !,
+        string_sort(String_list,Sorted_string_list) ;
+
+
+local
+
+% cut_space/3
+cut_space(_,String,String):-
+        string(String,Length,_),
+        Length \== 0 ,
+        string_element(String,0,Element1),
+        Element1 \== #" ",
+        string_element(String,Length - 1,Element2),
+        Element2 \== #" ",!;
+cut_space(Class,String,String0):-
+        :nonspace(Class,String,Head),
+        :nonspace_from_tail(Class,String,Tail),
+        substring(String,Head,Tail + 1 - Head,String0) ;
+
+
+        %---   GET NONSPACE CHARACTER POSITION   ---%
+% nonspace/4
+nonspace(_,Length,Length,_):- !,fail;
+nonspace(String,Po,Length,Position):-
+        string_element(String,Po,#" "),!,
+        nonspace(String,Po + 1,Length,Position) ;
+nonspace(_,Position,_,Position):- !;
+
+% nonspace_from_tail/3
+nonspace_from_tail(_,-1,_):- !,fail;
+nonspace_from_tail(String,Po,Position):-
+        string_element(String,Po,#" "),!,
+        nonspace_from_tail(String,Po - 1,Position) ;
+nonspace_from_tail(_,Position,Position):- !;
+
+
+        %---   CHECKS IF STRING HAS SPECIFIED CHARACTERS AS ITS ELEMENT   ---%
+% not_element/3
+not_element([],_,_):- !;
+not_element([Code|_],String,End):-
+        search_character(String,0,End,Code,_),!,fail ;
+not_element([_|List],String,End):-
+        not_element(List,String,End) ;
+
+
+        %--- GET CHARACTER POSITION ---%
+% character_position/5
+character_position(Start,End,String,Code,[Position|List]):-
+        Start =< End ,
+        search_character(String,Start,End,Code,Position),!,
+        character_position(Position + 1,End,String,Code,List) ;
+character_position(_,_,_,_,[]):- !;
+
+        %--- COUNT NUMBER OF ELEMEMTS   ---%
+% number_of_elements/3
+number_of_elements([],C,C):- !;
+number_of_elements([_|List],Co,Count):-
+        number_of_elements(List,Co + 1,Count) ;
+
+        %---   SPLIT STRING   ---%
+% split/4
+split([],Last_position,String,[Tail]):- !,
+        string_tail(String,Last_position,Tail) ;
+split([Tail_position|List],Head_position,String,[Part|Each_part]):-
+        substring(String,Head_position,Tail_position - Head_position,Part),
+        split(List,Tail_position + 1,String,Each_part) ;
+
+        %---   SEPARATE STRING BY SEPARATOR   ---%
+% separate/7
+separate(String,Position,End,Separator,First,Lsep,[S|List]):-
+        Position =< End ,
+        search_substring(String,Position,End,Separator,
+                                                First,Lsep,Fp,Next),!,
+        substring(String,Position,Fp - Position,S),
+        separate(String,Next,End,Separator,First,Lsep,List) ;
+separate(String,Position,_,_,_,_,[Tail]):- 
+        string_tail(String,Position,Tail) ;
+
+% search_substring/7
+search_substring(_,End,End,_,_,_,_,_):- !,fail;
+search_substring(String,Position,End,Separator,First,Lsep,Fp,Next):-
+        search_character(String,Position,End,First,Fp),
+        Next = Fp + Lsep ,
+        Next =< End + 1 ,
+        substring(String,Fp,Lsep,Substr),
+        equal_string(Separator,Substr) ,!;
+search_substring(String,Position,End,Separator,First,Lsep,Fp,Next):-
+        search_substring(String,Position + 1,End,Separator,
+                                                First,Lsep,Fp,Next) ;
+
+        %---   REPLACE STRING ELEMENT   ---%
+% replace/3
+replace([],_,_):- !;
+replace([Position|Position_list],Copy,New_code):-
+        set_string_element(Copy,Position,New_code),
+        replace(Position_list,Copy,New_code) ;
+
+
+        %--- SORT STRING ---%
+% string_sort/2
+string_sort(List,New_list):-   
+           qsort(List,[],New_list);
+
+% qsort/
+qsort([],L,L):- !;
+qsort([One|Tail],List,Sort):-
+        partition(Tail,One,List1,List2),
+        qsort(List2,List,Temp),
+        qsort(List1,[One|Temp],Sort) ;
+
+% partition/
+partition([],_,[],[]):- !;
+partition([X2|List],X1,L1,L2):-
+     (  X2 < X1 ->
+           L1 = [X2|List1] ,
+           partition(List,X1,List1,L2) ;
+        L2 = [X2|List2] ,
+           partition(List,X1,L1,List2)  ) ;
+
+end.                                
+
+% end of class e_string ----------------------------------------

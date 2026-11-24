@@ -1,17 +1,21 @@
 % SCAFFOLDING stand-in for SIMPOS's class `symbolizer`, compiled by
 % psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
 % `symbolizer` is printed.  It is PARTIAL: of the 27 selectors held
-% programs send (docs/simpos/required/classes.tsv), only the two that
-% the four witnessed string built-ins can express are here, each
-% INTERPOLATED (labelled).  The rest (enter_atom/3, get_atom/3,
-% get_number/3, get_number_string/3, ...) convert atoms or numbers and
-% strings: no witnessed built-in makes an atom from a string or back,
-% and number conversion needs X/Y and a remainder, which espc refuses.
-% kl0 refuses a send of one of them as SIMPOS (not in the stand-in).
+% programs send (docs/simpos/required/classes.tsv), only the four that
+% witnessed built-ins can express are here, each INTERPOLATED
+% (labelled): string_to_list/3, list_to_string/3, and (step 3c,
+% 2026-11-24) get_number/3 and get_number_string/3 for integers.  The
+% rest (enter_atom/3, get_atom/3, ...) convert atoms and strings: the
+% only atom built-in in cil's KL0 list (cil/src/cil_kl0.esp, 176 names)
+% is new_atom/1, so nothing witnessed makes an atom from a string or
+% back.  kl0 refuses a send of one of them as SIMPOS (not in the
+% stand-in).
 % Built-ins used (KL0, rows in psi/kl0_opcodes.tsv): string/3 (blt 0b),
 % new_string/3 (blt 1c), string_element/3 (blt 23),
-% set_string_element/3 (blt 2b).
-% Model (OURS): a new string's elements are 16-bit (type 16).
+% set_string_element/3 (blt 2b), integer/1 (blt 01), and X+Y (blt 40),
+% X-Y (blt 41), X*K, X/K, X-K, X+K (the immediate forms).
+% Model (OURS): a new string's elements are 16-bit (type 16); a digit is
+% its JIS code (#"0" .. #"9", as espc.py encodes a character constant).
 
 class symbolizer has
 
@@ -39,6 +43,42 @@ class symbolizer has
         new_string(S, L, 16),
         fill(List, S, 0);
 
+
+% :get_number(#symbolizer, Number, String) -- Number is the integer that
+% String writes in decimal, with an optional leading `-`; fails if String
+% is empty or has an element that is not a digit.
+% INTERPOLATED from: the call sites, which give the order (the number
+% out, the string in): cil src/ms_cdn.esp:613 `do_item(capsule_selector_
+% height, String, State_table) :- !, :get_number(#symbolizer, Height,
+% String), :put_at(State_table, Height, ...)`; kappa2 user_if/pb/
+% stwin.esp:100 (N read from a window, `equal_string(N,"")` tested
+% first); linguist prog/token_pool.esp:229 (a menu item's id to an
+% index).  That it fails on a non-number is INFERENCE from cil src/
+% es_ins.esp:1566-1568, whose clause with get_number/3 is followed by a
+% catch-all for the same value.  A `.` (kappa2 inwin.esp:567 converts a
+% `Floating`) is not modelled: get_number/3 then sends float_number/3,
+% which no stand-in has, and kl0 refuses the send as SIMPOS.
+:get_number(Class, Number, S) :-
+        string(S, L, _),
+        0 < L,
+        string_element(S, 0, C),
+        sign(C, S, L, Number);
+
+% :get_number_string(#symbolizer, Number, String) -- String is a new
+% string, the integer Number in decimal, `-` first if it is negative.
+% INTERPOLATED from: the call sites (the number in, the string out):
+% HELD-SOURCE morphana _simpos/name.esp:138 `:get_number_string(
+% #symbolizer,Version,Version_string)` (a file name's version, made a
+% string to append); linguist prog/browzer.esp:45 `:get_number_string(
+% #symbolizer,Num+1,SNum)`; cil src/ds_fep.esp:2096 (an arity).  A
+% number that is not an integer is not modelled (the second clause
+% sends float_number/3, which kl0 refuses as SIMPOS).
+:get_number_string(Class, Number, S) :-
+        integer(Number), !,
+        integer_string(Number, S);
+:get_number_string(Class, Number, S) :-
+        :float_number(Class, Number, S);
+
 local
 to_list(S, N, N, []) :- !;
 to_list(S, I, N, [E|R]) :- string_element(S, I, E), to_list(S, I+1, N, R);
@@ -46,4 +86,42 @@ count([], L, L);
 count([X|R], L0, L) :- count(R, L0+1, L);
 fill([], S, P);
 fill([E|R], S, P) :- set_string_element(S, P, E), fill(R, S, P+1);
+sign(#"-", S, L, Number) :- !,
+        1 < L,
+        digits(S, 1, L, 0, N),
+        Z = 0,
+        Number = Z - N;
+sign(C, S, L, Number) :-
+        digits(S, 0, L, 0, Number);
+digits(S, L, L, N, N) :- !;
+digits(S, I, L, N0, N) :-
+        string_element(S, I, #"."), !,
+        :float_number(#symbolizer, N, S);
+digits(S, I, L, N0, N) :-
+        string_element(S, I, C),
+        #"0" =< C, C =< #"9",
+        Zero = #"0",
+        D = C - Zero,
+        digits(S, I+1, L, N0*10+D, N);
+integer_string(N, S) :-
+        0 =< N, !,
+        count_digits(N, 1, L),
+        new_string(S, L, 16),
+        put_digits(N, S, L-1);
+integer_string(N, S) :-
+        Z = 0,
+        M = Z - N,
+        count_digits(M, 1, L),
+        new_string(S, L+1, 16),
+        set_string_element(S, 0, #"-"),
+        put_digits(M, S, L);
+count_digits(N, K, K) :- N < 10, !;
+count_digits(N, K0, K) :- count_digits(N/10, K0+1, K);
+put_digits(N, S, P) :- N < 10, !, Zero = #"0", set_string_element(S, P, N + Zero);
+put_digits(N, S, P) :-
+        Q = N/10,
+        R = N - Q*10,
+        Zero = #"0",
+        set_string_element(S, P, R + Zero),
+        put_digits(Q, S, P-1);
 end.

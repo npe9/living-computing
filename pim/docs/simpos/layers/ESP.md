@@ -294,6 +294,32 @@ expression in a head becomes a fresh variable, unified after the last body goal.
 `paragraph##list_index_buffer count/2` (`:count(Obj,Obj!count):-!;`: the neck cut, then the slot read and the unification) is compiled that way, and
 `espc.py` matches its cells exactly.
 
+*Step 3c (2026-11-24): new witnesses, `../../../psi/kl0_opcodes.tsv`.*
+
+- **Addition.** `X + Y` on two registers compiles to `add` (blt 40), with the result over the
+  first operand, as `X - Y` does with blt 41. Witnesses: h.esp:186 `Width2 = Width + X_Max`
+  → `40 01 00 01`, and receiver.esp:1398.
+- **Two-cell built-ins.** `substring/4` (blt 32) and `search_character/5` (blt 5c) take more
+  operands than one cell holds. The fourth and fifth operands go in the high bytes of an
+  `integer` cell after the instruction. Witnesses: p_wshell.esp:467 and kappa PCPSDSTR.ESP:155.
+  `espc.py` emits both forms that way.
+- **Outcome.** `espc.py check` gives:
+
+  | Program | Compared | Exact | Before (compared / exact) |
+  |---|---|---|---|
+  | paragraph | 1,234 | 256 | 1,051 / 247 |
+  | kappa2 | 12,479 | 1,485 | 10,641 / 1,361 |
+  | utter | 559 | 109 | 521 / 101 |
+
+  No predicate that matched exactly before stopped matching.
+- **Still refused.** `X * Y`, `X / Y` on two registers, `divide_with_remainder/4`,
+  `set_substring/4` and `->` have no row and are refused.
+- **Number conversion.** The stand-in symbolizer's `get_number/3` and
+  `get_number_string/3` (INTERPOLATED) are written on the immediate forms with a register-held
+  `#"0"`.
+- **Atoms.** cil's KL0 list (`cil/src/cil_kl0.esp`, 176 names) has only `new_atom/1` for
+  atoms. So no witnessed built-in turns a string into an atom or back.
+
 Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
 `bell`, `cr`, `del`, `esc` (line 7117), and pf keys are 1-18. The full special-key code values
 are **UNKNOWN**.

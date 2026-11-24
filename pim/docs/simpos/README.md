@@ -324,6 +324,27 @@ and stand-in `simpos##` classes. In order:
        `common_network:is_installed/1`,
        `network_listener_buffer:create/4` (5 each); and class
        `pmacs_window`, without which `pimos_window_editor`'s window is 0.
+   - *2026-11-24, step 3c, second part:* nine opcode rows from known
+     plaintext:
+     - `add` (blt 40);
+     - `integer`, `unbound`, `bound` (blt 01, 10, 16);
+     - `stack_vector` (blt 06);
+     - `equal_string` (blt 68), `string_tail` (blt 33);
+     - `substring` (blt 32) and `search_character` (blt 5c), two cells
+       long.
+
+     Three HELD-SOURCE classes: morphana's `_simpos/` `name`,
+     `e_string` and `pathname`, SIMPOS's own as copied for Common ESP
+     (ICOT Free Software). In `pathname`, the port's `/` is restored to
+     `>`, and its commented-out clauses are restored, each marked. The
+     symbolizer's `get_number/3` and `get_number_string/3` work on
+     integers.
+     - Census: 607 succeed, 101 fail (38 more, the census's unbound
+       arguments failing a type test), 521 refuse.
+     - pmi b0 has no witness.
+     - The next blockers: blt 6e (38, in `fep_message_assembler`, no
+       source), pmi b0 29, pmi b4 21, the SIMPOS calls above, and
+       `alarm_watch:create/2`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
