@@ -87,6 +87,11 @@ kl0.py, and into espc.py for the last; both test files run; observed):
     that compiles them errors: two setUpClass,
     test_no_internal_refusal, test_only_witnessed_opcodes, test_kappa2,
     test_aspect_differences, test_counts, test_named_exact.
+  - integer/1 (step 3c) refuses an unbound argument instead of failing:
+    test_step3c_cells errors here; test_espc test_on_after_gets_further
+    errors and test_fep_census fails.
+  - search_character/5 (step 3c) starts one past B: nothing here;
+    test_espc test_held_source fails.
 """
 import os
 import sys
@@ -125,7 +130,8 @@ class Table(unittest.TestCase):
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
-        self.assertEqual(len(rows), 100)
+        # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68)
+        self.assertEqual(len(rows), 109)
 
     def test_string_cells(self):
         # the string rows' witness operands, run on the handlers alone:
@@ -143,6 +149,48 @@ class Table(unittest.TestCase):
         m.op_string_element(None, 0, 4, 2, 5, None)
         m.op_string(None, 0, 4, 6, 7, None)
         self.assertEqual((s.codes(), m.x[5], m.x[6], m.x[7]), ([0, 0x2121, 0], 0x2121, 3, 16))
+
+    def test_step3c_cells(self):
+        # the step 3c rows on their witness operands, handlers alone
+        # (2026-11-24).  A test that fails leaves pc None (empty stack)
+        m = machine()
+        # h.esp:186 `40 01 00 01`: A1 := A1 + A0
+        m.reset()
+        m.x[0], m.x[1] = 5, 7
+        m.op_add(None, 0, 1, 0, 1, None)
+        self.assertEqual(m.x[1], 12)
+        with self.assertRaises(K.Refusal):
+            m.op_add(None, 0, 1, 0, 2, None)    # R != A: unwitnessed
+        # `01 01`, `10 00`, `16 00`: type tests fail, never refuse
+        for f, x, want in ((m.op_integer, 3, True), (m.op_integer, K.Var(), False),
+                           (m.op_integer, K.Atom('a'), False), (m.op_unbound, K.Var(), True),
+                           (m.op_unbound, 3, False), (m.op_bound, 3, True),
+                           (m.op_bound, K.Var(), False)):
+            m.reset()
+            m.pc = 'here'
+            m.x[0] = x
+            f(None, 0, 0, 0, 0, None)
+            self.assertEqual(m.pc is not None, want, (f.__name__, x))
+        # `06 00 04`: stack_vector(SV, Size) on a stack vector, not a heap one
+        for v, want in ((K.Vec([1, 2, 3]), 3), (K.Vec([1, 2], heap=True), None)):
+            m.reset()
+            m.pc = 'here'
+            m.x[0] = v
+            m.op_stack_vector(None, 0, 0, 4, 0, None)
+            self.assertEqual(m.x[4] if m.pc is not None else None, want)
+        # `68 04 01`, `33 00 02 09`
+        m.reset()
+        m.pc = 'here'
+        m.x[4], m.x[1] = K.Str('ab'), K.Str('ab')
+        m.op_equal_string(None, 0, 4, 1, 0, None)
+        self.assertIsNotNone(m.pc)
+        m.x[0], m.x[2] = K.Str('abcdef'), 4
+        m.op_string_tail(None, 0, 0, 2, 9, None)
+        self.assertEqual(repr(m.x[9]), "string#'ef'")
+        m.pc = 'here'
+        m.x[1] = K.Str('ac')
+        m.op_equal_string(None, 0, 4, 1, 0, None)
+        self.assertIsNone(m.pc)
 
 
 class Convert(unittest.TestCase):
@@ -347,14 +395,16 @@ class Census(unittest.TestCase):
                 rank[k] = rank.get(k, 0) + 1
         # the string built-ins (blt 0b, 2b) take two methods further:
         # csp_default_write write/2 to string/3 on an unbound argument,
-        # state_pe reflesh/3 to a draw_string/6 sent to an unbound receiver
+        # state_pe reflesh/3 to a draw_string/6 sent to an unbound receiver.
+        # unbound/1 (blt 10, step 3c) takes the three `blt 10` methods on:
+        # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
-            'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
-            'receiver not an object': 8, 'unbound argument': 18, 'operand': 17,
+            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
+            'receiver not an object': 8, 'unbound argument': 20, 'operand': 17,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
-            'missing opcode pmi 36': 3, 'missing opcode blt 10': 3,
+            'missing opcode pmi 36': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,
             'missing opcode pmi c3': 1})
 

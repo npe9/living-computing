@@ -42,6 +42,19 @@ if [ "${1:-}" != "--check" ]; then
     # MK48T02 TIMEKEEPER data sheet, Feb 1992
     fetch_pdf "$B/sgs/_dataBooks/1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf" \
       1992_SGS-THOMSON_Memory_Products_2nd_Ed.pdf
+    # Hobbit BeBox board (docs/bebox_hardware.md):
+    # VLSI VL82C106 combo I/O (book pp. 6-185..6-220) and VL16C452 (6-51..)
+    fetch_pdf "$B/vti/databook/1990_VTI_Computer_Products.pdf" \
+      1990_VTI_Computer_Products.pdf
+    # Motorola MCS3201 floppy disk controller data sheet, 1991
+    fetch_pdf "$B/motorola/_dataSheets/MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf" \
+      MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf
+    # AMD Am53C94/Am53C96, Publication 16506 Rev. C, 1993 (not on bitsavers)
+    fetch_pdf "https://stuff.mit.edu/afs/sipb/contrib/doc/specs/ic/scsi/am53c94.pdf" \
+      am53c94.pdf
+    # NCR 53C94/95/96 data sheet, February 1990 (image-only scan; not on bitsavers)
+    fetch_pdf "https://cdn.hackaday.io/files/18974811783616/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf" \
+      NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf
 fi
 
 shasum -a 256 -c SHA256SUMS

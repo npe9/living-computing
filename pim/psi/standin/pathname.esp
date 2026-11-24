@@ -1,0 +1,166 @@
+% SCAFFOLDING stand-in for SIMPOS's class `pathname`, compiled by
+% psi/espc.py into the package `simpos`.  HELD-SOURCE: below the line of
+% dashes is the file `_simpos/pathname.esp` of LAX
+% (ifs/natural-lang/cesp/morphana.tar.Z, (C)1992 ICOT, ICOT Free
+% Software), with the label lines and the marked changes described here,
+% the character set read as EUC-JP and written as UTF-8.  Its stamps
+% (lines 6-7) say it was copied from SIMPOS 7D's
+% `icpsi372::>sys>simpos7D>supervisor>world>PNAM1.esp`, through a 1988
+% user copy (docs/simpos/subsystems/sweep_2026-11-24.md §2.1).
+%
+% The CESP port changed it (sweep §2.1).  Undone here, each marked
+% `% [SIMPOS form restored N]`, because SIMPOS's form is evidenced:
+%   1-4. the component separator `/` back to `>` (in get_local_last/4,
+%        its root case, and append_two/4 [2] and [5]).  Evidence: the
+%        file's own check_local_pathname/4 splits at #">" and set_names/3
+%        joins with #">" (lines 93-114); its comment [2] says
+%        Upath may be string#"Node::>"; the stamps themselves are SIMPOS
+%        pathnames (`>sys>simpos7D>supervisor>world>PNAM1.esp`).
+%   5-7. three clauses the port commented out, un-commented: get_local_last
+%        [2] (`LN:Name`, a logical name) and append_two [3] (#":") and [4]
+%        (#"]", marked `% Patch 6.13`).  Evidence: the clauses themselves,
+%        kept as comments, and the case list [1]-[4] after append_two/4,
+%        which names them as cases.  INFERENCE: commenting them out was
+%        the port's (a Unix path has no logical names), as the sweep reads
+%        it.
+% Kept, labelled `% [CESP, kept]`: `use_package(lax).` (espc.py ignores
+% it), and append/4's `:convert_to_8(#cesp##string, ...)`, which turns
+% the result into an 8-bit string for CESP; what SIMPOS's append/4 did
+% instead is not evidenced, so it is not guessed (kl0 refuses the send,
+% class cesp##string not loaded).
+% Not carried by the port, and so not here: remove_or_local/6,
+% check_pathname/3, last/4, straighten_up/5 (sweep §2.1).
+% Each method's first clause has a label line `% HELD-SOURCE:
+% pathname.esp:N` above it.  The methods espc.py refuses are pinned in
+% psi/test_espc.py.
+% ----------------------------------------------------------------------
+% (C)1992 Institute for New Generation Computer Technology
+% 配付その他はCOPYRIGHTファイルを参照して下さい
+% (Read COPYRIGHT for detailed information.)
+
+use_package(lax).   % [CESP, kept]
+% icpsi372::>sys>simpos7D>supervisor>world>PNAM1.esp
+% icpsi900::>sys>user>tateishi>world>PNAM1.esp.2, 17-Feb-88 14:55:17, Edit by tateishi
+
+        %%%%%%%%%%%%%%%%%%%%%%%%
+        %   class   pathname   %
+        %%%%%%%%%%%%%%%%%%%%%%%%
+
+class   pathname    has
+
+
+% :last_name/
+% HELD-SOURCE: pathname.esp:17
+:last_name(Class,Pathname,Parent_path,Name):-
+        unbound(Parent_path),
+        unbound(Name),
+        :get_last(Class,Pathname,Parent_path,Name) ;
+
+% :get_last/4
+% HELD-SOURCE: pathname.esp:23
+:get_last(Class,Pathname,Parent_path0,Name):-
+        get_last(Class,Pathname,Parent_path0,Name) ;
+
+   %   THIS METHOD ASSUMES Pathname SYNTAX IS RIGHT.
+
+% :append/4
+% HELD-SOURCE: pathname.esp:29
+:append(Class,Upath,Dpath,Pathname):-
+        append(Upath,Dpath,Pathname0) ,
+        :convert_to_8(#cesp##string,Pathname0,Pathname);   % [CESP, kept]
+
+% :append_names/3
+% HELD-SOURCE: pathname.esp:34
+:append_names(_,Names,Pathname):-
+        number_of_elements(Names,0,N),
+        total_length(Names,0,Total,Names0),
+        new_string(Pathname,Total + N - 1,16),
+        set_names(Names0,0,Pathname) ;
+
+local %
+% get_last/4
+get_last(_,Pathname,string#"",string#""):-
+        string(Pathname,0,_),!;
+get_last(_,Pathname,Parent_path,Name):-
+        string(Pathname,Length,_),
+        get_local_last(Pathname,Length - 1,Parent_path,Name) ;
+
+   %   THIS METHOD ASSUMES Pathname SYNTAX IS RIGHT.
+
+
+% get_local_last/4
+get_local_last(Pathname,End,Parent_path,Name):-
+        search_character(Pathname,End,0,#">",Last),!,   % [SIMPOS form restored 1]
+     (  Last  == 0 ,!,
+           Parent_path = string#">" ,   % [SIMPOS form restored 2]
+           string_tail(Pathname,1,Name) ;
+          %   Pathname is "/Name
+        substring(Pathname,0,Last,Parent_path),
+           string_tail(Pathname,Last + 1,Name)  ) ;
+get_local_last(Pathname,End,Parent_path,Name):-   % [SIMPOS form restored 5]
+        search_character(Pathname,End,0,#":",Position),!,
+        Position1 = Position + 1 ,
+        substring(Pathname,0,Position1,Parent_path),
+        string_tail(Pathname,Position1,Name) ;      % [2]  LN:Name
+get_local_last(Name,_,string#"",Name):- !;          % [3]  Name
+% append/3
+append(_,_,Nil):- 
+        Nil == nil ,!;
+append(Upath,Dpath,Dpath):-
+        string(Upath,0,_),!;
+append(Upath,Dpath,Pathname):-
+        bound(Dpath),
+        string(Upath,Length,_),
+        string_element(Upath,Length - 1,Last_element),
+        append_two(Last_element,Upath,Dpath,Pathname) ;
+
+% append_two/4
+append_two(_,Pathname, null ,Pathname):- !;        % [1]
+append_two( #">" ,Upath,Dpath,Pathname):- !,       % [2]   % [SIMPOS form restored 3]
+        :append(#string,[Upath,Dpath],Pathname) ;      
+append_two( #":" ,Upath,Dpath,Pathname):- !,       % [3]   % [SIMPOS form restored 6]
+        :append(#string,[Upath,Dpath],Pathname) ;       
+append_two( #"]" ,Upath,Dpath,Pathname):- !,       % [4]  % Patch 6.13   % [SIMPOS form restored 7]
+        :append(#string,[Upath,Dpath],Pathname) ;       
+append_two(_,Upath,Dpath,Pathname):-               % [5]
+        :append(#string,[Upath,string#">",Dpath],Pathname) ;   % [SIMPOS form restored 4]
+
+% [1] Dpath = null 
+% [2] Upath = string#"/" or string#"Node::>"
+% [3] Upath = string#"Logical_name:"
+% [4] Upath = string#"...>Name"
+
+% check_local_pathname/4
+check_local_pathname(Class,Pathname,Checked_pathanme,Cclass):-
+        :split(#e_string,Pathname,#">",Namelist),
+        check_names(Namelist,Namelist0,Cclass),
+        :append_names(Class,Namelist0,Checked_pathanme) ;
+
+% check_names/3
+check_names([],[],_):- !;
+check_names([Name],[Name0],Cclass):- !,
+        :check_name(Cclass,Name,Name0) ;
+check_names([Name|List],[Name0|List0],Cclass):-
+        :check_name(#name,Name,Name0),
+        check_names(List,List0,Cclass) ;
+
+% set_names/3
+set_names([{Last,Length}],Position,Pathname):- !,
+        set_substring(Pathname,Position,Length,Last) ;
+set_names([{Name,Length}|Names],Position,Pathname):-
+        set_substring(Pathname,Position,Length,Name),
+        Position1 = Position + Length ,
+        set_string_element(Pathname,Position1,#">"),
+        set_names(Names,Position1 + 1,Pathname) ;
+
+% total_length/4
+total_length([],Total,Total,[]):- !;
+total_length([Name|Names],C,Total,[{Name,Length}|Names0]):-
+        string(Name,Length,_),
+        total_length(Names,C + Length,Total,Names0) ;
+
+% number_of_elements/3
+number_of_elements([],N,N):- !;
+number_of_elements([_|L],C,N):-
+        number_of_elements(L,C + 1,N) ;
+end.

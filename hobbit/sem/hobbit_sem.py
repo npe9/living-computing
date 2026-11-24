@@ -77,7 +77,14 @@ Only the standard library is used.
 CLI (fixed contract)::
 
     python3 hobbit/sem/hobbit_sem.py --image IMAGE --sp HEX --msp HEX \
-        [--max-steps N]
+        [--max-steps N] [--part 92010|92020S [--borrow-92010-timing]]
+
+``--part`` selects the part (``PARTS``; default 92010, unchanged).  The
+92020S differs only where a source says so (docs/att92020.md): its ID
+register, and refusals (``Unsourced92020``) where no source says what it
+does -- the encodings its Wait For Interrupt may occupy, a FLUSHPBE
+whose address and target differ in bit 10 (Be's two 1994 kernels
+disagree there), and its timing unless --borrow-92010-timing.
 
 IMAGE is text, one 32-bit word per line, eight hex digits, ascending
 addresses from 0.  The parcel at an even address is in bits 31:16 and the
@@ -105,6 +112,64 @@ PSW_USER_LE = 1 << 15   # user little-endian data (p. 1-3; _little_endian)
 PSW_VIRTUAL = 1 << 16   # virtual addressing (not modelled)
 
 SCSIZE = 256            # 64 words, p. 1-5
+
+
+# --- Part selection: ATT92010 (default) or ATT92020S ---------------------
+# docs/att92020.md is the evidence for every value here.  No AT&T 92020
+# data sheet, programmer's reference or errata has been found, so the
+# 92020S column rests on contemporaneous trade press (Microprocessor
+# Report 7:14, 25 Oct 1993; AT&T's press release of 18 Oct 1993; CBR,
+# 17 Oct 1993) and on Be's 1994 kernels (the ID compare in _main1, the
+# FLUSHPBE workaround in _flushpbe_020).  What none of them gives is
+# refused, not guessed: see ``Unsourced92020``.
+@dataclass(frozen=True)
+class Part:
+    name: str
+    # JTAG ID register (Table 1-4, p. 1-11 field layout).
+    ident: int
+    # Prefetch buffer bytes (92010: p. 1-1 "3 Kbyte"; 92020S: MPR 7:14
+    # p. 1, CBR).  Recorded only: this model has no prefetch buffer and
+    # prices every fetch as a hit (the p. 4-1 assumption).
+    pfb_bytes: int
+    # Stack cache bytes (92010: p. 1-5; 92020S: CBR "256-byte stack
+    # cache").  Equal for both parts; SCSIZE is used.
+    stack_cache_bytes: int
+    # True when the printed Chapter 4 tables are this part's own.  The
+    # 92020S has no published timing; its runs must opt in explicitly to
+    # borrowing the 92010 tables (State.borrow_92010_timing).
+    own_timing: bool
+
+
+PARTS: Dict[str, Part] = {
+    # Mask two (version 1, part code 0, manufacturer 0x3B), the model's
+    # historical choice (System.ident).
+    "92010": Part("92010", 0x1000003B, 3072, 256, True),
+    # 0x0E33D03B: the constant Be's March and November 1994 kernels
+    # compare the ID register with before printing "Running on Hobbit 020
+    # processor" (_main1, CMPEQ $0x0e33d03b,R4 after CALL _get_id).
+    # Version 0, part code 0xE33D, manufacturer 0x03B by p. 1-11's
+    # layout.  Which 92020 part or mask answers with it is not stated.
+    "92020S": Part("92020S", 0x0E33D03B, 6144, 256, False),
+}
+
+# Parts named in the sources but refused: their multiplexed bus changes
+# every memory access's cost and no figure for it exists (MPR 7:14 p. 1:
+# "each transaction requires an extra cycle").
+REFUSED_PARTS = {
+    "92020M": "multiplexed 32-bit address/data bus; no bus timing sourced",
+    "92020MX": "multiplexed bus and a 3 Kbyte prefetch buffer; no bus "
+               "timing sourced",
+}
+
+
+def part_info(name: str) -> Part:
+    """The ``Part`` called ``name``; a ValueError for anything else."""
+    if name in PARTS:
+        return PARTS[name]
+    if name in REFUSED_PARTS:
+        raise ValueError("part %s is refused: %s (docs/att92020.md)"
+                         % (name, REFUSED_PARTS[name]))
+    raise ValueError("unknown part %r; known: %s" % (name, ", ".join(PARTS)))
 
 # --- Chapter 4 memory parameters (printed p. 4-2, no values printed) -----
 # The manual defines A, D and Q (p. 4-2) as the memory access times for a
@@ -375,6 +440,12 @@ class State:
     # Set by step() while it decodes the instruction after a CPU escape
     # (p. 3-14); False at every instruction boundary.
     cpu_prefix: bool = False
+    # The part modelled: "92010" (default) or "92020S" (``PARTS``).
+    part: str = "92010"
+    # A 92020S run must set this to have cyc priced from the 92010's
+    # Chapter 4 tables (no 92020 timing is published); without it every
+    # 92020S step is refused.  Ignored for the 92010.
+    borrow_92010_timing: bool = False
 
     @property
     def csp(self) -> int:
@@ -590,6 +661,17 @@ class PrivilegeViolation(Refusal):
 
 class UnimplementedRegister(Refusal):
     """Exception 6 (Table 1-26): CPU register 0 or 0xD..0xF (p. 1-27)."""
+
+
+class Unsourced92020(Unsupported):
+    """A 92020S case no source settles: refused, never guessed.
+
+    The reserved encodings are where the 92020's Wait For Interrupt
+    instruction (MPR 7:14 p. 1; AT&T press release 18 Oct 1993) must
+    live, and its encoding is not known; a FLUSHPBE whose own address
+    and target disagree in bit 10 is what Be's November 1994 kernel
+    avoids on the 020, while its March kernel does exactly that
+    (docs/att92020.md)."""
 
 
 class ZeroDivide(Unsupported):
@@ -990,6 +1072,10 @@ def _read_control(state: State, reg: int) -> int:
     if reg == REG_FAULT:
         return sysm.fault & MASK32
     if reg == REG_ID:
+        # The 92010 keeps System.ident (a harness may pick mask one); any
+        # other part answers with its own sourced ID (PARTS).
+        if state.part != "92010":
+            return part_info(state.part).ident
         return sysm.ident & MASK32
     if reg == REG_TIMER1:
         return sysm.timer1 & MASK32
@@ -1046,6 +1132,23 @@ def _write_control(state: State, reg: int, value: int) -> None:
         raise UnimplementedRegister(
             "unimplemented register 0x%x (Table 1-24 p. 1-26, p. 1-27)"
             % reg)
+
+
+def _reserved_encoding(state: State, what: str) -> None:
+    """Refuse an encoding the model does not implement for the 92010
+    (an unassigned subcode, or a one-parcel ``unimp*`` cell the model
+    already refused).
+
+    On the 92010 it is outside the model (``Unsupported``), as before.
+    On the 92020S it may be the Wait For Interrupt instruction, whose
+    existence is sourced (MPR 7:14 p. 1; AT&T press release, 18 Oct
+    1993) and whose encoding is not, so the refusal says so."""
+    if state.part == "92020S":
+        raise Unsourced92020(
+            "unsourced (92020S): %s is not an implemented 92010 "
+            "instruction and may be the 92020's Wait For Interrupt, whose "
+            "encoding no source gives (docs/att92020.md)" % what)
+    raise Unsupported("unsupported: %s" % what)
 
 
 def _little_endian(state: State) -> bool:
@@ -1695,6 +1798,21 @@ def step(state: State,
     insn1 = 0
 
     try:
+        # --- the part (PARTS): an unknown or refused one stops here ------
+        if state.part == "92010":
+            part = None                         # the fast, default path
+        else:
+            try:
+                part = part_info(state.part)
+            except ValueError as exc:
+                raise Unsupported("unsupported: %s" % exc)
+        if (part is not None and not part.own_timing
+                and not state.borrow_92010_timing):
+            raise Unsourced92020(
+                "unsourced (%s): no Chapter 4 timing is published for this "
+                "part; set borrow_92010_timing (CLI --borrow-92010-timing) "
+                "to price cyc from the 92010's tables (docs/att92020.md)"
+                % part.name)
         # --- state limitations, not instruction semantics -----------------
         if state.system is None and state.psw & PSW_VIRTUAL:
             raise Unsupported(
@@ -1949,8 +2067,8 @@ def step(state: State,
                     mnemonic = "CLRE"
                     new_psw = state.psw & ~PSW_E
                 else:
-                    raise Unsupported(
-                        "unsupported: niladic subcode 0x%03x (Table 1-17, "
+                    _reserved_encoding(
+                        state, "niladic subcode 0x%03x (Table 1-17, "
                         "p. 1-22)" % sub)
             elif op == 0x0D:                          # ADD3 wai5, stk5
                 mnemonic = "ADD3"
@@ -2080,9 +2198,9 @@ def step(state: State,
                 store = (Operand(4, True, ea=(state.csp + 4) & MASK32),
                          result)
             else:
-                raise Unsupported(
-                    "unsupported: 1-parcel opcode 0x%02x (Table 1-15, "
-                    "p. 1-22)" % op)
+                _reserved_encoding(
+                    state, "1-parcel opcode 0x%02x (Table 1-15, p. 1-22)"
+                    % op)
 
         # =================================================================
         # Three- and five-parcel instructions
@@ -2227,7 +2345,50 @@ def step(state: State,
                     # is an address; with no TLB, NPSR or prefetch buffer
                     # modelled there is no entry to mark invalid.
                     mnemonic = "FLUSHPTE" if sub == 0xB else "FLUSHPBE"
-                    _word32_value(state, memory_reader, mono, smode, 32)
+                    target = _word32_value(state, memory_reader, mono,
+                                           smode, 32)
+                    if sub == 0xC and state.part == "92020S" and smode == 0xD:
+                        # Table 3-2 (p. 3-4): word32 is "A 32-bit value"
+                        # in modes >= 0xC, and FLUSHPBE invalidates "the
+                        # quad-word at src" (p. 3-26), so FLUSHPBE R20
+                        # names the word held in R20 -- as Be's
+                        # _flushpbe_020 uses it (it tests that word's bit
+                        # 10) -- not the slot's address, which is the
+                        # CATCH/ENTER reading _word32_value gives.
+                        target = _read_word(
+                            state, memory_reader,
+                            (state.csp + _sx(mono, 32)) & MASK32)
+                    elif sub == 0xC and state.part == "92020S" and smode == 0xE:
+                        # Stack offset indirect: the value reading gives
+                        # the word the pointer points at, while p. 3-27's
+                        # FLUSHPTE note ("the address is moved into the
+                        # stack cache and the stack offset indirect
+                        # addressing mode is used") and Be's FLUSHPTE *R4
+                        # read it as the pointer itself.  Which address
+                        # the bit-10 rule applies to is not settled.
+                        raise Unsourced92020(
+                            "unsourced (92020S): FLUSHPBE with a stack-"
+                            "offset-indirect operand; its target address "
+                            "is ambiguous (Table 3-2 p. 3-4 against "
+                            "p. 3-27) and the 020 rule depends on it "
+                            "(docs/att92020.md)")
+                    if (sub == 0xC and state.part == "92020S"
+                            and ((pc ^ target) >> 10) & 1):
+                        # Be's November 1994 kernel runs FLUSHPBE on the
+                        # 020 only from an address whose bit 10 equals
+                        # the target's (_flushpbe_020 picks the copy at
+                        # _pbe_off or _pbe_on, and _main1 checks they
+                        # have not moved); its March kernel pairs them
+                        # the other way.  The model follows the later
+                        # kernel and refuses the other case; no document
+                        # found settles it (docs/att92020.md).
+                        raise Unsourced92020(
+                            "unsourced (92020S): FLUSHPBE at 0x%08x of "
+                            "0x%08x, address bit 10 differs; Be's 020 "
+                            "workarounds disagree (November avoids this, "
+                            "March does only this) and no 92020 document "
+                            "says what happens (docs/att92020.md)"
+                            % (pc, target & MASK32))
                 elif sub == 0xB:
                     raise Unsupported(
                         "unsupported: FLUSHPTE (monadic 0x00/0xB; p. 3-27)")
@@ -2239,9 +2400,9 @@ def step(state: State,
                         "unsupported: FLUSHDCE (monadic 0x00/0xD); no data "
                         "cache, unimplemented sequence (p. 3-23)")
                 else:
-                    raise Unsupported(
-                        "unsupported: monadic subcode 0x%x (Table 1-19, "
-                        "p. 1-24)" % sub)
+                    _reserved_encoding(
+                        state, "monadic subcode 0x%x (Table 1-19, p. 1-24)"
+                        % sub)
 
             elif opcode == 0x06:                        # MOV
                 mnemonic = "MOV"
@@ -2561,6 +2722,16 @@ def step(state: State,
                     "privilege violation: write of %s at user level "
                     "(p. 1-27)" % REG_NAMES[store[0].reg])
             reg_store, store = store, None
+            if (state.part == "92020S" and reg_store[0].reg == REG_CONFIG
+                    and reg_store[1] & 0xFFFF):
+                # Reserved (=0) on the 92010 (Table 1-2, p. 1-10); the
+                # 92020 may give them a meaning (its larger prefetch
+                # buffer, its wait state) and no 92020 CONFIG table has
+                # been found.  Checked here, before anything is committed.
+                raise Unsourced92020(
+                    "unsourced (92020S): CONFIG write 0x%08x sets reserved "
+                    "bits 15:0, whose 92020 meaning no source gives "
+                    "(docs/att92020.md)" % (reg_store[1] & MASK32))
         if sysm is not None and mnemonic == "KCALL":
             # KCALL's frame goes to the interrupt stack at kernel level
             # (a fault there resets the part, p. 3-29), from any level.
@@ -3029,8 +3200,20 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="stop when the next PC equals the image length "
                              "in bytes, without executing past the end "
                              "(default: on)")
+    parser.add_argument("--part", default="92010",
+                        help="the part modelled: 92010 (default) or 92020S "
+                             "(docs/att92020.md); 92020M/MX are refused")
+    parser.add_argument("--borrow-92010-timing", action="store_true",
+                        help="92020S only: price cyc from the 92010's "
+                             "Chapter 4 tables (no 92020 timing is "
+                             "published); without it a 92020S run is "
+                             "refused at its first step")
     args = parser.parse_args(argv)
 
+    try:
+        part_info(args.part)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.max_steps < 0:
         parser.error("--max-steps must be non-negative")
 
@@ -3055,7 +3238,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 2
 
     reader = ImageReader(image)
-    state = State(pc=0, sp=sp, msp=msp, psw=psw, isp=isp, vb=vb)
+    state = State(pc=0, sp=sp, msp=msp, psw=psw, isp=isp, vb=vb,
+                  part=args.part,
+                  borrow_92010_timing=args.borrow_92010_timing)
+    if args.part != "92010" and args.borrow_92010_timing:
+        print("hobbit_sem: part %s, cyc priced from the 92010's Chapter 4 "
+              "tables (no 92020 timing is published)" % args.part,
+              file=sys.stderr)
     image_len = len(image) * 4
 
     for _ in range(args.max_steps):

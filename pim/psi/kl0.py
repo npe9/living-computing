@@ -1318,6 +1318,86 @@ class Machine:
         self.x[c] = cs[i]
         self.nxt(code, off)
 
+    # -- step 3c rows (2026-11-24): add, type tests, equal_string,
+    # string_tail, stack_vector (psi/kl0_opcodes.tsv)
+    def op_add(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'add') + self._int(self.x[b], 'add'),
+                    'add')
+
+    def op_stack_vector(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        if isinstance(t, Vec) and not t.heap:
+            self.x[b] = len(t.args)
+            self.nxt(code, off)
+        else:
+            self.fail()
+
+    def op_integer(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()
+
+    def op_unbound(self, code, off, a, b, c, v):
+        self.nxt(code, off) if isinstance(deref(self.x[a]), Var) else self.fail()
+
+    def op_bound(self, code, off, a, b, c, v):
+        self.fail() if isinstance(deref(self.x[a]), Var) else self.nxt(code, off)
+
+    def op_equal_string(self, code, off, a, b, c, v):
+        s, t = self._str(self.x[a], 'equal_string'), self._str(self.x[b], 'equal_string')
+        self.nxt(code, off) if s.codes() == t.codes() else self.fail()
+
+    def op_string_tail(self, code, off, a, b, c, v):
+        s = self._str(self.x[a], 'string_tail')
+        cs = s.codes()
+        p = self._int(self.x[b], 'string_tail')
+        if not 0 <= p <= len(cs):
+            raise Refusal('built-in', 'string_tail at %d of %d' % (p, len(cs)))
+        t = Str('', s.type)
+        t.set_codes(cs[p:])
+        self.x[c] = t
+        self.nxt(code, off)
+
+    def ext_cell(self, code, off, what):
+        """The integer cell after a two-cell built-in: (high byte, next)."""
+        c = self.operand(code, off)
+        if c[1] != 0x00:
+            raise Refusal('operand', '%s: operand cell %s' % (what, P.show(dict(syms=code.t.symbols), c)))
+        return c[3] >> 24 & 255, c[3] >> 16 & 255, c[3] & 0xffff
+
+    def op_substring(self, code, off, a, b, c, v):
+        r, z, low = self.ext_cell(code, off, 'substring')
+        if z or low:
+            raise Refusal('operand', 'substring operand cell with low bytes set: unwitnessed')
+        cs = self._str(self.x[a], 'substring').codes()
+        s = deref(self.x[a])
+        p, n = self._int(self.x[b], 'substring'), self._int(self.x[c], 'substring')
+        if p < 0 or n < 0 or p + n > len(cs):
+            raise Refusal('built-in', 'substring %d+%d of %d' % (p, n, len(cs)))
+        t = Str('', s.type)
+        t.set_codes(cs[p:p + n])
+        self.x[r] = t
+        self.nxt(code, off, 2)
+
+    def op_search_character(self, code, off, a, b, c, v):
+        ch, r, low = self.ext_cell(code, off, 'search_character')
+        if low:
+            raise Refusal('operand', 'search_character operand cell with low bytes set: unwitnessed')
+        cs = self._str(self.x[a], 'search_character').codes()
+        i, e = self._int(self.x[b], 'search_character'), self._int(self.x[c], 'search_character')
+        k = self._int(self.x[ch], 'search_character')
+        if i < 0 or e >= len(cs):
+            raise Refusal('built-in', 'search_character %d..%d of %d' % (i, e, len(cs)))
+        if i > e:
+            # pathname.esp:53 searches from End down to 0 (the last `>`):
+            # a backward search, its result not witnessed in a trace
+            raise Refusal('built-in', 'search_character backwards %d..%d: unwitnessed' % (i, e))
+        while i <= e:
+            if cs[i] == k:
+                self.x[r] = i
+                return self.nxt(code, off, 2)
+            i += 1
+        self.fail()
+
     def op_set_string_element(self, code, off, a, b, c, v):
         s = self._str(self.x[a], 'set_string_element')
         cs = s.codes()

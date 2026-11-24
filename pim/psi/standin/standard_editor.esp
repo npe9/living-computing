@@ -1,0 +1,35 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_editor` (Pmacs's
+% editor object), compiled by psi/espc.py into the package `simpos`.
+% It is NOT SIMPOS: no part of it is printed.  It is MINIMAL: of the
+% selectors held code sends to an editor (docs/simpos/subsystems/
+% window.md §2.11 and its usage table: get_window/2, current_buffer/2,
+% set_current_buffer/2, select_buffer/2, clear_input/1, exception/2,
+% carriage_return/1, ...) only get_window/2 is here, because 21 methods
+% of pimfep##pimos_window_editor stop at it (kl0 census --fep,
+% 2026-11-24).  pimos_window_editor's natures, as its template writes
+% them, are `simpos##standard_editor, pimfep##as_pimos_device`, so this
+% is the unloaded ancestor that holds the method (the other one,
+% simpos##as_program, is reached through as_pimos_device).
+%
+% Model (OURS): the editor's window in one slot.  In SIMPOS the window
+% and its editor are made together by `:create(#pmacs_window, Opts, _, W)`
+% and `:get_editor(W, E)` (window.md §2.11, from disc/exshow.esp:23-35);
+% class pmacs_window is not stood in, so no window is ever made and the
+% slot keeps its constant 0.  kl0 then refuses the next send, to the
+% window, as "receiver not an object".
+
+class standard_editor has
+
+instance
+
+% INTERPOLATED: the representation (OURS; see above).
+attribute window := 0;
+
+% :get_window(Editor, Window) -- the editor's window.
+% INTERPOLATED from: window.md §2.11 ("editor -> window", 188 uses);
+% the call sites kappa2 utility/fmp/KMACS.ESP:84, :106 and others
+% (`:get_window(Editor,Window)`, then window methods on Window); the held
+% compiled sends in pimfep##pimos_window_editor (21 methods, 2026-11-24).
+:get_window(Editor, Window) :- Window = Editor!window;
+
+end.

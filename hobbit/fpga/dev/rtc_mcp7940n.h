@@ -1,8 +1,9 @@
 // rtc_mcp7940n.h -- a behavioural MCP7940N (Microchip I2C real-time clock
 // with battery-backed SRAM) on a cycle-level I2C bus, for rtc_iic_tb.cpp.
 //
-// SOURCES.  The data sheet (Microchip DS20005010) is NOT on disk, so no
-// page is cited; every statement below is marked by where it comes from:
+// SOURCES.  The data sheet (Microchip DS20005010) is NOT on disk (its
+// download awaits the owner's approval), so no page is cited; every
+// statement below is marked by where it comes from:
 //   [T]  ~/src/ulx3s-experiments/flute-lx50/test/rtc_test.c, a program
 //        written for the chip on this board design (not yet run on the
 //        board, its notes say) that cites
@@ -10,13 +11,18 @@
 //        bit 3 VBATEN (off at the chip's power-on) and bit 4 PWRFAIL
 //        (cleared by writing RTCWKDAY); CONTROL 0x07; register-pointer
 //        writes then repeated-START reads; weekday 1..7.
-//   [I]  inference, from memory of the part's family, NOT checked against
-//        the data sheet: RTCWKDAY bit 5 OSCRUN (oscillator running, read
-//        only), RTCHOUR bit 6 12/24 and bit 5 AM/PM, RTCMTH bit 5 LPYR
-//        (read only), SRAM 0x20..0x5F (64 bytes), the register pointer
-//        auto-incrementing over a burst, OSCRUN clearing some time after
-//        ST is cleared, and the recommendation to stop the oscillator
-//        (ST = 0, wait for OSCRUN = 0) before writing the time.
+//   [L]  Linux 6.17-rc7 drivers/rtc/rtc-ds1307.c, mcp794xx paths (read
+//        only, nothing copied): RTCWKDAY bit 5 OSCRUN (time refused when
+//        clear); RTCHOUR bit 6 12/24 and bit 5 PM, 12 read as 0 before PM
+//        adds 12; SRAM 64 bytes at 0x20 ("battery backed SRAM"); the
+//        seven time registers moved in one bulk transfer from 0 (so the
+//        pointer auto-increments).
+//   [R]  RTEMS bsps/shared/dev/rtc/mcp7940m.c (MCP7940M, same map, no
+//        battery): RTCMTH bit 5 LPYR.
+//   [I]  inference, confirmed by none of the above: OSCRUN clearing some
+//        time after ST is cleared, and stopping the oscillator (ST = 0,
+//        wait for OSCRUN = 0) before writing the time.  Linux instead
+//        writes all seven registers, ST set, in one burst.
 //   [M]  modelling choices of this file: OSCRUN sets the cycle ST is
 //        written 1, and the second starts counting from that cycle; the
 //        pointer wraps from 0x5F to 0x00; a read returns the live
@@ -96,7 +102,7 @@ struct Mcp7940n {
         reg[6] = reg[6] == 0x99 ? 0 : bcdInc(reg[6]);
     }
 
-    void fixLpyr() {           // [I] LPYR read only, from the year
+    void fixLpyr() {           // [R] LPYR; read only, from the year [M]
         reg[5] = (reg[5] & 0x1F) | ((bin(reg[6]) % 4 == 0) ? 0x20 : 0);
     }
 
