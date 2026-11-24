@@ -570,7 +570,14 @@ least one verified use; about 23 of 64 have every value characterised
 (JMPF, the 16-bit EM, the three memory strobes, bit 57). Untouched:
 bit 63, SD2 38-37, ALF 28-26, 18, 17-16, all condition codes, most
 register numbers. Field boundaries are TR-733 fig. 4's geometry,
-confirmed for JMPF and EM only.
+confirmed for JMPF and EM only. *Corrected 2026-11-23: the
+boundaries are now Nakashima's Fig. 3-25 (`psi_microword.md` sections
+3 and 7; `pim_architecture.md` section 5): bit 63 is DBGF (zero in
+99.6%), ALF is 28-27 with 0 add, 1 subtract and EM2 the operation for
+2 and 3 (`rassy`'s ALU table below, confirmed at the `and`, `or`,
+`shift_left`, `shift_right` entries), JMPF is 26-23, 18 is MCF, 17-16
+TGIF. Still uncharacterised: CNDF's conditions, SD2F and AS2F beyond
+`rassy`'s values, MCF, TGIF 3, JMPF's bit 26.*
 
 **New in this probe: the firmware's reverse assembler is in the
 archive** (MEASURED, `python3 asm/ptfdump.py pimmutil rassy`).

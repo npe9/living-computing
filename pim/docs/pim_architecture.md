@@ -198,6 +198,36 @@ through to the completed branch takes two cycles. The field
 assignments within each field (the values) are still not printed;
 `pseudo_pimm_microcode.md` reads them from the Pseudo PIM/m binary.*
 
+*Corrected 2026-11-23: the layout the project decodes by is no longer
+TR-733 fig. 4's. Nakashima's 1991 thesis, Fig. 3-25 (printed p.143;
+`psi_microword.md` section 3) prints the PSI-III microword, and the
+held PSI-III stores (`syspsi`, the KL1 image of `pimm.MEkbn`) fit it
+better where the two documents disagree, bits 36..23
+(`psi_microword.md` sections 4.2 and 7). `asm/mekbn.py` now uses it.
+Bits 63..0, with the source of each field:*
+
+| Bits | Field | Source |
+|---|---|---|
+| 63 | DBGF | thesis; MEASURED zero in 99.6% (TR-733: an unnamed strobe) |
+| 62-58 | CCF | thesis and TR-733; read as five strobes (MEASURED); `rassy` has a value table instead (open) |
+| 57 | WRBF | thesis (TR-733: unnamed strobe); MEASURED, names the work-register file |
+| 56-52, 51-47, 46-42 | DSTF, SC1F, SC2F | thesis and TR-733 |
+| 41-39, 38-37 | SD1F, SD2F | thesis and TR-733; values `rassy` and MEASURED |
+| 36-34 | ADF | thesis (TR-733 prints AS1F here); MEASURED the ALU destination |
+| 33-31 | AS1F | thesis (TR-733: AS2F 33-32 and ADF's top bit); MEASURED values XR, MDR1, MDR2, MAR1, MAR2 |
+| 30-29 | AS2F | thesis (printed "AS1F" [sic]); values from `rassy` only |
+| 28-27 | ALF, 2 bits | thesis (TR-733 prints 3 bits, 28-26); MEASURED: 0 add, 1 subtract, 2 and 3 take the operation from EM2 (operation names from `rassy`) |
+| 26-23 | JMPF, 4 bits | thesis (TR-733 prints 3 bits, 25-23); MEASURED |
+| 22-19 | CNDF | thesis and TR-733 |
+| 18 | MCF | thesis (TR-733: unnamed); name also in `rassy` |
+| 17-16 | TGIF | thesis (TR-733: unnamed); name also in `rassy`; MEASURED tag stamp |
+| 15-10, 9-4, 3-0 | EM1, EM2, EM3 | thesis and TR-733 |
+
+*The documents conflict as printed (TR-733 describes PIM/m, 1992; the
+thesis PSI-III, 1991; the held microcode is PSI-III's and runs on the
+PIM/m PU, TM-862). `literature_gaps.md` App. C 2.3 remains a faithful
+transcription of TR-733.*
+
 The instruction set is KL1-B: the PU executes "WAM-like instructions for
 KL1, named KL1-B" (`M92` p. 427). `OV92` p. 62 adds that the PIM/m
 instruction set is KL1-B itself and is binary compatible with Multi-PSI/v2;

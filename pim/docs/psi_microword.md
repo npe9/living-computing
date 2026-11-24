@@ -5,8 +5,10 @@ Working notes of a delegated reading of Nakashima's 1991 thesis
 against the held PSI-III stores in `psdpim.tar.Z`, kept as written. The
 scripts it used are in `asm/psi_microword/` (run as `python3 -I
 asm/psi_microword/X.py docs/nonlocal/psdpim.tar.Z`). Summary:
-`psi_acquisition.md` section 11. Not yet applied: `asm/mekbn.py`'s
-FIELDS still follow TR-733 fig. 4.
+`psi_acquisition.md` section 11. *Applied 2026-11-23: `asm/mekbn.py`'s
+FIELDS now follow Fig. 3-25; the before/after measurements are in
+section 7.* (The "bin/" paths in sections 4 and 6 are the delegated
+run's names for what is held as `asm/psi_microword/`.)
 
 # Nakashima 1991 thesis: PSI microinstruction formats, and a test against the held PSI-III stores
 
@@ -359,3 +361,100 @@ section 3.2.2's text as seen only in the OCR layer; Appendix C itself not opened
 - `bin/sysinit_regions.py`; `sysinit_out.txt`; `bin/idat.py` (sysidat)
 - `img/` page renders and figure crops (f311a/b, f319, f325_0/1, f322b)
 Run any of them as `python3 -I bin/X.py /Users/npe/src/living-computing/pim/docs/nonlocal/psdpim.tar.Z`.
+
+## 7. Applied to `asm/mekbn.py`, and re-measured (2026-11-23)
+
+`asm/mekbn.py`'s FIELDS moved from TR-733 fig. 4 to Fig. 3-25. Each
+field's source is now written beside it in the code. Labels as above;
+[RASSY] = a value or name from the firmware's reverse assembler
+(`binary_reverse_engineering.md` section 3), which gives no bit
+positions.
+
+| Bits | Before (TR-733 fig. 4, as `mekbn.py` read it) | After | Source of the after |
+|---|---|---|---|
+| 63 | not decoded | DBGF | [READ] thesis; [MEASURED] zero in 99.6% |
+| 62-58 | CCF | CCF | [READ] both. Bits read as strobes [MEASURED, third pass]; [RASSY] gives a value table instead: conflict still open |
+| 57 | not a field (`WRB_BIT`) | WRBF | [READ] thesis; [MEASURED] names the W file |
+| 56-42 | DST, SC1, SC2 | DSTF, SC1F, SC2F | [READ] both |
+| 41-37 | SD1, SD2 | SD1F, SD2F | [READ] both; values [RASSY] and [MEASURED] |
+| 36-34 | AS1 | ADF | [READ] thesis (TR-733 prints AS1F here); [MEASURED] the ALU destination |
+| 33-31 | AS2 (33-32) + AD's top bit | AS1F | [READ] thesis; [MEASURED] values 1, 4, 5, 6, 7 = XR, MDR1, MDR2, MAR1, MAR2 (4.2 test 3; the enable test below); 2, 3 open |
+| 30-29 | AD's two low bits | AS2F | [READ] thesis (printed "AS1F" [sic]); values 0 / 1 YR / 2 MDR1 / 3 MDR2 [RASSY] only (1 = YR also DERIVED, third pass) |
+| 28-27 | AL (28-26, 3 bits) | ALF (2 bits) | [READ] thesis; [MEASURED] 4.2 test 5, and below |
+| 26-23 | JMP (25-23, 3 bits) | JMPF (4 bits) | [READ] thesis; [MEASURED] 4.2 test 1, and below |
+| 22-19 | CND | CNDF | [READ] both |
+| 18 | x18 | MCF | [READ] thesis; name also [RASSY] |
+| 17-16 | x17 | TGIF | [READ] thesis; name also [RASSY]; the stamp rule [MEASURED, third pass] |
+| 15-0 | EM | EM1, EM2, EM3 (6, 6, 4); `EM` kept as their concatenation | [READ] both |
+
+**Rules changed, beyond names** (all else re-expressed bit for bit):
+
+- `flow()` reads the branch kind from JMPF's low three bits (`jk(x)`,
+  = TR-733's JMPF), so k and k + 8 are read alike, except **4-bit JMPF
+  2, which is no longer a page-relative branch** (kind `jmpf2`, no
+  target, falls through; what it does is open).
+- The ALU's "plain add / pass" test is ALF = 0; under TR-733's 3-bit
+  ALF it also required bit 26 (JMPF's top bit) clear.
+- `alu_op()`: ALF 0 = add, 1 = subtract [MEASURED: `add` `3a68` and
+  `subtract` `3a70` differ only in bit 27 and the jump target;
+  likewise `add_extended` `29c8` / `subtract_extended` `29d8`]; ALF 2, 3
+  take EM2 as the operation, named by [RASSY]'s 16-entry table and
+  confirmed at four entries: `and` `3b08` EM2 8, `or` `3b10` 9,
+  `shift_left` `3af2` 12, `shift_right` `3afb` 14 (`alu_entries`, pinned).
+- `--rtl` and `--dis` print the new names; `--rtl` names AS1F and AS2F
+  operands (`MDR1`, `MDR2`, ... instead of "MDR") and the operation.
+- Not changed: the tracer (`Walk`) still takes the MAR of an AS1F = 6
+  operand from bit 58, not from AS1F's low bit.
+
+**Step A, the translation alone** (TR-733 conditions rewritten in the
+new fields, including bit 26 in the ALU test and 3-bit JMPF 2):
+`--check` passed against the unchanged pins, every key.
+
+**Measurements, before and after** (MEASURED; before = the TR-733
+layout, `asm/psi_microword/mekbn_fields.py` run on the unchanged tree;
+after = the same script and `mekbn.py --check`, which now pins every
+"after" number below):
+
+| Measure | Before | After |
+|---|---|---|
+| Bits in no field | 63, 57 | none |
+| Bit 63 / DBGF set | (not decoded) | 86 of 24,414 (syspsi), 57 of 18,343 (image 2): 99.6% / 99.7% zero |
+| Jump targets, syspsi: targets / in image / on a non-zero word | 11,086 / 11,086 / 11,004 (99.3%) | 11,060 / 11,060 / 10,984 (99.3%): the 26 removed are 4-bit JMPF 2 |
+| Jump targets, image 2 | 8,075 / 7,727 / 7,709 | 8,059 / 7,711 / 7,700 |
+| Page-relative landing, image 2 | 3-bit 2: 525 of 532; 3: 246/246; 6: 1,497/1,497; 7: 231/231 | 4-bit a 516/516, b 47/47, 3 199/199, 6 1,091/1,091, 7 199/199, e 406/406, f 32/32; **all 7 misses were 4-bit 2 (9 of 16, baseline 69%)**; syspsi 4-bit 2: 20 of 26 (baseline 74.5%) |
+| 4-bit JMPF 2 words with ALF 2/3 (EM2 an operation) | (not expressible) | 10 of 26 (syspsi), 6 of 16 (image 2) |
+| ALU field values | AL 0..7: EM2 takes 64/64/64/62 values with AL 0..3 and 12/12/16/10 with AL 4..7 (syspsi); the operation was printed `opN` | ALF 0 (18,681 words) / 1 (2,670): EM2 free (64 values); ALF 2 (694): 13 values; ALF 3 (2,369): 16 values. Image 2: 15,094 / 1,446 / 438 (14 values) / 1,365 (17) |
+| ALU operation distribution (syspsi) | (none) | + 18,765, - 2,744, shift_left 850, shift_right_32m 573, and 403, or 190, sub_with_one 154, pass_as2 149, add_with_one 116, EM2 1 110, reverse_sub 90, xor 67, add_with_carry 55, EM2 0x10 54, shift_left_rotate 44, sub_with_carry 43, 7 others |
+| ALU operation distribution (image 2) | (none) | + 15,127, - 1,509, shift_left 366, shift_right_32m 233, and 216, or 163, sub_with_one 109, add_with_carry 94, EM2 0x30 87, add_with_one 79, xor 68, pass_as2 65, reverse_sub 55, shift_left_rotate 45, EM2 1 44, EM2 0x20 44, 5 others |
+| ALF 2/3 together with a branch whose address uses EM2 (page-relative, absolute, JMPF 1 jump) | (not expressible) | **1 of 3,063 (syspsi; chance 1,265), 0 of 1,803 (image 2; chance 732)**; the exception is one JMPF e word of syspsi |
+| SC2F = 9 (EM2 immediate) with a page-relative branch | 3 with 3-bit JMPF 2 in image 2, "not excluded" | 0 with 4-bit a; the 3 (`0105`, `0107`, `2401`) are 4-bit 2 |
+| Enable rule on AS1F, strobe-free words | "AS2 = 2" (the MDR) with neither bit 58 nor 59: 3 of 3,541 | AS1F = MDR1 without bit 58: 2 of 2,618; AS1F = MDR2 without bit 59: 1 of 923 (image 2); syspsi 16 of 2,829 and 27 of 1,676. The other bit is at its base rate: bit 59 in 453 of the 2,618 (17%; 17.5% of all strobe-free words), bit 58 in 202 of the 923 (22%; 34%). So bit 31 says which MDR, as test 3 found |
+| "One word later" (`xr_pass`) | 420 of 487 (image 2), 245 of 341 (syspsi) | 450 of 532, 267 of 382 (the words with bit 26 set now qualify) |
+| Base plus constant (`base_plus_constant`) | 133 uses, constant at most 15; syspsi 10, at most 13 | 141, at most 15; syspsi 13, at most 13 (the prediction "never above 15" holds on 8 more uses) |
+| Record writes (`records`) | `suspend` cell 15 (`1c10`): not recovered | `{VECT2o, 0}`; it rests on TGIF 3 = both stamps, not verified (`pseudo_pimm_microcode.md` section 21) |
+| Every other pin of `--check` | | unchanged |
+
+Fault injections into the new checks (OBSERVED, on scratch copies of
+`mekbn.py`, `measure()` against `PINNED`):
+
+| Injection | Pins that FAILed |
+|---|---|
+| 4-bit JMPF 2 read as page-relative again (`JMPF2_OPEN` = -1) | `img2_mem[sc2_other_branches]`, `syspsi_jmpf_landing`, `img2_jmpf_landing`, `syspsi_jmpf2`, `img2_jmpf2` |
+| TR-733 widths ALF 28-26, JMPF 25-23 | `img2_mem` and `syspsi_mem` [`base_plus_constant`, `xr_pass`], `records[suspend_trailer]`, `img2_page_relative`, both `_jmpf_landing`, both `_jmpf2`, both `_alf_em2`, `alu_entries` |
+| TR-733 order (AS1F 36-34, AS2F 33-32, ADF 31-29) | both `_mem` [`alu_dst_port`, `base_plus_constant`, `mdr_enable`, `read_port`, `read_then_mdr`, `xr_pass`], `fill_after_alloc[1d3a, 30f3]`, `records` (7 of 8 paths), both `_as1f_enable` |
+| ALF 0 / 1 named the other way round | `alu_entries` |
+
+**Still open:** what bit 26 adds (JMPF 8 falls through like 0 but has
+CNDF non-zero in 52% of its words against 26%; the thesis says JMPF
+"takes part of condition generation from CNDF"); what 4-bit JMPF 2
+does; whether JMPF 9 really is JMPF 1's kind (the JMPF 1 rule lands
+30 of 31 and 46 of 46 of its jumps, but its EM taken as absolute also
+lands, 68 of 68); ALF 2 against 3; EM2 values 1 and 16 and above as
+operations; AS1F 2 and 3; AS2F's values (RASSY only); CCF's coding;
+MCF; TGIF 3. And the documents still conflict: TR-733 describes PIM/m
+(1992) and prints ALF 3, JMPF 3; the held PSI-III stores fit the
+thesis.
+
+Script: `asm/psi_microword/mekbn_fields.py` (imports `mekbn`, so its
+output follows `mekbn.py`'s layout; run from `pim/` as `python3 -I
+asm/psi_microword/mekbn_fields.py`).
