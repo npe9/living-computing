@@ -158,6 +158,13 @@ The kernel link (A3): `tools/p9kgen.py` makes the generated inputs,
 `plan9-1e/hobbit/s9term`, failing only on what must agree
 (`docs/s9term.md`).  `plan9-1e/hobbit/bin/size` and `sys/src/cmd/size.c`
 (2026-11-23) are the `9term` rule's last command.
+
+Added 2026-11-24 for the boot ROM (`../docs/boot_rom.md`), from the same
+archive (sha256 re-verified that day) and pinned in `SHA256SUMS`:
+`plan9-1e/hobbit/lib/libmach.a` (the ROM's boot program, `romboot.c`,
+includes `<mach.h>`, whose `#pragma lib "libmach.a"` makes `zl` link it
+for `crackhdr`) and `plan9-1e/sys/src/libmach/executable.c` (what
+`crackhdr` returns for a `-H1` image, which `mkrom.c` depends on).
 `tools/p9symdef.py ARCHIVE` accounts for every byte of an archive's
 `__.SYMDEF` past a name's NUL: libmach's `readar()` replayed, and the
 stack bytes `/mips/bin/rl`'s frames leave (the shipped tables were

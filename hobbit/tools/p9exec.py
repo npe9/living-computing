@@ -319,8 +319,11 @@ def kernel_symbols(k):
     return out
 
 
-def check_kernel(k, syms):
-    """What asmb's case 1 and pass.c's xdefine()s make true of any -H1 file."""
+def check_kernel(k, syms, data_base=None, entry=None):
+    """What asmb's case 1 and pass.c's xdefine()s make true of any -H1 file.
+    `data_base` / `entry`: the link's -D and -E when it gave them (9rom:
+    -D0xC0604000 -E0x0, sys/src/9/hobbit/mkfile), checked instead of
+    "the data follows the text" and "the entry is in the text"."""
     w = k["words"]
     p = []
     fixed = {1: 0, 4: KOPT, 5: KAOUT, 13: 0xFFFFFFFF, 15: 0, 16: 0, 17: 0,
@@ -344,10 +347,17 @@ def check_kernel(k, syms):
         p.append("bss base != data base + data")
     # -R4 and no -D: INITDAT = rnd(INITTEXT + textsize, INITRND).
     gap = k["database"] - (k["textbase"] + k["text"])
-    if not 0 <= gap < 4096 or k["database"] % 4:
+    if data_base is not None:
+        if k["database"] != data_base:
+            p.append("data base 0x%x is not -D 0x%x"
+                     % (k["database"], data_base))
+    elif not 0 <= gap < 4096 or k["database"] % 4:
         p.append("data base 0x%x does not follow the text (gap %d)"
                  % (k["database"], gap))
-    if not k["textbase"] <= k["entry"] < k["textbase"] + k["text"]:
+    if entry is not None:
+        if k["entry"] != entry:
+            p.append("entry 0x%x is not -E 0x%x" % (k["entry"], entry))
+    elif not k["textbase"] <= k["entry"] < k["textbase"] + k["text"]:
         p.append("entry 0x%x outside the text" % k["entry"])
     if not syms:
         return p
