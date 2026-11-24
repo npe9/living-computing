@@ -5,7 +5,7 @@ Bell, and Newell, *Computer Structures: Principles and Examples* (1982).
 The machine-specific name and printed chapter/page are tracked in
 computer-structures-plan.md.
 
-Bluespec implementation: bsv/ (not started).
+Bluespec implementation: bsv/ — an Alto II model imported 2026-11-24; status and gaps in README.md.
 
 Use the accompanying plan as the evidence gate. Preserve the machine's own
 ISP/ISPS behavior, PMS structure, performance dimensions, and historical
