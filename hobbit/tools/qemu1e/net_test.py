@@ -6,8 +6,9 @@
   cpu9     9pccpu.qs from build/qemu-cpu/fd-cpu.img (cpukernel.sh), no
            disk: /boot asks `root is from` (il) and, with no #r/nvram,
            the host key's password (boot/key.c); its root is fs9's kfs
-           over IL; at its console `aux/listen il` starts the release's
-           /bin/service (il17005 = `cpu -R`), as cpurc's own cases do
+           over IL; after cpurc, init asks the host key again to unlock
+           the console (init.c pass); there `ip/ipconfig; aux/listen il`
+           as cpurc's kremvax case does (il17005 = `cpu -R`)
   term386  the shipped 9pc from fd-term.img: a terminal
 
 joined by hub.py (three dgram netdevs; fs9 keeps the 10901/10902 pair
@@ -77,9 +78,18 @@ def main():
             # boot/key.c: no #r/nvram on a PC, so it asks
             cpu9.wait('password', 120)
             cpu9.type(net1e.CPU9_PW + '\n')
-            s = net1e.wait_prompt(cpu9, r'% *$', 600)
+            # after cpurc, init locks a CPU server's console with the
+            # host key (init.c pass(): reads #c/key, which only a
+            # cpuserver kernel lets eve read, port/devcons.c Qkey)
+            net1e.wait_prompt(cpu9, r'cpu9 password: *$', 600)
+            cpu9.type(net1e.CPU9_PW + '\n')
+            s = net1e.wait_prompt(cpu9, r'% *$', 120)
             net1e.screen_log(cpu9, 'cpu9 booted')
-            cpu9.type('aux/listen il; cat /dev/sysname; echo; cat /dev/user; echo\n')
+            # what cpurc's kremvax case does: ip/ipconfig (it execs
+            # ip/arpd, ipconfig.c; /boot's ARP answerer dies with /boot,
+            # boot/ip.c, so without it nobody can reach cpu9), then
+            # aux/listen il with the release's /bin/service (il17005 cpu -R)
+            cpu9.type('ip/ipconfig; aux/listen il; cat /dev/sysname; echo; cat /dev/user; echo\n')
             time.sleep(5)
             net1e.screen_log(cpu9, 'cpu9 listening')
 
