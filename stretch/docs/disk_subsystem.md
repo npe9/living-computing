@@ -1615,6 +1615,12 @@ warm-start test would also need core storage at the moment the disk was
 saved, or that deck. The image file is the precondition for either; the
 follow-on is to find or reconstruct the Disk IPL deck.
 
+**USED BY MCP's DISK FETCH (2026-11-24, fidelity M-a).**
+`tests/check_bss_mcp_go.py` saves the disk at its post-IPL bench's stop,
+alongside the core image. Every later bench then loads a patched copy,
+so DISK FETCH (pp.311-318) reads the arcs this IPL wrote. With that
+test's `PROSA_EXTRA` tape, IPL's arcs reach 37.
+
 ## 10. Summary for the build plan
 
 - **The disk can be modelled from what is here.** pp.157–162 is a complete

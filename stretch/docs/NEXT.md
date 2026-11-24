@@ -23,6 +23,39 @@ accumulate.
 
 
 
+## MCP'S OWN DISK FETCH SERVES THE GO JOB -- DONE (fidelity M-a), 2026-11-24
+
+`tests/check_bss_mcp_go.py` no longer stubs `$FETCH`. Every
+`B,DMCP / ,DFETCH` (66.32) goes from SIT+21's trap to MCP's SIFAE and
+DISK FETCH as landed (pp.311-318), reading the disk that the post-IPL
+run's own IPL wrote. `post_ipl()` saves that disk beside the core image
+(D2's `STRETCH_DISK_SAVE`), and each bench loads a copy (`STRETCH_DISK`).
+The details, with pages, are in the test header's "M-a" section.
+
+What is fetched, and where it comes from:
+- **22LOADER and 22$EOJ:** IPL wrote them as the default PROSA has them.
+  22LOADER is now exercised too.
+- **PCBSS, BSS and the library areas:** these are put on the master
+  tape by `strap/prosa_dict.py`'s opt-in `PROSA_EXTRA`, so that IPL
+  writes them. This is RECONSTRUCTION: C22-6728 p.96 places system type
+  areas on the master tape, and UPDATE-30 put them there.
+- **PCFORTRA (1c):** absent, so DISK FETCH takes its error return.
+- **TWS `))))))))`:** a dictionary entry at S SYRFT's arc 40 (p.28
+  ll.24-27; p.396 l.20). Its words are planted in the bench's disk copy,
+  which is SCAFFOLD for BSS's own write. DISK FETCH's routine for it,
+  p.317 l.22 X TRCTC, is `BEW,$`.
+
+The remaining stubs are listed in the header: `$SCR` (M-b), ENTER/IRET
+and STUB1 around the BSS processor, the hook's routing, the stage-2
+plants, the MARKER, `*MAIN*`'s body and the reader FIXTURE.
+`check_bss_mcp_load.py` keeps its own stub.
+
+The cost of real disk I/O is measured: stages 3-6 take 2,442,409 cycles
+(1,773,207 before), and stage 7 reaches ZJOBC1 at 3,195,867 cycles
+(2,559,405 before).
+
+**Next:** M-b (`$SCR`, `$RET`, the dispatcher's remaining stubs). After
+that, a BSS that writes TWS through MCP, so the planted TWS words can go.
 
 ## THE FP ADD'S BOX HOLD MOVED A PIN -- DONE: the level release, 2026-11-19
 
@@ -1910,7 +1943,7 @@ the sources allow.
   2), except while the reconstructed BSS processor runs (stage 4, ENTER
   to IEOJ). Still SCAFFOLD:
   - the `$FETCH` hook, SIT+21's and FWIT+1's BD to STUBIF instead of
-    SIFAE. MCP's own DISK FETCH (pp.311-318) is landed but not run: the
+    SIFAE. MCP's own DISK FETCH (pp.311-318) is landed but not run (RUN since 2026-11-24, M-a, see the top): the
     bench's disk is not IPL's, and the BSS, '))))))))' and LB type areas
     are not in PROSA;
   - every `$FETCH`, ENTER and IRET for the BSS processor;
@@ -1943,7 +1976,7 @@ the sources allow.
   `judge8`; injections `job2nocs` and `job2nojob` in the test header.
   Next on this path: a third card (an IOD or the end-of-file card) so the
   job runs to its chain, which is where DISK FETCH comes in.
-- **MCP's own DISK FETCH: scoped, NOT built (2026-11-19).** The `$FETCH`
+- **MCP's own DISK FETCH: scoped, NOT built (2026-11-19); BUILT 2026-11-24, see "MCP'S OWN DISK FETCH SERVES THE GO JOB" at the top.** The `$FETCH`
   hook (SIT+21's and FWIT+1's BD to STUBIF) is still SCAFFOLD. Replacing
   it with MCP's DFETCH (pp.311-318, landed, the XTENTB tentacle at 66.32)
   is three pieces, each blocked as stated:
