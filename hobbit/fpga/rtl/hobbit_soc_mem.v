@@ -31,7 +31,12 @@
 // probes are sampled.  The core's arrays read on the system clock
 // (rtl/hobbit_sysregfile.v), one clock per array a value passes through
 // on its way to a probe, so SETTLE must be at least the longest such
-// chain.  HOBBIT_SIM checks it at every core edge: a valid probe in RAM
+// chain.  That bounds zero-delay simulation only: on hardware each stage
+// also needs its combinational path to settle, about ceil(t / 40 ns)
+// system clocks at 25 MHz, and the post-placement estimate puts the
+// core's paths near 200 ns (fpga/README.md, "The core's arrays on the
+// system clock"), so a hardware SETTLE is sized from routed timing.
+// HOBBIT_SIM checks it at every core edge: a valid probe in RAM
 // or ROM that the window does not hold prints PROBE STALE and stops the
 // run (fpga/README.md, "The core's arrays on the system clock").
 module hobbit_soc_mem #(
