@@ -3,7 +3,8 @@ classes of each partition) by the dive's notes TSVs.
 
 A requirement (class, kind, method, arity) is
   DOC    if some notes row with a documentary grade (PRINTED*, PROSE,
-         SCREENSHOT) names the same method/arity on the same class, or on
+         SCREENSHOT, HELD-SOURCE: a method body in an application-carried
+         copy of SIMPOS source, added 2026-11-24 sweep) names the same method/arity on the same class, or on
          any class when the doc row's class is not a required class name
          (reports often state methods without their owning class);
   USAGE  if only USAGE/INFERENCE rows give it a meaning (same class+method+arity);
@@ -30,7 +31,7 @@ for f in glob.glob(os.path.join(B, 'notes', '*.tsv')):
         if '/' in m and not a:
             m, a = m.rsplit('/', 1)
         key = (c, m, a)
-        if g.startswith('PRINTED') or g.startswith('PROSE') or g.startswith('SCREENSHOT'):
+        if g.startswith('PRINTED') or g.startswith('PROSE') or g.startswith('SCREENSHOT') or g.startswith('HELD-SOURCE'):
             doc_exact.add(key)
             if c not in reqclasses:
                 doc_any.add((m, a))

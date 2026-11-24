@@ -90,6 +90,8 @@ with its version. The main variants are collected in Appendix B.
 | 4 | museum video (2.50 / A00) | system menu, window menu, editor and librarian screens | video.md |
 | 4 | IPSJ 122601 (1992) | which SIMPOS classes an ESP-to-CESP port had to re-create, and the ESP-to-CESP method table | newipsj.md (supersedes the `web_search_2026-11-24.md` items 1-2) |
 | — | IPSJ 118569 (CESP window library, 1990) | names CESP classes only. It says the CESP spec is "based on" SIMPOS's, but its Fig. 2 is **not** a SIMPOS class list | newipsj.md, correction 1 |
+| 4 | linguist (CESP, 1991): its manual names its `with_margin`, `as_markers` and `as_outputs` as substitutes for SIMPOS's classes | argument forms of `create_marker/7` and `get_margins/5`; the marker types. CESP substitute, an analogy only | sweep_2026-11-24.md §2.2 |
+| 4 | the 1990 ESP manual (`ESPtex/program-e.tex`); CAL's debugger manual (1992) | a `standard_io_buffer` example; the programming manual has a standard-I/O section on holophrasting (print depth/length, G7) | sweep_2026-11-24.md §2.3-2.4 |
 
 **How far the kl0 runs can be trusted.** The "(kl0 run)" facts come from the ptf reader's harness
 (`tools/ptf_stubrun.py`). It uses `../../../psi/kl0.py` read-only, stubs every SIMPOS send, and adds
@@ -382,7 +384,7 @@ the screen. TM-115 p29 says the manager "does not allow a window to go out of th
 | `set_label_flag/2` | label on or off (INFERENCE from the option `label_flag(off)`) | UNSPECIFIED (1 use) |
 | `get_label_height/2` | label height in dots, for layout | USAGE cil/src/ds_brs.esp:280 |
 | `set_border_width/2`, `get_border_width/2` | border width in dots, default 2 | PRINTED-INTERFACE TM-125 p15 (printed "set border_width"); get: UNSPECIFIED (12 uses), INFERENCE: returns the width |
-| `set_margins/5` `(W,L,R,Head,Tail)`, `get_margins/5` | margins in dots, default 1 | PRINTED-INTERFACE TM-125 p16; get: UNSPECIFIED (3 uses), INFERENCE: returns the four margins |
+| `set_margins/5` `(W,L,R,Head,Tail)`, `get_margins/5` | margins in dots, default 1. The CESP substitute for SIMPOS's `with_margin` has `get_margins(W,^Left,^Right,^Head,^Tail)`, plus `set_margin_flag/2` and `get_margin_flag/2` | PRINTED-INTERFACE TM-125 p16; get: CESP substitute linguist/prog/with_margin.esp:21-34, software1.tex:802-827 (sweep_2026-11-24 §2.2); held uses 3 |
 | `set_font/2` `(W,FontObj)`, `get_font/2` | text font. Also resets the cursor size from the font's space character | PRINTED-INTERFACE TM-112 p16; PROSE TM-115 p16-17; USAGE (174) |
 | `set_label_font/2` | label font | USAGE (55) |
 | `background/2` `(W,black\|white)` | background colour; with black, text is drawn white on black (`move_win`, esp.wmv@118) | USAGE paragraph p_wshell.esp:74-78; SCREENSHOT |
@@ -448,7 +450,7 @@ confirms the mechanism: the PIMOS window device is a `pmacs_window` driven throu
 | `putt/4` `(S,Term,VarsIn,VarsOut)` | write a term, threading a variable-name table | 33 | USAGE cal-esp/deb2.12/output.esp:516 |
 | `putf/2` `(S,Format)`, `putf/3` `(S,Format,Args)` | formatted output (directives below) | 130 / 365 | USAGE euod/BUP/bup.esp:1781 |
 | `unquote_atom/1` | print atoms unquoted from now on (INFERENCE) | 17 | USAGE papyrus_src/demo/TREE/winop.esp.1:8 |
-| `set_unparsing_operator/2`, `get_unparsing_operator/2`, `set_max_depth/2`, `set_max_length/2` | operator pool and print limits for putt (INFERENCE) | 2-4 | UNSPECIFIED |
+| `set_unparsing_operator/2`, `get_unparsing_operator/2`, `set_max_depth/2`, `set_max_length/2` | operator pool and print limits for putt (INFERENCE). Depth/length elision is "holophrasting": CAL's debugger manual sends the reader to the SIMPOS programming manual's section 「標準入出力（ホロフラスティング）」 for it (cal-esp/deb_jman/debug.tex:232-237) | 2-4 | UNSPECIFIED |
 
 **Input**
 
@@ -555,10 +557,10 @@ The method names are not printed. No held program uses a `do_` method. INFERENCE
 
 | method | meaning | grade, cite |
 |---|---|---|
-| `create_marker/2` `(W,^M)`; `create_marker/7` | create a marker; the held form takes 7 arguments, meaning unknown | PRINTED-INTERFACE TM-125 p17; USAGE (ifs_window.md §5) |
+| `create_marker/2` `(W,^M)`; `create_marker/7` | create a marker. The CESP substitute that claims "the same function as" SIMPOS's `as_markers` takes `(W,X,Y,Width,Height,Type,^M)`, where Type is `box`, `line` or `reverse` | PRINTED-INTERFACE TM-125 p17; USAGE (ifs_window.md §5); CESP substitute linguist/prog/with_marker.esp:21-25, :216, linguist/doc/Manual/Soft/software1.tex:831 (sweep_2026-11-24 §2.2) |
 | `draw_marker/2`, `erase_marker/2`, `move_marker/4` `(W,M,X,Y)` | show, hide, move | PRINTED-INTERFACE TM-125 p17 |
 | `set_marker_type/3` `(W,M,box\|line)`, `set_marker_size/4`, `get_marker_list/2` | marker attributes | PRINTED-INTERFACE TM-125 p17 |
-| `get_marker_position/4` | marker position (INFERENCE) | UNSPECIFIED (2 uses) |
+| `get_marker_position/4` | marker position (INFERENCE). The CESP substitute has only `/3` `(W,^X,^Y)`, so it does not settle `/4` | UNSPECIFIED (2 uses); linguist/prog/with_marker.esp:79 |
 | `get_mouse_position/3` `(W,^X,^Y)` | mouse position in window units | SCREENSHOT IPSJ 36239 p5; USAGE. The CESP port divides by the unit (IPSJ 122601) |
 | `get_mouse_dot_position/3` | the same in dots (INFERENCE) | UNSPECIFIED (1 use) |
 | `warp_mouse/3` `(W,X,Y)` | move the mouse | USAGE kwic-esp-002/kwic-esp/src/inSheet2.esp:903 |
@@ -603,7 +605,7 @@ marks their create/3 and create/2 "documented" only because a window method of t
 |---|---|---|---|
 | `standard_input_file` | c:`create/3` `(#standard_input_file, ^Stream, Path)`. **The output is the second argument.** It fails if the file does not exist, so code tries `"cal.init"` and then `"me:cal.init"` | gett/2,4, getl/2, getc/2, getb/3, end_of_input/1, **close_input/1**, set/get_parsing_operator/2 | USAGE cal-esp/cal2.12/control.esp:190-193; pimfep (ptf: `me:pimos.feps`, `pimos:pimfep.error`) |
 | `standard_output_file` | c:`create/3` `(#standard_output_file, ^Stream, Path)` | putt/2,4, putl/1,2, putf/2,3, putb/3, putc/2, unquote_atom/1, set_unparsing_operator/2, **close_output/1** (writes the file) | USAGE cal-esp/cal2.12/control.esp:356-360; papyrus (ptf: `demo:INIT_FILE>lemma.cl`) |
-| `standard_io_buffer` | c:`create/2` `(#standard_io_buffer, ^B)`; c:`create/3` `(#.., SizeOrName, ^B)` | the full put and get set, plus reset/1 (empty), reread/1, size/2, getb/3. Use: build text with putf/putt, then reread and getb it into a string | USAGE cal-esp/cal2.12/control.esp:409; cil/src/ds_bep.esp:1484-1491; fuzclust/fuzclust/src/struct.eism:338 |
+| `standard_io_buffer` | c:`create/2` `(#standard_io_buffer, ^B)`; c:`create/3` `(#.., SizeOrName, ^B)` | the full put and get set, plus reset/1 (empty), reread/1, size/2, getb/3. Use: build text with putf/putt, then reread and getb it into a string. The 1990 ESP manual's example: two putl lines are read back as two terms by gett; putt `[1,2]` then putt `p(1,2)` reads back by getl as `"[1,2]p(1,2)"`, so putt writes no separator (the manual prints `put1`/`get1`) | USAGE cal-esp/cal2.12/control.esp:409; cil/src/ds_bep.esp:1484-1491; fuzclust/fuzclust/src/struct.eism:338; PRINTED ESPtex/program-e.tex:6736-6745, ESPtex-j/program-j.tex:6470-6480 |
 | `standard_input_text_buffer_accessor`, `standard_output_text_buffer_accessor` | c:`create/3` `(#.., EditorTextBuffer, ^Accessor)` | read or write an editor buffer as a stream | USAGE papyrus_src/demo/EDITOR/my_reader.esp.1:23, pmacs_pretty.esp.1:21 |
 
 Pathnames are SIMPOS paths: `>sys>user>demo>x.esp.3`, logical names `me:`, `font:`, `pimos:`, and a node prefix
@@ -1329,13 +1331,18 @@ methods, 7162 uses):
 
 | status | methods | % | uses | % |
 |---|---|---|---|---|
-| DOC-class (printed for the class) | 10 | 1.5 | 675 | 9.4 |
-| DOC-unowned (printed, owner not stated) | 365 | 54.0 | 3432 | 47.9 |
+| DOC-class (printed for the class) | 15 | 2.2 | 1071 | 15.0 |
+| DOC-unowned (printed, owner not stated) | 369 | 54.6 | 3320 | 46.4 |
 | USAGE (owner known from use) | 74 | 10.9 | 812 | 11.3 |
-| USAGE-unowned | 147 | 21.7 | 1806 | 25.2 |
+| USAGE-unowned | 138 | 20.4 | 1522 | 21.3 |
 | NONE | 80 | 11.8 | 437 | 6.1 |
-| **documented (DOC-\*)** | 375 | 55.5 | 4107 | 57.3 |
+| **documented (DOC-\*)** | 384 | 56.8 | 4391 | 61.3 |
 | **any evidence** | 596 | 88.2 | 6725 | 93.9 |
+
+These are the counts after the second sweep (`sweep_2026-11-24.md` §4). Before it they were: DOC-class 10 (675
+uses), DOC-unowned 365 (3432), USAGE-unowned 147 (1806). The change comes from the 1990 ESP manual. Its
+`standard_io_buffer` example makes create/putl/gett/putt/getl DOC-class. Its `get_slot`/`set_slot` on class `class`
+adds 4 DOC-unowned rows on window classes. The CESP-substitute rows for `as_markers`/`with_margin` are not counted.
 
 **Distortions.** These numbers are a name match, not a semantic match. Report and correct them by hand:
 - **Overcount.** 440 uses on non-window classes count as DOC-unowned only because a window method of the same name is

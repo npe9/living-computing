@@ -128,6 +128,65 @@ requirements.
 - **An `espclass` file**: ETL's CESP re-creation of 12 SIMPOS window classes for the RLS port
   (IPSJ 122601). It is not held, and would be worth asking for.
 
+## 5a. Added by the second sweep (`sweep_2026-11-24.md`)
+
+**HELD-SOURCE** means a method body in an application-carried copy of SIMPOS source. Here it is
+treated as documentary, like PRINTED.
+
+1. **SIMPOS's `world` classes `pathname`, `name` and `e_string` (HELD-SOURCE, CESP-ported).**
+   - Where: `morphana/_simpos/pathname.esp`, `name.esp` and `e_string.esp`, inside
+     `ifs/natural-lang/cesp/morphana.tar.Z` (LAX, 1992).
+   - Provenance: `pathname.esp:6` is stamped `icpsi372::>sys>simpos7D>supervisor>world>PNAM1.esp`.
+     It is the only held stamp from a SIMPOS release tree.
+   - `name.esp:6` and `e_string.esp:6` are stamped from a 1988 user copy of the same `world`
+     directory.
+   - Coverage: 34 class methods; every `name` and `e_string` method the held programs call, and
+     `pathname`'s `append/4`, `last_name/4` and `get_last/4`.
+   - What it settles: the file-name rules. An ident is 1-44 characters, a type 0-10. The illegal
+     characters are `> * ? :` and space. The form is `ident.type.version`.
+   - The pathname port changed the separator to `/`. SIMPOS's `Node::>`, `Logical_name:` and
+     `...>Name` cases survive as comments, one marked "Patch 6.13" (`pathname.esp:79-92`).
+2. **CAL debugger operation manual, 2.12 (DERIVED documentation).**
+   - Where: `cal-esp/deb_jman/debug.tex`, dated 1992, describing the debugger of §3 on SIMPOS 7.0.
+   - It gives the Debugger Menu items, the trace command meanings, and the Mode_Leash, State and
+     Spy windows.
+   - It gives the leash levels as target/gate vectors and the init file `me:cal_debugger.ini`.
+   - It cites the SIMPOS programming manual's section 「標準入出力（ホロフラスティング）」 and the
+     operation manual's 「インスペクタ」.
+3. **CESP substitutes for SIMPOS mixins, documented as such (CESP substitute; not SIMPOS code).**
+   - `linguist/doc/Manual/Soft/software1.tex:802-920` says `with_margin` and `as_markers` replace
+     SIMPOS's classes, the latter "with the same function".
+   - It says `as_outputs` implements part of `as_output`.
+   - Source: `linguist/prog/with_marker.esp` and `with_margin.esp`.
+   - Gives the `create_marker/7` arguments and the marker types `box`, `line` and `reverse`.
+   - Gives `get_margins/5` as `(W,^L,^R,^Head,^Tail)`.
+   - Also: `morphana/_simpos/bfiles.esp` (binary_file family), `kwic-cesp` `for_rename.esp`
+     (as_esp_parser/unparser), `linguist/prog/window.esp` (CESP compositions of
+     `standard_io_window`, `standard_menu`, ...).
+4. **The held ESP manual, read for the remaining gaps (PRINTED/PROSE, 1990).**
+   - `get_slot/3` and `set_slot/3` are methods of class `class`; `!` is their macro
+     (`ESPtex/program-e.tex:5987-5988`).
+   - The `stop_watch` method table (`:10018-10045`).
+   - A `standard_io_buffer` round trip (`:6736-6745`) and `symbolizer` atoms and numbers
+     (`:6750-6765`).
+5. **Manual citations.**
+   - 「小型化PSI/SIMPOS プログラミング説明書 (SIMPOS 8.0版)」 and 「… ESP 説明書 (SIMPOS 8.0版)」,
+     ICOT 1992 (`INFO/cesp.j:116-119`).
+   - 「PSI/SIMPOS エディタ説明書」, 「… 操作説明書(I),(II),(III)」 and 「… KL0説明書」, ICOT 1988
+     (`cil/man/biblio.tex:84-97`).
+   - "Down-sized PSI/SIMPOS TCP/IP Network System Manual" and "… PSI Network System Manual"
+     (`pimosman/Eman/e-network.tex:56,80`).
+   - None of these is held. No copy or table of contents of 「入出力管理編」 was found.
+6. **SIMPOS's TCP/IP configuration file** (HELD-SOURCE, application-carried copy). fuzclust's
+   `install/net_config.dat` (52 lines, "version SIMPOS 7_han 91/07/19") is a sample copy of
+   `>sys>tcpip>net_config.dat`. It holds the TCP/IP menu classes, the boot and server classes, and
+   the spawn table, in which services 5, 6, 8 and 9 are `simpos##talk_input`, `talk_output`,
+   `x_server` and `remote_printer`. Transcribed in `shell.md` §2.3. The PIMOS manual
+   (`Eman/e-network.tex:22-56`, PRINTED) prints the spawn excerpt. `e-strio.tex:25-27` says in
+   English that `as_resource` inherits `as_program`, and that windows and filters inherit
+   `as_resource`. The commented-out Japanese original (`:20-23`) says instead that the two must not
+   be inherited together. This is an open conflict (`sweep_2026-11-24.md` §2.6).
+
 ## 6. Checked and not found
 
 - **Held compiled packages** (`notes/ptf.md`):
@@ -145,3 +204,11 @@ requirements.
   - no binary is visible (`notes/video.md`).
 - **The IFS archives:** no binary, boot image or `.ptf` of a SIMPOS package (`ifs_libshell`,
   `ifs_window`).
+- **Second sweep, every held file:** the second sweep unpacked recursively, 36,151 non-empty files
+  (`sweep_2026-11-24.md` §5). It found:
+  - no other `patch class` and no other `<SIMPOS.` or `>sys>simpos` stamp;
+  - no definition of any of the eleven missing Librarian natures;
+  - no `.ptf`/`.pak` beyond the 21 catalogued;
+  - no SIMPOS string table in any binary;
+  - no text of the I/O manual.
+  The 1,417 held report PDFs have no text layer, so they could not be text-searched.

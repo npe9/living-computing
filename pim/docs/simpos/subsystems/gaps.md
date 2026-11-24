@@ -14,15 +14,26 @@ notes' fact rows by `tools/coverage.py` and `tools/class_coverage.py`.
 
 | partition | methods | on their class, documented | name/arity documented elsewhere | meaning from use only | nothing |
 |---|---|---|---|---|---|
-| window | 676 | 10 | 365 | 221 | 80 |
+| window | 676 | 15 | 369 | 212 | 80 |
 | librarian | 114 | 1 | 14 | 78 | 21 |
-| shell | 115 | 4 | 11 | 41 | 59 |
+| shell | 115 | 9 | 16 | 33 | 57 |
+| other | 531 | 22 | 75 | 77 | 357 |
 
 | partition | classes | some method documented on the class | name documented elsewhere | use only | nothing | no methods required (nature-only or reference) |
 |---|---|---|---|---|---|---|
-| window | 135 | 4 | 68 | 5 | 10 | 48 |
+| window | 135 | 5 | 67 | 5 | 10 | 48 |
 | librarian | 32 | 1 | 8 | 7 | 2 | 14 |
-| shell | 38 | 2 | 8 | 9 | 7 | 12 |
+| shell | 38 | 3 | 8 | 8 | 7 | 12 |
+
+These are the counts after the second sweep (`sweep_2026-11-24.md` §4). Before it the method rows were:
+- window 10 / 365 / 221 / 80;
+- shell 4 / 11 / 41 / 59;
+- other 5 / 73 / 81 / 372.
+
+The class rows were window 4 / 68 / 5 / 10 and shell 2 / 8 / 9 / 7. The changes come from the 1990 ESP manual's
+`stop_watch`, `standard_io_buffer`, `symbolizer` and `get_slot`/`set_slot` passages, and from the HELD-SOURCE copies of
+SIMPOS's `name`, `pathname` and `e_string` (other partition). `tools/coverage.py` now counts grade HELD-SOURCE as
+documentary.
 
 Read the "documented elsewhere" column with care. It counts a name/arity documented on *any* class
 in a documentary source. Some of those classes are the TM-115 font editor's own, and some are demo
@@ -39,13 +50,13 @@ The specs add meaning, from reading call sites, that the fact rows do not record
 
 | rank | unknown | subsystem | dependence | settles it |
 |---|---|---|---|---|
-| 1 | Which mixin owns each window protocol (TM-125 lists ~45 methods without owners; 365 required window methods are documented only by name) | window (G3) | 3,432 uses | 「SIMPOSプログラミング説明書(II) 入出力編」 (ICOT 1987, not held); IPSJ 29th conv. 4E-6 (not held) |
+| 1 | Which mixin owns each window protocol (TM-125 lists ~45 methods without owners; 369 required window methods are documented only by name) | window (G3) | 3,320 uses | 「SIMPOSプログラミング説明書(II) 入出力編」 (ICOT 1987, not held), or its successor 「小型化PSI/SIMPOS プログラミング説明書 (SIMPOS 8.0版)」 (ICOT 1992, cited INFO/cesp.j:118, not held); IPSJ 29th conv. 4E-6 (not held) |
 | 2 | The `#` constants' values (`key#`, `mouse#`, `pf#`, `control#`...) as the macro expander turns them into integers | window (G2) | every read site, >600 uses | the expander's tables (cil `cil_esp.esp` re-implements the families, not the numbers); kl0.py on a held `.ptf` that compares a read code against a constant |
 | 3 | `putf` directive set (only kwic's re-implementation describes it) | window (G1) | 495 uses | the I/O manual above |
-| 4 | Generic object protocol booked on `as_program`: `get_slot/3`, `set_slot/3`, `class_object/2`, `refute/3`, `method/3` | shell (1) | 338 uses | ESP manual `program-e.tex` (held; not yet grepped for these); TM-388 |
+| 4 | Generic object protocol booked on `as_program`: `class_object/2`, `refute/3`, `method/3`. **Owner of `get_slot/3`/`set_slot/3` settled**: class `class`, with `Obj!slot` as their macro (ESPtex/program-e.tex:5987-5988, PROSE). Their exact failure behaviour is still open | shell (1) | 338 uses (322 of them get/set_slot) | TM-388; the ESP manual has nothing on the other three |
 | 5 | `library_utility` class-side `assert/retract` family: storage and persistence | librarian (2) | 287 uses | SIMPOS programming manual library section; sum's `cprolog.v32` read in full |
 | 6 | `close_input/1`, `close_output/1` and the standard file classes' write-on-close and error behaviour | window (G8) | 271 uses | I/O manual file chapter |
-| 7 | Pmacs default key bindings and command set | window (G6) | 223 user `:command` clauses | Pmacs part of 「SIMPOS使用説明書」 (JAIST MP3001-1) |
+| 7 | Pmacs default key bindings and command set | window (G6) | 223 user `:command` clauses | Pmacs part of 「SIMPOS使用説明書」 (JAIST MP3001-1); 「PSI/SIMPOS エディタ説明書」 (ICOT 1988, cited cil/man/biblio.tex:84-87, not held) |
 | 8 | `nature(L)` create option: mixins added at create time, or a class selected | window (G29) | 206 uses | I/O manual; the ESP compiler |
 | 9 | `library:get_class_object/3` resolution order and failure | librarian (1) | 160 uses / 11 programs | Ops 5.0 manual; kl0.py run of a held caller with a missing class |
 | 10 | What a user sees when a program's `:goal` raises: error window, menu items, process naming | shell (4) | every program | 「SIMPOS操作説明書」 (JAIST MP3002-1) error-handling section |
@@ -58,7 +69,18 @@ Librarian and shell. JAIST holds the 1985 manuals (MP3001-1, MP3002-1, MP7002-1;
 specification (IPSJ 118569) and distributed as source in 1992 (`web_search_2026-11-24.md`), would
 settle much of rank 1 if a copy turns up.
 
-What is NOT a gap any more: the Librarian's structure and its command-list interpreter (cil's copy
+The second sweep (`sweep_2026-11-24.md`) adds the titles of later editions:
+- 「小型化PSI/SIMPOS プログラミング説明書 (SIMPOS 8.0版)」 and 「… ESP 説明書 (SIMPOS 8.0版)」 (ICOT 1992,
+  `INFO/cesp.j:116-119`);
+- 「PSI/SIMPOS エディタ説明書」 (the Pmacs manual), 「… 操作説明書(I),(II),(III)」 and 「… KL0説明書」 (ICOT 1988,
+  `cil/man/biblio.tex:84-97`);
+- "Down-sized PSI/SIMPOS TCP/IP Network System Manual" and "… PSI Network System Manual" (cited by
+  the PIMOS manual, `pimosman/Eman/e-network.tex:56,80`).
+
+It found no copy or table of contents of the I/O volume.
+
+What is NOT a gap any more: the owner of `get_slot`/`set_slot` (class `class`); the `stop_watch` method set; SIMPOS
+file-name syntax (HELD-SOURCE `name`/`pathname`, `sweep_2026-11-24.md` §2.1); the Librarian's structure and its command-list interpreter (cil's copy
 of the SIMPOS 6.1 Librarian, `finds.md`); the system menu, Librarian, debugger and window menus by
 version (screens of 1.00, 2.10, 2.50, A00, 5.0); the window creation vocabulary and menu item
 formats (held code and compiled packages, kl0 runs).
@@ -83,7 +105,7 @@ These are the unknowns, ranked by how much depends on them. Weight is in uses (h
 | G4 | Behaviour of the nature-only mixins: as_mouse_input (12 programs), as_graphics (12), as_superior (11), as_input (11), with_superior_input_buffer (10), as_single_select (10), as_output (10), with_border (9), with_icon (8), with_click_information (5), with_bell (4), with_key_select (3), as_menu_input (3), select_notifier (2), deexpose_notifier (1) | 48 classes | IOM; 4E-6 |
 | G5 | Output permission semantics in 3.x+: which of wait/notify/out/show exist, and the default | 33 held option uses | IOM; USE |
 | G6 | Pmacs default key bindings and command set (100+ commands) | 223 user `:command` clauses build on it | Pmacs manual in USE; JAIST |
-| G7 | `get_parsing_operator/2`, `set_parsing_operator/2`, the unparsing pair, set_max_depth/length: argument form | 22+5+4+2+2+2 uses | ESP-IO |
+| G7 | `get_parsing_operator/2`, `set_parsing_operator/2`, the unparsing pair, set_max_depth/length: argument form. Depth/length elision is the programming manual's section 「標準入出力（ホロフラスティング）」 (title only, cal-esp/deb_jman/debug.tex:236) | 22+5+4+2+2+2 uses | ESP-IO; that section |
 | G8 | close_input/1, close_output/1: is the file written on close only; is there an error on a missing file | file classes, 271 uses | IOM file chapter |
 | G9 | Held 32-bit `.font` file format (the f822 layout is decoded) | 243 font option uses, 220 font creates | font editor source; a held font file dissected further |
 | G10 | `read/6` field meanings beyond the cal comment; `read_with_code/3,4` | read/6 in cal, paragraph | IOM input chapter |
@@ -94,10 +116,10 @@ These are the unknowns, ranked by how much depends on them. Weight is in uses (h
 | G15 | Window naming rule (`<prog>_<n>` vs `<class>/<N>`) | screen chrome, set_name | USE; 4E-6 |
 | G16 | Screen size per release (1200×900 ... 1280×944) | layout code | hardware manuals; USE |
 | G17 | The 6th argument of `draw_filled_rectangle/8` (`0`) | ptf paragraph | TM-785 class text; IOM graphics chapter |
-| G18 | `create_marker/7` arguments | kwic | IOM |
+| G18 | `create_marker/7` arguments. **Partly settled (CESP substitute)**: linguist's `as_markers`, documented as having "the same function" as SIMPOS's, takes `(W,X,Y,Width,Height,Type,^M)` with Type `box`/`line`/`reverse` (sweep_2026-11-24 §2.2) | kwic | IOM, to confirm |
 | G19 | Menu kind `string` inside items_list (vs choice_list) | 283 uses | IOM menu chapter |
 | G20 | Exact editor semantics beyond call shape: `set_current_buffer/2`, `clear_input/1`, `other_window/1`, `mark/1`: exact editor semantics | 20, 13, 8, 6 uses | Pmacs manual |
-| G21 | `get_border_width/2`, `get_margins/5`, `get_superior/2`: return form (outputs assumed) | 12, 3, 4 uses | IOM |
+| G21 | `get_border_width/2`, `get_superior/2`: return form (outputs assumed). `get_margins/5` is `(W,^L,^R,^Head,^Tail)` in the CESP substitute for SIMPOS's `with_margin` (sweep_2026-11-24 §2.2) | 12, 3, 4 uses | IOM |
 | G22 | `call_color_manipulator/2` and the colour API (set_color/2,3) beyond Giho 8907 | 9 uses | TM-785 full text; PSI-II manuals |
 | G23 | `exe_help_menu/3`, `enable_menu_help_click/1`, `set_help_font/2`: menu help protocol | 7+2 uses | IOM |
 | G24 | Temporary-menu exit in 3.x+: `abort` returned, or fail as in 1.0 | menu sites | IOM |
@@ -162,9 +184,9 @@ Spec: pim/docs/simpos/subsystems/shell.md.
 
 | # | unknown | dependence | what is known | settle by |
 |---|---|---|---|---|
-| 1 | Owner and exact contract of `get_slot/3`, `set_slot/3` (instance and class), `class_object/2`, `refute/3`, `method/3` (booked on as_program) | 161+151+6+4+8+7+1 = 338 uses | generic reflective methods; not defined by fuzclust/knov | ESP manual program-e.tex grep for set_slot/get_slot (not yet done); TM-388 App. G (:refute); other.md agent's findings |
+| 1 | Exact contract of `get_slot/3`, `set_slot/3` (instance and class), and owner and contract of `class_object/2`, `refute/3`, `method/3` (booked on as_program) | 161+151+6+4+8+7+1 = 338 uses | get/set_slot are methods of class `class`, `Obj!slot` their macro (ESPtex/program-e.tex:5987-5988, PROSE; done 2026-11-24); the manual has nothing on the other three | TM-388 App. G (:refute); other.md agent's findings |
 | 2 | `messenger` look and `confirm` result: does confirm return yes/no, what buttons, where it appears, does show/2 wait or time out | show/2 86/2, show/3 14/2, confirm/2 14/3, confirm/3 4/2 | callers never test an answer | a screenshot of a messenger box (none held); kl0.py run of a compiled sender (remote_pimfep_executor message/3) to see following code; 入出力編 manual 1987 |
-| 3 | `stop_watch` interface details: time object returned by `show/2`, other methods (get_count/2 confirmed only by use), whether stop fails when stopped | 93/6 | create/start/stop/reset/show | ESPtex/program-e.tex evaluation section near call_counter (grep stop_watch, not yet done) |
+| 3 | `stop_watch` details left: the time object's methods (`get_count/2` by use only); whether stop fails when stopped | 93/6 | create/start/stop/reset/show PRINTED with a method table; show gives a time instance and is valid only after stop; no measurement across two days (ESPtex/program-e.tex:10018-10045; done 2026-11-24) | the time class in the programming manual |
 | 4 | What `:activate/2` does when the program's `:goal/1` raises an uncaught error: which window, which menu items, which process is named | process activate 60/12; every program | 2.10 debugger-input error window (TM-181 p5); librarian 5.0 (TM-785 p3) | 「SIMPOS操作説明書」 (operation manual, not held) error-handling section; any screenshot of a user-process error (search IPSJ 33rd conv. 4D-x papers, not held) |
 | 5 | Full 7.x system menu (MEDIA SYSTEMS / "others" submenu): items, order, logout confirm text | every install procedure (gog, fuzclust, utter, cal-esp) | 2.50 list; 7.x prose names logout, others>user>maintenance>register, TCP-IP>reset network, process manipulator | SIMPOS 7.x operation manual; a PSI-II/UX video or photo; JAIST manuals |
 | 6 | Login dialogue text of 3.0-8.x (prompt exact spacing, failure message, `me`/`me` still allowed?) | every held program's first step | 7.x transcript `user     > ` / `password > `; 1.0 me/me | 「SIMPOS操作説明書」; PIMOS FEP login stand-in source in pimmcsp (already read: "Enter SIMPOS user name>") |
@@ -180,7 +202,7 @@ Spec: pim/docs/simpos/subsystems/shell.md.
 | 16 | What the system-menu item pop-up offers (create/kill; suspend/resume?) and when it appears | every menu start | video create/k…, WHICH ? create/kill; TM-143 start/stop/suspend/resume | better copy of simpos.wmv; TM-143 p3 re-eye at higher dpi; 操作説明書 |
 | 17 | MEDIA SYSTEMS rows 7-10 of the A00 video menu | display fidelity | 2.50 printed list | higher-bitrate copy of the ICOT museum video |
 | 18 | 2.10 goal prompt `:-` vs `?-`; whether 2.x+ still prints `> Success !!` / `> Fail !!` | listener fidelity | 1.00 `:-`+Success; 2.00 `?-`+bindings | TM-181 p4 at 600 dpi; Giho 8609 p20 re-eye for a Fail case |
-| 19 | Debugger Menu of 5.x-7.x (A00 list vs CAL labels) and the leash command words beyond step/skip_predicate/no_trace | cal-esp only | 1.00, 2.x, A00 menus | cal-esp/deb2.12/dmenu.esp top_menu item list (read in full); SIMPOS debugger manual (not held) |
+| 19 | Debugger Menu of 5.x-7.x (A00 list vs CAL labels) and the leash command words beyond step/skip_predicate/no_trace | cal-esp only | 1.00, 2.x, A00 menus; the CAL debugger's 1992 manual (DERIVED, SIMPOS 7.0): Debugger Menu `Mode_Leash`/`State`/`Set_spy`/`Inspector`/`Re_display`/`Abort`/`[Exit]`, commands step/skip/leap/fail/retry/print/notrace, leash levels full/tight/half/loose/no (cal-esp/deb_jman/debug.tex; shell.md §5.4.4) | SIMPOS debugger manual (not held); how much of CAL's is SIMPOS's stays open |
 | 20 | `interpreter` interpret/2 and create/3 contracts | 6/3 | interpret a goal (INFERENCE) | cil/src/cil_kl0.esp:300-330 read; cal-esp/deb2.12/deb.esp:200-230 read |
 | 21 | `throw raise/1,2` catcher side: how a program catches a tag (catch/3? situation?) and what an uncaught throw does | 12/4 | tags list | grep held source for the catching construct (`:catch(`, `situation`), TR-285 p10-11 eyed |
 | 22 | `event make_message_string/4` and the event class hierarchy | 2/1 | name only | TR-087 p9-10, TR-285 eyed; kwic searchMan.esp:320-330 |

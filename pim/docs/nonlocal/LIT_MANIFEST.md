@@ -1501,3 +1501,14 @@ formats; Ohno 1998) and a Waseda summary (Rokusawa 1998) to the new
 Giho 1988-05, 1988-10, 1989-01 to `lit/journals/`. KURENAI's served
 PDFs differ from its own bitstream checksums (probably stamped
 copies): the checksums in `lit/SHA256SUMS` are of what was served.
+
+## Addendum 2026-11-24: the second window, Librarian and shell web search
+
+Findings: `docs/simpos/subsystems/web_search2_2026-11-24.md` and
+`docs/psi_acquisition.md` section 13. One file was added, on disk only
+because no redistribution terms are stated: IPSJ 51390 (1987, the
+SIMPOS 2.52 naming study), in `lit/ipsj/`. It has a line in
+`lit/SOURCES.tsv` (retrieval "fetched 2026-11-24, SIMPOS second web
+search") and one in `lit/SHA256SUMS`, where the `SOURCES.tsv` line was
+recomputed. The Usenet mailbox archives read during the search were
+kept in scratch only.

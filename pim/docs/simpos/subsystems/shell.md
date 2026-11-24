@@ -123,6 +123,14 @@ as_trap_program                 nature of pimmcsp##yield_trap_handler (ptf)
 as_boot_program                 the program run by the boot process (TM-100 p6, p13; STRUCTURE §10)
 ```
 
+- **`as_resource` and `as_program`: the sources conflict** (`sweep_2026-11-24.md` §2.6). The PIMOS
+  manual's English text says `simpos##as_resource` "inherits simpos##as_program due to SIMPOS rules",
+  and that window and filter classes inherit `as_resource` (`Eman/e-strio.tex:25-27`). The Japanese
+  original, left commented out at `:20-23`, says instead that by SIMPOS's rule `as_resource` must not
+  be inherited together with `as_program`. Usage contradicts the Japanese rule: kappa2 has classes
+  with natures `{as_program|as_resource|as_class_with_lock}` (`../required/classes.tsv:282,311,461`).
+  Neither reading is settled. `as_resource` is not placed in the tree above.
+
 - **Census** (USAGE). 170 IFS user classes in 14 programs reach a program nature: 164
   `as_program`, 6 `as_server_program`, plus 4 `as_event_handler` handlers (notes: ifs_libshell §1.4).
   In the compiled packages 143 classes reach `simpos##as_program`; 102 declare it (notes: ptf S1).
@@ -187,8 +195,8 @@ terminates and the instance's slots are lost (PROSE, 1.0).
 |---|---|---|---|---|---|
 | class | `create/2` | 55/10 | `:create(Class,Obj)`: calls `:new(Class,Obj)`. Users override it, or hang demons on it (27 IFS classes, 25 compiled), to pass state or set slots. TM-134's example puts slot setup in an `after :create(Class,Obj)` demon | PRINTED | TM-100 p11; TM-134 p69-70; kappa2/kappa2/utility/tool/CCTPR.SHELL:11-12; pimmcsp##multi_psi_csp_manager create/2 after-demon (ptf) |
 | class | `new/2` | 39/7 | `:new(Class,Obj)`, the plain allocator. Its owner is the root class, not as_program (INFERENCE: every class answers it, TM-115 p12). Also typed at the debugger | PRINTED | TM-100 p11; TM-134 p67; pimfep##remote_pimfep_executor new/2 after-demon (ptf) |
-| class | `get_slot/3` | 6/1 | `:get_slot(#c,SlotName,Value)`: read a class slot by name, e.g. `:get_slot(#talk_window,input_window,W)`. Owner is the root object class (INFERENCE). misattributed | USAGE | fuzclust/fuzclust/src/input.talk:28; fuzclust/fuzclust/src/hikaku.comp:932 |
-| class | `set_slot/3` | 4/1 | class-slot write by name. misattributed (as above) | USAGE | fuzclust/fuzclust/src/ahp_tool.graph:23 |
+| class | `get_slot/3` | 6/1 | `:get_slot(#c,SlotName,Value)`: read a class slot by name, e.g. `:get_slot(#talk_window,input_window,W)`. Owner: class `class`, of which `Obj!slot` is the macro (PROSE, 1990 ESP manual). misattributed | USAGE; PROSE | fuzclust/fuzclust/src/input.talk:28; fuzclust/fuzclust/src/hikaku.comp:932; ESPtex/program-e.tex:5987, ESPtex-j/program-j.tex:5802 |
+| class | `set_slot/3` | 4/1 | class-slot write by name; owner class `class`, macro `Obj!slot := V` (PROSE). misattributed (as above) | USAGE; PROSE | fuzclust/fuzclust/src/ahp_tool.graph:23; ESPtex/program-e.tex:5988 |
 | class | `whiteboard/2` | 5/1 | really `:whiteboard(#simpos##coordinator,WB)`. The B-scan did not resolve the qualified receiver. misattributed: see coordinator | USAGE | cil/src/es_gin.esp:70 |
 | class | `goal/2` | 2/1 | `:goal(Class,ArgL)`, kwic's macro-inserted class method. It saves the standard devices, converts ArgL (§5.3.4), does `:new`, `:save_arguments`, `:goal/1`, then restores the devices. A kwic stand-in for a shell call, not SIMPOS (INFERENCE) | USAGE | kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47; dbDM.esp:30 |
 | class | `ordinary/5` | 1/1 | sent to `#display_board`, a gog class. misattributed, application | USAGE | gog-esp/PBM_CMD.ESP:104 |
@@ -198,8 +206,8 @@ terminates and the instance's slots are lost (PROSE, 1.0).
 | instance | `exit/1` | - | called on the program when it is ended from outside (INFERENCE). Demons on it in pimfep, pimmcsp and pimscsi prove SIMPOS defines a primary | USAGE | ptf S1; cil/src/ms_cdn.esp:53-54 |
 | instance | `cut_off/1` | - | cleanup hook, apparently on kill (INFERENCE); 13 class / 6 instance definitions | USAGE | cil/src/ms_cdn.esp:120-121; kwic-esp/src/searchMan.esp (before:cut_off) |
 | instance | `current_state/2` | - | defined by programs: fills a SIMPOS `initiation_table` with `{Key,Value}` pairs "for SIMPOS process saver" | USAGE + PROSE (comment) | cil/src/ms_cdn.esp:537-548; cil/src/ds_brs.esp:2654 |
-| instance | `set_slot/3` | 161/2 | `:set_slot(Obj,SlotName,Value)`: write an instance slot by name. Neither fuzclust nor knov defines it. Owner is the root object class (INFERENCE). misattributed to as_program because the receivers are programs | USAGE | fuzclust/fuzclust/src/ahp_menu.comp:19-22; pimmutil##dummy_fep overrides it (ptf) |
-| instance | `get_slot/3` | 151/2 | `:get_slot(Obj,SlotName,Value)`, reflective read. As above | USAGE | fuzclust/fuzclust/src/ahp_menu.comp:37 |
+| instance | `set_slot/3` | 161/2 | `:set_slot(Obj,SlotName,Value)`: write an instance slot by name. Neither fuzclust nor knov defines it. Owner is class `class`: the manual calls `Obj!slot := V` a macro of "method call :set_slot(Obj,slot-name,value) of class `class`" (PROSE, ESPtex/program-e.tex:5988). misattributed to as_program because the receivers are programs | USAGE; PROSE | fuzclust/fuzclust/src/ahp_menu.comp:19-22; pimmutil##dummy_fep overrides it (ptf) |
+| instance | `get_slot/3` | 151/2 | `:get_slot(Obj,SlotName,Value)`, reflective read; `Obj!slot` is its macro (PROSE, ESPtex/program-e.tex:5987). As above | USAGE; PROSE | fuzclust/fuzclust/src/ahp_menu.comp:37 |
 | instance | `get_arguments/2` | 10/1 | `:get_arguments(Prog,Args)`: the shell command line as a **list of strings**; an option is split into sign and name strings (§5.3.4) | USAGE | kappa2/kappa2/utility/tool/CCTPR.SHELL:29-31; LDTPR.SHELL:80-88 |
 | instance | `parse_arguments/2` | 3/1 | `:parse_arguments(Prog,{Positional,Named})`. Named = list of `{NameString,Value}`; Value `"+"`/`"-"` for options | USAGE | kwic-esp-002/kwic-esp/src/dbDM.esp:41; dtCompiler.esp:42; v2_tool.mac:92-102 |
 | instance | `save_arguments/2` | - | setter that stores the argument list before `:goal/1` (INFERENCE: as_program; unattributed in requirements.tsv:3353) | USAGE | kwic-esp-002/kwic-esp/src/v2_tool.mac:45 |
@@ -245,6 +253,24 @@ Slots read on as_program receivers (`!code`, `!selected_key`, `!menu`, `!debugge
 **Role.** A program started on a PSI when a remote node asks for a connection by service name. The
 requester uses `:spawn(#net_spawn_user,Node,"talk_output",Line,nil,_,Status)`. The server's
 `:goal/1` first accepts the request, then reads who asked. USAGE (fuzclust talk, 7.1).
+
+**Service table** (HELD-SOURCE, application-carried copy; `sweep_2026-11-24.md` §2.6). The service
+names map to classes in SIMPOS's `>sys>tcpip>net_config.dat`. fuzclust ships a 52-line copy of that
+file as its install sample, headed "version SIMPOS 7_han 91/07/19" (`fuzclust/fuzclust/install/net_config.dat:1-52`).
+It holds:
+- the `@spawn` / `@@process` table: 5 `simpos##talk_input`, 6 `talk_output`, 8 `x_server`, 9
+  `remote_printer`, 2000 `spawn` and 2001 `sline`, plus site additions (2010
+  `pimos_remote_login_server`, and 3000-3003 for GRAPE);
+- the `@tcpip_menu` tools and manipulators: FTP `simpos##ftp`, TELNET `telnet`, MAIL `tcpip_mail`,
+  TALK `talk`, BROADCAST `tcpip_network_broadcasting`, CONFIG `tcpip_configuration_manipulator`,
+  `tcpip_controler` and `tool_main`;
+- the `@boot` classes initiated, `tcpip_host_table`, `tcpip_mail_route_table`, `nline`,
+  `gateway_table` and `talk`;
+- the servers activated, each with 5: `ftp_spawn_server`, `tcpip_mail_receiver`,
+  `tcpip_mail_awaker` and `tcpip_spawn`;
+- the `@FTP`, `@broadcast` and `@gateway` sections.
+
+The PIMOS manual prints the same `@spawn` excerpt (`pimosman/Eman/e-network.tex:22-56`).
 
 | kind | method/arity | uses | args and meaning | grade | citation |
 |---|---|---|---|---|---|
@@ -360,11 +386,11 @@ acknowledged. Arguments: a string, or `{Format,ArgList}` (putf-style). Options l
 
 | kind | method/arity | uses | meaning | grade | citation |
 |---|---|---|---|---|---|
-| class | `create/2` | 24/6 | `:create(#stop_watch,W)` | USAGE (DOC-unowned by name) | cal-esp/cal2.12/control.esp:145 |
-| instance | `start/1` | 22/6 | start timing | USAGE | cal-esp/cal2.12/control.esp:440 |
-| instance | `stop/1` | 27/6 | stop timing. Callers guard it with `(:stop(W);true)`, so it may fail when not running (INFERENCE) | USAGE | cal-esp/cal2.12/control.esp:438 |
-| instance | `reset/1` | 10/4 | zero it | USAGE | cal-esp/cal2.12/control.esp:439 |
-| instance | `show/2` | 10/5 | `:show(W,Time)`: Time is a time object; `:get_count(Time,Ms)` gives milliseconds | USAGE | cal-esp/cal2.12/control.esp:260-263 |
+| class | `create/2` | 24/6 | `:create(#stop_watch,W)` | PRINTED; USAGE | ESPtex/program-e.tex:10018-10045 (method table), ESPtex-j/program-j.tex:9416-9430; cal-esp/cal2.12/control.esp:145 |
+| instance | `start/1` | 22/6 | start timing; the time measured runs from `reset` and `start` to `stop` | PRINTED; USAGE | same table; cal-esp/cal2.12/control.esp:440 |
+| instance | `stop/1` | 27/6 | stop timing. Callers guard it with `(:stop(W);true)`, so it may fail when not running (INFERENCE) | PRINTED; USAGE | same table; cal-esp/cal2.12/control.esp:438 |
+| instance | `reset/1` | 10/4 | reset the result | PRINTED; USAGE | same table; cal-esp/cal2.12/control.esp:439 |
+| instance | `show/2` | 10/5 | `:show(W,Time)`: Time is "an instance of time", obtainable only after `stop`; a measurement cannot span two days (PRINTED). `:get_count(Time,Ms)` gives milliseconds (USAGE) | PRINTED; USAGE | same table; cal-esp/cal2.12/control.esp:260-263 |
 
 ### 2.9 Debugger, inspector, interpreter, trace, call_counter
 
@@ -891,6 +917,27 @@ Format (SCREENSHOT): `(<invocation no.>)<depth> <PORT>[ <kind>]> <goal> ? <answe
 | 1986-91 (CAL copy) | window labels | `input_string`, `Mode_Leash`, `Command window`, `Variable`, `Debugger Menu`, `Input string`, `To whiteboard`, `From whiteboard`, `State window`, `Operator window`, `Place menu`; process number appended | COPY | cal-esp/deb2.12/winpar.esp:207-227 |
 | 1986-91 (CAL copy) | super-command menu | col 1: `library_error_mode(off)`, `reset_inspector`, `get_debugger(DEB)`, ..., `set_prompt("system_mode>")`, `reset_prompt`, `without_vars_window`, `with_vars_window`, `display_vars`, `from_wb(WB)`, `area_limit_off`; col 2: `icon`, `cmenu(off)`, `cmenu(on)`, `heap_on`, `heap_off`, `time_on`, `time_off`, ..., `package`, `font`, `depth(7),length(7)`, `system_help` | COPY | cal-esp/deb2.12/purs.esp:975-1021 (full list in notes: ifs_libshell §4.3) |
 
+| 1992 (CAL debugger 2.12 manual, SIMPOS 7.0) | `Debugger Menu` (opened by a double left click on the debugger window) | `Mode_Leash`, `State`, `Set_spy`, `Inspector`, `Re_display`, `Abort`, `[Exit]`; command column `Step`, `Skip`, `Leap`, `Fail`, `Retry`, `Print`, `No trace` | DERIVED (manual of the COPY) | cal-esp/deb_jman/debug.tex:49-64, :127-151 |
+| 1992 (same) | State window `CAL stat` | `Depth>`, `Length>`, `macro class>` (default `esp_macro_expander`; must inherit `as_macro`), `top-level redo : on off`, `display vars : all used new no`, `variable menu : on off`, `heap counter : on off`, `time : on off`, `[EXIT]` | DERIVED | debug.tex:229-282 |
+| 1992 (same) | `Spy window` | `PACKAGE>`, `CLASS>` (`all classes` / `public classes` / `local classes`), `PREDICATE>` (`all` / `own`), `class` / `instance` / `local : yes no`, `spy them`, then `set`, `reset`, `reset all`, `refresh`, `exit` | DERIVED | debug.tex:285-339 |
+
+Leash levels (DERIVED, debug.tex:373-386, agreeing with cal-esp/deb2.12/create.esp:1415-1421): `full`, `tight`,
+`half`, `loose` and `no`. Each is a pair of vectors:
+- `target(Method,Local,Predicate,Builtin)` chooses which entries are traced;
+- `gate(CALL,EXIT,REDO,FAIL)` gives each port as `leash`, `trace` or `off`.
+
+For example `tight` = `target(off,on,on)`, `gate(leash,trace,trace,leash)`. The debugger reads its settings from
+`me:cal_debugger.ini`: `debugger_size/2`, `print_depth/1`, `print_length/1`, `font/1`, `package/1`, `macro/1`,
+`leash/1` and `control_menu/1` (debug.tex:356-372). Trace commands (debug.tex:153-172):
+- `step` stops at the next gate;
+- `skip` does not trace below the current predicate;
+- `leap` runs to the next spy entry;
+- `fail` fails the predicate, and `retry` retries it;
+- `notrace` stops tracing up to the debugger top level.
+
+How much of this is SIMPOS's own debugger and how much is CAL's is unknown, as for §5.4.6. The manual sends the
+reader to the 「ＳＩＭＰＯＳ操作説明書」 for the inspector (debug.tex:346).
+
 Window names: `debugger_<n>`; sub-windows `Variable Window` (1.00) / `Variable` (2.x).
 
 #### 5.4.5 Inspector
@@ -1091,15 +1138,20 @@ awk -F'\t' 'NR>1{n[$7]++; u[$7]+=$5; N++; U+=$5} END{for(k in n) printf "%s\t%d\
 
 | status | methods | uses |
 |---|---|---|
-| DOC-class | 4 | 218 |
-| DOC-unowned | 11 | 53 |
-| USAGE | 31 | 739 |
-| USAGE-unowned | 10 | 45 |
-| NONE | 59 | 198 |
+| DOC-class | 9 | 311 |
+| DOC-unowned | 16 | 358 |
+| USAGE | 27 | 417 |
+| USAGE-unowned | 6 | 18 |
+| NONE | 57 | 149 |
 | total | 115 | 1,253 |
 
-So 15 of 115 methods (13%) have documentary support, but they carry 271 of 1,253 uses (22%). With
-USAGE added, 56 methods (49%) and 1,055 uses (84%) have a stated meaning. The DOC-unowned rows on
+These counts are after the second sweep (`sweep_2026-11-24.md` §4). The 1990 ESP manual's `stop_watch` table made
+all five `stop_watch` methods DOC-class. Its statement that `get_slot/3`/`set_slot/3` are methods of class `class`
+made the get/set_slot rows DOC-unowned (correctly owner-free). Before the sweep the counts were DOC-class 4 (218),
+DOC-unowned 11 (53), USAGE 31 (739), USAGE-unowned 10 (45), NONE 59 (198).
+
+So 25 of 115 methods (22%) have documentary support, and they carry 669 of 1,253 uses (53%). With
+USAGE added, 58 methods (50%) and 1,104 uses (88%) have a stated meaning. The DOC-unowned rows on
 `create/2` and `new/2` (stop_watch, inspector, debugger_stop_watch, interpreter, call_counter,
 debugger_gate, dummy_debugger, as_event_handler) are name-only matches: a printed `create/2`
 exists, but not on that class.
@@ -1117,7 +1169,7 @@ Adjusted reading (this document's own, not the script's):
 - `process self/2` (211 uses) is PRINTED in the as_program source (TM-100 p11), although the
   script counts it as USAGE.
 - `set_slot/3` and `get_slot/3` (322 uses including class forms) are generic object methods, not
-  as_program's.
+  as_program's: the 1990 ESP manual makes them methods of class `class` (PROSE, ESPtex/program-e.tex:5987-5988).
 - On that reading the genuinely unknown shell surface is small: `trace_exception_handler` (15),
   the `call_counter` setters (17), `post/1`, `trace/2`, `debugger_recorder`, `dummy_debugger` and
   `user_process_profile get_user_profile/5`. The large unknowns are behavioural (§5.3.5, gaps
