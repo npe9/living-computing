@@ -81,7 +81,9 @@ def main(argv):
     for k in ('G_LINK', 'G_STATUS', 'G_CODE', 'G_ARGN', 'G_ARGS', 'READY',
               'SUSPENDED', 'TAKEN', 'S_NEXT', 'S_GOAL', 'S_SIZE',
               'SH_COUNT', 'SH_STATUS', 'SH_PARENT', 'SH_REPORT', 'SH_GOAL', 'SH_SIZE',
-              'DORMANT', 'STARTED', 'TERMINATED', 'REPORT_STARTED', 'REPORT_TERMINATED'):
+              'DORMANT', 'STARTED', 'TERMINATED', 'REPORT_STARTED', 'REPORT_TERMINATED',
+              'SH_REDUCTIONS', 'SH_REMOVE', 'REMOVED', 'REPORT_STATISTICS_STARTED',
+              'REPORT_STATISTICS', 'REPORT_RETURN_RESOURCE'):
         lines.append('Integer lay_%s = %d;' % (k, getattr(L, k)))
     lines.append('')
     for m in im.mods:

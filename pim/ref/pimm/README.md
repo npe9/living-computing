@@ -20,9 +20,10 @@ the ready queue, suspension records, hooked variables; layouts in
 `asm/pimm_layout.py`, the project's design). One processor, newest
 goal first, no priorities; body built-ins that wait become goals of a
 stub (`asm/pimm_stubs.py`); 8- and 16-bit strings.  The shoen in its
-first stage: `create_shoen`, `start_shoen`, termination (shoen records
-in the heap, a goal's shoen in its record's status cell;
-`docs/pimm_semantics.md` "Shoen").
+first two stages: `create_shoen`, `start_shoen`, termination,
+`shoen_statistics` (twice the reductions, counted per shoen) and
+`remove_shoen` (shoen records in the heap, a goal's shoen in its
+record's status cell; `docs/pimm_semantics.md` "Shoen").
 `lockstep_repl.py` runs `exception_table:replace_argument/3`, which
 reads vectors the script builds (`driver.Script.vector`), and
 `lockstep_ground.py` runs `shoen:ground_term/2` on lists and vectors;
@@ -58,13 +59,16 @@ as the MRB says, `lockstep_atab.py` the IPL's own atom table
 the real `pimos.ipl`, `lockstep_p2c.py` `predicate_to_code` and
 `code`, `lockstep_apply.py` `apply`, `lockstep_where.py` `scsi_where`, `lockstep_shoen.py` the shoen
 (`create_shoen`, `start_shoen`, termination, through the image's own
-`shoen:execute/4`), `lockstep_alt.py` `read_eagerly`
+`shoen:execute/4`), `lockstep_shoen2.py` its second stage
+(`shoen_statistics`, `remove_shoen`, through the image's three
+monitors, the statistics checked against the reductions counted on
+the trace), `lockstep_alt.py` `read_eagerly`
 (`alternatively`), `not_equal` and `wait_vector_1`, `_4`, `_6`,
 `lockstep_body.py` `b_divide`, `b_modulo`, `b_string` and
 `enqueue_goal_to_processor`, `lockstep_elw.py` `string_operation`
 waiting on an element of its vector, `lockstep_reuse.py`
 `put_reused_structure` of a vector of seven or more;
-`longrun_ipl.py` is the long run (not in the suite); 128
+`longrun_ipl.py` is the long run (not in the suite); 130
 instructions on both models.  On the reference model ALONE, a
 prototype: the SCSI built-ins `scsi_init` and `scsi_command` against
 a small model of the front-end processor (`fep.py`), with
@@ -76,7 +80,7 @@ stack (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on
 them but nothing reclaimed
 (`docs/pimm_semantics.md` "The MRB"), of the shoen only its first
-stage (no stop, abort, remove, statistics, resource), no exceptions.
+two stages (no stop, abort, resource, profile), no exceptions.
 
     python3 ref/pimm/test_jtoa.py
 

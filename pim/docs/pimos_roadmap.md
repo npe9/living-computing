@@ -343,7 +343,10 @@ wherever the dialects differ. In dependency order:
    module linkage;
 5. shoen, priorities and exceptions (the IPL starts PIMOS "at priority
    4050"); the shoen's first stage (`create_shoen`, `start_shoen`,
-   termination) is on both models, `ref/pimm/lockstep_shoen.py`;
+   termination) is on both models, `ref/pimm/lockstep_shoen.py`, and
+   its second (`shoen_statistics`, `remove_shoen`, the image's monitors
+   to `Shut = shut`), `ref/pimm/lockstep_shoen2.py`; stop, abort,
+   resource limits and exceptions are not;
 6. garbage collection - only when a run exhausts memory; until then
    size memory to avoid it and record that.
 

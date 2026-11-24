@@ -16,8 +16,9 @@ they are this project's design, the firmware being lost).  One
 processor, a LIFO ready queue without priorities, 8- and 16-bit
 strings.  No garbage collection (the heap only grows); the MRB is
 kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
-it; the shoen in its first stage only (create_shoen, start_shoen
-and termination: "the shoen" below); no exceptions.  An instruction
+it; the shoen in its first two stages only (create_shoen,
+start_shoen, termination, shoen_statistics, remove_shoen: "the shoen"
+below); no exceptions.  An instruction
 this file does not implement raises Unimplemented: it never guesses.
 
 On this model ALONE (the Bluespec core has none of what this
@@ -74,6 +75,9 @@ from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
 from pimm_layout import (SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT,  # noqa: E402
                          SH_GOAL, SH_SIZE, DORMANT, STARTED, TERMINATED,
                          REPORT_STARTED, REPORT_TERMINATED)
+from pimm_layout import (SH_REDUCTIONS, SH_REMOVE, REMOVED,  # noqa: E402
+                         REPORT_STATISTICS_STARTED, REPORT_STATISTICS,
+                         REPORT_RETURN_RESOURCE)
 
 
 class Unimplemented(Exception):
@@ -163,6 +167,9 @@ class Machine:
         # the current shoen: the shoen record of the goal taken from the
         # ready queue; 0 for the root (no record) and between runs
         self.shoen = 0
+        # the reductions of the goal in hand so far (shoen stage 2): one
+        # for each execute and for its proceed (end_reduction)
+        self.chain = 0
         self.next_atom = NEW_ATOM0            # new_atom's counter (ours)
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
@@ -394,7 +401,8 @@ class Machine:
         return g
 
     # ---- the shoen ---------------------------------------------------
-    # Stage 1: create_shoen, start_shoen, termination.  What is
+    # Stages 1 and 2: create_shoen, start_shoen, termination,
+    # shoen_statistics, remove_shoen.  What is
     # PIM/m-sourced is said at each place; the record, the count, the
     # parked first goal and when a message is reported are not (they
     # are carried over from PDSS and VPIM, or ours): docs/
@@ -416,15 +424,16 @@ class Machine:
             a = self.shoen + SH_COUNT
             self.mem[a] = (INT, self.mem[a][1] + 1)
 
-    def report(self, sh, code):
+    def report(self, sh, code, car=None):
         """A message on a shoen's report stream: its unbound tail is
-        bound to [code | NewTail], waking the goals that wait on it,
-        and NewTail is the tail from now on (OURS).  The tail is
-        followed through references (create_shoen run from its stub
-        has its Report bound to the caller's variable); a tail that
-        someone has bound to a value is refused."""
+        bound to [code | NewTail] (or [car | NewTail]), waking the
+        goals that wait on it, and NewTail is the tail from now on
+        (OURS).  The tail is followed through references (create_shoen
+        run from its stub has its Report bound to the caller's
+        variable); a tail that someone has bound to a value (or that
+        remove_shoen has closed) is refused."""
         c = self.alloc(2)
-        self.mem[c] = (INT, code)
+        self.mem[c] = (INT, code) if car is None else car
         self.mem[c + 1] = (UNDF, 0)
         tail = self.deref(self.mem[sh + SH_REPORT])
         if not self.unbound(tail):
@@ -432,13 +441,50 @@ class Machine:
         self.unify(tail, (LIST, c))
         self.mem[sh + SH_REPORT] = (REF, c + 1)
 
+    def report3(self, sh, code, h, lo):
+        """A message {code, H, L} on the report stream: the vector's
+        three cells, then the list cell as report() makes it."""
+        v = self.alloc(3)
+        self.mem[v] = (INT, code)
+        self.mem[v + 1] = (INT, h & 0xffffffff)
+        self.mem[v + 2] = (INT, lo & 0xffffffff)
+        self.report(sh, None, car=(VECT0 + 6, v))
+
+    def remove(self, sh):
+        """A terminated shoen is removed: {14, 0, 0} (return_resource:
+        no resource is modelled, so nothing is left to return, OURS),
+        then the report stream is closed (its tail unified with []) and
+        the record marked REMOVED.  VPIM's order (f_shoen_control.psl.c:
+        547-575, f_shoen_with_fp.psl.c:69-71: return_resource, close,
+        reclaim), not PIM/m-sourced."""
+        self.report3(sh, REPORT_RETURN_RESOURCE, 0, 0)
+        tail = self.deref(self.mem[sh + SH_REPORT])
+        if not self.unbound(tail):
+            raise Unimplemented('the report stream of a shoen is bound to %r' % (tail,))
+        self.unify(tail, NIL)
+        self.mem[sh + SH_STATUS] = (INT, REMOVED)
+
     def end_reduction(self):
-        """The reduction of a goal has ended (proceed or suspend; not
-        execute, which goes on with the same goal): one less on its
+        """The run of a goal has ended (proceed or suspend; not
+        execute, which goes on with the same goal).  First its
+        reductions (self.chain: each execute, and the proceed) are
+        added to its shoen's SH_REDUCTIONS.  Then one less on the
         shoen's count.  A suspension wrote its record first (+1), so it
         nets nothing.  At 0 the shoen has terminated: its status says
-        so, 12 (terminated) is reported, and its parent, of which it
-        was one, loses one in turn.  Nothing for the root.
+        so, 12 (terminated) is reported (and if remove_shoen came
+        first, it is removed now: 14, the close), and its parent, of
+        which it was one, gets its reductions added and loses one in
+        turn.  Nothing for the root.
+
+        What a reduction is: the PIMOS manual (e-shoen.tex:388-395, the
+        profile's counts) has reductions = dequeues and executes less
+        suspensions, which is one per execute and one per proceed; PDSS
+        counts there too (emulator/emulate.c:333-365, KL1B_PROCEED,
+        KL1B_EXECUTE, KL1B_EXECUTE_EXTERNAL).  That a statistic covers
+        the descendant shoen is the manual's (e-shoen.tex:234); adding
+        a child's total to its parent at its termination is PDSS's
+        (shoen.c:293).  Writing the cell once per run, at its end, is
+        OURS.
 
         Carried over from PDSS (emulator/emulate.c:340 "if(--number_
         of_children == 0){ terminate_shoen(); }"; shoen.c:280-309: the
@@ -446,14 +492,18 @@ class Machine:
         f_shoen_with_fp.psl.c:86: `terminated` alone while the control
         stream is open); not PIM/m-sourced.  The code 12 is
         (asm/pimm_layout.py)."""
-        sh = self.shoen
+        sh, red = self.shoen, self.chain
         while sh:
+            red = self.mem[sh + SH_REDUCTIONS][1] + red & 0xffffffff
+            self.mem[sh + SH_REDUCTIONS] = (INT, red)
             n = self.mem[sh + SH_COUNT][1] - 1 & 0xffffffff
             self.mem[sh + SH_COUNT] = (INT, n)
             if n:
                 break
             self.mem[sh + SH_STATUS] = (INT, TERMINATED)
             self.report(sh, REPORT_TERMINATED)
+            if self.mem[sh + SH_REMOVE][1]:
+                self.remove(sh)
             sh = self.mem[sh + SH_PARENT][1]
 
     def hook(self, g, var):
@@ -489,6 +539,7 @@ class Machine:
             code = self.mem[g + G_CODE][1] - self.load
             for i in range(self.mem[g + G_ARGN][1]):
                 self.reg[i] = self.mem[g + G_ARGS + i]
+            self.chain = 0
             self.reduce(code, before + limit)     # the limit is this run's
             self.end_reduction()
         self.shoen = 0                # what a bench makes between runs is the root's
@@ -1363,6 +1414,7 @@ class Machine:
     def i_execute(self, pc, x, y, z, c16):
         # the same goal goes on as a reduction of the predicate at the label
         self.reductions += 1
+        self.chain += 1
         self.alt = None
         self.waiting = []
         return pc + 2 + sx16(c16)
@@ -1386,6 +1438,7 @@ class Machine:
         # writes nothing, and refuses a cache field that is not 0.
         target = self.external(pc, c16, 'execute_external')
         self.reductions += 1
+        self.chain += 1
         self.alt = None
         self.waiting = []
         return target
@@ -1439,6 +1492,7 @@ class Machine:
         return None
 
     def i_proceed(self, pc, x, y, z, c16):
+        self.chain += 1
         self.event('E done')
         return 'done'
 
@@ -1904,6 +1958,8 @@ class Machine:
             self.mem[sh + SH_REPORT] = var
             g = self.record(SUSPENDED, self.stubs['apply']['addr'], self.argv[1:3], shoen=sh)
             self.mem[sh + SH_GOAL] = (INT, g)
+            self.mem[sh + SH_REDUCTIONS] = (INT, 0)
+            self.mem[sh + SH_REMOVE] = (INT, 0)
             self.counted()                # the child is one of its parent's
             self.nsusp += 1
             return [var, (SHREC, sh)]
@@ -1938,6 +1994,55 @@ class Machine:
             self.nsusp -= 1
             return [h]
         self.builtin('start_shoen', [x, y], f)
+
+    def i_shoen_statistics(self, pc, x, y, z, c16):
+        # shoen_statistics(Shoen, ^NewShoen), 22:E6, r_r (inst_tab.kl1,
+        # blt.kl1:537-601: PIM/m-sourced; the image's control/2 calls it
+        # for `statistics`).  10 (statistics_started) is reported, then
+        # {9, H, L} (statistics(H, L)): H and L the high and low 32 bits
+        # of twice the shoen's reductions (PIM/m-sourced: the PIMOS
+        # manual, e-shoen.tex:234, "twice of the number of reductions
+        # ... including the descendent shoens"; the count is
+        # SH_REDUCTIONS, see end_reduction).  10 first and {9, ..} at
+        # once on a terminated shoen is VPIM's (f_shoen_control.psl.c:
+        # 691-727); on a shoen not terminated VPIM asks its processors
+        # and reports later, this model reports the count as it stands
+        # (the goal in hand's reductions not yet in it), which the
+        # manual allows ("should not exceed the actual consumption"):
+        # OURS.  NewShoen is the same handle (OURS).
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('shoen_statistics(%r)' % (h,))
+            sh = h[1]
+            self.report(sh, REPORT_STATISTICS_STARTED)
+            red = self.mem[sh + SH_REDUCTIONS][1]
+            self.report3(sh, REPORT_STATISTICS, red >> 31, red << 1)
+            return [h]
+        self.builtin('shoen_statistics', [x, y], f)
+
+    def i_remove_shoen(self, pc, x, y, z, c16):
+        # remove_shoen(Shoen), 22:E4, r (inst_tab.kl1, blt.kl1: PIM/m-
+        # sourced; the image's control/2 calls it when the control
+        # stream is []).  A terminated shoen is removed at once (remove:
+        # 14, the close).  One not yet terminated (dormant or started)
+        # is marked, SH_REMOVE = 1, and removed when it terminates
+        # (end_reduction): VPIM's (f_shoen_control.psl.c:547-575 sets
+        # its no_more_external_event flag; f_shoen_with_fp.psl.c:69-71
+        # then reports terminated, return_resource and closes), not
+        # PIM/m-sourced.  A shoen removed already is refused.
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('remove_shoen(%r)' % (h,))
+            sh = h[1]
+            st = self.mem[sh + SH_STATUS][1]
+            if st == REMOVED:
+                raise Unimplemented('remove_shoen of a shoen removed already')
+            if st == TERMINATED:
+                self.remove(sh)
+            else:
+                self.mem[sh + SH_REMOVE] = (INT, 1)
+            return []
+        self.builtin('remove_shoen', [x], f)
 
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.
