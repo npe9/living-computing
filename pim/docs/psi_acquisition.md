@@ -328,7 +328,10 @@ This search was delegated. Its record is
 `simpos/subsystems/web_search_2026-11-24.md`, which lists every source
 with its URL, whether it was opened or only located, and the negative
 results. It went into Japanese sources (IPSJ 全国大会 and SIG papers,
-CiNii, NDL) and wider (Common ESP, code hosts, Wayback, Usenet, museums).
+CiNii, NDL) and wider (Common ESP, code hosts, Wayback, museums). The
+record lists the sources that were asked for but not searched: Google
+Books, HathiTrust, Hitachi reviews, fj.* Usenet, FTP mirrors, GitLab and
+Software Heritage.
 
 **No SIMPOS or CESP code or binaries were found.**
 
@@ -346,7 +349,8 @@ What they add:
     (`:kill`, `:draw_line/8`, `:read_with_click/3`, ...).
 - **Librarian.**
   - IPSJ 118681 (1990) was already held but had not been read. Its
-    Fig. 1 shows the Librarian window's whole menu tree. Fig. 2 is the
+    Fig. 1 shows the Librarian's top menu and two of its submenus (the
+    caption says the figure is partial). Fig. 2 is the
     menu definition from the Librarian's initialisation file.
     Customisation arrived in SIMPOS 5.0.
   - IPSJ 117623 describes CESP's equivalent.

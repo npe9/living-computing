@@ -4,8 +4,10 @@ A delegated web search, made after the searches in `../../psi_acquisition.md`
 sections 1, 5, 6, 7, 9 and 10, `../../archive_search_notes.md`,
 `../source_notes.md` and `../../nonlocal/lit/SOURCES.tsv`. It did not
 repeat them. It went deeper into Japanese sources (IPSJ 全国大会 and SIG
-papers, CiNii, NDL) and wider (Common ESP, Software Heritage, GitHub,
-Usenet, Wayback, museums, booksellers). All accesses were on 2026-11-24.
+papers, CiNii, NDL) and wider (Common ESP, GitHub, one archived Usenet
+post, Wayback, museums, booksellers). Several of the sources asked for
+were not searched; they are listed under "Not searched" at the end. All
+accesses were on 2026-11-24.
 
 "Opened" means the document was fetched and its text or page images were
 read. "Located" means only a catalogue or search record was seen. All
@@ -88,8 +90,15 @@ page numbers are printed page numbers.
        was missing from CESP and was added in 3.3.
      - The string origin is the top left in SIMPOS and the bottom left
        in CESP.
-   - Timing: catalogue on PSI-II 3'30" against CESP 11'15". PSI-III
-     (PSI/UX) is about 4x PSI-II.
+   - Timing (§5, 速度比較):
+     - The first measurement is ESP on PSI-II 3'30" against CESP on a
+       SPARCstation 2 11'15". The OCR does not let us say what operation
+       was timed (probably compiling RLS), so check the page image
+       before using it.
+     - `ackerman(3,8,R)` takes 33" against 51". `reverse/2` takes 6"
+       against 10". The paper concludes ESP is about 1.5x faster.
+     - It says PSI-III (MELCOM PSI/UX) runs about 4x as fast as PSI-II
+       (200 ns).
    - **This is a primary-source list of real SIMPOS window class and
      method names with their arities.**
 
@@ -105,16 +114,19 @@ page numbers are printed page numbers.
    - 児玉泰子 and 藤本誠司 (三菱電機東部コンピュータシステム),
      「SIMPOSライブラリアンのカスタマイズ機能」. 第40回全国大会 (1990-03),
      pp.933-934. https://ipsj.ixsq.nii.ac.jp/records/118681
-   - **Fig. 1 is the standard Librarian window**, titled
-     "librarian 40 (default: user)".
+   - **Fig. 1 is the standard Librarian's opening screen.** The caption
+     「標準のライブラリアン初期画面（一部）」 says it is partial. The
+     window is titled "librarian 40 (default: user)". The page image was
+     read by eye.
      - Top menu: Set up / Check / Catalogue / Save / Load / Delete /
        Package / Execute / Utility / ESP tool / [Close].
      - The Set up submenu: Set up, Save state, Check menu item.
      - The Package submenu: Set default package, Define package, Define
        environment, Delete package, Delete environment, Retrieve, Other
        command, [Exit].
-   - **Fig. 2 is the menu definition from the Librarian's initialisation
-     file**, which is ESP-term syntax:
+   - **Fig. 2 is the menu definition statement (メニュー定義文) from the
+     Librarian's initialisation file.** The text below was transcribed
+     from OCR; the elided part is not shown in the figure.
      ```
      menu_list := [("Set up", set_up_menu, [("Set up", set_up),
        ("Save state", save_state), ("Check menu item", check_menu_item)]),
@@ -292,3 +304,56 @@ The records are 114011, 114015, 114484, 115459, 116733, 117096, 117622,
 | Auction and bookseller listings | Web searches found no SIMPOS, PSI or CESP manuals or media for sale. |
 | IFS newsletter No.4 (1992) | Its CESP and AIR statement was already known. |
 | Feigenbaum & Shrobe, FGCS 9 (1993) | Fetched (Stanford copy) and read. A general survey with nothing on SIMPOS's internals. Not added to the manifest. |
+
+## What was queried
+
+This list is drawn from the scratch query logs; nothing here is from
+memory.
+
+- **CiNii Research.** The OpenSearch endpoint `/opensearch/all` was used,
+  two pages of 200 for each of 16 terms:
+  - ライブラリアン, Common ESP, CESP, PSI-III, PSI/UX, Pmacs, SIMPOS
+  - ESP ウィンドウ, PSI ウィンドウ, SIMPOS ウィンドウ
+  - コーディネータ PSI, PSI ESP
+  - 推論マシン オペレーティングシステム, ESP オブジェクト指向 論理型
+  - 逐次型推論マシン SIMPOS, マルチウィンドウ 推論マシン
+
+  That index includes J-STAGE articles, KAKEN projects and the JSAI and
+  JSSST records J-STAGE carries, so those sources were covered only
+  through CiNii. 58 J-STAGE and 92 KAKEN links came back, and none was
+  relevant.
+- **CiNii Books.** Eleven queries were run, among them SIMPOS, ESP and
+  PSI manual titles.
+- **The IPSJ repository API.** Queries were run on SIMPOS, CESP, Common
+  ESP, MELCOM PSI, PSI-II, PSI/UX, ライブラリアン, "ESP ウィンドウ" and
+  "ESP PSI", and on titles. Record IDs were also walked (see the table
+  above).
+- **NDL Search OpenSearch.** Fourteen query results were saved, and two
+  book records were opened.
+- **Wayback CDX.** These hosts were queried: icot.or.jp `/cesp/`,
+  `/esp/` and `/simpos/`; ftp.icot.or.jp `/cesp/`; aitec.icot.or.jp;
+  air.co.jp and www.air.co.jp; mecs.co.jp and www.mecs.co.jp; and
+  melcos.co.jp.
+- **Discmaster.** SIMPOS, CESP, Common ESP and ICOT PSI were searched.
+- **GitHub repository search.**
+- **The CHM catalogue.**
+- **General web searches** (about 14). They covered Japanese and English
+  terms, the Oki research journal, auctions and booksellers, 未来技術遺産,
+  PSI/UX, and one "comp.lang.prolog OR fj OR usenet" query.
+
+## Not searched
+
+These sources were asked for but not searched, so no negative result is
+claimed for any of them:
+
+- J-STAGE, KAKEN, IEICE and JSAI on their own sites (they were covered
+  only through CiNii Research, as above)
+- Google Books and HathiTrust
+- 日立評論 (Hitachi Review) and 沖電気研究開発 full text. Only the
+  citations for the Oki journal were located.
+- Usenet fj.* archives and the comp.lang.prolog archive as a whole.
+  Only the one archived post and one general web query were checked.
+- University FTP mirrors
+- GitLab
+- Software Heritage (blocked by a bot challenge)
+- PSI emulators, as a separate query
