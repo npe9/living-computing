@@ -159,7 +159,14 @@ typedef struct {
 
 // One TLB entry.  The tag is the 20-bit concatenation of the segment
 // number and the page number; the payload is the page frame base plus
-// the PTE's protection and cache bits (Table 2-3, p. 2-7).
+// the PTE's protection and cache bits (Table 2-3, p. 2-7), and whether
+// the memory copy has M set: Table 2-3 bit 4, "Set to 1 when a write
+// occurs within the page.  On subsequent writes to this page, the memory
+// copy of the page table entry is not accessed to set this bit again",
+// and Table 2-4 (p. 2-9) charges a walk to a write whose entry hits
+// without M ("Data write, TLB/NPSR hit and M bit previously set" is the
+// only free write).  So a write that hits an entry filled by a read walks
+// and sets M (`translateFn`).
 typedef struct {
   Bool     valid;
   Bit#(10) seg;
@@ -168,6 +175,7 @@ typedef struct {
   Bool     writable;
   Bool     user;
   Bool     cache;
+  Bool     modified;
 } MmuTlbEntry deriving (Bits);
 
 // One nonpaged segment register: the nonpaged segment-table entry
@@ -184,7 +192,8 @@ typedef struct {
 
 function MmuTlbEntry invalidTlb();
   return MmuTlbEntry { valid: False, seg: 0, vpn: 0, ppn: 0,
-                       writable: False, user: False, cache: False };
+                       writable: False, user: False, cache: False,
+                       modified: False };
 endfunction
 
 function MmuNpsr invalidNpsr();
@@ -359,6 +368,16 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
                                               Bit#(5) idx, MmuTlbEntry e) =
     update(v, idx, e);
 
+  // Where the clock's starting TLB already holds the page: the walk a
+  // write makes to set M (`translateFn`) refills that slot, not a new one.
+  function Maybe#(Bit#(5)) slotOf(Vector#(32, MmuTlbEntry) v, Word va);
+    Maybe#(Bit#(5)) r = tagged Invalid;
+    for (Integer i = 0; i < 32; i = i + 1)
+      if (v[i].valid && (v[i].seg == va[31:22]) && (v[i].vpn == va[21:12]))
+        r = tagged Valid fromInteger(i);
+    return r;
+  endfunction
+
   function MmuResp translateFn(MmuReq r);
     if (!r.enabled)
       return mkResp(True, True, False, r.va, MMU_OK);
@@ -367,7 +386,8 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
       let hitE = r.isText
                    ? findTlb(tlbText, r.va[31:22], r.va[21:12])
                    : findTlb(tlbData, r.va[31:22], r.va[21:12]);
-      if (isValid(hitE)) begin
+      if (isValid(hitE) &&
+          !(r.isWrite && !validValue(hitE).modified)) begin
         let e = validValue(hitE);
         let f = permFault(e.user, e.writable, r);
         return mkResp(f == MMU_OK, True, True,
@@ -457,17 +477,22 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
           let w = walk(r);
           if (w.valid) begin
             if (w.paged) begin
+              let np = pteAfterRef(w.pte, r.isWrite);
+              Bool wrote = (np != w.pte) && !isValid(wb);
+              if (wrote) begin
+                wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
+                nPteW = nPteW + 1;
+              end
+              // M as memory now has it (a write-back lost to another
+              // note's in the same clock leaves it clear, to walk again)
+              Word mem = wrote ? np : w.pte;
               nt = refillTlb(nt, nNextT,
                              MmuTlbEntry { valid: True, seg: r.va[31:22],
                                            vpn: r.va[21:12], ppn: w.ppn,
                                            writable: w.writable,
-                                           user: w.user, cache: w.cache });
+                                           user: w.user, cache: w.cache,
+                                           modified: mem[4] == 1'b1 });
               nNextT = nNextT + 1;
-              let np = pteAfterRef(w.pte, r.isWrite);
-              if ((np != w.pte) && !isValid(wb)) begin
-                wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
-                nPteW = nPteW + 1;
-              end
             end else begin
               nnT = MmuNpsr { valid: True, seg: r.va[31:22],
                               base: w.ste[31:22], bound: w.ste[21:12],
@@ -494,17 +519,22 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
           let w = walk(r);
           if (w.valid) begin
             if (w.paged) begin
+              let np = pteAfterRef(w.pte, r.isWrite);
+              Bool wrote = (np != w.pte) && !isValid(wb);
+              if (wrote) begin
+                wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
+                nPteW = nPteW + 1;
+              end
+              // M as memory now has it (a write-back lost to another
+              // note's in the same clock leaves it clear, to walk again)
+              Word mem = wrote ? np : w.pte;
               nt = refillTlb(nt, nNextT,
                              MmuTlbEntry { valid: True, seg: r.va[31:22],
                                            vpn: r.va[21:12], ppn: w.ppn,
                                            writable: w.writable,
-                                           user: w.user, cache: w.cache });
+                                           user: w.user, cache: w.cache,
+                                           modified: mem[4] == 1'b1 });
               nNextT = nNextT + 1;
-              let np = pteAfterRef(w.pte, r.isWrite);
-              if ((np != w.pte) && !isValid(wb)) begin
-                wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
-                nPteW = nPteW + 1;
-              end
             end else begin
               nnT = MmuNpsr { valid: True, seg: r.va[31:22],
                               base: w.ste[31:22], bound: w.ste[21:12],
@@ -531,17 +561,23 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
           let w = walk(r);
           if (w.valid) begin
             if (w.paged) begin
-              nd = refillTlb(nd, nNextD,
-                             MmuTlbEntry { valid: True, seg: r.va[31:22],
-                                           vpn: r.va[21:12], ppn: w.ppn,
-                                           writable: w.writable,
-                                           user: w.user, cache: w.cache });
-              nNextD = nNextD + 1;
               let np = pteAfterRef(w.pte, r.isWrite);
-              if ((np != w.pte) && !isValid(wb)) begin
+              Bool wrote = (np != w.pte) && !isValid(wb);
+              if (wrote) begin
                 wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
                 nPteW = nPteW + 1;
               end
+              // M as memory now has it (a write-back lost to another
+              // note's in the same clock leaves it clear, to walk again)
+              Word mem = wrote ? np : w.pte;
+              let slot = slotOf(tlbData, r.va);
+              nd = refillTlb(nd, fromMaybe(nNextD, slot),
+                             MmuTlbEntry { valid: True, seg: r.va[31:22],
+                                           vpn: r.va[21:12], ppn: w.ppn,
+                                           writable: w.writable,
+                                           user: w.user, cache: w.cache,
+                                           modified: mem[4] == 1'b1 });
+              if (!isValid(slot)) nNextD = nNextD + 1;
             end else begin
               nnD = MmuNpsr { valid: True, seg: r.va[31:22],
                               base: w.ste[31:22], bound: w.ste[21:12],
@@ -567,17 +603,23 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
           let w = walk(r);
           if (w.valid) begin
             if (w.paged) begin
-              nd = refillTlb(nd, nNextD,
-                             MmuTlbEntry { valid: True, seg: r.va[31:22],
-                                           vpn: r.va[21:12], ppn: w.ppn,
-                                           writable: w.writable,
-                                           user: w.user, cache: w.cache });
-              nNextD = nNextD + 1;
               let np = pteAfterRef(w.pte, r.isWrite);
-              if ((np != w.pte) && !isValid(wb)) begin
+              Bool wrote = (np != w.pte) && !isValid(wb);
+              if (wrote) begin
                 wb = tagged Valid (tuple2(pteAddr(w.ste, r.va), np));
                 nPteW = nPteW + 1;
               end
+              // M as memory now has it (a write-back lost to another
+              // note's in the same clock leaves it clear, to walk again)
+              Word mem = wrote ? np : w.pte;
+              let slot = slotOf(tlbData, r.va);
+              nd = refillTlb(nd, fromMaybe(nNextD, slot),
+                             MmuTlbEntry { valid: True, seg: r.va[31:22],
+                                           vpn: r.va[21:12], ppn: w.ppn,
+                                           writable: w.writable,
+                                           user: w.user, cache: w.cache,
+                                           modified: mem[4] == 1'b1 });
+              if (!isValid(slot)) nNextD = nNextD + 1;
             end else begin
               nnD = MmuNpsr { valid: True, seg: r.va[31:22],
                               base: w.ste[31:22], bound: w.ste[21:12],
