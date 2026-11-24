@@ -124,6 +124,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
+  // the clock (pimm.py INSTRUCTIONS_PER_TICK): the system timer in 1/16
+  // msec, one tick per 423 instructions decoded (OURS rate from 615
+  // KLIPS on append), counted before the instruction; clk holds the
+  // value for the instruction in hand
+  Reg#(Bit#(9))      tickSub <- mkReg(0);
+  Reg#(Bit#(48))     ticks   <- mkReg(0);
+  Reg#(Bit#(48))     clk     <- mkReg(0);
   // multiply_bignum_by_word: the word in hand, the length, Y, the carry,
   // the pass (False: the carry only; True: the words written), whether
   // the product is one word longer, the new string
@@ -282,6 +289,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule decode (st == XDecode);
     traceI(pc, ins);
+    clk <= ticks;
+    if (tickSub == 422) begin
+      tickSub <= 0;
+      ticks <= ticks + 1;
+    end
+    else tickSub <= tickSub + 1;
     if (ins.tag != tag_GMI && ins.tag != tag_KLB) stop(EndError);
     // ---- clause selection
     else if (op == op_try_me_else) begin
@@ -420,9 +433,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       st <= XCPr1;
     end
     else if (op == op_system_timer) begin
-      // system_timer(^X1, ^X2), a guard with no input: the model's
-      // clock stands at 0 (ours), r[x] then r[y]
-      regs.wr(x, intC(0));
+      // system_timer(^X1, ^X2), a guard with no input: the clock's
+      // upper 16 bits, then (sysTimerLow) its lower 32
+      regs.wr(x, intC(zeroExtend(ticks[47:32])));
       st <= XSTim;
     end
     else if (op == op_current_node) begin
@@ -1089,7 +1102,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   // current_node: the second output, the total number of nodes
   rule sysTimerLow (st == XSTim);
-    regs.wr(y, intC(0));
+    regs.wr(y, intC(clk[31:0]));
     next;
   endrule
 
@@ -1584,13 +1597,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_set_timer) begin
-      // set_timer(Time, ^Wakeup): with the clock at 0 (ours) a time
-      // reached, (0 - Time) mod 2^32 < 2^31, gives Wakeup = 0; a time
+      // set_timer(Time, ^Wakeup): a time reached, (now - Time) mod 2^32
+      // < 2^31, gives Wakeup = now (the clock's lower 32 bits); a time
       // still to come is refused
-      Bit#(32) d = 0 - a.val;
+      Bit#(32) d = clk[31:0] - a.val;
       if (!isInt(a) || d[31] == 1) stop(EndUnimp);
       else begin
-        regs.wr(y, intC(0));
+        regs.wr(y, intC(clk[31:0]));
         finish(tagged Next afterBuiltin);
       end
     end

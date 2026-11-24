@@ -65,6 +65,16 @@ VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
 # is PIM/m-sourced (PIMOS debugger/inspector/tagtbl.kl1, 16#"38" SHREC);
 # what it points at is OURS (asm/pimm_layout.py).  From 20h: no MRB bit.
 SHREC = 0x38
+# THE CLOCK (system_timer, set_timer; fep.py's time of day): it advances
+# with the instructions both models execute, one tick of the system
+# timer (1/16 msec, PIMOS manual e-builtin.tex:1537-1549) every
+# INSTRUCTIONS_PER_TICK instructions, counted before the instruction
+# that reads it.  The rate: 615 KLIPS on append for one PIM/m processor
+# (FGCS'92, M92 p. 425; docs/pim_architecture.md), the image's own
+# append/3 (scsi_fep_module) taking 11 instructions a reduction, so
+# 615000 * 11 instructions a second, 62.5 usec * 6.765e6 = 422.8 per
+# tick.  That every instruction costs the same is OURS.
+INSTRUCTIONS_PER_TICK = 423
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
                          MEMORY_CELLS, HEAP)
@@ -1647,11 +1657,18 @@ class Machine:
         # with X1, and the lower 32 bits ... with X2. Suspend,
         # Exception: None" (manual, e-builtin.tex:1537-1549).  VPIM
         # gives X1 = 0 and X2 the current time (klb_pimos.psl.c
-        # kblt_system_timer, "just for PIM/s").  The CLOCK IS OURS: no
-        # time passes on this model, it stands at 0 (X1 = 0, X2 = 0),
-        # written r[x] then r[y]; set_timer agrees with it.
-        self.reg[x] = (INT, 0)
-        self.reg[y] = (INT, 0)
+        # kblt_system_timer, "just for PIM/s").  The clock (2026-11-24;
+        # it stood at 0 before): self.timer(), 48 bits, X1 its upper 16,
+        # X2 its lower 32, written r[x] then r[y]
+        t = self.timer()
+        self.reg[x] = (INT, (t >> 32) & 0xffff)
+        self.reg[y] = (INT, t & 0xffffffff)
+
+    def timer(self):
+        """The system timer, in 1/16 msec: the instructions executed
+        before this one, INSTRUCTIONS_PER_TICK to a tick (OURS rate,
+        above), 48 bits."""
+        return ((self.steps - 1) // INSTRUCTIONS_PER_TICK) & 0xffffffffffff
 
     def i_set_timer(self, pc, x, y, z, c16):
         # set_timer(Time, ^Wakeup), 22:FF r_r (blt.kl1:702-704: input
@@ -1664,11 +1681,14 @@ class Machine:
         # With this model's clock at 0 (system_timer, OURS) a time
         # reached gives Wakeup = 0; a time still to come would never
         # come, and is refused rather than left waiting silently.
+        # The clock is self.timer() (2026-11-24; it stood at 0): a time
+        # reached gives Wakeup = the timer's low 32 bits, now
         def f(t):
             t = self.need_int(t)
-            if (0 - t) & 0xffffffff >= 1 << 31:
-                raise Unimplemented('set_timer to a time still to come (%d)' % t)
-            return [(INT, 0)]
+            now = self.timer() & 0xffffffff
+            if (now - t) & 0xffffffff >= 1 << 31:
+                raise Unimplemented('set_timer to a time still to come (%d, now %d)' % (t, now))
+            return [(INT, now)]
         self.builtin('set_timer', [x, y], f)
 
     def i_current_node(self, pc, x, y, z, c16):
@@ -2889,6 +2909,7 @@ class Machine:
         self.event('B %d %d %s %d %d%s' % (cmd['unit'], cmd['lun'], bytes(cmd['cdb']).hex(),
                                            cmd['dir'], cmd['length'],
                                            ' ' + out.hex() if cmd['dir'] == 1 and out else ''))
+        self.fep.ticks = self.timer()     # the FEP's time of day follows the clock
         got = self.fep.command(cmd['unit'], cmd['lun'], bytes(cmd['cdb']), cmd['length'],
                                cmd['dir'], out)
         self.scsi_tape.append(got)

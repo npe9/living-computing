@@ -42,7 +42,8 @@ OURS, each for want of the FEP's own code:
   - append_open (203) is accepted, the bytes appended kept in
     Fep.appended (OURS; the kernel's syslog, Fep.request);
   - create_timer (310) is accepted (OURS, Fep.request), and
-    get_date_time (304) answered with a fixed clock (DATE, TIME);
+    get_date_time (304) answered with a fixed date and the machine's
+    clock as the time of day (DATE, Fep.ticks);
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -66,12 +67,16 @@ TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
 READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
 CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
 GET_DATE_TIME = 304                # pimos.vmac:95 fep#get_date_time
-# the FEP's clock, OURS: fixed, so every run is the same.  The date
-# the banner's, 20-May-1993, as PIMOS counts dates (days from
-# 01-Jan-1901: utility/timer/date.kl1 get_date_count, check_input),
-# the time 00:00:00 (milliseconds from midnight: utility/timer/
-# time.kl1 get_time_count)
-DATE, TIME = 33742, 0
+# the FEP's clock, OURS, the same on every run.  The date the
+# banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901:
+# utility/timer/date.kl1 get_date_count, check_input); the time of
+# day (milliseconds from midnight: utility/timer/time.kl1
+# get_time_count) follows the machine's clock (pimm.py timer(), set
+# into Fep.ticks before each command, 1/16 msec), so midnight is the
+# moment the processor booted (2026-11-24; it was a fixed 0).  PIMOS
+# takes the difference of the two as its time equation (server/fep/
+# fep/time_sv.kl1 wait_date_time/2, compare/4)
+DATE = 33742
 NORMAL, EOD, ABNORMAL = 1, 2, 5
 # scsi_command's Result for a unit with no device (OURS, Fep.command)
 NO_DEVICE = 8 << 8
@@ -141,6 +146,7 @@ class Fep:
         self.files = {}         # device id -> [bytes, position]
         self.appending = {}     # device id -> the path it appends to
         self.timers = set()     # device ids of timers made
+        self.ticks = 0          # the machine's clock (1/16 msec), set by pimm.py
         self.appended = {}      # path -> the bytes appended to it (OURS)
         self.replies = []       # packets to give, in order
         self.stopped = False
@@ -271,7 +277,7 @@ class Fep:
         if cmd == GET_DATE_TIME and len(msg) == 1 and dev in self.timers:
             # {Id, 304}: the reply {Status, Date, Time}
             # (bios/fep_module/time_dvc.kl1 device_io1/13)
-            return [NORMAL, DATE, TIME]
+            return [NORMAL, DATE, (self.ticks // 16) % 86400000]
         if cmd == GETB and len(msg) == 2 and dev in self.files:
             f = self.files[dev]
             chunk = f[0][f[1]:f[1] + (self.getb_bytes or msg[1] * self.getb_unit)]
