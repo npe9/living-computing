@@ -1524,6 +1524,7 @@ class Wire:
         self.log = []               # (t, "tx"/"rx", frame)
         self.sock = None
         self.peer = None
+        self.peer_clock = None      # ETHER_CHOICES['lockstep']
         if peer:
             host, port = peer.rsplit(":", 1)
             self.peer = (host, int(port))
@@ -1569,9 +1570,13 @@ class Wire:
     def poll_peer(self, timeout, base):
         """Datagrams from the peer; with a timeout, wait up to that many
         wall-clock seconds for the first.  Each is stamped base + the
-        wall-clock seconds waited (ETHER_CHOICES['peer'])."""
+        wall-clock seconds waited (ETHER_CHOICES['peer']).  With a
+        `peer_clock`, the time is the peer's own (ETHER_CHOICES
+        ['lockstep'])."""
         if self.sock is None:
             return 0
+        if self.peer_clock is not None:
+            return self._poll_lockstep(timeout, base)
         got = 0
         t0 = time.time()
         if timeout > 0:
@@ -1588,6 +1593,35 @@ class Wire:
         finally:
             self.sock.setblocking(False)
         return got
+
+    def _drain(self, t):
+        got = 0
+        while True:
+            try:
+                data, _ = self.sock.recvfrom(65536)
+            except (BlockingIOError, socket.timeout):
+                return got
+            self.schedule(data, t)
+            got += 1
+
+    def _poll_lockstep(self, timeout, base):
+        """ETHER_CHOICES['lockstep'].  `base` is the model time now.
+        Busy (timeout 0): if the peer is a quantum or more behind, run it
+        until its clock reaches `base`.  Idle (timeout > 0, the model has
+        nothing to do for that long): run the peer until its clock
+        reaches base + timeout or a datagram comes; the model waits for
+        it.  A datagram is stamped with the peer's time when it was read,
+        never earlier than `base`."""
+        pc = self.peer_clock
+        if timeout <= 0:
+            if base - pc.now() >= pc.quantum:
+                pc.run_until(base)
+            return self._drain(base)
+        got = self._drain(base)
+        if got:
+            return got
+        got = pc.run_until(base + timeout, sock=self.sock)
+        return self._drain(max(base, pc.now())) if got else 0
 
 
 ETHER_CHOICES = {
@@ -1608,6 +1642,20 @@ ETHER_CHOICES = {
             "attached; busy time runs at the reference model's speed, "
             "~100,000 instructions a second, ~200 times slower than a "
             "20 MHz part).  A datagram gets the model time it is read at.",
+    "lockstep": "With a peer clock (tools/p9join.py: the 1e server's own "
+                "tick counter, read through QEMU's monitor, QEMU paused "
+                "with `stop` and resumed with `cont`), the two machines "
+                "share one time base instead: while the model is busy the "
+                "server is paused, and every PEER_POLL instructions it is "
+                "run until its clock has caught up with model time, if it "
+                "is a quantum (one of its ticks) or more behind; while the "
+                "model is idle the server runs and the model waits for "
+                "it, up to the model's next timed event or the server's "
+                "next datagram, which is stamped with the server's time.  "
+                "Neither side sees the other run slow: the model's busy "
+                "time costs the server nothing, and the server's time "
+                "costs the model only its idle laps.  The server is ahead "
+                "by at most one of its ticks plus a monitor round trip.",
     "replay": "--ether-replay PCAP answers the model's frames with a "
               "recorded live session's (--pcap of a run joined to the 1e "
               "server in QEMU): when the model transmits the next "
@@ -1725,8 +1773,10 @@ class Boot:
             # ETHER_CHOICES['peer']: idle time runs at the wall clock.
             now = self.cycles / float(CPU_HZ)
             wait = PEER_IDLE_MAX if nxt is None else nxt - now
+            if w.peer_clock is None:
+                wait = min(wait, PEER_IDLE_MAX)
             if wait > 0:
-                w.poll_peer(min(wait, PEER_IDLE_MAX), now)
+                w.poll_peer(wait, now)
                 nxt = self.next_event()
             if nxt is None:
                 return

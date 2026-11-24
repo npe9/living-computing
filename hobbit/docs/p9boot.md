@@ -205,13 +205,9 @@ regression suite loaded the host) printed `error dialing
 shows why: 8.7 ms after the Hobbit's IL sync (id 26000) it sent a sync
 with **ack 0**, and only 0.14 ms later the proper one (ack 26000).
 s9term's `stil.c`, in Ilsyncer, hangs up on a sync whose ack is not its
-start ("connection rejected"), as the source says it should.  The
-ack-0 sync matches the server's `stil.c` timer path (`ilackproc`
-resends `Ilsync, ic->start, ic->recvd` for a conversation in Ilsyncee,
-whose `recvd` is 0 until `ilprocess` has handled the incoming sync);
-that it is this race is an inference from the code, not traced.
-Replaying that run's pcap reproduces the failure exactly (the replay
-is also a debugging tool).
+start ("connection rejected"), as the source says it should.  Replaying
+that run's pcap reproduces the failure exactly (the replay is also a
+debugging tool).  The cause is in "The ack-0 sync" below.
 
 A fourth run (committed code, `--until` that never matches, 360 M
 instructions) went past init: `/bin/rc` from the server ran on the
@@ -253,13 +249,130 @@ python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
     --ether-replay hobbit/tests/net/join_init.pcap --until 'init: starting'
 ```
 
-Live, busy model time runs ~200 times slower than the wall clock while
-idle time is paced to it (ETHER_CHOICES `peer`), so the server sees a
-slow terminal: the server's IL retransmitted, 56 of its 143 frames are
-Dataquery resends of data messages already sent (each answered by a
-State from the Hobbit), 10 for the first one; and the kernel's 1 s
-alarms take 14 s of model time at the default counter rate.  Neither
-stopped the boot.
+Live and free-running (`p9join.py --free-run`, the only mode until
+2026-11-23's lockstep), busy model time runs ~200 times slower than the
+wall clock while idle time is paced to it (ETHER_CHOICES `peer`), so the
+server sees a slow terminal: in the run to `init`, 56 of the server's
+143 frames are Dataquery resends of data messages already sent (each
+answered by a State from the Hobbit), 10 for the first one; in the run
+to `% `, 407 Dataquery resends against 265 data messages, and the
+server's clock ran 355 s while the model's ran 16.6 s between the first
+and last frame.  Neither stopped the boot.
+
+### One time base: the lockstep (ETHER_CHOICES `lockstep`)
+
+Since 2026-11-23 `p9join.py` runs the two machines on one time base.
+The server's time is its own tick counter, `MACHP(0)->ticks` (pc/clock.c
+`m->ticks++`, HZ 20), read from guest memory with QMP `pmemsave` at an
+address found in `9dos.q` itself (clock()'s first instructions, `mov
+m,%eax; incl 12(%eax)`: `m` is 0x8003b004).  QEMU is paused with QMP
+`stop` while the model is busy; every 20,000 model instructions, if the
+server is a tick or more behind, it is resumed (`cont`) until its ticks
+have caught up with model time, then stopped again.  While the model is
+idle with nothing due, the server runs and the model waits for it, up
+to the model's next timed event or the server's next datagram, which is
+stamped with the server's time.  QEMU's `stop` pauses its virtual clock,
+so the guest sees no time pass while paused (measured: 0 ticks in 5 s
+stopped).
+
+QEMU also runs with `-icount shift=4` (each guest instruction 16 ns of
+its virtual time).  The choice was measured (`build/a5/clocktest.py`
+then `race.py`, scratch):
+
+| server clock | free, per wall second | catching up 4 s of server time |
+|---|---:|---:|
+| QEMU's host clock (no icount) | 0.98 s | 4.06 s of wall |
+| `-icount shift=4` | 7.6-8.9 s (load-dependent) | 0.35 s of wall |
+
+`-icount` alone cannot pair the clocks: the 1e 386 kernel never halts
+(port/proc.c `runproc` spins, so `sleep=on|off` never applies), and its
+time then follows QEMU's throughput, 8 times the wall clock and varying
+with the host's load; `shift=auto` would track the host clock, which the
+model cannot keep up with.  Under the lockstep that does not matter (the
+server is run by its own ticks), and icount makes catching up 8 times
+cheaper and keeps host scheduling out of the guest's time (the ack-0
+sync below).  The server is ahead of the model by at most about a tick
+(50 ms) plus a monitor round trip.
+
+Measured on live runs to `% ` (IL counts from the Hobbit's pcap; skew
+is the server's pcap stamp minus the model's for the same frame, both
+counted from the first frame):
+
+| run | frames | server Dataquery resends | server data | skew | server ran |
+|---|---:|---:|---:|---|---:|
+| free-running (2026-11-23, earlier) | 1455 | 407 | 265 | server clock 355 s vs model 16.6 s | wall clock |
+| lockstep, no icount | 587 | 1 | 259 | -0.02 .. +0.23 s | 31 s of wall |
+| lockstep, icount 4 (6 runs, below) | 587-595 | 1-5 | 259 | -0.63 .. +0.12 s | 4-5 s of wall |
+
+**Reliability.**  Six consecutive live runs with the lockstep and
+`-icount shift=4` (`p9join.py --until '% '`, 2026-11-23, the host's load
+average 58-85; the kfs already had /usr/none, "The user" below), and two more (one without icount, one with the command
+script of step 3 below), all reached rc's `% ` with no failure:
+
+| run | instructions (idle-skipped) | model time | host time | frames | server resends |
+|---|---:|---:|---:|---:|---:|
+| 1 | 704,903,691 (690,745,356) | 35.32 s | 258 s | 595 | 5 |
+| 2 | 771,905,606 (757,761,120) | 38.67 s | 255 s | 587 | 1 |
+| 3 | 768,913,081 (754,755,988) | 38.52 s | 244 s | 591 | 3 |
+| 4 | 729,920,371 (715,752,340) | 36.57 s | 249 s | 591 | 2 |
+| 5 | 712,906,549 (698,763,784) | 35.72 s | 234 s | 587 | 1 |
+| 6 | 686,918,200 (672,777,344) | 34.42 s | 221 s | 587 | 1 |
+
+The runs differ by up to 3 s of model time because the Hobbit's clock
+ticks every 0.569 s and init's and /boot's sleeps end on ticks: a reply
+that lands just after a tick waits for the next one.  The free-running
+fifth run of the earlier session took 456 s of host time to the same
+prompt; the lockstep's runs take about half that, because the server no
+longer floods a slow terminal with resends.
+
+With the lockstep the kernel's 1 s alarms still take 14.2 s of model
+time (the counter period, below): that is model time, and the server now
+agrees with it, so it no longer costs anything but idle laps.
+
+### The ack-0 sync (the server's IL race)
+
+Read against the server's own `sys/src/9/port/stil.c` (1e tarball), the
+failed run's server pcap (`build/a5/join3/`, copied from that run):
+
+```
+ 22.660000 H> sync  id  26000 ack     0  5000>17008
+ 22.668703 <S sync  id 174100 ack     0 17008>5000
+ 22.668847 <S sync  id 174100 ack 26000 17008>5000
+ 23.101285 <S sync  id 174100 ack 26000 ...   (every ~0.4 s, 28 more)
+```
+
+The two answers have the same id, so they come from the one new
+conversation (`ic->start` = 174100).  Three places send an Ilsync with
+`(ic->start, ic->recvd)`: `ilstart` for an active open (the server only
+listens), `_ilprocess` in Ilsyncee on the incoming sync (line 431-432:
+`ic->recvd = id` and then the send, so its ack is 26000 -- the second
+frame), and `ilackproc`'s timer pass for a conversation in Ilsyncee or
+Ilsyncer (line 764-769).  So the first frame is `ilackproc`'s, sent
+while `recvd` was still 0: after `ilrcvmsg` set `ic->state = Ilsyncee`,
+`ic->start` and `ic->recvd = 0` (lines 356-360) and before
+`_ilprocess` set `recvd` (line 431).  `ilackproc` sends at once there
+because `ilrcvmsg` never calls `Starttimer` for the new conversation:
+a freshly allocated Ipconv has `timeout = fasttime = 0`, so the first
+pass (`timeout += 100 >= 0`) qualifies.  For `ilackproc` to run inside
+that window on a uniprocessor, the receiving kernel process must be
+preempted there: pc/clock.c's `clock()` preempts a running kernel
+process at any tick when `anyready()`, and `ilackproc` becomes ready
+every 100 ms (`tsleep(&ilackr, return0, 0, Iltickms)`).  The 1e IL in
+s9term (Ilsyncer) then rejects the connection, correctly.
+
+That much follows from the frames and the code.  What made the
+preemption land in a window of a few dozen instructions was not caught:
+probing the server as a fake Hobbit (`build/a5/race.py`: BOOTP, ARP,
+then IL syncs from new ports, each closed after the answer) gave **0
+ack-0 answers in 612 dials** -- 300 on a free-running server, 300 under
+`-icount shift=4`, and 12 first dials on freshly booted servers (the
+failed run's dial was the first after boot, the case with a fresh
+Ipconv and code never translated by QEMU before).  The likeliest
+stretch is the host: without icount the guest's clock is the host's,
+so a QEMU thread descheduled inside the window (the host's load was
+above 70) comes back to an overdue timer interrupt.  Under `-icount`
+the guest's clock follows its instructions, so that stretch is gone;
+the window itself, a 1e bug, remains.
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
