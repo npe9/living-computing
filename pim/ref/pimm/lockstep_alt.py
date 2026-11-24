@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6, wait_vector,
-jump, set_marked_variable, get_constant.
+jump, set_marked_variable, get_constant, b_vector.
 
     python3 ref/pimm/lockstep_alt.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_alt.py compare
@@ -98,6 +98,11 @@ gives it, not from either model:
                 cell); proceed.  X unbound: 100000; X = 100000:
                 succeeds; X = 7: fails.  Pins 13 / 2121 -> 14 / 2173,
                 this part's 52 lines.
+  body vector   body vector/3, 22:CA (2026-11-24; the next stop of
+                pim:go/4), at its stub: {1, 2, 3} gives 3 and itself,
+                {} gives 0, the vector of 8 (part vector 7's layout) 8,
+                an unbound X waits, then {4, 5} gives 2.  Pins 14 /
+                2173 -> 15 / 2349, this part's 176 lines.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -126,6 +131,12 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
                                              constant's cell for proceed
   (2026-11-24) get_constant takes the 16-bit field  constant, line 17:
                                              M .. 0 for 186a0
+  (2026-11-24) b_vector's NewVector not written  body vector, line 25:
+                                             R 4 0 for the vector
+  (2026-11-24) b_vector sizes a long vector by its tag  body vector,
+                                             line 99: R 3 7 for 8
+  (2026-11-24) a long vector's size one too many  body vector, line 99:
+                                             R 3 9 for 8
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -146,7 +157,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=14, lines=2173)
+PINNED = dict(parts=15, lines=2349)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -528,6 +539,50 @@ def script():
         s.run()
         s.out(0)
     part('constant', [100000, 100000, 7])
+    # 14. body vector(X, ^Size, ^NewVector), 22:CA (2026-11-24, met in
+    #    pim:go/4), at its stub: {1, 2, 3} gives 3 and itself; {} gives
+    #    0; the vector of 8 (as part 12 lays it out) gives 8; X unbound
+    #    waits (Size still unbound), then {4, 5} gives 2 (the stub taken
+    #    five times).  Outs: Size, then NewVector as a term
+    s.label('body vector')
+    stub = m.stubs['b_vector']['addr']
+
+    def bvec(slot, out=True):
+        s.newvar(13)
+        s.newvar(14)
+        s.arg(1, slot)
+        s.arg(2, 13)
+        s.arg(3, 14)
+        s.spawn(stub, 3)
+        s.run()
+        if out:
+            s.out(13)
+            s.out(14)
+    s.vector(10, 0, [I(1), I(2), I(3)])
+    bvec(10)
+    s.newvar(10)
+    s.unifyc(10, (pimm.VECT0, 0))
+    bvec(10)
+    for k in range(11):
+        s.newvar(k)
+    m = s.live()
+    a0 = s.live_slot[0][1]
+    assert [s.live_slot[k][1] for k in range(11)] == list(range(a0, a0 + 11))
+    s.unifyc(0, (pimm.VDESC, a0 + 3))
+    s.unifyc(1, I(8))
+    s.unifyc(2, I(8))
+    s.unifyc(3, I(5))
+    s._op(driver.PTR, 12, 0, (pimm.VECT0 + 15, 0))
+    bvec(12)
+    s.newvar(12)
+    bvec(12, out=False)
+    s.out(13)
+    s.vector(10, 0, [I(4), I(5)])
+    s.unify(12, 10)
+    s.run()
+    s.out(13)
+    s.out(14)
+    part('body vector', [3, (1, 2, 3), 0, (), 8, (5,) + (None,) * 7, None, 2, (4, 5)])
     return s, want
 
 
@@ -536,7 +591,7 @@ ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal'
         'alternatively': (0, 2), 'vector 4': (0, 0), 'vector 4 of three': (1, 0),
         'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0),
         'marked variable': (0, 0), 'vector 7': (2, 1),
-        'constant': (1, 0)}
+        'constant': (1, 0), 'body vector': (0, 0)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
@@ -544,8 +599,9 @@ TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'vector 4 of three': ('wait_vector_4', 1), 'vector 6': ('wait_vector_6', 3),
          'vector 1': ('wait_vector_1', 4), 'vector 0': ('wait_vector_0', 4),
          'jump': ('jump', 2), 'marked variable': ('set_marked_variable', 1),
-         'vector 7': ('wait_vector', 5), 'constant': ('get_constant', 3)}
-OPCODE = {'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'vector 7': ('wait_vector', 5), 'constant': ('get_constant', 3),
+         'body vector': ('b_vector', 5)}
+OPCODE = {'b_vector': '22ca', 'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 

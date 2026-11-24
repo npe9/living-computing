@@ -2719,6 +2719,21 @@ class Machine:
             return [(INT, h & 0xffffffff), w]
         self.builtin('hash', [x, y, z], f)
 
+    def i_b_vector(self, pc, x, y, z, c16):
+        # body vector(X, ^Size, ^NewVector), 22:CA r_r_r (assembler/
+        # inst_tab.kl1:298): "The size of the vector X is unified with
+        # Size, and X is unified with NewVector.  Exception: If X is
+        # anything other than a vector" (PIMOS manual, e-builtin.tex
+        # 750-755): refused.  r[y] := the size, then r[z] := X.  VPIM
+        # (kblt_b_vector_size) copies a vector whose MRB is on, to give
+        # NewVector a single reference; the same term, so OURS: X itself
+        def f(v):
+            n = self.vsize(v)
+            if n is None:
+                raise Unimplemented('built-in exception: vector')
+            return [(INT, n), v]
+        self.builtin('b_vector', [x, y, z], f)
+
     def i_b_vector_element(self, pc, x, y, z, c16):
         # vector_element(V, I, ^E, ^V1): r[z] := element, r[w] := the vector
         w4 = self.cells[pc + 1][1] >> 24

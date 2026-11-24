@@ -80,7 +80,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
-               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -191,7 +191,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
                   || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word
-                  || op == op_subtract_bignum;
+                  || op == op_subtract_bignum || op == op_b_vector;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1652,6 +1652,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XBVEl;
       end
     end
+    else if (op == op_b_vector) begin
+      // body vector(X, ^Size, ^NewVector): r[y] := the size, then r[z]
+      // := X.  Anything but a vector is the exception: not modelled
+      if (!isVec(a)) stop(EndUnimp);
+      else if (isLongVec(a)) begin
+        vbox.info(a);
+        st <= XVInfo;
+      end
+      else begin
+        regs.wr(y, intC(sizeOf(a)));
+        st <= XBVOut;
+      end
+    end
     else if (op == op_new_vector) begin
       // new_vector(Size, ^V)
       if (!isInt(a) || a.val[31] == 1) stop(EndUnimp);
@@ -2554,10 +2567,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       spSingle <= False;
       finish(tagged Next (pc + 2));
     end
+    else if (op == op_b_vector) begin
+      regs.wr(y, r.a);
+      st <= XBVOut;
+    end
     else begin
       regs.wr(y, r.a);
       next;
     end
+  endrule
+
+  // body vector/3: NewVector, after the size
+  rule bVOut (st == XBVOut);
+    regs.wr(z, vals[0]);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule bVec (st == XBVec);
