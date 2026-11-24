@@ -282,6 +282,36 @@ destination), `023` a wrong-path operand read that faults under the MMU
 (the core-only harness above), `024` `CATCH` (no earlier golden executes
 it) with absolute and stack-offset-indirect targets.
 
+## The privileged harness (2026-11-24)
+
+Golden `025` is the first to run on a privileged machine: virtual
+addressing, translation tables and a fault vector, so that an exception
+is recorded and followed by its handler's records instead of ending the
+run.  Its `.md` states its own pre-state (PSW, STB, the table entries,
+VB and the vector word).  The harnesses:
+
+* `sem/hobbit_sem.py --system --stb HEX --poke ADDR=WORD ...` gives the
+  model a `System` (the exception sequences, the MMU walk when PSW.V is
+  set) whose physical memory is the image plus the poked words, with SHAD
+  = SP; an exception record (`trap=1`, no write) no longer ends the run
+  there -- the image end and `--max-steps` do.
+* `bsv/run_golden.sh 025` runs the MMU core (`mkHobbitCoreMmu`, as 023)
+  with the same entries in its table memory, STB and VB set through the
+  core, and the vector word in the event unit's memory.
+
+The record conventions this adds:
+
+* **The exception record.**  An instruction that takes an exception does
+  not complete (p. 1-38): its record is `trap=1` with no write, the
+  pointers as before (the sequence's SP = SHAD leaves SP alone when SHAD
+  = SP), and `cyc=0`.  Chapter 4 prints no occupancy for the exception
+  sequence; 0 is the reference model's convention
+  (`hobbit_sem._system_exception`), not a printed number.
+* **After it** come the handler's records, at `*(VB+4)`.
+* `check_golden.py` accepts `cyc=0` and a following record on an
+  exception record only (a `trap=1` line with `we=0`); the
+  unimplemented-instruction trap (`we=1`, 006) still ends the run.
+
 ## What `check_golden.py` enforces
 
 Run `python3 hobbit/tests/golden/check_golden.py`; it exits non-zero and

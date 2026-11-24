@@ -189,6 +189,23 @@ for n in 009 022 023 024; do
         --spec-lines "$here/golden/$n.trace"
 done
 
+# 025 runs on the privileged harness (tests/golden/README.md): PSW.V = 1,
+# a page table with a read-only page, a fault vector.  A store to that
+# page takes exception 9 at the store and does not retire (s9term boot
+# record 2,893,033), and nothing EU_S1 held retires during the sequence
+# (record 3,298,054).  Three ways, the reference with --system.
+"$hobbit/bsv/run_golden.sh" 025 > "$tmp/025.model.raw"
+grep '^HRI ' "$tmp/025.model.raw" > "$tmp/025.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/025.model" \
+    --spec-lines "$here/golden/025.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/025.hex" \
+    --sp 0x100 --msp 0x180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000020 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 200c=00003001 2>/dev/null \
+    | grep '^HRI ' > "$tmp/025.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/025.sem" \
+    --spec-lines "$here/golden/025.trace"
+
 # The kernel boot on the core, a short sample (docs/p9boot.md, "The boot
 # on the core"): the shipped s9term from the ROM hand-off, physical
 # addressing, the first CRET into virtual mode (record 2,064), `main`

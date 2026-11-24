@@ -680,6 +680,14 @@ interface HobbitMmuMem;
   // (the privileged machine's KCALL frame, mkHobbitCoreSystem); a read
   // in the same clock is not affected.
   method Action kernelNow();
+  // Would a write to `a` fault if made now, under the PSW's level and
+  // translation bit?  The same translation `mem.write` makes (one
+  // `mmu.translate`, so the same TLB/NPSR state and the same walk), with
+  // no side effect: no note, no latch.  EU_S3 asks it for a store before
+  // the store commits (exception 9 is taken at the store's own PC,
+  // p. 1-38).  The `kernelNow` override is not applied: KCALL's frame is
+  // not checked this way (p. 3-29).
+  method Bool writeFaults(Word a);
 endinterface
 
 module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
@@ -753,6 +761,10 @@ module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
   method Action kernelNow();
     kernelW <= True;
   endmethod
+  method Bool writeFaults(Word a) =
+    mmu.translate(MmuReq { va: a, isText: isText, isWrite: True,
+                           user: (psw[10] == 1'b1),
+                           enabled: (psw[16] == 1'b1) }).fault != MMU_OK;
 endmodule
 
 

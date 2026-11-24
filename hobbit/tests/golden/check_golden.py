@@ -165,7 +165,12 @@ def check_trace(stem, parcels, words, errs):
         count = parcel_count(first, where, errs)
         if count is None:
             continue
-        if g["cyc"] == 0 and not is_branch(first, count):
+        # An exception record (trap=1, no write: the privileged harness,
+        # README "The privileged harness") has no printed occupancy: the
+        # exception sequence is not priced in Chapter 4, and its cyc is 0,
+        # the reference model's convention (hobbit_sem _system_exception).
+        exception = bool(g["trap"]) and g["we"] == 0
+        if g["cyc"] == 0 and not is_branch(first, count) and not exception:
             errs.append("%s: cyc=0 on a non-branch; only a folded branch takes no "
                         "time (p. 4-3 note, Table 4-35 p. 4-5)"
                         % where)
@@ -192,7 +197,9 @@ def check_trace(stem, parcels, words, errs):
                             % (where, g["mask"]))
         if g["trap"]:
             traps += 1
-            if i != last:
+            # The unimplemented-instruction trap ends the run (stop rule 1);
+            # an exception record is followed by its handler's records.
+            if i != last and not exception:
                 errs.append("%s: trap=1 but the run continues" % where)
         if prev is not None:
             if prev["spa"] != g["spb"]:
@@ -205,6 +212,8 @@ def check_trace(stem, parcels, words, errs):
                             % (where, g["mb"], prev["ma"]))
         if not is_branch(first, count):
             expect = g["pc"] + 2 * count
+        if exception:
+            expect = None      # the handler, *(VB+4) (p. 1-38)
         if i == last and not g["trap"] and expect != image_end:
             errs.append("%s: the last instruction ends at %04x, not at the image "
                         "end %04x; the model would fetch padding"

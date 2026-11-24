@@ -44,7 +44,7 @@ esac
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024) ;;
+    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023|024|025) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -61,7 +61,7 @@ run_one() {
   # PSW 0x8600 = UL | X | S, as 017.md's "Pre-state" says.
   case "$stem" in
     017) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00008600);' ;;
-    023) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
+    023|025) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
     *)   startcall='core.start(32'"'"'h00000100, 32'"'"'h00000180);' ;;
   esac
   # 023 runs on the MMU core with PSW.V = 1 (023.md "Pre-state"): segment
@@ -81,6 +81,37 @@ run_one() {
     tl <= tl + 1;
   endrule'
       tblready='(tl == 2) && ' ;;
+    # 025 (025.md "Pre-state"): the privileged golden harness -- PSW.V = 1,
+    # STB = 0x1000, segment 0 paged with its page table at 0x2000, page 0
+    # writable, page 3 read-only (Tables 2-1, 2-3, pp. 2-5, 2-7), the same
+    # words hobbit_sem.py --system --poke puts in physical memory -- and
+    # the fault vector: VB = 0x40, *(VB+4) = 0x20, the handler (p. 1-38),
+    # in the event unit's memory.  The exception record does not end the
+    # run: the handler's two NOPs retire and the image ends.
+    025)
+      coredecl='MmuTables tbl <- mkMmuTableMem;
+  HobbitCore core <- mkHobbitCoreMmu(phys, imageLength() << 2,
+                                     defaultMemCycles(), tbl);'
+      # STB is written from a rule of its own: with a table write in the
+      # same rule, bsc ordered the rule against the MMU's step rule (which
+      # reads the table and the STB wire) by dropping the step (G0010), and
+      # the STB write was lost.
+      tblrules='Reg#(Bit#(3)) tl <- mkReg(0);
+  rule loadTables (tl < 3);
+    case (tl)
+      0: tbl.write(32'"'"'h1000, 32'"'"'h00002001);
+      1: tbl.write(32'"'"'h2000, 32'"'"'h00000003);
+      2: tbl.write(32'"'"'h200c, 32'"'"'h00003001);
+    endcase
+    tl <= tl + 1;
+  endrule
+  rule loadStb (tl == 3);
+    core.setStb(32'"'"'h00001000);
+    core.setVb(32'"'"'h00000040);
+    core.eventMemWrite(32'"'"'h00000044, 32'"'"'h00000020);
+    tl <= 4;
+  endrule'
+      tblready='(tl == 4) && ' ;;
     *)
       coredecl='HobbitCore core <- mkHobbitCore(phys, imageLength() << 2,
                                   defaultMemCycles());'

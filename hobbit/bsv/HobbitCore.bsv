@@ -1840,6 +1840,8 @@ interface HobbitEuS3;
   method Word trapPc();
   method Parcel trapInsn0();
   method Bool trapNiladic();
+  // The faulting virtual address of a TR_WRITE_FAULT (FAULT, p. 1-39).
+  method Word trapVa();
   method Action clearTrap();
   method Action flush();
   method Word lastPc();
@@ -1880,6 +1882,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   Reg#(Word) trapPcR <- mkReg(0);
   Reg#(Parcel) trapInsn0R <- mkReg(0);
   Reg#(Bool) trapNiladicR <- mkReg(False);
+  Reg#(Word) trapVaR <- mkReg(0);
 
   // The instruction's PSW write and an event's pipeline flush are one-cycle
   // wires so the core's PSW rule sees them in the commit cycle, and the
@@ -1966,8 +1969,57 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     endcase
   endfunction
 
+  // A store whose translation faults is found here, before it commits
+  // (exception 9 is taken at "the PC of faulted instruction", p. 1-38,
+  // and the write fault is signalled "during an address translation",
+  // p. 2-3).  The store is held in this stage, so nothing younger has
+  // committed and it has done nothing yet: the commit rule retires it as
+  // a trap=1 record with no write, no PSW, pointer or control-register
+  // change and no folded branch, and the orchestrator takes the exception
+  // at its PC (the reference's `_system_exception`).  Only a write that
+  // would go to memory is translated (the box says which, `toMemory`;
+  // a word inside the cache's window is not, hobbit_sem `_store_word`),
+  // and the data face makes the same translation the write itself would
+  // (`writeFaults`).  Until 2026-11-24 the store committed, its record
+  // retired with the write, and the exception came a clock later at the
+  // same PC: found at record 2,893,033 of the s9term boot (`evenaddr`
+  // writing the user address 0xffbfffec).  Not covered: KCALL's frame
+  // (a fault there resets the part, p. 3-29), the unimplemented
+  // sequence's *(CSP) = PC, and the drain words (DQM's tail, the
+  // interlocked accumulator), which still fault after their commit.
+  function Bool storeFaults(EuS2Out o) =
+    eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal && !o.silent &&
+    !o.kcall && sc.toMemory(o.cmd) && dface.writeFaults(o.cmd.waddr);
+
+  // ENTER's check (p. 3-21, read from the page image): "If virtual
+  // addressing is enabled, the target address and the new MSP, if the MSP
+  // is updated, are checked to verify that stores are valid at the
+  // current execution level.  If the addresses are not valid, a read fault
+  // exception, exception type 8 ... is flagged for ENTER.  The exception
+  // is processed after any stack flushing is completed."  The reference
+  // checks the new SP, then the new MSP, as stores at the current level
+  // (hobbit_sem `step`), with CSP = SP only, and leaves SP and MSP where
+  // they were, so the ENTER restarts once the kernel has mapped the page.
+  // The answer is the address that failed.  Found at record 22,533,287 of
+  // the s9term boot: /boot's ENTER moving SP 0x1020 down into an unmapped
+  // user stack page.
+  function Maybe#(Word) enterFault(EuS2Out o);
+    Maybe#(Word) r = tagged Invalid;
+    if (eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal &&
+        (o.e.d.op == OP_ENTER) && (psw[9] == 1'b1)) begin
+      if (dface.writeFaults(o.spAfter & 32'hFFFFFFFC))
+        r = tagged Valid o.spAfter;
+      else if ((o.mspAfter != o.mspBefore) &&
+               dface.writeFaults(o.mspAfter & 32'hFFFFFFFC))
+        r = tagged Valid o.mspAfter;
+    end
+    return r;
+  endfunction
+
   function Bool squashOf(EuS2Out o);
     if (o.e.d.tr != TR_NONE) return False;
+    else if (storeFaults(o)) return False;
+    else if (isValid(enterFault(o))) return False;
     else if (splitHere(o)) return True;
     else if (o.serialize) return True;
     else if (isCondJumpOp(o.e.d.op) && !o.e.d.fold &&
@@ -2031,7 +2083,9 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end
   endrule
 
-  rule commit (!haltR && traceQ.notFull && !flushW);
+  // `!trapPendR`: nothing younger commits behind a trap that has not been
+  // taken yet (ENTER's waits for its flush, `trapPending`).
+  rule commit (!haltR && traceQ.notFull && !flushW && !trapPendR);
     if (pendCatch matches tagged Valid {.csp, .cto}) begin
       // CRET's refill: the cache was emptied at the new SP by the CRET's
       // own command; this CATCH fills it to the restored MSP.
@@ -2088,6 +2142,53 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end else if (pendFold matches tagged Valid .r) begin
       traceQ.enq(r);
       pendFold <= tagged Invalid;
+    end else if (inFull && !(stopHere && !inD.silent) &&
+                 isValid(enterFault(inD))) begin
+      // ENTER's check failed (`enterFault`): the flush is made -- the
+      // box's ENTER command with the pointers left where they were, so the
+      // flushed blocks stay in the cache too -- and a trap=1 record with
+      // no change goes out; the exception waits for the flush to end
+      // (`trapPending`).
+      let o = inD;
+      let d = o.e.d;
+      let k = o.cmd;
+      k.spAfter  = o.spBefore;
+      k.mspAfter = o.mspBefore;
+      sc.commit(k);
+      traceQ.enq(Hri { valid: True, pc: d.pc, insn0: d.insn0,
+                       insn1: d.insn1,
+                       sp_before: o.spBefore, sp_after: o.spBefore,
+                       msp_before: o.mspBefore, msp_after: o.mspBefore,
+                       mem_we: False, mem_addr: 0, mem_wdata: 0,
+                       mem_wmask: 0, trap: True, cyc: 0 });
+      ninstr       <= ninstr + 1;
+      lastPcR      <= d.pc;
+      inFull       <= False;
+      trapPendR    <= True;
+      trapReasonR  <= TR_ENTER_FAULT;
+      trapPcR      <= d.pc;
+      trapInsn0R   <= d.insn0;
+      trapNiladicR <= False;
+      trapVaR      <= validValue(enterFault(o));
+    end else if (inFull && !(stopHere && !inD.silent) && storeFaults(inD)) begin
+      // The held store (`storeFaults`): a trap=1 record and exception 9.
+      let o = inD;
+      let d = o.e.d;
+      traceQ.enq(Hri { valid: True, pc: d.pc, insn0: d.insn0,
+                       insn1: d.insn1,
+                       sp_before: o.spBefore, sp_after: o.spBefore,
+                       msp_before: o.mspBefore, msp_after: o.mspBefore,
+                       mem_we: False, mem_addr: 0, mem_wdata: 0,
+                       mem_wmask: 0, trap: True, cyc: 0 });
+      ninstr       <= ninstr + 1;
+      lastPcR      <= d.pc;
+      inFull       <= False;
+      trapPendR    <= True;
+      trapReasonR  <= TR_WRITE_FAULT;
+      trapPcR      <= d.pc;
+      trapInsn0R   <= d.insn0;
+      trapNiladicR <= False;
+      trapVaR      <= o.cmd.waddr;
     end else if (inFull && !(stopHere && !inD.silent)) begin
       let o = inD;
       let d = o.e.d;
@@ -2295,11 +2396,14 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     else
       return tagged Invalid;
   endmethod
-  method Bool trapPending() = trapPendR;
+  // ENTER's fault is processed after the flush has completed (p. 3-21).
+  method Bool trapPending() =
+    trapPendR && !((trapReasonR == TR_ENTER_FAULT) && sc.busy);
   method TrapReason trapReason() = trapReasonR;
   method Word trapPc() = trapPcR;
   method Parcel trapInsn0() = trapInsn0R;
   method Bool trapNiladic() = trapNiladicR;
+  method Word trapVa() = trapVaR;
   method Action clearTrap();
     trapPendR <= False;
   endmethod
@@ -2532,8 +2636,18 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   // `!s3.framePending()` holds the pipeline while a KCALL's frame tail
   // drains, so the vector handler cannot read a half-written frame.
-  rule deliver (!eventWanted() && !squash && !s3.framePending() &&
-                !dfOperand && s1.notEmpty && s2.canAccept);
+  //
+  // `!eventActiveR`: the event sequence owns the pipeline from startEvent
+  // to finishEvent.  `eventWanted` is False once the sequence has
+  // started, and EU_S1's `stop` leaves a full slot full, so without this
+  // an instruction EU_S1 held when the event started went on to EU_S2 --
+  // looked up in the decoded store startEvent had just emptied, i.e. an
+  // all-zero entry -- and retired as a record of PC 0.  Found at record
+  // 3,298,054 of the s9term boot, the second interrupt (the first had
+  // found EU_S1 empty).  finishEvent's `s1.start` empties the slot.
+  rule deliver (!eventWanted() && !eventActiveR && !squash &&
+                !s3.framePending() && !dfOperand && s1.notEmpty &&
+                s2.canAccept);
     let o = s1.out;
     s2.enq(o);
     s1.deq(o);
@@ -2559,7 +2673,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     if (dfOperand) dataFace.clearFault;
   endrule
 
-  rule move2to3 (!eventWanted() && s2.notEmpty && s3.canAccept);
+  rule move2to3 (!eventWanted() && !eventActiveR && s2.notEmpty &&
+                 s3.canAccept);
     s3.enq(s2.out);
     s2.deq;
   endrule
@@ -2617,9 +2732,24 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
         TR_FETCH_MISS:  c.fetchFault = True;
         TR_FETCH_FAULT: c.fetchFault = True;
         TR_UNIMP_REG:   c.unimpReg = True;     // exception 6 (p. 1-27)
+        TR_WRITE_FAULT: begin                  // exception 9 (p. 1-38)
+          c.writeFault = True;
+          c.va = s3.trapVa();
+        end
+        TR_ENTER_FAULT: begin                  // exception 8 (p. 3-21)
+          c.readFault = True;
+          c.va = s3.trapVa();
+        end
         default:        c.illegal  = True;
       endcase
     end
+    // A write fault that reaches the data face after its word was
+    // committed: a drain word (`storeFaults` lists them).  The reference
+    // takes it at the instruction that wrote it, before that retires, so
+    // a privileged run says so by name rather than diverging records on.
+    if (sysOn && df && dataFace.faultWrite())
+      $fwrite(stderr, "CORE late write fault: va 0x%08x after its store committed (last pc 0x%08x)\n",
+              dataFace.faultAddr(), s3.lastPc());
     if (df) begin
       if (dataFace.faultWrite()) c.writeFault = True;
       else                       c.readFault  = True;
