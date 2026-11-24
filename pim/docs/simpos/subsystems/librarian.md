@@ -75,6 +75,11 @@ TRANSLATION marks our rendering of Japanese.
 | 9 | ESP manual TeX (1990), TM-388 pp92-105 | packages, environments, macro banks | PROSE |
 | 10 | TR-057 p10, TM-143 p4, Giho 8810 | source/template/object model, compiler as subroutine | PROSE |
 
+The second sweep of all held material (`sweep_2026-11-24.md`) found **no further Librarian source**. None of the
+natures the cil copy names but does not define (§2.3) is defined anywhere held. It found SIMPOS's `pathname`/`name`
+classes (§3.8). It also found manual titles: the 8.0 editions of the programming and ESP manuals (ICOT 1992),
+and 「PSI/SIMPOS 操作説明書(I)-(III)」 (1988). None is held.
+
 ### 0.4 The cil copy (COPY grade): what it is and how far to trust it
 
 `cil/src/ds_bep.esp` contains three classes. They are SIMPOS Librarian source, re-catalogued into
@@ -611,6 +616,17 @@ with ` hrs. ` / ` min. ` / ` sec. `.
 | `>sys>librarian>esp>` | scratch copy of a remote or FDD source before catalogue (the copy is deleted and expunged afterwards; the class is marked "discordant") | COPY ds_bep.esp:2553-2564, 3073-3089 |
 | `*.ptf`, `*.env` | package template / environment files | USAGE CGS_INSTALLER.esp:379-381 |
 | `>fd0`, `>device>fdd1` | floppy link point and device | USAGE ms_ist.esp:1772-1775 |
+
+**Pathname and file-name syntax.** The Librarian's catalogue routes on `:remote_or_local(#pathname,...)` (§5.4).
+The rules for the names it handles come from SIMPOS's own `world` classes `pathname` and `name`, held in
+CESP-ported copies (HELD-SOURCE; `sweep_2026-11-24.md` §2.1):
+- a file name is `ident.type.version`;
+- the ident has 1-44 characters and the type 0-10, neither with a dot;
+- the illegal characters are `>`, `*`, `?`, `:` and space (morphana/_simpos/name.esp:83-96, :163-164);
+- directory components are joined with `>`. A directory part may be `Node::>`, `Logical_name:` or `...>Name`
+  (morphana/_simpos/pathname.esp:89-92, :93-111).
+
+`remote_or_local/6` itself is not in the copy.
 
 ---------------------------------------------------------------------------------------------------
 
