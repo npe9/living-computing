@@ -272,6 +272,20 @@ interface HobbitMmu;
   method Bit#(32) walks();
   method Bit#(32) faults();
   method Bit#(32) pteWrites();
+
+  // The physical words a table walk would read for reference r (the
+  // segment entry, then the page entry the segment entry selects), or
+  // Invalid where r needs no walk: translation off, a TLB hit or an
+  // NPSR hit.  Pure, like translate.  Nothing in the machine reads it:
+  // the ULX3S top (fpga/README.md, "The core's combinational reads")
+  // uses it to have those words on hand before the clock on which the
+  // walk is evaluated, because its physical memory is an SDRAM that
+  // cannot answer a combinational read.
+  method Vector#(2, Maybe#(Word)) walkProbe(MmuReq r);
+  // walkProbe of this clock's four noted references (noteText,
+  // noteText2, noteData, noteData2): every walk translate evaluates for
+  // the faces this clock, since every face translation is noted.
+  method Vector#(8, Maybe#(Word)) walkProbes();
 endinterface
 
 module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
@@ -390,6 +404,28 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
       end
     end
   endfunction
+
+  function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r);
+    Vector#(2, Maybe#(Word)) v = replicate(tagged Invalid);
+    if (r.enabled) begin
+      let hitE = r.isText
+                   ? findTlb(tlbText, r.va[31:22], r.va[21:12])
+                   : findTlb(tlbData, r.va[31:22], r.va[21:12]);
+      let n = r.isText ? npsrText : npsrData;
+      Bool npsrHit = n.valid && (n.seg == r.va[31:22]);
+      if (!isValid(hitE) && !npsrHit) begin
+        Word vs = steAddr(r.va);
+        v[0] = tagged Valid vs;
+        Word ste0 = tbl.read(vs);
+        if ((ste0[0] == 1'b1) && (ste0[3] == 1'b0))
+          v[1] = tagged Valid pteAddr(ste0, r.va);
+      end
+    end
+    return v;
+  endfunction
+
+  function Vector#(2, Maybe#(Word)) noteProbe(Maybe#(MmuReq) m) =
+    isValid(m) ? walkProbeFn(validValue(m)) : replicate(tagged Invalid);
 
   rule step;
     Vector#(32, MmuTlbEntry) nt = tlbText;
@@ -611,6 +647,10 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   endrule
 
   method MmuResp translate(MmuReq r) = translateFn(r);
+  method Vector#(2, Maybe#(Word)) walkProbe(MmuReq r) = walkProbeFn(r);
+  method Vector#(8, Maybe#(Word)) walkProbes() =
+    append(append(noteProbe(noteTextW), noteProbe(noteText2W)),
+           append(noteProbe(noteDataW), noteProbe(noteData2W)));
 
   method Action noteText(MmuReq r);
     noteTextW <= tagged Valid r;

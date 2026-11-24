@@ -128,6 +128,17 @@ interface HobbitCore;
   method Bit#(64) dbgState();
   // Harness probe: EU_S3's boundary state and the orchestrator's.
   method Bit#(32) dbgBoundary();
+  // Every physical word the machine may read combinationally this clock
+  // through `tbl` and the event memory: the MMU's walks for the faces'
+  // references, the event unit's (HobbitEvents combProbes) and VB, which
+  // KCALL reads in EU_S2 (vbProbe).  The machine never reads this; the ULX3S top
+  // has those words in its combinational window before it lets the
+  // clock edge happen (fpga/README.md, "The core's combinational reads").
+  method Vector#(21, Maybe#(Word)) combProbes();
+  // VB, which KCALL reads in EU_S2 (`events.memRead(vb)`): the 22nd
+  // probe, separate because it is read before EU_S3's commit writes VB
+  // and the other probes after the commit's wires.
+  method Word vbProbe();
 endinterface
 
 // One architectural write.  `addr` is the word address and `mask` the byte
@@ -2807,6 +2818,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Bool eventActive() = eventActiveR;
   method Word eventMemRead(Word a) = events.memRead(a);
   method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
+  method Vector#(21, Maybe#(Word)) combProbes() =
+    append(mmu.walkProbes, events.combProbes);
+  method Word vbProbe() = vbR;
 
   method Bit#(32) dbgBoundary() =
     { 4'b0, s3.dbgStop,

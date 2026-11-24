@@ -78,6 +78,13 @@ python3 "$here/test_p9run.py"
 # A3: every byte of the shipped __.SYMDEF tables past a name's NUL is
 # accounted for (libmach's readar replayed; /mips/bin/rl's stack frames).
 python3 "$here/test_p9symdef.py"
+# The Hobbit BeBox board (tools/beboot.py, docs/bebox_hobbit.md): device
+# tests against the data-sheet pages, and Be's Nov 1994 kernel from the
+# `be` disk to "Disk cache is" (~2 min; skips, printing the fetch command,
+# when build/bebox is not on disk).  BEBOOT_LONG=1 boots on to the root
+# volume's mount and checks the idle skip against a run without it
+# (~20 min).
+python3 -I "$here/test_beboot.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in
