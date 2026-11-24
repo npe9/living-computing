@@ -295,10 +295,16 @@ on 696,100 of 697,197.  Every remaining difference is a conditional jump
 | 2 | 3 | 161 | a misprediction the reference model places two instructions after its compare and the core places right after it |
 | 1 | 3 | 77 | a jump the reference model counts as correctly predicted and unfolded, and the core as mispredicted |
 
-These are open.  They are disagreements between the two models about
-fold eligibility and compare distance in particular instruction
-sequences, not yet traced to a page, and a cycle-accuracy claim for the
-core does not extend to them.
+Traced 2026-11-24 (`docs/cycle_accuracy_plan.md` §2.1,
+`tools/cyc_classify.py`): the first is the core folding into a
+*five-parcel* host, which p. 4-7 excludes ("a previous one- or
+three-parcel instruction"); the second and third are *folded*
+mispredicts, which the core prices at a flat 3 whatever the compare
+distance, where Table 4-35 prints 2 and 1.  `zc frexp.c` adds a fourth
+(16 records: a jump after a trap's return, where the core's compare
+distance is reset by the redirect).  The core is to be fixed (plan
+milestone C3); until then a cycle-accuracy claim for the core does not
+extend to them.
 
 ## 1d. What booting s9term on the core found (2026-11-23)
 

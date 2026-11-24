@@ -30,6 +30,7 @@ python3 "$here/test_p9kcmp.py"
 
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
+python3 "$here/test_cyc_classify.py"
 python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
