@@ -75,6 +75,11 @@ signed write_integer, wait_vector_0, apply with {}, diff of a
 structure; fep.py's append_open): 23,348 instructions, 10 SCSI
 commands, the first FEP message (append_open of pimos:pimos.syslog),
 the console the banner alone; the stop jump, not implemented.
+2026-11-24, a cached machine made afresh with --save (23,348 at jump
+again): jump, set_marked_variable, wait_vector, the timer device's
+create_timer and get_date_time (fep.py), multiply_bignum_by_word:
+65,482 instructions, the console the banner alone; the stop
+subtract_bignum(32#{}, 32#{0}), the 32#{0} from the clock at 0.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).

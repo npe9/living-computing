@@ -485,7 +485,10 @@ the device are given it again whenever the machine runs dry.
   | `wait_vector`, the general form for 7 or more | implemented (`lockstep_alt.py`) | 28,156 |
   | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
   | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
-  | `multiply_bignum_word` at 55108537 | **the stop now** | 65,471 |
+  | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
+  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+
+  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

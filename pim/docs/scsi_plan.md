@@ -30,7 +30,14 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   structure and an atom, all on both models; `fep.py` answers the
   kernel's FIRST FEP MESSAGE, `append_open` of `pimos:pimos.syslog`
   (accepted, ours). 23,348 instructions, 10 SCSI commands, the console
-  still the banner alone; the stop `jump`, not implemented (1.4).)* On the Bluespec core the whole
+  still the banner alone; the stop `jump`, not implemented (1.4).)*
+  *(Later 2026-11-24, from a cached machine made afresh: `jump`,
+  `set_marked_variable`, the general `wait_vector` and
+  `multiply_bignum_by_word` on both models; `fep.py` answers the
+  kernel's timer device, `create_timer` and `get_date_time` (a fixed
+  clock, ours). 65,482 instructions, the console the banner alone; the
+  stop `subtract_bignum` on a `32#{0}` made from our clock at 0, a
+  decision about the clock (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
