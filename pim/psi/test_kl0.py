@@ -39,7 +39,7 @@ copy, the observed failures recorded, the file restored from the backup):
   - dispatch: the primaries tried in reverse order: test_two_primaries
     and test_census fail;
   - the register barrier: pmi dd/de cut to the current stack height
-    instead of the barrier in A_A: only test_census fails (success 299,
+    instead of the barrier in A_A: only test_census fails (success 304,
     failure 10: pimmcsp##pseudo_csp_csbreak_address_table csp_mm_reg/3,
     whose source is not held, succeeds instead of failing).
   (Rerun with the session's injection script after any change to the
@@ -82,7 +82,7 @@ class Table(unittest.TestCase):
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
-        self.assertEqual(len(rows), 91)
+        self.assertEqual(len(rows), 96)
 
 
 class Convert(unittest.TestCase):
@@ -191,7 +191,7 @@ class Census(unittest.TestCase):
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual(out, {'refused': 221, 'success': 298, 'failure': 11})
+        self.assertEqual(out, {'refused': 216, 'success': 303, 'failure': 11})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -204,12 +204,11 @@ class Census(unittest.TestCase):
                 rank[k] = rank.get(k, 0) + 1
         self.assertEqual(rank, {
             'no method': 55, 'no slot': 30, 'built-in': 24, 'unbound receiver': 13,
-            'receiver not an object': 8, 'unbound argument': 17, 'operand': 16,
+            'receiver not an object': 8, 'unbound argument': 17, 'operand': 17,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
-            'missing opcode blt 25': 3, 'missing opcode pmi 36': 3,
-            'missing opcode blt 10': 3, 'missing opcode pmi 37': 3,
+            'missing opcode pmi 36': 3, 'missing opcode blt 10': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,
             'missing opcode blt 0b': 1, 'missing opcode pmi c3': 1,
             'missing opcode blt 2b': 1})

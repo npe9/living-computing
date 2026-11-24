@@ -220,6 +220,12 @@ def _term(rec, b, i):
         return ('code', b[i + 2]), i + 3
     if w == 0x1b00:
         return ('mod', b[i + 1]), i + 2
+    if w == 0x0308:
+        # an 8-bit string: n BYTES packed two to a word (psi/fepread/ptfread.py)
+        n = b[i + 1]
+        nw = (n + 1) // 2
+        raw = b''.join(bytes((x >> 8, x & 255)) for x in b[i + 2:i + 2 + nw])[:n]
+        return ('str', raw.decode('latin-1')), i + 2 + nw
     if t == 0x03:
         n = b[i + 1]
         return ('str', ''.join(P.ch(x) for x in b[i + 2:i + 2 + n])), i + 2 + n

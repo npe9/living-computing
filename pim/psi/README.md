@@ -93,8 +93,14 @@ What was measured about these fields:
     `test_cell_numbering`; with the old span that test fails).
   - Every class's code now ends exactly at `L` (554 of 554 in the six
     psdpim/paragraph packages; `ptfdump.py --check`, pins updated).
-  - The size word's meaning is UNKNOWN: in 149 of 212 tables it is
-    `mask + 2*keys + 1`, in the other 63 larger.
+  - The size word is not a size. It is the miss offset: a key that is not
+    found goes to cell + 2 + the word (`psi/fepread/ptfread.py`). In
+    149 of 212 tables that is the cell after the table, where the word
+    equals `mask + 2*keys + 1`. In 53 of the other 63 it is an
+    instruction of the same predicate, such as a catch-all clause. In 10
+    it is a cell tagged 0x96, which is UNKNOWN; `kl0.py` would refuse
+    there. This is an ad hoc count over the eleven packages,
+    2026-11-24.
   - The loader still finds each predicate by its header and renumbers
     from the header's offset; that is now the identity.
 - **Term tags.** The trailer's term tags confirm more of the tag pairing
@@ -290,17 +296,26 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 91 rows
+**Opcodes are named only from known plaintext.** Each of the 96 rows
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
 `opcode`). So is an operand pattern the witnesses never showed, such
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand. The rows are
-69 class-0 (`pmi`), 18 class-1 (`blt`) built-ins, 3 atom-cell forms
+70 class-0 (`pmi`), 22 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
+
+`fepread/witness.py`, written separately for `docs/fep_services.md`
+§6, witnesses 40 readings. Where its rows and these overlap, they
+agree, and 44 rows here cite it as an independent witness. Five rows
+come from it: `pmi 37` (get_vector of n), and blt `25` (class object),
+`62`/`64` (==) and `65` (\==). Its count of hash tables (0 misses over
+142) agrees with the cell numbering above. Its finding that a `0308`
+string's count is in bytes, not words, is now applied in
+`librarian._term`.
 
 MEASURED facts the witnesses settled:
 
@@ -363,8 +378,8 @@ string (`paragraph_version` answers `string#"3500"`).
     naming the class and its `simpos##` ancestors.
 - The census. Every method of the 104 classes that need no SIMPOS (103
   have methods) is called once with unbound arguments. The receiver is
-  the class, or a fresh instance. Of 530 methods, 298 succeed, 11 fail
-  cleanly and 221 are refused. The refusals by cause:
+  the class, or a fresh instance. Of 530 methods, 303 succeed, 11 fail
+  cleanly and 216 are refused. The refusals by cause:
 
   | Cause | Methods |
   |---|---|
@@ -372,12 +387,12 @@ string (`paragraph_version` answers `string#"3500"`).
   | no slot | 30 |
   | built-in on a bound argument of the wrong type | 24 |
   | unbound argument to a built-in | 17 |
-  | unwitnessed operand | 16 |
+  | unwitnessed operand | 17 |
   | unbound receiver | 13 |
   | receiver not an object (e.g. `send get_pes/2 to 0`) | 8 |
-  | unnamed opcodes | 58 |
+  | unnamed opcodes | 52 |
 
-  The 58 come from 15 opcodes. The most common are blt e1 (14), pmi c8
+  The 52 come from 13 opcodes. The most common are blt e1 (14), pmi c8
   (8), pmi 6c (5) and pmi ca (5).
   - Most of the first five causes come from the census's own inputs
     (unbound arguments, a fresh instance of a mixin), not from the

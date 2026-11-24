@@ -851,14 +851,16 @@ class Machine:
             self.pc = (code, off + 2)
 
     def op_hash_constant(self, code, off, cell):
-        mask, _size, ents = cell[3]
+        mask, miss, ents = cell[3]
         t = deref(self.x[self.switch_reg(code, off)])
         for key, _idx, tgt in ents:
             k = self.const_cell(code, (0,) + key)
             if (isinstance(k, int) and isinstance(t, int) and k == t) or (isinstance(k, Atom) and t is k):
                 self.pc = (code, tgt + 1)
                 return
-        self.pc = (code, off + P.table_span(mask, len(ents)))
+        # not found: cell + 2 + the header word ptfdump calls `size` (the cell
+        # after the table, or a catch-all clause; psi/fepread/ptfread.py)
+        self.pc = (code, off + 2 + miss)
 
     def switch_reg(self, code, off):
         c = code.cells.get(off - 2)
@@ -872,11 +874,31 @@ class Machine:
         else:
             self.pc = (code, off + 2 + s16(v))
 
-    def op_if_identical(self, code, off, a, b, c, v):
+    def identical(self, a, b):
         x, y = deref(self.x[a]), deref(self.x[b])
-        same = x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
+        return x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
             (isinstance(x, (Str, ClassRef)) and x == y)
-        if same:
+
+    def op_identical(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.identical(a, b) else self.fail()
+
+    op_identical_64 = op_identical
+
+    def op_not_identical(self, code, off, a, b, c, v):
+        self.fail() if self.identical(a, b) else self.nxt(code, off)
+
+    def op_class_object(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        if not isinstance(t, ClassRef):
+            raise Refusal('built-in', 'class_object of %r' % (t,))
+        self.x[b] = t
+        self.nxt(code, off)
+
+    def op_get_vector_n(self, code, off, a, b, c, v):
+        self.nxt(code, off) if self.get_struct(a, 'vec', c) else self.fail()
+
+    def op_if_identical(self, code, off, a, b, c, v):
+        if self.identical(a, b):
             self.nxt(code, off)
         else:
             self.pc = (code, off + 2 + c)

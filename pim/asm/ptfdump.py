@@ -166,9 +166,11 @@ def table_span(mask, keys):
     classes: numbered this way, 32,901 of 32,901 predicate heads sit at
     their code offset - 2 and 35,542 of 35,542 local-call targets of
     opcodes 60/61/62 land on a head; numbered by the table's size word
-    + 1, as before, 3,662 heads in 91 classes were displaced).  The size
-    word's meaning is UNKNOWN: it equals mask+2*keys+2 in 149 tables and
-    exceeds it in the rest."""
+    + 1, as before, 3,662 heads in 91 classes were displaced).  The
+    "size" word is the miss offset (psi/fepread/ptfread.py): a key not
+    found goes to cell + 2 + the word, which is the cell after the table
+    (word = mask+2*keys+1) in 149 of 212 tables and a later cell in the
+    rest."""
     return mask + 1 + 2 * keys + 2
 
 
