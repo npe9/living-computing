@@ -296,7 +296,7 @@ class Machine:
             if a[1] != b[1]:
                 raise Unimplemented('unify of two string objects')
             return
-        if a[0] & ~1 == LIST or VECT0 + 2 <= a[0] & ~1 <= VECT0 + 12:
+        if a[0] & ~1 == LIST or VECT0 + 2 <= a[0] & ~1 <= VECT0 + 14:
             # Two lists, or two vectors of the same size (of up to six:
             # the size is in the tag, so the tags were equal).  Not
             # unified here: a goal is made that unifies the elements
@@ -305,11 +305,14 @@ class Machine:
             # make_unify_vector_vector_goal_and_enqueue).  What PIM/m's
             # firmware did is not known.  The goal's code is the stub
             # unify_step (asm/pimm_stubs.py).  The same object against
-            # itself makes a goal too, as in PDSS.
+            # itself makes a goal too, as in PDSS.  Two vectors of seven
+            # or more (2026-11-24): their sizes are in memory, so they
+            # are compared in the goal's steps, not here (OURS; PDSS
+            # active_unify_with_vector compares the lengths first: a
+            # failure either way)
             self.record(READY, self.stubs['$unify_step']['addr'], [a, b, (INT, 0)])
             return
-        # a vector of seven or more (its size is in memory), a module,
-        # anything else
+        # a module, anything else
         raise Unimplemented('unify of %r and %r' % (a, b))
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
@@ -2244,11 +2247,20 @@ class Machine:
         if pc != self.stubs['$unify_step']['addr']:
             raise Unimplemented('unify_step at %d' % pc)
         a, b, i = self.reg[x], self.reg[y], self.reg[z][1]
-        n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
+        if a[0] & ~1 == VECT0 + 14:
+            # vectors of seven or more: the sizes, compared at every
+            # step, and the elements from the descriptors
+            n = self.vsize(a)
+            if self.vsize(b) != n:
+                raise Fail('unify of vectors of %d and %d' % (n, self.vsize(b)))
+            ba, bb = self.vbase(a), self.vbase(b)
+        else:
+            n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
+            ba, bb = a[1], b[1]
         if i == n:
             return None
-        ea = self.taken(a[1] + i, single=not a[0] & 1)
-        eb = self.taken(b[1] + i, single=not b[0] & 1)
+        ea = self.taken(ba + i, single=not a[0] & 1)
+        eb = self.taken(bb + i, single=not b[0] & 1)
         self.reg[z] = (INT, i + 1)
         self.unify(ea, eb)
         return pc
@@ -2718,6 +2730,33 @@ class Machine:
                 raise Unimplemented('hash of %r' % (w,))
             return [(INT, h & 0xffffffff), w]
         self.builtin('hash', [x, y, z], f)
+
+    def i_code_to_predicate(self, pc, x, y, z, c16):
+        # code_to_predicate(Code, ^Module, ^Name, ^Arity, ^Info), 22:F4
+        # r5 (assembler/inst_tab.kl1:353): "Unifies a module to which
+        # Code belongs with Module, a predicate atom with Name, argument
+        # count with Arity, and 1-word information (contents of <Code
+        # address - 3>) for software with Info.  Exception: If Code is
+        # anything other than a code" (PIMOS manual, e-builtin.tex
+        # 1304-1311, "for the Multi-PSI and PIM/m"): refused.  The
+        # predicate is laid out Name, 0, the head, the length, then the
+        # code (assembler/assemble.kl1 make_pred_head), so Name is Code
+        # - 4 and Info Code - 3; the module as the guard code finds it.
+        # VPIM (klb_body_blt_cont.psl.c kblt_b_code_to_predicate) gives
+        # Name the atom tag and Arity the integer tag, MRB off
+        w4, w5 = self.cells[pc + 1][1] >> 24, self.cells[pc + 1][1] >> 16 & 0xff
+
+        def f(c):
+            if c[0] != COD:
+                raise Unimplemented('built-in exception: code_to_predicate(%r)' % (c,))
+            head = self.mem[c[1] - 2]
+            m = c[1] - 2 - (head[1] & 0xffffff)
+            name = self.mem[c[1] - 4]
+            if head[0] != PREDH or self.mem[m][0] != CDESC or name[0] & ~1 != ATOM:
+                raise Unimplemented('code_to_predicate: no predicate head before %x' % c[1])
+            return [(MOD, m), (ATOM, name[1]), (INT, head[1] >> 24), self.mem[c[1] - 3]]
+        self.builtin('code_to_predicate', [x, y, z, w4, w5], f)
+        return pc + 2
 
     def i_b_vector(self, pc, x, y, z, c16):
         # body vector(X, ^Size, ^NewVector), 22:CA r_r_r (assembler/

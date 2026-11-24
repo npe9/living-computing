@@ -80,8 +80,8 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
-               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XAp1, XAp2, XSWh1, XSWh2,
-               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2,
+               XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
@@ -191,7 +191,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
                   || op == op_calculate_priority_from_current || op == op_supply_atom_number
                   || op == op_scsi_command || op == op_set_timer || op == op_multiply_bignum_word
-                  || op == op_subtract_bignum || op == op_b_vector;
+                  || op == op_subtract_bignum || op == op_b_vector
+                  || op == op_code_to_predicate;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -648,6 +649,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       Bit#(32) size = ((sa.tag & 8'hfe) == tag_LISTo) ? 2 : zeroExtend(((sa.tag & 8'hfe) - tag_VECT0o) >> 1);
       let ix = regs.r(z).val;
       if (pc != unifyStepStub) stop(EndUnimp);
+      else if (isLongVec(sa)) begin
+        // vectors of seven or more: sizes and elements from the
+        // descriptors (rules uLong1, uLong2)
+        vbox.info(sa);
+        st <= XUL1;
+      end
       else if (ix == size) next;
       else begin
         regs.wr(z, intC(ix + 1));
@@ -1157,6 +1164,26 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   endrule
 
   // an element of two structures unified: the instruction is taken again
+  rule uLong1 (st == XUL1);
+    let r <- vbox.result;
+    opA <= mkCell(regs.r(x).tag, r.b.val);    // a's first element
+    opB <= r.a;                               // a's size
+    vbox.info(regs.r(y));
+    st <= XUL2;
+  endrule
+
+  rule uLong2 (st == XUL2);
+    let r <- vbox.result;
+    let ix = regs.r(z).val;
+    if (r.a.val != opB.val) stop(EndFail);
+    else if (ix == opB.val) next;
+    else begin
+      regs.wr(z, intC(ix + 1));
+      dbox.step(mkCell(opA.tag, opA.val + ix), mkCell(regs.r(y).tag, r.b.val + ix), 0);
+      st <= XUStep;
+    end
+  endrule
+
   rule unifyStepped (st == XUStep || st == XMiU);
     let r <- dbox.unifyResult;
     case (r) matches
@@ -1650,6 +1677,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         vbox.markElement(a, b.val);     // V1 still holds the element
         st <= XBVEl;
+      end
+    end
+    else if (op == op_code_to_predicate) begin
+      // code_to_predicate(Code, ^Module, ^Name, ^Arity, ^Info): the
+      // predicate head two cells before the code, as the guard code's;
+      // anything but a code is the exception: not modelled
+      if (a.tag != tag_COD) stop(EndUnimp);
+      else begin
+        opA <= a;
+        smem.read(cellAddr(a) - 2);
+        st <= XC2P1;
       end
     end
     else if (op == op_b_vector) begin
@@ -2225,6 +2263,51 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule code4 (st == XCode4);
     regs.wr(operand[3], intC(2 + zeroExtend(opB.val[23:0])));
     finish(tagged Next (pc + 2));
+  endrule
+
+  // code_to_predicate: the head, the module's descriptor cell, then
+  // the name (Code - 4) and Info (Code - 3) (assemble.kl1 make_pred_head)
+  rule c2p1 (st == XC2P1);
+    let h <- smem.data;
+    if (h.tag != tag_PREDH) stop(EndUnimp);
+    else begin
+      opB <= h;
+      Bit#(32) back = zeroExtend(h.val[23:0]);
+      smem.read(cellAddr(opA) - 2 - truncate(back));
+      st <= XC2P2;
+    end
+  endrule
+
+  rule c2p2 (st == XC2P2);
+    let d <- smem.data;
+    if (d.tag != tag_CDESC) stop(EndUnimp);
+    else begin
+      regs.wr(y, mkCell(tag_MOD, opA.val - 2 - zeroExtend(opB.val[23:0])));
+      smem.read(cellAddr(opA) - 4);
+      st <= XC2P3;
+    end
+  endrule
+
+  rule c2p3 (st == XC2P3);
+    let n <- smem.data;
+    if ((n.tag & 8'hfe) != tag_ATOMo) stop(EndUnimp);
+    else begin
+      regs.wr(z, mkCell(tag_ATOMo, n.val));
+      smem.read(cellAddr(opA) - 3);
+      st <= XC2P4;
+    end
+  endrule
+
+  rule c2p4 (st == XC2P4);
+    let i <- smem.data;
+    regs.wr(operand[3], intC(zeroExtend(opB.val[31:24])));
+    opA <= i;
+    st <= XC2P5;
+  endrule
+
+  rule c2p5 (st == XC2P5);
+    regs.wr(operand[4], opA);
+    finish(tagged Next afterBuiltin);
   endrule
 
   rule bModule (st == XBMod);
