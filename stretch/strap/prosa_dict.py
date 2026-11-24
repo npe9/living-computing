@@ -242,13 +242,58 @@ def overlay_image(first, last, origin):
     return words, gaps
 
 
+# >>> AN OPT-IN VARIANT, PROSA_EXTRA (2026-11-24, fidelity plan M-a). <<<
+# PROSA_EXTRA=path names a JSON file {"areas": [[name, [hex word, ...]],
+# ...], "beyond": [[name, size], ...]}.  Unset, nothing here changes: the
+# default tape, its 33 arcs and every pin on them stay as they are.
+#   * "areas" are more type areas ON THE MASTER TAPE, so that IPL writes
+#     them to the disk with the rest of PROSA and DISK FETCH finds them in
+#     the dictionary.  C22-6728 printed p.96: the master tape carries the
+#     system's type areas after the first four.  Which areas, and their
+#     words, are the caller's (tests/check_bss_mcp_go.py: the BSS
+#     processor, its PC area and the library, each RECONSTRUCTION or
+#     SCAFFOLD there).
+#   * "beyond" are dictionary entries for areas NOT on the tape, placed at
+#     the first arc of the first track past PROSA: printed p.28 ll.24-27
+#     round the PROSA arc count up to whole tracks of eight and store it in
+#     S SYRFT, "VARIABLE POINTER FOR PP DISK ASSIGN" (p.103 l.40), and
+#     p.396 l.20 tells the compilers TWS is 4096 - S SYRFT arcs.  What
+#     writes such an area, and its dictionary entry, is not in the listing
+#     (DISK FETCH's own routine for the compiled program, p.317 l.22 X TRCTC
+#     "DITTO COMPILED PROGRAM", is BEW,$): CHOSEN, RECONSTRUCTION.
+def extra_areas():
+    """PROSA_EXTRA's areas and beyond-PROSA entries, or ([], [])."""
+    path = os.environ.get("PROSA_EXTRA")
+    if not path:
+        return [], []
+    import json
+    with open(path) as fh:
+        spec = json.load(fh)
+    areas = [(n, [int(w, 16) for w in ws]) for n, ws in spec.get("areas", [])]
+    beyond = [(n, int(s)) for n, s in spec.get("beyond", [])]
+    return areas, beyond
+
+
+def beyond_arc(total_words):
+    """The first arc of the first track past a PROSA record of
+    `total_words` words (prosa.py: its arc count is (words + 4) / 512
+    rounded up; printed p.28 ll.24-27 round that to tracks of 8)."""
+    arcs = -(-(total_words + 4) // ARC_WORDS)
+    return -(-arcs // 8) * 8
+
+
 def build(ipl_area_words, mcp_words):
     """The PROSA record from its first word: dictionary, index, IPL area,
     MCP, overlays.  Returns (words, layout), where layout maps each name
     to (offset, size)."""
     areas = [("11C11IPL", ipl_area_words), ("11D11MCP", mcp_words)]
     overlays = {name: overlay_image(a, b, o)[0] for name, a, b, o in OVERLAYS}
-    names = ["11A11DIC", "11B11IND"] + [n for n, _ in areas] + sorted(overlays, key=a6)
+    more, beyond = extra_areas()
+    for n, w in more:
+        assert n not in overlays and len(n) == 8, n
+        overlays[n] = w
+    names = ["11A11DIC", "11B11IND"] + [n for n, _ in areas] + \
+        sorted(list(overlays) + [n for n, _ in beyond], key=a6)
     # the four the tape order fixes come first in code order too
     assert names[:4] == sorted(names[:4], key=a6) and names[:4] == sorted(names, key=a6)[:4]
     n_entries = len(names)
@@ -257,12 +302,17 @@ def build(ipl_area_words, mcp_words):
     sizes.update(dict(areas))
     sizes.update({n: len(w) for n, w in overlays.items()})
     order = ["11A11DIC", "11B11IND", "11C11IPL", "11D11MCP"] + \
-        [n for n in names[4:]]
+        [n for n in names[4:] if n not in dict(beyond)]
     layout, at = {}, 0
     for n in order:
         layout[n] = (at, sizes[n])
         at += sizes[n]
     total = at
+    # beyond PROSA: their words are not in the record
+    b_at = beyond_arc(total) * ARC_WORDS
+    for n, s in beyond:
+        layout[n] = (b_at, s)
+        b_at += -(-s // ARC_WORDS) * ARC_WORDS
     # The index's place is derived, not chosen: printed p.317 reads it
     # from the start of an arc.
     assert layout["11B11IND"][0] % ARC_WORDS == 0

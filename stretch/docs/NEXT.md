@@ -23,6 +23,39 @@ accumulate.
 
 
 
+## MCP'S OWN DISK FETCH SERVES THE GO JOB -- DONE (fidelity M-a), 2026-11-24
+
+`tests/check_bss_mcp_go.py` no longer stubs `$FETCH`. Every
+`B,DMCP / ,DFETCH` (66.32) goes from SIT+21's trap to MCP's SIFAE and
+DISK FETCH as landed (pp.311-318), reading the disk that the post-IPL
+run's own IPL wrote. `post_ipl()` saves that disk beside the core image
+(D2's `STRETCH_DISK_SAVE`), and each bench loads a copy (`STRETCH_DISK`).
+The details, with pages, are in the test header's "M-a" section.
+
+What is fetched, and where it comes from:
+- **22LOADER and 22$EOJ:** IPL wrote them as the default PROSA has them.
+  22LOADER is now exercised too.
+- **PCBSS, BSS and the library areas:** these are put on the master
+  tape by `strap/prosa_dict.py`'s opt-in `PROSA_EXTRA`, so that IPL
+  writes them. This is RECONSTRUCTION: C22-6728 p.96 places system type
+  areas on the master tape, and UPDATE-30 put them there.
+- **PCFORTRA (1c):** absent, so DISK FETCH takes its error return.
+- **TWS `))))))))`:** a dictionary entry at S SYRFT's arc 40 (p.28
+  ll.24-27; p.396 l.20). Its words are planted in the bench's disk copy,
+  which is SCAFFOLD for BSS's own write. DISK FETCH's routine for it,
+  p.317 l.22 X TRCTC, is `BEW,$`.
+
+The remaining stubs are listed in the header: `$SCR` (M-b), ENTER/IRET
+and STUB1 around the BSS processor, the hook's routing, the stage-2
+plants, the MARKER, `*MAIN*`'s body and the reader FIXTURE.
+`check_bss_mcp_load.py` keeps its own stub.
+
+The cost of real disk I/O is measured: stages 3-6 take 2,442,409 cycles
+(1,773,207 before), and stage 7 reaches ZJOBC1 at 3,195,867 cycles
+(2,559,405 before).
+
+**Next:** M-b (`$SCR`, `$RET`, the dispatcher's remaining stubs). After
+that, a BSS that writes TWS through MCP, so the planted TWS words can go.
 
 ## THE FP ADD'S BOX HOLD MOVED A PIN -- DONE: the level release, 2026-11-19
 
@@ -139,11 +172,46 @@ STILL OPEN, in order:
    611. `uncountRefused` is reached by NO deck (injected off, nothing
    moves): kept because counting an instruction that did nothing is wrong
    in kind, recorded as unreached. New deck `decks/fp_box_hold_store.strap`.
+2a. **THE DIVIDER, DECIMAL ADDER AND VFL MULTIPLIER RELEASE THEIR LEVEL
+   TOO -- DONE 2026-11-23** (plan §1c 5f, stage 3): mkEBox's
+   `laBoxWaiting()` names the box a look-ahead level waits on, and
+   StretchCore's `boxReleases` lets rl_prepare start beside it, in the
+   answer clock and the hold clocks, for the FP box (as before) and for
+   `releaseDivBox`, `releaseDecBox` and `releaseVflBox`, one switch each.
+   Perf. Char. Vol. 1 pp.3-16..3-18 make no exception by unit; no page was
+   found that says the serial, VFL or decimal unit does not overlap. Decks
+   `div_box_release`, `dec_box_release`, `vfl_box_release` (an
+   interrupting level, an SX started in its hold clocks, independent I-box
+   work, the interlock); each switch moves only its own deck's CYCLES
+   (div 866 -> 891, dec 859 -> 867, vfl 945 -> 949, values passing).
+   Elsewhere int_recovery_undo moved 558 -> 550 (the divider's; RDIV gives
+   it back) and two unpinned MCP runs one clock each (the decimal adder's;
+   RDEC gives both back). THE ATLAS (2026-11-24, all 27,644 cases against
+   master) holds: 347 VFL decimal cases move, all the decimal adder's
+   (RDEC gives every one back), none by more than 0.0063 clocks, sum of
+   |residual| 819.769 -> 819.745; the divider and VFL multiplier move no
+   case; so all three releases are kept. LEFT:
+   the radix converter (DCV, boxKind 2) is still confined -- no deck of
+   its own and no measurement; the VFL divide holds the divider only 4
+   clocks (96 bits at 24 a clock) and the decimal adder and VFL
+   multiplier 3, against the I-box's ~10-clock charge per instruction, so
+   what the release gives there is at most a clock or two an operation
+   (the bulk of a VFL divide's time is the E-box budget after the box
+   answers, which no release reaches); a BE/BD/BEW started beside a held
+   level would change the enable state before the level's interruption
+   (Ref. Manual printed p.40, p.48) -- a switch refusing it there was
+   tried and backed out, because with it no deck moved: the BD the
+   divider deck reached came AFTER the level, in item 3's clocks.
 3. **A BD IN THE LATCH CLOCKS.** interruptDue() is two clocks behind the
    indicator; an unconditional branch prepared in those clocks drains the
    (empty) look-ahead and, if it disables, the interruption is lost
    (`int_recovery_resume` case F's slack note; int_timing_bracket's).
    p.48 allows no such window. The latch is StretchStorage's.
+   REACHED BY A SHORT TRAIL since the divider's release (2026-11-23):
+   decks/div_box_release case L with no NOPs before DONEL's BD lost XPL's
+   interruption (WHEREL 0, X7 = X8 = 1; measured), because the trail ran
+   beside the 17-clock walk and the BD arrived in those clocks. The deck
+   carries two NOPs; a fix should take them out and watch case L hold.
 4. **OTHER SOURCES.** An interruption due for any reason other than the
    level that just completed (an I/O report, the timer, an I-box
    instruction's own indicator, one due before the level completed) is
@@ -1910,7 +1978,7 @@ the sources allow.
   2), except while the reconstructed BSS processor runs (stage 4, ENTER
   to IEOJ). Still SCAFFOLD:
   - the `$FETCH` hook, SIT+21's and FWIT+1's BD to STUBIF instead of
-    SIFAE. MCP's own DISK FETCH (pp.311-318) is landed but not run: the
+    SIFAE. MCP's own DISK FETCH (pp.311-318) is landed but not run (RUN since 2026-11-24, M-a, see the top): the
     bench's disk is not IPL's, and the BSS, '))))))))' and LB type areas
     are not in PROSA;
   - every `$FETCH`, ENTER and IRET for the BSS processor;
@@ -1943,7 +2011,7 @@ the sources allow.
   `judge8`; injections `job2nocs` and `job2nojob` in the test header.
   Next on this path: a third card (an IOD or the end-of-file card) so the
   job runs to its chain, which is where DISK FETCH comes in.
-- **MCP's own DISK FETCH: scoped, NOT built (2026-11-19).** The `$FETCH`
+- **MCP's own DISK FETCH: scoped, NOT built (2026-11-19); BUILT 2026-11-24, see "MCP'S OWN DISK FETCH SERVES THE GO JOB" at the top.** The `$FETCH`
   hook (SIT+21's and FWIT+1's BD to STUBIF) is still SCAFFOLD. Replacing
   it with MCP's DFETCH (pp.311-318, landed, the XTENTB tentacle at 66.32)
   is three pieces, each blocked as stated:

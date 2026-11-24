@@ -313,8 +313,10 @@ module mkStretchCore(StretchCore);
   // 69, whose M+ indexed column another change owns).
   Reg#(Bool)     redecodeAfterHold <- mkReg(False);
   // THE LEVEL RELEASE's one-clock yield (2026-11-19; see yieldToPrepare
-  // above armPrepare).  Set in the clock the FP box's resume yields to
-  // rl_prepare, cleared when the resume fires: one yield per box request.
+  // above armPrepare).  Set in the clock a box's resume yields to
+  // rl_prepare (the FP box; since 2026-11-23 any box that releases its
+  // level, boxReleases), cleared when the resume fires: one yield per box
+  // request.
   Reg#(Bool)     resumeYielded <- mkReg(False);
   // THE CLOCK THE E-BOX FINISHES ITS CURRENT INSTRUCTION: the removal
   // clock + the charge + 1 (an E-box time of N occupies N + 1 clocks,
@@ -958,7 +960,10 @@ module mkStretchCore(StretchCore);
   // with it; it gives back fp_box_release_interlock 1153 -> 1142,
   // fp_box_interrupt_landing 426 -> 425 and int_recovery_resume 612 -> 611
   // (each restored with liftHoldClocks := False); decks/fp_box_hold_store
-  // .strap pins an SX started there.
+  // .strap pins an SX started there.  SINCE 2026-11-23 (stage 3) THE SAME
+  // FOR THE DIVIDER, THE DECIMAL ADDER AND THE VFL MULTIPLIER (boxReleases,
+  // below, one switch each; decks/div_box_release, dec_box_release,
+  // vfl_box_release).
   //
   // THE INTERLOCK.  The held level stays in the look-ahead (la.retireHead
   // is in rl_exec_resume), so iboxHazard sees it exactly as it sees any
@@ -1024,7 +1029,32 @@ module mkStretchCore(StretchCore);
     end
     return r;
   endfunction
-  Bool yieldToPrepare = resumeReady && ebox.fpBoxWaiting() && !resumeYielded
+  // >>> EVERY BOX RELEASES ITS LEVEL, 2026-11-23 (plan §1c 5f stage 3). <<<
+  // The FP box's release (yieldToPrepare, besideHold below) for the
+  // divider (FP and VFL divide), the decimal adder (VFL decimal add) and
+  // the VFL multiplier as well.  The pages make no exception by unit:
+  // Perf. Char. Vol. 1 printed p.3-16 (PDF 34), "the local autonomy of
+  // the major units: ... the I-box, the look-ahead (LA), the E-box",
+  // "Each major unit is responsible for processing at top speed as long
+  // as there is data to process", "temporary delays up to several us in
+  // one unit can be tolerated without slowing down the entire pipe line";
+  // printed p.3-18 (PDF 36), "The processing time of I-box instructions
+  // can be largely overlapped by concurrent E-box action".  The E-box is
+  // one unit to these pages, its serial (VFL, decimal) and parallel (FP,
+  // multiply, divide) parts alike.  The radix converter (DCV, boxKind 2)
+  // is left confined: not in this step.  One switch per box; each is the
+  // attributing injection for what it moves.
+  Bool releaseDivBox = True;
+  Bool releaseDecBox = True;
+  Bool releaseVflBox = True;
+  Bool boxReleases = case (ebox.laBoxWaiting()) matches
+                       tagged Valid 4: True;                 // FP box (2026-11-19)
+                       tagged Valid 0: releaseDivBox;
+                       tagged Valid 1: releaseDecBox;
+                       tagged Valid 3: releaseVflBox;
+                       default:        False;
+                     endcase;
+  Bool yieldToPrepare = resumeReady && boxReleases && !resumeYielded
                         && !ebox.busyFor(OwnerIbox) && ibusy == 0
                         && !isValid(intDue) && !isValid(intPC)
                         && st.writeReady() && !storeWait(prepNl) && !(clk < xstoreFreeAt)
@@ -1032,8 +1062,9 @@ module mkStretchCore(StretchCore);
                         && prepWouldAct();
   Bool armResume   = armResumeBase && !yieldToPrepare;
   // AND IN THE BOX'S HOLD CLOCKS (2026-11-23, plan §1c 5f stage 2): an
-  // I-box instruction may start beside the level the FP box holds while
-  // the box works, not only in the clock it answered.  The confinement's
+  // I-box instruction may start beside the level the FP box (since stage
+  // 3, any box that releases: boxReleases) holds while the box works, not
+  // only in the clock it answered.  The confinement's
   // reason is gone: what such an instruction does is given back if the
   // held level interrupts (rl_int_recover), and a store it makes waits in
   // a store level (deferIboxStores) -- the undo the 7030 does (Perf.
@@ -1041,7 +1072,7 @@ module mkStretchCore(StretchCore);
   // stood in for (the FP box's release note).  `liftHoldClocks` is the
   // switch (part a).
   Bool liftHoldClocks = True;
-  Bool besideHold = liftHoldClocks && ebox.fpBoxWaiting() && !resumeReady;
+  Bool besideHold = liftHoldClocks && boxReleases && !resumeReady;
   // An instruction mkEBox's start() REFUSES beside a held level (one that
   // needs a read or a box) has had no effect, so it is not counted as an
   // advance and holds nothing: it is offered again next clock.
@@ -2204,7 +2235,7 @@ module mkStretchCore(StretchCore);
     Bool done = False;
     // The instruction being prepared and the tests on it below were
     // computed in this rule until 2026-11-19; they are module-level now
-    // (prepPc ... prepInstrStored, above armPrepare) so that the FP box's
+    // (prepPc ... prepInstrStored, above armPrepare) so that a box's
     // resume can ask whether this rule would start an I-box instruction
     // (yieldToPrepare).  The same expressions, read in the same clock.
     HWordAddr pc = prepPc;
@@ -2430,9 +2461,10 @@ module mkStretchCore(StretchCore);
       // I-box class: execute ahead of pending levels unless a hazard
       // (plan §6c) says wait; never while the arithmetic unit's own
       // instruction is mid-flight (it owns the resume path).
-      // (or BESIDE a level the FP box holds, in the one clock the resume
-      // yields: the level release, above yieldToPrepare; mkEBox refuses an
-      // instruction that would bail.)
+      // (or BESIDE a level a box holds -- the FP box, and since 2026-11-23
+      // the divider, decimal adder and VFL multiplier (boxReleases) -- in
+      // the clock the resume yields or the hold clocks: the level release,
+      // above yieldToPrepare; mkEBox refuses an instruction that would bail.)
       // An I-box store that will need a store level waits for a free one.
       Maybe#(WordAddr) sw = iboxStoreWord(di);
       if ((!ebox.busyFor(OwnerLA) || yieldToPrepare || besideHold)
