@@ -83,9 +83,10 @@ module mkPimmCore#(String image)(PimmCore);
     case (s) matches
       tagged Next .pc: fetch.enq(pc);
       tagged Stop .e:
-        // the reduction is over: the goal's shoen loses one (the shoen
-        // box; nothing for the root), then on to the next goal
-        if (e == EndDone || e == EndSusp) shbox.endReduction;
+        // the reduction is over: the goal's shoen gets its reductions
+        // and loses one (the shoen box; nothing for the root), then on
+        // to the next goal
+        if (e == EndDone || e == EndSusp) shbox.endReduction(exec.reductions);
         else endQ.enq(e);
     endcase
   endrule

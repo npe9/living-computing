@@ -1,7 +1,7 @@
-// PIM/m core: the shoen box.  Stage 1 of the shoen: create_shoen,
-// start_shoen and termination, nothing more (no stop, abort, remove,
-// statistics, resource, profile or exception: the exec stage refuses
-// those built-ins).
+// PIM/m core: the shoen box.  Stages 1 and 2 of the shoen:
+// create_shoen, start_shoen, termination, shoen_statistics and
+// remove_shoen, nothing more (no stop, abort, resource, profile or
+// exception: the exec stage refuses those built-ins).
 //
 // What is PIM/m-sourced here: the handle's tag (38h SHREC, PIMOS
 // debugger/inspector/tagtbl.kl1) and the report stream's codes (8
@@ -34,7 +34,23 @@
 //                 parent loses one in turn (PDSS emulate.c:340
 //                 "if(--number_of_children == 0){ terminate_shoen();
 //                 }", shoen.c:280-309).  The root: nothing, and no
-//                 memory traffic.  Answered by ended
+//                 memory traffic.  Answered by ended.  Stage 2: the
+//                 run's reductions n (the exec stage's count: each
+//                 execute, and the proceed) are first added to the
+//                 shoen's reduction cell, and a terminated shoen's
+//                 total to its parent's (PDSS shoen.c:293); a shoen
+//                 whose remove came first is removed at termination
+//   statistics(h) 10 (statistics_started), then {9, H, L}, H:L twice
+//                 the reduction cell (PIMOS manual e-shoen.tex:234:
+//                 "twice of the number of reductions"; 10 then 9 at
+//                 once is VPIM's, f_shoen_control.psl.c:691-727)
+//   remove(h)     a terminated shoen: {14, 0, 0} (return_resource: no
+//                 resource here, OURS), the report stream closed (its
+//                 tail unified with []), the status REMOVED; one not
+//                 terminated: its remove cell set, removed when it
+//                 terminates (VPIM f_shoen_control.psl.c:547-575,
+//                 f_shoen_with_fp.psl.c:69-71); one removed already:
+//                 ok = False
 //
 // Reporting a message: two new cells {INT, code}{UNDF}; the stream's
 // tail (the record's reference, followed through references by the
@@ -57,29 +73,42 @@ interface PimmShBox;
   method Action create;
   method Action start(Cell handle);
   method ActionValue#(ShResult) result;
-  method Action endReduction;
+  method Action endReduction(Bit#(32) n);
   method Action ended;
+  method Action statistics(Cell handle);
+  method Action remove(Cell handle);
 endinterface
 
 typedef union tagged {
   void Create;
   Cell Start;
-  void EndReduction;
+  Bit#(32) EndReduction;
+  Cell Stats;
+  Cell Remove;
 } ShReq deriving (Bits);
 
 typedef enum { ShIdle, ShC1, ShC2, ShC3, ShC4, ShC5, ShC6, ShC7,
                ShS1, ShS2, ShS3, ShS4, ShS5,
                ShE1, ShE2, ShE3, ShE4,
-               ShR1, ShR2, ShR3, ShR4, ShR5, ShR6, ShR7, ShR8 } ShState deriving (Bits, Eq);
+               ShR1, ShR2, ShR3, ShR4, ShR5, ShR6, ShR7, ShR8,
+               ShC8, ShC9, ShE0, ShE0b, ShT1, ShT2, ShQ1, ShQ2, ShQ3, ShM1, ShM2,
+               ShV1, ShV2, ShV3, ShV4, ShK1, ShK2, ShK3, ShK4, ShK5 } ShState deriving (Bits, Eq);
 
 module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   Reg#(ShState)  st     <- mkReg(ShIdle);
   Reg#(Addr)     sh     <- mkRegU;     // the shoen record in hand
   Reg#(Addr)     parent <- mkRegU;
   Reg#(Cell)     var_   <- mkRegU;     // create: the Report variable
-  Reg#(Bit#(32)) code   <- mkRegU;     // the message being reported
+  Reg#(Cell)     code   <- mkRegU;     // the message being reported
   Reg#(ShState)  after  <- mkRegU;     // ... and where to go on from
   Reg#(Addr)     lcell  <- mkRegU;     // ... and its list cell
+  Reg#(Bit#(32)) red    <- mkRegU;     // reductions being added, or reported
+  Reg#(Bit#(32)) vcode  <- mkRegU;     // a message {vcode, vhi, vlo}
+  Reg#(Bit#(32)) vhi    <- mkRegU;
+  Reg#(Bit#(32)) vlo    <- mkRegU;
+  Reg#(ShState)  vnext  <- mkRegU;     // ... where to go on from
+  Reg#(Addr)     vaddr  <- mkRegU;     // ... its three cells
+  Reg#(ShState)  afterK <- mkRegU;     // where to go on from a removal
   FIFO#(ShReq)    reqQ <- mkFIFO;
   FIFO#(ShResult) resQ <- mkFIFO;
   FIFO#(Bool)     endQ <- mkFIFO;
@@ -89,6 +118,8 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   Addr shParent = fromInteger(lay_SH_PARENT);
   Addr shReport = fromInteger(lay_SH_REPORT);
   Addr shGoal   = fromInteger(lay_SH_GOAL);
+  Addr shRed    = fromInteger(lay_SH_REDUCTIONS);
+  Addr shRemove = fromInteger(lay_SH_REMOVE);
 
   function Action answer(Cell a, Cell b, Bool ok);
     action
@@ -99,9 +130,29 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
 
   function Action report(Bit#(32) c, ShState next);
     action
-      code <= c;
+      code <= intC(c);
       after <= next;
       st <= ShR1;
+    endaction
+  endfunction
+
+  // a message {c, h, l}: its three cells, then as report
+  function Action reportVec(Bit#(32) c, Bit#(32) h, Bit#(32) l, ShState next);
+    action
+      vcode <= c;
+      vhi <= h;
+      vlo <= l;
+      vnext <= next;
+      st <= ShV1;
+    endaction
+  endfunction
+
+  // the removal of a terminated shoen: return_resource, the close, then
+  // on to next
+  function Action removal(ShState next);
+    action
+      afterK <= next;
+      reportVec(fromInteger(lay_REPORT_RETURN_RESOURCE), 0, 0, ShK1);
     endaction
   endfunction
 
@@ -118,13 +169,24 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
         mem.read(cellAddr(h) + shStatus);
         st <= ShS1;
       end
-      tagged EndReduction: begin
+      tagged EndReduction .n: begin
         if (gbox.shoen == 0) endQ.enq(True);       // the root: nothing
         else begin
           sh <= gbox.shoen;
-          mem.read(gbox.shoen + shCount);
-          st <= ShE1;
+          red <= n;
+          mem.read(gbox.shoen + shRed);
+          st <= ShE0;
         end
+      end
+      tagged Stats .h: begin
+        sh <= cellAddr(h);
+        mem.read(cellAddr(h) + shRed);
+        st <= ShQ1;
+      end
+      tagged Remove .h: begin
+        sh <= cellAddr(h);
+        mem.read(cellAddr(h) + shStatus);
+        st <= ShM1;
       end
     endcase
   endrule
@@ -159,6 +221,17 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   rule create5 (st == ShC5);
     let g <- gbox.recordResult;
     mem.write(sh + shGoal, intC(absAddr(g)));
+    st <= ShC8;
+  endrule
+
+  // no reductions yet, no remove
+  rule create8 (st == ShC8);
+    mem.write(sh + shRed, intC(0));
+    st <= ShC9;
+  endrule
+
+  rule create9 (st == ShC9);
+    mem.write(sh + shRemove, intC(0));
     if (parent == 0) answer(var_, mkCell(tag_SHREC, absAddr(sh)), True);
     else st <= ShC6;
   endrule
@@ -204,6 +277,20 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   endrule
 
   // ---- the end of a reduction ----------------------------------------
+  // the reductions first: the run's, or a terminated child's total
+  rule end0 (st == ShE0);
+    let c <- mem.data;
+    let r = c.val + red;
+    red <= r;
+    mem.write(sh + shRed, intC(r));
+    st <= ShE0b;
+  endrule
+
+  rule end0b (st == ShE0b);
+    mem.read(sh + shCount);
+    st <= ShE1;
+  endrule
+
   rule end1 (st == ShE1);
     let c <- mem.data;
     mem.write(sh + shCount, intC(c.val - 1));
@@ -216,7 +303,19 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
 
   rule end2 (st == ShE2);
     mem.write(sh + shStatus, intC(fromInteger(lay_TERMINATED)));
-    report(fromInteger(lay_REPORT_TERMINATED), ShE3);
+    report(fromInteger(lay_REPORT_TERMINATED), ShT1);
+  endrule
+
+  // a remove that came before the end: the shoen is removed now
+  rule endT1 (st == ShT1);
+    mem.read(sh + shRemove);
+    st <= ShT2;
+  endrule
+
+  rule endT2 (st == ShT2);
+    let c <- mem.data;
+    if (c.val != 0) removal(ShE3);
+    else st <= ShE3;
   endrule
 
   rule end3 (st == ShE3);
@@ -232,9 +331,107 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
     end
     else begin
       sh <= cellAddr(c);
-      mem.read(cellAddr(c) + shCount);
-      st <= ShE1;
+      mem.read(cellAddr(c) + shRed);     // red: the child's total
+      st <= ShE0;
     end
+  endrule
+
+  // ---- statistics ------------------------------------------------------
+  rule stats1 (st == ShQ1);
+    let c <- mem.data;
+    red <= c.val;
+    report(fromInteger(lay_REPORT_STATISTICS_STARTED), ShQ2);
+  endrule
+
+  // twice the reductions, as 64 bits: high, low
+  rule stats2 (st == ShQ2);
+    reportVec(fromInteger(lay_REPORT_STATISTICS), red >> 31, red << 1, ShQ3);
+  endrule
+
+  rule stats3 (st == ShQ3);
+    answer(?, ?, True);
+  endrule
+
+  // ---- remove ----------------------------------------------------------
+  rule remove1 (st == ShM1);
+    let c <- mem.data;
+    if (c.val == fromInteger(lay_REMOVED)) answer(?, ?, False);
+    else if (c.val == fromInteger(lay_TERMINATED)) removal(ShM2);
+    else begin
+      mem.write(sh + shRemove, intC(1));
+      answer(?, ?, True);
+    end
+  endrule
+
+  rule remove2 (st == ShM2);
+    answer(?, ?, True);
+  endrule
+
+  // ---- a message {vcode, vhi, vlo} -------------------------------------
+  rule vec1 (st == ShV1);
+    gbox.alloc(3);
+    st <= ShV2;
+  endrule
+
+  rule vec2 (st == ShV2);
+    let a <- gbox.allocResult;
+    vaddr <= a;
+    mem.write(a, intC(vcode));
+    st <= ShV3;
+  endrule
+
+  rule vec3 (st == ShV3);
+    mem.write(vaddr + 1, intC(vhi));
+    st <= ShV4;
+  endrule
+
+  rule vec4 (st == ShV4);
+    mem.write(vaddr + 2, intC(vlo));
+    code <= mkCell(tag_VECT0o + 6, absAddr(vaddr));
+    after <= vnext;
+    st <= ShR1;
+  endrule
+
+  // ---- the close of the report stream, the status REMOVED ---------------
+  rule close1 (st == ShK1);
+    mem.read(sh + shReport);
+    st <= ShK2;
+  endrule
+
+  rule close2 (st == ShK2);
+    let t <- mem.data;
+    dbox.deref(t);
+    st <= ShK3;
+  endrule
+
+  rule close3 (st == ShK3);
+    let t <- dbox.derefResult;
+    if (!isRef(t)) fatal("the report stream of a shoen is bound");
+    else begin
+      dbox.unify(t, mkCell(tag_ATOMo, 0));
+      st <= ShK4;
+    end
+  endrule
+
+  rule close4 (st == ShK4);
+    let r <- dbox.unifyResult;
+    case (r) matches
+      tagged UOk: begin
+        mem.write(sh + shStatus, intC(fromInteger(lay_REMOVED)));
+        st <= afterK;
+      end
+      tagged UWake .s: begin
+        gbox.wake(s);
+        st <= ShK5;
+      end
+      default: fatal("the report stream of a shoen did not close");
+    endcase
+  endrule
+
+  rule close5 (st == ShK5);
+    gbox.done;
+    mem.write(sh + shStatus, intC(fromInteger(lay_REMOVED)));
+    st <= afterK;
   endrule
 
   // ---- a message on the report stream of sh --------------------------
@@ -246,7 +443,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
   rule report2 (st == ShR2);
     let a <- gbox.allocResult;
     lcell <= a;
-    mem.write(a, intC(code));
+    mem.write(a, code);
     st <= ShR3;
   endrule
 
@@ -302,8 +499,10 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmShBox);
     resQ.deq;
     return resQ.first;
   endmethod
-  method Action endReduction = reqQ.enq(tagged EndReduction);
+  method Action endReduction(Bit#(32) n) = reqQ.enq(tagged EndReduction n);
   method Action ended = endQ.deq;
+  method Action statistics(Cell handle) = reqQ.enq(tagged Stats handle);
+  method Action remove(Cell handle) = reqQ.enq(tagged Remove handle);
 endmodule
 
 endpackage

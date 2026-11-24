@@ -1,0 +1,44 @@
+% TM-061 「逐次型推論マシンPSIのオペレーティング・システム」 (服部 隆 他, May 1984)
+% PDF pages 6-7, printed folios 5-6, section 4.1 単純なクラス; no figure number.
+% Intro (as printed): システム構成要素の簡単な例としてクラスfileを説明する。このクラスはディ
+%   スク中のファイルをアクセスする機能を提供する。そのクラス定義の一部を下に示す。
+% NOTE: identifiers in this Japanese edition use HYPHENS (pool-of-files, create-file,
+% io-status) where TM-065 uses underscores. Proportional typeface; indentation approximated.
+% '...' bodies are elided IN THE ORIGINAL.
+% transcribed by eye from 300dpi crops (work/tm0061/p-06_2.png, p-06_3.png, p-07_0.png)
+
+        class file has
+        attribute
+                pool-of-files;
+        :create(Class, File) :- !,
+                :new(Class, File);      %オブジェクトを生成する。
+        :make(Class, File, Pathname) :- !,  %新しいファイルを作る。
+                :new(Class, File),
+                :create-file(File, Pathname);
+        :open(Class, File, Pathname) :- !,  %既存ファイルを開く。
+                :retrieve(Class, File, Pathname),
+                        %順路名で物理ファイルを検索する。
+% ---- page break (PDF p6 -> p7) ----
+                :open(File);
+        instance
+        attribute
+                region,
+                opened := no,
+                disposed,
+                io-status;
+        :create-file(File, Pathname) :- ... ;
+                %与えられた順路名で物理ファイルを作る。
+        :open(File) :- ... ;            %ファイルを開く。
+        :close(File) :- ... ;           %ファイルを閉じる。
+        :dispose(File) :- ... ;         %ファイルを捨てる。
+        end.
+
+% Glyph notes: '順路名' is as printed twice (the word for 'pathname' would usually be
+% 経路名; not corrected). '物理' -- the 理 is a degraded glyph at 300 dpi, read as 理.
+% Prose after the listing (p7), as printed:
+%   ファイルは上のようにopenやclose といった操作を受けつける。また、ファイ
+%   ルの状態を表わすために、region、opened、disposed、io-status といったスロ
+%   ットをもつ。一方、クラス・オブジェクトはmakeやopenという操作を受けつけ、
+%   開かれたファイルを管理するためにスロットpool-of-files をもつ。
+%   なお、実際のクラスfileはas-permanent-object 、as-resource 、with-lock
+%   などのクラスを継承している。

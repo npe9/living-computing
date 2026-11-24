@@ -1,0 +1,556 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	5213	gog-esp/AKISUMI_CV.ESP:29
+builtin		builtin	==	2	961	gog-esp/ANALYSIS_M.ESP:20
+builtin		builtin	:=	2	840	gog-esp/ANALYSIS_M.ESP:42
+builtin		builtin	vector_element	3	437	gog-esp/ANALYSIS_M.ESP:142
+builtin		builtin	>=	2	363	gog-esp/ANALYSIS_M.ESP:194
+builtin		builtin	>	2	313	gog-esp/ANALYSIS_M.ESP:145
+builtin		builtin	=<	2	288	gog-esp/ANALYSIS_M.ESP:191
+builtin		builtin	<	2	282	gog-esp/BUNRITEN.ESP:72
+builtin		constant a#b	16#str		247	
+builtin		builtin	=\=	2	231	gog-esp/ANALYSIS_M.ESP:160
+builtin		builtin	set_vector_element	3	123	gog-esp/ANALYSIS_M.ESP:215
+builtin		builtin	integer_to_floating_point	2	114	gog-esp/CANDIDATE.ESP:101
+builtin		builtin	string_element	3	105	gog-esp/CAP_CD.ESP:212
+builtin		builtin	set_string_element	3	98	gog-esp/CAP_CD.ESP:213
+builtin		builtin	\==	2	69	gog-esp/CAP_CD.ESP:395
+builtin		builtin	repeat	0	62	gog-esp/ANALYSIS_M.ESP:49
+builtin		builtin	object	3	56	gog-esp/DEBUG.ESP:116
+builtin		builtin	string	3	52	gog-esp/CGS_DEMO.ESP:251
+builtin		builtin	equal_string	2	48	gog-esp/CGS_INSTALLER.esp:24
+builtin		builtin	xor_string_elements	5	48	gog-esp/CAP_CD.ESP:195
+builtin		builtin	new_heap_vector	2	40	gog-esp/ANALYSIS_M.ESP:201
+builtin		builtin	heap_vector	2	35	gog-esp/CAP_CD.ESP:372
+builtin		builtin	integer	1	34	gog-esp/ANALYSIS_M.ESP:179
+builtin		builtin	=:=	2	34	gog-esp/CGS_START.ESP:23
+builtin		builtin	floating_point_to_integer	2	31	gog-esp/ANALYSIS_M.ESP:163
+builtin		builtin	is	2	27	gog-esp/DISPCLOCK.ESP:198
+builtin		builtin	new_string	3	26	gog-esp/CGS_UTIL.ESP:213
+builtin		builtin	substring	4	23	gog-esp/COMMU.ESP:164
+builtin		builtin	set_substring	4	23	gog-esp/COMMU.ESP:142
+builtin		builtin	copy_string_elements	5	21	gog-esp/CGS_UTIL.ESP:214
+builtin		builtin	search_character	5	19	gog-esp/CGS_UTIL.ESP:206
+builtin		builtin	divide_with_remainder	4	14	gog-esp/CGS_UTIL.ESP:407
+builtin		constant a#b	keypad#str		13	
+builtin		constant a#b	key#lf		12	
+builtin		constant a#b	string#str		11	
+builtin		builtin	floating_point	1	10	gog-esp/DISPCLOCK.ESP:225
+builtin		builtin	melt	2	9	gog-esp/ANALYSIS_M.ESP:210
+builtin		constant a#b	mouse#mm		9	
+builtin		builtin	unbound	1	8	gog-esp/KANJI_DIC.esp:40
+builtin		builtin	atomic	1	8	gog-esp/DISPTAI.ESP:128
+builtin		builtin	bound	1	8	gog-esp/MEKAZU.ESP:323
+builtin		builtin	draw_empty	12	8	gog-esp/DISPPBMS.esp:71
+builtin		builtin	atom	1	6	gog-esp/CLASS_REF.ESP:62
+builtin		builtin	stack_vector	2	6	gog-esp/FCOMMU.ESP:90
+builtin		builtin	freeze	2	5	gog-esp/KH_TOOL.ESP:203
+builtin		constant a#b	key#cr		5	
+builtin		builtin	set_subvector	4	5	gog-esp/GAKUSHU.esp:92
+builtin		builtin	new_stack_vector	2	4	gog-esp/FCOMMU.ESP:143
+builtin		builtin	number	1	4	gog-esp/DISPODT.ESP:68
+builtin		builtin	vector_to_list	3	4	gog-esp/PLAYSLOT.ESP:116
+builtin		builtin	first	2	4	gog-esp/CAPTURE.ESP:84
+builtin		constant a#b	key#del		4	
+builtin		builtin	divide	3	4	gog-esp/GAKUSHU.esp:231
+builtin		constant a#b	mouse#r		3	
+builtin		constant a#b	mouse#m		3	
+builtin		constant a#b	control#str		3	
+builtin		builtin	stack_to_heap_vector	2	3	gog-esp/CGS_DEMO.ESP:24
+builtin		constant a#b	bytes#brace		3	gog-esp/KE_SOUND.ESP:110
+builtin		builtin	list	1	2	gog-esp/FCOMMU.ESP:95
+builtin		builtin	second	2	2	gog-esp/CAPTURE.ESP:85
+builtin		constant a#b	mouse#l		2	
+builtin		constant a#b	mouse#ll		2	
+builtin		builtin	wait	1	2	gog-esp/DISPPBMS.esp:42
+builtin		builtin	convert_teban	2	2	gog-esp/MONDAIZU.ESP:62
+builtin		constant a#b	key#tab		2	gog-esp/CGS_UTIL.ESP:426
+builtin		constant a#b	key#up		2	gog-esp/IN_WINDOW.ESP:93
+builtin		constant a#b	key#down		2	gog-esp/IN_WINDOW.ESP:94
+builtin		constant a#b	key#left		2	gog-esp/IN_WINDOW.ESP:95
+builtin		constant a#b	key#right		2	gog-esp/IN_WINDOW.ESP:96
+builtin		builtin	string_tail	3	1	gog-esp/KANJI_DIC.esp:219
+builtin		builtin	list_to_vector	3	1	gog-esp/LABRD.ESP:128
+builtin		builtin	area_top_pointer	3	1	gog-esp/HEAPWATCH.ESP:88
+builtin		builtin	and	3	1	gog-esp/CGS_START.ESP:27
+builtin		constant a#b	key#abort		1	
+builtin		constant a#b	key#bs		1	
+builtin		constant a#b	mouse#rr		1	
+builtin		builtin	heap_to_stack_vector	2	1	gog-esp/CGS_DEMO.ESP:70
+builtin		constant a#b	key#esc		1	
+builtin		builtin	count_list	2	1	gog-esp/DISPPBMS.esp:44
+builtin		builtin	dot_zahyo	4	1	gog-esp/DISPPBMS.esp:63
+builtin		constant a#b	key#help		1	gog-esp/IN_WINDOW.ESP:88
+requirement	?	ambiguous	putf	3	168	gog-esp/ANALYSIS_M.ESP:176
+requirement	?	unknown	putf	2	146	gog-esp/CGS_INSTALLER.esp:25
+requirement	?	ambiguous	get_contents	2	104	gog-esp/FAMILY.ESP:59
+requirement	?	ambiguous	clear	1	60	gog-esp/CGS_DEMO.ESP:110
+requirement	symbolizer	ref	(#ref)		60	gog-esp/CGS_UTIL.ESP:271
+requirement	?	ambiguous	put_contents	2	55	gog-esp/FAMILY.ESP:81
+requirement	<root>	class	new	2	49	gog-esp/ANALYSIS_M.ESP:41
+requirement	?	ambiguous	draw_line	8	37	gog-esp/CGS_DEMO.ESP:138
+requirement	?	ambiguous	flash	1	31	gog-esp/CGS_INSTALLER.esp:28
+requirement	standard_io_window	instance	draw_string	5	29	gog-esp/KE_WINDOW.ESP:111
+requirement	string	class	append	3	28	gog-esp/CGS_INSTALLER.esp:36
+requirement	symbolizer	class	get_number_string	3	28	gog-esp/CGS_UTIL.ESP:271
+requirement	string	ref	(#ref)		28	gog-esp/CGS_INSTALLER.esp:36
+requirement	directory	ref	(#ref)		28	gog-esp/CGS_INSTALLER.esp:34
+requirement	?	ambiguous	kill	1	27	gog-esp/CGS_DEMO.ESP:37
+requirement	?	ambiguous	activate	1	25	gog-esp/CGS_DEMO.ESP:81
+requirement	?	ambiguous	read	2	25	gog-esp/CGS_DEMO.ESP:75
+requirement	standard_io_window	class	create	3	25	gog-esp/CGS_DEMO.ESP:242
+requirement	standard_io_window	instance	draw_rectangle	5	23	gog-esp/KE_WINDOW.ESP:349
+requirement	standard_input_file	class	create	3	21	gog-esp/CGS_DEMO.ESP:87
+requirement	standard_io_window	instance	activate	1	21	gog-esp/CGS_DEMO.ESP:247
+requirement	standard_input_file	ref	(#ref)		21	gog-esp/CGS_DEMO.ESP:87
+requirement	pmacs_window	instance	putf	3	21	gog-esp/DEBUG.ESP:346
+requirement	?	unknown	draw_filled_circle	5	21	gog-esp/DISPB2.ESP:94
+requirement	standard_input_file	instance	close_input	1	20	gog-esp/CGS_DEMO.ESP:92
+requirement	standard_input_file	instance	gett	2	20	gog-esp/CGS_DEMO.ESP:89
+requirement	font	class	create	3	20	gog-esp/CGS_DEMO.ESP:467
+requirement	font	ref	(#ref)		20	gog-esp/CGS_DEMO.ESP:467
+requirement	?	unknown	draw_string	5	20	gog-esp/DISPB2.ESP:232
+requirement	standard_io_window	instance	kill	1	19	gog-esp/CGS_DEMO.ESP:250
+requirement	?	ambiguous	add_last	2	19	gog-esp/GAKUSHU.esp:120
+requirement	?	unknown	draw_filled_rectangle	6	19	gog-esp/DISPB2.ESP:46
+requirement	standard_io_window	instance	draw_filled_rectangle	8	19	gog-esp/KE_WINDOW.ESP:109
+requirement	standard_io_window	instance	putf	3	17	gog-esp/DISPB3.ESP:23
+requirement	list	ref	(#ref)		15	gog-esp/JSKNODE.ESP:70
+requirement	stop_watch	class	create	2	13	gog-esp/CAPTURE.ESP:322
+requirement	inferior_window	class	create	3	13	gog-esp/CGS_DEMO.ESP:482
+requirement	list	class	create	2	13	gog-esp/JSKNODE.ESP:70
+requirement	list	instance	put_contents	2	13	gog-esp/JSKNODE.ESP:72
+requirement	directory	class	retrieve	3	13	gog-esp/CGS_INSTALLER.esp:83
+requirement	stop_watch	ref	(#ref)		13	gog-esp/CAPTURE.ESP:322
+requirement	stop_watch	instance	stop	1	12	gog-esp/CAPTURE.ESP:329
+requirement	stop_watch	instance	start	1	12	gog-esp/CAPTURE.ESP:323
+requirement	standard_io_window	instance	clear	1	12	gog-esp/DISPBIG.ESP:81
+requirement	as_program	class	new	2	11	gog-esp/CGS_DEMO.ESP:20
+requirement	esp_macro_expander	class	new	2	11	gog-esp/CGS_DEMO.ESP:90
+requirement	as_program	nature	(inherited)		11	gog-esp/CGS_DEMO.ESP:11
+requirement	process	ref	(#ref)		11	gog-esp/CGS_INSTALLER.esp:49
+requirement	esp_macro_expander	ref	(#ref)		11	gog-esp/CGS_DEMO.ESP:90
+requirement	time	ref	(#ref)		11	gog-esp/CH_CLOCK.ESP:33
+requirement	esp_macro_expander	instance	expand_goals	3	11	gog-esp/CGS_DEMO.ESP:91
+requirement	?	unknown	beep	1	11	gog-esp/GAKUSHU.esp:182
+requirement	?	ambiguous	remove	2	11	gog-esp/GAKUSHU.esp:115
+requirement	symbolizer	class	get_atom_string	3	10	gog-esp/CLASS_REF.ESP:67
+requirement	standard_output_file	class	create	3	10	gog-esp/CGS_UTIL.ESP:388
+requirement	standard_output_file	instance	close_output	1	10	gog-esp/CGS_UTIL.ESP:399
+requirement	symbolizer	class	get_number	3	10	gog-esp/COMMU.ESP:168
+requirement	standard_output_file	ref	(#ref)		10	gog-esp/CGS_UTIL.ESP:388
+requirement	standard_io_window	ref	(#ref)		10	gog-esp/CGS_DEMO.ESP:488
+requirement	?	ambiguous	draw_circle	7	10	gog-esp/CGS_DEMO.ESP:164
+requirement	?	ambiguous	get_at	3	10	gog-esp/GAKUSHU.esp:382
+requirement	?	ambiguous	deactivate	1	9	gog-esp/CGS_DEMO.ESP:567
+requirement	?	ambiguous	show	2	9	gog-esp/DISPB3.ESP:414
+requirement	?	unknown	get_count	2	8	gog-esp/CH_CLOCK.ESP:59
+requirement	list	instance	get_contents	2	8	gog-esp/JSKNODE.ESP:66
+requirement	standard_output_file	instance	putc	2	8	gog-esp/CGS_UTIL.ESP:424
+requirement	standard_io_window	instance	write_lines	2	8	gog-esp/CGS_DEMO.ESP:248
+requirement	pmacs_window	instance	flash	1	7	gog-esp/CGS_PWINDOW.ESP:20
+requirement	process	class	self	2	7	gog-esp/CGS_INSTALLER.esp:49
+requirement	?	unknown	getl	2	7	gog-esp/CGS_INSTALLER.esp:26
+requirement	?	unknown	set_cv	4	7	gog-esp/DAMETEN_CV.ESP:82
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	putf	3	7	gog-esp/DISPBIG.ESP:291
+requirement	array	instance	put_at	3	7	gog-esp/KIFU_DATA.ESP:80
+requirement	array	instance	get_at	3	7	gog-esp/KIFU_DATA.ESP:133
+requirement	standard_output_file	instance	putt	2	6	gog-esp/GAKUSHU.esp:75
+requirement	symbolizer	class	enter_atom	3	6	gog-esp/COMMU.ESP:165
+requirement	pmacs_window	class	create	3	6	gog-esp/CGS_INSTALLER.esp:70
+requirement	inferior_window	nature	(inherited)		6	gog-esp/BAN_D_W.ESP:11
+requirement	library	ref	(#ref)		6	gog-esp/CGS_INSTALLER.esp:346
+requirement	standard_output_file	instance	putf	3	6	gog-esp/PLAYSLOT.ESP:191
+requirement	standard_io_window	instance	putf	2	6	gog-esp/DISPODT.ESP:129
+requirement	time	class	create	2	6	gog-esp/DISPLAY_KIFU.ESP:31
+requirement	?	unknown	draw_rectangle	8	6	gog-esp/CGS_DEMO.ESP:371
+requirement	array	class	create	3	6	gog-esp/KIFU_DATA.ESP:33
+requirement	array	ref	(#ref)		6	gog-esp/KIFU_DATA.ESP:33
+requirement	pmacs_window	instance	putf	2	6	gog-esp/DEBUG.ESP:108
+requirement	?	unknown	add_cv	4	6	gog-esp/FUTOKOROPC.ESP:49
+requirement	standard_io_window	instance	write	2	6	gog-esp/IN_WINDOW.ESP:37
+requirement	?	unknown	get_jiflag	2	6	gog-esp/JIBRD.ESP:74
+requirement	?	ambiguous	put_at	3	6	gog-esp/KE_SOUND.ESP:44
+requirement	{pmacs_window|standard_io_window}	instance	putf	2	6	gog-esp/READTERM.ESP:58
+requirement	?	unknown	set_kokouten_color	2	6	gog-esp/UPKKT.ESP:91
+requirement	standard_input_file	instance	end_of_input	1	5	gog-esp/CGS_DEMO.ESP:203
+requirement	time	class	now	2	5	gog-esp/CH_CLOCK.ESP:33
+requirement	pmacs_window	instance	activate	1	5	gog-esp/CGS_UTIL.ESP:73
+requirement	as_mouse_input	nature	(inherited)		5	gog-esp/BAN_D_W.ESP:11
+requirement	window_subsystem	ref	(#ref)		5	gog-esp/CGS_MAIN.ESP:100
+requirement	pmacs_window	ref	(#ref)		5	gog-esp/CGS_INSTALLER.esp:70
+requirement	directory	class	rename	5	5	gog-esp/CGS_INSTALLER.esp:180
+requirement	labeled_sash	nature	(inherited)		5	gog-esp/BAN_D_W.ESP:11
+requirement	?	ambiguous	draw_line	7	5	gog-esp/CGS_DEMO.ESP:144
+requirement	window_subsystem	class	add_icon	4	5	gog-esp/CGS_MAIN.ESP:100
+requirement	?	unknown	get_text_window	2	5	gog-esp/DISPB3.ESP:52
+requirement	standard_io_window	instance	set_permission	2	5	gog-esp/DISPB3.ESP:377
+requirement	?	unknown	getc	2	5	gog-esp/DISPPBMS.esp:133
+requirement	?	ambiguous	in	2	5	gog-esp/GAKUSHU.esp:114
+requirement	file_utility	class	copy	3	4	gog-esp/CGS_INSTALLER.esp:134
+requirement	screen	class	get_size	3	4	gog-esp/CGS_DEMO.ESP:478
+requirement	with_superior_input_buffer	nature	(inherited)		4	gog-esp/BAN_D_W.ESP:11
+requirement	file_utility	ref	(#ref)		4	gog-esp/CGS_INSTALLER.esp:134
+requirement	screen	ref	(#ref)		4	gog-esp/CGS_DEMO.ESP:478
+requirement	directory	class	make	4	4	gog-esp/CGS_INSTALLER.esp:87
+requirement	?	unknown	data_buffer	2	4	gog-esp/MONDAIZU.ESP:25
+requirement	?	unknown	draw_string	6	4	gog-esp/CGS_DEMO.ESP:325
+requirement	standard_io_window	instance	erase_cursor	1	4	gog-esp/CGS_DEMO.ESP:493
+requirement	?	ambiguous	draw_rectangle	5	4	gog-esp/CGS_DEMO.ESP:150
+requirement	library_utility	instance	set_package	2	4	gog-esp/CGS_INSTALLER.esp:345
+requirement	time	instance	plus	3	4	gog-esp/DISPTAI.ESP:79
+requirement	?	unknown	get_semeai_flag	2	4	gog-esp/JIBRD.ESP:84
+requirement	standard_io_window	instance	draw_filled_circle	7	4	gog-esp/KE_WINDOW.ESP:128
+requirement	{pmacs_window|standard_io_window}	instance	putf	3	4	gog-esp/READTERM.ESP:51
+requirement	rs232c	instance	send	2	4	gog-esp/RS232C.ESP:56
+requirement	rs232c	instance	get_data	2	4	gog-esp/RS232C.ESP:57
+requirement	?	unknown	get_kokouten_color	2	4	gog-esp/UPKKT.ESP:89
+requirement	?	ambiguous	putb	3	3	gog-esp/PAT_DATA.ESP:202
+requirement	?	ambiguous	reset	1	3	gog-esp/HEAPWATCH.ESP:68
+requirement	process	class	create	2	3	gog-esp/CH_CLOCK.ESP:17
+requirement	process	instance	activate	2	3	gog-esp/CH_CLOCK.ESP:21
+requirement	port	class	create	2	3	gog-esp/DEBUG.ESP:84
+requirement	?	unknown	get_content	2	3	gog-esp/DEBUG.ESP:344
+requirement	?	ambiguous	get	3	3	gog-esp/KIFU_EDITOR.ESP:116
+requirement	?	unknown	putl	2	3	gog-esp/CGS_UTIL.ESP:156
+requirement	library_utility	class	create	2	3	gog-esp/CGS_INSTALLER.esp:340
+requirement	list	instance	remove	2	3	gog-esp/RKRBRD.ESP:88
+requirement	symbolizer	class	get_ch_string_token	3	3	gog-esp/CLASS_REF.ESP:97
+requirement	?	ambiguous	goal	1	3	gog-esp/CGS_MAIN.ESP:132
+requirement	pmacs_window	instance	set_font	2	3	gog-esp/CGS_UTIL.ESP:58
+requirement	mathematical_functions	class	sqrt	3	3	gog-esp/STOPWATCH.ESP:200
+requirement	?	unknown	set_area_limit_execution	7	3	gog-esp/CGS_MAIN.ESP:70
+requirement	with_click_information	nature	(inherited)		3	gog-esp/CGS_DEMO.ESP:606
+requirement	as_single_select	nature	(inherited)		3	gog-esp/CGS_DEMO.ESP:623
+requirement	port	ref	(#ref)		3	gog-esp/DEBUG.ESP:84
+requirement	message	ref	(#ref)		3	gog-esp/DEBUG.ESP:350
+requirement	library_utility	ref	(#ref)		3	gog-esp/CGS_INSTALLER.esp:340
+requirement	as_program	class	create	2	3	gog-esp/CH_CLOCK.ESP:18
+requirement	directory	class	retrieve	4	3	gog-esp/CGS_INSTALLER.esp:34
+requirement	?	unknown	size	2	3	gog-esp/KE_SOUND.ESP:49
+requirement	?	ambiguous	start	1	3	gog-esp/HEAPWATCH.ESP:38
+requirement	?	unknown	execute_command	2	3	gog-esp/DISPB3.ESP:57
+requirement	as_menu	nature	(inherited)		3	gog-esp/CGS_DEMO.ESP:623
+requirement	list	instance	get_at	3	3	gog-esp/KIFU.ESP:52
+requirement	standard_io_window	instance	deactivate	1	3	gog-esp/DISPLAY_KIFU.ESP:77
+requirement	pmacs_window	instance	kill	1	3	gog-esp/DEBUG.ESP:110
+requirement	standard_io_window	instance	read	2	3	gog-esp/DISPODT.ESP:126
+requirement	alarm_watch	class	create	2	3	gog-esp/CH_CLOCK.ESP:35
+requirement	alarm_watch	instance	wait	1	3	gog-esp/CH_CLOCK.ESP:62
+requirement	?	unknown	draw_string	4	3	gog-esp/TIMELOG.ESP:88
+requirement	alarm_watch	ref	(#ref)		3	gog-esp/CH_CLOCK.ESP:35
+requirement	?	ambiguous	draw_elliptical_arc	10	3	gog-esp/CGS_DEMO.ESP:189
+requirement	?	unknown	do_beep	1	3	gog-esp/CGS_DEMO.ESP:453
+requirement	ftp_user	instance	get_command	3	3	gog-esp/CGS_INSTALLER.esp:183
+requirement	message	class	create	2	3	gog-esp/DEBUG.ESP:350
+requirement	message	instance	set_content	2	3	gog-esp/DEBUG.ESP:351
+requirement	{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	set_inside_units	3	3	gog-esp/DISPB1.ESP:160
+requirement	{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}	instance	see_buffer	2	3	gog-esp/DISPB1.ESP:205
+requirement	sound_generator	class	get	2	3	gog-esp/DISPB2.ESP:415
+requirement	{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	set_color_pair	3	3	gog-esp/DISPBIG.ESP:262
+requirement	standard_io_window	instance	set_color_pair	3	3	gog-esp/DISPBIG.ESP:266
+requirement	?	unknown	draw_shasen	3	3	gog-esp/GAKUSHU.esp:193
+requirement	?	ambiguous	stop	1	3	gog-esp/HEAPWATCH.ESP:46
+requirement	?	unknown	set_jiflag	2	3	gog-esp/JIBRD.ESP:48
+requirement	expandable_array	instance	size	2	3	gog-esp/KE_WINDOW.ESP:61
+requirement	?	ambiguous	close	1	3	gog-esp/MONDAIZU.ESP:28
+requirement	array	instance	get_contents	2	3	gog-esp/STOPWATCH.ESP:90
+requirement	sound_generator	ref	(#ref)		3	gog-esp/DISPB2.ESP:415
+requirement	list	class	new	2	2	gog-esp/JSKNODE.ESP:80
+requirement	list	instance	add_last	2	2	gog-esp/KIFU.ESP:72
+requirement	?	unknown	send	2	2	gog-esp/COMMU.ESP:43
+requirement	?	unknown	receive	2	2	gog-esp/COMMU.ESP:49
+requirement	?	unknown	clear_buffer	1	2	gog-esp/DISPLAY_KIFU.ESP:133
+requirement	inferior_window	instance	kill	1	2	gog-esp/DISPB1.ESP:75
+requirement	standard_input_file	instance	getl	2	2	gog-esp/CGS_DEMO.ESP:205
+requirement	monogyny_hash_index	class	create	3	2	gog-esp/LABRD.ESP:36
+requirement	monogyny_hash_index	instance	clear	1	2	gog-esp/LABRD.ESP:81
+requirement	monogyny_hash_index	instance	put_at	3	2	gog-esp/LABRD.ESP:102
+requirement	monogyny_hash_index	instance	get_at	3	2	gog-esp/LABRD.ESP:88
+requirement	symbolizer	class	list_to_string	3	2	gog-esp/IN_WINDOW.ESP:49
+requirement	directory	class	retrieve_with_wildcard	4	2	gog-esp/CGS_INSTALLER.esp:78
+requirement	as_superior	nature	(inherited)		2	gog-esp/CGS_DEMO.ESP:606
+requirement	standard_io_window	nature	(inherited)		2	gog-esp/CGS_WINDOW.ESP:11
+requirement	as_input_buffer	nature	(inherited)		2	gog-esp/CGS_DEMO.ESP:606
+requirement	binary_file	ref	(#ref)		2	gog-esp/MONDAIZU.ESP:21
+requirement	mathematical_functions	ref	(#ref)		2	gog-esp/STOPWATCH.ESP:193
+requirement	?	unknown	putc	2	2	gog-esp/PAT_DATA.ESP:203
+requirement	?	unknown	set_title	2	2	gog-esp/CGS_DEMO.ESP:302
+requirement	?	unknown	get_value	5	2	gog-esp/LOGOUT.ESP:162
+requirement	binary_file_marker	class	create	2	2	gog-esp/MONDAIZU.ESP:22
+requirement	binary_file_marker	instance	set_position	2	2	gog-esp/MONDAIZU.ESP:23
+requirement	?	unknown	set_font	2	2	gog-esp/CGS_INSTALLER.esp:74
+requirement	?	unknown	erase_cursor	1	2	gog-esp/DISPLAY_KIFU.ESP:161
+requirement	monogyny_hash_index	instance	add_at	3	2	gog-esp/LABRD.ESP:95
+requirement	inferior_window	instance	deactivate	1	2	gog-esp/DISPB1.ESP:67
+requirement	with_icon	nature	(inherited)		2	gog-esp/CGS_M_W.ESP:4
+requirement	as_output	nature	(inherited)		2	gog-esp/BAN_D_W.ESP:11
+requirement	binary_file_marker	ref	(#ref)		2	gog-esp/MONDAIZU.ESP:22
+requirement	?	unknown	gett	2	2	gog-esp/EXPERT_A.ESP:275
+requirement	standard_io_window	instance	getl	2	2	gog-esp/CGS_DEMO.ESP:249
+requirement	standard_io_window	instance	move_cursor	3	2	gog-esp/DISPODT.ESP:115
+requirement	pmacs_window	instance	getl	2	2	gog-esp/INFO_D_W.ESP:13
+requirement	expandable_array	class	create	3	2	gog-esp/KE_WINDOW.ESP:103
+requirement	port	instance	send	2	2	gog-esp/DEBUG.ESP:352
+requirement	time	instance	set_value	5	2	gog-esp/DISPLAY_KIFU.ESP:32
+requirement	alarm_watch	instance	on_after	2	2	gog-esp/DISPLAY_KIFU.ESP:52
+requirement	expandable_array	ref	(#ref)		2	gog-esp/KE_WINDOW.ESP:103
+requirement	network_listener_buffer	class	create	4	2	gog-esp/COMMU.ESP:125
+requirement	?	unknown	warp_mouse	3	2	gog-esp/DISPB2.ESP:153
+requirement	network_listener_buffer	instance	data_buffer	2	2	gog-esp/COMMU.ESP:129
+requirement	?	unknown	read_with_click	3	2	gog-esp/DATA_S_A.ESP:26
+requirement	network_listener_buffer	ref	(#ref)		2	gog-esp/COMMU.ESP:125
+requirement	?	ambiguous	draw_arc	9	2	gog-esp/CGS_DEMO.ESP:176
+requirement	?	ambiguous	hide	1	2	gog-esp/CGS_DEMO.ESP:232
+requirement	ftp_user	instance	dir_command	3	2	gog-esp/CGS_INSTALLER.esp:158
+requirement	ftp_user	instance	lcwd_command	2	2	gog-esp/CGS_INSTALLER.esp:176
+requirement	library_utility	instance	get_package	2	2	gog-esp/CGS_INSTALLER.esp:341
+requirement	standard_input_file	instance	getc	2	2	gog-esp/CGS_UTIL.ESP:393
+requirement	process	instance	set_area_limit_execution	7	2	gog-esp/DEBUG.ESP:89
+requirement	pmacs_window	instance	getc	2	2	gog-esp/DEBUG.ESP:109
+requirement	port	instance	receive	2	2	gog-esp/DEBUG.ESP:343
+requirement	temporary_multiple_select_multi_column_menu	class	create	3	2	gog-esp/DISP2_TESUJI.esp:37
+requirement	temporary_multiple_select_multi_column_menu	instance	activate	1	2	gog-esp/DISP2_TESUJI.esp:42
+requirement	temporary_multiple_select_multi_column_menu	instance	read	2	2	gog-esp/DISP2_TESUJI.esp:43
+requirement	{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}	instance	activate	1	2	gog-esp/DISPB1.ESP:62
+requirement	{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	activate	1	2	gog-esp/DISPB1.ESP:63
+requirement	{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window}	instance	activate	1	2	gog-esp/DISPB1.ESP:64
+requirement	{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window}	instance	clear_items	1	2	gog-esp/DISPB1.ESP:89
+requirement	{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window}	instance	add_items	3	2	gog-esp/DISPB1.ESP:90
+requirement	{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}	instance	read_with_click	4	2	gog-esp/DISPB1.ESP:204
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	putf	2	2	gog-esp/DISPBIG.ESP:287
+requirement	?	unknown	inhibit_input	1	2	gog-esp/DISPLAY_KIFU.ESP:157
+requirement	?	unknown	set_operation	2	2	gog-esp/DISPLAY_KIFU.ESP:160
+requirement	?	unknown	draw_polygon	2	2	gog-esp/DISPPBMS.esp:117
+requirement	?	unknown	minus	3	2	gog-esp/DISPTAI.ESP:77
+requirement	time	instance	get_string	2	2	gog-esp/DISPTAI.ESP:190
+requirement	?	unknown	draw_characters	4	2	gog-esp/DISP_TESUJI.ESP:154
+requirement	<root>	class	create	7	2	gog-esp/FUTOKOROPC.ESP:21
+requirement	<root>	instance	calc_cv	2	2	gog-esp/FUTOKOROPC.ESP:46
+requirement	<root>	instance	get_candidate_color	2	2	gog-esp/FUTOKOROPC.ESP:47
+requirement	<root>	instance	get_ten_object	2	2	gog-esp/FUTOKOROPC.ESP:48
+requirement	?	unknown	get_gukei_cv	2	2	gog-esp/GUKEI_CV.ESP:19
+requirement	?	unknown	set_ji	2	2	gog-esp/JI.ESP:70
+requirement	?	unknown	expand	2	2	gog-esp/KE_SOUND.ESP:62
+requirement	expandable_array	instance	get_at	3	2	gog-esp/KE_WINDOW.ESP:78
+requirement	standard_io_window	instance	draw_line	6	2	gog-esp/KE_WINDOW.ESP:453
+requirement	standard_io_window	instance	draw_line	7	2	gog-esp/KE_WINDOW.ESP:454
+requirement	?	ambiguous	delete	3	2	gog-esp/KIFU_EDITOR.ESP:125
+requirement	?	unknown	get_potential_snd_2	2	2	gog-esp/SCOND.ESP:139
+requirement	?	unknown	set_semeai_flag	2	2	gog-esp/SSEMEAI.ESP:23
+requirement	?	unknown	set_semerute	2	2	gog-esp/SSEMEAI.ESP:27
+requirement	?	unknown	get_all_shini_flag	2	2	gog-esp/SSEMEAI.ESP:28
+requirement	?	unknown	get_deleted_ren	2	2	gog-esp/UPRKR.ESP:50
+requirement	?	unknown	set_renketumark	2	2	gog-esp/UPRKR.ESP:142
+requirement	temporary_multiple_select_multi_column_menu	ref	(#ref)		2	gog-esp/DISP2_TESUJI.esp:37
+requirement	?	unknown	new	2	1	gog-esp/LIST_A_3.ESP:128
+requirement	pmacs_window	instance	current_buffer	2	1	gog-esp/DISPB1.ESP:70
+requirement	?	unknown	exterminate	1	1	gog-esp/CGS_INSTALLER.esp:50
+requirement	?	unknown	die	1	1	gog-esp/COMMU.ESP:54
+requirement	?	unknown	show	1	1	gog-esp/DISPEXP.ESP:114
+requirement	library	class	get_class_object	3	1	gog-esp/CGS_INSTALLER.esp:346
+requirement	standard_io_buffer	class	create	2	1	gog-esp/READTERM.ESP:134
+requirement	?	ambiguous	initiate	1	1	gog-esp/LATENBRD.ESP:144
+requirement	standard_io_window	instance	read_sense	2	1	gog-esp/DISPLAY_KIFU.ESP:127
+requirement	editor_text_buffer	class	kill	2	1	gog-esp/DISPB1.ESP:74
+requirement	library_utility	instance	catalogue	3	1	gog-esp/PAT_DATA.ESP:89
+requirement	list	instance	clear	1	1	gog-esp/KIFU.ESP:23
+requirement	symbolizer	class	string_to_list	3	1	gog-esp/READTERM.ESP:88
+requirement	library	class	check_info	3	1	gog-esp/DISPB2.ESP:15
+requirement	?	ambiguous	create	3	1	gog-esp/DISPB3.ESP:315
+requirement	?	unknown	set_standard_input	2	1	gog-esp/CGS_INSTALLER.esp:104
+requirement	?	unknown	set_standard_output	2	1	gog-esp/CGS_INSTALLER.esp:102
+requirement	?	unknown	set_standard_message	2	1	gog-esp/CGS_INSTALLER.esp:103
+requirement	process	class	get_number	3	1	gog-esp/HEAPWATCH.ESP:15
+requirement	?	unknown	read	3	1	gog-esp/MONDAIZU.ESP:27
+requirement	pathname	class	remote_or_local	6	1	gog-esp/CGS_INSTALLER.esp:190
+requirement	date	class	now	2	1	gog-esp/PAT_DATA.ESP:174
+requirement	?	unknown	get_string	2	1	gog-esp/PAT_DATA.ESP:175
+requirement	standard_io_window	instance	getc	2	1	gog-esp/PLAYSLOT.ESP:78
+requirement	?	unknown	stick_tap	2	1	gog-esp/ANALYSIS_M.ESP:199
+requirement	library_utility	instance	set_output	2	1	gog-esp/CGS_INSTALLER.esp:342
+requirement	pmacs_window	instance	gett	2	1	gog-esp/DEBUG.ESP:335
+requirement	library	class	get_a_code	7	1	gog-esp/DISPB2.ESP:17
+requirement	library	class	check_class_id	3	1	gog-esp/CGS_START.ESP:26
+requirement	?	unknown	terminate	1	1	gog-esp/CH_CLOCK.ESP:53
+requirement	?	unknown	release	1	1	gog-esp/CH_CLOCK.ESP:54
+requirement	pmacs_window	nature	(inherited)		1	gog-esp/CGS_PWINDOW.ESP:11
+requirement	as_graphics	nature	(inherited)		1	gog-esp/BAN_D_W.ESP:11
+requirement	standard_io_buffer	ref	(#ref)		1	gog-esp/READTERM.ESP:134
+requirement	editor_text_buffer	ref	(#ref)		1	gog-esp/DISPB1.ESP:74
+requirement	pathname	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:190
+requirement	date	ref	(#ref)		1	gog-esp/PAT_DATA.ESP:174
+requirement	standard_menu	ref	(#ref)		1	gog-esp/DISPLAY_KH.ESP:50
+requirement	standard_multi_column_menu	ref	(#ref)		1	gog-esp/CGS_MAIN.ESP:104
+requirement	standard_choice_window	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:55
+requirement	superior_window	ref	(#ref)		1	gog-esp/CGS_UTIL.ESP:36
+requirement	menu	ref	(#ref)		1	gog-esp/DISPB3.ESP:353
+requirement	choice_window	ref	(#ref)		1	gog-esp/DISPSET.ESP:49
+requirement	multi_column_menu	ref	(#ref)		1	gog-esp/PBM_CMD.ESP:406
+requirement	?	unknown	putt	2	1	gog-esp/PAT_DATA.ESP:198
+requirement	?	unknown	get_editor	2	1	gog-esp/DISPB3.ESP:55
+requirement	?	unknown	write_lines	2	1	gog-esp/DISPLAY_KIFU.ESP:164
+requirement	string_buffer	class	create	4	1	gog-esp/MONDAIZU.ESP:86
+requirement	list	instance	add_first	2	1	gog-esp/RKRBRD.ESP:114
+requirement	standard_multi_column_menu	class	create	3	1	gog-esp/CGS_MAIN.ESP:104
+requirement	?	unknown	get_inside_size	3	1	gog-esp/DISPB3.ESP:53
+requirement	?	unknown	get_inside_units	3	1	gog-esp/DISPCLOCK.ESP:85
+requirement	standard_choice_window	class	create	3	1	gog-esp/CGS_INSTALLER.esp:55
+requirement	name	class	version	3	1	gog-esp/CGS_INSTALLER.esp:129
+requirement	superior_window	class	create	3	1	gog-esp/CGS_UTIL.ESP:36
+requirement	superior_window	instance	kill	1	1	gog-esp/CGS_UTIL.ESP:92
+requirement	?	unknown	see_buffer	2	1	gog-esp/DISPTAI.ESP:127
+requirement	?	unknown	resign	1	1	gog-esp/DISPB1.ESP:72
+requirement	standard_menu	class	create	3	1	gog-esp/DISPLAY_KH.ESP:50
+requirement	directory	class	remove	4	1	gog-esp/CGS_INSTALLER.esp:90
+requirement	binary_file	class	open	3	1	gog-esp/MONDAIZU.ESP:21
+requirement	binary_file	class	make	3	1	gog-esp/MONDAIZU.ESP:36
+requirement	temporary_window	nature	(inherited)		1	gog-esp/TMPMENU.ESP:11
+requirement	name	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:129
+requirement	string_buffer	ref	(#ref)		1	gog-esp/MONDAIZU.ESP:86
+requirement	net_spawn_user	ref	(#ref)		1	gog-esp/COMMU.ESP:31
+requirement	?	unknown	count	2	1	gog-esp/ANALYSIS_M.ESP:188
+requirement	standard_menu	instance	activate	1	1	gog-esp/DISPLAY_KH.ESP:64
+requirement	standard_menu	instance	read	2	1	gog-esp/DISPLAY_KH.ESP:65
+requirement	standard_io_window	instance	set_font	2	1	gog-esp/CGS_DEMO.ESP:494
+requirement	standard_menu	instance	kill	1	1	gog-esp/DISPLAY_KH.ESP:60
+requirement	standard_menu	instance	deactivate	1	1	gog-esp/DISPLAY_KH.ESP:66
+requirement	library_utility	instance	load	2	1	gog-esp/CGS_START.ESP:31
+requirement	essential_scrolling_menu	class	create	3	1	gog-esp/CGS_UTIL.ESP:60
+requirement	essential_scrolling_menu	instance	activate	1	1	gog-esp/CGS_UTIL.ESP:74
+requirement	standard_choice_window	instance	kill	1	1	gog-esp/CGS_INSTALLER.esp:62
+requirement	standard_choice_window	instance	activate	1	1	gog-esp/CGS_INSTALLER.esp:60
+requirement	standard_choice_window	instance	read	2	1	gog-esp/CGS_INSTALLER.esp:61
+requirement	as_standard_io_window	nature	(inherited)		1	gog-esp/TAI_INFO_WNDW.ESP:11
+requirement	as_markers	nature	(inherited)		1	gog-esp/BAN_D_W.ESP:11
+requirement	essential_scrolling_menu	ref	(#ref)		1	gog-esp/CGS_UTIL.ESP:60
+requirement	?	unknown	find_with_wildcard	3	1	gog-esp/CGS_UTIL.ESP:217
+requirement	?	unknown	get_except_void	2	1	gog-esp/ANALYSIS_M.ESP:208
+requirement	multi_column_menu	class	create	3	1	gog-esp/PBM_CMD.ESP:406
+requirement	multi_column_menu	instance	activate	1	1	gog-esp/PBM_CMD.ESP:412
+requirement	multi_column_menu	instance	kill	1	1	gog-esp/PBM_CMD.ESP:414
+requirement	?	unknown	get_name	2	1	gog-esp/DISPB1.ESP:73
+requirement	port	instance	connect	2	1	gog-esp/FCOMMU.ESP:41
+requirement	?	unknown	input_data	2	1	gog-esp/DISPLAY_KIFU.ESP:121
+requirement	?	unknown	get_activity	2	1	gog-esp/READ_MOVE.ESP:326
+requirement	?	unknown	move_cursor	3	1	gog-esp/DISPLAY_KIFU.ESP:163
+requirement	net_spawn_user	class	spawn	7	1	gog-esp/COMMU.ESP:31
+requirement	?	unknown	free	1	1	gog-esp/COMMU.ESP:62
+requirement	as_server_program	instance	give_answer	3	1	gog-esp/REMOTE_P.ESP:28
+requirement	network_listener_buffer	instance	set_send_data_size	2	1	gog-esp/COMMU.ESP:127
+requirement	?	unknown	get_cursor_position	3	1	gog-esp/DISPB3.ESP:231
+requirement	as_server_program	instance	get_line	2	1	gog-esp/REMOTE_P.ESP:29
+requirement	superior_window	instance	get_size	3	1	gog-esp/CGS_UTIL.ESP:41
+requirement	superior_window	instance	activate	1	1	gog-esp/CGS_UTIL.ESP:72
+requirement	as_server_program	nature	(inherited)		1	gog-esp/REMOTE_P.ESP:11
+requirement	<root>	class	sphase_analysis	3	1	gog-esp/ANALYSIS_M.ESP:29
+requirement	{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	get_mouse_dot_position	3	1	gog-esp/BAN_D_W.ESP:39
+requirement	?	unknown	set_point_value	4	1	gog-esp/CGS_DEMO.ESP:130
+requirement	?	ambiguous	draw_rectangle	7	1	gog-esp/CGS_DEMO.ESP:156
+requirement	?	unknown	draw_arc	7	1	gog-esp/CGS_DEMO.ESP:400
+requirement	file_backup	class	create	2	1	gog-esp/CGS_INSTALLER.esp:97
+requirement	file_backup	instance	set_output	2	1	gog-esp/CGS_INSTALLER.esp:99
+requirement	file_backup	instance	set_input	2	1	gog-esp/CGS_INSTALLER.esp:100
+requirement	file_backup	instance	restore	3	1	gog-esp/CGS_INSTALLER.esp:105
+requirement	?	unknown	dismount	1	1	gog-esp/CGS_INSTALLER.esp:113
+requirement	fdd_multi_volume	class	remove_at	3	1	gog-esp/CGS_INSTALLER.esp:114
+requirement	ftp_user	class	create	2	1	gog-esp/CGS_INSTALLER.esp:152
+requirement	ftp_user	instance	connect_command	2	1	gog-esp/CGS_INSTALLER.esp:153
+requirement	ftp_user	instance	user_command	3	1	gog-esp/CGS_INSTALLER.esp:154
+requirement	ftp_user	instance	pass_command	3	1	gog-esp/CGS_INSTALLER.esp:157
+requirement	ftp_user	instance	cwd_command	2	1	gog-esp/CGS_INSTALLER.esp:173
+requirement	ftp_user	instance	type_command	2	1	gog-esp/CGS_INSTALLER.esp:175
+requirement	ftp_user	instance	quit	1	1	gog-esp/CGS_INSTALLER.esp:193
+requirement	library_utility	instance	remove_output	1	1	gog-esp/CGS_INSTALLER.esp:344
+requirement	library_utility	instance	get_direct_superclasses	3	1	gog-esp/CGS_INSTALLER.esp:371
+requirement	library	class	delete_package_forcedly	2	1	gog-esp/CGS_INSTALLER.esp:374
+requirement	library	class	delete_environment_forcedly	2	1	gog-esp/CGS_INSTALLER.esp:376
+requirement	library_utility	instance	load_environment_for_package_template	3	1	gog-esp/CGS_INSTALLER.esp:379
+requirement	library_utility	instance	load_package_template	3	1	gog-esp/CGS_INSTALLER.esp:381
+requirement	<root>	instance	class_object	2	1	gog-esp/CGS_MAIN.ESP:167
+requirement	superior_window	instance	get_position	3	1	gog-esp/CGS_UTIL.ESP:40
+requirement	superior_window	instance	set_position	3	1	gog-esp/CGS_UTIL.ESP:46
+requirement	superior_window	instance	set_size	3	1	gog-esp/CGS_UTIL.ESP:47
+requirement	essential_scrolling_menu	instance	read	2	1	gog-esp/CGS_UTIL.ESP:88
+requirement	?	unknown	set_sub_priority	2	1	gog-esp/CH_CLOCK.ESP:42
+requirement	?	unknown	set_count	2	1	gog-esp/CH_CLOCK.ESP:60
+requirement	alarm_watch	instance	on_at	2	1	gog-esp/CH_CLOCK.ESP:61
+requirement	?	unknown	remove_d	4	1	gog-esp/D4CAPTURE.ESP:86
+requirement	temporary_multiple_select_multi_column_menu	instance	set_item_status	3	1	gog-esp/DISP2_TESUJI.esp:82
+requirement	bitmap	class	get_plane_count	2	1	gog-esp/DISPB1.ESP:36
+requirement	{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}	instance	read_sense	3	1	gog-esp/DISPB1.ESP:130
+requirement	{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	instance	erase_cursor	1	1	gog-esp/DISPB1.ESP:185
+requirement	pmacs_window	instance	get_text_window	2	1	gog-esp/DISPB1.ESP:217
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	activate	1	1	gog-esp/DISPBIG.ESP:60
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	erase_cursor	1	1	gog-esp/DISPBIG.ESP:230
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	set_color_pair	3	1	gog-esp/DISPBIG.ESP:272
+requirement	{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window}	instance	set_color_pair	3	1	gog-esp/DISPBIG.ESP:274
+requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	clear	1	1	gog-esp/DISPBIG.ESP:283
+requirement	?	unknown	draw_graph	5	1	gog-esp/DISPBIG2.ESP:190
+requirement	?	unknown	set_color_pair	3	1	gog-esp/DISPCLOCK.ESP:55
+requirement	?	unknown	read_sense	3	1	gog-esp/DISPLAY_KIFU.ESP:118
+requirement	standard_io_window	instance	input_data	2	1	gog-esp/DISPLAY_KIFU.ESP:129
+requirement	standard_io_window	instance	clear_buffer	1	1	gog-esp/DISPLAY_KIFU.ESP:134
+requirement	standard_io_window	instance	draw_string	4	1	gog-esp/DISPODT.ESP:275
+requirement	?	unknown	write_term	2	1	gog-esp/DISPODT.ESP:285
+requirement	?	unknown	paint	5	1	gog-esp/DISPPBMS.esp:118
+requirement	?	unknown	draw_font	6	1	gog-esp/DISPPBMS.esp:122
+requirement	choice_window	class	create	3	1	gog-esp/DISPSET.ESP:49
+requirement	choice_window	instance	activate	1	1	gog-esp/DISPSET.ESP:58
+requirement	choice_window	instance	kill	1	1	gog-esp/DISPSET.ESP:63
+requirement	choice_window	instance	read	2	1	gog-esp/DISPSET.ESP:68
+requirement	as_pimos_string_io_device	class	new	2	1	gog-esp/FEP.ESP:13
+requirement	?	unknown	get_gakushu_pc_list	2	1	gog-esp/GAKUSHUCV.ESP:14
+requirement	<root>	instance	get_strength	2	1	gog-esp/GUN.ESP:403
+requirement	<root>	instance	get_semerute	2	1	gog-esp/GUN.ESP:405
+requirement	?	ambiguous	remove_at	2	1	gog-esp/GUN.ESP:438
+requirement	pmacs_window	instance	input_data	2	1	gog-esp/INFO_D_W.ESP:12
+requirement	standard_io_window	instance	get_cursor_position	3	1	gog-esp/IN_WINDOW.ESP:23
+requirement	standard_io_window	instance	clear_line	1	1	gog-esp/IN_WINDOW.ESP:25
+requirement	?	unknown	get_onkessn	3	1	gog-esp/JI.ESP:102
+requirement	standard_io_window	instance	read_click_with_position	4	1	gog-esp/KE_WINDOW.ESP:52
+requirement	expandable_array	instance	empty	1	1	gog-esp/KE_WINDOW.ESP:104
+requirement	?	unknown	reset_mouse_marker	2	1	gog-esp/KE_WINDOW.ESP:193
+requirement	standard_io_window	instance	draw_graph	2	1	gog-esp/KE_WINDOW.ESP:319
+requirement	standard_io_window	instance	draw_circle	7	1	gog-esp/KE_WINDOW.ESP:386
+requirement	expandable_array	instance	put_at	3	1	gog-esp/KE_WINDOW.ESP:500
+requirement	list	instance	remove_last	2	1	gog-esp/KIFU.ESP:172
+requirement	list	instance	get_last	2	1	gog-esp/KIFU.ESP:173
+requirement	?	unknown	refuse_input	1	1	gog-esp/KIFU_EDITOR.ESP:51
+requirement	?	unknown	write	3	1	gog-esp/MONDAIZU.ESP:40
+requirement	<root>	class	temp_move_w_c	6	1	gog-esp/NEXT_MOVE.ESP:252
+requirement	<root>	class	temp_remove_w_c	6	1	gog-esp/NEXT_MOVE.ESP:255
+requirement	?	unknown	get_potential2	2	1	gog-esp/NZTEN.ESP:143
+requirement	?	unknown	get_potential_2	2	1	gog-esp/NZ_KYOKA.ESP:497
+requirement	library_utility	instance	save	2	1	gog-esp/PAT_DATA.ESP:90
+requirement	as_program	class	ordinary	5	1	gog-esp/PBM_CMD.ESP:104
+requirement	multi_column_menu	instance	read	2	1	gog-esp/PBM_CMD.ESP:413
+requirement	?	ambiguous	remove	4	1	gog-esp/PHASE_A.ESP:70
+requirement	{pmacs_window|standard_io_window}	instance	getl	2	1	gog-esp/READTERM.ESP:87
+requirement	?	unknown	set_area_limit_execution	5	1	gog-esp/REMOTE_P.ESP:24
+requirement	rs232c	class	create	2	1	gog-esp/RS232C.ESP:20
+requirement	rs232c	instance	set_mode	6	1	gog-esp/RS232C.ESP:21
+requirement	rs232c	instance	open	1	1	gog-esp/RS232C.ESP:22
+requirement	rs232c	instance	close	1	1	gog-esp/RS232C.ESP:28
+requirement	<root>	class	set_all_futokoro_cd	3	1	gog-esp/SSEMEAI.ESP:49
+requirement	?	unknown	get_engunte	2	1	gog-esp/SSEMEAI.ESP:106
+requirement	?	unknown	get_jaku_houi	2	1	gog-esp/SSEMEAI.ESP:114
+requirement	?	unknown	get_fkakudai_cd	2	1	gog-esp/SSEMEAI.ESP:119
+requirement	array	instance	put_contents	2	1	gog-esp/STOPWATCH.ESP:29
+requirement	<root>	slot	!main	0	1	gog-esp/TEST.ESP:46
+requirement	as_program	slot	!p	0	1	gog-esp/TESTP.ESP:11
+requirement	<root>	class	append_without_down	3	1	gog-esp/TJPLAY.ESP:50
+requirement	?	unknown	get_dpth	2	1	gog-esp/TJPLAY.ESP:178
+requirement	?	unknown	get_ren_of_kokouten	2	1	gog-esp/UPRKR.ESP:192
+requirement	?	unknown	get_renketumark	2	1	gog-esp/UPRKR.ESP:325
+requirement	?	unknown	get_created_ren	2	1	gog-esp/UPRKR.ESP:484
+requirement	?	unknown	get_adjacentren_of_deletedren	2	1	gog-esp/UPRKR.ESP:485
+requirement	?	unknown	clear_cv	1	1	gog-esp/UP_CV.ESP:95
+requirement	?	ambiguous	remove_last	2	1	gog-esp/UP_FAMILY.ESP:66
+requirement	menu	nature	(inherited)		1	gog-esp/CGS_M_W.ESP:4
+requirement	as_pimos_string_io_device	nature	(inherited)		1	gog-esp/FEP.ESP:4
+requirement	monogyny_hash_index	nature	(inherited)		1	gog-esp/THASH.ESP:10
+requirement	file_backup	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:97
+requirement	fdd_multi_volume	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:114
+requirement	ftp_user	ref	(#ref)		1	gog-esp/CGS_INSTALLER.esp:152
+requirement	bitmap	ref	(#ref)		1	gog-esp/DISPB1.ESP:36
+requirement	rs232c	ref	(#ref)		1	gog-esp/RS232C.ESP:20

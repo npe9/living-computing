@@ -1,0 +1,49 @@
+% TM-100 PDF page 15, printed folio 13. End of Figure 3.6 "Part of class 'stream'";
+% Section 3.2 (2) Stream variations, (a) Channel: Figure 3.7 "Part of class 'channel'".
+% Transcribed by eye from 300dpi crops.
+% [transcriber] ":remove_object(Stream!post_queue, Object), )," -- a comma before the
+% closing parenthesis, as printed.
+% Prose: "Several variations of streams are defined on top of class 'stream', which is a
+% primitive class for all other stream type classes. ... A channel is different from a
+% stream in that it has a post queue for messages rather than for general objects and
+% that it handles a sender of messages. ... the slot 'post_queue' is overridden in the
+% channel, so that the post queue of the channel can manage messages more efficiently."
+% After the figure: "The predicates, :send and :receive, are defined by using :put and
+% :get of class 'stream'.  Note that all the predicates of class
+% 'post_queue_for_message' which are called by a channel must be compatible to those
+% of class 'post_queue' called by a stream.  A message is defined by class 'message'."
+% (continues PDF p16)
+
+            ;   :self(#process, Process),
+                :hook(Stream!waiting_queue, Process),
+                :suspend(Process, stream(Stream)),
+                :remove_object(Stream!post_queue, Object), ),
+            :allow_interrupt(#process);
+
+    end.
+-----------------------------------------------------------------------
+                    Figure 3.6  Part of class 'stream'
+
+% ---- Figure 3.7 ----
+-----------------------------------------------------------------------
+    class  channel  has
+
+    nature      stream;
+
+    instance
+
+    attribute ( post_queue  :=
+                        Queue :- :create(#post_queue_for_message, Queue) );
+                    % Overrides 'post_queue' of class 'stream'
+
+    :send(Channel, Message, Sender) :-
+            :set_sender(Message, Sender),
+            :put(Channel, Message);
+
+    :receive(Channel, Message, Sender) :-
+            :get(Channel, Message),
+            :get_sender(Message, Sender);
+
+    end.
+-----------------------------------------------------------------------
+                    Figure 3.7  Part of class 'channel'

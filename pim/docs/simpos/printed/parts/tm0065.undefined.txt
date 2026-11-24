@@ -1,0 +1,10 @@
+# TM-065: names used in the printed listings but not defined in the report
+:new/1 (class method, called as :new(Class,Obj))       PDF p12, p15   -- built-in object creation (ESP; INFERENCE)
+:retrieve/2 (class, called :retrieve(Class,File,Pathname)) PDF p12
+:get_size/2  (:get_size(Window,Width,Height))           PDF p15
+:clear_rectangle/4                                       PDF p15
+:start/0                                                 PDF p15
+#binary_file_tap  (class)                                PDF p13
+with_display, as_inside, as_label  (natures)             PDF p15
+as_permanent_object, as_resource, with_lock (natures of real file) PDF p13
+bodies of :create_file, :open/0, :close, :dispose, :read, :write, :draw_border, :draw_label, :clear_label  ('...' in original)

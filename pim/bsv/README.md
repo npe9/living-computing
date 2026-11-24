@@ -71,7 +71,7 @@ instruction and is tested by trace comparison with it.
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element |
-| `PimmShBox.bsv` | shoen box (stage 1): the shoen record, the report stream, start, the count at the end of a reduction and termination |
+| `PimmShBox.bsv` | shoen box (stages 1 and 2): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
@@ -80,7 +80,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test (with arguments, only the tests named). Forty tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Forty-four tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -156,7 +156,15 @@ consumers): a goal run in a shoen with `started`, `terminated`
 reported; a shoen not started; one whose goal waits; a shoen inside a
 shoen; the records' counts read from memory (`PimmShBox.bsv`;
 `../docs/pimm_semantics.md` "Shoen" says what is PIM/m-sourced, what
-is carried over from PDSS and VPIM, and what is ours). `alt`: `read_eagerly` (what the compiler
+is carried over from PDSS and VPIM, and what is ours). `shoen2`: the
+shoen's second stage, `shoen_statistics` and `remove_shoen`, driven
+through the image's own monitors (`ipl:ipl_monitor/3`,
+`top:bios_monitor/3`, `top:top_level_monitor/4`) on `execute/4`'s
+report: `started`, `terminated`, `statistics_started`,
+`statistics(H, L)` (H, L checked against twice the reductions counted
+on the trace), `return_resource(0, 0)`, the stream closed, `Shut =
+shut`; a nested shoen whose parent now terminates; a remove before
+the end; statistics of a running shoen. `alt`: `read_eagerly` (what the compiler
 writes for `alternatively`), the guard `not_equal` and
 `wait_vector_1`, `_4`, `_6`, on `scsi_fep_util`,
 `scsi_fep_file:reply_with_attention/4`, `scsi:request_manager/3` and
@@ -169,15 +177,26 @@ only). `elw`: `string_operation` waits on an element of its vector
 that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
 `b_string`'s real sites, and `builtin_utility:append_string/2`).
 `reuse`: `put_reused_structure` of a vector of seven
-(`scsi_fep_file:request_device_io/6`). `scsi`: `scsi_init` and
-`scsi_command` (`PimmScsiBox.bsv`) at their sites
-(`scsi:create/2`, `scsi:command_executer/2`), the device on the
-tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE,
-a reply cut in two, a command that waits finished inside a SEND and
-one at a poll, an element waited for; the bus bytes compared as `B`
-lines. `ref_scsi.py`'s IPL parts are not on the core yet (a merger
-input bound to a vector; `lockstep_scsi.py --reference` runs them as
-scripts on the reference).
+(`scsi_fep_file:request_device_io/6`). `prio`: `current_node` (one
+node: 0 of 1) on code the bench writes, and
+`calculate_priority_from_current` at its stub and at the image's
+`shoen:execute/7` (PDSS's formula, the range and the current priority
+ours). `atom`: `top:go1/4`'s atom-number server, with
+`supply_atom_number` (what it does is not sourced: its inputs dropped,
+its output never bound, ours; the bench binds it) and a merger input
+bound to a vector (`throw_atom_number_client/4`'s `{E, F}`; the merger
+box's `spread`, the goals made through the argument registers).
+`xmod`: an external call between two modules the IPL loaded
+(`pimm_patch_mkdir360E.sav` through `ipl_loader:load/4`, the bench
+binding the module variable as the linker would; the hash box's
+dereference of the module field), about 7.4 M trace lines.
+`scsi`: `scsi_init` and `scsi_command` (`PimmScsiBox.bsv`) at their
+sites (`scsi:create/2`, `scsi:command_executer/2`), the device on the
+tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE, a
+reply cut in two, a command that waits finished inside a SEND and one
+at a poll, an element waited for; then `ref_scsi.py`'s six IPL parts,
+the IPL reading its list and its files through its own SCSI stack; the
+bus bytes compared as `B` lines.
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -185,9 +204,10 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 128
-instructions (as counted before; the count's rule is not stated,
-`../docs/gap_analysis.md`) plus `scsi_init` and `scsi_command`; goals as
+State: 136
+instructions (a recount, 2026-11-23: 136 handlers in `pimm.py`, all on
+both models since `scsi_init` and `scsi_command` joined; 134 without our
+two stubs; the earlier 128 and 130 were increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
@@ -195,9 +215,10 @@ its stub (layouts: `../asm/pimm_layout.py`, the project's design, see
 `../docs/pimm_semantics.md`). Sequential (the next fetch waits for the
 instruction before it), no timing claimed. The MRB is kept, and `set_vector_element`
 updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are always copied
-(`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen` and termination only
-(a goal knows its shoen, a shoen counts its goals and children and reports `started` and `terminated`);
-its other built-ins, resources and a failure inside a shoen stop the model.
+(`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
+(a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
+`terminated`, `statistics_started`, `statistics`, `return_resource` and its close);
+its other built-ins (stop, abort, resource, profile), `raise`, `resource_low` and a failure inside a shoen stop the model or are never reported.
 Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.

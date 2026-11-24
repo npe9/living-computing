@@ -1,0 +1,43 @@
+% TM-100 PDF pages 5-7 (printed folios 3-5). Section 2: operation signatures printed in the
+% running text (interface only, no bodies). Transcribed by eye from 300dpi crops.
+% Note: p6 says of :invoke "where 'Program' is a program class" (a class-level call), whereas the
+% printed as_program (PDF p11) defines :invoke(Program) as an INSTANCE predicate. As printed.
+
+% PDF p5 -- 2.1 (1) Process: "A process is defined as an object which accepts operations to
+% control its state:"
+%   o To activate a process
+        :activate(Process,Program)
+%   o To suspend a process
+        :suspend(Process,Reason)
+%   o To resume a process
+        :resume(Process,Reason)
+%   o To terminate a process
+        :terminate(Process)
+
+% PDF p6 -- 2.1 (2) Program: "A predicate for a program invocation is defined as:"
+        :invoke(Program)
+% "where 'Program' is a program class.  The main program is specified by the instance
+%  predicate :goal(Program)."
+
+% PDF p6 -- 2.2 (1) Stream
+%   o To insert an object into the stream
+        :put(Stream,Object)
+%   o To remove an object from the stream
+        :get(Stream,Object)
+
+% PDF p7 -- 2.2 (2) Stream variations: channel
+%   o To send a message to the channel with specifying a sender (channel) for a reply
+        :send(Channel, Message, Sender)
+%   o To receive a message from the channel with a sender returned
+        :receive(Channel, Message, Sender)
+
+% PDF p7 -- port: "A port is a message-box for two-way communication based on channels.  Four
+% major operations on a port are:"
+%   o To send a message to connected ports
+        :send(Port, Message, Sender)
+%   o To receive a message from the port
+        :receive(Port, Message, Sender)
+%   o To connect the port to another
+        :connect(Port, Another_port)
+%   o To disconnect each other
+        :disconnect(Port, Another_port)

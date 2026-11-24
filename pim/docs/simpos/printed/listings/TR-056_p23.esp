@@ -1,0 +1,15 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 23, printed folio 21. Section 6(2) 'Directory' operations and pathname retrieval.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+% o To retrieve an object with name
+            :find(Directory,Object,Name)
+% o To add an object with name
+            :bind(Directory,Object,Name)
+% o To remove an object with name
+            :remove(Directory,Object,Name)
+% "a pathname can be represented as"
+        "Name1>Name2>..."
+% "and is used in a retrieve operation"
+        :retrieve(Directory,Object,"Name1>Name2>...")

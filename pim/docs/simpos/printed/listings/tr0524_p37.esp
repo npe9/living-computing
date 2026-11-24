@@ -1,0 +1,158 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 37, printed folio 36. Appendix "A  Class Definitions" (continues on PDF p38).
+% Transcribed by eye from 300dpi crops (pdftoppm -r 300; crops in A/work/tr0524/c37*.png, z1/z2.png).
+% Layout: two printed columns; left column first, then right column, separated below by a "%%%% COLUMN" marker line
+% (the marker is ours, not printed). "..." elisions are printed in the original (the report omits code).
+% Transcriber notes:
+%  - Right column, :open/5: the parameter is printed "OpenMde" in the head but "OpenMode" in the body (as printed).
+%  - Right column: the first glyph of the variable printed in ":remote_or_local(..., «?»ode, ...)" and ":g_call(..., «?»ode)"
+%    is a heavy capital that could be N or M; the other capital Ms on the page look different. Read as "Node" is plausible
+%    but not certain, so marked «?».
+%  - Right column, class local_logical_file: the head ":l_call(Class, open, Lfile, Pathname, OpenMode, RequestMode}) :- !,"
+%    has a closing brace with no opening brace, as printed.
+%  - Left column, :accessor/1 body uses variable "File" (not "Lfile"), as printed.
+
+----------------------------------------------------
+class  binary_file  has
+   nature                     % inheritance declaration %
+       remote_binary_file,
+       binary_file_accessor,
+       local_binary_file,
+       p_binary_file,
+       logical_file,
+       with_retrieval ;
+
+          ...
+instance
+%==================================================%
+% External Methods                                 %
+%==================================================%
+:read(Lfile, Buffer, Marker, RequestMode) :- !,
+    :g_call(Lfile, read, {Buffer, Marker, RequestMode}) ;
+
+:add(Lfile, Buffer, Marker, RequestMode) :- !,
+    :g_call(Lfile, add, {Buffer, Marker, RequestMode}) ;
+
+:accessor(Lfile, Accessor) :- !,
+    :create(#binary_file_accessor, Accessor, File) ;
+
+:submit_add(Lfile, Buffer, Marker,
+                         MsgID, RequestMode) :- !,
+    :g_call(Lfile, submit_add,
+            {Buffer, Marker, MsgID, RequestMode}) ;
+
+:wait(Lfile, Buffer, Marker, MsgID) :- !,
+    :g_call(Lfile, wait, {Buffer, Marker, MsgID}) ;
+
+          ...
+end.
+----------------------------------------------------
+class  local_binary_file  has
+instance
+%==================================================%
+% Local Methods invoked to an original object      %
+%==================================================%
+:l_call(Lfile, read, {Buffer, Marker, RequestMode}) :- !,
+         ... ,
+    :send_receive(Lfile, input, do_read,
+                  {Buffer, Marker}, RequestMode), ... ;
+
+:l_call(Lfile, add, {Buffer, Marker, RequestMode}) :- !,
+         ... ,
+    :send_receive(Lfile, output, do_add,
+                  {Buffer, Marker}, RequestMode), ... ;
+
+:l_call(Lfile, submit_add,
+       {Buffer, Marker, MsgID, RequestMode}) :- !,
+         ...,
+    :submit(Lfile, output, do_add,
+               {Buffer, Marker}, RequestMode, MsgID) ;
+
+:l_call(Lfile, wait, {Buffer, Marker, MsgID}) :- !,
+         ... ,
+    :wait(Lfile, MsgID, {Buffer, Marker}), ... ;
+
+         ...
+%==================================================%
+% Internal Methods executed under file manager     %
+%==================================================%
+:do_add(Lfile, Buffer, Marker) :- !,
+    :interface(Lfile, Pfile, AccessStatus), ... ,
+    :add(Pfile, Buffer, Marker, AccessStatus), ... ;
+
+:do_read(Lfile, Buffer, Marker) :- !,
+    :interface(Lfile, Pfile, AccessStatus), ... ,
+    :read(Pfile, Buffer, Marker, AccessStatus), ... ;
+
+         ...
+end.
+----------------------------------------------------
+%%%% COLUMN (right column of PDF p37 follows; marker not printed)
+----------------------------------------------------
+class  logical_file  has
+   nature
+       file_accessor,
+       local_logical_file,
+       p_logical_file,
+       logical_object,
+       as_agent_of_physical_file,
+       as_resource,
+       as_file,
+       with_file_capability ;
+
+%==================================================%
+% External Methods                                 %
+%==================================================%
+:open(Class, Lfile, Pathname, OpenMde, RequestMode) :- !,
+    :remote_or_local(#pathname, Pathname,
+                     «?»ode, _, FullPathname, _),
+    :g_call(Class, open,
+     {Lfile, FullPathname, OpenMode, RequestMode}, «?»ode) ;
+          ...
+end.
+----------------------------------------------------
+class local_logical_file has
+
+%==================================================%
+% Local Methods invoked to an original object      %
+%==================================================%
+:l_call(Class, open, Lfile, Pathname,
+                          OpenMode, RequestMode}) :- !,
+    :retrieve(#directory, Lfile, Pathname, FullPathname),
+         ... ,
+    :set_full_pathname(Lfile, FullPathname),
+    :open(Lfile, OpenMode, RequestMode) ;
+
+         ...
+
+instance
+:l_call(Lfile, open, {OpenMode, RequestMode}) :- !,
+    :mode_type(Lfile, OpenMode, OpType), ... ,
+    :send_receive(Lfile, OpType, do_open,
+                         {OpenMode}, RequestMode),
+         ... ;
+
+         ...
+%==================================================%
+% Internal Methods executed under file manager     %
+%==================================================%
+:do_open(Lfile, OpenMode) :- !,
+         ... ,
+    :interface(Lfile, Pfile, Status),
+    :open(Pfile, OpenMode, Lfile, Status), ... ;
+
+         ...
+end.
+----------------------------------------------------
+class  logical_object has
+   nature
+       as_agent_of_physical_object,
+       with_capability,
+       with_internal_communication,
+       with_access_status,
+       remote_object ;            %% inherit ROAM %%
+
+          ...
+
+end.
+----------------------------------------------------

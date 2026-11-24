@@ -1,0 +1,494 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	776	fuzclust/fuzclust/src/ahp_menu.comp:41
+builtin		builtin	vector_element	3	167	fuzclust/fuzclust/src/cyclic.eism:254
+builtin		builtin	set_vector_element	3	107	fuzclust/fuzclust/src/cyclic.eism:481
+builtin		builtin	:=	2	105	fuzclust/fuzclust/src/cliant.grape:45
+builtin		builtin	>	2	104	fuzclust/fuzclust/src/a_line.graph:108
+builtin		builtin	equal_string	2	100	fuzclust/fuzclust/src/cliant.grape:76
+builtin		builtin	=<	2	98	fuzclust/fuzclust/src/ahp_menu.comp:58
+builtin		builtin	==	2	97	fuzclust/fuzclust/src/ahp_tool.graph:289
+builtin		builtin	cut_and_fail	0	96	fuzclust/fuzclust/src/cliant.grape:90
+builtin		builtin	melt	2	91	fuzclust/fuzclust/src/cliant.grape:65
+builtin		builtin	<	2	81	fuzclust/fuzclust/src/a_line.graph:87
+builtin		builtin	freeze	2	56	fuzclust/fuzclust/src/cliant.grape:135
+builtin		builtin	is	2	53	fuzclust/fuzclust/src/a_line.graph:164
+builtin		builtin	\==	2	43	fuzclust/fuzclust/src/cliant.grape:364
+builtin		builtin	>=	2	42	fuzclust/fuzclust/src/ahp_menu.comp:60
+builtin		builtin	string	3	42	fuzclust/fuzclust/src/ahp_menu.comp:57
+builtin		builtin	set_substring	4	34	fuzclust/fuzclust/src/ctl.grape:291
+builtin		builtin	repeat	0	27	fuzclust/fuzclust/src/cliant.grape:81
+builtin		builtin	integer_to_floating_point	2	24	fuzclust/fuzclust/src/a_line.graph:166
+builtin		builtin	integer	1	22	fuzclust/fuzclust/src/cliant.grape:271
+builtin		builtin	not_equal_string	2	20	fuzclust/fuzclust/src/comp.comp:413
+builtin		builtin	new_heap_vector	2	20	fuzclust/fuzclust/src/cyclic.eism:480
+builtin		constant a#b	mouse#l		20	
+builtin		builtin	unbound	1	17	fuzclust/fuzclust/src/draw.graph:475
+builtin		builtin	substring	4	15	fuzclust/fuzclust/src/ahp_menu.comp:70
+builtin		builtin	divide_with_remainder	4	14	fuzclust/fuzclust/src/mat_table.comp:128
+builtin		builtin	bound	1	13	fuzclust/fuzclust/src/froms.eism:286
+builtin		builtin	floating_point_to_integer	2	11	fuzclust/fuzclust/src/compare.comp:163
+builtin		constant a#b	mouse#r		6	
+builtin		constant a#b	string#str		5	
+builtin		constant a#b	key#lf		5	
+builtin		builtin	new_string	3	4	fuzclust/fuzclust/src/hikaku.comp:34
+builtin		builtin	minus	2	3	fuzclust/fuzclust/src/draw.graph:399
+builtin		builtin	atom	1	2	fuzclust/fuzclust/src/trans.eism:76
+builtin		builtin	=\=	2	2	fuzclust/fuzclust/src/matrix.tree:211
+builtin		builtin	set_string_element	3	2	fuzclust/fuzclust/src/hikaku.comp:454
+builtin		builtin	atomic	1	1	fuzclust/fuzclust/src/uti.eism:34
+builtin		builtin	heap_vector	2	1	fuzclust/fuzclust/src/froms.eism:281
+builtin		builtin	first	2	1	fuzclust/fuzclust/src/froms.eism:294
+builtin		builtin	second	2	1	fuzclust/fuzclust/src/froms.eism:295
+requirement	?	unknown	get_at	3	224	fuzclust/fuzclust/src/comp.comp:210
+requirement	as_program	instance	set_slot	3	154	fuzclust/fuzclust/src/ahp_menu.comp:20
+requirement	as_program	instance	get_slot	3	138	fuzclust/fuzclust/src/ahp_menu.comp:37
+requirement	?	unknown	activate	1	126	fuzclust/fuzclust/src/ahp_menu.comp:48
+requirement	?	unknown	putf	2	92	fuzclust/fuzclust/src/decide_par.ctl:62
+requirement	string	class	append	3	85	fuzclust/fuzclust/src/ahp_tool.graph:110
+requirement	string	ref	(#ref)		85	fuzclust/fuzclust/src/ahp_tool.graph:110
+requirement	?	unknown	draw_line	8	73	fuzclust/fuzclust/src/a_line.graph:88
+requirement	<root>	instance	set_slot	3	73	fuzclust/fuzclust/src/cliant.grape:155
+requirement	<root>	instance	get_slot	3	71	fuzclust/fuzclust/src/comp.comp:182
+requirement	?	unknown	deactivate	1	59	fuzclust/fuzclust/src/ahp_tool.graph:200
+requirement	symbolizer	ref	(#ref)		53	fuzclust/fuzclust/src/cliant.grape:270
+requirement	?	unknown	get	2	46	fuzclust/fuzclust/src/cliant.grape:198
+requirement	hash_index	class	create	3	46	fuzclust/fuzclust/src/cliant.grape:195
+requirement	hash_index	ref	(#ref)		46	fuzclust/fuzclust/src/cliant.grape:195
+requirement	?	unknown	get_contents_at	3	46	fuzclust/fuzclust/src/comp.comp:209
+requirement	monogyny_list_index	ref	(#ref)		45	fuzclust/fuzclust/src/comp.comp:38
+requirement	monogyny_list_index	class	create	2	45	fuzclust/fuzclust/src/comp.comp:38
+requirement	?	unknown	get_slot	3	43	fuzclust/fuzclust/src/ahp_tool.graph:159
+requirement	?	unknown	set_slot	3	43	fuzclust/fuzclust/src/ahp_tool.graph:26
+requirement	?	unknown	read	2	43	fuzclust/fuzclust/src/ahp_menu.comp:118
+requirement	?	unknown	add_at	3	39	fuzclust/fuzclust/src/comp.comp:468
+requirement	symbolizer	class	get_number_string	3	39	fuzclust/fuzclust/src/compare.comp:167
+requirement	?	unknown	put_at	3	38	fuzclust/fuzclust/src/comp.comp:416
+requirement	?	unknown	draw_filled_rectangle	6	37	fuzclust/fuzclust/src/draw.graph:240
+requirement	?	unknown	get_contents	2	33	fuzclust/fuzclust/src/comp.comp:204
+requirement	<root>	class	new	2	33	fuzclust/fuzclust/src/ahp_tool.graph:64
+requirement	?	unknown	getl	2	32	fuzclust/fuzclust/src/ctl.grape:288
+requirement	?	unknown	draw_string	5	30	fuzclust/fuzclust/src/draw.graph:149
+requirement	stream	ref	(#ref)		30	fuzclust/fuzclust/src/ahp_menu.comp:19
+requirement	monogyny_list_index	instance	get_at	3	29	fuzclust/fuzclust/src/comp.comp:225
+requirement	stream	class	create	2	29	fuzclust/fuzclust/src/ahp_menu.comp:19
+requirement	process	ref	(#ref)		28	fuzclust/fuzclust/src/ahp_menu.comp:17
+requirement	?	unknown	get_size	3	28	fuzclust/fuzclust/src/ahp_menu.comp:40
+requirement	?	unknown	set_size	3	27	fuzclust/fuzclust/src/ahp_menu.comp:46
+requirement	hash_index	instance	add_at	3	25	fuzclust/fuzclust/src/draw.graph:183
+requirement	?	unknown	set_item_status	3	24	fuzclust/fuzclust/src/struct.eism:146
+requirement	monogyny_list_index	instance	put_at	3	23	fuzclust/fuzclust/src/comp.comp:213
+requirement	process	class	create	2	22	fuzclust/fuzclust/src/ahp_menu.comp:17
+requirement	?	unknown	get_window_node	3	21	fuzclust/fuzclust/src/datamng.grape:101
+requirement	?	unknown	put	2	20	fuzclust/fuzclust/src/ahp_menu.comp:49
+requirement	?	unknown	set_send_data_size	2	20	fuzclust/fuzclust/src/ctl.grape:292
+requirement	?	unknown	data_buffer	2	19	fuzclust/fuzclust/src/ctl.grape:290
+requirement	process	instance	activate	2	18	fuzclust/fuzclust/src/ctl.grape:89
+requirement	hash_index	instance	get_at	3	18	fuzclust/fuzclust/src/draw.graph:179
+requirement	standard_io_buffer	ref	(#ref)		18	fuzclust/fuzclust/src/ctl.grape:75
+requirement	?	unknown	add_item	3	17	fuzclust/fuzclust/src/cliant.grape:224
+requirement	?	unknown	flash	1	17	fuzclust/fuzclust/src/decide_pro.ctl:51
+requirement	?	unknown	clear	1	17	fuzclust/fuzclust/src/ahp_tool.graph:265
+requirement	as_program	nature	(inherited)		16	fuzclust/fuzclust/src/ahp_menu.comp:10
+requirement	?	unknown	putt	2	16	fuzclust/fuzclust/src/ctl.grape:287
+requirement	?	unknown	draw_string	6	16	fuzclust/fuzclust/src/matrix.clu:81
+requirement	standard_io_window	class	create	3	15	fuzclust/fuzclust/src/envget.ctl:81
+requirement	essential_window	class	create	3	15	fuzclust/fuzclust/src/ahp_tool.graph:186
+requirement	?	unknown	set_superior	2	15	fuzclust/fuzclust/src/ahp_menu.comp:47
+requirement	essential_window	ref	(#ref)		15	fuzclust/fuzclust/src/ahp_tool.graph:186
+requirement	standard_io_window	ref	(#ref)		15	fuzclust/fuzclust/src/envget.ctl:81
+requirement	hash_index	instance	get_contents_at	3	15	fuzclust/fuzclust/src/get_rui.att:102
+requirement	<root>	class	get_slot	3	15	fuzclust/fuzclust/src/ahp_menu.comp:76
+requirement	?	unknown	free	1	15	fuzclust/fuzclust/src/ctl.grape:98
+requirement	net_talk_window	ref	(#ref)		15	fuzclust/fuzclust/src/ahp_tool.graph:159
+requirement	?	unknown	get_position	3	14	fuzclust/fuzclust/src/ahp_tool.graph:73
+requirement	as_program	class	create	2	14	fuzclust/fuzclust/src/ahp_menu.comp:18
+requirement	<root>	class	set_slot	3	14	fuzclust/fuzclust/src/cluster.clu:87
+requirement	standard_io_buffer	class	create	2	13	fuzclust/fuzclust/src/ctl.grape:75
+requirement	as_program	class	new	2	13	fuzclust/fuzclust/src/comp.comp:170
+requirement	?	unknown	set_title	2	13	fuzclust/fuzclust/src/get_obj.grape:73
+requirement	stream	instance	put	2	13	fuzclust/fuzclust/src/ahp_tool.graph:144
+requirement	?	unknown	draw_rectangle	8	13	fuzclust/fuzclust/src/draw.graph:236
+requirement	?	ambiguous	kill	1	12	fuzclust/fuzclust/src/ahp_tool.graph:63
+requirement	?	unknown	exterminate	1	12	fuzclust/fuzclust/src/ahp_tool.graph:166
+requirement	?	unknown	putl	2	12	fuzclust/fuzclust/src/ctl.grape:434
+requirement	list	class	create	2	12	fuzclust/fuzclust/src/draw.graph:108
+requirement	hash_index	instance	remove_at	3	12	fuzclust/fuzclust/src/get_rui.att:329
+requirement	?	unknown	clear_items	1	12	fuzclust/fuzclust/src/get_obj.grape:85
+requirement	network_node_name	class	get_my_node	2	12	fuzclust/fuzclust/src/comp.comp:409
+requirement	network_node_name	ref	(#ref)		12	fuzclust/fuzclust/src/comp.comp:409
+requirement	?	unknown	remove_at	3	11	fuzclust/fuzclust/src/datamng.grape:380
+requirement	?	unknown	putc	2	11	fuzclust/fuzclust/src/get_obj.grape:56
+requirement	?	unknown	write_lines	2	11	fuzclust/fuzclust/src/ahp_tool.graph:234
+requirement	?	unknown	get_keys	2	11	fuzclust/fuzclust/src/datamng.grape:85
+requirement	?	unknown	erase_cursor	1	11	fuzclust/fuzclust/src/ahp_tool.graph:127
+requirement	stream	instance	get	2	11	fuzclust/fuzclust/src/ahp_menu.comp:25
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_string	5	11	fuzclust/fuzclust/src/compare.comp:51
+requirement	?	ambiguous	show	2	11	fuzclust/fuzclust/src/cyclic.eism:42
+requirement	?	unknown	post	1	10	fuzclust/fuzclust/src/ahp_tool.graph:130
+requirement	?	unknown	move_cursor	3	10	fuzclust/fuzclust/src/ahp_tool.graph:233
+requirement	?	unknown	draw_filled_rectangle	8	10	fuzclust/fuzclust/src/input_mat.clu:69
+requirement	list_index	class	create	2	9	fuzclust/fuzclust/src/comp.comp:439
+requirement	temporary_menu	class	create	3	9	fuzclust/fuzclust/src/ahp_menu.comp:96
+requirement	?	unknown	add	2	9	fuzclust/fuzclust/src/msgport.grape:41
+requirement	temporary_menu	ref	(#ref)		9	fuzclust/fuzclust/src/ahp_menu.comp:96
+requirement	?	unknown	add_last	2	9	fuzclust/fuzclust/src/draw.graph:180
+requirement	list_index	instance	add_at	3	9	fuzclust/fuzclust/src/comp.comp:440
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_filled_rectangle	6	9	fuzclust/fuzclust/src/compare.comp:73
+requirement	?	unknown	putl	1	8	fuzclust/fuzclust/src/dispmsg.grape:31
+requirement	list	instance	add_last	2	8	fuzclust/fuzclust/src/draw.graph:184
+requirement	font	class	create	3	8	fuzclust/fuzclust/src/ahp_tool.graph:42
+requirement	standard_io_buffer	instance	getl	2	8	fuzclust/fuzclust/src/ctl.grape:77
+requirement	pmacs_window	class	create	3	8	fuzclust/fuzclust/src/g_menu_par.ctl:28
+requirement	font	ref	(#ref)		8	fuzclust/fuzclust/src/ahp_tool.graph:42
+requirement	list	ref	(#ref)		8	fuzclust/fuzclust/src/draw.graph:108
+requirement	pmacs_window	ref	(#ref)		8	fuzclust/fuzclust/src/g_menu_par.ctl:28
+requirement	?	unknown	get_inside_units	3	8	fuzclust/fuzclust/src/draw.graph:55
+requirement	?	unknown	see	2	8	fuzclust/fuzclust/src/froms.eism:239
+requirement	?	unknown	background	2	8	fuzclust/fuzclust/src/ahp_tool.graph:139
+requirement	network_listener_buffer	class	create	4	8	fuzclust/fuzclust/src/ctl.grape:226
+requirement	network_listener_buffer	ref	(#ref)		8	fuzclust/fuzclust/src/ctl.grape:226
+requirement	?	unknown	add_items	3	7	fuzclust/fuzclust/src/get_obj.grape:86
+requirement	?	unknown	add_contents	2	7	fuzclust/fuzclust/src/froms.eism:24
+requirement	net_talk_window	class	exe_help_menu	3	7	fuzclust/fuzclust/src/ahp_tool.graph:176
+requirement	?	unknown	write_line	3	7	fuzclust/fuzclust/src/matrix.clu:298
+requirement	process	class	self	2	6	fuzclust/fuzclust/src/ahp_menu.comp:50
+requirement	inferior_window	class	create	3	6	fuzclust/fuzclust/src/comp.comp:74
+requirement	standard_io_window	instance	activate	1	6	fuzclust/fuzclust/src/envget.ctl:82
+requirement	symbolizer	class	enter_atom	3	6	fuzclust/fuzclust/src/node.tree:204
+requirement	standard_io_buffer	instance	putt	2	6	fuzclust/fuzclust/src/ctl.grape:76
+requirement	?	unknown	get_contents_with_key	2	6	fuzclust/fuzclust/src/datamng.grape:120
+requirement	standard_menu	ref	(#ref)		6	fuzclust/fuzclust/src/cliant.grape:315
+requirement	multi_column_menu	ref	(#ref)		6	fuzclust/fuzclust/src/ahp_menu.comp:77
+requirement	list_stack	instance	push	2	6	fuzclust/fuzclust/src/matrix.clu:27
+requirement	superior_window	class	create	3	6	fuzclust/fuzclust/src/cliant.grape:366
+requirement	standard_menu	class	create	3	6	fuzclust/fuzclust/src/cliant.grape:315
+requirement	net_spawn_user	ref	(#ref)		6	fuzclust/fuzclust/src/ctl.grape:92
+requirement	?	unknown	draw_line	5	6	fuzclust/fuzclust/src/hikaku.comp:400
+requirement	multi_column_menu	class	create	3	6	fuzclust/fuzclust/src/ahp_menu.comp:77
+requirement	essential_window	instance	get_size	3	6	fuzclust/fuzclust/src/ahp_tool.graph:188
+requirement	?	unknown	set_name	2	6	fuzclust/fuzclust/src/struct.eism:191
+requirement	essential_window	instance	kill	1	6	fuzclust/fuzclust/src/ahp_tool.graph:188
+requirement	monogyny_list_index	instance	get_contents	2	6	fuzclust/fuzclust/src/comp.comp:275
+requirement	monogyny_list_index	instance	add_at	3	6	fuzclust/fuzclust/src/comp.comp:438
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_line	8	6	fuzclust/fuzclust/src/compare.comp:45
+requirement	net_spawn_user	class	spawn	7	6	fuzclust/fuzclust/src/ctl.grape:92
+requirement	?	ambiguous	receive	2	6	fuzclust/fuzclust/src/ctl.grape:125
+requirement	as_program	class	get_slot	3	6	fuzclust/fuzclust/src/hikaku.comp:932
+requirement	stream_set	ref	(#ref)		6	fuzclust/fuzclust/src/msgport.grape:15
+requirement	?	unknown	move_to_first	1	5	fuzclust/fuzclust/src/get_obj.grape:111
+requirement	list	instance	get_contents	2	5	fuzclust/fuzclust/src/froms.eism:23
+requirement	?	ambiguous	create	3	5	fuzclust/fuzclust/src/cyclic.eism:95
+requirement	?	unknown	set_position	3	5	fuzclust/fuzclust/src/help.grape:67
+requirement	standard_io_buffer	instance	reset	1	5	fuzclust/fuzclust/src/cyclic.eism:509
+requirement	?	unknown	stick_tap	2	5	fuzclust/fuzclust/src/cyclic.eism:149
+requirement	sash	nature	(inherited)		5	fuzclust/fuzclust/src/temp.graph:9
+requirement	messenger	ref	(#ref)		5	fuzclust/fuzclust/src/datamng.grape:104
+requirement	menu	ref	(#ref)		5	fuzclust/fuzclust/src/ahp_tool.graph:198
+requirement	?	unknown	get_inside_size	3	5	fuzclust/fuzclust/src/ahp_tool.graph:230
+requirement	standard_io_buffer	class	create	3	5	fuzclust/fuzclust/src/decide_par.ctl:144
+requirement	?	unknown	putf	3	5	fuzclust/fuzclust/src/get_rui.att:213
+requirement	essential_window	instance	write_line	2	5	fuzclust/fuzclust/src/sketch.graph:49
+requirement	net_talk_window	slot	!obj	0	5	fuzclust/fuzclust/src/ahp_tool.graph:159
+requirement	menu	class	create	3	5	fuzclust/fuzclust/src/ahp_tool.graph:198
+requirement	?	unknown	proceed	1	5	fuzclust/fuzclust/src/froms.eism:241
+requirement	?	unknown	read_click_with_position	4	5	fuzclust/fuzclust/src/help.grape:46
+requirement	stream_set	class	create	2	5	fuzclust/fuzclust/src/msgport.grape:15
+requirement	stream_set	instance	add	2	5	fuzclust/fuzclust/src/msgport.grape:16
+requirement	essential_on_off_menu	instance	set_item_status	3	5	fuzclust/fuzclust/src/read_mato.ctl:22
+requirement	?	unknown	at_end	1	4	fuzclust/fuzclust/src/cyclic.eism:153
+requirement	?	unknown	show	1	4	fuzclust/fuzclust/src/decide_par.ctl:41
+requirement	?	unknown	reshape	5	4	fuzclust/fuzclust/src/help.grape:69
+requirement	?	unknown	read	3	4	fuzclust/fuzclust/src/compare.comp:87
+requirement	?	unknown	activate	2	4	fuzclust/fuzclust/src/ahp_menu.comp:24
+requirement	temporary_window	class	create	3	4	fuzclust/fuzclust/src/comp.comp:68
+requirement	mathematical_functions	ref	(#ref)		4	fuzclust/fuzclust/src/ave_mat.comp:58
+requirement	?	unknown	put_contents_with_key	2	4	fuzclust/fuzclust/src/hikaku.comp:586
+requirement	?	unknown	in	2	4	fuzclust/fuzclust/src/cyclic.eism:241
+requirement	standard_temporary_menu	class	create	3	4	fuzclust/fuzclust/src/help.grape:33
+requirement	list_stack	instance	pop	2	4	fuzclust/fuzclust/src/matrix.clu:160
+requirement	hash_index	instance	get_contents_with_key	2	4	fuzclust/fuzclust/src/node.tree:90
+requirement	as_output	nature	(inherited)		4	fuzclust/fuzclust/src/temp.graph:9
+requirement	standard_temporary_menu	ref	(#ref)		4	fuzclust/fuzclust/src/help.grape:33
+requirement	standard_io_window	instance	gett	2	4	fuzclust/fuzclust/src/envget.ctl:83
+requirement	set	class	create	3	4	fuzclust/fuzclust/src/cyclic.eism:530
+requirement	labeled_superior_window	class	create	3	4	fuzclust/fuzclust/src/ahp_tool.graph:75
+requirement	essential_window	instance	write_lines	2	4	fuzclust/fuzclust/src/comp.comp:297
+requirement	labeled_superior_window	ref	(#ref)		4	fuzclust/fuzclust/src/ahp_tool.graph:75
+requirement	as_program	class	set_slot	3	4	fuzclust/fuzclust/src/ahp_tool.graph:23
+requirement	menu	instance	activate	1	4	fuzclust/fuzclust/src/ahp_tool.graph:201
+requirement	menu	instance	read	2	4	fuzclust/fuzclust/src/ahp_tool.graph:202
+requirement	multiple_select_scrolling_menu	class	create	3	4	fuzclust/fuzclust/src/cliant.grape:349
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_string	4	4	fuzclust/fuzclust/src/compare.comp:191
+requirement	?	unknown	empty	1	4	fuzclust/fuzclust/src/cyclic.eism:143
+requirement	?	unknown	get_name_tree	2	4	fuzclust/fuzclust/src/datamng.grape:124
+requirement	?	unknown	word_processor_mode	2	4	fuzclust/fuzclust/src/decide_pro.ctl:47
+requirement	as_server_program	instance	get_slot	3	4	fuzclust/fuzclust/src/envget.ctl:19
+requirement	standard_io_window	instance	set_border_width	2	4	fuzclust/fuzclust/src/g_menu_par.ctl:24
+requirement	as_server_program	instance	give_answer	3	4	fuzclust/fuzclust/src/input.talk:30
+requirement	hash_index	instance	get_contents	2	4	fuzclust/fuzclust/src/node.tree:27
+requirement	standard_io_window	instance	draw_string	5	4	fuzclust/fuzclust/src/sh_window.net:62
+requirement	sorted_sequence	instance	get_contents	2	4	fuzclust/fuzclust/src/uniq_list.eism:66
+requirement	as_server_program	nature	(inherited)		4	fuzclust/fuzclust/src/envget.ctl:6
+requirement	multiple_select_scrolling_menu	ref	(#ref)		4	fuzclust/fuzclust/src/cliant.grape:349
+requirement	list_index	instance	get_at	3	3	fuzclust/fuzclust/src/cyclic.eism:102
+requirement	list	instance	stick_tap	2	3	fuzclust/fuzclust/src/froms.eism:301
+requirement	?	unknown	send	2	3	fuzclust/fuzclust/src/input.talk:56
+requirement	pmacs_window	instance	flash	1	3	fuzclust/fuzclust/src/sh_window.net:76
+requirement	symbolizer	class	get_atom_string	3	3	fuzclust/fuzclust/src/decide_par.ctl:153
+requirement	symbolizer	class	string_to_list	3	3	fuzclust/fuzclust/src/get_obj.grape:109
+requirement	?	unknown	close	1	3	fuzclust/fuzclust/src/help.grape:65
+requirement	standard_io_window	instance	kill	1	3	fuzclust/fuzclust/src/envget.ctl:85
+requirement	set	class	create	2	3	fuzclust/fuzclust/src/cyclic.eism:186
+requirement	pmacs_window	instance	activate	1	3	fuzclust/fuzclust/src/send.mes:45
+requirement	pmacs_window	instance	set_font	2	3	fuzclust/fuzclust/src/sh_window.net:41
+requirement	inferior_window	nature	(inherited)		3	fuzclust/fuzclust/src/window.comp:10
+requirement	as_graphics	nature	(inherited)		3	fuzclust/fuzclust/src/window.comp:10
+requirement	list_index	ref	(#ref)		3	fuzclust/fuzclust/src/comp.comp:439
+requirement	editor_text_buffer	ref	(#ref)		3	fuzclust/fuzclust/src/froms.eism:80
+requirement	set	ref	(#ref)		3	fuzclust/fuzclust/src/cyclic.eism:530
+requirement	superior_window	ref	(#ref)		3	fuzclust/fuzclust/src/compare.comp:33
+requirement	?	unknown	current_buffer	2	3	fuzclust/fuzclust/src/tool.graph:210
+requirement	standard_io_buffer	instance	putf	2	3	fuzclust/fuzclust/src/decide_par.ctl:145
+requirement	standard_io_buffer	instance	gett	2	3	fuzclust/fuzclust/src/decide_par.ctl:148
+requirement	?	unknown	set_inside_units	3	3	fuzclust/fuzclust/src/ahp_tool.graph:229
+requirement	?	unknown	wait	1	3	fuzclust/fuzclust/src/ahp_menu.comp:51
+requirement	?	unknown	count	2	3	fuzclust/fuzclust/src/froms.eism:288
+requirement	essential_scrolling_menu_with_superior_input_buffer	class	create	3	3	fuzclust/fuzclust/src/cliant.grape:368
+requirement	essential_scrolling_menu_with_superior_input_buffer	ref	(#ref)		3	fuzclust/fuzclust/src/cliant.grape:368
+requirement	?	unknown	add_items	4	3	fuzclust/fuzclust/src/get_obj.grape:164
+requirement	?	unknown	retrieve_all_items	2	3	fuzclust/fuzclust/src/get_obj.grape:71
+requirement	?	unknown	delete_item	2	3	fuzclust/fuzclust/src/cliant.grape:223
+requirement	?	unknown	draw_string	4	3	fuzclust/fuzclust/src/draw.graph:263
+requirement	labeled_superior_window	instance	get_size	3	3	fuzclust/fuzclust/src/ahp_tool.graph:106
+requirement	labeled_superior_window	instance	set_label_font	2	3	fuzclust/fuzclust/src/ahp_tool.graph:77
+requirement	window_without_label	class	create	3	3	fuzclust/fuzclust/src/ahp_tool.graph:84
+requirement	window_without_label	instance	set_superior	2	3	fuzclust/fuzclust/src/ahp_tool.graph:87
+requirement	labeled_superior_window	instance	set_title	2	3	fuzclust/fuzclust/src/ahp_tool.graph:111
+requirement	menu	instance	kill	1	3	fuzclust/fuzclust/src/ahp_tool.graph:203
+requirement	multiple_select_scrolling_menu	instance	enable_menu_help_click	1	3	fuzclust/fuzclust/src/cliant.grape:355
+requirement	set	instance	add_contents	2	3	fuzclust/fuzclust/src/cyclic.eism:198
+requirement	network_login_user	class	login_user_list	3	3	fuzclust/fuzclust/src/decide_par.ctl:121
+requirement	essential_on_off_menu	class	create	3	3	fuzclust/fuzclust/src/g_menu_par.ctl:42
+requirement	as_server_program	instance	convert_con_req	6	3	fuzclust/fuzclust/src/input.talk:31
+requirement	standard_popup_window	instance	draw_string	4	3	fuzclust/fuzclust/src/input_mat.clu:35
+requirement	standard_popup_window	instance	draw_string	6	3	fuzclust/fuzclust/src/input_mat.clu:44
+requirement	standard_temporary_window	class	create	3	3	fuzclust/fuzclust/src/input_mat.clu:49
+requirement	standard_temporary_window	instance	erase_cursor	1	3	fuzclust/fuzclust/src/input_mat.clu:51
+requirement	hash_index	instance	get_keys	2	3	fuzclust/fuzclust/src/node.tree:161
+requirement	as_server_program	instance	set_slot	3	3	fuzclust/fuzclust/src/part.grape:128
+requirement	standard_io_window	instance	erase_cursor	1	3	fuzclust/fuzclust/src/sh_window.net:48
+requirement	window_without_label	ref	(#ref)		3	fuzclust/fuzclust/src/ahp_tool.graph:84
+requirement	network_login_user	ref	(#ref)		3	fuzclust/fuzclust/src/decide_par.ctl:121
+requirement	standard_temporary_window	ref	(#ref)		3	fuzclust/fuzclust/src/input_mat.clu:49
+requirement	pmacs_window	instance	current_buffer	2	2	fuzclust/fuzclust/src/sh_window.net:104
+requirement	pmacs_window	instance	get_editor	2	2	fuzclust/fuzclust/src/send.mes:43
+requirement	messenger	class	confirm	2	2	fuzclust/fuzclust/src/get_rui.att:332
+requirement	?	unknown	insert_string	2	2	fuzclust/fuzclust/src/get_obj.grape:114
+requirement	?	unknown	insert	2	2	fuzclust/fuzclust/src/get_obj.grape:115
+requirement	list	instance	put_contents	2	2	fuzclust/fuzclust/src/get_obj.grape:84
+requirement	monogyny_hash_index	class	create	3	2	fuzclust/fuzclust/src/datamng.grape:554
+requirement	list_stack	class	create	2	2	fuzclust/fuzclust/src/matrix.clu:26
+requirement	?	unknown	class_object	2	2	fuzclust/fuzclust/src/msgport.grape:40
+requirement	?	unknown	delete	3	2	fuzclust/fuzclust/src/get_obj.grape:183
+requirement	?	unknown	move_to	2	2	fuzclust/fuzclust/src/sh_window.net:106
+requirement	symbolizer	class	get_number	3	2	fuzclust/fuzclust/src/cliant.grape:270
+requirement	set	instance	get_contents	2	2	fuzclust/fuzclust/src/cyclic.eism:531
+requirement	mathematical_functions	class	ln	3	2	fuzclust/fuzclust/src/ave_mat.comp:58
+requirement	mathematical_functions	class	exp	3	2	fuzclust/fuzclust/src/ave_mat.comp:61
+requirement	temporary_window	instance	activate	1	2	fuzclust/fuzclust/src/comp.comp:130
+requirement	as_mouse_input	nature	(inherited)		2	fuzclust/fuzclust/src/window.comp:10
+requirement	with_superior_input_buffer	nature	(inherited)		2	fuzclust/fuzclust/src/window.comp:10
+requirement	monogyny_hash_index	ref	(#ref)		2	fuzclust/fuzclust/src/datamng.grape:554
+requirement	list_stack	ref	(#ref)		2	fuzclust/fuzclust/src/matrix.clu:26
+requirement	?	unknown	get_editor	2	2	fuzclust/fuzclust/src/decide_pro.ctl:46
+requirement	standard_io_buffer	instance	putf	3	2	fuzclust/fuzclust/src/cyclic.eism:506
+requirement	standard_io_buffer	instance	putl	2	2	fuzclust/fuzclust/src/init.ctl:95
+requirement	?	unknown	set_font	2	2	fuzclust/fuzclust/src/decide_pro.ctl:49
+requirement	?	unknown	beep	1	2	fuzclust/fuzclust/src/cliant.grape:273
+requirement	?	unknown	write	2	2	fuzclust/fuzclust/src/mat_table.comp:252
+requirement	with_icon	nature	(inherited)		2	fuzclust/fuzclust/src/window.net:11
+requirement	superior_window	nature	(inherited)		2	fuzclust/fuzclust/src/window.net:11
+requirement	temporary_window	nature	(inherited)		2	fuzclust/fuzclust/src/temp.graph:9
+requirement	?	unknown	gett	2	2	fuzclust/fuzclust/src/ctl.grape:435
+requirement	?	unknown	reset	1	2	fuzclust/fuzclust/src/tool.graph:427
+requirement	standard_menu	instance	set_title	2	2	fuzclust/fuzclust/src/cliant.grape:338
+requirement	standard_menu	instance	deactivate	1	2	fuzclust/fuzclust/src/tool.graph:190
+requirement	?	unknown	end_of_buffer	2	2	fuzclust/fuzclust/src/sh_window.net:105
+requirement	?	unknown	get_mouse_position	3	2	fuzclust/fuzclust/src/mat_table.comp:124
+requirement	?	unknown	name	2	2	fuzclust/fuzclust/src/struct.eism:133
+requirement	?	unknown	get_item_status	3	2	fuzclust/fuzclust/src/struct.eism:388
+requirement	multiple_select_scrolling_menu	instance	set_help_font	2	2	fuzclust/fuzclust/src/cliant.grape:354
+requirement	{sash|as_output|as_graphics|temporary_window}	instance	erase_cursor	1	2	fuzclust/fuzclust/src/comp.comp:69
+requirement	{sash|as_output|as_graphics|temporary_window}	instance	draw_string	5	2	fuzclust/fuzclust/src/comp.comp:70
+requirement	menu	instance	change_item	3	2	fuzclust/fuzclust/src/comp.comp:119
+requirement	<root>	slot	!all_psi_mat_list	0	2	fuzclust/fuzclust/src/comp.comp:553
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_rectangle	8	2	fuzclust/fuzclust/src/compare.comp:43
+requirement	?	unknown	receive_dgm	4	2	fuzclust/fuzclust/src/ctl.grape:431
+requirement	?	unknown	convert	7	2	fuzclust/fuzclust/src/ctl.grape:432
+requirement	messenger	class	comfirm	2	2	fuzclust/fuzclust/src/datamng.grape:104
+requirement	?	unknown	get_same_att_index_contents	2	2	fuzclust/fuzclust/src/datamng.grape:128
+requirement	?	unknown	get_att_index_contents	2	2	fuzclust/fuzclust/src/datamng.grape:131
+requirement	?	unknown	get_fork_node_id	2	2	fuzclust/fuzclust/src/datamng.grape:134
+requirement	?	unknown	warp_mouse	3	2	fuzclust/fuzclust/src/draw.graph:46
+requirement	list	slot	!first	0	2	fuzclust/fuzclust/src/froms.eism:35
+requirement	list	slot	!last	0	2	fuzclust/fuzclust/src/froms.eism:36
+requirement	?	unknown	remove_last	2	2	fuzclust/fuzclust/src/froms.eism:261
+requirement	?	unknown	get_point_value	4	2	fuzclust/fuzclust/src/hikaku.comp:148
+requirement	standard_scrolling_menu	instance	add_item	3	2	fuzclust/fuzclust/src/init.ctl:42
+requirement	network_listener_buffer	instance	convert	7	2	fuzclust/fuzclust/src/init.ctl:75
+requirement	network_listener_buffer	instance	data_buffer	2	2	fuzclust/fuzclust/src/input.talk:37
+requirement	network_listener_buffer	instance	set_send_data_size	2	2	fuzclust/fuzclust/src/input.talk:55
+requirement	array	class	create	3	2	fuzclust/fuzclust/src/matrix.tree:121
+requirement	hash_index	instance	get_key	2	2	fuzclust/fuzclust/src/node.tree:24
+requirement	as_server_program	instance	get_line	2	2	fuzclust/fuzclust/src/output.talk:29
+requirement	as_resource	instance	set_slot	3	2	fuzclust/fuzclust/src/portslot.grape:29
+requirement	standard_io_window	instance	draw_string	6	2	fuzclust/fuzclust/src/sh_window.net:49
+requirement	standard_io_window	instance	get_inside_size	3	2	fuzclust/fuzclust/src/sh_window.net:51
+requirement	superior_window	instance	activate	1	2	fuzclust/fuzclust/src/sh_window.net:75
+requirement	net_talk_window	slot	!temp_message_window	0	2	fuzclust/fuzclust/src/sh_window.net:108
+requirement	standard_menu	instance	set_item_status	3	2	fuzclust/fuzclust/src/tool.graph:189
+requirement	?	ambiguous	copy	2	2	fuzclust/fuzclust/src/trans.eism:139
+requirement	sorted_sequence	instance	stick_tap	2	2	fuzclust/fuzclust/src/uniq_list.eism:162
+requirement	array	ref	(#ref)		2	fuzclust/fuzclust/src/matrix.tree:121
+requirement	?	unknown	get_first	2	1	fuzclust/fuzclust/src/cyclic.eism:253
+requirement	list	class	new	2	1	fuzclust/fuzclust/src/froms.eism:15
+requirement	?	unknown	remove	2	1	fuzclust/fuzclust/src/froms.eism:144
+requirement	inferior_window	instance	kill	1	1	fuzclust/fuzclust/src/comp.comp:89
+requirement	editor_text_buffer	class	get_buffer_instance	3	1	fuzclust/fuzclust/src/froms.eism:80
+requirement	editor_text_buffer	class	kill	2	1	fuzclust/fuzclust/src/froms.eism:81
+requirement	?	unknown	see_current_line	2	1	fuzclust/fuzclust/src/get_obj.grape:143
+requirement	?	unknown	next_line	2	1	fuzclust/fuzclust/src/get_obj.grape:146
+requirement	list	instance	clear	1	1	fuzclust/fuzclust/src/hikaku.comp:799
+requirement	essential_window	instance	clear	1	1	fuzclust/fuzclust/src/comp.comp:294
+requirement	search_table	class	create	2	1	fuzclust/fuzclust/src/get_obj.grape:32
+requirement	search_table	instance	get_table	3	1	fuzclust/fuzclust/src/get_obj.grape:33
+requirement	?	unknown	string_search	3	1	fuzclust/fuzclust/src/get_obj.grape:139
+requirement	set	instance	add	2	1	fuzclust/fuzclust/src/trans.eism:120
+requirement	set	instance	remove	2	1	fuzclust/fuzclust/src/uniq_list.eism:72
+requirement	?	unknown	get_inferiors	2	1	fuzclust/fuzclust/src/matrix.clu:948
+requirement	?	unknown	move_begin_of_line	1	1	fuzclust/fuzclust/src/get_obj.grape:182
+requirement	list	nature	(inherited)		1	fuzclust/fuzclust/src/uti.eism:66
+requirement	as_single_select	nature	(inherited)		1	fuzclust/fuzclust/src/window.comp:29
+requirement	as_multiple_column	nature	(inherited)		1	fuzclust/fuzclust/src/window.comp:29
+requirement	as_input	nature	(inherited)		1	fuzclust/fuzclust/src/window.comp:10
+requirement	search_table	ref	(#ref)		1	fuzclust/fuzclust/src/get_obj.grape:32
+requirement	standard_scrolling_menu	ref	(#ref)		1	fuzclust/fuzclust/src/init.ctl:33
+requirement	standard_choice_window	ref	(#ref)		1	fuzclust/fuzclust/src/cliant.grape:306
+requirement	standard_io_buffer	instance	reread	1	1	fuzclust/fuzclust/src/cyclic.eism:507
+requirement	?	unknown	size	2	1	fuzclust/fuzclust/src/matrix.tree:260
+requirement	standard_choice_window	class	create	3	1	fuzclust/fuzclust/src/cliant.grape:306
+requirement	as_resource	class	new	2	1	fuzclust/fuzclust/src/portslot.grape:26
+requirement	superior_window	instance	kill	1	1	fuzclust/fuzclust/src/sh_window.net:94
+requirement	?	unknown	assign_window	1	1	fuzclust/fuzclust/src/input.talk:39
+requirement	?	unknown	resign_window	1	1	fuzclust/fuzclust/src/input.talk:41
+requirement	inferior_window	instance	get_position	3	1	fuzclust/fuzclust/src/comp.comp:86
+requirement	standard_scrolling_menu	class	create	3	1	fuzclust/fuzclust/src/init.ctl:33
+requirement	as_resource	nature	(inherited)		1	fuzclust/fuzclust/src/portslot.grape:21
+requirement	list	instance	in	2	1	fuzclust/fuzclust/src/froms.eism:385
+requirement	pmacs_window	instance	kill	1	1	fuzclust/fuzclust/src/send.mes:59
+requirement	standard_io_window	instance	getl	2	1	fuzclust/fuzclust/src/start.talk:34
+requirement	essential_scrolling_menu	class	create	3	1	fuzclust/fuzclust/src/g_menu_pro.ctl:33
+requirement	standard_io_window	instance	putf	2	1	fuzclust/fuzclust/src/start.talk:33
+requirement	pmacs_window	instance	set_input_buffer	2	1	fuzclust/fuzclust/src/sh_window.net:40
+requirement	pmacs_window	instance	getl	2	1	fuzclust/fuzclust/src/send.mes:47
+requirement	as_standard_io_window	nature	(inherited)		1	fuzclust/fuzclust/src/temp.graph:9
+requirement	as_markers	nature	(inherited)		1	fuzclust/fuzclust/src/window.comp:10
+requirement	essential_scrolling_menu	ref	(#ref)		1	fuzclust/fuzclust/src/g_menu_pro.ctl:33
+requirement	list_index	instance	get_keys	2	1	fuzclust/fuzclust/src/cyclic.eism:529
+requirement	list_index	instance	get_contents_with_key	2	1	fuzclust/fuzclust/src/cyclic.eism:182
+requirement	essential_window	instance	erase_cursor	1	1	fuzclust/fuzclust/src/window.net:77
+requirement	list	instance	remove_at	3	1	fuzclust/fuzclust/src/froms.eism:347
+requirement	labeled_superior_window	instance	kill	1	1	fuzclust/fuzclust/src/window.net:127
+requirement	?	unknown	get_activity	2	1	fuzclust/fuzclust/src/comp.comp:229
+requirement	essential_window	instance	activate	1	1	fuzclust/fuzclust/src/comp.comp:298
+requirement	essential_window	instance	deactivate	1	1	fuzclust/fuzclust/src/comp.comp:301
+requirement	essential_window	instance	move_cursor	3	1	fuzclust/fuzclust/src/comp.comp:296
+requirement	standard_scrolling_menu	instance	activate	1	1	fuzclust/fuzclust/src/init.ctl:35
+requirement	?	unknown	put_line	2	1	fuzclust/fuzclust/src/mat_table.comp:251
+requirement	list_index	instance	get_contents_at	3	1	fuzclust/fuzclust/src/cyclic.eism:536
+requirement	ahp	class	new	2	1	fuzclust/fuzclust/src/cliant.grape:199
+requirement	ahp	instance	ahp	8	1	fuzclust/fuzclust/src/cliant.grape:200
+requirement	?	unknown	try_to_get	2	1	fuzclust/fuzclust/src/cliant.grape:213
+requirement	{sash|as_output|as_graphics|inferior_window}	instance	erase_cursor	1	1	fuzclust/fuzclust/src/comp.comp:75
+requirement	{sash|as_output|as_graphics|inferior_window}	instance	draw_string	5	1	fuzclust/fuzclust/src/comp.comp:76
+requirement	menu	instance	get_size	3	1	fuzclust/fuzclust/src/comp.comp:84
+requirement	menu	instance	set_position	3	1	fuzclust/fuzclust/src/comp.comp:87
+requirement	menu	instance	retrieve_item	3	1	fuzclust/fuzclust/src/comp.comp:118
+requirement	menu	instance	deactivate	1	1	fuzclust/fuzclust/src/comp.comp:159
+requirement	<root>	slot	!pro	0	1	fuzclust/fuzclust/src/comp.comp:255
+requirement	essential_window	instance	read	2	1	fuzclust/fuzclust/src/comp.comp:299
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	set_superior	2	1	fuzclust/fuzclust/src/compare.comp:35
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	erase_cursor	1	1	fuzclust/fuzclust/src/compare.comp:42
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	activate	1	1	fuzclust/fuzclust/src/compare.comp:78
+requirement	{sash|as_single_select|as_multiple_column|with_superior_input_buffer|as_mouse_input|inferior_window}	instance	activate	1	1	fuzclust/fuzclust/src/compare.comp:79
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	warp_mouse	3	1	fuzclust/fuzclust/src/compare.comp:81
+requirement	{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	get_mouse_dot_position	3	1	fuzclust/fuzclust/src/compare.comp:96
+requirement	list_index	class	create	3	1	fuzclust/fuzclust/src/cyclic.eism:31
+requirement	<root>	instance	make_tree	3	1	fuzclust/fuzclust/src/cyclic.eism:69
+requirement	?	unknown	error	3	1	fuzclust/fuzclust/src/cyclic.eism:450
+requirement	list_index	instance	stick_index_tap	2	1	fuzclust/fuzclust/src/cyclic.eism:548
+requirement	?	unknown	set_key	2	1	fuzclust/fuzclust/src/cyclic.eism:549
+requirement	?	unknown	see_key	2	1	fuzclust/fuzclust/src/cyclic.eism:563
+requirement	?	unknown	make_oyako_relation	2	1	fuzclust/fuzclust/src/datamng.grape:202
+requirement	?	unknown	make_node_tree	2	1	fuzclust/fuzclust/src/datamng.grape:203
+requirement	?	unknown	init_priority	1	1	fuzclust/fuzclust/src/datamng.grape:236
+requirement	?	unknown	write_priority	2	1	fuzclust/fuzclust/src/datamng.grape:493
+requirement	average_tree	class	create_average_tree	3	1	fuzclust/fuzclust/src/datamng.grape:508
+requirement	average_tree	instance	init_matrix	2	1	fuzclust/fuzclust/src/datamng.grape:509
+requirement	?	ambiguous	init_matrix	2	1	fuzclust/fuzclust/src/datamng.grape:513
+requirement	?	unknown	get_mouse_dot_position	3	1	fuzclust/fuzclust/src/draw.graph:563
+requirement	{as_standard_io_window|sash|as_output|temporary_window}	instance	write_line	2	1	fuzclust/fuzclust/src/draw.graph:601
+requirement	list	instance	empty	1	1	fuzclust/fuzclust/src/froms.eism:97
+requirement	?	unknown	remove_same	2	1	fuzclust/fuzclust/src/froms.eism:236
+requirement	?	unknown	update	2	1	fuzclust/fuzclust/src/froms.eism:240
+requirement	list	instance	add_before	3	1	fuzclust/fuzclust/src/froms.eism:333
+requirement	editor_text_buffer	class	create	3	1	fuzclust/fuzclust/src/get_obj.grape:28
+requirement	hash_index	instance	put_contents_with_key	2	1	fuzclust/fuzclust/src/get_zoku.att:26
+requirement	?	unknown	show_message	3	1	fuzclust/fuzclust/src/hikaku.comp:331
+requirement	messenger	class	confirm	3	1	fuzclust/fuzclust/src/hikaku.comp:777
+requirement	standard_scrolling_menu	instance	read	2	1	fuzclust/fuzclust/src/init.ctl:36
+requirement	standard_scrolling_menu	instance	kill	1	1	fuzclust/fuzclust/src/init.ctl:37
+requirement	standard_popup_window	class	create	3	1	fuzclust/fuzclust/src/input_mat.clu:24
+requirement	standard_popup_window	instance	erase_cursor	1	1	fuzclust/fuzclust/src/input_mat.clu:25
+requirement	standard_popup_window	instance	draw_rectangle	8	1	fuzclust/fuzclust/src/input_mat.clu:32
+requirement	standard_popup_window	instance	draw_line	8	1	fuzclust/fuzclust/src/input_mat.clu:42
+requirement	standard_temporary_window	instance	draw_string	4	1	fuzclust/fuzclust/src/input_mat.clu:50
+requirement	?	unknown	get_cursor_position	3	1	fuzclust/fuzclust/src/mat_table.comp:231
+requirement	?	unknown	read_with_click	3	1	fuzclust/fuzclust/src/menu.graph:121
+requirement	as_resource	instance	get_slot	3	1	fuzclust/fuzclust/src/portslot.grape:44
+requirement	sdatagram	class	new	2	1	fuzclust/fuzclust/src/portslot.grape:54
+requirement	ndatagram	class	get_dgm_port	3	1	fuzclust/fuzclust/src/portslot.grape:55
+requirement	essential_on_off_menu	instance	read	2	1	fuzclust/fuzclust/src/read_mato.ctl:18
+requirement	essential_on_off_menu	instance	deactivate	1	1	fuzclust/fuzclust/src/read_mato.ctl:32
+requirement	pmacs_window	instance	set_position	3	1	fuzclust/fuzclust/src/send.mes:42
+requirement	pmacs_window	instance	putc	2	1	fuzclust/fuzclust/src/send.mes:46
+requirement	superior_window	instance	get_size	3	1	fuzclust/fuzclust/src/sh_window.net:30
+requirement	net_talk_window	class	wink	2	1	fuzclust/fuzclust/src/sh_window.net:32
+requirement	superior_window	instance	read_click_with_position	5	1	fuzclust/fuzclust/src/sh_window.net:84
+requirement	pmacs_window	instance	view_previous_screen	1	1	fuzclust/fuzclust/src/sh_window.net:102
+requirement	pmacs_window	instance	view_next_screen	1	1	fuzclust/fuzclust/src/sh_window.net:116
+requirement	essential_window	instance	write	2	1	fuzclust/fuzclust/src/sketch.graph:48
+requirement	standard_io_window	instance	set_position	3	1	fuzclust/fuzclust/src/start.talk:32
+requirement	standard_menu	instance	add_item	3	1	fuzclust/fuzclust/src/tool.graph:112
+requirement	standard_menu	instance	activate	2	1	fuzclust/fuzclust/src/tool.graph:186
+requirement	standard_menu	instance	read_with_click	3	1	fuzclust/fuzclust/src/tool.graph:187
+requirement	?	unknown	previous_line	2	1	fuzclust/fuzclust/src/tool.graph:211
+requirement	set	slot	!first	0	1	fuzclust/fuzclust/src/trans.eism:122
+requirement	set	slot	!last	0	1	fuzclust/fuzclust/src/trans.eism:123
+requirement	fuzzy_clustering	class	new	2	1	fuzclust/fuzclust/src/tree.tree:67
+requirement	fuzzy_clustering	instance	fuzzy	4	1	fuzclust/fuzclust/src/tree.tree:68
+requirement	sorted_sequence	class	new	2	1	fuzclust/fuzclust/src/uniq_list.eism:177
+requirement	{list|list_index|set}	instance	get_contents	2	1	fuzclust/fuzclust/src/uti.eism:15
+requirement	?	unknown	get_with_key	3	1	fuzclust/fuzclust/src/uti.eism:24
+requirement	labeled_superior_window	instance	set_label_flag	2	1	fuzclust/fuzclust/src/window.net:91
+requirement	standard_io_window	instance	draw_rectangle	7	1	fuzclust/fuzclust/src/window.net:102
+requirement	sdatagram	nature	(inherited)		1	fuzclust/fuzclust/src/portslot.grape:49
+requirement	essential_on_off_menu	nature	(inherited)		1	fuzclust/fuzclust/src/read_mato.ctl:6
+requirement	sorted_sequence	nature	(inherited)		1	fuzclust/fuzclust/src/uniq_list.eism:49
+requirement	set	nature	(inherited)		1	fuzclust/fuzclust/src/uti.eism:52
+requirement	list_index	nature	(inherited)		1	fuzclust/fuzclust/src/uti.eism:80
+requirement	ahp	ref	(#ref)		1	fuzclust/fuzclust/src/cliant.grape:199
+requirement	average_tree	ref	(#ref)		1	fuzclust/fuzclust/src/datamng.grape:508
+requirement	standard_popup_window	ref	(#ref)		1	fuzclust/fuzclust/src/input_mat.clu:24
+requirement	ndatagram	ref	(#ref)		1	fuzclust/fuzclust/src/portslot.grape:55
+requirement	fuzzy_clustering	ref	(#ref)		1	fuzclust/fuzclust/src/tree.tree:67

@@ -15,13 +15,13 @@ not only against the C.
 # The first console line (the regression test, ~2.1 M instructions, 25 s):
 python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
     --max-steps 4000000 --until '\n'
-# On to the boot program (see "How far it gets"):
+# On to the boot program's prompt (see "How far it gets"; ~30 s):
 python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
-    --max-steps 80000000 --progress 5000000 --counter-period 0.04 \
-    --until 'root is from' --out console.txt
+    --max-steps 400000000 --progress 20000000 \
+    --until 'root is from' --out console
 ```
 
-`--out FILE` writes the console bytes; `--until TEXT` stops once the
+`--out DIR` writes the console bytes, one file per channel; `--until TEXT` stops once the
 screen has shown TEXT; `--progress N` prints where the PC is every N
 instructions.  The run prints each first-reached function with its
 instruction number, every exception and interrupt the model takes (the
@@ -40,13 +40,35 @@ The kernel prints to two places, and both are captured:
   `uartputs` path, `\n` as `\r\n`), which is what a serial console would
   show.  These are the bytes the device model collected.
 
-**Bitmap screen and keyboard, the minimum chosen.**  The screen is plain
-RAM plus a write-only LCD register pair that counts writes; no pixels are
-interpreted.  The keyboard is Quart channel 2 (`kbdinit(2)`, 600 baud)
-and the mouse channel 3 (`eiaspecial(3, ..., 1200)`); nothing is
-connected to either, so they never receive a byte (QUART_CHOICES `sr`,
-`isr`).  A typed reply to the boot prompt would be the next device
-feature (RxRDY on channel 2 with scan codes, `kbd.c`).
+**Bitmap screen, the minimum chosen.**  The screen is plain RAM plus a
+write-only LCD register pair that counts writes; no pixels are
+interpreted.
+
+**The console's input is Quart channel 0, not a scan-code keyboard.**
+The shipped `screen.c` calls `kbdinit(2)` (the `kbd.c` scan-code
+keyboard on channel 2 at 600 baud), but s9term has no `kbdinit` and no
+`kbd.c` (`docs/s9term.md`: its `screen.c` predates `kbd.c`).  Tapping
+`eiaspecial` in the run shows what the image does instead:
+
+| step | call |
+|---:|---|
+| 127,557 | `eiaspecial(0, &printq, &kbdq.IOQ (0x8004fdfc), 19200)` |
+| 127,705 | `eiaspecial(3, 0, &mouseq, 1200)` |
+
+and `kbdq.putc` (kbdq+0x1034) then holds `kbdcr2nl`.  So the console is a
+serial terminal on channel 0 at 19200 baud 8N1 -- output and input --
+taking ASCII, CR made NL; channel 2 is never set up.  `--type
+TEXT=REPLY` (CHOICES `console-input`) types REPLY on that line once the
+screen has shown TEXT: `--type 'il]: =\r'` answers the prompt with
+Return.  The mouse (channel 3) gets nothing.
+
+Text reaches the screen ~0.4-0.5 M instructions before the serial line:
+s9term's `putstrn` draws it first (`screenputs`, the font blitted in
+software) and then calls `uartputs` (from `putstrn+0x96` / `+0xd0`):
+pageinit's line is at `screenputs` at 2,131,084 and at `uartputs` at
+2,621,219.  A reply typed with no `--think` delay arrives while the
+prompt is still being drawn, so on channel 0 its echo (`\r\n`) comes
+before the prompt; on the screen the order is the prompt, then `\n`.
 
 ## Milestones (2026-11-23)
 
@@ -76,9 +98,20 @@ The first console line, byte for byte, on both channels:
 
 ## How far it gets
 
-With `--counter-period 0.04` (QUART_CHOICES `counter-period`) the run
-reaches `/boot`'s prompt after **22,530,554 instructions** (1.145 s of
-model time, 26 clock interrupts; about 6 minutes of host time):
+At the counter rate the hardware formula gives (one tick per 0.569 s,
+QUART_CHOICES `counter-period`) the run reaches `/boot`'s prompt after
+**286,977,189 instructions** and 14.367 s of model time, 26 clock
+interrupts, in 30-60 s of host time: 283,995,808 of those
+instructions are laps of the idle loop that the idle skip (below)
+retires without executing.  (Before the EEPROM answered, CHOICES
+`iic`, it was 286,970,654: `iicreset`'s read adds 6,535.)
+
+With `--counter-period 0.04` (25 Hz) the same prompt comes after
+**22,537,089 instructions** (1.145 s of model time, 26 clock
+interrupts), which `tests/test_p9boot.py` `PromptTest` pins.  Before
+the EEPROM answered it was 22,530,554, measured first without the idle
+skip (6 minutes of host time) and reproduced exactly with it (29 s);
+the table is from those runs (add 6,535 from `iicreset` on):
 
 | instructions | reached |
 |---:|---|
@@ -95,12 +128,195 @@ The screen then holds, byte for byte (`--out` writes it):
 root is from (il, tcp, incon, 9600, 19200)[il]: 
 ```
 
-The prompt goes to `#c/cons`, which s9term writes to the screen only;
-Quart channel 0 carries the kernel's own `print` output (the first line).
+The prompt goes to `#c/cons`, which s9term writes to the screen and then
+(0.44 M instructions later, see the console above) to Quart channel 0.
+
+Typing Return at it (`--type 'il]: =\r'`, the default counter rate) takes
+`il`: `kbdcr2nl`, the echo, `etherattach` starting the
+SONIC's kproc, and the screen shows
+
+```
+1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
+root is from (il, tcp, incon, 9600, 19200)[il]: 
+sonic ether: 52 54 00 00 0b 0b
+```
+
+At **287,845,754** instructions (14.4 s of model time) `/boot` sends
+its BOOTP request through the SONIC (`tests/test_p9boot.py`
+`NetworkTest`, with `--pcap`):
+
+```
+52:54:00:00:0b:0b > ff:ff:ff:ff:ff:ff IP 0.0.0.0 > 255.255.255.255
+UDP 68 > 67 len 372 BOOTP request htype 1 hlen 6 xid 00000000
+chaddr 52:54:00:00:0b:0b file '' vend 'p9  '
+```
+
+406 bytes, IP header checksum good: the destination, the EEPROM's
+address as source and in `chaddr`, type 0x0800 and `p9  ` all decode,
+which checks the SONIC's byte lanes and CAM order at once.
+
+With nobody answering (a Wire with no peer), `/boot` sends the request
+ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
+0.569 s), each wait ended by an alarm note, and then asks
+`My IP address[0.0.0.0]: ` at 3,131,202,766 instructions (156.6 s of
+model time, ~55 s of host time; `NoServerTest`).  Each note's return is
+a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
+
+### The join: root from the 1e file server in QEMU
+
+`tools/p9join.py` (after `tools/qemu1e/build.sh`) boots the 1e 386 file
+server in QEMU (`docs/qemu_1e_server.md`: `9dos.q`, kfs, `rc /serve
+10.9.0.1 255.255.255.0`, its NE2000 on `-netdev dgram`
+127.0.0.1:10901 ⇄ 10902) and s9term on the model with the SONIC's wire
+on the other end of that UDP pair, types Return at `root is from` and at
+`user[none]`, and stops at `init: starting`.  Observed 2026-11-23:
+
+```
+...
+root is from (il, tcp, incon, 9600, 19200)[il]: 
+sonic ether: 52 54 00 00 0b 0b
+user[none]: 
+arp: rcvd for 10.9.0.1
+nop...session...time...
+init: starting /bin/rc
+```
+
+**310,933,347 instructions** (304,331,328 of them retired idle laps),
+15.58 s of model time, 150 s of host time; 277 frames.  The server's
+log shows `ip/bootp: reply to 10.9.0.2 525400000b0b /hobbit/s9term p9
+255.255.255.0 10.9.0.1 10.9.0.1 10.9.0.1` and `listen: il call for
+il17008`.  On the wire, in order: the BOOTP request and the server's
+reply (yiaddr 10.9.0.2, file `/hobbit/s9term`, vend `p9  255.255.255.0
+10.9.0.1 10.9.0.1 10.9.0.1`); `/boot` ARPs for 10.9.0.1 and gets the
+reply; the IL connection to `il!10.9.0.1!17008`; Tnop, Tsession, the
+attach as `none` (no auth server: user `none` needs none); the time
+from the root's access time, written to the timekeeper
+(1993-01-03 12:02:05, CHOICES `rtc`); then `/hobbit/init` read from the
+server and run: `init: starting /bin/rc` is printed by the init binary
+the server sent.  No CRET was clamped on this path.
+
+The first run stopped at `setrtc` (no device at IONAK+0x3FE0): the
+timekeeper was added for the second.
+
+The live join is not deterministic: the server runs at QEMU's speed and
+the wall clock.  A third run (on the committed code, while the
+regression suite loaded the host) printed `error dialing
+10.9.0.1!17008` and `panic: boot process died`.  The server's own pcap
+shows why: 8.7 ms after the Hobbit's IL sync (id 26000) it sent a sync
+with **ack 0**, and only 0.14 ms later the proper one (ack 26000).
+s9term's `stil.c`, in Ilsyncer, hangs up on a sync whose ack is not its
+start ("connection rejected"), as the source says it should.  The
+ack-0 sync matches the server's `stil.c` timer path (`ilackproc`
+resends `Ilsync, ic->start, ic->recvd` for a conversation in Ilsyncee,
+whose `recvd` is 0 until `ilprocess` has handled the incoming sync);
+that it is this race is an inference from the code, not traced.
+Replaying that run's pcap reproduces the failure exactly (the replay
+is also a debugging tool).
+
+A fourth run (committed code, `--until` that never matches, 360 M
+instructions) went past init: `/bin/rc` from the server ran on the
+Hobbit and printed, as the server's own console does for glenda,
+
+```
+init: starting /bin/rc
+Can't cd /usr/none
+lib/profile: rc: .: can't open
+init: rc exit status: rc 9:can't cd
+```
+
+(1515 frames, 18.1 s of model time, 389 s of host time; `/usr/none`
+does not exist on the release's file system).  A fifth run, `--until
+'% '`, went on to init's restart and **rc's prompt**:
+
+```
+init: rc exit status: rc 9:can't cd
+
+init: starting /bin/rc
+% 
+```
+
+at 618,458,635 instructions (601,206,616 retired idle laps), 31.0 s of
+model time, 456 s of host time, 1455 frames: an interactive rc on the
+Hobbit with its root from the 1e file server.
+
+`tests/net/join_init.pcap` is that run's `--pcap` (nanosecond stamps, so
+whole cycles).  `JoinReplayTest` re-runs the model with
+`--ether-replay` of it: the server's frames are delivered at their
+recorded cycle offsets from the model frame they followed, and every
+one of the model's 277-frame exchange must match the recording byte for
+byte.  It does, to the same instruction count (310,933,347), in ~60 s of
+CPU, without QEMU:
+
+```sh
+python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
+    --max-steps 400000000 --type 'il]: =\r' --type 'user[none]: =\r' \
+    --ether-replay hobbit/tests/net/join_init.pcap --until 'init: starting'
+```
+
+Live, busy model time runs ~200 times slower than the wall clock while
+idle time is paced to it (ETHER_CHOICES `peer`), so the server sees a
+slow terminal: the server's IL retransmitted, 56 of its 143 frames are
+Dataquery resends of data messages already sent (each answered by a
+State from the Hobbit), 10 for the first one; and the kernel's 1 s
+alarms take 14 s of model time at the default counter rate.  Neither
+stopped the boot.
 
 Without `--counter-period` the clock ticks every 0.569 s of model time,
-and `sleep(1000)` needs ~14 s of model time (~280 M instructions); the
-run has not been taken that far.
+and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
+skip that costs nothing, so the override is no longer needed to get
+anywhere.
+
+## The idle skip (CHOICES `idle-skip`)
+
+s9term's idle loop is `runproc`'s `while(runhiq.head==0 &&
+runloq.head==0);` after `spllo()` (port/proc.c), which in the image is
+four instructions at `runproc+0x08..+0x1e` (0x8000649a):
+
+```
++0x08  dffc 0000 0000 8004 d300   compare $0 with runhiq.head (runhiq+8)
++0x12  1007                       JMPFN +0x20: a process is ready, leave
++0x14  dffc 0000 0000 8004 d418   compare $0 with runloq.head (runloq+8)
++0x1e  1ff5                       JMPTY +0x08: both empty, again
+```
+
+It stores nothing, so only an interrupt can end it.  `find_idle_loop`
+checks these parcels in the loaded image and refuses to run otherwise.
+With the PC at the head, both heads 0, IPL 7, no interrupt asserted, no
+timer interrupt enabled, and the last two laps of equal cost, the
+harness retires N laps at once: `steps += 4N`, `cycles += N x lap`,
+with N the largest number that still ends *before* the next timed
+device event (the Quart counter, a scripted console byte, an inbound
+frame).  The laps executed after that, the interrupt and everything
+after it are the unskipped run's, instruction for instruction:
+
+| run | instructions | cycles | host time |
+|---|---:|---:|---:|
+| to the prompt, 25 Hz, no skip (before the skip existed) | 22,530,554 | | ~6 min |
+| the same with the skip (19,573,088 retired by 25 skips) | 22,530,554 | 22,890,723 | 29 s |
+| 3.4 M instructions at a 4 ms tick, no skip / skip (7 skips) | 3,400,000 | 3,757,855 | 34 s / 27 s |
+
+and in the last row the two runs end with the same PC, PSW, stacks,
+interrupt and exception lists, functions reached, console bytes, Quart
+state and every RAM word (`IdleSkipEquivalenceTest`).  The Hobbit has no
+idle, halt or wait instruction (none of Table 3-1's 46 mnemonics, pp.
+3-1..3-2, `docs/isa_inventory.md` §2), and s9term spins, so this loop is
+the only idle state there is.  With
+nothing timed pending, the loop could never end, and the run stops
+saying so.
+
+### The clock rate (QUART_CHOICES `counter-period`), reconsidered
+
+s9term's `clockinit` (0x8000f780) loads the counter with a constant:
+`acr = 0xF0` (BRGSet2|TimerD16), `ctu:ctl = 0xFFFF` (`MOV $0xffff`,
+then `>>8` and `&0xff` into ctu and ctl), where the shipped source
+computes `Crystal/(2*16*HZ)` = 4608.  Its HZ is 25 (`tsleep` divides by
+MS2HZ = 40; mem.h `HZ 25`).  So the image's software assumes 25 ticks a
+second and programs a count that, by the 68C94's timer formula with the
+3.6864 MHz crystal deveia.c names, gives 1.76 a second.  Nothing in the
+release says which is wrong (a different crystal on the 1992 board, a
+counter clock not divided by 16, or a kernel whose clock ran slow); the
+default stays the formula, and `--counter-period 0.04` stays a stated
+deviation, now needed for nothing but shorter model time.
 
 ## The root file system: what `/boot` asks the machine for
 
@@ -137,9 +353,8 @@ From `sys/src/9/boot/ip.c` and `async.c`, and the strings in the image:
 
 So the shortest path to a QEMU 1e file server is **il over the SONIC**:
 an IIC EEPROM with an ethernet address, SONIC transmit/receive, and a
-frame bridge.  Answering the prompt itself needs a keyboard byte on
-Quart channel 2 — or none at all: pressing return takes the default,
-`il`.
+frame bridge.  Answering the prompt itself needs only Return on the
+console line (Quart channel 0): the default is `il`.
 
 ## Modelling choices
 
@@ -170,20 +385,48 @@ such.
 * **clock** — model time is the sum of the records' Chapter 4 cycles at
   20 MHz, the lower of the data sheet's two rated clocks.  It paces the
   Quart counter, the kernel's clock interrupt.
-* **iic** — the PCF8584 never reports the bus free, so the EEPROM (ether
-  address, `eeprom.clock`) stays zero and `delay()` waits for nothing.
+* **iic** — the PCF8584 and the PCF8582 EEPROM answer `deviic.c`
+  (IIC_CHOICES, below): `iicreset` reads `io.h`'s `Eeprom`.
 * **lcd** — `Lcdisp` at IOACK 0x3000 accepts and counts writes.
 * **incon, IOCTL** — latches that record writes; an unexpected read
   stops the run.
+* **idle-skip** — `runproc`'s idle loop retired in whole laps up to the
+  next timed device event (section above); `--no-idle-skip` turns it off.
+* **cret-msp** — `hobbit_sem.System.cret_clamp` is on: a CRET whose
+  restored MSP is more than 256 bytes above its SP has its CATCH
+  portion stop with the cache full (p. 3-10, "or the cache is full"),
+  MSP = SP + 256, instead of the reference model's refusal (p. 1-13
+  calls the stack cache's results then unpredictable).  s9term's
+  `notify()` builds exactly that frame (it lowers the user SP by 0x170
+  for the Ureg, the note and the arguments and keeps MSP), and
+  `raml.s`'s `_exception` resets an MSP found above SP + SCSIZE, so the
+  kernel expected the state.  The run reports the number clamped.
+* **rtc** — `io.h`'s Nvram (IONAK 0x2000, 2040 bytes) and RTCdev (IONAK
+  0x3FE0) are one 2K timekeeper, a byte per word in bits 7:0: control,
+  sec, min, hour, wday, mday, mon, year in BCD; `devrtc.c`'s RTCREAD
+  (0x40) and RTCWRITE (0x80) freeze the registers and load them when
+  RTCWRITE clears (the MK48T02 scheme; no data sheet in the release).
+  The clock starts at 1993-01-03 12:00:00 UTC (the QEMU server's `-rtc
+  base`) and runs on model time.
+* **console-input** — the console line is Quart channel 0 (section "The
+  console"); `--type TEXT=REPLY` types REPLY there once the screen shows
+  TEXT, `--think SECONDS` after it.
 
 ### Quart (`QUART_CHOICES`, `io.h` `Quart`/`Duart`, `deveia.c`)
 
 * **sr** — TxRDY|TxEMT while the transmitter is enabled: a byte written
-  leaves at once.  RxRDY never: nothing is connected.
+  leaves at once.  RxRDY while the receive FIFO holds a byte, FFULL at
+  three.
+* **rx** — typed bytes arrive one character time apart (1 start bit,
+  mr1's data and parity bits, mr2's stop bits at csr's rate under
+  BRGSet2: 0.52 ms at 19200 8N1) into a three-byte FIFO; a byte that
+  finds it full, or the receiver disabled, waits on the line (no overrun
+  is modelled).  grxfifo/rxfifo pop; an empty FIFO reads 0.
 * **cr** — the enable/disable bits and MrReset/RxReset/TxReset change
   state; the rest are accepted and ignored.
 * **isr** — TxRDYa/TxRDYb while enabled; CtrRDY once the counter expires,
-  until a read of `stop`.
+  until a read of `stop`; RxRDYa/RxRDYb while the FIFO is not empty
+  (uartsetup's mr1 has bit 6, FFULL interrupts, clear).
 * **counter** — started by a read of `start`; CtrRDY every
   2·count/(3.6864 MHz/16) s.
 * **counter-period** — s9term's `clockinit` is older than the release's:
@@ -193,8 +436,11 @@ such.
   software assumes, a stated deviation that makes `sleep(1000)` in
   `/boot` last 25 ticks of 0.04 s instead of 25 of 0.569 s.
 * **cir** — a write of `update` latches the highest pending enabled
-  source: the counter (cir 0x14, gicr = 2·duart), then a transmitter
-  (cir 0x08, gicr = channel, gibcr = 1); nothing pending reads 0.
+  source: the counter (cir 0x14, gicr = 2·duart), then a receiver (cir
+  0x0C RxAvail, gicr = channel, gibcr = bytes in its FIFO), then a
+  transmitter (cir 0x08, gicr = channel, gibcr = 1); nothing pending
+  reads 0.  The order is a choice: the bidding registers (bcr) that set
+  it on the part are written by eiasetup but not modelled.
 * **irq** — IRQ 1 while any isr bit is enabled in its DUART's imr.
 
 ### WD33C93 (`WD_CHOICES`, `scsi.c`)
@@ -204,11 +450,87 @@ such.
 * **no-targets** — every selection ends in selection timeout (0x42).
 * **irq** — IRQ 10 while Intrpend is set.
 
+### IIC and the EEPROM (`IIC_CHOICES`, `deviic.c`)
+
+No PCF8584 or PCF8582 data sheet is in the release or the repository;
+the behaviour is inferred from `deviic.c`'s code and comments.
+
+* **bus** — S1 reads PIN (clear once a byte has gone or come), LRB
+  ("Nak", set when no slave acknowledged), BB ("Busfree", set with no
+  START outstanding); S0' and S2 are written through the ES1 select
+  before ESO; transfers complete at once.  On the bus: the EEPROM (0xA4)
+  and the LED latch (0x40); other addresses are not acknowledged.
+* **repeated-start** — `eepromread` writes the read address 0xA5 to S0
+  after the word address, reads S1, waits, then sets STA: the byte is
+  taken as the repeated START's address, not written to the EEPROM.
+* **receive** — the first S0 read after the address returns the address
+  byte (the driver: "We get some junk back"); each S0 read with ACK set
+  starts the next byte; the control write 0xC0 (ACK off) completes the
+  byte in progress.  So `eepromread` stores 17 bytes: the 16 of
+  `Eeprom` and one past it, into `rtclock` (EEPROM byte 16 = 0).
+* **eeprom** — magic `a6 00 d9 20 10` (`EEPROMMAGIC "A600D92010"` read as
+  hex digits; nothing checks it), ether address **52:54:00:00:0b:0b**
+  (`--ea`; locally administered, and the address `tools/qemu1e/ndb.local`
+  gives the Hobbit, so the 1e server's `ip/bootp` answers it), mask 0,
+  clock 20 (MHz: `delay()` loops `ms*1000*clock/2` times, consistent
+  with CHOICES `clock`), dsp, pcb, rev 0.  The values of a 1993 board
+  are not in the release.  Reading it adds 6,535 instructions before the
+  prompt (22,537,089 at 25 Hz).
+
 ### SONIC (`SONIC_CHOICES`, `devether.c`)
 
-* **no-network** — the commands `reset()` waits on (Rrra, Lcam) complete
-  at once and read back clear; nothing is received, `isr` stays 0; a
-  transmit command stops the run.
+No DP83932 data sheet is in the release or the repository.  Every point
+is what s9term's `devether.c` relies on; where the driver leaves a
+detail open, QEMU's model of the same part (`hw/net/dp8393x.c`, read
+2026-11-23 from qemu master) is followed, and each such point says so.
+
+* **registers** — io.h's words, 16 bits wide; reset state `cr =
+  Rst|Stp|Rxdis`; writing `cr` with Rst clear while in reset only leaves
+  reset (QEMU), which `reset()`'s `cr = Rst; dcr = ...; cr = 0` needs.
+* **isr** — write-one-to-clear (the driver writes back what it read);
+  IRQ 9 while `isr & imr`.
+* **rra** — Rrra (and each used-up buffer) reads the 4-word resource at
+  `urra:rrp`, advances `rrp` by 16 and wraps it at `rea`; completes at
+  once.
+* **cam** — Lcam reads `cdc` entries of (cep, cap0..2) at `urra:cdp`
+  (the upper half from urra: QEMU), each cap two address bytes low byte
+  first (the driver's `cap0 = ea[1]<<8|ea[0]`), then the enable word;
+  isr Lcd.
+* **transmit** — Txp sends from `utda:ctda` (size, fragment count, per
+  fragment ptr0/ptr1/size, link), at once (no line time, no collisions),
+  writes status 0x0001 (PTX: neither Host 0 nor Interface ~0, as the
+  driver tests), sets `ctda` to the link and goes on unless the link has
+  EOL; then isr Txdn.  `ctda` keeping the EOL link makes the next bare
+  `cr = Txp` (etheroput) start at the next descriptor (QEMU does the
+  same).  No FCS on transmit.
+* **receive** — an accepted frame goes into the current buffer with its
+  CRC-32 FCS, padded to 4 bytes; the descriptor at `urda:crda` gets
+  status Prx (|Bc, |Lpkt when fewer than `eobc` words remain), byte count
+  (+4, which etherkproc subtracts), buffer address, sequence number;
+  then, unless its link has EOL, `in_use = 0` (Host), `crda = link`, isr
+  Pktrx; with EOL the descriptor is kept (isr Rde) and its link re-read
+  at the next frame (QEMU).  Lpkt reads the next resource, so with
+  `eobc` = buffer words − 2 each frame has its own buffer and buffers
+  advance with descriptors, as `etherkproc`'s `rb[rh]` needs.
+  Descriptor words are written zero-extended (QEMU's 32-bit mode; the
+  driver compares the whole word with Host = 0).
+* **filter** — Pro (unicast), Brd (broadcast), an enabled CAM entry;
+  transmitted frames are not looped back.
+* **dma** — physical addresses (PADDR is the identity) through the
+  board's RAM, bytes in the little-endian lanes the kernel uses
+  (CONFIG.KL); the first frame checks it.
+
+### The wire (`ETHER_CHOICES`)
+
+`--pcap FILE` writes every frame both ways, stamped with model time.
+`--ether-peer HOST:PORT --ether-local HOST:PORT` exchanges frames with
+a UDP peer, one raw ethernet frame per datagram (QEMU's `-netdev dgram`
+framing); idle model time then runs at the wall clock (the idle skip
+waits on the socket for as long as the model time to the next event),
+busy time at the model's ~100,000 instructions/s.  `--ether-replay
+PCAP` answers with a recorded session's frames; `--ether-script PCAP`
+delivers frames at their timestamps.  With nothing attached, a transmit
+stops the run.
 
 ## What the reference model gained (`hobbit_sem.System`)
 
@@ -233,6 +555,9 @@ programs and `test_p9run.py` are green).  Unit tests:
 * The exception (p. 1-38), interrupt (p. 1-37), unimplemented-
   instruction and trapped-niladic sequences (p. 1-39); KCALL's frame and
   every vector read are made at kernel level whatever the PSW's level.
+* A CRET whose MSP is more than 256 above SP is refused (p. 1-13),
+  unless `System.cret_clamp` (a harness choice, off by default; p9boot
+  sets it, CHOICES `cret-msp`) clamps it to SP + 256.
 * CRET's CATCH portion (p. 3-15) runs under the restored PSW, block by
   block; a fault is exception 8 at the restored PC with SP kept — 1e's
   `trap.c` relies on it for the first entry to user mode (its "CRET
@@ -248,16 +573,11 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **Input.**  `/boot` now reads the reply from `#c/cons`: the keyboard
-   is Quart channel 2 (`kbd.c` scan codes at 600 baud).  A return key
-   (RxRDY/RxAvail on channel 2 and `kbd.c`'s code for it) takes `il`.
-2. **The network** for `il`: the IIC EEPROM's ethernet address and the
-   SONIC's descriptor-driven transmit and receive (above), then a frame
-   bridge to the file server.
-3. **Speed.** The reference model runs ~62,000 instructions/s; the
-   prompt takes 6 minutes, most of it `runproc` idling in `sleep(1000)`.
-   An idle-skip (advance model time to the next counter tick when the
-   kernel is in its idle loop) would be a harness choice to state.
-4. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
+1. **Past rc's prompt**: commands typed at `% ` (`--type`) are not yet
+   tried; termrc was not run (init ran rc without it: no /usr/none).
+2. **The live join's reliability**: a 1e server IL race (the ack-0
+   sync, above) can reject the connection; the busy model is ~200
+   times slower than the wall clock the server runs on.
+3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
-   assumes is not settled by anything in the release.
+   assumes is not settled by anything in the release (above).

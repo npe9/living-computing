@@ -219,7 +219,7 @@ is known.
 | Console primitives (`display_console`, `put_console`, `read_console`, `get_console`) | R4, R5 | — | PDSS manual meaning; how PIM/m rendered values unknown | PARTIAL | `display_console` on both (trace lines); others none (`gap_analysis.md` C1) | |
 | SCSI primitives (`scsi_init`, `scsi_command`, `scsi_where`, `scsi_transfer`, ...) | R4 | `bios/scsi/scsi_blt.kl1` (stand-in source) | arguments from `compiler/blt.kl1`; values OURS | PARTIAL | ref only (`ref_scsi.py`) | `scsi_transfer` is used once by the objects and absent from the held firmware (`pseudo_pimm_firmware.md` §1). The one use is the listener's typed-command pass-through (`com_built.kl1`:135), not a boot path (§6 item 13) |
 | Floats, extended floats, bignums (68 mnemonics, 1,066 uses) | applications | — | manual; `kbnheap.kl1` tags | PARTIAL | none beyond type tests | deferred by design (`pimos_boot_requirements.md` §0.5) |
-| Atom-number service (`supply_atom_number`, `new_atom`) | R4, R5 | — | directions only for `supply_atom_number` | PARTIAL | `new_atom` on both with OUR numbering from 10000h (`pimm_semantics.md`) | |
+| Atom-number service (`supply_atom_number`, `new_atom`) | R4, R5 | — | directions only for `supply_atom_number` | PARTIAL | `new_atom` on both with OUR numbering from 10000h (`pimm_semantics.md`); `supply_atom_number` on both, what it does OURS (inputs dropped, Done never bound), `top:go1/4`'s server run with the bench binding Done (`lockstep_atom.py`) | what `supply_atom_number`'s two integers mean (a block's first number or its end) |
 | The microprogram itself (`pimm.MEkbn`, 18,343 words, 324 entry points) | fidelity of all of B; cycle counts | `nonlocal/psdpim.tar.Z` `PMPSI.DIR/pimm.MEkbn` | memory datapath read; ~23 of 64 bits fully characterised (INFERENCE tally, `binary_reverse_engineering.md` §3) | HELD-BINARY-ONLY | read-only tools `asm/psdpim.py`, `asm/mekbn.py` | the firmware's own reverse assembler `pimmutil##rassy` is held as compiled ESP and would give the format (`binary_reverse_engineering.md` §3) |
 | Real PIM/m microcode, microassembler, Microlint | authenticity | none | TR-742, TM-849 (title) | LOST (`icot_software_survey.md` §4 table, §6 "Not found by anyone") | — | the Pseudo PIM/m is "converted from Multi-PSI/V2" like the real one; how far the two microprograms differ is UNKNOWN |
 
@@ -997,7 +997,7 @@ archives; tables and scripts kept outside git).
 - **SIMPOS**: still LOST as software. Its supervisor, file and window
   classes are partly PRINTED in ICOT reports (TM-100, TR-524, TR-046,
   TR-056, TR-059, TM-065, TM-125); the ~300 system classes the held
-  applications call are listed (`simpos/class_census.tsv`); five PSI-I
+  applications call are listed (`simpos/required/old_regex_census.tsv (superseded by simpos/required/)`); five PSI-I
   SIMPOS/KL0/CSP manuals are HELD-ELSEWHERE at the JAIST library
   (`psi_acquisition.md` §9). Row 14.
 - **Every ICOT TR/TM on SIMPOS, ESP or the PSI**: HELD (87 of 87).

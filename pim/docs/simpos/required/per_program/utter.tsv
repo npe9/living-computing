@@ -1,0 +1,247 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		user-macro	=	2	335	utter/source/FTS/BASIC.esp:163
+builtin		builtin	vector_element	3	133	utter/source/QXT/constr.esp:77
+builtin		builtin	:=	2	82	utter/source/QXT/basic.esp:22
+builtin		builtin	is	2	76	utter/source/FTS/BASIC.esp:298
+builtin		builtin	location_element	2	76	utter/source/QXT/constr.esp:76
+builtin		builtin	==	2	70	utter/source/FTS/BASIC.esp:279
+builtin		constant a#b	standard#output		64	
+builtin		file-level directive	use_package	1	60	
+builtin		builtin	first	2	59	utter/source/QXT/constr.esp:67
+builtin		builtin	second	2	50	utter/source/QXT/constr.esp:68
+builtin		builtin	set_second	2	33	utter/source/QXT/constr.esp:387
+builtin		builtin	set_first	2	31	utter/source/QXT/constr.esp:386
+builtin		builtin	stack_to_heap_vector	2	30	utter/source/Tour/VIS.esp:56
+builtin		constant a#b	16#str		27	
+builtin		builtin	locate	3	27	utter/source/FTS/BASIC.esp:96
+builtin		builtin	append	3	25	utter/source/FTS/BASIC.esp:138
+builtin		builtin	heap_to_stack_vector	2	25	utter/source/Tour/VIS.esp:131
+builtin		builtin	write	1	25	utter/source/FTS/BASIC.esp:564
+builtin		builtin	stack_vector	2	23	utter/source/QXT/objterm.esp:59
+builtin		builtin	new_heap_vector	2	23	utter/source/QXT/copy2.esp:47
+builtin		builtin	unbound	1	22	utter/source/FTS/BASIC.esp:578
+builtin		builtin	set_vector_element	3	20	utter/source/QXT/inherit.esp:32
+builtin		user-macro	of	3	20	utter/source/Tour/s_IF.esp:265
+builtin		builtin	heap_vector	2	19	utter/source/QXT/constr.esp:443
+builtin		builtin	dynamic	1	19	utter/source/Tour/tour_bel.esp:177
+builtin		builtin	new_stack_vector	2	15	utter/source/QXT/meetjoin.esp:68
+builtin		builtin	=\=	2	15	utter/source/QXT/constr.esp:28
+builtin		user-macro	instance	2	14	utter/source/FTS/qxt_int.mcr:96
+builtin		user-macro	support	3	14	utter/source/Tour/s_IF.esp:58
+builtin		file-level directive	add_operator	3	13	
+builtin		user-macro	nl	0	13	utter/source/FTS/BASIC.esp:566
+builtin		builtin	>	2	12	utter/source/FTS/dam_prep.esp:34
+builtin		builtin	string	3	12	utter/source/QXT/module.esp:301
+builtin		user-macro	=<	2	12	utter/source/FTS/BASIC.esp:472
+builtin		builtin	getRole	3	12	utter/source/FTS/BASIC.esp:133
+builtin		builtin	>=	2	11	utter/source/Sancho/sancho_d.esp:26
+builtin		builtin	partial	1	11	utter/source/FTS/BASIC.esp:135
+builtin		builtin	atomic	1	10	utter/source/QXT/objterm.esp:53
+builtin		user-macro	assert	2	10	utter/source/Tour/s_IF.esp:134
+builtin		user-macro	make_module	1	8	utter/source/Tour/s_IF.esp:133
+builtin		builtin	<	2	7	utter/source/FTS/BASIC.esp:280
+builtin		builtin	freeze	2	6	utter/source/Tour/graph2.esp:117
+builtin		builtin	integer	1	6	utter/source/Sancho/sancho5.esp:247
+builtin		builtin	current_goal	4	6	utter/source/Tour/tour_bel.esp:79
+builtin		builtin	atom	1	5	utter/source/QXT/module.esp:299
+builtin		builtin	list	1	5	utter/source/FTS/BASIC.esp:604
+builtin		constant a#b	standard#input		5	
+builtin		builtin	equal_string	2	4	utter/source/QXT/module.esp:305
+builtin		builtin	string_element	3	4	utter/source/QXT/objterm.esp:374
+builtin		builtin	vector_tail	3	4	utter/source/Tour/tour_6.esp:189
+builtin		builtin	set_location_element	2	4	utter/source/QXT/lib.esp:186
+builtin		builtin	setOfKeys	2	4	utter/source/FTS/BASIC.esp:124
+builtin		user-macro	head	2	4	utter/source/Tour/s_IF.esp:264
+builtin		builtin	melt	2	3	utter/source/Tour/graph2.esp:159
+builtin		builtin	\==	2	3	utter/source/FTS/BASIC.esp:605
+builtin		builtin	repeat	0	3	utter/source/Tour/MAN.esp:323
+builtin		builtin	bound	1	3	utter/source/FTS/BASIC.esp:581
+builtin		builtin	substring	4	3	utter/source/QXT/module.esp:304
+builtin		builtin	first_location	2	3	utter/source/QXT/lib.esp:130
+builtin		builtin	current_plan	2	3	utter/source/Tour/tour_bel.esp:67
+builtin		builtin	know	2	3	utter/source/Tour/tour_bel.esp:149
+builtin		builtin	object	3	2	utter/source/Tour/graph2.esp:175
+builtin		builtin	subvector	4	2	utter/source/Sancho/sancho.esp:184
+builtin		constant a#b	key#lf		2	
+builtin		constant a#b	key#cr		2	
+builtin		file-level directive	remove_operator	1	2	
+builtin		builtin	member	2	2	utter/source/FTS/BASIC.esp:198
+builtin		user-macro	instance_list	2	2	utter/source/FTS/qxt_int.mcr:137
+builtin		builtin	string_tail	3	1	utter/source/Sancho/dict_io.esp:49
+builtin		builtin	vector_to_list	3	1	utter/source/Sancho/dict_io.esp:55
+builtin		builtin	list_to_vector	3	1	utter/source/Sancho/sancho1.esp:102
+builtin		meta-call (variable goal)	call	1	1	utter/source/Tour/tour_8.esp:128
+builtin		constant a#b	mouse#r		1	
+builtin		constant a#b	mouse#l		1	
+builtin		builtin	integer_to_floating_point	2	1	utter/source/Tour/tour_6.esp:143
+builtin		builtin	search_string_difference	3	1	utter/source/Sancho/sancho5.esp:218
+builtin		builtin	bind_hook	2	1	utter/source/Sancho/sancho5.esp:114
+builtin		builtin	pp	2	1	utter/source/FTS/BASIC.esp:101
+builtin		builtin	role	3	1	utter/source/FTS/dam_prep.esp:36
+builtin		user-macro	print	1	1	utter/source/Tour/propdict.esp:93
+builtin		user-macro	putf	2	1	utter/source/Tour/propdict.esp:98
+builtin		user-macro	labels	2	1	utter/source/Tour/s_IF.esp:316
+builtin		builtin	bel_if	3	1	utter/source/Tour/tour_bel.esp:125
+builtin		builtin	持つ	2	1	utter/source/Tour/tour_bel.esp:139
+builtin		builtin	neg	1	1	utter/source/Tour/tour_bel.esp:141
+builtin		builtin	いる	2	1	utter/source/Tour/tour_bel.esp:143
+builtin		builtin	動転	2	1	utter/source/Tour/tour_bel.esp:151
+builtin		builtin	want	2	1	utter/source/Tour/tour_bel.esp:153
+builtin		builtin	easy	3	1	utter/source/Tour/tour_bel.esp:157
+builtin		builtin	subgoal_path_about_previous_system_utterance_goal	1	1	utter/source/Tour/tour_bel.esp:262
+builtin		builtin	user_age	2	1	utter/source/Tour/tour_bel.esp:282
+builtin		builtin	user_state	2	1	utter/source/Tour/tour_bel.esp:285
+requirement	?	unknown	get_at	3	48	utter/source/QXT/basic.esp:103
+requirement	monogyny_hash_index	instance	put_at	3	40	utter/source/QXT/basic.esp:77
+requirement	monogyny_hash_index	instance	get_at	3	39	utter/source/QXT/basic.esp:36
+requirement	?	unknown	putc	2	28	utter/source/FTS/BASIC.esp:559
+requirement	symbolizer	ref	(#ref)		26	utter/source/QXT/module.esp:282
+requirement	monogyny_hash_index	class	create	3	21	utter/source/QXT/basic.esp:21
+requirement	monogyny_hash_index	ref	(#ref)		21	utter/source/QXT/basic.esp:21
+requirement	?	unknown	putf	3	19	utter/source/FTS/FTS.esp:81
+requirement	symbolizer	class	get_atom_string	3	17	utter/source/QXT/module.esp:300
+requirement	standard_window	instance	draw_string	5	17	utter/source/Tour/VIS.esp:134
+requirement	?	unknown	putt	2	15	utter/source/FTS/qxt_int.mcr:27
+requirement	?	unknown	putf	2	15	utter/source/FTS/BASIC.esp:626
+requirement	?	unknown	put_at	3	13	utter/source/QXT/basic.esp:43
+requirement	?	unknown	get_keys	2	11	utter/source/QXT/basic.esp:109
+requirement	standard_window	instance	draw_line	8	11	utter/source/Tour/VIS.esp:273
+requirement	string	class	append	3	8	utter/source/QXT/module.esp:283
+requirement	font	class	create	3	8	utter/source/Sancho/sancho.esp:137
+requirement	string	ref	(#ref)		8	utter/source/QXT/module.esp:283
+requirement	font	ref	(#ref)		8	utter/source/Sancho/sancho.esp:137
+requirement	monogyny_hash_index	instance	put_contents_with_key	2	7	utter/source/QXT/basic.esp:61
+requirement	monogyny_hash_index	instance	get_keys	2	7	utter/source/QXT/basic.esp:63
+requirement	essential_window	instance	draw_string	5	7	utter/source/Tour/STA.esp:54
+requirement	essential_window	instance	transfer	8	7	utter/source/Tour/STA.esp:102
+requirement	<root>	class	new	2	6	utter/source/Tour/VIS.esp:33
+requirement	symbolizer	class	enter_atom	3	6	utter/source/QXT/module.esp:284
+requirement	?	unknown	flash	1	6	utter/source/FTS/FTS.esp:82
+requirement	essential_window	instance	draw_line	8	6	utter/source/Tour/STA.esp:63
+requirement	?	unknown	new_line	1	6	utter/source/Tour/tour_3.esp:135
+requirement	?	ambiguous	kill	1	5	utter/source/Sancho/sancho.esp:155
+requirement	?	unknown	show	1	5	utter/source/Tour/MAN.esp:188
+requirement	?	unknown	remove_at	3	5	utter/source/QXT/basic.esp:37
+requirement	library_utility	ref	(#ref)		4	utter/source/Tour/tour_pri.esp:54
+requirement	?	unknown	write	2	4	utter/source/Sancho/sancho.esp:63
+requirement	list	instance	get_contents	2	3	utter/source/QXT/support.esp:80
+requirement	symbolizer	class	get_number_string	3	3	utter/source/QXT/module.esp:282
+requirement	?	unknown	current_buffer	2	3	utter/source/Tour/MAN.esp:125
+requirement	monogyny_hash_index	instance	get_contents_with_key	2	3	utter/source/QXT/meetjoin.esp:165
+requirement	?	unknown	gett	2	3	utter/source/FTS/qxt_int.mcr:33
+requirement	<root>	class	refute	3	3	utter/source/Tour/tour_6.esp:190
+requirement	list	instance	add_last	2	2	utter/source/QXT/support.esp:86
+requirement	pmacs_window	instance	set_title	2	2	utter/source/Tour/WIN.esp:93
+requirement	inferior_window	class	create	3	2	utter/source/Tour/WIN.esp:85
+requirement	pmacs_window	class	create_with_input	5	2	utter/source/Tour/WIN.esp:88
+requirement	?	unknown	reshape	5	2	utter/source/Tour/MAN.esp:231
+requirement	standard_io_window	class	create	3	2	utter/source/Sancho/sancho.esp:138
+requirement	standard_io_window	instance	activate	1	2	utter/source/Sancho/sancho.esp:141
+requirement	list	class	create	2	2	utter/source/QXT/support.esp:78
+requirement	?	unknown	class_object	2	2	utter/source/Tour/graph2.esp:176
+requirement	pmacs_window	instance	activate	1	2	utter/source/Tour/WIN.esp:100
+requirement	pmacs_window	instance	set_font	2	2	utter/source/Tour/WIN.esp:91
+requirement	list	ref	(#ref)		2	utter/source/QXT/support.esp:78
+requirement	standard_io_window	ref	(#ref)		2	utter/source/Sancho/sancho.esp:138
+requirement	pmacs_window	ref	(#ref)		2	utter/source/Tour/WIN.esp:88
+requirement	standard_menu	instance	set_item_status	3	2	utter/source/Tour/MAN.esp:326
+requirement	pmacs_window	instance	set_label_font	2	2	utter/source/Tour/WIN.esp:92
+requirement	standard_window	instance	draw_filled_rectangle	6	2	utter/source/Tour/VIS.esp:344
+requirement	<root>	class	indexed_vector	8	2	utter/source/QXT/unify2.esp:372
+requirement	standard_window	instance	draw_rectangle	8	2	utter/source/Tour/VIS.esp:135
+requirement	{with_border|as_superior|as_mouse_input|with_default_mouse|inferior_window}	instance	get_inside_size	3	2	utter/source/Tour/WIN.esp:87
+requirement	{with_border|as_superior|as_mouse_input|with_default_mouse|inferior_window}	instance	activate	1	2	utter/source/Tour/WIN.esp:99
+requirement	?	ambiguous	reset	1	1	utter/source/Tour/MAN.esp:167
+requirement	process	class	create	2	1	utter/source/Tour/MAN.esp:69
+requirement	process	instance	activate	2	1	utter/source/Tour/MAN.esp:71
+requirement	?	unknown	command_interpret	1	1	utter/source/Tour/MAN.esp:348
+requirement	?	unknown	add_operator	4	1	utter/source/QXT/trans.esp:29
+requirement	stop_watch	class	create	2	1	utter/source/Sancho/sancho.esp:56
+requirement	standard_input_file	class	create	3	1	utter/source/QXT/trans.esp:27
+requirement	standard_input_file	instance	close_input	1	1	utter/source/QXT/trans.esp:31
+requirement	standard_input_file	instance	gett	2	1	utter/source/QXT/trans.esp:21
+requirement	stop_watch	instance	show	2	1	utter/source/Sancho/sancho.esp:60
+requirement	standard_io_buffer	class	create	2	1	utter/source/Tour/VIS.esp:101
+requirement	stop_watch	instance	stop	1	1	utter/source/Sancho/sancho.esp:59
+requirement	stop_watch	instance	start	1	1	utter/source/Sancho/sancho.esp:57
+requirement	library_utility	class	retract	3	1	utter/source/Tour/tour_pri.esp:63
+requirement	library_utility	class	retract_all	4	1	utter/source/Tour/tour_pri.esp:67
+requirement	list	instance	clear	1	1	utter/source/Tour/VIS.esp:364
+requirement	?	unknown	refute	3	1	utter/source/Tour/tour_pri.esp:141
+requirement	essential_window	class	create	3	1	utter/source/Tour/STA.esp:34
+requirement	screen	class	get_size	3	1	utter/source/Tour/STA.esp:27
+requirement	standard_input_file	instance	get_parsing_operator	2	1	utter/source/QXT/trans.esp:28
+requirement	?	unknown	getl	2	1	utter/source/Tour/VIS.esp:373
+requirement	?	unknown	move_to_last	1	1	utter/source/Tour/MAN.esp:260
+requirement	pmacs_window	instance	get_interpreter	2	1	utter/source/Tour/WIN.esp:96
+requirement	with_border	nature	(inherited)		1	utter/source/Tour/WIN.esp:14
+requirement	as_superior	nature	(inherited)		1	utter/source/Tour/WIN.esp:14
+requirement	as_mouse_input	nature	(inherited)		1	utter/source/Tour/WIN.esp:14
+requirement	with_default_mouse	nature	(inherited)		1	utter/source/Tour/WIN.esp:14
+requirement	inferior_window	nature	(inherited)		1	utter/source/Tour/WIN.esp:14
+requirement	process	ref	(#ref)		1	utter/source/Tour/MAN.esp:69
+requirement	stop_watch	ref	(#ref)		1	utter/source/Sancho/sancho.esp:56
+requirement	standard_input_file	ref	(#ref)		1	utter/source/QXT/trans.esp:27
+requirement	standard_io_buffer	ref	(#ref)		1	utter/source/Tour/VIS.esp:101
+requirement	essential_window	ref	(#ref)		1	utter/source/Tour/STA.esp:34
+requirement	screen	ref	(#ref)		1	utter/source/Tour/STA.esp:27
+requirement	standard_menu	ref	(#ref)		1	utter/source/Tour/MAN.esp:318
+requirement	menu	ref	(#ref)		1	utter/source/Tour/WIN.esp:124
+requirement	?	unknown	get_interpreter	2	1	utter/source/Tour/MAN.esp:346
+requirement	?	unknown	activate	1	1	utter/source/Tour/MAN.esp:178
+requirement	?	unknown	deactivate	1	1	utter/source/Tour/MAN.esp:201
+requirement	?	unknown	get_value	5	1	utter/source/Sancho/sancho.esp:61
+requirement	?	ambiguous	create_window	2	1	utter/source/Tour/WIN.esp:49
+requirement	standard_temporary_menu	class	create	3	1	utter/source/Tour/VIS.esp:106
+requirement	standard_window	class	create	3	1	utter/source/Tour/VIS.esp:109
+requirement	monogyny_hash_index	instance	remove_at	3	1	utter/source/QXT/basic.esp:137
+requirement	standard_menu	class	create	3	1	utter/source/Tour/MAN.esp:318
+requirement	inferior_window	instance	deactivate	1	1	utter/source/Tour/WIN.esp:118
+requirement	standard_temporary_menu	ref	(#ref)		1	utter/source/Tour/VIS.esp:106
+requirement	standard_window	ref	(#ref)		1	utter/source/Tour/VIS.esp:109
+requirement	?	unknown	clear	1	1	utter/source/Tour/VIS.esp:366
+requirement	standard_menu	instance	set_title	2	1	utter/source/Tour/MAN.esp:322
+requirement	standard_menu	instance	read	2	1	utter/source/Tour/MAN.esp:325
+requirement	standard_menu	instance	kill	1	1	utter/source/Tour/MAN.esp:328
+requirement	?	unknown	set_editor	2	1	utter/source/Tour/WIN.esp:98
+requirement	standard_temporary_menu	instance	set_title	2	1	utter/source/Tour/VIS.esp:108
+requirement	standard_temporary_menu	instance	read	2	1	utter/source/Tour/VIS.esp:351
+requirement	standard_temporary_menu	instance	kill	1	1	utter/source/Tour/VIS.esp:354
+requirement	?	unknown	read	2	1	utter/source/Sancho/sancho.esp:154
+requirement	essential_window	instance	set_size	3	1	utter/source/Tour/STA.esp:38
+requirement	essential_window	instance	erase_cursor	1	1	utter/source/Tour/STA.esp:39
+requirement	essential_window	instance	activate	1	1	utter/source/Tour/STA.esp:40
+requirement	<root>	class	get_slot	3	1	utter/source/QXT/module.esp:171
+requirement	?	unknown	background	2	1	utter/source/Tour/MAN.esp:306
+requirement	menu	class	create	3	1	utter/source/Tour/WIN.esp:124
+requirement	menu	instance	activate	1	1	utter/source/Tour/WIN.esp:129
+requirement	menu	instance	set_font	2	1	utter/source/Tour/WIN.esp:126
+requirement	process	instance	exterminate	1	1	utter/source/Tour/MAN.esp:113
+requirement	standard_temporary_menu	instance	activate	1	1	utter/source/Tour/VIS.esp:350
+requirement	standard_temporary_menu	instance	set_label_font	2	1	utter/source/Tour/VIS.esp:107
+requirement	standard_menu	instance	set_label_font	2	1	utter/source/Tour/MAN.esp:321
+requirement	essential_window	instance	show	1	1	utter/source/Tour/STA.esp:92
+requirement	standard_menu	instance	set_font	2	1	utter/source/Tour/MAN.esp:320
+requirement	standard_window	instance	get_size	3	1	utter/source/Tour/VIS.esp:215
+requirement	standard_window	instance	set_size	3	1	utter/source/Tour/VIS.esp:220
+requirement	standard_window	instance	get_position	3	1	utter/source/Tour/VIS.esp:216
+requirement	standard_window	instance	kill	1	1	utter/source/Tour/VIS.esp:357
+requirement	standard_window	instance	erase_cursor	1	1	utter/source/Tour/VIS.esp:119
+requirement	standard_window	instance	activate	1	1	utter/source/Tour/VIS.esp:118
+requirement	standard_window	instance	set_title	2	1	utter/source/Tour/VIS.esp:130
+requirement	library_utility	class	assert	3	1	utter/source/Tour/tour_pri.esp:54
+requirement	library_utility	class	asserta	3	1	utter/source/Tour/tour_pri.esp:58
+requirement	<root>	class	var_descriptor	2	1	utter/source/QXT/unify2.esp:189
+requirement	<root>	class	var_cell	10	1	utter/source/QXT/unify2.esp:190
+requirement	?	unknown	split_arguments	8	1	utter/source/QXT/unify2.esp:374
+requirement	<root>	class	generate_content	4	1	utter/source/Sancho/sancho.esp:24
+requirement	<root>	slot	!display_window	0	1	utter/source/Sancho/sancho.esp:27
+requirement	standard_menu	instance	show	1	1	utter/source/Tour/MAN.esp:324
+requirement	standard_window	instance	set_label_font	2	1	utter/source/Tour/VIS.esp:129
+requirement	standard_window	instance	read_click_with_position	4	1	utter/source/Tour/VIS.esp:319
+requirement	standard_temporary_menu	instance	deactivate	1	1	utter/source/Tour/VIS.esp:352
+requirement	menu	instance	set_label_font	2	1	utter/source/Tour/WIN.esp:127
+requirement	menu	instance	set_title	2	1	utter/source/Tour/WIN.esp:128
+requirement	<root>	class	fts2	5	1	utter/source/Tour/s_IF.esp:64
+requirement	?	unknown	get_goal_type_from_path	2	1	utter/source/Tour/tour_8.esp:40
+requirement	?	unknown	get_evaluation_from_utterance_plan	2	1	utter/source/Tour/tour_8.esp:42

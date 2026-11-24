@@ -1,0 +1,3 @@
+TR-285	situation stack operations	PROSE	no method names
+TR-285	resource-release method	PROSE	name not given
+TR-285	CIL	CITED	situational-semantics language using bind_hook

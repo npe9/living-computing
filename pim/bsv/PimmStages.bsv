@@ -71,6 +71,7 @@ endmodule
 
 interface PimmExec;
   method Action newGoal;                       // clear the clause-selection state
+  method Bit#(32) reductions;                  // the goal's so far: executes, proceed
   method Action enq(Fetched f);
   method ActionValue#(Step) out;
 endinterface
@@ -84,6 +85,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2,
                XSoW,
+               XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XReuse3,
                XScI1, XScI2, XScC, XScW, XScO1, XScO2, XScO3, XScO4 } XState deriving (Bits, Eq);
 
@@ -117,6 +119,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
   Reg#(ScsiResult)   scR     <- mkRegU;     // scsi_command's outputs, being written
+  // the reductions of the goal in hand: one per execute and one for its
+  // proceed (the shoen's statistics, PimmShBox.bsv)
+  Reg#(Bit#(32))     nRed    <- mkReg(0);
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -150,6 +155,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_change_element_size || op == op_string_operation
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
+                  || op == op_calculate_priority_from_current || op == op_supply_atom_number
                   || op == op_scsi_command;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
@@ -214,9 +220,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
-  // the shoen built-ins of stage 1 (PimmShBox.bsv); the inputs that are
-  // waited for: MinPrio, MaxPrio, ExcepMask, or the handle
-  Bool shoenHere = op == op_create_shoen || op == op_start_shoen;
+  // the shoen built-ins of stages 1 and 2 (PimmShBox.bsv); the inputs
+  // that are waited for: MinPrio, MaxPrio, ExcepMask, or the handle
+  Bool shoenHere = op == op_create_shoen || op == op_start_shoen
+                || op == op_shoen_statistics || op == op_remove_shoen;
   Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
 
   // wait_vector_N, N = 1..6
@@ -360,6 +367,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       scsi.init;
       st <= XScI1;
     end
+    else if (op == op_current_node) begin
+      // current_node(^NodeNumber, ^TotalNode): no input, never waits.
+      // One node here (ours): 0, then 1 (nodeTotal)
+      regs.wr(x, intC(0));
+      st <= XNode;
+    end
     else if (op == op_new_atom) begin
       // new_atom(^Atom): the next of a counter; which numbers is ours
       if (nextAtom[24] == 1) stop(EndUnimp);
@@ -501,6 +514,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // the same goal goes on as a reduction of the predicate at the label
       alt <= tagged Invalid;
       nNoted <= 0;
+      nRed <= nRed + 1;
       finish(tagged Next labelOf(pc, c16));
     end
     else if (op == op_execute_external) begin
@@ -553,7 +567,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       vals[3] <= intC(0);          // create_shoen does not wait for Code
       st <= XShIn;
     end
-    else if (op == op_proceed) stop(EndDone);
+    else if (op == op_proceed) begin
+      nRed <= nRed + 1;
+      stop(EndDone);
+    end
     // ---- body built-ins
     else if (builtinHere) begin
       bK <= 0;
@@ -901,6 +918,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule bStrInfo2 (st == XBSInfo2);
     regs.wr(z, opA);
     st <= XBOut2;
+  endrule
+
+  // supply_atom_number: Done, the fresh variable
+  rule supplied (st == XSan);
+    let v <- gbox.newVarResult;
+    regs.wr(z, v);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // current_node: the second output, the total number of nodes
+  rule nodeTotal (st == XNode);
+    regs.wr(y, intC(1));
+    next;
   endrule
 
   rule note2 (st == XNote2);
@@ -1291,6 +1321,27 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         finish(tagged Next afterBuiltin);
       end
     end
+    else if (op == op_calculate_priority_from_current) begin
+      // calculate_priority_from_current(X, ^Y), X in -4096..4096
+      // (manual).  PDSS's formula (blt_b_rltv) with the range 0..4096
+      // and the current priority 4096 (both ours): Y = 4096 + X for
+      // X < 0, 4096 for X >= 0.  The range test is signed
+      if (!isInt(a) || ia < -4096 || ia > 4096) stop(EndUnimp);
+      else begin
+        regs.wr(y, intC(ia < 0 ? 4096 + a.val : 4096));
+        finish(tagged Next afterBuiltin);
+      end
+    end
+    else if (op == op_supply_atom_number) begin
+      // supply_atom_number(X, Y, ^Done): what it does is not sourced.
+      // Ours, the narrowest its callers need: two integers, dropped;
+      // Done a fresh variable that nothing here binds
+      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        gbox.newVar;
+        st <= XSan;
+      end
+    end
     else if (op == op_new_instruction) begin
       // new_instruction(Tag, Value, ^Cell): atomic tags and tags from
       // 20h only; a reference or pointer tag is refused
@@ -1653,7 +1704,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       nbox.close(regs.r(y));
       st <= XMi4;
     end
-    else stop(EndUnimp);                  // a vector (more inputs), or not a stream
+    else if (isVec(a) && !isLongVec(a)) begin
+      // a vector: as many inputs as it has elements (TR-466 3.3)
+      nbox.spread(regs.r(y), sizeOf(a));
+      st <= XMv1;
+    end
+    else stop(EndUnimp);                  // a vector of 7 or more, or not a stream
   endrule
 
   rule mergeIn1 (st == XMi1);
@@ -1678,6 +1734,47 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule mergeInW (st == XMi2w);
     gbox.done;
     finish(tagged Next pc);
+  endrule
+
+  // an input bound to a vector: it ends and each element gets a ready
+  // goal of merge_in, made through the argument registers (a1 the
+  // element, taken with its MRB on, a2 the record), the last element's
+  // newest.  The empty vector only ends the input
+  rule mergeVec1 (st == XMv1);
+    let r <- nbox.result;
+    if (r.ok) begin
+      dbox.unify(r.a, mkCell(tag_ATOMo, 0));
+      st <= XUnify;
+    end
+    else if (vectorSize(opA) == 0) next;
+    else begin
+      packK <= 0;
+      smem.read(cellAddr(opA));
+      st <= XMv2;
+    end
+  endrule
+
+  rule mergeVec2 (st == XMv2);
+    let c <- smem.data;
+    Addr at = cellAddr(opA) + zeroExtend(packK);
+    regs.wa(1, isUnboundCell(c) ? mkCell(tag_REFx, absAddr(at)) : marked(c));
+    st <= XMv3;
+  endrule
+
+  rule mergeVec3 (st == XMv3);
+    regs.wa(2, regs.r(y));
+    gbox.record(fromInteger(lay_READY), mergeInStub, 2, True, True);
+    st <= XMv4;
+  endrule
+
+  rule mergeVec4 (st == XMv4);
+    let g <- gbox.recordResult;
+    if (zeroExtend(packK) + 1 == sizeOf(opA)) next;
+    else begin
+      packK <= packK + 1;
+      smem.read(cellAddr(opA) + zeroExtend(packK) + 1);
+      st <= XMv2;
+    end
   endrule
 
   // an input ends: the last one closes the output
@@ -1727,6 +1824,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShS;
       end
     end
+    // shoen_statistics(Shoen, ^NewShoen), 22:E6, and remove_shoen(Shoen),
+    // 22:E4 (stage 2): anything but a handle is refused
+    else if (op == op_shoen_statistics || op == op_remove_shoen) begin
+      if (vals[0].tag != tag_SHREC) stop(EndUnimp);
+      else begin
+        if (op == op_shoen_statistics) shbox.statistics(vals[0]);
+        else shbox.remove(vals[0]);
+        st <= XShS;
+      end
+    end
     // MinPrio, MaxPrio and ExcepMask must be integers (shoen:execute1/7
     // passes vectors: refused) and are then dropped: no priorities and
     // no exceptions here
@@ -1760,10 +1867,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     finish(tagged Next (pc + 2));
   endrule
 
-  // a shoen that is not dormant is refused; NewShoen is the same handle
+  // a shoen that is not dormant is refused (a shoen removed already, by
+  // remove_shoen); NewShoen is the same handle, remove_shoen has none
   rule shStarted (st == XShS);
     let r <- shbox.result;
     if (!r.ok) stop(EndUnimp);
+    else if (op == op_remove_shoen) next;
     else begin
       regs.wr(y, vals[0]);
       next;
@@ -1798,6 +1907,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         alt <= tagged Invalid;
         nNoted <= 0;
+        nRed <= nRed + 1;
         finish(tagged Next a);
       end
     end
@@ -1903,7 +2013,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   method Action newGoal;
     alt <= tagged Invalid;
     nNoted <= 0;
+    nRed <= 0;
   endmethod
+
+  method Bit#(32) reductions = nRed;
 
   method Action enq(Fetched f) = inQ.enq(f);
   method ActionValue#(Step) out;

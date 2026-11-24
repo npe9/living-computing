@@ -1,0 +1,10 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+pool	-	-	-	insert; extract; find (prose)	PROSE	TM-009	5	Page 4	"an instance of the class 'pool'"
+tap	-	-	-	-	PROSE	TM-009	5	Page 4	"plugged in a pool", sequential access
+stream	-	-	-	put; get (prose)	PROSE	TM-009	5-6	Page 4-5	get suspends on empty stream until a put
+world	-	pool list	-	-	PROSE	TM-009	6	Page 5	"a meta-object, an instance of the class 'world'"; created from pools; combined world includes other worlds; lookup in pool-list order
+process	-	-	-	initialization; termination; suspension; resumption (prose)	PROSE	TM-009	8	Page 7	"a meta-object ... instance of the class 'process'"; fork (::, !!) and remote call (@ world) creation; surrogate process
+port	-	-	-	send/receive (prose)	PROSE	TM-009	8	Page 7	channel created by connecting two ports
+source/sink port	(port)	-	-	-	PROSE	TM-009	8	Page 7	hole to the outer world; pseudo-process; open-ended channel
+:-	-	-	-	-	PROSE	TM-009	3-4	Page 2-3	"A clause is considered as a meta-object whose class name is ':-'"
+class	-	-	-	new/5 (notation)	PRINTED-INTERFACE	TM-009	4	Page 3	new(<class-name>:class, subobject names, component class names, required subobject names, required component class names); 1983 design notation, not ESP

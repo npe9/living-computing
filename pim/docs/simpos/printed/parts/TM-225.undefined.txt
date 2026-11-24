@@ -1,0 +1,2 @@
+TM-225	window save area	FIGURE	per-window save area in Fig. 5; structure absent
+TM-225	user / clock management	NAMED	supervisor components

@@ -1,0 +1,14 @@
+# Names used in TR-059 but never defined there (PDF page)
+disk (object; "responsible to the device management of the kernel") -- p06
+volume descriptor, VTOC entry, region descriptor, file descriptor -- formats not given -- p06-08
+page size / page table entry count / "the last few entries" -- p09
+KL0 integer vector and string (buffer contents) -- p11
+:decode/1, :encode/1, :instance_file/1 (per-class conversion) -- p22
+:object_class/1 on instance file; :file/1, :file_marker/1 on record pointer; #record_pointer :create -- p22
+io_port ("a special type of port") -- p29
+manager channel / handler channel message formats -- p29-31
+device handler (interrupt process) internals -- p30
+system boot-up region, CSP programs, PSI firmware programs, IPL -- p32-33
+floppy disk files -- p32
+file manipulator, binder, file class coercion -- p33
+user and node objects -- p04

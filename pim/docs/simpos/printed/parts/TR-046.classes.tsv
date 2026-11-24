@@ -1,0 +1,17 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+default_translation_table				:look_up/5	PRINTED-SOURCE	TR-046	26;28		Fig.2 (p26, abridged with printed elision, no '!' in clauses) and Fig.4 (p28, full: kill lull arouse status visit memorize broadcast remember invoke_system_menu x2 read write, default pass-through). Arity excludes receiver Table. Body calls :get_e_process(Window,E_process). Listings TR-046_p26.esp, TR-046_p28.esp. User translation tables inherit it (p14).
+system_menu		component menu_list	:create/2; :get_invariant_part/1		PRINTED-SOURCE	TR-046	27		Fig.3 System-Menu Definition, partial (printed elisions). Clauses take System_menu_class receiver (class predicates) though no 'class' keyword printed. Uses #list, #multi_column_menu, #menu_item, local make_from_to/2 (not shown), slot 'window' (System_menu!window := ...). Menu items 'window','file' (media systems). Listing TR-046_p27.esp.
+translation_table	default_translation_table				PROSE	TR-046	14		"the user translation table inherits this class" (default_translation_table); stored in a slot of e_window; executed by the window manager (p16).
+e_window		translation table; e_process (TR-061)			PROSE	TR-046	14;16		expert window; translation table stored in a slot; rewriting the slot changes the table dynamically.
+e_program					PROSE	TR-046	15		"The expert is implemented through the special classes, namely e_program and e_process."
+e_process					PROSE	TR-046	15		see e_program.
+e_process_pool					PROSE	TR-046	15		special object managing current set of experts; handles methods such as broadcast.
+as_superior		inferiors			PROSE	TR-046	13		window hierarchy mixin; slot inferiors lists inferior window pointers.
+as_inferior		superior			PROSE	TR-046	13		window hierarchy mixin; slot superior holds the superior window pointer.
+whiteboard					PROSE	TR-046	16		"implemented as a circular stack containing expert messages".
+coordinator					PROSE	TR-046	11;14-16		manager of experts; destination '#coordinator' in translation-table clauses (p26,p28). ~20,000 characters of ESP (p17).
+menu window					PROSE	TR-046	14-15		"The programmer can define the menu window only inherited the menu classes and supplied with the items"; size computed by window system. Class name not given.
+screen					PROSE	TR-046	9;13		full screen is the most superior window, "defined as special window". Class name not given.
+list					NAMED	TR-046	27		used as #list with :new/1, :add_first/1, :add_last/1 in system_menu.
+multi_column_menu					NAMED	TR-046	27		used as :create(#multi_column_menu, Menu_list, Menu_window).
+menu_item					NAMED	TR-046	27		used as :create(#menu_item, 'window', common, window, _, Window_item) -- 5 args after receiver.

@@ -1,0 +1,9 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 25, printed folio 23. Figure 4.4 Directory File Tree; Section 4.2(2) directory file pathname operations.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To retrieve a record pointer with a pathname
+          :find(Directory_File,Record_Pointer,Pathname)
+% o To bind a record pointer with a pathname
+          :bind(Directory_File,Record_Pointer,Pathname)

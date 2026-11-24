@@ -1,0 +1,9 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 06, printed folio 4. Section 2.1(1) 'Volume descriptor': class 'volume' operations.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To mount a volume on a disk
+          :mount(Volume,Disk)
+% o To dismount a volume
+          :dismount(Volume)

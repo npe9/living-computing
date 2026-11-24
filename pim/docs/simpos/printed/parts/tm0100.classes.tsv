@@ -1,0 +1,23 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+process	with_link, waiting_frame	class: ready_queue, instance_array; instance: context, priority, sub_priority, mask_count:=0, suspend_reason:=nil, suspend_reasons(list), suspend_flag:=nil, status:=nil, parent_process, children_processes(list), killer_process, invocation_stack(list), resources(list), world, user, interpreter_instance, clock(process_clock)	:create/1, :create_core/2	:activate/1, :resume/1, :suspend/1 (bodies p8-9); signatures printed p5 (tm0100_p05-07_signatures.esp): :activate(Process,Program), :suspend(Process,Reason), :resume(Process,Reason), :terminate(Process) i.e. :terminate/0 (no body); called on process: :status/2, :clear_masks/0, :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0	PRINTED-SOURCE	TM-100	7-10	5-8	Figure 3.1 "Part of class 'process'" (partial: "they are not complete"). status values nil(=dead), dormant, suspended, ready, (active) "and some others".
+as_program		none	:create/1	:goal/0 (default, to be overridden), :assign/0, :resign/0, :resign_core/0, :invoke/0	PRINTED-SOURCE	TM-100	11-12	9-10	Figure 3.3 "Part of class 'as_program'". Programs are instances of classes inheriting as_program.
+interrupt_process	process	class: context_stack, stack_pointer; instance: interrupt_index		:resume/1, :suspend/1 (override; "%TRAP TO PROCESS ...", "%RELEASE PROCESSOR ...", "%ALLOCATE PROCESSOR ..." elided)	PRINTED-SOURCE	TM-100	12-13	10-11	Figure 3.4. Resumed by interrupt or software trap; releases processor when suspended.
+boot_process	process			overrides :create and :activate (no code)	PROSE	TM-100	13	11	"a sole instance of class 'boot_process', which executes the boot program inheriting class 'as_boot_program'"
+as_boot_program					NAMED	TM-100	13	11	boot program class nature; no definition.
+stream		instance: waiting_queue(waiting_queue), post_queue(post_queue)	:create/1	:put/1, :get/1	PRINTED-SOURCE	TM-100	14-15	12-13	Figure 3.6; Figure 3.5 class relations (stream has waiting_queue, has post_queue).
+channel	stream	instance: post_queue (overridden: post_queue_for_message)		:send/2, :receive/2	PRINTED-SOURCE	TM-100	15	13	Figure 3.7
+port	channel	instance: out_port(list)		:send/2 (body); local send/4; signatures printed p7 (no body): :receive/2, :connect/1, :disconnect/1	PRINTED-SOURCE	TM-100	16	14	Figure 3.8; :connect/:disconnect named in prose (PDF p7, p16), not printed.
+bounded_channel	channel	instance: post_queue	:create/2 (Channel, Limit)		PRINTED-SOURCE	TM-100	17	15	Figure 3.10; Figure 3.9 class relations.
+bounded_post_queue	post_queue	instance: semaphore	:create/2 (Queue, Limit)	before :add_object/1 (-> :p_operation), after :remove_object/1 (-> :v_operation)	PRINTED-SOURCE	TM-100	17-18	15-16	Figure 3.11; shows use of before/after demons.
+post_queue				:add_object/1, :remove_object/1 (called)	PROSE	TM-100	14	12	"Any class of objects, including integers, atoms, and strings, can be put into the queue."
+post_queue_for_message				must be compatible with post_queue	PROSE	TM-100	15	13	
+waiting_queue				:hook/1, :unhook/1, :empty/0 (called)	PROSE	TM-100	14	12	"constructed on a doubly-linked list"; entries must be instances of waiting_frame.
+waiting_frame					PROSE	TM-100	10,14	8,12	inherited by process "to put the process into the waiting queue of a stream".
+with_link					PROSE	TM-100	10	8	inherited by process "to put the process into the ready queue".
+semaphore	(waiting_queue per Fig 3.9)		:create/2 (Semaphore, Limit) (called)	:p_operation/0, :v_operation/0 (called)	PROSE	TM-100	16-17	14-15	"A semaphore which is a component of a bounded post queue inherits a waiting queue."
+message				:set_sender/1, :get_sender/1, :copy/1 (called)	PROSE	TM-100	16	14	"A message is defined by class 'message'."
+context			:create/3 (Context_number, Stack_number, Context) (called)	:get_number/1, :set_entry_point/1, :activate/0, :set_priority/1 (called)	NAMED	TM-100	8-9	6-7	hardware context object used by process (comment: "% Hardware PC«?»").
+list			:create/1 (called)	:add_last/1, :remove/1, :empty/0, :clear/0, :count/1, :get_first/1, :stick_tap/1 (called)	NAMED	TM-100	8-16	6-14	
+process_clock			:create/1 (called)		NAMED	TM-100	8	6	"The elapse time of this process"
+window			:create/1 (called)	:activate/0, :read/1, :write/1 (called)	NAMED	TM-100	10	8	used by parrot example
+parrot	as_program			:goal/0; local loop/1	PRINTED-SOURCE	TM-100	10	8	EXAMPLE (Figure 3.2), not a system class.

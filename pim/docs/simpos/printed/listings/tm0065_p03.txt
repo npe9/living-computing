@@ -1,0 +1,6 @@
+% TM-065 (Hattori et al., June 1984) PDF page 3, printed folio 1. Caption: Figure 1.1 General View of PSI
+% transcribed by eye from the 300dpi render viewed at HALF SCALE (work/tm0065/s-03.png), not from crops.
+% Typewriter-drawn hardware sketch; reproduced as labels and connections only.
+  screen (with overlapping window rectangles) ===== PSI (cabinet, '===' marks) ============ //LAN
+  keyboard (below screen)                            mouse (connected to PSI side)
+  LAN // continues up to a second terminal+cabinet labelled 'psi' (lower-case as printed)

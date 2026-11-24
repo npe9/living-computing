@@ -1,0 +1,8 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 8, printed folio 7. Section 3.1 "Object-Orientation", in-text example of an ESP method (no figure number).
+% Transcribed by eye from 300dpi crop (A/work/tr0524/x08.png). Text says the method is identified as :add_data/2
+% counting the receiver (Accessor) as an argument.
+
+:add_data(Accessor, String) :-
+     :put_data(Accessor, String),
+     :add(Accessor, immediate) ;

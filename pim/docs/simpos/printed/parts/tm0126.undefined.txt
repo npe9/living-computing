@@ -1,0 +1,8 @@
+# TM-126: named but not defined
+parent-window / child-window part classes (no identifiers)              PDF p5
+rectangle-partition data structure (only Fig 2 worked example)         PDF p5
+fully-visible state flag (name/representation)                         PDF p7
+session-management (saved debugger command sequences) interface       PDF p7-8
+Debugger Menu items' semantics (Change State, Control Menu, From/To Whiteboard, From Last Input)  PDF p6
+file_manipulator menu items' semantics (undelete, expunge, purge ...)  PDF p6
+debugger ports unify/pick/next/miss (meaning not given here; cf. TM-079 p15 box model)  PDF p6

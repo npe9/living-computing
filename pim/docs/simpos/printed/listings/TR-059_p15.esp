@@ -1,0 +1,13 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 15, printed folio 13. Section 3.1(5) file tap position predicates; Figure 3.1 File Tap.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To note the current position
+             :marker(Tap,File_Marker)
+             :beginning(Tap)
+             :end(Tap)
+% o To point to a new record position
+             :move(Tap,File_Marker)
+             :move_to_beginning(Tap)
+             :move_to_end(Tap)

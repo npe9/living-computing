@@ -1,0 +1,37 @@
+% TM-079 「逐次型推論マシンのOS」 (服部 隆, November 1984) -- HANDWRITTEN manuscript (not slides)
+% PDF page 4 (manuscript page 3, section 2 SIMPOSの概要). Untitled tree figure.
+% Lead-in as written: SIMPOSの構成を示すと下の通りとなる。各要素については後述する。
+% transcribed by eye from 300dpi crops (work/tm0079/p-04_[012].png). Dotted continuation
+% lines ('...') are drawn in the original under the programming system and I/O media lists.
+
+SIMPOS
+ ├─ プログラミング・システム
+ │    ├─ コーディネータ
+ │    ├─ エディタ
+ │    ├─ トランスデューサ
+ │    ├─ デバッガ／インタプリタ
+ │    ├─ ライブラリアン
+ │    ┆
+ └─ オペレーティング・システム
+      ├─ 入出力メディア・システム
+      │    ├─ ウィンドウ
+      │    ├─ ネットワーク
+      │    ├─ ファイル
+      │    ┆
+      ├─ スーパバイザ
+      │    ├─ プロセス
+      │    ├─ プール
+      │    ├─ ストリーム
+      │    ├─ ワールド
+      │    └─ 時計
+      └─ カーネル
+           ├─ プロセサ
+           ├─ メモリ
+           ├─ デバイス
+           └─ IPL
+
+% TRANSLATION (labels): programming system {coordinator, editor, transducer,
+% debugger/interpreter, librarian, ...}; operating system {I/O media system {window,
+% network, file, ...}; supervisor {process, pool, stream, world, clock(時計)}; kernel
+% {processor, memory, device, IPL}}.
+% VARIANTS: TM-079 alone places IPL in the kernel and names 時計 (clock; TM-065 'Timer').

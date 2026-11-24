@@ -34,8 +34,11 @@ python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
-# A4: the shipped kernel s9term boots on the reference model as far as
-# pageinit's console line (tools/p9boot.py, docs/p9boot.md; ~25 s).
+# A4: the shipped kernel s9term boots on the reference model: pageinit's
+# console line, /boot's prompt, the BOOTP request, the no-server path,
+# and a replay of the join with the 1e file server to `init: starting`;
+# the idle skip is checked against a run without it (tools/p9boot.py,
+# docs/p9boot.md; ~4-5 min on a loaded machine).
 python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
@@ -159,6 +162,32 @@ done
 # A2 on the Bluespec core: the shipped 1e za and zl run on the model,
 # every retirement compared with the reference run (bsv/run_p9host.sh);
 # za's object is compared with the shipped libc.a member.
-"$here/run_p9host_tests.sh"
+P9HOST_SIM=bluesim "$here/run_p9host_tests.sh"
+
+# The Verilator build of the same testbench (bsv/build_p9host_vl.sh) on
+# the recording the last step left, zc frexp.c: its whole output --
+# 1,652,549 HRI lines, cyc included, and the P9HOST lines -- must be
+# byte-identical to Bluesim's, and so must the files it wrote
+# (docs/bluespec_architecture.md, "Simulators").  About 30 s to build and
+# 35 s to run, against Bluesim's 135 s for the same run (2026-11-23,
+# heavily loaded machine).  Skipped, loudly, where Verilator is missing.
+if command -v "${VERILATOR:-verilator}" > /dev/null 2>&1; then
+    work=${P9HOST_WORK:-$hobbit/bsv/p9work}
+    "$hobbit/bsv/build_p9host_vl.sh" > "$tmp/vl_build.log" 2>&1 || {
+        tail -30 "$tmp/vl_build.log"; echo "hobbit: the Verilator build failed" >&2; exit 1; }
+    mkdir -p "$tmp/vl/out"
+    P9REC="$work/p9.rec" P9OUT="$tmp/vl/out" "$hobbit/bsv/sim_p9host_vl" \
+        > "$tmp/vl/core.log" 2>&1 || {
+        tail -5 "$tmp/vl/core.log"; echo "hobbit: the Verilator run failed" >&2; exit 1; }
+    # run_p9host.sh touches out/console after the Bluesim run.
+    touch "$tmp/vl/out/console"
+    if ! cmp "$work/core.log" "$tmp/vl/core.log" || ! diff -r "$work/out" "$tmp/vl/out"; then
+        echo "hobbit: Verilator and Bluesim differ on zc frexp.c" >&2
+        exit 1
+    fi
+    echo "verilator: zc frexp.c, $(grep -c '^HRI ' "$tmp/vl/core.log") HRI records and the files written, identical to Bluesim's"
+else
+    echo "hobbit: SKIPPED the Verilator cross-check (verilator not installed)"
+fi
 
 echo "hobbit: all tests passed"

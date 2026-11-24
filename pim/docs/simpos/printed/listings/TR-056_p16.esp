@@ -1,0 +1,10 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 16, printed folio 14. Section 4(3) Port (cont.), Figure 4.3 Port; Section 4(4) 'Stream pool' multiple get.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+% o To disconnect a specified port
+          :disconnect(Port,The_other_port)
+% A stream pool ... is a pool of streams with a multiple get operation defined as
+    :get(Stream_pool,Object)
+% or   (continued on PDF p17)

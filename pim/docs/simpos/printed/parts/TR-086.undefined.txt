@@ -1,0 +1,3 @@
+TR-086	bind-hook, exception-hook	PROSE	KL0 operations named, not specified here
+TR-086	IPL module list	ABSENT	"included many modules of the kernel operating system and also run-time support routines of ESP"
+TR-086	ICOT-Net	NAMED	LAN; protocol not given

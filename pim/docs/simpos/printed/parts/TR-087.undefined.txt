@@ -1,0 +1,4 @@
+TR-087	event/situation methods	PROSE	no method names printed
+TR-087	read_console, display_console	NAMED	KL0 built-ins used by the runtime support; signatures not given
+TR-087	system tracer	PROSE	Sato et al. 1984 cited
+TR-087	IPL flexible-disk format	ABSENT	Ueda et al. 1984 cited

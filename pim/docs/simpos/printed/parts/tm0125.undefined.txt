@@ -1,0 +1,11 @@
+# TM-125: names referenced but not defined (no source/definition in the report)
+All 69 catalogue classes: role sentence only, no natures/slots/methods (except as_relation->as_superior, logical_mouse->single_object).
+Which class defines each chapter-5 method                              PDF p13-19
+:select/0 (:select(Window), receiver only)  -- named in 6.2 prose only                PDF p22
+Table 1 option semantics beyond one-line descriptions                  PDF p13-14
+Line_type, Alu value sets for draw_line/draw_rectangle/draw_string     PDF p17
+item_type values for menu/choice items (on_off named via as_on«?»off_menu) PDF p12, p14
+window_message format (inter-process message between user process and window manager) PDF p13
+kana-kanji translation module interface (Fig 1)                        PDF p4
+device handler interfaces (bitmap display, mouse, keyboard handlers)   PDF p4, p20-21
+fact example: :stick_index_t«…», #list_«…», :add_«?»t, stack_vector, first, make_list (hidden/undefined) PDF p23

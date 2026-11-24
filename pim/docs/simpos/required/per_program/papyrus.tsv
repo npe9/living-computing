@@ -1,0 +1,454 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	531	papyrus_src/demo/CC/cc_main.esp.1:15
+builtin		builtin	:=	2	400	papyrus_src/demo/BUFFER/buffer_goal.esp.1:15
+builtin		builtin	==	2	117	papyrus_src/demo/BUFFER/buffer_lemma.esp.1:20
+builtin		builtin	freeze	2	84	papyrus_src/demo/BUFFER/buffer_lemma.esp.1:27
+builtin		builtin	vector_element	3	66	papyrus_src/demo/CC/trans.esp.1:67
+builtin		builtin	melt	2	63	papyrus_src/demo/BUFFER/buffer_lemma.esp.1:34
+builtin		builtin	integer	1	43	papyrus_src/demo/BUFFER/buffer_state.esp.1:278
+builtin		builtin	atom	1	42	papyrus_src/demo/BUFFER/buffer_state.esp.1:227
+builtin		builtin	stack_vector	2	42	papyrus_src/demo/CC/trans.esp.1:49
+builtin		builtin	string	3	36	papyrus_src/demo/DATA_BASE/manipulator.esp.1:499
+builtin		file-level directive	add_operator	3	33	
+builtin		builtin	<	2	26	papyrus_src/demo/EDITOR/macro_heap.esp.1:57
+builtin		builtin	=\=	2	26	papyrus_src/demo/BUFFER/buffer_state.esp.1:89
+builtin		builtin	set_vector_element	3	24	papyrus_src/demo/CC/from_term.esp.1:111
+builtin		builtin	repeat	0	21	papyrus_src/demo/DATA_BASE/manipulator.esp.1:43
+builtin		builtin	unbound	1	20	papyrus_src/demo/CC/trans.esp.1:34
+builtin		file-level directive	remove_operator	1	19	
+builtin		builtin	list	1	18	papyrus_src/demo/CC/trans.esp.1:54
+builtin		builtin	vector_to_list	3	16	papyrus_src/demo/ML/ml_datatype.esp.1:108
+builtin		builtin	\==	2	15	papyrus_src/demo/CC/cc_main.esp.1:94
+builtin		builtin	new_stack_vector	2	15	papyrus_src/demo/CC/trans.esp.1:50
+builtin		builtin	is	2	15	papyrus_src/demo/ML/ml_nl0.esp.1:197
+builtin		builtin	heap_vector	2	13	papyrus_src/demo/EDITOR/macro_data.esp.1:63
+builtin		builtin	new_heap_vector	2	13	papyrus_src/demo/DATA_BASE/manipulator.esp.1:351
+builtin		builtin	object	3	12	papyrus_src/demo/DATA_BASE/window.esp.1:377
+builtin		builtin	atomic	1	11	papyrus_src/demo/DATA_BASE/compile.esp.1:128
+builtin		builtin	new_atom	1	11	papyrus_src/demo/CC/cc_main.esp.1:202
+builtin		builtin	list_to_vector	3	11	papyrus_src/demo/ML/ml_nl0.esp.1:126
+builtin		builtin	=<	2	9	papyrus_src/demo/EDITOR/my_save.esp.1:100
+builtin		builtin	>=	2	9	papyrus_src/demo/DATA_BASE/manipulator.esp.1:505
+builtin		builtin	>	2	7	papyrus_src/demo/DATA_BASE/manipulator.esp.1:576
+builtin		builtin	substring	4	7	papyrus_src/demo/DATA_BASE/manipulator.esp.1:501
+builtin		builtin	equal_string	2	6	papyrus_src/demo/DATA_BASE/library.esp.1:90
+builtin		builtin	divide_with_remainder	4	5	papyrus_src/demo/EDITOR/pdl_var.esp.1:27
+builtin		builtin	frozen	2	5	papyrus_src/demo/EDITOR/macro_heap.esp.1:33
+builtin		builtin	bound	1	4	papyrus_src/demo/DATA_BASE/compile.esp.1:337
+builtin		constant a#b	mouse#ll		4	
+builtin		builtin	remove_and_add_operators	1	4	papyrus_src/demo/CC/op.esp.1:11
+builtin		builtin	string_element	3	3	papyrus_src/demo/EDITOR/utility.esp.1:39
+builtin		constant a#b	string#str		3	
+builtin		constant a#b	mouse#r		3	
+builtin		constant a#b	mouse#m		3	
+builtin		constant a#b	mouse#l		3	
+builtin		builtin	floating_point_to_integer	2	3	papyrus_src/demo/DATA_BASE/window.esp.1:289
+builtin		builtin	string_tail	3	2	papyrus_src/demo/LEMMA_LIB/lib.esp.1:250
+builtin		builtin	set_string_element	3	2	papyrus_src/demo/EDITOR/pdl_var.esp.1:20
+builtin		builtin	first	2	2	papyrus_src/demo/ML/ml_vml_p.esp.1:60
+builtin		builtin	vector_tail	3	2	papyrus_src/demo/ML/ml_vml_p.esp.1:62
+builtin		builtin	new_string	3	2	papyrus_src/demo/EDITOR/pdl_var.esp.1:25
+builtin		builtin	subvector	4	2	papyrus_src/demo/LEMMA_LIB/lemma.esp.1:21
+builtin		constant a#b	mouse#mm		2	
+builtin		file-level directive	use_package	1	2	
+builtin		builtin	do	1	2	papyrus_src/demo/DATA_BASE/reference.esp.1:46
+builtin		builtin	number	1	1	papyrus_src/demo/ML/ml_type_top.esp.1:74
+builtin		constant a#b	control#str		1	
+builtin		builtin	set_const_info	1	1	papyrus_src/demo/ML/ml_vml_p.esp.1:20
+builtin		builtin	case_p_form	3	1	papyrus_src/demo/ML/ml_vml_p.esp.1:24
+builtin		builtin	val_parse	3	1	papyrus_src/demo/ML/ml_vml_p.esp.1:39
+builtin		builtin	rep_var	2	1	papyrus_src/demo/TREE/winop.esp.1:45
+builtin		builtin	replace_atom	2	1	papyrus_src/demo/TREE/winop.esp.1:49
+builtin		builtin	write_method	3	1	papyrus_src/demo/UTILITY/tex_write.esp.1:59
+requirement	?	ambiguous	write	2	107	papyrus_src/demo/ML/ml_datatype.esp.1:22
+requirement	symbolizer	ref	(#ref)		88	papyrus_src/demo/DATA_BASE/library.esp.1:109
+requirement	?	ambiguous	activate	1	72	papyrus_src/demo/DATA_BASE/manipulator.esp.1:30
+requirement	?	ambiguous	kill	1	48	papyrus_src/demo/DATA_BASE/reference.esp.1:53
+requirement	pmacs_standard_editor	instance	current_buffer	2	43	papyrus_src/demo/EDITOR/my_changer.esp.1:20
+requirement	?	unknown	putb	3	37	papyrus_src/demo/DATA_BASE/reference.esp.1:264
+requirement	symbolizer	class	enter_atom	3	35	papyrus_src/demo/DATA_BASE/library.esp.1:111
+requirement	?	ambiguous	read	2	34	papyrus_src/demo/DATA_BASE/window.esp.1:141
+requirement	symbolizer	class	get_atom_string	3	33	papyrus_src/demo/DATA_BASE/library.esp.1:109
+requirement	?	unknown	set_item_value	3	33	papyrus_src/demo/EDITOR/set_up_window.esp.1:216
+requirement	?	unknown	putl	2	31	papyrus_src/demo/DATA_BASE/reference.esp.1:75
+requirement	library	class	get_class_object	3	31	papyrus_src/demo/DATA_BASE/compile.esp.1:505
+requirement	library	ref	(#ref)		31	papyrus_src/demo/DATA_BASE/compile.esp.1:505
+requirement	string	class	append	3	30	papyrus_src/demo/DATA_BASE/library.esp.1:110
+requirement	string	ref	(#ref)		30	papyrus_src/demo/DATA_BASE/library.esp.1:110
+requirement	standard_output_file	instance	putl	2	29	papyrus_src/demo/UTILITY/tex_write.esp.1:41
+requirement	?	ambiguous	show	1	29	papyrus_src/demo/DATA_BASE/manipulator.esp.1:37
+requirement	?	ambiguous	write_line	2	28	papyrus_src/demo/EDITOR/editor_main.esp.1:102
+requirement	?	ambiguous	deactivate	1	25	papyrus_src/demo/DATA_BASE/manipulator.esp.1:45
+requirement	?	unknown	add_operator	4	25	papyrus_src/demo/EDITOR/editor_main.esp.1:144
+requirement	?	unknown	move_to	2	24	papyrus_src/demo/EDITOR/editor_buffer.esp.1:24
+requirement	<root>	class	new	2	22	papyrus_src/demo/DATA_BASE/compile.esp.1:16
+requirement	pmacs_standard_editor	nature	(inherited)		22	papyrus_src/demo/EDITOR/my_changer.esp.1:5
+requirement	?	ambiguous	term_to_string	3	19	papyrus_src/demo/DATA_BASE/manipulator.esp.1:474
+requirement	?	unknown	data	3	19	papyrus_src/demo/CC/cc_main.esp.1:149
+requirement	?	unknown	get_contents	2	18	papyrus_src/demo/DATA_BASE/compile.esp.1:274
+requirement	with_superior_input_buffer	nature	(inherited)		17	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	?	ambiguous	set_unparsing_operator	2	17	papyrus_src/demo/DATA_BASE/manipulator.esp.1:71
+requirement	?	unknown	add_at	3	16	papyrus_src/demo/EDITOR/editor_lemma.esp.1:56
+requirement	?	ambiguous	current_buffer	2	16	papyrus_src/demo/EDITOR/editor_main.esp.1:66
+requirement	standard_output_file	instance	putb	3	16	papyrus_src/demo/LEMMA_LIB/lib.esp.1:268
+requirement	font	class	create	3	16	papyrus_src/demo/DATA_BASE/reference.esp.1:324
+requirement	font	ref	(#ref)		16	papyrus_src/demo/DATA_BASE/reference.esp.1:324
+requirement	pmacs_standard_editor	instance	get_window	2	16	papyrus_src/demo/EDITOR/my_changer.esp.1:89
+requirement	inferior_window	class	create	3	15	papyrus_src/demo/EDITOR/command_menu.esp.1:29
+requirement	monogyny_list_index	instance	get_at	3	15	papyrus_src/demo/EDITOR/pdl_print.esp.1:109
+requirement	monogyny_list_index	instance	put_at	3	14	papyrus_src/demo/EDITOR/pdl_print.esp.1:41
+requirement	inferior_window	nature	(inherited)		14	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	?	unknown	putt	2	14	papyrus_src/demo/DATA_BASE/reference.esp.1:263
+requirement	list	class	create	2	13	papyrus_src/demo/BUFFER/buffer_goal.esp.1:12
+requirement	library_utility	class	create	2	13	papyrus_src/demo/DATA_BASE/compile.esp.1:17
+requirement	symbolizer	class	get_number_string	3	13	papyrus_src/demo/EDITOR/editor_cc.esp.1:144
+requirement	as_mouse_input	nature	(inherited)		13	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	list	ref	(#ref)		13	papyrus_src/demo/BUFFER/buffer_goal.esp.1:12
+requirement	standard_temporary_menu	class	create	3	13	papyrus_src/demo/DATA_BASE/window.esp.1:381
+requirement	standard_temporary_menu	ref	(#ref)		13	papyrus_src/demo/DATA_BASE/window.esp.1:381
+requirement	?	ambiguous	hide	1	13	papyrus_src/demo/DATA_BASE/window.esp.1:113
+requirement	library_utility	ref	(#ref)		12	papyrus_src/demo/EDITOR/installer.esp.1:9
+requirement	?	unknown	set_read_only_mode	1	12	papyrus_src/demo/EDITOR/my_changer.esp.1:194
+requirement	?	unknown	get_at	3	11	papyrus_src/demo/EDITOR/macro_pool.esp.1:31
+requirement	standard_io_buffer	class	create	2	11	papyrus_src/demo/DATA_BASE/manipulator.esp.1:55
+requirement	?	unknown	get_size	3	11	papyrus_src/demo/EDITOR/input_editor.esp.1:169
+requirement	?	unknown	clear_items	1	11	papyrus_src/demo/DATA_BASE/window.esp.1:156
+requirement	?	ambiguous	get_unparsing_operator	2	11	papyrus_src/demo/EDITOR/editor_main.esp.1:126
+requirement	?	unknown	reset_read_only_mode	1	11	papyrus_src/demo/EDITOR/my_changer.esp.1:57
+requirement	?	unknown	remove_operator	2	10	papyrus_src/demo/CC/op.esp.1:21
+requirement	?	unknown	add_items	3	10	papyrus_src/demo/DATA_BASE/window.esp.1:162
+requirement	?	ambiguous	set_item_status	3	10	papyrus_src/demo/DATA_BASE/window.esp.1:80
+requirement	?	unknown	set_title	2	10	papyrus_src/demo/DATA_BASE/reference.esp.1:404
+requirement	standard_io_buffer	instance	putl	2	10	papyrus_src/demo/EDITOR/installer.esp.1:153
+requirement	?	unknown	set_size	3	10	papyrus_src/demo/DATA_BASE/window.esp.1:283
+requirement	with_bell	nature	(inherited)		10	papyrus_src/demo/LEMMA_LIB/win.esp.1:5
+requirement	?	unknown	put_contents	2	10	papyrus_src/demo/DATA_BASE/compile.esp.1:271
+requirement	?	unknown	putl	1	9	papyrus_src/demo/DATA_BASE/reference.esp.1:282
+requirement	?	unknown	current_position	2	9	papyrus_src/demo/EDITOR/my_pdl_print.esp.1:35
+requirement	process	ref	(#ref)		9	papyrus_src/demo/DATA_BASE/manipulator.esp.1:46
+requirement	pmacs_standard_editor	instance	exception	2	9	papyrus_src/demo/EDITOR/my_changer.esp.1:24
+requirement	?	unknown	reset	1	9	papyrus_src/demo/EDITOR/my_changer.esp.1:123
+requirement	pmacs_standard_editor	instance	insert	2	9	papyrus_src/demo/EDITOR/my_search.esp.1:36
+requirement	?	ambiguous	get_editor	2	8	papyrus_src/demo/EDITOR/editor_inter.esp.1:26
+requirement	pmacs_window	instance	get_editor	2	8	papyrus_src/demo/EDITOR/expand_window.esp.1:26
+requirement	?	unknown	set_position	3	8	papyrus_src/demo/EDITOR/input_editor.esp.1:182
+requirement	?	unknown	method	3	8	papyrus_src/demo/DATA_BASE/window.esp.1:378
+requirement	?	unknown	close_input	1	8	papyrus_src/demo/DATA_BASE/compile.esp.1:64
+requirement	?	unknown	get_inside_size	3	8	papyrus_src/demo/EDITOR/input_editor.esp.1:24
+requirement	pmacs_standard_editor	instance	select_buffer	2	8	papyrus_src/demo/EDITOR/my_load.esp.1:32
+requirement	?	ambiguous	set_parsing_operator	2	8	papyrus_src/demo/DATA_BASE/manipulator.esp.1:70
+requirement	standard_menu	class	create	3	8	papyrus_src/demo/DATA_BASE/window.esp.1:227
+requirement	standard_input_file	class	create	3	7	papyrus_src/demo/DATA_BASE/compile.esp.1:256
+requirement	symbolizer	class	get_number	3	7	papyrus_src/demo/EDITOR/set_up_window.esp.1:187
+requirement	as_single_select	nature	(inherited)		7	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	standard_input_file	ref	(#ref)		7	papyrus_src/demo/DATA_BASE/compile.esp.1:256
+requirement	as_menu	nature	(inherited)		7	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	?	unknown	add_last	2	7	papyrus_src/demo/DATA_BASE/compile.esp.1:290
+requirement	?	unknown	remove_first	2	7	papyrus_src/demo/LEMMA_LIB/lib.esp.1:146
+requirement	?	unknown	r_data	3	7	papyrus_src/demo/CC/trans.esp.1:168
+requirement	process	class	create	2	6	papyrus_src/demo/DATA_BASE/window.esp.1:67
+requirement	inferior_window	instance	get_size	3	6	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:20
+requirement	standard_input_file	instance	get_parsing_operator	2	6	papyrus_src/demo/EDITOR/pdl_data.esp.1:35
+requirement	standard_superior_window	class	create	3	6	papyrus_src/demo/DATA_BASE/window.esp.1:208
+requirement	?	unknown	get_contents_with_key	2	6	papyrus_src/demo/EDITOR/as_formula.esp.1:27
+requirement	as_program	nature	(inherited)		6	papyrus_src/demo/DATA_BASE/manipulator.esp.1:8
+requirement	sash	nature	(inherited)		6	papyrus_src/demo/EDITOR/command_menu.esp.1:5
+requirement	standard_menu	ref	(#ref)		6	papyrus_src/demo/DATA_BASE/window.esp.1:227
+requirement	?	unknown	add_first	2	6	papyrus_src/demo/LEMMA_LIB/lib.esp.1:142
+requirement	?	unknown	flash	1	6	papyrus_src/demo/DATA_BASE/window.esp.1:126
+requirement	?	unknown	set_font	2	6	papyrus_src/demo/DATA_BASE/reference.esp.1:325
+requirement	list_index	class	create	2	5	papyrus_src/demo/BUFFER/buffer_lemma.esp.1:13
+requirement	?	unknown	insert_string	2	5	papyrus_src/demo/EDITOR/my_input.esp.1:280
+requirement	list	instance	put_contents	2	5	papyrus_src/demo/BUFFER/buffer_goal.esp.1:27
+requirement	?	unknown	getl	2	5	papyrus_src/demo/DATA_BASE/window.esp.1:138
+requirement	?	ambiguous	beep	1	5	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:150
+requirement	standard_io_buffer	instance	reset	1	5	papyrus_src/demo/EDITOR/installer.esp.1:158
+requirement	standard_io_buffer	instance	putt	2	5	papyrus_src/demo/EDITOR/installer.esp.1:174
+requirement	pmacs_window	class	create	3	5	papyrus_src/demo/DATA_BASE/reference.esp.1:323
+requirement	list_index	ref	(#ref)		5	papyrus_src/demo/BUFFER/buffer_lemma.esp.1:13
+requirement	monogyny_list_index	ref	(#ref)		5	papyrus_src/demo/CC/op.esp.1:13
+requirement	pmacs_window	ref	(#ref)		5	papyrus_src/demo/DATA_BASE/reference.esp.1:323
+requirement	as_program	class	create	2	5	papyrus_src/demo/DATA_BASE/reference.esp.1:12
+requirement	?	unknown	put_contents_with_key	2	5	papyrus_src/demo/EDITOR/as_formula.esp.1:20
+requirement	standard_scrolling_menu	class	create	3	5	papyrus_src/demo/DATA_BASE/window.esp.1:292
+requirement	?	unknown	gett	2	5	papyrus_src/demo/DATA_BASE/compile.esp.1:265
+requirement	monogyny_list_index	class	create	2	5	papyrus_src/demo/CC/op.esp.1:13
+requirement	library_utility	instance	remove_output	1	5	papyrus_src/demo/DATA_BASE/manipulator.esp.1:686
+requirement	?	ambiguous	size	2	5	papyrus_src/demo/EDITOR/my_changer.esp.1:213
+requirement	?	ambiguous	close_output	1	5	papyrus_src/demo/EDITOR/my_pdl_print.esp.1:49
+requirement	library_utility	class	assert	3	5	papyrus_src/demo/DATA_BASE/library.esp.1:191
+requirement	?	unknown	get_wff	2	5	papyrus_src/demo/TREE/cap_win.esp.1:112
+requirement	list_index	instance	get_at	3	4	papyrus_src/demo/EDITOR/my_expand.esp.1:80
+requirement	process	instance	activate	2	4	papyrus_src/demo/EDITOR/editor_def.esp.1:32
+requirement	?	ambiguous	get	3	4	papyrus_src/demo/EDITOR/my_lemma.esp.1:62
+requirement	standard_input_file	instance	close_input	1	4	papyrus_src/demo/EDITOR/pdl_data.esp.1:11
+requirement	?	unknown	move_to_first	1	4	papyrus_src/demo/EDITOR/my_changer.esp.1:212
+requirement	?	unknown	get_item_value	3	4	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:140
+requirement	?	unknown	operator	4	4	papyrus_src/demo/EDITOR/editor_main.esp.1:142
+requirement	pmacs_window	nature	(inherited)		4	papyrus_src/demo/EDITOR/expand_window.esp.1:5
+requirement	standard_io_buffer	ref	(#ref)		4	papyrus_src/demo/DATA_BASE/manipulator.esp.1:55
+requirement	standard_scrolling_menu	ref	(#ref)		4	papyrus_src/demo/DATA_BASE/window.esp.1:292
+requirement	?	unknown	get_contents_at	3	4	papyrus_src/demo/EDITOR/as_formula.esp.1:34
+requirement	?	unknown	see_position	4	4	papyrus_src/demo/EDITOR/my_delete.esp.1:47
+requirement	inferior_window	instance	set_position	3	4	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:30
+requirement	?	ambiguous	delete	2	4	papyrus_src/demo/DATA_BASE/compile.esp.1:320
+requirement	standard_superior_window	nature	(inherited)		4	papyrus_src/demo/EDITOR/input_editor.esp.1:5
+requirement	as_on_off_menu	nature	(inherited)		4	papyrus_src/demo/LEMMA_LIB/win.esp.1:17
+requirement	?	ambiguous	read	3	4	papyrus_src/demo/DATA_BASE/manipulator.esp.1:96
+requirement	?	unknown	retrieve_all_items	2	4	papyrus_src/demo/DATA_BASE/window.esp.1:95
+requirement	list	instance	remove_first	2	4	papyrus_src/demo/BUFFER/buffer_goal.esp.1:36
+requirement	?	unknown	background	2	4	papyrus_src/demo/EDITOR/prover_menu.esp.1:131
+requirement	library_utility	instance	set_package	2	4	papyrus_src/demo/DATA_BASE/manipulator.esp.1:774
+requirement	library_utility	instance	save	2	4	papyrus_src/demo/DATA_BASE/manipulator.esp.1:857
+requirement	?	ambiguous	get_parsing_operator	2	4	papyrus_src/demo/DATA_BASE/compile.esp.1:261
+requirement	pmacs_window	class	create	4	4	papyrus_src/demo/EDITOR/input_editor.esp.1:173
+requirement	?	ambiguous	show_buffer	1	4	papyrus_src/demo/EDITOR/editor_main.esp.1:114
+requirement	?	unknown	data	2	4	papyrus_src/demo/EDITOR/my_load.esp.1:46
+requirement	?	unknown	set_selection	3	4	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:241
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	clear	1	4	papyrus_src/demo/TREE/cap_win.esp.1:19
+requirement	?	unknown	get_children	2	4	papyrus_src/demo/TREE/cap_win.esp.1:111
+requirement	?	unknown	command_interpret	1	3	papyrus_src/demo/EDITOR/editor_inter.esp.1:27
+requirement	process	class	self	2	3	papyrus_src/demo/DATA_BASE/manipulator.esp.1:46
+requirement	standard_input_file	instance	gett	2	3	papyrus_src/demo/EDITOR/pdl_data.esp.1:40
+requirement	standard_output_file	class	create	3	3	papyrus_src/demo/LEMMA_LIB/lib.esp.1:266
+requirement	standard_output_file	instance	putt	2	3	papyrus_src/demo/LEMMA_LIB/lib.esp.1:267
+requirement	editor_text_buffer	class	create	4	3	papyrus_src/demo/EDITOR/my_load.esp.1:87
+requirement	library_utility	instance	catalogue	3	3	papyrus_src/demo/DATA_BASE/library.esp.1:139
+requirement	library_utility	class	retract	3	3	papyrus_src/demo/DATA_BASE/library.esp.1:198
+requirement	?	unknown	class_object	2	3	papyrus_src/demo/EDITOR/my_execute.esp.1:42
+requirement	temporary_menu	class	create	3	3	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:36
+requirement	?	unknown	delete	3	3	papyrus_src/demo/EDITOR/my_changer.esp.1:214
+requirement	standard_io_buffer	instance	getl	2	3	papyrus_src/demo/DATA_BASE/manipulator.esp.1:493
+requirement	?	ambiguous	put	2	3	papyrus_src/demo/EDITOR/my_execute.esp.1:28
+requirement	?	unknown	package_name	2	3	papyrus_src/demo/EDITOR/my_execute.esp.1:43
+requirement	mathematical_functions	class	max	3	3	papyrus_src/demo/DATA_BASE/window.esp.1:288
+requirement	standard_output_file	instance	putc	2	3	papyrus_src/demo/UTILITY/tex_write.esp.1:90
+requirement	standard_output_file	ref	(#ref)		3	papyrus_src/demo/LEMMA_LIB/lib.esp.1:266
+requirement	temporary_menu	ref	(#ref)		3	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:36
+requirement	mathematical_functions	ref	(#ref)		3	papyrus_src/demo/DATA_BASE/window.esp.1:288
+requirement	?	unknown	putc	2	3	papyrus_src/demo/DATA_BASE/window.esp.1:135
+requirement	?	unknown	get_interpreter	2	3	papyrus_src/demo/EDITOR/editor_inter.esp.1:25
+requirement	list	instance	add_first	2	3	papyrus_src/demo/BUFFER/buffer_goal.esp.1:30
+requirement	list_index	instance	add_at	3	3	papyrus_src/demo/EDITOR/my_expand.esp.1:218
+requirement	library_utility	instance	load	2	3	papyrus_src/demo/DATA_BASE/manipulator.esp.1:877
+requirement	<root>	instance	set_slot	3	3	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:109
+requirement	library_utility	instance	get_package	2	3	papyrus_src/demo/DATA_BASE/manipulator.esp.1:681
+requirement	?	unknown	getc	2	3	papyrus_src/demo/ML/ml_tnl0.esp.1:959
+requirement	standard_menu	instance	get_size	3	3	papyrus_src/demo/DATA_BASE/window.esp.1:246
+requirement	?	unknown	retrieve_item	3	3	papyrus_src/demo/DATA_BASE/window.esp.1:101
+requirement	library_utility	instance	check	3	3	papyrus_src/demo/DATA_BASE/library.esp.1:86
+requirement	?	unknown	load	2	3	papyrus_src/demo/EDITOR/editor_lib.esp.1:89
+requirement	?	unknown	return_to_original_buffer	1	3	papyrus_src/demo/EDITOR/expand_window.esp.1:27
+requirement	?	unknown	enable_menu_help_click	1	3	papyrus_src/demo/EDITOR/input_editor.esp.1:30
+requirement	cascade_index	class	create	3	3	papyrus_src/demo/EDITOR/macro_pool.esp.1:10
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	set_font	2	3	papyrus_src/demo/TREE/cap_win.esp.1:85
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	get_inside_units	3	3	papyrus_src/demo/TREE/cap_win.esp.1:116
+requirement	cascade_index	ref	(#ref)		3	papyrus_src/demo/EDITOR/macro_pool.esp.1:10
+requirement	?	unknown	get_first	2	2	papyrus_src/demo/LEMMA_LIB/lib.esp.1:117
+requirement	list	instance	add_last	2	2	papyrus_src/demo/DATA_BASE/library.esp.1:263
+requirement	pmacs_window	instance	putt	2	2	papyrus_src/demo/P_TERM/ESP/execute.esp.1:13
+requirement	standard_output_file	instance	close_output	1	2	papyrus_src/demo/LEMMA_LIB/lib.esp.1:269
+requirement	as_program	class	new	2	2	papyrus_src/demo/ML/ml_top.esp.1:19
+requirement	?	unknown	remove_at	3	2	papyrus_src/demo/EDITOR/macro_pool.esp.1:106
+requirement	library_utility	class	retract_all	4	2	papyrus_src/demo/DATA_BASE/library.esp.1:23
+requirement	?	unknown	:	2	2	papyrus_src/demo/ML/ml_type_top.esp.1:83
+requirement	<root>	instance	get_slot	3	2	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:112
+requirement	?	unknown	catalogue	3	2	papyrus_src/demo/EDITOR/installer.esp.1:157
+requirement	?	unknown	terminate	1	2	papyrus_src/demo/EDITOR/process.esp.1:59
+requirement	?	unknown	release	1	2	papyrus_src/demo/EDITOR/process.esp.1:60
+requirement	?	unknown	activate	2	2	papyrus_src/demo/DATA_BASE/window.esp.1:68
+requirement	standard_superior_window	ref	(#ref)		2	papyrus_src/demo/DATA_BASE/window.esp.1:208
+requirement	standard_multi_column_menu	ref	(#ref)		2	papyrus_src/demo/EDITOR/prover_menu.esp.1:134
+requirement	standard_choice_window	ref	(#ref)		2	papyrus_src/demo/EDITOR/set_up_window.esp.1:11
+requirement	?	unknown	set_input_position	1	2	papyrus_src/demo/DATA_BASE/window.esp.1:129
+requirement	?	unknown	set_library_environment	3	2	papyrus_src/demo/DATA_BASE/manipulator.esp.1:76
+requirement	?	unknown	put_at	3	2	papyrus_src/demo/ML/ml_vml_p.esp.1:61
+requirement	?	ambiguous	set_name	2	2	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:105
+requirement	standard_multi_column_menu	class	create	3	2	papyrus_src/demo/EDITOR/prover_menu.esp.1:134
+requirement	standard_choice_window	class	create	3	2	papyrus_src/demo/EDITOR/set_up_window.esp.1:11
+requirement	pmacs_standard_editor	instance	find_file	2	2	papyrus_src/demo/EDITOR/my_load.esp.1:243
+requirement	inferior_window	instance	set_size	3	2	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:64
+requirement	?	unknown	select_buffer	2	2	papyrus_src/demo/EDITOR/main_window.esp.1:137
+requirement	?	unknown	wait	1	2	papyrus_src/demo/DATA_BASE/manipulator.esp.1:47
+requirement	standard_io_buffer	nature	(inherited)		2	papyrus_src/demo/EDITOR/temporary.esp.1:5
+requirement	labeled_sash	nature	(inherited)		2	papyrus_src/demo/LEMMA_LIB/win.esp.1:63
+requirement	as_scrolling_menu	nature	(inherited)		2	papyrus_src/demo/LEMMA_LIB/win.esp.1:39
+requirement	esp_operator_pool	class	create	2	2	papyrus_src/demo/CC/op.esp.1:10
+requirement	?	unknown	remove_region	2	2	papyrus_src/demo/EDITOR/goal_op.esp.1:86
+requirement	esp_operator_pool	ref	(#ref)		2	papyrus_src/demo/CC/op.esp.1:10
+requirement	?	unknown	remove_last	2	2	papyrus_src/demo/LEMMA_LIB/lib.esp.1:140
+requirement	library_utility	instance	get_direct_superclasses	3	2	papyrus_src/demo/DATA_BASE/library.esp.1:205
+requirement	?	ambiguous	open	1	2	papyrus_src/demo/EDITOR/my_press.esp.1:48
+requirement	as_choice	nature	(inherited)		2	papyrus_src/demo/LEMMA_LIB/win.esp.1:28
+requirement	with_no_execute_choice_item	nature	(inherited)		2	papyrus_src/demo/LEMMA_LIB/win.esp.1:28
+requirement	library_utility	instance	delete	2	2	papyrus_src/demo/DATA_BASE/manipulator.esp.1:837
+requirement	standard_menu	nature	(inherited)		2	papyrus_src/demo/EDITOR/structure.esp.1:5
+requirement	library_utility	instance	make_package	3	2	papyrus_src/demo/DATA_BASE/library.esp.1:138
+requirement	library_utility	instance	get_packages_with_wildcard	3	2	papyrus_src/demo/DATA_BASE/manipulator.esp.1:727
+requirement	library_utility	instance	get_class_names	4	2	papyrus_src/demo/DATA_BASE/manipulator.esp.1:754
+requirement	?	unknown	set_type	2	2	papyrus_src/demo/EDITOR/as_region.esp.1:18
+requirement	?	unknown	get_type	2	2	papyrus_src/demo/EDITOR/as_region.esp.1:21
+requirement	?	unknown	remove	3	2	papyrus_src/demo/EDITOR/macro_pool.esp.1:89
+requirement	pmacs_standard_editor	instance	mark	1	2	papyrus_src/demo/EDITOR/my_changer.esp.1:110
+requirement	?	unknown	narrow_buffer	3	2	papyrus_src/demo/EDITOR/my_changer.esp.1:111
+requirement	?	unknown	widen_buffer	1	2	papyrus_src/demo/EDITOR/my_changer.esp.1:151
+requirement	?	ambiguous	register	2	2	papyrus_src/demo/EDITOR/my_lemma.esp.1:73
+requirement	?	unknown	message	2	2	papyrus_src/demo/EDITOR/my_pdl_print.esp.1:76
+requirement	pmacs_standard_editor	instance	backward_character	1	2	papyrus_src/demo/EDITOR/my_syntax.esp.1:40
+requirement	?	unknown	set_region	5	2	papyrus_src/demo/EDITOR/pdl_print.esp.1:238
+requirement	{labeled_sash|as_superior|with_bell|reshape_notifier|inferior_window}	instance	set_title	2	2	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:27
+requirement	?	unknown	get_classes	4	2	papyrus_src/demo/LEMMA_LIB/lib.esp.1:38
+requirement	{with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	2	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:62
+requirement	?	unknown	refer_leash	2	2	papyrus_src/demo/ML/ml_tnl0.esp.1:609
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	get_inside_size	3	2	papyrus_src/demo/TREE/cap_win.esp.1:20
+requirement	?	unknown	get_dependency	2	2	papyrus_src/demo/TREE/cap_win.esp.1:114
+requirement	?	unknown	set_position	2	2	papyrus_src/demo/TREE/cap_win.esp.1:123
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	draw_string	5	2	papyrus_src/demo/TREE/cap_win.esp.1:190
+requirement	?	unknown	set_dependency	2	2	papyrus_src/demo/TREE/euo_win.esp.1:128
+requirement	?	unknown	get_position	2	2	papyrus_src/demo/TREE/win2.esp.1:52
+requirement	?	unknown	set_package	2	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:220
+requirement	?	unknown	exterminate	1	1	papyrus_src/demo/EDITOR/editor_inter.esp.1:31
+requirement	standard_input_file	instance	end_of_input	1	1	papyrus_src/demo/ML/ml_top.esp.1:323
+requirement	editor_text_buffer	class	get_buffer_instance	3	1	papyrus_src/demo/EDITOR/rule_window.esp.1:68
+requirement	?	unknown	insert	2	1	papyrus_src/demo/EDITOR/my_press.esp.1:86
+requirement	standard_output_file	instance	putl	1	1	papyrus_src/demo/UTILITY/tex_write.esp.1:190
+requirement	library_utility	class	assertz	3	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:278
+requirement	list	instance	get_contents	2	1	papyrus_src/demo/DATA_BASE/manipulator.esp.1:445
+requirement	list	instance	clear	1	1	papyrus_src/demo/TREE/euo_win.esp.1:44
+requirement	?	unknown	end_of_input	1	1	papyrus_src/demo/EDITOR/installer.esp.1:119
+requirement	?	ambiguous	create	3	1	papyrus_src/demo/EDITOR/main_menu.esp.1:67
+requirement	?	unknown	get_label_height	2	1	papyrus_src/demo/EDITOR/main_window.esp.1:185
+requirement	as_program	instance	class_object	2	1	papyrus_src/demo/TOP/top.esp.1:26
+requirement	?	unknown	assign	1	1	papyrus_src/demo/EDITOR/editor_main.esp.1:60
+requirement	?	unknown	remove_operator	3	1	papyrus_src/demo/UTILITY/class_info.esp.1:83
+requirement	?	ambiguous	goal	1	1	papyrus_src/demo/EDITOR/main_menu.esp.1:43
+requirement	pmacs_window	instance	activate	1	1	papyrus_src/demo/P_TERM/ESP/execute.esp.1:10
+requirement	pmacs_window	instance	set_font	2	1	papyrus_src/demo/DATA_BASE/window.esp.1:317
+requirement	pmacs_window	instance	gett	2	1	papyrus_src/demo/P_TERM/ESP/execute.esp.1:33
+requirement	as_superior	nature	(inherited)		1	papyrus_src/demo/LEMMA_LIB/win.esp.1:63
+requirement	reshape_notifier	nature	(inherited)		1	papyrus_src/demo/LEMMA_LIB/win.esp.1:63
+requirement	as_graphics	nature	(inherited)		1	papyrus_src/demo/TREE/win2.esp.1:5
+requirement	as_multiple_column	nature	(inherited)		1	papyrus_src/demo/LEMMA_LIB/win1.esp.1:15
+requirement	as_input	nature	(inherited)		1	papyrus_src/demo/TREE/win2.esp.1:5
+requirement	with_shared_window	nature	(inherited)		1	papyrus_src/demo/EDITOR/window.esp.1:5
+requirement	superior_window	ref	(#ref)		1	papyrus_src/demo/TREE/edwin.esp.1:9
+requirement	?	unknown	putt	3	1	papyrus_src/demo/UTILITY/class_info.esp.1:202
+requirement	standard_io_buffer	instance	reread	1	1	papyrus_src/demo/TREE/winop.esp.1:15
+requirement	standard_io_buffer	instance	size	2	1	papyrus_src/demo/EDITOR/temporary.esp.1:15
+requirement	standard_io_buffer	instance	gett	2	1	papyrus_src/demo/EDITOR/temporary.esp.1:25
+requirement	standard_io_buffer	instance	get_parsing_operator	2	1	papyrus_src/demo/TREE/winop.esp.1:20
+requirement	standard_superior_window	instance	get_inside_size	3	1	papyrus_src/demo/DATA_BASE/window.esp.1:212
+requirement	?	unknown	set_echo_font	2	1	papyrus_src/demo/EDITOR/main_window.esp.1:40
+requirement	superior_window	class	create	3	1	papyrus_src/demo/TREE/edwin.esp.1:9
+requirement	superior_window	instance	get_inside_size	3	1	papyrus_src/demo/TREE/edwin.esp.1:11
+requirement	?	unknown	delete_items	2	1	papyrus_src/demo/DATA_BASE/window.esp.1:104
+requirement	?	unknown	set_label_font	2	1	papyrus_src/demo/EDITOR/main_window.esp.1:219
+requirement	?	unknown	resign	1	1	papyrus_src/demo/EDITOR/editor_main.esp.1:63
+requirement	editor_text_buffer	class	get_buffer_instance_list	2	1	papyrus_src/demo/EDITOR/my_load.esp.1:109
+requirement	?	unknown	post	1	1	papyrus_src/demo/ML/ml_top.esp.1:59
+requirement	?	unknown	class_id	2	1	papyrus_src/demo/EDITOR/editor_cc.esp.1:247
+requirement	with_icon	nature	(inherited)		1	papyrus_src/demo/EDITOR/window.esp.1:5
+requirement	with_margin	nature	(inherited)		1	papyrus_src/demo/LEMMA_LIB/win.esp.1:17
+requirement	as_output	nature	(inherited)		1	papyrus_src/demo/TREE/win2.esp.1:5
+requirement	as_multiple_select	nature	(inherited)		1	papyrus_src/demo/LEMMA_LIB/win.esp.1:51
+requirement	?	unknown	putf	3	1	papyrus_src/demo/EDITOR/pretty.esp.1:157
+requirement	?	unknown	clear	1	1	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:379
+requirement	pmacs_window	instance	kill	1	1	papyrus_src/demo/P_TERM/ESP/execute.esp.1:15
+requirement	temporary_menu	instance	show	1	1	papyrus_src/demo/TREE/gmwin.esp.1:54
+requirement	temporary_menu	instance	read	2	1	papyrus_src/demo/TREE/gmwin.esp.1:57
+requirement	standard_temporary_menu	instance	read	2	1	papyrus_src/demo/EDITOR/editor_util.esp.1:50
+requirement	standard_temporary_menu	instance	kill	1	1	papyrus_src/demo/EDITOR/editor_util.esp.1:35
+requirement	pmacs_window	instance	getl	2	1	papyrus_src/demo/P_TERM/ESP/execute.esp.1:14
+requirement	as_markers	nature	(inherited)		1	papyrus_src/demo/TREE/win2.esp.1:5
+requirement	?	unknown	replace	2	1	papyrus_src/demo/EDITOR/as_region.esp.1:42
+requirement	?	unknown	get_superior	2	1	papyrus_src/demo/EDITOR/my_changer.esp.1:227
+requirement	standard_input_text_buffer_accessor	class	create	3	1	papyrus_src/demo/EDITOR/my_reader.esp.1:23
+requirement	?	unknown	erase_marker	2	1	papyrus_src/demo/TREE/cap_win.esp.1:261
+requirement	standard_scrolling_menu	instance	add_items	3	1	papyrus_src/demo/EDITOR/variable.esp.1:25
+requirement	standard_input_text_buffer_accessor	ref	(#ref)		1	papyrus_src/demo/EDITOR/my_reader.esp.1:23
+requirement	stream	class	create	2	1	papyrus_src/demo/P_TERM/ESP/device.esp.1:38
+requirement	stream	instance	get	2	1	papyrus_src/demo/P_TERM/ESP/device.esp.1:44
+requirement	<root>	class	get_slot	3	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:216
+requirement	<root>	class	set_slot	3	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:222
+requirement	?	unknown	read_with_click	3	1	papyrus_src/demo/EDITOR/text_window.esp.1:83
+requirement	stream	ref	(#ref)		1	papyrus_src/demo/P_TERM/ESP/device.esp.1:38
+requirement	?	unknown	get_text_window	2	1	papyrus_src/demo/EDITOR/pmacs_pretty.esp.1:43
+requirement	as_pimos_string_io_device	nature	(inherited)		1	papyrus_src/demo/P_TERM/ESP/device.esp.1:5
+requirement	list_index	instance	get_contents	2	1	papyrus_src/demo/EDITOR/my_expand.esp.1:212
+requirement	process	instance	exterminate	1	1	papyrus_src/demo/EDITOR/editor_def.esp.1:43
+requirement	standard_temporary_menu	instance	activate	1	1	papyrus_src/demo/EDITOR/editor_util.esp.1:49
+requirement	?	unknown	read_with_code	3	1	papyrus_src/demo/DATA_BASE/window.esp.1:144
+requirement	temporary_standard_io_window	class	create	3	1	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:391
+requirement	select_notifier	nature	(inherited)		1	papyrus_src/demo/TREE/win2.esp.1:5
+requirement	temporary_standard_io_window	ref	(#ref)		1	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:391
+requirement	standard_input_file	instance	gett	4	1	papyrus_src/demo/UTILITY/class_info.esp.1:63
+requirement	standard_output_text_buffer_accessor	class	create	3	1	papyrus_src/demo/EDITOR/pmacs_pretty.esp.1:21
+requirement	?	unknown	save	2	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:264
+requirement	standard_scrolling_menu	nature	(inherited)		1	papyrus_src/demo/EDITOR/variable.esp.1:5
+requirement	standard_output_text_buffer_accessor	ref	(#ref)		1	papyrus_src/demo/EDITOR/pmacs_pretty.esp.1:21
+requirement	?	unknown	abc	2	1	papyrus_src/demo/CC/from_term.esp.1:24
+requirement	library_utility	instance	string_to_term	3	1	papyrus_src/demo/DATA_BASE/library.esp.1:258
+requirement	library_utility	instance	save_package_template	3	1	papyrus_src/demo/DATA_BASE/manipulator.esp.1:685
+requirement	library_utility	instance	delete_package	2	1	papyrus_src/demo/DATA_BASE/manipulator.esp.1:830
+requirement	?	ambiguous	set_output	2	1	papyrus_src/demo/DATA_BASE/window.esp.1:107
+requirement	standard_scrolling_menu	instance	enable_menu_help_click	1	1	papyrus_src/demo/DATA_BASE/window.esp.1:309
+requirement	?	unknown	get_size	2	1	papyrus_src/demo/EDITOR/as_region.esp.1:36
+requirement	?	unknown	set_variables	3	1	papyrus_src/demo/EDITOR/data_list.old.1:37
+requirement	?	unknown	set_goal_formula	3	1	papyrus_src/demo/EDITOR/data_list.old.1:49
+requirement	process	instance	post	1	1	papyrus_src/demo/EDITOR/editor_def.esp.1:28
+requirement	as_program	instance	method	3	1	papyrus_src/demo/EDITOR/editor_def.esp.1:38
+requirement	?	unknown	resign_window	2	1	papyrus_src/demo/EDITOR/editor_inter.esp.1:30
+requirement	<root>	class	package_name	2	1	papyrus_src/demo/EDITOR/editor_lib.esp.1:11
+requirement	?	unknown	catalogue	2	1	papyrus_src/demo/EDITOR/installer.esp.1:64
+requirement	standard_io_buffer	instance	putl	1	1	papyrus_src/demo/EDITOR/installer.esp.1:156
+requirement	<root>	instance	exist_tree_macro	2	1	papyrus_src/demo/EDITOR/macro_pool.esp.1:35
+requirement	pmacs_standard_editor	instance	push_to_yank	3	1	papyrus_src/demo/EDITOR/my_delete.esp.1:48
+requirement	?	unknown	rule2	11	1	papyrus_src/demo/EDITOR/my_expand.esp.1:130
+requirement	list_index	instance	put_contents	2	1	papyrus_src/demo/EDITOR/my_expand.esp.1:207
+requirement	pmacs_standard_editor	instance	clear_input	1	1	papyrus_src/demo/EDITOR/my_input.esp.1:278
+requirement	pmacs_standard_editor	instance	cursor_with_mouse	1	1	papyrus_src/demo/EDITOR/my_point.esp.1:23
+requirement	pmacs_standard_editor	instance	show_menu	1	1	papyrus_src/demo/EDITOR/my_point.esp.1:73
+requirement	?	unknown	lf_check_since	3	1	papyrus_src/demo/EDITOR/my_prover.old.1:38
+requirement	?	unknown	get_lf_all	4	1	papyrus_src/demo/EDITOR/my_prover.old.1:46
+requirement	?	unknown	call_prover	6	1	papyrus_src/demo/EDITOR/my_prover.old.1:50
+requirement	standard_input_text_buffer_accessor	instance	close_input	1	1	papyrus_src/demo/EDITOR/my_reader.esp.1:26
+requirement	standard_input_text_buffer_accessor	instance	set_parsing_operator	2	1	papyrus_src/demo/EDITOR/my_reader.esp.1:31
+requirement	standard_input_text_buffer_accessor	instance	gett	2	1	papyrus_src/demo/EDITOR/my_reader.esp.1:34
+requirement	pmacs_standard_editor	instance	goto_beginning	1	1	papyrus_src/demo/EDITOR/my_syntax.esp.1:28
+requirement	pmacs_standard_editor	instance	exchange_point	1	1	papyrus_src/demo/EDITOR/my_syntax.esp.1:34
+requirement	pmacs_standard_editor	instance	next_term	1	1	papyrus_src/demo/EDITOR/my_syntax.esp.1:36
+requirement	?	unknown	current_column	2	1	papyrus_src/demo/EDITOR/pmacs_pretty.esp.1:35
+requirement	standard_output_text_buffer_accessor	instance	set_unparsing_operator	2	1	papyrus_src/demo/EDITOR/pmacs_pretty.esp.1:48
+requirement	?	unknown	is_prefix	2	1	papyrus_src/demo/EDITOR/pretty.esp.1:393
+requirement	?	unknown	is_infix	2	1	papyrus_src/demo/EDITOR/pretty.esp.1:397
+requirement	?	unknown	read_file	3	1	papyrus_src/demo/EDITOR/text_window.esp.1:186
+requirement	{with_no_execute_choice_item|with_superior_input_buffer|as_choice|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:14
+requirement	{with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:19
+requirement	{with_no_execute_choice_item|with_superior_input_buffer|as_choice|as_mouse_input|with_bell|inferior_window}	instance	set_superior	2	1	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:28
+requirement	{with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|with_bell|inferior_window}	instance	set_superior	2	1	papyrus_src/demo/LEMMA_LIB/lemwin.esp.1:29
+requirement	?	unknown	save_to_fdd	3	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:107
+requirement	?	unknown	load	3	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:112
+requirement	?	unknown	get_class_names	4	1	papyrus_src/demo/LEMMA_LIB/lib.esp.1:208
+requirement	{labeled_sash|as_superior|with_bell|reshape_notifier|inferior_window}	instance	get_inside_size	3	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:47
+requirement	{with_margin|with_superior_input_buffer|as_menu|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:53
+requirement	{with_margin|with_superior_input_buffer|as_menu|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	instance	get_margins	5	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:54
+requirement	{with_margin|with_superior_input_buffer|as_menu|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	instance	set_margins	5	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:55
+requirement	{sash|with_no_execute_choice_item|with_superior_input_buffer|as_choice|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:72
+requirement	{sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:82
+requirement	{sash|as_scrolling_menu|as_multiple_select|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	instance	set_font	2	1	papyrus_src/demo/LEMMA_LIB/libwin.esp.1:90
+requirement	?	unknown	set_label_flag	2	1	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:366
+requirement	?	unknown	set_border_flag	2	1	papyrus_src/demo/LEMMA_LIB/viewer.esp.1:367
+requirement	?	unknown	refer_env	2	1	papyrus_src/demo/ML/ml_tnl0.esp.1:32
+requirement	?	unknown	refer_spy	2	1	papyrus_src/demo/ML/ml_tnl0.esp.1:891
+requirement	as_pimos_string_io_device	instance	class_object	2	1	papyrus_src/demo/P_TERM/ESP/device.esp.1:27
+requirement	?	unknown	is_closed	1	1	papyrus_src/demo/P_TERM/ESP/device.esp.1:54
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	get_font	2	1	papyrus_src/demo/TREE/cap_win.esp.1:18
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	draw_line	8	1	papyrus_src/demo/TREE/cap_win.esp.1:209
+requirement	?	unknown	set_notified	2	1	papyrus_src/demo/TREE/edwin.esp.1:19
+requirement	?	unknown	set_wff	2	1	papyrus_src/demo/TREE/euo_win.esp.1:122
+requirement	?	unknown	set_children	2	1	papyrus_src/demo/TREE/euo_win.esp.1:132
+requirement	{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	instance	get_mouse_position	3	1	papyrus_src/demo/TREE/win2.esp.1:22
+requirement	?	unknown	unquote_atom	1	1	papyrus_src/demo/TREE/winop.esp.1:8
+requirement	?	ambiguous	make	3	1	papyrus_src/demo/UTILITY/tex_write.esp.1:28
+requirement	editor_text_buffer	nature	(inherited)		1	papyrus_src/demo/BUFFER/buffer_main.esp.1:5
+requirement	library_utility	nature	(inherited)		1	papyrus_src/demo/DATA_BASE/library.esp.1:5

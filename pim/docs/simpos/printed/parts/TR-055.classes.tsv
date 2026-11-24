@@ -1,0 +1,29 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+pool	-	-	-	insert an object; extract an object; find an object (prose)	PROSE	TR-055	12	9	"A pool itself is an instance of the class 'pool'"
+stream	-	-	-	insert (put); extract (get) (prose)	PROSE	TR-055	12-13	9-10	FIFO between input head and output head; retrieve suspends when empty; "the only basic construct for synchronization and communication between processes"; "(get)" partly illegible on p13
+tap	-	-	-	-	PROSE	TR-055	13	10	"An instance of the class 'tap' makes a stream out of a pool"; retrieves objects sequentially from a pool
+process	-	-	-	suspend; resume; terminate (prose)	PROSE	TR-055	13	10	"created as an instance of the class 'process'"; solves a question (predicate call) with a program and data
+world	-	-	-	-	PROSE	TR-055	14	11	sequence of directories; shareable among processes; created/changed dynamically
+directory	(pool, per prose)	-	-	-	PROSE	TR-055	14	11	"a pool of associations of objects and their names"
+permanent directory	directory (prose: "a special kind of directory")	-	-	-	PROSE	TR-055	14	11	backed by a directory file; object stored at inclusion; survives reboot
+channel	(on top of streams)	-	-	-	PROSE	TR-055	14	11	message communication between two processes, "even in different machines", object packaged in a message of a certain protocol
+port	-	-	-	send/receive (prose)	PROSE	TR-055	14-15	11-12	two channels connect two ports; a port can be connected to many ports
+i/o port	(port, per prose: "a special kind of port")	-	-	-	PROSE	TR-055	15	12	opened through i/o channels to the outer world (user, machine, file)
+manager	-	manager port	-	-	PROSE	TR-055	15	12	each I/O subsystem has a main process called a manager holding a manager port connected to a user's i/o port
+file	-	-	-	-	PROSE	TR-055	16	13	container of records in a disk volume; binary/table/heap
+binary file	(file)	-	-	-	PROSE	TR-055	16	13	no internal structure; text or program code
+table file	(file)	-	-	-	PROSE	TR-055	16	13	fixed-length records
+heap file	(file)	-	-	-	PROSE	TR-055	16	13	variable-length records; "permanent heap area"
+region	-	page map	-	-	PROSE	TR-055	16	13	area in a volume storing a file; disk pages allocated as it expands; logical address = region number + offset; page map per region
+file marker	-	-	-	-	PROSE	TR-055	17	14	indicates record position
+file tap	-	file marker	-	-	PROSE	TR-055	17	14	sequential access; keeps a file marker
+directory file	(file)	-	-	-	PROSE	TR-055	17	14	associates files (and instance-file records) with names
+instance file	(table file)	-	-	-	PROSE	TR-055	17	14	"a table file to store objects"; each class knows how to store/restore its instances; VTOC built as an instance file for file objects
+window	-	-	-	-	PROSE	TR-055	18-19	15-16	virtual terminal; states shown/selected/de-exposed/de-activated; subwindows; temporary windows; menu windows; additional-feature classes: scrolling, labelling, framing
+menu window	(window)	-	-	-	PROSE	TR-055	19-20	16-17	-
+node	-	-	-	-	PROSE	TR-055	20	17	represents each site in network
+socket	-	-	-	-	PROSE	TR-055	20	17	connection point in a node
+cable	-	-	-	-	PROSE	TR-055	20	17	connects two sockets
+plug	-	-	-	read/write data (prose)	PROSE	TR-055	20-21	17-18	access point to a cable; user creates plug on a socket and connects it to another socket
+remote channel	(channel)	-	-	send (prose)	PROSE	TR-055	21	18	represents a channel on a remote node
+remote object	-	-	-	-	PROSE	TR-055	21	18	operation encoded into message, decoded at remote node; each class knows how to encode/decode

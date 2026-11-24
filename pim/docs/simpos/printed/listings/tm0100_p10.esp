@@ -1,0 +1,47 @@
+% TM-100 PDF page 10, printed folio 8. End of Figure 3.1 "Part of class 'process'",
+% then Figure 3.2 "An example program: class 'parrot'" (EXAMPLE, not a system class).
+% Transcribed by eye from 300dpi crops.
+% [transcriber] Note the second branch of :suspend tests  Reason == stream(Stream)
+% (two '=') where the first branch (PDF p9) and :resume use  Reason = stream(Stream).
+% As printed; not harmonized.
+            :allow_interrupt(#process)
+        ;   Process!status == suspended, !,
+            (   Reason == stream(Stream), !,
+                Process!suspend_reason := Stream
+            ;   :add_last(Process!suspend_reasons, Reason),
+                Process!suspend_flag := on ),
+            :allow_interrupt(#process)
+        ;   :allow_interrupt(#process), !,
+            fail ),
+        ! ;
+
+end.
+-----------------------------------------------------------------------
+                    Figure 3.1 Part of class 'process'
+
+% ---- Figure 3.2 ----
+-----------------------------------------------------------------------
+    class  parrot  has
+
+    nature      as_program ;
+
+    instance
+
+    :goal(Program) :-
+            :create(#window, Window),
+            :activate(Window),
+            loop(Window) ;
+
+    local
+
+    loop(Window) :-
+            :read(Window, Char),
+            (   Char == etx, !
+            ;   :write(Window, Char),
+                fail ) ;
+    loop(Window) :- !,
+            loop(Window) ;
+
+    end.
+-----------------------------------------------------------------------
+                Figure 3.2  An example program: class 'parrot'

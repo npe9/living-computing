@@ -159,7 +159,7 @@ the manuals and reports above (roadmap section 9).
 Made because the owner asked for more on SIMPOS. Delegated, like
 section 1-8's search; its working notes are `simpos/source_notes.md`
 (page by page, opened versus only located), its outputs
-`simpos/class_census.tsv` and `simpos/trtm_table.tsv`.
+`simpos/required/old_regex_census.tsv (superseded by simpos/required/)` and `simpos/trtm_table.tsv`.
 
 **SIMPOS itself: still NOT FOUND** (no source, binary, tape, disk
 image or emulator). What it adds:
@@ -177,7 +177,7 @@ image or emulator). What it adds:
   graphics methods). Not described anywhere found: the `.ptf` package
   format, the boot image, the disk format.
 - **The interface the applications use**: a census of the 1,351 ESP
-  files of the held IFS SIMPOS applications (`simpos/class_census.tsv`):
+  files of the held IFS SIMPOS applications (`simpos/required/old_regex_census.tsv (superseded by simpos/required/)`):
   about 300 classes used and not defined there, each with the methods
   called (`symbolizer`, `library`, `process`, `directory`, `pathname`,
   windows, menus, ...). By pattern, so a few entries may be
@@ -274,3 +274,44 @@ Heritage, GitLab, SourceForge, the OSDN mirror, Ring Server, some 34
 mirrors, Hitachi Hyoron 1985-95 (no PIM/c article): nothing.
 Refused or not searched: HathiTrust, scholar.archive.org, Codeberg,
 SourceHut, Usenet, Oki Technical Review, FUJITSU magazine.
+
+## 11. The PSI microwords read, and tested on the held stores (2026-11-23)
+
+From Nakashima's thesis (section 10), read from the page images
+(`psi_microword.md`; PDF page n = printed pages 2n-8, 2n-7; bit
+positions assume the leftmost field is the high bit, the figures
+print widths only, no code values):
+
+- PSI-I, Fig. 3-11 (p.74): 63 bits, a 43-bit basic part and a 20-bit
+  part of three types chosen by TYPF.
+- PSI-II, Fig. 3-19 (p.113): 53 bits (DBGF 1, CCF 4, TYPF 3, DSTF 7,
+  SC1F 6, ALF 2, SC2F 6, JMPF 3, CNDF 7, EM1 6, EM2 4, EM3 4); Table
+  3-5 the emit fields. Open: p.116's text and the figure disagree on
+  SC1F.
+- PSI-III, Fig. 3-25 (p.143): 64 bits: DBGF 1 (63), CCF 5 (62-58),
+  WRBF 1 (57), DSTF 5, SC1F 5, SC2F 5, SD1F 3 (41-39), SD2F 2, ADF 3
+  (36-34), AS1F 3 (33-31), AS2F 2 (30-29), ALF 2 (28-27), JMPF 4
+  (26-23), CNDF 4 (22-19), MCF 1 (18), TGIF 2 (17-16), EM1 6, EM2 6,
+  EM3 4. Also the nanocode, Fig. 3-22 (p.127), 50 bits; and the
+  PSI-III's pipeline (five stages, 60 ns), WCS 64 bits x 32 Kw, caches,
+  TLBs, register files (section 3.3). Tag and word widths are not given.
+- Section 3.4: PIM/m uses the PSI-III CPU; up to 256 PEs of 16 Mw, 32
+  a cabinet; the FEP on SCSI with a 600 MB disk per 8 PEs.
+
+Tested (MEASURED, scripts in `asm/psi_microword/`): `syspsi` and the
+KL1 image in `pimm.MEkbn` are 64-bit little-endian words that read
+consistently under the thesis's PSI-III layout and worse under TR-733
+fig. 4's, which `asm/mekbn.py` uses: the two differ in bits 36..23,
+and the measurements favour the thesis there (bit 26 in the jump
+field, ALF 2 bits with EM2 the operation, ADF/AS1F/AS2F at
+36-34/33-31/30-29). TR-733 prints ALF 3 and JMPF 3, so the documents
+conflict as printed. `sysidat` is not microcode but a decode table:
+471 of 471 start addresses land on code in `syspsi` (baseline 74.5%).
+`sysinit` is mostly text and data. Strength: strong for bit 26, ALF
+and bits 36-29; moderate for MCF, TGIF, DBGF; code values only from
+`rassy`. Next: move `mekbn.py`'s FIELDS to this layout and rerun its
+`--check`.
+
+Appendix A (pp.237-263) is the ESP object model and KL0 execution
+control (exceptions, remote cut, `on_backtrack`, `bind_hook`), not an
+instruction list; Appendix C (pp.278-285) a WAM instruction list.

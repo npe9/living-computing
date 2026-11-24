@@ -1,0 +1,52 @@
+# TR-524: names used but never defined in the report (PDF page / folio)
+# Classes / natures named without any definition
+p_binary_file                 p37/f36  (nature of binary_file)
+with_retrieval                p37/f36  (nature of binary_file)
+p_logical_file                p37/f36  (nature of logical_file)
+as_agent_of_physical_file     p37/f36
+as_resource                   p37/f36
+as_file                       p37/f36
+with_file_capability          p37/f36
+as_agent_of_physical_object   p37/f36  (nature of logical_object)
+with_capability               p37/f36
+with_internal_communication   p37/f36
+with_access_status            p37/f36
+remote_object                 p37/f36  (ROAM kernel class; prose only p20)
+as_remote_object              p38/f37  (ROAM kernel class; prose only p20)
+#pathname                     p37/f36  (:remote_or_local/5 called on it)
+#directory                    p37/f36  (:retrieve/3 called on it; method list in Table 3 p36)
+#table_file                   p11/f10
+process / file manager process / network manager / device handler   p8,p11,p20,p29 (prose)
+physical file / physical directory / physical volume objects        p10-18 (prose and figures; no class names)
+user management system        p10/f9
+world (alias set)             p9/f8, p22/f21
+# Methods called but never defined
+:g_call/2,/3 (Lfile, Name, {Args}[, Node])   p37  -- ROAM, defined only in prose
+:r_call, :x_call              p20-21 (prose, Fig.4)
+:send_receive/4 (Lfile, OpType, InternalMethod, {Args}, RequestMode)   p37
+:submit/5 (Lfile, OpType, InternalMethod, {Args}, RequestMode, MsgID)  p37
+:wait/2 (Lfile, MsgID, {Buffer,Marker})   p37   (low level; distinct from binary_file :wait/3)
+:probe                        p12 (prose only)
+:interface/2 (Lfile, Pfile, Status)       p37
+:mode_type/2                  p37
+:set_full_pathname/1          p37
+:remote_or_local/5            p37
+:retrieve/3 on #directory     p37
+:open/3 on Pfile (Pfile, OpenMode, Lfile, Status)    p37
+:add/3, :read/3 on Pfile (with AccessStatus)          p37
+:set_accessor/1               p38
+:buffer/1, :file_marker/1     p38 (presumably slot accessors of file, file_marker, buffer -- INFERENCE)
+:get_io_buffer/2, :set_io_buffer/2, :copy_data_buffer/2, :get_data/1 on buffer   p38
+:set_data_element/1, :get_data_element/1 on Packet   p38
+:new/1 (built-in instance creation)      p38
+unbound/1 (built-in predicate)           p38
+:close, :make on logical files           p12 (no body)
+# Concepts
+request_input / reply_input (attribute delivery types)   p38
+message identifier / MsgID format        p12
+GOID ([node#, creationtime])             p35 Table 2
+express / normal message priority (encoding)   p15
+abort message                            p15
+I/O bus memory, LRU cache                p9
+super_U / super_A / super_N / general ranks; user mode   p16-17 (semantics given, storage not)
+password holder (storage format)         p16

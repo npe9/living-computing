@@ -202,7 +202,9 @@ entry has all flags clear.
 - **Microinstruction layout.** The 64-bit field layout and
   the nano-code and decode-table widths are model-defined.
   *(Note 2026-11-23: the field layout is printed in TR-733 fig. 4,
-  `pim_architecture.md` §5. The nano-code and decode-table widths
-  are still not stated in print.)*
+  `pim_architecture.md` §5, and for the PSI-III, the same chip, in
+  Nakashima's thesis Fig. 3-25, which disagrees with TR-733 in bits
+  36..23 and fits the held stores better (`psi_acquisition.md` §11);
+  the thesis also prints the 50-bit nanocode, Fig. 3-22.)*
 - **Jump table.** The multi-way jump base and the
   jump-table encoding are unconfirmed.

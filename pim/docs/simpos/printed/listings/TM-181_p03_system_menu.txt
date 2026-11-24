@@ -1,0 +1,14 @@
+% TM-181 (1986), PDF page 3 (folio -2-), right column screenshot under (3) システム・メニュー.
+% Transcribed by eye from a 600dpi crop (F4). Screen footer reads "SIMPOS Version 2.19" (from the earlier search's notes; footer legible only as "SIMPOS Versi«?»" in my crop).
+
+SYSTEM MENU
+   Experts                 MEDIA SYSTEMS
+   debugger                user process list
+   pmacs                   window manipulator
+   librarian               network
+   file_manipulator        shell
+   spooler                 whiteboard
+   font_editor             kanakan initiate
+   edips                   garbage collection
+                           login
+                           shut down

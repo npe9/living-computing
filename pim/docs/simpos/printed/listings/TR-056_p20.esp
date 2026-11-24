@@ -1,0 +1,17 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 20, printed folio 18. Section 5(2) Program skeleton (cont. from p19) and program invocation.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+          :goal :- p(X), «?»(X).
+   local
+          p(X) :- ...
+          q(X) :- ...
+% (as printed the second goal of :goal shows only "(X)": the predicate letter is missing/unprinted;
+%  by the local part it is presumably q -- INFERENCE, so written «?»)
+
+% "A predicate for a program invocation is defined as a class predicate of class program"
+    :invoke(#program,Goal)
+% "when a process is activated with a given program, a different predicate, which is defined as
+%  an instance predicate on a process,"
+    :activate(Process,#program,Goal)

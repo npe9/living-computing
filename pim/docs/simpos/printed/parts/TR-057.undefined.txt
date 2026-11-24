@@ -1,0 +1,7 @@
+TR-057	list	NAMED	class named only as an example of a pool
+TR-057	array	NAMED	same
+TR-057	node, socket, cable, plug	NAMED	network classes, no definition
+TR-057	binder mechanism	PROSE	"will be supported": virtual file of many data and index files
+TR-057	table file, heap file, index file, instance file, directory file	PROSE	file types named without class names or interfaces
+TR-057	universe	PROSE	system directory tree held in a class slot of class directory; slot name not given
+TR-057	Customisable Assembler	CITED	S. Takagi 1983

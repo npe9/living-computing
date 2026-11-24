@@ -1,0 +1,22 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 12, printed folio 10. Section 3(6) generic tap get (clause body printed); Section 4(1) 'Stream' operations.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+% "A tap can be implemented in general for any class of pool, if a pool knows the next position as:"
+   :next(Pool,Current_Position,Next_Position)
+% "Then a get operation is defined as"
+   :get(Tap,Object) :-
+           :position(Tap,Current_Position),
+           :pool(Tap,Pool),
+           :get_at(Pool,Current_Position),
+           :next(Pool,Current_Position,Next_Position),
+           :set_position(Tap,Next_Position).
+% (as printed: :get_at/2 has no Object argument, so Object is never bound -- misprint in the
+%  original; not corrected)
+
+% (1) Stream
+% o To insert an object into the stream
+          :put(Stream,Object)
+% o To remove an object from the stream
+          :get(Stream,Object)

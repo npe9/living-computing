@@ -1,0 +1,22 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+pool	-	-	-	put/take (prose: "an object can be put into or taken from a pool")	PROSE	TR-057	5	-	"a container, which is also an object, of objects of any class"; list and array given as examples of pools
+list	(pool, per prose)	-	-	-	PROSE	TR-057	5	-	named as an example of a pool
+array	(pool, per prose)	-	-	-	PROSE	TR-057	5	-	named as an example of a pool
+directory	(pool, per prose)	-	-	bind/retrieve by name (prose)	PROSE	TR-057	5	-	pool of objects associated with a name; tree of directories; pathname; universe held in a class slot of class directory
+stream	-	-	-	put/retrieve (prose); retrieve suspends when empty	PROSE	TR-057	5	-	pipe through which objects flow; synchronisation and communication between processes
+channel	(defined on top of stream)	-	-	-	PROSE	TR-057	5	-	message communication between two processes
+port	-	-	-	-	PROSE	TR-057	5	-	message box for two-way communication, connected to other ports
+process	-	-	-	-	PROSE	TR-057	5	-	executes a program (an instance of a program class); environments: program, library, world, universe
+program	-	-	-	-	PROSE	TR-057	5	-	"program class": main goal is an instance predicate; slots hold objects local to the program
+window	-	selected_window (window manager instance slot)	-	-	PROSE	TR-057	5-6	-	each window an instance of the window class; hierarchy rooted at the logical screen; 5 states; Table 3-1 (listings/TR-057_p06.txt)
+window_manager	-	selected_window	-	-	PROSE	TR-057	6	-	"The window manager has the instance slot selected_window"; whether it is a class name is INFERENCE
+node	-	-	-	-	NAMED	TR-057	7	-	network subsystem class
+socket	-	-	-	-	NAMED	TR-057	7	-	network subsystem class
+cable	-	-	-	-	NAMED	TR-057	7	-	network subsystem class
+plug	-	-	-	-	NAMED	TR-057	7	-	network subsystem class
+remote_channel	-	-	-	send (prose)	PROSE	TR-057	7	-	"A remote channel is defined to represent an original channel on the other node"; spelling as a class name is INFERENCE
+remote_object	-	-	-	-	PROSE	TR-057	7	-	represents an object in a remote node; spelling as a class name is INFERENCE
+coordinator	-	-	-	-	PROSE	TR-057	7-8	-	work-behind process managing experts; system_menu; whiteboard; key command table
+system_menu	-	-	-	-	NAMED	TR-057	7	-	"Create, delete, and activate an expert via system_menu"
+whiteboard	-	-	-	-	PROSE	TR-057	7-8	-	blackboard for expert-to-expert messages
+e_window	-	-	-	-	PROSE	TR-057	7	-	expert's independent communication window

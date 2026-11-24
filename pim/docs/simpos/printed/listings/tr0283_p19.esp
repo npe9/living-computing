@@ -1,0 +1,30 @@
+% SOURCE: ICOT TR-283, K. Yoshida, "Remote Object Accessing Mechanism in SIMPOS -- Its Design and Application", June 1987
+% PDF page 19, printed folio 17. "Appendix 1  Definition of Primitive Methods (in ESP)" (boxed listing).
+% Transcribed by eye from 300dpi crops (A/work/tr0283/c19a.png, c19b.png).
+% EXAMPLE: class test is the benchmark class used for Table 2 (PDF p18) "primitive methods"; it is not a SIMPOS system class,
+% but it is the only complete printed example of a ROAM user class (external + local methods).
+% The right-hand comments are printed in a separate right column at roughly these heights; their placement is approximate.
+% Transcriber note: the clause head ":do(Class, Node) :-" is printed with no body and is immediately followed by the
+% ":make(Class, Instance, Node) :-" head, as printed (presumably a printing error: the :do/2 body,
+% e.g. a :g_call(Class, do, {}, Node), is missing -- INFERENCE, not printed).
+
+class  test  has
+  nature                                                   % inheritance %
+    remote_object ;
+                                                           % external class methods %
+  :do(Class, Node) :-
+  :make(Class, Instance, Node) :-
+    :g_call(Class, make, { Instance } , Node) ;
+                                                           % local class methods %
+  :l_call(Class, do, { } ) :- !;
+  :l_call(Class, make, { Instance } ) :- !,
+    :new(Class, Instance) ;
+
+ instance
+                                                           % external instance method %
+  :do(Instance) :-
+    :g_call(Instance, do, { } ) ;
+                                                           % local instance method %
+  :l_call(Instance, do, { } ) :- !;
+
+end.

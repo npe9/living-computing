@@ -1,0 +1,54 @@
+% TM-100 PDF page 11, printed folio 9. Section 3.1 (2) Program.
+% Usage fragment for the parrot EXAMPLE, then Figure 3.3 "Part of class 'as_program'"
+% (caption on PDF p12). Transcribed by eye from 300dpi crops.
+% Prose: "On invocation of a program, the program is pushed onto the invocation stack of
+% the process and the instance predicate :goal(Program) is called.  When the goal
+% finishes, the program is popped from the invocation stack.  If the stack becomes
+% empty, the process terminates."
+
+% ---- usage fragment (in running text) ----
+            :create(#parrot, Parrot_Program),
+            :create(#process, Process),
+            :activate(Process, Parrot_Program)
+
+% ---- Figure 3.3 ----
+-----------------------------------------------------------------------
+    class  as_program  has
+
+    :create(Class, Program) :- !,
+            :new(Class, Program), ! ;
+
+    instance
+
+    :goal(Program) ;
+                % A top-level predicate with a default name.
+                % This must be overridden by a user program.
+
+    :assign(Program) :- !,
+                % Push Program into 'invocation_stack'.
+            :self(#process, Process),
+            :add_program(Process, Program), ! ;
+
+    :resign(Program) :- !,
+                % Pop Program from 'invocation_stack'.  If it is the root
+                % program, then the process dies.
+            :self(#process, Process),
+            :remove_program(Process, Any_program),
+            (   :no_program(Process), !,
+                :die(Process)
+            ;   true ), ! ;
+
+    :resign_core(Program) :- !,
+                % Pop Program from 'invocation_stack'.
+            :self(#process, Process),
+            :remove_program(Process, Any_program), ! ;
+
+    :invoke(Program) :- !,
+                % Invoke the default goal.
+            :assign(Program),
+            (   :goal(Program), !,
+                :resign(Program)
+            ;   :resign(Program),
+                fail ), ! ;
+
+    end.

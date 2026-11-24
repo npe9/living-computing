@@ -1,0 +1,345 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	472	disc/analy.esp:35
+builtin		builtin	:=	2	296	disc/bsset.esp:21
+builtin		builtin	is	2	216	disc/analy_pp.esp:163
+builtin		constant a#b	string#str		175	
+builtin		builtin	==	2	50	disc/analy_pp.esp:34
+builtin		builtin	<	2	48	disc/analy.esp:16
+builtin		builtin	>	2	37	disc/bsset.esp:79
+builtin		builtin	freeze	2	30	disc/new_bsset.esp:22
+builtin		builtin	melt	2	30	disc/new_bsset.esp:48
+builtin		builtin	unbound	1	22	disc/bun_type.esp:60
+builtin		builtin	integer	1	21	disc/context.esp:884
+builtin		builtin	atom	1	21	disc/bunpu.esp:110
+builtin		builtin	repeat	0	20	disc/analy_pp.esp:31
+builtin		builtin	list	1	19	disc/analy_pp.esp:173
+builtin		builtin	set_vector_element	3	18	disc/bsset.esp:74
+builtin		builtin	vector_element	3	12	disc/bsset.esp:50
+builtin		builtin	string	3	11	disc/context.esp:855
+builtin		builtin	bound	1	10	disc/conjbun.esp:81
+builtin		file-level directive	use_package	1	10	
+builtin		builtin	list_to_vector	3	9	disc/analy_pp.esp:124
+builtin		builtin	=\=	2	7	disc/conv.esp:234
+builtin		builtin	=<	2	5	disc/convert.esp:153
+builtin		builtin	substring	4	5	disc/context.esp:857
+builtin		builtin	number	1	5	disc/context.esp:438
+builtin		builtin	less_than	2	4	disc/DATA/TOSSFTB99.esp:5360
+builtin		builtin	atomic	1	3	disc/context.esp:1287
+builtin		builtin	stack_vector	2	3	disc/meta.esp:251
+builtin		builtin	>=	2	2	disc/bsset.esp:92
+builtin		builtin	equal_string	2	2	disc/analy.esp:58
+builtin		builtin	string_tail	3	2	disc/context.esp:858
+builtin		builtin	vector_tail	3	2	disc/conv.esp:347
+builtin		builtin	new_heap_vector	2	2	disc/bsset.esp:22
+builtin		constant a#b	key#lf		2	
+builtin		builtin	\==	2	1	disc/segcheck.esp:61
+builtin		builtin	string_element	3	1	disc/sentence.esp:73
+builtin		builtin	vector_to_list	3	1	disc/segment.esp:140
+builtin		builtin	first	2	1	disc/DATA/TOSSFTB99.esp:7189
+requirement	standard_io_window	instance	putl	2	196	disc/demo_bun_cut.esp:50
+requirement	standard_menu	instance	activate	1	76	disc/demo_bun_cut.esp:34
+requirement	standard_menu	instance	read	2	76	disc/demo_bun_cut.esp:35
+requirement	font	class	create	3	74	disc/demo_bun_cut.esp:48
+requirement	font	ref	(#ref)		74	disc/demo_bun_cut.esp:48
+requirement	standard_io_window	instance	kill	1	70	disc/demo_bun_cut.esp:55
+requirement	standard_output_file	instance	putf	3	70	disc/analy_pp.esp:86
+requirement	standard_io_window	class	create	3	69	disc/demo_bun_cut.esp:42
+requirement	standard_io_window	ref	(#ref)		69	disc/demo_bun_cut.esp:42
+requirement	standard_output_file	instance	putf	2	66	disc/analy_pp.esp:123
+requirement	standard_io_window	instance	show	1	65	disc/demo_bun_cut.esp:47
+requirement	standard_io_window	instance	set_font	2	65	disc/demo_bun_cut.esp:49
+requirement	symbolizer	ref	(#ref)		44	disc/analy.esp:60
+requirement	list_index	class	create	2	42	disc/bunpu.esp:34
+requirement	list_index	ref	(#ref)		42	disc/bunpu.esp:34
+requirement	?	unknown	putl	2	34	disc/context.esp:351
+requirement	standard_menu	instance	kill	1	31	disc/demo_bun_cut.esp:141
+requirement	standard_output_file	instance	close_output	1	27	disc/analy_pp.esp:62
+requirement	?	unknown	putf	2	26	disc/analy_pp.esp:134
+requirement	standard_output_file	class	create	3	25	disc/analy_pp.esp:41
+requirement	standard_output_file	ref	(#ref)		25	disc/analy_pp.esp:41
+requirement	?	unknown	putt	2	24	disc/context.esp:834
+requirement	string	class	append	3	22	disc/context.esp:549
+requirement	as_program	nature	(inherited)		22	disc/demo_bun_cut.esp:8
+requirement	string	ref	(#ref)		22	disc/context.esp:549
+requirement	symbolizer	class	get_number_string	3	21	disc/context.esp:259
+requirement	?	unknown	clear	1	21	disc/context.esp:163
+requirement	standard_menu	instance	set_title	2	21	disc/demo_bun_cut.esp:33
+requirement	standard_input_file	class	create	3	20	disc/analy_pp.esp:49
+requirement	standard_input_file	ref	(#ref)		20	disc/analy_pp.esp:49
+requirement	standard_menu	ref	(#ref)		19	disc/demo_bun_cut.esp:28
+requirement	?	unknown	get_inside_size	3	19	disc/context.esp:358
+requirement	standard_menu	class	create	3	19	disc/demo_bun_cut.esp:28
+requirement	?	unknown	putf	3	19	disc/analy_pp.esp:137
+requirement	list	instance	get_at	3	17	disc/data_pool.esp:143
+requirement	standard_output_file	instance	putt	2	16	disc/conv.esp:419
+requirement	?	unknown	putl	1	13	disc/context.esp:362
+requirement	standard_input_file	instance	gett	2	13	disc/analy_pp.esp:92
+requirement	standard_input_file	instance	close_input	1	12	disc/analy_pp.esp:53
+requirement	symbolizer	class	get_atom_string	3	12	disc/context.esp:1178
+requirement	?	unknown	set_item_value	3	12	disc/context.esp:85
+requirement	?	unknown	get_inside_units	3	12	disc/context.esp:359
+requirement	standard_output_file	instance	putt	4	12	disc/seg2io.esp:62
+requirement	<root>	class	refute	3	11	disc/conv.esp:348
+requirement	?	unknown	close_input	1	10	disc/bun_cut.esp:51
+requirement	?	unknown	add_at	3	9	disc/context.esp:326
+requirement	standard_input_file	instance	end_of_input	1	9	disc/analy_pp.esp:90
+requirement	list	class	create	2	9	disc/bunpu.esp:23
+requirement	library_utility	class	create	2	9	disc/demo_disp.esp:68
+requirement	list	ref	(#ref)		9	disc/bunpu.esp:23
+requirement	library_utility	ref	(#ref)		9	disc/demo_disp.esp:68
+requirement	as_program	class	create	2	9	disc/demo_menu.esp:75
+requirement	standard_output_file	instance	unquote_atom	1	9	disc/daimeisi_io.esp:26
+requirement	library_utility	instance	load	2	9	disc/demo_disp.esp:69
+requirement	table	ref	(#ref)		9	disc/conv.esp:182
+requirement	standard_io_window	instance	activate	1	8	disc/demo_disp.esp:104
+requirement	?	unknown	putt	4	8	disc/analy_pp.esp:142
+requirement	table	class	n	3	8	disc/conv.esp:182
+requirement	pf2	class	through	3	8	disc/demo_bun_cut.esp:124
+requirement	pf2	ref	(#ref)		8	disc/demo_bun_cut.esp:124
+requirement	standard_temporary_menu	instance	show	1	7	disc/system_data.esp:188
+requirement	inferior_window	class	create	3	6	disc/disp_win.esp:225
+requirement	inferior_window	instance	kill	1	6	disc/disp_win.esp:466
+requirement	standard_io_window	instance	clear	1	6	disc/demo_menu.esp:67
+requirement	?	unknown	end_of_input	1	6	disc/context.esp:847
+requirement	standard_superior_window	class	create	3	6	disc/disp_win.esp:297
+requirement	standard_superior_window	ref	(#ref)		6	disc/disp_win.esp:297
+requirement	?	unknown	gett	2	6	disc/bun_cut.esp:48
+requirement	?	unknown	reset	1	6	disc/context.esp:369
+requirement	standard_menu	instance	deactivate	1	6	disc/demo_disp.esp:36
+requirement	menu_with_superior_input_buffer	instance	change_item	3	6	disc/disp_win.esp:184
+requirement	list	instance	add_last	2	5	disc/bunpu.esp:148
+requirement	?	unknown	move_to_first	1	5	disc/util.esp:327
+requirement	?	unknown	getl	2	5	disc/context.esp:354
+requirement	standard_io_buffer	instance	reset	1	5	disc/context.esp:100
+requirement	pmacs_window	instance	activate	1	5	disc/demo_windows.esp:20
+requirement	?	unknown	set_title	2	5	disc/context.esp:94
+requirement	standard_superior_window	instance	get_inside_size	3	5	disc/disp_win.esp:305
+requirement	standard_io_window	instance	deactivate	1	5	disc/demo_disp.esp:100
+requirement	{labeled_sash|as_standard_io_window|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	set_title	2	5	disc/disp_win.esp:307
+requirement	{labeled_sash|as_standard_io_window|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	hide	1	5	disc/disp_win.esp:433
+requirement	standard_superior_window	instance	kill	1	5	disc/disp_win.esp:470
+requirement	standard_temporary_menu	instance	read	2	5	disc/system_data.esp:189
+requirement	?	unknown	get_at	3	4	disc/context.esp:958
+requirement	<root>	class	new	2	4	disc/bsset.esp:20
+requirement	?	unknown	show	1	4	disc/context.esp:353
+requirement	?	unknown	remove_at	3	4	disc/context.esp:333
+requirement	?	unknown	current_position	2	4	disc/util.esp:335
+requirement	symbolizer	class	get_ch_string_token	3	4	disc/context.esp:754
+requirement	pmacs_window	instance	set_font	2	4	disc/demo_windows.esp:22
+requirement	standard_output_file	instance	putc	2	4	disc/seg2io.esp:109
+requirement	pmacs_window	ref	(#ref)		4	disc/demo_windows.esp:17
+requirement	builtin	ref	(#ref)		4	disc/conv.esp:343
+requirement	superior_window	ref	(#ref)		4	disc/disp_win.esp:143
+requirement	?	unknown	putb	3	4	disc/context.esp:835
+requirement	?	unknown	current_buffer	2	4	disc/util.esp:317
+requirement	?	unknown	get_contents_at	3	4	disc/data_pool.esp:177
+requirement	standard_superior_window	instance	get_size	3	4	disc/disp_win.esp:299
+requirement	standard_temporary_menu	class	create	3	4	disc/system_data.esp:170
+requirement	superior_window	class	create	3	4	disc/disp_win.esp:143
+requirement	superior_window	instance	get_inside_size	3	4	disc/disp_win.esp:291
+requirement	?	unknown	set_item_status	3	4	disc/context.esp:463
+requirement	standard_temporary_menu	ref	(#ref)		4	disc/system_data.esp:170
+requirement	?	unknown	count	2	4	disc/data_pool.esp:209
+requirement	pmacs_window	instance	kill	1	4	disc/demo_windows.esp:34
+requirement	standard_superior_window	instance	set_title	2	4	disc/disp_win.esp:298
+requirement	standard_superior_window	instance	hide	1	4	disc/disp_win.esp:432
+requirement	?	unknown	kill	1	4	disc/disp_win.esp:494
+requirement	{labeled_sash|as_standard_io_window|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	clear	1	4	disc/disp_win.esp:514
+requirement	standard_superior_window	instance	show	1	4	disc/disp_win.esp:534
+requirement	{labeled_sash|as_standard_io_window|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	show	1	4	disc/disp_win.esp:535
+requirement	standard_io_window	instance	getl	2	4	disc/exbunseki.esp:19
+requirement	standard_temporary_menu	instance	hide	1	4	disc/system_data.esp:190
+requirement	?	unknown	command_interpret	1	3	disc/analy_pp.esp:71
+requirement	?	unknown	see_current_line	2	3	disc/util.esp:342
+requirement	standard_output_file	instance	putl	2	3	disc/analy_pp.esp:121
+requirement	list	instance	put_contents	2	3	disc/bunpu.esp:24
+requirement	?	unknown	move_end_of_line	1	3	disc/util.esp:344
+requirement	?	unknown	move	2	3	disc/util.esp:345
+requirement	pmacs_window	class	create	3	3	disc/demo_windows.esp:17
+requirement	pmacs_window	instance	get_interpreter	2	3	disc/demo_windows.esp:25
+requirement	?	unknown	get_contents_with_key	2	3	disc/context.esp:1600
+requirement	?	unknown	activate	1	3	disc/demo_menu.esp:85
+requirement	?	unknown	deactivate	1	3	disc/demo_menu.esp:81
+requirement	?	ambiguous	get_contents	2	3	disc/bunpu.esp:137
+requirement	?	unknown	clear_items	1	3	disc/context.esp:265
+requirement	?	unknown	get_font	2	3	disc/context.esp:980
+requirement	list	instance	in	2	3	disc/bunpu.esp:132
+requirement	?	unknown	add_last	2	3	disc/bunpu.esp:141
+requirement	list_index	instance	add_at	3	3	disc/bunpu.esp:142
+requirement	?	unknown	draw_filled_rectangle	6	3	disc/context.esp:1007
+requirement	essential_scrolling_menu_with_superior_input_buffer	class	create	3	3	disc/disp_win.esp:322
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	set_title	2	3	disc/disp_win.esp:323
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	kill	1	3	disc/disp_win.esp:468
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	clear	1	3	disc/disp_win.esp:512
+requirement	standard_io_window	instance	putf	2	3	disc/exec_tmp.esp:43
+requirement	pmacs_window	instance	deactivate	1	3	disc/system_data.esp:156
+requirement	standard_temporary_menu	instance	set_font	2	3	disc/system_data.esp:173
+requirement	standard_temporary_menu	instance	kill	1	3	disc/util.esp:194
+requirement	?	unknown	end_of_buffer	2	3	disc/util.esp:336
+requirement	essential_scrolling_menu_with_superior_input_buffer	ref	(#ref)		3	disc/disp_win.esp:322
+requirement	pmacs_window	instance	current_buffer	2	2	disc/demo_windows.esp:26
+requirement	pmacs_window	instance	get_editor	2	2	disc/demo_windows.esp:24
+requirement	pmacs_window	instance	putb	3	2	disc/util.esp:297
+requirement	pmacs_window	instance	flash	1	2	disc/exshow.esp:33
+requirement	library	class	get_class_object	3	2	disc/demo_menu.esp:80
+requirement	standard_io_window	instance	putt	2	2	disc/demo_through.esp:153
+requirement	standard_io_window	instance	putl	1	2	disc/exbunseki.esp:17
+requirement	?	unknown	insert_string	2	2	disc/util.esp:323
+requirement	?	unknown	insert	2	2	disc/util.esp:324
+requirement	standard_output_file	instance	putl	1	2	disc/analy_pp.esp:126
+requirement	list	instance	get_contents	2	2	disc/conv.esp:328
+requirement	list	instance	count	2	2	disc/data_pool.esp:202
+requirement	list	instance	clear	1	2	disc/data_pool.esp:128
+requirement	symbolizer	class	enter_atom	3	2	disc/analy.esp:65
+requirement	screen	class	get_size	3	2	disc/disp_win.esp:108
+requirement	symbolizer	class	list_to_string	3	2	disc/context.esp:757
+requirement	?	unknown	add_items	3	2	disc/context.esp:829
+requirement	standard_io_buffer	instance	getl	2	2	disc/context.esp:896
+requirement	symbolizer	class	get_number	3	2	disc/context.esp:256
+requirement	?	unknown	add_item	3	2	disc/context.esp:367
+requirement	inferior_window	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	reshape_notifier	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	as_graphics	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	library	ref	(#ref)		2	disc/demo_menu.esp:80
+requirement	directory	ref	(#ref)		2	disc/exec_tmp.esp:44
+requirement	editor_text_buffer	ref	(#ref)		2	disc/exshow.esp:25
+requirement	screen	ref	(#ref)		2	disc/disp_win.esp:108
+requirement	?	unknown	set_input_position	1	2	disc/util.esp:328
+requirement	standard_io_buffer	instance	putf	3	2	disc/context.esp:885
+requirement	standard_io_buffer	instance	putl	2	2	disc/context.esp:400
+requirement	standard_io_buffer	instance	gett	2	2	disc/context.esp:401
+requirement	?	unknown	in	2	2	disc/data_pool.esp:164
+requirement	?	unknown	flash	1	2	disc/util.esp:329
+requirement	?	unknown	erase_cursor	1	2	disc/context.esp:355
+requirement	superior_window	instance	kill	1	2	disc/disp_win.esp:478
+requirement	?	unknown	reread	1	2	disc/util.esp:347
+requirement	as_output	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	labeled_sash	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	list_index	instance	clear	1	2	disc/bunpu.esp:68
+requirement	?	unknown	draw_cursor	1	2	disc/context.esp:352
+requirement	?	unknown	change_item	3	2	disc/context.esp:365
+requirement	?	unknown	draw_line	5	2	disc/context.esp:1276
+requirement	builtin	class	is_builtin	2	2	disc/conv.esp:343
+requirement	builtin	class	execute_builtin	2	2	disc/conv.esp:344
+requirement	standard_io_window	instance	gett	2	2	disc/demo_through.esp:149
+requirement	?	unknown	read_file	4	2	disc/demo_windows.esp:28
+requirement	menu_with_superior_input_buffer	class	create	3	2	disc/disp_win.esp:167
+requirement	menu_with_superior_input_buffer	instance	get_size	3	2	disc/disp_win.esp:168
+requirement	menu_with_superior_input_buffer	instance	set_size	3	2	disc/disp_win.esp:170
+requirement	menu_with_superior_input_buffer	instance	delete_item	2	2	disc/disp_win.esp:197
+requirement	menu_with_superior_input_buffer	instance	add_item	3	2	disc/disp_win.esp:202
+requirement	superior_window	instance	hide	1	2	disc/disp_win.esp:431
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	hide	1	2	disc/disp_win.esp:435
+requirement	menu_with_superior_input_buffer	instance	deactivate	1	2	disc/disp_win.esp:455
+requirement	menu_with_superior_input_buffer	instance	kill	1	2	disc/disp_win.esp:460
+requirement	menu_with_superior_input_buffer	instance	activate	1	2	disc/disp_win.esp:508
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	clear_items	1	2	disc/disp_win.esp:518
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	add_item	3	2	disc/disp_win.esp:519
+requirement	superior_window	instance	show	1	2	disc/disp_win.esp:533
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	show	1	2	disc/disp_win.esp:537
+requirement	essential_scrolling_menu	class	create	3	2	disc/exdisp.esp:35
+requirement	essential_scrolling_menu	instance	set_superior	2	2	disc/exdisp.esp:38
+requirement	essential_scrolling_menu	instance	activate	1	2	disc/exdisp.esp:39
+requirement	pf	class	through	2	2	disc/general_io.esp:26
+requirement	standard_temporary_menu	instance	set_title	2	2	disc/system_data.esp:172
+requirement	standard_temporary_menu	instance	clear_items	1	2	disc/util.esp:186
+requirement	standard_temporary_menu	instance	add_item	3	2	disc/util.esp:187
+requirement	standard_io_window	instance	move_cursor	3	2	disc/util.esp:262
+requirement	standard_io_window	instance	putb	3	2	disc/util.esp:263
+requirement	pmacs_window	instance	getl	2	2	disc/util.esp:298
+requirement	as_standard_io_window	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	as_scroll	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	as_markers	nature	(inherited)		2	disc/disp_win.esp:551
+requirement	menu_with_superior_input_buffer	ref	(#ref)		2	disc/disp_win.esp:167
+requirement	essential_scrolling_menu	ref	(#ref)		2	disc/exdisp.esp:35
+requirement	pf	ref	(#ref)		2	disc/general_io.esp:26
+requirement	list_index	instance	get_at	3	1	disc/wadai.esp:22
+requirement	process	class	create	2	1	disc/demo_menu.esp:76
+requirement	process	instance	activate	2	1	disc/demo_menu.esp:77
+requirement	standard_io_buffer	class	create	2	1	disc/context.esp:153
+requirement	pmacs_window	class	create_with_input	5	1	disc/system_data.esp:110
+requirement	?	unknown	get_position	3	1	disc/util.esp:162
+requirement	editor_text_buffer	class	create	4	1	disc/exshow.esp:25
+requirement	editor_text_buffer	class	get_buffer_instance	3	1	disc/exshow.esp:26
+requirement	standard_input_file	instance	getl	2	1	disc/util.esp:322
+requirement	symbolizer	class	string_to_list	3	1	disc/analy.esp:60
+requirement	?	unknown	hide	1	1	disc/disp_win.esp:449
+requirement	directory	class	retrieve_with_wildcard	4	1	disc/util.esp:152
+requirement	?	unknown	set_position	3	1	disc/util.esp:173
+requirement	temporary_menu	class	create	3	1	disc/system_data.esp:85
+requirement	?	unknown	move_to	2	1	disc/util.esp:348
+requirement	?	unknown	read	3	1	disc/context.esp:176
+requirement	?	unknown	close_output	1	1	disc/convert.esp:189
+requirement	?	unknown	get_slot	3	1	disc/util.esp:148
+requirement	standard_editor	class	create	4	1	disc/system_data.esp:116
+requirement	as_mouse_input	nature	(inherited)		1	disc/disp_win.esp:551
+requirement	standard_editor	nature	(inherited)		1	disc/system_data.esp:317
+requirement	as_input	nature	(inherited)		1	disc/disp_win.esp:551
+requirement	process	ref	(#ref)		1	disc/demo_menu.esp:76
+requirement	standard_io_buffer	ref	(#ref)		1	disc/context.esp:153
+requirement	monogyny_list_index	ref	(#ref)		1	disc/context.esp:166
+requirement	temporary_menu	ref	(#ref)		1	disc/system_data.esp:85
+requirement	standard_multi_column_menu	ref	(#ref)		1	disc/system_data.esp:122
+requirement	standard_choice_window	ref	(#ref)		1	disc/system_data.esp:214
+requirement	?	unknown	putc	2	1	disc/structio.esp:100
+requirement	?	unknown	get_interpreter	2	1	disc/analy_pp.esp:70
+requirement	directory	class	retrieve	4	1	disc/exec_tmp.esp:44
+requirement	?	unknown	get_size	3	1	disc/util.esp:161
+requirement	standard_multi_column_menu	class	create	3	1	disc/system_data.esp:122
+requirement	standard_choice_window	class	create	3	1	disc/system_data.esp:214
+requirement	?	unknown	purge	1	1	disc/exec_tmp.esp:45
+requirement	?	unknown	draw_string	5	1	disc/context.esp:1748
+requirement	inferior_window	instance	deactivate	1	1	disc/disp_win.esp:454
+requirement	list_index	instance	remove_at	3	1	disc/bunpu.esp:136
+requirement	monogyny_list_index	class	create	2	1	disc/context.esp:166
+requirement	standard_io_buffer	instance	end_of_input	1	1	disc/context.esp:894
+requirement	?	unknown	draw_rectangle	5	1	disc/context.esp:1699
+requirement	frozen_term	class	freeze	3	1	disc/conv.esp:331
+requirement	?	unknown	melt	2	1	disc/conv.esp:335
+requirement	table	class	mikata	4	1	disc/conv.esp:481
+requirement	choice_window_with_no_execute	instance	set_size	3	1	disc/disp_win.esp:119
+requirement	choice_window_with_no_execute	class	create	3	1	disc/disp_win.esp:156
+requirement	choice_window_with_no_execute	instance	get_size	3	1	disc/disp_win.esp:157
+requirement	menu_with_superior_input_buffer	instance	clear_items	1	1	disc/disp_win.esp:178
+requirement	menu_with_superior_input_buffer	instance	add_items	3	1	disc/disp_win.esp:180
+requirement	<root>	slot	!allp	0	1	disc/disp_win.esp:421
+requirement	choice_window_with_no_execute	instance	deactivate	1	1	disc/disp_win.esp:424
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	deactivate	1	1	disc/disp_win.esp:427
+requirement	choice_window_with_no_execute	instance	kill	1	1	disc/disp_win.esp:462
+requirement	{labeled_sash|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	clear	1	1	disc/disp_win.esp:510
+requirement	{labeled_sash|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	instance	activate	1	1	disc/disp_win.esp:511
+requirement	choice_window_with_no_execute	instance	activate	1	1	disc/disp_win.esp:528
+requirement	essential_scrolling_menu_with_superior_input_buffer	instance	activate	1	1	disc/disp_win.esp:530
+requirement	?	unknown	set_permission	2	1	disc/exdisp.esp:40
+requirement	editor_text_buffer	instance	reset	1	1	disc/exshow.esp:27
+requirement	pmacs_window	instance	set_input_buffer	2	1	disc/exshow.esp:30
+requirement	?	unknown	check7	3	1	disc/rule.esp:337
+requirement	<root>	class	check_bunpu_data	5	1	disc/rule.esp:349
+requirement	<root>	class	get_bunpu_data	3	1	disc/rule.esp:361
+requirement	temporary_menu	instance	show	1	1	disc/system_data.esp:65
+requirement	temporary_menu	instance	read	2	1	disc/system_data.esp:66
+requirement	temporary_menu	instance	hide	1	1	disc/system_data.esp:67
+requirement	temporary_menu	instance	set_font	2	1	disc/system_data.esp:87
+requirement	temporary_menu	instance	kill	1	1	disc/system_data.esp:97
+requirement	?	unknown	set_editor	2	1	disc/system_data.esp:117
+requirement	standard_multi_column_menu	instance	set_size	3	1	disc/system_data.esp:127
+requirement	standard_superior_window	instance	check_window	1	1	disc/system_data.esp:140
+requirement	standard_multi_column_menu	instance	kill	1	1	disc/system_data.esp:142
+requirement	standard_superior_window	instance	activate	1	1	disc/system_data.esp:150
+requirement	standard_multi_column_menu	instance	activate	1	1	disc/system_data.esp:152
+requirement	standard_multi_column_menu	instance	deactivate	1	1	disc/system_data.esp:155
+requirement	standard_superior_window	instance	deactivate	1	1	disc/system_data.esp:157
+requirement	standard_choice_window	instance	clear_items	1	1	disc/system_data.esp:220
+requirement	standard_choice_window	instance	add_items	3	1	disc/system_data.esp:221
+requirement	standard_choice_window	instance	kill	1	1	disc/system_data.esp:274
+requirement	standard_choice_window	instance	activate	1	1	disc/system_data.esp:279
+requirement	standard_choice_window	instance	read	2	1	disc/system_data.esp:280
+requirement	standard_choice_window	instance	deactivate	1	1	disc/system_data.esp:281
+requirement	<root>	class	exec_sentence	1	1	disc/through.esp:27
+requirement	<root>	class	exec_analy	1	1	disc/through.esp:33
+requirement	?	unknown	p	6	1	disc/DATA/know2.data:307
+requirement	frozen_term	ref	(#ref)		1	disc/conv.esp:331
+requirement	bup_BUP_BUN	ref	(#ref)		1	disc/demo_linguist.esp:52
+requirement	bup_BUP_BUN2	ref	(#ref)		1	disc/demo_linguist.esp:79
+requirement	bup_BUP_BUN3	ref	(#ref)		1	disc/demo_linguist.esp:106
+requirement	choice_window_with_no_execute	ref	(#ref)		1	disc/disp_win.esp:156

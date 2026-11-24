@@ -1,0 +1,92 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (J. Tsuji, S. Uchida, July 1985)
+% PDF pages 20-21, printed folios "Page 19"-"Page 20", chapter 6.1 evaluation of speed.
+% Tables: "Table 2. Result of estimation of output", "Table 3. Result of estimation of input".
+% transcribed by eye from the 300dpi page renders (work/tm0125/p-20.png, p-21.png, p-19_3.png).
+
+--- PDF p19 (folio 18) bottom ---
+1) output
+  For the measurement of one character output,
+      :write( Window, Character )
+  we use the window with following conditions.
+ * window classes
+    ordinary window which inherits the following classes.
+--- PDF p20 (folio 19) ---
+    labeled_sash, as_scroll, as_output, as_graphics, as_markers, as_input, as_mouse_input,
+    user_window
+ * window status
+    shown on the display.
+    without cursor.
+    output position not causing the scroll nor wrap around.
+    output character is printable character.
+    font size is 13 dots wide, and 19 dots hight.            [sic 'hight']
+ * measuring points
+    1. making window message and process change
+    2. analysis of window message and calculation of cursor position
+    3. deletion of cursor
+    4. calculation of parameters of character displaying.
+    5. character displaying
+    6. calculation of new position of cursor
+    7. displaying the cursor
+    8. making the reply message
+    9. process change and analysis of reply message
+ * revision items
+    a. first version
+    b. poling version of bitmap display handler               [sic 'poling']
+    c. subroutine version of bitmap display handler
+    d. revision of inter process communication
+    e. firmware support of method call and slots access
+ * result
+              Table 2. Result of estimation of output        msec.
+              |     a  |   b  |   c  |   d  |  e
+          1   |     -  |   -  |  54  |  27  |  3
+          2   |    18  |  18  |  13  |  13  |  2
+          3   |   216  | 146  |   5  |   6  |  2
+          4   |    22  |  22  |   9  |  10  |  2
+          5   |   333  | 193  |  10  |  12  |  5
+          6   |    23  |  23  |  12  |  11  |  1
+          7   |   257  | 146  |   5  |   6  |  2
+          8   |     8  |   8  |   3  |   2  |  1
+          9   |     -  |   -  |  65  |  36  |  3
+    total  I  |   922  | 556  |  57  |  60  | 15
+          II  |     -  |   -  | 171  | 123  | 21
+       I : total time in window manager process.
+       II : total time of message execution.
+% check (mine, not printed): column sums of rows 2-8 = a 877 (18+216+22+333+23+257+8), b 556 (matches),
+%  c 57 (13+5+9+10+12+5+3=57 matches), d 60 (matches), e 15 (matches). Column a sums to 877, not 922 as
+%  printed; recorded as printed (re-read from a full-resolution crop, work/tm0125/p-20_tab2.png: 216, 922, 54, 65, 171 confirmed). c/d/e II = I + rows 1 and 9 (57+54+65=176 vs 171 printed; 60+27+36=123 ok;
+%  15+3+3=21 ok). Column c II discrepancy (176 vs 171) recorded as printed.
+
+--- PDF p21 (folio 20) ---
+ * evaluation
+   From the first version to firmware support, it cost about four months, ... But it can be used for
+   software development tool because the PSI machine is personal machine and only one user can use its CPU time.
+2) input
+  For the measurement of one character input,
+      :read( Window, Character )
+ * window classes   same as evaluation of one character output.
+ * window status    shown on the display. / without cursor. / called the :read predicate and waiting the keyboard input.
+ * measuring points
+    1. processing in keyboard handler
+    2. process change
+    3. processing in window manager
+    4. process change
+    5. processing in user process
+ * revision items
+    a. first version
+    b. revision of process change
+    c. revision of keyboard handler processing
+    d. direct connection of keyboard handler and user process
+    e. revision of process change
+    f. firm ware support
+ * result
+              Table 3. Result of estimation of input        msec.
+              |   a  |   b  |   c  |  d  |  e  |  f
+          1   |  96  |  54  |  36  | 35  | 24  |  4
+          2   |  33  |  20  |  20  | 20  | 15  |  2
+          3   |  15  |  15  |  15  |  -  |  -  |  -
+          4   |  32  |  24  |  24  |  -  |  -  |  -
+          5   |   3  |   5  |   5  |  4  |  5  |  1
+        total | 179  | 118  | 100  | 59  | 44  |  7
+% check (mine): a 179 ok, b 118 ok, c 100 ok, d 59 ok, e 44 ok, f 7 ok.
+--- PDF p22 (folio 21): "Now it takes about 7 mil-seconds to input one character ... about 4 mil-second in
+   the keyboard handler ... the firm ware group will planning to introduce if_then_else notation and other os support"

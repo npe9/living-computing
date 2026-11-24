@@ -1,0 +1,814 @@
+category	class	kind	method_or_name	arity	uses_in_program	example_site
+builtin		builtin	=	2	824	kwic-esp-002/kwic-esp/src/dbDM.esp:42
+builtin		builtin	:=	2	448	kwic-esp-002/kwic-esp/src/autoTracer.esp:13
+builtin		builtin	vector_element	3	446	kwic-esp-002/kwic-esp/src/dbDM.esp:270
+builtin		builtin	is	2	308	kwic-esp-002/kwic-esp/src/dbDM.esp:281
+builtin		builtin	first	2	212	kwic-esp-002/kwic-esp/src/dbDM.esp:200
+builtin		builtin	==	2	169	kwic-esp-002/kwic-esp/src/dbDM.esp:199
+builtin		builtin	second	2	148	kwic-esp-002/kwic-esp/src/dbDM.esp:285
+builtin		builtin	member	2	133	kwic-esp-002/kwic-esp/src/dbDM.esp:53
+builtin		builtin	string	3	104	kwic-esp-002/kwic-esp/src/dbDM.esp:422
+builtin		builtin	set_vector_element	3	97	kwic-esp-002/kwic-esp/src/dbDM.esp:391
+builtin		builtin	stack_vector	2	95	kwic-esp-002/kwic-esp/src/dbDM.esp:315
+builtin		builtin	\==	2	76	kwic-esp-002/kwic-esp/src/dbDM.esp:1683
+builtin		builtin	heap_vector	2	76	kwic-esp-002/kwic-esp/src/dbDM.esp:387
+builtin		builtin	new_heap_vector	2	69	kwic-esp-002/kwic-esp/src/dbDM.esp:288
+builtin		builtin	new_stack_vector	2	62	kwic-esp-002/kwic-esp/src/dbDM.esp:332
+builtin		builtin	set_first	2	61	kwic-esp-002/kwic-esp/src/dbDM.esp:303
+builtin		builtin	<	2	56	kwic-esp-002/kwic-esp/src/dbDM.esp:1550
+builtin		builtin	>=	2	55	kwic-esp-002/kwic-esp/src/dbDM.esp:898
+builtin		builtin	integer_to_floating_point	2	53	kwic-esp-002/kwic-esp/src/dbDetail.esp:184
+builtin		builtin	>	2	51	kwic-esp-002/kwic-esp/src/dbDM.esp:423
+builtin		user-macro	GET_CONSTANT	1	50	kwic-esp-002/kwic-esp/src/dbDM.esp:154
+builtin		constant a#b	16#str		48	
+builtin		builtin	set_second	2	44	kwic-esp-002/kwic-esp/src/dbDM.esp:1036
+builtin		builtin	=<	2	39	kwic-esp-002/kwic-esp/src/dbDM.esp:621
+builtin		user-macro	CELL_ELEMENT	3	39	kwic-esp-002/kwic-esp/src/exPool.esp:94
+builtin		builtin	melt	2	37	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:166
+builtin		builtin	and	3	33	kwic-esp-002/kwic-esp/src/dbDM.esp:351
+builtin		builtin	string_element	3	32	kwic-esp-002/kwic-esp/src/dbDM.esp:424
+builtin		builtin	repeat	0	31	kwic-esp-002/kwic-esp/src/dbDetail.esp:171
+builtin		constant a#b	control#str		30	
+builtin		builtin	freeze	2	28	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:84
+builtin		builtin	set_string_element	3	23	kwic-esp-002/kwic-esp/src/dbDM.esp:570
+builtin		user-macro	PreV_ELEMENT	3	23	kwic-esp-002/kwic-esp/src/search_F.esp:169
+builtin		builtin	cut_and_fail	0	22	kwic-esp-002/kwic-esp/src/displays.esp:1162
+builtin		builtin	unbound	1	21	kwic-esp-002/kwic-esp/src/dbDM.esp:1171
+builtin		builtin	divide_with_remainder	4	20	kwic-esp-002/kwic-esp/src/dbDM.esp:238
+builtin		builtin	or	3	19	kwic-esp-002/kwic-esp/src/dbDM.esp:557
+builtin		builtin	integer	1	18	kwic-esp-002/kwic-esp/src/dbDM.esp:756
+builtin		builtin	shift_right	3	17	kwic-esp-002/kwic-esp/src/dbDetail.esp:109
+builtin		user-macro	ConV_ELEMENT	3	17	kwic-esp-002/kwic-esp/src/search_F.esp:246
+builtin		builtin	atomic	1	16	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:206
+builtin		builtin	shift_left	3	16	kwic-esp-002/kwic-esp/src/dbDM.esp:1364
+builtin		builtin	new_atom	1	15	kwic-esp-002/kwic-esp/src/dbDM.esp:1619
+builtin		user-macro	SENTENCE_VECTOR_ELEMENT	3	15	kwic-esp-002/kwic-esp/src/dbDetail.esp:17
+builtin		builtin	equal_string	2	14	kwic-esp-002/kwic-esp/src/dbUtil.esp:1252
+builtin		builtin	new_string	3	14	kwic-esp-002/kwic-esp/src/dbDM.esp:376
+builtin		constant a#b	mouse#ll		14	
+builtin		constant a#b	double_bytes#brace		14	
+builtin		builtin	bound	1	13	kwic-esp-002/kwic-esp/src/dbDM.esp:522
+builtin		constant a#b	mouse#r		13	
+builtin		constant a#b	mouse#l		13	
+builtin		builtin	atom	1	12	kwic-esp-002/kwic-esp/src/dbDM.esp:451
+builtin		constant a#b	meta#str		12	
+builtin		constant a#b	mouse#m		11	
+builtin		user-macro	SET_QTs_ELEMENT	3	11	kwic-esp-002/kwic-esp/src/search_F.esp:127
+builtin		builtin	substring	4	10	kwic-esp-002/kwic-esp/src/dbDetail.esp:65
+builtin		constant a#b	mouse#mm		10	
+builtin		user-macro	KEYWORD_TERM_ELEMENT	3	10	kwic-esp-002/kwic-esp/src/search_F.esp:483
+builtin		builtin	floating_point_to_integer	2	9	kwic-esp-002/kwic-esp/src/functions.esp:241
+builtin		user-macro	SET_CELL_ELEMENT	3	9	kwic-esp-002/kwic-esp/src/exPool.esp:133
+builtin		builtin	SIZE_OF_LIST	3	8	kwic-esp-002/kwic-esp/src/dbDM.esp:322
+builtin		builtin	GET_QUEUE_CONTENTS	2	8	kwic-esp-002/kwic-esp/src/dbDM.esp:1465
+builtin		user-macro	LEE_ELEMENT	3	8	kwic-esp-002/kwic-esp/src/expMan.esp:624
+builtin		user-macro	QTs_ELEMENT	3	8	kwic-esp-002/kwic-esp/src/search_F.esp:133
+builtin		user-macro	SET_ConV_ELEMENT	3	8	kwic-esp-002/kwic-esp/src/search_F.esp:195
+builtin		builtin	inserta	2	7	kwic-esp-002/kwic-esp/src/v2_macro.mac:95
+builtin		builtin	vector_tail	3	7	kwic-esp-002/kwic-esp/src/dbDM.esp:985
+builtin		builtin	relative_cut	1	7	kwic-esp-002/kwic-esp/src/search_F.esp:1602
+builtin		builtin	xor	3	7	kwic-esp-002/kwic-esp/src/dbDM.esp:1343
+builtin		user-macro	PUSH_QUEUE	2	7	kwic-esp-002/kwic-esp/src/dbDM.esp:1315
+builtin		user-macro	SeaV_ELEMENT	3	7	kwic-esp-002/kwic-esp/src/search_F.esp:178
+builtin		builtin	not_equal_string	2	6	kwic-esp-002/kwic-esp/src/exPool.esp:555
+builtin		builtin	set_subvector	4	6	kwic-esp-002/kwic-esp/src/dbDM.esp:625
+builtin		builtin	string_tail	3	5	kwic-esp-002/kwic-esp/src/displays.esp:817
+builtin		builtin	apply	2	5	kwic-esp-002/kwic-esp/src/functions.esp:631
+builtin		user-macro	GET_SYUTSUGENBUNBANGO_TABLE_CLASS_NAME	2	5	kwic-esp-002/kwic-esp/src/dbDM.esp:320
+builtin		user-macro	NEW_QUEUE	1	5	kwic-esp-002/kwic-esp/src/dbDM.esp:1327
+builtin		user-macro	GET_FEATURE_INDEX_CLASS_NAME	2	5	kwic-esp-002/kwic-esp/src/dbDM.esp:1419
+builtin		user-macro	GET_TAG_INDEX_CLASS_NAME	2	5	kwic-esp-002/kwic-esp/src/dbDM.esp:1498
+builtin		user-macro	FONT	1	5	kwic-esp-002/kwic-esp/src/displays.esp:591
+builtin		builtin	list	1	4	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:212
+builtin		builtin	subvector	4	4	kwic-esp-002/kwic-esp/src/dbFile.esp:171
+builtin		builtin	set_substring	4	4	kwic-esp-002/kwic-esp/src/dbDM.esp:650
+builtin		builtin	and_string_elements	5	4	kwic-esp-002/kwic-esp/src/search_F.esp:683
+builtin		user-macro	SET_LEE_ELEMENT	3	4	kwic-esp-002/kwic-esp/src/expMan.esp:589
+builtin		user-macro	APPEND_PROCESS_NUMBER	2	4	kwic-esp-002/kwic-esp/src/inEditor1.esp:137
+builtin		builtin	list_to_vector	3	3	kwic-esp-002/kwic-esp/src/dtCompiler.esp:333
+builtin		builtin	complement_string_elements	3	3	kwic-esp-002/kwic-esp/src/search_F.esp:684
+builtin		user-macro	STANDARD_DEVICES	4	3	kwic-esp-002/kwic-esp/src/dbDM.esp:39
+builtin		builtin	CHECK_OPTIONS	4	3	kwic-esp-002/kwic-esp/src/dbDM.esp:102
+builtin		builtin	COMP_XOR_TAG	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:1335
+builtin		builtin	object	3	2	kwic-esp-002/kwic-esp/src/dbFile.esp:159
+builtin		builtin	unify	2	2	kwic-esp-002/kwic-esp/src/v2_macro.mac:137
+builtin		builtin	frozen	2	2	kwic-esp-002/kwic-esp/src/functions.esp:277
+builtin		builtin	multiply_extended	4	2	kwic-esp-002/kwic-esp/src/functions.esp:860
+builtin		user-macro	NEW_CELL	1	2	kwic-esp-002/kwic-esp/src/exPool.esp:33
+builtin		user-macro	IS_CELL	1	2	kwic-esp-002/kwic-esp/src/exPool.esp:121
+builtin		user-macro	NEW_LEE	1	2	kwic-esp-002/kwic-esp/src/expMan.esp:588
+builtin		user-macro	NEW_QTs	1	2	kwic-esp-002/kwic-esp/src/search_F.esp:220
+builtin		builtin	string_one	4	2	kwic-esp-002/kwic-esp/src/vsearch.esp:53
+builtin		builtin	reverse	2	2	kwic-esp-002/kwic-esp/src/vsearch.esp:60
+builtin		builtin	floating_point	1	1	kwic-esp-002/kwic-esp/src/functions.esp:111
+builtin		builtin	insertz	2	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:451
+builtin		builtin	number	1	1	kwic-esp-002/kwic-esp/src/search_F.esp:947
+builtin		builtin	value	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:575
+builtin		builtin	add	3	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:129
+builtin		builtin	add_extended	4	1	kwic-esp-002/kwic-esp/src/functions.esp:892
+builtin		builtin	subtract	3	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:141
+builtin		builtin	equal	2	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:136
+builtin		builtin	or_string_elements	5	1	kwic-esp-002/kwic-esp/src/search_F.esp:763
+builtin		builtin	make_DictionarySource	7	1	kwic-esp-002/kwic-esp/src/dbDM.esp:298
+builtin		builtin	GET_BE_PATTERN	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:632
+builtin		user-macro	QUEUE_SIZE	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1469
+builtin		user-macro	CLOSE_STANDARD_DEVICES	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:75
+builtin		user-macro	NEW_TRIE	1	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1063
+builtin		user-macro	GET_TRIE	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1146
+builtin		user-macro	PUT_TRIE	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1153
+builtin		user-macro	GET_TRIE_CONTENTS	2	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1180
+builtin		builtin	make	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:69
+builtin		builtin	NEW_CELL	2	1	kwic-esp-002/kwic-esp/src/exPool.esp:168
+builtin		builtin	new_state_vector	1	1	kwic-esp-002/kwic-esp/src/fncSPutf.esp:13
+builtin		builtin	set_state_vector_element	3	1	kwic-esp-002/kwic-esp/src/fncSPutf.esp:14
+builtin		builtin	:	2	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:739
+builtin		builtin	put_printer_format	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:343
+builtin		builtin	is_atom_quoted	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:348
+builtin		user-macro	NEW_ConV	1	1	kwic-esp-002/kwic-esp/src/search_F.esp:194
+builtin		user-macro	MAKE_TAG_KEY	3	1	kwic-esp-002/kwic-esp/src/search_F.esp:469
+builtin		builtin	XOR_TAG	5	1	kwic-esp-002/kwic-esp/src/v2_dic.mac:14
+builtin		builtin	GET_TRIE_LOOP	4	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:429
+builtin		builtin	PUT_TRIE_LOOP	6	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:441
+builtin		builtin	GET_TRIE_CONTENTS_LOOP	5	1	kwic-esp-002/kwic-esp/src/v2_macro.mac:449
+builtin		builtin	is_useless_token	1	1	kwic-esp-002/kwic-esp/src/vsearch.esp:41
+builtin		builtin	get_Selected	2	1	kwic-esp-002/kwic-esp/src/vsearch.esp:67
+builtin		builtin	make_VarStrList	2	1	kwic-esp-002/kwic-esp/src/vsearch.esp:71
+builtin		builtin	string_loop	4	1	kwic-esp-002/kwic-esp/src/vsearch.esp:80
+builtin		constant a#b	MacroTag#Vector		1	kwic-esp-002/kwic-esp/src/dbDM.esp:1185
+builtin		constant a#b	MacroTag#Term1		1	kwic-esp-002/kwic-esp/src/dbDM.esp:1217
+builtin		constant a#b	control#left		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1146
+builtin		constant a#b	control#right		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1148
+requirement	?	ambiguous	putf	3	94	kwic-esp-002/kwic-esp/src/dbDM.esp:259
+requirement	?	ambiguous	kill	1	73	kwic-esp-002/kwic-esp/src/dbDetail.esp:36
+requirement	symbolizer	ref	(#ref)		52	kwic-esp-002/kwic-esp/src/dbDM.esp:700
+requirement	?	ambiguous	get_class_object	3	45	kwic-esp-002/kwic-esp/src/dbDM.esp:166
+requirement	?	ambiguous	activate	1	43	kwic-esp-002/kwic-esp/src/dbDetail.esp:152
+requirement	?	ambiguous	putf	2	40	kwic-esp-002/kwic-esp/src/dbDM.esp:40
+requirement	inferior_window	class	create	3	32	kwic-esp-002/kwic-esp/src/dbDetail.esp:145
+requirement	?	ambiguous	get_at	3	30	kwic-esp-002/kwic-esp/src/dbDM.esp:591
+requirement	<root>	class	new	2	28	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:16
+requirement	process	ref	(#ref)		25	kwic-esp-002/kwic-esp/src/autoTracer.esp:25
+requirement	?	ambiguous	deactivate	1	24	kwic-esp-002/kwic-esp/src/displays.esp:646
+requirement	library	ref	(#ref)		23	kwic-esp-002/kwic-esp/src/functions.esp:151
+requirement	?	ambiguous	count	2	23	kwic-esp-002/kwic-esp/src/dbDM.esp:309
+requirement	?	ambiguous	get	3	22	kwic-esp-002/kwic-esp/src/expMan.esp:215
+requirement	string	ref	(#ref)		22	kwic-esp-002/kwic-esp/src/dbDetail.esp:292
+requirement	?	ambiguous	get_contents	2	21	kwic-esp-002/kwic-esp/src/exPool.esp:590
+requirement	?	ambiguous	get_contents_with_key	2	20	kwic-esp-002/kwic-esp/src/dbDM.esp:849
+requirement	?	unknown	enter_atom	3	20	kwic-esp-002/kwic-esp/src/dbDM.esp:143
+requirement	string	class	append	3	19	kwic-esp-002/kwic-esp/src/dbDetail.esp:292
+requirement	?	unknown	refute	3	19	kwic-esp-002/kwic-esp/src/dbDM.esp:349
+requirement	pathname	ref	(#ref)		19	kwic-esp-002/kwic-esp/src/dbDM.esp:175
+requirement	time	ref	(#ref)		19	kwic-esp-002/kwic-esp/src/dbDM.esp:218
+requirement	?	ambiguous	retrieve_all_items	2	18	kwic-esp-002/kwic-esp/src/expMan.esp:103
+requirement	inferior_window	nature	(inherited)		18	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	?	ambiguous	get_data	2	18	kwic-esp-002/kwic-esp/src/dbDM.esp:720
+requirement	?	unknown	features	2	18	kwic-esp-002/kwic-esp/src/dbDM.esp:221
+requirement	as_mouse_input	nature	(inherited)		17	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	?	ambiguous	close	1	17	kwic-esp-002/kwic-esp/src/dbDM.esp:725
+requirement	process	class	self	2	16	kwic-esp-002/kwic-esp/src/autoTracer.esp:25
+requirement	directory	ref	(#ref)		16	kwic-esp-002/kwic-esp/src/dbDM.esp:131
+requirement	two_three_tree	ref	(#ref)		16	kwic-esp-002/kwic-esp/src/dbDM.esp:399
+requirement	symbolizer	class	list_to_string	3	14	kwic-esp-002/kwic-esp/src/fncSPutf.esp:16
+requirement	?	ambiguous	set_item_status	3	14	kwic-esp-002/kwic-esp/src/expMan.esp:393
+requirement	?	ambiguous	set_position	3	14	kwic-esp-002/kwic-esp/src/displays.esp:201
+requirement	symbolizer	class	string_to_list	3	13	kwic-esp-002/kwic-esp/src/dbOutput.esp:190
+requirement	pathname	class	append	4	13	kwic-esp-002/kwic-esp/src/dbDM.esp:686
+requirement	as_input	nature	(inherited)		13	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	?	ambiguous	read	2	12	kwic-esp-002/kwic-esp/src/expMan.esp:96
+requirement	?	unknown	getl	2	12	kwic-esp-002/kwic-esp/src/dbDM.esp:421
+requirement	time	class	present	2	12	kwic-esp-002/kwic-esp/src/dbDM.esp:218
+requirement	?	unknown	word_format	2	12	kwic-esp-002/kwic-esp/src/dbDM.esp:314
+requirement	?	unknown	syutten_number	3	12	kwic-esp-002/kwic-esp/src/dbDM.esp:471
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	draw_line	5	12	kwic-esp-002/kwic-esp/src/scrolls.esp:461
+requirement	as_program	nature	(inherited)		11	kwic-esp-002/kwic-esp/src/autoTracer.esp:6
+requirement	with_border	nature	(inherited)		11	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	name	ref	(#ref)		11	kwic-esp-002/kwic-esp/src/dbDM.esp:685
+requirement	?	unknown	change_item	3	11	kwic-esp-002/kwic-esp/src/expMan.esp:404
+requirement	?	unknown	vector_size_for_bits	2	11	kwic-esp-002/kwic-esp/src/dbDM.esp:219
+requirement	?	unknown	bun_vector_position	3	11	kwic-esp-002/kwic-esp/src/dbDM.esp:542
+requirement	?	unknown	show	1	10	kwic-esp-002/kwic-esp/src/displays.esp:603
+requirement	standard_input_file	class	create	3	10	kwic-esp-002/kwic-esp/src/dbDM.esp:442
+requirement	standard_input_file	ref	(#ref)		10	kwic-esp-002/kwic-esp/src/dbDM.esp:442
+requirement	?	unknown	get_inside_size	3	10	kwic-esp-002/kwic-esp/src/displays.esp:103
+requirement	standard_scrolling_menu	class	create	3	10	kwic-esp-002/kwic-esp/src/displays.esp:1347
+requirement	?	ambiguous	close_output	1	10	kwic-esp-002/kwic-esp/src/dbDM.esp:45
+requirement	?	unknown	number_of_feature	2	10	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:53
+requirement	library	class	assign	1	9	kwic-esp-002/kwic-esp/src/functions.esp:151
+requirement	?	ambiguous	set_title	2	9	kwic-esp-002/kwic-esp/src/expMan.esp:961
+requirement	?	unknown	assign	1	9	kwic-esp-002/kwic-esp/src/expMan.esp:55
+requirement	?	unknown	get_size	3	9	kwic-esp-002/kwic-esp/src/expMan.esp:253
+requirement	?	unknown	sosei_fullpat	3	9	kwic-esp-002/kwic-esp/src/dbDM.esp:244
+requirement	list_index	class	create	2	8	kwic-esp-002/kwic-esp/src/dbOutput.esp:28
+requirement	?	ambiguous	clear	1	8	kwic-esp-002/kwic-esp/src/expMan.esp:713
+requirement	symbolizer	class	enter_atom	3	8	kwic-esp-002/kwic-esp/src/functions.esp:93
+requirement	?	unknown	add_items	3	8	kwic-esp-002/kwic-esp/src/dbDetail.esp:277
+requirement	as_superior	nature	(inherited)		8	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	list_index	ref	(#ref)		8	kwic-esp-002/kwic-esp/src/dbOutput.esp:28
+requirement	name	class	append_type	4	8	kwic-esp-002/kwic-esp/src/dbDM.esp:685
+requirement	as_menu_input	nature	(inherited)		8	kwic-esp-002/kwic-esp/src/inSheet2.esp:16
+requirement	?	unknown	delete_item	2	8	kwic-esp-002/kwic-esp/src/expMan.esp:1090
+requirement	?	unknown	fullpat_atai	4	8	kwic-esp-002/kwic-esp/src/dbOutput.esp:290
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	get_inside_size	3	8	kwic-esp-002/kwic-esp/src/displays.esp:339
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	class_object	2	8	kwic-esp-002/kwic-esp/src/kwMan.esp:222
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_superior	2	8	kwic-esp-002/kwic-esp/src/scrolls.esp:382
+requirement	?	ambiguous	reset	1	7	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:46
+requirement	standard_input_file	instance	close_input	1	7	kwic-esp-002/kwic-esp/src/dbUtil.esp:1440
+requirement	directory	class	retrieve	3	7	kwic-esp-002/kwic-esp/src/dbDM.esp:184
+requirement	?	unknown	add_item	3	7	kwic-esp-002/kwic-esp/src/displays.esp:1572
+requirement	library	class	get_a_code	7	7	kwic-esp-002/kwic-esp/src/functions.esp:592
+requirement	inferior_window	instance	set_position	3	7	kwic-esp-002/kwic-esp/src/scrolls.esp:190
+requirement	?	unknown	show_buffer	1	7	kwic-esp-002/kwic-esp/src/inEditor1.esp:226
+requirement	?	ambiguous	remove_at	3	7	kwic-esp-002/kwic-esp/src/expMan.esp:565
+requirement	?	unknown	retrieve_item	3	7	kwic-esp-002/kwic-esp/src/expMan.esp:968
+requirement	?	ambiguous	open	1	7	kwic-esp-002/kwic-esp/src/dbDM.esp:441
+requirement	?	ambiguous	end_of_input	1	7	kwic-esp-002/kwic-esp/src/dbDM.esp:483
+requirement	?	ambiguous	at_end	1	7	kwic-esp-002/kwic-esp/src/dbDM.esp:770
+requirement	as_resource	instance	class_object	2	7	kwic-esp-002/kwic-esp/src/expMan.esp:83
+requirement	list	class	create	2	6	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:25
+requirement	?	unknown	hide	1	6	kwic-esp-002/kwic-esp/src/inEditor2.esp:464
+requirement	time	class	now	2	6	kwic-esp-002/kwic-esp/src/search_F.esp:118
+requirement	as_single_select	nature	(inherited)		6	kwic-esp-002/kwic-esp/src/inSheet2.esp:16
+requirement	list	ref	(#ref)		6	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:25
+requirement	coordinator	ref	(#ref)		6	kwic-esp-002/kwic-esp/src/dbUtil.esp:225
+requirement	pmacs_window	ref	(#ref)		6	kwic-esp-002/kwic-esp/src/dbDM.esp:26
+requirement	standard_temporary_menu	class	create	3	6	kwic-esp-002/kwic-esp/src/displays.esp:598
+requirement	inferior_window	instance	deactivate	1	6	kwic-esp-002/kwic-esp/src/kwMan.esp:171
+requirement	date_time	ref	(#ref)		6	kwic-esp-002/kwic-esp/src/dtCompiler.esp:871
+requirement	standard_temporary_menu	ref	(#ref)		6	kwic-esp-002/kwic-esp/src/displays.esp:598
+requirement	monogyny_list_index	class	create	2	6	kwic-esp-002/kwic-esp/src/expMan.esp:148
+requirement	standard_temporary_scrolling_menu	class	create	3	6	kwic-esp-002/kwic-esp/src/inSheet1.esp:362
+requirement	?	ambiguous	add_at	3	6	kwic-esp-002/kwic-esp/src/dbDM.esp:600
+requirement	?	unknown	class_count	2	6	kwic-esp-002/kwic-esp/src/dbDM.esp:820
+requirement	?	unknown	feature_in_tag	2	6	kwic-esp-002/kwic-esp/src/dtCompiler.esp:653
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	set_item_status	3	6	kwic-esp-002/kwic-esp/src/inSheet2.esp:524
+requirement	?	unknown	command_interpret	1	5	kwic-esp-002/kwic-esp/src/dbDM.esp:32
+requirement	standard_input_file	instance	gett	2	5	kwic-esp-002/kwic-esp/src/dbUtil.esp:1446
+requirement	standard_output_file	class	create	3	5	kwic-esp-002/kwic-esp/src/expMan.esp:997
+requirement	?	unknown	remove	2	5	kwic-esp-002/kwic-esp/src/expMan.esp:84
+requirement	library_utility	class	create	2	5	kwic-esp-002/kwic-esp/src/dbDM.esp:198
+requirement	symbolizer	class	get_number_string	3	5	kwic-esp-002/kwic-esp/src/displays.esp:1707
+requirement	standard_superior_window	class	create	3	5	kwic-esp-002/kwic-esp/src/displays.esp:217
+requirement	pmacs_window	class	create	3	5	kwic-esp-002/kwic-esp/src/dbDM.esp:26
+requirement	standard_output_file	ref	(#ref)		5	kwic-esp-002/kwic-esp/src/expMan.esp:997
+requirement	library_utility	ref	(#ref)		5	kwic-esp-002/kwic-esp/src/dbDM.esp:198
+requirement	standard_scrolling_menu	ref	(#ref)		5	kwic-esp-002/kwic-esp/src/inEditor1.esp:167
+requirement	?	unknown	get_editor	2	5	kwic-esp-002/kwic-esp/src/inEditor1.esp:152
+requirement	?	unknown	set_input_position	1	5	kwic-esp-002/kwic-esp/src/inEditor1.esp:155
+requirement	date_time	class	now	2	5	kwic-esp-002/kwic-esp/src/dtCompiler.esp:871
+requirement	?	unknown	close_input	1	5	kwic-esp-002/kwic-esp/src/dbDM.esp:44
+requirement	?	ambiguous	putl	2	5	kwic-esp-002/kwic-esp/src/dbOutput.esp:443
+requirement	?	unknown	flash	1	5	kwic-esp-002/kwic-esp/src/dbDM.esp:255
+requirement	?	unknown	set_size	3	5	kwic-esp-002/kwic-esp/src/expMan.esp:422
+requirement	standard_output_file	instance	putf	3	5	kwic-esp-002/kwic-esp/src/expMan.esp:1001
+requirement	standard_window	class	create	3	5	kwic-esp-002/kwic-esp/src/displays.esp:133
+requirement	two_three_tree	class	get_at	4	5	kwic-esp-002/kwic-esp/src/dbDM.esp:461
+requirement	?	unknown	get_superior	2	5	kwic-esp-002/kwic-esp/src/inEditor1.esp:179
+requirement	two_three_tree	class	put_at	5	5	kwic-esp-002/kwic-esp/src/dbDM.esp:502
+requirement	standard_temporary_scrolling_menu	ref	(#ref)		5	kwic-esp-002/kwic-esp/src/inSheet1.esp:362
+requirement	?	ambiguous	release	1	5	kwic-esp-002/kwic-esp/src/displays.esp:387
+requirement	?	unknown	find	3	5	kwic-esp-002/kwic-esp/src/dbOutput.esp:140
+requirement	directory	class	retrieve_with_wildcard	3	5	kwic-esp-002/kwic-esp/src/dbDM.esp:131
+requirement	standard_multi_column_menu	instance	set_item_status	3	5	kwic-esp-002/kwic-esp/src/displays.esp:1231
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	change_item	3	5	kwic-esp-002/kwic-esp/src/inSheet2.esp:150
+requirement	{with_border|as_superior|as_input|as_mouse_input|inferior_window}	instance	get_superior	2	5	kwic-esp-002/kwic-esp/src/scrolls.esp:173
+requirement	standard_scrolling_menu	nature	(inherited)		5	kwic-esp-002/kwic-esp/src/displays.esp:1337
+requirement	list_index	instance	get_at	3	4	kwic-esp-002/kwic-esp/src/systems.esp:38
+requirement	process	instance	activate	2	4	kwic-esp-002/kwic-esp/src/systems.esp:92
+requirement	standard_input_file	instance	end_of_input	1	4	kwic-esp-002/kwic-esp/src/dbUtil.esp:1444
+requirement	?	unknown	get_count	2	4	kwic-esp-002/kwic-esp/src/search_F.esp:219
+requirement	standard_output_file	instance	close_output	1	4	kwic-esp-002/kwic-esp/src/expMan.esp:1002
+requirement	inferior_window	instance	kill	1	4	kwic-esp-002/kwic-esp/src/dbDetail.esp:175
+requirement	?	unknown	get_position	3	4	kwic-esp-002/kwic-esp/src/expMan.esp:414
+requirement	hash_index	instance	add_at	3	4	kwic-esp-002/kwic-esp/src/dbDM.esp:356
+requirement	inferior_window	instance	get_size	3	4	kwic-esp-002/kwic-esp/src/scrolls.esp:192
+requirement	two_three_tree	class	get_contents	3	4	kwic-esp-002/kwic-esp/src/dbDM.esp:399
+requirement	?	ambiguous	create	3	4	kwic-esp-002/kwic-esp/src/dbOutput.esp:17
+requirement	process	class	get_number	3	4	kwic-esp-002/kwic-esp/src/v2_macro.mac:55
+requirement	?	unknown	get_string	2	4	kwic-esp-002/kwic-esp/src/dbDM.esp:216
+requirement	with_superior_input_buffer	nature	(inherited)		4	kwic-esp-002/kwic-esp/src/inSheet2.esp:16
+requirement	monogyny_list_index	ref	(#ref)		4	kwic-esp-002/kwic-esp/src/functions.esp:773
+requirement	set	ref	(#ref)		4	kwic-esp-002/kwic-esp/src/expMan.esp:19
+requirement	?	unknown	put_at	3	4	kwic-esp-002/kwic-esp/src/inEditor2.esp:116
+requirement	?	unknown	clear_items	1	4	kwic-esp-002/kwic-esp/src/dbDetail.esp:276
+requirement	pathname	class	check_pathname	3	4	kwic-esp-002/kwic-esp/src/dbDM.esp:175
+requirement	?	ambiguous	set_parsing_operator	2	4	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:68
+requirement	?	unknown	erase_cursor	1	4	kwic-esp-002/kwic-esp/src/displays.esp:253
+requirement	?	unknown	assign_window	1	4	kwic-esp-002/kwic-esp/src/functions.esp:155
+requirement	inferior_window	instance	set_size	3	4	kwic-esp-002/kwic-esp/src/scrolls.esp:732
+requirement	?	unknown	resign	1	4	kwic-esp-002/kwic-esp/src/expMan.esp:1068
+requirement	as_resource	nature	(inherited)		4	kwic-esp-002/kwic-esp/src/exPool.esp:12
+requirement	?	unknown	gett	2	4	kwic-esp-002/kwic-esp/src/dbDM.esp:450
+requirement	list_index	instance	add_at	3	4	kwic-esp-002/kwic-esp/src/dbOutput.esp:161
+requirement	standard_temporary_menu	instance	show	1	4	kwic-esp-002/kwic-esp/src/inSheet1.esp:564
+requirement	standard_temporary_menu	instance	read	2	4	kwic-esp-002/kwic-esp/src/inSheet1.esp:565
+requirement	standard_temporary_menu	instance	kill	1	4	kwic-esp-002/kwic-esp/src/inSheet1.esp:566
+requirement	standard_scrolling_menu	instance	activate	1	4	kwic-esp-002/kwic-esp/src/inEditor2.esp:408
+requirement	?	unknown	background	2	4	kwic-esp-002/kwic-esp/src/dbDetail.esp:274
+requirement	?	ambiguous	get	2	4	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:165
+requirement	?	unknown	get_string	3	4	kwic-esp-002/kwic-esp/src/dtCompiler.esp:872
+requirement	?	unknown	sbb	3	4	kwic-esp-002/kwic-esp/src/dbDM.esp:367
+requirement	?	unknown	lowest	4	4	kwic-esp-002/kwic-esp/src/dbDM.esp:544
+requirement	?	unknown	atai_fullpat	3	4	kwic-esp-002/kwic-esp/src/dbDM.esp:556
+requirement	?	unknown	index	5	4	kwic-esp-002/kwic-esp/src/dbDM.esp:1452
+requirement	?	unknown	feature_value	3	4	kwic-esp-002/kwic-esp/src/displays.esp:1725
+requirement	?	unknown	tango_vector_position	3	4	kwic-esp-002/kwic-esp/src/dtCompiler.esp:659
+requirement	?	ambiguous	expose	1	4	kwic-esp-002/kwic-esp/src/inEditor2.esp:430
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	retrieve_all_items	2	4	kwic-esp-002/kwic-esp/src/inSheet2.esp:78
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	retrieve_all_items	2	4	kwic-esp-002/kwic-esp/src/inSheet2.esp:478
+requirement	{as_markers|standard_window}	instance	get_mouse_position	3	4	kwic-esp-002/kwic-esp/src/inSheet2.esp:921
+requirement	{as_markers|standard_window}	instance	erase_marker	2	4	kwic-esp-002/kwic-esp/src/inSheet2.esp:1111
+requirement	?	unknown	draw_graph	2	4	kwic-esp-002/kwic-esp/src/scrolls.esp:1135
+requirement	list	instance	add_last	2	3	kwic-esp-002/kwic-esp/src/dbUtil.esp:1010
+requirement	?	unknown	set_package	2	3	kwic-esp-002/kwic-esp/src/dbDM.esp:202
+requirement	library	class	get_class_object	3	3	kwic-esp-002/kwic-esp/src/functions.esp:166
+requirement	symbolizer	class	get_atom_string	3	3	kwic-esp-002/kwic-esp/src/functions.esp:292
+requirement	font	class	create	3	3	kwic-esp-002/kwic-esp/src/functions.esp:192
+requirement	hash_index	class	create	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:220
+requirement	string	class	copy	3	3	kwic-esp-002/kwic-esp/src/kwMan.esp:470
+requirement	monogyny_list_index	instance	get_at	3	3	kwic-esp-002/kwic-esp/src/functions.esp:782
+requirement	screen	class	get_size	3	3	kwic-esp-002/kwic-esp/src/displays.esp:188
+requirement	symbolizer	class	get_number	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:700
+requirement	symbolizer	class	is_object	2	3	kwic-esp-002/kwic-esp/src/inSheet1.esp:193
+requirement	?	unknown	method	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:125
+requirement	pmacs_window	instance	activate	1	3	kwic-esp-002/kwic-esp/src/dbDM.esp:27
+requirement	font	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/functions.esp:192
+requirement	hash_index	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/dbDM.esp:220
+requirement	screen	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/displays.esp:188
+requirement	font_13	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/displays.esp:1680
+requirement	date	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/dbDM.esp:215
+requirement	?	unknown	get_interpreter	2	3	kwic-esp-002/kwic-esp/src/displays.esp:644
+requirement	directory	class	retrieve	4	3	kwic-esp-002/kwic-esp/src/expMan.esp:1013
+requirement	?	ambiguous	set_unparsing_operator	2	3	kwic-esp-002/kwic-esp/src/functions.esp:509
+requirement	?	unknown	resign_window	1	3	kwic-esp-002/kwic-esp/src/functions.esp:165
+requirement	?	unknown	lock	1	3	kwic-esp-002/kwic-esp/src/functions.esp:825
+requirement	?	ambiguous	unquote_atom	1	3	kwic-esp-002/kwic-esp/src/displays.esp:640
+requirement	standard_superior_window	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/displays.esp:206
+requirement	labeled_sash	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/inSheet2.esp:448
+requirement	as_scrolling_menu	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/inSheet2.esp:448
+requirement	as_menu	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/inSheet2.esp:16
+requirement	with_lock	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/exPool.esp:12
+requirement	as_markers	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/displays.esp:1830
+requirement	?	unknown	add_before	3	3	kwic-esp-002/kwic-esp/src/expMan.esp:614
+requirement	standard_temporary_scrolling_menu	instance	show	1	3	kwic-esp-002/kwic-esp/src/inSheet1.esp:419
+requirement	standard_temporary_scrolling_menu	instance	read	2	3	kwic-esp-002/kwic-esp/src/inSheet1.esp:420
+requirement	?	unknown	get_item_status	3	3	kwic-esp-002/kwic-esp/src/expMan.esp:387
+requirement	with_two_labels	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/kwMan.esp:9
+requirement	?	unknown	warp_mouse	3	3	kwic-esp-002/kwic-esp/src/displays.esp:113
+requirement	<root>	instance	class_object	2	3	kwic-esp-002/kwic-esp/src/functions.esp:730
+requirement	?	unknown	minus	3	3	kwic-esp-002/kwic-esp/src/search_F.esp:1793
+requirement	?	ambiguous	activate	2	3	kwic-esp-002/kwic-esp/src/menus.esp:128
+requirement	?	ambiguous	get_keys	2	3	kwic-esp-002/kwic-esp/src/kwMan.esp:226
+requirement	standard_temporary_scrolling_menu	instance	kill	1	3	kwic-esp-002/kwic-esp/src/inSheet1.esp:421
+requirement	standard_output_text_buffer_accessor	class	create	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:29
+requirement	as_program	instance	parse_arguments	2	3	kwic-esp-002/kwic-esp/src/dbDM.esp:41
+requirement	?	unknown	collect	4	3	kwic-esp-002/kwic-esp/src/dbDM.esp:1452
+requirement	?	unknown	collect	3	3	kwic-esp-002/kwic-esp/src/dbDM.esp:1509
+requirement	coordinator	class	information	3	3	kwic-esp-002/kwic-esp/src/dbUtil.esp:225
+requirement	?	unknown	feature_with_option	3	3	kwic-esp-002/kwic-esp/src/dbUtil.esp:749
+requirement	?	unknown	with_option	4	3	kwic-esp-002/kwic-esp/src/dbUtil.esp:1106
+requirement	standard_window	instance	kill	1	3	kwic-esp-002/kwic-esp/src/displays.esp:150
+requirement	standard_scrolling_menu	instance	retrieve_all_items	2	3	kwic-esp-002/kwic-esp/src/displays.esp:1358
+requirement	as_markers	instance	get_mouse_position	3	3	kwic-esp-002/kwic-esp/src/displays.esp:1853
+requirement	?	ambiguous	put_line	2	3	kwic-esp-002/kwic-esp/src/expMan.esp:723
+requirement	standard_window	instance	write_line	2	3	kwic-esp-002/kwic-esp/src/functions.esp:317
+requirement	?	ambiguous	set_mode	2	3	kwic-esp-002/kwic-esp/src/inEditor1.esp:58
+requirement	?	unknown	next_select	2	3	kwic-esp-002/kwic-esp/src/inEditor1.esp:200
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	retrieve_item	3	3	kwic-esp-002/kwic-esp/src/inSheet2.esp:62
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	get_superior	2	3	kwic-esp-002/kwic-esp/src/inSheet2.esp:102
+requirement	{as_markers|standard_window}	instance	warp_mouse	3	3	kwic-esp-002/kwic-esp/src/inSheet2.esp:903
+requirement	{with_border|as_superior|as_input|as_mouse_input|inferior_window}	instance	get_mouse_position	3	3	kwic-esp-002/kwic-esp/src/scrolls.esp:249
+requirement	{with_border|as_superior|as_input|as_mouse_input|inferior_window}	instance	get_inside_size	3	3	kwic-esp-002/kwic-esp/src/scrolls.esp:304
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	clear	1	3	kwic-esp-002/kwic-esp/src/scrolls.esp:460
+requirement	with_icon	slot	!display	0	3	kwic-esp-002/kwic-esp/src/windows.esp:462
+requirement	{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	class_object	2	3	kwic-esp-002/kwic-esp/src/windows.esp:510
+requirement	standard_window	nature	(inherited)		3	kwic-esp-002/kwic-esp/src/inSheet2.esp:853
+requirement	standard_output_text_buffer_accessor	ref	(#ref)		3	kwic-esp-002/kwic-esp/src/dbDM.esp:29
+requirement	?	unknown	new	2	2	kwic-esp-002/kwic-esp/src/searchMan.esp:60
+requirement	process	class	create	2	2	kwic-esp-002/kwic-esp/src/systems.esp:204
+requirement	?	unknown	add_operator	4	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:195
+requirement	library	class	make_class_object	2	2	kwic-esp-002/kwic-esp/src/kwMan.esp:465
+requirement	?	unknown	class_name	2	2	kwic-esp-002/kwic-esp/src/dbFile.esp:161
+requirement	hash_index	instance	clear	1	2	kwic-esp-002/kwic-esp/src/dbDM.esp:226
+requirement	?	unknown	push	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:655
+requirement	list_stack	class	create	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:266
+requirement	?	unknown	select	1	2	kwic-esp-002/kwic-esp/src/displays.esp:117
+requirement	?	unknown	class_object	2	2	kwic-esp-002/kwic-esp/src/dbFile.esp:160
+requirement	?	unknown	set_standard_input	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:56
+requirement	?	unknown	set_standard_output	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:57
+requirement	?	unknown	set_standard_message	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:58
+requirement	?	unknown	current_position	2	2	kwic-esp-002/kwic-esp/src/inEditor1.esp:295
+requirement	?	ambiguous	put	2	2	kwic-esp-002/kwic-esp/src/autoTracer.esp:24
+requirement	set	class	create	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:19
+requirement	set	instance	add	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:53
+requirement	set	instance	get_contents	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:1095
+requirement	pmacs_window	instance	get_interpreter	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:31
+requirement	?	ambiguous	put_contents	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:642
+requirement	?	unknown	catalogue	3	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1139
+requirement	library_utility	instance	set_output	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1129
+requirement	pmacs_window	instance	set_font	2	2	kwic-esp-002/kwic-esp/src/inEditor2.esp:404
+requirement	?	unknown	set_output	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:201
+requirement	?	ambiguous	create	2	2	kwic-esp-002/kwic-esp/src/systems.esp:91
+requirement	reshape_notifier	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/windows.esp:18
+requirement	with_shared_window	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/windows.esp:243
+requirement	editor_text_buffer	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/dbDM.esp:28
+requirement	list_stack	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/expMan.esp:266
+requirement	standard_superior_window	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/inEditor1.esp:139
+requirement	?	unknown	current_buffer	2	2	kwic-esp-002/kwic-esp/src/inEditor1.esp:294
+requirement	as_program	class	create	2	2	kwic-esp-002/kwic-esp/src/autoTracer.esp:12
+requirement	standard_multi_column_menu	class	create	3	2	kwic-esp-002/kwic-esp/src/displays.esp:1189
+requirement	?	unknown	set_font	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:977
+requirement	?	unknown	get_inside_units	3	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:874
+requirement	?	unknown	get_font	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:255
+requirement	pathname	class	last_name	4	2	kwic-esp-002/kwic-esp/src/kwMan.esp:595
+requirement	name	class	ident	3	2	kwic-esp-002/kwic-esp/src/dbDM.esp:699
+requirement	as_resource	class	new	2	2	kwic-esp-002/kwic-esp/src/expMan.esp:45
+requirement	two_three_tree	class	add_at	5	2	kwic-esp-002/kwic-esp/src/dbDM.esp:465
+requirement	inferior_window	instance	get_position	3	2	kwic-esp-002/kwic-esp/src/scrolls.esp:412
+requirement	standard_editor	instance	get_window	2	2	kwic-esp-002/kwic-esp/src/windows.esp:632
+requirement	process	class	create	3	2	kwic-esp-002/kwic-esp/src/systems.esp:89
+requirement	as_class_with_lock	class	lock	1	2	kwic-esp-002/kwic-esp/src/systems.esp:350
+requirement	as_class_with_lock	class	unlock	1	2	kwic-esp-002/kwic-esp/src/systems.esp:359
+requirement	with_icon	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/windows.esp:444
+requirement	with_key_select	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/kwMan.esp:9
+requirement	with_margin	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/displays.esp:239
+requirement	standard_window	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/displays.esp:133
+requirement	?	unknown	add_last	2	2	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:85
+requirement	pmacs_window	instance	kill	1	2	kwic-esp-002/kwic-esp/src/dbDM.esp:33
+requirement	standard_superior_window	instance	deactivate	1	2	kwic-esp-002/kwic-esp/src/displays.esp:1159
+requirement	set	class	create	3	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:631
+requirement	?	unknown	add_after	3	2	kwic-esp-002/kwic-esp/src/inSheet1.esp:168
+requirement	standard_superior_window	instance	read	3	2	kwic-esp-002/kwic-esp/src/displays.esp:1157
+requirement	?	unknown	word_processor_mode	2	2	kwic-esp-002/kwic-esp/src/inEditor1.esp:153
+requirement	standard_scrolling_menu	instance	read	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1516
+requirement	standard_scrolling_menu	instance	kill	1	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:818
+requirement	?	unknown	write_line	3	2	kwic-esp-002/kwic-esp/src/dbOutput.esp:420
+requirement	?	unknown	reset_mouse_marker	2	2	kwic-esp-002/kwic-esp/src/windows.esp:316
+requirement	?	ambiguous	add	2	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:639
+requirement	coordinator	class	login_user	2	2	kwic-esp-002/kwic-esp/src/kwMan.esp:505
+requirement	?	unknown	standard_input	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:27
+requirement	?	unknown	standard_output	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:28
+requirement	?	unknown	standard_message	2	2	kwic-esp-002/kwic-esp/src/v2_tool.mac:29
+requirement	symbolizer	class	get_floating_number_string	4	2	kwic-esp-002/kwic-esp/src/functions.esp:315
+requirement	?	unknown	read_with_code	3	2	kwic-esp-002/kwic-esp/src/displays.esp:604
+requirement	as_program	class	goal	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:30
+requirement	?	unknown	input_closed	1	2	kwic-esp-002/kwic-esp/src/dbDM.esp:44
+requirement	?	unknown	bit_size	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1078
+requirement	?	unknown	save	2	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1149
+requirement	?	unknown	tag	4	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1508
+requirement	?	unknown	get_number_token	3	2	kwic-esp-002/kwic-esp/src/dbDM.esp:1635
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|inferior_window}	instance	activate	1	2	kwic-esp-002/kwic-esp/src/dbDetail.esp:150
+requirement	?	unknown	merge_variable_tree	4	2	kwic-esp-002/kwic-esp/src/dbUtil.esp:282
+requirement	standard_window	instance	get_size	3	2	kwic-esp-002/kwic-esp/src/displays.esp:134
+requirement	standard_window	instance	set_size	3	2	kwic-esp-002/kwic-esp/src/displays.esp:135
+requirement	standard_window	instance	get_inside_size	3	2	kwic-esp-002/kwic-esp/src/displays.esp:136
+requirement	standard_window	instance	get_position	3	2	kwic-esp-002/kwic-esp/src/displays.esp:147
+requirement	standard_window	instance	get_inside_units	3	2	kwic-esp-002/kwic-esp/src/displays.esp:149
+requirement	?	unknown	get_title	2	2	kwic-esp-002/kwic-esp/src/displays.esp:218
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	get_inside_units	3	2	kwic-esp-002/kwic-esp/src/displays.esp:312
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	refute	3	2	kwic-esp-002/kwic-esp/src/displays.esp:328
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	warp_mouse	3	2	kwic-esp-002/kwic-esp/src/displays.esp:374
+requirement	{with_mouse_scroll|with_cwi}	instance	get_inside_size	3	2	kwic-esp-002/kwic-esp/src/displays.esp:696
+requirement	standard_scrolling_menu	instance	set_item_status	3	2	kwic-esp-002/kwic-esp/src/displays.esp:1416
+requirement	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	instance	retrieve_all_items	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1527
+requirement	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	instance	get_title	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1531
+requirement	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	instance	set_title	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1562
+requirement	?	unknown	create_marker	7	2	kwic-esp-002/kwic-esp/src/displays.esp:1839
+requirement	as_markers	instance	draw_marker	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1851
+requirement	as_markers	instance	erase_marker	2	2	kwic-esp-002/kwic-esp/src/displays.esp:1859
+requirement	as_markers	instance	get_marker_position	4	2	kwic-esp-002/kwic-esp/src/displays.esp:1870
+requirement	as_markers	instance	warp_mouse	3	2	kwic-esp-002/kwic-esp/src/displays.esp:1895
+requirement	as_markers	instance	set_marker_type	3	2	kwic-esp-002/kwic-esp/src/displays.esp:1933
+requirement	?	ambiguous	get_parsing_operator	2	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:194
+requirement	?	unknown	feature_values	2	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:656
+requirement	?	unknown	size_of_tango_vector	2	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:658
+requirement	?	unknown	relation	2	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:670
+requirement	date	class	present	2	2	kwic-esp-002/kwic-esp/src/dtCompiler.esp:674
+requirement	?	unknown	call	4	2	kwic-esp-002/kwic-esp/src/expMan.esp:367
+requirement	standard_window	instance	read	2	2	kwic-esp-002/kwic-esp/src/functions.esp:308
+requirement	?	unknown	get_offsets	3	2	kwic-esp-002/kwic-esp/src/inEditor1.esp:54
+requirement	{as_lasting_resource|with_lock}	instance	resign	1	2	kwic-esp-002/kwic-esp/src/inEditor2.esp:130
+requirement	?	ambiguous	append	4	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:499
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	background	2	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:538
+requirement	{as_markers|standard_window}	instance	reshape_marker	7	2	kwic-esp-002/kwic-esp/src/inSheet2.esp:1110
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	assigned	1	2	kwic-esp-002/kwic-esp/src/kwMan.esp:175
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	assign	1	2	kwic-esp-002/kwic-esp/src/kwMan.esp:177
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	resign	1	2	kwic-esp-002/kwic-esp/src/kwMan.esp:188
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	set_bottom_title	2	2	kwic-esp-002/kwic-esp/src/kwMan.esp:194
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	read	2	2	kwic-esp-002/kwic-esp/src/kwMan.esp:784
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	show	1	2	kwic-esp-002/kwic-esp/src/kwMan.esp:793
+requirement	{with_icon|labeled_sash|as_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window|reshape_notifier}	instance	read	2	2	kwic-esp-002/kwic-esp/src/menus.esp:31
+requirement	?	ambiguous	stick_tap	2	2	kwic-esp-002/kwic-esp/src/outDev.esp:110
+requirement	{with_border|as_superior|as_input|as_mouse_input|inferior_window}	instance	activate	1	2	kwic-esp-002/kwic-esp/src/scrolls.esp:191
+requirement	?	unknown	set_border_width	2	2	kwic-esp-002/kwic-esp/src/scrolls.esp:343
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_mouse_position	3	2	kwic-esp-002/kwic-esp/src/scrolls.esp:426
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	warp_mouse	3	2	kwic-esp-002/kwic-esp/src/scrolls.esp:435
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_inside_size	3	2	kwic-esp-002/kwic-esp/src/scrolls.esp:456
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	get_inside_units	3	2	kwic-esp-002/kwic-esp/src/scrolls.esp:457
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	hide	1	2	kwic-esp-002/kwic-esp/src/scrolls.esp:816
+requirement	standard_scrolling_menu	instance	change_item	3	2	kwic-esp-002/kwic-esp/src/searchMan.esp:320
+requirement	event	class	make_message_string	4	2	kwic-esp-002/kwic-esp/src/searchMan.esp:325
+requirement	reshape_notifier	instance	get_size	3	2	kwic-esp-002/kwic-esp/src/windows.esp:76
+requirement	reshape_notifier	instance	activate	1	2	kwic-esp-002/kwic-esp/src/windows.esp:91
+requirement	reshape_notifier	instance	set_position	3	2	kwic-esp-002/kwic-esp/src/windows.esp:92
+requirement	{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier}	instance	reset_mouse_marker	2	2	kwic-esp-002/kwic-esp/src/windows.esp:155
+requirement	standard_input_file	instance	getb	3	2	kwic-esp-002/kwic-esp/src/windows.esp:393
+requirement	?	unknown	prepare	1	2	kwic-esp-002/kwic-esp/src/windows.esp:454
+requirement	standard_multi_column_menu	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/displays.esp:1173
+requirement	as_lasting_resource	nature	(inherited)		2	kwic-esp-002/kwic-esp/src/inEditor2.esp:10
+requirement	code_conversion_utility	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/functions.esp:351
+requirement	event	ref	(#ref)		2	kwic-esp-002/kwic-esp/src/searchMan.esp:325
+requirement	?	ambiguous	putb	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:45
+requirement	list	instance	stick_tap	2	1	kwic-esp-002/kwic-esp/src/dbDM_Tsearch.esp:27
+requirement	?	unknown	move_to_input_position	1	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:296
+requirement	?	unknown	exterminate	1	1	kwic-esp-002/kwic-esp/src/systems.esp:242
+requirement	standard_io_window	class	create	3	1	kwic-esp-002/kwic-esp/src/functions.esp:193
+requirement	editor_text_buffer	class	get_buffer_instance	3	1	kwic-esp-002/kwic-esp/src/searchMan.esp:198
+requirement	?	unknown	insert_string	2	1	kwic-esp-002/kwic-esp/src/windows.esp:707
+requirement	list	instance	put_contents	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:1025
+requirement	list	instance	get_contents	2	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1013
+requirement	list	instance	clear	1	1	kwic-esp-002/kwic-esp/src/expMan.esp:679
+requirement	hash_index	instance	get_at	3	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1384
+requirement	?	ambiguous	write_lines	2	1	kwic-esp-002/kwic-esp/src/windows.esp:141
+requirement	monogyny_hash_index	class	create	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1423
+requirement	monogyny_hash_index	instance	put_at	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1474
+requirement	monogyny_hash_index	instance	get_at	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1471
+requirement	monogyny_list_index	instance	put_at	3	1	kwic-esp-002/kwic-esp/src/functions.esp:818
+requirement	?	ambiguous	putc	2	1	kwic-esp-002/kwic-esp/src/outDev.esp:36
+requirement	standard_input_file	instance	get_parsing_operator	2	1	kwic-esp-002/kwic-esp/src/systems.esp:390
+requirement	?	unknown	pop	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:663
+requirement	library	class	check_info	3	1	kwic-esp-002/kwic-esp/src/functions.esp:152
+requirement	?	unknown	get_packages	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:658
+requirement	?	unknown	set_superior	2	1	kwic-esp-002/kwic-esp/src/dbDetail.esp:252
+requirement	temporary_menu	class	create	3	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:187
+requirement	?	unknown	parent	2	1	kwic-esp-002/kwic-esp/src/windows.esp:550
+requirement	as_program	instance	class_object	2	1	kwic-esp-002/kwic-esp/src/systems.esp:61
+requirement	standard_editor	instance	current_buffer	2	1	kwic-esp-002/kwic-esp/src/windows.esp:706
+requirement	throw	class	raise	2	1	kwic-esp-002/kwic-esp/src/search_F.esp:1125
+requirement	?	unknown	delete_backward	3	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:622
+requirement	?	unknown	move_to	2	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:299
+requirement	coordinator	class	get_instance	2	1	kwic-esp-002/kwic-esp/src/searchMan.esp:278
+requirement	?	unknown	<variable selector>	0	1	kwic-esp-002/kwic-esp/src/dbDM.esp:989
+requirement	esp_macro_expander	class	new	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:1019
+requirement	?	unknown	read	3	1	kwic-esp-002/kwic-esp/src/displays.esp:119
+requirement	date	class	now	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:215
+requirement	?	ambiguous	goal	1	1	kwic-esp-002/kwic-esp/src/v2_tool.mac:46
+requirement	process	class	get_process	3	1	kwic-esp-002/kwic-esp/src/functions.esp:195
+requirement	?	unknown	read_sense	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1593
+requirement	with_default_mouse	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/windows.esp:722
+requirement	as_graphics	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/scrolls.esp:32
+requirement	with_mouse_scroll	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/displays.esp:890
+requirement	with_label	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/dbDetail.esp:116
+requirement	standard_editor	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/windows.esp:593
+requirement	with_pmacs_window	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/windows.esp:722
+requirement	monogyny_hash_index	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1423
+requirement	window_subsystem	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/windows.esp:405
+requirement	temporary_menu	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:187
+requirement	interpreter	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1374
+requirement	throw	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/search_F.esp:1125
+requirement	esp_macro_expander	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/expMan.esp:1019
+requirement	standard_io_window	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/functions.esp:193
+requirement	standard_temporary_choice_window	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/outDev.esp:72
+requirement	?	unknown	putt	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1163
+requirement	interpreter	class	interpret	2	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1374
+requirement	<root>	instance	refute	3	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:558
+requirement	esp_macro_expander	instance	expand_goals	3	1	kwic-esp-002/kwic-esp/src/expMan.esp:1020
+requirement	?	unknown	size	2	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:668
+requirement	list	instance	add_first	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:680
+requirement	standard_input_file	instance	set_parsing_operator	2	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:98
+requirement	library	class	get_class_id_in_package	6	1	kwic-esp-002/kwic-esp/src/functions.esp:153
+requirement	directory	class	make	3	1	kwic-esp-002/kwic-esp/src/dbDM.esp:186
+requirement	standard_superior_window	instance	get_inside_size	3	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:532
+requirement	standard_superior_window	instance	get_size	3	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:657
+requirement	standard_superior_window	instance	get_position	3	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:658
+requirement	standard_superior_window	instance	set_size	3	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:660
+requirement	?	ambiguous	start	1	1	kwic-esp-002/kwic-esp/src/search_F.esp:1823
+requirement	name	class	ident_type	3	1	kwic-esp-002/kwic-esp/src/kwMan.esp:596
+requirement	list_stack	instance	pop	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:978
+requirement	list_stack	instance	push	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:975
+requirement	monogyny_hash_index	instance	get_contents_with_key	2	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1477
+requirement	?	unknown	see	3	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:298
+requirement	?	unknown	draw_string	5	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:873
+requirement	?	unknown	beep	1	1	kwic-esp-002/kwic-esp/src/expMan.esp:527
+requirement	?	unknown	delete_items	2	1	kwic-esp-002/kwic-esp/src/menus.esp:156
+requirement	?	unknown	set_label_font	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1510
+requirement	?	unknown	refute_in	5	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:367
+requirement	hash_index	instance	get_contents_with_key	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1501
+requirement	standard_menu	class	create	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1797
+requirement	date_time	class	create	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:1016
+requirement	date_time	instance	set_count	3	1	kwic-esp-002/kwic-esp/src/kwMan.esp:1017
+requirement	?	unknown	write_data	2	1	kwic-esp-002/kwic-esp/src/dbFile.esp:221
+requirement	?	unknown	wait	1	1	kwic-esp-002/kwic-esp/src/autoTracer.esp:26
+requirement	?	unknown	proceed	3	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:798
+requirement	as_output	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/windows.esp:121
+requirement	as_class_with_lock	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/systems.esp:291
+requirement	as_event_handler	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/inEditor1.esp:788
+requirement	syntax_error	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/inEditor1.esp:367
+requirement	?	unknown	draw_line	5	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1034
+requirement	?	unknown	melt	2	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:194
+requirement	standard_output_file	instance	unquote_atom	1	1	kwic-esp-002/kwic-esp/src/outDev.esp:92
+requirement	library_utility	instance	load	2	1	kwic-esp-002/kwic-esp/src/functions.esp:161
+requirement	standard_superior_window	instance	set_title	2	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:573
+requirement	standard_superior_window	instance	show	1	1	kwic-esp-002/kwic-esp/src/displays.esp:234
+requirement	?	unknown	set_permission	2	1	kwic-esp-002/kwic-esp/src/functions.esp:194
+requirement	temporary_menu	instance	show	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:188
+requirement	temporary_menu	instance	read	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:189
+requirement	temporary_menu	instance	kill	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:190
+requirement	as_scroll	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/windows.esp:121
+requirement	list_index	instance	get_contents_with_key	2	1	kwic-esp-002/kwic-esp/src/systems.esp:240
+requirement	monogyny_list_index	instance	remove_at	3	1	kwic-esp-002/kwic-esp/src/systems.esp:49
+requirement	?	unknown	find_with_wildcard	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:663
+requirement	time	class	create	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:181
+requirement	?	unknown	draw_string	4	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1022
+requirement	?	unknown	get_mouse_position	3	1	kwic-esp-002/kwic-esp/src/functions.esp:831
+requirement	?	unknown	reshape_marker	7	1	kwic-esp-002/kwic-esp/src/expMan.esp:689
+requirement	standard_temporary_scrolling_menu	instance	hide	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:843
+requirement	standard_scrolling_menu	instance	add_items	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1556
+requirement	?	unknown	read_with_code	4	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:120
+requirement	?	unknown	get_value	8	1	kwic-esp-002/kwic-esp/src/sysInfo.esp:82
+requirement	printer	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/outDev.esp:134
+requirement	stream	class	create	2	1	kwic-esp-002/kwic-esp/src/v2_tool.mac:17
+requirement	stream	instance	get	2	1	kwic-esp-002/kwic-esp/src/v2_tool.mac:23
+requirement	?	unknown	set_key	2	1	kwic-esp-002/kwic-esp/src/systems.esp:405
+requirement	standard_scrolling_menu	instance	add_item	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1576
+requirement	?	ambiguous	copy	2	1	kwic-esp-002/kwic-esp/src/displays.esp:84
+requirement	stream	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/v2_tool.mac:17
+requirement	library_utility	instance	remove_output	1	1	kwic-esp-002/kwic-esp/src/functions.esp:162
+requirement	window_subsystem	class	add_icon	4	1	kwic-esp-002/kwic-esp/src/windows.esp:405
+requirement	?	unknown	set_count	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:182
+requirement	{as_resource|with_lock}	class	new	2	1	kwic-esp-002/kwic-esp/src/functions.esp:816
+requirement	{as_resource|with_lock}	instance	resign	1	1	kwic-esp-002/kwic-esp/src/functions.esp:797
+requirement	as_resource	instance	resign	1	1	kwic-esp-002/kwic-esp/src/expMan.esp:119
+requirement	hash_index	instance	stick_tap	2	1	kwic-esp-002/kwic-esp/src/systems.esp:332
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	set_top_title	2	1	kwic-esp-002/kwic-esp/src/windows.esp:750
+requirement	?	unknown	tag_catch	5	1	kwic-esp-002/kwic-esp/src/search_F.esp:142
+requirement	?	unknown	get_atom_string	3	1	kwic-esp-002/kwic-esp/src/search_F.esp:570
+requirement	?	unknown	get_number_string	3	1	kwic-esp-002/kwic-esp/src/sysInfo.esp:92
+requirement	?	ambiguous	put_contents_with_key	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:316
+requirement	?	unknown	set_icon	2	1	kwic-esp-002/kwic-esp/src/windows.esp:456
+requirement	standard_editor	instance	refute	3	1	kwic-esp-002/kwic-esp/src/windows.esp:684
+requirement	standard_temporary_choice_window	class	create	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:72
+requirement	standard_temporary_choice_window	instance	read	2	1	kwic-esp-002/kwic-esp/src/outDev.esp:75
+requirement	standard_temporary_choice_window	instance	kill	1	1	kwic-esp-002/kwic-esp/src/outDev.esp:78
+requirement	standard_scrolling_menu	instance	activate	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:821
+requirement	standard_multi_select_scrolling_menu	class	create	3	1	kwic-esp-002/kwic-esp/src/menus.esp:116
+requirement	monogyny_list_index	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/exPool.esp:12
+requirement	standard_multi_select_scrolling_menu	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/menus.esp:116
+requirement	?	unknown	gett	4	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:275
+requirement	standard_temporary_choice_window	instance	show	1	1	kwic-esp-002/kwic-esp/src/outDev.esp:73
+requirement	pmacs_window	instance	unquote_atom	1	1	kwic-esp-002/kwic-esp/src/kwMan.esp:290
+requirement	trace	class	trace	2	1	kwic-esp-002/kwic-esp/src/autoTracer.esp:23
+requirement	editor_text_buffer	class	create_with_parameter	5	1	kwic-esp-002/kwic-esp/src/dbDM.esp:28
+requirement	?	unknown	count	4	1	kwic-esp-002/kwic-esp/src/dbDM.esp:829
+requirement	library_utility	instance	get_classes_with_wildcard	5	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1131
+requirement	library_utility	instance	delete	2	1	kwic-esp-002/kwic-esp/src/dbDM.esp:1132
+requirement	{with_label|with_border|as_superior|as_input|as_mouse_input|inferior_window|reshape_notifier}	instance	read	3	1	kwic-esp-002/kwic-esp/src/dbDetail.esp:172
+requirement	table_file	class	make_only	4	1	kwic-esp-002/kwic-esp/src/dbFile.esp:15
+requirement	?	unknown	open	2	1	kwic-esp-002/kwic-esp/src/dbFile.esp:43
+requirement	?	unknown	read_data	2	1	kwic-esp-002/kwic-esp/src/dbFile.esp:219
+requirement	?	unknown	exclude_bound_variable	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:285
+requirement	?	unknown	get_atom_token	3	1	kwic-esp-002/kwic-esp/src/dbUtil.esp:1174
+requirement	standard_window	instance	set_margins	5	1	kwic-esp-002/kwic-esp/src/displays.esp:142
+requirement	standard_window	instance	set_position	3	1	kwic-esp-002/kwic-esp/src/displays.esp:192
+requirement	?	unknown	set_margins	5	1	kwic-esp-002/kwic-esp/src/displays.esp:254
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	get_superior	2	1	kwic-esp-002/kwic-esp/src/displays.esp:335
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	get_mouse_position	3	1	kwic-esp-002/kwic-esp/src/displays.esp:378
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	read	2	1	kwic-esp-002/kwic-esp/src/displays.esp:431
+requirement	{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	instance	read_sense	2	1	kwic-esp-002/kwic-esp/src/displays.esp:447
+requirement	outMenu	class	create_object	2	1	kwic-esp-002/kwic-esp/src/displays.esp:634
+requirement	outMenu	instance	put_external	2	1	kwic-esp-002/kwic-esp/src/displays.esp:635
+requirement	outMenu	instance	kill	1	1	kwic-esp-002/kwic-esp/src/displays.esp:636
+requirement	?	unknown	read_stdout	3	1	kwic-esp-002/kwic-esp/src/displays.esp:639
+requirement	outSTDoutManager	class	create	3	1	kwic-esp-002/kwic-esp/src/displays.esp:659
+requirement	?	unknown	create_cwi	2	1	kwic-esp-002/kwic-esp/src/displays.esp:675
+requirement	{with_mouse_scroll|with_cwi}	instance	update	3	1	kwic-esp-002/kwic-esp/src/displays.esp:693
+requirement	standard_multi_column_menu	instance	get_item_status	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1229
+requirement	standard_multi_column_menu	instance	retrieve_all_items	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1290
+requirement	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	instance	retrieve_item	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1559
+requirement	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	instance	delete_item	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1560
+requirement	{standard_multi_select_menu|reshape_notifier}	class	create	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1760
+requirement	{standard_multi_select_menu|reshape_notifier}	instance	delete_items	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1770
+requirement	{standard_multi_select_menu|reshape_notifier}	instance	retrieve_item	3	1	kwic-esp-002/kwic-esp/src/displays.esp:1784
+requirement	as_markers	instance	read_sense	2	1	kwic-esp-002/kwic-esp/src/displays.esp:1855
+requirement	as_markers	instance	move_marker	4	1	kwic-esp-002/kwic-esp/src/displays.esp:1872
+requirement	?	unknown	features2	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:651
+requirement	?	unknown	feature	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:652
+requirement	?	unknown	necessary_features	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:655
+requirement	?	unknown	size_of_bun_vector	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:660
+requirement	?	unknown	size_of_bits	2	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:662
+requirement	?	unknown	bits_position	3	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:664
+requirement	?	unknown	atai_soseipat	3	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:667
+requirement	?	unknown	fullpat_atai_by_feature	4	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:669
+requirement	?	unknown	creation_date_time	3	1	kwic-esp-002/kwic-esp/src/dtCompiler.esp:673
+requirement	?	unknown	set_top_title	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:89
+requirement	list	instance	keyword_count	3	1	kwic-esp-002/kwic-esp/src/expMan.esp:176
+requirement	?	unknown	change_top_item	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:201
+requirement	standard_window	instance	erase_cursor	1	1	kwic-esp-002/kwic-esp/src/expMan.esp:258
+requirement	{as_markers|standard_window}	instance	create_marker	7	1	kwic-esp-002/kwic-esp/src/expMan.esp:259
+requirement	{as_markers|standard_window}	instance	draw_marker	2	1	kwic-esp-002/kwic-esp/src/expMan.esp:260
+requirement	?	ambiguous	move_cursor	3	1	kwic-esp-002/kwic-esp/src/expMan.esp:722
+requirement	?	unknown	assigned	1	1	kwic-esp-002/kwic-esp/src/expMan.esp:1062
+requirement	standard_window	instance	activate	1	1	kwic-esp-002/kwic-esp/src/functions.esp:142
+requirement	?	unknown	assign_window	2	1	kwic-esp-002/kwic-esp/src/functions.esp:196
+requirement	standard_window	instance	set_title	2	1	kwic-esp-002/kwic-esp/src/functions.esp:313
+requirement	code_conversion_utility	class	string_to_vector	3	1	kwic-esp-002/kwic-esp/src/functions.esp:351
+requirement	code_conversion_utility	class	vector_to_character_string	3	1	kwic-esp-002/kwic-esp/src/functions.esp:379
+requirement	as_esp_parser	class	new	2	1	kwic-esp-002/kwic-esp/src/functions.esp:392
+requirement	as_esp_parser	instance	refute	3	1	kwic-esp-002/kwic-esp/src/functions.esp:440
+requirement	as_esp_parser	instance	gett	2	1	kwic-esp-002/kwic-esp/src/functions.esp:445
+requirement	as_esp_parser	instance	gett	3	1	kwic-esp-002/kwic-esp/src/functions.esp:450
+requirement	as_esp_parser	instance	gett	4	1	kwic-esp-002/kwic-esp/src/functions.esp:455
+requirement	as_esp_unparser	class	new	2	1	kwic-esp-002/kwic-esp/src/functions.esp:485
+requirement	?	ambiguous	get_unparsing_operator	2	1	kwic-esp-002/kwic-esp/src/functions.esp:505
+requirement	?	ambiguous	set_max_depth	2	1	kwic-esp-002/kwic-esp/src/functions.esp:513
+requirement	?	ambiguous	set_max_length	2	1	kwic-esp-002/kwic-esp/src/functions.esp:521
+requirement	as_esp_unparser	instance	refute	3	1	kwic-esp-002/kwic-esp/src/functions.esp:557
+requirement	as_esp_unparser	instance	putt	2	1	kwic-esp-002/kwic-esp/src/functions.esp:562
+requirement	as_esp_unparser	instance	putt	3	1	kwic-esp-002/kwic-esp/src/functions.esp:567
+requirement	as_esp_unparser	instance	putt	4	1	kwic-esp-002/kwic-esp/src/functions.esp:572
+requirement	{as_resource|with_lock}	instance	unlock	1	1	kwic-esp-002/kwic-esp/src/functions.esp:796
+requirement	{as_resource|with_lock}	instance	locked	1	1	kwic-esp-002/kwic-esp/src/functions.esp:802
+requirement	?	unknown	locked	2	1	kwic-esp-002/kwic-esp/src/functions.esp:821
+requirement	pmacs_window	class	create	4	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:151
+requirement	?	unknown	word_processor_mode	1	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:154
+requirement	?	unknown	is_word_processor_mode	1	1	kwic-esp-002/kwic-esp/src/inEditor1.esp:268
+requirement	{as_lasting_resource|with_lock}	class	new	2	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:19
+requirement	{as_lasting_resource|with_lock}	instance	assign	1	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:128
+requirement	{as_lasting_resource|with_lock}	instance	lock	1	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:129
+requirement	{as_lasting_resource|with_lock}	instance	unlock	1	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:134
+requirement	standard_output_file	instance	set_unparsing_operator	2	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:157
+requirement	standard_superior_window	instance	set_mode	2	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:377
+requirement	standard_superior_window	instance	get_inside_units	3	1	kwic-esp-002/kwic-esp/src/inEditor2.esp:531
+requirement	{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	activate	1	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:51
+requirement	{with_icon|as_input|as_mouse_input|standard_superior_window|reshape_notifier}	instance	expose	1	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:96
+requirement	{with_icon|as_input|as_mouse_input|standard_superior_window|reshape_notifier}	instance	close	1	1	kwic-esp-002/kwic-esp/src/inSheet1.esp:412
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	read	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:540
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	get_item_status	3	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:546
+requirement	{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	instance	retrieve_item	3	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:566
+requirement	standard_temporary_multi_column_menu	class	create	3	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:749
+requirement	standard_temporary_multi_column_menu	instance	show	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:794
+requirement	standard_temporary_multi_column_menu	instance	hide	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:797
+requirement	standard_temporary_multi_column_menu	instance	read	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:800
+requirement	standard_temporary_multi_column_menu	instance	kill	1	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:803
+requirement	{as_markers|standard_window}	instance	activate	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:909
+requirement	{as_markers|standard_window}	instance	read_sense	2	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1098
+requirement	{as_markers|standard_window}	instance	get_marker_position	4	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1153
+requirement	standard_window	instance	draw_filled_rectangle	6	1	kwic-esp-002/kwic-esp/src/inSheet2.esp:1284
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	read_with_code	4	1	kwic-esp-002/kwic-esp/src/kwMan.esp:163
+requirement	{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	instance	get_bottom_title	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:191
+requirement	?	unknown	get_classes_with_wildcard	5	1	kwic-esp-002/kwic-esp/src/kwMan.esp:428
+requirement	list_stack	instance	count	2	1	kwic-esp-002/kwic-esp/src/kwMan.esp:760
+requirement	date_time	instance	get_string	3	1	kwic-esp-002/kwic-esp/src/kwMan.esp:1018
+requirement	{with_icon|labeled_sash|as_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window|reshape_notifier}	instance	activate	2	1	kwic-esp-002/kwic-esp/src/menus.esp:30
+requirement	?	ambiguous	putl	1	1	kwic-esp-002/kwic-esp/src/outDev.esp:42
+requirement	standard_temporary_choice_window	instance	beep	1	1	kwic-esp-002/kwic-esp/src/outDev.esp:86
+requirement	standard_temporary_choice_window	instance	retrieve_item	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:87
+requirement	standard_temporary_choice_window	instance	change_item	3	1	kwic-esp-002/kwic-esp/src/outDev.esp:88
+requirement	printer	class	create	2	1	kwic-esp-002/kwic-esp/src/outDev.esp:134
+requirement	printer	instance	set_font	2	1	kwic-esp-002/kwic-esp/src/outDev.esp:136
+requirement	printer	instance	set_left_margin	2	1	kwic-esp-002/kwic-esp/src/outDev.esp:137
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	expose	1	1	kwic-esp-002/kwic-esp/src/scrolls.esp:889
+requirement	{with_border|inferior_window}	instance	activate	1	1	kwic-esp-002/kwic-esp/src/scrolls.esp:931
+requirement	standard_window	instance	get_superior	2	1	kwic-esp-002/kwic-esp/src/scrolls.esp:1115
+requirement	{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	instance	activate	1	1	kwic-esp-002/kwic-esp/src/scrolls.esp:1169
+requirement	{with_border|as_superior|as_input|as_mouse_input|inferior_window}	instance	get_inside_units	3	1	kwic-esp-002/kwic-esp/src/scrolls.esp:1240
+requirement	?	unknown	window	2	1	kwic-esp-002/kwic-esp/src/searchMan.esp:281
+requirement	standard_scrolling_menu	slot	!abort_information	0	1	kwic-esp-002/kwic-esp/src/searchMan.esp:308
+requirement	standard_scrolling_menu	instance	class_object	2	1	kwic-esp-002/kwic-esp/src/searchMan.esp:333
+requirement	bag	class	create	3	1	kwic-esp-002/kwic-esp/src/search_F.esp:556
+requirement	bag	instance	get_contents	2	1	kwic-esp-002/kwic-esp/src/search_F.esp:558
+requirement	bag	instance	add	2	1	kwic-esp-002/kwic-esp/src/search_F.esp:571
+requirement	?	unknown	after_matching	5	1	kwic-esp-002/kwic-esp/src/search_F.esp:1154
+requirement	hash_index	instance	stick_index_tap	2	1	kwic-esp-002/kwic-esp/src/systems.esp:340
+requirement	as_class_with_lock	class	refute	3	1	kwic-esp-002/kwic-esp/src/systems.esp:505
+requirement	?	unknown	goal	2	1	kwic-esp-002/kwic-esp/src/v2_tool.mac:40
+requirement	?	unknown	save_arguments	2	1	kwic-esp-002/kwic-esp/src/v2_tool.mac:45
+requirement	reshape_notifier	instance	set_size	3	1	kwic-esp-002/kwic-esp/src/windows.esp:54
+requirement	bitmap_display	class	get_mouse	2	1	kwic-esp-002/kwic-esp/src/windows.esp:110
+requirement	{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier}	instance	get_mouse_marker	2	1	kwic-esp-002/kwic-esp/src/windows.esp:154
+requirement	{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier}	instance	get_mouse_position	3	1	kwic-esp-002/kwic-esp/src/windows.esp:173
+requirement	{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier}	instance	read_sense	2	1	kwic-esp-002/kwic-esp/src/windows.esp:176
+requirement	?	unknown	get_mouse_marker	2	1	kwic-esp-002/kwic-esp/src/windows.esp:311
+requirement	?	unknown	put_title	2	1	kwic-esp-002/kwic-esp/src/windows.esp:462
+requirement	{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	getl	2	1	kwic-esp-002/kwic-esp/src/windows.esp:523
+requirement	{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	resign	1	1	kwic-esp-002/kwic-esp/src/windows.esp:531
+requirement	?	unknown	assign	2	1	kwic-esp-002/kwic-esp/src/windows.esp:551
+requirement	{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	resign_window	1	1	kwic-esp-002/kwic-esp/src/windows.esp:569
+requirement	?	unknown	set_bottom_title	2	1	kwic-esp-002/kwic-esp/src/windows.esp:633
+requirement	?	unknown	set_bottom_label_font	2	1	kwic-esp-002/kwic-esp/src/windows.esp:740
+requirement	{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	instance	get_editor	2	1	kwic-esp-002/kwic-esp/src/windows.esp:753
+requirement	with_cwi	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/displays.esp:665
+requirement	standard_multi_select_menu	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/displays.esp:1749
+requirement	standard_menu	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/displays.esp:1789
+requirement	as_esp_parser	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/functions.esp:383
+requirement	as_esp_unparser	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/functions.esp:476
+requirement	esp_operator_pool	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/inEditor1.esp:731
+requirement	standard_temporary_multi_column_menu	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:784
+requirement	deexpose_notifier	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:807
+requirement	standard_temporary_scrolling_menu	nature	(inherited)		1	kwic-esp-002/kwic-esp/src/inSheet2.esp:831
+requirement	trace	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/autoTracer.esp:23
+requirement	table_file	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/dbFile.esp:15
+requirement	outMenu	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/displays.esp:634
+requirement	outSTDoutManager	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/displays.esp:659
+requirement	bag	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/search_F.esp:556
+requirement	bitmap_display	ref	(#ref)		1	kwic-esp-002/kwic-esp/src/windows.esp:110

@@ -1,0 +1,24 @@
+% TM-061 「逐次型推論マシンPSIのオペレーティング・システム」 (服部 隆 他, May 1984)
+% PDF page 6, printed folio 5, section 3.2 システム構造
+% 図3．1 SIMPOSの構造   (a figure, not ESP source; Japanese version of TM-065 Fig 3.1)
+% transcribed by eye from 300dpi crops (work/tm0061/p-06_0.png, p-06_1.png)
+% Layout: one boxed figure; dotted rules separate the three OS sub-layers.
+ ____________________________________________
+| プログラミング・システム                     |
+|     コーディネータ  エディタ  トランスデューサ |
+|     インタプリタ／デバッガ  ライブラリアン      |
+|____________________________________________|
+| オペレーティング・システム                   |
+|   入出力メディア・システム                   |
+|     ウィンドウ  ネットワーク  ファイル         |
+|   スーパバイザ                               |
+|     プロセス  プール  ストリーム  ワールド     |
+|   カーネル                                   |
+|     プロセリ  メモリ  デバイス                 |
+|____________________________________________|
+  ハードウェア
+% NOTE: 'プロセリ' is as printed (TM-065 has 'Processor'; the expected spelling is
+% プロセッサ -- printed text not corrected).
+% VARIANT vs TM-065 Fig 3.1: TM-061 adds トランスデューサ (transducer) to the programming
+% system, says ライブラリアン (librarian) where TM-065 says 'Library', and omits
+% 'Printer' (I/O media) and 'Timer' (supervisor).

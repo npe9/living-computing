@@ -1,0 +1,43 @@
+% SOURCE: ICOT TR-283, K. Yoshida, "Remote Object Accessing Mechanism in SIMPOS -- Its Design and Application", June 1987
+% PDF pages 20-21, printed folios 18-19. "Appendix 2. Message and Packet" (PROTOCOL FIGURE, not source; boxes redrawn as text).
+% Transcribed by eye from 300dpi crops (A/work/tr0283/c20a.png, c20b.png, s21.png). "X'nnnn" = hexadecimal as printed.
+% Characters "*" and "#" inside tags are printed literally (e.g. X'0*0#); their meaning is not defined in the report.
+%
+% (1) Message
+%  (i) Request Message
+%   |<- Control Field ->|<------------------- Standard Field ------------------->|<- Extra Field ->|
+%   |    |    | GMID | object | method | arity | arg1 | arg2 | . . . | argN | parameters |
+%   0    1    4
+%   |         '- Global Message Identifier
+%   '- message type (X'0010 = request)
+%
+%  (ii) Reply Message
+%   |<- Control Field ->|<-------------- Standard Field -------------->|<- Extra Field ->|
+%   |    |    | GMID | status | arity | arg1 | arg2 | . . . | argN | returns |
+%   0    1    4
+%   |         '- Global Message Identifier
+%   '- message type (X'0020 = reply)
+%
+% (2) Data Representation            | Tag |
+%   Undefined Variable               [X'FFFF]
+%   Integer                          [X'0010][Integer]
+%   Atom                             [X'0030][String]
+%   String                           [X'0*0#][Length][Data]          (short X'000# , long X'0F0#)
+%   heap vector                      [X'0*60][Length][Data]          (short X'0060 , long X'0F60)
+%   list                             [X'0070][Car][Cdr]
+%   stack vector                     [X'0*80][N][Element1]...[ElementN]  (short X'0080 , long X'0F80)
+%   class object                     [X'FF10][Class Name String]
+%   exported instance object         [X'FF20][Class Name String][GOID]
+%   imported instance object         [X'FF30][Class Name String][GOID]
+%
+% (3) Packet   (PDF p21, folio 19)
+%  (i) External View of Packets
+%   [ Data Field 1 | Data Field 2 | Data Field 3 ]
+%  (ii) Internal Representation of Packet
+%   a vector of pointers (*), each to one packet:
+%     * -> [ Data Field 1 | Control Field 1 ]
+%     * -> [ Data Field 2 | Control Field 2 ]
+%     * -> [ Data Field 3 | Control Field 3 ]
+%   (one further empty slot printed at the end of the pointer vector)
+%
+% Note: the offsets "0 1 4" under the control field are printed; the unit (byte/word) is not stated.

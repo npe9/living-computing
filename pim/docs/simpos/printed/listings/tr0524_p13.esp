@@ -1,0 +1,18 @@
+% SOURCE: ICOT TR-524, K. Yoshida, "The SIMPOS Distributed File System -- Its Design and Implementation", Nov. 1989
+% PDF page 13, printed folio 12. Continuation of the second example of PDF p12 (section 3.4.1), printed below Figure 3
+% "Structural details around logical file lf51". Transcribed by eye from 300dpi crop (A/work/tr0524/x13c.png).
+% Indentation as printed: the first two lines are indented further than the two :wait lines.
+
+   :put_data(Acc, ``not to be.''), % put ``not to be.'' in external accessor
+   :submit_add(Acc, ID2, suppress),
+:wait(File, ID1),
+:wait(Acc, ID2),
+
+% Figure 3 (same page) access list of the directory entry "humm.txt" in physical directory ">sys>user>gee",
+% header "password/control/access" (read from 300dpi crop x13f.png):
+%   $owner   fdma   rwa
+%   olive    f      rwa
+%   popeye   f      r
+%   default  none   none      (default/none/none printed in italics)
+% Figure 3 password list of user process P4: $owner, olive, brute. Logical file lf51: capability access right
+% "rwa | rwa" (original/current), open mode "shared"; physical file "humm.txt": message queue, open mode "shared".

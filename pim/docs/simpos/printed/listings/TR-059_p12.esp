@@ -1,0 +1,19 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 12, printed folio 10. Section 3.1(2) buffer (cont.) and 3.1(3) 'File marker'.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+          :data_size(Buffer,Data_Size)
+          :set_data_size(Buffer,Data_Size)
+% "Other operations will be defined depending on the specific file record."
+% (3) File marker
+% o To get the record position of the file marker
+          :postion(File_Marker,Position)
+% (as printed: "postion" -- misspelling in the original; not corrected)
+% o To set the specified record position to the file marker
+          :set_position(File_Marker,Position)
+% "Operations on a file involving a file marker include:"
+% o To get the beginning_of_file file marker
+          :start_marker(File,File_Marker)
+% o To get the end_of_file file marker
+          :end_marker(File,File_Marker)

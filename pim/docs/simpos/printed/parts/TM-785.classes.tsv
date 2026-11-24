@@ -1,0 +1,6 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+window (drawing methods)	-	-	-	:draw_line, :draw_rectangle, :draw_circle, :draw_arc, :draw_fan, :draw_ellipse, :draw_elliptical_arc, :draw_graph, :draw_polygon, :draw_filled_rectangle, :draw_filled_circle, :draw_filled_ellipse, :draw_filled_fan, :draw_characters (argument vectors in listing)	PRINTED-INTERFACE	TM-785	40	-35-	method names and example argument tuples only, from an application data table; arities not stated (vector length 6-10)
+list_index	-	-	-	:add_at/2, :get_at/2 (OCR)	NAMED	TM-785	37	-32-	used as font bank in application code; OCR only, not eyed
+font	-	-	:create (with font path name)	-	NAMED	TM-785	37	-32-	OCR only
+graph_drawing	-	base_x, base_y, font_bank (OCR)	-	:draw/1, :set_color?, :get_window	PRINTED-SOURCE	TM-785	29-40	-24- to -35-	EXAMPLE generated application class; only p40 transcribed
+drawing_class_generator	-	-	-	-	NAMED	TM-785	25	-20-	application utility

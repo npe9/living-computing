@@ -1,0 +1,15 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 10, printed folio 8. Section 3(4) 'Bucket': mixin class 'as_bucket' get operation (clause body printed), path-key notation.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+% "We define a mixin class 'as_bucket'. For example, it defines a get operation as"
+    :get(Bucket,Object,[Position|Path_position]) :-
+            :get(Bucket,Sub-bucket,Position),
+            :get(Sub_bucket,Object,Path_position).
+% (as printed: "Sub-bucket" in the first goal, "Sub_bucket" in the second -- a misprint in the
+%  original; not corrected)
+% "When a sequence class has a get operation defined as"
+    :get(Sequence,Object,Position) :- ...
+% "a multi-layer index by defining a path-key as"
+    [Key1, Key2, ...]

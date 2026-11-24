@@ -1,0 +1,29 @@
+% TM-126 「マルチウィンドウシステムを通して見たインターフェースの考察」 (内田, 辻, June 1985)
+% PDF page 5, printed folio 4. Caption: 図2 高速表示のためのウィンドウの管理
+% transcribed by eye from the 300dpi page render (work/tm0126/p-5.png).
+% Drawing: a display (monitor outline) whose screen is cut by dotted/dash-dot lines into 12
+% numbered rectangles; window A (solid box, upper left) and window B (solid box, right)
+% overlap. Rectangle layout as drawn (approximate):
+
+   +---------------------------------------------+
+   |                      1                      |
+   |     +A---------3-------+ - - - - 6 - - - -  |
+   |  2  |   4    :   5   +-B--------+          |
+   |     |        :       |    7     |    8     |
+   |     +--------:-------+          |          |
+   |       9      |      10          |   11     |
+   |              +------------------+          |
+   |                     12                      |
+   +---------------------------------------------+
+
+ table (as printed):
+   含まれるウィンドウ  | 矩形領域の番号
+   ウィンドウなし      | 1, 2, 6, 8, 9, 11, 12
+   ウィンドウ A のみ   | 3, 4
+   ウィンドウ B のみ   | 7, 10
+   ウィンドウ A と B   | 5
+
+% Surrounding prose (p5 left col): each window's position, size etc. are held as an object and
+% each window's screen image is held in memory at dot level; for fast redisplay the real
+% screen is divided into many rectangles, and for each part the set of windows it contains is
+% kept and managed dynamically.
