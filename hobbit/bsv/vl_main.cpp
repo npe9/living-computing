@@ -1,5 +1,6 @@
 // vl_main.cpp -- the Verilator driver for a bsc-generated testbench
-// (bsv/run_p9host_vl.sh; bsv/run_golden.sh with HOBBIT_SIM=verilator).
+// (bsv/run_p9host_vl.sh; bsv/run_golden.sh with HOBBIT_SIM=verilator;
+// bsv/run_p9kern.sh with P9KERN_SIM=verilator).
 //
 // bsc -verilog writes the testbench as a module with only CLK and RST_N
 // (active low).  This does what bsc's own Verilog driver does
@@ -28,6 +29,15 @@
 // -Dp9h_poll=p9h_poll_c, and the p9h_poll the Verilated model imports is
 // the one below.  p9host.c itself is unchanged.  Without VL_P9HOST the
 // status is 0, as for the golden testbenches, whose $finish carries none.
+//
+// The kernel testbench (bsv/build_p9kern_vl.sh) builds without either
+// define, so it exits 0 at its $finish whatever P9KernTb.bsv passes,
+// because that is what Bluesim does: measured 2026-11-24 with a one-rule
+// module calling $finish(n) (bsc's argument is Bit#(2)), the Bluesim
+// executable exited 0 for n = 0, 1, 2 and 3.  (So the paragraph above's
+// "Bluesim exits with n" does not hold for this bsc; there Verilator is
+// the stricter of the two.)  A non-zero status from either simulator is
+// p9kern.c's exit(2) (no recording, out of memory) or a crash.
 //
 // $VL_MAXCLOCKS (default 0, no limit) stops a run that never calls
 // $finish, with status 4.  A build with --trace writes vl.vcd for clocks

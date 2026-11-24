@@ -26,6 +26,12 @@
 # into the comparison, which stops it at the first difference, and only
 # the non-HRI lines are kept (core.log).  Without it both traces are
 # plain files (~127 bytes a record each).
+#
+# P9KERN_SIM picks the simulator: `bluesim` (the default, WORKDIR/sim_p9kern)
+# or `verilator` (WORKDIR/sim_p9kern_vl, built by build_p9kern_vl.sh in
+# WORKDIR/vl, its own -bdir).  Both print the same core.log byte for byte
+# and exit with the same status (docs/bluespec_architecture.md,
+# "Simulators").
 set -eu
 cd "$(dirname "$0")"
 here=$(pwd)
@@ -51,7 +57,15 @@ export BLUESPECDIR
 PATH=$(dirname "$BSC"):$PATH
 export PATH
 
+sim=${P9KERN_SIM:-bluesim}
+case "$sim" in
+  bluesim|verilator) ;;
+  *) echo "run_p9kern.sh: P9KERN_SIM must be bluesim or verilator, not $sim" >&2
+     exit 2 ;;
+esac
+
 mkdir -p "$work/bo" "$work/sim" "$work/rec"
+work=$(cd "$work" && pwd)
 zflag=
 reftrace=$work/rec/ref.hri
 if [ "$stream" = 1 ]; then
@@ -69,7 +83,17 @@ else
   printf '%s\n' "$key" > "$work/rec/key"
 fi
 
-if [ "${P9KERN_KEEP_SIM:-0}" != 1 ] || [ ! -x "$work/sim_p9kern" ]; then
+if [ "$sim" = verilator ]; then
+  simbin=sim_p9kern_vl
+else
+  simbin=sim_p9kern
+fi
+if [ "${P9KERN_KEEP_SIM:-0}" = 1 ] && [ -x "$work/$simbin" ]; then
+  :
+elif [ "$sim" = verilator ]; then
+  "$here/build_p9kern_vl.sh" "$work" > "$work/build.log" 2>&1 || {
+      tail -30 "$work/build.log"; exit 1; }
+else
   "$BSC" +RTS -K512M -RTS -sim -u -bdir "$work/bo" -simdir "$work/sim" \
       -p "$work/bo:$here:%/Libraries" -g mkP9KernTb P9KernTb.bsv \
       > "$work/build.log" 2>&1 || { tail -30 "$work/build.log"; exit 1; }
@@ -87,7 +111,7 @@ if [ "$stream" = 1 ]; then
   # P9KERN report in core.log are what count.
   cmpout=$work/compare.out
   (cd "$work" && P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
-      ./sim_p9kern 2>&1 | PYTHONDONTWRITEBYTECODE=1 python3 \
+      "./$simbin" 2>&1 | PYTHONDONTWRITEBYTECODE=1 python3 \
       "$here/../tools/p9coreboot.py" compare "$reftrace" - \
       --functions "$work/rec/functions" --side "$work/core.log" \
       > "$cmpout") || fail=1
@@ -98,7 +122,7 @@ if [ "$stream" = 1 ]; then
   grep -q '^P9KERN FAIL' "$work/core.log" && simstatus=1
 else
   (cd "$work" && P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
-      ./sim_p9kern > "$work/core.log" 2>&1) || simstatus=$?
+      "./$simbin" > "$work/core.log" 2>&1) || simstatus=$?
   grep '^P9KERN' "$work/core.log" || true
   grep -v '^HRI \|^P9KERN' "$work/core.log" | head -20 || true
 

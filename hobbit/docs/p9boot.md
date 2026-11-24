@@ -893,6 +893,9 @@ applied to a kernel:
 # reference records at ~62,000 instructions/s; the core's part took
 # 15 to 35 minutes on a heavily loaded machine, 2026-11-24):
 hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
+# the same on Verilator (later in the day: 172 s for the whole Bluesim
+# run, 67 s for this one with the simulator prebuilt):
+P9KERN_SIM=verilator hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
 # the suite's sample (tests/run_tests.sh): to main and the first ORI
 hobbit/bsv/run_p9kern.sh 300000 WORKDIR
 ```
@@ -919,8 +922,13 @@ hobbit/bsv/run_p9kern.sh 300000 WORKDIR
   kernel builds its tables there.
   With `-D P9KERN_FLAT` the board memory is inlined, so every BDPI call
   sits in the one synthesized module, which is the pattern the Verilator
-  build needs.  As of 2026-11-24 that form compiles to Verilog with
-  `bsc -verilog`.  It has not been built or run with Verilator.
+  build needs.  `P9KERN_SIM=verilator bsv/run_p9kern.sh N [WORKDIR]`
+  runs that form on Verilator (`bsv/build_p9kern_vl.sh`): its `core.log`
+  is byte-identical to Bluesim's at 300,000 and at 2,893,000 records,
+  every HRI line with `cyc` included, and at 2,893,000 records the
+  simulator alone takes 31 CPU seconds against Bluesim's 92
+  (2026-11-24; `docs/bluespec_architecture.md`, "The kernel testbench
+  on Verilator").
 * `tools/p9coreboot.py compare` streams the two traces and stops at the
   first record that differs in any field but `cyc`
   (`tools/p9trace_cmp.py`'s rule, streamed: a boot is millions of
