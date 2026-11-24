@@ -53,11 +53,17 @@ typedef struct {
 typedef Vector#(NWin, WinEntry) Window;
 typedef Vector#(22, Maybe#(Word)) Probes;
 
+// The window's valid entries have distinct addresses (hobbit_soc_mem
+// enters an address only when no entry holds it, and checks that in
+// simulation), so at most one entry matches and an OR of the matching
+// entries' words is the priority select it replaces, at about half the
+// logic; this read is replicated at every table read of every walk
+// (docs/fpga_area.md).
 function Word winRead(Window w, Word a);
   Word r = 0;
   for (Integer i = 0; i < valueOf(NWin); i = i + 1)
     if (w[i].valid && (w[i].addr == (a & 32'hFFFFFFFC)))
-      r = w[i].data;
+      r = r | w[i].data;
   return r;
 endfunction
 
