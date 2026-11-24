@@ -400,7 +400,34 @@ Program development cycle (sec 4(4), PROSE): edit source with the editor -> regi
 
 **Librarian** (sec 4(6), PROSE, TRANSLATION): all classes are managed by the **library**; the **librarian** is the UI to it. Functions: (1) register/delete classes: from ESP source generate executable code, **interpreted code or directly executed (compiled) code**, selectable; delete registered classes; (2) change a class's executable code between interpreted and direct; (3) **save/load template files**: a template = per-class information (slot info, method and local-predicate code, inherited class names, referenced class names) saved to a file or loaded into main memory; (4) **batch commands**: a series of librarian commands invoked at once (useful to register many classes); (5) utilities: search information about OS and user classes.
 **SCREENSHOT p5 Librarian** (600 dpi, eyed): window label **`librarian_1`**; left command menu: **Check, Catalogue, Compile** (highlighted), **Uncompile, Save, Load, Delete, Execute, Utility**; right transcript pane:
-  [The screen transcription is kept locally, not in git, until the owner decides on quoting IPSJ papers at this length: pim/docs/nonlocal/lit/ipsj/LOCAL_transcriptions_36239_118681.md (gitignored). The facts drawn from it are listed below.]
+  (Transcribed from IPSJ SIG-DPS 31-1 (record 36239) p5, screen photograph; quoted for research, interface text only.)
+```
+File Name>demo
+Catalogging "demo.esp"...
+    as_demo_program
+    escher
+    oekaki
+    queens
+    squares
+    bounce
+    demo_manager
+as_demo_program end.
+escher end.
+oekaki end.
+queens end.
+squares end.
+bounce end.
+demo_manager end.
+- - - - - - - - - - - -
+PREDICATE
+- - - - - - - - - - - -
+File Name>test
+Catalogging "test.esp"...
+    test
+test end.
+- - - - - - - - - - - -
+Class Name>[test]
+```
   (spelling "Catalogging" as printed.) Popup **`CLASS NAME`** (variable-length operand menu): **DO IT, EXIT, ALL BUT SELCTED** (sic), **FROM WHITE BOARD**, then class names `test, demo_manager, bounce, squares, queens` (boxed, marked with an `x` = selected), `oekaki, escher, as_demo_program`. Status line `USER : hiroyuki`, `SIMPOS Version 2.50`, `screen`, `08-Sep-86 Monday 15:09:17`.
   - Facts: prompts `File Name>` and `Class Name>`; default shown in brackets `[test]`; cataloguing a file lists each class then `<class> end.`; a multi-select class menu with DO IT / EXIT / ALL BUT SELECTED / FROM WHITE BOARD (SCREENSHOT, v2.50). One source file may hold several classes here (demo.esp: 7 classes) -- VARIANT vs TR-057's "class source file holds exactly one class" (STRUCTURE s9).
 
@@ -444,7 +471,32 @@ References (p8): Hattori et al. "SIMPOS operating system" IPSJ 29th conv. pp285-
   - **`package`**: **Set default package, Define package, Define environment, ----, Delete package, Delete environment, ----, Retrieve, ----, Other command, ----, [Exit]**
   - Delete, Utility, ESP tool have submenus too (shown as dashed leaders, not expanded).
 - **Fig.2 "standard librarian menu definition"** (PRINTED, transcribed in full as printed, ellipsis is in the original):
-  [The Fig. 2 transcription is kept locally, not in git, until the owner decides on quoting IPSJ papers at this length: pim/docs/nonlocal/lit/ipsj/LOCAL_transcriptions_36239_118681.md (gitignored). The facts drawn from it are listed below.]
+  (Transcribed from IPSJ 3J-8 (record 118681) Fig. 2; quoted for research, interface text only.)
+```
+menu_list :=
+    [
+      ("Set up", set_up_menu,
+          [
+            ("Set up", set_up),
+            ("Save state", save_state),
+            ("Check menu item", check_menu_item)
+          ]),
+      ("Check", check),
+      ("Catalogue", catalogue),
+      ("Save", save),
+      ("Load", load),
+      ("Delete", delete_menu,
+          [
+            ("Delete", delete),
+            ("Abolish", abolish),
+            ("Forget", forget),
+            ("Delete resource", delete_resource),
+            (" [Exit]", up)
+          ]),
+               :
+               :
+    ]
+```
   Menu definition = list of (menu item string, command name) pairs; nesting = top/sub-menu hierarchy; **`up`** returns to the parent menu. Stored in the **librarian initialization file** (ライブラリアンの初期化ファイル); edit it with the editor and save it to get a new menu next time (sec 4).
   -> librarian command names (PRINTED, v5.0): `set_up_menu`, `set_up`, `save_state`, `check_menu_item`, `check`, `catalogue`, `save`, `load`, `delete_menu`, `delete`, `abolish`, `forget`, `delete_resource`, `up`.
 - Adding a command (sec 4, PROSE): define a class inheriting the system's librarian functions, plus a class defining the new command; their combination is a librarian with both.
