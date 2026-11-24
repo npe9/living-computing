@@ -1521,6 +1521,20 @@ class Machine:
         self.sp = w[1]
         self.sp_single = not w[0] & 1
 
+    def i_wait_vector(self, pc, x, y, z, c16):
+        # the general form, 23:AF r_vector: a vector of 7 or more, the
+        # length in the low bits (assembler klb_opr.kl1 p(r_vector, ..)
+        # Length>6: Op \/ Reg<<16 \/ Length; read as 16 bits, as
+        # put_vector's).  Below 7 the assembler writes wait_vector_N
+        n = c16
+        if n < 7:
+            raise Unimplemented('wait_vector of %d' % n)
+        w = self.g_word(x)
+        if w is None or w[0] & ~1 != VECT0 + 14 or self.vsize(w) != n:
+            return self.guard_fail()
+        self.sp = self.vbase(w)
+        self.sp_single = not w[0] & 1
+
     def i_wait_vector_2(self, pc, x, y, z, c16):
         return self.wait_vector(2, x)
 

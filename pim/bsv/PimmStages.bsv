@@ -246,7 +246,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                       || op == op_atom || op == op_code
                       || op == op_switch_on_non_atom || op == op_wait_nil || op == op_wait_list
                       || isWaitVector || op == op_switch_on_non_list
-                      || op == op_switch_on_non_vector || op == op_vector;
+                      || op == op_switch_on_non_vector || op == op_vector || op == op_wait_vector;
   Bool twoOperandGuard = op == op_not_less_than || op == op_less_than || op == op_equal
                       || op == op_subtract || op == op_and || op == op_vector_element
                       || op == op_shift_right || op == op_modulo || op == op_wait_value
@@ -754,6 +754,19 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else if (isVec(a)) begin
         regs.wr(y, intC(sizeOf(a)));
         next;
+      end
+      else guardFail;
+    end
+    else if (op == op_wait_vector) begin
+      // the general form, a vector of 7 or more, the length the low 16
+      // bits (assembler klb_opr.kl1 p(r_vector, ..) Length>6); the
+      // length is in the descriptor
+      if (isRef(a)) note(a);
+      if (c16 < 7) stop(EndUnimp);
+      else if (isLongVec(a)) begin
+        opA <= a;
+        vbox.info(a);
+        st <= XVInfo;
       end
       else guardFail;
     end
@@ -2191,13 +2204,24 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule vInfo (st == XVInfo);
     let r <- vbox.result;
-    regs.wr(y, r.a);
-    if (op == op_switch_on_non_vector) begin
+    if (op == op_wait_vector) begin
+      if (r.a.val == zeroExtend(c16)) begin
+        sp <= truncate(r.b.val);
+        spSingle <= opA.tag[0] == 0;
+        next;
+      end
+      else guardFail;
+    end
+    else if (op == op_switch_on_non_vector) begin
+      regs.wr(y, r.a);
       sp <= truncate(r.b.val);
       spSingle <= False;
       finish(tagged Next (pc + 2));
     end
-    else next;
+    else begin
+      regs.wr(y, r.a);
+      next;
+    end
   endrule
 
   rule bVec (st == XBVec);
