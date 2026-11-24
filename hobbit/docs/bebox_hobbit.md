@@ -206,7 +206,7 @@ sheet and the kernel's driver, and the run went on:
    finds no diskette and says so in its own words ("PrepareMedia:
    DiskChanged TRUE twice (i.e. no disk in drive)", "fsmount failure").
 5. "Volume 'be' w/size 332487 sectors mounted as id 0 on
-   /dev/scsi_disk_driver_000" at 29,138,973 instructions.
+   /dev/scsi_disk_driver_000" at 29,180,553 instructions.
 6. Stop at `_wait_status+0x1c`: the keyboard controller's status port
    0x64 (0x800190), from `_kb_init`. Modelled from the VL82C106 pages;
    `_kb_init` and `_mouse_init` then pass.
