@@ -85,6 +85,8 @@ of this module can check, on either model, and injections confirm it:
 | `apply` | `22:F1 x y` | `apply(Code, Args)`: a new ready goal of the code `r[x]` with the elements of the vector `r[y]` as its arguments; waits for either (PIMOS manual `e-builtin.tex`). The goal is made as PDSS makes it (`emulator/blt_system.c` `blt_b_apply`): each element taken with its MRB on if the vector's is. The manual's exceptions (not a code, not a vector, the count differs from the predicate's) are refused, as is a vector of seven or more | checked, with the IPL's own `apply` site (`lockstep_apply.py`) |
 | `create_shoen` | `22:E0 x y z`, four more registers in the next cell | `create_shoen(MinPrio, MaxPrio, ExcepMask, Code, Argv, ^Report, ^Shoen)`, format `r7`. **PIM/m-sourced**: the encoding and the directions (`assembler/inst_tab.kl1`:332-362, `klb_opr.kl1`:144-154, `compiler/blt.kl1`:567-569), and that the outputs may be the input registers (the image's `shoen:execute/4`, cell 15553, is `22:e0040506 / 00:00010001`: Code and Report both `r0`, Argv and Shoen both `r1`), so every input is read before an output is written. The manual does not document it. **What it does is not PIM/m-sourced** ("Shoen" below): the three first operands are waited for, must be integers and are dropped; a shoen record, a fresh Report variable, the handle `{SHREC, record}`, and one parked goal `apply(Code, Argv)` of the new shoen. Code and Argv are not waited for. Refused: a priority or mask that is not an integer (`shoen:execute1/7` passes vectors) | checked (`lockstep_shoen.py`, through the image's `execute/4` and through its stub); the refusal is not in the suite (observed by hand on both models, the test's header) |
 | `start_shoen` | `22:E1 x y` | `start_shoen(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2`, cell 15755). A dormant shoen: 8 is reported first, then it is started and its parked goal goes on the ready queue (the order is VPIM's, **carried over**); `r[y]` := the same handle (**ours**). Refused: a shoen that is not dormant, anything but a handle | checked (`lockstep_shoen.py`); a second start is refused on both models, observed by hand (the test's header), not in the suite |
+| `shoen_statistics` | `22:E6 x y` | `shoen_statistics(Shoen, ^NewShoen)` (encoding and directions **PIM/m-sourced**, `inst_tab.kl1`, `blt.kl1`:537-601; the image's `control/2` for `statistics`). 10 on the report stream, then `{9, H, L}`: twice the shoen's reductions, its descendants' included, as 64 bits (the value **PIM/m-sourced**, manual `e-shoen.tex`:234; 10 then 9 at once is VPIM's, **carried over**; what a reduction is and where the count lives, "Shoen" below). `r[y]` := the same handle (**ours**). On a running shoen the count as it stands (**ours**). Refused: anything but a handle | checked (`lockstep_shoen2.py`: through the image's `control/2` and three monitors, H, L from the trace's own count of reductions) |
+| `remove_shoen` | `22:E4 x` | `remove_shoen(Shoen)` (encoding and direction **PIM/m-sourced**; the image's `control/2` for `[]`). A terminated shoen: `{14, 0, 0}` (`return_resource`; 0, 0 **ours**, no resource model), then the report stream closed with `[]`, status removed; one not yet terminated is marked and removed at its termination (VPIM's, **carried over**). Refused: a shoen removed already, anything but a handle | checked (`lockstep_shoen2.py`, both cases); the refusal not in the suite |
 | `code` (guard) | `23:FA x y z`, a fourth register in the next cell | succeeds if `r[x]` is a code (whole tag 26h), with `r[y]` := arity, `r[z]` := its module, the fourth := its offset from the module's descriptor cell; anything else fails (PIMOS manual) | checked, outputs from the trace (`lockstep_p2c.py`) |
 | `atom` (guard) | `23:E1 x` | "If X is an atom, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted | run succeeding only (`lockstep_link.py`: the IPL's link table); a non-atom is not run |
 | `floating_point` (guard) | `23:E6 x` | "If X is a floating point, this predicate succeeds, otherwise it fails" (PDSS manual); an unbound X is noted. The type test only | run failing only (`lockstep_run.py`) |
@@ -372,7 +374,7 @@ those are its fields is not established.
   its `dc_*` pseudo-code (`body_builtin_suspend`). Because a stub is
   ordinary code, a test can also spawn one directly.
 
-### Shoen (stage 1: create, start, terminate)
+### Shoen (stages 1 and 2: create, start, terminate; statistics, remove)
 
 Three tiers, kept apart:
 
@@ -385,6 +387,19 @@ Three tiers, kept apart:
   pimos.vmac`:177-199 agrees); that a shoen is dormant until `start`
   and that `terminated` reports its end (manual, `e-shoen.tex`:
   117-262); the protocol of `shoen:execute/4`, `control/2`, `report/2`.
+  Stage 2: the encodings and directions of `shoen_statistics` (22:E6,
+  `r_r`) and `remove_shoen` (22:E4, `r`); the codes 10
+  `statistics_started`, `{9, H, L}` `statistics(H, L)` and `{14, H, L}`
+  `return_resource(H, L)` (the image's `report/2`, `pimos.vmac`);
+  that `statistics_started` is the acknowledgement of `statistics`
+  and `statistics(H, L)` follows it, H and L the high and low 32 bits
+  of the shoen's resource consumption "including the descendent
+  shoens", which "in the current specifications" is "twice of the
+  number of reductions", exact once the shoen has terminated and never
+  more than the truth before (manual, `e-shoen.tex`:42, 227-262); and
+  what a reduction is: dequeues and executes less suspensions
+  (`e-shoen.tex`:388-395, the profile's counts), i.e. one per
+  `execute`/`execute_external` and one per `proceed`.
 - **Carried over from the siblings, not PIM/m-sourced**: counting a
   shoen's goals and its child shoen and ending it at zero (PDSS
   `emulator/emulate.c`:340, `shoen.c`:123-178 and 280-309); the first
@@ -393,17 +408,29 @@ Three tiers, kept apart:
   the state changes and `terminated` alone while the control stream
   is open (VPIM `functions/f_shoen_control.psl.c`:324-330,
   `f_shoen_with_fp.psl.c`:86). VPIM's own message numbers are not
-  used.
+  used. Stage 2: counting reductions where PDSS does (`emulate.c`:
+  333-365, `KL1B_PROCEED`, `KL1B_EXECUTE`, `KL1B_EXECUTE_EXTERNAL`)
+  and adding a child's total to its parent at the child's termination
+  (`shoen.c`:293); `statistics_started` then `statistics(H, L)` at
+  once for a terminated shoen (VPIM `f_shoen_control.psl.c`:691-727);
+  `remove_shoen` of a terminated shoen reporting `return_resource`,
+  then closing the report stream, and of one not yet terminated only
+  marking it, the removal then happening at its termination
+  (`terminated`, `return_resource`, the close: VPIM
+  `f_shoen_control.psl.c`:547-575, `f_shoen_with_fp.psl.c`:69-71).
 - **Ours**: everything below about records and cells.
 
 The design:
 
-- **Shoen record**, 5 cells in the heap (`asm/pimm_layout.py`):
+- **Shoen record**, 7 cells in the heap (`asm/pimm_layout.py`):
   `{INT, count}` the shoen's live goals plus its live child shoen;
-  `{INT, status}` 0 dormant, 1 started, 2 terminated; `{INT, the
-  parent's record, or 0}` (the root has no record); a reference to
-  the report stream's unbound tail; `{INT, the goal record of the
-  first goal}`. The handle is `{SHREC, the record's address}`.
+  `{INT, status}` 0 dormant, 1 started, 2 terminated, 3 removed;
+  `{INT, the parent's record, or 0}` (the root has no record); a
+  reference to the report stream's unbound tail; `{INT, the goal
+  record of the first goal}`; (stage 2) `{INT, reductions}`, the
+  shoen's and its terminated descendants', 32 bits (it wraps at 2^32
+  reductions, not checked); `{INT, 1 if a remove is pending}`. The
+  handle is `{SHREC, the record's address}`.
 - **A goal's shoen** is in its record's status cell (above). The
   machine has a register, the current shoen: that of the goal last
   taken from the ready queue, and the root's (0) once the queue is
@@ -417,38 +444,73 @@ The design:
   not `execute`) takes one off. So a suspension nets nothing and a
   `proceed` is one less. The root is not counted: no memory traffic,
   and every trace made before the shoen existed is unchanged.
+- **Reductions** (stage 2). The exec stage counts, for the goal in
+  hand, one per `execute` and `execute_external` and one for its
+  `proceed` (a suspension adds none); at the end of the goal's run
+  that number is added to its shoen's reduction cell (one read and one
+  write, before the count's), and at a shoen's termination its total
+  is added to its parent's the same way. Writing the cell once per run
+  is ours; so is that a stub's goal (`apply`, `unify_step`, a waiting
+  built-in, a merger input) counts as an ordinary one (its proceed),
+  where the manual's profile counts `unify_vector` per element.
 - **`create_shoen`**: Code and Argv go to argument registers 1 and 2
   as they are; then the record (count 1, dormant, parent = the
   current shoen), a fresh Report variable, the first goal (code:
   `apply`'s stub of `asm/pimm_stubs.py`; suspended, on no queue and
   on no variable; it belongs to the new shoen and is the 1 of its
-  count), and one more on the parent's count unless that is the root.
+  count), reductions 0, no remove, and one more on the parent's count
+  unless that is the root.
 - **`start_shoen`**: 8 on the report stream, status started, then the
   first goal becomes ready and goes on the queue as a woken goal does
   (a `W` line).
 - **Termination.** When a count reaches 0: status terminated, 12 on
-  the report stream, then one off the parent's count, and so on up.
+  the report stream, the removal if a remove is pending (below), then
+  the parent gets the shoen's reductions and one off its count, and so
+  on up.
+- **`shoen_statistics`** (stage 2): 10 on the report stream, then
+  `{9, H, L}`, H:L = twice the reduction cell as 64 bits (high, low);
+  `r[y]` := the same handle (ours). On a shoen not yet terminated the
+  cell is reported as it stands (ours: VPIM asks its processors and
+  answers later; the manual allows an undercount). Refused: anything
+  but a handle; on a removed shoen the closed stream refuses it.
+- **`remove_shoen`** (stage 2): a terminated shoen is removed: `{14,
+  0, 0}` (`return_resource`; 0, 0 is OURS: there is no resource
+  model, so nothing is left to return), then the report stream's tail
+  is unified with `[]`, then status removed. A dormant or started
+  shoen gets its remove cell set and is removed at its termination
+  (so 12, 14, `[]` come together). Refused: a shoen removed already,
+  anything but a handle.
 - **A message on the report stream**: two new cells `{INT, code}`
-  `{UNDF}`; the record's tail, followed through references, is bound
-  to the list cell with the ordinary wake of the goals waiting on it;
-  the record's tail becomes the new cell. A tail someone has bound to
-  a value is refused.
+  `{UNDF}` (for `{9, H, L}` and `{14, H, L}`, first the vector's three
+  cells, the list cell's car then being the vector); the record's
+  tail, followed through references, is bound to the list cell with
+  the ordinary wake of the goals waiting on it; the record's tail
+  becomes the new cell. A tail someone has bound to a value is
+  refused.
 - **No resource model: 6 (`resource_low`) is never reported.** Ours,
   and probably not the machine's: VPIM reports it for a shoen with no
   limit left, and every caller of `execute/4` in the image grants
   resource only when it is told `resource_low`.
 - **Refused, loudly** (the reference model raises `Unimplemented`,
   the Bluespec ends `E unimp`): `stop_shoen`, `abort_shoen`,
-  `remove_shoen`, `shoen_statistics`, `add_shoen_resource`,
-  `allow_shoen_resource_report`, `shoen_profile`,
-  `create_profiling_shoen`, `raise`, and a goal that FAILS inside a
-  shoen (that is the exception path).
+  `add_shoen_resource`, `allow_shoen_resource_report`,
+  `shoen_profile`, `create_profiling_shoen`, `raise`, and a goal that
+  FAILS inside a shoen (that is the exception path).
 - **What follows for the image's own `execute/4`** (observed,
-  `lockstep_shoen.py`): its `control/2` and `report/2` belong to the
-  shoen that called it, and end only through `remove_shoen` and the
-  closing of the report stream. So a shoen whose code is `execute/4`
-  does not terminate in stage 1 even after the shoen it made has, and
-  the step "a child's end brings its parent to 0" is never run.
+  `lockstep_shoen.py`, `lockstep_shoen2.py`): its `control/2` and
+  `report/2` belong to the shoen that called it, and end only through
+  `remove_shoen` and the closing of the report stream. In stage 1 a
+  shoen whose code is `execute/4` never terminated. With stage 2 the
+  image's monitors (`ipl:ipl_monitor/3`, `top:bios_monitor/3`,
+  `top:top_level_monitor/4`) answer `terminated` with `[statistics]`,
+  `control/2` calls `shoen_statistics` and `remove_shoen`, the inner
+  stream closes, `report/2` ends, and the OUTER shoen terminates: the
+  last goal of the outer to end is the inner's `report/2` (observed
+  in `lockstep_shoen2.py`, `nested`). A child's own termination is
+  never what takes its parent to 0 with the image's code: `report/2`
+  of the child is the parent's and outlives it (the close comes with
+  or after the child's termination). That step of the cascade (a
+  parent terminated inside its child's termination) is not run.
 
 Things this predicate shows about the compiler, useful for reading the
 rest: range guards compile to `put_integer` and a comparison per bound;

@@ -28,16 +28,30 @@ of PIMOS's debugger/inspector/tagtbl.kl1, what it points at is ours):
     +SH_GOAL    {INT, the goal record of the shoen's first goal}:
                 parked (SUSPENDED, on no queue and on no variable)
                 until start_shoen
+    +SH_REDUCTIONS {INT, the reductions of the shoen's goals so far,
+                and of its child shoen that have terminated}: added to
+                at the end of each of its goals' runs, and a child's
+                total is added to its parent's when the child
+                terminates (shoen stage 2; 32 bits, so it wraps at
+                2**32 reductions: not checked)
+    +SH_REMOVE  {INT, 1 if remove_shoen came before the shoen
+                terminated, else 0}: it is then removed at termination
 """
 G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS = 0, 1, 2, 3, 4
 READY, SUSPENDED, TAKEN = 0, 1, 2
 S_NEXT, S_GOAL, S_SIZE = 0, 1, 2
-SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 5
-DORMANT, STARTED, TERMINATED = 0, 1, 2
+SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 7
+SH_REDUCTIONS, SH_REMOVE = 5, 6
+# REMOVED: terminated, then removed (remove_shoen): the report stream is
+# closed and the record is not used again
+DORMANT, STARTED, TERMINATED, REMOVED = 0, 1, 2, 3
 # The report stream's integer codes that the models emit.  PIM/m-sourced:
 # the image's shoen:report/2 (cell 15818) translates 8 to `started` and
-# 12 to `terminated` (PIMOS macro/pimos/pimos/pimos.vmac:177-199 agrees).
+# 12 to `terminated` (PIMOS macro/pimos/pimos/pimos.vmac:177-199 agrees),
+# 10 to `statistics_started`, {9, H, L} to `statistics(H, L)` and
+# {14, H, L} to `return_resource(H, L)`.
 REPORT_STARTED, REPORT_TERMINATED = 8, 12
+REPORT_STATISTICS_STARTED, REPORT_STATISTICS, REPORT_RETURN_RESOURCE = 10, 9, 14
 
 ADDR_BITS = 27                  # memory size in cells = 1 << ADDR_BITS
 MEMORY_CELLS = 1 << ADDR_BITS
