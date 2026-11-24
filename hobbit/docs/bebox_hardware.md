@@ -1,15 +1,20 @@
 # The Hobbit BeBox ("Be machine", board "Sako"): hardware dossier
 
 What Be Inc.'s pre-PowerPC machine was, part by part, to the depth needed for
-a board model that boots its surviving software (`tools/beboot.py`, built by
-the software side of this effort). Researched 2026-11-24.
+a board model that boots its surviving software. Researched 2026-11-24.
+
+This dossier leans on work on another branch that is not merged yet:
+`worktree-agent-aeb73561b39e2ec97` (commit 8315ce07) holds the scan and
+disk-image manifests (`hobbit/docs/bebox/`) and the software side's boot
+model (`tools/beboot.py`). Until it merges, those paths do not exist on this
+branch.
 
 Each claim is tagged with the kind of evidence behind it:
 
 | tag | evidence |
 |---|---|
 | **[S]** | Be Labs' draft *Be machine hardware documentation*, 15/16 Sep 1993 (page scans; "Sources" §1). Cited as `chapterN/pageM` exactly as the scan file is named (the case of `Page`/`page` varies). |
-| **[K]** | The surviving kernels, read for this dossier with `python3 -I`: the physical-object table dumped from the ELF data, and functions disassembled with `asm/hobbit_asm.py` (Sources §2). |
+| **[K]** | The surviving kernels, read for this dossier: the physical-object table dumped from the ELF data, strings, and functions disassembled with `asm/hobbit_asm.py`, using `tools/bebox_kphys.py`, `tools/bebox_ksyms.py` and `tools/bebox_kdis.py` (Sources §2). |
 | **[P]** | Photographs of surviving boards, read here (Sources §3). |
 | **[E]** | Only the third-party emulator `johnrash/bebox` says so (Sources §4). Its rows drawn from "the September 1993 hardware notes" are the same scans as [S] and not independent. Only its "(found)" rows are independent, and this dossier re-checked only the ones marked [K]. |
 | **[H]** | Secondhand history: Be Newsletter, bebox.nu, a book caption, owners' pages. |
@@ -98,7 +103,7 @@ Physical, as seen by the CPUs. All words are big-endian: byte 0 is bits
 | 0x00000000-0x0007FFFF | flash EEPROM, "0.5 Mbyte currently implemented" | [S `appendix/page3`]; the kernel maps `rom` 0x1000+0x7F000 [K] |
 | 0x00800000-0x00800FFF | I/O window, "4 Kbytes currently implemented" | [S `appendix/page3`]; kernel `io` 0x00800000+0x1000 [K] |
 | 0x08000000-… | RAM | [S `appendix/page3`]; kernel `phram` 0x08000000 [K]; the ROM tests from 0x08000000 [H typewritten] |
-| 0x60000000-0x601FFFFF | 2 MB DSP "shadow RAM" | [S `appendix/page3`, `page4`]; the kernel has a `dsp ram` object [K] |
+| 0x60000000-0x601FFFFF | 2 MB DSP "shadow RAM" | [S `appendix/page3`, `page4`]; the kernel has the name `dsp ram` among `sako/dsp.c`'s strings [K] |
 | 0x80000000-0xDFFFFFFF | six slots of 256 MB each, selected by A<31:28> | [S `appendix/page3`, `chapter1/page4`, `page12`] |
 | 0xE0000000-0xFFFFFFFF | reserved | [S `appendix/page3`] |
 
@@ -138,12 +143,14 @@ base, size}, read from the Nov 1994 kernel's data at 0x080E1280 [K]:
 | `vga_new` | 0xD0000000 | 0x100000 | frame buffer, slot 6 |
 | `vga_new_reg` | 0xD1000000 | 0x6000 | video registers |
 
-The March 1994 kernel's table (at 0x0821C1A0) has the same layout with
-`audio_regs` at 0x8, `slot_c` at 0xC and `phram` fixed at 8 MB [K].
+The March 1994 kernel's table (at 0x0821C1A8, file offset 0x1C1A8) has the
+same layout with `audio_regs` at 0x8, `slot_c` at 0xC, and `phram` fixed at
+0x08000000 + 8 MB. It is preceded by an entry `ram` with flag 2 and base and
+size 0 [K].
 
-**Slot card ROM.** Every card "must have a byte-wide configuration ROM,
-accessible on D<7:0>, at the top of its address space", read by the OS at
-boot [S `chapter1/Page2`]. The kernel has `_get_slot_rom_addr` (4 bytes) and
+**Slot card ROM.** The draft requires every card to carry a byte-wide
+configuration ROM on data lines 7-0, at the top of the card's address space,
+for the OS to read at boot [S `chapter1/Page2`]. The kernel has `_get_slot_rom_addr` (4 bytes) and
 `_get_slot_resources` (2 bytes), so in Nov 1994 these were stubs [K]. A model
 can leave the ROMs out.
 
@@ -206,10 +213,17 @@ All its registers are 8 bits wide, at byte lane 3 of their word
 
 - The draft gives Serial 1 = bit 2 and Serial 2 = bit 1, twice
   [S `appendix/page1`, `chapter6/page2`].
-- The Nov 1994 kernel's `_ser_init` does the opposite [K].
-  - Unit 0 uses port 1016 (0x3F8, SER1), calls `_io_int_set(1, _sera_inth)`
-    and enables bit 1.
-  - Unit 1 uses port 760 (0x2F8, SER2) with bit 2.
+- Both surviving kernels do the opposite [K].
+  - Nov 1994, `_ser_init`: unit 0 uses port 1016 (0x3F8, SER1), calls
+    `_io_int_set(1, _sera_inth)` and enables bit 1. Unit 1 uses port 760
+    (0x2F8, SER2) with bit 2.
+  - Mar 1994, `_ser_init` (0x08214CD8): unit 0 loads the register addresses
+    0x800FE3-0x800FFB (SER1) and calls `_int3_set(1, _sera_inth)`; unit 1
+    loads 0x800BE3-0x800BFB (SER2) and calls `_int3_set(2, _serb_inth)`.
+    `_int3_set(n, h)` stores h in slot n of the I/O handler table, and the
+    dispatcher calls slot n for bit n.
+  - The two kernels are 6 and 14 months newer than the draft, and agree with
+    each other, so the board as it ran had SER1 on bit 1.
 - **Model SER1 = bit 1 and SER2 = bit 2.** The emulator agrees [E].
 
 **Other bits and handlers.**
@@ -344,11 +358,13 @@ chapter states it as "data-sheet address * 4 + 800003" [S `chapter8/page2`].
   - The alpha draft lists 0x80080B, 0x80080F, … for registers 2-F (lane 3)
     and 0x800802/0x800803 for the transfer count [S `chapter2/page5`,
     `chapter9/page4`-`page24`].
-  - The kernel's data says `_reg_base` = 0x00800802, `__cmd_reg` = 0x0080080E
-    and `__fifo_reg` = 0x0080080A. `_init_53c94` steps the registers by 4
-    from `_reg_base` (clock factor at +36, i.e. register 9) [K].
-  - So register n is at 0x800802 + 4n. The draft is wrong here. The emulator
-    agrees with the kernel [E].
+  - Both kernels' data say `_reg_base` = 0x00800802, `__cmd_reg` = 0x0080080E
+    and `__fifo_reg` = 0x0080080A (Nov 1994; Mar 1994 at 0x0821F3D0-F3E4).
+    `_init_53c94` steps the registers by 4 from `_reg_base` (clock factor at
+    +36, i.e. register 9) [K].
+  - So register n is at 0x800802 + 4n. Both kernels, written for the running
+    board, contradict the alpha draft, which is wrong here. The emulator
+    agrees with the kernels [E].
 - **Pseudo-DMA.** A 16-bit pseudo-DMA port at 0x800842/0x800843; the draft
   asks "WHAT DOES THIS DO?" [S `chapter9/page24`]. The emulator's reading:
   each 16-bit access moves the next two bytes of a DMA transfer, and the
@@ -420,13 +436,13 @@ named `vga_new` [K].
   - On chip: boot ROM at 0; memory-mapped I/O at 0x400-0x41F (ibuf 0x404,
     obuf 0x408, ioc 0x40C, bioc 0x41B, bio 0x41E); RAM1 at 0xE000 and RAM0
     at 0xF000, each 1K × 32.
-  - Off chip: everything from 0x10000 is Be machine memory. "After reading
-    the internal memory, the DSP jumps to address 60000000" for further boot
-    code.
+  - Off chip: everything from 0x10000 is Be machine memory. Once the DSP
+    has run its internal boot code it continues at 0x60000000, in the shadow
+    RAM.
 - **How the CPUs talk to them.**
   1. *Shared memory.* The 2 MB at 0x60000000 is the DSPs' boot and working
-     memory; the OS protects it [S `appendix/page4`]. The kernel maps it as
-     `dsp ram` [K].
+     memory; the OS protects it [S `appendix/page4`]. The kernel's
+     `sako/dsp.c` strings include `dsp ram` and `dsp sem` [K].
   2. *Reset.* The Processor Reset Register bits 4-6 hold or release DSP 1-3
      [S `appendix/page2`]. A CPU writes code into the shadow RAM and then
      releases the DSP, which boots from 0x60000000 [G, from the two facts].
@@ -441,9 +457,9 @@ named `vga_new` [K].
        [G: probably the same 0x80001F bits].
   4. *Software.* The kernel source `sako/dsp.c` [K]. The `be3` disk holds
      DSP code: `system/vcos/mml/*.s`, including `g711e.s`, `throttle.s` and
-     `src1t2.s` (sample-rate converters) [K: file listing of the software
-     agent's `be3.tgz`]. "VCOS" is AT&T's real-time OS for the DSP3210.
-- **Data book.** Not found online (§16).
+     `src1t2.s` (sample-rate converters) [disk listing: the software agent's
+     `be3` file-system dump]. "VCOS" is AT&T's real-time OS for the DSP3210.
+- **Data book.** Not found online (Sources, "Searched").
 - **What a model needs.** A boot needs none of this: the 1994 system starts
   without the DSPs, and its sound server reports an error [E]. A model can
   hold the DSPs in reset, keep the 2 MB at 0x60000000 as plain RAM, and
@@ -561,7 +577,8 @@ Other dating evidence:
 
 1. **Be machine hardware documentation**, interim drafts dated 9/15/93 and
    9/16/93. Paula Butler and Ctein to Dan Dahle, Be Labs, 16 Sep 1993.
-   Marked "CONFIDENTIAL : Be Labs, Inc."; paraphrased here, not reproduced.
+   Marked "CONFIDENTIAL : Be Labs, Inc."; paraphrased here, with only short
+   phrases quoted.
    - 176 JPEG page scans plus `letter.jpg`, `intro1.jpg` and `intro2.jpg`,
      from fsck.technology, "BeOS Hobbit Prototype Release/Documentation
      (Loose Files)".
@@ -576,10 +593,18 @@ Other dating evidence:
    - `Hobbit-9308000044.kernel`, built 1 Mar 1994: sha256
      `1c91a68995d6bb6e0fed7dc36d0141d83deb0b6bd258c5dfb76112c8b7f57aaf`.
    
-   Both are big-endian ELF, machine 0x39D, with symbol tables. Functions
-   were disassembled with `asm/hobbit_asm.py` `disassemble_parcels`. The
-   source-file names (`sako/*.c`, `isa/*.c`, `hob/*.c`) are in the
-   kernels' strings.
+   Both are big-endian ELF, machine 0x39D, with symbol tables. The source-file
+   names (`sako/*.c`, `isa/*.c`, `hob/*.c`) are in the kernels' strings. The
+   [K] reads are reproducible with three read-only tools in this repository:
+
+   ```
+   python3 -I tools/bebox_kphys.py KERNEL phram rom io ether_regs audio_regs
+   python3 -I tools/bebox_ksyms.py KERNEL _ser_init _reg_base _cpu_masks
+   python3 -I tools/bebox_kdis.py asm KERNEL _ser_init _start_cpu _get_cpu_id
+   ```
+
+   `bebox_kdis.py` runs `asm/hobbit_asm.py` `disassemble_parcels` on a
+   symbol's bytes and names call targets and data addresses.
 3. **Photographs** (held out of git: `docs/bebox_photos/MANIFEST.md`):
    - Colin M. Strickland's Flickr album "Original BeBox", 17 Jun 2011
      (S/N 9308000017, Rev. A);

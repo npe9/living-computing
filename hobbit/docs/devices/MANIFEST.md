@@ -6,13 +6,14 @@ instead of inference.  `README.md` checks each modelling choice against
 these documents.
 
 The PDFs are held on disk in this directory but kept **out of git**
-(`.gitignore`).  They are bitsavers.org mirrors of 1990-1997 vendor data
-books, and none of them shows redistribution terms; the repository is
+(`.gitignore`).  They are 1990-1997 vendor data books and sheets, all from
+bitsavers.org except the two 53C94 sheets (MIT SIPB and hackaday.io, URLs
+below), and none of them shows redistribution terms; the repository is
 public.  This is the pattern of `pim/docs/nonlocal/LIT_MANIFEST.md`.
 `sh fetch.sh` downloads whatever is missing and checks every file against
 `SHA256SUMS` (`sh fetch.sh --check` only checks).  The files were fetched with
-plain `curl` (generic user agent) from `bitsavers.trailing-edge.com`, and
-re-fetched fresh by `fetch.sh` to confirm the checksums.  The same paths are
+plain `curl` (generic user agent) from `bitsavers.trailing-edge.com` (the
+53C94 sheets from their own hosts), and re-fetched fresh by `fetch.sh` to confirm the checksums.  The same paths are
 on `bitsavers.org` and its mirrors (e.g. `bitsavers.mirrorservice.org`).
 Nothing downloaded was executed.
 
