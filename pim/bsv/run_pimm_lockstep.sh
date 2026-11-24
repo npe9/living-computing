@@ -34,7 +34,7 @@ mkdir -p build_pimm
 # Each test writes its script, the driver executes it, the test
 # compares the trace with the reference model's.
 # With arguments: only those tests (a fault injection's quick run).
-for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm file file3 pool load mrb atab cons run link unif s32 ipll p2c apply where shoen shoen2 shoen3 alt body elw reuse prio atom xmod scsi scsi@1 scsi@2 scsi@3 scsi@4 scsi@5 scsi@6}; do
+for t in ${*:-jtoa conv get4 ccode asf repl ground rpos dec0 rss dect deca gca modc lmod ext ptab pack newm file file3 pool load mrb atab cons run link unif s32 ipll p2c apply where shoen shoen2 shoen3 alt body elw reuse prio atom xmod gmul rdvc pvec tproc timer wint scsi scsi@1 scsi@2 scsi@3 scsi@4 scsi@5 scsi@6}; do
   # test@N: part N of a test with several scripts (lockstep_scsi.py --part N)
   part=
   case $t in *@*) part="--part ${t#*@}"; t=${t%@*};; esac

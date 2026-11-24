@@ -199,6 +199,19 @@ box's `spread`, the goals made through the argument registers).
 (`pimm_patch_mkdir360E.sav` through `ipl_loader:load/4`, the bench
 binding the module variable as the linker would; the hash box's
 dereference of the module field), about 7.4 M trace lines.
+`gmul`: the guard `multiply` (the multiply box) and the register
+spill `save`/`restore` (work slots in `PimmRegs.bsv`, ours), at the
+four multiply sites of `scsi_fep` in `pimm_patch_scsifep360E.sav`
+loaded through `ipl_loader:load/4`, about 2.1 M trace lines.
+`rdvc`: the guard `diff`, at `file_request_device:driver_0/10` of
+`pimm_patch_mkdir360E.sav` (loaded as for `xmod`), about 7.4 M trace
+lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`), the
+IPL's pool `ipl_pool:keyed_set/2` given vector keys. `tproc`:
+`Goal@processor(P)` with P unbound waits (rules `tq1`..`tq4`, the
+stub `to_processor`, rules `tp0`..`tpE`; from VPIM), at the one site
+of `pimm_patch_scsifep360E.sav`. `timer`: `system_timer` and
+`set_timer`, the model's clock at 0 (ours). `wint`: `write_integer`
+with a negative operand, at `scsi_fep:check_data_size1/6`.
 `scsi`: `scsi_init` and `scsi_command` (`PimmScsiBox.bsv`) at their
 sites (`scsi:create/2`, `scsi:command_executer/2`), the device on the
 tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE, a
@@ -213,10 +226,10 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 140
-instructions (a recount, 2026-11-23: 140 handlers in `pimm.py`, all on
-both models since `scsi_init` and `scsi_command` joined; 138 without our
-two stubs; the earlier 128 and 130 were increments); goals as
+State: 148
+instructions (a recount, 2026-11-24: 148 handlers in `pimm.py`, all on
+both models; 145 without our three stubs; the earlier 128 and 130 were
+increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

@@ -38,25 +38,33 @@ OURS, each for want of the FEP's own code:
     packets as the IPL cuts its own (flag 1 on all but the last).
     The IPL does not then ask for the rest (ref_scsi.py, "small
     buffer"), so in practice a reply must fit;
-  - close is answered with status 1.
+  - close is answered with status 1;
+  - append_open (203) is accepted, the bytes appended kept in
+    Fep.appended (OURS; the kernel's syslog, Fep.request);
+  - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
+    is answered with five bytes, 03 00 07 00 00 (the values of the
+    source's own canned answer, the length ours), and TEST UNIT READY
+    to a unit with no device, 0-5, with Result = completion code 8
+    (no_status), NO_DEVICE: a choice about the lost built-in, not the
+    FEP (Fep.command cites the source).
 Anything else (another unit or LUN, another CDB, another command)
 raises FepError: nothing is guessed.
 
 The kernel's FEP conversation (rung S0 of docs/scsi_plan.md;
-longrun_ipl.py --reference --go --fep, or --load FILE --go --fep):
-EMPTY so far.  Observed 2026-11-23: pim:go/4 passes scsi_init and
-stops, after 3,612 instructions, at the guard instruction multiply
-(not implemented in pimm.py) in scsi:check_lun/4, before any
-scsi_command: this device was given no command, so no answer has been
-added for the kernel.  The order of commands the PIMOS source says
-comes next is READ, not run, in docs/binary_reverse_engineering.md
-1.4, "The kernel's FEP conversation".
+longrun_ipl.py --reference --go --fep, or --load FILE --go --fep), as
+far as it goes (2026-11-24): TEST UNIT READY and INQUIRY to unit 7,
+then TEST UNIT READY to units 5, 4, 3, 2, 1, 0, then the kernel's
+first FEP message, append_open of pimos:pimos.syslog (accepted;
+docs/binary_reverse_engineering.md 1.4, "The kernel's FEP
+conversation").
 """
 import struct
 
-TEST_UNIT_READY, RECEIVE, SEND = 0x00, 0x08, 0x0a
-READ_OPEN, GETB, CLOSE, ABORT = 201, 210, 60, 70
+TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
+READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
 NORMAL, EOD, ABNORMAL = 1, 2, 5
+# scsi_command's Result for a unit with no device (OURS, Fep.command)
+NO_DEVICE = 8 << 8
 
 
 class FepError(Exception):
@@ -97,6 +105,9 @@ def unpack_message(body):
 class Fep:
     MAX_BUFFER = 16000
     UNIT, SEND_LUN, RECEIVE_LUN = 7, 0, 1
+    # the units of the bus with nothing on them: all but the FEP's 7 and
+    # PIM/m's own 6 (scsi_where's answer)
+    ABSENT = (0, 1, 2, 3, 4, 5)
 
     def __init__(self, open_file, getb_unit=1, limit=None, max_buffer=None, lag=False,
                  getb_bytes=None):
@@ -118,6 +129,8 @@ class Fep:
         self.messages = []      # ('>' or '<', device id, [command or status, args...])
         self.partial = {}       # device id -> the pieces of a continued message
         self.files = {}         # device id -> [bytes, position]
+        self.appending = {}     # device id -> the path it appends to
+        self.appended = {}      # path -> the bytes appended to it (OURS)
         self.replies = []       # packets to give, in order
         self.stopped = False
 
@@ -127,6 +140,20 @@ class Fep:
         if self.limit is not None and len(self.wire) >= self.limit:
             self.stopped = True
             return None
+        if unit in self.ABSENT and len(cdb) == 5 and cdb[0] == TEST_UNIT_READY \
+                and direction == 0 and length == 0:
+            # no device at this unit: the lost built-in's answer, not the
+            # FEP's.  OURS: Result = completion code 8, status byte 0,
+            # detail 0, which PIMOS reads as abnormal(no_status(8, 0))
+            # (bios/scsi/scsi_common.kl1:186-199,
+            # check_completion_code/4: completion-code bit 3 is the only
+            # failure code the source names); the bus scan then drops
+            # the unit without a message (bios/boot/scsi_man.kl1,
+            # inquiry/8's last clause, SCSI = []), as the manual's boot
+            # log has only unit 7 found (PIMOS manual e-sysman.tex:
+            # 103-112, "SCSI UNITS FOUND" then 7 and 0)
+            self.wire.append(('TEST UNIT READY, no device', cdb, b'', b''))
+            return NO_DEVICE, b''
         if unit != self.UNIT or len(cdb) != 5:
             raise FepError('unit %d, CDB %s' % (unit, cdb.hex()))
         op, clun = cdb[0], cdb[1] >> 5
@@ -136,6 +163,27 @@ class Fep:
         if op == TEST_UNIT_READY and direction == 0 and length == 0 and clen == 0:
             self.wire.append(('TEST UNIT READY', cdb, b'', b''))
             return 0, b''
+        if op == INQUIRY and lun == 0 and direction == 2 and clen == length == 255:
+            # the kernel's bus scan (bios/boot/scsi_man.kl1 inquiry/8,
+            # bios/scsi/scsi_common.kl1:60-70, 255 = scsi#inquiry_data_
+            # max, macro/pimos/scsi/scsi.vmac:42).  The bytes: device
+            # type 3, processor (scsi.vmac:82; scsi_man.kl1 device_type/2
+            # makes it `processor`), byte 1 0 (not removable), byte 2 7,
+            # additional length 0: the values of the source's own canned
+            # answer for a front end it does not ask, normal(scsi#
+            # processor, 0, 7, "") (scsi_man.kl1, inquiry/8 under
+            # fep_interface kl1_network).  Five bytes: OURS, the least
+            # that gives that answer (check_inquiry_command/4's
+            # `Length =:= 5` clause, scsi_common.kl1:99-106).  The FEP's
+            # packages hold no inquiry answer to copy: no symbol or
+            # literal of the kind in pimscsi.ptf's scsi_device,
+            # scsi_handler, pseudo_scsi, scsi_communicator,
+            # scsi_device_bus_management (asm/ptfdump.py; `sense` only)
+            # nor in pimfep.ptf (an inquiry answer is the target's SCSI
+            # controller's, presumably, not ESP code: INFERENCE)
+            out = bytes([3, 0, 7, 0, 0])
+            self.wire.append(('INQUIRY', cdb, b'', out))
+            return 0, out
         if op == SEND and lun == self.SEND_LUN and direction == 1 and clen == length:
             self.wire.append(('SEND', cdb, data, b''))
             self.packet(data)
@@ -182,6 +230,22 @@ class Fep:
             if data is None:
                 return [ABNORMAL]
             self.files[dev] = [data, 0]
+            return [NORMAL]
+        if cmd == APPEND_OPEN and len(msg) == 5 and dev not in self.files \
+                and dev not in self.appending:
+            # {Id, 203, "", User, Password, Path}: fep#append_open
+            # (macro/pimos/pimos/pimos.vmac:69; bios/fep_module/
+            # file_dvc.kl1 device_create/5, the reply as read_open's).
+            # The kernel's syslog (bios/boot/syslog.kl1 wait_status1/3)
+            # opens pimos:pimos.syslog so on every boot; a real FEP
+            # appends to that file.  Accepted, OURS: the stand-in keeps
+            # what is appended in memory (Fep.appended), so the boot
+            # goes the way it does with a FEP that holds the file (an
+            # ABNORMAL answer is also taken by PIMOS, with "SYSLOG
+            # ERROR: reason / cannot open file pimos:pimos.syslog" on
+            # the console).
+            self.appending[dev] = msg[4]
+            self.appended.setdefault(msg[4], bytearray())
             return [NORMAL]
         if cmd == GETB and len(msg) == 2 and dev in self.files:
             f = self.files[dev]

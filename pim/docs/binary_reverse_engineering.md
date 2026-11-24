@@ -454,34 +454,87 @@ then `--load FILE --go --fep`, the same result).
 attached as `ref_scsi.py` attaches it, and the commands that wait for
 the device are given it again whenever the machine runs dry.
 
-- **The conversation is empty.** `scsi_init` passes (OURS values,
-  `docs/pimm_semantics.md`), and no `scsi_command` is issued before the
-  model stops: the device is given 0 commands, raises no `FepError`, and
-  no answer for the kernel has been added to `fep.py`. The console
-  shows the banner only: `PIMOS V 3.600 20-May-93`. 3,612 instructions
-  run, against 1,722 without the device, which stop at `scsi_init`.
-- **The stop is not a FEP command.** It is the guard instruction
-  `multiply` (`23:F6`, `r_r_r`, `docs/kl1_encoding.md`; only the body
-  form `b_multiply` is in `pimm.py`) at cell 62160538. The cell is in the
-  loaded module `scsi`, predicate `check_lun/4`, which is
-  `bios/scsi/scsi_handler.kl1`:119-122, `LUN =< ((ExtLUN * 2040) + 7)`.
-  The trace has `put_integer 2040` just before it. The registers at the
-  stop are LUN 0, ExtLUN 4 and Unit 0. ExtLUN is element 2 of
-  `scsi_init`'s Info, the 4 that is OURS (the stand-in `scsi_blt.kl1`).
-  The call chain is `scsi:request_manager/3` on
-  `processor(Unit, LUN, Result)` (lines 49-53), then `check/4`
-  (107-111), then `check_lun/4`. The sender is the kernel's bus scan,
-  `scsi_manager:check_unit_without_myself/6` (`bios/boot/scsi_man.kl1`:
-  198-207), which asks for a processor device on every unit but its
-  own, unit 0 first. The model stops here: instructions are being
-  added to `pimm.py` by other work, and this one is recorded, not
-  implemented.
+- **First run (2026-11-23, rung S0 begun): the conversation was empty.**
+  `scsi_init` passed (OURS values, `docs/pimm_semantics.md`), no
+  `scsi_command` was issued: 3,612 instructions, the stop the guard
+  instruction `multiply` (`23:F6`) in the loaded module `scsi`,
+  `check_lun/4` (`bios/scsi/scsi_handler.kl1`:119-122, `LUN =<
+  ((ExtLUN * 2040) + 7)`, ExtLUN 4, `scsi_init`'s Info element 2, OURS),
+  for unit 0 LUN 0 of the kernel's bus scan.
+- **The loop since** (each stop, what was done; the instructions on both
+  models with a lockstep test, the FEP answers in `fep.py`):
+
+  | Stop | Done | Instructions run |
+  |---|---|---|
+  | guard `multiply` in `scsi:check_lun/4` | implemented (`lockstep_gmul.py`; with it `save`/`restore`, which its test site needs) | 3,612 |
+  | `FepError`: INQUIRY to unit 7 | answered (below) | 5,066 |
+  | guard `diff` in `scsi_manager:create_scsi_device/9` (`Type \= non_existent`) | implemented (`lockstep_rdvc.py`) | 5,198 |
+  | `FepError`: TEST UNIT READY to unit 5 | an absent unit answered (below) | 5,447 |
+  | `enqueue_goal_to_processor` with an unbound number, `bios.kl1`:383 `scsi_fep:create(..)@node(Cluster)` | not the machine: the bench's BootInfo was unbound; `longrun_ipl.py --go` now runs the IPL's own `make_boot_info/1` on it, as `ipl:boot0` does (item 11 of 1.3) | 6,500 |
+  | `wait_value` on two vectors, `keyed_bag`, the key `{0,0,0}` | implemented for vectors of atomic elements (`lockstep_pvec.py`) | 10,781 |
+  | `enqueue_goal_to_processor` with an unbound number, `scsi_manager:check_lpid_pool/7` (`bios/boot/scsi_man.kl1`:499/506, `create_scsi_device(..)@node(Cluster)`, Cluster from an `LPID_POOL` `get` in the same body) | waited for, from VPIM (`lockstep_tproc.py`; below) | 12,912 |
+  | `system_timer` in `system_timer_manager:create/3`, then `set_timer` | implemented, the clock at 0, OURS (`lockstep_timer.py`) | 13,695 |
+  | `write_integer` with bit 23 set, `scsi_fep:check_data_size1/6` `L = [-1\|NL]` | the 24 bits are signed, the assembler's c24 form (`lockstep_wint.py`) | 14,482 |
+  | `FepError`: the kernel's first FEP message, `append_open` of `pimos:pimos.syslog` | answered (below) | 15,331 |
+  | `wait_vector_0`, `scsi_fep:receive_packet2_1/8` | implemented (`lockstep_alt.py`) | 16,104 |
+  | `apply(Code, {})`, a predicate of no argument | implemented (`lockstep_apply.py`) | 17,501 |
+  | `diff` of a structure and an atom, `task_handler` | succeeds, as KLIC and PDSS have it (`lockstep_rdvc.py`) | 22,630 |
+  | `enqueue_goal_to_processor` waiting, 10 arguments | the stub's limit raised from 9 to 11 | 22,902 |
+  | `jump` (not implemented) at 4838147 | **the stop now**, not looked into | 23,348 |
+
+  The console is still the banner alone, `PIMOS V 3.600 20-May-93`.
+  With the BootInfo string the cluster of `create_os_device/3` is bound
+  where without it it was not: so the held `pimm_bios360E.sav` takes
+  `decompose_boot_info`'s elements, not the constants branch of 1.3
+  item 11 (INFERENCE from the two runs).
+- **The conversation so far** (every command the device is given, in
+  order; `python3 ref/pimm/longrun_ipl.py --load FILE --go --fep`):
+
+  | # | Unit, LUN | Command | Answer (all OURS where not the source's) |
+  |---|---|---|---|
+  | 1 | 7, 0 | TEST UNIT READY, CDB `00 00 00 00 00` | Result 0 |
+  | 2 | 7, 0 | INQUIRY, CDB `12 00 00 00 ff`, 255 bytes in | 5 bytes `03 00 07 00 00`: device type 3 (processor, `scsi.vmac`:82), not removable, byte 2 7, additional length 0. The values are the source's own canned answer for a front end it does not ask, `normal(scsi#processor,0,7,"")` (`scsi_man.kl1`, `inquiry/8` under `fep_interface` `kl1_network`); the length is OURS, the least that gives that answer (`scsi_common.kl1`:99-106). No inquiry data was found in `pimscsi.ptf` or `pimfep.ptf` (`asm/ptfdump.py`: the classes `scsi_device`, `scsi_handler`, `pseudo_scsi`, `scsi_communicator`, `scsi_device_bus_management` have `sense` and nothing of the kind) |
+  | 3-8 | 5, 4, 3, 2, 1, 0; LUN 0 | TEST UNIT READY | no device: Result `800h`, completion code 8, which PIMOS reads as `abnormal(no_status(8,0))` (`scsi_common.kl1`:186-199: bit 3 of the completion code is the only failure code the source names); the scan then drops the unit with no message (`scsi_man.kl1` `inquiry/8`'s last clause). OURS, a choice about the lost built-in, not the FEP; the manual's boot log finds unit 7 only (`e-sysman.tex`:103-112, "SCSI UNITS FOUND", then 7 and 0) |
+
+  | 9 | 7, 0 | SEND, the packet of device 16: `append_open` (203, `macro/pimos/pimos/pimos.vmac`:69), `{16, 203, "", 0, 0, "pimos:pimos.syslog"}` in JIS, the kernel's syslog (`bios/boot/syslog.kl1` `wait_status1/3`, on every boot) | accepted, `[1]` (normal), OURS: the stand-in keeps what is appended in memory (`Fep.appended`), as a FEP holding the file would append to it. PIMOS also takes an abnormal answer, with "SYSLOG ERROR: reason / cannot open file pimos:pimos.syslog" on the console (`syslog.kl1`); the real FEP's answer is not held |
+  | 10 | 7, 1 | RECEIVE, the reply | as before |
+
+  Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
+  The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) replays
+  the tapes of `ref/pimm/fep_tapes/`, which are the IPL's parts and the
+  "direct" sequence only: it still passes, and covers none of the
+  kernel's commands above (INQUIRY to unit 7, TEST UNIT READY to the
+  absent units 0-5, `append_open`); it refuses another unit or CDB
+  (`whyUnitCdb`). Not changed here (another agent's file).
+- **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
+  lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
+  labelled "carried over from VPIM, agreeing with KLIC; the PIM/m
+  firmware's behaviour is not held"). The readings, as recorded:
+  `Goal@node(N)` with N unbound: the cluster number comes from a pool's
+  answer in the same clause body, so on every boot the number is
+  unbound when the goal is made, and refusing cannot be the machine's
+  behaviour. VPIM, PIM's own virtual machine (`vpim.tar.Z`,
+  `src/interpreter/klb_fork.psl.c` `klb_enqueue_to_processor`, its
+  comment at lines 406-447, EUC Japanese): when Rpe is unbound, (1)
+  the goal's arguments are made a vector, (2) the goal record is
+  reclaimed, (3) a D-code goal `dcode_enqueue_processor(Processor,
+  Code, Argv) :- integer(Processor) | dcode_apply(Code,Argv)@processor
+  (Processor)` is made and hooked on Rpe: the goal WAITS for the
+  number. KLIC agrees (`runtime/sched.c` `enqueue_throw_goal`, 267-330:
+  a goal of `wait_penum_preds` waits for the node number). PDSS, a
+  single processor, drops the number at compile time
+  (`compiler/outp.kl1`:360-363: `enqueue_to_processor` and
+  `enqueue_to_node` become `enqueue_goal`), which would let a later
+  non-zero number pass silently. The VPIM reading is a parked goal of
+  a new stub on both models (`asm/pimm_stubs.py` `TO_PROCESSOR`); the
+  stubs were appended, so no earlier stub moved and no pin changed.
 
 What the source says comes next (READ, not run; to be confirmed by
 the run once guard `multiply` exists; the build switches of the
 held object were not checked):
 
-1. The bus scan sends TEST UNIT READY to each unit 0-7 except its own,
+1. (CONFIRMED by the run, in the order 7, then 5 down to 0.) The bus
+   scan sends TEST UNIT READY to each unit 0-7 except its own,
    6 (`scsi_where`'s answer). That is `scsi_man.kl1`:198-216 and
    `test_unit_ready/7` (218-227), with the CDB from
    `scsi_common.kl1`:35-42. A unit that answers gets an INQUIRY:
@@ -518,8 +571,8 @@ held object were not checked):
    (`fep_utility:set_value/2`, `fep_util.kl1`), or the results are set
    to `fep#nil`.
 
-`pimfep.ptf` was not needed: no constant had to be chosen, since no
-FEP command was reached. What was extracted for the next run
+`pimfep.ptf` was not needed for a FEP message yet: the commands met so
+far are SCSI ones (above). What was extracted for the next run
 (`python3 asm/ptfdump.py pimfep CLASS`):
 
 - `pimos_scsi_front_end`: version "V0.45", "14-Jan-94", comment

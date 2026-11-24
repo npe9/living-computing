@@ -15,7 +15,22 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   during the kernel's bus scan, before any `scsi_command`. So the FEP
   conversation is still empty. `docs/binary_reverse_engineering.md`
   1.4, "The kernel's FEP conversation". `--save`/`--load` cache the
-  machine after the link.)* On the Bluespec core the whole
+  machine after the link.)* *(Later 2026-11-23: guard `multiply`,
+  `save`/`restore`, `diff` and `wait_value` on vectors on both models;
+  `fep.py` answers INQUIRY to unit 7 and TEST UNIT READY to the absent
+  units 0-5 (OURS, sourced in 1.4); `--go` makes BootInfo with the
+  IPL's `make_boot_info/1`. The kernel's bus scan completes: 8 SCSI
+  commands, 12,912 instructions; no FEP packet yet. The stop is
+  `enqueue_goal_to_processor` with an unbound node number, a choice
+  about the firmware recorded in 1.4 with VPIM's and KLIC's reading
+  (wait for the number) and PDSS's (ignore it).)* *(2026-11-24: the
+  wait implemented from VPIM, as the session lead decided; then
+  `system_timer`/`set_timer` (the clock at 0, ours), signed
+  `write_integer`, `wait_vector_0`, `apply` with `{}`, `diff` of a
+  structure and an atom, all on both models; `fep.py` answers the
+  kernel's FIRST FEP MESSAGE, `append_open` of `pimos:pimos.syslog`
+  (accepted, ours). 23,348 instructions, 10 SCSI commands, the console
+  still the banner alone; the stop `jump`, not implemented (1.4).)* On the Bluespec core the whole
   IPL load is identical (447,739,516 trace lines); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
