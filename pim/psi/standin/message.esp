@@ -1,0 +1,36 @@
+% SCAFFOLDING stand-in for SIMPOS's class `message`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `message` is printed.  Every slot and method is INTERPOLATED (labelled)
+% from:
+%   - TR-056 p.12 (PDF p14, §4(2)): a message "has a sender slot ..., a
+%     receiver slot ..., and a body (an object to be sent).  Class
+%     'message' inherits class 'as_message' to include the first two
+%     slots";
+%   - TM-100 p.14 (PDF p16): "A message is defined by class 'message'";
+%   - docs/simpos/required/classes.tsv (row `message`): the held programs
+%     send it create/2, create/4, new/2 and set_content/2, and pimscsi's
+%     cmt (nature `simpos##message`) sends get_content/2 to itself.
+% Model (OURS): the body in a slot named `body`, read and written by
+% get_content/2 and set_content/2 (the held selectors).  create/2 and
+% create/4 are not stood in: no pimfep or pimscsi method reaches them.
+
+class message has
+
+% INTERPOLATED from: TR-056 p.12 "Class 'message' inherits class
+% 'as_message'".
+nature as_message;
+
+instance
+
+% INTERPOLATED from: TR-056 p.12's "a body (an object to be sent)".
+attribute body;
+
+% INTERPOLATED from: the held set_content/2 (required/classes.tsv) and
+% TR-056 p.12's body.
+:set_content(Message, Content) :-
+        Message!body := Content;
+% INTERPOLATED from: pimscsi##cmt's get_content/2 sends, and TR-056 p.12.
+:get_content(Message, Content) :-
+        Content = Message!body;
+
+end.

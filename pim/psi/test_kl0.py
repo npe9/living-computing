@@ -92,9 +92,20 @@ kl0.py, and into espc.py for the last; both test files run; observed):
     errors and test_fep_census fails.
   - search_character/5 (step 3c) starts one past B: nothing here;
     test_espc test_held_source fails.
+Step 3d rows (2026-11-24, injected into kl0.py from a backup in the
+session scratchpad, restored with cp and checked with cmp; both test
+files run; observed):
+  - vector_to_list (blt 6e) writes the list over A_V instead of A_L: only
+    test_step3d_cells fails;
+  - put_vector_4 (pmi b4) makes three elements: only test_step3d_cells
+    fails (the compiled and held paragraph code fail alike, so test_espc's
+    behaviour census does not see it);
+  - put_variable_t (pmi a1) with A != X binds only A_A: only
+    test_step3d_cells fails; the FEP census totals are unchanged.
 """
 import os
 import sys
+import types
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -130,8 +141,62 @@ class Table(unittest.TestCase):
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
-        # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68)
-        self.assertEqual(len(rows), 109)
+        # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
+        # 109 before step 3d's four (blt 6e 34, pmi b0 b4)
+        self.assertEqual(len(rows), 113)
+
+    def test_step3d_cells(self):
+        # step 3d's rows on their witness operands, handlers alone
+        # (2026-11-24)
+        m = machine()
+        A = K.Atom
+        # dict_io.esp:55 `6e 00 03 00` (L over V) and BCMSEQUEN.ESP:432
+        # `6e 03 00 00` (V in X3, the list out in A0 over the tail)
+        for ops in ((0, 3, 0), (3, 0, 0), (0, 1, 2)):
+            m.reset()
+            m.x[ops[0]], m.x[ops[1]] = K.Vec([A('a'), 2, A('c')]), K.NIL
+            m.op_vector_to_list(None, 0, *ops, None)
+            self.assertEqual(repr(m.x[ops[2]]), '[a,2,c]', ops)
+        m.reset()
+        m.x[0], m.x[3] = K.Vec([]), K.NIL
+        m.op_vector_to_list(None, 0, 0, 3, 0, None)
+        self.assertIs(m.x[0], K.NIL)
+        # unwitnessed: a tail other than [] (vrm.esp:595's `_`), a heap vector
+        for v, t in ((K.Vec([1]), K.Var()), (K.Vec([1], heap=True), K.NIL)):
+            m.reset()
+            m.x[0], m.x[3] = v, t
+            with self.assertRaises(K.Refusal):
+                m.op_vector_to_list(None, 0, 0, 3, 0, None)
+        # p_tgraph.esp:299 `b4 03`, four unify_value_p, then `34 01 00 02`
+        # + `integer 03000000`: set_subvector(Hv,0,4,{X,Y,W,H})
+        m.reset()
+        m.op_put_vector_4(None, 0, 3, 0, 0, None)
+        v4 = m.x[3]
+        self.assertEqual(len(v4.args), 4)
+        for i, e in enumerate((10, 20, 30, 40)):
+            m.unify(v4.args[i], e)
+        # the operand cell after the instruction (only `cells` is read)
+        code = types.SimpleNamespace(id='test', cells={1: (1, 0x00, 0, 0x03000000)})
+        m.x[0], m.x[1], m.x[2] = 0, K.Vec([0] * 4, heap=True), 4
+        m.pc = 'here'
+        m.op_set_subvector(code, 0, 1, 0, 2, None)
+        self.assertEqual([K.deref(e) for e in m.x[1].args], [10, 20, 30, 40])
+        # typewin.esp:259 `b0 01`: {} in A1
+        m.reset()
+        m.op_put_vector_0(None, 0, 1, 0, 0, None)
+        self.assertEqual((type(m.x[1]), m.x[1].args, m.x[1].heap), (K.Vec, [], False))
+        # bar_v.esp:384 `45 00 01 06` and as_pred.esp:254 `46 04 0b 00`:
+        # the result in another register than the operand
+        m.reset()
+        m.x[0], m.x[4] = 7, 30
+        m.op_add_immediate(None, 0, 0, 1, 6, None)
+        m.op_subtract_immediate(None, 0, 4, 11, 0, None)
+        self.assertEqual((m.x[0], m.x[6], m.x[4]), (19, 8, 30))
+        # p_tgraph.esp:70-72 `a1 00 02`: one new variable in A0 and X2
+        m.reset()
+        m.op_put_variable_t(None, 0, 0, 2, 0, None)
+        self.assertIs(m.x[0], m.x[2])
+        self.assertIsInstance(m.x[0], K.Var)
 
     def test_string_cells(self):
         # the string rows' witness operands, run on the handlers alone:
@@ -400,7 +465,10 @@ class Census(unittest.TestCase):
         # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
             'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
-            'receiver not an object': 8, 'unbound argument': 20, 'operand': 17,
+            # step 3d: subtract_immediate with R != A is witnessed, so six
+            # methods go further; five stop at divide_immediate (R != A, still
+            # unwitnessed) and up_down_icon code/4 at an unbound argument
+            'receiver not an object': 8, 'unbound argument': 21, 'operand': 16,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
