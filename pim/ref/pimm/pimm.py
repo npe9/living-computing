@@ -2194,13 +2194,13 @@ class Machine:
         # each element dereferenced and its MRB set if the vector's
         # is, enqueue).  The arguments go through the argument
         # registers, as for enqueue_goal.  The exceptions are refused;
-        # so are a vector of seven or more (its size is in memory) and
-        # the empty vector (no test can run a predicate of no argument:
-        # the image's three are boot, boot0 and noop).
+        # so is a vector of seven or more (its size is in memory).  The
+        # empty vector makes a goal of no argument (2026-11-24: met in
+        # pim:go/4 with the device).
         def f(code, args):
             n = self.vsize(args)
             head = self.mem[code[1] - 2] if code[0] == COD else None
-            if head is None or head[0] != PREDH or not n or n > 6 or n != head[1] >> 24:
+            if head is None or head[0] != PREDH or n is None or n > 6 or n != head[1] >> 24:
                 raise Unimplemented('built-in exception: apply(%r, %r)' % (code, args))
             for i in range(n):
                 self.argv[i + 1] = self.taken(args[1] + i, single=not args[0] & 1)

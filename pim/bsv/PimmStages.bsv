@@ -1774,7 +1774,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule apply1 (st == XAp1);
     let h <- smem.data;
     if (h.tag != tag_PREDH || h.val[31:24] != applyN) stop(EndUnimp);
-    else if (applyN == 0) stop(EndUnimp);   // the empty vector: not run, refused
+    else if (applyN == 0) begin
+      // the empty vector: a goal of no argument
+      gbox.record(fromInteger(lay_READY), cellAddr(vals[0]), 0, True, True);
+      st <= XEnq;
+    end
     else begin
       packK <= 0;
       smem.read(cellAddr(vals[1]));
