@@ -19,8 +19,11 @@ nothing here was run on a model. The packet and SCSI levels are in
 - PSI side: `python3 asm/ptfdump.py pimfep fep_command_code_table
   --pairs` (the FEP's code/name table, re-run for this document) and
   `python3 asm/ptfdump.py pimfep [CLASS]` (class and method lists).
-  Compiled ESP: names, arities and literals only; no method body was
-  read, so **no argument or reply layout is confirmed by the PSI side.**
+  Compiled ESP: names, arities and literals only. Sections 1 to 5 were
+  written with no method body read. **Section 6 reads the method
+  bodies** (`psi/fepread/`) and settles U1 to U5 and the PSI half of
+  U6; where a sentence of sections 1 to 5 says the PSI side is not
+  known, section 6 is the later word.
 - Manual: `docs/nonlocal/pimosman.tar.Z`, `Eman/*.tex`.
 
 **Caveat on the object.** The held boot loads twelve patch files after
@@ -120,7 +123,7 @@ the 63 codes stands in the `--pairs` output under the same name, as do
   (`server/fep/file/fileRdvc.kl1` `convert_upn/8`, 654-674); the six
   strings are widened (0) or converted from EUC (1) (541-558). The
   codes are `fep#jiskanji` 0, `euc` 1, `jis` 2, `sjis` 3
-  (`pimos.vmac`:159-162, C). What the PSI answered is not held (U1).
+  (`pimos.vmac`:159-162, C). The PSI answers Code 0 (§6.3).
 - `getb` through the file server asks for bytes: `Size*2+1` for a
   16-bit read (`file_dvcb.kl1`, §1.4 "the unit of 7936").
 
@@ -175,7 +178,8 @@ start, `"simpos_user_device"`, `"pimos_remote_login_replier"`,
 class in `pimfep.ptf` with an instance method `io/4` (`ptfdump.py
 pimfep`: MEASURED). That 601 makes an object of the class named is an
 INFERENCE from `pimos_string_io_invoker`'s `create_string_io/10` and
-its local `get_class_object/3`; the code was not read.
+its local `get_class_object/3`; the code has since been read and says
+so (§6.4).
 
 ### 2.6 Window (`bios/fep_module/win_dvc.kl1`)
 
@@ -213,7 +217,9 @@ its local `get_class_object/3`; the code was not read.
   130, 124, 121, 141, 142, 111, 110, 112, 145
   (`binary_reverse_engineering.md` §4.3). 127, 132 and 143, which the
   login console sends first (section 3 step 15), are not among them;
-  where the PSI handles them was not found (U4).
+  they are methods of `pimos_window_editor`, and
+  `pimos_standard_io_window` is a string-I/O program, not the window
+  device (§6.4, §6.8).
 
 ### 2.7 Socket (`bios/fep_module/soc_dvc.kl1`)
 
@@ -243,7 +249,7 @@ its local `get_class_object/3`; the code was not read.
   PSI's table either.
 - PSI only (`fep_command_code_table`): 900 creation_fail, 901
   all_device_end, 902 remote_echo_check, 903 device_end. PIMOS has no
-  name for them; whether the PSI ever sends them to PIMOS is U5.
+  name for them; the PSI sends them only to another FEP (§6.6).
 
 ## 3. The start, from the banner to a shell
 
@@ -336,7 +342,8 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
     FEP (`login.kl1` `get_node_info/3`, 1244-1258; UN, UP the PIMOS
     user and password, RN, RP the FEP's). The unit of an element (the
     reply is widened to 16 bits) is P; what the real requester puts
-    there is U2.
+    there is in §6.5: the ID is 0 for the first login, the strings
+    are 16-bit, and RN, RP are never null.
 13. PIMOS: replier **620** `io(1, [ID] ++ "Login procedure starts.")`;
     the server device re-armed with **620** `io(1, " ")`
     (1005-1012).
@@ -380,6 +387,10 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
 | The window calls and their parameters | What a window is: where `putb` text goes, where a `getl` line comes from, echo and line editing |
 | The date and time units | The clock |
 
+Since §6 the right-hand column is smaller: five of 240's seven
+values, the replies to `io(0, ..)` and to the replier's commands, and
+NI's ID and Node are read from the PSI's code (§6.3-6.5), not OURS.
+
 **A minimal honest FEP for R6.** R6 is "Login and a shell prompt; a
 shell command that only needs the kernel runs" (`pimos_roadmap.md`
 §2), so it needs all of A-D. In order: 203 (done); 310, 304 (done),
@@ -391,7 +402,8 @@ console shows the two LOGIN SERVICE lines, the end of the manual's
 boot log; everything up to here is PIMOS's move and can be checked
 against that log. Then OURS begins in earnest: a scripted login (an
 NI answering the held `io(1)`), 620 commands 1 and 2 on the replier,
-`simpos_user_device` (or a login with RN = RP = 0, U3), status 5 for
+`simpos_user_device` (the real requester always sends an RN and RP,
+§6.5; a login with RN = RP = 0 would be OURS), status 5 for
 `me:pimos.init`, 104/127/130/132/143, 201 of the home directory's
 `shell.com` and `pimos.com`, then 111/112/110 with the lines of a
 script.
@@ -415,7 +427,9 @@ Weaker than the source allows, or to check:
   shutdown, each window). (The other agent has since added a timer
   close; not in this tree.)
 - 70 is given no reply for any device. Right for the IPL's client;
-  for the kernel's it is U6.
+  the PSI assembles none either (§6.7), but it answers the request
+  the 70 interrupts with status 6, which `fep.py` does not. Whether
+  the kernel's client waits for that is U6.
 - 80 with device id -1 raises `FepError`.
 - No reply is ever unsolicited: no attention (`{Id, 3}`), no deferred
   reply (303's alarm, the pending `io(1)`). The reply queue is one
@@ -440,13 +454,425 @@ branch), the other window calls.
 
 | | Unknown | What would settle it |
 |---|---|---|
-| U1 | The PSI's answer to 240 (Code, OS, Host, FepVer, Dir, FileVer, Comment). FepVer may be the "V0.45" of `pimos_scsi_front_end` (§1.4): INFERENCE | Decoding `pimfep.ptf`'s handler for key 240 in `pimos_scsi_front_end:command_type/2` (the KL0 disassembler of §4.4), or running `pimfep` under SIMPOS (P5). Until then Code 0 is the choice with a reason: the PSI's own code is 16-bit JIS |
-| U2 | The exact NI the PSI's login requester sends (ID's range, whether strings are JIS, a null RN/RP for a local login) | `pimos_remote_login_server`'s `check_message/6` and `as_pimos_login_requester` in `pimfep.ptf`, decoded; or P5 |
-| U3 | The replies to `io(0, "")`, `io(0, "local")` (only the status is used by PIMOS, `login.kl1`:966) and `simpos_user_device`'s Dir | The same classes' `io/4` |
-| U4 | Where the PSI handles 127, 132, 143 (not keys of `pimos_standard_io_window`) | `ptfdump.py pimfep pimos_window`, `pimos_window_process`, `pimos_window_editor` hash keys |
-| U5 | Whether the PSI sends 900-903 to PIMOS, and what PIMOS's receiver does with a status it has no clause for (a reply of status 900 would go through `set_value/2`'s second clause as that status) | The senders in `pimfep_message_sender`; on our side a test with the reference model |
-| U6 | Whether the kernel's client expects a reply to 70, and what the FEP answers to the request it interrupts | Tracing `receive(Vars, Result)` after `device_abort0` in `file_dvc.kl1` and `scsi_fep.kl1`'s sender; the PSI's `abort_timer`, `device_abort/1` |
+| U1 | **SETTLED but for two SIMPOS values (§6.3).** The PSI's answer to 240 is `{Id, 1, 0, "SIMPOS " ++ V, Host, "V0.45", ">", ".", ""}`. Still open: V (`:version` of `simpos##version`) and Host (`:get_my_node` of `simpos##network_node_name`), which SIMPOS supplies | SIMPOS's `version` class (not in the held packages), or a photograph or log of a PSI's version line; PIMOS shows neither value in the start, so a stand-in may choose both (OURS) |
+| U2 | **SETTLED (§6.5).** NI is `[ID, len Node, n1..n4] ++ Node ++ RN ++ RP ++ UN ++ UP`, 16-bit; ID is the smallest free integer from 0; Node `"local"`; RN, RP are the SIMPOS user's local name and password, never null. Still open: nothing in the layout; H and L of the requester's own message rest on unwitnessed arithmetic opcodes (they do not reach PIMOS) | A document giving the KL0 built-in numbers, or the interpreter run against `paragraph`'s source |
+| U3 | **SETTLED (§6.4).** `io(0, "")` on the replier and `io(0, "local")` on the server answer `""`; replier command 1 answers one character 0 (sent) or 1; `simpos_user_device` answers the user's directory from SIMPOS's `pathname`, or `">"`. Still open: the directory string a real SIMPOS user gets (SIMPOS's `remote_or_local/6`, not held) | P5 (pimfep under SIMPOS); a stand-in may answer `">"`, the PSI's own fallback |
+| U4 | **SETTLED (§6.2, §6.8).** 127, 132, 143 are `pimos_window_editor` `reshape/7`, `set_font/4`, `show/3`; all 63 codes have a PSI handler. Still open: `refute/3` (SIMPOS's, not held) is taken to call the method named, from the arities; the 8-element `get_max_size` has no PSI clause | The `refute` method of SIMPOS's object class; a grep of the patch files' objects for a sender of the 8-element 103 (U8) |
+| U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. Grade: READ FROM CONSTANTS, with the clause chaining of `fep_scsi_output put/4` (unwitnessed `c2`/`d3`) as the one INFERENCE under "903 is dropped" | A KL0 opcode document, or the first close on the real link |
+| U6 | **PARTLY (§6.7).** PSI half settled: no reply to 70; the interrupted timer, `io`, `getl`, socket `getb`/`accept` request is answered `{Id, 6}`; nothing found for a file or directory request. Still open: whether the kernel's client expects a reply to 70 (the PIMOS half), and what `tag_catch/9` does to a file request in progress | Tracing `receive(Vars, Result)` after `device_abort0` in `file_dvc.kl1` and `scsi_fep.kl1`'s sender; SIMPOS's `tag_catch` |
 | U7 | The form of `File_names` (237, 238) and of `Attributes` (222) | `server/fep/file/dir_dvc.kl1`, `file_dvcb.kl1` (held, not read for this) and `pimos_directory` |
 | U8 | Whether the held object asks for `pimos:autoload.tbl`, and whether its Fep and SCSI modules equal this source (the patch files) | The run itself; `asm/kl1decomp.py` on `pimm_patch_fepsv360E.sav` and `pimm_patch_scsifep360E.sav` |
 | U9 | Which window is the login shell's standard I/O (the console of step 15 or a new one), and whether a user with no partition gets the "Enter your partition ?" dialogue (`server/login/login/login_p.kl1`) | Reading `login_sv.kl1`:1517-1541 with `login_p.kl1`; then the run |
 | U10 | How `pimos:` and `me:` were resolved on the PSI. Held: they are SIMPOS logical names (`object/INSTALL`:8-9; `login.com` defines `pimos` as `>sys>csp>PIMOS.DIR` and `me` as `user:pmpsi`); `docs/simpos/` and `psi/` were searched for `pimos.init`, `autoload` and `simpos_user_device`: nothing beyond a format note | Nothing more is needed for a stand-in: serve `pimos:NAME` from the held `object/`, as INSTALL installs it |
+
+## 6. The PSI side, read from `pimfep.ptf` (2026-11-24)
+
+The compiled method bodies of `pimfep.ptf` were read with
+`psi/fepread/` (`ptfread.py` lists a predicate with its constant pool
+resolved; `fepfacts.py` computes what this section states;
+`python3 -I psi/fepread/check.py` pins it, 38 checks). Nothing was
+executed: there is no KL0 interpreter in this tree, and no SIMPOS.
+
+**How it was read, and the grades.** No held document gives KL0 opcode
+numbers, so an instruction is named only where a witness shows what it
+does: 36 readings stand beside the held ESP source of the same clause
+in `paragraph.ptf`, 4 beside the PIMOS source for the other end of the
+same message (`psi/fepread/witness.py`, checked). The opcodes used
+without a witness are listed there too.
+
+- **READ FROM CONSTANTS**: the value is a literal (integer, string,
+  atom, class reference, selector) in the cells, placed by witnessed
+  instructions.
+- **CROSS-END**: as above, and PIMOS's source independently expects
+  the same thing.
+- **INFERENCE**: rests on an unwitnessed opcode, or on the name of a
+  SIMPOS method whose code is not held.
+
+What a SIMPOS call *returns* is never known here: `simpos##` classes
+are not held. Such values are named by the call that produces them.
+
+**Mechanics found on the way** (MEASURED on the six PIM packages;
+for `psi/README.md` "Cell numbering" and the KL0 interpreter):
+
+- A hash-switch table spans `mask+1 + 2*keys + 2` cells. With that
+  span all 9,815 predicates end four cells before the next entry and
+  every local call lands on an entry; 142 of them hold a table, with
+  no miss. The header word `ptfdump.py` calls `size` is the miss
+  offset (cell + 2 + word), not a size.
+- The trailer's terms are cells 2 to h2-1 of the class's code object,
+  one top-level term a cell (`8b00 0d00 n` is one term, a class
+  reference by symbol number): all 47 classes of `pimfep`, 548 of the
+  554 of the six packages. An instruction's negative 16-bit operand
+  addresses cell + 2 + operand, a pool cell or a predicate.
+- `0308 n` is an 8-bit string of n bytes (not n words).
+- In a method the receiver is in the last argument register, the
+  other arguments in r0 upward.
+
+### 6.1 How a command reaches its handler
+
+READ in `pimos_scsi_front_end` (the main loop `$or$0/3`: `get/3`,
+`get_command/2`, `command_type/2`, `refute_command/3`,
+`check_fep_end/4`):
+
+1. `command_type/2` sorts the command number: `server` for 103, 240,
+   70, 80, 901, 902; `device_create` for 104, 102, 201-205, 310, 601,
+   801; `device` for every other number (the last clause has no test).
+2. `server`: the message is disassembled into a vector and matched by
+   the clauses of `refute_server_command/3`, on (length, command):
+   (6, 103), (3, 240), (2, 70), (2, 902), (2, 80), (2, 901).
+3. `device_create`: `fep_device_class/2` gives the class
+   (104, 102 `pimos_window_process`; 201-203 `pimos_file`; 204, 205
+   `pimos_directory`; 310 `pimos_timer`; 601
+   `pimos_string_io_invoker`; 801 `pimos_tcpip_socket`), and
+   `:refute(Class, Name, Args)` is sent with the command's name from
+   `fep_command_code_table`. Args is the message vector with three
+   more elements, so the class method has arity message length + 4.
+   The node argument is tested first (`is_self_node/2`): a 16-bit
+   string that is empty, or equal to the FEP's own node name, or the
+   same IP address, is this FEP; any other node forwards the message
+   to that FEP (`get_node_stream/3`), or fails the creation.
+4. `device`: the raw message is put on the stream of the device with
+   that id (`device_table`, `get_at/5`). The device's own process
+   takes it (`as_pimos_device` local `refute/3`), converts the command
+   number to its name and sends `:refute(Device, Name, Vector)`; a
+   failure is answered `{Id, 5}`. For a window the device
+   (`pimos_window_process put/2`) hands the message to its
+   `pimos_window`, whose `kl1_message/2` does the same on the window's
+   **editor**. So a device command is the instance method of that
+   name, with arity PIMOS's argument count + 3.
+
+`refute/3` is not in `pimfep.ptf`. That it calls the named method with
+the vector's elements is INFERENCE, from the arities: they fit in all
+63 rows below.
+
+### 6.2 The 63 commands and their PSI handlers
+
+Generated by `python3 -I psi/fepread/fepfacts.py handlers`. The name
+is `fep_command_code_table`'s for the code; the class is the device
+class of §6.1; the method was found by name and arity.
+
+| Code | Name | PIMOS device (§2) | PSI handler |
+|---|---|---|---|
+| 60 | close | every | `as_pimos_device close/3` |
+| 70 | abort | every | `pimos_scsi_front_end refute_server_command/3, a 2-element message` |
+| 80 | terminate | link | `pimos_scsi_front_end refute_server_command/3, a 2-element message` |
+| 201 | read_open | file | `class pimos_file read_open/10` |
+| 202 | write_open | file | `class pimos_file write_open/10` |
+| 203 | append_open | file | `class pimos_file append_open/10` |
+| 240 | fep_attributes | file | `pimos_scsi_front_end refute_server_command/3, a 3-element message` |
+| 210 | getb | file; socket | `pimos_file getb/4`; `pimos_tcpip_socket getb/4` |
+| 220 | end_of_file | file | `pimos_file end_of_file/3` |
+| 111 | putb | file; window; socket | `pimos_file putb/4`; `pimos_window_editor putb/4`; `pimos_tcpip_socket putb/5` |
+| 112 | flush | file; window; socket | `pimos_file flush/3`; `pimos_window_editor flush/3`; `pimos_tcpip_socket flush/3` |
+| 221 | pathname | file; directory | `pimos_file pathname/3`; `pimos_directory pathname/3` |
+| 222 | attributes | file | `pimos_file attributes/3` |
+| 204 | directory | directory | `class pimos_directory directory/10` |
+| 205 | make_directory | directory | `class pimos_directory make_directory/10` |
+| 237 | listing_all | directory | `pimos_directory listing_all/4` |
+| 231 | delete | directory | `pimos_directory delete/4` |
+| 239 | kill | directory | `pimos_directory kill/4` |
+| 232 | undelete | directory | `pimos_directory undelete/4` |
+| 238 | deleted_all | directory | `pimos_directory deleted_all/4` |
+| 233 | purge | directory | `pimos_directory purge/4` |
+| 235 | expunge | directory | `pimos_directory expunge/3` |
+| 310 | create_timer | timer | `class pimos_timer create_timer/9` |
+| 301 | get_count | timer | `pimos_timer get_count/3` |
+| 302 | on_at | timer | `pimos_timer on_at/4` |
+| 303 | on_after | timer | `pimos_timer on_after/4` |
+| 304 | get_date_time | timer | `pimos_timer get_date_time/3` |
+| 601 | create_string_io | string_io | `class pimos_string_io_invoker create_string_io/10` |
+| 620 | io | string_io | `as_pimos_string_io_device io/5` |
+| 104 | create_window | window | `class pimos_window_process create_window/9` |
+| 102 | create_with_buffer | window | `class pimos_window_process create_with_buffer/10` |
+| 103 | get_max_size | window | `pimos_scsi_front_end refute_server_command/3, a 6-element message` |
+| 110 | getl | window | `pimos_window_editor getl/3` |
+| 113 | beep | window | `pimos_window_editor beep/3` |
+| 114 | ungetb | window | `pimos_window_editor ungetb/4` |
+| 121 | set_inside_size | window | `pimos_window_editor set_inside_size/5` |
+| 120 | set_size | window | `pimos_window_editor set_size/3` |
+| 124 | set_position | window | `pimos_window_editor set_position/5` |
+| 123 | set_position_by_mouse | window | `pimos_window_editor set_position_by_mouse/3` |
+| 127 | reshape | window | `pimos_window_editor reshape/7` |
+| 126 | reshape_by_mouse | window | `pimos_window_editor reshape_by_mouse/3` |
+| 130 | set_title | window | `pimos_window_editor set_title/4` |
+| 132 | set_font | window | `pimos_window_editor set_font/4` |
+| 140 | select_buffer | window | `pimos_window_editor select_buffer/4` |
+| 146 | buffer_name | window | `pimos_window_editor buffer_name/3` |
+| 141 | activate | window | `pimos_window_editor activate/3` |
+| 142 | deactivate | window | `pimos_window_editor deactivate/3` |
+| 143 | show | window | `pimos_window_editor show/3` |
+| 144 | hide | window | `pimos_window_editor hide/3` |
+| 145 | clear | window | `pimos_window_editor clear/3` |
+| 122 | get_inside_size | window | `pimos_window_editor get_inside_size/3` |
+| 125 | get_position | window | `pimos_window_editor get_position/3` |
+| 131 | get_title | window | `pimos_window_editor get_title/3` |
+| 133 | get_font | window | `pimos_window_editor get_font/3` |
+| 801 | create_socket | socket | `class pimos_tcpip_socket create_socket/9` |
+| 802 | bind | socket | `pimos_tcpip_socket bind/4` |
+| 803 | listen | socket | `pimos_tcpip_socket listen/4` |
+| 804 | accept | socket | `pimos_tcpip_socket accept/4` |
+| 805 | connect | socket | `pimos_tcpip_socket connect/4` |
+| 812 | connect_hostname | socket | `pimos_tcpip_socket connect_hostname/5` |
+| 806 | set_socket_option | socket | `pimos_tcpip_socket set_socket_option/4, pimos_tcpip_socket set_socket_option/5, pimos_tcpip_socket set_socket_option/6` |
+| 810 | send_timeout | socket | `pimos_tcpip_socket send_timeout/4` |
+| 811 | receive_timeout | socket | `pimos_tcpip_socket receive_timeout/4` |
+
+- **Every code PIMOS sends has a handler** of the right arity. One
+  form has none: `get_max_size` with User and Password
+  (`bios/fep_module/win_dvc.kl1`:44, an 8-element message). The PSI
+  matches only the 6-element form of line 37. The window server sends
+  that one (`server/fep/window/winRdvc.kl1`:182); no sender of the
+  other was found outside `bios/`.
+- **Handled on the PSI, never sent by PIMOS**: 901 and 902 (server
+  keys, §6.6); `ungetb` (114) on a file (`pimos_file ungetb/4`);
+  commands 1 and 2 of `simpos_user_device` (§6.4).
+- **Named in the PSI's table with no handler found**: the stream tags
+  of §2.8, 400 `ipl`, 710 `node_name`, the option values 807-809, and
+  900, 903 (internal, §6.6).
+- A 60 to any device: `as_pimos_device close/3` answers `{Id, 1}`,
+  then `{Id, 903}` (which does not reach PIMOS, §6.6) and marks the
+  device closed. `pimos_tcpip_socket` has its own `close/3`;
+  `pimos_file` and `pimos_window_editor` add an after-demon.
+- 80: answered `{Id, 11}` with the id of the request (PIMOS sends
+  -1): `fep#end`, which ends PIMOS's receiver (§1). CROSS-END.
+- Timer: `get_count` answers `{Id, 1, Count}`, `get_date_time`
+  `{Id, 1, A, B}` from `:get_count(DateTime, A, B)` of
+  `simpos##date_time`, an alarm `{Id, 1, 9}`. CROSS-END with §2.4.
+
+### 6.3 U1: the answer to 240. SETTLED but for two SIMPOS values
+
+`refute_server_command/3`, clause `{Id, 240, Node}`, calls `$or$3/4`.
+If Node is this FEP (§6.1 step 3) it calls local `fep_attributes/7`
+and answers the 9-vector `{Id, 1, A0, .., A6}` with the seven results
+in order; for another node the message is forwarded; if that fails,
+`{Id, 5}`.
+
+| Element | Value | Where it comes from | Grade |
+|---|---|---|---|
+| Code | 0 | `get_integer r0, 0`. 0 is `fep#jiskanji`: paths are 16-bit JIS as bytes (§2.2) | READ FROM CONSTANTS |
+| OS | `"SIMPOS "` ++ V | `:version(#simpos##version, V)`, then `:append(#simpos##string, ["SIMPOS ", V], OS)`. V is not held | constant READ; V UNKNOWN |
+| Host | the node name | `:get_my_node(#simpos##network_node_name, Host)`. Not held | UNKNOWN value |
+| FepVer | `"V0.45"` | `:pimfep_version(#pimos_scsi_front_end, FepVer, _, _)`, which reads the class attribute `version`; its initial value in the template is `"V0.45"` (beside `creation_date` `"14-Jan-94"`, `comment` `"mkdir/rmdir, all_device_end"`). No method of the package writes the attribute | READ FROM CONSTANTS |
+| Dir | `">"` | pool constant | CROSS-END: PIMOS uses this element as the path delimiter between directory and name (`server/fep/file/fileRdvc.kl1`:125, 326-359), and `>` is SIMPOS's |
+| FileVer | `"."` | pool constant | READ FROM CONSTANTS |
+| Comment | `""` | pool constant | READ FROM CONSTANTS |
+
+All strings are 16-bit JIS. §5's guess that FepVer is "V0.45" is now
+read, not inferred. For a stand-in: Code 0, OS `"SIMPOS "` plus a
+version text of our choosing (OURS), Host a node name (OURS), the
+other four as above.
+
+### 6.4 U3: the three string-I/O programs. SETTLED
+
+601 (`pimos_string_io_invoker` class `create_string_io/10`): Name
+must be a 16-bit string; it is made an atom
+(`:enter_atom(#simpos##symbolizer, ..)`), the class object of that
+name is taken from `simpos##library` (`get_class_object/3`), an
+instance is created and its process started; `{Id, 1}` when the
+process reports `normal`. That 601 makes an object of the class named
+(§2.5) is now READ.
+
+620 (`as_pimos_string_io_device io/5`, `do_io/6`): calls the object's
+own `io/4` as `:io(Obj, Command, To_fep, From_fep)` and answers
+`{Id, 1, From_fep}`. From_fep left unbound is sent as `""`; otherwise
+it must be a 16-bit string. If `io/4` fails, `{Id, 5}` (§6.1 step 4).
+
+| Program | Command | What `io/4` does | From_fep |
+|---|---|---|---|
+| `pimos_remote_login_replier` | 0 (PIMOS: `io(0, "")`) | starts its socket table and listener | `""` |
+| | 1 (a text for the user) | sends the text to the requester whose ID is element 0 | one character: 0 if it was sent, 1 if not |
+| | 2 (`[ID]`) | closes that requester's socket | `""` |
+| `pimos_remote_login_server` | 0 with `"local"`, `"lia"` or `"tcpip"` | sets the server type (`local_login`, `lia`, `tcpip`) and opens that listener; any other text fails | `""` |
+| | 1 | waits for a login request (§6.5); needs command 0 first | the NI of §6.5 |
+| `simpos_user_device` | 0 with `[len(Name), len(Pass)] ++ Name ++ Pass` | `:identify(#pimfep##simpos_user, Name, Pass, User)`, or `:regist` if that fails; then the user's `world`, its default logical name L, `:root_path(World, L ++ ":", P)`, `:remote_or_local(#simpos##pathname, P, _, Dir, _, _)` | Dir; `">"` if the last steps fail |
+| | 1, 2 (PIMOS never sends them) | the user's `fullname`, `nickname` | that string |
+
+Grades: the three `""`, the 0/1 character, the three type names and
+the `">"` fallback are READ FROM CONSTANTS. `simpos_user_device`'s
+argument layout is CROSS-END (`melt/4` takes the string apart exactly
+as `confirm.kl1`:301-323 builds it). What `remote_or_local/6` returns
+(a directory path of the user's home, by the names) is INFERENCE; a
+stand-in may answer any directory string, or `">"`.
+
+PIMOS also opens `"pimos_standard_io_window"` by 601
+(`server/user/pass_body.kl1`:68, `su_body.kl1`:51,
+`shutdown_b.kl1`:42). Its `io/4` switches on the Command as a window
+code: 104, 60, 130, 124, 121, 141, 142, 111, 110, 112, 145. That is
+why those keys are in a string-I/O class (§2.6); it is not the window
+device. Not needed for a login.
+
+### 6.5 U2: the login record. SETTLED
+
+**What the requester sends** (`as_pimos_login_requester` local
+`create_message/3`; the transport is a SIMPOS port for a local login,
+a LIA or TCP/IP socket otherwise):
+
+    "PimosLogin" H L n1 n2 n3 n4  RN RP UN UP
+
+all in 16-bit characters: the ten letters; H and L, the total length
+of the four strings divided by 256 and its remainder; n1..n4, the
+lengths of RN, RP, UN, UP, each as one character; then the strings.
+(The template constant is `"PimosLoginHL1234"`; elements 10-15 are
+overwritten.)
+
+- UN and UP are what the user typed (§6.7); both must be 16-bit
+  strings, or the requester writes "Illigal input.".
+- RN is `:local_name` and RP `:user_password` of the SIMPOS user of
+  the requester's own process (`:self(#simpos##process, P)`,
+  `:user(P, U)`). **A local login sends them too**: there is no null
+  form. Their values are SIMPOS's.
+
+**What the server answers the pending `io(1)` with**
+(`pimos_remote_login_server` `receive/2`, `remote_node_name/5`,
+`reassemble_message/3`, `receive_message/5`), a 16-bit string:
+
+| Element | Value |
+|---|---|
+| 0 | ID: the smallest integer from 0 not in use as a key of the replier's socket table (`pimos_remote_login_socket_table get_key/4`). The first login is 0 |
+| 1 | length of Node |
+| 2-5 | n1..n4 as received: lengths of RN, RP, UN, UP |
+| then | Node, RN, RP, UN, UP |
+
+Node is `"local"` for a local login (constant); for `lia` and `tcpip`
+it is looked up from the peer's address (SIMPOS tables). This is
+PIMOS's `get_node_info/3` layout (§3 step 12): CROSS-END. The record
+is built as `"IN"` ++ lengths ++ Node ++ strings with elements 1 and
+0 then overwritten, so the two letters never arrive.
+
+Before answering, the server sends the requester "Your request is
+accepted." and hands the connection to the replier, which then
+carries PIMOS's texts (§3 steps 13, 16) to the user's window. Each
+reply to the requester is `"PimosLogin"`, H, L, text.
+
+Ranges: a length is one 16-bit character; the requester does not
+check a bound. Grade: the layout is READ FROM CONSTANTS and
+CROSS-END; the arithmetic (divide, multiply, subtract) rests on
+unwitnessed built-in opcodes, INFERENCE for H and L only.
+
+### 6.6 U5: 900-903 are FEP-to-FEP. SETTLED: PIMOS does not receive them
+
+A `pimos_scsi_front_end` has a type, given at creation: `pimscsi`
+(the PIM/m's SCSI link), `pseudo_scsi`, `nise_scsi`, `sline`, or
+`remote_fep` (`remote_pimfep_invoker`: this FEP serving another FEP
+over the network).
+
+| Code | Where it is made | Where it goes |
+|---|---|---|
+| 903 `device_end` | `as_pimos_device close/3`, after the `{Id, 1}` of every close | `fep_scsi_output put/4`: if the type is not `remote_fep` and the command is 903, the message is **logged and not sent**. On a `remote_fep` it goes to the other FEP, whose `pimfep_message_receiver refute_internal_command/4` consumes it (`internal`) |
+| 900 `creation_fail` | `pimos_scsi_front_end` `$or$4/3` (before the answer to 103 and 240) and `create_device/4` | only when `:fep_type(Fep, remote_fep)` holds; consumed by the other FEP's receiver, which removes its table entry for the id |
+| 901 `all_device_end` | `delete_remote_stream/2` (`{0, 901}` to a node's stream); `check_fep_end/4` | to another FEP, or on a `remote_fep`; a received `{_, 901}` is taken in silence |
+| 902 `remote_echo_check` | `pimfep_message_receiver receive_first_message/2` | to another FEP; a `remote_fep` echoes a received `{_, 902}` |
+
+READ FROM CONSTANTS for the codes, the type atoms and the tests. The
+test that drops 903 is `put/4`'s second clause: type `\==`
+`remote_fep` (`blt 65`, witnessed as `\==` in `paragraph`'s
+`color_line_v draw_std/2`), the command `==` 903 (`blt 62`,
+witnessed), a cut, `log/2`; the third clause is the one with `put/2`.
+What is left as INFERENCE is only that a failed test goes on to the
+next clause (`c2`, `d3`: the unwitnessed clause-chain opcodes every
+multi-clause predicate here uses). In support, not proof: PIMOS has
+no name and no receiver clause for 900-903 (§2.8). So on the PIM/m's
+own link none of the four is sent, and §5's
+question about PIMOS's receiver does not arise. (The 900 and 901 in
+`remote_pimfep_executor` number its own console texts, not commands.)
+
+### 6.7 U6, the PSI half: 70 gets no reply; the interrupted request gets status 6
+
+`refute_server_command/3`, clause `{Id, 70}`: the device is looked up
+and `abort_device/4` sends `:abort(AbortHandler, pimos_abort,
+DeviceProcess)` (for a device on another FEP it forwards the
+message). **No reply to the 70 is assembled.** READ.
+
+The device process runs each interruptible request under
+`tag_catch/9` with the tag `pimos_abort` and an abort method:
+
+| Device | Request | Abort method | Answer to the interrupted request |
+|---|---|---|---|
+| timer | `on_at`, `on_after` | `abort_timer/3` | `{Id, 6}` |
+| string I/O | `io` | `abort_string_io/2`, then the class's `device_abort/1` | `{Id, 6}` |
+| window | `getl` (if one is pending) | `abort_command/1`, editor's `abort_getl/1` | `{Id, 6}` |
+| socket | `getb`, `accept` | `abort_getb/3`, `abort_accept/3` | `{Id, 6}` |
+| file, directory | any | `as_pimos_device abort_loop/1` only | none found |
+
+6 is `fep#aborted`. The `{Id, 6}` vectors are READ FROM CONSTANTS;
+what `tag_catch/9` and `abort/3` do is INFERENCE from their names
+(SIMPOS). The PIMOS half (whether its client waits for anything after
+70) is still §5's.
+
+### 6.8 U4: the window commands
+
+127, 132 and 143 are `pimos_window_editor` `reshape/7`, `set_font/4`
+and `show/3`, reached as in §6.1 step 4; so are the other 21 window
+commands of §6.2. Each answers `{Id, 1}` (READ in those three).
+SETTLED. `pimos_window_editor` inherits `simpos##standard_editor`
+and `pimos_window` `simpos##pmacs_window`: the window is a PMACS
+editor buffer, which is where echo and line editing come from (not
+held).
+
+### 6.9 The login dialogue on the PSI's screen
+
+The dialogue is `pimfep##pimos_login_requester` (`login.com`'s menu
+entry, §3). READ at the level of selectors and constants; the window
+and menu classes are SIMPOS's.
+
+1. `initiate/1`: a `simpos##standard_io_window` created with
+   `[{size, {ch, 40}, {ch, 7}}, {position, manipulator}, {nature,
+   [with_icon]}]`, font `"font:test_11.font"`, title
+   `"Pimos remote login "` ++ the process number. Two menus are built
+   from files of terms: `"PIMOS FEPs"` from `me:pimos.feps` (default
+   item `"local"`) and `"PIMOS USERs"` from `me:pimos.uids` (default
+   `"me"`), each with an `"ABORT"` item.
+2. `read/4`: clear, show; `putl` **"Enter FEP node name--------->"**,
+   read a line (a first character 0x2121, a JIS space, opens the FEPs
+   menu when the additional function is on); the answer `exit` ends
+   the program. `putl` **"Enter your PIMOS user name-->"**, a line
+   (or the USERs menu). `putl` **"Enter your PIMOS password--->"**,
+   echo inhibited, characters read up to code 13, echo permitted,
+   window cleared.
+3. The node name `"local"`, or this node's own, makes a local login;
+   another is looked up, **"Unknown FEP node name."** if not found.
+4. The request is sent (§6.5). Texts from the PIMOS side are shown
+   with `show` and `putl`: first the server's **"Your request is
+   accepted."**, then PIMOS's own (§3 steps 13, 16). After the
+   exchange the window beeps twice and waits for a key.
+
+Every string of the four login classes (52 with repeats; all decode
+as JIS X 0208; `fepfacts.py strings` lists each with its predicate):
+
+| Class | Text | Shown when |
+|---|---|---|
+| `pimos_login_requester` | `Enter FEP node name--------->`, `Enter your PIMOS user name-->`, `Enter your PIMOS password--->` | the three prompts (`read/4`) |
+| | `Pimos remote login ` | window title (`title_string/1`) |
+| | `font:test_11.font` | font of window and menus |
+| | `PIMOS FEPs`, `PIMOS USERs`, `ABORT`, `local`, `me` | menu titles and items |
+| | `me:pimos.feps`, `me:pimos.uids` | files read for the menus (not shown) |
+| | `close`, `exit` | compared with the input (not shown) |
+| `as_pimos_login_requester` | `Receive timeout.`, `Network error.`, `Network error`, `Illigal input.`, `Unknown FEP node name.` | errors, written to the window |
+| | `PimosLoginHL1234`, `PimosLogin`, `local`, `::pimos_remote_login_server`, `pimos_remote_login_server`, `process`, `spawn` | protocol and addressing (not shown) |
+| `pimos_remote_login_server` | `Your request is accepted.` | sent to the requester, which shows it |
+| | `PimosLogin`, `IN`, `local`, `lia`, `tcpip`, and the addressing strings above | not shown |
+| `pimos_remote_login_replier` | `PimosLogin`, one character 0, one character 1 | not shown |
+
+To reproduce the screen exactly: the characters are full-width JIS.
+The run of dashes in the prompts is JIS 215d (MINUS SIGN, U+2212),
+not a hyphen, and `>` is 2164; `.` is 2125, `:` 2127, `_` 2132; the
+spaces are 2121. "Illigal" is the binary's spelling.
+
+The texts PIMOS sends through the replier ("Login procedure starts.",
+"OK. Your initial program starts.", "Good luck!", "Login incorrect")
+are in PIMOS's source (§3), not in `pimfep.ptf`.
+
+### 6.10 What this changes for the stand-in (`ref/pimm/fep.py`)
+
+- 240: answer `[1, 0, "SIMPOS ...", host, "V0.45", ">", ".", ""]`
+  (strings 16-bit).
+- `io(0, "")` on the replier and `io(0, "local")` on the server:
+  `[1, ""]`. Replier commands 1 and 2: `[1, "\0"]` and `[1, ""]`.
+- The scripted login's NI: `[0, 5, n1, n2, n3, n4] ++ "local" ++ RN
+  ++ RP ++ UN ++ UP`, with RN and RP real strings (a SIMPOS user and
+  password, OURS), not zeros. So PIMOS will confirm them through
+  `simpos_user_device` (§3 step 14), which answers `[1, Dir]`; `">"`
+  is the PSI's own fallback.
+- 60: one reply `[1]`; no 903 (§6.6, with its one INFERENCE). 70: no reply; a pending timer, `io`
+  or `getl` on that device is answered `[6]`. 80: `[11]`.
+- No 900-903 ever.
