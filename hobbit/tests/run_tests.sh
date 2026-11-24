@@ -44,6 +44,9 @@ python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
 python3 "$here/test_p9run.py"
+# A3: every byte of the shipped __.SYMDEF tables past a name's NUL is
+# accounted for (libmach's readar replayed; /mips/bin/rl's stack frames).
+python3 "$here/test_p9symdef.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in
