@@ -69,13 +69,22 @@ for top in sorted(os.listdir(held)):
     prog = top.split('__')[-1].split('.')[0]
     if prog in SKIP:
         continue
-    files = []
+    # ESP is selected by content, not by suffix: the IFS keeps ESP under .esp, .ESP, .v32, .wkm,
+    # .talk, .grape, .slv, .ctl, .esp.1 and others. A file counts if its name ends in .esp or it defines a class.
+    files = {}
     for dp, dn, fn in os.walk(os.path.join(held, top)):
-        files += [os.path.join(dp, f) for f in fn if f.lower().endswith('.esp')]
+        for f in fn:
+            p = os.path.join(dp, f)
+            try:
+                if os.path.islink(p) or os.path.getsize(p) > 4_000_000: continue
+                b = open(p, 'rb').read()
+            except OSError:
+                continue
+            s = b.decode('latin-1')
+            if f.lower().endswith('.esp') or DEF.search(s): files[p] = s
     texts = {}
     own = set()
-    for p in files:
-        s = open(p, 'rb').read().decode('latin-1')
+    for p, s in sorted(files.items()):
         texts[p] = '\n'.join(strip(l) for l in s.split('\n'))
         own |= {m.group(1).lower() for m in DEF.finditer(texts[p])}
     arch = top.split('__')[-1]

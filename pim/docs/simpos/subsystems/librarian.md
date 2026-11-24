@@ -367,8 +367,13 @@ class methods with a **class id** from `:class_id(Class,^Id)` instead of a class
 To clear a class, `wb_lib` maps `retract_all/4` over `:get_predicates_with_information(#library,
 Id, l, ^List)`, whose elements are `{Name, Arity, Category, Code}` (`astret.esp:34-44`); its listing
 reads one predicate with `:get_a_code(#library, Id, l, _, Name, Arity, ^Code)` (`wb_lib/listing.esp`).
-So the asserted clauses are the class's **local** predicates (category `l`). This bears on gap rank 5
-(storage); persistence is still open.
+So the asserted clauses are found among the class's predicates of category `l`; that `l` means
+local is an INFERENCE. CESP, by analogy only, does the same openly: its library class
+`meta_predicate` adds (`:assert`, `:asserta`, `:assertz`), deletes (`:retract`, `:abolish`,
+`:erase`) and finds (`:clause`, `:get_one_clause`, `:predicate`) clauses of a class's **local**
+predicates declared `:-dynamic`, e.g. `:asserta(#meta_predicate, animal, a(crocodile))`, and the
+added clauses are found before inherited ones (IPSJ 119496, 41st convention 6E-3, 1990, p.5-100,
+read on the page image). This bears on gap rank 5 (storage); persistence is still open.
 
 **Instance methods required by held programs**
 

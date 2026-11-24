@@ -4,8 +4,8 @@ librarian	library_utility	cmethod	asserta	4		(C, ClassId, Clause, ^Ref), as asse
 librarian	library_utility	cmethod	assertz	4		(C, ClassId, Clause, ^Ref), as assert/4 at the end	USAGE	examds/examds/wb_lib/astret.esp:21-23	IFS 1992
 librarian	library_utility	cmethod	clause	4		(C, ClassId, Head, ^Body): enumerate an asserted clause of the class	USAGE	examds/examds/wb_lib/clause.esp:16	IFS 1992
 librarian	library_utility	cmethod	retract	3		(C, ClassId, Clause) with a class id (also used with a class name by the census programs)	USAGE	examds/examds/wb_lib/astret.esp:26-28	IFS 1992
-librarian	library_utility	cmethod	retract_all	4		(C, ClassId, Name, Arity); examds removes every asserted predicate by mapping retract_all over get_predicates_with_information(#library,Id,l,L), so asserted clauses are LOCAL predicates of the class (category l)	USAGE	examds/examds/wb_lib/astret.esp:30-44	IFS 1992
-librarian	library	cmethod	get_predicates_with_information	4		(C, ClassId, l, ^List), List of {Name, Arity, Category, Code}; l selects local predicates	USAGE	examds/examds/wb_lib/astret.esp:36-38; listing.esp	IFS 1992
+librarian	library_utility	cmethod	retract_all	4		(C, ClassId, Name, Arity); examds removes every asserted predicate by mapping retract_all over get_predicates_with_information(#library,Id,l,L), so asserted clauses appear among the class's predicates of category l (INFERENCE: l = local)	USAGE	examds/examds/wb_lib/astret.esp:30-44	IFS 1992
+librarian	library	cmethod	get_predicates_with_information	4		(C, ClassId, l, ^List), List of {Name, Arity, Category, Code}; the category argument l is read as local (INFERENCE)	USAGE	examds/examds/wb_lib/astret.esp:36-38; listing.esp	IFS 1992
 librarian	library	cmethod	get_a_code	7		(C, ClassId, l, _, Name, Arity, ^Code): the code of one local predicate	USAGE	examds/examds/wb_lib/listing.esp (disp_exp)	IFS 1992
 librarian	library_utility	imethod	get_classes	4		(UT, PackageAtom, all, ^ClassIdList): the class ids of a package	USAGE	mendels/mendels/loader.esp:63	IFS (mendels)
 librarian	library_utility	imethod	get_classes_with_wildcard	5		(UT, Package, PatternString, all or ClassName, ^ClassIdList)	USAGE	mendels/mendels/loader.esp:64-65; quixote/src/QS/pm/pm.esp:99	IFS 1992
@@ -17,7 +17,7 @@ other	directory	cmethod	retrieve_with_wildcard	4		(C, ^List, Pattern, ^FullPath)
 other	directory	cmethod	remove_with_wildcard	4		(C, ^List, Pattern, _): remove every match	USAGE	quixote/src/QS/pm/pm_simIF.esp:31-32,464	IFS 1992 (Oki)
 other	directory	cmethod	rename_with_wildcard	6		(C, OldPattern, NewPattern, _, _, _): rename every match, * carried over (V>*.src to V>*.srcbak)	USAGE	quixote/src/QS/pm/pm_simIF.esp:34-35,501-514	IFS 1992 (Oki)
 other	directory	cmethod	make	4		(C, ^Dir, Path, ^FullPath): create a directory	USAGE	quixote/src/QS/pm/pm_simIF.esp:39-40	IFS 1992 (Oki)
-other	pathname	cmethod	remote_or_local	6		(C, Path, _, ^LocalPath, _, _): LocalPath is the path without its node part, non-empty for a local path	USAGE	quixote/src/QS/pm/pm_simIF.esp:1126,1133	IFS 1992 (Oki)
+other	pathname	cmethod	remote_or_local	6		(C, Path, _, ^LocalPath, _, _): the 4th argument is used as the path to index local directories by (INFERENCE: the path without its node part)	USAGE	quixote/src/QS/pm/pm_simIF.esp:1126,1133	IFS 1992 (Oki)
 other	wildcard	cmethod	remote_or_local	6		(C, Path, _, _, ^ExpandedPath, _): also on class wildcard; examds takes the 5th argument as the expanded path of me:exp_data>F	USAGE	examds/examds/editor/winmethod.esp:224	IFS 1992
 other	pathname	cmethod	check_pathname	3		(C, Path, ^CheckedPath): normalise/validate a non-empty path string	USAGE	quixote/src/QS/pm/pm_simIF.esp:561	IFS 1992 (Oki)
 other	memory_manager	cmethod	start_gc	1		(C): start a garbage collection	USAGE	examds/examds/editor2/gc_checker.esp:31	IFS 1992
@@ -31,7 +31,7 @@ shell	tcpip_socket	imethod	set_send_timeout	2		(S, nil): no timeout	USAGE	pimos/
 shell	tcpip_host_table	cmethod	get_address	4		(C, HostNameString, _, ^Address): a 16-bit string address record	USAGE	pimos/src_util/pmeter/xrmonitor.esp:72	PIMOS 1992
 shell	network_node_name	cmethod	get_my_node	2		(C, ^NodeNameString), e.g. a host name such as fkpsi602 (the attribute default)	USAGE	pimos/src_util/pmeter/xrmonitor.esp:27-31	PIMOS 1992
 window	ipl	cmethod	get_parameter	3		(C, bmm_size, ^Code): bitmap-memory size code; 16#"07FF" = monochrome, 16#"0FFF" = colour	USAGE	pimos/src_util/paragraph/p_MAIN.esp:183-185	PIMOS 1992
-window	bitmap	cmethod	get_plane_count	2		(C, ^N): PIMOS v2.7's PSI/UX patch (1991-05-08) replaces ipl get_parameter(bmm_size) with N planes: 1 -> 07FF, 3 or 4 -> 0FFF, 6 -> 17FF, 8 -> 1FFF	USAGE	pimos/src_util/paragraph/p_ux_patch.esp:3-15	PIMOS v2.7, PSI/UX 1991
+window	bitmap	cmethod	get_plane_count	2		(C, ^N): PIMOS v2.7's PSI/UX patch class profiler_ux_patch (1991-05-08) defines its own get_parameter from N planes, and the PSI/UX revisions of p_hwin/p_wwin/p_imag comment out :get_parameter(#ipl,bmm_size,Dev) and call it (or get_plane_count directly) instead; p_MAIN.esp still calls #ipl: 1 -> 07FF, 3 or 4 -> 0FFF, 6 -> 17FF, 8 -> 1FFF	USAGE	pimos/src_util/paragraph/p_ux_patch.esp:3-15; p_hwin.esp:165-166; p_wwin.esp:153-154; p_imag.esp:459-460,597-616; p_v_imag.esp:111-117	PIMOS v2.7, PSI/UX 1991
 window	editor_text_buffer	imethod	move_to_first	1		(B): to the start of the buffer	USAGE	mendels/mendels/swindow.esp:268	IFS (mendels)
 window	editor_text_buffer	imethod	move_to_last	1		(B): to the end of the buffer	USAGE	mendels/mendels/swindow.esp:247	IFS (mendels)
 window	editor_text_buffer	imethod	insert_string	2		(B, String) at the current position; a newline is inserted with :insert(B, key#lf)	USAGE	mendels/mendels/swindow.esp:247-249	IFS (mendels)
