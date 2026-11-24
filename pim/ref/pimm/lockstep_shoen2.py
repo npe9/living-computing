@@ -154,6 +154,13 @@ remove_shoen waiting on an unbound handle (their stubs); a removed
 shoen given
 statistics or removed again; three shoen deep; a parent terminated
 within its child's termination (see `nested`).
+
+Re-pinned for shoen stage 3 (2026-11-23), 4690 -> 4702 trace lines, no
+value changed: the shoen record has one more cell, SH_MASK, written at
+create (6 shoen made: 6 lines), and start_shoen empties the parked
+list, SH_GOAL := 0 (6 starts: 6 lines); counted on the reference's
+trace (both writes, nothing else new).  The line numbers of the injections
+above are from before.
 """
 import os
 import re
@@ -168,7 +175,7 @@ import lockstep_cons as cons  # noqa: E402
 import lockstep_shoen as stage1  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=7, lines=4690)
+PINNED = dict(parts=7, lines=4702)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 TEXT = 'abc'
 ABC = (8, [ord(c) for c in TEXT])

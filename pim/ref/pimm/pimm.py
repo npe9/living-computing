@@ -74,6 +74,9 @@ from pimm_layout import (SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT,  # noqa: E40
 from pimm_layout import (SH_REDUCTIONS, SH_REMOVE, REMOVED,  # noqa: E402
                          REPORT_STATISTICS_STARTED, REPORT_STATISTICS,
                          REPORT_RETURN_RESOURCE)
+from pimm_layout import (SH_MASK, STOPPED, REPORT_ABORTED,  # noqa: E402
+                         REPORT_EXCEPTION, REPORT_STOPPED,
+                         EXC_REDUCTION_FAILURE, EXC_RAISED)
 
 
 class Unimplemented(Exception):
@@ -489,7 +492,11 @@ class Machine:
         f_shoen_with_fp.psl.c:86: `terminated` alone while the control
         stream is open); not PIM/m-sourced.  The code 12 is
         (asm/pimm_layout.py)."""
-        sh, red = self.shoen, self.chain
+        self.ended(self.shoen, self.chain)
+
+    def ended(self, sh, red):
+        """The end of one of shoen sh's goals (or of a child shoen whose
+        total is red): as end_reduction says, from sh up."""
         while sh:
             red = self.mem[sh + SH_REDUCTIONS][1] + red & 0xffffffff
             self.mem[sh + SH_REDUCTIONS] = (INT, red)
@@ -497,11 +504,96 @@ class Machine:
             self.mem[sh + SH_COUNT] = (INT, n)
             if n:
                 break
-            self.mem[sh + SH_STATUS] = (INT, TERMINATED)
-            self.report(sh, REPORT_TERMINATED)
-            if self.mem[sh + SH_REMOVE][1]:
-                self.remove(sh)
+            self.terminate(sh)
             sh = self.mem[sh + SH_PARENT][1]
+
+    def terminate(self, sh):
+        """A shoen terminates: TERMINATED, 12, and the removal if a
+        remove_shoen came first."""
+        self.mem[sh + SH_STATUS] = (INT, TERMINATED)
+        self.report(sh, REPORT_TERMINATED)
+        if self.mem[sh + SH_REMOVE][1]:
+            self.remove(sh)
+
+    # ---- shoen stage 3: exceptions, stop, abort -------------------------
+    def chain_of(self, sh):
+        """The shoen sh and those above it, innermost first (reads only)."""
+        while sh:
+            yield sh
+            sh = self.mem[sh + SH_PARENT][1]
+
+    def exception(self, num, tag, b, c):
+        """An exception: reported to the innermost shoen, from the
+        current one up, whose mask AND tag is not 0 (PIM/m-sourced: the
+        PIMOS manual e-shoen.tex:57 "the innermost parent shoen for
+        which AND of the exception tag and the mask pattern is not 0";
+        its raise/3 hint, :776, says "is 0", taken as a slip: with
+        execute/4's mask -1 nothing would ever be reported.  VPIM's
+        s_IfExceptionMasked accepts only if mask AND tag = tag, which
+        differs for a tag of several bits).  None accepts it: refused
+        (OURS: what the machine did is not sourced).
+
+        What is done, in VPIM's order (f_reduce_exception_handler.psl.c
+        f_Failure_Sub, f_Raise_Sub: carried over, not PIM/m-sourced):
+        two fresh variables NewCode and NewArgv; a READY goal
+        apply(NewCode, NewArgv) of the CURRENT shoen, counted there (so
+        the shoen does not terminate until the handler binds them: the
+        manual, e-shoen.tex:59-60); the Info vector {Pe, b, c}, Pe = 0,
+        the one processor (OURS; the image's exception_table:translate/4
+        turns it into a node number); then the message {2, num, Info,
+        NewCode, NewArgv} (pimos.vmac shoen#exception, the image's
+        report/2) on the report stream of the shoen found.  c may be a
+        function that makes it, called after the goal (the ArgV of a
+        reduction failure: VPIM makes it there)."""
+        target = 0
+        for sh in self.chain_of(self.shoen):
+            if self.mem[sh + SH_MASK][1] & tag:
+                target = sh
+                break
+        if not target:
+            raise Unimplemented('an exception (tag %x) no shoen accepts' % tag)
+        nc, na = self.new_var(), self.new_var()
+        self.record(READY, self.stubs['apply']['addr'], [nc, na])
+        if callable(c):
+            c = c()
+        info = self.alloc(3)
+        self.mem[info] = (INT, 0)
+        self.mem[info + 1] = b
+        self.mem[info + 2] = c
+        m = self.alloc(5)
+        self.mem[m] = (INT, REPORT_EXCEPTION)
+        self.mem[m + 1] = (INT, num)
+        self.mem[m + 2] = (VECT0 + 6, info)
+        self.mem[m + 3] = nc
+        self.mem[m + 4] = na
+        self.report(target, None, car=(VECT0 + 10, m))
+
+    def taken_check(self, g):
+        """A goal of a shoen taken from the ready queue (after its
+        arguments are loaded): 'run', or 'aborted' if a shoen at or above
+        its own is TERMINATED or REMOVED (only an abort leaves a goal
+        there: a shoen that ends by itself has none), or 'park' if one is
+        STOPPED.  A parked goal is SUSPENDED and put on the parked list
+        of the innermost stopped shoen, whose start_shoen releases it.
+        Carried over from PDSS (emulator/goal.c:302-335: at dequeue, a
+        goal whose shoen is aborted is freed, one whose shoen is
+        suspended is hooked on the shoen's queue); where the check is
+        made and the list are OURS."""
+        park = 0
+        for sh in self.chain_of(self.shoen):
+            st = self.mem[sh + SH_STATUS][1]
+            if st in (TERMINATED, REMOVED):
+                return 'aborted'
+            if st == STOPPED and not park:
+                park = sh
+        if not park:
+            return 'run'
+        st = self.mem[g + G_STATUS][1]
+        self.mem[g + G_STATUS] = (INT, st & ~3 | SUSPENDED)
+        self.mem[g + G_LINK] = self.mem[park + SH_GOAL]
+        self.mem[park + SH_GOAL] = (INT, g)
+        self.nsusp += 1
+        return 'park'
 
     def hook(self, g, var):
         """Add goal record g to the goals waiting on the unbound cell."""
@@ -536,6 +628,11 @@ class Machine:
             code = self.mem[g + G_CODE][1] - self.load
             for i in range(self.mem[g + G_ARGN][1]):
                 self.reg[i] = self.mem[g + G_ARGS + i]
+            if self.shoen:
+                how = self.taken_check(g)
+                if how != 'run':
+                    self.event('E ' + how)
+                    continue
             self.chain = 0
             self.reduce(code, before + limit)     # the limit is this run's
             self.end_reduction()
@@ -601,8 +698,10 @@ class Machine:
                 pc = pc + 1 if nxt is None else nxt
         except Fail:
             if self.shoen:
-                # inside a shoen a failure is reported to the shoen
-                # (the exception path): not modelled
+                # inside a shoen a failure is reported to the shoen (the
+                # exception path).  A reduction failure is (i_suspend);
+                # a failed body unification, unification_failure, is
+                # not modelled: refused
                 raise Unimplemented('a goal failed inside a shoen')
             self.event('E fail')
             raise
@@ -728,6 +827,30 @@ class Machine:
     def i_suspend(self, pc, x, y, z, c16):
         if self.waiting:
             return self.suspend_goal(pc, x, c16)
+        if self.shoen:
+            # No clause applies inside a shoen: reduction_failure (number
+            # 9, tag 1 << 25: pimos.vmac, the manual's tag table), Info
+            # {Pe, Code, ArgV} (PIMOS kernel/builtin/excpt_tbl.kl1
+            # "FIRMWARE FORMAT" 9; VPIM f_Failure_Sub).  Code: the code
+            # of the predicate, {COD, the label}, which is the entry a
+            # suspension would resume at; ArgV: a vector of r[0..x) as
+            # they stand (OURS: VPIM takes the goal record's).  The goal
+            # ends; that counts as one reduction (OURS, as a proceed:
+            # the manual's profile counts reductions as dequeues and
+            # executes less suspensions).  An arity of 0 or above 6 (a
+            # long vector) is refused.
+            if not 1 <= x <= 6:
+                raise Unimplemented('reduction failure of arity %d inside a shoen' % x)
+            def argv():
+                v = self.alloc(x)
+                for i in range(x):
+                    self.mem[v + i] = self.reg[i]
+                return (VECT0 + 2 * x, v)
+            self.exception(EXC_REDUCTION_FAILURE, 1 << 16 + EXC_REDUCTION_FAILURE,
+                           (COD, self.load + pc + 2 + sx16(c16)), argv)
+            self.chain += 1
+            self.event('E fail')
+            return 'done'
         raise Fail('no clause of the predicate at %d applies' % (pc + 2 + sx16(c16)))
 
     def i_switch_on_non_integer(self, pc, x, y, z, c16):
@@ -1996,6 +2119,7 @@ class Machine:
             self.mem[sh + SH_GOAL] = (INT, g)
             self.mem[sh + SH_REDUCTIONS] = (INT, 0)
             self.mem[sh + SH_REMOVE] = (INT, 0)
+            self.mem[sh + SH_MASK] = (INT, mask[1])   # stage 3: kept, for exceptions
             self.counted()                # the child is one of its parent's
             self.nsusp += 1
             return [var, (SHREC, sh)]
@@ -2013,23 +2137,135 @@ class Machine:
         # the same handle (OURS).  A shoen that is not dormant
         # (started twice, or terminated) is refused, as is anything
         # but a handle.
+        #
+        # Stage 3: a STOPPED shoen is started again the same way ("This
+        # message is also used to restart the execution suspended by the
+        # stop message", manual e-shoen.tex:139: PIM/m-sourced): every
+        # goal on its parked list (asm/pimm_layout.py) is released, in
+        # the list's order, then the list is emptied (SH_GOAL := 0).
         def f(h):
             if h[0] != SHREC:
                 raise Unimplemented('start_shoen(%r)' % (h,))
             sh = h[1]
-            if self.mem[sh + SH_STATUS][1] != DORMANT:
-                raise Unimplemented('start_shoen of a shoen that is not dormant')
+            if self.mem[sh + SH_STATUS][1] not in (DORMANT, STOPPED):
+                raise Unimplemented('start_shoen of a shoen that is not dormant or stopped')
             self.report(sh, REPORT_STARTED)
             self.mem[sh + SH_STATUS] = (INT, STARTED)
             g = self.mem[sh + SH_GOAL][1]
-            st = self.mem[g + G_STATUS][1]
-            self.event('W %d' % (g - self.load))
-            self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
-            self.mem[g + G_LINK] = (INT, self.rq)
-            self.rq = g
-            self.nsusp -= 1
+            while g:
+                nxt = self.mem[g + G_LINK][1]
+                st = self.mem[g + G_STATUS][1]
+                self.event('W %d' % (g - self.load))
+                self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
+                self.mem[g + G_LINK] = (INT, self.rq)
+                self.rq = g
+                self.nsusp -= 1
+                g = nxt
+            self.mem[sh + SH_GOAL] = (INT, 0)
             return [h]
         self.builtin('start_shoen', [x, y], f)
+
+    def i_stop_shoen(self, pc, x, y, z, c16):
+        # stop_shoen(Shoen, ^NewShoen), 22:E2, r_r (inst_tab.kl1:334,
+        # blt.kl1: PIM/m-sourced; the image's control/2 for `stop`).
+        # "Suspends a shoen execution", acknowledged by `stopped`, 11
+        # (manual e-shoen.tex:143-150, 254-262; pimos.vmac).  11 is
+        # reported first, then a STARTED shoen becomes STOPPED; on any
+        # other (dormant, stopped, terminated) only 11 (VPIM
+        # f_shoen_control.psl.c:392-450 f_StopShoen_Sub, carried over;
+        # VPIM's dormant shoen is itself "stopped by control").  A
+        # stopped shoen's goals are parked as they are taken from the
+        # ready queue (taken_check); the goal running is not stopped
+        # (the manual's caution: "even if a stopped message has been
+        # reported, it cannot be inferred that the shoen internal
+        # processing has already been suspended").  NewShoen is the
+        # same handle (OURS).  Refused: anything but a handle; a removed
+        # shoen (its report stream is closed).
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('stop_shoen(%r)' % (h,))
+            sh = h[1]
+            self.report(sh, REPORT_STOPPED)
+            if self.mem[sh + SH_STATUS][1] == STARTED:
+                self.mem[sh + SH_STATUS] = (INT, STOPPED)
+            return [h]
+        self.builtin('stop_shoen', [x, y], f)
+
+    def i_abort_shoen(self, pc, x, y, z, c16):
+        # abort_shoen(Shoen, ^NewShoen), 22:E3, r_r (inst_tab.kl1:335,
+        # blt.kl1: PIM/m-sourced; the image's control/2 for `abort`).
+        # "Aborts a shoen execution ... execution cannot be restarted
+        # later", acknowledged by `aborted`, 1; `terminated` comes after
+        # it, and whether `aborted` is ahead of it tells a forced end
+        # from a normal one (manual e-shoen.tex:152-158, 212-218:
+        # PIM/m-sourced).  1 is reported first (VPIM f_AbortShoen_Sub,
+        # carried over); then a shoen not yet terminated terminates AT
+        # ONCE (OURS: VPIM tells its foster parents, which end their
+        # goals and then report termination; PDSS frees the parked
+        # goals, aborts the sons and takes the shoen off its parent's
+        # count, shoen.c:237-267, and reports no termination): status
+        # TERMINATED, 12, the removal if one is pending, its reductions
+        # to its parent and one off the parent's count, as at an
+        # ordinary end.  Its goals, and those of the shoen inside it,
+        # are discarded as they are taken from the ready queue
+        # (taken_check: PDSS goal.c:328-331); those waiting on a
+        # variable or parked stay in memory, never run.  The shoen
+        # inside it report nothing (OURS; PDSS aborts each with
+        # `aborted`): their report/2 and monitors are goals of the
+        # aborted shoen.  On a terminated shoen only 1 (VPIM: "abort to
+        # terminated shoen" is no error).  NewShoen is the same handle
+        # (OURS).  Refused: anything but a handle; a removed shoen; a
+        # shoen at or above the goal's own (its end would count in a
+        # terminated shoen: not modelled).
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('abort_shoen(%r)' % (h,))
+            sh = h[1]
+            if sh in self.chain_of(self.shoen):
+                raise Unimplemented('abort_shoen of the shoen the goal is in')
+            st = self.mem[sh + SH_STATUS][1]
+            self.report(sh, REPORT_ABORTED)
+            if st != TERMINATED:
+                red = self.mem[sh + SH_REDUCTIONS][1]
+                self.terminate(sh)
+                self.ended(self.mem[sh + SH_PARENT][1], red)
+            return [h]
+        self.builtin('abort_shoen', [x, y], f)
+
+    def i_raise(self, pc, x, y, z, c16):
+        # raise(Tag, Info, Data), 22:F2, r_r_r, three inputs (inst_tab.kl1
+        # :351, blt.kl1:537: PIM/m-sourced; shoen:raise/3 calls it once
+        # Info is ground, the image's control/2 directly).  A `raised`
+        # exception, number 16, its tag the Tag given, Info {Pe, Info,
+        # Data} (excpt_tbl.kl1 "FIRMWARE FORMAT" 16; the manual,
+        # e-shoen.tex:738-746, 766-777), reported as exception() says;
+        # the goal goes on (raise is a body built-in), and the goal
+        # apply(NewCode, NewArgv) is the one "to be executed in place of
+        # raise" (manual).  Only Tag is waited for, Info and Data are
+        # taken as the registers hold them (VPIM kblt_b_raise:
+        # f_ActiveDeref of Tag only; carried over).  Refused: a Tag
+        # that is not an integer (VPIM: illegal_input), an exception no
+        # shoen accepts (outside every shoen too).
+        def f(tag, _info, _data):
+            if tag[0] & ~1 != INT:
+                raise Unimplemented('raise with tag %r' % (tag,))
+            self.exception(EXC_RAISED, tag[1], self.reg[y], self.reg[z])
+            return []
+        self.builtin('raise', [x, y, z], f, nowait=(1, 2))
+
+    def i_current_processor(self, pc, x, y, z, c16):
+        # current_processor(^Current, ^X, ^Y), 22:EB r_r_r, three outputs
+        # (inst_tab.kl1:343, blt.kl1:552: PIM/m-sourced).  Not in the
+        # PIMOS manual; PIMOS's macros use it as current_processor(
+        # Cluster, X, Y) with X * Y the number of processors (pimos.vmac
+        # :381, shell/main/comexe.kl1:220); the image's exception_table:
+        # translate/4 subtracts Current from the exception's Pe.  One
+        # processor here: 0, 1, 1, PDSS's values (emulator/blt_system.c
+        # blt_b_current_processor: carried over).  No input: never
+        # waits; r[x], r[y], r[z] written in that order.
+        self.reg[x] = (INT, 0)
+        self.reg[y] = (INT, 1)
+        self.reg[z] = (INT, 1)
 
     def i_shoen_statistics(self, pc, x, y, z, c16):
         # shoen_statistics(Shoen, ^NewShoen), 22:E6, r_r (inst_tab.kl1,

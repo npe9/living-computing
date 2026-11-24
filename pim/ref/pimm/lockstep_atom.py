@@ -121,6 +121,11 @@ top:go1/4 starts the BIOS's shoen (shoen:execute/4), and the only
 change merged under this test is shoen stage 2, whose record has two
 more cells and writes its reduction count at the end of each run; that
 the 4 lines are those writes is expected, not counted line by line.
+Re-pinned for shoen stage 3 (2026-11-23), 1255 -> 1257 trace lines, no
+value changed: the shoen record has one more cell, SH_MASK, written at
+create (1 shoen made: 1 lines), and start_shoen empties the parked
+list, SH_GOAL := 0 (1 starts: 1 lines); counted on the reference's
+trace (both writes, nothing else new).
 """
 import os
 import sys
@@ -132,7 +137,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=4, lines=1255)
+PINNED = dict(parts=4, lines=1257)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 GO1 = 17391                 # top:go1/4, its first instruction current_node 4, 5
 MERGE = GO1 + 2             # merge 6, 6

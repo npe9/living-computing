@@ -192,6 +192,14 @@ create (16 lines), and every end of a run of a goal inside a shoen
 writes SH_REDUCTIONS before the count (56 lines).  Counted on the
 reference's trace: 64 writes of the reductions cells, 8 of the remove
 cells.  The injections above were run before that change.
+Re-pinned for shoen stage 3 (2026-11-23), 4495 -> 4511 trace lines, no
+value changed: the shoen record has one more cell, SH_MASK, written at
+create (8 shoen made: 8 lines), and start_shoen empties the parked
+list, SH_GOAL := 0 (8 starts: 8 lines); counted on the reference's
+trace (both writes, nothing else new).  The test now finds the first
+goal's record after the shoen record and the Report variable (where
+create_shoen writes it), SH_GOAL being 0 once the shoen is started;
+the line numbers of the injections above are from before.
 """
 import os
 import sys
@@ -204,7 +212,7 @@ import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=11, lines=4495)
+PINNED = dict(parts=11, lines=4511)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 TEXT = 'abc'
 ABC = (8, [ord(c) for c in TEXT])
@@ -472,6 +480,15 @@ def snapshot(m, outs, known):
     return vals, recs
 
 
+def first_goal(m, sh):
+    """The first goal's record.  Since shoen stage 3 SH_GOAL is the
+    list of parked goals and start_shoen empties it (writes 0): the
+    record then is found where create_shoen wrote it, after the shoen
+    record and the Report variable (its order of allocation)."""
+    g = m.mem[sh + L.SH_GOAL][1]
+    return g if g else sh + L.SH_SIZE + 1
+
+
 def check(m, snaps, parts):
     bad = []
     if [k for k, _v, _r in EXPECT] != list(snaps):
@@ -484,7 +501,7 @@ def check(m, snaps, parts):
     for a in known:
         sh = m.load + a
         # the first goal: a goal of apply's stub, of this shoen, taken
-        g = m.mem[sh + L.SH_GOAL][1]
+        g = first_goal(m, sh)
         if (m.mem[g + L.G_CODE][1] - m.load, m.mem[g + L.G_ARGN][1],
                 m.mem[g + L.G_STATUS][1]) != (stub, 2, a << 2 | L.TAKEN):
             bad.append(('first goal of the shoen at %d' % a,))
@@ -495,7 +512,7 @@ def check(m, snaps, parts):
     # `started` is reported BEFORE the first goal is released (VPIM's
     # order): in `run`, the message's two new cells, {INT, 8} then an
     # unbound cell after it, are written before the goal's W line
-    g = m.mem[m.load + known[0] + L.SH_GOAL][1] - m.load
+    g = first_goal(m, m.load + known[0]) - m.load
     lines = parts['run']
     car = '%02x%08x' % (pimm.INT, L.REPORT_STARTED)
     wrote = [i for i, ln in enumerate(lines[:-1])

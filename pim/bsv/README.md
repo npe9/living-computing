@@ -71,7 +71,7 @@ instruction and is tested by trace comparison with it.
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element |
-| `PimmShBox.bsv` | shoen box (stages 1 and 2): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination) |
+| `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
 | `PimmDriverTb.bsv` | lockstep driver bench: executes a test's script of operations on the core (`../ref/pimm/driver.py`) |
@@ -163,7 +163,16 @@ report: `started`, `terminated`, `statistics_started`,
 `statistics(H, L)` (H, L checked against twice the reductions counted
 on the trace), `return_resource(0, 0)`, the stream closed, `Shut =
 shut`; a nested shoen whose parent now terminates; a remove before
-the end; statistics of a running shoen. `alt`: `read_eagerly` (what the compiler
+the end; statistics of a running shoen. `shoen3`: the third stage,
+through the image's own code: a reduction failure inside a shoen
+(`ipl:close_fep/2` on an atom) and `shoen:raise/3`, each reported as
+`exception(Kind, Info, NewCode, NewArgv)` via
+`exception_table:translate/4` and answered by a monitor's `dummy/2`;
+a mask of `reduction_failure` alone (`execute/7`), and `raise/3`'s Tag 3 under mask 1 (the manual's rule, not VPIM's); the raise of
+`control/2` on an illegal control message; `stop` with a woken goal
+parked and released by `start`; `abort` of an inner shoen by its
+control stream and of an outer one by `top_level_monitor/4`, the
+woken goals discarded. `alt`: `read_eagerly` (what the compiler
 writes for `alternatively`), the guard `not_equal` and
 `wait_vector_1`, `_4`, `_6`, on `scsi_fep_util`,
 `scsi_fep_file:reply_with_attention/4`, `scsi:request_manager/3` and
@@ -196,10 +205,10 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 134
-instructions (a recount, 2026-11-23: 136 handlers in `pimm.py` less the
-two SCSI built-ins on the reference alone; 132 without our two stubs; the
-earlier 128 and 130 were increments); goals as
+State: 138
+instructions (a recount, 2026-11-23: 140 handlers in `pimm.py` less the
+two SCSI built-ins on the reference alone; 136 without our two stubs;
+134 before shoen stage 3; the earlier 128 and 130 were increments); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
@@ -209,8 +218,9 @@ instruction before it), no timing claimed. The MRB is kept, and `set_vector_elem
 updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are always copied
 (`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
 (a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
-`terminated`, `statistics_started`, `statistics`, `return_resource` and its close);
-its other built-ins (stop, abort, resource, profile), `raise`, `resource_low` and a failure inside a shoen stop the model or are never reported.
+`terminated`, `statistics_started`, `statistics`, `return_resource` and its close),
+the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`;
+its resource and profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
 Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.

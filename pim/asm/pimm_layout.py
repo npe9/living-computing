@@ -36,15 +36,29 @@ of PIMOS's debugger/inspector/tagtbl.kl1, what it points at is ours):
                 2**32 reductions: not checked)
     +SH_REMOVE  {INT, 1 if remove_shoen came before the shoen
                 terminated, else 0}: it is then removed at termination
+    +SH_MASK    {INT, the exception mask create_shoen was given} (shoen
+                stage 3): an exception is reported to the innermost
+                shoen whose mask AND the exception's tag is not 0
+                (PIMOS manual e-shoen.tex:57)
+SH_GOAL is the head of a list, linked through G_LINK, of the shoen's
+PARKED goals (stage 3): the first goal until start_shoen, and the goals
+taken from the ready queue while the shoen, or one above it, is
+stopped; start_shoen releases them all and writes 0 there.
 """
 G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS = 0, 1, 2, 3, 4
 READY, SUSPENDED, TAKEN = 0, 1, 2
 S_NEXT, S_GOAL, S_SIZE = 0, 1, 2
-SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 7
+SH_COUNT, SH_STATUS, SH_PARENT, SH_REPORT, SH_GOAL, SH_SIZE = 0, 1, 2, 3, 4, 8
 SH_REDUCTIONS, SH_REMOVE = 5, 6
+SH_MASK = 7
 # REMOVED: terminated, then removed (remove_shoen): the report stream is
 # closed and the record is not used again
 DORMANT, STARTED, TERMINATED, REMOVED = 0, 1, 2, 3
+# STOPPED: stop_shoen on a started shoen (stage 3); start_shoen starts it
+# again.  An aborted shoen is TERMINATED at once (its `aborted` comes
+# first on the report stream): a goal found under a TERMINATED or
+# REMOVED shoen is discarded when it is taken from the ready queue
+STOPPED = 4
 # The report stream's integer codes that the models emit.  PIM/m-sourced:
 # the image's shoen:report/2 (cell 15818) translates 8 to `started` and
 # 12 to `terminated` (PIMOS macro/pimos/pimos/pimos.vmac:177-199 agrees),
@@ -52,6 +66,14 @@ DORMANT, STARTED, TERMINATED, REMOVED = 0, 1, 2, 3
 # {14, H, L} to `return_resource(H, L)`.
 REPORT_STARTED, REPORT_TERMINATED = 8, 12
 REPORT_STATISTICS_STARTED, REPORT_STATISTICS, REPORT_RETURN_RESOURCE = 10, 9, 14
+# Stage 3: 1 `aborted`, 11 `stopped` and {2, Kind, Info, NewCode,
+# NewArgv} `exception(..)`, the same report/2 and pimos.vmac; Kind is
+# the firmware's exception number (pimos.vmac:331-349
+# exception_code#..: 9 reduction_failure, 16 raised), the language tag
+# of number n is 1 << (16 + n) (manual e-shoen.tex table "Exception Tag
+# Bit Positions"; VPIM f_ConvertExceptionNumberToTag agrees)
+REPORT_ABORTED, REPORT_EXCEPTION, REPORT_STOPPED = 1, 2, 11
+EXC_REDUCTION_FAILURE, EXC_RAISED = 9, 16
 
 ADDR_BITS = 27                  # memory size in cells = 1 << ADDR_BITS
 MEMORY_CELLS = 1 << ADDR_BITS

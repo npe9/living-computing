@@ -54,7 +54,7 @@ module mkPimmCore#(String image)(PimmCore);
   PimmVBox  vbox  <- mkPimmVBox(mem.port[6], gbox);
   PimmMBox  mbox  <- mkPimmMBox;
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
-  PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox);
+  PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox, regs);
   PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
@@ -62,13 +62,14 @@ module mkPimmCore#(String image)(PimmCore);
   FIFO#(Bool) unifyQ <- mkFIFO;
   Reg#(Bool)  outsideUnify <- mkReg(False);   // a unifyReq is in the data box
   Reg#(Bool)  outsideWake  <- mkReg(False);   // ... and its wake in the goal box
+  Reg#(Addr)  takenPc <- mkRegU;              // a goal of a shoen being checked
 
   rule toExec;
     let f <- fetch.out;
     exec.enq(f);
   endrule
 
-  (* descending_urgency = "advance, reduction_ended, begin_run" *)
+  (* descending_urgency = "advance, reduction_ended, begin_run, goal_checked" *)
   rule advance;
     let s <- exec.out;
     case (s) matches
@@ -96,14 +97,34 @@ module mkPimmCore#(String image)(PimmCore);
     let m <- gbox.picked;
     case (m) matches
       tagged Valid .pc: begin
-        exec.newGoal;
-        fetch.enq(pc);
+        // a goal of a shoen is checked first (shoen stage 3): run,
+        // discarded (its shoen aborted) or parked (stopped)
+        if (gbox.shoen != 0) begin
+          takenPc <= pc;
+          shbox.check(gbox.takenGoal);
+        end
+        else begin
+          exec.newGoal;
+          fetch.enq(pc);
+        end
       end
       tagged Invalid: begin
         $display("Q");
         endQ.enq(EndIdle);
       end
     endcase
+  endrule
+
+  rule goal_checked;
+    let k <- shbox.checked;
+    if (k == 0) begin
+      exec.newGoal;
+      fetch.enq(takenPc);
+    end
+    else begin
+      $display(k == 1 ? "E aborted" : "E park");
+      gbox.pickup;
+    end
   endrule
 
   rule outside_unified (outsideUnify);
