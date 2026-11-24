@@ -79,6 +79,17 @@ The second sweep (`sweep_2026-11-24.md`) adds the titles of later editions:
 
 It found no copy or table of contents of the I/O volume.
 
+The fixed-point search (`fixpoint_2026-11-24.md`) adds manual **numbers** and early titles, all
+cited in digitised books or IPSJ papers, none held by any library found: 「ESP説明書（第1版）」
+MP1002-1 (ICOT 1986), 「ESP 説明書（第2版）」 MP1005-2 (ICOT 1987, IPSJ 115299 ref. [2]),
+「SIMPOS使用操作説明書（第2版）」 MP3003-2 (ICOT 1986), and the CESP 2.0 manuals 「CESP言語マニュアル
+2.0版」 and 「CESPライブラリマニュアル2.0版」 (IPSJ 120508), and 「CESP言語2.0版」 (三菱電機東部
+コンピュータシステム, 1994). It also found that MITI's gazette 通産省公報 registers SIMPOS releases as
+national-project deliverables (2.0 in 1987, V4.0 in 1988, 6.0 as 5G-02-002 in 1990), at NDL only.
+Still no copy or table of contents of the I/O volume. On rank 5, the class-id form of the
+`library_utility` assert family shows asserted clauses are the class's local predicates
+(`librarian.md`, `library_utility` class methods, USAGE); persistence remains open.
+
 What is NOT a gap any more: the owner of `get_slot`/`set_slot` (class `class`); the `stop_watch` method set; SIMPOS
 file-name syntax (HELD-SOURCE `name`/`pathname`, `sweep_2026-11-24.md` §2.1); the Librarian's structure and its command-list interpreter (cil's copy
 of the SIMPOS 6.1 Librarian, `finds.md`); the system menu, Librarian, debugger and window menus by

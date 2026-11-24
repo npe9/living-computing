@@ -425,3 +425,32 @@ archive to record.
   7. Former AIR staff at universities, such as 川越恭二 (Ritsumeikan).
 
   AIR's founding and fate were not established.
+
+## 14. The fixed-point search (2026-11-24)
+
+Record: `simpos/subsystems/fixpoint_2026-11-24.md`. The search ran in rounds, held material and web
+together. Each round followed every lead the previous one produced. It stopped after round 4, the
+first round that gave no new source and no new fact.
+
+**Still no SIMPOS or CESP code, binary or software archive anywhere.** What it adds:
+- **A usage census of ESP code never mined before.** These are the SIMPOS-side front ends of the
+  PIMOS applications and PIMOS's own `src_util` ESP (`simpos/subsystems/tools/fe_census.py`). They
+  send 284 method keys to SIMPOS classes, 46 of them new. 42 were read for meaning (USAGE):
+  - `library_utility`'s class-id assert family;
+  - `directory`'s wildcard methods;
+  - the `tcpip_socket` client calls;
+  - the PSI/UX display-depth patch;
+  - `editor_text_buffer` navigation.
+- **Provenance.** CIL, which carries the SIMPOS 6.1 Librarian copy, was written by
+  三菱電機東部コンピュータシステム (its 1991 manual). MTC is also CESP's 1994 seller (「CESP言語2.0版」).
+  AIR's CESP leads came from Oki (INFERENCE from 沖電気研究開発 bylines).
+- **Bibliography.**
+  - Manual numbers MP1002-1 and MP1005-2 (ESP説明書, 1986 and 1987) and MP3003-2
+    (SIMPOS使用操作説明書, 1986).
+  - SIMPOS releases registered in MITI's 通産省公報: 2.0 (1987), V4.0 (1988), 6.0 (1990).
+  - The full contents of bit's 1990 「ESPerへの道」.
+  - Sixteen more IPSJ papers, on disk only. Among them, IPSJ 113884 names SIMPOS's pool
+    subsystem.
+  - No manual of any version is held by any library found, except JAIST's five 1985 manuals.
+- Unreachable sources, and the ranked institutional routes, are listed in the record (§3-§4). The
+  first is JAIST, then NDL, then Mitsubishi Electric's IT group.
