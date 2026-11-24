@@ -20,6 +20,7 @@ package P9KernTb;
 
 import HobbitTypes::*;
 import HobbitMmu::*;
+import HobbitEvents::*;
 import HobbitCore::*;
 
 import "BDPI" function ActionValue#(Bit#(32)) pk_fetch(Bit#(32) addr,
@@ -33,6 +34,11 @@ import "BDPI" function ActionValue#(Bit#(32)) pk_end();
 import "BDPI" function ActionValue#(Bit#(32)) pk_kclocks();
 import "BDPI" function ActionValue#(Bit#(32)) pk_failed();
 import "BDPI" function Action pk_report();
+import "BDPI" function Action pk_evwrite(Bit#(32) addr, Bit#(32) v);
+import "BDPI" function ActionValue#(Bit#(32)) pk_irq_at();
+import "BDPI" function ActionValue#(Bit#(32)) pk_irq_level();
+import "BDPI" function ActionValue#(Bit#(32)) pk_irq_pc();
+import "BDPI" function Action pk_irq_taken(Bit#(32) pc);
 
 // The synchronous physical memory (HobbitMem), as bsv/P9HostTb.bsv's: a
 // registered read address, the word visible the next clock, `fetch`
@@ -78,6 +84,16 @@ module mkP9KernMem(HobbitMem);
   method Word peek(Word addr) = pk_peek(addr);
 endmodule
 
+// The event unit's port (frames and vectors, p. 1-37/1-38): physical
+// memory itself, through its own BDPI write so it schedules against
+// nothing.  The kernel's vectors and interrupt stack are in RAM.
+module mkP9KernEventMem(HobbitEventMem);
+  method Word read(Word a) = pk_peek(a);
+  method Action write(Word a, Word v);
+    pk_evwrite(a, v);
+  endmethod
+endmodule
+
 // The table walk's port: physical memory itself.
 module mkP9KernTables(MmuTables);
   method Word read(Word a) = pk_peek(a);
@@ -90,8 +106,9 @@ endmodule
 module mkP9KernTb(Empty);
   HobbitMem mem <- mkP9KernMem;
   MmuTables tbl <- mkP9KernTables;
+  HobbitEventMem emem <- mkP9KernEventMem;
   HobbitCore core <- mkHobbitCoreSystem(mem, 32'hFFFFFFFF,
-                                        defaultMemCycles(), tbl);
+                                        defaultMemCycles(), tbl, emem);
 
   Reg#(Bit#(3)) boot <- mkReg(0);
   Reg#(Word) pc0 <- mkReg(0);
@@ -124,20 +141,86 @@ module mkP9KernTb(Empty);
 
   Bit#(32) retired = core.instrs() + core.folded();
 
+  // Every clock the board is told the retirement count.  It only reads the
+  // core, so it schedules before the commit rule and against nothing.
   rule tell (boot == 2);
     pk_retired(retired);
   endrule
 
+  // The rules below fire every clock or act on the core, so they work
+  // from a copy of the core's state taken by `sample`, one clock late:
+  // when they read the core directly, bsc found rule cycles through the
+  // commit rule and broke them by making `watch` (always enabled)
+  // conflict with it, and the core never retired an instruction.
+  Reg#(Bit#(32)) sRetired <- mkReg(0);
+  Reg#(Bool) sStop <- mkReg(False);
+  Reg#(Word) sPc <- mkReg(0);
+  Reg#(Word) sFaultPc <- mkReg(0);
+  Reg#(Bit#(32)) sProbe <- mkReg(0);
+  Reg#(Bit#(64)) sDbg <- mkReg(0);
+  rule sample (boot == 2);
+    sRetired <= retired;
+    sStop <= core.halted() || core.faulted();
+    sPc <= core.pc();
+    sFaultPc <= core.faultPc();
+    sProbe <= core.dbgBoundary();
+    sDbg <= core.dbgState();
+  endrule
+
+  // The recorded interrupts (docs/p9boot.md, "How device reads and
+  // interrupts reach the core", choice 3), through the core's two queues:
+  // `arm` hands over the next one whenever there is room, `tookIrq` checks
+  // the PC each one saved against the reference's.
+  Reg#(Bit#(32)) taken <- mkReg(0);
+  Reg#(Bit#(32)) armed <- mkReg(0);
+  Reg#(Bool) irqBad <- mkReg(False);
+  rule arm (boot == 2 && (armed == taken));
+    let n <- pk_irq_at();
+    let l <- pk_irq_level();
+    if (n != 32'hFFFFFFFF && n < endN) begin
+      core.armInterrupt(n, truncate(l));
+      armed <= armed + 1;
+    end
+  endrule
+  rule tookIrq (boot == 2);
+    let saved <- core.takenInterrupt();
+    let pc <- pk_irq_pc();
+    pk_irq_taken(saved);
+    taken <= taken + 1;
+    if (pc != saved) begin
+      $display("P9KERN FAIL: interrupt %0d saved pc %08x, the reference %08x",
+               taken + 1, saved, pc);
+      irqBad <= True;
+    end
+  endrule
+
+  // A stall: no retirement for 20,000 clocks.  `watch` reports the
+  // boundary probe once and stops (a deadlock otherwise runs to the clock
+  // limit).  It is part of `watch`: a separate always-enabled rule
+  // conflicted with it and bsc starved `watch`.
+  Reg#(Bit#(32)) lastRet <- mkReg(0);
+  Reg#(Bit#(32)) still <- mkReg(0);
+
   rule watch (boot == 2 && !finishing);
     clocks <= clocks + 1;
+    Bool stalled = False;
+    if (sRetired != lastRet) begin
+      lastRet <= sRetired; still <= 0;
+    end else begin
+      still <= still + 1;
+      stalled = (still == 20000);
+    end
+    if (stalled)
+      $display("P9KERN STALL: no record retired for 20,000 clocks at %0d",
+               sRetired);
     let f <- pk_failed();
-    if (retired >= endN) begin
+    if (sRetired >= endN) begin
       finishing <= True; why <= 0;
-    end else if (f != 0) begin
+    end else if ((f != 0) || irqBad) begin
       finishing <= True; why <= 1;
-    end else if (core.halted() || core.faulted()) begin
+    end else if (sStop) begin
       finishing <= True; why <= 2;
-    end else if (clocks > limit) begin
+    end else if (clocks > limit || stalled) begin
       finishing <= True; why <= 3;
     end
   endrule
@@ -148,15 +231,14 @@ module mkP9KernTb(Empty);
   rule finish (finishing && drain == 16'd400);
     pk_report();
     case (why)
-      0: $display("P9KERN END: %0d records, the reference's last", retired);
-      1: $display("P9KERN STOP: a device write differed, %0d records", retired);
+      0: $display("P9KERN END: %0d records, the reference's last", sRetired);
+      1: $display("P9KERN STOP: a device write or an interrupt differed, %0d records", sRetired);
       2: $display("P9KERN STOP: the machine halted, pc=%08x faultPc=%08x, %0d records",
-                  core.pc(), core.faultPc(), retired);
-      3: $display("P9KERN STOP: clock limit, pc=%08x sp=%08x msp=%08x psw=%08x dbg=%016x, %0d records",
-                  core.pc(), core.sp(), core.msp(), core.psw(), core.dbgState(),
-                  retired);
+                  sPc, sFaultPc, sRetired);
+      3: $display("P9KERN STOP: clock limit or a stall, %0d records", sRetired);
     endcase
-    $display("P9KERN %0d clocks", clocks);
+    $display("P9KERN probe: boundary %08x state %016x pc %08x", sProbe, sDbg, sPc);
+    $display("P9KERN %0d clocks, %0d interrupts taken", clocks, taken);
     $finish(why == 0 ? 0 : 1);
   endrule
 endmodule

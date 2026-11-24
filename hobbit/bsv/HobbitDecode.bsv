@@ -455,6 +455,16 @@ module mkHobbitDecode(HobbitDecode);
                   return mkInstr(pc, 3, OP_CATCH,
                                  Operand { mode: 4'hF, val: v32 },
                                  noOpnd(), TR_NONE);
+                // CATCH's operand is a Table 3-2 word32 like ENTER's
+                // (p. 3-10; Table 1-21, p. 1-25): absolute (0xC) and
+                // stack-offset-indirect (0xE) take the target from memory,
+                // which EU_S1 reads (HobbitCore.bsv, `word32Mem`).  The
+                // kernel's interrupt return uses CATCH *4(SP) (s9term,
+                // record 2,849,530 of the boot).
+                else if ((sm == 4'hC) || (sm == 4'hE))
+                  return mkInstr(pc, 3, OP_CATCH,
+                                 Operand { mode: sm, val: v32 },
+                                 noOpnd(), TR_NONE);
                 else
                   return trapAt(pc, 3, TR_BAD_MODE);
           4'h9: if (sm == 4'hD)
@@ -470,7 +480,7 @@ module mkHobbitDecode(HobbitDecode);
                 // fetched from memory (or the stack cache)" and the cache
                 // is set empty.  EU_S1 reads the word and passes the
                 // instruction on as the immediate form (HobbitCore.bsv,
-                // `enterMem`).
+                // `word32Mem`).
                 else if ((sm == 4'hC) || (sm == 4'hE))
                   return mkInstr(pc, 3, OP_ENTER,
                                  Operand { mode: sm, val: v32 },

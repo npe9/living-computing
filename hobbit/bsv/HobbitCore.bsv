@@ -95,6 +95,14 @@ interface HobbitCore;
   method Action setVb(Word vb);
   method Bit#(3) il();
   method Action setIl(Bit#(3) il);
+  // A recorded interrupt (bsv/P9KernTb.bsv): taken at the instruction
+  // boundary after record `n` at level `level`.
+  //
+  // Through two queues, so the testbench schedules against nothing in the
+  // core: `armInterrupt` enqueues (n, level); `takenInterrupt` hands back
+  // the PC each taken one saved, in order.
+  method Action armInterrupt(Bit#(32) n, Bit#(3) level);
+  method ActionValue#(Word) takenInterrupt();
   method Word isp();
   method Word shad();
   method Action setIsp(Word isp);
@@ -118,6 +126,8 @@ interface HobbitCore;
   // Verification probe for the harnesses (like HobbitMem::peek); the
   // machine never reads it.
   method Bit#(64) dbgState();
+  // Harness probe: EU_S3's boundary state and the orchestrator's.
+  method Bit#(32) dbgBoundary();
 endinterface
 
 // One architectural write.  `addr` is the word address and `mask` the byte
@@ -462,7 +472,6 @@ endinterface
 module mkHobbitCtl#(Reg#(Bool) kl, Reg#(Word) vb, HobbitEvents ev,
                     HobbitMmu mmu, HobbitStackCache sc)(HobbitCtl);
   Reg#(Word) configR <- mkReg(0);       // 0 on reset (p. 1-36)
-  Reg#(Word) faultR  <- mkReg(0);
   Reg#(Word) timer1R <- mkReg(0);
   Reg#(Word) timer2R <- mkReg(0);
 
@@ -478,7 +487,10 @@ module mkHobbitCtl#(Reg#(Bool) kl, Reg#(Word) vb, HobbitEvents ev,
       4'd6:  return ((psw[9] == 1'b1) ? sc.shad : ev.shad) & 32'hFFFFFFF0;
       4'd7:  return vb & 32'hFFFFFFF0;
       4'd8:  return mmu.stb & 32'hFFFFF800;
-      4'd9:  return faultR;
+      // FAULT lives in the event unit, which sets it on a read or write
+      // fault (p. 1-39); until 2026-11-24 the core kept a second copy here
+      // that only a CPU write changed, so the kernel read 0 after a fault.
+      4'd9:  return ev.faultReg;
       // The JTAG ID (Table 1-4, p. 1-11): version 1 (mask two), part 0,
       // manufacturer 0x3B -- the reference model's choice
       // (hobbit_sem.System.ident), adopted.
@@ -501,7 +513,7 @@ module mkHobbitCtl#(Reg#(Bool) kl, Reg#(Word) vb, HobbitEvents ev,
         4'd7: vb <= v & 32'hFFFFFFF0;
         // A write to STB flushes the TLBs and NPSRs (p. 1-18, p. 2-8).
         4'd8: mmu.setStb(v & 32'hFFFFF800);
-        4'd9: faultR <= v;
+        4'd9: ev.setFault(v);
         4'd11: timer1R <= v;
         4'd12: timer2R <= v;
         default: noAction;              // ID: a write does nothing (p. 1-11)
@@ -857,15 +869,17 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
         // instruction then goes down the pipe as the immediate form
         // (case 2), which has the same semantics once the value is known:
         // flush the cache unconditionally, MSP = SP = target (p. 3-19).
-        Bool enterMem = (d.op == OP_ENTER) &&
-                        ((so.mode == 4'hC) || (so.mode == 4'hE));
+        // CATCH's operand is the same word32 (p. 3-10), and the same holds:
+        // once read, the target is the immediate form's.
+        Bool word32Mem = ((d.op == OP_ENTER) || (d.op == OP_CATCH)) &&
+                         ((so.mode == 4'hC) || (so.mode == 4'hE));
         if (opReadsSrc(d.op) || (d.op == OP_KCALL) ||
             (d.op == OP_RETURN) || flowIndirect(d) ||
-            opNeedsSrcEa(d.op) || enterMem) begin
+            opNeedsSrcEa(d.op) || word32Mem) begin
           let r = operandA(so, cb, spb, mspb, d.cpu && (so.mode == 4'h7));
           srcEa = (dqmM && modeIsIndirect(so.mode)) ? r.ea + dqmOff : r.ea;
           bad = bad || r.bad;
-          if (enterMem)
+          if (word32Mem)
             e.d.src = Operand { mode: 4'hF,
                                 val: (so.mode == 4'hE) ? r.ea : r.val };
           if (!opNeedsSrcEa(d.op)) begin
@@ -1643,7 +1657,13 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
 
     // ---- the one architectural write --------------------------------
     WrInfo wr = noWr();
-    if (trap)
+    // The trap's write is the unimplemented-instruction sequence's
+    // `*(CSP) = PC` (pp. 1-39, 1-40).  On the privileged machine the other
+    // traps are exceptions (p. 1-38), which write only their frame on the
+    // interrupt stack: their record has no write (hobbit_sem
+    // `_system_exception`; the s9term boot's first user fetch fault,
+    // record 2,886,867).  The other cores keep the old record.
+    if (trap && (!sysOn || (d.tr == TR_UNIMP)))
       wr = WrInfo { we: True, addr: i.csp & 32'hFFFFFFFC, data: d.pc,
                     mask: 8'h0F, wdata: d.pc };
     else if (d.op == OP_KCALL)
@@ -1801,6 +1821,20 @@ interface HobbitEuS3;
   // a half-written frame.
   method Bool framePending();
   method Bool flushIcNow();
+  // CRET's CATCH portion (p. 3-15) is under way: its record waits for the
+  // refill, and `cretPc` is the PC the CRET restored.  `cretFault` ends
+  // it at a read fault (p. 3-11): the record goes out with MSP at the
+  // blocks filled, `mspFilled`.
+  method Bool cretCatchActive();
+  method Word cretPc();
+  method Action cretFault(Word mspFilled);
+  // Harness probe for the interrupt boundary (P9KernTb's stall report).
+  method Bit#(12) dbgStop();
+  // An interrupt boundary (mkHobbitCoreSystem's recorded interrupts):
+  // commit nothing once `n` records have retired (the head of the
+  // orchestrator's interrupt queue, passed in as `stopAt`); `stopPc` is
+  // then the PC of the instruction that has not executed.
+  method Maybe#(Word) stopPc();
   method Bool trapPending();
   method TrapReason trapReason();
   method Word trapPc();
@@ -1820,7 +1854,9 @@ endinterface
 
 module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                      HobbitEvents events, Bool eventsOn,
-                     HobbitCtl ctl, HobbitMmu mmu)(HobbitEuS3);
+                     HobbitCtl ctl, HobbitMmu mmu,
+                     Maybe#(Bit#(32)) stopR,
+                     HobbitMmuMem dface, Bool sysOn)(HobbitEuS3);
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.  The HRI record is the trace port
   // (Flute's g_pc_trace analogue), not datapath.
@@ -1873,6 +1909,19 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   // `catchWait` then holds the pipeline until the refill has ended.
   Reg#(Maybe#(Tuple2#(Word, Word))) pendCatch <- mkReg(tagged Invalid);
   Reg#(Bool) catchWait <- mkReg(False);
+  // CRET's record, held until its CATCH portion ends: the reference
+  // retires CRET with MSP where the portion left it -- the target, or the
+  // last block filled before a read fault (hobbit_sem `_cret_catch`).
+  Reg#(Maybe#(Hri)) pendCretRec <- mkReg(tagged Invalid);
+  Reg#(Word) cretPcR <- mkReg(0);
+  Wire#(Maybe#(Word)) cretFaultW <- mkDWire(tagged Invalid);
+  // The interrupt boundary: after record `stopR` no instruction commits
+  // until the orchestrator has taken the interrupt.  A host and its folded
+  // branch are two records the reference model executes as two steps, so
+  // the boundary can fall between them; the host then commits alone and
+  // squashes to the branch's PC (`splitHere`), and the branch is the
+  // instruction the interrupt saves.  `stopR` is the parameter: the
+  // record number at the head of the orchestrator's queue.
   // FLUSHI/FLUSHP: the orchestrator empties the decoded-instruction
   // store when it redirects for the serializing squash.
 
@@ -1903,8 +1952,23 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     o.e.d.fold &&
     (o.foldMis || (foldTaken(o) != predictedTaken(o.e.d.foldOp)));
 
+  Bit#(32) recNow = ninstr + nfold;
+  Bool stopHere = case (stopR) matches
+                    tagged Valid .n: return recNow == n;
+                    default: return False;
+                  endcase;
+  function Bool splitHere(EuS2Out o);
+    case (stopR) matches
+      tagged Valid .n:
+        return o.e.d.fold && !o.silent && (o.e.d.tr == TR_NONE) &&
+               (recNow + 1 == n);
+      default: return False;
+    endcase
+  endfunction
+
   function Bool squashOf(EuS2Out o);
     if (o.e.d.tr != TR_NONE) return False;
+    else if (splitHere(o)) return True;
     else if (o.serialize) return True;
     else if (isCondJumpOp(o.e.d.op) && !o.e.d.fold &&
              (o.sinceCmp == 0)) begin
@@ -1915,7 +1979,9 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   endfunction
 
   function Word redirectOf(EuS2Out o);
-    if (o.serialize)
+    if (splitHere(o))
+      return o.e.d.foldPc;
+    else if (o.serialize)
       return o.serPc;
     else if (isCondJumpOp(o.e.d.op) && !o.e.d.fold &&
         (o.sinceCmp == 0)) begin
@@ -1947,6 +2013,24 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                  mem_wmask: 0, trap: False, cyc: cyc };
   endfunction
 
+  // An event flush with an instruction still held: only the interrupt
+  // boundary does that (every other event starts with this slot empty, or
+  // with its instruction just committed).  The held instruction has not
+  // executed -- the interrupt saves its PC -- so it is dropped.
+  rule dropHeld (flushW && (inFull || isValid(cretFaultW)));
+    inFull <= False;
+    if (cretFaultW matches tagged Valid .m) begin
+      if (pendCretRec matches tagged Valid .h) begin
+        let k = h;
+        k.msp_after = m;
+        traceQ.enq(k);
+      end
+      pendCretRec <= tagged Invalid;
+      pendCatch <= tagged Invalid;
+      catchWait <= False;
+    end
+  endrule
+
   rule commit (!haltR && traceQ.notFull && !flushW);
     if (pendCatch matches tagged Valid {.csp, .cto}) begin
       // CRET's refill: the cache was emptied at the new SP by the CRET's
@@ -1963,7 +2047,11 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
       pendCatch <= tagged Invalid;
       catchWait <= True;
     end else if (catchWait) begin
-      if (!sc.busy) catchWait <= False;
+      if (!sc.busy) begin
+        catchWait <= False;
+        if (pendCretRec matches tagged Valid .h) traceQ.enq(h);
+        pendCretRec <= tagged Invalid;
+      end
     end else if (fq0v) begin
       // KCALL's frame tail (return PC at ISP-8, PSW at ISP-4; p. 3-29),
       // one word per clock through the box's single command port, ahead
@@ -2000,9 +2088,10 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end else if (pendFold matches tagged Valid .r) begin
       traceQ.enq(r);
       pendFold <= tagged Invalid;
-    end else if (inFull) begin
+    end else if (inFull && !(stopHere && !inD.silent)) begin
       let o = inD;
       let d = o.e.d;
+      Bool split = splitHere(o);
       if (o.fatal) begin
         // A fault the printed architecture raises as an exception (a
         // misaligned operand, pp. 1-4/1-27, or a zero divide, p. 3-17)
@@ -2026,13 +2115,24 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
       Bool lateMis = isCondJumpOp(d.op) && !d.fold && (o.sinceCmp == 0) &&
                      squashOf(o);
       Word occ = o.occ + (lateMis ? 2 : 0);
-      if (!o.silent) traceQ.enq(hostRecord(o, occ));
-      if (d.fold)
+      if (o.cretCatch) begin
+        pendCretRec <= tagged Valid hostRecord(o, occ);
+        cretPcR <= o.serPc;
+      end else if (!o.silent)
+        traceQ.enq(hostRecord(o, occ));
+      if (d.fold && !split)
         pendFold <= tagged Valid (foldRecord(o, foldMispredicted(o) ? 3 : 0));
       if (o.pswUpd.we) flagWW <= tagged Valid o.pswUpd;
       if (!o.silent) ninstr <= ninstr + 1;
-      if (d.fold) nfold <= nfold + 1;
+      if (d.fold && !split) nfold <= nfold + 1;
       lastPcR <= d.pc;
+      // KCALL's frame is the kernel's: the reference makes it at kernel
+      // level whatever the PSW's level (hobbit_sem.System).  Its first
+      // word goes to memory in this clock under the caller's PSW, so the
+      // data face is told; the two below drain after the PSW has become
+      // the kernel's.  Found at record 2,888,578 of the s9term boot,
+      // /boot's first system call, a write fault on the interrupt stack.
+      if (sysOn && o.kcall) dface.kernelNow;
       if (o.kcall) begin
         // The frame's remaining two words (p. 3-29) and ISP -= 16.  The
         // orchestrator holds the pipeline while they drain.
@@ -2183,6 +2283,18 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   method Bool framePending() = fq0v || fq1v || fq2v ||
                               isValid(pendCatch) || catchWait;
   method Bool flushIcNow() = inFull && inD.serialize && inD.flushIc;
+  method Bool cretCatchActive() = isValid(pendCretRec);
+  method Word cretPc() = cretPcR;
+  method Action cretFault(Word mspFilled);
+    cretFaultW <= tagged Valid mspFilled;
+  endmethod
+  method Maybe#(Word) stopPc();
+    if (stopHere && inFull && !inD.silent && !fq0v && !fq1v && !fq2v &&
+        !isValid(pendFold) && !isValid(pendCatch) && !catchWait)
+      return tagged Valid inD.e.d.pc;
+    else
+      return tagged Invalid;
+  endmethod
   method Bool trapPending() = trapPendR;
   method TrapReason trapReason() = trapReasonR;
   method Word trapPc() = trapPcR;
@@ -2211,6 +2323,11 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
 
   method Bool squash() = inFull && squashOf(inD);
   method Word redirectPc() = inFull ? redirectOf(inD) : 0;
+  method Bit#(12) dbgStop() =
+    { pack(isValid(stopR)), pack(stopHere), pack(inFull), pack(inD.silent),
+      pack(fq0v), pack(fq1v), pack(fq2v), pack(isValid(pendFold)),
+      pack(isValid(pendCatch)), pack(catchWait),
+      pack(inFull && squashOf(inD)), pack(inFull && inD.serialize) };
   method Bool faulted() = faultedR;
   method Word faultPc() = faultPcR;
   method Bit#(32) instrs() = ninstr;
@@ -2235,7 +2352,7 @@ endmodule
 // ---------------------------------------------------------------------
 module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
                          MmuTables tbl, Bool eventsOn,
-                         Bool sysOn)(HobbitCore);
+                         Bool sysOn, HobbitEventMem evmem)(HobbitCore);
 
   Reg#(Word) pswR <- mkReg(0);
   // CONFIG bit 16, kernel little-endian (Table 1-2, p. 1-10): the data
@@ -2251,6 +2368,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   // names it), not a commit-time refill.  See `dfOperand` below.
   Reg#(Bool) dfKnownR <- mkReg(False);
   Reg#(Bool) dfOpR <- mkReg(False);
+
   Reg#(Bool) eventTakenR <- mkReg(False);
   Reg#(Word) eventPcR <- mkReg(0);
   Reg#(Bit#(4)) eventIdR <- mkReg(0);
@@ -2263,12 +2381,25 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   Reg#(Hri) present <- mkReg(unpack(0));
   Reg#(Bool) presentValid <- mkReg(False);
+  // The privileged machine's exception record (hobbit_sem
+  // _system_exception): an operand read fault takes the exception at an
+  // instruction that never commits, and the reference retires a trap=1
+  // record for it -- the faulting instruction's PC and parcels, the stack
+  // pointers before the event and after it, no write.  `evRecPend` holds
+  // the first half from startEvent, `evRec` the whole record from
+  // finishEvent until the presentation slot takes it; `evRecs` counts
+  // them as retirements.
+  Reg#(Maybe#(Hri)) evRecPend <- mkReg(tagged Invalid);
+  Reg#(Maybe#(Hri)) evRec <- mkReg(tagged Invalid);
+  Reg#(Bit#(32)) evRecs <- mkReg(0);
+  // A read fault in CRET's CATCH portion: the MSP the event leaves.
+  Reg#(Maybe#(Word)) cretMspR <- mkReg(tagged Invalid);
 
   HobbitMmu mmu <- mkHobbitMmu(tbl);
   HobbitMmuMem textFace <- mkHobbitMmuMem(mem, mmu, True, pswR);
   HobbitMmuMem dataFace <- mkHobbitMmuMem(mem, mmu, False, pswR);
-  HobbitEventMem evmem <- mkHobbitEventMem;
-  HobbitEvents events <- mkHobbitEventsCore(evmem, mmu);
+  HobbitEvents events <- (sysOn ? mkHobbitEventsSys(evmem, mmu)
+                                : mkHobbitEventsCore(evmem, mmu));
 
   // The box owns the memory's one read port and lends it to the
   // prefetch buffer (sc.textPort), so it is instantiated first.
@@ -2280,7 +2411,22 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   // Instantiate the stages downstream-first so the bypass and flag
   // expressions can be passed as Flute passes stage2.out.bypass.
-  HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn, ctl, mmu);
+  // The recorded interrupts (armInterrupt): the head's record number is
+  // EU_S3's boundary.  The PCs the taken ones saved go back the same way.
+  // Unguarded: `stopAt` reads the head every clock, and a guarded `first`
+  // would lift "not empty" into every rule that reads EU_S3's boundary --
+  // the commit rule among them -- so the core stopped dead once the queue
+  // emptied (found when the first interrupt of the s9term boot was taken
+  // and nothing after it retired).  The uses below test notEmpty.
+  FIFOF#(Tuple2#(Bit#(32), Bit#(3))) intQ <- mkUGSizedFIFOF(2);
+  FIFOF#(Word) tookQ <- mkSizedFIFOF(4);
+  // EU_S3 counts what it commits; the recorded number also counts the
+  // exception records (`evRecs`, below), which EU_S3 never sees.
+  Maybe#(Bit#(32)) stopAt = intQ.notEmpty
+                              ? tagged Valid (tpl_1(intQ.first) - evRecs)
+                              : tagged Invalid;
+  HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn, ctl, mmu,
+                                stopAt, dataFace, sysOn);
   HobbitEuS2 s2 <- mkHobbitEuS2(pswR, configKlR, vbR, sc, s3.bypass, events,
                                 sysOn);
 
@@ -2374,9 +2520,15 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     end
   endrule
 
+  // The recorded interrupt: EU_S3 has stopped at the boundary and holds
+  // the next instruction (docs/p9boot.md, "The boot on the core").
+  Bool boundaryInt = eventsOn && intQ.notEmpty && tookQ.notFull &&
+                     isValid(s3.stopPc);
+
   function Bool eventWanted() =
     eventsOn && !eventActiveR &&
-    (s3.trapPending() || dfTake || intWanted() || traceWanted());
+    (s3.trapPending() || dfTake || intWanted() || traceWanted() ||
+     boundaryInt);
 
   // `!s3.framePending()` holds the pipeline while a KCALL's frame tail
   // drains, so the vector handler cannot read a half-written frame.
@@ -2430,13 +2582,22 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     let df = dfTake;
     let iw = intWanted();
     let tw = traceWanted();
+    let bw = boundaryInt && !s3.trapPending();
+    // CRET's CATCH portion faulted (p. 3-11, exception 8): the exception
+    // is taken at the PC the CRET restored, under the restored PSW, with
+    // MSP at the blocks already filled (hobbit_sem `_cret_catch`).
+    let cf = df && !dfOperand && s3.cretCatchActive;
 
-    if (iw)
+    if (bw)
+      c.pc = validValue(s3.stopPc);
+    else if (iw)
       c.pc = s1.pc;
     else if (tp)
       c.pc = s3.trapPc();
     else if (df && dfOperand)
       c.pc = s1.pc;
+    else if (cf)
+      c.pc = s3.cretPc;
     else if (df)
       c.pc = s3.lastPc();
     else
@@ -2455,6 +2616,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
         TR_ALIGN:       c.align    = True;
         TR_FETCH_MISS:  c.fetchFault = True;
         TR_FETCH_FAULT: c.fetchFault = True;
+        TR_UNIMP_REG:   c.unimpReg = True;     // exception 6 (p. 1-27)
         default:        c.illegal  = True;
       endcase
     end
@@ -2467,9 +2629,30 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
       c.interrupt = True;
       c.il      = ilR;
     end
+    if (bw) begin
+      c.interrupt = True;
+      c.il      = tpl_2(intQ.first);
+      intQ.deq;
+      tookQ.enq(validValue(s3.stopPc));
+    end
     if (tw) c.trace = True;
 
-    events.setShad(sc.shad);
+    if (cf) begin
+      Word filled = dataFace.faultAddr() & 32'hFFFFFFF0;
+      s3.cretFault(filled);
+      cretMspR <= tagged Valid filled;
+      sc.reset(sc.sp, filled);
+    end
+    if (sysOn && df && dfOperand && !bw && !iw && !tp) begin
+      let e = s1.out.e.d;
+      evRecPend <= tagged Valid Hri {
+        valid: True, pc: s1.pc, insn0: e.insn0, insn1: e.insn1,
+        sp_before: sc.sp, sp_after: 0, msp_before: sc.msp, msp_after: 0,
+        mem_we: False, mem_addr: 0, mem_wdata: 0, mem_wmask: 0,
+        trap: True, cyc: 0 };
+    end
+
+    if (!sysOn || (pswR[9] == 1'b1)) events.setShad(sc.shad);
     events.raise(c);
     eventActiveR <= True;
     if (tw) traceFired <= True;
@@ -2485,7 +2668,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     let r = events.result();
     eventPswW  <= tagged Valid r.newPsw;
     s1.start(r.vector);
-    sc.reset(r.newSp, sc.msp);
+    sc.reset(r.newSp, fromMaybe(sc.msp, cretMspR));
+    cretMspR <= tagged Invalid;
     events.ack;
     eventActiveR <= False;
     eventTakenR <= r.taken;
@@ -2494,10 +2678,25 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     savedPcR    <= r.savedPc;
     savedPswR   <= r.savedPsw;
     if (r.newPsw[7] == 1'b0) traceFired <= False;
+    if (evRecPend matches tagged Valid .h) begin
+      let k = h;
+      k.sp_after = r.newSp;
+      k.msp_after = sc.msp;
+      evRec <= tagged Valid k;
+      evRecPend <= tagged Invalid;
+      evRecs <= evRecs + 1;
+    end
   endrule
 
   // ---- retirement presentation --------------------------------------
-  rule loadTrace (!presentValid && s3.notEmpty);
+  (* descending_urgency = "loadEventRecord, loadTrace" *)
+  rule loadEventRecord (!presentValid && isValid(evRec));
+    present <= validValue(evRec);
+    presentValid <= True;
+    evRec <= tagged Invalid;
+  endrule
+
+  rule loadTrace (!presentValid && s3.notEmpty && !isValid(evRec));
     present <= s3.out;
     presentValid <= True;
     s3.deq;
@@ -2560,7 +2759,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   method Bit#(32) folded() = s3.folded;
   method Bit#(32) refills() = sc.refills;
-  method Bit#(32) instrs() = s3.instrs;
+  method Bit#(32) instrs() = s3.instrs + evRecs;
   method Word minSp() = sc.minSpSeen;
   method Word maxSp() = sc.maxSpSeen;
 
@@ -2581,6 +2780,13 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Word vb() = vbR;
   method Action setVb(Word v) = action vbR <= v; endaction;
   method Bit#(3) il() = ilR;
+  method Action armInterrupt(Bit#(32) n, Bit#(3) level) if (intQ.notFull);
+    intQ.enq(tuple2(n, level));
+  endmethod
+  method ActionValue#(Word) takenInterrupt();
+    tookQ.deq;
+    return tookQ.first;
+  endmethod
   method Action setIl(Bit#(3) v) = action ilR <= v; endaction;
   method Word isp() = events.isp;
   method Word shad() = events.shad;
@@ -2602,6 +2808,14 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Word eventMemRead(Word a) = events.memRead(a);
   method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
 
+  method Bit#(32) dbgBoundary() =
+    { 4'b0, s3.dbgStop,
+      pack(intQ.notEmpty), pack(tookQ.notFull), pack(eventActiveR),
+      pack(s1.notEmpty), pack(s2.occupied), pack(s3.occupied),
+      pack(isValid(s3.stopPc)), pack(squash), pack(eventWanted()),
+      pack(dfOperand), pack(s3.framePending), pack(s2.canAccept),
+      pack(boundaryInt), pack(s3.trapPending), pack(dataFace.fault()),
+      pack(s3.canAccept) };
   method Bit#(64) dbgState() =
     { zeroExtend(s1.pc[15:0]), pack(s2.notEmpty), pack(s3.notEmpty),
       pack(ic.filling), pack(pdu.outValid), pack(pdu.accepting),
@@ -2613,7 +2827,8 @@ endmodule
 // memory; the integrated MMU/event path is a separate constructor.
 module mkHobbitCore#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
   MmuTables tbl <- mkMmuTablesNull();
-  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, False, False);
+  HobbitEventMem evmem <- mkHobbitEventMem;
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, False, False, evmem);
   return c;
 endmodule
 
@@ -2623,13 +2838,15 @@ endmodule
 // process needs this for floating point (bsv/P9HostTb.bsv).
 module mkHobbitCoreEvents#(HobbitMem mem, Word pcLimit, MemCycles m)(HobbitCore);
   MmuTables tbl <- mkMmuTablesNull();
-  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, False);
+  HobbitEventMem evmem <- mkHobbitEventMem;
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, False, evmem);
   return c;
 endmodule
 
 module mkHobbitCoreMmu#(HobbitMem mem, Word pcLimit, MemCycles m,
                         MmuTables tbl)(HobbitCore);
-  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, False);
+  HobbitEventMem evmem <- mkHobbitEventMem;
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, False, evmem);
   return c;
 endmodule
 
@@ -2641,8 +2858,8 @@ endmodule
 // table walk reads `tbl`, which a kernel boot backs with the machine's
 // own memory (the kernel builds its tables in RAM).
 module mkHobbitCoreSystem#(HobbitMem mem, Word pcLimit, MemCycles m,
-                           MmuTables tbl)(HobbitCore);
-  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, True);
+                           MmuTables tbl, HobbitEventMem evmem)(HobbitCore);
+  HobbitCore c <- mkHobbitCoreImpl(mem, pcLimit, m, tbl, True, True, evmem);
   return c;
 endmodule
 

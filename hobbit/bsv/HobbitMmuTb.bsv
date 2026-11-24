@@ -274,7 +274,10 @@ module mkHobbitMmuTb(Empty);
       let f <- chkwf(r.newPsw, "fault_new_psw", 32'h00010000);
       let g <- chkwf(r.newIsp, "fault_new_isp", 32'h000000F0);
       let h <- chkwf(r.newShad, "fault_new_shad", 32'h000000F0);
-      let i <- chkwf(r.faultReg, "fault_register", 32'h0000DEAD);
+      // FAULT holds the "32-bit operand-aligned virtual address"
+      // (p. 1-39): the faulting 0xDEAD's word, as hobbit_sem stores it
+      // (exc.va & ~3).
+      let i <- chkwf(r.faultReg, "fault_register", 32'h0000DEAC);
       let j <- chkwf(ev.memRead(32'h0F4), "frame_id_word", 32'h8);
       let k <- chkwf(ev.memRead(32'h0F8), "frame_pc_word", 32'h00000ABC);
       let l <- chkwf(ev.memRead(32'h0FC), "frame_psw_word", 32'h00010000);

@@ -312,12 +312,22 @@ boot by record number and device writes checked against it
 the privileged machine -- the CPU escape and the control registers,
 CSP = ISP, CRET, KRET, the flushes, CONFIG.PX/KL (`docs/p9boot.md`
 lists them) -- which is new behaviour, not a finding.  With it, the
-comparison stopped twice before record 2,825,000:
+comparison stopped twice before record 2,825,000 (rows 1, 2), and six
+more times before 2,893,000 once interrupts were delivered and the boot
+went on into `/boot` (rows 3-8; record numbers from row 3 on are the
+reference's as merged 2026-11-23, which reaches `netadd` at 2,681,671
+rather than row 2's 2,658,001):
 
 | # | what | found at | fixed in | pinned by |
 |---|---|---|---|---|
 | 1 | The interlocked `ORI`/`ANDI`/`ADDI` (opcodes 0x01..0x03, pp. 3-37, 3-8, 3-6) were decoded as unimplemented and trapped | record 126,600, in `tas` (`ORI $1, *lock`), 3,397 records after `main` | `OP_ORI/ANDI/ADDI`; EU_S2 computes `dst OP src` and the accumulator's old-value write, which EU_S3 issues the next clock through the frame drain (`xw`); EU_S1 drains before and holds after (the pp. 3-8/3-37 Notes); R4 as the destination is the old value (p. 3-6 note) | golden 022 (and 009 now runs on the core) |
 | 2 | **A wrong-path operand read that faulted raised the exception.**  The data face latches an MMU fault when the read is made, and the core started the event sequence at once -- for a read EU_S1 made on the predicted path of a branch that then mispredicted | record 2,658,001, in `netadd`: `CMPEQ $0,R24; JMPTN` predicted not taken, taken when the pointer is nil, and the fall-through's `CMPEQ *R24,R0` read virtual 0 | the orchestrator classifies a data fault on the clock it appears (`dfOperand`: EU_S1's operand fetch, which the box's `memLive` names); such a fault holds EU_S1, lets the older instructions complete, and is taken at EU_S1's PC only when they have (p. 1-37: the faulting instruction has not completed); a squash first drops it | golden 023 (run on the MMU core, PSW.V = 1) |
+| 3 | **The recorded interrupt** (`docs/p9boot.md`, choice 3) is new behaviour; bringing it up found two defects in the new code: the queue's guarded `first` lifted "not empty" into every rule that read EU_S3's boundary, the commit rule among them, so nothing retired once the queue emptied; and the event's flush left the held instruction in EU_S3, which then retired after the interrupt | record 2,848,972 (level 6, in `spllo`): first a stall, then an extra `RETURN` record at 2,848,973 | an unguarded queue (`mkUGSizedFIFOF`, `notEmpty` tested at each use); EU_S3's `dropHeld` drops the held instruction on an event flush | the boot only (to 2,893,000); one interrupt, so more than one is untested, and so is the host/fold split at a boundary |
+| 4 | `CATCH` with an absolute or stack-offset-indirect target (`CATCH *$addr`, `CATCH *Roffset`; p. 3-10: "MSP = *(addr)", "MSP = *(offset + SP)") was decoded as a bad mode and trapped | record 2,849,530, the interrupt return's `CATCH *R4` | decoded; EU_S1 reads the target word as it does for ENTER's memory forms (`word32Mem`) and passes the immediate form on | golden 024 |
+| 5 | **CRET's CATCH portion that faults** (p. 3-15; p. 3-11: exception 8): the core retired CRET with MSP at the target and took the exception at the CRET's own PC with MSP left at the target | record 2,883,347, `touser`'s CRET to `/boot`: the user stack page is not mapped yet | CRET's record waits in EU_S3 until the portion ends (`pendCretRec`); a read fault during it is taken at the restored PC (`cretPc`), the record goes out with MSP at the blocks filled (the fault address rounded down to 16), and the stack cache is reset there (`hobbit_sem` `_cret_catch`) | the boot only |
+| 6 | **FAULT read 0 after a fault**: the control-register box kept its own FAULT, which only a CPU write changed, while the event unit set its own | record 2,883,355, the fault handler's `CPU MOV FAULT, ...` | one FAULT, the event unit's (`setFault` for a CPU write); a read or write fault stores the word-aligned address (p. 1-39) | the boot only |
+| 7 | **KCALL from user level faulted on its own frame**: the first frame word is written in KCALL's commit clock and was translated under the caller's PSW, so the kernel's interrupt stack refused it (a write fault, exception 9) | record 2,888,578, `/boot`'s first system call | EU_S3 tells the data face to translate that write at kernel level (`kernelNow`); the other two words drain under the kernel's PSW.  p. 3-29 says a fault on these writes resets the part and does not say at which level they are made; the kernel level is the reference's reading (`hobbit_sem.System`) and the only one under which 1e's system calls work | the boot only |
+| 8 | **An exception's record carried a write**: on the privileged machine every trap's record had the unimplemented sequence's `*(CSP) = PC`; the reference's exception record (`_system_exception`) has none | record 2,886,867, `/boot`'s first fetch fault | only `TR_UNIMP` writes in `mkHobbitCoreSystem` (the other cores unchanged); an operand read fault, which the core takes before the instruction commits, now makes its own `trap=1` record (`evRecPend`, counted in `instrs`) | the write: the boot only.  The operand-fault record: no case before 2,893,000, untested |
 
 Injections, each reverted by its exact reverse and the diff checked:
 
@@ -333,10 +343,21 @@ Injections, each reverted by its exact reverse and the diff checked:
 
 Golden 023 pins one half of finding 2: a squash drops the held fault.
 The other half -- a held operand fault taken at EU_S1's PC once it is
-the oldest instruction -- is not exercised by anything yet; the first
-user-mode faults of the boot (record 2,859,432 on) depend on it.  The
-interlocked drain and hold (finding 1) likewise have no discriminating
-test (see the table below).
+the oldest instruction -- is not exercised by anything yet: the boot's
+faults before 2,893,000 are a CRET's CATCH portion, a fetch fault and a
+KCALL frame write, none of them an operand read.  The interlocked drain
+and hold (finding 1) likewise have no discriminating test (see the table
+below).
+
+Rows 3 and 5-8 are pinned by the boot alone, and not by an injection on
+the final tree.  The evidence is the sequence in which they were found.
+The boot stopped at the record each row names, with the field given, and
+each fix moved the first difference past it: 2,848,973 (`pc`),
+2,849,530 (`we`/`trap`), 2,883,347 (`msp_after`), 2,883,355 (`data`),
+2,886,867 (`we`) and 2,888,579 (`pc`).  None of them is in the suite's
+300,000-record sample.  A golden for each would need the privileged
+machine in `run_golden.sh` and in the reference's CLI.  Neither has
+one.
 
 **The privileged machine against the boot sample.**  It is new
 behaviour, so its evidence is the boot itself; each of these was
@@ -359,8 +380,9 @@ restored byte for byte after each):
 So the sample pins PX, the ISP as the stack base and CRET's PSW; the
 CRET CATCH, the ISP-mode RETURN, PSW.E, the SP-write rule, the CPU
 serialization and the interlocked drain rest on argument and on the
-long run to 2,825,000 (not re-run under injection).  KRET and anything
-entered from user level are not reached before 2,825,000 at all.
+long run (to 2,825,000 then, 2,893,000 now; not re-run under
+injection).  KRET is first reached at 2,849,530+ and user level at
+2,886,866, after the sample.
 
 The 16,172 "unrecorded" device reads p9kern.c counts by record
 2,825,000 are the same kind of read as finding 2 and as §1c's
@@ -376,7 +398,12 @@ reference made were requested and answered from the recording, and all
 (p9boot's EEPROM, rtc and SONIC models; the idle skip off for the
 recording) the same run records 161 reads and 16,373 writes to record
 2,825,000: all 161 replayed, all 16,373 matched, the same 16,172
-unrecorded reads, and the trace and the 74-byte console identical.
+unrecorded reads, and the trace and the 74-byte console identical.  To
+record 2,893,000 (the same reference, with the interrupt and `/boot`):
+181 reads replayed, 16,526 writes matched, and 16,316 unrecorded reads.
+By address (`P9KSPEC=1`, that run) these are 16,256 of 0xB0003004, 58
+of 0xB0003000 and 2 of 0xA4400000: the same LCD and SONIC registers.
+None of them retired.
 
 ## 2a. Documented instruction interactions not yet modelled
 

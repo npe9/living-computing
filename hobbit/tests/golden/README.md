@@ -279,7 +279,8 @@ Later goldens took some of these in (each `.md` says what it covers and
 what found it): `009` `ADDI` and `022` `ORI`/`ANDI` (the accumulator's
 second write made visible by a following `MOV R4, R12`, and R4 as the
 destination), `023` a wrong-path operand read that faults under the MMU
-(the core-only harness above).
+(the core-only harness above), `024` `CATCH` (no earlier golden executes
+it) with absolute and stack-offset-indirect targets.
 
 ## What `check_golden.py` enforces
 

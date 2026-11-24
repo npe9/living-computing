@@ -589,10 +589,10 @@ record by record -- A2's method (one device model, recorded and replayed)
 applied to a kernel:
 
 ```sh
-# record the reference boot, build the core, boot it, compare (3.5 min
-# for the core's part on a loaded machine; the reference records at
-# ~62,000 instructions/s):
-hobbit/bsv/run_p9kern.sh 2825000 [WORKDIR]
+# record the reference boot, build the core, boot it, compare (the
+# reference records at ~62,000 instructions/s; the core's part took
+# 15 to 35 minutes on a heavily loaded machine, 2026-11-24):
+hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
 # the suite's sample (tests/run_tests.sh): to main and the first ORI
 hobbit/bsv/run_p9kern.sh 300000 WORKDIR
 ```
@@ -617,6 +617,10 @@ hobbit/bsv/run_p9kern.sh 300000 WORKDIR
   RAM is a sparse store ([0x80000000, 0x80800000), `CHOICES` memsize),
   and the MMU's table walk reads that same RAM (`pk_peek`), because the
   kernel builds its tables there.
+  With `-D P9KERN_FLAT` the board memory is inlined, so every BDPI call
+  sits in the one synthesized module, which is the pattern the Verilator
+  build needs.  As of 2026-11-24 that form compiles to Verilog with
+  `bsc -verilog`.  It has not been built or run with Verilator.
 * `tools/p9coreboot.py compare` streams the two traces and stops at the
   first record that differs in any field but `cyc`
   (`tools/p9trace_cmp.py`'s rule, streamed: a boot is millions of
@@ -654,8 +658,18 @@ The choices:
    (which must equal the recorded `pc`, or the run stops), and continue.
    This replays the reference's timing instead of modelling Quart's
    counter on the core: A2's rule (one device model), applied to time.
-   *Not yet implemented:* the first interrupt is after record 2,825,106,
-   past the matched range.
+   Implemented 2026-11-24: the testbench hands the core each recorded
+   interrupt through a queue (`armInterrupt`); EU_S3 commits nothing once
+   the core's record count reaches `n` (counting the exception records
+   the core makes outside EU_S3); the orchestrator then takes the
+   interrupt at the PC of the instruction EU_S3 holds, which is dropped
+   unexecuted, and hands the saved PC back (`takenInterrupt`) for the
+   testbench to check.  If the boundary falls between a host and its
+   folded branch -- two records, two reference steps -- the host commits
+   alone and squashes to the branch, which the interrupt then saves
+   (`splitHere`; not exercised yet).  The first interrupt of the boot is
+   after record 2,848,972 (level 6, saved PC 0x800041ec, in `spllo`);
+   it is the only one before 2,893,000.
 
 ### What the core gained: the privileged machine
 
@@ -672,11 +686,12 @@ one commit rule:
   everything after it at commit (`serialize`), so it reads committed
   state and what follows sees its writes.
 * **`mkHobbitCtl`**, the control-register box: CONFIG (with KL and PX),
-  FAULT, TIMER1/2 (registers only; nothing counts them yet), ID
-  (0x1000003B, the reference's choice), and the reads of all twelve.
-  EU_S3's commit rule is its only writer (`apply`), KCALL's ISP and SHAD
-  included.  The PSW stays the core's register, SP/MSP the stack
-  cache's, ISP/SHAD the event unit's, STB the MMU's.  Reserved bits read
+  TIMER1/2 (registers only; nothing counts them yet), ID (0x1000003B,
+  the reference's choice), and the reads of all twelve.  EU_S3's commit
+  rule is its only writer (`apply`), KCALL's ISP and SHAD included.  The
+  PSW stays the core's register, SP/MSP the stack cache's, ISP/SHAD and
+  FAULT the event unit's (which sets FAULT on a read or write fault),
+  STB the MMU's.  Reserved bits read
   as 0 and are masked on write (PSW 0x1FFF0, STB 0xFFFFF800, CONFIG
   0xFFFF0000, the pointers' low four bits); an SP write sets MSP = SP
   (p. 1-13); SHAD follows a written CSP (p. 1-16).
@@ -696,16 +711,34 @@ one commit rule:
   p. 1-23).
 * **The interlocked ORI/ANDI/ADDI** (pp. 3-37, 3-8, 3-6), in every core
   (`docs/conformance_1to1.md` §1d #1).
+* **Events in the kernel's memory.**  `mkHobbitCoreSystem` takes the
+  event unit's memory as a parameter (the testbench's is the board's
+  RAM, `pk_peek`/`pk_evwrite`), and its event unit (`mkHobbitEventsSys`)
+  translates the frame and the vector read at kernel level whatever the
+  level the event interrupts, as the reference does.  KCALL's own frame
+  goes through the stack cache's memory port; its first word is written
+  in the commit clock under the caller's PSW, so EU_S3 tells the data
+  face to translate that write at kernel level (`kernelNow`).  p. 3-29
+  says a fault on those writes resets the part; the kernel-level reading
+  is the reference's (§1d #7).
+* **Exceptions as the reference records them**: an operand read fault
+  makes a `trap=1` record of its own (the instruction never commits);
+  an exception's record has no write (only the unimplemented-instruction
+  sequence's stores `*(CSP) = PC`); CRET's record waits for its CATCH
+  portion and carries the MSP the portion reached; a read fault in that
+  portion is taken at the restored PC with MSP at the blocks filled
+  (§1d #5, #6, #8).
 * In the other cores nothing else changes: a CPU instruction is still
   `TR_CPU` and CRET/KRET/FLUSH* the unimplemented sequence, as the
   goldens and the smoke test require.
 
 ### How far it gets
 
-Every record matches through **2,825,000** (the first interrupt is after
-2,825,106), on the reference before and after it gained the EEPROM, rtc
-and SONIC models (re-run 2026-11-23: 161 device reads replayed, 16,373
-writes matched):
+Every record matches through **2,893,000**, on the reference as merged
+2026-11-23 (EEPROM, rtc and SONIC models; the idle skip off for the
+recording).  The record numbers are that reference's; on the one before
+it (no EEPROM/rtc reads) the boot reached `netadd` at 2,658,001 and
+`userinit` at 2,815,122, and the core matched it through 2,825,000.
 
 | record | reached |
 |---:|---|
@@ -714,8 +747,16 @@ writes matched):
 | 126,600 | `tas`'s `ORI` -- found the interlocked forms missing (§1d #1) |
 | 2,088,445 | `mmuinit` |
 | 2,621,219 | `uartputs`: the first console byte |
-| 2,658,001 | `netadd` -- found the wrong-path fault (§1d #2) |
-| 2,815,122 | `userinit` |
+| 2,681,671 | `netadd` -- found the wrong-path fault (§1d #2) |
+| 2,838,988 | `userinit` |
+| 2,848,972 | the first interrupt, level 6, in `spllo` (§1d #3) |
+| 2,849,530 | the interrupt return's `CATCH *R4` (§1d #4) |
+| 2,883,341 | `touser` |
+| 2,883,347 | its CRET to `/boot`: the CATCH portion faults on the user stack (§1d #5) |
+| 2,883,355 | the fault handler reads FAULT (§1d #6) |
+| 2,886,866 | **`/boot` runs in user mode** (its first instruction, `0x1020`) |
+| 2,886,867 | its first fetch fault, a `trap=1` record (§1d #8) |
+| 2,888,578 | `/boot`'s first system call, `KCALL` (§1d #7) |
 
 and the console is the reference's, byte for byte:
 
@@ -725,19 +766,17 @@ and the console is the reference's, byte for byte:
 
 ### What blocks the core next
 
-1. **Interrupts** (choice 3 above): the boundary hold in EU_S3, the
-   saved PC, the level.
-2. **Frames and vectors in real memory.**  The event unit still reads
-   vectors from, and writes exception and interrupt frames to, its own
-   256-word memory; the kernel's vectors and its interrupt stack are in
-   RAM, translated at kernel level (the reference makes every vector
-   read and KCALL's frame at kernel level whatever the PSW's level).
-3. **The first exceptions** (`touser`, 2,859,426, then the CRET's CATCH
-   read fault on the user stack at 2,859,432 -- record numbers of the
-   reference before the 2026-11-23 merge; on the merged one the first
-   trap record is a user fetch fault at 2,862,952): a CATCH fault taken at
-   the restored PC with SP kept, and a held operand fault taken once it
-   is the oldest -- the half of §1d #2 that golden 023 does not pin.
+1. **A write fault on a committed store** (record 2,893,033, the
+   kernel's `evenaddr` writing a user address, `0xffbfffec`): the
+   reference takes the exception at the store, which does not retire
+   (a `trap=1` record, no write); the core has already retired the store
+   when the stack cache's memory port reports the fault, and then takes
+   the exception.  A store whose translation can fault has to be checked
+   before it commits (or its record held until its write is accepted).
+2. **The operand-fault record** (§1d #8) has met no case before record
+   2,893,000: no operand read faults there.  It is untested.
+3. **Device DMA** (SONIC, once `/boot` starts BOOTP) is not in the
+   replay.
 4. **The reference walks the tables at every access**; the core's TLBs
    and NPSRs cache entries (the walk writes R/M back when it fills one).
    Software that changes a table and flushes behaves the same on both;

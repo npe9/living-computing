@@ -360,10 +360,25 @@ pk_irq_pc(void)
 }
 
 void
-pk_irq_taken(void)
+pk_irq_taken(uint32_t pc)
 {
+	(void)pc;
 	if (irq_next < nirq)
 		irq_next++;
+}
+
+/* The event unit's frame writes (bsv/P9KernTb.bsv mkP9KernEventMem). */
+void
+pk_evwrite(uint32_t addr, uint32_t v)
+{
+	init();
+	if (ram(addr & ~3u))
+		wr(addr & ~3u, v);
+	else {
+		printf("P9KERN FAIL: an event frame write to %08x, outside RAM\n",
+		    addr);
+		failed = 1;
+	}
 }
 
 void

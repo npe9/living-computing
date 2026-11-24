@@ -676,6 +676,10 @@ interface HobbitMmuMem;
   method Word faultAddr();
   method Bool faultWrite();
   method Action clearFault();
+  // This clock's write is translated at kernel level whatever the PSW
+  // (the privileged machine's KCALL frame, mkHobbitCoreSystem); a read
+  // in the same clock is not affected.
+  method Action kernelNow();
 endinterface
 
 module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
@@ -687,10 +691,12 @@ module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
   Wire#(Maybe#(MmuMemFault)) faultRW <- mkDWire(tagged Invalid);
   Wire#(Maybe#(MmuMemFault)) faultWW <- mkDWire(tagged Invalid);
   Wire#(Bool) clearW <- mkDWire(False);
+  Wire#(Bool) kernelW <- mkDWire(False);
 
   function MmuReq req(Word a, Bool wr) =
     MmuReq { va: a, isText: isText, isWrite: wr,
-             user: (psw[10] == 1'b1), enabled: (psw[16] == 1'b1) };
+             user: (psw[10] == 1'b1) && !(wr && kernelW),
+             enabled: (psw[16] == 1'b1) };
 
   rule latch;
     if (clearW) begin
@@ -743,6 +749,9 @@ module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
   method Bool faultWrite() = faultWriteR;
   method Action clearFault();
     clearW <= True;
+  endmethod
+  method Action kernelNow();
+    kernelW <= True;
   endmethod
 endmodule
 

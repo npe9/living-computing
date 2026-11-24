@@ -165,8 +165,9 @@ done
 # read that would fault must not raise the exception (the kernel's
 # netadd); the core runs it with PSW.V = 1 and only page 0 mapped
 # (023.md "Pre-state"), the reference physically -- the architectural
-# trace is the same.  Each three ways.
-for n in 009 022 023; do
+# trace is the same.  024: CATCH with an absolute and a stack-offset-
+# indirect target (the kernel's interrupt return).  Each three ways.
+for n in 009 022 023 024; do
     "$hobbit/bsv/run_golden.sh" "$n" > "$tmp/$n.model.raw"
     grep '^HRI ' "$tmp/$n.model.raw" > "$tmp/$n.model"
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.model" \
@@ -184,7 +185,7 @@ done
 # (125,203) and the kernel's first interlocked ORI (tas, 126,600), every
 # record compared with the reference boot and every device access
 # replayed from it.  300,000 records; the long run is the documented
-# `bsv/run_p9kern.sh 2825000`.
+# `bsv/run_p9kern.sh 2893000`, through `/boot`'s first system call.
 "$hobbit/bsv/run_p9kern.sh" 300000 "$tmp/p9kern" > "$tmp/p9kern.out" 2>&1 || {
     tail -20 "$tmp/p9kern.out"
     echo "hobbit: the s9term boot on the core diverged" >&2
