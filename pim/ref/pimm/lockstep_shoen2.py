@@ -64,9 +64,12 @@ it ran (its goal had not yet run); padding/3 3, statistics(0, 6).
 
 Seven parts, on a bare machine.  EXPECT says what each leaves: the
 values printed, the console, and for every shoen so far (count,
-status, parent, remove cell) from its record.  Derived from the
-design by hand before the first run; held on the first run of both
-models.
+status, parent, remove cell) from its record.  The first six parts
+were derived from the design by hand before the first run and held
+on it, but for one slip of the test's own (its check that every
+statistic was printed counted the console's marker twice); the
+Bluespec agreed on its first run.  `external` was added after, when
+the injection `execute_external not counted` was not caught.
   ipl_monitor     convert/2 on {"abc" in JIS, A}, Control [start|C],
                   ipl_monitor(Report, C, Shut) at the root: A = "abc",
                   Report = [started, terminated, statistics_started,
@@ -146,7 +149,9 @@ formula, and PIM/m's own count is not known to be the same.
 
 Not run: stop_shoen, abort_shoen, add_shoen_resource,
 allow_shoen_resource_report, shoen_profile, raise (refused); a
-statistic H above 0 (needs 2**31 reductions); a removed shoen given
+statistic H above 0 (needs 2**31 reductions); shoen_statistics or
+remove_shoen waiting on an unbound handle (their stubs); a removed
+shoen given
 statistics or removed again; three shoen deep; a parent terminated
 within its child's termination (see `nested`).
 """
