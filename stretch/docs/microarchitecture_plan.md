@@ -6427,6 +6427,55 @@ Staged, each step green and committed:
      removed no deck moved (fp_box_hold_store's case C, also with an LVE
      after the SIC to wait on store levels, and the six FP/recovery decks),
      so it had no pin to attribute; recorded in NEXT.md.
+   - **5f stage 3 (2026-11-23): THE DIVIDER, THE DECIMAL ADDER AND THE VFL
+     MULTIPLIER RELEASE THEIR LEVEL** as the FP box does: in the clock the
+     box answers and in its hold clocks. mkEBox `laBoxWaiting()` names the
+     box a look-ahead level waits on (boxKind 0 divider, 1 decimal adder, 3
+     VFL multiplier, 4 FP box); StretchCore `boxReleases` gates
+     `yieldToPrepare` and `besideHold` on it, with one switch per box
+     (`releaseDivBox`, `releaseDecBox`, `releaseVflBox`). THE PAGES: Perf.
+     Char. Vol. 1 printed p.3-16 (PDF 34), "the local autonomy of the major
+     units", "Each major unit is responsible for processing at top speed as
+     long as there is data to process"; printed p.3-18 (PDF 36), "The
+     processing time of I-box instructions can be largely overlapped by
+     concurrent E-box action". No page was found that exempts the serial
+     (VFL, decimal) unit or the divider. The radix converter (DCV, boxKind
+     2) stays confined: not measured. Interruption recovery and the store
+     levels already key on the held level, not on the box, so they cover a
+     level any of these holds (K1 and IH below).
+     NEW DECKS `div_box_release`, `dec_box_release`, `vfl_box_release`: L,
+     the box's level interrupts (XPL from an FP divide, p.85-86; PF from a
+     decimal add, p.60, and a VFL multiply, p.67) and the trail run beside
+     it is undone; S, an SX started in the box's hold clocks (seen with a
+     temporary $display: div pc 4250, dec 4249, vfl 4250, each `yield=0`)
+     waits in a store level and is cancelled; T, I-box work beside the held
+     level; I, the interlock (an LX and a Z of the accumulator wait for the
+     answer). The divider deck uses an FP divide: its walk holds the box 17
+     clocks, where the VFL divide holds it 4 (96 bits at 24 a clock) and
+     the decimal adder and VFL multiplier 3 -- too short for the I-box,
+     which charges about 10 clocks an instruction, to reach much beside
+     them.
+     OBSERVED INJECTIONS (real file, exact inverse edit, cmp IDENTICAL;
+     each over all three decks): RDIV moves only div_box_release's CYCLES
+     866 -> 891; RDEC only dec_box_release's 859 -> 867; RVFL only
+     vfl_box_release's 945 -> 949; K1 (`deferIboxStores := False`) makes
+     each S case's store and leaves it unrecovered (stws 1, wheres later);
+     IH (iboxHazard skipped beside a held level) fails each I case's zout.
+     FOUND ON THE WAY: with no NOPs before case L's BD the divider deck lost
+     its interruption (WHEREL 0, X7 = X8 = 1): the trail ran beside the
+     walk and the BD came in the two clocks after the level, NEXT.md item
+     3. A switch refusing BE/BD/BEW beside a held level was tried and moved
+     nothing there (the BD was not beside the level), so it was backed out.
+     @ATLAS@
+     MOVED PINS (MODEL; each given back by its switch's injection, real
+     file, exact inverse edit, cmp IDENTICAL, values passing):
+     int_recovery_undo CYCLES 558 -> 550, MEMREADS 48 -> 46 (RDIV gives
+     558 / 48 back; RDEC and RVFL do not). HALT CLOCKS against master (the
+     hold-lift suite log, master 3997745's bsv/; `STRETCH_HALT_REPORT=1`):
+     besides that deck and the three new ones, two unpinned MCP runs move
+     one clock, `PAST T MOVE` 6339172 -> 6339173 and `MCP's OWN IOD DECK`
+     6734458 -> 6734459, MEMREADS unchanged; RDEC gives both back, RDIV
+     and RVFL do not.
 
 Note on the ~120s build: profiling (item 9) showed elaborating the
 E-box logic ONCE is the cost, and neither replication nor the FP

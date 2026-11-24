@@ -565,7 +565,15 @@ recovery could not undo a store made beside the level -- the 7030 undoes
 the I-box's advance on an interruption, Ref. Manual printed p.48, Perf.
 Char. Vol. 1 printed p.3-24, Buchholz §15.6 -- and lifted once a store made
 there waited in a store level); the Vol. 2 atlas is byte-identical with
-it, and `decks/fp_box_hold_store.strap` pins an SX started there. Still
+it, and `decks/fp_box_hold_store.strap` pins an SX started there. AND FOR
+THE DIVIDER, THE DECIMAL ADDER AND THE VFL MULTIPLIER since 2026-11-23
+(plan §1c 5f stage 3; mkEBox `laBoxWaiting()`, StretchCore `boxReleases`
+with one switch per box, `releaseDivBox` / `releaseDecBox` /
+`releaseVflBox`): Perf. Char. Vol. 1 pp.3-16..3-18 give every unit the
+same autonomy, and the recovery and store levels already cover a level
+any box holds. `decks/div_box_release.strap`, `dec_box_release.strap`,
+`vfl_box_release.strap`; each switch moves only its own deck. The radix
+converter (DCV) is still confined. Still
 not for an E-box-class load or an indicator branch's guess, both of which
 the first version (c823af2) did: the E-box-class yield moved the atlas's `M+`
 EXTERNAL columns (PDF 100-101) up to 0.62 clock a case further from the
