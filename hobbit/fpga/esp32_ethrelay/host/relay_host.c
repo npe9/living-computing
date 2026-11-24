@@ -115,6 +115,11 @@ int main(int argc, char **argv)
         int big = 1 << 20;
         setsockopt(s, SOL_SOCKET, SO_RCVBUF, &big, sizeof big);
     }
+    /* The UDP port is bound: a datagram sent to it from now on is queued.
+     * A test waits for this line before it sends (before it, the kernel
+     * drops a datagram to the unbound port). */
+    fprintf(stderr, "relay_host: ready\n");
+    fflush(stderr);
 
     double rate = baud > 0 ? baud / 10.0 : 0;   /* bytes per second */
     double t_in = now(), t_out = t_in;
