@@ -655,6 +655,12 @@ reads a file from a modelled disk image, and `za` assembles a program
 *inside* the boot. That is "1e is running", not "the model can run one
 binary".
 
+The file server s9term's `/boot` needs (it is a terminal: root over IL
+17008 after BOOTP) is a 1e 386 machine in QEMU, serving the whole 1e
+release from a kfs made by 1e's own tools; a shipped 9pc terminal boots
+its root from it over the same frame boundary the model's SONIC will
+use. See [`qemu_1e_server.md`](qemu_1e_server.md) and `tools/qemu1e/`.
+
 ## A0 status (2026-11-19): closed — there was no hole
 
 **The parcel question is answered: there is no hole, no padding and no

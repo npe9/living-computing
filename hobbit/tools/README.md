@@ -11,6 +11,11 @@ of the chip: the archive's file dates are 3 January 1993, the same month
 as the manual. That makes it the closest thing to hand that states what
 the machine encodes, in code rather than in prose.
 
+`qemu1e/` is separate from the vendored toolchain: scripts (no
+binaries) that boot the release's own 386 kernels in QEMU as the 1e file
+server the Hobbit terminal boots from; see
+[`../docs/qemu_1e_server.md`](../docs/qemu_1e_server.md).
+
 ## Provenance
 
 | item | value |
