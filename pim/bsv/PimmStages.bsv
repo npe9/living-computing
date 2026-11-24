@@ -590,7 +590,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_to_processor) begin
       // the waiting goal of Goal@processor(P): not a PIM/m instruction,
       // only at its stub (asm/pimm_stubs.py TO_PROCESSOR)
-      if (z > 9 || pc != toProcStub + 2 * zeroExtend(z)) stop(EndUnimp);
+      if (z > 11 || pc != toProcStub + 2 * zeroExtend(z)) stop(EndUnimp);
       else begin
         dbox.deref(regs.r(x));
         st <= XTp0;
@@ -1250,7 +1250,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // enqueue_goal makes it; any other processor is refused
   rule toProcessor (st == XProc);
     let a <- dbox.derefResult;
-    if (isRef(a) && ins2.val[31:24] <= 9) begin
+    if (isRef(a) && ins2.val[31:24] <= 11) begin
       // P unbound: the goal waits for it (carried over from VPIM,
       // agreeing with KLIC; asm/pimm_stubs.py TO_PROCESSOR): P and
       // the code address after the arguments

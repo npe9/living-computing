@@ -63,7 +63,9 @@ run alone (bsv/run_pimm_lockstep.sh tproc) and restored from a copy,
   P and the code address swapped              P unbound, line 89 (A 10
                                               for A 9)
   the waiting goal hooked on its own record   P unbound, line 107
-NOT run: another processor number (a refusal), an arity over 9
+NOT run: another processor number (a refusal), arities 10 and 11 (the
+limit was 9 until a goal of 10 arguments was met in pim:go/4,
+2026-11-24; the stubs for 10 and 11 are appended), an arity over 11
 (refused), the waiting goal inside a shoen.
 """
 import os

@@ -35,7 +35,7 @@ REGS = {'r': 1, 'r_r': 2, 'r_r_r': 3, 'r4': 4, 'r5': 5, 'r6': 6, 'r7': 7}
 GET_VALUE = (0x23, 0xbc)
 PROCEED = (0x23, 0x60)
 
-PINNED = dict(stubs=81, cells=280)
+PINNED = dict(stubs=83, cells=284)
 
 # The merger's step.  NOT a PIM/m instruction: the machine's merger is a
 # cell with its own tag (MGHOK) that acts when it is unified; here a
@@ -66,11 +66,11 @@ UNIFY_STEP = (0x22, 0x01)
 # (runtime/sched.c enqueue_throw_goal, 267-330) makes a goal of
 # wait_penum_preds that waits for the node number.  Here (OURS) the
 # waiting goal's code is a stub to_processor N, N + 1, N, one per arity
-# N = 0..9: its arguments the goal's N arguments (in the record, not a
+# N = 0..11: its arguments the goal's N arguments (in the record, not a
 # vector), then P (rN), then the goal's code address (rN+1).  22:02 is not a PIM/m
 # instruction either; both models refuse it anywhere but at its stub.
 TO_PROCESSOR = (0x22, 0x02)
-TO_PROCESSOR_MAX = 9
+TO_PROCESSOR_MAX = 11
 
 
 def encode(tag, op, regs):
