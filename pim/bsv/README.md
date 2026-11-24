@@ -79,7 +79,7 @@ instruction and is tested by trace comparison with it.
 
 `run_pimm_lockstep.sh` builds into `build_pimm/`, and for each test
 (`../ref/pimm/lockstep_*.py`) writes its script, runs the driver on it
-and pipes the trace into the test (with arguments, only the tests named). Forty tests: `jtoa` (`convert_element/2`, every
+and pipes the trace into the test (with arguments, only the tests named). Forty-one tests: `jtoa` (`convert_element/2`, every
 key, suspension scenarios), `conv` (`convert/2`, the whole
 `jis_to_ascii` module, on strings), `get4`
 (`scsi_common:get_4_bytes/4`) and `ccode`
@@ -172,7 +172,11 @@ that is not yet a value (`scsi_fep_module:send_last_packet/9`, with
 node: 0 of 1) on code the bench writes, and
 `calculate_priority_from_current` at its stub and at the image's
 `shoen:execute/7` (PDSS's formula, the range and the current priority
-ours).
+ours). `atom`: `top:go1/4`'s atom-number server, with
+`supply_atom_number` (what it does is not sourced: its inputs dropped,
+its output never bound, ours; the bench binds it) and a merger input
+bound to a vector (`throw_atom_number_client/4`'s `{E, F}`; the merger
+box's `spread`, the goals made through the argument registers).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines
@@ -180,7 +184,7 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 130
+State: 131
 instructions; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when

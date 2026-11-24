@@ -83,7 +83,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2,
                XSoW,
-               XNode,
+               XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XReuse3 } XState deriving (Bits, Eq);
 
 module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
@@ -148,7 +148,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_change_element_size || op == op_string_operation
                   || op == op_hash || op == op_predicate_to_code || op == op_apply
                   || op == op_b_divide || op == op_b_modulo || op == op_b_string
-                  || op == op_calculate_priority_from_current;
+                  || op == op_calculate_priority_from_current || op == op_supply_atom_number;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -899,6 +899,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     st <= XBOut2;
   endrule
 
+  // supply_atom_number: Done, the fresh variable
+  rule supplied (st == XSan);
+    let v <- gbox.newVarResult;
+    regs.wr(z, v);
+    finish(tagged Next afterBuiltin);
+  endrule
+
   // current_node: the second output, the total number of nodes
   rule nodeTotal (st == XNode);
     regs.wr(y, intC(1));
@@ -1304,6 +1311,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         finish(tagged Next afterBuiltin);
       end
     end
+    else if (op == op_supply_atom_number) begin
+      // supply_atom_number(X, Y, ^Done): what it does is not sourced.
+      // Ours, the narrowest its callers need: two integers, dropped;
+      // Done a fresh variable that nothing here binds
+      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      else begin
+        gbox.newVar;
+        st <= XSan;
+      end
+    end
     else if (op == op_new_instruction) begin
       // new_instruction(Tag, Value, ^Cell): atomic tags and tags from
       // 20h only; a reference or pointer tag is refused
@@ -1656,7 +1673,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       nbox.close(regs.r(y));
       st <= XMi4;
     end
-    else stop(EndUnimp);                  // a vector (more inputs), or not a stream
+    else if (isVec(a) && !isLongVec(a)) begin
+      // a vector: as many inputs as it has elements (TR-466 3.3)
+      nbox.spread(regs.r(y), sizeOf(a));
+      st <= XMv1;
+    end
+    else stop(EndUnimp);                  // a vector of 7 or more, or not a stream
   endrule
 
   rule mergeIn1 (st == XMi1);
@@ -1681,6 +1703,47 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule mergeInW (st == XMi2w);
     gbox.done;
     finish(tagged Next pc);
+  endrule
+
+  // an input bound to a vector: it ends and each element gets a ready
+  // goal of merge_in, made through the argument registers (a1 the
+  // element, taken with its MRB on, a2 the record), the last element's
+  // newest.  The empty vector only ends the input
+  rule mergeVec1 (st == XMv1);
+    let r <- nbox.result;
+    if (r.ok) begin
+      dbox.unify(r.a, mkCell(tag_ATOMo, 0));
+      st <= XUnify;
+    end
+    else if (vectorSize(opA) == 0) next;
+    else begin
+      packK <= 0;
+      smem.read(cellAddr(opA));
+      st <= XMv2;
+    end
+  endrule
+
+  rule mergeVec2 (st == XMv2);
+    let c <- smem.data;
+    Addr at = cellAddr(opA) + zeroExtend(packK);
+    regs.wa(1, isUnboundCell(c) ? mkCell(tag_REFx, absAddr(at)) : marked(c));
+    st <= XMv3;
+  endrule
+
+  rule mergeVec3 (st == XMv3);
+    regs.wa(2, regs.r(y));
+    gbox.record(fromInteger(lay_READY), mergeInStub, 2, True, True);
+    st <= XMv4;
+  endrule
+
+  rule mergeVec4 (st == XMv4);
+    let g <- gbox.recordResult;
+    if (zeroExtend(packK) + 1 == sizeOf(opA)) next;
+    else begin
+      packK <= packK + 1;
+      smem.read(cellAddr(opA) + zeroExtend(packK) + 1);
+      st <= XMv2;
+    end
   endrule
 
   // an input ends: the last one closes the output

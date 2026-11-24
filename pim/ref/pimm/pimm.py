@@ -23,19 +23,15 @@ this file does not implement raises Unimplemented: it never guesses.
 On this model ALONE (the Bluespec core has none of what this
 paragraph lists as not given), a prototype: the SCSI built-ins scsi_init and scsi_command against a
 device that is a Python object (Machine.fep, ref/pimm/fep.py), and
-what the IPL's SCSI stack needs besides (a merger input bound to a
-vector, scsi_command waiting on its vector's elements).
-ref/pimm/ref_scsi.py runs them.  The core has since been given
-read_eagerly, not_equal and wait_vector_1/4/6 (lockstep_alt.py),
-b_divide, b_modulo, b_string and enqueue_goal_to_processor
-(lockstep_body.py), string_operation waiting on an element of its
-vector (lockstep_elw.py) and put_reused_structure of a long vector
-(lockstep_reuse.py).  The merger input bound to a vector is NOT
-given: the reference makes its goals' records from cells, with no
-register written, and the core's goal box makes a record only from
-the registers or the argument registers (whose writes are traced),
-so one model or the goal box has to change: a design decision, left
-with the gate in place.
+what the IPL's SCSI stack needs besides (scsi_command waiting on its
+vector's elements).  ref/pimm/ref_scsi.py runs them.  The core has
+since been given read_eagerly, not_equal and wait_vector_1/4/6
+(lockstep_alt.py), b_divide, b_modulo, b_string and
+enqueue_goal_to_processor (lockstep_body.py), string_operation
+waiting on an element of its vector (lockstep_elw.py),
+put_reused_structure of a long vector (lockstep_reuse.py) and a
+merger input bound to a vector (lockstep_atom.py: this model now
+makes those goals through the argument registers, as the core does).
 
 Every instruction's operand reading is taken from object code paired
 with its KL1 source; docs/pimm_semantics.md records which.
@@ -164,6 +160,7 @@ class Machine:
         # ready queue; 0 for the root (no record) and between runs
         self.shoen = 0
         self.next_atom = NEW_ATOM0            # new_atom's counter (ours)
+        self.supplied = []                    # supply_atom_number's calls: not machine state
         self.sp = 0                           # structure pointer: where write_* stores next
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
@@ -1678,8 +1675,9 @@ class Machine:
     # record {output}{count} and the first input variable in three
     # cells; its code is the stub merge_in (asm/pimm_stubs.py), which
     # is not a PIM/m instruction.  So the output appears after a goal
-    # switch, not at the unification.  A vector on the input (more
-    # inputs) is refused for now; anything but a list, [] or a
+    # switch, not at the unification.  A vector on the input adds as
+    # many inputs as it has elements (i_merge_in); anything but a
+    # list, [] or a vector, or a
     # variable is the machine's illegal_merger_input exception:
     # refused.  The output operand must be an unbound variable (it is
     # a fresh put_variable at all six sites in the image).
@@ -1730,11 +1728,6 @@ class Machine:
             if n == 0:
                 self.unify(self.mem[rec], NIL)
         elif self.vsize(w) is not None:
-            # Still on this model alone: the records below are made
-            # from cells, and the Bluespec goal box makes one only
-            # from the registers or the argument registers (traced
-            # writes).  Which side changes is not decided.
-            self.alone('a merger input bound to a vector')
             # "When a vector is unified to an MHV, as many input
             # streams (MHVs) as the arity of the vector are added to
             # the merger process and each element of the vector is
@@ -1745,14 +1738,24 @@ class Machine:
             # and 1581: the reports were not opened again for this).
             # Here: this input ends and each element gets a goal of
             # merge_in, ready, the last element's first (it suspends
-            # itself if its stream is unbound).
+            # itself if its stream is unbound).  Each goal is made
+            # through the argument registers, a1 the element, a2 the
+            # record, as enqueue_goal makes one, so that the Bluespec's
+            # goal box makes it the same way (2026-11-23: the records
+            # were written straight from cells before, and the core
+            # refused the case).  A vector of seven or more is refused
+            # (as apply refuses one; none is met).
+            if w[0] & ~1 == VECT0 + 14:
+                raise Unimplemented('a merger input bound to a vector of seven or more')
             n = self.vsize(w)
             count = self.mem[rec + 1][1] - 1 + n
             self.mem[rec + 1] = (INT, count)
             if count == 0:
                 self.unify(self.mem[rec], NIL)
             for i in range(n):
-                self.record(READY, pc, [self.taken(self.vbase(w) + i), self.reg[y]])
+                self.argv[1] = self.taken(w[1] + i)
+                self.argv[2] = self.reg[y]
+                self.record(READY, pc, self.argv[1:3])
         else:
             raise Unimplemented('merger input %r' % (w,))
 
@@ -2026,6 +2029,27 @@ class Machine:
             raise Unimplemented('new_atom: out of atom numbers')
         self.reg[x] = (ATOM, self.next_atom)
         self.next_atom += 1
+
+    def i_supply_atom_number(self, pc, x, y, z, c16):
+        # supply_atom_number(X, Y, ^Done), 22:B9 r_r_r, two inputs and
+        # an output (PIMOS library/assembler/inst_tab.kl1:249,
+        # library/compiler/blt.kl1:747-750).  No manual entry; nothing
+        # in PDSS, VPIM or the PIMOS source says what it does.  Its
+        # callers (top:throw_atom_number_client/7, atom_number_client/5,
+        # ref/pimm/lockstep_atom.py) force only this much: X and Y are
+        # integers (a block of atom numbers from the server in
+        # pimos::top, which numbers is not inferred) and Done is waited
+        # for, each binding making the processor ask for another block,
+        # so the machine binds it later, not at once.  OURS, the
+        # narrowest: the integers are dropped, Done is a fresh variable
+        # no model binds (new_atom, a counter of ours, draws on no
+        # block).  supplied records the calls, for tests.
+        def f(a, b):
+            a, b = self.need_int(a), self.need_int(b)
+            v = self.new_var()
+            self.supplied.append((a, b, v))
+            return [v]
+        self.builtin('supply_atom_number', [x, y, z], f)
 
     def i_hash(self, pc, x, y, z, c16):
         # hash(X, ^Value, ^NewX): "unifies Value with a hash code
