@@ -72,6 +72,9 @@ def main(argv):
               'Bit#(AddrBits) mergeInStub = %d;' % table['$merge_in']['addr'],
               "Bit#(16) op_unify_step = 16'h2201;",
               'Bit#(AddrBits) unifyStepStub = %d;' % table['$unify_step']['addr'],
+              "// Goal@processor(P), P unbound: the goal of to_processor N waits (ours)",
+              "Bit#(16) op_to_processor = 16'h2202;",
+              'Bit#(AddrBits) toProcStub = %d;   // to_processor N at toProcStub + 2 N' % table['$to_processor0']['addr'],
               "// a shoen's first goal is a goal of apply's stub (PimmShBox.bsv)",
               'Bit#(AddrBits) applyStub = %d;' % table['apply']['addr'], '']
     # the address of every predicate's first instruction

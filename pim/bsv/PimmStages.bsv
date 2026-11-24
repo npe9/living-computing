@@ -84,6 +84,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
+               XTq1, XTq2, XTq3, XTq4, XTp0, XTp1, XTp2, XTpE,
                XSoW,
                XNode, XSan, XMv1, XMv2, XMv3, XMv4,
                XReuse3,
@@ -561,6 +562,15 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         dbox.deref(regs.r(x));
         st <= XMi0;
+      end
+    end
+    else if (op == op_to_processor) begin
+      // the waiting goal of Goal@processor(P): not a PIM/m instruction,
+      // only at its stub (asm/pimm_stubs.py TO_PROCESSOR)
+      if (z > 9 || pc != toProcStub + 2 * zeroExtend(z)) stop(EndUnimp);
+      else begin
+        dbox.deref(regs.r(x));
+        st <= XTp0;
       end
     end
     else if (op == op_unify_step) begin
@@ -1211,11 +1221,76 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // enqueue_goal makes it; any other processor is refused
   rule toProcessor (st == XProc);
     let a <- dbox.derefResult;
-    if (!isInt(a) || a.val != 0 || ins2.val[31:24] > 11) stop(EndUnimp);
+    if (isRef(a) && ins2.val[31:24] <= 9) begin
+      // P unbound: the goal waits for it (carried over from VPIM,
+      // agreeing with KLIC; asm/pimm_stubs.py TO_PROCESSOR): P and
+      // the code address after the arguments
+      opA <= a;
+      st <= XTq1;
+    end
+    else if (!isInt(a) || a.val != 0 || ins2.val[31:24] > 11) stop(EndUnimp);
     else begin
       gbox.record(fromInteger(lay_READY), labelOf(pc, c16), ins2.val[31:24], True, True);
       st <= XEnq;
     end
+  endrule
+
+  rule tq1 (st == XTq1);
+    regs.wa(ins2.val[31:24] + 1, opA);
+    st <= XTq2;
+  endrule
+
+  rule tq2 (st == XTq2);
+    regs.wa(ins2.val[31:24] + 2, intC(absAddr(labelOf(pc, c16))));
+    st <= XTq3;
+  endrule
+
+  rule tq3 (st == XTq3);
+    Bit#(8) n = ins2.val[31:24];
+    gbox.record(fromInteger(lay_SUSPENDED), toProcStub + 2 * zeroExtend(n), n + 2, True, True);
+    st <= XTq4;
+  endrule
+
+  rule tq4 (st == XTq4);
+    let g <- gbox.recordResult;
+    gbox.hook(g, cellAddr(opA));
+    st <= XTp2;
+  endrule
+
+  // the stub to_processor x, y, z: r0.. the z arguments, r[x] = P,
+  // r[y] = the code.  P still unbound, wait again; P = 0, the goal
+  // made ready
+  rule tp0 (st == XTp0);
+    let a <- dbox.derefResult;
+    opA <= a;
+    if (isRef(a)) begin
+      gbox.record(fromInteger(lay_SUSPENDED), pc, z + 2, False, True);
+      st <= XTp1;
+    end
+    else if (!isInt(a) || a.val != 0) stop(EndUnimp);
+    else begin
+      gbox.record(fromInteger(lay_READY), cellAddr(regs.r(y)), z, False, True);
+      st <= XTpE;
+    end
+  endrule
+
+  rule tp1 (st == XTp1);
+    let g <- gbox.recordResult;
+    gbox.hook(g, cellAddr(opA));
+    st <= XTp2;
+  endrule
+
+  // a hook finished: the enqueue goes on past its two cells, the stub
+  // to its proceed
+  rule tp2 (st == XTp2);
+    gbox.done;
+    if (op == op_to_processor) next;
+    else finish(tagged Next (pc + 2));
+  endrule
+
+  rule tpE (st == XTpE);
+    let g <- gbox.recordResult;
+    next;
   endrule
 
   rule enqueued (st == XEnq);

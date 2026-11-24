@@ -35,7 +35,7 @@ REGS = {'r': 1, 'r_r': 2, 'r_r_r': 3, 'r4': 4, 'r5': 5, 'r6': 6, 'r7': 7}
 GET_VALUE = (0x23, 0xbc)
 PROCEED = (0x23, 0x60)
 
-PINNED = dict(stubs=71, cells=260)
+PINNED = dict(stubs=81, cells=280)
 
 # The merger's step.  NOT a PIM/m instruction: the machine's merger is a
 # cell with its own tag (MGHOK) that acts when it is unified; here a
@@ -55,6 +55,22 @@ MERGE_IN = (0x22, 0x00)
 # unify_step 0, 1, 2 unifies element r2 of r0 and r1, adds one to r2
 # and is taken again, until r2 is the size.
 UNIFY_STEP = (0x22, 0x01)
+
+# Goal@processor(P) with P unbound: the goal waits for the number.
+# Carried over from VPIM, agreeing with KLIC; the PIM/m firmware's
+# behaviour is not held.  VPIM (src/interpreter/klb_fork.psl.c
+# klb_enqueue_to_processor, its comment, lines 406-447) makes the goal's
+# arguments a vector and hooks on P a D-code goal
+# `dcode_enqueue_processor(Processor,Code,Argv) :- integer(Processor) |
+# dcode_apply(Code,Argv)@processor(Processor).`; KLIC
+# (runtime/sched.c enqueue_throw_goal, 267-330) makes a goal of
+# wait_penum_preds that waits for the node number.  Here (OURS) the
+# waiting goal's code is a stub to_processor N, N + 1, N, one per arity
+# N = 0..9: its arguments the goal's N arguments (in the record, not a
+# vector), then P (rN), then the goal's code address (rN+1).  22:02 is not a PIM/m
+# instruction either; both models refuse it anywhere but at its stub.
+TO_PROCESSOR = (0x22, 0x02)
+TO_PROCESSOR_MAX = 9
 
 
 def encode(tag, op, regs):
@@ -106,6 +122,11 @@ def build(base):
     table['$unify_step'] = dict(addr=base + len(cells), dirs='iii', words=1)
     cells.append((UNIFY_STEP[0], UNIFY_STEP[1] << 24 | 0 << 16 | 1 << 8 | 2))
     cells.append((PROCEED[0], PROCEED[1] << 24))
+    # to_processor N, N + 1, N: N arguments, then P, then the code
+    for n in range(TO_PROCESSOR_MAX + 1):
+        table['$to_processor%d' % n] = dict(addr=base + len(cells), dirs='i' * (n + 2), words=1)
+        cells.append((TO_PROCESSOR[0], TO_PROCESSOR[1] << 24 | n << 16 | (n + 1) << 8 | n))
+        cells.append((PROCEED[0], PROCEED[1] << 24))
     return cells, table
 
 

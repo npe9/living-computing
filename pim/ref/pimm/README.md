@@ -76,16 +76,18 @@ loaded modules, `lockstep_gmul.py` the guard `multiply`, `save` and
 `restore` at the sites of `scsi_fep` in a loaded patch file,
 `lockstep_rdvc.py` the guard `diff` at a site in another,
 `lockstep_pvec.py` the guard `X = Y` on two vectors (the IPL's pool
-with vector keys),
+with vector keys), `lockstep_tproc.py` `Goal@processor(P)` waiting
+for an unbound P,
 `lockstep_scsi.py` the SCSI built-ins `scsi_init` and `scsi_command`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The
 device tape"; the bus compared as `B` lines), and `ref_scsi.py`'s six
 IPL parts (the IPL reading its list and files through its own SCSI
 stack) on both models;
-`longrun_ipl.py` is the long run (not in the suite); 140
-instructions on both models (counted 2026-11-23: 140 `i_` handlers in
-`pimm.py`; 138 without our two stubs `merge_in` and `unify_step`).
+`longrun_ipl.py` is the long run (not in the suite); 141
+instructions on both models (counted 2026-11-24: 141 `i_` handlers in
+`pimm.py`; 138 without our three stubs `merge_in`, `unify_step` and
+`to_processor`).
 `ref_scsi.py` runs the same IPL body on the reference alone
 (`python3 ref/pimm/ref_scsi.py`, about a minute).  No
 garbage collection, MRB bits kept and vectors updated in place on

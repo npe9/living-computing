@@ -172,6 +172,7 @@ class Machine:
         self.optab = opcode_table()
         self.optab[(0x22, 0x00)] = ('merge_in',)     # ours: asm/pimm_stubs.py
         self.optab[(0x22, 0x01)] = ('unify_step',)   # ours: asm/pimm_stubs.py
+        self.optab[(0x22, 0x02)] = ('to_processor',)  # ours: asm/pimm_stubs.py
         # instruction names by code address; for code in the heap this
         # assumes a heap cell is never reused for other code
         self.names = {}
@@ -2366,13 +2367,44 @@ class Machine:
         # TM-1044's enqueue_to_processor(.., Rprocessor, ARITY) (as
         # listed in docs/literature_gaps.md, line 2441).  There
         # is ONE processor here, number 0 (ours): for 0 the goal is
-        # made as enqueue_goal makes it; anything else is refused.
+        # made as enqueue_goal makes it; another number is refused.
+        # An unbound number is waited for (carried over from VPIM,
+        # agreeing with KLIC; the PIM/m firmware's behaviour is not
+        # held: asm/pimm_stubs.py TO_PROCESSOR): P and the code address
+        # are put after the arguments, and a goal of the stub
+        # to_processor N is hooked on P.
         n = self.cells[pc + 1][1] >> 24
         w = self.deref(self.reg[x])
+        if self.unbound(w) and n <= pimm_stubs.TO_PROCESSOR_MAX:
+            self.argv[n + 1] = w
+            self.argv[n + 2] = (INT, self.load + pc + 2 + sx16(c16))
+            g = self.record(SUSPENDED, self.stubs['$to_processor%d' % n]['addr'], self.argv[1:n + 3])
+            self.nsusp += 1
+            self.hook(g, w[1])
+            return pc + 2
         if w[0] & ~1 != INT or w[1] != 0 or n > 11:
             raise Unimplemented('enqueue_goal_to_processor %r, %d arguments' % (w, n))
         self.record(READY, pc + 2 + sx16(c16), self.argv[1:n + 1])
         return pc + 2
+
+    def i_to_processor(self, pc, x, y, z, c16):
+        """Ours, only at its stub: the waiting goal of Goal@processor(P),
+        r0.. the goal's z arguments, r[x] = P, r[y] = the goal's code
+        address.  P still unbound: the goal waits again.  P = 0: the
+        goal is made ready (VPIM's dcode_apply(Code,Argv)@processor(P)).
+        Another number is refused."""
+        if pc != self.stubs.get('$to_processor%d' % z, {}).get('addr'):
+            raise Unimplemented('to_processor at %d' % pc)
+        w = self.deref(self.reg[x])
+        if self.unbound(w):
+            g = self.record(SUSPENDED, pc, self.reg[:z + 2])
+            self.nsusp += 1
+            self.hook(g, w[1])
+            return None
+        if w[0] & ~1 != INT or w[1] != 0:
+            raise Unimplemented('enqueue_goal_to_processor %r' % (w,))
+        self.record(READY, self.reg[y][1] - self.load, self.reg[:z])
+        return None
 
     def i_read_eagerly(self, pc, x, y, z, c16):
         # What the compiler writes for `alternatively.` (library/
