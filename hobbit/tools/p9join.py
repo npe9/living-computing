@@ -145,7 +145,7 @@ class ServerClock:
 
 class ClockGroup:
     """Several QEMUs as the model's one peer clock (ETHER_CHOICES
-    ['lockstep'] on the hub, docs/p9boot.md "Several QEMUs").  Each
+    ['lockstep'] on the hub, docs/p9boot.md "On the 1e network").  Each
     member is a ServerClock on its own machine's ticks.  The group's time
     is the laggard's, so the model's busy-time check (a quantum behind)
     runs whichever QEMU is behind; run_until resumes every member whose
