@@ -61,6 +61,25 @@ EEPROM and SONIC (IIC_CHOICES, SONIC_CHOICES; NetworkTest), observed
   dummy byte: FAIL test_bootp_request, test_console ("sonic ether: 54 00
   00 0b 0b 00"), test_eeprom_read, test_sonic_set_up.
 
+CRET with MSP > SP + 256 (CHOICES['cret-msp']; NoServerTest), observed
+2026-11-23: p9boot not setting System.cret_clamp: FAIL
+test_ten_requests_then_the_prompt only, the run REFUSED at _cret+0x0
+("CRET restores SP=0x7ffff680 MSP=0x7ffff7f0, outside SP <= MSP <=
+SP+256") on the first alarm note's return.
+
+The join replay (JoinReplayTest; SONIC receive, CHOICES['rtc']),
+observed 2026-11-23:
+
+* the receive descriptor's byte count without the 4 FCS bytes
+  (etherkproc subtracts 4, so every frame is cut short): FAIL
+  test_every_frame_as_recorded (the replay stops at model frame 1,
+  the one after the BOOTP request), FAIL test_init_started (max-steps), ERROR
+  test_bootp_reply_and_time (the RTC never set).
+* Lpkt not reading the next receive resource (frames overwrite one
+  buffer): the same three, model frame 2 differing.
+* the timekeeper's load taking mday as the month: FAIL
+  test_bootp_reply_and_time only ("1993-03-01 12:02:05").
+
 Not covered by this test (each left it green): the nonpaged STE base
 ignored (the kernel's segments are identity-mapped), the stack cache on
 with CONFIG.SE = 0, and the Quart sr never showing TxRDY (the UART line
@@ -69,6 +88,7 @@ comes after the stop).  test_sem_system.py covers the first two.
 
 import os
 import sys
+import time
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -78,6 +98,7 @@ sys.path.insert(0, os.path.join(HOBBIT, "tools"))
 import p9boot  # noqa: E402
 
 S9TERM = os.path.join(HOBBIT, "tools", "plan9-1e", "hobbit", "s9term")
+JOIN_PCAP = os.path.join(HERE, "net", "join_init.pcap")
 LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
         b"headroom 340K\n")
 FRAME = b"\xff" * 6 + b"\x02\x00\x00\x00\x00\xfe\x08\x06" + bytes(46)
@@ -272,8 +293,100 @@ class NetworkTest(unittest.TestCase):
         self.assertTrue(sonic.regs[sonic.CR] & sonic.RXEN)
 
 
+class NoServerTest(unittest.TestCase):
+    """/boot with nobody answering (a Wire with no peer): sys/src/9/boot's
+    BOOTP loop sends its request ten times, an alarm note interrupting
+    each wait, then asks for the address by hand.  Each note's return
+    is a CRET with MSP more than 256 above SP (notify() lowers the user
+    SP by 0x170 and keeps MSP): CHOICES['cret-msp']."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+        cls.boot.script = [(b"il]: ", b"\r")]
+        cls.boot.attach(p9boot.Wire(cls.boot.sonic.clock))
+        cls.boot.until = b"My IP address"
+        cls.status = cls.boot.run(3200000000)
+
+    def test_ten_requests_then_the_prompt(self):
+        boot = self.boot
+        self.assertIn("My IP address", self.status)
+        self.assertTrue(bytes(boot.console["screenputs"]).endswith(
+            ETHERLINE + b"My IP address[0.0.0.0]: "))
+        log = boot.wire.log
+        self.assertEqual([way for _, way, _ in log], ["tx"] * 10)
+        # the same request but for the IP id (1..10) and header checksum
+        frames = [f for _, _, f in log]
+        self.assertEqual({f[:18] + f[20:24] + f[26:] for f in frames},
+                         {frames[0][:18] + frames[0][20:24] + frames[0][26:]})
+        self.assertEqual([f[18] << 8 | f[19] for f in frames],
+                         list(range(1, 11)))
+        self.assertTrue(all(p9boot.ip_checksum(f[14:34]) == 0
+                            for f in frames))
+        # a 1 s alarm is 25 ticks: 14.2 s at the default counter rate
+        # (CHOICES['clock']: 0xFFFF counts, 0.569 s a tick)
+        gaps = [b[0] - a[0] for a, b in zip(log, log[1:])]
+        self.assertTrue(all(14.0 < g < 14.5 for g in gaps), gaps)
+        self.assertEqual(boot.sysm.cret_clamps, 10)
+        self.assertEqual(boot.steps, STEPS["no-server"])
+
+
+class JoinReplayTest(unittest.TestCase):
+    """The join with the 1e file server in QEMU, replayed
+    (ETHER_CHOICES['replay']).  tests/net/join_init.pcap is the --pcap of
+    a live tools/p9join.py run of 2026-11-23 that reached `init: starting
+    /bin/rc`: BOOTP answered by the server's ip/bootp (10.9.0.2, fs/auth/
+    gw 10.9.0.1, bootf /hobbit/s9term), ARP, IL to il!10.9.0.1!17008,
+    nop, session, attach as none, the time from the root's access time
+    (written to the timekeeper, CHOICES['rtc']), and /hobbit/init read
+    from the server and started.  The replay re-runs the model and
+    delivers the server's recorded frames at their recorded cycle
+    offsets from the model frame they followed; every frame the model
+    sends must equal the recording byte for byte."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.boot = p9boot.Boot(S9TERM)
+        cls.boot.script = [(b"il]: ", b"\r"), (b"user[none]: ", b"\r")]
+        cls.replay = p9boot.Replay(JOIN_PCAP, p9boot.EEPROM_EA)
+        cls.boot.attach(p9boot.Wire(cls.boot.sonic.clock,
+                                    replay=cls.replay))
+        cls.boot.until = b"init: starting"
+        cls.status = cls.boot.run(400000000)
+
+    def test_init_started(self):
+        boot = self.boot
+        self.assertIn("init: starting", self.status)
+        self.assertTrue(bytes(boot.console["screenputs"]).endswith(
+            b"\nuser[none]: \narp: rcvd for 10.9.0.1\n"
+            b"nop...session...time...\ninit: starting /bin/rc\n"))
+        self.assertEqual(boot.steps, STEPS["init"])
+
+    def test_every_frame_as_recorded(self):
+        self.assertIsNone(self.replay.mismatch)
+        self.assertEqual(self.replay.pos, len(self.replay.steps))
+        recorded = p9boot.read_pcap(JOIN_PCAP)
+        self.assertEqual([f for _, _, f in self.boot.wire.log],
+                         [f for _, f in recorded])
+        self.assertEqual(
+            [o for _, _, o in self.boot.sonic.received],
+            ["received"] * sum(1 for _, w, _ in self.boot.wire.log
+                               if w == "rx"))
+
+    def test_bootp_reply_and_time(self):
+        rx = [f for _, w, f in self.boot.wire.log if w == "rx"]
+        self.assertIn(b"/hobbit/s9term", rx[0])
+        self.assertIn(b"p9  255.255.255.0 10.9.0.1 10.9.0.1 10.9.0.1",
+                      rx[0])
+        (t, secs), = self.boot.rtc.sets
+        self.assertEqual(time.strftime("%Y-%m-%d %H:%M:%S",
+                                       time.gmtime(secs)),
+                         "1993-01-03 12:02:05")
+
+
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
-         "prompt": 22537089, "bootp": 287845754}
+         "prompt": 22537089, "bootp": 287845754,
+         "no-server": 3131202766, "init": 310933347}
 IDLE = {"equiv-skipped": 426976, "prompt-skipped": 19555708,
         "prompt-cycles": 22890721, "frame-time": 0.175}
 

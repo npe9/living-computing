@@ -153,6 +153,71 @@ chaddr 52:54:00:00:0b:0b file '' vend 'p9  '
 address as source and in `chaddr`, type 0x0800 and `p9  ` all decode,
 which checks the SONIC's byte lanes and CAM order at once.
 
+With nobody answering (a Wire with no peer), `/boot` sends the request
+ten times, 14.2 s of model time apart (its 1 s alarm is 25 ticks of
+0.569 s), each wait ended by an alarm note, and then asks
+`My IP address[0.0.0.0]: ` at 3,131,202,766 instructions (156.6 s of
+model time, ~55 s of host time; `NoServerTest`).  Each note's return is
+a CRET with MSP more than 256 bytes above SP (CHOICES `cret-msp`).
+
+### The join: root from the 1e file server in QEMU
+
+`tools/p9join.py` (after `tools/qemu1e/build.sh`) boots the 1e 386 file
+server in QEMU (`docs/qemu_1e_server.md`: `9dos.q`, kfs, `rc /serve
+10.9.0.1 255.255.255.0`, its NE2000 on `-netdev dgram`
+127.0.0.1:10901 ⇄ 10902) and s9term on the model with the SONIC's wire
+on the other end of that UDP pair, types Return at `root is from` and at
+`user[none]`, and stops at `init: starting`.  Observed 2026-11-23:
+
+```
+...
+root is from (il, tcp, incon, 9600, 19200)[il]: 
+sonic ether: 52 54 00 00 0b 0b
+user[none]: 
+arp: rcvd for 10.9.0.1
+nop...session...time...
+init: starting /bin/rc
+```
+
+**310,933,347 instructions** (304,331,328 of them retired idle laps),
+15.58 s of model time, 150 s of host time; 277 frames.  The server's
+log shows `ip/bootp: reply to 10.9.0.2 525400000b0b /hobbit/s9term p9
+255.255.255.0 10.9.0.1 10.9.0.1 10.9.0.1` and `listen: il call for
+il17008`.  On the wire, in order: the BOOTP request and the server's
+reply (yiaddr 10.9.0.2, file `/hobbit/s9term`, vend `p9  255.255.255.0
+10.9.0.1 10.9.0.1 10.9.0.1`); `/boot` ARPs for 10.9.0.1 and gets the
+reply; the IL connection to `il!10.9.0.1!17008`; Tnop, Tsession, the
+attach as `none` (no auth server: user `none` needs none); the time
+from the root's access time, written to the timekeeper
+(1993-01-03 12:02:05, CHOICES `rtc`); then `/hobbit/init` read from the
+server and run: `init: starting /bin/rc` is printed by the init binary
+the server sent.  No CRET was clamped on this path.
+
+The first run stopped at `setrtc` (no device at IONAK+0x3FE0): the
+timekeeper was added for the second.
+
+`tests/net/join_init.pcap` is that run's `--pcap` (nanosecond stamps, so
+whole cycles).  `JoinReplayTest` re-runs the model with
+`--ether-replay` of it: the server's frames are delivered at their
+recorded cycle offsets from the model frame they followed, and every
+one of the model's 277-frame exchange must match the recording byte for
+byte.  It does, to the same instruction count (310,933,347), in ~60 s of
+CPU, without QEMU:
+
+```sh
+python3 hobbit/tools/p9boot.py hobbit/tools/plan9-1e/hobbit/s9term \
+    --max-steps 400000000 --type 'il]: =\r' --type 'user[none]: =\r' \
+    --ether-replay hobbit/tests/net/join_init.pcap --until 'init: starting'
+```
+
+Live, busy model time runs ~200 times slower than the wall clock while
+idle time is paced to it (ETHER_CHOICES `peer`), so the server sees a
+slow terminal: the server's IL retransmitted, 56 of its 143 frames are
+Dataquery resends of data messages already sent (each answered by a
+State from the Hobbit), 10 for the first one; and the kernel's 1 s
+alarms take 14 s of model time at the default counter rate.  Neither
+stopped the boot.
+
 Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
 skip that costs nothing, so the override is no longer needed to get
@@ -284,6 +349,22 @@ such.
   stops the run.
 * **idle-skip** — `runproc`'s idle loop retired in whole laps up to the
   next timed device event (section above); `--no-idle-skip` turns it off.
+* **cret-msp** — `hobbit_sem.System.cret_clamp` is on: a CRET whose
+  restored MSP is more than 256 bytes above its SP has its CATCH
+  portion stop with the cache full (p. 3-10, "or the cache is full"),
+  MSP = SP + 256, instead of the reference model's refusal (p. 1-13
+  calls the stack cache's results then unpredictable).  s9term's
+  `notify()` builds exactly that frame (it lowers the user SP by 0x170
+  for the Ureg, the note and the arguments and keeps MSP), and
+  `raml.s`'s `_exception` resets an MSP found above SP + SCSIZE, so the
+  kernel expected the state.  The run reports the number clamped.
+* **rtc** — `io.h`'s Nvram (IONAK 0x2000, 2040 bytes) and RTCdev (IONAK
+  0x3FE0) are one 2K timekeeper, a byte per word in bits 7:0: control,
+  sec, min, hour, wday, mday, mon, year in BCD; `devrtc.c`'s RTCREAD
+  (0x40) and RTCWRITE (0x80) freeze the registers and load them when
+  RTCWRITE clears (the MK48T02 scheme; no data sheet in the release).
+  The clock starts at 1993-01-03 12:00:00 UTC (the QEMU server's `-rtc
+  base`) and runs on model time.
 * **console-input** — the console line is Quart channel 0 (section "The
   console"); `--type TEXT=REPLY` types REPLY there once the screen shows
   TEXT, `--think SECONDS` after it.
@@ -431,6 +512,9 @@ programs and `test_p9run.py` are green).  Unit tests:
 * The exception (p. 1-38), interrupt (p. 1-37), unimplemented-
   instruction and trapped-niladic sequences (p. 1-39); KCALL's frame and
   every vector read are made at kernel level whatever the PSW's level.
+* A CRET whose MSP is more than 256 above SP is refused (p. 1-13),
+  unless `System.cret_clamp` (a harness choice, off by default; p9boot
+  sets it, CHOICES `cret-msp`) clamps it to SP + 256.
 * CRET's CATCH portion (p. 3-15) runs under the restored PSW, block by
   block; a fault is exception 8 at the restored PC with SP kept — 1e's
   `trap.c` relies on it for the first entry to user mode (its "CRET
@@ -446,8 +530,10 @@ sensitivity, bus errors other than "no device".
 
 ## What blocks next
 
-1. **The join** with the 1e file server in QEMU (`tools/p9join.py`,
-   below).
+1. **After `init: starting /bin/rc`**: `init` execs `/bin/rc` from the
+   server and `termrc`; not yet run.  The likely next stops are the
+   floating-point sentinel (CHOICES `fpi-vector`: the release ships no
+   ROM and its interpreter) and devices `termrc` opens.
 2. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).

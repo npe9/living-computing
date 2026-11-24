@@ -39,6 +39,11 @@ under every one of them.  Observed failures of this file:
   test_kcall_from_user_level_uses_the_kernel_stack_and_vector.
 * no store check of ENTER's target (p. 3-21): FAIL
   test_enter_into_an_invalid_page_is_exception_8_and_restarts.
+* System.cret_clamp ignored (2026-11-23, the clamp's two lines removed
+  in a scratch copy): ERROR test_cret_msp_beyond_the_cache (the
+  "unpredictable" refusal); MSP taken literally instead (no refusal, no
+  clamp): FAIL test_cret_msp_beyond_the_cache ("Unsupported not raised",
+  the default's refusal gone).
 """
 
 import os
@@ -341,6 +346,32 @@ class EventTest(unittest.TestCase):
         self.assertEqual(sysm.shad, 0x400020)
         self.assertEqual(h._read_word(st, None, 0x400024), 0x77)
         self.assertEqual(st.cache[(0x400024 >> 2) & 63], 0x77)
+
+    def test_cret_msp_beyond_the_cache(self):
+        # 1e's notify() lowers the saved SP by 0x170 and leaves MSP: a
+        # CRET frame with MSP - SP > 256, whose stack-cache results p. 1-13
+        # calls unpredictable.  Refused by default; with System.cret_clamp
+        # (a harness choice) the CATCH portion stops with the cache full
+        # (p. 3-10) and MSP = SP + 256.
+        for clamp in (False, True):
+            ram, sysm, st = machine(psw=0, cache=True, config=h.CONFIG_SE)
+            sysm.cret_clamp = clamp
+            ram.m[0x400] = 0x2000                  # SP
+            ram.m[0x404] = 0x2170                  # MSP: SP + 0x170
+            ram.m[0x408] = 0x3000
+            ram.m[0x40C] = h.PSW_SP
+            ram.m[0x2004] = 0x1234                 # the handler's argument
+            ram.m[0x2104] = 0x5678                 # its cache alias
+            code(ram, 0x1000, [0x2C05])
+            if not clamp:
+                with self.assertRaises(h.Unsupported):
+                    h.step(st)
+                continue
+            rec, st = h.step(st)
+            self.assertEqual((st.sp, st.msp, st.pc), (0x2000, 0x2100,
+                                                      0x3000))
+            self.assertEqual(h._read_word(st, None, 0x2004), 0x1234)
+            self.assertEqual(sysm.cret_clamps, 1)
 
     def test_cret_catch_fault_is_exception_8_at_the_restored_pc(self):
         # CRET whose CATCH portion meets an invalid page (p. 3-15): the

@@ -34,7 +34,9 @@ instruction count, every function reached for the first time in order
 
 import argparse
 import bisect
+import calendar
 import collections
+import math
 import os
 import pathlib
 import socket
@@ -97,8 +99,30 @@ CHOICES = {
            "EEPROM behind it answer deviic.c's sequences (IIC_CHOICES): "
            "iicreset reads io.h's Eeprom, whose ether address devether.c "
            "uses and whose clock (20) paces delay().",
+    "rtc": "io.h's Nvram (IONAK 0x2000, 2040 bytes) and RTCdev (IONAK "
+           "0x3FE0, eight words) are one 2K-byte timekeeper's NVRAM and "
+           "clock registers, a byte per word in bits 7:0 (Nvram's uchar "
+           "val; pad[3]): control, then sec, min, hour, wday, mday, mon, "
+           "year in BCD.  devrtc.c's RTCREAD (0x40) and RTCWRITE (0x80) "
+           "bits are taken to freeze the registers for a read and to "
+           "load them when RTCWRITE clears (the scheme of the MK48T02 "
+           "class of part; no data sheet is in the release).  The clock "
+           "starts at 1993-01-03 12:00:00 UTC (the QEMU server's -rtc "
+           "base, docs/qemu_1e_server.md) and runs on model time; NVRAM "
+           "starts zero.",
     "lcd": "Bart's LCD (io.h Lcdisp at IOACK 0x3000) accepts and counts "
            "writes; it is never read by the kernel.",
+    "cret-msp": "hobbit_sem.System.cret_clamp is on: a CRET whose restored "
+                "MSP is more than 256 bytes above its SP has its CATCH "
+                "portion stop with the cache full (p. 3-10: 'or the cache "
+                "is full') and MSP = SP + 256, instead of the reference "
+                "model's refusal.  p. 1-13 calls stack-cache results with "
+                "MSP > SP + 256 unpredictable, but s9term's notify() "
+                "builds exactly such a frame (it lowers the user SP by "
+                "0x170 for the Ureg, the note and the arguments and keeps "
+                "MSP), and raml.s's _exception resets an MSP found above "
+                "SP + SCSIZE on entry, so the kernel expected the state "
+                "to occur.  The run reports how many CRETs were clamped.",
     "console-input": "The console's input is Quart channel 0: s9term's "
                      "screeninit calls eiaspecial(0, &printq, &kbdq, 19200) "
                      "and eiaspecial(3, 0, &mouseq, 1200) (observed at the "
@@ -689,6 +713,73 @@ def rom_handoff(board, memsize):
     board.set_word(RAMBASE + PPAGE0_FPI, ROM_SENTINEL)
 
 
+class Timekeeper:
+    """io.h Nvram (IONAK 0x2000, 2040 bytes) and RTCdev (IONAK 0x3FE0):
+    one byte per word, in bits 7:0 (CHOICES['rtc']).  The eight RTCdev
+    words are a timekeeper's control, sec, min, hour, wday, mday, mon,
+    year in BCD; devrtc.c sets RTCREAD (0x40) in control to read them
+    and RTCWRITE (0x80) to set them.  The clock runs on model time from
+    `base` (seconds since 1970)."""
+
+    NVRAM = 0x0000
+    NVRAMLEN = 2040
+    RTC = 0x1FE0
+
+    def __init__(self, clock, base):
+        self.clock = clock
+        self.offset = base          # epoch seconds at model time 0
+        self.nvram = bytearray(self.NVRAMLEN)
+        self.control = 0
+        self.held = None            # the registers while R or W is set
+        self.sets = []              # (model time, epoch seconds) written
+
+    def now(self):
+        return int(self.offset + self.clock())
+
+    def _regs(self, t):
+        tm = time.gmtime(t)
+        bcd = lambda v: ((v // 10) << 4) | (v % 10)
+        return [bcd(tm.tm_sec), bcd(tm.tm_min), bcd(tm.tm_hour),
+                bcd((tm.tm_wday + 1) % 7 + 1), bcd(tm.tm_mday),
+                bcd(tm.tm_mon), bcd(tm.tm_year % 100)]
+
+    def read(self, off):
+        if off < self.NVRAMLEN * 4:
+            return self.nvram[off >> 2]
+        i = (off - self.RTC) >> 2
+        if i == 0:
+            return self.control
+        regs = self.held if self.held is not None else self._regs(self.now())
+        return regs[i - 1]
+
+    def write(self, off, data, mask):
+        v = data & 0xFF
+        if off < self.NVRAMLEN * 4:
+            self.nvram[off >> 2] = v
+            return
+        i = (off - self.RTC) >> 2
+        if i:
+            if self.held is None or not self.control & 0x80:
+                raise hobbit_sem.BusError(
+                    "rtc: clock register %d written without RTCWRITE" % i)
+            self.held[i - 1] = v
+            return
+        was = self.control
+        self.control = v
+        if v & 0xC0 and not was & 0xC0:
+            self.held = self._regs(self.now())
+        elif was & 0x80 and not v & 0x80:
+            dec = [((b >> 4) * 10) + (b & 15) for b in self.held]
+            year = dec[6] + (2000 if dec[6] < 70 else 1900)
+            t = calendar.timegm((year, dec[5], dec[4], dec[2] & 0x3F,
+                                 dec[1], dec[0] & 0x7F, 0, 0, 0))
+            self.offset = t - self.clock()
+            self.sets.append((self.clock(), t))
+            self.held = None
+        elif not v & 0xC0:
+            self.held = None
+
+
 class Lcd:
     """io.h `Lcdisp` at IOACK(Lcdisp, 0x3000): ctl, data; CHOICES['lcd']."""
 
@@ -1113,6 +1204,8 @@ SONIC_CHOICES = {
 }
 
 
+RTC_BASE = 726062400     # 1993-01-03 12:00:00 UTC (CHOICES['rtc'])
+
 EEPROM_EA = bytes([0x52, 0x54, 0x00, 0x00, 0x0B, 0x0B])
 
 
@@ -1283,36 +1376,37 @@ IIC_CHOICES = {
 
 
 class Pcap:
-    """A libpcap file (LINKTYPE_ETHERNET), one record per frame, stamped
-    with model time; frames without FCS."""
+    """A libpcap file (LINKTYPE_ETHERNET, nanosecond stamps: one model
+    cycle is 50 ns), one record per frame, stamped with model time;
+    frames without FCS."""
 
     def __init__(self, path):
         self.f = open(path, "wb")
-        self.f.write(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0,
+        self.f.write(struct.pack("<IHHiIII", 0xA1B23C4D, 2, 4, 0, 0,
                                  65535, 1))
         self.f.flush()
 
     def write(self, t, frame):
-        sec = int(t)
-        usec = int(round((t - sec) * 1e6))
-        if usec >= 1000000:
-            sec, usec = sec + 1, usec - 1000000
-        self.f.write(struct.pack("<IIII", sec, usec, len(frame), len(frame)))
+        ns = int(round(t * 1e9))
+        sec, nsec = divmod(ns, 1000000000)
+        self.f.write(struct.pack("<IIII", sec, nsec, len(frame), len(frame)))
         self.f.write(frame)
         self.f.flush()
 
 
 def read_pcap(path):
-    """[(t, frame)] from a file written by Pcap (or any µs pcap)."""
-    data = open(path, "rb").read()
+    """[(t, frame)] from a little-endian pcap (ns or µs stamps)."""
+    with open(path, "rb") as f:
+        data = f.read()
     magic, = struct.unpack_from("<I", data)
-    if magic != 0xA1B2C3D4:
-        raise SystemExit("%s: not a little-endian microsecond pcap" % path)
+    scale = {0xA1B23C4D: 1e9, 0xA1B2C3D4: 1e6}.get(magic)
+    if scale is None:
+        raise SystemExit("%s: not a little-endian pcap" % path)
     out, off = [], 24
     while off + 16 <= len(data):
-        sec, usec, incl, _ = struct.unpack_from("<IIII", data, off)
+        sec, frac, incl, _ = struct.unpack_from("<IIII", data, off)
         off += 16
-        out.append((sec + usec / 1e6, data[off:off + incl]))
+        out.append((sec + frac / scale, data[off:off + incl]))
         off += incl
     return out
 
@@ -1385,14 +1479,17 @@ class Replay:
     stops the replay."""
 
     def __init__(self, path, ea):
-        self.steps = []             # [(tx frame, [(offset, rx frame)])]
-        tx_t = None
+        # [(tx frame, [(offset in cycles, rx frame)])]; nanosecond pcap
+        # stamps are whole cycles (50 ns), so the offsets are exact
+        self.steps = []
+        tx_c = None
         for t, frame in read_pcap(path):
+            c = int(round(t * CPU_HZ))
             if frame[6:12] == ea:
                 self.steps.append((frame, []))
-                tx_t = t
+                tx_c = c
             elif self.steps:
-                self.steps[-1][1].append((t - tx_t, frame))
+                self.steps[-1][1].append((c - tx_c, frame))
         self.pos = 0
         self.mismatch = None
 
@@ -1422,7 +1519,7 @@ class Wire:
         self.clock = clock
         self.pcap = Pcap(pcap) if pcap else None
         self.replay = replay
-        self.inbound = []           # sorted [(t, n, frame)]
+        self.inbound = []           # sorted [(due cycle, n, frame)]
         self.n = 0
         self.log = []               # (t, "tx"/"rx", frame)
         self.sock = None
@@ -1438,7 +1535,11 @@ class Wire:
             self.schedule(frame, t)
 
     def schedule(self, frame, t):
-        self.inbound.append((t, self.n, frame))
+        """Deliver `frame` at the first cycle at or after model time t."""
+        self.schedule_cycle(frame, int(math.ceil(t * CPU_HZ - 1e-6)))
+
+    def schedule_cycle(self, frame, due):
+        self.inbound.append((due, self.n, frame))
         self.n += 1
         self.inbound.sort()
 
@@ -1449,14 +1550,15 @@ class Wire:
         if self.sock is not None:
             self.sock.sendto(frame, self.peer)
         if self.replay is not None:
+            c = int(round(t * CPU_HZ))
             for offset, reply in self.replay.answer(frame):
-                self.schedule(reply, t + offset)
+                self.schedule_cycle(reply, c + offset)
 
     def next_time(self):
-        return self.inbound[0][0] if self.inbound else None
+        return self.inbound[0][0] / float(CPU_HZ) if self.inbound else None
 
     def take(self, now):
-        if self.inbound and self.inbound[0][0] <= now:
+        if self.inbound and self.inbound[0][0] <= int(round(now * CPU_HZ)):
             t, _, frame = self.inbound.pop(0)
             self.log.append((now, "rx", frame))
             if self.pcap:
@@ -1527,6 +1629,9 @@ class Boot:
         self.irq = Irq()
         self.quart = Quart(25, lambda: self.cycles / float(CPU_HZ))
         self.lcd = Lcd()
+        self.rtc = Timekeeper(lambda: self.cycles / float(CPU_HZ),
+                              RTC_BASE)
+        self.board.add(IONAK + 0x2000, IONAK + 0x4000, self.rtc)
         self.iic = Iic(eeprom_image(ea))
         self.board.add(IOBASE + 0x0080, IOBASE + 0x0088, self.iic)
         # devincon.c Device at IOACK(Device, 0x0000): ctl, csr, pad, data.
@@ -1550,6 +1655,7 @@ class Boot:
         self.syms = Symbols(p9exec.kernel_symbols(self.k))
         self.out = out
         self.sysm = hobbit_sem.System(bus=self.board)
+        self.sysm.cret_clamp = True     # CHOICES['cret-msp']
         self.state = hobbit_sem.State(pc=self.k["entry"], sp=0, msp=0,
                                       psw=0, isp=0, vb=0, config_kl=False,
                                       cache=[0] * 64, system=self.sysm)
@@ -1722,7 +1828,7 @@ class Boot:
                     self.try_idle_skip(max_steps)
                 w = self.wire
                 if w is not None:
-                    if w.inbound and w.inbound[0][0] * CPU_HZ <= self.cycles:
+                    if w.inbound and w.inbound[0][0] <= self.cycles:
                         self.sonic.poll()
                     if self.until_frames and len(w.log) >= self.until_frames:
                         raise Stop("%d frames on the wire" % len(w.log))
@@ -1860,6 +1966,9 @@ def main(argv):
             boot.console["uart%d" % n] = port["out"]
     print("p9boot: %d interrupts taken, model time %.3f s" % (
         boot.interrupts, boot.cycles / float(CPU_HZ)))
+    if boot.sysm.cret_clamps:
+        print("p9boot: %d CRETs with MSP > SP + 256 clamped "
+              "(CHOICES['cret-msp'])" % boot.sysm.cret_clamps)
     if boot.sysm.untimed:
         print("p9boot: untimed (cyc 0): %s" % dict(boot.sysm.untimed))
     for chan, data in sorted(boot.console.items()):

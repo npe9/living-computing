@@ -465,6 +465,14 @@ class System:
     kernel_level: bool = False
     # Events taken, for the harness: (kind, ident, pc) tuples, newest last.
     events: List[Tuple[str, int, int]] = field(default_factory=list)
+    # A harness choice, off by default: a CRET whose restored MSP is more
+    # than the cache size above SP (p. 1-13: stack-cache results then
+    # "unpredictable") fills the cache to SP + 256 and sets MSP there,
+    # i.e. its CATCH portion stops when the cache is full (p. 3-10)
+    # instead of being refused.  1e's notify() builds such frames, and
+    # its _exception entry (raml.s) resets an MSP above SP + SCSIZE.
+    cret_clamp: bool = False
+    cret_clamps: int = 0
 
 
 @dataclass
@@ -1904,6 +1912,11 @@ def step(state: State,
                                             state.isp) & ~0xF
                     fetched_msp = _read_word(state, memory_reader,
                                              (state.isp + 4) & MASK32) & ~0xF
+                    if (state.system is not None
+                            and state.system.cret_clamp
+                            and fetched_msp - fetched_sp > SCSIZE):
+                        fetched_msp = fetched_sp + SCSIZE
+                        state.system.cret_clamps += 1
                     if (fetched_msp < fetched_sp
                             or fetched_msp - fetched_sp > SCSIZE):
                         raise Unsupported(
