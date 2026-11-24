@@ -98,7 +98,11 @@ def ch(w):
 
 def parse(pkg):
     """[{id, syms, body}] for a package."""
-    d = member(*PKGS[pkg])
+    return parse_bytes(member(*PKGS[pkg]))
+
+
+def parse_bytes(d):
+    """parse() on the bytes of a .ptf file (used by psi/librarian.py)."""
     ws = list(struct.unpack('>%dH' % (len(d) // 2), d[:len(d) // 2 * 2]))
     i = 1
 

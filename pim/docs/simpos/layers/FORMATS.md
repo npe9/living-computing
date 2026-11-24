@@ -91,7 +91,16 @@ From the bit pattern, 0x2x appears to mean class, 0x3x instance and 0x1x local. 
 12. constants.
 
 The field meanings in items 5–11 are INFERENCE from two classes. Their exact grammar is
-**UNKNOWN** until a parser accepts all 554 classes. Linearisation, method combination and the
+**UNKNOWN** until a parser accepts all 554 classes.
+
+*Update 2026-11-23:* `pim/psi/librarian.py` parses the trailer of all 1,455 held classes, in 11
+packages, as 13 terms. These fields are now MEASURED and checked against source:
+
+- the slot flags (0x10 attribute, 0x02 init predicate, 0x01 `is Class`);
+- the kinds 0x26 (one, in kappa) and 0x37 (119 matched to kappa source);
+- a dynamic-predicate field.
+
+The two "unqualified natures" below are slot names, not natures. See `pim/psi/README.md`. Linearisation, method combination and the
 method and slot hash tables are therefore the **loader's** job (TH App A p.244; KNOWN).
 
 **Code samples.**

@@ -159,6 +159,13 @@ never define.
 distinct `simpos##` classes. Of their 554 classes, only **102** need
 no SIMPOS class when references are followed through other held
 classes. That is a lower bound, read from the trailers only.
+*Rechecked 2026-11-23 by the loader (`../../psi/README.md`):*
+
+- *Following natures and the trailer's referenced-classes vector, the
+  count is **104**.*
+- *Following natures alone, it is **338**.*
+- *The probe behind 102 is not deterministic: it gave 102 or 103 on
+  reruns. It also counted one slot name as a class.*
 
 ## 4. What is lost and must be written (the reconstruction's own parts)
 
@@ -188,8 +195,16 @@ No route has SIMPOS itself, so every route needs the loader of §4.1
 and stand-in `simpos##` classes. In order:
 
 1. **The loader first**, with the after-demon order as a switch.
+   *Status 2026-11-23: built, OURS, in `../../psi/` (`librarian.py`,
+   tested in `run_tests.sh`).* All 1,455 held classes, from eleven
+   packages, load and build. That covers trailers, natures, the TM-388
+   linearisation, method combination, slots and the Fig. A-1 tables.
+   Against the held ESP source, nature lists agree in 917 of 917
+   classes and slots in 3,673 of 3,674. Every method and local
+   disagreement is attributed to a macro bank, an unparsed source item
+   or the 3200/3500 version skew (`../../psi/README.md`).
 2. **A KL0 interpreter** running compiled `.ptf` code. Start on the
-   102 classes that need no SIMPOS. Verify on
+   102 (now 104) classes that need no SIMPOS. Verify on
    `fep_command_code_table:convert/3` against PIMOS's command-code
    names, then on the paragraph classes against their source. Name
    each opcode only from a known-plaintext witness.
