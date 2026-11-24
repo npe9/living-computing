@@ -430,7 +430,9 @@ Weaker than the source allows, or to check:
   the PSI assembles none either (§6.7), but it answers the request
   the 70 interrupts with status 6, which `fep.py` does not. Whether
   the kernel's client waits for that is U6.
-- 80 with device id -1 raises `FepError`.
+- 80 with device id -1 raises `FepError`. (2026-11-24: now noted with
+  no reply, and the appended syslog's 60 answered `[1]`, both met at
+  the end of a typed `shutdown`; `binary_reverse_engineering.md` 1.4.)
 - No reply is ever unsolicited: no attention (`{Id, 3}`), no deferred
   reply (303's alarm, the pending `io(1)`). The reply queue is one
   FIFO, which is enough, but a reply must be able to stay owed while

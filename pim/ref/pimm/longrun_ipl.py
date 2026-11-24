@@ -113,11 +113,17 @@ stop "nothing left to run, 1,220 goals waiting", the window's getl
 With --type LINE (any number): each line answers the next held getl
 (fep.py's event list, OURS).  --type shutdown --type yes: the shell
 takes "shutdown" and the job starts shutdown_body:go, which takes its
-third branch and asks for the string-I/O device
-pimos_standard_io_window: 8,690,718 instructions, FepError at its 601
-(docs/binary_reverse_engineering.md 1.4, "A command typed"; before the
-merger timing change a wait cycle through the user table stopped it at
-8,673,642).
+third branch: the string-I/O window pimos_standard_io_window, titled
+SHUTDOWN, asks "Really(yes/no)?" and the second line answers it; the
+console then shows "Shutdown started", "User Server End",
+"Statistics in PIMOS:", 0, 790104, "PIMOS END********" and the run
+ends at 8,766,339 instructions, nothing left to run, 253 goals
+waiting (docs/binary_reverse_engineering.md 1.4, "A command typed",
+with the manual compared line by line; before the merger timing
+change a wait cycle through the user table stopped it at 8,673,642).
+--type 'cat <= file("pimos:pimos.groups")': the file read through
+pimos: and written to the window, then Shell>> again: 8,760,685
+instructions, 1,224 goals waiting.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).

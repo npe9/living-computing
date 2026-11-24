@@ -538,11 +538,17 @@ the device are given it again whenever the machine runs dry.
   | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
   | 110 `getl` on a window | held; answered at the idle by the next typed line, `[1, LINE]` in JIS with no newline (`Fep(lines=..)`, `longrun_ipl.py --type LINE`; the event list OURS, the reply's form `bios/fep_module/win_dvc.kl1`:307-312; whether the FEP sends a newline is not known, §7.5). Without `--type` the run ends there | §7.5 |
   | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
-  | 70 on a held request | `[6]` (none has been met; a 70 on anything else has no reply) | §6.7, §7.1 |
+  | 70 on a held request | `[6]` (met at the shutdown: the local server's held `io(1)`; a 70 on anything else has no reply) | §6.7, §7.1 |
+  | 601 `create` of the string-I/O device `pimos_standard_io_window` (added 2026-11-24 for `shutdown`) | `[1]` | §6.4, `shutdown_b.kl1`:41-42 |
+  | 620 `io(104, ..)`, `io(130, ..)`, `io(141, ..)`, `io(111, Text)` on it (added 2026-11-24) | `[1, ""]`, OURS: the PSI's class is not held; the window device's own 104/130/141/111 answer `{Id, 1}` (§2.6) and a 620 reply carries a string (§6.4). A 111's text to the log | §2.6, §6.4 |
+  | 620 `io(110, "")` on it (added 2026-11-24) | held, as a window's 110; answered at the idle by the next typed line, `[1, LINE]` | §7.5 |
+  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended` | §2.2 |
+  | `{-1, 80}`, `fep#terminate`, when the link's stream closes at PIMOS's end (added 2026-11-24) | no reply (none is read); noted as `Fep.terminated` | §1, `scsi_fep.kl1`:234 |
+  | the typed line's characters (2026-11-24) | `"`, `(`, `)`, `=` added to `fep.py`'s JIS table, from PIMOS's own `server/telnet/code_cv.kl1`:154-182 (`table_ascii_to_jis`) | `code_cv.kl1` |
 
   What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
 
-  **A command typed (2026-11-24, rung R6's second half, NOT reached).**
+  **A command typed (2026-11-24, rung R6's second half: reached on the reference model, see the end of this item).**
   `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`
   (`shutdown` is the one command whose run the manual prints whole:
   `e-sysman.tex`:121-144). The held 110 is answered `[1, "shutdown"]`;
@@ -596,13 +602,63 @@ the device are given it again whenever the machine runs dry.
   waiting, the same console and device log; with `--type shutdown
   --type yes` the cycle does not form, `shutdown_body` takes its third
   branch and the run stops at the 601 of `pimos_standard_io_window`
-  (FepError, 8,690,718 instructions). Next, the 601/620 answers of
-  that branch (`io(104)`, `io(130,"SHUTDOWN")`,
-  `io(141)`, `io(111,"Really(yes/no)?")`, `io(110)` answered "yes",
-  `shutdown_b.kl1`:46-53, 71-73). That branch prints no
-  "Shutdown procedure starts." and its prompt differs from
-  `e-sysman.tex`:132 ("Really(yes/no) ?"): the printed transcript is
-  the first branch's (a window made for the job).
+  (FepError, 8,690,718 instructions).
+
+  **The shutdown runs to its end (2026-11-24, reference model).** With
+  the answers in the table above (601 of `pimos_standard_io_window`,
+  its 620s, the 60 on the syslog file, 80): `io(104, {324, 328, 40,
+  6})`, `io(130, "SHUTDOWN")`, `io(141)`, `io(111, "Really(yes/no)?")`,
+  `io(110)` answered "yes" by the second typed line; `wait_ans`
+  (`shutdown_b.kl1`:71-73) raises `shut_down`; the devices are closed
+  (the replier, the window, the string-I/O window, the server's held
+  `io(1)` aborted with 70 and answered 6, the syslog file), then `{-1,
+  80}`. Console: `Shutdown started`, `User Server End`, `Statistics in
+  PIMOS:`, 0, 790104, `PIMOS END********`; the run ends at 8,766,339
+  instructions, nothing left to run, 253 goals waiting.
+  `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`.
+
+  Why the third branch: the shell's `start_main` (`shell/main/
+  shell.kl1`:88-103) finds `task:make_window` unset and `task:top_task`
+  set (by `login_p:top`, `login_p.kl1`:94) and UNSETS `top_task`
+  before running; `make_window` is set only by the telnet login
+  (`tlogin.kl1`:93, `no`). So a command typed to a local login's shell
+  has neither, and `shutdown_body` takes the third branch, a window of
+  its own titled SHUTDOWN. The first branch (`make_window = no`,
+  "Shutdown procedure starts." then "Really(yes/no)? " on the job's
+  own I/O) is a telnet login's. READ from the code; not run.
+
+  Against the manual (`e-sysman.tex`:121-144), line by line:
+  - "Reply yes to the shutdown confirmation message that is displayed
+    in the window": the third branch's window. The prompt printed is
+    `Really(yes/no) ?`; the source's third branch writes
+    `Really(yes/no)?` (no space before `?`; its parentheses are the
+    16-bit string's), the first branch `Really(yes/no)? ` (a space
+    after). Neither is the manual's exactly: a difference between the
+    manual and the held source, not met by the model.
+  - `Shutdown started`: the same (`kernel/init/init.kl1`:313).
+  - `login Server End`: ours `User Server End`, the held source's
+    (`server/login/init/usersvman.kl1`:195); the manual's is another
+    version's text.
+  - `Statistics in PIMOS:` then two integers: the same line
+    (`bios/boot/bios.kl1`:145-147); the values are the report's
+    `statistics(ResH, ResL)`, high and low words: the manual's 0 and
+    000954C2h (611,522), ours 0 and 790,104 (C0E58h), the model's own
+    count (not traced further).
+  - `PIMOS END********`: the same (`bios.kl1`:167).
+  - The prefix `PE00(00) @ DC> ` and the `(  INTo) 00 ` form of an
+    integer are the console's display, not in PIMOS's strings; this
+    model's console list has the bare strings and integers.
+
+  **A second command: a file read through `pimos:` (2026-11-24).**
+  `--type 'cat <= file("pimos:pimos.groups")'` (`cat`, `e-shutil.tex`:
+  152-154; `<=` the job's standard input, `e-shell.tex`:218-226): the
+  shell read-opens `pimos:pimos.groups` (201, device 34), one `getb`,
+  writes its two lines to the window (111) and closes the file (60);
+  `cat` stops at the file's empty last line, as the manual says, and
+  the shell writes `Shell>> ` again: 8,760,685 instructions, 1,224
+  goals waiting, the next `getl` held. The text written is the held
+  file's. No transcript of it is printed in the manual. Needed
+  `fep.py`'s JIS table to have `"`, `(`, `)`, `=` (row above).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
