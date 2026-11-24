@@ -432,7 +432,7 @@ Other application holdings:
 
 | Item | What real piece it stands for | Where | What would replace it |
 |---|---|---|---|
-| `ref/pimm/fep.py` | the FEP: a PSI running SIMPOS with `pimfep.ptf`/`pimscsi.ptf` | header lists OURS choices: buffer size 16000, reply queueing, status 5 for a missing file, `getb` unit, end-of-data replies, reply cutting | P5: the held `pimfep.ptf` on a PSI model; short of that, a stand-in rewritten from the decompiled FEP classes (`binary_reverse_engineering.md` §4.4) |
+| `ref/pimm/fep.py` | the FEP: a PSI running SIMPOS with `pimfep.ptf`/`pimscsi.ptf` | header lists OURS choices: buffer size 16000, reply queueing, status 5 for a missing file, `getb` unit (READ since 2026-11-24 from `pimfep##pimos_file` getb/4: 16-bit characters, `source_check_2026-11-24.md` §4; the comment in `fep.py` still says OURS), end-of-data replies, reply cutting | P5: the held `pimfep.ptf` on a PSI model; short of that, a stand-in rewritten from the decompiled FEP classes (`binary_reverse_engineering.md` §4.4) |
 | `asm/pimm_layout.py` goal record (4+n cells: link, status, code, argn, args), suspension record (2 cells), one ready list | the firmware's goal record, suspension records and goal stacks per priority | `asm/pimm_layout.py` lines 1-30 | the microcode's layouts (`pseudo_pimm_microcode.md` §17-18), or Multi-PSI/V2's as documented, labelled (`gap_analysis.md` §3) |
 | Memory of 2^27 cells, no reuse | a 16 M-word PE memory with free pools and GC | `asm/pimm_layout.py` `ADDR_BITS = 27` | free lists and a copying collector (B, GC row) |
 | `asm/pimm_stubs.py` stubs for waiting body built-ins (71 stubs) | the firmware's waiting built-in | file header | the firmware's mechanism when read |
