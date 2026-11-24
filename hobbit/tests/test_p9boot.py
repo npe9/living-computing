@@ -67,18 +67,29 @@ test_ten_requests_then_the_prompt only, the run REFUSED at _cret+0x0
 ("CRET restores SP=0x7ffff680 MSP=0x7ffff7f0, outside SP <= MSP <=
 SP+256") on the first alarm note's return.
 
-The join replay (JoinReplayTest; SONIC receive, CHOICES['rtc']),
-observed 2026-11-23:
+The join replay (JoinReplayTest; SONIC receive, CHOICES['rtc'],
+console input at rc's prompt).  Against tests/net/join_echo.pcap,
+observed 2026-11-23, each injection made in a scratch copy of
+tools/p9boot.py (build/a5/inj/{A,B,C}; the real file untouched), the
+class run alone:
 
+* console input upper-cased by Quart.feed (only `echo hello` has
+  letters; the boot answers are CRs): FAIL test_every_frame_as_recorded
+  (model frame 266 differs: rc's 9P walk of `ECHO` where the recording
+  has `echo`), FAIL test_init_rc_and_echo (max-steps);
+  test_bootp_reply_and_time stays green.
 * the receive descriptor's byte count without the 4 FCS bytes
   (etherkproc subtracts 4, so every frame is cut short): FAIL
-  test_every_frame_as_recorded (the replay stops at model frame 1,
-  the one after the BOOTP request), FAIL test_init_started (max-steps), ERROR
-  test_bootp_reply_and_time (the RTC never set).
-* Lpkt not reading the next receive resource (frames overwrite one
-  buffer): the same three, model frame 2 differing.
-* the timekeeper's load taking mday as the month: FAIL
-  test_bootp_reply_and_time only ("1993-03-01 12:02:05").
+  test_every_frame_as_recorded (model frame 1: the BOOTP request sent
+  again where the recording has the ARP), FAIL test_init_rc_and_echo
+  (max-steps), ERROR test_bootp_reply_and_time (the RTC never set).
+* the timekeeper's load taking mday and month swapped: FAIL
+  test_bootp_reply_and_time only ("1993-03-01 12:00:48").
+
+Against the earlier tests/net/join_init.pcap (to `init: starting`, the
+same class then), also observed 2026-11-23: Lpkt not reading the next
+receive resource (frames overwrite one buffer) failed all three, model
+frame 2 differing.
 
 Not covered by this test (each left it green): the nonpaged STE base
 ignored (the kernel's segments are identity-mapped), the stack cache on
@@ -98,7 +109,7 @@ sys.path.insert(0, os.path.join(HOBBIT, "tools"))
 import p9boot  # noqa: E402
 
 S9TERM = os.path.join(HOBBIT, "tools", "plan9-1e", "hobbit", "s9term")
-JOIN_PCAP = os.path.join(HERE, "net", "join_init.pcap")
+JOIN_PCAP = os.path.join(HERE, "net", "join_echo.pcap")
 LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater 272K, "
         b"headroom 340K\n")
 FRAME = b"\xff" * 6 + b"\x02\x00\x00\x00\x00\xfe\x08\x06" + bytes(46)
@@ -332,35 +343,44 @@ class NoServerTest(unittest.TestCase):
 
 
 class JoinReplayTest(unittest.TestCase):
-    """The join with the 1e file server in QEMU, replayed
-    (ETHER_CHOICES['replay']).  tests/net/join_init.pcap is the --pcap of
-    a live tools/p9join.py run of 2026-11-23 that reached `init: starting
-    /bin/rc`: BOOTP answered by the server's ip/bootp (10.9.0.2, fs/auth/
-    gw 10.9.0.1, bootf /hobbit/s9term), ARP, IL to il!10.9.0.1!17008,
-    nop, session, attach as none, the time from the root's access time
-    (written to the timekeeper, CHOICES['rtc']), and /hobbit/init read
-    from the server and started.  The replay re-runs the model and
-    delivers the server's recorded frames at their recorded cycle
-    offsets from the model frame they followed; every frame the model
-    sends must equal the recording byte for byte."""
+    """The join with the 1e file server in QEMU and the first command at
+    rc's prompt, replayed (ETHER_CHOICES['replay']).
+    tests/net/join_echo.pcap is the first 615 frames of the --pcap of a
+    live tools/p9join.py run of 2026-11-23 (lockstep, -icount 4; the
+    whole run is docs/p9boot.md "Commands at rc's prompt"): BOOTP
+    answered by the server's ip/bootp (10.9.0.2, fs/auth/gw 10.9.0.1,
+    bootf /hobbit/s9term), ARP, IL to il!10.9.0.1!17008, nop, session,
+    attach as none, the time from the root's access time (written to the
+    timekeeper, CHOICES['rtc']), /hobbit/init from the server, termrc and
+    /usr/none's empty profile, init's restart of rc, its prompt, and
+    `echo hello` typed on the console and run.  The replay re-runs the
+    model and delivers the server's recorded frames at their recorded
+    cycle offsets from the model frame they followed; every frame the
+    model sends must equal the recording byte for byte.  ~3 min of CPU
+    (it replaced the run to `init: starting` of tests/net/join_init.pcap,
+    the first live join, ~1 min, which is kept as a record)."""
 
     @classmethod
     def setUpClass(cls):
         cls.boot = p9boot.Boot(S9TERM)
-        cls.boot.script = [(b"il]: ", b"\r"), (b"user[none]: ", b"\r")]
+        cls.boot.script = [(b"il]: ", b"\r"), (b"user[none]: ", b"\r"),
+                           (b"% ", b"echo hello\r")]
         cls.replay = p9boot.Replay(JOIN_PCAP, p9boot.EEPROM_EA)
         cls.boot.attach(p9boot.Wire(cls.boot.sonic.clock,
                                     replay=cls.replay))
-        cls.boot.until = b"init: starting"
-        cls.status = cls.boot.run(400000000)
+        cls.boot.until = b"% echo hello\nhello\n% "
+        cls.status = cls.boot.run(STEPS["echo"] + 1000000)
 
-    def test_init_started(self):
+    def test_init_rc_and_echo(self):
         boot = self.boot
-        self.assertIn("init: starting", self.status)
+        self.assertIn("echo hello", self.status)
         self.assertTrue(bytes(boot.console["screenputs"]).endswith(
             b"\nuser[none]: \narp: rcvd for 10.9.0.1\n"
-            b"nop...session...time...\ninit: starting /bin/rc\n"))
-        self.assertEqual(boot.steps, STEPS["init"])
+            b"nop...session...time...\ninit: starting /bin/rc\n"
+            b"\ninit: starting /bin/rc\n% echo hello\nhello\n% "))
+        self.assertEqual([s for s, _w, _r in boot.typed],
+                         [286977189, 288647330, 711879422])
+        self.assertEqual(boot.steps, STEPS["echo"])
 
     def test_every_frame_as_recorded(self):
         self.assertIsNone(self.replay.mismatch)
@@ -382,12 +402,12 @@ class JoinReplayTest(unittest.TestCase):
         (t, secs), = self.boot.rtc.sets
         self.assertEqual(time.strftime("%Y-%m-%d %H:%M:%S",
                                        time.gmtime(secs)),
-                         "1993-01-03 12:02:05")
+                         "1993-01-03 12:00:48")
 
 
 STEPS = {"_virtual": 2064, "main": 125203, "first-line": 2131084,
          "prompt": 22537089, "bootp": 287845754,
-         "no-server": 3131202766, "init": 310933347}
+         "no-server": 3131202766, "echo": 715867166}
 IDLE = {"equiv-skipped": 426976, "prompt-skipped": 19555708,
         "prompt-cycles": 22890721, "frame-time": 0.175}
 
