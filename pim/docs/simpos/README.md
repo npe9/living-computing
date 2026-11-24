@@ -280,3 +280,28 @@ The first deliverable that matters to PIM/m: `pimfep.ptf` and
 Media (`../psi_acquisition.md` §6, §9 leads) would replace most of §4.
 The JAIST library's KL0 manual (MP7002-1) and SIMPOS manuals
 (MP3001-1, MP3002-1) would settle §3's KL0 gaps and much of §4.
+
+## 7. The window system, the Librarian and the shell (2026-11-24)
+
+`subsystems/` holds specifications of SIMPOS's three user-facing
+subsystems: `window.md`, `librarian.md` and `shell.md`. Each is written
+for building stand-in classes that look and behave right to the held
+programs. Every claim is cited and graded, and versions are tagged from
+1.00 (1985) to 7.x/A22. The specs are built from a deeper reading of
+everything held:
+- the TR/TM pages read by eye;
+- the IPSJ papers and journals;
+- the IFS application sources and the compiled packages, partly run
+  under `../../psi/kl0.py`;
+- the ICOT museum video, frame by frame.
+
+The readers' notes are in `subsystems/notes/` and new TR/TM
+transcriptions in `subsystems/listings/`. `subsystems/gaps.md` ranks what
+is still unknown by how much the held programs depend on it.
+`subsystems/coverage/` measures each spec against `required/`, using
+`subsystems/tools/coverage.py`. Classes not listed in `printed/` or
+`required/` are in `subsystems/classes_added.tsv`.
+
+The main find is in `subsystems/finds.md`: `cil` carries a patched copy
+of three classes of the **SIMPOS 6.1 Librarian** (`cil/src/ds_bep.esp:1773-3518`).
+`cal-esp` carries a debugger derived from SIMPOS's.

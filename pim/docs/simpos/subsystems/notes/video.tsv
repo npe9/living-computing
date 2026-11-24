@@ -1,0 +1,100 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+SHELL		menu_item	Experts		SYSTEM MENU L1	system menu item (left column); header-or-item unresolved	SCREENSHOT	simpos@10.9	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	8puzzle		SYSTEM MENU L2	system menu item (left column); demo app entry	SCREENSHOT	simpos@10.9	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	debugger		SYSTEM MENU L3	system menu item (left column)	SCREENSHOT	simpos@10.9	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	edips		SYSTEM MENU L4	system menu item (left column); demo app entry	SCREENSHOT	simpos@10.9	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	pmacs		SYSTEM MENU L5	system menu item (left column); editor entry (no 'editor' item)	SCREENSHOT	simpos@10.9	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	file_manipulator		SYSTEM MENU L6	system menu item (left column)	SCREENSHOT	simpos@60.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	librarian		SYSTEM MENU L7	system menu item (left column)	SCREENSHOT	simpos@60.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	spooler		SYSTEM MENU L8	system menu item (left column)	SCREENSHOT	simpos@60.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	font_editor		SYSTEM MENU L9	system menu item (left column)	SCREENSHOT	simpos@60.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	MEDIA SYSTEMS		SYSTEM MENU R1	system menu item (right column); header-or-item unresolved	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	user process list		SYSTEM MENU R2	system menu item (right column)	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	window manipulator		SYSTEM MENU R3	system menu item (right column)	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	network		SYSTEM MENU R4	system menu item (right column)	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	shell		SYSTEM MENU R5	system menu item (right column)	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	whiteboard		SYSTEM MENU R6	system menu item (right column); UNCERTAIN read	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	?		SYSTEM MENU R7	system menu item (right column); illegible two words	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	garbage collection		SYSTEM MENU R8	system menu item (right column); UNCERTAIN read	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	login/logout?		SYSTEM MENU R9	system menu item (right column); illegible short word	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	?		SYSTEM MENU R10	system menu item (right column); illegible two words	SCREENSHOT	simpos@60.0-62.0	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	create		popup after choosing a program (title=program name or WHICH ?)	create new instance of chosen program, then rubber-band window	SCREENSHOT	simpos@49; prolog@14-15	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	kill		popup after choosing a program	kill an instance (item 2; legible only in prolog@14)	SCREENSHOT	prolog@14-15; simpos@49	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	State		Debugger Menu 1	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	Set Spy		Debugger Menu 2	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	From last input		Debugger Menu 3	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	Input string		Debugger Menu 4	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	Inspector		Debugger Menu 5	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	To whiteboard		Debugger Menu 6	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	From whiteboard		Debugger Menu 7	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		menu_item	Re-display		Debugger Menu 8	debugger pop-up menu item	SCREENSHOT	simpos@132	SIMPOS A00? (simpos.wmv, no version shown)
+SHELL		message	?- 		debugger_1 window	debugger goal prompt, block cursor	SCREENSHOT	simpos@0; esp@119	A00
+SHELL		message	 A= ?move_win		debugger_1	answer display after ?- :make(#move_win,A). ; first glyph $-like	SCREENSHOT	esp@119-121	A00
+SHELL		message	USER : <name>		bottom status strip line 1	current user (demo, KCM)	SCREENSHOT	esp@108; melco@50	A00; 2.50
+SHELL		message	SIMPOS Version <v>		bottom status strip line 2	version string: A00 / 2.50; followed by reverse box with window name (Input_Buffer)	SCREENSHOT	esp@108; melco@50,158	A00; 2.50
+LIBRARIAN		menu_item	Check		librarian window command menu 1	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Catalogue		librarian window command menu 2	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Compile		librarian window command menu 3	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Uncompile		librarian window command menu 4	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Save		librarian window command menu 5	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Load		librarian window command menu 6	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Delete		librarian window command menu 7	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Execute		librarian window command menu 8	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		menu_item	Utility		librarian window command menu 9	librarian command	SCREENSHOT	simpos@1.0; esp@118	A00
+LIBRARIAN		message	File Name>		librarian output pane	prompt for file name	SCREENSHOT	esp@118-121	A00
+LIBRARIAN		message	Cataloging "<file>"		librarian output pane	progress message of Catalogue	SCREENSHOT	esp@118-121	A00
+WINDOW		menu_item	SHOW		window operation menu 1	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	HIDE		window operation menu 2	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	RESHAPE		window operation menu 3	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	MOVE		window operation menu 4	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	EXPAND		window operation menu 5	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	MENU		window operation menu 6	per-window operation	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	PERM...		window operation menu 7	per-window operation (truncated by camera)	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		menu_item	ATT...		window operation menu 8	per-window operation (truncated by camera)	SCREENSHOT	simpos@117	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		message	>MENU(PF16) PF10=ON_OFF, PF0-PF6=MANAGE...		bottom strip, kana-kanji conversion	key help: PF16 menu, PF10 conversion on/off, PF0-PF6 manage...	SCREENSHOT	simpos@108-113	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		message	0.人工 1.人口 2.じんこう		bottom strip	kana-kanji candidate list for romaji jinnkou	SCREENSHOT	simpos@112-113	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		keycode	PF16			opens MENU (per key-help line)	SCREENSHOT	simpos@108	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		keycode	PF10			kana-kanji conversion ON_OFF	SCREENSHOT	simpos@110-113	SIMPOS A00? (simpos.wmv, no version shown)
+WINDOW		keycode	PF0-PF6			MANAGE... (truncated)	SCREENSHOT	simpos@112-113	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	listing		file_manipulator top menu 1	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	world		file_manipulator top menu 2	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	mount volume		file_manipulator top menu 3	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	dismount volume		file_manipulator top menu 4	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	initialize volume		file_manipulator top menu 5	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	copy volume		file_manipulator top menu 6	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	sync		file_manipulator top menu 7	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	MT utility		file_manipulator top menu 8	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		menu_item	ipl maintenance		file_manipulator top menu 9	file manipulator command	SCREENSHOT	simpos@57	SIMPOS A00? (simpos.wmv, no version shown)
+OTHER		message	Visit File(<file>): 		PMACS echo line	find-file prompt	SCREENSHOT	esp@108	A00
+OTHER		message	Read! <path>		PMACS echo line	file read, e.g. >sys>user>demo>8pzl.esp.1	SCREENSHOT	esp@133-134	A00
+OTHER		message	PMACS(esp)(68,16) *-2* <path>		PMACS mode line	editor/mode/(n,m)/buffer/path/--Top- or --0%--	SCREENSHOT	esp@108,133; simpos@0	A00
+OTHER		message	>sys>user>demo>8pzl.esp.1		pathname syntax	>-separated absolute path with trailing version number	SCREENSHOT	esp@133-134	A00
+WINDOW	move_win	class	move_win		as_output,with_label,inferior_window	demo window class	USAGE (on-screen app code)	simpos@124; esp@111	A00
+WINDOW	as_output	nature	as_output			used as nature of a user window class	USAGE (on-screen app code)	esp@111	A00
+WINDOW	with_label	nature	with_label			used as nature of a user window class	USAGE (on-screen app code)	esp@111	A00
+WINDOW	inferior_window	nature	inferior_window			used as nature of a user window class	USAGE (on-screen app code)	esp@111	A00
+WINDOW		cmethod	create			window class :create(Class,[size(300,200),...]... ; arity not visible	USAGE (on-screen app code)	esp@111-117	A00
+WINDOW		imethod	background	2		:background(Win,black)	USAGE (on-screen app code)	esp@112-117	A00
+WINDOW		imethod	write_line			:write_line(Win," MELCOM PSI..." ; closing paren cut	USAGE (on-screen app code)	esp@113-117	A00
+WINDOW		imethod	activate	1		:activate(Win)	USAGE (on-screen app code)	esp@113; esp@129	A00
+WINDOW		imethod	set_title	2		:set_title(W," FDD ==> F...") (string cut, 2 args visible)	USAGE (on-screen app code)	esp@129-132	A00
+WINDOW		imethod	getc	2		:getc(W,Ans)	USAGE (on-screen app code)	esp@143	A00
+WINDOW	fdd_utility_file_menu	class	fdd_utility_file_menu		labeled_sash,as_scrolling_menu,as_multiple_select,as_mouse_input,temporary_window	multi-select file menu (Select files / Do it)	USAGE (on-screen app code)	esp@155-162	A00
+WINDOW	labeled_sash	nature	labeled_sash			nature of a menu class	USAGE (on-screen app code)	esp@155-162	A00
+WINDOW	as_scrolling_menu	nature	as_scrolling_menu			nature of a menu class	USAGE (on-screen app code)	esp@155-162	A00
+WINDOW	as_multiple_select	nature	as_multiple_select			nature of a menu class	USAGE (on-screen app code)	esp@155-162	A00
+WINDOW	as_mouse_input	nature	as_mouse_input			nature of a menu class	USAGE (on-screen app code)	esp@155-162	A00
+WINDOW	temporary_window	nature	temporary_window			nature of a menu class	USAGE (on-screen app code)	esp@155-162	A00
+SHELL	fdd_utility	class	fdd_utility		as_program	program class started by :goal	USAGE (on-screen app code)	esp@129	A00
+SHELL	as_program	nature	as_program			program nature	USAGE (on-screen app code)	esp@129	A00
+SHELL		imethod	goal	1		:goal(_) instance method header of as_program class (the one arg is the receiver)	USAGE (on-screen app code)	esp@129	A00
+OTHER	binary_file	cmethod	open			:open(#binary_file,File,... ; arity not visible	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	size	2		:size(File,Size)	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	new_buffer			:new_buffer(File,Size/2,... ; arity not visible	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	read	1		:read(File)	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	get_data			:get_data(File,Buffer,... ; arity not visible	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	close	1		:close(File)	USAGE (on-screen app code)	esp@23	A00
+OTHER		imethod	release	1		:release(Printer_obj)	USAGE (on-screen app code)	esp@24-31	A00
+OTHER	printer	cmethod	get			:get(#printer,Printer... ; arity not visible	USAGE (on-screen app code)	esp@36-41	A00
+OTHER	laser_printer	cmethod	get			:get(#laser_printer,Printer... ; arity not visible	USAGE (on-screen app code)	esp@38-41	A00
+OTHER		imethod	set_font			:set_font(Printer,kanji.../an... ; closing paren cut	USAGE (on-screen app code)	esp@36-41	A00

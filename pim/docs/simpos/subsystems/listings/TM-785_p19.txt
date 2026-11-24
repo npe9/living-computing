@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p19 (folio -14-) ====
+ (2) Image editing: a middle click (single or double) opens Fig. 2-13:
+       +--------------+
+       | 消去         |  erase rectangle (two left clicks)
+       | 移動         |  move rectangle; then a click gives the new upper-left
+       | コピー       |  copy rectangle
+       | 拡大・縮小   |  enlarge/reduce
+       | 回転         |  rotate
+       | 閉領域塗り潰し |  flood-fill a closed region
+       | 消しゴム     |  eraser
+       | 曲線         |  freehand curve
+       +--------------+
+       図2-13 イメージ処理編集メニュー
+   移動: a LEFT DOUBLE click on "移動" opens a menu of the transfer logical operation:
+   exclusive_or (invert against the existing image), copy (background colour), reverse (inverted
+   background colour); default copy.
+

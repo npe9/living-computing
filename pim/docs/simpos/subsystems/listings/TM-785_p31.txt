@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p31 (folio -26-) ==== [400dpi crop]
+   % set_color/1, set_color/2   register colours on the window from local predicate color_pairs_list/1.
+   set_color(Window) :-
+       color_pairs_list(Color_pairs_list),
+       set_color(Color_pairs_list, Window)
+       ;
+   set_color([], Window) :- ! ;
+   set_color([{Even_number, Colors} | Color_pairs_list], Window) :-
+       :set_color_pair(Window, Even_number, Colors),
+       set_color(Color_pairs_list, Window)
+       ;
+   % color_pairs_list/1
+   color_pairs_list(Color_pairs_list) :-
+       Color_pairs_list =
+         [{0, 0}, {2, {{30720, 5376, 18944}, {32543, 65535, 0}}}]
+       ;
+

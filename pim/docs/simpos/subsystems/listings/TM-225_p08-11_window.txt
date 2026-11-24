@@ -1,0 +1,46 @@
+% TM-225 「AIワークステーションPSIのプログラミング環境」 (中澤 修 他, Aug 1986; SIMPOS 2.5 current per p12).
+% PDF pages 8-11 (printed folios -7- .. -10-), chapter 6 ウインドウシステム. Read by eye at 130dpi
+% (work/trtm_window/tm0225/m810.png, p-09.png, m1112.png). [TRANSLATION/SUMMARY] mine; key terms in Japanese.
+
+6. Window system: aims = multiple logical terminals for the multi-process environment (論理的端末の複数化);
+   simpler I/O programming by letting one program use several windows. Refs (7),(8).
+6.1 機能 (functions), list as printed (o-bullets):
+   o 重ね合せマルチウインドウ   overlapping windows; position/size at full bit (dot) granularity; logically
+                                unlimited number of windows.
+   o ウインドウの階層管理       hierarchical windows: multiwindow inside a window.
+   o ボーダ, ラベル, マージン    border, label display and margin setting are free (for visibility).
+   o 文字, ビットグラフィック出力 per-window different fonts INCLUDING KANJI; character output and graphics
+                                (straight lines, arcs 円弧, etc.).
+   o ユーザ定義ウインドウ作成機能 combine-and-inherit the system's part classes (部品クラス) into a dedicated
+                                window class; or program wholly new attributes.
+   o ウインドウマニピュレータ   interactive change of window attributes (position, size, ...) by mouse and keyboard.
+   o フォントエディタ           mouse-oriented interactive character-font editor.
+6.2 構成 (Fig 2, p14): the window manager (ウインドウマネージャ) runs as an independent process and mainly does
+   inter-process communication/synchronisation between user processes and device-handler processes. A window
+   is a window OBJECT (instance of a window class) and every I/O request on a window is processed inside the
+   window object -- "there is no single management program"; management is embedded in each object.
+   Window classes = many single-function part classes (部品クラス) + finished classes (完成品クラス) that
+   selectively inherit some parts.
+6.3 ウインドウ管理
+ (1) ウインドウ階層: root = the system window called スクリーン (screen) representing the whole terminal screen.
+     Figs 3/4: A and B directly under the screen; overlap of A and B managed by the screen, overlap of C and D
+     (inside A) managed by A. Recursive multiwindow.
+ (2) 出力管理: an unhidden window's image is written directly into the display's frame memory (フレームメモリ);
+     a hidden window's image (all or hidden part) is saved elsewhere: PSI's bitmap display has bitmap memory
+     of several to several tens of times the frame memory, and each window's image is saved in a SAVE AREA
+     (セーブエリア) allocated there. Re-stacking (Fig 5) = memory transfer between save areas and frame memory.
+     Output to an unhidden window rewrites frame memory; to a hidden window writes the save area.
+     Output-processing options for hidden windows (4, selectable per program):
+       ① the requesting process waits until the window becomes unhidden -- THE DEFAULT (オプションのデフォルト状態)
+       ② output goes to the save area as is; the unhidden part shows correctly on screen
+       ③ force the window unhidden, then output
+       ④ show a temporary window (一時的ウインドウ) notifying the user of the pending output request;
+          the user can choose, by mouse, processing like ① or ③.
+     (Use: hiding an unused tool's window stops that tool at its first output.)
+ (3) 入力管理: decide the destination window of keyboard and mouse input.
+     1) keyboard -> the one SELECTED WINDOW (セレクテッドウインドウ) in the hierarchy: a window having the
+        keyboard-input function that is at the TOP of the stacking order; changed freely by the user's mouse.
+     2) mouse -> the window under the mouse marker (マウスマーカ); the window system constantly monitors which
+        window the mouse marker is over.
+7. Size: ~230,000 source lines ESP, ~1,400 classes, ~18,000 methods; SIMPOS 2.5 released; used at ICOT,
+   8 makers and universities.

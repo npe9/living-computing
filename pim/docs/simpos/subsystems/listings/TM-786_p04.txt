@@ -1,0 +1,18 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p4 (folio -1-) 1. インストール方法 (installation) ====
+Intro (TRANSLATION): describes how to create/modify an "SIM照" (SIM-inquiry) and send it to the server.
+Prose (TRANSLATION): installed into package `simshow`; cannot install if package simshow already exists;
+check first that it does not exist.
+  (1)ライブラリアンを生成する。                 [create a Librarian]
+  (2)フロッピーをユニット0に入れる。            [put the floppy in unit 0]
+  (3)ライブラリアンの「Execute」を選択する。    [select the Librarian's "Execute"]
+  (4)Command>fdd(" simshow.com") と入力後、リタンキーを入力する。   [type, then Return]
+       (printed with a space after the opening quote: fdd(" simshow.com"); full-width-looking parens)
+  (5)FDD mount ok?
+         input unit No.(0): 0
+     ユニット番号「0」を入力する（リタンキーは不要）。 [type unit number 0; no Return needed]
+  (6)約45秒でインストールされる。               [installed in about 45 seconds]
+  * If package simshow already exists an error occurs; choose to continue (existing package simshow is
+    deleted and created anew) or abort.   (No error-menu picture in this report; cf. TM-785 p3.)
+  NOTE: prompt here prints lower-case "input unit No.(0): 0"; TM-785 p3 prints "Input unit No. (0):0".
+

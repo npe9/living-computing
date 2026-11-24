@@ -1,0 +1,11 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p20 (folio -15-) ====
+   コピー: the same transfer-operation menu, default copy.
+   拡大・縮小: a left double click selects the type, either magnify or expand
+   (「ウインドウ・システムで提供しているmagnify とexpand」: both provided by the window system); default expand.
+   回転: rotation. After the rectangle is given, a line follows the mouse from its lower-left corner; a
+   click sets the angle, measured anticlockwise.
+   閉領域塗り潰し: fill the closed region containing the clicked point with the current pattern. A left
+   double click allows clipping to a given rectangle.
+   消しゴム: the mouse becomes an eraser; hold the LEFT button to erase; (cont.)
+

@@ -1,0 +1,9 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p24 (folio -19-) ====
+   An image data file is one with identifier 'image' made by the image program, or one a user made with
+   the window system's methods; a user-made file must have identifier 'image' to be loaded.
+   The figure program loads only figure files; the image program loads either kind as an image. Loading
+   erases the current drawing, and the drawing size becomes the size recorded in the file.
+ (1) Figure program: 'load' gives a file-name input window (file name or path name, extension 'draw').
+ (2) Image program: 'load' shows Fig. 2-17, the same "which ?" menu (draw / image).
+

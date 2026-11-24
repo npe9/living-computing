@@ -1,0 +1,50 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+window	standard_scrolling_menu	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+window	standard_io_window	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+window	window_without_label	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+window	as_mouse_input	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+window	labeled_sash	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+window	as_scroll	class				SIMPOS class needed by RLS; re-created in CESP espclass by (multiple) inheritance	PRINTED-INTERFACE	IPSJ-122601 p1 [5-45]-p2 §4.1(1)	SIMPOS on PSI-II, 1992
+other	monogyny_hash_index	class				SIMPOS class needed by RLS; re-created in CESP espclass by inheritance	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.1(1)	SIMPOS on PSI-II, 1992
+librarian	library_utility	class				SIMPOS class needed by RLS; re-created in CESP espclass by inheritance	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.1(1)	SIMPOS on PSI-II, 1992
+window	choice_window	class				SIMPOS class; ported as subclass of a CESP class (same-named method differs)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.1(2)	SIMPOS on PSI-II, 1992
+window	popup_choice_window	class				SIMPOS class; ported as subclass of a CESP class (same-named method differs)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.1(2)	SIMPOS on PSI-II, 1992
+window	as_markers	class				SIMPOS class; defined wholly new in CESP (marker defined separately)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.1(3)	SIMPOS on PSI-II, 1992
+window	?	imethod	kill	1		ESP :kill(Window) -> CESP :close(Window); arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+librarian	library_utility	cmethod	retract_all	4		ESP :retract_all/4 -> CESP :abolish/4 (class from held usage); arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	write_lines	2		ESP :write_lines/2 -> CESP :write_line/2; arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	write	2		ESP newline pair :write(W,key#cr),:write(W,key#lf) -> CESP only first half (前半のみ); arity counts receiver	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	get_mouse_position	3		ESP :get_mouse_position/3; CESP same, divided by unit; arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	draw_line	8		ESP :draw_line/8 -> CESP :draw_abs_line/5; arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	draw_filled_circle	5		ESP :draw_filled_circle/5 -> CESP same name /7; arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window	?	imethod	read_with_click	3		returns item and click kind (l,m,r); missing in CESP until 3.3; arity counts receiver (checked vs held code)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.3	SIMPOS on PSI-II, 1992
+window		keycode	key#cr			SIMPOS keycode; newline written as :write(W,key#cr),:write(W,key#lf); CESP keeps only first half	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		keycode	key#lf			SIMPOS keycode; second half of newline pair, dropped in CESP (前半のみ)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		keycode	"control#""c"""			CESP key#etx	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		keycode	mouse#r			CESP 'mouse#r' (quoted)	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		keycode	key#enter			no CESP equivalent	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		keycode	keypad#'0'			no CESP equivalent	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+window		option	#font_13			"font object; CESP ""a14"" or ""a24"""	PRINTED-INTERFACE	IPSJ-122601 p2 [5-46] §4.2	SIMPOS on PSI-II, 1992
+librarian		command	catalog			"カタログ = compile; RLS 3'30"" on PSI-II vs CESP SS2 11'15"" (Librarian link is INFERENCE)"	PROSE	IPSJ-122601 p2 [5-46] §4.3,§5	SIMPOS on PSI-II, 1992
+window		message	string origin			string base point top-left in ESP/SIMPOS (bottom-left in CESP)	PROSE	IPSJ-122601 p2 [5-46] §4.3	SIMPOS on PSI-II, 1992
+window	#window	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): text window ops	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#menu	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): menu ops	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_superior	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): parent/child window ops	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#with_pane	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): parent/child window ops	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#with_border	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): border	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#with_label	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): label	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#with_font	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): char font	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_cursor	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): cursor	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_input	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): input	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_output	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): output	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_mouse	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): mouse	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_graphic	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): graphics	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_scrollbar	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): scroll	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#as_dialogbox	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): dialog box	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	#event	class				CESP-ONLY, do not count for SIMPOS coverage: CESP library class (NOT SIMPOS; spec 'based on SIMPOS window system'): event	PRINTED-INTERFACE	IPSJ-118569 p2 [717] Fig.2	CESP basic version 1990
+window	CESP window	imethod	create			CESP: create window object and display; (SIMPOS analogue unknown)	PROSE	IPSJ-118569 p2 [717] §3(3)	CESP 1990
+window	CESP window	imethod	close			CESP: delete window; replaces SIMPOS :kill per IPSJ-122601	PROSE	IPSJ-118569 p2 [717] §3(3)	CESP 1990
+other	Pmacs	class				PSI text editor; reused base 93(12) classes ~14,300(1000) lines; ( )=Proton tree-display share	PRINTED-INTERFACE	IPSJ-22404 p8 [8] tables 4.2.4-1/2	SIMPOS 1988
+other	Pmacs	command	(string-mode edit commands)			almost all Pmacs edit commands usable in SEMACS string mode; none named	PROSE	IPSJ-22404 p3 [3] §2.2	SIMPOS 1988
+other	SEMACS buffer	slot	text/structure/edit mode/grammar name			SEMACS buffer instance state; window = buffer	PROSE	IPSJ-22404 p7 [7] §4.2.1, p5 §3.3(2)	SEMACS 1988
+window	marker	class				defined separately for as_markers in CESP port (12th espclass class: INFERENCE)	PROSE	IPSJ-122601 p2 [5-46] §4.1(3)	SIMPOS on PSI-II, 1992

@@ -1,0 +1,18 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p22 (folio -17-) ====
+Files are made with the command-menu 'save'.
+ (1) Figure program: 'save' shows Fig. 2-14:
+       +which ?+
+       | draw  |
+       | image |
+       図2-14 セーブメニュー
+   draw: a file-name input window appears; type a file name or file path name. Give the extension
+   'draw'; if no file-type identifier is given the system adds 'draw'.
+   image: Fig. 2-15:
+       +SAVE---------------------+
+       | size     all | part      |   ①
+       | appoint  mouse  key      |   ②   (mouse selected)
+       |   do_it        abort     |
+       図2-15 イメージセーブ領域指定ウインドウ
+   'all' saves the whole drawing; 'part' extracts a region; ② chooses how. (cont.)
+

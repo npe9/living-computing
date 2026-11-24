@@ -1,0 +1,14 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p14 (folio -9-) ====
+   ellipse: two left clicks give the bounding rectangle.
+   line: left = start, left = end.
+   arc: centre, start, end; anticlockwise.
+   half-ellipse arc: two clicks give the rectangle. A LEFT DOUBLE click on this item in the figure window
+   opens the menu of Fig. 2-8 (default 上半楕円):
+       +楕円描画方法+
+       | 上半楕円   |   upper half
+       | 下半楕円   |   lower half
+       | 右半楕円   |   right half
+       | 左半楕円   |   left half
+   quarter-ellipse arc: as above; a left double click opens Fig. 2-9 (default 右上1/4楕円).
+

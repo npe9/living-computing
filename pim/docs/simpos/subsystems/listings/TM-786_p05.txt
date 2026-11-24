@@ -1,0 +1,24 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p5 (folio -2-) 2. 起動方法 (how to start) ====
+Three ways; behaviour after start is identical.
+ (1)デバッガ (debugger)
+    ライブラリアンでパッケージを"simshow"に設定し、パッケージsimshowの内容を全部ロードする。
+    [In the Librarian set the package to "simshow" and load ALL of package simshow's contents.]
+    次に、デバッガから、
+       :create(#simshow##simshow, S),
+       :goal(S).
+    で起動する。
+ (2)シェル (shell)
+    シェルから、
+       $ call simshow##simshow
+    で起動する。
+ (3)システムメニュー (system menu)
+    ログインファイルに、次のクラスを定義する。  simshow##simshow   (underlined)
+    [Define the following class in the login file.]
+    ・記述例 (example)
+         menu :-   . . . . . . . . . . . . .
+                   . . . . . . . . . . . . .
+                   {"simshow",simshow##simshow} ,
+                   . . . . . . . . . . . . .
+    (quote marks printed as ‶ ″; item = {Label-string, Package##Class})
+

@@ -1,0 +1,22 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p07 (folio -2-) ====
+2.2 初期操作. On start the process-selection menu (Fig. 2-1) appears; 'drawing' starts the figure
+program, 'image' the image program:
+       +PSI DRAW+
+       | drawing|
+       | image  |
+       図2-1 処理選択メニュー
+Selecting either shows the PSI graphics tool window (Fig. 2-2). [400dpi crop]
+Layout:
+ - コマンドメニュー (command menu): a one-line strip along the top of the edit window. Items, left to
+   right as on screen:  →  ←  ↑  ↓  show  size  grid  load  save  clear  close  exit
+ - 描画図形ウインドウ (figure-selection window): a column on the left. Header 線 (line); then the line
+   figures: circle, rectangle, fan, ellipse, straight line, arc, half-ellipse arc, quarter-ellipse arc,
+   polyline, polygon; then 塗り潰し (fill) header; then filled circle, filled rectangle, filled fan,
+   filled ellipse, filled polygon; then 文字 (characters); then 取り消し (undo). The selected item is in
+   inverse video (the circle in the figure).
+ - 編集ウインドウ (edit window): the large area.
+ - 描画属性ウインドウ (drawing-attribute window): a two-row strip along the bottom.
+   Row 1: 線 | widths 1 2 3 4 | line types (solid, dashed, dotted, dash-dot, dash-dot-dot) | set reset xor color
+   Row 2: 塗り潰し | border on/off and next-pattern arrows | 塗潰 | fill patterns ... | a status cell "* 図形 *"
+

@@ -1,0 +1,72 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+LIBRARIAN	librarian	command	Execute			Librarian menu item to run a command; gives Command> prompt	PROSE	TM-785 p3; TM-786 p4	SIMPOS 5.x 1989
+LIBRARIAN	librarian	command	fdd	1		Command>fdd("x.com"): run command file from floppy; asks 'FDD mount ok?' and unit no.	PROSE	TM-785 p3; TM-786 p4	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	FDD mount ok?			prompt before floppy access	SCREENSHOT	TM-785 p3; TM-786 p4	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	Input unit No. (0):			unit-number prompt, default 0, single key no Return (TM-786 prints 'input unit No.(0): ')	SCREENSHOT	TM-785 p3; TM-786 p4	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	Error occurred in librarian_59( process 59 )			error window title; librarian process named librarian_<n>	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	Package drawing already exists			error text when installing into existing package	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	Cannot load package_template_file			error text	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	message	Error handling menu:			title of recovery menu pane	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	menu_item	Erase existing package and continue			erase package, then Really? ERASE/STOP	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	menu_item	Inspect the information of this event			inspect event	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	menu_item	Return to librarian top level			back to librarian screen	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	menu_item	Really?/ERASE			confirm menu titled Really? item ERASE continues	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	menu_item	Really?/STOP			confirm menu item STOP aborts	SCREENSHOT	TM-785 p3	SIMPOS 5.x 1989
+LIBRARIAN	librarian	command	set package; load all			debugger start needs package set to simshow and all its contents loaded in Librarian	PROSE	TM-786 p5	SIMPOS 5.x 1989
+SHELL	shell	command	call			$ call simshow##simshow : start program class from shell; prompt $	PRINTED	TM-786 p5	SIMPOS 5.x 1989
+SHELL	debugger	command	:create(#simshow##simshow, S), :goal(S).			start program from debugger: create instance then :goal	PRINTED	TM-786 p5	SIMPOS 5.x 1989
+SHELL	?	imethod	goal	1		entry method :goal(S) sent to created program instance; class not printed (requirements has as_program class goal/2, ? goal/1)	PRINTED	TM-786 p5	SIMPOS 5.x 1989
+SHELL	login_file	command	menu :- items_list([{'Label', Class},...]).			login-file system-menu definition; items {'debugger',debugger},{'pmacs',pmacs},{'PsiDraw',drawing##psi_drawing_tool}	PRINTED	TM-785 p6, p25	SIMPOS 5.x 1989
+SHELL	login_file	command	menu :- ... {"simshow",simshow##simshow} ...			login-file menu item variant with string label	PRINTED	TM-786 p5	SIMPOS 5.x 1989
+SHELL	system_menu	menu_item	debugger			system-menu item class debugger (no package)	PRINTED	TM-785 p6, p25	SIMPOS 5.x 1989
+SHELL	system_menu	menu_item	pmacs			system-menu item class pmacs (no package)	PRINTED	TM-785 p25	SIMPOS 5.x 1989
+WINDOW	standard_window	cmethod	create	3		create(#standard_window,[size(1280,944)],Window)	PRINTED	TM-785 p30	SIMPOS 5.x 1989
+WINDOW	standard_window	option	size			init option size(W,H)	PRINTED	TM-785 p30	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	set_color_pair	3		set_color_pair(W,EvenNo,Colors); Colors 0 or {{R,G,B},{R,G,B}}	PRINTED	TM-785 p31	SIMPOS 5.x 1989
+WINDOW	<root>	imethod	refute	3		refute(W,MethodName,ArgVector): call method by name (receiver is a window here)	PRINTED	TM-785 p32	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_line	8		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_rectangle	8		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_circle	7		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_arc	9		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_fan	9		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_ellipse	8		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_elliptical_arc	10		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_graph	9		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_polygon	9		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_filled_rectangle	8		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_filled_circle	7		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_filled_ellipse	7		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_filled_fan	9		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	imethod	draw_characters	4		drawing method called via refute; args per data/2	PRINTED-INTERFACE	TM-785 p40, p32-36	SIMPOS 5.x 1989
+WINDOW	standard_window	option	set			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	reset			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	xor			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	exclusive_or			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	copy			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	reverse			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	solid			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	dotted			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	mesh			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	left_hatch			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	standard_window	option	small_mesh			drawing op / line type / fill pattern atom	PRINTED	TM-785 p12, p19, p40	SIMPOS 5.x 1989
+WINDOW	?	imethod	magnify			image scaling provided by window system (no signature); owning class INFERENCE	PROSE	TM-785 p20	SIMPOS 5.x 1989
+WINDOW	?	imethod	expand			image scaling provided by window system, default (no signature); owning class INFERENCE	PROSE	TM-785 p20	SIMPOS 5.x 1989
+WINDOW	font	cmethod	create	3		create(#font,PathName,Font); names font_13, >sys>font>kanji_16.font, font:kanji_16	PRINTED	TM-785 p37, p40, p17	SIMPOS 5.x 1989
+other	list_index	cmethod	create	2		create(#list_index,Bank)	PRINTED	TM-785 p37	SIMPOS 5.x 1989
+other	list_index	imethod	add_at	3		add_at(Bank,Obj,Key)	PRINTED	TM-785 p37	SIMPOS 5.x 1989
+other	list_index	imethod	get_at	3		get_at(Bank,Obj,Key)	PRINTED	TM-785 p37	SIMPOS 5.x 1989
+WINDOW	window	event	right click			cancel operation	PROSE	TM-785 p8	1989 app convention
+WINDOW	window	event	middle double click			open edit menu on selected object	PROSE	TM-785 p18	1989 app convention
+WINDOW	window	event	left double click on menu item			open item option sub-menu	PROSE	TM-785 p14	1989 app convention
+WINDOW	window	command	close -> icon			tool window close shows icon	PROSE	TM-785 p9	SIMPOS 5.x 1989
+WINDOW	window	keycode	C-x C-z			end form input (title shows (終了 = ^x^z))	SCREENSHOT	TM-786 p6, p8	1989 app
+WINDOW	window	option	screen 1280x944			default drawing size = screen size 1280x944	PROSE	TM-785 p9, p10	PSI-II 1989
+other	file_manipulator	command	copy_text			FDD->disk copy for text-like (draw) files; reading «?»	PROSE	TM-785 p21	SIMPOS 5.x 1989
+other	file_manipulator	command	copy			FDD->disk copy for image files	PROSE	TM-785 p21	SIMPOS 5.x 1989
+other	file_system	option	>sys>simshow>Qbox>*.*			path of saved queries	PRINTED	TM-786 p7, p12	SIMPOS 5.x 1989
+other	file_system	option	>sys>font>kanji_16.font			font path	PRINTED	TM-785 p40	SIMPOS 5.x 1989
+other	file_system	option	font:kanji_16			logical font name	SCREENSHOT	TM-785 p17	SIMPOS 5.x 1989
+other	file_system	option	name..version			file list shows name..N; icpsi116-01-May-89-12-00-00.sim.1	SCREENSHOT	TM-786 p7, p12	SIMPOS 5.x 1989
+other	system	message	SIMPOS版名 5.0 / Firm 1.02 / CSP 2.23«?»			version fields in example	SCREENSHOT	TM-786 p8	SIMPOS 5.0 May 1989
+SHELL	debugger	class	debugger			system-menu class named in login-file example {'debugger', debugger}	PRINTED	TM-785 p6, p25	SIMPOS 5.x 1989
+SHELL	pmacs	class	pmacs			system-menu class named in login-file example {'pmacs', pmacs}	PRINTED	TM-785 p25	SIMPOS 5.x 1989

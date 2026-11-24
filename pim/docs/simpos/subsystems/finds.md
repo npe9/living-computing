@@ -1,0 +1,143 @@
+# Possible SIMPOS code and binaries found in held material (2026-11-24)
+
+SIMPOS itself is lost. This page lists everything the 2026-11-24 subsystem dive found that may be
+**SIMPOS's own code or data**, as opposed to application code that calls SIMPOS. It covers the
+window system, the Librarian and the shell. Everything listed stays where it is held: the IFS
+archives are cited by path:line and are **not** committed (`AGENTS.md`, repo is public).
+
+Grades: **COPY** means the file says it is a copy of SIMPOS. **DERIVED** means it is descended
+from SIMPOS source by its stamps, then modified. **PRINTED** means it is printed in a report as
+system code. **DATA** means a file in a SIMPOS format, not code.
+
+## 1. The strongest find: the SIMPOS 6.1 Librarian, copied and patched (COPY)
+
+**Where:** `cil/src/ds_bep.esp:1773-3518`, inside `ifs/natural-lang/simpos/cil.tar.gz`.
+
+**What:** three Librarian classes, copied from SIMPOS 6.1 by ICOT's CIL team, patched, and
+catalogued into CIL's own package `spec_ds`:
+- `library_utility`, the programmatic Librarian (`:3123-3518`);
+- `librarian_class_generator`, the template and object generator (`:1777-2326`);
+- `librarian_read_term`, the source reader and cataloguer (`:2331-3121`).
+
+**Evidence.** The lead opened these lines himself on 2026-11-24:
+- `:45`: the file history says `91. 1.28 by T.S. merge patch class for library_utility`.
+- `:1774`: `% patch class for library_utility on SIMPOS 6.1`.
+- `:1776`: `% mkpsi000::>sys>user>yasuko>GEN.esp.6, 28-Jul-88 ..., Edit by yasuko`.
+- `:2327-2329`: three stamps on `librarian_read_term`:
+  - `icpsi135::>sys>user>yasuko>READ.esp.2, 22-Jul-88`;
+  - `icpsi123::>sys>user>soft>librarian>READ.esp.7, 26-Feb-88`;
+  - the DEC-20 file `<M-KONDOH.LIBRARIAN>ZREAD.ESP.79, 2-Jul-86`. The Librarian was developed on
+    the DEC-20 and moved to the PSI.
+- `:3122-3123`: `% mkpsi000::>sys>user>yasuko>UT.esp.2, 29-Jul-88`, then `class library_utility has`.
+- `:3358-3359`: `:compile(_,_);` and `:uncompile(_,_);`. CIL stubbed the real compile methods, so
+  those bodies are **not** SIMPOS's.
+
+INFERENCE, strong: "yasuko" is 児玉泰子 (Kodama Yasuko, Mitsubishi Electric Computer Systems), the
+author of IPSJ 118681 (1990) on the SIMPOS Librarian's customisation (`notes/ipsj.md`).
+
+**What it settles:**
+- the Librarian's internal class structure (natures, slots);
+- the `command/2` command-list interpreter, which is the semantics of `.com` command files;
+- the messages and the response-time flag bits;
+- the window it makes for itself.
+
+The detail is in `librarian.md` and `notes/ifs_libshell.md` §4.1. The natures it names but does not
+define are the rest of the Librarian, still lost: `librarian_version`, `librarian_delete`,
+`librarian_package`, `librarian_spy`, `librarian_reference`, `librarian_fdd`,
+`librarian_subroutine`, `as_assert_utility`, `librarian_catalogue`, `as_class_maker` and
+`compiler_error_reporter`.
+
+**Correction to `../required/NOTES.md`:** this copy's package is `spec_ds`
+(`cil/src/INSTALL.esp:93-105`). It is not `spec_ms`. CIL's own installer uses the real
+`#library_utility` (`INSTALL.esp:14`), and only its back end uses the copy (`ds_bep.esp:68`).
+
+## 2. The interpreter's KL0 built-in module (COPY, probable)
+
+**Where:** `cil/src/cil_kl0.esp:74`, `class builtin` in package `kl0`.
+
+**Evidence:**
+- The stamp `<M-KONDOH.SUBROUTINE>BUILT1.ESP.11, 23-Jul-86` (`:43`) has the same author and era as
+  the Librarian's reader.
+- The comment says the module is for the local interpreter to execute KL0 built-ins (`:45`).
+- It lists the predicates the interpreter must handle itself (`:45-52`) and the compiler's
+  renames (`:55-69`).
+
+INFERENCE: this is the built-in table of SIMPOS's `interpreter` class, which the debugger uses. Its
+176 name/arity pairs are already in `../required/builtins.tsv`. (`notes/ifs_libshell.md` §4.2)
+
+## 3. The SIMPOS debugger, as the base of CAL's debugger (DERIVED)
+
+**Where:** `cal-esp/deb2.12/`, inside `ifs/kbms-clp/simpos/cal-esp.tar.Z`.
+
+**Evidence:**
+- `save.esp:10` carries the DEC-20 stamp `<SIMPOS.E.DEBUGGER>SAVE.ESP.3, 14-Apr-87 ..., Edit by
+  M-TAJIMA`. That directory is the SIMPOS debugger's own.
+- Later stamps run through `>sys>user>tajima>new_debugger>` and `>sys>user>tajima>debugger>`
+  (1988).
+- `util.esp:312, :572` carry `<ISHIBASHI.EXEC>` stamps from 1986. Ishibashi is the author of
+  TM-143 and TM-181.
+- CAL's own edits date from 1990-91.
+
+**What it shows:**
+- the SIMPOS debugger's structure: box-model port slots, gates and leash, the state window, and
+  the save of debugger state;
+- its window labels ("Debugger Menu", "Mode_Leash", "Variable", "To whiteboard", ...);
+- the pane classes it is built from;
+- a super-command menu.
+
+How much is still SIMPOS's is unknown. The structure is used in `shell.md`, graded DERIVED.
+(`notes/ifs_libshell.md` §4.3)
+
+**Consequence for `../required/`:** several `as_program` rows in `requirements.tsv` are CAL-debugger
+internals, among them `!debugger_window`, `set_leash/2` and `mam_do_menu/2`. They are not SIMPOS
+requirements.
+
+## 4. System code and data printed in reports (PRINTED; known before, listed for completeness)
+
+- **Coordinator:**
+  - `default_translation_table`: TR-046 p26 and p28, TR-061 p13.
+  - `system_menu`: TR-046 p27.
+  - Transcribed in `../printed/listings/`.
+  - The 1984 system's own standard table, according to TR-061.
+- **Window mixins:** `bare_window`, `with_border`, `with_label` and `window_with_border_and_label`
+  (TM-065 p15-16).
+- **The Librarian's standard menu definition** (`menu_list`, from its initialisation file):
+  - printed as Fig. 2 of IPSJ 118681 (1990, SIMPOS 5.0), with an elision in the original;
+  - the system's own data, not code;
+  - transcribed in `notes/ipsj.md` and used in `librarian.md`.
+
+## 5. Re-implementations and SIMPOS-format data (not SIMPOS, but close)
+
+- **`cil/src/cil_esp.esp:120-254`** (package `esp_call`, 1990-91). It re-implements the SIMPOS
+  macro expander's `#`-constant families: `key#`, `control#`, `pf#`, `mouse#`, `string#`. It is
+  CIL's own code and the best written list of the families. It does not give their numeric values.
+  (`notes/ifs_window.md`)
+- **`kappa2/kappa2/utility/fmp/UTL_WIND.ESP:6`**: a `class window` whose natures are exactly TM-125
+  p20's `user_window` recipe. It is application code that confirms the recipe.
+- **The `.font` files in the IFS archives** (13 by name in the extracted trees; `notes/tm115.md` counts 14) (e.g. `gog-esp/suuji.font`, `kappa2 tiny_7.font`):
+  - fonts in SIMPOS's own font file format, made by users (DATA);
+  - the `f822` family is decoded and predicts both file sizes exactly; the 32-bit family is not
+    decoded (`notes/tm115.md` F3);
+  - no system font (`>sys>font>kanji_16.font`) is held.
+- **Common ESP**, whose window system was built "on the basis of" SIMPOS's window specification
+  (IPSJ 118569). It is not held. The 1992 distribution lead is in `web_search_2026-11-24.md`.
+- **An `espclass` file**: ETL's CESP re-creation of 12 SIMPOS window classes for the RLS port
+  (IPSJ 122601). It is not held, and would be worth asking for.
+
+## 6. Checked and not found
+
+- **Held compiled packages** (`notes/ptf.md`):
+  - None of the 1,662 classes in the 11 `.ptf` and 10 papyrus `.pak` files is in package `simpos`.
+  - None has the unqualified name of a SIMPOS class. The nearest miss, `kappa##window`, has nature
+    `user_window`.
+  - The headers name `lversion lib50` but no SIMPOS release.
+- **Reports:** TM-115, TM-785, TM-786, TM-181, TM-143, TM-229 and TM-388 print user example code
+  and SIMPOS screen text only. TM-115 says `as_general_font` is under a page of system source; it
+  is not reproduced.
+- **The ICOT museum video:**
+  - it shows SIMPOS's menus as rendered (system menu, Librarian, debugger, window menu,
+    file_manipulator);
+  - the source code on screen is demo application code;
+  - no binary is visible (`notes/video.md`).
+- **The IFS archives:** no binary, boot image or `.ptf` of a SIMPOS package (`ifs_libshell`,
+  `ifs_window`).
