@@ -62,6 +62,12 @@ the per-opcode table in `pimos_boot_requirements.md`, reproduced by
 | distinct (tag, opcode) pairs used | 197, 13 of them quick forms commented out of the 1992 `inst_tab.kl1` (`put_vector_0..6`, `wait_vector_1..6`) |
 | of those, with any arm in `PimKL1B.bsv` | 51 |
 
+*(Note 2026-11-23: the 51 is the BENCH model, `bsv/PimKL1B.bsv`, by a
+text match on its arms. The two models of the current work, the
+reference `ref/pimm/pimm.py` and the core `bsv/Pimm*.bsv`, implement
+128 instructions on both (`ref/pimm/README.md`, `bsv/README.md`
+"State"). The counts are of different models, not a disagreement.)*
+
 The 51 cover 73.4% of instruction words by static count, but that
 figure flatters the model: several of the arms are stand-ins
 (`try_me_else`, `fail`, `set_value`, `collect_value`, the no-op
@@ -112,7 +118,7 @@ longer `run_boot.sh` once runs exceed a few minutes).
 | R2 | One predicate from a real PIMOS module, loaded from its `.sav`, runs to completion with arguments we construct and returns the right answer | expected value computed independently (by hand for the first; by KLIC 2.002 for the rest) |
 | R3 | The same, for a predicate that suspends and is resumed | same |
 | R4 | The IPL image starts and loads the module list in `pimos.ipl` | the IPL's own "Link Modules" line on the console |
-| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs |
+| R5 | Boot log | "Link Modules ..." then "PIMOS V 3.600 20-May-93": `pim:go/4` displays `"PIMOS "` and `pimos_version:console_title` (`pimos/src/bios/boot/bios.kl1` the `:- default` branch, `kernel/init/version.kl1`: "3.600", "20-May-93"). Corrected 2026-11-23: this row asked for the manual's sequence "PIMOS booting ... / V 3.600 ... / SCSI UNITS FOUND" (`e-sysman.tex`), which is a V3.0 Multi-PSI transcript; "booting" is in no held 3.6 object file, searched 2026-11-23 as 8-bit text and as two-byte JIS (controls: "pimos" is found as 8-bit text in the bios and server files, "Version" as JIS in three; "SCSI" is found as JIS, a phrase with spaces was not searched for), and the source has the SCSI line commented out (`bios/boot/scsi_man.kl1`). Which branch the binary was compiled from is to be seen when it runs. *Note 2026-11-23: the version module at least agrees with the source. "20-May-93" occurs once in `pimm_kernel360E.sav` as a two-byte JIS string, and the reference model's run prints it. The objects' "3.600:25-Nov-93" is the base files' comment date, a different artefact (`binary_reverse_engineering.md` §2)* |
 | R6 | Login and a shell prompt; a shell command that only needs the kernel runs | the manual's transcript for that command (`e-shell.tex`) |
 | R7 | An application already inside the images runs | first choice: the PIMOS compiler compiling a one-clause module, because its output can be compared with our own decode of the same module |
 | R8 | A KL1 program from source: `fact.kl1`, `nrev.kl1`, `qsort.kl1`, `kkqueen.kl1` from `pkl1.tar.Z`, compiled by PIMOS's own compiler on the model, then run | results equal KLIC 2.002's on the same source |
@@ -447,12 +453,18 @@ addressing rule on a layout known from elsewhere.*
   `psdpim`). Still wanted: any PSI-III emulator or microcode listing.
 - TR-373 "KL1 no jitsugen houshiki to heiretsu OS no kijutsu" and
   TM-1203 "KL1 ni yoru PIMOS no jitsugen ni tsuite" (URLs in
-  `nonlocal/MANIFEST.md` §3).
+  `nonlocal/MANIFEST.md` §3). *Held since 2026-11-20:
+  `nonlocal/lit/trtm/tr0373.pdf`, `tm1203.pdf` (`LIT_MANIFEST.md`;
+  note 2026-11-23).*
 - `pimosman.ps.Z` (the typeset manual; we hold only the LaTeX).
   *`icot_software_survey.md` (2026-11-20) found it on the AIST mirror,
   with the PIMOS 1.5 and 3.0 manuals, the primer and the ESP manuals;
   that survey is the full inventory of ICOT software held, public and
   lost, and its section 5 is the acquisition list. Not fetched yet.*
+  *Corrected 2026-11-23: all of these were fetched as data on
+  2026-11-20 with the whole IFS tree, `nonlocal/ifs/symbolic-proc/pim-psi/pimosman.ps.Z`,
+  `nonlocal/ifs/manuals/pimos/`, `nonlocal/ifs/manuals/esp/`
+  (`nonlocal/IFS_MANIFEST.md`).*
 - Multi-PSI KL1 implementation reports (the distributed
   implementation, export/import tables, weighted reference counts) for
   §7.
@@ -464,6 +476,9 @@ addressing rule on a layout known from elsewhere.*
   node with pages kept by the front end, which needs a host shim for an
   8-operation page-file protocol and the PIMOS KL1 compiler, since it
   ships as source for PIMOS 3.4/3.45. Not fetched; nothing tried.
+  *(Note 2026-11-23: now held as data, nothing tried:
+  `nonlocal/ifs/symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz`,
+  `nonlocal/ifs/kbms-clp/pimos/kappa-p.tar.Z`.)*
 - Period KL1 applications for R9: the benchmarks the FGCS'92 PIM/m
   paper reports, and the IFS KL1 programs (theorem provers, puzzle
   and search benchmarks) once the IFS index is reachable.

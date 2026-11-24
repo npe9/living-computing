@@ -152,7 +152,7 @@ Columns: item | needed for | held? (path, form) | documented? | status
 | Instruction cache 1K words, data cache 4K words, direct-mapped | cycle accuracy | papers | sizes and mapping (`pim_architecture.md` §6); write policy, hit/miss latency not stated | PARTIAL | none ("no cache", `gap_analysis.md` §D) | |
 | Shared memory, clusters, coherence protocol | n/a for PIM/m | — | PIM/m has none (`TR659` p. 7, `OV92` p. 63, via `pim_architecture.md` §6) | not applicable | — | see area L for the cluster machines |
 | Inter-PE network: NU 5x5 crossbar, 9-bit packet byte, RAM route table, 1 byte / 4 cycles | multi-PE | papers | mechanism `M92` p. 427; frame format, port numbering, arbitration not printed (`pim_architecture.md` §10) | PARTIAL | bench `PimNU`, `PimLink`, `PimNURouted`, `PimMesh` (MODEL choices, tested) | message contents (KL1 inter-PE messages) are area B |
-| Machine cycle 65 ns | timing | papers | `M92` p. 426, `OV92` p. 62, `TR659` p. 6 | DOCUMENTED | not used | `gap_analysis.md` §D says "60 ns cycle"; `pim_architecture.md` §1 and §7 say 65 ns from three sources. 65 ns is the cited figure |
+| Machine cycle 65 ns | timing | papers | `M92` p. 426, `OV92` p. 62, `TR659` p. 6 | DOCUMENTED | not used | Both figures are printed (§6 item 4): 60 ns in TR-564 p. 2, FGCS'92 Vol. 1 p. 45 Fig. 7 and TR-799; 65 ns in `M92`, `OV92`, TM-1074 and TR-733 (FGCS'92 Vol. 1 p. 43 prints 50 under PIM/m, probably swapped with PIM/c). 65 ns is probably worst case and 60 ns typical (INFERENCE). Any timing claim must name which figure it uses. *(Cell rewritten 2026-11-23; it said: `gap_analysis.md` §D says "60 ns cycle", `pim_architecture.md` says 65 ns from three sources, 65 ns is the cited figure.)* |
 | SCSI attachment (one PE in eight has a SCSI board, 670 MB disk and the FEP) | I/O | papers | TR-733 via `literature_gaps.md` §8; `M92` p. 426 (four 670 MB disks per cabinet) | PARTIAL | `scsi_init`/`scsi_command` on ref only | SCSI controller chip, interrupt wiring: not documented in anything read |
 | Console attachment (CSP, maintenance architecture) | boot | `nonlocal/lit/trtm/tm1213.pdf` | TM-1213 read from page images (`literature_gaps.md` §8a); IPSJ 122850 (PIM/m maintenance architecture and console processor) is now held in `nonlocal/lit/ipsj/` (`psi_acquisition.md` §5), not read | PARTIAL | none | how the CSP reaches the PE (bus, registers) is in TM-1213 as far as it goes; not transcribed here |
 | Real PIM/m hardware | reference | National Museum of Nature and Science, Tokyo (IPSJ page, `icot_software_survey.md` §5.2) | — | UNKNOWN (preserved, not examined) | — | whether media came with it: unknown (`literature_gaps.md` Appendix D, ranked item 2) |
@@ -177,8 +177,9 @@ run on. None is PIM/m; `psdpim` is the closest (same firmware line,
 
 Instruction families, with the object-set census
 (`pimos_boot_requirements.md` §0.5). Per-family coverage by the models
-is not on record: the model documents give only the total (116 on both,
-`bsv/README.md`), and the rows of the next table say per family what
+is not on record: the model documents give only the total (116 on both
+when this audit was written; 128 since the merge of 2026-11-23,
+`bsv/README.md`, `ref/pimm/README.md`), and the rows of the next table say per family what
 is known.
 
 | Family | Object set: mnemonics | uses | IPL image: mnemonics | uses |
@@ -208,7 +209,7 @@ is known.
 | Priorities (goal stack per priority, 256-entry Goal Stack Entry Table) | R5.. (PIMOS starts at priority 4050) | `PIMM.PARAM` (binary package) | priority encoding not known (`gap_analysis.md` B4) | PARTIAL | OURS: priority carried and dropped; `calculate_priority_from_minimum` range OURS (`pimm_semantics.md`) | Goal Stack Entry Table use not found in microcode (`pseudo_pimm_microcode.md` §18 "Not recovered") |
 | Suspension and resumption (HOOK, MHOOK, DREF, multiple-suspension record) | R3 | microcode | multiple-suspension record's four fields and tags read, order conditional (`pseudo_pimm_microcode.md` §17); siblings' scheme in `literature_gaps.md` §2 | PARTIAL | both: OUR scheme (HOOK -> suspension record always) | known to differ from the documented siblings (`pimm_semantics.md` "Runtime state") |
 | Body built-in that waits | R2.. | — | PDSS `body_builtin_suspend`; PIM/m representation unknown | PARTIAL | both: OUR stubs (`asm/pimm_stubs.py`, 71 stubs, 260 cells) | |
-| Built-ins: count and provenance | R2..R8 | compiler `library/compiler/blt.kl1`: 87 guard and 120 body built-ins (`pimm_semantics.md`, `asm/bltdir.py`). Three different units: 207 compiler built-ins (language level); 116 KL1-B instructions implemented on both models (`bsv/README.md`; instructions, not built-ins); 112 rows in `pimm_semantics.md`'s table (one per instruction or instruction group); 71 stubs for waiting body built-ins (`asm/pimm_stubs.py`) | manual `e-builtin.tex` for meaning; directions from `blt.kl1` | PARTIAL | 116 instructions on both models (`bsv/README.md`) | **This audit's count** (reading each of the 112 rows of `pimm_semantics.md` lines 49-165 for the words OURS, PDSS and REFERENCE MODEL ONLY; a hand count, not a script): 8 rows have semantics that are partly OURS (`new_atom` numbering, `calculate_priority_from_minimum` range, `enqueue_goal_with_priority` priority dropped, `enqueue_goal_to_processor` one PE, `read_eagerly` no-op, `scsi_init` values, `scsi_command` waiting, `merge` not the machine's merger); 2 more have only a Bluespec step count of ours (`b_multiply`, guard `modulo`); 17 rows cite PDSS for part of their meaning (e.g. `hash` function, MRB rules, sign of `modulo`); 11 are REFERENCE MODEL ONLY. The rest rest on paired source/object or the manual |
+| Built-ins: count and provenance | R2..R8 | compiler `library/compiler/blt.kl1`: 87 guard and 120 body built-ins (`pimm_semantics.md`, `asm/bltdir.py`). Three different units: 207 compiler built-ins (language level); 116 KL1-B instructions implemented on both models (`bsv/README.md`; instructions, not built-ins; 128 since later on 2026-11-23, §6 item 2); 112 rows in `pimm_semantics.md`'s table (one per instruction or instruction group); 71 stubs for waiting body built-ins (`asm/pimm_stubs.py`) | manual `e-builtin.tex` for meaning; directions from `blt.kl1` | PARTIAL | 116 instructions on both models when written, 128 now (`bsv/README.md`) | **This audit's count** (reading each of the 112 rows of `pimm_semantics.md` lines 49-165 for the words OURS, PDSS and REFERENCE MODEL ONLY; a hand count, not a script): 8 rows have semantics that are partly OURS (`new_atom` numbering, `calculate_priority_from_minimum` range, `enqueue_goal_with_priority` priority dropped, `enqueue_goal_to_processor` one PE, `read_eagerly` no-op, `scsi_init` values, `scsi_command` waiting, `merge` not the machine's merger); 2 more have only a Bluespec step count of ours (`b_multiply`, guard `modulo`); 17 rows cite PDSS for part of their meaning (e.g. `hash` function, MRB rules, sign of `modulo`); 11 are REFERENCE MODEL ONLY. The rest rest on paired source/object or the manual |
 | Shoen built-ins (`create_shoen` .. `shoen_profile`, 10 instructions) and `raise`, `current_node`, `supply_atom_number`, `halt`, `put_console`, `calculate_priority_from_current` | R4 (`ipl:boot/0` calls `shoen:execute/4` first, `gap_analysis.md` §1) | — | encodings and directions from source; protocol from `kernel/builtin/shoen.kl1`, manual `e-shoen.tex`; record field order of the Pseudo PIM/m console (24 and 14 fields, `pseudo_pimm_firmware.md` §2); PDSS and VPIM behaviour | PARTIAL | none: no handler in `pimm.py` for any of them (`<scratch>/shoen_research/report.txt` §7) | that report (an agent's, scratch, not committed) specifies a minimal shoen and lists what is unsourced: when reports 8/12/14 are emitted, whether a shoen with no resource runs, the priority formulas (§8) |
 | Exceptions (built-in error -> report to shoen) | R5.. | `kernel/builtin/excpt_tbl.kl1` source | info codes in source and manual; mechanism not | PARTIAL | none: every built-in error stops the model (`gap_analysis.md` B5) | |
 | MRB reclamation (`collect_*`, `put_reused_structure`) | R5..R8 heap use | — | `M92` pp. 429-430, TR-248 | PARTIAL | `collect_*` do nothing; reuse always copies (`pimm_semantics.md`) | |
@@ -216,7 +217,7 @@ is known.
 | Inter-PE: export/import tables, weighted reference counts, messages | multi-PE | `PIMM.PARAM` sizes; VPIM source | entry fields from the console (`pseudo_pimm_firmware.md` §2); Multi-PSI/V2 TR-715, TR-390 (`literature_gaps.md` §6) | PARTIAL | none (one PE, decision 2) | message byte formats unknown (`literature_gaps.md` "Which sibling") |
 | Code and module objects (`predicate_to_code`, `new_module`, `apply`, `code`, external calls) | R4 | image and source | TM-662 module format (read, `literature_gaps.md` §8a); `kbn.kl1` | DOCUMENTED (as used) | both | the external-call cache field is not written (`pimm_semantics.md` `execute_external`) |
 | Console primitives (`display_console`, `put_console`, `read_console`, `get_console`) | R4, R5 | — | PDSS manual meaning; how PIM/m rendered values unknown | PARTIAL | `display_console` on both (trace lines); others none (`gap_analysis.md` C1) | |
-| SCSI primitives (`scsi_init`, `scsi_command`, `scsi_where`, `scsi_transfer`, ...) | R4 | `bios/scsi/scsi_blt.kl1` (stand-in source) | arguments from `compiler/blt.kl1`; values OURS | PARTIAL | ref only (`ref_scsi.py`) | `scsi_transfer` is used once by the objects and absent from the held firmware (`pseudo_pimm_firmware.md` §1) |
+| SCSI primitives (`scsi_init`, `scsi_command`, `scsi_where`, `scsi_transfer`, ...) | R4 | `bios/scsi/scsi_blt.kl1` (stand-in source) | arguments from `compiler/blt.kl1`; values OURS | PARTIAL | ref only (`ref_scsi.py`) | `scsi_transfer` is used once by the objects and absent from the held firmware (`pseudo_pimm_firmware.md` §1). The one use is the listener's typed-command pass-through (`com_built.kl1`:135), not a boot path (§6 item 13) |
 | Floats, extended floats, bignums (68 mnemonics, 1,066 uses) | applications | — | manual; `kbnheap.kl1` tags | PARTIAL | none beyond type tests | deferred by design (`pimos_boot_requirements.md` §0.5) |
 | Atom-number service (`supply_atom_number`, `new_atom`) | R4, R5 | — | directions only for `supply_atom_number` | PARTIAL | `new_atom` on both with OUR numbering from 10000h (`pimm_semantics.md`) | |
 | The microprogram itself (`pimm.MEkbn`, 18,343 words, 324 entry points) | fidelity of all of B; cycle counts | `nonlocal/psdpim.tar.Z` `PMPSI.DIR/pimm.MEkbn` | memory datapath read; ~23 of 64 bits fully characterised (INFERENCE tally, `binary_reverse_engineering.md` §3) | HELD-BINARY-ONLY | read-only tools `asm/psdpim.py`, `asm/mekbn.py` | the firmware's own reverse assembler `pimmutil##rassy` is held as compiled ESP and would give the format (`binary_reverse_engineering.md` §3) |
@@ -443,7 +444,7 @@ Other application holdings:
 | Test driver and bench (`ref/pimm/driver.py`, `bsv/PimmDriverTb.bsv`) that make variables, spawn goals and stand in for file buffers | the IPL's caller and the FEP | `ref/pimm/README.md` | the IPL started by a CSP stand-in |
 | Trace format (I/R/A/M/E/G/W/Q/C/S lines) | nothing: a lockstep instrument | `pimm_semantics.md` "Trace" | stays |
 | Bench model `bsv/PimKL1B.bsv` (invented tags, absolute labels, choice points) and diagnostic ISA `PimPU`/`pimasm.py` | early scaffolding | `kl1_model_status.md`, `isa.md` | already superseded by `Pimm*.bsv` for KL1-B (roadmap §8) |
-| Lockstep tests (33 on Bluespec, `bsv/README.md`) | — | `ref/pimm/lockstep_*.py` | stay as regression |
+| Lockstep tests (33 when this audit was written; 39 on 2026-11-23, the default list of `bsv/run_pimm_lockstep.sh`) | — | `ref/pimm/lockstep_*.py` | stay as regression |
 
 ### K. Tools used to read the artefacts (ours, read-only)
 
@@ -496,7 +497,7 @@ work (`psi_acquisition.md` §8).
 | PSI-II hardware (1986-87); the Multi-PSI/V2 PE | lineage; area L | TR-265 (read: 53-bit microinstruction, instruction word `001111 \| class(2) \| code(8) \| operand(24)`, `literature_gaps.md` §8); TM-444, TM-661, TM-859; IPSJ papers (`psi_acquisition.md` §3) | "adequate for the architecture; no microinstruction format" (same) | PARTIAL | none | the held PSI-III microcode does not run on a PSI-II (`pimos_roadmap.md` §9) |
 | PSI-III / PSI/UX hardware (the PIM/m PU) | P1, P2; area A | TR-714 (Japanese), TM-862, TM-858, TM-856 (cache); Giho 65(6) 1991; IPSJ papers on the PIM/m element processor and FEP (`psi_acquisition.md` §3) | "thin; no microinstruction-format document found" (same); TR-733 fig. 4 gives a PIM/m 64-bit microinstruction layout (`literature_gaps.md` §8); the full ICCD'90 paper is CITED-ONLY (paywalled) | PARTIAL | none | one chip with the PIM/m PE (above) |
 | PSI-III microinstruction format | P1 | `pimmutil##rassy` reverse assembler (compiled ESP) holds the field tables | value tables partly extracted (`binary_reverse_engineering.md` §3); bit positions not; no document (`psi_acquisition.md` §3) | PARTIAL | `asm/mekbn.py` fits | "reading the format is reverse engineering, not transcription" (`psi_acquisition.md` §8); `set_mnemonic_file` loads a label file not held |
-| KL0 control store `PMPSI.DIR/syspsi` (32,768 x 64-bit) | P1, P2 | `nonlocal/psdpim.tar.Z` | not read; its words 0..57ff equal image 1 of `pimm.MEkbn` (`binary_reverse_engineering.md` §3) | HELD-BINARY-ONLY | none | which file holds KL0: "not established" (`icot_software_survey.md` §2.3), "not yet determined" (`psi_acquisition.md` §4), `syspsi` "from its size and INSTALL's wording" (`binary_reverse_engineering.md` §4.2, §5). Treat as probable, not settled |
+| KL0 control store `PMPSI.DIR/syspsi` (32,768 x 64-bit) | P1, P2 | `nonlocal/psdpim.tar.Z` | not read; its words 0..57ff equal image 1 of `pimm.MEkbn` (`binary_reverse_engineering.md` §3) | HELD-BINARY-ONLY | none | which file holds KL0: "not established" (`icot_software_survey.md` §2.3), "not yet determined" (`psi_acquisition.md` §4), `syspsi` "from its size and INSTALL's wording" (`binary_reverse_engineering.md` §4.2, §5). Treat as probable, not settled. The KL0 firmware is the `sys*` trio, with `sysidat` as the decode table; all three docs now say so with the same wording (§6 items 6, 20) |
 | KL0 decode table `sysidat` (1,024 entries) | P1 | same | read: indexed class x 256 + opcode; covers every opcode the six `.ptf` files use (`binary_reverse_engineering.md` §4.2) | HELD-BINARY-ONLY, read | `asm/ptfdump.py --opcodes` | |
 | `sysinit` (8,286 words at `5000`) | P2 | same | not characterised (`binary_reverse_engineering.md` §5) | HELD-BINARY-ONLY | none | |
 | KL0 microcode source; PSI-I and PSI-II microcode | authenticity | none | TR-079, FGCS'84 micro-interpreter paper; TM-261, 353, 354, 212, 213 (held, not read) | LOST: "Nothing for PSI-I or PSI-II" (`psi_acquisition.md` §4); `icot_software_survey.md` §4 | — | |
@@ -723,7 +724,10 @@ an item may turn out to be in a document already held.
 
 ## 6. Open contradictions and unknowns found while auditing
 
-**Between documents** (newer stated where the dates allow):
+**Between documents** (newer stated where the dates allow). *Each item
+now ends with its resolution, recorded 2026-11-23 by a documentation
+pass. Older statements were corrected in place with dated notes, not
+rewritten.*
 
 1. **What is held from IFS.** `icot_software_survey.md` §0 item 4 ("We
    hold 8 files from 6 entries"), §3 ("No archive other than the eight
@@ -733,74 +737,234 @@ an item may turn out to be in a document already held.
    not downloaded", TR-373 and TM-1203 among them). Newer:
    `IFS_MANIFEST.md` and `LIT_MANIFEST.md` (2026-11-20) hold all of
    these. The older docs were not updated.
+   **Resolved.** Every file on those lists is on disk and in a manifest.
+   §5.1's rows are under `nonlocal/ifs/`, the TMs under
+   `nonlocal/lit/trtm/`. §3 of `MANIFEST.md`: TR-246/389/460/659 are in
+   `nonlocal/` itself (`LIT_MANIFEST.md` §8); TR-373, TM-140, TM-1067,
+   TM-1203 and the TR/TM index pages are in `lit/trtm/`; the FGCS'92 PIM
+   papers are in `lit/fgcs/`; the `-J` abstracts are in
+   `ifs/_catalogue/abst/`. One exception: `pim-spec-J.html` is still not
+   held (only `-E` is, in `lit/web/`). Dated notes were added at the
+   survey's §0 item 4, §3 and §5.1, at `pimos_roadmap.md` §6 (three
+   places), and at `MANIFEST.md` "Recorded, not downloaded" and §3.
 2. **How many instructions the models implement.** 51 arms in the bench
    model (`pimos_roadmap.md` §1, `pimos_boot_requirements.md` §0.2); 54
    on both models (`gap_analysis.md` §0, 2026-11-20); 116 on both
    (`bsv/README.md`, `ref/pimm/README.md`, newest). The counts describe
    different models and dates; `gap_analysis.md` §0 is stale.
+   **Mostly resolved: the READMEs say 128 on both models now**
+   (`ref/pimm/README.md`, `bsv/README.md` "State"; it was 116 before
+   the merge of ten ported items on 2026-11-23).
+   - The task's literal recipe (count `def i_` in `ref/pimm/pimm.py`,
+     less those gated by `self.alone(`) gives 131. No handler is gated
+     whole; the call appears only in `builtin()` and in one case of
+     `i_merge_in`.
+   - A name diff against `bsv/Pimm*.bsv` finds every handler with an
+     arm except `scsi_init` and `scsi_command`, which are on the
+     reference alone. That leaves 129 handlers on both models.
+   - Two of the 129, `merge_in` and `unify_step`, are our stubs
+     (`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves
+     127 PIM/m instructions.
+
+   Neither count is exactly 128, and the README's rule is not stated.
+   The one-off difference is left open; it would be settled by the
+   README naming what it counts. The 51 is the bench model
+   `PimKL1B.bsv`, and the 54 is a dated snapshot. Notes were added at
+   `gap_analysis.md` §0, `pimos_roadmap.md` §1,
+   `pimos_boot_requirements.md` §0.2 and the survey's row 1.
 3. **How many lockstep tests.** Seven (`gap_analysis.md` §0), 23
    (`pimm_semantics.md` "The MRB"), 33 (`bsv/README.md`, newest).
+   **Resolved: 39 now.** That is the count in
+   `grep -o 'for t in.*' bsv/run_pimm_lockstep.sh`, and `bsv/README.md`
+   now says "Thirty-nine tests". At this audit's own commit the README
+   said thirty-three while the script already listed 37, so the README
+   lagged. The 7 and the 23 are true of their dates: the 7 of the
+   2026-11-20 snapshot, the 23 of the MRB check. Dated notes were added
+   at `gap_analysis.md` §0 and `pimm_semantics.md`, and row J of this
+   audit's §3 was updated.
 4. **Machine cycle.** `gap_analysis.md` §D: "60 ns cycle";
    `pim_architecture.md` §1, §7: 65 ns from `M92`, `OV92`, `TR659`.
+   **Resolved: both are printed, so neither document is wrong.** 60 ns:
+   TR-564 PDF p. 3 (printed p. 2) and FGCS'92 Vol. 1 p. 45 Fig. 7, both
+   read from the page images in this pass, plus TR-799 Table 3 (OCR).
+   65 ns: `M92` p. 426 (PDF p. 459) and `OV92` p. 62 (PDF p. 91), plus
+   TM-1074 and TR-733 Table 1. FGCS'92 Vol. 1 p. 43 Table 2 ("Target
+   cycle time") prints 50 under PIM/m and 65 under PIM/c, the reverse
+   of `OV92` p. 62 Table 2. The other rows agree, so p. 43 is probably
+   a transposition (INFERENCE; both pages read from the image). `OV92`
+   marks PIM/p's 60 and PIM/c's 50 as † design specifications and
+   leaves PIM/m's 65 unmarked. The `literature_gaps.md`
+   App. C 2.1 INFERENCE stands: 65 ns is worst case (15.4 MHz, TM-1159)
+   and 60 ns typical (16.7 MHz, TR-799). Dated notes were added at
+   `gap_analysis.md` §D and `pim_architecture.md` §1 and §7. Open: which
+   figure a cycle-accurate model should use. A statement of the clock
+   PIM/m was actually run at would settle it.
 5. **Microinstruction layout in print.** `pim_architecture.md` §5:
    "not printed anywhere in these sources"; `literature_gaps.md` §8:
    TR-733 fig. 4. Both true of the sources each read; the latter is the
    later finding and `pim_architecture.md` was not amended.
+   **Resolved: the layout is printed.** TR-733 fig. 4 (journal p. 76(684),
+   TR PDF p. 4; read from the page image in this pass) gives 64 bits:
+   CCF 5, DSTF 5, SC1F 5, SC2F 5, SD1F 3, SD2F 2, AS1F 3, AS2F 2, ADF 3,
+   ALF 3, JMPF 3, CNDF 4, EM1 6, EM2 6, EM3 4, and five one-bit `*`
+   strobes. `pim_architecture.md` §5 and §7 were corrected in place,
+   with a dated note. What is still not printed is the field values;
+   `rassy` and `pseudo_pimm_microcode.md` read those from binaries.
 6. **Which file is the KL0 firmware.** `icot_software_survey.md` §2.3
    "not established"; `binary_reverse_engineering.md` §4.2: `syspsi`
    is the 32K control store, KL0/SIMPOS (same day, later).
+   **Narrowed, still open (with item 20).** From the primary files:
+   `psdpim/README` calls `PMPSI.DIR` "KL0 and KL1 firmware";
+   `SYSTEM.DIR/boot.init` loads `pimm.MEkbn` as the KL1 `impl` file; and
+   `INSTALL` copies `syspsi`, `sysinit`, `sysidat` to SIMPOS's
+   `/usr/psi/simpos/csp`. So KL0 is in the `sys*` trio. `sysidat` is its
+   decode table, and `syspsi` is, by shape, the 32K x 64 store, with its
+   words `0..57ff` equal to image 1 of `pimm.MEkbn`. That `syspsi` is
+   the KL0 control store is still INFERENCE, because no document names
+   its role. The same "probable, not proven" wording is now in the
+   survey §2.3 and §4, `psi_acquisition.md` §4 and
+   `binary_reverse_engineering.md` §5. What would settle it: the CSP's
+   micro loader read out of `pimmcsp.ptf` (which file it loads into
+   the WCS), or a PSI-III document.
 7. **`fep#ipl` / `fep#symbol`.** `icot_software_survey.md` §1.1 and
    `gap_analysis.md` C2 (first correction) infer they are the IPL's
    device classes; `binary_reverse_engineering.md` §1.4, §4.3 find the
    IPL never sends them and the FEP never tests them. The later reading
    stands (it too was "not executed" when written).
+   **Resolved: the IPL does not use them.** There is now executed
+   evidence for the IPL side. On 2026-11-23 `ref/pimm/ref_scsi.py` ran
+   the body of `ipl:boot0` on the reference model against
+   `ref/pimm/fep.py`, which serves only `read_open` 201, `getb` 210,
+   `close` 60 and `abort` 70 and raises on anything else, and the run
+   completes.
+   That covers our FEP model on the path `boot0` takes. The FEP side
+   (§4.3) is still a reading. Dated notes were added at the survey's
+   §1.1, the second correction in `gap_analysis.md` C2, and
+   `binary_reverse_engineering.md` §4.3.
 8. **Class counts.** `pimscsi` 23 and `pimmutil` 50 classes (survey)
    against 24 and 51 (`binary_reverse_engineering.md` §4.1, measured).
+   **Resolved: 24 and 51.** Re-measured with `python3 asm/ptfdump.py`:
+   `pimscsi` has 24 class records and `pimmutil` 51, and `--check`
+   passes. For `pimscsi` this was never a disagreement: the survey says
+   "23 classes ... plus a `cmt` class". For `pimmutil` the survey's 50
+   was corrected to 51 in place (row 3 and §2.3), with dated notes.
 9. **`fep#` definitions.** 105 definitions, 104 distinct names (survey
    §1.1); "104 `fep#` definitions outside comments"
    (`binary_reverse_engineering.md` §4.3). Probably the same set
    counted with and without a commented line (INFERENCE).
+   **Resolved: the inference holds (measured).** `pimos.vmac` has 105
+   `fep#Name =>` occurrences. One is the commented-out line 74,
+   `%%      fep#putb => 111`, a repeat of a live name. That leaves 104
+   outside comments, all distinct. A note was added at the survey's
+   §1.1.
 10. **Start address.** `20c` (`boot.init`), `202` (primer, another
     build), `2000`/`200` (CSP help text), `0xE0001E81` (the `.kbn`
     header). Not reconciled (`icot_software_survey.md` §7,
     `literature_gaps.md` §8).
+    **Partly resolved; the mapping is open.** These are two kinds of
+    quantity, not rival values of one.
+    - `0xE0001E81` is the image's own entry: cell 7,809 of an image
+      loaded at `0xE0000000`, which is `ipl:boot/0`
+      (`asm/kbndis.py --check`; the `.ldb` agrees).
+    - `20c`, `202`, `200` and `2000` are arguments to the CSP's
+      `GO/PIMos`. The help text calls the Pseudo MPSI one a "KL1 Start
+      Address" and the Multi-PSI one a "Micro Start Address", and says
+      `GO/PIMos` "throws a boot goal to the boot PE". That
+      `start(pimos,"20c")` is `GO/PIMos` is INFERENCE from the names.
+    - `20c` is not an offset into the IPL image: cell `0x20c` lies
+      inside `ipl_file_decoder:check_GC_element/8` (measured with
+      `kbndis.Image`).
+
+    `PIMM.PARAM`'s `stadr 16'204` and `bmadr 16'2E6` belong to the same
+    low-address family. What `20c` addresses would be settled by the
+    `GO/PIMos` code in `pimmcsp.ptf` or by the firmware's start-up path
+    in `pimm.MEkbn`. Notes were added at the survey's §7 and
+    `literature_gaps.md` §8.
 11. **PIMOS version dates.** Source `version.kl1` "3.600", "20-May-93";
     object comments "3.600:25-Nov-93"; patches 1994-05-12; manual V3.0
     (October/November 1991). R5's expected text was corrected on
     2026-11-23 to follow the source (`pimos_roadmap.md` §2 R5); which
     branch the binary was compiled from is open.
+    **Resolved: two dates of two artefacts, both in the objects.** A
+    search of the `.sav` files for the dates as two-byte JIS strings
+    found "25-Nov-93" once in each of the eight base sets, in the file
+    comment ("PIMM BIOS :3.600:25-Nov-93"). It found "20-May-93" once,
+    in `pimm_kernel360E.sav`: the constant of `pimos_version:date/1`.
+    Run on the reference model, `pim:go/4` prints "PIMOS V 3.600
+    20-May-93" (`longrun_ipl.py --reference --go`). So the compiled
+    version module agrees with `src/kernel/init/version.kl1`:21.
+    25-Nov-93 is probably the date the sets were built (INFERENCE). The
+    patch files' 1994-05-12 is an archive time. A note was added at
+    `binary_reverse_engineering.md` §2. Still open: whether every
+    module was compiled from exactly the held text (item 12).
 12. **The IPL image vs the held source.** The IPL's source-backed
     modules are older text than `src/` (`binary_reverse_engineering.md`
     §1.1); the `.sav` modules match the patched `src/` by predicate set
     (§2). So "source is the oracle" holds for the `.sav` set and not for
     the IPL image.
+    **Stands; not a contradiction.** Both readings are of different
+    artefacts and both are kept. Not re-examined in this pass.
 13. **Firmware vs object set.** The held firmware has no decode entry for
     `scsi_transfer`, used once by the 3.6 objects
     (`pseudo_pimm_firmware.md` §1): the firmware build and the object
     set are not an exact pair.
+    **Resolved: both statements stand, and the use is harmless to a
+    boot.** A scan of the object set with `asm/unlsav.py`'s reader (tag
+    22, opcode `dc`) found the single use in `pimm_debugger360E.sav`,
+    module `listener_cmd_builtin`: the listener's typed-command
+    pass-through, `do_command(scsi_transfer(A,B,C,D,E,F))`
+    (`src/debugger/listener/com_built.kl1`:135). Nothing on the boot or
+    system paths calls it, so the pair mismatches only on that one
+    command. `pimm.MEkbn` and the patch files share the archive date
+    1994-05-12. Whether PIM/m's own firmware had `dc` is unknown.
+    Notes were added at the survey's §0 and §7 and at
+    `pseudo_pimm_firmware.md` §1.
 14. **Model memory vs machine memory.** Both models use 2^27 cells
     (`bsv/README.md`); a PIM/m PE had 16 M words (`M92` p. 426). Not a
     contradiction between documents, but a model choice that exceeds
     the machine and should stay labelled.
+    **Stands (a labelled model choice).** No change.
 15. **Package naming.** Primer `mpsicsp##...` vs held `pimmcsp##...`;
     `mpsicspR.ptf` declares package `mpsicsp` (survey §7).
+    **Stands, not a contradiction.** These are parallel package families
+    for Multi-PSI and PIM/m, as the survey says. Not re-examined.
 16. **CCF field.** `rassy`'s `ccf` is a value table; the microcode doc
     reads CCF as separate strobe bits (`binary_reverse_engineering.md`
     §3, "not resolved").
+    **Open, not examined in this pass.** Reading `rassy`'s `set_up_ccf`
+    code (the bit extraction) would settle it.
 17. **`rassy` version string.** "1.3 (5-June-1989 by MTC KATAYAMA)"
     found on re-reading; an agent reported "1.4 (15-June-1989 ...)"
     (`binary_reverse_engineering.md` §3).
+    **Resolved: 1.3.** `asm/ptfdump.py pimmutil CLASS` over all 51
+    classes gives exactly one version string, "version 1.3 (5-June-1989
+    by MTC KATAYAMA)", in `rassy`. The 1.4 report is not borne out. Other
+    packages were not searched. A note was added at
+    `binary_reverse_engineering.md` §3.
 18. **`ifs/README` vs the catalogue** for entries 66-70, and its date
     (15-Apr-1996 in the text, 1997-04-15 on the listing)
     (`icot_software_survey.md` §7).
+    **Date: resolved; entries 66-70: open.** The two dates belong to two
+    things, the text's own "Last Modified on 15-Apr-1996" (line 3 of
+    the held `nonlocal/ifs/README`) and the server's file time. A note
+    was added at the survey's §7. Entries 66-70 were not re-examined.
 19. **PIMOS source file count.** `nonlocal/MANIFEST.md` §1: `src/`
     has 502 `.kl1` files; `icot_software_survey.md` §0: 485 under
     `src/` and 502 counting `src_util/`.
+    **Resolved: the survey is right.** Counting `.kl1` members of
+    `pimos.tar.Z` by second path component gives `src` 485 and
+    `src_util` 17, 502 in all. `MANIFEST.md` §1 was corrected in place
+    with a dated note: 559 is `src/`'s entry count, and its
+    per-directory figures are entries. The object set's 502 modules
+    (`asm/census.py`) count a different thing.
 20. **KL0 file identity, again.** `psi_acquisition.md` §4 (2026-11-23)
     says which file holds KL0 is "not yet determined" and cites
     `binary_reverse_engineering.md` for `syspsi` "from its size and
     INSTALL's wording": the identification is probable, not proven (see
     item 6).
+    **Made consistent; still open (see item 6).** `psi_acquisition.md`
+    §4 and `binary_reverse_engineering.md` §5 now carry the same
+    "probable, not proven" statement and the same evidence.
 
 **Unknowns this audit adds** (each found while auditing, none settled):
 

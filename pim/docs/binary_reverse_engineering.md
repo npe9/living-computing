@@ -476,7 +476,16 @@ against the clauses of the source file declaring the same module).
 - **Version.** Each base file's comment decodes as `PIMM <SET>
   :3.600:25-Nov-93`; the source's `kernel/init/version.kl1` says `"3.600"`,
   `"20-May-93"` (READ). The patch files carry no comment and are dated
-  1994-05-12 in the archive.
+  1994-05-12 in the archive. *Note 2026-11-23: both dates are in the
+  objects, and they belong to two different things. "25-Nov-93" is
+  each base file's comment, once in each of the eight base `.sav`.
+  "20-May-93" is the string constant of `pimos_version:date/1`, once,
+  in `pimm_kernel360E.sav`. Both were found by searching the files for
+  the dates as two-byte JIS strings, and when `pim:go/4` runs on the
+  reference model it prints "PIMOS V 3.600 20-May-93"
+  (`ref/pimm/longrun_ipl.py --reference --go`). So the compiled version
+  module agrees with the held source. 25-Nov-93 is probably the date
+  the sets were built or unloaded (INFERENCE).*
 - **Coverage.** 502 modules; 501 have a source module of the same
   name (the exception is `ifdef_filter`, 91 predicates, in
   `library`). 12,120 predicates excluding 224 compiler-made `$` ones.
@@ -570,7 +579,11 @@ one per field with TR-733's names (`ccf dstf sc1f sc2f sd1f sd2f
 as1f_and_as2f as2f adf alf jmpf cndf mcf tgif` and a `set_up_*`
 extractor each), with the string "version 1.3 (5-June-1989 by MTC
 KATAYAMA)" (the second agent reported "1.4 (15-June-1989 by
-A.KATAYAMA)"; only the 1.3 string was found on re-reading).
+A.KATAYAMA)"; only the 1.3 string was found on re-reading). *Checked
+2026-11-23: `asm/ptfdump.py pimmutil CLASS` over all 51 classes of
+`pimmutil` gives one version string, "version 1.3 (5-June-1989 by MTC
+KATAYAMA)", in `rassy`. The 1.4 report is not borne out by the file;
+the other `.ptf` packages were not searched.*
 That it is this processor's format is INFERENCE from its vocabulary:
 `pipeline_cancel`, `ic_trap`, `dc_trap_d`, `KL1F`, `GMI`, `MRP`,
 `SUSPF`, `CGCF`, and the KL1 tag names `into` = `00` .. `goal` = `3c`
@@ -673,7 +686,10 @@ big-endian words:
 | `paragraph` | 121 | 89,204 | 53,717 | 14,429 | 5,705 |
 
 (`icot_software_survey.md` says 23 classes for `pimscsi` and 50 for
-`pimmutil`; the files hold 24 and 51.)
+`pimmutil`; the files hold 24 and 51.) *Note 2026-11-23: for `pimscsi`
+the survey's own text says "23 classes ... plus a `cmt` class", which
+makes 24, so there is no disagreement there. For `pimmutil`, 50 was an
+undercount; the survey is corrected to 51 in place.*
 
 ### 4.2 Is the instruction encoding identifiable
 
@@ -772,7 +788,10 @@ the per-device command set is the method list of the device class.
 tables; `symbol` is not a symbol in the package. Together with 1.4
 (the IPL never sends them): the boot uses `read_open` and `getb` on a
 `pimos_file`, nothing special. (A reading of what is absent, on both
-sides; neither side was executed.)
+sides; neither side was executed.) *(Note 2026-11-23: the IPL side has
+since been executed on the reference model, `ref/pimm/ref_scsi.py`
+against our `ref/pimm/fep.py`, which raises on any request it does not
+serve. See §1.4, "Run". The FEP side is still a reading.)*
 
 **Message framing.** `fep_message_assembler` (503 cells; class
 methods `get_command/3`, `get_device_id/3`, `connection_flag/3`,
@@ -841,7 +860,7 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 | `object/pimm_ipl.ldb` (17,340 B) | two-byte JIS **text**, 777 lines: the image's atom names, then per module its name, address, length, table address and public predicates (name, arity, address), then load, end and start addresses and `ipl boot 0` | MEASURED by decoding; readable, agrees with `kbndis.py` on the start (`E0001E81`); nothing to reverse |
 | `object/pimm_ipl.sym` | text atom table | already used by `kbndis.py` |
 | `object/paragraph.ptf` (1,020,476 B) | compiled ESP with held source | the known plaintext of section 4 |
-| `PMPSI.DIR/syspsi` | 32,768 x 64-bit control store, KL0/SIMPOS microcode | same job as component 3, larger; not needed for PIMOS |
+| `PMPSI.DIR/syspsi` | 32,768 x 64-bit control store, KL0/SIMPOS microcode (by shape, the README's "KL0 and KL1 firmware" and INSTALL sending it to SIMPOS's `csp` directory: probable, not proven; no document names its role) | same job as component 3, larger; not needed for PIMOS |
 | `PMPSI.DIR/sysidat` | KL0 decode table | read (4.2) |
 | `PMPSI.DIR/sysinit` (8,286 words at `5000`) | not characterised | open |
 | `FONT.DIR/*.font`, `csp.icon` | SIMPOS bitmap fonts and an icon | not examined; console cosmetics |

@@ -42,7 +42,10 @@ version 3.0 the files are produced by the PIMOS unloader.
 `pimm_ipl.kbn` is a memory image of 40-bit tagged cells: a 256-byte
 header, then 18,300 five-byte cells in 256-byte blocks. The header
 states the load address (`0xE0000000`), the size, the start address
-(`0xE0001E81`) and the start module's address (`0xE0001E25`). The
+(`0xE0001E81`) and the start module's address (`0xE0001E25`).
+*(Note 2026-11-23: `0xE0001E81` is `ipl:boot/0`, cell 7,809. The CSP's
+`start(pimos,"20c")` in `boot.init` is a different quantity, and what
+it addresses is open; see `icot_software_survey.md` §7.)* The
 format, the 20 modules in it and the tag values are in
 `pimos_boot_requirements.md` §0.3, decoded by `asm/kbn.py` from
 `src/library/kbn/*.kl1`.

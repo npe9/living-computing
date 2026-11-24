@@ -287,7 +287,8 @@ by address and content, and the module objects the loader builds are
 checked cell by cell against their files (`lockstep_newm.py`,
 `lockstep_load.py`); paths the scripts do not run are not checked.
 
-Checked: the 23 lockstep tests agree line for line, and for 22 of them
+Checked (when the MRB went in; the suite had 23 tests then and has 39
+on 2026-11-23, `bsv/run_pimm_lockstep.sh`, all on both models): the 23 lockstep tests agree line for line, and for 22 of them
 the reference model's trace before the change equals the trace after
 it once the lines the marking adds are dropped and the bit masked
 (`jtoa`, whose count did not move, was not compared). Twelve

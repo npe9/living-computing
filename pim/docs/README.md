@@ -78,3 +78,5 @@ Notes:
 - No PIM/m microprogramming manual was found in the archive. TR-659 covers
   architecture and implementations; the FGCS 1992 PIM/m paper covers the
   implementation. Record the microprogramming gap rather than inferring it.
+  *(Note 2026-11-23: still no manual, but the 64-bit microinstruction field
+  layout is printed in TR-733 fig. 4; see `pim_architecture.md` §5.)*

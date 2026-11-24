@@ -46,7 +46,12 @@ tree; only UEDA serves directory listings).
    artifacts are missing or mismatched on the firmware side: the patch
    file `pimm_patch.com` that `boot.init` names is not in the archive,
    and the held firmware lacks `scsi_transfer`, which the object set
-   uses once.) (a) The KL1 firmware:
+   uses once. *Note 2026-11-23: that one use is the listener's
+   command pass-through, module `listener_cmd_builtin` in
+   `pimm_debugger360E.sav` (source `src/debugger/listener/com_built.kl1`:135,
+   `do_command(scsi_transfer(...))`), found with `asm/unlsav.py`'s
+   reader; no boot or system path calls it, so the mismatch matters
+   only if a user types that command.*) (a) The KL1 firmware:
    the machine that interprets KL1-B, with scheduler, suspension,
    shoen, GC. Held only as PSI-III microcode. (b) The console
    processor's boot functions (clear, init, impl, patch, ipl, start).
@@ -80,7 +85,13 @@ tree; only UEDA serves directory listings).
    31, 32, 39, 53, 55-61, 64) and 18 name SIMPOS without PIMOS; of
    those 18, entry 7 is a KL1 tool for the pseudo Multi-PSI and entry
    27 has no archive, leaving 16 ESP applications for SIMPOS. We hold 8 files from 6 entries (1, 2,
-   3, 4, 72, 85).
+   3, 4, 72, 85). *Corrected 2026-11-23: true when written; later on
+   2026-11-20 the whole IFS tree was fetched as data (1,724 files,
+   nothing unpacked or run), so all 150 files the abstract pages link,
+   the 116 archives among them, are now held
+   (`nonlocal/IFS_MANIFEST.md` §1, "Catalogue coverage"). The "HELD"
+   marks in section 3 and the "download now" list in 5.1 predate that
+   fetch.*
 5. **IFS is applications and the KL1 system. It is not the machines'
    system software.** Not in IFS and not found anywhere: SIMPOS, the
    ESP compiler and runtime, any KL0 firmware source, the Multi-PSI
@@ -102,9 +113,9 @@ measurement.
 
 | # | Component | Source held? | Binary held? | Documentation | Reconstitute? | Size of what exists / from what |
 |---|---|---|---|---|---|---|
-| 1 | **KL1-B instruction set, PIM/m dialect** (what the microcode decodes) | No | Yes, for the Pseudo PIM/m: `psdpim/PMPSI.DIR/pimm.MEkbn`, 506,624 B, PSI-III microcode | Encoding from the PIMOS assembler source (HELD); TR-246, TR-389 (HELD PDFs); PIMOS manual `e-builtin.tex` (HELD) | **Yes** (under way) | 197 instruction names used by the object set, 54 modelled (SECONDARY, `gap_analysis.md`). From: PIMOS compiler and assembler source, PDSS C source (sibling dialect, HELD), VPIM (HELD), the microcode binary |
+| 1 | **KL1-B instruction set, PIM/m dialect** (what the microcode decodes) | No | Yes, for the Pseudo PIM/m: `psdpim/PMPSI.DIR/pimm.MEkbn`, 506,624 B, PSI-III microcode | Encoding from the PIMOS assembler source (HELD); TR-246, TR-389 (HELD PDFs); PIMOS manual `e-builtin.tex` (HELD) | **Yes** (under way) | 197 instruction names used by the object set, 54 modelled (SECONDARY, `gap_analysis.md`; that was 2026-11-20: 128 on both models on 2026-11-23, `ref/pimm/README.md`). From: PIMOS compiler and assembler source, PDSS C source (sibling dialect, HELD), VPIM (HELD), the microcode binary |
 | 2 | **KL1 runtime in firmware**: goal queue and priorities, suspension, shoen, exceptions, MRB, GC, code and module objects | No | Same file as 1 | PIMOS manual `e-shoen.tex`; console text gives two record layouts (`pseudo_pimm_firmware.md`); TR/TM reports | **Yes**. The largest single job | From PDSS `emulator/` (28,441 lines of C, SECONDARY from `MANIFEST.md`), VPIM `src/` (185 PSL files, SECONDARY), the microcode once its datapath fields are read |
-| 3 | **CSP boot functions**: clear, init, impl (load microcode), patch, ipl (load `.kbn` and `.sym`), start | No | Yes: `INSTALL.DIR/pimmcsp.ptf`, 1,496,186 B, 281 ESP classes (names READ); `pimmutil.ptf` 477,374 B, 50 classes; `mpsicspR.ptf` (remote CSP) 183,078 B, 30 classes | `SYSTEM.DIR/boot.init` (READ, decoded: `impl(...,"/usr/psi/pimos/kl1/pimm.MEkbn")`, `patch(on,"pmpsi:pimm_patch.com")`, `ipl(on,"pimos:pimm_ipl.kbn","pimos:pimm_ipl.sym")`, `start(pimos,"20c")`); `PIMM.PARAM`, `PIMM.CONFIG`; PIMOS 3.0 primer (PUBLIC, READ). The CSP operating manual is CITED-ONLY | **Yes**, minimal | Small: place the `.kbn` at its load address, set the start address, provide the console. The `.kbn` format is decoded (`pimos_binaries.md`). Not held: `pimm_patch.com`, which `boot.init` names and the archive does not contain |
+| 3 | **CSP boot functions**: clear, init, impl (load microcode), patch, ipl (load `.kbn` and `.sym`), start | No | Yes: `INSTALL.DIR/pimmcsp.ptf`, 1,496,186 B, 281 ESP classes (names READ); `pimmutil.ptf` 477,374 B, 51 classes (corrected 2026-11-23 from 50: `asm/ptfdump.py` lists 51 class records, `binary_reverse_engineering.md` §4.1); `mpsicspR.ptf` (remote CSP) 183,078 B, 30 classes | `SYSTEM.DIR/boot.init` (READ, decoded: `impl(...,"/usr/psi/pimos/kl1/pimm.MEkbn")`, `patch(on,"pmpsi:pimm_patch.com")`, `ipl(on,"pimos:pimm_ipl.kbn","pimos:pimm_ipl.sym")`, `start(pimos,"20c")`); `PIMM.PARAM`, `PIMM.CONFIG`; PIMOS 3.0 primer (PUBLIC, READ). The CSP operating manual is CITED-ONLY | **Yes**, minimal | Small: place the `.kbn` at its load address, set the start address, provide the console. The `.kbn` format is decoded (`pimos_binaries.md`). Not held: `pimm_patch.com`, which `boot.init` names and the archive does not contain |
 | 4 | **IPL image** `pimm_ipl.kbn` (+ `.sym`, `.ldb`) | Partly: 8 of its 20 modules have same-named source; `ipl`, `ipl_loader`, `ipl_module`, `ipl_pool`, `ipl_link_table`, `ipl_scsi`, `ipl_file_decoder`, `top` and four `scsi_fep_*` do not (SECONDARY) | Yes: 92,160 B | Japanese PIMOS 3.0 manual section 6.1 (PUBLIC; SECONDARY reading) | No: run as held | 20 modules, 349 predicates (SECONDARY). Its FEP exchange must be read out of the object code |
 | 5 | **`pimos.ipl`** module list | n/a (text) | Yes: 1,678 B | same | No | READ, decoded here: 8 base sets in the order kernel, shell, utility, library, debugger, server, bios, macro; then 12 patch sets (macro, hash, tel, fepsv, driver, modu, mkdir, shutl, scsifep, libvar, newpg, lis). Paths `>sys>csp>PIMOS.DIR>pimm_*360E.sav`. All 20 are held; no held `.sav` is unlisted |
 | 6 | **PIMOS module sets** (`.sav`) | Yes, `pimos.tar.Z` `src/`: kernel 42 files / 14,444 lines; bios 35 / 11,557; server 97 / 33,162; shell 45 / 9,272; library 95 / 37,015; utility 43 / 19,048; debugger 116 / 28,392; macro 3 `.kl1` + macro files. Version string `3.600` (READ) | Yes: `pimm_{kernel,bios,server,shell,library,utility,debugger,macro}360E.sav`, 193,026 to 1,316,520 B | Manual, `pimosman.tar.Z` (HELD, LaTeX); typeset `pimosman.ps.Z` PUBLIC verified, 866,355 B | No | Whether the 1994 objects were compiled from exactly this source is unchecked (SECONDARY) |
@@ -181,7 +192,9 @@ are on the PIMOS side, in `pimos.vmac`.
 
 **What `pimscsi.ptf` is.** Package `pimscsi`, 114,074 B, 23 classes
 (row 9 above) plus a `cmt` class (cartridge tape: `cmt_lun`,
-`cmt_unit`). It is the SIMPOS SCSI driver that makes the PSI a SCSI
+`cmt_unit`). *(Note 2026-11-23: 24 class records in all, `cmt`
+included, as `asm/ptfdump.py pimscsi` lists them and
+`binary_reverse_engineering.md` §4.1 counts them: the two counts agree.)* It is the SIMPOS SCSI driver that makes the PSI a SCSI
 *processor device*: it uses SIMPOS classes `interrupt_process`,
 `as_interrupt_program`, `channel`, `mbus_allocator`. `pseudo_scsi`
 has `header`, `tail`, `buffer1`, `buffer2` slots: the in-memory
@@ -204,7 +217,10 @@ marked):
   packet. `{-1,fep#terminate}` closes the link. Byte order within a
   field and the continuation rules are in `int32_to_str8` and
   `send_packet1..3` and were not transcribed.
-- The whole code table, from `pimos.vmac` (READ; 105 definitions, 104 distinct names):
+- The whole code table, from `pimos.vmac` (READ; 105 definitions, 104 distinct names;
+  checked 2026-11-23: the 105th is a commented-out repeat, line 74
+  `%%      fep#putb => 111`, so 104 definitions outside comments, all distinct,
+  which is the count `binary_reverse_engineering.md` §4.3 gives):
   status `nil 0, normal 1, eod 2, control_c 3, attention 3, continue
   4, abnormal 5, aborted 6, yes 7, no 8, wake_up 9, disconnected 10,
   end 11`; control `reset 50, next_attention 51, close 60, abort 70,
@@ -240,7 +256,16 @@ marked):
   and then used nowhere else in the released source: they look like
   the device classes of the IPL-time loader, whose modules have no
   source. Whether the IPL's file fetch uses them is the first thing
-  the IPL disassembly should settle.
+  the IPL disassembly should settle. *Settled 2026-11-20/23, against
+  the inference above: the IPL does not use them.
+  `binary_reverse_engineering.md` §1.4 finds no 400 or 500 in the
+  decompiled `ipl*` and `scsi_fep_*` modules (the IPL fetches its
+  files with `read_open` 201 and `getb` 210), §4.3 finds no class in
+  `pimfep.ptf` that tests 400 or 500, and on 2026-11-23 the body of
+  `ipl:boot0` ran on the reference model against `ref/pimm/fep.py`,
+  which serves only 201, 210, 60 and 70 and raises on anything else,
+  and the run completes (`python3 ref/pimm/ref_scsi.py`; our model of the FEP, and
+  only the path `boot0` takes).*
 - Device classes opened by code: `fep#window` family (`create_window
   => 104`), `fep#file` (`read_open => 201`), `fep#timer` (`on_after
   => 303`), `fep#string_io => 600` (`create_string_io => 601`),
@@ -308,8 +333,8 @@ Each line: what the layer was, evidence, status.
 |---|---|---|---|
 | Hardware relation | "In Japan, the PSI-III is commercially available as the PSI/UX from Mitsubishi Electric" | `psdpim/README` (READ) | |
 | Host arrangement | SIMPOS files live under a UNIX path: "copy ./PMPSI.DIR/syspsi, sysinit, sysidat to /usr/psi/simpos/csp as unix files on PSI-III"; `boot.init` loads `/usr/psi/pimos/kl1/pimm.MEkbn` | `psdpim/INSTALL`, `boot.init` (READ) | That PSI/UX runs SIMPOS beside UNIX is an inference from these paths |
-| Firmware | "PMPSI.DIR  KL0 and KL1 firmware": `pimm.MEkbn` 506,624 B, `syspsi` 262,400 B, `sysinit` 66,544 B, `sysidat` 8,576 B. KL0 and KL1 microprograms are "dynamically swapped" | `README`, listing (READ); IFS abstract 003 (READ) | **HELD, binary only.** Which of the four files is the KL0 firmware is not established. `pimm.MEkbn` is partly decoded (`pseudo_pimm_microcode.md`) |
-| Console | Pseudo PIM/m CSP: `pimmcsp.ptf` (281 classes: `csp_ipl`, `csp_micro_loader`, `csp_boot_menu`, `csp_goal_record_inspector`, `csp_susp_record_inspector`, `csp_shoen_traverse`, `pseudo_memory`, `pseudo_pe_process`, `random_scheduler`, `pimos_file_manager`, `pimos_timer_manager`, ...); `pimmutil.ptf` (50: `micro_reverse_assembler`, `micro_field_modifier`, `kl1_step`, `firm_utility`, `h_meter`, `csp_param_file_maker`, ...); `mpsicspR.ptf` (30: `remote_csp*`, `csp_command_parser`, `pe_registers`, `kl1_tag`) | names READ | **HELD, compiled ESP only** |
+| Firmware | "PMPSI.DIR  KL0 and KL1 firmware": `pimm.MEkbn` 506,624 B, `syspsi` 262,400 B, `sysinit` 66,544 B, `sysidat` 8,576 B. KL0 and KL1 microprograms are "dynamically swapped" | `README`, listing (READ); IFS abstract 003 (READ) | **HELD, binary only.** Which of the four files is the KL0 firmware is not established. *(Note 2026-11-23: narrowed, not proven. `INSTALL` sends `syspsi`, `sysinit`, `sysidat` to SIMPOS's `/usr/psi/simpos/csp` and `boot.init` loads `pimm.MEkbn` as the KL1 `impl` file, so the KL0 firmware is the `sys*` trio. Within it, `syspsi` is probably the control store: 32,768 eight-byte records, the full 32K x 64-bit WCS, and its words `0..57ff` equal image 1 of `pimm.MEkbn` (`pseudo_pimm_microcode.md` §2). `sysidat` is the KL0 decode table (`binary_reverse_engineering.md` §4.2). No document names the file's role; a PSI-III document or the CSP's micro loader read out of `pimmcsp.ptf` would settle it.)* `pimm.MEkbn` is partly decoded (`pseudo_pimm_microcode.md`) |
+| Console | Pseudo PIM/m CSP: `pimmcsp.ptf` (281 classes: `csp_ipl`, `csp_micro_loader`, `csp_boot_menu`, `csp_goal_record_inspector`, `csp_susp_record_inspector`, `csp_shoen_traverse`, `pseudo_memory`, `pseudo_pe_process`, `random_scheduler`, `pimos_file_manager`, `pimos_timer_manager`, ...); `pimmutil.ptf` (51 by class record, corrected 2026-11-23 from 50: `micro_reverse_assembler`, `micro_field_modifier`, `kl1_step`, `firm_utility`, `h_meter`, `csp_param_file_maker`, ...); `mpsicspR.ptf` (30: `remote_csp*`, `csp_command_parser`, `pe_registers`, `kl1_tag`) | names READ | **HELD, compiled ESP only** |
 | Front end | `pimfep.ptf`, `pimscsi.ptf` | section 1.1 | **HELD, compiled ESP only** |
 | OS | SIMPOS for PSI-III; the Librarian loads `.ptf` files | `INSTALL` (READ) | not found |
 | Catalogue contradiction | IFS abstract 003 says "Language: ESP, microprogram / Source Code: 2.5 MB"; the archive has no source of either | READ both | recorded in section 7 |
@@ -392,6 +417,11 @@ files. The byte counts in the table are the Content-Length headers,
 not the catalogue's bracketed sizes, which are sometimes wrong
 (`icot_databases.md` section 7). No archive other than the eight
 marked HELD was downloaded or opened. `Z` = compress, `gz` = gzip.
+*Corrected 2026-11-23: true when this table was made. Later on
+2026-11-20 every file in the table was fetched as data, nothing
+unpacked or run (`nonlocal/IFS_MANIFEST.md`), so every row is now held,
+under `nonlocal/ifs/<path>`, except the eight marked HELD, which stay
+in `nonlocal/` itself. The HELD marks are left as they were.*
 Paths are under `ifs/`.
 
 | No. | Name | Machine / environment | Language | "Source Code" per page | Files: Content-Length bytes (size printed on the page; HTTP status, type) |
@@ -564,7 +594,7 @@ NDL catalogues; museum pages; GitHub).
 | **SIMPOS** (kernel, supervisor, window/file/network, PMACS editor, librarian, debugger, shell, spooler, pattern editor) | FGCS'84 SIM paper (READ); `login.com` in both held archives lists `simpos##debugger`, `simpos##pmacs`, `simpos##file_manipulator`, `simpos##librarian`, `simpos##shell`, `simpos##spooler_manipulator`, `simpos##pattern_editor` (READ); `.ptf` files reference `simpos##` classes (READ) | **None.** Not in IFS; no disk image, tape or source anywhere searched | Mitsubishi Electric (sold PSI, PSI-II, PSI/UX); the JAIST PSI if its disks survive; ICOT alumni |
 | **ESP compiler, linker, runtime; the Librarian and `.ptf` format** | ESP manuals (PUBLIC); `INSTALL`: "load them as package template files with the SIMPOS Librarian" (READ) | None. No description of the `.ptf` format found | as above |
 | **Common ESP (CESP)** | IFS newsletters E01, E06 (READ): not part of IFS; AI Language Research Institute, `cesp-request@air.co.jp`; SUN4 (SECONDARY) | None | AIR's successors; Mitsubishi Electric Computer Systems (Tokyo) |
-| **KL0 firmware** for PSI, PSI-II | FGCS'84 hardware papers; IFS abstract 003 ("ESP and the operating system ... are executed by a KL0 language processor", READ) | PSI-III only, as binary inside `psdpim/PMPSI.DIR` (HELD; which file not established). No source, no PSI-I/II image | Mitsubishi, Oki |
+| **KL0 firmware** for PSI, PSI-II | FGCS'84 hardware papers; IFS abstract 003 ("ESP and the operating system ... are executed by a KL0 language processor", READ) | PSI-III only, as binary inside `psdpim/PMPSI.DIR` (HELD; which file not established; probably `syspsi`, with `sysidat` as its decode table, see the note in 2.3). No source, no PSI-I/II image | Mitsubishi, Oki |
 | **Multi-PSI KL1 microcode** (`.mbn` images, `kl1kp.kbn`, `kl1pat.com`) and **Pseudo Multi-PSI for PSI-II** | primer (READ) | None | Mitsubishi; ICOT alumni (K. Nakajima and colleagues are the authors of the Multi-PSI KL1 implementation reports, SECONDARY) |
 | **PIM/m KL1 microcode** (real machine) and the microassembler, "Microlint" checker | TR-742; TM-849 (SECONDARY) | None. Pseudo PIM/m microcode binary HELD | Mitsubishi; the National Museum of Nature and Science if media came with the machine |
 | **Firmware patch file** `pmpsi:pimm_patch.com` for the Pseudo PIM/m | named in held `boot.init` (READ) | Not in `psdpim.tar.Z` | probably never released; `patch(on,...)` may fail soft |
@@ -614,6 +644,18 @@ JIPDEC.
 ## 5. Acquisition and reconstitution list, by how much each unblocks
 
 ### 5.1 Download now (public; link status as stated)
+
+*Done (note 2026-11-23): every item below is now held as data.
+Rows 1-7 are under `nonlocal/ifs/` (`IFS_MANIFEST.md`, 2026-11-20):
+`symbolic-proc/pim-psi/pimosman.ps.Z`, `manuals/pimos/primer25.tex.Z`,
+`man30.j.ps.Z`, `man15.ps.Z`, `manuals/esp/ESPtex.tar.Z`,
+`ESPps.tar.Z`, `solver-prover/pimos/MGTP/mgtp.tgz`,
+`symbolic-proc/pimos/aya.tar.Z`, `ldlib.tar.Z`,
+`symbolic-proc/klic-apps/d-pool/dpool_pimos.tgz`, `newsletter/E01`-`E09`
+and `J01`-`J09`, `symbolic-proc/KLIC-New/klic-3.001.tgz`,
+`symbolic-proc/klic-system/klic-old/`. Row 8's TM-1021, TM-1022,
+TM-1213 and TM-671 are in `nonlocal/lit/trtm/` (`LIT_MANIFEST.md`).
+The table is kept as the record of why each was wanted.*
 
 | Priority | Item | URL (under AIST unless noted) | Why |
 |---|---|---|---|
@@ -744,17 +786,40 @@ masters.
   (SECONDARY). Held `boot.init`: `start(pimos,"20c")` with
   `pimm_ipl.kbn`. Different builds. How `20c` relates to the start
   address in the `.kbn` header (`0xE0001E81`, SECONDARY,
-  `pimos_binaries.md`) is not reconciled.
+  `pimos_binaries.md`) is not reconciled. *Note 2026-11-23: still
+  open, but these are two different quantities. `0xE0001E81` is the
+  IPL image's own entry, cell `0x1e81` = 7,809 of an image loaded at
+  `0xE0000000`, which is `ipl:boot/0` (`asm/kbndis.py --check`; the
+  `.ldb` agrees). `20c`, `202` and the help text's `200` (Pseudo
+  MPSI, "KL1 Start Address") and `2000` (Multi-PSI, "Micro Start
+  Address") are the start addresses given to the CSP's `GO/PIMos`, which "starts CPU
+  and throws a boot goal to the boot PE". That `boot.init`'s
+  `start(pimos,"20c")` is that same command is INFERENCE from the names
+  and the help text's "$GO/PIMos <Start Address>". `20c` is not an offset into
+  the image: cell `0x20c` is in the middle of
+  `ipl_file_decoder:check_GC_element/8` (measured with `kbndis.Image`).
+  `PIMM.PARAM` also has `stadr 16'204` ("Firmware debug use only") and
+  `bmadr 16'2E6` ("Boot Module Address"). What `20c` addresses would be
+  settled by the CSP's `GO/PIMos` code in `pimmcsp.ptf`, or by the
+  firmware's start-up path in `pimm.MEkbn`.*
 - **File names in `pimos.ipl`.** The Japanese manual gives
   `mpsi_bios.sav` or `ppim_bios.sav` etc. (SECONDARY); the held list
   uses `pimm_*360E.sav`, and loads kernel first, macro last.
 - **Firmware and object set.** The held firmware has no decode entry
   for `scsi_transfer`, which the object set uses once (SECONDARY,
-  `pseudo_pimm_firmware.md`).
+  `pseudo_pimm_firmware.md`). *Note 2026-11-23: both statements stand.
+  The one use is the listener's `do_command(scsi_transfer(...))`
+  (module `listener_cmd_builtin`, `pimm_debugger360E.sav`;
+  `src/debugger/listener/com_built.kl1`:135), a command a user types.
+  Nothing on the boot or system paths uses it, so the firmware and
+  the object set fit everywhere except that one command.*
 - **`ifs/README` against the catalogue** for entries 66-70 (section
   3).
 - **Dates.** `ifs/README` says "Last Modified on 15-Apr-1996"; the
-  UEDA listing dates the file 1997-04-15.
+  UEDA listing dates the file 1997-04-15. *(Note 2026-11-23: the text's
+  date is confirmed in the held copy, `nonlocal/ifs/README` line 3.
+  The two are dates of two things, the text's own date and the
+  server's file time, so they do not contradict each other.)*
 
 ## 8. Sources
 

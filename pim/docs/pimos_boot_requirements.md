@@ -88,7 +88,9 @@ the opcode byte. Some
 opcodes are shared by several built-ins that a sub-function byte tells
 apart (`f_r_r`, `f_r_r_r` types); those are not yet broken out.
 
-**Against the bench model.** `bsv/PimKL1B.bsv` has an arm for 51 of the
+**Against the bench model.** *(Note 2026-11-23: this is the bench
+model only. The reference model and the `Pimm*` core implement 128 on
+both, `ref/pimm/README.md`.)* `bsv/PimKL1B.bsv` has an arm for 51 of the
 197, covering 533,088 instruction words (73.4%) by static count. The
 match is textual, so stand-in arms count. The most used opcodes with no
 arm at all:
@@ -266,6 +268,11 @@ is the 32-bit value low byte first, then the 8-bit tag.
 | 4-5 | StartAddress | `0xE0001E81` (cell 7,809) |
 | 6-7 | ModuleAddress | `0xE0001E25` (cell 7,717) |
 | 126-127 | Version | `0x01973460` (meaning not yet read) |
+
+*(Note 2026-11-23: StartAddress is the image's entry, `ipl:boot/0`. It
+is not the `20c` that `boot.init` passes to the CSP's `start`: cell
+`0x20c` lies inside `ipl_file_decoder:check_GC_element/8`. What `20c`
+addresses is open, `icot_software_survey.md` §7.)*
 
 92,160 bytes = 1 header block + 359 blocks of 51 cells = 18,309 cells,
 the last 9 zero.
