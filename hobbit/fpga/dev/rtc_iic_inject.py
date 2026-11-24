@@ -46,8 +46,8 @@ INJ = [
      "         if (be[0] == 0)\n            failWith(rtcFaultLane,",
      "         if (False)\n            failWith(rtcFaultLane,"),
     ("R10", "every loaded value taken as a calendar time", "Rtc.bsv",
-     "               else if (timeValid(t)) loadW.wset(t);",
-     "               else if (True) loadW.wset(t);"),
+     "               else if (timeValid(t)) begin",
+     "               else if (True) begin"),
     ("M1", "seed without waiting for the chip's next second", "Rtc.bsv",
      "            done <= (mb[0] & 8'h7F) != (firstSec & 8'h7F);",
      "            done <= True;"),
@@ -75,6 +75,12 @@ INJ = [
     ("M10", "the master ignores clock stretching", "RtcI2c.bsv",
      "         if (q == 1 && sclS == 0) begin     // a slave holds SCL low",
      "         if (False) begin     // a slave holds SCL low"),
+    ("M11", "a seed after a setrtc overwrites the kernel's time", "Rtc.bsv",
+     "      else if (seedW.wget matches tagged Valid .t &&& !kernel) begin",
+     "      else if (seedW.wget matches tagged Valid .t) begin"),
+    ("M12", "requests stall until the seed lands", "Rtc.bsv",
+     "                         Bool write) if (!rdPend);",
+     "                         Bool write) if (!rdPend && seedR != SeedPending);"),
     ("I1", "the repeated START's address taken as a data byte", "Iic.bsv",
      "                  if (slave[7:1] == devEeprom && ptrSet)",
      "                  if (False)"),
@@ -122,7 +128,7 @@ def clean():
 def main():
     only = sys.argv[1:]
     if not clean():
-        raise SystemExit("Rtc.bsv / Iic.bsv have uncommitted changes")
+        raise SystemExit(", ".join(FILES) + ": uncommitted changes")
     for ident, what, f, old, new in INJ:
         if only and ident not in only:
             continue
@@ -150,7 +156,7 @@ def main():
             if line.endswith("FAIL"):
                 print("    " + " ".join(line.split()[:-3]))
         sys.stdout.flush()
-    print("Rtc.bsv and Iic.bsv clean:", clean())
+    print(", ".join(FILES), "clean:", clean())
 
 
 if __name__ == "__main__":
