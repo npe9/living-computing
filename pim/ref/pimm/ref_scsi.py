@@ -114,6 +114,17 @@ NOT caught:
     bound every time (the wait is NOT run).
 Not run at all: wait_vector_1.
 
+Also checked, with no machine (event_list, 2026-11-24): fep.py's
+scripted events, OURS: the login, then each typed line (Fep(lines=..),
+longrun_ipl.py --type) answers the next held getl (110) of a window
+with [1, the line in JIS], in order; nothing is answered while the
+login is the next event or after the script.  Observed injections into
+fep.py (backed up, restored, compared byte for byte):
+  the lines taken in reverse order
+        the script check fails, and the answers swap: 'shutdown'
+        gets '#y#e#s', 'yes' gets '#s#h#u#t#d#o#w#n'
+  a newline (0x000A) appended to each answer
+        both answers differ, by the trailing 00 0A
 Not run: top:go/4 and the shoens; an open that fails; a read error;
 abort (70); attention (status 3); a message the IPL sends in more
 than one packet; REQUEST SENSE; more than one processor.
@@ -377,10 +388,38 @@ def real(limit):
     return 0
 
 
+def event_list():
+    """fep.py's scripted events (OURS): the login, then each typed line
+    answers the next held getl (110) of a window, in order, with
+    [1, the line in JIS] (bios/fep_module/win_dvc.kl1:307-312: the
+    reply {DevID, Status, Line}).  A getl is not answered while the
+    login is the next event, nor when the script is empty.  Device
+    28 as in the run (binary_reverse_engineering.md 1.4)."""
+    bad = []
+    f = fepm.Fep(lambda path: None, lines=('shutdown', 'yes'))
+    if f.script != [('login', fepm.LOGIN), ('getl', 'shutdown'), ('getl', 'yes')]:
+        bad.append(('script', f.script))
+    if f.request(28, [fepm.CREATE_WINDOW, b'', b'', b'']) != [fepm.NORMAL]:
+        bad.append(('create_window',))
+    if f.request(28, [fepm.GETL]) is not None:
+        bad.append(('getl not held',))
+    if f.idle():
+        bad.append(('a getl answered before the login',))
+    f.script.pop(0)                     # as if the login had been answered
+    for line in ('shutdown', 'yes'):
+        if not f.idle() or f.messages[-1] != ('<', 28, [fepm.NORMAL, fepm.jis(line)]):
+            bad.append(('answer', line, f.messages[-1:]))
+        if f.request(28, [fepm.GETL]) is not None:
+            bad.append(('getl not held again',))
+    if f.idle():
+        bad.append(('answered after the script ended',))
+    return bad
+
+
 def main(argv):
     if '--real' in argv:
         return real(int(argv[argv.index('--real') + 1]))
-    bad = []
+    bad = [('event list',) + x for x in event_list()]
     for label, files, device in PARTS:
         m, v, opened = boot(listing(files), **device)
         b = check(label, files, device, m, v, opened)
