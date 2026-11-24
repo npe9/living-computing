@@ -41,8 +41,8 @@ method Bit#(8) mcpWrites;                 // write-backs completed
 * Latency: a register read or any write responds on the next cycle. An NVRAM
   read responds one cycle later, because the block RAM's address is
   registered. A new request is taken only after the previous response has
-  been queued. With the MCP7940N enabled, no request is taken until the
-  seed has finished (up to about 1.5 s after reset; see below).
+  been queued. Requests are served from reset, including while the
+  MCP7940N seed runs ("Requests during the seed" below).
 
 | offset | register |
 |---|---|
@@ -128,24 +128,38 @@ master assumes it is alone on the bus: it has no arbitration-loss
 detection.
 
 **Sources.** The MCP7940N data sheet (DS20005010) is not on disk, so no
-page is cited. `rtc_mcp7940n.h` marks where each fact comes from.
-`~/src/ulx3s-experiments/flute-lx50/test/rtc_test.c`, written for
-this chip on this board design (its notes say it has not yet run on the
-board) and citing DS20005010J, gives the address,
-ST (RTCSEC bit 7), VBATEN (RTCWKDAY bit 3, off at the chip's power-on),
-PWRFAIL (bit 4, cleared by writing RTCWKDAY), and the pointer-then-
-repeated-START read. The following are **inference**, from memory of the
-part, not checked against the data sheet:
+page is cited. Fetching it was requested on 2026-11-24 and is waiting for
+the owner's approval of the download (agents may not download on their
+own); until then the facts below rest on code written against it.
+`rtc_mcp7940n.h` tags each fact with its source:
 
-* OSCRUN is RTCWKDAY bit 5;
-* the 12/24 bit is RTCHOUR bit 6, with AM/PM in bit 5;
-* LPYR is RTCMTH bit 5;
-* the SRAM is 64 bytes at 0x20..0x5F;
-* the register pointer auto-increments;
-* the recommended way to set the time is to clear ST, wait for OSCRUN to
-  clear, write, then set ST.
+* **[T]** `~/src/ulx3s-experiments/flute-lx50/test/rtc_test.c`, written
+  for this chip on this board design (its notes say it has not yet run on
+  the board), citing DS20005010J: the address 0x6F, ST (RTCSEC bit 7),
+  VBATEN (RTCWKDAY bit 3, off at the chip's power-on), PWRFAIL (bit 4,
+  cleared by writing RTCWKDAY), and the pointer-then-repeated-START read.
+* **[L]** Linux 6.17-rc7 `drivers/rtc/rtc-ds1307.c` (its `mcp794xx`
+  paths; `~/src/linux-cursor/linux`, read only, GPL-2.0, nothing copied):
+  * OSCRUN is RTCWKDAY bit 5 (`MCP794XX_BIT_OSCRUN BIT(5)`); the driver
+    refuses the time when it is clear, and when ST is clear;
+  * the 12/24 bit is RTCHOUR bit 6 and PM bit 5 (`DS1307_BIT_12HR 0x40`,
+    `DS1307_BIT_PM 0x20`, applied to the mcp794xx by the probe's default
+    case), with 12 read as 0 before PM adds 12: the conversion here;
+  * the SRAM is 64 bytes at 0x20 (`nvram_offset 0x20`, `nvram_size
+    0x40`, "battery backed SRAM");
+  * the seven time registers are read and written as one bulk transfer
+    from register 0, which implies the pointer auto-increments.
+* **[R]** RTEMS `bsps/shared/dev/rtc/mcp7940m.c` (`~/src/rtems`, read
+  only, BSD-2-Clause), for the MCP7940M, the same register map without the
+  battery: LPYR is RTCMTH bit 5 (`MCP7940M_RTCMTH_LPYR (0x01u << 5)`).
 
-Check these against the data sheet before the first hardware window.
+Still **inference**, confirmed by neither: the order used to set the time
+(clear ST, wait for OSCRUN to clear, write, set ST). Linux does not do it:
+it writes all seven registers, ST and VBATEN set, in one burst. The order
+here is the conservative one and costs only bus time; check it against
+the data sheet before the first hardware window, along with everything
+above (secondary sources agree with each other, not necessarily with the
+part).
 
 **Seed (mcpMode bit 0), at reset.**
 
@@ -163,7 +177,20 @@ Check these against the data sheet before the first hardware window.
 
 An SCL held low past 2^20 cycles of stretching gives 7. Any fallback leaves
 the counters running from `startBcd` since reset. `mcpSeed` = 2 means the
-time came from the chip. The seed only reads; it does not turn VBATEN on.
+time came from the chip. The seed only reads; it does not turn VBATEN on
+(Linux's driver does, at probe; here the first write-back does).
+
+**Requests during the seed.** The device does not wait for the seed: from
+reset it serves every request, the clock running from `startBcd`. The
+seed's load replaces the time on its cycle (a read on that cycle still
+sees the old time, as with a `setrtc` load), so a program that reads the
+clock in the first second or so sees `startBcd`'s time and then a jump to
+the chip's. A `setrtc` that comes before the seed lands wins: the seed is
+dropped (`mcpSeed` 8), and the kernel's time is written back to the chip
+when the seed's reads end, so the chip then runs behind by up to that wait
+(about 1.5 s at most). The NVRAM is served throughout. The earlier design
+stalled every request until the seed was done; that was dropped because
+the kernel or the ROM may touch the RTC or NVRAM early.
 
 **Write-back (mcpMode bit 1), after every load.** A `setrtc` load (W
 cleared with a valid time) queues the loaded time. The link then:
@@ -184,7 +211,7 @@ counters are unaffected.
 
 The NVRAM is 2040 bytes, and the board's backing for it is wanted only by
 the ROM's world: romboot's `Env` (712 bytes at 0) and key.c's `Nvrsafe` (31
-bytes at 1924). The MCP7940N's SRAM is 64 bytes (inference, above), so it
+bytes at 1924). The MCP7940N's SRAM is 64 bytes ([L], above), so it
 cannot hold the `Env`.
 
 **The `Env`: a sector of the configuration SPI flash.** The SPI flash is
@@ -259,7 +286,7 @@ behaviour when the chip is absent, and it reports which case it was:
 
 | mcpSeed | meaning |
 |---|---|
-| 0 | seeding (requests wait) |
+| 0 | seeding (requests are served, from `startBcd`) |
 | 1 | mcpMode bit 0 clear: `startBcd` |
 | 2 | the chip's time |
 | 3 | no ACK at 0x6F |
@@ -267,6 +294,7 @@ behaviour when the chip is absent, and it reports which case it was:
 | 5 | the chip's registers are not a calendar time |
 | 6 | the chip's second never changed within 1.5 s |
 | 7 | SCL held low (stretch timeout) |
+| 8 | a `setrtc` came before the seed landed: the kernel's time kept |
 
 ## Integration notes for the SoC top
 
@@ -293,18 +321,27 @@ behaviour when the chip is absent, and it reports which case it was:
 
 | LUT4 | PFUMX | L6MUX21 | CCU2C | TRELLIS_FF | DP16KD |
 |---:|---:|---:|---:|---:|---:|
-| 1674 | 253 | 56 | 222 | 600 | 1 |
+| 1585 | 201 | 29 | 205 | 602 | 1 |
 
 That is with `mcpMode 3`, `i2cQuarter 63`. **Switching the link off does
-not get the area back**: with `mcpMode 0` it is still 1594 LUT4 and 480
-TRELLIS_FF. Presumably yosys cannot prove the FSM's state registers
+not get the area back**: with `mcpMode 0` it was still 1594 LUT4 and 480
+TRELLIS_FF (measured at 1674 for mode 3, before the changes below). Presumably yosys cannot prove the FSM's state registers
 constant once the mode is fixed, but that is a hypothesis, not checked. Before the MCP7940N link (commit 821a5c62) it was 555
 LUT4, 219 TRELLIS_FF. The link (the I2C master, the seed and write-back
 FSM, the seven-byte buffer, the BCD/12-hour conversion and the second
 validity check, and the poll counters) costs about 1,100 LUT4, about 1.3%
-of the 85F. It has not been optimised. The first thing to try: `fromMcp` recomputes the
-weekday and the calendar check that the load path already computes, so the
-seed could hand raw BCD to the load path's own check.
+of the 85F. One cheap pass was made:
+
+* Converting a 12-hour hour by table instead of through binary saved 52
+  LUT4.
+* Registering one shared `fromMcp` result cost 57 LUT4 and 46 FF more, and
+  was dropped: bsc already shares it.
+* Serving requests during the seed (the `seeded` guard gone, a second load
+  wire) moved the count from 1674 to 1637, before the table.
+
+The rest is the StmtFSM's state decoding, the 32-bit cycle and poll
+counters, and the master's 20-bit stretch counter. Those are guesses; it
+is not measured per part.
 
 The NVRAM is one DP16KD. The counters, the held set, the weekday and the
 validity check make up the rest. The tens digit is multiplied by 10 with
@@ -340,38 +377,44 @@ is `Fraction(cycle, 1000)`, exact, with the RTL built at `ticksPerSec =
 * all 2040 NVRAM bytes, with romboot's `Env` at 0 and an `Nvrsafe` at 1924
   written first;
 * the faults above;
-* 25 MCP7940N sequences. Two more builds are used, `mkRtc_m1` and
+* 52 MCP7940N sequences. Two more builds are used, `mkRtc_m1` and
   `mkRtc_m3` (`mcpMode` 1 and 3, `ticksPerSec` 100000, `i2cQuarter` 2).
   Their I2C lines go to `rtc_mcp7940n.h`, a cycle-level behavioural chip
   written for this test (its own source tags say which facts are
   inference). The sequences cover:
   * seeds at four phases of the chip's second;
-  * four 12-hour times;
+  * all 24 twelve-hour values (12 AM to 11 PM);
   * a seed across the year end;
   * a chip that stretches SCL;
   * the nine fallbacks;
   * five write-back cases;
-  * mode 1, which must leave the chip alone.
+  * mode 1, which must leave the chip alone;
+  * requests during the seed: a `setrtc` that supersedes it, NVRAM and
+    clock accesses while it runs, and five single reads on exact cycles
+    around the seed's load (61168..61172; the load is at 61170, checked).
 
   Each sequence checks the seed status, every clock read against the model
-  offset to the chip's time at the seed (the seed lag is bounded at 2,000
-  cycles), the write-back count and fault, the chip's registers at the
+  (running from `startBcd`, then from the chip's time after the seed's load
+  cycle unless a `setrtc` came first; the seed lag is bounded at 2,000
+  cycles), the SCL low and high times (at least two quarters), the write-back count and fault, the chip's registers at the
   end against the time last set, and that the chip saw no I2C protocol
   violation and no time write while its oscillator ran.
 
-Last run, from an empty `build/`, 2026-11-24 (71 s): 109 of 109 sequences
-agree (RTC, IIC and MCP7940N together). 15 seeds came from the chip, with
-a lag of at most 1,625 cycles; 10 fell back; 422 clock reads were compared
-after a seed; 3 write-back sequences were checked to the chip's
-registers. The RTC reads compared per register were control 1137, sec
+Last run, from an empty `build/`, 2026-11-24 (44 s): 136 of 136
+sequences agree (RTC, IIC and MCP7940N together). 41 seeds came from the
+chip, with a lag of at most 1,625 cycles; 11 fell back; 367 accesses were
+taken while a seed ran; 793 clock reads were compared in the MCP
+sequences; 4 write-back sequences were checked to the chip's registers. The RTC reads compared per register were control 1137, sec
 473, min 436, hour 436, wday 433, mday 437, mon 437, year 436 and NVRAM
 2040, with 3571 writes. 4 model refusals were matched by the RTL's fault
 code, and 2 RTL-only faults came where expected.
 
-Discrimination (`rtc_iic_inject.py`) injected 10 RTC bugs and 10
-MCP7940N-link bugs (M1-M10: the seed alignment, the OSCRUN check, 12-hour
-PM, the calendar check, the write-back's OSCRUN wait, VBATEN, ST, the
-oscillator stop, the master's read ACK, and clock stretching). Every one
+Discrimination (`rtc_iic_inject.py`) injected 10 RTC bugs, 9 IIC bugs and
+13 MCP7940N-link bugs (M1-M13: the seed alignment, the OSCRUN check,
+12-hour PM, the calendar check, the write-back's OSCRUN wait, VBATEN, ST,
+the oscillator stop, the master's read ACK, clock stretching, a seed that
+overwrites an earlier `setrtc`, requests stalled during the seed, and one
+row of the 12-hour table). Every one
 made the check fail. The observed failure sets are in `rtc_iic_check.py`'s header.
 The first run of the divider injection (R1) passed: the phase probes had
 been spaced by the access gap. They are now one per sequence, checked to

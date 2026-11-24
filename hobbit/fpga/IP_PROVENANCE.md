@@ -38,3 +38,15 @@ Add new sections at the end. Do not edit other sections.
   * `flute-lx50/test/rtc_test.c` and `flute-lx50/linux-sw/dts-fp/flute-ulx3s.dts`,
     for the chip's address and register bits, marked `[T]` in
     `rtc_mcp7940n.h`.
+
+## Step 5 addendum 2: secondary sources for the MCP7940N's registers, 2026-11-24
+
+* **Copied: nothing.** The MCP7940N data sheet is still not on disk. Its
+  download waits for the owner's approval. Two drivers written against the
+  part were read, outside this repository and read-only, to check the
+  register facts `rtc.md` had marked as inference:
+  * Linux 6.17-rc7 `drivers/rtc/rtc-ds1307.c` (GPL-2.0), its `mcp794xx`
+    paths, at `~/src/linux-cursor/linux`;
+  * RTEMS `bsps/shared/dev/rtc/mcp7940m.c` (BSD-2-Clause), at `~/src/rtems`.
+* Only bit positions and register addresses are cited (tags `[L]`, `[R]` in
+  `fpga/dev/rtc_mcp7940n.h`). No code from either driver is used.

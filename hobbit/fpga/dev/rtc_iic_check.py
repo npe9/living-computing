@@ -33,92 +33,138 @@ Exit status 0 iff every comparison holds.
 
 Bug injection (AGENTS.md "proven discriminating"): rtc_iic_inject.py
 injects each bug into the BSV, runs this check, and reverts by reverse
-patch.  OBSERVED failures, 2026-11-24, all 29 injections against the
-current code (109 sequences; every sequence not listed still agreed).
-The R and I sets are the same as in the first run, made against 84
-sequences before the MCP7940N link; R7 now also fails all 25 MCP
-sequences:
+patch.  OBSERVED failures, 2026-11-24, all 32 injections against the
+current code (136 sequences; every sequence not listed still agreed;
+long lists are counted, the full names are in the injector's output):
 
-  R1 divider not restarted on a load (div <= 0)            100/109
-     phase after a load, sec at load+1000 and load+2000, all 4 skews;
-     on the wrap cycle, sec at load+1000 (load+999/+1001 agree: the
-     second comes one cycle late).  The first run, before the phase
-     probes were one per sequence, passed 52/52.
-  R2 leap year from the units digit only                   107/109
-     rollover Feb 28 1996, rollover Feb 29 1996
-  R3 a new snapshot on every R/W control write             106/109
-     W cleared with R still set loads and unfreezes; R then W without a
-     new snapshot; fault: W cleared with nothing held
-  R4 weekday table, March 2 -> 3                           108/109
-     300 random dates
-  R5 clock-register reads ignore the held set              104/109
-     freeze with R; held set visible while W is set; R then W; fault:
-     a load of month 0x13; RTL-only fault: Feb 30
-  R6 April has 31 days                                     108/109
-     rollover Apr 30
-  R7 NVRAM index from addr[11:1]                           18/109
-     all 25 MCP sequences, and 66 RTC sequences: all but phase at reset
-     at cycles 0, 998, 999 and the RTL-only lane-1 fault (which faults
-     before the index)
-  R8 clock-register write without W accepted               107/109
-     fault: written without RTCWRITE; fault: written with R only
-  R9 RTC write without byte lane 0 accepted                108/109
-     RTL-only fault: write on byte lane 1 only
-  R10 every loaded value taken as a calendar time          107/109
-     fault: a load of month 0x13; RTL-only fault: Feb 30.  Its pattern
-     had stopped matching when the load path grew the write-back queue;
-     fixed, then run.
-  I1 repeated START's address taken as a data byte         104/109
-     iic_join.trace; EEPROM reads from 5, from 250, from 0; two EEPROM
-     reads around ledputbyte
-  I2 LRB inverted                                          102/109
-     as I1, plus ledputbyte x3 and the no-acknowledge slave
-  I3 BB reads busy, not free                               101/109
-     as I2, plus PIN set and STA|STO together
-  I4 0xC0 does not complete the byte in progress           104/109
-     as I1
-  I5 LED latch write count not kept                        107/109
-     ledputbyte x3; two EEPROM reads around ledputbyte
-  I6 S0 read with ACK does not advance the pointer         104/109
-     as I1
-  I7 S0 readable with ESO off                              108/109
-     fault: S0 read with ESO off
-  I8 a write START to the EEPROM keeps ptr_set             108/109
-     two EEPROM reads around ledputbyte (before that sequence was added
-     the injection passed 79/79: every EEPROM read started from reset)
-  I9 IIC write without byte lane 0 accepted                108/109
-     RTL-only fault: write on byte lane 2 only
-
-  The MCP7940N link (Rtc.bsv seed/write-back, RtcI2c.bsv master), against
-  the behavioural chip in rtc_mcp7940n.h:
-  M1 seed without waiting for the chip's next second      93/109
-     all 10 seeds from the chip (phases 0, 1, 40000, 99999; 12-hour 2 PM,
-     12 AM, 12 PM, 9 AM; across the year end; stretch 37); fallback: a
-     chip whose second never ends; all 5 write-back sequences that run
-     (setrtc then 3.5 s; two setrtc; slow OSCRUN; OSCRUN never clears;
-     mode 1 leaves the chip alone)
-  M2 OSCRUN not checked at the seed                      108/109
-     fallback: OSCRUN clear
-  M3 12-hour PM not added                                107/109
-     12-hour 2 PM, 12-hour 12 PM
-  M4 the chip's time accepted unchecked                  105/109
-     fallbacks: month 0x13, hour 0x24, 12-hour 0x13, Feb 30.  The first
-     run crashed the checker (mcp_epoch on month 13); compare_mcp now
-     reports a non-calendar seed as a failure.
-  M5 write-back does not wait for OSCRUN to clear        105/109
-     setrtc then 3.5 s; two setrtc; slow OSCRUN; OSCRUN never clears
-  M6 write-back leaves VBATEN off                        106/109
-     setrtc then 3.5 s; two setrtc; slow OSCRUN
-  M7 write-back writes sec without ST                    106/109
-     as M6
-  M8 write-back never stops the oscillator               105/109
-     as M5
-  M9 the master never ACKs a byte it reads                92/109
-     as M1, plus fallback: OSCRUN clear (17 in all)
-  M10 the master ignores clock stretching                107/109
-     seed with the chip stretching SCL 37 cycles; fallback: SCL held low.
-     The first run crashed the checker's parser (free-text notes with
-     spaces); run_rtl now splits notes off first.
+  R1   the divider does not restart on a load             127/136
+       RTC: phase after a load at skew 0: sec at load+1000; phase
+       after a load at skew 0: sec at load+2000; phase after a load at
+       skew 1: sec at load+1000; phase after a load at skew 1: sec at
+       load+2000; phase after a load at skew 500: sec at load+1000;
+       phase after a load at skew 500: sec at load+2000; phase after a
+       load at skew 999: sec at load+1000; phase after a load at skew
+       999: sec at load+2000; phase after a load on the wrap cycle:
+       sec at load+1000.  The first run, before the phase probes were
+       one per sequence, passed 52/52.
+  R2   leap year from the units digit only                134/136
+       RTC: rollover Feb 28 1996; rollover Feb 29 1996.
+  R3   a new snapshot on every R/W control write          133/136
+       RTC: W cleared with R still set loads and unfreezes; R then W
+       without a new snapshot, then W cleared; fault: W cleared with
+       nothing held.
+  R4   weekday table: March 2 -> 3                        135/136
+       RTC: 300 random dates 1970..2069, wday after each load.
+  R5   clock register reads ignore the held set           131/136
+       RTC: freeze with R across seconds; held set visible while W is
+       set; unwritten fields keep the snapshot; R then W without a new
+       snapshot, then W cleared; fault: a load of month 0x13; RTL-only
+       fault: a load of Feb 30.
+  R6   April has 31 days                                  135/136
+       RTC: rollover Apr 30.
+  R7   NVRAM index from addr[11:1]                         21/136
+       66 RTC sequences; 49 MCP sequences.
+  R8   a clock register write without W is accepted       134/136
+       RTC: fault: clock register written without RTCWRITE; fault:
+       clock register written with R only.
+  R9   a write without byte lane 0 is accepted            135/136
+       RTC: RTL-only fault: write on byte lane 1 only.
+  R10  every loaded value taken as a calendar time        134/136
+       RTC: fault: a load of month 0x13; RTL-only fault: a load of Feb
+       30.  Its pattern had stopped matching when the load path grew
+       the write-back queue; fixed, then run.
+  M1   seed without waiting for the chip's next second     93/136
+       43 MCP sequences.
+  M2   OSCRUN not checked at the seed                     135/136
+       MCP: fallback to startBcd: OSCRUN clear.
+  M3   12-hour PM not added                               124/136
+       MCP: seed from a 12-hour chip, 12 PM; seed from a 12-hour chip,
+       1 PM; seed from a 12-hour chip, 2 PM; seed from a 12-hour chip,
+       3 PM; seed from a 12-hour chip, 4 PM; seed from a 12-hour chip,
+       5 PM; seed from a 12-hour chip, 6 PM; seed from a 12-hour chip,
+       7 PM; seed from a 12-hour chip, 8 PM; seed from a 12-hour chip,
+       9 PM; seed from a 12-hour chip, 10 PM; seed from a 12-hour
+       chip, 11 PM.
+  M13  12-hour 10 PM converted to 21                      135/136
+       MCP: seed from a 12-hour chip, 10 PM.
+  M4   the chip's time accepted unchecked                 132/136
+       MCP: fallback to startBcd: month 0x13; fallback to startBcd:
+       hour 0x24; fallback to startBcd: 12-hour 0x13; fallback to
+       startBcd: Feb 30.  The first run crashed the checker (mcp_epoch
+       on month 13); compare_mcp now reports a non-calendar seed as a
+       failure.
+  M5   write-back does not wait for OSCRUN to clear       131/136
+       MCP: write-back: setrtc, then 3.5 s; write-back: two setrtc,
+       the second during the first's write-back; write-back waits for
+       a slow OSCRUN (50000 cycles); write-back fails: OSCRUN never
+       clears; setrtc during the seed supersedes it.
+  M6   write-back leaves VBATEN off                       132/136
+       MCP: write-back: setrtc, then 3.5 s; write-back: two setrtc,
+       the second during the first's write-back; write-back waits for
+       a slow OSCRUN (50000 cycles); setrtc during the seed supersedes
+       it.
+  M7   write-back writes sec without ST                   132/136
+       MCP: write-back: setrtc, then 3.5 s; write-back: two setrtc,
+       the second during the first's write-back; write-back waits for
+       a slow OSCRUN (50000 cycles); setrtc during the seed supersedes
+       it.
+  M8   write-back never stops the oscillator              131/136
+       MCP: write-back: setrtc, then 3.5 s; write-back: two setrtc,
+       the second during the first's write-back; write-back waits for
+       a slow OSCRUN (50000 cycles); write-back fails: OSCRUN never
+       clears; setrtc during the seed supersedes it.
+  M9   the master never ACKs a byte it reads               92/136
+       44 MCP sequences.
+  M10  the master ignores clock stretching                129/136
+       MCP: seed with the chip stretching SCL 37 cycles; fallback to
+       startBcd: SCL held low; sec at cycle 61168, around the seed's
+       load; sec at cycle 61169, around the seed's load; sec at cycle
+       61170, around the seed's load; sec at cycle 61171, around the
+       seed's load; sec at cycle 61172, around the seed's load.  The
+       first run crashed the checker's parser (free-text notes with
+       spaces); run_rtl now splits notes off first.  The exact probes
+       fail because the seed lands on another cycle.
+  M11  a seed after a setrtc overwrites the kernel's time 135/136
+       MCP: setrtc during the seed supersedes it.
+  M12  requests stall until the seed lands                132/136
+       MCP: setrtc during the seed supersedes it; sec at cycle 61168,
+       around the seed's load; sec at cycle 61169, around the seed's
+       load; sec at cycle 61170, around the seed's load.
+  I1   the repeated START's address taken as a data byte  131/136
+       IIC: iic_join.trace; EEPROM read from 5, 12 bytes; EEPROM read
+       from 250, 12 bytes; EEPROM read from 0, 40 bytes; two EEPROM
+       reads (from 3, then from 9) around ledputbyte.
+  I2   LRB inverted                                       129/136
+       IIC: iic_join.trace; ledputbyte x3 after iicreset; a slave that
+       does not acknowledge (0x90), then release; EEPROM read from 5,
+       12 bytes; EEPROM read from 250, 12 bytes; EEPROM read from 0,
+       40 bytes; two EEPROM reads (from 3, then from 9) around
+       ledputbyte.
+  I3   BB reads busy, not free                            128/136
+       IIC: iic_join.trace; ledputbyte x3 after iicreset; a slave that
+       does not acknowledge (0x90), then release; EEPROM read from 5,
+       12 bytes; EEPROM read from 250, 12 bytes; EEPROM read from 0,
+       40 bytes; two EEPROM reads (from 3, then from 9) around
+       ledputbyte; PIN set and STA|STO together.
+  I4   0xC0 does not complete the byte in progress        131/136
+       IIC: iic_join.trace; EEPROM read from 5, 12 bytes; EEPROM read
+       from 250, 12 bytes; EEPROM read from 0, 40 bytes; two EEPROM
+       reads (from 3, then from 9) around ledputbyte.
+  I5   the LED latch's write count not kept               134/136
+       IIC: ledputbyte x3 after iicreset; two EEPROM reads (from 3,
+       then from 9) around ledputbyte.
+  I6   an S0 read with ACK does not advance the pointer   131/136
+       IIC: iic_join.trace; EEPROM read from 5, 12 bytes; EEPROM read
+       from 250, 12 bytes; EEPROM read from 0, 40 bytes; two EEPROM
+       reads (from 3, then from 9) around ledputbyte.
+  I8   a write START to the EEPROM keeps the old pointer  135/136
+       IIC: two EEPROM reads (from 3, then from 9) around ledputbyte.
+       Before the two-read sequence was added the injection passed
+       79/79: every EEPROM read started from reset.
+  I9   an IIC write without byte lane 0 is accepted       135/136
+       IIC: RTL-only fault: write on byte lane 2 only.
+  I7   S0 readable with ESO off                           135/136
+       IIC: fault: S0 read with ESO off.
 """
 import os
 import random
