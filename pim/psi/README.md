@@ -23,6 +23,9 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0.py` | Step 2: a KL0 interpreter (OURS) running the compiled method bodies the loader builds. Its `convert`, `census` and `call` commands are below. |
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
+| `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`: `process.esp` (ours) and `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections). |
+| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, the stand-ins. It is in `../run_tests.sh` and takes about 8 s. |
 
 ## How to run
 
@@ -38,6 +41,10 @@ From `pim/`:
     python3 -I psi/kl0.py convert                 # convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv FILE]     # every method of the 104 classes
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
+    python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
+    python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
+    python3 -I psi/espc.py behave [-v]            # compiled paragraph against paragraph.ptf
+    python3 -I psi/espc.py compile psi/standin/stream.esp --package simpos --listing
 
 None of these needs an extraction: `held.py` decompresses the archives
 in memory. To work from files instead, run
@@ -400,6 +407,105 @@ string (`paragraph_version` answers `string#"3500"`).
   - No refusal is a `simpos##` call: these classes need no SIMPOS by
     construction.
 
+## The ESP compiler (step 3, 2026-11-24)
+
+`espc.py` is OURS; ICOT's compiler is lost. It parses with the census
+reader (`../asm/simpos_census/esplex.py`) and emits a `Template`, in the
+form the loader builds, carrying its own constant pool. The code-shape
+rules are in its docstring: registers, permanent variables, clause
+chains and cut operands, each measured on the held code.
+
+**What it may emit.** Only opcodes with a row in `kl0_opcodes.tsv`.
+Anything else is refused as `CompileRefusal(construct, detail)`, and a
+predicate that calls a refused local is refused with it. The largest
+refusals over paragraph are: calls a refused local (208), `X+Y` on two
+registers (141), `heap_vector/2` (101), `string/3` (59), the
+`double_bytes#` macro (37), `X/Y` (36) and `=\=` (33). Over kappa2,
+404 of the 739 classes with source are refused whole, all for
+`with_macro`.
+
+**Structure** (`espc.py check`, against the held `.ptf`). Each class is
+checked for natures, slots with their flags, the declared method and
+local sets (refused ones included) and the demon set. Each predicate
+pairs compiled cells with held cells in a position-independent form.
+A disjunction is paired by where it is called from (`parent#k`), not by
+its `$or$N`. The held numbering does not follow source order: in
+`paragraph##receiver`, `send/7`'s disjunctions are numbered before
+`draw_graph/6`'s, although the source has them after.
+
+| | paragraph | kappa2 | utter |
+|---|---|---|---|
+| classes with source / compiled | 109 / 109 | 739 / 335 | 69 / 52 |
+| natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 334, 334, 334, 335, 333 | 52, 52, 52, 52, 51 |
+| predicates compared | 991 | 3,387 | 464 |
+| exact | 243 (24.5%) | 501 (14.8%) | 94 (20.3%) |
+| registers only | 32 | 49 | 11 |
+| moves and environment only | 189 | 916 | 95 |
+| clause order | 72 | 132 | 8 |
+| held indexes (switch tables), and other | 106 | 122 | 11 |
+| held uses an opcode with no row | 212 | 1,164 | 179 |
+| other (unclassified) | 137 | 503 | 66 |
+| exact / all held predicates of the classes with source | 11.4% of 2,123 | 2.4% of 21,027 | 6.5% of 1,454 |
+
+There are no key collisions and no `$or$` paired with another arity in
+paragraph or utter. Kappa2 has 3 pairs with another arity. The two
+paragraph aspect misses are `paragraph_version`'s version slot
+("3200" in the source, "3500" in the `.ptf`) and `h_grade`'s methods
+(two items of `h_grade_n.esp` do not parse). The "other" class was
+sampled by hand. In `receiver set_pred_pool/2`, the held code matches
+a head vector element by element and cuts through a register. The
+compiled code does neither.
+
+**Behaviour** (`espc.py behave`). The 109 compiled paragraph classes
+are loaded alone into a library, so a call that reached any class not
+compiled here would refuse. Every call `test_kl0.py` makes gives the
+same answer as `paragraph.ptf` alone:
+
+- `predicate_num_switch_icon` gives inc/dec at 210/228/229/240;
+- the `list_index_buffer` battery agrees;
+- `scroll_bottom_icon`'s two primaries agree;
+- `paragraph_version` gives "3200" (source) against "3500" (`.ptf`).
+
+kl0's census of `paragraph.ptf` was rerun on the compiled classes with
+the same calls. 88 methods have the same outcome and 87 are refused on
+both sides. 46 are refused only on the compiled side: 35 for
+`double_bytes#`, 5 for a refused local, 5 inherited by
+`wshell_buffer` from `array_index_buffer`, where they are refused,
+and 1 in a class not compiled (`rmonitor_version`, no source). 6 are refused only on the held side, at the unnamed opcodes
+pmi ca and 36, so their equivalence is unchecked. No method runs to a
+different outcome.
+
+**Stand-ins** (`standin/`, scaffolding). `standins()` compiles them
+into package `simpos` and flags each template. `kl0.py` then refuses
+a method a stand-in lacks as a SIMPOS call, not as "no method". That
+flag check is the second `kl0.py` change for this step. The first is
+that `Code` takes a compiled template's own pool. `load_six()` does
+not load the stand-ins, so `test_kl0.py`'s pins are unchanged.
+
+Each stand-in method is labelled in its source as PRINTED (verbatim,
+with the figure and page) or INTERPOLATED (ours, with what it was
+interpolated from: the interface, the call sites in held programs,
+the manuals). This is the owner's rule of 2026-11-24, so that any
+method can be replaced if real source turns up. `test_espc.py` checks
+that every method carries a label.
+
+- `process`: `self/2` is INTERPOLATED. `:self(#process,P)` gives one
+  instance, made on first use and kept in a class slot. It was
+  interpolated from the call sites in the printed `stream:get/2` and
+  `process:create_core/3` and from 46 pimfep senders. The printed
+  part of `process` (TM-100 Fig. 3.1) is not included yet. Its
+  natures are unprinted, and five of its slots are initialised by
+  code, which kl0's `new/2` refuses. This is recorded as a gap in
+  the file header.
+- `stream`: every method and slot is PRINTED, from TM-100 Fig. 3.6.
+  Three printing errors are corrected and marked, since without the
+  corrections it is not ESP.
+
+With them loaded, `pimfep##pimos_timer:on_after/4` gets past
+`simpos##process:self/2` and refuses at `simpos##process:tag_catch/9`.
+`pimos_timer:stream/2` refuses in kl0's `new/2`, at the printed
+`post_queue` slot, which is initialised by code.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -408,7 +514,13 @@ string (`paragraph_version` answers `string#"3500"`).
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
-  SIMPOS or firmware. They are not held and not modelled.
+  SIMPOS or firmware. They are not held and not modelled. kl0's
+  `new/2` stand-in refuses slots initialised by code. That stops
+  the printed `stream` and 179 pimfep and pimscsi methods.
+- **The compiler's unwitnessed constructs.** These have no witnessed
+  compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
+  more elements built in a body, `with_macro`, `->` and `not`.
+  Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
   not modelled. No held nature needs it.
 - **The descriptor's word layout and the atom numbering** are not held.

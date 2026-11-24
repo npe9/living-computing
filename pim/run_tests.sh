@@ -37,6 +37,9 @@ echo "=== PSI side: the KL0 interpreter on compiled .ptf code (opcodes from know
 python3 -I psi/test_kl0.py
 python3 -I psi/fepread/check.py
 
+echo "=== PSI side: the ESP compiler (ours) against paragraph.ptf, and the SIMPOS stand-ins ==="
+python3 -I psi/test_espc.py
+
 echo "=== PDSS port: a KL1 program compiled and run on the 1992 KL1-B emulator ==="
 ref/pdss/test.sh
 
