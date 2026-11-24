@@ -138,8 +138,9 @@ class Pred:
 class Slot:
     """A slot declaration as the template holds it."""
 
-    def __init__(self, name, flag, init):
+    def __init__(self, name, flag, init, term=None):
         self.name, self.flag, self.init = name, flag, init   # init: (kind, value)
+        self.term = term     # the initial value's pool term, (tag, value): 'atom' and 'str' apart
 
     @property
     def attribute(self):
@@ -399,7 +400,7 @@ def template_from_record(pkg, rec):
                 init = ('is', _value(iv))
             else:
                 init = ('const', _value(iv))
-            out.append(Slot(nm[1], flag, init))
+            out.append(Slot(nm[1], flag, init, iv))
     if f9 != ('int', 0):
         t.failures.append('trailer field 9 is not 0 (%s)' % f9[0])
     if t.extra is not None:

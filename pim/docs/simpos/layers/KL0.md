@@ -138,6 +138,18 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   
   These are the most promising held sources for an opcode-name table, but they serve the
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
+- MEASURED 2026-11-24, from known plaintext:
+  - 91 opcodes (69 class-0, 18 class-1, 3 atom-cell forms, the `cd00` hash table) are named in
+    `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
+    ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows.
+  - The table confirms the ten INFERENCE readings above.
+  - Facts the table settled:
+    - A predicate's cut barrier arrives in register A_arity. `dd A n` / `de A n` cut to it, with
+      n the environment size.
+    - `d5` is cut-and-fail (`remove(T,T,_,_,_):-!,fail;`).
+    - `blt 66 A B` tests A_A < A_B; `blt 67 A B` tests A_A >= A_B.
+    - `blt 48`/`49` multiply and divide by an 8-bit immediate.
+  - The names are OURS. Their mnemonics follow §3's groups where a group fits.
 
 ## 4. Built-in predicates
 
@@ -199,6 +211,6 @@ from instances in memory.
 | WAM semantics, stack frames, choice points, cut, indexing | Enough: TH App C, TM-444 |
 | Tag set | Names MEASURED; pairing INFERENCE with 6 anchors (§2) |
 | Instruction field format | KNOWN |
-| Opcode ↔ mnemonic | ~10 INFERENCE. Remaining route: more known-plaintext pairs from paragraph `.esp`/`.ptf` (121 classes; KL0.md is not the place for that grind) |
+| Opcode ↔ mnemonic | 91 MEASURED from known plaintext (`../../../psi/kl0_opcodes.tsv`, 2026-11-24), of 101 class-0 and 111 class-1 opcodes used. The rest are refused by `psi/kl0.py`; its census ranks them by use |
 | Built-in opcode ↔ name and modes | Largely UNKNOWN |
 | Object-descriptor layout and loader behaviour | UNKNOWN beyond TH App A |
