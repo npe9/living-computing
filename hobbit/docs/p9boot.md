@@ -924,7 +924,14 @@ reference model was found):
 | A5 script | 840,583,000 instructions, 42.2 s model, 1108 frames | 603,242,715, 30.3 s, 1221 frames | the clock again, for every sleep and alarm |
 | IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state | stil.c `ilackproc` sleeps `Iltickms` (100 ms) and resends as Dataquery once `fasttime` (400 ms at the minimum rtt) passes; at 25 Hz that is real time, and the lockstep's server lags the model by up to ~0.6 s ("One time base"), while s9term's 0.569 s ticks make the same timer ~2.3 s.  All resends were answered; nothing was lost |
 
-`tests/test_own9term.py` (in the suite) runs our
+The run replays without QEMU: `p9boot.py build/p9kbuild/9term
+--ether-replay DIR/hobbit.pcap` with the twelve `--type` answers and
+`--until 'end of script\n% '` stopped at the same 603,242,715
+instructions, every one of the 1221 model frames as recorded, the
+screen byte-identical to the live run's (597 s of CPU, 2026-11-24).
+The pcap is a build product and is not committed: it carries the
+release's binaries as the server sent them.  `tests/test_own9term.py`
+(in the suite) runs our
 9term to its first line and to Return at `/boot`'s prompt typed as scan
 codes; the image is a build product, not committed, so the test looks
 for it at `$HOBBIT_9TERM` or `build/p9kbuild/9term`, uses it only if its

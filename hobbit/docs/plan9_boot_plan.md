@@ -845,7 +845,8 @@ size, IL resend timing) follows from the source drift docs/s9term.md
 records; the table and the commands are in docs/p9boot.md, "Our 9term".
 No bug in the build or in the reference model was found; the harness
 gained typing on `kbd.c`'s keyboard (`tools/p9scancode.py`, p9boot
-CHOICES `console-keyboard`).  In the suite:
+CHOICES `console-keyboard`).  The live run's pcap replays without QEMU
+to the same instruction and the same screen.  In the suite:
 `tests/test_own9term.py` (first line; Return at `/boot`'s prompt as scan
 codes; the encoder against kbd.c), which skips its image tests, printing
 the build command, where `build/p9kbuild/9term` is absent.
