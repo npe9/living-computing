@@ -19,7 +19,13 @@ module hdmi_lcd_top (
     // CLKFB_DIV 13 with the feedback from CLKOP, so CLKOP = 25 * 13 = 325 MHz
     // (the shift clock), VCO = 325 * CLKOP_DIV 2 = 650 MHz (in the
     // 400..800 MHz range), and CLKOS = 650 / 10 = 65 MHz (the pixel clock).
-    // CPHASE = DIV - 1 is a 0-degree phase on both outputs.
+    // CPHASE is counted in VCO periods (1.54 ns): CLKOP's 1 and CLKOS's 9
+    // are DIV - 1 each, ecppll's 0-degree setting, and differ by 8 VCO
+    // periods = 4 shift-clock periods, so every pixel-clock edge is on a
+    // shift-clock edge.  (The source design's 2 and 12, for dividers 5 and
+    // 25, differ by 10 = 2 of its shift-clock periods.)  dvi_ser finds the
+    // pixel phase from ptog itself; the alignment only sets the margin of
+    // the pclk -> sclk path, which nextpnr times (hdmi_lcd.md).
     wire sclk, pclk, locked;
     (* FREQUENCY_PIN_CLKI="25" *)
     (* FREQUENCY_PIN_CLKOP="325" *)

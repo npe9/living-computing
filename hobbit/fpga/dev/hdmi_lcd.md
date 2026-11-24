@@ -81,8 +81,9 @@ cell, the whole panel is visible, and nothing is scaled.
 
 **Rejected: 768x1024 letterboxed in 1280x1024@60.**  That mode's pixel
 clock is 108 MHz, so TMDS is 1080 Mb/s a lane and the 10:1 serializer's
-DDR shift clock 540 MHz: above the ECP5 PLL's 400 MHz output limit and
-far above what `ODDRX1F` from fabric registers closes (this design's shift
+DDR shift clock 540 MHz: above the ECP5 PLL's output range (`ecppll -i 25
+-o 540` prints `Warning: Output frequency 540MHz not in range (10MHz,
+400MHz)`) and far above what `ODDRX1F` from fabric registers closes (this design's shift
 clock reaches 293-370 MHz depending on the seed, below).  A gearbox
 (`ODDRX2F` with `ECLKSYNCB`/`CLKDIVF`) would still need a 540 MHz edge
 clock from the same PLL.  Reduced blanking (CVT-RB, 91 MHz, 910 Mb/s)
@@ -129,7 +130,7 @@ nextpnr, seed 2 (`--85k --package CABGA381 --speed 6`, the LPF's
 | board clock, 25 MHz | 86.28 MHz, PASS |
 | **pixel clock, 65 MHz** | **82.80 MHz, PASS** (critical path: block RAM out, read mux, `DOB_R2`) |
 | **shift clock, 325 MHz** | **369.96 MHz, PASS** (critical path: `dvi_ser`'s phase detector `t2 -> ph`) |
-| pixel -> shift clock crossing | 2.04 ns (a 3.08 ns shift-clock period) |
+| pixel -> shift clock crossing | 2.04 ns max delay (a 3.08 ns shift-clock period); nextpnr reports this path but its PASS lines do not judge it.  The words are stable for 5 shift clocks around `dvi_ser`'s load, and the PLL puts every pixel edge on a shift edge (CPHASE 1 and 9 differ by 4 shift periods) |
 | bitstream | `hdmi_lcd_top.bit`, 538,110 bytes |
 
 The shift clock is the tight one and depends on placement.  Seeds 1-8, the
