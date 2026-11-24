@@ -17,10 +17,10 @@ Status, 2026-11-24:
 
 | piece | state | evidence |
 |---|---|---|
-| link protocol (C, `main/relay.c`) | written, tested on the host | `tests/test_ethrelay.py`, 6 tests, 3 injections (observed failure sets in its header) |
+| link protocol (C, `main/relay.c`) | written, tested on the host | `tests/test_ethrelay.py`, 8 tests, 5 injections (3 into relay.c, 2 into hub.py) (observed failure sets in its header) |
 | host relay (`host/relay_host.c`) | written, tested | the same test: against a real `Hub`, and a replay of s9term's whole recorded session |
-| `hub.py` ports off localhost | added (`HUB:HOST:PEER`, `HUB:learn`) | `test_learning_port`.  The `(h, p)` form is unchanged |
-| ESP-IDF firmware glue (`main/main.c`) | written, **not compiled for the target** | No ESP-IDF is installed here.  The API calls were checked against the ESP-IDF v5.3 documentation, the sdkconfig names against v5.3.2's Kconfig files |
+| `hub.py` ports off localhost | added (`HUB:HOST:PEER`, `HUB:learn`) | `test_learning_port`, `test_hub_port_spellings`, `test_hub_command_line`.  The `(h, p)` form is unchanged |
+| ESP-IDF firmware glue (`main/main.c`: UART on core 1, RTS on) | written, **not compiled for the target** | No ESP-IDF is installed here.  The API calls were checked against the ESP-IDF v5.3 documentation, the sdkconfig names against v5.3.2's Kconfig files |
 | FPGA link (`esplink`) and SONIC subset (`sonic`) | specified below; no RTL yet | — |
 | ESP32 programming | procedure written, **not run** (the board is in use by another session) | — |
 
@@ -65,7 +65,7 @@ fetched 2026-11-24; its own comments quoted in the last column):
 | K4 | `wifi_txd` | U0TXD (GPIO1) | — | UART0: ESP-IDF log |
 | **L1** | `wifi_gpio16` | GPIO16 | no | **link: FPGA → ESP32** ("Serial1 RX") |
 | **N3** | `wifi_gpio17` | GPIO17 | no | **link: ESP32 → FPGA** ("Serial1 TX") |
-| H1 | `wifi_gpio4` = `sd_d[1]` | GPIO4 | no | optional RTS (ESP32 → FPGA) |
+| H1 | `wifi_gpio4` = `sd_d[1]` | GPIO4 | no | **RTS, ESP32 → FPGA**: on by default; `CONFIG_RELAY_UART_RTS_GPIO` = -1 turns it off |
 | N4 | `wifi_gpio5` | GPIO5 (LED) | yes (SDIO timing) | unused.  lpf: "pull down or drive 0 for esp32 programming" |
 | J3 | `wifi_gpio2` = `sd_d[0]` | GPIO2 | **yes** | unused.  Do not drive it |
 | K1 | `wifi_gpio12` = `sd_d[2]` | GPIO12 (MTDI) | **yes**: high = 1.8 V flash | unused.  No pull-up (the lpf sets PULLMODE=NONE) |
@@ -82,8 +82,8 @@ high GPIO12 is harmless on that board.  Do not rely on that for other
 boards.
 
 **What the relay bitstream drives:** `wifi_en` = 1 (after the FPGA's own
-reset), `wifi_gpio0` = 1, L1 = UART TX (idle high).  N3 is an input
-(UART RX) with PULLMODE=UP.  Every SD/strap pin is an input with no
+reset), `wifi_gpio0` = 1, L1 = UART TX (idle high).  N3 (UART RX) and
+H1 (RTS) are inputs with PULLMODE=UP, so an undriven RTS reads "stop".  Every SD/strap pin is an input with no
 pull, except `sd_d[0]` and `sd_d[3]`, which keep their default pull-ups.
 GPIO0 is high, so GPIO2's level does not matter.
 
@@ -122,9 +122,18 @@ workload needs it.
   an unknown type is dropped and counted.  Line noise with no 0x00 of
   its own merges into the packet after it, so that one packet is lost
   as well (`test_bad_packets_dropped` pins this behaviour).
-* Flow control: the FPGA side must always accept a whole packet (a
-  2 KB buffer).  Towards the ESP32 the UART driver's RX ring buffers the
-  data.  RTS on GPIO4/H1 is optional (`CONFIG_RELAY_UART_RTS_GPIO`).
+* Flow control, ESP32 → FPGA: none.  The FPGA must always accept a
+  whole packet (one 2 KB buffer behind `esplink`).
+* Flow control, FPGA → ESP32: the ESP32's RX FIFO is 128 bytes
+  (`SOC_UART_FIFO_LEN`), which is 0.5 ms of line at 2.5 Mbaud.  The
+  UART interrupt must never be held off longer than that.  The firmware:
+  * installs the UART driver from a task pinned to core 1, away from the
+    WiFi stack on core 0;
+  * puts the UART ISR in IRAM (`CONFIG_UART_ISR_IN_IRAM=y`; the default
+    is n in esp-idf v5.3.2 `components/esp_driver_uart/Kconfig`);
+  * enables hardware RTS on GPIO4 (FPGA H1) at 100 bytes in the FIFO.
+
+  `esplink` must honour RTS: it starts no new byte while RTS is high.
 
 ## 4. Throughput, and whether IL boots at this rate
 
@@ -168,12 +177,26 @@ messages.
   hand.  A lost ARP reply is re-asked every second for ever (`boot/ip.c`
   `arp`).
 
+**What the measurement does not cover.** The host relay reads the
+FPGA → ESP32 direction from a pipe, and a pipe never overruns.  The
+ESP32's 128-byte RX FIFO can (section 3).  That direction carries only
+10% of the session's bytes (39,653 of 377,045), but one overrun loses a
+whole frame and costs IL 400 ms.  It stays unmeasured until the board
+runs.  RTS is on by default so that an overrun cannot happen silently.
+
 **Conclusion:** at 2.5 Mbaud the IL boot is limited by the core, not by
-the link.  A worst-case IL window of 20 full 8 KB messages, 160 KB, would
-drain in 0.65 s and could trigger one retransmission at 400 ms.  It is
-not seen in the recording, because 9P under `/boot` has one request
-outstanding.  Raise the rate to 5 Mbaud (Kconfig `RELAY_UART_BAUD`, and
-the FPGA divider 5) if that becomes a problem.
+the link.  The measured session uses the link for 5% of its time.  Its
+largest burst drains in 31 ms, and IL's first retransmission comes at
+400 ms.
+
+The real limit on a burst is the ESP32's buffering, not the line rate.
+The UART TX ring (16 KB) and the UDP mailbox (32 datagrams) together
+hold about 25-40 KB.  A full IL window of 20 x 8 KB messages is 160 KB,
+so part of it would be *dropped* and recovered by IL's retransmission,
+not merely delayed.  The recording never shows such a window, because
+9P under `/boot` has one request outstanding.  If it ever matters,
+raise the rate to 5 Mbaud (Kconfig `RELAY_UART_BAUD`, and the FPGA
+divider 5) or enlarge the rings.
 
 **WiFi MTU.** The hub's datagram is the whole frame, so a 1514-byte
 frame is a 1542-byte IP datagram.  That exceeds WiFi's 1500-byte MTU,
@@ -246,8 +269,10 @@ endinterface
 
 The SONIC's registers are 16-bit values at word offsets (io.h `Sonic`:
 register *i* at byte offset 4*i*, 0x00 `cr` to 0xFC `dcr2`).  Reads
-return the value zero-extended.  Writes take `wdata[15:0]` when `be[1:0]`
-is not 0.  `irq = (isr & imr) != 0`, wired to IRQ 9 (`IRQSONIC`).
+return the value zero-extended.  Writes take `wdata[15:0]` and ignore
+the byte enables, as `Sonic.write` does.  The kernel writes whole words,
+so the plan's replay of the RTL against the model compares like with
+like.  `irq = (isr & imr) != 0`, wired to IRQ 9 (`IRQSONIC`).
 
 ### 6.2 The subset, from `tools/p9boot.py` `Sonic` / `SONIC_CHOICES`
 
@@ -342,8 +367,15 @@ arrive, and advances crba and the descriptor only on a good `last`.
 
 ### 6.5 `esplink`
 
-`mkEspLink#(Integer clksPerBit)` provides a `FramePort` and the two pins
-(`txd` to L1, `rxd` from N3).  It is an 8N1 UART (16x oversampled RX, or
+`mkEspLink#(Integer clksPerBit)` provides a `FramePort` and three pins:
+
+* `txd` to L1;
+* `rxd` from N3;
+* `rts` from H1: no new byte starts while it is high.
+
+The system clock must be an integer multiple of the baud rate.  25 MHz
+(10 clocks a bit at 2.5 Mbaud, 5 at 5 Mbaud) and 50 MHz (20 and 10) both
+are.  The SoC agent picks the clock in plan step 1.  It is an 8N1 UART (16x oversampled RX, or
 a mid-bit sample at 10 clocks a bit), plus:
 
 * TX: CRC-32 over 0x45 and the frame, then a streaming COBS encoder,

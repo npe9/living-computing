@@ -41,10 +41,11 @@
 
 #define UART_PORT UART_NUM_2
 #define GOT_IP    BIT0
+#define UART_UP   BIT1
 
 static const char *TAG = "ethrelay";
 static EventGroupHandle_t wifi_events;
-static int sock = -1;
+static volatile int sock = -1;
 static struct sockaddr_in hub_addr;
 
 static void wifi_event(void *arg, esp_event_base_t base, int32_t id,
@@ -65,7 +66,6 @@ static void wifi_event(void *arg, esp_event_base_t base, int32_t id,
 
 static void wifi_start(void)
 {
-    wifi_events = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_create_default_wifi_sta();
@@ -128,6 +128,12 @@ static void link_rx_task(void *arg)
     uint8_t buf[256];
     unsigned long sent = 0, err = 0;
 
+    /* Installed here, on core 1, so the UART ISR is not on core 0 with
+     * the WiFi stack: at 2.5 Mbaud the 128-byte RX FIFO fills in 0.5 ms. */
+    uart_start();
+    xEventGroupSetBits(wifi_events, UART_UP);
+    while (sock < 0)
+        vTaskDelay(pdMS_TO_TICKS(10));
     relay_dec_init(&dec);
     for (;;) {
         int k = uart_read_bytes(UART_PORT, buf, sizeof buf,
@@ -175,18 +181,20 @@ void app_main(void)
         e = nvs_flash_init();
     }
     ESP_ERROR_CHECK(e);
-    uart_start();
+    wifi_events = xEventGroupCreate();
+    xTaskCreatePinnedToCore(link_rx_task, "link_rx", 4096, NULL, 10, NULL, 1);
+    xEventGroupWaitBits(wifi_events, UART_UP, pdFALSE, pdTRUE, portMAX_DELAY);
     send_status("ethrelay: wifi connecting");
     wifi_start();
 
-    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     struct sockaddr_in me = {
         .sin_family = AF_INET,
         .sin_port = htons(CONFIG_RELAY_LOCAL_PORT),
         .sin_addr.s_addr = htonl(INADDR_ANY),
     };
-    ESP_ERROR_CHECK(sock < 0 ? ESP_FAIL : ESP_OK);
-    ESP_ERROR_CHECK(bind(sock, (struct sockaddr *)&me, sizeof me) < 0
+    ESP_ERROR_CHECK(s < 0 ? ESP_FAIL : ESP_OK);
+    ESP_ERROR_CHECK(bind(s, (struct sockaddr *)&me, sizeof me) < 0
                         ? ESP_FAIL : ESP_OK);
     memset(&hub_addr, 0, sizeof hub_addr);
     hub_addr.sin_family = AF_INET;
@@ -195,8 +203,7 @@ void app_main(void)
     ESP_LOGI(TAG, "relaying UART%d @ %d baud <-> %s:%d (local %d)",
              UART_PORT, CONFIG_RELAY_UART_BAUD, CONFIG_RELAY_HUB_HOST,
              CONFIG_RELAY_HUB_PORT, CONFIG_RELAY_LOCAL_PORT);
+    sock = s;                       /* releases link_rx_task */
     send_status("ethrelay: up");
-
-    xTaskCreatePinnedToCore(link_rx_task, "link_rx", 4096, NULL, 10, NULL, 1);
     xTaskCreatePinnedToCore(net_rx_task, "net_rx", 4096, NULL, 10, NULL, 1);
 }

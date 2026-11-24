@@ -81,18 +81,23 @@ class Hub(threading.Thread):
             s.close()
 
 
+def parse_port(a):
+    """One command-line port: HUB:PEER, HUB:HOST:PEER or HUB:learn."""
+    f = a.split(':')
+    if len(f) == 2 and f[1] == 'learn':
+        return (int(f[0]), None, None, '0.0.0.0')
+    if len(f) == 2:
+        return (int(f[0]), int(f[1]))
+    if len(f) == 3:
+        return (int(f[0]), int(f[2]), f[1], '0.0.0.0')
+    raise ValueError('bad port %r' % a)
+
+
 def main():
-    ports = []
-    for a in sys.argv[1:]:
-        f = a.split(':')
-        if len(f) == 2 and f[1] == 'learn':
-            ports.append((int(f[0]), None, None, '0.0.0.0'))
-        elif len(f) == 2:
-            ports.append((int(f[0]), int(f[1])))
-        elif len(f) == 3:
-            ports.append((int(f[0]), int(f[2]), f[1], '0.0.0.0'))
-        else:
-            sys.exit('bad port %r' % a)
+    try:
+        ports = [parse_port(a) for a in sys.argv[1:]]
+    except ValueError as e:
+        sys.exit(str(e))
     if len(ports) < 2:
         sys.exit('usage: hub.py HUB:PEER|HUB:HOST:PEER|HUB:learn ...')
     hub = Hub(ports)

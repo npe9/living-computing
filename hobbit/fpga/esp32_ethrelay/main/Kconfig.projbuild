@@ -43,8 +43,14 @@ menu "Ethernet relay"
 
     config RELAY_UART_RTS_GPIO
         int "UART RTS GPIO (to FPGA H1, wifi_gpio4), -1 for none"
-        default -1
+        default 4
         range -1 39
+        help
+            Hardware flow control towards the ESP32: RTS rises when the
+            128-byte RX FIFO holds rx_flow_ctrl_thresh bytes, and the
+            FPGA's esplink must not start another byte while it is high.
+            GPIO4 is not a strap pin; it is the SD card's DAT1 (sd_d[1]),
+            unused when the card runs in SPI mode or is absent.
 
     config RELAY_UART_RX_BUF
         int "UART driver RX ring, bytes"

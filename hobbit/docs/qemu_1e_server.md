@@ -436,8 +436,10 @@ Ethernet address in the `hobbit` entry still to fix.
 
 Three machines, joined by `tools/qemu1e/hub.py` (a dgram netdev joins
 only two ends; the hub repeats each frame on every other port, as a
-coax segment would).  Names, addresses and passwords are in
-`tools/qemu1e/net1e.py` and `ndb.local`:
+coax segment would).  Ports off this host (`HUB:HOST:PEER`, and
+`HUB:learn` for a peer whose address is not known in advance, such as
+the ULX3S's ESP32 relay) are in `docs/ulx3s_ethernet.md` §5.  Names,
+addresses and passwords are in `tools/qemu1e/net1e.py` and `ndb.local`:
 
 | machine | ip, ether | kernel, root | roles |
 |---|---|---|---|

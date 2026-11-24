@@ -34,7 +34,8 @@ The checks
   good frame after each one still arrives.
 * the hub's learning port (`HUB:learn`, added for the ESP32, whose
   address is DHCP's): the hub sends nothing to it until it has heard
-  from it, then sends to the learned address.
+  from it, then sends to the learned address; and hub.py's command-line
+  spellings (`HUB:learn`, `HUB:HOST:PEER`), parsed and run as a process.
 * a replay of the recorded s9term session (`tests/net/a5_session.pcap`,
   1108 frames, /boot's BOOTP through `echo hello`'s output) through the
   relay paced at 2.5 Mbaud, each direction run sent as one burst (as IL
@@ -58,6 +59,24 @@ reverse replacement, `git diff` clean after each; observed results):
 3. Decoder: the runt check removed (`if (m > RELAY_MAX_FRAME)`).
    Observed: FAIL test_bad_packets_dropped only (the 13-byte runt is
    forwarded).
+
+(1-3 were run when the file had six tests; test_hub_port_spellings and
+test_hub_command_line came later, and do not touch relay.c.)
+
+Into tools/qemu1e/hub.py, same method:
+
+4. The learning update dropped (`self.peers[i] = self.learned[i] = src`
+   replaced by `pass`).  Observed: FAIL test_learning_port, ERROR
+   (timeout) test_hub_command_line; the other five pass.
+5. `HUB:HOST:PEER` parsed without its host and bind address (`return
+   (int(f[0]), int(f[2]))`).  Observed, before test_hub_port_spellings
+   existed: all pass (on loopback the default host is the same, so the
+   command-line test cannot see it); that is why test_hub_port_spellings
+   was added.  With it: FAIL test_hub_port_spellings only.
+
+The checks *not* made here: that HOST is reached off this host and that
+0.0.0.0 is bound (it needs a second interface); the ESP32's RX FIFO
+overrunning (a pipe never does; docs/ulx3s_ethernet.md section 4).
 """
 import json
 import os
@@ -75,7 +94,7 @@ import zlib
 here = os.path.dirname(os.path.abspath(__file__))
 hobbit = os.path.dirname(here)
 sys.path.insert(0, os.path.join(hobbit, 'tools', 'qemu1e'))
-from hub import Hub  # noqa: E402
+from hub import Hub, parse_port  # noqa: E402
 
 RELAY = os.path.join(hobbit, 'fpga', 'esp32_ethrelay')
 PCAP = os.path.join(here, 'net', 'a5_session.pcap')
@@ -280,10 +299,9 @@ class EthRelayTest(unittest.TestCase):
     def test_hub_to_link(self):
         rig = Rig()
         try:
-            for f in frames():
+            for i, f in enumerate(frames()):    # lockstep: UDP may drop
                 rig.server_send(f)
-                time.sleep(0.002)
-            out = rig.wait_out(len(frames()))
+                out = rig.wait_out(i + 1)
         finally:
             st = rig.close()
         self.assertEqual(len(out), len(frames()))
@@ -343,6 +361,42 @@ class EthRelayTest(unittest.TestCase):
         finally:
             rig.close()
         self.assertEqual([o[:2] for o in out], [(T_ETH, second)])
+
+    def test_hub_port_spellings(self):
+        """The parse behind the command line (the HOST and the 0.0.0.0
+        bind cannot be told apart on loopback alone)."""
+        self.assertEqual(parse_port('10902:10901'), (10902, 10901))
+        self.assertEqual(parse_port('10911:learn'),
+                         (10911, None, None, '0.0.0.0'))
+        self.assertEqual(parse_port('10911:192.168.1.7:10912'),
+                         (10911, 10912, '192.168.1.7', '0.0.0.0'))
+        self.assertRaises(ValueError, parse_port, '1:2:3:4')
+
+    def test_hub_command_line(self):
+        """hub.py's own spellings, as docs/ulx3s_ethernet.md runs it:
+        HUB:learn and HUB:HOST:PEER (and both bind 0.0.0.0)."""
+        h_a, h_b, p_b = free_udp_ports(3)
+        hub = subprocess.Popen(
+            [sys.executable, os.path.join(hobbit, 'tools', 'qemu1e',
+                                          'hub.py'),
+             '%d:learn' % h_a, '%d:127.0.0.1:%d' % (h_b, p_b)])
+        c = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        b = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            c.bind(('127.0.0.1', 0))
+            b.bind(('127.0.0.1', p_b))
+            c.settimeout(5)
+            b.settimeout(5)
+            time.sleep(0.5)                 # the hub binds its ports
+            c.sendto(b'up' * 30, ('127.0.0.1', h_a))
+            self.assertEqual(b.recv(2048), b'up' * 30)
+            b.sendto(b'dn' * 30, ('127.0.0.1', h_b))
+            self.assertEqual(c.recv(2048), b'dn' * 30)
+        finally:
+            hub.terminate()
+            hub.wait(5)
+            c.close()
+            b.close()
 
     def test_session_replay(self):
         """s9term's recorded session through the relay at 2.5 Mbaud."""
