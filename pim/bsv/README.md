@@ -185,8 +185,9 @@ identical): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 130
-instructions; goals as
+State: 128
+instructions (as counted before; the count's rule is not stated,
+`../docs/gap_analysis.md`) plus `scsi_init` and `scsi_command`; goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of

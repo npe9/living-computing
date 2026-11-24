@@ -6,7 +6,8 @@
     python3 ref/pimm/ref_scsi.py --real N   the held pimos.ipl, N commands
 
 REFERENCE MODEL ONLY: there is no Bluespec side, no script, no
-lockstep.  pimm.Machine is driven directly (not driver.Script: no
+lockstep (lockstep_scsi.py --reference plays these parts as scripts,
+ready for the core; the built-ins themselves are in lockstep there).  pimm.Machine is driven directly (not driver.Script: no
 bench answer is needed any more, the IPL's requests are answered by
 the device model ref/pimm/fep.py behind the built-ins scsi_init and
 scsi_command).

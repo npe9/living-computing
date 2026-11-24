@@ -68,8 +68,9 @@ waiting on an element of its vector, `lockstep_reuse.py`
 against a small model of the front-end processor (`fep.py`), the
 device on the bench a tape the reference recorded (`driver.py` "The
 device tape"; the bus compared as `B` lines);
-`longrun_ipl.py` is the long run (not in the suite); 130
-instructions on both models.  On the reference model ALONE:
+`longrun_ipl.py` is the long run (not in the suite); 128
+instructions on both models (as counted before) plus `scsi_init` and
+`scsi_command`.  On the reference model ALONE:
 a merger input bound to a vector
 (refused unless `Machine.ahead` is set; the core cannot yet make its
 goals as the reference does, see `pimm.py`'s header); `ref_scsi.py` runs the body of `ipl:boot0` on

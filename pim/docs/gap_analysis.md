@@ -26,7 +26,8 @@ exactly. `ref/pimm/pimm.py` has 131 `def i_` handlers, and none is
 gated whole by `self.alone(` (one case of `merge_in` and one
 built-in case are), so the task's literal recipe gives 131. Less
 `scsi_init` and `scsi_command`, which are on the reference alone (no
-arm in `bsv/Pimm*.bsv`), leaves 129 handlers on both models. Two of
+arm in `bsv/Pimm*.bsv`; *since 2026-11-23, later, on the core too,
+`PimmScsiBox.bsv`*), leaves 129 handlers on both models. Two of
 those, `merge_in` and `unify_step`, are this project's stubs
 (`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves 127
 PIM/m instructions. The README's counting rule is not stated; the

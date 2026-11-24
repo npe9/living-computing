@@ -39,9 +39,11 @@ A0h, A1h, ... beyond what is put in it:
                 three variables are bound and the waiting goal is woken
                 (Result + 5 = 5)
   receive       a SEND of getb (210, 20 bytes) and two RECEIVEs: one of
-                24 bytes (the 44-byte reply is cut by the device, flag
+                22 bytes (the 40-byte reply is cut by the device, flag
                 1: TransferredLength = Length) and one of 61 (the rest,
-                28 bytes)
+                26 bytes): byte counts that are not a multiple of four
+                (the copy's word with received and old bytes, the
+                tape's last word half padding)
   late          a SEND of close (60) and a RECEIVE the device refuses
                 once (this test's device, not fep.py's): it waits, the
                 machine runs dry, POLL gives it again and it finishes
@@ -91,13 +93,15 @@ compared byte for byte; the first difference:
   the rest of the buffer zero          send, line 105: M 32981
   the buffer size 16000, not the       create, line 31: M 32780
   device's
-NOT caught: the buffer's pad bytes taken from memory rather than zero
-(every buffer here was made with zero pad); the CDB and buffer read
+  Id not counted (a command that waits) send, line 125: the SEND's Id
+                                       1 for 2
+NOT caught (observed): the copy's pad bytes taken from the old
+buffer's memory rather than zero: the lockstep PASSes, every buffer
+here having been made with zero pad.
+Not injected (by reading, not caught either): the CDB and buffer read
 again at a poll where the reference keeps their bytes (nothing changes
-them between); the Id of a command that waits (counted in its own
-place in the box: an injection there was not run); the waiting list's
-order with two or more waiting (one at a time is the most run, here
-and in ref_scsi.py's "late").
+them between); the waiting list's order with two or more waiting (one
+at a time is the most run, here and in ref_scsi.py's "late").
 
 Not run: a vector not of seven, a seventh element not 0, a length over
 the buffer, a CDB or buffer not of 8-bit elements, the device giving
@@ -289,9 +293,9 @@ def script():
     s.label('receive')
     exp = send([fepm.GETB, 20], 3)
     reply = packet(0, [fepm.NORMAL, FILE[:20]])
-    first = reply[:4] + struct.pack('>i', 1) + reply[8:24]
-    rest = reply[:8] + reply[24:]
-    for ident, n, piece in ((4, 24, first), (5, BUFFER, rest)):
+    first = reply[:4] + struct.pack('>i', 1) + reply[8:22]
+    rest = reply[:8] + reply[22:]
+    for ident, n, piece in ((4, 22, first), (5, BUFFER, rest)):
         c, buf = receive(n)
         outs(10, 11, 12, 13)
         exp += [got(piece, buf), len(piece), ident, 0]
@@ -528,11 +532,11 @@ def main(argv):
         return 1
     print('pimm lockstep scsi: PASS (scsi_init and scsi_command on the Bluespec core, the '
           'device on a tape: %d parts, %d trace lines identical to the reference model, '
-          '%d commands on the bus compared byte for byte; scsi:create/2 and '
+          '%d device calls (B lines) of %d commands compared byte for byte; scsi:create/2 and '
           'scsi:command_executer/2 at their sites: TEST UNIT READY, SEND, RECEIVE, a reply '
           'cut in two, two commands that waited (one finished inside a SEND, one at a '
           "poll), an element waited for.  ref_scsi.py's IPL parts NOT on the core: the "
-          'merger input bound to a vector)' % (s.counts['parts'], s.counts['lines'], len(bus) - 1))
+          'merger input bound to a vector)' % (s.counts['parts'], s.counts['lines'], len(bus) - 1, m.scsi_commands))
     return 0
 
 
