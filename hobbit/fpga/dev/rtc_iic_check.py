@@ -808,9 +808,10 @@ def compare(seq, cov, verbose):
 # ---- the MCP7940N link (rtc.md "The MCP7940N") ------------------------------
 
 SEED = {"disabled": 1, "chip": 2, "noack": 3, "oscstopped": 4,
-        "invalid": 5, "notick": 6, "stuck": 7}
+        "invalid": 5, "notick": 6, "stuck": 7, "superseded": 8}
 RTC_MCP_WRITE = 5
 PHASE_BOUND = 2000          # cycles from the chip's second to the seed load
+SEED_AT = 61170             # seed load cycle, mkRtc_m1, --mcp-phase=40000
 WB_BOUND = 3000             # bus cycles from a load to the chip's restart,
                             # on top of the chip's OSCRUN delay
 
@@ -849,6 +850,8 @@ class McpSeq(Seq):
         self.variant, self.args = variant, list(args)
         self.seed, self.writes, self.fault = seed, writes, fault
         self.run_to = run_to
+        self.wb_wait = 0            # extra restart lag allowed (the seed)
+        self.exact, self.seed_at = False, 0
         self.gapc = 4
 
 
@@ -914,7 +917,8 @@ def mcp_sequences():
         ("SCL held low", ["--mcp-stuck"], "stuck"),
     ]
     for name, args, why in fallbacks:
-        s = McpSeq("fallback to startBcd: " + name, "mkRtc_m3", args, why)
+        s = McpSeq("fallback to startBcd: " + name, "mkRtc_m3", args, why,
+                   run_to=(32 * T if why == "stuck" else 0))   # 3 stretch timeouts
         reads(s, 0)
         reads(s, 2 * T + 1)
         seqs.append(s)
@@ -940,7 +944,7 @@ def mcp_sequences():
     s = McpSeq("write-back waits for a slow OSCRUN (50000 cycles)",
                "mkRtc_m3", ["--mcp-oscstop=50000"], "chip", writes=1,
                run_to=5 * T)
-    s.at(T)
+    s.at(2 * T)                       # after the seed (see "supersedes")
     setrtc(s, 1999, 12, 31, 23, 59, 59)
     reads(s, 3 * T)
     seqs.append(s)
@@ -948,7 +952,7 @@ def mcp_sequences():
     s = McpSeq("write-back fails: OSCRUN never clears", "mkRtc_m3",
                ["--mcp-oscstop=100000000"], "chip", writes=0,
                fault=RTC_MCP_WRITE, run_to=5 * T)
-    s.at(T)
+    s.at(2 * T)
     setrtc(s, 1999, 12, 31, 23, 59, 59)
     seqs.append(s)
 
@@ -962,10 +966,46 @@ def mcp_sequences():
     s = McpSeq("mode 1 (seed only): setrtc leaves the chip alone",
                "mkRtc_m1", ["--mcp-phase=500"], "chip", writes=0,
                run_to=5 * T)
-    s.at(T)
+    s.at(2 * T)
     setrtc(s, 1993, 1, 3, 12, 0, 48)
+    reads(s, 3 * T)
+    seqs.append(s)
+
+    # Requests are served while the seed runs (startBcd's time), and a
+    # setrtc before the seed lands wins: the seed is dropped (mcpSeed 8)
+    # and the kernel's time is written back once the seed's reads end.
+    s = McpSeq("setrtc during the seed supersedes it", "mkRtc_m3",
+               ["--mcp-phase=40000"], "superseded", writes=1,
+               run_to=6 * T)
+    reads(s, 0)
+    s.at(T // 10)
+    setrtc(s, 2003, 7, 14, 9, 30, 0)
+    reads(s, T // 2)                  # still seeding: the kernel's time
+    reads(s, 3 * T)
+    s.wb_wait = 2 * T                 # the write-back waits for the seed
+    seqs.append(s)
+
+    s = McpSeq("NVRAM and clock served during the seed", "mkRtc_m1",
+               ["--mcp-phase=40000"], "chip", run_to=3 * T)
+    for k in range(4):
+        s.w(4 * (1924 + k), 0xA0 + k)
+    for k in range(4):
+        s.r(4 * (1924 + k))
+    rtctime(s)
     reads(s, 2 * T)
     seqs.append(s)
+
+    # One sec read per sequence on the cycles around the seed's load (the
+    # load is at cycle 61170 with this chip; checked), taken exactly then:
+    # before it, startBcd's 12:00:00; from it, the chip's 12:00:01.
+    for c in range(SEED_AT - 2, SEED_AT + 3):
+        s = McpSeq("sec at cycle %d, around the seed's load" % c,
+                   "mkRtc_m1", ["--mcp-phase=40000"], "chip",
+                   run_to=2 * T)
+        s.at(c)
+        s.r(SEC)
+        s.exact, s.seed_at = True, SEED_AT
+        seqs.append(s)
     return seqs
 
 
@@ -985,6 +1025,12 @@ def compare_mcp(seq, cov, verbose):
     m = RtcModel()
     m.m = p9boot.Timekeeper(lambda: Fraction(m.now, T), p9boot.RTC_BASE)
     seedcyc = int(mcp["seedcyc"])
+    if seq.seed_at and seedcyc != seq.seed_at:
+        errs.append("seed loaded at cycle %d, the probes assume %d"
+                    % (seedcyc, seq.seed_at))
+    if seq.exact and [r[0] for r in rows] != [a[0] for a in seq.acc]:
+        errs.append("probe taken at cycle %s, not %s"
+                    % ([r[0] for r in rows], [a[0] for a in seq.acc]))
     snap = [int(mcp["snap"][2 * k:2 * k + 2], 16) for k in range(7)]
     base = None
     if seed == SEED["chip"]:
@@ -994,7 +1040,6 @@ def compare_mcp(seq, cov, verbose):
             errs.append("seeded from %s, not a calendar time: %s"
                         % (mcp["snap"], e))
     if base is not None:
-        m.m.offset = base - Fraction(seedcyc, T)
         lag = seedcyc - int(mcp["lasttick"])
         if not 0 < lag <= PHASE_BOUND:
             errs.append("seed loaded %d cycles after the chip's second "
@@ -1004,9 +1049,20 @@ def compare_mcp(seq, cov, verbose):
                                               lag)
     else:
         cov["mcp fallbacks to startBcd"] += 1
+    # Requests are served from reset: until the seed lands the clock runs
+    # from startBcd (RTC_BASE), then from the chip's time, unless a setrtc
+    # came first (then the seed is dropped: mcpSeed 8).
     loads = []
+    switched = base is None
     for i, ((_, op, addr, data, be), (a, rdata, fault, _l, _n)) in \
             enumerate(zip(seq.acc, rows)):
+        if not switched and a > seedcyc:
+            switched = True
+            if not m.m.sets:
+                m.m.offset = base - Fraction(seedcyc, T)
+                cov["mcp reads switched to the chip's time"] += 1
+        if a <= seedcyc or not seedcyc:
+            cov["mcp accesses taken while seeding"] += 1
         want_v, exc = m.access(a, op, addr, data, be)
         what = "#%d %s rtc+%x" % (i, op, addr)
         if exc is not None:
@@ -1052,7 +1108,7 @@ def compare_mcp(seq, cov, verbose):
         for a in seq.args:
             if a.startswith("--mcp-oscstop="):
                 osc = int(a.split("=")[1])
-        if not 0 < lag <= seq.writes * (osc + WB_BOUND):
+        if not 0 < lag <= seq.writes * (osc + WB_BOUND) + seq.wb_wait:
             errs.append("chip restarted %d cycles after the load" % lag)
         cov["mcp write-backs checked"] += 1
     elif seq.run_to and seq.fault == 0:
