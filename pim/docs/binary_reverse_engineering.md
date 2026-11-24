@@ -634,7 +634,9 @@ to was assigned by reading the listing, not by a tool):
 
 **What a full microcode disassembler still needs:** bit positions and
 value sets for ALF, the condition field, SD2, bits 63, 18, 17-16; the
-register maps and their bank selection; the memory-command numbering.
+register maps and their bank selection; the memory-command numbering. *(2026-11-23: the bit positions are now
+Nakashima's Fig. 3-25, and ALF's values are read (above); the value
+sets of CNDF, SD2F, MCF and TGIF 3 are still needed.)*
 Two routes: (1) decompile `rassy` (15,713 cells; needs component 4's
 KL0 disassembler), which is the authority; (2) go on fitting in
 `mekbn.py`, now seeded with the tables above. No held report gives

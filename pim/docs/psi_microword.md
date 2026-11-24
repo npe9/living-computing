@@ -378,7 +378,7 @@ positions.
 | 56-42 | DST, SC1, SC2 | DSTF, SC1F, SC2F | [READ] both |
 | 41-37 | SD1, SD2 | SD1F, SD2F | [READ] both; values [RASSY] and [MEASURED] |
 | 36-34 | AS1 | ADF | [READ] thesis (TR-733 prints AS1F here); [MEASURED] the ALU destination |
-| 33-31 | AS2 (33-32) + AD's top bit | AS1F | [READ] thesis; [MEASURED] values 1, 4, 5, 6, 7 = XR, MDR1, MDR2, MAR1, MAR2 (4.2 test 3; the enable test below); 2, 3 open |
+| 33-31 | AS2 (33-32) + AD's top bit | AS1F | [READ] thesis; [MEASURED] values 1, 4, 5, 6, 7 = XR, MDR1, MDR2, MAR1, MAR2 (4.2 test 3; the enable test below; for 6 / 7, the word after one that loads MAR1 / MAR2 through SD1F names AS1F 6 156 times and 7 5 times / 7 37 and 6 3 (image 2; syspsi 158 / 16, 88 / 19), scratch count, not pinned); 2, 3 open |
 | 30-29 | AD's two low bits | AS2F | [READ] thesis (printed "AS1F" [sic]); values 0 / 1 YR / 2 MDR1 / 3 MDR2 [RASSY] only (1 = YR also DERIVED, third pass) |
 | 28-27 | AL (28-26, 3 bits) | ALF (2 bits) | [READ] thesis; [MEASURED] 4.2 test 5, and below |
 | 26-23 | JMP (25-23, 3 bits) | JMPF (4 bits) | [READ] thesis; [MEASURED] 4.2 test 1, and below |
@@ -424,9 +424,9 @@ after = the same script and `mekbn.py --check`, which now pins every
 | Page-relative landing, image 2 | 3-bit 2: 525 of 532; 3: 246/246; 6: 1,497/1,497; 7: 231/231 | 4-bit a 516/516, b 47/47, 3 199/199, 6 1,091/1,091, 7 199/199, e 406/406, f 32/32; **all 7 misses were 4-bit 2 (9 of 16, baseline 69%)**; syspsi 4-bit 2: 20 of 26 (baseline 74.5%) |
 | 4-bit JMPF 2 words with ALF 2/3 (EM2 an operation) | (not expressible) | 10 of 26 (syspsi), 6 of 16 (image 2) |
 | ALU field values | AL 0..7: EM2 takes 64/64/64/62 values with AL 0..3 and 12/12/16/10 with AL 4..7 (syspsi); the operation was printed `opN` | ALF 0 (18,681 words) / 1 (2,670): EM2 free (64 values); ALF 2 (694): 13 values; ALF 3 (2,369): 16 values. Image 2: 15,094 / 1,446 / 438 (14 values) / 1,365 (17) |
-| ALU operation distribution (syspsi) | (none) | + 18,765, - 2,744, shift_left 850, shift_right_32m 573, and 403, or 190, sub_with_one 154, pass_as2 149, add_with_one 116, EM2 1 110, reverse_sub 90, xor 67, add_with_carry 55, EM2 0x10 54, shift_left_rotate 44, sub_with_carry 43, 7 others |
-| ALU operation distribution (image 2) | (none) | + 15,127, - 1,509, shift_left 366, shift_right_32m 233, and 216, or 163, sub_with_one 109, add_with_carry 94, EM2 0x30 87, add_with_one 79, xor 68, pass_as2 65, reverse_sub 55, shift_left_rotate 45, EM2 1 44, EM2 0x20 44, 5 others |
-| ALF 2/3 together with a branch whose address uses EM2 (page-relative, absolute, JMPF 1 jump) | (not expressible) | **1 of 3,063 (syspsi; chance 1,265), 0 of 1,803 (image 2; chance 732)**; the exception is one JMPF e word of syspsi |
+| ALU operation distribution (syspsi) | (none) | + 18,765, - 2,744, shift_left 850, shift_right_32m 573, and 403, or 190, sub_with_one 154, pass_as2 149, add_with_one 116, EM2 1 110, reverse_sub 90, xor 67, add_with_carry 55, EM2 0x10 54, shift_left_rotate 44, sub_with_carry 43, 5 other values (7 words) |
+| ALU operation distribution (image 2) | (none) | + 15,127, - 1,509, shift_left 366, shift_right_32m 233, and 216, or 163, sub_with_one 109, add_with_carry 94, EM2 0x30 87, add_with_one 79, xor 68, pass_as2 65, reverse_sub 55, shift_left_rotate 45, EM2 1 44, EM2 0x20 44, 5 other values |
+| ALF 2/3 together with a branch whose address uses EM2 (page-relative, absolute, JMPF 1 jump) | (not measured) | **1 of 3,063 (syspsi; chance 1,265), 0 of 1,803 (image 2; chance 732)**; the exception is one JMPF e word of syspsi |
 | SC2F = 9 (EM2 immediate) with a page-relative branch | 3 with 3-bit JMPF 2 in image 2, "not excluded" | 0 with 4-bit a; the 3 (`0105`, `0107`, `2401`) are 4-bit 2 |
 | Enable rule on AS1F, strobe-free words | "AS2 = 2" (the MDR) with neither bit 58 nor 59: 3 of 3,541 | AS1F = MDR1 without bit 58: 2 of 2,618; AS1F = MDR2 without bit 59: 1 of 923 (image 2); syspsi 16 of 2,829 and 27 of 1,676. The other bit is at its base rate: bit 59 in 453 of the 2,618 (17%; 17.5% of all strobe-free words), bit 58 in 202 of the 923 (22%; 34%). So bit 31 says which MDR, as test 3 found |
 | "One word later" (`xr_pass`) | 420 of 487 (image 2), 245 of 341 (syspsi) | 450 of 532, 267 of 382 (the words with bit 26 set now qualify) |
