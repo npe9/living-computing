@@ -5,8 +5,8 @@ Read-only analysis over the two HRI logs a `bsv/run_p9host.sh` run leaves
 behind (`ref.hri` from `tools/p9run.py`, `core.log` from the core).  The
 records are paired exactly as `tools/p9trace_cmp.py` pairs them (the
 kernel-page stub records dropped from the core's side), and every
-conditional jump (one-parcel opcodes 0x04..0x07, Table 1-15 p. 1-22) is
-described from the *reference* stream alone:
+one-parcel jump (JMP 0x03 and the conditional jumps 0x04..0x07, Table
+1-15 p. 1-22) is described from the *reference* stream alone:
 
 * `host`   -- the parcel count of the record immediately before it, if
   that record is the instruction physically before the jump (pc + 2*len
@@ -56,7 +56,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from p9trace_cmp import records  # noqa: E402
 
-COND = {0x04: ("JMPFN", False), 0x05: ("JMPFY", True),
+# The one-parcel jumps: the four conditional ones and, since 2026-11-24,
+# the unconditional JMP (0x03), which folds by the same p. 4-7 rule and
+# is "predicted" taken and always taken.  zc frexp.c has 11,772 JMPs the
+# core folds into a five-parcel host (ref 1, core 0) that the first
+# version, conditional jumps only, did not see.
+COND = {0x03: ("JMP", True), 0x04: ("JMPFN", False), 0x05: ("JMPFY", True),
         0x06: ("JMPTN", False), 0x07: ("JMPTY", True)}
 # Table 4-35, printed p. 4-5.
 T435_INCORRECT = {0: 3, 1: 2, 2: 1}
@@ -176,7 +181,8 @@ def main(argv=None):
     ref, dut = records(a.ref), records(a.dut)
     rows = analyse(ref, dut, lo, hi)
     diffs = [d for d in rows if d["ref"] != d["core"]]
-    print("conditional jumps: %d, cyc differs on %d" % (len(rows), len(diffs)))
+    print("one-parcel jumps (JMP and conditional): %d, cyc differs on %d"
+          % (len(rows), len(diffs)))
     by = {}
     for d in diffs:
         c = cause(d, d["ref"], d["core"])
@@ -193,7 +199,7 @@ def main(argv=None):
             joint.setdefault(key_all(d), {}).setdefault(
                 (d["ref"], d["core"]), 0)
             joint[key_all(d)][(d["ref"], d["core"])] += 1
-        print("all conditional jumps (prediction, p. 4-7 fold, host parcels,"
+        print("all one-parcel jumps (prediction, p. 4-7 fold, host parcels,"
               " compare distance): (ref, core) x count")
         for k in sorted(joint):
             print("  %-4s %-6s %-6s %-7s %s" % (k + (", ".join(
