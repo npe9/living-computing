@@ -16,6 +16,16 @@
 !   - The second CW's refill prints "$&1.0" = "$+1.0" (refill 000777,
 !     the printed ".01 FF").
 !   - FINM2's "NOP,0.0" has a smudged P; printed 0.30 00.
+!   - DAMAGED GLYPHS RESTORED IN REMARKS AND ONE OPERAND (none changes
+!     the code): 001006.40's operand prints "(MPAT1" with a broken M;
+!     the remark at 100006.00 prints "PATTER'I" (N broken), at
+!     100011.40 "HI 'IEM" (M broken), and the BUFFER remark at 001022
+!     has a broken first F.  The listing's own spelling "PETTERN" at
+!     100002.00 is kept.
+!   - MPTDE2 (100017.00, top of p.6) sits under the tear's crease: its
+!     remark marker prints as "(" and some zeros of the printed word are
+!     blotched, but every digit of the operand and of the word
+!     0000000000060000000001 is legible, so it is checked.
 !   - MPTDD2 (p.5's last line) is TORN after "0 525 252"; the rest of
 !     the operand and its whole machine-code row (100016.00) are lost.
 !     The operand below is RECONSTRUCTED from MPTDD1, its twin on p.4
