@@ -479,7 +479,7 @@ the other account, record by record:
   the s9term boot's reference recording, one interrupt in it; the first
   300,000 records agree on every record):
   * the 7 disagreements are all exception records, which the reference
-    writes with `cyc = 0` (`_system_exception`) and the twin prices at
+    wrote with `cyc = 0` (`_system_exception`) and the twin prices at
     Table 4-36's Exception row, `9 + D + A` = 12: four instruction-fetch
     faults (records 2,886,866, 2,901,427, 2,916,311, 2,923,430) and three
     operand-read faults of a MOV (2,893,032, 2,900,895, 2,908,152). The
@@ -498,14 +498,19 @@ the other account, record by record:
     replay assertions are unchanged. Interrupts and CRET's CATCH fault
     have no record of their own and stay uncharged in both accounts.
     Whether the core's exception records carry 12 is for C3/C4 to
-    check (`bsv/` not
-    touched here).
+    check (`bsv/` not touched here).
   * 3 undetermined are a mispredicted `JMPFY` at 0x800042fa whose PSW.F
-    came from a CPU-prefixed write of PSW, not a compare. Table 4-35
-    prints no row; the reference agrees that none applies (its
-    `_conditional_jump_cycles` refuses, and a `System` run counts the
-    record in `untimed` with `cyc = 0`). The fourth is the last record,
-    whose direction the stream does not show.
+    came from a CPU-prefixed write of PSW (`CPU; MOV ...,%PSW` at
+    0x800042f2, the record before), not a compare. Table 4-35 prints
+    no row. The reference does not see the PSW write as a flag source:
+    it prices the jump by the `CMPEQ` four records back as "folded, 4
+    or more" = 0 (checked 2026-11-24: `p9boot.py --max-steps 3000000
+    --no-idle-skip` reports no `untimed` record). Had it tracked the
+    write it would refuse, and a `System` run would write the same 0
+    as untimed, so the number cannot move; the reading differs. It is
+    the same gap as TADD/TSUB (pp. 3-42, 3-47), which also write PSW.F
+    and which the reference does not track either. The fourth is the
+    last record, whose direction the stream does not show.
   * **A shared choice, not independent agreement:** the board's
     `fold_into_cpu_prefixed = yes` lets a one-parcel jump fold into a
     CPU-prefixed host (the prefix costs 0 and is "part of the CPU

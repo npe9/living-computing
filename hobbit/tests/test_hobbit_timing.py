@@ -45,6 +45,10 @@ alone, the run below, then the patch reversed and `git diff` clean):
      2026-11-24, `- 1` removed in `load_boot_rec`):
        FAIL test_boot_rec_line_keys_the_interrupted_record
        ({1: ...} != {0: ...}), and nothing else.
+  I6 the trap pricing by opcode name instead of by the record's write
+     (`if rec[6]:` -> `if name is None or name in UNIMPLEMENTED:`):
+       FAIL test_exception_record_versus_unimplemented  8 != 12 (the
+       no-write trap of an unimplemented opcode), and nothing else.
 """
 
 import os
@@ -230,6 +234,18 @@ class Table435(unittest.TestCase):
         self.assertFalse(out[2][3])               # reached by KRET: unfolded
         out = run(base + [(8, [jmp(JMPTN, 0x20)], {}), (10, [NOP], {})])
         self.assertEqual(out[2][0], 1)            # correct, unfolded
+
+    def test_exception_record_versus_unimplemented(self):
+        # a trap record without a write is an exception (its frame goes to
+        # the interrupt stack): Table 4-36 Exception 9 + D + A = 12; with
+        # the *(CSP) = PC write it is the unimplemented sequence, 7 + A = 8
+        mov = (0, MOV3, {"trap": 1})
+        self.assertEqual(run([mov, (6, [NOP], {})])[0][0], 12)
+        unimp = (0, [0x8000 | (0x08 << 8), 0, 0],
+                 {"trap": 1, "we": 1, "addr": 0x100, "mask": 0xF})
+        self.assertEqual(run([unimp, (6, [NOP], {})])[0][0], 8)
+        unimp_no_write = (0, [0x8000 | (0x08 << 8), 0, 0], {"trap": 1})
+        self.assertEqual(run([unimp_no_write, (6, [NOP], {})])[0][0], 12)
 
 
 class Enter(unittest.TestCase):
