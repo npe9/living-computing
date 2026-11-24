@@ -85,6 +85,9 @@ python3 "$here/test_p9symdef.py"
 # volume's mount and checks the idle skip against a run without it
 # (~20 min).
 python3 -I "$here/test_beboot.py"
+# The DSP3210 disassembler and emulator (docs/dsp3210.md); the module
+# tests skip without the Nov 1994 disk image.
+python3 -I -B "$here/test_dsp3210.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in
