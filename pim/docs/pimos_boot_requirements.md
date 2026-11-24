@@ -269,6 +269,11 @@ is the 32-bit value low byte first, then the 8-bit tag.
 | 6-7 | ModuleAddress | `0xE0001E25` (cell 7,717) |
 | 126-127 | Version | `0x01973460` (meaning not yet read) |
 
+*(Note 2026-11-23: StartAddress is the image's entry, `ipl:boot/0`. It
+is not the `20c` that `boot.init` passes to the CSP's `start`: cell
+`0x20c` lies inside `ipl_file_decoder:check_GC_element/8`. What `20c`
+addresses is open, `icot_software_survey.md` §7.)*
+
 92,160 bytes = 1 header block + 359 blocks of 51 cells = 18,309 cells,
 the last 9 zero.
 

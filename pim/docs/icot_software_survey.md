@@ -792,8 +792,10 @@ masters.
   `0xE0000000`, which is `ipl:boot/0` (`asm/kbndis.py --check`; the
   `.ldb` agrees). `20c`, `202` and the help text's `200` (Pseudo
   MPSI, "KL1 Start Address") and `2000` (Multi-PSI, "Micro Start
-  Address") are arguments to the CSP's `GO/PIMos`, which "starts CPU
-  and throws a boot goal to the boot PE". `20c` is not an offset into
+  Address") are the start addresses given to the CSP's `GO/PIMos`, which "starts CPU
+  and throws a boot goal to the boot PE". That `boot.init`'s
+  `start(pimos,"20c")` is that same command is INFERENCE from the names
+  and the help text's "$GO/PIMos <Start Address>". `20c` is not an offset into
   the image: cell `0x20c` is in the middle of
   `ipl_file_decoder:check_GC_element/8` (measured with `kbndis.Image`).
   `PIMM.PARAM` also has `stadr 16'204` ("Firmware debug use only") and

@@ -152,7 +152,7 @@ Columns: item | needed for | held? (path, form) | documented? | status
 | Instruction cache 1K words, data cache 4K words, direct-mapped | cycle accuracy | papers | sizes and mapping (`pim_architecture.md` §6); write policy, hit/miss latency not stated | PARTIAL | none ("no cache", `gap_analysis.md` §D) | |
 | Shared memory, clusters, coherence protocol | n/a for PIM/m | — | PIM/m has none (`TR659` p. 7, `OV92` p. 63, via `pim_architecture.md` §6) | not applicable | — | see area L for the cluster machines |
 | Inter-PE network: NU 5x5 crossbar, 9-bit packet byte, RAM route table, 1 byte / 4 cycles | multi-PE | papers | mechanism `M92` p. 427; frame format, port numbering, arbitration not printed (`pim_architecture.md` §10) | PARTIAL | bench `PimNU`, `PimLink`, `PimNURouted`, `PimMesh` (MODEL choices, tested) | message contents (KL1 inter-PE messages) are area B |
-| Machine cycle 65 ns | timing | papers | `M92` p. 426, `OV92` p. 62, `TR659` p. 6 | DOCUMENTED | not used | Both figures are printed (§6 item 4): 60 ns in TR-564 p. 2, FGCS'92 Vol. 1 p. 45 Fig. 7 and TR-799; 65 ns in `M92`, `OV92`, TM-1074 and TR-733; 50 ns as a target in FGCS'92 Vol. 1 p. 43. 65 ns is probably worst case and 60 ns typical (INFERENCE). Any timing claim must name which figure it uses |
+| Machine cycle 65 ns | timing | papers | `M92` p. 426, `OV92` p. 62, `TR659` p. 6 | DOCUMENTED | not used | Both figures are printed (§6 item 4): 60 ns in TR-564 p. 2, FGCS'92 Vol. 1 p. 45 Fig. 7 and TR-799; 65 ns in `M92`, `OV92`, TM-1074 and TR-733 (FGCS'92 Vol. 1 p. 43 prints 50 under PIM/m, probably swapped with PIM/c). 65 ns is probably worst case and 60 ns typical (INFERENCE). Any timing claim must name which figure it uses. *(Cell rewritten 2026-11-23; it said: `gap_analysis.md` §D says "60 ns cycle", `pim_architecture.md` says 65 ns from three sources, 65 ns is the cited figure.)* |
 | SCSI attachment (one PE in eight has a SCSI board, 670 MB disk and the FEP) | I/O | papers | TR-733 via `literature_gaps.md` §8; `M92` p. 426 (four 670 MB disks per cabinet) | PARTIAL | `scsi_init`/`scsi_command` on ref only | SCSI controller chip, interrupt wiring: not documented in anything read |
 | Console attachment (CSP, maintenance architecture) | boot | `nonlocal/lit/trtm/tm1213.pdf` | TM-1213 read from page images (`literature_gaps.md` §8a); IPSJ 122850 (PIM/m maintenance architecture and console processor) is now held in `nonlocal/lit/ipsj/` (`psi_acquisition.md` §5), not read | PARTIAL | none | how the CSP reaches the PE (bus, registers) is in TM-1213 as far as it goes; not transcribed here |
 | Real PIM/m hardware | reference | National Museum of Nature and Science, Tokyo (IPSJ page, `icot_software_survey.md` §5.2) | — | UNKNOWN (preserved, not examined) | — | whether media came with it: unknown (`literature_gaps.md` Appendix D, ranked item 2) |
@@ -752,16 +752,23 @@ rewritten.*
    on both models (`gap_analysis.md` §0, 2026-11-20); 116 on both
    (`bsv/README.md`, `ref/pimm/README.md`, newest). The counts describe
    different models and dates; `gap_analysis.md` §0 is stale.
-   **Resolved: 128 on both models now** (`ref/pimm/README.md`,
-   `bsv/README.md` "State"; it was 116 before the merge of ten ported
-   items on 2026-11-23). How it was counted: `ref/pimm/pimm.py` has 131
-   `def i_` handlers. None is gated whole by `self.alone(`; that call
-   appears only in `builtin()` and in one case of `i_merge_in`. Taken
-   off the 131: `scsi_init` and `scsi_command`, which are on the
-   reference alone (no `op_` arm in `bsv/Pimm*.bsv`, by a name diff),
-   and `unify_step`, which is our stub (`asm/pimm_stubs.py`; not in the
-   PIMOS assembler's table), though both models run it. Every other
-   handler has an arm in the core. The 51 is the bench model
+   **Mostly resolved: the READMEs say 128 on both models now**
+   (`ref/pimm/README.md`, `bsv/README.md` "State"; it was 116 before
+   the merge of ten ported items on 2026-11-23).
+   - The task's literal recipe (count `def i_` in `ref/pimm/pimm.py`,
+     less those gated by `self.alone(`) gives 131. No handler is gated
+     whole; the call appears only in `builtin()` and in one case of
+     `i_merge_in`.
+   - A name diff against `bsv/Pimm*.bsv` finds every handler with an
+     arm except `scsi_init` and `scsi_command`, which are on the
+     reference alone. That leaves 129 handlers on both models.
+   - Two of the 129, `merge_in` and `unify_step`, are our stubs
+     (`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves
+     127 PIM/m instructions.
+
+   Neither count is exactly 128, and the README's rule is not stated.
+   The one-off difference is left open; it would be settled by the
+   README naming what it counts. The 51 is the bench model
    `PimKL1B.bsv`, and the 54 is a dated snapshot. Notes were added at
    `gap_analysis.md` §0, `pimos_roadmap.md` §1,
    `pimos_boot_requirements.md` §0.2 and the survey's row 1.
@@ -781,8 +788,12 @@ rewritten.*
    TR-564 PDF p. 3 (printed p. 2) and FGCS'92 Vol. 1 p. 45 Fig. 7, both
    read from the page images in this pass, plus TR-799 Table 3 (OCR).
    65 ns: `M92` p. 426 (PDF p. 459) and `OV92` p. 62 (PDF p. 91), plus
-   TM-1074 and TR-733 Table 1. FGCS'92 Vol. 1 p. 43 Table 2 also prints a
-   50 nsec *target* in the PIM/m column. The `literature_gaps.md`
+   TM-1074 and TR-733 Table 1. FGCS'92 Vol. 1 p. 43 Table 2 ("Target
+   cycle time") prints 50 under PIM/m and 65 under PIM/c, the reverse
+   of `OV92` p. 62 Table 2. The other rows agree, so p. 43 is probably
+   a transposition (INFERENCE; both pages read from the image). `OV92`
+   marks PIM/p's 60 and PIM/c's 50 as † design specifications and
+   leaves PIM/m's 65 unmarked. The `literature_gaps.md`
    App. C 2.1 INFERENCE stands: 65 ns is worst case (15.4 MHz, TM-1159)
    and 60 ns typical (16.7 MHz, TR-799). Dated notes were added at
    `gap_analysis.md` §D and `pim_architecture.md` §1 and §7. Open: which
@@ -858,7 +869,8 @@ rewritten.*
     - `20c`, `202`, `200` and `2000` are arguments to the CSP's
       `GO/PIMos`. The help text calls the Pseudo MPSI one a "KL1 Start
       Address" and the Multi-PSI one a "Micro Start Address", and says
-      `GO/PIMos` "throws a boot goal to the boot PE".
+      `GO/PIMos` "throws a boot goal to the boot PE". That
+      `start(pimos,"20c")` is `GO/PIMos` is INFERENCE from the names.
     - `20c` is not an offset into the IPL image: cell `0x20c` lies
       inside `ipl_file_decoder:check_GC_element/8` (measured with
       `kbndis.Image`).

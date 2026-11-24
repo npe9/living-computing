@@ -201,5 +201,8 @@ entry has all flags clear.
   the MRB bit position are not stated in the sources.
 - **Microinstruction layout.** The 64-bit field layout and
   the nano-code and decode-table widths are model-defined.
+  *(Note 2026-11-23: the field layout is printed in TR-733 fig. 4,
+  `pim_architecture.md` §5. The nano-code and decode-table widths
+  are still not stated in print.)*
 - **Jump table.** The multi-way jump base and the
   jump-table encoding are unconfirmed.

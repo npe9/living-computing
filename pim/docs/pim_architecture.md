@@ -43,7 +43,13 @@ p. 426; `OV92` p. 62; `TR659` p. 6).
 image. FGCS'92 Vol. 1 p. 45, Fig. 7 ("PIM model M") says "Machine cycle:
 60ns". TR-799 Table 3 says "PU 60nsec" (OCR, `literature_gaps.md`
 App. C 2.1). The same volume's p. 43 Table 2, "Target cycle time",
-prints 50 nsec in the PIM/m column. TM-1159 gives 15.4 MHz worst case
+prints 50 nsec under PIM/m and 65 nsec under PIM/c. `OV92` p. 62
+Table 2 has the reverse, PIM/m 65 nsec and PIM/c 50 nsec, and both
+tables agree on the other rows (PIM/m cell-based, PIM/c gate array).
+So p. 43 is probably a transposition (INFERENCE, both pages read
+from the image). `OV92` marks PIM/c's 50 and PIM/p's 60 with † for
+"design specifications ... under testing with longer cycle time",
+and leaves PIM/m's 65 unmarked. TM-1159 gives 15.4 MHz worst case
 and TR-799 16.7 MHz typical (App. C 2.1, OCR), so 65 ns is probably the
 worst-case clock and 60 ns the typical one (INFERENCE). 65 ns stays the
 figure here: it is the one the PIM/m paper itself gives. A timing claim
@@ -380,7 +386,7 @@ Everything above is a model choice, not a documented PIM/m encoding.
    implements only a 64 K-word memory, a deliberate simulation scaling, and
    no caches; see item 6 under contradictions.
 8. **65 ns cycle.** `M92` p. 426 and `OV92` p. 62 state it (other
-   sources say 60 ns, and one table gives a 50 ns target; see the note
+   sources say 60 ns; see the note
    in §1). The model
    currently does not attach time to steps; that is acceptable only if it
    does not claim cycle accuracy.

@@ -568,7 +568,7 @@ Appendix C):
   *Note 2026-11-23: these start values do not compete with the `.kbn`
   header's `0xE0001E81`. That value is the image's own entry,
   `ipl:boot/0` at cell 7,809 of an image loaded at `0xE0000000`; the
-  values in the table are arguments to the CSP's `GO`. `20c` is not an
+  values in the table are, by INFERENCE from the names, arguments to the CSP's `GO`. `20c` is not an
   offset into the IPL image (cell `0x20c` is inside
   `ipl_file_decoder:check_GC_element/8`). What `20c` addresses is
   open; see `icot_software_survey.md` §7.*

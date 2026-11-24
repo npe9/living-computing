@@ -21,12 +21,16 @@ table and coverage figures go with the 54; they were not re-measured.
 On 2026-11-23 the two models implement 128 instructions on both and
 agree on 39 lockstep tests. The 39 is the default list of
 `bsv/run_pimm_lockstep.sh` (`grep -o 'for t in.*'`). The 128 is
-`ref/pimm/README.md`'s count, checked by hand: 131 `def i_` handlers
-in `ref/pimm/pimm.py`, less `scsi_init` and `scsi_command`, which
-are on the reference alone and have no arm in `bsv/Pimm*.bsv`, less
-`unify_step`, which is this project's stub (`asm/pimm_stubs.py`), not
-a PIM/m instruction. No handler is gated whole by `self.alone(`; one
-case of `merge_in` and one built-in case are.*
+`ref/pimm/README.md`'s figure, and a hand count does not reproduce it
+exactly. `ref/pimm/pimm.py` has 131 `def i_` handlers, and none is
+gated whole by `self.alone(` (one case of `merge_in` and one
+built-in case are), so the task's literal recipe gives 131. Less
+`scsi_init` and `scsi_command`, which are on the reference alone (no
+arm in `bsv/Pimm*.bsv`), leaves 129 handlers on both models. Two of
+those, `merge_in` and `unify_step`, are this project's stubs
+(`asm/pimm_stubs.py`; neither is in `inst_tab.kl1`), which leaves 127
+PIM/m instructions. The README's counting rule is not stated; the
+one-off difference is open.*
 
 | | names the models have | of names used | instructions covered |
 |---|---|---|---|
@@ -159,7 +163,11 @@ here is PDSS's, not known to be PIM/m's. The test stands in only for
 the file's buffers. Console output is in (`lockstep_cons.py`): the
 decoder shows the comment of a 5702h file ("PIMM BIOS       :3.600:25-Nov-93"
 for `pimm_bios360E.sav`) and the NAME of a 5502h file, not both
-(object code of `check_magic_num/13`). `ipl_loader:load/4` runs
+(object code of `check_magic_num/13`). *(Note 2026-11-23: 25-Nov-93
+is the base files' comment date. The kernel's compiled
+`pimos_version:date/1` carries "20-May-93", the source's date, which
+is what the banner below shows: two dates of two artefacts, see
+`binary_reverse_engineering.md` §2.)* `ipl_loader:load/4` runs
 whole for a list of one file (`lockstep_link.py`): `load_files/10`,
 the link table (`ipl_link_table`) and `check_link_status/5`, the
 bench answering `open(Name, R)` with `normal(File)`. The unification of two vectors or lists, which a second
