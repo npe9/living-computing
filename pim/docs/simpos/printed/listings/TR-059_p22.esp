@@ -1,0 +1,38 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 22, printed folio 20. Section 4.1(2) 'Storing and restoring objects': class 'as_permanent_object' store (instance predicate) and restore (class predicate), clause bodies printed; Figure 4.2.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% "A store predicate, which is an instance predicate, stores an object and returns the record
+%  pointer to the instance record of the object. A coding example is given below."
+   :store(Object,Record_Pointer) :-
+        :decode(Object,Instance_Record),
+            % Convert Object into Instance_Record.
+        :instance_file(Object,Instance_File),
+            % Get the instance file of the class of Object.
+        :add(Instance_File,Instance_Record,File_Marker),
+            % Write out Instance Record. The position of the written
+            % record is returned in File_Marker.
+        :create(#record_pointer,Record_Pointer,Instance_File,File_Marker).
+            % Create a record pointer identifying the instance record.
+% "A restore operation is defined as a class predicate. It takes a record pointer and returns a
+%  restored object. A coding example is given below."
+   :restore(Class,Object,Record_Pointer) :-
+        :file(Record_Pointer,Instance_File),
+            % Get Instance_File.
+        :file_marker(Record_Pointer,File_Marker),
+            % Get File_Marker.
+        :read(Instance_File,Instance_Record,File_Marker),
+            % Read in Instance_Record.
+        :object_class(Instance_File,Class),
+            % Get Class of the objects in Instance_File.
+        :new(Class,Object),
+            % Create a new instance.
+        :encode(Object,Instance_Record).
+            % Convert Instance_Record to Object.
+% "These two predicates are defined in class 'as_permanent_object'. A new class whose instances
+%  are permanent can be defined by inheriting this class and defining its own encode/decode
+%  predicates."
+% Notes (as printed, not corrected): :decode is object->record and :encode is record->object;
+%  :add/3 here returns a File_Marker although :add(File,Buffer) on p13 is /2; :read is given an
+%  Instance_Record where p13 :read takes a Buffer.

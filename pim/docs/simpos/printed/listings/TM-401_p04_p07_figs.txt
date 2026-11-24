@@ -1,0 +1,23 @@
+% TM-401 「逐次型推論マシンPSIのネットワーク・システムの概要」(東 吉郎 他, Oct 1987).
+% Figures read by eye from a 60dpi contact sheet (layout clear at that size) and checked against
+% the text; labels as printed. F4.
+
+% PDF p4 (folio -3-): 図1 PSIネットの物理構成
+%   unit network (単位網): LAN coax with TC (transceivers); attached: NCLIA, サーバ・ホスト via LIA,
+%   BRG (bridge) joining two LAN segments, LIA + ホスト; GW (gateway) -- DDX-パケット網 -- GW -- second LAN
+%   (TC, LIA, ホスト).  Legend: 破線内：複合網
+%
+% PDF p7 (folio -6-): 図2 PSIネットのソフトウェア構成
+%        PSI                                         PSI
+%   +-------------------+                      +-------------------+
+%   | 応用プログラム    | <-- 応用プログラム・ --> | 応用プログラム    |
+%   |                   |        プロトコル        |                   |
+%   | ユーザ・          |                      | ユーザ・          |
+%   | インタフェース    |                      | インタフェース    |
+%   |       NCP         | <---- NCPプロトコル ---> |       NCP         |
+%   +-------------------+                      +-------------------+
+%   LIA                                         LIA
+%   +-------------------+                      +-------------------+
+%   |    LIAソフト      | <---- LIAプロトコル ---> |    LIAソフト      |
+%   +-------------------+                      +-------------------+
+%   ------------+-------------- LAN ---//------------+------------

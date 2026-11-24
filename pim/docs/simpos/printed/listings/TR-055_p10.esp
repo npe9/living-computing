@@ -1,0 +1,11 @@
+% TR-055 "SIMPOS: An Operating System for a Personal Prolog Machine PSI"
+% (Hattori, Tsuji, Yokoi, Apr 1984), PDF page 10, printed folio 7; continues on p11 (folio 8).
+% Section 4.1(2) Classes: inline notation fragments, not a listing. Transcribed by eye
+% from 300dpi crops (F4); p11 lines from OCR checked against the 200dpi render.
+
+        {<code>,<attribute1>,<attribute2>,...},
+
+        X = Point!x
+
+% p11 (folio 8): form of an operation head and of a body goal (both printed identically):
+        :<action_name>(<object1>,<object2>,...),

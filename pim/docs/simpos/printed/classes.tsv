@@ -1,0 +1,458 @@
+# One row per (class, report). arity = arguments as printed EXCLUDING the receiver (class or instance) argument, written :name/N.
+# tier: PRINTED-SOURCE body printed; PRINTED-INTERFACE signature/table only; PROSE described in text; NAMED name only.
+# pdf_page = PDF page index of trtm/<report>.pdf (not printed folio). notes: EXAMPLE = tutorial/test class, not SIMPOS.
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes	source_part
+(any I/O destination)	-	-	-	:putc/1	PRINTED-INTERFACE	TR-285	11	8	"the character output method (:putc in SIMPOS)"; arity INFERENCE (one character argument)	TR-285.classes.tsv
+(measurement window, unnamed "ordinary window")	labeled_sash, as_scroll, as_output, as_graphics, as_markers, as_input, as_mouse_input, user_window				PRINTED-INTERFACE	TM-125	20-21	19-20	nature list used for the 6.1 speed measurements (tm0125_p20.txt); no class name, no order semantics stated	tm0125.classes.tsv
+(process resource objects)	-	-	-	(one common release method, name not given)	PROSE	TR-285	11	8	process management closes open files, releases locked semaphores, closes network connections on unexpected termination by "the same invocation of the same method" on different objects	TR-285.classes.tsv
+:-	-	-	-	-	PROSE	TM-009	3-4	Page 2-3	"A clause is considered as a meta-object whose class name is ':-'"	TM-009.classes.tsv
+a					PROSE	TM-061	4	3	EXAMPLE	tm0061.classes.tsv
+a					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)	tm0065.classes.tsv
+a-having-b	a, with-b				PROSE	TM-061	4	3	EXAMPLE	tm0061.classes.tsv
+a_having_b	a, with_b				PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)	tm0065.classes.tsv
+area					NAMED	TM-061	5	4		tm0061.classes.tsv
+area					NAMED	TM-065	10	8	hardware-resource class	tm0065.classes.tsv
+array	sequence			:put_at/2; :get_at/2	PRINTED-INTERFACE	TR-056	7	5	fixed number of elements; constant access overhead.	TR-056.classes.tsv
+array	(pool, per prose)	-	-	-	PROSE	TR-057	5	-	named as an example of a pool	TR-057.classes.tsv
+as-esp-transducer	-	-	-	-	NAMED	TM-143	6	-	transducer function class	TM-143.classes.tsv
+as-graphic	-	-	-	-	NAMED	TM-143	6	-	function class: graphics output	TM-143.classes.tsv
+as-input	-	-	-	-	NAMED	TM-143	6	-	function class: keyboard input	TM-143.classes.tsv
+as-inside					NAMED	TM-061	8	7	nature only	tm0061.classes.tsv
+as-label					NAMED	TM-061	8	7	nature only	tm0061.classes.tsv
+as-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class	TM-143.classes.tsv
+as-mouse-input	-	-	-	-	NAMED	TM-143	6	-	function class: mouse-click input	TM-143.classes.tsv
+as-multiple-column-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class	TM-143.classes.tsv
+as-multiple-select	-	-	-	-	NAMED	TM-143	6	-	menu extension class	TM-143.classes.tsv
+as-on-off	-	-	-	-	NAMED	TM-143	6	-	menu extension class	TM-143.classes.tsv
+as-output	-	-	-	-	NAMED	TM-143	6	-	function class: character output	TM-143.classes.tsv
+as-permanent-object					NAMED	TM-061	6	5	comment in listing	tm0061.classes.tsv
+as-resource					NAMED	TM-061	6	5		tm0061.classes.tsv
+as-scroll	-	-	-	-	NAMED	TM-143	6	-	function class: scrolling of output	TM-143.classes.tsv
+as-scrolling-menu	-	-	-	-	NAMED	TM-143	6	-	menu basic function class	TM-143.classes.tsv
+as-single-select	-	-	-	-	NAMED	TM-143	6	-	menu extension class	TM-143.classes.tsv
+as-standard-transducer	-	-	-	-	NAMED	TM-143	6	-	transducer function class	TM-143.classes.tsv
+as_agent_of_physical_file	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+as_agent_of_physical_object	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+as_boot_program					NAMED	TM-100	13	11	boot program class nature; no definition.	tm0100.classes.tsv
+as_bucket	(mixin; inherited first, then a sequence class)			:get/2	PRINTED-SOURCE	TR-056	10	8	clause body printed: :get(Bucket,Object,[Position|Path_position]). Path-position and path-key notation. Listing TR-056_p10.esp.	TR-056.classes.tsv
+as_cursor					PROSE	TM-125	8-13	7-12	mixin 2): the class to manage the cursor which shows the position where the output is done.	tm0125.classes.tsv
+as_dot_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to scroll the window by dot bases.	tm0125.classes.tsv
+as_file	(mixin inherited by all file classes)	file marker ops	:open/2; :create/2	:close/0; :remove/0; :start_marker/1; :end_marker/1; :read/2; :write/2; :add/1; :delete/2; :tap/1	PRINTED-INTERFACE	TR-059	10-14	8-12	class preds written :open(#file,File,File_Name), :create(#file,...). Listings TR-059_p11..p14.	TR-059.classes.tsv
+as_file	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+as_global_object	(mixin)		:retrieve/2		PRINTED-INTERFACE	TR-056	24;26	22;24	">Name1>..." from system root, else from caller's world; planned protection/profile/version/mutual-exclusion (implementation "still under consideration").	TR-056.classes.tsv
+as_global_object	(mixin)		:retrieve/2	:bind/1	PRINTED-INTERFACE	TR-059	26	24	">dir1>..." from system root directory; "dir1>..." from process root directory.	TR-059.classes.tsv
+as_graphics					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to output the graphic primitives.	tm0125.classes.tsv
+as_inferior					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class supplying the function as a sub window. All the window class which is defined by the	tm0125.classes.tsv
+as_inferior		superior			PROSE	TR-046	13		window hierarchy mixin; slot superior holds the superior window pointer.	TR-046.classes.tsv
+as_input					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function of input from keyboard.	tm0125.classes.tsv
+as_inside					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for managing the inside area of the window.  The inside area is the part of window	tm0125.classes.tsv
+as_inside					NAMED	TM-065	15	13	nature only	tm0065.classes.tsv
+as_label					NAMED	TM-065	15	13	nature only	tm0065.classes.tsv
+as_markers					PROSE	TM-125	8-13	7-12	mixin 2): the class for suppling the function to have markers in the window.	tm0125.classes.tsv
+as_menu					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the menu window. Every menu window must inherit this class.	tm0125.classes.tsv
+as_message	(mixin)	sender; receiver			PROSE	TR-056	14	12	sender = channel for reply; receiver = channel to receive it.	TR-056.classes.tsv
+as_mouse_input					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function of input from mouse.	tm0125.classes.tsv
+as_multiple_column					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the multi column menu.	tm0125.classes.tsv
+as_multiple_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function of multi select.	tm0125.classes.tsv
+as_notification					PROSE	TM-125	8-13	7-12	mixin 3): the class  for supplying  the function  to have  the output  permission type  of "notify".  If the	tm0125.classes.tsv
+as_on«?»off_menu					PROSE	TM-125	8-13	7-12	mixin 4): the class for making the on-off menu. When  the window inherit this class, the item with  type	tm0125.classes.tsv
+as_output					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function of output.	tm0125.classes.tsv
+as_permanent_object	(mixin)		:restore/2	:store/1; (requires) :decode/1; :encode/1; :instance_file/1	PRINTED-SOURCE	TR-059	22	20	store/restore clause bodies printed. Listing TR-059_p22.esp.	TR-059.classes.tsv
+as_permanent_object	(mixin)	class attr: instance file; instance attr: record pointer			PROSE	TR-056	27	25	each permanent class defines its own conversion predicates (bodies in TR-059 p22).	TR-056.classes.tsv
+as_permanent_object					NAMED	TM-065	13	11	prose: natures of the real class file	tm0065.classes.tsv
+as_pervasive_object	(mixin)				PROSE	TR-056	29-30	27-28	message-to-operation decoding and execution.	TR-056.classes.tsv
+as_pool	(mixin)			:add/1; :remove/1; :get/1	PRINTED-INTERFACE	TR-056	6	4	"mixin class to be inherited by any pools". Listing TR-056_p06.esp.	TR-056.classes.tsv
+as_popup_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as a popup window.  Popup window is the temporary	tm0125.classes.tsv
+as_program		none	:create/1	:goal/0 (default, to be overridden), :assign/0, :resign/0, :resign_core/0, :invoke/0	PRINTED-SOURCE	TM-100	11-12	9-10	Figure 3.3 "Part of class 'as_program'". Programs are instances of classes inheriting as_program.	tm0100.classes.tsv
+as_program	-	-	-	:goal/0 (defined by the user class)	PRINTED-INTERFACE	TM-153	28	-	nature as_program in screenshot; user defines :goal(Obj)	TM-153.classes.tsv
+as_relation					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for managing the allocation of the sub windows in the superior window. This class is || inherited by as_superior (prose)	tm0125.classes.tsv
+as_remote_object	(mixin)				PROSE	TR-056	29	27	operation-to-message encoding and sending.	TR-056.classes.tsv
+as_remote_object	-	-	-	freezing/melting of internal state for incomplete objects (method names not given)	PROSE	TR-283	9	7	Remote object kernel class for incomplete objects	tr0283.classes.tsv
+as_remote_object	- (not printed)	-	-	- (internal state may be frozen and delivered as extra information)	PROSE	TR-524	20-21	19-20	ROAM kernel class for incomplete global objects (buffers, markers)	tr0524.classes.tsv
+as_resource					NAMED	TM-065	13	11	prose	tm0065.classes.tsv
+as_resource	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+as_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to scroll the window.	tm0125.classes.tsv
+as_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function for selecting the item by mouse.	tm0125.classes.tsv
+as_standard_io_window	-	-	-	-	NAMED	TM-364	-	-	appears in a nature list in TM-364 (OCR grep only)	ESP-manuals.classes.tsv
+as_string_output					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to output a string.	tm0125.classes.tsv
+as_submenu					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function as a sub menu. In the multi_column menu, each column is	tm0125.classes.tsv
+as_superior	as_relation (prose: as_relation is inherited by as_superior)				PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as superior window. If the user want to use the sub	tm0125.classes.tsv
+as_superior		inferiors			PROSE	TR-046	13		window hierarchy mixin; slot inferiors lists inferior window pointers.	TR-046.classes.tsv
+as_temporary_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function as temporary window.	tm0125.classes.tsv
+as«?»choice					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the basic function as a choice window.  This class manages the choice	tm0125.classes.tsv
+as«?»single_select					PROSE	TM-125	8-13	7-12	mixin 4): the class for supplying the function of single select.	tm0125.classes.tsv
+b					PROSE	TM-061	4	3	EXAMPLE	tm0061.classes.tsv
+b					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)	tm0065.classes.tsv
+bag					PROSE	TR-056	10	8	"Other pools will be also defined" -- planned.	TR-056.classes.tsv
+bare-window	with-display, as-inside, *	instance: width, height	:create/2	:refresh/0; :initialize/1	PRINTED-SOURCE	TM-061	8	7	':ge«?»-size' (t degraded)	tm0061.classes.tsv
+bare_window	with_display, as_inside, *	instance: width, height	:create/2 (calls :new,:initialize,:start)	:refresh/0; :initialize/1 (arg size(W,H))	PRINTED-SOURCE	TM-065	15	13	'*' = own position in nature list (TM-061 p4 prose: 自クラスの位置も指定できる); :get_size/:clear_rectangle/:start not defined here	tm0065.classes.tsv
+bare_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the basic function of the window.  For example, making the object,	tm0125.classes.tsv
+basic_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class supplying the function as a window. Every window must inherit this class.	tm0125.classes.tsv
+basic_window	-	-	-	-	NAMED	TR-044	19	15	example class object "#basic_window" in ESP Reference Manual syntax section	ESP-manuals.classes.tsv
+binary file	(file)	-	-	-	PROSE	TR-055	16	13	no internal structure; text or program code	TR-055.classes.tsv
+binary file	as_file				PROSE	TR-059	15-16	13-14	fixed 1- or 2-byte records; multi-record access.	TR-059.classes.tsv
+binary file tap	file tap				PROSE	TR-059	16	14	advances by records accessed.	TR-059.classes.tsv
+binary-file	file			:read/2 (...); :write/2 (...); :tap/1	PRINTED-SOURCE	TM-061	7	6	no 'end.' printed	tm0061.classes.tsv
+binary-file-tap					NAMED	TM-061	7	6	#binary-file-tap	tm0061.classes.tsv
+binary_file	file			:read/2 (...); :write/2 (...); :tap/1	PRINTED-SOURCE	TM-065	13-14	11-12	read/write bodies elided; :tap creates #binary_file_tap	tm0065.classes.tsv
+binary_file	remote_binary_file, binary_file_accessor, local_binary_file, p_binary_file, logical_file, with_retrieval (nature, in this order)	-	:make/2 (p12 example :make(#binary_file,File,Path)); :open/4 (p12/p14/p18 examples :open(#binary_file,File,Path,OpenMode,RequestMode)); :make/c and :open/c timed in Table 3 p36	:read/3, :add/3, :accessor/1, :submit_add/4, :wait/3 (external methods, bodies printed p37: each is :g_call(Lfile, Name, {Args})); used in examples: :add_data/1, :put_data/1, :read_data/1, :close/0, :submit_add/2, :wait/1; Table 3: :open/i, :close/i, :read/i, :write/i	PRINTED-SOURCE	TR-524	37	36	Appendix A; body partly elided with printed '...'. Interface class object for file sessions (p11: 'file interface class object, such as #binary_file and #table_file')	tr0524.classes.tsv
+binary_file	-	-	:make/2 (create and open)	:write/2, :read (arity not printed), :size/1 (inquire size), :close/0	PRINTED-INTERFACE	TR-283	18	16	Table 3 'File Methods' -- class name not printed in TR-283; 'binary_file' is INFERENCE from TR-524 Table 3	tr0283.classes.tsv
+binary_file_accessor	file_accessor (nature)	-	-	:read_data/1, :read_data/2, :read/1, :add_data/1, :add_data/2, :add/0, :add/1, :submit_add/1, :submit_add/2, :wait/1 ('Higher Level Interface Methods'; bodies printed; default RequestMode immediate, submit_add default suppress)	PRINTED-SOURCE	TR-524	38	37	Appendix A; uses slots via Accessor!file, Accessor!buffer, Accessor!file_marker	tr0524.classes.tsv
+binary_file_tap					NAMED	TM-065	13	11	only as #binary_file_tap in :tap body	tm0065.classes.tsv
+boot_process	process			overrides :create and :activate (no code)	PROSE	TM-100	13	11	"a sole instance of class 'boot_process', which executes the boot program inheriting class 'as_boot_program'"	tm0100.classes.tsv
+boot_process	process			overrides create and activate	PROSE	TR-056	21	19	created/activated by hardware at bootstrap; calls these itself to come under supervisor control.	TR-056.classes.tsv
+bounded_channel	channel	instance: post_queue	:create/2 (Channel, Limit)		PRINTED-SOURCE	TM-100	17	15	Figure 3.10; Figure 3.9 class relations.	tm0100.classes.tsv
+bounded_post_queue	post_queue	instance: semaphore	:create/2 (Queue, Limit)	before :add_object/1 (-> :p_operation), after :remove_object/1 (-> :v_operation)	PRINTED-SOURCE	TM-100	17-18	15-16	Figure 3.11; shows use of before/after demons.	tm0100.classes.tsv
+bucket	as_bucket; a sequence class				PROSE	TR-056	9-10	7-8	multi-layer sequence.	TR-056.classes.tsv
+buffer	as_remote_object (nature; '%% inherit ROAM %%')	slot data_size (referenced as Buffer!data_size)	-	:get_attributes/2, :set_attributes/2 (request_input: [ByteSize, ElementSize]; reply_input: [DataSize, ReadBuffer]) -- 'Specification of Delivered Attributes'	PRINTED-SOURCE	TR-524	38	37	Appendix A. Incomplete global object (p21)	tr0524.classes.tsv
+buffer (file buffer)		integer vector or string (KL0)		:record_data/1; :data_size/1; :set_data_size/1	PRINTED-INTERFACE	TR-059	11-12	9-10	hides record construction.	TR-059.classes.tsv
+c					PROSE	TM-061	4	3	EXAMPLE	tm0061.classes.tsv
+c					PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)	tm0065.classes.tsv
+cable	-	-	-	-	PROSE	TR-055	20	17	connects two sockets	TR-055.classes.tsv
+cable	-	-	-	-	NAMED	TR-057	7	-	network subsystem class	TR-057.classes.tsv
+cable	-	-	-	-	NAMED	TR-087	5	-	-	TR-087.classes.tsv
+cascade_index					NAMED	TR-061	5		planned more efficient replacement.	TR-061.classes.tsv
+channel	stream	instance: post_queue (overridden: post_queue_for_message)		:send/2, :receive/2	PRINTED-SOURCE	TM-100	15	13	Figure 3.7	tm0100.classes.tsv
+channel	stream			:send/1; :receive/1; :send_message/1; :receive_message/1	PRINTED-INTERFACE	TR-056	14	12	messages sent to channels, not processes. Listing TR-056_p14.esp.	TR-056.classes.tsv
+channel					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+channel	(on top of streams)	-	-	-	PROSE	TR-055	14	11	message communication between two processes, "even in different machines", object packaged in a message of a certain protocol	TR-055.classes.tsv
+channel	(defined on top of stream)	-	-	-	PROSE	TR-057	5	-	message communication between two processes	TR-057.classes.tsv
+channel	(on top of stream)	-	-	send/receive (prose)	PROSE	TR-087	4	-	"message communication among processes"	TR-087.classes.tsv
+channel pool					PROSE	TR-056	17	15	defined like a stream pool; no send operation.	TR-056.classes.tsv
+child-window part class (子ウィンドウとしての機能を提供する部品クラス)					PROSE	TM-126	5	4	no identifier; INFERENCE: TM-125 as_inferior	tm0126.classes.tsv
+choice_item					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice item.	tm0125.classes.tsv
+choice_window			:create/2 (choice item vector {item_string,item_type,elements_list,initial_element,documentation})		PRINTED-INTERFACE	TM-125	8-13	7-12	stand-alone: the class for making a standard choice window	tm0125.classes.tsv
+context			:create/3 (Context_number, Stack_number, Context) (called)	:get_number/1, :set_entry_point/1, :activate/0, :set_priority/1 (called)	NAMED	TM-100	8-9	6-7	hardware context object used by process (comment: "% Hardware PC«?»").	tm0100.classes.tsv
+coordinator					PROSE	TR-046	11;14-16		manager of experts; destination '#coordinator' in translation-table clauses (p26,p28). ~20,000 characters of ESP (p17).	TR-046.classes.tsv
+coordinator	-	-	-	-	PROSE	TR-057	7-8	-	work-behind process managing experts; system_menu; whiteboard; key command table	TR-057.classes.tsv
+coordinator	program (is-a)	has-a: e_process, whiteboard, e_port			PROSE	TR-061	12;3-8		Fig.1 class relation diagram (encircled = defined in the Coordinator). Background process; meta-commands visit/create/kill/lull/arouse/memorize/remember/broadcast/write/read/invoke system menu (p7-8).	TR-061.classes.tsv
+debugger_choice_menu_without_label					NAMED	TM-125	23	22	status-line selected-window name in Fig 6	tm0125.classes.tsv
+debugger_choice_menu_without_label					NAMED	TM-126	6	5	shown on status line in Fig 4 (selected-window name; whether a class is not stated)	tm0126.classes.tsv
+default_translation_table				:look_up/5	PRINTED-SOURCE	TR-046	26;28		Fig.2 (p26, abridged with printed elision, no '!' in clauses) and Fig.4 (p28, full: kill lull arouse status visit memorize broadcast remember invoke_system_menu x2 read write, default pass-through). Arity excludes receiver Table. Body calls :get_e_process(Window,E_process). Listings TR-046_p26.esp, TR-046_p28.esp. User translation tables inherit it (p14).	TR-046.classes.tsv
+default_translation_table				:look_up/5	PRINTED-SOURCE	TR-061	13		Fig.2 "A Translation Table Program in ESP": same 13 clauses as TR-046 Fig.4 but get_e_process goals printed without ';'. Listing TR-061_p13.esp. Fig.1: translation_table inherits (is-a) default_translation_table.	TR-061.classes.tsv
+denwa				instance: :number/2; :stay/2; :visit/2; :denwa/2 (facts)	PRINTED-SOURCE	TM-126	6	5	EXAMPLE user program shown in editor_1 screenshot (tm0126_p06.esp); separators read as ',' (INFERENCE)	tm0126.classes.tsv
+device handler	interrupt process	handler channel			PROSE	TR-059	30	28	instantiated and activated during boot.	TR-059.classes.tsv
+directory	index (a pool)	class slot root	:root/1	:find/2; :bind/2; :remove/2; :retrieve/2	PRINTED-INTERFACE	TR-056	22-24	20-22	pathnames "Name1>Name2>..."; system root directory kept in a class slot of 'directory'.	TR-056.classes.tsv
+directory	-	-	:make/2 (create)	:expunge/0, :find/2, :delete/2, :undelete/2, :add/2	PRINTED-INTERFACE	TR-283	18	16	Table 3 'Directory Methods' -- class name not printed in TR-283; 'directory' is INFERENCE from TR-524 Table 3	tr0283.classes.tsv
+directory	- (p8: 'class directory inherits forty classes'; none named)	-	:retrieve/3 (called :retrieve(#directory, Lfile, Pathname, FullPathname) p37); Table 3: :retrieve/c, :make/c	:delete/i, :undelete/i, :find/i, :expunge/i (Table 3)	PRINTED-INTERFACE	TR-524	36	35	Method names only in Table 3 (performance table) plus one call in Appendix A	tr0524.classes.tsv
+directory					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+directory	(pool, per prose)	-	-	-	PROSE	TR-055	14	11	"a pool of associations of objects and their names"	TR-055.classes.tsv
+directory	(pool, per prose)	-	-	bind/retrieve by name (prose)	PROSE	TR-057	5	-	pool of objects associated with a name; tree of directories; pathname; universe held in a class slot of class directory	TR-057.classes.tsv
+directory	(index pool)				PROSE	TR-059	26	24	main-memory directory; system root + per-process root directory.	TR-059.classes.tsv
+directory	(pool, per prose)	-	-	bind/retrieve by name	PROSE	TR-087	4	-	-	TR-087.classes.tsv
+directory file				:find/2	PRINTED-INTERFACE	TR-056	28	26	:find(Directory_file,Record_Pointer,Name).	TR-056.classes.tsv
+directory file	(file)	-	-	-	PROSE	TR-055	17	14	associates files (and instance-file records) with names	TR-055.classes.tsv
+directory_file	index file			:bind/2; :find/2; :replace/2; :rename/2	PRINTED-INTERFACE	TR-059	23;25	21;23	names or pathnames "dir1>dir2>name"; volume root directory file.	TR-059.classes.tsv
+disk					PROSE	TR-059	6	4	physical disk device; "responsible to the device management of the kernel".	TR-059.classes.tsv
+disk					NAMED	TM-061	5	4		tm0061.classes.tsv
+disk					NAMED	TM-065	10	8	physical I/O device class	tm0065.classes.tsv
+display					PROSE	TM-125	8-13	7-12	internal: the class for defining the bitmap display.  The bitmap display is constructed by the  screen and	tm0125.classes.tsv
+drawing_class_generator	-	-	-	-	NAMED	TM-785	25	-20-	application utility	TM-785.classes.tsv
+e_port	inter_process_port (is-a)				PROSE	TR-061	5;12		"a special class of the Port"; used for communication with the Coordinator.	TR-061.classes.tsv
+e_process					PROSE	TR-046	15		see e_program.	TR-046.classes.tsv
+e_process	process (is-a)	e_program; e_window; e_port; name of the expert			PROSE	TR-061	4-5;12		attributes listed p4-5; Fig.1 has-a e_program, e_port, e_window.	TR-061.classes.tsv
+e_process_pool					PROSE	TR-046	15		special object managing current set of experts; handles methods such as broadcast.	TR-046.classes.tsv
+e_process_pool	list_index (derived from); later cascade_index				PROSE	TR-061	5		experts indexed by e_program names; active object processing broadcast/remember.	TR-061.classes.tsv
+e_program					PROSE	TR-046	15		"The expert is implemented through the special classes, namely e_program and e_process."	TR-046.classes.tsv
+e_program	with_goal_demon; e_program_core (is-a)				PROSE	TR-061	5;12		"a special class of the 'program'"; name derived from the user's e_program_directory.	TR-061.classes.tsv
+e_program_core	program (is-a)	has-a help_info_dictionary			NAMED	TR-061	12		Fig.1 only.	TR-061.classes.tsv
+e_program_directory					NAMED	TR-061	5		user-defined directory from which expert names derive.	TR-061.classes.tsv
+e_window		translation table; e_process (TR-061)			PROSE	TR-046	14;16		expert window; translation table stored in a slot; rewriting the slot changes the table dynamically.	TR-046.classes.tsv
+e_window	-	-	-	-	PROSE	TR-057	7	-	expert's independent communication window	TR-057.classes.tsv
+e_window	window (is-a)	translation_table; e_process			PROSE	TR-061	6;12		accepts 'key-command_table-change' command (p9); other windows may not.	TR-061.classes.tsv
+error	event	-	-	-	PROSE	TR-087	10	-	subclasses "such as warning, fatal error, and normal error"	TR-087.classes.tsv
+escher	as_program	window	-	:goal/0, :init/0, :escher/4	PRINTED-SOURCE	TM-153	28	-	EXAMPLE (demo program; screenshot, partial)	TM-153.classes.tsv
+escher					NAMED	TM-125	4	3	EXAMPLE class in Fig 2 screenshot (tm0125_p04.txt)	tm0125.classes.tsv
+event	(a stream use)			:post/1; :wait/1	PRINTED-SOURCE	TR-056	13	11	bodies printed. Listing TR-056_p13.esp.	TR-056.classes.tsv
+event	-	-	-	-	PROSE	TR-087	10	-	"name of the exception in general"; two basic subclasses error and help	TR-087.classes.tsv
+event	-	-	-	-	PROSE	TR-285	10	7	exceptional cases called events, raised from built-in exceptions	TR-285.classes.tsv
+external					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to access to the window from outside of window  manager.	tm0125.classes.tsv
+fact		instance attribute: base, base_tap	:create/1 (partly hidden)	:read/1 (partly hidden)	PRINTED-SOURCE	TM-125	23	22	EXAMPLE in Fig 6 screenshot, right halves of lines hidden (tm0125_p23.esp)	tm0125.classes.tsv
+fatal error	error	-	-	-	NAMED	TR-087	10	-	printed as prose words "fatal error"; class spelling unknown	TR-087.classes.tsv
+file	(none printed); comment: real file inherits as-permanent-object, as-resource, with-lock	class: pool-of-files; instance: region, opened:=no, disposed, io-status	:create/1; :make/2; :open/2	:create-file/1 (...); :open/0 (...); :close/0 (...); :dispose/0 (...)	PRINTED-SOURCE	TM-061	6-7	5-6	hyphenated identifiers; see VARIANTS_tm0061_vs_tm0065.txt	tm0061.classes.tsv
+file	(none printed in listing); prose: real class file inherits as_permanent_object, as_resource, with_lock	class: pool_of_files; instance: region, opened:=no, disposed, io_status	:create/1; :make/2; :open/2	:create_file/1 (body ...); :open/0 (...); :close/0 (...); :dispose/0 (...)	PRINTED-SOURCE	TM-065	12-13	10-11	bodies of instance methods elided '...' in original; listing is 'part of the class definition'; class methods call :new/:retrieve (not defined here); real natures stated in prose PDF p13	tm0065.classes.tsv
+file	-	-	-	-	PROSE	TR-055	16	13	container of records in a disk volume; binary/table/heap	TR-055.classes.tsv
+file	as_file; io_port				PROSE	TR-059	11;29	9;27	"A file inherits class 'io_port'"; connected to the file manager's manager channel.	TR-059.classes.tsv
+file manager	(process)	manager channel (class slot)			PROSE	TR-059	28-32	26-30	dispatches requests from customers to device handlers; created/activated at boot.	TR-059.classes.tsv
+file marker		record position		:postion/1 [sic]; :set_position/1	PRINTED-INTERFACE	TR-059	12	10	"postion" misspelled as printed.	TR-059.classes.tsv
+file marker	-	-	-	-	PROSE	TR-055	17	14	indicates record position	TR-055.classes.tsv
+file tap		file object; file marker		:read/1; :write/1; :marker/1; :beginning/0; :end/0; :move/1; :move_to_beginning/0; :move_to_end/0	PRINTED-INTERFACE	TR-059	14-15	12-13	Figure 3.1.	TR-059.classes.tsv
+file tap	-	file marker	-	-	PROSE	TR-055	17	14	sequential access; keeps a file marker	TR-055.classes.tsv
+file types: binary / fixed-length record (table) / variable-length record (tape) / hash index / instance file / directory file					PROSE	TM-079	12-13	unnumbered	not called classes; VTOC is an instance file	tm0079.classes.tsv
+file_accessor	- (no nature printed)	instance attribute: file, file_marker, buffer	:create/2 (Class, Accessor, File): unbound(Accessor), :new(Class,Accessor), :set_accessor(Accessor,File)	:put_data/1, :get_data/1 (delegate to Accessor!buffer)	PRINTED-SOURCE	TR-524	38	37	Appendix A. Accessor = pair of buffer and marker (p12)	tr0524.classes.tsv
+floppy disk file					PROSE	TR-059	32	30	"only limited part of the facilities".	TR-059.classes.tsv
+font	-	-	:create (screenshot)	-	NAMED	TM-181	4	-3-	":create(#font, "font:ascii_16..." in the editor screenshot; font names font:ascii_16?, font:kanji_2?	TM-181.classes.tsv
+font	-	-	:create (with font path name)	-	NAMED	TM-785	37	-32-	OCR only	TM-785.classes.tsv
+font_executive	-	-	-	-	NAMED	TM-112	-	-	#font_executive (font editor; application)	ESP-manuals.classes.tsv
+GC process	-	-	-	-	PROSE	TR-213	4	2	"a software-level process started when a physical page allocation request arrives and no free physical page exists"; class name not given	TR-213.classes.tsv
+general_font	-	-	-	-	NAMED	TM-112	-	-	#general_font in font editor user guide (OCR grep)	ESP-manuals.classes.tsv
+graph_drawing	-	base_x, base_y, font_bank (OCR)	-	:draw/1, :set_color?, :get_window	PRINTED-SOURCE	TM-785	29-40	-24- to -35-	EXAMPLE generated application class; only p40 transcribed	TM-785.classes.tsv
+group					NAMED	TR-056	26	24	see user.	TR-056.classes.tsv
+hash_array	array				PROSE	TR-056	9	7	"an array of lists".	TR-056.classes.tsv
+heap file	(file)	-	-	-	PROSE	TR-055	16	13	variable-length records; "permanent heap area"	TR-055.classes.tsv
+heap file	as_file				PROSE	TR-059	17-18	15-16	variable-length records: type (string/vector), length, data.	TR-059.classes.tsv
+heap file marker	file marker	record position; byte offset			PROSE	TR-059	18	16		TR-059.classes.tsv
+heap file tap	file tap				PROSE	TR-059	18	16		TR-059.classes.tsv
+help	event	-	-	-	PROSE	TR-087	10	-	subclasses "such as help in general, and keyboard help"	TR-087.classes.tsv
+help_info_dictionary					NAMED	TR-061	12		Fig.1 only (has-a from e_program_core).	TR-061.classes.tsv
+i/o port	(port, per prose: "a special kind of port")	-	-	-	PROSE	TR-055	15	12	opened through i/o channels to the outer world (user, machine, file)	TR-055.classes.tsv
+index	hash_array (-> array -> sequence)			:add_at/2; :get_at/2; :remove/2	PRINTED-INTERFACE	TR-056	8-9	6-7	key = atomic term or string; hash array of lists of (key,object) entries.	TR-056.classes.tsv
+index buffer	buffer			:record_key/1; :set_record_key/1	PRINTED-INTERFACE	TR-059	19	17		TR-059.classes.tsv
+index file	table file				PROSE	TR-059	18-20	16-18	record = links|key|data; duplicate keys; hashed, no key ordering.	TR-059.classes.tsv
+index file marker	file marker	current key; record position		:key/1; :set_key/1	PRINTED-INTERFACE	TR-059	19	17	descriptions printed swapped (":key" under "To set a key").	TR-059.classes.tsv
+inferior-window	-	-	-	-	NAMED	TM-143	6	-	"basic window class (always needed)"; printed with hyphens; real identifier presumably uses underscores (INFERENCE)	TM-143.classes.tsv
+instance file	(table file)	-	-	-	PROSE	TR-055	17	14	"a table file to store objects"; each class knows how to store/restore its instances; VTOC built as an instance file for file objects	TR-055.classes.tsv
+instance file					PROSE	TR-056	27-28	25-26	table (fixed-length record) file.	TR-056.classes.tsv
+instance file	table file (table instance file)				PROSE	TR-059	20-21	18-19	one per permanent class; fixed-length instance records; heap instance file avoided.	TR-059.classes.tsv
+inter_process_port	port (is-a)				NAMED	TR-061	12		Fig.1 only.	TR-061.classes.tsv
+interrupt_process	process	class: context_stack, stack_pointer; instance: interrupt_index		:resume/1, :suspend/1 (override; "%TRAP TO PROCESS ...", "%RELEASE PROCESSOR ...", "%ALLOCATE PROCESSOR ..." elided)	PRINTED-SOURCE	TM-100	12-13	10-11	Figure 3.4. Resumed by interrupt or software trap; releases processor when suspended.	tm0100.classes.tsv
+interrupt_process	process				PROSE	TR-056	20-21	18-19	dispatched by hardware at interrupt/trap; trap handlers, device handlers, GC.	TR-056.classes.tsv
+io_port	port				NAMED	TR-059	29	27	"a special type of port".	TR-059.classes.tsv
+keyboard					NAMED	TM-061	5	4		tm0061.classes.tsv
+keyboard					NAMED	TM-065	10	8	physical I/O device class	tm0065.classes.tsv
+labeled_sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border, margins and label.	tm0125.classes.tsv
+labeled_superior_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the superior window with label.	tm0125.classes.tsv
+library	-	-	:get_class_object/2	-	PRINTED-INTERFACE	TR-283	18	16	Table 4 'class library'; p5: library subsystem manages all class objects; packages; class complete name = package name + class name	tr0283.classes.tsv
+library	-	-	:get_class_object (class retrieval, 3.25 ms local)	-	PRINTED-INTERFACE	TR-524	36	35	Class not named in TR-524 Table 3; name 'library' from TR-283 Table 4. INFERENCE that it is the same method	tr0524.classes.tsv
+library					PROSE	TR-056	22	20	holds a collection of classes, retrieved by class name.	TR-056.classes.tsv
+list	sequence			:add_after/2; :add_before/2; :get_at/2; :remove_at/2	PRINTED-INTERFACE	TR-056	7-8	5-6	any number of elements; removal leaves garbage words.	TR-056.classes.tsv
+list	(pool, per prose)	-	-	-	PROSE	TR-057	5	-	named as an example of a pool	TR-057.classes.tsv
+list			:create/1 (called)	:add_last/1, :remove/1, :empty/0, :clear/0, :count/1, :get_first/1, :stick_tap/1 (called)	NAMED	TM-100	8-16	6-14		tm0100.classes.tsv
+list	-	-	:create/1	-	NAMED	TM-388	62	-	":create(#list, L)" in examples; also simpos##list example p94 (OCR)	ESP-manuals.classes.tsv
+list					NAMED	TR-046	27		used as #list with :new/1, :add_first/1, :add_last/1 in system_menu.	TR-046.classes.tsv
+list_index	-	-	-	:add_at/2, :get_at/2 (OCR)	NAMED	TM-785	37	-32-	used as font bank in application code; OCR only, not eyed	TM-785.classes.tsv
+list_index					NAMED	TR-061	5		pool storing any number of objects retrievable by index.	TR-061.classes.tsv
+local_binary_file	- (no nature printed)	-	-	:l_call/2 clauses for read, add, submit_add, wait (local methods invoked to an original object; call :send_receive/4, :submit/5, :wait/2); :do_add/2, :do_read/2 (internal methods executed under file manager; call :interface/2 then :add/:read on Pfile with AccessStatus)	PRINTED-SOURCE	TR-524	37	36	Appendix A	tr0524.classes.tsv
+local_logical_file	- (no nature printed)	-	:l_call/5 as printed (Class, open, Lfile, Pathname, OpenMode, RequestMode}) -- unbalanced brace as printed; body :retrieve(#directory,...), :set_full_pathname/1, :open/2	:l_call/2 (open, {OpenMode,RequestMode}) -> :mode_type/2, :send_receive/4; :do_open/1 (internal, under file manager) -> :interface/2, :open(Pfile, OpenMode, Lfile, Status)	PRINTED-SOURCE	TR-524	37	36	Appendix A	tr0524.classes.tsv
+logical_file	file_accessor, local_logical_file, p_logical_file, logical_object, as_agent_of_physical_file, as_resource, as_file, with_file_capability (nature)	-	:open/4 (Class,Lfile,Pathname,OpenMode,RequestMode): :remote_or_local(#pathname,...) then :g_call(Class, open, {...}, Node)	-	PRINTED-SOURCE	TR-524	37	36	Appendix A. Head variable printed 'OpenMde' vs body 'OpenMode'; 'Node' glyph uncertain («?»ode)	tr0524.classes.tsv
+logical_mouse	single_object				PROSE	TM-125	8-13	7-12	internal: the class for the mouse device.  This class must have only one object and inherits the class	tm0125.classes.tsv
+logical_object	as_agent_of_physical_object, with_capability, with_internal_communication, with_access_status, remote_object (nature; comment '%% inherit ROAM %%')	-	-	- (body elided '...')	PRINTED-INTERFACE	TR-524	37	36	Only the nature part is printed. Prose p10-18: logical objects do communication, data caching (accessor) and capability checking	tr0524.classes.tsv
+manager	-	manager port	-	-	PROSE	TR-055	15	12	each I/O subsystem has a main process called a manager holding a manager port connected to a user's i/o port	TR-055.classes.tsv
+marker				(window methods :create_marker/:draw_marker/... take Marker as argument)	PROSE	TM-125	8-13	7-12	stand-alone: the class for making the marker.	tm0125.classes.tsv
+menu			:create/2 (menu item vector format, p14)	:add_item/2; :add_item/3 (multi column); :delete_item/1	PRINTED-INTERFACE	TM-125	8-13	7-12	stand-alone: the class for making the standard menu, single select single column menu. || add_item/delete_item receiver printed as Menu; INFERENCE that they belong to menu classes	tm0125.classes.tsv
+menu	(ready-made combination)	-	-	-	NAMED	TM-143	6	-	same sentence	TM-143.classes.tsv
+menu window					PROSE	TR-046	14-15		"The programmer can define the menu window only inherited the menu classes and supplied with the items"; size computed by window system. Class name not given.	TR-046.classes.tsv
+menu window	(window)	-	-	-	PROSE	TR-055	19-20	16-17	-	TR-055.classes.tsv
+menu_item		item string, value returned when selected, item type, documentation (prose, unnamed slots)			PROSE	TM-125	8-13	7-12	stand-alone: the class for making the menu item. It has the slots, item string, the value to be returned when	tm0125.classes.tsv
+menu_item					NAMED	TR-046	27		used as :create(#menu_item, 'window', common, window, _, Window_item) -- 5 args after receiver.	TR-046.classes.tsv
+message				:set_sender/1, :get_sender/1, :copy/1 (called)	PROSE	TM-100	16	14	"A message is defined by class 'message'."	tm0100.classes.tsv
+message	as_message	sender; receiver; body			PROSE	TR-056	14	12	self-descriptive message.	TR-056.classes.tsv
+multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi column menu.	tm0125.classes.tsv
+multi_column_menu					NAMED	TR-046	27		used as :create(#multi_column_menu, Menu_list, Menu_window).	TR-046.classes.tsv
+multiple_select_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi select single column menu.	tm0125.classes.tsv
+multiple_select_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the multi select multi column menu.	tm0125.classes.tsv
+my_window	window	user_name, group_name (component)	:create_my_window/1	:message/2, :get_group_name/1	PRINTED-SOURCE	TM-153	26	-	EXAMPLE	TM-153.classes.tsv
+my_window	-	window	:create/1	:test/0, :write/1	PRINTED-SOURCE	TM-181	4	-3-	EXAMPLE (user program in screenshot); partly hidden, listings/TM-181_p04_screenshot.esp	TM-181.classes.tsv
+NCP	-	-	-	-	PROSE	TM-401	5-6	-4-,-5-	Network Control Program (software layer, class name unknown); connection mode and datagram mode; interfaces: network listener, simple I/O, LIA interface	TM-401.classes.tsv
+node	-	-	-	-	PROSE	TR-055	20	17	represents each site in network	TR-055.classes.tsv
+node					PROSE	TR-056	29	27	represents a network node; stored as permanent objects.	TR-056.classes.tsv
+node					PROSE	TR-059	4	2	node object describing a remote node.	TR-059.classes.tsv
+node	-	-	-	-	NAMED	TR-057	7	-	network subsystem class	TR-057.classes.tsv
+node	-	-	-	-	NAMED	TR-087	5	-	-	TR-087.classes.tsv
+normal error	error	-	-	-	NAMED	TR-087	10	-	printed as prose words; class spelling unknown	TR-087.classes.tsv
+p_binary_file	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+p_logical_file	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+parent-window part class (親ウィンドウとしての機能を提供する部品クラス)					PROSE	TM-126	5	4	no identifier given; INFERENCE: corresponds to TM-125 as_superior	tm0126.classes.tsv
+parrot	as_program			:goal/0; local loop/1	PRINTED-SOURCE	TM-100	10	8	EXAMPLE (Figure 3.2), not a system class.	tm0100.classes.tsv
+pathname	-	-	:remote_or_local/5 (called :remote_or_local(#pathname, Pathname, Node, _, FullPathname, _))	-	NAMED	TR-524	37	36	Only the call is printed	tr0524.classes.tsv
+permanent directory	directory (prose: "a special kind of directory")	-	-	-	PROSE	TR-055	14	11	backed by a directory file; object stored at inclusion; survives reboot	TR-055.classes.tsv
+permanent directory	directory				PROSE	TR-056	28	26	cached view of a directory file.	TR-056.classes.tsv
+permanent directory	directory	directory file			PROSE	TR-059	27-28	25-26	first retrieval restores and caches the object; sub-directory files yield permanent sub-directories.	TR-059.classes.tsv
+plug	-	-	-	read/write data (prose)	PROSE	TR-055	20-21	17-18	access point to a cable; user creates plug on a socket and connects it to another socket	TR-055.classes.tsv
+plug	-	-	-	-	NAMED	TR-057	7	-	network subsystem class	TR-057.classes.tsv
+plug	-	-	-	-	NAMED	TR-087	5	-	-	TR-087.classes.tsv
+pool	-	-	-	insert; extract; find (prose)	PROSE	TM-009	5	Page 4	"an instance of the class 'pool'"	TM-009.classes.tsv
+pool					PROSE	TM-061	5	4	オブジェクトの収納	tm0061.classes.tsv
+pool					PROSE	TM-065	10	8	elementary class: object storage	tm0065.classes.tsv
+pool					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+pool	-	-	-	insert an object; extract an object; find an object (prose)	PROSE	TR-055	12	9	"A pool itself is an instance of the class 'pool'"	TR-055.classes.tsv
+pool	-	-	-	put/take (prose: "an object can be put into or taken from a pool")	PROSE	TR-057	5	-	"a container, which is also an object, of objects of any class"; list and array given as examples of pools	TR-057.classes.tsv
+pool	-	-	-	put/take (prose)	PROSE	TR-087	4	-	same text as TR-057; cites Saito et al. 1984	TR-087.classes.tsv
+pool	-	-	-	-	NAMED	TR-086	4	-	same sentence	TR-086.classes.tsv
+pool (generic)				:tap/1; :next/2; :get_at/2	PRINTED-INTERFACE	TR-056	11-12	9-10	operations any pool must provide for a generic tap.	TR-056.classes.tsv
+popup_choice_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the choice window with popup feature.	tm0125.classes.tsv
+port	channel	instance: out_port(list)		:send/2 (body); local send/4; prose: :receive/2, :connect/1, :disconnect/1	PRINTED-SOURCE	TM-100	16	14	Figure 3.8; :connect/:disconnect named in prose (PDF p7, p16), not printed.	tm0100.classes.tsv
+port	channel (for its input channel)	list of output channels		:connect/1; :disconnect/0; :disconnect/1	PRINTED-INTERFACE	TR-056	15-16	13-14	virtual-circuit; send broadcasts to all connected ports. Listings TR-056_p15.esp, p16.	TR-056.classes.tsv
+port	-	-	-	send/receive (prose)	PROSE	TM-009	8	Page 7	channel created by connecting two ports	TM-009.classes.tsv
+port					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+port	-	-	-	send/receive (prose)	PROSE	TR-055	14-15	11-12	two channels connect two ports; a port can be connected to many ports	TR-055.classes.tsv
+port	-	-	-	-	PROSE	TR-057	5	-	message box for two-way communication, connected to other ports	TR-057.classes.tsv
+port					PROSE	TR-061	5		"Port is the name of the class of objects that enable communication between processes."	TR-061.classes.tsv
+port	-	-	-	-	PROSE	TR-087	4	-	"connected to another port with channels"	TR-087.classes.tsv
+post_queue				:add_object/1, :remove_object/1 (called)	PROSE	TM-100	14	12	"Any class of objects, including integers, atoms, and strings, can be put into the queue."	tm0100.classes.tsv
+post_queue_for_message				must be compatible with post_queue	PROSE	TM-100	15	13		tm0100.classes.tsv
+process	with_link, waiting_frame	class: ready_queue, instance_array; instance: context, priority, sub_priority, mask_count:=0, suspend_reason:=nil, suspend_reasons(list), suspend_flag:=nil, status:=nil, parent_process, children_processes(list), killer_process, invocation_stack(list), resources(list), world, user, interpreter_instance, clock(process_clock)	:create/1, :create_core/2	:activate/1, :resume/1, :suspend/1 (bodies); prose also :terminate/0; called on process: :status/2, :clear_masks/0, :add_child/1, :add_program/1, :remove_program/1, :no_program/0, :die/0	PRINTED-SOURCE	TM-100	7-10	5-8	Figure 3.1 "Part of class 'process'" (partial: "they are not complete"). status values nil(=dead), dormant, suspended, ready, (active) "and some others".	tm0100.classes.tsv
+process	-	(management table held inside the class)	:create/1 (written :create(#process,P))	:activate/1 (Program), :terminate/0	PRINTED-INTERFACE	TM-225	6	-5-	call forms printed; arity excludes receiver; "process management consists only of the class called process; the class contains the management table data structure and the program operating on it" (p5)	TM-225.classes.tsv
+process		invocation stack; working world (instance slot)	:world/1	:activate/2; :suspend/1; :resume/1; :terminate/0	PRINTED-INTERFACE	TR-056	18-20;25	16-18;23	states running/ready/suspended/dormant; max 63 hardware processes, ~50 ordinary. :world(#process,World) is a class predicate returning the caller's world. Also :activate(Process,#program,Goal) (p20).	TR-056.classes.tsv
+process	-	-	-	initialization; termination; suspension; resumption (prose)	PROSE	TM-009	8	Page 7	"a meta-object ... instance of the class 'process'"; fork (::, !!) and remote call (@ world) creation; surrogate process	TM-009.classes.tsv
+process					PROSE	TM-061	5	4	実行主体	tm0061.classes.tsv
+process					PROSE	TM-065	10	8	elementary class: execution entity	tm0065.classes.tsv
+process					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+process	-	-	-	suspend; resume; terminate (prose)	PROSE	TR-055	13	10	"created as an instance of the class 'process'"; solves a question (predicate call) with a program and data	TR-055.classes.tsv
+process	-	-	-	-	PROSE	TR-057	5	-	executes a program (an instance of a program class); environments: program, library, world, universe	TR-057.classes.tsv
+process	-	-	-	-	PROSE	TR-087	4	-	execution environment = program, library, world, universe (cites Watanabe et al. 1984)	TR-087.classes.tsv
+process	-	-	-	-	PROSE	TR-283	4	2	Processes (process objects) hold the execution environment; each process holds virtual line objects, an export table, an import table and a status object (p5-8)	tr0283.classes.tsv
+process	-	-	-	-	PROSE	TR-524	8	7	'A class, process, is provided to create process instances, each of which holds an activation record'; kernel scheduling non-preemptive	tr0524.classes.tsv
+process					NAMED	TR-061	12		superclass of e_process in Fig.1.	TR-061.classes.tsv
+process	-	-	-	-	NAMED	TR-086	4	-	"abstract resources such as process, pool, stream"	TR-086.classes.tsv
+process_clock			:create/1 (called)		NAMED	TM-100	8	6	"The elapse time of this process"	tm0100.classes.tsv
+processor					NAMED	TM-061	5	4		tm0061.classes.tsv
+processor					NAMED	TM-065	10	8	hardware-resource class, not used by applications	tm0065.classes.tsv
+program		instance slots local to program; class slots shared	:invoke/1	:goal/0	PRINTED-INTERFACE	TR-056	19-20	17-18	program = instance of a program class; :invoke(#program,Goal) pushes onto caller's invocation stack. Skeleton (instance :goal, local p/q) printed p19-20 -- EXAMPLE.	TR-056.classes.tsv
+program	-	-	-	-	PROSE	TR-057	5	-	"program class": main goal is an instance predicate; slots hold objects local to the program	TR-057.classes.tsv
+program				:goal/0	PROSE	TR-061	5		"The instance of the 'program' has a special method 'goal' to execute the main function"; instance can be "invoked" in the process environment.	TR-061.classes.tsv
+program class (プログラム・クラス)				main goal defined as an instance predicate	PROSE	TM-079	10	unnumbered	TRANSLATION; 'a program is an instance of a program class'; no class name given	tm0079.classes.tsv
+record pointer		file identifier; file marker			PROSE	TR-056	28	26	file number on disk / file object in memory.	TR-056.classes.tsv
+record_pointer		file; file marker	:create/2	:file/1; :file_marker/1	PRINTED-INTERFACE	TR-059	21-22	19-20	interface seen only through as_permanent_object bodies.	TR-059.classes.tsv
+region	-	page map	-	-	PROSE	TR-055	16	13	area in a volume storing a file; disk pages allocated as it expands; logical address = region number + offset; page map per region	TR-055.classes.tsv
+region		region descriptor (page table, region size)			PROSE	TR-059	8-10	6-8	area of a volume storing records; multi-level page table; no multi-volume regions.	TR-059.classes.tsv
+remote channel	(channel)	-	-	send (prose)	PROSE	TR-055	21	18	represents a channel on a remote node	TR-055.classes.tsv
+remote channel	channel				PROSE	TR-056	30-31	28-29	send only; receive not allowed.	TR-056.classes.tsv
+remote directory	directory				PROSE	TR-056	30	28	root has object number 1.	TR-056.classes.tsv
+remote object	-	-	-	-	PROSE	TR-055	21	18	operation encoded into message, decoded at remote node; each class knows how to encode/decode	TR-055.classes.tsv
+remote_binary_file	- (no nature printed)	-	-	:set_parameters/3, :get_parameters/3, :set_returns/3, :get_returns/3 (for read; 'Specification of Extra Information Delivery'); :set_buffer_marker/4, :get_buffer_marker/4	PRINTED-SOURCE	TR-524	38	37	Appendix A. Packs buffer attributes into ROAM packet extra info (request_input / reply_input)	tr0524.classes.tsv
+remote_channel	-	-	-	send (prose)	PROSE	TR-057	7	-	"A remote channel is defined to represent an original channel on the other node"; spelling as a class name is INFERENCE	TR-057.classes.tsv
+remote_object	-	-	-	-	PROSE	TR-057	7	-	represents an object in a remote node; spelling as a class name is INFERENCE	TR-057.classes.tsv
+remote_object	as_remote_object (p9: 'The class as_remote_object is inherited by the class remote_object')	object_category = original | proxy (p4; slot of every global object -- which class declares it is not stated)	-	:g_call (global interface method), :l_call (local interface method), :r_call (remote method call); user-redefinable: proxy-object creating method, freezing/melting methods, extra-field handling methods (names not given)	PROSE	TR-283	9	7	Remote object kernel class for complete objects	tr0283.classes.tsv
+remote_object	- (not printed)	-	-	:g_call (global method call), :r_call (remote), :l_call (local, user-defined), :x_call (external call issued by server process) -- named in prose and Fig. 4	PROSE	TR-524	20-21	19-20	ROAM kernel class for complete global objects; inherited by logical_object. p26: not inherited by class 'class'	tr0524.classes.tsv
+sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border and margins.	tm0125.classes.tsv
+screen					PROSE	TM-125	8-13	7-12	internal: the class for managing the  logical screen on the display.	tm0125.classes.tsv
+screen					PROSE	TR-046	9;13		full screen is the most superior window, "defined as special window". Class name not given.	TR-046.classes.tsv
+semaphore	(a stream use)			:p/0; :v/0; :init/0; :init/1	PRINTED-SOURCE	TR-056	13	11	bodies printed (get/put of atom token); integer semaphore by :init(Semaphore,Count). ":init(Semaphore)" printed without ":-". Class name not stated as a class. Listing TR-056_p13.esp.	TR-056.classes.tsv
+semaphore	(waiting_queue per Fig 3.9)		:create/2 (Semaphore, Limit) (called)	:p_operation/0, :v_operation/0 (called)	PROSE	TM-100	16-17	14-15	"A semaphore which is a component of a bounded post queue inherits a waiting queue."	tm0100.classes.tsv
+sequence	pool				PROSE	TR-056	7	5	pool accessed by position; two major subclasses array and list.	TR-056.classes.tsv
+set	bag				PROSE	TR-056	10	8	planned; no duplicates.	TR-056.classes.tsv
+single_object					PROSE	TM-125	8-13	7-12	internal: the class to limit the number of object of the class.	tm0125.classes.tsv
+sink channel	channel				PROSE	TR-056	17	15	e.g. output character stream to a screen.	TR-056.classes.tsv
+situation	-	-	-	-	PROSE	TR-087	10	-	context for exception handling; stack-like; handlers set/deleted per program; sorts multiple handlers, applies nondeterministically	TR-087.classes.tsv
+situation stack	-	-	-	-	PROSE	TR-285	10	7	"a table associated with the computational process called the situation stack"; maintained with persistent alternatives	TR-285.classes.tsv
+socket	-	-	-	-	PROSE	TR-055	20	17	connection point in a node	TR-055.classes.tsv
+socket	-	-	-	-	NAMED	TR-057	7	-	network subsystem class	TR-057.classes.tsv
+socket	-	-	-	-	NAMED	TR-087	5	-	-	TR-087.classes.tsv
+sorted sequence	sequence				PROSE	TR-056	10	8	planned.	TR-056.classes.tsv
+source channel	channel				PROSE	TR-056	17	15	e.g. input character stream from a keyboard.	TR-056.classes.tsv
+source/sink port	(port)	-	-	-	PROSE	TM-009	8	Page 7	hole to the outer world; pseudo-process; open-ended channel	TM-009.classes.tsv
+sparse array	index (implemented as)				PROSE	TR-056	9	7	class name not quoted.	TR-056.classes.tsv
+standard-io-window	10 directly inherited classes; 40 classes in total after inheritance	121 slots incl. 1 class slot	14 class methods	527 methods in total incl. the 14 class methods	PROSE	TM-181	3	-2-	counts only; hyphenated as printed (screenshot shows #standard_... with underscore)	TM-181.classes.tsv
+standard_io_window	-	-	:create/2	:activate/0	PRINTED-INTERFACE	TM-364	74	73	:create(#standard_io_window,{size(300,500)},Window), :activate(Window) (OCR, Japanese manual; not eyed)	ESP-manuals.classes.tsv
+standard_io_window	-	-	:create/2 ({size(..),position(..)} attribute list, Window)	:activate/0	PRINTED-INTERFACE	TM-388	17	-	usage in ESP Guide example "class my_window has nature standard_io_window" (OCR, not eyed)	ESP-manuals.classes.tsv
+standard_output_file	-	-	:create/2 (File, path string)	:close_output/0	PRINTED-INTERFACE	TM-364	74	73	:create(#standard_output_file, File, "btree.txt"), :close_output(File) (OCR)	ESP-manuals.classes.tsv
+status_line					PROSE	TM-125	8-13	7-12	internal: the class for managing the status line. The status line is located at the bottom of the display	tm0125.classes.tsv
+stream		instance: waiting_queue(waiting_queue), post_queue(post_queue)	:create/1	:put/1, :get/1	PRINTED-SOURCE	TM-100	14-15	12-13	Figure 3.6; Figure 3.5 class relations (stream has waiting_queue, has post_queue).	tm0100.classes.tsv
+stream				:put/1; :get/1	PRINTED-INTERFACE	TR-056	12-13	10-11	get on empty stream suspends caller; FIFO; shared by many processes. Mixins planned for priority control and bounded buffer (p14).	TR-056.classes.tsv
+stream	-	-	-	put; get (prose)	PROSE	TM-009	5-6	Page 4-5	get suspends on empty stream until a put	TM-009.classes.tsv
+stream					PROSE	TM-061	5	4	オブジェクトの流れ(プロセス間通信)	tm0061.classes.tsv
+stream					PROSE	TM-065	10	8	elementary class: inter-process communication	tm0065.classes.tsv
+stream					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+stream	-	-	-	insert (put); extract (get) (prose)	PROSE	TR-055	12-13	9-10	FIFO between input head and output head; retrieve suspends when empty; "the only basic construct for synchronization and communication between processes"; "(get)" partly illegible on p13	TR-055.classes.tsv
+stream	-	-	-	put/retrieve (prose); retrieve suspends when empty	PROSE	TR-057	5	-	pipe through which objects flow; synchronisation and communication between processes	TR-057.classes.tsv
+stream	-	-	-	-	PROSE	TR-087	4	-	cites Shimazu et al. 1984	TR-087.classes.tsv
+stream	-	-	-	-	NAMED	TR-086	4	-	same sentence	TR-086.classes.tsv
+stream pool				:get/1; :get/2	PRINTED-INTERFACE	TR-056	16-17	14-15	merges streams; :get(Stream_pool,Object,Stream).	TR-056.classes.tsv
+submenu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the sub menu which is the sub window of another window.	tm0125.classes.tsv
+superior_window					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the superior window, the window which can have the sub-windows.	tm0125.classes.tsv
+symbolizer	-	-	:get_atom_token/2	-	PRINTED-INTERFACE	TM-388	170	-	"SIMPOS basic class symbolizer": :get_atom_token(#symbolizer, atom, Name) gives the JIS 16-bit print name (OCR, not eyed)	ESP-manuals.classes.tsv
+symbolizer	-	-	:get_atom_string/2, :get_atom/2, :enter_atom/2	-	PRINTED-INTERFACE	TR-283	18	16	Table 4 'class symbolizer' (atom<->string conversion used by ROAM message interpretation)	tr0283.classes.tsv
+symbolizer	-	-	-	-	PROSE	TM-229	4	-3-	I/O-media subsystem: external (string) <-> internal (structure) conversion of programs and data (TM-143 calls this the transducer)	TM-229.classes.tsv
+system_menu		component menu_list	:create/2; :get_invariant_part/1		PRINTED-SOURCE	TR-046	27		Fig.3 System-Menu Definition, partial (printed elisions). Clauses take System_menu_class receiver (class predicates) though no 'class' keyword printed. Uses #list, #multi_column_menu, #menu_item, local make_from_to/2 (not shown), slot 'window' (System_menu!window := ...). Menu items 'window','file' (media systems). Listing TR-046_p27.esp.	TR-046.classes.tsv
+system_menu	-	-	-	-	NAMED	TR-057	7	-	"Create, delete, and activate an expert via system_menu"	TR-057.classes.tsv
+system_menu (EXPERTS items)	-	-	-	-	NAMED	TM-143	3	-	screenshot: generalist?, debugger, editor, file_manipulator, librarian, terminal? (low confidence)	TM-143.classes.tsv
+system_menu (MEDIA SYSTEMS items)	-	-	-	-	NAMED	TM-143	3	-	screenshot: window_manipulator, network, shell?, whiteboard, login, shut down? (low confidence)	TM-143.classes.tsv
+table file	(file)	-	-	-	PROSE	TR-055	16	13	fixed-length records	TR-055.classes.tsv
+table file	as_file				PROSE	TR-059	16-17	14-15	fixed-length records; record size fixed at creation.	TR-059.classes.tsv
+table file tap	file tap				PROSE	TR-059	17	15		TR-059.classes.tsv
+table_file	-	-	(open/make implied p11)	-	NAMED	TR-524	11	10	'#table_file' named as a file interface class object; p9: table files are fixed-length record files	tr0524.classes.tsv
+tap		position; pool		:get/1; :put/1; :move/1; :position/1; :pool/1; :set_position/1	PRINTED-SOURCE	TR-056	11-12	9-10	generic :get/1 body printed (p12) using pool :get_at and :next/2; created by :tap(Pool,Tap). Body has misprint :get_at/1 (Object missing). Listings TR-056_p11.esp, TR-056_p12.esp.	TR-056.classes.tsv
+tap	-	-	-	-	PROSE	TM-009	5	Page 4	"plugged in a pool", sequential access	TM-009.classes.tsv
+tap	-	-	-	-	PROSE	TR-055	13	10	"An instance of the class 'tap' makes a stream out of a pool"; retrieves objects sequentially from a pool	TR-055.classes.tsv
+temporary-window	-	-	-	-	NAMED	TM-143	6	-	"basic window class (always needed)"; printed with hyphens; real identifier presumably uses underscores (INFERENCE)	TM-143.classes.tsv
+temporary_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the single select single column temporary menu.	tm0125.classes.tsv
+temporary_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the single select multi column temporary menu.	tm0125.classes.tsv
+temporary_multiple_select_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the temporary multi select single column menu.	tm0125.classes.tsv
+temporary_multiple_select_multi_column_menu					PROSE	TM-125	8-13	7-12	stand-alone: the class for making the temporary multi select multi column menu.	tm0125.classes.tsv
+test	remote_object (nature)	-	:do/1 (Class, Node) [head printed with no body]; :make/2 (Class, Instance, Node) -> :g_call(Class, make, {Instance}, Node); local :l_call/2 for do and make (make -> :new(Class, Instance))	:do/0 -> :g_call(Instance, do, {}); local :l_call/2 (do)	PRINTED-SOURCE	TR-283	19	17	EXAMPLE: Appendix 1 'Definition of Primitive Methods (in ESP)', benchmark for Table 2; the only complete ROAM user class printed	tr0283.classes.tsv
+test	remote_object (by TR-283 Appendix 1)	-	:do/1 (#test, Node), :make/2 (#test, Instance, Node)	:do/0	PRINTED-INTERFACE	TR-524	36	35	EXAMPLE (benchmark class, Table 3 'ROAM' rows); body printed in TR-283 p19	tr0524.classes.tsv
+translation_table	default_translation_table				PROSE	TR-046	14		"the user translation table inherits this class" (default_translation_table); stored in a slot of e_window; executed by the window manager (p16).	TR-046.classes.tsv
+translation_table	default_translation_table (is-a)				NAMED	TR-061	12		Fig.1.	TR-061.classes.tsv
+two_labeled_sash					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making a window which has border, margins and two labels.	tm0125.classes.tsv
+universe					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+user					PROSE	TR-059	4	2	user objects kept in an object storage; retrieved at login.	TR-059.classes.tsv
+user		directory of experts (expert directory)			PROSE	TR-061	8		"a class of objects, 'user', for each SIMPOS user"; on login the user's expert directory feeds the system_menu.	TR-061.classes.tsv
+user					NAMED	TR-056	26	24	"class 'user' and class 'group' must be defined".	TR-056.classes.tsv
+user management	-	-	-	-	NAMED	TM-229	4	-3-	supervisor: management of logged-in users; class name unknown	TM-229.classes.tsv
+user_window					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for making the standard window which can be used by the user.	tm0125.classes.tsv
+volume				:mount/1; :dismount/0; :allocate/1; :deallocate/1; :link/1	PRINTED-INTERFACE	TR-059	6-7;27	4-5;25	volume descriptor (id, VTOC, root directory file, free page pool) in fixed area; only the file manager uses volume access; a volume is a device port to a handler channel (p30-31).	TR-059.classes.tsv
+waiting_frame					PROSE	TM-100	10,14	8,12	inherited by process "to put the process into the waiting queue of a stream".	tm0100.classes.tsv
+waiting_queue				:hook/1, :unhook/1, :empty/0 (called)	PROSE	TM-100	14	12	"constructed on a doubly-linked list"; entries must be instances of waiting_frame.	tm0100.classes.tsv
+warning	error	-	-	-	NAMED	TR-087	10	-	-	TR-087.classes.tsv
+whiteboard					PROSE	TR-046	16		"implemented as a circular stack containing expert messages".	TR-046.classes.tsv
+whiteboard	-	-	-	-	PROSE	TR-057	7-8	-	blackboard for expert-to-expert messages	TR-057.classes.tsv
+whiteboard					PROSE	TR-061	7;12		buffer in which an object is stored by an expert as directed by the user; no control over process activation.	TR-061.classes.tsv
+wildcard	-	-	-	-	NAMED	TM-229	4	-3-	supervisor function "ワイルドカード機能"; class name unknown	TM-229.classes.tsv
+window			:create/1; :create/2 (Initiation list, Table 1)	:set_size/2; :set_position/2; :set_superior/1; :set«?»border_width/1; :set_label_position/1; :set_title/1; :set_top_title/1; :set_bottom_title/1; :set_margins/4; :activate/0; :show/0; :deactivate/0; :hide/0; :write/1; :move_cursor/2; :insert/1; :delete/1; :clear_line/0; :scroll/1; :open_rows/2; :move_rows/3; :get_point_value/3; :set_point_value/3; :draw_line/4; :draw_line/7; :draw_rectangle/4; :draw_rectangle/7; :draw_string/3; :draw_string/4; :create_marker/1; :draw_marker/1; :erase_marker/1; :move_marker/3; :set_marker_type/2; :set_marker_size/3; :get_marker_list/1; :read/1; :read_sense/1; :kill/0; :select/0	PRINTED-INTERFACE	TM-125	8-13; 13-19; 22	7-12; 12-18; 21	stand-alone: the class for make a standard window || methods: ch.5 "Using the Window" (tm0125_p13.esp); attaching them to class window is INFERENCE (report documents them for windows generally, receiver named Window); :draw_line/7 printed X1,X2,X2,Y2; :select/0 named in 6.2 prose only	tm0125.classes.tsv
+window	-	-	:create/2 (attribute list {size(W,H),position(X,Y)}, Window)	:activate/0, :write_lines/1, :write/1 (key#lf, key#cr)	PRINTED-INTERFACE	TM-153	26	-	usage in an example class (1986 syntax)	TM-153.classes.tsv
+window	-	-	-	-	PROSE	TR-055	18-19	15-16	virtual terminal; states shown/selected/de-exposed/de-activated; subwindows; temporary windows; menu windows; additional-feature classes: scrolling, labelling, framing	TR-055.classes.tsv
+window	-	selected_window (window manager instance slot)	-	-	PROSE	TR-057	5-6	-	each window an instance of the window class; hierarchy rooted at the logical screen; 5 states; Table 3-1 (listings/TR-057_p06.txt)	TR-057.classes.tsv
+window			:create/1 (called)	:activate/0, :read/1, :write/1 (called)	NAMED	TM-100	10	8	used by parrot example	tm0100.classes.tsv
+window	(ready-made combination of the part classes)	-	-	-	NAMED	TM-143	6	-	"標準品のクラス window や menu"	TM-143.classes.tsv
+window	-	-	:create/1	-	NAMED	TM-388	94	-	package example: window resolved to package simpos (OCR)	ESP-manuals.classes.tsv
+window					NAMED	TR-061	12		superclass of e_window in Fig.1.	TR-061.classes.tsv
+window (drawing methods)	-	-	-	:draw_line, :draw_rectangle, :draw_circle, :draw_arc, :draw_fan, :draw_ellipse, :draw_elliptical_arc, :draw_graph, :draw_polygon, :draw_filled_rectangle, :draw_filled_circle, :draw_filled_ellipse, :draw_filled_fan, :draw_characters (argument vectors in listing)	PRINTED-INTERFACE	TM-785	40	-35-	method names and example argument tuples only, from an application data table; arities not stated (vector length 6-10)	TM-785.classes.tsv
+window classes (基本クラス + 補助クラス)					PROSE	TM-079	12	unnumbered	basic window class plus auxiliary mixin-like classes (label, scroll); temporary window, menu window; no names	tm0079.classes.tsv
+window manager	-	-	-	-	PROSE	TM-225	14	-13-	Fig. 2: between user processes and bitmap/keyboard/mouse handlers; uses window objects and window classes	TM-225.classes.tsv
+window-with-border-and-label	bare-window, with-border, with-label				PRINTED-SOURCE	TM-061	8	7		tm0061.classes.tsv
+window_manager					PROSE	TM-125	8-13	7-12	internal: the internal class for window manager process.	tm0125.classes.tsv
+window_manager	-	selected_window	-	-	PROSE	TR-057	6	-	"The window manager has the instance slot selected_window"; whether it is a class name is INFERENCE	TR-057.classes.tsv
+window_manipulator					PROSE	TM-125	8-13	7-12	internal: the class for the window_manipulator. This class control the window manipulator menu.	tm0125.classes.tsv
+window_message					PROSE	TM-125	8-13	7-12	internal: the class for making the message for the inter process communication between the user  process	tm0125.classes.tsv
+window_region					PROSE	TM-125	8-13	7-12	stand-alone: the class for defining the window region.	tm0125.classes.tsv
+window_with_border_and_label	bare_window, with_border, with_label				PRINTED-SOURCE	TM-065	15	13	prose PDF p16: refresh clears area then redraws border and label (after-demons)	tm0065.classes.tsv
+window_with_two_labels					PROSE	TM-125	8-13	7-12	stand-alone: the class for making a window with two labels, top label and bottom label. user can use one of	tm0125.classes.tsv
+window_without_label					PROSE	TM-125	8-13	7-12	stand-alone: the class for making a window which has no labels.	tm0125.classes.tsv
+with-b	(has an instance of b)				PROSE	TM-061	4	3	EXAMPLE	tm0061.classes.tsv
+with-border	as-inside, *	component: border-x, border-y, border-area-width, border-area-height; attribute: border-flag:=on, border-width:=2		:draw-border/0 (...); after :refresh/0 (two clauses)	PRINTED-SOURCE	TM-061	8	7	first demon tests == off (TM-065: == 0); second demon has no cut	tm0061.classes.tsv
+with-border	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible	TM-143.classes.tsv
+with-display					NAMED	TM-061	8	7	nature only	tm0061.classes.tsv
+with-label	as-inside, *, as-label			:draw-label/0; :clear-label/0; :refresh-label/0; after :refresh/0	PRINTED-SOURCE	TM-061	8	7		tm0061.classes.tsv
+with-label	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible	TM-143.classes.tsv
+with-lock					NAMED	TM-061	6	5		tm0061.classes.tsv
+with-margin	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible	TM-143.classes.tsv
+with-two-labels	-	-	-	-	NAMED	TM-143	6	-	attribute class (属性クラス) for windows; hyphens as printed; with-margin partly illegible	TM-143.classes.tsv
+with_access_status	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+with_b	(has an instance of b)				PROSE	TM-065	7	5	EXAMPLE (inheritance/has_a explanation)	tm0065.classes.tsv
+with_border	as_inside, *	instance component: border_x, border_y, border_area_width, border_area_height; attribute: border_flag:=on, border_width:=2		:draw_border/0 (...); after :refresh/0 (two clauses)	PRINTED-SOURCE	TM-065	15	13	first after-demon tests border_flag == 0 although initial value is 'on' (as printed; TM-061 has == off)	tm0065.classes.tsv
+with_border					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have a border of the window.	tm0125.classes.tsv
+with_capability	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+with_default_mouse					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the basic function  about mouse control, to detect the mouse  movement	tm0125.classes.tsv
+with_display					NAMED	TM-065	15	13	nature of bare_window only	tm0065.classes.tsv
+with_file_capability	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+with_goal_demon					NAMED	TR-061	12		Fig.1 only (superclass of e_program).	TR-061.classes.tsv
+with_internal_communication	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+with_label	as_inside, *, as_label			:draw_label/0 (...); :clear_label/0 (...); :refresh_label/0; after :refresh/0	PRINTED-SOURCE	TM-065	15	13		tm0065.classes.tsv
+with_label					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have a label.	tm0125.classes.tsv
+with_line_selection					PROSE	TM-125	8-13	7-12	mixin 3): the class  for making  the window  whose each  line can  be selected  by mouse like to item of	tm0125.classes.tsv
+with_link					PROSE	TM-100	10	8	inherited by process "to put the process into the ready queue".	tm0100.classes.tsv
+with_lock					NAMED	TM-065	13	11	prose	tm0065.classes.tsv
+with_margin					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have the margins.  The margin is the blank area at the	tm0125.classes.tsv
+with_mouse_scroll					PROSE	TM-125	8-13	7-12	mixin 2): the class for supplying the function to cause  scrolling by the mouse. this class support the  two | listed again under mixin 3): the class for supplying the function to scroll the contents of the window by mou	tm0125.classes.tsv
+with_retrieval	-	-	-	-	NAMED	TR-524	37	36	Named only in a nature list in Appendix A	tr0524.classes.tsv
+with_superior_input_buffer					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to share the input buffer with its own superior window.	tm0125.classes.tsv
+with_translation_table					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to have translation table.  The translation table is used  for	tm0125.classes.tsv
+with_two_labels					PROSE	TM-125	8-13	7-12	mixin 4.2 1): the class for supplying the function to have two labels, top label and bottom label.	tm0125.classes.tsv
+with_window_region					PROSE	TM-125	8-13	7-12	mixin 3): the class for supplying the function to define a mouse sensitive area in that window.	tm0125.classes.tsv
+world	-	pool list	-	-	PROSE	TM-009	6	Page 5	"a meta-object, an instance of the class 'world'"; created from pools; combined world includes other worlds; lookup in pool-list order	TM-009.classes.tsv
+world					PROSE	TM-061	5	4	実行環境	tm0061.classes.tsv
+world					PROSE	TM-065	10	8	elementary class: execution environment	tm0065.classes.tsv
+world					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)	tm0079.classes.tsv
+world	-	-	-	-	PROSE	TR-055	14	11	sequence of directories; shareable among processes; created/changed dynamically	TR-055.classes.tsv
+world	(sequence of directories; same interface as directory)				PROSE	TR-056	24-25	22-23	first directory containing the name wins.	TR-056.classes.tsv
+クラスa					PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)	tm0079.classes.tsv
+クラスb					PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)	tm0079.classes.tsv
+クラスc	クラスa, クラスb				PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)	tm0079.classes.tsv
+クラスd	クラスwith_e				PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a	tm0079.classes.tsv
+クラスe					PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a	tm0079.classes.tsv
+クラスwith_e	(holds an クラスe object in a slot)				PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a	tm0079.classes.tsv
+ケーブル (cable)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given	tm0079.classes.tsv
+ソケット (socket)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given	tm0079.classes.tsv
+ノード (node)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given	tm0079.classes.tsv
+プラグ (plug)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given	tm0079.classes.tsv

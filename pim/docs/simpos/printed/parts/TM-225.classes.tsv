@@ -1,0 +1,3 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+process	-	(management table held inside the class)	:create/1 (written :create(#process,P))	:activate/1 (Program), :terminate/0	PRINTED-INTERFACE	TM-225	6	-5-	call forms printed; arity excludes receiver; "process management consists only of the class called process; the class contains the management table data structure and the program operating on it" (p5)
+window manager	-	-	-	-	PROSE	TM-225	14	-13-	Fig. 2: between user processes and bitmap/keyboard/mouse handlers; uses window objects and window classes

@@ -1,0 +1,6 @@
+TR-055	VTOC	PROSE	volume table of contents built as an instance file; layout absent
+TR-055	region page map	PROSE	per-region logical->physical page map; layout absent
+TR-055	manager message protocol	ABSENT	request/reply through manager port; no formats
+TR-055	remote object encoding	ABSENT	"each class knows how to encode and decode"
+TR-055	listeners, analyzers	NAMED	experts named only
+TR-055	Fifth generation kernel language version 0	CITED	ICOT internal document June 1983 (ref [2])

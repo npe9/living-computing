@@ -1,0 +1,13 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 19, printed folio 17. Section 5(1) Process (cont.) and 5(2) 'Program' (program skeleton starts here, continues on PDF p20).
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+% o To resume a process
+          :resume(Process,Reason)
+% o To terminate a process
+          :terminate(Process)
+
+% "a goal predicate, which is a default predicate for the main program, is usually defined in a
+%  program definition as"
+      instance

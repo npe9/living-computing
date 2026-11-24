@@ -1,0 +1,106 @@
+% TM-065 "An Operating System for Sequential Inference Machine PSI" (Hattori et al., June 1984)
+% PDF pages 15-16, printed folios 13-14, section 4.2 (2) Multiple inheritance; no figure numbers.
+% Four class listings: bare_window, with_border (continues onto p16), with_label,
+% window_with_border_and_label.
+% GLYPH NOTE: the nature lists contain a small raised glyph after as_inside; at
+% 250% zoom it reads as an asterisk '*' (ESP's mark for the class's own position
+% in its nature list -- that reading of '*' is from ESP usage, INFERENCE for this
+% page). Transcribed as '*'.
+% '...' bodies are elided IN THE ORIGINAL.
+% transcribed by eye from 300dpi crops (work/tm0065/p-15_[abc].png, p-16_[abc].png)
+
+% Prose (p15): "Class 'bare_window' is an elementary class that all window classes
+% must inherit either directly or indirectly."
+
+        class   bare_window has
+
+        nature
+                with_display, as_inside, * ;
+
+        :create(Class, Parameters, Window) :-   % Create a new window.
+                :new(Class, Window),
+                :initialize(Window, Parameters),
+                :start(Window) ;
+
+        instance
+
+        attribute
+                width, height ;
+
+        :refresh(Window) :- !,
+                :get_size(Window, Width, Height),
+                :clear_rectangle(Window, 0, 0, Width, Height) ;
+
+        :initialize(Window, size(Width, Height)) :- ! ,
+                Window!width := Width,
+                Window!height := Height ;
+
+        end.
+
+% Prose (p15): "Class 'with_border' supports functions that draw a window border.
+% The border consists of the four lines which outline the window."
+
+        class   with_border has
+
+        nature
+                as_inside, * ;
+
+        instance
+
+        component
+                border_x, border_y,
+                border_area_width, border_area_height ;
+
+        attribute
+                border_flag     := on,
+                border_width    := 2 ;
+
+        :draw_border(Window) :- ...;            % Draw the border.
+% ---- page break (PDF p15 -> p16) ----
+
+        after :refresh(Window) :-
+                Window!border_flag == 0, ! ;
+        after :refresh(Window) :- !,
+                :draw_border(Window) ;
+
+        end.
+% NOTE (as printed): border_flag is initialised to 'on' but the first after-demon
+% tests 'Window!border_flag == 0'. Not harmonised.
+
+% Prose (p16): "Class 'with_label' supports functions that draw a window label.
+% The label shows the name of the window."
+
+        class   with_label has
+
+        nature
+                as_inside, *, as_label ;
+
+        instance
+
+        :draw_label(Window) :- ... ;            % Draw the label.
+
+        :clear_label(Window) :- ... ;           % Erase the label.
+
+        :refresh_label(Window) :-
+                :clear_label(Window),
+                :draw_label(Window) ;
+
+        after :refresh(Window) :-
+                :refresh_label(Window) ;
+
+        end.
+
+% Prose (p16): "Class 'as_label', which is inherited by class 'with_label',
+% provides concrete facilities for labeling a window.
+% A Window that has both a border and a label is instantiated from the following class:"
+
+        class   window_with_border_and_label    has
+        nature
+                bare_window, with_border, with_label;
+        end.
+
+% Prose (p16-17): "In the above window class, the 'refresh' predicate uses demons.
+% Class 'bare_window' has the primary 'refresh' predicate, which refreshes the window
+% area. Class 'with_label' and class 'with_border' have 'after' demons of the
+% 'refresh' predicate. Refreshing this window first clears the window area, and
+% then redraws the border and the label."

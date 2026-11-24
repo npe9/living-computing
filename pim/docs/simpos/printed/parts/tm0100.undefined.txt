@@ -1,0 +1,20 @@
+# TM-100: names used but never defined in the report (PDF page)
+with_link (p7,p10) -- role stated, no definition
+waiting_frame (p7,p10,p14) -- role stated
+waiting_queue (p14) -- "doubly-linked list"; methods :hook :unhook :empty used, not defined
+post_queue (p14) -- :add_object :remove_object used
+post_queue_for_message (p15)
+message (p16) -- :set_sender :get_sender :copy used
+semaphore (p17) -- :p_operation :v_operation, :create(#semaphore, S, Limit) used
+context (p8) -- :create(#context, Context_number, Stack_number, Context), :get_number, :set_entry_point, :activate, :set_priority
+list (p8) -- :add_last :remove :empty :clear :count :get_first :stick_tap; and the "tap" object it returns (:get(Tap, A_port))
+process_clock (p8)
+window (p10) -- :create :activate :read :write; etx character
+boot_process (p13), as_boot_program (p13) -- prose only
+Pool, World, Timer, Printer, Network subsystems (p5, Figure 2.1)
+process methods called but not printed: :status/3 ":status(Process, dormant, on_activate)", :entry_of_invoke/2,
+  :clear_masks/1, :inhibit_interrupt/1, :allow_interrupt/1 (class methods on #process), :self(#process, P),
+  :add_child/2, :add_program/2, :remove_program/2, :no_program/1, :die/1, :terminate/1
+set_vector_element/3 (p8) -- a built-in (no colon), not defined
+port :connect/:disconnect (p7,p16) -- prose only
+"priority control" stream variation (p7)

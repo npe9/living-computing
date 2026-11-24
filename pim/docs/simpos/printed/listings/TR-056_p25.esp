@@ -1,0 +1,9 @@
+% TR-056 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS Supervisor", ICOT TR-056, 84.04)
+% PDF page 25, printed folio 23. Section 6(4) 'World'.
+% Transcribed by eye from 300dpi code-line crops (work/tr0056/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Interface lines are printed one per bullet item, each under an 'o To ...' description (given as % comments).
+
+        World = [..., Directory1, ..., Directory2, ...]
+% "The working world is kept in an instance slot of the process and is retrieved at any time by"
+        :world(#process,World)
+% "Though this is a class predicate, this call returns the working world of the calling process."

@@ -1,0 +1,13 @@
+# Names used in TR-046 but never defined there (PDF page)
+:get_e_process/1 (method on Window returning the expert process) -- called in every translation-table clause, p26, p28
+make_from_to/2 (local predicate; Directory -> Experts_list) -- p27
+:get_invariant_part/1 body shown only partly (elided) -- p27
+#coordinator (destination object/class of meta-commands) -- p26, p28
+control#"k", mouse#1/mouse#l, mouse#rr (key-code notation; encoding of control#, mouse# not given) -- p26, p28
+:create(#menu_item, Name, common, Kind, _, Item) -- meaning of 'common' and the 5th argument not given -- p27
+#multi_column_menu, #list (:add_first, :add_last) -- p27
+System_menu!window slot (not declared in the printed class; only menu_list is) -- p27
+e_window, e_program, e_process, e_process_pool, whiteboard (prose only) -- p14-16
+"the menu classes" -- p15
+move_window, select_window, reshape_window -- p09
+window manager (as distinct from window system) -- p16

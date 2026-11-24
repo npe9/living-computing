@@ -1,0 +1,16 @@
+% TR-057 "Overall Design of SIMPOS" (Takagi et al., Apr 1984), PDF page 6, right column.
+% Table 3-1. Window Status.  Transcribed by eye from 300dpi crops (F4).
+% Note as printed: the text above the table names five states
+% selected/shown/exposed/overlapped/deactivated, but the table's fourth row
+% reads "Deexposed" (not "Overlapped"); Exposed/output is printed "wait".
+
+Table 3-1.  Window Status
++-------------+--------+-------+--------+
+| Status      | key-in | mouse | output |
++-------------+--------+-------+--------+
+| Selected    | done   | done  | done   |
+| Shown       | wait   | done  | done   |
+| Exposed     | wait   | wait  | wait   |
+| Deexposed   | wait   | wait  | wait   |
+| Deactivated | fail   | fail  | fail   |
++-------------+--------+-------+--------+

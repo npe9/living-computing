@@ -1,0 +1,21 @@
+% TM-065 "An Operating System for Sequential Inference Machine PSI" (Hattori et al., June 1984)
+% PDF page 11, printed folio 9, section 3.2 System Structure
+% Figure 3.1  Layered Structure of SIMPOS   (a figure, not ESP source)
+% transcribed by eye from 300dpi crops (work/tm0065/p-11_b.png)
+ ______________________________________________________________
+| Programming system                                           |
+|        Coordinator Editor Interpreter/Debugger Library       |
+|______________________________________________________________|
+| Operating system                                             |
+|      ........................................................|
+|      : I/O medium systems                                    |
+|      :     Window Network File Printer                       |
+|      :.......................................................|
+|      : Supervisor                                            |
+|      :     Process Pool Stream World Timer                   |
+|      :.......................................................|
+|      : Kernel                                                |
+|      :     Processor Memory Device                           |
+|==============================================================|
+| Hardware                                                     |
+|______________________________________________________________|

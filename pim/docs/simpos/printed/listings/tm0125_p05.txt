@@ -1,0 +1,7 @@
+% TM-125, PDF page 5, printed "Page 4". Figure 3. Window Hierarchy (tree; rendered as text)
+% transcribed by eye from contact sheet + OCR draft; labels confirmed in OCR.
+                 SCREEN
+        /          |          \
+   WINDOW-1    WINDOW-2    WINDOW-3
+                /     \
+        WINDOW-2-1   WINDOW-2-2

@@ -1,0 +1,26 @@
+% TM-126 「マルチウィンドウシステムを通して見たインターフェースの考察」 (内田俊一, 辻 順一郎, June 1985)
+% PDF page 3, printed folio 2 (handwritten folio). Caption: 図1 マン・マシン対話系概念図
+% transcribed by eye from 300dpi crops (work/tm0126/p-3_fig1.png). Labels only; the figure is a
+% conceptual drawing (two regions joined by a narrow "channel" waist). Layout approximated.
+
+ top arrow label:  マン・マシンインタフェースの
+                   スループットを決めるチャネル
+                              ⇓
+ 人間系 (left region)                     | マシン系 (right region)
+   脳                                      |   «?»ウィンドウ«?» (vertical 2-column box; zoomed crop p-3_fig1_mid.png; one column reads ウインドウ-like, the other ﾏﾙﾁ-like, both «?»)
+   作りたいソフトウェアの                  |   [speaker icon] ブザー«?» (zoom: ﾌﾞｻﾞｰ-like, small print)
+     アイデア                              |   [mouse icon]   マウス
+     仕様                                  |                  キーボード
+     動作イメージ                          |                  «?» (boxed, black-on-white, illegible)
+   知覚・運動神経系 (vertical)             |   プログラミングシステム
+   目  耳  手 (with eye/ear/hand drawings) |   オペレーティングシステム
+                                           |     コーディネータ
+                                           |     エディタ
+                                           |     ディバッガ
+                                           |     対話向き機能
+                                           |     性能
+                                           |   作成中のプログラム (stack of ovals, dotted continuation)
+
+ bottom labels:  操作性の良否がこのチャネル幅を決める。
+                 操作性が悪いと、対話向きの機能が豊富にあっても、生きてこない。
+                 |←— 操作性にかかわる部分 —→|   (spans the channel waist and the I/O devices)

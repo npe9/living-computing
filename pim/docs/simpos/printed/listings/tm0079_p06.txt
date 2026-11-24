@@ -1,0 +1,25 @@
+% TM-079 「逐次型推論マシンのOS」 (服部 隆, November 1984) -- HANDWRITTEN manuscript
+% PDF page 6, section 3.1 オブジェクトの概念 (numbering as written; see tm0079_p07.txt).
+% Two untitled, uncaptioned hand-drawn figures. transcribed by eye from the 300dpi page render viewed whole at reduced display scale (not crops)
+% (work/tm0079/p-06.png). Arrows drawn from the inheriting class to the inherited class.
+
+Figure A (after: 継承により、クラス間に"is_a"の階層が形成される。)
+
+      クラスa            クラスb
+          ↖ 継承      ↗ 継承
+              クラスc
+
+Figure B (after: クラスdがクラスe(正確には、クラスeのオブジェクト)をもつべき場合には、
+          クラスeのオブジェクトをスロットにもつようなクラスwith_eをまず定義し、それをクラスdに継承させる。)
+
+      クラスwith_e  --保持-->  クラスeの
+          ↖ 継承               オブジェクト
+      クラスd
+
+% '保持' arrow is dashed as drawn.  Surrounding prose (p6): inside, class c has the clauses
+%  given by these classes OR-combined (OR結合) and all slots collected; from the logic
+%  programming viewpoint the axiom sets of the inherited classes are introduced into the
+%  inheriting class.  "has_a" hierarchy is formed using the "is_a" relation.
+% p5 bottom/p6 top: an operation that changes object state (e.g. rewriting a slot value)
+%  corresponds to Prolog's assert/retract ("log の assert や retract の機能に対応させられる"; first
+%  line of p6 faint, read as such).

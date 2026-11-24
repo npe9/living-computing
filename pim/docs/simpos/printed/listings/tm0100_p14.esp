@@ -1,0 +1,51 @@
+% TM-100 PDF page 14, printed folio 12. Section 3.2 (1) Stream. Figure 3.5 "Class
+% relations of class 'stream'" (a diagram, reproduced as printed) and the start of
+% Figure 3.6 "Part of class 'stream'" (caption on PDF p15).
+% Transcribed by eye from 300dpi crops.
+% Prose (PDF p13-14): "A stream consists of two queues; a queue of processes waiting
+% for events (in the case of stream, for an object being put) and a queue of objects
+% which are waiting to be taken out by processes.  Class 'waiting_queue' defines queues
+% of the first.  This queue is constructed on a doubly-linked list, and frames
+% (entries) in the queue must be instances of class 'waiting_frame'.  Class 'process'
+% inherits class 'waiting_frame'.  Class 'post_queue' defines queues of the second.
+% Any class of objects, including integers, atoms, and strings, can be put into the
+% queue.  A stream has a 'post_queue' slot which has an instance of class 'post_queue',
+% rather than it inherits class 'post_queue'.  It is because a channel, which is a
+% variation of stream, will have a post queue for messages different from that of a
+% stream.  Class 'channel' will inherit class 'stream' with overriding its
+% 'post_queue' slot (see 3.2 (2)). ... A stream also has a 'waiting_queue' slot ...
+% we chose to have the slot because of some subtle problem when initiating a stream."
+% [transcriber] ":add_object(Stream!post_queue, Object)" has no trailing comma in the
+% print (as printed).
+
+% ---- Figure 3.5 (diagram) ----
+                    waiting_queue   post_queue
+                          ^         ^
+                       has:         :has
+                          :         :
+                          stream..:
+                Figure 3.5  Class relations of class 'stream'
+
+% ---- Figure 3.6 ----
+-----------------------------------------------------------------------
+    class  stream  has
+
+    :create(Class, Stream) :-
+            :new(Class, Stream);
+
+    instance
+
+    attribute ( waiting_queue   := Queue :- :create(#waiting_queue, Queue) ),
+              ( post_queue      := Queue :- :create(#post_queue, Queue) );
+
+    :put(Stream, Object):-
+            :inhibit_interrupt(#process),
+            :add_object(Stream!post_queue, Object)
+            (   :empty(Stream!waiting_queue), !,
+            ;   :unhook(Stream!waiting_queue, Process),
+                :resume(Process, stream(Stream)) ),
+            :allow_interrupt(#process);
+
+    :get(Stream, Object):-
+            :inhibit_interrupt(#process),
+            (   :remove_object(Stream!post_queue, Object), !

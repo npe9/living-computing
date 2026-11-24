@@ -1,0 +1,27 @@
+% TM-785 「PSI図形ツールのインストール方法」, PDF page 3: install procedure (librarian from floppy).
+% Transcribed by eye from a 300dpi crop (F4); the remainder of p3 from OCR checked against the page.
+
+(1) インストール方法
+  ①ライブラリアンを生成する。
+  ②フロッピーをユニット0に入れる。
+  ③ライブラリアンの「Execute」を選択する。
+  ④Command>fdd("drawing.com") と入力後、リターンキーを入力する。
+  ⑤FDD mount ok?
+    Input unit No. (0):0
+    ユニット番号「0」を入力する（リターンキーは不要）。
+  ⑥約1分かけてインストールされる。
+◆既にパッケージdrawingが存在していると、次のエラーメッセージが表示される。
+  処理を続行する（既存のパッケージdrawingが削除され、新しく生成される）か、中止かを選択する。
+
+  +--------------------------------------------------+
+  | Error occurred in librarian_59( process 59 )     |
+  | Package drawing already exists                   |
+  | Cannot load package_template_file                |
+  |                                                  |
+  | Error handling menu:                             |   (menu lines from OCR)
+  |   Erase existing package and continue            |
+  |   Inspect the information of this event          |
+  |   Return to librarian top level                  |
+  +--------------------------------------------------+
+  ・処理を続行する場合：「Erase existing package and continue」を選択 → 確認画面 → 「ERASE」/「STOP」
+  ・処理を中止する場合：「Return to librarian top level」を選択 → ライブラリアンの画面に戻る。

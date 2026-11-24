@@ -1,0 +1,33 @@
+% TM-153 「ICOTのワークステーション」(上田尚純 他, Jan 1986), PDF page 26. Typed listing with handwritten
+% annotations; handwritten caption 「図5 ESPのプログラム例」. EXAMPLE (user class, not SIMPOS source)
+% showing the 1985/86 ESP syntax ("component" slots, ";" clause separators) and window methods.
+% Transcribed by eye from a 300dpi crop (F4). Handwritten margin notes (right): at line 1 「クラスの定義」,
+% at line 2 「継承するクラスの宣言」, at "end." 「クラス定義の終了」«?».
+
+class my_window has
+  nature window;
+
+     :create_my_window(CLASS, Window) :-
+        :create(CLASS,{size(900,250),
+              position(100,100)},Window),
+        :activate(Window);
+
+   instance
+     component
+       user_name,
+       group_name;
+
+     :message(Window,String0,String1) :-
+         :write_lines(Window,String0),
+         :write_lines(Window,String1),
+         user_name(Window);
+     :get_group_name(W,W!group_name);
+
+   local
+     user_name(Window) :-
+         :write_lines(Window," : "),
+         :write_lines(Window,
+              Window!user_name),
+         :write(Window,key#lf),
+         :write(Window,key#cr);
+end.

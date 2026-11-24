@@ -1,0 +1,32 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+volume				:mount/1; :dismount/0; :allocate/1; :deallocate/1; :link/1	PRINTED-INTERFACE	TR-059	6-7;27	4-5;25	volume descriptor (id, VTOC, root directory file, free page pool) in fixed area; only the file manager uses volume access; a volume is a device port to a handler channel (p30-31).
+disk					PROSE	TR-059	6	4	physical disk device; "responsible to the device management of the kernel".
+region		region descriptor (page table, region size)			PROSE	TR-059	8-10	6-8	area of a volume storing records; multi-level page table; no multi-volume regions.
+as_file	(mixin inherited by all file classes)	file marker ops	:open/2; :create/2	:close/0; :remove/0; :start_marker/1; :end_marker/1; :read/2; :write/2; :add/1; :delete/2; :tap/1	PRINTED-INTERFACE	TR-059	10-14	8-12	class preds written :open(#file,File,File_Name), :create(#file,...). Listings TR-059_p11..p14.
+file	as_file; io_port				PROSE	TR-059	11;29	9;27	"A file inherits class 'io_port'"; connected to the file manager's manager channel.
+buffer (file buffer)		integer vector or string (KL0)		:record_data/1; :data_size/1; :set_data_size/1	PRINTED-INTERFACE	TR-059	11-12	9-10	hides record construction.
+file marker		record position		:postion/1 [sic]; :set_position/1	PRINTED-INTERFACE	TR-059	12	10	"postion" misspelled as printed.
+file tap		file object; file marker		:read/1; :write/1; :marker/1; :beginning/0; :end/0; :move/1; :move_to_beginning/0; :move_to_end/0	PRINTED-INTERFACE	TR-059	14-15	12-13	Figure 3.1.
+binary file	as_file				PROSE	TR-059	15-16	13-14	fixed 1- or 2-byte records; multi-record access.
+binary file tap	file tap				PROSE	TR-059	16	14	advances by records accessed.
+table file	as_file				PROSE	TR-059	16-17	14-15	fixed-length records; record size fixed at creation.
+table file tap	file tap				PROSE	TR-059	17	15	
+heap file	as_file				PROSE	TR-059	17-18	15-16	variable-length records: type (string/vector), length, data.
+heap file marker	file marker	record position; byte offset			PROSE	TR-059	18	16	
+heap file tap	file tap				PROSE	TR-059	18	16	
+index file	table file				PROSE	TR-059	18-20	16-18	record = links|key|data; duplicate keys; hashed, no key ordering.
+index buffer	buffer			:record_key/1; :set_record_key/1	PRINTED-INTERFACE	TR-059	19	17	
+index file marker	file marker	current key; record position		:key/1; :set_key/1	PRINTED-INTERFACE	TR-059	19	17	descriptions printed swapped (":key" under "To set a key").
+instance file	table file (table instance file)				PROSE	TR-059	20-21	18-19	one per permanent class; fixed-length instance records; heap instance file avoided.
+record_pointer		file; file marker	:create/2	:file/1; :file_marker/1	PRINTED-INTERFACE	TR-059	21-22	19-20	interface seen only through as_permanent_object bodies.
+as_permanent_object	(mixin)		:restore/2	:store/1; (requires) :decode/1; :encode/1; :instance_file/1	PRINTED-SOURCE	TR-059	22	20	store/restore clause bodies printed. Listing TR-059_p22.esp.
+directory_file	index file			:bind/2; :find/2; :replace/2; :rename/2	PRINTED-INTERFACE	TR-059	23;25	21;23	names or pathnames "dir1>dir2>name"; volume root directory file.
+as_global_object	(mixin)		:retrieve/2	:bind/1	PRINTED-INTERFACE	TR-059	26	24	">dir1>..." from system root directory; "dir1>..." from process root directory.
+directory	(index pool)				PROSE	TR-059	26	24	main-memory directory; system root + per-process root directory.
+permanent directory	directory	directory file			PROSE	TR-059	27-28	25-26	first retrieval restores and caches the object; sub-directory files yield permanent sub-directories.
+file manager	(process)	manager channel (class slot)			PROSE	TR-059	28-32	26-30	dispatches requests from customers to device handlers; created/activated at boot.
+io_port	port				NAMED	TR-059	29	27	"a special type of port".
+device handler	interrupt process	handler channel			PROSE	TR-059	30	28	instantiated and activated during boot.
+user					PROSE	TR-059	4	2	user objects kept in an object storage; retrieved at login.
+node					PROSE	TR-059	4	2	node object describing a remote node.
+floppy disk file					PROSE	TR-059	32	30	"only limited part of the facilities".

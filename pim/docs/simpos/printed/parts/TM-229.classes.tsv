@@ -1,0 +1,4 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+symbolizer	-	-	-	-	PROSE	TM-229	4	-3-	I/O-media subsystem: external (string) <-> internal (structure) conversion of programs and data (TM-143 calls this the transducer)
+wildcard	-	-	-	-	NAMED	TM-229	4	-3-	supervisor function "ワイルドカード機能"; class name unknown
+user management	-	-	-	-	NAMED	TM-229	4	-3-	supervisor: management of logged-in users; class name unknown

@@ -1,0 +1,16 @@
+step	program_added	new_keys	cumulative_keys	programs_fully_satisfied_by_cumulative_set
+1	txtstrct	138	138	txtstrct
+2	chal	107	245	chal,txtstrct
+3	utter	158	403	chal,txtstrct,utter
+4	knov	177	580	chal,knov,txtstrct,utter
+5	disc	161	741	chal,disc,knov,txtstrct,utter
+6	icotext	176	917	chal,disc,icotext,knov,txtstrct,utter
+7	papyrus	183	1100	chal,disc,icotext,knov,papyrus,txtstrct,utter
+8	sum	224	1324	chal,disc,icotext,knov,papyrus,sum,txtstrct,utter
+9	fuzclust	214	1538	chal,disc,fuzclust,icotext,knov,papyrus,sum,txtstrct,utter
+10	gog-esp	246	1784	chal,disc,fuzclust,gog-esp,icotext,knov,papyrus,sum,txtstrct,utter
+11	euod	233	2017	chal,disc,euod,fuzclust,gog-esp,icotext,knov,papyrus,sum,txtstrct,utter
+12	cal-esp	297	2314	cal-esp,chal,disc,euod,fuzclust,gog-esp,icotext,knov,papyrus,sum,txtstrct,utter
+13	kwic-esp	279	2593	cal-esp,chal,disc,euod,fuzclust,gog-esp,icotext,knov,kwic-esp,papyrus,sum,txtstrct,utter
+14	cil	348	2941	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,knov,kwic-esp,papyrus,sum,txtstrct,utter
+15	kappa2	529	3470	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter

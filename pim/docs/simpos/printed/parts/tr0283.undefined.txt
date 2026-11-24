@@ -1,0 +1,24 @@
+# TR-283: names used but never defined in the report (PDF page / folio)
+remote_object, as_remote_object      p9/f7   (kernel classes; prose only)
+the other 14 of the 16 ROAM classes  p9/f7   (categories only: remote object kernel, message, process-related, others)
+controller process                   p4/f2   (protocol not given)
+server process / client process      p4/f2
+virtual line object                  p5/f3   ("external stream with the synchronization function", from the communication system)
+status object                        p8/f6
+packet pool                          p6/f4
+library subsystem                    p5/f3   (Table 4: class library :get_class_object/c2)
+package, class complete name         p5/f3
+class symbolizer                     p18/f16 (:get_atom_string/c2, :get_atom/c2, :enter_atom/c2)
+network manager, handler             p10/f8  (process levels)
+LIA/LIB hardware controller          p10/f8
+built-in predicate method_call       p12/f10
+:g_call, :l_call, :r_call            p9/f7   (prose; bodies not printed)
+proxy object creating method; internal state freezing/melting methods; extra field handling methods   p9/f7 (no names)
+object_category slot                 p4/f2   (declaring class not stated)
+GOID encoding                        p6/f4   (components only; printed as "N2T1P21" in figures)
+GMID format                          p6/f4, p20
+tag codes with '*' and '#'           p20/f18 (X'0*0#, X'0*60, X'0*80 -- meaning of * and # not defined)
+short vs long tag forms              p20/f18
+"exhausted GC" (mark and sweep)      p12/f10
+DDX global network                   p3/f1
+:make/c2 :write/i2 :read :size/i1 :close/i0 ; :expunge/i0 :find/i2 :delete/i2 :undelete/i2 :add/i2   p18/f16 (Table 3; classes not named)

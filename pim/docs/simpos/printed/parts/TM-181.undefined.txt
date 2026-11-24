@@ -1,0 +1,6 @@
+TM-181	spooler	NAMED	expert in system menu; no description
+TM-181	kanakan initiate	NAMED	media-system menu item
+TM-181	garbage collection (menu item)	NAMED	media-system menu item; GC algorithm not described
+TM-181	user process list	NAMED	menu item
+TM-181	file version numbers name.type.N	SCREENSHOT	semantics not described
+TM-181	DDX gateway	PROSE	protocol absent

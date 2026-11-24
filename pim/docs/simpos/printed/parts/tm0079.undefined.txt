@@ -1,0 +1,10 @@
+# TM-079: concepts named, no interface given (all TRANSLATION of handwritten Japanese)
+program class / main goal instance predicate      p10
+pool tap; stream; channel; port; world; universe; directory   p10-11
+node / socket / plug / cable network classes (identifiers not given)  p13
+remote object / remote channel                     p13
+e_window, e_port, whiteboard (coordinator)         p14-15
+key commands / special commands of coordinator     p14
+class template file / class object file formats    p17
+transducer (parser + pretty printer)               p16
+IPL bootstrap; firmware GC support                 p9-10

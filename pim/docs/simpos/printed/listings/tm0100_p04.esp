@@ -1,0 +1,20 @@
+% TM-100 PDF page 4, printed folio 2. Section 1 (2) ESP: the syntax of an ESP class
+% definition as printed (a grammar schema, not SIMPOS code). Transcribed by eye from
+% 300dpi crops. NOTE: an earlier pass listed "class object (p4)"; no class 'object'
+% listing exists on this page -- only this schema.
+% Prose following: "The inheritance part defines the super classes which this class
+% inherits.  A list of the super classes can be specified.  Their order is relevant,
+% because the operation definitions given in these classes are OR'ed in this order.
+% This class itself can be specified in this list. ... The local part defines the
+% predicates which can be called only within this class."
+
+        class  <class name>  has
+            [ <nature definition> ; ]              ..... inheritance
+            { <class slot definition> ; }          ...
+            { <class clause definition> ; }        ..:.. class
+      [ instance
+            { <instance slot definition> ; }       ...
+            { <instance clause definition> ; } ]   ..:.. instance
+      [ local
+            { <local clause definition> ; } ]      ..... local
+        end.

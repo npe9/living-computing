@@ -1,0 +1,22 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+クラスa					PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)
+クラスb					PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)
+クラスc	クラスa, クラスb				PROSE	TM-079	6	unnumbered	EXAMPLE, hand-drawn figure (tm0079_p06.txt)
+クラスd	クラスwith_e				PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a
+クラスwith_e	(holds an クラスe object in a slot)				PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a
+クラスe					PROSE	TM-079	6	unnumbered	EXAMPLE; has_a via is_a
+program class (プログラム・クラス)				main goal defined as an instance predicate	PROSE	TM-079	10	unnumbered	TRANSLATION; 'a program is an instance of a program class'; no class name given
+ノード (node)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given
+ソケット (socket)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given
+プラグ (plug)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given
+ケーブル (cable)					NAMED	TM-079	13	unnumbered	network subsystem classes 'ノード、ソケット、プラグ、およびケーブルといったクラスが用意されている'; TRANSLATION of names; real identifiers not given
+process					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+pool					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+stream					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+channel					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+port					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+world					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+universe					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+directory					PROSE	TM-079	10-11	unnumbered	described as supervisor facilities; TM-079 does not call them classes (INFERENCE from TM-065 that process/pool/stream/world are classes)
+window classes (基本クラス + 補助クラス)					PROSE	TM-079	12	unnumbered	basic window class plus auxiliary mixin-like classes (label, scroll); temporary window, menu window; no names
+file types: binary / fixed-length record (table) / variable-length record (tape) / hash index / instance file / directory file					PROSE	TM-079	12-13	unnumbered	not called classes; VTOC is an instance file

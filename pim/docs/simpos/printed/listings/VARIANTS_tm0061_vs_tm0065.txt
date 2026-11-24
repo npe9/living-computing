@@ -1,0 +1,24 @@
+Independent transcriptions of the same example classes in TM-061 (Japanese, May 1984)
+and TM-065 (English, June 1984), diffed by eye/line. NOT harmonised.
+
+1. Identifier spelling: TM-061 uses hyphens throughout (pool-of-files, io-status,
+   create-file, binary-file, File-marker, #binary-file-tap, bare-window, with-display,
+   as-inside, get-size, clear-rectangle, border-flag, draw-label, ...). TM-065 uses
+   underscores (pool_of_files, io_status, ...). Same names otherwise.
+2. class file: identical clause structure, slots (region, opened := no, disposed,
+   io_status) and class slot pool_of_files; same elided bodies. Comments differ only
+   by language.
+3. class binary_file: identical. TM-061 prints no 'end.' after the listing; TM-065 does.
+4. class bare_window: identical (create/3 class method; refresh/0, initialize/1; slots
+   width, height). TM-065 prints ':- ! ,' with a space; trivial.
+5. class with_border, first after-demon:
+     TM-061:  after :refresh(Window) :- Window!border-flag == off, ! ;
+     TM-065:  after :refresh(Window) :- Window!border_flag == 0, ! ;
+   Second after-demon:
+     TM-061:  after :refresh(Window) :- :draw-border(Window) ;
+     TM-065:  after :refresh(Window) :- !, :draw_border(Window) ;
+   (TM-061 'off' is consistent with border_flag := on; TM-065's '0' is not.)
+6. class with_label, window_with_border_and_label: identical.
+7. Fig 3.1: TM-061 lists トランスデューサ (transducer) and ライブラリアン (librarian) in the
+   programming system; TM-065 lists Coordinator Editor Interpreter/Debugger Library.
+   TM-065 adds Printer (I/O media) and Timer (supervisor), absent from TM-061.

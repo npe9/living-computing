@@ -1,0 +1,46 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+as_pool	(mixin)			:add/1; :remove/1; :get/1	PRINTED-INTERFACE	TR-056	6	4	"mixin class to be inherited by any pools". Listing TR-056_p06.esp.
+sequence	pool				PROSE	TR-056	7	5	pool accessed by position; two major subclasses array and list.
+array	sequence			:put_at/2; :get_at/2	PRINTED-INTERFACE	TR-056	7	5	fixed number of elements; constant access overhead.
+list	sequence			:add_after/2; :add_before/2; :get_at/2; :remove_at/2	PRINTED-INTERFACE	TR-056	7-8	5-6	any number of elements; removal leaves garbage words.
+index	hash_array (-> array -> sequence)			:add_at/2; :get_at/2; :remove/2	PRINTED-INTERFACE	TR-056	8-9	6-7	key = atomic term or string; hash array of lists of (key,object) entries.
+hash_array	array				PROSE	TR-056	9	7	"an array of lists".
+sparse array	index (implemented as)				PROSE	TR-056	9	7	class name not quoted.
+as_bucket	(mixin; inherited first, then a sequence class)			:get/2	PRINTED-SOURCE	TR-056	10	8	clause body printed: :get(Bucket,Object,[Position|Path_position]). Path-position and path-key notation. Listing TR-056_p10.esp.
+bucket	as_bucket; a sequence class				PROSE	TR-056	9-10	7-8	multi-layer sequence.
+bag					PROSE	TR-056	10	8	"Other pools will be also defined" -- planned.
+set	bag				PROSE	TR-056	10	8	planned; no duplicates.
+sorted sequence	sequence				PROSE	TR-056	10	8	planned.
+tap		position; pool		:get/1; :put/1; :move/1; :position/1; :pool/1; :set_position/1	PRINTED-SOURCE	TR-056	11-12	9-10	generic :get/1 body printed (p12) using pool :get_at and :next/2; created by :tap(Pool,Tap). Body has misprint :get_at/1 (Object missing). Listings TR-056_p11.esp, TR-056_p12.esp.
+pool (generic)				:tap/1; :next/2; :get_at/2	PRINTED-INTERFACE	TR-056	11-12	9-10	operations any pool must provide for a generic tap.
+stream				:put/1; :get/1	PRINTED-INTERFACE	TR-056	12-13	10-11	get on empty stream suspends caller; FIFO; shared by many processes. Mixins planned for priority control and bounded buffer (p14).
+semaphore	(a stream use)			:p/0; :v/0; :init/0; :init/1	PRINTED-SOURCE	TR-056	13	11	bodies printed (get/put of atom token); integer semaphore by :init(Semaphore,Count). ":init(Semaphore)" printed without ":-". Class name not stated as a class. Listing TR-056_p13.esp.
+event	(a stream use)			:post/1; :wait/1	PRINTED-SOURCE	TR-056	13	11	bodies printed. Listing TR-056_p13.esp.
+as_message	(mixin)	sender; receiver			PROSE	TR-056	14	12	sender = channel for reply; receiver = channel to receive it.
+message	as_message	sender; receiver; body			PROSE	TR-056	14	12	self-descriptive message.
+channel	stream			:send/1; :receive/1; :send_message/1; :receive_message/1	PRINTED-INTERFACE	TR-056	14	12	messages sent to channels, not processes. Listing TR-056_p14.esp.
+port	channel (for its input channel)	list of output channels		:connect/1; :disconnect/0; :disconnect/1	PRINTED-INTERFACE	TR-056	15-16	13-14	virtual-circuit; send broadcasts to all connected ports. Listings TR-056_p15.esp, p16.
+stream pool				:get/1; :get/2	PRINTED-INTERFACE	TR-056	16-17	14-15	merges streams; :get(Stream_pool,Object,Stream).
+channel pool					PROSE	TR-056	17	15	defined like a stream pool; no send operation.
+source channel	channel				PROSE	TR-056	17	15	e.g. input character stream from a keyboard.
+sink channel	channel				PROSE	TR-056	17	15	e.g. output character stream to a screen.
+process		invocation stack; working world (instance slot)	:world/1	:activate/2; :suspend/1; :resume/1; :terminate/0	PRINTED-INTERFACE	TR-056	18-20;25	16-18;23	states running/ready/suspended/dormant; max 63 hardware processes, ~50 ordinary. :world(#process,World) is a class predicate returning the caller's world. Also :activate(Process,#program,Goal) (p20).
+program		instance slots local to program; class slots shared	:invoke/1	:goal/0	PRINTED-INTERFACE	TR-056	19-20	17-18	program = instance of a program class; :invoke(#program,Goal) pushes onto caller's invocation stack. Skeleton (instance :goal, local p/q) printed p19-20 -- EXAMPLE.
+interrupt_process	process				PROSE	TR-056	20-21	18-19	dispatched by hardware at interrupt/trap; trap handlers, device handlers, GC.
+boot_process	process			overrides create and activate	PROSE	TR-056	21	19	created/activated by hardware at bootstrap; calls these itself to come under supervisor control.
+library					PROSE	TR-056	22	20	holds a collection of classes, retrieved by class name.
+directory	index (a pool)	class slot root	:root/1	:find/2; :bind/2; :remove/2; :retrieve/2	PRINTED-INTERFACE	TR-056	22-24	20-22	pathnames "Name1>Name2>..."; system root directory kept in a class slot of 'directory'.
+as_global_object	(mixin)		:retrieve/2		PRINTED-INTERFACE	TR-056	24;26	22;24	">Name1>..." from system root, else from caller's world; planned protection/profile/version/mutual-exclusion (implementation "still under consideration").
+world	(sequence of directories; same interface as directory)				PROSE	TR-056	24-25	22-23	first directory containing the name wins.
+user					NAMED	TR-056	26	24	"class 'user' and class 'group' must be defined".
+group					NAMED	TR-056	26	24	see user.
+as_permanent_object	(mixin)	class attr: instance file; instance attr: record pointer			PROSE	TR-056	27	25	each permanent class defines its own conversion predicates (bodies in TR-059 p22).
+instance file					PROSE	TR-056	27-28	25-26	table (fixed-length record) file.
+record pointer		file identifier; file marker			PROSE	TR-056	28	26	file number on disk / file object in memory.
+directory file				:find/2	PRINTED-INTERFACE	TR-056	28	26	:find(Directory_file,Record_Pointer,Name).
+permanent directory	directory				PROSE	TR-056	28	26	cached view of a directory file.
+node					PROSE	TR-056	29	27	represents a network node; stored as permanent objects.
+as_remote_object	(mixin)				PROSE	TR-056	29	27	operation-to-message encoding and sending.
+as_pervasive_object	(mixin)				PROSE	TR-056	29-30	27-28	message-to-operation decoding and execution.
+remote directory	directory				PROSE	TR-056	30	28	root has object number 1.
+remote channel	channel				PROSE	TR-056	30-31	28-29	send only; receive not allowed.

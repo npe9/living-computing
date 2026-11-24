@@ -1,0 +1,66 @@
+report	pages	pages_eyed	method	listings_found	simpos_content	note
+TR-057	13	6,8	OCR full + eye	TR-057_p06.txt (Table 3-1), TR-057_p08.txt (Fig 4-1)	y	prose design overview
+TR-087	13	-	OCR full	none	y	adds exception/situation, IPL on floppies, history
+TR-086	13	-	OCR full	none	y	progress report; layering variant; IPL debugging dates
+TR-055	23	10,13,17	OCR full + eye	TR-055_p10.esp (notation fragments)	y	basic constructs; region/page map; manager ports
+TM-009	9	3,4,5,7	OCR full + eye	TM-009_p03-07.txt (1983 notation)	y	pre-ESP design; fork/remote call
+TM-143	8	2,3,4,6,7,8	eye (250-600dpi)	TM-143_p02-08.txt	y	layer list+figure, librarian, window part classes, sizes, release history, perf
+TM-181	5	2,3,4,5	eye (100-600dpi)	TM-181_p03_system_menu.txt, TM-181_p04_screenshot.esp	y	SIMPOS 2.1 sizes, standard-io-window counts, network, file manipulator
+TM-229	9	2,3,4,5	eye (100-600dpi)	TM-229_p03-05.txt	y	1986 layer list + Fig 2-1 + system menu
+TM-401	13	all@60dpi,8,10	eye	TM-401_p04_p07_figs.txt	y	PSI-net: NCP, process addresses, remote access via remote objects
+TM-785	40	3,40	OCR triage + eye	TM-785_p03.txt, TM-785_p40.esp	y	librarian floppy install; app ESP pp29-39 NOT transcribed
+TR-285	15	-	OCR full	none	y	versions, situation stack, :putc, cleanup on termination
+TR-213	9	4	jpn OCR + eye	none (prose)	y	GC process, page-level then collect-garbage(ProcessTable)
+TM-225	16	all@40dpi,5,6,14	eye	TM-225_p06_p13-15.txt	y	:create(#process,P)/:activate/:terminate; window system figure
+TM-153	29	26,28	OCR triage + eye	TM-153_p26.esp, TM-153_p28_screenshot.esp	y	example window class, as_program :goal screenshot
+TR-714	9	4	jpn OCR + eye	none	y	PSI/UX: SIMPOS internal structure figure (kernel I/O handlers emulated by UNIX)
+TM-444	36	-	jpn OCR	none	y	PCBs in firmware System Area (OCR only)
+TR-142	6	-	OCR	none	y	firmware sizes for GC and SIMPOS support
+TM-661	9	-	jpn OCR	none	y	SIMPOS 3.2/4.2 instruction statistics
+TM-104	10	-	jpn OCR	none	y	SIMPOS interrupt-control code used as benchmark
+TM-128	9	-	OCR	none	y	overview only
+TM-388	184	-	OCR grep	none	y	package/package-environment rules pp93-94; symbolizer p170
+TM-364	88	-	OCR grep	none	y	standard_io_window / standard_output_file usage p74
+TM-134	76	-	OCR grep	none	n	ESP language examples
+TM-146	43	-	OCR grep	none	n	ESP hints
+TR-044	59	-	OCR grep	none	n	#basic_window example only
+TM-112	25	-	OCR grep	none	n	font editor app (#general_font, #font_executive)
+TM-115	119	-	OCR grep	none	n	font editor app implementation (not re-read)
+TM-786	12	-	OCR grep	none	n	application (#simshow)
+TM-055	9	-	OCR	none	n	ESP features
+TM-075	11	-	OCR	none	n	ESP language examples
+TM-053	11	-	OCR	none	n	OO parser
+TR-237	18	-	OCR	none	n	Multi-PSI; ESP/SIMPOS as host
+TR-265	11	-	OCR	none	n	PSI-II hardware
+TR-483	33	-	OCR	none	n	PIMOS; cites SIMPOS
+TM-696	12	-	jpn OCR	none	n	Multi-PSI; FEP on SIMPOS
+TM-306	9	-	jpn OCR	none	n	Multi-PSI network
+TR-005	29	-	OCR	none	n	-
+TR-013	22	-	OCR	none	n	-
+TR-014	13	-	jpn OCR	none	n	-
+TR-045	24	-	OCR	none	n	-
+TR-052	16	-	jpn OCR	none	n	-
+TR-075	13	-	OCR	none	n	-
+TR-079	19	-	jpn OCR	none	n	-
+TR-112	13	-	jpn OCR	none	n	-
+TR-219	10	-	jpn OCR	none	n	-
+TR-236	8	-	jpn OCR	none	n	-
+TR-274	12	-	OCR	none	n	-
+TR-439	13	-	OCR	none	n	-
+TR-469	21	-	OCR	none	n	-
+TR-563	9	-	jpn OCR	none	n	-
+TR-585	11	-	OCR	none	n	-
+TR-715	25	-	OCR	none	n	-
+TM-001	8	-	OCR	none	n	-
+TM-005	8	-	OCR	none	n	-
+TM-224	16	-	jpn OCR	none	n?	OCR found no SIMPOS; not eyed (possible OCR miss)
+TM-299	5	-	OCR	none	n	-
+TM-392	9	-	jpn OCR	none	n	-
+TM-426	12	-	OCR	none	n	-
+TM-734	9	-	jpn OCR	none	n	-
+TM-859	9	-	jpn OCR	none	n	-
+TM-1203	9	-	jpn OCR	none	n	-
+TM-1254	14	-	jpn OCR	none	n	-
+TM-305	81	-	not processed	-	?	Multi-PSI benchmarks
+TM-399	115	-	not processed	-	?	workshop proceedings
+TM-161	21	-	prior OCR only	-	n	assembler port (prior notes: class work p15-16)

@@ -1,0 +1,29 @@
+% TM-065 "An Operating System for Sequential Inference Machine PSI" (Hattori et al., June 1984)
+% PDF pages 13-14, printed folios 11-12, section 4.2 (1) Single inheritance; no figure number.
+% Introduced as: "For example, class 'binary_file' is defined by inheriting class 'file':"
+% The listing starts at the foot of PDF p13 (class header, 'nature') and continues on p14.
+% '...' bodies are elided IN THE ORIGINAL.
+% transcribed by eye from 300dpi crops (work/tm0065/p-13_c.png, p-14_a.png)
+
+        class   binary_file has
+
+        nature
+% ---- page break (PDF p13 -> p14) ----
+                file;
+
+        instance
+
+        :read(Binary_file, Buffer, File_marker):- ...;
+                % Read the record at the file marker into the buffer.
+
+        :write(Binary_file, Buffer, File_marker):- ...;
+                % Write the record in the buffer at the file marker.
+
+        :tap(Binary_file, File_tap):- !,    % Create a tap of the file.
+                :create(#binary_file_tap, File_tap, Binary_file);
+
+        end.
+
+% Following prose (p14, folio 12): "This class does not override the operations
+% defined in class 'file', but it adds new operations, such as 'read' and 'write'.
+% Note that externally these operations should rather be defined in class 'file'."

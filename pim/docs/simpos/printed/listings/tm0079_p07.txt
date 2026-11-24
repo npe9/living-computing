@@ -1,0 +1,38 @@
+% TM-079 「逐次型推論マシンのOS」 (服部 隆, November 1984) -- HANDWRITTEN manuscript
+% PDF page 7, section headed "2.2 ESPの機能" as written (NOTE: p5 heads the chapter
+%  "3. システム記述言語ESP" / "3.1 オブジェクトの概念"; p9 again uses 3.1 for the kernel.
+%  The manuscript's section numbering is inconsistent as written; first digit on p5 is faint).
+% No figure number or caption. Lead-in: ESPは次のようなシンタックスをもつ。
+% transcribed by eye from the 300dpi page render viewed whole at reduced display scale (work/tm0079/p-07.png,
+%  p-08.png); heading digits checked on a full-resolution crop (work/tm0079/z_heads.png): p5 "3." (faint), p7 "2.2".
+% Brackets: [ ] = optional, { } = repetition (INFERENCE from usual BNF convention; the
+%  manuscript does not define them). Bracket glyphs kept as written, incl. the closing ']'
+%  after the instance part and after the local part.
+
+      class クラス名
+         [マクロ・バンク定義]
+      has
+         [継承定義；]
+         {クラス・スロット定義；}
+         {クラス・クローズ定義；}
+     [instance
+         {インスタンス・スロット定義；}
+         {インスタンス・クローズ定義；} ]
+     [local
+         {ローカル・クローズ定義；} ]
+      end.
+
+% p8 (same section), the five parts, as written:
+%  ・マクロ部   マクロ・バンク定義より構成される。マクロはある構造をもつプログラムを別のプログラムに
+%              翻訳するためのメタ・プログラムであると考えられる。
+%  ・継承部     継承定義として、このクラスが継承するクラスを自クラスも含めて列挙する。これらのクラスで
+%              定義されたクローズは指定された順にOR結合される。
+%  ・クラス部   クラスに共通の性質をクラス・スロット定義とクラス・クローズ定義で与える。
+%  ・インスタンス部  インスタンス・スロット定義とインスタンス・クローズ定義でオブジェクトのテンプレートを与える。
+%  ・ローカル部  このクラス定義内だけで呼び出せるPROLOG述語を定義する。
+%  Then: クローズの定義は通常のPROLOGの形式にほぼ準拠している。相異点は、オブジェクト指向呼び出し
+%  (クラス・クローズとインスタンス・クローズの述語)が
+%         :述語名(オブジェクト{，パラメタ})
+%  となっている点と、クローズ定義の終わりが"."でなく";"である点である。また、クローズの実行はPROLOGの場合と同じである。
+% p7 top (demons): デーモン ... 本体に行なわれる操作を監視しており、特定の操作の前後に決められた処理を実行する
+%  ものである。内部的には、デーモン述語の呼び出しが本体の述語の前後に実行されるようにAND結合される。

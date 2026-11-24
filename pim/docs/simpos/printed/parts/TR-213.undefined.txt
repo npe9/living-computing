@@ -1,0 +1,2 @@
+TR-213	collect-garbage/1 ProcessTable format	ABSENT	built-in argument structure not described
+TR-213	real-page management stack	PROSE	kernel structure; layout absent

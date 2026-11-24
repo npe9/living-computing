@@ -1,0 +1,10 @@
+# ESP manuals and application guides (TM-388 ESP Guide 1987, TM-364 ESP入門 1987, TM-134 ESPプログラミング 1985, TM-146 ESPプログラミング・ヒント集 1985, TR-044 ESP Reference Manual 1984, TM-112/TM-115 font editor, TM-786 online inquiry tool). OCR triage only (simpos2/ocr), grep for SIMPOS class references; not eyed. Language content out of scope.
+
+## Packages (TM-388 pp93-94, folio 81-82, English OCR text, clean) -- librarian/package semantics
+- Class references: `#class-name`, `#package-name##class-name`; inheritance `nature class-name, package-name##class-name`; method call with class named: `package-name##class-name:method-name(class-object, ...)` and `:class-name:method-name(instance-object, ...)`; macro banks: `class C with macro [package##]bank has ... end.` Linkage to actual classes happens when classes are stored (when macros are expanded).
+- Package environment: at most one per package, named by an atom; can multiple-inherit packages and other package environments. Usual case: environment `with_simpos` inheriting system package `simpos`. Unqualified names resolve to (1) every class of the own package, (2) classes declared external (public) in packages inherited by the package environment; homonyms resolved by ESP inheritance order. Example: user package user_1 with its own `list`; `window` resolves to simpos's. REIMPLEMENTABLE (name resolution rule).
+- SIMPOS is itself a package named `simpos` (INFERENCE that all system classes live there, from "system package simpos").
+## Other SIMPOS class usage seen in manuals (OCR-only)
+- symbolizer :get_atom_token (TM-388 p170); standard_io_window, standard_output_file, :close_output (TM-364 p74); list (TM-388 p62, with `after :new(_, Obj)` demon creating a list); TR-044 p19 example `#basic_window`.
+- TM-115 (119 pp) font editor implementation notes: OCR finds #symbolizer only; class-level documentation is of the application, not SIMPOS (not re-read).
+- TM-786 online SIMPOS inquiry form: application classes #simshow (OCR); not SIMPOS internals.

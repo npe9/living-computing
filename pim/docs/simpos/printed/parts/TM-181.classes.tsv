@@ -1,0 +1,4 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+standard-io-window	10 directly inherited classes; 40 classes in total after inheritance	121 slots incl. 1 class slot	14 class methods	527 methods in total incl. the 14 class methods	PROSE	TM-181	3	-2-	counts only; hyphenated as printed (screenshot shows #standard_... with underscore)
+font	-	-	:create (screenshot)	-	NAMED	TM-181	4	-3-	":create(#font, "font:ascii_16..." in the editor screenshot; font names font:ascii_16?, font:kanji_2?
+my_window	-	window	:create/1	:test/0, :write/1	PRINTED-SOURCE	TM-181	4	-3-	EXAMPLE (user program in screenshot); partly hidden, listings/TM-181_p04_screenshot.esp

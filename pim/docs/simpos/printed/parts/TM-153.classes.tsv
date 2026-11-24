@@ -1,0 +1,5 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+window	-	-	:create/2 (attribute list {size(W,H),position(X,Y)}, Window)	:activate/0, :write_lines/1, :write/1 (key#lf, key#cr)	PRINTED-INTERFACE	TM-153	26	-	usage in an example class (1986 syntax)
+my_window	window	user_name, group_name (component)	:create_my_window/1	:message/2, :get_group_name/1	PRINTED-SOURCE	TM-153	26	-	EXAMPLE
+as_program	-	-	-	:goal/0 (defined by the user class)	PRINTED-INTERFACE	TM-153	28	-	nature as_program in screenshot; user defines :goal(Obj)
+escher	as_program	window	-	:goal/0, :init/0, :escher/4	PRINTED-SOURCE	TM-153	28	-	EXAMPLE (demo program; screenshot, partial)

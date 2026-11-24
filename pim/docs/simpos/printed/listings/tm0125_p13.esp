@@ -1,0 +1,203 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (Tsuji, Uchida, July 1985)
+% PDF pages 13-19, printed "Page 12"-"Page 18". Chapter 5 Using the Window:
+% the window method reference (signatures + printed descriptions), Table 1, sample coding.
+% '^X' marks an output argument AS PRINTED (e.g. ^Window). Typos as printed
+% ("Hight", "test size", "postion", "specifyed", "X1, X2, X2, Y2").
+% transcribed by eye from 300dpi crops (work/tm0125/p-13_* .. p-19_*); OCR draft corrected.
+
+% 5. Using the Window -- sequence (p13):
+%   1) define the window class.  2) create the window object.  3) setup the window attributes.
+%   4) activate the window.  5) operate through the window.  6) kill the window.
+% 5.1 "User can use the stand alone classes which are prepared by window system, or can define
+%   his own window inheriting the classes defined by window system."
+% 5.2 "The creation of window object is done by object-oriented call of class predicate, :create."
+
+%% 1) ordinary window
+:create( Class, ^Window )
+%       Class => class object of window class.
+%       Window => returned window object
+:create( Class, Initiation, ^Window )
+%       Class => class object of window class.
+%       Initiation -> prolog list of items about window initialization, such as window size,
+%                     position, etc..  For the items not described at here, the default value
+%                     is assigned. ( Table 1.)
+%       Window => the returned window object.
+% Example: (p14)
+:create( #window, [ size(200,400), position(100,200) ], Window ),
+%       create the standard window with size of 200 x 400 and position of (100,200).
+
+% Table 1. Window Initial Options (p14)
+% +-------------------------+-------------------------------+---------------------+
+% | Initiation              | Remarks                       | Default Value       |
+% +-------------------------+-------------------------------+---------------------+
+% | superior(Superior)      | the superior window           | screen              |
+% | position(X,Y)           | window position in the        | (0,0)               |
+% |                         | superior window               |                     |
+% | size(Width,Height)      | window size                   | inside size of      |
+% |                         |                               | superior window     |
+% | title(String)           | the label title               | blank               |
+% | top_title(String)       | the top_label title           | blank               |
+% | bottom_title(String)    | the bottom_label title        | blank               |
+% | margins(Left,Right,     | the margins                   | 1 dot               |
+% |           Head,TAil)    |                               |                     |
+% | units(Width,Height)     | the inside units              | 1 dot               |
+% |                         | ( the grid size in the window )|                    |
+% +-------------------------+-------------------------------+---------------------+
+
+%% 2) menu window (p14): initiation list must include items_list(Menu_items_list);
+%%    Menu_items_list is the prolog list of vectors, each of the form
+%   { item_string, item_type, item_id, documentation }
+%       item_string => string displayed in the menu.
+%       item_type => type of the item.
+%       item_id => the value which will be returned when that item is selected.
+%       documentation => the guide documentation displayed at the status line.
+%% 3) choice window (p14-15): initiation list must contain choice_list(Choice_items_list),
+%%    each vector of the form
+%   { item_string, item_type, elements_list, initial_element, documentation }
+%       item_string => strings displayed in the choice window.
+%       item_type => type of the item.
+%       elements_list => prolog list of alternatives of that item.
+%       initial_element => initial value of the item.
+%       documentation => guide displayed on the status line.
+
+% 5.3 Setting the attributes of the window (p15)
+%% 1) Basic attributes
+:set_size( Window, Width, Height )              % set the size of window.
+:set_position( Window, X, Y )                   % set the position to the superior window.
+:set_superior( Window, Superior_window )        % set the superior window.
+%% 2) Add/delete the menu item
+:add_item( Menu, Item, Position )
+%       add a new menu item to the single column menu at the specified position. Item is the
+%       vector which specify the item and its form is same as described at the menu creation.
+%       Position is the integer between 0 and the number of items.
+:add_item( Menu, Item, Column, Position )
+%       add a new menu item to the multi column menu at the specified column and specifyed position.
+:delete_item(Menu,Item_string)
+%       delete the item which item_string matches to the Item_string from the menu window.
+%% 3) Border/Label/Margins
+:set«?»border_width( Window, Width )
+%       set the width of border by dots. The default value is 2 dots.
+%       («?»: print shows a space, no underscore, between 'set' and 'border_width')
+:set_label_position( Window, Position )
+%       set the postion of label (top or bottom). Position is an atom "top" or "bottom".
+:set_title( Window, String )
+:set_top_title( Window, String )
+:set_bottom_title( Window, String )
+%       set the string displayed as the label.
+:set_margins( Window, Left, Right, Head, Tail )   % (p16) set the width of each margins by dots.
+
+% 5.4 Activation of the window (p16)
+:activate( Window )
+%       activate the window. When activated, the window is scheduled to be displayed on the
+%       superior window.
+:show( Window )          % show the window on the screen.
+:deactivate( Window )
+%       deactivate the window, e.g. delete the window from scheduling on the superior window.
+%       This predicate don't kill the window, so, the displaying image is kept as it is displayed.
+:hide( Window )
+%       hide the window on the superior window. The part where no other window is exist will be
+%       kept as displayed.
+
+% 5.5 Output
+%% 1) text output
+:write( Window, Character )
+%       output the Character to the cursor position and put the cursor one character forward.
+:move_cursor( Window, X, Y )          % move the cursor to the position of (X,Y).
+:insert( Window, Character )          % insert Character to the cursor position.
+:delete( Window, Character )
+%       delete the Character from the cursor position. By this predicate, the position of the
+%       cursor is not changed.
+:clear_line( Window )
+%       delete the characters between the cursor position and the end of line.
+:scroll( Window, Offset )
+%       scroll the window contents by Offset. If the Offset is positive integer, scrolling up will
+%       be done, and if the Offset is negative integer, scrolling down will be done.
+:open_rows( Window, Row, Offset )     % insert the Offset lines at the Row position.
+:move_rows( Window, Row1, Row2, Offset )
+%       (p17) move the lines between Row1 and Row2 by the value of Offset.
+%% 2) Graphic Output (p17)
+:get_point_value( Window, X, Y, ^Value )
+:set_point_value( Window, X, Y, Value )
+%       read/write the value (0/1) of the pixel specified by (X,Y).
+:draw_line( Window, X1, Y1, X2, Y2 )
+:draw_line( Window, X1, X2, X2, Y2, Line_width, Line_type, Alu )
+%       draw a line between the point (X1,Y1) and (X2,Y2).
+%       Line_width => width of the line (default is 1)
+%       Line_type => type of the line (default is fixed line)
+%       Alu => boolean operation for drawing (default is exclusive or)
+%       (NOTE: the 8-argument form is printed 'X1, X2, X2, Y2' -- a misprint for X1,Y1,X2,Y2
+%        is likely (INFERENCE); not corrected.)
+:draw_rectangle( Window, X, Y, Width, Hight )
+:draw_rectangle( Window, X, Y, Width, Hight, Line_width, Line_type, Alu )
+%       draw a rectangle at the position of ( X, Y ) with test size of ( Width, Hight ). The
+%       Line_width,Line_type and Alu are same as :draw_line.
+:draw_string( Window, X, Y, String )
+:draw_string( Window, X, Y, String, Alu )
+%       draw the string "String" at the position of ( X, Y ). the position specifies the
+%       top_left position of the first letter of String.
+%% 3) markers
+:create_marker( Window, ^Marker )                  % create the marker object.
+:draw_marker( Window, Marker )                     % display Marker on the window.
+:erase_marker( Window, Marker )                    % erase Marker from the window.
+:move_marker( Window, Marker, X, Y )               % display the marker at the position of ( X, Y ).
+:set_marker_type( Window, Marker, Type )           % set the marker type (box or line).
+:set_marker_size( Window, Marker, Width, Hight )    % set the marker size.
+:get_marker_list( Window, ^Markers_list )          % return the list of all markers the window have.
+
+% 5.6 Input (p18)
+:read( Window, ^Code )
+%       read a character (or mouse click, term, etc.). If there is no input, the process will
+%       be kept waiting.
+:read_sense( Window, ^Code )
+%       almost same as :read, but if there is no input, this predicate returns the atom "$$nil".
+%       (printed glyphs '$$nil' -- the two leading glyphs look like 'S'/'$' in this typeface)
+% "In the SIMPOS window system, above two predicates are main input predicate. The returned
+%  code will be different by whether the input is done by keyboard/mouse or by what class the
+%  window inherits."
+%  1) Input from keyboard: ordinary, the character code will be returned.
+%  2) Input from mouse: mouse_click_code will be returned. The mouse_click_code is coded on
+%     the source codes like:
+%        mouse$r  -> mouse right button single click
+%        mouse$m  => mouse middle button single click
+%        mouse$l  => mouse left button single click
+%        mouse$rr => mouse right button double click
+%     (glyph after 'mouse' printed like 'S'; read as '$' -- INFERENCE from the '$$nil' atom)
+%  3) Input with translation table: when the window inherits the class "with_translation_table"
+%     the input from keyboard and mouse is translated by the translation table and associated
+%     code will be returned as result.
+%  4) Input as mouse_scroll: when the window inherits the class "with_mouse_scroll", the user
+%     can require the scroll by mouse. When this request is done, the term
+%     "scroll_request(Offset)" will be returned as code.
+%  5) Input by menu selection: If the window is a menu, by the selection of menu item the
+%     item_id associated to that item will be returned as code. If the menu is a temporary menu
+%     and the mouse exit from the menu, the atom "abort" will be returned.
+
+% 5.7 Deletion of window (p18)
+:kill( Window )
+%       delete the window from system and release the bitmap area which the window occupied. The
+%       window is registered to the process which create the window, and when user killed that
+%       process, all windows that process have will killed automatically.
+
+% 5.8 Sample codings (PDF p19, printed Page 18) -- an EXAMPLE
+% "Here, We show the sample program which create a window with size of 300 X 200 and position
+%  of (100, 50), draw line and output a character input from keyboard."
+
+  :sample( Obj )   :-
+          .
+          .
+          .
+        % create window
+     :create( #window, [ position( 100, 50 ), size( 300, 200 ) ], Window ),
+        % activate window
+     :activate( Window ),
+        % draw line
+     :draw_line( Window, 10, 50, 250, 150 ),
+        % input character
+     :read( Window, Character ),
+        % output the character
+     :write( Window, Character ),
+          .
+          .
+          .
+
+% Also named in 6.2 (PDF p22): ":select(Window) predicate" -- to go to another window by program.

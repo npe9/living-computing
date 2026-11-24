@@ -1,0 +1,25 @@
+functor	role	uses	programs	example_site
+menu/0	command-file clause head	5	disc:1,fuzclust:1,gog-esp:1,kappa2:2	disc/login.com:3
+define/0	command-file clause head	5	disc:1,fuzclust:1,gog-esp:1,kappa2:2	disc/login.com:49
+package/0	command-file clause head	5	disc:1,fuzclust:1,gog-esp:1,kappa2:2	disc/login.com:57
+shell_transient/0	command-file clause head	3	gog-esp:1,kappa2:2	gog-esp/login.com:26
+items_list/1	command-file clause head	1	papyrus:1	papyrus_src/demo/EDITOR/icon.com.1:5
+fxds/1	command-list item	44	gog-esp:1,kappa2:43	gog-esp/cgscmp.com:7
+command/1	command-list item	34	kappa2:34	kappa2/kappa2/CATALOG.COM:2
+make_environment/2	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:2
+save_environment/1	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:3
+make_package/2	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:4
+save_package/1	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:5
+use_package/1	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:6
+save_all_classes/0	command-list item	1	gog-esp:1	gog-esp/cgscmp.com:215
+load/1	command-list item	1	kappa2:1	kappa2/kappa2/init/ipl.com:7
+refute/1	command-list item	1	kappa2:1	kappa2/kappa2/init/ipl.com:8
+,/2	term inside (com)	201	disc:40,fuzclust:9,gog-esp:41,kappa2:111	disc/login.com:5
+:=/2	term inside (com)	79	disc:6,fuzclust:1,gog-esp:26,kappa2:46	disc/login.com:50
+##/2	term inside (com)	54	disc:24,fuzclust:1,gog-esp:3,kappa2:26	disc/login.com:14
+items_list/1	term inside (com)	5	disc:1,fuzclust:1,gog-esp:1,kappa2:2	disc/login.com:4
+area_limit/1	term inside (com)	1	gog-esp:1	gog-esp/login.com:7
+font/1	term inside (com)	1	kappa2:1	kappa2/kappa2/login.com:10
+:/1	term inside (com)	1	kappa2:1	kappa2/kappa2/init/ipl.com:8
+ipl_load/3	term inside (com)	1	kappa2:1	kappa2/kappa2/init/ipl.com:8
+#/1	term inside (com)	1	kappa2:1	kappa2/kappa2/init/ipl.com:8

@@ -997,7 +997,7 @@ archives; tables and scripts kept outside git).
 - **SIMPOS**: still LOST as software. Its supervisor, file and window
   classes are partly PRINTED in ICOT reports (TM-100, TR-524, TR-046,
   TR-056, TR-059, TM-065, TM-125); the ~300 system classes the held
-  applications call are listed (`simpos/class_census.tsv`); five PSI-I
+  applications call are listed (`simpos/required/old_regex_census.tsv (superseded by simpos/required/)`); five PSI-I
   SIMPOS/KL0/CSP manuals are HELD-ELSEWHERE at the JAIST library
   (`psi_acquisition.md` §9). Row 14.
 - **Every ICOT TR/TM on SIMPOS, ESP or the PSI**: HELD (87 of 87).

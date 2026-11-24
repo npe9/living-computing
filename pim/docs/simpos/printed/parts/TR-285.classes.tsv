@@ -1,0 +1,5 @@
+class	inherits_natures	slots	class_methods	instance_methods	tier	report	pdf_page	folio	notes
+situation stack	-	-	-	-	PROSE	TR-285	10	7	"a table associated with the computational process called the situation stack"; maintained with persistent alternatives
+event	-	-	-	-	PROSE	TR-285	10	7	exceptional cases called events, raised from built-in exceptions
+(any I/O destination)	-	-	-	:putc/1	PRINTED-INTERFACE	TR-285	11	8	"the character output method (:putc in SIMPOS)"; arity INFERENCE (one character argument)
+(process resource objects)	-	-	-	(one common release method, name not given)	PROSE	TR-285	11	8	process management closes open files, releases locked semaphores, closes network connections on unexpected termination by "the same invocation of the same method" on different objects

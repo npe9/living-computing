@@ -1,0 +1,10 @@
+# Names used in TR-061 but never defined there (PDF page)
+:get_e_process/1 -- p13
+with_goal_demon, e_program_core, help_info_dictionary, inter_process_port -- named only in Fig.1, p12
+list_index, cascade_index -- p05
+e_program_directory -- p05
+'key-command_table-change' command -- p09
+history table (memorize/remember) -- p08
+"special port maintained by the window manager" -- p06
+read_from_whiteboard, write_to_whiteboard, system_menu_invoke (meta-command names differ from table atoms read/write/invoke_system_menu) -- p06 vs p13
+create meta-command (no key binding in the printed table) -- p07

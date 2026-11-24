@@ -159,7 +159,7 @@ the manuals and reports above (roadmap section 9).
 Made because the owner asked for more on SIMPOS. Delegated, like
 section 1-8's search; its working notes are `simpos/source_notes.md`
 (page by page, opened versus only located), its outputs
-`simpos/class_census.tsv` and `simpos/trtm_table.tsv`.
+`simpos/required/old_regex_census.tsv (superseded by simpos/required/)` and `simpos/trtm_table.tsv`.
 
 **SIMPOS itself: still NOT FOUND** (no source, binary, tape, disk
 image or emulator). What it adds:
@@ -177,7 +177,7 @@ image or emulator). What it adds:
   graphics methods). Not described anywhere found: the `.ptf` package
   format, the boot image, the disk format.
 - **The interface the applications use**: a census of the 1,351 ESP
-  files of the held IFS SIMPOS applications (`simpos/class_census.tsv`):
+  files of the held IFS SIMPOS applications (`simpos/required/old_regex_census.tsv (superseded by simpos/required/)`):
   about 300 classes used and not defined there, each with the methods
   called (`symbolizer`, `library`, `process`, `directory`, `pathname`,
   windows, menus, ...). By pattern, so a few entries may be

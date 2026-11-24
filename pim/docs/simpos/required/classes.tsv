@@ -1,0 +1,497 @@
+class	uses_send_slot_nature	hash_refs	n_programs	programs	class_methods	instance_methods	slots	as_nature	class_method_list	instance_method_list	compiled_packages_referencing	evidence_tier	reports_naming_it
+symbolizer	2315	2289	15	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	27	0	0	0	enter_atom/3 entor_atom_string/3 exclude_bound_variable/3 get_atom/3 get_atom_string/3 get_atom_token/3 get_ch_string_token/3 get_floating_number/3 get_floating_number_string/3 get_floating_number_string/4 get_interned_atom_string/3 get_number/3 get_number_string/3 get_number_string/4 get_number_token/3 get_number_token/4 get_object_string/3 get_string_token/3 get_variable/5 get_variable_string/5 in/2 is_object/2 list_to_string/3 merge_variable_tree/4 merge_variable_tree/5 remove_variable/4 string_to_list/3		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),sancho2(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0388,tr0283
+string	1046	1046	14	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,txtstrct,utter	2	0	0	0	append/3 copy/3		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),sancho2(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0025,tm0066,tm0112,tm0115,tm0125,tm0126,tm0134,tm0146,tm0161,tm0181
+list	1080	326	13	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,utter	2	20	2	2	create/2 new/2	add/2 add_before/3 add_first/2 add_last/2 class_object/2 clear/1 count/2 empty/1 get_at/3 get_contents/2 get_first/2 get_last/2 in/2 keyword_count/3 put_contents/2 remove/2 remove_at/3 remove_first/2 remove_last/2 stick_tap/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0025,tm0066,tm0100,tm0112,tm0115,tm0125,tm0134,tm0146
+standard_io_window	1139	136	11	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,utter	1	56	0	3	create/3	activate/1 activate/2 beep/1 clear/1 clear_buffer/1 clear_line/1 deactivate/1 draw_arc/9 draw_circle/7 draw_elliptical_arc/10 draw_filled_circle/7 draw_filled_rectangle/8 draw_graph/2 draw_line/6 draw_line/7 draw_rectangle/5 draw_rectangle/7 draw_string/4 draw_string/5 draw_string/6 erase_cursor/1 expose/1 get_activity/2 get_cursor_position/3 get_inside_size/3 get_size/3 getc/2 getl/2 gett/2 input_data/2 kill/1 move_cursor/3 putb/3 putf/2 putf/3 putl/1 putl/2 putt/2 putt/4 read/2 read_click_with_position/4 read_sense/2 set_border_width/2 set_color_pair/3 set_font/2 set_label_font/2 set_permission/2 set_position/3 set_superior/2 set_title/2 show/1 write/2 write_line/2 write_line/4 write_line_tail/4 write_lines/2	kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),sancho2(simpos##)	A:simpos##-in-compiled-package	tm0181,tm0364,tm0388
+<root>	974	0	14	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	41	88	42	0	a/6 append_without_down/3 check_bunpu_data/5 create/4 create/7 debug_on/2 end_message/4 exec_analy/1 exec_sentence/1 focus_inst/2 focus_value/2 fts2/5 gen_all/2 generate_content/4 get_bunpu_data/3 get_slot/3 gets/2 id/3 indexed_vector/8 is_builtin/2 is_builtin/3 look_up/3 max_css/2 method/3 new/2 outer_anaphora/2 outer_conflict/2 package_name/2 read_slots/4 refute/3 run/3 server_node/3 set_all_futokoro_cd/3 set_slot/3 sphase_analysis/3 start_message/4 temp_move_w_c/6 temp_remove_w_c/6 test/4 var_cell/10 var_descriptor/2	add_dependency/4 add_long_record/7 add_nil_value_list/3 bupl/2 calc_cv/2 check_open_mode/5 child_path2/4 class_object/2 clear_error/1 close_file/1 create_line/5 deactivate/1 delete_dependency/4 exist_tree_macro/2 expand_goals/3 get_assumption_object/5 get_attribute_element/3 get_attribute_path_list/4 get_candidate_color/2 get_domain_database/5 get_from_click/2 get_long_record_nil_value_list/3 get_long_record_string_value/4 get_max_depth/2 get_max_length/2 get_node_object/4 get_open_user/5 get_operator_data1/10 get_proof_in_window/2 get_registed_table/4 get_result_window/2 get_semerute/2 get_slot/3 get_strength/2 get_table_list/5 get_ten_object/2 get_theory/2 get_top_window/2 get_transaction/7 get_transaction_table/6 get_transaction_user/7 get_wff_by_number/4 getl/2 gett_string/4 goal/5 initialize_command/1 is_assumption/3 is_leaf/2 make_hash_table/4 make_key_table/4 make_tree/3 method/3 		set	
+standard_io_buffer	711	127	11	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,kappa2,knov,papyrus,utter	2	21	0	3	create/2 create/3	close_output/1 end_of_input/1 get_parsing_operator/2 get_unparsing_operator/2 getb/3 getl/2 gett/2 gett/4 putb/3 putc/2 putf/2 putf/3 putl/1 putl/2 putt/2 putt/4 reread/1 reset/1 set_max_depth/2 set_max_length/2 size/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+monogyny_hash_index	681	135	9	cal-esp,cil,euod,fuzclust,gog-esp,kappa2,knov,kwic-esp,utter	1	12	0	1	create/3	add_at/3 clear/1 count/2 empty/1 get_at/3 get_contents/2 get_contents_with_key/2 get_keys/2 put_at/3 put_contents_with_key/2 remove_at/3 stick_tap/2	kappa(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),qxt(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+standard_output_file	649	106	12	cal-esp,cil,disc,euod,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct	1	11	0	0	create/3	close_output/1 putb/3 putc/2 putf/2 putf/3 putl/1 putl/2 putt/2 putt/4 set_unparsing_operator/2 unquote_atom/1	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0364
+library_utility	424	324	12	cal-esp,disc,euod,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	6	20	0	1	assert/3 asserta/3 assertz/3 create/2 retract/3 retract_all/4	catalogue/3 check/3 delete/2 delete_package/2 get_class_id_atom_list/4 get_class_names/4 get_classes_with_wildcard/5 get_direct_superclasses/3 get_package/2 get_packages_with_wildcard/3 load/2 load_environment_for_package_template/3 load_package_template/3 make_package/3 remove_output/1 save/2 save_package_template/3 set_output/2 set_package/2 string_to_term/3	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+library	366	361	11	cal-esp,chal,cil,disc,euod,gog-esp,kappa2,knov,kwic-esp,papyrus,sum	46	0	0	0	abolish/2 abolish_class_object/2 assign/1 catalogue_class/2 change_environment_in_package/3 check_class_id/3 check_info/3 check_package/2 check_package/3 define_public_classes/2 delete/2 delete_environment_forcedly/2 delete_package/2 delete_package_forcedly/2 get_a_code/7 get_a_name/8 get_all_predicates_with_information/4 get_changed_classes/2 get_class_descriptor/6 get_class_id/5 get_class_id/6 get_class_id_in_environment/6 get_class_id_in_package/6 get_class_object/3 get_direct_referred_classes/3 get_direct_superclasses/3 get_exist_class/4 get_names/4 get_predicates_with_information/4 get_ve		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0025,tm0065,tm0161,tm0388,tr0056,tr0057,tr0086,tr0087,tr0283
+as_program	713	0	14	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct	8	27	14	164	create/2 get_slot/3 goal/2 new/2 ordinary/5 select_kakari_structure/3 set_slot/3 whiteboard/2	class_object/2 delete_items/2 do_state/3 get/3 get_arguments/2 get_default_class/2 get_inspector/2 get_leash/2 get_slot/3 get_state_switch/4 initial_setting/2 initiation_table/2 mam_do_menu/2 method/3 parse_arguments/2 refute/3 reset_prompt/1 reset_window/1 select_font_from_menu/2 select_package_from_menu/2 set_debugger_font/2 set_leash/2 set_mode/3 set_prompt/2 set_slot/3 set_title/1 with_vars_window/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0100,tm0115,tm0134
+process	389	316	12	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,utter	5	5	0	0	create/2 create/3 get_number/3 get_process/3 self/2	activate/2 exterminate/1 post/1 set_area_limit_execution/7 set_package/2	fts(simpos##),kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0065,tm0066,tm0100,tm0112,tm0115,tm0125,tm0134,tm0225
+list_index	523	136	9	cal-esp,chal,disc,euod,fuzclust,icotext,kappa2,kwic-esp,papyrus	2	12	1	2	create/2 create/3	add_at/3 clear/1 get_at/3 get_contents/2 get_contents_at/3 get_contents_with_key/2 get_keys/2 put_contents/2 put_contents_with_key/2 remove_at/2 remove_at/3 stick_index_tap/2	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0161,tm0785,tr0061
+standard_input_file	467	145	14	cal-esp,chal,cil,disc,euod,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	1	9	1	0	create/3	close_input/1 end_of_input/1 get_parsing_operator/2 getb/3 getc/2 getl/2 gett/2 gett/4 set_parsing_operator/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),qxt(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+pmacs_window	506	68	15	cal-esp,chal,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	7	33	0	17	create/3 create/4 create_with_input/4 create_with_input/5 get_slot/3 refute/3 set_slot/3	activate/1 current_buffer/2 deactivate/1 flash/1 get_editor/2 get_interpreter/2 get_size/3 get_text_window/2 getc/2 getl/2 gett/2 has_been_reshaped/1 input_data/2 kill/1 putb/3 putc/2 putf/2 putf/3 putl/1 putl/2 putt/2 read/2 set_font/2 set_input_buffer/2 set_label_font/2 set_name/2 set_position/3 set_size/3 set_title/2 show_buffer/1 unquote_atom/1 view_next_screen/1 view_previous_screen/1	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+hash_index	412	92	6	cal-esp,cil,euod,fuzclust,kappa2,kwic-esp	1	12	2	1	create/3	add_at/3 clear/1 get_at/3 get_contents/2 get_contents_at/3 get_contents_with_key/2 get_key/2 get_keys/2 put_contents_with_key/2 remove_at/3 stick_index_tap/2 stick_tap/2	kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0161
+font	220	220	14	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,knov,kwic-esp,papyrus,sum,txtstrct,utter	1	0	0	0	create/3		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),sancho2(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0066,tm0112,tm0115,tm0125,tm0143,tm0181,tm0229,tm0785,tm0927
+inferior_window	431	2	13	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct,utter	1	6	0	132	create/3	deactivate/1 get_position/3 get_size/3 kill/1 set_position/3 set_size/3	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0143,tm0364,tr0046,tr0057,wincs_8_1_54
+standard_menu	355	50	11	cal-esp,cil,disc,euod,fuzclust,gog-esp,kappa2,knov,kwic-esp,papyrus,utter	1	19	0	3	create/3	activate/1 activate/2 add_item/3 clear_buffer/1 deactivate/1 delete_item/2 expose/1 get_size/3 kill/1 read/2 read_with_click/3 set_font/2 set_item_status/3 set_label_font/2 set_name/2 set_position/3 set_superior/2 set_title/2 show/1	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0125
+directory	188	188	10	cal-esp,chal,cil,disc,euod,gog-esp,icotext,kappa2,knov,kwic-esp	16	0	0	0	change_directory/3 current_directory/3 delete/3 delete/4 directory/5 directory/6 kill/3 make/3 make/4 parent_directory/5 remove/4 rename/5 retrieve/3 retrieve/4 retrieve_with_wildcard/3 retrieve_with_wildcard/4		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0065,tm0066,tm0112,tm0115,tm0388,tm0715,tr0046,tr0055,tr0056,tr0057
+monogyny_list_index	275	85	10	cal-esp,cil,disc,euod,fuzclust,icotext,kappa2,kwic-esp,papyrus,sum	1	11	1	2	create/2	add_at/3 clear/1 get_at/3 get_contents/2 get_contents_with_key/2 get_keys/2 put_at/3 put_contents/2 put_contents_with_key/2 remove_at/3 stick_tap/2	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+standard_temporary_menu	235	64	7	cil,disc,fuzclust,kappa2,kwic-esp,papyrus,utter	1	12	0	0	create/3	activate/1 add_item/3 beep/1 clear_items/1 deactivate/1 hide/1 kill/1 read/2 set_font/2 set_label_font/2 set_title/2 show/1	kappa(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+standard_editor	286	2	8	cal-esp,cil,disc,euod,kappa2,kwic-esp,sum,txtstrct	1	20	2	16	create/4	beginning_of_line/1 carriage_return/1 clear_buffer/1 clear_input/1 current_buffer/2 exception/2 execute_command/2 get_interface/2 get_slot/3 get_window/2 mark/1 mark_position/2 method/3 other_window/1 refute/3 replace_region/3 see_region/2 select_buffer/2 set_current_buffer/2 view_two_windows/1	kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+temporary_menu	224	55	10	cal-esp,disc,euod,fuzclust,icotext,kappa2,knov,kwic-esp,papyrus,sum	1	13	0	4	create/3	activate/1 add_items/3 beep/1 clear_items/1 deactivate/1 hide/1 kill/1 read/2 read/3 set_font/2 set_label_font/2 set_title/2 show/1	kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125
+pmacs_standard_editor	244	0	4	cal-esp,chal,cil,papyrus	0	17	0	26		backward_character/1 clear_input/1 current_buffer/2 cursor_with_mouse/1 exception/2 exchange_point/1 find_file/2 get_window/2 goto_beginning/1 insert/2 mark/1 next_term/1 push_to_yank/3 select_buffer/2 show_menu/1 two_windows/1 write_file/4	pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+messenger	120	120	5	cal-esp,cil,euod,fuzclust,kappa2	5	0	0	0	comfirm/2 confirm/2 confirm/3 show/2 show/3		kappa(simpos##),paragraph(simpos##),pimfep(simpos##)	A:simpos##-in-compiled-package	
+standard_superior_window	204	33	9	cal-esp,cil,disc,euod,icotext,kappa2,knov,kwic-esp,papyrus	4	19	0	14	create/3 get_slot/3 refute/3 set_slot/3	activate/1 check_window/1 deactivate/1 get_border_width/2 get_inside_size/3 get_inside_units/3 get_label_height/2 get_margins/5 get_position/3 get_size/3 hide/1 kill/1 read/3 set_label_font/2 set_mode/2 set_position/3 set_size/3 set_title/2 show/1	kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+pathname	111	111	7	cal-esp,cil,euod,gog-esp,icotext,kappa2,kwic-esp	7	0	0	0	append/4 check_pathname/3 get_last/4 last/4 last_name/4 remote_or_local/6 straighten_up/5		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tm0066,tr0055,tr0056,tr0057,tr0059,tr0087,tr0283,tr0524
+essential_window	175	26	6	cal-esp,euod,fuzclust,kappa2,sum,utter	1	32	0	3	create/3	activate/1 activate/2 background/2 clear/1 deactivate/1 draw_filled_rectangle/6 draw_line/8 draw_rectangle/8 draw_string/5 erase_cursor/1 get_font/2 get_inside_size/3 get_inside_units/3 get_mouse_dot_position/3 get_mouse_position/3 get_size/3 get_superior/2 kill/1 move_cursor/3 read/2 read_sense/2 refute/3 set_font/2 set_name/2 set_position/3 set_size/3 set_title/2 show/1 transfer/8 write/2 write_line/2 write_lines/2	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0388
+name	97	97	6	cil,euod,gog-esp,icotext,kappa2,kwic-esp	7	0	0	0	append_type/4 check_name/3 ident/3 ident_type/3 sort/3 type/3 version/3		kappa(simpos##),mpsicspR(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0025,tm0066,tm0079,tm0100,tm0112,tm0115,tm0125,tm0134
+two_three_tree	94	94	5	cal-esp,cil,euod,kappa2,kwic-esp	6	0	0	0	add_at/5 get_at/4 get_contents/3 put_at/5 put_contents/4 remove_at/5		kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0146
+editor_text_buffer	90	83	10	cal-esp,cil,disc,euod,fuzclust,gog-esp,kappa2,kwic-esp,papyrus,sum	7	1	0	1	create/3 create/4 create_with_parameter/5 get_buffer_instance/3 get_buffer_instance_list/2 kill/2 rename_buffer/3	reset/1	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	
+time	95	78	7	cal-esp,cil,euod,gog-esp,kappa2,knov,kwic-esp	5	3	0	0	create/2 make_string/6 make_value/6 now/2 present/2	get_string/2 plus/3 set_value/5	kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0025,tm0065,tm0100,tm0112,tm0115,tm0125,tm0134,tm0161
+window_without_label	146	19	2	fuzclust,kappa2	1	12	0	0	create/3	activate/1 activate/2 background/2 beep/1 erase_cursor/1 kill/1 read/2 set_font/2 set_superior/2 write_line/2 write_line/3 write_lines/2	kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0125
+array	122	28	5	fuzclust,gog-esp,kappa2,knov,sum	1	4	0	0	create/3	get_at/3 get_contents/2 put_at/3 put_contents/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0066,tm0100,tm0134,tm0388,tr0056,tr0057,tr0087,tr0285
+cal_window	140	6	2	cal-esp,chal	1	16	5	0	create/3	activate/1 clear_buffer/1 flash/1 get_fullpath_name/3 get_parsing_operator/2 gett/4 kill/1 putb/3 putf/3 putl/1 putl/2 putt/2 set_input_position/1 set_title/2 show/1 show_buffer/1		C:used-by-2+-programs	
+{with_superior_input_buffer|with_border|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	134	0	1	kappa2	0	9	0	0		activate/1 background/2 draw_string/6 erase_cursor/1 paint/5 set_color_pair/3 set_font/2 write_line/2 write_lines/2		set	
+{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	134	0	1	sum	23	5	4	0	abolish/3 asserta/2 consult/2 create/3 display/2 display_ind/3 equalsh/3 get0/2 get_slot/3 heap/2 listing/2 nl/1 refute/3 retract/2 see/2 seen/1 set_slot/3 snl/1 spy/2 tell/2 textname/1 told/1 ttynl/1	deactivate/1 draw_cursor/1 getl/2 kill/1 unquote_atom/1		set	
+standard_scrolling_menu	104	26	7	cal-esp,cil,euod,fuzclust,kappa2,kwic-esp,papyrus	1	14	1	6	create/3	activate/1 activate/2 add_item/3 add_items/3 change_item/3 class_object/2 clear_items/1 deactivate/1 enable_menu_help_click/1 kill/1 read/2 retrieve_all_items/2 set_item_status/3 set_name/2	kappa(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+as_mouse_input	121	0	12	cal-esp,cil,disc,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct,utter	0	0	0	121			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0364,wincs_8_1_54
+stream	74	45	5	fuzclust,icotext,kappa2,kwic-esp,papyrus	1	2	0	0	create/2	get/2 put/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0009,tm0061,tm0065,tm0066,tm0100,tm0146,tr0055,tr0056,tr0057,tr0086
+stop_watch	93	24	6	cal-esp,chal,cil,gog-esp,kappa2,utter	1	4	0	0	create/2	reset/1 show/2 start/1 stop/1	kappa(simpos##),pimmcsp(simpos##),sancho2(simpos##)	A:simpos##-in-compiled-package	
+mathematical_functions	53	52	5	cal-esp,fuzclust,gog-esp,icotext,papyrus	16	0	0	0	acos/3 asin/3 atan/3 atan/4 cos/3 cosh/3 exp/3 ln/3 log/3 max/3 min/3 sin/3 sinh/3 sqrt/3 tan/3 tanh/3		pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+standard_temporary_scrolling_menu	64	27	3	euod,kappa2,kwic-esp	1	7	0	1	create/3	activate/1 add_items/3 clear_items/1 hide/1 kill/1 read/2 show/1	kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+initiation_table	73	15	1	cil	1	3	0	0	create/2	get_at/3 put_all/2 put_at/3		D:one-program-unconfirmed	
+esp_macro_expander_for_compiler	88	0	8	ptf:fts,ptf:kappa,ptf:mpsicspR,ptf:pimfep,ptf:pimmcsp,ptf:pimscsi,ptf:qxt,ptf:tour	0	0	0	0			fts(simpos##),kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##),qxt(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+standard_window	79	7	5	cil,euod,kappa2,kwic-esp,utter	1	20	0	3	create/3	activate/1 draw_filled_rectangle/6 draw_line/8 draw_rectangle/8 draw_string/5 erase_cursor/1 get_inside_size/3 get_inside_units/3 get_position/3 get_size/3 get_superior/2 kill/1 read/2 read_click_with_position/4 set_label_font/2 set_margins/5 set_position/3 set_size/3 set_title/2 write_line/2	kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0125
+menu_with_superior_input_buffer	60	20	3	disc,icotext,kappa2	1	10	0	0	create/3	activate/1 add_item/3 add_items/3 change_item/3 clear_items/1 deactivate/1 delete_item/2 get_size/3 kill/1 set_size/3	kappa(simpos##)	A:simpos##-in-compiled-package	tm0115
+menu	57	22	6	cal-esp,fuzclust,gog-esp,kappa2,knov,utter	1	12	0	2	create/3	activate/1 change_item/3 deactivate/1 get_size/3 kill/1 read/2 retrieve_item/3 set_font/2 set_label_font/2 set_position/3 set_superior/2 set_title/2	kappa(simpos##),paragraph(simpos##),pimmcsp(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0066,tm0112,tm0115,tm0125,tm0126,tm0143,tm0229,tm0785,tm0927,tr0046
+with_superior_input_buffer	78	0	10	cal-esp,cil,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	78			kappa(simpos##),pak_papyrus(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125
+as_class_with_lock	75	0	3	cil,kappa2,kwic-esp	5	0	0	21	lock/1 locked/2 new/2 refute/3 unlock/1		kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	
+essential_scrolling_menu	56	19	5	disc,euod,fuzclust,gog-esp,icotext	1	10	0	0	create/3	activate/1 add_items/3 clear_items/1 get_size/3 read/2 set_font/2 set_label_font/2 set_position/3 set_superior/2 set_title/2	pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+labeled_superior_window	67	8	3	euod,fuzclust,kappa2	1	15	0	3	create/3	activate/1 deactivate/1 get_border_width/2 get_inside_size/3 get_label_height/2 get_margins/5 get_position/3 get_size/3 kill/1 read/3 set_label_flag/2 set_label_font/2 set_position/3 set_size/3 set_title/2	kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0125
+date_time	39	35	5	cil,euod,kappa2,knov,kwic-esp	3	3	0	0	create/2 now/2 present/3	get_string/3 get_value/8 set_count/3	kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0125
+esp_macro_expander	53	20	5	cal-esp,cil,gog-esp,kappa2,kwic-esp	1	1	0	1	new/2	expand_goals/3	kappa(simpos##)	A:simpos##-in-compiled-package	tm0388
+character	54	19	4	cil,kappa2,sum,txtstrct	14	0	0	0	is_alphabetic/2 is_control/2 is_greek/2 is_hiragana/2 is_kanji/2 is_katakana/2 is_lowercase/2 is_numeric/2 is_russian/2 is_special/2 is_upper_alphabetic/2 is_uppercase/2 to_lowercase/3 to_uppercase/3		kappa(simpos##),mpsicspR(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0025,tm0066,tm0100,tm0112,tm0115,tm0125,tm0134,tm0161,tm0388,tr0044
+set	56	16	5	cal-esp,euod,fuzclust,kappa2,kwic-esp	2	7	2	1	create/2 create/3	add/2 add_contents/2 clear/1 get_contents/2 in/2 put_contents/2 remove/2	kappa(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0025,tm0065,tm0066,tm0100,tm0112,tm0115,tm0125,tm0134
+with_border	66	4	9	cal-esp,cil,euod,icotext,kappa2,kwic-esp,sum,txtstrct,utter	0	0	0	66			kappa(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tm0125,tm0143,tm0364,wincs_8_1_54
+{with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	66	0	2	kappa2,kwic-esp	0	14	0	0		activate/1 clear/1 end/1 flash/1 get_editor/2 get_interpreter/2 get_slot/3 parse/3 putf/2 putf/3 putl/2 set_bottom_title/2 set_input_buffer/2 set_top_title/2		set	
+standard_choice_window	44	20	8	cal-esp,cil,disc,euod,fuzclust,gog-esp,kappa2,papyrus	1	9	0	0	create/3	activate/1 activate/2 add_items/3 clear_items/1 deactivate/1 kill/1 read/2 set_name/2 set_title/2	kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0125
+superior_window	45	12	8	cal-esp,cil,disc,euod,fuzclust,gog-esp,kappa2,papyrus	1	10	0	4	create/3	activate/1 get_inside_size/3 get_position/3 get_size/3 hide/1 kill/1 read_click_with_position/5 set_position/3 set_size/3 show/1	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tr0046,tr0057
+as_resource	56	0	4	cil,fuzclust,kappa2,kwic-esp	1	6	0	18	new/2	assign/1 class_object/2 get_slot/3 resign/1 set_slot/3 show_error_winodw/1	kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0065,tr0082
+list_stack	41	13	6	cal-esp,cil,fuzclust,icotext,kappa2,kwic-esp	1	5	0	0	create/2	clear/1 count/2 get_contents/2 pop/2 push/2	kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0388
+standard_temporary_choice_window	42	12	4	cal-esp,kappa2,knov,kwic-esp	1	8	0	0	create/3	activate/1 beep/1 change_item/3 kill/1 read/2 retrieve_item/3 set_font/2 show/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+{with_margin|with_border|as_output|as_graphics|with_superior_input_buffer|inferior_window}	54	0	1	cil	0	13	0	0		clear/1 draw_arc/9 draw_elliptical_arc/10 draw_filled_circle/5 draw_filled_rectangle/6 draw_line/8 draw_string/6 get_font/2 get_inside_size/3 get_inside_units/3 paint/5 set_font/2 transfer/8		set	
+ras_text_utility	27	27	1	euod	5	0	0	0	backup/2 get_text_from_buffer/3 read/3 save/3 set_text_to_buffer/4			D:one-program-unconfirmed	
+{with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	53	0	1	kappa2	0	7	0	0		activate/1 flash/1 getl/2 putb/3 putl/2 read/2 set_superior/2		set	
+screen	26	25	9	cal-esp,cil,disc,euod,gog-esp,kappa2,kwic-esp,sum,utter	1	0	0	1	get_size/3		kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0065,tm0066,tm0112,tm0115,tm0125,tm0388,tr0046,tr0055,tr0056,tr0057
+binary_file	25	26	4	cal-esp,cil,gog-esp,kappa2	6	0	0	0	make/3 make_only/3 open/3 open/4 open/5 open_/3		kappa(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tm0066,tm0115,tm0161,tm0388,tr0055,tr0059,tr0524
+file_utility	25	25	5	cal-esp,cil,euod,gog-esp,kappa2	6	0	0	0	compress/4 copy/3 decompress/4 delete/3 delete_file/3 kill/2		kappa(simpos##)	A:simpos##-in-compiled-package	
+alarm_watch	38	12	3	euod,gog-esp,kappa2	1	3	0	0	create/2	on_after/2 on_at/2 wait/1	kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	
+string_buffer	31	18	3	cil,gog-esp,kappa2	2	5	0	0	create/2 create/4	data_buffer/2 get_data/2 get_data/3 put_data/2 set_data_buffer/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0161
+fdd_volume	42	7	2	cil,kappa2	2	5	0	0	create/2 get_physical_units/2	dismount/1 file_names/2 get_sub_info/2 link/2 mount/3	kappa(simpos##)	A:simpos##-in-compiled-package	tm0388
+standard_temporary_window	42	7	2	fuzclust,kappa2	1	7	0	0	create/3	activate/1 beep/1 draw_string/4 erase_cursor/1 kill/1 read/2 write_lines/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+as_single_select	48	0	10	cal-esp,cil,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	48			kappa(simpos##),pak_papyrus(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0125,wincs_8_1_54
+network_node_name	24	24	3	cil,fuzclust,kappa2	2	0	0	0	get_my_node/2 node_type/3		kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{as_graphics|inferior_window}	48	0	1	icotext	0	23	0	0		clear/1 copy/9 copy_from_string/11 copy_to_string/11 draw_arc/9 draw_circle/7 draw_ellipse/8 draw_filled_circle/5 draw_filled_ellipse/8 draw_filled_fan/9 draw_filled_rectangle/6 draw_filled_rectangle/8 draw_line/5 draw_line/8 draw_rectangle/5 draw_rectangle/8 draw_string/4 draw_string/5 execute_graphics_command/2 get_point_value/4 hardcopy/1 set_point_value/4 transfer/8		set	
+standard_popup_menu	45	2	2	cal-esp,icotext	1	12	0	4	create/3	activate/1 add_item/3 add_items/3 clear_items/1 deactivate/1 hide/1 kill/1 read/2 set_font/2 set_item_status/3 set_title/2 show/1		C:used-by-2+-programs	
+as_superior	46	0	11	cal-esp,cil,euod,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct,utter	0	0	0	46			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tr0046,wincs_8_1_54
+as_rpc_server_tcp	45	0	1	kappa2	1	6	0	1	create/4	err_noproc/1 getargs/3 sendreply/3 set_jis_string_max_length/2 xdr_int/2 xdr_jis_string/2		D:one-program-unconfirmed	
+as_input	44	0	11	cal-esp,cil,disc,euod,fuzclust,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	44			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0364,tr0046,wincs_8_1_54
+code_man	22	22	1	euod	12	0	0	0	is_ctrl/2 is_ctrlmeta/2 is_jis/2 is_meta/2 is_nonshift/2 is_shift/2 to_ctrl/3 to_ctrlmeta/3 to_jis/3 to_meta/3 to_nonshift/3 to_shift/3			D:one-program-unconfirmed	
+essential_temporary_window	39	5	1	kappa2	1	7	0	0	create/3	activate/1 background/2 beep/1 erase_cursor/1 kill/1 put_line/2 read/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+{as_program|as_class_with_lock}	43	0	1	kappa2	4	2	0	0	lock/1 locked/1 new/2 unlock/1	get_e_window/2 refute/3		set	
+wildcard	21	21	3	cil,euod,kappa2	4	0	0	0	check_name/3 name/4 rename/5 string/4		kappa(simpos##),paragraph(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	42	0	1	cil	0	7	0	0		clear/1 draw_elliptical_arc/10 draw_filled_rectangle/6 draw_filled_rectangle/8 draw_line/8 get_inside_size/3 transfer/8		set	
+network_listener_buffer	30	11	3	fuzclust,gog-esp,kappa2	2	3	0	2	buffer/3 create/4	convert/7 data_buffer/2 set_send_data_size/2	pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+trace_exception_handler	20	20	1	cal-esp	4	0	1	0	reset_exception_handler/1 set_exception_handler/1 set_trace_switch/2 trace_enable/1			D:one-program-unconfirmed	
+reshape_notifier	40	0	8	cal-esp,cil,disc,euod,kappa2,kwic-esp,papyrus,txtstrct	0	4	0	33		activate/1 get_size/3 set_position/3 set_size/3	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0364
+multi_column_menu	29	11	5	cal-esp,euod,fuzclust,gog-esp,sum	1	7	0	1	create/3	activate/1 deactivate/1 get_size/3 kill/1 read/2 set_size/3 set_superior/2		B:named-in-SIMPOS-report-OCR	tm0125,tr0046
+essential_scrolling_menu_with_superior_input_buffer	32	7	3	disc,fuzclust,kappa2	1	9	0	3	create/3	activate/1 add_item/3 clear/1 clear_items/1 deactivate/1 hide/1 kill/1 set_title/2 show/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+standard_multi_column_menu	26	11	7	cal-esp,cil,disc,euod,gog-esp,kwic-esp,papyrus	1	8	0	2	create/3	activate/1 deactivate/1 get_item_status/3 kill/1 retrieve_all_items/2 set_item_status/3 set_name/2 set_size/3	pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+{sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	37	0	1	fuzclust	0	10	0	0		activate/1 draw_filled_rectangle/6 draw_line/8 draw_rectangle/8 draw_string/4 draw_string/5 erase_cursor/1 get_mouse_dot_position/3 set_superior/2 warp_mouse/3		set	
+format_printer	31	6	1	kappa2	2	4	0	0	create/2 get/2	get_font/2 put_line/2 release/1 set_format_by_operator/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+window_subsystem	18	18	4	cal-esp,gog-esp,kappa2,kwic-esp	2	0	0	0	add_icon/4 system_font/2		kappa(simpos##),mpsicspR(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0100,tm0125,tr0055,tr0057,tr0086,tr0087
+temporary_window	35	1	7	cal-esp,cil,fuzclust,gog-esp,kappa2,sum,txtstrct	1	2	0	11	create/3	activate/1 kill/1	kappa(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0364,tr0055,wincs_8_1_54
+{librarian_catalogue|as_class_maker|compiler_error_reporter}	36	0	1	cil	1	11	1	0	new/2	add_class_name/2 add_class_names/2 add_discordant_class/2 add_file_name/2 get_package_and_class/4 make_all_classes/2 make_all_classes/3 mumble/3 remove_discordant_class/2 term_to_string/3 zero_position/4		set	
+frozen_term	18	18	3	disc,kappa2,knov	1	0	0	0	freeze/3		kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0388
+laxinf	18	18	1	icotext	2	0	0	0	get_lex_obj/3 get_sem_obj/3			D:one-program-unconfirmed	
+access_status	32	4	1	kappa2	2	2	0	1	create/2 new/2	initialize/1 status/2	kappa(simpos##),pimfep(simpos##)	A:simpos##-in-compiled-package	tr0283
+{with_border|as_graphics|as_input|as_mouse_input|inferior_window}	35	0	1	kwic-esp	0	10	0	0		activate/1 clear/1 draw_line/5 expose/1 get_inside_size/3 get_inside_units/3 get_mouse_position/3 get_superior/2 hide/1 warp_mouse/3		set	
+date	17	17	4	cal-esp,gog-esp,kappa2,kwic-esp	4	0	0	0	make_string/5 make_value/5 now/2 present/2		kappa(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	9103,tm0112,tm0125,tm0146,tm0388,tm0404,tm0715,tm0785,tm0927,tr0044
+sorted_sequence	31	3	2	fuzclust,kappa2	2	9	0	2	create/2 new/2	add/2 get_at/3 get_contents/2 get_first/2 put_contents/2 remove/2 remove_at/3 remove_first/2 stick_tap/2	kappa(simpos##),pimfep(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tr0056
+font_13	0	33	5	cal-esp,cil,euod,kappa2,kwic-esp	0	0	0	0			kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0143
+{with_superior_input_buffer|with_margin|with_border|as_graphics|as_input|as_mouse_input|inferior_window}	33	0	1	icotext	0	5	0	0		clear/1 copy/9 get_inside_size/3 get_mouse_dot_position/3 warp_mouse/3		set	
+{as_menu_input|with_click_information|temporary_single_scrolling_menu}	32	0	1	kappa2	1	8	0	0	create/3	activate/1 add_item/3 kill/1 read/2 set_font/2 set_label_font/2 set_size/3 set_title/2		set	
+call_counter	17	14	1	cal-esp	17	0	0	0	count_reset/1 count_start/1 count_stop/1 get_best/2 get_filename/2 get_package/2 get_threshold/2 initial/1 new/2 predicate_output_to_file/3 reset_all_process/1 set_all_process/2 set_best/2 set_class/2 set_filename/2 set_process_number/3 set_threshold/2			M:named-in-ESP-manual-TeX	
+choice_window	18	13	4	cal-esp,gog-esp,icotext,kappa2	1	3	0	1	create/3	activate/1 kill/1 read/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0125
+with_icon	31	0	8	cil,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum	0	0	1	28			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+as_markers	31	0	7	disc,fuzclust,gog-esp,kappa2,kwic-esp,papyrus,txtstrct	0	8	0	16		draw_marker/2 erase_marker/2 get_marker_position/4 get_mouse_position/3 move_marker/4 read_sense/2 set_marker_type/3 warp_mouse/3	kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tm0125,wincs_8_1_54
+net_talk_window	15	15	1	fuzclust	2	0	2	0	exe_help_menu/3 wink/2			D:one-program-unconfirmed	
+trans_buffer	15	15	1	icotext	2	0	0	0	set_buffer/2 term_to_string/3			D:one-program-unconfirmed	
+as_menu_input	29	0	3	cil,kappa2,kwic-esp	0	0	0	29			kappa(simpos##),pak_papyrus(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+labeled_sash	29	0	7	cil,disc,gog-esp,icotext,kappa2,kwic-esp,papyrus	0	0	0	29			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##)	A:simpos##-in-compiled-package	tm0125,tm0364
+scrolling_on_off_menu_with_superior_input_buffer	24	5	1	kappa2	1	4	0	0	create/3	activate/1 add_items/3 kill/1 retrieve_all_items/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+coordinator	14	14	3	cal-esp,kappa2,kwic-esp	4	0	0	0	get_instance/2 information/3 login_user/2 whiteboard/2		kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0065,tm0100,tm0125,tr0046,tr0055,tr0057,tr0061,tr0086,tr0087
+as_graphics	28	0	12	cal-esp,cil,disc,euod,fuzclust,gog-esp,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	28			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0364,wincs_8_1_54
+kappaP	27	1	1	kappa2	1	12	0	0	create/3	add_set/4 begin_transaction/2 close/1 create_tap/4 define_set/5 delete_set/2 delete_tap/2 end_transaction/1 open/2 read_record/4 read_record/5 search_index/5		D:one-program-unconfirmed	
+as_server_program	27	0	3	fuzclust,gog-esp,kappa2	0	5	0	6		convert_con_req/6 get_line/2 get_slot/3 give_answer/3 set_slot/3	pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+as_output	26	0	10	cil,disc,euod,fuzclust,gog-esp,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	26			kappa(simpos##),pak_papyrus(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0143,tm0364,tr0044,wincs_8_1_54
+expandable_array	21	5	3	euod,gog-esp,kappa2	1	6	0	0	create/3	add_at/3 empty/1 expand/2 get_at/3 put_at/3 size/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+temporary_choice_window	14	12	1	kappa2	1	2	0	0	create/3	set_font/2 set_label_font/2	kappa(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	
+{as_menu_input|temporary_multiple_scrolling_menu}	26	0	1	kappa2	1	6	0	0	create/3	activate/1 add_items/3 clear_items/1 deactivate/1 read_with_code/3 set_size/3		set	
+fdd_binary_file	12	13	2	cil,kappa2	6	0	0	0	make/3 make/4 make_only/3 make_only/4 open/3 open/5		kappa(simpos##)	A:simpos##-in-compiled-package	tm0388
+fdd_binary_file_tap	19	6	1	kappa2	1	3	0	0	create/3	at_end/1 read/2 write/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+debugger_error	12	12	1	cal-esp	2	0	0	0	raise/4 raise/5			B:named-in-SIMPOS-report-OCR	tr0086
+throw	12	12	4	cal-esp,cil,kappa2,kwic-esp	2	0	0	0	raise/1 raise/2		kappa(simpos##)	A:simpos##-in-compiled-package	tm0066,tm0143,tr0087,tr0285
+net_spawn_user	12	12	4	cil,fuzclust,gog-esp,kappa2	2	0	0	0	hello/4 spawn/7		pimmcsp(simpos##)	P:provided-by-held-package(pimfep##net_spawn_user)	
+with_margin	24	0	7	cil,icotext,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	24			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tm0125,tm0364,wincs_8_1_54
+as_menu	24	0	7	cil,gog-esp,kappa2,kwic-esp,papyrus,sum,txtstrct	0	0	0	24			kappa(simpos##),pak_papyrus(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,wincs_8_1_54
+temporary_multiple_select_menu	21	3	3	icotext,kappa2,knov	1	10	0	0	create/3	activate/1 add_items/3 clear_items/1 deactivate/1 kill/1 read/2 set_font/2 set_label_font/2 set_title/2 show/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+editor_main_window	24	0	1	kappa2	1	8	0	4	create/3	activate/1 beep/1 clear_echo_area/1 get_editor/2 get_interpreter/2 get_with_prompt/3 set_font/2 set_title/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+port	15	8	3	cal-esp,euod,gog-esp	1	3	0	0	create/2	connect/2 receive/2 send/2	pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0009,tm0079,tm0100,tm0189,tm0388,tr0046,tr0055,tr0056,tr0057,tr0059
+with_label	23	0	7	cal-esp,cil,kappa2,knov,kwic-esp,sum,txtstrct	0	0	0	23			kappa(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tm0115,tm0125,tm0143,tm0364,wincs_8_1_54
+search_table	17	5	4	cal-esp,cil,fuzclust,sum	1	3	0	0	create/2	copy/2 get_table/3 set/2		M:named-in-ESP-manual-TeX	
+{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	22	0	1	cil	1	12	1	0	create_with_input/4	beep/1 class_object/2 flash/1 get_border_width/2 get_echo_area_window_size/3 get_label_window_size/3 get_text_window/2 put_back/2 putc/2 putf/2 putf/3 set_input_position/1		set	
+e_string	11	11	1	kappa2	3	0	0	0	nonspace/3 replace/5 split/4		pimfep(simpos##)	A:simpos##-in-compiled-package	tm0388
+{with_superior_input_buffer|as_standard_io_window|with_border|as_output|as_graphics|as_markers|reshape_notifier|as_mouse_input|inferior_window}	22	0	1	kappa2	1	7	4	0	create/7	draw_filled_rectangle/6 draw_filled_rectangle/8 draw_rectangle/8 draw_string/4 draw_string/6 get_mouse_dot_position/3 warp_mouse/3		set	
+{with_two_labels|with_border|as_superior|with_key_select|as_menu_input|as_input|inferior_window|reshape_notifier}	22	0	1	kwic-esp	0	9	0	0		assign/1 assigned/1 class_object/2 get_bottom_title/2 read/2 read_with_code/4 resign/1 set_bottom_title/2 show/1		set	
+hitachi_wk	11	11	1	sum	6	0	0	0	is_a/3 numeric/4 part_of/3 rel/3 unique/2 val/3			D:one-program-unconfirmed	
+if1000_wk	11	11	1	sum	6	0	0	0	is_a/3 numeric/4 part_of/3 rel/3 unique/2 val/3			D:one-program-unconfirmed	
+standard_popup_choice_window	20	1	2	euod,icotext	1	4	0	2	create/3	activate/1 change_item/3 deactivate/1 read/2		C:used-by-2+-programs	
+channel	16	5	1	kappa2	1	2	0	0	create/2	receive/2 send/2	kappa(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0100,tm0115,tr0055,tr0056,tr0057,tr0059,tr0087,tr0524
+debugger_gate	15	5	1	cal-esp	1	1	0	0	new/2	set/3		D:one-program-unconfirmed	
+with_click_information	20	0	5	cal-esp,chal,cil,gog-esp,kappa2	0	0	0	20			kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+with_bell	20	0	4	cil,icotext,kappa2,papyrus	0	0	0	20			kappa(simpos##),pak_papyrus(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+imi_set_data	10	10	1	icotext	4	0	0	0	get_child_str/3 get_children/3 multiple_child/4 set/4			D:one-program-unconfirmed	
+with_default_mouse	19	0	7	cal-esp,cil,kappa2,kwic-esp,sum,txtstrct,utter	0	0	0	19			kappa(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	tm0125
+sash	19	0	5	cal-esp,fuzclust,icotext,kappa2,papyrus	0	0	0	19			kappa(simpos##),pak_papyrus(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0025,tm0115,tm0125,tm0364,tm0927
+{as_superior|with_label|with_border|inferior_window}	19	0	1	kappa2	0	5	0	0		activate/1 get_inside_size/3 read/3 set_label_font/2 set_title/2		set	
+kappaREP_select_menu	17	2	1	kappa2	1	7	0	0	create/3	activate/1 add_items/3 kill/1 read/2 set_font/2 set_label_font/2 set_title/2		D:one-program-unconfirmed	
+as_scrolling_menu	18	0	5	cil,icotext,kappa2,kwic-esp,papyrus	0	0	0	18			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+table	9	9	1	disc	2	0	0	0	mikata/4 n/3			B?:one-word-name-in-report-OCR(weak)	tm0065,tm0100,tm0115,tm0125,tm0242,tm0388,tr0044,tr0046,tr0055,tr0056
+{labeled_sash|as_standard_io_window|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	18	0	1	disc	0	4	0	0		clear/1 hide/1 set_title/2 show/1		set	
+kk_qsort	9	9	1	euod	1	0	0	0	quick_sort/3			D:one-program-unconfirmed	
+color_manipulator	9	9	1	kappa2	1	0	0	0	call_color_manipulator/2		kappa(simpos##)	A:simpos##-in-compiled-package	
+binary_file_tap	12	6	1	kappa2	1	3	0	0	create/3	at_end/1 read/2 write/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tr0059
+{as_input|with_superior_input_buffer|editor_main_window}	18	0	1	kappa2	1	7	0	0	create/3	activate/1 beep/1 clear_echo_area/1 get_editor/2 get_interpreter/2 get_with_prompt/3 kill/1		set	
+{with_margin|with_mouse_scroll|with_cwi|as_markers|as_input|as_mouse_input|inferior_window}	18	0	1	kwic-esp	0	8	0	0		get_inside_size/3 get_inside_units/3 get_mouse_position/3 get_superior/2 read/2 read_sense/2 refute/3 warp_mouse/3		set	
+{as_markers|standard_window}	18	0	1	kwic-esp	0	9	0	0		activate/2 create_marker/7 draw_marker/2 erase_marker/2 get_marker_position/4 get_mouse_position/3 read_sense/2 reshape_marker/7 warp_mouse/3		set	
+message	12	5	3	cal-esp,gog-esp,kappa2	3	1	0	1	create/2 create/4 new/2	set_content/2	kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0065,tm0100,tm0112,tm0115,tm0125,tm0134,tm0388,tm0404
+{with_superior_input_buffer|labeled_sash|as_input|as_mouse_input|as_output|as_graphics|as_markers|select_notifier|inferior_window}	17	0	1	papyrus	0	8	0	0		clear/1 draw_line/8 draw_string/5 get_font/2 get_inside_size/3 get_inside_units/3 get_mouse_position/3 set_font/2		set	
+{with_border|as_output|as_input|as_graphics|as_mouse_input|inferior_window}	17	0	1	sum	8	0	0	0	clear/1 draw_arc/9 draw_line/8 erase_cursor/1 move_cursor/3 show/1 write_line/2 write_lines/2			set	
+{with_click_information|temporary_single_scrolling_menu}	16	0	2	cal-esp,chal	1	5	0	0	create/3	activate/1 add_item/3 add_items/3 clear_items/1 read_with_click/3		set	
+{as_debugger_goal_input|as_debugger_input_buffer_processing}	16	0	1	cal-esp	1	7	1	0	new/2	class_object/2 get_and_checl/3 get_input_strings_list/2 get_slot/3 prompt/2 save_input_strings/2 set_slot/3		set	
+builtin	8	8	2	cal-esp,disc	5	0	0	0	builtin/4 builtin_opcode/3 execute_builtin/2 is_builtin/2 is_builtin/3			X:defined-in-another-IFS-app	tm0126,tr0086
+pf2	8	8	1	disc	1	0	0	0	through/3			B?:one-word-name-in-report-OCR(weak)	tr0524
+standard_popup_scrolling_menu	14	2	1	euod	1	6	0	0	create/3	add_items/3 clear_items/1 hide/1 read/2 set_size/3 show/1		D:one-program-unconfirmed	
+stream_set	10	6	1	fuzclust	1	1	0	0	create/2	add/2	mpsicspR(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{with_superior_input_buffer|with_pmacs_window|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	16	0	1	kappa2	1	7	0	0	create_with_input/4	flash/1 getl/2 putf/2 putf/3 read/2 show/1 show_buffer/1		set	
+{with_margin|with_border|as_scroll|as_output|as_input|inferior_window}	16	0	1	kappa2	0	3	0	0		read/2 write/2 write_lines/2		set	
+{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	16	0	1	kwic-esp	0	5	0	0		activate/1 change_item/3 get_superior/2 retrieve_all_items/2 retrieve_item/3		set	
+with_shared_window	15	0	5	cal-esp,cil,kappa2,kwic-esp,papyrus	0	1	0	11		assign_window/1	kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##)	A:simpos##-in-compiled-package	
+vkey4_table	13	2	1	euod	4	4	0	0	get_code/3 get_pos/4 get_title/3 new/2	get_window_size/3 initiate/1 set_factor/2 set_key_assign/2		D:one-program-unconfirmed	
+ftp_user	14	1	1	gog-esp	1	9	0	0	create/2	connect_command/2 cwd_command/2 dir_command/3 get_command/3 lcwd_command/2 pass_command/3 quit/1 type_command/2 user_command/3		D:one-program-unconfirmed	
+as_global_object	9	6	1	kappa2	2	1	0	0	new/2 retrieve/3	owner_name/2	kappa(simpos##)	A:simpos##-in-compiled-package	tr0056,tr0059
+{labeled_sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_mouse_input|as_menu_input|inferior_window}	15	0	1	kwic-esp	0	6	0	0		background/2 get_item_status/3 read/2 retrieve_all_items/2 retrieve_item/3 set_item_status/3		set	
+pmacs_request	15	0	3	ptf:mpsicspR,ptf:pimfep,ptf:pimmcsp	0	0	0	0			mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+hash_set	12	2	2	cal-esp,cil	2	3	0	1	create/2 new/2	add/2 get_contents/2 in/2		C:used-by-2+-programs	
+extensible_hash_index	8	6	2	cal-esp,kappa2	2	2	0	0	create/3 create/7	add_at/3 clear/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+with_pmacs_window	14	0	6	cal-esp,cil,kappa2,kwic-esp,sum,txtstrct	0	0	0	14			kappa(simpos##)	A:simpos##-in-compiled-package	
+{with_pmacs_window|as_superior|reshape_notifier|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	14	0	1	cil	1	5	0	0	create_with_input/5	class_object/2 get_border_width/2 get_echo_area_window_size/3 get_label_window_size/3 get_text_window/2		set	
+printer	8	6	4	euod,kappa2,kwic-esp,sum	3	2	0	0	create/2 get/2 get/3	set_font/2 set_left_margin/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0065,tm0100,tm0146,tr0057,tr0086,tr0087,tr0524
+popup_choice_window	13	1	3	kappa2,sum,txtstrct	1	3	0	3	create/3	set_font/2 set_label_font/2 set_title/2	kappa(simpos##)	A:simpos##-in-compiled-package	tm0125
+{with_border|as_superior|as_input|as_mouse_input|inferior_window}	14	0	1	kwic-esp	0	5	0	0		activate/1 get_inside_size/3 get_inside_units/3 get_mouse_position/3 get_superior/2		set	
+debug	7	7	1	sum	3	0	0	0	activate_window/1 deactivate_window/1 deb/2			X:defined-in-another-IFS-app	tm0025,tm0388,tr0086,tr0087
+as_multiple_column	13	0	7	cal-esp,cil,fuzclust,icotext,kappa2,papyrus,txtstrct	0	0	0	13			pak_papyrus(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	
+{with_pmacs_window|as_superior|with_click_information|reshape_notifier|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	13	0	1	cil	0	8	0	0		class_object/2 flash/1 get_border_width/2 get_echo_area_window_size/3 get_label_window_size/3 get_text_window/2 put_back/2 set_input_position/1		set	
+multiple_select_scrolling_menu	9	4	1	fuzclust	1	2	0	0	create/3	enable_menu_help_click/1 set_help_font/2	pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	13	0	1	gog-esp	0	6	0	0		activate/1 clear/1 erase_cursor/1 putf/2 putf/3 set_color_pair/3		set	
+rs232c	12	1	1	gog-esp	1	5	0	0	create/2	close/1 get_data/2 open/1 send/2 set_mode/6		B?:one-word-name-in-report-OCR(weak)	tm0146,tm0153,tm0388
+{as_resource|with_lock}	13	0	2	kappa2,kwic-esp	1	6	0	0	new/2	assign/1 lock_with_hook/1 locked/1 resign/1 unlock/1 unlock_with_hook/1		set	
+interpreter	6	6	3	cal-esp,cil,kwic-esp	2	0	0	0	create/3 interpret/2		pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0009,tm0065,tm0100,tm0388,tr0046,tr0057,tr0061,tr0086,tr0087,tr0281
+{labeled_sash|as_multiple_column|as_single_select|as_on_off_menu|as_mouse_input|popup_window}	12	0	1	icotext	1	5	0	0	create/3	add_items/4 clear_items/1 deactivate/1 read/2 show/1		set	
+make_sem_data2	6	6	1	icotext	2	0	0	0	init_slot/1 make_sem_data/3			D:one-program-unconfirmed	
+disk_unit	6	6	1	kappa2	3	0	0	0	create/5 get/3 get_free_map_with_unit/2		kappa(simpos##)	A:simpos##-in-compiled-package	tr0524
+remote_object	12	0	1	kappa2	2	1	1	2	g_call/4 r_create/2	g_call/3	kappa(simpos##),mpsicspR(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tr0055,tr0056,tr0057,tr0087,tr0283,tr0524
+{with_icon|with_pmacs_window|with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	12	0	1	kappa2	0	6	0	0		activate/1 clear/1 current_buffer/2 flash/1 get_editor/2 get_interpreter/2		set	
+list_bucket	10	2	1	knov	1	4	0	0	create/2	add_first/2 add_last/2 get_at/3 get_contents/2		D:one-program-unconfirmed	
+focus_pro2	6	6	1	sum	6	0	0	0	focus_attr2/2 focus_inst2/2 focus_is_a2/3 focus_obj2/2 focus_part_of2/3 focus_rel2/4			D:one-program-unconfirmed	
+standard_temporary_multi_select_menu	6	5	2	cal-esp,kappa2	1	4	0	0	create/3	activate/1 deactivate/1 read/2 show/1	kappa(simpos##)	A:simpos##-in-compiled-package	
+binary_file_marker	7	4	3	cil,gog-esp,kappa2	1	1	0	0	create/2	set_position/2		C:used-by-2+-programs	
+with_key_select	11	0	3	cil,kappa2,kwic-esp	0	0	0	11			kappa(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+essential_on_off_menu	11	0	1	fuzclust	1	3	0	1	create/3	deactivate/1 read/2 set_item_status/3		D:one-program-unconfirmed	
+standard_popup_window	10	1	1	fuzclust	1	5	0	0	create/3	draw_line/8 draw_rectangle/8 draw_string/4 draw_string/6 erase_cursor/1		D:one-program-unconfirmed	
+{pmacs_window|standard_io_window}	11	0	1	gog-esp	0	3	0	0		getl/2 putf/2 putf/3		set	
+imi_super_win	8	3	1	icotext	2	4	0	0	create/3 create_window/3	activate/1 close/1 kill/1 set_label_font/2		D:one-program-unconfirmed	
+debugger	5	5	1	cal-esp	0	0	2	0				B?:one-word-name-in-report-OCR(weak)	tm0100,tm0112,tm0125,tm0126,tm0229,tm0388,tm0785,tr0046,tr0057,tr0086
+as_on_off_menu	10	0	4	cil,icotext,kappa2,papyrus	0	0	0	10			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tm0125
+ras_with_input_window	10	0	1	euod	1	5	1	1	new/2	ask_what/3 assign_input_window/2 get_derived_rule_data/5 get_inference_rule/5 initialize_input/2		D:one-program-unconfirmed	
+{as_program|kk_init}	10	0	1	euod	0	4	0	0		is_defined/6 melt/3 refute/3 set_max_level/2		set	
+{with_superior_input_buffer|labeled_sash|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	10	0	1	gog-esp	0	5	0	0		activate/1 erase_cursor/1 get_mouse_dot_position/3 set_color_pair/3 set_inside_units/3		set	
+user	5	5	1	kappa2	3	0	0	0	login_user/2 user/2 user_list/2		kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	9103,tm0009,tm0025,tm0065,tm0066,tm0100,tm0112,tm0115,tm0125,tm0126
+{with_border|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|temporary_window}	10	0	1	txtstrct	0	2	0	0		putl/2 show/1		set	
+{with_border|as_superior|as_mouse_input|with_default_mouse|inferior_window|reshape_notifier}	9	0	1	cal-esp	0	7	0	0		activate/1 execute_command/3 get_command_key/4 get_inside_size/3 input_data/6 read/6 read_sense/3		set	
+{sash|with_superior_input_buffer|with_mouse_scroll|as_graphics|as_mouse_input|inferior_window}	9	0	1	cal-esp	0	9	0	0		activate/1 clear/1 copy/9 get_inside_pixel_size/3 get_inside_size/3 get_mouse_position/3 get_superior/2 reshape/5 set_inside_units/3		set	
+as_standard_io_window	9	0	6	disc,fuzclust,gog-esp,kappa2,sum,txtstrct	0	0	0	9			kappa(simpos##)	A:simpos##-in-compiled-package	tm0364
+temporary_multiple_select_multi_column_menu	7	2	1	gog-esp	1	3	0	0	create/3	activate/1 read/2 set_item_status/3		D:one-program-unconfirmed	
+standard_output_text_buffer_accessor	5	4	2	kwic-esp,papyrus	1	1	0	0	create/3	set_unparsing_operator/2	pak_papyrus(simpos##),tour(simpos##)	A:simpos##-in-compiled-package	
+{as_graphics|as_mouse_input}	8	0	1	cal-esp	0	6	0	0		clear/1 draw_filled_rectangle/6 draw_line/8 draw_rectangle/8 draw_string/5 get_mouse_position/3		set	
+{labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	8	0	1	cil	0	8	0	0		add_items/3 clear_items/1 get_font/2 hide/1 read/2 set_font/2 set_label_font/2 show/1		set	
+fdd_volume_utility	4	4	2	cil,kappa2	1	0	0	0	initialize/3		kappa(simpos##)	A:simpos##-in-compiled-package	
+as_scroll	8	0	4	disc,kappa2,kwic-esp,txtstrct	0	0	0	8			kappa(simpos##)	A:simpos##-in-compiled-package	tm0125,tm0364,wincs_8_1_54
+esp_operator_pool	5	3	4	euod,kwic-esp,papyrus,sum	1	0	0	2	create/2		pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+{with_click_information|with_icon|as_superior|as_input_buffer|inferior_window}	8	0	1	gog-esp	0	4	0	0		activate/1 read_sense/3 read_with_click/4 see_buffer/2		set	
+imi_save_child	4	4	1	icotext	3	0	0	0	regist/2 remove_c/4 remove_child/6			D:one-program-unconfirmed	
+lax_sax	4	4	1	icotext	1	0	0	0	conv/3			D:one-program-unconfirmed	
+sax_starter	4	4	1	icotext	1	0	0	0	parse/4			D:one-program-unconfirmed	
+kappa_message	5	3	1	kappa2	1	2	0	0	create/2	set_stsobj/2 set_type/2		D:one-program-unconfirmed	
+{sash|as_scrolling_menu|with_superior_input_buffer|as_on_off_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	8	0	1	kappa2	0	4	0	0		activate/1 add_items/3 clear_items/1 retrieve_all_items/2		set	
+{with_superior_input_buffer|with_border|as_output|as_mouse_input|as_superior|as_graphics|inferior_window}	8	0	1	kappa2	0	5	0	0		activate/1 background/2 clear/1 get_superior/2 write_line/2		set	
+{as_menu_input|with_click_information|scrolling_on_off_menu}	8	0	1	kappa2	0	7	0	0		activate/1 do_set_item_status/3 get_size/3 set_label_font/2 set_position/3 set_superior/2 set_title/2		set	
+sparse_array	5	3	1	kappa2	1	2	0	0	create/3	get_at/3 put_at/3	kappa(simpos##)	A:simpos##-in-compiled-package	tr0056
+multiple_select_scrolling_menu_with_superior_input_buffer	4	4	1	kappa2	1	0	0	0	create/3		kappa(simpos##)	A:simpos##-in-compiled-package	
+standard_multi_select_scrolling_menu	6	2	2	kappa2,kwic-esp	1	4	0	0	create/3	activate/2 add_items/3 kill/1 read/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+get_request	6	2	1	kappa2	1	2	0	0	create/2	run/1 set/2		D:one-program-unconfirmed	
+{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier}	8	0	1	kwic-esp	0	5	0	0		delete_item/2 get_title/2 retrieve_all_items/2 retrieve_item/3 set_title/2		set	
+peek	4	4	1	sum	2	0	0	0	activate_window/1 deactivate_window/1			D:one-program-unconfirmed	
+tcpip_host_table	8	0	3	ptf:paragraph,ptf:pimfep,ptf:pimmcsp	0	0	0	0			paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+inspector	4	3	2	cal-esp,kappa2	2	1	0	0	create/2 create/3	inspect/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+as_input_buffer	7	0	4	cal-esp,gog-esp,kappa2,sum	0	0	0	7			kappa(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0115,wincs_8_1_54
+{labeled_sash|as_scrolling_menu|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	7	0	1	cil	0	7	0	0		add_items/3 clear_items/1 hide/1 read/2 set_font/2 set_label_font/2 show/1		set	
+choice_window_with_no_execute	6	1	1	disc	1	5	0	0	create/3	activate/1 deactivate/1 get_size/3 kill/1 set_size/3	pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+standard_input_text_buffer_accessor	5	2	2	euod,papyrus	1	3	0	0	create/3	close_input/1 gett/2 set_parsing_operator/2	pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+standard_popup_multi_select_scrolling_menu	6	1	1	euod	1	5	0	0	create/3	add_items/3 clear_items/1 hide/1 read/2 show/1		D:one-program-unconfirmed	
+{with_superior_input_buffer|labeled_sash|as_menu|as_single_select|as_mouse_input|inferior_window}	7	0	1	gog-esp	0	4	0	0		activate/1 add_items/3 clear_items/1 set_color_pair/3		set	
+channel_set	6	1	1	kappa2	1	4	0	0	create/2	add/2 receive/2 remove/2 try_to_get/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_superior_input_buffer|inferior_window}	7	0	1	kappa2	0	3	0	0		activate/1 set_color_pair/3 set_font/2		set	
+{with_border|as_output|as_mouse_input|temporary_window}	7	0	1	kappa2	0	6	0	0		background/2 beep/1 get_inside_units/3 read/2 set_size/3 write_line/2		set	
+{with_margin|with_border|as_scroll|as_output|as_markers|as_mouse_input|temporary_window}	7	0	1	kappa2	0	5	0	0		erase_cursor/1 read/2 show/1 write_line/2 write_lines/2		set	
+tcpip_socket	7	0	3	ptf:paragraph,ptf:pimfep,ptf:pimmcsp	0	0	0	0			paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+ascii_coder	3	3	2	cil,kappa2	1	0	0	0	from_kanji/3		kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+editor_yank_buffer	3	3	1	cil	2	0	0	0	add_named_yank/3 get_named_yank/3			D:one-program-unconfirmed	
+{with_click_information|with_bell|as_menu|as_single_select|as_mouse_input|temporary_window}	6	0	1	cil	0	6	0	0		add_items/3 beep/1 clear_items/1 hide/1 read_with_click/3 show/1		set	
+{with_label|with_border|as_superior|with_key_select|with_click_information|reshape_notifier|as_input|as_mouse_input|with_default_mouse|with_icon|inferior_window}	6	0	1	cil	0	3	0	0		get_border_width/2 get_inside_size/3 get_label_height/2		set	
+variable_symbolizer	3	3	1	cil	1	0	0	0	merge_variable_tree/4			D:one-program-unconfirmed	
+network_login_user	3	3	1	fuzclust	1	0	0	0	login_user_list/3			D:one-program-unconfirmed	
+ndatagram	3	3	2	fuzclust,kappa2	1	0	0	0	get_dgm_port/3			C:used-by-2+-programs	
+sound_generator	3	3	1	gog-esp	1	0	0	0	get/2		pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+sentence	3	3	1	icotext	1	0	0	0	sentence_check/3			X:defined-in-another-IFS-app	tm0242
+conv_sem_data	3	3	1	icotext	1	0	0	0	conv_data/3			D:one-program-unconfirmed	
+disk_io_message	3	3	1	kappa2	2	0	0	0	create/2 take/2		kappa(simpos##)	A:simpos##-in-compiled-package	
+str_machine_id	3	3	1	kappa2	1	0	0	0	me_psi/1		kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+as_esp_parser	6	0	1	kwic-esp	1	4	0	1	new/2	gett/2 gett/3 gett/4 refute/3		B:named-in-SIMPOS-report-OCR	tm0364
+as_esp_unparser	6	0	1	kwic-esp	1	4	0	1	new/2	putt/2 putt/3 putt/4 refute/3		B:named-in-SIMPOS-report-OCR	tm0161,tm0364
+{as_lasting_resource|with_lock}	6	0	1	kwic-esp	1	4	0	0	new/2	assign/1 lock/1 resign/1 unlock/1		set	
+standard_temporary_multi_column_menu	6	0	1	kwic-esp	1	4	0	1	create/3	hide/1 kill/1 read/2 show/1		D:one-program-unconfirmed	
+{as_lasting_resource|with_icon|with_pmacs_window|with_two_labels|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window|with_shared_window}	6	0	1	kwic-esp	0	4	0	0		class_object/2 getl/2 resign/1 resign_window/1		set	
+cascade_index	3	3	1	papyrus	1	0	0	0	create/3		pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tr0061
+{with_pmacs_window|as_superior|with_superior_input_buffer|as_input|as_mouse_input|with_default_mouse|inferior_window}	6	0	2	sum,txtstrct	1	1	0	0	create_with_input/4	set_font/2		set	
+network_listener	6	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+user_process_profile	6	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{reshape_notifier|as_input_buffer|as_mouse_input|as_superior}	5	0	1	cal-esp	0	5	0	0		get_inside_size/3 get_position/3 get_size/3 read_sense/2 reshape/5		set	
+{with_click_information|labeled_sash|as_scrolling_menu|as_on_off_menu|as_single_select|as_menu_input|as_mouse_input|with_bell|inferior_window}	5	0	1	cil	0	5	0	0		add_items/3 clear_items/1 read_sense/2 set_font/2 set_label_font/2		set	
+{as_class_with_lock|as_event_handler}	5	0	1	cil	3	0	0	0	lock/1 locked/1 unlock/1			set	
+scrolling_on_off_menu	4	1	2	cil,kappa2	1	0	0	1	create/3		kappa(simpos##)	A:simpos##-in-compiled-package	
+as_multiple_select	5	0	4	cil,icotext,kappa2,papyrus	0	0	0	5			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+with_lock	5	0	3	cil,kappa2,kwic-esp	0	0	0	5			kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0061,tm0065,tr0044
+with_two_labels	5	0	3	euod,kappa2,kwic-esp	0	0	0	5			kappa(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0125,tm0143
+file_backup	4	1	1	gog-esp	1	3	0	0	create/2	restore/3 set_input/2 set_output/2		D:one-program-unconfirmed	
+{as_program|as_resource|as_class_with_lock}	5	0	1	kappa2	4	1	0	0	lock/1 locked/1 new/2 unlock/1	slot/2		set	
+{with_superior_input_buffer|with_border|with_bell|as_output|as_graphics|as_markers|as_mouse_input|inferior_window}	5	0	1	kappa2	0	3	0	0		activate/1 clear/1 write_lines/2		set	
+{temporary_menu|inferior_window|as_menu_input}	5	0	1	kappa2	1	2	0	0	create/3	add_item/3 deactivate/1		set	
+{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_click_information|as_mouse_input|inferior_window}	5	0	1	kappa2	0	4	0	0		activate/1 add_items/3 clear_items/1 read/2		set	
+{as_class_with_lock|as_program}	5	0	1	kappa2	4	0	0	0	create/2 lock/1 locked/1 unlock/1			set	
+{with_border|as_scroll|as_output|as_input|as_mouse_input|inferior_window|reshape_notifier}	5	0	1	kwic-esp	0	4	0	0		get_mouse_marker/2 get_mouse_position/3 read_sense/2 reset_mouse_marker/2		set	
+tcpip_network_configuration	5	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+cal_op_menu	2	2	2	cal-esp,chal	1	0	0	0	create/2			C:used-by-2+-programs	
+func_index	4	0	2	cal-esp,chal	1	0	0	0	get_contents_at/3			C:used-by-2+-programs	
+debugger_variable_with_name	2	2	1	cal-esp	2	0	0	0	check_and_get/4 check_and_set/4			D:one-program-unconfirmed	
+temporary_single_scrolling_menu	4	0	3	cal-esp,chal,kappa2	0	0	0	4			kappa(simpos##)	A:simpos##-in-compiled-package	
+cal_file_menu	2	2	1	chal	1	0	0	0	create_menu/3			X:defined-in-another-IFS-app	
+quick_list	2	2	1	cil	1	0	0	0	create/2			D:one-program-unconfirmed	
+{with_superior_input_buffer|labeled_sash|as_scrolling_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window}	4	0	1	cil	0	2	0	0		set_font/2 set_label_font/2		set	
+{with_lock|as_resource}	4	0	1	cil	1	3	0	0	new/2	assign/1 lock/1 unlock/1		set	
+network_address_table	2	2	1	cil	2	0	0	0	site_names/2 site_psi_names/3		pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}	4	0	1	cil	0	4	0	0		get_border_width/2 get_inside_size/3 get_label_height/2 read/2		set	
+as_event_handler	4	0	3	cil,kappa2,kwic-esp	1	0	0	3	new/2		kappa(simpos##)	A:simpos##-in-compiled-package	
+syntax_error	0	4	2	cil,kwic-esp	0	0	0	0				C:used-by-2+-programs	
+pf	2	2	1	disc	1	0	0	0	through/2			B?:one-word-name-in-report-OCR(weak)	9103,tm0079,tm0134,tm0143,tm0146,tm0388,tm0715,tm0927,tr0524
+port_set	3	1	1	euod	1	2	0	0	create/2	add/2 receive/2		D:one-program-unconfirmed	
+standard_popup_superior_window	2	2	1	euod	1	0	0	0	create/3			D:one-program-unconfirmed	
+{sash|as_output|as_graphics|temporary_window}	4	0	1	fuzclust	0	2	0	0		draw_string/5 erase_cursor/1		set	
+bitmap	2	2	2	gog-esp,kappa2	1	0	0	0	get_plane_count/2		kappa(simpos##),paragraph(simpos##)	A:simpos##-in-compiled-package	tm0066,tm0112,tm0115,tm0125,tr0285
+as_pimos_string_io_device	4	0	2	gog-esp,papyrus	1	1	0	2	new/2	class_object/2	pak_papyrus(pimfep##),paragraph(pimfep##)	P:provided-by-held-package(pimfep##as_pimos_string_io_device,pimmcsp##as_pimos_string_io_device)	
+rdg_v26_4	0	4	1	icotext	0	0	0	0				D:one-program-unconfirmed	
+disk_io_request	2	2	1	kappa2	2	0	0	0	take/3 take/7		kappa(simpos##)	A:simpos##-in-compiled-package	
+temporary_scrolling_menu	3	1	1	kappa2	1	2	0	0	create/3	activate/1 read/2	kappa(simpos##)	A:simpos##-in-compiled-package	
+permanent_directory	2	2	1	kappa2	1	0	0	0	make/3			B:named-in-SIMPOS-report-OCR	tr0055,tr0056,tr0057,tr0059,tr0087
+{as_resource|as_program|as_class_with_lock}	4	0	1	kappa2	4	0	0	0	lock/1 locked/1 new/2 unlock/1			set	
+temporary_standard_io_window	2	2	2	kappa2,papyrus	1	0	0	0	create/3		kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+pmap_client	2	2	1	kappa2	1	0	0	0	unset/3			D:one-program-unconfirmed	
+as_choice	4	0	2	kappa2,papyrus	0	0	0	4			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	tm0125
+cascade	2	2	1	knov	1	0	0	0	create/3			B?:one-word-name-in-report-OCR(weak)	tr0061
+temporary_choice_window_with_no_execute	3	1	1	knov	1	2	0	0	create/3	read/2 show/1	pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+outMenu	3	1	1	kwic-esp	1	2	0	0	create_object/2	kill/1 put_external/2		D:one-program-unconfirmed	
+code_conversion_utility	2	2	1	kwic-esp	2	0	0	0	string_to_vector/3 vector_to_character_string/3			D:one-program-unconfirmed	
+event	2	2	1	kwic-esp	1	0	0	0	make_message_string/4			B?:one-word-name-in-report-OCR(weak)	tm0025,tm0143,tm0785,tr0056,tr0087,tr0226,tr0281,tr0285
+bag	3	1	1	kwic-esp	1	2	0	0	create/3	add/2 get_contents/2		B?:one-word-name-in-report-OCR(weak)	tr0056
+{pmacs_window|with_icon|inferior_window|esp_operator_pool}	4	0	1	sum	1	2	0	0	create/3	deactivate/1 kill/1		set	
+simple	2	2	1	sum	1	0	0	0	simple/1			B?:one-word-name-in-report-OCR(weak)	9103,tm0009,tm0065,tm0100,tm0112,tm0115,tm0125,tm0388,tm0401,tr0044
+{with_border|as_superior|as_mouse_input|with_default_mouse|inferior_window}	4	0	1	utter	0	2	0	0		activate/1 get_inside_size/3		set	
+network_subsystem	4	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	tr0055,tr0057,tr0086,tr0087
+nline	4	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{sash|with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|inferior_window}	3	0	1	cal-esp	0	3	0	0		activate/1 reshape/5 set_font/2		set	
+dummy_debugger	1	2	1	cal-esp	1	0	0	0	new/2			D:one-program-unconfirmed	
+bool	3	0	2	cal-esp,chal	0	0	0	3				B?:one-word-name-in-report-OCR(weak)	tm0715,tr0171
+popup_window	2	1	3	cal-esp,icotext,kappa2	0	0	0	2				B:named-in-SIMPOS-report-OCR	tm0125,wincs_8_1_54
+{librarian_version|librarian_catalogue|as_class_maker|compiler_error_reporter|librarian_delete|librarian_package|librarian_spy|librarian_reference|librarian_fdd|librarian_subroutine|as_assert_utility}	3	0	1	cil	1	1	1	0	new/2	refute/3		set	
+{with_border|as_multiple_column|as_single_select|as_mouse_input|as_menu_input|with_superior_input_buffer|inferior_window}	3	0	1	cil	0	2	0	0		set_font/2 set_item_status/3		set	
+as_message	3	0	1	euod	1	0	0	1	create/2			B:named-in-SIMPOS-report-OCR	tr0056
+font_editor	2	1	1	euod	1	1	0	0	create/2	goal/1		M:named-in-ESP-manual-TeX	tm0112,tm0115,tm0125
+ahp	2	1	1	fuzclust	1	1	0	0	new/2	ahp/8		D:one-program-unconfirmed	
+average_tree	2	1	1	fuzclust	1	1	0	0	create_average_tree/3	init_matrix/2		D:one-program-unconfirmed	
+fuzzy_clustering	2	1	1	fuzclust	1	1	0	0	new/2	fuzzy/4		D:one-program-unconfirmed	
+kakari_attribute_menu	2	1	1	icotext	1	1	0	0	create_window/2	kill/1		D:one-program-unconfirmed	
+{with_icon|labeled_sash|as_superior|as_input|as_mouse_input|inferior_window}	3	0	1	icotext	0	2	0	0		get_inside_size/3 reshape/5		set	
+{as_single_select|as_multiple_column|as_mouse_input|inferior_window}	3	0	1	kappa2	0	3	0	0		activate/1 read_sense/2 set_superior/2		set	
+select_notifier	3	0	2	kappa2,papyrus	0	0	0	3			kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##)	A:simpos##-in-compiled-package	
+with_no_execute_choice_item	3	0	2	kappa2,papyrus	0	0	0	3			kappa(simpos##),pak_papyrus(simpos##)	A:simpos##-in-compiled-package	
+error	0	3	1	kappa2	0	0	0	0			kappa(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0025,tm0115,tm0125,tm0189,tm0388,tm0785,tm0786,tm0927,tr0044,tr0046
+failure	0	3	1	kappa2	0	0	0	0			kappa(simpos##)	A:simpos##-in-compiled-package	tm0112,tm0388,tr0285,tr0524
+{with_mouse_scroll|with_cwi}	3	0	1	kwic-esp	0	2	0	0		get_inside_size/3 update/3		set	
+{standard_multi_select_menu|reshape_notifier}	3	0	1	kwic-esp	1	2	0	0	create/3	delete_items/2 retrieve_item/3		set	
+{with_icon|labeled_sash|as_menu|as_single_select|as_menu_input|as_mouse_input|inferior_window|reshape_notifier}	3	0	1	kwic-esp	0	2	0	0		activate/2 read/2		set	
+{labeled_sash|as_superior|with_bell|reshape_notifier|inferior_window}	3	0	1	papyrus	0	2	0	0		get_inside_size/3 set_title/2		set	
+{with_margin|with_superior_input_buffer|as_menu|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	3	0	1	papyrus	0	3	0	0		get_margins/5 set_font/2 set_margins/5		set	
+{with_margin|with_label|with_border|as_mouse_input|as_superior|as_input_buffer|inferior_window}	3	0	1	sum	0	3	0	0		get_inside_size/3 set_label_font/2 set_title/2		set	
+{multi_column_menu|with_icon}	3	0	1	sum	0	3	0	0		set_font/2 set_label_font/2 set_title/2		set	
+{with_margin|with_label|with_border|as_menu|as_single_select|with_superior_input_buffer|as_mouse_input|inferior_window}	3	0	1	txtstrct	0	3	0	0		set_font/2 set_label_font/2 set_title/2		set	
+{with_label|with_border|as_superior|reshape_notifier|as_mouse_input|with_default_mouse|inferior_window}	3	0	1	txtstrct	0	3	0	0		activate/1 set_label_font/2 set_title/2		set	
+world	3	0	3	ptf:pimfep,ptf:pimmcsp,ptf:pimmutil	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0009,tm0061,tm0065,tm0100,tm0115,tm0388,tm0404,tr0055,tr0056,tr0057
+abort_handler	3	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+with_character	1	1	1	cal-esp	1	0	0	0	get_character_font/2		paragraph(simpos##),pimmutil(simpos##)	A:simpos##-in-compiled-package	
+debugger_recorder	1	1	1	cal-esp	1	0	0	0	save/3			D:one-program-unconfirmed	
+esp_compiler	1	1	1	cal-esp	1	0	0	0	compile/4			M:named-in-ESP-manual-TeX	tm0388,tr0087,tr0281
+kl0_compiler	1	1	1	cal-esp	1	0	0	0	compile_one_predicate/6			D:one-program-unconfirmed	
+debugger_stop_watch	1	1	1	cal-esp	1	0	0	0	create/2			D:one-program-unconfirmed	
+temporary_multi_column_menu	1	1	1	cal-esp	1	0	0	0	create/3			B:named-in-SIMPOS-report-OCR	tm0125
+purs_builtin	1	1	1	cal-esp	1	0	0	0	get_super_command/3			D:one-program-unconfirmed	
+str_format	1	1	1	cal-esp	1	0	0	0	format/3			D:one-program-unconfirmed	
+debugger_error_with_retry	1	1	1	cal-esp	1	0	0	0	raise/4			D:one-program-unconfirmed	
+with_mouse_scroll	2	0	2	cal-esp,kwic-esp	0	0	0	2			pimmutil(simpos##)	A:simpos##-in-compiled-package	tm0125
+editor_buffer_window	0	2	1	cal-esp	0	0	0	0				D:one-program-unconfirmed	
+library_error	1	1	1	cil	1	0	0	0	raise/4			D:one-program-unconfirmed	
+named_yank_buffer_subsystem	1	1	1	cil	1	0	0	0	named_yank_flag/2			D:one-program-unconfirmed	
+macro_preprocessor	1	1	1	cil	1	0	0	0	preprocess/3			D:one-program-unconfirmed	
+{with_icon|with_key_select|reshape_notifier|standard_superior_window}	2	0	1	cil	0	1	0	0		activate/2		set	
+{with_margin|with_border|as_single_select|as_multiple_column|with_superior_input_buffer|as_menu_input|as_mouse_input|inferior_window}	2	0	1	cil	0	1	0	0		set_font/2		set	
+vax_file_transfer	1	1	1	cil	1	0	0	0	create/2			D:one-program-unconfirmed	
+librarian_io	0	2	1	cil	0	0	0	0				D:one-program-unconfirmed	
+{labeled_sash|as_standard_io_window|as_input|as_mouse_input|as_scroll|as_output|as_graphics|as_markers|reshape_notifier|inferior_window}	2	0	1	disc	0	2	0	0		activate/1 clear/1		set	
+kk_init	2	0	1	euod	1	0	0	1	new/2			D:one-program-unconfirmed	
+{sash|as_output|as_graphics|inferior_window}	2	0	1	fuzclust	0	2	0	0		draw_string/5 erase_cursor/1		set	
+sdatagram	2	0	1	fuzclust	1	0	0	1	new/2			D:one-program-unconfirmed	
+fdd_multi_volume	1	1	1	gog-esp	1	0	0	0	remove_at/3			D:one-program-unconfirmed	
+imi_test	1	1	1	icotext	1	0	0	0	test2/3			D:one-program-unconfirmed	
+imi_first_save	1	1	1	icotext	1	0	0	0	get_saved_data/5			D:one-program-unconfirmed	
+imi_attribute_menu	1	1	1	icotext	1	0	0	0	create_window/2			D:one-program-unconfirmed	
+imi_attribute_sub_menu	1	1	1	icotext	1	0	0	0	create_window/2			D:one-program-unconfirmed	
+{with_superior_input_buffer|sash|as_scrolling_menu|as_single_select|as_mouse_input|with_bell|inferior_window}	2	0	1	icotext	0	2	0	0		add_item/3 clear_items/1		set	
+multi_column_menu_with_superior_input_buffer	1	1	1	icotext	1	0	0	0	create/3			D:one-program-unconfirmed	
+std	1	1	1	icotext	1	0	0	0	append/4			B?:one-word-name-in-report-OCR(weak)	tm0404,tm0715,tm0927
+utls_icon	1	1	1	icotext	1	0	0	0	get_and_set_icon_id/3			D:one-program-unconfirmed	
+version	1	1	1	kappa2	1	0	0	0	version/2		kappa(simpos##),pimfep(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0009,tm0065,tm0066,tm0112,tm0115,tm0125,tm0181,tm0229,tm0364,tm0404
+kappa_remote_interface	1	1	1	kappa2	1	0	0	0	error/3			D:one-program-unconfirmed	
+double_key_index	1	1	1	kappa2	1	0	0	0	create/3			D:one-program-unconfirmed	
+{sash|as_scrolling_menu|with_superior_input_buffer|as_multiple_select|as_menu_input|as_mouse_input|inferior_window}	2	0	1	kappa2	0	1	0	0		activate/1		set	
+{with_superior_input_buffer|reshape_notifier|select_notifier|as_superior|inferior_window}	2	0	1	kappa2	0	2	0	0		activate/1 reshape/5		set	
+{reshape_notifier|select_notifier|with_label|with_border|as_superior|with_pane|with_click_information|as_input_buffer|with_icon|inferior_window}	2	0	1	kappa2	0	2	0	0		get_inside_size/3 read/3		set	
+cmt_device	1	1	1	kappa2	1	0	0	0	release/1		kappa(cmt##)	D:one-program-unconfirmed	
+{with_label|with_margin|with_border|as_scrolling_menu|as_single_select|with_superior_input_buffer|with_click_information|as_mouse_input|inferior_window}	2	0	1	kappa2	0	2	0	0		add_items/3 clear_items/1		set	
+standard_temporary_multi_select_scrolling_menu	1	1	1	kappa2	1	0	0	0	create/3		kappa(simpos##)	A:simpos##-in-compiled-package	
+{with_icon|with_shared_window|with_label|with_border|as_superior|as_input_buffer|as_mouse_input|inferior_window}	2	0	1	kappa2	0	2	0	0		activate/1 show/1		set	
+{with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_bell|temporary_window}	2	0	1	kappa2	0	2	0	0		add_item/3 clear_items/1		set	
+condition_split	1	1	1	kappa2	1	0	0	0	new/2			D:one-program-unconfirmed	
+with_pane	2	0	2	kappa2,knov	0	0	0	2			kappa(simpos##)	A:simpos##-in-compiled-package	
+temporary_multiple_scrolling_menu	2	0	1	kappa2	0	0	0	2			kappa(simpos##)	A:simpos##-in-compiled-package	
+trace	1	1	1	kwic-esp	1	0	0	0	trace/2		pimfep(simpos##)	A:simpos##-in-compiled-package	tm0112,tm0125,tm0126,tm0181,tm0927,tr0057,tr0087,tr0226
+{with_border|with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|inferior_window}	2	0	1	kwic-esp	0	1	0	0		activate/1		set	
+table_file	1	1	1	kwic-esp	1	0	0	0	make_only/4			B:named-in-SIMPOS-report-OCR	tr0055,tr0059,tr0524
+outSTDoutManager	1	1	1	kwic-esp	1	0	0	0	create/3			D:one-program-unconfirmed	
+{with_icon|as_input|as_mouse_input|standard_superior_window|reshape_notifier}	2	0	1	kwic-esp	0	2	0	0		close/1 expose/1		set	
+bitmap_display	1	1	1	kwic-esp	1	0	0	0	get_mouse/2			M:named-in-ESP-manual-TeX	tm0112,tm0115,tm0125,tr0285
+as_lasting_resource	2	0	1	kwic-esp	0	0	0	2			pimfep(simpos##)	A:simpos##-in-compiled-package	
+{with_no_execute_choice_item|with_superior_input_buffer|as_choice|as_mouse_input|with_bell|inferior_window}	2	0	1	papyrus	0	2	0	0		set_font/2 set_superior/2		set	
+{with_superior_input_buffer|as_single_select|as_multiple_column|as_mouse_input|with_bell|inferior_window}	2	0	1	papyrus	0	2	0	0		set_font/2 set_superior/2		set	
+{with_superior_input_buffer|as_menu|as_single_select|as_mouse_input|with_bell|inferior_window}	2	0	1	papyrus	0	1	0	0		set_font/2		set	
+{with_margin|with_label|with_border|as_output|as_graphics|as_mouse_input|temporary_window}	2	0	1	sum	0	2	0	0		set_font/2 set_title/2		set	
+gen_summary	1	1	1	sum	1	0	0	0	gen_suymmary/1			D:one-program-unconfirmed	
+dbg_win	1	1	1	sum	1	0	0	0	dbg_opn/2			D:one-program-unconfirmed	
+gen_menu_win	1	1	1	sum	1	0	0	0	gen_menu_win/3			D:one-program-unconfirmed	
+gen_hyoji_win	1	1	1	sum	1	0	0	0	gen_hyoji_win/2			D:one-program-unconfirmed	
+jyuuyou_win	1	1	1	sum	1	0	0	0	jyuuyou_win/2			D:one-program-unconfirmed	
+you_hyouji_win	1	1	1	sum	1	0	0	0	you_hyouji_win/2			D:one-program-unconfirmed	
+you_menu_win	1	1	1	sum	1	0	0	0	you_menu_win/2			D:one-program-unconfirmed	
+hyou_sen_win	1	1	1	sum	1	0	0	0	hyou_sen_win/2			D:one-program-unconfirmed	
+gen_file_win	1	1	1	sum	1	0	0	0	gen_file_win/2			D:one-program-unconfirmed	
+keyw_in_win	1	1	1	sum	1	0	0	0	keyw_in_win/2			D:one-program-unconfirmed	
+uni_sen_win	1	1	1	sum	1	0	0	0	uni_sen_win/2			D:one-program-unconfirmed	
+gen_mes_win	1	1	1	sum	1	0	0	0	gen_mes_win/2			D:one-program-unconfirmed	
+y_sa_w	1	1	1	sum	1	0	0	0	y_sa_w/2			D:one-program-unconfirmed	
+b_in_w	1	1	1	sum	1	0	0	0	b_in_w/2			D:one-program-unconfirmed	
+common_network	2	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+tcpip_network_subsystem	2	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+hex_converter	2	0	2	ptf:pimfep,ptf:pimmcsp	0	0	0	0			pimfep(simpos##),pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+interrupt_process	2	0	2	ptf:pimmcsp,ptf:pimscsi	0	0	0	0			pimmcsp(simpos##),pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0100,tr0044,tr0056,tr0059
+as_debugger_goal_input	1	0	1	cal-esp	0	0	0	1				D:one-program-unconfirmed	
+as_debugger_input_buffer_processing	1	0	1	cal-esp	0	0	0	1				D:one-program-unconfirmed	
+standard_temporary_superior_window	0	1	1	cal-esp	0	0	0	0				D:one-program-unconfirmed	
+{pre|bool}	1	0	1	chal	1	0	0	0	pre/3			set	
+pre	1	0	1	chal	0	0	0	1				B?:one-word-name-in-report-OCR(weak)	tm0143,tm0153,tm0229,tm0388,tm0715,tr0057,tr0082,tr0524
+{with_border|with_superior_input_buffer|as_superior|reshape_notifier|inferior_window}	1	0	1	cil	0	1	0	0		get_inside_size/3		set	
+{with_superior_input_buffer|labeled_sash|as_single_select|as_multiple_column|as_menu_input|as_mouse_input|inferior_window}	1	0	1	cil	0	1	0	0		set_font/2		set	
+librarian_catalogue	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+as_class_maker	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+compiler_error_reporter	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_version	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_delete	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_package	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_spy	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_reference	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_fdd	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+librarian_subroutine	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+as_assert_utility	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+editor_command_interpreter	1	0	1	cil	0	0	0	1				D:one-program-unconfirmed	
+bup_BUP_BUN	0	1	1	disc	0	0	0	0				D:one-program-unconfirmed	
+bup_BUP_BUN2	0	1	1	disc	0	0	0	0				D:one-program-unconfirmed	
+bup_BUP_BUN3	0	1	1	disc	0	0	0	0				D:one-program-unconfirmed	
+{as_program|ras_with_font_key_assignment}	1	0	1	euod	0	1	0	0		assign_loop/2		set	
+ras_with_font_key_assignment	1	0	1	euod	0	0	0	1				D:one-program-unconfirmed	
+{sash|as_single_select|as_multiple_column|with_superior_input_buffer|as_mouse_input|inferior_window}	1	0	1	fuzclust	0	1	0	0		activate/1		set	
+{as_standard_io_window|sash|as_output|temporary_window}	1	0	1	fuzclust	0	1	0	0		write_line/2		set	
+{list|list_index|set}	1	0	1	fuzclust	0	1	0	0		get_contents/2		set	
+{as_program|pmacs_window}	1	0	1	icotext	1	0	0	0	create/2			set	
+with_keeping_status	1	0	1	icotext	0	0	0	1			pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+{sash|as_markers|as_graphics|reshape_notifier|with_superior_input_buffer|as_mouse_input|inferior_window}	1	0	1	kappa2	0	1	0	0		activate/1		set	
+{reshape_notifier|standard_superior_window|with_icon}	1	0	1	kappa2	0	1	0	0		set_icon/2		set	
+{with_icon|standard_superior_window|reshape_notifier}	1	0	1	kappa2	0	1	0	0		set_icon/2		set	
+{as_program|as_resource}	1	0	1	kappa2	1	0	0	0	new/2			set	
+{labeled_sash|as_scroll|as_output|as_graphics|as_input|as_mouse_input|popup_window}	1	0	1	kappa2	1	0	0	0	create/3			set	
+user_window	1	0	1	kappa2	0	0	0	1			kappa(simpos##)	A:simpos##-in-compiled-package	tm0115,tm0125,tm0134
+laser_printer	0	1	1	kappa2	0	0	0	0			kappa(simpos##)	A:simpos##-in-compiled-package	tm0146
+{with_label|standard_superior_window|with_pane}	1	0	1	knov	0	1	0	0		create_panes_sharing_width/3		set	
+{with_label|with_border|as_superior|as_input|as_mouse_input|inferior_window|reshape_notifier}	1	0	1	kwic-esp	0	1	0	0		read/3		set	
+{with_border|inferior_window}	1	0	1	kwic-esp	0	1	0	0		activate/1		set	
+with_cwi	1	0	1	kwic-esp	0	0	0	1				D:one-program-unconfirmed	
+standard_multi_select_menu	1	0	1	kwic-esp	0	0	0	1				D:one-program-unconfirmed	
+deexpose_notifier	1	0	1	kwic-esp	0	0	0	1				D:one-program-unconfirmed	
+{sash|with_no_execute_choice_item|with_superior_input_buffer|as_choice|as_mouse_input|with_bell|inferior_window}	1	0	1	papyrus	0	1	0	0		set_font/2		set	
+{sash|with_superior_input_buffer|as_scrolling_menu|as_single_select|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	1	0	1	papyrus	0	1	0	0		set_font/2		set	
+{sash|as_scrolling_menu|as_multiple_select|as_on_off_menu|as_mouse_input|with_bell|inferior_window}	1	0	1	papyrus	0	1	0	0		set_font/2		set	
+{with_margin|with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon|screen}	1	0	1	sum	1	0	0	0	create/3			set	
+{with_label|as_mouse_input|essential_window|as_standard_io_window|inferior_window|with_icon}	1	0	1	sum	1	0	0	0	create/3			set	
+as_turning_menu	1	0	1	sum	0	0	0	1				D:one-program-unconfirmed	
+telnet_terminal	1	0	1	ptf:pimfep	0	0	0	0			pimfep(simpos##)	A:simpos##-in-compiled-package	
+connection_reply_packet_v1	1	0	1	ptf:pimfep	0	0	0	0			pimfep(simpos##)	A:simpos##-in-compiled-package	
+connection_request_packet_v1	1	0	1	ptf:pimfep	0	0	0	0			pimfep(simpos##)	A:simpos##-in-compiled-package	
+image_file	1	0	1	ptf:pimfep	0	0	0	0			pimfep(simpos##)	A:simpos##-in-compiled-package	
+mbus_allocator	1	0	1	ptf:pimscsi	0	0	0	0			pimscsi(simpos##)	P:provided-by-held-package(pimscsi##mbus_allocator)	
+keyed_message	1	0	1	ptf:pimscsi	0	0	0	0			pimscsi(simpos##)	A:simpos##-in-compiled-package	
+as_interrupt_program	1	0	1	ptf:pimscsi	0	0	0	0			pimscsi(simpos##)	A:simpos##-in-compiled-package	
+as_network_log	1	0	1	ptf:pimscsi	0	0	0	0			pimscsi(simpos##)	A:simpos##-in-compiled-package	
+undefined_method	1	0	1	ptf:pimscsi	0	0	0	0			pimscsi(simpos##)	A:simpos##-in-compiled-package	tm0388
+multiple_select_menu	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0125
+as_trap_program	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+trap_process	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+multiple_select_multi_column_menu	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0125
+area	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	9103,tm0061,tm0065,tm0112,tm0115,tm0125,tm0153,tm0181,tm0225,tm0229
+memory	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	9103,tm0065,tm0100,tm0115,tm0189,tm0388,tr0044,tr0046,tr0055,tr0056
+memory_manager	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tr0057,tr0086
+logical_packet	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	
+boot_process	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0100,tr0056
+context	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tm0100,tm0634,tr0044,tr0046,tr0055,tr0087,tr0281
+unix_file	1	0	1	ptf:pimmcsp	0	0	0	0			pimmcsp(simpos##)	A:simpos##-in-compiled-package	tr0524
+ipl	1	0	1	ptf:paragraph	0	0	0	0			paragraph(simpos##)	A:simpos##-in-compiled-package	tm0100,tm0388,tr0059,tr0086,tr0087

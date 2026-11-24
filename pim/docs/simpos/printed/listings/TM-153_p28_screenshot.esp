@@ -1,0 +1,23 @@
+% TM-153, PDF page 28: screenshot, handwritten caption 「図7 PSIのウィンドウの表示例」.
+% Transcribed by eye from a 150dpi render (F4); LOW CONFIDENCE. EXAMPLE (user program) in an EDIPS window.
+% Editor mode line: "EDIPS(string)[53,15] >sys>user>graphic>escher.esp"; prompt lines "ARG>"; window "editor_1".
+% Status line: "USER : «?»" / "SIMPOS Version 2.«?»0" / "25-Jan-86 Saturday 13:01:36".
+
+class escher has
+
+nature as_program;
+
+instance
+
+attribute window ;
+
+:goal(Obj) :-
+      :init(Obj),
+      :escher(Obj,_,_,_,_);
+
+:init(Obj) :- !,
+      :create(#window,{size(416,430),position(manip«?»
+      Obj!window := W,«?»
+
+% Overlapping "network" menu window: columns TOOLS (terminal, talk, netcp, mail),
+% MANIPULATOR (ncp_manipulator), DEMO (renju, hanoi).

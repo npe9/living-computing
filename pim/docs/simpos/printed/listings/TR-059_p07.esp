@@ -1,0 +1,10 @@
+% TR-059 (Hattori, Yokoi, "The Concepts and Facilities of SIMPOS File System", ICOT TR-059, 84.04)
+% PDF page 07, printed folio 5. Figure 2.1 Volume Structure (volume descriptor -> VTOC (file file), root directory file; file); Section 2.1(2) 'Page allocation'.
+% Transcribed by eye from 300dpi code-line crops (work/tr0059/m*.png), F2 2026-11-23. Courier font: punctuation clear.
+% Bullet descriptions ('o To ...') are given as % comments; only the indented code lines are printed code.
+
+% o To allocate a free page
+             :allocate(Volume,Page)
+% o To de-allocate a page
+             :deallocate(Volume,Page)
+% "where 'Page' is a disk page address in the volume."

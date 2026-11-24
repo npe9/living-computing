@@ -1,0 +1,50 @@
+% SOURCE: ICOT TR-283, K. Yoshida, "Remote Object Accessing Mechanism in SIMPOS -- Its Design and Application", June 1987
+% PDF page 18, printed folio 16. Tables 1-4 (METHOD/PERFORMANCE TABLES, not source).
+% Transcribed by eye from 300dpi crops (A/work/tr0283/c18a.png, c18b.png, z18.png). Empty cells shown as -.
+%
+% Table 1: Performance of the Communication System   (msec)
+%   Process Level                         Round-Trip Time, Packet Size (byte)
+%                                         1400     4200
+%   handler level                         180      -
+%   network manager level                 -        -
+%   user process level                    283      545*
+%   initialization                        -        1100
+%   (connect line and create server)
+%   * : Network Penalty to be referred in Table 2
+%
+% Table 2: Performance of ROAM   (msec)
+%   Primitive Method                      Total Elapsed Time   ROAM Overhead*
+%   primitive class method
+%     :do(Class, Node)                    685                  140
+%   primitive instance method
+%     :do(Instance)                       645                  100
+%   * : ROAM Overhead = Total Elapsed Time - Network Penalty - Local Call Time (30us)   [printed "30µs"]
+%
+% Table 3: Performance of Global File System   (msec)
+%   Method                                          Remote Call   Local Call
+%   File Methods
+%     :make/c2 (create and open)                    1055          167
+%     :write/i2   buffer size =   1024              1197          27
+%                                 40960             4817          399
+%     :read                       1024              1160          25
+%                                 40960             4621          179
+%     :size/i1 (inquire size)                       788           10
+%     :close/i0                                     2197          1446
+%   Directory Methods
+%     :make/c2 (create)                             1835          1«?»0
+%     :expunge/i0                                   75«?»         13
+%     :find/i2                                      879           19
+%     :delete/i2                                    934           20
+%     :undelete/i2                                  930           20
+%     :add/i2                                       1134          25
+%   (method suffix /cN, /iN as printed: class or instance method, N = argument count EXCLUDING the receiver --
+%    INFERENCE from :close/i0 and :size/i1; the report does not define the notation)
+%
+% Table 4: Performance of Related Functions   (msec)
+%   Class/Method                          Elapsed Time
+%   class library
+%     :get_class_object/c2                20 ~ 90
+%   class symbolizer
+%     :get_atom_string/c2                 2
+%     :get_atom/c2                        1
+%     :enter_atom/c2                      5
