@@ -19,7 +19,12 @@ file system itself is made in the guest by 1e's `disk/kfs -r`.
 With --data FILE, the image holds FILE from sector 0 (an archive for
 mkext) and is padded to whole cylinders, plus one.
 
-usage: mkdisk.py OUT (--fs MBYTES | --data FILE)
+With --parts NAME:MBYTES[,NAME:MBYTES...], the table has those
+partitions, in order from sector 0, and the disk is their total plus
+the table, rounded up to whole cylinders (cpukernel.sh: `swap` and
+`out`, i.e. #w/hd1swap and #w/hd1out; devhard.c takes up to 8).
+
+usage: mkdisk.py OUT (--fs MBYTES | --data FILE | --parts NAME:MBYTES,...)
 """
 import os
 import sys
@@ -39,6 +44,23 @@ def main():
             f.write(tab + bytes(512 - len(tab)))
         print('%s: %d bytes, %d cylinders, partition fs 0..%d' %
               (out, size, size // CYL, nsec - 1))
+    elif kind == '--parts':
+        parts, start = [], 0
+        for p in arg.split(','):
+            name, _, mb = p.partition(':')
+            n = int(mb) * 1024 * 1024 // 512
+            parts.append((name, start, start + n))
+            start += n
+        size = (start * 512 + 512 + CYL - 1) // CYL * CYL
+        nsec = size // 512
+        tab = b'plan9 partitions\n' + b''.join(
+            b'%s %d %d\n' % (n.encode(), a, e) for n, a, e in parts)
+        with open(out, 'wb') as f:
+            f.truncate(size)
+            f.seek((nsec - 1) * 512)
+            f.write(tab + bytes(512 - len(tab)))
+        print('%s: %d bytes, %d cylinders, %s' % (out, size, size // CYL,
+              ', '.join('%s %d..%d' % p for p in parts)))
     elif kind == '--data':
         n = os.path.getsize(arg)
         size = (n + CYL - 1) // CYL * CYL + CYL
