@@ -163,6 +163,34 @@ and writing a card are the owner's steps, `bsv/README.md`). Not yet
 connected to the core: the adapter to S1's `scsiReq`/`scsiResp` port is
 described in `bsv/README.md`; it is the hardware twin of S2's tape and
 S6's live FEP, behind the same port.
+STATUS 2026-11-24, later: it follows `fep.py` to the shell's prompt
+(`longrun_ipl.py --load PKL --go --fep`: 8,586,110 instructions, the
+login answered, "Shell>> " on the window, its getl held). Covered:
+`create_timer` 310, `get_date_time` 304 (the time of day from a clock
+input, `setTime`, as `fep.py` takes `Fep.ticks` from the machine's
+timer), the timer's close, `fep_attributes` 240, the pimos: files from
+the card (`tools/mkfepcard.py --held` adds the held object directory as
+pimos:NAME; absent names 5), 601/620 for the login's replier, servers
+and `simpos_user_device`, the window calls, 60 on string-I/O and
+windows, 112 on a read file, 70 on a held request [6], and the held
+requests with the event that answers them. A held request is seen by
+the core as a RECEIVE that stays outstanding (not ready at each poll,
+kept in `PimmScsiBox`'s waiting list), and the emulator's `idle` input
+(the bench's question when the machine has run dry, `Fep.idle()`)
+takes the next entry of a script on the card and answers the lowest
+device holding that kind. `fep.py`'s constants (the attributes message,
+the script) are on the card (`mkfepcard.fep_tables`), so the scripted
+command line another change adds to `fep.py` needs a new card, not new
+hardware. Tapes: `kernel` re-recorded to the prompt (175 calls, 2
+events; the clock and the events are records on the tape), and
+`direct_kernel` with every new answer's edges and errors (309 commands,
+10 events, under a script of two logins and two lines). 9 tapes, 714
+commands and 12 events, all equal on the three benches; thirteen
+injections into the new paths, twelve caught at once and the
+thirteenth (the user device's length word, high byte) after a section
+for it was added (`bsv/PimmFepEmuTb.bsv`). The board top synthesizes
+at 14,799 LUT4, 4,243 FF, 3 DP16KD, 36.69 MHz (PASS at 25 MHz), its
+self-test passing in Bluesim on the new `--held` card (54 entries).
 
 **S2. The device on the bench: a replay of the reference's device.**
 The lockstep bench is scripted, not live. So the reference model,
