@@ -82,7 +82,9 @@ Status 10 in any reply marks the device's FEP line as gone
 
 Request = `{Id, Code, args}`; reply = `{Id, Status, results}`. "s" a
 string, "i" an integer. All rows are P for number, layout and reply,
-and C for name and number; the layouts are P only.
+and C for name and number (checked row by row, 2026-11-24: each of
+the 63 codes stands in the `--pairs` output under the same name, as do
+807-809 and the statuses 0-11); the layouts are P only.
 
 ### 2.1 Every device
 
@@ -210,7 +212,7 @@ its local `get_class_object/3`; the code was not read.
 - PSI side: the hash keys of `pimos_standard_io_window` are 104, 60,
   130, 124, 121, 141, 142, 111, 110, 112, 145
   (`binary_reverse_engineering.md` §4.3). 127, 132 and 143, which the
-  login console sends first (section 3 step 10), are not among them;
+  login console sends first (section 3 step 15), are not among them;
   where the PSI handles them was not found (U4).
 
 ### 2.7 Socket (`bios/fep_module/soc_dvc.kl1`)
@@ -249,7 +251,8 @@ KL1 is concurrent: an order is given only where a stream or a wait
 enforces it. "Wire" is what the FEP sees. Ids are given out from 16
 in order of creation, so the numbers shift with the order.
 
-**A. BIOS** (`bios/boot/bios.kl1`:41-61, 388-396)
+**A. BIOS** (`bios/boot/bios.kl1`:41-61 the banner and `init:go`,
+388-396 `create_os_device1/2`: console, system timer, syslog)
 
 1. Banner (no wire); the bus scan (§1.4, done).
 2. Console: a dummy, every `putb`/`getl` answered abnormal locally,
@@ -265,7 +268,10 @@ in order of creation, so the numbers shift with the order.
    becomes **111** on that device (86-89); the only users found are
    forwarders (`kernel/init/init.kl1`:300-302,
    `kernel/task/raisehdl.kl1`:69-73), so a 111 comes when a task
-   writes to the syslog, not at a fixed point of the start.
+   writes to the syslog, not at a fixed point of the start. This is a
+   negative from a grep for `syslog` in `kernel/`, `server/`,
+   `shell/`, `utility/`, `library/`, and it narrows §1.4's "then
+   `putb` (111)", which reads the device, not a writer.
 
 **B. The servers**, in this order, chained by an `ok` variable from
 each to the next (`kernel/init/init.kl1`:58-73, `start_top`; that each
@@ -283,9 +289,12 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
    ends: **60** on the timer (INFERENCE from `time_sv.kl1`:55, the
    stream is closed with the one request).
 6. Module Server: **201** `"pimos:autoload.tbl"` unless built with
-   `autoloading` = `no` (`server/module/autoload.kl1`:13-29). The
-   file is not in `pimosobj.tar.Z`; an error text exists for a failed
-   read (51, 59). Which build the object is: the run.
+   `autoloading` = `no` (`server/module/autoload.kl1`:19-29). The
+   file is not in `pimosobj.tar.Z`, whose `object/INSTALL` (lines
+   8-9) says to copy `object/*` to `pimos:`, so an installation as
+   shipped has none. A failed open is taken in silence (`init_1/4`'s
+   last clause, 39-41); only an unreadable term gives "Error on read"
+   (50-52, 58-60). Which build the object is: the run.
 7. The first open through the file server asks **240** first, on a
    device of its own (section 2.2). So 240 comes before the 201 of
    step 6 or, without it, of step 8.
@@ -314,7 +323,7 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
     request stays unanswered until someone logs in.** The manual's
     boot log ends the same way (`Eman/e-sysman.tex`:104-112).
 
-    Rung R6's "login prompt" is therefore not a prompt PIMOS prints.
+    A "login prompt" is therefore not something PIMOS prints.
     The dialogue is the PSI's: "Login PIMOS" in the SIMPOS menu
     (`Eman/e-login.tex`:34-48; `login.com`'s menu entry is
     `pimfep##pimos_login_requester`). PIMOS waits.
@@ -339,7 +348,10 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
     `conf_dvc.kl1`:43, 67, 79-91). If the open fails the window is
     `"PIMOS CONSOLE"`, at (200,200), 47 x 14 characters, font
     `"font:test_11.font"` (1104-1106, 1169-1173). We hold no
-    `pimos.init`.
+    `pimos.init`, and the shipped set has none (`object/INSTALL`
+    puts only `init.com` and `login.com` in `me:`); the manual
+    describes its `console_window(Pos, Size, Font).` term
+    (`Eman/e-login.tex`:130).
 15. The task "login" with that window as its standard I/O: **104**,
     then **127** reshape, **130** set_title, **132** set_font,
     **143** show (`kernel/stdio/s-server.kl1`:262-271, 289-292).
@@ -368,16 +380,21 @@ User Server Manager (`kernel/init/rsc_init.kl1`:26-47).
 | The window calls and their parameters | What a window is: where `putb` text goes, where a `getl` line comes from, echo and line editing |
 | The date and time units | The clock |
 
-**A minimal honest FEP for R6** answers, in this order: 203 (done);
-310, 304 (done), 60 on a timer; 240; 201/210/60 for `autoload.tbl`
-(or status 5, if the build asks) and for `pimos.conf`, `pimos.logins`,
-`pimos.groups`; 601 and 620 command 0 for the replier and the server;
-and holds `io(1)`. At that point the console shows the two LOGIN
-SERVICE lines and R6 is reached in the manual's sense. A shell needs,
-on top: a scripted login (an NI), 620 commands 1 and 2 on the replier,
-`simpos_user_device` or a login with RN = RP = 0 (U3), status 5 for
-`me:pimos.init`, 104/127/130/132/143, then 111/112/110 with lines
-from a script.
+**A minimal honest FEP for R6.** R6 is "Login and a shell prompt; a
+shell command that only needs the kernel runs" (`pimos_roadmap.md`
+§2), so it needs all of A-D. In order: 203 (done); 310, 304 (done),
+60 on a timer; 240; 201 of `pimos:autoload.tbl` answered 5 (if the
+build asks; the shipped set has no such file); 201/210/60 for
+`pimos.conf`, `pimos.logins`, `pimos.groups`; 601 and 620 command 0
+for the replier and the server; then `io(1)` held. **Waypoint:** the
+console shows the two LOGIN SERVICE lines, the end of the manual's
+boot log; everything up to here is PIMOS's move and can be checked
+against that log. Then OURS begins in earnest: a scripted login (an
+NI answering the held `io(1)`), 620 commands 1 and 2 on the replier,
+`simpos_user_device` (or a login with RN = RP = 0, U3), status 5 for
+`me:pimos.init`, 104/127/130/132/143, 201 of the home directory's
+`shell.com` and `pimos.com`, then 111/112/110 with the lines of a
+script.
 
 ## 4. `fep.py` against the source
 
@@ -411,7 +428,8 @@ Weaker than the source allows, or to check:
   `scsi_manager` (§1.4 item 2): not the FEP's affair, noted there.
 
 Missing, in the order the start will ask (section 3): 60 on a timer;
-240; 201 of a file that may be absent (`autoload.tbl`); 601; 620 with
+240; a mapping of `pimos:NAME` to the held `object/` files in the
+caller's `open_file` (an absent file already gets 5); 601; 620 with
 commands 0, 1, 2 and a reply that can be withheld; 111 on the syslog;
 then for a shell 104, 127, 130, 132, 143, 111, 112, 110 on a window,
 and 60 on each. Not needed for R6 or a first shell: directory,
@@ -431,4 +449,4 @@ branch), the other window calls.
 | U7 | The form of `File_names` (237, 238) and of `Attributes` (222) | `server/fep/file/dir_dvc.kl1`, `file_dvcb.kl1` (held, not read for this) and `pimos_directory` |
 | U8 | Whether the held object asks for `pimos:autoload.tbl`, and whether its Fep and SCSI modules equal this source (the patch files) | The run itself; `asm/kl1decomp.py` on `pimm_patch_fepsv360E.sav` and `pimm_patch_scsifep360E.sav` |
 | U9 | Which window is the login shell's standard I/O (the console of step 15 or a new one), and whether a user with no partition gets the "Enter your partition ?" dialogue (`server/login/login/login_p.kl1`) | Reading `login_sv.kl1`:1517-1541 with `login_p.kl1`; then the run |
-| U10 | How `pimos:` and `me:` were resolved on the PSI (`login.com` defines `pimos` as `>sys>csp>PIMOS.DIR` and `me` as `user:pmpsi`, SIMPOS logical names) | Nothing more is needed for a stand-in: serve `pimos:NAME` from the held `object/`; label it OURS |
+| U10 | How `pimos:` and `me:` were resolved on the PSI. Held: they are SIMPOS logical names (`object/INSTALL`:8-9; `login.com` defines `pimos` as `>sys>csp>PIMOS.DIR` and `me` as `user:pmpsi`); `docs/simpos/` and `psi/` were searched for `pimos.init`, `autoload` and `simpos_user_device`: nothing beyond a format note | Nothing more is needed for a stand-in: serve `pimos:NAME` from the held `object/`, as INSTALL installs it |
