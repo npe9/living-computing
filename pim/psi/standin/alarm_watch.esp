@@ -1,0 +1,39 @@
+% SCAFFOLDING stand-in for SIMPOS's class `alarm_watch`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `alarm_watch` is printed or held, and NO CLOCK IS MODELLED.  Every method
+% is INTERPOLATED (labelled) from:
+%   - gog-kl1 ESP/PLAYSLOT.ESP:81-86 (ICOT Free Software, IFS
+%     exper-apps/pimos/gog-kl1.tar.Z), commented "timer wait":
+%     `:create(#alarm_watch,Watch), :create(#time,Time),
+%     :set_value(Time,0,0,S,M), :on_after(Watch,Time), :wait(Watch)`;
+%     DISP_KIFU.ESP:29-54 and CH_CLOCK.ESP:35 the same pattern ("read
+%     waiting loop timer");
+%   - pimfep##pimos_timer's local on_after/4 (held .ptf @10c):
+%     `:create(#alarm_watch,W), :create(#time,T), :set_count(T,N),
+%     :on_after(W,T), :wait(W)`, then a message is put on the timer's
+%     stream;
+%   - docs/simpos/required/classes.tsv (row `alarm_watch`): create/2,
+%     on_after/2, on_at/2, wait/1.
+% Model (OURS): one process and no clock, so the alarm is set and wait/1
+% returns at once, as if the time had passed.  on_at/2 is not stood in.
+
+class alarm_watch has
+
+% INTERPOLATED from: `:create(#alarm_watch,Watch)` (see above).
+:create(Class, Watch) :-
+        :new(Class, Watch);
+
+instance
+
+% INTERPOLATED: the representation (OURS): the time object last set.
+attribute alarm := 0;
+
+% INTERPOLATED from: `:on_after(Watch,Time)` (PLAYSLOT.ESP:85, pimos_timer
+% on_after/4).
+:on_after(Watch, Time) :-
+        Watch!alarm := Time;
+% INTERPOLATED from: `:wait(Watch)` (PLAYSLOT.ESP:86).  OURS: it returns
+% at once (no clock, one process).
+:wait(Watch);
+
+end.

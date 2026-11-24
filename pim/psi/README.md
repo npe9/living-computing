@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`). |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -965,6 +965,71 @@ rows gained a witnessed operand pattern:
     `check_arguments/2` that is not in their class, 1
     `standard_temporary_menu:create/3`.
   - The 5 that stopped at pmi a1 with A != X reach an unbound receiver.
+
+### Step 3d's stand-ins (2026-11-24)
+
+No PRINTED or HELD-SOURCE body was found for any of the step 3c class
+blockers: `finds.md` §1-3 and §5a-5b, the TR/TM OCR and the printed
+listings name them at most. Ten classes were added, every method
+INTERPOLATED and labelled with its sources. What is OURS is marked in
+each file and in the last column:
+
+| Class | Methods | Interpolated from | OURS |
+|---|---|---|---|
+| `as_class_with_lock` | `lock/1`, `unlock/1`, `locked/1` (class) | kappa2 `LOADER.ESP:133-153`, whose comment says `:lock` has `:unlock` as its alternative, so no `!` may follow it | a count in a class slot; a lock never waits (one process); `unlock/1` of an unlocked class succeeds |
+| `with_lock` | the same, on instances | pimfep `fep_device_table` and `fep_node_table`, which bracket each method with `:lock` and a last-call `:unlock`; kappa2 `KP_DBOBF.ESP` | as above; the alternative unlock is INFERENCE from the class form |
+| `as_message` | slots `sender`, `receiver`; `set_sender/2`, `get_sender/2` | TR-056 p.12 (PDF p14): a sender slot, a receiver slot and a body, and class `message` inherits `as_message`; TM-100 Fig. 3.7 | no receiver accessor (no caller) |
+| `message` | nature `as_message`, slot `body`; `set_content/2`, `get_content/2` | TR-056 p.12; `required/classes.tsv`; pimscsi `cmt` | the body slot's name |
+| `trace` | `trace/1` | pimfep `trace_string_io/1` (`:trace(#trace)`) | does nothing: no tracer |
+| `common_network` | `is_installed/1` | pimfep `remote_stream`'s four create methods: none handles an uninstalled network | succeeds: no network is modelled |
+| `network_listener_buffer` | `create/4` | gog-kl1 `COMMU.ESP:124-135`; pimfep `buffer/2` (`Buf, 2, 16`) and `sline_scsi_stream` (`Buf, 16250, 32`) | the two integers kept, meaning UNKNOWN |
+| `alarm_watch` | `create/2`, `on_after/2`, `wait/1` | gog-kl1 `PLAYSLOT.ESP:81-86` ("timer wait"); pimfep `pimos_timer on_after/4` | `wait/1` returns at once: no clock |
+| `time` | `create/2`, `set_count/2` | pimfep `pimos_timer on_after/4`; gog-kl1 `PLAYSLOT.ESP:83` | the count's unit UNKNOWN |
+| `pmacs_window` | `create/3`, `create/4`, `get_editor/2` | `window.md` §2.11 (`disc/exshow.esp:23-35`); pimfep `pimfep_message_log`, `pimos_fep_superviser` | window and `standard_editor` made together; options ignored; no window protocol |
+
+Not stood in, with the reason:
+
+- `simpos##undefined_method:raise/2` (16 methods, pimscsi `cmt` and
+  `scsi_low_if`, reached through pmi b0). TM-388 p.59 says
+  `:undefined_method(...)` generates an exception. kl0 models no
+  exceptions, so any answer would be a guess.
+- `library:assign/1` (9): the Librarian class is large and not held;
+  cil's `ds_bep.esp` `library_utility` (`:assign(#library)` at :3155)
+  and `INSTALL.esp` only call it.
+- `pmacs_window`'s window protocol (`activate/1` and the rest).
+- `pimos_window_editor`'s 21 methods: their window slot stays 0 because
+  the census makes the editor with `new/2`, not through
+  `pmacs_window:create/3`.
+
+Effect on the FEP census (each class added and rerun, compared method
+by method against the census after step 3d's rows; no method moved out
+of success):
+
+| | methods | success | failure | refused |
+|---|---|---|---|---|
+| after step 3d's rows | 1,229 | 607 | 101 | 521 |
+| with the ten stand-ins | 1,265 | 665 | 113 | 487 |
+
+- 36 methods are new: the tables' inherited `lock/1`, `unlock/1`,
+  `locked/1` (32 succeed; the 4 `locked/1` fail on an unlocked table).
+- 26 moved from refused to success: the `buffer/2`s and
+  `trace_string_io/1`s, `fep_device_table add_at/5` and two more under
+  `lock/1`, `pimos_remote_login_socket_table`'s three class methods,
+  `pimos_fep_superviser log_window/2`, `pimscsi##cmt` and `scsi`
+  `command/2,3` and `set_command/2`, `packet create/2`,
+  `pseudo_scsi shutdown/1`.
+- 8 moved from refused to failure: `get_at/5`, `remove_at/5`,
+  `remove_stream/3` and the socket tables' getters, past `lock/1` on an
+  empty table. That is their answer, not a refusal.
+- `pimos_timer on_after/4` given an integer now gets past
+  `alarm_watch:create/2` to `fep_message_assembler @5b`
+  (`set_string_element` on an unbound argument).
+- The refusals now rank: receiver not an object 128, missing opcodes
+  118 (pmi ca 23, pmi c6 18, blt 9a 12, blt 54 12, blt f2 10, ...),
+  SIMPOS calls 102 (`undefined_method:raise/2` 16, `library:assign/1`
+  9, `network_node_name:node_name/2` 6, `get_my_node/2` 4,
+  `pimos_file:create/2` 4, `pmacs_window:activate/1` 3, ...), unbound
+  argument 60, unbound receiver 46.
 
 ## Open
 

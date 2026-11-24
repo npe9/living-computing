@@ -357,6 +357,22 @@ and stand-in `simpos##` classes. In order:
      - Census: still 607 / 101 / 521, but 93 refused methods get
        further. They now stop at the census's unbound arguments, at
        pmi ca and c6, and at SIMPOS (`undefined_method:raise/2`, 16).
+   - *2026-11-24, step 3d, stand-ins:* no printed or held body exists for
+     the step 3c class blockers, so ten classes are INTERPOLATED, each
+     method labelled with its sources and what is OURS:
+     `as_class_with_lock` and `with_lock` (`lock/1` with `unlock/1` as its
+     alternative, from kappa2 `LOADER.ESP:133-153`), `as_message` and
+     `message` (TR-056 p.12), `trace`, `common_network`,
+     `network_listener_buffer`, `alarm_watch`, `time` and a minimal
+     `pmacs_window` (`../../psi/README.md` "Step 3d's stand-ins").
+     - Census: 1,265 methods (36 inherited lock methods), 665 succeed,
+       113 fail, 487 refuse; no method moved out of success.
+     - Not stood in: `undefined_method:raise/2` (an exception, TM-388
+       p.59; kl0 models none), `library:assign/1` (the Librarian, not
+       held), `pmacs_window`'s window protocol.
+     - The next blockers: pmi ca 23, pmi c6 18, blt 9a 12, blt 54 12;
+       `undefined_method:raise/2` 16, `library:assign/1` 9,
+       `network_node_name` 10.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
