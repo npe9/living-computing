@@ -14,12 +14,17 @@
 #     byte-identical to the member of the shipped hobbit/lib/libc.a;
 #   * the shipped zl links, on the core, an object za made on the core,
 #     and the linked program runs on the core and prints its line.
+#
+# P9HOST_SIM=verilator runs every step on Verilator (bsv/run_p9host_vl.sh)
+# instead of Bluesim; the core's output is byte-identical either way
+# (docs/bluespec_architecture.md, "Simulators").  P9HOST_WORK moves the
+# work directory, so the two can run side by side.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 hobbit=$(cd "$here/.." && pwd)
 rel=$hobbit/tools/plan9-1e
 run=$hobbit/bsv/run_p9host.sh
-work=$hobbit/bsv/p9work
+work=${P9HOST_WORK:-$hobbit/bsv/p9work}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 

@@ -37,3 +37,5 @@ P9BootTb.bo
 p9work/
 sim_p9host
 sim_p9host.so
+sim_p9host_vl
+sim_golden_vl_*

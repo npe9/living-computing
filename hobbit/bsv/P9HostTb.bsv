@@ -48,7 +48,19 @@ import "BDPI" function ActionValue#(Bit#(32)) p9h_unmapped_reads();
 // So reads outside the process's segments are counted per *request*:
 // `fresh` is True on the clock after a readReq, and `fetch` then reports
 // that address once (p9host.c, p9h_request).
+//
+// The Verilator build (run_p9host_vl.sh) compiles with -D P9HOST_FLAT,
+// which inlines this module into mkP9HostTb.  In Verilog, bsc puts each
+// module's C calls in that module's own `always @(negedge CLK)` block,
+// and the order between two such blocks is the simulator's choice, not
+// the schedule's: with two modules, writes were lost (the testbench's
+// block had not yet computed the core's write enable when the memory's
+// called p9h_write; observed 2026-11-23).  In one module every C call is
+// in one block, in schedule order -- poll, fetch, ..., commit, as Bluesim
+// runs them.  Bluesim builds without the flag, so nothing changes there.
+`ifndef P9HOST_FLAT
 (* synthesize *)
+`endif
 (* execution_order = "fetch, commit" *)
 module mkP9HostMem(HobbitMem);
   Reg#(Word) raddr <- mkReg(0);

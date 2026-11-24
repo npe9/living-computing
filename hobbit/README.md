@@ -38,6 +38,7 @@ machines whose differences must remain explicit.
 | Chapter 4 timing table | `docs/timing.csv`, `docs/timing_tables.md` | 46/46 spellings covered; `tools/check_timing.py` |
 | one-instruction semantics model | `sem/` | written from the PRM, independent of `bsv/` and `asm/`; now also MUL/MUL3, DIV/DIV3, REM/REM3, UDIV, UREM, ADDI/ANDI/ORI, TADD/TSUB, DQM, MOVA, LDRAA, CLRE, KCALL/KRET/CRET and the five-parcel forms, with 27 unit tests (`tests/test_sem_extended.py`) and explicit refusals where the manual is silent (divide by zero, DQM's `8·S` cell) |
 | Bluesim core | `bsv/` | 30-check smoke test (behaviour + cycles), `run_smoke.sh`; PDU → decoded-instruction store → EU, stack cache as a stateful box |
+| Verilator build | `bsv/run_p9host_vl.sh`, `HOBBIT_SIM=verilator bsv/run_golden.sh` | same HRI output as Bluesim byte for byte (cyc included) on the A2/A3 runs and the goldens; ~3.5× faster (`docs/bluespec_architecture.md`, "Simulators") |
 | cycle accuracy | `cyc` in every HRI record | Tables 4-32…4-36 under the p. 4-1 assumptions; A/D/Q are named model choices, not printed values |
 | hand-derived golden programs | `tests/golden/` | twelve programs, 56 retirement records, each line and each cycle figure justified by a printed page; 001–006 run on the core and the model, 007–012 on the model only (the core does not yet implement those instructions) |
 | HRI retirement interface and differ | `bsv/`, `sem/`, `tests/hri_check.py` | the Hobbit counterpart of riscv-formal's RVFI (RVFI itself means *RISC-V* Formal Interface) |

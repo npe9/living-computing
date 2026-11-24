@@ -161,4 +161,28 @@ done
 # za's object is compared with the shipped libc.a member.
 "$here/run_p9host_tests.sh"
 
+# The Verilator build of the same testbench (bsv/build_p9host_vl.sh) on
+# the recording the last step left, zc frexp.c: its whole output --
+# 1,652,549 HRI lines, cyc included, and the P9HOST lines -- must be
+# byte-identical to Bluesim's, and so must the files it wrote
+# (docs/bluespec_architecture.md, "Simulators").  About 30 s to build and
+# 35 s to run, against Bluesim's 135 s for the same run (2026-11-23,
+# heavily loaded machine).  Skipped, loudly, where Verilator is missing.
+if command -v "${VERILATOR:-verilator}" > /dev/null 2>&1; then
+    work=$hobbit/bsv/p9work
+    "$hobbit/bsv/build_p9host_vl.sh" > "$tmp/vl_build.log" 2>&1 || {
+        tail -30 "$tmp/vl_build.log"; echo "hobbit: the Verilator build failed" >&2; exit 1; }
+    mkdir -p "$tmp/vl/out"
+    P9REC="$work/p9.rec" P9OUT="$tmp/vl/out" "$hobbit/bsv/sim_p9host_vl" \
+        > "$tmp/vl/core.log" 2>&1 || {
+        tail -5 "$tmp/vl/core.log"; echo "hobbit: the Verilator run failed" >&2; exit 1; }
+    if ! cmp "$work/core.log" "$tmp/vl/core.log" || ! diff -r "$work/out" "$tmp/vl/out"; then
+        echo "hobbit: Verilator and Bluesim differ on zc frexp.c" >&2
+        exit 1
+    fi
+    echo "verilator: zc frexp.c, $(grep -c '^HRI ' "$tmp/vl/core.log") HRI records and the files written, identical to Bluesim's"
+else
+    echo "hobbit: SKIPPED the Verilator cross-check (verilator not installed)"
+fi
+
 echo "hobbit: all tests passed"

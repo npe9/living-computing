@@ -153,3 +153,84 @@ signals through a wire.  The same hazard inside the core was the
 operand-latch rule against `move2to3` with events on (G0009), fixed by
 making `start`'s latch clear a toggle the latch rule reads.
 
+## Simulators: Bluesim and Verilator (2026-11-23)
+
+The model runs on two simulators, built from the same BSV:
+
+| | Bluesim | Verilator |
+|---|---|---|
+| A2/A3 host testbench | `bsv/run_p9host.sh` (`sim_p9host`) | `bsv/run_p9host_vl.sh` (`sim_p9host_vl`, built by `bsv/build_p9host_vl.sh`) |
+| golden testbenches | `bsv/run_golden.sh NNN` | `HOBBIT_SIM=verilator bsv/run_golden.sh NNN` |
+| the whole A2/A3 list | `tests/run_p9host_tests.sh` | `P9HOST_SIM=verilator tests/run_p9host_tests.sh` |
+
+`run_p9host_vl.sh` is `run_p9host.sh` with `P9HOST_SIM=verilator`: the
+same arguments, environment (`P9CWD`, `P9HOST_KEEP_SIM`, `P9KCLOCKS`,
+`P9UNMAPPED`), work directory, comparison and exit status.
+`P9HOST_WORK` moves the work directory for either, so the two can run
+side by side.  Toolchain: Verilator 5.052 (Homebrew), bsc 2026.01.
+
+**Equivalence.**  On every run checked, the two simulators print the
+same `core.log` byte for byte -- every HRI line with its `cyc`, every
+`P9HOST` line, in the same order -- and write the same files (a scratch
+script, 2026-11-23): echo, cat trap.c, za main9.s, za hello.s, zl, the
+linked hello, and zc frexp.c (1,652,549 HRI lines).  `tests/run_tests.sh`
+re-checks this on zc frexp.c after the Bluesim steps.  The goldens
+001-006 and 013-021 print the same output on both and pass their
+hand-derived traces on Verilator.
+
+**Speed** (zc frexp.c: 12,016,397 clocks, 1,651,700 retirements; the
+same recording on both; machine at load average ~180, 2026-11-23):
+
+| | wall | CPU (user+sys) | retirements per CPU second | clocks per CPU second |
+|---|---|---|---|---|
+| Bluesim | 136.7 s | 46.8 s | 35,300 | 257,000 |
+| Verilator | 36.4 s | 13.5 s | 122,000 | 890,000 |
+
+About 3.5 times faster.  At that rate the 1e kernel's boot (~22.5M
+instructions) is ~3 CPU minutes on Verilator and the kernel link (351M)
+~50.  Building `sim_p9host_vl` takes ~30 s.  A third of Verilator's time
+in the first measurement was `getenv` in `p9host.c`'s `init`, called on
+every C call before its "already done" test; that is fixed, for Bluesim
+too (the Bluesim figure above is with the fix).
+
+**What the Verilog path needs, and why** (`bsv/build_p9host_vl.sh`):
+
+1. *One module.*  bsc puts each module's C calls (`p9h_read`,
+   `p9h_poll`, ...) and `$display`s in that module's own
+   `always @(negedge CLK)` block, in schedule order *within* the block;
+   the order *between* two blocks is the simulator's.  With
+   `mkP9HostMem` synthesized separately, memory writes were lost (the
+   memory's block called `p9h_write` before the testbench's block had
+   computed the write enable).  `-D P9HOST_FLAT` drops that module's
+   `(* synthesize *)` (`P9HostTb.bsv`), so every C call is in one block,
+   in the order Bluesim runs them (poll, fetch, ..., commit).  Bluesim
+   builds without the flag.  The rule for later testbenches: C state
+   touched from two synthesized modules is not portable to Verilog;
+   inline them.
+2. *`--no-timing`.*  bsc follows each C call with `#0` and computes,
+   inside the block, every value a later statement needs, so ignoring
+   the `#0`s changes nothing.  Honouring them (`--timing`) did not work:
+   Verilator then did not re-evaluate continuous assignments that read
+   what the block wrote after a resumption (the stack cache's CATCH test
+   saw a stale MSP comparison and a refill never started).  Found by
+   comparing VCDs of Verilator, Bluesim and Icarus Verilog (bsc
+   `-vsim iverilog`, which matched Bluesim's output byte for byte).
+3. *`$finish` stops at once.*  Bluesim runs no rule after `$finish`;
+   Verilator's default lets the rest of the block run (one extra HRI
+   line) and prints `- file:line: Verilog $finish`, so `bsv/vl_main.cpp`
+   defines `vl_finish` to flush and exit.
+4. *Exit status.*  Verilog's `$finish(n)` is a diagnostic level, not a
+   status.  `vl_main.cpp` wraps `p9h_poll` (`p9host.c` is compiled with
+   `-Dp9h_poll=p9h_poll_c`, otherwise unchanged) and exits 0 exactly
+   when P9HostTb.bsv's `ok` holds: exits reached and the recording
+   fully served.
+5. `bsc -verilog -use-dpi` emits the BDPI imports as `import "DPI-C"`;
+   `Bit#(32)` is `int unsigned`, i.e. `p9host.c`'s `uint32_t`, so no
+   signature changes.
+
+Differences that remain, none visible in any output: register values
+that are don't-cares in BSV can differ (the payload of an `Invalid`
+`Maybe`, e.g. `sc_memLiveR`, reads `'hAAAAAAAA` in Bluesim and 0 in
+Verilator).  The Verilator build keeps its own `-bdir`
+(`build/verilator/`), because `.bo` files do not record `-D`.
+
