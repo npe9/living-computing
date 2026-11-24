@@ -112,7 +112,9 @@ The PSI packages were read with `psi/fepread/ptfread.py` (read-only).
   their positioned fragments, not by multi-word grep.
 
 **Who did what.** Three delegated agents produced the row tables. The
-lead spot-checked these citations against the sources, and they hold:
+lead spot-checked these citations against the held files and the OCR
+text (greps, not page images, except TM-444 PDF p31, read as an
+image), and they hold:
 
 - CH_CLOCK.ESP:59-62;
 - exshow.esp:24-28;
@@ -131,8 +133,8 @@ lead spot-checked these citations against the sources, and they hold:
 | §2 opcode table rows | 113 | 88 | 13 | 0 | 12 |
 | §2 header claims (opcode names / numbers) | 2 | 1 | 0 | 1 | 0 |
 | §3 shutdown lines | 9 | 5 | 2 | 1 | 1 |
-| §4 FEP claims marked OURS or INFERENCE | 20 | 7 | 4 | 0 | 9 |
-| **Total** | **284** | **189** | **29** | **10** | **56** |
+| §4 FEP claims marked OURS or INFERENCE | 20 | 6 | 1 | 1 | 12 |
+| **Total** | **284** | **188** | **26** | **11** | **59** |
 
 The 11 opcodes still missing from the table are in §2. They are
 findings, not verdicts.
@@ -338,10 +340,11 @@ printed source describes.
 - **blt 06:** TR-044 A.2 `stack_vector(?Vector, ^Length)`, an arbitrary
   argument, so a test that fails. That a heap vector fails stays
   INFERENCE.
-- **blt 0b and 1c:** the third operand is the element Size
-  (`string(?String, ^Length, ^Size)`, `new_string(~String, Length,
-  Size)`, TR-044 A.2-A.3 PDF p39), not a "type". This was counted with
-  the row changes; see §5.
+
+**Rows CONFIRMED with a wording change:** blt 0b and 1c. Their third
+operand is the element Size (`string(?String, ^Length, ^Size)`,
+`new_string(~String, Length, Size)`, TR-044 A.2-A.3 PDF p39), not a
+"type" (§5, P-k7).
 
 **NO SOURCE FOUND (12)** are listed in the TSV. No source was found, in
 TM-444, TR-236, TR-044, `cil_kl0.esp` or the ESP manuals, for:
@@ -408,21 +411,21 @@ check's edit.
 | 4.3 | 60 on the timer after 304: INFERENCE from `time_sv.kl1`:55 (:309) | `server/fep/fep/time_sv.kl1`:54-56: `TS=[get_date_time(Args)]`, a closed one-element list, so the stream ends after the one request; `fep.py` and the run show the close | CONFIRMED |
 | 4.4 | §4 table, "OURS, until the PSI side runs" (:393-420) | by design: these are the stand-in's choices | NO SOURCE FOUND (no PSI-side run is held) |
 | 4.5 | U1: the version V and the Host of the 240 answer, OURS (:474, :679) | searched: SIMPOS `version` and `network_node_name` are in no held package (ptf class lists), the corpus and the IFS sources. TM-181 PDF p4's screenshot reads "SIMPOS version 2.19" (an old version, not the PSI that ran pimfep `V0.45`) | NO SOURCE FOUND |
-| 4.6 | U5: "903 is dropped" rests on the clause chain `c2`/`d3`, "unwitnessed" (:478, :788) | `psi/kl0_opcodes.tsv` now has KNOWN-PLAINTEXT rows for both: c2 `retry_me_else` (kappa `$or$0/1` @812) and d3 `cut_env_d3` (fts `post_cts/2` @27). The try family is in TM-444 PDF p9-10 | **UPGRADED**: the inference is discharged by the witnessed rows. `fep_services.md` U5 and §6.6 should drop "unwitnessed" (done) |
+| 4.6 | U5: "903 is dropped" rests on the clause chain `c2`/`d3`, "unwitnessed" (:478, :788) | `psi/kl0_opcodes.tsv` now has rows for both, but c2's witness (kappa `$or$0/1` @812, `c2 00 ff fe`) has no held source clause and targets itself, and d3's (fts `post_cts/2` @27) is a cut; the opcode check found no source for the c-series (NO SOURCE FOUND rows). The try family's meaning is in TM-444 PDF p9-10, by mnemonic only | NO SOURCE FOUND: no witness shows the fall-through; stays INFERENCE (`fep_services.md` reworded to say so) |
 | 4.7 | U9: the login task inherits the "login" task's window, INFERENCE (:482) | the request handler was not traced in this check | NO SOURCE FOUND (not re-traced) |
 | 4.8 | `refute/3` calls the named method with the vector's elements in order, INFERENCE (:562) | `refute/3` is in no held package; the arities fit all 63 rows (re-run of `fepfacts.py handlers` not repeated). §4.1 adds one more fit (getb's Size lands in A3) | NO SOURCE FOUND (support only) |
 | 4.9 | U3: what `remote_or_local/6` returns (the user's home directory, by the names), INFERENCE (:711) | `e-login.tex`:125, :177 (`task:home`, "Home Directory Name String"; `pimos.init` under the home) and `login_p.kl1`:93 (`setenv(task:home,Dir,_)`) say what PIMOS does with it; the SIMPOS method is not held (the held port of `pathname` lacks it, sweep §2.1), and its held callers (cil `ms_ist.esp`:251, 1668) were not read for its result | NO SOURCE FOUND |
 | 4.10 | U2: the H and L arithmetic, "unwitnessed built-in opcodes" (:767) | `pimfep##as_pimos_login_requester` uses blt 40, 42 and 48. 40 and 48 have rows; blt 42 has none (§2, "met without a row") | NO SOURCE FOUND (blt 42 still unwitnessed) |
-| 4.11 | abort: a failed test goes on to the next clause, INFERENCE (:788) | as 4.6: c2/d3 are witnessed | **UPGRADED** (same as 4.6) |
-| 4.12 | what `tag_catch/9` and `abort/3` do, INFERENCE from names (:815) | the SIMPOS `process` class is lost. TM-100 prints no `tag_catch`; it was searched in the corpus, IPSJ and IFS sources | NO SOURCE FOUND |
-| 4.13 | the login password, OURS (:890) | `pimosobj/object/pimos.logins` (held) gives the users; the SIMPOS password is the PSI's | CONFIRMED as OURS (no source can give it) |
-| 4.14 | "60: one reply; no 903 (§6.6, with its one INFERENCE)" (:893) | as 4.6 | **UPGRADED** (same as 4.6) |
-| 4.15 | `pimos.syslog` made by the append, OURS (:1004) | `bios/boot/syslog.kl1`:33 opens it for append; `object/INSTALL` does not ship it | CONFIRMED |
-| 4.16 | a `shell.com` or `pimos.com` in the home would be OURS (:1009) | `object/INSTALL`:8 puts the objects in `PIMOS.DIR`, not in the home | CONFIRMED |
-| 4.17 | how the firmware held LUN 1 open: INFERENCE (:1098) | not in the held source (bios SCSI), the manuals or the corpus (`disconnect`, `reselect`) | NO SOURCE FOUND |
-| 4.18 | the idle test, OURS (:1130) | by design | NO SOURCE FOUND |
-| 4.19 | login record ID = 1, OURS (:1143) | §6.5: the real requester's ID is "the smallest integer from 0 not in use" (pimfep `pimos_remote_login_socket_table get_key/4`); the first login is 0 | **CONFIRMED that it is a deviation**: the PSI would send 0 for the first login. Noted, not changed (the run's tapes depend on it) |
-| 4.20 | RN `"pmpsi"` is the SIMPOS user, INFERENCE; RP `""` OURS (:1146-1147) | `pimosobj/object/login.com` `"me" := ["user:pmpsi"]` (held); `primer25.tex` gives the pseudo-Multi-PSI setup with logical directories under `>sys>csp`, but no user | CONFIRMED for the name; the user role NO SOURCE FOUND (counted as CONFIRMED) |
+| 4.11 | abort: a failed test goes on to the next clause, INFERENCE (:788) | as 4.6 | NO SOURCE FOUND (as 4.6) |
+| 4.12 | what `tag_catch/9` and `abort/3` do, INFERENCE from names (:818) | the SIMPOS `process` class is lost. TM-100 prints no `tag_catch`; it was searched in the corpus, IPSJ and IFS sources | NO SOURCE FOUND |
+| 4.13 | the login password, OURS (:893) | `pimosobj/object/pimos.logins` (held) gives the users; the SIMPOS password is the PSI's | CONFIRMED as OURS (no source can give it) |
+| 4.14 | "60: one reply; no 903 (§6.6, with its one INFERENCE)" (:896) | as 4.6 | NO SOURCE FOUND (as 4.6) |
+| 4.15 | `pimos.syslog` made by the append, OURS (:1007) | `bios/boot/syslog.kl1`:33 opens it for append; `object/INSTALL` does not ship it | CONFIRMED |
+| 4.16 | a `shell.com` or `pimos.com` in the home would be OURS (:1012) | `object/INSTALL`:8 puts the objects in `PIMOS.DIR`, not in the home | CONFIRMED |
+| 4.17 | how the firmware held LUN 1 open: INFERENCE (:1101) | not in the held source (bios SCSI), the manuals or the corpus (`disconnect`, `reselect`) | NO SOURCE FOUND |
+| 4.18 | the idle test, OURS (:1133) | by design | NO SOURCE FOUND |
+| 4.19 | login record ID = 1, OURS (:1146) | §6.5: the real requester's ID is "the smallest integer from 0 not in use" (pimfep `pimos_remote_login_socket_table get_key/4`); the first login is 0 | **CONTRADICTED**: the held PSI gives the first login ID 0; the stand-in sends 1. Proposal P-f3 (§5) |
+| 4.20 | RN `"pmpsi"` is the SIMPOS user, INFERENCE; RP `""` OURS (:1149-1150) | `pimosobj/object/login.com` `"me" := ["user:pmpsi"]` (held); `primer25.tex` gives the pseudo-Multi-PSI setup with logical directories under `>sys>csp`, but no user | CONFIRMED for the name; the user role NO SOURCE FOUND (counted as CONFIRMED) |
 
 ## §5 Proposed changes to `pim/psi/` (ready to apply; NOT applied)
 
@@ -567,7 +570,12 @@ citation. P-numbers are for reference.
 ### `psi/kl0_opcodes.tsv`
 
 - **P-k0. Row blt 6e, witness.** `devide_value/5 @ad` becomes `@ab`.
-- **P-k1. Rows 42, 43, 44, 45: mnemonics and meanings.**
+- **P-k1. Rows 42, 43, 44, 45: mnemonics and meanings.** The page is
+  verified by the lead (TM-444 PDF p31, printed 30, ex. 8, read as an
+  image: `unify_local_value_t A0` on a head argument, `unify_value_p
+  Y0` on a Y from `get_variable_p`, `unify local_value_p Y1` on a Y
+  from `put_variable_p`); the binding to the numbers rests on the
+  agent's clause-scoped counts, not re-run by the lead.
   - 42 `unify_value_p`, 44 `unify_local_value_p`;
   - 43 `unify_value_t`, 45 `unify_local_value_t`;
   - TM-444 PDF p31 ex. 8, with the clause-scoped counts of §2.
@@ -621,6 +629,13 @@ citation. P-numbers are for reference.
   - each with the witness in §2's table.
   - Each needs `witness.py` entries and the kl0 tests in the same change.
 
+**Which proposals the lead verified.** P-s7, P-s8, P-s9, P-s15 (the
+CH_CLOCK.ESP line), P-s14 (the TR-056 sentence), P-s10 (the TM-161
+line), P-s2 (the TM-388 sentence) and P-k1's page were checked by the
+lead against the held file or the OCR text; P-f1 to P-f3 are the
+lead's own. The rest are agent-reported, with the citation in the row
+tables; re-check each line before applying.
+
 ### Code and docstrings
 
 These are outside `psi/` in part. Changing them requires the full suite.
@@ -636,6 +651,13 @@ These are outside `psi/` in part. Changing them requires the full suite.
   held document; the MNEMONICS are (TM-444 PDF p6-16, 30-31; TR-236 PDF
   p5), so a number is tied to a mnemonic only by a witness."
 
+- **P-f3. `ref/pimm/fep.py`, the login record's ID.** It sends 1; the
+  held PSI sends the smallest integer from 0 not in use as a key of the
+  replier's socket table (`pimfep##pimos_remote_login_socket_table
+  get_key/4`, `fep_services.md` §6.5), so 0 for the first login. Change
+  it to 0, or keep 1 and label it a known deviation. Either way the
+  tapes and pins that carry it move: the full suite is needed.
+
 ## §6 Open after this check
 
 - No V3.0 PIMOS source is held, so `login Server End` stays INFERENCE
@@ -646,5 +668,13 @@ These are outside `psi/` in part. Changing them requires the full suite.
   the corpus.
 - The opcodes still without a row, and the unrowed blt 42 that U2's
   arithmetic uses (4.10).
+- Not given rows: the unlabelled local helpers of INTERPOLATED files
+  (about 20 in `hash_index`, `list`, `list_index`), which inherit their
+  file's label.
+- `required/classes.tsv`'s `time` row lacks get_count/2 and
+  set_count/2, which held IFS source sends (CH_CLOCK.ESP:59-60); not
+  fixed here (a generated table).
+- The primer cited as `primer25.tex` is titled "PIMOS 3.0 Introductory
+  Manual" (its `\title`), but points readers to the "PIMOS 2.5 Manual".
 - The OCR corpus covers about half the held TR/TM pages. It covers all
   of the SIMPOS-related pages but TM-305.
