@@ -11,6 +11,9 @@ python3 "$here/patch_kernel.py" "$S/sys/lib/pc/9dos" "$Q/9dos.q"
 python3 "$here/patch_kernel.py" "$S/386/9pc" "$Q/9pc.q"
 python3 "$here/mkfloppy.py" "$S/sys/lib/pcdisk" "$S/sys/lib/pc/b.com" "$Q/fd.img" "$Q/9dos.q"
 mmd -i "$Q/fd.img" ::/N/KFS
+# keyfs's mount point (serve.rc, authinit.rc): auth/* look keys up on
+# /mnt/keys; the floppy's /mnt has no keys directory
+mmd -i "$Q/fd.img" ::/MNT/KEYS
 mcopy -i "$Q/fd.img" "$here/kfsinit.rc" ::/KFSINIT
 mcopy -i "$Q/fd.img" "$here/serve.rc" ::/SERVE
 mcopy -i "$Q/fd.img" "$here/mkcpu.rc" ::/MKCPU

@@ -18,7 +18,6 @@
 # key of the password typed at this boot.
 disk/kfs -f /dev/hd0fs
 mount -c /srv/kfs /n/kfs
-bind /n/kfs/mnt /mnt
 /n/kfs/386/bin/auth/keyfs -d /n/kfs/adm/keys
 disk/kfscmd 'newuser glenda'
 # the kfs was attached before glenda was a kfs user: let this console

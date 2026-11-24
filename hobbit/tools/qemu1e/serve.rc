@@ -16,10 +16,12 @@
 # /dev/crypt, i.e. with the key of the password typed at this machine's
 # boot: the scripts all type `password`, and /adm/keys is encrypted
 # with that key.  keyfs is mounted before the listeners start: listen
-# takes a copy of the name space (rfork RFNAMEG, listen.c main).
+# takes a copy of the name space (rfork RFNAMEG, listen.c main).  Its
+# mount point is the floppy's /mnt/keys (floppies.sh), not the kfs's:
+# a mount on /n/kfs/mnt/keys would be served by il17008 and tcp564 to
+# anyone, `none` included, keys and all.
 disk/kfs -f /dev/hd0fs
 mount -c /srv/kfs /n/kfs
-bind /n/kfs/mnt /mnt
 /n/kfs/386/bin/auth/keyfs -d /n/kfs/adm/keys
 ip/ipconfig -m $2 $1
 # ndb/cs (run by termrc) set /dev/sysname from our ether address;
