@@ -257,8 +257,21 @@ Comparison mappings, as printed in PRG lines 7161-7168:
 | `X > Y` | `less_than(Y,X)` |
 | `X >= Y` | `not_less_than(Y,X)` |
 
-The `=<`/`>=` rows look swapped. They are recorded as printed and should be checked against
-compiled code. Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
+The `=<`/`>=` rows look swapped. They are recorded as printed. **Settled against compiled code
+(2026-11-24): the print is swapped.** `X =< Y` compiles to `not_less_than(Y,X)` (blt 67 with Y
+first) and `X >= Y` to `not_less_than(X,Y)`. The witness is p_icon.esp `Y =< Icon!height/2`: the held
+cells of `paragraph##predicate_num_switch_icon` are `67 03 01`, with A3 = height/2 and A1 = Y
+(`../../../psi/kl0_opcodes.tsv`, row blt 67). `psi/espc.py` compiles it that way. Its cells for
+that `$or$` run to the answers the source predicts (228 → inc, 229 → dec;
+`psi/test_espc.py`). An injection that drops the swap fails those tests. `<` and `>` agree with
+the print.
+
+The compiler also follows TM-388 p.66 on head macros, quoted above: a slot or arithmetic
+expression in a head becomes a fresh variable, unified after the last body goal. Held
+`paragraph##list_index_buffer count/2` (`:count(Obj,Obj!count):-!;`: the neck cut, then the slot read and the unification) is compiled that way, and
+`espc.py` matches its cells exactly.
+
+Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
 `bell`, `cr`, `del`, `esc` (line 7117), and pf keys are 1-18. The full special-key code values
 are **UNKNOWN**.
 
