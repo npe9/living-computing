@@ -1,0 +1,13 @@
+# MK48T02 timekeeper accesses, IONAK+0x2000 offsets
+# captured by rtc_iic_capture.py from the JoinReplayTest run of s9term (tests/test_p9boot.py)
+# cycle op off data mask result function  (cycle = model cycles at 20000000 Hz)
+304053529 R 1fe0 00000000 0 00000000 setrtc
+304053529 W 1fe0 00000080 f - setrtc
+304053690 W 1ffc 00000093 f - setrtc
+304053775 W 1ff8 00000001 f - setrtc
+304053860 W 1ff4 00000003 f - setrtc
+304053945 W 1fec 00000012 f - setrtc
+304054030 W 1fe8 00000000 f - setrtc
+304054112 W 1fe4 00000048 f - setrtc
+304054113 R 1fe0 00000000 0 00000080 setrtc
+304054113 W 1fe0 00000000 f - setrtc

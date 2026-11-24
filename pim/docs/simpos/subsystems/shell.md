@@ -280,6 +280,19 @@ The PIMOS manual prints the same `@spawn` excerpt (`pimosman/Eman/e-network.tex:
 | instance | `get_slot/3` | 4/1 | reflective slot read (as 2.1). misattributed | USAGE | fuzclust/fuzclust/src/envget.ctl:19 |
 | instance | `set_slot/3` | 3/1 | reflective slot write | USAGE | fuzclust/fuzclust/src/part.grape:128 |
 
+**The client side: `tcpip_socket`** (USAGE, `fixpoint_2026-11-24.md` round 1, `notes/fixpoint.tsv`).
+PIMOS's X performance meter front end (`pimos/src_util/pmeter/xrmonitor.esp:27-101`, 1992) opens a
+TCP connection from ESP:
+1. `:get_my_node(#network_node_name, ^Node)`: this PSI's node name string (the slot default is a
+   host name of the form `fkpsi602`);
+2. `:get_address(#tcpip_host_table, HostName, _, ^Address)`, then the port is written into string
+   elements 2 (low byte) and 3 (high byte) of `Address`;
+3. `:create(#tcpip_socket, ^S, ^Status, _)`, `:connect(S, Address, ^Status, _)`,
+   `:set_receive_timeout(S, nil)`, `:set_send_timeout(S, nil)`;
+4. `:send(S, String, ^Status, _)`, and `:close_socket(S, ^Status, _)`.
+Every call returns `Status`, `normal` on success; on anything else the program opens an
+`ERROR_WINDOW` `standard_io_window` and kills its process.
+
 ### 2.4 `process`
 
 Printed source exists for creation, activation, resume and suspend (TM-100 p7-p13, PRINTED;

@@ -1,0 +1,67 @@
+# The board and policy file of sem/hobbit_timing.py (the timing twin).
+#
+# Every value here is a CHOICE: no page prints it.  The printed rows the
+# twin charges are in docs/timing.csv; this file only resolves their
+# symbols and the readings the pages leave open.  One `key = value` per
+# line; `#` starts a comment.  docs/cycle_accuracy_plan.md §3.1.
+
+# --- memory symbols (PRM p. 4-2 defines A, D, Q and prints no value) -----
+# One clock per 32-bit word, the model's single-cycle word memory; D and
+# Q as two and four single-word transfers (p. A-6: a block transfer
+# "looks like a series of single-word bus transfers").  No bus figure
+# draws a one-clock transfer (Figure A-3, p. A-5: START in bus cycles 4,
+# 11 and 14, DTACK three, three and two clocks later), so A = 1 is
+# faster than anything drawn.
+A = 1
+D = 2
+Q = 4
+# Table 4-34's "8·S" (p. 4-4): S is not among p. 4-2's symbols.  Read as
+# a single-word access, so the cell is eight word transfers.
+S = 1
+
+# --- data-dependent rows -------------------------------------------------
+# Table 4-33 prints MUL/MUL3 as Min 3 / Max 20, data dependent; no page
+# prints the dependence.  The printed maximum.
+MUL = 20
+
+# --- Table 4-34's SC/M quad-word cell -------------------------------------
+# PRM p. 4-4 prints "4 + D"; the ATT2100 specification prints the same
+# cell "4 + Q" (2100 Table 3-4, p. 3-3).  `printed` charges 4 + D,
+# `2100` charges 4 + Q.  docs/timing_tables.md §7 item 4.
+dqm_scm_qw = printed
+
+# --- Table 4-35's compare distance ----------------------------------------
+# `retired`: every retired instruction between the compare and the jump
+# counts, folded branches included (an HRI record is a retirement).
+# `slots`: folded branches do not count, as TIMER's "completed
+# instructions (folded branches are not counted)" (DS pp. 32-33) does
+# not count them.
+distance = retired
+
+# --- folding into a CPU-prefixed instruction ------------------------------
+# p. 4-7 and DS p. 26 name one- and three-parcel hosts; a CPU-prefixed
+# instruction is a prefix parcel plus its instruction, and no page says
+# whether it is a host.  `yes`: it is, when the prefixed instruction's
+# own encoding is a host (a non-monadic three-parcel one).  The reasons:
+# CPU costs 0 and is "prefix only" (Table 4-32, p. 4-3); "the
+# instruction following CPU is considered part of the CPU instruction"
+# (p. 3-14), so the PDU decodes the pair as one entry with one
+# next-address field (p. 4-7); and Table 4-37 prices a CPU-prefix IC
+# miss as its own case (1, p. 4-6).  `no` was the first setting; on the
+# s9term boot's first 3,000,000 records it made 19 correctly predicted
+# JMPFY after `CPU; MOV` unfolded (1) where the reference folds them (0)
+# -- the reference makes the same reading implicitly (its fold state
+# comes from the prefixed instruction).  A choice; C3 checks the core.
+fold_into_cpu_prefixed = yes
+
+# --- the trapped niladic sequence (p. 1-40, through VB + 8) ---------------
+# Table 4-36 has no row for it; the sequence is the unimplemented one's
+# with another vector, so it takes that row.
+trapped_niladic = Unimplemented opcode
+
+# --- CONFIG's PC extension bit (p. 1-23) ----------------------------------
+# A 16-bit absolute address takes bits 31:29 from the PC when CONFIG.PX
+# is 1, zeros when it is 0.  The goldens start from reset, CONFIG = 0;
+# 1st Edition Plan 9 sets PX (raml.s, roml.s: PM|PE|IE|SE|PX|KL), so its
+# runs pass --config-px 1.
+config_px = 0

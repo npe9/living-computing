@@ -399,9 +399,10 @@ it is computed per ENTER (below).
 | `JMPFN`, `JMPFY`, `JMPTN`, `JMPTY` | Table 4-35 rows | 0..3 | Table 4-35, p. 4-5 (below) |
 | `FLUSHD`, `FLUSHDCE` (trap) | `Unimplemented opcode = 7 + A` | 8 | Table 4-36, p. 4-5; the sequence both take (pp. 3-22, 3-23) |
 
-The code's `CHAPTER4` tuple still transcribes the `Exception` row
-(`9 + D + A`, p. 4-5), which the model refuses because event processing
-is outside it, and the `DQM M quad-word to M quad-word = 8·S` cell, which
+The code's `CHAPTER4` tuple also transcribes the `Exception` row
+(`9 + D + A` = 12, p. 4-5), which an exception's record (`System` runs)
+carries since 2026-11-24 (it was 0 before; the timing twin found it), and
+the `DQM M quad-word to M quad-word = 8·S` cell, which
 has no encoded value in the tuple because `S` is not defined on p. 4-2
 (`step()` resolves it with the model's `S_CYC`).  The one
 MUL row keeps its printed `Min 3/Max 20` range in the tuple; the named
@@ -483,6 +484,52 @@ sources -- has **no** Table 4-35 row.  `step()` raises `Refusal` with
 A correctly predicted branch needs no compare distance and is priced
 normally.  This is the only timing refusal; every other refusal is an
 instruction, encoding or state the model already refused.
+
+### The timing twin (`hobbit_timing.py`)
+
+`sem/hobbit_timing.py` is a second, independent account of the same base
+`cyc` (milestone C2 of `docs/cycle_accuracy_plan.md`, §3.1). It does not
+execute anything: it reads an HRI stream, the memory image the stream
+ran from (a golden `.hex`, a 1e executable, or a kernel boot's
+`boot.rec`) and a board-and-policy file (`hobbit_timing_board.txt`,
+every value in it a named choice), and gives each record the printed
+row that prices it. It imports nothing from this file, from `bsv/`,
+`asm/` or `tools/cyc_classify.py`; its opcode tables were transcribed
+again from the page images of Tables 1-15..1-20, and its cells are read
+from `docs/timing.csv` and evaluated with the board's A, D, Q and S.
+
+Where it differs from this model by construction:
+
+* **Folding is static.** A one-parcel jump folds only into the record
+  immediately before it, and only if that record is the instruction
+  *physically* before it (pc + length) and retired; a jump reached by a
+  taken branch, a KRET, an interrupt or a trap's return is unfolded.
+  This model's `Timing.prev_foldable` is the dynamic predecessor's.
+* **Hosts.** p. 4-7's "non-branching operation" excludes KRET and CRET
+  (one-parcel opcode 0x0B, which `_foldable_target` accepts); a
+  CPU-prefixed instruction is a host when its own encoding is (a board
+  choice, `fold_into_cpu_prefixed`, the reading this model makes
+  implicitly).
+* **The flag's provenance.** TADD/TSUB (pp. 3-42, 3-47), KRET/CRET, a
+  CPU-prefixed write of PSW and a trap whose handler is not in the
+  stream all write PSW.F; a mispredicted jump after any of them is
+  *undetermined* (no Table 4-35 row), where this model tracks only
+  compares and TESTC/TESTV.
+* **Exceptions.** A trap record with no write is an exception, priced
+  at Table 4-36's Exception row (`9 + D + A`, p. 4-5). This model's
+  `_system_exception` wrote `cyc = 0` until 2026-11-24: those were the
+  only records of the s9term boot's first 3,000,000 on which the two
+  disagreed (7 of them; `docs/cycle_accuracy_plan.md` §4.2), and they
+  agree since the fix.
+
+Because the CPU-prefix host choice is the one this model makes, the
+records it decides (19 on the kernel prefix) agree by construction, not
+independently.
+
+`python3 tests/test_hobbit_timing.py` runs it on every golden (twin =
+the hand-derived `cyc` on every record) and on synthetic streams for
+each rule, with five injected defects recorded in its docstring;
+`tests/run_p9host_tests.sh` runs it on the za and zc reference traces.
 
 ## Traps and refusals
 
@@ -866,7 +913,10 @@ this model ever disagree, the README is the tie-breaker for the checker.
     memory is a single-cycle 32-bit word store.  The alternative (some
     bus latency from the data sheet or a board model) would change every
     cell that contains A/D/Q; the chosen values are named parameters,
-    not inline numbers, and are model choices, not manual facts.
+    not inline numbers, and are model choices, not manual facts.  No
+    printed bus figure supports A = 1 either: Figures A-2/A-3
+    (pp. A-3, A-5) draw a single-word transfer from START to DTACK in
+    two or three clocks, never one (`docs/timing_tables.md` §11).
 20. **ENTER's E term.**  Table 4-36 prints `1 + (Q·E)` and p. 4-2 calls
     E “ENTER size” without a unit.  This model reads E as the number of
     16-byte blocks the pp. 3-19/3-20 flush loop moves, rounded up for a

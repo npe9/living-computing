@@ -1,0 +1,134 @@
+# Directed: the receive FIFO depth, FFULL, the interrupt bids and their
+# priority, the global FIFO registers, channels 2 and 3 (the keyboard and
+# mouse streams).  The `= VALUE` expectations are written from the SC68C94
+# product specification (27 April 1994; docs/devices/README.md "Quart"),
+# not from the Python model, so the Python replay checks the model against
+# the data sheet and the testbench checks the RTL against both.
+#
+# DUART 1 (channels 2 = a, 3 = b) is at word 0x10: mr 0x40, sr/csr 0x44,
+# cr 0x48, fifo 0x4c, acr 0x50, isr/imr 0x54, ctu 0x58, ctl 0x5c,
+# channel 3 at 0x60..0x6c, start 0x78, stop 0x7c.  Global: cir 0xa0,
+# gicr 0xa4, gibcr/update 0xa8, grxfifo/gtxfifo 0xac, icr 0xb0.
+
+a quart w 9c 0 f = ok            # ack
+a quart w b0 0 f = ok            # icr = 0 (eiasetup)
+a irq w 0 2 f = ok               # Irq mask0: IRQQUART
+s 0 0
+
+# the MR pointer: MR1, then MR2, and it stays at MR2 (1994 p. 316)
+a quart w 48 10 f = ok           # MrReset
+a quart w 40 13 f = ok           # mr1: 8 bits, no parity
+a quart w 40 7 f = ok            # mr2: 1 stop bit
+a quart r 40 = 7
+a quart w 48 10 f = ok
+a quart r 40 = 13
+a quart r 40 = 7
+a quart w 44 cc f = ok           # csr 19200
+
+# receiver and transmitter on (cr 0x05); sr with nothing held: TxRDY|TxEMT
+a quart w 48 5 f = ok
+a quart r 44 = c
+a quart r 54 = 1                 # isr: TxRDYa (FIFO empty, MR0 level 8)
+a quart w 54 2 f = ok            # imr: RxRDYa only
+s 0 0
+x 2 41
+a quart r 44 = d                 # RxRDY
+a quart r 54 = 3
+s 1 1
+a quart w a8 0 f = ok            # update
+a quart r a0 = 2e                # cir: 1 held, type rx 011, channel 2
+a quart r a4 = 2                 # gicr
+a quart r a8 = 1                 # gibcr
+
+# eight held: FFULL (all eight positions occupied, 1994 p. 317)
+x 2 42
+x 2 43
+x 2 44
+x 2 45
+x 2 46
+x 2 47
+a quart r 44 = d                 # seven: not full
+x 2 48
+a quart r 44 = f                 # RxRDY|FFULL|TxRDY|TxEMT
+a quart w a8 0 f = ok
+a quart r a0 = ee                # 8 coded as 7: (7<<5)|0x0C|2
+a quart r a8 = 7
+
+# the transmitter's bid joins: (7 free << 4)|0x08|2 = 0x7a, lower than a
+# receiver holding 4 or more
+a quart w 54 3 f = ok            # imr: TxRDYa|RxRDYa
+a quart w a8 0 f = ok
+a quart r a0 = ee
+a quart r ac = 41                # grxfifo pops channel gicr = 2
+a quart r ac = 42
+a quart r ac = 43
+a quart r ac = 44
+a quart w a8 0 f = ok            # four held: (4<<5)|0x0e = 0x8e > 0x7a
+a quart r a0 = 8e
+a quart r a8 = 4
+a quart r 4c = 45                # rxfifo pops too
+a quart w a8 0 f = ok            # three held: 0x6e < 0x7a, the tx wins
+a quart r a0 = 7a
+a quart r a4 = 2
+a quart r a8 = 7                 # GIBC = free count 7 (8 coded as 7)
+a quart w ac 61 f = ok           # gtxfifo: to channel gicr = 2
+a quart w ac 62 f = ok
+a quart r 4c = 46
+a quart r 4c = 47
+a quart r 4c = 48
+a quart r 4c = 0                 # empty FIFO reads 0
+a quart r 44 = c
+
+# channel 3 (DUART 1 b, the mouse) bids too; channel b beats a at equal
+# counts only by its channel bits
+a quart w 68 15 f = ok           # MrReset|TxEnable|RxEnable
+a quart w 54 22 f = ok           # imr: RxRDYa|RxRDYb
+x 3 80
+x 2 31
+a quart r 54 = 33                # TxRDYa|RxRDYa|TxRDYb|RxRDYb
+a quart w a8 0 f = ok
+a quart r a0 = 2f                # 0x2f (ch 3) > 0x2e (ch 2)
+a quart r ac = 80
+a quart w a8 0 f = ok
+a quart r a0 = 2e
+a quart r ac = 31
+a quart w 6c 4d f = ok           # txfifo channel 3
+a quart w a8 0 f = ok
+a quart r a0 = 0                 # nothing enabled is pending
+a quart r a4 = 0
+a quart r a8 = 0
+s 0 0
+
+# the counter of DUART cd bids 0x17: channel d (1994 p. 311, 321), the
+# lowest priority of all
+a quart w 50 70 f = ok           # acr: timer, X1/CLK / 16
+a quart w 58 1 f = ok
+a quart w 5c 0 f = ok            # count 0x100: 512 C/T clocks a period
+a quart w 54 1a f = ok           # imr: CtrRDY|RxRDYa|TxRDYb (ch3 tx bid 0x7b)
+a quart r 78 = 0                 # start
+s 1 1                            # TxRDYb pending
+t 1 1
+a quart r 54 = 19                # TxRDYa|CtrRDY|TxRDYb
+a quart w a8 0 f = ok
+a quart r a0 = 7b                # the empty transmitter of channel 3 wins
+a quart w 54 8 f = ok            # imr: CtrRDY only
+a quart w a8 0 f = ok
+a quart r a0 = 17
+a quart r a4 = 3
+a quart r a8 = 0
+a quart r 7c = 0                 # stop: CtrRDY cleared, the counter runs on
+a quart w a8 0 f = ok
+a quart r a0 = 0
+s 0 0
+t 1 1
+s 1 1
+a quart r 7c = 0
+s 0 0
+
+# channel 1 (DUART 0 b), a stream like 2 and 3
+a quart w 28 15 f = ok
+x 1 5a
+a quart r 24 = d
+a quart r 2c = 5a
+a quart w 2c a5 f = ok
+a quart r 24 = c

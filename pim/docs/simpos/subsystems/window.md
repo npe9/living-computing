@@ -707,6 +707,12 @@ values are read by the program, as with `csp_break_choice_menu` (ptf.md W8).
 | `editor_yank_buffer`, `named_yank_buffer_subsystem` | named yank (kill) buffers `class`, `file`, `package`, used by library_utility | c:get_named_yank/3, c:add_named_yank/3, c:named_yank_flag/2 | COPY cil/src/ds_bep.esp:2312, :3515 (notes: ifs_libshell.md §4.1.1); meanings INFERENCE |
 | `with_pmacs_window` | mixin giving a frame a Pmacs pane | — | USAGE nature list: kappa.ptf class kappa##pb_status_window |
 
+**`editor_text_buffer` navigation** (USAGE, `fixpoint_2026-11-24.md` round 1, `notes/fixpoint.tsv`).
+MENDELS ZONE's scrolling window (`mendels/mendels/swindow.esp:240-300, 427`) draws a buffer line by
+line with `move_to_first/1`, `current_position(B,^Pos)`, `see_current_line(B,^String)` (the current
+line, position unchanged), `next_line(B,0)`, `previous_line(B,0)` and `move_to(B,Pos)`, and appends
+with `move_to_last/1`, `insert_string(B,S)` and `:insert(B, key#lf)` for a newline.
+
 **Screen form** (SCREENSHOT: IPSJ 36239 p5-6; IPSJ 114012 Fig. 2; esp.wmv@108-149):
 - text pane;
 - a reverse mode line, e.g. `PMACS(esp)[65,26] demo i3psi7::>sys>user>hiroyuki>demo.esp --74%--`, with these
@@ -779,6 +785,37 @@ size cannot be changed") (kwic-esp-002/kwic-esp/src/windows.esp:51-57, USAGE).
 | c:`call_color_manipulator/2` on `#color_manipulator` | open the colour manipulator (INFERENCE) | UNSPECIFIED (9 uses); first use kappa2/kappa2/user_if/pb/pcn.esp:3210 |
 
 Font files and names are in §3.6.
+
+**Display depth** (USAGE, `fixpoint_2026-11-24.md` round 1). PIMOS's ESP profiler front end
+(`pimos/src_util/paragraph/p_MAIN.esp:183-185`) reads `:get_parameter(#ipl, bmm_size, ^Code)`:
+16#"07FF" means monochrome, 16#"0FFF" colour. Its PSI/UX patch (`p_ux_patch.esp`, "PIMOS v2.7
+release, 1991.5.8 for PSI-UX") is a class `profiler_ux_patch` whose own `get_parameter/2` derives
+the code from `:get_plane_count(#bitmap, N)`: 1 plane gives 07FF, 3 or 4 give 0FFF, 6 gives 17FF and
+8 gives 1FFF. In the PSI/UX revisions of four other files (`p_hwin.esp:165-166`, `p_wwin.esp:153-154,
+349-350`, `p_imag.esp:459-460`, all dated 1991), the line `:get_parameter(#ipl,bmm_size,Dev)` is
+commented out and replaced by `:get_parameter(#profiler_ux_patch,Dev)` or by
+`:get_plane_count(#bitmap,N)` directly (`p_v_imag.esp:111-117`, `p_imag.esp:597-616`). `p_MAIN.esp`
+still calls `#ipl`. That the `ipl` parameter is wrong or absent on the PSI/UX is an INFERENCE from
+these edits. The same file draws with `set_color_pair(W, 0, {{R,G,B},{R,G,B}})` (16-bit
+components), `transfer/8` with the operations `copy`, `reverse` and `exclusive_or`,
+`draw_filled_rectangle/8` with `reset`, `set` and `exclusive_or` and the pattern `light_paint`, and
+`draw_string/6` with `set`.
+
+**Screen width by machine** (USAGE, fixed-point round 6). DISC's display code keeps one live and
+two commented-out versions of the same full-width `essential_scrolling_menu` create, each labelled
+with its machine (`disc/exdisp.esp:35-37, 47-49`):
+- `position(0,904), size(1600,216)` "for O-PSI" (live);
+- `position(0,788), size(1280,156)` "for M-PSI";
+- `position(0,805), size(1280,160)` "for PSI-UX".
+DISC's INSTALL names its machine "OKI-PSI-II" (`disc/INSTALL:9`), so "O-PSI" is read as the Oki
+PSI-II (INFERENCE, strong): its screen was 1,600 dots wide, and the PSI/UX's 1,280. "M-PSI" is
+ambiguous. In other held code it means the Multi-PSI (`gog-kl1/ESP/FEP.ESP:32-34`,
+`mmi/README:36`), whose front end is a PSI-II; it could also mean a Mitsubishi PSI-II. Either way
+the screen is 1,280 wide.
+That each pane ends at the bottom edge, which would make the heights 1,120, 944 and 965, is an
+INFERENCE; `:get_size(#screen,...)` is the run-time source. One check agrees: kl1graph, a PIMOS
+front end of 1992, makes its full-screen window `size(1280,944)` and fills `0,0,1280,944`
+(`kl1graph/kl1graph/screen.esp:25,30`), which equals the "M-PSI" pane's 788+156.
 
 ### 2.14 Every class of the partition: the methods the held programs send to it
 

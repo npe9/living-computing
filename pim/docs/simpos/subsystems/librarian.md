@@ -356,6 +356,25 @@ Also used: `process` (set by create), `response_time_flag`, `skipped_classes` an
 Asserted clauses live in class templates. This is why the Librarian's save offers to "save all
 asserted predicates" (sum/INSTALL:26-29, PROSE; INFERENCE).
 
+**A second, class-id form** (USAGE; `fixpoint_2026-11-24.md` round 1, `notes/fixpoint.tsv`).
+examds's `wb_lib` (a Prolog-style assert/listing library for its workbench, 1992) calls the same
+class methods with a **class id** from `:class_id(Class,^Id)` instead of a class name:
+- `assert/4`, `asserta/4`, `assertz/4` as `(#library_utility, ClassId, Clause, ^Ref)`, returning a
+  clause reference (`examds/examds/wb_lib/astret.esp:11-23`);
+- `retract/3` `(#library_utility, ClassId, Clause)` and `retract_all/4` `(.., ClassId, Name, Arity)`
+  (`:26-33`);
+- `clause/4` `(#library_utility, ClassId, Head, ^Body)` (`wb_lib/clause.esp:16`).
+To clear a class, `wb_lib` maps `retract_all/4` over `:get_predicates_with_information(#library,
+Id, l, ^List)`, whose elements are `{Name, Arity, Category, Code}` (`astret.esp:34-44`); its listing
+reads one predicate with `:get_a_code(#library, Id, l, _, Name, Arity, ^Code)` (`wb_lib/listing.esp`).
+So the asserted clauses are found among the class's predicates of category `l`; that `l` means
+local is an INFERENCE. CESP, by analogy only, does the same openly: its library class
+`meta_predicate` adds (`:assert`, `:asserta`, `:assertz`), deletes (`:retract`, `:abolish`,
+`:erase`) and finds (`:clause`, `:get_one_clause`, `:predicate`) clauses of a class's **local**
+predicates declared `:-dynamic`, e.g. `:asserta(#meta_predicate, animal, a(crocodile))`, and the
+added clauses are found before inherited ones (IPSJ 119496, 41st convention 6E-3, 1990, p.5-100,
+read on the page image). This bears on gap rank 5 (storage); persistence is still open.
+
 **Instance methods required by held programs**
 
 | method | uses/progs | arguments and meaning | grade | citation |
