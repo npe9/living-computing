@@ -61,6 +61,9 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   outside-window log dropped: test_dsp_reaches_the_board_registers; a
   stop without the access: test_off_window_stops_name_the_dsp.  A DSP in
   waiti not skipped to its timer, or its tick not a timed event:
+  test_waiting_dsp_skips_to_its_timer; the skip rounded down to whole
+  cycles below the CPUs' time (so a spinning DSP is stepped whenever
+  fewer than 4 clocks are due, as the first emulated boot did):
   test_waiting_dsp_skips_to_its_timer; a watched store not reported, a
   DSP's own store reported, a watch accepted on a device register, or a
   DSP's old watch kept: test_watched_words_report_other_writes.
@@ -525,11 +528,15 @@ class DspEmulationTest(unittest.TestCase):
         d.clocks_until_event = lambda: d.wait
         d.skip = lambda k: (skipped.append(k), setattr(d, "wait", d.wait - k))
         self.assertEqual(self.m.next_event(), 6)    # 12 clocks = 6 cycles
-        self.m.cpus[0].cycles = 5               # 10 clocks: 8 skipped, then
-        self.m.step_dsps()                      # less than 4 left: steps
+        self.m.cpus[0].cycles = 3               # 6 clocks: two whole
+        self.m.step_dsps()                      # cycles skipped, not stepped
         self.assertEqual(skipped, [8])
-        self.assertEqual((d.steps, self.m.dsp_clock[1]), (2, 10))
-        self.assertEqual(self.m.dsp_idle_clocks[1], 8)
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (0, 8))
+        self.m.cpus[0].cycles = 7               # 14 clocks: up to the tick
+        self.m.step_dsps()                      # (12), then a step
+        self.assertEqual(skipped, [8, 4])
+        self.assertEqual((d.steps, self.m.dsp_clock[1]), (2, 14))
+        self.assertEqual(self.m.dsp_idle_clocks[1], 12)
         d.wait = 0
         self.assertEqual(self.m.dsps_busy(), [1])
 

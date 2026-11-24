@@ -2051,9 +2051,11 @@ class Machine:
                     self.dsp_clock[n] = target
                     break
                 if wait:
-                    # In waiti until its timer: skip whole instruction
-                    # cycles (4 clocks) up to the event or the CPUs' time.
-                    k = min(wait, target - self.dsp_clock[n]) & ~3
+                    # Spinning or in waiti until its timer: skip whole
+                    # instruction cycles (4 clocks) up to the event or
+                    # past the CPUs' time by less than one cycle, as a
+                    # step would.
+                    k = min(wait & ~3, (target - self.dsp_clock[n] + 3) & ~3)
                     if k:
                         d.skip(k)
                         self.dsp_idle_clocks[n] += k
