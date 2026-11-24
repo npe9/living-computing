@@ -33,6 +33,9 @@ the whole file run:
 * the dump's pixels taken from the high bits of a byte first: FAIL
   test_panel_is_the_bitmap, test_cursor_moved, test_checksum.
 
+* the script's `type` fed unencoded (`args[0]`, before the merge with
+  our 9term's scan-code keyboard): FAIL test_type_on_either_keyboard.
+
 EightHalfReplayTest, observed 2026-11-24 the same way
 (build/gfx/inject_half.sh), the class alone:
 
@@ -90,6 +93,28 @@ class UnitTest(unittest.TestCase):
         self.assertEqual(sum(m[1] for m in moves), -450)
         self.assertEqual(sum(m[2] for m in moves), 333)
         self.assertTrue(all(m[0] == 1 for m in moves))
+
+    def test_type_on_either_keyboard(self):
+        """The script's `type` goes where --type goes (p9boot
+        CHOICES['console-keyboard']): ASCII on s9term's channel 0, kbd.c
+        scan codes on channel 2 for an image with kbdinit."""
+        import p9scancode
+
+        class Quart:
+            def feed(self, ch, data, think=0.0):
+                self.fed = (ch, data)
+
+        class Boot:
+            steps = cycles = 0
+            quart = Quart()
+
+        for ch, enc in ((0, bytes), (2, p9scancode.Encoder().encode)):
+            b = Boot()
+            b.console_channel, b.console_encode = ch, enc
+            s = p9term.InputScript(b, ["at-cycle 0 type 'ls\\r'"])
+            s.fire(s.items.pop(0))
+            self.assertEqual(b.quart.fed, (ch, enc(b"ls\r")))
+        self.assertNotEqual(p9scancode.Encoder().encode(b"ls\r"), b"ls\r")
 
     def test_panel(self):
         """screenupdate's sequence for rows 260..263, columns 0..1."""

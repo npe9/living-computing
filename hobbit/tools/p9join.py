@@ -152,6 +152,11 @@ def start_server(wd, extra=(), ps=PS, ph=PH):
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--image", default=S9TERM,
+                    help="the Hobbit kernel image (default the shipped "
+                         "s9term; a 9term linked from the release types "
+                         "on its kbd.c keyboard, p9boot "
+                         "CHOICES['console-keyboard'])")
     ap.add_argument("--max-steps", type=int, default=3000000000)
     ap.add_argument("--until", default="init: starting")
     ap.add_argument("--progress", type=int, default=5000000)
@@ -193,7 +198,7 @@ def main(argv):
     clock = None
     t0 = time.time()
     try:
-        boot = p9boot.Boot(S9TERM)
+        boot = p9boot.Boot(args.image)
         boot.script = [(b"il]: ", b"\r")]
         if args.user == "none":
             boot.script.append((b"user[none]: ", b"\r"))

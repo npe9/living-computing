@@ -308,6 +308,21 @@ between readings the sources allow; every pin will move.
 display/store, single step, repeat mode, the index-storage test. It
 goes as far as the pages specify, as testbench-visible controls.
 
+**A13. The rest of the interrupt and execute rules** (rows §1a had no
+milestone for, found by the 2026-11-24 refresh; Ref. Manual pp.43-51):
+- MK, IK, IJ and EK are defined and never set, and CBJ is never set.
+- An E-box-class instruction at the interruption address (p.49, "may be
+  of any type"; `rl_prepare` says it is unbuilt).
+- p.50's two disabled-state exceptions.
+- A Class S alert during an EX/EXIC subject instruction.
+- EX/EXIC's 1 ms USA end (LVE has one).
+- AD for an instruction counter stepped past the end of storage.
+- EXIC's p.51 item (d); IF beside EXE under EXECUTE.
+- The stale "IF is not implemented at all" comment in `StretchCore.bsv`
+  (IF is built).
+Exit: a deck per item, with its injection; §1a's interrupt and EXIC rows
+done.
+
 ## Track B, beside track A
 
 - 0.2 and 0.3 above.
@@ -361,7 +376,8 @@ recommendation is built behind a switch until it is decided.
 ## Order, and why
 
 Phase 0 runs now. Then A1 → A2 → A3 → A6 → A7 → A4 → A5 → A8 → A9 →
-A10 → A11 → A12.
+A10 → A11 → A12, with A13 taken when a core slot is free between
+them (its items are small and independent).
 
 - A3 comes early because the VFL family is the largest remaining
   timing gap, and the serial unit is also the rewrite's largest

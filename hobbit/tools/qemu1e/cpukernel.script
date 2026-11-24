@@ -1,0 +1,14 @@
+# qemu1e.py script: boot the floppy system and build the CPU-server
+# kernel in the kfs with /mkcpu (mkcpu.rc).  Run by cpukernel.sh.
+wait boot from 60
+type \n
+wait root is from 120
+type \n
+wait user 120
+type glenda\n
+wait password 20
+type password\n
+wait ^% 120
+type rc /mkcpu\n
+wait mkcpu done 14400
+screen

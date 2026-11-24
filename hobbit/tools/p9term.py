@@ -78,7 +78,12 @@ TERM_CHOICES = {
                 "screen.c's kbdinit(2), a scan-code keyboard on channel 2 "
                 "at 600 baud, came later), so there are no scan codes to "
                 "model.  8½ reads the same bytes through /dev/cons in raw "
-                "mode.",
+                "mode.  A 9term linked from the release does have kbd.c: "
+                "for such an image (kbdinit defined) p9boot's "
+                "CHOICES['console-keyboard'] puts the console on channel 2 "
+                "as scan codes (tools/p9scancode.py), and the input "
+                "script's `type` goes the same way (Boot.console_channel, "
+                "Boot.console_encode).",
     "mouse": "The mouse is on Quart channel 3 at 1200 baud: main+0xa4 "
              "calls eiaspecial(3, 0, &mouseq, 1200), and printinit+0x6e "
              "sets mouseq.putc = mouseputc (0x8002c926; m3mouseputc, the "
@@ -379,7 +384,7 @@ class InputScript:
         self.fired.append((b.steps, b.cycles, it["line"]))
         act, args = it["act"], it["args"]
         if act == "type":
-            b.quart.feed(b.console_channel, args[0])
+            b.quart.feed(b.console_channel, b.console_encode(args[0]))
         elif act in ("mouse", "move", "buttons"):
             if self.pos is None:
                 self.pos = b.mouse_xy()
