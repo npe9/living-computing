@@ -51,6 +51,12 @@ I 13259 against I 13440 or I 13244):
   X's element compared with itself, not Y's                line 4875
 Before the colliding keys were added (17 requests) the second and third
 of these were NOT caught: the test was made to catch them.
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 12869 -> 12892 trace
+lines, both models identical and all 22 answers unchanged; the line
+numbers of the injections above are as observed before it.
 """
 import os
 import sys
@@ -61,7 +67,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=3, lines=12869, answers=22)
+PINNED = dict(parts=3, lines=12892, answers=22)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 
 

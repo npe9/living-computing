@@ -80,6 +80,11 @@ the others unchanged.
 
 NOT run: another processor number (a refusal), an arity over 11
 (refused), the waiting goal inside a shoen.
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 2064868 -> 2066384
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
@@ -91,7 +96,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 
-PINNED = dict(parts=9, lines=2064868)
+PINNED = dict(parts=9, lines=2066384)
 FILE = 'pimm_patch_scsifep360E.sav'
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 ARGS = [None, 7, 8, 0, 1, 1, 5, 13]                 # r0 is the vector

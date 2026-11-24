@@ -123,7 +123,12 @@ whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
 `ipl_pool:keyed_set/2`, against a dictionary; the merger is a waiting
-goal here, `PimmNBox.bsv`, not the machine's merger cell) and `load` (`ipl_loader:load_file/9`
+goal here, `PimmNBox.bsv`, not the machine's merger cell) and `merge`
+(the same pool's merger with two and three inputs bound in one step:
+they reach the pool in the order they were bound, as VPIM, KLIC and
+PDSS pass them on at the unification; a woken `merge_in` goes on the
+goal box's merger's list, `PimmGBox.bsv`, taken before the ready
+queue, 2026-11-24) and `load` (`ipl_loader:load_file/9`
 loads a real object file with the IPL's own buffer reader, checksum
 and atom-number pool; a file with its checksum altered is refused;
 `string_operation`, `change_element_size`, 32-bit strings) and `mrb`
@@ -227,8 +232,10 @@ a command not ready at a poll; the copy's pad bytes from old memory
 fail none (every string has zero pad).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
-hours; run whole on both models 2026-11-23: 447,739,516 trace lines
-identical): the IPL's `load/4` on the whole held `pimos.ipl`,
+hours; run whole on both models 2026-11-24, under the merger rule:
+448,194,526 trace lines identical, every check passing, 7,435 s to the
+compare on a shared machine; 447,739,516 on 2026-11-23, before the
+merger timing change, which moved the count): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
@@ -337,7 +344,7 @@ what comes from `fep.py` and the PIMOS source.
 | `PimmFepUlx3sTb.bsv` | the self-test in Bluesim over the SPI reader and card model |
 | `run_fepemu_fpga.sh` | the self-test in Bluesim, then yosys / nextpnr-ecp5 / ecppack |
 | `../tools/mkfepcard.py` | builds a card image (format in its header), `--list` reads one |
-| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py`, two direct sequences of OURS (`direct`: what the IPL never does; `direct_kernel`: the answers for PIMOS's start and their edges), and `kernel`, recorded from PIMOS's start to the shell's prompt (`--kernel PKL`, a machine `longrun_ipl.py --reference --save` wrote); a tape also holds the clock (`ticks N`) and the events (`idle`) |
+| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py`, two direct sequences of OURS (`direct`: what the IPL never does; `direct_kernel`: the answers for PIMOS's start and their edges), and `kernel`, recorded from PIMOS's start to PIMOS END after a typed shutdown (`--kernel PKL --type shutdown --type yes`, a machine `longrun_ipl.py --reference --save` wrote); a tape also holds the clock (`ticks N`) and the events (`idle`) |
 
 **Verification.** `run_fepemu.sh`: each tape (one file, two files,
 characters, late, odd, small buffer: every call `ref_scsi.py`'s machine
@@ -349,19 +356,26 @@ shell's prompt with its edges (cut replies, the clock at midnight and at
 the top of 48 bits, unjis's readings of a name, overlapping device
 sets, holds, events under a script of two logins and two lines), and
 every `FepError` next to them; `kernel`: every call PIMOS's start made
-of `Fep.command` and `Fep.idle` to the shell's prompt, 8,586,110
-instructions) is replayed into a fresh
+of `Fep.command` and `Fep.idle` to PIMOS END after a typed
+`shutdown` and `yes`, 8,766,339 instructions, recorded under the merger
+rule; 8,586,110 to the prompt before it) is replayed into a fresh
 `fep.Fep` for the expected answers and into the emulator, over a card
 with decoy entries (a prefix and an extension of each real name, ahead of
 it), on three benches (the image file; the SPI reader with a
-block-addressed card; with a byte-addressed card). 9 tapes, 714
-commands and 12 events (2026-11-24, to the shell's prompt; 293
+block-addressed card; with a byte-addressed card). 9 tapes, 827
+commands and 18 events (2026-11-24, to PIMOS END: the standard I/O
+window, the append-opened file's close, terminate; 714 commands and 12
+events to the shell's prompt before; 293
 commands before), all answers equal on all three. Injected faults and
 what each was observed to fail: the header of `PimmFepEmuTb.bsv`.
 
 **Synthesis** (`run_fepemu_fpga.sh`, yosys 0.51, nextpnr-ecp5 --85k,
 2026-11-24, to the shell's prompt: the timer and its clock, 240,
-string-I/O, windows, holds and the event): 14,799 LUT4 (11,423 logic,
+string-I/O, windows, holds and the event; re-run 2026-11-24 after the
+standard I/O window, the append-opened file's close and terminate were
+added: 14,816 LUT4 (11,440 logic, 3,166 carry, 140 RAM), 4,259
+TRELLIS_FF, 3 DP16KD, 19 I/O, **35.03 MHz** (PASS at 25 MHz); before
+them): 14,799 LUT4 (11,423 logic,
 3,166 carry, 140 RAM), 4,243 TRELLIS_FF, 3 DP16KD, 19 I/O; **36.69
 MHz** (PASS at 25 MHz). +4,300 LUT4 and +1,078 FF over the line below
 (not broken down: the eight device slots, four hold slots, the 32-byte

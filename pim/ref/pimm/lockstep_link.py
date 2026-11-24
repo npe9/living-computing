@@ -71,6 +71,12 @@ on (lockstep_unif.py's header).
 Not run: a normal link (it needs the boot module, pimos::pim, hence
 the system's files); more than one file in a list; a system file
 (the reference model stops at new_string with 32-bit elements).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 8661495 -> 8671698
+trace lines, both models identical and every check passing; the line
+numbers of the injections above are as observed before it.
 """
 import os
 import sys
@@ -86,7 +92,7 @@ import lockstep_gca as gca  # noqa: E402
 import lockstep_load as lload  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=8661495)
+PINNED = dict(parts=2, lines=8671698)
 UNIFIED = 23        # vector pairs the second part's link unifies: three steps each
 # (label, the file list)
 PARTS = [('load', ['pimm_patch_hash360E.sav']),

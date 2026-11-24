@@ -510,7 +510,7 @@ the device are given it again whenever the machine runs dry.
   | guard `bignum_not_less_than` (and `bignum_less_than`) | implemented, after VPIM (`lockstep_login.py`) | 8,247,127 |
   | `create_shoen` with `{MinPrio, MaxPrio}`, `{MinNode, NumNode}` (`shoen:execute1/7`) | accepted and dropped as the integers are (`lockstep_shoen3.py`) | 8,256,632 |
   | `enqueue_goal` of 17 arguments | the spread of a vector of 7 or more (`lockstep_login.py`) | 8,463,929 |
-  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,586,110, 1,220 goals waiting |
+  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,587,092, 1,220 goals waiting (8,586,110 before the merger timing change of 2026-11-24) |
 
   The counts after the login are those of the run with `getb_unit=2`;
   the two before it (139,747 and 6,675,822) are from runs before that
@@ -538,11 +538,17 @@ the device are given it again whenever the machine runs dry.
   | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
   | 110 `getl` on a window | held; answered at the idle by the next typed line, `[1, LINE]` in JIS with no newline (`Fep(lines=..)`, `longrun_ipl.py --type LINE`; the event list OURS, the reply's form `bios/fep_module/win_dvc.kl1`:307-312; whether the FEP sends a newline is not known, §7.5). Without `--type` the run ends there | §7.5 |
   | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
-  | 70 on a held request | `[6]` (none has been met; a 70 on anything else has no reply) | §6.7, §7.1 |
+  | 70 on a held request | `[6]` (met at the shutdown: the local server's held `io(1)`; a 70 on anything else has no reply) | §6.7, §7.1 |
+  | 601 `create` of the string-I/O device `pimos_standard_io_window` (added 2026-11-24 for `shutdown`) | `[1]` | §6.4, `shutdown_b.kl1`:41-42 |
+  | 620 `io(104, ..)`, `io(130, ..)`, `io(141, ..)`, `io(111, Text)` on it (added 2026-11-24) | `[1, ""]`, OURS: the PSI's class is not held; the window device's own 104/130/141/111 answer `{Id, 1}` (§2.6) and a 620 reply carries a string (§6.4). A 111's text to the log | §2.6, §6.4 |
+  | 620 `io(110, "")` on it (added 2026-11-24) | held, as a window's 110; answered at the idle by the next typed line, `[1, LINE]` | §7.5 |
+  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended`. The FEP emulator (`bsv/PimmFepEmu.bsv`) follows it, and the 601/620 rows above and the `{-1, 80}` row below, since 2026-11-24 (until then it refused this 60: `bsv/run_fepemu.sh`'s `direct_kernel` tape FAILed at its command 49, "emulator refused (why 7); fep.py done") | §2.2 |
+  | `{-1, 80}`, `fep#terminate`, when the link's stream closes at PIMOS's end (added 2026-11-24) | no reply (none is read); noted as `Fep.terminated` | §1, `scsi_fep.kl1`:234 |
+  | the typed line's characters (2026-11-24) | `"`, `(`, `)`, `=` added to `fep.py`'s JIS table, from PIMOS's own `server/telnet/code_cv.kl1`:154-182 (`table_ascii_to_jis`) | `code_cv.kl1` |
 
   What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
 
-  **A command typed (2026-11-24, rung R6's second half, NOT reached).**
+  **A command typed (2026-11-24, rung R6's second half: reached on the reference model, see the end of this item).**
   `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`
   (`shutdown` is the one command whose run the manual prints whole:
   `e-sysman.tex`:121-144). The held 110 is answered `[1, "shutdown"]`;
@@ -550,7 +556,8 @@ the device are given it again whenever the machine runs dry.
   the shell resolves `get_code pimos shutdown go 0` and the job runs
   `shutdown:go`, `privilege:execute(shutdown_body:go, ..)`, a task by
   `execute_super`, and `shutdown_body:go` asks
-  `getenv(task:make_window)`. The run then stops: 8,673,642
+  `getenv(task:make_window)`. Under the merger timing before
+  2026-11-24 the run then stopped: 8,673,642
   instructions, nothing left to run, 1,388 goals waiting, the second
   line never asked for. Nothing was refused. The cause is a wait
   cycle (traced with probes outside the tree):
@@ -585,15 +592,92 @@ the device are given it again whenever the machine runs dry.
   `top_task` both absent from the job's environment,
   `shutdown_b.kl1`:39-53) and asks for a string-I/O device
   `pimos_standard_io_window` (601), which `fep.py` refuses (FepError,
-  8,689,393 instructions with (a)). So R6's second half needs the
-  merger made to act at the unification on BOTH models (a change of
-  semantics, every count after the first merger moves), then the
-  601/620 answers of that branch (`io(104)`, `io(130,"SHUTDOWN")`,
-  `io(141)`, `io(111,"Really(yes/no)?")`, `io(110)` answered "yes",
-  `shutdown_b.kl1`:46-53, 71-73). That branch prints no
-  "Shutdown procedure starts." and its prompt differs from
-  `e-sysman.tex`:132 ("Really(yes/no) ?"): the printed transcript is
-  the first branch's (a window made for the job).
+  8,689,393 instructions with (a)). **Changed on both models
+  (2026-11-24)**: a woken `merge_in` goes on a merger's list taken
+  before the ready queue, in the order the goals were woken
+  (`pimm_semantics.md`, merge; `lockstep_merge.py`); every count after
+  the first merger moved (the lockstep pins, `ref_scsi.py`'s heap
+  cells; the wire is the same). The untyped run (a cache made afresh
+  under the new rule) now ends at 8,587,092 instructions, 1,220 goals
+  waiting, the same console and device log, but NOT the same FEP
+  conversation: 119 messages for 118 (old rule run from its own
+  cache, compared line by line): the timer's 304 answers another time
+  (it is counted from the instructions), a 70 on the timer device
+  (17) is new, the closes of devices 20, 21, 22 come in another order
+  and the `Shell>> ` write (111) comes earlier. A tape recorded from
+  the login before this change does not match it; with `--type shutdown
+  --type yes` the cycle does not form, `shutdown_body` takes its third
+  branch and the run stops at the 601 of `pimos_standard_io_window`
+  (FepError, 8,690,718 instructions).
+
+  **The shutdown runs to its end (2026-11-24, reference model).** With
+  the answers in the table above (601 of `pimos_standard_io_window`,
+  its 620s, the 60 on the syslog file, 80): `io(104, {324, 328, 40,
+  6})`, `io(130, "SHUTDOWN")`, `io(141)`, `io(111, "Really(yes/no)?")`,
+  `io(110)` answered "yes" by the second typed line; `wait_ans`
+  (`shutdown_b.kl1`:71-73) raises `shut_down`; the devices are closed
+  (the replier, the window, the string-I/O window, the server's held
+  `io(1)` aborted with 70 and answered 6, the syslog file), then `{-1,
+  80}`. Console: `Shutdown started`, `User Server End`, `Statistics in
+  PIMOS:`, 0, 790104, `PIMOS END********`; the run ends at 8,766,339
+  instructions, nothing left to run, 253 goals waiting.
+  `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`.
+
+  Why the third branch: the shell's `start_main` (`shell/main/
+  shell.kl1`:88-103) finds `task:make_window` unset and `task:top_task`
+  set (by `login_p:top`, `login_p.kl1`:94) and UNSETS `top_task`
+  before running; `make_window` is set only by the telnet login
+  (`tlogin.kl1`:93, `no`). So a command typed to a local login's shell
+  has neither, and `shutdown_body` takes the third branch, a window of
+  its own titled SHUTDOWN. The first branch (`make_window = no`,
+  "Shutdown procedure starts." then "Really(yes/no)? " on the job's
+  own I/O) is a telnet login's: READ from the code, not run. The
+  second (`top_task` set) is the login as the user `shutdown`, the
+  manual's footnote (held `pimos.logins`: program
+  `pimos::shutdown:go`): `login_p:top` sets `top_task` and applies the
+  program with no shell between. A probe outside the tree (`fep.py`'s
+  login record with UN `shutdown`, then the line `yes`) gave "Shutdown
+  procedure starts." and "Really(yes/no)? " on the `PIMOS CONSOLE`
+  window, then the same console lines to `PIMOS END********` (769,710
+  for the count): the second branch, run once, not in the suite.
+  The earlier reading here, that the manual's transcript is the first
+  branch's (a window made for the job), is WITHDRAWN: the branch with
+  a window of its own is the third, and the manual's "displayed in the
+  window" fits it as well as the others.
+
+  Against the manual (`e-sysman.tex`:121-144), line by line:
+  - "Reply yes to the shutdown confirmation message that is displayed
+    in the window": the third branch's window. The prompt printed is
+    `Really(yes/no) ?`; the source's third branch writes
+    `Really(yes/no)?` (no space before `?`; its parentheses are the
+    16-bit string's), the first branch `Really(yes/no)? ` (a space
+    after). Neither is the manual's exactly: a difference between the
+    manual and the held source, not met by the model.
+  - `Shutdown started`: the same (`kernel/init/init.kl1`:313).
+  - `login Server End`: ours `User Server End`, the held source's
+    (`server/login/init/usersvman.kl1`:195). The manual's string is
+    not in the held source at all (searched); that it is another
+    version's is INFERENCE.
+  - `Statistics in PIMOS:` then two integers: the same line
+    (`bios/boot/bios.kl1`:145-147); the values are the report's
+    `statistics(ResH, ResL)`, high and low words: the manual's 0 and
+    000954C2h (611,522), ours 0 and 790,104 (C0E58h), the model's own
+    count (not traced further).
+  - `PIMOS END********`: the same (`bios.kl1`:167).
+  - The prefix `PE00(00) @ DC> ` and the `(  INTo) 00 ` form of an
+    integer are the console's display, not in PIMOS's strings; this
+    model's console list has the bare strings and integers.
+
+  **A second command: a file read through `pimos:` (2026-11-24).**
+  `--type 'cat <= file("pimos:pimos.groups")'` (`cat`, `e-shutil.tex`:
+  152-154; `<=` the job's standard input, `e-shell.tex`:218-226): the
+  shell read-opens `pimos:pimos.groups` (201, device 34), one `getb`,
+  writes its two lines to the window (111) and closes the file (60);
+  `cat` stops at the file's empty last line, as the manual says, and
+  the shell writes `Shell>> ` again: 8,760,685 instructions, 1,224
+  goals waiting, the next `getl` held. The text written is the held
+  file's. No transcript of it is printed in the manual. Needed
+  `fep.py`'s JIS table to have `"`, `(`, `)`, `=` (row above).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
@@ -651,6 +735,17 @@ the device are given it again whenever the machine runs dry.
   (`bsv/run_fepemu.sh`); the design and the recipe for the next answer
   (a scripted line for the held 110 is a new card, not new hardware):
   `bsv/PimmFepEmu.bsv`'s header.
+  2026-11-24, after the merger change and the typed shutdown: the
+  emulator also answers 601 of `pimos_standard_io_window`, its 620
+  io 104/130/141/111 (`[1, ""]`) and 110 (held, answered by the event),
+  60 on the append-opened file (`[1]`) and `{-1, 80}` (no reply).
+  `kernel.tape` re-recorded under the merger rule and on to PIMOS END
+  (`record_fep.py --kernel PKL --type shutdown --type yes`: 220 calls,
+  155 answered, 4 events; 8,766,339 instructions), `late.tape`
+  re-recorded (its RECEIVE retries move under the merger rule), the
+  other IPL parts re-recorded for the clock lines alone, and
+  `direct_kernel` given the new answers' edges and errors (377 commands,
+  14 events). 9 tapes, all equal on the three benches.
 - **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
   lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
   labelled "carried over from VPIM, agreeing with KLIC; the PIM/m
