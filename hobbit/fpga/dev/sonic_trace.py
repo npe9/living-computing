@@ -14,11 +14,15 @@ line per event, in the order the model made them:
     R off value irq       register read: the value returned; irq after
     W off data mask irq   register write (a command runs inside it)
     X irq hex             a frame offered to the receiver; irq after
+    B irq hex             a frame whose last byte carries `bad` (a link CRC
+                          error): the model is not called; the RTL must
+                          drop it (no DMA, irq unchanged)
     D R addr value        a DMA read the SONIC made (one 32-bit word)
     D W addr value be     a DMA write
     T hex                 a frame the SONIC transmitted (no FCS)
 
-D and T lines belong to the R/W/X line before them.  DMA is recorded at
+D and T lines belong to the R/W/X line before them (a B line has
+none).  Only sonic_directed.py writes B lines.  DMA is recorded at
 word granularity, as the RTL makes it: the model's `_get`/`_put` are one
 word each, its `_bytes(pa, n)` is the words covering [pa, pa+n) in
 address order (the values the model's memory held), and its
@@ -137,7 +141,7 @@ def groups(ev):
     """[(head, [D/T lines])]"""
     out = []
     for e in ev:
-        if e[0] in ("R", "W", "X"):
+        if e[0] in ("R", "W", "X", "B"):
             out.append((e, []))
         else:
             out[-1][1].append(e)
@@ -211,7 +215,7 @@ def check(path):
         def transmit(self, frame, now):
             sent.append(frame)
     s.wire = W()
-    n = {"R": 0, "W": 0, "X": 0, "D": 0, "T": 0}
+    n = {"R": 0, "W": 0, "X": 0, "B": 0, "D": 0, "T": 0}
     for t[0], (head, rest) in enumerate(groups(ev)):
         board.q = [d for d in rest if d[0] == "D"]
         board.cur = None
@@ -228,24 +232,28 @@ def check(path):
         elif head[0] == "W":
             s.write(int(head[1], 16), int(head[2], 16), int(head[3], 16))
             irq = head[4]
-        else:
+        elif head[0] == "X":
             s.receive(bytes.fromhex(head[2]))
             irq = head[1]
+        else:
+            irq = head[1]                   # dropped by the link: no call
         if int(s.irq()) != int(irq):
             err("irq: model %d, trace %s" % (s.irq(), irq))
         if board.q:
             err("trace has %d more DMA records" % len(board.q))
         if sent != txs:
             err("transmitted frames differ")
-    print("sonic_trace: %d register reads, %d writes, %d frames offered, "
+    bad = ", %d bad" % n["B"] if n["B"] else ""
+    print("sonic_trace: %d register reads, %d writes, %d frames offered%s, "
           "%d DMA words, %d frames sent; %d mismatches"
-          % (n["R"], n["W"], n["X"], n["D"], n["T"], len(errs)))
+          % (n["R"], n["W"], n["X"], bad, n["D"], n["T"], len(errs)))
     return not errs
 
 
 def vectors(path, out):
     """events.hex: 96-bit records, one per R/W/X event, then a 0 record:
-         [95:92] op (1 read, 2 write, 3 frame, 0 end)  [91] irq after
+         [95:92] op (1 read, 2 write, 3 frame, 4 bad frame, 0 end)
+         [91] irq after
          [90:79] offset  [78:47] data (write) or value (read)
          [46:43] mask  [42:32] frame length  [31:0] DMA records after it
        plus the running number of transmitted frames in dma? no: tx count
@@ -262,7 +270,7 @@ def vectors(path, out):
     fl = open(os.path.join(out, "txlen.hex"), "w")
     nd = ntx = 0
     for head, rest in ev:
-        op = {"R": 1, "W": 2, "X": 3}[head[0]]
+        op = {"R": 1, "W": 2, "X": 3, "B": 4}[head[0]]
         off = data = mask = flen = 0
         if op == 1:
             off, data, irq = int(head[1], 16), int(head[2], 16), int(head[3])

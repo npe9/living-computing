@@ -2,7 +2,8 @@
 //
 // sonic_trace.py vectors writes, in the working directory:
 //   events.hex  one 96-bit record per register access or offered frame:
-//               [95:92] op (1 read, 2 write, 3 frame, 0 end), [91] the
+//               [95:92] op (1 read, 2 write, 3 frame, 4 a frame whose last
+//               byte has `bad`, 0 end), [91] the
 //               model's irq after it, [90:79] offset, [78:47] write data
 //               or the value read, [46:43] mask, [42:32] frame length,
 //               [31:0] the number of DMA words the model had made by the
@@ -18,6 +19,8 @@
 // checked as it is made: read or write, address, and for writes the data
 // and byte enables; reads are answered with the model's data); that it
 // sent exactly the model's frames, byte for byte; and that no fault is up.
+// Throughout, irq must not rise before the RTL has made all of the
+// event's DMA words (isr is raised only after the data is written).
 // The DMA port is stalled and the read data delayed by a pseudo-random
 // pattern, so the RTL is replayed against a busy arbiter.
 //
@@ -128,14 +131,14 @@ module mkSonicReplayTb(Empty);
         dut.req(off, dat, (op == 2) ? msk : 0, op == 2);
         phase <= Resp;
       end
-      3: begin feedLeft <= flen; phase <= Feed; end
+      3, 4: begin feedLeft <= flen; phase <= Feed; end
       default: begin mismatch($format("bad op %0d", op)); phase <= Done; end
     endcase
   endrule
 
   rule feed (phase == Feed);
     dut.rx.put(FrameByte {data: rxb.sub(rxPos), last: feedLeft == 1,
-                          bad: False});
+                          bad: feedLeft == 1 && op == 4});
     rxPos <= rxPos + 1;
     feedLeft <= feedLeft - 1;
     if (feedLeft == 1) begin phase <= Settle; quiet <= 0; end
@@ -166,6 +169,16 @@ module mkSonicReplayTb(Empty);
       ei <= ei + 1;
       phase <= Fetch;
     end
+  endrule
+
+  // irq may rise only once the RTL has made every DMA word of the event:
+  // the isr bit announces data that is already with the arbiter
+  Reg#(Bool) irqPrev <- mkReg(False);
+  rule irqOrder;
+    irqPrev <= dut.irq;
+    if (dut.irq && !irqPrev && phase != Fetch && di != nd)
+      mismatch($format("irq rose after %0d of the event's %0d DMA words",
+                       di, nd));
   endrule
 
   rule done (phase == Done);

@@ -44,6 +44,16 @@ Two choices differ from the first version of the specification in
 * **No address check**: the model has none (its PADDR is the identity),
   so the RTL has none either. The arbiter owns the address map.
 
+**isr after the data.** The isr bits an operation raises (Lcd, Txdn,
+Pktrx, Rde) are collected and applied only after the operation's last
+DMA write has been accepted by the arbiter. irq therefore never rises
+ahead of the buffer and descriptor words it announces. No register
+access is served before then either. The first version set Pktrx on the
+kept-descriptor path before the frame's writes were issued; the replay
+compares irq only between events, so it passed. `SonicReplayTb` now also
+checks, every clock, that irq does not rise before all of the event's DMA
+words have been taken (S12 below).
+
 Where the model raises `Stop`, the RTL sets a sticky `fault`, puts a code
 in `faultInfo` (the list is in `Sonic.bsv`'s header), and abandons the
 command or frame. The register write is still answered.
@@ -97,7 +107,11 @@ of these:
 * chained transmit descriptors with odd and empty fragments;
 * a second Txp from ctda;
 * isr write-one-to-clear against imr;
-* Rst.
+* Rst;
+* two frames whose last byte carries `bad`, a link CRC error. These are
+  "B" events: the model is not called, and the RTL must make no DMA and
+  leave irq alone. One is 2045 bytes, longer than the RTL's buffer, so it
+  must be dropped without a fault.
 
 The same docstring lists every case.
 
@@ -114,12 +128,14 @@ compares:
 * the number of DMA words per event;
 * every transmitted frame, byte for byte;
 * the frame count per event;
-* that no fault is raised.
+* that no fault is raised;
+* every clock, that irq does not rise before the event's DMA words are
+  all made.
 
 | trace | events | register reads / writes | frames offered | DMA words | frames sent | mismatches |
 |---|---|---|---|---|---|---|
 | `join_echo.trace.gz` | 2336 | 1134 / 863 | 339 | 51329 | 276 | 0 |
-| `directed.trace.gz` | 88 | 35 / 42 | 11 | 253 | 3 | 0 |
+| `directed.trace.gz` | 90 | 35 / 42 | 11 (+2 bad) | 253 | 3 | 0 |
 
 ### The link: against the ESP32's own C
 
@@ -163,30 +179,47 @@ Each injection below was applied to the RTL by exact string replacement,
 the runner was run, and the replacement was reversed. `git diff` of the
 file was clean afterwards. The failures listed are the **observed** ones.
 
-**The SONIC** (`sonic_run_tests.sh`). For each injection, both traces
-were run and the trace's own result is given. For S9, only the directed
-trace was run.
+**The SONIC** (`sonic_run_tests.sh`, both traces, on the committed
+traces and RTL):
 
 | | injection in `Sonic.bsv` | `join_echo` | `directed` (first mismatch) |
 |---|---|---|---|
 | S1 | FCS not inverted (`fcs <= rxCrc`) | FAIL, 534 | FAIL, 9: the FCS words of each received frame (DMA write data) |
-| S2 | isr write-one-to-SET | FAIL, 2264 | FAIL, 25: the isr read after `W isr ffff`, then irq |
-| S3 | broadcast accepted without rcr Brd | pass | FAIL, 1232: frame 3 written to memory, beyond the model's DMA words |
+| S2 | isr write-one-to-SET | FAIL, 2264 | FAIL, 27: the isr read after `W isr ffff`, then irq |
+| S3 | broadcast accepted without rcr Brd | pass | FAIL, 1238: frame 3 written to memory, beyond the model's DMA words |
 | S4 | mpt not incremented | pass | FAIL, 2: the two mpt reads |
 | S5 | fragment descriptors 16 bytes apart, not 12 | pass | FAIL, 9: the second fragment's descriptor reads |
-| S6 | Lpkt at `rbwc <= eobc`, not `<` | pass | FAIL, 1141: frame 9's status word (0x41, not 0x01), then an extra Rrra |
+| S6 | Lpkt at `rbwc <= eobc`, not `<` | pass | FAIL, 1143: frame 9's status word (0x41, not 0x01), then an extra Rrra |
 | S7 | rrp wraps at rea + 16, not rea | FAIL, 1232 | FAIL, 1: the rrp read after frame 10 (0120, not 0100) |
 | S8 | irq = isr != 0 (imr ignored) | FAIL, 4 | FAIL, 10: irq high while imr masks isr |
-| S9 | rcr Pro ignored | (not run) | FAIL, 595: frame 10 not received (irq, DMA count, isr) |
+| S9 | rcr Pro ignored | pass | FAIL, 595: frame 10 not received (irq, DMA count, isr) |
+| S10 | a `bad` frame accepted | pass | FAIL, 1235: the bad frame written to memory |
+| S11 | a `bad` frame over 2 KB faults (the first version's behaviour) | pass | FAIL, 46: fault 6 from that event on |
+| S12 | Pktrx raised on the kept-descriptor path before the frame's writes (the first version's behaviour) | pass | FAIL, 2: "irq rose after 118 of the event's 138 DMA words" |
 
-The join alone misses S3, S4, S5 and S6: devether.c never sends a
-broadcast with Brd clear, never runs out of descriptors, never uses more
-than one fragment, and sets eobc so that every frame takes Lpkt. The
-directed trace is there for those paths. The first version of
-`sonic_directed.py` passed S6 (no frame left exactly eobc words) and S9
-(frame 10 was dropped for want of a descriptor, so Pro was never
-exercised). Frame 9's length and frame 10's descriptor were then
-changed, and the failures above are from the corrected trace.
+The join alone misses S3-S6 and S9-S12. devether.c never:
+
+* sends a broadcast with Brd clear;
+* runs out of descriptors;
+* uses more than one fragment;
+* sets Pro.
+
+It also sets eobc so that every frame takes Lpkt, and no link error
+occurs in the join.
+
+The directed trace is there for those paths. Its first version passed
+four injections:
+
+* S6, because no frame left exactly eobc words;
+* S9, because frame 10 was dropped for want of a descriptor, so Pro was
+  never exercised;
+* S11 and S12, because neither case was in it.
+
+Frame 9's length, frame 10's descriptor and the two bad frames were
+then added. S11 found a real bug: a link-bad frame over 2 KB raised
+fault 6. A review of the code found S12's bug, the isr ordering
+described above. Both are fixed, and the counts above are from the
+committed traces and RTL.
 
 **The link** (`esplink_run_tests.sh`):
 
@@ -208,18 +241,18 @@ changed, and the failures above are from the corrected trace.
 
 | module | LUT4 | TRELLIS_DPR16X4 | PFUMX / L6MUX21 | CCU2C | TRELLIS_FF | DP16KD |
 |---|---|---|---|---|---|---|
-| `mkSonic` | 5928 | 264 | 882 / 191 | 567 | 2765 | 1 |
+| `mkSonic` | 5898 | 264 | 876 / 206 | 567 | 2770 | 1 |
 | `mkEspLink25M` | 2062 | 260 | 344 / 76 | 221 | 582 | 3 |
 
-Together that is about 8000 LUT4, plus 524 distributed-RAM cells, 10%
-of the 85F's 83640 LUTs. Two 2 KB frame buffers (`RegFile` 2048 x 8,
+Together that is about 8000 LUT4, plus 524 distributed-RAM cells, about
+10% of the 85F's 83640 LUTs. Two 2 KB frame buffers (`RegFile` 2048 x 8,
 read asynchronously) are mapped to distributed RAM:
 
 * one of `mkSonic`'s two (the other became the DP16KD);
 * `mkEspLink`'s transmit buffer.
 
-Moving them to block RAM (BRAM2, a registered read) would save about
-1000 LUTs of RAM. It needs the read loops restructured, and the replay
+Moving them to block RAM (BRAM2, a registered read) would free the 524
+distributed-RAM cells (an estimate, not measured). It needs the read loops restructured, and the replay
 tests will check that. The register file (64 x 16) and the 16-entry CAM
 account for most of `mkSonic`'s flip-flops. The 3 DP16KD of the link are
 the 2 KB receive FIFO.
@@ -234,3 +267,16 @@ the 2 KB receive FIFO.
   storage.
 * The link's 16-bit counters are not yet on any register: they are for
   a debug readout once the SoC top has one.
+* Fault codes 1-5 are never raised by either trace. The model raises
+  `Stop` there, so no trace of it can contain them. They are fail-loud
+  guards checked by reading only. Only fault 6's "not for a bad frame"
+  side is tested (S11).
+* There is no joint simulation of EspLink feeding mkSonic. Each is
+  tested against its own reference, through the same `FrameByte` port.
+* The ESP32 side (`main.c`) has never been compiled for the target. The
+  RTS polarity (high = stop) and the 3-clock latency are what
+  `docs/ulx3s_ethernet.md` §2 specifies, and are unconfirmed against the
+  real firmware.
+* These runners are not in `tests/run_tests.sh`, as the quart and rtc
+  device runners are not. They need bsc, about 5 minutes for the SONIC
+  (most of it the Python check of the join) and 15 s for the link.

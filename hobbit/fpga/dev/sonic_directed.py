@@ -23,6 +23,10 @@ records it with sonic_trace.tap in the same trace format:
 * transmit: two chained descriptors in one Txp, fragments at byte
   offsets 1, 2 and 3 and of length 0, then a second Txp that starts at the
   descriptor the EOL link left in ctda;
+* frames whose last byte carries `bad` (a link CRC error; "B" lines,
+  the model is not called): one where a frame would be received, one of
+  2045 bytes (more than the RTL's buffer holds), each followed by a good
+  frame;
 * isr write-one-to-clear and imr, so irq rises and falls; rsa..rwp
   dropping bits 1:0; Rst and the leaving of reset; Rxdis/Rxen; registers
   the model only stores.
@@ -80,6 +84,9 @@ def main():
 
     def R(off):
         return s.read(off)
+
+    def bad(f):                          # the link drops it
+        log.append("B %d %s" % (s.irq(), f.hex()))
 
     def put(pa, v):                      # the kernel's memory writes
         board.set_word(pa, v)
@@ -159,6 +166,8 @@ def main():
     s.receive(frame(OTHER, 64, 2))           # CAM entry 3 not enabled
     s.receive(frame(b"\xff" * 6, 60, 3))     # broadcast without Brd
     s.receive(frame(b"\x01\x00\x5e\x00\x00\x01", 60, 4))   # multicast
+    bad(frame(EA, 61, 30))                   # link CRC error: dropped
+    bad(frame(EA, 2045, 31))                 # and one over 2 KB
     s.receive(frame(EA, 61, 5))              # ours: descriptor 0
     R(ISR)
     W(ISR, 0x0400)

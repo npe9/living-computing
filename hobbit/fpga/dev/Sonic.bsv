@@ -31,8 +31,11 @@
 // DMA: `dma.req` gives one-word requests (physical byte addresses,
 // little-endian lanes); `dma.rdata` takes one word per read, in order.
 // One read is outstanding at a time.  Writes are posted: the arbiter must
-// make an accepted write visible before the core's later reads (the
-// engine updates isr only after its last write is accepted).
+// make an accepted write visible before the core's later reads.  The isr
+// bits an operation raises (Lcd, Txdn, Pktrx, Rde) are collected in isrSet
+// and applied only after the operation's last DMA write has been accepted,
+// so irq never rises ahead of the data it announces; and no register
+// access is served until then.
 //
 // Fail loud: where the model raises Stop the RTL sets the sticky `fault`
 // with a code in faultInfo and abandons the command or frame (the write
@@ -40,7 +43,8 @@
 //   1 a command bit outside 0x03BF       2 rrp reached rwp
 //   3 transmit: fragments != packet size 4 transmit frame over 2 KB
 //   5 receive: frame does not fit the buffer (rbwc)
-//   6 receive: frame over 2 KB (or 4 bytes short of it, with its FCS)
+//   6 receive: frame over 2 KB (or 4 bytes short of it, with its FCS);
+//     a frame the link marked `bad` is dropped whatever its length
 package Sonic;
 
 import FIFOF    :: *;
@@ -133,6 +137,7 @@ module mkSonic(HobbitSonic);
   Reg#(Bool)     faultR <- mkReg(False);
   Reg#(Bit#(16)) faultC <- mkReg(0);
   Reg#(Bool)     active <- mkReg(False);
+  Reg#(Bit#(16)) isrSet <- mkReg(0);     // isr bits to raise at the end
 
   // receive state (model: crba, rbwc, rx_eol) and the CAM
   Reg#(Bit#(32)) crba  <- mkReg(0);
@@ -248,7 +253,7 @@ module mkSonic(HobbitSonic);
     endseq
     action r[iCDC] <= 0; r[iCDP] <= fp[15:0]; endaction
     dmaRd(fp);
-    action r[iCE] <= rd[15:0]; r[iISR] <= r[iISR] | sLCD; endaction
+    action r[iCE] <= rd[15:0]; isrSet <= isrSet | sLCD; endaction
   endseq;
 
   // ---- Txp (SONIC_CHOICES['transmit'])
@@ -301,7 +306,7 @@ module mkSonic(HobbitSonic);
         endaction
       endseq
     endseq
-    if (ok) r[iISR] <= r[iISR] | sTXDN;
+    if (ok) isrSet <= isrSet | sTXDN;
   endseq;
 
   // ---- a register access
@@ -384,7 +389,7 @@ module mkSonic(HobbitSonic);
           action
             r[iCRDA] <= rd[15:0];
             rxEol <= False;
-            r[iISR] <= r[iISR] | sPKTRX;
+            isrSet <= isrSet | sPKTRX;
           endaction
         endseq
       endseq
@@ -425,13 +430,13 @@ module mkSonic(HobbitSonic);
         dmaRd(rda + 20);
         if (rd[0] == 1) action
           rxEol <= True;
-          r[iISR] <= r[iISR] | sRDE;
+          isrSet <= isrSet | sRDE;
         endaction
         else seq
           dmaWr(rda + 24, 0);
           action
             r[iCRDA] <= rd[15:0];
-            r[iISR] <= r[iISR] | sPKTRX;
+            isrSet <= isrSet | sPKTRX;
           endaction
         endseq
         r[iRSC] <= (r[iRSC] & 'hFF00) | ((r[iRSC] + 1) & 'h00FF);
@@ -450,9 +455,13 @@ module mkSonic(HobbitSonic);
       active <= True;
       if (reqQ.notEmpty) access;
       else receive;
-      // isr may be read only after the last write is accepted
+      // isr (and so irq) rises only after the last write is accepted
       await(!dmaQ.notEmpty);
-      active <= False;
+      action
+        r[iISR] <= r[iISR] | isrSet;
+        isrSet <= 0;
+        active <= False;
+      endaction
     endseq
   endseq;
   FSM fsm <- mkFSM(main);
@@ -503,7 +512,7 @@ module mkSonic(HobbitSonic);
       rxDst <= dst;
       rxFresh <= b.last;
       if (b.last && !b.bad && !over) rxSet.send;
-      if (b.last && over) rxFault <= True;
+      if (b.last && over && !b.bad) rxFault <= True;   // bad: just dropped
     endmethod
   endinterface
 

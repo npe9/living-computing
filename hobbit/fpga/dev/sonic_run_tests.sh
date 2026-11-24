@@ -11,14 +11,17 @@
 #
 # Discrimination (observed, 2026-11-24; sonic.md has the table):
 #   S1 FCS not inverted        join 534, directed 9 mismatches
-#   S2 isr write-one-to-set    join 2264, directed 25
-#   S3 Bc without Brd          join pass, directed 1232
+#   S2 isr write-one-to-set    join 2264, directed 27
+#   S3 Bc without Brd          join pass, directed 1238
 #   S4 mpt not counted         join pass, directed 2
 #   S5 fragments 16 apart      join pass, directed 9
-#   S6 Lpkt at rbwc <= eobc    join pass, directed 1141
+#   S6 Lpkt at rbwc <= eobc    join pass, directed 1143
 #   S7 rrp wraps at rea+16     join 1232, directed 1
 #   S8 irq ignores imr         join 4, directed 10
-#   S9 rcr Pro ignored         directed 595 (join not run)
+#   S9 rcr Pro ignored         join pass, directed 595
+#   S10 bad frame accepted     join pass, directed 1235
+#   S11 bad frame over 2K faults  join pass, directed 46
+#   S12 Pktrx before the writes   join pass, directed 2 (irq order)
 #
 # A trace passes when the Python check has no mismatch, the RTL prints no
 # MISMATCH line, and the testbench reaches its SUMMARY with every event.

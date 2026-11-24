@@ -21,7 +21,7 @@ Status, 2026-11-24:
 | host relay (`host/relay_host.c`) | written, tested | the same test: against a real `Hub`, and a replay of s9term's whole recorded session |
 | `hub.py` ports off localhost | added (`HUB:HOST:PEER`, `HUB:learn`) | `test_learning_port`, `test_hub_port_spellings`, `test_hub_command_line`.  The `(h, p)` form is unchanged |
 | ESP-IDF firmware glue (`main/main.c`: UART on core 1, RTS on) | written, **not compiled for the target** | No ESP-IDF is installed here.  The API calls were checked against the ESP-IDF v5.3 documentation, the sdkconfig names against v5.3.2's Kconfig files |
-| FPGA link (`esplink`) and SONIC subset (`sonic`) | specified below; no RTL yet | — |
+| FPGA link (`EspLink.bsv`) and SONIC subset (`Sonic.bsv`) | written in BSV, tested in Bluesim; not yet in a bitstream (the SoC top instantiates them) | `fpga/dev/sonic_run_tests.sh`: the BOOTP + IL join and a directed trace of p9boot.Sonic, replayed word for word; `fpga/dev/esplink_run_tests.sh`: against relay.c; 12 + 9 injections; yosys sizes (`fpga/dev/sonic.md`) |
 | ESP32 programming | procedure written, **not run** (the board is in use by another session) | — |
 
 ## 1. Architecture
