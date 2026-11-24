@@ -43,7 +43,8 @@ step() {
   # too-eager operand fetch was found (docs/conformance_1to1.md 1c).  The
   # ones the runs here make are operand fetches by instructions on the
   # predicted path of a mispredicted conditional jump (PRM p. 2-3 lets
-  # their faults be ignored): echo, cat and hello 0, za 2, zl 9, zc 51.
+  # their faults be ignored): echo, cat, hello and za 0, zl 9, zc 49
+  # (observed 2026-11-24; za was 2 and zc 51 on 2026-11-23).
   # A hundred is the alarm; without the EU_S1 `!s2Taken` gate za alone
   # makes 1,174 (observed 2026-11-23).
   n=$(sed -n 's/^P9HOST EXIT.* \([0-9][0-9]*\) reads outside the segments$/\1/p' "$tmp/$name.out")

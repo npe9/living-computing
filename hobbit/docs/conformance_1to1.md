@@ -40,14 +40,17 @@ claim it does.
 |---|---|---|
 | 4-32 Simple (p. 4-3) | `sem/` cycle rows + core | rows asserted by `smoke` and goldens |
 | 4-33 Multi-cycle arithmetic (p. 4-4) | `sem/` (`MUL` takes the printed maximum, a named choice) | rows present; `MUL` min/max is data dependent and unnamed in the model |
-| 4-34 DQM (p. 4-4) | `sem/` (`8·S` refused, `S` undefined) | rows present; core has no DQM |
-| 4-35 Conditional jumps (p. 4-5) | folded 0, unfolded 1, mispredict 3/2/1 | **1:1** for the folded and compare-adjacent cases |
+| 4-34 DQM (p. 4-4) | `sem/` (`8·S` read as 8 single-word accesses, `S_CYC = A_CYC`; `SC/M quad` kept at the printed `4 + D` though the ATT2100 prints `4 + Q`, `docs/timing_tables.md` §7 item 4) + core (golden 019, 021) | rows present |
+| 4-35 Conditional jumps (p. 4-5) | folded 0, unfolded 1; mispredict 3/2/1 at 1/2/3 instructions after the compare, folded *or* unfolded (only the "4 or more" row is split: folded 0, unfolded 1; `docs/timing_tables.md` §7 item 9) | `sem/` and the timing twin follow the table; the **core does not**: it prices every mispredicted folded branch 3 and folds into five-parcel hosts (`docs/cycle_accuracy_plan.md` §2.1, milestone C3) |
 | 4-36 Miscellaneous (p. 4-5) | CATCH 1, CRET 15, KCALL 11, KRET 12, unimplemented 8 | present in `sem/`; CRET/KCALL/KRET not in the core |
 | 4-6…4-9 delays (pp. 4-5…4-7) | **not charged**: the model adopts the p. 4-1 assumption "instruction fetches must access the instruction cache" | **not 1:1** while a fetch can miss |
 
 Named choices, which the manual leaves open and which are therefore not
-violations: A = 1, D = 2, Q = 4 (p. 4-2 prints no memory terms); the TLB
-replacement policy (p. 2-1 prints none); the prefetch fill policy.
+violations: A = 1, D = 2, Q = 4 (p. 4-2 prints no memory terms, and no
+Appendix A figure draws a one-clock transfer: `docs/timing_tables.md`
+§11); the TLB replacement policy (p. 2-1 prints none); the prefetch fill
+policy. Table 2-4's translation penalties (p. 2-9) are in `timing.csv`
+and charged by neither model yet.
 
 ## 1a. The stack cache's window and memory
 
@@ -183,7 +186,9 @@ compare:
      Same runs, same clocks, new counts: `echo`, `cat`, `hello` 0, `za`
      2, `zl` 9, `zc` 51 (was 1,376).  Removing the `!s2Taken` gate
      again makes `za` 1,174, so the alarm (100) still fires on the
-     defect it was set for.
+     defect it was set for.  Re-run 2026-11-24 (the suite, Bluesim,
+     commit 137212b1's core): `echo`, `cat`, `hello` 0, **`za` 0**,
+     `zl` 9, `zc` 49.
   2. *Every remaining request is an operand fetch by an instruction on
      the predicted path of a conditional jump that mispredicted.*  With
      `$display`s in `fetchOperand`, in the stack-cache box's port

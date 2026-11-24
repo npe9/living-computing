@@ -52,7 +52,7 @@ t434_const_m_qw,dqm,DQM,DQM,Constant to M quad-word,,,1 + Q,,p. 4-4 Table 4-34,
 t434_sc_dw_sc_dw,dqm,DQM,DQM,SC double-word to SC double-word,,,4,,p. 4-4 Table 4-34,
 t434_sc_qw_sc_qw,dqm,DQM,DQM,SC quad-word to SC quad-word,,,8,,p. 4-4 Table 4-34,
 t434_scm_dw_msc_dw,dqm,DQM,DQM,SC/M double-word to M/SC double-word,,,2 + D,,p. 4-4 Table 4-34,
-t434_scm_qw_msc_qw,dqm,DQM,DQM,SC/M quad-word to M/SC quad-word,,,4 + D,,p. 4-4 Table 4-34,Printed 4 + D; a quad-word transfer priced with D rather than Q. Compare Constant to M quad-word 1 + Q. Unresolved.
+t434_scm_qw_msc_qw,dqm,DQM,DQM,SC/M quad-word to M/SC quad-word,,,4 + D,,p. 4-4 Table 4-34,"Printed 4 + D; a quad-word transfer priced with D rather than Q. The ATT2100 specification prints this cell 4 + Q (2100 Table 3-4, p. 3-3), the one cell of its Chapter 3 that differs from PRM Chapter 4: evidence that 4 + D is a misprint. The model keeps the printed 4 + D (timing_tables.md §7 item 4)."
 t434_m_dw_m_dw,dqm,DQM,DQM,M double-word to M double-word,,,2·D,,p. 4-4 Table 4-34,
 t434_m_qw_m_qw,dqm,DQM,DQM,M quad-word to M quad-word,,,8·S,,p. 4-4 Table 4-34,Printed 8·S; S is not in the p. 4-2 abbreviation list. Presumably 8·Q. Unresolved.
 t435_correct_folded,condjump,Conditional Jump,,"Correct prediction, folded",,,0,JMPFY;JMPFN;JMPTY;JMPTN,p. 4-5 Table 4-35,Anchor row for Table 3-1 JMP(F/N)(Y/N). Fetch delays are possible if the branch is not folded (p. 4-4) e.g. @t437_ic_pfb.
@@ -60,7 +60,7 @@ t435_correct_unfolded,condjump,Conditional Jump,,"Correct prediction, unfolded",
 t435_incorrect_after,condjump,Conditional Jump,,"Incorrect prediction, jump after compare",,,3,,p. 4-5 Table 4-35,
 t435_incorrect_2,condjump,Conditional Jump,,"Incorrect prediction, jump 2 instructions after compare",,,2,,p. 4-5 Table 4-35,
 t435_incorrect_3,condjump,Conditional Jump,,"Incorrect prediction, jump 3 instructions after compare",,,1,,p. 4-5 Table 4-35,
-t435_incorrect_unfolded_4,condjump,Conditional Jump,,"Incorrect prediction, unfolded, 4 or more instructions after compare",,,1,,p. 4-5 Table 4-35,Table 4-35 prints no folded incorrect-prediction row for 1 to 3 instructions after compare; see the p. 4-7 fold restrictions.
+t435_incorrect_unfolded_4,condjump,Conditional Jump,,"Incorrect prediction, unfolded, 4 or more instructions after compare",,,1,,p. 4-5 Table 4-35,Only this row and @t435_incorrect_folded_4 carry a folded/unfolded qualifier. The three rows above them carry none and so price folded and unfolded jumps alike (reading recorded 2026-11-24 from the page image; timing_tables.md §7 item 9).
 t435_incorrect_folded_4,condjump,Conditional Jump,,"Incorrect prediction, folded, 4 or more instructions after compare",,,0,,p. 4-5 Table 4-35,
 t436_catch,misc,Miscellaneous,CATCH,,,,1,CATCH,p. 4-5 Table 4-36,Instruction fetch and miscellaneous delays are possible (p. 4-5) e.g. @t437_ic_pfb @t440_ind_sc.
 t436_cret,misc,Miscellaneous,CRET,,,,11 + Q,CRET,p. 4-5 Table 4-36,
@@ -86,3 +86,16 @@ t439_dt2,delay,Data Type,,Two operands not word type,,,2,,p. 4-7 Table 4-39,
 t440_ind_sc,delay,Miscellaneous,,"One or two operands indirect, both pointers in stack cache",,,1,,p. 4-7 Table 4-40,
 t440_ind_1m,delay,Miscellaneous,,"One or two operands indirect, one pointer in memory",,,"1 + A",,p. 4-7 Table 4-40,
 t440_ind_2m,delay,Miscellaneous,,"Two operands indirect, both pointers in memory",,,"1 + 2A",,p. 4-7 Table 4-40,Byte-identical to the three indirect rows of Table 4-38; the manual does not say whether both tables apply to one access.
+t24_text_paged_rmod,translation,Address Translation Performance,,"Text reference, micro-TLB miss, TLB/NPSR miss, paged segment walk, R bit modified",,,3A + 3,,p. 2-9 Table 2-4,The penalties exclude the time to access the item itself; A is the I/O delay for a single word access (p. 2-9).
+t24_text_paged_rset,translation,Address Translation Performance,,"Text reference, micro-TLB miss, TLB/NPSR miss, paged segment walk, R bit previously set",,,2A + 3,,p. 2-9 Table 2-4,
+t24_text_nonpaged,translation,Address Translation Performance,,"Text reference, micro-TLB miss, TLB/NPSR miss, nonpaged segment walk",,,A + 1,,p. 2-9 Table 2-4,
+t24_text_tlb_hit,translation,Address Translation Performance,,"Text reference, micro-TLB miss, TLB/NPSR hit",,,1,,p. 2-9 Table 2-4,p. 2-1: one cycle to update the micro-TLB when the text TLB or NPSR hits.
+t24_text_utlb_hit,translation,Address Translation Performance,,"Text reference, micro-TLB hit",,,0,,p. 2-9 Table 2-4,p. 2-1: the micro-TLB provides zero-cycle translation.
+t24_read_paged_rmod,translation,Address Translation Performance,,"Data read, TLB/NPSR miss, paged segment walk, R bit modified",,,3A + 3,,p. 2-9 Table 2-4,
+t24_read_paged_rset,translation,Address Translation Performance,,"Data read, TLB/NPSR miss, paged segment walk, R bit previously set",,,2A + 3,,p. 2-9 Table 2-4,
+t24_read_nonpaged,translation,Address Translation Performance,,"Data read, TLB/NPSR miss, nonpaged segment walk",,,A + 3,,p. 2-9 Table 2-4,Text prints A + 1 for the same walk; data A + 3. Both printed; neither explained.
+t24_read_hit,translation,Address Translation Performance,,"Data read, TLB/NPSR hit",,,0,,p. 2-9 Table 2-4,
+t24_write_paged_rmmod,translation,Address Translation Performance,,"Data write, TLB/NPSR miss, paged segment walk, R and/or M bit modified",,,3A + 3,,p. 2-9 Table 2-4,
+t24_write_paged_rmset,translation,Address Translation Performance,,"Data write, TLB/NPSR miss, paged segment walk, R and M bit previously set",,,2A + 3,,p. 2-9 Table 2-4,
+t24_write_nonpaged,translation,Address Translation Performance,,"Data write, TLB/NPSR miss, nonpaged segment walk",,,A + 3,,p. 2-9 Table 2-4,
+t24_write_hit_mset,translation,Address Translation Performance,,"Data write, TLB/NPSR hit and M bit previously set",,,0,,p. 2-9 Table 2-4,No row prices a data write that hits the TLB/NPSR with M not yet set; the table is silent.
