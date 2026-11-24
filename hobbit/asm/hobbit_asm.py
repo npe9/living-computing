@@ -1188,8 +1188,9 @@ def _decode_dyadic(parcel: int, src: int, dst: int, pc: int,
             return f"%{reg}" if reg else None
         if cpu and mode not in (0xC, 0xD, 0xE, 0xF):
             return None
-        if not cpu and mode == 0x7:
-            return None
+        # Without CPU, mode 0x7 is Roffset:UH, an unsigned half-word stack
+        # offset (Table 1-21, p. 1-25); MetaWare High C emits it (Be's
+        # 1994 kernels, docs/att92020.md).
         return _format_general_operand(mode, value, 16)
 
     s = operand(smode, src)
@@ -1292,8 +1293,9 @@ def _decode_dyadic_wide(parcel: int, src: int, dst: int, pc: int,
             return f"%{reg}" if reg else None
         if cpu and mode not in (0xC, 0xD, 0xE, 0xF):
             return None
-        if not cpu and mode == 0x7:
-            return None
+        # Without CPU, mode 0x7 is Roffset:UH, an unsigned half-word stack
+        # offset (Table 1-21, p. 1-25); MetaWare High C emits it (Be's
+        # 1994 kernels, docs/att92020.md).
         return _format_general_operand(mode, value, 32)
 
     s = operand(smode, src)
