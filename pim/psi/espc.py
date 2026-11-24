@@ -564,6 +564,17 @@ BUILTINS = {
     ('new_string', 3): ('1c', ('out', 'in', 'in')),     # emitted with S = T
     ('string_element', 3): ('23', ('in', 'in', 'out')),
     ('set_string_element', 3): ('2b', ('in', 'in', 'in')),
+    # step 3c (2026-11-24)
+    ('stack_vector', 2): ('06', ('in', 'out')),
+    ('integer', 1): ('01', ('in',)),
+    ('unbound', 1): ('10', ('in',)),
+    ('bound', 1): ('16', ('in',)),
+    ('equal_string', 2): ('68', ('in', 'in')),
+    ('string_tail', 3): ('33', ('in', 'in', 'out')),
+    # two cells: the fourth and fifth operands are the high bytes of an
+    # integer cell after the instruction (rows 32 and 5c)
+    ('substring', 4): ('32', ('in', 'in', 'in', 'out')),
+    ('search_character', 5): ('5c', ('in', 'in', 'in', 'in', 'out')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -1172,13 +1183,18 @@ class ClauseCompiler:
             r = self.dest(x, prefer, avoid)
             self.asm.blt(imm[op], r, y[1], r)
             return r
-        if op == '-':
+        if op in ('-', '+'):
+            # blt 41 subtract and blt 40 add (step 3c), both witnessed
+            # with the result over the first operand
             yr = self.to_reg(y, scratch=False)
             held = self.R.holder.get(yr)
-            self.R.set(yr, ('val', 'rhs'))
+            # as in builtin(): a variable's register stays the variable's,
+            # so X may read it too (`S - (S + 1)`)
+            if not (y[0] == 'var' and held == ('var', y[1])):
+                self.R.set(yr, ('val', 'rhs'))
             r = self.dest(x, prefer, avoid)
             self.R.set(yr, held)
-            self.asm.blt(0x41, r, yr, r)
+            self.asm.blt(0x41 if op == '-' else 0x40, r, yr, r)
             self.consume(y, yr)
             return r
         raise CompileRefusal('arithmetic X%sY' % op, 'on two registers (no witnessed opcode)')
@@ -1364,7 +1380,11 @@ class ClauseCompiler:
             if role == 'in':
                 r = self.to_reg(v, scratch=True)
                 keep.append((r, self.R.holder.get(r)))
-                self.R.set(r, ('val', 'in'))
+                # a variable's register stays the variable's (its uses not
+                # yet consumed keep it live), so a later input that reads
+                # the same variable (`substring(S, H, T - H, P)`) finds it
+                if not (v[0] == 'var' and self.R.holder.get(r) == ('var', v[1])):
+                    self.R.set(r, ('val', 'in'))
                 regs.append(r)
             else:
                 regs.append(None)
@@ -1385,6 +1405,9 @@ class ClauseCompiler:
             self.R.set(r, h)
         ops = regs + [0] * (3 - len(regs))
         self.asm.blt(int(op, 16), *ops[:3])
+        if len(regs) > 3:
+            ext = regs[3:] + [0]
+            self.asm.items.append(('cell', 0x00, 0, ext[0] << 24 | ext[1] << 16))
         for i in outs:
             self.bind_out(g.args[i], regs[i], emitted=True)
 
@@ -1550,7 +1573,7 @@ class ClauseCompiler:
         if self.need_env:
             self.ensure_env()
         # 1. expressions and structures that are arguments, left to right
-        placed = {}
+        placed = self.placed = {}
         for i, v in enumerate(args):
             if v[0] in ('slot', 'arith', 'list', 'vec') and not ground(v):
                 r = self.to_reg(v, prefer=i)
@@ -1623,6 +1646,7 @@ class ClauseCompiler:
                 if R.where.get(('x',)) is None:
                     pass
             R.set(i, ('val', 'arg'))
+        self.placed = {}
         # 3. the call
         if g.kind == 'send':
             if last:
@@ -1655,6 +1679,13 @@ class ClauseCompiler:
             self.asm.pmi(0xa3, r, i)
             R.set(r, h)
             R.holder[i] = None
+            # an argument already placed in I (step 1 of call) now lives in
+            # R: without this, `fill(I+1, N, V)` put N for I+1 (found
+            # 2026-11-24 by the hash_index stand-in's fill/3)
+            placed = getattr(self, 'placed', {})
+            for k in placed:
+                if placed[k] == i:
+                    placed[k] = r
             return r
         if R.holder.get(i) and R.holder[i][0] == 'perm':
             R.drop(i)

@@ -1,0 +1,132 @@
+% SCAFFOLDING stand-in for SIMPOS's class `list_index`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `list_index` is printed.  Every method is INTERPOLATED (labelled).
+%
+% The representation is evidenced, not ours.  Held user subclasses read
+% list_index's own slot and entries directly (kappa2, ICOT Free Software):
+%   - kernel/flm/KPPOOL.ESP (`kappa_list_index`, nature list_index,
+%     1986): `Obj!first`, `Obj!first := '$$void'`, and a chain of entries
+%     walked with `first(Entry, Next_entry)`, `second(Entry, Object)` and
+%     `vector_element(Entry, 2, Key)`, ending in the atom '$$void';
+%   - kernel/svm/SVHSH_IDX.ESP (`kappaSVM_hash_index`, nature
+%     hash_index): the same walk from `List_index!first` (`get/4`,
+%     `get_with_key/4`), and `:empty(List_index)`.
+% So: one slot `first`, holding '$$void' or an entry {Next, Object, Key}.
+%
+% The interface is TR-056 p8 (PDF; docs/simpos/printed/listings/
+% TR-056_p08.esp), "(3) Index": `:add_at(Pool,Object,Key)`,
+% `:get_at(Pool,Object,Key)`, `:remove(Pool,Object,Key)` -- the object
+% before the key -- and the selectors held programs send
+% (docs/simpos/required/classes.tsv).  The pair order of
+% get_contents_with_key/2, {Object, Key}, is the one SVHSH_IDX.ESP's
+% override builds (`List = [{Object,Key}|Tail]`) and paragraph's
+% p_wshell.esp consumes (`disp_all([{Val,Var}|L],Win)` after
+% `:add_at(Obj!env,Value,VarS)`).  KPPOOL.ESP's own override builds
+% {Key, Object} instead: a subclass's choice, read as not the base's.
+%
+% OURS: a new entry goes at the end of the chain (insertion order);
+% several entries may share a key (KPPOOL.ESP's get_all/3 and
+% remove_all/3 collect every object under one key, and p_wshell.esp
+% removes before it adds); keys are matched by unification.
+
+class list_index has
+
+% INTERPOLATED from: `:create(#list_index, L)` (paragraph p_tgraph.esp,
+% p_hist.esp:24, p_MAIN.esp:268-271, receiver.esp:605; pimfep's slot
+% initialisers), the same shape as the printed stream:create/2.
+:create(Class, Index) :- :new(Class, Index);
+
+instance
+
+% INTERPOLATED: the slot and its empty value from KPPOOL.ESP (above).
+attribute first := '$$void';
+
+% INTERPOLATED from: TR-056 p8 `:add_at(Pool,Object,Key)`; the entry
+% layout from KPPOOL.ESP.  Appends (OURS).
+:add_at(Index, Object, Key) :-
+        E = Index!first,
+        add_last(E, Object, Key, E1),
+        Index!first := E1;
+% INTERPOLATED from: TR-056 p8 `:get_at(Pool,Object,Key)`: the first
+% object under Key; fails if there is none.
+:get_at(Index, Object, Key) :-
+        find(Index!first, Object, Key), !;
+% INTERPOLATED from: TR-056 p8 `:remove(Pool,Object,Key)` under the
+% selector held programs send, remove_at/3 (p_wshell.esp
+% `:remove_at(Obj!env,_,VarS)`; KPPOOL.ESP remove/3): unlinks the first
+% entry under Key and gives its object; fails if there is none.
+:remove_at(Index, Object, Key) :-
+        E = Index!first,
+        unlink(E, Object, Key, E1), !,
+        Index!first := E1;
+% INTERPOLATED from: the selector clear/1 (classes.tsv) and KPPOOL.ESP's
+% `Obj!first := '$$void'` (remove_all/2).
+:clear(Index) :- Index!first := '$$void';
+% INTERPOLATED from: SVHSH_IDX.ESP's remove/3, `:empty(List_index)`.
+:empty(Index) :- Index!first == '$$void';
+% INTERPOLATED from: the selector get_contents/2 (classes.tsv); the walk
+% of SVHSH_IDX.ESP's get/4: the objects in chain order.
+:get_contents(Index, List) :- objects(Index!first, List);
+% INTERPOLATED from: SVHSH_IDX.ESP get_with_key/4 and paragraph
+% p_wshell.esp disp_all/2: {Object, Key} pairs in chain order.
+:get_contents_with_key(Index, List) :- pairs(Index!first, List);
+% INTERPOLATED from: KPPOOL.ESP get_keys/2 (`vector_element(Entry, 2,
+% Key)`): the keys in chain order.
+:get_keys(Index, List) :- keys(Index!first, List);
+% INTERPOLATED from: the selector get_contents_at/3 (classes.tsv) and
+% KPPOOL.ESP get_all/3: every object under Key, in chain order.
+:get_contents_at(Index, List, Key) :- all_at(Index!first, List, Key);
+% INTERPOLATED from: the selector put_contents_with_key/2 (classes.tsv;
+% paragraph's list_index_buffer has the same selector, p_buf.esp:74,
+% clearing first): replaces the contents by the {Object, Key} pairs.
+:put_contents_with_key(Index, List) :-
+        Index!first := '$$void',
+        put_pairs(List, Index);
+
+local
+add_last('$$void', Object, Key, {'$$void', Object, Key}) :- !;
+add_last(E, Object, Key, E) :-
+        first(E, Next),
+        add_last(Next, Object, Key, Next1),
+        set_first(E, Next1);
+find(E, Object, Key) :-
+        E \== '$$void',
+        vector_element(E, 2, K),
+        K = Key, !,
+        second(E, Object);
+find(E, Object, Key) :-
+        E \== '$$void',
+        first(E, Next),
+        find(Next, Object, Key);
+unlink(E, Object, Key, Next) :-
+        E \== '$$void',
+        vector_element(E, 2, K),
+        K = Key, !,
+        second(E, Object),
+        first(E, Next);
+unlink(E, Object, Key, E) :-
+        E \== '$$void',
+        first(E, Next),
+        unlink(Next, Object, Key, Next1),
+        set_first(E, Next1);
+objects('$$void', []) :- !;
+objects(E, [Object|L]) :-
+        second(E, Object), first(E, Next), objects(Next, L);
+pairs('$$void', []) :- !;
+pairs(E, [{Object, Key}|L]) :-
+        second(E, Object), vector_element(E, 2, Key),
+        first(E, Next), pairs(Next, L);
+keys('$$void', []) :- !;
+keys(E, [Key|L]) :-
+        vector_element(E, 2, Key), first(E, Next), keys(Next, L);
+all_at('$$void', [], _) :- !;
+all_at(E, [Object|L], Key) :-
+        vector_element(E, 2, K), K = Key, !,
+        second(E, Object), first(E, Next), all_at(Next, L, Key);
+all_at(E, L, Key) :-
+        first(E, Next), all_at(Next, L, Key);
+put_pairs([], _) :- !;
+put_pairs([{Object, Key}|L], Index) :-
+        :add_at(Index, Object, Key),
+        put_pairs(L, Index);
+end.

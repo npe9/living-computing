@@ -305,6 +305,46 @@ and stand-in `simpos##` classes. In order:
        methods), `hash_index:create/3` (58), `list_index:create/2`
        (20), `process:create/3` (14),
        `process:allow_forced_event/1` (9).
+   - *2026-11-24, step 3c:* stand-ins for those blockers. PRINTED,
+     verbatim: `channel` (TM-100 Fig. 3.7), `bounded_channel` and
+     `bounded_post_queue` (Figs. 3.10, 3.11; their demons run).
+     INTERPOLATED: `post_queue_for_message`, `semaphore`, `list_index`
+     and `hash_index` (on the entry layout that kappa2's
+     `KPPOOL.ESP` and `SVHSH_IDX.ESP` read from the base classes),
+     `process:create/3`, `allow_forced_event/1` and slot accessors, and
+     a minimal `standard_editor` (`get_window/2`, the unloaded ancestor
+     of `pimfep##pimos_window_editor`). An espc argument-placement bug
+     found on the way is fixed (no `check` count moved).
+     - Census of pimfep and pimscsi: 605 of 1,229 methods succeed (515
+       before), 63 fail cleanly (12 on an empty index or queue), 561
+       refuse; none changed between success and failure.
+     - The next blockers: missing opcodes (blt 06 65 methods, pmi b0
+       29, pmi b4 21, ...); the `lock/1` of four pimfep tables, in a
+       `simpos##` ancestor; `trace:trace/1`,
+       `common_network:is_installed/1`,
+       `network_listener_buffer:create/4` (5 each); and class
+       `pmacs_window`, without which `pimos_window_editor`'s window is 0.
+   - *2026-11-24, step 3c, second part:* nine opcode rows from known
+     plaintext:
+     - `add` (blt 40);
+     - `integer`, `unbound`, `bound` (blt 01, 10, 16);
+     - `stack_vector` (blt 06);
+     - `equal_string` (blt 68), `string_tail` (blt 33);
+     - `substring` (blt 32) and `search_character` (blt 5c), two cells
+       long.
+
+     Three HELD-SOURCE classes: morphana's `_simpos/` `name`,
+     `e_string` and `pathname`, SIMPOS's own as copied for Common ESP
+     (ICOT Free Software). In `pathname`, the port's `/` is restored to
+     `>`, and its commented-out clauses are restored, each marked. The
+     symbolizer's `get_number/3` and `get_number_string/3` work on
+     integers.
+     - Census: 607 succeed, 101 fail (38 more, the census's unbound
+       arguments failing a type test), 521 refuse.
+     - pmi b0 has no witness.
+     - The next blockers: blt 6e (38, in `fep_message_assembler`, no
+       source), pmi b0 29, pmi b4 21, the SIMPOS calls above, and
+       `alarm_watch:create/2`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
