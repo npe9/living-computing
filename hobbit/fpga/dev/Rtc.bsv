@@ -204,15 +204,21 @@ endfunction
 //   0x02 RTCHOUR 12/24 6, BCD 5:0     0x06 RTCYEAR BCD 7:0
 //   0x03 RTCWKDAY OSCRUN 5, PWRFAIL 4, VBATEN 3, weekday 2:0
 
-function Bit#(8) binToBcd(Bit#(7) v);   // 0..99
-   Bit#(4) t = 0;
-   Bit#(7) r = v;
-   for (Integer k = 9; k >= 1; k = k - 1)
-      if (t == 0 && v >= fromInteger(k * 10)) begin
-         t = fromInteger(k);
-         r = v - fromInteger(k * 10);
-      end
-   return {t, r[3:0]};
+// A 12-hour RTCHOUR (BCD 01..12 in 4:0, PM in 5) as 24-hour BCD; Invalid
+// if the hour is not 01..12.  A table: cheaper than through binary.
+function Maybe#(Bit#(8)) hour24(Bit#(8) r);
+   Bit#(5) h = r[4:0];
+   Bool pm = r[5] == 1;
+   Bool ok = (h >= 5'h01 && h <= 5'h09) || (h >= 5'h10 && h <= 5'h12);
+   Bit#(8) v = case (h)
+      5'h12: (pm ? 8'h12 : 8'h00);
+      5'h10: (pm ? 8'h22 : 8'h10);
+      5'h11: (pm ? 8'h23 : 8'h11);
+      5'h08: (pm ? 8'h20 : 8'h08);
+      5'h09: (pm ? 8'h21 : 8'h09);
+      default: (pm ? {4'h1, h[3:0] + 2} : zeroExtend(h));   // 01..07
+   endcase;
+   return ok ? tagged Valid v : tagged Invalid;
 endfunction
 
 function Bool mcpRunning(Vector#(7, Bit#(8)) m) =
@@ -226,11 +232,9 @@ function Maybe#(RtcTime) fromMcp(Vector#(7, Bit#(8)) m);
    if (m[2][6] == 0)
       t.hour = m[2] & 8'h3F;
    else begin                               // 12-hour mode: AM/PM in 5
-      Bit#(8) h = {3'b0, m[2][4:0]};
-      Bit#(7) hb = bcdToBin(h);
-      ok = bcdValid(h) && hb >= 1 && hb <= 12;
-      Bit#(7) h24 = ((hb == 12) ? 0 : hb) + ((m[2][5] == 1) ? 12 : 0);
-      t.hour = binToBcd(h24);
+      let h = hour24(m[2]);
+      ok = isValid(h);
+      t.hour = validValue(h);
    end
    t.mday = m[4] & 8'h3F;
    t.mon  = m[5] & 8'h1F;

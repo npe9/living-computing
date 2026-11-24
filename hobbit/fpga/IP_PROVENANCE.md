@@ -96,3 +96,14 @@ Flute: Apache License 2.0. LICENSE was added to its main branch as commit
 631c88b. Files from that repository that earlier sections recorded as having
 no licence line (for example `flute-m50/src/Uart_Pins.bsv`) are therefore
 Apache-2.0 and may be copied in with attribution.
+## Step 5 addendum 2: secondary sources for the MCP7940N's registers, 2026-11-24
+
+* **Copied: nothing.** The MCP7940N data sheet is still not on disk. Its
+  download waits for the owner's approval. Two drivers written against the
+  part were read, outside this repository and read-only, to check the
+  register facts `rtc.md` had marked as inference:
+  * Linux 6.17-rc7 `drivers/rtc/rtc-ds1307.c` (GPL-2.0), its `mcp794xx`
+    paths, at `~/src/linux-cursor/linux`;
+  * RTEMS `bsps/shared/dev/rtc/mcp7940m.c` (BSD-2-Clause), at `~/src/rtems`.
+* Only bit positions and register addresses are cited (tags `[L]`, `[R]` in
+  `fpga/dev/rtc_mcp7940n.h`). No code from either driver is used.
