@@ -15,8 +15,9 @@ redistribution terms are flagged for the owner.
 | repository | `github.com/npe9/flute-ulx3s` (the `origin` of that checkout), branch `lx50`, commit `8aaf3603f9716c39ac607f3531f180f2e02b3d74` |
 | sha256 of the source file | `88ad876db6ecf37e124ddc3cabace67345dfc47fe89ea8aae2a6888ff82d5b0c` |
 | author | the repository owner (written in the owner's Flute SoC sessions; not part of Bluespec's Flute) |
-| licence as found | **none stated.** `Video_DVI.v` has no licence header and the checkout has no top-level LICENSE; the only licence in the tree, `Flute/LICENSE` (Apache-2.0), covers Bluespec's Flute sources under `Flute/`, not the owner's `src/`. |
-| status | **owner to confirm** that the file may be published here (it is the owner's own code; a licence line in `hdmi_tmds.v`'s header would settle it) |
+| licence as found at 8aaf3603 | none stated: `Video_DVI.v` has no licence header and that checkout has no top-level LICENSE (the tree's `Flute/LICENSE` covers Bluespec's Flute under `Flute/` only) |
+| licence | **Apache License 2.0.** The owner stated on 2026-11-24 that npe9/flute-ulx3s is theirs and is licensed the same as Flute, every branch (lx50 included); `LICENSE` (Apache-2.0, a copy of Flute's) was pushed to flute-ulx3s `main` as commit `631c88b` (relayed by the lead, not fetched here). `hdmi_tmds.v` carries `SPDX-License-Identifier: Apache-2.0` and the attribution above. |
+| status | cleared for the public repository |
 
 Nothing else under `hobbit/fpga/dev/lcd*` or `hdmi*` is copied: the pin
 sites in `hdmi_lcd.lpf` are facts about the board, read from the same

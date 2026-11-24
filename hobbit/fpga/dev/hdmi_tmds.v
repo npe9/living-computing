@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
 // hdmi_tmds.v: TMDS encoder and 10:1 DVI serializer for the ULX3S GPDI port.
+//
+// Licence: Apache License 2.0, as github.com/npe9/flute-ulx3s is licensed
+// (its LICENSE, commit 631c88b on main, a copy of Flute's), by the owner's
+// statement of 2026-11-24 covering every branch of that repository,
+// lx50 included.
 //
 // COPIED VERBATIM (lines 380-481: modules tmds_enc and dvi_ser, no edits) from
 //   ~/src/ulx3s-experiments/flute-lx50/src/Video_DVI.v
@@ -6,9 +12,9 @@
 //   8aaf3603f9716c39ac607f3531f180f2e02b3d74
 //   sha256 of the whole source file
 //   88ad876db6ecf37e124ddc3cabace67345dfc47fe89ea8aae2a6888ff82d5b0c
-// The source file carries no licence header; it is the repository owner's own
-// code (not Bluespec's Flute, whose Apache-2.0 LICENSE covers Flute/ in that
-// tree).  See hobbit/fpga/IP_PROVENANCE.md.
+// The source file itself carries no licence header; it is the repository
+// owner's own code (not Bluespec's Flute), licensed as above.  See
+// hobbit/fpga/IP_PROVENANCE.md.
 //
 // Used here at 1024x768@60: pclk 65 MHz, sclk 325 MHz (5x, two bits a shift
 // clock through ODDRX1F).  The comments below are the source's and speak of
