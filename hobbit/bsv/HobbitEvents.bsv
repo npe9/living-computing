@@ -344,6 +344,28 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
     return xlate(va, wr, psw).pa;
   endfunction
 
+  // The step's translations: at most two a clock, by state and class.
+  // In EVS_IDLE a raise needs base - 4 and base - 12 for its frame (base
+  // - 8 is on one of their pages: a translation is a function of
+  // va[31:12] alone, HobbitMmu translateFn), or the CSP alone for the
+  // unimplemented sequence; EVS_WRITE needs its frame word, EVS_VECTOR
+  // the vector.  So one translation (`evX1`) is muxed by state and class,
+  // and one more (`evX2`) is base - 12's.  combProbes asks for the walks
+  // of the same two requests, so the probes share this logic
+  // (docs/fpga_area.md).
+  Word ispNow = isValid(setIspW) ? validValue(setIspW) : ispR;
+  Word shadNow = isValid(setShadW) ? validValue(setShadW) : shadR;
+  EventCauses cRaise = validValue(raiseW);
+  Word evBase = (cRaise.psw[9] == 1'b0) ? shadNow : ispNow;
+  Word evCsp = (cRaise.psw[9] == 1'b1) ? cRaise.sp : ispNow;
+  Bool evUnimp = (chooseClass(cRaise) == EV_UNIMP);
+  Word evX1Va = (state == EVS_IDLE) ? (evUnimp ? evCsp : evBase - 4)
+              : ((state == EVS_WRITE) ? wrAddr[wrIdxR] : vecAddrR);
+  Bool evX1Wr = (state != EVS_VECTOR);
+  Word evX1Psw = (state == EVS_IDLE) ? cRaise.psw : cR.psw;
+  MmuResp evX1 = xlate(evX1Va, evX1Wr, evX1Psw);
+  MmuResp evX2 = xlate(evBase - 12, True, cRaise.psw);
+
   rule step;
     // ISP/SHAD may be loaded by a testbench or the core before an event.
     Word isp = isValid(setIspW) ? validValue(setIspW) : ispR;
@@ -392,13 +414,12 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
             // SP = SHAD (p. 1-37/1-38).
             Word base = (c.psw[9] == 1'b0) ? shad : isp;
             Word spNew = (c.psw[9] == 1'b0) ? c.sp : shad;
-            // The frame words' translations.  A translation is a function
-            // of va[31:12] alone (HobbitMmu translateFn), and base - 8 is
-            // on base - 4's page unless base[11:0] < 8, when it is on
-            // base - 12's: two translations serve the three words.  The
-            // same requests as combProbes', so the two share their logic.
-            Bool okM12 = xlateOk(base - 12, True, c.psw);
-            Bool okM4  = xlateOk(base - 4, True, c.psw);
+            // The frame words' translations (evX1, evX2 above): base - 8
+            // is on base - 4's page unless base[11:0] < 8, and then on
+            // base - 12's.  evX1 is base - 4's except for the
+            // unimplemented sequence, which translates only the CSP.
+            Bool okM12 = (evX2.fault == MMU_OK);
+            Bool okM4  = (evX1.fault == MMU_OK);
             Bool okM8  = (base[11:0] >= 12'd8) ? okM4 : okM12;
             Word vAddr = 0;
             Word nPsw = c.psw;
@@ -454,7 +475,7 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
               nIsp  = isp;
               nShad = shad;
               nPsw  = c.psw;
-              ok    = xlateOk(cspA, True, c.psw);
+              ok    = (evX1.fault == MMU_OK);  // evX1 is cspA's here
             end
 
             // A translation fault during event processing resets the
@@ -500,9 +521,8 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
 
       EVS_WRITE: begin
         let c = nC;
-        Word a = nWrAddr[nWrIdx];
         Word d = nWrData[nWrIdx];
-        let x = xlate(a, True, c.psw);
+        let x = evX1;                    // nWrAddr[nWrIdx], a write
         if (x.fault == MMU_OK)
           mem.write(x.pa, d);
         else begin
@@ -522,7 +542,7 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
         if ((nCls == EV_RESET) && (nVecAddr == 0)) begin
           nVec = 0;
         end else begin
-          let x = xlate(nVecAddr, False, c.psw);
+          let x = evX1;                  // nVecAddr, a read
           if (x.fault == MMU_OK)
             nVec = mem.read(x.pa);
           else begin
@@ -617,31 +637,23 @@ module mkHobbitEventsP#(HobbitEventMem mem, HobbitMmu mmu,
       mmu.walkProbe(MmuReq { va: va, isText: False, isWrite: wr,
                              user: !atKernel && (psw[10] == 1'b1),
                              enabled: (psw[16] == 1'b1) });
-    Word isp = isValid(setIspW) ? validValue(setIspW) : ispR;
-    Word shad = isValid(setShadW) ? validValue(setShadW) : shadR;
+    // The walks of evX1's and evX2's requests (the step's translations
+    // above): base - 4 or the CSP and base - 12 in EVS_IDLE (base - 8's
+    // walk is one of the frame's two, a walk's words being a function of
+    // the page), the frame word in EVS_WRITE, the vector in EVS_VECTOR.
+    let a = wp(evX1Va, evX1Wr, evX1Psw);
+    let d = wp(evBase - 12, True, cRaise.psw);
     case (state)
       EVS_IDLE:
-        if (raiseW matches tagged Valid .c) begin
-          Word base = (c.psw[9] == 1'b0) ? shad : isp;
-          Word cspA = (c.psw[9] == 1'b1) ? c.sp : isp;
-          let a = wp(base - 4, True, c.psw);
-          let d = wp(base - 12, True, c.psw);
-          // base - 8's page is base - 4's or base - 12's (step), and a
-          // walk's words depend on the page alone.
-          let b = (base[11:0] >= 12'd8) ? a : d;
-          let e = wp(cspA, True, c.psw);
-          v[0] = a[0]; v[1] = a[1]; v[2] = b[0]; v[3] = b[1];
-          v[4] = d[0]; v[5] = d[1]; v[6] = e[0]; v[7] = e[1];
+        if (isValid(raiseW)) begin
+          v[0] = a[0]; v[1] = a[1]; v[4] = d[0]; v[5] = d[1];
         end
       EVS_WRITE: begin
-        let a = wp(wrAddr[wrIdxR], True, cR.psw);
         v[8] = a[0]; v[9] = a[1];
       end
       EVS_VECTOR: begin
-        let a = wp(vecAddrR, False, cR.psw);
         v[10] = a[0]; v[11] = a[1];
-        let x = xlate(vecAddrR, False, cR.psw);
-        if (x.fault == MMU_OK) v[12] = tagged Valid x.pa;
+        if (evX1.fault == MMU_OK) v[12] = tagged Valid evX1.pa;
       end
     endcase
     return v;

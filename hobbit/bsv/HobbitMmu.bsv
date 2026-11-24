@@ -446,8 +446,14 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r) =
     noteProbe(tagged Valid noteOf(r));
 
+  // A text note is a text reference (every caller's request has isText
+  // set, and the step rule refills the text structures from it); saying
+  // so here keeps the data TLB's lookup out of its translation.
+  function MmuReq asText(MmuReq r) =
+    MmuReq { va: r.va, isText: True, isWrite: r.isWrite, user: r.user,
+             enabled: r.enabled };
   Maybe#(MmuNote) noteTextN = isValid(noteTextW)
-                                ? tagged Valid noteOf(validValue(noteTextW))
+                                ? tagged Valid noteOf(asText(validValue(noteTextW)))
                                 : tagged Invalid;
 
   rule step;
