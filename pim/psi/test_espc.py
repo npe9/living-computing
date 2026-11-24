@@ -922,12 +922,18 @@ end.''', 'simpos')
         # 113 failure (8 that refused: tables empty after lock/1), 487
         # refused; no method moved out of success.  Step 3e's pmi ca: 666
         # success (remote_pimfep_executor check_status/3), 486 refused; 22
-        # more refused methods stop later.
+        # more refused methods stop later.  Step 3e's blt f2: 667 success
+        # (pimos_window_editor abort_getl/1, cmt show_status/1), 120
+        # failure (6 that refused), 478 refused; pimos_remote_login_
+        # socket_table locked/1 moved from success to failure: add_at/3,
+        # which runs before it, used to refuse at f2 with the table still
+        # locked, and now fails and unlocks it (locked/1 fails on a fresh
+        # machine with or without f2, like the other tables' locked/1).
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1265, {'success': 666, 'failure': 113, 'refused': 486}))
+        self.assertEqual((len(rows), out), (1265, {'success': 667, 'failure': 120, 'refused': 478}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

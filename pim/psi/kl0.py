@@ -1050,6 +1050,9 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    # blt f2 (step 3e): as f0, the difference UNKNOWN (kl0_opcodes.tsv)
+    op_if_identical_f2 = op_if_identical
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):

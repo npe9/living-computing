@@ -113,6 +113,11 @@ cp and checked with cmp; observed):
   - an unbound A0 jumps: test_if_not_constant and test_census here;
     test_espc test_fep_census;
   - the jump base cell + 2 instead of + 3: only test_if_not_constant.
+Step 3e's blt f2, if_identical_f2 (2026-11-24, same method; observed):
+  - inverted (jump when identical): only test_if_identical_f2 here;
+    test_espc test_fep_census fails;
+  - the jump base cell + 3 instead of + 2: test_if_identical_f2 here;
+    test_espc test_fep_census.
 """
 import os
 import sys
@@ -154,8 +159,31 @@ class Table(unittest.TestCase):
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
-        # step 3e's pmi ca
-        self.assertEqual(len(rows), 114)
+        # step 3e's pmi ca and blt f2
+        self.assertEqual(len(rows), 115)
+
+    def test_if_identical_f2(self):
+        # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
+        # on the held code.  $or$0/3 (g_window.esp:15-17 `( Display ==
+        # color,!, create_pairs(Win,ViewMode); true )`): color goes on into
+        # create_pairs, which sends to the unbound window; anything else
+        # jumps to `true`.  $or$1/3 (g_window.esp:24-27 `( ViewMode ==
+        # act,!, :set_view(Win,pe_view) ; :set_gid(Win,Obj!g_id), ...)`):
+        # act sends set_view/2, anything else reads the slot g_id
+        m = machine()
+        cid = 'paragraph##g_window'
+        code = m.code(cid)
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+
+        def run(name, d):
+            try:
+                return sum(1 for _ in m.solve((code, ps[(name, 3)].offset), [K.Var(), K.Var(), A(d)]))
+            except K.Refusal as e:
+                return e.detail.split(' of ')[0].split(' to ')[0]
+        self.assertEqual([run('$or$0', d) for d in ('color', 'act', 'mono')],
+                         ['send set_color_pair/3', 1, 1])
+        self.assertEqual([run('$or$1', d) for d in ('color', 'act', 'mono')],
+                         ['slot g_id', 'send set_view/2', 'slot g_id'])
 
     def test_if_not_constant(self):
         # pmi ca (step 3e, 2026-11-24): the first-clause guard.  The handler

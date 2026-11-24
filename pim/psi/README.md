@@ -304,8 +304,8 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 114 rows
-(100 at step 2, nine more at step 3c, four at step 3d, one at step 3e)
+**Opcodes are named only from known plaintext.** Each of the 115 rows
+(100 at step 2, nine more at step 3c, four at step 3d, two at step 3e)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
@@ -313,7 +313,7 @@ An opcode without a row is refused loudly (`Refusal`, cause
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand (where no
 witness shows it). The rows are
-73 class-0 (`pmi`), 37 class-1 (`blt`) built-ins, 3 atom-cell forms
+73 class-0 (`pmi`), 38 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -1076,6 +1076,50 @@ Effect, compared method by method:
     create_pimos_window/3` at the slot `activity` of the window, which
     is not in the `pmacs_window` stand-in.
   - No method moved out of success.
+
+### Step 3e: blt f2, `==` as a test-and-branch (2026-11-24)
+
+blt f2 (10 FEP methods) has 3,067 held uses. It is witnessed in
+paragraph by `g_window.esp:15-17` and `:24-27`, two disjunctions of the
+form `( X == c, !, Then ; Else )`:
+
+- `$or$0/3`: put `color`, `f2 02 03 00`, then the execute of
+  `create_pairs`. The jump lands on the `true` branch's `f0`.
+- `$or$1/3`: put `act`, `f2 02 03 02`. The jump lands on the else
+  branch's allocate.
+
+In the same file, `Obj!color = color,!` (`=`) compiles to get_atom and a
+cut, so f2 is `==`. It reads exactly as blt f0, `if_identical`: equal
+goes on, anything else jumps to cell + 2 + c. How f2 differs from f0 is
+UNKNOWN. Both usually follow a constant put into B, and they execute
+alike, as 62 and 64 do. MEASURED (a scratch survey of all 3,067 uses):
+
+- A != B in every use;
+- the cell before the target is a proceed, an execute, a `fail` or a
+  send's selector in all but about 130 uses, which are data cells that
+  were not examined.
+
+Test: `test_kl0.py` `test_if_identical_f2` runs both disjunctions on the
+held code, for an equal and for an unequal value.
+
+Effect on the FEP census (compared method by method): 666 / 113 / 486
+becomes 667 / 120 / 478.
+
+- 2 methods move from refused to success: `pimos_window_editor
+  abort_getl/1` and `cmt show_status/1`.
+- 6 move from refused to failure: the socket table's `add_at/3`,
+  `get_at/3` and `remove_at/3` on an empty table, `scsi_device close/1`
+  and `polling/1`, and `scsi_load_test create/4`.
+- 2 stop later: `net_spawn_user spawn/7,8` at
+  `network_node_name:get_my_node/2`.
+- 1 moves from success to failure: `pimos_remote_login_socket_table
+  locked/1`. This is a census order effect.
+  - Before, `add_at/3` ran first and refused at f2 with the table still
+    locked, so `locked/1` then succeeded.
+  - Now `add_at/3` fails, its `:unlock` alternative runs, and `locked/1`
+    fails.
+  - On a fresh machine, `locked/1` fails with or without f2, as the
+    other tables' `locked/1` do.
 
 ## Open
 
