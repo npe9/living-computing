@@ -49,7 +49,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "sem"))
 import p9exec          # noqa: E402
+import p9scancode      # noqa: E402
 import hobbit_sem      # noqa: E402
+import p9term          # noqa: E402  the terminal's display and input
 
 MASK32 = 0xFFFFFFFF
 
@@ -123,8 +125,20 @@ CHOICES = {
            "starts at 1993-01-03 12:00:00 UTC (the QEMU server's -rtc "
            "base, docs/qemu_1e_server.md) and runs on model time; NVRAM "
            "starts zero.",
-    "lcd": "Bart's LCD (io.h Lcdisp at IOACK 0x3000) accepts and counts "
-           "writes; it is never read by the kernel.",
+    "lcd": "Bart's LCD (io.h Lcdisp at IOACK 0x3000) is a 768 x 1024 "
+           "panel of 2-bit cells built from what s9term's screenupdate "
+           "writes, never read by the kernel; the run reports whether it "
+           "equals the bitmap (tools/p9term.py TERM_CHOICES['lcd']).",
+    "framebuffer": "The screen is s9term's gscreen, 768 x 1024 at 2 bits "
+                   "a pixel in kernel memory; --screen/--screen-at dump it "
+                   "with pixel 0 white, as s9term's getcolor has it "
+                   "(TERM_CHOICES['framebuffer']).",
+    "mouse": "A Mouse Systems serial mouse on Quart channel 3 at 1200 "
+             "baud, 5-byte packets, as s9term's mouseputc decodes them "
+             "(TERM_CHOICES['mouse']); --input moves it.",
+    "input": "--input/--input-line: keyboard bytes, mouse packets and "
+             "screenshots at model times, screen text, or once the LCD "
+             "has been quiet (TERM_CHOICES['input']).",
     "cret-msp": "hobbit_sem.System.cret_clamp is on: a CRET whose restored "
                 "MSP is more than 256 bytes above its SP has its CATCH "
                 "portion stop with the cache full (p. 3-10: 'or the cache "
@@ -137,9 +151,11 @@ CHOICES = {
                 "SP + SCSIZE on entry, so the kernel expected the state "
                 "to occur.  The run reports how many CRETs were clamped.",
     "console-input": "The console's input is Quart channel 0: s9term's "
-                     "screeninit calls eiaspecial(0, &printq, &kbdq, 19200) "
-                     "and eiaspecial(3, 0, &mouseq, 1200) (observed at the "
-                     "calls, step 127,557 and 127,705) and never kbdinit "
+                     "main (+0x8a, +0xa4) calls eiaspecial(0, &printq, "
+                     "&kbdq, 19200) and eiaspecial(3, 0, &mouseq, 1200) "
+                     "(observed at the calls, step 127,557 and 127,705; "
+                     "the shipped screen.c makes them in screeninit) and "
+                     "never kbdinit "
                      "-- its screen.c predates kbd.c (docs/s9term.md), so "
                      "there are no scan codes: kbdq.putc is kbdcr2nl, "
                      "ASCII with CR made NL, as from a serial terminal.  "
@@ -152,6 +168,19 @@ CHOICES = {
                      "while the prompt is still being drawn and its echo "
                      "reaches Quart channel 0 before the prompt does "
                      "(putstrn draws, then calls uartputs).",
+    "console-keyboard": "An image that defines kbdinit (the release's "
+                        "kbd.c, linked into a 9term built from the "
+                        "release, docs/s9term.md) has screeninit call "
+                        "kbdinit(2): kbdq.putc is rawkbdputc, a scan-code "
+                        "keyboard on Quart channel 2 at 600 baud with odd "
+                        "parity.  For such an image --type REPLY goes to "
+                        "channel 2 as scan codes, each character a press "
+                        "and a release (code | 0x80), Lshift around the "
+                        "skeymap characters, CR as the Return key; the "
+                        "tables are read out of kbd.c (tools/p9scancode.py). "
+                        "The keyboard's own timing (key rate, its answer "
+                        "to the Noclick byte) is not modelled: the codes "
+                        "arrive at the line's character rate.",
     "idle-skip": "A harness shortcut, on by default (--no-idle-skip turns "
                  "it off).  s9term's idle loop is runproc+0x8..+0x1e (proc.c "
                  "`while(runhiq.head==0 && runloq.head==0);` with spllo): "
@@ -181,8 +210,7 @@ PPAGE0_FPI = 0x74
 MEMSIZE = 8 * 1024 * 1024
 
 
-class Stop(Exception):
-    pass
+Stop = p9term.Stop     # an exception the run stops with
 
 
 class Board:
@@ -438,30 +466,43 @@ class Quart:
     def irq(self):
         return any(self.isr(d) & self.duarts[d]["imr"] for d in (0, 1))
 
-    def _update(self):
-        """A write to `update` latches the current interrupt into cir,
-        gicr and gibcr (deveia.c eiaintr).  QUART_CHOICES['cir']."""
-        self.glob["cir"] = 0
-        self.glob["gicr"] = 0
-        self.glob["gibcr"] = 0
+    def bids(self):
+        """The interrupt bids of every pending, enabled source
+        (QUART_CHOICES['cir']): (bid, channel, count).  SC68C94 1994
+        product spec p. 321 and the bidding-format table (docs/devices/
+        README.md "Quart"), with the bidding registers at reset (s9term
+        never writes bcr): a receiver holding n bytes bids
+        [n 7:5][0][1][1][ch], n = 8 coded as 7; an empty transmitter
+        [0][free 6:4][1][0][ch] (the model's transmit FIFO is always
+        empty: 8 free, coded 7, i.e. 0x78|ch); the counter of DUART ab or
+        cd [00][0][1][0][1][ch] with ch = b or d (0x15, 0x17)."""
+        out = []
         for d in (0, 1):
             pend = self.isr(d) & self.duarts[d]["imr"]
             if pend & 0x08:
-                self.glob.update(cir=0x14, gicr=2 * d, gibcr=0)
-                return
-        for d in (0, 1):
-            pend = self.isr(d) & self.duarts[d]["imr"]
+                ch = 2 * d + 1
+                out.append((0x14 | ch, ch, 0))
             for bit, ch in ((0x02, 2 * d), (0x20, 2 * d + 1)):
                 if pend & bit:
                     n = min(len(self.ports[ch]["fifo"]), 7)
-                    self.glob.update(cir=0x0C, gicr=ch, gibcr=n)
-                    return
-        for d in (0, 1):
-            pend = self.isr(d) & self.duarts[d]["imr"]
+                    out.append(((n << 5) | 0x0C | ch, ch, n))
             for bit, ch in ((0x01, 2 * d), (0x10, 2 * d + 1)):
                 if pend & bit:
-                    self.glob.update(cir=0x08, gicr=ch, gibcr=1)
-                    return
+                    free = min(TX_FIFO, 7)
+                    out.append(((free << 4) | 0x08 | ch, ch, free))
+        return out
+
+    def _update(self):
+        """A write to `update` latches the winning bid into cir, its
+        channel into gicr and its byte count into gibcr (deveia.c
+        eiaintr): the numerically largest bid wins (QUART_CHOICES['cir']);
+        nothing pending reads 0."""
+        bids = self.bids()
+        if not bids:
+            self.glob.update(cir=0, gicr=0, gibcr=0)
+            return
+        bid, ch, n = max(bids)
+        self.glob.update(cir=bid, gicr=ch, gibcr=n)
 
     def read(self, off):
         idx = off // 4
@@ -596,17 +637,19 @@ class Quart:
 
 CSR_BAUD = {0x11: 110, 0x22: 38400, 0x44: 300, 0x55: 600, 0x66: 1200,
             0x88: 2400, 0x99: 4800, 0xBB: 9600, 0xCC: 19200}
-RX_FIFO = 3
+RX_FIFO = 8              # SC68C94: 8-byte receive and transmit FIFOs
+TX_FIFO = 8
 
 QUART_CHOICES = {
     "sr": "sr reads TxRDY|TxEMT (0x0C) while the channel's transmitter is "
           "enabled and 0 otherwise: a byte written to txfifo leaves at "
           "once. RxRDY (0x01) while the receive FIFO holds a byte, FFULL "
-          "(0x02) while it holds three.",
+          "(0x02) while it holds eight (SC68C94 1994 p. 317: 'all eight "
+          "FIFO positions are occupied').",
     "rx": "Input (--type) arrives on a channel's receive line one "
           "character time apart (1 start bit, mr1's data and parity bits, "
           "mr2's stop bits, at csr's rate under BRGSet2: 19200 baud 8N1 = "
-          "0.52 ms on channel 0) into a three-byte receive FIFO.  A byte "
+          "0.52 ms on channel 0) into the eight-byte receive FIFO.  A byte "
           "that finds the FIFO full or the receiver disabled waits on the "
           "line (no overrun is modelled) and follows one character time "
           "after the next byte is read.  isr RxRDYa (0x02) / RxRDYb (0x20) "
@@ -633,13 +676,20 @@ QUART_CHOICES = {
                       "hardware as documented); --counter-period 0.04 "
                       "gives the 25 Hz the software assumes, a stated "
                       "deviation for reaching the boot program sooner.",
-    "cir": "A write of `update` latches the highest pending, enabled "
-           "source: the counter (cir 0x14 CtAvail, gicr = 2*duart), then "
-           "a receiver (cir 0x0C RxAvail, gicr = channel, gibcr = bytes in "
-           "its FIFO), then a transmitter (cir 0x08 TxAvail0, gicr = "
-           "channel, gibcr = 1); the order is a choice (the part's bidding "
-           "registers bcr are written by eiasetup but not modelled).  "
-           "With nothing pending cir reads 0, which ends eiaintr's loop.",
+    "cir": "A write of `update` latches the winning interrupt bid: the "
+           "numerically largest of the pending, enabled sources' bids "
+           "(SC68C94 product spec 1994 p. 321; bidding format, reprint "
+           "p. 333; docs/devices/README.md 'Quart'), with the bidding "
+           "registers at their reset value 0 (s9term writes only ack and "
+           "icr of the global registers, observed).  A receiver holding n "
+           "bytes bids (n<<5)|0x0C|ch (8 coded as 7; type RxAvail); an "
+           "enabled transmitter, whose FIFO the model keeps empty, bids "
+           "0x78|ch (type TxAvail1, 7 free); a counter that has expired "
+           "bids 0x15 (DUART ab, channel b) or 0x17 (cd, channel d), the "
+           "lowest.  cir is the bid, gicr its channel, gibcr its count "
+           "(the bytes held, 7 free, or 0), so eiaintr reads every byte "
+           "held and writes up to 7.  With nothing pending cir reads 0, "
+           "which ends eiaintr's loop.",
     "irq": "The Quart requests IRQ 1 (io.h IRQQUART) while any isr bit "
            "is enabled in its DUART's imr.",
 }
@@ -824,19 +874,6 @@ class Timekeeper:
             self.held = None
         elif not v & 0xC0:
             self.held = None
-
-
-class Lcd:
-    """io.h `Lcdisp` at IOACK(Lcdisp, 0x3000): ctl, data; CHOICES['lcd']."""
-
-    def __init__(self):
-        self.writes = collections.Counter()
-
-    def read(self, off):
-        raise Stop("LCD: read of +0x%x (write-only in the kernel)" % off)
-
-    def write(self, off, data, mask):
-        self.writes[off] += 1
 
 
 class Latch:
@@ -1728,7 +1765,7 @@ class Boot:
         self.ioctl = Register("IOCTL")
         self.irq = Irq()
         self.quart = Quart(25, lambda: self.cycles / float(CPU_HZ))
-        self.lcd = Lcd()
+        self.lcd = p9term.LcdPanel(lambda: self.cycles / float(CPU_HZ))
         self.rtc = Timekeeper(lambda: self.cycles / float(CPU_HZ),
                               RTC_BASE)
         self.board.add(IONAK + 0x2000, IONAK + 0x4000, self.rtc)
@@ -1786,13 +1823,95 @@ class Boot:
         self.script_from = 0
         self.think = 0.0            # seconds from TEXT to the first byte
         self.typed = []
+        # CHOICES['input']: p9term.InputScript, polled at input_due
+        self.inputs = None
+        self.input_due = None
+        self.cpu_hz = CPU_HZ
+        self.screen_at = []         # [(step, path)] CHOICES['framebuffer']
+        # CHOICES['console-keyboard']
+        if "kbdinit" in self.syms.by_name:
+            self.console_channel = 2
+            self.console_encode = p9scancode.Encoder().encode
+        else:
+            self.console_channel = CONSOLE_CHANNEL
+            self.console_encode = bytes
 
     def next_event(self):
         """The earliest model time (seconds) after now at which a device
         changes state by itself, or None."""
         times = [t for t in (self.quart.next_event(),
                              self.sonic.next_event()) if t is not None]
+        if self.inputs is not None:
+            t = self.inputs.next_time()
+            if t is not None:
+                times.append(t)
         return min(times) if times else None
+
+    # --- the terminal: CHOICES['framebuffer'], ['input'] (tools/p9term.py)
+    def set_inputs(self, lines):
+        self.inputs = p9term.InputScript(self, lines)
+        self._input_schedule()
+
+    def _input_schedule(self):
+        """When the run loop next polls the input script: the next timed
+        item's cycle, every step for a `step` item, never for `screen`
+        (tap_screenputs polls it)."""
+        inp = self.inputs
+        if inp is None or not inp.items:
+            self.input_due = None
+            return
+        if inp.items[0]["when"] == "step":
+            self.input_due = 0
+            return
+        c = inp.due_cycle()
+        self.input_due = c
+
+    def poll_inputs(self):
+        self.inputs.poll()
+        self._input_schedule()
+
+    def kernel_word(self, va):
+        """A word of kernel memory (KZERO = RAMBASE: virtual = physical)."""
+        return self.board.read(va)
+
+    def mouse_xy(self):
+        """The kernel's mouse.xy (mouse+0x10, +0x14: mouseupdate)."""
+        m = self.syms.by_name["mouse"]
+        sx = lambda v: v - (1 << 32) if v & 0x80000000 else v
+        return (sx(self.kernel_word(m + 0x10)), sx(self.kernel_word(m + 0x14)))
+
+    def screen_pixels(self):
+        return p9term.framebuffer(self.kernel_word,
+                                  self.syms.by_name["gscreen"])
+
+    def dump_screen(self, path):
+        info, pix = self.screen_pixels()
+        if pix is None:
+            print("p9boot: step %d: no screen yet (gscreen %r), %s not "
+                  "written" % (self.steps, info, path), file=sys.stderr)
+            return None
+        w, h = info["size"]
+        p9term.write_image(path, w, h, p9term.shade(pix, info["ldepth"]))
+        print("p9boot: step %d: screen %dx%d ldepth %d at 0x%08x -> %s "
+              "(sha256 of the pixels %s)" % (
+                  self.steps, w, h, info["ldepth"], info["base"], path,
+                  screen_digest(pix)), file=sys.stderr)
+        return pix
+
+    def dump_lcd(self, path):
+        p9term.write_image(path, p9term.LCD_W, p9term.LCD_H,
+                           self.lcd.grey())
+
+    def panel_check(self):
+        """Cells of the LCD that disagree with the bitmap (written cells
+        only): CHOICES['lcd'].  (disagreeing, written)."""
+        info, pix = self.screen_pixels()
+        if pix is None or info.get("size") != (p9term.LCD_W, p9term.LCD_H) \
+                or info["ldepth"] != 1:
+            return None
+        lv, wr = self.lcd.level, self.lcd.written
+        bad = sum(1 for i in range(len(pix)) if wr[i] and lv[i] != 3 - pix[i])
+        return bad, sum(wr)
 
     def attach(self, wire):
         self.wire = wire
@@ -1884,7 +2003,11 @@ class Boot:
             self.script.pop(0)
             self.script_from = at + len(wait)
             self.typed.append((self.steps, wait, reply))
-            self.quart.feed(CONSOLE_CHANNEL, reply, self.think)
+            self.quart.feed(self.console_channel,
+                            self.console_encode(reply), self.think)
+        if self.inputs is not None and self.inputs.items \
+                and self.inputs.items[0]["when"] == "screen":
+            self.poll_inputs()
         if self.until is not None and self.until in screen:
             raise Stop("screenputs printed %r" % self.until)
 
@@ -1937,6 +2060,10 @@ class Boot:
                         raise Stop("%d frames on the wire" % len(w.log))
                     if w.sock is not None and self.steps % PEER_POLL == 0:
                         w.poll_peer(0.0, self.cycles / float(CPU_HZ))
+                if self.input_due is not None and self.cycles >= self.input_due:
+                    self.poll_inputs()
+                if self.screen_at and self.steps >= self.screen_at[0][0]:
+                    self.dump_screen(self.screen_at.pop(0)[1])
                 if self.progress and self.steps >= next_progress:
                     next_progress = (self.steps // self.progress + 1) \
                         * self.progress
@@ -1964,6 +2091,13 @@ class Boot:
             status = "STOP at %s (pc %08x): %s" % (syms.where(st.pc), st.pc,
                                                   exc)
         return status
+
+
+def screen_digest(pix):
+    """sha256 of a screen's pixel values (one byte per pixel, row major):
+    the checksum the tests pin (CHOICES['framebuffer'])."""
+    import hashlib
+    return hashlib.sha256(bytes(pix)).hexdigest()
 
 
 def unescape(text):
@@ -2014,6 +2148,25 @@ def main(argv):
                     help="no fpi in the boot ROM (CHOICES['fpi-rom'])")
     ap.add_argument("--progress", type=int, default=0, metavar="N",
                     help="report the current function every N steps")
+    ap.add_argument("--screen", metavar="FILE",
+                    help="at the end of the run, write the screen bitmap "
+                         "(gscreen) as an image: PNG, or PGM for .pgm "
+                         "(CHOICES['framebuffer'])")
+    ap.add_argument("--screen-at", action="append", default=[],
+                    metavar="STEP:FILE",
+                    help="write the screen once the run has executed STEP "
+                         "instructions; repeatable")
+    ap.add_argument("--lcd", metavar="FILE",
+                    help="at the end, write the LCD panel's shadow "
+                         "(CHOICES['lcd'])")
+    ap.add_argument("--input", metavar="SCRIPT",
+                    help="timed keyboard and mouse input and screenshots, "
+                         "one `WHEN ACTION` a line (CHOICES['input'])")
+    ap.add_argument("--input-line", action="append", default=[],
+                    metavar="LINE", help="one input line, after --input's")
+    ap.add_argument("--input-log", metavar="FILE",
+                    help="write the input items that fired as at-cycle "
+                         "lines")
     args = ap.parse_args(argv)
     ea = EEPROM_EA
     if args.ea:
@@ -2040,6 +2193,19 @@ def main(argv):
         if not sep:
             ap.error("--type wants TEXT=REPLY, not %r" % item)
         boot.script.append((unescape(wait), unescape(reply)))
+    lines = []
+    if args.input:
+        with open(args.input) as f:
+            lines += f.read().splitlines()
+    lines += args.input_line
+    if lines:
+        boot.set_inputs(lines)
+    for item in args.screen_at:
+        n, sep, path = item.partition(":")
+        if not sep:
+            ap.error("--screen-at wants STEP:FILE, not %r" % item)
+        boot.screen_at.append((int(n), path))
+    boot.screen_at.sort()
     t0 = time.time()
     status = boot.run(args.max_steps)
     dt = time.time() - t0
@@ -2077,6 +2243,27 @@ def main(argv):
               "(CHOICES['cret-msp'])" % boot.sysm.cret_clamps)
     if boot.sysm.untimed:
         print("p9boot: untimed (cyc 0): %s" % dict(boot.sysm.untimed))
+    if boot.inputs is not None:
+        for stepno, cycles, line in boot.inputs.fired:
+            print("p9boot: step %d (cycle %d): input %s" % (stepno, cycles,
+                                                            line))
+        for it in boot.inputs.items:
+            print("p9boot: input not reached: %s" % it["line"])
+        if args.input_log:
+            with open(args.input_log, "w") as f:
+                f.write("".join(l + "\n" for l in boot.inputs.log_lines()))
+    lcdw = boot.lcd.writes
+    print("p9boot: LCD: %d ctl and %d data writes, %d column overruns"
+          % (lcdw[0], lcdw[4], boot.lcd.overruns))
+    chk = boot.panel_check()
+    if chk is not None:
+        print("p9boot: LCD panel == framebuffer: %s (%d of %d written "
+              "cells differ)" % ("yes" if chk[0] == 0 else "NO", chk[0],
+                                 chk[1]))
+    if args.screen:
+        boot.dump_screen(args.screen)
+    if args.lcd:
+        boot.dump_lcd(args.lcd)
     for chan, data in sorted(boot.console.items()):
         print("p9boot: console %s: %d bytes: %r" % (chan, len(data),
                                                     bytes(data)))

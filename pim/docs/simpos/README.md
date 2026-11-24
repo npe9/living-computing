@@ -208,6 +208,19 @@ and stand-in `simpos##` classes. In order:
    `fep_command_code_table:convert/3` against PIMOS's command-code
    names, then on the paragraph classes against their source. Name
    each opcode only from a known-plaintext witness.
+   *Status 2026-11-24: started, OURS, `../../psi/kl0.py` (tested in
+   `run_tests.sh` by `test_kl0.py`).* Witnesses name 96 opcodes
+   (`../../psi/kl0_opcodes.tsv`); any other opcode is refused.
+   - `convert/3` agrees with `pimos.vmac` on 96 names. 4 names are
+     only in the FEP table and 8 only in PIMOS; none disagrees.
+   - Two paragraph classes (`predicate_num_switch_icon`,
+     `list_index_buffer`) give the answers their source predicts.
+   - Of the 530 methods of the 104 classes, 303 run to a solution, 11
+     fail cleanly and 216 are refused. The causes are ranked in
+     `../../psi/README.md`. 52 of the refusals come from 13 opcodes
+     not yet named.
+   Cell numbering inside `.ptf` code was settled for this step: a hash
+   table spans mask+1+2*keys+2 cells.
 3. **An ESP compiler** producing KL0, checked structurally against
    `paragraph.ptf`. Use it to write the stand-in `simpos##` classes,
    in the order of §1 and in reference-count order (`symbolizer`,

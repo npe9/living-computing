@@ -237,7 +237,15 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   bus check on each. The bench now waits for a spawned goal's record
   before its next operation (the IPL parts load an argument register
   right after a SPAWN, and the register's A line was traced before the
-  record's M lines).
+  record's M lines). Injections re-done against the six IPL parts
+  (2026-11-24, eleven, each against `scsi` and `scsi@1..6`, observed
+  sets in `lockstep_scsi.py`'s header): the CDB byte order, unit/LUN
+  swapped, the last received byte dropped, TransferredLength, Result,
+  two Info elements and the init hook's registers fail all seven; a
+  command not ready at a poll dropped or taken as ready fail `scsi`
+  only (no IPL part has a command not ready at a poll: counted on the
+  tapes); the copy's pad from old memory fails none (unobservable:
+  every string's pad is zero).
 
 ## 4. Order and dependencies
 

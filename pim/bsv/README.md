@@ -218,7 +218,13 @@ tape the reference model recorded: TEST UNIT READY, SEND, RECEIVE, a
 reply cut in two, a command that waits finished inside a SEND and one
 at a poll, an element waited for; then `ref_scsi.py`'s six IPL parts,
 the IPL reading its list and its files through its own SCSI stack; the
-bus bytes compared as `B` lines.
+bus bytes compared as `B` lines. Eleven fault injections into
+`PimmScsiBox.bsv` and the exec stage's hook, each run against all seven
+(2026-11-24, observed failure sets in `lockstep_scsi.py`'s header):
+eight fail all seven; the two poll injections (a command not ready at a
+poll dropped, or taken as ready) fail only `scsi`, the IPL never having
+a command not ready at a poll; the copy's pad bytes from old memory
+fail none (every string has zero pad).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
 hours; run whole on both models 2026-11-23: 447,739,516 trace lines

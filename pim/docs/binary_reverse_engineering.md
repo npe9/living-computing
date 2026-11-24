@@ -892,19 +892,19 @@ big-endian words:
 
 | Check | Result |
 |---|---|
-| classes whose cells land exactly on `L` | 552 of 554 (`csp_compare_break_menu`, `csp_mpsi_data_converter` overshoot; not investigated) |
-| predicate headers with code two cells after the head | 8,230 of 9,839 candidates; 1,609 not understood |
-| header kinds | `11` local 3,559; `12` local 1,904; `35` instance method 3,256; `25` class method 589; five other kinds, 156, unidentified |
-| local call target = cell + 2 + signed 16 bits | opcode `60`: 4,131 of 5,214 land on a head; `61`: 1,949 of 2,556; `62`: 1,384 of 1,851 |
+| classes whose cells land exactly on `L` | 554 of 554 (2026-11-24, once a hash table is counted as `mask+1 + 2*keys + 2` cells, `ptfdump.table_span`; with the table's size word + 1, as before, 552, and the two `pimmcsp` classes overshot) |
+| predicate headers with code two cells after the head | 9,815 of 9,815 (2026-11-24, same numbering; the earlier "8,230 of 9,839, 1,609 not understood" was the size-word numbering drifting after hash tables) |
+| header kinds | `11` local 3,609; `12` local 2,205; `35` instance method 3,256; `25` class method 589; the other five kinds 156 (`22` 15, `27` 16, `32` 57, `36` 22, `37` 46; named in `simpos/layers/FORMATS.md` §2). Recounted 2026-11-24 with the fixed numbering; before it, 3,559 and 1,904 |
+| local call target = cell + 2 + signed 16 bits | every one lands on a head (2026-11-24): opcode `60` 5,390 of 5,390, `61` 2,646 of 2,646, `62` 1,916 of 1,916 (before the numbering fix: 4,131/5,214, 1,949/2,556, 1,384/1,851) |
 
 | Package | Classes | Cells | Class-0 instr. | Class-1 instr. | Symbols |
 |---|---|---|---|---|---|
-| `pimfep` | 47 | 28,832 | 18,574 | 1,764 | 2,747 |
-| `pimscsi` | 24 | 12,979 | 8,311 | 1,147 | 1,086 |
-| `pimmcsp` | 281 | 149,954 | 99,066 | 8,877 | 14,217 |
-| `pimmutil` | 51 | 53,639 | 39,720 | 3,161 | 3,085 |
-| `mpsicspR` | 30 | 14,897 | 9,148 | 674 | 2,124 |
-| `paragraph` | 121 | 89,204 | 53,717 | 14,429 | 5,705 |
+| `pimfep` | 47 | 28,935 | 18,658 | 1,765 | 2,747 |
+| `pimscsi` | 24 | 12,977 | 8,311 | 1,147 | 1,086 |
+| `pimmcsp` | 281 | 156,090 | 103,403 | 9,158 | 14,217 |
+| `pimmutil` | 51 | 54,615 | 40,312 | 3,223 | 3,085 |
+| `mpsicspR` | 30 | 15,616 | 9,629 | 723 | 2,124 |
+| `paragraph` | 121 | 93,582 | 56,580 | 14,804 | 5,705 |
 
 (`icot_software_survey.md` says 23 classes for `pimscsi` and 50 for
 `pimmutil`; the files hold 24 and 51.) *Note 2026-11-23: for `pimscsi`
@@ -917,8 +917,8 @@ undercount; the survey is corrected to 51 in place.*
 - **The opcode set: yes** (MEASURED, `ptfdump.py --opcodes`).
   `PMPSI.DIR/sysidat` is the KL0 decode table, 1,024 entries indexed
   by class x 256 + opcode, 214 populated in class 0 and 241 in class
-  1. Every opcode the six packages use has an entry: 228,536 class-0
-  and 30,052 class-1 instructions, 101 and 111 distinct opcodes, none
+  1. Every opcode the six packages use has an entry: 236,893 class-0
+  and 30,820 class-1 instructions (2026-11-24, fixed numbering; 228,536 and 30,052 before), 101 and 111 distinct opcodes, none
   missing.
 - `sysidat`'s classes 0-1 are the table at the head of `pimm.MEkbn`'s
   classes 0-1 (496 of 512 entries byte-identical): the "PMI"/"BLT"
@@ -1052,21 +1052,22 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - **Container, class and method listing, fact tables: done.**
 - **KL0 disassembler: mechanical with a research tail.** To build:
   names and operand formats for 212 opcodes (101 class 0, 111 class
-  1). Material: the `paragraph` pair (68,146 instructions with
+  1). Material: the `paragraph` pair (71,384 instructions with
   source), and the microcode entry of each opcode as a tie-breaker.
   The ten commonest class-0 opcodes (`a2 20 73 a0 a4 a7 a3 27 5f f0`)
-  are 118,126 of 228,536 uses, so a few dozen paired clauses settle
+  are 121,668 of 236,893 uses, so a few dozen paired clauses settle
   most of the volume (INFERENCE); the 111 built-in opcodes are the
   tail, each needing a source witness or a document (TM-444, TR-265,
   TM-261/353/354; a KL0 built-in manual is catalogued and not
-  obtained, `literature_gaps.md`). Also to settle: the 1,609
-  irregular headers, `h1`, the trailer's slot definitions.
+  obtained, `literature_gaps.md`). Also to settle: `h1`. (The 1,609
+  "irregular headers" were a cell-numbering error, fixed 2026-11-24, 4.1;
+  the trailer is decoded by `psi/librarian.py`.)
 - **Decompiling the FEP services for a faithful stand-in: mechanical
   after that.** For boot: `fep_message_assembler` (503 cells),
   `pimos_scsi_front_end` `command_type/2` + `refute_command/3`
   (1,708), `pimos_file` (1,157), `scsi_stream` (1,296): about 4,700
   cells, each checkable against the PIMOS client source and section
-  1.4. All services: 47 classes, 28,832 cells. The SIMPOS classes
+  1.4. All services: 47 classes, 28,935 cells. The SIMPOS classes
   they call (`simpos##...`) are not held, so a decompiled FEP is a
   specification to re-implement against, not something to run.
 - **Unblocks:** C2 and C4 from the server's side; the command numbers
@@ -1114,8 +1115,9 @@ link itself is in `pimscsi`: `pseudo_scsi_handler` has
 - Which `ipl_parameter` branch `pimm_bios360E.sav` was built with
   (harmless either way, 1.3 step 11).
 - Clause-level identity of any `.sav` module with its source.
-- KL0 opcode names beyond the ten rows of 4.2; `h1`; 1,609 irregular
-  predicate headers; two overshooting `pimmcsp` classes.
+- KL0 opcode names beyond the ten rows of 4.2; `h1`;
+  the hash table's size word (the irregular headers and the two
+  overshooting classes were a cell-numbering error, 4.1).
 - The FEP's own message header code (names only).
 - `rassy`'s bit positions and the numbering of its memory commands
   and conditions; whether its 1989 date matches the PIM/m chips in
