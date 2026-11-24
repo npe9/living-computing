@@ -173,6 +173,7 @@ class DSP3210:
         self.sio_out = None        # callback(word) on obuf write
         self.sio_in = None         # callback() -> word or None for ibuf
         self.on_bio = None         # callback(pins) when the BIO outputs change
+        self.on_watch = None       # callback(reads) -> bool: watch these bus words
         self.cycles = 0            # instruction cycles since construction
         self.reset(bio_pins=0)
         self.running = False       # held in reset until released
@@ -220,15 +221,72 @@ class DSP3210:
         so this is what lets a board skip its idle time."""
         if not self.running:
             return None
-        if not self.waiting or self._pending() or self.pending:
+        if self._pending():
             return 0
+        if self.waiting:
+            if self.pending:
+                return 0
+        elif self._spin is None:
+            return 0
+        return self._timer_horizon()
+
+    def _timer_horizon(self):
+        """Cycles before the one in which the timer reaches zero (it then
+        latches vector 9, masked or not), or None if it is stopped."""
         tcon = self.mmio.get(0x413, 0)
         div = {0: 2, 1: 4}.get(tcon >> 5)
-        if (not tcon & 1 or div is None or self.timer_count == 0
-                or not self.ior[EMR] & (1 << VEC_TIMER)):
+        if not tcon & 1 or div is None or self.timer_count == 0:
             return None
         need = self.timer_count * div - self.timer_frac   # CKI to reach zero
         return max(0, -(-need // self.CKI_PER_INSN) - 1)
+
+    # -------------------------------------------------- spin detection
+    # A loop iteration that starts and ends in the same complete state,
+    # reads no MMIO, writes nothing on the bus and leaves on-chip memory
+    # unchanged repeats forever until a bus word it read changes or an
+    # interrupt arrives.  Such a spin (VCOS's empty-list poll, mml/os
+    # 0x780) is skipped a whole number of iterations at a time, provided
+    # the board agrees to report writes to the words it reads (on_watch).
+
+    def _snap(self):
+        return (self.pc, self.npc, tuple(self.r), tuple(self.flags.items()),
+                tuple(self.acc), tuple(map(tuple, self.acc_hist)),
+                tuple(self.dflags.items()),
+                tuple(tuple(d.items()) for d in self.dflag_hist),
+                tuple(map(tuple, self.loops)), tuple(map(tuple, self.pending)),
+                tuple(sorted(self.ior.items())), self.in_interrupt,
+                self.nointr, self.stall, self.irq_latched, self.irq_pins)
+
+    def _at_head(self):
+        snap = self._snap()
+        t = self._trk
+        if t is not None and t["clean"] and t["snap"] == snap:
+            reads = frozenset(t["reads"])
+            self._trk = None
+            if self.on_watch is not None and self.on_watch(reads):
+                self._spin = (self.steps - t["steps"], reads)
+            return
+        self._trk = dict(snap=snap, steps=self.steps, reads=set(), clean=True)
+
+    def _dirty(self):
+        if self._trk is not None:
+            self._trk["clean"] = False
+
+    def _unspin(self):
+        self._spin = None
+        self._trk = None
+
+    def notify_write(self, addr, size=4):
+        """The board wrote bus bytes [addr, addr+size): if a spin read any
+        of them, it is over."""
+        if self._spin is None:
+            if self._trk is not None:
+                self._dirty()
+            return
+        for a, n in self._spin[1]:
+            if a < addr + size and addr < a + n:
+                self._unspin()
+                return
 
     def skip(self, n):
         """Advance n idle instruction cycles at once; n must not exceed
@@ -236,22 +294,35 @@ class DSP3210:
         lim = self.cycles_until_event()
         if lim is not None and n > lim:
             raise DspError("%s: skip(%d) past the next event (%d)" % (self.name, n, lim))
+        if self.running and not self.waiting and n:
+            return self._skip_spin(n)
         self.cycles += n
         if not self.running or n == 0:
             return
+        self._advance_timer(n)
+
+    def _skip_spin(self, n):
+        period = self._spin[0]
+        head = self._head
+        while n and not (self.pc == head and not self.stall):
+            self.run(1)
+            n -= 1
+        k = n // period * period
+        self.steps += k
+        self.cycles += k
+        self._advance_timer(k)
+        self.run(n - k)
+
+    def _advance_timer(self, n):
         tcon = self.mmio.get(0x413, 0)
         div = {0: 2, 1: 4}.get(tcon >> 5)
         if tcon & 1 and div is not None and self.timer_count:
             total = self.timer_frac + n * self.CKI_PER_INSN
             dec = total // div
-            if dec >= self.timer_count:          # wraps only when masked
-                return self._skip_slow(n)
+            if dec >= self.timer_count:
+                raise DspError("%s: skip crosses a timer tick" % self.name)
             self.timer_count -= dec
             self.timer_frac = total % div
-
-    def _skip_slow(self, n):
-        self.cycles -= n
-        self.run(n)
 
     # -------------------------------------------------- reset and boot ROM
 
@@ -289,6 +360,9 @@ class DSP3210:
         self.npc = 4
         self.steps = 0
         self.boot_state = None
+        self._head = None          # target of the last backward branch
+        self._trk = None           # an iteration being checked for a fixed point
+        self._spin = None          # (period, bus reads) of a proven spin
         self.running = True
         self._rom_reset()
 
@@ -350,11 +424,14 @@ class DSP3210:
             if off >= RAM_BASE:
                 return int.from_bytes(self.ram[off - RAM_BASE:off - RAM_BASE + size], "big")
             if MMIO_LO <= off < MMIO_HI:
+                self._dirty()
                 return self._mmio_read(off, size)
             if off < MMIO_LO:
                 raise DspError("%s: data read of boot ROM 0x%x (no ROM image)"
                                % (self.name, addr))
             raise DspError("%s: read of reserved on-chip 0x%x" % (self.name, addr))
+        if self._trk is not None:
+            self._trk["reads"].add((addr, size))
         return self.bus_read(addr, size)
 
     def store(self, addr, size, value):
@@ -363,12 +440,17 @@ class DSP3210:
         off = self._local(addr)
         if off is not None:
             if off >= RAM_BASE:
-                self.ram[off - RAM_BASE:off - RAM_BASE + size] = value.to_bytes(size, "big")
+                b = value.to_bytes(size, "big")
+                if self._trk is not None and self.ram[off - RAM_BASE:off - RAM_BASE + size] != b:
+                    self._dirty()
+                self.ram[off - RAM_BASE:off - RAM_BASE + size] = b
                 return
             if MMIO_LO <= off < MMIO_HI:
+                self._dirty()
                 self._mmio_write(off, size, value)
                 return
             raise DspError("%s: write to on-chip 0x%x" % (self.name, addr))
+        self._dirty()                      # any bus write may be a signal
         self.bus_write(addr, size, value)
 
     def fetch(self, addr):
@@ -489,6 +571,7 @@ class DSP3210:
             self._rom_ext1()
             return True
         self.in_interrupt = True
+        self._unspin()
         self.pcsh = self.pc
         self.shadow = (list(self.acc), dict(self.dflags), self.ior[DAUC],
                        [list(l) for l in self.loops], self.npc)
@@ -629,6 +712,8 @@ class DSP3210:
             return True
         if self.waiting:
             return False
+        if self.pc == self._head and self._spin is None:
+            self._at_head()
         addr = self.pc
         word = self.fetch(addr)
         self.nointr = self._uninterruptible(word)
@@ -663,6 +748,8 @@ class DSP3210:
     def _branch(self, target):
         """Delayed: the instruction already in npc runs first."""
         self.npc = target & M32
+        if self.npc < self.pc:
+            self._head = self.npc              # a loop head, for spin detection
 
     def _execute(self, w, addr):
         top3 = w >> 29
@@ -833,6 +920,7 @@ class DSP3210:
                 if io == SPC and rh == 0:
                     if wsz == 7:
                         self.waiting = True     # waiti
+                        self._dirty()
                         return
                     raise DspError("%s: spc = r0 (%s) at 0x%x not modelled"
                                    % (self.name, "bkpt/sftrst", addr))
@@ -1060,7 +1148,18 @@ class Dsp3210:
         self.bus = bus
         self.core = DSP3210(self._read, self._write, name="dsp%d" % n)
         self.core.on_bio = self._bio
+        self.core.on_watch = self._watch
         self._pins = 0
+
+    def _watch(self, reads):
+        """A spin was proven: ask the board to report writes to the bus
+        words it reads.  A bus without watch() gets no spin skipping."""
+        watch = getattr(self.bus, "watch", None)
+        return bool(watch and watch(sorted(reads)))
+
+    def notify_write(self, addr, size=4):
+        """The board wrote a watched bus range: end the spin."""
+        self.core.notify_write(addr, size)
 
     def _read(self, addr, size):
         return self.bus.read(addr, size)
@@ -1104,7 +1203,9 @@ class Dsp3210:
 
     def clocks_until_event(self):
         """DSP clocks beboot may skip with skip(): 0 while executing, None
-        while only the board can wake the DSP (see DSP3210.cycles_until_event)."""
+        while only the board can wake the DSP (see DSP3210.cycles_until_event).
+        Also covers a proven spin (VCOS's empty-list poll), once bus.watch
+        has agreed to report writes to the words the spin reads."""
         n = self.core.cycles_until_event()
         return None if n is None else n * self.CLOCKS_PER_STEP
 
