@@ -523,6 +523,22 @@ NINETERM_SHA256 = ("002880c011bd7418c36c036b16f450e6"
                    "1d1ed43e1ec963a6f5b4574a2eece1b1")
 
 
+#: sizeof(struct mipsexec) (sys/include/bootexec.h): libmach's hdrsz for
+#: a "hobbit plan 9 boot image" (executable.c exectab), which size.c
+#: subtracts from a txtsz that, for that format, never included it.
+MIPSEXEC_SIZE = 76
+
+
+def size_line(k, name):
+    """What the release's `size NAME` prints for the -H1 image k
+    (p9exec.read_kernel): size.c's "%ldt + %ldd + %ldb = %ld\t%s\n" of
+    crackhdr()'s txtsz - hdrsz, datsz, bsssz; hobbitboot() sets txtsz =
+    the header's text, so the text figure is 76 short of it."""
+    text = k["text"] - MIPSEXEC_SIZE
+    return "%dt + %dd + %db = %d\t%s\n" % (
+        text, k["data"], k["bss"], text + k["data"] + k["bss"], name)
+
+
 def target_link(a):
     """9$CONF: the mkfile's rule, with its three inputs made on the model:
         $CC $CFLAGS '-DKERNDATE='`{date -n} $CONF.c
@@ -533,7 +549,7 @@ def target_link(a):
     are: tools/p9kgen.py's $CONF.c, boot$CONF.root.c and kerndate
     (--kgen DIR), and libram.a (--libram, default BUILD/libram.a, the
     `kernel` target's product).  The rule's last command, `size 9$CONF`,
-    is not run (`size` is not vendored); p9exec prints the sizes."""
+    is run too (size_line: its line must be the header's figures)."""
     if not a.kgen:
         raise SystemExit("p9kbuild: link needs --kgen DIR (tools/p9kgen.py)")
     kg = pathlib.Path(a.kgen)
@@ -601,6 +617,16 @@ def target_link(a):
     import p9exec
     import p9kcmp
     k = p9exec.read_kernel(str(out))
+    r = run_tool(root, cwd, "size", [target], a.max_steps)
+    report("size", r)
+    want = size_line(k, target)
+    log.line("size", r, None, "header's figures" if r["console"] == want
+             else "NOT the header's figures: %r" % want)
+    print("p9kbuild: " + r["console"].rstrip("\n"))
+    if not ok(r) or r["console"] != want:
+        print("p9kbuild: FAILED: size printed %r, the header says %r"
+              % (r["console"], want))
+        return 1
     problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k))
     log.note("p9exec.check_kernel: %s" % ("; ".join(problems) or "passes"))
     status = p9kcmp.compare(p9kcmp.Image(out), p9kcmp.Image(p9kcmp.S9TERM))
@@ -791,8 +817,24 @@ def symdef_residue_only(got, want):
         detail = ("every member and header identical; __.SYMDEF's %d "
                   "entries identical in offset, name and type, %d bytes "
                   "differ, all after a name's NUL (readar's uninitialised "
-                  "Prog.id; why the model's residue differs is open)"
-                  % (n, nbytes))
+                  "Prog.id)" % (n, nbytes))
+        try:
+            import p9symdef
+            full = b"!<arch>\n" + b"".join(
+                h + b + b"\n" * (len(b) & 1) for _n, h, b in want)
+            c, odd = p9symdef.explain(full)
+            mine, _odd = p9symdef.explain(full, g[2])
+            detail += ("; of the shipped table's %d bytes past the NULs, "
+                       "%d are in-call bytes as replayed and %d stack bytes "
+                       "as /mips/bin/rl's frames leave them; %d are not"
+                       "; this table's: %d in-call as replayed, %d stack "
+                       "bytes the MIPS frames would differ in -- the "
+                       "Hobbit rl's own (tools/p9symdef.py)"
+                       % (c["in_call"] + c["pre"], c["in_call_same"],
+                          c["pre_mips"], len(odd), mine["in_call_same"],
+                          mine["pre"] - mine["pre_mips"]))
+        except SystemExit as exc:
+            detail += "; p9symdef: %s" % exc
     return True, detail
 
 

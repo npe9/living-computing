@@ -147,10 +147,16 @@ re-verified that day) and pinned in `SHA256SUMS`:
 The kernel link (A3): `tools/p9kgen.py` makes the generated inputs,
 `tools/p9kbuild.py kernel --kgen K` builds `libram.a`, and
 `tools/p9kbuild.py link --kgen K --check` runs the shipped `zl` to make
-`9term` (351 M instructions on the reference model, sha256 `002880c0...`).
+`9term` (351 M instructions on the reference model, sha256 `002880c0...`);
+`tools/p9kbuild.py all --build DIR` runs the three in one fresh directory.
 `tools/p9kcmp.py IMAGE` compares any `-H1` image with the shipped
 `plan9-1e/hobbit/s9term`, failing only on what must agree
-(`docs/s9term.md`).
+(`docs/s9term.md`).  `plan9-1e/hobbit/bin/size` and `sys/src/cmd/size.c`
+(2026-11-23) are the `9term` rule's last command.
+`tools/p9symdef.py ARCHIVE` accounts for every byte of an archive's
+`__.SYMDEF` past a name's NUL: libmach's `readar()` replayed, and the
+stack bytes `/mips/bin/rl`'s frames leave (the shipped tables were
+written by the MIPS `rl`, not the Hobbit one; `docs/plan9_syscalls.md`).
 
 `hobbit/bin/echo` measures: `magic 0x197`, text 0x2258 loaded at 0x1000,
 data 0x374, bss 0x354, entry 0x2ad0, `syms` 0x3db0 — a 1st Edition

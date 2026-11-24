@@ -11,6 +11,8 @@ Everything the kernel does here is taken from the release, not guessed:
 
   exec frame     sys/src/9/port/sysproc.c sysexec() and
                  sys/src/9/hobbit/trap.c execregs():
+                     nbytes = BY2WD + the strings (the profiling
+                              clock's hole at USTKTOP-4, sysproc.c:286)
                      ssize = 4*(nargs+1) + roundup(nbytes, 4)
                      if((ssize+4) & 7) ssize += 4
                      argv[] at USTKTOP-ssize, the strings at USTKTOP-nbytes
@@ -74,6 +76,7 @@ import p9exec          # noqa: E402
 import hobbit_sem      # noqa: E402
 
 USTKTOP = 0x80000000
+BY2WD = 4                   # mem.h
 USTKSIZE = 4 * 1024 * 1024  # mem.h: size of the user stack
 
 # The kernel's page.  Page 0 is below UTZERO (0x1000) and no 1e process
@@ -312,7 +315,11 @@ def exec_frame(state, argv):
     m = Machine(state)
     strings = [a.encode("latin-1") + b"\0" for a in argv]
     nargs = len(strings)
-    nbytes = sum(len(s) for s in strings)
+    # sysproc.c:286: "nbytes = BY2WD; /* hole for profiling clock at top
+    # of stack */": the strings end a word below USTKTOP.  That word (a
+    # fresh stack page, so zero) is what sp[0] points at, and libc's
+    # main9.s keeps the pointer in _clock (`MOV R0, _clock(SB)`).
+    nbytes = BY2WD + sum(len(s) for s in strings)
     ssize = 4 * (nargs + 1) + ((nbytes + 3) & ~3)
     if (ssize + 4) & 7:
         ssize += 4

@@ -484,9 +484,17 @@ system calls, output size and sha256 (`build/p9kbuild/<target>.log`):
   whose `__.SYMDEF` has the same 201 entries -- offsets, names, types,
   order.  212 bytes of the table differ, all after a name's NUL: stack
   residue in libmach `readar()`'s uninitialised `Prog p`
-  (`docs/plan9_syscalls.md`).  Why the model's residue differs from the
-  1993 machine's at those positions is **open** (not traced; the model
-  is the core's oracle, so it matters).  For this `p9run` gained `fstat` and
+  (`docs/plan9_syscalls.md`).  **Traced 2026-11-23**
+  (`tools/p9symdef.py`): every one of the table's 2,623 bytes past a
+  NUL is accounted for -- 631 left by earlier names of the same member
+  (the model's `rl` writes all of them identically), 1,992 the stack at
+  readar's entry, which the frames of the release's **`/mips/bin/rl`**
+  predict byte for byte (big-endian: objtype's `i` and Bseek's
+  argument); so do the tables of 22 more shipped Hobbit libraries.  The
+  shipped tables were written by the MIPS `rl` of a cross-building host,
+  and the 212 bytes are where the Hobbit's own `rl` (little-endian `i`,
+  no argument word at `id[5..8]`) must differ: not an exec-environment
+  difference, and nothing to fix in the runner.  For this `p9run` gained `fstat` and
   `rfork(RFNOTEG)`; `rl`'s own `fork()`/`exec("/bin/ar")`/`wait` was
   refused (one process), so `rl` stopped at that call with its table
   written and the driver ran the `ar` command line `writerl()` would
