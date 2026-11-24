@@ -564,3 +564,11 @@ and the PIMOS source tree, which carries per-machine variants; the
 The one-opcode-per-commit loop on the current `PimKL1B.bsv`. Its
 benches stay in the suite; no further instructions are added to that
 module except to support a Phase 0 measurement.
+
+## 11. SCSI
+
+The plan for the SCSI link and the front-end processor, rungs S0..S7
+(the kernel's FEP conversation, a device box on the Bluespec core,
+the bench's device tape, lockstep of the IPL's file service, the real
+IPL by SCSI, `pim:go/4` past `scsi_init`, a live FEP, the real FEP):
+`scsi_plan.md`.
