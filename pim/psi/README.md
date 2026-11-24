@@ -468,8 +468,26 @@ predicate that calls a refused local is refused with it. The largest
 refusals over paragraph are: calls a refused local (208), `X+Y` on two
 registers (141), `heap_vector/2` (101), `string/3` (59), the
 `double_bytes#` macro (37), `X/Y` (36) and `=\=` (33). Over kappa2,
-404 of the 739 classes with source are refused whole, all for
-`with_macro`.
+all 739 classes with source compile now that `with_macro` is expanded
+(below); before, 404 were refused whole for it.
+
+**Macro banks (`with_macro`, TM-388 §3.7.3 pp.72-75, page images).** A
+class `with_macro B` has its clauses rewritten by bank B's clause-level
+rules, `Pattern => Expansion`, before compilation: head arguments, body
+goals and their arguments, top-down, the result expanded again. A bank
+inherits its `nature` banks' rules; its own are tried first
+(INFERENCE: TM-388 states the inheritance, not the order).
+`esp_macro_expander`, which every bank inherits, is SIMPOS and not
+held; its standard macros are the compiler's own. Not modelled, and
+refused by name as `macro rule` for the predicate that meets one: a
+rule with a `when`/`where`/`with`/`by`/`:-` tail (15 in kappa2's
+banks), `==>` (one), and a backquote. Measured over kappa2's banks:
+about 3,811 rules, nearly all `@name => constant`. A bank whose source
+is not held refuses the class as `with_macro` (utter: `cil_macro`,
+`travel_fts_macro`, 10 classes). The structural witness: of kappa2's
+1,323 exact predicates, 822 are in the 406 classes with a bank, and 109
+have source clauses a bank rule changed, so the expansion meets
+`kappa.ptf` cell for cell.
 
 **Structure** (`espc.py check`, against the held `.ptf`). Each class is
 checked for natures, slots with their flags, the declared method and
@@ -482,20 +500,23 @@ its `$or$N`. The held numbering does not follow source order: in
 
 | | paragraph | kappa2 | utter |
 |---|---|---|---|
-| classes with source / compiled | 109 / 109 | 739 / 335 | 69 / 52 |
-| natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 334, 334, 334, 335, 333 | 52, 52, 52, 52, 51 |
-| predicates compared | 991 | 3,387 | 464 |
-| exact | 243 (24.5%) | 501 (14.8%) | 94 (20.3%) |
-| registers only | 32 | 49 | 11 |
-| moves and environment only | 189 | 916 | 95 |
-| clause order | 72 | 132 | 8 |
-| held indexes (switch tables), and other | 106 | 122 | 11 |
-| held uses an opcode with no row | 212 | 1,164 | 179 |
-| other (unclassified) | 137 | 503 | 66 |
-| exact / all held predicates of the classes with source | 11.4% of 2,123 | 2.4% of 21,027 | 6.5% of 1,454 |
+| classes with source / compiled | 109 / 109 | 739 / 739 | 69 / 59 |
+| natures, slots, methods, demons, locals agree | 109, 108, 108, 109, 109 | 738, 738, 736, 739, 736 | 59, 59, 59, 59, 58 |
+| predicates compared | 991 | 9,971 | 515 |
+| exact | 243 (24.5%) | 1,323 (13.3%) | 101 (19.6%) |
+| registers only | 32 | 103 | 13 |
+| moves and environment only | 189 | 2,469 | 103 |
+| clause order | 72 | 287 | 9 |
+| held indexes (switch tables), and other | 106 | 657 | 19 |
+| held uses an opcode with no row | 212 | 3,605 | 191 |
+| other (unclassified) | 137 | 1,527 | 79 |
+| exact / all held predicates of the classes with source | 11.4% of 2,123 | 6.3% of 21,027 | 6.9% of 1,454 |
+
+(Before `with_macro`, 2026-11-24: kappa2 335 classes compiled, 3,387
+compared, 501 exact; utter 52, 464, 94.)
 
 There are no key collisions and no `$or$` paired with another arity in
-paragraph or utter. Kappa2 has 3 pairs with another arity. The two
+paragraph or utter. Kappa2 has 12 pairs with another arity. The two
 paragraph aspect misses are `paragraph_version`'s version slot
 ("3200" in the source, "3500" in the `.ptf`) and `h_grade`'s methods
 (two items of `h_grade_n.esp` do not parse). The "other" class was
@@ -631,7 +652,8 @@ method.
   (OURS), slot initialisation included.
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
-  more elements built in a body, `with_macro`, `->` and `not`.
+  more elements built in a body, `->` and `not`; of `with_macro`, the
+  rules with a tail and `==>`.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
   not modelled. No held nature needs it.

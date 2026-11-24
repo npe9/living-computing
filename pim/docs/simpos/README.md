@@ -235,9 +235,13 @@ and stand-in `simpos##` classes. In order:
      are the 3200/3500 version slot and two unparsed items of
      `h_grade`. Of 991 predicates compared, 243 are cell for cell
      identical. That is 24.5% of the compared predicates and 11.4% of
-     all 2,123 held predicates of those classes. Kappa2 compares 3,387
-     predicates, 501 exact (14.8%); 404 of its 739 classes are refused
-     whole for `with_macro`. Utter compares 464, 94 exact (20.3%). The
+     all 2,123 held predicates of those classes. Kappa2: all 739
+     classes compile now that macro banks are expanded (`with_macro`,
+     TM-388 §3.7.3; before, 404 were refused whole); 9,971 predicates
+     compared, 1,323 exact (13.3%). 109 of the exact ones have source
+     clauses a bank rule changed: the structural witness of the
+     expansion. Utter compares 515, 101 exact (19.6%); 10 of its
+     classes use banks whose source is not held. The
      differences are classified in `../../psi/README.md`. The largest
      classes are held code using opcodes not in the table (212 in
      paragraph) and differences of moves and environment only (189).

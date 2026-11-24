@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tests of the ESP compiler (psi/espc.py).  OURS.
 
-    python3 -I psi/test_espc.py        (about ten seconds; reads the held
+    python3 -I psi/test_espc.py        (about twenty seconds; reads the held
                                         source and .ptf files in memory,
                                         extracts nothing)
 
@@ -20,10 +20,14 @@
    paragraph_version gives the held source's "3200" where paragraph.ptf
    gives "3500" (the known build skew).  On kl0's census of
    paragraph.ptf no method runs to a different outcome.
-5. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
+5. Macro banks (`with_macro`, TM-388 §3.7.3): expansion on a compiled
+   example (own rules before the natures', a `:-` rule refusing its
+   predicate), and kappa2's structure against kappa.ptf pinned (all 739
+   classes compile; 1,323 predicates cell for cell).
+6. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
    pp.48-50): instance and class slots, a failing initialiser fails new,
    an unbound value refuses, an after-demon of new sees the slots.
-6. Stand-ins (psi/standin/): every method carries a PRINTED or
+7. Stand-ins (psi/standin/): every method carries a PRINTED or
    INTERPOLATED label (the owner's rule, 2026-11-24); `:self(#process,P)`
    gives one process instance, made by :new, which runs the printed
    slot initialisers of TM-100 Fig. 3.1 (four lists and a clock);
@@ -51,6 +55,14 @@ restored with cp and checked with cmp):
     test_aspect_differences fail;
   - language: `=<` compiled without the operand swap: test_compare and
     test_compiled_answers fail (get_code's `Y =< Icon!height/2`).
+  - macro bank: a bank's natures not inherited: test_expansion and
+    test_kappa2 fail;
+  - macro bank: an expansion not expanded again: test_expansion and
+    test_kappa2 fail;
+  - macro bank: the natures' rules tried before the bank's own: only
+    test_expansion fails;
+  - macro bank: rules with a `:-` tail applied as plain rules: only
+    test_expansion fails;
   - stand-in label (injected into standin/stream.esp): get/2's PRINTED
     label reworded: only test_methods_labelled fails.
   The injections into kl0.py's slot initialisation, and what they fail
@@ -201,6 +213,58 @@ class Behaviour(unittest.TestCase):
         self.assertEqual(dict(self.r['census']), {'same outcome': 88, 'both refused': 87,
                                                   'refused compiled only': 46,
                                                   'refused held only': 6})
+
+
+class MacroBank(unittest.TestCase):
+    """`with_macro` (TM-388 §3.7.3 pp.72-75): a bank's plain clause-level
+    rules expand head arguments and body terms top-down; a bank inherits
+    its natures' rules, its own first; an unmodelled rule form refuses
+    the predicate that meets it."""
+    T = '''add_operator(@,fx,100).
+macro_bank mb0 has
+@k0 => 7;
+@k1 => 8;
+end.
+macro_bank mb has
+nature mb0;
+@k => 5;
+@k0 => 99;
+pair(X) => {X, @k};
+cond(X) => X :- true;
+end.
+class t with_macro mb has
+:a(C, X) :- X = @k;
+:b(C, Y) :- Y = pair(2);
+:c(C, Z) :- Z = @k0;
+:d(C, Z) :- Z = cond(1);
+:e(C, @k1);
+end.'''
+
+    def test_expansion(self):
+        ts, failed = espc.compile_text(self.T, 'user')
+        self.assertEqual(failed, {})
+        (t,) = ts
+        self.assertEqual([(r[0][0], r[1]) for r in t.refusals], [('d', 'macro rule')])
+        m = K.Machine(espc.library(ts))
+        got = {sel: K.call_class_method(m, 'user##t', sel, [K.Var()])
+               for sel in ('a', 'b', 'c', 'e')}
+        self.assertEqual(repr(got), "{'a': [[5]], 'b': [[{2,5}]], 'c': [[99]], 'e': [[8]]}")
+
+    def test_kappa2(self):
+        # espc.py check kappa2, 2026-11-24.  Before with_macro: 335 of 739
+        # classes compiled (404 refused whole), 3,387 predicates compared,
+        # 501 exact.  After: all 739 compile; 9,971 compared, 1,323 exact.
+        # Of the exact ones, 822 are in the 406 classes with a bank, and
+        # 109 of those have source clauses that a bank rule changed: the
+        # expansion meets the held cells (structural witness).
+        r = espc.check('kappa2')
+        c = r['counts']
+        self.assertEqual((c['classes compiled'], c['class refused']), (739, 0))
+        self.assertEqual((c['pred compared'], c['pred exact']), (9971, 1323))
+        self.assertEqual([c['%s agree' % a] for a in ('natures', 'slots', 'methods', 'locals')],
+                         [738, 738, 736, 736])
+        self.assertEqual((r['refusals']['macro rule'], r['refusals']['internal']), (40, 2))
+        self.assertNotIn('with_macro', r['refusals'])
 
 
 class SlotInit(unittest.TestCase):

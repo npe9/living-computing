@@ -242,6 +242,15 @@ Pattern => Expansion [when Gen] [where Check] [with Clauses] [by Var] :- Cond
 **Macro banks:** `macro_bank N [with_macro M] has [nature...;] ... end.` Every bank inherits
 `esp_macro_expander`, which provides `expand_clause/5` and `expand_goals/3`.
 
+*Witness (2026-11-24):* `psi/espc.py` (OURS) expands a class's
+`with_macro` bank's plain `Pattern => Expansion` rules, the bank's
+natures' rules after its own, top-down and again on the result. On
+kappa2 all 739 classes with source then compile, and 109 predicates
+whose source a bank rule changed are cell for cell identical to
+`kappa.ptf` (`psi/test_espc.py` MacroBank). Rules with a tail
+(`when`/`where`/`with`/`by`/`:-`), `==>` and the backquote are not
+modelled; a predicate that meets one is refused.
+
 **Standard macros** (TM-388 App C pp.143–144):
 
 | Group | Macros |
