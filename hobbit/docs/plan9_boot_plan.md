@@ -891,6 +891,20 @@ not met yet: s9term prints no banner of its own; the first text after
 pageinit's line is `/boot`'s prompt.  The Bluespec-side DUART below is
 unchanged.
 
+## A4 status, core side (2026-11-24): s9term on the Bluespec core, record for record, into `/boot`
+
+`bsv/run_p9kern.sh N` boots the same image on `mkHobbitCoreSystem` and
+compares every retirement record with the reference boot's (every field
+but `cyc`), device reads replayed and device writes checked, interrupts
+delivered at the reference's instruction boundary (docs/p9boot.md, "The
+boot on the core").  Every record matches through 2,893,000 on the
+reference as merged 2026-11-23: `main` (125,203), `mmuinit`
+(2,088,445), the console line, the first interrupt (2,848,972),
+`touser` (2,883,341), `/boot` in user mode (2,886,866) and its first
+system call (2,888,578).  The next difference is a write fault on a
+committed store (2,893,033).  Findings: docs/conformance_1to1.md §1d.
+The suite runs the first 300,000 records.
+
 ## A4 status (DUART): model written, gate red, parked (2026-11-19)
 
 A first `mkHobbitDuart` exists but its gate is **not** green: 26 of 37
