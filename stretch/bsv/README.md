@@ -52,6 +52,7 @@ pulled from bitsavers.org):
 | `StretchExecute.bsv` | The execute datapath for the in-scope opcode subset (`execute`), and `mkEBox`, the E-box as a request/busy/result box: `start` runs an instruction and, if it needs an operand word, issues the read and holds the instruction (`busy`, `busyFor(owner)`, `canResume`) until the core's resume arm calls `resume`; `exec` is the bare one-shot datapath for the preparation arm's operand-address probe. |
 | `StretchIO.bsv` | Simulated Input-Output subsystem (four fixed devices — card reader, printer, tape, disk — standing in for the real Exchange, the IBM 7612 disk synchronizer, and the external units); see its own file header for the full scope statement. |
 | `StretchDiskSource.bsv` | The 353 platter behind an interface, the way `StretchTapeSource.bsv` holds the 729's reel: `DiskIndex`/`ArcAddr`/`arcWords`, and a small RegFile-backed source of two arcs to test against. A unit is 2²¹ words, so the real thing is a host file or an SD card, not registers. |
+| `StretchDiskSourceFile.bsv` + `host_tape.c` | `mkDiskSourceFile`, the full 353 (2²¹ words) in host memory through `host_tape.c`'s `host_disk_*`, for every `-D HOST_TAPE` (Bluesim) build; zero at power-on. **Image file, optional** (2026-11-24, `../docs/disk_subsystem.md` §9c): `STRETCH_DISK=path` loads one the first time the disk is used, zero-filling past its end (a missing or over-long file stops the run); `STRETCH_DISK_SAVE=path` writes the whole unit when the testbench finishes (`host_disk_save`, called from `../tests/gen_tb.py`'s finish rule under `` `ifdef HOST_TAPE ``). Format: the tape's, 8 bytes per word big-endian, word `arc*512 + w` at byte `8*(arc*512 + w)`, 16,777,216 bytes. With neither variable set nothing is read, written or printed. Tested by `../tests/run_disk_image_test.sh`. |
 | `StretchIBox.bsv` | The instruction unit's stage module `mkInstrBuffers` (1Y/2Y buffers + IC controls: `advance` once per clock, `lookup` for preparation) and, as functions, the instruction classification (E-box class, fetches an operand, stores where, progressive) and the I-box-ahead-of-look-ahead hazard test. |
 | `StretchLookAhead.bsv` | The four-level look-ahead as a stage module `mkLookAhead`: `collect` every clock (operand arrivals, one fetch issue), the levels/head/tail/count for the decision arms, and their three mutations `retireHead`/`load`/`cancelAll`. |
 | `check_schedule.py` | Run by `build.sh` on bsc's `-show-schedule` output: fails if any core rule is blocked by another core rule (only exported harness methods may block one) — the assertion `fire_when_enabled` cannot make at the synthesized boundary, see "Toolchain" item 10. |
@@ -1920,8 +1921,9 @@ instruction addressed to a channel whose report is still waiting is
 not rejected with CBJ, and the scanner is not reset to the
 last-addressed channel -- it simply walks 0, 32, 33, 34, 35 in
 ascending order. The host builds (-D HOST_TAPE) carry a full 353,
-2^21 words (StretchDiskSourceFile.bsv); every other build keeps the
-two-arc source.
+2^21 words (StretchDiskSourceFile.bsv), which can load and save an
+image file (STRETCH_DISK, STRETCH_DISK_SAVE; see the Files table);
+every other build keeps the two-arc source.
 
 ## Toolchain
 
