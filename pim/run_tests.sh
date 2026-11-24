@@ -66,6 +66,9 @@ bsv/run_mesh_tb.sh
 echo "=== Bluesim SDRAM store testbench ==="
 bsv/run_sdram_tb.sh
 
+echo "=== Bluesim FEP emulator against ref/pimm/fep.py (image file and SPI reader) ==="
+bsv/run_fepemu.sh
+
 echo "=== formal BMC (fixed PASS, buggy FAIL) ==="
 bsv/formal/run_formal.sh
 
