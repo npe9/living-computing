@@ -761,7 +761,7 @@ binaries on the reference model -- the core had no little-endian data
 mode, which every 1e program but `cat` depends on (A2's status above;
 added with golden `017`).
 
-## A4 status, reference side (2026-11-23): s9term boots to /boot's prompt
+## A4 status, reference side (2026-11-23): s9term boots to init, root from the 1e server
 
 `tools/p9boot.py` boots the shipped kernel image `s9term` on the
 reference model (`sem/hobbit_sem.py` with a `System`: CPU-prefixed
@@ -778,6 +778,44 @@ Details, milestones and choices: `docs/p9boot.md`.
   `sysexec("/boot")` and `/boot` demand-paging in user mode; the clock
   interrupt (the Quart counter) is taken.
 * 22,530,554: `/boot`'s prompt on the screen, `root is from (il, tcp, incon, 9600, 19200)[il]: ` (with `--counter-period 0.04`, a stated choice); it waits for a keyboard byte.  Its default transport, `il`, needs the SONIC ethernet and the IIC EEPROM (docs/p9boot.md).
+* Idle skip (CHOICES `idle-skip`): `runproc`'s four-instruction idle
+  loop is retired in whole laps up to the next timed device event, the
+  run otherwise unchanged instruction for instruction (pinned: the 25 Hz
+  prompt run still takes 22,530,554 instructions, now in 29 s instead of
+  6 min).  At the formula's own clock rate the prompt comes after
+  286,970,654 instructions (286,977,189 with the EEPROM), 14.4 s of
+  model time, ~30 s of host time, so
+  `--counter-period` is no longer needed.
+* Console input: s9term's console is a serial terminal on Quart channel
+  0 (`eiaspecial(0, &printq, &kbdq, 19200)`, `kbdq.putc = kbdcr2nl`;
+  the image has no `kbd.c`).  Return typed there (`--type`) takes `il`:
+  287,427,906 instructions (before the EEPROM: `sonic ether: 00 00 00 00 00 00`), then the
+  first BOOTP transmit.
+* EEPROM and SONIC: the PCF8584/PCF8582 answer deviic.c (ether address
+  52:54:00:00:0b:0b, the one the QEMU server's ndb gives the Hobbit), the
+  DP83932 is modelled as devether.c uses it (CAM, RRA/RDA, TDA, isr/imr,
+  IRQ 9; QEMU's dp8393x.c followed where the driver is silent), and
+  /boot's BOOTP request leaves at 287,845,754 instructions, decoding
+  byte for byte (`--pcap`).
+* The join (tools/p9join.py): s9term on the model, its SONIC's frames
+  on QEMU's `-netdev dgram` pair to the 1e 386 file server
+  (docs/qemu_1e_server.md), boots with its root from that server to
+  **`init: starting /bin/rc`** at 310,933,347 instructions (15.6 s of
+  model time, 150 s of host time, 277 frames): BOOTP from the server's
+  ip/bootp, ARP, IL to il!10.9.0.1!17008, user none, the time written to
+  the timekeeper, /hobbit/init from the server.  `JoinReplayTest`
+  replays the recorded session without QEMU, byte for byte and to the
+  same instruction.  The one device it needed beyond the SONIC: the
+  MK48T02-style timekeeper at IONAK 0x2000/0x3FE0 (CHOICES `rtc`; the
+  first live run stopped at setrtc).  No CRET was clamped on this
+  path; the clamp (a CRET with MSP > SP + 256, notify()'s frames;
+  CHOICES `cret-msp`) is what the no-server path needs: ten BOOTP
+  requests, ten alarm notes, `My IP address[0.0.0.0]: `.  A later live run went on: `/bin/rc` from the server ran on the Hobbit
+  (`Can't cd /usr/none`, `init: rc exit status: rc 9:can't cd`, as the
+  server prints for glenda), and init's restart reached **rc's `% `
+  prompt** at 618,458,635 instructions (31.0 s model time, 456 s host).
+  The live join is not deterministic: one
+  run was rejected by an ack-0 IL sync from the server (docs/p9boot.md).
 
 The gate as written above (the boot banner and prompt on the UART) is
 not met yet: s9term prints no banner of its own; the first text after

@@ -34,8 +34,11 @@ python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
-# A4: the shipped kernel s9term boots on the reference model as far as
-# pageinit's console line (tools/p9boot.py, docs/p9boot.md; ~25 s).
+# A4: the shipped kernel s9term boots on the reference model: pageinit's
+# console line, /boot's prompt, the BOOTP request, the no-server path,
+# and a replay of the join with the 1e file server to `init: starting`;
+# the idle skip is checked against a run without it (tools/p9boot.py,
+# docs/p9boot.md; ~4-5 min on a loaded machine).
 python3 "$here/test_p9boot.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
