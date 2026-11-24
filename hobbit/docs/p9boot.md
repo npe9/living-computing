@@ -40,9 +40,10 @@ The kernel prints to two places, and both are captured:
   `uartputs` path, `\n` as `\r\n`), which is what a serial console would
   show.  These are the bytes the device model collected.
 
-**Bitmap screen, the minimum chosen.**  The screen is plain RAM plus a
-write-only LCD register pair that counts writes; no pixels are
-interpreted.
+**The bitmap and the LCD** are modelled since 2026-11-24 ("The
+terminal: screen, keyboard, mouse" below): `--screen FILE` writes the
+bitmap as an image, and the LCD is a panel built from the kernel's
+writes, checked equal to the bitmap.
 
 **The console's input is Quart channel 0, not a scan-code keyboard.**
 The shipped `screen.c` calls `kbdinit(2)` (the `kbd.c` scan-code
@@ -60,7 +61,9 @@ serial terminal on channel 0 at 19200 baud 8N1 -- output and input --
 taking ASCII, CR made NL; channel 2 is never set up.  `--type
 TEXT=REPLY` (CHOICES `console-input`) types REPLY on that line once the
 screen has shown TEXT: `--type 'il]: =\r'` answers the prompt with
-Return.  The mouse (channel 3) gets nothing.
+Return.  The calls are in s9term's `main` (+0x8a, +0xa4), not in
+`screeninit` as in the shipped `screen.c`.  The mouse on channel 3 is
+below ("The terminal").
 
 Text reaches the screen ~0.4-0.5 M instructions before the serial line:
 s9term's `putstrn` draws it first (`screenputs`, the font blitted in
@@ -561,6 +564,123 @@ Without `--counter-period` the clock ticks every 0.569 s of model time,
 and `sleep(1000)` (25 ticks) needs ~14 s of model time; with the idle
 skip that costs nothing, so the override is no longer needed to get
 anywhere.
+
+## The terminal: screen, keyboard, mouse (2026-11-24)
+
+`tools/p9term.py` holds the terminal's display and input devices
+(`TERM_CHOICES`, summarized in `CHOICES` `framebuffer`, `lcd`, `mouse`,
+`input`).  Every fact below is read from s9term's own code, by function
+and offset (`python3 tools/p9kdis.py screeninit`, `^eiaspecial` for
+callers: `asm/hobbit_asm.py` on the image), because the image is older than the shipped
+`screen.c` (`docs/s9term.md`) and differs from it where it matters.
+
+### The bitmap
+
+s9term's `screeninit` (0x800265dc):
+
+| offset | does | so |
+|---|---|---|
+| +0x4c..+0x5e | `xalloc(198656)` | 2048 + 768·1024·2/8 bytes |
+| +0x68 | `gscreen.base += 2048` | base 0x805b7968 in the runs below (the shipped source adds 512) |
+| +0x72 | `width = 48` | words a row: 192 bytes |
+| +0x7c | `ldepth = 1` | 2 bits a pixel |
+| +0x86..+0xa4 | `r = (0, 0, 768, 1024)` | portrait, 768 wide |
+| +0x1e8..+0x222 | `gbitblt(&gscreen, ..., flipD[0])` | the whole screen to ones |
+
+`--screen FILE` (PNG, or PGM for `.pgm`; zlib only, no dependencies)
+writes it at the end of the run, `--screen-at STEP:FILE` once STEP
+instructions have run, and the input action `screen FILE` (below) at a
+chosen moment.  The dump reads `gscreen` (base, width, ldepth, r) at
+that moment; pixel 4k+j of a row is bits 2j+1..2j of byte k (islittle,
+`screen.c:24`; s9term bit-reverses its font and cursor into that order),
+the bytes in the address order of the little-endian kernel.  The report
+gives the sha256 of the pixel values (one byte per pixel, row major).
+
+**Shade.**  s9term's `getcolor` (0x80026aa0) gives pixel 0 the colour ~0
+(white) and every other value 0 (black); `bitreset` (+0x5c..+0x62) reads
+it and so leaves `flipping` 0: `/dev/bitblt` draws with 0 white.  The
+dump draws value v as grey 255 − 85v.  The kernel's own console does
+not follow that: `screeninit` fills the screen with `flipD[0]` (ones)
+and `screenputs` draws glyphs with `flipD[S]`, as for a screen whose 1
+is bright, so with getcolor's shade **the console is white text on
+black**.  The cursor confirms the shade: `bitinit` draws the arrow at
+(0, 0) with `D&~clr` and `S|D` (flipping 0), and the dump shows Plan 9's
+black arrow with a white border, over the corner of the first line's
+`1` (a zoom of the first-line dump).  Values 1 and 2 are
+drawn as greys; nothing in the image tells them apart, and 8½'s
+textures and fonts are 1-bit.
+
+### The LCD (`TERM_CHOICES` `lcd`)
+
+`screenupdate` (0x80026368) copies the rows that changed (`mbb`, rounded
+to groups of 4 rows and 32 rows) to Bart's LCD (io.h `Lcdisp`, IOACK
+0x3000): per group of rows y..y+3, `ctl = y>>8`, `ctl = (y>>2)&0x3f`
+(+0x78..+0xa0), then from x = 0 four `data` writes per bitmap byte
+(+0x134..+0x17c), word j holding pixel 4k+j of the four rows (row r in
+bits 2r+1..2r: its `swiz13` table, which s9term's `lcdscsion` builds
+without the shipped source's `((m<<2)|m)>>1` step), inverted (`~m`).
+`LcdPanel` takes that as a 768 × 1024 panel: each `ctl` write shifts its
+low 6 bits into an 8-bit row-group address and resets the column, each
+`data` write fills one column of four rows and moves right.  The run
+reports `LCD panel == framebuffer: yes (0 of N written cells differ)`
+when every cell written equals 3 − the bitmap's pixel; `--lcd FILE`
+writes the panel.  At the first line (3 M instructions): 58 `ctl` and
+16,256 `data` writes, 49,152 cells, all equal.  Nothing in the release
+documents the LCD, so the panel is a reading of the driver, which the
+equality makes consistent with the bitmap; it is not checked against
+the hardware.
+
+### The keyboard (`TERM_CHOICES` `keyboard`)
+
+s9term has no scan-code keyboard: no `kbd.c`, no `kbdinit`.  Its
+keyboard is the serial console, Quart channel 0 at 19200 baud, ASCII,
+CR made NL by `kbdcr2nl` (the console section above).  `--type
+TEXT=REPLY` still types there once `screenputs` has shown TEXT; under
+8½ the screen is drawn through `/dev/bitblt`, not `screenputs`, so the
+input script's timed `type` is the way to type into a window.  8½ reads
+the same bytes from `/dev/cons` in raw mode.
+
+### The mouse (`TERM_CHOICES` `mouse`)
+
+`main+0xa4` calls `eiaspecial(3, 0, &mouseq, 1200)`, and `printinit+0x6e`
+sets `mouseq.putc = mouseputc` (0x8002c926).  `m3mouseputc` (the
+Microsoft 3-byte decoder) is in the image, but nothing installs it and
+nothing writes `mousetype`.  `mouseputc` is devbit.c's "Logitech 5 byte
+packed binary" decoder, the Mouse Systems protocol, 1200 baud 8N1:
+
+| byte | bits |
+|---|---|
+| 0 | `1000 0LMR`: a byte with high nibble 8 starts a packet; buttons active low (left bit 2, middle bit 1, right bit 0: `b[] = {0,4,2,6,1,5,3,7}` after `^7`, Plan 9's 1, 2, 4) |
+| 1, 3 | dx1, dx2, signed: dx = dx1 + dx2 |
+| 2, 4 | dy1, dy2, signed, y up: dy = −(dy1 + dy2) |
+
+A delta byte 0x80..0x8F would restart the packet, so `mouse_packet`
+keeps each in −100..100 and `mouse_packets` splits a larger move.
+`mouseupdate` adds the delta to `mouse.xy` (mouse+0x10, +0x14), clamped
+to [0, 768] × [0, 1024], one count one pixel, and redraws the cursor.
+
+### Timed input (`TERM_CHOICES` `input`)
+
+`--input SCRIPT` (or `--input-line LINE`, repeatable; `p9join.py` takes
+both) is a list of `WHEN ACTION` lines, each waiting for the one before:
+
+```
+screen 'il]: ' mouse 100 50       # once screenputs shows "il]: "
+after 0.5 mouse -30 200 L         # 0.5 s of model time later, left down
+quiet 30 screen out.png           # once the LCD has been still for 30 s
+after 0.2 type 'ls\r'             # on the console line
+at-cycle 123456789 buttons -      # at a model cycle (--input-log writes these)
+step 50000000 stop
+```
+
+Timed items are device events for the idle skip (`Boot.next_event`),
+so a wait costs idle laps, not instructions.  `move X Y` moves to a
+position the script tracks (the kernel's `mouse.xy` when it first
+moves, then its own sum of deltas).  `TerminalTest`
+(`tests/test_p9term.py`) runs the first two lines at /boot's prompt
+(25 Hz): `mouse.xy` becomes (70, 250), `mouse.buttons` 1, ten bytes
+arrive on channel 3, the arrow is drawn there, the panel equals the
+bitmap, and the bitmap's checksum is pinned.
 
 ## The idle skip (CHOICES `idle-skip`)
 

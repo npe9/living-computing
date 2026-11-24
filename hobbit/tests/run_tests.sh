@@ -41,6 +41,10 @@ python3 "$here/test_sem_system.py"
 # checked against a run without it (tools/p9boot.py, docs/p9boot.md;
 # ~6-7 min on a loaded machine).
 python3 "$here/test_p9boot.py"
+# The terminal (tools/p9term.py): the screen bitmap, the LCD panel built
+# from screenupdate's writes, the Mouse Systems mouse on Quart channel 3
+# and timed input, at /boot's prompt (~1 min).
+python3 "$here/test_p9term.py"
 python3 "$here/test_p9shim.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.

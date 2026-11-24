@@ -168,6 +168,19 @@ def main(argv):
                     metavar="TEXT=REPLY",
                     help="after the two boot answers, type REPLY once the "
                          "screen shows TEXT (p9boot --type)")
+    ap.add_argument("--user", default="none",
+                    help="the answer to /boot's user[none] (default none); "
+                         "another user is asked a password (--password) "
+                         "and the boot goes on unchecked (no auth server)")
+    ap.add_argument("--password", default="password",
+                    help="typed at password: for a user other than none")
+    ap.add_argument("--input", metavar="SCRIPT",
+                    help="timed keyboard and mouse input (p9boot --input, "
+                         "p9term TERM_CHOICES['input'])")
+    ap.add_argument("--input-line", action="append", default=[],
+                    metavar="LINE")
+    ap.add_argument("--screen-every", type=int, default=0, metavar="N",
+                    help="write OUT/screen-K.png every N instructions")
     ap.add_argument("--ports", default="%d,%d" % (PS, PH),
                     metavar="SERVER,HOBBIT",
                     help="the UDP ports of the two ends of the wire")
@@ -181,13 +194,32 @@ def main(argv):
     t0 = time.time()
     try:
         boot = p9boot.Boot(S9TERM)
-        boot.script = [(b"il]: ", b"\r"), (b"user[none]: ", b"\r")]
+        boot.script = [(b"il]: ", b"\r")]
+        if args.user == "none":
+            boot.script.append((b"user[none]: ", b"\r"))
+        else:
+            boot.script.append((b"user[none]: ",
+                                args.user.encode() + b"\r"))
+            boot.script.append((b"password: ",
+                                args.password.encode() + b"\r"))
         for item in args.type:
             wait, sep, reply = item.partition("=")
             boot.script.append((p9boot.unescape(wait),
                                 p9boot.unescape(reply)))
         boot.until = p9boot.unescape(args.until)
         boot.progress = args.progress
+        lines = []
+        if args.input:
+            with open(args.input) as f:
+                lines += f.read().splitlines()
+        lines += args.input_line
+        if lines:
+            boot.set_inputs(lines)
+        if args.screen_every:
+            boot.screen_at = [
+                (k * args.screen_every,
+                 os.path.join(args.out, "screen-%04d.png" % k))
+                for k in range(1, args.max_steps // args.screen_every + 1)]
         wire = p9boot.Wire(
             boot.sonic.clock, pcap=os.path.join(args.out, "hobbit.pcap"),
             peer="127.0.0.1:%d" % ps, local="127.0.0.1:%d" % ph)
@@ -221,6 +253,13 @@ def main(argv):
         print("  %.6f %s %s" % (t, way, p9boot.decode_frame(frame)))
     for stepno, wait, reply in boot.typed:
         print("p9join: step %d: typed %r after %r" % (stepno, reply, wait))
+    if boot.inputs is not None:
+        for stepno, cycles, line in boot.inputs.fired:
+            print("p9join: step %d (cycle %d): input %s" % (stepno, cycles,
+                                                            line))
+        with open(os.path.join(args.out, "input.log"), "w") as f:
+            f.write("".join(l + "\n" for l in boot.inputs.log_lines()))
+    boot.dump_screen(os.path.join(args.out, "screen.png"))
     for chan, data in sorted(boot.console.items()):
         print("p9join: console %s: %r" % (chan, bytes(data)))
     with open(os.path.join(args.out, "console"), "wb") as f:
