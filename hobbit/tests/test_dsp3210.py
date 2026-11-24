@@ -11,10 +11,11 @@ this file, only instruction words, addresses and short decoded texts.
 The model tests run hand-encoded programs on a flat bus.
 
 Discriminating checks, observed 2026-11-24 with the disk image present
-(each injection a text edit, reverted by the exact reverse edit and the
-file compared byte for byte with its copy from before; run with python -B,
-since an injection of the same size inside one second leaves a stale .pyc
-that Python trusts).  Observed failures:
+(HOBBIT_9308000058 set).  Each injection is a text edit, reverted by the
+exact reverse edit, with the file then compared byte for byte against its
+copy from before.  Run with python -B: an injection of the same size
+inside one second leaves a stale .pyc that Python trusts.  Observed
+failures:
 
 - dsp3210dis, branch dispatch back to `op >> 1 == 0` (the first draft's
   bug that made I/O-condition branches "reserved"):
@@ -23,21 +24,24 @@ that Python trusts).  Observed failures:
   test_do_forms, test_os_boot_mover.
 - dsp3210, the delayed branch made immediate (_branch calls _jump):
   test_call_return, test_dau_condition_latency, test_delayed_branch,
-  test_loop_counter.
+  test_loop_counter, test_os_boot_standalone, test_reset_release_run.
+- dsp3210, the pc read as address + 4 instead of + 8: the same six.
 - dsp3210, do-loop body one instruction short (end = start + 4*K):
-  test_do_loop.
+  test_do_loop, test_os_boot_standalone.
 - dsp3210, DA memory write committed at once (countdown 1, not 4):
   test_da_write_latency.
 - dsp3210, DAU condition from the current flags (dflag_hist[-1]):
   test_dau_condition_latency.
 - dsp3210, float_to_dsp's negative mantissa as sign-magnitude:
   test_float_format.
+- dsp3210, SHIFT-OR keeping only rS's low half: test_shift_or.
 - dsp3210, BRC=1 boot taking the address from header bytes 4-7: every
-  model test that boots (12): test_alu_flags, test_boot_rom_brc1,
-  test_boot_rom_brc1_copy, test_call_return, test_da_write_latency,
-  test_dau_condition_latency, test_delayed_branch, test_do_loop,
-  test_load_store, test_loop_counter, test_mac, test_timer_interrupt.
-- dsp3210, interrupt vector r22 + 8*(n-1): test_timer_interrupt.
+  test that boots the model (17), test_alu_flags .. test_wrapper.
+- dsp3210, interrupt vector r22 + 8*(n-1):
+  test_bio_and_irq, test_timer_interrupt.
+
+Tried and not discriminating: doblock taking K from its field instead
+of forcing 0.  Every doblock in the code has K = 0 encoded.
 """
 import os
 import struct
@@ -358,6 +362,17 @@ class ModelTest(unittest.TestCase):
         run(d2, 2)
         self.assertEqual((d2.r[4], d2.flags["z"]), (0, 1))
 
+    def test_shift_or(self):
+        # SHIFT-OR p. 4-75: N << 16 OR'ed with all of rS, always 32-bit
+        prog = [set24("r1", 0x345678),
+                0x90410800,                         # r2 = r1 <<| 0x0800
+                0x90220800]                         # r1 = r2 <<| 0x0800 (OR again)
+        d, _ = machine(prog)
+        run(d, 2)
+        self.assertEqual(d.r[2], 0x08345678)
+        run(d, 1)
+        self.assertEqual(d.r[1], 0x08345678)
+
     def test_load_store(self):
         # 7c, Table 10-1; W = 1 char (sign-extends), 2 ushort, 3 short
         prog = [set24("r1", 0xE000),
@@ -536,6 +551,92 @@ class BeBootTest(unittest.TestCase):
         self.assertEqual(d.pc, d2.pc)
         d.hold()
         self.assertTrue(d.idle)
+
+
+
+def relocate(coff, symbols):
+    """Lay out a VCOS module at its paddrs and apply its COFF relocations
+    (10-byte entries: vaddr, symbol index, type).  Types as observed in
+    mml/os: 44 a 32-bit word, 46 the 24-bit immediate of a format 8b
+    `rN = (ushort24) A` (Ne bits 28-21 high, N bits 15-0 low), 47 the N of
+    the `rN <<| N` after it, which takes bits 31-16 of the pair's value.
+    The value is symbols[index] + A.  The type meanings are INFERRED from
+    the code pairs they land on, and the symbol values are the caller's:
+    the module's symbol table is absent (symptr 0x382b lies past the end),
+    so what vcas_server's loader gives each index is not known."""
+    img = bytearray(max(s["paddr"] + s["size"] for s in coff.sections))
+    for sec in coff.sections:
+        img[sec["paddr"]:sec["paddr"] + sec["size"]] = coff.data(sec)
+    pair = {}
+    unresolved = []
+    for sec in coff.sections:
+        for k in range(sec["nreloc"]):
+            e = coff.blob[sec["relptr"] + 10 * k: sec["relptr"] + 10 * k + 10]
+            va, sym, typ = struct.unpack(">IIH", e)
+            if sym not in symbols:
+                unresolved.append((sec["name"], va, sym, typ))
+                continue
+            w = struct.unpack(">I", img[va:va + 4])[0]
+            if typ == 44:
+                w = (w + symbols[sym]) & 0xFFFFFFFF
+            elif typ == 46:
+                v = (((w >> 21) & 0xFF) << 16 | (w & 0xFFFF)) + symbols[sym]
+                pair[va + 4] = v
+                w = (w & 0xE01F0000) | ((v >> 16) & 0xFF) << 21 | (v & 0xFFFF)
+            elif typ == 47:
+                w = (w & 0xFFFF0000) | (pair[va] >> 16) & 0xFFFF
+            else:
+                raise AssertionError("relocation type %d" % typ)
+            img[va:va + 4] = struct.pack(">I", w)
+    return img, unresolved
+
+
+class VcosBootTest(unittest.TestCase):
+    """mml/os's __boot from Be's boot block, standing alone: the BRC = 1
+    ROM path enters the module in host memory, __boot sets up the timer
+    and pcw, copies __vcos on-chip with doblock and enters it.
+
+    Inputs that are INFERRED, not read from the loader: the module image at
+    DSP 0x60010000; symbol 12 (the vector table's handler pointers) is the
+    module base; 63/68 put __vcos's copy at on-chip 0xE000 (68 is 0x20
+    past 63, as the copy starts at the section header while the return
+    address counts from the code); 81 (r21, the stack) at 0xE400; pcw
+    word 0x128 holds vcos.cfg's Boot= 0x3d80.  The run ends where __vcos
+    reads its execution-list pointer, which the host has not set: a
+    load through 0, the boot ROM, which is not modelled."""
+
+    BASE = 0x60010000
+
+    def test_os_boot_standalone(self):
+        disk_or_skip(self)
+        coff = module_words("/system/vcos/mml/os")
+        b = self.BASE
+        img, unresolved = relocate(coff, {12: b, 63: 0xE000 - 0x69C,
+                                          68: 0xE000 - 0x69C + 0x20,
+                                          81: 0xE400 - 0x69C})
+        # the five external symbols of __vcos, and __ModH's
+        self.assertEqual(sorted(u[2] for u in unresolved), [13, 56, 58, 59, 62, 76])
+        img[0x128:0x12C] = struct.pack(">I", 0x3D80)
+        bus = Bus()
+        for i, x in enumerate(img):
+            bus.mem[b + i] = x
+        for i, x in enumerate((b + 0x58).to_bytes(4, "big")):
+            bus.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        d.reset(0xF0)
+        seen = []
+        with self.assertRaisesRegex(dsp3210.DspError, "data read of boot ROM 0x0"):
+            for _ in range(1000):
+                seen.append(d.pc)
+                d.step()
+        self.assertEqual(d.steps, 176)                      # the 177th faults
+        self.assertEqual(seen[-1], 0xE114)
+        self.assertEqual(d.mmio[0x413], 0x2F)               # timer running
+        self.assertEqual(d.ior[dsp3210.PCW], 0x3D80)
+        self.assertEqual(d.ior[dsp3210.DAUC], 12)
+        self.assertEqual(d.r[26], b + 0x130)                # vector table
+        self.assertIn(0xE108, seen)                         # __vcos entered on-chip
+        self.assertEqual(d.ram[:0x188], bytes(img[0x67C:0x67C + 0x188]))
 
 
 if __name__ == "__main__":

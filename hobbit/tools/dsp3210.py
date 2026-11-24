@@ -626,8 +626,9 @@ class DSP3210:
                 tgt = self.get(r2_, addr) + sx(w, 16)
                 self.put(r1_, addr + 8)
                 self._branch(tgt)
-            else:                               # rD = rS <<| N
-                v = (self.get(r2_, addr) & 0xFFFF) | ((w & 0xFFFF) << 16)
+            else:                               # rD = rS <<| N (p. 4-75):
+                # N << 16 OR'ed with all of rS, always 32-bit
+                v = (self.get(r2_, addr) | ((w & 0xFFFF) << 16)) & M32
                 self.put(r1_, v)
                 self.flags.update(n=v >> 31, z=int(v == 0), v=0, c=0)
             return
