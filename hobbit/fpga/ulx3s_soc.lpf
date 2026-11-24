@@ -81,3 +81,10 @@ IOBUF PORT "sdram_ba[*]" IO_TYPE=LVCMOS33 SLEWRATE=FAST ;
 IOBUF PORT "sdram_a[*]" IO_TYPE=LVCMOS33 SLEWRATE=FAST ;
 IOBUF PORT "sdram_dq[*]" IO_TYPE=LVCMOS33 SLEWRATE=FAST ;
 IOBUF PORT "sdram_dqm[*]" IO_TYPE=LVCMOS33 SLEWRATE=FAST ;
+# The MCP7940N RTC's I2C, shared with the GPDI DDC (fpga/dev/rtc.md,
+# "The MCP7940N"; sites from the Flute tree's constraints/ulx3s_85f.lpf
+# lines 149-162): reserved for mkRtc, released until it is wired.
+LOCATE COMP "gpdi_sda" SITE "B19";
+IOBUF PORT "gpdi_sda" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "gpdi_scl" SITE "E12";
+IOBUF PORT "gpdi_scl" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;

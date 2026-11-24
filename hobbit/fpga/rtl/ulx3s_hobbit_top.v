@@ -25,8 +25,15 @@ module ulx3s_hobbit_top (
     output wire [1:0]  sdram_ba,
     output wire [12:0] sdram_a,
     output wire [1:0]  sdram_dqm,
-    inout  wire [15:0] sdram_dq
+    inout  wire [15:0] sdram_dq,
+    // The MCP7940N's I2C, shared with the GPDI DDC: reserved for the RTC
+    // (fpga/dev/rtc.md, "The MCP7940N").  Released (open drain, not
+    // driven) until mkRtc's i2cPins are wired here.
+    inout  wire        gpdi_sda,
+    inout  wire        gpdi_scl
 );
+    assign gpdi_sda = 1'bz;
+    assign gpdi_scl = 1'bz;
     assign wifi_en = 1'b0;           // the ESP32 stays in reset
     assign sdram_cke = 1'b1;
 

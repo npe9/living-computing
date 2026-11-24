@@ -10,6 +10,9 @@
 # RECORDS: how many records of the reference boot to record and compare
 # (125203 reaches `main`).  WORKDIR defaults to fpga/build/socsim.
 # SOC_KEEP_SIM=1 reuses the simulator already built there.
+# SOC_LOAD=1 loads RAM and the ROM block through the UART pins with
+# tools/p9link.py's stream (B frames, then G) instead of the back door, so
+# the host link's load path and the adapter's aux port are exercised too.
 #
 # Result, 2026-11-24: `run_soc.sh 2893000` prints "MATCH: 2893000 records
 # agree in every field but cyc (2865913 also agree in cyc)" and "SOC
@@ -24,6 +27,15 @@
 # (last function reached before it: gotolabel)" -- the first record after
 # the store to ffffefb0, a paged address; rc=1.  Reverted by the reverse
 # patch; the file compared identical to its pre-injection copy.
+#
+# SOC_LOAD=1 run_soc.sh 2893000, 2026-11-24: "SOC load: 768 replies, 0
+# frames unsent", then the same MATCH and console (10.17 system clocks
+# per core clock).  Discriminating: with hostlink.v's B address step
+# `mem_addr + 4` made `mem_addr + 8`, OBSERVED: "P9KERN FAIL: device write
+# 00000000 to fffffff4 after record 3" and "FAIL at record 3: insn, we,
+# addr, mask differ (last function reached before it: _startup)" (the
+# core fetched insn 00000000 at 80004004); rc=1.  Reverted by the reverse
+# patch; identical to the pre-injection copy.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 fpga=$(dirname "$here")
@@ -60,8 +72,15 @@ if [ "${SOC_KEEP_SIM:-0}" != 1 ] || [ ! -x "$work/obj/Vsoc_sim_top" ]; then
       "$work/p9kern.o" > "$work/verilator.log" 2>&1 || { tail -30 "$work/verilator.log"; exit 1; }
 fi
 
+loadfile=""
+if [ "${SOC_LOAD:-0}" = 1 ]; then
+  PYTHONDONTWRITEBYTECODE=1 python3 "$hobbit/tools/p9link.py" emit \
+      "$work/load.bin" --sparse
+  loadfile="$work/load.bin"
+fi
+
 simstatus=0
-(cd "$work" && P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
+(cd "$work" && SOC_LOAD="$loadfile" P9KREC="$work/rec/boot.rec" P9KCONSOLE="$work/console" \
     SOC_ROM="$hobbit/tools/p9kbuild/fpi.rom" SOC_IOLOG="$work/io.log" \
     ./obj/Vsoc_sim_top > "$work/core.log" 2>&1) || simstatus=$?
 grep '^SOC\|^P9KERN' "$work/core.log" || true

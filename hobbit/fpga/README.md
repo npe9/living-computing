@@ -382,25 +382,39 @@ MATCH: 2893000 records agree in every field but cyc (2865913 also agree in cyc)
 SOC console: 74 bytes, identical to the reference boot's
 ```
 
-An earlier run of the same core compared the SoC's HRI lines with the bare
-core's `run_p9kern.sh` lines for the same 2,893,000 records. They were
-byte-identical, `cyc` included, so the gating is invisible to the core. That
-run used the parallel probe matcher, which is the same logic as the serial
-scan below.
+The same run's 2,893,000 HRI lines (`grep '^HRI' core.log`) are
+byte-identical, `cyc` included, to the bare core's for the same records
+(`bsv/run_p9kern.sh`, the same `HobbitCore.bsv`). So the gating is invisible
+to the core.
 
 The test is discriminating. Dropping the page-entry probe makes the run fail
 at record 2849643, the first access to a paged stack address. The observed
 lines are in `run_soc.sh`'s header.
 
-**Wrong-path I/O reads.** The 16,316 unrecorded reads are reads the core
-issues on a path it then discards. Of them, 16,256 are `b0003004` and 58 are
-`b0003000`: one read of the LCD before each LCD write, because `HobbitMem`
-writes whole words. Two are reads of the SONIC `cr`. Forwarding answers them
-harmlessly. A device whose reads have side effects cannot accept them,
-though: the Quart's RX FIFO pop is one example. The core needs a
-non-speculative I/O read, one that drains before an I/O-space operand read,
-before the Quart's RTL is put behind the bus. In this prefix every Quart read
-was architectural.
+**Unrecorded I/O reads.** `p9kern.c` calls the 16,316 unrecorded reads
+"mispredicted path", meaning any read that the reference boot did not
+record. `$SOC_IOLOG` (`build/socsim/io.log`) shows two different kinds,
+matched against `rec/ref.hri`:
+
+* **16,314 are read-modify-writes of halfword stores.** There are 16,256
+  reads of `b0003004` and 58 of `b0003000`, the LCD. Every one is followed
+  by a write to the same address 1 or 2 retirements later: 12,221 at +1,
+  4,035 at +2 and 58 at +1. Every reference record of those writes is
+  `insn=c6730000` with `mask=03`, a halfword store. `HobbitMem` writes whole
+  words, so the core reads the word and writes it back merged. The bus
+  therefore carries byte enables 4'hF and a full-word write. A device
+  register whose read has side effects would see a spurious read, and the
+  other halfword would be rewritten. The fix is real byte enables from the
+  core's store path to the bus, which the device contract already has.
+* **2 are extra reads of the SONIC `cr` (`a4400000`).** After each of the
+  writes of 0x100 and 0x200, the poll reads `cr` twice, at retirements
+  2681150/2681151 and 2681583/2681584. The reference has one read for each.
+  These are true extra reads, either a wrong-path read or a reissue.
+
+In this prefix every Quart read was architectural. Before the Quart's RTL
+goes behind the bus (its reads pop the RX FIFO), the core needs byte-enabled
+stores, and either a guarantee or a drain that keeps an I/O-space read from
+being issued twice or speculatively.
 
 ### Area, Fmax and the clock (step 1)
 
@@ -440,9 +454,13 @@ store, about 12.9k, and the don't-care folding, about 1.3k) leave about
 98k, still 18% over before any device is added. Fitting the privileged core
 needs a redesign of its area, not a flag.
 
-The smoke build above (11,367 LUT4) is no measure of this core. Its program
-was a fixed 256-word image and the MMU and event unit were never enabled.
-Synthesis therefore folded most of the privileged machine away.
+The smoke build above (11,367 LUT4) is no measure of this core.
+`bsv/HobbitUlx3s.bsv` instantiates `mkHobbitCore`, which is
+`mkHobbitCoreImpl(..., mkMmuTablesNull, events False, system False, ...)`
+(`bsv/HobbitCore.bsv`). bsc elaborates that without the table walk, the
+event sequences and the privileged machine. Its prefetch box was 1,875 LUT4
+with no DPR16X4. Here the prefetch is 14,512 LUT4 plus 1,440 DPR16X4, by
+cell name. That difference is the first place to look for area.
 
 The combinational probes cost nothing measurable. The variant whose probe
 port is tied to Invalid (`build/noprobe_bsv`) came out no smaller. Name-based
@@ -464,10 +482,14 @@ nextpnr: TRELLIS_COMB: 9998/83640 11%   TRELLIS_FF: 3550   DP16KD: 8   DCCA: 2
 ecppack: build/soc-stub/hobbit_soc.bit, 461,434 bytes
 ```
 
+After the RTC's I2C pins were reserved (below), the same build gave
+33.61 MHz for the system clock and 325.95 MHz for `gclk`, with 54
+TRELLIS_IO in use; both still pass 25 MHz.
+
 The critical path is the adapter's probe scan (`pi` into the window compare).
 
 **The clock is the 25 MHz board oscillator, with no PLL.** The periphery
-closes there with 39% slack. The core's own Fmax is unknown until it places.
+closes there with about 34% slack. The core's own Fmax is unknown until it places.
 nextpnr times the gated domain at the system clock's period, so the core
 must also meet 40 ns, a whole core clock in one system clock. At 10.58
 system clocks per core clock in the boot above, the core clock averages
@@ -488,6 +510,73 @@ What would make it fit (not done here):
   the gated clock or by moving the stack cache to block RAM. That is core
   work, and it needs the lead's decision on scope.
 
+### The kernel load (step 3)
+
+`tools/p9link.py emit OUT` writes the byte stream that loads the kernel
+over the host link:
+
+* `B` frames put the fpi image into the ROM block. These are
+  `p9boot.Rom`'s words below 0x4000.
+* `B` frames write RAM. This is the memory `p9boot.Boot` starts from:
+  s9term's text and data plus PPage0 (memsize 8 MB, argc 0, env 0, and the
+  fpi vector at +0x74).
+* `G` sends the entry.
+
+By default every word of the 8 MB is sent, because SDRAM powers up holding
+no particular value. That is 8 MB at 1 Mbaud, about 90 s. `--sparse` sends
+only the nonzero words (70,953 RAM and 1,582 ROM words, 768 frames,
+295,514 bytes), which is correct where RAM is known to be zero.
+
+`SOC_LOAD=1 fpga/sim/run_soc.sh N` checks the stream. The co-simulation
+loads RAM and ROM through the UART pins with the sparse stream and no back
+door. It sends one frame per reply (`b`, then `g`), and must then reach
+the same MATCH. On 2026-11-24, `SOC_LOAD=1 run_soc.sh 2893000` gave "SOC
+load: 768 replies, 0 frames unsent", then "MATCH: 2893000 records agree in
+every field but cyc" and the identical 74-byte console. With the `B`
+address step injected as +8, it failed at record 3 in `_startup`, where
+the core fetched 00000000; the header of `run_soc.sh` has the details. This exercises `hostlink.v`'s `B`/`G` path and the
+adapter's aux port, which the back-door load never touches.
+
+Not done: the host session that sends the stream over the serial port and
+then answers `F` from `tools/p9boot.py`'s device models. The models need
+the board's `clk5` as their time base. Until that exists, the run
+procedure below cannot be carried out.
+
+### Device integration (pending)
+
+The device modules are on master under `fpga/dev/`: Quart and intc, RTC and
+IIC, and Lcdisp/HDMI. They are not yet in `rtl/hobbit_soc.v`'s I/O bus.
+Three things block them:
+
+* the fit (above);
+* byte-enabled stores and no repeated I/O reads ("Unrecorded I/O reads"
+  above), because Quart reads pop its FIFO;
+* an oracle for live interrupts. Once the intc drives the core's IL, the
+  recorded-interrupt replay (`armInterrupt`) no longer applies.
+
+The parameters for when they are wired, as given by the device agents on
+2026-11-24:
+
+* `Irq.sources`, driven every clock: bit 1 = Quart `irq`; bits 5, 8, 9 and
+  10 = incon, SCSI DMA, SONIC and SCSI.
+* Quart: tie the unused `txOut` streams (channels 1-3) to always-ready
+  sinks. At 25 MHz, `clksPerBit` = 1302 (19200 baud) and `ctNum`/`ctDen` =
+  1152/125000.
+* RTC: `mkRtc#(ticksPerSec, startBcd, mcpMode, i2cQuarter)`. `ticksPerSec`
+  and `startBcd` default to 0 and must be set. The board setting is
+  `mcpMode` 3 and `i2cQuarter` 63 at 25 MHz. Its window is 8 KB
+  (`0xB8002000`-`0xB8003FFF`), so the bus offset must be 13 bits; the
+  contract's 12 is too narrow.
+* The I2C pins `gpdi_sda` B19 and `gpdi_scl` E12 are reserved in
+  `ulx3s_soc.lpf` and released in `rtl/ulx3s_hobbit_top.v`. The RTC assumes
+  it is alone on the DDC bus.
+* IIC: EEPROM byte 12 is the CPU MHz (`iic_eeprom.py --clock 25`).
+  `rtc_nvram.hex` and `iic_eeprom.hex` are resolved against the working
+  directory.
+* yosys must read bsc's `RegFileLoad.v` with `read_verilog -defer`.
+* The LCD/HDMI build uses a 65/325 MHz PLL (`dev/hdmi_lcd.md`), and its
+  shift clock is seed-sensitive.
+
 ### Hardware window: run procedure (not yet runnable)
 
 No board action has been taken. The board is in use by the Linux Flute
@@ -503,13 +592,13 @@ full-SoC bitstream exists, the procedure for an owner-approved window is:
    `led[7:6]` (stopped, running) stay dark until `G`.
 4. Host: open the FTDI port at 1,000,000 baud, 8N1. Send `P`; expect
    `p` (status byte, core clock count, retired count 0).
-5. Load: send `B` frames of the kernel image into 0x80000000+ and the fpi
-   ROM into 0x20+. Then send `W` frames for PPage0 (memsize 8 MB, argc 0,
-   env 0, the fpi vector, as `tools/p9boot.py` builds it). Read back a
-   sample with `R`.
-6. `G 80004000`. Answer every `F` with `D` from `tools/p9boot.py`'s device
-   models (the step-3 loader). The console is the Quart's channel-0 output,
-   which the models print.
+5. Load: send `tools/p9link.py emit`'s stream without `--sparse`, one frame
+   per reply (`b`), as `sim/soc_main.cpp` does with `SOC_LOAD`. Its last
+   frame is `G 80004000`, answered `g`. To check the load, send `R` for a
+   sample of addresses before that last frame.
+6. Answer every `F` with `D` from `tools/p9boot.py`'s device models. The
+   host session that does this has not been written ("The kernel load").
+   The console is the Quart's channel-0 output, which the models print.
 7. Afterwards: `openFPGALoader -b ulx3s -r` to restore the board to its
    flash image for the Flute session.
 

@@ -100,6 +100,17 @@ static uint32_t get32(const uint8_t *p) {
 }
 
 static unsigned long fwd_reads, fwd_writes;
+// $SOC_LOAD: tools/p9link.py's load stream, sent one frame at a time, each
+// after the board's reply to the one before ('b' for B, 'g' for G).
+static std::deque<std::vector<uint8_t>> loadq;
+static int load_wait = 0;
+static unsigned long load_replies;
+static void load_next(void) {
+    if (load_wait || loadq.empty()) return;
+    for (uint8_t c : loadq.front()) txq.push_back(c);
+    loadq.pop_front();
+    load_wait = 1;
+}
 // $SOC_IOLOG: every forwarded access, "R|W addr value retired".
 static FILE *iolog;
 
@@ -120,7 +131,9 @@ static bool frames(void) {
                 fprintf(iolog, "%c %08x %08x %u\n", we ? 'W' : 'R', a,
                         we ? d : v, (unsigned)top->retired);
             txq.push_back('D'); put32(v);
-        } else if (c != 'T' && c != 'g' && c != 'w' && c != 'b' && c != 'p' && c != 'r') {
+        } else if (c == 'b' || c == 'g') {
+            if (load_wait) { load_wait = 0; load_replies++; }
+        } else if (c != 'T' && c != 'w' && c != 'p' && c != 'r') {
             fprintf(stderr, "SOC FAIL: unexpected byte %02x from the board\n", c);
             exit(1);
         }
@@ -164,6 +177,27 @@ int main(int argc, char **argv) {
     uint32_t entry = pk_start();
     uint32_t endN = pk_end();
     unsigned long words = 0;
+    const char *load = getenv("SOC_LOAD");
+    if (load && *load) {
+        // Everything through the UART pins: no back door.
+        FILE *f = fopen(load, "rb");
+        if (!f) { fprintf(stderr, "soc: no %s\n", load); exit(1); }
+        std::vector<uint8_t> b;
+        int ch;
+        while ((ch = fgetc(f)) != EOF) b.push_back((uint8_t)ch);
+        fclose(f);
+        size_t i = 0;
+        unsigned long nb = 0;
+        while (i < b.size()) {
+            size_t n = 5;                                  // G a4
+            if (b[i] == 'B') n = 7 + 4 * (size_t)((b[i + 5] << 8) | b[i + 6]);
+            else if (b[i] != 'G') { fprintf(stderr, "soc: bad load frame %02x\n", b[i]); exit(1); }
+            loadq.emplace_back(b.begin() + i, b.begin() + i + n);
+            if (b[i] == 'B') nb += (n - 7) / 4;
+            i += n;
+        }
+        printf("SOC load: %zu frames, %lu words, from %s\n", loadq.size(), nb, load);
+    } else {
     for (uint32_t a = 0x80000000u; a < 0x80800000u; a += 4) {
         uint32_t v = pk_peek(a);
         if (!v) continue;
@@ -179,6 +213,7 @@ int main(int argc, char **argv) {
         load_rom(rom);
     }
     txq.push_back('G'); put32(entry);
+    }
     printf("SOC start pc=%08x, the reference has %u records\n", entry, endN);
 
     uint64_t limit = strtoull(getenv("SOC_CLOCKS") ? getenv("SOC_CLOCKS") : "4000000000", 0, 0);
@@ -186,6 +221,7 @@ int main(int argc, char **argv) {
     bool armed = false, arming = false, taking = false;
     int why = 0;
     while (clocks < limit) {
+        load_next();
         uart_step();
         // The replayed interrupts: one in the queue at a time.
         uint32_t n = pk_irq_at();
@@ -223,6 +259,11 @@ int main(int argc, char **argv) {
     }
     // Drain: let the last records print.
     for (int i = 0; i < 4000; i++) { uart_step(); tick(); pk_retired(top->retired); frames(); }
+    if (load && *load) {
+        printf("SOC load: %lu replies, %zu frames unsent%s\n", load_replies,
+               loadq.size(), load_wait ? ", one unanswered" : "");
+        if (!loadq.empty() || load_wait) { printf("SOC FAIL: the load did not complete\n"); why = 1; }
+    }
     static const char *whys[] = {"the reference's last record", "a failed check", "the core stopped", "a stall or the clock limit"};
     printf("SOC end: %s; %u records, %llu core clocks, %llu system clocks "
            "(%.2f per core clock), %lu forwarded reads, %lu forwarded writes\n",
