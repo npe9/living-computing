@@ -182,6 +182,20 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
 Initialisation runs as an after-demon of `new`. MEASURED: these compile to kind-0x22/0x32
 predicates, e.g. `display_pos/1` in `time_graph_window` from p_tgraph.esp:81.
 
+*2026-11-24, witnessed and run (`pim/psi/kl0.py`, `test_kl0.py`):*
+
+- **Calling convention** (MEASURED). All 424 initialisers in the eleven packages have arity 1.
+  There is no receiver argument, and the value comes back in A0.
+- **Semantics** (TM-388 §3.5 pp.49-50, page images).
+  - Instance slots are filled when `new` makes the instance. Class slots are filled "when the
+    class is generated".
+  - A failing initialiser makes `new` fail, or leaves the class not generated.
+  - The order of the initialisers "is uncertain".
+  - An initialiser cannot use the object being made.
+  - For work that needs the object, TM-388 recommends an after-demon of `new`, whose second
+    argument "has already been unified with the instance object".
+  - `slot is Class` stores a new instance of Class (p.49).
+
 **Rules:**
 
 - Attributes of the same name collapse to one slot, and the first initial value in inheritance

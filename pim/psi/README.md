@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`: `process.esp` (ours) and `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections). |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), and the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, the stand-ins. It is in `../run_tests.sh` and takes about 8 s. |
 
 ## How to run
@@ -40,6 +40,7 @@ From `pim/`:
     python3 -I psi/test_kl0.py                    # the interpreter's tests (~2 s)
     python3 -I psi/kl0.py convert                 # convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv FILE]     # every method of the 104 classes
+    python3 -I psi/kl0.py census --fep [--tsv FILE]   # every method of pimfep and pimscsi, stand-ins loaded
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
@@ -346,10 +347,56 @@ no test discriminates it.
 **Method dispatch** goes through `Librarian.send` and runs TM-388
 §3.4's combined method: before-demons, then the primaries as
 alternatives, then after-demons. Class `class`'s `new/2` is OURS. It
-builds an instance from the slots' constant or `is Class` initial
-values. A slot initialised by code refuses. The loader's `Slot.term`
-now keeps a constant's pool tag, so a string initial value stays a
-string (`paragraph_version` answers `string#"3500"`).
+builds an instance whose slots take their constant initial values. The
+loader's `Slot.term` keeps a constant's pool tag, so a string initial
+value stays a string (`paragraph_version` answers `string#"3500"`).
+
+**Slots initialised by code** (2026-11-24). `new/2` runs them.
+
+- The calling convention is MEASURED. All 424 slot-initialisation
+  predicates of the eleven packages (kind 0x22: 33, kind 0x32: 391)
+  have arity 1 and no receiver argument, and the value comes back in
+  A0. The witness is `paragraph##time_graph_window display_pos/1`,
+  compiled from p_tgraph.esp `(display_pos:=L :- :create(#list_index,L))`:
+  `a9 01 ..` puts the class into A1, then `blt 25` and `pmi 74 01 02`
+  send `create/2` with L still in A0. `espc.py` compiles this
+  predicate cell for cell.
+- The semantics are SOURCED from TM-388 §3.5, pp.49-50 (PDF pp.61-62,
+  page images read).
+  - An instance slot's value is computed when `new` makes the instance.
+    A class slot's value is computed "when the class is generated".
+  - If the predicate fails, `new` fails, or the class is not generated.
+  - The order "is uncertain".
+  - The predicate cannot use the object being made.
+  - A slot may not hold an unbound variable (p.48).
+  - `slot is Class` stores "an instance object for the class" (p.49,
+    (3)). kl0 used to store the class object. It now makes the instance
+    with `new/2`. Only kappa has such slots (102).
+- OURS choices:
+  - Each predicate runs on its own sub-machine, to its first solution.
+    The sub-machine shares the code and the class slots.
+  - The slots are filled in template order (the held templates list them
+    in reverse source order).
+  - Class slots are computed at the class's first class-slot access,
+    standing in for load time.
+  - An unbound value refuses (`slot init unbound`). A failing class-slot
+    predicate refuses (`class not generated`).
+- Tests are in `test_kl0.py` on kappa alone, against its source.
+  - `kappaMDM_hash_table`'s `new_heap_vector(Table,128)` gives 128
+    zeros.
+  - `kappaMDM_access_right` makes two distinct hash tables, each with its
+    own vector (a nested initialiser), and `faot` is
+    `@max_faot_entry+1` = 21 long.
+  - `kappaTBO_SDB_RUC_control`'s two-goal initialiser gives
+    `{1,0,...}` of 21.
+  - `kappaHLC_selection`'s `is` slots are instances, one with its own
+    `is` slot.
+  - `test_espc.py` checks the failure, unbound, class-slot and
+    after-demon cases on compiled classes.
+- No new opcode was needed. Of the 424 held predicates, 308 use only
+  opcodes in the table. The other 116 use opcodes with no row: blt 1c
+  (84), blt 3e (31), blt 35 (2), blt 54 and blt 2b (1 each). This is an
+  ad hoc count, 2026-11-24.
 
 **Results** (pinned in `test_kl0.py`):
 
@@ -489,22 +536,88 @@ the manuals). This is the owner's rule of 2026-11-24, so that any
 method can be replaced if real source turns up. `test_espc.py` checks
 that every method carries a label.
 
-- `process`: `self/2` is INTERPOLATED. `:self(#process,P)` gives one
-  instance, made on first use and kept in a class slot. It was
-  interpolated from the call sites in the printed `stream:get/2` and
-  `process:create_core/3` and from 46 pimfep senders. The printed
-  part of `process` (TM-100 Fig. 3.1) is not included yet. Its
-  natures are unprinted, and five of its slots are initialised by
-  code, which kl0's `new/2` refuses. This is recorded as a gap in
-  the file header.
+- `process`:
+  - PRINTED: TM-100 Fig. 3.1, verbatim. That is the natures, the two
+    class slots, `create/2`, `create_core/3`, the 18 instance slots
+    (five of them initialised by code), `activate/2`, `resume/2` and
+    `suspend/2`.
+  - The printed `create/2` passes `PROCESS` in capitals, as printed. It
+    is a fresh variable, and it is kept that way.
+  - INTERPOLATED: the class slot `current`, and `self/2`. `:self(
+    #process,P)` gives one instance, made with `:new` on first use and
+    kept in `current`. It was interpolated from the call sites in the
+    printed `stream:get/2` and `process:create_core/3`, and from 46
+    pimfep senders.
+  - INTERPOLATED: `inhibit_interrupt/1` and `allow_interrupt/1`, which do
+    nothing. One process is modelled, with no interrupts. They come from
+    the paired call sites in Figs. 3.1 and 3.6 and from the slot
+    `mask_count`.
 - `stream`: every method and slot is PRINTED, from TM-100 Fig. 3.6.
   Three printing errors are corrected and marked, since without the
   corrections it is not ESP.
+- The classes the printed code creates or inherits are INTERPOLATED:
+  - `list`: 13 methods, from the call forms in TM-100, TM-388 p.50 and
+    the selectors in `required/classes.tsv`. Its elements are one
+    Prolog list (OURS).
+  - `post_queue` (`add_object`, `remove_object`) and `waiting_queue`
+    (`empty`, `hook`, `unhook`), from TM-100 §3.2 (1)'s prose (PDF
+    p13-14) and the printed `stream`. Both are first in, first out, as
+    TR-056 pp.12-13 says a stream is. The waiting queue is a list, not
+    the printed doubly-linked list through `waiting_frame`.
+  - `process_clock` (`create/2`).
+  - `with_link` and `waiting_frame`: empty. TM-100 says only what they
+    are for.
 
-With them loaded, `pimfep##pimos_timer:on_after/4` gets past
-`simpos##process:self/2` and refuses at `simpos##process:tag_catch/9`.
-`pimos_timer:stream/2` refuses in kl0's `new/2`, at the printed
-`post_queue` slot, which is initialised by code.
+With them loaded:
+
+- `pimfep##pimos_timer:on_after/4` gets past `simpos##process:self/2`
+  and refuses at `simpos##process:tag_catch/9`.
+- `pimos_timer:stream/2`, which used to stop in kl0's `new/2` at the
+  printed `post_queue` slot, now succeeds.
+- The printed `put/2` and `get/2` run first in, first out
+  (`test_espc.py`). `get/2` on an empty stream fails. The printed
+  `suspend/2` fails for a process whose status is `nil`, and the
+  stand-in's one process is never activated.
+
+### The census of pimfep and pimscsi (`kl0.py census --fep`)
+
+Every method of the 71 pimfep and pimscsi classes is called once, as
+the census above calls the 104. The stand-ins are loaded. Before is
+the tree at a214477a; after is the slot initialisation and the
+stand-ins above. Both were run 2026-11-24 and compared method by
+method.
+
+| | methods | success | failure | refused | `slot init by code` |
+|---|---|---|---|---|---|
+| before | 1,215 | 486 | 50 | 679 | 195 |
+| after | 1,228 | 501 | 50 | 677 | 0 |
+
+- The 13 new methods are `list`'s, now inherited by
+  `pimscsi##scsi_device`, which has `simpos##list` as a nature. All 13
+  refuse, because its instances stop at a slot initialiser's SIMPOS
+  call.
+- Of the 195 that stopped at `new/2`:
+  - 14 now succeed: the `stream/2` class method of 14 pimfep classes;
+  - 112 reach a SIMPOS call;
+  - 69 reach an opcode with no row.
+- `pimfep##remote_stream`: `message_buffer/2` succeeds, and `get/2`
+  now refuses on a receiver that is not an object (`receive/2` sent to
+  `none`).
+- No method changed between success and failure.
+- After, the refusals rank: SIMPOS calls 301, receiver not an object
+  81, missing opcodes 257 (blt 1c 78, blt 06 53, blt 0b 27, pmi b0
+  19, ...), unbound receiver 24.
+- The SIMPOS calls they stop at, by class and selector, name the next
+  blockers:
+  - `simpos##channel:create/2` (69);
+  - `simpos##hash_index:create/3` (58);
+  - `simpos##list_index:create/2` (20);
+  - `simpos##process:create/3` (14);
+  - `simpos##process:allow_forced_event/1` (6);
+  - `simpos##process:tag_catch/9` (4).
+  
+  21 more stop at `pimfep##pimos_window_editor:get_window/2`. That class
+  is partial, so the method is in an unloaded ancestor.
 
 ## Open
 
@@ -514,9 +627,8 @@ With them loaded, `pimfep##pimos_timer:on_after/4` gets past
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
-  SIMPOS or firmware. They are not held and not modelled. kl0's
-  `new/2` stand-in refuses slots initialised by code. That stops
-  the printed `stream` and 179 pimfep and pimscsi methods.
+  SIMPOS or firmware. They are not held. Only `new/2` is modelled
+  (OURS), slot initialisation included.
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `X+Y` on registers, `=\=`, vectors of four or
   more elements built in a body, `with_macro`, `->` and `not`.

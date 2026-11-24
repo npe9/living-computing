@@ -20,12 +20,19 @@
    paragraph_version gives the held source's "3200" where paragraph.ptf
    gives "3500" (the known build skew).  On kl0's census of
    paragraph.ptf no method runs to a different outcome.
-5. Stand-ins (psi/standin/): every method carries a PRINTED or
-   INTERPOLATED label (the owner's rule, 2026-11-24); `:self(#process,P)` gives one process
-   instance; pimfep##pimos_timer on_after/4, which refused at
+5. Slot initialisation in kl0's new/2 on compiled classes (TM-388 §3.5
+   pp.48-50): instance and class slots, a failing initialiser fails new,
+   an unbound value refuses, an after-demon of new sees the slots.
+6. Stand-ins (psi/standin/): every method carries a PRINTED or
+   INTERPOLATED label (the owner's rule, 2026-11-24); `:self(#process,P)`
+   gives one process instance, made by :new, which runs the printed
+   slot initialisers of TM-100 Fig. 3.1 (four lists and a clock);
+   pimfep##pimos_timer on_after/4, which refused at
    simpos##process:self/2, now refuses at simpos##process:tag_catch/9;
-   pimos_timer's class stream/2 gets into the printed stream class and
-   stops at kl0's new/2 (a slot initialised by code).
+   pimos_timer's class stream/2, which stopped at kl0's new/2 (the
+   printed stream's slots are initialised by code), succeeds, and the
+   printed put/2 and get/2 run first in, first out; kl0's census of
+   pimfep and pimscsi is pinned.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -46,6 +53,8 @@ restored with cp and checked with cmp):
     test_compiled_answers fail (get_code's `Y =< Icon!height/2`).
   - stand-in label (injected into standin/stream.esp): get/2's PRINTED
     label reworded: only test_methods_labelled fails.
+  The injections into kl0.py's slot initialisation, and what they fail
+  here, are recorded in test_kl0.py's header.
 """
 import os
 import sys
@@ -194,6 +203,67 @@ class Behaviour(unittest.TestCase):
                                                   'refused held only': 6})
 
 
+class SlotInit(unittest.TestCase):
+    """kl0's new/2 runs compiled slot-initialisation predicates (TM-388
+    §3.5 pp.49-50): instance slots at new, class slots when the class is
+    generated (first class-slot access, OURS); a failing predicate makes
+    new fail (and the class not generated); an unbound value refuses
+    (TM-388 p.48: a slot cannot hold an unbound variable); an after-demon
+    of new sees the initialised instance (TM-388 p.50)."""
+    T = '''class t has
+attribute (cs := V :- V = 5);
+:get_cs(C, X) :- X = C!cs;
+instance
+attribute a := 1, (b := Y :- Y = 2), (c := Z :- Z = {Y, 3});
+end.
+class t2 has
+after :new(C, O) :- O!a := 10;
+instance
+attribute a := 1, (b := Y :- Y = 2), (c := Z :- Z = {2, 3});
+:get(O, A, B, C) :- A = O!a, B = O!b, C = O!c;
+end.
+class u has
+instance
+attribute (b := Y :- fail);
+end.
+class v has
+attribute (cs := V :- fail);
+:get_cs(C, X) :- X = C!cs;
+end.'''
+
+    @classmethod
+    def setUpClass(cls):
+        ts, failed = espc.compile_text(cls.T, 'user')
+        assert not failed and not any(t.refusals for t in ts)
+        cls.m = K.Machine(espc.library(ts))
+
+    def new(self, cid):
+        m = self.m
+        return [K.resolve(m.x[0]) for _ in m.solve_send(K.ClassRef(cid), 'new',
+                                                       [K.Var(), K.ClassRef(cid)])]
+
+    def test_instance_slots_and_after_demon(self):
+        (o,) = self.new('user##t2')
+        regs = [K.Var(), K.Var(), K.Var(), o]
+        got = [[K.resolve(r) for r in regs[:3]] for _ in self.m.solve_send(o, 'get', regs)]
+        self.assertEqual(repr(got), '[[10, 2, {2,3}]]')
+
+    def test_failure_fails_new(self):
+        self.assertEqual(self.new('user##u'), [])
+
+    def test_unbound_refuses(self):
+        with self.assertRaises(K.Refusal) as e:
+            self.new('user##t')
+        self.assertEqual(e.exception.cause, 'slot init unbound')
+
+    def test_class_slot(self):
+        (s,) = K.call_class_method(self.m, 'user##t', 'get_cs', [K.Var()])
+        self.assertEqual(s, [5])
+        with self.assertRaises(K.Refusal) as e:
+            K.call_class_method(self.m, 'user##v', 'get_cs', [K.Var()])
+        self.assertEqual(e.exception.cause, 'class not generated')
+
+
 class Standins(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -215,20 +285,26 @@ class Standins(unittest.TestCase):
         return e.exception.cause, e.exception.detail
 
     def test_compiled_whole(self):
-        self.assertEqual(sorted(t.id for t in self.ts), ['simpos##process', 'simpos##stream'])
+        self.assertEqual(sorted(t.id for t in self.ts), [
+            'simpos##list', 'simpos##post_queue', 'simpos##process', 'simpos##process_clock',
+            'simpos##stream', 'simpos##waiting_frame', 'simpos##waiting_queue',
+            'simpos##with_link'])
         for t in self.ts:
             self.assertEqual(t.refusals, [], t.id)
 
     def test_methods_labelled(self):
         # owner's rule (2026-11-24): each stand-in method is labelled
-        # PRINTED or INTERPOLATED in the comment block just above it
+        # PRINTED or INTERPOLATED in the comment block just above it (its
+        # first clause: a head indented at most 4, as the files are laid out;
+        # a body goal is indented further).  Locals are not methods.
         for t in self.ts:
             with open(os.path.join(espc.STANDIN, t.name + '.esp')) as f:
                 lines = f.read().splitlines()
             for p in t.preds():
-                if p is None or p.kind in (0x12, 0x22, 0x32):
+                if p is None or p.kind in (0x11, 0x12, 0x22, 0x32):
                     continue
-                (i,) = [k for k, x in enumerate(lines) if x.strip().startswith(':%s(' % p.name)][:1]
+                (i,) = [k for k, x in enumerate(lines) if x.strip().startswith(':%s(' % p.name)
+                        and len(x) - len(x.lstrip()) <= 4][:1]
                 j = i - 1
                 block = []
                 while j >= 0 and lines[j].strip().startswith('%'):
@@ -252,12 +328,56 @@ class Standins(unittest.TestCase):
         self.assertEqual(cause, 'simpos')
         self.assertIn('simpos##process:tag_catch/9 (not in the stand-in)', detail)
 
-    def test_stream_gets_into_the_printed_class(self):
+    def test_stream_runs(self):
+        # pimos_timer's class stream/2 used to stop at kl0's new/2 (the
+        # printed stream's slots are initialised by code); with new/2
+        # running them and the post_queue / waiting_queue stand-ins it
+        # succeeds
         cid, sel = 'pimfep##pimos_timer', 'stream/2'
         cause, detail = self.refusal(self.plain, cid, 'class', sel)
         self.assertIn('simpos##stream:create/2', detail)
-        cause, detail = self.refusal(self.m, cid, 'class', sel)
-        self.assertEqual((cause, detail), ('slot init by code', 'simpos##stream slot post_queue'))
+        m = self.m
+        m.reset()
+        regs = [K.Var(), K.ClassRef(cid)]
+        self.assertTrue(any(True for _ in m.solve_send(K.ClassRef(cid), 'stream', regs)))
+        # the printed put/2 and get/2: first in, first out; get on an empty
+        # stream fails (the printed suspend/2 fails for a process whose
+        # status is nil: the stand-in's one process is never activated)
+        (s,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+        st = s[0]
+        self.assertEqual([x.cid for x in st.slots], ['simpos##post_queue', 'simpos##waiting_queue'])
+
+        def send(name, *args):
+            regs = list(args) + [st]
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(st, name, regs)]
+        self.assertEqual(len(send('put', K.Atom('a'))), 1)
+        self.assertEqual(len(send('put', 7)), 1)
+        self.assertEqual(repr(send('get', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('get', K.Var())), '[[7]]')
+        self.assertEqual(send('get', K.Var()), [])
+
+    def test_printed_process_slots(self):
+        # :self(#process,P) makes the process with :new, which runs the
+        # printed slot initialisers (TM-100 Fig. 3.1): four lists and a clock
+        (a,) = K.call_class_method(self.m, 'simpos##process', 'self', [K.Var()])
+        co = self.m.lib.build('simpos##process')
+        got = {e.name: v for e, v in zip(co.instance_slots, a[0].slots)}
+        for n in ('suspend_reasons', 'children_processes', 'invocation_stack', 'resources'):
+            self.assertEqual(got[n].cid, 'simpos##list', n)
+        self.assertEqual(got['clock'].cid, 'simpos##process_clock')
+        self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'nil'))
+        self.assertTrue(co.complete)
+
+    def test_fep_census(self):
+        # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
+        # Before slot initialisation by code ran: 1,215 methods, 486
+        # success, 50 failure, 679 refused (195 'slot init by code').
+        rows = K.census_fep(K.fep_machine())
+        out = {}
+        for r in rows:
+            out[r[3]] = out.get(r[3], 0) + 1
+        self.assertEqual((len(rows), out), (1228, {'success': 501, 'failure': 50, 'refused': 677}))
+        self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 
 if __name__ == '__main__':

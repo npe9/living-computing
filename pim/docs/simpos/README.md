@@ -263,9 +263,23 @@ and stand-in `simpos##` classes. In order:
      `string:append/3` 24 times and `symbolizer:get_number/3` 10 times.
      `pimfep##pimos_timer:on_after/4` used to refuse at
      `simpos##process:self/2`. It now refuses at
-     `simpos##process:tag_catch/9`. `pimos_timer:stream/2` gets into
-     the printed `stream` and stops at kl0's `new/2`, because the
-     printed slots are initialised by code.
+     `simpos##process:tag_catch/9`.
+   - *2026-11-24, later:* kl0's `new/2` runs slots initialised by
+     code. The calling convention is measured: all 424 held
+     initialisers have arity 1, with the value in A0. The semantics
+     are TM-388 §3.5 pp.49-50. `process` now carries the printed
+     TM-100 Fig. 3.1 body. The classes that body and `stream` create
+     or inherit are interpolated stand-ins: `list`, `post_queue`,
+     `waiting_queue`, `process_clock`, `with_link` and
+     `waiting_frame`.
+     - `pimos_timer:stream/2` now succeeds, and the printed
+       `put/2`/`get/2` run first in, first out.
+     - Over pimfep and pimscsi (`kl0.py census --fep`), 195 methods
+       stopped at `new/2`. Now none do: 14 more succeed, 112 reach a
+       SIMPOS call and 69 reach an unnamed opcode.
+     - The next blocking classes are `channel:create/2` (69 methods),
+       `hash_index:create/3` (58), `list_index:create/2` (20) and
+       `process:create/3` (14). See `../../psi/README.md`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

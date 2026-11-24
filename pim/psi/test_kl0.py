@@ -21,7 +21,12 @@
    and time_graph_window:go/1 refuses at its first SIMPOS send.  (The
    104 classes have no before- or after-demons: 14 methods have more
    than one primary, none has a demon.)
-4. The census of the 104 classes that need no SIMPOS (103 with methods):
+4. Slot initialisation (TM-388 §3.5 pp.49-50), on kappa alone against its
+   held source: new/2 runs the slot-initialisation predicates (all 424
+   held ones have arity 1, pinned), nested creation (an initialiser that
+   creates a class with its own initialiser), two-goal initialisers, and
+   `slot is Class` as a new instance (TM-388 p.49 (3)).
+5. The census of the 104 classes that need no SIMPOS (103 with methods):
    each method called once with unbound arguments; totals and the refusal
    ranking pinned.
 
@@ -42,6 +47,21 @@ copy, the observed failures recorded, the file restored from the backup):
     instead of the barrier in A_A: only test_census fails (success 304,
     failure 10: pimmcsp##pseudo_csp_csbreak_address_table csp_mm_reg/3,
     whose source is not held, succeeds instead of failing).
+Slot initialisation (2026-11-24, injected into kl0.py from a backup in the
+session scratchpad, restored with cp and checked with cmp; both test files
+run; observed):
+  - a failing initialiser ignored (new/2 succeeds, the slot 0): only
+    test_espc test_failure_fails_new fails;
+  - the initialiser's value taken from A1, not A0: errors in
+    test_hash_table, test_nested_new, test_two_goals, and in test_espc
+    test_class_slot, test_instance_slots_and_after_demon,
+    test_printed_process_slots, test_self, test_stream_runs; failures in
+    test_fep_census and test_on_after_gets_further;
+  - class slots initialised by code left 0: only test_espc test_class_slot;
+  - one initial value per slot, shared by every instance: only
+    test_nested_new;
+  - `slot is Class` stores the class object: only test_slot_is_class
+    (an error).
   (Rerun with the session's injection script after any change to the
   tests; the set above was observed on the final tests.)
 """
@@ -181,6 +201,89 @@ class Paragraph(unittest.TestCase):
         m = machine()
         (sol,) = K.call_class_method(m, 'paragraph##paragraph_version', 'get_version', [K.Var()])
         self.assertEqual(sol[0], K.Str('3500'))     # version.esp: "3200"
+
+
+class SlotInit(unittest.TestCase):
+    """new/2 runs slot-initialisation predicates (TM-388 §3.5 pp.49-50).
+    Held code, package kappa loaded alone, against its held source."""
+
+    @classmethod
+    def setUpClass(cls):
+        lib = K.LB.Librarian()
+        lib.load_held(pkgs=['kappa'])
+        cls.m = K.Machine(lib)
+
+    def new(self, cid):
+        m = self.m
+        sols = []
+        for _ in m.solve_send(K.ClassRef(cid), 'new', [K.Var(), K.ClassRef(cid)]):
+            sols.append(K.resolve(m.x[0]))
+        self.assertEqual(len(sols), 1, cid)
+        inst = sols[0]
+        co = m.lib.build(cid)
+        return {e.name: v for e, v in zip(co.instance_slots, inst.slots)}
+
+    def test_arity_one(self):
+        # MEASURED: every slot-initialisation predicate (kind 0x22/0x32) of
+        # the eleven packages has arity 1: the value, no receiver
+        lib = K.LB.Librarian()
+        lib.load_held()
+        kinds = {}
+        for t in lib.templates.values():
+            for p in t.preds():
+                if p is not None and p.kind in (0x22, 0x32):
+                    kinds[(p.kind, p.arity)] = kinds.get((p.kind, p.arity), 0) + 1
+        self.assertEqual(kinds, {(0x22, 1): 33, (0x32, 1): 391})
+
+    def test_hash_table(self):
+        # KP_MDMTBL.ESP: ( table := Table :- new_heap_vector(Table,128) )
+        s = self.new('kappa##kappaMDM_hash_table')
+        t = s['table']
+        self.assertIsInstance(t, K.Vec)
+        self.assertTrue(t.heap)
+        self.assertEqual(t.args, [0] * 128)
+
+    def test_nested_new(self):
+        # KP_MDMAR.ESP: (work_hash1 := HT :- :create(#kappaMDM_hash_table,HT)),
+        # (work_hash2 := ...same...), access_right_table,
+        # (faot := FAOT :- new_heap_vector(FAOT,@max_faot_entry+1)), and
+        # KP_MDM.MAC @max_faot_entry => 20.  create/2 (:new(Class,OBJ)) runs
+        # the hash table's own initialiser: two distinct tables.
+        s = self.new('kappa##kappaMDM_access_right')
+        h1, h2 = s['work_hash1'], s['work_hash2']
+        for h in (h1, h2):
+            self.assertIsInstance(h, K.Instance)
+            self.assertEqual(h.cid, 'kappa##kappaMDM_hash_table')
+            self.assertEqual(h.slots[0].args, [0] * 128)
+        self.assertIsNot(h1, h2)
+        self.assertIsNot(h1.slots[0], h2.slots[0])
+        self.assertEqual(s['faot'].args, [0] * 21)
+        self.assertEqual(s['access_right_table'], 0)
+
+    def test_two_goals(self):
+        # KP_TBOSRUC.ESP: (ruc_table := RUCT :- new_heap_vector(RUCT,
+        # @sdb_ruc_table_max_entry*2+1), set_vector_element(RUCT,0,1)), and
+        # KAPPATBO.MAC @sdb_ruc_table_max_entry => 10
+        s = self.new('kappa##kappaTBO_SDB_RUC_control')
+        self.assertEqual(s['ruc_table'].args, [1] + [0] * 20)
+        self.assertEqual((s['dbo'], s['bfm'], s['rct_lpn']), (0, 0, 0))
+
+
+    def test_slot_is_class(self):
+        # `slot is Class` stores a new instance (TM-388 p.49, (3)), made by
+        # new/2, which runs that class's own initialisers.  HLCSELECT.ESP:
+        # component ..., search_info_tree is kappaHLC_search_information_tree,
+        # practice is kappaHLC_selection_practice; HLCSELSIT.ESP: attribute
+        # ..., sit_hv_table is kappaHLC_SIT_HV_table, ...
+        s = self.new('kappa##kappaHLC_selection')
+        tree = s['kappa##kappaHLC_selection$search_info_tree']
+        self.assertEqual(tree.cid, 'kappa##kappaHLC_search_information_tree')
+        self.assertEqual(s['kappa##kappaHLC_selection$practice'].cid,
+                         'kappa##kappaHLC_selection_practice')
+        self.assertEqual(repr(s['kappa##kappaHLC_selection$supervisor']), 'nil')
+        co = self.m.lib.build(tree.cid)
+        t = {e.name: v for e, v in zip(co.instance_slots, tree.slots)}
+        self.assertEqual(t['sit_hv_table'].cid, 'kappa##kappaHLC_SIT_HV_table')
 
 
 class Census(unittest.TestCase):
