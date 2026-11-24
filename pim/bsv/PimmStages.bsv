@@ -214,7 +214,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
-  function Action next() = finish(tagged Next (pc + 1));
+  // get_constant's constant is the next cell: its unification goes on two on
+  function Action next() = finish(tagged Next (pc + (op == op_get_constant ? 2 : 1)));
 
   function Action stop(End e0);
     action
@@ -403,6 +404,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     end
     else if (op == op_get_integer) begin
       dbox.unify(regs.r(x), intCell(c16));
+      st <= XUnify;
+    end
+    else if (op == op_get_constant) begin
+      // get_constant(X, C): r[x] unified with the whole next cell
+      dbox.unify(regs.r(x), ins2);
       st <= XUnify;
     end
     else if (isGetAtom) begin

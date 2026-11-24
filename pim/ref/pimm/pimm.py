@@ -1404,6 +1404,15 @@ class Machine:
         self.reg[x] = (REF + 1, var[1])
         self.reg[y] = (REF + 1, var[1])
 
+    def i_get_constant(self, pc, x, y, z, c16):
+        # get_constant(X, C), 23:B8 r_c40 (assembler/inst_tab.kl1:174):
+        # r[x] unified with the constant, the whole next cell, as
+        # put_constant's.  The compiler writes it for an atomic constant
+        # that is not an atom nor [] (library/compiler/comp.kl1
+        # compile_put_valuable, instrtbl.kl1 convert_instr)
+        self.unify(self.reg[x], self.cells[pc + 1])
+        return pc + 2
+
     def i_get_integer(self, pc, x, y, z, c16):
         self.unify(self.reg[x], (INT, sx16(c16) & 0xffffffff))
 

@@ -41,9 +41,10 @@ OURS, each for want of the FEP's own code:
   - close is answered with status 1;
   - append_open (203) is accepted, the bytes appended kept in
     Fep.appended (OURS; the kernel's syslog, Fep.request);
-  - create_timer (310) is accepted (OURS, Fep.request), and
+  - create_timer (310) is accepted (OURS, Fep.request),
     get_date_time (304) answered with a fixed date and the machine's
-    clock as the time of day (DATE, Fep.ticks);
+    clock as the time of day (DATE, Fep.ticks), and the timer's close
+    (60) accepted;
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -285,6 +286,13 @@ class Fep:
                 return [EOD]
             f[1] += len(chunk)
             return [NORMAL, chunk]
+        if cmd == CLOSE and len(msg) == 1 and dev in self.timers:
+            # {Id, 60}: the timer device's end (bios/fep_module/
+            # time_dvc.kl1 device_io1/13 at the stream's end, then
+            # device_terminate/5: normal goes on to read the reply).
+            # Accepted, OURS, as a file's close
+            self.timers.discard(dev)
+            return [NORMAL]
         if cmd == CLOSE and len(msg) == 1 and dev in self.files:
             del self.files[dev]
             return [NORMAL]

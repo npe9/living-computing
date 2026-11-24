@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Lockstep: read_eagerly (`alternatively`), not_equal, wait_vector_0/1/4/6, wait_vector,
-jump, set_marked_variable.
+jump, set_marked_variable, get_constant.
 
     python3 ref/pimm/lockstep_alt.py --script FILE     write the script
     sim_pimm_driver | python3 ref/pimm/lockstep_alt.py compare
@@ -92,6 +92,12 @@ gives it, not from either model:
                 gives its first element 5; {5} fails; a variable waits
                 and the vector of 7 gives 5; a vector of 8 fails.
                 Pins 12 / 1972 -> 13 / 2121, this part's 149 lines.
+  constant      get_constant, 23:B8 r_c40 (2026-11-24; the next stop of
+                pim:go/4; none in the image): three cells, OURS,
+                get_constant 0, 100000 (more than 16 bits, so the next
+                cell); proceed.  X unbound: 100000; X = 100000:
+                succeeds; X = 7: fails.  Pins 13 / 2121 -> 14 / 2173,
+                this part's 52 lines.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
 2026-11-23, each restored from a copy:
@@ -116,6 +122,10 @@ Observed fault injections into the Bluespec (bsv/PimmStages.bsv),
   (2026-11-24) wait_vector's elements at the descriptor  vector 7,
                                              line 42: R 2 0d.. for 5
   (2026-11-24) wait_vector notes no variable  vector 7, line 86: E fail
+  (2026-11-24) get_constant goes on one cell  constant, line 18: the
+                                             constant's cell for proceed
+  (2026-11-24) get_constant takes the 16-bit field  constant, line 17:
+                                             M .. 0 for 186a0
 Not tried: the MRB of what read_variable takes after wait_vector_4 or
 _6 (the rule is wait_vector_2's, one code path for every N;
 lockstep_mrb.py and lockstep_repl.py run it).
@@ -136,7 +146,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=13, lines=2121)
+PINNED = dict(parts=14, lines=2173)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NIL = (pimm.ATOM, 0)
 KLB = 0x23
@@ -497,6 +507,27 @@ def script():
     s.run()
     s.out(11)
     part('vector 7', [5, None, None, 5, None])
+    # 13. get_constant (2026-11-24, met in pim:go/4; none in the image):
+    #    three cells, OURS: get_constant 0, 100000; proceed.  p(X) gives
+    #    X = 100000 (more than 16 bits: the constant is the next cell);
+    #    X = 100000 already succeeds; X = 7 fails
+    s.label('constant')
+    code = [(KLB, 0xb8 << 24 | 0 << 16),           # get_constant 0, ..
+            I(100000),                              # .. the constant
+            (KLB, 0x60 << 24)]                      # proceed
+    s.vector(15, 8, code)
+    m = s.live()
+    at = s.live_slot[15][1] - m.load
+    assert [m.opname(at), m.opname(at + 2)] == ['get_constant', 'proceed']
+    for given in (None, 100000, 7):
+        s.newvar(0)
+        if given is not None:
+            s.unifyc(0, I(given))
+        s.arg(1, 0)
+        s.spawn(at, 1)
+        s.run()
+        s.out(0)
+    part('constant', [100000, 100000, 7])
     return s, want
 
 
@@ -504,7 +535,8 @@ def script():
 ENDS = {'attention': (0, 0), 'taken twice': (1, 0), 'not equal': (0, 0), 'equal': (0, 0),
         'alternatively': (0, 2), 'vector 4': (0, 0), 'vector 4 of three': (1, 0),
         'vector 6': (2, 1), 'vector 1': (1, 1), 'vector 0': (1, 1), 'jump': (0, 0),
-        'marked variable': (0, 0), 'vector 7': (2, 1)}
+        'marked variable': (0, 0), 'vector 7': (2, 1),
+        'constant': (1, 0)}
 # part: (the instruction that must be taken, how often at least)
 TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'not equal': ('not_equal', 2), 'equal': ('not_equal', 2),
@@ -512,8 +544,8 @@ TAKEN = {'attention': ('read_eagerly', 3), 'taken twice': ('read_eagerly', 1),
          'vector 4 of three': ('wait_vector_4', 1), 'vector 6': ('wait_vector_6', 3),
          'vector 1': ('wait_vector_1', 4), 'vector 0': ('wait_vector_0', 4),
          'jump': ('jump', 2), 'marked variable': ('set_marked_variable', 1),
-         'vector 7': ('wait_vector', 5)}
-OPCODE = {'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
+         'vector 7': ('wait_vector', 5), 'constant': ('get_constant', 3)}
+OPCODE = {'get_constant': '23b8', 'wait_vector': '23af', 'jump': '2367', 'set_marked_variable': '2315', 'wait_vector_0': '23a8', 'read_eagerly': '236b', 'not_equal': '23f3', 'wait_vector_1': '23a9',
           'wait_vector_4': '23ac', 'wait_vector_6': '23ae'}
 
 

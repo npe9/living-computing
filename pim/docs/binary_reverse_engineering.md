@@ -513,11 +513,12 @@ the device are given it again whenever the machine runs dry.
   | 10 | 7, 1 | RECEIVE, the reply | as before |
   | 11-12 | 7, 0 then 1 | SEND and RECEIVE, device 17: `create_timer` (310, `pimos.vmac`:146), `{17, 310, Node, User, Password}`, the kernel's timer device (`bios/fep_module/time_dvc.kl1` `device_create/5`) | accepted, `[1]`, OURS: a FEP that has a timer. `reply/9` goes on to `device_process`, the timer's requests; an abnormal answer would end the device |
   | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, T]`, OURS, the same on every run. The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`). T, milliseconds from midnight (`utility/timer/time.kl1`), follows the machine's clock (`pimm.py` `timer()`, 2026-11-24; it was 0): midnight is the moment the processor booted. PIMOS keeps the difference of the two as its time equation (`server/fep/fep/time_sv.kl1` `wait_date_time/2`, `compare/4`). In the long run T = 28,927: the cached machine's clock includes the whole IPL load |
+  | 15-16 | 7, 0 then 1 | SEND and RECEIVE, device 17: `close` (60), `{17, 60}`, the timer device's end when its stream ends (`time_dvc.kl1` `device_io1/13`, then `device_terminate/5`) | accepted, `[1]`, OURS, as a file's close (2026-11-24) |
 
   New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
   on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
-  packets `append_open` (203), `create_timer` (310) and
-  `get_date_time` (304).
+  packets `append_open` (203), `create_timer` (310),
+  `get_date_time` (304) and the timer's `close` (60).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
   The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
