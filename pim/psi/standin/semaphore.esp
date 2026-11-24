@@ -1,0 +1,46 @@
+% SCAFFOLDING stand-in for SIMPOS's class `semaphore`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `semaphore` is printed.  Every method is INTERPOLATED (labelled) from:
+%   - TM-100 Fig. 3.9 (PDF p17, docs/simpos/printed/listings/
+%     tm0100_p17.esp): semaphore inherits waiting_queue, and "A semaphore
+%     which is a component of a bounded post queue inherits a waiting
+%     queue" (p16 prose);
+%   - the printed bounded_post_queue (Fig. 3.11): `:create(#semaphore,
+%     Semaphore, Limit)`, `:p_operation(S)` before an object is added,
+%     `:v_operation(S)` after one is removed;
+%   - TR-056 p11 (PDF p13; TR-056_p13.esp): p and v on a semaphore that
+%     holds "the specified number of tokens".
+% Model (OURS): the free tokens as an integer.  p_operation/1 takes one,
+% and fails when there is none: one process is modelled, so no other
+% process could give one back while this one waited on the inherited
+% waiting queue.  v_operation/1 gives one back.
+
+class semaphore has
+
+% INTERPOLATED from: the nature in TM-100 Fig. 3.9 (see above).
+nature waiting_queue;
+
+% INTERPOLATED from: the printed `:create(#semaphore, Semaphore, Limit)`
+% (TM-100 Fig. 3.11, PDF p17); the tokens from TR-056 p11.
+:create(Class, Semaphore, Limit) :-
+        :new(Class, Semaphore),
+        Semaphore!tokens := Limit;
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute tokens := 0;
+
+% INTERPOLATED from: the printed before-demon `:p_operation(Queue!
+% semaphore)` (TM-100 Fig. 3.11, PDF p17) and TR-056 p11's `:p`.
+:p_operation(Semaphore) :-
+        N = Semaphore!tokens,
+        0 < N,
+        Semaphore!tokens := N - 1;
+% INTERPOLATED from: the printed after-demon `:v_operation(Queue!
+% semaphore)` (TM-100 Fig. 3.11, PDF p18) and TR-056 p11's `:v`.
+:v_operation(Semaphore) :-
+        N = Semaphore!tokens,
+        Semaphore!tokens := N + 1;
+
+end.

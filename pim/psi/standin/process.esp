@@ -26,9 +26,12 @@
 % for (PDF p10, p14), not what they hold.
 %
 % Added (INTERPOLATED, labelled below): the class slot `current`,
-% self/2, inhibit_interrupt/1, allow_interrupt/1 and tag_catch/5, /6, /9.
-% Model (INTERPOLATED): one process (the machine runs one), made on
-% first use and kept in a class slot.
+% self/2, inhibit_interrupt/1, allow_interrupt/1, tag_catch/5, /6, /9,
+% create/3, allow_forced_event/1 and inhibit_forced_event/1.
+% Model (INTERPOLATED): one running process (the machine runs one), made
+% on first use and kept in a class slot.  create/3 makes further process
+% objects, dormant; nothing runs them (kl0 runs one goal at a time), so
+% activating one stops at the printed activate/2's lost `context` calls.
 
     class  process  has
 
@@ -90,6 +93,33 @@
     % INTERPOLATED: see inhibit_interrupt/1 just above.
     :allow_interrupt(Class) ;
 
+    % :create(#process, Process, Areas) -- a new process, dormant, whose
+    % parent is the calling process.
+    % INTERPOLATED from:
+    %   - the call sites: kappa2 kernel/itr/ITRSES.ESP:114 and
+    %     utility/mop/MOPMANAGER.ESP:170 `:create(#process,Process,
+    %     [free,free,free,free])`, utility/tool/LOADER.ESP:53
+    %     `[free,default,free,middle]`, each followed by
+    %     `:activate(Process, Program)`; pimfep##as_pimos_device
+    %     process/4 (held cells @1a-29, read 2026-11-24):
+    %     `:create(#process, P, [free,default,free,small])`, then its local
+    %     setup_process/3;
+    %   - the printed create_core/3 (TM-100 Fig. 3.1, PDF p8), whose slot
+    %     settings it repeats, without the hardware context (class
+    %     `context` is not stood in) and without :add_child (not stood in).
+    % What the four-element list means (four memory areas' sizes, by the
+    % atoms free/default/small/middle: INFERENCE) is not known; it is
+    % ignored.
+    :create(Class, Process, Areas) :-
+        :new(Class, Process),
+        :self(#process, Self_process),
+        Process!priority := 0,
+        Process!sub_priority := 0,
+        Process!parent_process := Self_process,
+        Process!world := Self_process!world,
+        Process!user := Self_process!user,
+        Process!status := dormant, ! ;
+
 
     instance
 
@@ -116,6 +146,48 @@
                         % Interpreter instance which runs on this process
               ( clock     := Clock :- :create(#process_clock, Clock) ) ;
                         % The elapse time of this process
+
+    % INTERPOLATED: a slot not printed in Fig. 3.1, from the accessors
+    % below.
+    attribute   password_list ;
+
+    % Slot accessors.  INTERPOLATED from: the held compiled calls in
+    % pimfep##as_pimos_device's local setup_process/3 (@183-1b5, read
+    % 2026-11-24), which reads sub_priority/2, user/2, password_list/2
+    % and world/2 from the calling process (`:self(#process,P)`) and sets
+    % set_sub_priority/2, set_user/2, set_password_list/2 and set_world/2
+    % on the new one; the slots sub_priority, user and world are PRINTED
+    % (TM-100 Fig. 3.1, PDF p8), password_list is not (above).  A getter
+    % gives the slot's value, a setter replaces it (OURS).
+    :sub_priority(Process, X) :- X = Process!sub_priority ;
+    % INTERPOLATED: see the slot accessors just above.
+    :set_sub_priority(Process, X) :- Process!sub_priority := X ;
+    % INTERPOLATED: see the slot accessors above.
+    :user(Process, X) :- X = Process!user ;
+    % INTERPOLATED: see the slot accessors above.
+    :set_user(Process, X) :- Process!user := X ;
+    % INTERPOLATED: see the slot accessors above.
+    :world(Process, X) :- X = Process!world ;
+    % INTERPOLATED: see the slot accessors above.
+    :set_world(Process, X) :- Process!world := X ;
+    % INTERPOLATED: see the slot accessors above.
+    :password_list(Process, X) :- X = Process!password_list ;
+    % INTERPOLATED: see the slot accessors above.
+    :set_password_list(Process, X) :- Process!password_list := X ;
+
+    % :allow_forced_event(Process) / :inhibit_forced_event(Process).
+    % INTERPOLATED from: the held compiled calls -- pimfep##pimos_timer's
+    % local allow_forced_event/1 (@101: `:allow_forced_event(P), ! ; true`),
+    % called from do_on_after/4 and do_on_at/4 with the process that
+    % tag_catch/9 passed in, so the receiver is a process instance; the
+    % selectors allow_forced_event/1 (10 sends) and inhibit_forced_event/1
+    % (8) in pimmcsp (docs/simpos/required/ptf_unattributed_selectors.tsv);
+    % the pairing with tag_catch/9's abort path (a forced event is read
+    % here as an abort delivered to the process: INFERENCE).  One process
+    % and no abort are modelled, so both succeed and do nothing.
+    :allow_forced_event(Process) ;
+    % INTERPOLATED: see allow_forced_event/1 just above.
+    :inhibit_forced_event(Process) ;
 
     % :tag_catch(Process, Object, Method, Args, Tag) and its 6- and
     % 9-argument forms run the goal :Method(Object, Args...) as a catch

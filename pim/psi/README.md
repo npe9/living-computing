@@ -24,8 +24,8 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`). |
-| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 25 s. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`. |
+| `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
 
@@ -643,6 +643,57 @@ that every method carries a label.
   specification held. No pimfep or pimscsi method reaches
   `symbolizer` first in the census.
 
+**Step 3c stand-ins** (2026-11-24), for the next blockers of the
+census below:
+
+- `channel` (PRINTED, TM-100 Fig. 3.7, verbatim): nature `stream`,
+  the code-initialised slot `post_queue` that overrides stream's, and
+  `send/3`, `receive/3`. Its `create/2` is the printed `stream`'s,
+  inherited. Not stood in: TR-056 p14's `send/2`, `receive/2`, and class
+  `message`'s `set_sender/2`, `get_sender/2`, which the printed bodies
+  call.
+- `bounded_channel` and `bounded_post_queue` (PRINTED, Figs. 3.10 and
+  3.11, verbatim; no held code sends to them). The plain `attribute
+  post_queue;` overrides channel's initialiser; `bounded_post_queue`'s
+  before- and after-demons run on stand-ins (a third `put/2` on a channel
+  bounded at 2 fails until a `get/2`). With `post_queue_for_message`
+  (INTERPOLATED: nature `post_queue`, from TM-100 p15's "must be
+  compatible") and `semaphore` (INTERPOLATED: nature `waiting_queue`
+  from Fig. 3.9; tokens from TR-056 p11; `p_operation/1` fails at none,
+  since one process could not be woken).
+- `list_index` and `hash_index` (INTERPOLATED). Their representation is
+  evidenced: kappa2's `kernel/flm/KPPOOL.ESP` (`kappa_list_index`, nature
+  `list_index`) and `kernel/svm/SVHSH_IDX.ESP` (`kappaSVM_hash_index`,
+  nature `hash_index`) read the base classes' slots directly. A
+  list_index holds `first`, `'$$void'` or an entry `{Next, Object, Key}`;
+  a hash_index holds `size` and `vector`, a vector of `size`
+  list_indexes. The interface is TR-056 p8's `(3) Index` (object before
+  key). `get_contents_with_key/2` gives `{Object, Key}`, as
+  SVHSH_IDX.ESP builds and paragraph's `p_wshell.esp` reads. OURS: new
+  entries go last, keys match by unification, and every key goes to
+  bucket 0 (kappa.ptf's `get_list_index/4` compiles `hash/2` and `mod` to
+  blt 6b and blt 44, but the firmware hash is lost).
+- `process` (INTERPOLATED additions): `create/3` (a dormant child of
+  the calling process; the four-atom area list, e.g.
+  `[free,default,free,small]`, is ignored), from kappa2's `ITRSES.ESP`,
+  `LOADER.ESP` and pimfep's `as_pimos_device process/4`, and the printed
+  `create_core/3`; `allow_forced_event/1` and `inhibit_forced_event/1`
+  (no-ops: one process, no abort); the accessors `sub_priority/2`,
+  `user/2`, `world/2`, `password_list/2` and their setters, read off
+  `as_pimos_device`'s `setup_process/3` (`password_list` is not a
+  printed slot).
+- `standard_editor` (INTERPOLATED, minimal): `pimos_window_editor`'s
+  natures are `simpos##standard_editor, pimfep##as_pimos_device`, so
+  `get_window/2` is standard_editor's (window.md §2.11). It gives a
+  `window` slot that stays 0, since `pmacs_window` is not stood in: the 21
+  methods now refuse at their next send, to 0.
+- **An espc bug fixed on the way.** In a call, an argument computed into
+  a register in step 1 was read from that register after a later
+  argument's move had cleared it, so `fill(I+1, N, V)` passed N for
+  I+1. `clear_way` now updates the placed argument. `espc.py check` of
+  paragraph, kappa2 and utter is the same with or without the fix, so
+  no pin moved; the hash_index stand-in's `fill/3` found it.
+
 With them loaded:
 
 - `pimfep##pimos_timer:on_after/4` gets past `simpos##process:self/2`
@@ -712,6 +763,39 @@ method.
   
   21 more stop at `pimfep##pimos_window_editor:get_window/2`. That class
   is partial, so the method is in an unloaded ancestor.
+- With step 3c's stand-ins (fourth row, 2026-11-24; each step rerun and
+  compared method by method, nothing changed between success and
+  failure):
+
+  | step | methods | success | failure | refused |
+  |---|---|---|---|---|
+  | before (third row) | 1,228 | 515 | 51 | 662 |
+  | `channel` | 1,228 | 558 | 51 | 619 |
+  | `list_index`, `hash_index`, `process` `create/3`, `allow_forced_event/1` | 1,228 | 590 | 63 | 575 |
+  | `process` accessors | 1,228 | 604 | 63 | 561 |
+  | `standard_editor` | 1,229 | 605 | 63 | 561 |
+
+  - 90 methods moved from refused to success, 12 from refused to
+    failure (`scsi_device`'s `get_first/2`, `remove/2`, ... on an empty
+    index; `pimos_socket_manager`'s `get_at/3`, `remove_at/3`;
+    `as_pimos_string_io_device do_io/6`, `pimos_tcpip_socket accept/4`,
+    `do_accept/3`), and `pimos_window_editor get_window/2` is a new method
+    (it is the stand-in's, inherited).
+  - `pimos_timer on_after/4` now gets through `allow_forced_event/1` and
+    stops at blt 01.
+  - The refusals now rank: SIMPOS calls 128, receiver not an object
+    107, missing opcodes (blt 06 65, pmi b0 29, pmi b4 21, blt 9a 12,
+    pmi ca 12, blt 54 12, blt 01 11, ...), unbound receiver 39, unbound
+    argument 27.
+  - The SIMPOS calls rank: the `lock/1` of four pimfep tables (7, 6, 5,
+    5; partial classes: the method is in a `simpos##` ancestor),
+    `trace:trace/1`, `common_network:is_installed/1`,
+    `network_listener_buffer:create/4` (5 each), `library:assign/1`,
+    `network_node_name:get_my_node/2`, `pimos_file:create/2`,
+    `pmacs_window:create/3` (4 each), and class `message`'s
+    `get_sender/2` (6, from pimscsi's `cmt` and `scsi`).
+  - "Receiver not an object" grew by 21: the `pimos_window_editor`
+    methods, whose window is 0 until `pmacs_window` is stood in.
 
 ## Open
 

@@ -1550,7 +1550,7 @@ class ClauseCompiler:
         if self.need_env:
             self.ensure_env()
         # 1. expressions and structures that are arguments, left to right
-        placed = {}
+        placed = self.placed = {}
         for i, v in enumerate(args):
             if v[0] in ('slot', 'arith', 'list', 'vec') and not ground(v):
                 r = self.to_reg(v, prefer=i)
@@ -1623,6 +1623,7 @@ class ClauseCompiler:
                 if R.where.get(('x',)) is None:
                     pass
             R.set(i, ('val', 'arg'))
+        self.placed = {}
         # 3. the call
         if g.kind == 'send':
             if last:
@@ -1655,6 +1656,13 @@ class ClauseCompiler:
             self.asm.pmi(0xa3, r, i)
             R.set(r, h)
             R.holder[i] = None
+            # an argument already placed in I (step 1 of call) now lives in
+            # R: without this, `fill(I+1, N, V)` put N for I+1 (found
+            # 2026-11-24 by the hash_index stand-in's fill/3)
+            placed = getattr(self, 'placed', {})
+            for k in placed:
+                if placed[k] == i:
+                    placed[k] = r
             return r
         if R.holder.get(i) and R.holder[i][0] == 'perm':
             R.drop(i)

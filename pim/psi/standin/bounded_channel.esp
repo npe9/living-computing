@@ -1,0 +1,30 @@
+% SCAFFOLDING stand-in for SIMPOS's class `bounded_channel`, compiled by
+% psi/espc.py into the package `simpos`.  The class text is PRINTED
+% SOURCE, not ours: TM-100 Figure 3.10 "Class 'bounded_channel'" (PDF
+% p17, printed folio 15), as transcribed in
+% docs/simpos/printed/listings/tm0100_p17.esp, verbatim (layout as
+% printed).  Unlike Figs. 3.6-3.8 the caption does not say "part of".
+% The plain `attribute post_queue;` overrides channel's slot of the same
+% name and its initialiser (TM-100 p16 prose: "The slot 'post_queue' in
+% class 'bounded_channel' contains a bounded post queue instead of a post
+% queue by overriding the slot of class 'channel'"); create/3 then fills
+% it.  No held program or package sends to it: it is here because it is
+% printed.
+
+    class  bounded_channel  has
+
+    % PRINTED: TM-100 Fig. 3.10, PDF p17 (the nature)
+    nature      channel;
+
+    % PRINTED: TM-100 Fig. 3.10, PDF p17
+    :create(Class, Channel, Limit) :-
+            :create(Class, Channel),
+            :create(#bounded_post_queue, Queue, Limit),
+            Channel!post_queue := Queue;
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.10, PDF p17 (the overriding slot)
+    attribute   post_queue;
+
+    end.

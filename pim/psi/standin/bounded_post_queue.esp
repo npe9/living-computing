@@ -1,0 +1,36 @@
+% SCAFFOLDING stand-in for SIMPOS's class `bounded_post_queue`, compiled
+% by psi/espc.py into the package `simpos`.  The class text is PRINTED
+% SOURCE, not ours: TM-100 Figure 3.11 "Class 'bounded_post_queue'" (PDF
+% p17-18, printed folios 15-16), as transcribed in
+% docs/simpos/printed/listings/tm0100_p17.esp and tm0100_p18.esp,
+% verbatim (layout as printed).  TM-100 p17: "The latter is an example
+% of using demon predicates."  Its class `semaphore` is an INTERPOLATED
+% stand-in (semaphore.esp).
+
+    class  bounded_post_queue  has
+
+    % PRINTED: TM-100 Fig. 3.11, PDF p17 (the nature)
+    nature      post_queue;
+
+    % PRINTED: TM-100 Fig. 3.11, PDF p17
+    :create(Class, Queue, Limit) :-
+            :create(Class, Queue),
+            :create(#semaphore, Semaphore, Limit),
+            Queue!semaphore := Semaphore;
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.11, PDF p17 (the slot)
+    attribute   semaphore;
+
+    before
+    % PRINTED: TM-100 Fig. 3.11, PDF p17 (before-demon)
+    :add_object(Queue, Object) :-
+            :p_operation(Queue!semaphore);
+
+    after
+    % PRINTED: TM-100 Fig. 3.11, PDF p18 (after-demon)
+    :remove_object(Queue, Object) :-
+            :v_operation(Queue!semaphore);
+
+    end.
