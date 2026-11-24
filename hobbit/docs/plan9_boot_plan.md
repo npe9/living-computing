@@ -829,6 +829,30 @@ Not done: the Bluespec core has not run any of this; 8½ (bitmap and
 mouse) is not modelled; the server's ack-0 IL sync race is a 1e bug,
 not removed, not seen since (0 of 612 probe dials, 0 of 9 live runs).
 
+## A4/A5 status, our 9term (2026-11-24): the kernel built here boots and passes the A5 script
+
+The `9term` A3 linked (sha256 `002880c0...`) boots on the reference
+model with its root from the 1e server in QEMU (`p9join.py --image`) and
+runs A5's command script to `end of script` and `% `: 603,242,715
+instructions, 30.3 s of model time, 839 s of host time, 1221 frames; the
+screen is s9term's (`tests/net/a5_screen.txt`) byte for byte except
+pageinit's line (1362 free pages, not 1364: the kernel is three pages
+larger).  Its `/boot`, built against the shipped libc and so not
+s9term's binary, offers the same transports, takes `il`, sends the same
+BOOTP request and joins.  Every other difference (no serial console, a
+scan-code keyboard on Quart channel 2, the release's 25 Hz clock, BSS
+size, IL resend timing) follows from the source drift docs/s9term.md
+records; the table and the commands are in docs/p9boot.md, "Our 9term".
+No bug in the build or in the reference model was found; the harness
+gained typing on `kbd.c`'s keyboard (`tools/p9scancode.py`, p9boot
+CHOICES `console-keyboard`).  In the suite:
+`tests/test_own9term.py` (first line; Return at `/boot`'s prompt as scan
+codes; the encoder against kbd.c), which skips its image tests, printing
+the build command, where `build/p9kbuild/9term` is absent.
+
+Not done: our 9term on the Bluespec core; 8½ (now that the keyboard
+types, the display and mouse are what `tor`'s profile wants).
+
 ## A4 status, reference side (2026-11-23): s9term boots to init, root from the 1e server
 
 `tools/p9boot.py` boots the shipped kernel image `s9term` on the

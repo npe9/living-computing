@@ -867,6 +867,70 @@ Not modelled: the TLBs and their flushes (no-ops; the walk is made on
 every access), the instruction cache and prefetch, tracing, NMI edge
 sensitivity, bus errors other than "no device".
 
+## Our 9term: the kernel linked from the release (2026-11-24)
+
+A3 links `9term` from the release's own sources with the release's own
+tools on the reference model (docs/plan9_boot_plan.md A3; 562,452
+bytes, sha256 `002880c0...`, `p9kbuild.NINETERM_SHA256`).  It boots the
+same way as s9term, through the join, and runs A5's whole command
+script:
+
+```sh
+# the image: python3 hobbit/tools/p9kbuild.py all --build hobbit/build/p9kbuild
+#   (3 h 15 min; leaves build/p9kbuild/9term), or `link --kgen K`
+python3 hobbit/tools/p9join.py --image hobbit/build/p9kbuild/9term \
+    --until 'end of script\n% ' --max-steps 6000000000 --out DIR \
+    --type '% =echo hello\r' ... (the ten lines of "Commands at rc's prompt")
+```
+
+Live, 2026-11-24 (lockstep, icount 4, `--ports 11931,11932`):
+**603,242,715 instructions** (553,710,484 idle-skipped), 30.3 s of model
+time, 839 s of host time, 1221 frames.  **The screen is s9term's
+`tests/net/a5_screen.txt` byte for byte except its first line** (2127
+bytes both): `hello`, `6 6 83`, `/lib/ndb/local` whole, `za` and `zl`
+inside the boot, the same `ls -l`, the same sums (`b3769ed2 255
+hello.z`, `4b4798a2 2014 z.out`), `hello 1e`.  `/boot` is a different
+binary from s9term's (built against the shipped libc, text 0x5e30 vs
+0x5cf8, plan9_boot_plan.md A3) and behaves the same: the same prompt,
+`il` taken, the BOOTP request and the ARP exchange byte-identical to
+s9term's recording (frames 0-3 of `a5_session.pcap`), user `none`, the
+attach and the time, init.
+
+The run needed one harness change: our 9term's console is a keyboard.
+The release's `screen.c` calls `kbdinit(2)`, so input is `kbd.c`'s
+scan codes on Quart channel 2 at 600 baud, odd parity, decoded by
+`rawkbdputc`; there is no serial console at all.  p9boot types on that
+keyboard when the image defines `kbdinit` (CHOICES
+`console-keyboard`): `tools/p9scancode.py` turns the typed text into
+press/release codes using `keymap[]`/`skeymap[]` read out of the vendored
+`kbd.c`, `Lshift` around shifted characters, CR as the Return key.
+s9term runs are unchanged (it has no `kbdinit`).
+
+Every difference from the s9term boot, diagnosed from the sources (all
+expected from the drift in docs/s9term.md; no bug in our build or in the
+reference model was found):
+
+| | s9term | our 9term | why |
+|---|---|---|---|
+| first line | `1364 free pages, 5456K bytes, swap 27856K, ...` | `1362 free pages, 5448K bytes, swap 27848K, ...` | `end` 0x80062ee0 vs 0x800653d8 (text +4,268, data +2,520, bss +2,676): rammain.c `confinit` gives npage = (8 MB top - PGROUND(end))/4K = 1949 vs 1946; page.c prints upages = npage*70/100 = 1364 vs 1362; swap is pmem + nswap pages |
+| `main` reached | step 125,203 | 128,548 | +3,345 = 669 more BSS words cleared by raml.s `_virtual`'s 5-instruction loop (bss +2,676 bytes) |
+| first line on the screen | step 2,131,084 | 2,135,886 | the above plus the screeninit row |
+| `screeninit` | `eiaspecial(0, &printq, &kbdq, 19200)`, `eiaspecial(3, ...)`, `bitreverse` | `kbdinit(2)`: `eiaspecial(2, &liteq, &kbdq, 600)`, `eiasetrts`, `eiasetparity(2, 'o')`, `eiarawput(2, Noclick)`, then `eiaspecial(3, ...)`, `pixreverse` | s9term's screen.c predates kbd.c; devbit.c's `bitreverse` became `pixreverse` (docs/s9term.md table) |
+| Quart channel 2 out | nothing | `0x08` once | `eiarawput(portno, Noclick)` (kbd.c:282) |
+| serial console (channel 0) | every console line, `\n` as `\r\n` (`a5_uart0.txt`, 2235 bytes) | **nothing** | only rommain.c sets `printq` (rommain.c:41); `putstrn` skips the serial line when `printq.puts == 0` |
+| console input | ASCII on channel 0, `kbdcr2nl` | scan codes on channel 2, `rawkbdputc` | kbd.c `kbdinit` |
+| clock | ctu = ctl = 0xFF: a tick every 0.569 s (QUART_CHOICES `counter-period`) | deveia.c `clockinit`'s `Crystal/(2*16*HZ)`: 25 Hz | s9term's clockinit is older |
+| `/boot`'s prompt | 286,977,189 instructions, 14.367 s | **22,515,681, 1.144 s** | the clock: `/boot`'s `sleep(1000)` is 25 ticks either way (s9term at `--counter-period 0.04`: 22,537,089, 1.145 s) |
+| A5 script | 840,583,000 instructions, 42.2 s model, 1108 frames | 603,242,715, 30.3 s, 1221 frames | the clock again, for every sleep and alarm |
+| IL from the Hobbit | 475 data, 0 Dataquery, 1 ack, 6 state | 475 data, **48 Dataquery**, 12 ack, 9 state | stil.c `ilackproc` sleeps `Iltickms` (100 ms) and resends as Dataquery once `fasttime` (400 ms at the minimum rtt) passes; at 25 Hz that is real time, and the lockstep's server lags the model by up to ~0.6 s ("One time base"), while s9term's 0.569 s ticks make the same timer ~2.3 s.  All resends were answered; nothing was lost |
+
+`tests/test_own9term.py` (in the suite) runs our
+9term to its first line and to Return at `/boot`'s prompt typed as scan
+codes; the image is a build product, not committed, so the test looks
+for it at `$HOBBIT_9TERM` or `build/p9kbuild/9term`, uses it only if its
+sha256 is the recorded one, and otherwise skips its image tests,
+printing the command that makes it.
+
 ## What blocks next
 
 1. **8½ and the rest of a terminal**: `tor`'s profile (the release's
