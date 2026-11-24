@@ -300,6 +300,84 @@ fold eligibility and compare distance in particular instruction
 sequences, not yet traced to a page, and a cycle-accuracy claim for the
 core does not extend to them.
 
+## 1d. What booting s9term on the core found (2026-11-23)
+
+`bsv/run_p9kern.sh N` boots the shipped kernel image `s9term` on the
+privileged core (`mkHobbitCoreSystem`) from the ROM's hand-off and
+compares its retirement records with the reference boot's
+(`tools/p9boot.py` on `hobbit_sem` with a `System`), every field but
+`cyc`, record by record; device reads are replayed from the reference
+boot by record number and device writes checked against it
+(`docs/p9boot.md`, "The boot on the core").  The core first had to gain
+the privileged machine -- the CPU escape and the control registers,
+CSP = ISP, CRET, KRET, the flushes, CONFIG.PX/KL (`docs/p9boot.md`
+lists them) -- which is new behaviour, not a finding.  With it, the
+comparison stopped twice before record 2,825,000:
+
+| # | what | found at | fixed in | pinned by |
+|---|---|---|---|---|
+| 1 | The interlocked `ORI`/`ANDI`/`ADDI` (opcodes 0x01..0x03, pp. 3-37, 3-8, 3-6) were decoded as unimplemented and trapped | record 126,600, in `tas` (`ORI $1, *lock`), 3,397 records after `main` | `OP_ORI/ANDI/ADDI`; EU_S2 computes `dst OP src` and the accumulator's old-value write, which EU_S3 issues the next clock through the frame drain (`xw`); EU_S1 drains before and holds after (the pp. 3-8/3-37 Notes); R4 as the destination is the old value (p. 3-6 note) | golden 022 (and 009 now runs on the core) |
+| 2 | **A wrong-path operand read that faulted raised the exception.**  The data face latches an MMU fault when the read is made, and the core started the event sequence at once -- for a read EU_S1 made on the predicted path of a branch that then mispredicted | record 2,658,001, in `netadd`: `CMPEQ $0,R24; JMPTN` predicted not taken, taken when the pointer is nil, and the fall-through's `CMPEQ *R24,R0` read virtual 0 | the orchestrator classifies a data fault on the clock it appears (`dfOperand`: EU_S1's operand fetch, which the box's `memLive` names); such a fault holds EU_S1, lets the older instructions complete, and is taken at EU_S1's PC only when they have (p. 1-37: the faulting instruction has not completed); a squash first drops it | golden 023 (run on the MMU core, PSW.V = 1) |
+
+Injections, each reverted by its exact reverse and the diff checked:
+
+* `xw: False && ...` (no accumulator write): golden 022 fails at L03,
+  `data` 0 for 5.  Nothing else ran past the first failure (hri_check
+  stops there).
+* `res = r` for R4 as the destination (ignore the p. 3-6 note): golden
+  022 fails at L05, `data` 0 for 9.
+* `dfOperand = False && ...` (the fault taken when it appears, as
+  before): golden 023 matches L01..L10 and fails at L11, `pc` 0 for
+  0x28 -- the event vector (0 in that harness) instead of the branch
+  target.
+
+Golden 023 pins one half of finding 2: a squash drops the held fault.
+The other half -- a held operand fault taken at EU_S1's PC once it is
+the oldest instruction -- is not exercised by anything yet; the first
+user-mode faults of the boot (record 2,859,432 on) depend on it.  The
+interlocked drain and hold (finding 1) likewise have no discriminating
+test (see the table below).
+
+**The privileged machine against the boot sample.**  It is new
+behaviour, so its evidence is the boot itself; each of these was
+injected into a copy of `HobbitCore.bsv` and run against the 300,000-
+record sample (`build/coreboot/inject_all.sh`, not committed; the copy
+restored byte for byte after each):
+
+| injection | observed |
+|---|---|
+| CONFIG.PX ignored | fails at record 2,096 (just after `_virtual`), every field |
+| stack operands from SP when CSP = ISP | fails at record 11 (`_startup`), `addr` |
+| CRET restores only PSW bits 31:16 | fails at record 2,065, `sp_after` |
+| CRET's CATCH portion dropped | **every record still matched** |
+| a RETURN with CSP = ISP returns to the next PC | **every record still matched** |
+| ENTER's PSW.E never written | **every record still matched** |
+| an SP write leaves MSP alone | **every record still matched** |
+| a CPU instruction does not serialize | **every record still matched** |
+| no drain before an interlocked instruction | **every record still matched** |
+
+So the sample pins PX, the ISP as the stack base and CRET's PSW; the
+CRET CATCH, the ISP-mode RETURN, PSW.E, the SP-write rule, the CPU
+serialization and the interlocked drain rest on argument and on the
+long run to 2,825,000 (not re-run under injection).  KRET and anything
+entered from user level are not reached before 2,825,000 at all.
+
+The 16,172 "unrecorded" device reads p9kern.c counts by record
+2,825,000 are the same kind of read as finding 2 and as §1c's
+`dotsearch` reads: requests the reference boot never made, answered 0,
+and none retired (the trace matched).  By address (`P9KSPEC=1`, the
+same run): 16,128 of 0xB0003004 and 42 of 0xB0003000 -- the LCD
+display (`io.h` `LCDADDR`, `IOACK(Lcdisp, 0x3000)`), which the
+reference boot never reads -- and 2 of 0xA4400000, the SONIC
+(`SONICADDR`).  That they are wrong-path operand fetches is the reading
+of §1c's traced case, not traced again here.  All 102 reads the
+reference made were requested and answered from the recording, and all
+16,366 device writes matched.  On the reference as merged 2026-11-23
+(p9boot's EEPROM, rtc and SONIC models; the idle skip off for the
+recording) the same run records 161 reads and 16,373 writes to record
+2,825,000: all 161 replayed, all 16,373 matched, the same 16,172
+unrecorded reads, and the trace and the 74-byte console identical.
+
 ## 2a. Documented instruction interactions not yet modelled
 
 Printed p. 3-2 ("Certain combinations of instructions may produce

@@ -34,7 +34,7 @@ mkdir -p "$GEN"
 run_one() {
   stem=$1
   case "$stem" in
-    001|002|003|004|005|006|013|014|015|016|017|018|019|020|021) ;;
+    001|002|003|004|005|006|009|013|014|015|016|017|018|019|020|021|022|023) ;;
     *) echo "run_golden: no such golden stem: $stem" >&2
        echo "usage: run_golden.sh [001..006]" >&2
        exit 2 ;;
@@ -51,7 +51,31 @@ run_one() {
   # PSW 0x8600 = UL | X | S, as 017.md's "Pre-state" says.
   case "$stem" in
     017) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00008600);' ;;
+    023) startcall='core.startPsw(32'"'"'h00000100, 32'"'"'h00000180, 32'"'"'h00010200);' ;;
     *)   startcall='core.start(32'"'"'h00000100, 32'"'"'h00000180);' ;;
+  esac
+  # 023 runs on the MMU core with PSW.V = 1 (023.md "Pre-state"): segment
+  # 0 paged with its table at 0x1000 (Table 2-1, p. 2-5), page 0 mapped
+  # to frame 0 and every other page invalid (Table 2-3, p. 2-7) -- the
+  # tables of HobbitCoreMmuTb.bsv.  Its architectural trace is the same
+  # as with V = 0, because no instruction it retires touches page 1 up.
+  case "$stem" in
+    023)
+      coredecl='MmuTables tbl <- mkMmuTableMem;
+  HobbitCore core <- mkHobbitCoreMmu(phys, imageLength() << 2,
+                                     defaultMemCycles(), tbl);'
+      tblrules='Reg#(Bit#(2)) tl <- mkReg(0);
+  rule loadTables (tl != 2);
+    if (tl == 0) tbl.write(32'"'"'h0000, 32'"'"'h00001001);
+    else         tbl.write(32'"'"'h1000, 32'"'"'h00000807);
+    tl <= tl + 1;
+  endrule'
+      tblready='(tl == 2) && ' ;;
+    *)
+      coredecl='HobbitCore core <- mkHobbitCore(phys, imageLength() << 2,
+                                  defaultMemCycles());'
+      tblrules=''
+      tblready='' ;;
   esac
 
   pkg=GoldenImage_$stem
@@ -62,6 +86,7 @@ run_one() {
 package $tb;
 
 import HobbitTypes::*;
+import HobbitMmu::*;
 import HobbitCore::*;
 import HobbitBus::*;
 import $pkg::*;
@@ -70,8 +95,7 @@ import $pkg::*;
 module mkGoldenTb_$stem(Empty);
   HobbitBusMem mem <- mkHobbitBusMem;
   HobbitMem phys <- mkHobbitMemBus(mem);
-  HobbitCore core <- mkHobbitCore(phys, imageLength() << 2,
-                                  defaultMemCycles());
+  $coredecl
 
   Reg#(Bit#(16)) li <- mkReg(0);
   Reg#(Bool) loaded <- mkReg(False);
@@ -90,7 +114,8 @@ module mkGoldenTb_$stem(Empty);
   // Warm the prefetch buffer from the synchronous read port (p. 4-1
   // instruction-cache assumption), then start the measured run.
   Reg#(Bit#(2)) boot <- mkReg(0);
-  rule askPrefetch (loaded && (boot == 0));
+  $tblrules
+  rule askPrefetch (${tblready}loaded && (boot == 0));
     core.prefetchImage();
     boot <= 1;
   endrule

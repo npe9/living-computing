@@ -59,7 +59,7 @@ module mkHobbitDecode(HobbitDecode);
                           insn0: 0, insn1: 0,
                           fold: False, foldOp: OP_NONE, foldPc: 0,
                           foldInsn0: 0, foldTarget: 0,
-                          foldAfter: 0, tr: tr };
+                          foldAfter: 0, tr: tr, cpu: False };
   endfunction
 
   function DecodedInstr trapAt(Word pc, Bit#(8) len, TrapReason r);
@@ -129,14 +129,24 @@ module mkHobbitDecode(HobbitDecode);
     endcase
   endfunction
 
-  // Table 1-17: CPU = 0x000, NOP = 0x002.  CPU is a documented escape
-  // (p. 3-14) and is rejected explicitly; every other niladic is unimp.
+  // Table 1-17: CPU = 0x000, KRET = 0x001, NOP = 0x002, FLUSHI = 0x003,
+  // FLUSHP = 0x004, CRET = 0x005.  CPU on its own (not followed by a
+  // three- or five-parcel instruction, `decode` below) is illegal.  KRET,
+  // CRET and the two flushes exist only in the privileged machine
+  // (mkHobbitCoreSystem); the other cores take them as before, through
+  // the unimplemented-instruction sequence (HobbitCore.bsv, EU_S1).
   function DecodedInstr niladic1(Word pc, Parcel q);
     Bit#(10) sub = q[9:0];
     if (sub == 10'h002)
       return unary(pc, 1, OP_NOP, 4'h0, 0, TR_NONE);
     else if (sub == 10'h000)
       return trapAt(pc, 1, TR_CPU);
+    else if (sub == 10'h001)
+      return unary(pc, 1, OP_KRET, 4'h0, 0, TR_NONE);
+    else if (sub == 10'h005)
+      return unary(pc, 1, OP_CRET, 4'h0, 0, TR_NONE);
+    else if ((sub == 10'h003) || (sub == 10'h004))
+      return unary(pc, 1, OP_FLUSH, 4'h0, 0, TR_NONE);
     else
       return trapAt(pc, 1, TR_UNIMP);
   endfunction
@@ -291,9 +301,9 @@ module mkHobbitDecode(HobbitDecode);
     case (o)
       // row 000
       6'h00: return OP_NONE;   // monadic (Table 1-19), handled separately
-      6'h01: return OP_NONE;   // ORI   -- two architectural writes, unmodelled
-      6'h02: return OP_NONE;   // ANDI  -- two architectural writes, unmodelled
-      6'h03: return OP_NONE;   // ADDI  -- two architectural writes, unmodelled
+      6'h01: return OP_ORI;    // ORI  (p. 3-37): dst |= src, Acc = old dst
+      6'h02: return OP_ANDI;   // ANDI (p. 3-8):  dst &= src, Acc = old dst
+      6'h03: return OP_ADDI;   // ADDI (p. 3-6):  dst += src, Acc = old dst
       6'h04: return OP_MOVA;
       6'h05: return OP_UREM;
       6'h06: return OP_MOV;
@@ -352,7 +362,7 @@ module mkHobbitDecode(HobbitDecode);
                             fold: True, foldOp: branchOp5(opc),
                             foldPc: bpc, foldInsn0: q,
                             foldTarget: pcrel10(bpc, q[9:0]),
-                            foldAfter: bpc + 2, tr: d.tr };
+                            foldAfter: bpc + 2, tr: d.tr, cpu: False };
     end else
       return d;
   endfunction
@@ -485,6 +495,12 @@ module mkHobbitDecode(HobbitDecode);
           4'hA: return mkInstr(pc, 3, OP_LDRAA,
                                branch3(pc, OP_NOP, sm, v32, 3).src,
                                noOpnd(), branch3(pc, OP_NOP, sm, v32, 3).tr);
+          // FLUSHPTE word32 (Table 1-19, p. 1-24; p. 3-27).  The model
+          // flushes every TLB and NPSR entry (HobbitCore.bsv, EU_S3), so
+          // the operand is not read.
+          4'hB: return mkInstr(pc, 3, OP_FLUSHPTE,
+                               Operand { mode: sm, val: v32 },
+                               noOpnd(), TR_NONE);
           default: return trapAt(pc, 3, TR_UNIMP);
         endcase
       end else if (opc == 6'h07) begin
@@ -527,8 +543,46 @@ module mkHobbitDecode(HobbitDecode);
   // Fill the retirement record's first two parcels: the parcel stream is
   // big-endian within each memory word, so p[0] is the parcel at pc and
   // p[1] the parcel at pc+2 (p. 1-21 and the shared image format).
+  // The CPU escape (p. 3-14): "The instruction following CPU is
+  // considered part of the CPU instruction."  The pair is one decoded
+  // instruction (`cpu`, HobbitTypes).  Only the three- and five-parcel
+  // forms have the mode fields CPU modifies (Table 1-22, p. 1-26); after
+  // CPU a mode below 0xC other than 7 is illegal (p. 1-39), and mode 7
+  // names a control register, of which 1..12 exist (Table 1-24, p. 1-26;
+  // 0 and 13..15 are exception 6, p. 1-27).  No branch is folded into a
+  // CPU instruction: the six parcels the decoder sees are all its own.
+  function Bool cpuModeBad(Bit#(4) m) = (m < 4'hC) && (m != 4'h7);
+  function Bool cpuRegBad(Bit#(4) m, Word v) =
+    (m == 4'h7) && ((v[3:0] == 0) || (v[3:0] > 4'd12));
+
+  function DecodedInstr cpuEscape(Word pc, Vector#(6, Parcel) p);
+    Vector#(6, Parcel) q = shiftInAtN(p, 0);
+    Parcel q0 = q[0];
+    let d = decodeRaw(pc, q);
+    if (d.plen == 1)
+      return trapAt(pc, 1, TR_CPU);
+    else begin
+      Bit#(4) sm = q0[7:4];
+      Bit#(4) dm = q0[3:0];
+      Bool monadic = (q0[13:8] == 6'h00);
+      TrapReason tr = d.tr;
+      if (!monadic && (tr == TR_NONE)) begin
+        if (cpuModeBad(sm) || cpuModeBad(dm))
+          tr = TR_CPU;
+        else if (cpuRegBad(sm, d.src.val) || cpuRegBad(dm, d.dst.val))
+          tr = TR_UNIMP_REG;
+      end
+      d.plen = d.plen + 1;
+      d.fold = False;
+      d.foldOp = OP_NONE;
+      d.cpu = True;
+      d.tr = tr;
+      return d;
+    end
+  endfunction
+
   method DecodedInstr decode(Word pc, Vector#(6, Parcel) p);
-    let d = decodeRaw(pc, p);
+    let d = (p[0] == 16'h2C00) ? cpuEscape(pc, p) : decodeRaw(pc, p);
     return DecodedInstr { pc: d.pc, plen: d.plen, op: d.op,
                           src: d.src, dst: d.dst,
                           insn0: p[0],
@@ -536,7 +590,7 @@ module mkHobbitDecode(HobbitDecode);
                           fold: d.fold, foldOp: d.foldOp,
                           foldPc: d.foldPc, foldInsn0: d.foldInsn0,
                           foldTarget: d.foldTarget, foldAfter: d.foldAfter,
-                          tr: d.tr };
+                          tr: d.tr, cpu: d.cpu };
   endmethod
 
 endmodule
@@ -826,7 +880,7 @@ function DecodedInstr fetchFaultInstr(Word pc);
                         insn0: 0, insn1: 0,
                         fold: False, foldOp: OP_NONE, foldPc: 0,
                         foldInsn0: 0, foldTarget: 0, foldAfter: 0,
-                        tr: TR_FETCH_FAULT };
+                        tr: TR_FETCH_FAULT, cpu: False };
 endfunction
 
 function DecodedInstr fetchMissInstr(Word pc);
@@ -836,7 +890,7 @@ function DecodedInstr fetchMissInstr(Word pc);
                         insn0: 0, insn1: 0,
                         fold: False, foldOp: OP_NONE, foldPc: 0,
                         foldInsn0: 0, foldTarget: 0, foldAfter: 0,
-                        tr: TR_FETCH_MISS };
+                        tr: TR_FETCH_MISS, cpu: False };
 endfunction
 
 // ---- PDU_S1: PC and the 64-bit prefetch lines -----------------------

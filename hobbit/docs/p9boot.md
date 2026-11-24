@@ -581,3 +581,166 @@ sensitivity, bus errors other than "no device".
 3. s9term's clock rate (QUART_CHOICES `counter-period`): whether the
    board's counter ran from a faster clock than the release's formula
    assumes is not settled by anything in the release (above).
+
+## The boot on the core (2026-11-23)
+
+The same boot on the Bluespec core, compared with the reference boot
+record by record -- A2's method (one device model, recorded and replayed)
+applied to a kernel:
+
+```sh
+# record the reference boot, build the core, boot it, compare (3.5 min
+# for the core's part on a loaded machine; the reference records at
+# ~62,000 instructions/s):
+hobbit/bsv/run_p9kern.sh 2825000 [WORKDIR]
+# the suite's sample (tests/run_tests.sh): to main and the first ORI
+hobbit/bsv/run_p9kern.sh 300000 WORKDIR
+```
+
+* `tools/p9coreboot.py record` runs `p9boot.Boot` unchanged -- it
+  imports it and wraps `hobbit_sem.step`, `hobbit_sem.take_interrupt`
+  and the board's `read`/`write` from outside -- and writes `ref.hri`
+  (every retirement record), `functions` (the first-reached functions
+  by record number), `console` (the bytes written to Quart channel 0's
+  transmit register) and `boot.rec`, the replay: the boot memory (the
+  loaded image and the ROM's hand-off page), the entry, every device
+  read and write by record number, and every interrupt by record number.
+  It turns the idle skip off (`CHOICES['idle-skip']`): the skip retires
+  idle-loop laps without executing them, and the core executes every
+  lap, so with the skip on the record numbers would not line up.
+  Device DMA into RAM (SONIC's descriptors and buffers, after `/boot`
+  starts BOOTP) is not in the replay yet: the core's RAM would not see
+  it.
+* `bsv/P9KernTb.bsv` starts `mkHobbitCoreSystem` at the entry with
+  every control register 0, as `Boot` starts the reference (physical
+  addressing, CSP = ISP, kernel level).  `bsv/p9kern.c` is its board:
+  RAM is a sparse store ([0x80000000, 0x80800000), `CHOICES` memsize),
+  and the MMU's table walk reads that same RAM (`pk_peek`), because the
+  kernel builds its tables there.
+* `tools/p9coreboot.py compare` streams the two traces and stops at the
+  first record that differs in any field but `cyc`
+  (`tools/p9trace_cmp.py`'s rule, streamed: a boot is millions of
+  records).  `run_p9kern.sh` also requires the core's console to be the
+  reference's, byte for byte.
+
+### How device reads and interrupts reach the core (stated choices)
+
+The core makes reads the reference never makes: it fetches operands
+ahead, including on mispredicted paths (`docs/conformance_1to1.md` §1c,
+§1d).  So a device read cannot be answered by "the next recorded read".
+The choices:
+
+1. **A device read is matched by address and by retirement count.**
+   The testbench tells the board, every clock, how many records the core
+   has retired (`pk_retired`; instructions plus folded branches).  A
+   request for physical address `pa` takes the earliest unused `D n pa`
+   record with `retired < n <= retired + 8` -- the instruction asking is
+   at most a few slots younger than the last one retired.  The same
+   request again (an operand fetch retried) gets the same value.  A
+   request matching nothing is a read the reference never made: it is
+   answered 0 and counted as "unrecorded", and if such an instruction
+   ever retired the trace would differ.
+2. **A device write is checked, not modelled.**  Each must equal the next
+   `W` record (address and value) or the run stops (`P9KERN FAIL`).
+   Quart channel 0's transmit register (0xB000010C) is the console: the
+   core's console file is made from the core's own writes.  Past the
+   reference's last record (the testbench drains the pipeline) writes
+   are neither checked nor printed.
+3. **An interrupt is delivered at the reference's instruction
+   boundary.**  The reference takes an interrupt between two
+   instructions; `I n level pc` says after which record, at which level,
+   and the PC it saved.  The core is to stop committing once it has
+   retired `n` records, take the interrupt at the next instruction's PC
+   (which must equal the recorded `pc`, or the run stops), and continue.
+   This replays the reference's timing instead of modelling Quart's
+   counter on the core: A2's rule (one device model), applied to time.
+   *Not yet implemented:* the first interrupt is after record 2,825,106,
+   past the matched range.
+
+### What the core gained: the privileged machine
+
+`mkHobbitCoreSystem` (`bsv/HobbitCore.bsv`) is `mkHobbitCoreMmu` plus
+what a kernel executes, in the structure `docs/bluespec_architecture.md`
+describes -- a control-register box, and stage fields carried to the
+one commit rule:
+
+* **The CPU escape** (0x2C00, p. 3-14) is fused by the decoder with the
+  instruction after it into one decoded entry (`DecodedInstr.cpu`); its
+  mode-7 operands name the control registers 1..12 (Table 1-24, p. 1-26),
+  and 0 or 13..15 decode as exception 6 (p. 1-27).  A CPU instruction
+  waits for an empty pipeline in EU_S1 (`drainFirst`) and squashes
+  everything after it at commit (`serialize`), so it reads committed
+  state and what follows sees its writes.
+* **`mkHobbitCtl`**, the control-register box: CONFIG (with KL and PX),
+  FAULT, TIMER1/2 (registers only; nothing counts them yet), ID
+  (0x1000003B, the reference's choice), and the reads of all twelve.
+  EU_S3's commit rule is its only writer (`apply`), KCALL's ISP and SHAD
+  included.  The PSW stays the core's register, SP/MSP the stack
+  cache's, ISP/SHAD the event unit's, STB the MMU's.  Reserved bits read
+  as 0 and are masked on write (PSW 0x1FFF0, STB 0xFFFFF800, CONFIG
+  0xFFFF0000, the pointers' low four bits); an SP write sets MSP = SP
+  (p. 1-13); SHAD follows a written CSP (p. 1-16).
+* **CSP = ISP** (PSW bit 9 = 0, p. 1-12): stack operands are formed
+  from the ISP (EU_S1's `csp`, separate from the cache window, which
+  stays SP's); ENTER sets ISP = SHAD = target, RETURN and POPN move the
+  ISP, CATCH is a no-op (pp. 3-10, 3-19, 3-38, 3-40), each serializing.
+* **CRET** (p. 3-15) and **KRET** (p. 3-30): the frame's words at
+  ISP+0/4/8/12 are read through EU_S1's two read ports and two
+  pointed-to slots; PC and PSW restored, ISP += 16, SHAD = the new CSP.
+  CRET's CATCH portion is issued by EU_S3 one clock after the CRET
+  commits, so the data face translates it under the *restored* PSW.
+* **ENTER's PSW.E** (Table 1-8, pp. 3-19..3-21), **FLUSHI/FLUSHP**
+  (empty the decoded store as the serializing squash refetches),
+  **FLUSHPTE** (every TLB entry; a superset of p. 3-27's one entry),
+  **CONFIG.PX** (a dyadic three-parcel absolute takes PC[31:29],
+  p. 1-23).
+* **The interlocked ORI/ANDI/ADDI** (pp. 3-37, 3-8, 3-6), in every core
+  (`docs/conformance_1to1.md` §1d #1).
+* In the other cores nothing else changes: a CPU instruction is still
+  `TR_CPU` and CRET/KRET/FLUSH* the unimplemented sequence, as the
+  goldens and the smoke test require.
+
+### How far it gets
+
+Every record matches through **2,825,000** (the first interrupt is after
+2,825,106), on the reference before and after it gained the EEPROM, rtc
+and SONIC models (re-run 2026-11-23: 161 device reads replayed, 16,373
+writes matched):
+
+| record | reached |
+|---:|---|
+| 2,064 | `_virtual`: the first CRET, into virtual addressing |
+| 125,203 | `main` |
+| 126,600 | `tas`'s `ORI` -- found the interlocked forms missing (§1d #1) |
+| 2,088,445 | `mmuinit` |
+| 2,621,219 | `uartputs`: the first console byte |
+| 2,658,001 | `netadd` -- found the wrong-path fault (§1d #2) |
+| 2,815,122 | `userinit` |
+
+and the console is the reference's, byte for byte:
+
+```
+1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
+```
+
+### What blocks the core next
+
+1. **Interrupts** (choice 3 above): the boundary hold in EU_S3, the
+   saved PC, the level.
+2. **Frames and vectors in real memory.**  The event unit still reads
+   vectors from, and writes exception and interrupt frames to, its own
+   256-word memory; the kernel's vectors and its interrupt stack are in
+   RAM, translated at kernel level (the reference makes every vector
+   read and KCALL's frame at kernel level whatever the PSW's level).
+3. **The first exceptions** (`touser`, 2,859,426, then the CRET's CATCH
+   read fault on the user stack at 2,859,432 -- record numbers of the
+   reference before the 2026-11-23 merge; on the merged one the first
+   trap record is a user fetch fault at 2,862,952): a CATCH fault taken at
+   the restored PC with SP kept, and a held operand fault taken once it
+   is the oldest -- the half of §1d #2 that golden 023 does not pin.
+4. **The reference walks the tables at every access**; the core's TLBs
+   and NPSRs cache entries (the walk writes R/M back when it fills one).
+   Software that changes a table and flushes behaves the same on both;
+   software that relies on a stale entry, or on R/M being set by an
+   access that hit the TLB, would not.  Nothing up to record 2,825,000
+   differed.
