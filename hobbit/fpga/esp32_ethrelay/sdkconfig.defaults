@@ -1,0 +1,16 @@
+# ESP-IDF v5.3 defaults for the ULX3S Ethernet relay (hobbit/docs/ulx3s_ethernet.md).
+# Option names, defaults and ranges checked against esp-idf v5.3.2
+# components/lwip/Kconfig and components/esp_wifi/Kconfig (2026-11-24).
+CONFIG_IDF_TARGET="esp32"
+# A full 1514-byte frame is a 1542-byte IP datagram, over the WiFi MTU
+# (1500), so it is fragmented both ways.  Reassembly is off by default.
+CONFIG_LWIP_IP4_FRAG=y
+CONFIG_LWIP_IP4_REASSEMBLY=y
+# Two fragments a frame; the largest burst in tests/net/a5_session.pcap
+# is 6 frames (an 8 KB 9P Rread).  Default 10, range 10..100.
+CONFIG_LWIP_IP_REASS_MAX_PBUFS=40
+# Frames queued on the socket while the UART drains.  Default 6, range 6..64.
+CONFIG_LWIP_UDP_RECVMBOX_SIZE=32
+# Default 32 (dynamic) and 10 (static, range 2..25).
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=64
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=16

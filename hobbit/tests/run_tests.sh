@@ -55,6 +55,10 @@ python3 "$here/test_own9term.py"
 # mouse-swept window and `ls` in it as well).
 python3 "$here/test_p9term.py"
 python3 "$here/test_p9shim.py"
+# The ULX3S ESP32 Ethernet relay: its link protocol (C, built with cc)
+# against tools/qemu1e/hub.py, and the s9term session replayed through it
+# at 2.5 Mbaud (docs/ulx3s_ethernet.md; ~5 s).
+python3 "$here/test_ethrelay.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
 python3 "$here/test_p9run.py"
