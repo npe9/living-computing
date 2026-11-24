@@ -329,6 +329,44 @@ With the lockstep the kernel's 1 s alarms still take 14.2 s of model
 time (the counter period, below): that is model time, and the server now
 agrees with it, so it no longer costs anything but idle laps.
 
+### The user: `none`, with 1e's PC-floppy home
+
+s9term's `/boot` asks `user[none]:`, and Return takes `none`, the
+unauthenticated user every 1e file server accepts.  init (`sys/src/cmd/
+init.c` rcexec, service `terminal`) then runs `rc -c '/rc/bin/termrc;
+home=/usr/$user; cd; . lib/profile'`.  On the release's file system that
+failed (`Can't cd /usr/none`, `lib/profile: rc: .: can't open`): the
+release's `/usr` holds only `tor`.  termrc itself did run: the old run's
+pcap carries the reads of `/rc/bin/termrc`, `/bin/ndb/cs` and
+`/lib/ndb/local` (termrc starts `ndb/cs`; its `*hobbit*` case binds `#t`;
+nothing it does prints).
+
+What 1e itself did for `none`: the PC install floppy's tree
+(`sys/lib/pc/usr/none/lib/profile`, mkfs'd onto the floppy) gives `none`
+a home whose `lib/profile` is empty.  The kfs now has the same
+(tools/qemu1e/overlay/usr/none, refreshed with `overlay.sh`), so init's
+`rc -c` runs termrc, cds to `/usr/none`, sources the empty profile and
+exits; init prints nothing for an empty status, sleeps 1 s and starts a
+plain interactive `rc`, and the screen shows
+
+```
+nop...session...time...
+init: starting /bin/rc
+
+init: starting /bin/rc
+% 
+```
+
+The alternative, `tor`, is the release's demonstration account
+(install.ms: "a stub account we put on the distribution to show you how
+a proper user's directory should be set up"); its `lib/profile` binds
+`$home/tmp` and `$home/bin` and, for `service=terminal`, ends in `exec
+8½ -i 8½start -s -f $font`: the window system, which wants the
+bitmap device (`/dev/bitblt`) and the mouse on Quart channel 3, neither
+of which is modelled beyond the LCD's write counter.  So the console
+stays plain rc as `none`; `glenda` (the server's own console user)
+would fail the same way as `none` did, with no `/usr/glenda`.
+
 ### The ack-0 sync (the server's IL race)
 
 Read against the server's own `sys/src/9/port/stil.c` (1e tarball), the

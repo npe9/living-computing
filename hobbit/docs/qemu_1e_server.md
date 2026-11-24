@@ -224,6 +224,13 @@ The two services are qemu1e additions to the served tree
   `#c` onto its `/dev`, the kfs onto `/`, `exec /bin/exportfs -s`.
   `-s` serves `/` with no preamble, and `exportsrv.c` answers Tnop and
   Tsession with 3-byte replies, which `boot/nopsession.c` requires.
+* `usr/none/lib/profile` (empty) and `usr/none/hello.s`: the user
+  `none`'s home, as 1e's own PC install floppy has it
+  (`sys/lib/pc/usr/none/lib/profile`, a 0-byte file; the release's
+  `/usr` has only `tor`), plus the test program of `tests/p9/hello.s`
+  for the Hobbit's `za` (docs/p9boot.md "The user").  mkarchive.py
+  makes the directories mode 777 (owner bits copied), so `none` can
+  write there through exportfs.
 * `tcp564`: the same plus `#Itcp` on `/net` and `-c $3/ctl`, which
   pushes the `fcall` line discipline on the server's end of the TCP
   connection (`exportfs.c pushfcall`; the terminal's `connecttcp`
