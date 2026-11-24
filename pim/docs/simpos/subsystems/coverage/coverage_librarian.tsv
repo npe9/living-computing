@@ -58,7 +58,7 @@ fdd_binary_file	class	make_only	3	2	1	NONE
 fdd_binary_file	class	open	5	2	1	NONE
 fdd_binary_file_tap	instance	at_end	1	2	1	NONE
 library_utility	instance	make_package	3	2	1	NONE
-library_utility	instance	get_packages_with_wildcard	3	2	1	NONE
+library_utility	instance	get_packages_with_wildcard	3	2	1	USAGE
 library_utility	instance	get_class_names	4	2	1	NONE
 library_utility	class	asserta	3	2	2	USAGE
 library_utility	instance	get_class_id_atom_list	4	2	1	USAGE

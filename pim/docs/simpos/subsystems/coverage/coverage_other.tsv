@@ -58,7 +58,7 @@ two_three_tree	class	add_at	5	22	4	NONE
 list	instance	remove	2	21	6	NONE
 symbolizer	class	get_atom	3	21	4	DOC-class
 access_status	class	new	2	21	1	DOC-unowned
-network_node_name	class	get_my_node	2	20	3	NONE
+network_node_name	class	get_my_node	2	20	3	USAGE
 list_index	instance	get_contents	2	20	3	USAGE-unowned
 name	class	type	3	18	2	DOC-class
 as_rpc_server_tcp	instance	sendreply	3	18	1	NONE
@@ -108,7 +108,7 @@ net_spawn_user	class	spawn	7	10	3	NONE
 format_printer	instance	put_line	2	10	1	USAGE-unowned
 as_rpc_server_tcp	instance	xdr_jis_string	2	10	1	NONE
 file_utility	class	copy	3	9	4	NONE
-pathname	class	remote_or_local	6	9	3	NONE
+pathname	class	remote_or_local	6	9	3	USAGE
 mathematical_functions	class	atan	4	9	2	NONE
 directory	class	remove	4	9	2	USAGE
 directory	class	rename	5	9	3	USAGE
@@ -119,7 +119,7 @@ laxinf	class	get_sem_obj	3	9	1	NONE
 hash_index	instance	stick_tap	2	9	2	NONE
 port	class	create	2	8	3	DOC-unowned
 search_table	instance	get_table	3	8	4	NONE
-pathname	class	check_pathname	3	8	3	NONE
+pathname	class	check_pathname	3	8	3	USAGE
 name	class	ident_type	3	8	2	DOC-class
 table	class	n	3	8	1	NONE
 pf2	class	through	3	8	1	NONE
