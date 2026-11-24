@@ -12,7 +12,7 @@
 // this RTL follows: FIFOs 8 deep, interrupt priority by numeric bid (the
 // largest wins), an empty transmitter bids 0x78|ch with GIBC = 7, the
 // counter bids 0x15/0x17 (channel b / d).  hobbit/fpga/dev/quart/
-// run_replay.sh replays register-access traces (the kernel's own, captured
+// run_tests.sh replays register-access traces (the kernel's own, captured
 // from a p9boot run, and directed ones) into this RTL and the Python model
 // and compares every read, every fault, the irq line, IL6 and every
 // transmitted byte.

@@ -9,7 +9,7 @@
 //
 // Behavioural reference: tools/p9boot.py's Irq, Register("IOCTL") and
 // Latch("incon"), checked access for access against this RTL by
-// hobbit/fpga/dev/quart/run_replay.sh.  Where the Python model stops the
+// hobbit/fpga/dev/quart/run_tests.sh.  Where the Python model stops the
 // run (p9boot.Stop / hobbit_sem.BusError) the RTL raises `fault`: a
 // sticky flag, a running count (one per faulting access, so a testbench
 // can attribute it) and the code of the last one, {dev[3:0], write,

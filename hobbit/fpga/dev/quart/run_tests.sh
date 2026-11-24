@@ -1,10 +1,17 @@
 #!/bin/sh
-# Replay register-access traces into the Quart / interrupt-path RTL and the
-# Python models (tools/p9boot.py) and compare (QuartReplayTb.bsv).
+# The Quart / interrupt-path tests:
 #
-#   sh hobbit/fpga/dev/quart/run_replay.sh [TRACE ...]
+#   1. QuartUnitTb.bsv: what the RTL does that the Python model has no
+#      counterpart for (pin waveforms, TX FIFO full, RX overrun and framing,
+#      the counter period in clocks), checked against the data sheet.
+#   2. QuartReplayTb.bsv: register-access traces replayed into the RTL and
+#      the Python models (tools/p9boot.py), compared access by access.
 #
-# With no arguments: every tests/*.trace (directed) and the kernel's own
+#   sh hobbit/fpga/dev/quart/run_tests.sh [TRACE ...]
+#
+# With TRACE arguments only those traces are replayed (no unit test).
+# With no arguments: the unit test, every tests/*.trace (directed) and the
+# kernel's own
 # boot trace tests/kernel_echo.trace.gz (captured with quart_trace.py
 # capture from the p9boot run named in its first line).  A trace passes
 # when quart_trace.py's fresh Python models reproduce every captured value,
@@ -18,7 +25,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 
 BSC=${BSC_BIN:-$(ls -d /opt/homebrew/Cellar/bsc/*/bin/bsc 2>/dev/null | sort | tail -1)}
 if [ -z "$BSC" ] || [ ! -x "$BSC" ]; then
-  echo "run_replay: bsc not found; set BSC_BIN" >&2
+  echo "run_tests: bsc not found; set BSC_BIN" >&2
   exit 1
 fi
 BLUESPECDIR=$(cd "$(dirname "$BSC")/../libexec/lib" && pwd)
@@ -29,24 +36,35 @@ export PATH
 BUILD=${BUILD_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/hobbit-quart.XXXXXX")}
 [ -n "${BUILD_DIR:-}" ] || trap 'rm -rf "$BUILD"' EXIT
 mkdir -p "$BUILD/src" "$BUILD/obj"
-cp "$HERE/HobbitQuart.bsv" "$HERE/QuartReplayTb.bsv" \
+cp "$HERE/HobbitQuart.bsv" "$HERE/QuartReplayTb.bsv" "$HERE/QuartUnitTb.bsv" \
    "$HERE/../intc/HobbitIntc.bsv" "$BUILD/src/"
-(
-  cd "$BUILD/src"
-  bsc +RTS -K512M -RTS -sim -bdir "$BUILD/obj" -simdir "$BUILD/obj" \
-      -info-dir "$BUILD/obj" -no-warn-action-shadowing -aggressive-conditions \
-      -g mkQuartReplayTb -u QuartReplayTb.bsv >"$BUILD/bsc.log" 2>&1 ||
-      { cat "$BUILD/bsc.log"; exit 1; }
-  bsc +RTS -K512M -RTS -sim -bdir "$BUILD/obj" -simdir "$BUILD/obj" \
-      -info-dir "$BUILD/obj" -e mkQuartReplayTb -o "$BUILD/sim" \
-      >>"$BUILD/bsc.log" 2>&1 || { cat "$BUILD/bsc.log"; exit 1; }
-)
+build() {   # top module, package file, simulator
+  (
+    cd "$BUILD/src"
+    bsc +RTS -K512M -RTS -sim -bdir "$BUILD/obj" -simdir "$BUILD/obj" \
+        -info-dir "$BUILD/obj" -no-warn-action-shadowing \
+        -aggressive-conditions -g "$1" -u "$2" >"$BUILD/bsc.log" 2>&1 ||
+        { cat "$BUILD/bsc.log"; exit 1; }
+    bsc +RTS -K512M -RTS -sim -bdir "$BUILD/obj" -simdir "$BUILD/obj" \
+        -info-dir "$BUILD/obj" -e "$1" -o "$3" \
+        >>"$BUILD/bsc.log" 2>&1 || { cat "$BUILD/bsc.log"; exit 1; }
+  )
+}
+build mkQuartReplayTb QuartReplayTb.bsv "$BUILD/sim"
 
+fail=0
 if [ $# -eq 0 ]; then
+  build mkQuartUnitTb QuartUnitTb.bsv "$BUILD/unit"
+  (cd "$BUILD" && ./unit >"$BUILD/unit.log" 2>&1) || true
+  grep '^FAIL' "$BUILD/unit.log" || true
+  unit=$(grep '^UNIT' "$BUILD/unit.log" || true)
+  case "$unit" in
+    "UNIT pass="*" fail=0") echo "PASS unit: $unit" ;;
+    *) echo "FAIL unit: ${unit:-no UNIT line}"; fail=1 ;;
+  esac
   set -- "$HERE"/tests/*.trace "$HERE/tests/kernel_echo.trace.gz"
 fi
 
-fail=0
 for t in "$@"; do
   name=$(basename "$t")
   run="$BUILD/run.$name"

@@ -2,7 +2,7 @@
 // interrupt-path RTL and compare with the Python models' answers.
 //
 // The vectors come from quart_trace.py (see its docstring for the trace
-// and vector formats); run_replay.sh builds them from a trace, builds this
+// and vector formats); run_tests.sh builds them from a trace, builds this
 // testbench, and runs it.  The vector file is read with $readmemh as
 // "vectors.hex" in the working directory.
 //
@@ -24,11 +24,11 @@
 //           Quart's irq, wired here as the board wires it)
 //   sample  after the drain, Quart irq and Irq IL6 must equal the model's
 //
-// Output: one MISMATCH line per difference (run_replay.sh counts them),
+// Output: one MISMATCH line per difference (run_tests.sh counts them),
 // then  SUMMARY records=N accesses=A cycles=C
 //
-// Discrimination (observed, see run_replay.sh's header for the commands and
-// the injected patches): recorded in the header of run_replay.sh.
+// Discrimination (observed, see run_tests.sh's header for the commands and
+// the injected patches): recorded in the header of run_tests.sh.
 
 package QuartReplayTb;
 
