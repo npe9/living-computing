@@ -371,3 +371,96 @@ New leads, not contacted (contacting anyone needs the owner):
 5. Five SIMPOS manual titles that no known library holds, among them
    「ESPプログラミング説明書－入出力管理編」 and
    「小型化PSI/SIMPOS操作説明書 基本編 (SIMPOS5.0版)」.
+
+## 13. The second window, Librarian and shell web search (2026-11-24)
+
+This search was also delegated. Its record is
+`simpos/subsystems/web_search2_2026-11-24.md`, which lists every source
+with its URL, whether it was opened or only located, and the negatives.
+It covered section 12's unsearched list:
+
+- fj.* and comp.* Usenet, through the Internet Archive's mailbox items;
+- Wayback CDX for about twenty Japanese FTP hosts;
+- GitLab, J-STAGE, KAKEN, CiNii, NDL and the IPSJ repository.
+
+Five sources were not reachable, and no challenge was bypassed:
+
+- Google Books: the API quota was exhausted, then the site showed a
+  CAPTCHA;
+- HathiTrust, Software Heritage and IEICE: bot challenges;
+- WorldCat: it needs OCLC's terms accepted.
+
+**Still no SIMPOS or CESP code or binary anywhere**, and no software
+archive to record.
+
+- **IPSJ 51390.** 青柳龍也 (1987) studied the names in the whole SIMPOS
+  2.52 source. It was added to `nonlocal/lit/ipsj/`, on disk only.
+  - The source has 1,450 system classes, 15,064 methods and 4,412
+    distinct method names, about 750,000 words in all.
+  - It cites a manual title not otherwise recorded,
+    「SIMPOS総合説明書（第一版）」 (ICOT 1986).
+  - Chikayama (fj.comp.misc, 1987) put SIMPOS at about 270,000 lines.
+- **CESP V3.3's release notice** (AIR, fj.lang.prolog, 6 April 1992).
+  - AIR had distributed CESP since November 1990, to about 200 sites.
+  - It was free for research use, under a contract.
+  - Sites got **object code** for Sun-4 on a cartridge they supplied,
+    with seven manuals.
+  - This corrects section 12's lead 1, which said "source code" on the
+    strength of one 1992 user post, unless that user meant library
+    source.
+- **By March 1994 CESP was sold by 三菱電機東部コンピュータシステム**
+  (MTC), per the held `ifs/_catalogue/INFO/cesp-J.html`. MTC's staff
+  wrote the SIMPOS Librarian customisation paper (IPSJ 118681).
+- **Who to ask for CESP.** The record ranks these; nobody was contacted.
+  1. Mitsubishi Electric's IT group. MTC's successor was not identified;
+     the group's IT companies became 三菱電機デジタルイノベーション in
+     2025.
+  2. AIST, formerly ETL. CESP's research head 実近憲昭 came from ETL
+     and returned to it, and 田島守彦 (ETL) ported RLS to CESP.
+  3. The ICOT archive at AIST.
+  4. Universities with CESP projects in 1992-96: Fukui, UEC, Tsukuba,
+     Tohoku, 成蹊/港湾短大 and 拓殖.
+  5. ASTEM.
+  6. Oki.
+  7. Former AIR staff at universities, such as 川越恭二 (Ritsumeikan).
+
+  AIR's founding and fate were not established.
+
+## 14. The fixed-point search (2026-11-24)
+
+Record: `simpos/subsystems/fixpoint_2026-11-24.md`. The search ran in rounds, held material and web
+together. Each round followed every lead the previous one produced. Round 4 gave nothing new, but a
+review found unfollowed leads and too narrow an unpacking of the held archives, so rounds 5-8
+followed. It stopped after round 8, the first round after that which gave no new source and no new
+fact.
+
+**Still no SIMPOS or CESP code, binary or software archive anywhere.** What it adds:
+- **A usage census of ESP code never mined before.** These are the SIMPOS-side front ends of the
+  PIMOS applications and PIMOS's own `src_util` ESP, selected by content after a recursive unpack
+  (`simpos/subsystems/tools/fe_census.py`). They send 285 method keys to SIMPOS classes, 46 of them
+  new. 42 were read for meaning (USAGE):
+  - `library_utility`'s class-id assert family;
+  - `directory`'s wildcard methods;
+  - the `tcpip_socket` client calls;
+  - the PSI/UX display-depth patch, which four PIMOS front-end files call in place of
+    `#ipl`'s `bmm_size`;
+  - `editor_text_buffer` navigation.
+- **Screen widths by machine** (DISC, `window.md` §2.13): 1600 dots on "O-PSI" (read as the Oki
+  PSI-II from DISC's INSTALL), 1280 on PSI-UX and on "M-PSI" (ambiguous: elsewhere in the held code
+  M-PSI is the Multi-PSI); kl1graph's full screen is 1280 x 944. The heights are INFERENCE.
+- **Provenance.** CIL, which carries the SIMPOS 6.1 Librarian copy, names
+  三菱電機東部コンピュータシステム (MTC) as the author of its 1991 4.0 manual; that MTC wrote CIL is
+  INFERENCE. MTC is also reported as CESP's 1994 publisher (「CESP言語2.0版」). AIR's CESP leads came
+  from Oki (INFERENCE from 沖電気研究開発 bylines).
+- **Bibliography.**
+  - Manual numbers MP1002-1 and MP1005-2 (ESP説明書, 1986 and 1987) and MP3003-2
+    (SIMPOS使用操作説明書, 1986). MP1005-2 was read on a page image; the other two were reported
+    by a delegated NDL search and not re-opened.
+  - SIMPOS releases registered in MITI's 通産省公報: 2.0 (1987), V4.0 (1988), 6.0 (1990)
+    (reported, not re-opened).
+  - The full contents of bit's 1990 「ESPerへの道」.
+  - Sixteen more IPSJ papers, on disk only. Among them, IPSJ 113884 names SIMPOS's pool
+    subsystem, and IPSJ 119496 prints CESP's `meta_predicate` assert family.
+  - No manual of any version is held by any library found, except JAIST's five 1985 manuals.
+- Unreachable sources, the places not searched, and the ranked institutional routes are listed in
+  the record (§3-§4). The first route is JAIST, then NDL, then Mitsubishi Electric's IT group.

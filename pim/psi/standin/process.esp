@@ -5,34 +5,230 @@
 % INTERPOLATED (ours, with what it was interpolated from), so it can be
 % replaced if real source turns up.
 %
-% What is printed: TM-100 Figure 3.1 "Part of class 'process'" (PDF
-% p7-10, listings docs/simpos/printed/listings/tm0100_p07.esp-p10.esp:
-% create/2, create_core/3, activate/resume/suspend, and the slots).  It
-% is NOT included yet, and this is a known gap: its natures
-% (with_link, waiting_frame) are not printed, so the class would be
-% opaque to kl0 until they have stand-ins too; and five of its instance
-% slots are initialised by code (`:create(#list, List)`,
-% `:create(#process_clock, Clock)`), which kl0's stand-in new/2 refuses
-% (cause 'slot init by code'), so `:new` -- and with it `self/2` below
-% -- would stop.  Add the printed bodies verbatim once kl0's new/2 runs
-% slot-initialisation code.
+% PRINTED: TM-100 Figure 3.1 "Part of class 'process'" (PDF p7-10,
+% printed folios 5-8; listings docs/simpos/printed/listings/
+% tm0100_p07.esp-p10.esp): the natures, the class slots, create/2,
+% create_core/3, the instance slots, activate/2, resume/2 and suspend/2,
+% verbatim (layout as printed, comments shortened).  The figure is "part
+% of" the class and "not complete" (TM-100 p5).  One printed oddity is
+% kept as printed: create/2 calls `:create_core(PROCESS, ...)` with
+% PROCESS in capitals, a fresh variable (tm0100_p08.esp transcriber's
+% note: probably a typo for Class).  So the printed create/2 cannot make
+% a process even with a `context` class (none is held or stood in:
+% kl0 refuses at simpos##context:create/4).
 %
+% The printed instance slots are initialised by code (five
+% `:create(#list, L)` / `:create(#process_clock, C)` predicates).  kl0's
+% new/2 runs them (TM-388 §3.5 pp.49-50); the classes they create are
+% the INTERPOLATED stand-ins list.esp and process_clock.esp.  The
+% natures with_link and waiting_frame are INTERPOLATED empty stand-ins
+% (with_link.esp, waiting_frame.esp): TM-100 says only what they are
+% for (PDF p10, p14), not what they hold.
+%
+% Added (INTERPOLATED, labelled below): the class slot `current`,
+% self/2, inhibit_interrupt/1, allow_interrupt/1 and tag_catch/5, /6, /9.
 % Model (INTERPOLATED): one process (the machine runs one), made on
 % first use and kept in a class slot.
 
-class process has
+    class  process  has
 
-attribute current := 0;
+    % PRINTED: TM-100 Fig. 3.1, PDF p7 (natures; with_link and
+    % waiting_frame are INTERPOLATED empty stand-ins)
+    nature      with_link,
+                waiting_frame ;
+
+    % PRINTED: TM-100 Fig. 3.1, PDF p7 (both class slots)
+    attribute   ready_queue,
+                instance_array ;
+                % Relates a process to its context_number.
+
     % INTERPOLATED: holds the one process; not a printed slot.
+    attribute   current := 0 ;
 
-% :self(#process, P) -- P is the calling process.
-% INTERPOLATED from: the call sites `:self(#process, Process)` in the
-% printed stream:get/2 (TM-100 Fig. 3.6, PDF p15) and in the printed
-% process:create_core/3 (TM-100 Fig. 3.1, PDF p7), both of which use P
-% as a process instance; the class-predicate form matches TR-056 p25's
-% `:world(#process,World)`; 46 pimfep methods send it (psi/README.md,
-% "The ESP compiler").  The body is not printed anywhere held.
-:self(Class, P) :- P = Class!current, P \== 0, !;
-:self(Class, P) :- :new(Class, P), Class!current := P;
+    % PRINTED: TM-100 Fig. 3.1, PDF p8 (PROCESS in capitals as printed)
+    :create(Class, Process) :- !,
+            % Make an instance and initiate it.  If hardware processes
+            % are exhausted, then fail.
+        :create(#context, Context_number, Stack_number, Context),
+        :create_core(PROCESS, Process, Context), ! ;
 
-end.
+    % PRINTED: TM-100 Fig. 3.1, PDF p8
+    :create_core(Class, Process, Context) :-
+        :new(Class, Process),
+        :get_number(Context, Context_number),
+        set_vector_element(#process!instance_array,
+                                Context_number, Process),
+        :self(#process, Self_process),
+        Process!context := Context,
+        Process!priority := 0,
+        Process!sub_priority := 0,
+        Process!parent_process := Self_process,
+        :add_child(Self_process, Process),
+        Process!world := Self_process!world,
+        Process!user := Self_process!user,
+        Process!status := dormant, ! ;
+
+    % :self(#process, P) -- P is the calling process.
+    % INTERPOLATED from: the call sites `:self(#process, Process)` in the
+    % printed stream:get/2 (TM-100 Fig. 3.6, PDF p15) and in the printed
+    % process:create_core/3 (TM-100 Fig. 3.1, PDF p8), both of which use P
+    % as a process instance; the class-predicate form matches TR-056 p25's
+    % `:world(#process,World)`; 46 pimfep methods send it (psi/README.md,
+    % "The ESP compiler").  The body is not printed anywhere held.
+    :self(Class, P) :- P = Class!current, P \== 0, !;
+    :self(Class, P) :- :new(Class, P), Class!current := P;
+
+    % :inhibit_interrupt(#process) / :allow_interrupt(#process) bracket a
+    % critical section.
+    % INTERPOLATED from: the call sites in the printed stream:put/2 and
+    % get/2 (TM-100 Fig. 3.6) and process:activate/resume/suspend (Fig.
+    % 3.1), always paired, always on the class; the instance slot
+    % mask_count ("the number of interrupt mask nestings", Fig. 3.1 PDF
+    % p8).  One process and no interrupts are modelled here, so both
+    % succeed and do nothing.
+    :inhibit_interrupt(Class) ;
+    % INTERPOLATED: see inhibit_interrupt/1 just above.
+    :allow_interrupt(Class) ;
+
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.1, PDF p8 (all instance slots)
+    attribute   context,    % Hardware PC
+                priority,   % Corresponds to interrupt level
+                sub_priority,
+                mask_count          := 0,
+                        % The number of interrupt mask nestings
+                suspend_reason  := nil,
+              ( suspend_reasons := List :- :create(#list, List) ),
+                suspend_flag    := nil,
+                status          := nil,
+                        % nil(=dead), dormant, suspended, ready, (active)
+                        % and some others
+                parent_process,
+              ( children_processes  := List :- :create(#list, List) ),
+                killer_process,     % which terminates this process
+              ( invocation_stack    := List :- :create(#list, List) ),
+              ( resources           := List :- :create(#list, List) ),
+                world,
+                user,
+                interpreter_instance,
+                        % Interpreter instance which runs on this process
+              ( clock     := Clock :- :create(#process_clock, Clock) ) ;
+                        % The elapse time of this process
+
+    % :tag_catch(Process, Object, Method, Args, Tag) and its 6- and
+    % 9-argument forms run the goal :Method(Object, Args...) as a catch
+    % point for Tag; a throw of Tag returns control here (and, in the
+    % 9-argument form, runs :Abort_method(Abort_object, Abort_args...)).
+    % INTERPOLATED from:
+    %   - the call forms in held source: kappa2 inwin.esp:301
+    %     `:tag_catch(Process,INwin,getl,{Value0},abort_input)`; cal-esp
+    %     deb2.12/cm.esp:320 `:tag_catch(Proc, nil, D_obj,
+    %     get_goal_with_cancel_situation, {Proc,Args}, break)`; kwic-esp
+    %     search_F.esp:142 `:tag_catch(Me, Me, catch, {ItemString, Search,
+    %     Method, Args}, Tag)`, thrown by `:raise(#throw, quit_search)`;
+    %   - the held compiled call in pimfep##pimos_timer on_after/4 and
+    %     on_at/4 (registers read 2026-11-24): `:tag_catch(Process, "",
+    %     Timer, do_on_after, {X,Z,Process}, Timer, abort_timer,
+    %     {X,Process}, pimos_abort)`, X and Z on_after's first and third
+    %     arguments; the abort side is fep_services.md
+    %     §6.7 (70 sends :abort(Handler, pimos_abort, DeviceProcess); the
+    %     interrupted request is answered {Id, 6} by abort_timer/3);
+    %   - TR-285 §4.2 (PDF p9-10): catch and throw are built on the
+    %     multiple-level cut and enforced failure; resumption points are
+    %     recorded in the process's situation stack;
+    %   - TM-388 p.46: the goal is a dynamic call, :refute(Object, Method,
+    %     ArgVector), a method of class `class` (kl0's refute/3);
+    %   - TM-100 was checked (the transcribed listings
+    %     docs/simpos/printed/listings/tm0100_p04-p18): it is silent on
+    %     tag_catch, catch, throw and abort.
+    % What the second argument of the 6- and 9-argument forms is (nil, "")
+    % is not known; it is ignored.  No throw is modelled (one process,
+    % nothing sends :abort), so the catch point is never used: each form
+    % just runs the goal.
+    :tag_catch(Process, Object, Method, Args, Tag) :-
+        :refute(Object, Method, Args);
+    % INTERPOLATED: the 6-argument form; see tag_catch/5 just above.
+    :tag_catch(Process, Name, Object, Method, Args, Tag) :-
+        :refute(Object, Method, Args);
+    % INTERPOLATED: the 9-argument form; see tag_catch/5 above.  The abort
+    % goal (Abort_object, Abort_method, Abort_args) is not run: no throw.
+    :tag_catch(Process, Name, Object, Method, Args,
+               Abort_object, Abort_method, Abort_args, Tag) :-
+        :refute(Object, Method, Args);
+
+    % PRINTED: TM-100 Fig. 3.1, PDF p8-9
+    :activate(Process, Program) :-
+            % Give Program to Process, and make it ready.
+        :status(Process, dormant, on_activate), !,
+        :entry_of_invoke(Program, Entry),
+        :set_entry_point(Process!context, Entry),
+        :activate(Process!context),
+        :set_priority(Process!context, 0),
+        :clear_masks(Process),
+        :inhibit_interrupt(#process),
+        Process!status := ready,
+        :add(#process!ready_queue, Process),
+        :allow_interrupt(#process), ! ;
+
+    % PRINTED: TM-100 Fig. 3.1, PDF p9
+    :resume(Process, Reason) :-
+            % Remove Reason from 'suspend_reasons'.  If there's no
+            % such Reason, then fail.  If 'suspend_reasons' becomes
+            % empty, then make Process ready.  If already resumed,
+            % then do nothing.
+        :inhibit_interrupt(#process),
+        %CHECK REASON
+        (   Process!status == suspended, !,
+            (   Reason = stream(Stream), !,
+                Process!suspend_reason := nil,
+                (   Process!suspend_flag == nil, !,
+                    Process!status := ready,
+                    :add(#process!ready_queue, Process)
+                ;   true ),
+                :allow_interrupt(#process)
+            ;   :remove(Process!suspend_reasons, Reason), !,
+                (   :empty(Process!suspend_reasons), !,
+                    Process!suspend_flag := nil
+                ;   true ),
+                (   Process!suspend_reason == nil,
+                    Process!suspend_flag == nil, !,
+                    Process!status := ready,
+                    :add(#process!ready_queue, Process)
+                ;   true ),
+                :allow_interrupt(#process)
+            ;   :allow_interrupt(#process), !,
+                fail )
+        ;   Process!status == ready, !,
+            :allow_interrupt(#process)
+        ;   :allow_interrupt(#process), !,
+            fail ),
+        ! ;
+
+    % PRINTED: TM-100 Fig. 3.1, PDF p9-10 (`Reason == stream(Stream)` in
+    % the second branch as printed)
+    :suspend(Process, Reason) :-
+            % Add Reason to 'suspend_reasons'.  If Process is ready,
+            % then make it suspended.
+        :inhibit_interrupt(#process),
+        %CHECK REASON
+        (   Process!status == ready, !,
+            (   Reason = stream(Stream), !,
+                Process!suspend_reason := Stream
+            ;   :add_last(Process!suspend_reasons, Reason),
+                Process!suspend_flag := on ),
+            Process!status := suspended,
+            :remove(#process!ready_queue, Process),
+            :allow_interrupt(#process)
+        ;   Process!status == suspended, !,
+            (   Reason == stream(Stream), !,
+                Process!suspend_reason := Stream
+            ;   :add_last(Process!suspend_reasons, Reason),
+                Process!suspend_flag := on ),
+            :allow_interrupt(#process)
+        ;   :allow_interrupt(#process), !,
+            fail ),
+        ! ;
+
+    end.

@@ -75,6 +75,11 @@ TRANSLATION marks our rendering of Japanese.
 | 9 | ESP manual TeX (1990), TM-388 pp92-105 | packages, environments, macro banks | PROSE |
 | 10 | TR-057 p10, TM-143 p4, Giho 8810 | source/template/object model, compiler as subroutine | PROSE |
 
+The second sweep of all held material (`sweep_2026-11-24.md`) found **no further Librarian source**. None of the
+natures the cil copy names but does not define (§2.3) is defined anywhere held. It found SIMPOS's `pathname`/`name`
+classes (§3.8). It also found manual titles: the 8.0 editions of the programming and ESP manuals (ICOT 1992),
+and 「PSI/SIMPOS 操作説明書(I)-(III)」 (1988). None is held.
+
 ### 0.4 The cil copy (COPY grade): what it is and how far to trust it
 
 `cil/src/ds_bep.esp` contains three classes. They are SIMPOS Librarian source, re-catalogued into
@@ -351,6 +356,25 @@ Also used: `process` (set by create), `response_time_flag`, `skipped_classes` an
 Asserted clauses live in class templates. This is why the Librarian's save offers to "save all
 asserted predicates" (sum/INSTALL:26-29, PROSE; INFERENCE).
 
+**A second, class-id form** (USAGE; `fixpoint_2026-11-24.md` round 1, `notes/fixpoint.tsv`).
+examds's `wb_lib` (a Prolog-style assert/listing library for its workbench, 1992) calls the same
+class methods with a **class id** from `:class_id(Class,^Id)` instead of a class name:
+- `assert/4`, `asserta/4`, `assertz/4` as `(#library_utility, ClassId, Clause, ^Ref)`, returning a
+  clause reference (`examds/examds/wb_lib/astret.esp:11-23`);
+- `retract/3` `(#library_utility, ClassId, Clause)` and `retract_all/4` `(.., ClassId, Name, Arity)`
+  (`:26-33`);
+- `clause/4` `(#library_utility, ClassId, Head, ^Body)` (`wb_lib/clause.esp:16`).
+To clear a class, `wb_lib` maps `retract_all/4` over `:get_predicates_with_information(#library,
+Id, l, ^List)`, whose elements are `{Name, Arity, Category, Code}` (`astret.esp:34-44`); its listing
+reads one predicate with `:get_a_code(#library, Id, l, _, Name, Arity, ^Code)` (`wb_lib/listing.esp`).
+So the asserted clauses are found among the class's predicates of category `l`; that `l` means
+local is an INFERENCE. CESP, by analogy only, does the same openly: its library class
+`meta_predicate` adds (`:assert`, `:asserta`, `:assertz`), deletes (`:retract`, `:abolish`,
+`:erase`) and finds (`:clause`, `:get_one_clause`, `:predicate`) clauses of a class's **local**
+predicates declared `:-dynamic`, e.g. `:asserta(#meta_predicate, animal, a(crocodile))`, and the
+added clauses are found before inherited ones (IPSJ 119496, 41st convention 6E-3, 1990, p.5-100,
+read on the page image). This bears on gap rank 5 (storage); persistence is still open.
+
 **Instance methods required by held programs**
 
 | method | uses/progs | arguments and meaning | grade | citation |
@@ -611,6 +635,17 @@ with ` hrs. ` / ` min. ` / ` sec. `.
 | `>sys>librarian>esp>` | scratch copy of a remote or FDD source before catalogue (the copy is deleted and expunged afterwards; the class is marked "discordant") | COPY ds_bep.esp:2553-2564, 3073-3089 |
 | `*.ptf`, `*.env` | package template / environment files | USAGE CGS_INSTALLER.esp:379-381 |
 | `>fd0`, `>device>fdd1` | floppy link point and device | USAGE ms_ist.esp:1772-1775 |
+
+**Pathname and file-name syntax.** The Librarian's catalogue routes on `:remote_or_local(#pathname,...)` (§5.4).
+The rules for the names it handles come from SIMPOS's own `world` classes `pathname` and `name`, held in
+CESP-ported copies (HELD-SOURCE; `sweep_2026-11-24.md` §2.1):
+- a file name is `ident.type.version`;
+- the ident has 1-44 characters and the type 0-10, neither with a dot;
+- the illegal characters are `>`, `*`, `?`, `:` and space (morphana/_simpos/name.esp:83-96, :163-164);
+- directory components are joined with `>`. A directory part may be `Node::>`, `Logical_name:` or `...>Name`
+  (morphana/_simpos/pathname.esp:89-92, :93-111).
+
+`remote_or_local/6` itself is not in the copy.
 
 ---------------------------------------------------------------------------------------------------
 

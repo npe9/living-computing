@@ -11,9 +11,12 @@
 // The vector file: whitespace-separated hex words, records
 //   1 getbUnit getbBytes lag maxBuffer                  configure
 //   2 unit lun dir length cdbLen cdb... ndata data...   a command
+//   3                                                   the event (idle)
+//   4 high low                                          setTime: the clock
 //   0                                                   the end
 // Printed: "A D result count hex|-", "A N", "A E why" for each command,
-// then "END n"; "FAIL ..." on a timeout.
+// "A I 0|1" (or "A E why") for each event, then "END n"; "FAIL ..." on a
+// timeout.
 //
 // Observed fault injections, 2026-11-23 (each into the file, from a
 // backup copy, run_fepemu.sh run, the file restored from the copy and
@@ -71,6 +74,39 @@
 //                                          refused)
 //   append_open on a device with a file    direct_kernel (answered; fep.py
 //     open accepted                        raises)
+//
+// Observed fault injections, 2026-11-24, the paths to the shell's prompt
+// (the timer, 240, string-I/O, windows, holds and the event), the same
+// way (each from a backup copy, run_fepemu.sh run, restored, `cmp`
+// equal), all 9 tapes; every one fails on F, S and B, only the tapes and
+// commands named (direct_kernel's command numbers count the events):
+//   get_date_time's division 17 steps,     direct_kernel 70 (the clock at
+//     not 18                               2^48-1 only)
+//   the date 33743                         direct_kernel 61 63 65 68 70
+//                                          72, kernel 15
+//   the event picks the highest device id  direct_kernel 223 (44 answered,
+//                                          not -3)
+//   the event answers a hold of any kind   direct_kernel 162 164 165 166
+//                                          169 173
+//   a name of odd length not matched       direct_kernel 108 (refused) and
+//     (unjis drops the last byte)          every command after it
+//   the user device's n from its second    direct_kernel 318 (n 256) --
+//     byte only                            PASSED UNNOTICED until that
+//                                          section was added: no tape had
+//                                          a high byte set
+//   the replier's io(1) answered [1, ""]   direct_kernel 98 100, kernel
+//                                          108 127 134
+//   a window's close clears its timer too  direct_kernel 201 (304 refused)
+//                                          and after
+//   240 on a known device answered         direct_kernel 245 314
+//   putb's text not checked                direct_kernel 288 290
+//   a held request aborted answered 1      direct_kernel 164 211
+//   a whole-message reply (RRaw) read 4    direct_kernel 53 55 56 57 (240,
+//     bytes off                            whole and cut), kernel 21
+//   the server's io(1) held without        direct_kernel 274
+//     listening
+// NOT tested: the new OURS limits (DevSlots, HeldSlots, HomeMax, one home
+// reply queued): no tape reaches one.
 //
 // The card is reached through `card` (a module argument in
 // mkPimmFepEmuBench), so the same bench runs the emulator over the
@@ -170,6 +206,22 @@ module mkPimmFepEmuBench#(SdBlockServer card)(Empty);
             moved.send;
          endaction
          else if (at(0) == 2) one;
+         else if (at(0) == 3) seq
+            action emu.idle; ix <= ix + 1; moved.send; endaction
+            action
+               let a <- emu.cmd.response.get;
+               cmds <= cmds + 1;
+               moved.send;
+               if (a.kind == FepDone) $display("A I %0d", a.result);
+               else if (a.kind == FepRefused) $display("A E %0d", a.why);
+               else $display("A N");
+            endaction
+         endseq
+         else if (at(0) == 4) action
+            emu.setTime(truncate({at(1), at(2)}));
+            ix <= ix + 3;
+            moved.send;
+         endaction
          else action
             $display("FAIL vector word %0d is %0d", ix, at(0));
             $finish(1);

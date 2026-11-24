@@ -1548,7 +1548,7 @@ summarised here so the repository stands on its own.
 | source | where | size | for |
 |---|---|---|---|
 | `mkDiskSourceSmall` | flip-flops | two arcs, 1,024 words | the disk unit tests and today's bitstream |
-| `mkDiskSourceFile` | host memory (`host_tape.c` `host_disk_*`), `-D HOST_TAPE` | 2^21 words | every MCP run in Bluesim |
+| `mkDiskSourceFile` | host memory (`host_tape.c` `host_disk_*`), `-D HOST_TAPE`; optional image file (§9c) | 2^21 words | every MCP run in Bluesim |
 | `mkDiskSourceSdram` (planned) | a 16 MiB region of the ULX3S SDRAM | 2^21 words | the board, and Bluesim against the SDRAM model |
 
 **WHY THE HOST BUILDS NEEDED THE FULL SIZE.** IPL's disk WRITE is 24 arcs.
@@ -1574,6 +1574,47 @@ tests/run_disk_stall_test.sh, which runs io_disk.strap with the source
 refusing three clocks in four; the injection is recorded in
 run_tests.sh.
 
+## 9c. THE IMAGE FILE, 2026-11-24 (disk plan step D2)
+
+The host source can load and save the whole unit as a file.
+
+| variable | effect |
+|---|---|
+| `STRETCH_DISK=path` | `host_tape.c` loads the image the first time the disk is read or written. A file shorter than the unit is zero-filled to the end, including the missing bytes of a final partial word. A file that cannot be opened, or is longer than the unit, stops the run, so a mistyped path cannot boot on a blank disk and look like a pass. |
+| `STRETCH_DISK_SAVE=path` | the whole unit is written when the testbench finishes: `host_disk_save()`, a BDPI call in `tests/gen_tb.py`'s `finish` rule, under `` `ifdef HOST_TAPE `` so a build without that define preprocesses to the text it always had. |
+| neither | the disk is the zeroed one it always was; nothing is read, written or printed. |
+
+**THE FORMAT IS THE TAPE'S.** 8 bytes per word, big-endian (byte 0 is
+IBM bits 0-7), word `i = arc*512 + w` at byte `8*i`. A saved image is
+always 2^21 × 8 = 16,777,216 bytes, so its length alone says it holds a
+whole 353 (printed p.157).
+
+**TESTED** by `tests/run_disk_image_test.sh`, in the suite. MCP's P1 IPL
+runs with SAVE set; the file is exactly one unit long; arcs 0-32 hold the
+IPL tape's words at the offsets `tests/check_disk_image.py` pins
+(expected values from the tape, never from an earlier save), and every
+other arc is zero. **Measured: the run writes 33 arcs, not 24.** The
+24 are IPL's first WRITE (§9b); the saved image shows arcs 0-32, each a
+512-word run of the tape's PROSA records, arc `a` at tape word
+`370 + 513a` (the 513-word chunked records `gen_mcp_boot_tb.py`
+describes).
+`decks/io_disk_image.strap`, which only READS, then finds those words in
+arcs 0 and 32 of the loaded image and zeros in arcs 33 and 4095. A short
+image with a partial last word checks the zero-fill, and loading it and
+saving again gives the same bytes padded with zeros. A control run with
+neither variable set reads zeros, prints nothing and writes no file. The
+two measured injections, a save that drops the last arc and a load that
+skips the zero-fill, are recorded in the script's header.
+
+**WARM START IS NOT BUILT, and an image alone cannot give it.** The idea
+was to skip the 6.7M-step tape IPL by starting from a saved disk. But
+MCP never boots from the disk (§5.1). The path that reloads from PROSA is
+C22-6678-1 printed p.32's "Disk IPL", a binary CARD DECK read by a
+hardware IPL from the card reader, and no copy of that deck is in this repository (it is not in `docs/archival_inventory.md`). A
+warm-start test would also need core storage at the moment the disk was
+saved, or that deck. The image file is the precondition for either; the
+follow-on is to find or reconstruct the Disk IPL deck.
+
 ## 10. Summary for the build plan
 
 - **The disk can be modelled from what is here.** pp.157–162 is a complete
@@ -1593,7 +1634,9 @@ run_tests.sh.
   difference.
 - **The real structural dependency is 18 MiB of backing store**, not logic.
   Plan for a file-backed or sparse representation; it interacts with
-  `fpga_feasibility.md`.
+  `fpga_feasibility.md`.  **In Bluesim it is built**: 2^21 words in host memory, with an
+  optional image file to load and save (§9b, §9c). The board's SDRAM
+  leg is disk plan steps D3-D4.
 - **No deck will verify it.** Build to the manual, with pp.157–162's own
   tables as the checklist, and write the STRAP exerciser the way the
   Exchange will have to be exercised.

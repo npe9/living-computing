@@ -43,7 +43,8 @@ step() {
   # too-eager operand fetch was found (docs/conformance_1to1.md 1c).  The
   # ones the runs here make are operand fetches by instructions on the
   # predicted path of a mispredicted conditional jump (PRM p. 2-3 lets
-  # their faults be ignored): echo, cat and hello 0, za 2, zl 9, zc 51.
+  # their faults be ignored): echo, cat, hello and za 0, zl 9, zc 49
+  # (observed 2026-11-24; za was 2 and zc 51 on 2026-11-23).
   # A hundred is the alarm; without the EU_S1 `!s2Taken` gate za alone
   # makes 1,174 (observed 2026-11-23).
   n=$(sed -n 's/^P9HOST EXIT.* \([0-9][0-9]*\) reads outside the segments$/\1/p' "$tmp/$name.out")
@@ -78,6 +79,22 @@ if made != member:
     sys.exit("run_p9host_tests: main9.z written on the core differs from libc.a main9.z")
 print("za-main9: main9.z written on the core, %d bytes, identical to the shipped libc.a member" % len(made))
 ' "$hobbit/tools" "$rel/hobbit/lib/libc.a" "$work/out/main9.z"
+# The timing twin (sem/hobbit_timing.py, plan milestone C2) on this run's
+# reference trace: an independent account of the base cyc from the pages
+# (no code shared with the reference model or the core) must equal the
+# reference model's on every record (125,572 of 125,572, 2026-11-24).
+twin() {
+  # twin NAME BINARY: --compare exits 1 on any disagreement
+  if ! python3 "$hobbit/sem/hobbit_timing.py" "$work/ref.hri" \
+        --aout "$rel/hobbit/bin/$2" --config-px 1 --compare \
+        > "$tmp/twin-$1.out" 2>&1; then
+    cat "$tmp/twin-$1.out"
+    echo "run_p9host_tests: the timing twin and the reference model disagree on $1" >&2
+    exit 1
+  fi
+  sed -n "1,2s/^/$1: /p" "$tmp/twin-$1.out"
+}
+twin za-main9 za
 
 # za, then zl, then the program: all three on the core.
 mkdir -p "$tmp/link/hobbit/lib"
@@ -120,6 +137,16 @@ if made != member:
     sys.exit("run_p9host_tests: frexp.z written on the core differs from libc.a frexp.z")
 print("zc-frexp: frexp.z written on the core, %d bytes, identical to the shipped libc.a member" % len(made))
 ' "$hobbit/tools" "$rel/hobbit/lib/libc.a" "$work/out/sys/src/libc/hobbit/frexp.z"
+# The twin on zc: no record disagrees, and exactly 16 are undetermined --
+# the mispredicted JMPFN after a floating-point trap's return, whose PSW.F
+# came from a handler the trace does not show (Table 4-35 prices a
+# misprediction only from a compare; cycle_accuracy_plan.md 4.2).
+twin zc-frexp zc
+grep -q '^twin: 1651700 records, .* 16 undetermined$' "$tmp/twin-zc-frexp.out" || {
+  cat "$tmp/twin-zc-frexp.out"
+  echo "run_p9host_tests: the twin's undetermined set on zc changed" >&2
+  exit 1
+}
 # The core's unmapped reads on this run are all off the retiring path:
 # the reference model, which executes only that path, makes none.
 cp -R "$tmp/zc" "$tmp/zc-arch"

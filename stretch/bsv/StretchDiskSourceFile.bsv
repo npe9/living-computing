@@ -20,9 +20,16 @@
 //
 // POWER-ON CONTENTS ARE ZERO, the same choice mkDiskSourceSmall makes
 // and for the same reason (printed p.157 says nothing): host_tape.c
-// callocs the image.  No image file is loaded or written back -- MCP
-// formats its own disk at IPL (printed pp.15-16), so nothing needs one
-// yet.
+// callocs the image.
+//
+// AN IMAGE FILE IS OPTIONAL (docs/disk_subsystem.md §9c).
+// STRETCH_DISK=path loads one at first use, zero-filling past its end;
+// STRETCH_DISK_SAVE=path writes the whole unit when the testbench
+// finishes, through host_disk_save below, which tests/gen_tb.py's
+// finish rule calls in every -D HOST_TAPE build.  The format is the
+// tape's, 8 bytes per word big-endian, 16,777,216 bytes.  With neither
+// set the disk is the zeroed one it always was: MCP formats its own
+// disk at IPL (printed pp.15-16), so no MCP run needs a file.
 
 package StretchDiskSourceFile;
 
@@ -32,6 +39,8 @@ import StretchDiskSource::*;
 import "BDPI" function Bit#(64) host_disk_read_word(Bit#(32) idx);
 import "BDPI" function Action   host_disk_write_word(Bit#(32) idx,
                                                      Bit#(64) d);
+// A no-op unless STRETCH_DISK_SAVE is set; called by the testbench.
+import "BDPI" function Action   host_disk_save();
 
 module mkDiskSourceFile(DiskSource);
   // One clock of latency and the same CReg as every other source; see

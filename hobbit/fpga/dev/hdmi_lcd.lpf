@@ -1,0 +1,49 @@
+# ULX3S (LFE5U-85F, CABGA381) pins for hdmi_lcd_top.v, the Lcdisp + HDMI test
+# bitstream (ulx3s_plan.md step 4).  Sites are the ones in the Flute tree's
+# ~/src/ulx3s-experiments/flute-lx50/constraints/ulx3s_85f.lpf (GPDI lines
+# 74-83; clock, LEDs and wifi_gpio0 as in the ULX3S reference LPF).  This file
+# is only for the standalone test; the SoC top has its own constraints.
+
+BLOCK RESETPATHS;
+BLOCK ASYNCPATHS;
+SYSCONFIG CONFIG_IOVOLTAGE=3.3 COMPRESS_CONFIG=ON MCCLK_FREQ=62 SLAVE_SPI_PORT=DISABLE MASTER_SPI_PORT=ENABLE SLAVE_PARALLEL_PORT=DISABLE;
+
+LOCATE COMP "clk_25mhz" SITE "G2";
+IOBUF PORT "clk_25mhz" PULLMODE=NONE IO_TYPE=LVCMOS33;
+FREQUENCY PORT "clk_25mhz" 25 MHZ;
+
+# The PLL outputs: nextpnr derives them from the PLL's dividers; the targets
+# are stated here too so the log's per-clock check is explicit.
+FREQUENCY NET "pclk" 65 MHZ;
+FREQUENCY NET "sclk" 325 MHZ;
+
+# GPDI (HDMI connector) as DVI: three TMDS data pairs and the clock pair.
+# LVCMOS33D drives each gpdi_dp pin and its paired _dn pin as the complement.
+LOCATE COMP "gpdi_dp[0]" SITE "A16";   # blue
+LOCATE COMP "gpdi_dp[1]" SITE "A14";   # green
+LOCATE COMP "gpdi_dp[2]" SITE "A12";   # red
+LOCATE COMP "gpdi_dp[3]" SITE "A17";   # clock
+IOBUF PORT "gpdi_dp[0]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[1]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[2]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[3]" IO_TYPE=LVCMOS33D DRIVE=4;
+
+LOCATE COMP "led[7]" SITE "H3";
+LOCATE COMP "led[6]" SITE "E1";
+LOCATE COMP "led[5]" SITE "E2";
+LOCATE COMP "led[4]" SITE "D1";
+LOCATE COMP "led[3]" SITE "D2";
+LOCATE COMP "led[2]" SITE "C1";
+LOCATE COMP "led[1]" SITE "C2";
+LOCATE COMP "led[0]" SITE "B2";
+IOBUF PORT "led[0]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[1]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[2]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[3]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[4]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[5]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[6]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+IOBUF PORT "led[7]" PULLMODE=NONE IO_TYPE=LVCMOS33 DRIVE=4;
+
+LOCATE COMP "wifi_gpio0" SITE "L2";
+IOBUF PORT "wifi_gpio0" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;

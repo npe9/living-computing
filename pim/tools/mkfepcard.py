@@ -4,7 +4,10 @@ files the FEP serves, in a format of OURS.
 
     python3 tools/mkfepcard.py OUT.img --held
         the held pimos.ipl (docs/nonlocal/pimosobj.tar.Z, object/pimos.ipl)
-        and every file it names: the card for the real IPL
+        and every file it names (the card for the real IPL), then every
+        other file of the held object/ directory as pimos:NAME (the
+        kernel's files, as ref/pimm/longrun_ipl.kernel_file serves them:
+        pimos.conf, pimos.logins, pimos.groups, ...)
     python3 tools/mkfepcard.py OUT.img --made-up NAME [NAME ...]
         ref/pimm/ref_scsi.py's made-up pimos.ipl listing these .sav files,
         and the files (what ref_scsi.py's parts use)
@@ -34,6 +37,9 @@ PIMOS's files in SIMPOS's file system on a PSI disk):
     20  entry size (256)
     24  blocks in the image
     28  0
+    32  the attributes: first block, 36 length in bytes (0 0: none)
+    40  the script: first block, 44 length in bytes (0 0: none)
+    48  0 ...
     64  text: what made the image (for a person with a hex dump)
   blocks 1.., the directory: entries of 256 bytes, two a block:
      0  name length in bytes (at most 240)
@@ -46,7 +52,19 @@ PIMOS's files in SIMPOS's file system on a PSI disk):
         first, as ref_scsi.py's open_file receives them.  The emulator
         compares bytes; no JIS table in hardware.  Zeros after.
   then the files, each from a block boundary, in directory order, the
-  last block zero-padded.
+  last block zero-padded; then the attributes and the script, each from
+  a block boundary.
+
+fep.py's constants, on every card this tool or bsv/fepemu_check.py
+makes (fep_tables), so the emulator holds none of them in hardware:
+  the attributes  fep_attributes' (240) whole reply message,
+                  fep.pack_message([fep.NORMAL] + fep.ATTRIBUTES)
+  the script      fep.Fep().script, the events Fep.idle() takes in
+                  order: per event the kind (SCRIPT_KINDS: login 1, getl
+                  2), the length of the reply's string, the string
+                  (login: fep.login_record; getl: fep.jis of the line),
+                  zeros to four bytes.  An event kind not in SCRIPT_KINDS
+                  stops the tool.
 
 Names and contents are those ref/pimm/ref_scsi.py's open_file gives:
 "pimos:pimos.ipl" for the list, and ">sys>csp>PIMOS.DIR>NAME" for a .sav
@@ -93,7 +111,8 @@ def made_up(names):
 
 
 def held():
-    """[(path bytes, contents)]: the held pimos.ipl and its files."""
+    """[(path bytes, contents)]: the held pimos.ipl and its files, then
+    the rest of the held object directory as pimos:NAME."""
     import ref_scsi as rs
     words = rs.ipll.list_words()
     out = [(jis_bytes(rs.LIST), rs.words_bytes(words))]
@@ -103,7 +122,47 @@ def held():
             raise SystemExit('mkfepcard: the held list names %r, not under %s' % (path, rs.DIR))
         out.append((rs.words_bytes(list(entry)),
                     rs.words_bytes(rs.lfile.file_words(path[len(rs.DIR):]))))
+    have = dict(out)
+    for name, data in objects():
+        if name in have:
+            # object/pimos.ipl is the list already put first
+            if have[name] != data:
+                raise SystemExit('mkfepcard: %s differs from the held list' % name_text(name))
+            continue
+        out.append((name, data))
     return out
+
+
+def objects():
+    """[(path bytes, contents)]: every file of the held object directory
+    (docs/nonlocal/pimosobj.tar.Z, object/) as pimos:NAME, the kernel's
+    file service (ref/pimm/longrun_ipl.kernel_file: object/INSTALL copies
+    object/* to pimos:)."""
+    import longrun_ipl as lr
+    lr.held_object('')
+    return [(jis_bytes('pimos:' + n), lr._held[n]) for n in sorted(lr._held)]
+
+
+# the event kinds of fep.Fep.script, as the emulator's held requests
+# name them (bsv/PimmFepEmu.bsv heldLogin, heldGetl)
+SCRIPT_KINDS = {'login': 1, 'getl': 2}
+
+
+def fep_tables(events=None):
+    """(attributes, script): fep.py's constants as the card holds them
+    (the header above); events, a script in place of fep.Fep().script
+    (a test tape's)."""
+    import fep
+    attributes = fep.pack_message([fep.NORMAL] + fep.ATTRIBUTES)
+    script = b''
+    for kind, what in (fep.Fep(None).script if events is None else events):
+        if kind not in SCRIPT_KINDS:
+            raise SystemExit('mkfepcard: fep.py\'s script has a %r event: give it a code in '
+                             'SCRIPT_KINDS and the emulator the hold that waits for it' % kind)
+        data = fep.login_record(**what) if kind == 'login' else fep.jis(what)
+        script += struct.pack('>II', SCRIPT_KINDS[kind], len(data)) + data
+        script += bytes(-len(data) % 4)
+    return attributes, script
 
 
 def decoys(entries):
@@ -117,7 +176,9 @@ def decoys(entries):
     return out
 
 
-def build(entries, note):
+def build(entries, note, tables=None):
+    """The image; tables (attributes, script) as fep_tables() gives, or
+    None for neither."""
     names = [n for n, _ in entries]
     if len(set(names)) != len(names):
         raise SystemExit('mkfepcard: a name twice')
@@ -134,7 +195,13 @@ def build(entries, note):
         files += data + bytes(-len(data) % BLOCK)
         at += -(-len(data) // BLOCK)
     directory += bytes(dir_blocks * BLOCK - len(directory))
+    where = []
+    for t in tables or (b'', b''):
+        where += [at if t else 0, len(t)]
+        files += t + bytes(-len(t) % BLOCK)
+        at += -(-len(t) // BLOCK)
     head = MAGIC + struct.pack('>IIIIII', len(entries), 1, dir_blocks, ENTRY, at, 0)
+    head += struct.pack('>IIII', *where)
     head += bytes(64 - len(head)) + note.encode()[:BLOCK - 64]
     head += bytes(BLOCK - len(head))
     img = head + directory + files
@@ -157,7 +224,10 @@ def parse(img):
         out.append(dict(name=e[16:16 + nl], start=start, length=length, sum=s,
                         ok=len(data) == length and sum32(data) == s, data=data))
     note = img[64:BLOCK].rstrip(b'\0').decode(errors='replace')
-    return dict(count=count, first=first, blocks=nblocks, total=total, note=note), out
+    ab, al, sb, sl = struct.unpack('>IIII', img[32:48])
+    return dict(count=count, first=first, blocks=nblocks, total=total, note=note,
+                attributes=img[ab * BLOCK:ab * BLOCK + al], script=img[sb * BLOCK:sb * BLOCK + sl],
+                tables=(ab, al, sb, sl)), out
 
 
 def safe_output(path):
@@ -177,6 +247,8 @@ def list_image(path):
           % (path, h['count'], h['first'], h['first'] + h['blocks'] - 1, h['total'],
              h['total'] * BLOCK))
     print('  note: %s' % h['note'])
+    ab, al, sb, sl = h['tables']
+    print('  attributes: block %d, %d bytes; script: block %d, %d bytes' % (ab, al, sb, sl))
     print('  %-6s %-9s %-9s %-8s %s' % ('entry', 'block', 'bytes', 'sum32', 'name'))
     bad = 0
     for i, e in enumerate(entries):
@@ -215,7 +287,8 @@ def main(argv):
     if '--decoys' in argv:
         entries = decoys(entries) + entries
     note = 'PIM/m FEP card (OURS), pim/tools/mkfepcard.py %s' % ' '.join(argv[2:])
-    img = build(entries, note)
+    tables = fep_tables()
+    img = build(entries, note, tables)
     tmp = out + '.tmp'
     with open(tmp, 'wb') as fh:
         fh.write(img)
@@ -223,6 +296,7 @@ def main(argv):
     h, got = parse(img)
     assert [e['name'] for e in got] == [n for n, _ in entries]
     assert all(e['ok'] and e['data'] == d for e, (_, d) in zip(got, entries))
+    assert (h['attributes'], h['script']) == tables
     print('mkfepcard: wrote %s, %d entries, %d bytes' % (out, len(entries), len(img)))
     return 0
 

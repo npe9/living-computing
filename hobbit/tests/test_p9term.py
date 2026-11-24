@@ -348,12 +348,12 @@ HALF_INPUT = [
     "at-cycle 2774578184 type 'ls\\r'",
     "at-cycle 2988614887 stop"]
 # (cycles, steps, sha256 of the pixels) at the live run's q1 and its end
-HALF = {"q1": (1391163610, 1388344680,
+HALF = {"q1": (1391163610, 1388330026,
                "7a182d449ee765366d511f50fca9861cdc070ed44bf9e41ca48881ae932892cb"),
-        "ls": (2988614887, 2985469493,
+        "ls": (2988614887, 2985453059,
                "a908ac2986d9e6b3457b6d90922a3d8f1a338f8f2b6fb4090e2f0092734d9f63")}
 
-STEPS = {"fired": [22537091, 32506729, 42502279]}
+STEPS = {"fired": [22537007, 32506645, 42502195]}
 BASE = 0x805B7968       # xalloc(198656) + 2048 (screeninit+0x4c..+0x68)
 DIGEST = "183d08cc55bda49eb4fdd3ee7a213b18623a0d70fc18340f1b38a5abe9546eea"
 
