@@ -30,6 +30,11 @@ SHA256SUMS`, and visually inspect the encoding tables and the Chapter 4
 timing tables before citing them: the scanned pages carry OCR text that
 mangles opcode tables (`5` for `S`, `0` for `O`).
 
+The ATT92020 (the 1993 second generation) has no AT&T document here; its
+differences from the 92010, from trade press and Be's 1994 kernels, are
+in [`att92020.md`](att92020.md), and the articles held on disk (not in
+git) are listed in [`att92020/MANIFEST.md`](att92020/MANIFEST.md).
+
 ## Not yet acquired
 
 Each of these would outrank the vendor manuals for a claim the corpus
