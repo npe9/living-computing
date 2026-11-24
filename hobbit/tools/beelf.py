@@ -227,6 +227,13 @@ def main(argv):
         for a in argv[3:]:      # ADDR, or PC+OFFSET (an LDRAA's operand)
             va = sum(int(x, 16) for x in a.split("+")) & 0xFFFFFFFF
             print("0x%08x %r" % (va, e.cstring(va)))
+    elif op == "--words":
+        va = int(argv[3], 16)
+        for i in range(int(argv[4]) if len(argv) > 4 else 16):
+            a = va + 4 * i
+            w = int.from_bytes(bytes(e.byte_at(a + j) or 0 for j in range(4)), "big")
+            print("0x%08x 0x%08x %s" % (a, w, e.where(w) if e.text_syms and
+                                         e.text_syms[0][0] <= w < e.func_end(e.text_syms[-1][0]) else ""))
     elif op == "--unimpl":
         for pc, func, line in sweep(e):
             if "unimplemented" in line or line.startswith("??"):

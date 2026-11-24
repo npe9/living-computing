@@ -57,6 +57,11 @@ MEMSIZE_WORD = RAM_BASE + 0x48
 
 # CHOICES['clock']
 CPU_HZ = 25e6
+# CHOICES['scsi-timing']: cycles from a 53C94 command to its interrupt.
+NCR_IRQ_DELAY = 2500
+# CHOICES['floppy']: seconds from a seek's last step (or a recalibrate
+# on cylinder 0) to its interrupt.
+FDC_SETTLE = 100e-6
 
 CHOICES = {
     "rom": "No boot ROM image survives (docs/bebox/MANIFEST.md).  The run "
@@ -92,6 +97,40 @@ CHOICES = {
            "time (Mc146818).",
     "printer": "Nothing is attached to the printer port: its status "
                "register reads 0x7F (no interrupt is ever raised).",
+    "scsi-timing": "A 53C94 command's interrupt asserts 2,500 cycles "
+                   "(100 us at 25 MHz) after the command is written, or "
+                   "after the last byte of a DMA transfer passes the "
+                   "pseudo-DMA port; selection, the target's work and the "
+                   "bus phases take no other time.",
+    "floppy": "The MCS3201 (Mcs3201) has one drive, drive 1, the one the "
+              "kernel selects (_MotorOn writes DOR 0x2d), with no diskette "
+              "in it: DIR bit 7 (disk change) stays set, so _PrepareMedia "
+              "reports no medium.  Drive 1's head starts on cylinder 0.  "
+              "The ROM is taken to have left the controller out of reset "
+              "(DOR 0x0C) with no interrupt pending, because the kernel "
+              "never resets it on the way up and its _FloppyInterrupt "
+              "ignores an interrupt it did not ask for (intType 0), which "
+              "on a level-triggered line would never end.  A seek or "
+              "recalibrate interrupts (16 - SRT) ms per step after the "
+              "command, plus 100 us.",
+    "disks": "--disk images are SCSI targets 0, 1, ... in order (the "
+             "first holds /system/kernel unless --kernel is given).  "
+             "INQUIRY answers 'BEBOOT HOBBIT DISK'.",
+    "disk-writes": "Writes to a disk go to an in-memory overlay; the image "
+                   "file is never modified.",
+    "interrupts": "Levels as the kernel's vector table uses them "
+                  "(_init_vector_table copies 13 handlers: VB+20 _inth_l1 "
+                  "-> _cpu_inth, the internal interrupt register; VB+28 "
+                  "_inth_l3 -> _io_int_dispatch, the I/O interrupt "
+                  "register; VB+36 _inth_l5 -> _slot_int_dispatch; VB+40 "
+                  "_inth_l6 -> _joy_inth; VB+44/48 the timers).  CPU n "
+                  "sees IL 3 while (I/O interrupt register & its mask) != "
+                  "0 and IL 1 while bit n-1 of the internal interrupt "
+                  "register is set.  Timer overflows are taken at level 1 "
+                  "through VB+44/48 (PRM Table 1-14), before the internal "
+                  "interrupt.  An interrupt is taken when its level is "
+                  "below the PSW's IPL (Table 1-8, hobbit_sem."
+                  "interrupt_accepted).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -141,11 +180,25 @@ class IoWindow:
                        % (IO_BASE + off, off // 4, what))
         return r
 
+    def add_word(self, addr, device, name):
+        """A device that takes the whole word (device.read(off),
+        device.write(off, data, mask))."""
+        off = (addr - IO_BASE) & ~3
+        if off in self.regs:
+            raise ValueError("I/O word 0x%08x claimed twice" % addr)
+        self.regs[off] = (None, device, None, name)
+
     def read(self, off):
         lane, dev, reg, name = self._find(off, "a read")
+        if lane is None:
+            return dev.read(off) & MASK32
         return (dev.read(reg) & 0xFF) << (8 * (3 - lane))
 
     def write(self, off, data, mask):
+        r = self.regs.get(off & ~3)
+        if r is not None and r[0] is None:
+            r[1].write(off, data, mask)
+            return
         lane, dev, reg, name = self._find(
             off, "a write of 0x%08x mask %x" % (data, mask))
         # A word store (the kernel's _fetch_and_or: an interlocked ORI on
@@ -423,6 +476,475 @@ class Mc146818:
 
 
 # ---------------------------------------------------------------------------
+# SCSI: the NCR 53C94 (data sheet Feb 1990, docs/bebox/MANIFEST.md) on lane
+# 2 of the I/O words 0x00800800 + reg * 4 (the kernel's _reg_base =
+# 0x00800802, __cmd_reg = 0x0080080E ...), its 16-bit pseudo-DMA port at
+# 0x00800842 (__pseudo_dma_reg), and disks behind it.
+# ---------------------------------------------------------------------------
+
+NCR_BASE = 0x00800802
+NCR_PDMA = 0x00800842
+
+# SCSI phases as the status register's bits 2:0 report them (MSG, C/D, I/O).
+PH_DATA_OUT, PH_DATA_IN, PH_COMMAND, PH_STATUS = 0, 1, 2, 3
+PH_MSG_OUT, PH_MSG_IN = 6, 7
+
+INT_DISCONNECT, INT_BUS_SERVICE, INT_FUNCTION_COMPLETE = 0x20, 0x10, 0x08
+INT_ILLEGAL, INT_SCSI_RESET = 0x40, 0x80
+
+
+class ScsiDisk:
+    """A direct-access target backed by a disk image, read only: writes go
+    to an in-memory overlay (CHOICES['disk-writes']), never to the file.
+    Commands not listed stop the run."""
+
+    def __init__(self, path, name):
+        self.f = open(path, "rb")
+        self.f.seek(0, 2)
+        self.blocks = self.f.tell() // 512
+        self.name = name
+        self.overlay = {}
+        self.sense = (0, 0)             # (key, additional sense code)
+        self.reads = self.writes = 0
+
+    def read_block(self, lba):
+        if lba in self.overlay:
+            return self.overlay[lba]
+        self.f.seek(lba * 512)
+        return self.f.read(512)
+
+    def execute(self, cdb):
+        """Returns (status, data in or None, bytes expected out or 0,
+        callback for the data out)."""
+        op = cdb[0]
+        if op == 0x00:                                  # TEST UNIT READY
+            return 0, None, 0, None
+        if op == 0x03:                                  # REQUEST SENSE
+            key, asc = self.sense
+            self.sense = (0, 0)
+            data = bytes([0x70, 0, key, 0, 0, 0, 0, 10, 0, 0, 0, 0, asc, 0,
+                          0, 0, 0, 0])
+            return 0, data[:cdb[4] or 4], 0, None
+        if op == 0x12:                                  # INQUIRY
+            data = (bytes([0, 0, 1, 1, 31, 0, 0, 0]) + b"BEBOOT  "
+                    + b"HOBBIT DISK     " + b"1994")
+            return 0, data[:cdb[4]], 0, None
+        if op == 0x25:                                  # READ CAPACITY
+            return 0, (self.blocks - 1).to_bytes(4, "big") + \
+                (512).to_bytes(4, "big"), 0, None
+        if op in (0x08, 0x28, 0x0A, 0x2A):              # READ/WRITE 6/10
+            if op in (0x08, 0x0A):
+                lba = ((cdb[1] & 0x1F) << 16) | (cdb[2] << 8) | cdb[3]
+                n = cdb[4] or 256
+            else:
+                lba = int.from_bytes(cdb[2:6], "big")
+                n = int.from_bytes(cdb[7:9], "big")
+            if lba + n > self.blocks:
+                self.sense = (5, 0x21)          # illegal request, LBA range
+                return 2, None, 0, None
+            if op in (0x08, 0x28):
+                self.reads += n
+                return 0, b"".join(self.read_block(lba + i)
+                                   for i in range(n)), 0, None
+
+            def store(data, lba=lba, n=n):
+                self.writes += n
+                for i in range(n):
+                    self.overlay[lba + i] = bytes(data[512 * i:512 * (i + 1)])
+            return 0, None, 512 * n, store
+        raise Stop("SCSI %s: command 0x%02x not modelled (CDB %s)"
+                   % (self.name, op, cdb.hex()))
+
+
+class Ncr53c94:
+    """The 53C94 as the kernel's driver (scsi_sim.c: _init_53c94,
+    _sim_execute_scsi_io, _data_xfer_in[_dma], _data_xfer_out[_dma],
+    _command_complete, _sim_reset_bus) drives it, initiator only.
+
+    Registers: data sheet Table 7 (p. 12).  Select without ATN: Table 8
+    (p. 18): time-out -> interrupt 0x20, step 0; complete -> 0x18, step
+    4.  Transfer information, initiator command complete, message
+    accepted: p. 33.  Reset SCSI bus: p. 29 (RSTO tied to RSTI, so a SCSI
+    reset interrupt unless Config 1 bit 6 disables it).  The INT output
+    is the board's I/O interrupt bit 7 (Appendix A).  A command the
+    driver does not use stops the run."""
+
+    def __init__(self, targets, irq_delay, clock):
+        self.targets = targets          # id -> ScsiDisk
+        self.irq_delay = irq_delay      # cycles from command to INT
+        self.clock = clock              # callable() -> cycles
+        self.reset_chip()
+        self.dest = 0
+        self.config1 = 0
+        self.log = []
+
+    def reset_chip(self):
+        self.fifo = collections.deque()
+        self.tc = 0                     # transfer count register
+        self.counter = 0
+        self.tc_zero = False
+        self.isr = 0
+        self.seq = 0
+        self.int_at = None              # cycle at which INT asserts
+        self.phase = None               # None: bus free
+        self.target = None
+        self.data_in = b""              # bytes the target will send
+        self.out_need = 0
+        self.out_buf = bytearray()
+        self.out_store = None
+        self.status_byte = 0
+        self.dma = None                 # "in" / "out" during a DMA transfer
+
+    # -- the INT line --
+    def int_active(self):
+        return self.int_at is not None and self.clock() >= self.int_at
+
+    def _interrupt(self, isr, seq=None):
+        self.isr = isr
+        if seq is not None:
+            self.seq = seq
+        self.int_at = self.clock() + self.irq_delay
+
+    def irq(self):
+        return self.int_active()
+
+    def _status(self):
+        st = 0x80 if self.int_active() else 0
+        if self.tc_zero:
+            st |= 0x10
+        return st | (self.phase if self.phase is not None else 0)
+
+    def read(self, reg):
+        if reg == 0:
+            return self.counter & 0xFF
+        if reg == 1:
+            return (self.counter >> 8) & 0xFF
+        if reg == 2:
+            if not self.fifo:
+                raise Stop("53C94: FIFO read while empty")
+            return self.fifo.popleft()
+        if reg == 4:
+            return self._status()
+        if reg == 5:
+            v = self.isr if self.int_active() else 0
+            if self.int_active():
+                self.isr = 0
+                self.int_at = None
+            return v
+        if reg == 6:
+            return self.seq
+        if reg == 7:
+            n = len(self.fifo)
+            if self.dma == "in":
+                n = min(16, len(self.data_in))
+            return (self.seq << 5) | min(n, 16)
+        if reg == 8:
+            return self.config1
+        raise Stop("53C94: read of register %d" % reg)
+
+    def write(self, reg, value):
+        if reg == 0:
+            self.tc = (self.tc & 0xFF00) | value
+        elif reg == 1:
+            self.tc = (self.tc & 0x00FF) | (value << 8)
+        elif reg == 2:
+            self.fifo.append(value)
+            if len(self.fifo) > 16:
+                raise Stop("53C94: FIFO overflow")
+        elif reg == 3:
+            self.command(value)
+        elif reg == 4:
+            self.dest = value & 7
+        elif reg == 8:
+            self.config1 = value
+        elif reg in (5, 6, 7, 9, 0x0A, 0x0B, 0x0C):
+            pass        # time-out, sync period/offset, clock, test, config
+        else:
+            raise Stop("53C94: write of 0x%02x to register %d" % (value, reg))
+
+    def command(self, cmd):
+        dma = bool(cmd & 0x80)
+        code = cmd & 0x7F
+        self.log.append(cmd)
+        if dma:
+            self.counter = self.tc or 0x10000
+            self.tc_zero = False
+        if code == 0x00:                                # NOP
+            return
+        if code == 0x01:                                # flush FIFO
+            self.fifo.clear()
+            return
+        if code == 0x02:                                # reset chip
+            self.reset_chip()
+            return
+        if code == 0x03:                                # reset SCSI bus
+            self.phase = None
+            if not self.config1 & 0x40:
+                self._interrupt(INT_SCSI_RESET)
+            return
+        if code == 0x41 and not dma:                    # select without ATN
+            target = self.targets.get(self.dest)
+            if target is None:
+                self.fifo.clear()
+                self.phase = None
+                self._interrupt(INT_DISCONNECT, 0)
+                return
+            cdb = bytes(self.fifo)
+            self.fifo.clear()
+            group = cdb[0] >> 5
+            want = {0: 6, 1: 10, 2: 10, 5: 12}.get(group, 6)
+            if len(cdb) < want:
+                raise Stop("53C94: %d CDB bytes in the FIFO, command 0x%02x "
+                           "needs %d" % (len(cdb), cdb[0], want))
+            self.target = target
+            status, data, need, store = target.execute(cdb[:want])
+            self.status_byte = status
+            self.data_in = data or b""
+            self.out_need, self.out_store = need, store
+            self.out_buf = bytearray()
+            if self.data_in:
+                self.phase = PH_DATA_IN
+            elif need:
+                self.phase = PH_DATA_OUT
+            else:
+                self.phase = PH_STATUS
+            self._interrupt(INT_BUS_SERVICE | INT_FUNCTION_COMPLETE, 4)
+            return
+        if code == 0x10:                                # transfer information
+            if self.phase == PH_DATA_IN:
+                if dma:
+                    self.dma = "in"
+                    return          # bytes leave through the PDMA port
+                self.fifo.append(self.data_in[0])
+                self.data_in = self.data_in[1:]
+                if not self.data_in:
+                    self.phase = PH_STATUS
+                self._interrupt(INT_BUS_SERVICE)
+                return
+            if self.phase == PH_DATA_OUT:
+                if dma:
+                    self.dma = "out"
+                    return
+                while self.fifo:
+                    self._out_byte(self.fifo.popleft())
+                self._interrupt(INT_BUS_SERVICE)
+                return
+            raise Stop("53C94: transfer information in phase %s"
+                       % self.phase)
+        if code == 0x11 and not dma:                    # initiator cmd complete
+            if self.phase != PH_STATUS:
+                raise Stop("53C94: command complete in phase %s" % self.phase)
+            self.fifo.extend([self.status_byte, 0x00])  # status, COMMAND COMPLETE
+            self.phase = PH_MSG_IN
+            self._interrupt(INT_FUNCTION_COMPLETE)
+            return
+        if code == 0x12 and not dma:                    # message accepted
+            self.phase = None
+            self.target = None
+            self._interrupt(INT_DISCONNECT)
+            return
+        raise Stop("53C94: command 0x%02x not modelled" % cmd)
+
+    def _out_byte(self, b):
+        self.out_buf.append(b)
+        if len(self.out_buf) == self.out_need:
+            self.out_store(self.out_buf)
+            self.phase = PH_STATUS
+
+    def _dma_step(self, n):
+        self.counter -= n
+        if self.counter <= 0:
+            self.counter = 0
+            self.tc_zero = True
+            self.dma = None
+            self._interrupt(INT_BUS_SERVICE)
+
+    # the pseudo-DMA port: a 16-bit word, the earlier byte in bits 15:8
+    def pdma_read(self):
+        if self.dma != "in" or len(self.data_in) < 2:
+            raise Stop("53C94: pseudo-DMA read with no data-in transfer "
+                       "running (%d bytes left)" % len(self.data_in))
+        v = (self.data_in[0] << 8) | self.data_in[1]
+        self.data_in = self.data_in[2:]
+        if not self.data_in:
+            self.phase = PH_STATUS
+        self._dma_step(2)
+        return v
+
+    def pdma_write(self, value):
+        if self.dma != "out":
+            raise Stop("53C94: pseudo-DMA write with no data-out transfer "
+                       "running")
+        self._out_byte(value >> 8)
+        self._out_byte(value & 0xFF)
+        self._dma_step(2)
+
+
+class PdmaPort:
+    """0x00800840: the 53C94's pseudo-DMA port in bits 15:0 of the word
+    (the kernel reads and writes *0x00800842 as a half word)."""
+
+    def __init__(self, ncr):
+        self.ncr = ncr
+
+    def read(self, off):
+        return self.ncr.pdma_read()
+
+    def write(self, off, data, mask):
+        if mask != 0x3:
+            raise Stop("pseudo-DMA port written with byte mask %x" % mask)
+        self.ncr.pdma_write(data & 0xFFFF)
+
+
+# ---------------------------------------------------------------------------
+# The floppy controller: a Motorola MCS3201 at the PC's secondary address
+# 0x370 (docs/bebox_hardware.md section 8; data sheet
+# docs/devices/MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf, which
+# has no text layer: pages read from the page images).
+# ---------------------------------------------------------------------------
+
+class Mcs3201:
+    """The MCS3201's four registers the kernel touches: DOR (0x372, write
+    only), main status (0x374, read only), data (0x375), and DIR/DCR
+    (0x377: read the digital input register, write the diskette control
+    register) -- data sheet section 5, pp. 12-13.
+
+    Commands modelled: SPECIFY (0x03), RECALIBRATE (0x07), SENSE
+    INTERRUPT STATUS (0x08) and SEEK (0x0F), the four the kernel issues
+    before it reads a sector (_InitDrive, _PrepareMedia).  Any other
+    command byte stops the run, as does a reset of the controller through
+    the DOR (CHOICES['floppy']).  Drives are `drives[n]`: None (no drive)
+    or a dict with 'medium' (None = no diskette) and 'cyl' (the head's
+    cylinder)."""
+
+    NAMES = ["0x370", "0x371", "DOR", "0x373", "MSR", "data", "0x376",
+             "DIR/DCR"]
+    # Command byte (low five bits) -> bytes in the command phase
+    # (section 6, pp. 15-19).
+    LENGTHS = {0x03: 3, 0x07: 2, 0x08: 1, 0x0F: 3}
+
+    def __init__(self, drives, clock):
+        self.drives = drives
+        self.clock = clock          # -> model seconds
+        # CHOICES['floppy']: the ROM left the controller out of reset,
+        # DMA and interrupts enabled, no drive selected, no interrupt
+        # pending.
+        self.dor = 0x0C
+        self.dcr = 0
+        self.srt = None             # step rate time, set by SPECIFY
+        self.cmd = []               # command phase bytes so far
+        self.results = []           # result phase bytes still to read
+        self.pcn = [0, 0, 0, 0]     # present cylinder per drive
+        self.busy = 0               # MSR bits 3:0, drives seeking
+        self.pending = []           # (time, drive, st0) seek/recal ends
+        self.done = []              # (drive, st0) ended, not yet sensed
+        self.log = []
+
+    # -- the interrupt line (section 7.11, p. 23) --------------------------
+    def _advance(self):
+        now = self.clock()
+        due = [p for p in self.pending if p[0] <= now]
+        for p in due:
+            self.pending.remove(p)
+            self.done.append((p[1], p[2]))
+            self.busy &= ~(1 << p[1])
+
+    def int_line(self):
+        self._advance()
+        return bool(self.done)
+
+    def irq(self):
+        """I/O interrupt register bit 0: the INT pin, gated by DOR bit 3
+        (DMA and interrupt enable, p. 12; Appendix A / chapter 7 p. 4)."""
+        return bool(self.dor & 0x08) and self.int_line()
+
+    # -- registers ---------------------------------------------------------
+    def _msr(self):
+        """Section 5.3, p. 12: 7 RQM, 6 DIO (1 = to the host), 5 non-DMA
+        execution, 4 controller busy, 3:0 drive n seeking."""
+        self._advance()
+        if self.results:
+            return 0x80 | 0x40 | 0x10 | self.busy
+        return 0x80 | (0x10 if self.cmd else 0) | self.busy
+
+    def _drive(self):
+        return self.drives.get(self.dor & 3)
+
+    def read(self, reg):
+        if reg == 4:
+            return self._msr()
+        if reg == 5:
+            if not self.results:
+                raise Stop("MCS3201 data register read outside a result "
+                           "phase")
+            return self.results.pop(0)
+        if reg == 7:
+            # Section 5.5, p. 13: bit 7 DSKCHG, bits 6:0 always 0.  The
+            # line is the selected drive's; with no diskette it stays set.
+            d = self._drive()
+            if d is None:
+                raise Stop("MCS3201 DIR read with drive %d selected, which "
+                           "is not modelled" % (self.dor & 3))
+            return 0x80 if d["medium"] is None else 0x00
+        raise Stop("MCS3201 register %s read" % self.NAMES[reg])
+
+    def write(self, reg, value):
+        if reg == 2:
+            if not value & 0x04 or not self.dor & 0x04:
+                raise Stop("MCS3201 DOR written 0x%02x: a controller reset "
+                           "(not modelled)" % value)
+            self.dor = value
+        elif reg == 7:
+            self.dcr = value & 3        # section 5.6: the data rate
+        elif reg == 5:
+            self._command_byte(value)
+        else:
+            raise Stop("MCS3201 register %s written 0x%02x"
+                       % (self.NAMES[reg], value))
+
+    # -- commands ----------------------------------------------------------
+    def _command_byte(self, value):
+        if self.results:
+            raise Stop("MCS3201 command byte 0x%02x written during a "
+                       "result phase" % value)
+        self.cmd.append(value)
+        op = self.cmd[0] & 0x1F
+        n = self.LENGTHS.get(op)
+        if n is None:
+            raise Stop("MCS3201 command 0x%02x not modelled" % self.cmd[0])
+        if len(self.cmd) < n:
+            return
+        cmd, self.cmd = self.cmd, []
+        self.log.append(tuple(cmd))
+        if op == 0x03:                          # SPECIFY: SRT/HUT, HLT/ND
+            self.srt = cmd[1] >> 4
+            if cmd[2] & 1:
+                raise Stop("MCS3201 SPECIFY with ND (non-DMA) set")
+        elif op == 0x08:                        # SENSE INTERRUPT STATUS
+            self._advance()
+            if self.done:
+                drive, st0 = self.done.pop(0)
+                self.results = [st0, self.pcn[drive]]
+            else:
+                self.results = [0x80]           # invalid (p. 24)
+        else:                                   # RECALIBRATE, SEEK
+            drive = cmd[1] & 3
+            if self.srt is None:
+                raise Stop("MCS3201 seek before SPECIFY")
+            d = self.drives.get(drive)
+            if d is None:
+                raise Stop("MCS3201 seek on drive %d, not modelled" % drive)
+            target = 0 if op == 0x07 else cmd[2]
+            steps = abs(d["cyl"] - target)
+            d["cyl"] = target
+            self.pcn[drive] = target
+            # Section 7.12: SRT is 1 to 16 ms, F = 1 ms (p. 24).
+            t = self.clock() + FDC_SETTLE + steps * (16 - self.srt) / 1000.0
+            self.busy |= 1 << drive
+            self.pending.append((t, drive, 0x20 | drive))   # SE, normal
+
+
+# ---------------------------------------------------------------------------
 # The bus
 # ---------------------------------------------------------------------------
 
@@ -506,13 +1028,13 @@ class Cpu:
 def read_kernel(args):
     if args.kernel:
         return beelf.Elf(args.kernel), args.kernel
-    vol = befs1.Volume(args.disk)
+    vol = befs1.Volume(args.disk[0])
     data = vol.read(vol.lookup("/system/kernel"))
     path = os.path.join(args.workdir, "kernel")
     os.makedirs(args.workdir, exist_ok=True)
     with open(path, "wb") as f:
         f.write(data)
-    return beelf.Elf(path), "%s:/system/kernel" % args.disk
+    return beelf.Elf(path), "%s:/system/kernel" % args.disk[0]
 
 
 class Machine:
@@ -536,11 +1058,27 @@ class Machine:
         io.add(port_addr(0x70), 3, self.rtc, 0, "RTC index")
         io.add(port_addr(0x71), 3, self.rtc, 1, "RTC data")
         self.regs.io_sources[4] = self.rtc_irq
+        self.disks = {}
+        self.ncr = Ncr53c94(self.disks, NCR_IRQ_DELAY,
+                            lambda: self.cpus[0].cycles)
+        for n in range(16):
+            io.add(NCR_BASE + 4 * n, 2, self.ncr, n, "53C94 register %d" % n)
+        io.add_word(NCR_PDMA, PdmaPort(self.ncr), "53C94 pseudo-DMA")
+        self.regs.io_sources[7] = self.ncr.irq
+        self.fdc = Mcs3201({1: {"medium": None, "cyl": 0}},
+                           lambda: self.cpus[0].cycles / CPU_HZ)
+        for n in (2, 4, 5, 7):
+            io.add(port_addr(0x370 + n), 3, self.fdc, n,
+                   "MCS3201 " + Mcs3201.NAMES[n])
+        self.regs.io_sources[0] = self.fdc.irq
         self.par = Parallel()
         for n, name in enumerate(("data", "status", "control")):
             io.add(port_addr(0x378 + n), 3, self.par, n, "printer " + name)
-        self.regs.io_sources[2] = self.ser1.irq
-        self.regs.io_sources[1] = self.ser2.irq
+        # SER1 on bit 1, SER2 on bit 2: both kernels' _ser_init
+        # (_io_int_set(1, _sera_inth)); the 1993 draft has them the other
+        # way round (docs/bebox_hardware.md section 5).
+        self.regs.io_sources[1] = self.ser1.irq
+        self.regs.io_sources[2] = self.ser2.irq
         for addr, word in elf.words().items():
             if not (RAM_BASE <= addr < self.board.ram_hi):
                 raise SystemExit("beboot: kernel word at 0x%08x is outside "
@@ -552,7 +1090,8 @@ class Machine:
         self.cycles = 0
         self.reached = []
         self.seen = set()
-        self.events = []
+        self.events = collections.deque(maxlen=200)
+        self.interrupts = 0
         self.trace = None           # deque of pre-states (--trace N)
         text = elf.sections[".text"]
         self.text_lo, self.text_hi = text[3], text[3] + text[5]
@@ -569,6 +1108,29 @@ class Machine:
             self.events.append((self.cpus[0].steps, "CPU 2 released"))
         elif old & 2 and not new & 2 and len(self.cpus) == 2:
             raise Stop("CPU 2 put back into reset (not modelled)")
+
+    def deliver(self, cpu):
+        """CHOICES['interrupts']: one interrupt per instruction boundary,
+        the lowest level first."""
+        st = cpu.state
+        sysm = cpu.sysm
+        i = cpu.n - 1
+        ipl = (st.psw >> hobbit_sem.PSW_IPL_SHIFT) & 7
+        if ipl <= 1:
+            return
+        if sysm.timer1_pending:
+            sysm.timer1_pending = False
+            hobbit_sem.take_interrupt(st, 1, 44)
+        elif sysm.timer2_pending:
+            sysm.timer2_pending = False
+            hobbit_sem.take_interrupt(st, 1, 48)
+        elif self.regs.internal & (1 << i):
+            hobbit_sem.take_interrupt(st, 1)
+        elif ipl > 3 and self.regs.io_status() & self.regs.io_mask[i]:
+            hobbit_sem.take_interrupt(st, 3)
+        else:
+            return
+        self.interrupts += 1
 
     def run(self, max_steps, until=None):
         status = "max-steps"
@@ -599,6 +1161,7 @@ class Machine:
                 cpu.steps += 1
                 total += 1
                 cpu.cycles += max(rec.cyc, 1)
+                self.deliver(cpu)
                 if cpu.sysm.events:
                     for kind, ident, epc in cpu.sysm.events:
                         self.events.append((total, "CPU %d %s 0x%x at %s %s" % (
@@ -621,7 +1184,9 @@ class Machine:
 
 def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--disk", help="a Hobbit BeBox disk image (befs1)")
+    ap.add_argument("--disk", action="append", default=[],
+                    help="a Hobbit BeBox disk image (befs1); SCSI target 0, "
+                         "then 1, ... (CHOICES['disks'])")
     ap.add_argument("--kernel", help="the kernel ELF file instead of the "
                     "disk's /system/kernel")
     ap.add_argument("--workdir", default=os.path.join(HERE, "..", "build",
@@ -630,22 +1195,30 @@ def main(argv):
     ap.add_argument("--max-steps", type=int, default=2000000)
     ap.add_argument("--trace", type=int, default=0,
                     help="print the last N instructions before the stop")
+    ap.add_argument("--show", type=int, default=40,
+                    help="print the last N first-reached functions")
     ap.add_argument("--until", help="stop once SER1 has printed this text")
     args = ap.parse_args(argv)
     if not args.disk and not args.kernel:
         ap.error("give --disk or --kernel")
     elf, source = read_kernel(args)
     m = Machine(elf, args.memsize << 20)
+    for i, path in enumerate(args.disk):
+        m.disks[i] = ScsiDisk(path, "target %d" % i)
     print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
                                                args.memsize))
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
     status = m.run(args.max_steps,
                    args.until.encode("latin-1") if args.until else None)
-    for step, cpu, name in m.reached[-40:]:
+    for step, cpu, name in m.reached[-args.show:]:
         print("reached %9d CPU %d %s" % (step, cpu, name))
-    for step, what in m.events[-20:]:
+    for step, what in list(m.events)[-20:]:
         print("event %9d %s" % (step, what))
+    for i, d in sorted(m.disks.items()):
+        print("SCSI target %d: %d blocks read, %d written (overlay)"
+              % (i, d.reads, d.writes))
+    print("interrupts taken: %d" % m.interrupts)
     print("SER1: %r" % bytes(m.ser1.out).decode("latin-1"))
     if m.ser2.out:
         print("SER2: %r" % bytes(m.ser2.out).decode("latin-1"))
