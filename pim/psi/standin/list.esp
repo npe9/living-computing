@@ -1,0 +1,64 @@
+% SCAFFOLDING stand-in for SIMPOS's class `list`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no part of `list` is
+% printed.  Every method is INTERPOLATED (labelled), from:
+%   - the call forms printed in TM-100 Fig. 3.1 (`:create(#list, List)`
+%     as process's slot initialisers, `:remove`, `:empty`, `:add_last`
+%     on suspend_reasons, PDF p8-10) and TM-388 p.50 (`:create(#list,L)`);
+%   - TR-056 pp.7-8 (PDF), the printed interface of `list` as a sequence
+%     (add_after, add_before, get_at, remove_at: not stood in yet);
+%   - the selectors held programs send (docs/simpos/required/classes.tsv:
+%     add/2 add_first/2 add_last/2 clear/1 count/2 empty/1 get_contents/2
+%     get_first/2 get_last/2 remove/2 remove_first/2 remove_last/2 ...).
+% Model (OURS): the elements as a Prolog list in one slot, first element
+% first.  TM-388 p.48's footnote says structured data is kept in a slot
+% through the pool function; kl0 stores the term itself.  What a method
+% does at an empty list (fail) is OURS too.
+
+class list has
+
+% INTERPOLATED from: `:create(#list, List)` (TM-100 Fig. 3.1 PDF p8;
+% TM-388 p.50), the same shape as the printed stream:create/2.
+:create(Class, List) :- :new(Class, List);
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute elements := [];
+
+% INTERPOLATED from: TM-100 Fig. 3.1 suspend/2, `:add_last(Process!
+% suspend_reasons, Reason)` (PDF p9).
+:add_last(List, X) :- append(List!elements, [X], E), List!elements := E;
+% INTERPOLATED from: the selector add/2 in held programs (classes.tsv);
+% taken to be add_last/2 (OURS).
+:add(List, X) :- append(List!elements, [X], E), List!elements := E;
+% INTERPOLATED from: the selector add_first/2 (classes.tsv).
+:add_first(List, X) :- E = List!elements, List!elements := [X|E];
+% INTERPOLATED from: TM-100 Fig. 3.1 resume/2, `:remove(Process!
+% suspend_reasons, Reason), !` (PDF p9): fails if Reason is not there.
+:remove(List, X) :- E0 = List!elements, delete(E0, X, E), !, List!elements := E;
+% INTERPOLATED from: the selector remove_first/2 (classes.tsv).
+:remove_first(List, X) :- [X|E] = List!elements, List!elements := E;
+% INTERPOLATED from: the selector remove_last/2 (classes.tsv).
+:remove_last(List, X) :- E0 = List!elements, append(E, [X], E0), !, List!elements := E;
+% INTERPOLATED from: the selector get_first/2 (classes.tsv).
+:get_first(List, X) :- [X|_] = List!elements;
+% INTERPOLATED from: the selector get_last/2 (classes.tsv).
+:get_last(List, X) :- E = List!elements, append(_, [X], E), !;
+% INTERPOLATED from: the selector get_contents/2 (classes.tsv).
+:get_contents(List, E) :- E = List!elements;
+% INTERPOLATED from: TM-100 Fig. 3.1 resume/2, `:empty(Process!
+% suspend_reasons), !` (PDF p9).
+:empty(List) :- List!elements == [];
+% INTERPOLATED from: the selector clear/1 (classes.tsv).
+:clear(List) :- List!elements := [];
+% INTERPOLATED from: the selector count/2 (classes.tsv).
+:count(List, N) :- len(List!elements, 0, N);
+
+local
+append([], L, L);
+append([X|A], B, [X|C]) :- append(A, B, C);
+delete([X|A], X, A) :- !;
+delete([Y|A], X, [Y|B]) :- delete(A, X, B);
+len([], N, N) :- !;
+len([_|A], K, N) :- len(A, K+1, N);
+end.

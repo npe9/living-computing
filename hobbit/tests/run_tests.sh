@@ -31,6 +31,10 @@ python3 "$here/test_p9kcmp.py"
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
 python3 "$here/test_cyc_classify.py"
+# The timing twin (sem/hobbit_timing.py, plan milestone C2): its base cyc
+# equals every golden's hand-derived cyc, and its synthetic rules hold;
+# za and zc are checked in run_p9host_tests.sh.
+python3 "$here/test_hobbit_timing.py"
 python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
@@ -54,6 +58,11 @@ python3 "$here/test_own9term.py"
 # (EightHalfReplayTest, the longest part; P9TERM_8HALF=ls replays the
 # mouse-swept window and `ls` in it as well).
 python3 "$here/test_p9term.py"
+# The Hobbit on the three-machine 1e network (fs9, cpu9, the model on
+# tools/qemu1e/hub.py), replayed: glenda's wrong password refused and the
+# right one accepted by fs9's auth server, every frame as recorded (~80 s;
+# P9HUB_CPU=1 replays on through `cpu -h cpu9` and its output, ~8 min).
+python3 "$here/test_p9hub.py"
 python3 "$here/test_p9shim.py"
 # The ULX3S ESP32 Ethernet relay: its link protocol (C, built with cc)
 # against tools/qemu1e/hub.py, and the s9term session replayed through it

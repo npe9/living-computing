@@ -353,6 +353,23 @@ A model that matches every page and does not fit has not met the goal.
   cannot, partitioning is recorded as an owner decision with the
   measured numbers.
 
+**MCP: from stubs to MCP's own paths (added 2026-11-24).** IPL
+completes, and MCP runs a job card through UNCODE, its loader and job end
+(`boot_plan.md`; `NEXT.md` "THE BSS PROCESSOR, RECONSTRUCTED"). The run
+leans on stubs: the dispatcher, `$RET`, and `$SCR`/`$FETCH` over core
+images instead of the disk.
+- **M-a.** Replace `$FETCH`'s core-image stub with MCP's own fetch from
+  the 353. The simulated disk now holds what IPL writes (D2, merged
+  `19b7234`: P1 writes arcs 0-32, 33 arcs, measured), so the stub's
+  reason is gone. Exit: `check_bss_mcp_go.py` passes with the stub
+  deleted.
+- **M-b.** Then `$SCR`, `$RET` and the dispatcher, each the same way.
+- **M-c.** A warm start needs C22-6678-1 p.32's "Disk IPL" card deck,
+  which the repo does not hold. Search for it (G5), and reconstruct it
+  only if it is lost, labelled RECONSTRUCTION.
+- STRAP II and FORTRAN IV compiling under MCP, and the DCP (boot plan
+  M4), follow. Their code status is in `archival_inventory.md`.
+
 **IBM's own diagnostics as oracles, not yet run** (`archival_inventory.md`):
 - The three memory tests, `ja_bp6a` (6 pp), `ja_bm6a` and `ja_bb6b`,
   gate A11a, the memory cycle.

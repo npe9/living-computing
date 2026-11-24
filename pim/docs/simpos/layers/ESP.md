@@ -161,7 +161,7 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   | `:m(Obj,A...)` | Dispatch on the first argument: a class object selects class methods, an instance selects instance methods |
   | `Class:m(ClassObj,...)` | Class method of a named ancestor |
   | `:Class:m(Inst,...)` | Instance method of a named ancestor |
-  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46) |
+  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46). Modelled in `psi/kl0.py` (OURS, 2026-11-24): the vector's elements become the arguments after the receiver; `psi/test_espc.py` test_refute sends `put/2` to a stream through it |
   
   Built-ins `method_call` and `overridden_method_call` exist (TM-388 App D).
 - **Missing method or slot.** The call goes to `:undefined_method(Obj,Name,ArgVec,Addr)` or
@@ -181,6 +181,20 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
 
 Initialisation runs as an after-demon of `new`. MEASURED: these compile to kind-0x22/0x32
 predicates, e.g. `display_pos/1` in `time_graph_window` from p_tgraph.esp:81.
+
+*2026-11-24, witnessed and run (`pim/psi/kl0.py`, `test_kl0.py`):*
+
+- **Calling convention** (MEASURED). All 424 initialisers in the eleven packages have arity 1.
+  There is no receiver argument, and the value comes back in A0.
+- **Semantics** (TM-388 §3.5 pp.49-50, page images).
+  - Instance slots are filled when `new` makes the instance. Class slots are filled "when the
+    class is generated".
+  - A failing initialiser makes `new` fail, or leaves the class not generated.
+  - The order of the initialisers "is uncertain".
+  - An initialiser cannot use the object being made.
+  - For work that needs the object, TM-388 recommends an after-demon of `new`, whose second
+    argument "has already been unified with the instance object".
+  - `slot is Class` stores a new instance of Class (p.49).
 
 **Rules:**
 
@@ -227,6 +241,15 @@ Pattern => Expansion [when Gen] [where Check] [with Clauses] [by Var] :- Cond
 
 **Macro banks:** `macro_bank N [with_macro M] has [nature...;] ... end.` Every bank inherits
 `esp_macro_expander`, which provides `expand_clause/5` and `expand_goals/3`.
+
+*Witness (2026-11-24):* `psi/espc.py` (OURS) expands a class's
+`with_macro` bank's plain `Pattern => Expansion` rules, the bank's
+natures' rules after its own, top-down and again on the result. On
+kappa2 all 739 classes with source then compile, and 109 predicates
+whose source a bank rule changed are cell for cell identical to
+`kappa.ptf` (`psi/test_espc.py` MacroBank). Rules with a tail
+(`when`/`where`/`with`/`by`/`:-`), `==>` and the backquote are not
+modelled; a predicate that meets one is refused.
 
 **Standard macros** (TM-388 App C pp.143–144):
 
