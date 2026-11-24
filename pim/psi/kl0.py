@@ -229,7 +229,9 @@ class Code:
             self.preds[p.offset] = p
             for c in p.cells:
                 self.cells[c[0]] = c
-        self.pool = None
+        # a template compiled by psi/espc.py carries its own pool; a loaded
+        # one is read from its held record on first use
+        self.pool = getattr(t, 'pool', None)
         self.lib = lib
 
     def sym(self, n):
@@ -563,6 +565,10 @@ class Machine:
             if not co.complete:
                 raise Refusal('simpos', 'send %s:%s/%d (not in the held classes; ancestors %s)' % (
                     cid, name, arity, ' '.join(r for r, _s in co.opaque)))
+            if m is None and getattr(self.lib.templates.get(cid), 'standin', False):
+                # a stand-in (psi/standin/, OURS) has only some of the
+                # lost class's methods: the rest is still SIMPOS
+                raise Refusal('simpos', 'send %s:%s/%d (not in the stand-in)' % (cid, name, arity))
             if m is None:
                 # not in the class's own table: a method of class `class`
                 # (not held, other than new/2), or one a mixin leaves to

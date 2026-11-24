@@ -1,0 +1,57 @@
+% SCAFFOLDING stand-in for SIMPOS's class `stream`, compiled by
+% psi/espc.py into the package `simpos`.  The class text is PRINTED
+% SOURCE, not ours: TM-100 Figure 3.6 "Part of class 'stream'" (PDF
+% p14-15, printed folios 12-13), as transcribed in
+% docs/simpos/printed/listings/tm0100_p14.esp and tm0100_p15.esp.  The
+% figure is "part of" the class: SIMPOS's full `stream` is lost.
+%
+% Three corrections to the print, all marked below, are OURS; without
+% them the figure is not ESP (TM-388 App. A), and espc.py refuses it:
+%   1. `:add_object(Stream!post_queue, Object)` has no comma before the
+%      disjunction that follows it (tm0100_p14.esp transcriber's note);
+%   2. `:remove_object(Stream!post_queue, Object), )` has a comma before
+%      the closing parenthesis (tm0100_p15.esp transcriber's note);
+%   3. `:empty(Stream!waiting_queue), !,` has a comma between the cut and
+%      the `;` (tm0100_p14.esp line 44, as printed; not noted there).
+% The three changes are marked `% [correction N]`; layout as printed.
+% Every method and slot below is PRINTED (each labelled); nothing here
+% is INTERPOLATED.  What the figure leaves out (the classes
+% waiting_queue and post_queue, process's inhibit_interrupt/1,
+% allow_interrupt/1, hook/unhook, resume/suspend) has no stand-in yet:
+% kl0 refuses those sends as SIMPOS calls.
+
+    class  stream  has
+
+    % PRINTED: TM-100 Fig. 3.6, PDF p14 (tm0100_p14.esp)
+    :create(Class, Stream) :-
+            :new(Class, Stream);
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.6, PDF p14 (both slots)
+    attribute ( waiting_queue   := Queue :- :create(#waiting_queue, Queue) ),
+              ( post_queue      := Queue :- :create(#post_queue, Queue) );
+
+    % PRINTED: TM-100 Fig. 3.6, PDF p14, corrections 1 and 3
+    :put(Stream, Object):-
+            :inhibit_interrupt(#process),
+            :add_object(Stream!post_queue, Object),
+            % [correction 1] comma added after the goal above
+            (   :empty(Stream!waiting_queue), !
+            % [correction 3] comma removed after the cut above
+            ;   :unhook(Stream!waiting_queue, Process),
+                :resume(Process, stream(Stream)) ),
+            :allow_interrupt(#process);
+
+    % PRINTED: TM-100 Fig. 3.6, PDF p14-15, correction 2
+    :get(Stream, Object):-
+            :inhibit_interrupt(#process),
+            (   :remove_object(Stream!post_queue, Object), !
+            ;   :self(#process, Process),
+                :hook(Stream!waiting_queue, Process),
+                :suspend(Process, stream(Stream)),
+                :remove_object(Stream!post_queue, Object) ),
+            % [correction 2] comma removed before the `)` above
+            :allow_interrupt(#process);
+
+    end.
