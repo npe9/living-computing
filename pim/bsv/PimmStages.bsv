@@ -70,6 +70,7 @@ endmodule
 
 interface PimmExec;
   method Action newGoal;                       // clear the clause-selection state
+  method Bit#(32) reductions;                  // the goal's so far: executes, proceed
   method Action enq(Fetched f);
   method ActionValue#(Step) out;
 endinterface
@@ -114,6 +115,9 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
   Vector#(5, Reg#(Cell)) sv  <- replicateM(mkRegU);   // string_operation's vector
+  // the reductions of the goal in hand: one per execute and one for its
+  // proceed (the shoen's statistics, PimmShBox.bsv)
+  Reg#(Bit#(32))     nRed    <- mkReg(0);
 
   // the instruction in hand
   let pc   = inQ.first.pc;
@@ -210,9 +214,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     endaction
   endfunction
 
-  // the shoen built-ins of stage 1 (PimmShBox.bsv); the inputs that are
-  // waited for: MinPrio, MaxPrio, ExcepMask, or the handle
-  Bool shoenHere = op == op_create_shoen || op == op_start_shoen;
+  // the shoen built-ins of stages 1 and 2 (PimmShBox.bsv); the inputs
+  // that are waited for: MinPrio, MaxPrio, ExcepMask, or the handle
+  Bool shoenHere = op == op_create_shoen || op == op_start_shoen
+                || op == op_shoen_statistics || op == op_remove_shoen;
   Bit#(3) shoenIns = op == op_create_shoen ? 3 : 1;
 
   // wait_vector_N, N = 1..6
@@ -489,6 +494,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       // the same goal goes on as a reduction of the predicate at the label
       alt <= tagged Invalid;
       nNoted <= 0;
+      nRed <= nRed + 1;
       finish(tagged Next labelOf(pc, c16));
     end
     else if (op == op_execute_external) begin
@@ -541,7 +547,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       vals[3] <= intC(0);          // create_shoen does not wait for Code
       st <= XShIn;
     end
-    else if (op == op_proceed) stop(EndDone);
+    else if (op == op_proceed) begin
+      nRed <= nRed + 1;
+      stop(EndDone);
+    end
     // ---- body built-ins
     else if (builtinHere) begin
       bK <= 0;
@@ -1705,6 +1714,16 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XShS;
       end
     end
+    // shoen_statistics(Shoen, ^NewShoen), 22:E6, and remove_shoen(Shoen),
+    // 22:E4 (stage 2): anything but a handle is refused
+    else if (op == op_shoen_statistics || op == op_remove_shoen) begin
+      if (vals[0].tag != tag_SHREC) stop(EndUnimp);
+      else begin
+        if (op == op_shoen_statistics) shbox.statistics(vals[0]);
+        else shbox.remove(vals[0]);
+        st <= XShS;
+      end
+    end
     // MinPrio, MaxPrio and ExcepMask must be integers (shoen:execute1/7
     // passes vectors: refused) and are then dropped: no priorities and
     // no exceptions here
@@ -1738,10 +1757,12 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     finish(tagged Next (pc + 2));
   endrule
 
-  // a shoen that is not dormant is refused; NewShoen is the same handle
+  // a shoen that is not dormant is refused (a shoen removed already, by
+  // remove_shoen); NewShoen is the same handle, remove_shoen has none
   rule shStarted (st == XShS);
     let r <- shbox.result;
     if (!r.ok) stop(EndUnimp);
+    else if (op == op_remove_shoen) next;
     else begin
       regs.wr(y, vals[0]);
       next;
@@ -1776,6 +1797,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else begin
         alt <= tagged Invalid;
         nNoted <= 0;
+        nRed <= nRed + 1;
         finish(tagged Next a);
       end
     end
@@ -1828,7 +1850,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   method Action newGoal;
     alt <= tagged Invalid;
     nNoted <= 0;
+    nRed <= 0;
   endmethod
+
+  method Bit#(32) reductions = nRed;
 
   method Action enq(Fetched f) = inQ.enq(f);
   method ActionValue#(Step) out;

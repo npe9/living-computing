@@ -170,18 +170,28 @@ refusal, the reference raising Unimplemented, the Bluespec ending
     get_nil, cell 7874, not `E fail`
   a shoen started twice (Control = [start, start | _]): at the second
     start_shoen, cell 15755
-  the closed Control [start]: remove_shoen, cell 15792
+  the closed Control [start]: remove_shoen, cell 15792 (stage 1; since
+    stage 2 remove_shoen is implemented and this runs, in
+    lockstep_shoen2.py `closed control`)
   create_shoen's stub with an atom for MinPrio
 
-Not run at all: stop_shoen, abort_shoen, shoen_statistics,
-add_shoen_resource, allow_shoen_resource_report, shoen_profile,
-create_profiling_shoen, raise (no handler in either model: refused
-as any unknown instruction is); a report stream that a consumer has
-bound; a shoen ended BY the end of its child (the step up from a
-parent's count reaching 0: with the image's code a parent always
-keeps control/2, see `nested`); a merger inside a shoen; three shoen
-deep; the closed Control list the IPL's monitors send ([statistics],
-then []).
+Not run at all: stop_shoen, abort_shoen, add_shoen_resource,
+allow_shoen_resource_report, shoen_profile, create_profiling_shoen,
+raise (no handler in either model: refused as any unknown instruction
+is); a report stream that a consumer has bound; a shoen ended BY the
+end of its child (the step up from a parent's count reaching 0: with
+the image's code a parent always keeps the child's report/2, see
+`nested` here and in lockstep_shoen2.py); a merger inside a shoen;
+three shoen deep.  shoen_statistics, remove_shoen and the closed
+Control lists the IPL's monitors send are stage 2: lockstep_shoen2.py.
+
+Re-pinned for stage 2 (2026-11-23), 4423 -> 4495 trace lines, no value
+changed: the shoen record has two more cells (asm/pimm_layout.py), so
+each of the eight shoen made writes SH_REDUCTIONS and SH_REMOVE at
+create (16 lines), and every end of a run of a goal inside a shoen
+writes SH_REDUCTIONS before the count (56 lines).  Counted on the
+reference's trace: 64 writes of the reductions cells, 8 of the remove
+cells.  The injections above were run before that change.
 """
 import os
 import sys
@@ -194,7 +204,7 @@ import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=11, lines=4423)
+PINNED = dict(parts=11, lines=4495)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 TEXT = 'abc'
 ABC = (8, [ord(c) for c in TEXT])
