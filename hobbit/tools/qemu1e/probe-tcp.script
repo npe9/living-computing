@@ -13,5 +13,5 @@ wait ^% 60
 type rc /serve 10.0.2.15 255.255.255.0\n
 wait ^serving 120
 screen
-host python3 ../../tools/qemu1e/p9probe.py 127.0.0.1 ${P9PORT:-5640} /tmp/p9/plan9-1e.tar.bz2 --walk release.list lib/ndb/local hobbit/s9term 386/9pc rc/bin/termrc sys/lib/troff/font/devpost/Hb sys/lib/troff/font/devpost/HB sys/src/cda/lde/main.c sys/src/cda/LDE/main.c adm/mkext.log
+host python3 ../../tools/qemu1e/p9probe.py 127.0.0.1 ${P9PORT:-5640} ${P9TAR:-/tmp/p9/plan9-1e.tar.bz2} --walk release.list lib/ndb/local hobbit/s9term 386/9pc rc/bin/termrc sys/lib/troff/font/devpost/Hb sys/lib/troff/font/devpost/HB sys/src/cda/lde/main.c sys/src/cda/LDE/main.c adm/mkext.log
 screen

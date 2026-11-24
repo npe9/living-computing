@@ -5,10 +5,22 @@
 # NE2000, answers BOOTP with 1e's ip/bootp (from /lib/ndb/local, to
 # which build.sh appended tools/qemu1e/ndb.local), and listens on il
 # and tcp with the services in the kfs's /rc/bin/service.9fs (il17008,
-# tcp564), run trusted (-d names a directory that does not exist, so no
-# service runs untrusted as none).
+# tcp564, and the authentication services il17020-il17024), run trusted
+# (-d names a directory that does not exist, so no service runs
+# untrusted as none).
+#
+# It is also the authentication server: 1e's auth/keyfs serves the
+# kfs's /adm/keys (written by /authinit) on /mnt/keys, where the auth
+# services look keys up (sys/src/auth/findkey.c).  A PC has no
+# #r/nvram (pc/devrtc.c: only `rtc`), so keyfs -d decrypts with
+# /dev/crypt, i.e. with the key of the password typed at this machine's
+# boot: the scripts all type `password`, and /adm/keys is encrypted
+# with that key.  keyfs is mounted before the listeners start: listen
+# takes a copy of the name space (rfork RFNAMEG, listen.c main).
 disk/kfs -f /dev/hd0fs
 mount -c /srv/kfs /n/kfs
+bind /n/kfs/mnt /mnt
+/n/kfs/386/bin/auth/keyfs -d /n/kfs/adm/keys
 ip/ipconfig -m $2 $1
 # ndb/cs (run by termrc) set /dev/sysname from our ether address;
 # bootp needs it in the environment

@@ -1,0 +1,37 @@
+#!/bin/rc
+# Run on the 1e floppy system (9dos) to make the kfs's authentication
+# database and the user glenda, as 1e's administrator would
+# (auth(8), keyfs(4), kfscmd(8)):
+#	rc /authinit
+# authinit.sh types the passwords; nothing here holds one.
+#   kfscmd newuser glenda   add glenda to the kfs's /adm/users and make
+#                           /usr/glenda with tmp, lib, bin (kfs con.c
+#                           cmd_newuser); /lib/namespace binds
+#                           /usr/$user/tmp on /tmp
+#   auth/adduser glenda     glenda's key in /adm/keys, through keyfs
+#   auth/adduser -h cpu9    the CPU server's key, as a host ("All Plan 9
+#                           CPU servers must be installed as users with
+#                           host permission", auth(8)); rexauth looks it
+#                           up by the name the client dialled
+#                           (sys/src/auth/rexauth.srv.c)
+# keyfs runs with -d, as in /serve: the key file is encrypted with the
+# key of the password typed at this boot.
+disk/kfs -f /dev/hd0fs
+mount -c /srv/kfs /n/kfs
+bind /n/kfs/mnt /mnt
+/n/kfs/386/bin/auth/keyfs -d /n/kfs/adm/keys
+disk/kfscmd 'newuser glenda'
+# the kfs was attached before glenda was a kfs user: let this console
+# write in glenda's new 775 directories
+disk/kfscmd allow
+# glenda's profile: empty, like none's on 1e's PC floppy
+# (sys/lib/pc/usr/none/lib/profile)
+> /n/kfs/usr/glenda/lib/profile
+echo authinit: adduser glenda
+/n/kfs/386/bin/auth/adduser glenda
+echo authinit: adduser -h cpu9
+/n/kfs/386/bin/auth/adduser -h cpu9
+disk/kfscmd sync
+ls -l /n/kfs/adm/keys /n/kfs/adm/users /n/kfs/usr/glenda /mnt/keys/*
+cat /n/kfs/adm/users
+echo authinit done

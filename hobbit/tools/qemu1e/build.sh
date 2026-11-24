@@ -5,6 +5,9 @@
 #
 #   tools/qemu1e/build.sh [/path/to/plan9-1e.tar.bz2] [fs-size-MB]
 #
+# The tarball: the argument, else $P9TAR, else hobbit/build/dist/ (the
+# durable copy), else /tmp/p9/ (where it first was; /tmp gets cleaned).
+#
 # Produces
 #   build/qemu/src/plan9-1e/      the release, extracted
 #   build/qemu/9dos.q, 9pc.q      shipped kernels, patched for QEMU (patch_kernel.py)
@@ -19,7 +22,11 @@ set -e
 here=$(cd "$(dirname "$0")" && pwd)
 hob=$(cd "$here/../.." && pwd)
 Q=$hob/build/qemu
-TAR=${1:-/tmp/p9/plan9-1e.tar.bz2}
+TAR=${1:-$P9TAR}
+if [ -z "$TAR" ]; then
+	TAR=$hob/build/dist/plan9-1e.tar.bz2
+	[ -f "$TAR" ] || TAR=/tmp/p9/plan9-1e.tar.bz2
+fi
 FSMB=${2:-1024}
 SHA=8718e279aa35b10a9391f330976d31c177bad00de40e7f0f67232ffa54fb7d77
 
