@@ -500,8 +500,9 @@ _TERM_NUM16 = re.compile(r'[0-9A-F]+')
 # A BLANK IS NOT A CHARACTER OF THE STATEMENT FIELD, so "(2) 10" is
 # "(2)10".  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA
 # does not give blanks to main flow unless main flow has turned on the
-# indicator, Gcaz" -- and Gcaz is on only for an alphabetic DD (p.102,
-# MQDALF) and the ID field (MPUNID).  C22-6578 printed p.21 prints the
+# indicator, Gcaz" -- and the guide turns Gcaz on for an alphabetic DD's
+# datum (pp.26, 102, MQDALF) and the ID field (p.27, MPUNID), never for
+# an address field.  C22-6578 printed p.21 prints the
 # case, Problem 2.9's "KFI(BU, 2), (2) 10,4", and says the same thing
 # (Problem 2.8 comment (d)).  tests/check_radix_blank.py.
 _TERM_RADIX = re.compile(r'\(\s*(\d+)\s*\)\s*(?=[\dA-F.])')
@@ -4152,7 +4153,12 @@ def emit_statement(stmt, symtab, image):
             t = f.strip()
             if rad is not None and t[:1].isdigit():
                 t = "(%d)%s" % (rad, t)
-            image.deposit(pos, length, parse_dd_literal(t, stmt.lineno, dmode))
+            if dmode in ('D', 'DU'):
+                val = _dd_decimal_mode(t, length, stmt.mods[0], dmode,
+                                       symtab, stmt.lineno)
+            else:
+                val = parse_dd_literal(t, stmt.lineno, dmode)
+            image.deposit(pos, length, val)
             pos += length
         return
 
@@ -5411,6 +5417,60 @@ def _dd_normalized(field, lineno=None):
         e = xexp
     return ((abs(e) << 53) | ((1 if e < 0 else 0) << 52)
             | (frac << 4) | sbyte)
+
+
+def _dd_decimal_mode(field, length, dds_text, mode, symtab, lineno=None):
+    """A numeric DD in use mode D or DU: one decimal digit a byte.
+
+    C28-6129 printed p.15 (PDF 19), read in the ink 2026-11-23: "When use
+    mode D is specified, a character-by-character type of conversion is
+    called for, wherein each decimal digit in the numeric entry is
+    converted to the four bit binary coded decimal form.  If the byte
+    size specified in the dds is greater than 4, high order zeros are
+    added. ... If use mode DU is specified, the conversion process is
+    the same.  However, no sign byte is compiled", with the printed
+    example "DD(DU, 12, 4),12  000000010010".  The sign byte is "the low
+    order byte of the converted number, equal in size to the byte size"
+    (the same page, mode B), and minus is S10 at byte size 4 (printed
+    p.29, PDF 33).  Printed p.30 (PDF 34), "Decimal Signed VFL": the
+    radix entry mode gives the radix the number is WRITTEN in ("it is
+    possible to write an integer in binary or octal and have it
+    converted to decimal"), E multiplies by powers of ten, and an
+    omitted field length or byte size is FL = 64, BS = 4.
+
+    So the value is read as parse_dd_literal reads a B/BU entry (an
+    integer, a radix literal, or E notation; an S or X suffix and a
+    fraction are refused there) and its decimal digits are laid out
+    right-justified, one per byte, the sign byte last for D.
+
+    REFUSED, LOUD, as the host STRAP II (strap/strap2 dnum.py) refuses
+    them with message 45: a byte size under 4 (p.15 says "truncation
+    occurs", and which bits go is not printed), and more digits than the
+    field holds (p.15 prints no rule for D; for B it discards high-order
+    bits).  CHOSEN, as the host does: a minus sign on a DU entry is
+    dropped, the entry being unsigned (p.15).
+    """
+    _, _, bs_expr = parse_dds(dds_text, lineno)
+    bs = 4 if bs_expr is None or not bs_expr.strip() else \
+        eval_expr(bs_expr, symtab, 0, lineno=lineno)
+    if bs < 4:
+        raise AssemblerError(
+            f"DD({mode}) byte size {bs}: a decimal byte under four bits "
+            f"is 'truncated' (C28-6129 printed p.15) by a rule the page "
+            f"does not print", lineno)
+    v = parse_dd_literal(field, lineno, None)
+    digits = str(abs(v))
+    data = length if mode == 'DU' else length - bs
+    if len(digits) > data // bs:
+        raise AssemblerError(
+            f"DD({mode}) entry {field!r} has {len(digits)} digits; a "
+            f"{length}-bit field of {bs}-bit bytes holds {data // bs}", lineno)
+    out = 0
+    for ch in digits:
+        out = (out << bs) | int(ch)
+    if mode == 'DU':
+        return out
+    return (out << bs) | (0b1000 if v < 0 else 0)
 
 
 def parse_dd_literal(field, lineno=None, mode=None):

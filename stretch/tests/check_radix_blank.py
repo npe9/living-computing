@@ -13,10 +13,13 @@ the blank and WITHB with it.
 
 THE RULE.  C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5, read in
 the ink 2026-11-23: "GETCHA does not give blanks to main flow unless
-main flow has turned on the indicator, Gcaz."  Gcaz is turned on only
-for an alphabetic DD's datum (printed p.102, MQDALF) and the ID field
-(MPUNID), so a blank anywhere else in a statement field is not seen at
-all, and "(2) 10" is "(2)10".
+main flow has turned on the indicator, Gcaz."  The guide's text turns
+Gcaz on for an alphabetic DD's datum (printed pp.26, 102, MQDALF) and
+the ID field (printed p.27, MPUNID); strap/strap2 also turns it on to
+read an entry mode.  None of these is an address field, so a blank in
+one is not seen at all, and "(2) 10" is "(2)10".  C28-6129 prints the
+same spelling in DD data: "(8) 77760" (printed p.29, PDF 33) and
+"(8) 77241" (printed p.30, PDF 34).
 
 CHECKS
   strap2_withb_equals_nob   the host STRAP II (strap/strap2) assembles

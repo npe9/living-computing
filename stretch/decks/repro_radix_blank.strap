@@ -17,8 +17,8 @@
 ! FIXED 2026-11-23: WITHB and NOB assemble to the same word.  The
 ! grammar's rule is C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5:
 ! "GETCHA does not give blanks to main flow unless main flow has
-! turned on the indicator, Gcaz" (on only for an alphabetic DD and
-! the ID field).
+! turned on the indicator, Gcaz" (on, in the guide's text, for an
+! alphabetic DD's datum and the ID field: pp.26-27, 102).
 !
 ! tests/check_radix_blank.py is the registered check.
 ! problem_2_9.strap now writes the statement with the printed blank.

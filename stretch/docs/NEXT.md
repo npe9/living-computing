@@ -1549,36 +1549,27 @@ MAIN Box 5, GETCHA gives no blanks unless Gcaz is on.  Record:
 `tests/check_radix_blank.py`'s header and `strap/README.md` "Next steps"
 item 10.
 
-## `strap_asm` ASSEMBLES A DECIMAL-MODE `DD` AS A BINARY INTEGER -- open, 2026-11-15
+## `strap_asm` ASSEMBLES A DECIMAL-MODE `DD` AS A BINARY INTEGER -- fixed 2026-11-23
 
-Found transcribing `C22-6578` Problem 2.8 (`decks/problem_2_8.strap`),
-whose subfields are `(DU, 24, 8)` and `(DU, 48, 8)`.  Reproducer:
-`decks/repro_dd_decimal_mode.strap`, registered twice in
-`tests/run_tests.sh` section 3d.
+A `DD` in use mode `D`/`DU` now gives one decimal digit a byte, with a
+sign byte for `D`, under strap_asm as under STRAP II.  Rule: C28-6129
+printed p.15 (which prints `DD(DU, 12, 4),12` as `000000010010`) and
+printed pp.29-30.  Record: `tests/check_dd_decimal_mode.py`'s header and
+`strap/README.md` "Next steps" item 10.
 
-    DD(DU,16,8), 12        should be 0102          strap_asm: 000C
-    DD(DU,16,4), 1234      should be 1234          strap_asm: 04D2
-    DD(DU,48,8), 000125    should be 000000010205  strap_asm: 00000000007D
-    DD(D,16,4), -123       should be 1238          strap_asm: FF85
+## `strap_asm` WRITES A `DD(B)` ENTRY WITH NO SIGN BYTE -- open, found 2026-11-23
 
-The rule is `C22-6531` printed pp.28-29 (PDF 29-30): "The two decimal
-modes in DD and DDI statements represent the only cases in which Strap-1
-converts numbers to an internal decimal radix"; `DD(D, , 8), 432E3` --
-"Four binary zeros are inserted in the zone positions of each byte"; a
-4-bit sign byte in `D`, none in `DU`.  `parse_dd_literal` returns
-`int(field, 10)` whatever the mode, and a negative value is then stored
-as a two's complement, which is not a 7030 form.
-
-**The host STRAP II (`strap/strap2`, `ASM=strap2`) gets all four right**,
-so the first registered run pins `strap_asm`'s wrong words (labels
-`*_WRONG_want_*`) and the second checks the rule's values through
-STRAP II.  When `strap_asm` is fixed the first run's checks must be
-changed to the wanted values, not deleted.  Not fixed here: the task
-that found it was not allowed to edit `strap/`.
-
-Nothing in the suite depended on it: `grep -E 'DD\(DU?[,)]' decks/*.strap`
-finds a decimal-mode `DD` in these two decks and no other (measured
-2026-11-15; `decks/` only, the MCP listing sources were not swept).
+`DD(B,16,4),-5` is `FFFB` under strap_asm, a two's complement, which is
+not a 7030 number form; STRAP II gives `0058`.  C28-6129 printed p.15:
+in use mode B "The sign byte is the low order byte of the converted
+number, equal in size to the byte size specified in the dds", and the
+sign bit's place for a byte size under 4 is printed p.29's table (S1,
+S2, S4, S10).  Found fixing the decimal modes (the entry above), which
+left mode B alone.  A positive entry is wrong too: `DD(B,16),5` is
+`0005` under strap_asm and `000A` under STRAP II (the default byte size
+is 1, and the one-bit sign byte shifts the number up).  No deck in
+decks/ writes `DD(B,` or `DD(B)` (grep, 2026-11-23), which is why
+`strap2_compare.py` never saw it.
 
 ## BUCHHOLZ APPENDIX B: WHAT THE WORKED PROGRAMS FOUND -- 2026-11-15
 

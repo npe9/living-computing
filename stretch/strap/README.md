@@ -1110,11 +1110,37 @@ until one has.
     - ~~A blank after a radix specifier, `(2) 10`, refused.~~ **Fixed.**
       C22-6729 printed p.20 (PDF 20), Chart MAIN Box 5: "GETCHA does
       not give blanks to main flow unless main flow has turned on the
-      indicator, Gcaz", and Gcaz is on only for an alphabetic DD's
-      datum (printed p.102) and the ID field.  `_TERM_RADIX` now takes
+      indicator, Gcaz", and the guide turns Gcaz on for an alphabetic
+      DD's datum (printed pp.26, 102) and the ID field (p.27), never
+      for an address field.  `_TERM_RADIX` now takes
       blanks inside and after the parentheses.  C22-6578 printed p.21's
       `KFI(BU, 2), (2) 10,4` assembles to `(2)10,4`'s word, as the
       host STRAP II's does; `decks/problem_2_9.strap` writes the
       printed blank.  `tests/check_radix_blank.py`, 5 of 5; the
       injection (the old pattern) fails two of them.  No other deck's
       image moved (825 hashed).
+    - ~~A decimal-mode `DD` assembled as a binary integer.~~ **Fixed.**
+      C28-6129 printed p.15 (PDF 19): in use mode D "each decimal digit
+      in the numeric entry is converted to the four bit binary coded
+      decimal form", high-order zeros for a byte size over 4, and DU
+      "the same ... no sign byte"; the page prints
+      `DD(DU, 12, 4),12` as `000000010010`.  Printed p.30 (PDF 34): a
+      radix entry is the radix the number is written in, E scales by
+      ten, FL = 64 and BS = 4 by default; minus is S10 (p.29).
+      `_dd_decimal_mode` lays the digits out; `parse_dd_literal` still
+      reads the value, so an S or X suffix or a fraction is refused as
+      before.  Refused loud, as the host STRAP II refuses them (45): a
+      byte size under 4 (p.15's "truncation occurs" does not say which
+      bits go) and more digits than the field holds.  CHOSEN, as the
+      host does: a minus on a DU entry is dropped.
+      `tests/check_dd_decimal_mode.py` 22 of 22 (both assemblers; the
+      bypass injection fails the 11 strap_asm rows it should).  Images
+      moved: `repro_dd_decimal_mode.strap` and the three
+      `problem_2_8*.strap` decks, under strap_asm only, onto STRAP II's
+      words (the suite runs the 2.8 decks with `ASM=strap2`, so no pin
+      moved there); `check_strap2_oracles.py`'s `KNOWN` lost those four.
+      Mode B's sign byte is NOT changed here, and it is wrong the same
+      way: measured 2026-11-23, `DD(B,16,4),-5` is `FFFB` under
+      strap_asm (a two's complement) and `0058` under STRAP II (5, then
+      the sign byte 1000), as p.15's mode-B paragraph says.  Open;
+      `docs/NEXT.md` has the entry.
