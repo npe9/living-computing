@@ -27,8 +27,8 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
 - I/O window accepts a store on any lane: test_wrong_lane_stops.
 - Keyboard controller self test answers 0x54: test_kb_init.
 - A read of the IIR does not clear the THRE interrupt: test_thre_interrupt.
-- With BEBOOT_LONG=1: the idle skip leaves R16 of _null_thread unchanged:
-  see MountTest's header.
+- With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
+  MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
 import hashlib
 import os
@@ -432,7 +432,15 @@ class BootTest(unittest.TestCase):
 class MountTest(unittest.TestCase):
     """On to the root volume: the SCSI scan (LUN 0 only), the floppy
     driver finding no diskette in drive 1 (the kernel's own messages),
-    and 'be' mounted from target 0."""
+    and 'be' mounted from target 0.
+
+    Observed 2026-11-24 with the idle skip leaving _null_thread's R16
+    (its lap counter) unadvanced: test_idle_skip_changes_nothing fails
+    (CPU 1's stack cache differs, 555439 laps counted without the skip,
+    528940 with it) and nothing else.  Before the skip measured the
+    timers' own increments per lap (a 0-cycle folded JMP counts a model
+    cycle but no timer tick), this test found the skipped run 41,580
+    instructions short of the mount."""
 
     @classmethod
     def setUpClass(cls):
