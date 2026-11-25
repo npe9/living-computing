@@ -2419,7 +2419,7 @@ Effect, method by method:
     check_argument/2`. Not progress. The cause was traced for
     `check_argument/2` only: the census's unbound first argument takes
     clause 1, which binds it to `initiator` (`get r0`, @b8), cuts (`dc
-    02`) and then fails on the slot it compares. The other five were
+    02`) and then fails on the slot it compares. The other six were
     checked alone but not traced.
   - 6 stop at `not_less_than` on an unbound argument (cmt and scsi
     `send_data/4`, `receive_data/4`, `request/4`).
