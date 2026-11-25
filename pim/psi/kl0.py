@@ -188,6 +188,9 @@ class Str:
     def set_codes(self, codes):
         self.text = ''.join(P.ch(x) for x in codes)
 
+    # Python equality compares contents, for tests and tables only.  KL0's
+    # unification and `==` do NOT use it: on the PSI two strings unify only
+    # when they are the same stored string (see Machine.unify).
     def __eq__(self, o):
         return isinstance(o, Str) and o.text == self.text
 
@@ -284,6 +287,7 @@ class Code:
         # one is read from its held record on first use
         self.pool = getattr(t, 'pool', None)
         self.lib = lib
+        self.strs = {}      # pool cell -> its string, when POOL_STR_PER_CELL
 
     def sym(self, n):
         return P.sym(dict(syms=self.t.symbols), n)
@@ -294,7 +298,22 @@ class Code:
         k = cell - 13
         if not 0 <= k < len(self.pool):
             raise Refusal('pool', '%s: pool cell %d outside the %d constants read' % (self.id, cell, len(self.pool)))
-        return build(self, self.pool[k])
+        x = self.pool[k]
+        if POOL_STR_PER_CELL and x[0] == 'str':
+            if k not in self.strs:
+                self.strs[k] = build(self, x)
+            return self.strs[k]
+        return build(self, x)
+
+
+# A string constant in a clause: one stored string per pool cell (every
+# load of the cell is the same string), or a fresh string per load?  No
+# held source settles it, and since strings unify only by storage (TM-388
+# PDF p79) the choice is visible.  INFERENCE: a fresh string per load, as
+# kl0 always did, which keeps a constant safe from set_string_element on
+# an earlier load.  True gives one per cell (the census was run both ways,
+# psi/README.md).
+POOL_STR_PER_CELL = False
 
 
 def read_pool(t):
@@ -450,7 +469,14 @@ class Machine:
             if len(a.args) != len(b.args):
                 return False
             return all(self.unify(x, y) for x, y in zip(a.args, b.args))
-        if isinstance(a, (Str, ClassRef)) and a == b:
+        # A string unifies only with itself: the same storage (logical
+        # address of the first element, its position in the word, element
+        # length and count).  TM-388 PDF p79 (folio 67): 'abc'='abc', == and
+        # =:= all fail, equal_string/2 succeeds; p117-119 (folio 105-107),
+        # unify rule (iii)b and Table 4-3; p169 (folio 157), ESP's "ABC" =
+        # "ABC" fails; TM-115 PDF p97 (folio 92).  A Str object is one stored
+        # string here, so identity is `is` (tested above).
+        if isinstance(a, ClassRef) and a == b:
             return True
         return False
 
@@ -1036,8 +1062,10 @@ class Machine:
 
     def identical(self, a, b):
         x, y = deref(self.x[a]), deref(self.x[b])
+        # strings: the same storage only (TM-388 PDF p79, p119 Table 4-3),
+        # so `is`, above
         return x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
-            (isinstance(x, (Str, ClassRef)) and x == y)
+            (isinstance(x, ClassRef) and x == y)
 
     def op_identical(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.identical(a, b) else self.fail()
@@ -1090,7 +1118,8 @@ class Machine:
         self.env.y[b] = self.x[a]
         self.nxt(code, off)
 
-    op_get_variable_p_24 = op_get_variable_p
+    # pmi 24 get_builtin_variable (TR-236 Fig. 1): as get_variable_p here
+    op_get_builtin_variable = op_get_variable_p
 
     def op_get_variable_t(self, code, off, a, b, c, v):
         self.x[b] = self.x[a]
@@ -1123,7 +1152,7 @@ class Machine:
     def op_get_list(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.get_struct(a, 'list', 2) else self.fail()
 
-    def op_get_list_vars(self, code, off, a, b, c, v):
+    def op_get_var_var_list(self, code, off, a, b, c, v):
         if not self.get_struct(a, 'list', 2):
             return self.fail()
         el = self.S[0]
@@ -1157,12 +1186,15 @@ class Machine:
     def op_unify_value_p(self, code, off, a, b, c, v):
         self._uval(self.env.y[a], code, off)
 
-    op_unify_value_p_42 = op_unify_value_p
+    # pmi 44 unify_local_value_p (TM-444 p31): kl0 has no local stack to
+    # globalise from, so it unifies as unify_value_p (OURS)
+    op_unify_local_value_p = op_unify_value_p
 
     def op_unify_value_t(self, code, off, a, b, c, v):
         self._uval(self.x[a], code, off)
 
-    op_unify_value_t_43 = op_unify_value_t
+    # pmi 45 unify_local_value_t: as unify_value_t (OURS, as above)
+    op_unify_local_value_t = op_unify_value_t
 
     def op_unify_integer(self, code, off, a, b, c, v):
         self._uval(u16('unify_integer', v), code, off)
@@ -1198,8 +1230,10 @@ class Machine:
         self.x[a] = self.env.y[b]
         self.nxt(code, off)
 
-    op_put_value_p_a4 = op_put_value_p
-    op_put_value_p_a5 = op_put_value_p
+    # pmi a4 put_local_value, a5 put_unsafe_value (TM-444 pp30-31): on the
+    # PSI each may globalise; kl0 has no stacks, so each copies (OURS)
+    op_put_local_value = op_put_value_p
+    op_put_unsafe_value = op_put_value_p
 
     def op_put_variable_t(self, code, off, a, b, c, v):
         # A != X witnessed (step 3d): p_tgraph.esp:70-72 `a1 00 02`, both
@@ -1287,23 +1321,23 @@ class Machine:
         self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
                     'subtract')
 
-    def op_add_immediate(self, code, off, a, b, c, v):
+    def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
         self.x[c] = self._int(self.x[a], 'add') + b
         self.nxt(code, off)
 
-    def op_subtract_immediate(self, code, off, a, b, c, v):
+    def op_subtract_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (as_pred.esp:254-256 `46 04 0b 00`, step 3d)
         self.x[c] = self._int(self.x[a], 'subtract') - b
         self.nxt(code, off)
 
-    def op_multiply_immediate(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_immediate')
+    def op_multiply_constant(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_constant')
 
-    def op_divide_immediate(self, code, off, a, b, c, v):
+    def op_divide_constant(self, code, off, a, b, c, v):
         x = self._int(self.x[a], 'divide')
         if x < 0 or b == 0:
-            raise Refusal('operand', 'divide_immediate %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
+            raise Refusal('operand', 'divide_constant %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
         # R != A is witnessed (c_grade_ex.esp:26 `49 00 0a 07`, step 3e)
         self.x[c] = x // b
         self.nxt(code, off)
@@ -1317,8 +1351,8 @@ class Machine:
         self.nxt(code, off)
 
     def op_new_heap_vector(self, code, off, a, b, c, v):
-        if a != b:
-            raise Refusal('operand', 'new_heap_vector with V != N unwitnessed')
+        # V != N is witnessed (2026-11-25): kappa##format_conv sv_to_hv/2
+        # @1b `19 02 04 00` (FMT_CONV.ESP:13-16, Size in A4, HV out in A2)
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
         self.nxt(code, off)
 
@@ -1329,6 +1363,12 @@ class Machine:
         return t
 
     def op_string(self, code, off, a, b, c, v):
+        # a type test: string(?String, ^Length, ^Size) is listed under "Data
+        # Type and Attributes" in TR-044 App. A.2 (PDF p39), `?` an argument
+        # of any kind; so it fails on anything but a string, unbound included
+        # (INFERENCE from the listing: no failing call is printed)
+        if not isinstance(deref(self.x[a]), Str):
+            return self.fail()
         s = self._str(self.x[a], 'string')
         self.x[b] = len(s.codes())
         self.x[c] = s.type

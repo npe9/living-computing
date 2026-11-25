@@ -46,7 +46,9 @@ them):
   The integer cell after a `c7` is the cell count of the whole switch
   block that follows it.
 
-Opcode names are NOT known from a document.  The few used in comments
+Opcode NUMBERS are not printed in any held document; the MNEMONICS are
+(TM-444 PDF p6-16, 30-31; TR-236 PDF p5), so a number is tied to a
+mnemonic only by a witness.  The few names used in comments
 are the known-plaintext readings of docs/binary_reverse_engineering.md
 §4.2 and of witness.py; the listing prints raw opcodes.
 """

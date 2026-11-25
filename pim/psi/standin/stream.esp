@@ -15,10 +15,11 @@
 %      the `;` (tm0100_p14.esp line 44, as printed; not noted there).
 % The three changes are marked `% [correction N]`; layout as printed.
 % Every method and slot below is PRINTED (each labelled); nothing here
-% is INTERPOLATED.  What the figure leaves out (the classes
-% waiting_queue and post_queue, process's inhibit_interrupt/1,
-% allow_interrupt/1, hook/unhook, resume/suspend) has no stand-in yet:
-% kl0 refuses those sends as SIMPOS calls.
+% is INTERPOLATED.  What the figure leaves out is stood in elsewhere:
+% the classes waiting_queue (with hook/2, unhook/2, empty/1) and
+% post_queue (INTERPOLATED, waiting_queue.esp, post_queue.esp), and
+% process's self/2, inhibit_interrupt/1, allow_interrupt/1, resume/2
+% and suspend/2 (process.esp).
 
     class  stream  has
 

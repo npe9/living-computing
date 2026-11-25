@@ -30,8 +30,10 @@ Container, 16-bit big-endian words (MEASURED on all six files; see
   instance method, 0x11/0x12 local (INFERENCE from the trailer vectors).
   Local call targets are cell + 2 + signed 16 bits (opcodes 60, 61, 62).
 
-Opcode NAMES are not known (no KL0 instruction table is held); the
-listing prints opcodes in hex with atoms and selectors resolved.
+Opcode NUMBERS are not printed in any held document; the MNEMONICS are
+(TM-444 PDF p6-16, 30-31; TR-236 PDF p5), so a number is tied to a
+mnemonic only by a witness (psi/kl0_opcodes.tsv).  The listing prints
+opcodes in hex with atoms and selectors resolved.
 
 Usage:
     python3 asm/ptfdump.py                 packages and counts

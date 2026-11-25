@@ -403,7 +403,6 @@ requirement	standard_io_buffer	instance	getl	2	2	cal-esp/deb2.12/dmenu.esp:731
 requirement	{as_debugger_goal_input|as_debugger_input_buffer_processing}	instance	save_input_strings	2	2	cal-esp/deb2.12/dmenu.esp:1144
 requirement	?	unknown	read	3	2	cal-esp/deb2.12/gmenu.esp:238
 requirement	pathname	class	remote_or_local	6	2	cal-esp/deb2.12/init.esp:314
-requirement	?	unknown	get_string	2	2	cal-esp/deb2.12/init.esp:1301
 requirement	{as_debugger_goal_input|as_debugger_input_buffer_processing}	instance	get_slot	3	2	cal-esp/deb2.12/io.esp:358
 requirement	standard_io_window	instance	putl	2	2	cal-esp/deb2.12/io.esp:449
 requirement	?	unknown	get_slot	3	2	cal-esp/deb2.12/modify.esp:44
@@ -601,7 +600,9 @@ requirement	dummy_debugger	class	new	2	1	cal-esp/deb2.12/init.esp:688
 requirement	binary_file	class	open	4	1	cal-esp/deb2.12/init.esp:765
 requirement	?	ambiguous	set	3	1	cal-esp/deb2.12/init.esp:1128
 requirement	date	class	now	2	1	cal-esp/deb2.12/init.esp:1300
+requirement	?	unknown	get_string	2	1	cal-esp/deb2.12/init.esp:1301
 requirement	time	class	now	2	1	cal-esp/deb2.12/init.esp:1302
+requirement	time	instance	get_string	2	1	cal-esp/deb2.12/init.esp:1303
 requirement	?	unknown	close_output	1	1	cal-esp/deb2.12/init.esp:1328
 requirement	{as_debugger_goal_input|as_debugger_input_buffer_processing}	class	new	2	1	cal-esp/deb2.12/io.esp:47
 requirement	{as_debugger_goal_input|as_debugger_input_buffer_processing}	instance	class_object	2	1	cal-esp/deb2.12/io.esp:319

@@ -1417,6 +1417,193 @@ Step 3e as a whole, compared method by method with the tree at step 3d
 - Six packages: 303 / 11 / 216 becomes 307 / 12 / 211. Four refused
   methods succeed, one fails, and none moves out of success.
 
+### The source check applied: labels and citations (2026-11-25)
+
+`docs/simpos/source_check_2026-11-24.md` §5 proposed label and citation
+changes for the stand-ins (P-s1 to P-s20). Each was re-checked before
+it was applied: page images for the TR/TM citations, the held file and
+line for source citations. The status of each is marked in that file's
+§5. Only labels and comments change, so the census is unchanged
+(rerun, row by row).
+
+- Corrections of fact in a label: `semaphore` (TR-056 p11 does print a
+  stream-based `:p`/`:v`/`:init`, an earlier design, cited and not
+  transcribed); `message` and `as_message` (their nature and slots are
+  printed in TR-056's prose, so they are `PRINTED (prose)`, the slot
+  name `body` being OURS); `stream` (the classes it said had "no
+  stand-in yet" have stand-ins); `time` (the count is in MILLISECONDS,
+  CH_CLOCK.ESP:60); `pathname` (`remote_or_local/6`, not
+  `remove_or_local/6`).
+- One audit citation did not match its file: `pathname`'s
+  `remote_or_local/6` is not at cil `ms_ist.esp`:251/1668/1793 or
+  `ds_fep.esp`:912. It is cited from cal-esp `deb2.12/init.esp`:314
+  and cil `src/ds_fep.esp`:909 instead.
+- `network_listener_buffer`: TM-388 PDF p29 lists four element widths
+  (1, 8, 16, 32), not the audit's "16 or 32".
+- Not applied: `hash_index`'s `put_at/3` and the IPSJ citation for
+  `pmacs_window`, both optional in the audit (new behaviour or a
+  citation not re-read here, so out of a labels-only change).
+- `required/classes.tsv`'s `time` row now has get_count/2 and
+  set_count/2. The table is generated, so the generator changed:
+  `asm/simpos_census/espscan.py` learns that `time` `now/2` returns an
+  instance (`INSTANCE_RESULT`, READ from CH_CLOCK.ESP:33-34, 59-60). The
+  whole scan was rerun: the committed generator reproduces every
+  committed table byte for byte, and the change moves only `time`'s
+  sends (`time` gains get_count/2, set_count/2, get_value/5, minus/3;
+  the full set is 3,474 keys, was 3,470).
+- P-f2: `asm/ptfdump.py`, `fepread/ptfread.py` and `fepread/README.md`
+  now say that the opcode NUMBERS are printed nowhere, but the
+  MNEMONICS are (TM-444, TR-236).
+- `test_espc.test_source_check_labels` pins the corrected statements
+  and the absence of the stale ones.
+
+### The source check applied: the opcode table (2026-11-25)
+
+The §5 proposals P-k0 to P-k9 for `kl0_opcodes.tsv`, each re-checked:
+the witness cells re-read with `fepread/ptfread.py`, the source lines
+in fresh extractions, the counts re-run by an independent clause-scoped
+def-use count (each clause starts at the entry and after every try
+instruction).
+
+- Mnemonics bound to numbers (INFERENCE bindings, each with its count;
+  the handler is unchanged, renamed or aliased):
+  - pmi 42 `unify_value_p` (Y made by unify_variable_p in 1,277 of
+    2,785 uses), 44 `unify_local_value_p` (Y never made by
+    unify_variable_p, 0 of 6,805; by put_variable_p in 3,690), 43
+    `unify_value_t`, 45 `unify_local_value_t` (X a head argument or its
+    copy in 6,451 of 6,639): TM-444 PDF p31 ex. 8, TR-236 Fig. 1. kl0
+    has no local stack, so the local forms unify as the others (OURS).
+  - pmi a4 `put_local_value`, a5 `put_unsafe_value` (TM-444 PDF
+    p30-31), 24 `get_builtin_variable` (TR-236 Fig. 1; 5,331 of 5,773
+    follow a built-in, against at most 172 of 28,529 pmi 20), 2b
+    `get_var_var_list` (TM-444 PDF p16).
+  - blt 45/46/48/49 `add_constant`, `subtract_constant`,
+    `multiply_constant`, `divide_constant` (held cil `cil_kl0.esp`:82,
+    264, 173, 117). The census's refusal text changes with the name
+    (four paragraph draw/2 rows).
+- Witnesses: blt 6e's `devide_value/5` is @ab, not @ad; second
+  witnesses for e6, f0, 2a, 2b, a0, blt 27, dd, e4, c5 (a non-zero
+  offset, h_grade_n.esp:507-512), each settling an operand the first
+  left open; d1, 60, e2, e6 and pmi 49 quote their source verbatim.
+- Operands: c4/c5's first byte is n, the argument registers saved
+  (TR-236 `try_me_else L,N`), the arity in 5,209 of 7,993 c4 and
+  arity+1 in 2,784. The audit's rule "arity+1 when the A_arity barrier
+  is live" is not exact (543 of the 2,784 are in predicates that keep no
+  barrier there), so the row gives the counts and leaves it open. blt
+  0b/1c's third operand is the element Size (TR-044 A.2-A.3 PDF p39).
+- Behaviour: blt 19 `new_heap_vector` with V != N is witnessed
+  (kappa##format_conv sv_to_hv/2 @1b `19 02 04 00`, FMT_CONV.ESP:13-16),
+  so kl0 no longer refuses it. Censuses, row by row: six packages 307 /
+  12 / 211 becomes 310 / 12 / 208 (booking_table, local_node_manager and
+  remote_cell_table create/2 succeed; four other rows stop later); FEP
+  one row, packet32 initiate/1, goes from refused to the step limit
+  (787 / 123 / 476 refused / 16 / 1 step limit). No method leaves
+  success. Injection recorded in `test_kl0.py`'s header.
+- Not applied (P-k10): pmi c6 as an UNKNOWN row and blt 6f: each needs
+  an implementation, witness entries and tests, and blt 6f's third
+  argument is not settled. The other P-k10 rows were added by step 3e.
+
+### Strings unify by storage (2026-11-25)
+
+kl0's unification and `==` compared strings by contents. The PSI's do
+not. Read from the page images:
+
+- TM-388 PDF p79 (folio 67): `'abc'='abc'`, `'abc'=='abc'` and
+  `'abc'=:='abc'` all fail; `equal_string('abc','abc')` succeeds; two
+  references to one string succeed.
+- TM-388 PDF p117-119 (folio 105-107): unify rule (iii)b and Table 4-3.
+  Two strings are equal when they have the same logical address of the
+  first element, its position in the word, element length and count.
+- TM-388 PDF p169 (folio 157): in ESP, `"ABC" = "ABC"` fails. TM-115 PDF
+  p97 (folio 92) says the same; the ESP manual (`program-e.tex`:7174)
+  says it of `=:=`.
+
+So kl0 now unifies a string, and holds it `==`, only with the same `Str`
+object (one `Str` is one stored string). Python's `Str.__eq__` still
+compares contents, for tests and tables; KL0 never uses it.
+
+Two changes go with it:
+
+- `string/3` (blt 0b) is a type test. TR-044 App. A.2 (PDF p39) lists
+  `string(?String, ^Length, ^Size)` under "Data Type and Attributes".
+  kl0 now fails on a non-string, unbound included, where it refused
+  (INFERENCE: no failing call is printed).
+- `list_index` compares keys with a local `equal_key/2`. TM-161 PDF p18
+  names it; its body is not printed. Strings are compared by contents
+  (`equal_string/2`), anything else by unification. Held callers need
+  this: paragraph `p_wshell.esp` sets `"$from"` at :102 and reads it
+  with another literal at :396, through `add_at`/`get_at` on a
+  list_index (:95-99). The body is INTERPOLATED, and that the contents
+  are compared there is INFERENCE.
+
+A string constant in a clause stays a fresh string at each load
+(`POOL_STR_PER_CELL = False`, INFERENCE: no source says whether it is
+one stored string per constant).
+
+Censuses, row by row, against the tree before this change:
+
+- Identity alone (string/3 as before): no row changes in either census.
+  The census calls methods with unbound arguments, so no two strings
+  meet. One string per pool cell instead: also no change.
+- With the type test, six packages: `csp_default_write write/2` goes
+  from refused to the step limit. Totals 310 / 12 / 207 refused / 1 step
+  limit.
+- FEP, 40 rows: 789 succeed, 154 fail, 443 refused, 16 raise, 1 step
+  limit (was 787 / 123 / 476 / 16 / 1).
+  - Refused to failure (30): `simpos_user_device` io/4, io/5, do_io/6;
+    `simpos_user` login_password/2; `remote_stream` put/2; `pimos_window`
+    kl1_message/2; `pimos_window_editor` putb/4, ungetb/4;
+    `fep_message_assembler` get_command/3, divide_message/4,
+    connection_flag/3, get_device_id/3, disassemble/3;
+    `message_converter` convert/3; `remote_pimfep_executor` open/1;
+    `pimos_file` putb/4; `pimos_string_io_invoker` create_string_io/10;
+    `pimos_fep_initiation_table` initialize/2,
+    set_initiation_file_name/2; `net_spawn_user` server_name/3;
+    `pimos_tcpip_socket` putb/5, connect/4; `pimos_standard_io_window`
+    io/4, io/5, do_io/6; `pimos_fep_superviser` command_menu/2;
+    `scsi_stream` put/2; `hmcb_log` message/3; `scsi_load_test`
+    send_request/1, receive_request/1.
+  - Refused to success (3): `remote_pimfep_executor` goal/1, receive/3,
+    invoke/1.
+  - Still refused, later (6): `pimos_window_process` goal/1,
+    initiate/1, invoke/1 at a slot constant; `packet32` set_message/2
+    at blt 0c; `scsi_handler` take_buffer/3 and take_TMSG/2 at blt 7f.
+  - Success to failure (1): `pimos_file resign_core/1`. This is a census
+    order effect. Run alone on a fresh machine it fails both before and
+    after the change: the invocation stack it pops is empty. In the
+    census it had succeeded on a program left there by an earlier call.
+
+What the moves are: all 41 come from the string/3 type test (an
+INFERENCE), none from the sourced identity rule. Twelve of them leave a
+refusal `string on 0 (a slot constant)`, including the three new
+successes: a census artifact of the step 3e kind (receivers made with
+new/2), so 789 is not progress in itself. The two step-limit rows,
+traced: FEP `packet32 initiate/1` is a long finite loop (its
+`initiate/3` makes `pool_size` = 1,000 packets, the slot's template
+constant, about 25 cells each, past the 20,000-step limit);
+`csp_default_write write/2` does not terminate on an unbound argument
+(its list clause binds the argument to a one-element list and recurses
+on the unbound element; 11 cells repeat, the same at 400,000 steps).
+
+With `Str.__eq__` and `__hash__` deleted, the only failure in both test
+files is test_kl0's Python-side `assertEqual(sol[0], K.Str('3500'))`,
+and neither census changes: no KL0 path compares strings by content.
+The stand-ins' string constants are output arguments or held SIMPOS
+source (`name`, `pathname`), so none relied on content comparison but
+`list_index`.
+
+Tests: `test_kl0.StringIdentity` and `test_espc.test_string_keys`. Four
+injections are recorded in `test_kl0.py`'s header.
+
+Open:
+
+- Table 4-3 makes `==` element-wise on stack vectors and address-only on
+  heap vectors. kl0's `==` (pmi 62, blt f0/f2) is object identity for
+  both.
+- kl0's unification of heap vectors is element-wise.
+- A substring that shares its parent's storage is not modelled. kl0's
+  string built-ins make new strings.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

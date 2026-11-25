@@ -322,7 +322,6 @@ ras_text_utility	ref	(#ref)		27	1	euod:27	ref:27	euod/DB/db1.esp:22				no
 standard_temporary_scrolling_menu	ref	(#ref)		27	3	euod:1,kappa2:21,kwic-esp:5	ref:27	euod/PROOF/proof2.esp:2782		kappa(simpos##),pimmcsp(simpos##)		no
 ?	ambiguous	term_to_string	3	27	2	kappa2:8,papyrus:19	ambiguous-user-or-system:27	kappa2/kappa2/user_if/pb/exwin.esp:88	trans_buffer			no
 pmacs_window	instance	flash	1	26	5	cal-esp:1,disc:2,fuzclust:3,gog-esp:7,kappa2:13	create-bound:24,self-inherited>single-nature:2	cal-esp/cal2.12/ccwindow.esp:73		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	{pmacs_window}	no
-?	unknown	get_count	2	26	5	cal-esp:2,chal:1,gog-esp:8,kappa2:11,kwic-esp:4	unattributed:26	cal-esp/cal2.12/control.esp:264				no
 ?	unknown	move	2	26	3	cal-esp:6,cil:17,disc:3	unattributed:26	cal-esp/deb2.12/dedit.esp:467				yes
 pmacs_standard_editor	nature	(inherited)		26	4	cal-esp:1,chal:1,cil:2,papyrus:22	nature:26	cal-esp/cal2.12/cal_pmacs.esp:25		pak_papyrus(simpos##)		no
 essential_window	ref	(#ref)		26	5	cal-esp:1,euod:6,fuzclust:15,kappa2:3,utter:1	ref:26	cal-esp/cal2.12/scawin.esp:28		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)		no
@@ -484,7 +483,6 @@ symbolizer	class	get_atom_token	3	16	3	cal-esp:1,icotext:11,kappa2:4	class:16	ca
 esp_macro_expander	class	new	2	16	4	cal-esp:1,gog-esp:11,kappa2:3,kwic-esp:1	class:15,class-inherited>single-nature:1	cal-esp/deb2.12/entry.esp:526		kappa(simpos##)	{esp_macro_expander}	yes
 standard_editor	nature	(inherited)		16	8	cal-esp:1,cil:1,disc:1,euod:1,kappa2:7,kwic-esp:1,sum:2,txtstrct:2	nature:16	cal-esp/deb2.12/dedit.esp:17		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)		no
 set	ref	(#ref)		16	5	cal-esp:3,euod:5,fuzclust:3,kappa2:1,kwic-esp:4	ref:14,ref-slot-is:2	cal-esp/deb2.12/opmenu.esp:48		kappa(simpos##),tour(simpos##)		no
-?	unknown	get_value	5	16	4	cil:6,gog-esp:2,kappa2:7,utter:1	unattributed:16	cil/src/INSTALL.esp:34				no
 string_buffer	class	create	4	16	3	cil:1,gog-esp:1,kappa2:14	class:16	cil/src/ds_bep.esp:2166		kappa(simpos##)		yes
 superior_window	class	create	3	16	7	cil:2,disc:4,euod:1,fuzclust:6,gog-esp:1,kappa2:1,papyrus:1	class:11,class-inherited>refined:3,self-inherited>refined:2	cil/src/es_gin.esp:250		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##)	{with_border|with_icon|with_label|with_key_select|superior_window};{reshape_notifier|with_label|with_border|with_click_information|with_key_select|with_icon|superior_window};{superior_window|with_icon}	yes
 {with_margin|with_border|as_input|as_mouse_input|as_graphics|with_superior_input_buffer|inferior_window}	instance	transfer	8	16	1	cil:16	self-inherited:16	cil/src/es_gin.esp:855				yes
@@ -499,8 +497,8 @@ list_index	instance	get_contents_with_key	2	16	5	euod:5,fuzclust:1,icotext:7,kap
 ?	ambiguous	read	3	16	3	euod:5,kappa2:7,papyrus:4	ambiguous-user-or-system:16	euod/DEF/def.esp:111	labeled_superior_window,ras_text_utility,standard_superior_window,temporary_menu			yes
 ?	unknown	warp_mouse	3	16	4	fuzclust:2,gog-esp:2,kwic-esp:3,sum:9	unattributed:16	fuzclust/fuzclust/src/draw.graph:46				no
 window_without_label	instance	kill	1	16	1	kappa2:16	create-bound:16	kappa2/kappa2/kernel/net/SRVMNT.ESP:430		kappa(simpos##),pimmcsp(simpos##)		yes
-?	ambiguous	get_string	2	16	1	kappa2:16	ambiguous-user-or-system:16	kappa2/kappa2/utility/bck/BCKTIME.ESP:424	time			no
 ?	ambiguous	val	3	16	1	sum:16	ambiguous-user-or-system:16	sum/src/atrdisp.wkm:23	hitachi_wk,if1000_wk			no
+?	unknown	get_count	2	15	5	cal-esp:2,chal:1,gog-esp:7,kappa2:2,kwic-esp:3	unattributed:15	cal-esp/cal2.12/control.esp:264	time			no
 library_utility	instance	catalogue	3	15	7	cal-esp:2,euod:2,gog-esp:1,icotext:2,knov:2,papyrus:3,txtstrct:3	create-bound(other-IFS-app:cil):13,self-inherited>single-nature:2	cal-esp/cal2.12/graph.esp:93		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	{library_utility}	yes
 ?	unknown	node	3	15	1	cal-esp:15	unattributed:15	cal-esp/cal2.12/graph.esp:162				yes
 list	instance	count	2	15	4	cal-esp:5,disc:2,kappa2:4,knov:4	create-bound:15	cal-esp/cal2.12/graph.esp:288		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),tour(simpos##)		yes
@@ -584,6 +582,7 @@ choice_window	class	create	3	13	3	gog-esp:1,icotext:1,kappa2:11	class:12,class-i
 ?	ambiguous	part_of	3	13	1	sum:13	ambiguous-user-or-system:13	sum/src/everyw_mv.wkm:40	hitachi_wk,if1000_wk			no
 ?	ambiguous	get_editor	2	12	2	cal-esp:4,papyrus:8	ambiguous-user-or-system:12	cal-esp/cal2.12/cal_pmacs.esp:66	pmacs_window			no
 ?	unknown	move_end_of_line	1	12	5	cal-esp:1,cil:1,disc:3,sum:6,txtstrct:1	unattributed:12	cal-esp/deb2.12/dedit.esp:417				no
+time	instance	get_string	2	12	5	cal-esp:1,gog-esp:2,kappa2:6,knov:1,kwic-esp:2	create-bound:12	cal-esp/deb2.12/init.esp:1303		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 symbolizer	class	get_ch_string_token	3	12	4	cal-esp:2,disc:4,gog-esp:3,icotext:3	class:12	cal-esp/deb2.12/modify.esp:66		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),sancho2(simpos##),tour(simpos##)		no
 set	instance	get_contents	2	12	5	cal-esp:4,euod:3,fuzclust:2,kappa2:1,kwic-esp:2	create-bound:12	cal-esp/deb2.12/opmenu.esp:491		kappa(simpos##),tour(simpos##)		no
 pmacs_window	instance	get_interpreter	2	12	5	cal-esp:1,disc:3,euod:5,kwic-esp:2,utter:1	create-bound:7,create-bound-inherited>single-nature:5	cal-esp/deb2.12/pmod.esp:33		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	{pmacs_window}	no
@@ -603,6 +602,7 @@ standard_io_window	instance	putf	2	12	4	disc:3,fuzclust:1,gog-esp:6,kappa2:2	cre
 standard_superior_window	instance	activate	1	12	4	disc:1,euod:2,kappa2:5,knov:4	create-bound:9,create-bound-inherited>refined:3	disc/system_data.esp:150		kappa(simpos##),pak_papyrus(simpos##)	{reshape_notifier|standard_superior_window|with_icon};{with_icon|standard_superior_window|reshape_notifier};{with_label|standard_superior_window|with_pane}	yes
 ras_text_utility	class	backup	2	12	1	euod:12	class:12	euod/DB/db1.esp:64				no
 alarm_watch	class	create	2	12	3	euod:1,gog-esp:3,kappa2:8	class:12	euod/DEF/def.esp:967		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		yes
+time	instance	set_value	5	12	3	euod:1,gog-esp:2,kappa2:9	create-bound:12	euod/DEF/def.esp:969		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 alarm_watch	instance	on_after	2	12	3	euod:1,gog-esp:2,kappa2:9	create-bound:12	euod/DEF/def.esp:970		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 essential_window	instance	draw_string	5	12	2	euod:5,utter:7	create-bound:10,self-inherited>single-nature:2	euod/DEF/def.esp:1144		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)	{essential_window}	no
 ?	unknown	erase_marker	2	12	2	euod:11,papyrus:1	unattributed:12	euod/PROOF/proof1.esp:374				no
@@ -656,7 +656,6 @@ temporary_menu	instance	kill	1	11	3	disc:1,kappa2:9,kwic-esp:1	create-bound:10,c
 standard_temporary_menu	instance	show	1	11	2	disc:7,kwic-esp:4	create-bound:11	disc/system_data.esp:188		kappa(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),tour(simpos##)		yes
 wildcard	class	string	4	11	2	euod:1,kappa2:10	class:11	euod/DB/db1.esp:818		kappa(simpos##),paragraph(simpos##),pimmcsp(simpos##)		yes
 multi_column_menu	class	create	3	11	4	euod:3,fuzclust:6,gog-esp:1,sum:1	class:10,class-inherited>refined:1	euod/DB/db3.esp:577			{multi_column_menu|with_icon}	yes
-time	instance	set_value	5	11	3	euod:1,gog-esp:2,kappa2:8	create-bound:11	euod/DEF/def.esp:969		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 labeled_superior_window	class	create	3	11	3	euod:4,fuzclust:4,kappa2:3	class:8,class-inherited>single-nature:2,self-inherited>single-nature:1	euod/PROOF/proof1.esp:718		kappa(simpos##),pimmcsp(simpos##)	{labeled_superior_window}	yes
 ?	unknown	add_before	3	11	3	euod:6,knov:2,kwic-esp:3	unattributed:11	euod/PROOF/proof2.esp:627	list			no
 {sash|as_output|as_graphics|as_markers|with_superior_input_buffer|as_input|as_mouse_input|inferior_window}	instance	draw_string	5	11	1	fuzclust:11	create-bound-inherited:11	fuzclust/fuzclust/src/compare.comp:51				no
@@ -664,6 +663,7 @@ network_listener_buffer	class	create	4	11	3	fuzclust:8,gog-esp:2,kappa2:1	class:
 standard_scrolling_menu	instance	read	2	11	3	fuzclust:1,kappa2:8,kwic-esp:2	create-bound:9,self-inherited>refined:2	fuzclust/fuzclust/src/init.ctl:36		kappa(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##)	{standard_scrolling_menu|standard_multi_select_menu|reshape_notifier};{deexpose_notifier|standard_scrolling_menu}	yes
 standard_scrolling_menu	instance	kill	1	11	3	fuzclust:1,kappa2:8,kwic-esp:2	create-bound:9,self-inherited>refined:2	fuzclust/fuzclust/src/init.ctl:37		kappa(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##)	{deexpose_notifier|standard_scrolling_menu}	yes
 network_listener_buffer	ref	(#ref)		11	3	fuzclust:8,gog-esp:2,kappa2:1	ref:11	fuzclust/fuzclust/src/ctl.grape:226		pimfep(simpos##),pimmcsp(simpos##)		no
+time	instance	get_count	2	11	3	gog-esp:1,kappa2:9,kwic-esp:1	create-bound:11	gog-esp/CH_CLOCK.ESP:59		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 ?	ambiguous	remove	2	11	1	gog-esp:11	ambiguous-user-or-system:11	gog-esp/GAKUSHU.esp:115	channel_set,list,set			no
 ?	ambiguous	send	2	11	1	kappa2:11	ambiguous-user-or-system:11	kappa2/kappa2/kernel/flm/VOL1.ESP:161	channel,port,rs232c			no
 ?	ambiguous	create	4	11	1	kappa2:11	ambiguous-user-or-system:11	kappa2/kappa2/kernel/itr/ITRMAN.ESP:64	editor_text_buffer,message,network_listener_buffer,pmacs_window,standard_editor,string_buffer			yes
@@ -691,11 +691,11 @@ cal_window	instance	putb	3	10	2	cal-esp:6,chal:4	create-bound:10	cal-esp/deb2.12
 ?	unknown	delete	3	10	4	cal-esp:2,fuzclust:2,icotext:3,papyrus:3	unattributed:10	cal-esp/deb2.12/dedit.esp:468	directory,file_utility			yes
 debugger_gate	instance	set	3	10	1	cal-esp:10	create-bound:10	cal-esp/deb2.12/init.esp:704				yes
 date	class	now	2	10	4	cal-esp:1,gog-esp:1,kappa2:7,kwic-esp:1	class:10	cal-esp/deb2.12/init.esp:1300		kappa(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)		no
-?	unknown	get_string	2	10	5	cal-esp:2,cil:2,gog-esp:1,knov:1,kwic-esp:4	unattributed:9,fallback-unattributed:1	cal-esp/deb2.12/init.esp:1301	time			no
 set	instance	add	2	10	5	cal-esp:3,euod:3,fuzclust:1,kappa2:1,kwic-esp:2	create-bound:9,create-bound-inherited>single-nature:1	cal-esp/deb2.12/opmenu.esp:457		kappa(simpos##),tour(simpos##)	{set}	yes
 ?	ambiguous	putt	4	10	2	cal-esp:7,cil:3	ambiguous-user-or-system:10	cal-esp/deb2.12/output.esp:516	standard_io_buffer,standard_io_window,standard_output_file			yes
 ?	ambiguous	getc	2	10	4	cal-esp:4,cil:1,euod:1,knov:4	ambiguous-user-or-system:10	cal-esp/deb2.12/pmod.esp:62	pmacs_window,standard_input_file,standard_io_window			no
 mathematical_functions	class	max	3	10	3	cal-esp:1,icotext:6,papyrus:3	class:10	cal-esp/deb2.12/purs.esp:138		pak_papyrus(simpos##)		no
+?	unknown	get_value	5	10	4	cil:6,gog-esp:2,kappa2:1,utter:1	unattributed:10	cil/src/INSTALL.esp:34	time			no
 pathname	class	get_last	4	10	1	cil:10	class:10	cil/src/ds_bep.esp:568		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 {librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	mumble	3	10	1	cil:10	create-bound-inherited:8,self-inherited:2	cil/src/ds_bep.esp:2605				no
 ?	unknown	in	2	10	4	cil:1,disc:2,euod:3,fuzclust:4	unattributed:10	cil/src/ds_bep.esp:2909	list,set,symbolizer			yes
@@ -733,6 +733,7 @@ format_printer	instance	put_line	2	10	1	kappa2:10	create-bound:10	kappa2/kappa2/
 {as_program|as_class_with_lock}	class	locked	1	10	1	kappa2:10	self-inherited:10	kappa2/kappa2/utility/bck/BCKPROC.ESP:32				no
 {as_program|as_class_with_lock}	class	lock	1	10	1	kappa2:10	self-inherited:10	kappa2/kappa2/utility/bck/BCKPROC.ESP:43				no
 {as_program|as_class_with_lock}	class	unlock	1	10	1	kappa2:10	self-inherited:10	kappa2/kappa2/utility/bck/BCKPROC.ESP:49				no
+?	ambiguous	get_string	2	10	1	kappa2:10	ambiguous-user-or-system:10	kappa2/kappa2/utility/bck/BCKTIME.ESP:424	time			no
 ?	unknown	find	3	10	2	kappa2:5,kwic-esp:5	unattributed:10	kappa2/kappa2/utility/fmp/KFILMP.ESP:698				no
 standard_temporary_choice_window	class	create	3	10	3	kappa2:2,knov:7,kwic-esp:1	class:10	kappa2/kappa2/utility/mdu/TABLE.ESP:286		kappa(simpos##)		yes
 standard_temporary_choice_window	instance	read	2	10	3	kappa2:2,knov:7,kwic-esp:1	create-bound:10	kappa2/kappa2/utility/mdu/TABLE.ESP:292		kappa(simpos##)		yes
@@ -805,6 +806,7 @@ search_table	instance	get_table	3	8	4	cal-esp:4,cil:1,fuzclust:1,sum:2	create-bo
 ?	unknown	set_max_length	2	8	2	cal-esp:2,cil:6	unattributed:8	cal-esp/deb2.12/stat.esp:512	standard_io_buffer			no
 port	ref	(#ref)		8	3	cal-esp:2,euod:3,gog-esp:3	ref:8	cal-esp/cal2.12/cal_process.esp:67		pimfep(simpos##),pimmcsp(simpos##)		no
 builtin	ref	(#ref)		8	2	cal-esp:4,disc:4	ref:8	cal-esp/deb2.12/util.esp:520				no
+time	instance	minus	3	8	3	cil:3,gog-esp:2,kwic-esp:3	create-bound:8	cil/src/INSTALL.esp:33		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		yes
 ?	unknown	is_directory	1	8	2	cil:5,kappa2:3	unattributed:8	cil/src/ds_bep.esp:2118				no
 standard_superior_window	instance	get_border_width	2	8	2	cil:2,euod:6	create-bound:6,self-inherited>refined:2	cil/src/ds_brs.esp:279		kappa(simpos##),pak_papyrus(simpos##)	{with_icon|with_key_select|reshape_notifier|standard_superior_window}	no
 standard_superior_window	instance	get_label_height	2	8	2	cil:2,euod:6	create-bound:6,self-inherited>refined:2	cil/src/ds_brs.esp:280		kappa(simpos##),pak_papyrus(simpos##)	{with_icon|with_key_select|reshape_notifier|standard_superior_window}	no
@@ -930,6 +932,7 @@ directory	class	directory	6	6	3	cal-esp:4,chal:1,cil:1	class:6	cal-esp/cal2.12/f
 ?	unknown	pop	2	6	3	cal-esp:1,kappa2:4,kwic-esp:1	unattributed:6	cal-esp/deb2.12/break.esp:118	list_stack			no
 cal_window	instance	get_fullpath_name	3	6	2	cal-esp:4,chal:2	create-bound:6	cal-esp/deb2.12/deb_cont.esp:302				no
 symbolizer	class	get_variable	5	6	3	cal-esp:4,cil:1,knov:1	class:6	cal-esp/deb2.12/dmenu.esp:698		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),qxt(simpos##),sancho2(simpos##),tour(simpos##)		no
+?	unknown	get_string	2	6	4	cal-esp:1,cil:2,gog-esp:1,kwic-esp:2	unattributed:5,fallback-unattributed:1	cal-esp/deb2.12/init.esp:1301	time			no
 as_program	instance	get	3	6	1	cal-esp:6	self-inherited>single-nature:6	cal-esp/deb2.12/purs.esp:228		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	{as_program}	yes
 as_program	instance	set_leash	2	6	1	cal-esp:6	self-inherited>single-nature:6	cal-esp/deb2.12/purs.esp:597		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)	{as_program}	no
 cal_window	ref	(#ref)		6	2	cal-esp:4,chal:2	ref:6	cal-esp/cal2.12/control.esp:131				no
@@ -981,6 +984,7 @@ standard_popup_menu	instance	deactivate	1	6	1	icotext:6	self-inherited>single-na
 make_sem_data2	ref	(#ref)		6	1	icotext:6	ref:6	icotext/src/ki_main_test.esp:174				no
 channel	class	create	2	6	1	kappa2:6	class:6	kappa2/kappa2/kernel/flm/VOL1.ESP:52		kappa(simpos##),pimscsi(simpos##)		yes
 <root>	instance	get_attribute_path_list	4	6	1	kappa2:6	self-inherited:6	kappa2/kappa2/kernel/hlc/HLCRECINT2.ESP:25				no
+time	instance	get_value	5	6	1	kappa2:6	create-bound:6	kappa2/kappa2/kernel/itr/ITRTIM.ESP:28		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 <root>	slot	!litr	0	6	1	kappa2:6	slot-inherited:6	kappa2/kappa2/kernel/net/REMAPC.ESP:327				no
 <root>	instance	set_transaction_mode	5	6	1	kappa2:6	self-inherited:6	kappa2/kappa2/kernel/net/REMAPC.ESP:382				no
 hash_index	slot	!vector	0	6	1	kappa2:6	slot:3,slot-inherited>single-nature:3	kappa2/kappa2/kernel/net/SRVCNF.ESP:884		kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)	{hash_index}	yes
@@ -1097,7 +1101,6 @@ message	class	create	2	5	2	gog-esp:3,kappa2:2	class(other-IFS-app:cil):3,class-i
 standard_io_window	instance	set_permission	2	5	1	gog-esp:5	create-bound-inherited>single-nature:4,create-bound:1	gog-esp/DISPB3.ESP:377		kappa(simpos##),mpsicspR(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),sancho2(simpos##)	{standard_io_window}	no
 ?	unknown	set_color_pair	3	5	2	gog-esp:1,kappa2:4	unattributed:5	gog-esp/DISPCLOCK.ESP:55	standard_io_window			no
 ?	unknown	draw_font	6	5	2	gog-esp:1,kappa2:4	unattributed:4,fallback-unattributed:1	gog-esp/DISPPBMS.esp:122				no
-?	unknown	minus	3	5	2	gog-esp:2,kwic-esp:3	unattributed:5	gog-esp/DISPTAI.ESP:77				yes
 ?	ambiguous	stop	1	5	2	gog-esp:3,kappa2:2	ambiguous-user-or-system:5	gog-esp/HEAPWATCH.ESP:46	stop_watch			yes
 expandable_array	instance	put_at	3	5	2	gog-esp:1,kappa2:4	create-bound:5	gog-esp/KE_WINDOW.ESP:500		kappa(simpos##)		no
 standard_popup_menu	class	create	3	5	1	icotext:5	self-inherited>single-nature:3,class:2	icotext/src/kei_select.esp:15			{standard_popup_menu}	yes
@@ -1266,7 +1269,6 @@ standard_menu	instance	set_item_status	3	4	2	fuzclust:2,utter:2	create-bound:4	f
 multiple_select_scrolling_menu	ref	(#ref)		4	1	fuzclust:4	ref:4	fuzclust/fuzclust/src/cliant.grape:349		pimmcsp(simpos##)		no
 ?	ambiguous	draw_rectangle	5	4	1	gog-esp:4	ambiguous-user-or-system:4	gog-esp/CGS_DEMO.ESP:150	standard_io_window			no
 <root>	instance	class_object	2	4	2	gog-esp:1,kwic-esp:3	self-inherited:3,create-bound-inherited:1	gog-esp/CGS_MAIN.ESP:167				no
-?	unknown	set_count	2	4	3	gog-esp:1,kappa2:2,kwic-esp:1	unattributed:3,fallback-unattributed:1	gog-esp/CH_CLOCK.ESP:60				no
 time	instance	plus	3	4	1	gog-esp:4	create-bound:4	gog-esp/DISPTAI.ESP:79		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		yes
 ?	unknown	get_semeai_flag	2	4	1	gog-esp:4	unattributed:4	gog-esp/JIBRD.ESP:84				no
 expandable_array	instance	size	2	4	2	gog-esp:3,kappa2:1	create-bound:4	gog-esp/KE_WINDOW.ESP:61		kappa(simpos##)		yes
@@ -1578,6 +1580,7 @@ sparse_array	class	create	3	3	1	kappa2:3	class:3	kappa2/kappa2/utility/ivt/IVTFI
 name	class	check_name	3	3	1	kappa2:3	class:3	kappa2/kappa2/utility/ivt/IVTMENU.ESP:249		kappa(simpos##),mpsicspR(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 {as_superior|with_label|with_border|inferior_window}	instance	get_inside_size	3	3	1	kappa2:3	create-bound-inherited:3	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1246				no
 {as_superior|with_label|with_border|inferior_window}	instance	read	3	3	1	kappa2:3	create-bound-inherited:3	kappa2/kappa2/utility/ivt/IVTMNG.ESP:1288				yes
+?	unknown	set_count	2	3	2	kappa2:2,kwic-esp:1	unattributed:2,fallback-unattributed:1	kappa2/kappa2/utility/mop/MOPUSER.ESP:118	time			no
 string_buffer	instance	put_data	2	3	1	kappa2:3	create-bound:3	kappa2/kappa2/utility/tgt/TGTSDIS.ESP:108		kappa(simpos##)		no
 ?	unknown	ask_status	4	3	1	kappa2:3	unattributed:3	kappa2/kappa2/utility/tgt/TGTSMT.ESP:209				no
 pmacs_window	instance	read	2	3	1	kappa2:3	create-bound:3	kappa2/kappa2/utility/tool/MSTPR.ESP:269		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##),tour(simpos##)		yes
@@ -1715,6 +1718,7 @@ hash_set	instance	get_contents	2	2	1	cil:2	create-bound:2	cil/src/cil_esp.esp:35
 quick_list	class	create	2	2	1	cil:2	class:2	cil/src/cil_mta.esp:951				yes
 <root>	class	start_message	4	2	1	cil:2	class-inherited:2	cil/src/ds_bep.esp:212				no
 <root>	class	end_message	4	2	1	cil:2	class-inherited:2	cil/src/ds_bep.esp:215				no
+?	ambiguous	minus	3	2	1	cil:2	ambiguous-user-or-system:2	cil/src/ds_bep.esp:1618	time			yes
 {librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	make_all_classes	2	2	1	cil:2	self-inherited:1,create-bound-inherited:1	cil/src/ds_bep.esp:1947				no
 {librarian_catalogue|as_class_maker|compiler_error_reporter}	instance	get_package_and_class	4	2	1	cil:2	self-inherited:2	cil/src/ds_bep.esp:1979				no
 library	class	is_name_only_class	3	2	1	cil:2	class:2	cil/src/ds_bep.esp:1981		kappa(simpos##),mpsicspR(simpos##),pak_papyrus(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##),pimscsi(simpos##)		no
@@ -1910,7 +1914,6 @@ bitmap	class	get_plane_count	2	2	2	gog-esp:1,kappa2:1	class:2	gog-esp/DISPB1.ESP
 ?	unknown	set_operation	2	2	1	gog-esp:2	unattributed:2	gog-esp/DISPLAY_KIFU.ESP:160				no
 ?	unknown	draw_polygon	2	2	1	gog-esp:2	fallback-unattributed:2	gog-esp/DISPPBMS.esp:117				no
 choice_window	instance	activate	1	2	2	gog-esp:1,kappa2:1	create-bound:2	gog-esp/DISPSET.ESP:58		kappa(simpos##)		yes
-time	instance	get_string	2	2	1	gog-esp:2	create-bound:2	gog-esp/DISPTAI.ESP:190		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 ?	unknown	draw_characters	4	2	1	gog-esp:2	unattributed:2	gog-esp/DISP_TESUJI.ESP:154				no
 <root>	class	create	7	2	1	gog-esp:2	self-inherited:1,class-inherited:1	gog-esp/FUTOKOROPC.ESP:21				yes
 <root>	instance	calc_cv	2	2	1	gog-esp:2	self-inherited:2	gog-esp/FUTOKOROPC.ESP:46				no
@@ -2125,7 +2128,6 @@ string_buffer	instance	get_data	2	2	1	kappa2:2	create-bound:2	kappa2/kappa2/util
 {with_pmacs_window|as_superior|as_input|as_mouse_input|inferior_window}	instance	getl	2	2	1	kappa2:2	create-bound-inherited:2	kappa2/kappa2/utility/tgt/TGTWIN.ESP:86				no
 essential_window	instance	activate	2	2	1	kappa2:2	create-bound:2	kappa2/kappa2/utility/tool/CCTPR.ESP:332		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)		yes
 essential_window	instance	background	2	2	1	kappa2:2	create-bound:2	kappa2/kappa2/utility/tool/CCTPR.ESP:353		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##),pimmutil(simpos##),tour(simpos##)		yes
-?	unknown	set_value	5	2	1	kappa2:2	unattributed:2	kappa2/kappa2/utility/tool/LOADCH.ESP:122	time			no
 {as_class_with_lock|as_program}	class	create	2	2	1	kappa2:2	self-inherited:2	kappa2/kappa2/utility/tool/LOADER.ESP:52				yes
 standard_multi_select_scrolling_menu	class	create	3	2	2	kappa2:1,kwic-esp:1	class:2	kappa2/kappa2/utility/tool/SDTPR.ESP:180		kappa(simpos##)		yes
 as_rpc_server_tcp	class	create	4	2	1	kappa2:2	self-inherited>single-nature:2	kappa2/kvif/esp/kap_serv.esp:14			{as_rpc_server_tcp}	yes
@@ -2845,6 +2847,7 @@ superior_window	instance	set_position	3	1	1	gog-esp:1	create-bound:1	gog-esp/CGS
 superior_window	instance	set_size	3	1	1	gog-esp:1	create-bound:1	gog-esp/CGS_UTIL.ESP:47		kappa(simpos##),pak_papyrus(simpos##),paragraph(simpos##),pimmcsp(simpos##)		yes
 essential_scrolling_menu	instance	read	2	1	1	gog-esp:1	create-bound:1	gog-esp/CGS_UTIL.ESP:88		pak_papyrus(simpos##)		yes
 ?	unknown	set_sub_priority	2	1	1	gog-esp:1	unattributed:1	gog-esp/CH_CLOCK.ESP:42				no
+time	instance	set_count	2	1	1	gog-esp:1	create-bound:1	gog-esp/CH_CLOCK.ESP:60		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 alarm_watch	instance	on_at	2	1	1	gog-esp:1	create-bound:1	gog-esp/CH_CLOCK.ESP:61		kappa(simpos##),mpsicspR(simpos##),pimfep(simpos##),pimmcsp(simpos##),pimmutil(simpos##)		no
 ?	unknown	remove_d	4	1	1	gog-esp:1	unattributed:1	gog-esp/D4CAPTURE.ESP:86				no
 temporary_multiple_select_multi_column_menu	instance	set_item_status	3	1	1	gog-esp:1	create-bound:1	gog-esp/DISP2_TESUJI.esp:82				no
@@ -3186,6 +3189,7 @@ string_buffer	instance	get_data	3	1	1	kappa2:1	create-bound:1	kappa2/kappa2/util
 {with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_bell|temporary_window}	instance	clear_items	1	1	1	kappa2:1	self-inherited:1	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:64				no
 {with_margin|with_border|as_menu|as_single_select|as_mouse_input|with_bell|temporary_window}	instance	add_item	3	1	1	kappa2:1	self-inherited:1	kappa2/kappa2/utility/tool/KAPPA_PURGE.ES:65				no
 ?	unknown	set_system_sub_priority	2	1	1	kappa2:1	unattributed:1	kappa2/kappa2/utility/tool/LOADCH.ESP:89				no
+?	unknown	set_value	5	1	1	kappa2:1	unattributed:1	kappa2/kappa2/utility/tool/LOADCH.ESP:122	time			no
 ?	unknown	on_after	2	1	1	kappa2:1	unattributed:1	kappa2/kappa2/utility/tool/LOADCH.ESP:129	alarm_watch			no
 ?	unknown	draw_font	5	1	1	kappa2:1	unattributed:1	kappa2/kappa2/utility/tool/LOADCH.ESP:138				no
 {as_class_with_lock|as_program}	class	locked	1	1	1	kappa2:1	self-inherited:1	kappa2/kappa2/utility/tool/LOADER.ESP:134				no

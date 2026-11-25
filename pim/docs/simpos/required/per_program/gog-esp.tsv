@@ -143,12 +143,12 @@ requirement	?	ambiguous	draw_circle	7	10	gog-esp/CGS_DEMO.ESP:164
 requirement	?	ambiguous	get_at	3	10	gog-esp/GAKUSHU.esp:382
 requirement	?	ambiguous	deactivate	1	9	gog-esp/CGS_DEMO.ESP:567
 requirement	?	ambiguous	show	2	9	gog-esp/DISPB3.ESP:414
-requirement	?	unknown	get_count	2	8	gog-esp/CH_CLOCK.ESP:59
 requirement	list	instance	get_contents	2	8	gog-esp/JSKNODE.ESP:66
 requirement	standard_output_file	instance	putc	2	8	gog-esp/CGS_UTIL.ESP:424
 requirement	standard_io_window	instance	write_lines	2	8	gog-esp/CGS_DEMO.ESP:248
 requirement	pmacs_window	instance	flash	1	7	gog-esp/CGS_PWINDOW.ESP:20
 requirement	process	class	self	2	7	gog-esp/CGS_INSTALLER.esp:49
+requirement	?	unknown	get_count	2	7	gog-esp/DISPB3.ESP:415
 requirement	?	unknown	getl	2	7	gog-esp/CGS_INSTALLER.esp:26
 requirement	?	unknown	set_cv	4	7	gog-esp/DAMETEN_CV.ESP:82
 requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_output|as_mouse_input|inferior_window}	instance	putf	3	7	gog-esp/DISPBIG.ESP:291
@@ -268,6 +268,7 @@ requirement	monogyny_hash_index	instance	put_at	3	2	gog-esp/LABRD.ESP:102
 requirement	monogyny_hash_index	instance	get_at	3	2	gog-esp/LABRD.ESP:88
 requirement	symbolizer	class	list_to_string	3	2	gog-esp/IN_WINDOW.ESP:49
 requirement	directory	class	retrieve_with_wildcard	4	2	gog-esp/CGS_INSTALLER.esp:78
+requirement	time	instance	get_string	2	2	gog-esp/DISPTAI.ESP:190
 requirement	as_superior	nature	(inherited)		2	gog-esp/CGS_DEMO.ESP:606
 requirement	standard_io_window	nature	(inherited)		2	gog-esp/CGS_WINDOW.ESP:11
 requirement	as_input_buffer	nature	(inherited)		2	gog-esp/CGS_DEMO.ESP:606
@@ -275,6 +276,7 @@ requirement	binary_file	ref	(#ref)		2	gog-esp/MONDAIZU.ESP:21
 requirement	mathematical_functions	ref	(#ref)		2	gog-esp/STOPWATCH.ESP:193
 requirement	?	unknown	putc	2	2	gog-esp/PAT_DATA.ESP:203
 requirement	?	unknown	set_title	2	2	gog-esp/CGS_DEMO.ESP:302
+requirement	time	instance	minus	3	2	gog-esp/DISPTAI.ESP:77
 requirement	?	unknown	get_value	5	2	gog-esp/LOGOUT.ESP:162
 requirement	binary_file_marker	class	create	2	2	gog-esp/MONDAIZU.ESP:22
 requirement	binary_file_marker	instance	set_position	2	2	gog-esp/MONDAIZU.ESP:23
@@ -321,8 +323,6 @@ requirement	{with_superior_input_buffer|labeled_sash|as_standard_io_window|as_ou
 requirement	?	unknown	inhibit_input	1	2	gog-esp/DISPLAY_KIFU.ESP:157
 requirement	?	unknown	set_operation	2	2	gog-esp/DISPLAY_KIFU.ESP:160
 requirement	?	unknown	draw_polygon	2	2	gog-esp/DISPPBMS.esp:117
-requirement	?	unknown	minus	3	2	gog-esp/DISPTAI.ESP:77
-requirement	time	instance	get_string	2	2	gog-esp/DISPTAI.ESP:190
 requirement	?	unknown	draw_characters	4	2	gog-esp/DISP_TESUJI.ESP:154
 requirement	<root>	class	create	7	2	gog-esp/FUTOKOROPC.ESP:21
 requirement	<root>	instance	calc_cv	2	2	gog-esp/FUTOKOROPC.ESP:46
@@ -472,7 +472,8 @@ requirement	superior_window	instance	set_position	3	1	gog-esp/CGS_UTIL.ESP:46
 requirement	superior_window	instance	set_size	3	1	gog-esp/CGS_UTIL.ESP:47
 requirement	essential_scrolling_menu	instance	read	2	1	gog-esp/CGS_UTIL.ESP:88
 requirement	?	unknown	set_sub_priority	2	1	gog-esp/CH_CLOCK.ESP:42
-requirement	?	unknown	set_count	2	1	gog-esp/CH_CLOCK.ESP:60
+requirement	time	instance	get_count	2	1	gog-esp/CH_CLOCK.ESP:59
+requirement	time	instance	set_count	2	1	gog-esp/CH_CLOCK.ESP:60
 requirement	alarm_watch	instance	on_at	2	1	gog-esp/CH_CLOCK.ESP:61
 requirement	?	unknown	remove_d	4	1	gog-esp/D4CAPTURE.ESP:86
 requirement	temporary_multiple_select_multi_column_menu	instance	set_item_status	3	1	gog-esp/DISP2_TESUJI.esp:82

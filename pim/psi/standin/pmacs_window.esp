@@ -12,7 +12,10 @@
 %     standard_editor), `:get_window(E, W)` (editor -> window); create/4,
 %     `:create(#pmacs_window, Opts, _, W)` with the third argument
 %     unbound, is kwic-esp src/inEditor1.esp:151 and mendels
-%     comp_win.esp:54-62 (USAGE, as cited there; not re-read here);
+%     comp_win.esp:54-62 (both re-read 2026-11-25: Opts carry
+%     `nature([with_superior_input_buffer])` and `superior(..)`); over
+%     the IFS sources create/3 is the common form (about 85 sends against
+%     3 of create/4, source check row SA36);
 %   - pimfep##pimfep_message_log dump_log/1, sorted_log/1,
 %     sorted_log_string/1 and pimos_fep_superviser log_window/2 (held
 %     .ptf): `:create(#pmacs_window, Opts, W)`, then `:activate(W)` and
@@ -40,9 +43,11 @@ class pmacs_window has
         :new(Editor_class, Editor),
         Window!editor := Editor,
         Editor!window := Window;
-% INTERPOLATED from: inEditor1.esp:151, comp_win.esp:54 `:create(
-% #pmacs_window, Opts, _, W)` (window.md §2.11); the third argument is left
-% unbound, as every held caller leaves it.
+% INTERPOLATED from: kwic-esp src/inEditor1.esp:151 and mendels
+% comp_win.esp:54-62 `:create(#pmacs_window, Opts, _, W)` (held IFS
+% source; Opts with `nature([with_superior_input_buffer])` and
+% `superior(..)`, window.md §2.11); the third argument is left unbound,
+% as every held caller leaves it.  The options are ignored (OURS).
 :create(Class, Options, Unused, Window) :-
         :create(Class, Options, Window);
 

@@ -147,6 +147,28 @@ Step 3e's census semantics (2026-11-24, same method; observed):
     errors here; test_espc test_fep_census;
   - raise/2 fails instead: test_uncaught_exception here; test_espc
     test_fep_census.
+The source check's opcode rows (2026-11-25, injected into kl0.py, restored
+by cp from a backup and cmp-checked; observed):
+  - blt 19 new_heap_vector refusing V != N again: test_result_register
+    errors and test_census fails here; test_espc test_fep_census fails.
+  The mnemonic renames (42-45, a4, a5, 24, 2b, blt 45/46/48/49) change
+  only names and were not injected: Machine() raises ValueError for a
+  table row with no handler of its name (kl0.py load), which the suite
+  runs on every machine it builds.
+String identity (2026-11-25; each injected into kl0.py or
+standin/list_index.esp by the session's variant.py, restored by copy and
+cmp-checked; both test files run; observed):
+  - unify compares strings by content again: test_unify_and_identical
+    only (test_espc passes: equal_key/2 compares contents anyway, and the
+    census's arguments are unbound);
+  - == (identical) compares strings by content again:
+    test_unify_and_identical only;
+  - list_index equal_key/2 reduced to unification: test_espc
+    test_string_keys only;
+  - string/3 refuses a non-string again: test_string_is_a_type_test
+    errors and test_census fails here; test_espc test_list_index,
+    test_hash_index and test_string_keys error (equal_key/2's type test
+    is refused on an atom key) and test_fep_census fails.
 """
 import os
 import sys
@@ -318,8 +340,8 @@ class Table(unittest.TestCase):
         # the result in another register than the operand
         m.reset()
         m.x[0], m.x[4] = 7, 30
-        m.op_add_immediate(None, 0, 0, 1, 6, None)
-        m.op_subtract_immediate(None, 0, 4, 11, 0, None)
+        m.op_add_constant(None, 0, 0, 1, 6, None)
+        m.op_subtract_constant(None, 0, 4, 11, 0, None)
         self.assertEqual((m.x[0], m.x[6], m.x[4]), (19, 8, 30))
         # p_tgraph.esp:70-72 `a1 00 02`: one new variable in A0 and X2
         m.reset()
@@ -385,6 +407,44 @@ class Table(unittest.TestCase):
         m.x[1] = K.Str('ac')
         m.op_equal_string(None, 0, 4, 1, 0, None)
         self.assertIsNone(m.pc)
+
+
+class StringIdentity(unittest.TestCase):
+    """Strings unify only with the same stored string (2026-11-25): TM-388
+    PDF p79 (folio 67), 'abc'='abc', == and =:= fail, equal_string/2
+    succeeds; p117-119 Table 4-3; TM-115 PDF p97.  string/3 is a type test
+    (TR-044 App. A.2 PDF p39)."""
+
+    def test_unify_and_identical(self):
+        m = machine()
+        a, b = K.Str('abc'), K.Str('abc')
+        m.reset()
+        self.assertFalse(m.unify(a, b))
+        self.assertTrue(m.unify(a, a))
+        v = K.Var()
+        self.assertTrue(m.unify(v, a))
+        self.assertTrue(m.unify(v, a))
+        self.assertFalse(m.unify(v, b))
+        m.x[0], m.x[1], m.x[2] = a, b, a
+        self.assertFalse(m.identical(0, 1))
+        self.assertTrue(m.identical(0, 2))
+        m.pc = 'here'
+        m.op_equal_string(None, 0, 0, 1, 0, None)
+        self.assertIsNotNone(m.pc)
+        # a structure holding them: element-wise, so the same rule
+        self.assertFalse(m.unify(K.Vec([a]), K.Vec([b])))
+        self.assertTrue(m.unify(K.Vec([a]), K.Vec([a])))
+
+    def test_string_is_a_type_test(self):
+        m = machine()
+        for x, ok in ((K.Str('ab'), True), (K.Var(), False), (3, False), (K.Atom('ab'), False)):
+            m.reset()
+            m.pc = 'here'
+            m.x[0] = x
+            m.op_string(None, 0, 0, 1, 2, None)
+            self.assertEqual(m.pc is not None, ok, x)
+            if ok:
+                self.assertEqual(m.x[1], 2)
 
 
 class Convert(unittest.TestCase):
@@ -657,18 +717,23 @@ class Step3eRows(unittest.TestCase):
                 op(code, 0, 0, 1, 2, 0)
 
     def test_result_register(self):
-        # R != A for divide_immediate (c_grade_ex.esp:26 `49 00 0a 07`) and
+        # R != A for divide_constant (c_grade_ex.esp:26 `49 00 0a 07`) and
         # add (p_wwin.esp:420 `40 00 01 01`): the result lands in A_R, A_A
         # keeps its value
         m = machine()
         code = self.cell()
         m.reset()
         m.x[0] = 37
-        m.op_divide_immediate(code, 0, 0, 10, 7, 0x000a07)
+        m.op_divide_constant(code, 0, 0, 10, 7, 0x000a07)
         self.assertEqual((m.x[7], m.x[0]), (3, 37))
         m.x[0], m.x[1] = 5, 9
         m.op_add(code, 0, 0, 1, 1, 0x000101)
         self.assertEqual((m.x[1], m.x[0]), (14, 5))
+        # V != N for new_heap_vector (FMT_CONV.ESP:13-16 `19 02 04 00`):
+        # the vector lands in A_V, A_N keeps the length
+        m.x[4] = 3
+        m.op_new_heap_vector(code, 0, 2, 4, 0, 0x020400)
+        self.assertEqual((len(m.x[2].args), m.x[2].heap, m.x[4]), (3, True, 3))
 
 
 class Step3eCensus(unittest.TestCase):
@@ -720,7 +785,13 @@ class Census(unittest.TestCase):
         # step 3e's pmi ca: 4 refused methods now succeed (array_index_buffer
         # and wshell_buffer set_all_at/2, reset_all_at/2) and 1 fails
         # (csp_fep_main_program get/4); was 216 / 303 / 11
-        self.assertEqual(out, {'refused': 211, 'success': 307, 'failure': 12})
+        # 2026-11-25: blt 19 new_heap_vector with V != N witnessed
+        # (FMT_CONV.ESP:13-16): the 7 methods refused there go on; three
+        # succeed (booking_table, local_node_manager, remote_cell_table
+        # create/2), the others stop later
+        # 2026-11-25: string/3 a type test (fails on an unbound argument):
+        # csp_default_write write/2 goes on and runs into the step limit
+        self.assertEqual(out, {'refused': 207, 'success': 310, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -748,7 +819,13 @@ class Census(unittest.TestCase):
             # step 3e: the 8 sends to an integer still holding its slot's
             # template constant are named so (the census makes receivers
             # with new/2, not through their creators)
-            'receiver a slot constant': 8, 'unbound argument': 21, 'operand': 14,
+            # 2026-11-25: blt 19 V != N witnessed: 'operand' 14 -> 7; of the
+            # 7, three succeed, two stop at an unbound new_heap_vector length
+            # ('unbound argument' 21 -> 23), dummy_kl1_value_cell unify/2 at a
+            # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
+            # constant ('pool' 1)
+            # string/3 a type test: 'unbound argument' 23 -> 22
+            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 7, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,

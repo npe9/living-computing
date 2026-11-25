@@ -20,10 +20,17 @@
 % reproduced; every key goes to bucket 0.  What a key finds, and every
 % answer but the order of get_contents/2 and its kin, does not depend on
 % the bucket.  The buckets are the list_index stand-in (list_index.esp).
+%
+% Further sources: TR-056 p7 (PDF p9): an index "is implemented as a hash
+% array which is an array of lists", a key "hashed by a standard hash
+% function"; TM-161 PDF p13: hash_index registers data other than stack
+% vectors only (the stand-in accepts any term: OURS); `hash/2` can be
+% negative (SVHSH_IDX.ESP:83-89 masks it with 16#"7FFFFFFF").
 
 class hash_index has
 
-% INTERPOLATED from: `:create(#hash_index, H, Size)` (above), and the
+% INTERPOLATED from: `:create(#hash_index, H, Size)` (above;
+% also program-e.tex:6517 `:create(#hash_index,HT,256)`), and the
 % slots SVHSH_IDX.ESP reads: size, and a vector of Size list_indexes.
 :create(Class, Hash, Size) :-
         :new(Class, Hash),
@@ -42,8 +49,10 @@ attribute size := 0,
 % SVHSH_IDX.ESP add_at/3 (the bucket's :add_at).
 :add_at(Hash, Object, Key) :-
         bucket(Hash, Key, L), :add_at(L, Object, Key);
-% INTERPOLATED from: TR-056 p8 `:get_at(Pool,Object,Key)`; the bucket's
-% :get_at (as SVHSH_IDX.ESP does for add_at/remove_at).
+% READ: TM-161 PDF p14 (Fig. 4): returns the object under the key, and
+% fails when the search fails (argument order TR-056 p8,
+% program-e.tex:6529).  INTERPOLATED: the body, the bucket's :get_at (as
+% SVHSH_IDX.ESP does for add_at/remove_at).
 :get_at(Hash, Object, Key) :-
         bucket(Hash, Key, L), :get_at(L, Object, Key);
 % INTERPOLATED from: SVHSH_IDX.ESP remove_at/3 (the bucket's

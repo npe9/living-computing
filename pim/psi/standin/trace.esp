@@ -5,8 +5,13 @@
 %   - pimfep##as_pimos_string_io_device trace_string_io/1 (held .ptf,
 %     @a5): `:trace(#trace)` as a last call, after a neck cut, with no
 %     other goal (docs/simpos/subsystems/shell.md:438);
-%   - kwic-esp autoTracer.esp:23 `:trace(#trace,X)` (shell.md:437, a
-%     second arity, UNSPECIFIED there);
+%   - kwic-esp autoTracer.esp:23 `:trace( #trace , AT!proNumber )`
+%     (shell.md:437).  trace/2 takes a process number: cal-esp
+%     deb2.12/util.esp:217-227, the help text "Multi_process_debugger",
+%     `:trace(#trace)/:trace(#trace,Process_no)`; notrace/1 and notrace/2
+%     exist (same lines) and are not stood in;
+%   - TR-087 PDF p11 §5.4: the system tracer "runs as a separate process
+%     and traces the execution of other processes";
 %   - the debugger's trace mode, documented as a screen and its commands
 %     (TM-181 pp.4-5; shell.md §3), which this stand-in does not provide.
 % Model (OURS): trace/1 succeeds and does nothing.  A method that succeeds

@@ -8,6 +8,8 @@
 % and get/2 that call it (Fig. 3.6).  A stream is first in, first out
 % (TR-056 pp.12-13, printed interface of stream).
 % Model (OURS): the objects as a Prolog list in one slot, oldest first.
+% A list cannot be saved in a slot on the PSI (TM-388 PDF p138, folio
+% 126), so this representation is OURS twice over.
 
 class post_queue has
 
@@ -18,7 +20,8 @@ class post_queue has
 
 instance
 
-% INTERPOLATED: the representation (OURS).
+% INTERPOLATED: the representation (OURS; a list cannot be saved in a
+% slot on the PSI, TM-388 PDF p138).
 attribute objects := [];
 
 % INTERPOLATED from: the printed stream:put/2, `:add_object(Stream!

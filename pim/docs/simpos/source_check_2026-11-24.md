@@ -427,7 +427,10 @@ check's edit.
 | 4.19 | login record ID = 1, OURS (:1146) | §6.5: the real requester's ID is "the smallest integer from 0 not in use" (pimfep `pimos_remote_login_socket_table get_key/4`); the first login is 0 | **CONTRADICTED**: the held PSI gives the first login ID 0; the stand-in sends 1. Proposal P-f3 (§5) |
 | 4.20 | RN `"pmpsi"` is the SIMPOS user, INFERENCE; RP `""` OURS (:1149-1150) | `pimosobj/object/login.com` `"me" := ["user:pmpsi"]` (held); `primer25.tex` gives the pseudo-Multi-PSI setup with logical directories under `>sys>csp`, but no user | CONFIRMED for the name; the user role NO SOURCE FOUND (counted as CONFIRMED) |
 
-## §5 Proposed changes to `pim/psi/` (ready to apply; NOT applied)
+## §5 Proposed changes to `pim/psi/`
+
+Applied on 2026-11-25, each after its own re-check: the status of every
+item is in "Status" at the end of this section.
 
 These are listed by file. Each gives the location, the change, and the
 citation. P-numbers are for reference.
@@ -658,6 +661,52 @@ These are outside `psi/` in part. Changing them requires the full suite.
   it to 0, or keep 1 and label it a known deviation. Either way the
   tapes and pins that carry it move: the full suite is needed.
 
+### Status (2026-11-25)
+
+Each item was re-checked against its primary source before it was
+applied: the page image for a TR/TM citation, the held file and line
+for a source citation, the held cells for a witness. APPLIED means
+applied as proposed unless the note says otherwise.
+
+| Item | Status | Note |
+|---|---|---|
+| P-s1 | APPLIED | TR-056 p11 is PDF p13 (image read) |
+| P-s2 | APPLIED | TM-388 PDF p79 and TM-161 PDF p18 read as images |
+| P-s3 | APPLIED, except `put_at/3` | `put_at/3` NOT APPLIED: optional, and new behaviour, not a label |
+| P-s4 | APPLIED | |
+| P-s5 | APPLIED | |
+| P-s6 | APPLIED | |
+| P-s7 | APPLIED with other citations | the audit's cil `ms_ist.esp`:251/1668/1793 and `ds_fep.esp`:912 do not hold `remote_or_local`; cited instead: cal-esp `deb2.12/init.esp`:314, cil `src/ds_fep.esp`:909 (and `ds_bep.esp`:2026) |
+| P-s8 | APPLIED, except the IPSJ citation | the optional IPSJ 114007 citation NOT APPLIED: not re-read |
+| P-s9 | ALREADY DONE | step 3e (1695727f) |
+| P-s10 | APPLIED | |
+| P-s11 | APPLIED | |
+| P-s12 | APPLIED | |
+| P-s13 | APPLIED | |
+| P-s14 | APPLIED | |
+| P-s15 | APPLIED | time_dvc.kl1 lines are 199-210, not 197-209 |
+| P-s16 | APPLIED | |
+| P-s17 | APPLIED, corrected | TM-388 PDF p29 lists four element widths (1, 8, 16, 32), not "16 or 32" |
+| P-s18 | APPLIED | |
+| P-s19 | APPLIED | |
+| P-s20 | APPLIED | |
+| P-k0 | APPLIED | `@ab` read from the cells |
+| P-k1 | APPLIED | counts re-run independently (clause-scoped def-use): 44's Y never from 40/46 (0 of 6,805); 45's X a head argument in 6,451 of 6,639 |
+| P-k2 | APPLIED | pmi 24: 5,331 of 5,773 follow a built-in cell |
+| P-k3 | APPLIED | handlers renamed; the census refusal text follows the name |
+| P-k4 | APPLIED, and executed | kl0 no longer refuses blt 19 V != N; census moves in `psi/README.md` |
+| P-k5 | APPLIED, reworded | the rule "arity+1 when the barrier is live" is not exact: of 2,784 arity+1 c4, 2,241 are in predicates keeping a barrier in A_arity and 543 are not; the row gives the counts. c5 witness: h_grade_n.esp:507-512 @368 |
+| P-k6 | APPLIED | every cell and source line re-read |
+| P-k7 | APPLIED | TR-044 PDF p39 read as an image; TERMCODE.ESP:183's size 8 is a `string/3` call |
+| P-k8 | APPLIED | TM-444 PDF p12-14 and TR-236 PDF p5 read as images; cited in the meaning, mnemonics not renamed |
+| P-k9 | APPLIED | all five quotes re-read verbatim |
+| P-k10 | ALREADY DONE except c6 and blt 6f | b1/b5/b6/b7, ca, 9a/9b, 50/51/54/55, f2 by step 3e; c6 and 6f NOT APPLIED: each needs an implementation and tests, and 6f's third argument is unsettled |
+| P-f1 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
+| P-f2 | APPLIED | also `psi/fepread/ptfread.py`'s docstring, which said the same |
+| P-f3 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
+| P-k1 string audit | APPLIED | TM-388 PDF p79, p117-119, p169 and TM-115 PDF p97 read as images: strings unify only by storage. kl0 follows (unify, `==`); string/3 a type test (TR-044 PDF p39); list_index `equal_key/2` compares string keys by contents. Census effect in `psi/README.md` |
+| §6 `classes.tsv` | APPLIED (generator) | `asm/simpos_census/espscan.py` `INSTANCE_RESULT`: `time` `now/2` returns an instance (CH_CLOCK.ESP:33-34, 59-60); the scan rerun, every table regenerated; only `time`'s sends move |
+
 ## §6 Open after this check
 
 - No V3.0 PIMOS source is held, so `login Server End` stays INFERENCE
@@ -671,9 +720,8 @@ These are outside `psi/` in part. Changing them requires the full suite.
 - Not given rows: the unlabelled local helpers of INTERPOLATED files
   (about 20 in `hash_index`, `list`, `list_index`), which inherit their
   file's label.
-- `required/classes.tsv`'s `time` row lacks get_count/2 and
-  set_count/2, which held IFS source sends (CH_CLOCK.ESP:59-60); not
-  fixed here (a generated table).
+- ~~`required/classes.tsv`'s `time` row lacks get_count/2 and
+  set_count/2~~: fixed 2026-11-25 in the generator (Status, §5).
 - The primer cited as `primer25.tex` is titled "PIMOS 3.0 Introductory
   Manual" (its `\title`), but points readers to the "PIMOS 2.5 Manual".
 - The OCR corpus covers about half the held TR/TM pages. It covers all

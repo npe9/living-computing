@@ -152,6 +152,23 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     - `blt 66 A B` tests A_A < A_B; `blt 67 A B` tests A_A >= A_B.
     - `blt 48`/`49` multiply and divide by an 8-bit immediate.
   - The names are OURS. Their mnemonics follow §3's groups where a group fits.
+  - 2026-11-25 (`../source_check_2026-11-24.md` §5): where TM-444 or TR-236 prints a mnemonic
+    that the held cells single out, the row now carries it as an INFERENCE binding with its
+    count: pmi 42/43 `unify_value_p/t`, 44/45 `unify_local_value_p/t` (TM-444 PDF p31 ex. 8),
+    a4 `put_local_value`, a5 `put_unsafe_value`, 24 `get_builtin_variable` (TR-236 PDF p5
+    Fig. 1), 2b `get_var_var_list` (TM-444 PDF p16); blt 45/46/48/49 `add_/subtract_/
+    multiply_/divide_constant` (held cil `cil_kl0.esp`). The indexing and cut rows cite
+    `jump_on_non_list`, `jump_on_non_constant`, `jump_on_value`, `hash_on_value`, `cut_me`,
+    `cut_me_and_proceed`, `cut_me_and_fail` in their meaning without renaming. The numbers
+    themselves are still printed nowhere.
+
+**Unification of strings** (KNOWN, TM-388 PDF p79 and p117-119 Table 4-3): two strings unify,
+and are `==`, only when they are the same stored string; `equal_string/2` compares contents.
+`string/3` is listed as a type test (TR-044 App. A.2, PDF p39, `string(?String, ^Length,
+^Size)`); kl0 makes it fail on a non-string (INFERENCE: no failing call is printed). Open:
+Table 4-3 makes `==` on stack vectors element-wise and on heap vectors address-only, while
+kl0's `==` (pmi 62, blt f0/f2) is object identity for both and its unification is
+element-wise for both; neither is settled by a witness yet.
 
 ## 4. Built-in predicates
 

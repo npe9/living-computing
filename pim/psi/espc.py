@@ -555,7 +555,7 @@ def small(v):
 BUILTINS = {
     # name/arity: (blt opcode, operand roles) -- roles: 'in' an input
     # register, 'out' an output register.  Each from a witnessed row.
-    ('new_heap_vector', 2): ('19', ('out', 'in')),      # V = N only
+    ('new_heap_vector', 2): ('19', ('out', 'in')),      # emitted V = N (V != N held too)
     ('first', 2): ('21', ('in', 'out')),
     ('second', 2): ('22', ('in', 'out')),
     ('vector_element', 3): ('20', ('in', 'in', 'out')),

@@ -49,6 +49,13 @@ def is_binary(raw):
     return b'\x00' in raw[:4096]
 
 
+# System class methods, other than create*/new, whose one fresh output is an
+# instance of the class.  Each entry is READ from held source that sends an
+# instance message to the result:
+#   time now/2: gog-esp CH_CLOCK.ESP:33-34 binds `:now(#time,T)` to the slot
+#   `time`, and :59-60 send it get_count/2 and set_count/2 (also gog-kl1).
+INSTANCE_RESULT = {('time', 'now', 2)}
+
 def name_of(t):
     """Class name from a term: atom, pkg##atom, #atom.  -> (pkg, name) or None."""
     if t is None:
@@ -627,7 +634,8 @@ class Analyzer:
                 self.user_has_method(cname, 'class', nm, ar, False)
             if factory and record:
                 self.p.stats['create_not_bound_user_factory'] += 1
-            if (nm.startswith('create') or nm == 'new') and not factory:
+            if (nm.startswith('create') or nm == 'new' or (cname, nm, ar) in INSTANCE_RESULT) \
+                    and not factory:
                 fresh = []
                 for a in args[1:]:
                     if a[0] == 'var' and a[1] != '_' and a[1] not in seen and a[1] not in env:
