@@ -328,8 +328,8 @@ So the window from the prompt runs no `new_atom` and no instruction
 that reads the clock (`system_timer` and the timer instructions write
 the clock's bits to a register, which the trace shows: INFERENCE from
 the PASS, not counted). RESTOREs 1-3 are
-unchecked by this window; a window that reads them is still to be
-found. RESTOREs 16-26 (the waiting command's fields) were not dropped
+unchecked by this window; they are checked by the commands past the
+shell (below, "Which RESTOREs the commands check"). RESTOREs 16-26 (the waiting command's fields) were not dropped
 one by one; dropping the push (31) removes them all.
 
 ### Commands past the shell (`run_pimm_apps.sh`)
@@ -362,6 +362,32 @@ instructions), every line identical:
 | versions | `versions` | 114,472 | 610,006 | 38 |
 | compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
 | compile_missing | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | 94 |
+
+Which RESTOREs the commands check (2026-11-24, the kept work directory
+of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT
+of the same length, as in the table above, and the command compared
+again. The prediction came first, from the reference: `echo(zorkqx)`
+makes one `new_atom` (counter 75,569 to 75,570); each compile reads
+`system_timer` once. The checkpoint's clock is 204,335,039 steps, 236
+past a tick (the timer is `(steps-1)//423`); with RESTORE 3 dropped the
+core counts 423 instructions to its next tick where the reference
+counts 187, so it is one tick behind only for a read fewer than 236
+instructions after one of the reference's ticks: the read is 135 after
+one in compile_exit (caught), 357 in compile_missing (not caught).
+
+| Command | RESTORE dropped | Result |
+|---|---|---|
+| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 25,012, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
+| echo_new_atom | 2, 3 | PASS: no clock read |
+| compile_exit | 1 | PASS: no `new_atom` |
+| compile_exit | 2, the ticks | FAIL at line 828,137, instruction 234,242: `R 9 000007611f` / `R 9 000000022a` |
+| compile_exit | 3, the instructions since the tick | FAIL at the same line: `R 9 000007611f` / `R 9 000007611e`, one tick short |
+| compile_missing | 2 | FAIL at line 1,484,817, instruction 288,608: `R 9 000007619f` / `R 9 00000002aa` |
+| compile_missing | 3 | PASS, as predicted: the read falls past the 236 |
+
+So each of RESTOREs 0-4 and the waiting command's push is now caught
+by some window (16-26 not dropped one by one): 0, 4 and 31 by `shutdown`/`yes`, 1 by `echo(zorkqx)`, 2 and 3 by
+`compile`/`!exit`.
 
 ## FPGA flow (ULX3S / ECP5)
 

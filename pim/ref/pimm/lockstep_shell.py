@@ -69,6 +69,23 @@ RESTORE word of the script replaced by a silent SLOT 15):
     B 7 1 0820004000 2 16384 / Q
 The splice-order injection into PimmGBox (lockstep_merge.py's header)
 fails the same run at line 8429.
+
+Observed injections on the commands past the shell (2026-11-24, the
+prompt checkpoint with the login ID 0, run_pimm_apps.sh KEEP=1; the
+same SLOT 15 in place of the RESTORE word):
+  echo_new_atom, 1  FAIL at line 25012, instruction 8124:
+    R 8 0200012731 / R 8 0200010000
+  echo_new_atom, 2 and 3  PASS (no clock read)
+  compile_exit, 1  PASS (no new_atom)
+  compile_exit, 2  FAIL at line 828137, instruction 234242:
+    R 9 000007611f / R 9 000000022a
+  compile_exit, 3  FAIL at the same line: R 9 000007611f / R 9 000007611e
+  compile_missing, 2  FAIL at line 1484817, instruction 288608:
+    R 9 000007619f / R 9 00000002aa
+  compile_missing, 3  PASS, as predicted: the checkpoint is 236
+    instructions past a tick, and the one system_timer read falls 357
+    after a tick, so the core's late tick has come by then
+(bsv/README.md, "Which RESTOREs the commands check".)
 """
 import json
 import os

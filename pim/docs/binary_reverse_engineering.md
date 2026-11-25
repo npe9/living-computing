@@ -824,6 +824,13 @@ the device are given it again whenever the machine runs dry.
   ordinary atom after a special one is written after a space); the
   directory is the home `fep.py` gives (OURS, user `pmpsi`).
 
+  The RESTOREs these check (`bsv/README.md`, "Which RESTOREs the
+  commands check"): dropping `new_atom`'s counter fails `echo(zorkqx)`
+  at line 25,012; dropping the clock's ticks or the instructions since
+  the last tick fails `compile`/`!exit` at line 828,137 (its one
+  `system_timer` read); so each of RESTOREs 0-4 and the waiting command
+  (31) is now caught by some window (16-26 not dropped one by one).
+
   What these needed: the rest of printable ASCII in `fep.py`'s JIS
   table, from PIMOS's own `table_ascii_to_jis` (`code_cv.kl1`:152-251;
   17 were missing, among them `[`, `]`, `;`, `|`), and 0x000A read as
