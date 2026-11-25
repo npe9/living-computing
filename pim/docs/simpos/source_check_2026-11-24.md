@@ -36,6 +36,7 @@ The docs outside `psi/` were corrected in place:
 8. [§6 Open after this check](#6-open-after-this-check)
 9. [§7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)](#7-step-3fs-interpolated-and-ours-parts-re-checked-2026-11-25)
 10. [§8 The rest of §7, re-checked in step 3h (2026-11-25)](#8-the-rest-of-7-re-checked-in-step-3h-2026-11-25)
+11. [§9 Step 3i: the two items §8 left open (2026-11-25)](#9-step-3i-the-two-items-8-left-open-2026-11-25)
 
 ## How the check was done
 
@@ -794,7 +795,8 @@ This section re-reads the four items that §7 left unread. Page images
 were made with `pdftoppm` and read by eye. Cells come from the
 `ptfread` listings of `pimfep.ptf`. Pool constants were resolved with
 kl0's `Code.pool_term`. With these, §7's four items are re-read. One
-cross-reference stays unread: §6.1 step 4's `{Id, 5}`.
+cross-reference stayed unread: §6.1 step 4's `{Id, 5}` (re-read in
+step 3i, §9).
 
 | Item | Re-read | Verdict |
 |---|---|---|
@@ -919,4 +921,58 @@ Two drifts surfaced in the re-run. Both predate step 3h:
     the appendix.
 
   Only the three citation cells were changed. Bringing the appendix in
-  line with the generator is open.
+  line with the generator was open; step 3i did it (§9).
+
+## §9 Step 3i: the two items §8 left open (2026-11-25)
+
+### `fep_services.md` §6.1 step 4's `{Id, 5}`
+
+Read from the cells of `pimfep##as_pimos_device` local `refute/3`
+(@129-165, `psi/librarian.py class pimfep##as_pimos_device --listing`).
+The six `a9` pool cells were resolved by cell + s16 against the pool
+`kl0.read_pool` reads: @12e, @134 and @152 load
+`#pimfep##fep_message_assembler`, @13a `#pimfep##fep_command_code_table`,
+@146 and @15d `#simpos##process`.
+
+- Clause 1 (@129-14e, `c4 03 00 22`, so the alternative is @14e):
+  `:disassemble(#fep_message_assembler, Raw, Vector)`,
+  `:get_command(#fep_message_assembler, Vector, Code)`,
+  `:convert(#fep_command_code_table, Code, Name)`,
+  `:refute(Self, Name, Vector)`, a cut (@145 `d3`), then
+  `:self(#process, P)`, `:allow_forced_event(P)`.
+- Clause 2 (@14e-165): `:get_device_id(#fep_message_assembler, Raw, Id)`
+  (@152-156); `{Id, 5}` built at @158-15a (`b2 00`, `44 01` for Id,
+  `47 00 00 05` for 5); `:reply_message(Self, {Id, 5})` (@15b-15c);
+  `:self(#process, P)`, `:allow_forced_event(P)` (@15d-164); then `fe`,
+  fail (@165).
+
+**CONFIRMED**: a failed command is answered `{Id, 5}`. One detail is
+added to §6.1 step 4: after replying, the local fails. Its caller
+`$or$1/3` (@215-22d) calls it at @227.
+
+### `window.md` appendix A against its generator
+
+- The generator's `create/4` row now carries the 2026-11-24 correction,
+  which had been made in `window.md` only. It was re-read 2026-11-25:
+  - kwic-esp `src/inEditor1.esp`:151-152: the clause head is at :151,
+    and :152 sends `:create(#pmacs_window, [...], _, InW)`, create/4;
+  - disc `exshow.esp`:24 sends pmacs_window create/3, and :25 sends
+    editor_text_buffer create/4.
+- `tools/window_appendix_gen.py` was re-run. Appendix A is now the
+  generated `coverage/out/selectors.md`, line for line (228 lines). That
+  changes 12 rows:
+  - `create/4`, the citation;
+  - `getl/2` and `putt/2`, which gain their PRINTED row (`ESPtex/
+    program-e.tex`:6736-6745, re-read: the `:putt(B,[1,2]),
+    :putt(B,p(1,2))` then `:get1(B,S)` example, "get1" as printed);
+  - seven selectors go from UNSPECIFIED to CENSUS: `get_character_font/2`,
+    `get_parsing_operator/2`, `get_unparsing_operator/2`,
+    `set_max_depth/2`, `set_max_length/2`, `set_parsing_operator/2`,
+    `set_unparsing_operator/2`.
+- The per-class table of `window.md` §2.14 is the generator's other
+  output (`perclass.md`). It had drifted in four rows since the second
+  sweep (status letters only: `standard_io_buffer`, `pmacs_window`,
+  `standard_editor`, `standard_superior_window`). It is also made equal
+  to the generated file.
+- `gaps.md`'s counts come from `tools/coverage.py`, which reads the notes,
+  not the appendix. They were regenerated in step 3h and do not change.

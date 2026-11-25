@@ -31,7 +31,7 @@
 | `close_output/1` | i | 88 | close (and write out) a standard_output_file (USAGE: cal-esp/cal2.12/control.esp:360) | USAGE | (in meaning) | — |
 | `create/2` | c | 127 | class-method constructor without options (PRINTED-INTERFACE TM-125 p13); see §3.1 (window), §2.8 (standard_io_buffer) | PRINTED-INTERFACE | (in meaning) | — |
 | `create/3` | c | 1499 | class-method constructor (PRINTED-INTERFACE TM-125 p13-14); per-class argument order in §3.1 (windows: options list first; files/buffers/fonts differ) | PRINTED-INTERFACE | (in meaning) | — |
-| `create/4` | c | 64 | pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE disc/exshow.esp:23, cal-esp/deb2.12/dmenu.esp:1214); see §2.11, §3.1 | USAGE | (in meaning) | — |
+| `create/4` | c | 64 | pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE kwic-esp src/inEditor1.esp:151-152 for pmacs_window, cal-esp/deb2.12/dmenu.esp:1214; disc/exshow.esp:23-25 sends pmacs_window create/3 and editor_text_buffer create/4, corrected 2026-11-24, re-read 2026-11-25); see §2.11, §3.1 | USAGE | (in meaning) | — |
 | `create_menu/3` | c | 2 | **UNSPECIFIED** | — | first use chal/control.esp:75 | — |
 | `create_window/2` | c | 3 | **UNSPECIFIED** | — | first use icotext/src/imi_main.esp:251 | — |
 | `create_with_input/4` | c | 1 | [pmacs_window] :create_with_input(#C,Init,Superior,W) (txtstrct form); after:create_with_input/5 demon exists in cal | USAGE | txtstrct/ctx_system.esp:408 (ifs_window) | held 3.x-7.x |
