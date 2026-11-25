@@ -141,6 +141,11 @@ Step 3e's rows 9a/9b, b1/b5/b6/b7, 50/51/54/55 and R != A for 40/49
     test_result_register and test_step3c_cells.
   test_espc passes under every injection but the first: its census pins
   see only the opcodes' presence, not their arithmetic.
+  - (step 3g, 2026-11-25) multiply_constant with R != A refused again
+    (blt 48, witness p_hwin.esp:233 `48 00 02 03`): test_result_register
+    errors and test_census fails here; test_espc
+    test_step3f_census_recipes fails (editor get_title/3 back at the
+    operand refusal).
 Step 3e's census semantics (2026-11-24, same method; observed):
   - slot constants not marked: test_census and test_slot_constant here;
     test_espc test_get_window;
@@ -173,6 +178,25 @@ cmp-checked; both test files run; observed):
     errors and test_census fails here; test_espc test_list_index,
     test_hash_index and test_string_keys error (equal_key/2's type test
     is refused on an atom key) and test_fep_census fails.
+Step 3g's switches (Step3gSwitches: pmi c6, ce, c3, c1, ff, tables
+cd03/cd04; 2026-11-25; each injected into kl0.py or kl0_opcodes.tsv from
+a backup, restored by cp and cmp-checked; both test files run; observed):
+  - c6 sends a list to the atom path: test_get_bfs_list_only fails here;
+    test_espc passes;
+  - c6 sends a vector to the unbound target: test_receiver_send errors
+    here; test_espc passes;
+  - ce's key length N - 1: test_make_com errors and test_receiver_send
+    fails here; test_espc test_fep_census and test_step3f_census_recipes
+    fail;
+  - ff's target cell + 3: test_get_bfs_list_only errors here; test_espc
+    test_fep_census and test_step3f_census_recipes fail;
+  - the hash register always A0: test_make_com and test_receiver_send
+    error here; test_espc passes;
+  - the pmi c3 row dropped: test_make_com and test_receiver_send error,
+    test_census and test_handlers_are_the_table fail here; test_espc
+    passes;
+  - cc reading its constant with const_cell (no vector keys): only
+    test_get_tap_type errors; test_espc passes.
 """
 import os
 import sys
@@ -227,8 +251,9 @@ class Table(unittest.TestCase):
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
-        # step 3e's pmi ca and blt f2
-        self.assertEqual(len(rows), 125)
+        # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
+        # c3 c6 ce ff, tables cd03 cd04)
+        self.assertEqual(len(rows), 132)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -748,6 +773,19 @@ class Step3eRows(unittest.TestCase):
         m.x[4] = 3
         m.op_new_heap_vector(code, 0, 2, 4, 0, 0x020400)
         self.assertEqual((len(m.x[2].args), m.x[2].heap, m.x[4]), (3, True, 3))
+        # step 3g: R != A for multiply_constant (p_hwin.esp:233
+        # `Y=<(Height*2)`, `48 00 02 03`): A3 := A0 * 2, A0 keeps Height
+        m.x[0], m.x[3] = 7, 99
+        m.op_multiply_constant(code, 0, 0, 2, 3, 0x000203)
+        self.assertEqual((m.x[3], m.x[0]), (14, 7))
+        # the witness's cells: the two products into the temporary A3, each
+        # compared with Y (A1) by not_less_than(A3, A1)
+        t = machine().lib.templates['paragraph##scroll_bar_icon']
+        cells = {c[0]: c for p in t.preds() if p.name == '$or$0' and p.arity == 3 for c in p.cells}
+        self.assertEqual([cells[o][3] for o in (0x282, 0x283, 0x288, 0x289)],
+                         [0x48000203, 0x67030100, 0x48000303, 0x67030100])
+        cells = {c[0]: c for p in t.preds() if p.name == 'code' and p.arity == 4 for c in p.cells}
+        self.assertEqual([cells[o][3] for o in (0x14, 0x15)], [0x27030000, 0x49000400])
 
 
 class Step3eCensus(unittest.TestCase):
@@ -788,6 +826,147 @@ class Step3eCensus(unittest.TestCase):
         self.assertEqual((out['reset/1'], out['initialize/1']), ('exception', 'exception'))
 
 
+class Step3gSwitches(unittest.TestCase):
+    """pmi c6 switch_on_term, ce switch_on_vector, c3 retry, c1 trust, ff
+    jump and the cd03/cd04 tables (step 3g), on held code beside its
+    held source.  Each first-argument type is run, and the clauses it
+    reaches are the ones the source says can match."""
+
+    def run_local(self, m, cid, name, n, off, args):
+        code = m.code(cid)
+        (p,) = [p for p in m.lib.templates[cid].locals if (p.name, p.arity, p.offset) == (name, n, off)]
+        m.reset()
+        return [[K.resolve(a) for a in args] for _ in m.solve((code, p.offset), args)]
+
+    def test_get_bfs_list_only(self):
+        # RDMSOPE.ESP:285-291 `get_BFS_list_only([],[]):-!;
+        # get_BFS_list_only([{_,Buffer_string}|Info_list],[Buffer_string|
+        # BFS_list]):-!, ...; get_BFS_list_only(end,end);`, compiled into
+        # kappaRDM_manager @6b7 (c6, cc [], cc end, fe, ff, e4 chain)
+        m = kappa_machine()
+        cid = 'kappa##kappaRDM_manager'
+        run = lambda a0: self.run_local(m, cid, 'get_BFS_list_only', 2, 0x6b7, [a0, K.Var()])  # noqa: E731
+        self.assertEqual(repr(run(K.NIL)), '[[[], []]]')
+        self.assertEqual(repr(run(A('end'))), '[[end, end]]')
+        self.assertEqual(run(A('foo')), [])            # atom, no clause: the cc chain's fe
+        self.assertEqual(run(K.Vec([A('a')])), [])     # vector: ff to fe
+        self.assertEqual(repr(run(K.Var())), '[[[], []]]')   # the e4 chain, clause 1 cuts
+        # a list reaches clause 2 (@6c5 2b, past its e2), which stops at the
+        # unrowed pmi 3b @6c9: the dispatch itself is what is checked
+        with self.assertRaises(K.Refusal) as e:
+            run(K.Cons(K.Vec([1, A('s1')]), K.NIL))
+        self.assertIn('pmi 3b', str(e.exception))
+        self.assertIn('@6c9', str(e.exception))
+        for x in (5, K.Str('ab')):
+            with self.assertRaises(K.Refusal) as e:
+                run(x)
+            self.assertEqual(e.exception.cause, 'operand')
+            self.assertIn('pmi c6 on', str(e.exception))
+
+    def test_get_tap_type(self):
+        # a `cc` chain on ce's register: kappa2 KP_MDMSCT.ESP:316-321
+        # `get_tap_type(primitive,tap_primitive):-!; ...
+        # get_tap_type(primitive(table),tap_primitive_table):-!;
+        # get_tap_type(table(id),tap_table_id):-!; ...`, compiled into
+        # kappaMDM_schema_table @1c2: c6, ce 00 02 @1ce, `cc 02 ..
+        # primitive/2` -> @1e5, `cc 02 .. table/2` -> @1e9, fe
+        m = kappa_machine()
+        cid = 'kappa##kappaMDM_schema_table'
+
+        def run(a0):
+            return [repr(r[1]) for r in self.run_local(m, cid, 'get_tap_type', 2, 0x1c2, [a0, K.Var()])]
+        self.assertEqual(run(A('primitive')), ['tap_primitive'])
+        self.assertEqual(run(K.Vec([A('primitive'), A('table')])), ['tap_primitive_table'])
+        self.assertEqual(run(K.Vec([A('table'), A('id')])), ['tap_table_id'])
+        self.assertEqual(run(K.Vec([A('table'), A('x')])), [])
+        self.assertEqual(run(K.Vec([A('foo'), 1])), [])
+        # N counts: a 3-vector's key primitive/3 is not primitive/2
+        self.assertEqual(run(K.Vec([A('primitive'), A('table'), A('z')])), [])
+
+    def test_make_com(self):
+        # p_MAIN.esp:479-689: twenty atom clauses (cd00 @471), seventeen
+        # 3-vector clauses (ce @4bb, cd03 @4bd, the c3 chain @501, ff @512),
+        # then two `make_com(Mes,code(window,Com),VS)` catch-alls (:663, :689)
+        m = machine()
+        cid = 'paragraph##view_selector'
+
+        def first(a0):
+            out = []
+            code = m.code(cid)
+            (p,) = [p for p in m.lib.templates[cid].locals if (p.name, p.arity) == ('make_com', 3)]
+            m.reset()
+            args = [a0, K.Var(), K.Var()]
+            for _ in m.solve((code, p.offset), args):
+                out.append([K.resolve(a) for a in args[:2]])
+                break
+            return repr(out)
+        self.assertEqual(first(A('exit')), '[[exit, {code,exit,nil}]]')           # :479
+        self.assertEqual(first(K.Vec([A('kill'), 1, 2])), '[[{kill,1,2}, {code,window,{kill,1,2}}]]')  # :579
+        # element 0 unbound: the c3 chain, kill first in source order
+        self.assertEqual(first(K.Vec([K.Var(), 1, 2])), '[[{kill,1,2}, {code,window,{kill,1,2}}]]')
+        # an atom with no clause: the table misses to the catch-alls, whose
+        # `Mes={Code,Wid,Gid}` fails
+        self.assertEqual(first(A('zzz')), '[]')
+        # a 3-vector with no clause: the catch-all :663 runs its body,
+        # check_when_where(VS,Gid) on the unbound VS
+        with self.assertRaises(K.Refusal) as e:
+            first(K.Vec([A('zzz'), 1, 2]))
+        self.assertEqual(e.exception.cause, 'unbound receiver')
+
+    def test_receiver_send(self):
+        # receiver.esp:38-686 (paragraph##receiver send/3 @11c: c6, cc
+        # read_code, ff, ce 00 04, the cd04 table keyed Name/N)
+        m = machine()
+        cid = 'paragraph##receiver'
+        co = m.lib.build(cid)
+
+        def send3(msg):
+            m.reset()
+            o = K.Instance(cid, [K.Var() for _ in co.instance_slots])
+            res = K.Var()
+            for _ in m.solve_send(o, 'send', [msg, res, o]):
+                sl = {e.name.split('$')[-1]: K.resolve(v) for e, v in zip(co.instance_slots, o.slots)}
+                return repr(K.resolve(res)), sl
+            return None, None
+        r, sl = send3(K.Vec([A('goal_name'), K.Str('g')]))      # :54
+        self.assertEqual((r, repr(sl['goal_name'])), ("string#'normal'", "string#'g'"))
+        r, sl = send3(K.Vec([A('view_mode'), A('act')]))         # :46
+        self.assertEqual((r, sl['view_mode'], sl['view']), ("string#'normal'", A('act'), A('pe_view')))
+        r, sl = send3(K.Vec([A('view_mode'), A('other')]))       # :50, after :46 fails
+        self.assertEqual((r, sl['view_mode'], isinstance(sl['view'], K.Var)), ("string#'normal'", A('other'), True))
+        # the catch-all :686 for a vector key not in the table, an atom
+        # other than read_code (ff), and a list (c6 lo16)
+        for msg in (K.Vec([A('foo'), 1, 2]), A('zzz'), K.Cons(1, K.NIL)):
+            self.assertEqual(send3(msg)[0], "string#'abnormal'", msg)
+        # unbound, and element 0 unbound: both reach clause 1, color(Code)
+        # (:38), whose first goal is a SIMPOS send
+        for msg in (K.Var(), K.Vec([K.Var(), A('act')])):
+            with self.assertRaises(K.Refusal) as e:
+                send3(msg)
+            self.assertIn('get_plane_count', str(e.exception), msg)
+        # N counts element 0: the table's three init keys, by the handlers
+        code = m.code(cid)
+        for vec, want in (([A('init'), A('pe_view'), 1, 2], 0x219), ([A('init'), A('htree_view')], 0x21d),
+                          ([A('init'), A('htree_view'), 1, 2, 3], 0x21f)):
+            m.reset()
+            m.x[0] = K.Vec(vec)
+            c = code.cells[0x124]
+            m.op_switch_on_vector(code, 0x124, 0, 4, 0, c[3])
+            self.assertEqual((m.pc[1], m.x[4]), (0x126, K.Functor('init', len(vec))))
+            m.op_hash_constant(code, 0x126, code.cells[0x126])
+            self.assertEqual(m.pc[1], want, vec)
+        # what the handlers refuse
+        for msg in (7, K.Vec([3, 4])):
+            with self.assertRaises(K.Refusal) as e:
+                send3(msg)
+            self.assertEqual(e.exception.cause, 'operand', msg)
+        fake = types.SimpleNamespace(id='test', cells={1: (1, 0, 0, 5), 2: (2, 0, 0, 0x60000b)})
+        with self.assertRaises(K.Refusal):
+            m.op_switch_on_term(fake, 0, 0, 0, 0x1a, 0xc600001a)
+        with self.assertRaises(K.Refusal):
+            m.op_jump(fake, 0, 1, 0, 2, 0xff010002)
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -805,7 +984,8 @@ class Census(unittest.TestCase):
         # create/2), the others stop later
         # 2026-11-25: string/3 a type test (fails on an unbound argument):
         # csp_default_write write/2 goes on and runs into the step limit
-        self.assertEqual(out, {'refused': 207, 'success': 310, 'failure': 12, 'step limit': 1})
+        # step 3g: pmi c3 witnessed: pe_registers register_type/3 succeeds
+        self.assertEqual(out, {'refused': 206, 'success': 311, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -822,7 +1002,7 @@ class Census(unittest.TestCase):
         # unbound/1 (blt 10, step 3c) takes the three `blt 10` methods on:
         # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
-            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 16,
+            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 20,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)
             # and up_down_icon code/4 at an unbound argument.  Step 3e:
@@ -839,13 +1019,20 @@ class Census(unittest.TestCase):
             # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
             # constant ('pool' 1)
             # string/3 a type test: 'unbound argument' 23 -> 22
-            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 7, 'pool': 1,
+            # step 3g: multiply_constant R != A witnessed (p_hwin.esp:233):
+            # the four draw/2 (predicate_top/bottom_icon, scroll_top/
+            # bottom_icon) go on to an execute_graphics_command/2 sent to
+            # an unbound receiver: 'operand' 7 -> 3, 'unbound receiver'
+            # 16 -> 20
+            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 3, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
-            'missing opcode blt 63': 2, 'missing opcode blt f5': 1,
-            'missing opcode pmi c3': 1})
+            # step 3g: pmi c3 (retry) witnessed: pe_registers
+            # register_type/3 succeeds (its unbound first argument takes
+            # the first clause, nifr); refused 207 -> 206
+            'missing opcode blt 63': 2, 'missing opcode blt f5': 1})
 
 
 if __name__ == '__main__':

@@ -143,6 +143,30 @@ class Atom:
 NIL = Atom('[]')
 
 
+class Functor:
+    """The key `pmi ce` (switch_on_vector, step 3g) puts in its register
+    for a vector {Name, ...} of N elements, and the key cell a `cc` or a
+    hash table after it holds: tag 01 with the low byte N, printed by
+    ptfread as the selector Name/N.  N is the vector's length, element 0
+    included (MEASURED with source: receiver.esp:669-680 `init(pe_view,PE,
+    Wid)`, `init(htree_view)`, `init(htree_view,{Id,Nid},Depth,Wid)` are
+    the three keys init/4, init/2, init/5 of receiver send/3's cd04
+    table @126).  The representation is OURS; interned, so `is` compares."""
+    table = {}
+    __slots__ = ('name', 'n')
+
+    def __new__(cls, name, n):
+        f = Functor.table.get((name, n))
+        if f is None:
+            f = object.__new__(cls)
+            f.name, f.n = name, n
+            Functor.table[(name, n)] = f
+        return f
+
+    def __repr__(self):
+        return '%s/%d' % (self.name, self.n)
+
+
 class Cons:
     __slots__ = ('args',)
 
@@ -597,6 +621,19 @@ class Machine:
             return Atom(code.sym(c[3]))
         raise Refusal('operand', '%s: constant cell %s' % (code.id, P.show(dict(syms=code.t.symbols), c)))
 
+    def key_cell(self, code, c):
+        """A cc constant or a hash key: as const_cell, and also the vector
+        key cell (tag 01, low byte N != 0) that follows a `pmi ce`
+        (Functor, step 3g)."""
+        if c[1] == 0x01 and c[2] != 0:
+            return Functor(code.sym(c[3]), c[2])
+        return self.const_cell(code, c)
+
+    @staticmethod
+    def key_match(k, t):
+        return (isinstance(k, int) and isinstance(t, int) and t == k) or \
+            (isinstance(k, (Atom, Functor)) and t is k)
+
     # -- calls -------------------------------------------------------------
     def call_local(self, code, off, target, last, dealloc=False):
         p = code.preds.get(target)
@@ -830,7 +867,11 @@ class Machine:
         """:check_info(#library, Name, Kind).  INTERPOLATED from: kappa2
         LOADER.ESP:252-256 and pimfep pimos_string_io_invoker local
         get_class_object/3 (@5a-80), which try Kind `template_file` (then
-        make_class_object/2) and `object`, and then get_class_object/3.
+        make_class_object/2) and `object`, and then get_class_object/3
+        (LOADER `object` first, pimfep `template_file` first: step 3g's
+        re-check, source_check_2026-11-24.md §7; either order answers
+        the same here).  get_class_object/c2 and enter_atom/c2 are
+        printed in TR-283 PDF p18 (folio 16) Table 4.
         OURS: every class here is loaded as a class object, so `object`
         succeeds for a loaded class and `template_file` fails."""
         name, kind = deref(self.x[0]), deref(self.x[1])
@@ -872,6 +913,18 @@ class Machine:
             raise Refusal('unbound argument' if isinstance(s, Var) else 'built-in',
                           'symbolizer enter_atom/3 on %r' % (s,))
         return self.proceed() if self.unify(self.x[0], Atom(s.text)) else self.fail()
+
+    def process_suspend(self):
+        """:suspend(Process, Reason), refused (step 3g, OURS).  The printed
+        body (TM-100 Fig. 3.1, standin/process.esp) is not run: kl0 runs
+        one process and has no scheduler, so a process that suspends here
+        (stream get/2 or see/2 on an empty stream) waits for a put or a
+        resume that nothing can make.  Run, the printed body would fail
+        for the census's process (status nil: `:self(#process, P)` makes
+        it with new/2 and nothing activates it), and the wait would show
+        as a clean failure.  So it refuses, cause 'would suspend'."""
+        reason = resolve(self.x[0])
+        raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -1126,8 +1179,8 @@ class Machine:
 
     def op_if_constant(self, code, off, a, b, c, v):
         t = deref(self.x[a])
-        k = self.const_cell(code, self.operand(code, off))
-        if (isinstance(k, int) and isinstance(t, int) and t == k) or (isinstance(k, Atom) and t is k):
+        k = self.key_cell(code, self.operand(code, off))
+        if self.key_match(k, t):
             self.pc = (code, off + 3 + s16(v))
         else:
             self.pc = (code, off + 2)
@@ -1146,21 +1199,97 @@ class Machine:
 
     def op_hash_constant(self, code, off, cell):
         mask, miss, ents = cell[3]
-        t = deref(self.x[self.switch_reg(code, off)])
+        t = deref(self.x[self.switch_reg(code, off, cell)])
         for key, _idx, tgt in ents:
-            k = self.const_cell(code, (0,) + key)
-            if (isinstance(k, int) and isinstance(t, int) and k == t) or (isinstance(k, Atom) and t is k):
+            if self.key_match(self.key_cell(code, (0,) + key), t):
                 self.pc = (code, tgt + 1)
                 return
         # not found: cell + 2 + the header word ptfdump calls `size` (the cell
         # after the table, or a catch-all clause; psi/fepread/ptfread.py)
         self.pc = (code, off + 2 + miss)
 
-    def switch_reg(self, code, off):
-        c = code.cells.get(off - 2)
-        if c is None or c[1] != 0x20 or c[3] >> 24 != 0xc7:
-            raise Refusal('code', '%s @%x: hash table not after switch_on_constant' % (code.id, off))
-        return (c[3] >> 16) & 255
+    def switch_reg(self, code, off, cell):
+        """The register a hash table looks up: the low byte of its op
+        (cdNN), which is the register its switch named (step 3g, MEASURED:
+        cd00 after all 116 c7 (R 00) and all 7 c6 (R 00); cdNN after every
+        ce 00 NN, 20 tables, over nine listings: the six source-held
+        packages and pimfep, pimscsi, pimmcsp; two more cdNN tables
+        follow a ce with an e2 between).  Only those three placements
+        are witnessed; any other refuses."""
+        reg = cell[2] & 0xff
+        for back, op, named in ((2, 0xc7, 16), (3, 0xc6, 16), (2, 0xce, 8)):
+            c = code.cells.get(off - back)
+            if c is not None and c[1] == 0x20 and c[3] >> 24 == op:
+                if (c[3] >> named) & 255 != reg:
+                    raise Refusal('operand', '%s @%x: hash table cd%02x after pmi %02x naming %02x' % (
+                        code.id, off, reg, op, (c[3] >> named) & 255))
+                return reg
+        raise Refusal('code', '%s @%x: hash table not after a switch (c7, c6, ce)' % (code.id, off))
+
+    def _word(self, code, at):
+        c = code.cells.get(at)
+        if c is None or c[1] != 0x00:
+            raise Refusal('code', '%s @%x: no integer word' % (code.id, at))
+        return c[3]
+
+    def op_switch_on_term(self, code, off, a, b, c, v):
+        """pmi c6 (step 3g): R; word W1; word W2; base = cell + 3.  A_R
+        unbound -> base + hi16(W2), atom -> base (the cc chain or hash
+        table), list -> base + lo16(W2), vector -> base + W1.  Witnessed
+        with source: kappaRDM_manager get_BFS_list_only/2 @6b7
+        (RDMSOPE.ESP:285-291) and view_selector make_com/3 @46e
+        (p_MAIN.esp:479-689).  An integer, a string or an object, and
+        non-zero second/third bytes, are not witnessed and refuse."""
+        if v & 0xffff:
+            raise Refusal('operand', '%s @%x: pmi c6 %02x %02x %02x: only 00 00 00 is witnessed' % (
+                code.id, off, a, b, c))
+        w1, w2 = self._word(code, off + 1), self._word(code, off + 2)
+        base = off + 3
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, base + (w2 >> 16))
+        elif isinstance(t, Atom):
+            self.pc = (code, base)
+        elif isinstance(t, Cons):
+            self.pc = (code, base + (w2 & 0xffff))
+        elif isinstance(t, Vec):
+            self.pc = (code, base + w1)
+        else:
+            raise Refusal('operand', '%s @%x: pmi c6 on %s: only unbound, atom, list and vector are witnessed' % (
+                code.id, off, type(t).__name__))
+
+    def op_switch_on_vector(self, code, off, a, b, c, v):
+        """pmi ce (step 3g): R, K; word W; base = cell + 2.  A_R is a vector
+        (c6 sends only vectors here).  Its element 0 unbound -> base +
+        lo16(W) (a retry chain over the vector clauses); an atom -> X_K :=
+        the key Name/N (N the vector's length) and fall through to base (a
+        cc chain on X_K or the hash table cdKK).  Witnessed with source:
+        view_selector make_com/3 @4bb (p_MAIN.esp:579-657) and receiver
+        send/3 @124 (receiver.esp:38-684).  hi16(W) is the miss target in
+        both and is not taken here: what else takes it is UNSETTLED, so
+        any other element 0 refuses."""
+        if c != 0:
+            raise Refusal('operand', '%s @%x: pmi ce %02x %02x %02x: third byte not 0' % (code.id, off, a, b, c))
+        w = self._word(code, off + 1)
+        t = deref(self.x[a])
+        if not isinstance(t, Vec) or not t.args:
+            raise Refusal('operand', '%s @%x: pmi ce on %r: only a non-empty vector is witnessed' % (code.id, off, t))
+        e = deref(t.args[0])
+        if isinstance(e, Var):
+            self.pc = (code, off + 2 + (w & 0xffff))
+        elif isinstance(e, Atom):
+            self.x[b] = Functor(e.name, len(t.args))
+            self.pc = (code, off + 2)
+        else:
+            raise Refusal('operand', '%s @%x: pmi ce, element 0 %r: only unbound or an atom is witnessed' % (
+                code.id, off, e))
+
+    def op_jump(self, code, off, a, b, c, v):
+        """pmi ff (step 3g): go to cell + 2 + s16.  Byte A is 00 in all 956
+        held uses; another refuses."""
+        if a != 0:
+            raise Refusal('operand', '%s @%x: pmi ff %02x: only 00 is witnessed' % (code.id, off, a))
+        self.pc = (code, off + 2 + s16(v))
 
     def op_if_unbound(self, code, off, a, b, c, v):
         if isinstance(deref(self.x[a]), Var):
@@ -1440,7 +1569,10 @@ class Machine:
         self.nxt(code, off)
 
     def op_multiply_constant(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_constant')
+        # R != A is witnessed (step 3g: p_hwin.esp:233 `Y=<(Height*2)`,
+        # paragraph##scroll_bar_icon $or$0/3 @282 `48 00 02 03`)
+        self.x[c] = self._int(self.x[a], 'multiply') * b
+        self.nxt(code, off)
 
     def op_divide_constant(self, code, off, a, b, c, v):
         x = self._int(self.x[a], 'divide')
@@ -1923,6 +2055,7 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'check_info', 3): Machine.library_check_info,
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
+    ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
 }
 
 
@@ -1970,21 +2103,107 @@ SIMPOS_MODELS = {
 # and the census's process runs no program, so the stack is empty.
 # pimos_string_io_invoker create_string_io/10 has its own recipe below
 # (STRING_IO_PROGRAMS).
+# Step 3g: the fourth field is the argument that holds the output
+# stream, the fifth the one that holds the device id, read from the
+# registers kept for `:set_output_stream(Dev, Y)` and `:set_device_id(Dev,
+# Y)`; the sixth fixes other arguments.
+#   - create_timer/9: Y0 = A0 (@1a) to set_output_stream (@35-38); Y3 =
+#     A3 (@1d) to set_device_id (@41-44).
+#   - pimos_file create/9 is called by read_open/10, write_open/10 and
+#     append_open/10 (@67-72, @77-..), which put the open mode in A0
+#     (`read` at @70) and shift the message one place: Y1 = A1 (@1b) to
+#     set_output_stream (@37-3a), Y4 = A4 (@1e) to set_device_id
+#     (@43-46), Y0 = A0 to set_open_mode (@4b-4e).  The recipe gives A0
+#     `read`, as read_open/10 does (OURS: read, not write or append).
+#     Step 3f's recipe put the stream in A0 (the open mode) and left the
+#     output stream unbound: corrected here.
+#   - directory/10: Y0 = A0 (@18) to set_output_stream (@34-37); Y3 =
+#     A3 (@1b) to set_device_id (@41-43).
+#   - create_with_buffer/10: Y0 = A0 (@57) to set_output_stream
+#     (@73-76); Y3 = A3 (@5a) to set_device_id (@80-82).
 DEVICE_CREATORS = {
-    'pimfep##pimos_timer': ('create_timer', 9, '@19-48'),
-    'pimfep##pimos_file': ('create', 9, '@19-52'),
-    'pimfep##pimos_directory': ('directory', 10, '@17-4e'),
-    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86'),
+    'pimfep##pimos_timer': ('create_timer', 9, '@19-48', 0, 3, {}),
+    'pimfep##pimos_file': ('create', 9, '@19-52', 1, 4, {0: 'read'}),
+    'pimfep##pimos_directory': ('directory', 10, '@17-4e', 0, 3, {}),
+    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86', 0, 3, {}),
 }
+
+
+# The request a census row is given (step 3g, OURS: the values chosen
+# here; where each sits is read from held code).
+#
+# A creator's device-id argument (A3, A4 for pimos_file: DEVICE_CREATORS)
+# is the new device's id, the first element of PIMOS's create message:
+# create_timer/9 keeps it (Y3, @1d) for
+# `:set_device_id(Dev, Y3)` (@41-44) and its creation reply `{Y3, 1}`
+# (@52-58); create_string_io/10 the same (Y3 @19, into
+# initiate_string_io_device/7 @3b, reply @4f-51).  That the front end's
+# :refute passes the message's elements in order after its own three is
+# fep_services.md §6.1's INFERENCE.  PIMOS gives device ids from 16:
+# scsi_fep.kl1 create/2 (`create(16, SCSI, Result)`, 22-23) seeds
+# id_manager/3, which answers `normal(ID, Stream)` and goes on with ID+1
+# (131-141, 157-160).  So REQUEST_ID is 16, the first id given (OURS:
+# the first, not another).
+#
+# A device command reaches its handler as `:refute(Device, Name, Vector)`
+# from the device's local refute/3 (as_pimos_device @129-145):
+# fep_message_assembler disassemble/3 (@8f-ac) builds the list [Id, Code
+# | Args] from the message's elements 0 and 2 (@96-9b) and the argument
+# list, and list_to_vector (blt 6f, unwitnessed) makes the vector; the
+# command's name is convert/3 of the code (@13a-13f).  So a handler's A0
+# is the request's Id and A1 its code (fep_services.md §6.1: arity is
+# PIMOS's argument count + 3; close/3 replies `{A0, 1}`, @6e-77).  A
+# window's commands go the same way to its editor: pimos_window
+# kl1_message/2 (@77-98) disassembles, converts, takes get_editor/2 and
+# sends `:refute(Editor, Name, Vector)`.  So the handlers are the
+# instance methods of as_pimos_device's heirs and of pimos_window_editor
+# (COMMAND_RECEIVERS).  The census gives such a method, when its class
+# has a recipe, its arity is 3 or more and the held
+# fep_command_code_table convert/3 maps its name to a code, A0 =
+# REQUEST_ID and A1 = that code (request_args).  Its other arguments stay
+# unbound.
+#
+# The abort handlers a request's tag_catch/9 names take that request's Id
+# as A0: io/5 (@36-4c, simpos_user_device) catches `pimos_abort` with
+# abort_string_io and the vector {Y0}, Y0 its own A0; on_after/4 (@63-7d,
+# pimos_timer) with abort_timer and {Y0, X8}.  (pimos_tcpip_socket's
+# abort_getb, @13a, and abort_accept, @1e4, are the same pattern; that
+# class has no recipe.)  So the census gives these A0 = REQUEST_ID only.
+REQUEST_ID = 16
+COMMAND_RECEIVERS = ('pimfep##as_pimos_device', 'pimfep##pimos_window_editor')
+ABORT_HANDLERS = {('abort_string_io', 2), ('abort_timer', 3), ('abort_getb', 3), ('abort_accept', 3)}
+
+
+def request_args(m, cid, name, n):
+    """The leading request arguments for a census call of instance method
+    NAME/N of CID (see REQUEST_ID): [REQUEST_ID, Code] for a command
+    handler, [REQUEST_ID] for an abort handler, or []."""
+    if not any(c in COMMAND_RECEIVERS for c in m.lib.build(cid).order):
+        return []
+    if (name, n) in ABORT_HANDLERS:
+        return [REQUEST_ID]
+    if n < 3:
+        return []
+    try:
+        sols = call_class_method(m, 'pimfep##fep_command_code_table', 'convert', [Var(), Atom(name)], limit=1)
+    except Refusal:
+        return []
+    if not sols or not isinstance(deref(sols[0][0]), int):
+        return []
+    return [REQUEST_ID, deref(sols[0][0])]
 
 
 def _creator_device(m, cid):
     """The device CID's held creator makes (DEVICE_CREATORS), stopped
-    before its activate/2."""
-    sel, n, _cells = DEVICE_CREATORS[cid]
+    before its activate/2.  The device id argument is REQUEST_ID."""
+    sel, n, _cells, outarg, idarg, fixed = DEVICE_CREATORS[cid]
     m.reset()
     (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
-    args = [st[0]] + [Var() for _ in range(n - 2)]
+    args = [Var() for _ in range(n - 1)]
+    args[outarg] = st[0]
+    args[idarg] = REQUEST_ID
+    for i, a in fixed.items():
+        args[i] = Atom(a)
     m.stop_before = {('activate', 2)}
     try:
         for _ in m.solve_send(ClassRef(cid), sel, args + [ClassRef(cid)]):
@@ -2023,6 +2242,7 @@ def _string_io_device(m, cid):
     m.reset()
     (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
     args = [st[0]] + [Var() for _ in range(8)]
+    args[3] = REQUEST_ID
     args[8] = Str(cid.split('##')[1])
     m.stop_before = {('activate', 2)}
     try:
@@ -2119,8 +2339,12 @@ def census_of(m, classes, recipes=None):
             for (name, n), meth in table.items():
                 sel = '%s/%d' % (name, n)
                 try:
+                    # step 3g: a request for a device command handler
+                    # (REQUEST_ID), only where the receiver has a recipe
+                    lead = (request_args(m, cid, name, n)
+                            if section == 'instance' and recipes and cid in recipes else [])
                     recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
-                    regs = [Var() for _ in range(n - 1)] + [recv]
+                    regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
                     ok = any(True for _ in m.solve_send(recv, name, regs))
                     rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
                 except Refusal as e:

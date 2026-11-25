@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -305,8 +305,9 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 125 rows
-(100 at step 2, nine more at step 3c, four at step 3d, twelve at step 3e)
+**Opcodes are named only from known plaintext.** Each of the 132 rows
+(100 at step 2, nine more at step 3c, four at step 3d, twelve at step 3e,
+seven at step 3g)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
@@ -1753,7 +1754,10 @@ other method still refuses as SIMPOS.
 - `:check_info(#library, Name, Kind)`. INTERPOLATED from kappa2
   LOADER.ESP:252-256 and `pimos_string_io_invoker`'s local
   `get_class_object/3` (@5a-80). Both try `template_file` (then
-  `make_class_object/2`) and `object`, then `get_class_object/3`. OURS:
+  `make_class_object/2`) and `object`, then `get_class_object/3`.
+  (Step 3g's re-check: LOADER tries `object` first, pimfep
+  `template_file` first. The model answers the same in either order.)
+  OURS:
   every class here is loaded as a class object, so `object` succeeds
   for a loaded class and `template_file` fails.
 - `:get_class_object(#library, Name, Class)`. The class an atom names:
@@ -1851,7 +1855,7 @@ gains 17 of them, every one INTERPOLATED and labelled from
 
 - PRINTED-INTERFACE: TM-125 p15-16 for `set_size/3`, `set_position/3`,
   `set_title/2`, `activate/1`, `show/1`, `hide/1` and `deactivate/1`;
-  TM-115 p50 and p63 for `get_size/3` and `get_position/3`; TM-112 p16
+  TM-115 p50 and p63-64 (the methods on p64: step 3g, source check §7) for `get_size/3` and `get_position/3`; TM-112 p16
   for `set_font/2`.
 - USAGE only: `reshape/5`, `set_text_size/3`, `get_text_size/3`,
   `get_title/2`, `get_font/2`, `beep/1` and `flash/1`.
@@ -2045,39 +2049,502 @@ constant). Made by `make_instance` instead, both are 0 (MEASURED), so
 both assertions fail under the step 3f "executor made by
 `make_instance`" injection.
 
+### Step 3g: `stream:see/2`, `try_to_see/2`, `try_to_get/2` (2026-11-25)
+
+**The search.** No printed or held source defines `see/2` on a stream.
+Searched (2026-11-25):
+
+- the page images of TM-100 PDF p13-15 (Fig. 3.6 prints `create/2`,
+  `put/2`, `get/2`; the prose names no other method) and TR-056 PDF
+  p12-13 (folio 10-11: "Two major operations on a stream", `:put` and
+  `:get`; a stream "looks like a tap on a pool");
+- TM-009 p5-6 (OCR: a stream's operations are put and get);
+- the held ESP source: the 24 IFS SIMPOS/CESP archives, kappa2, the ESP
+  manuals, and `pimos`, `psdpim`, `pimosman`, `pimosobj`, `vpim`,
+  `pkl1` and the other IFS and `icot-other` archives (grep `:see(`,
+  `try_to_see`, `see_with_key`);
+- every predicate of the eleven held packages (`see/2` and
+  `try_to_see/2` sends).
+
+What the search found:
+
+- `see/2` sends: two, both in pimfep, whose source is not held.
+  - `as_pimos_device` `$or$1/3` @215-22b, the body of every device's
+    `loop_main/1`: `:see(S, _)`, with a fresh variable (@21b) never read
+    again; `inhibit_forced_event/1` (@21f); `:get(S, M)` on the same
+    stream (@223); the local `refute/3` on M (@227).
+  - `pimos_tcpip_socket` `do_getb/3` @3b0-3c3: `allow_forced_event/1`
+    (@3b9), `:see(S, _)` (@3bd, result unused), `inhibit_forced_event/1`
+    (@3bf), `:get(S, M)` (@3c3).
+- `try_to_see/2` sends: two, source not held, and here the result is
+  used.
+  - pimfep `pimos_tcpip_socket abort_loop/1` @30e-324: `:try_to_see(S,
+    M)`, `fep_message_assembler get_command/3` on M, `== 210`, cut, then
+    `:get(S, _)`.
+  - pimmcsp `csp_stream_interface` `$or$2/1` @281-28e: `:try_to_see(S,
+    X)`, `string(X,_,_)`, cut, `:get(S, _)`.
+- `try_to_get/2` on a `:create(#stream, S)` stream, HELD-SOURCE: fuzclust
+  `src/cliant.grape`:212-215 (`try_get(Stream,Mes) :- :try_to_get(Stream,
+  Mes),!; try_get(Stream,Mes) :- Mes=none,!;`, polled in a `repeat` loop
+  at 203-206; the stream made at 358-360) and icotext
+  `src/bunkatu_io.esp`:24. Also kappa2 `kernel/svm/SVMSG.ESP`:132 (a
+  `channel_set`) and pimfep `pimfep_message_sender`
+  `clear_from_fep_stream/5` @2c3-2c4.
+- In other classes, `see` looks without taking. This is ANALOGY only.
+  kwic-esp `doc/classSpec.doc` (ISO-2022-JP):
+  - its taps' `see_with_key/3` and `see_key/2` are "the same as the
+    simpos pool tap's";
+  - its own `see/4` reads the current position, "the current position
+    is not changed", beside a `get/4` that advances it.
+
+  The `:see(B, Char)` sends to text buffers (cil `ds_fep.esp`:1842-1908)
+  and kappa2's `:see(Buffer,Size,MDU)` are the same idea, in buffer
+  classes.
+
+**The stand-ins (INTERPOLATED, `standin/stream.esp`).** Each copies the
+printed `get/2`. The post queue's oldest object is looked at, by a new
+`post_queue see_object/2` (name OURS), instead of taken out.
+
+- `see/2` waits as `get/2` does (hook, then suspend) and removes
+  nothing. That it waits and removes nothing is INTERPOLATED from the
+  `see/2` call sites: forced events are allowed around it, and the
+  `get/2` after it takes the object. What its second argument receives
+  (the oldest object) is INFERENCE, from `try_to_see/2`, whose result is
+  read.
+- `try_to_see/2` is the same, and fails at once on an empty stream.
+  Failing is INFERENCE from the `try_to_` prefix.
+- `try_to_get/2` is `get/2` that fails at once on an empty stream: from
+  the fuzclust polling loop.
+- Not modelled: `put/2` resumes one waiting process. A process waiting
+  in `see/2` and another in `get/2` on one stream are not distinguished.
+
+**`process:suspend/2` refuses (OURS, kl0 `SIMPOS_MODELS`).** kl0 runs one
+process and no scheduler. A process that suspends here waits for a put
+or resume that nothing can make. Run, the printed body (TM-100 Fig. 3.1)
+fails for the census's process: `:self(#process, P)` makes it with
+new/2, its status is nil, and nothing makes it ready. So the wait would
+show as a clean failure. kl0 now refuses there, with cause `would
+suspend`. Before this step no census row reached `suspend/2` (MEASURED:
+a dispatch probe, plain and recipes). So the only earlier behaviour that
+changes is the test of `get/2` on an empty stream (`test_stream_runs`).
+
+Effect, row by row against HEAD before the step (MEASURED 2026-11-25):
+
+- Plain `census --fep`: identical (807 / 154 / 442 / 16 / 1).
+- With recipes: totals unchanged (809 / 154 / 440 / 16 / 1). The 17 rows
+  that stopped at `simpos##stream:see/2` move from `simpos` to `would
+  suspend`:
+  - `goal/1`, `loop_main/1` and `invoke/1` of `pimos_timer`,
+    `simpos_user_device`, `pimos_remote_login_server`,
+    `pimos_remote_login_replier` and `pimos_standard_io_window` (15);
+  - `loop_main/1` of `pimos_file` and `pimos_directory` (2).
+
+  Each waits in `see/2` on its device's empty input stream. That is
+  what a device with no request does. It is not progress, but the gap
+  is now the missing request, not a missing method.
+  `pimos_window_process:see/2` (a different receiver, the window process
+  itself) is still refused.
+- With one message on its input stream (`test_step3g_stream_see`), a
+  timer's `loop_main/1` sees it, gets it (the stream is empty after),
+  and its local `refute/3` stops at `fep_message_assembler
+  disassemble/3`'s blt 6f (`list_to_vector`, unwitnessed).
+
+Test (`test_espc.py` `test_step3g_stream_see`): the empty-stream cases;
+`see/2` and `try_to_see/2` leave the oldest object; `try_to_get/2` takes
+it; the timer loop. `test_step3f_census_recipes` pins the 17 `would
+suspend` rows. Injected from a backup, restored by cp, cmp-checked.
+Observed, with `test_kl0.py` passing each time:
+
+- `see/2` taking the object out: only `test_step3g_stream_see` fails.
+- `try_to_see/2` waiting: only `test_step3g_stream_see` errors.
+- `try_to_get/2` leaving the object: only `test_step3g_stream_see`
+  fails.
+- kl0's suspend/2 model removed: `test_step3f_census_recipes`,
+  `test_step3g_stream_see` and `test_stream_runs` fail.
+
+### Step 3g: census requests, and blt 48 with R != A (2026-11-25)
+
+**Where a request sits, read from held code.**
+
+- *A device command.* The device's local `refute/3` (`as_pimos_device`
+  @129-145) handles it:
+  - `fep_message_assembler disassemble/3` (@8f-ac) takes message
+    elements 0 and 2 (@96-9b) and the argument list, and makes the list
+    `[Id, Code | Args]`;
+  - blt 6f (`list_to_vector`, unwitnessed) makes it a vector;
+  - `convert/3` gives the command's name;
+  - `:refute(Device, Name, Vector)` calls the handler.
+
+  So a handler's A0 is the request's Id and A1 its code. The other
+  readers agree:
+  - `get_device_id/3` reads element 0 (@3c-44);
+  - `get_command/3` reads element 2 (@14-1c);
+  - `close/3` replies `{A0, 1}` (@6e-77).
+
+  That the vector's elements arrive in order is `fep_services.md`
+  §6.1's INFERENCE. A window passes its commands on to its editor the
+  same way: `pimos_window kl1_message/2` (@77-98) disassembles,
+  converts, calls `get_editor/2`, and sends `:refute(Editor, Name,
+  Vector)`.
+- *An abort handler* takes its request's Id as A0. `simpos_user_device
+  io/5` (@36-4c) catches `pimos_abort` with `abort_string_io` and `{Y0}`,
+  where Y0 is its own A0. `pimos_timer on_after/4` (@63-7d) does the
+  same with `abort_timer` and `{Y0, X8}`.
+- *A creator's device id* is the first element of the create message.
+  Each creator keeps it for `:set_device_id(Dev, Y)` and for its
+  creation reply `{Y, 1}`:
+  - `create_timer/9`: A3 (@1d, @41-44, @52-58);
+  - `directory/10`: A3;
+  - `create_with_buffer/10`: A3;
+  - `create_string_io/10`: A3 (@19, @3b, @4f-51);
+  - `pimos_file create/9`: A4. Its callers `read_open/10` and the other
+    open handlers (@67-72) put the open mode (`read`) in A0, which
+    shifts the message one place.
+- *PIMOS gives device ids from 16*: `scsi_fep.kl1` `create/2` (22-23)
+  seeds `id_manager/3`, which answers `normal(ID, Stream)` and goes on
+  with ID+1 (131-141, 157-160).
+
+**The values (OURS), kl0 `REQUEST_ID`, `request_args`.**
+
+- Creators: the device id is 16, the first id PIMOS gives.
+- Command handlers: an instance method of an heir of `as_pimos_device`
+  or of `pimos_window_editor`, whose class has a recipe, with arity 3 or
+  more, and whose name the held `fep_command_code_table convert/3` maps
+  to a code. It gets A0 = 16 and A1 = that code. The other arguments
+  stay unbound.
+- Abort handlers (`abort_string_io/2`, `abort_timer/3`, `abort_getb/3`,
+  `abort_accept/3`) get A0 = 16.
+- Plain `census --fep` is unchanged.
+
+**A step 3f recipe was wrong (CONTRADICTED by the cells).** The
+`pimos_file` recipe put the output stream in A0 of `create/9`. A0 is
+the open mode (`set_open_mode`, @4b-4e). The output stream is A1
+(@37-3a), which stayed unbound. So step 3f's `pimos_file goal/1` and
+`invoke/1` successes, and its `initiate/1` failure, ran with a stream as
+the open mode. `DEVICE_CREATORS` now names each creator's output-stream
+and device-id arguments, and gives `pimos_file` A0 = `read` (OURS: the
+mode `read_open/10` passes).
+
+**blt 48 with R != A: KNOWN-PLAINTEXT, row widened.** The witness is
+`paragraph##scroll_bar_icon` `$or$0/3`, against `p_hwin.esp`:229-236:
+
+    :code(Icon,X,Y,Code):- Height=Icon!height/4,
+        (Y=<Height,!, Code=previous_page; Y=<(Height*2),!, Code=previous_one;
+         Y=<(Height*3),!, Code=next_one; Code=next_page);
+
+- `code/4` @14-16 puts Height in A0 (`27 03 00 00`, `49 00 04 00`) and
+  executes `$or$0` with Y in A1.
+- @282 is `48 00 02 03`: A3 := Height * 2, in a temporary.
+- @283 is `67 03 01 00`: not_less_than(A3, A1), which is `Y =< Height*2`
+  with the operands swapped (as `=<` compiles; step 3c). Then the cut,
+  and the atom `previous_one` into A2.
+- @288-289 are the same with 3 (`48 00 03 03`) for `next_one`.
+- The source is release 3200 against the object's 3500 (Inputs, above).
+
+Effect, row by row (MEASURED 2026-11-25):
+
+- **Six packages:** 310 / 12 / 207 / 1, totals unchanged. Four `draw/2`
+  rows (`predicate_top_icon`, `predicate_bottom_icon`,
+  `scroll_top_icon`, `scroll_bottom_icon`) move from `operand` to an
+  `execute_graphics_command/2` sent to an unbound receiver.
+- **FEP plain:** identical, 807 / 154 / 442 / 16 / 1.
+- **FEP with recipes:** 809 / 154 / 440 / 16 / 1 becomes 829 / 152 /
+  422 / 16 / 1. Slot constants go from 86 to 96. Of the 45 rows that
+  stopped at `set_string_element` on an unbound argument, each was
+  traced:
+  - 21 succeed. Each was checked alone on a fresh machine.
+    - `close/3` and `attention/1` of `pimos_timer`, `pimos_directory`,
+      `pimos_window_process`, `simpos_user_device`,
+      `pimos_remote_login_replier`, `_server` and
+      `pimos_standard_io_window`;
+    - `abort_timer/3`, and `abort_string_io/2` of `simpos_user_device`,
+      the replier and `pimos_standard_io_window`;
+    - `pimos_file` `flush/3`, `ungetb/4` and `attention/1`.
+
+    What they do is put the reply on the device's output stream. A
+    timer's `attention/1` puts `[16, 0, 3, 0]`, and its `close/3` puts
+    `[16, 0, 1, 0]` then `[16, 0, 903, 0]` (`test_step3g_requests`).
+    The layout `[Id, 0, Status, count]` fits the readers above. These
+    are real held paths given an OURS request. They are not a running
+    front end.
+  - 10 `pimos_window_editor` replies reach a slot constant:
+    `set_position/5`, `close/3`, `activate/3`, `hide/3`,
+    `deactivate/3`, `show/3`, `beep/3`, `set_title/4`, `flush/3` and
+    `set_position_by_mouse/3`. Each is a `put/2` in `as_pimos_device`
+    @fc, on a window process whose output stream is unset. The window's
+    `pimos_window_process` is set only by `pimos_window_process
+    initiate/1` (@f0-10d), a process body that never runs. This is an
+    artifact, of the kind tabled in step 3f.
+  - 2 stop at an operand: editor `get_position/3` and
+    `get_inside_size/3`, at `put_integer` with immediate `ffff` (the
+    sign of a 16-bit immediate is unwitnessed).
+  - 2 stop at an opcode:
+    - editor `get_title/3` goes past `pad_string/2` and blt 48 (now
+      witnessed) to blt 36 in `fep_message_assembler` @122;
+    - `pimos_remote_login_server abort_string_io/2` stops at pmi ff
+      (@783).
+  - 1, `pimos_file close/3`, is now `receiver not an object`: it sends
+    `class_object/2` to `none`, the file object that only `initiate/1`'s
+    open would set.
+  - 9 still stop at `set_string_element` on an unbound argument. Each
+    has a receiver with no recipe, made by new/2, so it has no device
+    id and gets no request:
+    - `as_pimos_device close/3`;
+    - `as_pimos_string_io_device` `close/3` and `abort_string_io/2`;
+    - `pimos_string_io_invoker close/3`;
+    - `pimos_socket_receiver close/3`;
+    - `pimos_tcpip_socket` `bind/4`, `flush/3`, `abort_getb/3` and
+      `abort_accept/3`. tcpip has no recipe (`invocation_stack/2`).
+- One row outside the 45 also moves: `pimos_remote_login_server io/4`,
+  from `equal_string` on an unbound argument to failure.
+- **The `pimos_file` correction moves 4 more rows:**
+  - `initiate/1`, `goal/1` and `invoke/1` now reach
+    `simpos##directory:retrieve/3`, a class not loaded (failure,
+    success and success before);
+  - `getb/4`, from failure to `receiver not an object` (`end_of_input/1`
+    to `none`).
+- `pimscsi_fep resign_core/1` moves from failure to success. It is the
+  known order effect: alone, it fails.
+
+Tests:
+
+- `test_espc.py` `test_step3g_requests`: `request_args`, and the timer's
+  replies.
+- `test_step3f_census_recipes`: the totals, 96 slot constants, the
+  `pimos_file` recipe, the eight `attention/1` successes, and
+  `get_title/3` at blt 36.
+- `test_kl0.py` `test_result_register`: blt 48 R != A and the witness's
+  cells. `test_census` pins the six-package moves.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+
+- creators' device id left unbound: `test_step3g_requests` errors and
+  `test_step3f_census_recipes` fails;
+- `pimos_file`'s stream back in A0: `test_step3f_census_recipes`
+  errors;
+- the command-receiver check dropped: `test_step3f_census_recipes` and
+  `test_step3g_requests` fail;
+- blt 48 R != A refused again: `test_step3f_census_recipes` fails, and
+  `test_result_register` (error) and `test_census` fail.
+
+### Step 3g: pmi c6, ce, c3, c1, ff and the cd03/cd04 tables (2026-11-25)
+
+**The jump-base reading, on predicates whose source is held.** Three
+predicates were read cell by cell beside their source:
+
+- `kappa##kappaRDM_manager` local `get_BFS_list_only/2` @6b7
+  (kappa2 `kernel/rdm/RDMSOPE.ESP`:285-291: `([],[])`, a list clause,
+  `(end,end)`);
+- `paragraph##view_selector` local `make_com/3` @46d (`p_MAIN.esp`:479-
+  689: twenty atom clauses, seventeen 3-vector clauses, two
+  `make_com(Mes,...)` catch-alls);
+- `paragraph##receiver` `send/3` @11c (`receiver.esp`:38-686: one atom
+  clause `read_code`, vector clauses, the catch-all
+  `:send(Obj,Term,Ans):- !,Ans="abnormal"` at :686).
+
+What they settle (each target checked against the clause the source
+puts there):
+
+- **pmi c6 R; word W1; word W2** (`switch_on_term`, an INFERENCE
+  binding to TM-444's indexing group). The base is the cell after the
+  two words, c + 3. A_R unbound goes to base + hi16(W2), the try chain
+  over every clause (RDMSOPE @6c0 `e4`; make_com @513, clause 1's
+  `c2`). An atom falls through to base, a `cc` chain or a `cd00` table.
+  A list goes to base + lo16(W2) (RDMSOPE @6c5, clause 2's `2b`; 9 held
+  lo16 targets land on a `2a`/`2b`). A vector goes to base + W1: a `ce`
+  (make_com @4bb), or an `ff` to fail where no clause takes a vector
+  (RDMSOPE @6bf). MEASURED over the six packages: hi16 lands on
+  e4/c4/e2/c2 in all 132 c6.
+- **pmi ce R, K; word W** (`switch_on_vector`, OURS). A_R is a vector.
+  Element 0 unbound goes to c + 2 + lo16(W), a retry chain over the
+  vector clauses in source order (make_com @501: seventeen `c3`, kill
+  first). Element 0 an atom: X_K := the key Name/N and fall through, to
+  a `cc` chain testing register K or to the table cdKK. **K is a
+  register, not an arity**: pimscsi's `ce 00 0b` is followed by
+  `cc 0b ...`, and each of 20 cdNN tables directly follows a `ce 00 NN`
+  (MEASURED over nine listings: the six source-held packages and
+  pimfep, pimscsi, pimmcsp; two more follow a ce with an `e2` between).
+  **N is the vector's length**, element 0 included: receiver's cd04
+  table has the three keys init/4, init/2 and init/5 for `init(pe_view,
+  PE,Wid)` (:669-675, a c5 c3 c3 c1 chain), `init(htree_view)` (:678) and
+  `init(htree_view,{Id,Nid},Depth,Wid)` (:680). The key cell is tag 01
+  with low byte N (ptfread prints it as a selector). kl0 holds it as a
+  `Functor`, interned.
+- **pmi c3** is the second encoding of e3 (`retry`, target = c + 2 +
+  s16), and **pmi c1** of e1 (`trust`). make_com @501 `c3 00 017d`
+  lands on @680, the kill clause's `33 00` just past its `c2`. MEASURED:
+  864 c3, preceded by c5 or c3 in 817 and followed by c3 or c1 in 811.
+- **pmi ff** (`jump`, OURS) goes to c + 2 + s16. It ends a cc chain
+  when no constant matched. RDMSOPE @6bf goes to @6d4 `fe`, make_com
+  @512 to @81e (the catch-all), receiver @121 to @b8b (the catch-all).
+  Byte A is 00 in all 956 held uses.
+- **The table's register** is the low byte of its op (cd00 after c7 R
+  00 and c6 R 00; cdKK after ce K). `switch_reg` now reads it there and
+  checks the switch before the table. Tables cd03 (make_com @4bd) and
+  cd04 (receiver @126) get rows. cd02, cd05 and cd08 stay refused: their
+  witnesses are not paired with source.
+
+This also settles the step 3f bounded read of pimscsi `command_code/2`
+@361 (Open, now removed). The selector entries were `cc` on register
+2 after `ce 00 02`. The row's cell + 3 + s16 fits all three of them:
+`sense` reaches @37a, `trace` @372 (a chain: trace has more than one
+clause) and `read_trace` @388. The two words were W1 = 5 (@369, the ce)
+and W2 = 0x150031 (hi16 @379, the `e4` chain; lo16 @395, `fe`).
+
+**Not witnessed, so refused:**
+
+- c6 on an integer, a string or an object (no held c6 `cc` chain tests
+  an integer: MEASURED, 117 chains of atoms only);
+- c6 with a non-zero second or third byte (5 held, kappa `assoc/3`,
+  `set_part_value/5`, `get_node_ID/2`);
+- ce on an element 0 that is neither unbound nor an atom. hi16(W) is
+  the miss target in both witnesses, and what else takes it is
+  UNSETTLED. pimscsi `check_argument/2` @9b sends it to an `ff`;
+- ff with byte A != 0;
+- a hash table not directly after c7, c6 or ce (two kappa ce have an
+  `e2` between).
+
+Effect, method by method:
+
+- Six packages (`kl0.py census`): 310 / 12 / 207 / 1 becomes 311 / 12 /
+  206 / 1. `pimmcsp##pe_registers register_type/3` succeeds; checked
+  alone, its unbound first argument takes clause 1 (`nifr`).
+- Plain `census --fep`: 807 / 154 / 442 becomes 808 / 163 / 432. In the
+  recipe census, 829 / 152 / 422 becomes 831 / 161 / 411. Every new
+  success and failure was checked alone on a fresh machine.
+  - `pimos_remote_login_server device_abort/1` succeeds (both censuses);
+    `abort_string_io/2` too, with its recipe and request.
+  - 9 fail: pimscsi `cmt`'s and `scsi`'s `check_argument/2`, `low_if/2`,
+    `send_request/5`, `receive_request/5`, and `scsi_communicator
+    check_argument/2`. Not progress. The cause was traced for
+    `check_argument/2` only: the census's unbound first argument takes
+    clause 1, which binds it to `initiator` (`get r0`, @b8), cuts (`dc
+    02`) and then fails on the slot it compares. The other six were
+    checked alone but not traced.
+  - 6 stop at `not_less_than` on an unbound argument (cmt and scsi
+    `send_data/4`, `receive_data/4`, `request/4`).
+  - `pimfep_message_log dump_log/1` and `/2` reach `vector_element` on an
+    unbound argument.
+  - `pimos_scsi_front_end exit/1` reaches `process:children/2`.
+  - 9 more stop later at another opcode (blt e1, blt a8, blt 05, pmi
+    34), and none stops at c6 any more (21 before).
+  - None leaves success.
+
+Tests (`test_kl0.py` `Step3gSwitches`):
+
+- `test_get_bfs_list_only`: each first-argument type on RDMSOPE's
+  predicate. A list reaches clause 2 and stops at the unrowed pmi 3b
+  @6c9.
+- `test_make_com`: an atom, a vector, a vector with element 0 unbound
+  (kill first), and a vector and an atom with no clause.
+- `test_receiver_send`: `goal_name`, both `view_mode` clauses, the
+  catch-all for a vector, an atom and a list, clause 1 for an unbound
+  message, the three init keys, and the refusals.
+- `test_get_tap_type`: kappaMDM_schema_table `get_tap_type/2` @1ce
+  (KP_MDMSCT.ESP:316-321), the witness for `cc` testing a vector key on
+  the register ce loaded: `primitive`, `{primitive,table}` and
+  `{table,id}` take their clauses; `{table,x}`, `{foo,1}` and
+  `{primitive,table,z}` fail.
+- `test_handlers_are_the_table` (132 rows) and `test_census` pin the
+  counts; `test_espc.py` pins the FEP censuses.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+
+- c6 sending a list to the atom path: `test_get_bfs_list_only` fails
+  (`test_receiver_send` passes: there a list and an unknown atom both
+  reach the catch-all), and `test_espc.py` passes;
+- c6 sending a vector to the unbound target: `test_receiver_send`
+  errors, and `test_espc.py` passes;
+- ce's key length N - 1: `test_make_com` errors and `test_receiver_send`
+  fails; `test_fep_census` and `test_step3f_census_recipes` fail;
+- ff's target c + 3: `test_get_bfs_list_only` errors;
+  `test_fep_census` and `test_step3f_census_recipes` fail;
+- the hash register always A0: `test_make_com` and `test_receiver_send`
+  error, and `test_espc.py` passes;
+- the c3 row dropped from the table: `test_make_com` and
+  `test_receiver_send` error, `test_census` and
+  `test_handlers_are_the_table` fail, and `test_espc.py` passes;
+- cc reading its constant with `const_cell` (no vector keys): only
+  `test_get_tap_type` errors, and `test_espc.py` passes.
+
+### Step 3g: `process:invocation_stack/2` (2026-11-25)
+
+`standin/process.esp` gains `:invocation_stack(Process, Stack)`, the
+list object itself. It is INTERPOLATED in the same way as the slot
+accessors, from:
+
+- the printed slot `invocation_stack`, a list (TM-100 Fig. 3.1, PDF
+  p8);
+- the held source kappa-p.tar.Z `src/emu/kappaPITR.esp`:13-14,
+  `:self(#process, Proc), :get_first(Proc!invocation_stack, Prog)`,
+  whose `Prog!kappa_in_stream` shows that the first element is the
+  calling program;
+- the held compiled caller `pimos_tcpip_socket create_socket/9`
+  @4d-59, the same sequence through a method.
+
+That it answers the list object and not a copy is OURS.
+
+Effect: tcpip still has no recipe. A fresh census process runs no
+program, so `get_first/2` fails on its empty stack and the creator
+fails. A recipe would have to push the front end's program, which the
+census does not run. In both censuses one row moves:
+`pimos_tcpip_socket create_socket/9` now stops at `process:status/3`
+(inside activate/2, like the other creators), not at
+`invocation_stack/2`. That is a census order effect: the census's one
+process is shared, and an earlier row's `assign/1` left a program on
+its stack. Alone, on a fresh machine, the creator fails at
+`get_first/2`. Totals are unchanged. Test (`test_espc.py`
+`test_step3g_invocation_stack`): on the empty stack the creator fails.
+With an `as_program` pushed, `invocation_stack/2` answers the stack,
+and the held creator runs to activate/2 with that program as the
+device's `fep_object`, the process as `fep_process` and device id 16.
+
+Injected into the stand-in from a backup, restored by cp, cmp-checked.
+Observed: with `invocation_stack/2` answering a new empty list,
+`test_step3g_invocation_stack`, `test_fep_census` and
+`test_step3f_census_recipes` fail, and `test_kl0.py` passes.
+
+`get_interpreter/2` and `has_been_reshaped/1` are still not stood in
+(Open).
+
+### Step 3g: step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)
+
+Every page, line and cell that step 3f cited was re-read. The record is
+`../docs/simpos/source_check_2026-11-24.md` §7. What changed:
+
+- CORRECTED: `get_position/3` is on TM-115 PDF p64 (folio 59), not p63
+  (`standin/pmacs_window.esp`, `subsystems/window.md`).
+- CORRECTED: LOADER.ESP:252-256 tries `object` before `template_file`;
+  the pimfep invoker tries them the other way round. The model's
+  answers are the same in either order.
+- CONTRADICTED, already fixed in step 3g: the creators' A0 is not
+  always the output stream. For `pimos_file create/9` it is the open
+  mode.
+- UPGRADED: `get_title/2` is printed on TM-115 PDF p64 (for a menu
+  window); `library:get_class_object` is printed as `/c2` in TR-283 PDF
+  p18 Table 4.
+- CONFIRMED: TM-125 PDF p15-16, TM-112 PDF p16, TR-283 Table 4's
+  `enter_atom/c2`, `p_wshell.esp`:211, the kappa2 `assign` call sites,
+  the front end's three message elements (@42e-447), `fep_scsi_output
+  create/7`'s `simpos##stream` and `pass_body.kl1`:68.
+- Unchanged and still OURS: the window model (slots, initial values,
+  no display) and the atom name being the string's text. `assign/1`'s
+  effect is still NO SOURCE FOUND.
+
+No code path changed, so no census row moves.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
   to be found (`kl0.py census` lists them). The state of the FEP
-  blockers after step 3f:
-  - pmi c6 (21 methods): a multi-way switch with packed words. It needs
-    ce and ff, which have no rows. Not attempted in step 3f. Witnesses
-    are available: MEASURED 2026-11-25, c6 has 132 uses, ce 262 and ff
-    958 in the six source-held packages (paragraph, kappa, fts, qxt,
-    sancho2, tour). The layout seen at pimscsi `scsi_device`
-    `command_code/2` @361 is: c6; two integer words; a `cc` table of
-    atoms ended by `fe`; a `ce` table of selectors ended by `fe`; then
-    the clauses. A bounded read of that predicate (2026-11-25, listing
-    only; pimscsi's source is not held, so it is no witness, and no row
-    is added) found:
-    - Each atom entry `cc 00 00 k` at cell c lands on the clause that
-      unifies that atom at c + 2 + k: `download` @364 k=28 lands at
-      @38e, and `diagnose` @366 k=2a lands at @392.
-    - The selector entries do not fit that rule. `sense/2` @36b k=0c and
-      `read_trace/2` @36f k=16 land on their clauses (`pmi 32`, then
-      `atom get r76, sense` / `read_trace`, @37a and @388) at c + 3 + k.
-      `trace/2` @36d k=02 lands at @372, a block of e1-e5/ff cells. So
-      the base differs by one cell, or the `02` byte matters. UNSETTLED.
-    - The first integer (5) at @362 brings @364 + 5 = @369, the `ce`
-      cell. That fits a table offset from the first `cc`, but it is one
-      instance.
-    - 0x150031 at @363: @364 + 0x31 = @395, the predicate's final `fe`;
-      @364 + 0x15 = @379, an `e4` cell just before the `sense` clause.
-      Perhaps fail and otherwise targets, but this is a guess and is not
-      used.
-    The next step is the same read on a c6 predicate whose source is held
-    (paragraph, kappa, fts, qxt, sancho2, tour), which is still not done.
+  blockers after step 3g:
+  - pmi c6: done in step 3g (with ce, c3, c1, ff and tables cd03/cd04,
+    on held source). Still refused, for want of a witness: c6 on an
+    integer, string or object; c6 with non-zero second or third bytes
+    (5 kappa uses); ce's hi16 target (element 0 neither unbound nor an
+    atom); tables cd02, cd05 and cd08 (not paired with source); a table
+    after a `ce` and an `e2` (two kappa uses).
   - blt 0d (10): witnessed as `object/3`, but not added. kappa2
     `user_if/pb/som.esp:191-194` has `Sheet = Obj!current_sheet,
     object(Sheet,_,_)`, which compiles to `0d 00 01 02` with Sheet in
@@ -2096,17 +2563,42 @@ both assertions fail under the step 3f "executor made by
   - pmi b7 with A != 0: DONE in step 3f (the section above).
   - Revealed by the step 3f recipes:
     - `stream:see/2`, the commonest stop (every device `loop_main/1`).
-      No source: TM-100 Fig. 3.6 prints create/put/get only.
+      No source: TM-100 Fig. 3.6 prints create/put/get only. Step 3g:
+      INTERPOLATED from its call sites (with `try_to_see/2` and
+      `try_to_get/2`); the 17 rows now wait in it (`would suspend`).
+      Next: a request on the input stream, which stops at blt 6f.
     - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
-      callback (`pmacs_window`, not stood in).
+      callback (`pmacs_window`, not stood in). Step 3g searched again
+      and found no body for either:
+      - `get_interpreter/2`: USAGE only. Held ESP callers (chal
+        `cal_pmacs.esp`:51, txtstrct `ctx_system.esp`:472, kwic-esp
+        `src/dtCompiler.esp`:31, cil `src/ms_msm.esp`:497,
+        `src/ds_brs.esp`:64, `src/ds_edt.esp`:65) send
+        `:command_interpret(I)` to the answer; pimfep's editor reads its
+        slot `original_buffer`. Neither the interpreter's class nor
+        where the window keeps it is printed.
+      - `has_been_reshaped/1`: kappa's after-demons on it
+        (`subsystems/notes/ptf.tsv` 1538-1546) imply a SIMPOS primary,
+        and 23 held ESP files define their own, a layout of their own
+        windows (kwic-esp `src/windows.esp`:51-58, cal-esp
+        `cal2.12/scawin.esp`:68; kwic-esp `doc/classSpec.IO2`:2232
+        documents kwic's own). What the default primary does is not
+        printed. A no-op would be a guess.
     - The census's unbound request arguments: device replies refuse at
       `set_string_element` on an unbound argument (25 rows plain, 45
-      with recipes). The request Id is the argument in the one row
-      traced, `get_title/3` (see the recomputed accounting). Given an Id, the
-      traced `get_title/3` goes on to blt 48 (`multiply_constant`) with
-      R != A, which is unwitnessed.
-    - `process:invocation_stack/2`, not stood in: it stops the tcpip
-      `create_socket` creator, so tcpip has no recipe.
+      with recipes). Step 3g: the recipe census gives requests (OURS
+      values in held-code positions) and blt 48 R != A is witnessed; of
+      the 45, 21 succeed, 9 remain (receivers with no recipe), and the
+      rest stop at named gaps (see "Step 3g: census requests"). The
+      plain census still leaves requests unbound (25 rows).
+    - blt 36 (editor `get_title/3`'s reply assembly,
+      `fep_message_assembler` @122) and put_integer's 16-bit sign
+      (`ffff`, editor `get_position/3`, `get_inside_size/3`), revealed
+      by step 3g.
+    - `process:invocation_stack/2`: stood in by step 3g
+      (INTERPOLATED). tcpip still has no recipe: a fresh census process
+      has no program on its stack, and pushing the front end's program
+      would invent the caller.
     - `process:status/3` (11 plain-census creator rows). It has one
       printed call, `:status(Process, dormant, on_activate)` in
       `activate/2` (TM-100 Fig. 3.1), and no definition. A stand-in

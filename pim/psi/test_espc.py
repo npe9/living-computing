@@ -114,6 +114,47 @@
    same; activate/1 failing, fails test_fep_census,
    test_step3d_window_and_timer, test_step3f_census_recipes and
    test_step3f_window_protocol.  test_kl0.py passes each time.
+13. Step 3g (2026-11-25, test_step3g_stream_see): stream see/2,
+   try_to_see/2 and try_to_get/2 (INTERPOLATED, standin/stream.esp) and
+   kl0's 'would suspend' refusal of process:suspend/2 (one process, no
+   scheduler); a timer's loop_main/1 with one message on its input
+   stream sees it, gets it and stops at blt 6f in disassemble/3.  The
+   17 recipe-census rows that stopped at stream:see/2 now refuse 'would
+   suspend' (test_step3f_census_recipes); the totals are unchanged.
+   Injected from a backup copy, restored by cp, cmp-checked, observed
+   (test_kl0.py passing each time): see/2 taking the object out
+   (remove_object for see_object), fails only test_step3g_stream_see;
+   try_to_see/2 waiting as see/2 does, errors only
+   test_step3g_stream_see; try_to_get/2 leaving the object
+   (see_object for remove_object), fails only test_step3g_stream_see;
+   kl0's suspend/2 model removed (the printed body runs and fails),
+   fails test_step3f_census_recipes, test_step3g_stream_see and
+   test_stream_runs.
+14. Step 3g (2026-11-25, test_step3g_requests): census requests (kl0
+   REQUEST_ID = 16, request_args, COMMAND_RECEIVERS, ABORT_HANDLERS;
+   the creators' device-id and output-stream positions read per
+   creator, which corrects step 3f's pimos_file recipe).  Recipe census
+   829 / 152 / 422, 96 slot constants (test_step3f_census_recipes).
+   Injected into kl0.py from a backup copy, restored by cp,
+   cmp-checked, observed (test_kl0.py passing each time unless said):
+   the creators' device id left unbound: test_step3g_requests errors,
+   test_step3f_census_recipes fails; pimos_file's stream back in A0
+   with no open mode: test_step3f_census_recipes errors; the
+   command-receiver check dropped (pimos_window's get_position/3 given
+   a request): test_step3f_census_recipes and test_step3g_requests
+   fail; blt 48 R != A refused again: test_step3f_census_recipes fails,
+   and in test_kl0.py test_result_register errors and test_census
+   fails.
+15. Step 3g (2026-11-25): pmi c6/ce/c3/c1/ff and tables cd03/cd04
+   (test_kl0.py Step3gSwitches, which lists the injections): plain FEP
+   census 808 / 163 / 432, recipes 831 / 161 / 411.  ce's key length
+   N - 1 and ff's target cell + 3 each fail test_fep_census and
+   test_step3f_census_recipes here.
+16. Step 3g (2026-11-25, test_step3g_invocation_stack): process
+   invocation_stack/2 (INTERPOLATED).  Injected into standin/process.esp
+   from a backup, restored by cp, cmp-checked, observed: answering a new
+   empty list fails test_step3g_invocation_stack, test_fep_census and
+   test_step3f_census_recipes; test_kl0.py passes.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -717,9 +758,11 @@ class Standins(unittest.TestCase):
         m.reset()
         regs = [K.Var(), K.ClassRef(cid)]
         self.assertTrue(any(True for _ in m.solve_send(K.ClassRef(cid), 'stream', regs)))
-        # the printed put/2 and get/2: first in, first out; get on an empty
-        # stream fails (the printed suspend/2 fails for a process whose
-        # status is nil: the stand-in's one process is never activated)
+        # the printed put/2 and get/2: first in, first out.  get on an
+        # empty stream reaches process:suspend/2, which kl0 refuses since
+        # step 3g ('would suspend': one process, no scheduler); before, the
+        # printed suspend/2 failed for the census's process (status nil)
+        # and the wait showed as a clean failure
         (s,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
         st = s[0]
         self.assertEqual([x.cid for x in st.slots], ['simpos##post_queue', 'simpos##waiting_queue'])
@@ -731,7 +774,9 @@ class Standins(unittest.TestCase):
         self.assertEqual(len(send('put', 7)), 1)
         self.assertEqual(repr(send('get', K.Var())), '[[a]]')
         self.assertEqual(repr(send('get', K.Var())), '[[7]]')
-        self.assertEqual(send('get', K.Var()), [])
+        with self.assertRaises(K.Refusal) as cm:
+            send('get', K.Var())
+        self.assertEqual(cm.exception.cause, 'would suspend')
 
     def test_printed_process_slots(self):
         # :self(#process,P) makes the process with :new, which runs the
@@ -1155,7 +1200,11 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1420, {'success': 807, 'failure': 154, 'refused': 442, 'exception': 16,
+        # 2026-11-25, step 3g: pmi c6/ce/c3/c1/ff witnessed (RDMSOPE.ESP,
+        # p_MAIN.esp, receiver.esp): 808 / 163 / 432 (login_server
+        # device_abort/1 succeeds, checked alone; nine pimscsi methods fail
+        # on the census's unbound first argument, as in the recipe census)
+        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 163, 'refused': 432, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1164,7 +1213,8 @@ end.''', 'simpos')
         m = K.fep_machine()
         # pimos_timer create_timer/9 stopped before activate/2: the device
         # has the two streams its creator made with stream/2 and the output
-        # stream the recipe passed; device_id stays the unbound A3
+        # stream the recipe passed; device_id is REQUEST_ID, the A3 the
+        # recipe passes since step 3g (unbound before)
         dev = K.RECIPES['pimfep##pimos_timer'](m)
         co = m.lib.build(dev.cid)
         s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
@@ -1172,7 +1222,14 @@ end.''', 'simpos')
                           ('input_stream', 'output_stream', 'creation_status_stream')],
                          ['simpos##stream'] * 3)
         self.assertIsNot(s['input_stream'], s['creation_status_stream'])
-        self.assertIsInstance(s['device_id'], K.Var)
+        self.assertEqual(s['device_id'], K.REQUEST_ID)
+        # pimos_file (step 3g): the stream is the output stream (A1, as
+        # read_open/10 shifts the message), the open mode `read`, the id 16
+        f = K.RECIPES['pimfep##pimos_file'](m)
+        co = m.lib.build(f.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, f.slots)}
+        self.assertEqual((s['output_stream'].cid, s['open_mode'], s['device_id']),
+                         ('simpos##stream', K.Atom('read'), 16))
         # the window's editor points back at it
         ed = K.RECIPES['pimfep##pimos_window_editor'](m)
         self.assertEqual(ed.cid, 'pimfep##pimos_window_editor')
@@ -1190,37 +1247,191 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 154, 'refused': 440,
+        # step 3g: the requests (REQUEST_ID and the command's code) and
+        # pimos_file's corrected recipe: 809 / 154 / 440 -> 829 / 152 / 422;
+        # 10 editor replies reach the unset window process (slot
+        # constants 86 -> 96)
+        # step 3g: pmi c6/ce/c3/c1/ff and tables cd03/cd04 witnessed: 829 /
+        # 152 / 422 -> 831 / 161 / 411.  The two successes (login_server
+        # device_abort/1, abort_string_io/2) were checked alone on a fresh
+        # machine; the nine failures (pimscsi cmt, scsi, scsi_communicator
+        # check_argument/2, low_if/2, send_request/5, receive_request/5)
+        # are the census's unbound first argument meeting a first clause
+        # that binds it and cuts (check_argument/2 @b7 `get r0, initiator`,
+        # `dc 02`): not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 161, 'refused': 411,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 86)
+        self.assertEqual(slot_const, 96)
         # the four string-I/O programs, made by create_string_io/10
+        # step 3g: a device's loop_main/1 waits in stream see/2 on its
+        # empty input stream ('would suspend'), as do the 17 goal/1,
+        # loop_main/1 and invoke/1 rows that stopped at see/2 before
         for c in K.STRING_IO_PROGRAMS:
-            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2], ('refused', 'simpos'), c)
+            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2],
+                             ('refused', 'would suspend'), c)
         self.assertEqual(by[('as_pimos_string_io_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
-        # a device with a recipe goes on to the stream stand-in's missing
-        # see/2; the abstract as_pimos_device (no creator) still refuses
+        # a device with a recipe goes on to the wait in see/2; the
+        # abstract as_pimos_device (no creator) still refuses
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
-                         ('refused', 'simpos'))
-        self.assertIn('simpos##stream:see/2', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+                         ('refused', 'would suspend'))
+        self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 17)
+        self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
-        # pimos_file: initiate/1 runs its open on the unbound pathname and
-        # fails; goal/1 then takes its error clause (put(error)) and succeeds
-        self.assertEqual(by[('pimos_file', 'instance', 'initiate/1')][0], 'failure')
-        self.assertEqual(by[('pimos_file', 'instance', 'goal/1')][0], 'success')
+        # pimos_file: with the open mode `read` (step 3g), initiate/1 and
+        # goal/1 reach the SIMPOS directory (step 3f's failure and
+        # success were on a stream in the open-mode argument)
+        for sel in ('initiate/1', 'goal/1'):
+            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'simpos'))
+            self.assertIn('simpos##directory:retrieve/3', by[('pimos_file', 'instance', sel)][2])
+        # step 3g: the device replies to the request REQUEST_ID
+        for c in ('pimos_timer', 'pimos_directory', 'pimos_window_process', 'pimos_file',
+                  'simpos_user_device', 'pimos_remote_login_replier', 'pimos_standard_io_window',
+                  'pimos_remote_login_server'):
+            self.assertEqual(by[(c, 'instance', 'attention/1')][0], 'success', c)
+        self.assertEqual(by[('pimos_timer', 'instance', 'close/3')][0], 'success')
+        self.assertEqual(by[('pimos_timer', 'instance', 'abort_timer/3')][0], 'success')
         # the editor reaches pimos_window's lost pmacs_window protocol
         # (get_interpreter/2 is not stood in)
         self.assertIn('pimfep##pimos_window:get_interpreter/2',
                       by[('pimos_window_editor', 'instance', 'clear/3')][2])
         # with the interpolated geometry and title (step 3f), get_title/3
-        # runs through the window and stops at its reply, on the census's
-        # unbound request; set_size/3 at the has_been_reshaped/1 callback
+        # runs through the window to its reply; with the request (step 3g)
+        # and blt 48 R != A, the reply's assembly stops at blt 36;
+        # set_size/3 at the has_been_reshaped/1 callback
         self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')][:2],
-                         ('refused', 'unbound argument'))
+                         ('refused', 'opcode'))
+        self.assertIn('blt 36', by[('pimos_window_editor', 'instance', 'get_title/3')][2])
         self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
+
+    def test_step3g_stream_see(self):
+        # stream see/2, try_to_see/2, try_to_get/2 (step 3g, INTERPOLATED
+        # from their held callers; standin/stream.esp)
+        m = self.m
+        m.reset()
+        (s,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+        st = s[0]
+
+        def send(name, *args):
+            m.reset()
+            regs = list(args) + [st]
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(st, name, regs)]
+        # empty: try_to_see and try_to_get fail at once; see/2 would wait
+        self.assertEqual(send('try_to_see', K.Var()), [])
+        self.assertEqual(send('try_to_get', K.Var()), [])
+        with self.assertRaises(K.Refusal) as cm:
+            send('see', K.Var())
+        self.assertEqual(cm.exception.cause, 'would suspend')
+        send('put', K.Atom('a'))
+        send('put', K.Atom('b'))
+        # see/2 and try_to_see/2 give the oldest object and leave it
+        self.assertEqual(repr(send('see', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('try_to_see', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('see', K.Var())), '[[a]]')
+        # try_to_get/2 takes it out; then see/2 gives the next
+        self.assertEqual(repr(send('try_to_get', K.Var())), '[[a]]')
+        self.assertEqual(repr(send('see', K.Var())), '[[b]]')
+        self.assertEqual(repr(send('get', K.Var())), '[[b]]')
+        self.assertEqual(send('try_to_see', K.Var()), [])
+        # a timer made by its creator, with one message on its input
+        # stream: loop_main/1 sees it, gets it (the stream is empty after)
+        # and goes on to its local refute/3, which stops at
+        # fep_message_assembler disassemble/3's unwitnessed blt 6f
+        dev = K.RECIPES['pimfep##pimos_timer'](m)
+        co = m.lib.build(dev.cid)
+        sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        inp = sl['input_stream']
+        msg = K.Str('', 32)
+        msg.set_codes([16, 0, 60, 0])
+        m.reset()
+        self.assertEqual(len(list(m.solve_send(inp, 'put', [msg, inp]))), 1)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(dev, 'loop_main', [dev]))
+        self.assertEqual(cm.exception.cause, 'opcode')
+        self.assertIn('blt 6f', cm.exception.detail)
+        self.assertEqual(repr(K.resolve(inp.slots[0].slots[0])), '[]')
+
+    def test_step3g_requests(self):
+        # step 3g: census requests (kl0 REQUEST_ID, request_args, OURS
+        # values in held-code positions).  A command handler of a class
+        # with a recipe gets [Id, Code], the code from the held
+        # fep_command_code_table convert/3; an abort handler [Id]; a
+        # method of a class that receives no commands, nothing
+        m = K.fep_machine()
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_timer', 'close', 3), [16, 60])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_window_editor', 'get_title', 3), [16, 131])
+        self.assertEqual(K.request_args(m, 'pimfep##simpos_user_device', 'abort_string_io', 2), [16])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_window', 'get_position', 3), [])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_timer', 'attention', 1), [])
+
+        def replies(name, n):
+            dev = K.RECIPES['pimfep##pimos_timer'](m)
+            co = m.lib.build(dev.cid)
+            sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+            lead = K.request_args(m, dev.cid, name, n)
+            regs = lead + [K.Var() for _ in range(n - 1 - len(lead))] + [dev]
+            self.assertTrue(any(True for _ in m.solve_send(dev, name, regs)))
+            q, out = K.resolve(sl['output_stream'].slots[0].slots[0]), []
+            while isinstance(q, K.Cons):
+                out.append(K.deref(q.args[0]).codes())
+                q = K.deref(q.args[1])
+            return out
+        # the replies the device puts on its output stream: {Id, Status} as
+        # [Id, 0, Status, 0] (get_device_id/3 reads element 0,
+        # get_command/3 element 2, disassemble/3 element 3)
+        self.assertEqual(replies('attention', 1), [[16, 0, 3, 0]])
+        self.assertEqual(replies('close', 3), [[16, 0, 1, 0], [16, 0, 903, 0]])
+
+    def test_step3g_invocation_stack(self):
+        # process:invocation_stack/2 (step 3g, INTERPOLATED: TM-100 Fig.
+        # 3.1's slot; kappa-p kappaPITR.esp:13-14).  It answers the stack
+        # list itself; held pimos_tcpip_socket create_socket/9 then takes
+        # the calling program with get_first/2 (@4d-59) and stores it as
+        # the device's fep_object before activate/2
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##as_program', 'create', [K.Var()])
+        prog = r[0]
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        co = m.lib.build('simpos##process')
+        stack = proc.slots[m.lib.slot_number(co, 'instance', 'invocation_stack')]
+        cid = 'pimfep##pimos_tcpip_socket'
+
+        def create_socket():
+            (st,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+            args = [K.Var() for _ in range(8)]
+            args[0], args[3] = st[0], K.REQUEST_ID
+            m.stop_before = {('activate', 2)}
+            try:
+                return [None for _ in m.solve_send(K.ClassRef(cid), 'create_socket', args + [K.ClassRef(cid)])]
+            except K.CreatorStopped as e:
+                dev = e.args[2][0]
+                dco = m.lib.build(dev.cid)
+                return {x.name.split('$')[-1]: K.deref(v) for x, v in zip(dco.instance_slots, dev.slots)}
+            finally:
+                m.stop_before = None
+        # the census's process runs no program: get_first/2 fails on the
+        # empty stack, so the creator fails (tcpip has no recipe).  The
+        # machine is shared: empty the stack first
+        self.send(stack, 'clear')
+        self.assertEqual(create_socket(), [])
+        self.assertEqual(len(self.send(proc, 'add_program', prog)), 1)
+        try:
+            L = K.Var()
+            self.assertEqual([K.resolve(L) is stack for _ in m.solve_send(proc, 'invocation_stack', [L, proc])],
+                             [True])
+            sl = create_socket()
+            self.assertIs(sl['fep_object'], prog)
+            self.assertIs(sl['fep_process'], proc)
+            self.assertEqual(sl['device_id'], K.REQUEST_ID)
+        finally:
+            self.send(stack, 'clear')
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,

@@ -140,7 +140,7 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
 - MEASURED 2026-11-24, from known plaintext:
   - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) were named
-    at first; 125 now (77 class-0, 44 class-1, after steps 3c, 3d and 3e). They are in
+    at first; 125 after steps 3c, 3d and 3e (77 class-0, 44 class-1), 132 after step 3g (82 class-0, the cd03 and cd04 tables). They are in
     `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
     ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows. 44 rows are
     witnessed independently by `../../../psi/fepread/witness.py`, and both are cited.

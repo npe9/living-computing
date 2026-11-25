@@ -455,7 +455,7 @@ and stand-in `simpos##` classes. In order:
        is now the commonest stop.
      - `pmacs_window` gains its geometry, title, font and display
        methods (INTERPOLATED from `subsystems/window.md` §2.1-2.3, TM-125
-       p15-16, TM-115 p50, p63), as slots and no-ops. The census has
+       p15-16, TM-115 p50, p63-64), as slots and no-ops. The census has
        1,420 methods: the 17 new ones are inherited by `pimos_window` and
        succeed, which is not progress. Plain 807 / 154 / 442; with
        recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their
@@ -481,6 +481,36 @@ and stand-in `simpos##` classes. In order:
        real success was checked alone on a fresh machine; the two
        `resign_core/1` successes are order effects (both fail alone).
        The six-package census is identical to master.
+   - *2026-11-25, step 3g* (`../../psi/README.md`, the "Step 3g"
+     sections):
+     - `stream` `see/2`, `try_to_see/2` and `try_to_get/2` stood in
+       (INTERPOLATED from their pimfep, pimmcsp, fuzclust and icotext
+       callers; no printed or held definition found). kl0 refuses
+       `process:suspend/2` as `would suspend` (one process, no
+       scheduler). The 17 recipe rows that stopped at `see/2` now wait
+       there on an empty input stream; the totals are unchanged.
+     - Census requests (OURS values in positions read from held code:
+       Id 16, PIMOS's first device id, and the command's code) and blt
+       48 with R != A (KNOWN-PLAINTEXT, `p_hwin.esp`:233). Step 3f's
+       `pimos_file` recipe had the stream in the open-mode argument:
+       corrected. Plain census unchanged; with recipes 829 / 152 / 422 /
+       16 / 1. 21 device replies succeed (each checked alone): they put
+       `{Id, Status}` on the output stream. Six packages: four `draw/2`
+       rows go on; totals unchanged.
+     - pmi c6 (`switch_on_term`), ce, c3, c1, ff and the cd03/cd04
+       tables (KNOWN-PLAINTEXT on held source: kappa2 `RDMSOPE.ESP`
+       :285-291, paragraph `p_MAIN.esp`:479-689 and `receiver.esp`
+       :38-686). ce's middle byte is a register and its key is Name/N
+       with N the vector's length. Unwitnessed type cases refuse. Six
+       packages 311 / 12 / 206 / 1; plain FEP 808 / 163 / 432, with
+       recipes 831 / 161 / 411. The 9 new failures are the census's
+       unbound first argument meeting a cut, not progress.
+     - `process:invocation_stack/2` stood in (INTERPOLATED, TM-100 Fig.
+       3.1 and kappa-p `kappaPITR.esp`:13-14). `get_interpreter/2` and
+       `has_been_reshaped/1` are still not stood in: no body is
+       printed or held.
+     - Step 3f's INTERPOLATED and OURS parts re-checked against their
+       sources (`source_check_2026-11-24.md` §7).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
