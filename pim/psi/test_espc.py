@@ -1174,11 +1174,14 @@ end.''', 'simpos')
         ed = K.RECIPES['pimfep##pimos_window_editor'](m)
         self.assertEqual(ed.cid, 'pimfep##pimos_window_editor')
         # remote_pimfep_executor through :new, so its after-demon on new/2
-        # copies the class slot socket into accept
+        # copies the class slot socket into accept: that slot's own
+        # template constant, a string (one template constant for another)
         ex = K.RECIPES['pimfep##remote_pimfep_executor'](m)
         co = m.lib.build(ex.cid)
         s = {e.name: K.deref(v) for e, v in zip(co.instance_slots, ex.slots)}
-        self.assertNotIsInstance(s['accept'], K.SlotConstant)
+        self.assertIsInstance(s['accept'], K.Str)
+        self.assertEqual(s['accept'].text, 'pimos_scsi_fep_control')
+        self.assertEqual(s['time'], 10)
         rows = K.census_fep(K.fep_machine(), recipes=K.RECIPES)
         by = {(r[0].split('##')[1], r[1], r[2]): r[3:] for r in rows}
         out = {}

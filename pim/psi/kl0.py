@@ -32,6 +32,11 @@ THE MACHINE (OURS, WAM-shaped as layers/KL0.md §3 describes KL0)
   objects (Var, Atom, int, Cons, Vec, Str, ClassRef, Instance), all on
   one heap, so the safe/unsafe distinctions of the put/unify variants do
   not arise here.
+- SIMPOS methods modelled in Python (step 3f; OURS, INTERPOLATED from
+  call sites): `SIMPOS_MODELS` answers library assign/1, check_info/3,
+  get_class_object/3 and symbolizer enter_atom/3 before a send looks for
+  compiled code.  Everything else of SIMPOS is a stand-in in
+  psi/standin/ or refuses.
 - Cut: a predicate's entry barrier is kept in B0 and also put in register
   A_arity (MEASURED: kappa##kappaDBC_interface pic/1 saves A1 with
   `20 01 00` and cuts with `dd 01 01`; pmi dd/de take the register).

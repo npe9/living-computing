@@ -1619,7 +1619,7 @@ slot write:
 |---|---|---|
 | `as_pimos_device`'s `input_stream`, `output_stream`, `creation_status_stream` (59 in 15 classes) | the device creators: `pimos_timer create_timer/9` @19-48, `pimos_file create/9` @19-52, `pimos_directory directory/10` @17-4e and `make_directory/10` @63-9a, `pimos_tcpip_socket create_socket/9` @21-69, `pimos_window_process create_with_buffer/10` @56-86, `pimos_string_io_invoker` local `initiate_string_io_device/7` @9d-b6 | artifact |
 | `pimos_window_editor` `window` (21), `pimos_window` `editor` (1) | `pimos_window create_pimos_window/3` @19-34, through the `pmacs_window` stand-in | artifact |
-| `remote_pimfep_executor` `accept` (1) | its own class after-demon on new/2, @40-48 (`accept` := the class slot `socket`) | artifact: `make_instance` runs no new/2 demon |
+| `remote_pimfep_executor` `accept` (1) | its own class after-demon on new/2, @40-48 (`accept` := the class slot `socket`, whose template constant is the string `'pimos_scsi_fep_control'`) | artifact: `make_instance` runs no new/2 demon; with it, one template constant replaces another |
 | `fep_scsi_output` `report_stream` (2), `pimfep_message_receiver`/`_sender` `fep` (6), `scsi_stream` `handler` (3), `pimos_socket_receiver` `data_stream` (2), `pimos_scsi_front_end` `input_stream` (1) | a creator class method that stores its caller's argument (`fep_scsi_output create/7` @16-3b, `create/8` @16-2e, `create/6` @22-30, `scsi_stream create/4` @2b-46, `pimos_socket_receiver create/5` @14-25, `pimos_scsi_front_end create/6` @41-5c) | artifact; the value is the caller's, not supplied |
 | `pimos_tcpip_socket` `receive_message_stream` (2), `pimos_window_process` `device_process` and `pimos_window` (2), `pimos_login_requester` `window` (4), `simpos_user` `user` (3) | the object's own process body or set-up (`initiate/1` @a8-c3, `initiate/1` @f0-10d, local `initiate/1` @ad-b8, `setup_process/2` @e3-ed), which runs only once the process does | artifact of a process that never runs |
 | `cmt`, `scsi` `channel` and `sender` (14), `scsi_device`, `scsi_device_bus_management` `handler` (8), `scsi_handler` `devices`, `request_devices`, `channel` (7), `scsi_load_test` `scsi`, `window` (5), `pseudo_scsi_handler` `memory` (1) | for `scsi_load_test` `window`, its class `create/2` and `create/4` (`blt 2f` @59, @72); `pseudo_scsi new/3` sets `sender` (@5c); the creators `scsi_common_if create/3`, `/4` need bound bus and unit numbers (`not_less_than` on the census's unbound argument) | artifact where a writer is found; for `channel`, `devices`, `request_devices` and `memory` no writer was found by name (UNKNOWN) |
@@ -1691,20 +1691,30 @@ methods, 789 / 154 / 443 / 16 / 1):
     - `pimos_directory` `initiate/1`, `goal/1` and `invoke/1` stop at
       `simpos##directory:retrieve/4` (class not loaded).
   - 5 stop at `set_string_element` on an unbound argument (the
-    `attention/1` rows).
+    `attention/1` rows; see the recomputed accounting below for what
+    that argument is).
   - 4 succeed: `pimos_window set_output_stream/2`, `pimos_window_process
     initiate/1`, and `pimos_file goal/1` and `invoke/1`. pimos_file's
     goal/1 takes its error clause (`put(error)` on the creation-status
     stream). Its `initiate/1` (1 row, now `failure`) runs `open` on the
     census's unbound pathname and fails.
-  - 1 (`pimos_window_editor attention/1`) is still a slot constant, one
-    hop later: the editor's `pimos_window_process` slot.
+  - 1, `remote_pimfep_executor close/1`, is now `receiver not an
+    object`: it sends `close_socket/3` to `accept`, which now holds the
+    class slot `socket`'s template constant, the string
+    `'pimos_scsi_fep_control'`.
+  - (Not among the 41: `pimos_window_editor attention/1` is still a slot
+    constant, one hop later, at the editor's `pimos_window_process`
+    slot.)
 - 3 move out of success:
   - `remote_pimfep_executor goal/1` and `invoke/1` stop at
     `network_node_name:to_tcpip_address/3`, and `open/1` moves there from
     failure. With the after-demon run, `accept` holds the class slot's
-    value, so `open/1` gets past the test that used to fail. The plain
-    census's successes were on an instance new/2 could not have made.
+    value, so `open/1` gets past the test that used to fail. That value
+    is itself a template constant: one template constant (0) replaced by
+    another (the string `'pimos_scsi_fep_control'`). Whether a class
+    method sets `socket` before new/2 in real use was not traced. The
+    plain census's successes were on an instance that new/2, with its
+    after-demon, could not have made.
   - `pimscsi_fep resign_core/1` is a census order effect: run alone on a
     fresh machine it fails, as it now does.
 
@@ -1924,6 +1934,96 @@ cmp-checked. Observed:
 `test_espc.py` passes both times: its census pins count the moved row
 as refused either way.
 
+### Step 3f: the census accounting, recomputed (2026-11-25)
+
+A review after the b7 commit found the step-by-step numbers above were
+partly mis-attributed. Every figure here is recomputed, row by row, from
+two final TSVs of HEAD (`census --fep` and `census --fep --recipes`)
+and from the plain census of master 496173b8 run on the untouched tree
+at the start of step 3f. Rows are keyed by (class, section, selector).
+Outcome and cause are compared, and `_G` variable numbers are ignored.
+
+**Master plain to HEAD plain** (1,403 to 1,420 methods; 789 / 154 / 443
+/ 16 / 1 to 807 / 154 / 442 / 16 / 1):
+
+- 17 new rows, the `pmacs_window` methods inherited by `pimos_window`.
+  All succeed, which is not progress.
+- 13 rows keep their outcome and cause but stop later.
+- 4 rows move:
+  - `remote_stream create_from_fep/4`: simpos to unbound receiver.
+  - `remote_stream create_to_fep/3`: simpos to success. This rests on
+    the no-op `library:assign/1` (INTERPOLATED).
+  - `pimfep_message_log dump_log/1`: simpos to opcode, now at pmi ff.
+  - `pimos_fep_superviser error_mode_menu/2`: operand to simpos, now at
+    `standard_choice_window` (b7 A != 0).
+
+So the plain census gains 1 real success. The other 17 are new rows.
+
+**HEAD plain to HEAD recipes** (807 / 154 / 442 to 809 / 154 / 440;
+slot constants 142 to 86):
+
+- 56 rows leave `receiver a slot constant`:
+  - 30 to simpos: `stream:see/2` (10 `goal/1`/`invoke/1` rows, 7
+    `loop_main/1` rows), `pimos_window_process:see/2` (the window
+    process's `loop_main/1`), `get_interpreter/2` (3 editor rows, 2
+    window-process rows), `has_been_reshaped/1` (4 editor rows),
+    `directory:retrieve/4` (3 rows).
+  - 20 to `unbound argument` at `set_string_element`: 12 editor rows and
+    8 `attention/1` rows.
+  - 4 to success: `pimos_file goal/1` and `invoke/1`,
+    `pimos_window_process initiate/1`, `pimos_window
+    set_output_stream/2`.
+  - 1 to failure: `pimos_file initiate/1`.
+  - 1 to `receiver not an object`: `remote_pimfep_executor close/1`
+    sends `close_socket` to `accept`, which now holds the class slot
+    `socket`'s template constant, the string `'pimos_scsi_fep_control'`
+    (one template constant replaced by another).
+- 2 rows are still slot constants but stop later: editor `attention/1`
+  and editor `get_font/3`. `get_font/3` reaches the font slot of the
+  `pmacs_window` stand-in, whose initial 0 is OURS. That slot constant
+  is made by the stand-in, not by held code.
+- Out of success, 3:
+  - `remote_pimfep_executor goal/1` and `invoke/1`, to
+    `to_tcpip_address/3` (simpos). Their plain successes were on an
+    executor that new/2, with its after-demon, could not have made.
+  - `pimscsi_fep resign_core/1`, to failure.
+- 2 more rows move:
+  - executor `open/1`: failure to simpos.
+  - `pimos_file resign_core/1`: failure to success.
+
+**The two `resign_core/1` rows are order effects.** On a fresh machine,
+each alone, both fail in both modes (MEASURED 2026-11-25). Their census
+successes, `pimscsi_fep` plain and `pimos_file` with recipes, come from
+state left by earlier rows in the same run.
+
+**Net with recipes:** 4 real successes, 1 real failure, and 51 rows on
+to a named gap (30 simpos, 20 unbound request, 1 non-object). None of
+the 56 is progress toward a running front end by itself: it is the
+removal of a census artifact.
+
+**The `set_string_element` stops, traced.** In editor `get_title/3` the
+unbound argument is the request Id (A0). It reaches
+`fep_message_assembler assemble/3` through `reply_message/2`. With Id =
+7 the call goes on to `pad_string/2` and refuses at blt 48
+(`multiply_constant`) with R != A, an unwitnessed operand pattern. The
+other rows were not traced one by one.
+
+**Six-package census:** identical to master row by row (530 methods,
+310 / 12 / 207 / 1).
+
+**Invented slot names.** The `pmacs_window` slots `x`, `y`, `width`,
+`height`, `columns`, `rows`, `title` and `font` are OURS. A slot read or
+write in compiled code names its slot with an atom (`pmi-atom put rN,
+activity` before `pimos_window create_pimos_window/3`'s write is the
+pattern). The pimfep and pimscsi listings were searched for those eight
+atoms (MEASURED 2026-11-25). Only one is found, `pmi-atom get r76,
+title` at pimscsi `scsi_load_test` @cc, and it is a unify with an atom,
+not a slot access. So no held code reads or writes an invented slot.
+
+Test (`test_espc.py` `test_step3f_census_recipes`): the executor's
+`accept` is now pinned as the string `'pimos_scsi_fep_control'`, and
+`time` as 10.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -1960,7 +2060,12 @@ as refused either way.
     - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
       callback (`pmacs_window`, not stood in).
     - The census's unbound request arguments: device replies refuse at
-      `set_string_element` (16 rows with recipes).
+      `set_string_element` on the unbound request Id (25 rows plain, 45
+      with recipes; see the recomputed accounting). Given an Id, the
+      traced `get_title/3` goes on to blt 48 (`multiply_constant`) with
+      R != A, which is unwitnessed.
+    - `process:invocation_stack/2`, not stood in: it stops the tcpip
+      `create_socket` creator, so tcpip has no recipe.
     - `process:status/3` (11 plain-census creator rows). It has one
       printed call, `:status(Process, dormant, on_activate)` in
       `activate/2` (TM-100 Fig. 3.1), and no definition. A stand-in

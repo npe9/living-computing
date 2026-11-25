@@ -469,6 +469,17 @@ and stand-in `simpos##` classes. In order:
        (the outputs are not settled). Not stood in: `process:status/3`
        (it would only move rows to `entry_of_invoke/2`),
        `node_full_name/3`, and `stream:see/2` (no source).
+     - Recomputed row by row from the final TSVs (`psi/README.md`, "the
+       census accounting, recomputed"). Master plain to HEAD plain:
+       1,403 to 1,420 methods, 789 to 807 successes, but 17 of these are
+       the new inherited rows and only 1 is a real move
+       (`remote_stream create_to_fep/3`, on the no-op `assign/1`).
+       Recipes then move 56 slot-constant rows: 4 to success, 1 to
+       failure, 30 to simpos, 20 to `set_string_element` on the
+       census's unbound request Id, 1 to `receiver not an object`. The
+       one new slot constant comes from the stand-in's own font 0. The
+       `resign_core/1` successes are order effects (both fail alone).
+       The six-package census is identical to master.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
