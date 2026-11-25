@@ -260,6 +260,7 @@ import StretchTapeSource::*;  // TapeSource, mkTapeSourceVector, and the
 import StretchDiskSource::*;  // DiskSource, mkDiskSourceSmall, and the
                               // DiskIndex/ArcAddr/arcWords typedefs
 import RegFile::*;
+import BRAMCore::*;
 
 typedef 32 DeviceWords;
 // The console's switch register: exactly three words, Reference
@@ -285,6 +286,10 @@ typedef Bit#(TAdd#(TLog#(DeviceWords), 1)) DevicePos;
 // continuous paper, read back by the testbench.  Its End Exception is
 // a model artifact.  On the ULX3S it belongs in BRAM or a UART
 // stream, not 16 Kbit of registers. <<<
+// IT IS A BRAM SINCE 2026-11-25 (fidelity_plan.md F0): fpga_feasibility.md
+// §11 measured its 16,384 flip-flops, a fixture in the bitstream.  See
+// consoleImg in mkStretchIO for the shape, and readConsoleReq below for
+// what that did to the testbench's side.
 typedef 256 ConsoleWords;
 typedef Bit#(TLog#(ConsoleWords)) ConsoleIndex;
 typedef Bit#(TAdd#(TLog#(ConsoleWords), 1)) ConsolePos;
@@ -491,7 +496,6 @@ interface StretchIO;
   method ActionValue#(Word64) diskReadResp();
   method Bool diskCanWrite();
   method Action writeDiskWord(DiskIndex i, Word64 v);
-  method Word64 peekDiskWord(DiskIndex i);   // testbench only
   method DiskPos diskCapacity();
   method ArcAddr arcAddr();
   method Action setArcAddr(ArcAddr a);
@@ -508,7 +512,15 @@ interface StretchIO;
   // or the message comes out on top of itself.
   // ---------------------------------------------------------------
   method Action writeConsoleWord(ConsoleIndex i, Word64 v);
-  method Word64 readConsoleWord(ConsoleIndex i);   // testbench only
+  // TESTBENCH ONLY, AND NOW A REQUEST AND A RESPONSE: the paper is a
+  // BRAM, so a read asked for in clock N is answered by readConsoleResp
+  // in N+1 (and held there until the next request).  It is not 7030
+  // hardware and nothing in the machine reads it, so the latency is
+  // the testbench's, never the machine's: tests/gen_tb.py gives each
+  // console check and dump word two phases, after the run.  No guard,
+  // for the reason StretchDiskSource.bsv's header gives.
+  method Action readConsoleReq(ConsoleIndex i);
+  method Word64 readConsoleResp();
   method ConsolePos consolePos();
   method Action setConsolePos(ConsolePos p);
 
@@ -666,7 +678,19 @@ module mkStretchIO(StretchIO);
   // the choice -- but something had to be chosen and this says so.
   Reg#(ArcAddr) arcReg     <- mkReg(0);
   // The console printer's paper, and where the next character goes.
-  Vector#(ConsoleWords, Reg#(Word64)) consoleImg <- replicateM(mkReg(0));
+  // A BRAMCore, port a written by rl_io, port b read by the testbench;
+  // no output register, so one clock of read latency.  It was a Vector
+  // of 256 Reg (16,384 flip-flops, fpga_feasibility.md §11).  POWER-ON
+  // ZERO is `consoleWritten`, one bit per word, latched beside a read
+  // and ANDed onto it -- exactly mkDiskSourceSmall's arrangement and
+  // for the same reason: a BRAM does not power on at zero and a sweep
+  // rule is the guard-lifting trap that file's header records.  The
+  // write side costs the machine nothing: writeConsoleWord is still one
+  // Action in the clock it always was.
+  BRAM_DUAL_PORT#(ConsoleIndex, Word64) consoleImg
+      <- mkBRAMCore2(valueOf(ConsoleWords), False);
+  Reg#(Bit#(ConsoleWords)) consoleWritten <- mkReg(0);
+  Reg#(Bool) consoleRdReal <- mkReg(False);
   Reg#(ConsolePos) consolePosReg <- mkReg(0);
   // The console's three switch words, zero at power-on -- which is
   // MCP's "NO TIME ENTERED" case, not an absence of behaviour.  See
@@ -794,7 +818,6 @@ module mkStretchIO(StretchIO);
   method Action writeDiskWord(DiskIndex i, Word64 v);
     disk.write(i, v);
   endmethod
-  method Word64 peekDiskWord(DiskIndex i) = disk.peek(i);
   method DiskPos diskCapacity() = disk.capacity();
   method ArcAddr arcAddr() = arcReg;
   method Action setArcAddr(ArcAddr a);
@@ -802,9 +825,14 @@ module mkStretchIO(StretchIO);
   endmethod
 
   method Action writeConsoleWord(ConsoleIndex i, Word64 v);
-    consoleImg[i] <= v;
+    consoleImg.a.put(True, i, v);
+    consoleWritten[i] <= 1;
   endmethod
-  method Word64 readConsoleWord(ConsoleIndex i) = consoleImg[i];
+  method Action readConsoleReq(ConsoleIndex i);
+    consoleImg.b.put(False, i, ?);
+    consoleRdReal <= (consoleWritten[i] == 1);
+  endmethod
+  method Word64 readConsoleResp() = consoleRdReal ? consoleImg.b.read : 0;
   method ConsolePos consolePos() = consolePosReg;
   method Action setConsolePos(ConsolePos p);
     consolePosReg <= p;

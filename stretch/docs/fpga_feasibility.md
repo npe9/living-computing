@@ -2740,3 +2740,106 @@ Without these two fixtures, the rest of the core's state is about
   (seconds each).
 - nextpnr was not run, so there is no TRELLIS_COMB or IO figure this
   time. §9.3.6c's 448% COMB stands as the last placed measurement.
+
+### 11.1 The two fixtures moved to block RAM, and the core re-measured (2026-11-25)
+
+The first fit item above is done. It is a structural change, not the
+`-D` flag suggested above: the default build is the fixture-free one. Both
+fixtures stay inside the core. Each is now a `BRAMCore` (`mkBRAMCore2`,
+whose `put` and `read` have no guard) instead of a `Vector` of `Reg`.
+- **`mkDiskSourceSmall`** (`StretchDiskSource.bsv`).
+  - Port a reads and port b writes.
+  - A read put in clock N answers in N+1. That is when the old CReg
+    already made `respReady` true, so the transfer FSM's timing does not
+    change.
+  - `rl_io`'s block in `mkStretchCore.sched` is byte-identical to
+    master's (md5 compared).
+  - The two decks that use this source were run with
+    `STRETCH_HALT_REPORT=1` at 7e78395e and after the change. Their halt
+    clocks are identical: `io_disk` 2,030 and the stall variant 6,623,
+    with 40 memory reads each.
+  - Power-on zero comes from a 1,024-bit written mask. A BRAM powers on
+    at `'hAAAA...`, both in Bluesim and in `BRAM2.v`.
+  - `peek` is gone. Nothing called it.
+- **`consoleImg`** (`StretchIO.bsv`).
+  - Port a takes the machine's write. It is the same one Action, in the
+    same clock, as before.
+  - Port b belongs to the testbench: `io.readConsoleReq`, then
+    `io.readConsoleResp` a clock later.
+  - Power-on zero comes from a 256-bit written mask.
+  - `tests/gen_tb.py` gives each console check and each dump word two
+    phases. They come after `stopRun`, so no step count or CYCLES pin
+    can see them.
+- **New test.** `tests/run_fixture_test.sh` (`bsv/StretchFixtureTest.bsv`)
+  pins the masks and the held read, which no deck reaches. Its header
+  records the observed injection sets.
+
+**Why not move them out of the core behind interfaces** (Flute's shape,
+with memory on the SoC side)?
+- The disk's request and response would cross the `(* synthesize *)`
+  boundary through `rl_io`.
+- Keeping today's one-clock answer would then need same-clock paths in
+  both directions. That is the guard-lifting trap
+  `StretchDiskSource.bsv` records.
+- Every generator that runs a disk program would also have to wire up
+  a platter.
+
+Block RAM removes the flip-flops with no interface change on the
+machine's side. The board's full-size disk still comes in behind the same
+`DiskSource` interface (the disk plan's D3, SDRAM).
+
+**Generated Verilog.** The state registers with a `$D_IN`, summed by
+name as in §11, fall from 100,669 to 19,967 bits. The
+`ioDev_disk_img_*` and `ioDev_consoleImg_*` registers are gone. The
+masks add `ioDev_disk_written` (1,024 bits) and `ioDev_consoleWritten`
+(256).
+
+**The run.** The command and script were the same as §11
+(`nice fpga/synth_core.sh OUT mkStretchCore hier`, yosys 0.51,
+`-noabc9`). It took 56 min wall-clock, with two suites running alongside.
+The design-hierarchy figures:
+
+| | LUT4 | CCU2C | PFUMX | L6MUX21 | TRELLIS_FF | DP16KD | MULT18X18D |
+|---|---|---|---|---|---|---|---|
+| whole design, before (§11) | 686,817 | 31,488 | 67,890 | 13,346 | 102,219 | 384 | 100 |
+| whole design, after | **369,181** | 31,483 | 59,746 | 12,730 | **21,517** | **392** | 100 |
+| `mkStretchCore` own logic, before | 661,332 | 29,610 | 59,597 | 8,868 | 100,012 | 0 | 94 |
+| `mkStretchCore` own logic, after | 344,369 | 29,605 | 51,817 | 8,593 | 19,310 | 0 | 94 |
+
+Each of the two new `BRAM2`s maps to 4 DP16KD, which is the +8.
+
+**The flip-flop delta closes to the bit.** It is −81,920 (the two
+images), +1,281 (the two masks and `consoleRdReal`), −63
+(`ioDev_disk_resp` went from 65 bits to 2): −80,702 in all. That equals
+both the Verilog sum and the core's TRELLIS_FF delta.
+
+**The boxes' LUT4 moved by up to 9% though their source did not.** This
+commit's parent 7e78395e has no `bsv/` change since §11's 61e18dc1
+(`git diff --stat` is empty). The figures, before and after: `mkFpBox`
+7,920 → 7,235, `mkDivBox` 6,489 → 6,858, `mkCvtBox` 5,987 → 5,629,
+`mkDecBox` 1,098 → 1,095, `mkVflBox` 404 → 404. That is yosys run-to-run
+variation in `-noabc9` mapping on identical input, so read any LUT4
+difference under about 10% as noise. The core's own 317k drop is far
+outside it.
+
+**What it says:**
+- The two fixtures cost 317k of the core's own 661k LUT4 (48%), as well
+  as 81k of its flip-flops. They were the wide read muxes §11
+  suspected, and the share is now measured rather than inferred.
+- The LUT4 figure is still the `-noabc9` upper bound. 344k is about
+  4x an 85F's 83,640 LUT4, before any abc9 credit (§9.6.1, up to 2.5x).
+- 392 DP16KD against 208 is still F2's problem: core storage accounts
+  for 384 of them.
+- **Still in flip-flops** (5,120 bits):
+  - `ioDev_printerImg`, 2,048 bits. The machine only writes it and the
+    testbench reads it, exactly as with the console, so the same
+    conversion applies directly. It is an easy follow-up.
+  - `ioDev_readerImg`, 2,048 bits. `rl_io` reads it combinationally, in
+    the clock it moves the word. A BRAM there would move the machine's
+    timing unless the read were issued a clock early, so that is a
+    separate change.
+  - The 16-word tape, 1,024 bits.
+- **The disk's written mask costs about 4,900 LUT4** (`-noabc9`;
+  `mkDiskSourceSmall` synthesised alone: 4,904 LUT4, 1,026 FF, 4 DP16KD).
+  A per-arc mask would be smaller, but it would change what a
+  part-written arc reads back, so it was not done.

@@ -1547,9 +1547,21 @@ summarised here so the repository stands on its own.
 
 | source | where | size | for |
 |---|---|---|---|
-| `mkDiskSourceSmall` | flip-flops | two arcs, 1,024 words | the disk unit tests and today's bitstream |
+| `mkDiskSourceSmall` | block RAM (`BRAMCore`, four DP16KD) plus a 1,024-bit written mask; flip-flops until 2026-11-25 | two arcs, 1,024 words | the disk unit tests and today's bitstream |
 | `mkDiskSourceFile` | host memory (`host_tape.c` `host_disk_*`), `-D HOST_TAPE`; optional image file (§9c) | 2^21 words | every MCP run in Bluesim |
 | `mkDiskSourceSdram` (planned) | a 16 MiB region of the ULX3S SDRAM | 2^21 words | the board, and Bluesim against the SDRAM model |
+
+**THE SMALL SOURCE LEFT THE FLIP-FLOPS, 2026-11-25.** Its 1,024 `Reg`s were
+65,536 of the whole core's 102,219 TRELLIS_FF (`fpga_feasibility.md` §11).
+It is now a dual-port `BRAMCore`: port a reads, port b writes. A BRAM read
+put in clock N answers in N+1, which is the clock the CReg already made
+`respReady` true, so the transfer FSM sees the same timing and no cycle
+count moved. A BRAM does not power on at zero, so one bit per word records
+"written" and is ANDed onto the read; it is a plain register, with no sweep
+rule and no guard to lift into `rl_io` (`StretchDiskSource.bsv`'s header).
+The interface lost `peek`, which no test called: every disk check reads the
+platter back through the machine, as above. D3's SDRAM source plans the
+same kind of mask, per arc rather than per word.
 
 **WHY THE HOST BUILDS NEEDED THE FULL SIZE.** IPL's disk WRITE is 24 arcs.
 On two arcs it ran off the end of the volume, and MCP received End
