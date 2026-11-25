@@ -211,6 +211,13 @@ class Str:
         out, t, i = [], self.text, 0
         while i < len(t):
             c = t[i]
+            # step 3k: an element wider than 16 bits (a 32-bit string's
+            # 0xffffffff, written by set_string_element) is an 8-hex token
+            if c == "<" and t[i + 9:i + 10] == ">" and all(
+                    x in '0123456789abcdef' for x in t[i + 1:i + 9]):
+                out.append(int(t[i + 1:i + 9], 16))
+                i += 10
+                continue
             if c == "<" and t[i + 5:i + 6] == ">" and all(
                     x in '0123456789abcdef' for x in t[i + 1:i + 5]):
                 out.append(int(t[i + 1:i + 5], 16))
@@ -485,6 +492,9 @@ class Machine:
         self.sender = None
         # step 3j: the registers of each process not running (dispatcher, OURS)
         self.saved = {}
+        # step 3k: the hardware process control blocks written by blt 94,
+        # {(context number, index): value} (OURS representation)
+        self.pcb = {}
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -1781,7 +1791,10 @@ class Machine:
         self.nxt(code, off)
 
     def op_put_integer(self, code, off, a, b, c, v):
-        self.x[a] = u16('put_integer', v)
+        # step 3k: the immediate is sign-extended (INFERENCE, owner's rule
+        # of 2026-11-25; psi/kl0_opcodes.tsv row pmi a7).  Before step 3k
+        # an immediate >= 0x8000 refused.
+        self.x[a] = s16(v)
         self.nxt(code, off)
 
     def op_put_constant(self, code, off, a, b, c, v):
@@ -1825,7 +1838,29 @@ class Machine:
         self.nxt(code, off)
 
     def resolve_value(self, t):
-        return deref(t)
+        # Step 3k: a list stored in a slot keeps the VALUES of its bound
+        # variables, not the variables.  Before, `:add(List, X)` stored a
+        # list cell whose element was a variable bound to X; when the
+        # storing process later backtracked past that binding (the
+        # interpolated see/2's clauses), the element came unbound and the
+        # supervisor's ready queue lost the process (step 3k's B4 run of a
+        # timer get_count request).  TM-388 PDF p110 (folio 98): "Writing
+        # is carried out by overriding a value over the element", and not
+        # with an unbound variable; that list cells are copied with their
+        # bound variables replaced is OURS (how the PSI keeps a slot's
+        # value from the global stack is not printed).  Vectors, strings
+        # and objects are stored as they are (their identity matters).
+        t = deref(t)
+        if not isinstance(t, Cons):
+            return t
+        cars = []
+        while isinstance(t, Cons):
+            cars.append(self.resolve_value(t.args[0]))
+            t = deref(t.args[1])
+        out = t
+        for c in reversed(cars):
+            out = Cons(c, out)
+        return out
 
     def _int(self, t, what):
         t = deref(t)
@@ -2053,6 +2088,74 @@ class Machine:
         self.x[c] = out
         self.nxt(code, off)
 
+    def op_list_to_vector(self, code, off, a, b, c, v):
+        # blt 6f (step 3k): list_to_vector(L, ^V, ^Tail).  KNOWN-PLAINTEXT
+        # (psi/kl0_opcodes.tsv): the operand order L, V, Tail
+        # (KP_UPTACC.ESP:224-227, $or$9/2 @6eb `6f 01 02 00`, @6ed `6f 00
+        # 03 00`, then `06 02 01`); V a stack vector (stack_vector/2 on it
+        # next, there and in HLCEXTSEL.ESP:170-173 @720-723); Tail [] for a
+        # proper list (ROCHECK.ESP:119-121 check_list/1 @a4-a7 `Tail ==
+        # []`).  INFERENCE, step 3k under the owner's 2026-11-25 rule ("it's
+        # okay to infer"): V holds the list's elements in order, shared
+        # (KP_UPTACC set_old_value_info binds through the vector and
+        # rebuilds the list with vector_to_list); Tail is the list's last
+        # cdr, whatever it is ([] for a proper list, the terminator of an
+        # improper or partial one, the term itself if L is not a list
+        # cell), from check_list/1 and :list/2 (ROCOMMON.ESP:82-84), which
+        # test a list's properness by `Tail == []`.  An unbound L refuses.
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            raise Refusal('unbound argument', 'list_to_vector on %r' % t)
+        els = []
+        while isinstance(t, Cons):
+            els.append(t.args[0])
+            t = deref(t.args[1])
+        self.x[b] = Vec(els)
+        self.x[c] = t
+        self.nxt(code, off)
+
+    def op_set_pcb_entry(self, code, off, a, b, c, v):
+        # blt 94 (step 3k): set_pcb_entry(N, I, V), INFERENCE (row status
+        # INFERENCE, psi/kl0_opcodes.tsv): word I of the hardware process
+        # control block of context N := V.  From the held method names of
+        # pimmcsp##pseudo_pe_process: set_pcb_entry/4 @b9-d2 ends in `94 01
+        # 00 02` after checking its index < 32 (@c3-c4); pcb_entry/4 @7b-84
+        # reads with blt 90 after the same check (@80-81); and from the
+        # uses in release_core's $or$2/1 @34b, @351, @35e and
+        # terminate_core's $or$4/2 @381, @38a, whose first operand is the
+        # number get_number/2 gave for the process's context.  TR-044 App
+        # A.9 (PDF p41) prints the 1984 firmware pair
+        # process_control_block(Process, PCB) / set_process_control_block.
+        # What a word does to the hardware is not modelled: the value is
+        # only recorded.  A non-integer N or I, or I outside 0..31, refuses.
+        n = self._int(self.x[a], 'set_pcb_entry')
+        i = self._int(self.x[b], 'set_pcb_entry')
+        if not 0 <= i < 32:
+            raise Refusal('built-in', 'set_pcb_entry index %d: only 0..31 (pcb_entry/4 @80-81)' % i)
+        self.pcb[(n, i)] = deref(self.x[c])
+        self.nxt(code, off)
+
+    def op_pcb(self, code, off, a, b, c, v):
+        # blt 90 (step 3k): pcb(N, I, ^V), KNOWN-PLAINTEXT operands: held
+        # kappa2 utility/luu/LUUTIME.ESP:105-108 `pcb(Class!s_memory_mgr_no,
+        # 3,MEM)` is kappaLUU_timer start_timer/2 @59-5d: the slot read
+        # into A0 (@5a), `a7 01 00 03` I = 3 into A1, `90 00 01 00`, then
+        # `24 00 03` saves A0 as MEM.  So byte 1 is N, byte 2 I, byte 3 V.
+        # Word I of context N's process control block, the word blt 94
+        # (set_pcb_entry) writes.  INFERENCE (row): the value read is the
+        # one last written by blt 94; the hardware's own words (kappa reads
+        # word 3 of the system processes 2, 8, 17 and 36 for its timing)
+        # are not modelled, so reading a word never written refuses.
+        n = self._int(self.x[a], 'pcb')
+        i = self._int(self.x[b], 'pcb')
+        if not 0 <= i < 32:
+            raise Refusal('built-in', 'pcb index %d: only 0..31 (pcb_entry/4 @80-81)' % i)
+        if (n, i) not in self.pcb:
+            raise Refusal('built-in', 'pcb word %d of context %d: never written, and the hardware '
+                          'words are not modelled' % (i, n))
+        self.x[c] = self.pcb[(n, i)]
+        self.nxt(code, off)
+
     def op_set_subvector(self, code, off, a, b, c, v):
         s, z, low = self.ext_cell(code, off, 'set_subvector')
         if z or low:
@@ -2148,6 +2251,16 @@ class Machine:
         e = self._int(self.x[c], 'set_string_element')
         if not 0 <= i < len(cs):
             raise Refusal('built-in', 'set_string_element index %d of %d' % (i, len(cs)))
+        if e < 0:
+            # step 3k: a negative integer in a 32-bit string is stored as
+            # its 32-bit two's complement (INFERENCE: fep_message_assembler
+            # create_argument_string_list/5 @132-133 writes -1 as an
+            # integer argument's length word, which PIMOS reads as -1,
+            # scsi_fep.kl1:429-445, docs/fep_services.md section 1); in a
+            # string of any other element size it is unwitnessed and refuses
+            if s.type != 32 or e < -0x80000000:
+                raise Refusal('built-in', 'set_string_element %d into a %d-bit string: unwitnessed' % (e, s.type))
+            e &= 0xffffffff
         cs[i] = e
         s.set_codes(cs)
         self.nxt(code, off)
@@ -2735,6 +2848,7 @@ def census_of(m, classes, recipes=None, reverse=False):
         for section, name, n in (calls[::-1] if reverse else calls):
             m.class_slots = {}
             m.saved = {}
+            m.pcb = {}
             rows.append(census_row(m, cid, section, name, n, recipes))
     return rows
 

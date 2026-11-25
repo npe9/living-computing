@@ -592,7 +592,7 @@ class Standins(unittest.TestCase):
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
             'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
-            'simpos##common_network', 'simpos##context',
+            'simpos##common_network', 'simpos##context', 'simpos##date_time',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
@@ -1364,10 +1364,21 @@ end.''', 'simpos')
         # success, 12 failure) and 16 held rows changed (11 creators to
         # the missing ready queue, 5 pseudo_scsi past assigned/1): 826 /
         # 234 / 389, slot constants 94 -> 105
-        self.assertEqual((len(rows), out), (1466, {'success': 826, 'failure': 234, 'refused': 389,
+        # step 3k (row by row against master b62208d4, each checked alone
+        # on a fresh machine): 4 rows change.  pimos_timer get_count/3 and
+        # get_date_time/3 succeed (time:now/2, get_count/2 and date_time
+        # INTERPOLATED, the reply's integer length word -1 from put_integer
+        # sign-extended and stored in the 32-bit string: INFERENCE); the
+        # editor's get_position/3 and get_inside_size/3 pass put_integer
+        # `ffff` and stop at put/2 on the window's unset output stream (a
+        # slot constant, the step 3g artifact).  828 / 234 / 387, slot
+        # constants 105 -> 107
+        self.assertEqual((len(rows), out), (1466, {'success': 828, 'failure': 234, 'refused': 387,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 105)
+        self.assertEqual(slot_const, 107)
+        self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
+        self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'bind/4')][0], 'success')
         # the four string-I/O programs, made by create_string_io/10
@@ -1447,22 +1458,27 @@ end.''', 'simpos')
         self.assertEqual(send('try_to_see', K.Var()), [])
         # a timer made by its creator, with one message on its input
         # stream: loop_main/1 sees it, gets it (the stream is empty after)
-        # and goes on to its local refute/3, which stops at
-        # fep_message_assembler disassemble/3's unwitnessed blt 6f
+        # and goes on to its local refute/3.  Until step 3k it stopped at
+        # fep_message_assembler disassemble/3's unwitnessed blt 6f; since
+        # step 3k (blt 6f list_to_vector) the close request (60) runs to
+        # its end: the device replies {16, 1}, sets its close flag and
+        # loop_main/1 ends
         dev = K.RECIPES['pimfep##pimos_timer'](m)
         co = m.lib.build(dev.cid)
         sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
-        inp = sl['input_stream']
+        inp, out = sl['input_stream'], sl['output_stream']
         msg = K.Str('', 32)
         msg.set_codes([16, 0, 60, 0])
         m.reset()
         self.assertEqual(len(list(m.solve_send(inp, 'put', [msg, inp]))), 1)
         m.reset()
-        with self.assertRaises(K.Refusal) as cm:
-            any(True for _ in m.solve_send(dev, 'loop_main', [dev]))
-        self.assertEqual(cm.exception.cause, 'opcode')
-        self.assertIn('blt 6f', cm.exception.detail)
+        self.assertTrue(any(True for _ in m.solve_send(dev, 'loop_main', [dev])))
         self.assertEqual(repr(K.resolve(inp.slots[0].slots[0])), '[]')
+        sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual(sl['close_flag'], K.Atom('closed'))
+        m.reset()
+        (reply,) = [K.deref(x) for x in [K.Var()] if any(True for _ in m.solve_send(out, 'get', [x, out]))]
+        self.assertEqual(reply.codes(), [16, 0, 1, 0])
 
     def test_step3g_requests(self):
         # step 3g: census requests (kl0 REQUEST_ID, request_args, OURS
@@ -1702,7 +1718,8 @@ end.'''
         # the supervisor (its own :create and :activate, INTERPOLATED,
         # TR-056 p21) and a second process runs.  The probes are OURS, in
         # the shape of held kappa2 kernel/itr/ITRSES.ESP:111-116 and
-        # utility/mop/MOPMANAGER.ESP:162-168 with MOPKAPPA.ESP goal/1: the
+        # utility/mop/MOPMANAGER.ESP:165-172 (CORRECTED step 3k: first
+        # cited :162-168) with MOPKAPPA.ESP goal/1 (:31-37): the
         # parent makes a stream, a program holding it and a process
         # (create/3, [free,free,free,free]), activates the process with the
         # program and does :get on the stream; the child's goal :puts.
@@ -1767,6 +1784,9 @@ end.'''
         # contexts: the boot process's is number 0, the child's 1; the
         # child's entry is {Program, invoke} (OURS) and it is active
         bs = sl(boot)
+        # step 3k: create/3 sends :add_child (INTERPOLATED), so the child
+        # is among the boot process's children
+        self.assertEqual(self._walk(m.get_slot(bs['children_processes'], 'elements')), [child])
         self.assertEqual(sl(bs['context'])['number'], 0)
         cc = sl(cs['context'])
         self.assertEqual((cc['number'], cc['state']), (1, K.Atom('active')))
@@ -1797,19 +1817,67 @@ end.'''
         one(p3, 'clear_masks')
         self.assertEqual(sl(p3)['mask_count'], 0)
 
+        # step 3k: the printed create/2 with its PROCESS line CORRECTED to
+        # Class (process.esp, the printed text kept in its comment) runs
+        # the printed create_core/3: a dormant process whose parent is the
+        # boot process, entered in the class slot instance_array (a heap
+        # vector of 63 made by boot_process create/2, OURS) at its
+        # context's number; the boot process is element 0.  create/3
+        # (INTERPOLATED) makes no entry, so element 1 (the child) stays 0.
+        # Injection, observed (2026-11-25): K13 the line put back as
+        # printed (PROCESS): this test ERROR, nothing else.  K14 no
+        # instance_array entry for the boot process: this test FAIL,
+        # nothing else.  K15 any other request/3 succeeds silently: this
+        # test FAIL, nothing else.  (The other-request check is the
+        # release section below.)
+        (p4,) = one(K.ClassRef('simpos##process'), 'create', K.Var())
+        self.assertEqual((p4.cid, sl(p4)['status']), ('simpos##process', K.Atom('dormant')))
+        self.assertIs(sl(p4)['parent_process'], boot)
+        arr = K.deref(m.get_slot(K.ClassRef('simpos##process'), 'instance_array'))
+        self.assertEqual(len(arr.args), 63)
+        self.assertIs(K.deref(arr.args[0]), boot)
+        self.assertEqual(K.deref(arr.args[1]), 0)
+        self.assertIs(K.deref(arr.args[sl(sl(p4)['context'])['number']]), p4)
+
         # held pimmcsp##pseudo_pe_process release/1 @177-189: a dormant PE
         # process passes status/3 (dormant -> on_release) and reaches the
-        # boot process's request/3, not stood in; with status nil it fails
+        # boot process's request/3; with status nil it fails.  Until step
+        # 3k request/3 was refused; since step 3k (boot_process.esp,
+        # INTERPOLATED) the boot process runs the PE process's held
+        # release_core/1 (@1cf, $or$2/1 @33b-367): the context is taken
+        # from the process and released, three control-block words are
+        # cleared (blt 94, INFERENCE), the process leaves its parent's
+        # children (remove_child/2, $or$3/1) and its parent, world and
+        # user become nil.  The PE process is made here by new/2 (OURS
+        # set-up: its held create/3 is not run), given a context and the
+        # boot process as parent, as create_core/3 would
+        # Injections, observed (2026-11-25, step 3k; from a backup,
+        # restored by copy, cmp clean): see test_step3k_b4.
         pe = K.make_instance(m, 'pimmcsp##pseudo_pe_process')
         m.reset()
         self.assertFalse(any(True for _ in m.solve_send(pe, 'release', [pe])))
+        (_n, _s, pctx) = one(K.ClassRef('simpos##context'), 'create', K.Var(), K.Var(), K.Var())
+        m.set_slot(pe, 'context', pctx)
+        m.set_slot(pe, 'parent_process', boot)
+        one(boot, 'add_child', pe)
+        self.assertIn(pe, self._walk(m.get_slot(sl(boot)['children_processes'], 'elements')))
         m.set_slot(pe, 'status', K.Atom('dormant'))
+        m.pcb = {}
+        one(pe, 'release')
+        ps = sl(pe)
+        self.assertEqual(ps['status'], K.Atom('on_release'))
+        self.assertEqual((ps['context'], ps['parent_process'], ps['world'], ps['user']),
+                         (K.Atom('nil'),) * 4)
+        self.assertEqual(sl(pctx)['state'], K.Atom('released'))
+        n = sl(pctx)['number']
+        self.assertEqual(m.pcb, {(n, 24): 0, (n, 8): 0, (n, 12): K.Atom('nil')})
+        kids = m.get_slot(sl(boot)['children_processes'], 'elements')
+        self.assertNotIn(pe, [K.deref(k) for k in self._walk(kids)])
+        # any other request refuses loudly
         m.reset()
         with self.assertRaises(K.Refusal) as cm:
-            any(True for _ in m.solve_send(pe, 'release', [pe]))
-        self.assertEqual(cm.exception.cause, 'simpos')
-        self.assertIn('simpos##boot_process:request/3', cm.exception.detail)
-        self.assertEqual(sl(pe)['status'], K.Atom('on_release'))
+            any(True for _ in m.solve_send(boot, 'request', [K.Atom('other'), pe, boot]))
+        self.assertIn('unsupported_request', cm.exception.detail)
 
         # every process waits: the boot program waits on an empty stream
         # with nothing else ready (wait/1's second clause)
@@ -1829,6 +1897,14 @@ end.'''
         m.reset()
         self.assertFalse(any(True for _ in m.solve_send(
             K.ClassRef('simpos##context'), 'create', [K.Var(), K.Var(), K.Var(), K.ClassRef('simpos##context')])))
+
+    @staticmethod
+    def _walk(t):
+        out, t = [], K.deref(t)
+        while isinstance(t, K.Cons):
+            out.append(K.deref(t.args[0]))
+            t = K.deref(t.args[1])
+        return out
 
     B4_PROBES = '''class b4_boot has
 nature as_boot_program;
@@ -1893,19 +1969,101 @@ end.'''
         self.assertIs(K.resolve(m.get_slot(d['invocation_stack'], 'elements')).args[0], dev)
         self.assertEqual(sl(dev)['device_id'], 16)
         # a request (OURS: close, code 60, as a 32-bit string, the type
-        # disassemble/3 @93 requires) is taken by the device process and
-        # stops at blt 6f (list_to_vector), still unwitnessed
-        (prog2,) = K.call_class_method(m, 'simpos##b4_boot', 'create', [K.Var()])[0]
+        # disassemble/3 @93 requires) is taken by the device process.
+        # Until step 3k it stopped at blt 6f (list_to_vector); step 3k's
+        # B4 run of this request and of get_count and get_date_time is
+        # test_step3k_b4
+
+    def b4_run(self, code, setup=None):
+        # step 3k: the B4 probe (B4_PROBES) on a fresh machine: the boot
+        # program comes under the supervisor, makes a timer with the held
+        # create_timer/9, then puts one request on the device's input
+        # stream and :gets the reply.  -> (machine, program slots)
+        ts, failed = espc.compile_text(self.B4_PROBES, 'simpos')
+        self.assertFalse(failed)
+        lib = K.load_six()
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib, max_steps=400000)
+        (prog,) = K.call_class_method(m, 'simpos##b4_boot', 'create', [K.Var()])[0]
         m.class_slots, m.saved = {}, {}
+        if setup:
+            setup(m)
         req = K.Str('', 32)
-        req.set_codes([16, 0, 60, 0])
-        m.set_slot(prog2, 'req', req)
+        req.set_codes([16, 0, code, 0])
+        m.set_slot(prog, 'req', req)
         m.reset()
-        with self.assertRaises(K.Refusal) as cm:
-            any(True for _ in m.solve_send(prog2, 'invoke', [prog2]))
-        self.assertEqual((cm.exception.cause, cm.exception.detail),
-                         ('opcode', 'blt 6f (pimfep##fep_message_assembler @a9)'))
-        self.assertEqual(m.running_process().cid, 'simpos##process')
+        self.assertTrue(any(True for _ in m.solve_send(prog, 'invoke', [prog])))
+        sl = {e.name.split('$')[-1]: K.deref(v)
+              for e, v in zip(m.lib.build(prog.cid).instance_slots, prog.slots)}
+        return m, sl
+
+    def test_step3k_b4(self):
+        # step 3k, docs/simpos/boot_route.md B4: a request to the timer
+        # device process round-trips through the device under the
+        # supervisor.  The boot program (OURS probe) comes under the
+        # supervisor, the held pimos_timer create_timer/9 makes the device
+        # and its process, and a request put on the device's input stream
+        # is taken by the device's own process (held loop_main/1, refute/3,
+        # fep_message_assembler disassemble/3 with blt 6f), handled by the
+        # held command method and answered on the output stream (held
+        # reply_message/2, assemble/3), which resumes the boot process.
+        # The requests are PIMOS's timer commands (docs/fep_services.md
+        # §2.4): 60 close, 301 get_count, 304 get_date_time.  The replies
+        # are what PIMOS reads (§2.4, §6.2): {Id, 1}; {Id, 1, Count};
+        # {Id, 1, Date, Time}, an integer argument after a length word -1
+        # (scsi_fep.kl1:429-445).  The clock values are OURS (the stand-in
+        # time and date_time read class slots; no clock is modelled).
+        # Injections, observed (2026-11-25; each from a backup copy,
+        # restored by copy, cmp clean):
+        #   K1 list_to_vector swaps V and Tail (kl0.py): this test and
+        #      test_step3g_stream_see ERROR; test_kl0 test_list_to_vector
+        #      FAIL; nothing else.
+        #   K2 list_to_vector builds a heap vector: test_kl0
+        #      test_list_to_vector FAIL, nothing else (this file OK).
+        #   K3 put_integer not sign-extended (u16 as before): this test
+        #      ERROR, test_step3f_census_recipes FAIL; test_kl0
+        #      test_census FAIL; nothing else.
+        #   K4 resolve_value returns deref(t), uncopied: this test ERROR,
+        #      test_step3j_supervisor FAIL, nothing else.
+        #   K5 boot_process request/3 release does nothing:
+        #      test_step3j_supervisor FAIL, nothing else.
+        #   K6 date_time get_count/3 returns Time, Date: this test FAIL,
+        #      nothing else.
+        #   K7 set_pcb_entry does not record: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   K8 remove_child/2 a no-op: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   K9 context release/1 a no-op: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   K10 time now/2 ignores the clock: this test FAIL, nothing else.
+        #   K11 a negative 32-bit string element not masked: this test
+        #      FAIL, nothing else.
+        #   K12 create/3 without add_child: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   test_kl0.py stayed OK in K4-K12.
+        # 60 close: {16, 1}; the device process resigns its program and
+        # dies (status nil); the boot process ends after its get
+        m, s = self.b4_run(60)
+        self.assertEqual(s['r1'].codes(), [16, 0, 1, 0])
+        self.assertEqual(s['r2'].codes(), [16, 0, 1, 0])
+        self.assertEqual(m.saved, {})
+        # 301 get_count: {16, 1, Count}, Count after the length word -1
+        m, s = self.b4_run(301, lambda m: m.set_slot(K.ClassRef('simpos##time'), 'clock', 1234))
+        self.assertEqual(s['r2'].codes(), [16, 0, 1, 1, 0xffffffff, 1234])
+        # the device process goes back to see/2 on its input stream,
+        # suspended, and the boot process is ready again: the ready queue
+        # kept it (step 3k's slot-store fix, kl0 resolve_value)
+        ((dp, _regs),) = m.saved.values()
+        self.assertEqual((dp.cid, m.get_slot(dp, 'status')), ('simpos##process', K.Atom('suspended')))
+
+        def dt(m):
+            m.set_slot(K.ClassRef('simpos##date_time'), 'date', 33000)
+            m.set_slot(K.ClassRef('simpos##date_time'), 'time', 45678)
+        # 304 get_date_time: {16, 1, Date, Time}: two length words, then
+        # the two integers in the order of get_count(D, Date, Time)
+        m, s = self.b4_run(304, dt)
+        self.assertEqual(s['r2'].codes(), [16, 0, 1, 2, 0xffffffff, 0xffffffff, 33000, 45678])
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:

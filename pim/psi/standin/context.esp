@@ -14,7 +14,8 @@
 %       :set_entry_point(Process!context, Entry)   in activate/2
 %       :activate(Process!context)                 in activate/2
 %       :set_priority(Process!context, 0)          in activate/2
-%     and the process slot `context` ("Hardware PC", PDF p8).
+%     and the process slot `context` ("Hardware PCB", PDF p8;
+%     CORRECTED step 3k: first read "Hardware PC", source_check §10.2).
 %   - TR-055 PDF p5 (folio 2): four stacks per KL0 execution; "PSI can
 %     have a maximum of 63 contexts executing at the same time ... the
 %     processor has 63 sets of the internal registers for process
@@ -83,5 +84,15 @@ class context has
     % "Corresponds to interrupt level", PDF p8).  Stored, not used: the
     % dispatcher ignores priority (OURS).
     :set_priority(Context, Priority) :- Context!priority := Priority ;
+
+    % INTERPOLATED (step 3k) from its one held send,
+    % pimmcsp##pseudo_pe_process release_core's $or$2/1 @35f-361
+    % (`:release(Ctx)` after the process's slot context is set to nil and
+    % its control-block words are cleared with blt 94), reached through
+    % boot_process:request/3 (boot_process.esp): the hardware context is
+    % given back.  Only its state changes, to `released` (name OURS); the
+    % number is not reused (as create/4 above, OURS) and kl0's dispatcher
+    % runs only an `active` context.
+    :release(Context) :- Context!state := released ;
 
 end.

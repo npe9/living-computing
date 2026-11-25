@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"). |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"); since step 3k, the interpolated `date_time` (basis table in "Step 3k"). |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -3145,7 +3145,9 @@ and `boot_process` `create/2` and `activate/2`.
 - Held source, as ANALOGY for what a SIMPOS caller expects, not as
   SIMPOS:
   - kappa2 `kernel/itr/ITRSES.ESP`:111-116, and
-    `utility/mop/MOPMANAGER.ESP`:162-168 with `MOPKAPPA.ESP` `goal/1`.
+    `utility/mop/MOPMANAGER.ESP`:165-172 (CORRECTED step 3k: first
+    cited :162-168; source_check §10.4) with `MOPKAPPA.ESP` `goal/1`
+    (:31-37).
     A parent makes a stream and a process, activates it and `:get`s;
     the child's goal `:put`s.
   - `utility/tool/LOADER.ESP`:53-68, `kernel/svm/SVCTL.ESP`:271-276,
@@ -3191,7 +3193,7 @@ and `boot_process` `create/2` and `activate/2`.
 | `as_program:entry_of_invoke/2` | `standin/as_program.esp` | its one call in the printed `activate/2`; TM-100 PDF p6 (the program must be pushed on the NEW process's stack, which the printed `invoke/1` does when the new process runs it) | INTERPOLATED; the entry's form `{Program, invoke}` OURS |
 | `context:create/4` | `standin/context.esp` | the printed call in `create/2` and its comment ("If hardware processes are exhausted, then fail"); TR-055 PDF p5 and TR-056 PDF p19 (63) | INTERPOLATED; numbering from 0 and never reusing a number, OURS |
 | `context:get_number/2` | `standin/context.esp` | the printed `create_core/3`; held `pseudo_pe_process terminate_core/1` @1e0, `$or$2/1` @347 | INTERPOLATED |
-| `context:set_entry_point/2`, `activate/1`, `set_priority/2` | `standin/context.esp` | their calls in the printed `activate/2`; the slot comment "Hardware PC" | INTERPOLATED; the slot names OURS |
+| `context:set_entry_point/2`, `activate/1`, `set_priority/2` | `standin/context.esp` | their calls in the printed `activate/2`; the slot comment "Hardware PCB" (CORRECTED 2026-11-25, step 3k: this row first read it "Hardware PC"; the page image of TM-100 PDF p8 was re-read, `docs/simpos/source_check_2026-11-24.md` §10.2) | INTERPOLATED; the slot names OURS |
 | `boot_process:create/2` | `standin/boot_process.esp` | TM-100 PDF p13 and TR-056 PDF p21 (it overrides `:create`; the boot process calls it itself); the printed `create/2` and `create_core/3` without `:new` and without a parent (TM-100 p6) | INTERPOLATED; making the ready queue here, as a list, OURS |
 | `boot_process:activate/2` | `standin/boot_process.esp` | the same prose; the printed `activate/2` without the entry point (the boot program is already running) | INTERPOLATED; Program unused, OURS |
 | the dispatcher (`kl0.py` `Machine.yield_processor`, the `suspend/2` model, the `yield` and `exit` steps) | `kl0.py` | TR-055 PDF p5; TR-056 PDF p18, p21; TR-087 PDF p4 (a stream's retrieve "is suspended"); TR-059 PDF p30 differs for interrupt processes (not modelled); the printed `suspend/2` (takes the running process out of the ready queue) and `get/2` (reads the stream right after `suspend/2`) | OURS |
@@ -3239,7 +3241,7 @@ and `boot_process` `create/2` and `activate/2`.
     `activate/2` fails;
   - the held `pseudo_pe_process release/1`, on a dormant PE process,
     passes `status/3` and stops at `boot_process:request/3`. With
-    status `nil` it fails;
+    status `nil` it fails (step 3k: it now runs to its end, "Step 3k");
   - a boot program that waits on an empty stream, with nothing ready,
     is refused `would suspend`;
   - the 64th context is not made.
@@ -3251,7 +3253,7 @@ and `boot_process` `create/2` and `activate/2`.
     suspended, with the device on top of its stack;
   - a request (OURS: close, code 60, a 32-bit string) is taken by the
     device process and stops at blt 6f in `fep_message_assembler
-    disassemble/3` @a9.
+    disassemble/3` @a9 (step 3k: it now round-trips, "Step 3k").
 
   `b4_timer` is an OURS subclass of the held class. Its `create/2` also
   records the device, so the probe can reach the device's input stream.
@@ -3350,6 +3352,144 @@ progress is what the census cannot show: two processes running, and a
 held creator completing its handshake with the device process it made
 (`test_step3j_fep_device`).
 
+### Step 3k: route step B4 for the FEP timer (2026-11-25)
+
+Route step B4 of `../docs/simpos/boot_route.md` (§4.3) is done for the
+FEP timer: a request to its device process round-trips under the
+supervisor. The owner's instruction of 2026-11-25, "It's okay to infer
+what you don't have", applies: where no source is held, the choice is
+made and labelled INFERENCE or OURS. Step 3j's stand-ins were re-read
+against their cited pages (`../docs/simpos/source_check_2026-11-24.md`
+§10): of 29 rows, 26 CONFIRMED, 2 CORRECTED ("Hardware PC" is printed
+"Hardware PCB"; the kappa2 handshake is `MOPMANAGER.ESP`:165-172, not
+:162-168), 1 superseded (list_to_vector's third argument), 0
+CONTRADICTED.
+
+**What was added, and its basis.**
+
+| what | file | basis | label |
+|---|---|---|---|
+| blt 6f `list_to_vector(L, ^V, ^Tail)` | `kl0.py`, `kl0_opcodes.tsv` | held source with held cells: kappa2 `KP_UPTACC.ESP`:224-227 (`$or$9/2` @6eb `6f 01 02 00`, @6ed `6f 00 03 00`), `HLCEXTSEL.ESP`:170-173 (`delete_temp/1` @720-723), `ROCHECK.ESP`:119-121 (`check_list/1` @a4), `hash.esp`:152 (@1a9 `6f 00 00 02`). TR-044 A.8 (PDF p41) prints only the 2-argument form; TM-388 ch. 4 and TM-444 have none. 75 uses | KNOWN-PLAINTEXT; an improper list's tail, and shared elements, INFERENCE |
+| blt 90 `pcb(N, I, ^V)` | `kl0.py`, `kl0_opcodes.tsv` | held source with held cells: kappa2 `LUUTIME.ESP`:105-108 `pcb(Class!s_memory_mgr_no,3,MEM)`, `kappaLUU_timer` `start_timer/2` @59-5d (`a7 01 00 03`, `90 00 01 00`, `24 00 03`); the same in `BCKTIME.ESP`; `pseudo_pe_process` `pcb_entry/4` @7b-84. 34 uses: kappa 32, pimmcsp 2 | KNOWN-PLAINTEXT operands; the value (what blt 94 wrote; a word never written refuses) INFERENCE |
+| blt 94 `set_pcb_entry(N, I, V)` | `kl0.py`, `kl0_opcodes.tsv` | `pseudo_pe_process` `set_pcb_entry/4` @b9-d2 and `pcb_entry/4` (blt 90), their uses in `$or$2/1` and `$or$4/2`; the slot comment "Hardware PCB" (TM-100 p8). Kept in `Machine.pcb`, reset per census row. 6 uses | INFERENCE (the only INFERENCE row) |
+| pmi a7 `put_integer`: the immediate is sign-extended | `kl0.py` | `packet_generator abs/2` @280-287; the -1 length word in every integer reply; 49 uses with the immediate ≥ 0x8000 | INFERENCE |
+| a negative element of a 32-bit string is stored in two's complement | `kl0.py` `op_set_string_element` | the -1 length word in the 32-bit replies (`fep_services.md` §2.4) | INFERENCE |
+| `resolve_value`: a stored list's cells are copied, each car resolved | `kl0.py` | TM-388 PDF p110 (folio 98): writing a slot overrides it with a value | the copy OURS |
+| `boot_process:request(Boot, release, P)` calls `release_core(P)`; any other request refuses `unsupported_request` | `standin/boot_process.esp` | the one held send, `pseudo_pe_process release/1` @184-189; no held cell sends `release_core/1` | INTERPOLATED; synchronous OURS |
+| `process:add_child/2`, `remove_child/2`; `create/3` calls `add_child` | `standin/process.esp` | the printed slot `children_processes` (TM-100 Fig. 3.1); `remove_child`'s held send `$or$3/1` @36c-374 | INTERPOLATED |
+| `context:release/1` (state `released`) | `standin/context.esp` | held send @35f-361 | INTERPOLATED; the state's name OURS |
+| `time:now/2`, `get_count/2`; class `date_time`, `now/2`, `get_count/3` | `standin/time.esp`, `standin/date_time.esp` | `pimos_timer` `get_count/3` @86-8e and `get_date_time/3` @be-d0; `fep_services.md` §2.4 | INTERPOLATED; the clock class attributes OURS |
+| `create/2`'s `:create_core(PROCESS, ...)` runs as `:create_core(Class, ...)` | `standin/process.esp` | TM-100 PDF p8, re-read: `PROCESS` is no variable of the clause | CORRECTED, the printed line kept in a comment |
+| the class slot `instance_array` made as a heap vector of 63 by `boot_process:create/2`, the boot process at its context's number | `standin/boot_process.esp` | the printed slot and its comment (TM-100 p7), the printed `create_core/3`'s `set_vector_element`; 63 contexts (TR-055 p5, TR-056 p19) | OURS; the boot process's entry INTERPOLATED |
+
+**Tests.**
+- `test_kl0.py` `test_list_to_vector`: the held `check_list/1` on a
+  proper and an improper list, and the operands one by one.
+- `test_kl0.py` `test_pcb`: the held `pseudo_pe_process pcb_entry/4`
+  reads back words in `Machine.pcb` (index 32 fails the held check; a
+  word never written refuses), and the operands one by one.
+- `test_espc.py` `test_step3k_b4`: on a fresh machine the boot process
+  creates the timer with the held `create_timer/9`, puts a request on the
+  device's input stream and waits for the reply:
+  - 60 `close` → `[16, 0, 1, 0]`;
+  - 301 `get_count`, clock 1234 → `[16, 0, 1, 1, 0xffffffff, 1234]`;
+  - 304 `get_date_time`, date 33000, time 45678 →
+    `[16, 0, 1, 2, 0xffffffff, 0xffffffff, 33000, 45678]`.
+
+  After 301 and 304 the device process waits in `see/2` again.
+- `test_step3j_supervisor`, extended. The boot process's children are
+  `[child]`. The held `release/1` on a dormant PE process now runs to its
+  end:
+  - context, parent, world and user become `nil`;
+  - the context's state becomes `released`;
+  - the PCB entries `(n, 24)` and `(n, 8)` become 0, and `(n, 12)`
+    becomes `nil`;
+  - the child is no longer in the boot process's children.
+
+  Any other request refuses `unsupported_request`. The printed
+  `create/2`, corrected, makes a dormant process whose parent is the boot
+  process, entered in `instance_array` at its context's number.
+- `test_step3g_stream_see`: the `close` round trip now succeeds
+  (`close_flag` `closed`, reply `[16, 0, 1, 0]`).
+
+**Injections, observed** (2026-11-25). Each was injected from a backup
+copy, then `test_espc.py` and `test_kl0.py` were run, and the file was
+restored by copy and checked clean with cmp (script: the session's
+`inject.py`):
+- K1 `list_to_vector` swaps V and Tail (`kl0.py`): `test_step3g_stream_see`
+  and `test_step3k_b4` ERROR; `test_kl0` `test_list_to_vector` FAIL;
+  nothing else.
+- K2 `list_to_vector` makes a heap vector: `test_list_to_vector` FAIL,
+  nothing else (`test_espc.py` OK: no held path on the route tells the
+  two kinds of vector apart).
+- K3 `put_integer` not sign-extended (`u16`, as before):
+  `test_step3k_b4` ERROR, `test_step3f_census_recipes` FAIL, `test_kl0`
+  `test_census` FAIL, nothing else.
+- K4 `resolve_value` returns its argument dereferenced, uncopied:
+  `test_step3k_b4` ERROR, `test_step3j_supervisor` FAIL, nothing else.
+- K5 `request(Boot, release, P)` does nothing: `test_step3j_supervisor`
+  FAIL, nothing else.
+- K6 `date_time:get_count/3` swaps date and time: `test_step3k_b4` FAIL,
+  nothing else.
+- K7 `set_pcb_entry` records nothing (`kl0.py`): `test_step3j_supervisor`
+  FAIL, nothing else.
+- K8 `remove_child/2` a no-op: `test_step3j_supervisor` FAIL, nothing
+  else.
+- K9 `context:release/1` a no-op: `test_step3j_supervisor` FAIL, nothing
+  else.
+- K10 `time:now/2` ignores the clock: `test_step3k_b4` FAIL, nothing
+  else.
+- K11 a negative 32-bit string element not masked (`kl0.py`):
+  `test_step3k_b4` FAIL, nothing else.
+- K12 `create/3` without `add_child`: `test_step3j_supervisor` FAIL,
+  nothing else.
+
+- K13 the `create/2` line put back as printed (`PROCESS`):
+  `test_step3j_supervisor` ERROR, nothing else.
+
+- K14 `boot_process:create/2` makes no `instance_array` entry for the
+  boot process: `test_step3j_supervisor` FAIL, nothing else.
+- K15 any other request succeeds silently (no `unsupported_request`):
+  `test_step3j_supervisor` FAIL, nothing else.
+
+- K16 blt 90 reads `(I, N)`, an unwritten word as 0: `test_kl0`
+  `test_pcb` FAIL, nothing else.
+- K17 blt 90 does not refuse a word never written: `test_pcb` ERROR
+  (KeyError), nothing else.
+
+`test_kl0.py` stayed OK in K4-K15.
+
+Open, an OURS choice: `create/3` (INTERPOLATED) sends `add_child` where
+the printed `create_core/3` does, but makes no `instance_array` entry.
+The census's process is not under the supervisor, so `instance_array`
+is not made there. An entry in `create/3` would meet a slot with no
+vector in every census row that creates a process (predicted, not
+measured), so it was left out.
+
+**Census, recomputed row by row** against b62208d4 (MEASURED
+2026-11-25, each row alone on a fresh machine; `_G` numbering
+normalised).
+- Six packages: 317 / 12 / 200 → **318 / 12 / 199**. Two rows change:
+  - `csp_deref_utility` `deref/4` succeeds. It probes an unbound
+    argument, so this is not progress;
+  - `collect_vars/5` goes on to `no method` `get/4`.
+
+  In both rows the `ffff` immediate no longer refuses (`operand` 9 → 7).
+- Plain FEP: **801 / 233 / 415**, unchanged. The timer's `get_count/3`
+  and `get_date_time/3` move their stop to `set_string_element` on an
+  unbound argument. The plain census leaves the request unbound.
+- With recipes: 826 / 234 / 389 → **828 / 234 / 387**:
+  - the timer's `get_count/3` and `get_date_time/3` succeed (checked
+    alone on a fresh machine);
+  - the editor's `get_position/3` and `get_inside_size/3` go on to
+    `put/2` on a slot constant.
+
+  Slot constants: 105 → 107.
+- No rows are new. blt 6f, `add_child/2` and the context release change
+  no census row: the census's process is not under the supervisor.
+- The `create/2` correction and `instance_array`: all three censuses
+  re-run after them, row by row: no row changes.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -3372,7 +3512,8 @@ held creator completing its handshake with the device process it made
     `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
     (Step 3i: DONE, on mcd.esp:112-116; see "Step 3i: pmi 3b, 6c, c8".)
   - blt 6f: witnessed as `list_to_vector`, but not added: its third
-    argument is not settled.
+    argument is not settled. (Step 3k: DONE, KNOWN-PLAINTEXT on four held
+    source clauses; see "Step 3k".)
   - blt 0d, 1a and 6f stay refused after step 3f. Another call site
     does not settle what the outputs receive. Searched without a
     definition: `docs/simpos/required/builtins.tsv` (names and use
@@ -3385,6 +3526,7 @@ held creator completing its handshake with the device process it made
       INTERPOLATED from its call sites (with `try_to_see/2` and
       `try_to_get/2`); the 17 rows now wait in it (`would suspend`).
       Next: a request on the input stream, which stops at blt 6f.
+      (Step 3k: the timer's requests round-trip; see "Step 3k".)
     - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
       callback (`pmacs_window`, not stood in). Step 3g searched again
       and found no body for either:
@@ -3412,7 +3554,9 @@ held creator completing its handshake with the device process it made
     - blt 36 (editor `get_title/3`'s reply assembly,
       `fep_message_assembler` @122) and put_integer's 16-bit sign
       (`ffff`, editor `get_position/3`, `get_inside_size/3`), revealed
-      by step 3g.
+      by step 3g. Step 3k: the sign is taken as sign extension
+      (INFERENCE); both editor rows now stop at `put/2` on a slot
+      constant. blt 36 is still open.
     - `process:invocation_stack/2`: stood in by step 3g
       (INTERPOLATED). Step 3g held that pushing the front end would
       invent the caller. Step 3h read the front end's `goal/1`: it runs
@@ -3432,9 +3576,12 @@ held creator completing its handshake with the device process it made
       Open from step 3j: blt 6f (every device request);
       `boot_process:request/3` (`pseudo_pe_process release/1`); the
       PROCESS typo in the printed `create/2` (`create_core/3` is sent to
-      an unbound receiver; not corrected).
+      an unbound receiver; not corrected). Step 3k: blt 6f and
+      `request/3` are done; the PROCESS typo is corrected, labelled,
+      with the printed text kept (see "Step 3k").
     - `process:children/2`: stood in by step 3h (INTERPOLATED).
-      `add_child/2` is not, so the list is always empty.
+      `add_child/2` is not, so the list is always empty. (Step 3k:
+      `add_child/2` and `remove_child/2` are stood in, INTERPOLATED.)
     - Step 3h's leads, not taken:
       - Step 3i settled pmi c8, pmi 6c (with 3b) and blt e0 / 00 (the
         "Step 3i: pmi 3b, 6c, c8" section). What step 3h wrote of them:
