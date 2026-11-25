@@ -457,6 +457,20 @@ Weaker than the source allows, or to check:
   served, though the syslog can send 111 at any time.
 - `MAX_BUFFER` 16,000 where the kernel's link uses 16,384 from
   `scsi_manager` (§1.4 item 2): not the FEP's affair, noted there.
+- (2026-11-24, the commands past the shell.) The text code: `fep.py`
+  now has every printable ASCII character, each the two bytes of
+  PIMOS's own `table_ascii_to_jis` (`server/telnet/code_cv.kl1`:
+  152-251), and reads 0x000A as a newline; checked both ways for all
+  95 by `ref_scsi.py` (`jis_table`). 126 (`reshape_by_mouse`) on a
+  window is answered `[1]`: the listener's window sends it
+  (`win_dvc.kl1`:357-363 the request; the PSI's answer `{Id, 1}` is
+  INFERENCE from `pimos_window_editor reshape_by_mouse/3`, §6.2 and
+  §6.8, its body not walked). The FEP emulator answers it the same
+  (`PimmFepEmu.bsv` `windowAnswered`, `direct_kernel.tape`).
+  Not served, met by commands typed (`binary_reverse_engineering.md`
+  1.4, "Commands past the shell"): a home directory's files (201 on
+  `>sys>user>pmpsi>...` answers 5, so `compile sample1` finds no
+  file), 221/222 on them, and 204 (directory) for `ls`.
 
 Missing, in the order the start will ask (section 3): 60 on a timer;
 240; a mapping of `pimos:NAME` to the held `object/` files in the

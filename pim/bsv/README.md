@@ -328,9 +328,69 @@ So the window from the prompt runs no `new_atom` and no instruction
 that reads the clock (`system_timer` and the timer instructions write
 the clock's bits to a register, which the trace shows: INFERENCE from
 the PASS, not counted). RESTOREs 1-3 are
-unchecked by this window; a window that reads them is still to be
-found. RESTOREs 16-26 (the waiting command's fields) were not dropped
+unchecked by this window; they are checked by the commands past the
+shell (below, "Which RESTOREs the commands check"). RESTOREs 16-26 (the waiting command's fields) were not dropped
 one by one; dropping the push (31) removes them all.
+
+### Commands past the shell (`run_pimm_apps.sh`)
+
+`run_pimm_apps.sh PROMPT.pkl [NAME ...]` types each command line of
+`APPS` in `../ref/pimm/lockstep_shell.py` at the prompt of the saved
+machine, on the reference and on the core, and compares them line by
+line, the counts against `PINNED` and the window's text against
+`APPS`. The checkpoint is loaded once and its heap written once; each
+command is played in a process of its own (`lockstep_shell.py apps`).
+Outside the suite, like `run_pimm_shell.sh`. Ends with
+`pimm lockstep apps: PASS` or the names that failed. What each prints
+and how it stands against the primers and manuals:
+`../docs/binary_reverse_engineering.md` 1.4, "Commands past the shell".
+
+Measured 2026-11-24 from the prompt checkpoint (login ID 0, 8,587,072
+instructions), every line identical:
+
+| Name | Typed | Instructions | Trace lines | SCSI commands on the tape |
+|---|---|---|---|---|
+| pwd | `pwd` | 29,867 | 229,102 | 21 |
+| echo_string | `echo("a b c")` | 118,027 | 482,259 | 25 |
+| echo_list | `echo([a,b,c])` | 127,373 | 509,143 | 25 |
+| echo_new_atom | `echo(zorkqx)` | 121,155 | 489,049 | 25 |
+| usage_echo | `usage(echo)` | 133,233 | 520,129 | 25 |
+| help | `help` | 36,685 | 324,411 | 27 |
+| who | `who` | 146,977 | 555,038 | 25 |
+| history | `set hl=20`, `history` | 56,133 | 441,489 | 41 |
+| rs | `rs`, (empty) | 190,791 | 800,789 | 36 |
+| versions | `versions` | 114,472 | 610,006 | 38 |
+| compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
+| compile_missing | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | 94 |
+
+Which RESTOREs the commands check (2026-11-24, the kept work directory
+of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT
+of the same length, as in the table above, and the command compared
+again (`INJECT=1`, or `run_pimm_apps.sh --inject WORK` on a kept
+directory; the pinned lines are `DROPPED` in `lockstep_shell.py`;
+the table below re-run that way 2026-11-25). The prediction came first,
+from the reference, by a scratch probe not kept: `echo(zorkqx)`
+makes one `new_atom` (counter 75,569 to 75,570); each compile reads
+`system_timer` once. The checkpoint's clock is 204,335,039 steps, 236
+past a tick (the timer is `(steps-1)//423`); with RESTORE 3 dropped the
+core counts 423 instructions to its next tick where the reference
+counts 187, so it is one tick behind only for a read fewer than 236
+instructions after one of the reference's ticks: the read is 135 after
+one in compile_exit (caught), 357 in compile_missing (not caught).
+
+| Command | RESTORE dropped | Result |
+|---|---|---|
+| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 25,012, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
+| echo_new_atom | 2, 3 | PASS: no clock read |
+| compile_exit | 1 | PASS: no `new_atom` |
+| compile_exit | 2, the ticks | FAIL at line 828,137, instruction 234,242: `R 9 000007611f` / `R 9 000000022a` |
+| compile_exit | 3, the instructions since the tick | FAIL at the same line: `R 9 000007611f` / `R 9 000007611e`, one tick short |
+| compile_missing | 2 | FAIL at line 1,484,817, instruction 288,608: `R 9 000007619f` / `R 9 00000002aa` |
+| compile_missing | 3 | PASS, as predicted: the read falls past the 236 |
+
+So each of RESTOREs 0-4 and the waiting command's push is now caught
+by some window (16-26 not dropped one by one): 0, 4 and 31 by `shutdown`/`yes`, 1 by `echo(zorkqx)`, 2 and 3 by
+`compile`/`!exit`.
 
 ## FPGA flow (ULX3S / ECP5)
 
