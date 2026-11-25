@@ -41,6 +41,7 @@ From `pim/`:
     python3 -I psi/kl0.py convert                 # convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv FILE]     # every method of the 104 classes
     python3 -I psi/kl0.py census --fep [--tsv FILE]   # every method of pimfep and pimscsi, stand-ins loaded
+    python3 -I psi/kl0.py census --fep --recipes      # the same, receivers made by their held creators
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
@@ -1604,14 +1605,479 @@ Open:
 - A substring that shares its parent's storage is not modelled. kl0's
   string built-ins make new strings.
 
+### Step 3f: census receivers made by their held creators (2026-11-25)
+
+**The slot constants are census artifacts, with exceptions.** Before
+this step the FEP census had 142 rows refused as `receiver a slot
+constant` (not 139: the string type test moved three
+`pimos_window_process` rows onto one). A scratch probe named the slot
+behind each row: 22 distinct slots in 30 classes. The slot was then
+looked up in the held cells, for a `set_<slot>/2` call or a `blt 2f`
+slot write:
+
+| Slot (rows before) | Held writer | Verdict |
+|---|---|---|
+| `as_pimos_device`'s `input_stream`, `output_stream`, `creation_status_stream` (59 in 15 classes) | the device creators: `pimos_timer create_timer/9` @19-48, `pimos_file create/9` @19-52, `pimos_directory directory/10` @17-4e and `make_directory/10` @63-9a, `pimos_tcpip_socket create_socket/9` @21-69, `pimos_window_process create_with_buffer/10` @56-86, `pimos_string_io_invoker` local `initiate_string_io_device/7` @9d-b6 | artifact |
+| `pimos_window_editor` `window` (21), `pimos_window` `editor` (1) | `pimos_window create_pimos_window/3` @19-34, through the `pmacs_window` stand-in | artifact |
+| `remote_pimfep_executor` `accept` (1) | its own class after-demon on new/2, @40-48 (`accept` := the class slot `socket`, whose template constant is the string `'pimos_scsi_fep_control'`) | artifact: `make_instance` runs no new/2 demon; with it, one template constant replaces another |
+| `fep_scsi_output` `report_stream` (2), `pimfep_message_receiver`/`_sender` `fep` (6), `scsi_stream` `handler` (3), `pimos_socket_receiver` `data_stream` (2), `pimos_scsi_front_end` `input_stream` (1) | a creator class method that stores its caller's argument (`fep_scsi_output create/7` @16-3b, `create/8` @16-2e, `create/6` @22-30, `scsi_stream create/4` @2b-46, `pimos_socket_receiver create/5` @14-25, `pimos_scsi_front_end create/6` @41-5c) | artifact; the value is the caller's, not supplied |
+| `pimos_tcpip_socket` `receive_message_stream` (2), `pimos_window_process` `device_process` and `pimos_window` (2), `pimos_login_requester` `window` (4), `simpos_user` `user` (3) | the object's own process body or set-up (`initiate/1` @a8-c3, `initiate/1` @f0-10d, local `initiate/1` @ad-b8, `setup_process/2` @e3-ed), which runs only once the process does | artifact of a process that never runs |
+| `cmt`, `scsi` `channel` and `sender` (14), `scsi_device`, `scsi_device_bus_management` `handler` (8), `scsi_handler` `devices`, `request_devices`, `channel` (7), `scsi_load_test` `scsi`, `window` (5), `pseudo_scsi_handler` `memory` (1) | for `scsi_load_test` `window`, its class `create/2` and `create/4` (`blt 2f` @59, @72); `pseudo_scsi new/3` sets `sender` (@5c); the creators `scsi_common_if create/3`, `/4` need bound bus and unit numbers (`not_less_than` on the census's unbound argument) | artifact where a writer is found; for `channel`, `devices`, `request_devices` and `memory` no writer was found by name (UNKNOWN) |
+
+**Recipes (OURS).** `kl0.RECIPES` gives the census a way to make a
+receiver the way held code does: it runs the class's held creator,
+through the stand-ins, and takes the object it made. No slot is written
+from Python. `census --fep --recipes` uses them; plain `census --fep`
+is unchanged and keeps its pins.
+
+- The device creators share a prefix: `:create(Class, Dev)`,
+  `:process(Class, .., Dev)`, `:stream(Class, S)`,
+  `:set_input_stream(Dev, S)`, `:set_output_stream(Dev, A0)`, a second
+  `stream/2`, `:set_creation_status_stream(Dev, S2)`,
+  `:set_device_id(Dev, A3)`, then `:activate(Process, Dev)`.
+  activate/2 is the PRINTED `process:activate/2` (TM-100 Fig. 3.1). It
+  needs `status/3` (not printed) and the hardware `context`. So kl0
+  stops the creator before that send (`Machine.stop_before`,
+  `CreatorStopped`) and takes Dev, its first argument: the device as its
+  creator left it, not yet running.
+- The creators' A0 is the stream the device answers on, the caller's.
+  INFERENCE: it is the front end's `fep_output_stream`.
+  `pimos_scsi_front_end create_device/4` reads `fep_output_stream/2`
+  (@42e-431) into the first of the three elements it adds to the message
+  vector before `:refute` (@433-447). In each creator, A1 and A2 then
+  take the device's input stream and its process, which the front end
+  enters in its `device_table` (`add_at/5` @448-452). The front end's
+  stream comes from `fep_scsi_output create/7` (@32-3b), whose class kl0
+  resolves to `simpos##stream`. So the recipe passes a new
+  `simpos##stream` (OURS: a fresh one). The other arguments are unbound,
+  as in the plain census.
+- Recipes run for `pimos_timer`, `pimos_file`, `pimos_directory` and
+  `pimos_window_process`. `pimos_window` and `pimos_window_editor` come
+  from `create_pimos_window/3` and the stand-in's `get_editor/2`.
+  `remote_pimfep_executor` is made by sending `:new`, so that its
+  after-demon runs.
+- Not given a recipe:
+  - `pimos_tcpip_socket create_socket/9` reads the calling process's
+    invocation stack (`:invocation_stack(P, L)`, `:get_first(L, _)`,
+    @4d-59) before activate/2. The process stand-in has no such
+    accessor, and the census's process runs no program.
+  - `pimos_string_io_invoker create_string_io/10` (it makes
+    `pimos_remote_login_replier`, `_server`, `simpos_user_device` and
+    `pimos_standard_io_window`, `fep_services.md` §6.4) stops at
+    `symbolizer:enter_atom/3` and `library:assign/1`.
+  - The argument-supplied slots and the process-body slots of the table
+    above: a recipe would have to invent the caller's value or run a
+    process.
+
+Effect, compared method by method with plain `census --fep` (1,403
+methods, 789 / 154 / 443 / 16 / 1):
+
+- With recipes: 791 succeed, 154 fail, 441 refused, 16 exception, 1 step
+  limit. 101 rows are still `receiver a slot constant`; 41 of the 142
+  left it.
+- Where the 41 went. None of the moves is progress in itself: each is a
+  real held path that now runs further on a census receiver.
+  - 30 stop at a SIMPOS call.
+    - 19 `pimos_window_editor` rows stop at `pimos_window`'s missing
+      `pmacs_window` protocol: `get_interpreter/2`, `set_position/3`,
+      `get_position/3`, `activate/1`, `flash/1`, `beep/1`,
+      `set_title/2`, `get_text_size/3`, `get_font/2`, `get_title/2`,
+      `set_text_size/3`, `reshape/5`. `pimos_window_process` `goal/1`
+      and `invoke/1` stop there too, at `get_interpreter/2`.
+    - The device `loop_main/1` rows stop at `see/2`, which the
+      `stream` stand-in lacks (timer, file, directory; the window
+      process's own stream is the process itself). The timer's `goal/1`
+      and `invoke/1` stop there as well.
+    - `pimos_directory` `initiate/1`, `goal/1` and `invoke/1` stop at
+      `simpos##directory:retrieve/4` (class not loaded).
+  - 5 stop at `set_string_element` on an unbound argument (the
+    `attention/1` rows; see the recomputed accounting below for what
+    that argument is).
+  - 4 succeed: `pimos_window set_output_stream/2`, `pimos_window_process
+    initiate/1`, and `pimos_file goal/1` and `invoke/1`. pimos_file's
+    goal/1 takes its error clause (`put(error)` on the creation-status
+    stream). Its `initiate/1` (1 row, now `failure`) runs `open` on the
+    census's unbound pathname and fails.
+  - 1, `remote_pimfep_executor close/1`, is now `receiver not an
+    object`: it sends `close_socket/3` to `accept`, which now holds the
+    class slot `socket`'s template constant, the string
+    `'pimos_scsi_fep_control'`.
+  - (Not among the 41: `pimos_window_editor attention/1` is still a slot
+    constant, one hop later, at the editor's `pimos_window_process`
+    slot.)
+- 3 move out of success:
+  - `remote_pimfep_executor goal/1` and `invoke/1` stop at
+    `network_node_name:to_tcpip_address/3`, and `open/1` moves there from
+    failure. With the after-demon run, `accept` holds the class slot's
+    value, so `open/1` gets past the test that used to fail. That value
+    is itself a template constant: one template constant (0) replaced by
+    another (the string `'pimos_scsi_fep_control'`). Whether a class
+    method sets `socket` before new/2 in real use was not traced. The
+    plain census's successes were on an instance that new/2, with its
+    after-demon, could not have made.
+  - `pimscsi_fep resign_core/1` is a census order effect: run alone on a
+    fresh machine it fails, as it now does.
+
+Test (`test_espc.py` `test_step3f_census_recipes`): the timer's three
+streams are `simpos##stream` objects and its device id is unbound; the
+editor and executor recipes; the recipe census totals and its 101 slot
+constants; rows that go on (timer `loop_main/1` at `stream:see/2`, the
+editor at `get_interpreter/2`) while `as_pimos_device` (no creator)
+still refuses. Four injections into `kl0.py`, each from a backup copy,
+restored by cp and checked with cmp. Observed: each fails only this
+test, and `test_kl0.py` passes.
+
+- The `pimos_timer` recipe dropped: errors. Measured separately, the
+  census's slot constants rise from 101 to 105: the timer's `goal/1`,
+  `attention/1`, `loop_main/1` and `invoke/1`.
+- A0 left unbound: fails.
+- No stop before activate/2: errors. The creator runs into
+  `process:status/3`.
+- The executor made by `make_instance`: fails.
+
+### Step 3f: the library and the symbolizer's atom table (2026-11-25)
+
+SIMPOS's `library` (the Librarian) and `symbolizer` are not held. Four
+of their class methods cannot be ESP stand-ins: they answer from the
+loader's tables and from the atom table. So kl0 models them in Python
+(`SIMPOS_MODELS`, OURS). Each docstring cites its sources, and any
+other method still refuses as SIMPOS.
+
+- `:assign(#library)`. INTERPOLATED from its call sites: it is the
+  first library send of its clause, before `check_info/3`,
+  `get_class_object/3` or `make_package/2` (kappa2 HLCLIB.ESP:29,
+  LOADCH.ESP:64, LOADER.ESP:251; the pimfep and pimscsi sends that the
+  plain census stopped at, 12 rows). What it
+  binds is UNKNOWN (`subsystems/gaps.md`, librarian row 4). It succeeds
+  and changes nothing.
+- `:check_info(#library, Name, Kind)`. INTERPOLATED from kappa2
+  LOADER.ESP:252-256 and `pimos_string_io_invoker`'s local
+  `get_class_object/3` (@5a-80). Both try `template_file` (then
+  `make_class_object/2`) and `object`, then `get_class_object/3`. OURS:
+  every class here is loaded as a class object, so `object` succeeds
+  for a loaded class and `template_file` fails.
+- `:get_class_object(#library, Name, Class)`. The class an atom names:
+  `pkg##c` exactly; else `c` in the sending class's package; else the
+  one loaded `*##c`. A class not loaded, or a name two packages share
+  with no sender, refuses.
+  - INTERPOLATED: "own package first" is the static rule for a bare
+    class name (`subsystems/librarian.md` §1.4, TM-388 pp92-101).
+  - INFERENCE: that the run-time lookup follows it, and that "own"
+    means the sender's package, not the process's default package
+    (HLCLIB.ESP:30-31 `:get_package(Process, P)`).
+  - The rule is needed: pimfep and pimmcsp both define
+    `pimos_remote_login_replier`, `_server`, `simpos_user_device` and
+    `pimos_timer`.
+- `:enter_atom(#symbolizer, Atom, String)`. PRINTED interface: TR-283
+  p18 (folio 16), Table 4, lists `:enter_atom/c2` (atom <-> string).
+  The argument order is from paragraph `p_wshell.esp`:211 (`substring(
+  C0,1,Len-1,C1), :enter_atom(#symbolizer,Var,C1), :get_at(Obj!var,St,
+  Var)`: the atom first, then used as a key) and `create_string_io/10`
+  @28-2d. The atom's name is the string's text (OURS).
+- `NAMED_NOT_DEFINED.md`'s `:status/2` and kl0's `process:status/3` are
+  the same method. The doc counts the arguments without the receiver.
+
+**The string-I/O recipe.** `pimos_string_io_invoker
+create_string_io/10` (@15-45) makes the program PIMOS names by command
+601 (`fep_services.md` §6.4):
+
+1. It tests A8 as a 16-bit string (@1d-1e).
+2. It makes the string an atom (@28-2d) and takes the class from the
+   library (local `get_class_object/3`).
+3. It creates the object (local `create/3`) and gives it its streams
+   and device id (local `initiate_string_io_device/7` @9d-b6).
+4. Then it sends activate/2.
+
+`RECIPES` now passes the class name as that string for
+`pimos_remote_login_replier`, `pimos_remote_login_server`,
+`simpos_user_device` and `pimos_standard_io_window` (PIMOS's
+`pass_body.kl1`:68). It stops before activate/2, as the device creators
+do.
+
+Effect, method by method:
+
+- Plain `census --fep`: 789 / 154 / 443 becomes 790 / 154 / 442.
+  - `remote_stream create_to_fep/3` goes from refused to success.
+  - `create_from_fep/4` stops at an unbound receiver (its
+    `convert_con_req/6` is sent to an argument).
+  - 11 others stop later:
+    - `create_from_remote_fep/4` at
+      `network_node_name:network_type/3`;
+    - `create_to_remote_fep/5` at `nline:connect/5`;
+    - `initiate_to_fep/1` at `get_class_object/3` of `nline` (not
+      loaded);
+    - `pimscsi_fep`'s and `pseudo_scsi_fep`'s `goal/1` and `invoke/1`
+      at `standard_input_file:create/3`;
+    - `nise_scsi_fep`'s three at `mpsicsp##nise_scsi` (not loaded);
+    - `remote_pimfep_invoker goal/1` at its `convert_con_req/6`
+      (SIMPOS).
+  - None leaves success.
+- With recipes: 791 / 154 / 441 becomes 792 / 154 / 440, and the slot
+  constants go from 101 to 85. The 16 rows of the four string-I/O
+  programs move:
+  - `goal/1`, `loop_main/1` and `invoke/1` (12) to `stream:see/2`;
+  - `attention/1` (4) to `set_string_element` on an unbound argument.
+- Not progress in itself. `stream:see/2` is now the commonest stop
+  (every device `loop_main/1`), and no held or printed source defines
+  it: TM-100 Fig. 3.6 prints `create/2`, `put/2` and `get/2` only, and
+  the kappa2 `:see(Buffer,Size,MDU)` sends (mdu TABLE.ESP:518) are to a
+  buffer.
+
+Test (`test_espc.py` `test_step3f_library_and_symbolizer`): each model
+on its own (assign, both kinds of `check_info`, `get_class_object`
+qualified and ambiguous, `enter_atom` and its refusal), and the replier
+made by `create_string_io/10` in pimfep with its three streams.
+`test_step3f_census_recipes` pins the four programs' `loop_main/1`
+refusal at SIMPOS, and the abstract `as_pimos_string_io_device` still at
+a slot constant. Four injections into `kl0.py`, from a backup, restored
+by cp, cmp-checked. Observed, `test_kl0.py` passing each time:
+
+- assign/1 failing: test_fep_census, test_step3f_census_recipes and
+  test_step3f_library_and_symbolizer fail.
+- The own-package rule dropped: test_step3f_census_recipes fails and
+  test_step3f_library_and_symbolizer errors.
+- `template_file` succeeding as `object` does: test_step3f_census_recipes
+  and test_step3f_library_and_symbolizer fail.
+- enter_atom reading its first argument as the string:
+  test_step3f_census_recipes fails and test_step3f_library_and_symbolizer
+  errors.
+
+### Step 3f: `pmacs_window`'s geometry, title and display methods (2026-11-25)
+
+With recipes, 19 `pimos_window_editor` rows stopped at `pimos_window`
+methods that `pmacs_window` should supply. `standin/pmacs_window.esp`
+gains 17 of them, every one INTERPOLATED and labelled from
+`subsystems/window.md` §2.1-2.3:
+
+- PRINTED-INTERFACE: TM-125 p15-16 for `set_size/3`, `set_position/3`,
+  `set_title/2`, `activate/1`, `show/1`, `hide/1` and `deactivate/1`;
+  TM-115 p50 and p63 for `get_size/3` and `get_position/3`; TM-112 p16
+  for `set_font/2`.
+- USAGE only: `reshape/5`, `set_text_size/3`, `get_text_size/3`,
+  `get_title/2`, `get_font/2`, `beep/1` and `flash/1`.
+
+Model (OURS): each value is a slot that its setter writes and its getter
+reads back. Nothing is displayed, so the display methods succeed and do
+nothing. The initial values (0, an empty title) are OURS. The font
+starts as 0, since no font object is stood in, and a `manipulator`
+coordinate is stored like a number. Not stood in: the text protocol
+(§2.4: `putl/2`, `putf/3`, `getl/2`), `get_interpreter/2`, and the
+`has_been_reshaped/1` callback.
+
+Effect, method by method:
+
+- Plain `census --fep`: 1,403 becomes 1,420 methods. The 17 new rows
+  are the new methods, inherited by `pimos_window`; they all succeed,
+  which is not progress. So 790 / 154 / 442 becomes 807 / 154 / 442.
+  `pimfep_message_log` `dump_log/1`, `sorted_log/1` and
+  `sorted_log_string/1` stop later, past `activate/1`: at pmi ff, or at
+  `sorted_sequence:create/2`. None leaves success.
+- With recipes: 809 / 154 / 440, with the same 17 new successes. The
+  slot constants go from 85 to 86. 17 of the 19 editor rows stop later
+  (`clear/3` and `buffer_name/3` still stop at `get_interpreter/2`):
+  - 11 run through the window and stop at `set_string_element` on an
+    unbound argument, while building their reply. The census leaves
+    the request unbound: `get_title/3`, `get_position/3`, `activate/3`,
+    `show/3`, `hide/3`, `beep/3`, `set_title/4`, `get_inside_size/3`,
+    `flush/3`, `set_position/5`, `set_position_by_mouse/3`.
+  - 4 stop at the `has_been_reshaped/1` callback: `set_size/3`,
+    `reshape/7`, `set_inside_size/5`, `reshape_by_mouse/3`.
+  - 1, `getl/3`, stops at `get_interpreter/2`.
+  - 1, `get_font/3`, sends `pathname/2` to the font, a slot constant.
+  - The 3 message-log rows, as in the plain census.
+
+Test (`test_espc.py` `test_step3f_window_protocol`): each setter's value
+is read back, `reshape/5` sets position and size, and the six display
+methods succeed. `test_step3d_window_and_timer` now expects
+`dump_log/1` to stop at `putl/2`. Three injections into the stand-in,
+from a backup, restored by cp, cmp-checked. Observed:
+
+- `get_position/3` answering y, x: only test_step3f_window_protocol
+  fails.
+- `reshape/5` not setting the size: the same.
+- `activate/1` failing: test_fep_census, test_step3d_window_and_timer,
+  test_step3f_census_recipes and test_step3f_window_protocol fail.
+
+`test_kl0.py` passes each time.
+
+### Step 3f: pmi b7 with A != 0 (2026-11-25)
+
+The step 3e row of pmi b7 (`put_vector_n`) refused A != 0 for want of a
+witness whose source is held. A search of the six source-held packages
+(MEASURED 2026-11-25) found 12 uses with A != 0, all with a zero second
+byte. One is lined up with its source:
+
+- `kappa##kappaMDM_manager set_up/2` @e6 is `b7 01 00 09`. Nine `43`
+  element cells follow (@e7-ef), then `a2 00 00` and a send of
+  set_up/3 (@f1-f2).
+- The source is KP_MDM.ESP:89, `:set_up(DBO,OBJuser,{MS_max,MSN,RS_max,
+  RSN,RS_size,MH_max,MHN,IH_max,IHN})`. The nine-element vector is the
+  second argument, so it goes to A1. The two slot writes just before
+  (@e1-e5) are lines 87-88, `OBJ!default_record_extent_size :=` and
+  `OBJ!default_index_extent_parameter :=`.
+- KNOWN-PLAINTEXT. The row now accepts any A. A non-zero second byte
+  still refuses.
+
+Census, row by row: one FEP method stops later in both modes.
+`pimos_fep_superviser error_mode_menu/2` (`b7 05 00 07`) now reaches
+`simpos##standard_choice_window`. Totals are unchanged, and the
+six-package census is unchanged (310 / 12 / 207 / 1).
+
+Test (`test_kl0.py` `test_vector_puts`): b7 with A = 1 makes a
+nine-element vector there; the second byte still refuses; the witness's
+cells are pinned. Injected into `kl0.py` from a backup, restored and
+cmp-checked. Observed:
+
+- A != 0 refused again: test_vector_puts errors.
+- A non-zero second byte accepted: test_vector_puts fails.
+
+`test_espc.py` passes both times: its census pins count the moved row
+as refused either way.
+
+### Step 3f: the census accounting, recomputed (2026-11-25)
+
+A review after the b7 commit found the step-by-step numbers above were
+partly mis-attributed. Every figure here is recomputed, row by row, from
+two final TSVs of HEAD (`census --fep` and `census --fep --recipes`)
+and from the plain census of master 496173b8 run on the untouched tree
+at the start of step 3f. Rows are keyed by (class, section, selector).
+Outcome and cause are compared, and `_G` variable numbers are ignored.
+
+**Master plain to HEAD plain** (1,403 to 1,420 methods; 789 / 154 / 443
+/ 16 / 1 to 807 / 154 / 442 / 16 / 1):
+
+- 17 new rows, the `pmacs_window` methods inherited by `pimos_window`.
+  All succeed, which is not progress.
+- 13 rows keep their outcome and cause but stop later.
+- 4 rows move:
+  - `remote_stream create_from_fep/4`: simpos to unbound receiver.
+  - `remote_stream create_to_fep/3`: simpos to success. This rests on
+    the no-op `library:assign/1` (INTERPOLATED).
+  - `pimfep_message_log dump_log/1`: simpos to opcode, now at pmi ff.
+  - `pimos_fep_superviser error_mode_menu/2`: operand to simpos, now at
+    `standard_choice_window` (b7 A != 0).
+
+So the plain census gains 1 real success. The other 17 are new rows.
+
+**HEAD plain to HEAD recipes** (807 / 154 / 442 to 809 / 154 / 440;
+slot constants 142 to 86):
+
+- 56 rows leave `receiver a slot constant`:
+  - 30 to simpos: `stream:see/2` (10 `goal/1`/`invoke/1` rows, 7
+    `loop_main/1` rows), `pimos_window_process:see/2` (the window
+    process's `loop_main/1`), `get_interpreter/2` (3 editor rows, 2
+    window-process rows), `has_been_reshaped/1` (4 editor rows),
+    `directory:retrieve/4` (3 rows).
+  - 20 to `unbound argument` at `set_string_element`: 12 editor rows and
+    8 `attention/1` rows.
+  - 4 to success: `pimos_file goal/1` and `invoke/1`,
+    `pimos_window_process initiate/1`, `pimos_window
+    set_output_stream/2`.
+  - 1 to failure: `pimos_file initiate/1`.
+  - 1 to `receiver not an object`: `remote_pimfep_executor close/1`
+    sends `close_socket` to `accept`, which now holds the class slot
+    `socket`'s template constant, the string `'pimos_scsi_fep_control'`
+    (one template constant replaced by another).
+- 2 rows are still slot constants but stop later: editor `attention/1`
+  and editor `get_font/3`. `get_font/3` reaches the font slot of the
+  `pmacs_window` stand-in, whose initial 0 is OURS. That slot constant
+  is made by the stand-in, not by held code.
+- Out of success, 3:
+  - `remote_pimfep_executor goal/1` and `invoke/1`, to
+    `to_tcpip_address/3` (simpos). Their plain successes were on an
+    executor that new/2, with its after-demon, could not have made.
+  - `pimscsi_fep resign_core/1`, to failure.
+- 2 more rows move:
+  - executor `open/1`: failure to simpos.
+  - `pimos_file resign_core/1`: failure to success.
+
+**The two `resign_core/1` rows are order effects.** On a fresh machine,
+each alone, both fail in both modes (MEASURED 2026-11-25). Their census
+successes, `pimscsi_fep` plain and `pimos_file` with recipes, come from
+state left by earlier rows in the same run.
+
+**Net with recipes:** 4 real successes, 1 real failure, and 51 rows on
+to a named gap (30 simpos, 20 unbound request, 1 non-object). None of
+the 56 is progress toward a running front end by itself: it is the
+removal of a census artifact.
+
+**The `set_string_element` stops, traced.** In editor `get_title/3` the
+unbound argument is the request Id (A0). It reaches
+`fep_message_assembler assemble/3` through `reply_message/2`. With Id =
+7 the call goes on to `pad_string/2` and refuses at blt 48
+(`multiply_constant`) with R != A, an unwitnessed operand pattern. The
+other rows were not traced one by one.
+
+**Six-package census:** identical to master row by row (530 methods,
+310 / 12 / 207 / 1).
+
+**Invented slot names.** The `pmacs_window` slots `x`, `y`, `width`,
+`height`, `columns`, `rows`, `title` and `font` are OURS. A slot read or
+write in compiled code names its slot with an atom (`pmi-atom put rN,
+activity` before `pimos_window create_pimos_window/3`'s write is the
+pattern). The pimfep and pimscsi listings were searched for those eight
+atoms (MEASURED 2026-11-25). Only one is found, `pmi-atom get r76,
+title` at pimscsi `scsi_load_test` @cc, and it is a unify with an atom,
+not a slot access. So no held code reads or writes an invented slot.
+
+**Rows that are called real were checked alone** (MEASURED 2026-11-25:
+each method on a fresh machine). With recipes, `pimos_file goal/1` and
+`invoke/1`, `pimos_window_process initiate/1` and `pimos_window
+set_output_stream/2` succeed alone, and `pimos_file initiate/1` fails
+alone. Plain, `remote_stream create_to_fep/3` succeeds alone. Only the
+two `resign_core/1` rows are order effects.
+
+**The 20 unbound-argument rows by class.** The 12 editor rows are the
+11 named in the `pmacs_window` section plus `deactivate/3`, which that
+list missed. The 8 `attention/1` rows are one per class: `pimos_timer`,
+`pimos_file`, `pimos_directory`, `pimos_window_process`,
+`pimos_remote_login_replier`, `pimos_remote_login_server`,
+`simpos_user_device` and `pimos_standard_io_window`. The milestone
+sections' partial counts are superseded by these. Only `get_title/3`
+was traced to the request Id. That the other rows at
+`set_string_element` stop on the same unbound request is INFERENCE,
+from the shared reply path.
+
+Test (`test_espc.py` `test_step3f_census_recipes`): the executor's
+`accept` is now pinned as the string `'pimos_scsi_fep_control'`, and
+`time` as 10. Both are template constants (`time` is still a slot
+constant). Made by `make_instance` instead, both are 0 (MEASURED), so
+both assertions fail under the step 3f "executor made by
+`make_instance`" injection.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
-  to be found (`kl0.py census` lists them). Step 3e's state of the FEP
-  blockers:
+  to be found (`kl0.py census` lists them). The state of the FEP
+  blockers after step 3f:
   - pmi c6 (21 methods): a multi-way switch with packed words. It needs
-    ce and ff, which have no rows. Deferred.
+    ce and ff, which have no rows. Not attempted in step 3f. Witnesses
+    are available: MEASURED 2026-11-25, c6 has 132 uses, ce 262 and ff
+    958 in the six source-held packages (paragraph, kappa, fts, qxt,
+    sancho2, tour). The layout seen at pimscsi `scsi_device`
+    `command_code/2` @361 is: c6; two integer words; a `cc` table of
+    atoms ended by `fe`; a `ce` table of selectors ended by `fe`; then
+    the clauses. A bounded read of that predicate (2026-11-25, listing
+    only; pimscsi's source is not held, so it is no witness, and no row
+    is added) found:
+    - Each atom entry `cc 00 00 k` at cell c lands on the clause that
+      unifies that atom at c + 2 + k: `download` @364 k=28 lands at
+      @38e, and `diagnose` @366 k=2a lands at @392.
+    - The selector entries do not fit that rule. `sense/2` @36b k=0c and
+      `read_trace/2` @36f k=16 land on their clauses (`pmi 32`, then
+      `atom get r76, sense` / `read_trace`, @37a and @388) at c + 3 + k.
+      `trace/2` @36d k=02 lands at @372, a block of e1-e5/ff cells. So
+      the base differs by one cell, or the `02` byte matters. UNSETTLED.
+    - The first integer (5) at @362 brings @364 + 5 = @369, the `ce`
+      cell. That fits a table offset from the first `cc`, but it is one
+      instance.
+    - 0x150031 at @363: @364 + 0x31 = @395, the predicate's final `fe`;
+      @364 + 0x15 = @379, an `e4` cell just before the `sense` clause.
+      Perhaps fail and otherwise targets, but this is a guess and is not
+      used.
+    The next step is the same read on a c6 predicate whose source is held
+    (paragraph, kappa, fts, qxt, sancho2, tour), which is still not done.
   - blt 0d (10): witnessed as `object/3`, but not added. kappa2
     `user_if/pb/som.esp:191-194` has `Sheet = Obj!current_sheet,
     object(Sheet,_,_)`, which compiles to `0d 00 01 02` with Sheet in
@@ -1622,13 +2088,43 @@ Open:
     `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
   - blt 6f: witnessed as `list_to_vector`, but not added: its third
     argument is not settled.
-  - pmi b7 with A != 0: no witness whose source is held was found. The
-    `performance_pes initiate/2` use has no held source.
+  - blt 0d, 1a and 6f stay refused after step 3f. Another call site
+    does not settle what the outputs receive. Searched without a
+    definition: `docs/simpos/required/builtins.tsv` (names and use
+    counts), `source_check_2026-11-24_opcodes.tsv`, and the cil
+    `cil_kl0.esp` wrapper table (names only).
+  - pmi b7 with A != 0: DONE in step 3f (the section above).
+  - Revealed by the step 3f recipes:
+    - `stream:see/2`, the commonest stop (every device `loop_main/1`).
+      No source: TM-100 Fig. 3.6 prints create/put/get only.
+    - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
+      callback (`pmacs_window`, not stood in).
+    - The census's unbound request arguments: device replies refuse at
+      `set_string_element` on an unbound argument (25 rows plain, 45
+      with recipes). The request Id is the argument in the one row
+      traced, `get_title/3` (see the recomputed accounting). Given an Id, the
+      traced `get_title/3` goes on to blt 48 (`multiply_constant`) with
+      R != A, which is unwitnessed.
+    - `process:invocation_stack/2`, not stood in: it stops the tcpip
+      `create_socket` creator, so tcpip has no recipe.
+    - `process:status/3` (11 plain-census creator rows). It has one
+      printed call, `:status(Process, dormant, on_activate)` in
+      `activate/2` (TM-100 Fig. 3.1), and no definition. A stand-in
+      would only move the rows to `entry_of_invoke/2` (also not printed)
+      and then to the hardware `context`. Not added.
+    - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
+      set_default_node/2` @29-34, which stores the answer in the class
+      slot `default_spawn_node`). No held or printed source gives the
+      form of a full name, so it stays refused.
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
   SIMPOS or firmware. They are not held. Only `new/2` (slot
   initialisation included) and `refute/3` are modelled (OURS).
+- **The library and the symbolizer** (step 3f). Only `library`
+  `assign/1`, `check_info/3` and `get_class_object/3`, and `symbolizer`
+  `enter_atom/3`, are modelled (OURS, INTERPOLATED). The run-time
+  lookup order is an INFERENCE.
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `=\=`, `->` and `not`; of `with_macro`, the
   rules with a tail and `==>`. Vectors of one, five, six or n elements
@@ -1636,6 +2132,7 @@ Open:
   `espc.py` does not emit them yet.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
-  not modelled. No held nature needs it.
+  not modelled. No held nature needs it. The step 3f library lookup uses
+  only the sender's package first (INFERENCE).
 - **The descriptor's word layout and the atom numbering** are not held.
   They are UNKNOWN beyond Fig. A-1.

@@ -1,10 +1,12 @@
 % SCAFFOLDING stand-in for SIMPOS's class `pmacs_window` (the Pmacs editor
 % window), compiled by psi/espc.py into the package `simpos`.  It is NOT
 % SIMPOS: no part of it is printed or held, and NO DISPLAY IS MODELLED.
-% It is MINIMAL: creation and get_editor/2 only.  The window protocol
-% (activate/1, putl/2, putf/3, getl/2, ...; docs/simpos/subsystems/
-% window.md §2.4, §2.11) is not stood in, so a caller stops at its first
-% window method.  INTERPOLATED (labelled) from:
+% It is MINIMAL: creation, get_editor/2, and (step 3f) the geometry,
+% title, font and display methods of window.md §2.1-2.3 as slots and
+% no-ops.  The text protocol (putl/2, putf/3, getl/2, ...; docs/simpos/
+% subsystems/window.md §2.4, §2.11), get_interpreter/2 and the
+% has_been_reshaped/1 callback are not stood in, so a caller stops
+% there.  INTERPOLATED (labelled) from:
 %   - window.md §2.11 (corrected 2026-11-24 by docs/simpos/
 %     source_check_2026-11-24.md, row SA36): disc/exshow.esp:24 (held
 %     IFS source) sends create/3, `:create(#pmacs_window,[title(Buf)|
@@ -63,6 +65,77 @@ attribute activity := 0;
 % INTERPOLATED from: window.md §2.11 `:get_editor(W, E)`.
 :get_editor(Window, Editor) :-
         Editor = Window!editor;
+
+% Step 3f: the window's geometry, title and font, and the display
+% methods, as pimfep##pimos_window_editor sends them to its window (kl0
+% census --fep --recipes, 2026-11-25).  The selectors and argument forms
+% are from window.md §2.1-2.3 (PRINTED-INTERFACE: TM-125 p15-16 for
+% set_size/3, set_position/3, set_title/2, activate/1, show/1, hide/1,
+% deactivate/1; TM-115 p50 and p63 for get_size/3 and get_position/3;
+% TM-112 p16 for set_font/2; USAGE for reshape/5, set_text_size/3,
+% get_text_size/3, get_title/2, get_font/2, beep/1, flash/1).  Model
+% (OURS): each value is a slot, set by the setter and read back by the
+% getter; nothing is displayed, so the display methods succeed and do
+% nothing.  The initial values are OURS (0, an empty title); the font
+% starts as 0, since no font object is stood in.  What `manipulator` in
+% place of a coordinate does (the user places the window, TM-125 p15) is
+% not modelled: it is stored like a number.
+
+% INTERPOLATED: the representation (OURS); see the note above.
+attribute x := 0, y := 0, width := 0, height := 0,
+          columns := 0, rows := 0, title := "", font := 0;
+
+% INTERPOLATED from: window.md §2.1 set_position/3 (TM-125 p15).
+:set_position(Window, X, Y) :-
+        Window!x := X, Window!y := Y;
+% INTERPOLATED from: window.md §2.1 get_position/3 (TM-115 p63).
+:get_position(Window, X, Y) :-
+        X = Window!x, Y = Window!y;
+% INTERPOLATED from: window.md §2.1 set_size/3 (TM-125 p15).
+:set_size(Window, W, H) :-
+        Window!width := W, Window!height := H;
+% INTERPOLATED from: window.md §2.1 get_size/3 (TM-115 p50).
+:get_size(Window, W, H) :-
+        W = Window!width, H = Window!height;
+% INTERPOLATED from: window.md §2.1 reshape/5 `(W,X,Y,Wd,Ht)`, "move and
+% resize at once" (USAGE cal-esp cpwindow.esp:85).
+:reshape(Window, X, Y, W, H) :-
+        Window!x := X, Window!y := Y,
+        Window!width := W, Window!height := H;
+% INTERPOLATED from: window.md §2.1 set_text_size/3 `(W,Cols,Rows)`
+% (USAGE pimfep device reshape/7).
+:set_text_size(Window, C, R) :-
+        Window!columns := C, Window!rows := R;
+% INTERPOLATED from: window.md §2.1 get_text_size/3 (USAGE pimfep
+% get_inside_size/3).
+:get_text_size(Window, C, R) :-
+        C = Window!columns, R = Window!rows;
+% INTERPOLATED from: window.md §2.2 set_title/2 (TM-125 p15).
+:set_title(Window, T) :-
+        Window!title := T;
+% INTERPOLATED from: window.md §2.2 get_title/2 (USAGE, 111 uses).
+:get_title(Window, T) :-
+        T = Window!title;
+% INTERPOLATED from: window.md §2.2 set_font/2 (TM-112 p16).
+:set_font(Window, F) :-
+        Window!font := F;
+% INTERPOLATED from: window.md §2.2 get_font/2 (USAGE).
+:get_font(Window, F) :-
+        F = Window!font;
+% INTERPOLATED from: window.md §2.1 activate/1 (TM-125 p16); nothing is
+% displayed here.
+:activate(Window) ;
+% INTERPOLATED from: window.md §2.1 deactivate/1 (TM-125 p16).
+:deactivate(Window) ;
+% INTERPOLATED from: window.md §2.1 show/1 (TM-125 p16).
+:show(Window) ;
+% INTERPOLATED from: window.md §2.1 hide/1 (TM-125 p16).
+:hide(Window) ;
+% INTERPOLATED from: window.md §2.3 beep/1 (USAGE, 69 uses).
+:beep(Window) ;
+% INTERPOLATED from: window.md §2.3 flash/1 (USAGE, pimfep
+% pimos_window_editor).
+:flash(Window) ;
 
 local
 

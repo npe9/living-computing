@@ -429,6 +429,58 @@ and stand-in `simpos##` classes. In order:
        row. With the type test, FEP is 789 / 154 / 443 / 16 / 1 step
        limit; one method leaves success, a census order effect
        (`psi/README.md`).
+   - *2026-11-25, step 3f* (`../../psi/README.md`, the "Step 3f"
+     sections):
+     - The slot constants (142, not 139: the string type test moved
+       three rows onto one) were traced slot by slot to their held
+       writers. They are census artifacts: device creators, creators
+       storing a caller's argument, process bodies that never run, and
+       one new/2 after-demon that `make_instance` skipped. For four
+       pimscsi slots no writer was found (UNKNOWN).
+     - `kl0.py census --fep --recipes` (OURS) makes receivers by their
+       held creators. The device creators are stopped before the
+       PRINTED `process:activate/2`, which needs the lost `status/3` and
+       `context`. The plain census is unchanged.
+     - With recipes: 791 / 154 / 441 / 16 / 1, and 101 slot constants
+       (41 fewer). The rows go on to real gaps, not success: the
+       `pmacs_window` window protocol (21 rows), `stream:see/2`, and
+       `directory:retrieve/4`.
+     - kl0 models four SIMPOS methods in Python (OURS, INTERPOLATED from
+       call sites): `library` `assign/1`, `check_info/3` and
+       `get_class_object/3` (own package first), and `symbolizer`
+       `enter_atom/3` (interface PRINTED, TR-283 p18). With them,
+       `create_string_io/10` makes the four string-I/O programs, which
+       are now recipes too. Plain census 790 / 154 / 442; with recipes
+       792 / 154 / 440 and 85 slot constants. `stream:see/2` (no source)
+       is now the commonest stop.
+     - `pmacs_window` gains its geometry, title, font and display
+       methods (INTERPOLATED from `subsystems/window.md` §2.1-2.3, TM-125
+       p15-16, TM-115 p50, p63), as slots and no-ops. The census has
+       1,420 methods: the 17 new ones are inherited by `pimos_window` and
+       succeed, which is not progress. Plain 807 / 154 / 442; with
+       recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their
+       reply, on the census's unbound request, and 4 at the
+       `has_been_reshaped/1` callback.
+     - pmi b7 with A != 0 witnessed (kappaMDM_manager set_up/2 @e6,
+       KP_MDM.ESP:89) and accepted. One FEP row stops later; totals
+       unchanged.
+     - Still refused: pmi c6, ce and ff (not attempted; 132, 262 and
+       958 uses in the source-held packages), and blt 0d, 1a and 6f
+       (the outputs are not settled). Not stood in: `process:status/3`
+       (it would only move rows to `entry_of_invoke/2`),
+       `node_full_name/3`, and `stream:see/2` (no source).
+     - Recomputed row by row from the final TSVs (`psi/README.md`, "the
+       census accounting, recomputed"). Master plain to HEAD plain:
+       1,403 to 1,420 methods, 789 to 807 successes, but 17 of these are
+       the new inherited rows and only 1 is a real move
+       (`remote_stream create_to_fep/3`, on the no-op `assign/1`).
+       Recipes then move 56 slot-constant rows: 4 to success, 1 to
+       failure, 30 to simpos, 20 to `set_string_element` on an
+       unbound argument (the request Id in the one row traced), 1 to `receiver not an object`. The
+       one new slot constant comes from the stand-in's own font 0. Each
+       real success was checked alone on a fresh machine; the two
+       `resign_core/1` successes are order effects (both fail alone).
+       The six-package census is identical to master.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
