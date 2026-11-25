@@ -564,3 +564,24 @@ not held and was not fetched; whether it covers PSI-II is unknown. The earlier s
   `nonlocal/psdpim.tar.Z`, with the recipe above.
 - The Giho facts were read on page images rendered with `pdftoppm` at 150 dpi.
 - This is a documentation change only. The ten `asm/*.py --check` passes were run before commit.
+
+---
+
+## 9. Hardware
+
+`window_hardware_plan.md` (2026-11-25) is the plan for this environment as hardware: Bluespec RTL,
+checked in Bluesim, then the ULX3S. In brief:
+- **The device layer of §4.1 becomes RTL.** Its primitive set is the interface of a framebuffer
+  box (`mkWinFbBox`), and the box is checked byte for byte against this layer's PBM output. A
+  DVI scan-out and a keyboard/mouse box sit beside it.
+- **The first CPU is kl0 on the host**, which sends drawing commands over the UART. The CPU route
+  after that is the PIM/m PU itself, since the PSI-III and the PIM/m PE are one chip (TM-862): a
+  KL0 front end on the Bluespec core in lockstep with `kl0.py`, then the held PSI-III microcode.
+- **Display numbers, MEASURED in a scratch synthesis:**
+  - native 1280×1024@60 does not close on the ECP5;
+  - a 1,280×1,024 frame letterboxed 1:1 in 1920×1080@30 does;
+  - the one-bit frame costs 80 of the 85F's 208 block RAMs.
+- **Milestones H0-H13** mirror M0-M11.
+
+The hardware plan reads this page's primitive set (§4.1) and event format (§4.3) as its contract,
+so a change to either is a change to both.
