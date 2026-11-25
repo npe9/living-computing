@@ -178,6 +178,14 @@ class TestGlyph(unittest.TestCase):
                        for i in range(11)) for j in range(14)]
         self.assertEqual(got, self.A)
 
+    def test_login_prompt_all_held(self):
+        codes = F.jis_text(F.LOGIN_PROMPT)
+        self.assertEqual(len(codes), 29)
+        fr = run('\n'.join('glyph 0 %d %d 0 set' % (c, 11 * i)
+                           for i, c in enumerate(codes)))
+        self.assertEqual(fr.status, [F.OK] * 29)
+        self.assertGreater(fr.count(), 29 * 10)
+
     def test_opaque_and_missing(self):
         fr = run('fill 0 0 11 14 set\nglyph 0 0x2341 0 0 copy')
         self.assertEqual(fr.count(), 48)

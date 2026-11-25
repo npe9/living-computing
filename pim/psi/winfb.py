@@ -530,8 +530,32 @@ def s_glyphs(_seed):
     for i, c in enumerate([0x2353, 0x2368, 0x2365, 0x236c, 0x236c,
                            0x2164, 0x2164, 0x2121]):
         L.append('glyph 0 %d %d 200 copy' % (c, 200 + 11 * i))
+    # Login PIMOS's first prompt (docs/fep_services.md §6.9), as test_11
+    # draws it in the requester's window
+    for i, c in enumerate(jis_text(LOGIN_PROMPT)):
+        L.append('glyph 0 %d %d 300 set' % (c, 20 + 11 * i))
     L += ['glyph 1 9025 0 0 set', 'glyph 0 9025 1275 1020 set', 'end']
     return '\n'.join(L)
+
+
+LOGIN_PROMPT = 'Enter FEP node name--------->'
+
+
+def jis_text(s):
+    """ASCII text as the full-width JIS X 0208 codes test_11 holds (OURS
+    table for the few characters used: window_hardware_plan.md §3.1)."""
+    out = []
+    for ch in s:
+        if 'A' <= ch <= 'Z':
+            out.append(0x2341 + ord(ch) - ord('A'))
+        elif 'a' <= ch <= 'z':
+            out.append(0x2361 + ord(ch) - ord('a'))
+        elif '0' <= ch <= '9':
+            out.append(0x2330 + ord(ch) - ord('0'))
+        else:
+            out.append({' ': 0x2121, '.': 0x2125, ':': 0x2127, '_': 0x2132,
+                        '-': 0x215d, '>': 0x2164}[ch])
+    return out
 
 
 def s_lines(_seed):
