@@ -6,9 +6,6 @@
 *************************************************************************/
 
 #define	 MAIN
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <signal.h>
 #include "pdss.h"
 #include "io.h"
 #include "instr.h"
@@ -23,9 +20,6 @@ static int write_result(void);
 /* PORT: forward declarations */
 
 
-#ifndef sigmask
-#define sigmask(m) (1 << ((m)-1))
-#endif
 
 static CHAR execute_goal[128];	/** top level goal name **/
 
@@ -341,14 +335,14 @@ int print_instr_counter(void)
 int timeit(int (* routine)())
 {
     long uspent, sspent;
-    struct rusage usage_before, usage_after;
-    getrusage(RUSAGE_SELF, &usage_before);
+    PDSS_CPUTIME usage_before, usage_after;
+    pdss_cputime(&usage_before);
     routine();
-    getrusage(RUSAGE_SELF, &usage_after);
-    uspent = (usage_after.ru_utime.tv_sec-usage_before.ru_utime.tv_sec)*1000
-	   + (usage_after.ru_utime.tv_usec-usage_before.ru_utime.tv_usec)/1000;
-    sspent = (usage_after.ru_stime.tv_sec-usage_before.ru_stime.tv_sec)*1000
-	   + (usage_after.ru_stime.tv_usec-usage_before.ru_stime.tv_usec)/1000;
+    pdss_cputime(&usage_after);
+    uspent = (usage_after.user_sec-usage_before.user_sec)*1000
+	   + (usage_after.user_usec-usage_before.user_usec)/1000;
+    sspent = (usage_after.sys_sec-usage_before.sys_sec)*1000
+	   + (usage_after.sys_usec-usage_before.sys_usec)/1000;
     PrintCons2F("\nSystem: %8d msec\nUser: %10d msec\n", (int)sspent, (int)uspent);
     return 0;
 }

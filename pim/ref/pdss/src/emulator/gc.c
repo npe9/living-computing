@@ -5,8 +5,6 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <sys/time.h>
-#include <sys/resource.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
@@ -33,8 +31,8 @@ int gc(void)
     PARENT_RECORD *ma;
     CELL *rma;
     long uspent;
-    struct rusage usage_before, usage_after;
-    getrusage(RUSAGE_SELF, &usage_before);
+    PDSS_CPUTIME usage_before, usage_after;
+    pdss_cputime(&usage_before);
     gc_counter++;
     gc_code = CodeGcFlag_ON();
     ResetGcFlag();
@@ -79,9 +77,9 @@ CheckHeap();
 #endif
     gc_panic_flag = 0;
   done:
-    getrusage(RUSAGE_SELF, &usage_after);
-    uspent = (usage_after.ru_utime.tv_sec-usage_before.ru_utime.tv_sec)*1000
-	   + (usage_after.ru_utime.tv_usec-usage_before.ru_utime.tv_usec)/1000;
+    pdss_cputime(&usage_after);
+    uspent = (usage_after.user_sec-usage_before.user_sec)*1000
+	   + (usage_after.user_usec-usage_before.user_usec)/1000;
     PrintCons1F("GC Time: %d msec\n", (int)uspent);
     return 0;
 }

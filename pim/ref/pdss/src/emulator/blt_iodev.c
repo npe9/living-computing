@@ -5,8 +5,6 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <sys/types.h>
-#include <sys/dir.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
@@ -773,16 +771,16 @@ int blt_b_test_directory(CELL *name, CELL *status)
 	}
     }else{
 	CHAR buf1[256], buf2[512];
-	DIR *dirp;
+	PDSS_DIR *dirp;
 	convert_to_c_string(name, buf1, 250);
 	if(Mrbof(name) == MRBOFF){
 	    FreeString(Objectof(name), StringLengthof(name));
 	    mrbgc_statistics_collect_in_builtin(StringLengthof(name)+1);
 	}
-	if(!(*buf1) || (dirp = opendir(expand_path_name(buf1, buf2))) == NULL){
+	if(!(*buf1) || (dirp = pdss_opendir((char *)expand_path_name(buf1, buf2))) == NULL){
 	    SetAll(status, INT, IOSUB_CANNOT_OPEN_FILE, MRBOFF);
 	}else{
-	    closedir(dirp);
+	    pdss_closedir(dirp);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	}
     }
@@ -825,12 +823,12 @@ int blt_b_directory_pathname(CELL *name, CELL *exname, CELL *status)
 	    mrbgc_statistics_collect_in_builtin(StringLengthof(name)+1);
 	}
 	getwd(here);
-	if(!(*dir) || chdir(expand_path_name(dir, path))){
+	if(!(*dir) || pdss_chdir((char *)expand_path_name(dir, path))){
 	    SetAll(exname, STRING, convert_to_kl1_string(""), MRBOFF);
 	    SetAll(status, INT, IOSUB_CANNOT_OPEN_FILE, MRBOFF);
 	}else{
 	    getwd(path);
-	    chdir(here);
+	    pdss_chdir((char *)here);
 	    pdss_world(path);  /* PORT: test hook, see sysdep.h */
 	    SetAll(exname, STRING, convert_to_kl1_string(path), MRBOFF);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
@@ -874,8 +872,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
     }else{
 	register CELL *p, *q;
 	CHAR *dn, bufn[256], bufw[256], ex[512];
-	DIR *dirp;
-	struct direct *dp;
+	PDSS_DIR *dirp;
 	int st;
 	convert_to_c_string(name, bufn, 250);
 	convert_to_c_string(wild, bufw, 250);
@@ -887,7 +884,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 	    FreeString(Objectof(wild), StringLengthof(wild));
 	    mrbgc_statistics_collect_in_builtin(StringLengthof(wild)+1);
 	}
-	if(!(*bufn) || (dirp = opendir(bufn)) == NULL){
+	if(!(*bufn) || (dirp = pdss_opendir((char *)bufn)) == NULL){
 	    st = IOSUB_CANNOT_OPEN_FILE;
 	}else{
 	    if(*bufw){
@@ -898,8 +895,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 		    if(!strcmp(bufn, "/")) *bufn = 0;
 		    p = list;
 		    st = IOSUB_SUCCESS;
-		    while((dp = readdir(dirp))){
-			dn = (CHAR *)dp->d_name;
+		    while((dn = (CHAR *)pdss_readdir(dirp))){
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
 			    snprintf((char *)ex, sizeof ex, "%s/%s", (char *)bufn, (char *)dn);
 			    AllocCons(q);
@@ -926,7 +922,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 		    st = IOSUB_SUCCESS;
 		}
 	    }
-	    closedir(dirp);
+	    pdss_closedir(dirp);
 	}
 	if(st == IOSUB_SUCCESS){
 	    *p = const_nil;
@@ -971,8 +967,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 	}
     }else{
 	CHAR *dn, bufn[256], bufw[256], ex[512];
-	DIR *dirp, *dirp2;
-	struct direct *dp;
+	PDSS_DIR *dirp, *dirp2;
 	int st;
 	convert_to_c_string(name, bufn, 250);
 	convert_to_c_string(wild, bufw, 250);
@@ -984,7 +979,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 	    FreeString(Objectof(wild), StringLengthof(wild));
 	    mrbgc_statistics_collect_in_builtin(StringLengthof(wild)+1);
 	}
-	if(!(*bufn) || (dirp = opendir(bufn)) == NULL){
+	if(!(*bufn) || (dirp = pdss_opendir((char *)bufn)) == NULL){
 	    st = IOSUB_CANNOT_OPEN_FILE;
 	}else{
 	    if(*bufw){
@@ -993,14 +988,13 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 		    st = IOSUB_CANNOT_OPEN_FILE;
 		}else{
 		    st = IOSUB_CANNOT_OPEN_FILE;
-		    while((dp = readdir(dirp))){
-			dn = (CHAR *)dp->d_name;
+		    while((dn = (CHAR *)pdss_readdir(dirp))){
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
 			    snprintf((char *)ex, sizeof ex, "%s/%s", (char *)bufn, (char *)dn);
-			    if((dirp2 = opendir(ex))){
-				closedir(dirp2);
+			    if((dirp2 = pdss_opendir((char *)ex))){
+				pdss_closedir(dirp2);
 			    }else{
-				if(!unlink(ex)) st = IOSUB_SUCCESS;
+				if(!pdss_unlink((char *)ex)) st = IOSUB_SUCCESS;
 			    }
 			}
 		    }
@@ -1008,7 +1002,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 	    }else{
 		st = IOSUB_CANNOT_OPEN_FILE;
 	    }
-	    closedir(dirp);
+	    pdss_closedir(dirp);
 	}
 	SetAll(status, INT, st, MRBOFF);
     }
@@ -1038,7 +1032,7 @@ static CHAR *wildcard_to_regular_expression(CHAR *wildcard, CHAR *regex)
 	  case '$':
 	    for(pidl = 0, wildcard--; *wildcard=='$'; pidl++, wildcard++);
 	    if(pidl == 5) {
-		sprintf(e, "%05d", getpid());
+		sprintf(e, "%05d", pdss_getpid());
 		e += 5;
 	    }else{
 		while(pidl--)

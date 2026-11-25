@@ -5,9 +5,7 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/resource.h>
+#include <time.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
@@ -553,10 +551,10 @@ int blt_b_get_print_image(CELL *atomic, CELL *mode, CELL *left, CELL *string, CE
 int blt_statistics(CELL *ct, CELL *hs, CELL *hu, CELL *cs, CELL *cu, CELL *sy)
 {
     long uspent;
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    uspent = usage.ru_utime.tv_sec*1000
-	   + usage.ru_utime.tv_usec/1000;
+    PDSS_CPUTIME usage;
+    pdss_cputime(&usage);
+    uspent = usage.user_sec*1000
+	   + usage.user_usec/1000;
     SetAll(ct, INT, uspent,	      MRBOFF);
     SetAll(hs, INT, HeapSize(),	      MRBOFF);
     SetAll(hu, INT, HeapUsed(),	      MRBOFF);
@@ -574,10 +572,10 @@ int blt_statistics(CELL *ct, CELL *hs, CELL *hu, CELL *cs, CELL *cu, CELL *sy)
 int blt_get_cpu_time(CELL *cpu)
 {
     long uspent;
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    uspent = usage.ru_utime.tv_sec*1000
-	   + usage.ru_utime.tv_usec/1000;
+    PDSS_CPUTIME usage;
+    pdss_cputime(&usage);
+    uspent = usage.user_sec*1000
+	   + usage.user_usec/1000;
     SetAll(cpu, INT, uspent, MRBOFF);
     return 0;
 }
@@ -845,7 +843,7 @@ int blt_b_unix(CELL *command, CELL *flag, CELL *status)
     if(convert_to_c_string(command, buffer, 960) == NULL){
 	goto exception;
     }
-    id = getpid();
+    id = pdss_getpid();
     p = buffer;
     while(*p){
 	if(p[0]=='$' && p[1]=='$' && p[2]=='$' && p[3]=='$' && p[4]=='$'){

@@ -3,19 +3,44 @@
 *  Not part of the 1992 sources.  ICOT Free Software terms (COPYRIGHT).	 *
 *************************************************************************/
 
-/* Everything PDSS needs beyond ISO C comes from POSIX, through this
-   header: <unistd.h> (getcwd, chdir, unlink, getpid, alarm, pause), the
-   signals PDSS catches (SIGINT, SIGQUIT, SIGTERM, SIGTSTP, SIGALRM), and
-   the BSD regular-expression calls the 1992 code used, supplied by
-   sysdep.c over POSIX <regex.h>.  A port to a system without POSIX
+/* Everything PDSS needs beyond ISO C comes from POSIX, and only through
+   this header and sysdep.c: getcwd, chdir, unlink, getpid, alarm, pause,
+   getrusage, getpwnam, the directory calls, sigprocmask and kill, the
+   signals beyond ISO C's (SIGQUIT, SIGTSTP, SIGALRM), and the BSD
+   regular-expression calls the 1992 code used, supplied over POSIX
+   <regex.h>.  No other source file includes a POSIX header (checked by
+   ../../tools/posixcheck.py).  A port to a system without POSIX
    (Windows, for one) replaces this header and sysdep.c. */
 
 #ifndef PDSS_SYSDEP_H
 #define PDSS_SYSDEP_H
 
 #include <stddef.h>
-#include <unistd.h>
-#include <signal.h>
+#include <signal.h>		/* ISO C; sigset_t below is POSIX */
+
+/* The signals PDSS uses beyond ISO C's SIGINT, SIGTERM and SIGFPE. */
+#define PDSS_SIGQUIT	SIGQUIT
+#define PDSS_SIGTSTP	SIGTSTP
+#define PDSS_SIGALRM	SIGALRM
+
+/* Call-for-call wrappers of the POSIX functions PDSS calls. */
+int  pdss_getpid(void);
+void pdss_pause(void);				/* pause(2) */
+unsigned pdss_alarm(unsigned seconds);		/* alarm(2) */
+int  pdss_chdir(const char *dir);		/* 0 on success */
+int  pdss_unlink(const char *file);		/* 0 on success */
+const char *pdss_home_of(const char *user);	/* getpwnam(3)->pw_dir, or NULL */
+
+/* CPU time used so far (getrusage(2), RUSAGE_SELF), as it reports it. */
+typedef struct { long user_sec, user_usec, sys_sec, sys_usec; } PDSS_CPUTIME;
+void pdss_cputime(PDSS_CPUTIME *t);
+
+/* Directory reading (opendir(3) and friends); readdir gives the next
+   entry's name, NULL at the end. */
+typedef struct pdss_dir PDSS_DIR;
+PDSS_DIR   *pdss_opendir(const char *path);
+const char *pdss_readdir(PDSS_DIR *d);
+void        pdss_closedir(PDSS_DIR *d);
 
 /* BSD sigblock/sigsetmask, over POSIX sigprocmask: block one signal
    (saving the previous mask in *OLD unless OLD is NULL), put a saved

@@ -1,2 +1,6 @@
 build/
 build-*/
+# a plain "make" in src/emulator (O=.) puts its outputs there
+src/emulator/*.o
+src/emulator/pdss
+src/emulator/pdssasm

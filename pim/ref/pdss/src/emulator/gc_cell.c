@@ -255,7 +255,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		SetOldNewPointer1(work, new);
 		GcAllocNWords(next, leng+1);
 		SetAll(new, NUE, next, MRBOFF);
-		SetAll(next, DESC, (len2<<24)|leng, MRBOFF);
+		SetAll(next, DESC, ((uint32_t)len2<<24)|(uint32_t)leng, MRBOFF);
 		leng -= len2;
 		while(len2--){
 		    work++; next++;

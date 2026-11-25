@@ -7,6 +7,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <pwd.h>
+#include <sys/types.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 #include "sysdep.h"
 
 static regex_t re_cur;
@@ -81,4 +87,51 @@ void pdss_stop_self(void)
     kill(getpid(), SIGTSTP);
     pdss_sig_block(SIGTSTP, NULL);
     signal(SIGTSTP, SIG_IGN);
+}
+
+int pdss_getpid(void) { return (int)getpid(); }
+void pdss_pause(void) { pause(); }
+unsigned pdss_alarm(unsigned seconds) { return alarm(seconds); }
+int pdss_chdir(const char *dir) { return chdir(dir); }
+int pdss_unlink(const char *file) { return unlink(file); }
+
+const char *pdss_home_of(const char *user)
+{
+    struct passwd *pw = getpwnam(user);
+    return pw ? pw->pw_dir : NULL;
+}
+
+void pdss_cputime(PDSS_CPUTIME *t)
+{
+    struct rusage u;
+    getrusage(RUSAGE_SELF, &u);
+    t->user_sec = (long)u.ru_utime.tv_sec;
+    t->user_usec = (long)u.ru_utime.tv_usec;
+    t->sys_sec = (long)u.ru_stime.tv_sec;
+    t->sys_usec = (long)u.ru_stime.tv_usec;
+}
+
+struct pdss_dir { DIR *d; };
+
+PDSS_DIR *pdss_opendir(const char *path)
+{
+    PDSS_DIR *r;
+    DIR *d = opendir(path);
+    if(!d) return NULL;
+    r = malloc(sizeof *r);
+    if(!r){ closedir(d); return NULL; }
+    r->d = d;
+    return r;
+}
+
+const char *pdss_readdir(PDSS_DIR *d)
+{
+    struct dirent *e = readdir(d->d);
+    return e ? e->d_name : NULL;
+}
+
+void pdss_closedir(PDSS_DIR *d)
+{
+    closedir(d->d);
+    free(d);
 }

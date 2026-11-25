@@ -58,8 +58,8 @@ byte for byte on every target. `build.sh`, `port.diff` and
 
 ## What the modernisation changes
 
-The 1992 source assumed a 32-bit big-endian-or-little-endian machine
-with K&R C: a pointer fits in an `int` (a cell's value field holds
+The 1992 source assumed a 32-bit machine (of either byte order) and K&R
+C: a pointer fits in an `int` (a cell's value field holds
 pointers; records hold pointers; native predicates are function
 pointers stored in code), `long` is 32 bits, plain `char` is signed or
 unsigned at the compiler's whim, and BSD system calls. The changes, in
@@ -91,21 +91,33 @@ commit order (`git log -- src/emulator`):
   assembler's and the reader's temporary areas align blocks for the
   structs they hold (they were 4-byte aligned, enough when a pointer
   was 4 bytes).
-- **No implementation-defined integer behaviour.** Values that must
-  wrap as 32-bit two's complement are computed unsigned and converted
-  with `pdss_s32` (by arithmetic, not a cast); priorities, string
-  descriptors and string elements no longer shift into the sign bit
-  of an `int`; integer literals at `INT32_MIN` no longer overflow.
+- **No undefined or implementation-defined integer behaviour.** Values
+  that must wrap as 32-bit two's complement are computed unsigned and
+  converted with `pdss_s32` (by arithmetic, not a cast); priorities,
+  string descriptors, string elements and the packing of characters
+  into string words (a byte of 0x80 or more shifted left 24) no longer
+  shift into the sign bit of an `int`; integer literals at `INT32_MIN`
+  no longer overflow. Byte order: strings are packed into words, and
+  code words and save files read and written, by shifts and `memcpy`;
+  no source views a cell's storage as bytes, and no `#if` selects on a
+  machine or a byte order (checked by grep).
 - **Save files** (`saveload.c`): big-endian bytes, as written by the
   1992 SPARC build, read and written by arithmetic on `uint32_t`; the
   magic numbers `0xA5C3`-`0xA5C9` and the format are unchanged. The
   1992 `.sav` files load (see "Targets").
 - **Operating system** (`sysdep.h`, `sysdep.c`): everything beyond ISO
-  C comes from POSIX through these two files: BSD `re_comp`/`re_exec`
-  over `<regex.h>`; `getwd` over `getcwd`; BSD `sigblock`/`sigsetmask`
-  over `sigprocmask`; job-control stop; the `PDSS_WORLD` test hook.
-  Directory listing (`blt_iodev.c`, `<dirent.h>`), `getrusage`,
-  `getpwnam`, `alarm` and `signal` are used directly and are POSIX.
+  C comes from POSIX through these two files only: BSD
+  `re_comp`/`re_exec` over `<regex.h>`; `getwd` over `getcwd`; BSD
+  `sigblock`/`sigsetmask` over `sigprocmask`; job-control stop;
+  call-for-call wrappers of `getpid`, `pause`, `alarm`, `chdir`,
+  `unlink`, `getpwnam`, `getrusage` and the directory calls; the names
+  of the signals beyond ISO C's (`PDSS_SIGQUIT`, `PDSS_SIGTSTP`,
+  `PDSS_SIGALRM`); the `PDSS_WORLD` test hook. `sysdep.h` includes no
+  POSIX header but `<signal.h>`'s `sigset_t`, so a POSIX call anywhere
+  else does not compile; `tools/posixcheck.py` (run by `test.sh`)
+  checks that no other built source includes a non-ISO header or names
+  a POSIX function. A port to a system without POSIX replaces
+  `sysdep.h` and `sysdep.c`.
 - **Bugs of the 1992 source fixed on the way**: `atom.c` modified a
   variable twice without a sequence point; `read_line`/`read_buffer`
   returned an uninitialised character after a GC restart or for a
@@ -116,16 +128,18 @@ commit order (`git log -- src/emulator`):
   `blt_code.c` passed an atom where a module entry was expected.
 
 Not built and not modernised: `pdssinv.c` (an inverse assembler, not
-in the Makefile), `table.c` (a template included by other files),
-`pdssmerge.c`; `native.c`'s `a.out` native-code loader is compiled out
+in the Makefile) and `pdssmerge.c`. (`table.c` is a template that
+`assemble.c`, `atom.c` and `instr.c` include, and is modernised with
+them.) `native.c`'s `a.out` native-code loader is compiled out
 and reports a link error, as the reference port did.
 
 ### Record sizes
 
 The garbage collector's schedule depends on how many bytes the goal,
 suspension, shoen and merger records take, and the KL1 compiler's
-register allocation depends on the collector's schedule (it reuses
-variables freed by MRB). So the record layout is visible in output.
+output depends on the collector's schedule (shown below by moving the
+schedule with the heap size). So the record layout is visible in
+output.
 The default layout is 1992's: a reference is 4 bytes (goal record 104
 bytes, suspension 24, shoen 76, merger 32). The reference port, built
 LP64, had 8-byte pointer fields in records. `-DPDSS_LP64_RECORDS`
@@ -174,18 +188,22 @@ Silicon), 2026-11-25:
 | `asan` | `-fsanitize=address,undefined`, no recovery | matches `golden32/`, no report |
 | each `-lp64rec` | the above with `-DPDSS_LP64_RECORDS` | match `golden/` |
 | 1992 save files | `build-lp64rec` with the shipped `.sav` (big-endian, written on a SPARC) in place of the reassembled ones | load and run; transcripts match `golden/` with GC reports removed, except `c_compiler_outp` (GC-schedule dependent: the shipped files order atoms differently) |
-| 32-bit | `arm-none-eabi-gcc` 14.3 (newlib, where `int32_t` is `long`), compile only, `-Werror=format -Werror=incompatible-pointer-types` | every ISO C source compiles; `blt_iodev.c`, `pdss.c` and `sysdep.c` need POSIX headers newlib lacks |
+| 32-bit | `arm-none-eabi-gcc` 14.3 (newlib, where `int32_t` is `long`), **compile only, not run**, `-Werror=format -Werror=incompatible-pointer-types` | every source but `sysdep.c` compiles; `sysdep.c` needs POSIX headers newlib lacks |
 
-The 32-bit compile found real faults the 64-bit builds could not: 29
+The 32-bit compile found real faults the 64-bit builds could not: 31
 places passing an `int *` where an `int32_t *` is wanted (the float
-built-ins, the assembler's and the reader's float scanners), 21
+built-ins, the assembler's and the reader's float scanners, the
+window and file creation built-ins), 21
 `int32_t` values printed with `%d` or `%x`, and a static prototype
 that disagreed with its definition (`get4c` in `saveload.c`).
 
 Save files are byte-identical across all default-layout targets (each
 transcript carries the `.asm` and `.sav` sums, and `libsav` the sums of
 all 52 reassembled libraries), so a `.sav` written by one target is
-the file any other writes. 16 of the 52 reassembled libraries are
+the file any other writes, and swapping them between targets is
+implied. They do not depend on the record layout either:
+`golden/libsav.out` (reference port) and `golden32/libsav.out` are
+identical. 16 of the 52 reassembled libraries are
 byte-identical to the shipped SPARC files; the other 36 differ only in
 the order of their atom tables, and the shipped ones load (above).
 
@@ -223,7 +241,7 @@ Leads (not tested here; exact commands):
   direct POSIX uses listed above; the rest is ISO C.
 
 Remaining compiler warnings with `-Wall -Wextra` (Apple clang 21,
-arm64): 674 `-Wpointer-sign` (`CHAR` is `unsigned char` and is passed
+arm64): 661 `-Wpointer-sign` (`CHAR` is `unsigned char` and is passed
 to the `str*` functions; same representation), 8 `-Wsign-compare`
 (unsigned loop bounds against `int` counts), and 18 unused variables,
 parameters, a label and two functions. GCC 15 adds 13
@@ -291,8 +309,8 @@ and reverted from the backup (2026-11-25). Observed:
   descriptor by 23 instead of 24): `pdss: FAIL (KL1 compile)`.
 - **Dropped GC root** (`gc.c` no longer calls `gc_io_table`): queens
   and its 12,000-cell-heap run still pass; conformance fails 46 of 186
-  jobs, exactly those that collect, on the live-cell counts of the GC
-  report; with the GC reports removed (`gcblind.py`) all 186 match.
+  jobs, the same set as the 46 whose `golden32/` transcript has a GC
+  report, on the live-cell counts of the GC report; with the GC reports removed (`gcblind.py`) all 186 match.
   Only the byte-exact transcript catches it, which is why the GC
   reports stay in.
 

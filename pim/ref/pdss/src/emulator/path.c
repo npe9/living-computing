@@ -5,14 +5,13 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <pwd.h>
 #include "pdss.h"
 #include "io.h"
 
 
 CHAR *expand_path_name(CHAR *name, CHAR *buffer)
 {
-    register struct passwd  *pw;
+    register const char  *home;
     register CHAR  *p;
 
     if(*name == '~'){
@@ -28,18 +27,18 @@ CHAR *expand_path_name(CHAR *name, CHAR *buffer)
 	    while(*p && *p != '/') p++;
 	    if(*p){
 		*p = 0;
-		if((pw = getpwnam(name)) == NULL){
+		if((home = pdss_home_of((char *)name)) == NULL){
 		    Error1F("Unknown user \"%s\".", name);
 		    return(NULL);
 		}
 		*p++ = '/';
-		sprintf(buffer, "%s/%s", pw->pw_dir, p);
+		sprintf(buffer, "%s/%s", home, p);
 	    }else{
-		if((pw = getpwnam(name)) == NULL){
+		if((home = pdss_home_of((char *)name)) == NULL){
 		    Error1F("Unknown user \"%s\".", name);
 		    return(NULL);
 		}
-		sprintf(buffer, "%s", pw->pw_dir);
+		sprintf(buffer, "%s", home);
 	    }
 	}
     }else{
@@ -48,7 +47,7 @@ CHAR *expand_path_name(CHAR *name, CHAR *buffer)
     p = buffer;
     while(*p){
 	if(p[0]=='$' && p[1]=='$' && p[2]=='$' && p[3]=='$' && p[4]=='$'){
-	    int x = getpid();
+	    int x = pdss_getpid();
 	    *p++ = '0'+(x/10000)%10;
 	    *p++ = '0'+(x/1000)%10;
 	    *p++ = '0'+(x/100)%10;

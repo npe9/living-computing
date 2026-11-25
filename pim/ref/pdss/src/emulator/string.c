@@ -189,7 +189,7 @@ int get_substring(CELL *string, int position, int length, CELL *substr)
 	p = Objectof(string)+1+(position/elms);
 	AllocString(q, leng2);
 	SetAll(substr, STRING, q, MRBOFF);
-	SetAll(q, DESC, (type2<<24)|leng2, MRBOFF); q++;
+	SetAll(q, DESC, ((uint32_t)type2<<24)|(uint32_t)leng2, MRBOFF); q++;
     }
     if(length > 0){
 	int w1 = position%elms;
@@ -335,7 +335,7 @@ int append_string(CELL *string1, CELL *string2, CELL *newstr)
 	    p = Objectof(string1);
 	    AllocString(q, leng);
 	    SetAll(newstr, STRING, q, MRBOFF);
-	    SetAll(q, DESC, (type<<24)|leng, MRBOFF);
+	    SetAll(q, DESC, ((uint32_t)type<<24)|(uint32_t)leng, MRBOFF);
 	    while(leng1--){ q++; p++; *q = *p; }
 	}
 	if(length2 > 0){
@@ -519,7 +519,7 @@ int atom_to_string(unsigned int atom, CELL *string)
 	x = (*str++);
 	x |= (*str++)<<8;
 	x |= (*str++)<<16;
-	x |= (*str++)<<24;
+	x |= pdss_s32((uint32_t)(*str++)<<24);
 	SetAll(p, INT, x, MRBOFF);
     }
     if(leng >= 0){
@@ -530,7 +530,7 @@ int atom_to_string(unsigned int atom, CELL *string)
 	    if(rest <= 1){
 		x |= (*str++)<<16;
 		if(rest <= 0){
-		    x |= (*str++)<<24;
+		    x |= pdss_s32((uint32_t)(*str++)<<24);
 		}
 	    }
 	}
@@ -744,7 +744,7 @@ int get_print_image(CELL *atomic, int mode, int left, CELL *string, int *sleng, 
 	x = (*str++);
 	x |= (*str++)<<8;
 	x |= (*str++)<<16;
-	x |= (*str++)<<24;
+	x |= pdss_s32((uint32_t)(*str++)<<24);
 	SetAll(p, INT, x, MRBOFF);
     }
     if(leng >= 0){
@@ -755,7 +755,7 @@ int get_print_image(CELL *atomic, int mode, int left, CELL *string, int *sleng, 
 	    if(rest <= 1){
 		x |= (*str++)<<16;
 		if(rest <= 0){
-		    x |= (*str++)<<24;
+		    x |= pdss_s32((uint32_t)(*str++)<<24);
 		}
 	    }
 	}
@@ -787,7 +787,7 @@ CELL *convert_to_kl1_string(register CHAR *string)
 	    if(len-- > 0){
 		n |= ((*string++)&0xFF)<<16;
 		if(len-- > 0){
-		    n |= ((*string++)&0xFF)<<24;
+		    n |= pdss_s32((uint32_t)((*string++)&0xFF)<<24);
 		}
 	    }
 	}
@@ -814,7 +814,7 @@ CELL *convert_to_kl1_string2(register CHAR *string, register int len)
 	    if(len-- > 0){
 		n |= ((*string++)&0xFF)<<16;
 		if(len-- > 0){
-		    n |= ((*string++)&0xFF)<<24;
+		    n |= pdss_s32((uint32_t)((*string++)&0xFF)<<24);
 		}
 	    }
 	}

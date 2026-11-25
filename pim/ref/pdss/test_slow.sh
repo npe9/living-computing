@@ -70,11 +70,11 @@ if command -v "$XCC" >/dev/null 2>&1; then
       fails="$fails $b"
     fi
   done
-  # POSIX-only sources: the bare-metal library has no dirent or sigprocmask.
-  if [ "$fails" = " blt_iodev sysdep" ]; then
-    echo "slow(32-bit): PASS ($XCC: $n sources compile with -Werror=format; POSIX-only:$fails)"
+  # Only sysdep.c, the POSIX layer, needs what the bare-metal library lacks.
+  if [ "$fails" = " sysdep" ]; then
+    echo "slow(32-bit): PASS ($XCC: $n sources compile with -Werror=format; not sysdep.c, the POSIX layer)"
   else
-    echo "slow(32-bit): FAIL ($XCC: failed:$fails; expected: blt_iodev sysdep)"; bad=1
+    echo "slow(32-bit): FAIL ($XCC: failed:$fails; expected: sysdep)"; bad=1
   fi
 else
   echo "slow(32-bit): SKIP (no $XCC)"

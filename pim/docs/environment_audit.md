@@ -168,7 +168,7 @@ What PDSS, VPIM and `psdpim` are, stated once: **PDSS** V2.52.20 is a
 KL1-B interpreter in C by the PIMOS group, a sibling dialect (save magic
 `0xA5C3`-`0xA5C9`, other opcode numbers), held in tree as
 `ref/pdss/src/` and made portable C that behaves as the 1992 program
-did, on any word size and byte order (`pimos_boot_requirements.md`
+did (tested on little-endian LP64 hosts; `pimos_boot_requirements.md`
 §0.1, "PDSS runs"; `ref/pdss/README.md`). **VPIM** is the
 runtime of every PIM except PIM/m, in PSL, read-only, with no
 translator (`nonlocal/MANIFEST.md` §1a). **`psdpim`** is the Pseudo
@@ -458,7 +458,7 @@ Other application holdings:
 | `asm/psdpim.py`, `mekbn.py` | `psdpim.tar.Z`, the decode table, the microprogram | `pseudo_pimm_firmware.md`, `pseudo_pimm_microcode.md` |
 | `asm/ptfdump.py` | compiled ESP `.ptf` packages | `binary_reverse_engineering.md` §4 |
 | `asm/gen_pimm_bsv.py`, `sav2hex.py` | generate tables and memory images for Bluespec | `bsv/README.md` |
-| `ref/pdss/` | PDSS V2.52.20 in tree (`src/`), portable C: any word size and byte order; tested arm64, x86_64, gcc, clang, ASan/UBSan, 32-bit compile | `ref/pdss/README.md` |
+| `ref/pdss/` | PDSS V2.52.20 in tree (`src/`), portable C, POSIX in one file; tested arm64, x86_64 (little-endian, LP64), gcc, clang, ASan/UBSan; 32-bit compile only; big-endian untested | `ref/pdss/README.md` |
 
 ### G. The PSI (console and front-end processor): hardware, KL0, ESP, SIMPOS, CSP, FEP
 

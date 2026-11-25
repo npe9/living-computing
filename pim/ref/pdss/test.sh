@@ -1,6 +1,8 @@
 #!/bin/sh
 # PDSS V2.52.20, built from the in-tree source (src/, see README.md), end
 # to end on this host:
+#   0. tools/posixcheck.py: no source but sysdep.[ch] includes a POSIX
+#      header or calls a POSIX function.
 #   1. queens.kl1 through PDSS's own KL1 compiler (itself KL1, running on
 #      the emulator), assembler and loader; N-queens solution counts and
 #      the first 4-queens solutions; again with a 12,000-cell heap, which
@@ -26,12 +28,14 @@
 #   - wrong tag shift (cell.h StringTypeof shifts the descriptor by 23,
 #     not 24): "FAIL (KL1 compile)".
 #   - dropped GC root (gc.c no longer calls gc_io_table): queens and its
-#     small-heap run still pass; conformance FAILs 46 of 186 jobs, every
-#     job that collects, on the GC report's live-cell counts; with the GC
+#     small-heap run still pass; conformance FAILs 46 of 186 jobs, the
+#     same set as the 46 golden32/ transcripts with a GC report, on the
+#     GC report's live-cell counts; with the GC
 #     reports removed (gcblind.py) all 186 still match -- only the
 #     byte-exact transcript catches it.
 HERE=$(cd "$(dirname "$0")" && pwd)
 T=timeout; command -v timeout >/dev/null 2>&1 || T=
+python3 -I "$HERE/tools/posixcheck.py" >/dev/null || { python3 -I "$HERE/tools/posixcheck.py"; echo "pdss: FAIL (POSIX use outside sysdep.[ch])"; exit 1; }
 B=$("$HERE/modern.sh" native); rc=$?
 [ $rc = 77 ] && { echo "pdss: SKIP ($B)"; exit 0; }
 [ $rc = 0 ] || { echo "$B" | tail -20; echo "pdss: FAIL (build)"; exit 1; }

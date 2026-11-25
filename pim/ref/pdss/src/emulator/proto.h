@@ -423,12 +423,12 @@ extern int is_there_goal_waiting_for_keyboard_input(void);
 extern int is_there_goal_waiting_for_keyboard_interrupt(void);
 
 /* iosub.c */
-extern int create_window(CELL *name, CELL *intr, int *ioid);
+extern int create_window(CELL *name, CELL *intr, int32_t *ioid);
 extern int remove_window(int ioid);
 extern int remove_all_windows(void);
 extern int show_window(int ioid);
 extern int hide_window(int ioid);
-extern int create_file(int *ioid);
+extern int create_file(int32_t *ioid);
 extern int open_file(int ioid, CELL *name, int mode);
 extern int close_file(int ioid);
 extern int remove_file(int ioid);

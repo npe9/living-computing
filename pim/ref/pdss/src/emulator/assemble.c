@@ -6,7 +6,6 @@
 *************************************************************************/
 
 #include <setjmp.h>
-#include <strings.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
@@ -668,7 +667,7 @@ int assemble(FILE *file, MODULE_ENTRY **module)
 		  case KL1B_DEFINE_DESC:
 		    it = parse_short(&assemble_cursor, 0xFF, "desc1");
 		    it2 = parse_short(&assemble_cursor, 0xFFFFFF, "desc2");
-		    PutCell(DESC, (it<<24)|it2, MRBOFF, pc);
+		    PutCell(DESC, pdss_s32(((uint32_t)it<<24)|(uint32_t)it2), MRBOFF, pc);
 		    pc += KLB_CELL_LENGTH;
 		    break;
 		  case KL1B_DEFINE_LIST:

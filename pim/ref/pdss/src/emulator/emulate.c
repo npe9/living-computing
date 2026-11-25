@@ -3539,7 +3539,7 @@ static int idle(void)
   loop:
     do_interrupt();
     if(!dequeue()){
-	while(!InterruptOccurred()) pause();
+	while(!InterruptOccurred()) pdss_pause();
 	goto loop;
     }
 #if TWO_WAY_READY_GOAL_POOL
@@ -3560,7 +3560,7 @@ static int idle2(void)
 	if(is_there_goal_waiting_for_timer() ||
 	   is_there_goal_waiting_for_keyboard_input() ||
 	   is_there_goal_waiting_for_keyboard_interrupt()){
-	    while(!InterruptOccurred()) pause();
+	    while(!InterruptOccurred()) pdss_pause();
 	    goto loop;
 	}
 	return(NO);

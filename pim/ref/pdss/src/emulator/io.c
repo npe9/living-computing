@@ -5,7 +5,6 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include  <signal.h>
 #include  "pdss.h"
 #include  "memory.h"
 #include  "io.h"
@@ -25,9 +24,6 @@ static void sig_stop_pdss(int s) { (void)s; stop_pdss(); }
 /* PORT: forward declarations */
 
 
-#ifndef sigmask
-#define sigmask(m) (1 << ((m)-1))
-#endif
 
 IO_BACKET  io_table[MAX_OF_WINDOW+MAX_OF_FILE];
 IO_BACKET  *file_pool;
@@ -129,13 +125,13 @@ int initialize_io(void)
 
     if(use_windows){
 	signal(SIGINT,	sig_keyboard_interrupt);
-	signal(SIGQUIT, sig_abort_pdss);
+	signal(PDSS_SIGQUIT, sig_abort_pdss);
 	signal(SIGTERM, sig_abort_pdss);
     }else{
 	signal(SIGINT,	sig_keyboard_interrupt_without_emacs);
-	signal(SIGQUIT, sig_abort_pdss);
+	signal(PDSS_SIGQUIT, sig_abort_pdss);
 	signal(SIGTERM, sig_abort_pdss);
-	signal(SIGTSTP, sig_stop_pdss);
+	signal(PDSS_SIGTSTP, sig_stop_pdss);
     }
     return 0;
 }
@@ -148,9 +144,9 @@ int initialize_io(void)
 int io_ctrl_when_exit(void)
 {
     signal(SIGINT,  SIG_IGN);
-    signal(SIGQUIT, SIG_IGN);
+    signal(PDSS_SIGQUIT, SIG_IGN);
     signal(SIGTERM, SIG_IGN);
-    signal(SIGTSTP, SIG_IGN);
+    signal(PDSS_SIGTSTP, SIG_IGN);
     return 0;
 }
 
@@ -161,7 +157,7 @@ int io_ctrl_when_stop(void)
 
 int io_ctrl_when_resume(void)
 {
-    signal(SIGTSTP, sig_stop_pdss);
+    signal(PDSS_SIGTSTP, sig_stop_pdss);
     return 0;
 }
 
@@ -268,7 +264,7 @@ int request_console(void)
     if(use_windows){
 	fflush(stdout);
 	io_table[0].kb_req++;
-	while(io_table[0].kb_req > 0) pause();
+	while(io_table[0].kb_req > 0) pdss_pause();
     }
     return 0;
 }

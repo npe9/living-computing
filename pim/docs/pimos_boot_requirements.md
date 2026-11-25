@@ -557,12 +557,14 @@ transcripts byte for byte, GC reports included.
 The 2026-11-20 port kept pointers in `int` and ran only x86_64 below
 2 GB. The source now keeps 32-bit references (arena offsets and a
 table for outside addresses) where it kept pointers, so cells stay 8
-bytes as in 1992, and it makes no word-size, byte-order, alignment or
-`char`-signedness assumption. It builds with clang and GCC 15, natively
-on arm64 and under Rosetta on x86_64, with ASan and UBSan silent, and
-every ISO C file compiles for 32-bit ARM; all of these give
-byte-identical transcripts and save files, and the 1992 save files,
-written big-endian on a SPARC, load. With the reference port's record
+bytes as in 1992; the code is written not to depend on word size,
+byte order, alignment or the signedness of `char`, and POSIX is
+confined to one file. Tested: clang and GCC 15, natively on arm64 and
+under Rosetta on x86_64, with plain `char` signed and unsigned, and
+under ASan and UBSan (silent); all give byte-identical transcripts and
+save files. The 1992 save files, written big-endian on a SPARC, load.
+Every source but the POSIX layer compiles for 32-bit ARM (not run).
+Big-endian hosts, 32-bit runs, Linux and Windows are untested leads. With the reference port's record
 sizes it reproduces that port's transcripts exactly. Targets, the two
 goldens, the remaining leads (Linux, big-endian, Windows) and the
 observed fault injections are in `ref/pdss/README.md`.

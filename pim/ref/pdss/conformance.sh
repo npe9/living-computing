@@ -1,25 +1,26 @@
 #!/bin/sh
 # PDSS conformance runner: compile and run every program of PDSS's own
 # test/ directory and the example programs on one PDSS build, and
-# compare the normalised transcripts with golden/.
+# compare the normalised transcripts with a golden directory
+# (PDSS_GOLDEN, default golden/; README.md "Record sizes" says which).
 #
 #   ./conformance.sh ROOT [fast|slow|all] [--record]
 #
-# ROOT is an unpacked PDSS tree with a built emulator/pdss and
-# reassembled libraries (build.sh's build/, or the modern build's
-# tree).  Each job is one Micro PIMOS session: compile(File) (PDSS's
+# ROOT is a PDSS tree with a built emulator/pdss and reassembled
+# libraries (modern.sh's build-<target>/).  Each job is one Micro PIMOS session: compile(File) (PDSS's
 # KL1 compiler, then its assembler, loader and saver), then the job's
 # goals, then halt.  PDSS_WORLD makes the "World is" directory a path
 # of the same length wherever the tree is (the string is in the heap,
-# so its length changes GC timing; port_low.c and src/ honour it), and
+# so its length changes GC timing; sysdep.c honours it), and
 # it is printed as <world>.
 # The transcript is normalised (the banner line, and the msec of stat/1
 # and of the GC report are host-dependent and removed), the emulator's
 # exit status is appended,
 # and so are the sha256 sums of the .asm the compiler wrote and the
 # .sav the saver wrote.  It is compared byte for byte with
-# golden/<job>.out.  --record writes the golden files instead (only
-# ever from the reference build; see README.md).
+# <golden>/<job>.out.  --record writes the golden files instead:
+# golden/ was recorded from the retired reference port, golden32/ from
+# build-native (README.md); neither is re-recorded to make a change pass.
 #
 # The job list is jobs.txt: "name|file|goal. goal. ..." per line; a
 # leading "slow " marks jobs run only in slow/all mode.  PDSS_RUN

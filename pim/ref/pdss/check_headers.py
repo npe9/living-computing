@@ -6,8 +6,8 @@ program should print: a title line, then one line per instruction
 group with one letter per passed check ('*' marks a failed check).
 This compares that block with the console output in a conformance
 transcript (golden/t_<name>.out, or a .got file), and prints one line
-per test that differs.  It is independent of any PDSS build: it says
-whether the reference build itself passes ICOT's tests.
+per test that differs.  It says whether a build passes ICOT's own
+tests, independently of any golden transcript.
 
     check_headers.py TESTDIR TRANSCRIPTDIR [--expect headers_expected.txt]
 

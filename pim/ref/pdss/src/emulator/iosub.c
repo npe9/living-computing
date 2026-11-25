@@ -32,7 +32,7 @@ static int conv_to_var(CHAR *name, IO_BACKET *it);
 *   Create New Window							 *
 *************************************************************************/
 
-int create_window(CELL *name, CELL *intr, int *ioid)
+int create_window(CELL *name, CELL *intr, int32_t *ioid)
     /* + window name (STRING) */
     /* - interrupt stream */
     /* - io device id */
@@ -124,7 +124,7 @@ int hide_window(int ioid)
 *   Create New File							 *
 *************************************************************************/
 
-int create_file(int *ioid)
+int create_file(int32_t *ioid)
     /* - io device id */
 {
     register IO_BACKET *it;

@@ -51,7 +51,7 @@
 
 *******************************************************************/
 
-#include <strings.h>
+#include <string.h>
 
 struct ENTRY_TYPE_NAME{
     struct ENTRY_TYPE_NAME *next;   /* link for hash bucket */

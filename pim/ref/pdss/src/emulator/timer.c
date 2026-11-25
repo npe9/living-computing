@@ -5,9 +5,7 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <sys/types.h>
-#include <sys/time.h>
-#include <signal.h>
+#include <time.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
@@ -19,9 +17,6 @@ static int set_timer(int count, CELL *var);
 /* PORT: forward declarations */
 
 
-#ifndef sigmask
-#define sigmask(m) (1 << ((m)-1))
-#endif
 
 #define COUNT(H,M,S) ((H)*3600+(M)*60+(S))
 #define HUGE	     0x7FFFFFFF
@@ -43,8 +38,8 @@ int initialize_timer(void)
     timer_next_count = HUGE;
     AllocCell(timer_table);
     SetAll(timer_table, ATOM, NIL, MRBOFF);
-    signal(SIGALRM, sig_alarm_clock_int);
-    if(option_alarm_clock_sw) alarm(1);
+    signal(PDSS_SIGALRM, sig_alarm_clock_int);
+    if(option_alarm_clock_sw) pdss_alarm(1);
     return 0;
 }
 
@@ -53,7 +48,7 @@ static int alarm_clock_int(void)
     time_t clock;
     struct tm *tm;
     int now;
-    if(option_alarm_clock_sw) alarm(1);
+    if(option_alarm_clock_sw) pdss_alarm(1);
     time(&clock);
     tm = localtime(&clock);
     now = COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec);
@@ -72,7 +67,7 @@ int timer_wakeup_goal(void)
     CELL *p, *q;
     int count;
     PDSS_SIGMASK mask;
-    pdss_sig_block(SIGALRM, &mask);
+    pdss_sig_block(PDSS_SIGALRM, &mask);
     timer_next_count = HUGE;
     p = timer_table;
     while(Typeof(p) == VECTOR){
@@ -121,7 +116,7 @@ static int set_timer(int count, CELL *var)
 {
     CELL *p;
     PDSS_SIGMASK mask;
-    pdss_sig_block(SIGALRM, &mask);
+    pdss_sig_block(PDSS_SIGALRM, &mask);
     if(count <= timer_last_count || !option_alarm_clock_sw){
 	active_unify_with_integer(var, timer_last_count);
     }else{
