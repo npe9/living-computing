@@ -9,11 +9,11 @@ publications that show no redistribution terms, and the repository is
 public. This follows `../devices/MANIFEST.md`. `sh fetch.sh` downloads
 whatever is missing and checks every file against `SHA256SUMS`;
 `sh fetch.sh --check` only checks. A fresh fetch into an empty directory
-reproduced all five checksums. Nothing downloaded was executed.
+reproduced the five DSP3210 checksums. Nothing downloaded was executed.
 
 ## Source
 
-All five files come from <https://github.com/Wrangler491/AA3000-DSP>, a
+The five DSP3210 files come from <https://github.com/Wrangler491/AA3000-DSP>, a
 hobbyist's repository for the Amiga AA3000's DSP3210 daughter board. It
 has no licence file. `fetch.sh` pins commit
 `bfaf15154222735eb156f13b0f6ea440225e459d` (2024-08-23).
@@ -28,6 +28,17 @@ Information Manual" pages 9-4/9-5, 9-20 and 9-23 for the MMIO register
 layout. Those pages carry those registers in this September 1991 edition,
 and its table of contents matches.
 
+**The codec.** `AD1849K.pdf` comes from the ALSA project's manuals
+mirror, <https://sunsite2.icm.edu.pl/Linux/alsa/manuals/ad/1063_0.pdf>.
+It is Analog Devices' own data sheet and carries their copyright, with
+no redistribution terms, so it stays out of git like the rest. The
+analog.com URLs tried for it (`.../obsolete-data-sheets/AD1849.pdf`,
+`.../data-sheets/AD1849.pdf`) failed; the Aalborg University component
+library also lists one. Why this part: Be's `audio.tbd` on the Nov 1994
+disk says the frame control word "is exactly what the AD1849 codec
+expects" (`../dsp3210.md`, "The audio path"). The data sheet's page
+numbers are printed (`-11-`); the page index of the PDF is the same.
+
 ## Held
 
 | File | What | Pages | Bytes | SHA-256 |
@@ -37,6 +48,7 @@ and its table of contents matches.
 | `DSP3210_Information_Manual-135-226.pdf` | same: ch. 5-9 | 135-226 | 21,308,846 | `c47e6be510ca60069ff7f8e566aa0d109fb14e6b0b65dfaf8cd1ac78d9332875` |
 | `DSP3210_Information_Manual-227-288.pdf` | same: ch. 10-12 (encoding tables, registers), Appendix A (boot ROM listing) | 227-288 | 12,146,664 | `b04ee4bda3b1ec8e795453e38d5f9088dd33074fcf13d4b14696b3ccf2cb2069` |
 | `ATT_DSP3210_DSP_The_Multimedia_Solution.pdf` | AT&T data sheet *DSP3210 Digital Signal Processor: The Multimedia Solution* (39 pp.) | whole | 2,975,600 | `1de05d033187bb7b230c34bc509056ccc202bb4b2fb5addbbaf53b8f1612e95f` |
+| `AD1849K.pdf` | Analog Devices *AD1849K Serial-Port 16-Bit SoundPort Stereo Codec* data sheet, REV. 0 (PDF created 1997) | 28 pp. | 300,619 | `d40df2a808eb0b61d56a9e52d4284cc84313606a754680d6449c1f6532dfc44b` |
 
 **Page numbers.** The page numbers printed in the manual are chapter-page
 (e.g. 4-31). They map to the page index of the whole 288-page scan as
