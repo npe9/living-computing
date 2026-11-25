@@ -1,0 +1,33 @@
+% SCAFFOLDING stand-in for SIMPOS's class `network_node_name` (this PSI's
+% name on the network), compiled by psi/espc.py into the package
+% `simpos`.  It is NOT SIMPOS: no part of it is printed or held.  Every
+% method is INTERPOLATED (labelled), from:
+%   - docs/simpos/subsystems/shell.md §2.3 and notes/fixpoint.tsv row
+%     `network_node_name get_my_node 2` (USAGE): PIMOS's
+%     src_util/pmeter/xrmonitor.esp:27-31 (held IFS source, 1992),
+%     `:get_my_node(#network_node_name, ^Node)` gives this PSI's node name
+%     string, used as a host name (the attribute default there is a host
+%     name of the form `fkpsi602`);
+%   - pimfep##fep_node_table (held .ptf, cells read 2026-11-24): its
+%     initiate/1 stores `:get_my_node(#network_node_name, N)` with
+%     set_local_node_name/2, and its local_node_name/2, when that slot is
+%     still `none`, stores `:node_name(#network_node_name, N)` the same
+%     way.  So both name the local node (INFERENCE from the two
+%     call sites; no source says they differ).
+% Model (OURS): one class slot holding the name; the string "psi" is OURS
+% (the real default is not known; shell.md's `fkpsi602` is one site's).
+% node_full_name/3 and node_type/3 (also sent by held code) are not
+% stood in.
+
+class network_node_name has
+
+% INTERPOLATED: the representation and the value (OURS; see above).
+attribute my_node := "psi";
+
+% INTERPOLATED from: xrmonitor.esp:27-31; fep_node_table initiate/1.
+:get_my_node(Class, Node) :- Node = Class!my_node;
+
+% INTERPOLATED from: fep_node_table local_node_name/2 (see above).
+:node_name(Class, Node) :- Node = Class!my_node;
+
+end.

@@ -390,15 +390,18 @@ and stand-in `simpos##` classes. In order:
        `:raise(#undefined_method, ...)` ends in a new outcome,
        `exception`: uncaught, since no handler is modelled (TM-388
        p.59; 16 methods).
-     - Census: 1,403 methods (138 inherited from `as_program`), 784
-       succeed, 123 fail, 16 raise, 480 refuse. No method moved out of
+     - INTERPOLATED stand-ins: `network_node_name` (one node name;
+       its value "psi" is OURS), and `pmacs_window`'s `{editor, Class}`
+       option and `activity` slot, from the held cells of `pimos_window`.
+     - Census: 1,403 methods (138 inherited from `as_program`), 787
+       succeed, 123 fail, 16 raise, 477 refuse. No method moved out of
        success at any step.
      - Not added: blt 6f `list_to_vector` (its third argument is
        unsettled) and pmi c6 (a multi-way switch with packed words; it
        needs ce and ff, which have no rows).
      - The next blockers: the slot constants (139, by making receivers
        through their creators), pmi c6 21, `library:assign/1` 12,
-       `process:status/3` 11, blt 0d 10, `network_node_name` 14.
+       `process:status/3` 11, blt 0d 10.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

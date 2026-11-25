@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3). |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -1322,6 +1322,61 @@ Effect on the FEP census, compared method by method: 1,403 / 784 / 123
 The six-package census keeps its totals. 32 rows change only their
 refusal: 8 take the new cause, and 24 have details that now name a slot
 constant.
+
+### Step 3e: `network_node_name`, and `pmacs_window`'s editor option (2026-11-24)
+
+Two INTERPOLATED stand-ins; every method is labelled.
+
+- **`standin/network_node_name.esp`** (new): one class slot holding
+  this PSI's node name. Both `get_my_node/2` and `node_name/2` give it.
+  - Sources: shell.md §2.3 and fixpoint.tsv, for PIMOS's
+    `xrmonitor.esp:27-31` (held IFS source, USAGE: the node name as a
+    host name). Also the held cells of `pimfep##fep_node_table`: its
+    `initiate/1` stores `get_my_node`'s answer, and `local_node_name/2`
+    stores `node_name`'s the same way.
+  - That the two selectors name the same thing is INFERENCE from those
+    two call sites.
+  - The value `"psi"` is OURS. `fkpsi602` in shell.md is one site's
+    name, not a default.
+  - Not stood in: `node_full_name/3` and `node_type/3`.
+- **`standin/pmacs_window.esp`** gains two things, from the held cells
+  of `pimfep##pimos_window create_pimos_window/3`:
+  - an `{editor, Class}` option. That method creates a window with
+    `[{size,70,110}, {editor,#pimos_window_editor}]`. The editor is now
+    made in that class, and in `standard_editor` without the option. An
+    unbound option list, or an unbound option, is not an editor option.
+  - an `activity` slot, which the same method sets to 1.
+    `pimos_window` declares no such slot, so it is `pmacs_window`'s.
+    Its meaning is UNKNOWN.
+- **The header citations are corrected** (merged source check, rows
+  SA36 and SA42). `exshow.esp:24` sends create/3, not create/4. The
+  create/4 sends are kwic-esp `inEditor1.esp:151` and mendels
+  `comp_win.esp:54-62`, as `subsystems/window.md` §2.11 now cites them
+  (not re-read here). `standard_editor.esp`'s header no longer says
+  that `pmacs_window` has no stand-in.
+
+Test (`test_espc.py` `test_step3e_node_and_editor`):
+
+- both selectors give `"psi"`, and `fep_node_table initiate/1` runs;
+- `create_pimos_window/3` makes a window whose editor is a
+  `pimos_window_editor` and whose activity is 1, and the editor points
+  back at the window;
+- `create/3` with an unbound option list makes a `standard_editor`, with
+  activity 0.
+
+Effect on the FEP census, compared method by method: 784 / 123 / 480 /
+16 becomes 787 / 123 / 477 / 16 (success / failure / refused /
+exception).
+
+- 3 move from refused to success: `fep_node_table initiate/1` and
+  `local_node_name/2`, and `pimos_window create_pimos_window/3`.
+- 13 stop later. Five `fep_node_table` methods stop at an unbound
+  argument, and the others at `nline` (not loaded), at
+  `node_full_name/3` and at slot constants.
+- No method moved out of success. A first draft without the unbound
+  guard moved `pimos_window create/3` and `create/4` out of success: the
+  census's unbound options matched `{editor, Class}` and left the class
+  unbound.
 
 ## Open
 

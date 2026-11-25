@@ -70,7 +70,14 @@
 11. Step 3e (2026-11-24): the PRINTED as_program (TM-100 Fig. 3.3) with
    process's interpolated program stack (assign/resign_core/invoke), and
    kl0's rule that a missing primary under a stand-in ancestor stays
-   SIMPOS; the FEP census pinned (1,403 methods, 782 success).
+   SIMPOS; the FEP census pinned (1,403 methods, 782 success).  Then
+   (test_step3e_node_and_editor) the interpolated network_node_name and
+   pmacs_window's {editor, Class} option and activity slot; the FEP
+   census pinned again (787 success, 16 exception).  Injected into the
+   stand-ins from a backup copy, observed: node_name/2 answering 0, the
+   option's atom misspelt, each fails only test_step3e_node_and_editor;
+   the activity slot removed, or the unbound-options guard removed, each
+   errors test_step3e_node_and_editor and fails test_fep_census.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -503,6 +510,7 @@ class Standins(unittest.TestCase):
             'simpos##common_network',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
+            'simpos##network_node_name',
             'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
@@ -905,6 +913,34 @@ end.''', 'simpos')
             m.reset()
             self.assertTrue(any(True for _ in m.solve_send(o, sel, regs)), cid)
 
+    def test_step3e_node_and_editor(self):
+        # network_node_name (INTERPOLATED): both selectors give the one
+        # name, OURS "psi"; fep_node_table's initiate/1 stores it
+        m = self.m
+        for sel in ('get_my_node', 'node_name'):
+            m.reset()
+            self.assertEqual(repr(K.call_class_method(m, 'simpos##network_node_name', sel, [K.Var()])),
+                             "[[string#'psi']]", sel)
+        o = K.make_instance(m, 'pimfep##fep_node_table')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(o, 'initiate', [o])))
+        # pmacs_window's {editor, Class} option (step 3e): pimos_window's
+        # create_pimos_window/3 makes a window whose editor is a
+        # pimos_window_editor, and sets its activity slot to 1; without
+        # the option the editor is a standard_editor and activity 0
+        m.reset()
+        (r,) = K.call_class_method(m, 'pimfep##pimos_window', 'create_pimos_window', [K.Var(), K.Var()])
+        w = r[1]
+        co = m.lib.build(w.cid)
+        s = {e.name: v for e, v in zip(co.instance_slots, w.slots)}
+        self.assertEqual((s['editor'].cid, s['activity']), ('pimfep##pimos_window_editor', 1))
+        self.assertEqual(self.send(s['editor'], 'get_window', K.Var()), [[w]])
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.Var(), K.Var()])
+        co = m.lib.build(r[1].cid)
+        s = {e.name: v for e, v in zip(co.instance_slots, r[1].slots)}
+        self.assertEqual((s['editor'].cid, s['activity']), ('simpos##standard_editor', 0))
+
     def test_step3e_as_program(self):
         # as_program, PRINTED (TM-100 Fig. 3.3), with process's
         # add_program/2, remove_program/2, no_program/1 and die/1
@@ -999,11 +1035,16 @@ end.''', 'simpos')
         # The 139 sends to an integer still holding its slot's template
         # constant are refused as 'receiver a slot constant', not 'receiver
         # not an object' (14 remain: atoms none, nil).
+        # Step 3e's stand-ins network_node_name and pmacs_window's
+        # {editor, Class} option and activity slot: 787 success
+        # (fep_node_table initiate/1, local_node_name/2, pimos_window
+        # create_pimos_window/3), 477 refused (13 more stop later); no
+        # method left success.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 784, 'failure': 123, 'refused': 480, 'exception': 16}))
+        self.assertEqual((len(rows), out), (1403, {'success': 787, 'failure': 123, 'refused': 477, 'exception': 16}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 
