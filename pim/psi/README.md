@@ -3033,6 +3033,29 @@ Effect, row by row (MEASURED 2026-11-25, recomputed after each row):
 None of the successes is progress. The rows matter as opcodes no longer
 in the way: `assigned/1` is the new real stop.
 
+**blt 1a `new_stack_vector` ^V, N** (step 3h: "the initial elements are
+not settled"), reattempted with a fresh search of held source. kappa2
+`user_if/pb/mcd.esp`:112-116 `make_term/5` builds each condition with
+`new_stack_vector(Cond,3)` and then `vector_element(Cond,0,=)` and the
+like. Compiled (`pb_siki_make_cond` @bc-c9), each `vector_element` is a
+`blt 20` read followed by a `get` that unifies the element with the
+constant. With any bound initial element the predicate could never
+succeed, so each element is a fresh unbound variable (INFERENCE from held
+source). V != N: `KP_BFMOM.ESP`:181-185 `statistics/3` @93 `1a 02 00
+00` (size 21 in A0, the vector to A2). Plain FEP becomes **768 / 221 /
+414**, with recipes **793 / 222 / 388**: `melt_arguments/2` (3 classes)
+and `melt_method/3` (2) succeed because `valid_size` is its template
+slot constant 0 and the melted vector is `{}` (a census artifact, not
+progress); `scsi_communicator melt_method/3` stops at `get_content/2`,
+not in the class. Six packages unchanged.
+
+**Reattempted, still blocked:**
+- blt 0d `object/3`: a fresh search of kappa2, paragraph and the pimos
+  sources finds 94 `object(...)` calls; every three-argument one has
+  both outputs `_`. Nothing settles what they receive.
+- blt a8 and 05: not reattempted beyond the census; no held source line
+  is paired with them yet.
+
 Injected into kl0.py from a backup, restored by cp, cmp-checked; the
 observed failure sets are in `test_kl0.py`'s header (eight injections).
 
@@ -3056,6 +3079,7 @@ observed failure sets are in `test_kl0.py`'s header (eight injections).
     kappa2 `HLCANACOM.ESP:552-554` has `stack_vector(Base_attr,Len),
     new_stack_vector(Checked_attr,Len)`, which compiles to `06 00 04`,
     `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
+    (Step 3i: DONE, on mcd.esp:112-116; see "Step 3i: pmi 3b, 6c, c8".)
   - blt 6f: witnessed as `list_to_vector`, but not added: its third
     argument is not settled.
   - blt 0d, 1a and 6f stay refused after step 3f. Another call site

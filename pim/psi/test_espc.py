@@ -1252,7 +1252,14 @@ end.''', 'simpos')
         # census's unbound first argument takes c8's try chain and the
         # first clause's get_constant binds it (unbound probing, not
         # progress)
-        self.assertEqual((len(rows), out), (1420, {'success': 763, 'failure': 221, 'refused': 419, 'exception': 16,
+        # step 3i: blt 1a new_stack_vector (mcd.esp:112-116, KP_BFMOM.ESP:
+        # 181-185): 763 / 221 / 419 -> 768 / 221 / 414.  melt_arguments/2
+        # (cmt, scsi, scsi_communicator) and melt_method/3 (cmt, scsi)
+        # succeed: valid_size is its template slot constant 0, so the
+        # melted vector is {} (a census artifact, not progress);
+        # scsi_communicator melt_method/3 stops at get_content/2, not in
+        # the class
+        self.assertEqual((len(rows), out), (1420, {'success': 768, 'failure': 221, 'refused': 414, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1325,8 +1332,9 @@ end.''', 'simpos')
         # step 3i: pmi 3b and 6c: the same five pseudo_scsi rows, 784 / 220
         # / 399 (two successes on an unbound argument, not progress); blt 00
         # and e0: the same two transfer/6 rows fail, 784 / 222 / 397; pmi
-        # c8: the same four expand/7 succeed, 788 / 222 / 393
-        self.assertEqual((len(rows), out), (1420, {'success': 788, 'failure': 222, 'refused': 393,
+        # c8: the same four expand/7 succeed, 788 / 222 / 393; blt 1a: the
+        # same six melt rows, 793 / 222 / 388
+        self.assertEqual((len(rows), out), (1420, {'success': 793, 'failure': 222, 'refused': 388,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 94)

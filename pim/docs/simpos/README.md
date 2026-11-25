@@ -545,11 +545,12 @@ and stand-in `simpos##` classes. In order:
        `pseudo_pe_process release/1`). Totals unchanged.
      - window.md appendix A and §2.14 equal their generators; §6.1 step
        4's `{Id, 5}` re-read from the cells (`source_check` §9).
-     - pmi 3b, 6c, c8 and blt 00, e0 are KNOWN-PLAINTEXT on held kappa2
-       and paragraph source. Six packages 317 / 12 / 200 / 1, plain FEP
-       763 / 221 / 419, with recipes 788 / 222 / 393. Every new success
-       is the census's unbound argument meeting the first clause (not
-       progress); the new real stop is `as_resource assigned/1`.
+     - pmi 3b, 6c, c8 and blt 00, e0, 1a are KNOWN-PLAINTEXT on held
+       kappa2 and paragraph source. Six packages 317 / 12 / 200 / 1,
+       plain FEP 768 / 221 / 414, with recipes 793 / 222 / 388. Every new
+       success is a census artifact (an unbound argument meeting the
+       first clause, or a template slot constant), not progress; the new
+       real stop is `as_resource assigned/1`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

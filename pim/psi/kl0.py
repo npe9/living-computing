@@ -1749,6 +1749,22 @@ class Machine:
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
         self.nxt(code, off)
 
+    def op_new_stack_vector(self, code, off, a, b, c, v):
+        # blt 1a (step 3i): new_stack_vector(^V, N); each element a fresh
+        # unbound variable (INFERENCE: kappa2 user_if/pb/mcd.esp:112-116
+        # `new_stack_vector(Cond,3), vector_element(Cond,0,=), ...` compiles
+        # to `1a 00 00 00`, then `blt 20` and `get r0, =`, which unify each
+        # element with a constant; with any bound initial value make_term/5
+        # could never succeed).  V != N: kappaBFM_other_disposition_manager
+        # statistics/3 @93 `1a 02 00 00` (KP_BFMOM.ESP:181-185, the size 21
+        # in A0 from `a7 00 00 15`, INFO out in A2).  Only a zero third
+        # byte is witnessed
+        if c:
+            raise Refusal('operand', '%s @%x: blt 1a %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        self.x[a] = Vec([Var() for _ in range(self._int(self.x[b], 'new_stack_vector'))])
+        self.nxt(code, off)
+
     def _str(self, t, what):
         t = deref(t)
         if not isinstance(t, Str):

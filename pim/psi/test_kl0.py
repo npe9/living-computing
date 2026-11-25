@@ -239,6 +239,12 @@ observed):
     test_step3f_census_recipes fail;
   - 6c into a c8 swapping the vector and else targets: only
     test_switch_on_vector_else fails; test_espc passes.
+Step 3i's blt 1a new_stack_vector (test_new_stack_vector: mcd.esp:112-116,
+KP_BFMOM.ESP:181-185; injected the same way; observed):
+  - elements 0 instead of fresh variables: only test_new_stack_vector
+    fails; test_espc passes;
+  - V and N swapped: test_new_stack_vector errors here; test_espc
+    test_fep_census and test_step3f_census_recipes fail.
 """
 import os
 import sys
@@ -295,8 +301,8 @@ class Table(unittest.TestCase):
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
         # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
-        # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0
-        self.assertEqual(len(rows), 140)
+        # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a
+        self.assertEqual(len(rows), 141)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1205,6 +1211,36 @@ class Step3iRows(unittest.TestCase):
             self.assertEqual(at(cid, off, K.Cons(A('a'), K.NIL), ex), fail)
         with self.assertRaises(K.Refusal):
             sw(types.SimpleNamespace(id='test', cells={}), 0, 1, 0, 0, 0)
+
+    def test_new_stack_vector(self):
+        # blt 1a (step 3i): kappa2 user_if/pb/mcd.esp:112-116 make_term/5
+        # (pb_siki_make_cond @a3): new_stack_vector(Cond,3), then each
+        # element unified with a constant or an argument; the last clause
+        # (no cut in the source) gives Flag = 1
+        m = kappa_machine()
+        cid = 'kappa##pb_siki_make_cond'
+        (p,) = [p for p in m.lib.templates[cid].locals if p.offset == 0xa3]
+
+        def run(op):
+            args = [A(op), A('age'), 30, K.Var(), K.Var()]
+            m.reset()
+            return [repr([K.resolve(a) for a in args][3:]) for _ in m.solve((m.code(cid), p.offset), args)]
+        r = run('=')
+        self.assertEqual((len(r), r[0]), (2, '[{=,age,30}, 0]'))
+        self.assertTrue(r[1].startswith('[_G') and r[1].endswith(', 1]'), r[1])
+        self.assertEqual(run('<')[0], '[{<,age,30}, 0]')
+        self.assertEqual(len(run('foo')), 1)
+        # V != N (KP_BFMOM.ESP:181-185 @93 `1a 02 00 00`): size in A0, vector to A2
+        fake = types.SimpleNamespace(id='test', cells={})
+        m.reset()
+        m.x[0] = 21
+        m.op_new_stack_vector(fake, 0, 2, 0, 0, 0)
+        v = K.deref(m.x[2])
+        self.assertEqual(len(v.args), 21)
+        self.assertTrue(all(isinstance(K.deref(e), K.Var) for e in v.args))
+        self.assertEqual(m.x[0], 21)
+        with self.assertRaises(K.Refusal):
+            m.op_new_stack_vector(fake, 0, 2, 0, 1, 0)
 
     def test_other_entries_refused(self):
         # a 6c whose entry is not a c9 or a c6 00 00 00, and a 6c whose
