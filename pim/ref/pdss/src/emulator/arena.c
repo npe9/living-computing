@@ -22,9 +22,47 @@ unsigned char *pdss_arena_base;
 unsigned char *pdss_arena_end;
 static unsigned char *arena_next;
 
-#define HDR	16			/* block header: the size class */
+#define HDR	16			/* block header: size class, size asked */
 #define NCLASS	32
 static void *free_list[NCLASS];
+
+/* Under AddressSanitizer the arena tells it what is in use, so that ASan
+   still sees PDSS's own memory errors: a block's header, the part of its
+   size class beyond the size asked for, and a freed block (but for the
+   free-list link in its first bytes) are poisoned. */
+#if defined(__SANITIZE_ADDRESS__)
+#define PDSS_ASAN 1
+#elif defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define PDSS_ASAN 1
+#endif
+#endif
+#ifdef PDSS_ASAN
+#include <sanitizer/asan_interface.h>
+#define Poison(p, n)	ASAN_POISON_MEMORY_REGION((p), (n))
+#define Unpoison(p, n)	ASAN_UNPOISON_MEMORY_REGION((p), (n))
+#else
+#define Poison(p, n)	((void)0)
+#define Unpoison(p, n)	((void)0)
+#endif
+
+static void put_header(unsigned char *p, int c, size_t n)
+{
+    Unpoison(p - HDR, HDR);
+    memcpy(p - HDR, &c, sizeof c);
+    memcpy(p - HDR + 8, &n, sizeof n);
+    Poison(p - HDR, HDR);
+}
+
+static int get_header(const unsigned char *p, size_t *n)
+{
+    int c;
+    Unpoison(p - HDR, HDR);
+    memcpy(&c, p - HDR, sizeof c);
+    if(n) memcpy(n, p - HDR + 8, sizeof *n);
+    Poison(p - HDR, HDR);
+    return c;
+}
 
 int pdss_arena_init(void)
 {
@@ -64,12 +102,14 @@ void *pdss_malloc(size_t n)
     if(free_list[c]){
 	p = free_list[c];
 	memcpy(&free_list[c], p, sizeof(void *));
-	return p;
+    }else{
+	if((size_t)(pdss_arena_end - arena_next) < ((size_t)1 << c) + HDR) return NULL;
+	p = arena_next + HDR;
+	arena_next = p + ((size_t)1 << c);
     }
-    if((size_t)(pdss_arena_end - arena_next) < ((size_t)1 << c) + HDR) return NULL;
-    p = arena_next + HDR;
-    memcpy(p - HDR, &c, sizeof c);
-    arena_next = p + ((size_t)1 << c);
+    put_header(p, c, n);
+    Unpoison(p, n);
+    Poison(p + n, ((size_t)1 << c) - n);
     return p;
 }
 
@@ -86,20 +126,29 @@ void pdss_free(void *p)
 {
     int c;
     if(!p) return;
-    memcpy(&c, (unsigned char *)p - HDR, sizeof c);
+    c = get_header(p, NULL);
+    Unpoison(p, sizeof(void *));
     memcpy(p, &free_list[c], sizeof(void *));
+    Poison((unsigned char *)p + sizeof(void *), ((size_t)1 << c) - sizeof(void *));
     free_list[c] = p;
 }
 
 void *pdss_realloc(void *p, size_t n)
 {
     int c;
+    size_t old;
     void *q;
     if(!p) return pdss_malloc(n);
-    memcpy(&c, (unsigned char *)p - HDR, sizeof c);
-    if(n <= ((size_t)1 << c)) return p;
+    c = get_header(p, &old);
+    if(n == 0) n = 1;
+    if(n <= ((size_t)1 << c)){
+	put_header(p, c, n);
+	Unpoison(p, n);
+	Poison((unsigned char *)p + n, ((size_t)1 << c) - n);
+	return p;
+    }
     if(!(q = pdss_malloc(n))) return NULL;
-    memcpy(q, p, (size_t)1 << c);
+    memcpy(q, p, old);
     pdss_free(p);
     return q;
 }

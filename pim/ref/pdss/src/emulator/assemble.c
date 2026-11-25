@@ -243,7 +243,7 @@ CHAR *scan_name(CHAR **s)
 static int scan_integer(CHAR **s, int *x)
 {
     CHAR *p = *s;
-    int  result;
+    uint32_t result;	/* MODERN: was int; -2147483648 overflowed */
     int  sign = 1;
     int  base;
     while(IsBlank(*p)) p++;
@@ -259,12 +259,12 @@ static int scan_integer(CHAR **s, int *x)
     }
     if(*p == '\''){
 	if(result < 2 || result > 36) return(NO);
-	base = result; p++;
+	base = (int)result; p++;
 	if(GetDigitValue(*p) >= base) return(NO);
 	result = GetDigitValue(*p++);
 	while(IsAlNum(*p)){
 	    if(GetDigitValue(*p) >= base) return(NO);
-	    result = result * base + GetDigitValue(*p++);
+	    result = result * (uint32_t)base + GetDigitValue(*p++);
 	}
     }
     if(IsBlank(*p)){
@@ -277,7 +277,7 @@ static int scan_integer(CHAR **s, int *x)
 	return(NO);
     }
     *s = p;
-    *x = result*sign;
+    *x = pdss_s32(result*(uint32_t)sign);
     return(YES);
 }
 
@@ -337,7 +337,7 @@ static int parse_integer(CHAR **s)
 
 static int parse_float(CHAR **s)
 {
-    int flot;
+    int32_t flot;
     if(!scan_float(s, &flot)){
 	Error2F("\n>>> Assembler: Illegal float/delimiter.\n%04d: %s",
 		assemble_line_count, assemble_line0);

@@ -46,7 +46,8 @@ int get_string_type(CELL *string, int *length, int *width)
 int new_string(int length, int width, CELL *string)
 {
     register CELL *p;
-    register int leng, elms, rest, desc;
+    register int leng, elms, rest;
+    register uint32_t desc = 0;	/* MODERN: was int; (width<<31) overflowed */
     if(width < 1 || width > 32) return(STRUTL_BAD_WIDTH);
     elms = 32/width;
     leng = (length+elms-1)/elms;
@@ -55,20 +56,20 @@ int new_string(int length, int width, CELL *string)
     rest = leng*elms-length;
     switch(width){
       case 1:
-	desc = (rest<<27)|leng;
+	desc = ((uint32_t)rest<<27)|leng;
 	break;
       case 2: case 3:
-	desc = (width<<31)|(rest<<27)|0x01000000|leng;
+	desc = ((uint32_t)width<<31)|((uint32_t)rest<<27)|0x01000000|leng;
 	break;
       case 4: case 5: case 6: case 7:
-	desc = (width<<30)|(rest<<27)|0x02000000|leng;
+	desc = ((uint32_t)width<<30)|((uint32_t)rest<<27)|0x02000000|leng;
 	break;
       case 8: case 9: case 10: case 11: case 12: case 13: case 14: case 15:
-	desc = (width<<29)|(rest<<27)|0x03000000|leng;
+	desc = ((uint32_t)width<<29)|((uint32_t)rest<<27)|0x03000000|leng;
 	break;
       case 16: case 17: case 18: case 19: case 20: case 21: case 22: case 23:
       case 24: case 25: case 26: case 27: case 28: case 29: case 30: case 31:
-	desc = (width<<28)|(rest<<27)|0x04000000|leng;
+	desc = ((uint32_t)width<<28)|((uint32_t)rest<<27)|0x04000000|leng;
 	break;
       case 32:
 	desc = 0x05000000|leng;
@@ -134,7 +135,8 @@ int get_string_element(CELL *string, int position, int *element)
 int set_string_element(CELL *string, int position, int element)
 {
     CELL *p;
-    register int leng, type, width, mask, elms, rest, x;
+    register int leng, type, width, mask, elms, rest;
+    register uint32_t ux;		/* MODERN: was int x; shifts overflowed */
     leng = StringLengthof(string);
     type = StringTypeof(string);
     if((type&0xE7) == 0x03){
@@ -143,8 +145,8 @@ int set_string_element(CELL *string, int position, int element)
 	if(position < 0 || position >= leng*4-rest)
 	    return(STRUTL_BAD_POSITION);
 	p = Objectof(string)+1+(position/4);
-	x = Valueof(p)&(~(0xFF<<((position%4)*8)));
-	Valueof(p) = (x|((element&0xFF)<<((position%4)*8)));
+	ux = (uint32_t)Valueof(p)&(~(0xFFu<<((position%4)*8)));
+	Valueof(p) = pdss_s32(ux|(((uint32_t)element&0xFFu)<<((position%4)*8)));
     }else{
 	width = (1<<(type&7))+(type>>(8-(type&7)));
 	mask = ((unsigned int)0xFFFFFFFF)>>(32-width);
@@ -153,8 +155,8 @@ int set_string_element(CELL *string, int position, int element)
 	if(position < 0 || position >= leng*elms-rest)
 	    return(STRUTL_BAD_POSITION);
 	p = Objectof(string)+1+(position/elms);
-	x = Valueof(p)&(~(mask<<((position%elms)*width)));
-	Valueof(p) = (x|((element&mask)<<((position%elms)*width)));
+	ux = (uint32_t)Valueof(p)&(~((uint32_t)mask<<((position%elms)*width)));
+	Valueof(p) = pdss_s32(ux|(((uint32_t)element&(uint32_t)mask)<<((position%elms)*width)));
     }
     return(STRUTL_SUCCESS);
 }
@@ -592,16 +594,16 @@ int get_print_image(CELL *atomic, int mode, int left, CELL *string, int *sleng, 
     register CELL *p;
     register CHAR *s1, *s2, *str;
     register int x, leng, rest, length, desc;
-    int	  fw;
+    int32_t  fw;
 
     switch(Typeof(atomic)){
       case INT:
 	str = string_work_buffer;
 	if(IsAlNum(left) || (IsSymbol(left) && Valueof(atomic) < 0)
 			 || left == '-' || left == '+'){
-	    sprintf(str, " %d", Valueof(atomic));
+	    sprintf(str, " %d", (int)Valueof(atomic));
 	}else{
-	    sprintf(str, "%d", Valueof(atomic));
+	    sprintf(str, "%d", (int)Valueof(atomic));
 	}	
 	length = strlen(str);
 	*sleng = length;

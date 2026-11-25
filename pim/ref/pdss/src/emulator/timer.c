@@ -70,8 +70,9 @@ static int alarm_clock_int(void)
 int timer_wakeup_goal(void)
 {
     CELL *p, *q;
-    int count, mask;
-    mask = sigblock(sigmask(SIGALRM));
+    int count;
+    PDSS_SIGMASK mask;
+    pdss_sig_block(SIGALRM, &mask);
     timer_next_count = HUGE;
     p = timer_table;
     while(Typeof(p) == VECTOR){
@@ -85,7 +86,7 @@ int timer_wakeup_goal(void)
 	    p = q;
 	}
     }
-    sigsetmask(mask);
+    pdss_sig_restore(&mask);
     return 0;
 }
 
@@ -119,8 +120,8 @@ int set_timer_on_at(int count, CELL *var)
 static int set_timer(int count, CELL *var)
 {
     CELL *p;
-    int mask;
-    mask = sigblock(sigmask(SIGALRM));
+    PDSS_SIGMASK mask;
+    pdss_sig_block(SIGALRM, &mask);
     if(count <= timer_last_count || !option_alarm_clock_sw){
 	active_unify_with_integer(var, timer_last_count);
     }else{
@@ -131,7 +132,7 @@ static int set_timer(int count, CELL *var)
 	SetAll(timer_table, VECTOR, p, MRBOFF);
 	if(count < timer_next_count) timer_next_count = count;
     }
-    sigsetmask(mask);
+    pdss_sig_restore(&mask);
     return 0;
 }
 

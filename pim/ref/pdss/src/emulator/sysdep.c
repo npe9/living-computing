@@ -50,3 +50,35 @@ void pdss_world(char *path)
 	strcpy(path, buf);
     }
 }
+
+void pdss_sig_block(int sig, PDSS_SIGMASK *old)
+{
+    sigset_t s;
+    sigemptyset(&s);
+    sigaddset(&s, sig);
+    sigprocmask(SIG_BLOCK, &s, old);
+}
+
+void pdss_sig_restore(const PDSS_SIGMASK *old)
+{
+    sigprocmask(SIG_SETMASK, old, NULL);
+}
+
+void pdss_sig_unblock(int sig)
+{
+    sigset_t s;
+    sigemptyset(&s);
+    sigaddset(&s, sig);
+    sigprocmask(SIG_UNBLOCK, &s, NULL);
+}
+
+/* The 1992 stop_pdss: let SIGTSTP through with its default action, stop,
+   and ignore it again once continued. */
+void pdss_stop_self(void)
+{
+    signal(SIGTSTP, SIG_DFL);
+    pdss_sig_unblock(SIGTSTP);
+    kill(getpid(), SIGTSTP);
+    pdss_sig_block(SIGTSTP, NULL);
+    signal(SIGTSTP, SIG_IGN);
+}

@@ -1167,7 +1167,7 @@ static int trace_monitor_stream(int argn, CHAR **argv)
     grec->args[0] = *ref;
     SetAll(&(grec->args[1]), STRING, name,    MRBOFF);
     SetAll(&(grec->args[2]), INT,    counter, MRBOFF);
-    SetGoalPriority(grec, INT, MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
+    SetGoalPriority(grec, INT, (uint32_t)MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
     grec->debug	 = NO_TRACE_GOAL;
     grec->pcode	 = 0;
     enqueue_with_priority(grec);
@@ -1312,7 +1312,7 @@ int blt_b_debug_monitor_stream(CELL *x, CELL *name, CELL *count)
 	grec->args[0] = *var;
 	grec->args[1] = *name;
 	SetAll(&(grec->args[2]), INT, counter, MRBOFF);
-	SetGoalPriority(grec, INT, (MAX_PRIORITY<<PRIORITY_SIFT_WIDTH));
+	SetGoalPriority(grec, INT, ((uint32_t)MAX_PRIORITY<<PRIORITY_SIFT_WIDTH));
 	grec->debug  = NO_TRACE_GOAL;
 	grec->pcode  = 0;
 	enqueue_with_priority(grec);
@@ -1454,7 +1454,7 @@ int write_goal(OBJ *code, int an, CELL *as, PARENT_RECORD *prec, int pl, int pd)
 {
     int i;
 
-    printf("[%04d]", prec->id);
+    printf("[%04d]", (int)prec->id);
     if(IsNativeCode(code)){
 	unsigned int mod, pred, arity;
 	function_to_mod_pred_arity(code, &mod, &pred, &arity);

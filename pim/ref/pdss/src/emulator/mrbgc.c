@@ -468,7 +468,7 @@ static int display_deadlock_suspended_goals(CELL *c)
 	    mg = Mergerof(c);
 	    if(IsParentAborted(PrecOf(mg->parent))) return 0;
 	    SetAll(&tmp, REF, c, MRBOFF);
-	    PrintCons1F("[%04d]merge(", PrecOf(mg->parent)->id);
+	    PrintCons1F("[%04d]merge(", (int)PrecOf(mg->parent)->id);
 	    print_term2(&tmp, 10, 10);
 	    PrintCons(",");
 	    print_term2(&(mg->output), 10, 10);

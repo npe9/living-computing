@@ -403,7 +403,7 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 		break;
 	      default:
 		Error("Illegal data type is found in suspension stack.");
-		PrintCons2F("TAG : %x, Value : %x", Typeof(c), Valueof(c));
+		PrintCons2F("TAG : %x, Value : %x", Typeof(c), (unsigned)Valueof(c));
 		PrintCons1F("SSP : %x", (unsigned)(SSP - suspension_stack));
 		return 0;
 	    }
@@ -452,7 +452,7 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 	    break;
 	  default:
 	    Error("Illegal data type is found in suspension stack.");
-	    PrintCons2F("TAG : %x, Value : %x", Typeof(c), Valueof(c));
+	    PrintCons2F("TAG : %x, Value : %x", Typeof(c), (unsigned)Valueof(c));
 	    PrintCons1F("SSP : %x", (unsigned)(SSP - suspension_stack));
 	}
     }
@@ -523,7 +523,7 @@ int single_wait_suspend(GOAL_RECORD *goal, CELL *ref)
 	break;
       default:
 	Error("Illegal data type is found in single_wait_suspend().");
-	PrintCons2F("Tag : %x, Value : %x", Typeof(var), Valueof(var));
+	PrintCons2F("Tag : %x, Value : %x", Typeof(var), (unsigned)Valueof(var));
     }
     return 0;
 }

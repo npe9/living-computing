@@ -327,7 +327,7 @@ int blt_b_consume_resource(CELL *red)
 		grec->code = Ref(CodeOfFunction(dc_consume_resource));
 		grec->argn = 1;
 		SetAll(&(grec->args[0]), INT, reduction, MRBOFF);
-		SetGoalPriority(grec, INT, MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
+		SetGoalPriority(grec, INT, (uint32_t)MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
 		SetGoalPriority(grec, INT, logical_priority);
 		grec->pcode = Ref(current_predicate2 ? current_predicate2
 						 : current_predicate);

@@ -412,7 +412,7 @@ static int deadlock_report_goal(GOAL_RECORD *goal, int f)
     }
     /** Display term to Console **/
     if(backtrace_flag || (f&DDROOT)){
-	PrintCons1F("Deadlock::[%04d]", shoen->id);
+	PrintCons1F("Deadlock::[%04d]", (int)shoen->id);
 	print_term2(cons, PRINT_LENGTH, PRINT_DEPTH);
 	PrintCons("\n");
     }
@@ -469,7 +469,7 @@ static int deadlock_report_merger(MERGER_RECORD *merger, int f)
     /** Display term to Console **/
     SetAll(cons+1, VECTOR, CellOf(merger->input), MRBOFF);
     if(backtrace_flag || (f&DDROOT)){
-	PrintCons1F("Deadlock::[%04d]merge(", shoen->id);
+	PrintCons1F("Deadlock::[%04d]merge(", (int)shoen->id);
 	print_term2(cons+1, PRINT_LENGTH, PRINT_DEPTH);
 	PrintCons(",");
 	print_term2(out, PRINT_LENGTH, PRINT_DEPTH);

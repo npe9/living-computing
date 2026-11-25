@@ -246,16 +246,16 @@ int ungetc_window(register int chr, register IO_BACKET *it)
 
 int request_keyboard(register IO_BACKET *it)
 {
-    register int mask;
+    PDSS_SIGMASK mask;
     if(use_windows){
 	fflush(stdout);
-	mask = sigblock(sigmask(SIGINT));
+	pdss_sig_block(SIGINT, &mask);
 	if(it->buf_lc == 0){
 	    it->kb_req++;
-	    sigsetmask(mask);
+	    pdss_sig_restore(&mask);
 	    return(NO);
 	}else{
-	    sigsetmask(mask);
+	    pdss_sig_restore(&mask);
 	    return(YES);
 	}
     }else{

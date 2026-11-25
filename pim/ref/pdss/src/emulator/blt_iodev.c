@@ -901,7 +901,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
 		    while((dp = readdir(dirp))){
 			dn = (CHAR *)dp->d_name;
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
-			    sprintf(ex, "%s/%s", bufn, dn);
+			    snprintf((char *)ex, sizeof ex, "%s/%s", (char *)bufn, (char *)dn);
 			    AllocCons(q);
 			    if(HeapRest() <= 0){
 				SetHeapGcFlag();
@@ -996,7 +996,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
 		    while((dp = readdir(dirp))){
 			dn = (CHAR *)dp->d_name;
 			if(!(*bufw != '.' && *dn == '.') && re_exec(dn)){
-			    sprintf(ex, "%s/%s", bufn, dn);
+			    snprintf((char *)ex, sizeof ex, "%s/%s", (char *)bufn, (char *)dn);
 			    if((dirp2 = opendir(ex))){
 				closedir(dirp2);
 			    }else{

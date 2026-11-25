@@ -17,6 +17,17 @@
 #include <unistd.h>
 #include <signal.h>
 
+/* BSD sigblock/sigsetmask, over POSIX sigprocmask: block one signal
+   (saving the previous mask in *OLD unless OLD is NULL), put a saved
+   mask back, unblock one signal. */
+typedef sigset_t PDSS_SIGMASK;
+void pdss_sig_block(int sig, PDSS_SIGMASK *old);
+void pdss_sig_restore(const PDSS_SIGMASK *old);
+void pdss_sig_unblock(int sig);
+
+/* Stop the process (job control, as on SIGTSTP); returns when continued. */
+void pdss_stop_self(void);
+
 /* BSD: compile a regular expression (NULL on success) and match one. */
 char *re_comp(const char *s);
 int   re_exec(const char *s);

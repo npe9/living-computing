@@ -178,7 +178,7 @@ static int print_sub(CELL *c, CELL *r, int mrb, int depth)
 	fprintf(file, "%s", atom_name(Valueof(c)));
 	return(NO);
       case INT:
-	fprintf(file, "%d", Valueof(c));
+	fprintf(file, "%d", (int)Valueof(c));
 	return(NO);
       case FLOAT:
 	fprintf(file, "%s", float_to_string(&Valueof(c)));
@@ -202,13 +202,13 @@ static int print_sub(CELL *c, CELL *r, int mrb, int depth)
 	print_nue(c, depth, mrb);
 	return(YES);
       case SHOEN:
-	fprintf(file, "$SHOEN#%d", Shoenof(c)->id);
+	fprintf(file, "$SHOEN#%d", (int)Shoenof(c)->id);
 	return(YES);
       default:
 	win = current_window;
 	SelectWindow(CONSOLE);
 	printf("Illegal data type occurred(Tag: 0x%x  Value: 0x%x)\n", 
-	       Typeof(c), Valueof(c));
+	       Typeof(c), (unsigned)Valueof(c));
 	if(win >= 0) SelectWindow(win);
 	return(NO);
     }

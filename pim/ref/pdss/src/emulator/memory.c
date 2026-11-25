@@ -860,6 +860,14 @@ int switch_code(void)
 *   Temporary Area Management.						 *
 *************************************************************************/
 
+/* MODERN: the 1992 code rounded sizes to 4 bytes, enough when a pointer
+   was 4 bytes; the assembler keeps structs with host pointers here, so a
+   block is aligned for them (TEMP_ALIGN, at least 4). */
+struct temp_align_probe { char c; union { void *p; double d; long l; int32_t i; } u; };
+#define TEMP_ALIGN	offsetof(struct temp_align_probe, u)
+#define TempAlignDown(p) ((unsigned char *)(p) - ((uintptr_t)(p) % TEMP_ALIGN))
+#define TempAlignUp(p)	 ((unsigned char *)(p) + ((TEMP_ALIGN - (uintptr_t)(p) % TEMP_ALIGN) % TEMP_ALIGN))
+
 static unsigned char *temp1_top;
 static unsigned char *temp2_top;
 static unsigned char *temp3_top;
@@ -867,8 +875,8 @@ static unsigned char *temp4_top;
 
 unsigned char *t1_alloc(unsigned int size)
 {
-    size = (size+3)&0xFFFFFFFC;
-    return(temp1_top -= size);
+    temp1_top = TempAlignDown(temp1_top - size);
+    return(temp1_top);
 }
 
 int t1_free(void)
@@ -880,9 +888,8 @@ int t1_free(void)
 unsigned char *t2_alloc(unsigned int size)
 {
     unsigned char *p;
-    size = (size+3)&0xFFFFFFFC;
-    p = temp2_top;
-    temp2_top += size;
+    p = TempAlignUp(temp2_top);
+    temp2_top = p + size;
     return(p);
 }
 
@@ -894,8 +901,8 @@ int t2_free(void)
 
 unsigned char *t3_alloc(unsigned int size)
 {
-    size = (size+3)&0xFFFFFFFC;
-    return(temp3_top -= size);
+    temp3_top = TempAlignDown(temp3_top - size);
+    return(temp3_top);
 }
 
 int t3_free(void)
@@ -907,9 +914,8 @@ int t3_free(void)
 unsigned char *t4_alloc(unsigned int size)
 {
     unsigned char *p;
-    size = (size+3)&0xFFFFFFFC;
-    p = temp4_top;
-    temp4_top += size;
+    p = TempAlignUp(temp4_top);
+    temp4_top = p + size;
     return(p);
 }
 

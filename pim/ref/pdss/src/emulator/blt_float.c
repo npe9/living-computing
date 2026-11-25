@@ -17,7 +17,7 @@
 
 int blt_g_float_add(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_add(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -33,7 +33,7 @@ int blt_g_float_add(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_subtract(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_subtract(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -49,7 +49,7 @@ int blt_g_float_subtract(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_multiply(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_multiply(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -65,7 +65,7 @@ int blt_g_float_multiply(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_divide(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_divide(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -81,7 +81,7 @@ int blt_g_float_divide(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_minus(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_minus(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -97,7 +97,7 @@ int blt_g_float_minus(CELL *in, CELL *out)
 
 int blt_g_float_abs(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     float_abs(&Valueof(in), &z);
     SetAll(out, FLOAT, z, MRBOFF);
     return(YES);
@@ -110,7 +110,7 @@ int blt_g_float_abs(CELL *in, CELL *out)
 
 int blt_g_float_min(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     float_min(&Valueof(in1), &Valueof(in2), &z);
     SetAll(out, FLOAT, z, MRBOFF);
     return(YES);
@@ -123,7 +123,7 @@ int blt_g_float_min(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_max(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     float_max(&Valueof(in1), &Valueof(in2), &z);
     SetAll(out, FLOAT, z, MRBOFF);
     return(YES);
@@ -136,7 +136,7 @@ int blt_g_float_max(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_floor(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_floor(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -152,7 +152,7 @@ int blt_g_float_floor(CELL *in, CELL *out)
 
 int blt_g_float_sqrt(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_sqrt(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -168,7 +168,7 @@ int blt_g_float_sqrt(CELL *in, CELL *out)
 
 int blt_g_float_ln(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_ln(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -184,7 +184,7 @@ int blt_g_float_ln(CELL *in, CELL *out)
 
 int blt_g_float_log(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_log(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -200,7 +200,7 @@ int blt_g_float_log(CELL *in, CELL *out)
 
 int blt_g_float_exp(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_exp(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -216,7 +216,7 @@ int blt_g_float_exp(CELL *in, CELL *out)
 
 int blt_g_float_pow(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_pow(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -232,7 +232,7 @@ int blt_g_float_pow(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_sin(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_sin(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -248,7 +248,7 @@ int blt_g_float_sin(CELL *in, CELL *out)
 
 int blt_g_float_cos(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_cos(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -264,7 +264,7 @@ int blt_g_float_cos(CELL *in, CELL *out)
 
 int blt_g_float_tan(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_tan(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -280,7 +280,7 @@ int blt_g_float_tan(CELL *in, CELL *out)
 
 int blt_g_float_asin(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_asin(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -296,7 +296,7 @@ int blt_g_float_asin(CELL *in, CELL *out)
 
 int blt_g_float_acos(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_acos(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -312,7 +312,7 @@ int blt_g_float_acos(CELL *in, CELL *out)
 
 int blt_g_float_atan(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_atan(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -328,7 +328,7 @@ int blt_g_float_atan(CELL *in, CELL *out)
 
 int blt_g_float_atan2(CELL *in1, CELL *in2, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_atan2(&Valueof(in1), &Valueof(in2), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -344,7 +344,7 @@ int blt_g_float_atan2(CELL *in1, CELL *in2, CELL *out)
 
 int blt_g_float_sinh(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_sinh(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -360,7 +360,7 @@ int blt_g_float_sinh(CELL *in, CELL *out)
 
 int blt_g_float_cosh(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_cosh(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -376,7 +376,7 @@ int blt_g_float_cosh(CELL *in, CELL *out)
 
 int blt_g_float_tanh(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_tanh(&Valueof(in), &z)){
 	SetAll(out, FLOAT, z, MRBOFF);
 	return(YES);
@@ -392,7 +392,7 @@ int blt_g_float_tanh(CELL *in, CELL *out)
 
 int blt_g_float_to_integer(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     if(float_to_integer(&Valueof(in), &z)){
 	SetAll(out, INT, z, MRBOFF);
 	return(YES);
@@ -409,7 +409,7 @@ int blt_g_float_to_integer(CELL *in, CELL *out)
 
 int blt_g_integer_to_float(CELL *in, CELL *out)
 {
-    int z;
+    int32_t z;
     integer_to_float(&Valueof(in), &z);
     SetAll(out, FLOAT, z, MRBOFF);
     return(YES);

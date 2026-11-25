@@ -27,7 +27,7 @@ int shoen_tree_trace_flag;
     if(shoen_tree_trace_flag){\
 	PrintCons2F(mesg,\
 	    (sr)->status==READY ? 'R' : ((sr)->status==ABORTED ? 'A' : 'S'),\
-	    (sr)->id);\
+	    (int)(sr)->id);\
 	dump_shoen_tree(grand_mother, 0);\
     }\
 }
@@ -69,7 +69,7 @@ int initialize_shoen_tree(OBJ *boot_code)
     dummy->status = READY;
     dummy->reduction_left = -100;
     dummy->reduction_arrowed_max = -1;
-    dummy->priority_max = (MAX_PRIORITY<<PRIORITY_SIFT_WIDTH)-1;
+    dummy->priority_max = ((uint32_t)MAX_PRIORITY<<PRIORITY_SIFT_WIDTH)-1;
     dummy->priority_min = 0;
     AllocUndef(c);
     SetAll(&(dummy->queue), REF, c, MRBOFF);
@@ -90,7 +90,7 @@ int initialize_shoen_tree(OBJ *boot_code)
     grandma->total_of_reduction = 0;
     grandma->number_of_children = 1;
     grandma->reduction_arrowed_max = -100;
-    grandma->priority_max = (MAX_PRIORITY<<PRIORITY_SIFT_WIDTH)-1;
+    grandma->priority_max = ((uint32_t)MAX_PRIORITY<<PRIORITY_SIFT_WIDTH)-1;
     grandma->priority_min = 0;
     grandma->tag = 0xFFFFFFFF;
     AllocUndef(c);
@@ -534,7 +534,7 @@ int report_raise_flag = NO;
     if(report_raise_flag || id == 0){\
 	PrintCons(">> ");\
 	print_term(mesg, PRINT_LENGTH, PRINT_DEPTH);\
-	printf(" in shoen#%d.\n", id);\
+	printf(" in shoen#%d.\n", (int)(id));\
     }\
 }
 
@@ -634,7 +634,7 @@ static int dump_shoen_tree(PARENT_RECORD *root, int level)
     PARENT_RECORD *prec=PrecOf(root->left_son);
     printf("%c%04d",
 	   root->status==READY ? 'R' : (root->status==ABORTED ? 'A' : 'S'),
-	   root->id);
+	   (int)root->id);
     if(prec!=root){
 	if(PrecOf(root->left_son)==PrecOf(root->right_son)){
 	    printf("--");

@@ -22,9 +22,9 @@ static int write_code_body(OBJ *cp, FILE *fp);
 static OBJ *write_predicate(OBJ *cp, FILE *fp);
 static int write_constant_section(CELL *p, CELL *bottom, FILE *fp);
 static unsigned short get2c(FILE *fp);
-static unsigned int get4c(FILE *fp);
+static uint32_t get4c(FILE *fp);
 static short get2sc(FILE *fp);
-static int get4sc(FILE *fp);
+static int32_t get4sc(FILE *fp);
 static int read_atom_table(FILE *fp);
 static int read_code_body(OBJ *cp, FILE *fp);
 static OBJ *read_predicate(OBJ *cp, FILE *fp);
@@ -53,16 +53,16 @@ static unsigned short atom_id_table[ATOMMAX];
     putc(c, fp);\
 }
 #define Write2C(x, fp){\
-    int xx = (x);\
-    putc(xx>>8, fp);\
-    putc(xx, fp);\
+    uint32_t xx = (uint32_t)(x);\
+    putc((int)((xx>>8)&0xFF), fp);\
+    putc((int)(xx&0xFF), fp);\
 }
 #define Write4C(x, fp){\
-    int xx = (x);\
-    putc(xx>>24, fp);\
-    putc(xx>>16, fp);\
-    putc(xx>>8, fp);\
-    putc(xx, fp);\
+    uint32_t xx = (uint32_t)(x);\
+    putc((int)((xx>>24)&0xFF), fp);\
+    putc((int)((xx>>16)&0xFF), fp);\
+    putc((int)((xx>>8)&0xFF), fp);\
+    putc((int)(xx&0xFF), fp);\
 }
 
 #define WriteOpCode(x, fp)	Write1C(x, fp)
@@ -776,32 +776,27 @@ static unsigned short get2c(FILE *fp)
     return(s);
 }
 
-static unsigned int get4c(FILE *fp)
+static uint32_t get4c(FILE *fp)
 {
-    register unsigned int l;
-    l = getc(fp);
-    l = getc(fp)|(l<<8);
-    l = getc(fp)|(l<<8);
-    l = getc(fp)|(l<<8);
+    register uint32_t l;
+    l = (uint32_t)getc(fp) & 0xFF;
+    l = ((uint32_t)getc(fp) & 0xFF)|(l<<8);
+    l = ((uint32_t)getc(fp) & 0xFF)|(l<<8);
+    l = ((uint32_t)getc(fp) & 0xFF)|(l<<8);
     return(l);
 }
 
+/* MODERN: two's-complement values from the bytes by arithmetic (the 1992
+   code shifted into a signed int, undefined past INT_MAX). */
 static short get2sc(FILE *fp)
 {
-    register short s;
-    s = getc(fp);
-    s = getc(fp)|(s<<8);
-    return(s);
+    long v = (long)get2c(fp);
+    return((short)(v >= 0x8000 ? v - 0x10000 : v));
 }
 
-static int get4sc(FILE *fp)
+static int32_t get4sc(FILE *fp)
 {
-    register int l;
-    l = getc(fp);
-    l = getc(fp)|(l<<8);
-    l = getc(fp)|(l<<8);
-    l = getc(fp)|(l<<8);
-    return(l);
+    return(pdss_s32(get4c(fp)));
 }
 
 #define ReadOpCode(fp)		getc(fp)

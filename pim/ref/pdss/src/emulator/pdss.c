@@ -84,11 +84,7 @@ int main(int argc, char **argv_)
 int stop_pdss(void)
 {
     io_ctrl_when_stop();
-    signal(SIGTSTP, SIG_DFL);
-    sigsetmask(sigblock(0) & ~sigmask(SIGTSTP));
-    kill(getpid(), SIGTSTP);
-    sigblock(sigmask(SIGTSTP));	 /** Stop here **/
-    signal(SIGTSTP, SIG_IGN);
+    pdss_stop_self();		 /** Stop here (job control, sysdep.c) **/
     io_ctrl_when_resume();
     return 0;
 }
@@ -121,7 +117,7 @@ static int load_kl1b_file(void)
 	 ||((fp = fopen(file_name, "r")) == NULL)){
 	    if(*option_startup_file == '/' || *option_startup_file == '~')
 		goto cannot_open;
-	    sprintf(file_name, "%s/%s", PDSS_SUPDIR, option_startup_file);
+	    snprintf((char *)file_name, sizeof file_name, "%s/%s", PDSS_SUPDIR, (char *)option_startup_file);
 	    fp = fopen(file_name, "r");
 	    if(fp == NULL){
 	      cannot_open:
@@ -177,7 +173,7 @@ static int load_kl1b_file_and_enter_module(CHAR *file)
     }
     while(*file == ' ') file++;
     if(*file != '/'){
-	sprintf(buf, "%s/%s", PDSS_LIBDIR, file);
+	snprintf((char *)buf, sizeof buf, "%s/%s", PDSS_LIBDIR, (char *)file);
 	file = buf;
     }
     if(option_startup_flag == 2){

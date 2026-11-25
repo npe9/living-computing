@@ -67,8 +67,14 @@ typedef int (*PDSS_FUNC)(void);
 /* A cell value from an integer or a pointer, for SetAll and friends,
    which the original used for both: integers are stored as their 32
    low bits, pointers as a PREF. */
-static inline int32_t pdss_v_int(long long v)   { return (int32_t)(uint32_t)(unsigned long long)v; }
-static inline int32_t pdss_v_uint(unsigned long long v) { return (int32_t)(uint32_t)v; }
+/* The 32-bit two's-complement value of the low 32 bits, by arithmetic
+   (a cast of an out-of-range value to int32_t is implementation-defined). */
+static inline int32_t pdss_s32(uint32_t v)
+{
+    return v <= (uint32_t)INT32_MAX ? (int32_t)v : (int32_t)(v - 0x80000000u) - INT32_MAX - 1;
+}
+static inline int32_t pdss_v_int(long long v)   { return pdss_s32((uint32_t)(unsigned long long)v); }
+static inline int32_t pdss_v_uint(unsigned long long v) { return pdss_s32((uint32_t)v); }
 static inline int32_t pdss_v_ptr(const void *p) { return (int32_t)pdss_ref(p); }
 #define CellValue(V) _Generic((V),				\
     _Bool: pdss_v_int, char: pdss_v_int, signed char: pdss_v_int,	\

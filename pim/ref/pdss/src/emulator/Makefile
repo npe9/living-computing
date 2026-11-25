@@ -14,8 +14,6 @@ LDFLAGS	=
 LIBS	= -lm
 O	= .
 MAKEDATE = living-computing modern build
-# Extra objects (the transitional low-memory shim, see ../README.md).
-SHIM	=
 
 KL1	= pdss option emulate blt_basic blt_float blt_shoen blt_iodev \
 	  blt_code blt_system deref passive unify goal shoen exception \
@@ -28,11 +26,11 @@ all: $(O)/pdss $(O)/pdssasm
 
 $(O)/pdss: objs
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -D'MAKEDATE="$(MAKEDATE)"' version.c \
-	  `for f in $(KL1); do printf '$(O)/%s.o ' $$f; done` $(SHIM) $(LIBS)
+	  `for f in $(KL1); do printf '$(O)/%s.o ' $$f; done` $(LIBS)
 
 $(O)/pdssasm: objs
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ -D'MAKEDATE="$(MAKEDATE)"' version.c \
-	  `for f in $(ASM); do printf '$(O)/%s.o ' $$f; done` $(SHIM) $(LIBS)
+	  `for f in $(ASM); do printf '$(O)/%s.o ' $$f; done` $(LIBS)
 
 objs:
 	@mkdir -p $(O)
