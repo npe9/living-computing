@@ -289,13 +289,17 @@ the script is `go()`'s loop as RUN and POLL; the device is the tape of
 the reference alone.
 
 Measured 2026-11-24, every line identical (`PINNED` in
-`lockstep_shell.py`), on a shared machine:
+`lockstep_shell.py`), on a shared machine, with the login record's ID
+0 (`fep.py` `LOGIN`, P-f3; the checkpoints made afresh under it). With
+the ID 1 every count was 20 instructions higher, the link row 30 trace
+lines longer (20,107,047), and the windows from the prompt the same
+length:
 
 | From | Typed | Instructions of `go()` | Trace lines | Ends |
 |---|---|---|---|---|
-| the prompt | `shutdown`, `yes` | 8,587,092 to 8,766,339 (179,247) | 878,180 | `PIMOS END********`, nothing left to run, 253 goals waiting |
-| the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,092 to 8,760,685 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
-| the link | `shutdown`, `yes` | 0 to 8,766,339 | 20,107,047 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
+| the prompt | `shutdown`, `yes` | 8,587,072 to 8,766,319 (179,247) | 878,180 | `PIMOS END********`, nothing left to run, 253 goals waiting |
+| the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,072 to 8,760,665 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
+| the link | `shutdown`, `yes` | 0 to 8,766,319 | 20,107,017 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
 
 The last row is the first time PIMOS's start, the login and the shell
 have run on the Bluespec core: everything `longrun_ipl.py --go --fep`
@@ -303,9 +307,11 @@ does after the link, 221 device answers on the tape, 5,859 splices of
 the merger's list (300 onto a list that is not empty). No divergence was found, so nothing in the
 core was changed. The splice-order injection into the goal box (the
 merger's list) fails the first row at line 8,429
-(`lockstep_merge.py`'s header).
+(`lockstep_merge.py`'s header; on the checkpoint made with the login ID
+1).
 
-Which RESTOREs the first row checks (2026-11-24): each RESTORE word of
+Which RESTOREs the first row checks (2026-11-24, on the checkpoint made
+with the login ID 1, before P-f3; the window is the same length): each RESTORE word of
 its script replaced in turn by a silent SLOT, the same length, and the
 run compared again.
 
@@ -422,8 +428,8 @@ the top of 48 bits, unjis's readings of a name, overlapping device
 sets, holds, events under a script of two logins and two lines), and
 every `FepError` next to them; `kernel`: every call PIMOS's start made
 of `Fep.command` and `Fep.idle` to PIMOS END after a typed
-`shutdown` and `yes`, 8,766,339 instructions, recorded under the merger
-rule; 8,586,110 to the prompt before it) is replayed into a fresh
+`shutdown` and `yes`, 8,766,319 instructions, recorded under the merger
+rule and re-recorded with the login ID 0 (8,766,339 with the ID 1); 8,586,110 to the prompt before it) is replayed into a fresh
 `fep.Fep` for the expected answers and into the emulator, over a card
 with decoy entries (a prefix and an extension of each real name, ahead of
 it), on three benches (the image file; the SPI reader with a

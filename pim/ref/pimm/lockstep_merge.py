@@ -74,7 +74,8 @@ Before these parts it was caught by no lockstep test (it was also passed by
 lockstep_atom, lockstep_pool and lockstep_scsi --part 1; in
 ref_scsi.py's six IPL parts all 2,051 splices are onto an empty list).
 It is also caught by the lockstep from the shell's prompt
-(lockstep_shell.py, bsv/run_pimm_shell.sh, outside the suite): FAIL at
+(lockstep_shell.py, bsv/run_pimm_shell.sh, outside the suite; on the
+checkpoint made with the login ID 1, before P-f3): FAIL at
 line 8,429, 1,609 instructions after the prompt, M 77708415 0000000000
 for 00e4a3cf57. In that window 88 of 804 splices are onto a non-empty
 list (in the whole typed-shutdown run from the cached machine, 300 of

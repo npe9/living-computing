@@ -34,7 +34,9 @@ OURS, each for want of the FEP's own code:
     getb(Size)), and counted in bytes every reply is odd, widened by a
     zero byte, the data a byte late (pimos.conf read as with_console,
     then end_of_file): longrun_ipl.py gives the kernel 2, the count in
-    characters (2026-11-24, from that run).
+    16-bit characters, READ from pimfep##pimos_file getb/4 @259-263
+    (new_string(S, Size, 16), docs/fep_services.md 2.2); the default 1
+    is kept for the IPL, which works either way.
     docs/binary_reverse_engineering.md 1.4;
   - a getb at the end of the data is answered with status 2 every
     time it is asked (the loader asks more than once);
@@ -137,9 +139,11 @@ REPLIER, SERVER, USER_DEVICE = ('pimos_remote_login_replier', 'pimos_remote_logi
 STD_WINDOW = 'pimos_standard_io_window'
 # The scripted login (fep_services.md 7.5): Node "local" (SOURCED,
 # login.kl1:1256), RN "pmpsi" and RP "" (OURS; the name HELD in
-# login.com), UN "pimos" and UP "" (HELD FILE, pimos.logins), the ID 1
-# (OURS)
-LOGIN = dict(id=1, node='local', rn='pmpsi', rp='', un='pimos', up='')
+# login.com), UN "pimos" and UP "" (HELD FILE, pimos.logins), the ID 0
+# (READ: the smallest integer from 0 not a key of the replier's socket
+# table, pimfep##pimos_remote_login_socket_table get_key/2 @a8-b2,
+# get_key/4 @b7-cf; fep_services.md 6.5)
+LOGIN = dict(id=0, node='local', rn='pmpsi', rp='', un='pimos', up='')
 
 
 def login_record(id, node, rn, rp, un, up):

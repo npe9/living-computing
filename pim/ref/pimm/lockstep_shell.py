@@ -51,7 +51,8 @@ changes only what the next POLL's answer is.
 Pinned (PINNED below, measured on both models, bsv/run_pimm_shell.sh):
 see bsv/README.md "The lockstep from a saved machine".
 
-Observed injections (2026-11-24, from the prompt, shutdown / yes; each
+Observed injections (2026-11-24, from the prompt checkpoint made with
+the login ID 1, before P-f3, shutdown / yes; each
 RESTORE word of the script replaced by a silent SLOT 15):
   0 (heap pointer)  FAIL at line 4, instruction 0: M 77959241 / M 32768
   1, 2, 3 (new_atom's counter, the clock)  PASS: not caught.  The
@@ -80,11 +81,13 @@ import longrun_ipl as longrun  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
 # (the saved machine, the lines typed) -> (trace lines, instructions),
-# measured on both models 2026-11-24 (bsv/run_pimm_shell.sh)
+# measured on both models 2026-11-24 (bsv/run_pimm_shell.sh), with the
+# login ID 0 (fep.py LOGIN, P-f3; the link row was 20107047, 8766339
+# with the ID 1, the prompt rows the same)
 PINNED = {
     ('prompt', ('shutdown', 'yes')): (878180, 179247),
     ('prompt', ('cat <= file("pimos:pimos.groups")',)): (731110, 173593),
-    ('link', ('shutdown', 'yes')): (20107047, 8766339),
+    ('link', ('shutdown', 'yes')): (20107017, 8766319),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
