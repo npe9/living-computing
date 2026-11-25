@@ -1095,7 +1095,23 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   the shell, `bsv/run_pimm_apps.sh`; compiling a file stops at a
   merger input of a long vector, `binary_reverse_engineering.md` 1.4,
   "Commands past the shell". Not held: a user's home directory, so
-  serving a source file to compile is OURS.)
+  serving a source file to compile is OURS. 2026-11-25: the home
+  holds the primer's `sample1.kl1`, its text the primer's, its 221
+  and 222 answers OURS in PIMOS's format; the compile reads it and
+  stopped at the long-vector merge, `compile_sample1`; with that
+  merge in on both models it stopped at `wait_value` on vectors of
+  vectors; with VPIM's general passive unification on both, at a
+  1-bit string, `refused: new_string(15, 1)`; with 1-bit strings, the
+  unary `string_operation` and `module_element` the compile runs to
+  `Compile Succeeded : sample1` and PIMOS's registration error for the
+  login user `pimos`, the package's protection; with the compiler's
+  `!package work` first, `"work:: sample1" Loaded`, `compile_work`,
+  and the module's `sieve([1,2,3],E,O)` gives the primer's answer on
+  the reference, `ref/pimm/r7_sieve.py`. The Listener, which would run
+  it as the primer does, is not reached. `ts` is past `add_bignum`,
+  which is now on both models, and stops at `set_timer` to a time
+  still to come. `gc`'s `collect_garbage` is kept refused, with a
+  staged plan in `binary_reverse_engineering.md` 1.4.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.

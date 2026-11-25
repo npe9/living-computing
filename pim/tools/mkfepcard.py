@@ -7,7 +7,9 @@ files the FEP serves, in a format of OURS.
         and every file it names (the card for the real IPL), then every
         other file of the held object/ directory as pimos:NAME (the
         kernel's files, as ref/pimm/longrun_ipl.kernel_file serves them:
-        pimos.conf, pimos.logins, pimos.groups, ...)
+        pimos.conf, pimos.logins, pimos.groups, ...), and the home
+        directory's (longrun_ipl.HOME_FILES, the primer's sample1.kl1,
+        with its pathname and attributes)
     python3 tools/mkfepcard.py OUT.img --made-up NAME [NAME ...]
         ref/pimm/ref_scsi.py's made-up pimos.ipl listing these .sav files,
         and the files (what ref_scsi.py's parts use)
@@ -42,7 +44,7 @@ PIMOS's files in SIMPOS's file system on a PSI disk):
     48  0 ...
     64  text: what made the image (for a person with a hex dump)
   blocks 1.., the directory: entries of 256 bytes, two a block:
-     0  name length in bytes (at most 240)
+     0  name length in bytes (at most 224)
      4  first block of the file
      8  length of the file in bytes
     12  the sum of the file's bytes, modulo 2**32 (the board's self-test
@@ -51,9 +53,16 @@ PIMOS's files in SIMPOS's file system on a PSI disk):
         read_open (fep#read_open 201, argument 4): 16-bit JIS, high byte
         first, as ref_scsi.py's open_file receives them.  The emulator
         compares bytes; no JIS table in hardware.  Zeros after.
+   240  the file's pathname, 221's answer string: first block, 244
+        length in bytes; 248 its attributes, 222's: first block, 252
+        length (2026-11-25, a home file, fep.FileData: the bytes fep.py
+        answers, fep.jis(pathname) and fep.attribute_string).  0 0 for
+        a file that has neither (every pimos: file, every .sav), on
+        which 221 and 222 are refused as fep.py refuses them.
   then the files, each from a block boundary, in directory order, the
-  last block zero-padded; then the attributes and the script, each from
-  a block boundary.
+  last block zero-padded, a file's pathname and attributes after it,
+  each from a block boundary; then the attributes and the script, each
+  from a block boundary.
 
 fep.py's constants, on every card this tool or bsv/fepemu_check.py
 makes (fep_tables), so the emulator holds none of them in hardware:
@@ -81,7 +90,7 @@ sys.path.insert(0, os.path.join(HERE, '..', 'ref', 'pimm'))
 sys.path.insert(0, os.path.join(HERE, '..', 'asm'))
 
 MAGIC = b'PIMFEPC1'
-BLOCK, ENTRY, NAME_MAX = 512, 256, 240
+BLOCK, ENTRY, NAME_MAX = 512, 256, 224
 
 
 def sum32(data):
@@ -140,7 +149,24 @@ def objects():
     object/* to pimos:)."""
     import longrun_ipl as lr
     lr.held_object('')
-    return [(jis_bytes('pimos:' + n), lr._held[n]) for n in sorted(lr._held)]
+    return [(jis_bytes('pimos:' + n), lr._held[n]) for n in sorted(lr._held)] + homes()
+
+
+def homes():
+    """[(path bytes, fep.FileData)]: the home directory's files
+    (longrun_ipl.HOME_FILES, the primer's sample1.kl1; 2026-11-25), as
+    HOME>NAME, with what 221 and 222 answer for each."""
+    import longrun_ipl as lr
+    return [(jis_bytes(lr.HOME + '>' + n), lr.home_file(n)) for n in sorted(lr.HOME_FILES)]
+
+
+def info(data):
+    """(221's answer bytes, 222's) of a file, b'' b'' for one that has
+    neither (plain bytes)"""
+    import fep
+    if isinstance(data, fep.FileData):
+        return fep.jis(data.pathname), bytes(data.attributes)
+    return b'', b''
 
 
 # the event kinds of fep.Fep.script, as the emulator's held requests
@@ -190,10 +216,15 @@ def build(entries, note, tables=None):
     at = 1 + dir_blocks
     directory, files = b'', b''
     for name, data in entries:
-        directory += struct.pack('>IIII', len(name), at, len(data), sum32(data))
-        directory += name + bytes(ENTRY - 16 - len(name))
+        entry = struct.pack('>IIII', len(name), at, len(data), sum32(data))
+        entry += name + bytes(240 - 16 - len(name))
         files += data + bytes(-len(data) % BLOCK)
         at += -(-len(data) // BLOCK)
+        for t in info(data):
+            entry += struct.pack('>II', at if t else 0, len(t))
+            files += t + bytes(-len(t) % BLOCK)
+            at += -(-len(t) // BLOCK)
+        directory += entry
     directory += bytes(dir_blocks * BLOCK - len(directory))
     where = []
     for t in tables or (b'', b''):
@@ -220,9 +251,12 @@ def parse(img):
     for i in range(count):
         e = img[first * BLOCK + i * ENTRY:][:ENTRY]
         nl, start, length, s = struct.unpack('>IIII', e[:16])
+        pb, pl, ab, al = struct.unpack('>IIII', e[240:256])
         data = img[start * BLOCK:start * BLOCK + length]
         out.append(dict(name=e[16:16 + nl], start=start, length=length, sum=s,
-                        ok=len(data) == length and sum32(data) == s, data=data))
+                        ok=len(data) == length and sum32(data) == s, data=data,
+                        pathname=img[pb * BLOCK:pb * BLOCK + pl] if pb else b'',
+                        attributes=img[ab * BLOCK:ab * BLOCK + al] if ab else b''))
     note = img[64:BLOCK].rstrip(b'\0').decode(errors='replace')
     ab, al, sb, sl = struct.unpack('>IIII', img[32:48])
     return dict(count=count, first=first, blocks=nblocks, total=total, note=note,
@@ -252,9 +286,12 @@ def list_image(path):
     print('  %-6s %-9s %-9s %-8s %s' % ('entry', 'block', 'bytes', 'sum32', 'name'))
     bad = 0
     for i, e in enumerate(entries):
-        print('  %-6d %-9d %-9d %08x %s%s' % (i, e['start'], e['length'], e['sum'],
-                                             name_text(e['name']),
-                                             '' if e['ok'] else '   BAD (sum or length)'))
+        print('  %-6d %-9d %-9d %08x %s%s%s' % (i, e['start'], e['length'], e['sum'],
+                                               name_text(e['name']),
+                                               '' if e['ok'] else '   BAD (sum or length)',
+                                               '   (221: %s; 222: %d bytes)'
+                                               % (name_text(e['pathname']), len(e['attributes']))
+                                               if e['pathname'] or e['attributes'] else ''))
         bad += not e['ok']
     return 1 if bad else 0
 
@@ -295,7 +332,8 @@ def main(argv):
     os.replace(tmp, out)
     h, got = parse(img)
     assert [e['name'] for e in got] == [n for n, _ in entries]
-    assert all(e['ok'] and e['data'] == d for e, (_, d) in zip(got, entries))
+    assert all(e['ok'] and e['data'] == d and (e['pathname'], e['attributes']) == info(d)
+               for e, (_, d) in zip(got, entries))
     assert (h['attributes'], h['script']) == tables
     print('mkfepcard: wrote %s, %d entries, %d bytes' % (out, len(entries), len(img)))
     return 0

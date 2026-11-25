@@ -87,6 +87,31 @@ env_check), met only in the whole IPL after the login: the reference's
 longrun (ref/pimm/longrun_ipl.py) shows it, and the Bluespec meets it
 in the lockstep from a saved machine (lockstep_shell.py, outside the
 suite; docs/pimos_roadmap.md R6).
+
+A vector of seven or more (2026-11-25, `seven senders`): a merger input
+bound to a long vector, {VECT0+14|o, a} -> {VDESC, the first element},
+the size (as the linker lays one out; lockstep_alt.py `vector 7`), was
+refused on both models until the compiler met one on the primer's
+sample1 (two vectors of 9; lockstep_shell.py APPS compile_sample1).
+No source bounds the arity (TR-466 3.3 "as many input streams as the
+arity of the vector"; KLIC runtime/gmerge.c:81-104 takes any size;
+VPIM f_reduce_merger_unify.psl.c f_Unify_MGHOK_VECT_Sub takes a long
+one, with a WARNING).  The merger here is OURS, code in heap cells:
+merge 1, 2; get_value 0, 2; proceed (p(A, O): A the input of a merger
+whose output is O).  A is bound to a vector of seven whose elements are
+[1], [2], [3], an unbound input, [], [6], [7]; after a run the fourth
+is bound to [4].  One ready goal per element, the first element's
+first, so the last element's runs first: O = [7, 6, 3, 2, 1, 4], closed
+when the count is back at 0 (worked by hand; the same on the
+reference, both OUTs read at the end).
+Observed fault injections, 2026-11-25 (bsv/PimmStages.bsv rule
+mergeVecL, each run alone with bsv/run_pimm_lockstep.sh merge and
+restored from a copy, compared with cmp):
+  the elements read from the descriptor   seven senders: the input bound
+    cell, not from its first element      to the vector, line 50: A 1
+                                          0de0008254 for 05e000825b
+  the size one short                      the same part, line 98: I 18557
+                                          for A 1 05e0008263
 """
 import os
 import sys
@@ -97,7 +122,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=12, lines=2168)
+PINNED = dict(parts=15, lines=2438)
 I = lambda v: (pimm.INT, v & 0xffffffff)       # noqa: E731
 
 # (label, the vector's size, [(element, key, value)] in the order bound,
@@ -149,6 +174,7 @@ def script():
         answers.append((label, len(binds)))
     for label, order in CHAINED:
         chained(s, label, order)
+    long_vector(s)
     del m
     return s, answers
 
@@ -208,6 +234,64 @@ def chained(s, label, order):
     s.out(5)
 
 
+# A merger input bound to a vector of seven (a long vector: {VECT0+14|o,
+# a} -> {VDESC, the first element}, the size, as the linker lays one
+# out; lockstep_alt.py `vector 7`).  Its elements: [1], [2], [3], an
+# input left unbound, [], [6], [7]; then the fourth bound to [4].
+LONG = 7
+LONG_WANT = [7, 6, 3, 2, 1, 4]
+
+
+def long_vector(s):
+    s.label('seven senders: the merger')
+    code = [(GMI, 0xf0 << 24 | 1 << 16 | 2 << 8),     # merge 1, 2
+            (KLB, 0xbc << 24 | 0 << 16 | 2 << 8),     # get_value 0, 2
+            (KLB, 0x60 << 24)]                        # proceed
+    for k in range(len(code)):
+        s.newvar(k)
+    m = s.live()
+    a0 = s.live_slot[0][1]
+    for k, c in enumerate(code):
+        s.unifyc(k, c)
+    m = s.live()
+    at = a0 - m.load
+    assert [m.opname(at + i) for i in range(3)] == ['merge', 'get_value', 'proceed']
+    s.newvar(14)                                  # A, the input
+    s.newvar(15)                                  # O, the output
+    s.arg(1, 14)
+    s.arg(2, 15)
+    s.spawn(at, 2)
+    s.run()
+    s.label('seven senders: the input bound to the vector')
+    for k in range(3 + LONG):
+        s.newvar(k)
+    m = s.live()
+    a0 = s.live_slot[0][1]
+    assert [s.live_slot[k][1] for k in range(3 + LONG)] == list(range(a0, a0 + 3 + LONG))
+    s.unifyc(0, (pimm.VDESC, a0 + 3))
+    s.unifyc(1, I(LONG))
+    s.unifyc(2, I(LONG))
+    for e in range(LONG):
+        if e == 3:
+            continue
+        if e == 4:
+            s.unifyc(3 + e, (pimm.ATOM, 0))
+            continue
+        s.cons(11, 12, I(e + 1), (pimm.ATOM, 0))
+        s.unify(3 + e, 11)
+    s._op(driver.PTR, 10, 0, (pimm.VECT0 + 15, 0))
+    m = s.live()
+    assert m.vsize(m.deref(s.live_slot[10])) == LONG
+    s.unify(14, 10)
+    s.run()
+    s.out(15)
+    s.label('seven senders: the fourth input bound')
+    s.cons(11, 12, I(4), (pimm.ATOM, 0))
+    s.unify(6, 11)
+    s.run()
+    s.out(15)
+
+
 def check(s, m):
     bad = []
     got = {}
@@ -221,6 +305,15 @@ def check(s, m):
         t = [m.term(w) for w in got.get(label, [])]
         if t != want:
             bad.append((label, t, want))
+    # seven senders: the merger makes one ready goal per element, the
+    # first element's first, so the newest, the last element's, runs
+    # first: 7, 6, then [] (the fifth) only ends its input, the fourth
+    # waits on its stream, 3, 2, 1; then 4 when it is bound, and its []
+    # closes the output (the count back to 0).  Read at the end: the
+    # same list both times
+    t = [m.term(m.deref(w)) for w in got.get('seven senders', [])]
+    if t != [LONG_WANT, LONG_WANT]:
+        bad.append(('seven senders', t, [LONG_WANT, LONG_WANT]))
     for label, _n, _binds, want in PARTS:
         ws = got.get(label, [])
         t = []
@@ -254,7 +347,8 @@ def main(argv):
     print('pimm lockstep merge: PASS (a merger under ipl_pool:keyed_set/2 on the Bluespec '
           'core, %d trace lines identical to the reference model: two and three inputs '
           'bound in one step, out of the elements\' order, reach the pool in the order they '
-          'were bound; the merger closed and no goal left waiting)' % s.counts['lines'])
+          'were bound; the merger closed and no goal left waiting; an input bound to a '
+          'vector of seven)' % s.counts['lines'])
     return 0
 
 

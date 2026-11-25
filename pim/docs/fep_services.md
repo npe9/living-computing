@@ -468,9 +468,18 @@ Weaker than the source allows, or to check:
   §6.8, its body not walked). The FEP emulator answers it the same
   (`PimmFepEmu.bsv` `windowAnswered`, `direct_kernel.tape`).
   Not served, met by commands typed (`binary_reverse_engineering.md`
-  1.4, "Commands past the shell"): a home directory's files (201 on
-  `>sys>user>pmpsi>...` answers 5, so `compile sample1` finds no
-  file), 221/222 on them, and 204 (directory) for `ls`.
+  1.4, "Commands past the shell"): 204 (directory) for `ls`.
+  (2026-11-25, R7) Served: one home file, the primer's `sample1.kl1`
+  (`longrun_ipl.HOME_FILES`, its text read from `primer25.tex.Z`
+  lines 592-605 at run time), and 221 (pathname) and 222 (attributes)
+  on it (`fep.FileData`, `fep.attribute_string`): the format is
+  PIMOS's (222: `file_dvcb.kl1`:598-691, U7; dates as
+  `fileutil.kl1` `normalize_date_time`:31-58 reads them), the pathname
+  in the primer's printed form `NODE::PATH.VERSION`
+  (`primer25.tex`:1280), every value OURS (node `PSI`, version 1,
+  owner `pmpsi`, 20-May-93 00:00:00, 1 link, FSize the bytes, RSize
+  0). The FEP emulator serves the same from the card's directory
+  entry (`tools/mkfepcard.py`, bytes 240-255).
 
 Missing, in the order the start will ask (section 3): 60 on a timer;
 240; a mapping of `pimos:NAME` to the held `object/` files in the

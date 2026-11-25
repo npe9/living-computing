@@ -51,7 +51,27 @@ inject() {
     done
     python3 "$REF/lockstep_shell.py" drop "$which" "$1/$name/checkpoint/script.hex" "$d/checkpoint/script.hex"
     want=$(python3 "$REF/lockstep_shell.py" dropped "$name" "$which")
-    got=$(cd "$d" && ../../sim_pimm_shell | python3 "$REF/lockstep_shell.py" compare checkpoint | head -1) || true
+    # A dropped RESTORE can leave the core running with no more output:
+    # with RESTORE 21 (the cdb length) it writes one line and goes
+    # silent, and the compare waits for its next line (16 minutes, then
+    # killed, 2026-11-25).  So the sim runs in the background into a
+    # fifo, a watchdog kills it (its own PID) after INJECT_LIMIT
+    # seconds (600 by default; the longest pair takes about a minute),
+    # and the compare then reads the end of the trace, which is the
+    # FAIL it would print; the sim is also killed once the compare has
+    # its line
+    rm -f "$d/fifo"
+    mkfifo "$d/fifo"
+    (cd "$d" && exec ../../sim_pimm_shell > fifo) &
+    simpid=$!
+    (sleep "${INJECT_LIMIT:-600}" && kill "$simpid" 2>/dev/null) &
+    dogpid=$!
+    got=$(cd "$d" && python3 "$REF/lockstep_shell.py" compare checkpoint < fifo 2>/dev/null | head -1) || true
+    kill "$dogpid" 2>/dev/null || true
+    wait "$dogpid" 2>/dev/null || true
+    kill "$simpid" 2>/dev/null || true
+    wait "$simpid" 2>/dev/null || true
+    rm -f "$d/fifo"
     printf 'RESTORE %s dropped, %s: %s\n' "$which" "$name" "$got" | cut -c1-200
     case "$got" in
       *": $want"*) ;;

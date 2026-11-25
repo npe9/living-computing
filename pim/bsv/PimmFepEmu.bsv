@@ -43,6 +43,13 @@
 //   the held object directory there, as longrun_ipl.kernel_file serves
 //   it); a name not on the card is answered 5 (autoload.tbl, me:, the
 //   home directory), as fep.py's open_file None is.
+//   AND (2026-11-25, R7, the primer's sample1): a home file
+//   (longrun_ipl.HOME_FILES, fep.FileData) is on the card under its
+//   path, with its pathname and attributes in the directory entry
+//   (bytes 240-255, mkfepcard.py); 221 (pathname) and 222 (attributes)
+//   on a read file that has them answer [1, the card's string], as
+//   fep.py answers them after read_open in its order of tests; on a file
+//   that has none (every pimos: file) they are refused, as fep.py raises.
 //
 // HELD REQUESTS AND THE EVENT (how the core's SCSI port sees them).  A
 // request fep.py holds (the login server's io(1), a window's getl) gets
@@ -253,6 +260,8 @@ Bit#(32) absentLast      = 5;         // fep.Fep.ABSENT: units 0..5
 Int#(32) reqReadOpen   = 201;
 Int#(32) reqAppendOpen = 203;
 Int#(32) reqGetb       = 210;
+Int#(32) reqPathname   = 221;     // fep#pathname (pimos.vmac:77)
+Int#(32) reqFileAttributes = 222; // fep#attributes (pimos.vmac:138)
 Int#(32) reqClose      = 60;
 Int#(32) reqAbort      = 70;
 Int#(32) reqTerminate  = 80;
@@ -495,6 +504,10 @@ typedef struct {
    Bit#(32) start;      // the file's first block
    UInt#(32) len;
    UInt#(32) pos;
+   Bit#(32) pblk;       // 221's answer on the card (0: none), and its length
+   UInt#(32) plen;
+   Bit#(32) ablk;       // 222's, likewise
+   UInt#(32) alen;
 } FileSlot deriving (Bits, Eq, FShow);
 
 // fep.Fep's device sets for one device id, kept apart as fep.py keeps
@@ -631,6 +644,10 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(UInt#(32)) nl    <- mkReg(0);
    Reg#(Bit#(32))  fstart <- mkReg(0);
    Reg#(UInt#(32)) flen  <- mkReg(0);
+   Reg#(Bit#(32))  fpblk <- mkReg(0);     // the entry's 221 and 222 answers
+   Reg#(UInt#(32)) fplen <- mkReg(0);
+   Reg#(Bit#(32))  fablk <- mkReg(0);
+   Reg#(UInt#(32)) falen <- mkReg(0);
    Reg#(Bit#(32))  w     <- mkReg(0);     // a card word read
    Reg#(Bit#(32))  bw    <- mkReg(0);     // a body word read
    // a name compared (fep.unjis), the time of day, the home's name
@@ -877,7 +894,15 @@ module mkPimmFepEmu(PimmFepEmu);
                cardRd(dirFirst * 512 + pack(e) * 256 + 4, True);
                fstart <= w;
                cardRd(dirFirst * 512 + pack(e) * 256 + 8, True);
-               action flen <= unpack(w); found <= True; endaction
+               flen <= unpack(w);
+               cardRd(dirFirst * 512 + pack(e) * 256 + 240, True);
+               fpblk <= w;
+               cardRd(dirFirst * 512 + pack(e) * 256 + 244, True);
+               fplen <= unpack(w);
+               cardRd(dirFirst * 512 + pack(e) * 256 + 248, True);
+               fablk <= w;
+               cardRd(dirFirst * 512 + pack(e) * 256 + 252, True);
+               action falen <= unpack(w); found <= True; endaction
             endseq
          endseq
          e <= e + 1;
@@ -993,7 +1018,8 @@ module mkPimmFepEmu(PimmFepEmu);
             else action
                case (freeSlot()) matches
                   tagged Valid .s: begin
-                     files[s] <= FileSlot { valid: True, dev: pdev, start: fstart, len: flen, pos: 0 };
+                     files[s] <= FileSlot { valid: True, dev: pdev, start: fstart, len: flen, pos: 0,
+                                            pblk: fpblk, plen: fplen, ablk: fablk, alen: falen };
                      queue(plain(pdev, stNormal));
                   end
                   default: perr <= whyLimit;
@@ -1001,6 +1027,22 @@ module mkPimmFepEmu(PimmFepEmu);
             endaction
          endseq
       endseq
+      // pathname {Id, 221} and attributes {Id, 222} on a read file the
+      // card gives them for (a home file, fep.FileData): [1, the card's
+      // string] (2026-11-25).  On a file without them fep.py goes on
+      // through its tests and raises, as here
+      else if (mcmd == reqPathname && nargs == 0 && isFile
+               && files[validValue(slotOf(pdev))].pblk != 0) action
+         let f = files[validValue(slotOf(pdev))];
+         queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
+                           addr: f.pblk * 512, dlen: f.plen });
+      endaction
+      else if (mcmd == reqFileAttributes && nargs == 0 && isFile
+               && files[validValue(slotOf(pdev))].ablk != 0) action
+         let f = files[validValue(slotOf(pdev))];
+         queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
+                           addr: f.ablk * 512, dlen: f.alen });
+      endaction
       // append_open {Id, 203, "", User, Password, Path}: accepted, [1],
       // whatever the arguments are (fep.py never looks at the path's
       // bytes: no open_file), if the device has no file and is not
@@ -1093,8 +1135,9 @@ module mkPimmFepEmu(PimmFepEmu);
          else begin
             queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
                               addr: f.start * 512 + pack(f.pos), dlen: chunk });
-            files[s] <= FileSlot { valid: True, dev: f.dev, start: f.start, len: f.len,
-                                   pos: f.pos + chunk };
+            let g = f;
+            g.pos = f.pos + chunk;
+            files[s] <= g;
          end
       endaction
       // the timer's close: [1]

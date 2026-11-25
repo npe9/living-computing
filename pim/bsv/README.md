@@ -70,7 +70,8 @@ instruction and is tested by trace comparison with it.
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
-| `PimmSBox.bsv` | string box: length and size, element, new string, set element |
+| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`) |
+| `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
 | `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
@@ -118,7 +119,9 @@ image's own tables have; fourteen instructions, among them
 compiler packs those from the 11th on into a vector, `enqueue_goal`
 spreads it) and `newm` (`ipl_module:load/4` builds five real modules
 as module objects, `new_module`; every cell checked against the file
-and the layout of the image's own modules) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
+and the layout of the image's own modules) and `melem`
+(`module_element` on three image modules, against `asm/kbndis.py`'s
+table, and on a `new_module`'s; rules `modElem1`, `modElem2`) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
 whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
@@ -151,7 +154,9 @@ module). The bench fills a string it has made in place (`SETW`),
 not through `set_string_element`. `unif`: two vectors or two lists
 are unified by a goal of their own (PDSS's way; the stub
 `unify_step`), nine cases with their bindings and two failures.
-`s32`: `new_string` with 32-bit elements. `ipll`: the IPL's
+`s32`: `new_string` with 32-bit elements. `s1`: strings of 1-bit
+elements (the string box's type 0) and the unary `string_operation`
+(a vector of three), a change to 1 bit refused. `ipll`: the IPL's
 `ipl_files/4` reads the held `pimos.ipl` and gives its twenty names. `p2c`: `predicate_to_code` on every predicate
 of the image and the guard `code`. `apply`: `apply(Code, Args)`, with
 `top:go_pimos1/2`'s own. `shoen`: the shoen in its first stage,
@@ -210,8 +215,13 @@ four multiply sites of `scsi_fep` in `pimm_patch_scsifep360E.sav`
 loaded through `ipl_loader:load/4`, about 2.1 M trace lines.
 `rdvc`: the guard `diff`, at `file_request_device:driver_0/10` of
 `pimm_patch_mkdir360E.sav` (loaded as for `xmod`), about 7.4 M trace
-lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`), the
-IPL's pool `ipl_pool:keyed_set/2` given vector keys. `tproc`:
+lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`, since
+2026-11-25 rule `pv1` and the box `PimmPBox.bsv`), the
+IPL's pool `ipl_pool:keyed_set/2` given vector keys. `pstruct`:
+`wait_value` on nested structures, VPIM's general passive unification
+(`PimmPBox.bsv`), an OURS goal in heap cells: lists, long vectors,
+strings, codes and modules as elements, goals waiting on an element of
+X or Y, the 512-frame stack and its 513th push refused. `tproc`:
 `Goal@processor(P)` with P unbound waits (rules `tq1`..`tq4`, the
 stub `to_processor`, rules `tp0`..`tpE`; from VPIM), at the one site
 of `pimm_patch_scsifep360E.sav`. `timer`: `system_timer` and
@@ -240,9 +250,10 @@ twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
 
-State: 168
+State: 169
 instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
-both models; 165 without our three stubs; the earlier 128 and 130 were
+both models; 165 without our three stubs; 169 with `module_element`,
+2026-11-25; the earlier 128 and 130 were
 increments; the eleven since 157 are those met between the login and
 the shell's prompt, `ref/pimm/lockstep_login.py`); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
@@ -329,8 +340,9 @@ that reads the clock (`system_timer` and the timer instructions write
 the clock's bits to a register, which the trace shows: INFERENCE from
 the PASS, not counted). RESTOREs 1-3 are
 unchecked by this window; they are checked by the commands past the
-shell (below, "Which RESTOREs the commands check"). RESTOREs 16-26 (the waiting command's fields) were not dropped
-one by one; dropping the push (31) removes them all.
+shell (below, "Which RESTOREs the commands check"), and so are
+RESTOREs 16-26, the waiting command's fields, each dropped alone
+(2026-11-25, `pwd`, the table there).
 
 ### Commands past the shell (`run_pimm_apps.sh`)
 
@@ -361,7 +373,36 @@ instructions), every line identical:
 | rs | `rs`, (empty) | 190,791 | 800,789 | 36 |
 | versions | `versions` | 114,472 | 610,006 | 38 |
 | compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
-| compile_missing | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | 94 |
+| compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | 149 |
+| compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | 178 |
+| ts | `ts` | 68,783 | 184,130 | 3 |
+
+(2026-11-25) compile_missing typed `sample1` until the home directory
+served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
+222 in `fep.py`); it now types `sample2`, which the home lacks, the
+same run but for the name (its counts and its two `DROPPED` lines
+unchanged, re-run). compile_sample1 reads the file; it ended refused on
+both models (first at `refused: a merger input bound to a vector of
+seven or more`; since the long-vector merge, rule `mergeVecL` and
+`lockstep_merge.py` `seven senders`, at `refused: wait_value: an
+element (21, ...)`; since the passive-unification box, `PimmPBox.bsv`,
+at `refused: new_string(15, 1)`, where the core's last line was the
+string box's own stop, `E error`, so the compare failed on that line
+alone; since the 1-bit strings, the unary `string_operation` and
+`module_element`, 2026-11-25, `lockstep_s1.py`, `lockstep_melem.py`,
+the compile runs to its end on both models: the window as
+`binary_reverse_engineering.md` 1.4 has it, ending `!ERROR! module
+registration error : pimos:: sample1` and the shell's prompt).
+compile_work (2026-11-25) types the compiler's `!package work` first
+and ends `"work:: sample1" Loaded`, the module loaded
+(`binary_reverse_engineering.md` 1.4; `ref/pimm/r7_sieve.py` runs it,
+reference only). ts (2026-11-25) stopped at `add_bignum` until it
+was in on both models (rules `ba1`..`ba9`, `lockstep_bignum.py`); it
+now ends refused on both models at `set_timer` to a time still to
+come, its window empty (the compare takes the core's `E unimp`).
+`new_string` of another size and `change_element_size` to 1 bit are
+now refused by the exec stage (`E unimp`), before the string box.
 
 Which RESTOREs the commands check (2026-11-24, the kept work directory
 of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT
@@ -387,10 +428,23 @@ one in compile_exit (caught), 357 in compile_missing (not caught).
 | compile_exit | 3, the instructions since the tick | FAIL at the same line: `R 9 000007611f` / `R 9 000007611e`, one tick short |
 | compile_missing | 2 | FAIL at line 1,484,817, instruction 288,608: `R 9 000007619f` / `R 9 00000002aa` |
 | compile_missing | 3 | PASS, as predicted: the read falls past the 236 |
+| pwd | 16-21: unit, lun, direction, length, the cdb's word, the cdb's length | FAIL at line 1: the trace's first command line (`B 7 1 0820004000 2 16384` on the reference) |
+| pwd | 22, the buffer's word | FAIL at line 12, a write of the data |
+| pwd | 23, the buffer's length | FAIL at line 4 |
+| pwd | 24, 25, 26, the three outs | FAIL at lines 4,101, 4,102, 4,103, the three writes after the data |
 
-So each of RESTOREs 0-4 and the waiting command's push is now caught
-by some window (16-26 not dropped one by one): 0, 4 and 31 by `shutdown`/`yes`, 1 by `echo(zorkqx)`, 2 and 3 by
-`compile`/`!exit`.
+The pwd rows (2026-11-25) drop each field of the one command waiting
+in the checkpoint (unit 7, lun 1, a 5-byte cdb, direction 2, 16,384
+bytes). With 21 dropped the core writes one line and goes silent, so
+the compare waits for its next (16 minutes, then killed); `inject`
+now runs each sim in the background into a fifo with a watchdog that
+kills it (its own PID) after `INJECT_LIMIT` seconds, 600 by default,
+and the compare then reads the end of the trace and prints the same
+FAIL at line 1.
+
+So each of RESTOREs 0-4, 16-26 and the waiting command's push is now
+caught by some window: 0, 4 and 31 by `shutdown`/`yes`, 1 by
+`echo(zorkqx)`, 2 and 3 by `compile`/`!exit`, 16-26 by `pwd`.
 
 ## FPGA flow (ULX3S / ECP5)
 

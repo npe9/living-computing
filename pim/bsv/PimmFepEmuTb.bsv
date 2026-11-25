@@ -141,7 +141,23 @@
 //   80 answered [1]                        direct_kernel 368 372, kernel 221
 //   the 80 branch removed                  direct_kernel 367-372, kernel
 //                                          220-223
-// Nothing injected passed unnoticed.  The four characters added to
+// Nothing injected passed unnoticed.
+//
+// Observed fault injections, 2026-11-25, 221 and 222 on a home file (the
+// primer's sample1.kl1; record_fep.py direct_kernel section 11), the
+// same way, from a copy of the file, restored and `cmp` equal; each
+// FAILs on F, S and B alike, on direct_kernel only, the other eight
+// tapes passing:
+//   222 answers the pathname's block       direct_kernel 400 405 406 408
+//   the 221 branch removed                 direct_kernel 401-406 (refused,
+//                                          why 7, then every one after)
+//   221 on a file with no pathname         direct_kernel 431 only (a held
+//     answered                             pimos: file's: fep.py raises)
+//   the lookup does not read 221's length  direct_kernel 402 404 405 406
+//                                          408 409
+// Nothing injected passed unnoticed.
+//
+// (Of 2026-11-24:) The four characters added to
 // unjisChar (" ( ) =) cannot be seen on a tape: no name compared holds
 // them, and a typed line reaches the emulator as card bytes.
 //

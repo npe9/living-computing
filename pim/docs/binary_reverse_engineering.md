@@ -813,7 +813,9 @@ the device are given it again whenever the machine runs dry.
   | `rs`, (empty line) | 190,791 | 800,789 | the resource tree, `+-----+-------+-------+` / `\|RscID\|RscType\|RscName\|` and 14 rows, then `OK? ` | the manual's described table (`e-shell.tex`); the IDs are this run's |
   | `versions` | 114,472 | 610,006 | ` Module not found !! ( versions:go ) ` / `  [ Job#1, Node#0, PE#0 ]`, then ` Job 1 was aborted . ` | the module is named `ipl_versions` (`versions.kl1`:7) and not loaded under `versions`: the held source's behaviour, not a model fault (INFERENCE: which module list a 3.6 installation linked is not held) |
   | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
-  | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample1`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample1`, `.aya`, `.mac`, `.kl1`, each 5) and `fep.py` holds no home files |
+  | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample2`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample2`, `.aya`, `.mac`, `.kl1`, each 5), which holds only `sample1.kl1` (2026-11-25; this row typed `sample1` before, the same counts) |
+  | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | as above, then `Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1`, the with_macro warning, `[sample1.kl1@0] Compile Module : sample1`, `=>  :- module sample1 .`, `Compile Succeeded : sample1`, `!ERROR! module registration error : pimos:: sample1`, the totals, `COMPILE> `, `Shell>> `; nothing left to run (until 2026-11-25 refused: at the long-vector merge, 608,552 and 2,236,196; at `wait_value` on vectors of vectors, 612,857 and 2,248,660; at `new_string(15, 1)`, 727,607 and 2,563,611) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
+  | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | as above, but `Package : work`, `!WARNING! not included in the working packages : work`, `COMPILE> ` after the package line, and `"work:: sample1" Loaded` for the registration error, `Total Number of Warning : 1` only; nothing left to run | the compiler's own `!package` command (APPS `compile_work`, 2026-11-25); the module is loaded |
 
   `pwd` against the primer, each difference root-caused: the prompt
   `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
@@ -829,7 +831,9 @@ the device are given it again whenever the machine runs dry.
   at line 25,012; dropping the clock's ticks or the instructions since
   the last tick fails `compile`/`!exit` at line 828,137 (its one
   `system_timer` read); so each of RESTOREs 0-4 and the waiting command
-  (31) is now caught by some window (16-26 not dropped one by one).
+  (31) is now caught by some window; and each of 16-26, the waiting
+  command's fields, dropped one at a time, fails `pwd` (2026-11-25:
+  16-21 at line 1, 22 at 12, 23 at 4, 24-26 at 4,101-4,103).
 
   What these needed: the rest of printable ASCII in `fep.py`'s JIS
   table, from PIMOS's own `table_ascii_to_jis` (`code_cv.kl1`:152-251;
@@ -853,7 +857,19 @@ the device are given it again whenever the machine runs dry.
     held an `in` and an `out` but no `inter`, and no clause of
     `invoke_std_handler` takes that. (The atom was read as 65,785, `v`
     in the module's atom table as `unlsav` writes it, the JIS 21:76 of
-    `*`.) Why no `inter` was asked for was not traced.
+    `*`.) Who should give the `inter`, read 2026-11-25 (source only,
+    not run): the shell's pipe stages ask for `in` and `out` only
+    (`shell/main/tos.kl1`:47, 66, 80, `IO_info`). A task's missing
+    stream is to be inherited from its parent: `inter_check` with the
+    `inter` slot `*` sets the old kind to `inter` (or `in_inter`,
+    `out_inter`, `in_out_inter`; `kernel/stdio/std.kl1`:88-103), and
+    `stdio_old_check` asks the parent's switch to `make_branch` that
+    kind (124-127). Its `normal(E, Id)` answer puts `{inter, Cont,
+    FCode, SShut}` on the same `Dist` list `std_handler` reads
+    (129-133). So the `*` left in the vector means the inherited branch
+    gave nothing to `Dist`. That happens when the old kind came out
+    as `[]` (`stdio_old_check([], ...)`, 117-122) or when the branch's
+    answer was not `normal`. Which of the two it is, is the next probe.
   - `listener`: the window it opens sends 126 (`reshape_by_mouse`), now
     answered `[1]` (`fep_services.md` §4); then a 201 of
     `listener.com` (5) and 130; then (PROBE) a reduction failure in
@@ -862,24 +878,113 @@ the device are given it again whenever the machine runs dry.
     task's first report to be `resource_low`. The model never reports
     `resource_low` (`pimm.py`:2631, OURS: no source gives the
     threshold).
-  - `ts`: `refused: add_bignum` (not implemented). `gc`: `refused:
-    collect_garbage`. `ls`: needs 204 (directory), not served; its
-    contents would be OURS.
-  - PROBE, all of this item: the primer's `sample1` (`primer25.tex`:592-605, the sieve), served
-    by the probe as a home file with 222's attributes in the format of
-    `fileutil.kl1` `normalize_date_time`:31-58 (the values OURS) and
-    221's path: the compiler prints `Compile File :
-    >sys>user>pmpsi>sample1.kl1` (the primer's form) and stops at
-    `refused: a merger input bound to a vector of seven or more`
-    (`pimm.py` `i_merge_in`; the core has the same stop,
-    `PimmStages.bsv` `mergeIn0`'s `stop(EndUnimp)` for a long vector,
-    READ, not run).
-    With the probe's own long-vector merge (the size and elements from
-    the vector's descriptor) it merges two vectors of 9, reads the file
-    (210, 550 bytes) and stops at 556,699 instructions at `refused:
-    wait_value: an element (21, ...)`, an element tag the model does
-    not wait on. So R7 waits on the long-vector merge and that wait,
-    then whatever comes next; the home-file service would be OURS.
+  - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
+    `add_bignum` in on both models (VPIM's edges, `pimm.py`
+    `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs
+    in lockstep (APPS `ts`, 68,783 instructions, 184,130 lines) to
+    `refused: set_timer to a time still to come (643223, now 483224)`
+    before writing anything: an alarm, which neither model keeps
+    (`pimm.py` `i_set_timer`). That is the next stop.
+  - `gc`: `refused: collect_garbage`, kept refused. The built-in is
+    23:77 with no operands (`library/assembler/inst_tab.kl1`:132), a
+    guard of class user with no inputs or outputs
+    (`library/compiler/blt.kl1`:126-127). Its only callers are
+    `gcCall :- collect_garbage | true` and the same form with a stream
+    (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It is in neither
+    VPIM's built-in table nor the manual. The Pseudo PIM/m microprogram
+    has an entry named `collect_garbage` at `02d5`
+    (`pseudo_pimm_microcode.md` line 211). Taking it as a guard that
+    succeeds would give the shell's answer but not the collection, and
+    that would be a fake success. A staged plan:
+    1. Read the microprogram's `02d5` routine through
+       `pimmutil##rassy`, as for the other entries, for what it does
+       with the heap and what it reports.
+    2. Write a copying collector on the reference, rooted at the goal
+       records, the hooks and the registers, that keeps `lockstep_*`
+       green with `collect_garbage` run between parts.
+    3. On the core, add a box of its own (the PimmPBox pattern: its own
+       memory port and a stack in a register file), with a lockstep
+       test that compares the heap after a collection.
+    4. Add APPS `gc`.
+  - `ls`: needs 204 (directory), not served; its contents would be
+    OURS.
+  - **R7, the primer's sample1** (2026-11-25; the PROBE that stood
+    here, 2026-11-24, is replaced by committed runs). The home
+    directory holds `sample1.kl1`, its text the primer's
+    (`primer25.tex`:592-605, the sieve, read from the held
+    `primer25.tex.Z` at run time; `longrun_ipl.HOME_FILES`), and
+    `fep.py` answers 221 and 222 on it (`fep_services.md` §4, the
+    values OURS). `compile`, `sample1`, `!exit` (APPS
+    `compile_sample1`) then reads it as the primer's compile does:
+    201 of `>sys>user>pmpsi>sample1`, `.aya`, `.mac` (5), `.kl1` (1),
+    222, 201 of `.pkl1` and `.sav` (5), 221, 222, 221, getb 6001 (the
+    549 characters), getb (2), and stopped on both models at 608,552
+    instructions, 2,236,196 trace lines, at `refused: a merger input
+    bound to a vector of seven or more` (`pimm.py` `i_merge_in`,
+    `PimmStages.bsv` `mergeIn0`), the window `** KL1 Compiler **`,
+    `COMPILE> ` only (the compiler's messages come after the parse).
+    The merge of a long vector is in on both models (2026-11-25,
+    `lockstep_merge.py` `seven senders`): two vectors of 9 merged, it
+    stops at 612,857 instructions, 2,248,660 lines, at `refused:
+    wait_value: an element (21, ...)`, in `pimos::keyed_bag`
+    `if_empty/4` (`utility/pool/k_bag.kl1`:155) comparing two vectors
+    whose elements are vectors: the compiler's head-position keys
+    (`library/compiler/index.kl1`:787 `new_register(car(Pos), ...)`,
+    `{car, {arg, 1}}` against `{variable(N), 7}`; atoms named from
+    `loaded`'s name list). The general passive unification is in on
+    both models (2026-11-25, VPIM's `f_EqualStruct`/`f_Equal_Sub`;
+    `pimm.py` `passive`, `PimmPBox.bsv`, `lockstep_pstruct.py`): it
+    stops at 727,607 instructions, 2,563,611 lines, at `refused: new_string(15, 1)`, in
+    `kl1cmp_register`'s fill of a string (`compiler/reg.kl1`, a 1-bit
+    string: element type 0, `kbnheap.kl1` `string_cdesc`), which
+    neither model took. With 1-bit strings, the unary
+    `string_operation` and `module_element` on both models
+    (2026-11-25, `lockstep_s1.py`, `lockstep_melem.py`) the compile
+    runs to its end: 973,759 instructions, 4,048,964 lines, then nothing left to
+    run, back at `Shell>>`. "R7, the compile against the primer" below
+    has the window line by line.
+  - **R7, the compile against the primer** (2026-11-25, APPS
+    `compile_sample1`, in lockstep on both models). The primer's run
+    (`primer25.tex`:1280-1302) compiles three files; its sample1 part
+    and ours, line by line:
+
+    | The primer | Here | Why they differ |
+    |---|---|---|
+    | `Compile File : **psi***::>sys>**>sample1.kl1.1` | `Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1` | the primer masks the node and directory; ours are the 221 answer, OURS |
+    | (none) | `` !WARNING! no with_macro declaraion. assumed `pimos'. `` | the file has no `with_macro`; the held compiler warns (`compiler/driver.kl1`:708, 716; the same warning commented out at :74). The primer's compiler may have been another version: not settled |
+    | `Compile Module : sample1` | `[sample1.kl1@0] Compile Module : sample1` | the held compiler's form; the primer's is not held |
+    | (none) | `=>  :- module sample1 .` | the held compiler echoes the declaration |
+    | `sieve/3` | (none) | the held compiler's message for each predicate is commented out (`compiler/com3.kl1`:266, `%% &err<<=[message(string#"~T", [Pred/Ari])]`) |
+    | `Compile Succeeded : sample1` | `Compile Succeeded : sample1` | the same |
+    | `"nak::sample1" Loaded` | `!ERROR! module registration error : pimos:: sample1` | PIMOS's own protection: the login user here is `pimos` (UID 101, `fep.py` `LOGIN`, `pimos.logins`), the package `pimos`; `module_table_device` `update_module/9` (`server/module/mod_dvc.kl1`:143-145, 284-286) finds the module new and its `add` answers `protection_violation`, which `wait_reg` (`library/loader/modtbl.kl1`:257-267) prints as this error. Traced 2026-11-25 by a scratch probe hooking `update_module/9` (St0 `normal`, St1 `non_existent`, then the add's status); not kept. The primer's user is `nak`, its package `nak` |
+    | `Compilation(s) Succeeded` | `Total Number of Warning : 1`, `Total Number of Error : 1` | follows from the error |
+
+    So the compiler itself runs as the held source says; the difference
+    that matters is the package. The compiler's own `!package work`
+    before the file (APPS `compile_work`, in lockstep on both models,
+    1,008,832 instructions, 4,359,920 lines, 178 SCSI commands; the
+    login and the saved machine unchanged) gives `Package : work`, the
+    compiler's warning that `work` is not among the working packages,
+    and then, for the registration error, `"work:: sample1" Loaded`:
+    the primer's line with our package for its `nak`.
+
+    The module loaded, against the source (`ref/pimm/r7_sieve.py`,
+    reference only: it replays `compile_work` and catches the last
+    `new_module`): 47 elements, one predicate head (`sieve/3`), and
+    the code is the source's three clauses (`primer25.tex`:592-605)
+    under `try_me_else`: a list's head `X`, `modulo X,2`, then
+    `equal` 0 building `E` = `[X|E1]` and `execute` `sieve`;
+    `not_equal` 0 building `O` the same way; `[]` with `get_nil` on
+    both outputs and `proceed`; `suspend` last. Run as a goal of the
+    root with `[1,2,3]` and two new variables, it answers `E = [2]`,
+    `O = [1,3]`, the primer's answer in the Listener
+    (`primer25.tex`:1343-1349). How the goal is started is OURS: the
+    Listener run (`[1] sample1:sieve([1,2,3],E,O).`) needs the
+    Listener, which stops at `listener_task_monitor:create/15`
+    wanting `resource_low` (above): not reached; and the shell's own
+    goal form (`sample1:sieve(...)` typed at `Shell>>`) stops, on the
+    reference, at `string_less_than` (not implemented; a scratch
+    probe, not kept).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

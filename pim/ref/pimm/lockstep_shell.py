@@ -123,7 +123,15 @@ PINNED = {
     ('prompt', ('rs', '')): (800789, 190791),
     ('prompt', ('versions',)): (610006, 114472),
     ('prompt', ('compile', '!exit')): (1029437, 255083),
-    ('prompt', ('compile', 'sample1', '!exit')): (1770029, 318476),
+    # 2026-11-25: compile_missing types sample2 (the old sample1 row's
+    # counts, the same run but for the name); compile_sample1, the
+    # primer's file served from the home directory
+    ('prompt', ('compile', 'sample2', '!exit')): (1770029, 318476),
+    ('prompt', ('compile', 'sample1', '!exit')): (4048964, 973759),
+    # compile_work: the same file into the package work, loaded
+    ('prompt', ('compile', '!package work', 'sample1', '!exit')): (4359920, 1008832),
+    # ts, past add_bignum, to its set_timer refusal
+    ('prompt', ('ts',)): (184130, 68783),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -154,9 +162,44 @@ APPS = {
         (' Module not found !! ( versions:go ) \n  [ Job#1, Node#0, PE#0 ]\n', 'Shell>> ', ' Job 1 was aborted . \n')),
     'compile_exit': (('compile', '!exit'),
         ('** KL1 Compiler **\n', 'COMPILE> ', 'Shell>> ')),
-    'compile_missing': (('compile', 'sample1', '!exit'),
-        ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample1\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
-
+    # (2026-11-25: sample1 is now a home file, longrun_ipl.HOME_FILES, so
+    # the missing file is the primer's sample2, which the home lacks)
+    'compile_missing': (('compile', 'sample2', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample2\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
+    # the primer's sample1 (primer25.tex:592-605) from the home
+    # directory (longrun_ipl.home_file), R7; the whole compile since
+    # 2026-11-25 (docs/binary_reverse_engineering.md 1.4, "R7, the
+    # compile against the primer": the registration error is PIMOS's
+    # protection for the login user pimos)
+    'compile_sample1': (('compile', 'sample1', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ',
+         'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n',
+         "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n",
+         '=>  :- module sample1 .\n',
+         'Compile Succeeded : sample1\n\n',
+         '!ERROR! module registration error : pimos:: sample1\n',
+         'Total Number of Warning : 1\nTotal Number of Error : 1\n',
+         'COMPILE> ', 'Shell>> ')),
+    # the same into the package `work` (the compiler's `!package`,
+    # pimosman e-compiler.tex:437-440): the module is loaded, as the
+    # primer's `"nak::sample1" Loaded` (primer25.tex:1297); r7_sieve.py
+    # runs it
+    'compile_work': (('compile', '!package work', 'sample1', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ',
+         'Package : work\n!WARNING! not included in the working packages : work\n',
+         'COMPILE> ',
+         'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n',
+         "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n",
+         '=>  :- module sample1 .\n',
+         'Compile Succeeded : sample1\n\n',
+         '"work:: sample1" Loaded\n',
+         'Total Number of Warning : 1\n',
+         'COMPILE> ', 'Shell>> ')),
+    # `ts` (2026-11-25): past add_bignum, now on both models, it stops
+    # refused at set_timer to a time still to come (an alarm neither
+    # model keeps: pimm.py i_set_timer, PimmStages.bsv op_set_timer),
+    # before writing anything, so its window is empty
+    'ts': (('ts',), ()),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -416,7 +459,11 @@ def compare(argv):
             recent = (recent + [w.rstrip('\n')])[-6:]
             n += 1
     extra = got.readline() if n else first
-    if extra:
+    if extra and not (extra.strip() == 'E unimp' and want['stop'].startswith('refused')
+                      and not got.readline()):
+        # (2026-11-25) a run the reference ends refusing (Unimplemented,
+        # no trace line) passes only if the core ends there refusing
+        # too, its one last line `E unimp`
         print('%s: FAIL, the Bluespec trace goes on: %s' % (name, extra.strip()))
         return 1
     if n != want['lines'] or ins != want['instructions']:
@@ -462,6 +509,12 @@ DROPPED = {
     ('echo_new_atom', 1): 25012, ('echo_new_atom', 2): None, ('echo_new_atom', 3): None,
     ('compile_exit', 1): None, ('compile_exit', 2): 828137, ('compile_exit', 3): 828137,
     ('compile_missing', 2): 1484817, ('compile_missing', 3): None,
+    # the waiting command's fields, 2026-11-25 (bsv/README.md)
+    # (the one waiting: unit 7, lun 1, a 5-byte cdb, dir 2, 16384
+    # bytes); every one caught, measured 2026-11-25
+    ('pwd', 16): 1, ('pwd', 17): 1, ('pwd', 18): 1, ('pwd', 19): 1,
+    ('pwd', 20): 1, ('pwd', 21): 1, ('pwd', 22): 12, ('pwd', 23): 4,
+    ('pwd', 24): 4101, ('pwd', 25): 4102, ('pwd', 26): 4103,
 }
 
 

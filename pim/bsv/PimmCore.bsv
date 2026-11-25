@@ -23,6 +23,7 @@ import PimmMBox::*;
 import PimmNBox::*;
 import PimmShBox::*;
 import PimmScsiBox::*;
+import PimmPBox::*;
 import PimmStages::*;
 
 interface PimmCore;
@@ -74,7 +75,8 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   PimmNBox  nbox  <- mkPimmNBox(mem.port[7], gbox);
   PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox, regs);
   PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi);
+  PimmPBox  pbox  <- mkPimmPBox(mem.port[10], dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi, pbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;

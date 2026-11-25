@@ -64,6 +64,14 @@ OURS, each for want of the FEP's own code:
     bios/fep_module/win_dvc.kl1:307-312), and abort (70) answering a held request with status 6 (6.7).
     Each answer's marks (SOURCED, READ, HELD FILE, OURS) are at its
     constant below;
+  - (2026-11-25, R7) pathname (221) and attributes (222) on a read
+    file that open_file gave as a FileData (a home file,
+    longrun_ipl.home_file): [1, its pathname in JIS] and [1, its
+    attribute string] (attribute_string: the format PIMOS reads,
+    server/fep/file/file_dvcb.kl1:598-691; the values the caller's,
+    OURS).  On a file given as plain bytes neither is served (FepError,
+    as before).  jis() writes a newline as 00 0A, as the held text
+    files hold it (object/pimos.conf);
   - the kernel's bus scan (bios/boot/scsi_man.kl1): INQUIRY to unit 7
     is answered with five bytes, 03 00 07 00 00 (the values of the
     source's own canned answer, the length ours), and TEST UNIT READY
@@ -85,6 +93,7 @@ import struct
 
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
 READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT, TERMINATE = 201, 203, 210, 60, 70, 80
+PATHNAME, ATTRIBUTES_OF = 221, 222   # pimos.vmac:77 fep#pathname, :138 fep#attributes
 CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
 # docs/fep_services.md 2 (the commands, from pimos.vmac):
 FEP_ATTRIBUTES, CREATE_STRING_IO, IO = 240, 601, 620
@@ -118,7 +127,8 @@ _PUNCT = {' ': 0x21, ',': 0x24, '.': 0x25, ':': 0x27, '_': 0x32, '/': 0x3f,
 def jis(text):
     out = b''
     for ch in text:
-        out += bytes([0x23, ord(ch)]) if ch.isalnum() else bytes([0x21, _PUNCT[ch]])
+        out += b'\x00\x0a' if ch == '\n' else bytes([0x23, ord(ch)]) if ch.isalnum() \
+            else bytes([0x21, _PUNCT[ch]])
     return out
 
 
@@ -184,6 +194,35 @@ NO_DEVICE = 8 << 8
 
 class FepError(Exception):
     pass
+
+
+class FileData(bytes):
+    """A file's bytes, as open_file returns them, with what 221
+    (pathname) and 222 (attributes) answer for it: a home file
+    (longrun_ipl.home_file; docs/fep_services.md 2.2).  A file given as
+    plain bytes (the held pimos: set) has neither, and 221 or 222 on it
+    raises FepError, as any request not served does."""
+
+    def __new__(cls, data, pathname, attributes):
+        o = bytes.__new__(cls, data)
+        o.pathname, o.attributes = pathname, attributes
+        return o
+
+
+def attribute_string(owner, update_user, cdate, ctime, mdate, mtime, links, fsize, rsize):
+    """222's answer, the one string PIMOS reads: Owner, UpdateUser,
+    CDate, CTime, MDate, MTime, then LinkCnt, FSize, RSize in decimal,
+    each field ended by an LF (16-bit JIS, element 10), the integers'
+    LF needed (server/fep/file/file_dvcb.kl1:598-691, attributes/2,
+    get_data/7, if_lf/8, attributes_int/6: an integer's digits are
+    counted to one before its LF, and the string must end at the last
+    LF; docs/fep_services.md U7).  A date is DD-Mon-YY and a time
+    HH:MM:SS (library/utility/fileutil.kl1:31-58 normalize_date_time,
+    the substrings it takes), what the compiler reads (library/loader/
+    dstrbt.kl1 distribute/5)."""
+    fields = [owner, update_user, cdate, ctime, mdate, mtime] + ['%d' % n for n in
+                                                                (links, fsize, rsize)]
+    return jis(''.join(f + '\n' for f in fields))
 
 
 def pack_message(args):
@@ -434,6 +473,19 @@ class Fep:
                 return [ABNORMAL]
             self.files[dev] = [data, 0]
             return [NORMAL]
+        if cmd == PATHNAME and len(msg) == 1 and dev in self.files \
+                and isinstance(self.files[dev][0], FileData):
+            # {Id, 221}: {Id, 1, Pathname} (bios/fep_module/file_dvc.kl1:
+            # 319; server/fep/file/file_dvcb.kl1 pathname/3 widens it to
+            # 16 bits for Code 0).  The name is the home file's
+            # (longrun_ipl.home_file)
+            return [NORMAL, jis(self.files[dev][0].pathname)]
+        if cmd == ATTRIBUTES_OF and len(msg) == 1 and dev in self.files \
+                and isinstance(self.files[dev][0], FileData):
+            # {Id, 222}: {Id, 1, Attributes}, one string (attribute_string;
+            # file_dvc.kl1:324).  Read under Code 0 only because 240's
+            # OS begins "SIMPOS" (file_dvcb.kl1 attributes0/4)
+            return [NORMAL, self.files[dev][0].attributes]
         if cmd == APPEND_OPEN and len(msg) == 5 and dev not in self.files \
                 and dev not in self.appending:
             # {Id, 203, "", User, Password, Path}: fep#append_open

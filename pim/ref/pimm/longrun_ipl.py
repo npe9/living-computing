@@ -331,15 +331,63 @@ def held_object(name):
     return _held.get(name)
 
 
+# The home directory's files (2026-11-25, R7: the primer's sample1):
+# HOME (">sys>user>pmpsi", fep.py simpos_user_device) holds the one
+# file the primer has the reader make there, sample1.kl1 ("should be
+# entered into a file named sample1.kl1", primer25.tex:585-605, the
+# PIMOS 2.5 primer; docs/nonlocal/ifs/manuals/pimos/primer25.tex.Z,
+# in git), its text read from the primer at run time, the verbatim
+# block's lines 592-605 as printed, each ended by an LF (16-bit JIS,
+# element 10, as the held text files, e.g. object/pimos.conf).  What
+# the FEP says of it (fep.FileData):
+#   221, its pathname: NODE::PATH.VERSION, the form the primer's own
+#     compile prints, "Compile File : **psi***::>sys>**>sample1.kl1.1"
+#     (primer25.tex:1280; the compiler prints 221's answer,
+#     library/loader/dstrbt.kl1 distribute/5, assign_pre_proc/9), and
+#     the form of every held source's first line ("icpsi183::>sys>user>
+#     hori>...>fileutil.kl1.10").  The node "PSI" (fep.ATTRIBUTES' Host)
+#     and the version 1 are OURS;
+#   222, its attributes (fep.attribute_string): the owner and the
+#     updater the SIMPOS user pmpsi, created and modified 20-May-93
+#     00:00:00 (the FEP's DATE), 1 link, FSize the file's bytes, RSize
+#     0: all OURS, in the format PIMOS reads.
+HOME = '>sys>user>' + fepm.LOGIN['rn']
+PRIMER = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'ifs', 'manuals', 'pimos',
+                      'primer25.tex.Z')
+HOME_FILES = {'sample1.kl1': (PRIMER, 592, 605, ':- module sample1.', '%(1-6)')}
+_home = {}
+
+
+def home_file(name):
+    """HOME>NAME as the FEP gives it (fep.FileData), or None."""
+    if name not in HOME_FILES:
+        return None
+    if name not in _home:
+        import subprocess
+        src, first, last, head, tail = HOME_FILES[name]
+        text = subprocess.run(['uncompress', '-c', src], capture_output=True,
+                              check=True).stdout.decode('ascii').split('\n')
+        lines = text[first - 1:last]
+        assert head in lines[0] and lines[-1].rstrip().endswith(tail), (lines[0], lines[-1])
+        data = fepm.jis(''.join(x + '\n' for x in lines))
+        _home[name] = fepm.FileData(
+            data, 'PSI::%s>%s.1' % (HOME, name),
+            fepm.attribute_string('pmpsi', 'pmpsi', '20-May-93', '00:00:00', '20-May-93',
+                                  '00:00:00', 1, len(data), 0))
+    return _home[name]
+
+
 def kernel_file(path):
     """--fep: the file the kernel asks the FEP to open (the path is
     16-bit JIS, fep.ATTRIBUTES' Code 0): pimos:NAME from the held
-    object/ set, None (abnormal) for a name it lacks and for me: and
-    the home directory; any other
-    name raises, as any request fep.py does not know does."""
+    object/ set, HOME>NAME from HOME_FILES (home_file), None (abnormal)
+    for a name either lacks and for me:; any other name raises, as any
+    request fep.py does not know does."""
     name = text_of(struct.unpack('>%dH' % (len(path) // 2), path))
     if name.startswith('pimos:'):
         return held_object(name[len('pimos:'):])
+    if name.startswith(HOME + '>'):
+        return home_file(name[len(HOME) + 1:])
     if name.startswith('me:') or name.startswith('>sys>user>'):
         return None
     raise fepm.FepError('read_open of %r: no such file is served' % (name,))

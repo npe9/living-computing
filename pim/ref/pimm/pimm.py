@@ -347,16 +347,24 @@ class Machine:
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
     # then `words` cells of 32 bits, elements packed from the top.
-    # type 3 = 8-bit elements, 4 = 16-bit, 5 = 32-bit (kbnheap.kl1
-    # string_cdesc); 1-bit strings are not modelled.
+    # type 3 = 8-bit elements, 4 = 16-bit, 5 = 32-bit, 0 = 1-bit
+    # (kbnheap.kl1 string_cdesc:168-175).  The pad is two bits at 27
+    # for types 3..5 and five bits at 27 for type 0: (32 - Len mod 32)
+    # << 27, the 32 of a whole last word falling out of the word.
+    # VPIM: "the element sizes are 1, 8, 16 and 32"
+    # (interpreter/klb_body_blt_struct.psl.c kblt_b_search_character,
+    # its PreCondition); element 0 is the top bit of the first word, as
+    # for the other sizes (2026-11-25, met compiling the primer's
+    # sample1: compiler/reg.kl1 new_string(Str, Size, 1)).
     def string(self, w):
         t, v = self.mem[w[1]]
         if t != CDESC:
             raise RuntimeError('string without a descriptor at %x' % w[1])
-        typ, pad, words = (v >> 24) & 7, (v >> 27) & 3, v & 0xffffff
-        if typ not in (3, 4, 5):
+        typ, words = (v >> 24) & 7, v & 0xffffff
+        pad = (v >> 27) & (31 if typ == 0 else 3)
+        if typ not in (0, 3, 4, 5):
             raise Unimplemented('string element type %d' % typ)
-        size = 1 << typ
+        size = 1 << typ if typ else 1
         per = 32 // size
         out = []
         for i in range(words):
@@ -366,7 +374,7 @@ class Machine:
 
     def new_string(self, n, size):
         """A new string of n zero elements of `size` bits."""
-        if size not in (8, 16, 32) or n < 0:
+        if size not in (1, 8, 16, 32) or n < 0:
             raise Unimplemented('new_string(%d, %d)' % (n, size))
         return self.make_string(size, [0] * n)
 
@@ -388,7 +396,7 @@ class Machine:
         return (INT, elems[i])
 
     def make_string(self, size, elems):
-        typ = {8: 3, 16: 4, 32: 5}[size]
+        typ = {1: 0, 8: 3, 16: 4, 32: 5}[size]
         per = 32 // size
         words = (len(elems) + per - 1) // per
         pad = words * per - len(elems)
@@ -1164,8 +1172,8 @@ class Machine:
         # atomic values and strings: two strings are equal when their
         # descriptors and all their words are (PDSS emulator/passive.c
         # passive_unify, case STRING), a string and an atomic value
-        # are not.  Vectors as below; lists, and one variable twice,
-        # need the general passive unification and are refused
+        # are not.  Lists and vectors as below; one variable twice is
+        # refused
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
             raise Unimplemented('wait_value of a variable with itself')
@@ -1182,15 +1190,10 @@ class Machine:
         if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):
             return self.guard_fail()
         if self.structure(a) or self.structure(b):
-            # vectors: PDSS's passive unification (emulator/emulate.c
-            # KL1B_WAIT_VALUE, emulator/passive.c passive_unify) as far
-            # as both models take it: two vectors of 0..6 elements are
-            # equal when the sizes are and each pair of elements is the
-            # same atomic value; in order, the first unbound element met
-            # is noted and the guard fails there (X's; or Y's opposite
-            # an atomic element of X).  A vector against anything else
-            # bound fails.  Refused: a list, a vector of seven or more,
-            # an element of X that is a structure or a string
+            # lists and vectors: the general passive unification,
+            # VPIM's (passive below; 2026-11-25, before: two vectors of
+            # 0..6 atomic elements, after PDSS).  The Bluespec's is
+            # PimmPBox.bsv, step for step
             if not self.passive(a, b):
                 return self.guard_fail()
             return
@@ -1202,33 +1205,92 @@ class Machine:
     def structure(self, w):
         return w[0] & ~1 == LIST or self.vsize(w) is not None
 
+    # VPIM's unify stack: _LOCAL_MEM_UNIFY_STACK_AREA_SIZE 0x800 words
+    # (basics/bsc_mem_map.psl.c:90), a frame of 4 (crp, size, X's and
+    # Y's first element; structures/str_passive_unify.psl.c
+    # C_U_STACK_FRAME_SIZE), so 512 frames.  VPIM's bound, not PIM/m's
+    # (its microcode is not held)
+    PASSIVE_FRAMES = 512
+
     def passive(self, a, b):
         """Two bound words, at least one a list or a vector: whether
-        they are equal (wait_value).  An unbound element met is noted
-        and answers False."""
-        short = lambda w: VECT0 <= w[0] & ~1 <= VECT0 + 12      # noqa: E731
-        for w in (a, b):
-            if w[0] & ~1 == LIST or (self.vsize(w) is not None and not short(w)):
-                raise Unimplemented('wait_value on %r' % (w,))
-        if not (short(a) and short(b)):
-            return False
-        n = self.vsize(a)
-        if n != self.vsize(b):
-            return False
-        for i in range(n):
-            x = self.deref(self.taken(self.vbase(a) + i))
-            y = self.deref(self.taken(self.vbase(b) + i))
+        they are equal (wait_value), as VPIM's f_EqualStruct and
+        f_Equal_Sub take them (functions/f_reduce_passive_unify.psl.c
+        41-109, 166-312): words of two types are not equal; two null
+        vectors are; two long vectors of different sizes are not; two
+        lists or vectors are compared element by element, depth first,
+        with an explicit stack of frames (crp, size, X's and Y's first
+        element; structures/str_passive_unify.psl.c).  Each pair of
+        elements, dereferenced: an unbound X is noted and the answer is
+        False (s_PushSuspendStack, Lsusp), then an unbound Y; a module
+        or a code is equal only to the same tag and value (MOD 27h and
+        COD 26h differ in the bit other tags keep for the MRB); other
+        types that differ are not equal; integers and atoms by tag and
+        value; strings by descriptor and words; a null
+        vector is equal; a list or vector (a long one after its size)
+        pushes the frame in hand, even one at its end (so a list's cdr
+        takes a frame), and its elements are compared next.  Refused,
+        loud: a 513th frame (VPIM suspends there with a DEBUG warning
+        and no variable, which would hang the goal) and a type the
+        model does not compare (a float: VPIM compares its value; or
+        any other).  VPIM's deref writes the result back into the
+        structure: not carried over (PIM/m's microcode is not held).
+        2026-11-25, met by the compiler on the primer's sample1
+        (pimos::keyed_bag if_empty/4, utility/pool/k_bag.kl1:155, the
+        keys {car, {arg, 1}} of library/compiler/index.kl1:787); before,
+        two short vectors of atomic elements only."""
+        stack = []
+        frame = None
+        x, y = a, b
+        while True:
             if self.unbound(x):
                 self.waiting.append(x[1])
                 return False
-            if not self.atomic(x):
-                raise Unimplemented('wait_value: an element %r' % (x,))
             if self.unbound(y):
                 self.waiting.append(y[1])
                 return False
-            if (x[0] & ~1, x[1]) != (y[0] & ~1, y[1]):
+            tx, ty = x[0] & ~1, y[0] & ~1
+            expand = None
+            if x[0] in (MOD, COD) or y[0] in (MOD, COD):
+                if x != y:                             # tags from 20h: no MRB bit
+                    return False
+            elif tx != ty:
                 return False
-        return True
+            elif tx in (INT, ATOM):
+                if x[1] != y[1]:
+                    return False
+            elif tx == STRG:
+                k = self.mem[x[1]][1] & 0xffffff
+                if self.mem[x[1]] != self.mem[y[1]] or any(
+                        self.mem[x[1] + i][1] != self.mem[y[1] + i][1] for i in range(1, k + 1)):
+                    return False
+            elif tx == VECT0:
+                pass                                   # the null vector
+            elif tx == LIST:
+                expand = (x[1], y[1], 2)
+            elif self.vsize(x) is not None:
+                n = self.vsize(x)
+                if n != self.vsize(y):
+                    return False                       # long vectors of two sizes
+                expand = (self.vbase(x), self.vbase(y), n)
+            else:
+                raise Unimplemented('wait_value: an element %r' % (x,))
+            if expand:
+                if frame is not None:
+                    if len(stack) == self.PASSIVE_FRAMES:
+                        raise Unimplemented('wait_value: the unify stack full (%d frames)'
+                                            % self.PASSIVE_FRAMES)
+                    stack.append(frame)
+                frame = [0, expand[2], expand[0], expand[1]]
+            else:
+                while frame is None or frame[0] == frame[1]:
+                    if not stack:
+                        return True
+                    frame = stack.pop()
+            crp, _n, xa, ya = frame
+            x = self.deref(self.taken(xa + crp))
+            y = self.deref(self.taken(ya + crp))
+            frame[0] = crp + 1
 
     def i_diff(self, pc, x, y, z, c16):
         # the guard diff(X, Y), X \= Y, 23:F9 r_r (inst_tab.kl1:212;
@@ -2048,7 +2110,8 @@ class Machine:
         # change_element_size(String, NewElemSize, ^NewString): "the
         # smallest index element occupies the highest order bits";
         # widening pads with zero elements to the boundary (manual).
-        # 8, 16 and 32 bits; a 1-bit string is refused.
+        # To 8, 16 and 32 bits, from any of 1, 8, 16, 32; a change to
+        # 1 bit is refused.
         def f(s, new):
             size, elems = self.need_string(s)
             new = self.need_int(new)
@@ -2087,8 +2150,15 @@ class Machine:
         # (library/compiler/blt.kl1 specialPredicate).  The operation
         # on Len elements of Str1 from Pos1 and of Str2 from Pos2;
         # NewS1 is Str1 with those elements replaced (a copy here),
-        # NewS2 is Str2 (manual).  The vectors of four and three
-        # elements (the shifting and unary forms) are refused.  An
+        # NewS2 is Str2 (manual).  The vector of three is the unary
+        # form, unary_string_operation(Op, Str1, Pos1, Len, NewS1):
+        # {Pos1, Str1, Len}, NewS2 a new variable of the compiler's
+        # (blt.kl1:937-939); VPIM's f_UnaryStringOpe_Sub
+        # (functions/f_reduce_string_ope.psl.c:1206-1229) is the
+        # binary one with String1 and Position1 in place of the second
+        # string's ("Dummy"), so op(e, e) for each element; NewS2 gets
+        # Str1 here (OURS: VPIM's unary built-in has no such output).
+        # The vector of four (the shifting form) is refused.  An
         # element of the vector that is not yet a value is waited for
         # (the manual says the built-in waits; builtin_utility:
         # append_string/2 gives it a new_string whose length is not
@@ -2098,9 +2168,11 @@ class Machine:
 
         def f(op, v):
             op = self.need_int(op)
-            if self.vsize(v) != 5 or not 0 <= op <= 15:
+            if self.vsize(v) not in (3, 5) or not 0 <= op <= 15:
                 raise Unimplemented('string_operation %d on %r' % (op, v))
-            e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(5)]
+            e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(self.vsize(v))]
+            if len(e) == 3:
+                e = e + [e[0], e[1]]
             p1, n, p2 = self.need_int(e[0]), self.need_int(e[2]), self.need_int(e[3])
             size1, s1 = self.need_string(e[1])
             size2, s2 = self.need_string(e[4])
@@ -2118,7 +2190,7 @@ class Machine:
                                | (fn(s1[p1 + i], s2[p2 + i]) & mask) << sh)
             return [new, e[4]]
         self.builtin('string_operation', [x, y, z, w4], f, elements=lambda op, v: (
-            self.unbound_elements(v) if self.vsize(v) == 5 else []))
+            self.unbound_elements(v) if self.vsize(v) in (3, 5) else []))
         return pc + 2
 
     def i_multiply_bignum_word(self, pc, x, y, z, c16):
@@ -2196,6 +2268,45 @@ class Machine:
         o = self.bignum_order(x, y)
         if o is None or o < 0:
             return self.guard_fail()
+
+    def i_add_bignum(self, pc, x, y, z, c16):
+        # add_bignum(BigX, BigY, ^BigZ), 22:B6 r_r_r (assembler/
+        # inst_tab.kl1:245; compiler/blt.kl1:718-719 the inputs X, Y,
+        # the output Z): "Adds BigX and BigY and unifies the result with
+        # BigZ" (manual e-builtin.tex 710-717; bignums as
+        # multiply_bignum_word's).  As VPIM (klb_body_blt_bignum.psl.c
+        # kblt_b_add_bignum, f_reduce_bignum.psl.c f_Add_BIGNUM_Sub,
+        # str_bignum.psl.c s_Add_BIGNUM): either not a 32-bit string, or
+        # a leading zero word (X checked first), is the exception,
+        # refused; X empty gives Y itself, Y empty X itself; otherwise
+        # the sum, as long as the longer, one word longer when the last
+        # carry is 1.  The words are written from the least significant
+        # up into a new string of zeros, the carry word last (OURS: the
+        # Bluespec's order).  2026-11-25, met in the shell's `ts`
+        def f(bx, by):
+            sx, ex = self.need_string(bx)
+            sy, ey = self.need_string(by)
+            if sx != 32 or sy != 32 or (ex and ex[0] == 0) or (ey and ey[0] == 0):
+                raise Unimplemented('built-in exception: add_bignum of %r, %r' % (ex[:2], ey[:2]))
+            if not ex:
+                return [by]
+            if not ey:
+                return [bx]
+            vx = vy = 0
+            for e in ex:
+                vx = (vx << 32) | e
+            for e in ey:
+                vy = (vy << 32) | e
+            nl = max(len(ex), len(ey))
+            s = vx + vy
+            extra = 1 if s >> (32 * nl) else 0
+            out = self.new_string(nl + extra, 32)
+            for i in reversed(range(nl)):
+                self.mem[out[1] + 1 + i + extra] = (INT, (s >> (32 * (nl - 1 - i))) & 0xffffffff)
+            if extra:
+                self.mem[out[1] + 1] = (INT, 1)
+            return [out]
+        self.builtin('add_bignum', [x, y, z], f)
 
     def i_subtract_bignum(self, pc, x, y, z, c16):
         # subtract_bignum(BigX, BigY, ^Borrow, ^BigZ), 22:B7 r4
@@ -2438,17 +2549,27 @@ class Machine:
             # record, as enqueue_goal makes one, so that the Bluespec's
             # goal box makes it the same way (2026-11-23: the records
             # were written straight from cells before, and the core
-            # refused the case).  A vector of seven or more is refused
-            # (as apply refuses one; none is met).
-            if w[0] & ~1 == VECT0 + 14:
-                raise Unimplemented('a merger input bound to a vector of seven or more')
+            # refused the case).  A vector of seven or more
+            # (2026-11-25, met by the compiler on the primer's sample1,
+            # two vectors of 9): the same, its size and elements from
+            # its descriptor (vsize, vbase).  No source bounds the
+            # arity: TR-466 3.3 says "as many input streams as the
+            # arity of the vector"; KLIC's merger takes a vector of any
+            # size the same way (runtime/gmerge.c:81-104: the count
+            # goes up by size - 1, then each element 0..size-1 is
+            # unified with a new input); VPIM's merger takes a long
+            # vector too (functions/f_reduce_merger_unify.psl.c
+            # f_Unify_MGHOK_VECT_Sub, 1487ff, a WARNING for one at
+            # :1499-1500; :210-213 the dispatch).  The order of the goals is
+            # this model's, as for a short vector.
             n = self.vsize(w)
+            base = self.vbase(w)
             count = self.mem[rec + 1][1] - 1 + n
             self.mem[rec + 1] = (INT, count)
             if count == 0:
                 self.unify(self.mem[rec], NIL)
             for i in range(n):
-                self.argv[1] = self.taken(w[1] + i)
+                self.argv[1] = self.taken(base + i)
                 self.argv[2] = self.reg[y]
                 self.record(READY, pc, self.argv[1:3])
         else:
@@ -2922,6 +3043,33 @@ class Machine:
         if d[0] != CDESC:
             raise Unimplemented('module: no descriptor at %x' % w[1])
         self.reg[y] = (INT, d[1] & 0xffffff)
+
+    def i_module_element(self, pc, x, y, z, c16):
+        # module_element(Module, Position, ^Element), 22:F7 r_r_r
+        # (assembler/inst_tab.kl1:356; compiler/blt.kl1:617-618 the
+        # inputs X1, X2, the output X3).  Element i is the cell i + 1
+        # after the module's descriptor, 0 <= i < the descriptor's
+        # count: the unloader writes {CDESC, 06 << 24 | Length} and
+        # then module_element 0 (the GC size) and on
+        # (library/kbn/kbn.kl1 encode_module:140-158), as i_module
+        # reads the count.  VPIM (interpreter/klb_body_blt_cont.psl.c
+        # kblt_b_module_element) reads the element at the module
+        # pointer plus Position under its own header, with Position
+        # checked against the module's size; a Position out of range,
+        # or a Module not a module, is the built-in's exception there:
+        # refused here.  2026-11-25, met compiling the primer's
+        # sample1 (module_utility, ground_module/3)
+        def f(md, i):
+            i = self.need_int(i)
+            if md[0] != MOD:
+                raise Unimplemented('built-in exception: module_element of %r' % (md,))
+            d = self.mem[md[1]]
+            if d[0] != CDESC:
+                raise Unimplemented('module_element: no descriptor at %x' % md[1])
+            if not 0 <= i < d[1] & 0xffffff:
+                raise Unimplemented('built-in exception: module_element %d' % i)
+            return [self.mem[md[1] + 1 + i]]
+        self.builtin('module_element', [x, y, z], f)
 
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.
