@@ -129,9 +129,21 @@ Products (`tools/p9kbuild/`, committed; `p9kbuild.NINEROM_SHA256`):
 * **`9rom.com`**: 248,648 bytes, sha256 `b6bedfa054ff18b2...73f78c7`;
   (184,048+64,600) % 4 = 0, so no padding.
 
-The image was made once; it was not rebuilt a second time to show the
-build is reproducible (the 9term build was, `docs/plan9_boot_plan.md`
-A3).  KERNDATE is s9term's (p9kgen's choice).
+**The build is reproducible.**  A second, independent build from
+scratch (2026-11-24/25, the three commands above into a fresh
+directory, `link --check`) gave byte-identical results:
+- `9rom` (sha256 `b83c5f86...44ae85`), `9rom.com` (`b6bedfa0...73f78c7`)
+  and `librom.a` (`4a19874b...`);
+- all ten generated files in the kgen directory: `rom.c`, `rom.z`,
+  `bootrom.c`, `bootrom.root.c`, `bootrom.root.z`, `devtab.h`,
+  `errstr.h`, `init.h`, `objlists`, `kerndate`;
+- the same instruction counts at every stage: p9kgen 1,441,786,197,
+  the kernel's programs 469,124,532, zl 163,617,627.
+
+Only host time differed (p9kgen 33,906 s against 11,341 s; zl 4,153 s
+against 1,039 s, on a more heavily loaded machine).  The 9term build
+was checked the same way (`docs/plan9_boot_plan.md` A3).  KERNDATE is
+s9term's (p9kgen's choice).
 
 ## 2. From reset to `main` (`hobbit/roml.s`)
 
@@ -661,8 +673,8 @@ failures observed are in the test's header.
 ## 9. Open questions
 
 * Which `mk` invocation built the real ROM (`TYPE=rom` is inferred) and
-  what KERNDATE it had; the release ships no image, so nothing here can
-  be compared with a real EPROM.
+  what KERNDATE it had.  The release ships no image, so our
+  (reproducible) build cannot be compared with a real EPROM.
 * booting(8) vs `romboot.c` on `--` and on `b` setting `bootfile`:
   another revision of the monitor, or a manual written ahead of (or
   behind) the code?
