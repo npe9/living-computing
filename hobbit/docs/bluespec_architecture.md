@@ -162,6 +162,7 @@ The model runs on two simulators, built from the same BSV:
 | A2/A3 host testbench | `bsv/run_p9host.sh` (`sim_p9host`) | `bsv/run_p9host_vl.sh` (`sim_p9host_vl`, built by `bsv/build_p9host_vl.sh`) |
 | golden testbenches | `bsv/run_golden.sh NNN` | `HOBBIT_SIM=verilator bsv/run_golden.sh NNN` |
 | the whole A2/A3 list | `tests/run_p9host_tests.sh` | `P9HOST_SIM=verilator tests/run_p9host_tests.sh` |
+| A4 kernel boot on the core | `bsv/run_p9kern.sh N [DIR]` (`DIR/sim_p9kern`) | `P9KERN_SIM=verilator bsv/run_p9kern.sh N [DIR]` (`DIR/sim_p9kern_vl`, built by `bsv/build_p9kern_vl.sh DIR` in `DIR/vl`) |
 
 `run_p9host_vl.sh` is `run_p9host.sh` with `P9HOST_SIM=verilator`: the
 same arguments, environment (`P9CWD`, `P9HOST_KEEP_SIM`, `P9KCLOCKS`,
@@ -243,4 +244,67 @@ that are don't-cares in BSV can differ (the payload of an `Invalid`
 `Maybe`, e.g. `sc_memLiveR`, reads `'hAAAAAAAA` in Bluesim and 0 in
 Verilator).  The Verilator build keeps its own `-bdir`
 (`build/verilator/`), because `.bo` files do not record `-D`.
+
+### The kernel testbench on Verilator (2026-11-24)
+
+`P9KERN_SIM=verilator bsv/run_p9kern.sh RECORDS [WORKDIR]` is
+`run_p9kern.sh` with the core part on Verilator: the same arguments,
+recording step, comparison (`tools/p9coreboot.py compare` and the
+console), output and exit status.  `bsv/build_p9kern_vl.sh WORKDIR`
+builds `WORKDIR/sim_p9kern_vl` with its intermediates in `WORKDIR/vl`
+(its own `-bdir`); `P9KERN_KEEP_SIM=1` reuses whichever simulator the
+run asks for.  A relative WORKDIR is relative to `bsv/`, as before.
+
+*One module.*  `-D P9KERN_FLAT` inlines `mkP9KernMem`; the event-memory
+and table ports (`mkP9KernEventMem`, `mkP9KernTables`) and the core are
+not synthesized separately in any build, so `mkP9KernTb.v` is one
+module with one `always @(negedge CLK)` block holding every Action C
+call (`pk_fetch`, `pk_write`, `pk_poke`, `pk_evwrite`, `pk_retired`,
+the interrupt calls, `pk_report`) and every `$display`.  The build
+script checks both counts.  The pure `pk_peek` (the table walk's reads
+and the event unit's vector read) is in about 30 continuous
+assignments, which Verilator evaluates when their address inputs
+change, not when the C memory under them changes.  Nothing in the runs
+below shows a stale read from that, but it is the first suspect if
+the two simulators ever differ past the verified range.
+
+*Exit status.*  `$finish(why == 0 ? 0 : 1)` does not set Bluesim's exit
+status: a one-rule module calling `$finish(n)` (bsc's argument is
+`Bit#(2)`) exited 0 for n = 0, 1, 2 and 3 (measured 2026-11-24, bsc
+2026.01).  So `sim_p9kern_vl` exits 0 at `$finish` too (`vl_main.cpp`
+without `VL_P9HOST`), and on either simulator a non-zero status means
+`p9kern.c` exited (no recording, out of memory) or the simulator
+crashed.  The run's verdict is the comparison: with `P9KCLOCKS=100`
+(a clock-limit stop at 46,481 records) both simulators exit 0, and
+`run_p9kern.sh` fails on both with byte-identical output ("the core
+retired 46481 records; the reference has more").  The same measurement
+means P9HostTb.bsv's `$finish(ok ? 0 : 1)` does not set Bluesim's
+status either; `vl_main.cpp`'s `VL_P9HOST` status is stricter than
+Bluesim's.
+
+**Equivalence**: `core.log` byte-identical between the two (every HRI
+line with `cyc`, every `P9KERN` line), the comparison passing on both,
+the same console:
+
+| records | HRI lines | clocks | interrupts | console |
+|---|---|---|---|---|
+| 300,000 | 300,129 | 881,049 | 0 | 0 bytes |
+| 2,893,000 | 2,893,026 | 9,919,728 | 1 | 74 bytes |
+
+`tests/run_tests.sh` re-checks the 300,000-record sample on Verilator
+next to the Bluesim one.
+
+**Speed** (2,893,000 records, the simulator alone on the same
+recording, run one after the other; load average ~16 on 16 cores,
+2026-11-24):
+
+| | wall | CPU (user+sys) | records per CPU second | clocks per CPU second |
+|---|---|---|---|---|
+| Bluesim | 93.5 s | 92.1 s | 31,400 | 108,000 |
+| Verilator | 31.7 s | 31.2 s | 92,700 | 318,000 |
+
+About 2.9 times faster.  `build_p9kern_vl.sh` (bsc `-verilog` and
+Verilator together) took 39.6 s wall.  The whole
+`run_p9kern.sh 2893000` (recording included) was 172.5 s on Bluesim and
+67.4 s on Verilator with a prebuilt simulator.
 

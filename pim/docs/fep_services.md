@@ -124,8 +124,22 @@ the 63 codes stands in the `--pairs` output under the same name, as do
   strings are widened (0) or converted from EUC (1) (541-558). The
   codes are `fep#jiskanji` 0, `euc` 1, `jis` 2, `sjis` 3
   (`pimos.vmac`:159-162, C). The PSI answers Code 0 (§6.3).
-- `getb` through the file server asks for bytes: `Size*2+1` for a
-  16-bit read (`file_dvcb.kl1`, §1.4 "the unit of 7936").
+- `getb` through the file server asks for `Size*2+1`, where `Size*2`
+  is the bytes of `Size` 16-bit characters (`file_dvcb.kl1`:301, 400,
+  and the buffer cut at `Size*2` bytes, 522-533; §1.4 "the unit of
+  7936"). **What the PSI counts (READ 2026-11-24):** the handler
+  `pimos_file` local `getb/4` (@256-26b, `psi/fepread/ptfread.py pimfep
+  pimos_file getb/4`) puts 16 in A0 and makes `new_string(A0, A3, A0)`
+  (`a7 00 00 10`, `1c 00 03 00`), a 16-bit string of A3 elements, sends
+  `:getb/3` to the SIMPOS file with it, and replies `substring(S, 0,
+  N)` (`32 00 01 02`, @263). A3 is the message's Size if the command's
+  arguments arrive as the vector's elements in order (the INFERENCE of
+  §6.1). So the PSI answers at most Size 16-bit characters: the count
+  is in characters, as `fep.py`'s `getb_unit=2` (chosen from a run)
+  assumed. PIMOS's own older code agrees: the commented-out
+  `send_message_getb/7` (`file_dvcb.kl1`:370-385) sent Size unchanged
+  to a JIS FEP (code 0) and `Size*2` to an EUC one (code 1).
+  `docs/simpos/source_check_2026-11-24.md` §4.
 
 ### 2.3 Directory (`bios/fep_module/dir_dvc.kl1`)
 
@@ -425,12 +439,15 @@ Weaker than the source allows, or to check:
 - 60 is answered only for a device opened with 201. The source
   closes every device (a timer after step 5, the appended syslog at
   shutdown, each window). (The other agent has since added a timer
-  close; not in this tree.)
+  close; not in this tree.) (2026-11-24: `fep.py` now closes timers,
+  string-I/O devices, windows and the appended file too.)
 - 70 is given no reply for any device. Right for the IPL's client;
   the PSI assembles none either (§6.7), but it answers the request
   the 70 interrupts with status 6, which `fep.py` does not. Whether
   the kernel's client waits for that is U6.
-- 80 with device id -1 raises `FepError`.
+- 80 with device id -1 raises `FepError`. (2026-11-24: now noted with
+  no reply, and the appended syslog's 60 answered `[1]`, both met at
+  the end of a typed `shutdown`; `binary_reverse_engineering.md` 1.4.)
 - No reply is ever unsolicited: no attention (`{Id, 3}`), no deferred
   reply (303's alarm, the pending `io(1)`). The reply queue is one
   FIFO, which is enough, but a reply must be able to stay owed while
@@ -458,7 +475,7 @@ branch), the other window calls.
 | U2 | **SETTLED (§6.5).** NI is `[ID, len Node, n1..n4] ++ Node ++ RN ++ RP ++ UN ++ UP`, 16-bit; ID is the smallest free integer from 0; Node `"local"`; RN, RP are the SIMPOS user's local name and password, never null. Still open: nothing in the layout; H and L of the requester's own message rest on unwitnessed arithmetic opcodes (they do not reach PIMOS) | A document giving the KL0 built-in numbers, or the interpreter run against `paragraph`'s source |
 | U3 | **SETTLED (§6.4).** `io(0, "")` on the replier and `io(0, "local")` on the server answer `""`; replier command 1 answers one character 0 (sent) or 1; `simpos_user_device` answers the user's directory from SIMPOS's `pathname`, or `">"`. Still open: the directory string a real SIMPOS user gets (SIMPOS's `remote_or_local/6`, not held) | P5 (pimfep under SIMPOS); a stand-in may answer `">"`, the PSI's own fallback |
 | U4 | **SETTLED (§6.2, §6.8).** 127, 132, 143 are `pimos_window_editor` `reshape/7`, `set_font/4`, `show/3`; all 63 codes have a PSI handler. Still open: `refute/3` (SIMPOS's, not held) is taken to call the method named, from the arities; the 8-element `get_max_size` has no PSI clause | The `refute` method of SIMPOS's object class; a grep of the patch files' objects for a sender of the 8-element 103 (U8) |
-| U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. Grade: READ FROM CONSTANTS, with the clause chaining of `fep_scsi_output put/4` (unwitnessed `c2`/`d3`) as the one INFERENCE under "903 is dropped" | A KL0 opcode document, or the first close on the real link |
+| U5 | **SETTLED (§6.6).** 900-903 pass only between FEPs; on the PIM/m's own link 903 is logged and dropped and the others are not made. Still open: nothing for PIMOS. Grade: READ FROM CONSTANTS, with the clause chaining of `fep_scsi_output put/4` (`c2`/`d3`: both now have rows in `psi/kl0_opcodes.tsv`, but neither witness shows a failed test falling through to the next clause, c2's targets itself and d3's is a cut; so this stays INFERENCE, `simpos/source_check_2026-11-24.md` 4.6) under "903 is dropped" | A KL0 opcode document, or the first close on the real link |
 | U6 | **Settled on the PIMOS side (READ, 2026-11-24; §7.1).** 70 gets no reply of its own, in all six device modules. Idle device: `{Id, 70}` is sent and only the send's result is taken (`file_dvc.kl1`:256-260, 552-556); no `receive` is queued. Request outstanding: its `receive(Vars, Result)` is already queued (493-498); `{Id, 70}` is sent and `device_abort1` waits for the send's result **and** the outstanding request's reply (521-525, 578-582). So the FEP owes exactly one reply, that of the interrupted request, with any status (6, `aborted`, gives the caller 6 and zeros by the reply rule); a second packet would be taken as the answer to the device's next request (`fep_rcvr.kl1`:86-92, replies are matched in order). After either the device answers every request `aborted` locally until a `reset` (`device_aborted`, 352-406) PSI half: **PARTLY (§6.7).** PSI half settled: no reply to 70; the interrupted timer, `io`, `getl`, socket `getb`/`accept` request is answered `{Id, 6}`; nothing found for a file or directory request. Still open: whether the kernel's client expects a reply to 70 (the PIMOS half), and what `tag_catch/9` does to a file request in progress | Open on the PSI side only: what status the real FEP gives the interrupted request (`abort_timer`, `device_abort/1` in `pimfep.ptf`) |
 | U7 | **Settled on the PIMOS side (READ; §7.1).** Both are ONE string, widened to 16 bits for Code 0 (EUC to JIS for 1), cut at elements of value 10 (LF). `File_names` (237, 238): each name up to an LF; the last may end with the string instead (`server/fep/file/dir_dvc.kl1`:304-339); the result is a list of 16-bit strings. `Attributes` (222): nine fields, the first six strings (Owner, UpdateUser, CDate, CTime, MDate, MTime), then three decimal integers in JIS digits (LinkCnt, FSize, RSize), **every integer field ended by an LF** (the digits are counted to one before the cut, `file_dvcb.kl1`:598-651, 668-691); taken only if 240's OS string begins `"SIMPOS"` (or Code is 1, the UNIX reading), otherwise abnormal (557-576). The object's modules agree with this source in clause counts and integers (`dir_device`, `file_request_device`, `fep_directory_device` are the `mkdir` patch's; §7.1) | The PSI's side (`pimos_directory`, `pimos_file`), not decoded; the date and time strings' format, which PIMOS passes through unread |
 | U8 | **Settled to the depth of §7.1** (`python3 asm/fep_services/savpreds.py`). (a) The patch modules ARE the held source: `scsi_fep` differs from its base in `send_packet2/10` and `send_packet3/10` alone, exactly the source's "Remake by Amanuma" (the rounding of a string's length moved, `copy_string_elements` for `substring`: a string argument cut across packets); `fep_server` gains an abort line through the 240 fetch (8 predicates added, 5 dropped, 2 changed); neither changes a code, a layout or the order of commands. (b) The object is built with `fep_interface` = `scsi`, `virtual_machine_interface` not `yes`, `machine` not `vm` (and `mpsi`/`pimm` in the timer), `machine_type` = `mpsi`, `ipl_parameter` = `yes`, `autoloading` not `no`: it asks for `pimos:autoload.tbl`. tcpip, telnet and remote login are not build switches but `pimos.conf` terms | Instruction-level equality with the source was not shown (no compiler is run): the measure is predicate names, clause counts, integers, atoms and the module's constants. `pimos.h`, which sets the switches, is not held |
@@ -769,8 +786,10 @@ test that drops 903 is `put/4`'s second clause: type `\==`
 `color_line_v draw_std/2`), the command `==` 903 (`blt 62`,
 witnessed), a cut, `log/2`; the third clause is the one with `put/2`.
 What is left as INFERENCE is only that a failed test goes on to the
-next clause (`c2`, `d3`: the unwitnessed clause-chain opcodes every
-multi-clause predicate here uses). In support, not proof: PIMOS has
+next clause (`c2`, `d3`: the clause-chain opcodes every
+multi-clause predicate here uses; both have rows in
+`psi/kl0_opcodes.tsv` since, but no witness shows the fall-through,
+so it stays INFERENCE, `simpos/source_check_2026-11-24.md` 4.6). In support, not proof: PIMOS has
 no name and no receiver clause for 900-903 (§2.8). So on the PIM/m's
 own link none of the four is sent, and §5's
 question about PIMOS's receiver does not arise. (The 900 and 901 in

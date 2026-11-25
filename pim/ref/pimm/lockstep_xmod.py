@@ -37,7 +37,11 @@ part loaded before, as a probe of 2026-11-23 had it, every address is
 217,509 higher: this site was 891692 there):
   enqueue_goal_external 2 at 674183, in the module at 673893
   (fep_filter), to the module at 586110 (filereq_filter), predicate
-  filereq_filter/2 at 586151.
+  filereq_filter/2 at 586151.  Since the merger timing change
+  (2026-11-24) the loader's heap is laid out otherwise: the same call
+  (opcode 66h, the same modules) is at 676409, to the module at
+  587874, predicate at 587915 (SITE re-pinned from the check's own
+  report; the trace pin below with it).
 It is found on the loaded memory by the probe's method (a call whose
 descriptor has a cache field of 0, an unbound module variable and a
 key another loaded module's table holds), the first enqueue_goal_
@@ -78,6 +82,11 @@ NOT caught here: a dereference limited to the image's depth (one REF
 met in xTab, then a miss): the bench's chain is no deeper than the
 image's;
 the field's MRB; a cache field that is not 0 (refused, never met).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 7421731 -> 7431633
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
@@ -90,9 +99,9 @@ import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=2, lines=7421731)
+PINNED = dict(parts=2, lines=7431633)
 FILE = 'pimm_patch_mkdir360E.sav'
-SITE = (674183, 0x66, 586110, 586151)   # pc, opcode, called module, target
+SITE = (676409, 0x66, 587874, 587915)   # pc, opcode, called module, target
 DEPTH = 2                   # references from the module field to {MOD, ..}
 
 

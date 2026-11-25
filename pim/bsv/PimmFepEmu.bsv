@@ -28,7 +28,17 @@
 //   create 104 and calls 127 130 132 141 142 143 111 112: [1]; getl 110
 //   HELD; 60 on a string-I/O device or a window: [1]; 70 on a device
 //   with a held request: that request answered [6]; 112 on a read file:
-//   [1]; and fep.Fep.idle(), the EVENT (below).  The files of pimos: are
+//   [1]; and fep.Fep.idle(), the EVENT (below).
+//   AND (fep.py after the merger change and the typed shutdown,
+//   2026-11-24, docs/fep_services.md 2, docs/binary_reverse_engineering.md
+//   1.4 "A command typed"): 601 of fep.STD_WINDOW, the string-I/O window
+//   "pimos_standard_io_window" that shutdown_body's question opens; io 620
+//   on it: 104, 130, 141 and 111 (putb, a string) [1, ""], 110 (getl)
+//   HELD, answered by the event as a window's getl; 60 on the
+//   append-opened file (the syslog's, at PIMOS's end): [1]; {-1, 80}
+//   (terminate): no reply (fep.py notes Fep.terminated; nothing is kept
+//   here).  Nothing else fep.py answers is missing here: any other io on
+//   the window, or 80 on another device, is refused as fep.py raises.  The files of pimos: are
 //   whatever the card holds under those names (mkfepcard.py --held puts
 //   the held object directory there, as longrun_ipl.kernel_file serves
 //   it); a name not on the card is answered 5 (autoload.tbl, me:, the
@@ -70,13 +80,16 @@
 //   2. one line or section in record_fep.direct_kernel_sections (the
 //      answer and the FepError next to it), then
 //      `python3 ref/pimm/record_fep.py --part direct_kernel`; and, if the
-//      kernel now reaches it, `--kernel PKL` again for the kernel tape.
+//      kernel now reaches it, `--kernel PKL --type shutdown --type yes`
+//      again for the kernel tape.
 //   3. bsv/run_fepemu.sh; one injection into the new branch, its observed
 //      failures in PimmFepEmuTb.bsv's header.
-//   direct_kernel's error sections hold putb (111), getb and close on a
-//   device that only appends, as tripwires: when fep.py answers one,
+//   direct_kernel's error sections hold putb (111) and getb on a device
+//   that only appends, as tripwires: when fep.py answers one,
 //   run_fepemu.sh fails on that line until the emulator follows; move
-//   that line out of the error sections then.
+//   that line out of the error sections then.  (The close was such a
+//   tripwire until fep.py answered it, 2026-11-24: run_fepemu.sh failed
+//   at direct_kernel command 49 until this module followed.)
 //
 // FROM PIMOS SOURCE (through fep.py, whose header cites each):
 //   the CDBs (TEST UNIT READY 00h, RECEIVE 08h, SEND 0Ah; group 0, the
@@ -107,9 +120,9 @@
 //   by then.
 // OURS AND NOT fep.py's (limits of a small machine; each is answered
 //   FepRefused, why 8, where fep.py would go on; record_fep.py --kernel
-//   prints what the kernel's start uses: a request of 88 bytes, 2 files,
-//   1 appending, 1 timer, 3 string-I/O, 1 window, 2 held, 3 replies
-//   queued):
+//   prints what the kernel's start uses, to PIMOS END after a typed
+//   shutdown: a request of 88 bytes, 2 files, 1 appending, 1 timer, 3
+//   string-I/O, 1 window, 2 held, 4 replies queued):
 //   a request message of at most BodyMax (1024) bytes; FileSlots (4)
 //   files open; ReplySlots (8) replies queued; AppendSlots (2) devices
 //   appending; DevSlots (8) devices that are timers, string-I/O programs
@@ -242,6 +255,7 @@ Int#(32) reqAppendOpen = 203;
 Int#(32) reqGetb       = 210;
 Int#(32) reqClose      = 60;
 Int#(32) reqAbort      = 70;
+Int#(32) reqTerminate  = 80;
 Int#(32) reqCreateTimer = 310;
 Int#(32) reqGetDateTime = 304;
 Int#(32) reqAttributes = 240;
@@ -296,6 +310,12 @@ function Maybe#(Bit#(8)) unjisChar(Bit#(8) hi, Bit#(8) lo);
          8'h2a: r = tagged Valid 33;    // '!'
          8'h29: r = tagged Valid 63;    // '?'
          8'h76: r = tagged Valid 42;    // '*'
+         // fep._PUNCT's four since 2026-11-24 (a typed line's); no name
+         // compared here holds them, so they cannot be seen on a tape
+         8'h49: r = tagged Valid 34;    // '"'
+         8'h4a: r = tagged Valid 40;    // '('
+         8'h4b: r = tagged Valid 41;    // ')'
+         8'h61: r = tagged Valid 61;    // '='
       endcase
    return r;
 endfunction
@@ -309,14 +329,16 @@ function Bit#(8) charAt(String s, UInt#(32) i);
 endfunction
 
 // the names compared (fep.REPLIER, SERVER, USER_DEVICE; the server's
-// kinds "local" and "tcpip")
-typedef 5 NNames;
+// kinds "local" and "tcpip"; fep.STD_WINDOW, the string-I/O window of
+// shutdown_body's question)
+typedef 6 NNames;
 function String nameOf(Integer n) = case (n)
    0: "pimos_remote_login_replier";
    1: "pimos_remote_login_server";
    2: "simpos_user_device";
    3: "local";
-   default: "tcpip";
+   4: "tcpip";
+   default: "pimos_standard_io_window";
 endcase;
 function UInt#(32) nameLen(Integer n) = fromInteger(stringLength(nameOf(n)));
 
@@ -477,7 +499,7 @@ typedef struct {
 // fep.Fep's device sets for one device id, kept apart as fep.py keeps
 // them (timers, strio, windows, listening): a slot is in use while any
 // is set
-typedef enum { SNone, SReplier, SServer, SUserDevice } StrIo deriving (Bits, Eq, FShow);
+typedef enum { SNone, SReplier, SServer, SUserDevice, SStdWindow } StrIo deriving (Bits, Eq, FShow);
 typedef struct {
    Bit#(32) dev;
    Bool     timer;
@@ -575,7 +597,8 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(Bit#(32))  partDev  <- mkReg(0);
    Reg#(UInt#(32)) partLen  <- mkReg(0);
    // fep.Fep.appending: the devices an append_open accepted (the path and
-   // fep.Fep.appended are not kept: nothing on master appends yet)
+   // fep.Fep.appended are not kept: fep.py keeps them in memory only, and
+   // no answer reads them); a close (60) frees the slot
    Vector#(AppendSlots, Reg#(Maybe#(Bit#(32)))) appending <- replicateM(mkReg(tagged Invalid));
    Vector#(DevSlots, Reg#(DevSlot))   devs <- replicateM(mkReg(unpack(0)));
    Vector#(HeldSlots, Reg#(HeldSlot)) held <- replicateM(mkReg(unpack(0)));
@@ -868,7 +891,7 @@ module mkPimmFepEmu(PimmFepEmu);
             nm[n] <= !a.isInt && (a.len >> 1) == nameLen(n);
          j <= 0;
       endaction
-      while (j < (a.len >> 1) && (nm[0] || nm[1] || nm[2] || nm[3] || nm[4])) seq
+      while (j < (a.len >> 1) && (nm[0] || nm[1] || nm[2] || nm[3] || nm[4] || nm[5])) seq
          bodyRd(unpack(a.v) + 2 * j, False);
          hb <= bw[7:0];
          bodyRd(unpack(a.v) + 2 * j + 1, False);
@@ -908,6 +931,19 @@ module mkPimmFepEmu(PimmFepEmu);
       endseq
       else if (ioInt && d.strio == SServer && ioCmd == 1 && d.listening)
          hold(heldLogin);                               // no reply: held
+      // the standard I/O window (fep.STD_WINDOW): 104 its place, 130 its
+      // title, 141 activate, 111 putb: [1, ""]; putb's text is unjis'd
+      // (logged) there, so it must be a string; the others' data is not
+      // looked at
+      else if (ioInt && d.strio == SStdWindow
+               && (ioCmd == reqCreateWindow || ioCmd == 130 || ioCmd == 141 || ioCmd == reqPutb))
+         action
+            if (ioCmd == reqPutb && args[1].isInt) perr <= whyRequest;
+            else queue(zeros(pdev, 0));
+         endaction
+      // its getl (110): held until the next scripted line, as a window's
+      else if (ioInt && d.strio == SStdWindow && ioCmd == reqGetl)
+         hold(heldGetl);                                // no reply: held
       else if (ioInt && d.strio == SUserDevice && ioCmd == 0) seq
          // [len Name, len Pass] ++ Name ++ Pass: the reply ">sys>user>"
          // ++ data[4:4+2n], n = int.from_bytes(data[:2]), as Python
@@ -993,10 +1029,11 @@ module mkPimmFepEmu(PimmFepEmu);
       // create_string_io {C, 601, Node, User, Password, Name}
       else if (mcmd == reqCreateStrIo && nargs == 4 && !known) seq
          names(args[3]);
-         if (args[3].isInt || !(nm[0] || nm[1] || nm[2])) perr <= whyRequest;
+         if (args[3].isInt || !(nm[0] || nm[1] || nm[2] || nm[5])) perr <= whyRequest;
          else action
             setDev(DevSlot { dev: pdev, timer: d.timer,
-                             strio: nm[0] ? SReplier : nm[1] ? SServer : SUserDevice,
+                             strio: nm[0] ? SReplier : nm[1] ? SServer
+                                    : nm[2] ? SUserDevice : SStdWindow,
                              window: d.window, listening: d.listening },
                    plain(pdev, stNormal));
          endaction
@@ -1072,6 +1109,16 @@ module mkPimmFepEmu(PimmFepEmu);
          files[validValue(slotOf(pdev))] <= unpack(0);
          queue(plain(pdev, stNormal));
       endaction
+      // the close of the append-opened file (the syslog's, at PIMOS's
+      // end): [1], as a read file's
+      else if (mcmd == reqClose && nargs == 0 && isAppending(pdev)) action
+         for (Integer s = 0; s < valueOf(AppendSlots); s = s + 1)
+            if (appending[s] == tagged Valid pdev) appending[s] <= tagged Invalid;
+         queue(plain(pdev, stNormal));
+      endaction
+      // {-1, 80}, terminate (the link's stream closed, at PIMOS's end):
+      // noted there (fep.Fep.terminated), not answered; nothing kept here
+      else if (mcmd == reqTerminate && nargs == 0 && pdev == 32'hffffffff) noAction;
       else if (mcmd == reqAbort && nargs == 0) noAction;
       else perr <= whyRequest;
    endseq;

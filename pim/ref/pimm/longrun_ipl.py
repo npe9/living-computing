@@ -29,10 +29,17 @@ must be the later one's; no goal left waiting.
 Measured 2026-11-23, the reference model alone (--reference): 844 s,
 of which 416 s making the script; 1,644,180 script operations;
 73,483,342 heap cells; 10,032 atoms, 480 modules, 20 comments.
+After the merger timing change (2026-11-24): 73,594,186 heap cells,
+the rest the same (837 s to the script on a shared machine).
 On BOTH models (bsv/run_pimm_longrun.sh), 2026-11-23: the whole list,
 447,739,516 trace lines identical, every check above passing; 7,350 s
 on a machine shared with other runs (668 s of it making the script).
-That run's simulator was built from the tree of b7187d59.
+That run's simulator was built from the tree of b7187d59, before the
+merger timing change of 2026-11-24 (docs/pimm_semantics.md, merge),
+which moved the count.  Run again 2026-11-24 under the merger rule
+(the simulator built from the tree of 3712bdd9): 448,194,526 trace
+lines identical, every check passing, 7,435 s to the compare on a
+shared machine (546 s of it making the script).
 
 --go (reference model alone, with what only it has: Machine.ahead):
 after the link, top:go_pimos1(Loaded, BootInfo) is started as the IPL
@@ -99,18 +106,27 @@ stops when the script is empty.  With search_character, unbound,
 extended_floating_point, module, the double-precision integers,
 allow_shoen_resource_report, the bignum guards, apply and
 enqueue_goal of more than 16, and create_shoen's distributed form, on
-both models: 8,586,110 instructions; the console "LOCAL  LOGIN
+both models: 8,587,092 instructions (8,586,110 before the merger
+timing change of 2026-11-24, docs/pimm_semantics.md merge; the cache
+made afresh under it); the console "LOCAL  LOGIN
 SERVICE STARTS ***", 0, "CANNOT MAKE A TCPIP LOGIN SERVICE!!", 0; the
 replier's texts and the window's "Shell>> " in the device's log; the
 stop "nothing left to run, 1,220 goals waiting", the window's getl
 (110) held.
 With --type LINE (any number): each line answers the next held getl
 (fep.py's event list, OURS).  --type shutdown --type yes: the shell
-takes "shutdown" and the job starts shutdown_body:go, then the run
-stops at 8,673,642 instructions, 1,388 goals waiting, the second line
-never asked for: a wait cycle through the user table that the model's
-merger timing makes (docs/binary_reverse_engineering.md 1.4, "A
-command typed").
+takes "shutdown" and the job starts shutdown_body:go, which takes its
+third branch: the string-I/O window pimos_standard_io_window, titled
+SHUTDOWN, asks "Really(yes/no)?" and the second line answers it; the
+console then shows "Shutdown started", "User Server End",
+"Statistics in PIMOS:", 0, 790104, "PIMOS END********" and the run
+ends at 8,766,339 instructions, nothing left to run, 253 goals
+waiting (docs/binary_reverse_engineering.md 1.4, "A command typed",
+with the manual compared line by line; before the merger timing
+change a wait cycle through the user table stopped it at 8,673,642).
+--type 'cat <= file("pimos:pimos.groups")': the file read through
+pimos: and written to the window, then Shell>> again: 8,760,685
+instructions, 1,224 goals waiting.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -133,7 +149,11 @@ import lockstep_ipll as ipll  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=447739516)
+# lines: the Bluesim run of 2026-11-24 under the merger rule (the merger
+# acts at unification, docs/pimm_semantics.md merge), 448,194,526; it was
+# 447,739,516 before that change, which moved it (every lockstep count
+# after a merger moved).  The other values are the reference's, unchanged
+PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=448194526)
 T0 = time.time()
 BANNER = 'PIMOS V 3.600 20-May-93'
 
