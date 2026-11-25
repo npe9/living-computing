@@ -30,7 +30,7 @@ extern CHAR *mesg_code_area_overflow;
 #define HeapUsed() (H-heap1)
 #define HeapRest() (heap1_warn-H)
 #define HeapUsedKL1()\
-    ((((unsigned int)H) - ((unsigned int)heap1)\
+    (((size_t)((char *)H - (char *)heap1)\
 	-(srec_peek   * sizeof(SUSPENSION_RECORD))\
 	-(grec08_peek * sizeof(GOAL_RECORD))\
 	-(grec16_peek * sizeof(GOAL_RECORD16))\
@@ -518,7 +518,7 @@ extern int  mst_merge;
 #define AllocMerger(C){\
     (C) = (MERGER_RECORD *)H;\
     H += (sizeof(MERGER_RECORD)+sizeof(CELL)-1)/sizeof(CELL);\
-    (C)->next = merger_rec_list;\
+    (C)->next = Ref(merger_rec_list);\
     merger_rec_list = (C);\
 }
 
@@ -568,7 +568,7 @@ extern int srec_total, srec_used;
 	srec_peek++;\
     }\
     (R) = srec_pool_top;\
-    srec_pool_top = srec_pool_top->other;\
+    srec_pool_top = SrecOf(srec_pool_top->other);\
     srec_total++; srec_used++;\
 }
 #else
@@ -578,7 +578,7 @@ extern int srec_total, srec_used;
 	srec_peek += 10;\
     }\
     (R) = srec_pool_top;\
-    srec_pool_top = srec_pool_top->other;\
+    srec_pool_top = SrecOf(srec_pool_top->other);\
 }
 #endif
 
@@ -600,14 +600,14 @@ extern int srec_total, srec_used;
 #define FreeSuspensionRecord(R){\
     register SUSPENSION_RECORD *p = srec_pool_top;\
     srec_pool_top = (R);\
-    srec_pool_top->other = p;\
+    srec_pool_top->other = Ref(p);\
     srec_used--;\
 }
 #else
 #define FreeSuspensionRecord(R){\
     register SUSPENSION_RECORD *p = srec_pool_top;\
     srec_pool_top = (R);\
-    srec_pool_top->other = p;\
+    srec_pool_top->other = Ref(p);\
 }
 #endif
 
@@ -700,21 +700,21 @@ extern MERGER_RECORD *merger_rec_list_old; /* for Deadlock Detection */
 #if MRBGC_STATISTICS
 #define GcGetGoalRecord8(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD *)H)+1);\
     grec08_peek++; grec08_total++; grec08_used++;\
 }
 #define GcGetGoalRecord16(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD16 *)H)+1);\
     grec16_peek++; grec16_total++; grec16_used++;\
 }
 #define GcGetGoalRecord32(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD32 *)H)+1);\
     grec32_peek++; grec32_total++; grec32_used++;\
@@ -722,21 +722,21 @@ extern MERGER_RECORD *merger_rec_list_old; /* for Deadlock Detection */
 #else
 #define GcGetGoalRecord8(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD *)H)+1);\
     grec08_peek++;\
 }
 #define GcGetGoalRecord16(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD16 *)H)+1);\
     grec16_peek++;\
 }
 #define GcGetGoalRecord32(R){\
     (R) = (GOAL_RECORD *)H;\
-    ((GOAL_RECORD *)H)->next = goal_rec_list;\
+    ((GOAL_RECORD *)H)->next = Ref(goal_rec_list);\
     goal_rec_list = (GOAL_RECORD *)H;\
     H = (CELL *)(((GOAL_RECORD32 *)H)+1);\
     grec32_peek++;\
@@ -753,21 +753,21 @@ extern MERGER_RECORD *merger_rec_list_old; /* for Deadlock Detection */
     register GOAL_RECORD *p = grec08_pool_top;\
     grec08_pool_top = (R);\
     SetGoalQueuePt2(grec08_pool_top, p);\
-    grec08_pool_top->parent = NULL;\
+    grec08_pool_top->parent = 0;\
     grec08_used--;\
 }
 #define FreeGoalRecord16(R){\
     register GOAL_RECORD16 *p = grec16_pool_top;\
     grec16_pool_top = (GOAL_RECORD16 *)(R);\
     SetGoalQueuePt2(grec16_pool_top, p);\
-    grec16_pool_top->parent = NULL;\
+    grec16_pool_top->parent = 0;\
     grec16_used--;\
 }
 #define FreeGoalRecord32(R){\
     register GOAL_RECORD32 *p = grec32_pool_top;\
     grec32_pool_top = (GOAL_RECORD32 *)(R);\
     SetGoalQueuePt2(grec32_pool_top, p);\
-    grec32_pool_top->parent = NULL;\
+    grec32_pool_top->parent = 0;\
     grec32_used--;\
 }
 #else
@@ -775,19 +775,19 @@ extern MERGER_RECORD *merger_rec_list_old; /* for Deadlock Detection */
     register GOAL_RECORD *p = grec08_pool_top;\
     grec08_pool_top = (R);\
     SetGoalQueuePt2(grec08_pool_top, p);\
-    grec08_pool_top->parent = NULL;\
+    grec08_pool_top->parent = 0;\
 }
 #define FreeGoalRecord16(R){\
     register GOAL_RECORD16 *p = grec16_pool_top;\
     grec16_pool_top = (GOAL_RECORD16 *)(R);\
     SetGoalQueuePt2(grec16_pool_top, p);\
-    grec16_pool_top->parent = NULL;\
+    grec16_pool_top->parent = 0;\
 }
 #define FreeGoalRecord32(R){\
     register GOAL_RECORD32 *p = grec32_pool_top;\
     grec32_pool_top = (GOAL_RECORD32 *)(R);\
     SetGoalQueuePt2(grec32_pool_top, p);\
-    grec32_pool_top->parent = NULL;\
+    grec32_pool_top->parent = 0;\
 }
 #endif
 #define FreeGoalRecord(R,N){\
@@ -824,7 +824,7 @@ extern int prec_total, prec_used;
 	prec_peek++;\
     }\
     (R) = prec_pool_top;\
-    prec_pool_top = prec_pool_top->parent;\
+    prec_pool_top = PrecOf(prec_pool_top->parent);\
     prec_total++; prec_used++;\
 }
 #else
@@ -834,7 +834,7 @@ extern int prec_total, prec_used;
 	prec_peek += 10;\
     }\
     (R) = prec_pool_top;\
-    prec_pool_top = prec_pool_top->parent;\
+    prec_pool_top = PrecOf(prec_pool_top->parent);\
 }
 #endif
 

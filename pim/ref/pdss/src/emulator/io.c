@@ -15,6 +15,13 @@ static int keyboard_to_buffer(register IO_BACKET *it);
 static int keyboard_eof_to_buffer(register IO_BACKET *it);
 static int keyboard_interrupt(void);
 static int keyboard_interrupt_without_emacs(void);
+
+/* MODERN: signal handlers have the type signal() takes; each calls the
+   1992 function, which keeps its own type. */
+static void sig_keyboard_interrupt(int s) { (void)s; keyboard_interrupt(); }
+static void sig_keyboard_interrupt_without_emacs(int s) { (void)s; keyboard_interrupt_without_emacs(); }
+static void sig_abort_pdss(int s) { abort_pdss(s); }
+static void sig_stop_pdss(int s) { (void)s; stop_pdss(); }
 /* PORT: forward declarations */
 
 
@@ -121,14 +128,14 @@ int initialize_io(void)
     *nx = NULL;
 
     if(use_windows){
-	signal(SIGINT,	keyboard_interrupt);
-	signal(SIGQUIT, abort_pdss);
-	signal(SIGTERM, abort_pdss);
+	signal(SIGINT,	sig_keyboard_interrupt);
+	signal(SIGQUIT, sig_abort_pdss);
+	signal(SIGTERM, sig_abort_pdss);
     }else{
-	signal(SIGINT,	keyboard_interrupt_without_emacs);
-	signal(SIGQUIT, abort_pdss);
-	signal(SIGTERM, abort_pdss);
-	signal(SIGTSTP, stop_pdss);
+	signal(SIGINT,	sig_keyboard_interrupt_without_emacs);
+	signal(SIGQUIT, sig_abort_pdss);
+	signal(SIGTERM, sig_abort_pdss);
+	signal(SIGTSTP, sig_stop_pdss);
     }
 }
 
@@ -147,12 +154,12 @@ int io_ctrl_when_exit(void)
 
 int io_ctrl_when_stop(void)
 {
-    return;
+    return 0;
 }
 
 int io_ctrl_when_resume(void)
 {
-    signal(SIGTSTP, stop_pdss);
+    signal(SIGTSTP, sig_stop_pdss);
 }
 
 
@@ -221,7 +228,7 @@ int getc_window(register IO_BACKET *it)
 
 int ungetc_window(register int chr, register IO_BACKET *it)
 {
-    if(chr == EOF) return;
+    if(chr == EOF) return 0;
     if(use_windows){
 	if(chr == '\n') it->buf_lc++;
 	it->buf_cc++;
@@ -306,12 +313,12 @@ static int keyboard_interrupt(void)
 		it->inp_flag = YES;
 		SetKeyboardFlag();
 	    }
-	    return;
+	    return 0;
 	}
     }else if(chr == 'A'){			       /** Input to Console **/
 	if(io_table[0].kb_req > 0){
 	    io_table[0].kb_req--;
-	    return;
+	    return 0;
 	}
     }else if(chr > 'a' && chr < 'a'+MAX_OF_WINDOW){ /** Interrupt to Window **/
 	it = &io_table[chr-'a'];
@@ -329,14 +336,14 @@ static int keyboard_interrupt(void)
 		it->int_code = x;
 		SetKeyIntFlag();
 	    }
-	    return;
+	    return 0;
 	}
     }else if(chr == '?'){
 	trace_interrupt();
     }else if(chr == '!'){
 	SetHeapGcFlag();
     }else if(chr == '\n'){
-	return;
+	return 0;
     }
     while(getchar() != '\n');
 }
@@ -394,25 +401,25 @@ static int keyboard_interrupt_without_emacs(void)
 	    printf("    ?   help.\n");
 	    continue;
 	  case 'c':
-	    return;
+	    return 0;
 	  case 'g':
 	    SetHeapGcFlag();
-	    return;
+	    return 0;
 	  case 't':
 	    trace_interrupt();
-	    return;
+	    return 0;
 	  case 's':
 	    if(io_table[1].status&IO_ACTIVE){
 		io_table[1].int_code = 2;
 		SetKeyIntFlag();
 	    }
-	    return;
+	    return 0;
 	  case 'a':
 	    if(io_table[1].status&IO_ACTIVE){
 		io_table[1].int_code = 1;
 		SetKeyIntFlag();
 	    }
-	    return;
+	    return 0;
 	  case 'e':
 	    exit_pdss(0);
 	}

@@ -38,7 +38,7 @@ int blt_b_predicate_to_code(CELL *mod, CELL *pred, CELL *arity, CELL *code)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_predicate_to_code, x,
+	    body_builtin_suspend(CodeOfFunction(dc_predicate_to_code), x,
 				 IIIO, mod, pred, arity, code);
 	}else{
   exception:
@@ -101,7 +101,7 @@ int blt_b_code_to_predicate(CELL *code, CELL *mod, CELL *pred, CELL *arity, CELL
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_code_to_predicate, x,
+	    body_builtin_suspend(CodeOfFunction(dc_code_to_predicate), x,
 				 IOOOO, code, mod, pred, arity, info);
 	}else{
   exception:
@@ -170,7 +170,7 @@ int blt_b_save_module(CELL *mod, CELL *file, CELL *status)
     if(Typeof(x) != STRING){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_save_module, x, IIO, mod, file, status);
+	    body_builtin_suspend(CodeOfFunction(dc_save_module), x, IIO, mod, file, status);
 	}else{
   exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==mod ? 1 : 2),
@@ -185,15 +185,15 @@ int blt_b_save_module(CELL *mod, CELL *file, CELL *status)
 	}
 	if(lookup_module(Valueof(mod), &mtbl) == MODMAN_MODULE_NOT_FOUND){
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	}
 	if(IsNativeCode(mtbl->addr)){
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	}
 	if(save_to_sav_file(buf, mtbl) == MODMAN_CANNOT_OPEN_FILE){
 	    SetAll(status, INT, MODMAN_CANNOT_OPEN_FILE, MRBOFF);
-	    return;
+	    return 0;
 	}
 	SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
     }
@@ -222,7 +222,7 @@ int blt_b_load_module(CELL *mod, CELL *file, CELL *status)
     Dereference(x);
     if(Typeof(x) != STRING){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_load_module, x, OIO, mod, file, status);
+	    body_builtin_suspend(CodeOfFunction(dc_load_module), x, OIO, mod, file, status);
 	}else{
   exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
@@ -239,23 +239,23 @@ int blt_b_load_module(CELL *mod, CELL *file, CELL *status)
 	  case MODMAN_CANNOT_OPEN_FILE:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_CANNOT_OPEN_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_LOAD_ERROR:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_LOAD_ERROR, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_MODULE_PROTECTED:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_MODULE_PROTECTED, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_REQUEST_GC:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_REQUEST_GC, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(mod, ATOM, mtbl->module_id, MRBOFF);
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -283,7 +283,7 @@ int blt_b_assemble_module(CELL *mod, CELL *file, CELL *status)
     Dereference(x);
     if(Typeof(x) != STRING){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_assemble_module, x, OIO, mod,file,status);
+	    body_builtin_suspend(CodeOfFunction(dc_assemble_module), x, OIO, mod,file,status);
 	}else{
   exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
@@ -300,23 +300,23 @@ int blt_b_assemble_module(CELL *mod, CELL *file, CELL *status)
 	  case MODMAN_CANNOT_OPEN_FILE:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_CANNOT_OPEN_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_LOAD_ERROR:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_LOAD_ERROR, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_MODULE_PROTECTED:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_MODULE_PROTECTED, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_REQUEST_GC:
 	    *mod = const_nil;
 	    SetAll(status, INT, MODMAN_REQUEST_GC, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(mod, ATOM, mtbl->module_id, MRBOFF);
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -341,7 +341,7 @@ int blt_b_remove_module(CELL *mod, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_remove_module, x, IO, mod, status);
+	    body_builtin_suspend(CodeOfFunction(dc_remove_module), x, IO, mod, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_REMOVE_MODULE, IO, mod, status);
@@ -350,13 +350,13 @@ int blt_b_remove_module(CELL *mod, CELL *status)
 	switch(remove_module(Valueof(mod))){
 	  case MODMAN_MODULE_NOT_FOUND:
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_MODULE_PROTECTED:
 	    SetAll(status, INT, MODMAN_MODULE_PROTECTED, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -382,7 +382,7 @@ int blt_b_get_public_predicates(CELL *mod, CELL *list, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_get_public_predicates, x,
+	    body_builtin_suspend(CodeOfFunction(dc_get_public_predicates), x,
 				 IOO, mod, list, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -394,17 +394,17 @@ int blt_b_get_public_predicates(CELL *mod, CELL *list, CELL *status)
 	switch(get_public_predicates(Valueof(mod), &new)){
 	  case MODMAN_REQUEST_GC:
 	    SetCodeGcFlag();
-	    body_builtin_swap(dc_get_public_predicates,
+	    body_builtin_swap(CodeOfFunction(dc_get_public_predicates),
 			      IOO, mod, list, status);
-	    return;
+	    return 0;
 	  case MODMAN_MODULE_NOT_FOUND:
 	    *list = const_nil;
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    *list = new;
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -433,7 +433,7 @@ int blt_b_trace_module(CELL *mod, CELL *flag, CELL *status)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_trace_module, x, IIO, mod, flag, status);
+	    body_builtin_suspend(CodeOfFunction(dc_trace_module), x, IIO, mod, flag, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==mod ? 1 : 2),
 				   KL1B_B_TRACE_MODULE, IIO, mod,flag,status);
@@ -442,13 +442,13 @@ int blt_b_trace_module(CELL *mod, CELL *flag, CELL *status)
 	switch(set_module_trace_flag(Valueof(mod), Valueof(flag))){
 	  case MODMAN_MODULE_NOT_FOUND:
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -474,7 +474,7 @@ int blt_b_get_module_status(CELL *mod, CELL *flag, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_get_module_status, x,
+	    body_builtin_suspend(CodeOfFunction(dc_get_module_status), x,
 				 IOO, mod, flag, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -487,15 +487,15 @@ int blt_b_get_module_status(CELL *mod, CELL *flag, CELL *status)
 	  case MODMAN_MODULE_NOT_FOUND:
 	    SetAll(flag, ATOM, NIL, MRBOFF);
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    SetAll(flag, ATOM, NIL, MRBOFF);
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(flag, INT, f, MRBOFF);
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -545,7 +545,7 @@ int blt_b_spy_predicate(CELL *code, CELL *flag, CELL *status)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_spy_predicate, x, IIO, code, flag, status);
+	    body_builtin_suspend(CodeOfFunction(dc_spy_predicate), x, IIO, code, flag, status);
 	}else{
   exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==flag ? 2 : 1),
@@ -555,16 +555,16 @@ int blt_b_spy_predicate(CELL *code, CELL *flag, CELL *status)
 	switch(set_predicate_spy_flag(mod, pred, arity, Valueof(flag))){
 	  case MODMAN_MODULE_NOT_FOUND:
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_PREDICATE_NOT_FOUND:
 	    SetAll(status, INT, MODMAN_PREDICATE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -590,7 +590,7 @@ int blt_b_get_spied_predicates(CELL *mod, CELL *list, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_get_spied_predicates, x,
+	    body_builtin_suspend(CodeOfFunction(dc_get_spied_predicates), x,
 				 IOO, mod, list, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -602,21 +602,21 @@ int blt_b_get_spied_predicates(CELL *mod, CELL *list, CELL *status)
 	switch(get_spied_predicates(Valueof(mod), &new)){
 	  case MODMAN_REQUEST_GC:
 	    SetCodeGcFlag();
-	    body_builtin_swap(dc_get_spied_predicates,
+	    body_builtin_swap(CodeOfFunction(dc_get_spied_predicates),
 			      IOO, mod, list, status);
-	    return;
+	    return 0;
 	  case MODMAN_MODULE_NOT_FOUND:
 	    *list = const_nil;
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    *list = const_nil;
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    *list = new;
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -641,7 +641,7 @@ int blt_b_reset_profile_info(CELL *mod, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_reset_profile_info, x, IO, mod, status);
+	    body_builtin_suspend(CodeOfFunction(dc_reset_profile_info), x, IO, mod, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_RESET_PROFILE_INFO, IO, mod, status);
@@ -650,13 +650,13 @@ int blt_b_reset_profile_info(CELL *mod, CELL *status)
 	switch(reset_module_profile_info(Valueof(mod))){
 	  case MODMAN_MODULE_NOT_FOUND:
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -682,7 +682,7 @@ int blt_b_get_profile_info(CELL *mod, CELL *list, CELL *status)
     Dereference(x);
     if(Typeof(x) != ATOM){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_get_profile_info, x,
+	    body_builtin_suspend(CodeOfFunction(dc_get_profile_info), x,
 				 IOO, mod, list, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -694,20 +694,20 @@ int blt_b_get_profile_info(CELL *mod, CELL *list, CELL *status)
 	switch(get_module_profile_info(Valueof(mod), &new)){
 	  case MODMAN_REQUEST_GC:
 	    SetCodeGcFlag();
-	    body_builtin_swap(dc_get_profile_info, IOO, mod, list, status);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_get_profile_info), IOO, mod, list, status);
+	    return 0;
 	  case MODMAN_MODULE_NOT_FOUND:
 	    *list = const_nil;
 	    SetAll(status, INT, MODMAN_MODULE_NOT_FOUND, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_NATIVE_CODE_MODULE:
 	    *list = const_nil;
 	    SetAll(status, INT, MODMAN_NATIVE_CODE_MODULE, MRBOFF);
-	    return;
+	    return 0;
 	  case MODMAN_SUCCESS:
 	    *list = new;
 	    SetAll(status, INT, MODMAN_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }

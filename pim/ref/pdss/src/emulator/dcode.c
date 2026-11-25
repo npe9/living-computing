@@ -159,16 +159,17 @@ int initialize_dcode_table(void)
     mod_table->func_pid_hash_tbl = func_pred_hash;
 }
 
-int dcode_function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity)
+int dcode_function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity)
 {
+    PDSS_FUNC func = FunctionOfCode(code);
     register PREDICATE_ENTRY *p;
-    p = func_pred_hash[HashFuncAddr(func)];
+    p = func_pred_hash[HashFuncAddr(code)];
     while(p){
 	if(p->function == func){
 	    *mod = ATOM_DDD_SYSTEM;
 	    *pred = p->pid&0xFFFF;
 	    *arity = (p->pid>>16)&0xFFFF;
-	    return;
+	    return 0;
 	}
 	p = p->p2;
     }

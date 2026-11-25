@@ -309,13 +309,13 @@ static int remove_suspended_goals(CELL *cc)
 	}else if(Typeof(c) == MHOOK){	/* case of multiple waiting */
 	    SUSPENSION_RECORD  *other;
 	    srec = Suspof(c);
-	    other = srec->other;
+	    other = SrecOf(srec->other);
 	    if(other == srec){
-		grec = srec->suspended;
+		grec = GrecOf(srec->suspended);
 		FreeGoalRecord(grec, grec->argn);
 	    }else{
-		while(other->other != srec){
-		    other = other->other;
+		while(SrecOf(other->other) != srec){
+		    other = SrecOf(other->other);
 		}
 		other->other = srec->other;
 	    }

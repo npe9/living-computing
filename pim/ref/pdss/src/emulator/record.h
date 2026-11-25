@@ -5,31 +5,46 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
+/* MODERN: every pointer field of a record is a PREF (port.h), so that a
+   record has its 32-bit size on every host.  Records live in the heap,
+   and their size is part of the heap accounting that schedules the GC.
+   A field is read through the view of its type and written with Ref(). */
+#define Ref(P)		pdss_ref(P)
+#define CodeOf(R)	((OBJ *)pdss_ptr(R))
+#define CellOf(R)	((CELL *)pdss_ptr(R))
+#define GrecOf(R)	((GOAL_RECORD *)pdss_ptr(R))
+#define SrecOf(R)	((SUSPENSION_RECORD *)pdss_ptr(R))
+#define PrecOf(R)	((PARENT_RECORD *)pdss_ptr(R))
+#define MrecOf(R)	((MERGER_RECORD *)pdss_ptr(R))
+
 typedef struct goal_record{
-    OBJ	 *code, *pcode;
-    int	 argn, debug;
-    struct parent_record *parent;	/* pointer to parent shoen */
-    struct goal_record *next;		/* for deadlock detection */
+    PREF code; PREF_PAD(1)
+    PREF pcode; PREF_PAD(2)	/* OBJ * */
+    int32_t argn, debug;
+    PREF parent; PREF_PAD(3)	/* PARENT_RECORD *: parent shoen */
+    PREF next; PREF_PAD(4)	/* GOAL_RECORD *: deadlock detection */
     CELL pt;				/* for ready or suspension queue */
     CELL priority;
     CELL args[8];
 } GOAL_RECORD;
 
 typedef struct goal_record16{
-    OBJ	 *code, *pcode;
-    int	 argn, debug;
-    struct parent_record *parent;	/* pointer to parent shoen */
-    struct goal_record16 *next;		/* for deadlock detection */
+    PREF code; PREF_PAD(5)
+    PREF pcode; PREF_PAD(6)	/* OBJ * */
+    int32_t argn, debug;
+    PREF parent; PREF_PAD(7)	/* PARENT_RECORD *: parent shoen */
+    PREF next; PREF_PAD(8)	/* GOAL_RECORD *: deadlock detection */
     CELL pt;				/* for ready or suspension queue */
     CELL priority;
     CELL args[16];
 } GOAL_RECORD16;
 
 typedef struct goal_record32{
-    OBJ	 *code, *pcode;
-    int	 argn, debug;
-    struct parent_record *parent;	/* pointer to parent shoen */
-    struct goal_record32 *next;		/* for deadlock detection */
+    PREF code; PREF_PAD(9)
+    PREF pcode; PREF_PAD(10)	/* OBJ * */
+    int32_t argn, debug;
+    PREF parent; PREF_PAD(11)	/* PARENT_RECORD *: parent shoen */
+    PREF next; PREF_PAD(12)	/* GOAL_RECORD *: deadlock detection */
     CELL pt;				/* for ready or suspension queue */
     CELL priority;
     CELL args[32];
@@ -39,14 +54,14 @@ typedef struct goal_record32{
     Goalof(&((G)->pt))
 #define SetGoalQueuePt(G, T, V){\
     SetTypeof(&((G)->pt), T);\
-    SetValueof(&((G)->pt), (int)(V));\
+    SetValueof(&((G)->pt), CellValue(V));\
 }
 #define SetGoalQueuePt2(G, V){\
-    SetValueof(&((G)->pt), (int)(V));\
+    SetValueof(&((G)->pt), CellValue(V));\
 }
 #define SetGoalPriority(G, T, V){\
     SetTypeof(&((G)->priority), T);\
-    SetValueof(&((G)->priority), (int)(V));\
+    SetValueof(&((G)->priority), CellValue(V));\
 }
 
 /* goal_record.debug */
@@ -56,32 +71,35 @@ typedef struct goal_record32{
 
 typedef struct suspension_record{
     CELL forward, backward;
-    struct goal_record *suspended;
-    struct suspension_record *other;
+    PREF suspended; PREF_PAD(13)	/* GOAL_RECORD * */
+    PREF other; PREF_PAD(14)	/* SUSPENSION_RECORD * */
 } SUSPENSION_RECORD;
 
 #define SetSuspRecForward(S,T,V){\
     SetTypeof(&((S)->forward), T);\
-    SetValueof(&((S)->forward), (int)(V));\
+    SetValueof(&((S)->forward), CellValue(V));\
 }
 #define SetSuspRecBackward(S,T,V){\
     SetTypeof(&((S)->backward), T);\
-    SetValueof(&((S)->backward), (int)(V));\
+    SetValueof(&((S)->backward), CellValue(V));\
 }
 
 
 typedef struct parent_record{
-    int	 status;
-    int	 number_of_children;
-    int	 number_of_children2;	/* for parent termination at GC */
-    int	 reduction_arrowed_max;	/* for resource management */
-    int	 reduction_left;	/* for resource management */
-    int	 total_of_reduction;	/* for statistics */
-    unsigned int id;
-    unsigned int priority_max, priority_min;
-    unsigned int tag;
-    struct parent_record *parent, *left_son, *right_son;
-    struct parent_record *left_brother, *right_brother;
+    int32_t status;
+    int32_t number_of_children;
+    int32_t number_of_children2;	/* for parent termination at GC */
+    int32_t reduction_arrowed_max;	/* for resource management */
+    int32_t reduction_left;		/* for resource management */
+    int32_t total_of_reduction;		/* for statistics */
+    uint32_t id;
+    uint32_t priority_max, priority_min;
+    uint32_t tag;
+    PREF parent; PREF_PAD(15)
+    PREF left_son; PREF_PAD(16)
+    PREF right_son; PREF_PAD(17)	/* PARENT_RECORD * */
+    PREF left_brother; PREF_PAD(18)
+    PREF right_brother; PREF_PAD(19)	/* PARENT_RECORD * */
     CELL queue;
     CELL report;
 } PARENT_RECORD;
@@ -115,14 +133,14 @@ typedef struct parent_record{
 #define CacheGoal(GOAL){\
     register int i;\
     register CELL *args;\
-    PC = (GOAL)->code;\
+    PC = CodeOf((GOAL)->code);\
     number_of_argument = i = (GOAL)->argn;\
     args = (GOAL)->args;\
     while(i--){\
 	regs[i] = args[i];\
     }\
     current_predicate = PC;\
-    current_predicate2 = (GOAL)->pcode;\
+    current_predicate2 = CodeOf((GOAL)->pcode);\
     logical_priority = (GOAL)->priority.value;\
     goal_debug_status = (GOAL)->debug;\
 }
@@ -132,10 +150,10 @@ typedef struct parent_record{
     register CELL *args;\
     i = number_of_argument;\
     GetGoalRecord(GOAL, i);\
-    (GOAL)->code = (CODE);\
-    (GOAL)->pcode = current_predicate2;\
+    (GOAL)->code = Ref(CODE);\
+    (GOAL)->pcode = Ref(current_predicate2);\
     (GOAL)->argn = i;\
-    (GOAL)->parent = parent;\
+    (GOAL)->parent = Ref(parent);\
     args = (GOAL)->args;\
     while(i--){\
 	args[i] = regs[i];\

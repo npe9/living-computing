@@ -26,8 +26,8 @@ static CELL const_int0 = {INT, MRBOFF, 0};
 	    register CELL *undef;\
 	    GetGoalRecord(grec, 3);\
 	    number_of_children++;\
-	    grec->parent = parent;\
-	    grec->code = (OBJ *)DCOD;\
+	    grec->parent = Ref(parent);\
+	    grec->code = Ref(CodeOfFunction(DCOD));\
 	    grec->argn = 3;\
 	    grec->args[0] = *IN1;\
 	    grec->args[1] = *IN2;\
@@ -35,15 +35,15 @@ static CELL const_int0 = {INT, MRBOFF, 0};
 	    SetAll(&(grec->args[2]), REF, undef, MRBOFF);\
 	    SetGoalPriority(grec, INT, logical_priority);\
 	    grec->debug = goal_debug_status;\
-	    grec->pcode = current_predicate2 ? current_predicate2\
-					     : current_predicate;\
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2\
+					     : current_predicate);\
 	    single_wait_suspend(grec, x);\
 	    SetAll(OUT, REF, undef, MRBOFF);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==IN1 ? 1 : 2),\
 				   OP, IIO, IN1, IN2, OUT);\
 	}\
-	return;\
+	return 0;\
     }\
 }
 
@@ -57,22 +57,22 @@ static CELL const_int0 = {INT, MRBOFF, 0};
 	    register CELL *undef;\
 	    GetGoalRecord(grec, 2);\
 	    number_of_children++;\
-	    grec->parent = parent;\
-	    grec->code = (OBJ *)DCOD;\
+	    grec->parent = Ref(parent);\
+	    grec->code = Ref(CodeOfFunction(DCOD));\
 	    grec->argn = 2;\
 	    grec->args[0] = *IN1;\
 	    AllocUndef(undef);\
 	    SetAll(&(grec->args[1]), REF, undef, MRBOFF);\
 	    SetGoalPriority(grec, INT, logical_priority);\
 	    grec->debug = goal_debug_status;\
-	    grec->pcode = current_predicate2 ? current_predicate2\
-					     : current_predicate;\
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2\
+					     : current_predicate);\
 	    single_wait_suspend(grec, x);\
 	    SetAll(OUT, REF, undef, MRBOFF);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1, OP, IO, IN1, OUT);\
 	}\
-	return;\
+	return 0;\
     }\
 }
 
@@ -252,7 +252,7 @@ int blt_b_minus(CELL *in1, CELL *out)
 #if !IGNORE_INTEGER_OVERFLOW
     if(Valueof(in1) == 0x80000000){
 	body_builtin_exception(INTEGER_OVERFLOW, 0, KL1B_B_MINUS, IO, in1,out);
-	return;
+	return 0;
     }
 #endif
     SetAll(out, INT, -Valueof(in1), MRBOFF);
@@ -278,7 +278,7 @@ int blt_b_increment(CELL *in1, CELL *out)
     if(Valueof(in1) == 0x7FFFFFFF){
 	body_builtin_exception(INTEGER_OVERFLOW, 0,
 			       KL1B_B_INCREMENT, IO, in1, out);
-	return;
+	return 0;
     }
 #endif
     SetAll(out, INT, Valueof(in1)+1, MRBOFF);
@@ -304,7 +304,7 @@ int blt_b_decrement(CELL *in1, CELL *out)
     if(Valueof(in1) == 0x80000000){
 	body_builtin_exception(INTEGER_OVERFLOW, 0,
 			       KL1B_B_DECREMENT, IO, in1, out);
-	return;
+	return 0;
     }
 #endif
     SetAll(out, INT, Valueof(in1)-1, MRBOFF);
@@ -329,7 +329,7 @@ int blt_b_abs(CELL *in1, CELL *out)
 #if !IGNORE_INTEGER_OVERFLOW
     if(Valueof(in1) == 0x80000000){
 	body_builtin_exception(INTEGER_OVERFLOW, 0, KL1B_B_ABS, IO, in1, out);
-	return;
+	return 0;
     }
 #endif
     SetAll(out, INT, Valueof(in1)<0?(-Valueof(in1)):Valueof(in1), MRBOFF);
@@ -526,8 +526,8 @@ int blt_b_vector(CELL *vect, CELL *size, CELL *newvect)
 	    register CELL *undef1, *undef2;
 	    GetGoalRecord(grec, 3);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_vector;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_vector));
 	    grec->argn = 3;
 	    grec->args[0] = *vect;
 	    AllocUndef(undef1);
@@ -536,8 +536,8 @@ int blt_b_vector(CELL *vect, CELL *size, CELL *newvect)
 	    SetAll(&(grec->args[2]), REF, undef2, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(size, REF, undef1, MRBOFF);
 	    SetAll(newvect, REF, undef2, MRBOFF);
@@ -576,16 +576,16 @@ int blt_b_new_vector(CELL *vect, CELL *size)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 2);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_new_vector;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_new_vector));
 	    grec->argn = 2;
 	    grec->args[1] = *size;
 	    AllocUndef(undef);
 	    SetAll(&(grec->args[0]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(vect, REF, undef, MRBOFF);
 	}else{
@@ -598,12 +598,12 @@ int blt_b_new_vector(CELL *vect, CELL *size)
 	if(n < 0 || n >= heap_size){
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_NEW_VECTOR, OI, vect, size);
-	    return;
+	    return 0;
 	}
 	if(HeapRest() <= n){  /** Enqueue:: Redo after GC **/
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_new_vector, OI, vect, size);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_new_vector), OI, vect, size);
+	    return 0;
 	}
 	AllocVector(x, n);
 	SetAll(vect, VECTOR, x, MRBOFF);
@@ -642,8 +642,8 @@ int blt_b_vector_element(CELL *vect, CELL *pos, CELL *elem, CELL *newvect)
 	    register CELL *undef2, *undef3;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_vector_element;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_vector_element));
 	    grec->argn = 4;
 	    grec->args[0] = *vect;
 	    grec->args[1] = *pos;
@@ -653,8 +653,8 @@ int blt_b_vector_element(CELL *vect, CELL *pos, CELL *elem, CELL *newvect)
 	    SetAll(&(grec->args[3]), REF, undef3, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(elem, REF, undef2, MRBOFF);
 	    SetAll(newvect, REF, undef3, MRBOFF);
@@ -670,7 +670,7 @@ int blt_b_vector_element(CELL *vect, CELL *pos, CELL *elem, CELL *newvect)
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_VECTOR_ELEMENT,
 				   IIOO, vect, pos, elem, newvect);
-	    return;
+	    return 0;
 	}
 	x = VectorElementof(vect, p);
 	Dereference(x);
@@ -709,8 +709,8 @@ int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, C
 	    register CELL *undef2, *undef4;
 	    GetGoalRecord(grec, 5);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_set_vector_element;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_set_vector_element));
 	    grec->argn = 5;
 	    grec->args[0] = *vect;
 	    grec->args[1] = *pos;
@@ -721,8 +721,8 @@ int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, C
 	    SetAll(&(grec->args[4]), REF, undef4, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(oldelem, REF, undef2, MRBOFF);
 	    SetAll(newvect, REF, undef4, MRBOFF);
@@ -742,7 +742,7 @@ int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, C
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_SET_VECTOR_ELEMENT,
 				   IIOIO, vect, pos, oldelem, elem, newvect);
-	    return;
+	    return 0;
 	}
 	newelem = *elem;  /* save NewElem */
 	if(Mrbof(vect) == MRBOFF){
@@ -754,9 +754,9 @@ int blt_b_set_vector_element(CELL *vect, CELL *pos, CELL *oldelem, CELL *elem, C
 	}else{
 	    if(HeapRest() <= n){  /** Enqueue:: Redo after GC **/
 		SetHeapGcFlag();
-		body_builtin_swap(dc_set_vector_element,
+		body_builtin_swap(CodeOfFunction(dc_set_vector_element),
 				  IIOIO, vect, pos, oldelem, elem, newvect);
-		return;
+		return 0;
 	    }
 	    x = Objectof(vect)+1;
 	    AllocVector(e, n);
@@ -803,8 +803,8 @@ int blt_b_string(CELL *str, CELL *len, CELL *width, CELL *newstr)
 	    register CELL *undef1, *undef2, *undef3;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string));
 	    grec->argn = 4;
 	    grec->args[0] = *str;
 	    AllocUndef(undef1);
@@ -815,8 +815,8 @@ int blt_b_string(CELL *str, CELL *len, CELL *width, CELL *newstr)
 	    SetAll(&(grec->args[3]), REF, undef3, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(len, REF, undef1, MRBOFF);
 	    SetAll(width, REF, undef2, MRBOFF);
@@ -864,8 +864,8 @@ int blt_b_new_string(CELL *str, CELL *len, CELL *width)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 3);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_new_string;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_new_string));
 	    grec->argn = 3;
 	    grec->args[1] = *len;
 	    grec->args[2] = *width;
@@ -873,8 +873,8 @@ int blt_b_new_string(CELL *str, CELL *len, CELL *width)
 	    SetAll(&(grec->args[0]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(str, REF, undef, MRBOFF);
 	}else{
@@ -886,15 +886,15 @@ int blt_b_new_string(CELL *str, CELL *len, CELL *width)
 	  case STRUTL_BAD_LENGTH:
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_NEW_STRING, OII, str, len, width);
-	    return;
+	    return 0;
 	  case STRUTL_BAD_WIDTH:
 	    body_builtin_exception(RANGE_OVERFLOW, 3,
 				   KL1B_B_NEW_STRING, OII, str, len, width);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_new_string, OII, str, len, width);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_new_string), OII, str, len, width);
+	    return 0;
 	}
     }
 }
@@ -928,8 +928,8 @@ int blt_b_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    register CELL *undef2, *undef3;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string_element;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string_element));
 	    grec->argn = 4;
 	    grec->args[0] = *str;
 	    grec->args[1] = *pos;
@@ -939,8 +939,8 @@ int blt_b_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    SetAll(&(grec->args[3]), REF, undef3, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(elem, REF, undef2, MRBOFF);
 	    SetAll(newstr, REF, undef3, MRBOFF);
@@ -956,11 +956,11 @@ int blt_b_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_STRING_ELEMENT,
 				   IIOO, str, pos, elem, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_string_element, IIOO, str, pos, elem, newstr);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_string_element), IIOO, str, pos, elem, newstr);
+	    return 0;
 	}
 	*newstr = *str;
 	SetAll(elem, INT, element, MRBOFF);
@@ -998,8 +998,8 @@ int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_set_string_element;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_set_string_element));
 	    grec->argn = 4;
 	    grec->args[0] = *str;
 	    grec->args[1] = *pos;
@@ -1008,8 +1008,8 @@ int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    SetAll(&(grec->args[3]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	}else{
@@ -1027,14 +1027,14 @@ int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    body_builtin_exception(RANGE_OVERFLOW, 3,
 				   KL1B_B_SET_STRING_ELEMENT,
 				   IIIO, str, pos, elem, newstr);
-	    return;
+	    return 0;
 	}
 	if(Mrbof(str) == MRBON){
 	    if(copy_string(str, &new) == STRUTL_REQUEST_GC){
 		SetHeapGcFlag();
-		body_builtin_swap(dc_set_string_element,
+		body_builtin_swap(CodeOfFunction(dc_set_string_element),
 				  IIIO, str, pos, elem, newstr);
-		return;
+		return 0;
 	    }
 	    str = &new;
 	}else{
@@ -1045,7 +1045,7 @@ int blt_b_set_string_element(CELL *str, CELL *pos, CELL *elem, CELL *newstr)
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_SET_STRING_ELEMENT,
 				   IIIO, str, pos, elem, newstr);
-	    return;
+	    return 0;
 	}
 	*newstr = *str;
     }
@@ -1083,8 +1083,8 @@ int blt_b_substring(CELL *str, CELL *pos, CELL *len, CELL *substr, CELL *newstr)
 	    register CELL *undef3, *undef4;
 	    GetGoalRecord(grec, 5);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_substring;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_substring));
 	    grec->argn = 5;
 	    grec->args[0] = *str;
 	    grec->args[1] = *pos;
@@ -1095,8 +1095,8 @@ int blt_b_substring(CELL *str, CELL *pos, CELL *len, CELL *substr, CELL *newstr)
 	    SetAll(&(grec->args[4]), REF, undef4, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(substr, REF, undef3, MRBOFF);
 	    SetAll(newstr, REF, undef4, MRBOFF);
@@ -1113,16 +1113,16 @@ int blt_b_substring(CELL *str, CELL *pos, CELL *len, CELL *substr, CELL *newstr)
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_SUBSTRING,
 				   IIIOO, str, pos, len, substr, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_BAD_LENGTH:
 	    body_builtin_exception(RANGE_OVERFLOW, 3,
 				   KL1B_B_SUBSTRING,
 				   IIIOO, str, pos, len, substr, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_substring, IIIOO, str,pos,len,substr,newstr);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_substring), IIIOO, str,pos,len,substr,newstr);
+	    return 0;
 	}
 	*newstr = *str;
 	*substr = new;
@@ -1160,8 +1160,8 @@ int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_set_substring;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_set_substring));
 	    grec->argn = 4;
 	    grec->args[0] = *str;
 	    grec->args[1] = *pos;
@@ -1170,8 +1170,8 @@ int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 	    SetAll(&(grec->args[3]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	}else{
@@ -1185,9 +1185,9 @@ int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 	if(Mrbof(str) == MRBON){
 	    if(copy_string(str, &new) == STRUTL_REQUEST_GC){
 		SetHeapGcFlag();
-		body_builtin_swap(dc_set_substring,
+		body_builtin_swap(CodeOfFunction(dc_set_substring),
 				  IIIO, str, pos, substr, newstr);
-		return;
+		return 0;
 	    }
 	    str = &new;
 	}else{
@@ -1198,17 +1198,17 @@ int blt_b_set_substring(CELL *str, CELL *pos, CELL *substr, CELL *newstr)
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_SET_SUBSTRING,
 				   IIIO, str, pos, substr, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_BAD_POSITION:
 	    body_builtin_exception(RANGE_OVERFLOW, 2,
 				   KL1B_B_SET_SUBSTRING,
 				   IIIO, str, pos, substr, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_BAD_LENGTH:
 	    body_builtin_exception(RANGE_OVERFLOW, 3,
 				   KL1B_B_SET_SUBSTRING,
 				   IIIO, str, pos, substr, newstr);
-	    return;
+	    return 0;
 	}
 	if(Mrbof(substr) == MRBOFF){
 	    FreeString(Objectof(substr), StringLengthof(substr));
@@ -1246,8 +1246,8 @@ int blt_b_append_string(CELL *str1, CELL *str2, CELL *newstr)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 3);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_append_string;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_append_string));
 	    grec->argn = 3;
 	    grec->args[0] = *str1;
 	    grec->args[1] = *str2;
@@ -1255,8 +1255,8 @@ int blt_b_append_string(CELL *str1, CELL *str2, CELL *newstr)
 	    SetAll(&(grec->args[2]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	}else{
@@ -1271,11 +1271,11 @@ int blt_b_append_string(CELL *str1, CELL *str2, CELL *newstr)
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
 				   KL1B_B_APPEND_STRING,
 				   IIO, str1, str2, newstr);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_append_string, IIO, str1, str2, newstr);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_append_string), IIO, str1, str2, newstr);
+	    return 0;
 	}
 	if(Mrbof(str1) == MRBOFF){
 	    FreeString(Objectof(str1), StringLengthof(str1));
@@ -1318,8 +1318,8 @@ int blt_b_string_and(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    register CELL *undef, *undef2;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string_and;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string_and));
 	    grec->argn = 4;
 	    grec->args[0] = *str1;
 	    grec->args[1] = *str2;
@@ -1329,8 +1329,8 @@ int blt_b_string_and(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    SetAll(&(grec->args[3]), REF, undef2, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	    SetAll(newstr2, REF, undef2, MRBOFF);
@@ -1346,11 +1346,11 @@ int blt_b_string_and(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
 				   KL1B_B_STRING_AND,
 				   IIOO, str1, str2, newstr, newstr2);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_string_and, IIOO, str1,str2,newstr,newstr2);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_string_and), IIOO, str1,str2,newstr,newstr2);
+	    return 0;
 	}
 	*newstr = new;
 	*newstr2 = new2;
@@ -1386,8 +1386,8 @@ int blt_b_string_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    register CELL *undef, *undef2;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string_or;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string_or));
 	    grec->argn = 4;
 	    grec->args[0] = *str1;
 	    grec->args[1] = *str2;
@@ -1397,8 +1397,8 @@ int blt_b_string_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    SetAll(&(grec->args[3]), REF, undef2, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	    SetAll(newstr2, REF, undef2, MRBOFF);
@@ -1414,11 +1414,11 @@ int blt_b_string_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr2)
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
 				   KL1B_B_STRING_OR,
 				   IIOO, str1, str2, newstr, newstr2);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_string_or, IIOO, str1, str2, newstr, newstr2);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_string_or), IIOO, str1, str2, newstr, newstr2);
+	    return 0;
 	}
 	*newstr = new;
 	*newstr2 = new2;
@@ -1454,8 +1454,8 @@ int blt_b_string_exclusive_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr
 	    register CELL *undef, *undef2;
 	    GetGoalRecord(grec, 4);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string_exclusive_or;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string_exclusive_or));
 	    grec->argn = 4;
 	    grec->args[0] = *str1;
 	    grec->args[1] = *str2;
@@ -1465,8 +1465,8 @@ int blt_b_string_exclusive_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr
 	    SetAll(&(grec->args[3]), REF, undef2, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	    SetAll(newstr2, REF, undef2, MRBOFF);
@@ -1482,12 +1482,12 @@ int blt_b_string_exclusive_or(CELL *str1, CELL *str2, CELL *newstr, CELL *newstr
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
 				   KL1B_B_STRING_EXCLUSIVE_OR,
 				   IIOO, str1, str2, newstr, newstr2);
-	    return;
+	    return 0;
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_string_exclusive_or,
+	    body_builtin_swap(CodeOfFunction(dc_string_exclusive_or),
 			      IIOO, str1, str2, newstr, newstr2);
-	    return;
+	    return 0;
 	}
 	*newstr = new;
 	*newstr2 = new2;
@@ -1518,16 +1518,16 @@ int blt_b_string_complement(CELL *str, CELL *newstr)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 2);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_string_complement;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_string_complement));
 	    grec->argn = 2;
 	    grec->args[0] = *str;
 	    AllocUndef(undef);
 	    SetAll(&(grec->args[1]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(newstr, REF, undef, MRBOFF);
 	}else{
@@ -1539,8 +1539,8 @@ int blt_b_string_complement(CELL *str, CELL *newstr)
 	switch(string_complement(str, &new)){
 	  case STRUTL_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_string_complement, IO, str, newstr);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_string_complement), IO, str, newstr);
+	    return 0;
 	}
 	*newstr = new;
     }
@@ -1580,16 +1580,16 @@ int blt_b_intern_atom(CELL *atom, CELL *name)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 2);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_intern_atom;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_intern_atom));
 	    grec->argn = 2;
 	    grec->args[1] = *name;
 	    AllocUndef(undef);
 	    SetAll(&(grec->args[0]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(atom, REF, undef, MRBOFF);
 	}else{
@@ -1634,16 +1634,16 @@ int blt_b_atom_name(CELL *atom, CELL *name)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 2);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_atom_name;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_atom_name));
 	    grec->argn = 2;
 	    grec->args[0] = *atom;
 	    AllocUndef(undef);
 	    SetAll(&(grec->args[1]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(name, REF, undef, MRBOFF);
 	}else{
@@ -1653,8 +1653,8 @@ int blt_b_atom_name(CELL *atom, CELL *name)
     }else{
 	if(atom_to_string(Valueof(atom), name) == STRUTL_REQUEST_GC){
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_atom_name, IO, atom, name);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_atom_name), IO, atom, name);
+	    return 0;
 	}
     }
 }
@@ -1683,16 +1683,16 @@ int blt_b_atom_number(CELL *atom, CELL *number)
 	    register CELL *undef;
 	    GetGoalRecord(grec, 2);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_atom_number;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_atom_number));
 	    grec->argn = 2;
 	    grec->args[0] = *atom;
 	    AllocUndef(undef);
 	    SetAll(&(grec->args[1]), REF, undef, MRBOFF);
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    single_wait_suspend(grec, x);
 	    SetAll(number, REF, undef, MRBOFF);
 	}else{

@@ -170,7 +170,7 @@ int exception_illegal_merger_input(CELL *x, CELL *strm)
     *v++ = *strm;
     AllocVector2(g, 3);
     SetAll(v, VECTOR, g, MRBOFF); v++; g++;
-    ptop = Mergerof(Objectof(strm))->pcode;
+    ptop = CodeOf(Mergerof(Objectof(strm))->pcode);
     if(IsNativeCode(ptop)){
 	unsigned int mod, pred, arity;
 	function_to_mod_pred_arity(ptop, &mod, &pred, &arity);
@@ -199,7 +199,7 @@ int exception_illegal_merger_input(CELL *x, CELL *strm)
     SetAll(v, REF, code, MRBOFF); v++;
     SetAll(v, REF, argv, MRBOFF);
     create_goal_and_wait_new_code(code, argv);
-    unify_exception_with_report_stream(Mergerof(Objectof(strm))->parent, &mesg,
+    unify_exception_with_report_stream(PrecOf(Mergerof(Objectof(strm))->parent), &mesg,
 				    exception_tag_table[ILLEGAL_MERGER_INPUT]);
 }
 
@@ -279,14 +279,14 @@ static int create_goal_and_wait_new_code(CELL *code, CELL *argv)
 {
     GOAL_RECORD *grec;
     GetGoalRecord(grec, 2);
-    grec->parent = parent;
-    grec->code = (OBJ *)dc_apply;
+    grec->parent = Ref(parent);
+    grec->code = Ref(CodeOfFunction(dc_apply));
     grec->argn = 2;
     SetAll(&(grec->args[0]), REF, code, MRBOFF);
     SetAll(&(grec->args[1]), REF, argv, MRBOFF);
     SetGoalPriority(grec, INT, logical_priority);
     grec->debug = 0;
-    grec->pcode = current_predicate2;
+    grec->pcode = Ref(current_predicate2);
     number_of_children += 1;
     single_wait_suspend(grec, &(grec->args[0]));
 }

@@ -41,20 +41,20 @@ extern int trace_intr_flag;
 	trace((PC), number_of_argument, regs, GATE_DEQU, NULL, parent)
 #define TraceSuspendGoal(GOAL)\
     if(TraceCheck((GOAL)->debug))\
-	trace((GOAL)->code, (GOAL)->argn, (GOAL)->args, GATE_SUSP,\
-	      (GOAL), (GOAL)->parent);
+	trace(CodeOf((GOAL)->code), (GOAL)->argn, (GOAL)->args, GATE_SUSP,\
+	      (GOAL), PrecOf((GOAL)->parent));
 #define TracePrioritySuspendGoal(GOAL)\
     if(TraceCheck((GOAL)->debug))\
-	trace((GOAL)->code, (GOAL)->argn, (GOAL)->args, GATE_SPRI,\
-	      (GOAL), (GOAL)->parent);
+	trace(CodeOf((GOAL)->code), (GOAL)->argn, (GOAL)->args, GATE_SPRI,\
+	      (GOAL), PrecOf((GOAL)->parent));
 #define TraceResumeGoal(GOAL)\
     if(TraceCheck((GOAL)->debug))\
-	trace((GOAL)->code, (GOAL)->argn, (GOAL)->args, GATE_RESU,\
-	      (GOAL), (GOAL)->parent);
+	trace(CodeOf((GOAL)->code), (GOAL)->argn, (GOAL)->args, GATE_RESU,\
+	      (GOAL), PrecOf((GOAL)->parent));
 #define TraceSwapGoal(GOAL)\
     if(TraceCheck((GOAL)->debug))\
-	trace((GOAL)->code, (GOAL)->argn, (GOAL)->args, GATE_SWAP,\
-	      (GOAL), (GOAL)->parent);
+	trace(CodeOf((GOAL)->code), (GOAL)->argn, (GOAL)->args, GATE_SWAP,\
+	      (GOAL), PrecOf((GOAL)->parent));
 #define TraceFailGoal(PC)\
     if(TraceCheck(goal_debug_status))\
 	trace((PC), number_of_argument, regs, GATE_FAIL, NULL, parent)

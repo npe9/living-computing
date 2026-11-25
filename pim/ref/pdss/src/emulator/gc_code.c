@@ -72,7 +72,7 @@ OBJ *gc_code_module(OBJ *old)
 		*to++ = *from++;
 	    }
 	    if(from < module_bottom){
-		gc_constant_section(from, to, module_bottom);
+		gc_constant_section((CELL *)from, (CELL *)to, (CELL *)module_bottom);
 	    }
 	    SetCodeGCinfo(old, new);
 	}else{
@@ -91,7 +91,7 @@ OBJ *gc_code_module(OBJ *old)
 
 int gc_constant_section(CELL *from, CELL *to, CELL *bottom)
 {
-    int offs = (int)to-(int)from;
+    int offs = (int)((char *)to - (char *)from);
     while(from < bottom){
 	switch(Typeof(from)){
 	  case ATOM:
@@ -119,11 +119,11 @@ CELL *gc_cell_in_constant_section(CELL *old)
 	if(IsNotCodeCopied(old)){
 	    p = old;
 	    while(Typeof(p) != 0xFF) p--;
-	    oldtop = (OBJ *)Valueof(p);
+	    oldtop = CodeOf((PREF)Valueof(p));
 	    newtop = gc_code_module(oldtop);
-	    return((CELL *)((int)old+(newtop-oldtop)));
+	    return((CELL *)((char *)old + (newtop - oldtop)));
 	}else{
-	    return((CELL *)Valueof(old));
+	    return(CellOf((PREF)Valueof(old)));
 	}
     }else{
 	return(old);

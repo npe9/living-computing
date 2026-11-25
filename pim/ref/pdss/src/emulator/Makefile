@@ -21,8 +21,8 @@ KL1	= pdss option emulate blt_basic blt_float blt_shoen blt_iodev \
 	  blt_code blt_system deref passive unify goal shoen exception \
 	  memory atom module dcode float string gc gc_ctrl gc_cell gc_code \
 	  gc_dead mrbgc instr invassm assemble saveload native tracer print \
-	  io iosub timer path ctype
-ASM	= pdssasm memory atom module instr assemble saveload float ctype
+	  io iosub timer path ctype arena sysdep
+ASM	= pdssasm memory atom module instr assemble saveload float ctype arena sysdep
 
 all: $(O)/pdss $(O)/pdssasm
 

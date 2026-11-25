@@ -34,7 +34,7 @@ int gc_ready_queue(void)
 		if(p->lower != NULL) p->lower->upper = p->upper;
 		goto next_priority;
 	    }
-	    if(!IsParentAborted(old->parent)){
+	    if(!IsParentAborted(PrecOf(old->parent))){
 		GcGetGoalRecord(new, old->argn);
 		gc_goal_record(old, new);
 		p->head = new;
@@ -51,7 +51,7 @@ int gc_ready_queue(void)
 #endif
 		break;
 	    }
-	    if(!IsParentAborted(old->parent)){
+	    if(!IsParentAborted(PrecOf(old->parent))){
 		GcGetGoalRecord(next, old->argn);
 		gc_goal_record(old, next);
 		SetGoalQueuePt2(new, next);
@@ -91,20 +91,20 @@ int gc_goal_record(register GOAL_RECORD *old, register GOAL_RECORD *new)
 	gc_cell(oldarg, newarg);
 	oldarg++; newarg++;
     }
-    if(IsNotPrecCopied(old->parent)){
+    if(IsNotPrecCopied(PrecOf(old->parent))){
 	/** 1st Access to Parent Record => Copy Record **/
-	GcGetParentRecord(new->parent);
-	gc_parent_record(old->parent, new->parent);
+	{ PARENT_RECORD *gc_r_; GcGetParentRecord(gc_r_); new->parent = Ref(gc_r_); }
+	gc_parent_record(PrecOf(old->parent), PrecOf(new->parent));
     }else{
 	/** Parent Record is Already Copied **/
-	new->parent = GetCopiedPrec(old->parent);
+	new->parent = Ref(GetCopiedPrec(PrecOf(old->parent)));
     }
-    new->parent->number_of_children2++;
+    PrecOf(new->parent)->number_of_children2++;
     gc_cell(&(old->priority), &(new->priority));
     if(Typeof(&(new->priority)) == REF)
 	SetMrbof(Objectof(&(new->priority)), MRBON);
-    new->code = GcProcedure(old->code);
-    new->pcode = GcProcedure(old->pcode);
+    new->code = Ref(GcProcedure(CodeOf(old->code)));
+    new->pcode = Ref(GcProcedure(CodeOf(old->pcode)));
     new->debug = old->debug;
     SetGrecGCflag(old);
 }
@@ -118,7 +118,7 @@ int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
 {
     register PARENT_RECORD *parent, *old_son, *new_son;
 
-    parent = old->parent;
+    parent = PrecOf(old->parent);
     SetPrecGCflag(old, new);  /* old->parent Point New-Heap => old is Copied */
     new->status		       = old->status;
     new->number_of_children    = old->number_of_children;
@@ -131,39 +131,39 @@ int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
     new->priority_min	       = old->priority_min;
     new->tag		       = old->tag;
 
-    new->left_son = new;	    /** New SHOEN Have no Child SHOEN **/
-    new->right_son = new;
+    new->left_son = Ref(new);	    /** New SHOEN Have no Child SHOEN **/
+    new->right_son = Ref(new);
     if(parent == NULL){	    /* Have no Parent => Highest Level of Tree */
-	new->parent = NULL;
-	new->left_brother = NULL;
-	new->right_brother = NULL;
+	new->parent = 0;
+	new->left_brother = 0;
+	new->right_brother = 0;
 	new->number_of_children2++;
     }else{
 	if(IsNotPrecCopied(parent)){
 	    /** 1st Access to Parent => Copy Parent Record **/
-	    GcGetParentRecord(new->parent);
-	    gc_parent_record(parent, new->parent);
-	    parent = new->parent;
+	    { PARENT_RECORD *gc_r_; GcGetParentRecord(gc_r_); new->parent = Ref(gc_r_); }
+	    gc_parent_record(parent, PrecOf(new->parent));
+	    parent = PrecOf(new->parent);
 	}else{
 	    /** Parent is Already Copied **/
-	    parent = new->parent = GetCopiedPrec(parent);
+	    parent = GetCopiedPrec(parent); new->parent = Ref(parent);
 	}
-	if(parent->left_son == parent){	 /** new is 1st Son of Parent **/
-	    parent->left_son = new;
-	    parent->right_son = new;
-	    new->left_brother = parent;
-	    new->right_brother = parent;
+	if(PrecOf(parent->left_son) == parent){	 /** new is 1st Son of Parent **/
+	    parent->left_son = Ref(new);
+	    parent->right_son = Ref(new);
+	    new->left_brother = Ref(parent);
+	    new->right_brother = Ref(parent);
 	}else{	  /** new is not 1st => Insert new into Brothers List **/
-	    parent->left_son->left_brother = new;
+	    PrecOf(parent->left_son)->left_brother = Ref(new);
 	    new->right_brother = parent->left_son;
-	    new->left_brother = parent;
-	    parent->left_son = new;
+	    new->left_brother = Ref(parent);
+	    parent->left_son = Ref(new);
 	}
 	parent->number_of_children2++;
     }
 
     /*** Copy Child SHOEN. 88/07/12 ***/
-    old_son = old->left_son;
+    old_son = PrecOf(old->left_son);
     while(old_son != old){
 	if(IsNotPrecCopied(old_son)){
 	    GcGetParentRecord(new_son);
@@ -171,7 +171,7 @@ int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
 	}else{
 	    new_son = GetCopiedPrec(old_son);
 	}
-	old_son = old_son->right_brother;
+	old_son = PrecOf(old_son->right_brother);
     }
 
     gc_cell(&(old->queue), &(new->queue));
@@ -180,7 +180,7 @@ int gc_parent_record(register PARENT_RECORD *old, register PARENT_RECORD *new)
     gc_cell(&(old->report), &(new->report));
     if(Typeof(&(new->report)) == REF)
 	SetMrbof(Objectof(&(new->report)), MRBON);
-    old->number_of_children = NULL;	  /** Used by Deadlock Check **/
+    old->number_of_children = 0;	  /** Used by Deadlock Check **/
 }
 
 
@@ -201,7 +201,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case HOOK:
 	    /** HOOK Point to Suspended Goal Record (Single Wait) **/
 	    old.goal = Goalof(oldhook);
-	    if(IsParentAborted(old.goal->parent)){
+	    if(IsParentAborted(PrecOf(old.goal->parent))){
 		oldhook = &(old.goal->pt);
 		continue;
 	    }
@@ -215,7 +215,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case MHOOK:
 	    /** MHOOK Point to Suspension Record (Multiple Wait) **/
 	    old.susp = Suspof(oldhook);
-	    if(IsParentAborted(old.susp->suspended->parent)){
+	    if(IsParentAborted(PrecOf(GrecOf(old.susp->suspended)->parent))){
 		oldhook = &(old.susp->forward);
 		continue;
 	    }
@@ -230,12 +230,12 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case UNDEF:
 	    /** UNDEF => End of Qeueu **/
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
-	    return;
+	    return 0;
 	  default:
 	    Error2F("Not Hook Cell(%02x) in Susp-Queue (AD:%08x)\n",
 					   Typeof(oldhook), oldhook);
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
   next:
@@ -244,7 +244,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case HOOK:
 	    /** HOOK Point to Suspended Goal Record (Single Wait) **/
 	    old.goal = Goalof(oldhook);
-	    if(IsParentAborted(old.goal->parent)){
+	    if(IsParentAborted(PrecOf(old.goal->parent))){
 		oldhook = &(old.goal->pt);
 		continue;
 	    }
@@ -258,7 +258,7 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case MHOOK:
 	    /** MHOOK Point to Suspension Record (Multiple Wait) **/
 	    old.susp = Suspof(oldhook);
-	    if(IsParentAborted(old.susp->suspended->parent)){
+	    if(IsParentAborted(PrecOf(GrecOf(old.susp->suspended)->parent))){
 		oldhook = &(old.susp->forward);
 		continue;
 	    }
@@ -273,12 +273,12 @@ int gc_suspension_queue(register CELL *oldhook, register CELL *newhook)
 	  case UNDEF:
 	    /** UNDEF => End of Qeueu **/
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
-	    return;
+	    return 0;
 	  default:
 	    Error2F("Not Hook Cell(%02x) in Susp-Queue (AD:%08x)\n",
 					    Typeof(oldhook), oldhook);
 	    SetAll(newhook, UNDEF, NULL, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -294,20 +294,20 @@ int gc_suspension_record(register SUSPENSION_RECORD *old, register SUSPENSION_RE
 
     if(IsNotSrecCopied(old)){
 	/** 1st Access to Goal Record => Copy Goal Record **/
-	GcGetGoalRecord(new->suspended, old->suspended->argn);
-	for(p1 = old->other; p1 != old; p1 = p2){
-	    p2 = p1->other;
+	{ GOAL_RECORD *gc_g_; GcGetGoalRecord(gc_g_, GrecOf(old->suspended)->argn); new->suspended = Ref(gc_g_); }
+	for(p1 = SrecOf(old->other); p1 != old; p1 = p2){
+	    p2 = SrecOf(p1->other);
 	    SetSrecGCflag(p1, new);
 	}
-	new->other = new;
-	gc_goal_record(old->suspended, new->suspended);
-	return;
+	new->other = Ref(new);
+	gc_goal_record(GrecOf(old->suspended), GrecOf(new->suspended));
+	return 0;
     }else{
 	/** Suspended Goal is Already Copied **/
 	new->suspended = GetCopiedSrec(old)->suspended;
 	new->other = GetCopiedSrec(old)->other;
-	GetCopiedSrec(old)->other = new;
-	return;
+	GetCopiedSrec(old)->other = Ref(new);
+	return 0;
     }
 }
 

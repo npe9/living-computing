@@ -65,7 +65,7 @@ int initialize_shoen_tree(OBJ *boot_code)
     shoen_id_counter = 0;
     GetParentRecord(dummy);
     dummy->number_of_children = 2;
-    dummy->parent = NULL;
+    dummy->parent = 0;
     dummy->status = READY;
     dummy->reduction_left = -100;
     dummy->reduction_arrowed_max = -1;
@@ -77,15 +77,15 @@ int initialize_shoen_tree(OBJ *boot_code)
     SetAll(&(dummy->report), REF, c, MRBOFF);
 
     GetParentRecord(grandma);
-    dummy->right_son = grandma;
-    dummy->left_son = grandma;
+    dummy->right_son = Ref(grandma);
+    dummy->left_son = Ref(grandma);
     grandma->status = READY;
     grandma->id = GetShoenid();
-    grandma->right_brother = dummy;
-    grandma->left_brother = dummy;
-    grandma->left_son = grandma;
-    grandma->right_son = grandma;
-    grandma->parent = dummy;
+    grandma->right_brother = Ref(dummy);
+    grandma->left_brother = Ref(dummy);
+    grandma->left_son = Ref(grandma);
+    grandma->right_son = Ref(grandma);
+    grandma->parent = Ref(dummy);
     grandma->reduction_left = 0x7FFFFFFF;
     grandma->total_of_reduction = 0;
     grandma->number_of_children = 1;
@@ -104,11 +104,11 @@ int initialize_shoen_tree(OBJ *boot_code)
     CacheParent(grandma);
     GetGoalRecord(boot_goal, 0);
     boot_goal->argn = 0;
-    boot_goal->parent = parent;
-    boot_goal->code = boot_code;
+    boot_goal->parent = Ref(parent);
+    boot_goal->code = Ref(boot_code);
     SetGoalPriority(boot_goal, INT, parent->priority_max);
     boot_goal->debug = 0;
-    boot_goal->pcode = NULL;
+    boot_goal->pcode = 0;
     enqueue_with_priority(boot_goal);
 }
 
@@ -148,20 +148,20 @@ PARENT_RECORD *create_shoen(CELL *code, CELL *argv, unsigned int pmin, unsigned 
     prec->priority_min		= min+((max-min)>>PRIORITY_RATE_WIDTH)*pmin;
     prec->priority_max		= max-((max-min)>>PRIORITY_RATE_WIDTH)*pmax;
     prec->tag			= tag;
-    prec->parent		= parent;
+    prec->parent		= Ref(parent);
     number_of_children++;
     DumpTree("*** create shoen [%c%04d] - begin.\n", prec);
 
     prec->left_brother = parent->right_son;
-    parent->right_son = prec;
-    prec->right_brother = parent;
-    if(parent == prec->left_brother){
-	parent->left_son = prec;
+    parent->right_son = Ref(prec);
+    prec->right_brother = Ref(parent);
+    if(parent == PrecOf(prec->left_brother)){
+	parent->left_son = Ref(prec);
     }else{
-	prec->left_brother->right_brother = prec;
+	PrecOf(prec->left_brother)->right_brother = Ref(prec);
     }
-    prec->left_son = prec;
-    prec->right_son = prec;
+    prec->left_son = Ref(prec);
+    prec->right_son = Ref(prec);
 
     AllocUndef(c);
     SetAll(&(prec->queue), REF, c, MRBOFF); 
@@ -171,13 +171,13 @@ PARENT_RECORD *create_shoen(CELL *code, CELL *argv, unsigned int pmin, unsigned 
 
     GetGoalRecord(grec, 2);
     SetGoalPriority(grec, INT, prec->priority_max);
-    grec->parent = prec;
-    grec->code = (OBJ *)dc_apply;
+    grec->parent = Ref(prec);
+    grec->code = Ref(CodeOfFunction(dc_apply));
     grec->argn = 2;
     grec->args[0] = *code;
     grec->args[1] = *argv;
     grec->debug = 0;
-    grec->pcode = NULL;
+    grec->pcode = 0;
     enqueue_with_priority(grec);
 
     DumpTree("*** create shoen [%c%04d] - end.\n", prec);
@@ -191,7 +191,7 @@ PARENT_RECORD *create_shoen(CELL *code, CELL *argv, unsigned int pmin, unsigned 
 
 int start_shoen(PARENT_RECORD *shoen, int kind)
 {
-    if(IsParentAborted(shoen)) return;
+    if(IsParentAborted(shoen)) return 0;
 /** DumpTree("*** start shoen [%c%04d] - begin.\n", shoen); **/
     if((shoen->status & (~kind)) == READY && 
        Typeof(Objectof(&(shoen->queue))) == HOOK){
@@ -207,7 +207,7 @@ int start_shoen(PARENT_RECORD *shoen, int kind)
     }
     if(!((shoen->status &= ~kind) & SUSP_PD)){
 	PARENT_RECORD *son; 
-	for(son = shoen->left_son; son != shoen; son = son->right_brother){
+	for(son = PrecOf(shoen->left_son); son != shoen; son = PrecOf(son->right_brother)){
 	    start_shoen(son, SUSP_P);
 	}
     }
@@ -223,11 +223,11 @@ int stop_shoen(PARENT_RECORD *shoen, int kind)
 {
     PARENT_RECORD *son;	   
 /** DumpTree("*** stop shoen [%c%04d] - begin.\n", shoen); **/
-    son = shoen->left_son;
+    son = PrecOf(shoen->left_son);
     shoen->status |= kind;
     while(son != shoen){
 	stop_shoen(son, SUSP_P);
-	son = son->right_brother;
+	son = PrecOf(son->right_brother);
     }
 /** DumpTree("*** stop shoen [%c%04d] - end.\n", shoen); **/
 }
@@ -240,7 +240,7 @@ int stop_shoen(PARENT_RECORD *shoen, int kind)
 int abort_shoen(PARENT_RECORD *shoen)
 {
     register PARENT_RECORD *prec;
-    if(IsParentAborted(shoen)) return;
+    if(IsParentAborted(shoen)) return 0;
     DumpTree("*** abort shoen [%c%04d] - begin.\n", shoen);
     shoen->status = ABORTED;
     unify_message_with_parent_report_stream(shoen, &const_atom_aborted);
@@ -255,14 +255,14 @@ int abort_shoen(PARENT_RECORD *shoen)
 	FreeGoalRecord(grec, grec->argn);
 	Typeof(Objectof(&(shoen->queue))) = UNDEF;
     }
-    for(prec = shoen->left_son; prec != shoen; prec = prec->right_brother){
+    for(prec = PrecOf(shoen->left_son); prec != shoen; prec = PrecOf(prec->right_brother)){
 	abort_shoen(prec);
     }
     prec = parent;
     DecacheParent();
-    shoen->parent->number_of_children -= 1;
-    shoen->parent->total_of_reduction += shoen->total_of_reduction;
-    shoen->parent->reduction_left += shoen->reduction_left;
+    PrecOf(shoen->parent)->number_of_children -= 1;
+    PrecOf(shoen->parent)->total_of_reduction += shoen->total_of_reduction;
+    PrecOf(shoen->parent)->reduction_left += shoen->reduction_left;
     delete_from_and_tree(shoen);
     CacheParent(prec);
     DumpTree("*** abort shoen [%c%04d] - end.\n", shoen);
@@ -270,7 +270,7 @@ int abort_shoen(PARENT_RECORD *shoen)
 
 int remove_shoen(PARENT_RECORD *shoen)
 {
-    return;
+    return 0;
 }
 
 
@@ -286,7 +286,7 @@ int terminate_shoen(void)
     current_shoen = parent;
     DumpTree("*** terminate shoen [%c%04d] - begin.\n", current_shoen);
     DecacheParent();
-    parent_shoen = current_shoen->parent;
+    parent_shoen = PrecOf(current_shoen->parent);
     report = &(current_shoen->report);
     current_shoen->status = ABORTED;
     delete_from_and_tree(current_shoen);
@@ -311,15 +311,15 @@ int terminate_shoen(void)
 
 static int delete_from_and_tree(PARENT_RECORD *shoen)
 {
-    if(shoen->parent == shoen->left_brother){
-	shoen->left_brother->left_son = shoen->right_brother;
+    if(PrecOf(shoen->parent) == PrecOf(shoen->left_brother)){
+	PrecOf(shoen->left_brother)->left_son = shoen->right_brother;
     }else{
-	shoen->left_brother->right_brother = shoen->right_brother;
+	PrecOf(shoen->left_brother)->right_brother = shoen->right_brother;
     }
-    if(shoen->parent == shoen->right_brother){
-	shoen->right_brother->right_son = shoen->left_brother;
+    if(PrecOf(shoen->parent) == PrecOf(shoen->right_brother)){
+	PrecOf(shoen->right_brother)->right_son = shoen->left_brother;
     }else{
-	shoen->right_brother->left_brother = shoen->left_brother;
+	PrecOf(shoen->right_brother)->left_brother = shoen->left_brother;
     }
 }
 
@@ -332,7 +332,7 @@ int shoen_statistics(PARENT_RECORD *shoen)
 {
     register PARENT_RECORD *son;
     register int red=0;
-    for(son = shoen->left_son; son != shoen; son = son->right_brother){
+    for(son = PrecOf(shoen->left_son); son != shoen; son = PrecOf(son->right_brother)){
 	red += shoen_statistics(son);
     }
     return(red+shoen->total_of_reduction);
@@ -346,7 +346,7 @@ int shoen_statistics(PARENT_RECORD *shoen)
 int shoen_add_resource(PARENT_RECORD *shoen, int more)
 {
     PARENT_RECORD *current_shoen;
-    if(IsParentAborted(shoen)) return;
+    if(IsParentAborted(shoen)) return 0;
     current_shoen = parent;
     DecacheParent();
     shoen->reduction_arrowed_max += more;
@@ -355,8 +355,8 @@ int shoen_add_resource(PARENT_RECORD *shoen, int more)
 	    unify_exception_with_parent_report_stream(
 					  shoen, &const_atom_reduction_limit);
 	}else{
-	    if(shoen->parent->reduction_left == 0){
-		(shoen->parent->reduction_left)++;
+	    if(PrecOf(shoen->parent)->reduction_left == 0){
+		(PrecOf(shoen->parent)->reduction_left)++;
 	    }
 	}
     }
@@ -390,7 +390,7 @@ int resource_limit(PARENT_RECORD *p, int level)
 {
     int max = p->reduction_arrowed_max;
     if(max != 0){  /* Require reduction count of */
-	PARENT_RECORD *pp = p->parent;
+	PARENT_RECORD *pp = PrecOf(p->parent);
 	if((pp->reduction_left > 0) || (pp->reduction_left < -99)){
 	    /** Grandfather can divide **/
 	    divide_resource(pp, p);
@@ -447,7 +447,7 @@ int resource_limit(PARENT_RECORD *p, int level)
 
 static int resource_divide_to_children(PARENT_RECORD *p)
 {
-    PARENT_RECORD *prec = p->left_son;
+    PARENT_RECORD *prec = PrecOf(p->left_son);
     while((p != prec) && (p->reduction_left > 0)){
 	int max = prec->reduction_arrowed_max;
 	if((IsResourceExhausted(prec) || IsChildRequestResource(prec)) &&
@@ -463,7 +463,7 @@ static int resource_divide_to_children(PARENT_RECORD *p)
 		ResetParentStatus(prec, RESOURCE_EXHAUSTED);
 	    }
 	}
-	prec = prec->right_brother;
+	prec = PrecOf(prec->right_brother);
     }
     while(prec != p){
 	int max = prec->reduction_arrowed_max;
@@ -471,7 +471,7 @@ static int resource_divide_to_children(PARENT_RECORD *p)
 	   (max != 0)){
 	    return(YES);	/** Resource Limit Occured **/
 	}
-	prec = prec->right_brother;
+	prec = PrecOf(prec->right_brother);
     }
     return(NO);			/** Not Resource Limit, Can Continue **/
 }
@@ -513,7 +513,7 @@ PARENT_RECORD *search_parent_tag(PARENT_RECORD *prec, unsigned int tag)
 {
     while(prec){
 	if((prec->tag & tag) != 0) return(prec);
-	prec = prec->parent;
+	prec = PrecOf(prec->parent);
     }
     Error1F("Illegal exception tag was occurred: %d\n", tag);
     exit_pdss(1);
@@ -539,7 +539,7 @@ int unify_exception_with_report_stream(PARENT_RECORD *prec, CELL *mesg, unsigned
 	current_parent = parent;
 	DecacheParent();
 	prec = search_parent_tag(prec, tag);
-	CacheParent(prec->parent);
+	CacheParent(PrecOf(prec->parent));
 	report = prec->report;
 	AllocUndef(undef);
 	AllocCons(cons);
@@ -560,7 +560,7 @@ int unify_exception_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
     ExceptionMesg(mesg, prec->id);
     if(prec->id != 0){
 	current_parent = parent;
-	CacheParent2(prec->parent);
+	CacheParent2(PrecOf(prec->parent));
 	report = prec->report;
 	AllocUndef(undef);
 	AllocCons(cons);
@@ -579,7 +579,7 @@ int unify_message_with_parent_report_stream(PARENT_RECORD *prec, CELL *mesg)
     register CELL *cons, *undef;
     CELL report, list;
     current_parent = parent;
-    CacheParent2(prec->parent);
+    CacheParent2(PrecOf(prec->parent));
     report = prec->report;
     AllocUndef(undef);
     AllocCons(cons);
@@ -617,23 +617,23 @@ int inspect_shoen_tree(void)
 
 static int dump_shoen_tree(PARENT_RECORD *root, int level)
 {
-    PARENT_RECORD *prec=root->left_son;
+    PARENT_RECORD *prec=PrecOf(root->left_son);
     printf("%c%04d",
 	   root->status==READY ? 'R' : (root->status==ABORTED ? 'A' : 'S'),
 	   root->id);
     if(prec!=root){
-	if(root->left_son==root->right_son){
+	if(PrecOf(root->left_son)==PrecOf(root->right_son)){
 	    printf("--");
 	}else{
 	    printf("-+");
 	}
 	dump_shoen_tree(prec, level+1);
-	prec = prec->right_brother;
+	prec = PrecOf(prec->right_brother);
 	while(prec!=root){
 	    dump_shoen_tree_sub(root, level);
 	    printf(" +");
 	    dump_shoen_tree(prec, level+1);
-	    prec = prec->right_brother;
+	    prec = PrecOf(prec->right_brother);
 	}
     }else{
 	printf("\n");
@@ -643,8 +643,8 @@ static int dump_shoen_tree(PARENT_RECORD *root, int level)
 static int dump_shoen_tree_sub(PARENT_RECORD *prec, int level)
 {
     if(level>0){
-	dump_shoen_tree_sub(prec->parent, level-1);
-	if(prec==prec->parent->right_son){
+	dump_shoen_tree_sub(PrecOf(prec->parent), level-1);
+	if(prec==PrecOf(PrecOf(prec->parent)->right_son)){
 	    printf("       ");
 	}else{
 	    printf(" |     ");

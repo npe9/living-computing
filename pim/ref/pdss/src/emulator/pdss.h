@@ -11,6 +11,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "port.h"
+#include "sysdep.h"
+
+/* MODERN: every allocation of PDSS's is in the arena (arena.c), so that
+   a pointer to it fits in a cell's 32-bit value (port.h). */
+#define malloc(n)	pdss_malloc(n)
+#define calloc(n, m)	pdss_calloc(n, m)
+#define realloc(p, n)	pdss_realloc(p, n)
+#define free(p)		pdss_free(p)
 
 typedef unsigned char OBJ;
 typedef unsigned char CHAR;
@@ -432,7 +441,7 @@ extern unsigned int gensym_count2;
 #define PREDICATE_TABLE_SIZE 16	 /** Cannot Change **/
 #define HashModuleID(id) ((id) & (MODULE_TABLE_SIZE-1))
 #define HashPredID(id)	 (((id)+(id>>16)) & (PREDICATE_TABLE_SIZE-1))
-#define HashFuncAddr(fa) ((((int)(fa))>>2) & (PREDICATE_TABLE_SIZE-1))
+#define HashFuncAddr(fa) ((int)(((uintptr_t)(fa))>>2) & (PREDICATE_TABLE_SIZE-1))
 
 typedef struct predicate_table {	/* for native code */
     unsigned int pid;

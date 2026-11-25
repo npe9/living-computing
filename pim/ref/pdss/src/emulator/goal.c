@@ -146,8 +146,8 @@ int enqueue_head_with_priority(GOAL_RECORD *grec)
     if(IsRef(goal_priority_c)){
 	SetMrbof(goal_priority_c, MRBON);
 	single_wait_suspend(grec, goal_priority_c);
-	if(!IsNativeCode(grec->code)) TracePrioritySuspendGoal(grec);
-	return;
+	if(!IsNativeCode(CodeOf(grec->code))) TracePrioritySuspendGoal(grec);
+	return 0;
     }else{
 	/* Translate:: logical priority --> phisical priority */
 	goal_priority
@@ -156,7 +156,7 @@ int enqueue_head_with_priority(GOAL_RECORD *grec)
 	if(backet->head != NULL){
 	    SetGoalQueuePt2(grec, backet->head);
 	    backet->head = grec;
-	    return;
+	    return 0;
 	}
 	/* backet is empty */
 	backet->head = grec;
@@ -164,14 +164,14 @@ int enqueue_head_with_priority(GOAL_RECORD *grec)
 	backet->tail = grec;
 #endif
 	SetGoalQueuePt2(grec, NULL);
-	if(current_queue == backet) return;
+	if(current_queue == backet) return 0;
 	if(highest->priority < goal_priority){
 	    higher_priority_flag = YES;
 	    backet->lower = highest;
 	    highest->upper = backet;
 	    backet->upper = NULL;
 	    highest = backet;
-	    return;
+	    return 0;
 	}else{			/* highest->priority > goal_priority */
 	    queue_pt = highest;
 	    do{
@@ -179,7 +179,7 @@ int enqueue_head_with_priority(GOAL_RECORD *grec)
 		    backet->upper = queue_pt;
 		    queue_pt->lower = backet;
 		    backet->lower = NULL;
-		    return;
+		    return 0;
 		}
 		queue_pt = queue_pt->lower;
 	    } while(queue_pt->priority > goal_priority);
@@ -202,8 +202,8 @@ int enqueue_tail_with_priority(GOAL_RECORD *grec)
     if(IsRef(goal_priority_c)){
 	SetMrbof(goal_priority_c, MRBON);
 	single_wait_suspend(grec, goal_priority_c);
-	if(!IsNativeCode(grec->code)) TracePrioritySuspendGoal(grec);
-	return;
+	if(!IsNativeCode(CodeOf(grec->code))) TracePrioritySuspendGoal(grec);
+	return 0;
     }else{
 	/* Translate:: logical priority --> phisical priority */
 	goal_priority
@@ -213,20 +213,20 @@ int enqueue_tail_with_priority(GOAL_RECORD *grec)
 	    SetGoalQueuePt2(grec, NULL);
 	    SetGoalQueuePt2(backet->tail, grec);
 	    backet->tail = grec;
-	    return;
+	    return 0;
 	}
 	/* backet is empty */
 	backet->head = grec;
 	backet->tail = grec;
 	SetGoalQueuePt2(grec, NULL);
-	if(current_queue == backet) return;
+	if(current_queue == backet) return 0;
 	if(highest->priority < goal_priority){
 	    higher_priority_flag = YES;
 	    backet->lower = highest;
 	    highest->upper = backet;
 	    backet->upper = NULL;
 	    highest = backet;
-	    return;
+	    return 0;
 	}else{			/* highest->priority > goal_priority */
 	    queue_pt = highest;
 	    do{
@@ -234,7 +234,7 @@ int enqueue_tail_with_priority(GOAL_RECORD *grec)
 		    backet->upper = queue_pt;
 		    queue_pt->lower = backet;
 		    backet->lower = NULL;
-		    return;
+		    return 0;
 		}
 		queue_pt = queue_pt->lower;
 	    } while(queue_pt->priority > goal_priority);
@@ -299,38 +299,38 @@ int dequeue(void)
 #if TWO_WAY_READY_GOAL_POOL
     if(highest->head == NULL) highest->tail = NULL;
 #endif
-    if(IsParentReady(goal->parent)){ /* executable */
-	if(parent != goal->parent){
-	    CacheParent2(goal->parent);
+    if(IsParentReady(PrecOf(goal->parent))){ /* executable */
+	if(parent != PrecOf(goal->parent)){
+	    CacheParent2(PrecOf(goal->parent));
 	}
 	if(reduction_left==0){
 	    if(parent->reduction_arrowed_max != 0){
 		DecacheParent();
-		if(resource_limit(goal->parent, 0)){  /* can't get resource */
-		    SetMrbof(&(goal->parent->queue), MRBON);
-		    single_wait_suspend(goal, &(goal->parent->queue));
+		if(resource_limit(PrecOf(goal->parent), 0)){  /* can't get resource */
+		    SetMrbof(&(PrecOf(goal->parent)->queue), MRBON);
+		    single_wait_suspend(goal, &(PrecOf(goal->parent)->queue));
 		    goto dequeue_loop;
 		}
-		CacheParent(goal->parent);
+		CacheParent(PrecOf(goal->parent));
 	    }else{
-		SetMrbof(&(goal->parent->queue), MRBON);
-		single_wait_suspend(goal, &(goal->parent->queue));
-		unify_exception_with_parent_report_stream(goal->parent,
+		SetMrbof(&(PrecOf(goal->parent)->queue), MRBON);
+		single_wait_suspend(goal, &(PrecOf(goal->parent)->queue));
+		unify_exception_with_parent_report_stream(PrecOf(goal->parent),
 						  &const_atom_reduction_limit);
-		goal->parent->status |= RESOURCE_EXHAUSTED;
+		PrecOf(goal->parent)->status |= RESOURCE_EXHAUSTED;
 		goto dequeue_loop;
 	    }
 	}
 	CacheGoal(goal);
 	FreeGoalRecord(goal, goal->argn);
 	return(YES);
-    }else if(IsParentAborted(goal->parent)){	/* parent was aborted */
-	goal->parent->number_of_children -= 1;
+    }else if(IsParentAborted(PrecOf(goal->parent))){	/* parent was aborted */
+	PrecOf(goal->parent)->number_of_children -= 1;
 	FreeGoalRecord(goal, goal->argn);
 	goto dequeue_loop;
     }else{			/* parent was suspended */
-	SetMrbof(&(goal->parent->queue), MRBON);
-	single_wait_suspend(goal, &(goal->parent->queue));
+	SetMrbof(&(PrecOf(goal->parent)->queue), MRBON);
+	single_wait_suspend(goal, &(PrecOf(goal->parent)->queue));
 	goto dequeue_loop;
     }
 }
@@ -356,22 +356,22 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 	    switch(Typeof(c)){
 	      case UNDEF:
 		GetSuspensionRecord(srec);
-		srec->suspended = goal;
+		srec->suspended = Ref(goal);
 		SetSuspRecForward(srec, UNDEF, NIL);
 		SetSuspRecBackward(srec, REF, c);
 		SetTypeof(c, MHOOK); SetSuspof(c, srec);
 		break;
 	      case HOOK:
 		GetSuspensionRecord(srec);
-		srec->suspended = goal;
+		srec->suspended = Ref(goal);
 		SetSuspRecForward(srec, HOOK, Suspof(c));
 		SetSuspRecBackward(srec, REF, c);
 		SetTypeof(c, MHOOK); SetSuspof(c, srec);
 		break;
 	      case MHOOK:
-		if(Suspof(c)->suspended != goal){
+		if(GrecOf(Suspof(c)->suspended) != goal){
 		    GetSuspensionRecord(srec);
-		    srec->suspended = goal;
+		    srec->suspended = Ref(goal);
 		    SetSuspRecForward(srec, MHOOK, Suspof(c));
 		    SetSuspRecBackward(srec, REF, c);
 		    SetSuspRecBackward(Suspof(c), MHOOK, srec);
@@ -383,7 +383,7 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 		    register CELL *nc;
 		    register GOAL_RECORD *grec;
 		    GetSuspensionRecord(srec);
-		    srec->suspended = goal;
+		    srec->suspended = Ref(goal);
 		    AllocMghok(nc);
 		    SetMergerof(nc, Mergerof(c));
 		    SetTypeof(c, MHOOK); SetSuspof(c, srec);
@@ -398,15 +398,15 @@ int popup_suspension_stack(GOAL_RECORD *goal)
 		Error("Illegal data type is found in suspension stack.");
 		PrintCons2F("TAG : %x, Value : %x", Typeof(c), Valueof(c));
 		PrintCons1F("SSP : %x", (SSP - suspension_stack));
-		return;
+		return 0;
 	    }
-	    srec->other = last;
+	    srec->other = Ref(last);
 	    last = srec;
 	    if(--SSP < suspension_stack) break;
 	    c = Objectof(SSP);
 	    while(same_var_exist(c)) c = Objectof(--SSP);
 	}
-	Suspof(root)->other = srec;  /* success terminateion */
+	Suspof(root)->other = Ref(srec);  /* success terminateion */
     }else{
 	/**** Single Wait ****/
 	mrb = Mrbof(SSP);
@@ -550,11 +550,11 @@ int body_builtin_suspend(OBJ *code, CELL *waitref, unsigned int argio, ...)
     }
     va_end(bltargs);
     grec->argn = i;
-    grec->parent = parent;
-    grec->code = code;
+    grec->parent = Ref(parent);
+    grec->code = Ref(code);
     SetGoalPriority(grec, INT, logical_priority);
     grec->debug = NO_TRACE_GOAL;
-    grec->pcode = current_predicate2 ? current_predicate2 : current_predicate;
+    grec->pcode = Ref(current_predicate2 ? current_predicate2 : current_predicate);
     number_of_children += 1;
     single_wait_suspend(grec, waitref);
     while(i--){
@@ -602,11 +602,11 @@ int body_builtin_swap(OBJ *code, unsigned int argio, ...)
 	    *ap[i] = *y;
 	}
     }
-    grec->parent = parent;
-    grec->code = code;
+    grec->parent = Ref(parent);
+    grec->code = Ref(code);
     SetGoalPriority(grec, INT, logical_priority);
     grec->debug = NO_TRACE_GOAL;
-    grec->pcode = current_predicate2;
+    grec->pcode = Ref(current_predicate2);
     number_of_children += 1;
     enqueue(grec);
 }
@@ -616,7 +616,7 @@ int body_builtin_swap(OBJ *code, unsigned int argio, ...)
 *   Resume -- Wakeup Goal.						 *
 *************************************************************************/
 
-int wakeup_goals(CELL *cc, int type, CELL *value, MRB mrb)
+int wakeup_goals_v(CELL *cc, int type, int32_t value, MRB mrb)
 {
     register SUSPENSION_RECORD *srec;
     register GOAL_RECORD *grec;
@@ -629,16 +629,16 @@ int wakeup_goals(CELL *cc, int type, CELL *value, MRB mrb)
     do{
 	if(Typeof(c) == HOOK){	/* case of single waiting */
 	    grec = Goalof(c);
-	    if(!IsNativeCode(grec->code)) TraceResumeGoal(grec);
+	    if(!IsNativeCode(CodeOf(grec->code))) TraceResumeGoal(grec);
 	    tmpc = grec->pt; c = &tmpc;
 	    enqueue_with_priority(grec);
 	}else{			/* case of multiple waiting or read message */
 	    SUSPENSION_RECORD *other;			   /* hooked */
 	    srec = Suspof(c);
-	    grec = srec->suspended;
-	    if(!IsNativeCode(grec->code)) TraceResumeGoal(grec);
+	    grec = GrecOf(srec->suspended);
+	    if(!IsNativeCode(CodeOf(grec->code))) TraceResumeGoal(grec);
 	    enqueue_with_priority(grec);
-	    other = srec->other;
+	    other = SrecOf(srec->other);
 	    while(other != srec){
 		SUSPENSION_RECORD *gomi_srec = other;
 		CELL *forw = &(other->forward);
@@ -661,7 +661,7 @@ int wakeup_goals(CELL *cc, int type, CELL *value, MRB mrb)
 				       Typeof(&(other->backward)),
 				       Suspof(&(other->backward)));
 		}
-		other = other->other;
+		other = SrecOf(other->other);
 		FreeSuspensionRecord(gomi_srec);
 	    }
 	    tmpc = srec->forward;
@@ -696,7 +696,7 @@ int move_suspension_queue(register CELL *from, register CELL *to)
 	if(Typeof(from) == MHOOK){
 	    SetSuspRecBackward(Suspof(from), HOOK, tmp_grec);
 	}
-	return;
+	return 0;
     }
   move_susp_loop_srec:
     switch(Typeof(tmp_cell)){
@@ -711,6 +711,6 @@ int move_suspension_queue(register CELL *from, register CELL *to)
 	if(Typeof(from) == MHOOK){
 	    SetSuspRecBackward(Suspof(from), MHOOK, tmp_srec);
 	}
-	return;
+	return 0;
     }
 }

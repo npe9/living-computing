@@ -437,13 +437,13 @@ int blt_g_integer_to_float(CELL *in, CELL *out)
     if(Typeof(x) != FLOAT){\
   suspend_or_exception:\
 	if(IsRef(x)){\
-	    body_builtin_suspend(DC, x, IIO, IN1, IN2, OUT);\
+	    body_builtin_suspend(CodeOfFunction(DC), x, IIO, IN1, IN2, OUT);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==IN1 ? 1 : 2),\
 				   OP, IIO, IN1, IN2, OUT);\
 	}\
     }else{\
-	int *z;\
+	int32_t z;\
 	if(FN(&Valueof(IN1), &Valueof(IN2), &z)){\
 	    SetAll(OUT, FLOAT, z, MRBOFF);\
 	}else{\
@@ -462,13 +462,13 @@ int blt_g_integer_to_float(CELL *in, CELL *out)
     if(Typeof(x) != FLOAT){\
   suspend_or_exception:\
 	if(IsRef(x)){\
-	    body_builtin_suspend(DC, x, IIO, IN1, IN2, OUT);\
+	    body_builtin_suspend(CodeOfFunction(DC), x, IIO, IN1, IN2, OUT);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==IN1 ? 1 : 2),\
 				   OP, IIO, IN1, IN2, OUT);\
 	}\
     }else{\
-	int *z;\
+	int32_t z;\
 	FN(&Valueof(IN1), &Valueof(IN2), &z);\
 	SetAll(OUT, FLOAT, z, MRBOFF);\
     }\
@@ -485,12 +485,12 @@ int blt_g_integer_to_float(CELL *in, CELL *out)
     Dereference(IN);\
     if(Typeof(IN) != FLOAT){\
 	if(IsRef(IN)){\
-	    body_builtin_suspend(DC, IN, IO, IN, OUT);\
+	    body_builtin_suspend(CodeOfFunction(DC), IN, IO, IN, OUT);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1, OP, IO, IN, OUT);\
 	}\
     }else{\
-	int *z;\
+	int32_t z;\
 	if(FN(&Valueof(IN), &z)){\
 	    SetAll(OUT, FLOAT, z, MRBOFF);\
 	}else{\
@@ -503,12 +503,12 @@ int blt_g_integer_to_float(CELL *in, CELL *out)
     Dereference(IN);\
     if(Typeof(IN) != FLOAT){\
 	if(IsRef(IN)){\
-	    body_builtin_suspend(DC, IN, IO, IN, OUT);\
+	    body_builtin_suspend(CodeOfFunction(DC), IN, IO, IN, OUT);\
 	}else{\
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1, OP, IO, IN, OUT);\
 	}\
     }else{\
-	int *z;\
+	int32_t z;\
 	FN(&Valueof(IN), &z);\
 	SetAll(OUT, FLOAT, z, MRBOFF);\
     }\
@@ -892,13 +892,13 @@ int blt_b_float_to_integer(register CELL *in, CELL *out)
     Dereference(in);
     if(Typeof(in) != FLOAT){
 	if(IsRef(in)){
-	    body_builtin_suspend(dc_float_to_integer, in, IO, in, out);
+	    body_builtin_suspend(CodeOfFunction(dc_float_to_integer), in, IO, in, out);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_FLOAT_TO_INTEGER, IO, in, out);
 	}
     }else{
-	int *z;
+	int32_t z;
 	if(float_to_integer(&Valueof(in), &z)){
 	    SetAll(out, INT, z, MRBOFF);
 	}else{
@@ -926,13 +926,13 @@ int blt_b_integer_to_float(register CELL *in, CELL *out)
     Dereference(in);
     if(Typeof(in) != INT){
 	if(IsRef(in)){
-	    body_builtin_suspend(dc_integer_to_float, in, IO, in, out);
+	    body_builtin_suspend(CodeOfFunction(dc_integer_to_float), in, IO, in, out);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_INTEGER_TO_FLOAT, IO, in, out);
 	}
     }else{
-	int *z;
+	int32_t z;
 	integer_to_float(&Valueof(in), &z);
 	SetAll(out, FLOAT, z, MRBOFF);
     }

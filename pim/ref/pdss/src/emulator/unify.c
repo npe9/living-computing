@@ -29,40 +29,40 @@ int active_unify(CELL *regX, CELL *regY)
     switch(Typeof(varY)){
       case ATOM:
 	active_unify_with_atom(regX, Valueof(varY));
-	return;
+	return 0;
       case INT:
 	active_unify_with_integer(regX, Valueof(varY));
-	return;
+	return 0;
       case FLOAT:
 	active_unify_with_float(regX, Valueof(varY));
-	return;
+	return 0;
       case LIST:
 	active_unify_with_list(regX, varY);
-	return;
+	return 0;
       case VECTOR:
 	active_unify_with_vector(regX, varY);
-	return;
+	return 0;
       case STRING:
 	active_unify_with_string(regX, varY);
-	return;
+	return 0;
       case NUE:
 	active_unify_with_nue(regX, varY);
-	return;
+	return 0;
       case SHOEN:
 	active_unify_with_shoen(regX, Shoenof(varY));
-	return;
+	return 0;
       case UNDEF:
 	active_unify_with_undef(regX, varY, Mrbof(regY));
-	return;
+	return 0;
       case HOOK:
 	active_unify_with_hook(regX, varY, Mrbof(regY));
-	return;
+	return 0;
       case MHOOK:
 	active_unify_with_mhook(regX, varY, Mrbof(regY));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_with_stream(regX, varY, Mrbof(regY));
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(varY);
 	exception_active_unify_fail(regX, regY);
@@ -80,23 +80,23 @@ int active_unify_with_atom(CELL *reg, unsigned int atom)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case ATOM:
-	if(Valueof(var) == atom) return;
+	if(Valueof(var) == atom) return 0;
       case INT: case FLOAT: case LIST: case VECTOR: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, ATOM, atom, Mrbof(reg));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, ATOM, atom, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	if(atom == NIL){
 	    active_unify_stream_nil(var, Mrbof(reg));
 	}else{
 	    active_unify_stream_atom(var, Mrbof(reg), atom);
 	}
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -111,19 +111,19 @@ int active_unify_with_nil(CELL *reg)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case ATOM:
-	if(Valueof(var) == NIL) return;
+	if(Valueof(var) == NIL) return 0;
       case INT: case FLOAT: case LIST: case VECTOR: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, ATOM, NIL, Mrbof(reg));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, ATOM, NIL, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_nil(var, Mrbof(reg));
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -137,19 +137,19 @@ int active_unify_with_integer(CELL *reg, int inte)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case INT:
-	if(Valueof(var) == inte) return;
+	if(Valueof(var) == inte) return 0;
       case ATOM: case FLOAT: case LIST: case VECTOR: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, INT, inte, Mrbof(reg));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, INT, inte, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_integer(var, Mrbof(reg), inte);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -164,19 +164,19 @@ int active_unify_with_float(CELL *reg, int flot)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case FLOAT:
-	if(Valueof(var) == flot) return;
+	if(Valueof(var) == flot) return 0;
       case ATOM: case INT: case LIST: case VECTOR: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, FLOAT, flot, Mrbof(reg));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, FLOAT, flot, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_float(var, Mrbof(reg), flot);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -192,19 +192,19 @@ int active_unify_with_list(CELL *reg, CELL *list)
     switch(Typeof(var)){
       case LIST:
 	make_unify_list_list_goal_and_enqueue(var, list);
-	return;
+	return 0;
       case INT: case FLOAT: case ATOM: case VECTOR: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, LIST, Objectof(list), Mrbof(reg)|Mrbof(list));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, LIST, Objectof(list), Mrbof(reg)|Mrbof(list));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_list(var, Mrbof(reg), list);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -220,20 +220,20 @@ int active_unify_with_vector(CELL *reg, CELL *vct)
       case VECTOR:
 	if(VectorLengthof(var) == VectorLengthof(vct)){
 	    make_unify_vector_vector_goal_and_enqueue(var, vct);
-	    return;
+	    return 0;
 	}
       case INT: case FLOAT: case ATOM: case LIST: case STRING:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, VECTOR, Objectof(vct), Mrbof(reg)|Mrbof(vct));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, VECTOR, Objectof(vct), Mrbof(reg)|Mrbof(vct));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_vector(var, Mrbof(reg), vct);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -256,20 +256,20 @@ int active_unify_with_string(CELL *reg, register CELL *str)
 		if(Valueof(var) != Valueof(ptr)) goto unify_fail;
 		var++; ptr++;
 	    }
-	    return;
+	    return 0;
 	}
       case INT: case FLOAT: case ATOM: case LIST: case VECTOR:
       case NUE: case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, STRING, Objectof(str), Mrbof(reg)|Mrbof(str));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, STRING, Objectof(str), Mrbof(reg)|Mrbof(str));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_string(var, Mrbof(reg), str);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -283,19 +283,19 @@ int active_unify_with_nue(CELL *reg, CELL *nue)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case NUE:
-	if(Objectof(var) == Objectof(nue)) return;
+	if(Objectof(var) == Objectof(nue)) return 0;
       case INT: case FLOAT: case ATOM: case LIST: case VECTOR: case STRING:
       case SHOEN:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, NUE, Objectof(nue), Mrbof(reg)|Mrbof(nue));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, NUE, Objectof(nue), Mrbof(reg)|Mrbof(nue));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_nue(var, Mrbof(reg), nue);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -309,19 +309,19 @@ int active_unify_with_shoen(CELL *reg, PARENT_RECORD *shoen)
     Dereference2(reg, var);
     switch(Typeof(var)){
       case SHOEN:
-	if(Shoenof(var) == shoen) return;
+	if(Shoenof(var) == shoen) return 0;
       case INT: case FLOAT: case ATOM: case LIST: case VECTOR: case STRING:
       case NUE:
 	goto unify_fail;
       case UNDEF:
 	SetAll(var, SHOEN, shoen, Mrbof(reg));
-	return;
+	return 0;
       case HOOK: case MHOOK:
 	wakeup_goals(var, SHOEN, shoen, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_shoen(var, Mrbof(reg), shoen);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
       unify_fail:
@@ -342,24 +342,24 @@ int active_unify_with_undef(CELL *reg, CELL *undef, MRB mrb)
     switch(Typeof(var)){
       case ATOM: case INT: case FLOAT: case SHOEN:
 	SetAll(undef, Typeof(var), Valueof(var), mrb);
-	return;
+	return 0;
       case LIST: case VECTOR: case STRING: case NUE:
 	SetAll(undef, Typeof(var), Objectof(var), Mrbof(reg)|mrb);
-	return;
+	return 0;
       case UNDEF:
 	if(var != undef) SetAll(var, REF, undef, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case HOOK:
 	DetectDeadlockInUnifyHookUndef(var, Mrbof(reg), undef, mrb);
 	SetAll(undef, REF, var, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case MGHOK:
 	DetectDeadlockInUnifyMghokUndef(var, Mrbof(reg), undef, mrb);
 	SetAll(undef, REF, var, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case MHOOK:
 	SetAll(undef, REF, var, Mrbof(reg)|mrb);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
 	SetAll(&work, REF, undef, mrb);
@@ -374,25 +374,25 @@ int active_unify_with_hook(CELL *reg, CELL *hook, MRB mrb)
     switch(Typeof(var)){
       case INT: case ATOM: case FLOAT: case SHOEN:
 	wakeup_goals(hook, Typeof(var), Valueof(var), mrb);
-	return;
+	return 0;
       case LIST: case VECTOR: case STRING: case NUE:
 	wakeup_goals(hook, Typeof(var), Objectof(var), Mrbof(reg)|mrb);
-	return;
+	return 0;
       case UNDEF:
 	DetectDeadlockInUnifyHookUndef(hook, mrb, var, Mrbof(reg));
 	SetAll(var, REF, hook, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case HOOK:
-	if(var == hook) return;
+	if(var == hook) return 0;
 	DetectDeadlockInUnifyHookHook(hook, mrb, var, Mrbof(reg));
       case MHOOK:
 	move_suspension_queue(var, hook);
 	SetAll(var, REF, hook, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case MGHOK:
 	DetectDeadlockInUnifyHookMghok(hook, mrb, var, Mrbof(reg));
 	active_unify_stream_hook(var, Mrbof(reg), hook, mrb);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
 	SetAll(&work, REF, hook, mrb);
@@ -407,22 +407,22 @@ int active_unify_with_mhook(CELL *reg, CELL *mhook, MRB mrb)
     switch(Typeof(var)){
       case INT: case ATOM: case FLOAT: case SHOEN:
 	wakeup_goals(mhook, Typeof(var), Valueof(var), mrb);
-	return;
+	return 0;
       case LIST: case VECTOR: case STRING: case NUE:
 	wakeup_goals(mhook, Typeof(var), Objectof(var), Mrbof(reg)|mrb);
-	return;
+	return 0;
       case UNDEF:
 	SetAll(var, REF, mhook, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case MHOOK:
-	if(var == mhook) return;
+	if(var == mhook) return 0;
       case HOOK:
 	move_suspension_queue(var, mhook);
 	SetAll(var, REF, mhook, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case MGHOK:
 	active_unify_stream_hook(var, Mrbof(reg), mhook, mrb);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
 	SetAll(&work, REF, mhook, mrb);
@@ -441,41 +441,41 @@ int active_unify_with_stream(CELL *reg, CELL *stream, MRB mrb)
 	}else{
 	    active_unify_stream_atom(stream, mrb, Valueof(var));
 	}
-	return;
+	return 0;
       case INT:
 	active_unify_stream_integer(stream, mrb, Valueof(var));
-	return;
+	return 0;
       case FLOAT:
 	active_unify_stream_float(stream, mrb, Valueof(var));
-	return;
+	return 0;
       case LIST:
 	active_unify_stream_list(stream, mrb, var);
-	return;
+	return 0;
       case VECTOR:
 	active_unify_stream_vector(stream, mrb, var);
-	return;
+	return 0;
       case STRING:
 	active_unify_stream_string(stream, mrb, var);
-	return;
+	return 0;
       case NUE:
 	active_unify_stream_nue(stream, mrb, var);
-	return;
+	return 0;
       case SHOEN:
 	active_unify_stream_shoen(stream, mrb, Shoenof(var));
-	return;
+	return 0;
       case UNDEF:
 	DetectDeadlockInUnifyMghokUndef(stream, mrb, var, Mrbof(reg));
 	SetAll(var, REF, stream, Mrbof(reg)|mrb);
-	return;
+	return 0;
       case HOOK:
 	DetectDeadlockInUnifyHookMghok(var, Mrbof(reg), stream, mrb);
       case MHOOK:
 	active_unify_stream_hook(stream, mrb, var, Mrbof(reg));
-	return;
+	return 0;
       case MGHOK:
 	DetectDeadlockInUnifyMghokMghok(stream, mrb, var, Mrbof(reg));
 	active_unify_stream_stream(stream, var);
-	return;
+	return 0;
       DEFAULT:
 	illegal_data_type_in_active_unify(var);
 	SetAll(&work, REF, stream, mrb);
@@ -492,9 +492,9 @@ int active_unify_stream_atom(CELL *strm, MRB mrb, int atom)
     /** atom \= [] **/
 {
     CELL x, y, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON) SetAll(strm, ATOM, atom, MRBON);
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&y, REF, strm, MRBOFF);
@@ -513,9 +513,9 @@ int active_unify_stream_nil(CELL *strm, MRB mrb)
 {
     register MERGER_RECORD *merger;
     merger = Mergerof(strm);
-    if(IsParentAborted(merger->parent)){
+    if(IsParentAborted(PrecOf(merger->parent))){
 	if(mrb == MRBON) SetAll(strm, ATOM, NIL, MRBON);
-	return;
+	return 0;
     }
     if(--(merger->count) == 0){
 	register CELL *reg, *var;
@@ -547,9 +547,9 @@ int active_unify_stream_nil(CELL *strm, MRB mrb)
 int active_unify_stream_integer(CELL *strm, MRB mrb, int inte)
 {
     CELL x, y, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON) SetAll(strm, INT, inte, MRBON);
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&y, REF, strm, MRBOFF);
@@ -567,9 +567,9 @@ int active_unify_stream_integer(CELL *strm, MRB mrb, int inte)
 int active_unify_stream_float(CELL *strm, MRB mrb, int flot)
 {
     CELL x, y, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON) SetAll(strm, FLOAT, flot, MRBON);
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&y, REF, strm, MRBOFF);
@@ -590,9 +590,9 @@ int active_unify_stream_list(CELL *strm, MRB mrb, CELL *list)
     CELL tmp;
     MERGER_RECORD *merger;
     merger = Mergerof(strm);
-    if(IsParentAborted(merger->parent)){
+    if(IsParentAborted(PrecOf(merger->parent))){
 	if(mrb == MRBON) SetAll(strm, LIST, Objectof(list), MRBON);
-	return;
+	return 0;
     }
     if(mrb == MRBOFF && Mrbof(list) == MRBOFF){
 	/** MGHOK cell & LIST cell are SRP -> Reuse cons cell **/
@@ -713,9 +713,9 @@ int active_unify_stream_vector(CELL *strm, MRB mrb, CELL *vct)
     unsigned size, i;
     merger = Mergerof(strm);
     vp = Objectof(vct);
-    if(IsParentAborted(merger->parent)){
+    if(IsParentAborted(PrecOf(merger->parent))){
 	if(mrb == MRBON) SetAll(strm, VECTOR, vp, MRBON);
-	return;
+	return 0;
     }
     if((size = VectorLengthof(vct)) != 0){
 	if(mrb == MRBON) SetAll(strm, VECTOR, vp, MRBON);
@@ -778,9 +778,9 @@ int active_unify_stream_vector(CELL *strm, MRB mrb, CELL *vct)
 int active_unify_stream_string(CELL *strm, MRB mrb, CELL *str)
 {
     CELL x, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON){ SetMrbof(str, MRBON); *strm = *str; }
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&x, REF, strm, MRBOFF);
@@ -798,9 +798,9 @@ int active_unify_stream_string(CELL *strm, MRB mrb, CELL *str)
 int active_unify_stream_nue(CELL *strm, MRB mrb, CELL *nue)
 {
     CELL x, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON){ SetMrbof(nue, MRBON); *strm = *nue; }
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&x, REF, strm, MRBOFF);
@@ -818,9 +818,9 @@ int active_unify_stream_nue(CELL *strm, MRB mrb, CELL *nue)
 int active_unify_stream_shoen(CELL *strm, MRB mrb, PARENT_RECORD *shoen)
 {
     CELL x, y, *mghok;
-    if(IsParentAborted(Mergerof(strm)->parent)){
+    if(IsParentAborted(PrecOf(Mergerof(strm)->parent))){
 	if(mrb == MRBON) SetAll(strm, SHOEN, shoen, MRBON);
-	return;
+	return 0;
     }
     if(mrb == MRBOFF){
 	SetAll(&y, REF, strm, MRBOFF);
@@ -841,9 +841,9 @@ int active_unify_stream_hook(CELL *strm, MRB mrbst, CELL *hook, MRB mrbhk)
     register MERGER_RECORD *merger;
     register GOAL_RECORD *grec;
     merger = Mergerof(strm);
-    if(IsParentAborted(merger->parent)){
+    if(IsParentAborted(PrecOf(merger->parent))){
 	if(mrbst == MRBON) SetAll(strm, REF, hook, MRBON);
-	return;
+	return 0;
     }
     if(mrbst == MRBON){
 	AllocMghok(mghok);
@@ -865,14 +865,14 @@ int active_unify_stream_stream(CELL *st1, CELL *st2)
     register MERGER_RECORD *mg1, *mg2;
     register GOAL_RECORD *grec1, *grec2;
     mg1 = Mergerof(st1);
-    if(IsParentAborted(mg1->parent)){
+    if(IsParentAborted(PrecOf(mg1->parent))){
 	SetAll(st1, REF, st2, MRBON);
-	return;
+	return 0;
     }
     mg2 = Mergerof(st2);
-    if(IsParentAborted(mg2->parent)){
+    if(IsParentAborted(PrecOf(mg2->parent))){
 	SetAll(st2, REF, st1, MRBON);
-	return;
+	return 0;
     }
     AllocMghok(mghk1);
     SetMergerof(mghk1, mg1);
@@ -890,7 +890,7 @@ static int terminate_merger(MERGER_RECORD *merger)
 {
     PARENT_RECORD *current_shoen;
     current_shoen = parent;
-    CacheParent2(merger->parent);
+    CacheParent2(PrecOf(merger->parent));
     if(--number_of_children == 0){
 	terminate_shoen();
 	parent = NULL;
@@ -909,11 +909,11 @@ GOAL_RECORD *make_unify_goal_for_merger(TYPE type1, CELL *val1, MRB mrb1,
     register GOAL_RECORD *grec;
     PARENT_RECORD *current_shoen;
     current_shoen = parent;
-    CacheParent2(merger->parent);
+    CacheParent2(PrecOf(merger->parent));
     GetGoalRecord(grec, 2);
     number_of_children++;
-    grec->parent = parent;
-    grec->code = (OBJ *)dc_unify;
+    grec->parent = Ref(parent);
+    grec->code = Ref(CodeOfFunction(dc_unify));
     grec->argn = 2;
     SetAll(&(grec->args[0]), type1, val1, mrb1);
     SetAll(&(grec->args[1]), type2, val2, mrb2);
@@ -930,11 +930,11 @@ static int make_unify_goal_and_enqueue_for_merger(TYPE type1, CELL *val1, MRB mr
     register GOAL_RECORD *grec;
     PARENT_RECORD *current_shoen;
     current_shoen = parent;
-    CacheParent2(merger->parent);
+    CacheParent2(PrecOf(merger->parent));
     GetGoalRecord(grec, 2);
     number_of_children++;
-    grec->parent = parent;
-    grec->code = (OBJ *)dc_unify;
+    grec->parent = Ref(parent);
+    grec->code = Ref(CodeOfFunction(dc_unify));
     grec->argn = 2;
     SetAll(&(grec->args[0]), type1, val1, mrb1);
     SetAll(&(grec->args[1]), type2, val2, mrb2);
@@ -950,14 +950,14 @@ int make_unify_list_list_goal_and_enqueue(CELL *x, CELL *y)
     register GOAL_RECORD *grec;
     GetGoalRecord(grec, 2);
     number_of_children++;
-    grec->parent = parent;
-    grec->code = (OBJ *)dc_unify_list_list2;
+    grec->parent = Ref(parent);
+    grec->code = Ref(CodeOfFunction(dc_unify_list_list2));
     grec->argn = 2;
     grec->args[0] = *x;
     grec->args[1] = *y;
     SetGoalPriority(grec, INT, logical_priority);
     grec->debug = NO_TRACE_GOAL;
-    grec->pcode = current_predicate2 ? current_predicate2 : current_predicate;
+    grec->pcode = Ref(current_predicate2 ? current_predicate2 : current_predicate);
     enqueue(grec);
 }
 
@@ -966,15 +966,15 @@ int make_unify_vector_vector_goal_and_enqueue(CELL *x, CELL *y)
     register GOAL_RECORD *grec;
     GetGoalRecord(grec, 3);
     number_of_children++;
-    grec->parent = parent;
-    grec->code = (OBJ *)dc_unify_vector_vector2;
+    grec->parent = Ref(parent);
+    grec->code = Ref(CodeOfFunction(dc_unify_vector_vector2));
     grec->argn = 3;
     grec->args[0] = *x;
     grec->args[1] = *y;
     SetAll(&(grec->args[2]), INT, 0, MRBOFF);
     SetGoalPriority(grec, INT, logical_priority);
     grec->debug = NO_TRACE_GOAL;
-    grec->pcode = current_predicate2 ? current_predicate2 : current_predicate;
+    grec->pcode = Ref(current_predicate2 ? current_predicate2 : current_predicate);
     enqueue(grec);
 }
 
@@ -1003,14 +1003,14 @@ DCODE dc_unify_list_list(void)
   suspend_or_fail:
 	if(IsRef(x)){
 	    GetGoalRecord(grec, 2);
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_unify_list_list;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_unify_list_list));
 	    grec->argn = 2;
 	    grec->args[0] = R0;
 	    grec->args[1] = R1;
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2;
+	    grec->pcode = Ref(current_predicate2);
 	    single_wait_suspend(grec, x);
 	    return(NC_SUSPENDED);
 	}
@@ -1058,15 +1058,15 @@ DCODE dc_unify_vector_vector(void)
   suspend_or_fail:
 	if(IsRef(x)){
 	    GetGoalRecord(grec, 3);
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_unify_vector_vector;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_unify_vector_vector));
 	    grec->argn = 3;
 	    grec->args[0] = R0;
 	    grec->args[1] = R1;
 	    grec->args[2] = R2;
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2;
+	    grec->pcode = Ref(current_predicate2);
 	    single_wait_suspend(grec, x);
 	    return(NC_SUSPENDED);
 	}

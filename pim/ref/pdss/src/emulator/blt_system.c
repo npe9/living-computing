@@ -88,7 +88,7 @@ int blt_b_apply(CELL *code, CELL *argv)
     x = code;
     Dereference(x);
     if(Typeof(x) != VECTOR){
-	if(Typeof(x) == ATOM && Valueof(x) ==  NIL) return;
+	if(Typeof(x) == ATOM && Valueof(x) ==  NIL) return 0;
 	goto suspend_or_exception;
     }
     if(VectorLengthof(x) != 3) goto exception;
@@ -116,37 +116,37 @@ int blt_b_apply(CELL *code, CELL *argv)
 	if(!IsRef(x)) goto exception;
 	GetGoalRecord(grec, 2);
 	number_of_children++;
-	grec->parent = parent;
-	grec->code = (OBJ *)dc_apply;
+	grec->parent = Ref(parent);
+	grec->code = Ref(CodeOfFunction(dc_apply));
 	grec->argn = 2;
 	grec->args[0] = *code;
 	grec->args[1] = *argv;
 	SetGoalPriority(grec, INT, logical_priority);
 	grec->debug = goal_debug_status;
-	grec->pcode = NULL;
+	grec->pcode = 0;
 	single_wait_suspend(grec, x);
-	return;
+	return 0;
     }
     if(VectorLengthof(argv) != arity){
   exception:
 	body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==argv ? 2 : 1),
 			       KL1B_B_APPLY, II, code, argv);
-	return;
+	return 0;
     }
 
     if(lookup_module(mod, &mtbl) == MODMAN_MODULE_NOT_FOUND){
 	body_goal_exception2(MODULE_NOT_FOUND, code, argv);
-	return;
+	return 0;
     }
     obj = find_predicate(mtbl, (arity<<16)|pred);
     if(obj == NULL){
 	body_goal_exception2(PREDICATE_NOT_FOUND, code, argv);
-	return;
+	return 0;
     }
     GetGoalRecord(grec, arity);
     number_of_children++;
-    grec->parent = parent;
-    grec->code = obj;
+    grec->parent = Ref(parent);
+    grec->code = Ref(obj);
     grec->argn = arity;
     x = grec->args;
     y = Objectof(argv);
@@ -158,7 +158,7 @@ int blt_b_apply(CELL *code, CELL *argv)
 	*x = *y; x++;
     }
     grec->debug = goal_debug_status;
-    grec->pcode = NULL;
+    grec->pcode = 0;
     SetGoalPriority(grec, INT, logical_priority);
     enqueue(grec);
     if(Mrbof(code) == MRBOFF){
@@ -169,7 +169,7 @@ int blt_b_apply(CELL *code, CELL *argv)
 	FreeVector(Objectof(argv), grec->argn);
 	mrbgc_statistics_collect_in_builtin(grec->argn+1);
     }
-    return;
+    return 0;
 }
 
 
@@ -195,13 +195,13 @@ int blt_b_raise(CELL *tag, CELL *key, CELL *info)
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_RAISE, III, tag, key, info);
-	    return;
+	    return 0;
 	}
     }
     if(Valueof(tag) == 0){
 	body_builtin_exception(RANGE_OVERFLOW, 1,
 			       KL1B_B_RAISE, III, tag, key, info);
-	return;
+	return 0;
     }
     if(!is_ground(key, MRBOFF, PASSIVE_UNIFY_DEPTH)){
 	if(IsSuspensionStackEmpty()){
@@ -212,19 +212,19 @@ int blt_b_raise(CELL *tag, CELL *key, CELL *info)
   suspend:
 	    GetGoalRecord(grec, 3);
 	    number_of_children++;
-	    grec->parent = parent;
-	    grec->code = (OBJ *)dc_raise;
+	    grec->parent = Ref(parent);
+	    grec->code = Ref(CodeOfFunction(dc_raise));
 	    grec->argn = 3;
 	    grec->args[0] = *tag;
 	    grec->args[1] = *key;
 	    grec->args[2] = *info;
 	    SetGoalPriority(grec, INT, logical_priority);
 	    grec->debug = goal_debug_status;
-	    grec->pcode = current_predicate2 ? current_predicate2
-					     : current_predicate;
+	    grec->pcode = Ref(current_predicate2 ? current_predicate2
+					     : current_predicate);
 	    popup_suspension_stack(grec);
 	}
-	return;
+	return 0;
     }
     pdss_raise(Valueof(tag), key, info);
 }
@@ -247,8 +247,8 @@ int blt_b_merge(CELL *in, CELL *out)
     SetAll(&(merger->output), REF, undef, MRBOFF);
     merger->count    = 1;
     merger->priority = logical_priority;
-    merger->parent   = parent;
-    merger->pcode    = current_predicate;
+    merger->parent   = Ref(parent);
+    merger->pcode    = Ref(current_predicate);
     number_of_children++;
 }
 
@@ -305,7 +305,7 @@ int blt_b_rate(CELL *rate, CELL *prio)
     Dereference(rate);
     if(Typeof(rate) != INT){
 	if(IsRef(rate)){
-	    body_builtin_suspend(dc_rate, rate, IO, rate, prio);
+	    body_builtin_suspend(CodeOfFunction(dc_rate), rate, IO, rate, prio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_RATE, IO, rate, prio);
@@ -322,7 +322,7 @@ int blt_b_rate(CELL *rate, CELL *prio)
 	}else{
 	    body_builtin_exception(INCORRECT_PRIORITY, 1,
 				   KL1B_B_RATE, IO, rate, prio);
-	    return;
+	    return 0;
 	}
 	SetAll(prio, INT, p1, MRBOFF);
     }
@@ -346,7 +346,7 @@ int blt_b_rltv(CELL *rate, CELL *prio)
     Dereference(rate);
     if(Typeof(rate) != INT){
 	if(IsRef(rate)){
-	    body_builtin_suspend(dc_rltv, rate, IO, rate, prio);
+	    body_builtin_suspend(CodeOfFunction(dc_rltv), rate, IO, rate, prio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_RLTV, IO, rate, prio);
@@ -369,7 +369,7 @@ int blt_b_rltv(CELL *rate, CELL *prio)
 	}else{
 	    body_builtin_exception(INCORRECT_PRIORITY, 1,
 				   KL1B_B_RLTV, IO, rate, prio);
-	    return;
+	    return 0;
 	}
 	SetAll(prio, INT, p1, MRBOFF);
     }
@@ -393,7 +393,7 @@ int blt_b_hash(CELL *x, CELL *hv, CELL *newx)
 {
     Dereference(x);
     if(IsRef(x)){
-	body_builtin_suspend(dc_hash, x, IOO, x, hv, newx);
+	body_builtin_suspend(CodeOfFunction(dc_hash), x, IOO, x, hv, newx);
     }else{
 	unsigned int h;
 	switch(Typeof(x)){
@@ -503,7 +503,7 @@ int blt_b_get_print_image(CELL *atomic, CELL *mode, CELL *left, CELL *string, CE
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_get_print_image, x, IIIOOO,
+	    body_builtin_suspend(CodeOfFunction(dc_get_print_image), x, IIIOOO,
 				 atomic, mode, left, string, len, tail);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE,
@@ -517,9 +517,9 @@ int blt_b_get_print_image(CELL *atomic, CELL *mode, CELL *left, CELL *string, CE
 	if(get_print_image(atomic, Valueof(mode), Valueof(left), &s, &l, &t)
 	   == STRUTL_REQUEST_GC){
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_get_print_image,
+	    body_builtin_swap(CodeOfFunction(dc_get_print_image),
 			      IIIOOO, atomic, mode, left, string, len, tail);
-	    return;
+	    return 0;
 	}
 	if(Typeof(atomic) == STRING && Mrbof(atomic) == MRBOFF){
 	    FreeString(Objectof(atomic), StringLengthof(atomic));
@@ -777,8 +777,8 @@ int blt_b_get_all_atom_name(CELL *list)
 	SetAll(vect+1, ATOM, atom, MRBOFF);
 	if(atom_to_string(atom, vect+2) == STRUTL_REQUEST_GC){
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_get_all_atom_name, O, list);
-	    return;
+	    body_builtin_swap(CodeOfFunction(dc_get_all_atom_name), O, list);
+	    return 0;
 	}
 	AllocCons(cons);
 	SetAll(p, LIST, cons, MRBOFF);
@@ -816,13 +816,13 @@ int blt_b_unix(CELL *command, CELL *flag, CELL *status)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_unix, x, IIO, command, flag, status);
+	    body_builtin_suspend(CodeOfFunction(dc_unix), x, IIO, command, flag, status);
 	}else{
   exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==command ? 1 : 2),
 				   KL1B_B_UNIX, IIO, command, flag, status);
 	}
-	return;
+	return 0;
     }
     if(convert_to_c_string(command, buffer, 960) == NULL){
 	goto exception;

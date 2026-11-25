@@ -89,7 +89,7 @@ int emulate(void)
 *************************************************************************/
 
 #define CallGc() { DecacheParent(); gc(); }
-#define	Idle()	 { if(use_windows) idle(); else if(!idle2()) return; }
+#define	Idle()	 { if(use_windows) idle(); else if(!idle2()) return 0; }
 
 suspend_emulated_code_goal:
     DecacheGoal(new_grec, PCR);
@@ -316,7 +316,7 @@ case KL1B_OTHERWISE:{
     if(IsSuspensionStackEmpty()){
 	NextInstr(LEN_of_LAB);
     }else{
-	GetPredicateSuspensionCount(current_predicate)++;
+	IncPredicateSuspensionCount(current_predicate);
 	PCR = GetAddr(PCR+LAB_of_LAB);
 	goto suspend_emulated_code_goal;
     }
@@ -331,7 +331,7 @@ case KL1B_SUSPEND:{
 		GetPredicateName(PCR), GetPredicateArity(PCR), regs);
 	goto proceed_to_next_goal;
     }else{
-	GetPredicateSuspensionCount(current_predicate)++;
+	IncPredicateSuspensionCount(current_predicate);
 	PCR = GetAddr(PCR+LAB_of_LAB);
 	goto suspend_emulated_code_goal;
     }
@@ -339,7 +339,7 @@ case KL1B_SUSPEND:{
 
 case KL1B_PROCEED:{
     reduction_left--;
-    GetPredicateReductionCount(current_predicate)++;
+    IncPredicateReductionCount(current_predicate);
 #ifdef STATISTICS_REDUCTION
     STATISTICS_REDUCTION;
 #endif
@@ -352,7 +352,7 @@ case KL1B_PROCEED:{
 
 case KL1B_EXECUTE:{
     reduction_left--;
-    GetPredicateReductionCount(current_predicate)++;
+    IncPredicateReductionCount(current_predicate);
 #ifdef STATISTICS_REDUCTION
     STATISTICS_REDUCTION;
 #endif
@@ -366,7 +366,7 @@ case KL1B_EXECUTE_EXTERNAL:{
     unsigned int module, pid;
     MODULE_ENTRY *maddr;
     reduction_left--;
-    GetPredicateReductionCount(current_predicate)++;
+    IncPredicateReductionCount(current_predicate);
 #ifdef STATISTICS_REDUCTION
     STATISTICS_REDUCTION;
 #endif
@@ -401,10 +401,10 @@ case KL1B_CREATE_GOAL:{
 
 case KL1B_ENQUEUE_GOAL:{
     number_of_children++;
-    new_grec->parent = parent;
+    new_grec->parent = Ref(parent);
     new_grec->argn = GetPredArity(PCR+PARITY_of_PARITY_LAB);
-    new_grec->code = GetAddr(PCR+LAB_of_PARITY_LAB);
-    new_grec->pcode = current_predicate2;
+    new_grec->code = Ref(GetAddr(PCR+LAB_of_PARITY_LAB));
+    new_grec->pcode = Ref(current_predicate2);
     new_grec->debug = goal_debug_status;
     SetGoalPriority(new_grec, INT, logical_priority);
     enqueue(new_grec);
@@ -413,10 +413,10 @@ case KL1B_ENQUEUE_GOAL:{
 
 case KL1B_ENQUEUE_GOAL_WITH_PRIORITY:{
     number_of_children++;
-    new_grec->parent = parent;
+    new_grec->parent = Ref(parent);
     new_grec->argn = GetPredArity(PCR+PARITY_of_PARITY_LAB_REG);
-    new_grec->code = GetAddr(PCR+LAB_of_PARITY_LAB_REG);
-    new_grec->pcode = current_predicate2;
+    new_grec->code = Ref(GetAddr(PCR+LAB_of_PARITY_LAB_REG));
+    new_grec->pcode = Ref(current_predicate2);
     new_grec->debug = goal_debug_status;
     new_grec->priority = *GetRi(PCR+REG_of_PARITY_LAB_REG);
     enqueue_with_priority(new_grec);
@@ -446,10 +446,10 @@ case KL1B_ENQUEUE_GOAL_EXTERNAL:{
 	NextInstr(LEN_of_MOD_PRED_PARITY);
     }
     number_of_children++;
-    new_grec->parent = parent;
+    new_grec->parent = Ref(parent);
     new_grec->argn = arity;
-    new_grec->code = code;
-    new_grec->pcode = current_predicate2;
+    new_grec->code = Ref(code);
+    new_grec->pcode = Ref(current_predicate2);
     new_grec->debug = goal_debug_status;
     SetGoalPriority(new_grec, INT, logical_priority);
     enqueue(new_grec);
@@ -3519,7 +3519,7 @@ DEFAULT:
 
 int nop(void)
 {
-    return;
+    return 0;
 }
 
 static int do_interrupt(void)

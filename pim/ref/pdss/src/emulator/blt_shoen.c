@@ -39,7 +39,7 @@ int blt_b_create_shoen(CELL *code, CELL *argv, CELL *pmin, CELL *pmax, CELL *tag
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_create_shoen, x, IIIIIOO,
+	    body_builtin_suspend(CodeOfFunction(dc_create_shoen), x, IIIIIOO,
 				 code, argv, pmin, pmax, tag, shoen, report);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE,
@@ -93,7 +93,7 @@ int blt_b_start_shoen(CELL *shoen, CELL *newshoen)
     Dereference(x);
     if(Typeof(x) != SHOEN){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_start_shoen, x, IO, shoen, newshoen);
+	    body_builtin_suspend(CodeOfFunction(dc_start_shoen), x, IO, shoen, newshoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_START_SHOEN, IO, shoen, newshoen);
@@ -124,7 +124,7 @@ int blt_b_stop_shoen(CELL *shoen, CELL *newshoen)
     Dereference(x);
     if(Typeof(x) != SHOEN){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_stop_shoen, x, IO, shoen, newshoen);
+	    body_builtin_suspend(CodeOfFunction(dc_stop_shoen), x, IO, shoen, newshoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_STOP_SHOEN, IO, shoen, newshoen);
@@ -155,7 +155,7 @@ int blt_b_abort_shoen(CELL *shoen, CELL *newshoen)
     Dereference(x);
     if(Typeof(x) != SHOEN){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_abort_shoen, x, IO, shoen, newshoen);
+	    body_builtin_suspend(CodeOfFunction(dc_abort_shoen), x, IO, shoen, newshoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_ABORT_SHOEN, IO, shoen, newshoen);
@@ -185,7 +185,7 @@ int blt_b_remove_shoen(CELL *shoen)
     Dereference(x);
     if(Typeof(x) != SHOEN){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_remove_shoen, x, I, shoen);
+	    body_builtin_suspend(CodeOfFunction(dc_remove_shoen), x, I, shoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_REMOVE_SHOEN, I, shoen);
@@ -216,7 +216,7 @@ int blt_b_shoen_statistics(CELL *shoen, CELL *red, CELL *newshoen)
     Dereference(x);
     if(Typeof(x) != SHOEN){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_shoen_statistics, x,
+	    body_builtin_suspend(CodeOfFunction(dc_shoen_statistics), x,
 				 IOO, shoen, red, newshoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -255,7 +255,7 @@ int blt_b_shoen_add_resource(CELL *shoen, CELL *red, CELL *newshoen)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_shoen_add_resource, x,
+	    body_builtin_suspend(CodeOfFunction(dc_shoen_add_resource), x,
 				 IIO, shoen, red, newshoen);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==shoen ? 1 : 2),
@@ -297,7 +297,7 @@ int blt_b_consume_resource(CELL *red)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_consume_resource, x, I, red);
+	    body_builtin_suspend(CodeOfFunction(dc_consume_resource), x, I, red);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_CONSUME_RESOURCE, I, red);
@@ -316,14 +316,14 @@ int blt_b_consume_resource(CELL *red)
 		reduction_left = 1;
 		GetGoalRecord(grec, 1);
 		number_of_children++;
-		grec->parent = parent;
-		grec->code = (OBJ *)dc_consume_resource;
+		grec->parent = Ref(parent);
+		grec->code = Ref(CodeOfFunction(dc_consume_resource));
 		grec->argn = 1;
 		SetAll(&(grec->args[0]), INT, reduction, MRBOFF);
 		SetGoalPriority(grec, INT, MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
 		SetGoalPriority(grec, INT, logical_priority);
-		grec->pcode = current_predicate2 ? current_predicate2
-						 : current_predicate;
+		grec->pcode = Ref(current_predicate2 ? current_predicate2
+						 : current_predicate);
 		grec->debug = NO_TRACE_GOAL;
 		enqueue(grec);
 	    }

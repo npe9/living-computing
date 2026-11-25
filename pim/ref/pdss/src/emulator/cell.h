@@ -5,10 +5,12 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
+/* MODERN: the cell is 8 bytes on every host (port.h); a pointer value
+   is a PREF, converted by the accessors below. */
 typedef struct cell{
-    unsigned short type;
-    unsigned short mrb;
-    int		   value;
+    uint16_t type;
+    uint16_t mrb;
+    int32_t  value;
 } CELL;
 typedef CELL *CELLP;
 
@@ -19,16 +21,17 @@ typedef CELL *CELLP;
 #define Mrbof(X)	((X)->mrb)
 #define SetMrbof(X,M)	(X)->mrb = (M)
 #define SetAll(X,T,V,M) \
-	    { SetTypeof(X,T); SetMrbof(X,M); SetValueof(X,(int)(V)); }
+	    { SetTypeof(X,T); SetMrbof(X,M); SetValueof(X,CellValue(V)); }
 
-#define Objectof(X)	 ((CELL *)Valueof(X))
-#define SetObjectof(X,V) SetValueof(X, (int)(V))
-#define Goalof(X)	 ((GOAL_RECORD *)Valueof(X))
-#define SetGoalof(X,V)	 SetValueof(X, (int)(V))
-#define Suspof(X)	 ((SUSPENSION_RECORD *)Valueof(X))
-#define SetSuspof(X,V)	 SetValueof(X, (int)(V))
-#define Shoenof(X)	 ((PARENT_RECORD *)Valueof(X))
-#define SetShoenof(X,V)	 SetValueof(X, (int)(V))
+#define Pointerof(X)	 pdss_ptr((PREF)Valueof(X))
+#define Objectof(X)	 ((CELL *)Pointerof(X))
+#define SetObjectof(X,V) SetValueof(X, (int32_t)pdss_ref(V))
+#define Goalof(X)	 ((GOAL_RECORD *)Pointerof(X))
+#define SetGoalof(X,V)	 SetValueof(X, (int32_t)pdss_ref(V))
+#define Suspof(X)	 ((SUSPENSION_RECORD *)Pointerof(X))
+#define SetSuspof(X,V)	 SetValueof(X, (int32_t)pdss_ref(V))
+#define Shoenof(X)	 ((PARENT_RECORD *)Pointerof(X))
+#define SetShoenof(X,V)	 SetValueof(X, (int32_t)pdss_ref(V))
 
 
 /*************************************************************************
@@ -137,16 +140,16 @@ typedef unsigned int MRB;
 
 typedef struct merger_record{
     CELL output;			/* merger output */
-    unsigned int count;			/* number of merger input */
-    unsigned int priority;		/* priority of merger */
-    struct parent_record *parent;	/* pointer to parent shoen */
-    OBJ	 *pcode;			/* predicate what create merger */
-    CELL *input;			/* for deadlock detection */
-    struct merger_record *next;		/* for deadlock detection */
+    uint32_t count;			/* number of merger input */
+    uint32_t priority;			/* priority of merger */
+    PREF parent; PREF_PAD(1)		/* struct parent_record *: parent shoen */
+    PREF pcode; PREF_PAD(2)		/* OBJ *: predicate what create merger */
+    PREF input; PREF_PAD(3)		/* CELL *: for deadlock detection */
+    PREF next; PREF_PAD(4)		/* struct merger_record *: deadlock det. */
 } MERGER_RECORD;
 
-#define Mergerof(X)		  ((MERGER_RECORD *)Valueof(X))
-#define SetMergerof(X,MG)	  SetValueof(X, (int)(MG))
+#define Mergerof(X)		  ((MERGER_RECORD *)Pointerof(X))
+#define SetMergerof(X,MG)	  SetValueof(X, (int32_t)pdss_ref(MG))
 #define MergerTailof(MG)	  (&(Mergerof(MG)->output))
 #define MergerRefCountof(MG)	  (Mergerof(MG)->count)
 #define SetMergerRefCountof(MG,I) { Mergerof(MG)->count = (I); }

@@ -63,7 +63,7 @@ int current_window;
 int gc_counter;
 int gc_panic_flag;
 int iflag;
-int dcode_function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity)
+int dcode_function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity)
     { exit_pdss(1); return(0); }
 int load_and_link_native_code_module(CHAR *fname, MODULE_ENTRY **mod_table)
     { exit_pdss(1); return(0); }

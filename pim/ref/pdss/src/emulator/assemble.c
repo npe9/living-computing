@@ -21,7 +21,7 @@ static int enter_label_table2(CHAR *name, OBJ *pc);
 static int define_label(CHAR *name, OBJ *pc);
 static int check_undefined_label(void);
 static int scan_integer(CHAR **s, int *x);
-static int scan_float(CHAR **s, float *x);
+static int scan_float(CHAR **s, int32_t *x);
 static int parse_atom(CHAR **s);
 static int parse_integer(CHAR **s);
 static int parse_float(CHAR **s);
@@ -76,6 +76,11 @@ int ChkAndPutRAddr(int raddr, OBJ *pc)
 *   Label Table.							 *
 *************************************************************************/
 
+/* MODERN: label arithmetic on PREFs, so that a label taken with base 0
+   (the 0xFF cell of a constant section) is its 32-bit address, as on the
+   original, and not a truncated host pointer. */
+#define LabOffset(pc)	((int)(Ref(pc) - Ref(module_top)))
+
 struct lab_rec {
     CHAR *name;
     int	 defined;
@@ -106,14 +111,14 @@ static int enter_label_table(CHAR *name, OBJ *pc)
 	lab = (struct lab_rec *) t1_alloc(sizeof(struct lab_rec));
 	lab->name = (CHAR *)strcpy(t1_alloc(strlen(name)+1),name);
 	lab->defined = NO;
-	lab->addr = (pc - module_top);
+	lab->addr = LabOffset(pc);
 	(void) enter_label(lab->name, &lab);
 	return(0);			/* end of reference chain */
     }else if(lab->defined){		/* already defined */
-	return((module_top + lab->addr) - pc); /* relative address returned */
+	return((int)(Ref(module_top + lab->addr) - Ref(pc))); /* relative address returned */
     }else{				/* not defined but already used */
 	int r = lab->addr;
-	lab->addr = (pc - module_top);	/* chain this ref. */
+	lab->addr = LabOffset(pc);	/* chain this ref. */
 	return(r);
     }
 }
@@ -125,14 +130,14 @@ static int enter_label_table2(CHAR *name, OBJ *pc)
 	lab = (struct lab_rec *) t1_alloc(sizeof(struct lab_rec));
 	lab->name = name;
 	lab->defined = NO;
-	lab->addr = (pc - module_top);
+	lab->addr = LabOffset(pc);
 	(void) enter_label(name, &lab);
 	return(0);			/* end of reference chain */
     }else if(lab->defined){		/* already defined */
-	return((module_top + lab->addr) - pc); /* relative address returned */
+	return((int)(Ref(module_top + lab->addr) - Ref(pc))); /* relative address returned */
     }else{				/* not defined but already used */
 	int r = lab->addr;
-	lab->addr = (pc - module_top);	/* chain this ref. */
+	lab->addr = LabOffset(pc);	/* chain this ref. */
 	return(r);
     }
 }
@@ -144,7 +149,7 @@ static int define_label(CHAR *name, OBJ *pc)
 	lab = (struct lab_rec *)t1_alloc(sizeof(struct lab_rec));
 	lab->name = (CHAR *)strcpy(t1_alloc(strlen(name)+1), name);
 	lab->defined = YES;
-	lab->addr = (pc - module_top);
+	lab->addr = LabOffset(pc);
 	(void) enter_label(lab->name, &lab);
     }else if(lab->defined == YES){	/** Already Defined **/
 	Error3F("\n>>> Assembler: Doubly defined label. \"%s\"\n%04d: %s",
@@ -153,14 +158,14 @@ static int define_label(CHAR *name, OBJ *pc)
     }else{			/* Not Defined But Already Used */
 	register OBJ *pc2, *pc3;
 	pc2 = (OBJ *)(module_top + (lab->addr));
-	while(GetRelAddr(pc2) != NULL){	 /* resolve reference chain */
+	while(GetRelAddr(pc2) != 0){	 /* resolve reference chain */
 	    pc3 = pc2;
 	    pc2 = (OBJ *)(module_top + GetRelAddr(pc2));
 	    ChkAndPutRAddr(pc-pc3, pc3);
 	}
 	ChkAndPutRAddr(pc-pc2, pc2);
 	lab->defined = YES;
-	lab->addr = (unsigned int)(pc - module_top);
+	lab->addr = LabOffset(pc);
     }
 }
 
@@ -273,7 +278,7 @@ static int scan_integer(CHAR **s, int *x)
     return(YES);
 }
 
-static int scan_float(CHAR **s, float *x)
+static int scan_float(CHAR **s, int32_t *x)
 {
     register CHAR *p = *s, *q;
     while(IsBlank(*p)) p++;
@@ -299,7 +304,7 @@ static int scan_float(CHAR **s, float *x)
     }else if(IsNameDelimiter(*p)){
 	*p++ = 0;
     }else if(*p){
-	return(NULL);
+	return(0);
     }
     *s = p;
     return(string_to_float(q, x));

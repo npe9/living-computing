@@ -27,12 +27,18 @@ KLB_4BYTE_REL_ADDR:
 #endif
 
 #if KLB_4BYTE_REL_ADDR
-/* PORT: every "long" below was 32 bits in 1992; now int. */
-typedef int RADDR;
-typedef unsigned int MSIZE;
+/* PORT: every "long" below was 32 bits in 1992. */
+typedef int32_t RADDR;
+typedef uint32_t MSIZE;
+#define pdss_get_raddr(p)	pdss_get32(p)
+#define pdss_get_msize(p)	pdss_getu32(p)
+#define pdss_put_raddr(p,x)	pdss_put32(p,(uint32_t)(x))
 #else
-typedef short RADDR;
-typedef unsigned short MSIZE;
+typedef int16_t RADDR;
+typedef uint16_t MSIZE;
+#define pdss_get_raddr(p)	pdss_get16(p)
+#define pdss_get_msize(p)	pdss_getu16(p)
+#define pdss_put_raddr(p,x)	pdss_put16(p,(uint16_t)(x))
 #endif
 
 
@@ -54,44 +60,48 @@ typedef unsigned short MSIZE;
 #define KLB_REL_ADDR_LENGTH		ZZ(2,2,4,4)
 #define KLB_MOD_PRED_SIZE_LENGTH	ZZ(2,2,4,4)
 
+/* MODERN: multi-byte fields of KL1-B code are read and written with
+   memcpy (port.h), never through a cast pointer: no alignment or
+   aliasing assumption.  GetChar is signed, as char was on the SPARC. */
 #define PutOpCode(x, p)		{ *(p) = (x); CheckCode(p); }
 #define PutReg(x, p)		{ *(p) = (x); }
 #define PutReg2(x, p)		{ *(p) = (x)-1; }
-#define PutAtom(x, p)		{ *(unsigned short *)(p) = (x); }
-#define PutInt(x, p)		{ *(int *)(p) = (x); }
-#define PutFloat(x, p)		{ *(int *)(p) = (x); }
+#define PutAtom(x, p)		{ pdss_put16((p), (uint16_t)(x)); }
+#define PutInt(x, p)		{ pdss_put32((p), (uint32_t)(x)); }
+#define PutFloat(x, p)		{ pdss_put32((p), (uint32_t)(x)); }
 #define PutArity(x, p)		{ *(p) = (x); }
 #define PutIndex(x, p)		{ *(p) = (x); }
 #define PutRepnum(x, p)		{ *(p) = (x); }
 #define PutPredArity(x, p)	{ *(p) = (x); }
-#define PutPredID(x, p)		{ *(unsigned int *)(p) = (x); }
-#define PutRelAddr(x, p)	{ *(RADDR *)(p) = (x); }
-#define PutModPredSize(x, p)	{ *(MSIZE *)(p) = (x); }
+#define PutPredID(x, p)		{ pdss_put32((p), (uint32_t)(x)); }
+#define PutRelAddr(x, p)	{ pdss_put_raddr((p), (x)); }
+#define PutModPredSize(x, p)	{ pdss_put_raddr((p), (x)); }
 #define PutChar(x, p)		{ *(p) = (x); }
-#define PutShort(x, p)		{ *(short *)(p) = (x); }
-#define PutLong(x, p)		{ *(int *)(p) = (x); }
+#define PutShort(x, p)		{ pdss_put16((p), (uint16_t)(x)); }
+#define PutLong(x, p)		{ pdss_put32((p), (uint32_t)(x)); }
+#define PutULong(x, p)		{ pdss_put32((p), (uint32_t)(x)); }
 #define PutCell(ty, va, mr, p)	{ SetAll(((CELL *)(p)), (ty), (va), (mr)); }
 
 #define GetOpCode(p)	    (*(unsigned char *)(p))
 #define GetReg(p)	    (*(unsigned char *)(p))
 #define GetReg2(p)	    ((*(unsigned char *)(p))+1)
-#define GetAtom(p)	    (*(unsigned short *)(p))
-#define GetInt(p)	    (*(int *)(p))
-#define GetFloat(p)	    (*(int *)(p))
+#define GetAtom(p)	    pdss_getu16(p)
+#define GetInt(p)	    pdss_get32(p)
+#define GetFloat(p)	    pdss_get32(p)
 #define GetArity(p)	    (*(unsigned char *)(p))
 #define GetIndex(p)	    (*(unsigned char *)(p))
 #define GetRepnum(p)	    (*(unsigned char *)(p))
 #define GetPredArity(p)	    (*(unsigned char *)(p))
-#define GetPredID(p)	    (*(unsigned int *)(p))
-#define GetRelAddr(p)	    (*(RADDR *)(p))
-#define GetAddr(p)	    ((p)+(*(RADDR *)(p)))
-#define GetModPredSize(p)   (*(MSIZE *)(p))
-#define GetChar(p)	    (*(char *)(p))
-#define GetShort(p)	    (*(short *)(p))
-#define GetLong(p)	    (*(int *)(p))
+#define GetPredID(p)	    pdss_getu32(p)
+#define GetRelAddr(p)	    ((RADDR)pdss_get_raddr(p))
+#define GetAddr(p)	    ((p)+GetRelAddr(p))
+#define GetModPredSize(p)   ((MSIZE)pdss_get_msize(p))
+#define GetChar(p)	    (*(signed char *)(p))
+#define GetShort(p)	    pdss_get16(p)
+#define GetLong(p)	    pdss_get32(p)
 #define GetUChar(p)	    (*(unsigned char *)(p))
-#define GetUShort(p)	    (*(unsigned short *)(p))
-#define GetULong(p)	    (*(unsigned int *)(p))
+#define GetUShort(p)	    pdss_getu16(p)
+#define GetULong(p)	    pdss_getu32(p)
 #define GetCell(p)	    (*(struct cell *)(p))
 #define GetCellP(p)	    ((struct cell *)(p))
 
@@ -229,6 +239,14 @@ Table:		|  Predicate ID	 | Raddr to Pred. |
     GetULong(GetPredicateTop(code)+PREDICATE_RCOUNT)
 #define GetPredicateSuspensionCount(code) \
     GetULong(GetPredicateTop(code)+PREDICATE_SCOUNT)
+#define SetPredicateReductionCount(code, x) \
+    PutULong((x), GetPredicateTop(code)+PREDICATE_RCOUNT)
+#define SetPredicateSuspensionCount(code, x) \
+    PutULong((x), GetPredicateTop(code)+PREDICATE_SCOUNT)
+#define IncPredicateReductionCount(code) \
+    SetPredicateReductionCount(code, GetPredicateReductionCount(code)+1)
+#define IncPredicateSuspensionCount(code) \
+    SetPredicateSuspensionCount(code, GetPredicateSuspensionCount(code)+1)
 #define GetModuleTop(code) \
     GetAddr(GetPredicateTop(code)+PREDICATE_TO_MODULE_HEADER)
 
@@ -237,7 +255,7 @@ Table:		|  Predicate ID	 | Raddr to Pred. |
 *    Adjust PC -- 4byte Boundary					 *
 *************************************************************************/
 
-#define AdjustPC(p) (p) = (OBJ *)((((int)(p))+3)&0xFFFFFFFC)
+#define AdjustPC(p) (p) += (4 - ((uintptr_t)(p) & 3)) & 3
 
 #if KLB_PACKED_CODE
 #define AdjustPCunlessPackedCode(p)

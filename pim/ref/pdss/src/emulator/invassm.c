@@ -28,7 +28,7 @@ int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
     
     if(op->type < 0){
 	sprintf(s, "%06x: UNKNOWN OPCODE (0x%x)", p0, opcode);
-	return;
+	return 0;
     }
     
     switch(op->type){
@@ -104,12 +104,12 @@ int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
       case REG_FLOT:
 	sprintf(s, "%06x: %-14s  R%d, %s", p0, op->mnem,
 		GetReg2(p+REG_of_REG_FLOT),
-		float_to_string(&GetFloat(p+FLOT_of_REG_FLOT)));
+		float_to_string(&(int32_t){GetFloat(p+FLOT_of_REG_FLOT)}));
 	break;
       case REG_FLOT_LAB:
 	sprintf(s, "%06x: %-14s  R%d, %s, %06x", p0, op->mnem,
 		GetReg2(p+REG_of_REG_FLOT_LAB),
-		float_to_string(&GetFloat(p+FLOT_of_REG_FLOT_LAB)),
+		float_to_string(&(int32_t){GetFloat(p+FLOT_of_REG_FLOT_LAB)}),
 		GetAddr(p+LAB_of_REG_FLOT_LAB)-top);
 	break;
       case REG_ARITY:
@@ -159,7 +159,7 @@ int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
 	sprintf(s,"%06x: %-14s  R%d, %d, %s", p0, op->mnem,
 		GetReg2(p+REG_of_REG_IDX_FLOT),
 		GetIndex(p+IDX_of_REG_IDX_FLOT),
-		float_to_string(&GetFloat(p+FLOT_of_REG_IDX_FLOT)));
+		float_to_string(&(int32_t){GetFloat(p+FLOT_of_REG_IDX_FLOT)}));
 	break;
       case REG_IDX_ATM:
 	sprintf(s,"%06x: %-14s  R%d, %d, %s", p0, op->mnem,
@@ -187,7 +187,7 @@ int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
       case ARG_FLOT:
 	sprintf(s, "%06x: %-14s  G%d, %s", p0, op->mnem,
 		GetReg2(p+ARG_of_ARG_FLOT),
-		float_to_string(&GetFloat(p+FLOT_of_ARG_FLOT)));
+		float_to_string(&(int32_t){GetFloat(p+FLOT_of_ARG_FLOT)}));
 	break;
       case ARG_LAB:
 	sprintf(s, "%06x: %-14s  G%d, %06x", p0, op->mnem,
@@ -286,7 +286,7 @@ int inverse_assemble_one(OBJ *p, OBJ *top, CHAR *s)
 	sprintf(s, "%06x: UNSUPPORTED OP CODE (0x%x).\n", p0, opcode);
 	break;
     }
-    return;
+    return 0;
 }
 
 #endif

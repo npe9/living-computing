@@ -640,14 +640,14 @@ int mrbgc_statistics_reuse_in_builtin(int n)
 int alloc_suspension_record(register unsigned int num)
 {
     register SUSPENSION_RECORD *p;
-    if(num*sizeof(SUSPENSION_RECORD) > HeapRest()*sizeof(CELL))
-	num = HeapRest()*sizeof(CELL)/sizeof(SUSPENSION_RECORD);
+    if((uint32_t)(num*sizeof(SUSPENSION_RECORD)) > (uint32_t)(HeapRest()*sizeof(CELL)))	/* MODERN: 32-bit arithmetic, as on the original */
+	num = (uint32_t)(HeapRest()*sizeof(CELL))/sizeof(SUSPENSION_RECORD);
     if(num == 0) num = 1;
     p = (SUSPENSION_RECORD *)H;
-    p->other = NULL;
+    p->other = 0;
     while(--num){
 	p++;
-	p->other = p-1;
+	p->other = Ref(p-1);
     }
     H = (CELL *)(p+1);
     srec_pool_top = p;
@@ -657,18 +657,18 @@ int alloc_suspension_record(register unsigned int num)
 int alloc_goal_record8(register unsigned int num)
 {
     register GOAL_RECORD *p1, *p2;
-    if(num*sizeof(GOAL_RECORD) > HeapRest()*sizeof(CELL))
-	num = HeapRest()*sizeof(CELL)/sizeof(GOAL_RECORD);
+    if((uint32_t)(num*sizeof(GOAL_RECORD)) > (uint32_t)(HeapRest()*sizeof(CELL)))	/* MODERN: 32-bit arithmetic, as on the original */
+	num = (uint32_t)(HeapRest()*sizeof(CELL))/sizeof(GOAL_RECORD);
     if(num == 0) num = 1;
     p1 = (GOAL_RECORD *)H;
     SetGoalQueuePt2(p1, NULL);
-    p1->next = goal_rec_list;
-    p1->parent = NULL;
+    p1->next = Ref(goal_rec_list);
+    p1->parent = 0;
     p2 = p1++;
     while(--num){
 	SetGoalQueuePt2(p1, p2);
-	p1->next = p2;
-	p1->parent = NULL;
+	p1->next = Ref(p2);
+	p1->parent = 0;
 	p2 = p1++;
     }
     H = (CELL *)p1;
@@ -680,18 +680,18 @@ int alloc_goal_record8(register unsigned int num)
 int alloc_goal_record16(register unsigned int num)
 {
     register GOAL_RECORD16 *p1, *p2;
-    if(num*sizeof(GOAL_RECORD16) > HeapRest()*sizeof(CELL))
-	num = HeapRest()*sizeof(CELL)/sizeof(GOAL_RECORD16);
+    if((uint32_t)(num*sizeof(GOAL_RECORD16)) > (uint32_t)(HeapRest()*sizeof(CELL)))	/* MODERN: 32-bit arithmetic, as on the original */
+	num = (uint32_t)(HeapRest()*sizeof(CELL))/sizeof(GOAL_RECORD16);
     if(num == 0) num = 1;
     p1 = (GOAL_RECORD16 *)H;
     SetGoalQueuePt2(p1, NULL);
-    p1->next = (GOAL_RECORD16 *)goal_rec_list;
-    p1->parent = NULL;
+    p1->next = Ref((GOAL_RECORD16 *)goal_rec_list);
+    p1->parent = 0;
     p2 = p1++;
     while(--num){
 	SetGoalQueuePt2(p1, p2);
-	p1->next = p2;
-	p1->parent = NULL;
+	p1->next = Ref(p2);
+	p1->parent = 0;
 	p2 = p1++;
     }
     H = (CELL *)p1;
@@ -703,18 +703,18 @@ int alloc_goal_record16(register unsigned int num)
 int alloc_goal_record32(register unsigned int num)
 {
     register GOAL_RECORD32 *p1, *p2;
-    if(num*sizeof(GOAL_RECORD32) > HeapRest()*sizeof(CELL))
-	num = HeapRest()*sizeof(CELL)/sizeof(GOAL_RECORD32);
+    if((uint32_t)(num*sizeof(GOAL_RECORD32)) > (uint32_t)(HeapRest()*sizeof(CELL)))	/* MODERN: 32-bit arithmetic, as on the original */
+	num = (uint32_t)(HeapRest()*sizeof(CELL))/sizeof(GOAL_RECORD32);
     if(num == 0) num = 1;
     p1 = (GOAL_RECORD32 *)H;
     SetGoalQueuePt2(p1, NULL);
-    p1->next = (GOAL_RECORD32 *)goal_rec_list;
-    p1->parent = NULL;
+    p1->next = Ref((GOAL_RECORD32 *)goal_rec_list);
+    p1->parent = 0;
     p2 = p1++;
     while(--num){
 	SetGoalQueuePt2(p1, p2);
-	p1->next = p2;
-	p1->parent = NULL;
+	p1->next = Ref(p2);
+	p1->parent = 0;
 	p2 = p1++;
     }
     H = (CELL *)p1;
@@ -726,14 +726,14 @@ int alloc_goal_record32(register unsigned int num)
 int alloc_parent_record(register unsigned int num)
 {
     register PARENT_RECORD *p;
-    if(num*sizeof(PARENT_RECORD) > HeapRest()*sizeof(CELL))
-	num = HeapRest()*sizeof(CELL)/sizeof(PARENT_RECORD);
+    if((uint32_t)(num*sizeof(PARENT_RECORD)) > (uint32_t)(HeapRest()*sizeof(CELL)))	/* MODERN: 32-bit arithmetic, as on the original */
+	num = (uint32_t)(HeapRest()*sizeof(CELL))/sizeof(PARENT_RECORD);
     if(num == 0) num = 1;
     p = (PARENT_RECORD *)H;
-    p->parent = NULL;
+    p->parent = 0;
     while(--num){
 	p++;
-	p->parent = p-1;
+	p->parent = Ref(p-1);
     }
     H = (CELL *)(p+1);
     prec_pool_top = p;
@@ -744,7 +744,7 @@ unsigned int count_suspension_record_in_free_list(void)
 {
     register SUSPENSION_RECORD *p;
     register unsigned int n = 0;
-    for(p = srec_pool_top; p != NULL; p = p->other) n++;
+    for(p = srec_pool_top; p != NULL; p = SrecOf(p->other)) n++;
     return(n);
 }
 
@@ -776,7 +776,7 @@ unsigned int count_parent_record_in_free_list(void)
 {
     register PARENT_RECORD *p;
     register unsigned int n = 0;
-    for(p = prec_pool_top; p != NULL; p = p->parent) n++;
+    for(p = prec_pool_top; p != NULL; p = PrecOf(p->parent)) n++;
     return(n);
 }
 
@@ -818,7 +818,7 @@ int initialize_code(unsigned int size)
 int initialize_code2(void)
 {
     unsigned int size;
-    C = (OBJ *)(((unsigned int)C+7)&0xFFFFFFF8);
+    C += (8 - ((uintptr_t)C & 7)) & 7;
     size = code_base+code_size_all-C;
     code_size = size/2;
     user_code = C;

@@ -42,16 +42,16 @@ static int collect_value_sub(CELL *c, int d)
     OBJ *pt = current_predicate;
     switch(Typeof(c)){
       case REF:
-	if(Mrbof(c) == MRBON) return;
+	if(Mrbof(c) == MRBON) return 0;
 	c = Objectof(c);
 	if(--d >= 0) collect_value_sub(c, d);
 	if(Mrbof(c) == MRBOFF && !IsUnbound(c)){
 	    FreeCell(c);
 	    mrbgc_statistics_collect_value(1);
 	}
-	return;
+	return 0;
       case LIST:
-	if(Mrbof(c) == MRBON) return;
+	if(Mrbof(c) == MRBON) return 0;
 	c = Objectof(c);
 	if(--d >= 0){
 	    collect_value_sub(c, d);
@@ -59,9 +59,9 @@ static int collect_value_sub(CELL *c, int d)
 	}
 	FreeCons(c);
 	mrbgc_statistics_collect_value(2);
-	return;
+	return 0;
       case VECTOR:
-	if(Mrbof(c) == MRBON) return;
+	if(Mrbof(c) == MRBON) return 0;
 	n = VectorLengthof(c);
 	c = Objectof(c);
 	if(--d >= 0){
@@ -73,20 +73,20 @@ static int collect_value_sub(CELL *c, int d)
 	}
 	FreeVector(c, n);
 	mrbgc_statistics_collect_value(n+1);
-	return;
+	return 0;
       case STRING:
-	if(Mrbof(c) == MRBON) return;
+	if(Mrbof(c) == MRBON) return 0;
 	n = StringLengthof(c);
 	c = Objectof(c);
 	FreeString(c, n);
 	mrbgc_statistics_collect_value(n+1);
-	return;
+	return 0;
       case UNDEF:
 	SetMrbof(c, MRBOFF);
-	return;
+	return 0;
       case HOOK:
-	if(Mrbof(c) == MRBON) return;
-	if(!is_deadlock_occurred_really(c)) return;
+	if(Mrbof(c) == MRBON) return 0;
+	if(!is_deadlock_occurred_really(c)) return 0;
 	PrintCons("\n\
 *** Deadlock occurred. [collect(HOOKoo)]\n\
 *** A variable which has a goal waiting for instantiation was abandoned.\n");
@@ -103,9 +103,9 @@ static int collect_value_sub(CELL *c, int d)
 	}
 	display_deadlock_suspended_goals(c);
 	report_deadlock_suspended_goals(COLLECT_HOOK, c, pt);
-	return;
+	return 0;
       case MGHOK:
-	if(!is_deadlock_occurred_really(c)) return;
+	if(!is_deadlock_occurred_really(c)) return 0;
 	PrintCons("\n\
 *** Deadlock will occur. [collect(MGHOKo)]\n\
 *** A merger input variable was abandoned.\n");
@@ -122,9 +122,9 @@ static int collect_value_sub(CELL *c, int d)
 	}
 	display_deadlock_suspended_goals(c);
 	report_deadlock_suspended_goals(COLLECT_MGHK, c, pt);
-	return;
+	return 0;
       DEFAULT:
-	return;
+	return 0;
     }
 }
 
@@ -133,7 +133,7 @@ static int collect_value_sub(CELL *c, int d)
 int collect_value(CELL *c, int d)
 {
     int n;
-    if(Mrbof(c) == MRBON) return;
+    if(Mrbof(c) == MRBON) return 0;
     switch(Typeof(c)){
       case REF:
 	c = Objectof(c);
@@ -142,7 +142,7 @@ int collect_value(CELL *c, int d)
 	    FreeCell(c);
 	    mrbgc_statistics_collect_value(1);
 	}
-	return;
+	return 0;
       case LIST:
 	c = Objectof(c);
 	if(--d >= 0){
@@ -151,7 +151,7 @@ int collect_value(CELL *c, int d)
 	}
 	FreeCons(c);
 	mrbgc_statistics_collect_value(2);
-	return;
+	return 0;
       case VECTOR:
 	n = VectorLengthof(c);
 	c = Objectof(c);
@@ -164,15 +164,15 @@ int collect_value(CELL *c, int d)
 	}
 	FreeVector(c, n);
 	mrbgc_statistics_collect_value(n+1);
-	return;
+	return 0;
       case STRING:
 	n = StringLengthof(c);
 	c = Valueof(c);
 	FreeString(c, n);
 	mrbgc_statistics_collect_value(n+1);
-	return;
+	return 0;
       DEFAULT:
-	return;
+	return 0;
     }
 }
 
@@ -193,29 +193,29 @@ static int detect_deadlock_by_collect_value_sub(CELL *c, int d)
     for(;;){
 	switch(Typeof(c)){
 	  case REF:
-	    if(Mrbof(c) == MRBON) return;
-	    if(--d < 0) return;
+	    if(Mrbof(c) == MRBON) return 0;
+	    if(--d < 0) return 0;
 	    c = Objectof(c);
 	    continue;
 	  case LIST:
-	    if(Mrbof(c) == MRBON) return;
-	    if(--d < 0) return;
+	    if(Mrbof(c) == MRBON) return 0;
+	    if(--d < 0) return 0;
 	    c = Objectof(c);
 	    detect_deadlock_by_collect_value_sub(c++, d);
 	    continue;
 	  case VECTOR:
-	    if(Mrbof(c) == MRBON) return;
-	    if(--d < 0) return;
+	    if(Mrbof(c) == MRBON) return 0;
+	    if(--d < 0) return 0;
 	    c = Objectof(c);
 	    n = VectorLengthof(c);
 	    while(n--) detect_deadlock_by_collect_value_sub(++c, d);
-	    return;
+	    return 0;
 	  case UNDEF:
 	    SetMrbof(c, MRBOFF);
-	    return;
+	    return 0;
 	  case HOOK:
-	    if(Mrbof(c) == MRBON) return;
-	    if(!is_deadlock_occurred_really(c)) return;
+	    if(Mrbof(c) == MRBON) return 0;
+	    if(!is_deadlock_occurred_really(c)) return 0;
 	    PrintCons("\n\
 *** Deadlock occurred. [collect(HOOKoo)]\n\
 *** A variable which has a goal waiting for instantiation was abandoned.\n");
@@ -232,9 +232,9 @@ static int detect_deadlock_by_collect_value_sub(CELL *c, int d)
 	    }
 	    display_deadlock_suspended_goals(c);
 	    report_deadlock_suspended_goals(COLLECT_HOOK, c, pt);
-	    return;
+	    return 0;
 	  case MGHOK:
-	    if(!is_deadlock_occurred_really(c)) return;
+	    if(!is_deadlock_occurred_really(c)) return 0;
 	    PrintCons("\n\
 *** Deadlock will occur. [collect(MGHOKo)]\n\
 *** A merger input variable was abandoned.\n");
@@ -251,9 +251,9 @@ static int detect_deadlock_by_collect_value_sub(CELL *c, int d)
 	    }
 	    display_deadlock_suspended_goals(c);
 	    report_deadlock_suspended_goals(COLLECT_MGHOK, c, pt);
-	    return;
+	    return 0;
 	  DEFAULT:
-	    return;
+	    return 0;
 	}
     }
 }
@@ -306,7 +306,7 @@ int detect_deadlock_in_suspension(int type, GOAL_RECORD *goal, CELL *c)
 int detect_deadlock_in_unification1(CELL *x)
 {
     OBJ *ptop = current_predicate2 ? current_predicate2 : current_predicate;
-    if(!is_deadlock_occurred_really(x)) return;
+    if(!is_deadlock_occurred_really(x)) return 0;
     initialize_print_routine();
     if(Typeof(x) == HOOK){
 	PrintCons("\n\
@@ -326,7 +326,7 @@ int detect_deadlock_in_unification1(CELL *x)
 	}
 	display_deadlock_suspended_goals(x);
 	report_deadlock_suspended_goals(UNIFY_VOID_HOOK, x, ptop);
-	return;
+	return 0;
     }
     if(Typeof(x) == MGHOK){
 	PrintCons("\n\
@@ -345,7 +345,7 @@ int detect_deadlock_in_unification1(CELL *x)
 	}
 	display_deadlock_suspended_goals(x);
 	report_deadlock_suspended_goals(UNIFY_VOID_HOOK, x, ptop);
-	return;
+	return 0;
     }
 }
 
@@ -354,7 +354,7 @@ int detect_deadlock_in_unification2(CELL *x, CELL *y)
     CELL *z;
     OBJ *ptop = current_predicate2 ? current_predicate2 : current_predicate;
     if(!is_deadlock_occurred_really(x) &&
-       !is_deadlock_occurred_really(y)) return;
+       !is_deadlock_occurred_really(y)) return 0;
     initialize_print_routine();
     if(Typeof(x) == HOOK && Typeof(y) == HOOK){
 	PrintCons("\n\
@@ -375,7 +375,7 @@ int detect_deadlock_in_unification2(CELL *x, CELL *y)
 	display_deadlock_suspended_goals(y);
 	report_deadlock_suspended_goals(UNIFY_HOOK_HOOK, x, ptop);
 	report_deadlock_suspended_goals(UNIFY_HOOK_HOOK, y, ptop);
-	return;
+	return 0;
     }
     if(Typeof(y) == HOOK) { z=x; x=y; y=z; }
     if(Typeof(x) == HOOK && Typeof(y) == MGHOK){
@@ -398,7 +398,7 @@ int detect_deadlock_in_unification2(CELL *x, CELL *y)
 	display_deadlock_suspended_goals(y);
 	report_deadlock_suspended_goals(UNIFY_HOOK_MGHK, x, ptop);
 	report_deadlock_suspended_goals(UNIFY_HOOK_MGHK, y, ptop);
-	return;
+	return 0;
     }
     if(Typeof(x) == MGHOK && Typeof(y) == MGHOK){
 	PrintCons("\n\
@@ -419,7 +419,7 @@ int detect_deadlock_in_unification2(CELL *x, CELL *y)
 	display_deadlock_suspended_goals(y);
 	report_deadlock_suspended_goals(UNIFY_MGHK_MGHK, x, ptop);
 	report_deadlock_suspended_goals(UNIFY_MGHK_MGHK, y, ptop);
-	return;
+	return 0;
     }
 }
 
@@ -435,14 +435,14 @@ static int is_deadlock_occurred_really(CELL *c)
     if(Typeof(c) == MGHOK){
 	MERGER_RECORD *mg;
 	mg = Mergerof(c);
-	if(!IsParentAborted(mg->parent)) return(YES);
+	if(!IsParentAborted(PrecOf(mg->parent))) return(YES);
     }else{
 	GOAL_RECORD *hgr;
 	SUSPENSION_RECORD *sr;
 	for(;;){
 	    if(Typeof(c) == HOOK){
 		hgr = Goalof(c);
-		if(!IsParentAborted(hgr->parent)) return(YES);
+		if(!IsParentAborted(PrecOf(hgr->parent))) return(YES);
 		c = &(hgr->pt);
 	    }else if(Typeof(c) == MHOOK){
 		sr = Suspof(c);
@@ -462,28 +462,28 @@ static int display_deadlock_suspended_goals(CELL *c)
 	CELL tmp;
 	for(;;){
 	    mg = Mergerof(c);
-	    if(IsParentAborted(mg->parent)) return;
+	    if(IsParentAborted(PrecOf(mg->parent))) return 0;
 	    SetAll(&tmp, REF, c, MRBOFF);
-	    PrintCons1F("[%04d]merge(", mg->parent->id);
+	    PrintCons1F("[%04d]merge(", PrecOf(mg->parent)->id);
 	    print_term2(&tmp, 10, 10);
 	    PrintCons(",");
 	    print_term2(&(mg->output), 10, 10);
-	    if(IsNativeCode(mg->pcode)){
+	    if(IsNativeCode(CodeOf(mg->pcode))){
 		unsigned int mod, pred, arity;
-		function_to_mod_pred_arity(mg->pcode, &mod, &pred, &arity);
+		function_to_mod_pred_arity(CodeOf(mg->pcode), &mod, &pred, &arity);
 		PrintCons3F(") in %s:%s/%d\n",
 			    atom_name(mod), atom_name(pred), arity);
 	    }else{
 		PrintCons3F(") in %s:%s/%d\n",
-			    atom_name(GetModuleName(GetModuleTop(mg->pcode))),
-			    atom_name(GetPredicateName(mg->pcode)),
-			    GetPredicateArity(mg->pcode));
+			    atom_name(GetModuleName(GetModuleTop(CodeOf(mg->pcode)))),
+			    atom_name(GetPredicateName(CodeOf(mg->pcode))),
+			    GetPredicateArity(CodeOf(mg->pcode)));
 	    }
 	    Dereference2(&(mg->output), c);
 	    if(Typeof(c) != MGHOK) break;
 	}
-	if(Typeof(c) != HOOK) return;
-	if(!is_deadlock_occurred_really(c)) return;
+	if(Typeof(c) != HOOK) return 0;
+	if(!is_deadlock_occurred_really(c)) return 0;
     }
     {
 	GOAL_RECORD *hgr;
@@ -491,7 +491,7 @@ static int display_deadlock_suspended_goals(CELL *c)
 	for(;;){
 	    if(Typeof(c) == HOOK){
 		hgr = Goalof(c);
-		if(!IsParentAborted(hgr->parent)){
+		if(!IsParentAborted(PrecOf(hgr->parent))){
 		    display_deadlock_suspended_goal(hgr);
 		}
 		c = &(hgr->pt);
@@ -516,13 +516,13 @@ static int report_deadlock_suspended_goals(int type, CELL *c, OBJ *ptop)
 	MERGER_RECORD *mg;
 	for(;;){
 	    mg = Mergerof(c);
-	    if(IsParentAborted(mg->parent)) return;
+	    if(IsParentAborted(PrecOf(mg->parent))) return 0;
 	    report_deadlock_suspended_merger(type, mg, ptop);
 	    Dereference2(&(mg->output), c);
 	    if(Typeof(c) != MGHOK) break;
 	}
-	if(Typeof(c) != HOOK) return;
-	if(!is_deadlock_occurred_really(c)) return;
+	if(Typeof(c) != HOOK) return 0;
+	if(!is_deadlock_occurred_really(c)) return 0;
     }
     {
 	GOAL_RECORD *hgr;
@@ -530,7 +530,7 @@ static int report_deadlock_suspended_goals(int type, CELL *c, OBJ *ptop)
 	for(;;){
 	    if(Typeof(c) == HOOK){
 		hgr = Goalof(c);
-		if(!IsParentAborted(hgr->parent))
+		if(!IsParentAborted(PrecOf(hgr->parent)))
 		    report_deadlock_suspended_goal(type, hgr, ptop);
 		c = &(hgr->pt);
 	    }else if(Typeof(c) == MHOOK){
@@ -550,14 +550,14 @@ static int report_deadlock_suspended_goal(int type, GOAL_RECORD *grec, OBJ *ptop
     PARENT_RECORD *shoen;
 
     AllocVector2(v1, 3);
-    if(IsNativeCode(grec->code)){
+    if(IsNativeCode(CodeOf(grec->code))){
 	unsigned int mod, pred, arity;
-	function_to_mod_pred_arity(grec->code, &mod, &pred, &arity);
+	function_to_mod_pred_arity(CodeOf(grec->code), &mod, &pred, &arity);
 	SetAll(v1+1, ATOM, mod, MRBOFF);
 	SetAll(v1+2, ATOM, pred, MRBOFF);
     }else{
-	SetAll(v1+1, ATOM, GetModuleName(GetModuleTop(grec->code)), MRBOFF);
-	SetAll(v1+2, ATOM, GetPredicateName(grec->code), MRBOFF);
+	SetAll(v1+1, ATOM, GetModuleName(GetModuleTop(CodeOf(grec->code))), MRBOFF);
+	SetAll(v1+2, ATOM, GetPredicateName(CodeOf(grec->code)), MRBOFF);
     }
     SetAll(v1+3, INT, grec->argn, MRBOFF);
 
@@ -584,23 +584,23 @@ static int report_deadlock_suspended_goal(int type, GOAL_RECORD *grec, OBJ *ptop
     SetAll(info+3, VECTOR, v2, MRBOFF);
     SetAll(info+4, LIST, ls, MRBOFF);
 
-    shoen = search_parent_tag(grec->parent, DEADLOCK_TAG);
-    if(shoen->parent != NULL){
+    shoen = search_parent_tag(PrecOf(grec->parent), DEADLOCK_TAG);
+    if(PrecOf(shoen->parent) != NULL){
 	AllocCons(cons);
 	AllocUndef(undef);
 	SetAll(cons+0, VECTOR, info, MRBOFF);
 	SetAll(cons+1, REF, undef, MRBOFF);
 	GetGoalRecord(goal, 2);
-	shoen->parent->number_of_children++;
+	PrecOf(shoen->parent)->number_of_children++;
 	goal->parent = shoen->parent;
-	goal->code = (OBJ *)dc_unify;
+	goal->code = Ref(CodeOfFunction(dc_unify));
 	goal->argn = 2;
 	goal->args[0] = shoen->report;
 	SetAll(&(shoen->report), REF, undef, MRBOFF);
 	SetAll(&(goal->args[1]), LIST, cons, MRBOFF);
-	SetGoalPriority(goal, INT, shoen->parent->priority_max);
+	SetGoalPriority(goal, INT, PrecOf(shoen->parent)->priority_max);
 	goal->debug = NO_TRACE_GOAL;
-	goal->pcode = NULL;
+	goal->pcode = 0;
 	enqueue_with_priority(goal);
     }
 }
@@ -615,16 +615,16 @@ static int report_deadlock_suspended_merger(int type, MERGER_RECORD *mg, OBJ *pt
     AllocVector2(v2, 3);
     v1[1] = const_atom_merge;
     SetAll(v1+2, VECTOR, v2, MRBOFF);
-    if(IsNativeCode(mg->pcode)){
+    if(IsNativeCode(CodeOf(mg->pcode))){
 	unsigned int mod, pred, arity;
 	function_to_mod_pred_arity(ptop, &mod, &pred, &arity);
 	SetAll(v2+1, ATOM, mod, MRBOFF);
 	SetAll(v2+2, ATOM, pred, MRBOFF);
 	SetAll(v2+3, INT, arity, MRBOFF);
     }else{
-	SetAll(v2+1, ATOM, GetModuleName(GetModuleTop(mg->pcode)), MRBOFF);
-	SetAll(v2+2, ATOM, GetPredicateName(mg->pcode), MRBOFF);
-	SetAll(v2+3, INT, GetPredicateArity(mg->pcode), MRBOFF);
+	SetAll(v2+1, ATOM, GetModuleName(GetModuleTop(CodeOf(mg->pcode))), MRBOFF);
+	SetAll(v2+2, ATOM, GetPredicateName(CodeOf(mg->pcode)), MRBOFF);
+	SetAll(v2+3, INT, GetPredicateArity(CodeOf(mg->pcode)), MRBOFF);
     }
     AllocCons(ls);
     SetAll(ls+0, VECTOR, v1, MRBOFF);
@@ -649,23 +649,23 @@ static int report_deadlock_suspended_merger(int type, MERGER_RECORD *mg, OBJ *pt
     SetAll(info+3, VECTOR, v2, MRBOFF);
     SetAll(info+4, LIST, ls, MRBOFF);
 
-    shoen = search_parent_tag(mg->parent, DEADLOCK_TAG);
-    if(shoen->parent != NULL){
+    shoen = search_parent_tag(PrecOf(mg->parent), DEADLOCK_TAG);
+    if(PrecOf(shoen->parent) != NULL){
 	AllocCons(cons);
 	AllocUndef(undef);
 	SetAll(cons+0, VECTOR, info, MRBOFF);
 	SetAll(cons+1, REF, undef, MRBOFF);
 	GetGoalRecord(goal, 2);
-	shoen->parent->number_of_children++;
+	PrecOf(shoen->parent)->number_of_children++;
 	goal->parent = shoen->parent;
-	goal->code = (OBJ *)dc_unify;
+	goal->code = Ref(CodeOfFunction(dc_unify));
 	goal->argn = 2;
 	goal->args[0] = shoen->report;
 	SetAll(&(shoen->report), REF, undef, MRBOFF);
 	SetAll(&(goal->args[1]), LIST, cons, MRBOFF);
-	SetGoalPriority(goal, INT, shoen->parent->priority_max);
+	SetGoalPriority(goal, INT, PrecOf(shoen->parent)->priority_max);
 	goal->debug = NO_TRACE_GOAL;
-	goal->pcode = NULL;
+	goal->pcode = 0;
 	enqueue_with_priority(goal);
     }
 }

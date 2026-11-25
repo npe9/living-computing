@@ -22,10 +22,10 @@ static int terminate_shoen_without_child(PARENT_RECORD *prec);
 /* PORT: forward declarations */
 
 
-#define	 GoalList(shoen)	 ((CELL *)((shoen)->number_of_children))
-#define	 SetGoalList(shoen, x)	 ((shoen)->number_of_children) = (int)(x)
-#define	 NextShoen(shoen)	 ((PARENT_RECORD *)((shoen)->reduction_left))
-#define	 SetNextShoen(shoen, x)	 ((shoen)->reduction_left) = (int)(x)
+#define	 GoalList(shoen)	 CellOf((PREF)(shoen)->number_of_children)
+#define	 SetGoalList(shoen, x)	 ((shoen)->number_of_children) = (int32_t)Ref(x)
+#define	 NextShoen(shoen)	 PrecOf((PREF)(shoen)->reduction_left)
+#define	 SetNextShoen(shoen, x)	 ((shoen)->reduction_left) = (int32_t)Ref(x)
 
 int backtrace_flag;
 
@@ -39,18 +39,18 @@ static int deadlock_goal_merger_list;
 #define MarkRoot()	 { deadlock_goal_merger_list |= DDROOT; }
 #define SetDeadlockGoal(g){\
     (g)->debug = deadlock_goal_merger_list;\
-    deadlock_goal_merger_list = ((int)(g))|DDGOAL;\
+    deadlock_goal_merger_list = (int)(Ref(g)|DDGOAL);\
 }
 #define SetDeadlockMerger(m){\
     (m)->priority = deadlock_goal_merger_list;\
-    deadlock_goal_merger_list = ((int)(m));\
+    deadlock_goal_merger_list = (int)Ref(m);\
 }
 #define GetDeadlockGoal(g){\
-    g = (GOAL_RECORD *)(deadlock_goal_merger_list&0xFFFFFFFC);\
+    g = GrecOf((PREF)deadlock_goal_merger_list & 0xFFFFFFFCu);\
     deadlock_goal_merger_list = (g)->debug;\
 }
 #define GetDeadlockMerger(m){\
-    m = (MERGER_RECORD *)(deadlock_goal_merger_list&0xFFFFFFFC);\
+    m = MrecOf((PREF)deadlock_goal_merger_list & 0xFFFFFFFCu);\
     deadlock_goal_merger_list = (m)->priority;\
 }
 
@@ -70,29 +70,29 @@ int deadlock_check_and_report(void)
     /** Search deadlocked goals/mergers **/
     deadgoals = NULL;
     for(goal = goal_rec_list_old; goal != NULL; goal = next){
-	next = goal->next;
-	shoen = goal->parent;
+	next = GrecOf(goal->next);
+	shoen = PrecOf(goal->parent);
 	if(shoen != NULL && IsNotGrecCopied(goal)){
 	    if(IsPrecCopied(shoen) && (!IsParentAborted(shoen))){
 		/** goal in shoen is deadlocked **/
 		goal->debug = 0;
-		goal->next = deadgoals;
+		goal->next = Ref(deadgoals);
 		deadgoals = goal;
 	    }
 	}
     }
     deadmergers = NULL;
     for(merger = merger_rec_list_old; merger != NULL; merger = nextmerger){
-	nextmerger = merger->next;
-	merger->input = NULL;
+	nextmerger = MrecOf(merger->next);
+	merger->input = 0;
 	if(merger->count != 0){
 	    if(IsNotCopied(&(merger->output))){
-		shoen = merger->parent;
+		shoen = PrecOf(merger->parent);
 		if(IsPrecCopied(shoen) && (!IsParentAborted(shoen))){
 		    /** merger in shoen is deadlocked **/
 		    argn = merger->count;
 		    GcAllocNWords(vect, argn+1);
-		    merger->input = vect;
+		    merger->input = Ref(vect);
 		    SetAll(vect, DESC, argn, MRBOFF); vect++;
 		    while(--argn >= 0){
 			GcAlloc1Word(undef);
@@ -100,7 +100,7 @@ int deadlock_check_and_report(void)
 			SetAll(vect+argn, REF, undef, MRBOFF);
 		    }
 		    merger->priority = 0;
-		    merger->next = deadmergers;
+		    merger->next = Ref(deadmergers);
 		    deadmergers = merger;
 		}
 		merger->count = 0;
@@ -109,20 +109,20 @@ int deadlock_check_and_report(void)
     }
 
     /** Check dependency and search deadlock root **/
-    for(goal = deadgoals; goal != NULL; goal = goal->next){
+    for(goal = deadgoals; goal != NULL; goal = GrecOf(goal->next)){
 	argn = goal->argn;
 	args = goal->args;
 	while(argn--){
 	    deadlock_mark_goals(args++, goal);
 	}
     }
-    for(merger = deadmergers; merger != NULL; merger = merger->next){
+    for(merger = deadmergers; merger != NULL; merger = MrecOf(merger->next)){
 	deadlock_mark_goals(&(merger->output), NULL);
     }
 
     /** Make list of deadlocked goals/merger **/
     deadlock_goal_merger_list = -1;
-    for(goal = deadgoals, f = -1; goal != NULL; goal = goal->next){
+    for(goal = deadgoals, f = -1; goal != NULL; goal = GrecOf(goal->next)){
 	if(goal->debug == 0){
 	    goal->debug = -1;
 	    argn = goal->argn;
@@ -135,7 +135,7 @@ int deadlock_check_and_report(void)
 	    f = 0;
 	}
     }
-    for(merger = deadmergers; merger != NULL; merger = merger->next){
+    for(merger = deadmergers; merger != NULL; merger = MrecOf(merger->next)){
 	if(merger->priority == 0){
 	    merger->priority = -1;
 	    deadlock_link_goals(&(merger->output), NULL);
@@ -144,7 +144,7 @@ int deadlock_check_and_report(void)
 	    f = 0;
 	}
     }
-    for(goal = deadgoals; goal != NULL; goal = goal->next){
+    for(goal = deadgoals; goal != NULL; goal = GrecOf(goal->next)){
 	if((goal->debug&0xFFFFFFFC) == 0){
 	    goal->debug = -1;
 	    argn = goal->argn;
@@ -155,7 +155,7 @@ int deadlock_check_and_report(void)
 	    SetDeadlockGoal(goal);
 	}
     }
-    for(merger = deadmergers; merger != NULL; merger = merger->next){
+    for(merger = deadmergers; merger != NULL; merger = MrecOf(merger->next)){
 	if((merger->priority&0xFFFFFFFC) == 0){
 	    merger->priority = -1;
 	    deadlock_link_goals(&(merger->output), NULL);
@@ -195,9 +195,9 @@ int deadlock_check_and_report(void)
     /** Unify to report stream of new shoen **/
     for(shoen = shoen_list_for_deadlock_detection; shoen != NULL;
 						   shoen = NextShoen(shoen)){
-	new_shoen = shoen->parent;
+	new_shoen = PrecOf(shoen->parent);
 	new_shoen = search_parent_tag(new_shoen, DEADLOCK_TAG);
-	if(new_shoen->parent != NULL && new_shoen->id != 0){
+	if(PrecOf(new_shoen->parent) != NULL && new_shoen->id != 0){
 	    GcAlloc2Words(cons);
 	    GcAllocNWords2(vect, 5);
 	    GcAlloc1Word(undef);
@@ -211,16 +211,16 @@ int deadlock_check_and_report(void)
 	    SetAll(vect+4, LIST, GoalList(shoen), MRBOFF);
 	    SetAll(undef, UNDEF, NULL, MRBON);
 	    GcGetGoalRecord(goal, 2);
-	    new_shoen->parent->number_of_children++;
+	    PrecOf(new_shoen->parent)->number_of_children++;
 	    goal->parent = new_shoen->parent;
-	    goal->code = (OBJ *)dc_unify;
+	    goal->code = Ref(CodeOfFunction(dc_unify));
 	    goal->argn = 2;
 	    goal->args[0] = new_shoen->report;
 	    SetAll(&(new_shoen->report), REF, undef, MRBOFF);
 	    SetAll(&(goal->args[1]), LIST, cons, MRBOFF);
-	    SetGoalPriority(goal, INT, new_shoen->parent->priority_max);
+	    SetGoalPriority(goal, INT, PrecOf(new_shoen->parent)->priority_max);
 	    goal->debug = NO_TRACE_GOAL;
-	    goal->pcode = NULL;
+	    goal->pcode = 0;
 	    enqueue_with_priority(goal);
 	}
     }
@@ -243,20 +243,20 @@ static int deadlock_mark_goals(CELL *c, GOAL_RECORD *goal0)
     while(Typeof(c) == REF){
 	c = Objectof(c);
 	if(Typeof(c) == MGHOK){
-	    if(IsCopied(c)) return;
+	    if(IsCopied(c)) return 0;
 	    merger = Mergerof(c);
-	    if(merger->count != 0) return;
-	    if(merger->priority != 0) return;
-	    shoen = merger->parent;
-	    if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) return;
+	    if(merger->count != 0) return 0;
+	    if(merger->priority != 0) return 0;
+	    shoen = PrecOf(merger->parent);
+	    if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) return 0;
 	    /** merger in shoen is deadlocked **/
 	    merger->priority = 1;
 	    c = &(merger->output);
 	    goal0 = NULL;
 	}
     }
-    if(Typeof(c) != HOOK && Typeof(c) != MHOOK) return;
-    if(IsCopied(c)) return;
+    if(Typeof(c) != HOOK && Typeof(c) != MHOOK) return 0;
+    if(IsCopied(c)) return 0;
     if(goal0){
 	c0 = c;
 	for(;;){
@@ -265,12 +265,12 @@ static int deadlock_mark_goals(CELL *c, GOAL_RECORD *goal0)
 		c0 = &(goal->pt);
 	    }else if(Typeof(c0) == MHOOK){
 		susp = Suspof(c0);
-		goal = susp->suspended;
+		goal = GrecOf(susp->suspended);
 		c0 = &(susp->forward);
 	    }else{
 		break;
 	    }
-	    if(goal == goal0) return;  /** goal is self **/
+	    if(goal == goal0) return 0;  /** goal is self **/
 	}
     }
     for(;;){
@@ -279,12 +279,12 @@ static int deadlock_mark_goals(CELL *c, GOAL_RECORD *goal0)
 	    c = &(goal->pt);
 	}else if(Typeof(c) == MHOOK){
 	    susp = Suspof(c);
-	    goal = susp->suspended;
+	    goal = GrecOf(susp->suspended);
 	    c = &(susp->forward);
 	}else{
-	    return;
+	    return 0;
 	}
-	shoen = goal->parent;
+	shoen = PrecOf(goal->parent);
 	if(shoen == NULL || IsGrecCopied(goal)) continue;
 	if(goal->debug != 0) continue;
 	if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) continue;
@@ -314,20 +314,20 @@ static int deadlock_link_goals(CELL *c, GOAL_RECORD *goal0)
 
     while(Typeof(c) == REF) c = Objectof(c);
     if(Typeof(c) == MGHOK){
-	if(IsCopied(c)) return;
+	if(IsCopied(c)) return 0;
 	merger = Mergerof(c);
-	if(merger->count != 0) return;
-	if(merger->priority&0xFFFFFFFC) return;
-	shoen = merger->parent;
-	if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) return;
+	if(merger->count != 0) return 0;
+	if(merger->priority&0xFFFFFFFC) return 0;
+	shoen = PrecOf(merger->parent);
+	if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) return 0;
 	/** merger in shoen is deadlocked **/
 	merger->priority = -1;
 	deadlock_link_goals(&(merger->output), NULL);
 	SetDeadlockMerger(merger);
-	return;
+	return 0;
     }
-    if(Typeof(c) != HOOK && Typeof(c) != MHOOK) return;
-    if(IsCopied(c)) return;
+    if(Typeof(c) != HOOK && Typeof(c) != MHOOK) return 0;
+    if(IsCopied(c)) return 0;
     if(goal0){
 	c0 = c;
 	for(;;){
@@ -336,12 +336,12 @@ static int deadlock_link_goals(CELL *c, GOAL_RECORD *goal0)
 		c0 = &(goal->pt);
 	    }else if(Typeof(c0) == MHOOK){
 		susp = Suspof(c0);
-		goal = susp->suspended;
+		goal = GrecOf(susp->suspended);
 		c0 = &(susp->forward);
 	    }else{
 		break;
 	    }
-	    if(goal == goal0) return;  /** goal is self **/
+	    if(goal == goal0) return 0;  /** goal is self **/
 	}
     }
     for(;;){
@@ -350,12 +350,12 @@ static int deadlock_link_goals(CELL *c, GOAL_RECORD *goal0)
 	    c = &(goal->pt);
 	}else if(Typeof(c) == MHOOK){
 	    susp = Suspof(c);
-	    goal = susp->suspended;
+	    goal = GrecOf(susp->suspended);
 	    c = &(susp->forward);
 	}else{
-	    return;
+	    return 0;
 	}
-	shoen = goal->parent;
+	shoen = PrecOf(goal->parent);
 	if(shoen == NULL || IsGrecCopied(goal)) continue;
 	if(goal->debug&0xFFFFFFFC) continue;
 	if(IsNotPrecCopied(shoen) || IsParentAborted(shoen)) continue;
@@ -382,13 +382,13 @@ static int deadlock_report_goal(GOAL_RECORD *goal, int f)
     register int  argn;
     unsigned int  mod, pred, arity;
 
-    if(IsNativeCode(goal->code)){
-	function_to_mod_pred_arity(goal->code, &mod, &pred, &arity);
+    if(IsNativeCode(CodeOf(goal->code))){
+	function_to_mod_pred_arity(CodeOf(goal->code), &mod, &pred, &arity);
     }else{
-	mod = GetModuleName(GetModuleTop(goal->code));
-	pred = GetPredicateName(goal->code);
+	mod = GetModuleName(GetModuleTop(CodeOf(goal->code)));
+	pred = GetPredicateName(CodeOf(goal->code));
     }
-    shoen = goal->parent;
+    shoen = PrecOf(goal->parent);
     GcAlloc2Words(cons);
     GcAllocNWords2(func1, 4);
     SetAll(cons, VECTOR, func1, MRBOFF);
@@ -421,9 +421,9 @@ static int deadlock_report_goal(GOAL_RECORD *goal, int f)
 	func1[2] = (goal->argn == 0) ? func1[3] : func2[1];
 	SetAll(func1+3, INT, goal->argn, MRBOFF);
 	/** Make list of deadlock message **/
-	new_shoen = shoen->parent;
-	if(new_shoen->parent != NULL  /** not(parent of grand mother) **/
-	   && new_shoen->parent->parent != NULL){  /** not(grand mother) **/
+	new_shoen = PrecOf(shoen->parent);
+	if(PrecOf(new_shoen->parent) != NULL  /** not(parent of grand mother) **/
+	   && PrecOf(PrecOf(new_shoen->parent)->parent) != NULL){  /** not(grand mother) **/
 	    if(GoalList(shoen) == NULL){
 		cons[1] = const_nil;
 		SetGoalList(shoen, cons);
@@ -443,7 +443,7 @@ static int deadlock_report_merger(MERGER_RECORD *merger, int f)
     register PARENT_RECORD  *shoen, *new_shoen;
     unsigned int  mod, pred, arity;
 
-    shoen = merger->parent;
+    shoen = PrecOf(merger->parent);
     GcAlloc2Words(cons);
     GcAllocNWords2(func1, 3);
     GcAllocNWords2(func2, 4);
@@ -453,19 +453,19 @@ static int deadlock_report_merger(MERGER_RECORD *merger, int f)
     SetAll(cons, VECTOR, func1, MRBOFF);
     func1[1] = const_atom_merge;
     SetAll(func1+2, VECTOR, func2, MRBOFF);
-    if(IsNativeCode(merger->pcode)){
-	function_to_mod_pred_arity(merger->pcode, &mod, &pred, &arity);
+    if(IsNativeCode(CodeOf(merger->pcode))){
+	function_to_mod_pred_arity(CodeOf(merger->pcode), &mod, &pred, &arity);
     }else{
-	mod = GetModuleName(GetModuleTop(merger->pcode));
-	pred = GetPredicateName(merger->pcode);
-	arity = GetPredicateArity(merger->pcode);
+	mod = GetModuleName(GetModuleTop(CodeOf(merger->pcode)));
+	pred = GetPredicateName(CodeOf(merger->pcode));
+	arity = GetPredicateArity(CodeOf(merger->pcode));
     }
     SetAll(func2+1, ATOM, mod, MRBOFF);
     SetAll(func2+2, ATOM, pred, MRBOFF);
     SetAll(func2+3, INT, arity, MRBOFF);
     dead_cp_cell(&(merger->output), out);
     /** Display term to Console **/
-    SetAll(cons+1, VECTOR, merger->input, MRBOFF);
+    SetAll(cons+1, VECTOR, CellOf(merger->input), MRBOFF);
     if(backtrace_flag || (f&DDROOT)){
 	PrintCons1F("Deadlock::[%04d]merge(", shoen->id);
 	print_term2(cons+1, PRINT_LENGTH, PRINT_DEPTH);
@@ -475,9 +475,9 @@ static int deadlock_report_merger(MERGER_RECORD *merger, int f)
     }
     if(f){
 	/** Make list of deadlock message **/
-	new_shoen = shoen->parent;
-	if(new_shoen->parent != NULL  /** not(parent of grand mother) **/
-	   && new_shoen->parent->parent != NULL){  /** not(grand mother) **/
+	new_shoen = PrecOf(shoen->parent);
+	if(PrecOf(new_shoen->parent) != NULL  /** not(parent of grand mother) **/
+	   && PrecOf(PrecOf(new_shoen->parent)->parent) != NULL){  /** not(grand mother) **/
 	    if(GoalList(shoen) == NULL){
 		cons[1] = const_nil;
 		SetGoalList(shoen, cons);
@@ -507,13 +507,13 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 	switch(Typeof(old)){
 	  case ATOM:
 	    SetAll(new, ATOM, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case INT:
 	    SetAll(new, INT, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case FLOAT:
 	    SetAll(new, FLOAT, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case REF:
 	    work = Objectof(old);
 	    switch(Typeof(work)){
@@ -526,14 +526,14 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		GcAlloc1Word(next);
 		SetAll(new, REF, next, MRBOFF);
 		SetAll(next, UNDEF, NULL, MRBOFF);
-		return;
+		return 0;
 	      case MGHOK:
 		/** REF->MHOOK No.1 **/
 		/** OLD-MHOOK := Pointer to NEW-REF, MRB=OFF **/
 		wcell = *work;
 		SetOldNewPointer1(work, new);
 		dead_cp_stream_merger(Mergerof(&wcell), new);
-		return;
+		return 0;
 	      case COPIED:
 		next = Objectof(work); /* REF No.1 in new heap */
 		switch(Typeof(Objectof(next))){
@@ -546,13 +546,13 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBOFF);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }else{
 			/** REF->UNDEF No.3 **/
 			SetMrbof(next, MRBON); /** Mark REF No.1 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
-			return;
+			return 0;
 		    }
 		  case HOOK:
 		    if(Mrbof(work) == MRBOFF){
@@ -561,14 +561,14 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 			MarkOldNewPointer(work);
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBOFF);
-			return;
+			return 0;
 		    }else{
 			/** REF->HOOK No.3 **/
 			SetMrbof(next, MRBON); /** Mark REF No.1 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }
 		  case MGHOK:
 		    if(Mrbof(work) == MRBOFF){
@@ -579,12 +579,12 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }else{
 			/** REF->MGOOK No.3 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
-			return;
+			return 0;
 		    }
 		}
 	      DEFAULT:
@@ -601,7 +601,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, LIST, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** LIST No.1 **/
@@ -623,12 +623,12 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work,next);
 		SetAll(new, LIST, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** LIST No.3 **/
 		next = Objectof(work);
 		SetAll(new, LIST, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case VECTOR:
 	    work = Objectof(old);
@@ -640,7 +640,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, VECTOR, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** VECTOR No.1 **/
@@ -654,7 +654,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    work++; next++;
 		    dead_cp_cell(work, next);
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** VECTOR No.2 **/
@@ -664,12 +664,12 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, VECTOR, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** VECTOR No.3 **/
 		next = Objectof(work);
 		SetAll(new, VECTOR, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case STRING:
 	    work = Objectof(old);
@@ -681,7 +681,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, STRING, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** STRING No.1 **/
@@ -696,7 +696,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    next++; work++;
 		    *next = *work;
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** STRING No.2 **/
@@ -706,12 +706,12 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, STRING, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** STRING No.3 **/
 		next = Objectof(work);
 		SetAll(new, STRING, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case NUE:
 	    work = Objectof(old);
@@ -732,7 +732,7 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		    next++; work++;
 		    *next = *work;
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** NUE No.2 **/
@@ -741,12 +741,12 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, NUE, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** NUE No.3 **/
 		next = Objectof(work);
 		SetAll(new, NUE, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case SHOEN:
 	    /** SHOEN -> '$SHOEN'(Shoen-ID) **/
@@ -755,11 +755,11 @@ static int dead_cp_cell(register CELL *old, register CELL *new)
 	    SetAll(next, DESC, 2, MRBOFF);
 	    next[1] = const_atom_d_shoen;
 	    SetAll(next+2, INT, Shoenof(old)->id, MRBOFF);
-	    return;
+	    return 0;
 	  DEFAULT:
 	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), old);
 	    new = old;
-	    return;
+	    return 0;
 	}
     }
 }
@@ -769,8 +769,8 @@ static int dead_cp_stream_merger(register MERGER_RECORD *oldmg, CELL *newref)
     register CELL *new, *v;
     CELL wcell;
     register int i;
-    if(oldmg->input){
-	v = oldmg->input;
+    if(CellOf(oldmg->input)){
+	v = CellOf(oldmg->input);
 	for(i=1; i<=Valueof(v); i++){
 	    if(Mrbof(Objectof(v+i)) == MRBOFF){
 		new = Objectof(v+i);
@@ -798,8 +798,8 @@ static int dead_cp_stream_merger(register MERGER_RECORD *oldmg, CELL *newref)
 int terminate_shoen_by_gc(void)
 {
     PARENT_RECORD  *prec, *next;
-    for(prec = grand_mother->left_son; prec != grand_mother; prec = next){
-	next = prec->right_brother;
+    for(prec = PrecOf(grand_mother->left_son); prec != grand_mother; prec = next){
+	next = PrecOf(prec->right_brother);
 	terminate_shoen_without_child(prec);
     }
 }
@@ -814,8 +814,8 @@ static int terminate_shoen_without_child(PARENT_RECORD *prec)
 	}
     }else{
 	PARENT_RECORD  *son, *next;
-	for(son = prec->left_son; son != prec; son = next){
-	    next = son->right_brother;
+	for(son = PrecOf(prec->left_son); son != prec; son = next){
+	    next = PrecOf(son->right_brother);
 	    terminate_shoen_without_child(son);
 	}
     }

@@ -304,7 +304,7 @@ extern int blt_b_get_library_directory(CELL *name);
 
 /* dcode.c */
 extern int initialize_dcode_table(void);
-extern int dcode_function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity);
+extern int dcode_function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity);
 
 /* deref.c */
 extern CELL *dereference(CELL *reg);
@@ -324,38 +324,38 @@ extern int body_builtin_exception(unsigned int excp_code, unsigned int where, un
 
 /* float.c */
 extern int initialize_float_calculator(void);
-extern int float_equal(float *x, float *y);
-extern int float_not_equal(float *x, float *y);
-extern int float_less_than(float *x, float *y);
-extern int float_not_less_than(float *x, float *y);
-extern int float_add(float *x, float *y, float *z);
-extern int float_subtract(float *x, float *y, float *z);
-extern int float_multiply(float *x, float *y, float *z);
-extern int float_divide(float *x, float *y, float *z);
-extern int float_minus(float *x, float *z);
-extern int float_abs(float *x, float *z);
-extern int float_min(float *x, float *y, float *z);
-extern int float_max(float *x, float *y, float *z);
-extern int float_floor(float *x, float *z);
-extern int float_sqrt(float *x, float *z);
-extern int float_ln(float *x, float *z);
-extern int float_log(float *x, float *z);
-extern int float_exp(float *x, float *z);
-extern int float_pow(float *x, float *y, float *z);
-extern int float_sin(float *x, float *z);
-extern int float_cos(float *x, float *z);
-extern int float_tan(float *x, float *z);
-extern int float_asin(float *x, float *z);
-extern int float_acos(float *x, float *z);
-extern int float_atan(float *x, float *z);
-extern int float_atan2(float *x, float *y, float *z);
-extern int float_sinh(float *x, float *z);
-extern int float_cosh(float *x, float *z);
-extern int float_tanh(float *x, float *z);
-extern int float_to_integer(float *x, int *y);
-extern int integer_to_float(int *x, float *y);
-extern CHAR *float_to_string(float *x);
-extern int string_to_float(register CHAR *s, float *z);
+extern int float_equal(int32_t *x, int32_t *y);
+extern int float_not_equal(int32_t *x, int32_t *y);
+extern int float_less_than(int32_t *x, int32_t *y);
+extern int float_not_less_than(int32_t *x, int32_t *y);
+extern int float_add(int32_t *x, int32_t *y, int32_t *z);
+extern int float_subtract(int32_t *x, int32_t *y, int32_t *z);
+extern int float_multiply(int32_t *x, int32_t *y, int32_t *z);
+extern int float_divide(int32_t *x, int32_t *y, int32_t *z);
+extern int float_minus(int32_t *x, int32_t *z);
+extern int float_abs(int32_t *x, int32_t *z);
+extern int float_min(int32_t *x, int32_t *y, int32_t *z);
+extern int float_max(int32_t *x, int32_t *y, int32_t *z);
+extern int float_floor(int32_t *x, int32_t *z);
+extern int float_sqrt(int32_t *x, int32_t *z);
+extern int float_ln(int32_t *x, int32_t *z);
+extern int float_log(int32_t *x, int32_t *z);
+extern int float_exp(int32_t *x, int32_t *z);
+extern int float_pow(int32_t *x, int32_t *y, int32_t *z);
+extern int float_sin(int32_t *x, int32_t *z);
+extern int float_cos(int32_t *x, int32_t *z);
+extern int float_tan(int32_t *x, int32_t *z);
+extern int float_asin(int32_t *x, int32_t *z);
+extern int float_acos(int32_t *x, int32_t *z);
+extern int float_atan(int32_t *x, int32_t *z);
+extern int float_atan2(int32_t *x, int32_t *y, int32_t *z);
+extern int float_sinh(int32_t *x, int32_t *z);
+extern int float_cosh(int32_t *x, int32_t *z);
+extern int float_tanh(int32_t *x, int32_t *z);
+extern int float_to_integer(int32_t *x, int32_t *y);
+extern int integer_to_float(int32_t *x, int32_t *y);
+extern CHAR *float_to_string(int32_t *x);
+extern int string_to_float(register CHAR *s, int32_t *z);
 
 /* gc.c */
 extern int gc(void);
@@ -397,7 +397,9 @@ extern int popup_suspension_stack(GOAL_RECORD *goal);
 extern int single_wait_suspend(GOAL_RECORD *goal, CELL *ref);
 extern int body_builtin_suspend(OBJ *code, CELL *waitref, unsigned int argio, ...);
 extern int body_builtin_swap(OBJ *code, unsigned int argio, ...);
-extern int wakeup_goals(CELL *cc, int type, CELL *value, MRB mrb);
+extern int wakeup_goals_v(CELL *cc, int type, int32_t value, MRB mrb);
+/* MODERN: callers pass an integer or a pointer as the new value (cell.h SetAll). */
+#define wakeup_goals(CC, T, V, M) wakeup_goals_v((CC), (T), CellValue(V), (M))
 extern int move_suspension_queue(register CELL *from, register CELL *to);
 
 /* instr.c */
@@ -478,7 +480,7 @@ extern int lookup_module(register unsigned int id, MODULE_ENTRY **mod);
 extern int enter_module(unsigned int id, OBJ *addr, int size, MODULE_ENTRY **indp);
 extern int remove_module(register unsigned int id);
 extern OBJ *find_predicate(MODULE_ENTRY *mod, unsigned int pid);
-extern int function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity);
+extern int function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity);
 extern int rehash_predicate_table(PREDICATE_ENTRY *pt, PREDICATE_ENTRY **pft, PREDICATE_ENTRY **fpt, int pn, int ppn);
 extern int renumber_atoms_in_pred_and_const_table(PREDICATE_ENTRY *pt, register unsigned int pn, register CELL *ct, register unsigned int cn, unsigned short *at);
 extern int set_module_trace_flag(unsigned int module, int flag);

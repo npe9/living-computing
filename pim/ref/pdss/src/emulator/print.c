@@ -263,7 +263,7 @@ static int print_vector(CELL *c, int depth, int mrb1)
 
     if((size=VectorLengthof(c))==0){
 	fprintf(file, "{}");
-	return;
+	return 0;
     }
     p=Objectof(c)+1;
     len=length;
@@ -281,7 +281,7 @@ static int print_vector(CELL *c, int depth, int mrb1)
 						&& mrb2==MRBON && !deadlock){
 		putc('x', file);
 	    }
-	    return;
+	    return 0;
 	}
 	if(Valueof(c)==ATOM_COMMA){
 	    fprintf(file, "(");
@@ -303,7 +303,7 @@ static int print_vector(CELL *c, int depth, int mrb1)
 	    len--;
 	}
 	putc(')', file);
-	return;
+	return 0;
     }else{
 	putc('{', file);
 	for(i=1;; i++){
@@ -321,7 +321,7 @@ static int print_vector(CELL *c, int depth, int mrb1)
 	    len--;
 	}
 	putc('}', file);
-	return;
+	return 0;
     }
 }
 
@@ -487,7 +487,7 @@ static int print_nue(CELL *c, int depth, int mrb1)
     siz2=NueCellsof(c);
     if(siz2==0){
 	fprintf(file, "$NUE#0.%d{}", size);
-	return;
+	return 0;
     }
     p=Objectof(c)+1;
     len=length;
@@ -508,7 +508,7 @@ static int print_nue(CELL *c, int depth, int mrb1)
 	len--;
     }
     putc('}', file);
-    return;
+    return 0;
 }
 
 
@@ -517,7 +517,7 @@ static int print_nue(CELL *c, int depth, int mrb1)
 *************************************************************************/
 
 #define TABLE_SIZE 64
-#define HashIndex(var) ((int)(var) & (TABLE_SIZE-1))
+#define HashIndex(var) ((int)Ref(var) & (TABLE_SIZE-1))
 
 struct var_number_backet{
     CELL *var;

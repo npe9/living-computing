@@ -154,7 +154,7 @@ static int load_kl1b_file(void)
 	    PrintCons("\n");
 	    if(read_console("Code file name : ", file_name, 128) < 0)
 		exit_pdss(1);
-	    if(file_name[0] == 0) return;
+	    if(file_name[0] == 0) return 0;
 	    if(load_from_sav_or_asm_file(file_name, &mod_table)){
 		Error1F("\nCannot Load File: %s", file_name);
 	    }
@@ -298,7 +298,7 @@ static int write_result(void)
 	PrintCons1F("%12d instructions.\n\n", instruction_counter);
 	if(option_instruction_count) print_instr_counter();
 #endif
-	return;
+	return 0;
     }else{
 	PrintCons("\nDeadlock or Error ?\n");
 #if INSTRUCTION_COUNT

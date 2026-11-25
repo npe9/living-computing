@@ -11,21 +11,29 @@
 #include <errno.h>
 #include "pdss.h"
 
-static float_error() { errno = -1; }
+static void float_error(int sig) { (void)sig; errno = -1; }
 
 int initialize_float_calculator(void)
 {
     signal(SIGFPE, float_error);
+    return(YES);
 }
 
 #define FLOAT_HUGE 3.4028234e38
+
+/* MODERN: a float lives in a cell's 32-bit value; these functions take a
+   pointer to that value (int32_t, as the callers always passed an int)
+   and read or write it as a float with memcpy (port.h), not through a
+   float pointer to an int. */
+#define F(p)	pdss_float_of(p)
+#define SF(p,v)	pdss_set_float((p), (float)(v))
 
 #define CALC(EXP){\
     double work;\
     errno = 0;\
     work = EXP;\
     if(!errno && work >= -FLOAT_HUGE && work <= FLOAT_HUGE){\
-	*z = work;\
+	SF(z, work);\
 	return(YES);\
     }else{\
 	return(NO);\
@@ -37,10 +45,10 @@ int initialize_float_calculator(void)
 *   Compare Floating Point Number.					 *
 *************************************************************************/
 
-int float_equal(float *x, float *y)  { return(*x == *y); }
-int float_not_equal(float *x, float *y)  { return(*x != *y); }
-int float_less_than(float *x, float *y)  { return(*x <  *y); }
-int float_not_less_than(float *x, float *y)  { return(*x >= *y); }
+int float_equal(int32_t *x, int32_t *y)  { return(F(x) == F(y)); }
+int float_not_equal(int32_t *x, int32_t *y)  { return(F(x) != F(y)); }
+int float_less_than(int32_t *x, int32_t *y)  { return(F(x) <  F(y)); }
+int float_not_less_than(int32_t *x, int32_t *y)  { return(F(x) >= F(y)); }
 
 
 /*************************************************************************
@@ -51,48 +59,49 @@ int float_not_less_than(float *x, float *y)  { return(*x >= *y); }
    callers test the result, which was whatever the register held (YES in
    practice: test/b_f_func*.kl1 pass).  They now return YES. */
 
-int float_add(float *x, float *y, float *z)	{ CALC(*x + *y);	    }
-int float_subtract(float *x, float *y, float *z)	{ CALC(*x - *y);	    }
-int float_multiply(float *x, float *y, float *z)	{ CALC(*x * *y);	    }
-int float_divide(float *x, float *y, float *z)	{ CALC(*x / *y);	    }
-int float_minus(float *x, float *z)	{ *z = -(*x); return(YES); }
-int float_abs(float *x, float *z)	{ *z = *x < 0 ? -(*x) : *x; return(YES); }
-int float_min(float *x, float *y, float *z)	{ *z = *x < *y ? *x : *y; return(YES); }
-int float_max(float *x, float *y, float *z)	{ *z = *x > *y ? *x : *y; return(YES); }
-int float_floor(float *x, float *z)	{ CALC(floor(*x));	    }
-int float_sqrt(float *x, float *z)	{ CALC(sqrt(*x));	    }
-int float_ln(float *x, float *z)	{ CALC(log(*x));	    }
-int float_log(float *x, float *z)	{ CALC(log10(*x));	    }
-int float_exp(float *x, float *z)	{ CALC(exp(*x));	    }
-int float_pow(float *x, float *y, float *z)	{ CALC(pow(*x, *y));	    }
-int float_sin(float *x, float *z)	{ CALC(sin(*x));	    }
-int float_cos(float *x, float *z)	{ CALC(cos(*x));	    }
-int float_tan(float *x, float *z)	{ CALC(tan(*x));	    }
-int float_asin(float *x, float *z)	{ CALC(asin(*x));	    }
-int float_acos(float *x, float *z)	{ CALC(acos(*x));	    }
-int float_atan(float *x, float *z)	{ CALC(atan(*x));	    }
-int float_atan2(float *x, float *y, float *z)	{ CALC(atan2(*x, *y));	    }
-int float_sinh(float *x, float *z)	{ CALC(sinh(*x));	    }
-int float_cosh(float *x, float *z)	{ CALC(cosh(*x));	    }
-int float_tanh(float *x, float *z)	{ CALC(tanh(*x));	    }
+int float_add(int32_t *x, int32_t *y, int32_t *z)	{ CALC(F(x) + F(y));	    }
+int float_subtract(int32_t *x, int32_t *y, int32_t *z)	{ CALC(F(x) - F(y));	    }
+int float_multiply(int32_t *x, int32_t *y, int32_t *z)	{ CALC(F(x) * F(y));	    }
+int float_divide(int32_t *x, int32_t *y, int32_t *z)	{ CALC(F(x) / F(y));	    }
+int float_minus(int32_t *x, int32_t *z)	{ SF(z, -F(x)); return(YES); }
+int float_abs(int32_t *x, int32_t *z)	{ SF(z, F(x) < 0 ? -F(x) : F(x)); return(YES); }
+int float_min(int32_t *x, int32_t *y, int32_t *z)	{ SF(z, F(x) < F(y) ? F(x) : F(y)); return(YES); }
+int float_max(int32_t *x, int32_t *y, int32_t *z)	{ SF(z, F(x) > F(y) ? F(x) : F(y)); return(YES); }
+int float_floor(int32_t *x, int32_t *z)	{ CALC(floor(F(x)));	    }
+int float_sqrt(int32_t *x, int32_t *z)	{ CALC(sqrt(F(x)));	    }
+int float_ln(int32_t *x, int32_t *z)	{ CALC(log(F(x)));	    }
+int float_log(int32_t *x, int32_t *z)	{ CALC(log10(F(x)));	    }
+int float_exp(int32_t *x, int32_t *z)	{ CALC(exp(F(x)));	    }
+int float_pow(int32_t *x, int32_t *y, int32_t *z)	{ CALC(pow(F(x), F(y)));	    }
+int float_sin(int32_t *x, int32_t *z)	{ CALC(sin(F(x)));	    }
+int float_cos(int32_t *x, int32_t *z)	{ CALC(cos(F(x)));	    }
+int float_tan(int32_t *x, int32_t *z)	{ CALC(tan(F(x)));	    }
+int float_asin(int32_t *x, int32_t *z)	{ CALC(asin(F(x)));	    }
+int float_acos(int32_t *x, int32_t *z)	{ CALC(acos(F(x)));	    }
+int float_atan(int32_t *x, int32_t *z)	{ CALC(atan(F(x)));	    }
+int float_atan2(int32_t *x, int32_t *y, int32_t *z)	{ CALC(atan2(F(x), F(y)));	    }
+int float_sinh(int32_t *x, int32_t *z)	{ CALC(sinh(F(x)));	    }
+int float_cosh(int32_t *x, int32_t *z)	{ CALC(cosh(F(x)));	    }
+int float_tanh(int32_t *x, int32_t *z)	{ CALC(tanh(F(x)));	    }
 
 
 /*************************************************************************
 *   Convert Floating Point <-> Integer.					 *
 *************************************************************************/
 
-int float_to_integer(float *x, int *y)
+int float_to_integer(int32_t *x, int32_t *y)
 {
 #if !IGNORE_INTEGER_OVERFLOW
-    if(IntOverflow(*x)) return(NO);
+    if(IntOverflow(F(x))) return(NO);
 #endif
-    *y = *x;
+    *y = (int32_t)F(x);
     return(YES);
 }
 
-int integer_to_float(int *x, float *y)
+int integer_to_float(int32_t *x, int32_t *y)
 {
-    *y = *x;
+    SF(y, *x);
+    return(YES);
 }
 
 
@@ -100,12 +109,12 @@ int integer_to_float(int *x, float *y)
 *   Convert Floating to String.						 *
 *************************************************************************/
 
-CHAR *float_to_string(float *x)
+CHAR *float_to_string(int32_t *x)
 {
     register CHAR *p, *q, *b;
     static CHAR buf[32];
     b = buf+1;
-    sprintf(b, "%g", *x);
+    sprintf(b, "%g", F(x));
     if(*b == '.'){
 	*--b = '0';
     }
@@ -132,7 +141,7 @@ CHAR *float_to_string(float *x)
 *   Convert String to Floating.						 *
 *************************************************************************/
 
-int string_to_float(register CHAR *s, float *z)
+int string_to_float(register CHAR *s, int32_t *z)
 {
     double work;
     errno = 0;
@@ -141,10 +150,10 @@ int string_to_float(register CHAR *s, float *z)
     atof("0");	/** Dummy, for BUG? of library on Symmetry **/
 #endif
     if(!errno && work >= -FLOAT_HUGE && work <= FLOAT_HUGE){
-	*z = work;
+	SF(z, work);
 	return(YES);
     }else{
-	*z = 0.0;
+	SF(z, 0.0);
 	return(NO);
     }
 }

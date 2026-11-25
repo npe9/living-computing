@@ -39,7 +39,7 @@ int blt_b_create_window(CELL *name, CELL *status, CELL *intrup, CELL *ioid)
     Dereference(x);
     if(Typeof(x) != STRING){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_create_window, x,
+	    body_builtin_suspend(CodeOfFunction(dc_create_window), x,
 				 IOOO, name, status, intrup, ioid);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -52,11 +52,11 @@ int blt_b_create_window(CELL *name, CELL *status, CELL *intrup, CELL *ioid)
 	    SetAll(status, INT, IOSUB_IO_TABLE_FULL, MRBOFF);
 	    *intrup = const_nil;
 	    *ioid = const_nil;
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	    SetTypeof(ioid, INT); SetMrbof(ioid, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -81,7 +81,7 @@ int blt_b_remove_window(CELL *ioid, CELL *status)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_remove_window, x, IO, ioid, status);
+	    body_builtin_suspend(CodeOfFunction(dc_remove_window), x, IO, ioid, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_REMOVE_WINDOW, IO, ioid, status);
@@ -113,7 +113,7 @@ int blt_b_show_window(CELL *ioid, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_show_window, x, IOO, ioid, status, newio);
+	    body_builtin_suspend(CodeOfFunction(dc_show_window), x, IOO, ioid, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_SHOW_WINDOW, IOO, ioid,status,newio);
@@ -146,7 +146,7 @@ int blt_b_hide_window(CELL *ioid, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_hide_window, x, IOO, ioid, status, newio);
+	    body_builtin_suspend(CodeOfFunction(dc_hide_window), x, IOO, ioid, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_HIDE_WINDOW, IOO, ioid,status,newio);
@@ -169,11 +169,11 @@ int blt_b_create_file(CELL *status, CELL *ioid)
       case IOSUB_IO_TABLE_FULL:
 	SetAll(status, INT, IOSUB_IO_TABLE_FULL, MRBOFF);
 	*ioid = const_nil;
-	return;
+	return 0;
       case IOSUB_SUCCESS:
 	SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	SetTypeof(ioid, INT); SetMrbof(ioid, MRBOFF);
-	return;
+	return 0;
     }
 }
 
@@ -197,7 +197,7 @@ int blt_b_remove_file(CELL *ioid, CELL *status)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_remove_file, x, IO, ioid, status);
+	    body_builtin_suspend(CodeOfFunction(dc_remove_file), x, IO, ioid, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_REMOVE_FILE, IO, ioid, status);
@@ -236,7 +236,7 @@ int blt_b_open_file(CELL *ioid, CELL *name, CELL *mode, CELL *status, CELL *newi
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_open_file, x,
+	    body_builtin_suspend(CodeOfFunction(dc_open_file), x,
 				 IIIOO, ioid, name, mode, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE,
@@ -249,11 +249,11 @@ int blt_b_open_file(CELL *ioid, CELL *name, CELL *mode, CELL *status, CELL *newi
 	  case IOSUB_CANNOT_OPEN_FILE:
 	    *newio = *ioid;
 	    SetAll(status, INT, IOSUB_CANNOT_OPEN_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    *newio = *ioid;
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -279,7 +279,7 @@ int blt_b_close_file(CELL *ioid, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_close_file, x, IOO, ioid, status, newio);
+	    body_builtin_suspend(CodeOfFunction(dc_close_file), x, IOO, ioid, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_CLOSE_FILE, IOO, ioid,status,newio);
@@ -316,7 +316,7 @@ int blt_b_write_char(CELL *ioid, CELL *chr, CELL *status, CELL *newio)
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_write_char, x,
+	    body_builtin_suspend(CodeOfFunction(dc_write_char), x,
 				 IIOO, ioid, chr, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==ioid ? 1 : 2),
@@ -355,7 +355,7 @@ int blt_b_write_line(CELL *ioid, CELL *line, CELL *status, CELL *newio)
     if(Typeof(x) != STRING){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_write_line, x,
+	    body_builtin_suspend(CodeOfFunction(dc_write_line), x,
 				 IIOO, ioid, line, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==ioid ? 1 : 2),
@@ -398,7 +398,7 @@ int blt_b_write_buffer(CELL *ioid, CELL *buffer, CELL *status, CELL *newio)
     if(Typeof(x) != STRING){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_write_buffer, x,
+	    body_builtin_suspend(CodeOfFunction(dc_write_buffer), x,
 				 IIOO, ioid, buffer, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==ioid ? 1 : 2),
@@ -444,7 +444,7 @@ int blt_b_write_term(CELL *ioid, CELL *term, CELL *len, CELL *dep, CELL *status,
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_write_term, x,
+	    body_builtin_suspend(CodeOfFunction(dc_write_term), x,
 				 IIIIOO, ioid, term, len, dep, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE,
@@ -481,7 +481,7 @@ int blt_b_read_char(CELL *ioid, CELL *chr, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_read_char, x,
+	    body_builtin_suspend(CodeOfFunction(dc_read_char), x,
 				 IOOO, ioid, chr, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -492,20 +492,20 @@ int blt_b_read_char(CELL *ioid, CELL *chr, CELL *status, CELL *newio)
 	int c;
 	switch(read_char(Valueof(ioid), &c)){
 	  case IOSUB_CONTINUE:
-	    body_builtin_suspend(dc_read_char,
+	    body_builtin_suspend(CodeOfFunction(dc_read_char),
 				 io_table[Valueof(ioid)].inp_hook,
 				 IOOO, ioid, chr, status, newio);
-	    return;
+	    return 0;
 	  case IOSUB_END_OF_FILE:
 	    *newio = *ioid;
 	    *chr = const_nil;
 	    SetAll(status, INT, IOSUB_END_OF_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    *newio = *ioid;
 	    SetAll(chr, INT, c, MRBOFF);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -532,7 +532,7 @@ int blt_b_read_line(CELL *ioid, CELL *line, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_read_line, x,
+	    body_builtin_suspend(CodeOfFunction(dc_read_line), x,
 				 IOOO, ioid, line, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -543,25 +543,25 @@ int blt_b_read_line(CELL *ioid, CELL *line, CELL *status, CELL *newio)
 	CELL l;
 	switch(read_line(Valueof(ioid), &l)){
 	  case IOSUB_CONTINUE:
-	    body_builtin_suspend(dc_read_line,
+	    body_builtin_suspend(CodeOfFunction(dc_read_line),
 				 io_table[Valueof(ioid)].inp_hook,
 				 IOOO, ioid, line, status, newio);
-	    return;
+	    return 0;
 	  case IOSUB_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_read_line,
+	    body_builtin_swap(CodeOfFunction(dc_read_line),
 			      IOOO, ioid, line, status, newio);
-	    return;
+	    return 0;
 	  case IOSUB_END_OF_FILE:
 	    *newio = *ioid;
 	    *line = l;
 	    SetAll(status, INT, IOSUB_END_OF_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    *newio = *ioid;
 	    *line = l;
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -592,7 +592,7 @@ int blt_b_read_buffer(CELL *ioid, CELL *len, CELL *buffer, CELL *status, CELL *n
     if(Typeof(x) != INT){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_read_buffer, x,
+	    body_builtin_suspend(CodeOfFunction(dc_read_buffer), x,
 				 IIOOO, ioid, len, buffer, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==ioid ? 1 : 2),
@@ -603,25 +603,25 @@ int blt_b_read_buffer(CELL *ioid, CELL *len, CELL *buffer, CELL *status, CELL *n
 	CELL b;
 	switch(read_buffer(Valueof(ioid), Valueof(len), &b)){
 	  case IOSUB_CONTINUE:
-	    body_builtin_suspend(dc_read_buffer,
+	    body_builtin_suspend(CodeOfFunction(dc_read_buffer),
 				 io_table[Valueof(ioid)].inp_hook,
 				 IIOOO, ioid, len, buffer, status, newio);
-	    return;
+	    return 0;
 	  case IOSUB_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_read_buffer,
+	    body_builtin_swap(CodeOfFunction(dc_read_buffer),
 			      IIOOO, ioid, len, buffer, status, newio);
-	    return;
+	    return 0;
 	  case IOSUB_END_OF_FILE:
 	    *newio = *ioid;
 	    *buffer = b;
 	    SetAll(status, INT, IOSUB_END_OF_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    *newio = *ioid;
 	    *buffer = b;
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -649,7 +649,7 @@ int blt_b_read_token(CELL *ioid, CELL *token, CELL *varnum, CELL *status, CELL *
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_read_token, x,
+	    body_builtin_suspend(CodeOfFunction(dc_read_token), x,
 				 IOOOO, ioid, token, varnum, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -661,35 +661,35 @@ int blt_b_read_token(CELL *ioid, CELL *token, CELL *varnum, CELL *status, CELL *
 	int n;
 	switch(read_token(Valueof(ioid), &h, &t, &n)){
 	  case IOSUB_CONTINUE:
-	    body_builtin_suspend(dc_read_token,
+	    body_builtin_suspend(CodeOfFunction(dc_read_token),
 				 io_table[Valueof(ioid)].inp_hook,
 				 IIOOO, ioid, &t, varnum, status, newio);
 	    *token = h;
-	    return;
+	    return 0;
 	  case IOSUB_REQUEST_GC:
 	    SetHeapGcFlag();
-	    body_builtin_swap(dc_read_token,
+	    body_builtin_swap(CodeOfFunction(dc_read_token),
 			      IIOOO, ioid, &t, varnum, status, newio);
 	    *token = h;
-	    return;
+	    return 0;
 	  case IOSUB_END_OF_FILE:
 	    *newio = *ioid;
 	    *token = h;
 	    SetAll(varnum, INT, n, MRBOFF);
 	    SetAll(status, INT, IOSUB_END_OF_FILE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_EOF_IN_QUOTE:
 	    *newio = *ioid;
 	    *token = h;
 	    SetAll(varnum, INT, n, MRBOFF);
 	    SetAll(status, INT, IOSUB_EOF_IN_QUOTE, MRBOFF);
-	    return;
+	    return 0;
 	  case IOSUB_SUCCESS:
 	    *newio = *ioid;
 	    *token = h;
 	    SetAll(varnum, INT, n, MRBOFF);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
-	    return;
+	    return 0;
 	}
     }
 }
@@ -715,7 +715,7 @@ int blt_b_abort_read_command(CELL *ioid, CELL *status, CELL *newio)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_abort_read_command, x,
+	    body_builtin_suspend(CodeOfFunction(dc_abort_read_command), x,
 				 IOO, ioid, status, newio);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -749,7 +749,7 @@ int blt_b_test_directory(CELL *name, CELL *status)
     Dereference(x);
     if(Typeof(x) != STRING){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_test_directory, x, IO, name, status);
+	    body_builtin_suspend(CodeOfFunction(dc_test_directory), x, IO, name, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_TEST_DIRECTORY, IO, name, status);
@@ -792,7 +792,7 @@ int blt_b_directory_pathname(CELL *name, CELL *exname, CELL *status)
     Dereference(x);
     if(Typeof(x) != STRING){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_directory_pathname, x,
+	    body_builtin_suspend(CodeOfFunction(dc_directory_pathname), x,
 				 IOO, name, exname, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
@@ -813,7 +813,7 @@ int blt_b_directory_pathname(CELL *name, CELL *exname, CELL *status)
 	}else{
 	    getwd(path);
 	    chdir(here);
-	    pdss_world(path);  /* PORT: test hook, see port_low.c */
+	    pdss_world(path);  /* PORT: test hook, see sysdep.h */
 	    SetAll(exname, STRING, convert_to_kl1_string(path), MRBOFF);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	}
@@ -845,7 +845,7 @@ int blt_b_listing_files(CELL *name, CELL *wild, CELL *list, CELL *status)
     if(Typeof(x) != STRING){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_listing_files, x,
+	    body_builtin_suspend(CodeOfFunction(dc_listing_files), x,
 				 IIOO, name, wild, list, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==name ? 1 : 2),
@@ -942,7 +942,7 @@ int blt_b_delete_files(CELL *name, CELL *wild, CELL *status)
     if(Typeof(x) != STRING){
   suspend_or_exception:
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_delete_files, x,
+	    body_builtin_suspend(CodeOfFunction(dc_delete_files), x,
 				 IIO, name, wild, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, (x==name ? 1 : 2),
@@ -1064,7 +1064,7 @@ int blt_b_on_at(CELL *time, CELL *done, CELL *status)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_on_at, x, IOO, time, done, status);
+	    body_builtin_suspend(CodeOfFunction(dc_on_at), x, IOO, time, done, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_ON_AT, IOO, time, done, status);
@@ -1104,7 +1104,7 @@ int blt_b_on_after(CELL *time, CELL *done, CELL *status)
     Dereference(x);
     if(Typeof(x) != INT){
 	if(IsRef(x)){
-	    body_builtin_suspend(dc_on_after, x, IOO, time, done, status);
+	    body_builtin_suspend(CodeOfFunction(dc_on_after), x, IOO, time, done, status);
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_ON_AFTER, IOO, time, done, status);

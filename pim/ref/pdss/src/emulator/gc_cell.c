@@ -30,13 +30,13 @@ int gc_cell(register CELL *old, register CELL *new)
 	switch(Typeof(old)){
 	  case ATOM:
 	    SetAll(new, ATOM, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case INT:
 	    SetAll(new, INT, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case FLOAT:
 	    SetAll(new, FLOAT, Valueof(old), MRBOFF);
-	    return;
+	    return 0;
 	  case REF:
 	    work = Objectof(old);
 	    switch(Typeof(work)){
@@ -47,7 +47,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		GcAlloc1Word(next);
 		SetAll(new, REF, next, MRBOFF);
 		SetAll(next, UNDEF, NULL, MRBOFF);
-		return;
+		return 0;
 	      case HOOK:
 	      case MHOOK:
 		/** REF->HOOK/MHOOK No.1 **/
@@ -57,7 +57,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		GcAlloc1Word(next);
 		SetAll(new, REF, next, MRBOFF);
 		gc_suspension_queue(&wcell, next);
-		return;
+		return 0;
 	      case MGHOK:
 		/** REF->MGHOK No.1 **/
 		/** OLD-MGHOK := Pointer to NEW-REF, MRB=OFF **/
@@ -66,7 +66,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		GcAlloc1Word(next);
 		SetAll(new, REF, next, MRBOFF);
 		gc_stream_merger(&wcell, next);
-		return;
+		return 0;
 	      case COPIED:
 		next = Objectof(work); /* REF No.1 in new heap */
 		switch(Typeof(Objectof(next))){
@@ -79,13 +79,13 @@ int gc_cell(register CELL *old, register CELL *new)
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBOFF);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }else{
 			/** REF->UNDEF No.3 **/
 			SetMrbof(next, MRBON); /** Mark REF No.1 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
-			return;
+			return 0;
 		    }
 		  case HOOK:
 		    if(Mrbof(work) == MRBOFF){
@@ -94,14 +94,14 @@ int gc_cell(register CELL *old, register CELL *new)
 			MarkOldNewPointer(work);
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBOFF);
-			return;
+			return 0;
 		    }else{
 			/** REF->HOOK No.3 **/
 			SetMrbof(next, MRBON); /** Mark REF No.1 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }
 		  case MGHOK:
 		    if(Mrbof(work) == MRBOFF){
@@ -112,12 +112,12 @@ int gc_cell(register CELL *old, register CELL *new)
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
 			SetMrbof(next, MRBON);
-			return;
+			return 0;
 		    }else{
 			/** REF->MGOOK No.3 **/
 			next = Objectof(next);
 			SetAll(new, REF, next, MRBON);
-			return;
+			return 0;
 		    }
 		}
 	      DEFAULT:
@@ -134,7 +134,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, LIST, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** LIST No.1 **/
@@ -156,12 +156,12 @@ int gc_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work,next);
 		SetAll(new, LIST, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** LIST No.3 **/
 		next = Objectof(work);
 		SetAll(new, LIST, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case VECTOR:
 	    work = Objectof(old);
@@ -173,7 +173,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, VECTOR, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** VECTOR No.1 **/
@@ -187,7 +187,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    work++; next++;
 		    gc_cell(work, next);
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** VECTOR No.2 **/
@@ -197,12 +197,12 @@ int gc_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, VECTOR, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** VECTOR No.3 **/
 		next = Objectof(work);
 		SetAll(new, VECTOR, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case STRING:
 	    work = Objectof(old);
@@ -214,7 +214,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    /** Structure Constant in Code Area **/
 		    SetAll(new, STRING, GcConstInCode(work), MRBON);
 		}
-		return;
+		return 0;
 	    }
 	    if(IsNotCopied(work)){
 		/** STRING No.1 **/
@@ -229,7 +229,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    next++; work++;
 		    *next = *work;
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** STRING No.2 **/
@@ -239,12 +239,12 @@ int gc_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, STRING, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** STRING No.3 **/
 		next = Objectof(work);
 		SetAll(new, STRING, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case NUE:
 	    work = Objectof(old);
@@ -265,7 +265,7 @@ int gc_cell(register CELL *old, register CELL *new)
 		    next++; work++;
 		    *next = *work;
 		}
-		return;
+		return 0;
 	    }
 	    if(Mrbof(work) == MRBOFF){
 		/** NUE No.2 **/
@@ -274,12 +274,12 @@ int gc_cell(register CELL *old, register CELL *new)
 		next = Objectof(next);
 		SetOldNewPointer2(work, next);
 		SetAll(new, NUE, next, MRBON);
-		return;
+		return 0;
 	    }else{
 		/** NUE No.3 **/
 		next = Objectof(work);
 		SetAll(new, NUE, next, MRBON);
-		return;
+		return 0;
 	    }
 	  case SHOEN:
 	    if(IsNotPrecCopied(Shoenof(old))){
@@ -288,16 +288,16 @@ int gc_cell(register CELL *old, register CELL *new)
 		GcGetParentRecord(parent);
 		SetAll(new, SHOEN, parent, MRBOFF);
 		gc_parent_record(Shoenof(old), Shoenof(new));
-		return;
+		return 0;
 	    }else{
 		/** SHOEN is Already Copied **/
 		SetAll(new, SHOEN, GetCopiedPrec(Shoenof(old)), MRBOFF);
-		return;
+		return 0;
 	    }
 	  DEFAULT:
 	    Error2F("Unknown Data Type (%02x  AD:%08x)\n", Typeof(old), old);
 	    new = old;
-	    return;
+	    return 0;
 	}
     }
 }
@@ -312,7 +312,7 @@ static int gc_stream_merger(CELL *old, CELL *new)
     register MERGER_RECORD *oldmg, *newmg;
     CELL wcell;
     oldmg = Mergerof(old);
-    if(IsParentAborted(oldmg->parent)){
+    if(IsParentAborted(PrecOf(oldmg->parent))){
 	GcAlloc1Word(new);
 	SetAll(new, UNDEF, NULL, MRBOFF);
     }else{
@@ -323,16 +323,16 @@ static int gc_stream_merger(CELL *old, CELL *new)
 	    SetAll(new, MGHOK, newmg, MRBON);
 	    newmg->count    = oldmg->count;
 	    newmg->priority = logical_priority;
-	    if(IsNotPrecCopied(oldmg->parent)){
+	    if(IsNotPrecCopied(PrecOf(oldmg->parent))){
 		/** 1st Access to Parent Record => Copy Record **/
-		GcGetParentRecord(newmg->parent);
-		gc_parent_record(oldmg->parent, newmg->parent);
+		{ PARENT_RECORD *gc_r_; GcGetParentRecord(gc_r_); newmg->parent = Ref(gc_r_); }
+		gc_parent_record(PrecOf(oldmg->parent), PrecOf(newmg->parent));
 	    }else{
 		/** Parent Record is Already Copied **/
-		newmg->parent = GetCopiedPrec(oldmg->parent);
+		newmg->parent = Ref(GetCopiedPrec(PrecOf(oldmg->parent)));
 	    }
-	    newmg->parent->number_of_children2++;
-	    newmg->pcode = GcProcedure(oldmg->pcode);
+	    PrecOf(newmg->parent)->number_of_children2++;
+	    newmg->pcode = Ref(GcProcedure(CodeOf(oldmg->pcode)));
 	    gc_cell(&wcell, &(newmg->output));
 	}else{
 	    newmg = Mergerof(&(oldmg->output));

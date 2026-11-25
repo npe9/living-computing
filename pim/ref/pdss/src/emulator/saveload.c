@@ -146,7 +146,7 @@ static int make_atom_table(OBJ *cp)
 
     /**** Enter Atoms in Structured Constant ****/
     if(cp < module_bottom){
-	enter_atoms_in_constant_section(cp, module_bottom);
+	enter_atoms_in_constant_section((CELL *)cp, (CELL *)module_bottom);
     }
 }
 
@@ -292,7 +292,7 @@ static int enter_atom(unsigned int atom)
 {
     register unsigned int i;
     for(i=0; atom_id_table[i] != 0xFFFF; i++){
-	if(atom == atom_id_table[i]) return;
+	if(atom == atom_id_table[i]) return 0;
     }
     atom_id_table[i] = atom;
 }
@@ -370,7 +370,7 @@ static int write_code_body(OBJ *cp, FILE *fp)
 
     /**** Write Structured Constent ****/
     if(cp < module_bottom){
-	write_constant_section(cp, module_bottom, fp);
+	write_constant_section((CELL *)cp, (CELL *)module_bottom, fp);
     }
 }
 
@@ -749,7 +749,7 @@ static int write_constant_section(CELL *p, CELL *bottom, FILE *fp)
 	  case STRING:
 	  case 0xFF:
 	    WriteChar(Typeof(p), fp);
-	    WriteLong(Valueof(p)-((int)p), fp);
+	    WriteLong(Valueof(p)-(int32_t)Ref(p), fp);
 	    break;
 	}
 	p++;
@@ -941,7 +941,7 @@ static int read_code_body(OBJ *cp, FILE *fp)
 
     /**** Read Structured Constant ****/
     if(cp < module_bottom){
-	return(read_constant_section(cp, module_bottom, fp));
+	return(read_constant_section((CELL *)cp, (CELL *)module_bottom, fp));
     }
     return(LOAD_SUCCESS);
 }
@@ -1312,7 +1312,7 @@ static int read_constant_section(CELL *p, CELL *bottom, FILE *fp)
 	  case VECTOR:
 	  case STRING:
 	  case 0xFF:
-	    va = ReadLong(fp)+((int)p);
+	    va = ReadLong(fp)+(int32_t)Ref(p);
 	    SetAll(p, ty, va, MRBON);
 	    break;
 	  default:

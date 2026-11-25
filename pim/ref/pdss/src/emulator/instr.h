@@ -461,6 +461,7 @@ extern struct instr_rec{
     int		 type;
     CHAR	 *mnem;
 } instruction_table[];
+extern unsigned int lookup_mnemonic(unsigned char *key, struct instr_rec **value);	/* instr.c (table.c) */
 
 #define GetInstrType(OP)     instruction_table[OP].type
 #define GetInstrMnemonic(OP) instruction_table[OP].mnem

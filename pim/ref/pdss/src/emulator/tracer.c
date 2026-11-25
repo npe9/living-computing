@@ -493,7 +493,7 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	set_print_file(stdout);
 	initialize_print_routine();
     }else{
-	if(!trace_on(mode, code, grec)) return;
+	if(!trace_on(mode, code, grec)) return 0;
 	SelectWindow(CONSOLE);
 	set_print_file(stdout);
 	initialize_print_routine();
@@ -502,7 +502,7 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    write_mode(mode, code, grec);
 	    write_goal(code, an, as, prec, trace_pr_length0, trace_pr_depth0); 
 	    putchar('\n');
-	    return;
+	    return 0;
 	}
 	if(trace_count > 1){
 	    trace_count--;
@@ -510,11 +510,11 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    write_mode(mode, code, grec);
 	    write_goal(code, an, as, prec, trace_pr_length0, trace_pr_depth0); 
 	    putchar('\n');
-	    return;
+	    return 0;
 	}
     }
     if(grec){
-	tracer_pcode = grec->pcode;
+	tracer_pcode = CodeOf(grec->pcode);
     }else{
 	tracer_pcode = current_predicate2;
     }
@@ -553,59 +553,59 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    continue;
 	  case TC_NO_TRACE:
 	    trace_status = NO_TRACE;
-	    return;
+	    return 0;
 	  case TC_NO_TRACE_GOAL:
 	    if(mode&(GATE_CALL|GATE_FAIL)){
 		goal_debug_status |= NO_TRACE_GOAL;
 	    }else{
 		grec->debug |= NO_TRACE_GOAL;
 	    }
-	    return;
+	    return 0;
 	  case TC_STEP:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = STEP_TRACE;
 	    default_command = TC_STEP;
-	    return;
+	    return 0;
 	  case TC_STEP_TO_SPIED_P_OR_G:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = STEP_TO_SPIED_P_OR_G;
 	    default_command = TC_STEP_TO_SPIED_P_OR_G;
-	    return;
+	    return 0;
 	  case TC_STEP_TO_SPIED_P_AND_G:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = STEP_TO_SPIED_P_AND_G;
 	    default_command = TC_STEP_TO_SPIED_P_AND_G;
-	    return;
+	    return 0;
 	  case TC_STEP_TO_SPIED_PRED:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = STEP_TO_SPIED_PRED;
 	    default_command = TC_STEP_TO_SPIED_PRED;
-	    return;
+	    return 0;
 	  case TC_STEP_TO_SPIED_GOAL:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = STEP_TO_SPIED_GOAL;
 	    default_command = TC_STEP_TO_SPIED_GOAL;
-	    return;
+	    return 0;
 	  case TC_NEXT_SPIED_P_OR_G:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = NEXT_SPIED_P_OR_G;
 	    default_command = TC_NEXT_SPIED_P_OR_G;
-	    return;
+	    return 0;
 	  case TC_NEXT_SPIED_P_AND_G:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = NEXT_SPIED_P_AND_G;
 	    default_command = TC_NEXT_SPIED_P_AND_G;
-	    return;
+	    return 0;
 	  case TC_NEXT_SPIED_PRED:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = NEXT_SPIED_PRED;
 	    default_command = TC_NEXT_SPIED_PRED;
-	    return;
+	    return 0;
 	  case TC_NEXT_SPIED_GOAL:
 	    if(!trace_set_count(argn, &argv[1])) continue;
 	    trace_status = NEXT_SPIED_GOAL;
 	    default_command = TC_NEXT_SPIED_GOAL;
-	    return;
+	    return 0;
 	  case TC_SET_DEBUG_MODE:
 	    trace_set_debug_flag(argn, &argv[1], YES);
 	    continue;
@@ -634,7 +634,7 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    trace_status = STEP_TRACE;
 	    default_command = TC_STEP;
 	    trace_count = 1;
-	    return;
+	    return 0;
 	  case TC_ENQUEUE_TO_TAIL:
 	    if(mode&(GATE_SUSP|GATE_FAIL)){
 		printf("!!! cannot use this command, now.\n");
@@ -644,7 +644,7 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    trace_status = STEP_TRACE;
 	    default_command = TC_STEP;
 	    trace_count = 1;
-	    return;
+	    return 0;
 	  case TC_DEPTH_FIRST:
 	    trace_depth_first(argn, &argv[1]);
 	    continue;
@@ -715,7 +715,7 @@ int trace(OBJ *code, int an, CELL *as, int mode, GOAL_RECORD *grec, PARENT_RECOR
 	    trace_status = NO_TRACE;
 	    io_table[1].int_code = 1;
 	    SetKeyIntFlag();
-	    return;
+	    return 0;
 	  case TC_EXIT_PDSS:
 	    if(strcmp(argv[0], "EXIT") == 0) exit_pdss(0);
 	    continue;
@@ -1142,8 +1142,8 @@ static int trace_monitor_stream(int argn, CHAR **argv)
     /*** Create Monitor Stream Goal ***/
     GetGoalRecord(grec, 3);
     number_of_children++;
-    grec->parent = parent;
-    grec->code	 = (OBJ *)dc_debug_monitor_stream;
+    grec->parent = Ref(parent);
+    grec->code	 = Ref(CodeOfFunction(dc_debug_monitor_stream));
     grec->argn	 = 3;
     SetMrbof(ref, MRBON);
     grec->args[0] = *ref;
@@ -1151,7 +1151,7 @@ static int trace_monitor_stream(int argn, CHAR **argv)
     SetAll(&(grec->args[2]), INT,    counter, MRBOFF);
     SetGoalPriority(grec, INT, MAX_PRIORITY<<PRIORITY_SIFT_WIDTH);
     grec->debug	 = NO_TRACE_GOAL;
-    grec->pcode	 = NULL;
+    grec->pcode	 = 0;
     enqueue_with_priority(grec);
     return(YES);
 }
@@ -1165,18 +1165,18 @@ int blt_b_debug_monitor_stream(CELL *x, CELL *name, CELL *count)
 
     Dereference(x);
     if(IsRef(x)){
-	body_builtin_suspend(dc_debug_monitor_stream, x,
+	body_builtin_suspend(CodeOfFunction(dc_debug_monitor_stream), x,
 			     III, x, name, count);
-	return;
+	return 0;
     }
     if(Typeof(x) == LIST){
 	var = Carof(x);
 	Dereference(var);
 	if(Mrbof(x) == MRBON) SetMrbof(var, MRBON);
 	if(IsRef(var)){
-	    body_builtin_suspend(dc_debug_monitor_stream, var,
+	    body_builtin_suspend(CodeOfFunction(dc_debug_monitor_stream), var,
 				 III, x, name, count);
-	    return;
+	    return 0;
 	}
 	fstr = YES;
     }else{
@@ -1186,29 +1186,29 @@ int blt_b_debug_monitor_stream(CELL *x, CELL *name, CELL *count)
     Dereference(name);
     if(Typeof(name) != STRING){
 	if(IsRef(name)){
-	    body_builtin_suspend(dc_debug_monitor_stream, name,
+	    body_builtin_suspend(CodeOfFunction(dc_debug_monitor_stream), name,
 				 III, x, name, count);
-	    return;
+	    return 0;
 	}else{
       exception:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 2,
 				   KL1B_B_DEBUG_MONITOR_STREAM, III,
 				   x, name, count);
-	    return;
+	    return 0;
 	}
     }
     if((StringTypeof(name)&0xE7) != 0x03) goto exception;
     Dereference(count);
     if(Typeof(count) != INT){
 	if(IsRef(count)){
-	    body_builtin_suspend(dc_debug_monitor_stream, count,
+	    body_builtin_suspend(CodeOfFunction(dc_debug_monitor_stream), count,
 				 III, x, name, count);
-	    return;
+	    return 0;
 	}else{
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 3,
 				   KL1B_B_DEBUG_MONITOR_STREAM, III,
 				   x, name, count);
-	    return;
+	    return 0;
 	}
     }
     counter = Valueof(count)-1;
@@ -1288,15 +1288,15 @@ int blt_b_debug_monitor_stream(CELL *x, CELL *name, CELL *count)
 	if(Mrbof(x) == MRBON) SetMrbof(var, MRBON);
 	GetGoalRecord(grec, 3);
 	number_of_children++;
-	grec->parent = parent;
-	grec->code   = (OBJ *)dc_debug_monitor_stream;
+	grec->parent = Ref(parent);
+	grec->code   = Ref(CodeOfFunction(dc_debug_monitor_stream));
 	grec->argn   = 3;
 	grec->args[0] = *var;
 	grec->args[1] = *name;
 	SetAll(&(grec->args[2]), INT, counter, MRBOFF);
 	SetGoalPriority(grec, INT, (MAX_PRIORITY<<PRIORITY_SIFT_WIDTH));
 	grec->debug  = NO_TRACE_GOAL;
-	grec->pcode  = NULL;
+	grec->pcode  = 0;
 	enqueue_with_priority(grec);
     }else{
       quit_monitor:
@@ -1423,7 +1423,7 @@ static int write_mode(int mode, OBJ *code, GOAL_RECORD *grec)
 
 int write_goal_record(GOAL_RECORD *goal)
 {
-    write_goal(goal->code, goal->argn, goal->args, goal->parent,
+    write_goal(CodeOf(goal->code), goal->argn, goal->args, PrecOf(goal->parent),
 	       PRINT_LENGTH, PRINT_DEPTH);
     putchar('\n');
 }
@@ -1512,7 +1512,7 @@ int display_suspended_goals(CELL *mmm)
 	    break;
 	  case MHOOK:
 	    sr = Suspof(mmm);
-	    DisplayGoal(sr->suspended, count);
+	    DisplayGoal(GrecOf(sr->suspended), count);
 	    mmm = &(sr->forward);
 	    break;
 	  default:

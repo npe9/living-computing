@@ -152,23 +152,24 @@ OBJ *find_predicate(MODULE_ENTRY *mod, unsigned int pid)
 *   Runtime Support Functions for Native Code Module.			 *
 *************************************************************************/
 
-int function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *pred, unsigned int *arity)
+int function_to_mod_pred_arity(OBJ *code, unsigned int *mod, unsigned int *pred, unsigned int *arity)
 {
+    PDSS_FUNC func = FunctionOfCode(code);
     MODULE_ENTRY *m;
     register PREDICATE_ENTRY *p;
     register int i, x;
     for(i=0; i<MODULE_TABLE_SIZE; i++){
 	m = module_id_table[i];
 	while(m){
-	    if((OBJ *)func >= m->addr && (OBJ *)func < m->addr+m->size){
-		x = HashFuncAddr(func);
+	    if(code >= m->addr && code < m->addr+m->size){
+		x = HashFuncAddr(code);
 		p = m->func_pid_hash_tbl[x];
 		while(p){
 		    if(p->function == func){
 			*mod = m->module_id;
 			*pred = p->pid&0xFFFF;
 			*arity = (p->pid>>16)&0xFFFF;
-			return;
+			return 0;
 		    }
 		    p = p->p2;
 		}
@@ -176,7 +177,7 @@ int function_to_mod_pred_arity(int (* func)(), unsigned int *mod, unsigned int *
 	    m = m->next;
 	}
     }
-    dcode_function_to_mod_pred_arity(func, mod, pred, arity);
+    dcode_function_to_mod_pred_arity(code, mod, pred, arity);
 }
 
 int rehash_predicate_table(PREDICATE_ENTRY *pt, PREDICATE_ENTRY **pft, PREDICATE_ENTRY **fpt, int pn, int ppn)
@@ -478,8 +479,8 @@ int reset_module_profile_info(unsigned int module)
     p += table_size+MODULE_HEADER_LENGTH;
     while(p+PREDICATE_HEADER_LENGTH < bottom) {
 	code_size = GetPredicateSize(p+PREDICATE_HEADER_LENGTH);
-	GetPredicateReductionCount(p+PREDICATE_HEADER_LENGTH) = 0;
-	GetPredicateSuspensionCount(p+PREDICATE_HEADER_LENGTH) = 0;
+	SetPredicateReductionCount(p+PREDICATE_HEADER_LENGTH, 0);
+	SetPredicateSuspensionCount(p+PREDICATE_HEADER_LENGTH, 0);
 	p += code_size+PREDICATE_SIZE_LENGTH;
     }
     return(MODMAN_SUCCESS);

@@ -3,9 +3,9 @@
 # build-<target>/, and reassemble the KL1 libraries with it.
 #
 #   ./modern.sh [target]       target: native (default), gcc, x86_64,
-#                              asan, low (see README.md "Targets")
+#                              asan, lp64rec (see README.md "Targets")
 #
-# A tree is the tarball unpacked (KL1 libraries, test/, sample/) with
+# A tree is a copy of src/ (KL1 libraries, test/, sample/) with
 # emulator/pdss and emulator/pdssasm built from src/emulator/.  Prints the tree's
 # path on success.  Exit 77 = this host cannot build or run the target.
 # PDSS_RUN in the environment is the prefix that runs the target's
@@ -13,7 +13,6 @@
 # build-<target>/RUN).
 set -e
 HERE=$(cd "$(dirname "$0")" && pwd)
-TAR="$HERE/../../docs/nonlocal/pdss.tar.Z"
 T=${1:-native}
 B="$HERE/build-$T"
 RUN=
@@ -31,22 +30,14 @@ case "$T" in
           [ "$(uname -m)" = x86_64 ] || RUN="arch -x86_64"
           CC=${CC:-cc}; CF="-O2 -arch x86_64 $WARN" ;;
   asan)   CC=${CC:-cc}; CF="-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize-recover=undefined $WARN" ;;
-  low)    # Transitional: the reference recipe (build.sh) applied to src/.
-          arch -x86_64 /usr/bin/true 2>/dev/null || { echo "modern($T): SKIP (no x86_64 execution)"; exit 77; }
-          CC=cc
-          CF="-arch x86_64 -O1 -std=gnu89 -w -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-error=return-type -fcommon -Dmalloc=pdss_malloc -Dfree=pdss_free -Drealloc=pdss_realloc -Dcalloc=pdss_calloc -Dmain=pdss_main"
-          LDF="-Wl,-pagezero_size,0x10000 -Wl,-no_pie -Wl,-image_base,0x100000" ;;
+  lp64rec) CC=${CC:-cc}; CF="-O2 -DPDSS_LP64_RECORDS $WARN" ;;  # layout check, see README
   *) echo "modern: unknown target $T"; exit 2 ;;
 esac
 mkdir -p "$B"
-if [ ! -d "$B/runtime" ]; then
-  gzip -dc "$TAR" | (cd "$B" && tar xf -)
-  rm -f "$B"/emulator/*.c "$B"/emulator/*.h "$B"/emulator/Makefile
-fi
+# The tree is a copy of the in-tree distribution, src/, refreshed on every
+# run; the emulator is built from src/emulator/ itself (objects in the tree).
+cp -R "$HERE/src/." "$B/"
 SHIM=
-if [ "$T" = low ]; then
-  cc -arch x86_64 -O1 -c "$HERE/src/emulator/port_low.c" -o "$B/emulator/port_low.o"; SHIM="$B/emulator/port_low.o"
-fi
 make -s -C "$HERE/src/emulator" CC="$CC" CFLAGS="$CF" LDFLAGS="${LDF:-}" SHIM="$SHIM" O="$B/emulator" >"$B/make.log" 2>&1 \
   || { cat "$B/make.log"; echo "modern($T): FAIL (build)"; exit 1; }
 echo "$RUN" > "$B/RUN"

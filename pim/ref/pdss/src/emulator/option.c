@@ -55,7 +55,7 @@ static int read_option_sub(CHAR *s)
     int	 x;
 
     for(;;){
-	while(*s <= ' ') if(*s++ == 0) return;	/* Skip Space */
+	while(*s <= ' ') if(*s++ == 0) return 0;	/* Skip Space */
 	if(*s == '-' || *s == '+'){
 	    f = *s++;
 	    while(*s > ' '){
