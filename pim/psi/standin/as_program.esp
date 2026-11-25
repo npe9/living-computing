@@ -1,0 +1,71 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_program`, compiled by
+% psi/espc.py into the package `simpos`.  The class text is PRINTED
+% SOURCE, not ours: TM-100 Figure 3.3 "Part of class 'as_program'" (PDF
+% p11, printed folio 9; caption on PDF p12), as transcribed in
+% docs/simpos/printed/listings/tm0100_p11.esp.  The figure is "part of"
+% the class: SIMPOS's full `as_program` is lost.  Layout as printed,
+% comments as printed; nothing is corrected.
+%
+% Every method below is PRINTED (each labelled); nothing here is
+% INTERPOLATED.  TM-100's prose (PDF p11): "On invocation of a program,
+% the program is pushed onto the invocation stack of the process and the
+% instance predicate :goal(Program) is called.  When the goal finishes,
+% the program is popped from the invocation stack.  If the stack becomes
+% empty, the process terminates."
+%
+% What the figure leaves out stays SIMPOS, and kl0 refuses it as a
+% SIMPOS call: process's add_program/2, remove_program/2, no_program/1
+% and die/1 (sent by assign/1, resign/1 and resign_core/1), and the
+% as_program methods held code sends that the figure does not print
+% (exit/1, class_object/2, read/4, reset/4, carriage_return/1: kl0
+% census --fep, 2026-11-24).
+%
+% Method combination (TM-388 §3.4): a class that inherits as_program and
+% defines its own goal/1 has two primaries, its own first, then the
+% printed default below; they are tried as alternatives.
+
+    class  as_program  has
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :create(Class, Program) :- !,
+            :new(Class, Program), ! ;
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :goal(Program) ;
+                % A top-level predicate with a default name.
+                % This must be overridden by a user program.
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :assign(Program) :- !,
+                % Push Program into 'invocation_stack'.
+            :self(#process, Process),
+            :add_program(Process, Program), ! ;
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :resign(Program) :- !,
+                % Pop Program from 'invocation_stack'.  If it is the root
+                % program, then the process dies.
+            :self(#process, Process),
+            :remove_program(Process, Any_program),
+            (   :no_program(Process), !,
+                :die(Process)
+            ;   true ), ! ;
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :resign_core(Program) :- !,
+                % Pop Program from 'invocation_stack'.
+            :self(#process, Process),
+            :remove_program(Process, Any_program), ! ;
+
+    % PRINTED: TM-100 Fig. 3.3, PDF p11
+    :invoke(Program) :- !,
+                % Invoke the default goal.
+            :assign(Program),
+            (   :goal(Program), !,
+                :resign(Program)
+            ;   :resign(Program),
+                fail ), ! ;
+
+    end.

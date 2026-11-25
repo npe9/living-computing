@@ -622,6 +622,13 @@ class Machine:
                 # a stand-in (psi/standin/, OURS) has only some of the
                 # lost class's methods: the rest is still SIMPOS
                 raise Refusal('simpos', 'send %s:%s/%d (not in the stand-in)' % (cid, name, arity))
+            partial = [c for c in co.order if getattr(self.lib.templates.get(c), 'standin', False)]
+            if partial:
+                # step 3e: an ancestor is a stand-in, which holds only part
+                # of the lost class, so a missing primary may be in the
+                # lost part: still SIMPOS, as for an unloaded ancestor
+                raise Refusal('simpos', 'send %s:%s/%d (no primary in the held classes; stand-in ancestors %s)'
+                              % (cid, name, arity, ' '.join(partial)))
             if m is None:
                 # not in the class's own table: a method of class `class`
                 # (not held, other than new/2), or one a mixin leaves to

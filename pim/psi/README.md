@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3). |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -1120,6 +1120,77 @@ becomes 667 / 120 / 478.
     fails.
   - On a fresh machine, `locked/1` fails with or without f2, as the
     other tables' `locked/1` do.
+
+### Step 3e: `as_program`, PRINTED, and the program stack (2026-11-24)
+
+`simpos##as_program` was the largest single SIMPOS blocker. Grouped by
+ancestor, 30 FEP refusals were sends that fell to it: `create/2` 19,
+`exit/1` 5, `class_object/2` 3, and others. A body is printed: TM-100
+Figure 3.3, "Part of class 'as_program'" (PDF p11, transcribed in
+`docs/simpos/printed/listings/tm0100_p11.esp`).
+
+- **`standin/as_program.esp`** is that figure verbatim: `create/2`,
+  and the instance methods `goal/1` (the default, a fact), `assign/1`,
+  `resign/1`, `resign_core/1` and `invoke/1`. Every method is labelled
+  PRINTED; nothing is corrected.
+- **`process`** gains four INTERPOLATED methods, which the figure sends:
+  - `add_program/2` and `remove_program/2` push and pop the printed
+    `invocation_stack` list, with the top first (OURS);
+  - `no_program/1` tests that the stack is empty;
+  - `die/1` sets the status to `nil`, the printed slot comment's
+    "nil(=dead)". Nothing is released.
+
+  The sources are TM-100 p11's prose ("pushed onto the invocation stack
+  ... popped ... If the stack becomes empty, the process terminates")
+  and the figure's own comments.
+- **kl0: a missing primary under a stand-in ancestor stays SIMPOS.** A
+  stand-in is only part of the lost class. So when a class with a
+  stand-in in its inheritance order has no primary for a selector, kl0
+  now refuses the send as `simpos` ("no primary in the held classes;
+  stand-in ancestors ..."), as it does for an unloaded ancestor.
+  - Without this rule, loading `as_program` turned 7 refusals (the
+    demon-only `exit/1`, `reset/4`, `carriage_return/1`) into failures,
+    and one (`as_pimos_login_requester goal/1`) into "no method".
+  - On the tree before `as_program`, the rule changes no census row.
+
+Tests (`test_espc.py` `test_step3e_as_program`):
+
+- `assign/1` pushes and leaves the process alive.
+- `resign_core/1` pops and leaves it alive.
+- `invoke/1` of the printed default goal pushes, runs it, pops, and
+  kills the process (status `nil`).
+- `create/2` inherited by `pimos_timer` makes a `pimos_timer`.
+- `pimos_window_editor carriage_return/1` (demons only) refuses as
+  SIMPOS.
+
+Effect on the FEP census, compared method by method: 1,265 / 667 / 120
+/ 478 becomes 1,403 / 782 / 121 / 500 (methods / success / failure /
+refused).
+
+- **138 new methods**: the inherited `create/2` (26 classes),
+  `assign/1`, `invoke/1`, `resign/1` and `resign_core/1` (28 each).
+  - 109 succeed.
+  - 28 refuse, all `invoke/1`. They stop in the class's own `goal/1`:
+    13 at a `put/2` to an unset 0 slot, 3 at `library:assign/1`, and
+    others.
+  - 1 fails: `pimos_timer resign_core/1`. The census runs every method
+    on the one process. `pimos_timer`'s `resign/1` has just emptied the
+    stack, so `resign_core/1` finds it empty. Later classes'
+    `resign_core/1` succeed, because each refused `invoke/1` leaves its
+    program on the stack.
+- **6 move from refused to success**: the create methods that stopped at
+  `create/2`. These are `fep_scsi_output create/7`,
+  `pimfep_message_receiver create/8`, `pimfep_message_sender create/6`,
+  `pimos_fep_superviser create/5`, `pimos_socket_receiver create/5` and
+  `pimscsi_fep create/3`.
+- **24 stop later**:
+  - 11 at `process:status/3`, which the printed `activate/2` sends
+    (`directory/10`, `create/9`, the `*_open/10`, `create_timer/9`,
+    ...);
+  - 11 at the stand-in rule above;
+  - 1 at `process:invocation_stack/2` and 1 at
+    `abort_handler:create/2`.
+- No method moved out of success.
 
 ## Open
 
