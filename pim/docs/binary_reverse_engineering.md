@@ -990,12 +990,28 @@ the device are given it again whenever the machine runs dry.
        reductions, 1607 suspended goals, and the same trace but for
        what moves (M lines, addresses, the pc of moved code). The
        first collection takes the heap from 77.86M cells to 1.88M.
-       Three injections observed in its header. Gated
-       (`Machine.ahead`) until the core has its collector.
-    3. On the core, a box of its own (the PimmPBox pattern: its own
-       memory port), the same algorithm step for step, with a lockstep
-       test on the K line's checksum.
-    4. Add APPS `gc`.
+       Three injections observed in its header. (Gated by
+       `Machine.ahead` until stage 3; no longer.)
+    3. **On the core (stage 3, done).** `bsv/PimmGcBox.bsv`, a box
+       of its own (the PimmPBox pattern: its own memory port,
+       `port[11]`, its writes untraced), the same algorithm step for
+       step, one StmtFSM per routine of `pimm_gc.py`; `PimmCore`
+       collects at `pick_or_fire` before the alarm, as `run()` does.
+    4. **APPS (stage 4, done).** `gc` (89,179 instructions, 368,543
+       trace lines) and `gc_listener` (r7g_gc.py's session: 1,752,873
+       instructions, 7,880,429 lines, both K lines) run in lockstep,
+       every line identical, the K lines' checksums included
+       (`K gc 32768 77892213 77892213 79768684 a8652141`; the second
+       `K gc 77892213 82173730 32768 2452104 638807af`, back to the
+       heap's base). Three injections in the box, observed:
+       `bsv/README.md`, "Commands past the shell". The shell's `gc`
+       prints nothing but its prompt (`shell/utils/gc.kl1` `go/0`:
+       `gcCall` on each other processor, then its own; nothing is
+       written); the manual prints no gc transcript, so the
+       window's only check is that prompt. Not run: a collection with
+       goals parked in a shoen, a `to_processor` goal, a non-empty
+       merger list, an armed alarm (no session here makes them at a
+       collection).
   - **`ls`** (R7, 2026-11-25; INFERENCE, the owner's rule of
     2026-11-25 "It's okay to infer what you don't have"). 204's own
     reply is documented (`{Id, 1}`, `fep_services.md` §2.3); the

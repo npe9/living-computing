@@ -3582,11 +3582,11 @@ class Machine:
     # writes one cell and a work register and ends, so it only asks;
     # the collection is made at the next goal switch (run).  The guard
     # succeeds.  The request is not machine memory: no trace line until
-    # the collection's K line
+    # the collection's K line.  The core's: PimmGcBox.bsv, the same
+    # collection step for step (lockstep_shell APPS gc, gc_listener)
     gc_request = False
 
     def i_collect_garbage(self, pc, x, y, z, c16):
-        self.alone('collect_garbage')       # until the core has its collector
         self.gc_request = True
 
     def i_read_eagerly(self, pc, x, y, z, c16):

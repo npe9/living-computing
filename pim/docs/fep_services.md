@@ -481,8 +481,10 @@ Weaker than the source allows, or to check:
   INFERENCE from `pimos_window_editor reshape_by_mouse/3`, §6.2 and
   §6.8, its body not walked). The FEP emulator answers it the same
   (`PimmFepEmu.bsv` `windowAnswered`, `direct_kernel.tape`).
-  Not served, met by commands typed (`binary_reverse_engineering.md`
-  1.4, "Commands past the shell"): 204 (directory) for `ls`.
+  Not served until 2026-11-25, met by commands typed
+  (`binary_reverse_engineering.md` 1.4, "Commands past the shell"):
+  204 (directory) for `ls`; now served with 237 and 60 on it, the
+  listing's form INFERENCE (§2.3's note, U7).
   (2026-11-25, R7) Served: one home file, the primer's `sample1.kl1`
   (`longrun_ipl.HOME_FILES`, its text read from `primer25.tex.Z`
   lines 592-605 at run time), and 221 (pathname) and 222 (attributes)

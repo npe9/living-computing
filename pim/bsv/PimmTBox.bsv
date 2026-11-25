@@ -36,6 +36,9 @@ interface PimmTBox;
   method Bit#(32) time_;
   method Action fire(Bit#(32) now);
   method Action fired;
+  // R7G: the armed alarm's Wakeup, a root of the garbage collector
+  method Cell wakeup;
+  method Action setWakeup(Cell c);
 endinterface
 
 // a time t is reached at now: (now - t) mod 2^32 < 2^31
@@ -156,6 +159,10 @@ module mkPimmTBox#(PimmGBox gbox, PimmDBox dbox)(PimmTBox);
   method Bit#(32) time_ = atime;
   method Action fire(Bit#(32) now) = reqQ.enq(tagged Fire now);
   method Action fired = firedQ.deq;
+  method Cell wakeup = avar;
+  method Action setWakeup(Cell c) if (st == TIdle);
+    avar <= c;
+  endmethod
 endmodule
 
 endpackage

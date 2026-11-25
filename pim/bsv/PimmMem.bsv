@@ -3,7 +3,8 @@
 // instruction fetch, the hash box, the data box, the goal box, the
 // string box, the execute stage's structure reads and writes, the
 // vector box, the merger box, the shoen box, the SCSI box and, since
-// 2026-11-25, the passive-unification box).  Every write is traced here, when it is
+// 2026-11-25, the passive-unification box and the garbage-collection
+// box, whose writes are not traced: MemPort.quiet).  Every write is traced here, when it is
 // requested: the machine does one thing at a time, so request order is
 // the order of events, and the address and data printed are the ones
 // queued for the RAM.
@@ -18,9 +19,12 @@ interface MemPort;
   method Action read(Addr a);
   method Action write(Addr a, Cell d);
   method ActionValue#(Cell) data;        // the answer to a read, in order
+  // a write that is not traced: the garbage collector's (R7G,
+  // PimmGcBox.bsv), whose one trace line is its K line
+  method Action quiet(Addr a, Cell d);
 endinterface
 
-typedef 11 MemClients;
+typedef 12 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;
@@ -101,6 +105,9 @@ module mkPimmMem#(String file, String heapFile)(PimmMem);
       method ActionValue#(Cell) data;
         resps[i].deq;
         return resps[i].first;
+      endmethod
+      method Action quiet(Addr a, Cell d);
+        reqs.enq(MemReq { who: fromInteger(i), wr: True, addr: a, data: d });
       endmethod
     endinterface);
   endfunction

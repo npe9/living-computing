@@ -28,6 +28,7 @@ import PimmShBox::*;
 import PimmScsiBox::*;
 import PimmPBox::*;
 import PimmTBox::*;
+import PimmGcBox::*;
 
 interface PimmFetch;
   method Action enq(Addr pc);
@@ -107,7 +108,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                    PimmSBox sbox, PimmVBox vbox, PimmMBox mbox, PimmNBox nbox,
                    MemPort smem,
                    PimmShBox shbox, PimmScsiBox scsi, PimmPBox pbox,
-                   PimmTBox tbox)(PimmExec);
+                   PimmTBox tbox, PimmGcBox gcbox)(PimmExec);
   Reg#(Maybe#(Addr)) alt     <- mkReg(tagged Invalid);  // next clause on guard failure
   // the variables guards wanted bound, in the order met (a variable
   // met twice is there twice)
@@ -394,6 +395,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     // eager read of external references (TM-1044).  One processor has
     // none: nothing is done, the variables noted so far stay noted
     else if (op == op_read_eagerly) next;
+    // collect_garbage, 23:77 (R7G, INFERENCE: its microcode, 02d5-02d7,
+    // only asks): the collection at the next goal switch (PimmGcBox.bsv,
+    // PimmCore pick_or_fire); the guard succeeds
+    else if (op == op_collect_garbage) begin
+      gcbox.request;
+      next;
+    end
     else if (isWaitAtom) begin
       dbox.deref(regs.r(zeroExtend(ins.val[28:24])));
       st <= XDeref1;

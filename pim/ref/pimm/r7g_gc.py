@@ -15,8 +15,10 @@ primer's compile of sample1 into the package work (APPS compile_work),
     listener / default_package(work). / sample1:sieve([1,2,3],E,O).
 
 Two runs from the checkpoint, each in a process of its own (fork),
-Machine.ahead set (collect_garbage is the reference's alone until the
-core has its collector):
+Machine.ahead set (it was needed while collect_garbage was the
+reference's alone; since the core's PimmGcBox.bsv, 2026-11-25, the same
+session runs in lockstep, APPS gc_listener, and this test is the
+collection against none):
 
 1. Collected (ref/pimm/pimm_gc.py, INFERENCE/OURS: its header).
 2. Not collected: collect_garbage still asks, the request is dropped.

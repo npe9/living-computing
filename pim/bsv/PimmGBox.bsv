@@ -90,6 +90,14 @@ interface PimmGBox;
   // a checkpoint (ref/pimm/lockstep_shell.py): the heap pointer of the
   // machine saved, between runs, the queues empty
   method Action setHp(Addr a);
+  // R7G, the garbage collector (PimmGcBox.bsv), at a goal switch: the
+  // roots it moves, and what it gives back
+  method Addr hpOf;
+  method Addr rqOf;
+  method Addr mqOf;
+  method Addr mwHOf;
+  method Addr mwTOf;
+  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur);
 endinterface
 
 typedef union tagged {
@@ -630,6 +638,19 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method Action unpark(Addr goal) = reqQ.enq(tagged Release goal);
   method Action setHp(Addr a) if (st == GIdle);
     hp <= a;
+  endmethod
+  method Addr hpOf = hp;
+  method Addr rqOf = rq;
+  method Addr mqOf = mq;
+  method Addr mwHOf = mwH;
+  method Addr mwTOf = mwT;
+  method Action gcSet(Addr nrq, Addr nmq, Addr nmwH, Addr nmwT, Addr nhp, Addr ncur) if (st == GIdle);
+    rq <= nrq;
+    mq <= nmq;
+    mwH <= nmwH;
+    mwT <= nmwT;
+    hp <= nhp;
+    cur <= ncur;
   endmethod
 endmodule
 
