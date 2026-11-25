@@ -251,6 +251,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import espc  # noqa: E402
 import kl0 as K  # noqa: E402
+import simpos_fs as FS  # noqa: E402
 
 _CHECK = None
 _LIB_SIX = None
@@ -590,18 +591,19 @@ class Standins(unittest.TestCase):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
-            'simpos##boot_process',
+            'simpos##binary_file', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
-            'simpos##common_network', 'simpos##context', 'simpos##date_time',
-            'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##common_network', 'simpos##context', 'simpos##coordinator',
+            'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
+            'simpos##e_string', 'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
-            'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
+            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
-            'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
-            'simpos##trace', 'simpos##waiting_frame', 'simpos##waiting_queue',
-            'simpos##with_link', 'simpos##with_lock'])
+            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
+            'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
+            'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
         held = {
@@ -1278,13 +1280,22 @@ end.''', 'simpos')
         # and stop at class_object of 1900544 on the not_assigned path.
         # Not progress: the held rows' outcomes are unchanged (767 / 221 /
         # 415 over the 1,420)
-        self.assertEqual((len(rows), out), (1466, {'success': 801, 'failure': 233, 'refused': 415, 'exception': 16,
+        # step 3l: simpos_user create/4 now fails at identify/4 (no user is
+        # registered in a census row: the registry is a class slot, which
+        # the census drops), where it was refused: not progress.  801 /
+        # 234 / 414.  Step 3l, the window stand-ins: pimos_fep_superviser
+        # log_size_input_window/2 makes its window (OURS) and succeeds; the
+        # login requester's three rows move to get_number/2 on its
+        # process's context, unset in a census row.  802 / 234 / 413
+        self.assertEqual((len(rows), out), (1466, {'success': 802, 'failure': 234, 'refused': 413, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
         # assigned/1 is as_resource's alone (assign/1 is as_program's too)
         self.assertEqual(sorted(r[3] for r in rows if r[2] == 'assigned/1'), ['failure'] * 6)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 154)
+        # slot constants 154 -> 157 in step 3l: the login requester's three
+        # rows (get_number/2 to its process's unset context)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 157)
         self.assertNotIn('simpos##process:status/3', {K.simpos_target(r[5]) for r in rows})
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1372,11 +1383,13 @@ end.''', 'simpos')
         # editor's get_position/3 and get_inside_size/3 pass put_integer
         # `ffff` and stop at put/2 on the window's unset output stream (a
         # slot constant, the step 3g artifact).  828 / 234 / 387, slot
-        # constants 105 -> 107
-        self.assertEqual((len(rows), out), (1466, {'success': 828, 'failure': 234, 'refused': 387,
+        # constants 105 -> 107.  Step 3l: simpos_user create/4 fails at
+        # identify/4 (no registry in a census row): 828 / 235 / 386; the
+        # window stand-ins, as in test_fep_census: 829 / 235 / 385
+        self.assertEqual((len(rows), out), (1466, {'success': 829, 'failure': 235, 'refused': 385,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 107)
+        self.assertEqual(slot_const, 110)   # step 3l: 107 -> 110, as in test_fep_census
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -1403,9 +1416,13 @@ end.''', 'simpos')
         # pimos_file: with the open mode `read` (step 3g), initiate/1 and
         # goal/1 reach the SIMPOS directory (step 3f's failure and
         # success were on a stream in the open-mode argument)
+        # step 3l: the directory's retrieve/3 is modelled (INTERPOLATED,
+        # kl0 directory_retrieve); the recipe gives no pathname, so it
+        # refuses on the unbound one
         for sel in ('initiate/1', 'goal/1'):
-            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'simpos'))
-            self.assertIn('simpos##directory:retrieve/3', by[('pimos_file', 'instance', sel)][2])
+            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'unbound argument'))
+            self.assertIn('directory retrieve/3 on an unbound pathname',
+                          by[('pimos_file', 'instance', sel)][2])
         # step 3g: the device replies to the request REQUEST_ID
         for c in ('pimos_timer', 'pimos_directory', 'pimos_window_process', 'pimos_file',
                   'simpos_user_device', 'pimos_remote_login_replier', 'pimos_standard_io_window',
@@ -2064,6 +2081,368 @@ end.'''
         # the two integers in the order of get_count(D, Date, Time)
         m, s = self.b4_run(304, dt)
         self.assertEqual(s['r2'].codes(), [16, 0, 1, 2, 0xffffffff, 0xffffffff, 33000, 45678])
+
+    def fs_machine(self, extra=''):
+        # step 3l: the stand-ins (and EXTRA, OURS probes) on a fresh machine
+        # with the file system of psi/simpos_fs.py mounted (OURS population
+        # from the HELD psdpim archive and its HELD INSTALL placement)
+        lib = K.load_six()
+        ts = []
+        if extra:
+            ts, failed = espc.compile_text(extra, 'simpos')
+            self.assertFalse(failed)
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib, max_steps=600000)
+        FS.mount(m)
+        return m
+
+    @staticmethod
+    def run_local(m, cid, off, args):
+        # a held local predicate at @OFF run alone: its first solution's
+        # arguments, 'fail', or ('refused', cause, detail)
+        m.reset()
+        try:
+            for _ in m.solve((m.code(cid), off), args):
+                return [K.resolve(a) for a in args]
+        except K.Refusal as e:
+            return ('refused', e.cause, e.detail)
+        return 'fail'
+
+    def test_step3l_b5(self):
+        # step 3l, docs/simpos/boot_route.md B5: the directory.  The tree is
+        # psi/simpos_fs.py's (OURS population; placement and contents HELD:
+        # psdpim/INSTALL and the archive's members); retrieve/3 and /4 are
+        # kl0 models (INTERPOLATED from the printed interfaces, TR-056 PDF
+        # p22-p23, TR-524 PDF p9, p36-p37, and the held call sites); the
+        # nodes are standin/directory.esp and binary_file.esp.
+        # Injections, observed (2026-11-25, re-run at the step 3l window
+        # commit fb5187d5 so later tests count; each from a backup copy,
+        # restored by copy, cmp clean):
+        #   L1 fs_walk ignores an explicit version (kl0.py): this test FAIL,
+        #      nothing else.
+        #   L2 a miss succeeds with the parent directory (kl0.py fs_walk
+        #      returns the last node found): this test, test_step3l_b7 and
+        #      test_step3l_b6_b8 FAIL, nothing else.
+        #   L3 a file's full name without its version (simpos_fs.py
+        #      mount): this test, test_step3l_b7 and test_step3l_b6_b8
+        #      FAIL, nothing else.
+        #   L4 binary_file not_directory/1 fails: this test FAIL, nothing
+        #      else.
+        #   L5 node_full_name/3 succeeds for any name
+        #      (network_node_name.esp): this test, test_fep_census and
+        #      test_step3f_census_recipes FAIL (the census row
+        #      set_default_node/2 succeeds on its unbound name), nothing
+        #      else.
+        #   test_kl0.py stayed OK in L1-L5.
+        D = K.ClassRef('simpos##directory')
+        m = self.fs_machine()
+
+        def retrieve(path, n=4):
+            m.reset()
+            obj, full = K.Var(), K.Var()
+            regs = [obj, K.Str(path)] + ([full] if n == 4 else []) + [D]
+            for _ in m.solve_send(D, 'retrieve', regs):
+                return K.deref(obj), (K.deref(full).text if n == 4 else None)
+            return None
+        # the HELD login.com is at me: (>sys>user>pmpsi, INFERENCE), its
+        # first line the stamp of the copy it was made from
+        f, full = retrieve('>sys>user>pmpsi>login.com')
+        self.assertEqual(f.cid, 'simpos##binary_file')
+        self.assertEqual(full, '>sys>user>pmpsi>login.com.1')
+        text = FS.text_of(m.get_slot(f, 'contents').codes())
+        self.assertTrue(text.startswith('% icpsi277::>sys>csp>INSTALL.DIR>login.com.8,'), text[:60])
+        self.assertIn('{"Login PIMOS", pimfep##pimos_login_requester}', text)
+        self.assertEqual(m.get_slot(f, 'size'), 2448)
+        # an explicit version; a version not held; a directory (no version)
+        self.assertIs(retrieve('>sys>user>pmpsi>login.com.1')[0], f)
+        self.assertIsNone(retrieve('>sys>user>pmpsi>login.com.2'))
+        d, dfull = retrieve('>sys>csp>INSTALL.DIR')
+        self.assertEqual((d.cid, dfull), ('simpos##directory', '>sys>csp>INSTALL.DIR'))
+        self.assertEqual(retrieve('>sys>csp>INSTALL.DIR>pimfep.ptf', 3)[0].cid, 'simpos##binary_file')
+        # a miss fails (the held callers' fallback clauses), as does a
+        # path through a file or with an empty component
+        for miss in ('>sys>user>pmpsi>nope.com', '>sys>user>pmpsi>login.com>x', '>sys>>csp',
+                     'pimos:pimfep.image', 'login.com'):
+            self.assertIsNone(retrieve(miss), miss)
+        # the root (TR-056 PDF p22's printed :root(#directory, Root))
+        m.reset()
+        (root,) = K.call_class_method(m, 'simpos##directory', 'root', [K.Var()])[0]
+        self.assertEqual(m.get_slot(root, 'full_name').text, '>')
+        # held pimfep##pimos_file local check_file_size/1 @3d1: retrieve/3,
+        # not_directory/1, size/2, size >= 1
+        pf = 'pimfep##pimos_file'
+        self.assertNotEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>user>pmpsi>login.com')]), 'fail')
+        self.assertEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>csp>PIMOS.DIR')]), 'fail')
+        self.assertEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>nope')]), 'fail')
+        # held pimos_fep_superviser local full_pathname/1 @1bc: clause 1
+        # misses "pimos:pimfep.image" (no world defines pimos: yet, and the
+        # image is not in the archive), so clause 2 asks the coordinator
+        # for an image file name: until B6 (test_step3l_b6_b8) that send
+        # refused (class not loaded); now no login file was read, the
+        # coordinator has no such item, and full_pathname/1 fails
+        r = self.run_local(m, 'pimfep##pimos_fep_superviser', 0x1bc, [K.Var()])
+        self.assertEqual(r, 'fail')
+        # held pimfep##net_spawn_user set_default_node/2 @29-36 with this
+        # node's name (network_node_name's "psi", OURS): its full name is
+        # stored; another name fails (INFERENCE: get_your_node/3's later
+        # clauses take it as an IP address)
+        m.reset()
+        self.assertEqual(len(K.call_class_method(m, 'pimfep##net_spawn_user', 'set_default_node',
+                                                 [K.Str('psi')])), 1)
+        self.assertEqual(m.get_slot(K.ClassRef('pimfep##net_spawn_user'), 'default_spawn_node').text, 'psi')
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'pimfep##net_spawn_user', 'set_default_node',
+                                             [K.Str('10.1.2.3')]), [])
+        # nothing mounted: refused loudly
+        m.class_slots = {}
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str('>sys'), D]))
+        self.assertIn('no file system is mounted', cm.exception.detail)
+
+    def login(self, m, name='pmpsi', password='pmpsi'):
+        # step 3l, B7: the held pimfep##simpos_user create/4 (identify,
+        # world, "me" := ["user:NAME"], default "me") and setup_process/2
+        # on the calling process.  -> (simpos_user, process) or None
+        m.reset()
+        r = K.call_class_method(m, 'pimfep##simpos_user', 'create', [K.Str(name), K.Str(password), K.Var()])
+        if not r:
+            return None
+        su = r[0][2]
+        m.reset()
+        (p,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])[0]
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(su, 'setup_process', [p, su])))
+        return su, p
+
+    def test_step3l_b7(self):
+        # step 3l, docs/simpos/boot_route.md B7: login.  The held
+        # pimfep##simpos_user create/4 and setup_process/2 run to their ends
+        # on the stand-ins user, world and password_list (INTERPOLATED from
+        # those held sends; the registry, the password and the rank OURS)
+        # and pathname append/4 (HELD-SOURCE, its CESP conversion replaced
+        # by an INFERENCE).  The logged-in process's world then resolves
+        # `me:` (directory_retrieve, step 3l B5).
+        # Injections, observed (2026-11-25, re-run at fb5187d5; each from
+        # a backup copy, restored by copy, cmp clean):
+        #   M1 identify/4 ignores the password (user.esp): this test FAIL,
+        #      nothing else.
+        #   M2 define/3 appends instead of prepending, so a redefinition
+        #      does not shadow (world.esp): this test FAIL, nothing else.
+        #   M3 retrieve ignores the world's default logical name (kl0.py):
+        #      this test FAIL, nothing else.
+        #   M4 pathname append/4 back to the port's convert_to_8: this test
+        #      ERROR (cesp##string not loaded), test_step3l_b6_b8 and
+        #      test_step3l_b8_prompt FAIL (login refused), nothing else.
+        #   test_kl0.py stayed OK in M1-M4.
+        m = self.fs_machine()
+        D = K.ClassRef('simpos##directory')
+
+        def full_name(path):
+            m.reset()
+            f = K.Var()
+            for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str(path), f, D]):
+                return K.deref(f).text
+            return None
+        # before login: no world, so me: and a bare name miss
+        self.assertIsNone(full_name('me:login.com'))
+        self.assertEqual(full_name('user:pmpsi>login.com'), '>sys>user>pmpsi>login.com.1')
+        # a wrong password: identify/4 fails, so create/4 fails
+        self.assertIsNone(self.login(m, password='wrong'))
+        self.assertIsNone(self.login(m, name='nobody'))
+        su, p = self.login(m)
+        self.assertEqual(su.cid, 'pimfep##simpos_user')
+        u = m.get_slot(p, 'user')
+        self.assertEqual((u.cid, m.get_slot(u, 'name').text), ('simpos##user', 'pmpsi'))
+        w = m.get_slot(p, 'world')
+        self.assertIs(m.get_slot(su, 'world'), w)
+        self.assertEqual(m.get_slot(w, 'default').text, 'me')
+        pl = m.get_slot(p, 'password_list')
+        self.assertEqual(m.get_slot(pl, 'access_mode'), K.Atom('general'))
+        self.assertEqual([x.text for x in self._walk(m.get_slot(pl, 'passwords'))], ['pmpsi'])
+        # the printed class form :world(#process, W) (TR-056 PDF p25)
+        m.reset()
+        self.assertIs(K.call_class_method(m, 'simpos##process', 'world', [K.Var()])[0][0], w)
+        m.reset()
+        self.assertIs(K.call_class_method(m, 'simpos##user', 'user', [K.Var()])[0][0], u)
+        # me: = user:pmpsi = >sys>user>pmpsi; a bare name is under me:
+        self.assertEqual(full_name('me:login.com'), '>sys>user>pmpsi>login.com.1')
+        self.assertEqual(full_name('login.com'), '>sys>user>pmpsi>login.com.1')
+        self.assertEqual(full_name('me:'), '>sys>user>pmpsi')
+        self.assertIsNone(full_name('pimos:pimfep.image'))
+        # a later define shadows an earlier one (login.com redefines "me")
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(
+            w, 'define', [K.Str('me'), K.Cons(K.Str('>sys>csp'), K.NIL), w])))
+        self.assertEqual(full_name('me:INSTALL.DIR'), '>sys>csp>INSTALL.DIR')
+        self.assertIsNone(full_name('me:login.com'))
+
+    B8_PROBES = '''class b8_boot has
+nature as_boot_program;
+instance
+attribute events := 0;
+:goal(Prog) :-
+    :create(#boot_process, B), :activate(B, Prog),
+    :create(#pimfep##simpos_user, "pmpsi", "pmpsi", SU),
+    :self(#process, P), :setup_process(SU, P),
+    :start(#coordinator),
+    put_events(Prog!events),
+    :create(#stream, Idle), :get(Idle, _);
+local
+put_events([]) :- !;
+put_events([E|Es]) :- :put(#coordinator!events, E), put_events(Es);
+end.'''
+
+    def boot_to_top(self, events):
+        # step 3l, B2-B8 on one machine: the boot program (OURS probe) comes
+        # under the supervisor (B3), logs in as pmpsi with the held
+        # simpos_user create/4 and setup_process/2 (B7), starts the
+        # coordinator process (B6, OURS), puts EVENTS on the coordinator's
+        # stream (OURS: standing in for the mouse and the menu's answer)
+        # and waits for ever on a stream of its own.  -> (machine, the
+        # refusal that ended the run)
+        m = self.fs_machine(self.B8_PROBES)
+        (prog,) = K.call_class_method(m, 'simpos##b8_boot', 'create', [K.Var()])[0]
+        t = K.NIL
+        for e in reversed(events):
+            t = K.Cons(e, t)
+        m.set_slot(prog, 'events', t)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(prog, 'invoke', [prog]))
+        return m, cm.exception
+
+    @staticmethod
+    def jstr(text):
+        s = K.Str('')
+        s.text = text
+        return s
+
+    def test_step3l_b6_b8(self):
+        # step 3l, docs/simpos/boot_route.md B6 and B8: from the boot process
+        # to a program started from the system menu.  The coordinator
+        # (standin/coordinator.esp, coordinator_program.esp: OURS, labelled)
+        # reads the HELD login.com through standard_input_file gett/2 (the
+        # reader OURS, psi/esp_reader.py), applies its `define` to the
+        # world, holds its `menu` columns and answers information/3.  On
+        # `invoke_system_menu` (the printed translation-table action, TR-046
+        # PDF p28) and {select, "Login PIMOS"} (OURS) it starts the item's
+        # class in a new process the way TM-134 p71 prints: create, create
+        # (#process), activate.  The held pimfep##pimos_login_requester then
+        # runs in that process (to its prompt: test_step3l_b8_prompt).
+        # Injections, observed (2026-11-25, re-run at fb5187d5; each from
+        # a backup copy, restored by copy, cmp clean):
+        #   N1 gett/2 does not advance (kl0.py): this test and
+        #      test_step3l_b8_prompt ERROR (kl0.StepLimit 600001: the login
+        #      file is read for ever), nothing else.
+        #   N2 a `define` item is taken as a user item (coordinator.esp):
+        #      this test FAIL (pimos: unresolved), nothing else.
+        #   N3 a select searches the menu, shown or not (coordinator.esp,
+        #      the guard dropped too): this test FAIL (the no-menu select
+        #      started a process), nothing else.
+        #   N4 the reader's atoms without `##` (esp_reader.py): this test
+        #      and test_step3l_b8_prompt FAIL (the reader refuses at `##`),
+        #      nothing else.
+        #   N5 information/3 succeeds with [] for an absent key
+        #      (coordinator.esp): this test FAIL, nothing else.
+        #   test_kl0.py stayed OK in N1-N5.
+        login = self.jstr('Login PIMOS')
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])])
+        # the stop: until the window stand-ins (test_step3l_b8_prompt) the
+        # held login requester's initiate/1 stopped at its first window
+        # send, :create(#standard_io_window, Opts, W) (@af-b4); now every
+        # process waits, the requester's last
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertIn('no process is ready', r.detail)
+        C = K.ClassRef('simpos##coordinator')
+        # the login file was read: menu columns, user items, define
+        menu = [self._walk(c) for c in self._walk(m.get_slot(C, 'menu'))]
+        self.assertEqual([len(c) for c in menu], [7, 3])
+        self.assertEqual([K.deref(i.args[0]).text for i in menu[1]],
+                         ['Pseudo Multi-PSI', 'Login PIMOS', '(Pseudo)Multi-PSI Installer'])
+        self.assertEqual(K.deref(menu[1][1].args[1]), K.Atom('pimfep##pimos_login_requester'))
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##coordinator', 'information',
+                                             [K.Atom('package'), K.Var()])[0][1], K.Atom('user'))
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##coordinator', 'information',
+                                             [K.Atom('pimos_login_additional_function'), K.Var()]), [])
+        D = K.ClassRef('simpos##directory')
+
+        def full_name(path):
+            m.reset()
+            f = K.Var()
+            for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str(path), f, D]):
+                return K.deref(f).text
+            return None
+        self.assertEqual(full_name('pimos:'), '>sys>csp>PIMOS.DIR')
+        self.assertEqual(full_name('sys:PIMM.PARAM'), '>sys>csp>SYSTEM.DIR>PIMM.PARAM.1')
+        self.assertEqual(full_name('pmpsi:pimm.MEkbn'), '>sys>csp>PMPSI.DIR>pimm.MEkbn.1')
+        # the started process: the coordinator's child, running the
+        # requester (on top of its invocation stack), world inherited
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        self.assertIs(m.running_process(), p)
+        cp = m.get_slot(C, 'process')
+        self.assertIs(m.get_slot(p, 'parent_process'), cp)
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        self.assertEqual(top.cid, 'pimfep##pimos_login_requester')
+        self.assertIs(m.get_slot(p, 'world'), m.get_slot(cp, 'world'))
+        # the coordinator waits on its stream, the boot process on its own
+        self.assertEqual(m.get_slot(cp, 'status'), K.Atom('suspended'))
+        # held pimos_fep_superviser full_pathname/1 now finds pimos: (the
+        # login file's define) without the image, and the coordinator
+        # has no pimfep_superviser_image_file_name item: it fails
+        self.assertEqual(self.run_local(m, 'pimfep##pimos_fep_superviser', 0x1bc, [K.Var()]), 'fail')
+        # a select with no menu shown starts nothing: every process waits
+        m, r = self.boot_to_top([K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])])
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertIn('no process is ready', r.detail)
+        self.assertEqual(m.get_slot(C, 'started'), K.NIL)
+
+    def test_step3l_b8_prompt(self):
+        # step 3l, B8 continued: the started pimfep##pimos_login_requester
+        # runs its held initiate/1 and read/4 on the stand-ins
+        # standard_io_window and font (OURS bodies, held selectors and
+        # argument order) and process get_number/3 (INFERENCE), to its
+        # first prompt, and waits in the window's read/2 for a FEP node
+        # name.  The title is made by the held title_string/1 (symbolizer
+        # and string stand-ins).
+        # Injections, observed (2026-11-25, at fb5187d5; each from a backup
+        # copy, restored by copy, cmp clean; N1, N4 and M4 fail this test
+        # too, see their headers):
+        #   P1 putl/2 keeps nothing (standard_io_window.esp): this test
+        #      FAIL, nothing else.
+        #   P2 read/2 succeeds at once with [] (standard_io_window.esp):
+        #      this test and test_step3l_b6_b8 FAIL (a 'simpos' refusal
+        #      past the prompt, not 'would suspend'), nothing else.
+        #   P3 get_number/3 gives 0 (process.esp): this test FAIL ('Pimos
+        #      remote login 0'), test_fep_census and
+        #      test_step3f_census_recipes FAIL (the requester's census rows
+        #      pass get_number: 803 / 830 successes), nothing else.
+        #   P4 font create/3 takes (F, Name) (font.esp): this test FAIL
+        #      (the window's font is a slot constant), test_fep_census and
+        #      test_step3f_census_recipes FAIL (803 / 830), nothing else.
+        #   test_kl0.py stayed OK in P1-P4.
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])])
+        self.assertEqual(r.cause, 'would suspend')
+        C = K.ClassRef('simpos##coordinator')
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        self.assertIn('%r is suspended' % (p,), r.detail)
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        w = m.get_slot(top, 'window')
+        self.assertEqual(w.cid, 'simpos##standard_io_window')
+        self.assertEqual([K.deref(x).text for x in self._walk(m.get_slot(w, 'transcript'))],
+                         ['Enter FEP node name--------->'])
+        self.assertEqual(m.get_slot(w, 'shown'), 1)
+        self.assertEqual(m.get_slot(w, 'active'), 1)
+        self.assertEqual(m.get_slot(m.get_slot(w, 'font'), 'name').text, 'font:test_11.font')
+        self.assertIs(m.get_slot(w, 'label_font'), m.get_slot(w, 'font'))
+        n = m.get_slot(m.get_slot(p, 'context'), 'number')
+        self.assertEqual(m.get_slot(w, 'title').text, 'Pimos remote login %d' % n)
+        opts = self._walk(m.get_slot(w, 'options'))
+        self.assertEqual(K.deref(K.deref(opts[1]).args[1]), K.Atom('manipulator'))
+        self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:

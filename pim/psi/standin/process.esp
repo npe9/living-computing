@@ -151,6 +151,20 @@
     % the printed create_core/3 does (TM-100 Fig. 3.1, PDF p8), since
     % add_child/2 is now stood in (below).
 
+    % :world(#process, World) -- the calling process's world.  PRINTED
+    % interface (TR-056 PDF p25, folio 23: "Though this is a class
+    % predicate, this call returns the working world of the calling
+    % process"); the body is INTERPOLATED (step 3l).
+    :world(Class, World) :- :self(Class, P), World = P!world ;
+
+    % :get_number(#process, Process, N) -- step 3l.  INTERPOLATED
+    % (INFERENCE) from its held senders: pimfep##pimos_login_requester
+    % title_string/1 @2a4-2ae (`:self(#process, P)`, then this, the number
+    % turned into a string for the window's title) and pimmcsp##
+    % pseudo_pe_process get_pe_process_number/2 @220-226.  N is the number
+    % of the process's context, the index the printed create_core/3 files
+    % it under in instance_array (TM-100 Fig. 3.1, PDF p8): INFERENCE.
+    :get_number(Class, Process, N) :- :get_number(Process!context, N) ;
 
     instance
 
@@ -204,7 +218,12 @@
     % INTERPOLATED: see the slot accessors above.
     :set_world(Process, X) :- Process!world := X ;
     % INTERPOLATED: see the slot accessors above.
-    :password_list(Process, X) :- X = Process!password_list ;
+    % Step 3l: a process with no list yet gets one (OURS: made on first
+    % use, as simpos_user setup_process/2 @ee-f9 sends set_access_mode/2
+    % to the answer; standin/password_list.esp).
+    :password_list(Process, X) :- X = Process!password_list, X \== 0, ! ;
+    :password_list(Process, X) :-
+        :new(#password_list, X), Process!password_list := X ;
     % INTERPOLATED: see the slot accessors above.
     :set_password_list(Process, X) :- Process!password_list := X ;
 

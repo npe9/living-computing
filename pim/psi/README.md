@@ -3464,7 +3464,14 @@ the printed `create_core/3` does, but makes no `instance_array` entry.
 The census's process is not under the supervisor, so `instance_array`
 is not made there. An entry in `create/3` would meet a slot with no
 vector in every census row that creates a process (predicted, not
-measured), so it was left out.
+measured, so it was left out). **Step 3l: MEASURED** (2026-11-25, at
+fb5187d5, the entry `set_vector_element(#process!instance_array, N,
+Process)` after `Process!context := Context`, then reverted by copy):
+six packages unchanged; plain FEP 802 / 234 / 413 → 788 / 233 / 428;
+with recipes 829 / 235 / 385 → 578 / 164 / 707; in `test_espc.py` 8
+ERROR and 2 FAIL, all at `set_vector_element on 0 (a slot constant)`
+(`instance_array` is made only under the supervisor). The prediction
+holds; the entry stays out.
 
 **Census, recomputed row by row** against b62208d4 (MEASURED
 2026-11-25, each row alone on a fresh machine; `_G` numbering
@@ -3489,6 +3496,84 @@ normalised).
   no census row: the census's process is not under the supervisor.
 - The `create/2` correction and `instance_array`: all three censuses
   re-run after them, row by row: no row changes.
+
+### Step 3l: route steps B5 to B8, the directory, login, the coordinator (2026-11-25)
+
+Under the owner's rule of 2026-11-25 ("It's okay to infer what you don't
+have"), the boot route (`../docs/simpos/boot_route.md`) is taken from B5
+to B8 with labelled stand-ins. Every inference is listed with its basis
+in `../docs/simpos/source_check_2026-11-24.md` §11. Six commits: four with their tests (`test_espc.py`), one of docs,
+and one re-observing the injections. The tests:
+
+| Step | What runs | Label | Test |
+|---|---|---|---|
+| B5 | `directory:retrieve/3,4` (kl0 models), `root/2`, `is_directory/1`, `not_directory/1`, `size/2`, `full_name/2` (`standin/directory.esp`, `binary_file.esp`) over the file tree of `simpos_fs.py` | interface PRINTED (TR-056 PDF p22-p23, TR-524 PDF p9, p36-p37); argument order and miss = failure from HELD cells; tree OURS, its placement and contents HELD (`psdpim/INSTALL`, the archive) | `test_step3l_b5` |
+| B5 | `network_node_name:node_full_name/3` | INFERENCE from the two held senders | `test_step3l_b5` |
+| B7 | the held `pimfep##simpos_user` `create/4` and `setup_process/2` run to their ends on `user`, `world`, `password_list` (new stand-ins) | USAGE (held sends); registry, password, rank OURS; `pathname append/4`'s CESP `convert_to_8` replaced (INFERENCE: SIMPOS strings are 16-bit) | `test_step3l_b7` |
+| B6 | a coordinator process (`coordinator.esp`, `coordinator_program.esp`) reads the HELD `me:login.com` through `standard_input_file` `gett/2` (kl0 model; reader `esp_reader.py` OURS), applies its `define`, holds its `menu`, answers `information/3` | INTERPOLATED from TR-061, TR-046 PDF p26-p28, TM-181 p3, TM-229 p5-p6; state, selectors and events OURS | `test_step3l_b6_b8` |
+| B8 | `invoke_system_menu`, then `{select, "Login PIMOS"}`: the item's class is created and activated in a new process (TM-134 p71's printed dialogue) | events OURS; the started program HELD | `test_step3l_b6_b8` |
+| B8 | the started `pimos_login_requester` runs its held `initiate/1` and `read/4` on `standard_io_window` and `font` (new stand-ins) and `process:get_number/3`: it titles its window `Pimos remote login N`, puts `Enter FEP node name--------->` and waits in `read/2` | window and font bodies OURS (a transcript and an input stream; a font is its name), selectors and argument order HELD (cells @af-d7, @dc-f3); `get_number/3` INFERENCE (the context's number) | `test_step3l_b8_prompt` |
+
+**Where it stops.** The started process runs the held
+`pimfep##pimos_login_requester` `goal/1`, `initiate/1` and `read/4` to
+its first prompt, `Enter FEP node name--------->`, and waits in the
+window's `read/2` for a node name. Every other process (the coordinator,
+the boot program) waits on its stream, so the machine refuses `would
+suspend` ("no process is ready"): SIMPOS's top level with the Login
+PIMOS program waiting for its user. Until the window stand-ins it
+stopped at the first window send, `:create(#standard_io_window, Opts,
+W)` (@af-b4). Its next steps, given an answer, are `feps_menu/2`,
+`check_code/4` and `getl/2` (not reached: no keyboard input is
+modelled).
+
+**Injections, observed** (each from a backup copy, restored by copy, `cmp`
+clean; `test_kl0.py` OK in all; all eighteen re-run at fb5187d5, so the
+later tests count; the full lists are in each test's header):
+
+- L1 (version ignored), L4 (`not_directory/1` failing): `test_step3l_b5`
+  FAIL only. L2 (a miss returning the parent) and L3 (a full name
+  without its version, `simpos_fs.py`): `test_step3l_b5`, `_b7` and
+  `_b6_b8` FAIL. L5 (`node_full_name/3` for any name): `test_step3l_b5`,
+  `test_fep_census`, `test_step3f_census_recipes` FAIL.
+- M1-M3 (password ignored, `define/3` appending, no default logical
+  name): `test_step3l_b7` FAIL only. M4 (`convert_to_8` back):
+  `test_step3l_b7` ERROR, `_b6_b8` and `_b8_prompt` FAIL.
+- N1 (`gett/2` not advancing): `test_step3l_b6_b8` and `_b8_prompt`
+  ERROR (step limit). N2, N3, N5 (`define` taken as an item, a select
+  without the menu shown, `information/3` for an absent key):
+  `test_step3l_b6_b8` FAIL only. N4 (`##` not in atoms): `_b6_b8` and
+  `_b8_prompt` FAIL.
+- P1 (`putl/2` keeps nothing): `test_step3l_b8_prompt` FAIL only. P2
+  (`read/2` succeeds at once): that test and `_b6_b8` FAIL. P3
+  (`get_number/3` gives 0) and P4 (`font:create/3`'s arguments swapped):
+  that test, `test_fep_census` and `test_step3f_census_recipes` FAIL
+  (the requester's census rows go further).
+
+**Census, recomputed row by row** against the step 3k merge a74f2fd6
+(MEASURED 2026-11-25, `_G` numbering normalised; no row new or gone):
+
+- Six packages: 318 / 12 / 199, unchanged.
+- Plain FEP: 801 / 233 / 415 → **801 / 234 / 414**. The one outcome
+  change is `simpos_user` `create/4`, refused → failure: the census
+  machine registers no user, so `identify/4` fails. Not progress. Ten
+  more rows move their stop: `set_default_node/2` to `equal_string` on
+  its unbound name; nine to `directory retrieve: no file system is
+  mounted` (the census mounts none).
+- With recipes: 828 / 234 / 387 → **828 / 235 / 386**: the same
+  `create/4` move; 16 rows move their stop, the six recipe rows of
+  `pimos_directory` and `pimos_file` to `retrieve` on an unbound
+  pathname.
+- Then the window stand-ins (step 3l's fourth commit), against the
+  above: plain FEP 801 / 234 / 414 → **802 / 234 / 413**, recipes 828 /
+  235 / 386 → **829 / 235 / 385**. `pimos_fep_superviser`
+  `log_size_input_window/2` makes its window and succeeds; that is a run
+  on an OURS window, not evidence about SIMPOS's. The login requester's
+  three rows move to `get_number/2` on their process's context, unset in
+  a census row (slot constants 154 → 157 plain, 107 → 110 with
+  recipes).
+- Otherwise no census row reaches further because of B5-B8: the route's
+  progress is in the four tests, which mount the file system and log
+  in.
 
 ## Open
 

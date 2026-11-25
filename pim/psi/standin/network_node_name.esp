@@ -16,8 +16,8 @@
 %     call sites; no source says they differ).
 % Model (OURS): one class slot holding the name; the string "psi" is OURS
 % (the real default is not known; shell.md's `fkpsi602` is one site's).
-% node_full_name/3 and node_type/3 (also sent by held code) are not
-% stood in.
+% node_type/3 (also sent by held code) is not stood in.  node_full_name/3
+% was not until step 3l (below).
 
 class network_node_name has
 
@@ -29,5 +29,22 @@ attribute my_node := "psi";
 
 % INTERPOLATED from: fep_node_table local_node_name/2 (see above).
 :node_name(Class, Node) :- Node = Class!my_node;
+
+% :node_full_name(#network_node_name, Name, Full) -- step 3l,
+% INTERPOLATED (INFERENCE) from its two held senders in
+% pimfep##net_spawn_user (cells read 2026-11-25):
+%   - class set_default_node/2 @29-36: `:node_full_name(#network_node_name,
+%     Name, Full)`, then `Class!default_spawn_node := Full` (blt 2f);
+%   - local get_your_node/3 @13b-163: clause 1 takes `nil` to the slot
+%     default_spawn_node; clause 2 (@148) is node_full_name/3 alone;
+%     clauses 3-4 (@150, @155) take the name as an IP address (ip_dump/1,
+%     ip_address/7).
+% So it succeeds for a node name it knows and fails otherwise, letting
+% the IP-address clauses run (INFERENCE from the try chain).  What a
+% "full" name adds to a name is not printed or held: here the only node
+% known is this PSI's own, and its full name is the same string (OURS).
+:node_full_name(Class, Name, Full) :-
+        equal_string(Name, Class!my_node), !,
+        Full = Class!my_node;
 
 end.

@@ -1085,6 +1085,172 @@ class Machine:
         raise Refusal('simpos', 'boot_process overrides :create and :activate '
                       '(TM-100 p13, TR-056 p21); create/3 is not stood in')
 
+    # -- the directory (step 3l, route step B5) ------------------------------
+    def directory_retrieve(self, n):
+        """:retrieve(#directory, Object, Pathname) and :retrieve(#directory,
+        Object, Pathname, FullPathname).  INTERPOLATED.
+        PRINTED interfaces: TR-056 PDF p23 (folio 21)
+        `:retrieve(Directory,Object,"Name1>Name2>...")`; TR-524 PDF p36
+        Table 3 (`:retrieve/c`) and p37 App. A (local_logical_file:
+        `:retrieve(#directory, Lfile, Pathname, FullPathname)`).
+        The argument order is the held cells': pimfep##pimos_fep_superviser
+        local full_pathname/1 @1be-1c4 (A0 a new variable, A1
+        "pimos:pimfep.image", A2 the caller's full name) and @1d1-1d7;
+        pimos_file check_file_size/1 @3d2-3d7 (A0 new, A1 the pathname) and
+        remove/2 @1d9-1de.  A miss FAILS: every held caller has a fallback
+        clause after it (full_pathname/1's `c0` @1c6; remove/2's clause 2
+        @1e3; kappa2 SRVCNF.ESP:394-396, BCKFIF.ESP:464-471, held source).
+        The resolution (INTERPOLATED from TR-524 PDF p9, folio 8): a
+        leading '>' is the local root; `Alias:Rest` looks the alias up in
+        the calling process's world (TR-056 PDF p25, folio 23: "The
+        working world is kept in an instance slot of the process"), each
+        directory of its list in order (shell.md §4.2.2, the held login
+        files' `define`); a name without either is taken under the world's
+        default logical name (TM-229 p5: "a default directory used when
+        none is given"); `ident.ext` gives the latest version, `ident.ext.N`
+        version N.  The full pathname of a file carries its version
+        (INFERENCE: TR-524 PDF p9 ">sys>user>gee>humm.txt.3"; held source
+        cal-esp cal2.12/control.esp:1135-1136 and chal control.esp:947-948
+        strip a version from retrieve/4's answer with del_version_number,
+        :969-974); a directory's has none.  OURS: the host prefix
+        (`icpsi277::`) is not part of the full name; the aliases a world
+        does not define are looked up in the class slot `system` of
+        simpos##world (psi/standin/world.esp).  Not modelled: an Object
+        already bound to another object (TR-524's Lfile) fails, as
+        unification does."""
+        path = deref(self.x[1])
+        if isinstance(path, Var):
+            raise Refusal('unbound argument', 'directory retrieve/%d on an unbound pathname' % n)
+        if not isinstance(path, Str):
+            raise Refusal('simpos', 'directory retrieve/%d on %r' % (n, path))
+        root = self.get_slot(ClassRef('simpos##directory'), 'root')
+        if not isinstance(root, Instance):
+            raise Refusal('simpos', 'directory retrieve/%d: no file system is mounted (root %r)' % (n, root))
+        node = self.fs_lookup(root, path.text, 0)
+        if node is None or not self.unify(self.x[0], node):
+            return self.fail()
+        if n == 4 and not self.unify(self.x[2], Str(self.get_slot(node, 'full_name').text)):
+            return self.fail()
+        return self.proceed()
+
+    def input_terms(self, inp):
+        """The terms of a standard_input_file's file (psi/esp_reader.py,
+        OURS) and its position."""
+        import esp_reader
+        f = self.get_slot(inp, 'file')
+        text = self.get_slot(f, 'contents') if isinstance(f, Instance) else None
+        if not isinstance(text, Str):
+            raise Refusal('simpos', 'standard_input_file: %r holds no text here' % (f,))
+        import simpos_fs
+        try:
+            terms = esp_reader.read_terms(sys.modules[__name__], simpos_fs.text_of(text.codes()))
+        except ValueError as e:
+            raise Refusal('simpos', 'standard_input_file: %s' % e)
+        return terms, self.get_slot(inp, 'position')
+
+    def input_gett(self):
+        """:gett(In, Term) -- the next term, or failure at the end.
+        INTERPOLATED: the held send (pimos_login_requester items_list/3
+        @17b-17e); the end fails (INFERENCE from held source utter
+        QXT/trans.esp:20-24, whose gett loop is ended by its last clause,
+        and kwic systems.esp:368-374, which tests end_of_input/1 first).
+        The reader is OURS (psi/esp_reader.py)."""
+        inp = deref(self.x[1])
+        terms, pos = self.input_terms(inp)
+        if pos >= len(terms):
+            return self.fail()
+        self.set_slot(inp, 'position', pos + 1)
+        return self.proceed() if self.unify(self.x[0], terms[pos]) else self.fail()
+
+    def input_end(self):
+        """:end_of_input(In) -- INTERPOLATED from held source kwic-esp
+        src/systems.esp:368-369 and dbUtil.esp:1433-1434 (ANALOGY): true
+        when every term has been read."""
+        terms, pos = self.input_terms(deref(self.x[0]))
+        return self.proceed() if pos >= len(terms) else self.fail()
+
+    def world_aliases(self):
+        """[(name, [dir text, ...])]: the calling process's world first,
+        then the system aliases (OURS, see directory_retrieve)."""
+        out = []
+        if 'simpos##world' not in self.lib.templates:
+            return out, None
+        default = None
+        run = self.get_slot(ClassRef(PROCESS), 'current') if PROCESS in self.lib.templates else 0
+        w = self.get_slot(run, 'world') if isinstance(run, Instance) else 0
+        lists = [self.get_slot(ClassRef('simpos##world'), 'system')]
+        if isinstance(w, Instance):
+            lists.insert(0, self.get_slot(w, 'aliases'))
+            d = self.get_slot(w, 'default')
+            default = d.text if isinstance(d, Str) else None
+        for t in lists:
+            t = deref(t)
+            while isinstance(t, Cons):
+                e = deref(t.args[0])
+                # [Name | Directories] (standin/world.esp, OURS)
+                if isinstance(e, Cons) and isinstance(deref(e.args[0]), Str):
+                    dirs, d = [], deref(e.args[1])
+                    while isinstance(d, Cons):
+                        x = deref(d.args[0])
+                        if isinstance(x, Str):
+                            dirs.append(x.text)
+                        d = deref(d.args[1])
+                    out.append((deref(e.args[0]).text, dirs))
+                t = deref(t.args[1])
+        return out, default
+
+    def fs_lookup(self, root, text, depth):
+        if depth > 8:
+            raise Refusal('simpos', 'directory retrieve: aliases nested over 8 deep at %r' % text)
+        if text.startswith('>'):
+            return self.fs_walk(root, text[1:])
+        aliases, default = self.world_aliases()
+        if ':' in text:
+            name, rest = text.split(':', 1)
+        elif default is not None:
+            name, rest = default, text
+        else:
+            return None
+        for a, dirs in aliases:
+            if a != name:
+                continue
+            for d in dirs:
+                node = self.fs_lookup(root, d, depth + 1)
+                if node is not None and node.cid == 'simpos##directory':
+                    hit = self.fs_walk(node, rest) if rest else node
+                    if hit is not None:
+                        return hit
+            return None
+        return None
+
+    def fs_walk(self, node, rest):
+        if not rest:
+            return node
+        for comp in rest.split('>'):
+            if not isinstance(node, Instance) or node.cid != 'simpos##directory' or not comp:
+                return None
+            parts = comp.split('.')
+            version = None
+            if len(parts) >= 3 and parts[-1].isdigit():
+                comp, version = '.'.join(parts[:-1]), int(parts[-1])
+            best = None
+            t = self.get_slot(node, 'entries')
+            while isinstance(t, Cons):
+                e = deref(t.args[0])
+                t = deref(t.args[1])
+                if deref(e.args[0]).text != comp:
+                    continue
+                x = deref(e.args[1])
+                v = self.get_slot(x, 'version') if x.cid == 'simpos##binary_file' else None
+                if version is not None and v != version:
+                    continue
+                if best is None or (v is not None and v > best[0]):
+                    best = (v, x)
+            if best is None:
+                return None
+            node = best[1]
+        return node
+
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
         instance, with constant and `is Class` slot values and the values of
@@ -2496,6 +2662,13 @@ SIMPOS_MODELS = {
     # step 3j: create/2 and activate/2 are stood in (INTERPOLATED,
     # boot_process.esp); create/3 is not
     ('simpos##boot_process', 'class', 'create', 3): Machine.boot_process_override,
+    # step 3l, route step B5: the directory's retrieve (INTERPOLATED;
+    # standin/directory.esp, psi/simpos_fs.py)
+    ('simpos##directory', 'class', 'retrieve', 3): lambda m: m.directory_retrieve(3),
+    ('simpos##directory', 'class', 'retrieve', 4): lambda m: m.directory_retrieve(4),
+    # step 3l, B6: reading terms (standin/standard_input_file.esp)
+    ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
+    ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
 }
 
 
