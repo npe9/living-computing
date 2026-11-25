@@ -6,7 +6,8 @@
 % Built-ins used (KL0, each with a known-plaintext row in
 % psi/kl0_opcodes.tsv): string/3 (blt 0b), new_string/3 (blt 1c),
 % string_element/3 (blt 23), set_string_element/3 (blt 2b).
-% Model (OURS): the elements of a new string are 16-bit (type 16, as
+% Model (OURS): the elements of a new string are the first string's size
+% (step 3n, see append/3), 16-bit for an empty list (type 16, as
 % p_tgraph.esp's `new_string(N,L,16)`); lengths are counted one by one,
 % because adding two registers has no witnessed opcode.
 
@@ -22,9 +23,16 @@ class string has
 % :86 and name.esp:110, :139, :257, e.g. `:append(#string,[Key,
 % string#".",Version_string],Name)`).  Only strings are taken as
 % elements (OURS).
+% Step 3n: the new string's element size is the first string's (16 for
+% an empty list), INTERPOLATED from pimfep##fep_message_assembler
+% assemble/3 @56-75: it appends a 32-bit header (new_string(.., 32) @58)
+% and 32-bit argument strings (substring/7 to 32 bits, @122) into the
+% message, whose elements are words (PIMOS's packet, ref/pimm/fep.py
+% pack_message; get_command/3 @14-1c reads a message only if it is 32-bit).
 :append(Class, List, S) :-
         total(List, 0, L),
-        new_string(S, L, 16),
+        size(List, T),
+        new_string(S, L, T),
         fill(List, S, 0, _);
 
 % :copy(#string, S, C) -- C is a new string with S's elements and type.
@@ -39,6 +47,8 @@ class string has
         copy(S, 0, N, C, 0, _);
 
 local
+size([], 16) :- !;
+size([X|_], T) :- string(X, _, T);
 total([], L, L);
 total([X|R], L0, L) :- string(X, N, _), count(N, L0, L1), total(R, L1, L);
 count(0, L, L) :- !;

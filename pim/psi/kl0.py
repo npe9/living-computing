@@ -233,7 +233,10 @@ class Str:
         return out
 
     def set_codes(self, codes):
-        self.text = ''.join(P.ch(x) for x in codes)
+        # step 3n: an element wider than 16 bits (a 32-bit string's) is
+        # written as the 8-hex token codes() reads; P.ch would give
+        # '<10000>' for 0x10000, which no reader takes back
+        self.text = ''.join(P.ch(x) if x <= 0xffff else '<%08x>' % x for x in codes)
 
     # Python equality compares contents, for tests and tables only.  KL0's
     # unification and `==` do NOT use it: on the PSI two strings unify only
@@ -874,9 +877,28 @@ class Machine:
             if isinstance(run, Instance) and self.get_slot(run, 'status') == ATOM_SUSPENDED:
                 self.yield_processor(run, False)
             return
+        if k == 'ifdead':
+            # step 3n: after exterminate/1, the running process if it is dead
+            self.pc = (code, off + 1)
+            run = self.running_process()
+            if isinstance(run, Instance) and self.get_slot(run, 'status') == Atom('nil'):
+                self.yield_processor(run, True)
+            return
         if k == 'exit':
             # step 3j: a dispatched process's program has ended
             return self.yield_processor(self.running_process(), True)
+        if k == 'isend':
+            # step 3n: the idle interrupt's :put(Stream, Object), the
+            # receiver last
+            _k, recv, name, args = op
+            self.cont = (code, off + 1, self.env, self.b0)
+            self.x = collections.defaultdict(Var)
+            for i, a in enumerate(args):
+                self.x[i] = a
+            self.x[len(args)] = recv
+            return self.dispatch(recv, name, len(args) + 1)
+        if k == 'dispatch':
+            return self.dispatch_after_interrupt()
         if k == 'return':
             env = self.env
             self.env = env.prev
@@ -1007,6 +1029,21 @@ class Machine:
         self.pc = (Syn('%s:suspend/2 + dispatcher' % PROCESS,
                        [('save', 2), ('restore', 2), ('call', cid, p.offset), ('yield',), ('return',)]), 0)
 
+    def process_exterminate(self):
+        """:exterminate(Process) (step 3n): the stand-in's body
+        (standin/process.esp: the status becomes nil, dead), then, OURS,
+        the dispatcher: a process that kills itself (the held front end's
+        exit_program/1) gives up the processor as one whose program has
+        ended; another process's saved registers are dropped."""
+        proc = deref(self.x[0])
+        if proc is not self.running_process():
+            self.saved.pop(id(proc), None)
+        co = self.lib.build(PROCESS)
+        m = self.lib.send(co, 'instance', 'exterminate', 1)
+        cid, p = [(c, q) for c, q in m.primaries if c == PROCESS][0]
+        self.pc = (Syn('%s:exterminate/1 + dispatcher' % PROCESS,
+                       [('save', 1), ('restore', 1), ('call', cid, p.offset), ('ifdead',), ('return',)]), 0)
+
     # -- the dispatcher (step 3j, OURS) -------------------------------------
     # TR-055 PDF p5 (folio 2): "Interrupts and traps cause direct context
     # switching at the hardware level, but process dispatching must be
@@ -1067,6 +1104,13 @@ class Machine:
         nxt = [p for p in self.ready_processes()
                if p is not leaving and isinstance(p, Instance) and self.get_slot(p, 'status') == ATOM_READY]
         if not nxt:
+            puts = self.idle_hook(self) if getattr(self, 'idle_hook', None) else None
+            if puts:
+                if ended:
+                    self.saved.pop(id(leaving), None)
+                else:
+                    self.saved[id(leaving)] = (leaving, self.registers())
+                return self.interrupt(puts)
             raise Refusal('would suspend', 'no process is ready: %r %s' % (
                 leaving, 'has ended' if ended else 'is %r' % (self.get_slot(leaving, 'status'),)))
         nxt = nxt[0]
@@ -1074,6 +1118,40 @@ class Machine:
             self.saved.pop(id(leaving), None)
         else:
             self.saved[id(leaving)] = (leaving, self.registers())
+        self.switch_to(nxt)
+
+    # -- the idle interrupt (step 3n, OURS) ----------------------------------
+    # When every process waits, Machine.idle_hook (a function of the
+    # machine, set by psi/fep_bridge.py) may give (stream, object) pairs:
+    # the input an outside device has for the PSI (the SCSI link to the
+    # PIM/m).  They are put with the printed stream put/2 (TM-100 Fig.
+    # 3.6), which resumes a process waiting in get/2, run on registers of
+    # their own, as an interrupt handler would run (TR-055 PDF p5: "Interrupts
+    # and traps cause direct context switching at the hardware level").
+    # Then the dispatcher goes on: the first ready process runs.  Which
+    # device, when, and in which form is the bridge's (OURS); the put and
+    # the resume are the printed ones.
+    def interrupt(self, puts):
+        ops = []
+        for stream, obj in puts:
+            ops.append(('isend', stream, 'put', [obj]))
+        ops.append(('dispatch',))
+        self.x, self.env, self.trail, self.S, self.sender = collections.defaultdict(Var), None, [], None, None
+        self.b0, self.stack = 0, []
+        self.cont = None
+        self.pc = (Syn('idle interrupt', ops), 0)
+
+    def dispatch_after_interrupt(self):
+        nxt = [p for p in self.ready_processes()
+               if isinstance(p, Instance) and self.get_slot(p, 'status') == ATOM_READY]
+        if not nxt:
+            puts = self.idle_hook(self) if getattr(self, 'idle_hook', None) else None
+            if puts:
+                return self.interrupt(puts)
+            raise Refusal('would suspend', 'no process is ready after an idle interrupt')
+        self.switch_to(nxt[0])
+
+    def switch_to(self, nxt):
         self.set_slot(ClassRef(PROCESS), 'current', nxt)
         r = self.saved.pop(id(nxt), None)
         if r is not None:
@@ -1189,15 +1267,69 @@ class Machine:
         terms, pos = self.input_terms(deref(self.x[0]))
         return self.proceed() if pos >= len(terms) else self.fail()
 
-    def world_aliases(self):
-        """[(name, [dir text, ...])]: the calling process's world first,
-        then the system aliases (OURS, see directory_retrieve)."""
+    def world_root_path(self):
+        """:root_path(World, LogicalName, Root) (step 3n).  INTERPOLATED
+        from its one held send, pimfep##simpos_user_device $or$3/2
+        (@ba-d6, cells read 2026-11-25): `:default_logical_name(W, N)`,
+        `:append(#string, [N, ":"], LN)`, `:root_path(W, LN, Root)`, then
+        `:remote_or_local(#pathname, Root, _, Dir, _, _)`, and Dir is the
+        answer to PIMOS's io(0, [len RN, len RP] ++ RN ++ RP), the user's
+        directory (docs/fep_services.md §6, the reference run's
+        ">sys>user>pmpsi"); the clause's alternative answers ">".
+        INFERENCE: Root is the full pathname of the directory the logical
+        name denotes in World, resolved as directory_retrieve resolves it
+        (the world's aliases, then the system's: TR-524 PDF p9); it fails
+        when the name denotes no directory (and the caller answers ">")."""
+        w, ln = deref(self.x[2]), deref(self.x[0])
+        if not isinstance(ln, Str):
+            raise Refusal('unbound argument' if isinstance(ln, Var) else 'simpos',
+                          'world root_path/3 on %r' % (ln,))
+        root = self.get_slot(ClassRef('simpos##directory'), 'root')
+        if not isinstance(root, Instance):
+            raise Refusal('simpos', 'world root_path/3: no file system is mounted')
+        node = self.fs_lookup(root, ln.text, 0, w)
+        if node is None or node.cid != 'simpos##directory':
+            return self.fail()
+        if not self.unify(self.x[1], Str(self.get_slot(node, 'full_name').text)):
+            return self.fail()
+        return self.proceed()
+
+    def pathname_remote_or_local(self):
+        """:remote_or_local(#pathname, Pathname, _, Local, _, _) (step 3n).
+        INTERPOLATED from the held source callers: cil src/ds_fep.esp:909
+        (`:remote_or_local(#pathname, Pathname_string, _, Local_pathname,
+        _,_)`, then last_name/4 on the local pathname) and cal-esp
+        deb2.12/init.esp:314-318 (the local part compared with
+        ">sys>font>kanji_16.font"), and the held compiled
+        pimfep##simpos_user_device $or$3/2 (@d6).  The HELD-SOURCE
+        pathname.esp (step 3c) says the CESP port does not carry it.
+        INFERENCE: a pathname without a node prefix (`Node::`, pathname.esp
+        comment [2]) is local and is its own local part.  A remote one is
+        not modelled (refused); the second, fifth and sixth arguments (by
+        the callers, never read) are left unbound."""
+        path = deref(self.x[0])
+        if not isinstance(path, Str):
+            raise Refusal('unbound argument' if isinstance(path, Var) else 'simpos',
+                          'pathname remote_or_local/6 on %r' % (path,))
+        if '::' in path.text:
+            raise Refusal('simpos', 'pathname remote_or_local/6: a remote pathname %r is not modelled' % path.text)
+        if not self.unify(self.x[2], path):
+            return self.fail()
+        return self.proceed()
+
+    def world_aliases(self, world=None):
+        """[(name, [dir text, ...])]: the calling process's world (or
+        WORLD, step 3n) first, then the system aliases (OURS, see
+        directory_retrieve)."""
         out = []
         if 'simpos##world' not in self.lib.templates:
             return out, None
         default = None
-        run = self.get_slot(ClassRef(PROCESS), 'current') if PROCESS in self.lib.templates else 0
-        w = self.get_slot(run, 'world') if isinstance(run, Instance) else 0
+        if world is not None:
+            w = world
+        else:
+            run = self.get_slot(ClassRef(PROCESS), 'current') if PROCESS in self.lib.templates else 0
+            w = self.get_slot(run, 'world') if isinstance(run, Instance) else 0
         lists = [self.get_slot(ClassRef('simpos##world'), 'system')]
         if isinstance(w, Instance):
             lists.insert(0, self.get_slot(w, 'aliases'))
@@ -1219,12 +1351,12 @@ class Machine:
                 t = deref(t.args[1])
         return out, default
 
-    def fs_lookup(self, root, text, depth):
+    def fs_lookup(self, root, text, depth, world=None):
         if depth > 8:
             raise Refusal('simpos', 'directory retrieve: aliases nested over 8 deep at %r' % text)
         if text.startswith('>'):
             return self.fs_walk(root, text[1:])
-        aliases, default = self.world_aliases()
+        aliases, default = self.world_aliases(world)
         if ':' in text:
             name, rest = text.split(':', 1)
         elif default is not None:
@@ -1235,7 +1367,7 @@ class Machine:
             if a != name:
                 continue
             for d in dirs:
-                node = self.fs_lookup(root, d, depth + 1)
+                node = self.fs_lookup(root, d, depth + 1, world)
                 if node is not None and node.cid == 'simpos##directory':
                     hit = self.fs_walk(node, rest) if rest else node
                     if hit is not None:
@@ -1857,7 +1989,12 @@ class Machine:
         self.nxt(code, off) if self.unify(self.x[a], NIL) else self.fail()
 
     def op_get_integer(self, code, off, a, b, c, v):
-        k = u16('get_integer', v)
+        # step 3n: the immediate is sign-extended, as put_integer's (step
+        # 3k).  INFERENCE: fep_message_assembler take_argument/5 @17b-17d,
+        # whose first clause is guarded by `ca` with the 32-bit constant -1
+        # (ffffffff) and then tests the same register with `27 00 ffff`:
+        # read unsigned, the clause could never succeed
+        k = s16(v)
         self.nxt(code, off) if self.unify(self.x[a], k) else self.fail()
 
     def op_get_constant(self, code, off, a, b, c, v):
@@ -1903,6 +2040,10 @@ class Machine:
 
     def op_get_vector_5(self, code, off, a, b, c, v):
         self._get_vector_k(code, off, a, b, c, 5)
+
+    # pmi 36 (step 3n): paragraph##graph_status_element create/3 @19
+    def op_get_vector_6(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 6)
 
     # unify
     def _uvar(self, store, i, code, off):
@@ -2196,11 +2337,22 @@ class Machine:
         self.nxt(code, off)
 
     def op_string_element(self, code, off, a, b, c, v):
-        cs = self._str(self.x[a], 'string_element').codes()
+        s = self._str(self.x[a], 'string_element')
+        cs = s.codes()
         i = self._int(self.x[b], 'string_element')
         if not 0 <= i < len(cs):
             raise Refusal('built-in', 'string_element index %d of %d' % (i, len(cs)))
-        self.x[c] = cs[i]
+        e = cs[i]
+        if s.type == 32 and e & 0x80000000:
+            # step 3n: a 32-bit element is read as a signed integer, the
+            # inverse of set_string_element's two's complement (step 3k).
+            # INFERENCE: fep_message_assembler take_argument/5 @17b-17d
+            # tests a message's length word against the constant -1
+            # (`ca` with the cell ffffffff, which const_cell reads signed)
+            # to tell an integer argument, as PIMOS writes it
+            # (scsi_fep.kl1:429-445; ref/pimm/fep.py pack_message)
+            e -= 1 << 32
+        self.x[c] = e
         self.nxt(code, off)
 
     # -- step 3c rows (2026-11-24): add, type tests, equal_string,
@@ -2320,6 +2472,18 @@ class Machine:
             out = [y for x in part for y in (x >> 8 & 255, x & 255)]
         elif (s.type, size) == (8, 16) and n % 2 == 0:
             out = [part[k] << 8 | part[k + 1] for k in range(0, n, 2)]
+        elif (s.type, size) == (16, 32) and n % 2 == 0:
+            # step 3n: fep_message_assembler create_argument_string_list/5
+            # @11d-126 (a string argument padded to an even length by
+            # padding/5 @165-176, then re-read as 32-bit elements into the
+            # message).  The high half first: INFERENCE, as 16 to 8 above
+            # and as the wire's words (ref/pimm/fep.py pack_message)
+            out = [part[k] << 16 | part[k + 1] for k in range(0, n, 2)]
+        elif (s.type, size) == (32, 16):
+            # step 3n: take_argument/5 @183-18e, a string argument of the
+            # message: (bytes + 3) >> 2 words re-read as 16-bit elements,
+            # then cut to bytes >> 1 (blt 32 @18c).  INFERENCE as above
+            out = [y for x in part for y in (x >> 16 & 0xffff, x & 0xffff)]
         elif s.type == size:
             out = part
         else:
@@ -2327,7 +2491,18 @@ class Machine:
         t = Str('', size)
         t.set_codes(out)
         self.x[r] = t
-        self.x[u], self.x[w] = Var(), Var()
+        if (s.type, size) in ((16, 32), (32, 16)):
+            # step 3n, U and V (INFERENCE): the held callers constrain them.
+            # create_argument_string_list/5 @125-126 requires U == 0
+            # (get_integer A1, 0) and V == the length it passed (get_value
+            # A2, Y6); take_argument/5 @18f takes the next argument's
+            # position as Pos + V (blt 40 add), which is right only if V
+            # is the number of source elements read.  So U = 0 (nothing
+            # left over: the conversions here are whole) and V = N.  The
+            # 16/8 witnesses write `_` for both, so those are left unbound
+            self.x[u], self.x[w] = 0, n
+        else:
+            self.x[u], self.x[w] = Var(), Var()
         self.nxt(code, off, 2)
 
     def op_search_character(self, code, off, a, b, c, v):
@@ -2449,6 +2624,40 @@ class Machine:
             raise Refusal('built-in', 'set_subvector %d+%d of %d from %d' % (p, n, len(vec), len(sub)))
         for i in range(n):
             vec[p + i] = deref(sub[i])
+        self.nxt(code, off, 2)
+
+    def op_object(self, code, off, a, b, c, v):
+        # step 3n: blt 0d, object/3 (kappa2 user_if/pb/som.esp:191-194
+        # `object(Sheet,_,_)` compiles to `0d 00 01 02`, Sheet in A0;
+        # psi/README.md "Reattempted, still blocked").  INFERENCE: it
+        # succeeds when A_A is an object (an instance or a class), fails
+        # otherwise, as the other type tests (atom/1, integer/1) do.  What
+        # the two outputs receive is NOT settled (every held source call
+        # has both `_`), so they are left as fresh unbound variables: a
+        # later use of one refuses as an unbound argument.  On step 3n's
+        # path (pimos_scsi_front_end delete_remote_stream/2 @879 `0d 00 00
+        # 01`) both registers are written again before they are read.
+        t = deref(self.x[a])
+        if isinstance(t, (Instance, ClassRef)):
+            self.x[b], self.x[c] = Var(), Var()
+            self.nxt(code, off)
+        else:
+            self.fail()
+
+    def op_subvector(self, code, off, a, b, c, v):
+        # step 3n: blt 30, subvector/4 (kappa2 HLCCMPS.ESP:169-176,
+        # kappaHLC_builtin_common except_unique/2 @1f3-209; kl0_opcodes.tsv).
+        # The result holds the same element terms as the vector (INFERENCE:
+        # except_unique/2 fills New_Attr only by unifying its subvectors
+        # with Attr's)
+        r, z, low = self.ext_cell(code, off, 'subvector')
+        if z or low:
+            raise Refusal('operand', 'subvector operand cell with low bytes set: unwitnessed')
+        vec = self._vec(self.x[a], 'subvector').args
+        p, n = self._int(self.x[b], 'subvector'), self._int(self.x[c], 'subvector')
+        if p < 0 or n < 0 or p + n > len(vec):
+            raise Refusal('built-in', 'subvector %d+%d of %d' % (p, n, len(vec)))
+        self.x[r] = Vec(vec[p:p + n])
         self.nxt(code, off, 2)
 
     def op_put_vector_0(self, code, off, a, b, c, v):
@@ -2771,6 +2980,9 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
+    ('simpos##process', 'instance', 'exterminate', 1): Machine.process_exterminate,
+    ('simpos##world', 'instance', 'root_path', 3): Machine.world_root_path,
+    ('simpos##pathname', 'class', 'remote_or_local', 6): Machine.pathname_remote_or_local,
     # step 3i: boot_process overrides :create and :activate (TM-100 p13,
     # TR-056 p21); the overriding bodies are not printed, and the
     # inherited process versions would run in their place, so they are

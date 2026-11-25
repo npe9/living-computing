@@ -312,7 +312,7 @@ class Table(unittest.TestCase):
             if r['status'] == 'INFERENCE':
                 self.assertIn('INFERENCE', r['meaning'], r)
         self.assertEqual([(r['class'], r['opcode']) for r in rows if r['status'] == 'INFERENCE'],
-                         [('blt', '94')])
+                         [('blt', '0d'), ('blt', '94')])
         m = machine()
         self.assertEqual(set(m.handlers), set(keys))
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
@@ -324,8 +324,9 @@ class Table(unittest.TestCase):
         # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05,
         # 142 before step 3k's blt 6f, 94 and 90, 145 before step 3m's
         # blt 42 and 43, 147 before step 3m's blt 35, 36, f4, f5 and pmi d6,
-        # 152 before step 3m's pmi a8
-        self.assertEqual(len(rows), 153)
+        # 152 before step 3m's pmi a8, 153 before step 3n's blt 30, pmi 36
+        # and blt 0d (INFERENCE)
+        self.assertEqual(len(rows), 156)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1490,7 +1491,12 @@ class Census(unittest.TestCase):
         # instance class_object/2 (kl0 dispatch, INTERPOLATED; no source
         # held).  Nine rows move their stop past blt f4 / f5 (to an
         # unbound argument or receiver, the census's own)
-        self.assertEqual(out, {'refused': 198, 'success': 319, 'failure': 12, 'step limit': 1})
+        # step 3n (row by row): pmi 36 get_vector_6 witnessed on
+        # paragraph##graph_status_element create/3 itself (p_MAIN.esp:202):
+        # its create/3, get/2 and set/2 refused -> success.  The census's
+        # unbound arguments take the get_vector's write mode: unbound
+        # probing, but past an opcode that was missing
+        self.assertEqual(out, {'refused': 195, 'success': 322, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -1551,7 +1557,7 @@ class Census(unittest.TestCase):
             # equal_string on an unbound argument (22 -> 23)
             'receiver a slot constant': 9, 'unbound argument': 28, 'operand': 7, 'pool': 1,
             'missing opcode blt 44': 4,
-            'missing opcode pmi 36': 3,
+            # step 3n: pmi 36 rowed: its 3 rows succeed (the count above)
             # step 3g: pmi c3 (retry) witnessed: pe_registers
             # register_type/3 succeeds (its unbound first argument takes
             # the first clause, nifr); refused 207 -> 206

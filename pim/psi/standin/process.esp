@@ -472,4 +472,31 @@
     :die(Process) :-
         Process!status := nil ;
 
+    % :exterminate(Process) -- the process is killed.
+    % INTERPOLATED (step 3n) from: its held sends, e.g.
+    % pimfep##pimos_scsi_front_end local exit_program/1 (@4da-4e2:
+    % `:self(#process, P), :exterminate(P)`, the last call: a process
+    % ending itself) and exterminate_child_loop/1 (@526-530, a parent
+    % killing its children); the printed status slot's comment
+    % "nil(=dead)" (TM-100 Fig. 3.1, PDF p8), as die/1.  Only the status
+    % is set (no context, children or resources are modelled).  When the
+    % process is the running one, kl0's dispatcher (OURS,
+    % Machine.process_exterminate) then gives the processor away.
+    :exterminate(Process) :-
+        Process!status := nil ;
+
+    % :set_area_limit_execution(Process, A1, ..., A6) and
+    % :set_package(Process, Package).  Step 3n, INTERPOLATED from their one
+    % held send each, pimfep##pimos_scsi_front_end local initiate/1
+    % (@21d-22e, cells read 2026-11-25): `:self(#process, P)`, then
+    % set_area_limit_execution/7 with the atom `free` in all six
+    % arguments, then `:set_package(P, pimfep)`.  By the names, the
+    % process's memory-area limits and its package for name lookup.
+    % Neither is modelled (no memory areas; the library's lookup order
+    % is the sender's package, step 3f): both succeed and record
+    % nothing (OURS).
+    :set_area_limit_execution(Process, A1, A2, A3, A4, A5, A6) ;
+    % INTERPOLATED (step 3n): see set_area_limit_execution/7 just above.
+    :set_package(Process, Package) ;
+
     end.

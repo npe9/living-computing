@@ -1,0 +1,39 @@
+% SCAFFOLDING stand-in for SIMPOS's class `monogyny_list_index`, compiled
+% by psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% it is printed.  Step 3n (docs/simpos/boot_route.md §6).
+% Its source is INTERPOLATED (labelled) from:
+%   - pimfep##simpos_user (held .ptf, cells read 2026-11-25 with
+%     psi/fepread/ptfread.py): local users/3 (@11c-12b) makes the class
+%     slot `users` with `:create(#monogyny_list_index, U)` on first use;
+%     regist/4 (@4d-61) sends `:put_at(Users, User, Name)` after making
+%     the user, identify/4 (@66-72) `:get_at(Users, User, Name)`, and
+%     setup_process/4 (@7f-9e) tries identify/4 first and regist/4 when it
+%     fails: so get_at/3 fails on a name never put, and put_at/3 adds one;
+%   - the selectors held programs send (docs/simpos/required/classes.tsv
+%     row monogyny_list_index: create/2 and add_at/3, clear/1, get_at/3,
+%     get_contents/2, get_contents_with_key/2, get_keys/2, put_at/3,
+%     put_contents/2, put_contents_with_key/2, remove_at/3, stick_tap/2),
+%     the list_index protocol plus put_at/3.
+% INFERENCE: it is a list_index (nature list_index: the same selectors)
+% that holds ONE object per key ("monogyny"): put_at/3 replaces what the
+% key held.  Only put_at/3 is new here; the rest is the list_index
+% stand-in's.
+
+class monogyny_list_index has
+nature list_index;
+
+% INTERPOLATED from: users/3 above, as list_index:create/2.
+:create(Class, Index) :- :new(Class, Index);
+
+instance
+
+% INTERPOLATED from: regist/4 above (Object before Key, as add_at/3).
+% INFERENCE: the key's old object, if any, is removed first.
+:put_at(Index, Object, Key) :-
+        remove_old(Index, Key),
+        :add_at(Index, Object, Key);
+
+local
+remove_old(Index, Key) :- :remove_at(Index, _, Key), !;
+remove_old(_, _);
+end.
