@@ -234,7 +234,7 @@ No new SIMPOS method body (HELD-SOURCE) was found. Provenance and usage only:
   - no text of the I/O manual.
   The 1,417 held report PDFs have no text layer, so they could not be text-searched.
 - **Places that hold files, searched from outside** (`search_files_2026-11-24b.md`): GitHub code
-  search (57 queries), Sourcegraph, GitLab, Software Heritage, SourceForge, the OSDN mirrors, eight
+  search (57 queries), Sourcegraph, GitLab, Software Heritage, SourceForge, the OSDN mirrors, seven
   live Japanese FTP mirrors, Wayback CDX of 35 more hosts, archive.org metadata and full-text search,
   Discmaster, two Usenet archives, and the KLIC and PDSS distributions. No SIMPOS, ESP or CESP file
   was found; the only ICOT files were copies of the held IFS tree. No ICOT Free Software or AITEC

@@ -469,7 +469,7 @@ fact.
 
 `simpos/subsystems/search_files_2026-11-24b.md` searched places that hold files rather than
 catalogues: code search (GitHub, Sourcegraph, GitLab), Software Heritage, SourceForge and the OSDN
-mirrors, live and archived FTP mirrors (eight live hosts, 35 more in Wayback CDX), archive.org's
+mirrors, live and archived FTP mirrors (seven live hosts, 35 more in Wayback CDX), archive.org's
 metadata and full-text search, Discmaster, Usenet backups, and the KLIC and PDSS distributions. It
 found no SIMPOS, ESP or CESP file. The ICOT files it met (the CMU AI Repository mirror on GitHub,
 the Waseda AITEC/ICOT mirror) are the held IFS tree. Its leads need an account: GitHub's signed-in
