@@ -123,7 +123,11 @@ PINNED = {
     ('prompt', ('rs', '')): (800789, 190791),
     ('prompt', ('versions',)): (610006, 114472),
     ('prompt', ('compile', '!exit')): (1029437, 255083),
-    ('prompt', ('compile', 'sample1', '!exit')): (1770029, 318476),
+    # 2026-11-25: compile_missing types sample2 (the old sample1 row's
+    # counts, the same run but for the name); compile_sample1, the
+    # primer's file served from the home directory
+    ('prompt', ('compile', 'sample2', '!exit')): (1770029, 318476),
+    ('prompt', ('compile', 'sample1', '!exit')): (2236196, 608552),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -154,8 +158,14 @@ APPS = {
         (' Module not found !! ( versions:go ) \n  [ Job#1, Node#0, PE#0 ]\n', 'Shell>> ', ' Job 1 was aborted . \n')),
     'compile_exit': (('compile', '!exit'),
         ('** KL1 Compiler **\n', 'COMPILE> ', 'Shell>> ')),
-    'compile_missing': (('compile', 'sample1', '!exit'),
-        ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample1\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
+    # (2026-11-25: sample1 is now a home file, longrun_ipl.HOME_FILES, so
+    # the missing file is the primer's sample2, which the home lacks)
+    'compile_missing': (('compile', 'sample2', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample2\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
+    # the primer's sample1 (primer25.tex:592-605) from the home
+    # directory (longrun_ipl.home_file), R7
+    'compile_sample1': (('compile', 'sample1', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ')),
 
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
@@ -416,7 +426,11 @@ def compare(argv):
             recent = (recent + [w.rstrip('\n')])[-6:]
             n += 1
     extra = got.readline() if n else first
-    if extra:
+    if extra and not (extra.strip() == 'E unimp' and want['stop'].startswith('refused')
+                      and not got.readline()):
+        # (2026-11-25) a run the reference ends refusing (Unimplemented,
+        # no trace line) passes only if the core ends there refusing
+        # too, its one last line `E unimp`
         print('%s: FAIL, the Bluespec trace goes on: %s' % (name, extra.strip()))
         return 1
     if n != want['lines'] or ins != want['instructions']:

@@ -86,6 +86,14 @@ the FepErrors next to them (an integer putb text, io 112 and 127, a
 string command, io while held, a window's own putb, another name, 80
 on device 5, 80 with an argument).
 
+Then (2026-11-25, R7) a home file, the primer's sample1.kl1
+(longrun_ipl.HOME_FILES): read_open as the compiler asks (the names
+without .kl1 first, 5), 222 and 221 as it sends them, both also cut, a
+second device open on it at once, getb to the end, close and reopen;
+and the FepErrors next to them (221 and 222 on a held pimos: file,
+which has neither; each with an argument; on another device; after the
+close).
+
 "kernel": recorded from the real PIMOS start, `longrun_ipl.go` on a
 machine `longrun_ipl.py --reference --save PKL` wrote, with
 fepm.Fep replaced as above (go() makes its device as fepm.Fep at call
@@ -595,6 +603,37 @@ def direct_login_sections(std):
         [strio(31, 'pimos_standard_io_windows')],                # another name
         [sd(5, fepm.TERMINATE)],                                 # not device -1
         [sd(-1, fepm.TERMINATE, 0)],                             # an argument
+    ]
+    for e in errs:
+        s.append((std, e))
+    # 11. (2026-11-25, R7) a home file: the primer's sample1.kl1, read
+    # as the compiler reads it (docs/binary_reverse_engineering.md 1.4,
+    # "Commands past the shell": 201, 222, 221, 222, 221, getb to the
+    # end), its pathname (221) and attributes (222) also cut, a second
+    # open on another device at once, the names next to it that are
+    # not there (5), and 221/222 after the close's device is reopened
+    home = fj('>sys>user>pmpsi>sample1.kl1')
+    opn = lambda dev, path: sd(dev, fepm.READ_OPEN, b'', fj('pmpsi'), b'', path)  # noqa: E731
+    s.append((dict(std, getb_unit=2), [
+        opn(36, fj('>sys>user>pmpsi>sample1')), r,
+        opn(37, fj('>sys>user>pmpsi>sample1.aya')), r,
+        opn(39, home), r,
+        sd(39, fepm.ATTRIBUTES_OF), receive(16000), sd(39, fepm.PATHNAME), r,
+        sd(39, fepm.ATTRIBUTES_OF), receive(60), receive(64), receive(64),   # cut
+        sd(39, fepm.PATHNAME), receive(40), r,                               # cut
+        opn(40, home), r, sd(40, fepm.PATHNAME), r,
+        sd(39, fepm.GETB, 6001), receive(16000), sd(39, fepm.GETB, 6001), r,
+        sd(40, fepm.GETB, 100), receive(16000), sd(40, fepm.CLOSE), r,
+        sd(39, fepm.CLOSE), r,
+        opn(39, home), r, sd(39, fepm.ATTRIBUTES_OF), receive(16000),
+        sd(39, fepm.CLOSE), r]))
+    errs = [
+        [opn(19, fj('pimos:pimos.conf')), sd(19, fepm.PATHNAME)],        # a held file: none
+        [opn(19, fj('pimos:pimos.conf')), sd(19, fepm.ATTRIBUTES_OF)],
+        [opn(39, home), sd(39, fepm.PATHNAME, 0)],                       # an argument
+        [opn(39, home), sd(39, fepm.ATTRIBUTES_OF, b'')],
+        [opn(39, home), sd(40, fepm.PATHNAME)],                          # another device
+        [opn(39, home), sd(39, fepm.CLOSE), sd(39, fepm.ATTRIBUTES_OF)],  # closed
     ]
     for e in errs:
         s.append((std, e))

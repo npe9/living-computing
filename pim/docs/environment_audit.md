@@ -1093,7 +1093,10 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   the shell, `bsv/run_pimm_apps.sh`; compiling a file stops at a
   merger input of a long vector, `binary_reverse_engineering.md` 1.4,
   "Commands past the shell". Not held: a user's home directory, so
-  serving a source file to compile is OURS.)
+  serving a source file to compile is OURS. 2026-11-25: the home
+  holds the primer's `sample1.kl1`, its text the primer's, its 221
+  and 222 answers OURS in PIMOS's format; the compile reads it and
+  stops at the long-vector merge, `compile_sample1`.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.
