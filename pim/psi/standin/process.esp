@@ -10,13 +10,12 @@
 % tm0100_p07.esp-p10.esp): the natures, the class slots, create/2,
 % create_core/3, the instance slots, activate/2, resume/2 and suspend/2,
 % verbatim (layout as printed, comments shortened).  The figure is "part
-% of" the class and "not complete" (TM-100 p5).  One printed oddity is
-% kept as printed: create/2 calls `:create_core(PROCESS, ...)` with
-% PROCESS in capitals, a fresh variable (tm0100_p08.esp transcriber's
-% note: probably a typo for Class).  So the printed create/2 cannot make
-% a process: since step 3j it has a `context` class (the INTERPOLATED
-% stand-in context.esp), and it stops at `create_core/3` sent to the
-% unbound PROCESS.  Not corrected.
+% of" the class and "not complete" (TM-100 p5).  One printed oddity:
+% create/2 calls `:create_core(PROCESS, ...)` with PROCESS in capitals, a
+% fresh variable (tm0100_p08.esp transcriber's note: probably a typo for
+% Class).  Until step 3k it was kept as printed, and create/2 stopped at
+% create_core/3 sent to the unbound PROCESS.  Since step 3k it runs as
+% `Class`, a CORRECTED line with the printed text kept in its comment.
 %
 % The printed instance slots are initialised by code (five
 % `:create(#list, L)` / `:create(#process_clock, C)` predicates).  kl0's
@@ -53,12 +52,19 @@
     % INTERPOLATED: holds the running process; not a printed slot.
     attribute   current := 0 ;
 
-    % PRINTED: TM-100 Fig. 3.1, PDF p8 (PROCESS in capitals as printed)
+    % PRINTED: TM-100 Fig. 3.1, PDF p8, with one labelled correction.
+    % CORRECTED (step 3k, 2026-11-25): the printed second line reads
+    %         :create_core(PROCESS, Process, Context), ! ;
+    % with PROCESS in capitals, a variable the clause does not bind (its
+    % head binds Class).  It runs here as `Class`, the transcriber's
+    % reading (tm0100_p08.esp note).  The page image was re-read
+    % (docs/simpos/source_check_2026-11-24.md §10.2): the printed text is
+    % as recorded above.
     :create(Class, Process) :- !,
             % Make an instance and initiate it.  If hardware processes
             % are exhausted, then fail.
         :create(#context, Context_number, Stack_number, Context),
-        :create_core(PROCESS, Process, Context), ! ;
+        :create_core(Class, Process, Context), ! ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8
     :create_core(Class, Process, Context) :-
@@ -115,8 +121,8 @@
     %     `:create(#process, P, [free,default,free,small])`, then its local
     %     setup_process/3;
     %   - the printed create_core/3 (TM-100 Fig. 3.1, PDF p8), whose slot
-    %     settings it repeats, without the hardware context (class
-    %     `context` is not stood in) and without :add_child (not stood in).
+    %     settings it repeats (step 3j added the hardware context, step
+    %     3k :add_child; see below).
     % What the four-element list means is not known; it is ignored.
     % INFERENCE: four area-limit check settings, one per stack.  The same
     % atoms open set_area_limit_execution/6, commented "area limit check
@@ -149,7 +155,9 @@
     instance
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (all instance slots)
-    attribute   context,    % Hardware PC
+    attribute   context,    % Hardware PCB
+                % (CORRECTED step 3k: first transcribed "Hardware PC";
+                % TM-100 PDF p8 page image re-read, source_check §10.2)
                 priority,   % Corresponds to interrupt level
                 sub_priority,
                 mask_count          := 0,

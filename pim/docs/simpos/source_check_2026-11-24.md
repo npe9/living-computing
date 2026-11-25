@@ -37,6 +37,7 @@ The docs outside `psi/` were corrected in place:
 9. [§7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)](#7-step-3fs-interpolated-and-ours-parts-re-checked-2026-11-25)
 10. [§8 The rest of §7, re-checked in step 3h (2026-11-25)](#8-the-rest-of-7-re-checked-in-step-3h-2026-11-25)
 11. [§9 Step 3i: the two items §8 left open (2026-11-25)](#9-step-3i-the-two-items-8-left-open-2026-11-25)
+12. [§10 Step 3k: step 3j's stand-ins re-checked (2026-11-25)](#10-step-3k-step-3js-stand-ins-re-checked-2026-11-25)
 
 ## How the check was done
 
@@ -356,7 +357,9 @@ TM-444, TR-236, TR-044, `cil_kl0.esp` or the ESP manuals, for:
 - the rounding of division;
 - whether substring and string_tail share storage;
 - the bounds of search_character;
-- the third argument of list_to_vector and vector_to_list;
+- the third argument of list_to_vector and vector_to_list (superseded
+  2026-11-25 for list_to_vector: §10.1 settles it from known plaintext;
+  vector_to_list is unchanged);
 - the split of the e/c try family.
 
 TR-044 refers to "[Chikayama 84]" for the details; it is not held.
@@ -375,7 +378,7 @@ whose source is held, the "would-be witnesses".
 | blt 9a | 14 | `inhibit_interrupt`; blt 9b `allow_interrupt` | TERMCODE.ESP:181-193; `cil_kl0.esp`:149, :85 |
 | blt 54 | 418 | `shift_left(X,N,^R)`; also 51 `or`, 55 `shift_right` | BCKBCK.ESP:121-125 @70; KP_TIMER.ESP:43-45; TR-044 A.6 |
 | blt f2 | 3,067 | `==`, else = cell+2+u8, as blt f0 (difference UNKNOWN) | CTS.esp:50-52 @48b |
-| blt 6f | 75 | `list_to_vector(L,^V,^Tail)` | BCMSETSEQ.ESP:346-348 @4c3 |
+| blt 6f | 75 | `list_to_vector(L,^V,^Tail)` (row added 2026-11-25, step 3k, KNOWN-PLAINTEXT: §10.1) | BCMSETSEQ.ESP:346-348 @4c3 |
 | blt 49, R != A | 175 of 585 | as row 49 | above |
 
 Also met without a row: pmi c1, ce, ff, a8; blt 05, 0c, 12, 14, 42, 43,
@@ -976,3 +979,79 @@ added to §6.1 step 4: after replying, the local fails. Its caller
   to the generated file.
 - `gaps.md`'s counts come from `tools/coverage.py`, which reads the notes,
   not the appendix. They were regenerated in step 3h and do not change.
+
+## §10 Step 3k: step 3j's stand-ins re-checked (2026-11-25)
+
+Every page and line cited by the step 3j stand-ins was re-read in this step. That covers `psi/standin/process.esp`,
+`boot_process.esp`, `context.esp` and `dispatcher.esp`, the `pseudo_scsi` rows, and `psi/README.md` "Step 3j".
+Page images were read where a PDF has no usable text layer (`pdftoppm -r 150`). TR-044, TM-444 and TM-388 were also
+OCR'd with tesseract so they could be searched. Held cells were re-listed with `psi/librarian.py class X --listing`,
+and held pool strings with `asm/ptfread.py <pkg> --strings`.
+
+### §10.1 blt 6f `list_to_vector` (item 1)
+
+- **The printed sources.**
+  - TR-044 A.8 (PDF p41) prints only a 2-argument `list_to_vector`.
+  - TM-388 §4.5 (PDF p122, folio 110) lists only the integer and floating conversions.
+  - TM-388 ch. 4 (PDF p106-p123) lists neither list_to_vector nor vector_to_list.
+  - The TM-444 OCR has no hit.
+- **The known plaintext.** These held source clauses have held compiled cells, and they settle the three operands:
+  - kappa2 `KP_UPTACC.ESP`:224-227, `$or$9/2`: @6eb `6f 01 02 00`, @6ed `6f 00 03 00`, then @6ef `06 02 01 00`;
+  - `HLCEXTSEL.ESP`:170-173, `delete_temp/1` @720-723;
+  - `ROCHECK.ESP`:119-121, `check_list/1` @a4;
+  - `hash.esp`:152 @1a9, `6f 00 00 02` followed by `26 02`.
+- **The reading.**
+  - Byte 1 is the list, byte 2 the vector and byte 3 the tail. The tail is `[]` for a proper list.
+  - The vector is a stack vector.
+  - 75 held uses: kappa 68, pimmcsp 5, pimfep 1, sancho2 1.
+- **Verdict.**
+  - §2's "NO SOURCE FOUND" for list_to_vector's third argument is superseded, and marked so in place.
+  - The row is KNOWN-PLAINTEXT.
+  - Two parts are INFERENCE, and the row says so: the tail of an improper list, and that the elements are shared, not copied.
+
+### §10.2 TM-100 (the printed process code)
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| PDF p7: class slots `ready_queue` and `instance_array`, with no initial value | page image | CONFIRMED |
+| PDF p8: `create/2` sends `:create_core(PROCESS, Process, Context)` | page image | CONFIRMED as printed. `PROCESS` is not a variable of the clause; its head binds `Class`. The stand-in keeps the printed text in a comment and runs a labelled correction (§10.5) |
+| PDF p8: the slot comment of `context` | page image: "Hardware PCB" (the last letter is degraded and looks like a "2") | **CORRECTED.** The stand-ins and `psi/README.md` cited "Hardware PC". Fixed, each labelled, in `standin/context.esp`, `standin/process.esp` and the README. The reading supports blt 94 being a PCB write (§10.4) |
+| PDF p8-p9: the calls of `activate/2` (`set_entry_point`, `activate`, `set_priority`, the ready queue) | page image | CONFIRMED |
+| PDF p6: the quoted lines on processes and the supervisor | page image | CONFIRMED. Found in passing: device handlers are interrupt processes, "not dispatched by the supervisor" |
+| PDF p10: `with_link` and the ready queue | page image | CONFIRMED |
+| PDF p13: the boot process paragraph | page image | CONFIRMED |
+
+### §10.3 TR-056, TR-055, TR-285
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| TR-056 PDF p18 (folio 16): the four states; dispatcher and scheduler; dormant is "just been created or terminated" | page image | CONFIRMED. Found in passing: TR-056 prints `:activate(Process,Program,Goal)` with three arguments, an older interface than TM-100's `activate/2`. The stand-in follows TM-100 |
+| TR-056 PDF p19 (folio 17): the limit of 63, and about 50 ordinary processes | page image | CONFIRMED |
+| TR-056 PDF p21 (folio 19): activation puts the process in the ready queue; resume calls the scheduler; the boot process | page image | CONFIRMED |
+| TR-055 PDF p5: 63 contexts, "63 sets of the internal registers for process control", dispatching by software | page image | CONFIRMED |
+| TR-285 PDF p11 (folio 8): resources are released by the same method | page image | CONFIRMED |
+
+### §10.4 Held cells and held source
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| `pseudo_pe_process` `release/1` @177-189 (the send of `request(Boot, release, Process)`) | listing | CONFIRMED. Since step 3k it runs to the end: release_core, two blt 94, `remove_child`, then the context release |
+| `pseudo_pe_process` `$or$5/2` @3a9-3bc: suspended→dormant @3af, ready→dormant @3b8 | listing | CONFIRMED. Noted: blt 90 (the PCB read) at @3bb has no row yet |
+| `terminate_core` @1e0 `get_number`; `$or$2` @347 | listing | CONFIRMED |
+| `pseudo_scsi` @71 assign, @155 assigned, @161 resign, @26c, @5bf | listing | CONFIRMED |
+| pimscsi pool string "SCSI is not assigned to process" in `$or$0/1` (@55a, used at @56b) | `ptfread.py pimscsi --strings` and the listing | CONFIRMED |
+| kappa2 `KP_POOL.ESP`:285-290, `check_resource` | source | CONFIRMED |
+| kappa2 `ITRAPP.ESP`: nature `as_resource`; `:assign` at :106 | source | CONFIRMED |
+| kappa2 `ITRSES.ESP`:111-116 | source | CONFIRMED |
+| kappa2 `MOPMANAGER.ESP`:162-170: `create_kappa` creates the process with `:create(#process,Process,[free,free,free,free])` (:170), then sends `:activate(Process,Kappa_kernel)` | source | CONFIRMED |
+| TM-388 PDF p110 (folio 98): writing a slot overrides a value; it may not be written with an unbound variable or a stack vector | OCR, then page image | CONFIRMED. It is the basis for `resolve_value` copying the cells of a stored list. The copy itself is OURS |
+
+### §10.5 Counts and what changed
+
+- 23 rows were re-read:
+  - CONFIRMED: 21. One of them, the `PROCESS` typo, is CONFIRMED "as printed".
+  - CORRECTED: 1, "Hardware PC" → "Hardware PCB".
+  - Superseded: 1, §2's third argument of list_to_vector.
+  - CONTRADICTED: 0.
+- The `create/2` correction: `standin/process.esp` now runs `:create_core(Class, Process, Context)`, labelled
+  CORRECTED. The printed line is kept in the comment above it.

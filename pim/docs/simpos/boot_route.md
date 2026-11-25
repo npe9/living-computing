@@ -10,8 +10,8 @@ a top level. This page gives:
 - what the console and the FEP must answer;
 - which of these exist today, and what blocks each.
 
-It then names the first step that is unblocked. Step 3i took B2 and
-step 3j B3 (§4).
+It then names the first step that is unblocked. Step 3i took B2, step
+3j B3, and step 3k B4 for the FEP timer (§4).
 
 Labels, as elsewhere in `docs/simpos/`:
 
@@ -55,11 +55,11 @@ from it.
 | B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles 36 stand-ins | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
-| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor (§4) | **BLOCKED**: the handler classes and the device list are lost, and `interrupt_process` is printed only in part (its dispatch is elided). |
+| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and blt 90. |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE | BLOCKED in part: no `directory`, `user`, `world` or file system stand-in. |
 | B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal | BLOCKED: the coordinator is a process of its own, which B3 now allows; but its class and the window bodies are lost (`subsystems/window.md`). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors | BLOCKED: `user` and `world` are known by USAGE only; reading `login.com` needs B5's file system. |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j | BLOCKED on B6. Also the printed `create/2` (TM-100 Fig. 3.1) now stops at its own `create_core(PROCESS, ...)`: `PROCESS`, in capitals as printed, is unbound (§4). |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept) | BLOCKED on B6. |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -219,13 +219,17 @@ is not stood in. With status `nil` it fails at `status/3`.
 What stays open, labelled in the stand-ins:
 
 - `instance_array` (printed class slot) is not filled, and `add_child/2`
-  is not stood in, so `children/2` stays empty.
+  is not stood in, so `children/2` stays empty. (Step 3k: both done;
+  `instance_array` is an OURS heap vector of 63, filled by the printed
+  `create_core/3`.)
 - A dead process is not taken out of the ready queue (`die/1` does not
   do it); the dispatcher skips it.
 - The printed `create/2` now reaches its `:create_core(PROCESS, ...)`.
   `PROCESS`, in capitals as printed, is a fresh variable, so it stops
   there (`unbound receiver`). No correction was made: `create/3` is the
-  form the held callers on the route use.
+  form the held callers on the route use. (Step 3k: corrected to `Class`,
+  labelled CORRECTED, the printed text kept in the comment; the printed
+  `create/2` now makes a process.)
 - In the census the process is the boot process before its own `create`
   and `activate`. So the 11 device creators' `activate/2` now stop at
   the missing ready queue, not at `status/3`.
@@ -250,9 +254,9 @@ What stays open, labelled in the stand-ins:
   4. the creator puts the creation reply `{16, 1}`.
 
   The device process then waits in `see/2` on its input stream. Given a
-  request, it takes it in its own process and stops at blt 6f
-  (`list_to_vector`, unwitnessed) in `fep_message_assembler
-  disassemble/3` @a9. That is the next stop for every FEP device.
+  request, it takes it in its own process. In step 3j it stopped at blt
+  6f (`list_to_vector`, unwitnessed then) in `fep_message_assembler
+  disassemble/3` @a9. Step 3k passes that stop (§4.3).
 - TR-056 p22-p25: the root directory is kept in a class slot of
   `directory` (`:root(#directory, Root)`). Pathnames are retrieved with
   `:retrieve`, and a process's world with `:world(#process, World)`.
@@ -293,8 +297,9 @@ new process: `:create(#c,O).`, `:create(#process,P).`,
 `:activate(P,O).` A system-menu item does the same (TM-786 p5, TM-785
 p6). Every way to start a program in its own process goes through
 `activate/2`, which runs since step 3j (B3). The printed `create/2`,
-which the dialogue uses, stops at its own `create_core(PROCESS, ...)`
-(§B3). The kappa2 and Tour callers use `create/3`.
+which the dialogue uses, stopped at its own `create_core(PROCESS, ...)`
+until step 3k corrected it (§B3). The kappa2 and Tour callers use
+`create/3`.
 
 ## 3. What the console and the FEP must answer
 
@@ -310,9 +315,9 @@ which the dialogue uses, stops at its own `create_core(PROCESS, ...)`
   `pimfep` and `pimscsi` programs answer PIMOS's FEP commands
   (`../fep_services.md` §6). Their own SIMPOS needs are what the
   censuses measure: `directory:retrieve/3,4` (B5), the `pmacs_window`
-  protocol (B6), and blt 6f in every device's request path. Step 3j
-  settled `process:status/3` and the second process that `stream:see/2`
-  needed (B3).
+  protocol (B6), and, until step 3k, blt 6f in every device's request
+  path. Step 3j settled `process:status/3` and the second process that
+  `stream:see/2` needed (B3).
 
 ## 4. The steps taken
 
@@ -398,25 +403,100 @@ Also `as_resource.esp` (INTERPOLATED, from `pseudo_scsi` and kappa2
 `KP_POOL.ESP`): `assign/1`, `assigned/1` and `resign/1`, membership in
 the printed process slot `resources`. It is not on the route.
 
-**Where the boot route stops now.** B3 runs as a stand-in. B4 is still
-blocked: the SIMPOS handlers are lost. The FEP devices go one step
-further and stop at blt 6f. B5 to B8 are blocked as before (§2).
+At the end of step 3j, B3 ran as a stand-in. B4 was blocked, because
+the SIMPOS handlers are lost. The FEP devices went one step further and
+stopped at blt 6f.
+
+### 4.3 B4 for the FEP timer (step 3k)
+
+The basis table is `../../psi/README.md`, "Step 3k". What was added:
+
+- **blt 6f `list_to_vector(L, ^V, ^Tail)`** (`psi/kl0_opcodes.tsv`,
+  KNOWN-PLAINTEXT). Four held source clauses with held cells settle the
+  operands (`source_check_2026-11-24.md` §10.1). Two parts are
+  INFERENCE: the tail of an improper list, and that the elements are
+  shared.
+- **`boot_process:request/3`** (INTERPOLATED, `standin/boot_process.esp`):
+  - `request(Boot, release, Process)` calls `release_core(Process)`;
+  - any other request refuses with `unsupported_request`.
+
+  The basis is the one held send (`pseudo_pe_process release/1`
+  @184-189). No held cell sends `release_core/1` itself. That the call
+  is synchronous is OURS.
+- **What the held `release/1` then needs:**
+  - `process:add_child/2` and `remove_child/2` (INTERPOLATED, the
+    printed `children_processes` slot; `remove_child`'s send is
+    `$or$3/1` @36c-374);
+  - `context:release/1` (INTERPOLATED, @35f-361);
+  - blt 94 `set_pcb_entry(N, I, V)`, an INFERENCE row. Its basis is the
+    `pseudo_pe_process` methods `set_pcb_entry/4` and `pcb_entry/4`, and
+    the slot comment "Hardware PCB" (TM-100 p8).
+
+  `create/3` now records the child in its parent.
+- **What the timer's requests need:**
+  - `time:now/2` and `get_count/2`, and the new class `date_time` with
+    `now/2` and `get_count/3`, all INTERPOLATED from `pimos_timer`
+    `get_count/3` @86-8e and `get_date_time/3` @be-d0. The clock values
+    are class attributes (OURS).
+  - `put_integer`'s immediate is sign-extended (INFERENCE). Its basis is
+    `packet_generator abs/2` @280-287, and the -1 length word of the
+    reply.
+  - A negative element of a 32-bit string is stored in two's complement.
+  - `resolve_value` copies the cells of a stored list. Without the copy,
+    the ready queue lost the boot process when a list element was a
+    variable that backtracking unbound. Its basis is TM-388 p110 (folio
+    98); the copy itself is OURS.
+
+**The run** (`psi/test_espc.py` `test_step3k_b4`). On a fresh machine,
+the boot process creates the timer with the held `create_timer/9`. It
+then puts a request on the device's input stream and waits on the
+output stream. The device process takes the request in its own process,
+the held handler answers, and the boot process gets the reply:
+
+| Command | Reply (32-bit words) | After |
+|---|---|---|
+| 60 `close` | `[16, 0, 1, 0]` | the device process's `close_flag` is `closed` |
+| 301 `get_count`, clock 1234 | `[16, 0, 1, 1, 0xffffffff, 1234]` | the device process waits in `see/2` again (suspended) |
+| 304 `get_date_time`, date 33000, time 45678 | `[16, 0, 1, 2, 0xffffffff, 0xffffffff, 33000, 45678]` | as for 301 |
+
+`test_step3j_supervisor` also runs the held `release/1` to its end:
+
+- the process's context and its parent, world and user become `nil`;
+- the context's state becomes `released`;
+- the PCB entries `(n, 24)` and `(n, 8)` become 0, and `(n, 12)` becomes `nil`;
+- the boot process's children no longer include it.
+
+The PE status stays `on_release`, because the held `release_core` does
+not change it.
+
+**Where the boot route stops now.**
+
+- B4 runs for the FEP timer as a stand-in: its requests round-trip
+  through its device process under the supervisor.
+- Not reached in B4:
+  - `on_after` (303) is the timer's alarm, and it needs an alarm process;
+  - blt 90 (`pcb_entry`, read in `terminate_core` `$or$5` @3bb) has no
+    row.
+- The SIMPOS handlers themselves are still lost.
+- B5 to B8 are as in §2.
 
 ## 5. Next
 
-B3 is done as a stand-in. The next unblocked work, in order:
+B4 is done for the FEP timer as a stand-in. Under the owner's rule of
+2026-11-25 ("It's okay to infer what you don't have"), the next steps
+are taken as labelled INFERENCE or OURS when no source is held. In
+order:
 
-1. **blt 6f** (`list_to_vector`). Every FEP device's request now
-   reaches it in its own process (`fep_message_assembler disassemble/3`
-   @a9: `blt 6f 00 00 01`). Step 3g left it unwitnessed: its third
-   argument is not settled. A held source with a `list_to_vector/3` call
-   whose compiled cells can be paired would unblock the whole request
-   path.
-2. The boot process's `request/3` (held `pseudo_pe_process release/1`).
-   No source says what a request does.
-3. B7's `user` and `world` (USAGE) and B5's `directory`. Then a
-   coordinator process with a system menu that has the two PIM/m items
-   of §1.
+1. B5's `directory` with an OURS file-system population
+   (`directory:retrieve/3,4`, the step 3i examination below), then
+   `node_full_name/3`.
+2. B7's `user` and `world` (USAGE): `identify/4`, `world:create/2`,
+   `define/3`, `set_default_logical_name/2`, in the order of
+   `pimfep##simpos_user create/4`.
+3. A coordinator process with a system menu that has the two PIM/m
+   items of §1 (B6).
+4. Also on the way: blt 90, blt 0d (10 stops in each FEP census) and blt a8 (2); `get_interpreter/2` and
+   `has_been_reshaped/1`; the timer's `on_after`.
 
 **B5's `directory`, examined in step 3i (PARTIAL).** The interface is
 printed (TR-056 p22-p24; TR-524 p36-p37), and the held callers settle

@@ -1816,6 +1816,24 @@ end.'''
         one(p3, 'clear_masks')
         self.assertEqual(sl(p3)['mask_count'], 0)
 
+        # step 3k: the printed create/2 with its PROCESS line CORRECTED to
+        # Class (process.esp, the printed text kept in its comment) runs
+        # the printed create_core/3: a dormant process whose parent is the
+        # boot process, entered in the class slot instance_array (a heap
+        # vector of 63 made by boot_process create/2, OURS) at its
+        # context's number; the boot process is element 0.  create/3
+        # (INTERPOLATED) makes no entry, so element 1 (the child) stays 0.
+        # Injection, observed (2026-11-25): K13 the line put back as
+        # printed (PROCESS): this test ERROR, nothing else.
+        (p4,) = one(K.ClassRef('simpos##process'), 'create', K.Var())
+        self.assertEqual((p4.cid, sl(p4)['status']), ('simpos##process', K.Atom('dormant')))
+        self.assertIs(sl(p4)['parent_process'], boot)
+        arr = K.deref(m.get_slot(K.ClassRef('simpos##process'), 'instance_array'))
+        self.assertEqual(len(arr.args), 63)
+        self.assertIs(K.deref(arr.args[0]), boot)
+        self.assertEqual(K.deref(arr.args[1]), 0)
+        self.assertIs(K.deref(arr.args[sl(sl(p4)['context'])['number']]), p4)
+
         # held pimmcsp##pseudo_pe_process release/1 @177-189: a dormant PE
         # process passes status/3 (dormant -> on_release) and reaches the
         # boot process's request/3; with status nil it fails.  Until step
@@ -1993,24 +2011,32 @@ end.'''
         # time and date_time read class slots; no clock is modelled).
         # Injections, observed (2026-11-25; each from a backup copy,
         # restored by copy, cmp clean):
-        #   K1 list_to_vector swaps V and Tail (kl0.py): this test,
-        #      test_step3j_fep_device and test_step3g_stream_see ERROR;
-        #      test_kl0 test_list_to_vector FAIL; nothing else.
-        #   K2 list_to_vector builds a heap vector: the same three ERROR,
-        #      test_list_to_vector FAIL, nothing else.
-        #   K3 put_integer not sign-extended (u16 as before): this test,
-        #      test_step3f_census_recipes FAIL; test_kl0 test_census FAIL;
-        #      nothing else.
-        #   K4 slot stores keep bound variables (resolve_value = deref):
-        #      this test ERROR (would suspend), nothing else.
-        #   K5 boot_process request/3 does nothing: test_step3j_supervisor
-        #      FAIL, nothing else.
+        #   K1 list_to_vector swaps V and Tail (kl0.py): this test and
+        #      test_step3g_stream_see ERROR; test_kl0 test_list_to_vector
+        #      FAIL; nothing else.
+        #   K2 list_to_vector builds a heap vector: test_kl0
+        #      test_list_to_vector FAIL, nothing else (this file OK).
+        #   K3 put_integer not sign-extended (u16 as before): this test
+        #      ERROR, test_step3f_census_recipes FAIL; test_kl0
+        #      test_census FAIL; nothing else.
+        #   K4 resolve_value returns deref(t), uncopied: this test ERROR,
+        #      test_step3j_supervisor FAIL, nothing else.
+        #   K5 boot_process request/3 release does nothing:
+        #      test_step3j_supervisor FAIL, nothing else.
         #   K6 date_time get_count/3 returns Time, Date: this test FAIL,
         #      nothing else.
         #   K7 set_pcb_entry does not record: test_step3j_supervisor FAIL,
         #      nothing else.
         #   K8 remove_child/2 a no-op: test_step3j_supervisor FAIL,
         #      nothing else.
+        #   K9 context release/1 a no-op: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   K10 time now/2 ignores the clock: this test FAIL, nothing else.
+        #   K11 a negative 32-bit string element not masked: this test
+        #      FAIL, nothing else.
+        #   K12 create/3 without add_child: test_step3j_supervisor FAIL,
+        #      nothing else.
+        #   test_kl0.py stayed OK in K4-K12.
         # 60 close: {16, 1}; the device process resigns its program and
         # dies (status nil); the boot process ends after its get
         m, s = self.b4_run(60)

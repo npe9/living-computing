@@ -84,9 +84,9 @@ class boot_process has
     % printed create/2 and create_core/3 give a new process: a context (its
     % number 0 when it is the first), priorities 0, status dormant.  Not
     % :new (the boot process exists: "sole instance", TM-100 p13), no
-    % parent (it is "not [created] by another process", TM-100 p6), and no
-    % instance_array entry (the printed class slot has no initial value
-    % and nothing on the route reads it).  The supervisor's ready queue,
+    % parent (it is "not [created] by another process", TM-100 p6).  Until
+    % step 3k it made no instance_array entry; see the end of the
+    % clause.  The supervisor's ready queue,
     % the printed class slot ready_queue (Fig. 3.1, PDF p7), is made here
     % as a list (OURS: the slot has no printed initial value; with_link
     % "is inherited to put the process into the ready queue", PDF p10, so
@@ -100,7 +100,18 @@ class boot_process has
         Boot!sub_priority := 0,
         Boot!status := dormant,
         :create(#list, Queue),
-        #process!ready_queue := Queue, ! ;
+        #process!ready_queue := Queue,
+        % Step 3k, OURS: the printed class slot instance_array ("Relates a
+        % process to its context_number", PDF p7) is made here as a heap
+        % vector of 63, one element per context (TR-055 PDF p5, TR-056
+        % PDF p19), so that the printed create_core/3's
+        % set_vector_element can run once create/2's PROCESS is corrected.
+        % The boot process takes its own context's element, as
+        % create_core/3 gives every process (INTERPOLATED).
+        new_heap_vector(Array, 63),
+        #process!instance_array := Array,
+        :get_number(Context, Boot_number),
+        set_vector_element(Array, Boot_number, Boot), ! ;
 
     instance
 
