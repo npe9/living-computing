@@ -1204,7 +1204,13 @@ end.''', 'simpos')
         # p_MAIN.esp, receiver.esp): 808 / 163 / 432 (login_server
         # device_abort/1 succeeds, checked alone; nine pimscsi methods fail
         # on the census's unbound first argument, as in the recipe census)
-        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 163, 'refused': 432, 'exception': 16,
+        # 2026-11-25, step 3h: pmi 34/35 witnessed (receiver.esp:669, :680):
+        # 808 / 165 / 430.  Two rows leave refused for failure, both on the
+        # census's unbound arguments (net_spawn_user take_ip_address/3 in
+        # the e_string stand-in, scsi receive_command/3 at check_argument's
+        # `string` clause, blt 0b on an unbound); two scsi_device rows stop
+        # later, at an unbound receiver.  Not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 165, 'refused': 430, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1256,10 +1262,12 @@ end.''', 'simpos')
         # device_abort/1, abort_string_io/2) were checked alone on a fresh
         # machine; the nine failures (pimscsi cmt, scsi, scsi_communicator
         # check_argument/2, low_if/2, send_request/5, receive_request/5)
-        # are the census's unbound first argument meeting a first clause
-        # that binds it and cuts (check_argument/2 @b7 `get r0, initiator`,
-        # `dc 02`): not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 161, 'refused': 411,
+        # are not progress.  Step 3h traced the six low_if/send_request/
+        # receive_request rows (test_step3h_scsi_mode): initiator methods
+        # on a receiver in target mode (lun 0, an integer), held behaviour
+        # step 3h: pmi 34/35 witnessed: 831 / 163 / 409 (the same four rows
+        # as the plain census move)
+        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 163, 'refused': 409,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 96)
@@ -1432,6 +1440,48 @@ end.''', 'simpos')
             self.assertEqual(sl['device_id'], K.REQUEST_ID)
         finally:
             self.send(stack, 'clear')
+
+    def test_step3h_scsi_mode(self):
+        # step 3h: the six pimscsi failures of step 3g, traced.  cmt and scsi
+        # check their arguments in scsi_communicator check_arguments/2
+        # (@130-147): each element goes to check_argument/2 (@93-10d).  The
+        # `initiator` clause (@b7-bd) needs Obj!lun = initiator, which
+        # scsi_common_if create/3 writes (@22-25); the `target` clause
+        # (@be-c4) needs an integer lun, which create/4 writes (@46-49).
+        # The census's new/2 instance keeps lun = 0, a target, as held
+        # scsi_handler initiate_device/7 leaves the scsi it makes with
+        # :new (@3cb-3d3, no lun written).  So low_if/2, send_request/5
+        # and receive_request/5, which list `initiator`, fail through
+        # @13f-147 (status software, detail arguments): held behaviour.
+        m = self.m
+
+        def run(cid, sel, lun):
+            m.reset()
+            o = K.make_instance(m, cid)
+            if lun is not None:
+                self.assertEqual(len(self.send(o, 'set_lun', lun)), 1)
+            name, n = sel.split('/')
+            try:
+                r = 'success' if any(True for _ in m.solve_send(o, name, [K.Var() for _ in range(int(n) - 1)] + [o])) \
+                    else 'failure'
+            except K.Refusal as e:
+                r = e.cause
+            co = m.lib.build(cid)
+            s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, o.slots)}
+            return r, s['status'], s['detail']
+        sw = (K.Atom('software'), K.Atom('arguments'))
+        for cid in ('pimscsi##cmt', 'pimscsi##scsi'):
+            for sel in ('low_if/2', 'send_request/5', 'receive_request/5'):
+                self.assertEqual(run(cid, sel, None), ('failure',) + sw, (cid, sel))
+                # an initiator (lun := initiator by the held set_lun/2) gets
+                # past `initiator`: low_if/2 to blt e1, the others to the
+                # unit check on the census's unbound unit
+                want = 'opcode' if sel == 'low_if/2' else 'unbound argument'
+                self.assertEqual(run(cid, sel, K.Atom('initiator'))[0], want, (cid, sel))
+            # a target method: on lun 0 it reaches the unbound unit; on an
+            # initiator it fails at `target` (@c3, integer(lun))
+            self.assertEqual(run(cid, 'send_data/4', None)[0], 'unbound argument')
+            self.assertEqual(run(cid, 'send_data/4', K.Atom('initiator')), ('failure',) + sw)
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,

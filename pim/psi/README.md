@@ -2533,6 +2533,118 @@ Every page, line and cell that step 3f cited was re-read. The record is
 
 No code path changed, so no census row moves.
 
+### Step 3h: the six pimscsi failures, traced (2026-11-25)
+
+Step 3g left six new failures untraced: `low_if/2`, `send_request/5`
+and `receive_request/5` of `cmt` and of `scsi`. Each was run alone on a
+fresh machine with a trace (MEASURED 2026-11-25). All six are **held
+behaviour**, not census artifacts.
+
+- Each method lists its arguments for scsi_communicator
+  `check_arguments/2` (@130-147). That checks each element with
+  `check_argument/2` (@93-10d), and on a failure it sets `status :=
+  software`, `detail := arguments` (@13f-146) and fails (`fe`, @147).
+- All three list the atom `initiator` (scsi_low_if `low_if/2` @f1-f5).
+  Its clause (@b7-bd) unifies `Obj!lun` with `initiator`.
+- The receiver is new/2's instance, so `lun` is 0, its template
+  constant. 0 is a target's lun: the `target` clause (@be-c4) is
+  `integer(Obj!lun)`. scsi_common_if `create/4` writes an integer there
+  (@46-49), `create/3` writes `initiator` (@22-25).
+- An scsi left with lun 0 is a state held code makes. scsi_handler
+  `initiate_device/7` makes its scsi with `:new` and writes no lun
+  (@3cb-3d3: new/2, set_device/2, add_at/3). So does `shutdown_device/4`
+  (@413-41c). So the six rows are initiator methods sent to a target.
+  They fail as the held code says.
+
+The step 3g README and test comment that put this down to "the census's
+unbound first argument" were right only for `check_argument/2`.
+
+**No recipe.** A recipe through `create/3` (unit 0, as scsi
+`initialize/1` @2b-30 passes it) was tried and dropped. It only swaps
+the stops: the target methods (`send_data/4`, `receive_data/4`,
+`transfer/6`, scsi `receive_command/3`) then fail at `target`, and the
+initiator methods stop at the unit check. Which mode the census should
+pick would be OURS.
+
+**The 6 `not_less_than`-on-unbound stops** (cmt and scsi `send_data/4`,
+`receive_data/4`, `request/4`): the `unit` clause (@c5-ce) tests `0 =<
+Unit =< 7` on the census's unbound unit. They are artifacts of unbound
+probing and stay refused (fail loud). The held callers pass a run-time
+value:
+
+- pimfep `scsi_stream`'s local `send_data_to_handler/4` (@3aa-3b3) and
+  `receive_data_from_handler/4` (@354-35d) pass their own arguments
+  through (from `send_data/5` @244-25b and `refute_internal_command/4`).
+- cmt's own `test_unit_ready/1`, `inquiry/1` and `request_sense/2` pass
+  `Obj!cmt_unit` and `Obj!cmt_lun` (`$or$4/2` @119-125, `$or$5/2`
+  @12e-13a, `$or$6/3` @143-14e). Those rows are in the census already.
+
+No single held constant is the unit, so none is invented.
+
+Test (`test_espc.py` `test_step3h_scsi_mode`): a pin of held behaviour.
+- On lun 0, the three initiator methods fail with status `software`,
+  detail `arguments`.
+- With `lun := initiator`, written by the held `set_lun/2`, they get
+  past it: `low_if/2` to blt e1, the other two to the unit check.
+- `send_data/4` reaches the unit check on lun 0 and fails at `target`
+  on an initiator.
+
+### Step 3h: pmi 34 and 35, `get_vector_4` and `get_vector_5` (2026-11-25)
+
+**KNOWN-PLAINTEXT**, `paragraph##receiver send/3` beside `receiver.esp`
+(release 3200 against the object's 3500):
+
+- @b2f `34 00`, atom `init`, atom `pe_view`, `41 04`, `41 05`. That is
+  :669 `:send(Obj,init(pe_view,PE,Wid),Res):-!`: the head's 4-vector in
+  A0. The body's copy is `b4 00` (@b37), the witnessed put_vector_4. The
+  same holds at @b3f (:672) and @b4f (:675).
+- @b67 `35 00`, atom `init`, atom `htree_view`, `41 00`, `41 04`, `41 05`,
+  then `32 00` on X0. That is :680 `init(htree_view,{Id,Nid},Depth,Wid)`.
+  The body's copy is `b5 00` (@b76).
+- A != 0:
+  - receiver's local `set_pred_pool/2` @11d0 `34 01`, after `2a 01` and
+    `41 01` (:1318 `set_pred_pool(L,[{Pred,R,S,Id}|Rest])`);
+  - `paragraph##h` local `draw_string/6` @13d `35 01`, after `32 01`,
+    atom `draw_string`, `41 01` (h.esp:193 `List =
+    [{draw_string,{X,Y,S1,Font,set}}|List2]`).
+- The second and third bytes are zero in all 1,755 held 34 and 689 held
+  35 (MEASURED over the eleven packages). A non-zero byte refuses.
+
+Effect, row by row (MEASURED 2026-11-25):
+
+- Six packages: identical (311 / 12 / 206 / 1). No row stopped at 34 or
+  35.
+- Plain `census --fep`: 808 / 163 / 432 becomes 808 / 165 / 430. With
+  recipes, 831 / 161 / 411 becomes 831 / 163 / 409. The same four rows
+  move in both:
+  - `net_spawn_user take_ip_address/3` goes from pmi 35 to failure. Its
+    unbound A1 is bound to a vector of five unbound elements, and the
+    HELD-SOURCE `e_string` stand-in fails on them.
+  - scsi `receive_command/3` goes from pmi 34 to failure. check_argument's
+    `string` clause (@ed-f3) tests the census's unbound string with blt
+    0b. That is unbound probing.
+  - `scsi_device` `do_send_request/3` and `do_receive_request/3` stop
+    later, at `melt_arguments/2` sent to an unbound receiver.
+
+  None is progress. Both failures were checked alone on a fresh
+  machine.
+
+Tests (`test_kl0.py` `Step3hRows`):
+- `send/3` run end to end with the three `init/4` messages and the
+  `init/5` one. Each refuses at the body's send to the unbound `d_map`,
+  with the rebuilt message in A0.
+- An unknown view, and an `init/5` whose element 2 is not a 2-vector,
+  reach the catch-all (`"abnormal"`).
+- The non-zero bytes refuse, and A != 0 reads the register named.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+- 34 taking 3 elements: `test_get_vector_4` and
+  `test_nonzero_bytes_refused` fail, and `test_espc.py` passes.
+- The 35 row and handler dropped: `test_get_vector_5`,
+  `test_handlers_are_the_table` and (error) `test_nonzero_bytes_refused`
+  fail; so do `test_fep_census` and `test_step3f_census_recipes`.
+- The byte refusal removed: only `test_nonzero_bytes_refused` fails.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

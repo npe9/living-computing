@@ -197,6 +197,17 @@ a backup, restored by cp and cmp-checked; both test files run; observed):
     passes;
   - cc reading its constant with const_cell (no vector keys): only
     test_get_tap_type errors; test_espc passes.
+Step 3h's rows (Step3hRows: pmi 34 get_vector_4, pmi 35 get_vector_5,
+receiver.esp:669 and :680; 2026-11-25; injected into kl0.py or
+kl0_opcodes.tsv from a backup, restored by cp and cmp-checked; both test
+files run; observed):
+  - pmi 34 taking 3 elements: test_get_vector_4 and
+    test_nonzero_bytes_refused fail here; test_espc passes;
+  - the pmi 35 row and its handler dropped: test_get_vector_5 and
+    test_handlers_are_the_table fail, test_nonzero_bytes_refused errors
+    here; test_espc test_fep_census and test_step3f_census_recipes fail;
+  - the non-zero second/third byte refusal removed: only
+    test_nonzero_bytes_refused fails; test_espc passes.
 """
 import os
 import sys
@@ -252,8 +263,8 @@ class Table(unittest.TestCase):
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
-        # c3 c6 ce ff, tables cd03 cd04)
-        self.assertEqual(len(rows), 132)
+        # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35
+        self.assertEqual(len(rows), 134)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -965,6 +976,65 @@ class Step3gSwitches(unittest.TestCase):
             m.op_switch_on_term(fake, 0, 0, 0, 0x1a, 0xc600001a)
         with self.assertRaises(K.Refusal):
             m.op_jump(fake, 0, 1, 0, 2, 0xff010002)
+
+
+class Step3hRows(unittest.TestCase):
+    """pmi 34 and 35 (get_vector_4, get_vector_5), step 3h, run end to end
+    on paragraph##receiver send/3, beside receiver.esp:669-681."""
+
+    def send3(self, msg):
+        """:send(Obj, Msg, Res) on a receiver whose slots are unbound:
+        each init clause's body sends to Obj!d_map, unbound, so it refuses
+        there with the body's message in A0 (or Res is returned)."""
+        m = machine()
+        cid = 'paragraph##receiver'
+        co = m.lib.build(cid)
+        m.reset()
+        o = K.Instance(cid, [K.Var() for _ in co.instance_slots])
+        res = K.Var()
+        try:
+            for _ in m.solve_send(o, 'send', [msg, res, o]):
+                return 'result', repr(K.resolve(res))
+            return 'failure', None
+        except K.Refusal as e:
+            return e.cause, repr(K.resolve(m.x[0]))
+
+    def test_get_vector_4(self):
+        # :669, :672, :675 `:send(Obj,init(V,PE,Wid),Res):-!, :send(Obj!d_map,
+        # init(V,PE,Wid),Res)`: @b2f, @b3f, @b4f `34 00` read the head's
+        # 4-vector; the body's `b4 00` rebuilds it
+        for view in ('pe_view', 'overall_stack_view', 'stack_view'):
+            self.assertEqual(self.send3(K.Vec([A('init'), A(view), 5, 6])),
+                             ('unbound receiver', '{init,%s,5,6}' % view))
+        # a view no clause names: the init/4 chain fails through, and the
+        # catch-all :686 answers "abnormal"
+        self.assertEqual(self.send3(K.Vec([A('init'), A('zzz_view'), 5, 6])),
+                         ('result', "string#'abnormal'"))
+
+    def test_get_vector_5(self):
+        # :680 `:send(Obj,init(htree_view,{Id,Nid},Depth,Wid),Res)`: @b67 `35
+        # 00`, then `32 00` on the {Id,Nid} it put in X0
+        self.assertEqual(self.send3(K.Vec([A('init'), A('htree_view'), K.Vec([1, 2]), 3, 4])),
+                         ('unbound receiver', '{init,htree_view,{1,2},3,4}'))
+        # element 2 not a 2-vector: 32 fails, so does the clause
+        self.assertEqual(self.send3(K.Vec([A('init'), A('htree_view'), 7, 3, 4])),
+                         ('result', "string#'abnormal'"))
+
+    def test_nonzero_bytes_refused(self):
+        m = machine()
+        fake = types.SimpleNamespace(id='test', cells={})
+        for op, k in ((m.op_get_vector_4, 4), (m.op_get_vector_5, 5)):
+            m.reset()
+            m.x[0] = K.Vec([K.Var() for _ in range(k)])
+            with self.assertRaises(K.Refusal) as e:
+                op(fake, 0, 0, 1, 0, 0)
+            self.assertEqual(e.exception.cause, 'operand')
+            # A != 0 (receiver set_pred_pool/2 @11d0 `34 01`, h draw_string/6
+            # @13d `35 01`): the register named is read
+            m.reset()
+            m.x[1] = K.Vec([K.Var() for _ in range(k)])
+            op(fake, 0, 1, 0, 0, 0)
+            self.assertEqual(m.pc, (fake, 1))
 
 
 class Census(unittest.TestCase):

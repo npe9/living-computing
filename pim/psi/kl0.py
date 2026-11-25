@@ -1402,6 +1402,19 @@ class Machine:
     def op_get_vector_3(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.get_struct(a, 'vec', 3) else self.fail()
 
+    # pmi 34, 35 (step 3h): witnessed with a zero second and third byte only
+    def _get_vector_k(self, code, off, a, b, c, k):
+        if b or c:
+            raise Refusal('operand', '%s @%x: pmi %02x %02x %02x %02x: only zero second and third bytes '
+                          'are witnessed' % (code.id, off, 0x30 + k, a, b, c))
+        self.nxt(code, off) if self.get_struct(a, 'vec', k) else self.fail()
+
+    def op_get_vector_4(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 4)
+
+    def op_get_vector_5(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 5)
+
     # unify
     def _uvar(self, store, i, code, off):
         el, k = self.next_elem()
