@@ -68,8 +68,10 @@ else
     grep -A2 G0021 "$B/bsc.log" >&2
     exit 1
   fi
-  CPUREADS="read_verilog $FPGA/$B/mkHobbitSocCpu.v;"
-  CPUV="$B/mkHobbitSocCpu.v"
+  # The core's arrays read on the system clock (sysram_filter.py).
+  python3 sysram_filter.py "$B/mkHobbitSocCpu.v" "$B/mkHobbitSocCpu.sys.v"
+  CPUREADS="read_verilog $FPGA/$B/mkHobbitSocCpu.sys.v; read_verilog $FPGA/rtl/hobbit_sysregfile.v;"
+  CPUV="$B/mkHobbitSocCpu.sys.v"
 fi
 
 "$BSC" +RTS -K512M -RTS -verilog -g mkHobbitSocDevs -u \
@@ -79,7 +81,7 @@ fi
   || { tail -30 "$B/bsc_devs.log"; exit 1; }
 DEVV=""
 for v in "$B"/mk*.v; do
-  case "$v" in */mkHobbitSocCpu.v) ;; *) DEVV="$DEVV read_verilog $FPGA/$v;" ;; esac
+  case "$v" in */mkHobbitSocCpu.v|*/mkHobbitSocCpu.sys.v) ;; *) DEVV="$DEVV read_verilog $FPGA/$v;" ;; esac
 done
 LIBREADS=$(libreads $CPUV "$B"/mk*.v)
 

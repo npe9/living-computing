@@ -219,7 +219,7 @@ module mkHobbitSmoke(Empty);
   // flush from this command and advances it one word per clock, so the
   // harness only counts the clocks it stays busy.
   rule boxEnter (boxState == 1);
-    box.commit(ScCmd { op: BX_ENTER, we: False, waddr: 0, wdata: 0,
+    box.commit(ScCmd { op: BX_ENTER, we: False, waddr: 0, wdata: 0, wbe: 4'hF,
                        spBefore: sp0, mspBefore: msp0,
                        spAfter: 32'h000000C0, mspAfter: 32'h000000C0,
                        target: 32'h000000C0, stackMode: False });
