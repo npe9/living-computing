@@ -1,7 +1,9 @@
 // PIM/m core: the memory, one block RAM of 40-bit cells behind
-// request/response, shared by seven clients (instruction fetch, the
-// hash box, the data box, the goal box, the string box, the execute
-// stage's structure reads and writes, the vector box).  Every write is traced here, when it is
+// request/response, shared by its clients (PimmCore.bsv's port order:
+// instruction fetch, the hash box, the data box, the goal box, the
+// string box, the execute stage's structure reads and writes, the
+// vector box, the merger box, the shoen box, the SCSI box and, since
+// 2026-11-25, the passive-unification box).  Every write is traced here, when it is
 // requested: the machine does one thing at a time, so request order is
 // the order of events, and the address and data printed are the ones
 // queued for the RAM.
@@ -18,7 +20,7 @@ interface MemPort;
   method ActionValue#(Cell) data;        // the answer to a read, in order
 endinterface
 
-typedef 10 MemClients;
+typedef 11 MemClients;
 
 interface PimmMem;
   interface Vector#(MemClients, MemPort) port;

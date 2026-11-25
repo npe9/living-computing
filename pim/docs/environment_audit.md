@@ -1097,8 +1097,9 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   holds the primer's `sample1.kl1`, its text the primer's, its 221
   and 222 answers OURS in PIMOS's format; the compile reads it and
   stopped at the long-vector merge, `compile_sample1`; with that
-  merge in on both models it stops at `wait_value` on vectors of
-  vectors.)
+  merge in on both models it stopped at `wait_value` on vectors of
+  vectors; with VPIM's general passive unification on both, at a
+  1-bit string, `refused: new_string(15, 1)`.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.

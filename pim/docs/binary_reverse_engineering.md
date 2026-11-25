@@ -814,7 +814,7 @@ the device are given it again whenever the machine runs dry.
   | `versions` | 114,472 | 610,006 | ` Module not found !! ( versions:go ) ` / `  [ Job#1, Node#0, PE#0 ]`, then ` Job 1 was aborted . ` | the module is named `ipl_versions` (`versions.kl1`:7) and not loaded under `versions`: the held source's behaviour, not a model fault (INFERENCE: which module list a 3.6 installation linked is not held) |
   | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
   | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample2`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample2`, `.aya`, `.mac`, `.kl1`, each 5), which holds only `sample1.kl1` (2026-11-25; this row typed `sample1` before, the same counts) |
-  | `compile`, `sample1`, `!exit` | 612,857 | 2,248,660 | as above, then (both models) `refused: wait_value: an element (21, ...)` (until 2026-11-25 the long-vector merge, at 608,552 and 2,236,196) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
+  | `compile`, `sample1`, `!exit` | 727,607 | 2,563,611 | as above, then (both models) `refused: new_string(15, 1)` (until 2026-11-25 the long-vector merge, at 608,552 and 2,236,196, then `wait_value` on vectors of vectors, at 612,857 and 2,248,660) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
 
   `pwd` against the primer, each difference root-caused: the prompt
   `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
@@ -889,7 +889,13 @@ the device are given it again whenever the machine runs dry.
     whose elements are vectors: the compiler's head-position keys
     (`library/compiler/index.kl1`:787 `new_register(car(Pos), ...)`,
     `{car, {arg, 1}}` against `{variable(N), 7}`; atoms named from
-    `loaded`'s name list).
+    `loaded`'s name list). The general passive unification is in on
+    both models (2026-11-25, VPIM's `f_EqualStruct`/`f_Equal_Sub`;
+    `pimm.py` `passive`, `PimmPBox.bsv`, `lockstep_pstruct.py`): it
+    stops at 727,607 instructions, 2,563,611 lines, at `refused: new_string(15, 1)`, in
+    `kl1cmp_register`'s fill of a string (`compiler/reg.kl1`, a 1-bit
+    string: element type 0, `kbnheap.kl1` `string_cdesc`), which
+    neither model takes yet.
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

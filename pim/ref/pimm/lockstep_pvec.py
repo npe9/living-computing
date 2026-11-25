@@ -15,17 +15,18 @@ same way (wait_value in if_empty/4, do_get_if_any/9,
 do_get_if_any_and_put1/10, do_get_and_put/5), so this test gives that
 pool vector keys.
 
-The meaning is PDSS's passive unification (emulator/emulate.c
+The meaning was PDSS's passive unification (emulator/emulate.c
 KL1B_WAIT_VALUE, emulator/passive.c passive_unify), as far as both
-models take it (docs/pimm_semantics.md, wait_value): two vectors of 0
-to 6 elements are equal when they have the same size and each pair of
-elements is the same atomic value (tag and value); the elements are
-taken in order, and the first unbound one met is noted and the guard
-fails there (an unbound element of X; or of Y, opposite an atomic
-element of X), so a goal with no other clause waits for it.  A vector
-against anything that is not a vector fails.  Refused on both models:
-a list, a vector of seven or more, an element of X that is a structure
-or a string.
+models took it: two vectors of 0 to 6 elements are equal when they
+have the same size and each pair of elements is the same atomic value
+(tag and value); the elements are taken in order, and the first
+unbound one met is noted and the guard fails there (an unbound element
+of X; or of Y, opposite an atomic element of X), so a goal with no
+other clause waits for it.  A vector against anything that is not a
+vector fails.  Since 2026-11-25 it is VPIM's general passive
+unification (pimm.py passive, bsv/PimmPBox.bsv; lockstep_pstruct.py
+tests the rest: nested structures, lists, long vectors, strings), which
+gives these keys the same answers: this test passes unchanged.
 
 The oracle is a Python dictionary keyed by tuples, the pool's meaning
 as lockstep_pool.py has it.  A pool of size 4, so keys share slots.
@@ -41,7 +42,8 @@ until the bench binds it, but in its hash, before any X = Y, so an
 unbound element reaching wait_value is NOT run.
 
 Observed fault injections into the Bluespec (bsv/PimmStages.bsv, the
-vector branch of deref2 and rules pv1..pv4), each run alone
+vector branch of deref2 and rules pv1..pv4, which PimmPBox.bsv has
+replaced), each run alone
 (bsv/run_pimm_lockstep.sh pvec) and restored from a copy, 2026-11-23;
 each first difference is the clause chosen after an X = Y (I 13453 or
 I 13259 against I 13440 or I 13244):

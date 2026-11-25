@@ -127,7 +127,7 @@ PINNED = {
     # counts, the same run but for the name); compile_sample1, the
     # primer's file served from the home directory
     ('prompt', ('compile', 'sample2', '!exit')): (1770029, 318476),
-    ('prompt', ('compile', 'sample1', '!exit')): (2248660, 612857),
+    ('prompt', ('compile', 'sample1', '!exit')): (2563611, 727607),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and

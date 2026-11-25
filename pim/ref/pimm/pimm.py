@@ -1164,8 +1164,8 @@ class Machine:
         # atomic values and strings: two strings are equal when their
         # descriptors and all their words are (PDSS emulator/passive.c
         # passive_unify, case STRING), a string and an atomic value
-        # are not.  Vectors as below; lists, and one variable twice,
-        # need the general passive unification and are refused
+        # are not.  Lists and vectors as below; one variable twice is
+        # refused
         a, b = self.deref(self.reg[x]), self.deref(self.reg[y])
         if self.unbound(a) and self.unbound(b) and a[1] == b[1]:
             raise Unimplemented('wait_value of a variable with itself')
@@ -1182,15 +1182,10 @@ class Machine:
         if (sa or self.atomic(a)) and (sb or self.atomic(b)) and (sa or sb):
             return self.guard_fail()
         if self.structure(a) or self.structure(b):
-            # vectors: PDSS's passive unification (emulator/emulate.c
-            # KL1B_WAIT_VALUE, emulator/passive.c passive_unify) as far
-            # as both models take it: two vectors of 0..6 elements are
-            # equal when the sizes are and each pair of elements is the
-            # same atomic value; in order, the first unbound element met
-            # is noted and the guard fails there (X's; or Y's opposite
-            # an atomic element of X).  A vector against anything else
-            # bound fails.  Refused: a list, a vector of seven or more,
-            # an element of X that is a structure or a string
+            # lists and vectors: the general passive unification,
+            # VPIM's (passive below; 2026-11-25, before: two vectors of
+            # 0..6 atomic elements, after PDSS).  The Bluespec's is
+            # PimmPBox.bsv, step for step
             if not self.passive(a, b):
                 return self.guard_fail()
             return
@@ -1202,33 +1197,92 @@ class Machine:
     def structure(self, w):
         return w[0] & ~1 == LIST or self.vsize(w) is not None
 
+    # VPIM's unify stack: _LOCAL_MEM_UNIFY_STACK_AREA_SIZE 0x800 words
+    # (basics/bsc_mem_map.psl.c:90), a frame of 4 (crp, size, X's and
+    # Y's first element; structures/str_passive_unify.psl.c
+    # C_U_STACK_FRAME_SIZE), so 512 frames.  VPIM's bound, not PIM/m's
+    # (its microcode is not held)
+    PASSIVE_FRAMES = 512
+
     def passive(self, a, b):
         """Two bound words, at least one a list or a vector: whether
-        they are equal (wait_value).  An unbound element met is noted
-        and answers False."""
-        short = lambda w: VECT0 <= w[0] & ~1 <= VECT0 + 12      # noqa: E731
-        for w in (a, b):
-            if w[0] & ~1 == LIST or (self.vsize(w) is not None and not short(w)):
-                raise Unimplemented('wait_value on %r' % (w,))
-        if not (short(a) and short(b)):
-            return False
-        n = self.vsize(a)
-        if n != self.vsize(b):
-            return False
-        for i in range(n):
-            x = self.deref(self.taken(self.vbase(a) + i))
-            y = self.deref(self.taken(self.vbase(b) + i))
+        they are equal (wait_value), as VPIM's f_EqualStruct and
+        f_Equal_Sub take them (functions/f_reduce_passive_unify.psl.c
+        41-109, 166-312): words of two types are not equal; two null
+        vectors are; two long vectors of different sizes are not; two
+        lists or vectors are compared element by element, depth first,
+        with an explicit stack of frames (crp, size, X's and Y's first
+        element; structures/str_passive_unify.psl.c).  Each pair of
+        elements, dereferenced: an unbound X is noted and the answer is
+        False (s_PushSuspendStack, Lsusp), then an unbound Y; a module
+        or a code is equal only to the same tag and value (MOD 27h and
+        COD 26h differ in the bit other tags keep for the MRB); other
+        types that differ are not equal; integers and atoms by tag and
+        value; strings by descriptor and words; a null
+        vector is equal; a list or vector (a long one after its size)
+        pushes the frame in hand, even one at its end (so a list's cdr
+        takes a frame), and its elements are compared next.  Refused,
+        loud: a 513th frame (VPIM suspends there with a DEBUG warning
+        and no variable, which would hang the goal) and a type the
+        model does not compare (a float: VPIM compares its value; or
+        any other).  VPIM's deref writes the result back into the
+        structure: not carried over (PIM/m's microcode is not held).
+        2026-11-25, met by the compiler on the primer's sample1
+        (pimos::keyed_bag if_empty/4, utility/pool/k_bag.kl1:155, the
+        keys {car, {arg, 1}} of library/compiler/index.kl1:787); before,
+        two short vectors of atomic elements only."""
+        stack = []
+        frame = None
+        x, y = a, b
+        while True:
             if self.unbound(x):
                 self.waiting.append(x[1])
                 return False
-            if not self.atomic(x):
-                raise Unimplemented('wait_value: an element %r' % (x,))
             if self.unbound(y):
                 self.waiting.append(y[1])
                 return False
-            if (x[0] & ~1, x[1]) != (y[0] & ~1, y[1]):
+            tx, ty = x[0] & ~1, y[0] & ~1
+            expand = None
+            if x[0] in (MOD, COD) or y[0] in (MOD, COD):
+                if x != y:                             # tags from 20h: no MRB bit
+                    return False
+            elif tx != ty:
                 return False
-        return True
+            elif tx in (INT, ATOM):
+                if x[1] != y[1]:
+                    return False
+            elif tx == STRG:
+                k = self.mem[x[1]][1] & 0xffffff
+                if self.mem[x[1]] != self.mem[y[1]] or any(
+                        self.mem[x[1] + i][1] != self.mem[y[1] + i][1] for i in range(1, k + 1)):
+                    return False
+            elif tx == VECT0:
+                pass                                   # the null vector
+            elif tx == LIST:
+                expand = (x[1], y[1], 2)
+            elif self.vsize(x) is not None:
+                n = self.vsize(x)
+                if n != self.vsize(y):
+                    return False                       # long vectors of two sizes
+                expand = (self.vbase(x), self.vbase(y), n)
+            else:
+                raise Unimplemented('wait_value: an element %r' % (x,))
+            if expand:
+                if frame is not None:
+                    if len(stack) == self.PASSIVE_FRAMES:
+                        raise Unimplemented('wait_value: the unify stack full (%d frames)'
+                                            % self.PASSIVE_FRAMES)
+                    stack.append(frame)
+                frame = [0, expand[2], expand[0], expand[1]]
+            else:
+                while frame is None or frame[0] == frame[1]:
+                    if not stack:
+                        return True
+                    frame = stack.pop()
+            crp, _n, xa, ya = frame
+            x = self.deref(self.taken(xa + crp))
+            y = self.deref(self.taken(ya + crp))
+            frame[0] = crp + 1
 
     def i_diff(self, pc, x, y, z, c16):
         # the guard diff(X, Y), X \= Y, 23:F9 r_r (inst_tab.kl1:212;

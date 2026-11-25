@@ -71,6 +71,7 @@ instruction and is tested by trace comparison with it.
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element |
+| `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
 | `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
@@ -362,7 +363,7 @@ instructions), every line identical:
 | versions | `versions` | 114,472 | 610,006 | 38 |
 | compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
 | compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
-| compile_sample1 | `compile`, `sample1`, `!exit` | 612,857 | 2,248,660 | 58 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 727,607 | 2,563,611 | 58 |
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
@@ -372,8 +373,13 @@ unchanged, re-run). compile_sample1 reads the file and ends refused on
 both models (first at `refused: a merger input bound to a vector of
 seven or more`; since the long-vector merge, rule `mergeVecL` and
 `lockstep_merge.py` `seven senders`, at `refused: wait_value: an
-element (21, ...)`; the core's last line `E unimp`, which `compare`
-takes only when the reference's stop is a refusal).
+element (21, ...)`; since the passive-unification box, `PimmPBox.bsv`,
+at `refused: new_string(15, 1)`; the core's last line `E unimp`, which `compare`
+takes only when the reference's stop is a refusal). At this stop the
+core's last line is the string box's own stop, `E error: new_string:
+element size not 8, 16 or 32`, not `E unimp`, so `run_pimm_apps.sh
+compile_sample1` reports FAIL on that line, every line before it
+identical (2026-11-25; the 1-bit strings come next).
 
 Which RESTOREs the commands check (2026-11-24, the kept work directory
 of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT
