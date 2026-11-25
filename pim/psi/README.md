@@ -3575,6 +3575,117 @@ later tests count; the full lists are in each test's header):
   progress is in the four tests, which mount the file system and log
   in.
 
+### Step 3m: the login requester's dialogue and a local login to the held server (2026-11-25)
+
+This step follows the owner's rule of 2026-11-25. Every inference is in
+`../docs/simpos/source_check_2026-11-24.md` §12, and the path is in
+`../docs/simpos/boot_route.md` §4.5 and §6. The work is in two commits
+with their tests (`test_espc.py`):
+
+| What runs | Label | Test |
+|---|---|---|
+| Keyboard input: coordinator `{key, Code}` events go to a keyboard stream, which the window last shown reads. `read/2`, `getl/2`, `input_data/2`, `inhibit_echo/1`, `permit_echo/1`, `beep/1`, `clear_buffer/1`, `kill/1` | the path is OURS; `read/2` and `getl/2` are INFERENCE (§12 #1-2) | `test_step3m_keyboard` |
+| The held requester's three prompts, `check_code/4`, `read_password/3`, `get_fep_address/4` and `create_message/3` (the login record); `user_password/2` | held; the user is INTERPOLATED | `test_step3m_keyboard` |
+| No server running: the held `local_server_socket/2` fails, and the requester writes `Network error.` | held | `test_step3m_keyboard` |
+| A local login: the held replier, server and socket table on `port` (TM-100 Fig. 3.8, CORRECTED twice), `message create/2`, `alarm_watch on_after/5` and `wait_and_return/2`, `network_subsystem` (not installed), and kl0's `class_object/2` and `class_name/2` | PRINTED / INTERPOLATED / INFERENCE (§12 #5-11); the probe for PIMOS is OURS | `test_step3m_local_login` |
+| The rows blt 42, 43, 35, 36, f4, f5, pmi d6, a8, and blt 41 with R != A | KNOWN-PLAINTEXT, each on held source (its row gives it) | `test_kl0.py` (row count 153), and the two tests above |
+
+**The dialogue reached** (`test_step3m_local_login`):
+
+```
+Enter FEP node name--------->   local
+Enter your PIMOS user name-->   pimos
+Enter your PIMOS password--->   (not echoed)
+Your request is accepted.
+Login procedure starts.
+OK. Your initial program starts.<000a>
+Good luck!<000a>
+beep, beep: the requester waits for a key, and a key ends its process
+```
+
+The server's answer to the held `io(1)`, NI, equals the output of
+`ref/pimm/fep.py` `login_record(id=0, node='local', rn='pmpsi',
+rp='pmpsi', un='pimos', up='')`, compared in the test by a read-only
+import. It does not equal `fep.LOGIN`, whose RP is `''`. Both values
+are OURS, and they differ in RP only (`boot_route.md` §6.3).
+
+**Where it stops.** The requester has done its work and waits for a
+key, as does every other process. The probe called the server's and the
+replier's held `io/4` directly. The real path goes through
+`fep_message_assembler`'s 620 frames, and that still stops at
+`substring/7` from 16 to 32 bits (@122, unwitnessed). No clock is
+modelled, so no timeout fires.
+
+**Injections, observed.** Each injection was made from a backup copy and
+restored by copy, and `cmp` was clean afterwards. `test_kl0.py` stayed
+OK unless stated.
+
+- K1-K5, on the keyboard path, re-run on the final tree: each makes
+  `test_step3m_keyboard` and `test_step3m_local_login` FAIL, and nothing
+  else. The details are in `test_step3m_keyboard`'s header.
+
+- C1-C16, on the local login's pieces. The full list is in
+  `test_step3m_local_login`'s header.
+  - C1 (connect/2 one way), C2 (a port sends to itself), C3 (the alarm
+    waits on the peer), C6 (`class_name/2` keeps the package), C9 (the
+    substring/7 byte order), C10 (`copy_string_elements` rotated), C12
+    (pmi d6 without its cut) and C16 (subtract into A): that test FAILS,
+    and nothing else.
+  - C4 (`message create/2` fails) and C7 (`class_object/2` fails): that
+    test, `test_fep_census` and `test_step3f_census_recipes` FAIL. C7
+    also fails `test_kl0` `test_census`.
+  - C5 (the network installed): that test ERRORS and `test_fep_census`
+    FAILS.
+  - C13 (multiply adds) and C14 (divide swapped): that test and
+    `test_step3m_keyboard` FAIL.
+  - C8 (pmi a8 truncated), C11 (f5 strict) and C15 (f4 not strict):
+    `test_espc.py` is OK, so the run does not discriminate them.
+    `test_kl0.py` `Step3mRows` was added for them (set_x_unit0/2 at its
+    boundaries; view_selector `$or$11` with N = Max), and it then FAILS
+    (C8 ERRORS).
+
+**Census, recomputed row by row** against 167ea83d (MEASURED
+2026-11-25, `_G` numbering normalised). Three held rows go from refused
+to success, and each gets there only through kl0's INTERPOLATED
+`class_object/2`. Those are runs on an inference, NOT progress, in the
+same way as the two artifact rows.
+
+- **Six packages:** 318 / 12 / 199 becomes **319 / 12 / 198**.
+  - pimmcsp `dummy_kl1_value_cell free/1` goes from refused to success,
+    past the instance `class_object/2`. No source is held for that
+    class.
+  - Nine rows move their stop past blt f4 and f5.
+    - Five go to an unbound argument of `if_less_than` or
+      `if_not_less_than`: `array_index_buffer` and `wshell_buffer`
+      `set_to/4` and `reset_to/4`, and `scroll_bar_icon code/4`.
+    - Four go to an unbound receiver: the `state_pe` rows, at
+      `draw_string/6`.
+    - All of these are the census's own unbound inputs.
+- **Plain FEP:** 802 / 234 / 413 becomes **806 / 234 / 411**, and the
+  rows go from 1,466 to 1,468.
+  - The two new rows are `message create/2`, inherited by pimscsi `cmt`
+    and `scsi` (nature `simpos##message`). Both succeed. They are
+    artifacts.
+  - Two rows go from refused to success, both past `class_object/2`:
+    the replier's `io/4` and `scsi_handler exit/1`.
+  - Six rows move their stop:
+    - the replier's `io/5` and `do_io/6`, to `set_string_element` on an
+      unbound argument;
+    - `scsi_handler goal/1`, `open/1` and `invoke/1`, to the lost
+      `mbus_allocator`;
+    - pimscsi `packet free/1`, past blt 35, to `add_first/2` on `nil`.
+- **With recipes:** 829 / 235 / 385 becomes **832 / 235 / 384**.
+  - The same two artifact rows.
+  - `scsi_handler exit/1` goes from refused to success.
+  - The replier's `io/5` moves to substring/7 from 16 to 32 bits, and
+    its `do_io/6` to `set_string_element`.
+  - The editor's `get_title/3` moves from blt 36 to the same
+    unwitnessed substring/7 width.
+  - The other three `scsi_handler` rows and `packet free/1` move as in
+    the plain census.
+- Slot constants are unchanged (157 plain, 110 with recipes). The step's
+  progress is in its two tests, not in the census.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

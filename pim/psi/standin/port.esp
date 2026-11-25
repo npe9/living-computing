@@ -1,0 +1,97 @@
+% SCAFFOLDING stand-in for SIMPOS's class `port`, compiled by psi/espc.py
+% into the package `simpos`.  Step 3m (docs/simpos/boot_route.md §6): the
+% SIMPOS port that carries a LOCAL login from the held
+% pimfep##as_pimos_login_requester to the held
+% pimfep##pimos_remote_login_server on the same PSI.
+%
+% PRINTED SOURCE (part): TM-100 Figure 3.8 "Part of class 'port'" (PDF
+% p16, printed folio 14), as transcribed in
+% docs/simpos/printed/listings/tm0100_p16.esp: the nature `channel`, the
+% slot `out_port` and the method send/3, kept below as printed except
+% where marked.  The prose beside it (PRINTED): "A port has an additional
+% slot called 'out_port' which contains a list of connected ports.  Class
+% 'port' adds its own predicates such as :connect and :disconnect"; those
+% two are NOT in the figure.
+%
+% INTERPOLATED (each labelled) from the held call sites (pimfep, cells
+% read 2026-11-25 with psi/fepread/ptfread.py):
+%   - as_pimos_login_requester get_socket/3 @4b9-4c1 `:create(#port, S)`;
+%     connect_server/4 @5cf-5e4: `:local_server_socket(
+%     #pimos_remote_login_server, SS)`, `:create(#port, L)`,
+%     `:connect(S, L)`, `:put(SS, L)` (the server's listening stream gets
+%     the second port); send_message/4 @2fd-309 `:send(S, Msg)`;
+%     receive_block/7 @52e-537 `:who_is_connecting_to(P, X)`,
+%     `:get_contents(X, [Peer])`;
+%   - pimos_remote_login_server accept/5 @352-35e (`:get(Stream, P)`),
+%     receive_block/3 @51c-525 (`:who_is_connecting_to(P, X)`,
+%     `:get_contents(X, [Peer])`, the same pair), send_reply/4 @5f6-60a
+%     (`:send(_, Msg)`).
+% Both ends ask the port they hold who is connected to it and expect ONE
+% peer, and each sends on its own port what the other must receive: so
+% connect/2 links the two ports both ways (INFERENCE), and a port's
+% send delivers to its out_port (the PRINTED send/3).
+
+    class  port  has
+
+    % PRINTED: TM-100 Fig. 3.8, PDF p16 (the nature)
+    nature      channel;
+
+    instance
+
+    % PRINTED: TM-100 Fig. 3.8, PDF p16
+    attribute ( out_port    := List :- :create(#list, List) );
+
+    % PRINTED: TM-100 Fig. 3.8, PDF p16.  Only the one-port branch is
+    % reached on the route; the other needs stick_tap/2 and copy/2 (not
+    % stood in).  `:channel:send` is written here as the local
+    % channel_send/3 below (CORRECTED for espc, which has no class-
+    % qualified send: the printed text is `:channel:send(Out_port,
+    % Message, Sender)`).
+    :send(Port, Message, Sender) :- !,
+            :count(Port!out_port, Count),
+            (   Count == 1, !,
+                :get_first(Port!out_port, Out_port),
+                channel_send(Out_port, Message, Sender)
+            ;   :stick_tap(Port!out_port, Tap),
+                send(Port, Tap, Message, Sender) );
+
+    % :send(Port, Object) -- INTERPOLATED: TR-056 PDF p14 prints the
+    % channel interface `:send(Channel,Object)` "to send an object to a
+    % channel"; the held senders above pass a message.  That the port's
+    % two-argument send goes through its printed send/3 with the port as
+    % the sender is INFERENCE.
+    :send(Port, Object) :- :send(Port, Object, Port);
+
+    % :connect(Port, Other) -- INTERPOLATED from TM-100 p16 (prose: a port
+    % "adds its own predicates such as :connect"; "out_port ... contains a
+    % list of connected ports") and the held sends above: each port joins
+    % the other's out_port (INFERENCE: both ways).
+    :connect(Port, Other) :-
+            :add_last(Port!out_port, Other),
+            :add_last(Other!out_port, Port);
+
+    % :who_is_connecting_to(Port, Ports) -- INTERPOLATED from the two held
+    % senders above (each takes the answer's contents with get_contents/2,
+    % the printed slot's list protocol): the port's out_port list.
+    :who_is_connecting_to(Port, Ports) :- Ports = Port!out_port;
+
+    local
+
+    % PRINTED: TM-100 Fig. 3.8, PDF p16, except the recursive call:
+    % CORRECTED from the printed three-argument `send(Port, Tap, Message)`
+    % (no local send/3 exists, so as printed espc refuses send/4 and, with
+    % it, the whole :send/3; the clause's own head has four arguments)
+    send(Port, Tap, Message, Sender):-
+            (   :get(Tap, A_port),!,
+                :copy(Message, New_message),
+                channel_send(A_port, New_message, Sender),
+                send(Port, Tap, Message, Sender),!
+            ;   true );
+
+    % CORRECTED (see send/3): channel's PRINTED send/3, TM-100 Fig. 3.7
+    % (channel.esp), on the receiving port.
+    channel_send(Channel, Message, Sender) :-
+            :set_sender(Message, Sender),
+            :put(Channel, Message);
+
+    end.

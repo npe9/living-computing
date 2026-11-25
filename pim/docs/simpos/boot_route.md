@@ -12,7 +12,9 @@ a top level. This page gives:
 
 It then names the first step that is unblocked. Step 3i took B2, step
 3j B3, step 3k B4 for the FEP timer, and step 3l B5 to B8 as labelled
-stand-ins, under the owner's rule of 2026-11-25 (§4.4).
+stand-ins, under the owner's rule of 2026-11-25 (§4.4). Step 3m took the
+login requester through its prompts and a local login to the held login
+server and replier (§4.5); §6 is the path from SIMPOS to PIMOS.
 
 Labels, as elsewhere in `docs/simpos/`:
 
@@ -53,14 +55,14 @@ from it.
 | # | Step | Source | Exists today | Blocked by |
 |---|---|---|---|---|
 | B0 | The console processor loads the microcode and starts the IPL | PRINTED prose: TM-112 p7 (1.00 cold boot); TR-087 p11 §5.3; HELD: psdpim `INSTALL` (the `sys*` trio to `/usr/psi/simpos/csp`) | `syspsi`, `sysinit`, `sysidat` are held; the microword is decoded (`../psi_microword.md`) | Not on the route for now. `kl0.py` (OURS) stands in for the KL0 firmware (README §5 step 4). |
-| B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles the stand-ins (36 before step 3l; 48 files in `psi/standin/` after it) | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
+| B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles the stand-ins (36 before step 3l; 48 files in `psi/standin/` after it, 50 after step 3m) | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
 | B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE. **Step 3l:** `directory` (`retrieve/3,4` and the node methods, INTERPOLATED) over an OURS tree built from the HELD psdpim archive and its `INSTALL` placement; `node_full_name/3` (INFERENCE) | **DONE as a stand-in** (§4.4). The real file system is lost; the tree holds only what PIM/m installs. |
 | B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3`; `standard_io_window` and `font` (OURS bodies, held selectors) | **The coordinator: DONE as a stand-in** (§4.4). The window system only as far as the login requester's first prompt: a window is a transcript and an input stream; no bitmap, no menu window (the menu is a list). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors. **Step 3l:** `user`, `world`, `password_list` (INTERPOLATED from the held sends; registry and password OURS); the held `create/4` and `setup_process/2` run to their ends | **DONE as a stand-in** (§4.4). |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program puts its first prompt and waits for a FEP node name; every process waits. |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program puts its first prompt and waits for a FEP node name; every process waits. Step 3m (§4.5): keyboard input takes it through its three prompts and a local login to the held server and replier. |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -531,17 +533,65 @@ have"). The basis table, the injections and the census are in
 requester for a node name typed in its window, the coordinator for an
 event, the boot program on its own stream. This is §1's target, the
 system menu up and `Login PIMOS` started from it, reached with
-stand-ins. Not modelled: keyboard input to a window, so the requester's
-`feps_menu/2`, `check_code/4` and `getl/2` are not reached. The real
-window classes are lost (`subsystems/window.md`).
+stand-ins. Until step 3m keyboard input to a window was not modelled
+(§4.5 takes it on). The real window classes are lost
+(`subsystems/window.md`).
+
+### 4.5 The login requester's dialogue and a local login (step 3m)
+
+The basis, the injections and the census are in `../../psi/README.md`,
+"Step 3m"; every inference is listed in `source_check_2026-11-24.md` §12.
+
+- **Keyboard input** (`test_step3m_keyboard`, OURS path). Coordinator
+  events `{key, Code}` go to a keyboard stream; the window that was
+  last shown (`show/1`) reads it. `read/2` gives one code, `getl/2`
+  reads to RETURN, `input_data/2` gives codes back, and
+  `inhibit_echo/1` stops the echo around the password. The held
+  requester's `read/4`, `check_code/4` and `read_password/3` run. It puts
+  all three prompts and takes the node `local`, the user name and the
+  password.
+- **No server** (`test_step3m_keyboard`). The requester makes its port
+  (`standin/port.esp`). Its `connect_server/4` asks
+  `:local_server_socket(#pimos_remote_login_server, SS)`, which is held
+  code (@32-38) and fails while the slot is `none`. The requester then
+  writes `Network error.`, beeps twice and waits for a key. For a node
+  that is not known it writes `Unknown FEP node name.` instead.
+- **A local login** (`test_step3m_local_login`). A probe program (OURS)
+  stands in for PIMOS's side. It makes the held
+  `pimos_remote_login_replier` and sends it `io(0, "")`, makes the held
+  `pimos_remote_login_server` and sends it `io(0, "local")` and
+  `io(1, "  ")`, then sends the replier PIMOS's texts. All of these are
+  the requests `login.kl1` makes through 620 (`../fep_services.md` §7.3
+  rows 1-9). The window then shows:
+
+  ```
+  Enter FEP node name--------->   local
+  Enter your PIMOS user name-->   pimos
+  Enter your PIMOS password--->   (not echoed)
+  Your request is accepted.
+  Login procedure starts.
+  OK. Your initial program starts.<LF>
+  Good luck!<LF>
+  (beep, beep: the requester waits for a key; a key ends its process)
+  ```
+
+  The server's answer to `io(1)`, NI, is byte for byte
+  `ref/pimm/fep.py`'s `login_record` for node `local`, RN `pmpsi`, RP
+  `pmpsi`, UN `pimos`, UP `""`, ID 0 (§6.3).
+
+**Where the route stops now.** The login requester has done its work
+and waits for a key, and so does every other process. What is still
+missing is the wire: the real PIMOS on the far side of
+`fep_message_assembler`, in place of the probe (§6.4).
 
 ## 5. Next
 
-B5 to B8 run as stand-ins (§4.4). Open, in order:
+B5 to B8 run as stand-ins (§4.4). The requester's dialogue and a local
+login run (§4.5). Open, in order:
 
-1. Keyboard input to a window (OURS), to take the login requester past
-   its prompt: `feps_menu/2`, `check_code/4`, `getl/2`, then the user
-   name and password (`inhibit_echo/1`, `read_password/3`).
+1. The wire from SIMPOS to PIMOS (§6.4): substring/7 from 16 to 32 bits
+   in `fep_message_assembler` (@122), then a 620 request through
+   `take_argument` in place of the probe's direct `io/4`.
 2. The FEP census side items: blt 0d (10 stops in each FEP census) and
    blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s
@@ -569,3 +619,100 @@ file system's (B5's other half, not held). A directory with no entries
 would only turn the census's `retrieve` refusals into failures, which is
 not progress. A directory with entries would be OURS. So `directory`
 waits for the file system.
+
+## 6. SIMPOS to PIMOS (step 3m, 2026-11-25)
+
+The connection is a local login, from the "Login PIMOS" item of the
+system menu to PIMOS's login task. It runs on the PSI as far as the
+login record PIMOS gets, and back from PIMOS's texts to the user's
+window (§4.5, `test_step3m_local_login`). Cells were read with
+`psi/fepread/ptfread.py` (pimfep, 2026-11-25).
+
+### 6.1 The path
+
+1. **The requester** (`pimfep##pimos_login_requester`, HELD). It is
+   started from the system menu (B8) and puts its three prompts. Its
+   `as_pimos_login_requester login_request/4` (@69b-6c9) then calls
+   `get_fep_address/4` (`local` is a local login), `create_message/3`
+   (the record, §6.2), `get_socket/3` (`:create(#port, S)`) and
+   `connect_server/4` (@5cb-5e4). That last call asks the server class
+   for its listening stream, makes a second port L, connects S to L
+   and puts L on the stream. Then it calls `send_message/4`
+   (`:send(S, Msg)`) and `receive/3` (`receive_block/7`). The receive
+   waits on S: `who_is_connecting_to(S)` gives `[L]`, and the alarm
+   watch is set to send a `timeout` message to S from L after 120000.
+2. **The port** (`standin/port.esp`). TM-100 Fig. 3.8 prints its
+   `send/3`: a port with one connected port puts the message, with its
+   sender set, on that port. `connect/2` links the two ports both ways
+   (INFERENCE). Each end receives on its own port what the other end
+   sends.
+3. **The server** (`pimfep##pimos_remote_login_server`, HELD, on the
+   same PSI). PIMOS's `io(0, "local")` initiates it and makes its
+   listening stream. Its `io(1, "  ")` runs `receive/2` and then
+   `$or$0/4`: `accept/5` gets L from the stream, `remote_node_name/5`
+   gives `local`, and `receive_message/5` (@3cf) runs. That last call
+   runs `receive_block/3` (waits on L), `reassemble_message/3` (NI),
+   `send_reply/4` (`Your request is accepted.`) and `grant_socket/4`.
+   For a local login, `grant_socket/4` files L in the replier's socket
+   table under the login's ID (@755-762). NI is the answer to PIMOS's
+   620 `io(1)`.
+4. **The replier** (`pimfep##pimos_remote_login_replier`, HELD). It must
+   exist first. Its `io(0, "")` runs `initiate/1`, which initiates the
+   socket table class (`pimos_remote_login_socket_table initiate/1`).
+   Without that, `grant_socket/4` fails and the server answers `close`.
+   `initiate_listener/1` takes its second clause, `true`, because the
+   network subsystem is not installed. After that, every `io(1, [ID] ++
+   Text)` finds L under ID and sends the text on it. `io(2, [ID])`
+   removes the entry and sends `close`.
+5. **The requester again.** It shows each text (`check_message/4`,
+   `show_message/3`, `write/2`) until `close`. Then `wait/1` beeps
+   twice and waits for a key. A key ends it (`exit_program/1`).
+6. **PIMOS** (`login.kl1`, KL1). It decodes NI (`get_node_info/3`,
+   1244-1258), checks UN and UP against `pimos.logins`, and answers
+   through the replier (`../fep_services.md` §7.3). In step 3m a probe
+   (OURS) sends those answers. `ref/pimm/fep.py` stands in for the
+   same exchange on the PIMOS side.
+
+### 6.2 The message formats (observed in the run, read against §6.5 of `../fep_services.md`)
+
+| Message | From, to | Content |
+|---|---|---|
+| login request | requester S to L | the 512-element 16-bit `buffer_string`: `PimosLogin`, H = 0, L = 15 (the strings' total length), n1..n4 = 5 5 5 0, then RN `pmpsi`, RP `pmpsi`, UN `pimos`, UP `""`, zero-padded |
+| accept reply | server L to S | `PimosLogin`, 0, 25, `Your request is accepted.` |
+| text | replier L to S | `PimosLogin`, 0, the text's length, the text. The buffer is reused, so elements past the length are stale (`Good luck!<LF>itial program starts.`): the length word bounds the text |
+| close | either | the atom `close`, not a string |
+| timeout | the alarm, never sent | the atom `timeout` |
+| NI | server to PIMOS (620 reply) | `[ID, len Node, len RN, len RP, len UN, len UP]` ++ Node ++ RN ++ RP ++ UN ++ UP; `reassemble_message/3` builds it from `IN`, the four lengths, `local` and the strings, then sets elements 0 and 1 |
+
+### 6.3 The first link, checked in Python
+
+`test_step3m_local_login` imports `ref/pimm/fep.py` read-only and
+compares the server's NI with `fep.login_record`. NI, as big-endian
+16-bit words, is
+
+`0000 0005 0005 0005 0005 0000` + `local` `pmpsi` `pmpsi` `pimos`
+
+It equals `login_record(id=0, node='local', rn='pmpsi', rp='pmpsi',
+un='pimos', up='')`. It does **not** equal `fep.LOGIN`, whose RP is
+`''`. The difference is RP only, and both values are OURS. The PSI
+side's password is the one the probe boot logged in with (B7, `pmpsi`
+/ `pmpsi`). `fep.py`'s comes from its own LOGIN constant. Section §6.5
+of `../fep_services.md` says the real requester's RN and RP are never
+null. That favours a non-empty RP, but `fep.py` (outside this step's
+scope) was not changed.
+
+### 6.4 What is missing
+
+- **The wire.** The probe calls the server's and the replier's held
+  `io/4` directly. On the real path PIMOS's 620 frames reach them
+  through `fep_message_assembler`. That path still stops at
+  `substring/7` taking 16-bit elements as 32-bit (@122, unwitnessed;
+  the recipes census's `get_title/3` row).
+- **The clock.** No alarm fires (`alarm_watch` stand-in), so the
+  requester's 120000 and the server's 60000 timeouts never happen.
+- **lia and tcpip.** Only `local_login` runs. `network_subsystem` is not
+  installed (OURS), and the requester's `lia` and `tcpip` branches need
+  `user_process_profile`, network groups and sockets that are lost.
+- **RP.** See §6.3.
+- **PIMOS itself.** The probe sends `login.kl1`'s texts in the order of
+  §7.3 for a login that succeeds. It checks nothing.

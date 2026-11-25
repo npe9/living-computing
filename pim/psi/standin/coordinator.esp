@@ -31,8 +31,9 @@
 % caller has a fallback clause, shell.md §2.5).
 % OURS throughout, labelled: the coordinator's state in class slots (one
 % coordinator per machine); its event stream and the events
-% `invoke_system_menu` (the printed action's name) and {select, Label} (the
-% menu's answer, OURS); the menu as login.com's item columns (the 1984
+% `invoke_system_menu` (the printed action's name), {select, Label} (the
+% menu's answer, OURS) and, step 3m, {key, Code} (a key typed, OURS: the
+% code put on the keyboard stream for the selected window); the menu as login.com's item columns (the 1984
 % system_menu of TR-046 PDF p27, with its multi_column_menu, is not
 % built: its menu_item and multi_column_menu classes are lost); the order
 % of the login file's items as they are read.
@@ -41,7 +42,14 @@ class coordinator has
 
 % OURS state (see above).
 attribute items := [], menu := [], shown := 0, started := [], events := 0,
-          process := 0;
+          process := 0, keyboard := 0, selected := 0;
+% Step 3m, OURS: `keyboard`, a stream of the character codes typed (the
+% keyboard handler's output, B4: its class is lost), read by the selected
+% window (standard_io_window.esp); `selected`, that window (0: none).
+% INTERPOLATED from TR-061 and TR-046 PDF p26-p28 (PRINTED prose and
+% code): the coordinator receives the keyboard events; keys the
+% translation table does not take go to the selected window (TM-225 p11,
+% PROSE TRANSLATION: "the selected window has keyboard input").
 
 % :start(#coordinator) -- OURS (selector and body): make the coordinator's
 % event stream and its process, running coordinator_program, as kappa2's
@@ -52,6 +60,8 @@ attribute items := [], menu := [], shown := 0, started := [], events := 0,
 :start(Class) :-
         :create(#stream, Events),
         Class!events := Events,
+        :create(#stream, Keyboard),
+        Class!keyboard := Keyboard,
         :create(#coordinator_program, Prog),
         :create(#process, P, [free, free, free, free]),
         Class!process := P,
@@ -76,6 +86,8 @@ attribute items := [], menu := [], shown := 0, started := [], events := 0,
 % as the coordinator process takes it from its stream.
 :event(Class, invoke_system_menu) :- !,
         Class!shown := Class!menu;
+:event(Class, {key, Code}) :- !,
+        :put(Class!keyboard, Code);
 :event(Class, {select, Label}) :- !,
         Class!shown \== 0,
         find_item(Class!shown, Label, Name),

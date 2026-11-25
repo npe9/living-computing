@@ -597,8 +597,8 @@ class Standins(unittest.TestCase):
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
             'simpos##e_string', 'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
-            'simpos##network_node_name',
-            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
+            'simpos##network_node_name', 'simpos##network_subsystem',
+            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##port', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
             'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
@@ -1287,7 +1287,13 @@ end.''', 'simpos')
         # log_size_input_window/2 makes its window (OURS) and succeeds; the
         # login requester's three rows move to get_number/2 on its
         # process's context, unset in a census row.  802 / 234 / 413
-        self.assertEqual((len(rows), out), (1466, {'success': 802, 'failure': 234, 'refused': 413, 'exception': 16,
+        # step 3m (row by row against 167ea83d): 1,466 -> 1,468 rows, the
+        # message stand-in's create/2 inherited by pimscsi cmt and scsi
+        # (nature simpos##message), both success: artifacts, not held.
+        # Two held rows change outcome, refused -> success, both past
+        # class_object/2 (kl0 dispatch, INTERPOLATED): replier io/4 and
+        # scsi_handler exit/1.  Six rows move their stop.  806 / 234 / 411
+        self.assertEqual((len(rows), out), (1468, {'success': 806, 'failure': 234, 'refused': 411, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1385,8 +1391,12 @@ end.''', 'simpos')
         # slot constant, the step 3g artifact).  828 / 234 / 387, slot
         # constants 105 -> 107.  Step 3l: simpos_user create/4 fails at
         # identify/4 (no registry in a census row): 828 / 235 / 386; the
-        # window stand-ins, as in test_fep_census: 829 / 235 / 385
-        self.assertEqual((len(rows), out), (1466, {'success': 829, 'failure': 235, 'refused': 385,
+        # window stand-ins, as in test_fep_census: 829 / 235 / 385.  Step
+        # 3m: the two artifact rows of test_fep_census (success) and
+        # scsi_handler exit/1 refused -> success (class_object/2); the
+        # replier's io/4 moves to substring/7 16 -> 32 bits and to
+        # set_string_element on an unbound argument.  832 / 235 / 384
+        self.assertEqual((len(rows), out), (1468, {'success': 832, 'failure': 235, 'refused': 384,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 110)   # step 3l: 107 -> 110, as in test_fep_census
@@ -1437,10 +1447,11 @@ end.''', 'simpos')
         # with the interpolated geometry and title (step 3f), get_title/3
         # runs through the window to its reply; with the request (step 3g)
         # and blt 48 R != A, the reply's assembly stops at blt 36;
-        # set_size/3 at the has_been_reshaped/1 callback
-        self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')][:2],
-                         ('refused', 'opcode'))
-        self.assertIn('blt 36', by[('pimos_window_editor', 'instance', 'get_title/3')][2])
+        # set_size/3 at the has_been_reshaped/1 callback.  Step 3m: blt 36
+        # rowed (substring/7); the assembler asks it for a 16-bit string
+        # read as 32-bit elements (fep_message_assembler @122), unwitnessed
+        self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')],
+                         ('refused', 'built-in', 'substring/7 from 16 to 32 bits (0 elements): unwitnessed'))
         self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
 
@@ -1593,7 +1604,7 @@ end.''', 'simpos')
             classes = [c for c in m.lib.templates if c.split('##')[0] in K.FEP_PACKAGES]
             fwd = norm(K.census_of(m, classes, recipes))
             bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
-            self.assertEqual(len(fwd), 1466)   # step 3j: 46 stand-in rows
+            self.assertEqual(len(fwd), 1468)   # step 3j: 46 stand-in rows; 3m: 2 (message create/2)
             diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
             self.assertEqual(diff, [], recipes is not None)
         # the order effect step 3h left open: set_log_table/2's unbound
@@ -2294,16 +2305,19 @@ put_events([]) :- !;
 put_events([E|Es]) :- :put(#coordinator!events, E), put_events(Es);
 end.'''
 
-    def boot_to_top(self, events):
+    def boot_to_top(self, events, probes=None, boot='b8_boot', before=None):
         # step 3l, B2-B8 on one machine: the boot program (OURS probe) comes
         # under the supervisor (B3), logs in as pmpsi with the held
         # simpos_user create/4 and setup_process/2 (B7), starts the
         # coordinator process (B6, OURS), puts EVENTS on the coordinator's
         # stream (OURS: standing in for the mouse and the menu's answer)
         # and waits for ever on a stream of its own.  -> (machine, the
-        # refusal that ended the run)
-        m = self.fs_machine(self.B8_PROBES)
-        (prog,) = K.call_class_method(m, 'simpos##b8_boot', 'create', [K.Var()])[0]
+        # refusal that ended the run).  PROBES, BOOT: another boot program
+        # (step 3m); BEFORE(m) runs on the machine before the boot
+        m = self.fs_machine(self.B8_PROBES if probes is None else probes)
+        if before:
+            before(m)
+        (prog,) = K.call_class_method(m, 'simpos##' + boot, 'create', [K.Var()])[0]
         t = K.NIL
         for e in reversed(events):
             t = K.Cons(e, t)
@@ -2443,6 +2457,226 @@ end.'''
         opts = self._walk(m.get_slot(w, 'options'))
         self.assertEqual(K.deref(K.deref(opts[1]).args[1]), K.Atom('manipulator'))
         self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
+
+    @staticmethod
+    def keys(*lines):
+        # step 3m: the coordinator events for LINES typed, each ended by
+        # RETURN (13).  The codes are those of the model's 16-bit strings
+        # (kl0 Str.codes, the inverse of ptfdump.ch): JIS X 0208, as the
+        # held pool strings "local", "exit", "close" are stored.
+        ev = []
+        for line in lines:
+            for c in K.Str(line).codes() + [13]:
+                ev.append(K.Vec([K.Atom('key'), c]))
+        return ev
+
+    def login_dialogue(self, *lines, **boot):
+        # step 3m: boot to the system menu, start Login PIMOS, type LINES.
+        # -> (machine, refusal, requester process, requester, window,
+        #     dialogue) where the dialogue is the window's history (OURS)
+        # as ('put', text), ('typed', text) and ('event', beep), in order.
+        # BOOT: boot_to_top's probes, boot and before
+        login = self.jstr('Login PIMOS')
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])]
+                                + self.keys(*lines), **boot)
+        C = K.ClassRef('simpos##coordinator')
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        w = m.get_slot(top, 'window')
+        out, typed = [], []
+        for e in reversed(self._walk(m.get_slot(w, 'history'))):
+            if isinstance(e, K.Str):
+                out.append(('put', e.text))
+            elif isinstance(e, int) and e == 13:
+                t = K.Str('')
+                t.set_codes(typed)
+                out.append(('typed', t.text))
+                typed = []
+            elif isinstance(e, int):
+                typed.append(e)
+            else:
+                out.append(('event', e))
+        return m, r, p, top, w, out
+
+    def test_step3m_keyboard(self):
+        # step 3m, docs/simpos/boot_route.md §4.5: keyboard input to a window
+        # (OURS path, standard_io_window.esp, coordinator.esp: the
+        # coordinator's keyboard stream read by the selected window; read/2
+        # a character code, input_data/2, getl/2 to RETURN, echo inhibited
+        # around the password) takes the held pimfep##pimos_login_requester
+        # through its three prompts (read/4 @dc-12c, check_code/4,
+        # read_password/3) and on into as_pimos_login_requester
+        # login_request/4: get_fep_address/4 takes "local" as a local login,
+        # create_message/3 builds the record (blt 42, 43: kl0_opcodes.tsv),
+        # get_socket/3 makes its port (@4b9, standin/port.esp), and with no
+        # login server running connect_server/4's
+        # :local_server_socket(#pimos_remote_login_server, SS) fails (the
+        # held class method @32-38 fails while the slot is `none`): the
+        # requester writes "Network error." and waits (test_step3m_local_login
+        # runs a server).  Until the port stand-in (step 3m) the run stopped
+        # at :create(#simpos##port, P); K1-K5 were observed then.
+        # Injections, observed (2026-11-25, re-run on the final step 3m tree;
+        # each from a backup copy, restored by copy, cmp clean):
+        #   K1 input_data/2 keeps nothing (standard_io_window.esp; the line
+        #      becomes "ocal"), K2 the keyboard read before the window's own
+        #      queue, K3 inhibit_echo/1 a no-op (the password echoed), K4
+        #      getl/2 keeps the RETURN, K5 show/1 does not select the window
+        #      (the first read waits for ever): each makes this test and
+        #      test_step3m_local_login FAIL, nothing else.
+        #   test_kl0.py stayed OK in K1-K5.
+        m, r, p, req, w, d = self.login_dialogue('local', 'pimos', 'secret')
+        self.assertEqual(d, [('put', 'Enter FEP node name--------->'), ('typed', 'local'),
+                             ('put', 'Enter your PIMOS user name-->'), ('typed', 'pimos'),
+                             ('put', 'Enter your PIMOS password--->'), ('put', 'Network error.'),
+                             ('event', K.Atom('beep')), ('event', K.Atom('beep'))])
+        # the password went to the requester's buffer, not to the history:
+        # read_password's loop ($or$0/4 @32a-34c) stores each code, RETURN
+        # too, and counts it, then stops at 13
+        self.assertEqual(m.get_slot(req, 'password_counter'), 7)
+        buf = K.deref(m.get_slot(req, 'string_buffer')).codes()
+        self.assertEqual(buf[:7], K.Str('secret').codes() + [13])
+        self.assertIs(m.get_slot(K.ClassRef('simpos##coordinator'), 'selected'), w)
+        self.assertEqual(m.get_slot(w, 'echo'), K.Atom('on'))
+        self.assertEqual([t.text for t in self._walk(m.get_slot(w, 'transcript'))], ['Network error.'])
+        # no server: the requester has its port and waits for a key
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertEqual(K.deref(m.get_slot(req, 'socket')).cid, 'simpos##port')
+        self.assertEqual(m.get_slot(K.ClassRef('pimfep##pimos_remote_login_server'), 'local_server_socket'),
+                         K.Atom('none'))
+        # a node that is neither "local" nor known: get_fep_address/4's last
+        # clause (@6e9-6ef) writes the error, and wait/1 (@15d-16e) beeps
+        # twice, discards pending input and waits for a key (every process
+        # waits)
+        m, r, p, req, w, d = self.login_dialogue('nowhere', 'pimos', '')
+        self.assertEqual(d[-4:], [('put', 'Enter your PIMOS password--->'), ('put', 'Unknown FEP node name.'),
+                                  ('event', K.Atom('beep')), ('event', K.Atom('beep'))])
+        self.assertEqual(d[1], ('typed', 'nowhere'))
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertEqual(m.get_slot(w, 'beeps'), 2)
+        self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
+
+    B3M_PROBES = B8_PROBES.replace('b8_boot', 'b3m_boot').replace(
+        '    :start(#coordinator),',
+        '    :create(#b3m_pimos, PP), :create(#process, P2), :activate(P2, PP),\n'
+        '    :start(#coordinator),') + '''
+class b3m_pimos has
+nature as_program;
+attribute last := 0, texts := [];
+instance
+attribute replier := 0, server := 0, r0 := 0, s0 := 0, ni := 0, stage := 0;
+:goal(Prog) :-
+    #b3m_pimos!last := Prog,
+    :create(#pimfep##pimos_remote_login_replier, R), Prog!replier := R,
+    :io(R, 0, "", R0), Prog!r0 := R0,
+    :create(#pimfep##pimos_remote_login_server, S), Prog!server := S,
+    :io(S, 0, "local", S0), Prog!s0 := S0,
+    Prog!stage := listening,
+    :io(S, 1, "  ", NI), Prog!ni := NI,
+    Prog!stage := answered,
+    replies(#b3m_pimos!texts, R),
+    Prog!stage := replied;
+local
+replies([], _) :- !;
+replies([{C, T}|Ts], R) :- :io(R, C, T, _), replies(Ts, R);
+end.'''
+
+    @staticmethod
+    def pimos_texts(texts):
+        # step 3m: the probe's replier requests {Command, [ID] ++ Text} (ID 0)
+        def before(m):
+            out = K.NIL
+            for c, text in reversed(texts):
+                t = K.Str('')
+                t.set_codes([0] + K.Str(text.replace('\n', '')).codes() + ([10] if text.endswith('\n') else []))
+                out = K.Cons(K.Vec([c, t]), out)
+            m.set_slot(K.ClassRef('simpos##b3m_pimos'), 'texts', out)
+        return before
+
+    # PIMOS's replier texts for a login that succeeds, docs/fep_services.md
+    # §7 rows 3 and 9 (login.kl1:1007-1010, 1075-1090, 1215-1231)
+    PIMOS_OK = [(1, 'Login procedure starts.'), (1, 'OK. Your initial program starts.\n'),
+                (1, 'Good luck!\n'), (2, '')]
+
+    def test_step3m_local_login(self):
+        # step 3m, docs/simpos/boot_route.md §6: a LOCAL login from the held
+        # requester to the held pimfep##pimos_remote_login_server on the same
+        # PSI, and PIMOS's answer.  The probe b3m_pimos (OURS) stands in for
+        # PIMOS's login.kl1 on the far side of the FEP wire: it makes the held
+        # pimos_remote_login_replier and sends it io(0, "") (its initiate/1
+        # initiates the held socket table; network_subsystem is not installed,
+        # standin/network_subsystem.esp, so no listener), makes the server and
+        # sends it io(0, "local") and the held io(1, "  "), whose answer NI is
+        # what PIMOS's 620 io(1) gets (fep_services.md §7 rows 1-2), then the
+        # replier texts of rows 3 and 9 for a login that succeeds.  The wire
+        # itself (fep_message_assembler, the 620 frames) is not run.
+        # On the way: the port (standin/port.esp: TM-100 Fig. 3.8's send/3 and
+        # out_port, connect/2 both ways), message create/2, alarm_watch
+        # on_after/5 and wait_and_return/2 (no clock: no timeout fires),
+        # class_object/2 and class_name/2 (kl0 dispatch), and the rows blt 35
+        # 36 f4 f5, pmi d6 a8 (kl0_opcodes.tsv).
+        # Injections, observed (2026-11-25; each from a backup copy, restored
+        # by copy, cmp clean; test_kl0.py OK unless named):
+        #   C1 port connect/2 one way, C2 port send/3 to itself, C3
+        #   wait_and_return/2 on the peer, C6 class_name/2 with the package,
+        #   C9 substring/7 16->8 low byte first, C10 copy_string_elements
+        #   rotated, C12 pmi d6 without its cut, C16 subtract into A: this
+        #   test FAIL, nothing else.
+        #   C4 message create/2 fails, C7 class_object/2 fails: this test,
+        #   test_fep_census and test_step3f_census_recipes FAIL (C7 also
+        #   test_kl0 test_census).
+        #   C5 network_subsystem installed: this test ERROR (network_listener
+        #   is lost), test_fep_census FAIL.
+        #   C13 multiply adds, C14 divide swapped: this test and
+        #   test_step3m_keyboard FAIL (the record's H and L).
+        #   C8 pmi a8 truncated to 15 bits, C11 f5 strict, C15 f4 not
+        #   strict: test_espc OK (not discriminated here); test_kl0
+        #   Step3mRows FAIL (C8 ERROR), which was added for them
+        m, r, p, req, w, d = self.login_dialogue('local', 'pimos', '', probes=self.B3M_PROBES,
+                                                 boot='b3m_boot', before=self.pimos_texts(self.PIMOS_OK))
+        self.assertEqual(d, [('put', 'Enter FEP node name--------->'), ('typed', 'local'),
+                             ('put', 'Enter your PIMOS user name-->'), ('typed', 'pimos'),
+                             ('put', 'Enter your PIMOS password--->'),
+                             ('put', 'Your request is accepted.'),
+                             ('put', 'Login procedure starts.'),
+                             ('put', 'OK. Your initial program starts.<000a>'),
+                             ('put', 'Good luck!<000a>'),
+                             ('event', K.Atom('beep')), ('event', K.Atom('beep'))])
+        self.assertEqual(r.cause, 'would suspend')
+        pp = m.get_slot(K.ClassRef('simpos##b3m_pimos'), 'last')
+        self.assertEqual(m.get_slot(pp, 'stage'), K.Atom('replied'))
+        self.assertEqual(K.resolve(m.get_slot(pp, 'r0')).codes(), [])
+        self.assertEqual(K.resolve(m.get_slot(pp, 's0')).codes(), [])
+        # NI against ref/pimm/fep.py's login record (read-only import): the
+        # same bytes, with RP the PSI user's password.  fep.LOGIN has RP ''
+        # (OURS there); the probe logged in as pmpsi/pmpsi (B7): both OURS,
+        # and they differ in RP only
+        ni = K.resolve(m.get_slot(pp, 'ni'))
+        got = b''.join(c.to_bytes(2, 'big') for c in ni.codes())
+        fep = self.fep_module()
+        self.assertEqual(got, fep.login_record(**dict(fep.LOGIN, rp='pmpsi')))
+        self.assertNotEqual(got, fep.login_record(**fep.LOGIN))
+        self.assertEqual(ni.codes()[:6], [0, 5, 5, 5, 5, 0])
+        # the requester's last status is normal (its check_status/2 after
+        # the close)
+        self.assertEqual(m.get_slot(req, 'status'), K.Atom('normal'))
+        # a key after the two beeps: wait/1 returns, exit_program/1 kills
+        # the window and the requester's process ends
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'),
+                                 K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])]
+                                + self.keys('local', 'pimos', '', 'x'), probes=self.B3M_PROBES,
+                                boot='b3m_boot', before=self.pimos_texts(self.PIMOS_OK))
+        (p,) = self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'started'))
+        self.assertEqual((r.cause, r.detail), ('would suspend', 'no process is ready: <simpos##process> has ended'))
+        self.assertEqual(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')), K.NIL)
+
+    @staticmethod
+    def fep_module():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            'pimm_fep', os.path.join(HERE, '..', 'ref', 'pimm', 'fep.py'))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:
