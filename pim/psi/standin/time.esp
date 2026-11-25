@@ -14,7 +14,8 @@
 %     learned that `:now(#time,T)` returns an instance (gog-esp
 %     CH_CLOCK.ESP:33-34 then :59-60 `:get_count(Obj!time,MS),
 %     :set_count(Obj!time,MS+1000)`; the same lines in gog-kl1).
-% Not stood in: get_count/2, now/2, set_value/5 and the rest.
+% Not stood in: set_value/5 and the rest.  Step 3k stands in now/2 and
+% get_count/2 (labelled below), for the held pimos_timer get_count/3.
 % The count is in MILLISECONDS: HELD-SOURCE gog-kl1 ESP/CH_CLOCK.ESP:60
 % `:set_count(Obj!time,MS+1000),       % 1000 msec interval`.  PIMOS
 % converts a timer count to msec before fep#on_at and fep#on_after
@@ -27,6 +28,20 @@ class time has
 :create(Class, Time) :-
         :new(Class, Time);
 
+% OURS (step 3k): the present count, read by now/2 below.
+attribute clock := 0;
+
+% :now(#time, T) -- T, a new time instance holding the present count.
+% INTERPOLATED (step 3k) from: the held pimfep##pimos_timer get_count/3
+% @86-8e (`:now(#time,T)`, then `:get_count(T,C)`, replied as `{Id, 1,
+% C}`), and gog-esp CH_CLOCK.ESP:33-34 (`:now(#time,T)` answers an
+% instance, above).  PIMOS reads the count as milliseconds
+% (docs/fep_services.md §2.4, time_dvc.kl1:241-248).  There is no clock:
+% the count is the class slot clock, 0 unless set (OURS).
+:now(Class, Time) :-
+        :new(Class, Time),
+        Time!count := Class!clock;
+
 instance
 
 % INTERPOLATED: the representation (OURS).  The count is in
@@ -36,5 +51,10 @@ attribute count := 0;
 % INTERPOLATED from: pimos_timer on_after/4 `:set_count(T,N)`.
 :set_count(Time, Count) :-
         Time!count := Count;
+
+% INTERPOLATED (step 3k) from: pimos_timer get_count/3 @8b-8e
+% `:get_count(T,C)` and gog-esp CH_CLOCK.ESP:59 `:get_count(Obj!time,MS)`.
+:get_count(Time, Count) :-
+        Count = Time!count;
 
 end.

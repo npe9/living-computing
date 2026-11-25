@@ -38,8 +38,10 @@
 %   - step 3j: the overriding class create/2 and instance activate/2,
 %     INTERPOLATED (labelled at the end of the class).
 % Not stood in, so refused loudly: create/3 (kl0 SIMPOS_MODELS: the
-% inherited process version would make a second boot process), and
-% request/3 (no source says what a request does).
+% inherited process version would make a second boot process).  request/3
+% was refused until step 3k (no source says what a request does); step 3k
+% stands in its `release` request, INTERPOLATED (below), and refuses any
+% other request.
 
 class boot_process has
 
@@ -117,5 +119,28 @@ class boot_process has
         Boot!status := ready,
         :add(#process!ready_queue, Boot),
         :allow_interrupt(#process), ! ;
+
+    % ---- step 3k: request/3, INTERPOLATED.  No body or prose prints it.
+    % Its one held send is pimmcsp##pseudo_pe_process release/1 @184-189:
+    % `:request(Boot, release, Self)`, the last call of release/1 after
+    % `:status(Self, dormant, on_release)` (@17a-17e), with Boot from
+    % `:get_instance(#boot_process, Boot)` (@17f-183).  release/1 is sent
+    % by terminate/1 @1ca after terminate_core/1, and by release_core's
+    % $or$2/1 @361 to the context.  The same class defines the instance
+    % method release_core/1 (@1cf), and NO held cell of the eleven
+    % packages sends release_core/1 (sweep of the compiled cells,
+    % 2026-11-25): its sender is lost SIMPOS.  So the request `release`
+    % is read as: the boot process, the supervisor's own process (TM-100
+    % p13, TR-056 p21), performs :release_core on the requesting process,
+    % which a process cannot do to itself once dormant (INTERPOLATED).
+    % That the boot process does it at once, in the caller's process,
+    % rather than queueing it for its own, is OURS (no request queue is
+    % printed).  Any other request is unwitnessed and refuses loudly:
+    % unsupported_request/2 is not a method of any class (OURS), so the
+    % send is refused "not in the stand-in".
+    :request(Boot, release, Process) :- !,
+        :release_core(Process) ;
+    :request(Boot, Request, Process) :-
+        :unsupported_request(Boot, Request) ;
 
 end.

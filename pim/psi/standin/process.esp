@@ -137,9 +137,13 @@
         Process!priority := 0,
         Process!sub_priority := 0,
         Process!parent_process := Self_process,
+        :add_child(Self_process, Process),
         Process!world := Self_process!world,
         Process!user := Self_process!user,
         Process!status := dormant, ! ;
+    % Step 3k: create/3 now sends :add_child(Self_process, Process) where
+    % the printed create_core/3 does (TM-100 Fig. 3.1, PDF p8), since
+    % add_child/2 is now stood in (below).
 
 
     instance
@@ -415,9 +419,23 @@
     % local exterminate_child/0 (@50e-51e: `:self(#process,P)`,
     % `:children(P,L)`, `:get_contents(L,Cs)`) and
     % pimmcsp##remote_device_manager exit/1 (@8b-97, the same).  That the
-    % method answers the slot's list object is OURS.  add_child/2 is
-    % still not stood in, so the list stays empty.
+    % method answers the slot's list object is OURS.  add_child/2 was not
+    % stood in until step 3k, so the list stayed empty.
     :children(Process, List) :- List = Process!children_processes ;
+
+    % :add_child(Parent, Child) / :remove_child(Parent, Child).
+    % INTERPOLATED (step 3k): add_child/2 from its printed call in
+    % create_core/3 (`:add_child(Self_process, Process)`, TM-100 Fig. 3.1,
+    % PDF p8) and the printed slot children_processes, a list;
+    % remove_child/2 from its one held send, pimmcsp##pseudo_pe_process
+    % release_core's $or$3/1 @36c-374 (`:remove_child(P!parent_process,
+    % P)` in the first clause of a try_me_else whose second clause
+    % proceeds, so a failure is tolerated there).  Appending, and
+    % removing by identity, are OURS (the list stand-in's add/2 and
+    % remove/2).
+    :add_child(Parent, Child) :- :add(Parent!children_processes, Child) ;
+    % INTERPOLATED (step 3k): see add_child/2 just above.
+    :remove_child(Parent, Child) :- :remove(Parent!children_processes, Child) ;
 
     % :die(Process) -- the process terminates.
     % INTERPOLATED (step 3e) from: the printed as_program:resign/1 (above)
