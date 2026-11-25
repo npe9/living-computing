@@ -3686,6 +3686,20 @@ same way as the two artifact rows.
 - Slot constants are unchanged (157 plain, 110 with recipes). The step's
   progress is in its two tests, not in the census.
 
+## The window framebuffer layer (`winfb.py`, 2026-11-25)
+
+`winfb.py` is the Python device layer under the planned SIMPOS window
+stand-ins (`../docs/simpos/window_environment_plan.md` §4). It is the
+reference for the hardware box `../bsv/WinFbBox.bsv`. It provides a 1-bit
+1280×1024 frame (MSB leftmost), fill, line, glyph, copy, save/restore and
+dump with raster ops, and a text command-stream format that it shares
+with the Bluesim bench. The `test_11` font is read from
+`../docs/nonlocal/psdpim.tar.Z` FONT.DIR. Every OURS choice is labelled
+in its header. `test_winfb.py` (26 tests) pins hand-written facts: edge
+masks, overlapping copies, XOR twice erases, save/restore round trips,
+and the glyphs of the Login PIMOS prompt. It is not yet wired into the
+`SIMPOS_MODELS` hook; that is milestone M3 onward.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

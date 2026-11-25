@@ -690,6 +690,22 @@ NewObj at once and the rest when it finishes; (4) on `FepRefused` stop
 loudly (the reference raises `FepError`); (5) give `scsi_init` Info[0]
 from `maxBuffer`.
 
+## The SIMPOS window framebuffer (`WinFbBox.bsv`)
+
+Milestones H0 and H1 of `../docs/simpos/window_hardware_plan.md`.
+`mkWinFbBox#(fontFile)` is the SIMPOS display's drawing hardware: a
+`Server#(WinFbCmd, WinFbRsp)` box with BRAMs for the 1-bit 1280×1024
+frame, the window save areas, the `test_11` font and its JIS code index,
+and engines for blit (fill, copy, save, restore, glyph), Bresenham lines
+and the dump. It imports only standard libraries. The display hardware
+is undocumented, so all of it is OURS scaffolding. The command format is
+frozen in the header of `../psi/winfb.py`, the Python reference.
+`WinFbBoxTb.bsv` (hand-written, committed) reads a command stream and
+writes P4 PBM frames plus status files. `run_win_tb.sh` runs 11 streams
+on both the box and the Python layer and `cmp`s every frame and status
+file. It takes about a minute, and its header lists the injected faults
+and which streams catch each. Measured cycle counts are in the box header.
+
 ## Regression
 
 `../run_tests.sh` chains the assembler selftest, the ISA table check,
