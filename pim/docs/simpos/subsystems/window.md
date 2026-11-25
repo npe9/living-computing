@@ -1404,7 +1404,7 @@ adds 4 DOC-unowned rows on window classes. The CESP-substitute rows for `as_mark
   from their call sites. That leaves **56 UNSPECIFIED** (`coverage/out/unspec.tsv`), marked in Appendix A with
   their use counts and first use.
 
-Other partitions for scale: librarian 114 methods, shell 115, other 531.
+Other partitions for scale: librarian 114 methods, shell 115, other 535 (531 before `time`'s four, 2026-11-25).
 
 ---
 

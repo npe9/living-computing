@@ -152,8 +152,9 @@ by cp from a backup and cmp-checked; observed):
   - blt 19 new_heap_vector refusing V != N again: test_result_register
     errors and test_census fails here; test_espc test_fep_census fails.
   The mnemonic renames (42-45, a4, a5, 24, 2b, blt 45/46/48/49) change
-  only names: a row without a handler under its name stops Machine()
-  with ValueError, so every test that builds a machine would error.
+  only names and were not injected: Machine() raises ValueError for a
+  table row with no handler of its name (kl0.py load), which the suite
+  runs on every machine it builds.
 String identity (2026-11-25; each injected into kl0.py or
 standin/list_index.esp by the session's variant.py, restored by copy and
 cmp-checked; both test files run; observed):

@@ -19,6 +19,12 @@ notes' fact rows by `tools/coverage.py` and `tools/class_coverage.py`.
 | shell | 115 | 9 | 16 | 33 | 57 |
 | other | 531 | 22 | 75 | 77 | 357 |
 
+2026-11-25: `time` gained four required instance methods (get_count/2, set_count/2, get_value/5,
+minus/3) when the census scan learned that `time` `now/2` returns an instance
+(`../source_check_2026-11-24.md` §5 Status). `coverage/` was regenerated: other is now 535
+methods, 22 / 75 / 27 + 53 / 358 (the four new rows have nothing documented); no other partition's
+files changed.
+
 | partition | classes | some method documented on the class | name documented elsewhere | use only | nothing | no methods required (nature-only or reference) |
 |---|---|---|---|---|---|---|
 | window | 135 | 5 | 67 | 5 | 10 | 48 |

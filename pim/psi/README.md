@@ -1573,6 +1573,25 @@ Censuses, row by row, against the tree before this change:
     after the change: the invocation stack it pops is empty. In the
     census it had succeeded on a program left there by an earlier call.
 
+What the moves are: all 41 come from the string/3 type test (an
+INFERENCE), none from the sourced identity rule. Twelve of them leave a
+refusal `string on 0 (a slot constant)`, including the three new
+successes: a census artifact of the step 3e kind (receivers made with
+new/2), so 789 is not progress in itself. The two step-limit rows,
+traced: FEP `packet32 initiate/1` is a long finite loop (its
+`initiate/3` makes `pool_size` = 1,000 packets, the slot's template
+constant, about 25 cells each, past the 20,000-step limit);
+`csp_default_write write/2` does not terminate on an unbound argument
+(its list clause binds the argument to a one-element list and recurses
+on the unbound element; 11 cells repeat, the same at 400,000 steps).
+
+With `Str.__eq__` and `__hash__` deleted, the only failure in both test
+files is test_kl0's Python-side `assertEqual(sol[0], K.Str('3500'))`,
+and neither census changes: no KL0 path compares strings by content.
+The stand-ins' string constants are output arguments or held SIMPOS
+source (`name`, `pathname`), so none relied on content comparison but
+`list_index`.
+
 Tests: `test_kl0.StringIdentity` and `test_espc.test_string_keys`. Four
 injections are recorded in `test_kl0.py`'s header.
 
