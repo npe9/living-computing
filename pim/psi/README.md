@@ -3145,7 +3145,9 @@ and `boot_process` `create/2` and `activate/2`.
 - Held source, as ANALOGY for what a SIMPOS caller expects, not as
   SIMPOS:
   - kappa2 `kernel/itr/ITRSES.ESP`:111-116, and
-    `utility/mop/MOPMANAGER.ESP`:162-168 with `MOPKAPPA.ESP` `goal/1`.
+    `utility/mop/MOPMANAGER.ESP`:165-172 (CORRECTED step 3k: first
+    cited :162-168; source_check §10.4) with `MOPKAPPA.ESP` `goal/1`
+    (:31-37).
     A parent makes a stream and a process, activates it and `:get`s;
     the child's goal `:put`s.
   - `utility/tool/LOADER.ESP`:53-68, `kernel/svm/SVCTL.ESP`:271-276,
@@ -3239,7 +3241,7 @@ and `boot_process` `create/2` and `activate/2`.
     `activate/2` fails;
   - the held `pseudo_pe_process release/1`, on a dormant PE process,
     passes `status/3` and stops at `boot_process:request/3`. With
-    status `nil` it fails;
+    status `nil` it fails (step 3k: it now runs to its end, "Step 3k");
   - a boot program that waits on an empty stream, with nothing ready,
     is refused `would suspend`;
   - the 64th context is not made.
@@ -3251,7 +3253,7 @@ and `boot_process` `create/2` and `activate/2`.
     suspended, with the device on top of its stack;
   - a request (OURS: close, code 60, a 32-bit string) is taken by the
     device process and stops at blt 6f in `fep_message_assembler
-    disassemble/3` @a9.
+    disassemble/3` @a9 (step 3k: it now round-trips, "Step 3k").
 
   `b4_timer` is an OURS subclass of the held class. Its `create/2` also
   records the device, so the probe can reach the device's input stream.
@@ -3358,7 +3360,9 @@ supervisor. The owner's instruction of 2026-11-25, "It's okay to infer
 what you don't have", applies: where no source is held, the choice is
 made and labelled INFERENCE or OURS. Step 3j's stand-ins were re-read
 against their cited pages (`../docs/simpos/source_check_2026-11-24.md`
-§10): 21 CONFIRMED, 1 CORRECTED ("Hardware PC" was "Hardware PCB"), 0
+§10): of 29 rows, 26 CONFIRMED, 2 CORRECTED ("Hardware PC" is printed
+"Hardware PCB"; the kappa2 handshake is `MOPMANAGER.ESP`:165-172, not
+:162-168), 1 superseded (list_to_vector's third argument), 0
 CONTRADICTED.
 
 **What was added, and its basis.**
@@ -3366,6 +3370,7 @@ CONTRADICTED.
 | what | file | basis | label |
 |---|---|---|---|
 | blt 6f `list_to_vector(L, ^V, ^Tail)` | `kl0.py`, `kl0_opcodes.tsv` | held source with held cells: kappa2 `KP_UPTACC.ESP`:224-227 (`$or$9/2` @6eb `6f 01 02 00`, @6ed `6f 00 03 00`), `HLCEXTSEL.ESP`:170-173 (`delete_temp/1` @720-723), `ROCHECK.ESP`:119-121 (`check_list/1` @a4), `hash.esp`:152 (@1a9 `6f 00 00 02`). TR-044 A.8 (PDF p41) prints only the 2-argument form; TM-388 ch. 4 and TM-444 have none. 75 uses | KNOWN-PLAINTEXT; an improper list's tail, and shared elements, INFERENCE |
+| blt 90 `pcb(N, I, ^V)` | `kl0.py`, `kl0_opcodes.tsv` | held source with held cells: kappa2 `LUUTIME.ESP`:105-108 `pcb(Class!s_memory_mgr_no,3,MEM)`, `kappaLUU_timer` `start_timer/2` @59-5d (`a7 01 00 03`, `90 00 01 00`, `24 00 03`); the same in `BCKTIME.ESP`; `pseudo_pe_process` `pcb_entry/4` @7b-84. 34 uses: kappa 32, pimmcsp 2 | KNOWN-PLAINTEXT operands; the value (what blt 94 wrote; a word never written refuses) INFERENCE |
 | blt 94 `set_pcb_entry(N, I, V)` | `kl0.py`, `kl0_opcodes.tsv` | `pseudo_pe_process` `set_pcb_entry/4` @b9-d2 and `pcb_entry/4` (blt 90), their uses in `$or$2/1` and `$or$4/2`; the slot comment "Hardware PCB" (TM-100 p8). Kept in `Machine.pcb`, reset per census row. 6 uses | INFERENCE (the only INFERENCE row) |
 | pmi a7 `put_integer`: the immediate is sign-extended | `kl0.py` | `packet_generator abs/2` @280-287; the -1 length word in every integer reply; 49 uses with the immediate ≥ 0x8000 | INFERENCE |
 | a negative element of a 32-bit string is stored in two's complement | `kl0.py` `op_set_string_element` | the -1 length word in the 32-bit replies (`fep_services.md` §2.4) | INFERENCE |
@@ -3380,6 +3385,9 @@ CONTRADICTED.
 **Tests.**
 - `test_kl0.py` `test_list_to_vector`: the held `check_list/1` on a
   proper and an improper list, and the operands one by one.
+- `test_kl0.py` `test_pcb`: the held `pseudo_pe_process pcb_entry/4`
+  reads back words in `Machine.pcb` (index 32 fails the held check; a
+  word never written refuses), and the operands one by one.
 - `test_espc.py` `test_step3k_b4`: on a fresh machine the boot process
   creates the timer with the held `create_timer/9`, puts a request on the
   device's input stream and waits for the reply:
@@ -3439,7 +3447,24 @@ restored by copy and checked clean with cmp (script: the session's
 - K13 the `create/2` line put back as printed (`PROCESS`):
   `test_step3j_supervisor` ERROR, nothing else.
 
-`test_kl0.py` stayed OK in K4-K13.
+- K14 `boot_process:create/2` makes no `instance_array` entry for the
+  boot process: `test_step3j_supervisor` FAIL, nothing else.
+- K15 any other request succeeds silently (no `unsupported_request`):
+  `test_step3j_supervisor` FAIL, nothing else.
+
+- K16 blt 90 reads `(I, N)`, an unwritten word as 0: `test_kl0`
+  `test_pcb` FAIL, nothing else.
+- K17 blt 90 does not refuse a word never written: `test_pcb` ERROR
+  (KeyError), nothing else.
+
+`test_kl0.py` stayed OK in K4-K15.
+
+Open, an OURS choice: `create/3` (INTERPOLATED) sends `add_child` where
+the printed `create_core/3` does, but makes no `instance_array` entry.
+The census's process is not under the supervisor, so `instance_array`
+is not made there. An entry in `create/3` would meet a slot with no
+vector in every census row that creates a process (predicted, not
+measured), so it was left out.
 
 **Census, recomputed row by row** against b62208d4 (MEASURED
 2026-11-25, each row alone on a fresh machine; `_G` numbering

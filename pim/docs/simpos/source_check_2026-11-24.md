@@ -983,7 +983,8 @@ added to §6.1 step 4: after replying, the local fails. Its caller
 ## §10 Step 3k: step 3j's stand-ins re-checked (2026-11-25)
 
 Every page and line cited by the step 3j stand-ins was re-read in this step. That covers `psi/standin/process.esp`,
-`boot_process.esp`, `context.esp` and `dispatcher.esp`, the `pseudo_scsi` rows, and `psi/README.md` "Step 3j".
+`boot_process.esp`, `context.esp`, `as_program.esp` and `as_resource.esp`, the dispatcher in `kl0.py`, and the basis
+table of `psi/README.md` "Step 3j", checked against these tables citation by citation.
 Page images were read where a PDF has no usable text layer (`pdftoppm -r 150`). TR-044, TM-444 and TM-388 were also
 OCR'd with tesseract so they could be searched. Held cells were re-listed with `psi/librarian.py class X --listing`,
 and held pool strings with `asm/ptfread.py <pkg> --strings`.
@@ -1016,6 +1017,8 @@ and held pool strings with `asm/ptfread.py <pkg> --strings`.
 | PDF p7: class slots `ready_queue` and `instance_array`, with no initial value | page image | CONFIRMED |
 | PDF p8: `create/2` sends `:create_core(PROCESS, Process, Context)` | page image | CONFIRMED as printed. `PROCESS` is not a variable of the clause; its head binds `Class`. The stand-in keeps the printed text in a comment and runs a labelled correction (§10.5) |
 | PDF p8: the slot comment of `context` | page image: "Hardware PCB" (the last letter is degraded and looks like a "2") | **CORRECTED.** The stand-ins and `psi/README.md` cited "Hardware PC". Fixed, each labelled, in `standin/context.esp`, `standin/process.esp` and the README. The reading supports blt 94 being a PCB write (§10.4) |
+| PDF p8: `create/2`'s comment "If hardware processes are exhausted, then fail" | page image | CONFIRMED |
+| PDF p8: the slot `mask_count := 0`, "The number of interrupt mask nestings" | page image | CONFIRMED. Found in passing: the status comment reads "nil(=dead), dormant, suspended, ready, (active) and some others" |
 | PDF p8-p9: the calls of `activate/2` (`set_entry_point`, `activate`, `set_priority`, the ready queue) | page image | CONFIRMED |
 | PDF p6: the quoted lines on processes and the supervisor | page image | CONFIRMED. Found in passing: device handlers are interrupt processes, "not dispatched by the supervisor" |
 | PDF p10: `with_link` and the ready queue | page image | CONFIRMED |
@@ -1030,27 +1033,31 @@ and held pool strings with `asm/ptfread.py <pkg> --strings`.
 | TR-056 PDF p21 (folio 19): activation puts the process in the ready queue; resume calls the scheduler; the boot process | page image | CONFIRMED |
 | TR-055 PDF p5: 63 contexts, "63 sets of the internal registers for process control", dispatching by software | page image | CONFIRMED |
 | TR-285 PDF p11 (folio 8): resources are released by the same method | page image | CONFIRMED |
+| TR-087 PDF p4: a stream's retrieve "is suspended" until an object is put | page image (§3.2) | CONFIRMED |
+| TR-059 PDF p30 (folio 28): a device handler is an interrupt process, dispatched by hardware, "instantiated and activated during a system boot-up procedure" | page image | CONFIRMED. It is why the OURS dispatcher's lack of interrupt processes is stated as a difference |
 
 ### §10.4 Held cells and held source
 
 | Cited | Re-read | Verdict |
 |---|---|---|
 | `pseudo_pe_process` `release/1` @177-189 (the send of `request(Boot, release, Process)`) | listing | CONFIRMED. Since step 3k it runs to the end: release_core, two blt 94, `remove_child`, then the context release |
-| `pseudo_pe_process` `$or$5/2` @3a9-3bc: suspended→dormant @3af, ready→dormant @3b8 | listing | CONFIRMED. Noted: blt 90 (the PCB read) at @3bb has no row yet |
+| `pseudo_pe_process` `$or$5/2` @3a9-3bc: suspended→dormant @3af, ready→dormant @3b8 | listing | CONFIRMED. Noted: blt 90 (the PCB read) at @3bb had no row; step 3k adds it (`pcb(N, I, ^V)`, operands KNOWN-PLAINTEXT from kappa2 `LUUTIME.ESP`:107, `kappaLUU_timer start_timer/2` @59-5d) |
 | `terminate_core` @1e0 `get_number`; `$or$2` @347 | listing | CONFIRMED |
 | `pseudo_scsi` @71 assign, @155 assigned, @161 resign, @26c, @5bf | listing | CONFIRMED |
 | pimscsi pool string "SCSI is not assigned to process" in `$or$0/1` (@55a, used at @56b) | `ptfread.py pimscsi --strings` and the listing | CONFIRMED |
 | kappa2 `KP_POOL.ESP`:285-290, `check_resource` | source | CONFIRMED |
-| kappa2 `ITRAPP.ESP`: nature `as_resource`; `:assign` at :106 | source | CONFIRMED |
+| kappa2 `ITRAPP.ESP`:28-33 (the class head, nature `as_resource` at :32-33); `:assign` at :106 | source | CONFIRMED |
+| `pseudo_scsi` `close/1` @150-16d: `assigned/1` @155, status `closed` @15c-15e, `resign/1` @161; the alternative's `not_assigned` and `error/4` @16a-16d | listing | CONFIRMED |
 | kappa2 `ITRSES.ESP`:111-116 | source | CONFIRMED |
-| kappa2 `MOPMANAGER.ESP`:162-170: `create_kappa` creates the process with `:create(#process,Process,[free,free,free,free])` (:170), then sends `:activate(Process,Kappa_kernel)` | source | CONFIRMED |
+| kappa2 `MOPMANAGER.ESP`:162-168, cited for the handshake (create, activate, get) | source: :162-164 are the banner comment of `create_kappa`, the handshake clause is :165-172, with `:create(#process,Process,[free,free,free,free])` at :170, `:activate(Process,Kappa_kernel)` at :171 and `:get(Stream,FLAG)` at :172 | **CORRECTED** to :165-172 in `psi/README.md`, `boot_route.md` and the `test_step3j_supervisor` header, each labelled |
+| kappa2 `MOPKAPPA.ESP` `goal/1` (the child's `:put`) | source: `:goal(Obj)` at :31, `:put(Obj!stream,created)` at :34, `:put(Obj!stream,fail)` at :37 | CONFIRMED |
 | TM-388 PDF p110 (folio 98): writing a slot overrides a value; it may not be written with an unbound variable or a stack vector | OCR, then page image | CONFIRMED. It is the basis for `resolve_value` copying the cells of a stored list. The copy itself is OURS |
 
 ### §10.5 Counts and what changed
 
-- 23 rows were re-read:
-  - CONFIRMED: 21. One of them, the `PROCESS` typo, is CONFIRMED "as printed".
-  - CORRECTED: 1, "Hardware PC" → "Hardware PCB".
+- 29 rows were re-read:
+  - CONFIRMED: 26. One of them, the `PROCESS` typo, is CONFIRMED "as printed".
+  - CORRECTED: 2, "Hardware PC" → "Hardware PCB", and `MOPMANAGER.ESP`:162-168 → :165-172.
   - Superseded: 1, §2's third argument of list_to_vector.
   - CONTRADICTED: 0.
 - The `create/2` correction: `standin/process.esp` now runs `:create_core(Class, Process, Context)`, labelled

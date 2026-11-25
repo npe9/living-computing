@@ -55,7 +55,7 @@ from it.
 | B1 | The IPL loads SIMPOS from the fixed disk and links it | PRINTED prose: TR-087 p11 §5.3; TM-100 p18; `ESPtex/overview-e.tex`:1150-1180 | Substituted: `librarian.py` loads the 1,455 held class templates; `espc.py` compiles 36 stand-ins | SUBSTITUTED, OURS. The IPL image is not held (`layers/FORMATS.md` §4). |
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
-| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and blt 90. |
+| B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE | BLOCKED in part: no `directory`, `user`, `world` or file system stand-in. |
 | B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal | BLOCKED: the coordinator is a process of its own, which B3 now allows; but its class and the window bodies are lost (`subsystems/window.md`). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors | BLOCKED: `user` and `world` are known by USAGE only; reading `login.com` needs B5's file system. |
@@ -198,7 +198,8 @@ that step 3j wrote them from:
 
 What runs now (`psi/test_espc.py` `test_step3j_supervisor`): a probe
 boot program, in the shape of held kappa2 `ITRSES.ESP`:111-116 and
-`MOPMANAGER.ESP`:162-168 with `MOPKAPPA.ESP` `goal/1`, does:
+`MOPMANAGER.ESP`:165-172 (CORRECTED step 3k: first cited :162-168,
+`source_check_2026-11-24.md` §10.4) with `MOPKAPPA.ESP` `goal/1`, does:
 
 1. `:create(#boot_process, B)` and `:activate(B, Prog)`;
 2. makes a stream, a child program holding it, and a process
@@ -214,7 +215,8 @@ program ends, and it dies (status `nil`). The boot process gets
 
 The held `pseudo_pe_process release/1` now passes `status/3` (`dormant`
 becomes `on_release`) and stops at the boot process's `request/3`, which
-is not stood in. With status `nil` it fails at `status/3`.
+is not stood in. With status `nil` it fails at `status/3`. (Step 3k:
+`request/3` is stood in, and `release/1` runs to its end, §4.3.)
 
 What stays open, labelled in the stand-ins:
 
@@ -475,8 +477,11 @@ not change it.
   through its device process under the supervisor.
 - Not reached in B4:
   - `on_after` (303) is the timer's alarm, and it needs an alarm process;
-  - blt 90 (`pcb_entry`, read in `terminate_core` `$or$5` @3bb) has no
-    row.
+  - `terminate_core`: blt 90 (`pcb`, read in `$or$5` @3bb) now has a
+    row, its operands KNOWN-PLAINTEXT from kappa2 `LUUTIME.ESP`:107.
+    But it reads word 15 of the PCB, which nothing on the route writes,
+    so it refuses there (the hardware's own words are not modelled).
+    No test runs `terminate_core`.
 - The SIMPOS handlers themselves are still lost.
 - B5 to B8 are as in §2.
 
@@ -495,7 +500,7 @@ order:
    `pimfep##simpos_user create/4`.
 3. A coordinator process with a system menu that has the two PIM/m
    items of §1 (B6).
-4. Also on the way: blt 90, blt 0d (10 stops in each FEP census) and blt a8 (2); `get_interpreter/2` and
+4. Also on the way: blt 0d (10 stops in each FEP census) and blt a8 (2); `get_interpreter/2` and
    `has_been_reshaped/1`; the timer's `on_after`.
 
 **B5's `directory`, examined in step 3i (PARTIAL).** The interface is

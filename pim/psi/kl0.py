@@ -2135,6 +2135,27 @@ class Machine:
         self.pcb[(n, i)] = deref(self.x[c])
         self.nxt(code, off)
 
+    def op_pcb(self, code, off, a, b, c, v):
+        # blt 90 (step 3k): pcb(N, I, ^V), KNOWN-PLAINTEXT operands: held
+        # kappa2 utility/luu/LUUTIME.ESP:105-108 `pcb(Class!s_memory_mgr_no,
+        # 3,MEM)` is kappaLUU_timer start_timer/2 @59-5d: the slot read
+        # into A0 (@5a), `a7 01 00 03` I = 3 into A1, `90 00 01 00`, then
+        # `24 00 03` saves A0 as MEM.  So byte 1 is N, byte 2 I, byte 3 V.
+        # Word I of context N's process control block, the word blt 94
+        # (set_pcb_entry) writes.  INFERENCE (row): the value read is the
+        # one last written by blt 94; the hardware's own words (kappa reads
+        # word 3 of the system processes 2, 8, 17 and 36 for its timing)
+        # are not modelled, so reading a word never written refuses.
+        n = self._int(self.x[a], 'pcb')
+        i = self._int(self.x[b], 'pcb')
+        if not 0 <= i < 32:
+            raise Refusal('built-in', 'pcb index %d: only 0..31 (pcb_entry/4 @80-81)' % i)
+        if (n, i) not in self.pcb:
+            raise Refusal('built-in', 'pcb word %d of context %d: never written, and the hardware '
+                          'words are not modelled' % (i, n))
+        self.x[c] = self.pcb[(n, i)]
+        self.nxt(code, off)
+
     def op_set_subvector(self, code, off, a, b, c, v):
         s, z, low = self.ext_cell(code, off, 'set_subvector')
         if z or low:

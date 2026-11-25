@@ -322,8 +322,8 @@ class Table(unittest.TestCase):
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
         # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
         # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05,
-        # 142 before step 3k's blt 6f and 94
-        self.assertEqual(len(rows), 144)
+        # 142 before step 3k's blt 6f, 94 and 90
+        self.assertEqual(len(rows), 145)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1273,6 +1273,11 @@ class Step3iRows(unittest.TestCase):
         # kappaRDO_check check_list/1 @a4 (ROCHECK.ESP:119-121
         # `list_to_vector(List,_,Tail), Tail == []`): a proper list passes;
         # an improper one fails (its Tail is the terminator: INFERENCE)
+        # Injections, observed (2026-11-25; from a backup, restored by
+        # copy, cmp clean): K1 V and Tail swapped: this test FAIL (and
+        # test_espc test_step3g_stream_see, test_step3k_b4 ERROR); K2 a
+        # heap vector instead of a stack vector: this test FAIL, nothing
+        # else in either file.
         m = kappa_machine()
         cid = 'kappa##kappaRDO_check'
         (p,) = [p for p in m.lib.templates[cid].locals if p.offset == 0xa4]
@@ -1315,6 +1320,41 @@ class Step3iRows(unittest.TestCase):
         m.x[0] = K.Var()
         with self.assertRaises(K.Refusal):
             m.op_list_to_vector(fake, 0, 0, 0, 1, 0)
+
+    def test_pcb(self):
+        # blt 90 pcb(N, I, ^V) (step 3k): operands KNOWN-PLAINTEXT from
+        # kappa2 LUUTIME.ESP:107 (kappaLUU_timer start_timer/2 @59-5d);
+        # the value read is what blt 94 wrote (INFERENCE).  Run on the held
+        # pimmcsp##pseudo_pe_process pcb_entry/4 @7b-84: PE number ->
+        # context number through the class slot pe_number_table (OURS
+        # contents here), index < 32, then blt 90.
+        # Injections, observed (2026-11-25; from a backup, restored by
+        # copy, cmp clean): K16 N and I swapped, unwritten words read 0:
+        # this test FAIL, nothing else in test_kl0 or test_espc; K17 no
+        # refusal for a word never written: this test ERROR (KeyError),
+        # nothing else.  All three censuses re-run row by row: no row
+        # changes (blt 90 is reached by no census row).
+        m = machine()
+        cid = 'pimmcsp##pseudo_pe_process'
+        m.set_slot(K.ClassRef(cid), 'pe_number_table', K.Vec([5, 6, 7], heap=True))
+        m.pcb = {(6, 24): 0, (6, 12): A('nil')}
+
+        def read(pe, i):
+            m.reset()
+            v = K.Var()
+            return [K.deref(v) for _ in m.solve((m.code(cid), 0x7b), [pe, i, v, K.ClassRef(cid)])]
+        self.assertEqual(read(1, 24), [0])
+        self.assertEqual(read(1, 12), [A('nil')])
+        # index 32 fails the held check before the opcode
+        self.assertEqual(read(1, 32), [])
+        # a word never written refuses (the hardware words are not modelled)
+        with self.assertRaises(K.Refusal):
+            read(0, 3)
+        # byte 1 N, byte 2 I, byte 3 V, as kappa's `90 00 01 00`
+        fake = types.SimpleNamespace(id='test', cells={})
+        m.x[2], m.x[1] = 6, 24
+        m.op_pcb(fake, 0, 2, 1, 0, 0)
+        self.assertEqual(m.x[0], 0)
 
     def test_heap_vector(self):
         # blt 05 heap_vector(V, ^N) (step 3i): KPEXTENT.ESP:109-120, on the
@@ -1423,7 +1463,10 @@ class Census(unittest.TestCase):
             # blt f4 (4 -> 8)
             # step 3k: put_integer sign-extended: csp_deref_utility's two
             # `ffff` rows leave 'operand' (9 -> 7); deref/4 succeeds,
-            # collect_vars/5 goes on to 'no method' get/4 (56 -> 57)
+            # collect_vars/5 goes on to 'no method' get/4 (56 -> 57).
+            # Injection K3 (u16 as before), observed: this test FAIL (and
+            # test_espc test_step3k_b4 ERROR, test_step3f_census_recipes
+            # FAIL), nothing else.
             'no method': 57, 'no slot': 40, 'built-in': 24, 'unbound receiver': 20,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)

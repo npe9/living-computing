@@ -1718,7 +1718,8 @@ end.'''
         # the supervisor (its own :create and :activate, INTERPOLATED,
         # TR-056 p21) and a second process runs.  The probes are OURS, in
         # the shape of held kappa2 kernel/itr/ITRSES.ESP:111-116 and
-        # utility/mop/MOPMANAGER.ESP:162-168 with MOPKAPPA.ESP goal/1: the
+        # utility/mop/MOPMANAGER.ESP:165-172 (CORRECTED step 3k: first
+        # cited :162-168) with MOPKAPPA.ESP goal/1 (:31-37): the
         # parent makes a stream, a program holding it and a process
         # (create/3, [free,free,free,free]), activates the process with the
         # program and does :get on the stream; the child's goal :puts.
@@ -1824,7 +1825,11 @@ end.'''
         # context's number; the boot process is element 0.  create/3
         # (INTERPOLATED) makes no entry, so element 1 (the child) stays 0.
         # Injection, observed (2026-11-25): K13 the line put back as
-        # printed (PROCESS): this test ERROR, nothing else.
+        # printed (PROCESS): this test ERROR, nothing else.  K14 no
+        # instance_array entry for the boot process: this test FAIL,
+        # nothing else.  K15 any other request/3 succeeds silently: this
+        # test FAIL, nothing else.  (The other-request check is the
+        # release section below.)
         (p4,) = one(K.ClassRef('simpos##process'), 'create', K.Var())
         self.assertEqual((p4.cid, sl(p4)['status']), ('simpos##process', K.Atom('dormant')))
         self.assertIs(sl(p4)['parent_process'], boot)
