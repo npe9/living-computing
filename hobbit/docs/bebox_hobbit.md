@@ -369,8 +369,9 @@ only prepares to be interrupted by them.
   - 8,248 interrupts and 2,419 disk blocks read; no "dsp" message on the
     console.
 - What would hang is the first client that waits on a DSP: a `vcRead*`
-  FIFO poll, or a `_wait_dsp_int` with no timeout. Phone and audio, for
-  example, were not run.
+  FIFO poll, or a `_wait_dsp_int` with no timeout. `/apps/sound` record
+  is one: inert, it waits forever. With `--dsp emulated` it completes
+  ("DSP emulation" below).
 - The console line "area_for error 03000000" printed while the servers
   start is not the DSPs. It is `_sh_init` (ansi_server, storage_server)
   probing for the shared heap at 0x03000000 before it exists, through
@@ -387,12 +388,17 @@ modelled stops the run with the PC, the device and the access.
 
     python3 -I tools/beboot.py --disk build/bebox/hdd-hobbit-9308000058/hobbit-9308000058.img \
         [--max-steps N] [--until TEXT] [--trace N] [--no-idle-skip] \
-        [--screen FILE.png] [--save SNAP] [--resume SNAP]
+        [--screen FILE.png] [--save SNAP] [--resume SNAP] \
+        [--type TEXT [--type-at STEPS]] [--extract BEPATH=OUT] \
+        [--dsp inert|emulated [--codec-in IN.wav] [--codec-out OUT.wav]]
 
 `--screen` writes the display card's picture when the run ends.
 `--save` pickles the whole machine; `--resume SNAP` continues it with
 the current code. It is a development aid for the long runs, and a
 snapshot is only as good as the code that wrote it.
+`--type` types into the AT keyboard (below); `--extract` copies a file
+off SCSI target 0, the run's own writes included, when the run ends;
+`--dsp` and `--codec-*` are "DSP emulation" below.
 
 With no ROM, the run does the ROM's job: it takes `/system/kernel` from
 the disk (`tools/befs1.py`), loads its segments at their physical
@@ -471,16 +477,92 @@ sheet and the kernel's driver, and the run went on:
     into the processor reset register (0x0080001B), which releases DSP1.
     This was a stop until CHOICES `dsp`: the bits are now kept and no DSP
     runs (see "DSP3210 contract" above). vcas_server releases all three.
-12. **Current state**: no stop through 162,819,522 instructions. Both
-    CPUs are idle in `_null_thread`, with the "Terminal 1" shell window
-    up; 8,248 interrupts and 2,419 disk blocks read. The next step is
-    input: keys to the shell through the VL82C106.
+12. No stop through 162,819,522 instructions. Both CPUs are idle in
+    `_null_thread`, with the "Terminal 1" shell window up; 8,248
+    interrupts and 2,419 disk blocks read.
+13. Keys (`--type`, CHOICES `typing`): `ls` lists the root directory
+    in the Terminal window (`build/bebox/beboot/screens/ls-183M.png`).
+14. `/apps/sound` starts and shows its menu ("0-exit 1-record 2-play
+    ...", "dsp id 3"; `build/bebox/beboot/screens/sound-menu-204M.png`), with either DSP
+    choice. Recording ("1", "2" seconds, default file) needs the DSPs:
+    inert, both CPUs go idle and the program waits forever; emulated
+    with the AD1849K, the record completes (below).
 
 The run reaches the mount (29M instructions) in about 10 minutes (CPU-bound Python,
 ~50k instructions/s). An idle skip (CHOICES `idle-skip`) jumps whole
 laps of `_null_thread` when both CPUs are idle; `tests/test_beboot.py`
 checks that a run with it ends in the same state, register for register
 and word for word, as a run without it.
+
+**Typing** (CHOICES `typing`). `--type TEXT` (`\n` for Enter) is
+typed from `--type-at STEPS` (default: the start of the run), one key
+every 50 ms of model time, as scan code set 2 make and break codes on a
+US layout, shifted keys with Left Shift. Set 2, because the kernel's
+`_kb_inth` decodes set 2 (0xE0/0xE1 prefixes, 0xF0 break) and writes
+controller mode 0x03 (no translation). The pace is a choice; each key is
+a timed event, so the idle skip stops at it.
+
+### DSP emulation
+
+`--dsp emulated` (CHOICES `dsp`; `inert` stays the default) runs the
+three DSP3210s with `tools/dsp3210.py` (docs/dsp3210.md). The board side
+lives in beboot:
+
+- **Reset.** A rising bit 4-6 of 0x0080001B releases DSP n (it is created
+  then, with its clock at the CPUs' time); a falling bit holds it. Each
+  boots BRC=1 from Be machine memory into VCOS, as vcas_server set it up.
+- **Interrupts.** Bits 4-6 of 0x0080001F are a level on the DSP's IREQ1,
+  for as long as the bit is set. Nothing in the host code read clears
+  them except `_veDspHalt`; after the release they read 0x70 and stay
+  so (an open question).
+- **Bus.** Below 0x10000 is the DSP's own on-chip space. The DSP's
+  0x60000000 window, 2 MB, is the RAM area at 0x08000000 that
+  vcas_server maps for it (`_veLogToDspPhys` is the identity). Anything
+  else is the Hobbit physical map from 0x10000 up (Appendix A p. 4),
+  big-endian; Who Am I reads the DSP's number during its access. Any
+  access outside the window is counted and reported, and an unmodelled
+  device stops with the DSP, its PC, the address, size and value. No
+  arbitration delay is modelled: a DSP access takes no Hobbit cycles (a
+  choice; Appendix A says only that the DSPs win arbitration).
+- **Pins.** BIO0-7 are latched and reported; any other pin stops.
+- **Clocks.** 50 MHz against the CPUs' 25 MHz: 2 DSP clocks per Hobbit
+  cycle, in integers. After each CPU instruction every running DSP is
+  brought up to twice the slower CPU's cycle count. A DSP waiting on
+  its timer is skipped to it (`clocks_until_event`/`skip`), a DSP
+  polling an empty list is skipped to the CPUs' time and woken by a
+  host store to the watched word (`watch`/`notify_write`), and the CPU
+  idle skip is taken only while no DSP is busy; DSP timer ticks bound
+  it.
+- **Audio.** DSP 3 (be.oem/audio's "dsp id 3") gets the AD1849K model
+  (tools/ad1849.py). `--codec-in` feeds it a WAV; `--codec-out` saves
+  what it played.
+- A snapshot taken by an older emulator is brought up to date on
+  `--resume` (the new fields are filled from a fresh DSP and printed).
+
+**What VCOS does** (Nov 23 1994 disk, 2026-11-24):
+
+- The boot with emulated DSPs reaches the same idle shell. vcas_server
+  releases DSP1-3 at about 103M instructions; each runs VCOS from
+  0xE000 and settles at 0xE0E8 polling an empty task list. To 163.8M
+  instructions: about 17M DSP instructions each, every DSP access inside
+  its window, no stop. Cost from 103.8M to 163.8M: 1,065 s user, against
+  about the same for inert, once the spin skip rounded up to whole
+  cycles (it first rounded down to zero and ran 17M real steps per DSP).
+- `/apps/sound` record, emulated, with no codec: DSP 3 runs the record
+  task (about 626k instructions) until it drives BIO0, which stopped
+  the run then (no pin was wired); hence the pin latch.
+- With the codec, from the menu at 203.8M, typing "1", "2", Enter: the
+  record completes and `/apps/sound` comes back to its menu
+  (`build/bebox/beboot/screens/sound-record-300M.png`). DSP 3 ran 43.8M instructions; the
+  codec clocked 91,735 frames and consumed 91,034 input samples (2 s of
+  44.1 kHz stereo, plus the start-up). The host wrote the file with
+  `_fswrite` at 235.6M instructions and flushed it at about 296M; 632
+  blocks were written. The DAC output for the run was silence (the
+  record does not play through). No DSP access fell outside its window,
+  so the DSP-to-host interrupt route has still not been seen in use.
+  Cost: 2,767 s user for 120M instructions.
+- SER2 shows "getsc" / "ok" exchanges during `/apps/sound` (with either
+  DSP choice); they were not examined.
 
 **Tests.** `tests/test_beboot.py`: device tests against the data-sheet
 pages (no image needed), a boot test to "Disk cache is" (~2 min, skipped
