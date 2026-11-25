@@ -35,6 +35,7 @@ The docs outside `psi/` were corrected in place:
 7. [§5 Proposed changes to pim/psi/](#5-proposed-changes-to-pimpsi-ready-to-apply-not-applied)
 8. [§6 Open after this check](#6-open-after-this-check)
 9. [§7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)](#7-step-3fs-interpolated-and-ours-parts-re-checked-2026-11-25)
+10. [§8 The rest of §7, re-checked in step 3h (2026-11-25)](#8-the-rest-of-7-re-checked-in-step-3h-2026-11-25)
 
 ## How the check was done
 
@@ -752,7 +753,7 @@ Page numbers are PDF pages, with the printed folio where it differs.
 | `pmacs_window` `set_size/3`, `set_position/3`, `set_title/2` | TM-125 p15-16 | TM-125 PDF p15 (folio 14) §5.3 prints `:set_size(Window, Width, Height)`, `:set_position(Window, X, Y)` and `:set_title(Window, String)` | CONFIRMED |
 | `activate/1`, `show/1`, `deactivate/1`, `hide/1` | TM-125 p15-16 | TM-125 PDF p16 (folio 15) §5.4 prints all four | CONFIRMED |
 | `get_size/3` | TM-115 p50 | PDF p50 (folio 45) names `:get_size` "provided by the window system", without arguments. PDF p64 (folio 59) prints `:get_size(Instance,^Width,^Height)` | CONFIRMED. PDF p64 is the better citation (it gives the arity) |
-| `get_position/3` | TM-115 p63 | PDF p63 (folio 58) and folio 63 (PDF p68) do not print it. It is on PDF p64 (folio 59, "Page 4-26"): `:get_position(Instance,^X,^Y)` | CORRECTED: the citation is PDF p64. PDF p63 opens the parameters_display_menu section (4.14) that the methods belong to, which is likely why `subsystems/notes/tm115.md` and `tm115.tsv` cite p63. Fixed in `standin/pmacs_window.esp`, `subsystems/window.md` §2.1 and the README texts; the generated notes tables (`tm115.tsv` and the coverage outputs built from it) are left as they are |
+| `get_position/3` | TM-115 p63 | PDF p63 (folio 58) and folio 63 (PDF p68) do not print it. It is on PDF p64 (folio 59, "Page 4-26"): `:get_position(Instance,^X,^Y)` | CORRECTED: the citation is PDF p64. PDF p63 opens the parameters_display_menu section (4.14) that the methods belong to, which is likely why `subsystems/notes/tm115.md` and `tm115.tsv` cite p63. Fixed in `standin/pmacs_window.esp`, `subsystems/window.md` §2.1 and the README texts; the generated notes tables (`tm115.tsv` and the coverage outputs built from it) are left as they are (fixed in step 3h: §8) |
 | `get_title/2` (USAGE only) | none printed | TM-115 PDF p64 prints `:get_title(Instance,^Title)` among the parameters_display_menu methods that "just call the method of the menu which has the same name" | UPGRADED to PRINTED-INTERFACE, for a menu window (1985) |
 | `set_font/2` | TM-112 p16 | TM-112 PDF p16 (folio 12) §3.6 prints `:set_font(Window,Font)` | CONFIRMED |
 | `reshape/5`, `set_text_size/3`, `get_text_size/3`, `get_font/2`, `beep/1`, `flash/1` (USAGE only) | held `.ptf` sends | the TM-115 OCR has no hit for any of them | unchanged: USAGE only |
@@ -786,3 +787,103 @@ Not re-read:
 - the rest of `create_string_io/10` beyond @28-2d.
 
 So this re-check is PARTIAL.
+
+## §8 The rest of §7, re-checked in step 3h (2026-11-25)
+
+This section re-reads the four items that §7 left unread. Page images
+were made with `pdftoppm` and read by eye. Cells come from the
+`ptfread` listings of `pimfep.ptf`. Pool constants were resolved with
+kl0's `Code.pool_term`. With these, §7 is COMPLETE.
+
+| Item | Re-read | Verdict |
+|---|---|---|
+| TM-100 Fig. 3.1 (`process:activate/2`; step 3h also uses it for `children/2`) | TM-100 PDF p7-p10 as images, against `printed/listings/tm0100_p07-p10` | CONFIRMED: the transcriptions match. No page defines `status/3`. |
+| TM-388 pp92-101 (the own-package rule kl0's `lib_class_named` uses for `get_class_object/3`) | PDF p92-p101 (folios 80-89, §3.8 "Multi-Class Name Space (Package)") as images | CONFIRMED as a static rule (details below the table) |
+| `fep_services.md` §6.4 (the three string-I/O programs) | `create_string_io/10` @15-55, its locals (see the next row), `as_pimos_string_io_device do_io/6` @71-89, `pimos_remote_login_server reset/2` @17e-1c3 | CONFIRMED, for what was re-read (details below the table) |
+| `create_string_io/10` beyond @28-2d | @15-55, `get_class_object/3` @5a-86, `create/3` @8b-98, `initiate_string_io_device/7` @9d-bd | CONFIRMED (details below the table) |
+| TM-115 `get_position/3` page (§7: CORRECTED, generated tables not fixed) | TM-115 PDF p63 and p64 as images | FIXED (details below the table) |
+
+### TM-388 pp92-101
+
+- PDF p94 (folio 82) prints the lookup: "(1) every class in the self
+  package". Then, among the classes of the packages that the
+  environment inherits, "only those classes that have been declared as
+  external", with the higher inheritance order first.
+- PDF p95 (folio 83) has the worked example.
+- PDF p93 (folio 81) says linkage is made "when the classes are
+  stored", and PDF p98 (folio 86) "statically upon macro expansion".
+- No page on pp92-101 describes a run-time lookup.
+
+So "own package first" is PRINTED, but only for names bound when a
+class is stored. Applying it to the run-time `get_class_object/3`, with
+the sender's package as "own", stays INFERENCE. `psi/kl0.py`'s
+docstring now cites these pages; no code changes.
+
+### `fep_services.md` §6.4
+
+- "Name must be a 16-bit string": @1d `blt 0b 08 00 01` (`string/3` on
+  A8), then @1e `pmi 27 01 00 10` (the size must be 16).
+- The symbolizer and the library: @28 pool `#simpos##symbolizer` with
+  `enter_atom/3`, and @2e `#simpos##library` with `assign/1`. The
+  `assign/1` is not mentioned in §6.4; it is the call step 3f's
+  `library:assign/1` stand-in models (§7 row 1).
+- The instance and its process: an instance is made (@39 `create/3` to
+  @8b `create/2`), `process/4` @22-23, `activate/2` @44-45.
+- The reply: `get/2` on the creation-status stream, compared with
+  `normal` (@4b-4c, blt 64). Then `{Y3, 1}` is built (@50-52: `b2`,
+  `44 03`, `47 00 00 01`) and sent by `reply_message/2`, which is
+  `{Id, 1}`.
+- 620, `do_io/6`: by `73 R n` (the receiver is in R) the cells are
+  `:io(Self, Command, To_fep, From_fep)` @79-7e and
+  `:reply_message(Self, {Id, 1, From_fep})` @82-89. From_fep is
+  checked at @80-81 (call to @e6).
+- The server's three type atoms `local_login`, `lia` and `tcpip` are
+  in `reset/2` @18e, @1a4 and @1b5.
+- Not re-read: the string constants (`"local"`, `"lia"`, `"tcpip"`,
+  the 0/1 character, `">"`), the `{Id, 5}` path, and
+  `simpos_user_device`'s argument layout.
+
+### `create_string_io/10` beyond @28-2d
+
+- The local `get_class_object/3` (@5a-86) has two clauses. The first
+  tries `check_info(template_file)`, then `make_class_object/2`, then
+  `get_class_object/3`. The second tries `check_info(object)`, then
+  `get_class_object/3`. All five pool constants are `#simpos##library`
+  (@5e, @64, @69, @74, @7a). This agrees with §7 row 2.
+- `create/3` sends `create/2` to the class object.
+- `initiate_string_io_device/7` (@9d-bd) sends `set_input_stream/2`,
+  `set_output_stream/2`, `set_device_id/2`, `stream/2` and
+  `set_creation_status_stream/2`.
+
+Each of the three locals has a last clause that sends `exterminate/1`
+(@81-85, @93-97, @b8-bc): if the steps before fail, the object is
+killed.
+
+### TM-115 `get_position/3`
+
+- PDF p64 (folio 59, "Page 4-26", §4.14.3) prints `:get_size`,
+  `:set_size`, `:set_position` and `:get_position` together.
+- PDF p63 (folio 58) prints only the class's description and its
+  attributes (§4.14.1-2).
+
+The fix, made through the generators:
+
+- `subsystems/notes/tm115.tsv` rows 37-40 and `tm115.md` lines 89-92
+  now cite p64 for all four methods. `get_size` keeps p50 as well.
+- `tools/coverage.py` and `tools/window_appendix_gen.py` were re-run.
+- `subsystems/window.md` appendix A's three cells (`get_position/3`,
+  `get_size/3`, `set_size/3`) were set to the new generated rows.
+
+Two drifts surfaced in the re-run. Both predate step 3h:
+
+- The committed `coverage/out/selectors.md` and `unspec.tsv` were older
+  than `notes/fixpoint_fe.tsv` (f1210837, a8880b48). The re-run turns
+  seven UNSPECIFIED selectors into CENSUS rows and drops them from
+  `unspec.tsv`: `get_character_font/2`, `get_parsing_operator/2`,
+  `get_unparsing_operator/2`, `set_max_depth/2`, `set_max_length/2`,
+  `set_parsing_operator/2` and `set_unparsing_operator/2`. They are
+  committed as generated.
+- `window.md` appendix A is not a byte copy of `selectors.md`. Five
+  rows differ (`create/4`, `getl/2`, `putt/2` and two `″` rows), as
+  they did before step 3h. Only the three citation cells were changed;
+  the appendix is otherwise left as it was.

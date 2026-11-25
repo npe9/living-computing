@@ -836,8 +836,12 @@ class Machine:
         the package of the class that sent the library call; else the one
         loaded class `*##c`.  None if none is loaded; refused if several
         are.  INTERPOLATED: the own package first is the static lookup rule
-        of a bare class name (subsystems/librarian.md §1.4, TM-388 pp92-101,
-        ESP manual program-e.tex:5250-5934); that the run-time lookup
+        of a bare class name, PRINTED in TM-388 PDF p94 (folio 82: "(1)
+        every class in the self package") and the p95 worked example
+        (subsystems/librarian.md §1.4; ESP manual program-e.tex:5250-5934).
+        TM-388 binds it when a class is stored (PDF p93, folio 81) and
+        at macro expansion (p98, folio 86), and says nothing of a run-time
+        lookup (pp92-101 read as images, 2026-11-25); that the run-time lookup
         follows it, and that the "own" package is the sender's (not the
         process's default package, kappa2 HLCLIB.ESP:30-31 `:get_package(
         Process, P)`), are INFERENCE (gaps.md, librarian row 1: the
