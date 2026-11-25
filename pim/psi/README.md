@@ -304,8 +304,8 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 115 rows
-(100 at step 2, nine more at step 3c, four at step 3d, two at step 3e)
+**Opcodes are named only from known plaintext.** Each of the 125 rows
+(100 at step 2, nine more at step 3c, four at step 3d, twelve at step 3e)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
@@ -313,7 +313,7 @@ An opcode without a row is refused loudly (`Refusal`, cause
 as a 16-bit immediate with its top bit set, or a three-register
 built-in whose result register is not its first operand (where no
 witness shows it). The rows are
-73 class-0 (`pmi`), 38 class-1 (`blt`) built-ins, 3 atom-cell forms
+77 class-0 (`pmi`), 44 class-1 (`blt`) built-ins, 3 atom-cell forms
 and 1 hash table (`cd00`). A few class-0 rows are opcodes whose
 difference from a sibling is UNKNOWN (e.g. `24` beside `20`, `de`
 beside `dd`). They execute alike, and their rows say so.
@@ -1192,6 +1192,72 @@ refused).
     `abort_handler:create/2`.
 - No method moved out of success.
 
+### Step 3e: the interrupt brackets, the vector puts, the bit operations (2026-11-24)
+
+Ten rows, and R != A for two old ones. Each has a held predicate whose
+cells sit beside their held source (re-read here; the merged
+`docs/simpos/source_check_2026-11-24.md` listed most of them as leads).
+MEASURED counts are scratch surveys of the eleven packages.
+
+| Row | Reading | Witness (held source) |
+|---|---|---|
+| blt 9a, 9b | `inhibit_interrupt`, `allow_interrupt`: no-ops here (OURS: no interrupts are modelled) | TERMCODE.ESP:181-193, two brackets in source order; 14 and 17 uses, all `00 00 00` |
+| pmi b1 | `put_vector_1` A | HLCAPRSUB.ESP:426-427 `{Group}`; 342 uses, one element cell after each |
+| pmi b5 | `put_vector_5` A | receiver.esp:680-681 (A = 0), KP_MDMUGT.ESP:92-94 (A = 1); 144 uses, five elements after each |
+| pmi b6 | `put_vector_6` A | p_MAIN.esp:443-444 (A = 0), KP_MDMART.ESP:81-82 (A = 1); 174 uses, six elements |
+| pmi b7 | `put_vector_n` A, 0, n | p_icon.esp:226-229, n = 7; 67 uses, n elements after each, second byte 0 in all. A != 0 is not witnessed with source and refuses |
+| blt 50 | `and` A, B, ^R | TERMCODE.ESP:188 (R = A), :85 (R = B) |
+| blt 51 | `or` A, B, ^R | KP_TIMER.ESP:44, KP_DBO.ESP:403-404 (R != A) |
+| blt 54 | `shift_left` X, N, ^R | KP_DBO.ESP:400-404 (R != X), KP_TIMER.ESP:43 |
+| blt 55 | `shift_right` X, N, ^R | KP_TIMER.ESP:45 |
+| blt 49, R != A | as before | c_grade_ex.esp:26 `49 00 0a 07` |
+| blt 40, R != A | as before | p_wwin.esp:418-422 `40 00 01 01`, `40 00 02 02` |
+
+What the 32-bit word does at its edges is not printed, so the bit rows
+refuse it rather than guess. A negative operand refuses, as does a
+shift count outside 0..31 and a left shift whose result reaches 2**31.
+Two held idioms depend on it: KP_TIMER.ESP:43 `shift_left(Time1,31,T1)`
+and the `set_integer` of KP_DBOFE.ESP:376-378. They are leads, not
+witnesses.
+
+Not added:
+
+- blt 6f, `list_to_vector`, is witnessed (BCMSETSEQ.ESP:346-348, hash.esp:152,
+  sancho1.esp:102), but what its third argument receives is not settled
+  (NO SOURCE FOUND in the merged source check).
+- The 9a/9b pairs of `pimmcsp##pseudo_pe_process` were not examined. In
+  six of its predicates, a 9a has no 9b after it, or a 9b has none
+  before it.
+
+Tests (`test_kl0.py` `Step3eRows`):
+
+- `test_interrupt_brackets`: the no-ops, and `pimfep_message_log log/2`
+  run to its one solution.
+- `test_vector_puts`: HLCAPRSUB.ESP's `make_nest_vector(2, a, F)` gives
+  `{{a}}` on the held code. The handlers for b5, b6 and b7 are checked
+  for length, the element pointer and b7's refusals.
+- `test_bit_operations`: KP_DBO.ESP's `get_integer` on the held code is
+  `(H << 16) | L`, and `0x8000 << 16` refuses. TERMCODE.ESP's `and(Count,1,0)`
+  disjunction gives 4 for 4 and 6 for 5. The handlers for shift_right,
+  and, or and the refusals are checked too.
+- `test_result_register`: R != A for 49 and 40.
+
+Effect on the FEP census, compared method by method: 1,403 / 782 / 121
+/ 500 becomes 1,403 / 784 / 123 / 496.
+
+- 2 methods move from refused to success: `pimfep_message_log log/2`
+  and `cmt make_CDB/3`.
+- 2 move from refused to failure: `io/5` of `as_pimos_string_io_device`
+  and `pimos_remote_login_replier`.
+- 32 stop later, at pmi c6, `process:wait/1`, an unbound argument, and
+  others.
+- No method moved out of success.
+
+The six-package census keeps its totals (211 / 307 / 12). The six
+`draw/2` icons that stopped at divide_immediate's R != A now stop
+later. Four stop at multiply_immediate's R != A, which is still
+unwitnessed. Two stop at a `draw_line/8` sent to an unbound window.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -1203,9 +1269,10 @@ refused).
   SIMPOS or firmware. They are not held. Only `new/2` (slot
   initialisation included) and `refute/3` are modelled (OURS).
 - **The compiler's unwitnessed constructs.** These have no witnessed
-  compiled form yet: `=\=`, vectors of one, or of five or more,
-  elements built in a body, `->` and `not`; of `with_macro`, the
-  rules with a tail and `==>`.
+  compiled form yet: `=\=`, `->` and `not`; of `with_macro`, the
+  rules with a tail and `==>`. Vectors of one, five, six or n elements
+  now have interpreter rows (pmi b1, b5, b6, b7, step 3e), but
+  `espc.py` does not emit them yet.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
   not modelled. No held nature needs it.

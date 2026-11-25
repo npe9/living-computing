@@ -988,12 +988,16 @@ end.''', 'simpos')
         # 782 success (109 of the new ones, and 6 create methods that
         # stopped at create/2), 121 failure (pimos_timer resign_core/1 on
         # the shared process's empty stack), 500 refused; no method left
-        # success.
+        # success.  Step 3e's rows blt 9a/9b, pmi b1/b5/b6/b7, blt 50/51/
+        # 54/55 and R != A for blt 40/49: 784 success (pimfep_message_log
+        # log/2, cmt make_CDB/3), 123 failure (as_pimos_string_io_device
+        # and pimos_remote_login_replier io/5, which refused at b1), 496
+        # refused (32 more stop later); no method left success.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 782, 'failure': 121, 'refused': 500}))
+        self.assertEqual((len(rows), out), (1403, {'success': 784, 'failure': 123, 'refused': 496}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 

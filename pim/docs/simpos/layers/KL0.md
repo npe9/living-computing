@@ -140,7 +140,7 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
 - MEASURED 2026-11-24, from known plaintext:
   - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) were named
-    at first; 115 now (73 class-0, 38 class-1, after steps 3c, 3d and 3e). They are in
+    at first; 125 now (77 class-0, 44 class-1, after steps 3c, 3d and 3e). They are in
     `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
     ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows. 44 rows are
     witnessed independently by `../../../psi/fepread/witness.py`, and both are cited.
@@ -205,6 +205,18 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   uses have R = 0 (MEASURED). It also witnesses blt f2 as `==` in a test-and-branch, read as blt f0
   (`g_window.esp:15`, `( Display == color,!, ... ; true )`: `f2 02 03 00`). The difference from f0
   is UNKNOWN.
+- Step 3e also witnesses, each on held kappa or paragraph code beside its source
+  (`psi/README.md`, "the interrupt brackets, the vector puts, the bit operations"):
+  - `inhibit_interrupt` / `allow_interrupt` are blt 9a / 9b, no operands (`TERMCODE.ESP:181-193`).
+    They are no-ops in the interpreter (OURS: no interrupts are modelled);
+  - vectors of one, five and six elements are pmi b1, b5, b6; `b7 A 0 n` puts an n-element vector
+    (`HLCAPRSUB.ESP:427`, `receiver.esp:680`, `p_MAIN.esp:444`, `p_icon.esp:229`). MEASURED: every
+    held use is followed by exactly that many element cells;
+  - `and`, `or`, `shift_left` and `shift_right` (TR-044 A.6) are blt 50, 51, 54 and 55, written
+    `X, Y, ^R` (`TERMCODE.ESP:85, 188`, `KP_DBO.ESP:403-404`, `KP_TIMER.ESP:43-45`). The 32-bit
+    word's sign and overflow are not printed, so negative operands and results of 2**31 or more
+    are refused;
+  - blt 40 and 49 take the result in another register (`p_wwin.esp:420`, `c_grade_ex.esp:26`).
 - OVW (lines 2662–2704) states that categories (7) system control and (8) language-processing
   support are **not described** in the user manuals.
 

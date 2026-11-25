@@ -1298,7 +1298,9 @@ class Machine:
         x = self._int(self.x[a], 'divide')
         if x < 0 or b == 0:
             raise Refusal('operand', 'divide_immediate %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
-        self._arith(code, off, a, b, c, x // b, 'divide_immediate')
+        # R != A is witnessed (c_grade_ex.esp:26 `49 00 0a 07`, step 3e)
+        self.x[c] = x // b
+        self.nxt(code, off)
 
     def op_vector_element(self, code, off, a, b, c, v):
         vec = self._vec(self.x[a], 'vector_element').args
@@ -1347,8 +1349,9 @@ class Machine:
     # -- step 3c rows (2026-11-24): add, type tests, equal_string,
     # string_tail, stack_vector (psi/kl0_opcodes.tsv)
     def op_add(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'add') + self._int(self.x[b], 'add'),
-                    'add')
+        # R != A is witnessed (p_wwin.esp:420-422 `40 00 01 01`, step 3e)
+        self.x[c] = self._int(self.x[a], 'add') + self._int(self.x[b], 'add')
+        self.nxt(code, off)
 
     def op_stack_vector(self, code, off, a, b, c, v):
         t = deref(self.x[a])
@@ -1465,6 +1468,69 @@ class Machine:
         new = Vec([Var(), Var(), Var(), Var()])
         self.x[a] = new
         self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    # -- step 3e rows (2026-11-24): the interrupt brackets, the other
+    # vector puts, the bit operations (psi/kl0_opcodes.tsv)
+    def op_inhibit_interrupt(self, code, off, a, b, c, v):
+        # no interrupts are modelled, so there is nothing to hold off (OURS)
+        self.nxt(code, off)
+
+    op_allow_interrupt = op_inhibit_interrupt
+
+    def _put_vector(self, code, off, a, n):
+        new = Vec([Var() for _ in range(n)])
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    def op_put_vector_1(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 1)
+
+    def op_put_vector_5(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 5)
+
+    def op_put_vector_6(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 6)
+
+    def op_put_vector_n(self, code, off, a, b, c, v):
+        if a != 0 or b != 0:
+            raise Refusal('operand', 'put_vector_n %02x %02x %02x: only A = 0, second byte 0 is witnessed with source'
+                          % (a, b, c))
+        self._put_vector(code, off, a, c)
+
+    def _bits(self, t, what):
+        x = self._int(t, what)
+        if x < 0:
+            raise Refusal('built-in', '%s on %d: sign and width of the word unwitnessed' % (what, x))
+        return x
+
+    def op_and(self, code, off, a, b, c, v):
+        self.x[c] = self._bits(self.x[a], 'and') & self._bits(self.x[b], 'and')
+        self.nxt(code, off)
+
+    def op_or(self, code, off, a, b, c, v):
+        self.x[c] = self._bits(self.x[a], 'or') | self._bits(self.x[b], 'or')
+        self.nxt(code, off)
+
+    def _shift_count(self, t, what):
+        n = self._int(t, what)
+        if not 0 <= n <= 31:
+            raise Refusal('built-in', '%s by %d bits: unwitnessed' % (what, n))
+        return n
+
+    def op_shift_left(self, code, off, a, b, c, v):
+        x, n = self._bits(self.x[a], 'shift_left'), self._shift_count(self.x[b], 'shift_left')
+        r = x << n
+        if r >= 1 << 31:
+            raise Refusal('built-in', 'shift_left %d by %d overflows: the 32-bit word on overflow is unwitnessed'
+                          % (x, n))
+        self.x[c] = r
+        self.nxt(code, off)
+
+    def op_shift_right(self, code, off, a, b, c, v):
+        x, n = self._bits(self.x[a], 'shift_right'), self._shift_count(self.x[b], 'shift_right')
+        self.x[c] = x >> n
         self.nxt(code, off)
 
     def op_set_string_element(self, code, off, a, b, c, v):
