@@ -136,6 +136,11 @@ class Script:
     def run(self):
         self._op(RUN)
 
+    def alarm(self):
+        """The machine idle with an alarm armed: the clock moved on to
+        it (ALARM), so the next run() fires it."""
+        self._op(ALARM)
+
     def out(self, a):
         self._op(OUT, a)
 
@@ -161,7 +166,7 @@ class Script:
     def poll(self):
         self._op(POLL)
 
-    def fund_parked(self, slot, hi=0x3FFFFFFF, lo=0xFFFFFFFF):
+    def fund_parked(self, slot, hi=0x3FFFFFFF, lo=0xFFFFFFFF, once=False):
         """The bench as PIMOS's task manager (R8, 2026-11-25): a shoen
         starts with no resource (VPIM f_shoen_main.psl.c
         _INIT_SHOEN_RESOURCE 0), so its first goal parks and reports
@@ -172,8 +177,9 @@ class Script:
         left and goals parked on it is given that amount by a goal of
         add_shoen_resource's stub at the root (slot: its NewShoen), and
         the machine run; again until none is left (a funded shoen may
-        make one that parks).  Found on a live reference machine, so the
-        script is the same for both models."""
+        make one that parks; once: a single pass, for an amount that may
+        run out).  Found on a live reference machine, so the script is
+        the same for both models."""
         import pimm_layout as L
         while True:
             m = self.live()
@@ -190,6 +196,8 @@ class Script:
                 self.arg(4, slot)
                 self.spawn(m.stubs['add_shoen_resource']['addr'], 4)
                 self.run()
+            if once:
+                return
 
     def live(self):
         """Perform the operations added since the last call on a private

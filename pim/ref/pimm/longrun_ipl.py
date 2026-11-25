@@ -440,6 +440,7 @@ def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
         # (observed: with_console read, then end_of_file, the system/4
         # line lost).  Counted in characters every reply is even
         dev = m.fep = fepm.Fep(kernel_file, getb_unit=2, lines=lines)
+    skips = 0
     try:
         while True:
             try:
@@ -450,7 +451,20 @@ def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
             if dev is None:
                 break
             if m.scsi_poll():
+                skips = 0
                 continue
+            # R8: an alarm armed (set_timer to a time still to come):
+            # the clock moved on to it, and the next run's first goal
+            # switch fires it -- after the device, before the FEP's
+            # scripted events, as lockstep_shell.play (driver ALARM).
+            # A machine that only ever re-arms is refused, not looped
+            if m.alarm_var is not None:
+                skips += 1
+                if skips > 100:
+                    raise pimm.Unimplemented('100 alarms in a row with nothing else to do')
+                m.alarm_skip()
+                continue
+            skips = 0
             # PIMOS idles: the FEP's next scripted event, if a held
             # request waits for one (fep_services.md 7.5, 7.7 item 1)
             if save_at and 'getl' in dev.held.values() and \

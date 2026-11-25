@@ -161,6 +161,16 @@ create (6 shoen made: 6 lines), and start_shoen empties the parked
 list, SH_GOAL := 0 (6 starts: 6 lines); counted on the reference's
 trace (both writes, nothing else new).  The line numbers of the injections
 above are from before.
+Re-pinned for R8 (2026-11-25), 4702 -> 6172 trace lines: a shoen starts
+with no resource.  The image's monitors (ipl_monitor/3, bios_monitor/3,
+top_level_monitor/4) answer resource_low on the Control with
+add_resource(16#"3FFFFFFF", 16#"FFFFFFFF") and allow_resource_report,
+so their reports gain resource_low, resource_added,
+resource_report_allowed and the Control streams the two messages;
+`closed control` and `running` have no monitor on a live Control, and
+the bench funds them (driver.Script.fund_parked).  return_resource is
+now that amount less what the trace counts as consumed (RETURNED).  The
+fault injections above were observed before R8.
 """
 import os
 import re
@@ -175,7 +185,7 @@ import lockstep_cons as cons  # noqa: E402
 import lockstep_shoen as stage1  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=7, lines=4702)
+PINNED = dict(parts=7, lines=6172)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 TEXT = 'abc'
 ABC = (8, [ord(c) for c in TEXT])
@@ -271,6 +281,7 @@ def script():
     s.newvar(11)                                   # Shut
     goal(top_monitor, 8, 9, 10, 11)
     s.run()
+    s.fund_parked(12)                              # R8: the task manager's answer
     for k in (5, 8, 9, 11):
         s.out(k)
 
@@ -284,6 +295,7 @@ def script():
     s.newvar(8)                                    # Report
     goal(execute4, 0, 2, 3, 8)
     s.run()
+    s.fund_parked(15)
     s.out(8)
     s.label('running: woken')
     s.unifyc(12, I(-7))
@@ -318,8 +330,27 @@ def stream(*msgs, closed=True):
     return stage1.stream(*msgs, closed=closed)
 
 
+# R8: a shoen starts with no resource (VPIM _INIT_SHOEN_RESOURCE), so
+# its first goal parks and resource_low is reported.  The image's own
+# monitors answer add_resource(16#"3FFFFFFF", 16#"FFFFFFFF") and
+# allow_resource_report, as PIMOS's task manager does (kernel/init/
+# init.kl1:84-89); where no monitor listens, the bench gives the same
+# (driver.Script.fund_parked).  What is returned at removal is that
+# amount less the resource consumed, which is the shoen's statistic.
+FUND = (0x3FFFFFFF << 32) | 0xFFFFFFFF
+LOW = ('started', 'resource_low', 'resource_added')
+MONITORED = LOW + ('resource_report_allowed',)
+
+
+def RETURNED(i):
+    """In EXPECT: return_resource(H, L) of the i-th shoen made, FUND
+    less twice the reductions the trace counts for it and the shoens
+    below it (expected_stats), all of them done by its removal."""
+    return ('RETURNED', i)
+
+
 def ended(i):
-    return ('started', 'terminated', 'statistics_started', STATS(i), ('return_resource', 0, 0))
+    return MONITORED + ('terminated', 'statistics_started', STATS(i), RETURNED(i))
 
 # What each part must leave, derived by hand from the design BEFORE the
 # first run: the values printed, the console's lines (display_console),
@@ -328,7 +359,8 @@ def ended(i):
 # trace (expected_stats).
 EXPECT = [
     ('ipl_monitor',
-     [ABC, stream(*ended(0)), ['statistics'], 'shut'],
+     [ABC, stream(*ended(0)),
+      [('add_resource', 0x3FFFFFFF, -1), 'allow_resource_report', 'statistics'], 'shut'],
      ['Statistics in Resource:', STATS(0), 'SCSI-FEP END********'],
      [(0, 'removed', None, 0)]),
     ('nested',
@@ -336,23 +368,25 @@ EXPECT = [
      [],
      [(0, 'removed', None, 0), (0, 'removed', None, 0), (0, 'removed', 1, 0)]),
     ('closed control',
-     [ABC, stream('started', 'terminated', ('return_resource', 0, 0)), ['statistics'], 'shut'],
+     [ABC, stream(*LOW, 'terminated', RETURNED(3)),
+      [('add_resource', 0x3FFFFFFF, -1), 'allow_resource_report', 'statistics'], 'shut'],
      [],
      [(0, 'removed', None, 0), (0, 'removed', None, 0), (0, 'removed', 1, 0),
       (0, 'removed', None, 1)]),
     ('running',
-     [stream('started', 'statistics_started', STATS(4), closed=False)],
+     [stream('started', 'statistics_started', STATS(4), *LOW[1:], closed=False)],
      [],
      [(0, 'removed', None, 0), (0, 'removed', None, 0), (0, 'removed', 1, 0),
       (0, 'removed', None, 1), (1, 'started', None, 0)]),
     ('running: woken',
-     [7, stream('started', 'statistics_started', STATS(4), 'terminated', closed=False)],
+     [7, stream('started', 'statistics_started', STATS(4), *LOW[1:], 'terminated',
+                closed=False)],
      [],
      [(0, 'removed', None, 0), (0, 'removed', None, 0), (0, 'removed', 1, 0),
       (0, 'removed', None, 1), (0, 'terminated', None, 0)]),
     ('running: removed',
-     [stream('started', 'statistics_started', STATS(4), 'terminated', 'statistics_started',
-             STATS(4, 1), ('return_resource', 0, 0))],
+     [stream('started', 'statistics_started', STATS(4), *LOW[1:], 'terminated',
+             'statistics_started', STATS(4, 1), RETURNED(4))],
      [],
      [(0, 'removed', None, 0), (0, 'removed', None, 0), (0, 'removed', 1, 0),
       (0, 'removed', None, 1), (0, 'removed', None, 0)]),
@@ -440,17 +474,20 @@ def expected_stats(m, lines, known):
     return out, marks[-1] if marks else {}, total
 
 
-def fill(v, stats, known):
+def fill(v, stats, known, spent=None):
     """EXPECT's value with each STATS(i, j) replaced by the statistic
     the trace gives (a tuple), or by its two numbers (flat=True, for
     the console)."""
     if isinstance(v, tuple) and v[:1] == ('STATS',):
         got = stats.get(known[v[1]], [])
         return got[v[2]] if v[2] < len(got) else ('no statistic', v)
+    if isinstance(v, tuple) and v[:1] == ('RETURNED',):
+        n = FUND - spent(known[v[1]])
+        return ('return_resource', n >> 32, pimm.signed(n & 0xffffffff))
     if isinstance(v, list):
-        return [fill(x, stats, known) for x in v]
+        return [fill(x, stats, known, spent) for x in v]
     if isinstance(v, tuple):
-        return tuple(fill(x, stats, known) for x in v)
+        return tuple(fill(x, stats, known, spent) for x in v)
     return v
 
 
@@ -461,14 +498,17 @@ def check(m, snaps, parts):
     lines = [ln for k, _v, _c, _r in EXPECT for ln in parts[k]]
     known = stage1.handles(lines, m.load)
     stats, own, total = expected_stats(m, lines, known)
+
+    def spent(a):
+        return 2 * total(a, own)
     for k, vals, cons_, recs in EXPECT:
         got_vals, got_recs = snaps[k]
-        want = fill(vals, stats, known)
+        want = fill(vals, stats, known, spent)
         if got_vals != want:
             bad.append((k, 'values', got_vals, want))
         c = console(parts[k], m)
         wantc = []
-        for x in fill(cons_, stats, known):
+        for x in fill(cons_, stats, known, spent):
             wantc += list(x[1:]) if isinstance(x, tuple) else [x]
         if c != wantc:
             bad.append((k, 'console', c, wantc))

@@ -130,8 +130,12 @@ PINNED = {
     ('prompt', ('compile', 'sample1', '!exit')): (4048964, 973759),
     # compile_work: the same file into the package work, loaded
     ('prompt', ('compile', '!package work', 'sample1', '!exit')): (4359920, 1008832),
-    # ts, past add_bignum, to its set_timer refusal
-    ('prompt', ('ts',)): (184130, 68783),
+    # R8 (2026-11-25), measured on both models from a prompt checkpoint
+    # made with R8's resource model (shoen records of 11 cells): ts past
+    # set_timer's alarm to its table; the Listener's sieve
+    ('prompt', ('ts', '')): (705103, 160945),
+    ('prompt', ('compile', '!package work', 'sample1', '!exit', 'listener',
+                'default_package(work).', 'sample1:sieve([1,2,3],E,O).')): (7144906, 1575086),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -206,9 +210,27 @@ APPS = {
     # R8 (2026-11-25): the Listener, and in it the primer's goal
     # sample1:sieve([1,2,3],E,O) (primer25.tex:1343-1349), compiled into
     # work as compile_work, the Listener told so by its own
-    # default_package(work). (pimosman e-listener.tex:2508-2522)
+    # default_package(work). (pimosman e-listener.tex:2508-2522).  The
+    # answer is ` E =[2]` where the primer prints `E = [2]`: the held
+    # unparser puts a space between a variable and a special atom and
+    # none after `=` before `[` (utility/ioutls/uparse.kl1:573-604,
+    # checkQuote), and the Listener prints the vector {=, variable(K),
+    # WT} with it (debugger/listener/buffer.kl1:97-106): the held
+    # source's text, not a slip of the model
     'listener_sieve': (('compile', '!package work', 'sample1', '!exit', 'listener',
-                        'default_package(work).', 'sample1:sieve([1,2,3],E,O).'), None),
+                        'default_package(work).', 'sample1:sieve([1,2,3],E,O).'),
+        ('** KL1 Compiler **\n', 'COMPILE> ',
+         'Package : work\n!WARNING! not included in the working packages : work\n',
+         'COMPILE> ',
+         'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n',
+         "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n",
+         '=>  :- module sample1 .\n',
+         'Compile Succeeded : sample1\n\n',
+         '"work:: sample1" Loaded\n',
+         'Total Number of Warning : 1\n',
+         'COMPILE> ', 'Shell>> ',
+         '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n',
+         '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()

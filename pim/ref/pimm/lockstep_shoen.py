@@ -200,6 +200,14 @@ trace (both writes, nothing else new).  The test now finds the first
 goal's record after the shoen record and the Report variable (where
 create_shoen writes it), SH_GOAL being 0 once the shoen is started;
 the line numbers of the injections above are from before.
+Re-pinned for R8 (2026-11-25), 4511 -> 5534 trace lines: a shoen starts
+with no resource (VPIM _INIT_SHOEN_RESOURCE = 0), so each part's first
+goal parks and resource_low is reported; after each part's first run
+the bench answers as PIMOS's task manager does (driver.Script.
+fund_parked, kernel/init/init.kl1:84-89), and each report has
+resource_low, resource_added after started (EXPECT's FUNDED).  The
+records are unchanged.  The fault injections above were observed
+before R8, on the trace as it was then.
 """
 import os
 import sys
