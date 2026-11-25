@@ -57,7 +57,13 @@ module hobbit_soc_mem #(
     output reg  [31:0]          bk_wdata,
     output reg  [3:0]           bk_be,
     input  wire                 bk_done,
-    input  wire [31:0]          bk_rdata
+    input  wire [31:0]          bk_rdata,
+    // A DMA write that reached memory (hobbit_soc's SONIC arbiter): the
+    // window and rdData are kept equal to memory.
+    input  wire                 snoop_valid,
+    input  wire [31:0]          snoop_addr,
+    input  wire [31:0]          snoop_wdata,
+    input  wire [3:0]           snoop_be
 );
     localparam S_WR = 0, S_RD = 1, S_SETTLE = 2, S_PROBE = 3, S_CHECK = 4,
                S_FILL = 5, S_FIRE = 6, S_AUX = 7;
@@ -121,8 +127,20 @@ module hobbit_soc_mem #(
             if (win_v[k] && win_a[k] == {a[31:2], 2'b00}) win_d[k] <= d;
     endtask
 
+    function [31:0] merge(input [31:0] old, input [31:0] d, input [3:0] be);
+        merge = {be[3] ? d[31:24] : old[31:24], be[2] ? d[23:16] : old[23:16],
+                 be[1] ? d[15:8] : old[15:8], be[0] ? d[7:0] : old[7:0]};
+    endfunction
+
     always @(posedge clk) begin
         aux_done <= 1'b0;
+        if (!rst && snoop_valid) begin
+            for (i = 0; i < NWIN; i = i + 1)
+                if (win_v[i] && win_a[i][31:2] == snoop_addr[31:2])
+                    win_d[i] <= merge(win_d[i], snoop_wdata, snoop_be);
+            if (ra[31:2] == snoop_addr[31:2] && is_mem(ra))
+                cpu_rdData <= merge(cpu_rdData, snoop_wdata, snoop_be);
+        end
         if (rst) begin
             st <= S_SETTLE; fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0;
             bk_valid <= 1'b0; core_clocks <= 0; wptr <= 0; ra <= 0;

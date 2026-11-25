@@ -3147,6 +3147,27 @@ class ImageReader:
         return self.words.get(address & ~3)
 
 
+class WordBus:
+    """The ``System.bus`` of the CLI's privileged mode (``--system``):
+    physical memory as a sparse dict of words (the image at 0, the
+    ``--poke`` words), unwritten words reading 0, and no devices."""
+
+    def __init__(self, words: Dict[int, int]):
+        self.words = dict(words)
+
+    def read(self, pa: int) -> int:
+        return self.words.get(pa & ~3 & MASK32, 0)
+
+    def write(self, pa: int, data: int, mask: int) -> None:
+        w = pa & ~3 & MASK32
+        expanded = 0
+        for bit in range(4):
+            if mask & (1 << bit):
+                expanded |= 0xFF << (8 * bit)
+        old = self.words.get(w, 0)
+        self.words[w] = (old & ~expanded & MASK32) | (data & expanded)
+
+
 def load_image(path: str) -> Dict[int, int]:
     """Load the fixed one-word-per-line image format.
 
@@ -3192,6 +3213,18 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="initial PSW (hex; default 0x200, CSP = SP; "
                              "0x8600 adds user level and user "
                              "little-endian data, p. 1-3)")
+    parser.add_argument("--system", action="store_true",
+                        help="the privileged machine (System): the "
+                             "exception sequences, the MMU walk when the "
+                             "PSW's V bit is set, physical memory = the "
+                             "image plus --poke words (the goldens' "
+                             "privileged harness, tests/golden/README.md)")
+    parser.add_argument("--stb", default="0x0",
+                        help="with --system: the segment table base (hex)")
+    parser.add_argument("--poke", action="append", default=[],
+                        metavar="ADDR=WORD",
+                        help="with --system: a physical word (hex), e.g. "
+                             "a segment- or page-table entry; repeatable")
     parser.add_argument("--max-steps", type=int, default=10000,
                         help="maximum instructions to execute (default 10000)")
     parser.add_argument("--stop-at-image-end",
@@ -3245,6 +3278,22 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("hobbit_sem: part %s, cyc priced from the 92010's Chapter 4 "
               "tables (no 92020 timing is published)" % args.part,
               file=sys.stderr)
+    if args.poke and not args.system:
+        parser.error("--poke needs --system")
+    if args.system:
+        words = dict(image)
+        try:
+            for item in args.poke:
+                a, sep, v = item.partition("=")
+                if not sep:
+                    raise ValueError(item)
+                words[_parse_hex(a) & ~3] = _parse_hex(v)
+            stb = _parse_hex(args.stb)
+        except ValueError:
+            parser.error("--poke wants ADDR=WORD in hex; --stb hex")
+        # SHAD = SP, the goldens' pre-state (tests/golden/README.md; p. 1-15
+        # requires it after a direct write of PSW bit 9).
+        state.system = System(bus=WordBus(words), stb=stb, shad=sp)
     image_len = len(image) * 4
 
     for _ in range(args.max_steps):
@@ -3267,7 +3316,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(record.line())
         if record.trap:
             print(record.reason, file=sys.stderr)
-            return 0
+            # The privileged machine performs the sequence and goes on at
+            # the vector; the stop rules are then the image end and
+            # --max-steps (tests/golden/README.md, the privileged harness).
+            if not args.system:
+                return 0
     else:
         print("hobbit_sem: stopped after %d steps without a trap"
               % args.max_steps, file=sys.stderr)

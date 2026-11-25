@@ -115,4 +115,6 @@ The kernel `s9term` was built 1992-11-07 (`docs/s9term.md`), so the board is
 - **A 1990-1992 PCF8582(A) / PCF8584 data sheet** (see "Dates" above).
 - **AT&T DSP3210 Information Manual** (for the Hobbit BeBox's three DSPs,
   `../bebox_hardware.md` §13).  Not on bitsavers (`components/att/dsp/` has
-  DSP16 and DSP32C material only) and not found by web search.
+  DSP16 and DSP32C material only).  Found later (2026-11-24) on GitHub, the
+  September 1991 edition: it is listed, fetched and checked in
+  `../dsp3210/MANIFEST.md`, and used in `../dsp3210.md`.

@@ -88,3 +88,25 @@ LOCATE COMP "gpdi_sda" SITE "B19";
 IOBUF PORT "gpdi_sda" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
 LOCATE COMP "gpdi_scl" SITE "E12";
 IOBUF PORT "gpdi_scl" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+# HDMI (GPDI) from fpga/dev/hdmi_lcd.lpf; the video PLL's clocks.
+FREQUENCY NET "pclk" 65 MHZ;
+FREQUENCY NET "sclk" 325 MHZ;
+LOCATE COMP "gpdi_dp[0]" SITE "A16";
+LOCATE COMP "gpdi_dp[1]" SITE "A14";
+LOCATE COMP "gpdi_dp[2]" SITE "A12";
+LOCATE COMP "gpdi_dp[3]" SITE "A17";
+IOBUF PORT "gpdi_dp[0]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[1]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[2]" IO_TYPE=LVCMOS33D DRIVE=4;
+IOBUF PORT "gpdi_dp[3]" IO_TYPE=LVCMOS33D DRIVE=4;
+# The ESP32 relay's link (docs/ulx3s_ethernet.md, "Pins"): GPIO0 high,
+# GPIO16 (L1) FPGA -> ESP32, GPIO17 (N3) and RTS GPIO4 (H1) inputs with
+# pull-ups, so an undriven RTS reads "stop".
+LOCATE COMP "wifi_gpio0" SITE "L2";
+IOBUF PORT "wifi_gpio0" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "wifi_gpio16" SITE "L1";
+IOBUF PORT "wifi_gpio16" PULLMODE=UP IO_TYPE=LVCMOS33 DRIVE=4;
+LOCATE COMP "wifi_gpio17" SITE "N3";
+IOBUF PORT "wifi_gpio17" PULLMODE=UP IO_TYPE=LVCMOS33;
+LOCATE COMP "wifi_gpio4" SITE "H1";
+IOBUF PORT "wifi_gpio4" PULLMODE=UP IO_TYPE=LVCMOS33;
