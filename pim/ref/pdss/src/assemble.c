@@ -1,0 +1,1540 @@
+/*************************************************************************
+*  PDSS (PIMOS Development Support System)  Version 2.52		 *
+*  (C) Copyright 1988,1989,1990,1992.					 *
+*  Institute for New Generation Computer Technology (ICOT), Japan.	 *
+*  Read "../COPYRIGHT" for detailed information.			 *
+*************************************************************************/
+
+#include <setjmp.h>
+#include <strings.h>
+#include "pdss.h"
+#include "memory.h"
+#include "io.h"
+#include "klb.h"
+#include "instr.h"
+#include "ctype.h"
+
+#define ARGMAX 32
+#define REGMAX MAXREGS
+
+static CHAR	assemble_line[BUFSIZ];
+static CHAR	assemble_line0[BUFSIZ];
+static CHAR	*assemble_cursor;
+static int	assemble_line_count;
+static OBJ	*module_top, *predicate_top;
+static jmp_buf	assemble_env;
+
+
+/*************************************************************************
+*   Put Relative Address.						 *
+*************************************************************************/
+
+#if KLB_4BYTE_REL_ADDR
+#define ChkAndPutRAddr(raddr, pc)  PutRelAddr(raddr, pc)
+#else
+ChkAndPutRAddr(raddr, pc)
+    int raddr;
+    OBJ *pc;
+{
+/*  if(raddr<0xFFFF8000 || raddr>0x7FFF){ */
+    if(raddr<   -0x8000 || raddr>0x7FFF){
+	Error2F("\n>>> Assembler: Relative address field overflow.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    PutRelAddr(raddr, pc);
+}
+#endif
+
+
+/*************************************************************************
+*   Label Table.							 *
+*************************************************************************/
+
+struct lab_rec {
+    CHAR *name;
+    int	 defined;
+    int	 addr;		/* Relative Address */
+};
+/* Label Table */
+#define LABEL_TABLE_SIZE	1024
+#define TABLE_NAME		label_table
+#define ENTRY_TYPE_NAME		label_table_entry
+#define DATA_TYPE		struct lab_rec *
+#define TABLE_SIZE		LABEL_TABLE_SIZE
+#define INIT_ROUTINE_NAME	clear_label_table2
+#define LOOKUP_ROUTINE_NAME	lookup_label
+#define ENTRY_ROUTINE_NAME	enter_label
+#define MALLOC_ROUTINE_NAME	t1_alloc       /* Use backward of code area */
+#include "table.c"  /* General Purpose Name Table Lookup Subroutine Package */
+
+static clear_label_table()
+{
+    t1_free();
+    clear_label_table2();
+}
+
+static enter_label_table(name, pc)
+    CHAR *name;
+    OBJ	 *pc;
+{
+    struct lab_rec *lab;
+    if(lookup_label(name, &lab)){ /* new label */
+	lab = (struct lab_rec *) t1_alloc(sizeof(struct lab_rec));
+	lab->name = (CHAR *)strcpy(t1_alloc(strlen(name)+1),name);
+	lab->defined = NO;
+	lab->addr = (pc - module_top);
+	(void) enter_label(lab->name, &lab);
+	return(0);			/* end of reference chain */
+    }else if(lab->defined){		/* already defined */
+	return((module_top + lab->addr) - pc); /* relative address returned */
+    }else{				/* not defined but already used */
+	int r = lab->addr;
+	lab->addr = (pc - module_top);	/* chain this ref. */
+	return(r);
+    }
+}
+
+static enter_label_table2(name, pc)
+    CHAR *name;
+    OBJ	 *pc;
+{
+    struct lab_rec *lab;
+    if(lookup_label(name, &lab)){ /* new label */
+	lab = (struct lab_rec *) t1_alloc(sizeof(struct lab_rec));
+	lab->name = name;
+	lab->defined = NO;
+	lab->addr = (pc - module_top);
+	(void) enter_label(name, &lab);
+	return(0);			/* end of reference chain */
+    }else if(lab->defined){		/* already defined */
+	return((module_top + lab->addr) - pc); /* relative address returned */
+    }else{				/* not defined but already used */
+	int r = lab->addr;
+	lab->addr = (pc - module_top);	/* chain this ref. */
+	return(r);
+    }
+}
+
+static define_label(name, pc)
+    CHAR *name;
+    OBJ	 *pc;
+{
+    struct lab_rec *lab;
+    if(lookup_label(name, &lab)){	/** New Label **/
+	lab = (struct lab_rec *)t1_alloc(sizeof(struct lab_rec));
+	lab->name = (CHAR *)strcpy(t1_alloc(strlen(name)+1), name);
+	lab->defined = YES;
+	lab->addr = (pc - module_top);
+	(void) enter_label(lab->name, &lab);
+    }else if(lab->defined == YES){	/** Already Defined **/
+	Error3F("\n>>> Assembler: Doubly defined label. \"%s\"\n%04d: %s",
+		name, assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error Return **/
+    }else{			/* Not Defined But Already Used */
+	register OBJ *pc2, *pc3;
+	pc2 = (OBJ *)(module_top + (lab->addr));
+	while(GetRelAddr(pc2) != NULL){	 /* resolve reference chain */
+	    pc3 = pc2;
+	    pc2 = (OBJ *)(module_top + GetRelAddr(pc2));
+	    ChkAndPutRAddr(pc-pc3, pc3);
+	}
+	ChkAndPutRAddr(pc-pc2, pc2);
+	lab->defined = YES;
+	lab->addr = (unsigned int)(pc - module_top);
+    }
+}
+
+static check_undefined_label()
+{
+    struct label_table_entry **p = label_table.table;
+    struct label_table_entry *rec;
+    int	 f = YES;
+    while(p != &label_table.table[LABEL_TABLE_SIZE]){
+	for(rec = *p; rec != NULL; rec = rec->next){
+	    if(rec->data->defined == NO){
+		PrintCons1F("\n>>> Assembler: Undefined Label \"%s\".",
+			    rec->key);
+		f = NO;
+	    }
+	}
+	p++;
+    }
+    if(!f){
+	Error("");
+	longjmp(assemble_env, 1);  /** Error Return **/
+    }
+}
+
+
+/*************************************************************************
+*   Parser.								 *
+*************************************************************************/
+
+#define IsNameDelimiter(p) (p && (p == ','))
+
+CHAR *scan_name(s)
+    CHAR **s;
+{
+    register CHAR *p = *s, *q;
+    while(IsBlank(*p)) p++;
+    q = p;
+    if(*p == '\''){		/* quoted atom */
+	CHAR *qq;
+	q = qq = ++p;		/* skip quote */
+	while(*p != '\''){
+      quote2:
+	    *qq++ = *p;
+	    if(*p++ == 0) return(NULL); /* non-terminating atom */
+	}
+	if(*++p == '\'') goto quote2;	/** '' ==> ' **/
+        *qq++ = 0;
+    }else if(*p=='['){          /* '[]' ? */
+        if(*++p != ']') return(NULL);
+        p++;
+    }else if(IsAlpha(*p)){
+        while(IsAlNum(*++p));
+    }else if(IsSymbol(*p)){
+        while(IsSymbol(*++p));
+    }else if(IsSpcial(*p)){
+        while(IsSpcial(*++p));
+    }else{
+        return(NULL);
+    }
+    if(IsBlank(*p) || *p == ':'){
+        *p++ = 0;
+        while(IsBlank(*p)) p++;
+        if(IsNameDelimiter(*p)) p++;
+    }else if(IsNameDelimiter(*p)){
+        *p++ = 0;
+    }else if(*p){
+        return(NULL);
+    }
+    *s = p;
+    return(q);
+}
+
+static scan_integer(s, x)
+    CHAR **s;
+    int  *x;
+{
+    CHAR *p = *s;
+    int  result;
+    int  sign = 1;
+    int  base;
+    while(IsBlank(*p)) p++;
+    if(*p=='+'){
+        p++;
+    }else if(*p=='-'){
+        sign = -1; p++;
+    }
+    if(!IsDigit(*p)) return(NO);
+    result = GetDigitValue(*p++);
+    while(IsDigit(*p)){
+        result = result * 10 + GetDigitValue(*p++);
+    }
+    if(*p == '\''){
+	if(result < 2 || result > 36) return(NO);
+	base = result; p++;
+	if(GetDigitValue(*p) >= base) return(NO);
+	result = GetDigitValue(*p++);
+	while(IsAlNum(*p)){
+	    if(GetDigitValue(*p) >= base) return(NO);
+	    result = result * base + GetDigitValue(*p++);
+	}
+    }
+    if(IsBlank(*p)){
+	p++;
+	while(IsBlank(*p)) p++;
+	if(IsNameDelimiter(*p)) p++;
+    }else if(IsNameDelimiter(*p)){
+	p++;
+    }else if(*p){
+	return(NO);
+    }
+    *s = p;
+    *x = result*sign;
+    return(YES);
+}
+
+static scan_float(s, x)
+    CHAR **s;
+    float *x;
+{
+    register CHAR *p = *s, *q;
+    while(IsBlank(*p)) p++;
+    q = p;
+    if(*p=='+' || *p=='-') p++;
+    if(!IsDigit(*p)) return(NO);
+    while(IsDigit(*p)) p++;
+    if(*p=='.'){
+	p++;
+	if(!IsDigit(*p)) return(NO);
+	while(IsDigit(*p)) p++;
+    }
+    if(*p=='E' || *p=='e'){
+	p++;
+	if(*p=='+' || *p=='-') p++;
+	if(!IsDigit(*p)) return(NO);
+	while(IsDigit(*p)) p++;
+    }
+    if(IsBlank(*p)){
+	*p++ = 0;
+	while(IsBlank(*p)) p++;
+	if(IsNameDelimiter(*p)) p++;
+    }else if(IsNameDelimiter(*p)){
+	*p++ = 0;
+    }else if(*p){
+	return(NULL);
+    }
+    *s = p;
+    return(string_to_float(q, x));
+}
+
+static parse_atom(s)
+    CHAR **s;
+{
+    CHAR *name;
+    if((name = scan_name(s)) == NULL){
+	Error2F("\n>>> Assembler: Illegal atom/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(intern_atom(name));
+}
+
+static parse_integer(s)
+    CHAR **s;
+{
+    int integer;
+    if(!scan_integer(s, &integer)){
+	Error2F("\n>>> Assembler: Illegal integer/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(integer);
+}
+
+static int parse_float(s)
+    CHAR **s;
+{
+    int flot;
+    if(!scan_float(s, &flot)){
+	Error2F("\n>>> Assembler: Illegal float/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(flot);
+}
+
+static parse_reg(s)
+    CHAR **s;
+{
+    int reg;
+    if(!scan_integer(s, &reg)){
+	Error2F("\n>>> Assembler: Illegal reg number/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    if(reg <= 0 || reg > REGMAX){
+	Error2F("\n>>> Assembler: Bad reg number.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(reg);
+}
+
+static parse_arg(s)
+    CHAR **s;
+{
+    int arg;
+    if(!scan_integer(s, &arg)){
+	Error2F("\n>>> Assembler: Illegal arg number/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    if(arg <= 0 || arg > ARGMAX){
+	Error2F("\n>>> Assembler: Bad arg number.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(arg);
+}
+
+static parse_pred_arity(s)
+    CHAR **s;
+{
+    int pred_arity;
+    if(!scan_integer(s, &pred_arity)){
+	Error2F("\n>>> Assembler: Illegal pred arity/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    if(pred_arity < 0 || pred_arity > ARGMAX){
+	Error2F("\n>>> Assembler: Bad pred arity.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(pred_arity);
+}
+
+static parse_arity(s)
+    CHAR **s;
+{
+    int arity;
+    if(!scan_integer(s, &arity)){
+	Error2F("\n>>> Assembler: Illegal arity/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    if(arity < 0 || arity > 0x7FFF){
+	Error2F("\n>>> Assembler: Bad arity.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(arity);
+}
+
+static parse_short(s, max, mesg)
+    CHAR **s, *mesg;
+    int max;
+{
+    int x;
+    if(!scan_integer(s, &x)){
+	Error3F("\n>>> Assembler: Illegal %s/delimiter.\n%04d: %s",
+		mesg, assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    if(x < 0 || x > max){
+	Error3F("\n>>> Assembler: Bad %s.\n%04d: %s",
+		mesg, assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(x);
+}
+
+static parse_addr(s, base)
+    CHAR **s;
+    OBJ	 *base;	 /* Base of relative address. equal to PC. */
+{
+    CHAR *name;
+    if((name = scan_name(s)) == NULL){
+	Error2F("\n>>> Assembler: Illegal label/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return(enter_label_table(name, base));
+}
+
+static CHAR *parse_label(s)
+    CHAR **s;
+{
+    CHAR *name;
+    if((name = scan_name(s)) == NULL){
+	Error2F("\n>>> Assembler: Illegal label/delimiter.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	longjmp(assemble_env, 1);  /** Error return **/
+    }
+    return((CHAR *)strcpy(t1_alloc(strlen(name)+1), name));
+}
+
+
+/*************************************************************************
+*   Assembler Main.							 *
+**************************************************************************
+
+Return Value:
+  ASSEMBLE_SUCCESS	    = 0 -> Success.
+  ASSEMBLE_ERROR	    = 1 -> Failure, Assemble Error.
+  ASSEMBLE_MODULE_PROTECTED = 2 -> Failure, Cannot Update Module.
+  ASSEMBLE_REQUEST_GC	    = 3 -> Failure, Request GC.
+				   Call once more after code area GC.
+*/
+
+assemble(file, module)
+    FILE *file;
+    MODULE_ENTRY **module;
+{
+    OBJ *pc;
+    CHAR *name;
+    struct lab_rec *label;
+    struct instr_rec *op;
+    int	 error_code = ASSEMBLE_ERROR;
+    int	 predicate_table_size = 0;
+    int	 sequence = 0;
+    int	 assemble_module_name;
+    OBJ	 *assemble_module_addr;
+    int	 arg, reg, re1, re2, re3, re4, re5, re6, re7, re8;
+    int	 it, it2, flot, lab, lb1, lb2, lb3, lb4, lb5, lb6, repnum;
+    int	 atm, mod, pred, arity, parity, msk, idx;
+    int	 special;
+    
+    AdjustPC(C);
+    module_top = pc = C;	/* init. module top pointer */
+    predicate_top = 0;		/* init. predicate top pointer */
+    assemble_line_count = 0;
+    switch(setjmp(assemble_env)){  /* for non-local return */
+      case 1: goto error;
+      case 2: goto request_gc;
+    }
+
+    clear_label_table();
+    while(fgets(assemble_line, BUFSIZ, file)){
+	assemble_line_count++;
+	if(assemble_line[0] == 0) continue;
+	if(assemble_line[0] == '%') continue;	/* Comment */
+	assemble_cursor = assemble_line;
+	strcpy(assemble_line0, assemble_line);
+
+	if(GcFlag_ON()){ /* Code area full ==> Abort assemble & Request GC. */
+  request_gc:
+	    Warning("\n>>> Assembler: Request GC.");
+	    return(ASSEMBLE_REQUEST_GC);
+	}
+
+  assm_line:
+	if((!IsBlank(*assemble_cursor)) ||
+	   (assemble_cursor[0] == ' ' && assemble_cursor[1] == '\'')){
+	    /*** Label Definition Line ***/
+	    if((name = scan_name(&assemble_cursor)) == NULL){
+		Error2F(
+		    "\n>>> Assembler: Illegal label/delimiter. (2)\n%04d: %s",
+		    assemble_line_count, assemble_line0);
+		goto error;
+	    }
+	    define_label(name, pc);
+	}else{
+	    /*** Non Label Definition Line ***/
+	    while(IsBlank(*assemble_cursor)) assemble_cursor++;
+	    if(*assemble_cursor == 0) continue;	 /* Blank Line */
+	    if(*assemble_cursor == '%') continue;   /* Comment */
+	    if((name = scan_name(&assemble_cursor)) == NULL){
+		Error2F(
+		      "\n>>> Assembler: Invalid mnemonic/delimiter.\n%04d: %s",
+			assemble_line_count, assemble_line0);
+		goto error;
+	    }
+	    if(lookup_mnemonic(name, &op)){
+		Error3F("\n>>> Assembler: Unknown mnemonic. \"%s\"\n%04d: %s",
+			name, assemble_line_count, assemble_line0);
+		goto error;
+	    }
+	    switch(op->type){
+	      case ASSM_IGNORE:
+		break;
+	      case ASSM_NOT_SUPPORTED:
+		Error3F(
+		"\n>>> Assembler: Not supported instruction. \"%s\"\n%04d: %s",
+			name, assemble_line_count, assemble_line0);
+		goto error;
+	      case ASSM_CONTROL:
+		switch(op->opcode){
+		  case KL1B_MODULE:
+		    if(sequence != 0){
+			Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+				name, assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    sequence = KL1B_MODULE;
+		    mod = parse_atom(&assemble_cursor); 
+		    assemble_module_name = mod;
+		    assemble_module_addr = pc;
+		    PutModPredSize(0, pc+MODULE_CODE_SIZE);
+		    PutAtom(mod, pc+MODULE_NAME);
+		    PutChar(0, pc+MODULE_DEBUG_INFO);
+		    PutChar(0, pc+MODULE_RESERVED_1);
+		    PutShort(0, pc+MODULE_RESERVED_2);
+		    PutShort(0, pc+MODULE_RESERVED_3);
+		    PutShort(0, pc+MODULE_ENTRY_TABLE_SIZE);
+		    PutShort(0, pc+MODULE_NUMBER_OF_ENTRY);
+		    PutRelAddr(0, pc+MODULE_CONSTANT_OFFSET);
+		    pc += MODULE_HEADER_LENGTH;
+		    predicate_table_size = 0;
+		    break;
+		  case KL1B_ENTRY:
+		    if(sequence != KL1B_MODULE){
+			Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+				name, assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    sequence = KL1B_ENTRY;
+		    strcpy(assemble_line, assemble_line0);
+		    assemble_cursor = assemble_line;
+		    predicate_table_size = make_entry_table(&pc, file);
+		    goto assm_line;
+		  case KL1B_MODULE_ENTRY:
+		    if(sequence != 1 && sequence != KL1B_ENTRY){
+			Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+				name, assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    sequence = KL1B_MODULE_ENTRY;
+		    name = scan_name(&assemble_cursor);
+		    if(lookup_label(name, &label) || label->defined != YES){
+			Error2F(
+		 "\n>>> Assembler: Label for module is not defined.\n%04d: %s",
+				assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    if(predicate_top){ /* set code size of last proc. */
+			PutModPredSize(
+				      (pc-predicate_top)-PREDICATE_SIZE_LENGTH,
+				       predicate_top);
+		    }
+		    predicate_top = pc;
+		    PutModPredSize(0, pc+PREDICATE_CODE_SIZE);
+		    ChkAndPutRAddr(((module_top+(label->addr))
+				    - (pc+PREDICATE_TO_MODULE_HEADER)),
+				   pc+PREDICATE_TO_MODULE_HEADER);
+		    pc += PREDICATE_HEADER_LENGTH_1;
+		    break;
+		  case KL1B_PREDICATE:
+		    if(sequence != KL1B_MODULE_ENTRY){
+			Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+				name, assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    sequence = KL1B_PREDICATE;
+		    pc -= PREDICATE_HEADER_LENGTH_1;
+		    pred = parse_atom(&assemble_cursor);
+		    parity = parse_pred_arity(&assemble_cursor);
+		    PutAtom(pred, pc+PREDICATE_NAME);
+		    PutPredArity(parity, pc+PREDICATE_ARITY);
+		    PutChar(0, pc+PREDICATE_DEBUG_INFO);
+		    PutLong(0, pc+PREDICATE_RCOUNT);
+		    PutLong(0, pc+PREDICATE_SCOUNT);
+		    pc += PREDICATE_HEADER_LENGTH;
+		    break;
+		  case KL1B_BEGIN_CONST_SECTION:
+		    if(sequence != 1){
+		  constant_seqerr:
+			Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+				name, assemble_line_count, assemble_line0);
+			goto error;
+		    }
+		    sequence = 2;
+		    if(predicate_top){ /* set code size of last proc. */
+			PutModPredSize(
+				      (pc-predicate_top)-PREDICATE_SIZE_LENGTH,
+				       predicate_top);
+			predicate_top = 0;
+		    }
+		    AdjustPC(pc);
+		    ChkAndPutRAddr(pc-(module_top+MODULE_CONSTANT_OFFSET),
+				   module_top+MODULE_CONSTANT_OFFSET);
+		    lab = parse_addr(&assemble_cursor, 0);
+		    PutCell(0xFF, lab, MRBOFF, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  default:
+		    Error2F(
+		       "\n>>> Assembler: Not supported instruction.\n%04d: %s",
+			    assemble_line_count, assemble_line0);
+		    goto error;
+		}
+		break;
+	      case ASSM_CONSTANT:
+		if(sequence != 2) goto constant_seqerr;
+		switch(op->opcode){
+		  case KL1B_DEFINE_ATOM:
+		    atm = parse_atom(&assemble_cursor);
+		    PutCell(ATOM, atm, MRBOFF, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_INTEGER:
+		    it = parse_integer(&assemble_cursor);
+		    PutCell(INT, it, MRBOFF, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_FLOAT:
+		    flot = parse_float(&assemble_cursor);
+		    PutCell(FLOAT, flot, MRBOFF, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_DESC:
+		    it = parse_short(&assemble_cursor, 0xFF, "desc1");
+		    it2 = parse_short(&assemble_cursor, 0xFFFFFF, "desc2");
+		    PutCell(DESC, (it<<24)|it2, MRBOFF, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_LIST:
+		    lab = parse_addr(&assemble_cursor, pc);
+		    PutCell(LIST, pc+lab, MRBON, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_VECTOR:
+		    lab = parse_addr(&assemble_cursor, pc);
+		    PutCell(VECTOR, pc+lab, MRBON, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  case KL1B_DEFINE_STRING:
+		    lab = parse_addr(&assemble_cursor, pc);
+		    PutCell(STRING, pc+lab, MRBON, pc);
+		    pc += KLB_CELL_LENGTH;
+		    break;
+		  default:
+		    Error2F(
+		       "\n>>> Assembler: Not supported instruction.\n%04d: %s",
+			    assemble_line_count, assemble_line0);
+		    goto error;
+		}
+		break;
+	      default:
+		/*** Normal KL1B Instruction ***/
+		if(sequence != 1 && sequence != KL1B_PREDICATE){
+		    Error3F(
+			   "\n>>> Assembler: Sequence error. \"%s\"\n%04d: %s",
+			    name, assemble_line_count, assemble_line0);
+		    goto error;
+		}
+		sequence = 1;
+		special = NO;
+		if((op->opcode)&0x100){
+		    PutOpCode(SPECIAL_FUNCTION_SHIFT, pc); pc++;
+		    special = YES;
+		}
+		PutOpCode(op->opcode, pc);
+		switch(op->type){
+		  case NO_ARG:
+		    pc += special ? LEN_of_2B_NO_ARG : LEN_of_NO_ARG;
+		    break;
+		  case REG:
+		    reg = parse_reg(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG);
+		    pc += special ? LEN_of_2B_REG : LEN_of_REG;
+		    break;
+		  case REGS2:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS2);
+		    PutReg2(re2, pc+RE2_of_REGS2);
+		    pc += special ? LEN_of_2B_REGS2 : LEN_of_REGS2;
+		    break;
+		  case REGS3:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS3);
+		    PutReg2(re2, pc+RE2_of_REGS3);
+		    PutReg2(re3, pc+RE3_of_REGS3);
+		    pc += special ? LEN_of_2B_REGS3 : LEN_of_REGS3;
+		    break;
+		  case REGS4:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    re4 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS4);
+		    PutReg2(re2, pc+RE2_of_REGS4);
+		    PutReg2(re3, pc+RE3_of_REGS4);
+		    PutReg2(re4, pc+RE4_of_REGS4);
+		    pc += special ? LEN_of_2B_REGS4 : LEN_of_REGS4;
+		    break;
+		  case REGS5:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    re4 = parse_reg(&assemble_cursor);
+		    re5 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS5);
+		    PutReg2(re2, pc+RE2_of_REGS5);
+		    PutReg2(re3, pc+RE3_of_REGS5);
+		    PutReg2(re4, pc+RE4_of_REGS5);
+		    PutReg2(re5, pc+RE5_of_REGS5);
+		    pc += special ? LEN_of_2B_REGS5 : LEN_of_REGS5;
+		    break;
+		  case REGS6:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    re4 = parse_reg(&assemble_cursor);
+		    re5 = parse_reg(&assemble_cursor);
+		    re6 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS6);
+		    PutReg2(re2, pc+RE2_of_REGS6);
+		    PutReg2(re3, pc+RE3_of_REGS6);
+		    PutReg2(re4, pc+RE4_of_REGS6);
+		    PutReg2(re5, pc+RE5_of_REGS6);
+		    PutReg2(re6, pc+RE6_of_REGS6);
+		    pc += special ? LEN_of_2B_REGS6 : LEN_of_REGS6;
+		    break;
+		  case REGS7:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    re4 = parse_reg(&assemble_cursor);
+		    re5 = parse_reg(&assemble_cursor);
+		    re6 = parse_reg(&assemble_cursor);
+		    re7 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS7);
+		    PutReg2(re2, pc+RE2_of_REGS7);
+		    PutReg2(re3, pc+RE3_of_REGS7);
+		    PutReg2(re4, pc+RE4_of_REGS7);
+		    PutReg2(re5, pc+RE5_of_REGS7);
+		    PutReg2(re6, pc+RE6_of_REGS7);
+		    PutReg2(re7, pc+RE7_of_REGS7);
+		    pc += special ? LEN_of_2B_REGS7 : LEN_of_REGS7;
+		    break;
+		  case REGS8:
+		    re1 = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    re4 = parse_reg(&assemble_cursor);
+		    re5 = parse_reg(&assemble_cursor);
+		    re6 = parse_reg(&assemble_cursor);
+		    re7 = parse_reg(&assemble_cursor);
+		    re8 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+RE1_of_REGS8);
+		    PutReg2(re2, pc+RE2_of_REGS8);
+		    PutReg2(re3, pc+RE3_of_REGS8);
+		    PutReg2(re4, pc+RE4_of_REGS8);
+		    PutReg2(re5, pc+RE5_of_REGS8);
+		    PutReg2(re6, pc+RE6_of_REGS8);
+		    PutReg2(re7, pc+RE7_of_REGS8);
+		    PutReg2(re8, pc+RE8_of_REGS8);
+		    pc += special ? LEN_of_2B_REGS8 : LEN_of_REGS8;
+		    break;
+
+		  case REG_ATM:
+		    reg = parse_reg(&assemble_cursor);
+		    atm = parse_atom(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_ATM);
+		    PutAtom(atm, pc+ATM_of_REG_ATM);
+		    pc += LEN_of_REG_ATM;
+		    break;
+		  case REG_ATM_LAB:
+		    reg = parse_reg(&assemble_cursor);
+		    atm = parse_atom(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_REG_ATM_LAB);
+		    PutReg2(reg, pc+REG_of_REG_ATM_LAB);
+		    PutAtom(atm, pc+ATM_of_REG_ATM_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_ATM_LAB);
+		    pc += LEN_of_REG_ATM_LAB;
+		    break;
+		  case REG_IT:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_integer(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_IT);
+		    PutInt(it, pc+IT_of_REG_IT);
+		    pc += LEN_of_REG_IT;
+		    break;
+		  case REG_IT_LAB:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_integer(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_REG_IT_LAB);
+		    PutReg2(reg, pc+REG_of_REG_IT_LAB);
+		    PutInt(it, pc+IT_of_REG_IT_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_IT_LAB);
+		    pc += LEN_of_REG_IT_LAB;
+		    break;
+		  case REG_FLOT:
+		    reg = parse_reg(&assemble_cursor);
+		    flot = parse_float(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_FLOT);
+		    PutFloat(flot, pc+FLOT_of_REG_FLOT);
+		    pc += LEN_of_REG_FLOT;
+		    break;
+		  case REG_FLOT_LAB:
+		    reg = parse_reg(&assemble_cursor);
+		    flot = parse_float(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_REG_FLOT_LAB);
+		    PutReg2(reg, pc+REG_of_REG_FLOT_LAB);
+		    PutFloat(flot, pc+FLOT_of_REG_FLOT_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_FLOT_LAB);
+		    pc += LEN_of_REG_FLOT_LAB;
+		    break;
+		  case REG_ARITY:
+		    reg = parse_reg(&assemble_cursor);
+		    arity = parse_arity(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_ARITY);
+		    PutArity(arity, pc+ARITY_of_REG_ARITY);
+		    pc += LEN_of_REG_ARITY;
+		    break;
+		  case REG_ARITY_LAB:
+		    reg = parse_reg(&assemble_cursor);
+		    arity = parse_arity(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor,pc+LAB_of_REG_ARITY_LAB);
+		    PutReg2(reg, pc+REG_of_REG_ARITY_LAB);
+		    PutArity(arity, pc+ARITY_of_REG_ARITY_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_ARITY_LAB);
+		    pc += LEN_of_REG_ARITY_LAB;
+		    break;
+		  case REG_LAB:
+		    reg = parse_reg(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_REG_LAB);
+		    PutReg2(reg, pc+REG_of_REG_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_LAB);
+		    pc += LEN_of_REG_LAB;
+		    break;
+		  case REG_LAB6:
+		    reg = parse_reg(&assemble_cursor);
+		    lb1 = parse_addr(&assemble_cursor, pc+LB1_of_REG_LAB6);
+		    lb2 = parse_addr(&assemble_cursor, pc+LB2_of_REG_LAB6);
+		    lb3 = parse_addr(&assemble_cursor, pc+LB3_of_REG_LAB6);
+		    lb4 = parse_addr(&assemble_cursor, pc+LB4_of_REG_LAB6);
+		    lb5 = parse_addr(&assemble_cursor, pc+LB5_of_REG_LAB6);
+		    lb6 = parse_addr(&assemble_cursor, pc+LB6_of_REG_LAB6);
+		    PutReg2(reg, pc+REG_of_REG_LAB6);
+		    ChkAndPutRAddr(lb1, pc+LB1_of_REG_LAB6);
+		    ChkAndPutRAddr(lb2, pc+LB2_of_REG_LAB6);
+		    ChkAndPutRAddr(lb3, pc+LB3_of_REG_LAB6);
+		    ChkAndPutRAddr(lb4, pc+LB4_of_REG_LAB6);
+		    ChkAndPutRAddr(lb5, pc+LB5_of_REG_LAB6);
+		    ChkAndPutRAddr(lb6, pc+LB6_of_REG_LAB6);
+		    pc += LEN_of_REG_LAB6;
+		    break;
+
+		  case REG_IDX:
+		    reg = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    PutReg2(reg, pc+REG_of_REG_IDX);
+		    PutIndex(idx, pc+IDX_of_REG_IDX);
+		    pc += LEN_of_REG_IDX;
+		    break;
+		  case REG_IDX_REG:
+		    re1 = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    re2 = parse_reg(&assemble_cursor);
+		    PutReg2(re1, pc+REG_of_REG_IDX_REG);
+		    PutIndex(idx, pc+IDX_of_REG_IDX_REG);
+		    PutReg2(re2, pc+RE2_of_REG_IDX_REG);
+		    pc += LEN_of_REG_IDX_REG;
+		    break;
+		  case REG_IDX_ATM:
+		    reg = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    atm = parse_atom(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_IDX_ATM);
+		    PutIndex(idx, pc+IDX_of_REG_IDX_ATM);
+		    PutAtom(atm, pc+ATM_of_REG_IDX_ATM);
+		    pc += LEN_of_REG_IDX_ATM;
+		    break;
+		  case REG_IDX_IT:
+		    reg = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    it = parse_integer(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_IDX_IT);
+		    PutIndex(idx, pc+IDX_of_REG_IDX_IT);
+		    PutInt(it, pc+IT_of_REG_IDX_IT);
+		    pc += LEN_of_REG_IDX_IT;
+		    break;
+		  case REG_IDX_FLOT:
+		    reg = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    flot = parse_float(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_IDX_FLOT);
+		    PutIndex(idx, pc+IDX_of_REG_IDX_FLOT);
+		    PutFloat(flot, pc+FLOT_of_REG_IDX_FLOT);
+		    pc += LEN_of_REG_IDX_FLOT;
+		    break;
+
+		  case ARG:
+		    arg = parse_arg(&assemble_cursor);
+		    PutReg2(arg, pc+ARG_of_ARG);
+		    pc += LEN_of_ARG;
+		    break;
+		  case ARG_REG:
+		    arg = parse_arg(&assemble_cursor);
+		    reg = parse_reg(&assemble_cursor);
+		    PutReg2(arg, pc+ARG_of_ARG_REG);
+		    PutReg2(reg, pc+REG_of_ARG_REG);
+		    pc += LEN_of_ARG_REG;
+		    break;
+		  case ARG_ATM:
+		    arg = parse_arg(&assemble_cursor);
+		    atm = parse_atom(&assemble_cursor);
+		    PutReg2(arg, pc+ARG_of_ARG_ATM);
+		    PutAtom(atm, pc+ATM_of_ARG_ATM);
+		    pc += LEN_of_ARG_ATM;
+		    break;
+		  case ARG_IT:
+		    arg = parse_arg(&assemble_cursor);
+		    it = parse_integer(&assemble_cursor);
+		    PutReg2(arg, pc+ARG_of_ARG_IT);
+		    PutInt(it, pc+IT_of_ARG_IT);
+		    pc += LEN_of_ARG_IT;
+		    break;
+		  case ARG_FLOT:
+		    arg = parse_arg(&assemble_cursor);
+		    flot = parse_float(&assemble_cursor);
+		    PutReg2(arg, pc+ARG_of_ARG_FLOT);
+		    PutFloat(flot, pc+FLOT_of_ARG_FLOT);
+		    pc += LEN_of_ARG_FLOT;
+		    break;
+		  case ARG_LAB:
+		    arg = parse_arg(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_ARG_LAB);
+		    PutReg2(arg, pc+ARG_of_ARG_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_ARG_LAB);
+		    pc += LEN_of_ARG_LAB;
+		    break;
+
+		  case LAB:
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_LAB);
+		    pc += LEN_of_LAB;
+		    break;
+		  case PARITY:
+		    parity = parse_pred_arity(&assemble_cursor);
+		    PutPredArity(parity, pc+PARITY_of_PARITY);
+		    pc += LEN_of_PARITY;
+		    break;
+		  case PARITY_LAB:
+		    parity = parse_pred_arity(&assemble_cursor);
+		    lab = parse_addr(&assemble_cursor, pc+LAB_of_PARITY_LAB);
+		    PutPredArity(parity, pc+PARITY_of_PARITY_LAB);
+		    ChkAndPutRAddr(lab, pc+LAB_of_PARITY_LAB);
+		    pc += LEN_of_PARITY_LAB;
+		    break;
+		  case PARITY_LAB_REG:
+		    parity = parse_pred_arity(&assemble_cursor);
+		    lab=parse_addr(&assemble_cursor,pc+LAB_of_PARITY_LAB_REG);
+		    reg = parse_reg(&assemble_cursor);
+		    PutPredArity(parity, pc+PARITY_of_PARITY_LAB_REG);
+		    ChkAndPutRAddr(lab, pc+LAB_of_PARITY_LAB_REG);
+		    PutReg2(reg, pc+REG_of_PARITY_LAB_REG);
+		    pc += LEN_of_PARITY_LAB_REG;
+		    break;
+		  case MOD_PRED_PARITY:
+		    mod = parse_atom(&assemble_cursor);
+		    pred = parse_atom(&assemble_cursor);
+		    parity = parse_pred_arity(&assemble_cursor);
+		    PutAtom(mod, pc+MOD_of_MOD_PRED_PARITY);
+		    PutPredID(pred|(parity<<16), pc+PRED_of_MOD_PRED_PARITY);
+		    PutPredArity(parity, pc+PARITY_of_MOD_PRED_PARITY);
+		    pc += LEN_of_MOD_PRED_PARITY;
+		    break;
+
+		  case REG_REG_ATM:
+		    reg = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    atm = parse_atom(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_REG_ATM);
+		    PutReg2(re2, pc+RE2_of_REG_REG_ATM);
+		    PutAtom(atm, pc+ATM_of_REG_REG_ATM);
+		    pc += LEN_of_REG_REG_ATM;
+		    break;
+		  case REG_ARITY_ATM:
+		    reg = parse_reg(&assemble_cursor);
+		    arity = parse_arity(&assemble_cursor);
+		    atm = parse_atom(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_ARITY_ATM);
+		    PutArity(arity, pc+ARITY_of_REG_ARITY_ATM);
+		    PutAtom(atm, pc+ATM_of_REG_ARITY_ATM);
+		    pc += LEN_of_REG_ARITY_ATM;
+		    break;
+		  case REG_LAB_REG_REG:
+		    reg = parse_reg(&assemble_cursor);
+		    lab=parse_addr(&assemble_cursor,pc+LAB_of_REG_LAB_REG_REG);
+		    re2 = parse_reg(&assemble_cursor);
+		    re3 = parse_reg(&assemble_cursor);
+		    PutReg2(reg, pc+REG_of_REG_LAB_REG_REG);
+		    ChkAndPutRAddr(lab, pc+LAB_of_REG_LAB_REG_REG);
+		    PutReg2(re2, pc+RE2_of_REG_LAB_REG_REG);
+		    PutReg2(re3, pc+RE3_of_REG_LAB_REG_REG);
+		    pc += LEN_of_REG_LAB_REG_REG;
+		    break;
+		  case REG_REG_REP:
+		    reg = parse_reg(&assemble_cursor);
+		    re2 = parse_reg(&assemble_cursor);
+		    repnum = parse_short(&assemble_cursor, 0xFF, "repnum");
+		    PutReg2(reg, pc+REG_of_REG_REG_REP);
+		    PutReg2(re2, pc+RE2_of_REG_REG_REP);
+		    PutRepnum(repnum, pc+REP_of_REG_REG_REP);
+		    pc += LEN_of_REG_REG_REP;
+		    break;
+		  case ARG_REG_REP:
+		    arg = parse_arg(&assemble_cursor);
+		    reg = parse_reg(&assemble_cursor);
+		    repnum = parse_short(&assemble_cursor, 0xFF, "repnum");
+		    PutReg2(arg, pc+ARG_of_ARG_REG_REP);
+		    PutReg2(reg, pc+REG_of_ARG_REG_REP);
+		    PutRepnum(repnum, pc+REP_of_ARG_REG_REP);
+		    pc += LEN_of_ARG_REG_REP;
+		    break;
+		  case REG_IDX_REG_REP:
+		    reg = parse_reg(&assemble_cursor);
+		    idx = parse_short(&assemble_cursor, 0xFF, "index");
+		    re2 = parse_reg(&assemble_cursor);
+		    repnum = parse_short(&assemble_cursor, 0xFF, "repnum");
+		    PutReg2(reg, pc+REG_of_REG_IDX_REG_REP);
+		    PutIndex(idx, pc+IDX_of_REG_IDX_REG_REP);
+		    PutReg2(re2, pc+RE2_of_REG_IDX_REG_REP);
+		    PutRepnum(repnum, pc+REP_of_REG_IDX_REG_REP);
+		    pc += LEN_of_REG_IDX_REG_REP;
+		    break;
+
+		  case JUMP_ON:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_short(&assemble_cursor, 0xFFFF, "size");
+		    lab = parse_addr(&assemble_cursor, pc+FAIL_of_JUMP_ON);
+		    PutReg2(reg, pc+REG_of_JUMP_ON);
+		    PutShort(it, pc+SIZE_of_JUMP_ON);
+		    ChkAndPutRAddr(lab, pc+FAIL_of_JUMP_ON);
+		    pc += TABLE_of_JUMP_ON;
+		    make_jump_on_xxx_table(it, &pc, file);
+		    break;
+		  case BRANCH_ON_A:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_short(&assemble_cursor, 0xFFFF, "size");
+		    lab = parse_addr(&assemble_cursor, pc+FAIL_of_BRANCH_ON_A);
+		    PutReg2(reg, pc+REG_of_BRANCH_ON_A);
+		    PutShort(it, pc+SIZE_of_BRANCH_ON_A);
+		    ChkAndPutRAddr(lab, pc+FAIL_of_BRANCH_ON_A);
+		    pc += TABLE_of_BRANCH_ON_A;
+		    make_branch_on_atom_table(it, &pc, file);
+		    break;
+		  case BRANCH_ON_I:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_short(&assemble_cursor, 0xFFFF, "size");
+		    lab = parse_addr(&assemble_cursor, pc+FAIL_of_BRANCH_ON_I);
+		    PutReg2(reg, pc+REG_of_BRANCH_ON_I);
+		    PutShort(it, pc+SIZE_of_BRANCH_ON_I);
+		    ChkAndPutRAddr(lab, pc+FAIL_of_BRANCH_ON_I);
+		    pc += TABLE_of_BRANCH_ON_I;
+		    make_branch_on_int_table(it, &pc, file);
+		    break;
+		  case HASH_ON_A:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_short(&assemble_cursor, 0xFFFF, "size");
+		    msk = make_hash_mask(it);
+		    lab = parse_addr(&assemble_cursor, pc+FAIL_of_HASH_ON_A);
+		    PutReg2(reg, pc+REG_of_HASH_ON_A);
+		    PutShort(msk, pc+MASK_of_HASH_ON_A);
+		    ChkAndPutRAddr(lab, pc+FAIL_of_HASH_ON_A);
+		    pc += TABLE_of_HASH_ON_A;
+		    make_hash_on_atom_table(it, msk, &pc, file);
+		    break;
+		  case HASH_ON_I:
+		    reg = parse_reg(&assemble_cursor);
+		    it = parse_short(&assemble_cursor, 0xFFFF, "size");
+		    msk = make_hash_mask(it);
+		    lab = parse_addr(&assemble_cursor, pc+FAIL_of_HASH_ON_I);
+		    PutReg2(reg, pc+REG_of_HASH_ON_I);
+		    PutShort(msk, pc+MASK_of_HASH_ON_I);
+		    ChkAndPutRAddr(lab, pc+FAIL_of_HASH_ON_I);
+		    pc += TABLE_of_HASH_ON_I;
+		    make_hash_on_int_table(it, msk, &pc, file);
+		    break;
+
+		  default:
+		    Error3F(
+		      "\n>>> Assembler: Not supported OP type. (%d)\n%04d: %s",
+			    op->type, assemble_line_count, assemble_line0);
+		    goto error;
+		}
+	    }
+	}
+	while(IsBlank(*assemble_cursor)) assemble_cursor++;
+	if(*assemble_cursor != 0 && *assemble_cursor != '%'){
+	    Warning2F(
+		 "\n>>> Assembler: Junk at the end of line ignored.\n%04d: %s",
+		      assemble_line_count, assemble_line0);
+	}
+    }
+    if(predicate_top){ /* set code size of last proc. */
+	PutModPredSize((pc-predicate_top)-PREDICATE_SIZE_LENGTH,predicate_top);
+    }
+#if !KLB_4BYTE_REL_ADDR
+    if((pc-module_top)-MODULE_SIZE_LENGTH >= 0x7FFF){
+	Error2F("\n>>> Assembler: Module size is too big.\n%04d: %s",
+		assemble_line_count, assemble_line0);
+	goto error;
+    }
+#endif
+    PutModPredSize((pc-module_top)-MODULE_SIZE_LENGTH,
+		   module_top+MODULE_CODE_SIZE);
+    PutShort(ENTRY_TABLE_HASH_TABLE_SIZE+
+	     predicate_table_size*ELEN_of_ENTRY_TABLE,
+	     module_top+MODULE_ENTRY_TABLE_SIZE);
+    PutShort(predicate_table_size,
+	     module_top+MODULE_NUMBER_OF_ENTRY);
+    check_undefined_label();
+    if(enter_module(assemble_module_name, assemble_module_addr,
+		    pc-assemble_module_addr, module) != MODMAN_SUCCESS){
+	error_code = ASSEMBLE_MODULE_PROTECTED;
+	goto error;
+    }
+    C = pc;
+    return(ASSEMBLE_SUCCESS);  /** Success return **/
+    
+  error:
+    return(error_code);
+}
+
+
+/*************************************************************************
+*   Entry Table.							 *
+*************************************************************************/
+
+struct hash_on_entry {
+    struct hash_on_entry *next;
+    int	 constant;
+    CHAR *label;
+};
+
+make_entry_table(pcp, file)
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ *pc;
+    unsigned int x;
+    struct hash_on_entry *ent, **tail, **head;
+    unsigned int *collision, predicate_table_size;
+    OBJ	 *pc2;
+
+    pc = *pcp;
+    t2_free();
+    head = (struct hash_on_entry **)
+	   t2_alloc((ENTRY_TABLE_HASH_MASK+1)*sizeof(struct hash_on_entry *));
+    tail = (struct hash_on_entry **)
+	   t2_alloc((ENTRY_TABLE_HASH_MASK+1)*sizeof(struct hash_on_entry *));
+    collision = (unsigned int *)
+		t2_alloc((ENTRY_TABLE_HASH_MASK+1)*sizeof(unsigned int));
+    pc2 = pc;
+    for(x = 0; x <= ENTRY_TABLE_HASH_MASK; x++){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	head[x] = NULL;
+	tail[x] = NULL;
+	collision[x] = 0;
+	pc += TLEN_of_ENTRY_TABLE;
+    }
+    predicate_table_size = 0;
+    for(;;){
+	CHAR *name;
+	struct instr_rec *op;
+
+	if(!(IsBlank(*assemble_cursor)) ||
+	   (assemble_cursor[0]==' ' && assemble_cursor[1]=='\'')) break;
+	while(IsBlank(*assemble_cursor)) assemble_cursor++;
+	if(*assemble_cursor == 0) continue;	   /** if blank line **/
+	if((name = scan_name(&assemble_cursor)) == NULL){
+	    Error2F("\n>>> Assembler: Invalid mnemonic/delimiter.\n%04d, %s",
+		    assemble_line_count, assemble_line0);
+	    longjmp(assemble_env, 1);
+	}
+	if(lookup_mnemonic(name, &op)){
+	    Error2F("\n>>> Assembler: Unknown mnemonic.\n%04d: %s",
+		    assemble_line_count, assemble_line0);
+	    longjmp(assemble_env, 1);
+	}
+	if(op->opcode != KL1B_ENTRY) break;
+	ent = (struct hash_on_entry *)t2_alloc(sizeof(struct hash_on_entry));
+
+	predicate_table_size++;
+	x = parse_atom(&assemble_cursor);
+	ent->constant = x = (x | (parse_pred_arity(&assemble_cursor) << 16));
+	ent->label = parse_label(&assemble_cursor);
+	ent->next = NULL;
+	x = ENTRY_TABLE_HASH_FUNC(x);
+	if(tail[x] == NULL){
+	    head[x] = ent;
+	}else{
+	    tail[x]->next = ent;
+	}
+	tail[x] = ent;
+	collision[x]++;
+
+	while(IsBlank(*assemble_cursor)) assemble_cursor++;
+	if(*assemble_cursor != 0 && *assemble_cursor != '%'){
+	    Warning2F(
+		 "\n>>> Assembler: Junk at the end of line ignored.\n%04d: %s",
+		      assemble_line_count, assemble_line0);
+	}
+	if(fgets(assemble_line, BUFSIZ, file) == NULL){	 /** Read Next Line **/
+	    Error("\n>>> Assembler: EOF in entry table.");
+	    longjmp(assemble_env, 1);
+	}
+	strcpy(assemble_line0, assemble_line);
+	assemble_cursor = assemble_line;
+	assemble_line_count++;
+    }
+    strcpy(assemble_line, assemble_line0);
+    assemble_cursor = assemble_line;
+
+    Debug(PrintCons("\n*** entry"));
+    for(x = 0; x <= ENTRY_TABLE_HASH_MASK; x++){
+	Debug(PrintCons1F(" %d", collision[x]));
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	if(collision[x] != 0){
+	    PutShort(collision[x], pc2+CNUM_of_ENTRY_TABLE);
+	    ChkAndPutRAddr(pc-(pc2+OFST_of_ENTRY_TABLE),
+			    pc2+OFST_of_ENTRY_TABLE);
+	    pc2 += TLEN_of_ENTRY_TABLE;
+	    ent = head[x];
+	    while(collision[x]--){
+		PutPredID(ent->constant, pc+PRED_of_ENTRY_TABLE);
+		ChkAndPutRAddr(
+		    enter_label_table2(ent->label, pc+LAB_of_ENTRY_TABLE),
+		    pc+LAB_of_ENTRY_TABLE);
+		pc += ELEN_of_ENTRY_TABLE;
+		ent = ent->next;
+	    }
+	}else{
+	    PutShort(0, pc2+CNUM_of_ENTRY_TABLE);
+	    PutRelAddr(0, pc2+OFST_of_ENTRY_TABLE);
+	    pc2 += TLEN_of_ENTRY_TABLE;
+	}
+    }
+    Debug(PrintCons(". "));
+    *pcp = pc;
+    return(predicate_table_size);
+}
+
+
+/*************************************************************************
+*   Clause Indexing Code.						 *
+*************************************************************************/
+
+#define ReadTableLine(table_op, mnem, file) {\
+    CHAR *name;\
+    struct instr_rec *op;\
+    while(IsBlank(*assemble_cursor)) assemble_cursor++;\
+    if(*assemble_cursor != 0 && *assemble_cursor != '%'){\
+	Warning2F(\
+	    "\n>>> Assembler: Junk at the end of line ignored.\n%04d: %s",\
+	    assemble_line_count, assemble_line0);\
+    }\
+    if(fgets(assemble_line, BUFSIZ, file) == NULL){\
+	Error1F("\n>>> Assembler: EOF in %s table.", mnem);\
+	longjmp(assemble_env, 1);\
+    }\
+    assemble_cursor = assemble_line;\
+    strcpy(assemble_line0, assemble_line);\
+    assemble_line_count++;\
+    if(!IsBlank(*assemble_cursor) ||\
+       (assemble_cursor[0]==' ' && assemble_cursor[1]=='\'')){ /*label*/\
+	Error3F("\n>>> Assembler: Illegal label in %s table.\n%04d: %s",\
+		mnem, assemble_line_count, assemble_line0);\
+	longjmp(assemble_env, 1);\
+    }\
+    while(IsBlank(*assemble_cursor)) assemble_cursor++;\
+    if(*assemble_cursor == 0) continue;	   /** if empty line **/\
+    if((name = scan_name(&assemble_cursor)) == NULL){\
+	Error2F("\n>>> Assembler: Invalid mnemonic field.\n%04d, %s",\
+		assemble_line_count, assemble_line0);\
+	longjmp(assemble_env, 1);\
+    }\
+    if(lookup_mnemonic(name, &op)){\
+	Error2F("\n>>> Assembler: Unknown mnemonic.\n%04d: %s",\
+		assemble_line_count, assemble_line0);\
+	longjmp(assemble_env, 1);\
+    }\
+    if(op->opcode != table_op){\
+	Error3F("\n>>> Assembler: Illegal mnemonic in %s table.\n%04d: %s",\
+		mnem, assemble_line_count, assemble_line0);\
+	longjmp(assemble_env, 1);\
+    }\
+}
+
+static make_jump_on_xxx_table(size, pcp, file)
+    register int size;
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ  *pc;
+    register int  lab;
+    
+    pc = *pcp;
+    while(size--){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	ReadTableLine(KL1B_TABLE_ENTRY, "jump_on_xxx", file);
+	lab = parse_addr(&assemble_cursor, pc+LAB_of_JUMP_ON);
+	ChkAndPutRAddr(lab, pc+LAB_of_JUMP_ON);
+	pc += ELEN_of_JUMP_ON;
+    }
+    AdjustPCunlessPackedCode(pc);
+    *pcp = pc;
+}
+
+static make_branch_on_int_table(size, pcp, file)
+    register int size;
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ  *pc;
+    register int  it, lab;
+    
+    pc = *pcp;
+    while(size--){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	ReadTableLine(KL1B_BUCKET_ENTRY_I, "branch_on_int", file);
+	it  = parse_integer(&assemble_cursor);
+	lab = parse_addr(&assemble_cursor, pc+LAB_of_BRANCH_ON_I);
+	PutInt(it, pc+IT_of_BRANCH_ON_I);
+	ChkAndPutRAddr(lab, pc+LAB_of_BRANCH_ON_I);
+	pc += ELEN_of_BRANCH_ON_I;
+    }
+    *pcp = pc;
+}
+
+static make_branch_on_atom_table(size, pcp, file)
+    register int size;
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ  *pc;
+    register int  atm, lab;
+    
+    pc = *pcp;
+    while(size--){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	ReadTableLine(KL1B_BUCKET_ENTRY_A, "branch_on_atom", file);
+	atm = parse_atom(&assemble_cursor);
+	lab = parse_addr(&assemble_cursor, pc+LAB_of_BRANCH_ON_A);
+	PutAtom(atm, pc+ATM_of_BRANCH_ON_A);
+	ChkAndPutRAddr(lab, pc+LAB_of_BRANCH_ON_A);
+	pc += ELEN_of_BRANCH_ON_A;
+    }
+    *pcp = pc;
+}
+
+static make_hash_mask(size)
+    register unsigned int size;
+{
+    register unsigned int mask;
+    size <<= 1;
+    for(mask = 0xFFFF; mask > 1 && (size&mask) == size; ) mask >>= 1;
+    return(mask);
+}
+
+static make_hash_on_int_table(size, mask, pcp, file)
+    int size, mask;
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ *pc;
+    unsigned int x;
+    struct hash_on_entry *ent, **tail, **head;
+    unsigned int *collision;
+    OBJ	 *pc2;
+
+    pc = *pcp;
+    t2_free();
+    head = (struct hash_on_entry **)
+	   t2_alloc((mask+1)*sizeof(struct hash_on_entry *));
+    tail = (struct hash_on_entry **)
+	   t2_alloc((mask+1)*sizeof(struct hash_on_entry *));
+    collision = (unsigned int *)t2_alloc((mask+1)*sizeof(unsigned int));
+    pc2 = pc;
+    for(x = 0; x <= mask; x++){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	head[x] = NULL;
+	tail[x] = NULL;
+	collision[x] = 0;
+	pc += TLEN_of_HASH_ON_I;
+    }
+    while(size--){
+	ReadTableLine(KL1B_BUCKET_ENTRY_I, "hash_on_int", file);
+	ent = (struct hash_on_entry *)t2_alloc(sizeof(struct hash_on_entry));
+	ent->constant = x = parse_integer(&assemble_cursor);
+	ent->label = parse_label(&assemble_cursor);
+	ent->next = NULL;
+	x &= mask;
+	if(tail[x] == NULL){
+	    head[x] = ent;
+	}else{
+	    tail[x]->next = ent;
+	}
+	tail[x] = ent;
+	collision[x]++;
+    }
+    Debug(PrintCons("\n*** hash_on_int "));
+    for(x = 0; x <= mask; x++){
+	Debug(PrintCons1F(" %d", collision[x]));
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	if(collision[x] != 0){
+	    PutShort(collision[x], pc2+CNUM_of_HASH_ON_I);
+	    ChkAndPutRAddr(pc-(pc2+OFST_of_HASH_ON_I), pc2+OFST_of_HASH_ON_I);
+	    pc2 += TLEN_of_HASH_ON_I;
+	    ent = head[x];
+	    while(collision[x]--){
+		PutInt(ent->constant, pc+IT_of_HASH_ON_I);
+		ChkAndPutRAddr(
+		    enter_label_table2(ent->label, pc+LAB_of_HASH_ON_I),
+		    pc+LAB_of_HASH_ON_I);
+		pc += ELEN_of_HASH_ON_I;
+		ent = ent->next;
+	    }
+	}else{
+	    PutShort(0, pc2+CNUM_of_HASH_ON_I);
+	    PutRelAddr(0, pc2+OFST_of_HASH_ON_I);
+	    pc2 += TLEN_of_HASH_ON_I;
+	}
+    }
+    Debug(PrintCons(". "));
+    *pcp = pc;
+}
+
+static make_hash_on_atom_table(size, mask, pcp, file)
+    register int size, mask;
+    OBJ	 **pcp;
+    FILE *file;
+{
+    register OBJ *pc;
+    unsigned int x;
+    struct hash_on_entry *ent, **tail, **head;
+    unsigned int *collision;
+    OBJ	 *pc2;
+
+    pc = *pcp;
+    t2_free();
+    head = (struct hash_on_entry **)
+	   t2_alloc((mask+1)*sizeof(struct hash_on_entry *));
+    tail = (struct hash_on_entry **)
+	   t2_alloc((mask+1)*sizeof(struct hash_on_entry *));
+    collision = (unsigned int *)t2_alloc((mask+1)*sizeof(unsigned int));
+    pc2 = pc;
+    for(x = 0; x <= mask; x++){
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	head[x] = NULL;
+	tail[x] = NULL;
+	collision[x] = 0;
+	pc += TLEN_of_HASH_ON_A;
+    }
+    while(size--){
+	ReadTableLine(KL1B_BUCKET_ENTRY_A, "hash_on_atom", file);
+	ent = (struct hash_on_entry *)t2_alloc(sizeof(struct hash_on_entry));
+	ent->constant = x = parse_atom(&assemble_cursor);
+	ent->label = parse_label(&assemble_cursor);
+	ent->next = NULL;
+	x &= mask;
+	if(tail[x] == NULL){
+	    head[x] = ent;
+	}else{
+	    tail[x]->next = ent;
+	}
+	tail[x] = ent;
+	collision[x]++;
+    }
+    Debug(PrintCons("\n*** hash_on_atom"));
+    for(x = 0; x <= mask; x++){
+	Debug(PrintCons1F(" %d", collision[x]));
+	if(GcFlag_ON()) longjmp(assemble_env, 2);
+	if(collision[x] != 0){
+	    PutShort(collision[x], pc2+CNUM_of_HASH_ON_A);
+	    ChkAndPutRAddr(pc-(pc2+OFST_of_HASH_ON_A), pc2+OFST_of_HASH_ON_A);
+	    pc2 += TLEN_of_HASH_ON_A;
+	    ent = head[x];
+	    while(collision[x]--){
+		PutAtom(ent->constant, pc+ATM_of_HASH_ON_A);
+		ChkAndPutRAddr(
+		    enter_label_table2(ent->label, pc+LAB_of_HASH_ON_A),
+		    pc+LAB_of_HASH_ON_A);
+		pc += ELEN_of_HASH_ON_A;
+		ent = ent->next;
+	    }
+	}else{
+	    PutShort(0, pc2+CNUM_of_HASH_ON_A);
+	    PutRelAddr(0, pc2+OFST_of_HASH_ON_A);
+	    pc2 += TLEN_of_HASH_ON_A;
+	}
+    }
+    Debug(PrintCons(". "));
+    *pcp = pc;
+}

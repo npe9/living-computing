@@ -1,0 +1,17 @@
+:- module sample.
+:- public primes/0, primes/2.
+
+primes:- true | primes(500,L), display(L).
+primes(N, PL) :- true | gen(2, N, NL), sift(NL, PL).
+
+gen(N, Max, S) :- N =< Max | S=[N|S1], gen(~(N+1), Max, S1).
+gen(N, Max, S) :- N  > Max | S=[].
+
+sift([P|L], S) :- true | S=[P|S1], filter(L, K, P), sift(K, S1).
+sift([],    S) :- true | S=[].
+
+filter([Q|L], K, P) :- Q mod P=:=0 |           filter(L, K,  P).
+filter([Q|L], K, P) :- Q mod P=\=0 | K=[Q|K1], filter(L, K1, P).
+filter([],    K, P) :- true        | K=[].
+
+display(X):- wait(X), display_console(X) | true.

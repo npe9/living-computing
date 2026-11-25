@@ -1,0 +1,139 @@
+/*************************************************************************
+*  PDSS (PIMOS Development Support System)  Version 2.52		 *
+*  (C) Copyright 1988,1989,1990,1992.					 *
+*  Institute for New Generation Computer Technology (ICOT), Japan.	 *
+*  Read "../COPYRIGHT" for detailed information.			 *
+*************************************************************************/
+
+#include <sys/types.h>
+#include <sys/time.h>
+#include <signal.h>
+#include "pdss.h"
+#include "memory.h"
+#include "io.h"
+
+#ifndef sigmask
+#define sigmask(m) (1 << ((m)-1))
+#endif
+
+#define COUNT(H,M,S) ((H)*3600+(M)*60+(S))
+#define HUGE	     0x7FFFFFFF
+
+static int startup_day;
+static int timer_last_count;
+static int timer_next_count;
+CELL *timer_table;
+
+
+initialize_timer()
+{
+    time_t clock;
+    struct tm *tm, *localtime();
+    int alarm_clock_int();
+    time(&clock);
+    tm = localtime(&clock);
+    startup_day = tm->tm_wday;
+    timer_last_count = COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec);
+    timer_next_count = HUGE;
+    AllocCell(timer_table);
+    SetAll(timer_table, ATOM, NIL, MRBOFF);
+    signal(SIGALRM, alarm_clock_int);
+    if(option_alarm_clock_sw) alarm(1);
+}
+
+static alarm_clock_int()
+{
+    time_t clock;
+    struct tm *tm, *localtime();
+    int now;
+    if(option_alarm_clock_sw) alarm(1);
+    time(&clock);
+    tm = localtime(&clock);
+    now = COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec);
+    now += (tm->tm_wday-startup_day)*24*60*60;
+    if(tm->tm_wday < startup_day) now += 7*24*60*60;
+    if(timer_next_count <= now) SetAlarmIntFlag();
+    timer_last_count = now;
+#ifdef STATISTICS_SECOND
+    STATISTICS_SECOND;
+#endif
+}
+
+timer_wakeup_goal()
+{
+    CELL *p, *q;
+    int count, mask;
+    mask = sigblock(sigmask(SIGALRM));
+    timer_next_count = HUGE;
+    p = timer_table;
+    while(Typeof(p) == VECTOR){
+	q = Objectof(p)+1;
+	count = Valueof(q+1);
+	if(count <= timer_last_count){
+	    active_unify_with_integer(q+2, timer_last_count);
+	    *p = *q;
+	}else{
+	    if(count < timer_next_count) timer_next_count = count;
+	    p = q;
+	}
+    }
+    sigsetmask(mask);
+}
+
+int is_there_goal_waiting_for_timer()
+{
+    if(Typeof(timer_table) == VECTOR){
+	return(YES);
+    }else{
+	return(NO);
+    }
+}
+
+
+set_timer_on_after(count, var)
+    int count;
+    CELL *var;
+{
+    time_t clock;
+    struct tm *tm, *localtime();
+    time(&clock);
+    tm = localtime(&clock);
+    set_timer(COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec)+count, var);
+}
+
+set_timer_on_at(count, var)
+    int count;
+    CELL *var;
+{
+    while(count <= timer_last_count) count += 24*36*36;
+    set_timer(count, var);
+}
+
+static set_timer(count, var)
+    int count;
+    CELL *var;
+{
+    CELL *p;
+    int mask;
+    mask = sigblock(sigmask(SIGALRM));
+    if(count <= timer_last_count || !option_alarm_clock_sw){
+	active_unify_with_integer(var, timer_last_count);
+    }else{
+	AllocVector2(p, 3);
+	*(p+1) = *timer_table;
+	SetAll(p+2, INT, count, MRBOFF);
+	*(p+3) = *var;
+	SetAll(timer_table, VECTOR, p, MRBOFF);
+	if(count < timer_next_count) timer_next_count = count;
+    }
+    sigsetmask(mask);
+}
+
+int get_time_count()
+{
+    time_t clock;
+    struct tm *tm, *localtime();
+    time(&clock);
+    tm = localtime(&clock);
+    return(COUNT(tm->tm_hour, tm->tm_min, tm->tm_sec));
+}

@@ -1,0 +1,474 @@
+/*************************************************************************
+*  PDSS (PIMOS Development Support System)  Version 2.52		 *
+*  (C) Copyright 1988,1989,1990,1991,1992.				 *
+*  Institute for New Generation Computer Technology (ICOT), Japan.	 *
+*  Read "../COPYRIGHT" for detailed information.			 *
+*************************************************************************/
+
+#include "pdss.h"
+#include "io.h"
+#include "klb.h"
+#include "instr.h"
+
+#define INVALID	      -1
+#define NOT_SUPPORTED ASSM_NOT_SUPPORTED
+
+initialize_instruction_table()
+{
+    reset_instruction_table();
+
+    op(KL1B_TRUE,		    "true",		      NO_ARG);
+    op(KL1B_FAIL,		    "fail",		      NO_ARG);
+    op(KL1B_JUMP,		    "jump",		      LAB);
+    op(KL1B_TRY_ME_ELSE,	    "try_me_else",	      LAB);
+    op(KL1B_OTHERWISE,		    "otherwise",	      LAB);
+    op(KL1B_READ_EAGERLY,	    "read_eagerly",	      ASSM_IGNORE);
+    op(KL1B_SUSPEND,		    "suspend",		      LAB);
+    op(KL1B_PROCEED,		    "proceed",		      NO_ARG);
+    op(KL1B_EXECUTE,		    "execute",		      PARITY_LAB);
+    op(KL1B_EXECUTE_EXTERNAL,	    "execute_external",	      MOD_PRED_PARITY);
+    op(KL1B_CREATE_GOAL,	    "create_goal",	      PARITY);
+    op(KL1B_ENQUEUE_GOAL,	    "enqueue_goal",	      PARITY_LAB);
+    op(KL1B_ENQUEUE_GOAL_WITH_PRIORITY,
+				"enqueue_goal_with_priority", PARITY_LAB_REG);
+    op(KL1B_ENQUEUE_GOAL_EXTERNAL,  "enqueue_goal_external",  MOD_PRED_PARITY);
+
+    op(KL1B_WAIT,		    "wait",		      REG);
+
+    op(KL1B_IS_ATOM,		    "is_atom",		      REG_LAB);
+    op(KL1B_IS_INTEGER,		    "is_integer",	      REG_LAB);
+    op(KL1B_IS_FLOAT,		    "is_float",		      REG_LAB);
+    op(KL1B_IS_LIST,		    "is_list",		      REG_LAB);
+    op(KL1B_IS_VECTOR,		    "is_vector",	      REG_LAB);
+    op(KL1B_IS_STRING,		    "is_string",	      REG_LAB);
+    op(KL1B_SWITCH_ON_TYPE,	    "switch_on_type",	      REG_LAB6);
+
+    op(KL1B_TEST_ATOM,		    "test_atom",	      REG_ATM_LAB);
+    op(KL1B_TEST_NIL,		    "test_nil",		      REG_LAB);
+    op(KL1B_TEST_INTEGER,	    "test_integer",	      REG_IT_LAB);
+    op(KL1B_TEST_FLOAT,		    "test_float",	      REG_FLOT_LAB);
+    op(KL1B_TEST_ARITY,		    "test_arity",	      REG_ARITY_LAB);
+    op(KL1B_JUMP_ON_INTEGER,	    "jump_on_integer",	      JUMP_ON);
+    op(KL1B_JUMP_ON_ARITY,	    "jump_on_arity",	      JUMP_ON);
+    op(KL1B_BRANCH_ON_ATOM,	    "branch_on_atom",	      BRANCH_ON_A);
+    op(KL1B_BRANCH_ON_INTEGER,	    "branch_on_integer",      BRANCH_ON_I);
+    op(KL1B_HASH_ON_ATOM,	    "hash_on_atom",	      HASH_ON_A);
+    op(KL1B_HASH_ON_INTEGER,	    "hash_on_integer",	      HASH_ON_I);
+    op(KL1B_TABLE_ENTRY,	    "table_entry",	      ASSM_CONTROL);
+    op(KL1B_BUCKET_ENTRY_I,	    "bucket_entry_i",	      ASSM_CONTROL);
+    op(KL1B_BUCKET_ENTRY_A,	    "bucket_entry_a",	      ASSM_CONTROL);
+
+    op(KL1B_ATOM,		    "atom",		      REG);
+    op(KL1B_INTEGER,		    "integer",		      REG);
+    op(KL1B_FLOAT,		    "float",		      REG);
+    op(KL1B_LIST,		    "list",		      REG);
+    op(KL1B_VECTOR,		    "vector",		      REG);
+    op(KL1B_STRING,		    "string",		      REG);
+
+    op(KL1B_JUMP_ON_NON_ATOM,	    "jump_on_non_atom",	      REG_LAB);
+    op(KL1B_JUMP_ON_NON_INTEGER,    "jump_on_non_integer",    REG_LAB);
+    op(KL1B_JUMP_ON_NON_FLOAT,	    "jump_on_non_float",      REG_LAB);
+    op(KL1B_JUMP_ON_NON_LIST,	    "jump_on_non_list",	      REG_LAB);
+    op(KL1B_JUMP_ON_NON_VECTOR,	    "jump_on_non_vector",     REG_LAB);
+    op(KL1B_JUMP_ON_NON_STRING,	    "jump_on_non_string",     REG_LAB);
+
+    op(KL1B_CHECK_ATOM,		    "check_atom",	      REG_ATM_LAB);
+    op(KL1B_CHECK_NIL,		    "check_nil",	      REG_LAB);
+    op(KL1B_CHECK_INTEGER,	    "check_integer",	      REG_IT_LAB);
+    op(KL1B_CHECK_FLOAT,	    "check_float",	      REG_FLOT_LAB);
+    op(KL1B_CHECK_VECTOR,	    "check_vector",	      REG_ARITY_LAB);
+
+    op(KL1B_WAIT_ATOM,		    "wait_atom",	      REG_ATM);
+    op(KL1B_WAIT_NIL,		    "wait_nil",		      REG);
+    op(KL1B_WAIT_INTEGER,	    "wait_integer",	      REG_IT);
+    op(KL1B_WAIT_FLOAT,		    "wait_float",	      REG_FLOT);
+    op(KL1B_WAIT_VECTOR,	    "wait_vector",	      REG_ARITY);
+
+    op(KL1B_WAIT_VALUE,		    "wait_value",	      REGS2);
+
+    op(KL1B_READ_CAR,		    "read_car",		      REGS2);
+    op(KL1B_READ_CDR,		    "read_cdr",		      REGS2);
+    op(KL1B_READ_ELEMENT,	    "read_element",	      REG_IDX_REG);
+
+    op(KL1B_PUT_VALUE,		    "put_value",	      REGS2);
+    op(KL1B_PUT_MARKED_VALUE,	    "put_marked_value",	      REGS2);
+
+    op(KL1B_SET_VALUE,		    "set_value",	      ARG_REG);
+    op(KL1B_SET_MARKED_VALUE,	    "set_marked_value",	      ARG_REG);
+
+    op(KL1B_WRITE_CAR_VALUE,	    "write_car_value",	      REGS2);
+    op(KL1B_WRITE_CDR_VALUE,	    "write_cdr_value",	      REGS2);
+    op(KL1B_WRITE_ELEMENT_VALUE,    "write_element_value",    REG_IDX_REG);
+    op(KL1B_WRITE_CAR_MARKED_VALUE, "write_car_marked_value", REGS2);
+    op(KL1B_WRITE_CDR_MARKED_VALUE, "write_cdr_marked_value", REGS2);
+    op(KL1B_WRITE_ELEMENT_MARKED_VALUE,
+				"write_element_marked_value", REG_IDX_REG);
+
+    op(KL1B_PUT_ATOM,		    "put_atom",		      REG_ATM);
+    op(KL1B_PUT_NIL,		    "put_nil",		      REG);
+    op(KL1B_PUT_INTEGER,	    "put_integer",	      REG_IT);
+    op(KL1B_PUT_FLOAT,		    "put_float",	      REG_FLOT);
+    op(KL1B_PUT_LIST,		    "put_list",		      REG);
+    op(KL1B_PUT_REUSED_LIST,	    "put_reused_list",	      REGS2);
+    op(KL1B_PUT_VECTOR,		    "put_vector",	      REG_ARITY);
+    op(KL1B_PUT_REUSED_VECTOR,	    "put_reused_vector",      REGS2);
+    op(KL1B_PUT_STRUCTURED_CONSTANT,"put_structured_constant",REG_LAB);
+
+    op(KL1B_SET_ATOM,		    "set_atom",		      ARG_ATM);
+    op(KL1B_SET_NIL,		    "set_nil",		      ARG);
+    op(KL1B_SET_INTEGER,	    "set_integer",	      ARG_IT);
+    op(KL1B_SET_FLOAT,		    "set_float",	      ARG_FLOT);
+
+    op(KL1B_WRITE_CAR_ATOM,	    "write_car_atom",	      REG_ATM);
+    op(KL1B_WRITE_CDR_ATOM,	    "write_cdr_atom",	      REG_ATM);
+    op(KL1B_WRITE_ELEMENT_ATOM,	    "write_element_atom",     REG_IDX_ATM);
+    op(KL1B_WRITE_CAR_NIL,	    "write_car_nil",	      REG);
+    op(KL1B_WRITE_CDR_NIL,	    "write_cdr_nil",	      REG);
+    op(KL1B_WRITE_ELEMENT_NIL,	    "write_element_nil",      REG_IDX);
+    op(KL1B_WRITE_CAR_INTEGER,	    "write_car_integer",      REG_IT);
+    op(KL1B_WRITE_CDR_INTEGER,	    "write_cdr_integer",      REG_IT);
+    op(KL1B_WRITE_ELEMENT_INTEGER,  "write_element_integer",  REG_IDX_IT);
+    op(KL1B_WRITE_CAR_FLOAT,	    "write_car_float",	      REG_FLOT);
+    op(KL1B_WRITE_CDR_FLOAT,	    "write_cdr_float",	      REG_FLOT);
+    op(KL1B_WRITE_ELEMENT_FLOAT,    "write_element_float",    REG_IDX_FLOT);
+
+    op(KL1B_PUT_VOID,		    "put_void",		      REG);
+    op(KL1B_PUT_VARIABLE,	    "put_variable",	      REGS2);
+    op(KL1B_PUT_MARKED_VARIABLE,    "put_marked_variable",    REGS2);
+
+    op(KL1B_SET_VOID,		    "set_void",		      ARG);
+    op(KL1B_SET_VARIABLE,	    "set_variable",	      ARG_REG);
+    op(KL1B_SET_MARKED_VARIABLE,    "set_marked_variable",    ARG_REG);
+
+    op(KL1B_WRITE_CAR_VOID,	    "write_car_void",	      REG);
+    op(KL1B_WRITE_CDR_VOID,	    "write_cdr_void",	      REG);
+    op(KL1B_WRITE_ELEMENT_VOID,	    "write_element_void",     REG_IDX);
+    op(KL1B_WRITE_CAR_VARIABLE,	    "write_car_variable",     REGS2);
+    op(KL1B_WRITE_CDR_VARIABLE,	    "write_cdr_variable",     REGS2);
+    op(KL1B_WRITE_ELEMENT_VARIABLE, "write_element_variable", REG_IDX_REG);
+    op(KL1B_WRITE_CAR_MARKED_VARIABLE,
+				 "write_car_marked_variable", REGS2);
+    op(KL1B_WRITE_CDR_MARKED_VARIABLE,
+				 "write_cdr_marked_variable", REGS2);
+    op(KL1B_WRITE_ELEMENT_MARKED_VARIABLE,
+			     "write_element_marked_variable", REG_IDX_REG);
+
+    op(KL1B_GET_ATOM,		    "get_atom",		      REG_ATM);
+    op(KL1B_GET_NIL,		    "get_nil",		      REG);
+    op(KL1B_GET_INTEGER,	    "get_integer",	      REG_IT);
+    op(KL1B_GET_FLOAT,		    "get_float",	      REG_FLOT);
+    op(KL1B_GET_LIST_VALUE,	    "get_list_value",	      REGS2);
+    op(KL1B_GET_VECTOR_VALUE,	    "get_vector_value",	      REGS2);
+    op(KL1B_GET_VALUE,		    "get_value",	      REGS2);
+
+    op(KL1B_WAIT_LIST_VAR_VAR,	    "wait_list_var_var",      REGS3);
+    op(KL1B_JUMP_ON_NON_LIST_VAR_VAR,
+				  "jump_on_non_list_var_var", REG_LAB_REG_REG);
+    op(KL1B_PUT_FUNC,		    "put_func",		      REG_ARITY_ATM);
+    op(KL1B_PUT_REUSED_FUNC,	    "put_reused_func",	      REG_REG_ATM);
+    op(KL1B_PUT_LIST_VAL_VAL,	    "put_list_val_val",	      REGS3);
+    op(KL1B_PUT_REUSED_LIST_VAL_VAL,"put_reused_list_val_val",REGS4);
+    op(KL1B_PUT_LIST_VAL_VAR,	    "put_list_val_var",	      REGS3);
+    op(KL1B_PUT_REUSED_LIST_VAL_VAR,"put_reused_list_val_var",REGS4);
+    op(KL1B_GET_LIST_VAL_VAR,	    "get_list_val_var",	      REGS4);
+    op(KL1B_GET_REUSED_LIST_VAL_VAR,"get_reused_list_val_var",REGS5);
+    op(KL1B_READ_ELEMENTS_INC,	    "read_elements_inc",      REG_IDX_REG_REP);
+    op(KL1B_READ_ELEMENTS_DEC,	    "read_elements_dec",      REG_IDX_REG_REP);
+    op(KL1B_PUT_VALUES_INC,	    "put_values_inc",	      REG_REG_REP);
+    op(KL1B_PUT_VALUES_DEC,	    "put_values_dec",	      REG_REG_REP);
+    op(KL1B_SET_VALUES_INC,	    "set_values_inc",	      ARG_REG_REP);
+    op(KL1B_SET_VALUES_DEC,	    "set_values_dec",	      ARG_REG_REP);
+    op(KL1B_WRITE_ELEMENTS_INC,	    "write_elements_inc",     REG_IDX_REG_REP);
+    op(KL1B_WRITE_ELEMENTS_DEC,	    "write_elements_dec",     REG_IDX_REG_REP);
+
+    op(KL1B_COLLECT_VALUE,	    "collect_value",	      REG);
+    op(KL1B_COLLECT_LIST,	    "collect_list",	      REG);
+    op(KL1B_COLLECT_VECTOR,	    "collect_vector",	      REG);
+
+    op(KL1B_G_DIFF,		    "g_diff",		      REGS2);
+
+    op(KL1B_G_EQUAL,		    "g_equal",		      REGS2);
+    op(KL1B_G_NOT_EQUAL,	    "g_not_equal",	      REGS2);
+    op(KL1B_G_LESS_THAN,	    "g_less_than",	      REGS2);
+    op(KL1B_G_NOT_LESS_THAN,	    "g_not_less_than",	      REGS2);
+
+    op(KL1B_G_ADD,		    "g_add",		      REGS3);
+    op(KL1B_G_SUBTRACT,		    "g_subtract",	      REGS3);
+    op(KL1B_G_MULTIPLY,		    "g_multiply",	      REGS3);
+    op(KL1B_G_DIVIDE,		    "g_divide",		      REGS3);
+    op(KL1B_G_MODULO,		    "g_modulo",		      REGS3);
+    op(KL1B_G_MINUS,		    "g_minus",		      REGS2);
+    op(KL1B_G_INCREMENT,	    "g_increment",	      REGS2);
+    op(KL1B_G_DECREMENT,	    "g_decrement",	      REGS2);
+    op(KL1B_G_ABS,		    "g_abs",		      REGS2);
+    op(KL1B_G_MIN,		    "g_min",		      REGS3);
+    op(KL1B_G_MAX,		    "g_max",		      REGS3);
+    op(KL1B_G_AND,		    "g_and",		      REGS3);
+    op(KL1B_G_OR,		    "g_or",		      REGS3);
+    op(KL1B_G_EXCLUSIVE_OR,	    "g_exclusive_or",	      REGS3);
+    op(KL1B_G_COMPLEMENT,	    "g_complement",	      REGS2);
+    op(KL1B_G_SHIFT_LEFT,	    "g_shift_left",	      REGS3);
+    op(KL1B_G_SHIFT_RIGHT,	    "g_shift_right",	      REGS3);
+
+    op(KL1B_G_VECTOR,		    "g_vector",		      REGS2);
+    op(KL1B_G_VECTOR_ELEMENT,	    "g_vector_element",	      REGS3);
+    op(KL1B_MARK_ELEMENT,	    "mark_element",	      REGS2);
+
+    op(KL1B_G_STRING,		    "g_string",		      REGS3);
+    op(KL1B_G_STRING_ELEMENT,	    "g_string_element",	      REGS3);
+
+    op(KL1B_B_ADD,		    "b_add",		      REGS3);
+    op(KL1B_B_SUBTRACT,		    "b_subtract",	      REGS3);
+    op(KL1B_B_MULTIPLY,		    "b_multiply",	      REGS3);
+    op(KL1B_B_DIVIDE,		    "b_divide",		      REGS3);
+    op(KL1B_B_MODULO,		    "b_modulo",		      REGS3);
+    op(KL1B_B_MINUS,		    "b_minus",		      REGS2);
+    op(KL1B_B_INCREMENT,	    "b_increment",	      REGS2);
+    op(KL1B_B_DECREMENT,	    "b_decrement",	      REGS2);
+    op(KL1B_B_ABS,		    "b_abs",		      REGS2);
+    op(KL1B_B_MIN,		    "b_min",		      REGS3);
+    op(KL1B_B_MAX,		    "b_max",		      REGS3);
+    op(KL1B_B_AND,		    "b_and",		      REGS3);
+    op(KL1B_B_OR,		    "b_or",		      REGS3);
+    op(KL1B_B_EXCLUSIVE_OR,	    "b_exclusive_or",	      REGS3);
+    op(KL1B_B_COMPLEMENT,	    "b_complement",	      REGS2);
+    op(KL1B_B_SHIFT_LEFT,	    "b_shift_left",	      REGS3);
+    op(KL1B_B_SHIFT_RIGHT,	    "b_shift_right",	      REGS3);
+
+    op(KL1B_B_VECTOR,		    "b_vector",		      REGS3);
+    op(KL1B_B_NEW_VECTOR,	    "b_new_vector",	      REGS2);
+    op(KL1B_B_VECTOR_ELEMENT,	    "b_vector_element",	      REGS4);
+    op(KL1B_B_SET_VECTOR_ELEMENT,   "b_set_vector_element",   REGS5);
+    op(KL1B_B_SUBVECTOR,	    "b_subvector",	      NOT_SUPPORTED);
+    op(KL1B_B_SET_SUBVECTOR,	    "b_set_subvector",	      NOT_SUPPORTED);
+
+    op(KL1B_B_STRING,		    "b_string",		      REGS4);
+    op(KL1B_B_NEW_STRING,	    "b_new_string",	      REGS3);
+    op(KL1B_B_STRING_ELEMENT,	    "b_string_element",	      REGS4);
+    op(KL1B_B_SET_STRING_ELEMENT,   "b_set_string_element",   REGS4);
+    op(KL1B_B_SUBSTRING,	    "b_substring",	      REGS5);
+    op(KL1B_B_SET_SUBSTRING,	    "b_set_substring",	      REGS4);
+    op(KL1B_B_APPEND_STRING,	    "b_append_string",	      REGS3);
+
+    op(KL1B_B_NEW_ATOM,		    "b_new_atom",	      REG);
+    op(KL1B_B_INTERN_ATOM,	    "b_intern_atom",	      REGS2);
+    op(KL1B_B_ATOM_NAME,	    "b_atom_name",	      REGS2);
+    op(KL1B_B_ATOM_NUMBER,	    "b_atom_number",	      REGS2);
+
+    op(KL1B_B_PREDICATE_TO_CODE,    "b_predicate_to_code",    REGS4);
+    op(KL1B_B_CODE_TO_PREDICATE,    "b_code_to_predicate",    REGS5);
+
+    op(KL1B_DISPLAY_CONSOLE,	    "display_console",	      REG);
+    op(KL1B_PUT_CONSOLE,	    "put_console",	      REG);
+    op(KL1B_READ_CONSOLE,	    "read_console",	      REG);
+
+    op(KL1B_B_CURRENT_NODE,	    "b_current_node",	      REGS2);
+    op(KL1B_B_APPLY,		    "b_apply",		      REGS2);
+    op(KL1B_B_RAISE,		    "b_raise",		      REGS3);
+    op(KL1B_B_MERGE,		    "b_merge",		      REGS2);
+    op(KL1B_B_CURRENT_PROCESSOR,    "b_current_processor",    REGS3);
+    op(KL1B_B_CURRENT_PRIORITY,	    "b_current_priority",     REGS3);
+    op(KL1B_B_RATE,		    "b_rate",		      REGS2);
+    op(KL1B_B_RLTV,		    "b_rltv",		      REGS2);
+    op(KL1B_B_HASH,		    "b_hash",		      REGS3);
+    op(KL1B_B_UNBOUND,		    "b_unbound",	      REGS4);
+    op(KL1B_B_GET_PRINT_IMAGE,	    "b_get_print_image",      REGS6);
+    op(KL1B_B_UNBOUND2,		    "b_unbound2",	      REGS2);
+
+    op(KL1B_G_FLOAT_EQUAL,	    "g_float_equal",	      REGS2);
+    op(KL1B_G_FLOAT_NOT_EQUAL,	    "g_float_not_equal",      REGS2);
+    op(KL1B_G_FLOAT_LESS_THAN,	    "g_float_less_than",      REGS2);
+    op(KL1B_G_FLOAT_NOT_LESS_THAN,  "g_float_not_less_than",  REGS2);
+
+    op(KL1B_G_FLOAT_ADD,	    "g_float_add",	      REGS3);
+    op(KL1B_G_FLOAT_SUBTRACT,	    "g_float_subtract",	      REGS3);
+    op(KL1B_G_FLOAT_MULTIPLY,	    "g_float_multiply",	      REGS3);
+    op(KL1B_G_FLOAT_DIVIDE,	    "g_float_divide",	      REGS3);
+    op(KL1B_G_FLOAT_MINUS,	    "g_float_minus",	      REGS2);
+    op(KL1B_G_FLOAT_ABS,	    "g_float_abs",	      REGS2);
+    op(KL1B_G_FLOAT_MIN,	    "g_float_min",	      REGS3);
+    op(KL1B_G_FLOAT_MAX,	    "g_float_max",	      REGS3);
+    op(KL1B_G_FLOAT_FLOOR,	    "g_float_floor",	      REGS2);
+    op(KL1B_G_FLOAT_SQRT,	    "g_float_sqrt",	      REGS2);
+    op(KL1B_G_FLOAT_LN,		    "g_float_ln",	      REGS2);
+    op(KL1B_G_FLOAT_LOG,	    "g_float_log",	      REGS2);
+    op(KL1B_G_FLOAT_EXP,	    "g_float_exp",	      REGS2);
+    op(KL1B_G_FLOAT_POW,	    "g_float_pow",	      REGS3);
+    op(KL1B_G_FLOAT_SIN,	    "g_float_sin",	      REGS2);
+    op(KL1B_G_FLOAT_COS,	    "g_float_cos",	      REGS2);
+    op(KL1B_G_FLOAT_TAN,	    "g_float_tan",	      REGS2);
+    op(KL1B_G_FLOAT_ASIN,	    "g_float_asin",	      REGS2);
+    op(KL1B_G_FLOAT_ACOS,	    "g_float_acos",	      REGS2);
+    op(KL1B_G_FLOAT_ATAN,	    "g_float_atan",	      REGS2);
+    op(KL1B_G_FLOAT_ATAN2,	    "g_float_atan2",	      REGS3);
+    op(KL1B_G_FLOAT_SINH,	    "g_float_sinh",	      REGS2);
+    op(KL1B_G_FLOAT_COSH,	    "g_float_cosh",	      REGS2);
+    op(KL1B_G_FLOAT_TANH,	    "g_float_tanh",	      REGS2);
+
+    op(KL1B_G_FLOAT_TO_INTEGER,	    "g_float_to_integer",     REGS2);
+    op(KL1B_G_INTEGER_TO_FLOAT,	    "g_integer_to_float",     REGS2);
+
+    op(KL1B_B_FLOAT_ADD,	    "b_float_add",	      REGS3);
+    op(KL1B_B_FLOAT_SUBTRACT,	    "b_float_subtract",	      REGS3);
+    op(KL1B_B_FLOAT_MULTIPLY,	    "b_float_multiply",	      REGS3);
+    op(KL1B_B_FLOAT_DIVIDE,	    "b_float_divide",	      REGS3);
+    op(KL1B_B_FLOAT_MINUS,	    "b_float_minus",	      REGS2);
+    op(KL1B_B_FLOAT_ABS,	    "b_float_abs",	      REGS2);
+    op(KL1B_B_FLOAT_MIN,	    "b_float_min",	      REGS3);
+    op(KL1B_B_FLOAT_MAX,	    "b_float_max",	      REGS3);
+    op(KL1B_B_FLOAT_FLOOR,	    "b_float_floor",	      REGS2);
+    op(KL1B_B_FLOAT_SQRT,	    "b_float_sqrt",	      REGS2);
+    op(KL1B_B_FLOAT_LN,		    "b_float_ln",	      REGS2);
+    op(KL1B_B_FLOAT_LOG,	    "b_float_log",	      REGS2);
+    op(KL1B_B_FLOAT_EXP,	    "b_float_exp",	      REGS2);
+    op(KL1B_B_FLOAT_POW,	    "b_float_pow",	      REGS3);
+    op(KL1B_B_FLOAT_SIN,	    "b_float_sin",	      REGS2);
+    op(KL1B_B_FLOAT_COS,	    "b_float_cos",	      REGS2);
+    op(KL1B_B_FLOAT_TAN,	    "b_float_tan",	      REGS2);
+    op(KL1B_B_FLOAT_ASIN,	    "b_float_asin",	      REGS2);
+    op(KL1B_B_FLOAT_ACOS,	    "b_float_acos",	      REGS2);
+    op(KL1B_B_FLOAT_ATAN,	    "b_float_atan",	      REGS2);
+    op(KL1B_B_FLOAT_ATAN2,	    "b_float_atan2",	      REGS3);
+    op(KL1B_B_FLOAT_SINH,	    "b_float_sinh",	      REGS2);
+    op(KL1B_B_FLOAT_COSH,	    "b_float_cosh",	      REGS2);
+    op(KL1B_B_FLOAT_TANH,	    "b_float_tanh",	      REGS2);
+
+    op(KL1B_B_FLOAT_TO_INTEGER,	    "b_float_to_integer",     REGS2);
+    op(KL1B_B_INTEGER_TO_FLOAT,	    "b_integer_to_float",     REGS2);
+
+    op(KL1B_B_CREATE_SHOEN,	    "b_create_shoen",	      REGS7);
+    op(KL1B_B_START_SHOEN,	    "b_start_shoen",	      REGS2);
+    op(KL1B_B_STOP_SHOEN,	    "b_stop_shoen",	      REGS2);
+    op(KL1B_B_ABORT_SHOEN,	    "b_abort_shoen",	      REGS2);
+    op(KL1B_B_REMOVE_SHOEN,	    "b_remove_shoen",	      REG);
+    op(KL1B_B_SHOEN_STATISTICS,	    "b_shoen_statistics",     REGS3);
+    op(KL1B_B_SHOEN_ADD_RESOURCE,   "b_shoen_add_resource",   REGS3);
+    op(KL1B_B_CONSUME_RESOURCE,	    "b_consume_resource",     REG);
+
+    op(KL1B_B_CREATE_WINDOW,	    "b_create_window",	      REGS4);
+    op(KL1B_B_REMOVE_WINDOW,	    "b_remove_window",	      REGS2);
+    op(KL1B_B_SHOW_WINDOW,	    "b_show_window",	      REGS3);
+    op(KL1B_B_HIDE_WINDOW,	    "b_hide_window",	      REGS3);
+    op(KL1B_B_CREATE_FILE,	    "b_create_file",	      REGS2);
+    op(KL1B_B_REMOVE_FILE,	    "b_remove_file",	      REGS2);
+    op(KL1B_B_OPEN_FILE,	    "b_open_file",	      REGS5);
+    op(KL1B_B_CLOSE_FILE,	    "b_close_file",	      REGS3);
+    op(KL1B_B_WRITE_CHAR,	    "b_write_char",	      REGS4);
+    op(KL1B_B_WRITE_LINE,	    "b_write_line",	      REGS4);
+    op(KL1B_B_WRITE_BUFFER,	    "b_write_buffer",	      REGS4);
+    op(KL1B_B_WRITE_TERM,	    "b_write_term",	      REGS6);
+    op(KL1B_B_READ_CHAR,	    "b_read_char",	      REGS4);
+    op(KL1B_B_READ_LINE,	    "b_read_line",	      REGS4);
+    op(KL1B_B_READ_BUFFER,	    "b_read_buffer",	      REGS5);
+    op(KL1B_B_READ_TOKEN,	    "b_read_token",	      REGS5);
+    op(KL1B_B_ABORT_READ_COMMAND,   "b_abort_read_command",   REGS3);
+
+    op(KL1B_B_TEST_DIRECTORY,	    "b_test_directory",	      REGS2);
+    op(KL1B_B_DIRECTORY_PATHNAME,   "b_directory_pathname",   REGS3);
+    op(KL1B_B_LISTING_FILES,	    "b_listing_files",	      REGS4);
+    op(KL1B_B_DELETE_FILES,	    "b_delete_files",	      REGS3);
+
+    op(KL1B_B_GET_TIME_COUNT,	    "b_get_time_count",	      REGS2);
+    op(KL1B_B_ON_AT,		    "b_on_at",		      REGS3);
+    op(KL1B_B_ON_AFTER,		    "b_on_after",	      REGS3);
+
+    op(KL1B_B_SAVE_MODULE,	    "b_save_module",	      REGS3);
+    op(KL1B_B_LOAD_MODULE,	    "b_load_module",	      REGS3);
+    op(KL1B_B_ASSEMBLE_MODULE,	    "b_assemble_module",      REGS3);
+    op(KL1B_B_REMOVE_MODULE,	    "b_remove_module",	      REGS2);
+    op(KL1B_B_GET_PUBLIC_PREDICATES,"b_get_public_predicates",REGS3);
+    op(KL1B_B_TRACE_MODULE,	    "b_trace_module",	      REGS3);
+    op(KL1B_B_GET_MODULE_STATUS,    "b_get_module_status",    REGS3);
+    op(KL1B_B_SPY_PREDICATE,	    "b_spy_predicate",	      REGS3);
+    op(KL1B_B_GET_SPIED_PREDICATES, "b_get_spied_predicates", REGS3);
+    op(KL1B_B_RESET_PROFILE_INFO,   "b_reset_profile_info",   REGS2);
+    op(KL1B_B_GET_PROFILE_INFO,	    "b_get_profile_info",     REGS3);
+
+    op(KL1B_STATISTICS,		    "statistics",	      REGS6);
+    op(KL1B_GET_CPU_TIME,	    "get_cpu_time",	      REG);
+    op(KL1B_GET_CURRENT_TIME,	    "get_current_time",	      REGS6);
+    op(KL1B_G_TAG_AND_VALUE,	    "g_tag_and_value",	      REGS3);
+    op(KL1B_G_REGISTER_TAG_AND_VALUE, "g_register_tag_and_value", REGS3);
+    op(KL1B_G_WORD,		    "g_word",		      REGS3);
+    op(KL1B_G_SET_TAG_AND_VALUE,    "g_set_tag_and_value",    REGS3);
+    op(KL1B_G_HALT,		    "g_halt",		      REG);
+    op(KL1B_G_REQUEST_GC,	    "g_request_gc",	      REG);
+    op(KL1B_G_SET_SCHEDULING_SWITCH,"g_set_scheduling_switch",REG);
+    op(KL1B_G_SET_TRACE_SWITCH,	    "g_set_trace_switch",     REG);
+    op(KL1B_G_SET_BACKTRACE_SWITCH, "g_set_backtrace_switch", REG);
+    op(KL1B_G_DEVICE_DUP_CHECK,	    "g_device_dup_check",     REG);
+    op(KL1B_B_GET_ALL_ATOM_NAME,    "b_get_all_atom_name",    REG);
+    op(KL1B_B_UNIX,		    "b_unix",		      REGS3);
+    op(KL1B_B_DEBUG_MONITOR_STREAM, "b_debug_monitor_stream", REGS3);
+    op(KL1B_B_GET_LIBRARY_DIRECTORY,"b_get_library_directory",REG);
+
+    op(KL1B_B_STRING_AND,	    "b_string_and",	      REGS4);
+    op(KL1B_B_STRING_OR,	    "b_string_or",	      REGS4);
+    op(KL1B_B_STRING_EXCLUSIVE_OR,  "b_string_exclusive_or",  REGS4);
+    op(KL1B_B_STRING_COMPLEMENT,    "b_string_complement",    REGS2);
+
+    op(SPECIAL_FUNCTION_SHIFT,	    "special_function_shift", ASSM_CONTROL);
+
+    op(KL1B_MODULE,		    "module",		      ASSM_CONTROL);
+    op(KL1B_ENTRY,		    "entry",		      ASSM_CONTROL);
+    op(KL1B_MODULE_ENTRY,	    "module_entry",	      ASSM_CONTROL);
+    op(KL1B_PREDICATE,		    "predicate",	      ASSM_CONTROL);
+
+    op(KL1B_BEGIN_CONST_SECTION,    "begin_const_section",    ASSM_CONTROL);
+    op(KL1B_DEFINE_ATOM,	    "define_atom",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_INTEGER,	    "define_integer",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_FLOAT,	    "define_float",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_DESC,	    "define_desc",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_LIST,	    "define_list",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_VECTOR,	    "define_vector",	      ASSM_CONSTANT);
+    op(KL1B_DEFINE_STRING,	    "define_string",	      ASSM_CONSTANT);
+}
+
+
+/*************************************************************************
+*    Instruction Table							 *
+*************************************************************************/
+
+struct instr_rec instruction_table[INSTRUCTION_TABLE_SIZE];
+
+/* Opcode Mnemonic Table */
+#define TABLE_NAME		mnemonic_table
+#define ENTRY_TYPE_NAME		mnemonic_table_entry
+#define DATA_TYPE		struct instr_rec *
+#define TABLE_SIZE		INSTRUCTION_TABLE_SIZE
+#define INIT_ROUTINE_NAME	clear_mnemonic_table
+#define LOOKUP_ROUTINE_NAME	lookup_mnemonic
+#define ENTRY_ROUTINE_NAME	enter_mnemonic
+#define MALLOC_FAILURE_ROUTINE1 {\
+    Error(">>> Not Enough Memory (instr.c: malloc failure) -- Aborted.");\
+    exit_pdss(1);\
+}
+#define MALLOC_FAILURE_ROUTINE2 {\
+    Error(">>> Not Enough Memory (instr.c: malloc failure) -- Aborted.");\
+    exit_pdss(1);\
+}
+#include "table.c"  /* General Purpose Name Table Lookup Subroutine Package */
+
+static reset_instruction_table()
+{
+    register int i;
+    for(i=0; i<INSTRUCTION_TABLE_SIZE; i++){
+	instruction_table[i].type = INVALID;
+    }
+    clear_mnemonic_table();
+}
+
+static op(opcode, mnem, type)
+    unsigned int opcode;
+    CHAR	 *mnem;
+    unsigned int type;
+{
+    struct instr_rec *p = &instruction_table[opcode];
+    p->opcode = opcode;
+    p->type = type;
+    p->mnem = mnem;
+    if(enter_mnemonic(mnem, &p)){
+	Error1F("\n>>> PDSS: Double Defined Mnemonic: %s.", mnem);
+	exit_pdss(1);
+    }
+}
