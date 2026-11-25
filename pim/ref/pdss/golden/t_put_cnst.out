@@ -1,0 +1,33 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/put_cnst" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,nil/0,nil00/0,nil00/1,nil01/0,int/0,int00/0,int00/1,int01/0,flt/0,flt00/0,flt00/1,flt01/0,lst/0,lst00/0,lst00/1,lst01/0,vec/0,vec00/0,vec00/1,vec01/0,stc/0,stc00/0,stc00/1,stc01/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : put_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Put_Constant %%%
+% Put_Atom %%%%%%%%%%%%%% a
+% Put_Nil %%%%%%%%%%%%%%% a
+% Put_Integer %%%%%%%%%%% a
+% Put_Float %%%%%%%%%%%%% a
+% Put_List %%%%%%%%%%%%%% a
+% Put_Vector %%%%%%%%%%%% a
+% Put_Struct_Const %%%%%% a
+Total of 34 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm f94cc77c16e16a63d249acf2ac6e9a5bb96a0985a492b60f4a67f91b4c117696
+sav 61ee653cc77b4ca68178f18635feec0e57c0b11208c2b3333a4923c17dd3e762

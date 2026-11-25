@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/get_cnst_e" : Compiling ... go/0,atm/0,atm00/0,atm00get/1,atm00/1,atm01/0,atm01get/1,atm01/1,atm02/0,atm02get/1,atm02/1,atm03/0,atm03get/1,atm03/1,atm04/0,atm04get/1,atm04/1,atm05/0,atm05get/1,atm05/1,atm06/0,atm06get/1,atm06/1,atm07/0,atm07get/1,atm07/1,atm08/0,nil/0,nil00/0,nil00get/1,nil00/1,nil01/0,nil01get/1,nil01/1,nil02/0,nil02get/1,nil02/1,nil03/0,nil03get/1,nil03/1,nil04/0,nil04get/1,nil04/1,nil05/0,nil05get/1,nil05/1,nil06/0,nil06get/1,nil06/1,nil07/0,nil07get/1,nil07/1,nil08/0,int/0,int00/0,int00get/1,int00/1,int01/0,int01get/1,int01/1,int02/0,int02get/1,int02/1,int03/0,int03get/1,int03/1,int04/0,int04get/1,int04/1,int05/0,int05get/1,int05/1,int06/0,int06get/1,int06/1,int07/0,int07get/1,int07/1,int08/0,flt/0,flt00/0,flt00get/1,flt00/1,flt01/0,flt01get/1,flt01/1,flt02/0,flt02get/1,flt02/1,flt03/0,flt03get/1,flt03/1,flt04/0,flt04get/1,flt04/1,flt05/0,flt05get/1,flt05/1,flt06/0,flt06get/1,flt06/1,flt07/0,flt07get/1,flt07/1,flt08/0,lst/0,lst00/0,lst00get/1,lst00/1,lst01/0,lst01get/1,lst01/1,lst02/0,lst02get/1,lst02/1,lst03/0,lst03get/1,lst03/1,lst04/0,lst04get/1,lst04/1,lst05/0,lst05get/1,lst05/1,lst06/0,lst06get/1,lst06/1,lst07/0,vec/0,vec00/0,vec00get/1,vec00/1,vec01/0,vec01get/1,vec01/1,vec02/0,vec02get/1,vec02/1,vec03/0,vec03get/1,vec03/1,vec04/0,vec04get/1,vec04/1,vec05/0,vec05get/1,vec05/1,vec06/0,vec06get/1,vec06/1,vec07/0,vec07get/1,vec07/1,vec08/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,END.
+
+[go/0,atm00get/1,atm01get/1,atm02get/1,atm03get/1,atm04get/1,atm05get/1,atm06get/1,atm07get/1,nil00get/1,...]
+successdone
+Loading ... done
+Module name : get_cnst_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Get_Constant (Exception) %%%
+% Get_Atom %%%%%%%%%%%%%% abcdefgh
+% Get_Nil %%%%%%%%%%%%%%% abcdefgh
+% Get_Integer %%%%%%%%%%% abcdefgh
+% Get_Float %%%%%%%%%%%%% abcdefgh
+% Get_List_Value %%%%%%%% abcdefg
+% Get_Vect_Value %%%%%%%% abcdefgh
+Total of 898 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 1e6ee89914afa6697b485ee8b6cbb2f393bb24c162b7d8d7b55677d8a3bdd1da
+sav 8a7b8c3dc5a3411ba4697c17157a258d5f49601a89ef321876ba22ae478a063d

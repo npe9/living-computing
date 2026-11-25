@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_type" : Compiling ... go/0,hsh/0,hsh00/0,hsh00/1,hsh00ans/2,hsh01/0,hsh01/1,hsh01ans/2,hsh02/0,hsh02/1,hsh02ans/2,hsh03/0,hsh03/1,hsh03ans/2,hsh04/0,hsh04/1,hsh04ans/2,hsh05/0,hsh05/1,hsh05ans/2,hsh06/0,ubd/0,ubd00/0,ubd00/1,ubd00ans/3,ubd01/0,ubd01/1,ubd01ans/3,ubd02/0,ubd02/1,ubd02ans/3,ubd03/0,ubd03/1,ubd03ans/3,ubd04/0,ubd04/1,ubd04ans/3,ubd05/0,ubd05/1,ubd05ans/3,ubd06/0,ubd06/1,ubd06ans/3,ubd07/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_type
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Type_Function %%%
+% B_Hash %%%%%%%%%%%%%%%% abcdef
+% B_Unbound %%%%%%%%%%%%% abcdefg
+Total of 49 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm eb5649f5558064b38148cf16fbab3101492eada2eac0657b97c6bf57aa9bb70e
+sav fbba67c8a80ea4eb3e20de725470cbb3c5a719c291e9e213e6d6300c38cf2b41

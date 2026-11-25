@@ -1,0 +1,29 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/put_var" : Compiling ... go/0,vid/0,vid00/0,vid00/1,vid01/0,var/0,var00/0,var00/2,var00/1,var01/0,var01/2,var01/1,var02/0,var02/2,var02/1,var03/0,var03/2,var03/1,var04/0,var04/2,var04/1,var05/0,var05/2,var05/1,var06/0,mrk/0,mrk00/0,mrk00/3,mrk00/1,mrk01/0,mrk01/3,mrk01/1,mrk02/0,mrk02/3,mrk02/1,mrk03/0,mrk03/3,mrk03/1,mrk04/0,mrk04/3,mrk04/1,mrk05/0,mrk05/3,mrk05/1,mrk06/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : put_var
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Put_Variable %%%
+% Put_Void %%%%%%%%%%%%%% a
+% Put_Variable %%%%%%%%%% abcdef
+% Put_Marked_Variable %%% abcdef
+Total of 50 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm bbb430af63b8b0ac7bb333d1258c9d0e2526083313ab0dcbe30509886ea9a3a3
+sav 19e8c4132ecab43bb0beeb433bd0caf25032b4ece3b2882a7e234ab5d576019d

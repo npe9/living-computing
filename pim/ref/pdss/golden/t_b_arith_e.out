@@ -1,0 +1,41 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_arith_e" : Compiling ... go/0,add/0,add00/0,add00/2,add01/0,add01/2,add02/0,add02/2,add03/0,add03/2,add04/0,add04/2,add05/0,add05/2,add06/0,add06/2,add07/0,add07/2,add08/0,add08/2,add09/0,add09/2,add10/0,add10/2,add11/0,add11/2,add12/0,add12/2,add13/0,add13/2,add14/0,sub/0,sub00/0,sub00/2,sub01/0,sub01/2,sub02/0,sub02/2,sub03/0,sub03/2,sub04/0,sub04/2,sub05/0,sub05/2,sub06/0,sub06/2,sub07/0,sub07/2,sub08/0,sub08/2,sub09/0,sub09/2,sub10/0,sub10/2,sub11/0,sub11/2,sub12/0,sub12/2,sub13/0,sub13/2,sub14/0,mul/0,mul00/0,mul00/2,mul01/0,mul01/2,mul02/0,mul02/2,mul03/0,mul03/2,mul04/0,mul04/2,mul05/0,mul05/2,mul06/0,mul06/2,mul07/0,mul07/2,mul08/0,mul08/2,mul09/0,mul09/2,mul10/0,mul10/2,mul11/0,mul11/2,mul12/0,mul12/2,mul13/0,mul13/2,mul14/0,div/0,div00/0,div00/2,div01/0,div01/2,div02/0,div02/2,div03/0,div03/2,div04/0,div04/2,div05/0,div05/2,div06/0,div06/2,div07/0,div07/2,div08/0,div08/2,div09/0,div09/2,div10/0,div10/2,div11/0,div11/2,div12/0,div12/2,div13/0,div13/2,div14/0,mod/0,mod00/0,mod00/2,mod01/0,mod01/2,mod02/0,mod02/2,mod03/0,mod03/2,mod04/0,mod04/2,mod05/0,mod05/2,mod06/0,mod06/2,mod07/0,mod07/2,mod08/0,mod08/2,mod09/0,mod09/2,mod10/0,mod10/2,mod11/0,mod11/2,mod12/0,mod12/2,mod13/0,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193935     50    221    10    1584016        0
+After:      15526     38    100     3     138224        0
+GCed :     178409     12    121     7    1445792        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+min/0,min00/0,min00/2,min01/0,min01/2,min02/0,min02/2,min03/0,min03/2,min04/0,min04/2,min05/0,min05/2,min06/0,min06/2,min07/0,inc/0,inc00/0,inc00/2,inc01/0,inc01/2,inc02/0,inc02/2,inc03/0,inc03/2,inc04/0,inc04/2,inc05/0,inc05/2,inc06/0,inc06/2,inc07/0,dec/0,dec00/0,dec00/2,dec01/0,dec01/2,dec02/0,dec02/2,dec03/0,dec03/2,dec04/0,dec04/2,dec05/0,dec05/2,dec06/0,dec06/2,dec07/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_add/3,do_subtract/3,do_multiply/3,do_divide/3,do_modulo/3,do_minus/2,do_increment/2,do_decrement/2,END.
+
+[go/0,do_add/3,do_subtract/3,do_multiply/3,do_divide/3,do_modulo/3,do_minus/2,do_increment/2,do_decrement/2]
+successdone
+Loading ... done
+Module name : b_arith_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Arithmetic (Exception) %%%
+% B_Add %%%%%%%%%%%%%%%%% abcdefghijklmn
+% B_Subtract %%%%%%%%%%%% abcdefghijklmn
+% B_Multiply %%%%%%%%%%%% abcdefghijklmn
+% B_Divide %%%%%%%%%%%%%% abcdefghijklmn
+% B_Modulo %%%%%%%%%%%%%% abcdefghijklm
+% B_Minus %%%%%%%%%%%%%%% abcdefg
+% B_Increment %%%%%%%%%%% abcdefg
+% B_Decrement %%%%%%%%%%% abcdefg
+Total of 1757 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 1bf2a5eac4d60830c5ba937142910fa70e90f7e488e136905b1b924918283b1c
+sav 07340b972654f6aa5211f4b07deac956eb629951c98ed0a7a36a89bf9146f734

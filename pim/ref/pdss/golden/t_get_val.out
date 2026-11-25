@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/get_val" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,atm01/1,atm02/0,int/0,int00/0,int00/1,int01/0,int01/1,int02/0,flt/0,flt00/0,flt00/1,flt01/0,flt01/1,flt02/0,lst/0,lst00/0,lst00/1,lst01/0,lst01/1,lst02/0,vec/0,vec00/0,vec00/1,vec01/0,vec01/1,vec02/0,done/0,unify/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : get_val
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Get_Value %%%
+% (Atom) %%%%%%%%%%%%%%%% ab
+% (Integer) %%%%%%%%%%%%% ab
+% (Float) %%%%%%%%%%%%%%% ab
+% (List) %%%%%%%%%%%%%%%% ab
+% (Vector) %%%%%%%%%%%%%% ab
+Total of 46 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 8b31ec61cde6036a6f10964770daf495914622e5644a8e7b85a61129ba2c3e70
+sav 89dd0b0da8dc53aa3660793687d959e526f8777670b3cc4b4efa7750b21cb224

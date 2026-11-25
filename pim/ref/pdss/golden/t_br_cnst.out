@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/br_cnst" : Compiling ... go/0,jin/0,jin/2,jin00/0,jin00/1,jin01/0,jin01/1,jin02/0,jin02/1,jin03/0,jar/0,jar/2,jar00/0,jar00/1,jar01/0,jar01/1,jar02/0,jar02/1,jar03/0,bin/0,bin/2,bin00/0,bin00/1,bin01/0,bin01/1,bin02/0,bin02/1,bin03/0,bat/0,bat/2,bat00/0,bat00/1,bat01/0,bat01/1,bat02/0,bat02/1,bat03/0,hin/0,hin/2,hin00/0,hin00/1,hin01/0,hin01/1,hin02/0,hin02/1,hin03/0,hat/0,hat/2,hat00/0,hat00/1,hat01/0,hat01/1,hat02/0,hat02/1,hat03/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : br_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Branch_On_Constant %%%
+% Jump_On_Integer %%%%%%% abc
+% Jump_On_Arity %%%%%%%%% abc
+% Branch_On_Integer %%%%% abc
+% Branch_On_Atom %%%%%%%% abc
+% Hash_On_Integer %%%%%%% abc
+% Hash_On_Atom %%%%%%%%%% abc
+Total of 72 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 5224b939b24a0d3bea0ed4c14045310fd7c2af565bdc9d066d40a09a929ac1ff
+sav 60c9eeaeacde67435c2224080cc6b5873610e9f976870f9c29384a80f2ada648

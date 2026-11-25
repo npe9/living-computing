@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/dummy_dir.kl1" : Compiling ... create/3,os_create/6,request/4,END.
+
+[create/3,os_create/6,request/4]
+successdone
+
+exit 0
+asm 5686a6c928e2adc05af78af0d9168b80e169e45275f9988df7a06cc880e42b45
+sav none

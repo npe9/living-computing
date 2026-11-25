@@ -1,0 +1,29 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_code" : Compiling ... go/0,ptc/0,ptc00/0,ptc00/3,ptc00ans/1,ptc01/0,ptc01/3,ptc01ans/1,ptc02/0,ptc02/3,ptc02ans/1,ptc03/0,ptc03/3,ptc03ans/1,ptc04/0,ctp/0,ctp00/0,ctp00/1,ctp00ans/4,ctp01/0,ctp01/1,ctp01ans/4,ctp02/0,apl/0,apl00/0,apl00/3,apl00ans/1,apl01/0,done/0,get/1,not_public/0,END.
+
+[go/0,get/1]
+successdone
+Loading ... done
+Module name : b_code
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Code %%%
+% B_Predicate_To_Code %%% abcd
+% B_Code_To_Predicate %%% ab
+% B_Apply %%%%%%%%%%%%%%% a
+Total of 34 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 81382f8e2b307615edb3803c495851f0ac2040b6a0bbc8857ef67b4bebc35cd4
+sav d0593a0acf92a4b4c7e889c223cbd3aa506f32b033cd922df82f81ccbbc8e7f2

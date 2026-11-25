@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/module_pool.kl1" : Compiling ... create/2,module_pool_start/3,make_pool/2,set_dummy/3,module_pool/3,save_all/7,all_un_saved_modules/5,all_modules/4,create_module/4,module/4,wait_member/6,module_wait_save_un_saved/9,module_wait_save/7,create_dummy/1,dummy/1,dummy_wait_load/7,get_module_name/2,member/3,append/3,information_analyzer/3,END.
+
+[create/2]
+successdone
+
+exit 0
+asm d1b3afae46c52ddecc73435504e1a3a6bea0b0fe115eb5418855a62fe90d89bc
+sav none

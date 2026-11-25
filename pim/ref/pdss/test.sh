@@ -28,3 +28,8 @@ if [ "$got" = "$want" ]; then
 else
   echo "pdss: FAIL"; echo "  got : $got"; echo "  want: $want"; exit 1
 fi
+# PDSS's own test/ programs, the samples and the compiler on the
+# distribution's sources, against golden/ (recorded from this build).
+"$HERE/conformance.sh" "$B" fast || { echo "pdss: FAIL (conformance, reference build)"; exit 1; }
+python3 -I "$HERE/check_headers.py" "$B/test" "$HERE/golden" --expect "$HERE/headers_expected.txt" -q \
+  || { echo "pdss: FAIL (test/ headers)"; exit 1; }

@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/test_cnst" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,atm01/1,atm02/0,atm02/1,atm03/0,atm03/1,atm04/0,atm04/1,atm05/0,atm05/1,atm06/0,atm06/1,atm07/0,nil/0,nil00/0,nil00/1,nil01/0,nil01/1,nil02/0,nil02/1,nil03/0,nil03/1,nil04/0,nil04/1,nil05/0,nil05/1,nil06/0,nil06/1,nil07/0,int/0,int00/0,int00/1,int01/0,int01/1,int02/0,int02/1,int03/0,int03/1,int04/0,int04/1,int05/0,int05/1,int06/0,int06/1,int07/0,flt/0,flt00/0,flt00/1,flt01/0,flt01/1,flt02/0,flt02/1,flt03/0,flt03/1,flt04/0,flt04/1,flt05/0,flt05/1,flt06/0,flt06/1,flt07/0,ari/0,ari00/0,ari00/1,ari01/0,ari01/1,ari02/0,ari02/1,ari03/0,ari03/1,ari04/0,ari04/1,ari05/0,ari05/1,ari06/0,ari06/1,ari07/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : test_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Test_Constant %%%
+% Test_Atom %%%%%%%%%%%%% abcdefg
+% Test_Nil %%%%%%%%%%%%%% abcdefg
+% Test_Integer %%%%%%%%%% abcdefg
+% Test_Float %%%%%%%%%%%% abcdefg
+% Test_Arity %%%%%%%%%%%% abcdefg
+Total of 86 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 7a910da8329ecbccb4ddd1371403ab37633ce71d09ed9d0f3daabfa6059725d4
+sav 2766d0e8ccd820000c6f19868a01fb77a4332d1f51c0db8d72aeef19020da50f

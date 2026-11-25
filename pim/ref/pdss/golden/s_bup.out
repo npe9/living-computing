@@ -1,0 +1,39 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/bup" : Compiling ... bup/0,go/1,go1/1,go2/1,go3/1,go4/1,go5/1,goal/4,pre_c/8,get_dict/5,get_d/6,goal0/4,pre_c0/8,pred_call0/6,sobj0/5,sobj01/5,r_sentence0/6,pred0/5,pred01/5,r_sobj0/6,case0/5,case01/5,r_g_sobj0/6,repeat_sobj0/6,verb0/5,verb01/5,r_pred0/6,adj0/5,adj01/5,adj02/5,adj03/5,r_g_np0/6,repeat_np0/6,np0/5,np01/5,np02/5,r_g_case0/6,repeat_case0/6,np03/5,r_g_goal0/6,repeat_goal0/6,repeat_np0/7,pro_noun0/5,pro_noun01/5,r_np0/6,gen_noun0/5,gen_noun01/5,p0/5,p01/5,p02/5,p03/5,r_g_pp0/6,r_pp0/6,repeat_pp0/6,lno0/5,pp0/5,sentence0/5,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194018     50    218    10    1584000        0
+After:      17682     40    123     3     159256        0
+GCed :     176336     10     95     7    1424744        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+merg/6,pred_call/6,sobj/5,sobj1/5,r_sentence/6,pred/5,pred1/5,r_sobj/6,case/5,case1/5,r_g_sobj/6,repeat_sobj/6,verb/5,verb1/5,r_pred/6,adj/5,adj1/5,adj2/5,adj3/5,r_g_np/6,repeat_np/6,np/5,np1/5,np2/5,r_g_case/6,repeat_case/6,np3/5,r_g_goal/6,repeat_goal/6,repeat_np/7,pro_noun/5,pro_noun1/5,r_np/6,gen_noun/5,gen_noun1/5,p/5,p1/5,p2/5,p3/5,r_g_pp/6,r_pp/6,repeat_pp/6,lno/5,pp/5,sentence/5,merg/3,dict/3,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195024     50    164     3    1584000        0
+After:      15871     33    120     3     143864        0
+GCed :     179153     17     44     0    1440136        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+link/3,END.
+
+[bup/0]
+successdone
+Loading ... done
+Module name : bup
+Saving ... done
+
+yes.
+| ?- Total of 35862 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 40890bfcfea65da2ce54b424f7036647fbabf89e2e385d92b3544839f3a19da3
+sav 678dcc0e014d89f5cce14e62c2f1ad5632e9a0debc7a82f48be9094c9dfb57f5

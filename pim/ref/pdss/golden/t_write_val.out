@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/write_val" : Compiling ... go/0,car/0,car00/0,car00write/1,car00/1,car01/0,car01write/1,car01/1,car02/0,car02write/1,car02/1,car03/0,car03write/1,car03/1,car04/0,car04write/1,car04/1,car05/0,car05write/1,car05/1,car06/0,cdr/0,cdr00/0,cdr00write/1,cdr00/1,cdr01/0,cdr01write/1,cdr01/1,cdr02/0,cdr02write/1,cdr02/1,cdr03/0,cdr03write/1,cdr03/1,cdr04/0,cdr04write/1,cdr04/1,cdr05/0,cdr05write/1,cdr05/1,cdr06/0,elm/0,elm00/0,elm00write/1,elm00/1,elm01/0,elm01write/1,elm01/1,elm02/0,elm02write/1,elm02/1,elm03/0,elm03write/1,elm03/1,elm04/0,elm04write/1,elm04/1,elm05/0,elm05write/1,elm05/1,elm06/0,cak/0,cak00/0,cak00/1,cak00/2,cak01/0,cak01/1,cak01/2,cak02/0,cak02/1,cak02/2,cak03/0,cak03/1,cak03/2,cak04/0,cak04/1,cak04/2,cak05/0,cak05/1,cak05/2,cak06/0,cdk/0,cdk00/0,cdk00/1,cdk00/2,cdk01/0,cdk01/1,cdk01/2,cdk02/0,cdk02/1,cdk02/2,cdk03/0,cdk03/1,cdk03/2,cdk04/0,cdk04/1,cdk04/2,cdk05/0,cdk05/1,cdk05/2,cdk06/0,elk/0,elk00/0,elk00/1,elk00/2,elk01/0,elk01/1,elk01/2,elk02/0,elk02/1,elk02/2,elk03/0,elk03/1,elk03/2,elk04/0,elk04/1,elk04/2,elk05/0,elk05/1,elk05/2,elk06/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : write_val
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Write_Value %%%
+% Write_Car_Value %%%%%%% abcdef
+% Write_Cdr_Value %%%%%%% abcdef
+% Write_Element_Value %%% abcdef
+% Write_Car_Mk_Value %%%% abcdef
+% Write_Cdr_Mk_Value %%%% abcdef
+% Write_Elm_Mk_Value %%%% abcdef
+Total of 126 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 618d9b197329d723339fd7044dc66a3444a379e0ff253a5601230952a01b9ea6
+sav 6eed5066383457853d56fdea89a6ae70ec369dca34d5761709936894c7e4294e

@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_debug.kl1" : Compiling ... is_command/2,do_command/2,wait_spied_pred/3,listing_predicates/2,wait_spied_pred1/3,wait_spy_mode/3,write_status/2,wait_debug_mode/2,correct_module/4,wait_reset_profile/3,profile_info/4,wait_get_profile/8,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     192538     50    314    10    1584000        0
+After:      36502     40    131     3     311288        0
+GCed :     156036     10    183     7    1272712        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+sort_profile_info/3,put_profile_info/12,line/3,line/5,width/2,width/3,profile_status/2,varchk/4,varchk_go/4,correct_files/4,fail_action/1,wait/1,help/2,END.
+
+[is_command/2,do_command/2,help/2]
+successdone
+
+exit 0
+asm a3dc2939b51efe68aeeaddee82de96cceb747b5df138c0e9cfa9337260c67eec
+sav none

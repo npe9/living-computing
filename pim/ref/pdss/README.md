@@ -71,6 +71,45 @@ Not verified: PDSS's own `test/` directory (551 KB of KL1 tests) has
 not been run; the tracer, the Emacs window interface, file and timer
 devices, floating point, and MRB-GC specifically are unexercised.
 
+## Conformance baseline (2026-11-25)
+
+`conformance.sh ROOT` runs 185 jobs from `jobs.txt` on a PDSS tree and
+compares each normalised transcript with `golden/` (plus the
+reassembled libraries' `.sav` sums, `golden/libsav.out`): every one of
+the 80 programs in PDSS's `test/` under `stat/1`, every `sample/`
+program (the deadlock samples case by case), `emulator/sample.kl1`,
+and the KL1 compiler on all 68 KL1 sources of `runtime/`, `mpimos/`,
+`compiler/`, `debug_utl/` and `pimos_utl/`. A transcript includes the
+console output, the reduction counts, the GC reports (only the msec
+fields are removed), the emulator's exit status, and the sha256 of the
+`.asm` and `.sav` the job wrote. Two recordings are byte-identical.
+The whole run takes about 20 s.
+
+`check_headers.py` compares each `test/` program's output with its own
+header comment, which is ICOT's expected output: 73 of 80 match, and
+the 7 that do not are listed with their causes in
+`headers_expected.txt` (two stale headers, three `pow(0.0,0.0)` cases
+where IEEE libm returns 1.0, a substring bound, and
+`code_to_predicate` on a built-in module).
+
+Building the baseline found three port bugs, now fixed in `port.diff`:
+
+- `float.c` called `atof` undeclared, so it returned an `int`: every
+  float constant was garbage and 13 float tests printed `*`.
+- `alloc_cells_to_free_list` (`memory.c`) compared `HeapRest()`, a
+  pointer difference that was 32-bit `int` on the original, with an
+  `unsigned`. Under LP64 the comparison is signed, and past the GC
+  warning line the free list overran the heap: segmentation faults
+  compiling `compiler/outp.kl1`, `debug_utl/mpimos_xref.kl1` and others,
+  depending on file-name length.
+- `blt_code.c` passed a module-name atom to `find_predicate`, which
+  takes a module entry, and dereferenced address 1 (`test/b_code_e.kl1`).
+  This is a bug in the 1992 source.
+
+Observed injections: removing the `atof` fix fails 56 jobs; removing
+the `HeapRest` fix fails 3 (`c_mpimos_file`, `c_compiler_blt`,
+`c_compiler_outp`).
+
 ## What it is for
 
 PDSS is a sibling dialect, not PIM/m's: 73 of the 197 instructions

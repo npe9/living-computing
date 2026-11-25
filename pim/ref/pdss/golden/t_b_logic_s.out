@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_logic_s" : Compiling ... go/0,shl/0,shl00/0,shl00/1,shl01/0,shl01/1,shl02/0,shl02/1,shl03/0,shr/0,shr00/0,shr00/1,shr01/0,shr01/1,shr02/0,shr02/1,shr03/0,and/0,and00/0,and00/1,and01/0,and01/1,and02/0,and02/1,and03/0,and03/1,and04/0,or/0,or00/0,or00/1,or01/0,or01/1,or02/0,or02/1,or03/0,or03/1,or04/0,exo/0,exo00/0,exo00/1,exo01/0,exo01/1,exo02/0,exo02/1,exo03/0,exo03/1,exo04/0,cmp/0,cmp00/0,cmp00/1,cmp01/0,cmp01/1,cmp02/0,cmp02/1,cmp03/0,done/0,unify/4,unify/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_logic_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Logic (Suspend) %%%
+% B_Shift_Left %%%%%%%%%% abc
+% B_Shift_Right %%%%%%%%% abc
+% B_And %%%%%%%%%%%%%%%%% abcd
+% B_Or %%%%%%%%%%%%%%%%%% abcd
+% B_Exclusive_Or %%%%%%%% abcd
+% B_Complement %%%%%%%%%% abc
+Total of 81 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 45f774cfa732f7f2ff243aac22a22e08a2c901099604ab4fc79e531758c2cded
+sav fbc1261ac37f2886973c377f19ada5b13f3b0be05d230ae0cbf01e7fbb539303

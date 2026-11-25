@@ -1,0 +1,29 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_f_func2" : Compiling ... go/0,min/0,min00/0,min00/2,min00/1,min01/0,min01/2,min01/1,min02/0,min02/2,min02/1,min03/0,min03/2,min03/1,min04/0,min04/2,min04/1,min05/0,min05/2,min05/1,min06/0,min06/2,min06/1,min07/0,min07/2,min07/1,min08/0,min08/2,min08/1,min09/0,max/0,max00/0,max00/2,max00/1,max01/0,max01/2,max01/1,max02/0,max02/2,max02/1,max03/0,max03/2,max03/1,max04/0,max04/2,max04/1,max05/0,max05/2,max05/1,max06/0,max06/2,max06/1,max07/0,max07/2,max07/1,max08/0,max08/2,max08/1,max09/0,pow/0,pow00/0,pow00/2,pow00/1,pow01/0,pow01/2,pow01/1,pow02/0,pow02/2,pow02/1,pow03/0,pow03/2,pow04/0,pow04/2,pow04/1,pow05/0,pow05/2,pow05/1,pow06/0,pow06/2,pow07/0,pow07/2,pow07/1,pow08/0,pow08/2,pow08/1,pow09/0,pow09/2,pow09/1,pow10/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_f_func2
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Float_Function_2_Args %%%
+% G_Float_Min %%%%%%%%%%% abcdefghi
+% G_Float_Max %%%%%%%%%%% abcdefghi
+% G_Float_Pow %%%%%%%%%%% abcd*fghij
+Total of 94 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 249496318a7b825d6b8b19f04002244b4c848cdfe0c4be8c52876835fd2f6ae0
+sav 957bf9bcff1c426e6ee8168e271529d7c21bc3ba555410b92541e614855a706a

@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/queen" : Compiling ... queen4/0,queen5/0,queen6/0,queen7/0,queen8/0,append/3,queen/5,c1/7,display/1,END.
+
+[queen4/0,queen5/0,queen6/0,queen7/0,queen8/0]
+successdone
+Loading ... done
+Module name : queen
+Saving ... done
+
+yes.
+| ?- Total of 162 reductions in N msec.
+
+yes.
+| ?- Total of 2155 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 821fbc0c2ee71dc2216c96a9fb09f0830ce244c1dc0e3723581304873f0b95ae
+sav cf33694b544e04cef377fec0900052fc5ce6d0448e4ba2aa5bdb570a45847a77

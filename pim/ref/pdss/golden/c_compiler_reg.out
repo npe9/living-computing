@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/reg.kl1" : Compiling ... compile_predicate/9,compile_predicate/8,compile_last_one_block/8,compile_and_output_one_clause/10,output_code_or_retry/15,compile_one_block/9,register_predefined/9,init_used_table/9,register_preference/13,one_register_pref/13,allocate_on_same_registers/16,one_register_pref_foo/15,decision_on_answer/6,one_register_pref_foobar_or_not/12,one_register_pref_bar/14,one_register_pref_foobar/11,return_less/3,return_greater/3,determine_registers/14,check_void_variable/15,number_of_registers/1,find_free_register/11,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     192066     50    330    10    1584000        0
+After:       9527     38    105     3      91536        0
+GCed :     182539     12    225     7    1492464        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+$find_free_register/11_0/12,register_available/7,register_available_on_one_pc/9,register_free_or_not/8,get_one_used_element/4,use_register/5,use_register/6,allocate_used_table_element/8,reserve_register/3,new_used_table_element/2,ref_vector/4,set_vector/4,rep_vector/5,equal/2,END.
+
+[compile_predicate/9]
+successdone
+
+exit 0
+asm b1053ef9e5b314ca8a4d1ca89c2e045b899708c401d00406b1aff96f7481b447
+sav none

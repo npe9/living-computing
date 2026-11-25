@@ -1,0 +1,27 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/prime_dd" : Compiling ... Warning:Commit operator not found :
+	prime:-go(95)
+prime/0,go/1,gen/2,sift/2,filter/3,filter/5,driver/3,driver/4,END.
+
+[prime/0,go/1]
+successdone
+Loading ... done
+Module name : prime_dd
+Saving ... done
+
+yes.
+| ?- Total of 10751 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 077def19fafae6532830a9174a8505a600b8ad88f7e80cc29e161e1fba6947e1
+sav eb7fe45d5bf01725095f5834e9397fa780f8c4593e53b4216c17656717b2dfb7

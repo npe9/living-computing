@@ -1,0 +1,30 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_atom" : Compiling ... go/0,nat/0,nat00/0,nat00func/0,nat00ans/1,nat01/0,iat/0,iat00/0,iat00func/1,iat00ans/1,iat01/0,iat01func/1,iat01ans/1,iat02/0,iat02func/1,iat02ans/1,iat03/0,ana/0,ana00/0,ana00func/1,ana00ans/1,ana01/0,ana01func/1,ana01ans/1,ana02/0,ana02func/1,ana02ans/1,ana03/0,anu/0,anu00/0,anu00func/1,anu00ans/1,anu01/0,anu01func/1,anu01ans/1,anu02/0,anu02func/1,anu02ans/1,anu03/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_atom
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Atom %%%
+% B_New_Atom %%%%%%%%%%%% a
+% B_Intern_Atom %%%%%%%%% abc
+% B_Atom_Name %%%%%%%%%%% abc
+% B_Atom_Number %%%%%%%%% abc
+Total of 44 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm dd1a3c726a239ee30dd0c9499b81ee8d3701b7350ecf3a78da9ba85df524e003
+sav 8bc9c73289ac028da9c2a1ccc4104a4d655668902ce76f4a69bc5a44f9c0edbb

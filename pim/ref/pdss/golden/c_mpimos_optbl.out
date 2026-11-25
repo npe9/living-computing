@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/optbl.kl1" : Compiling ... op/2,END.
+
+[op/2]
+successdone
+
+exit 0
+asm 1bf4722dea09b7de8dfa8766b260b23c28ece3f114ee01899cfa04592a1ed2e4
+sav none

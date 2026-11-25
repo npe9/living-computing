@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/unparser.kl1" : Compiling ... create/2,do/5,term/13,ex_term/13,atom/9,atom/10,get_comma_image/4,variable1/9,variable2/10,variable_left_space/3,make_variable_name/2,make_variable_name0/3,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193891     50    214    10    1582376        0
+After:      13797     35     93     3     123520        0
+GCed :     180094     15    121     7    1458856        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+string/9,string_args/7,string_args2/7,list/12,list/13,functor/15,functor1/15,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194280     45    208     3    1584000        0
+After:      29269     38    147     3     255152        0
+GCed :     165011      7     61     0    1328848        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+functor2/15,functor3/14,functor32/12,vector/13,vector0/12,parenthesis_left_space/3,END.
+
+[create/2,make_variable_name/2]
+successdone
+
+exit 0
+asm 63a37bbe74bf89797c26ee49848d31d1031744740df52fd311fb6282d5e960d5
+sav none

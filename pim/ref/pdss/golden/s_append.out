@@ -1,0 +1,25 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/append" : Compiling ... append/0,append/3,END.
+
+[append/0,append/3]
+successdone
+Loading ... done
+Module name : append
+Saving ... done
+
+yes.
+| ?- Total of 106 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 8eabfa62ff81de81eaf53546d17998dd253e371c79e5c6f1beb2acd8757b96ea
+sav a920f990906e2f489d3bfef8bc015d00d062839563bb7ba2de742b50c8068ef9

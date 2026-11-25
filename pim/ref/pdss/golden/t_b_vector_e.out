@@ -1,0 +1,30 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_vector_e" : Compiling ... go/0,vec/0,vec00/0,vec00/1,vec01/0,vec01/1,vec02/0,vec02/1,vec03/0,vec03/1,vec04/0,vec04/1,vec05/0,vec05/1,vec06/0,nvc/0,nvc00/0,nvc00/1,nvc01/0,nvc01/1,nvc02/0,nvc02/1,nvc03/0,nvc03/1,nvc04/0,nvc04/1,nvc05/0,nvc05/1,nvc06/0,nvc06/1,nvc07/0,nvc07/1,nvc08/0,vce/0,vce00/0,vce00/1,vce01/0,vce01/1,vce02/0,vce02/1,vce03/0,vce03/1,vce04/0,vce04/1,vce05/0,vce05/1,vce06/0,vce06/1,vce07/0,vce07/1,vce08/0,vce08/1,vce09/0,vce09/1,vce10/0,vce10/1,vce11/0,vce11/1,vce12/0,vce12/1,vce13/0,vce13/1,vce14/0,vce14/1,vce15/0,sve/0,sve00/0,sve00/1,sve01/0,sve01/1,sve02/0,sve02/1,sve03/0,sve03/1,sve04/0,sve04/1,sve05/0,sve05/1,sve06/0,sve06/1,sve07/0,sve07/1,sve08/0,sve08/1,sve09/0,sve09/1,sve10/0,sve10/1,sve11/0,sve11/1,sve12/0,sve12/1,sve13/0,sve13/1,sve14/0,sve14/1,sve15/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_vector/1,do_new_vector/1,do_vector_element/2,do_set_vector_element/3,END.
+
+[go/0,do_vector/1,do_new_vector/1,do_vector_element/2,do_set_vector_element/3]
+successdone
+Loading ... done
+Module name : b_vector_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Vector (Exception) %%%
+% B_Vector %%%%%%%%%%%%%% abcdef
+% B_New_Vector %%%%%%%%%% abcdefgh
+% B_Vector_Element %%%%%% abcdefghijklmno
+% B_Set_Vector_Element %% abcdefghijklmno
+Total of 859 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm a0a46523da978cfc7c581074cff347c356b227c472676eef288af1194087cbd9
+sav 80569e5ca1a54db3d8af9d2d83d1f88e3c39a2163f56e259a8aa49f2e000b805

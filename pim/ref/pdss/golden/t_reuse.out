@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/reuse" : Compiling ... go/0,lst/0,lst00/0,lst00reuse/1,lst00/1,lst01/0,lst01/1,lst01reuse/2,lst01/2,lst02/0,vct/0,vct00/0,vct00reuse/1,vct00/1,vct01/0,vct01/1,vct01reuse/2,vct01/2,vct02/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : reuse
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Put_Reused_Structure %%%
+% Put_Reused_List %%%%%%% ab
+% Put_Reused_Vector %%%%% ab
+Total of 24 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 7f5f6773627a413969684db2bec8dc9fc49a2bc26c46891ef77df7f79aa0d3fa
+sav 24ab80208eb8fc64b85e5a5cf9c616b7cd305da9777db3fa6babf453c2415d4f

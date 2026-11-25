@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_env.kl1" : Compiling ... is_command/2,do_command/2,member/3,is_setenv_member/4,is_getenv_member/4,is_print_member/3,print_env/2,print_env0/4,wait/1,raise_fail/2,fail_action/1,help/2,END.
+
+[is_command/2,do_command/2,help/2]
+successdone
+
+exit 0
+asm 1cde962dabe7a33239a54ac43a59a0fb1f4db4615da46eeb2b79c252b0cd5b3f
+sav none

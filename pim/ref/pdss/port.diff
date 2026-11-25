@@ -681,3 +681,51 @@ diff -u -r a/emulator/unify.c b/emulator/unify.c
  
  static CELL work;
  
+diff -u -r a/emulator/float.c b/emulator/float.c
+--- a/emulator/float.c
++++ b/emulator/float.c
+@@ -6,6 +6,7 @@
+ *************************************************************************/
+ 
+ #include <math.h>
++#include <stdlib.h>	/* atof() returns double: undeclared, it was taken as int */
+ #include <signal.h>
+ #include <errno.h>
+ #include "pdss.h"
+diff -u -r a/emulator/memory.c b/emulator/memory.c
+--- a/emulator/memory.c
++++ b/emulator/memory.c
+@@ -317,7 +317,11 @@
+     register unsigned int size, num;
+ {
+     register CELL *p;
+-    if(size*num > HeapRest()) num = HeapRest()/size;
++    /* PORT: HeapRest() is a pointer difference, int on the 32-bit
++       original, so this comparison and division were unsigned there.
++       Past the GC warning line it is negative; signed 64-bit
++       arithmetic made num huge and overran the heap. */
++    if(size*num > (unsigned int)HeapRest()) num = (unsigned int)HeapRest()/size;
+     if(num == 0) num = 1;
+     p = H;
+     SetObjectof(p, NULL);
+diff -u -r a/emulator/blt_code.c b/emulator/blt_code.c
+--- a/emulator/blt_code.c
++++ b/emulator/blt_code.c
+@@ -121,10 +121,15 @@
+ 				   IOOOO, code, mod, pred, arity, info);
+ 	    break;
+ 	  case MODMAN_NATIVE_CODE_MODULE:
+-	    if(find_predicate(Valueof(x+0), Valueof(x+1)|(Valueof(x+2)<<16))){
++	    /* PORT: the original passed the module-name atom where
++	       find_predicate() takes a MODULE_ENTRY pointer, and
++	       dereferenced address 1 (test/b_code_e.kl1, check b). */
++	    { MODULE_ENTRY *mte;
++	    if(lookup_module(Valueof(x+0), &mte) == MODMAN_SUCCESS &&
++	       find_predicate(mte, Valueof(x+1)|(Valueof(x+2)<<16))){
+ 		flag = 0;
+ 		goto success;
+-	    }
++	    } }
+ 	  case MODMAN_PREDICATE_NOT_FOUND:
+ 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
+ 				   KL1B_B_CODE_TO_PREDICATE,

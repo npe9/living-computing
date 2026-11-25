@@ -1,0 +1,36 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_code_e" : Compiling ... go/0,ptc/0,ptc00/0,ptc00/1,ptc01/0,ptc01/1,ptc02/0,ptc02/1,ptc03/0,ptc03/1,ptc04/0,ptc04/1,ptc05/0,ptc05/1,ptc06/0,ptc06/1,ptc07/0,ptc07/1,ptc08/0,ptc08/1,ptc09/0,ptc09/1,ptc10/0,ptc10/1,ptc11/0,ptc11/1,ptc12/0,ptc12/1,ptc13/0,ptc13/1,ptc14/0,ptc14/1,ptc15/0,ptc15/1,ptc16/0,ctp/0,ctp00/0,ctp00/1,ctp01/0,ctp01/1,ctp02/0,ctp02/1,ctp03/0,ctp03/1,ctp04/0,ctp04/1,ctp05/0,ctp05/1,ctp06/0,ctp06/1,ctp07/0,ctp07/1,ctp08/0,ctp08/1,ctp09/0,ctp09/1,ctp10/0,ctp10/1,ctp11/0,ctp11/1,ctp12/0,ctp12/1,ctp13/0,ctp13/1,ctp14/0,ctp14/1,ctp15/0,ctp15/1,ctp16/0,ctp16/1,ctp17/0,ctp17/1,ctp18/0,ctp18/1,ctp19/0,ctp19/1,ctp20/0,ctp20/1,ctp21/0,ctp21/1,ctp22/0,ctp22/1,ctp23/0,ctp23/1,ctp24/0,ctp24/1,ctp25/0,ctp25/1,ctp26/0,apl/0,apl00/0,apl00/1,apl01/0,apl01/1,apl02/0,apl02/1,apl03/0,apl03/1,apl04/0,apl04/1,apl05/0,apl05/1,apl06/0,apl06/1,apl07/0,apl07/1,apl08/0,apl08/1,apl09/0,apl09/1,apl10/0,apl10/1,apl11/0,apl11/1,apl12/0,apl12/1,apl13/0,apl13/1,apl14/0,apl14/1,apl15/0,apl15/1,apl16/0,apl16/1,apl17/0,apl17/1,apl18/0,apl18/1,apl19/0,apl19/1,apl20/0,apl20/1,apl21/0,apl21/1,apl22/0,apl22/1,apl23/0,apl23/1,apl24/0,apl24/1,apl25/0,apl25/1,apl26/0,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194140     50    211    10    1583944        0
+After:      37114     38    103     3     311608        0
+GCed :     157026     12    108     7    1272336        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+apl26/1,apl27/0,apl27/1,apl28/0,apl28/1,apl29/0,apl29/1,apl30/0,apl30/1,apl31/0,apl31/1,apl32/0,done/0,get/1,not_public/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_predicate_to_code/3,do_code_to_predicate/1,do_apply/2,END.
+
+[go/0,get/1,do_predicate_to_code/3,do_code_to_predicate/1,do_apply/2]
+successdone
+Loading ... done
+Module name : b_code_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Code (Exception) %%%
+% B_Predicate_To_Code %%% abcdefghijklmnop
+% B_Code_To_Predicate %%% a*cdefghijklmnopqrstuvwxyz
+% B_Apply %%%%%%%%%%%%%%% abcdefghijklmnopqrstuvwxyzABCDEF
+Total of 1472 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 8a976598959e19396d4ef054a16eb108a77c5783d33a87380d497b480d2d0ad4
+sav 86f81664e180a27ee0e7f590e711258bf26d4dd54ebdf6e3b09f1c17b75a5a3b

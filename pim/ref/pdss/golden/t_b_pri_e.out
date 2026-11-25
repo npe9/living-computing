@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_pri_e" : Compiling ... go/0,rat/0,rat00/0,rat00/1,rat01/0,rat01/1,rat02/0,rat02/1,rat03/0,rat03/1,rat04/0,rat04/1,rat05/0,rat05/1,rat06/0,rat06/1,rat07/0,rat07/1,rat08/0,rat08/1,rat09/0,rtv/0,rtv00/0,rtv00/1,rtv01/0,rtv01/1,rtv02/0,rtv02/1,rtv03/0,rtv03/1,rtv04/0,rtv04/1,rtv05/0,rtv05/1,rtv06/0,rtv06/1,rtv07/0,rtv07/1,rtv08/0,rtv08/1,rtv09/0,rtv09/1,rtv10/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,dummy0/1,dummy1/1,dummy/0,END.
+
+[go/0,dummy0/1,dummy1/1]
+successdone
+Loading ... done
+Module name : b_pri_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Priority (Exception) %%%
+% B_Rate %%%%%%%%%%%%%%%% abcdefghi
+% B_Rltv %%%%%%%%%%%%%%%% abcdefghij
+Total of 370 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 370a7452748e3d0b3292da18b03b8caa02e8d93169657bfd105b96a8931b3f46
+sav 386b88c1c0d9933530488867008bd171591658d1d8f7493f8cbf0e9e1fc206c5

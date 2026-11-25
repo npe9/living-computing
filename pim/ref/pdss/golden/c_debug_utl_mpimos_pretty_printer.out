@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../debug_utl/mpimos_pretty_printer.kl1" : Compiling ... pprinter/2,command/2,transform/4,put_guard/4,put_body/6,put_body_vector/8,put_body_vector1/8,put_body_case/6,put_neck/3,put_non_guard_neck/3,put_bar/3,put_declaration/3,put_guard_separator/3,put_body_bar/3,put_body_separator/5,put_term/4,END.
+
+[pprinter/2]
+successdone
+
+exit 0
+asm 5d1deb8e5a5c1f64fefc9e5404cd553e7de11d042198aa465337f8e664a82e8a
+sav none

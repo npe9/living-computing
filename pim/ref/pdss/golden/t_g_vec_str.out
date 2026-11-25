@@ -1,0 +1,46 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_vec_str" : Compiling ... go/0,vec/0,vec00/0,vec00/1,vec00size/1,vec01/0,vec01/1,vec01size/1,vec02/0,str/0,str00/0,str00/1,str00size/2,str01/0,str01/1,str01size/2,str02/0,str02/1,str02size/2,str03/0,str03/1,str03size/2,str04/0,str04/1,str04size/2,str05/0,str05/1,str05size/2,str06/0,vel/0,vel00/0,vel00/2,vel01/0,vel01/2,vel02/0,vel02/2,vel03/0,Warning:There is no cluase after otherwise
+
+vel03/2,vel03/1,vel03elm/1,vel04/0,Warning:There is no cluase after otherwise
+
+vel04/2,vel04/1,vel04elm/1,vel05/0,vel05/2,vel06/0,sel/0,sel00/0,sel00/2,sel01/0,sel01/2,sel02/0,sel02/2,sel03/0,Warning:There is no cluase after otherwise
+
+sel03/2,sel03/1,sel03elm/1,sel04/0,Warning:There is no cluase after otherwise
+
+sel04/2,sel04/1,sel04elm/1,sel05/0,sel05/2,sel06/0,sel06/2,sel07/0,sel07/2,sel08/0,sel08/2,sel09/0,Warning:There is no cluase after otherwise
+
+sel09/2,sel09/1,sel09elm/1,sel10/0,Warning:There is no cluase after otherwise
+
+sel10/2,sel10/1,sel10elm/1,sel11/0,sel11/2,sel12/0,sel12/2,sel13/0,sel13/2,sel14/0,sel14/2,sel15/0,Warning:There is no cluase after otherwise
+
+sel15/2,sel15/1,sel15elm/1,sel16/0,Warning:There is no cluase after otherwise
+
+sel16/2,sel16/1,sel16elm/1,sel17/0,sel17/2,sel18/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_vec_str
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Vector_String %%%
+% G_Vector %%%%%%%%%%%%%% ab
+% G_String %%%%%%%%%%%%%% abcdef
+% G_Vector_Element %%%%%% abcdef
+% G_String_Element %%%%%% abcdefghijklmnopqr
+Total of 94 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 69fb3d63b6b46e1842e0e72e6e38191c2051a901956fafa6f4ea380b524ecdca
+sav 5cd29b887c443acb998ae42ddd330367cadcf7c78321370c7eb2a9f07c12c5e8

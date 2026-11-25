@@ -1,0 +1,43 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_tfunc_e" : Compiling ... go/0,sin/0,sin00/0,sin00/2,sin01/0,sin01/2,sin02/0,sin02/2,sin03/0,sin03/2,sin04/0,sin04/2,sin05/0,sin05/2,sin06/0,sin06/2,sin07/0,cos/0,cos00/0,cos00/2,cos01/0,cos01/2,cos02/0,cos02/2,cos03/0,cos03/2,cos04/0,cos04/2,cos05/0,cos05/2,cos06/0,cos06/2,cos07/0,tan/0,tan00/0,tan00/2,tan01/0,tan01/2,tan02/0,tan02/2,tan03/0,tan03/2,tan04/0,tan04/2,tan05/0,tan05/2,tan06/0,tan06/2,tan07/0,asn/0,asn00/0,asn00/2,asn01/0,asn01/2,asn02/0,asn02/2,asn03/0,asn03/2,asn04/0,asn04/2,asn05/0,asn05/2,asn06/0,asn06/2,asn07/0,acs/0,acs00/0,acs00/2,acs01/0,acs01/2,acs02/0,acs02/2,acs03/0,acs03/2,acs04/0,acs04/2,acs05/0,acs05/2,acs06/0,acs06/2,acs07/0,atn/0,atn00/0,atn00/2,atn01/0,atn01/2,atn02/0,atn02/2,atn03/0,atn03/2,atn04/0,atn04/2,atn05/0,atn05/2,atn06/0,atn06/2,atn07/0,snh/0,snh00/0,snh00/2,snh01/0,snh01/2,snh02/0,snh02/2,snh03/0,snh03/2,snh04/0,snh04/2,snh05/0,snh05/2,snh06/0,snh06/2,snh07/0,csh/0,csh00/0,csh00/2,csh01/0,csh01/2,csh02/0,csh02/2,csh03/0,csh03/2,csh04/0,csh04/2,csh05/0,csh05/2,csh06/0,csh06/2,csh07/0,tnh/0,tnh00/0,tnh00/2,tnh01/0,tnh01/2,tnh02/0,tnh02/2,tnh03/0,tnh03/2,tnh04/0,tnh04/2,tnh05/0,tnh05/2,tnh06/0,tnh06/2,tnh07/0,atn2/0,atn200/0,atn200/2,atn201/0,atn201/2,atn202/0,atn202/2,atn203/0,atn203/2,atn204/0,atn204/2,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193796     50    227    10    1584008        0
+After:      16952     36    105     3     150424        0
+GCed :     176844     14    122     7    1433584        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+atn205/0,atn205/2,atn206/0,atn206/2,atn207/0,atn207/2,atn208/0,atn208/2,atn209/0,atn209/2,atn210/0,atn210/2,atn211/0,atn211/2,atn212/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_sin/2,do_cos/2,do_tan/2,do_asin/2,do_acos/2,do_atan/2,do_sinh/2,do_cosh/2,do_tanh/2,do_atan2/3,END.
+
+[go/0,do_sin/2,do_cos/2,do_tan/2,do_asin/2,do_acos/2,do_atan/2,do_sinh/2,do_cosh/2,do_tanh/2,...]
+successdone
+Loading ... done
+Module name : b_f_tfunc_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Tri_Function (Exception) %%%
+% B_Float_Sin %%%%%%%%%%% abcdefg
+% B_Float_Cos %%%%%%%%%%% abcdefg
+% B_Float_Tan %%%%%%%%%%% abcdefg
+% B_Float_Asin %%%%%%%%%% abcdefg
+% B_Float_Acos %%%%%%%%%% abcdefg
+% B_Float_Atan %%%%%%%%%% abcdefg
+% B_Float_Sinh %%%%%%%%%% abcdefg
+% B_Float_Cosh %%%%%%%%%% abcdefg
+% B_Float_Tanh %%%%%%%%%% abcdefg
+% B_Float_Atan2 %%%%%%%%% abcdefghijkl
+Total of 1436 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 3271b1d1392462c7a6181931ba227f53acb77a469fe194a730e51f5f2f15cc0f
+sav 8ed52a257ffbe72f31c6a2fa4ea5188d67661abceb75f929e330de1d0ee13698

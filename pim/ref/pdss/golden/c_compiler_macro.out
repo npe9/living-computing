@@ -1,0 +1,44 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/macro.kl1" : Compiling ... test/0,compiler/4,compiler_/6,generate_macro_expander/6,dispatch_case_on_pred/8,macro_expander/12,after_eof/2,new_external_clause/5,new_pragma_clause/6,new_clause_args/6,new_clause_head/4,check_directives/8,expand_clauses/12,expand_one_clause/12,split_head_and_new_goal/4,split_head_and_new_goal1/3,arity_in_origin/2,copy_implicit_args_head/4,convert_term/16,convert_head_macro/5,convert_head_macro_arg/3,convert_goals/13,convert_COMMA_to_list/3,convert_list_to_COMMA/2,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193638     50    228    10    1583952        0
+After:       8109     38    115     3      81136        0
+GCed :     185529     12    113     7    1502816        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+convert_macros/13,convert_one_goal/13,convert_reduced_macros/15,convert_one_goal/14,make_external_goal/5,make_pragma_goal/6,add_pragma_args/4,add_pragma_args_1/6,append_list/2,append_list/3,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     180629     58   1047     3    1583568        0
+After:      16076     42    254     3     161680        0
+GCed :     164553     16    793     0    1421888        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+convert_one_goal_/13,convert_one_body_goal/14,copy_implicit_args/16,copy_implicit_args/5,copy_original_args/6,convert_unify/14,convert_becomes/14,convert_math_macro/14,convert_inner_math_macro/12,convert_float_becomes/14,convert_float_math_macro/14,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     184941     52    817     3    1584000        0
+After:      22936     42    766     3     278384        0
+GCed :     162005     10     51     0    1305616        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+convert_float_inner_math_macro/12,convert_arg_ref/13,convert_arg_ref_macro/15,convert_arg_ref_list/3,convert_arg_ref_vect/15,
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     180089     52   1133     3    1584000        0
+After:      16911     40    280     3     171800        0
+GCed :     163178     12    853     0    1412200        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+convert_arg_set/13,convert_arg_set_macro/15,convert_arg_set_vect/15,expand_explicit_args/15,copy_explicit_args/4,extract_goal_args/18,extract_one_goal_arg/16,extract_one_goal_macro_arg/17,convert_single_op/14,
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     191136     50    388     3    1584000        0
+After:      19767     40    274     3     194120        0
+GCed :     171369     10    114     0    1389880        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+case_on_right_hand/15,convert_float_single_op/14,case_on_float_right_hand/15,convert_double_op/14,expression/3,float_expression/3,check_arg/6,check_define_macro/4,out_to_dlist/3,END.
+
+[test/0,generate_macro_expander/6]
+successdone
+
+exit 0
+asm afbba7d7971e90d139481e54f8374164428b501a99af8fa572fc6a8d2d227227
+sav none

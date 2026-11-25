@@ -1,0 +1,26 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/emu_sample" : Compiling ... primes/0,primes/2,gen/3,sift/2,filter/3,display/1,END.
+
+[primes/0,primes/2]
+successdone
+Loading ... done
+Module name : sample
+Saving ... done
+
+yes.
+| ?- [2,3,5,7,11,13,17,19,23,29,31,37,...]
+Total of 5880 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 60e5fdc62d5c4b7dc6cb65d62f474facf7fa5c238784971c76bd5640c0861afb
+sav b290baa26cfd13019fc891b66065b2e210174421d03eb9a0b5417c0bd4baab76

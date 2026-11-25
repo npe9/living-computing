@@ -1,0 +1,30 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../debug_utl/mpimos_xref.kl1" : Compiling ... go/2,go/3,go_f/3,go_f/4,start/4,start_f/6,end/2,option/4,output_option/2,output_file_option/2,loop/6,open_check/9,message_distributer/2,error/3,warning/3,output_error/2,pre_xref/12,pre_xref0/13,pre_xref_directive/12,pre_xref_directive_wait/13,pre_xref_module/11,pre_xref_module_wait/12,xref/9,xref0/10,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193753     50    224    10    1584008        0
+After:      29691     38    131     3     256096        0
+GCed :     164062     12     93     7    1327912        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+xref_predicate/12,wait_module_entry/3,wait_public/3,wait_entry/3,predicate_info/5,public_entry/6,guard_check/6,guard_builtin_check/9,body_check/7,body_builtin_check/8,expression/4,expression_check/5,expression_check_list/4,float_expression/4,float_expression_check/5,float_expression_check_list/4,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     189155     88    519     3    1584000        0
+After:      47127     40    343     3     420768        0
+GCed :     142028     48    176     0    1163232        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+referred_result/6,referred_result_list/5,referred_result_one/4,referred_table/3,referred_result_guard/4,referred_result_body/4,referred_result_builtin/3,put_referred/6,put_module_result/5,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     184084     50    848     3    1584000        0
+After:      89855     38    109     3     734256        0
+GCed :      94229     12    739     0     849744        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+put_predicate_result/7,put_one_predicate/7,put_one_builtin/7,put_one_builtin_no_entry/6,check_builtin_type/3,out_convert/3,out_convert1/3,out_convert_v/3,get_list_from_table/5,init_module_table/2,END.
+
+[go/2,go/3,go_f/3,go_f/4]
+successdone
+
+exit 0
+asm e46ffcfe4ad50e71864e5cc2947895c2358b5c4259aea10373b749cf367b5425
+sav none

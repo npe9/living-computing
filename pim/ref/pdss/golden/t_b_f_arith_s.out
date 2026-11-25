@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_arith_s" : Compiling ... go/0,add/0,add00/0,add00/1,add01/0,add01/1,add02/0,add02/1,add03/0,add03/1,add04/0,add04/1,add05/0,add05/1,add06/0,add06/1,add07/0,add07/1,add08/0,add08/1,add09/0,sub/0,sub00/0,sub00/1,sub01/0,sub01/1,sub02/0,sub02/1,sub03/0,sub03/1,sub04/0,sub04/1,sub05/0,sub05/1,sub06/0,sub06/1,sub07/0,sub07/1,sub08/0,sub08/1,sub09/0,mul/0,mul00/0,mul00/1,mul01/0,mul01/1,mul02/0,mul02/1,mul03/0,mul03/1,mul04/0,mul04/1,mul05/0,mul05/1,mul06/0,mul06/1,mul07/0,mul07/1,mul08/0,mul08/1,mul09/0,div/0,div00/0,div00/1,div01/0,div01/1,div02/0,div02/1,div03/0,div03/1,div04/0,div04/1,div05/0,div05/1,div06/0,min/0,min00/0,min00/1,min01/0,min01/1,min02/0,min02/1,min03/0,done/0,unify/4,unify/2,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : b_f_arith_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Arithmetic (Suspend) %%%
+% B_Float_Add %%%%%%%%%%% abcdefghi
+% B_Float_Subtract %%%%%% abcdefghi
+% B_Float_Multiply %%%%%% abcdefghi
+% B_Float_Divide %%%%%%%% abcdef
+% B_Float_Minus %%%%%%%%% abc
+Total of 124 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 86d1330cb8d46e0235b77c7687a44e2d45524c406d0e20375a743182e68fdde3
+sav 046112ad6c235a94e98dc9c942b60dcffc9523a9c230409fd6532d2129a7aa23

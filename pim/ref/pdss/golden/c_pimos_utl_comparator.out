@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/comparator.kl1" : Compiling ... sort/5,descending_sort/5,sort0/5,wait_sorted/6,get_type/3,get_type1/3,do_sort/7,wait_compared_real/3,comp/6,comp_int/5,comp_real/5,comp_str/5,comp_str/10,comp_str/8,wait_compared_str/9,comp_list/5,wait_compared_list/6,comp_vect/7,comp_e/7,wait_compared_vect/8,comp_tag_and_value/5,wait_compared_tag/4,END.
+
+[sort/5,descending_sort/5,sort0/5]
+successdone
+
+exit 0
+asm 025470df71d4a6a52783dd80785cd18a849aca2fd18a2be2f7e373215919abde
+sav none

@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/reader.kl1" : Compiling ... test_reader/0,trans_io_instr/3,C/4,tr/5,check_end_of_file/7,name_generator/3,make_new_name/4,convert_atom_to_list/2,convert_integer_to_list/2,convert_integer_to_list/3,convert_string_to_list/2,convert_one_char_to_list/4,convert_list_to_atom/2,len_of_list/2,convert_list_to_string/3,convert_list_to_string/4,create_reader/5,create_varchk_reader/5,reader/13,read_predicate/16,case_dispatch_on_clauses/16,otherwise_error_check/5,case_dispatch_on_error/18,read_predicate_one_block/16,expanded_read/12,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193545     50    233    10    1584000        0
+After:      17393     38    101     3     153280        0
+GCed :     176152     12    132     7    1430720        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+dispatch_on_terms/14,normalize_clause/13,check_directives/13,count_implicit_args/6,increment_implicit_arg_number/6,convert_integer_to_string/2,copy_one_clause/5,case_expansion/15,case_expansion_vector/17,case_expand/13,calcurate_real_arity/5,generate_case_head/2,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194168     48    210     3    1584016        0
+After:      15989     44    133     3     147936        0
+GCed :     178179      4     77     0    1436080        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+copy_list_to_vector/4,copy_list_to_args/4,case_expand_clauses/14,convert_case_vector/4,convert_case_vector/5,convert_case_one_term/2,convert_term_to_vector/2,length/4,set_elem/5,make_term/6,list_variables/4,get_args_to_list/3,copy_args_to_list/5,find_or_insert/4,output_list/3,intersection/3,find_and_insert/4,copy_one_term/3,table_for_copy/5,case_on_vector_element/4,copy_term/3,copy_term_args/5,count_variables/3,count_variables_args/5,bell/2,herrey/3,initialize_vector/4,functor/3,gen_functor/3,replace_element_with_undef/3,END.
+
+[count_variables/3,create_reader/5,create_varchk_reader/5,functor/3,gen_functor/3,herrey/3,trans_io_instr/3,test_reader/0,convert_integer_to_string/2,convert_integer_to_list/3,...]
+successdone
+
+exit 0
+asm 435856f2064d6095790bd6ddb9e03150a7cc296407e689070ae7433ff2189a35
+sav none

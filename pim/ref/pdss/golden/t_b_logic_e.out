@@ -1,0 +1,39 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_logic_e" : Compiling ... go/0,shl/0,shl00/0,shl00/2,shl01/0,shl01/2,shl02/0,shl02/2,shl03/0,shl03/2,shl04/0,shl04/2,shl05/0,shl05/2,shl06/0,shl06/2,shl07/0,shl07/2,shl08/0,shl08/2,shl09/0,shl09/2,shl10/0,shl10/2,shl11/0,shl11/2,shl12/0,shl12/2,shl13/0,shl13/2,shl14/0,shr/0,shr00/0,shr00/2,shr01/0,shr01/2,shr02/0,shr02/2,shr03/0,shr03/2,shr04/0,shr04/2,shr05/0,shr05/2,shr06/0,shr06/2,shr07/0,shr07/2,shr08/0,shr08/2,shr09/0,shr09/2,shr10/0,shr10/2,shr11/0,shr11/2,shr12/0,shr12/2,shr13/0,shr13/2,shr14/0,and/0,and00/0,and00/2,and01/0,and01/2,and02/0,and02/2,and03/0,and03/2,and04/0,and04/2,and05/0,and05/2,and06/0,and06/2,and07/0,and07/2,and08/0,and08/2,and09/0,and09/2,and10/0,and10/2,and11/0,and11/2,and12/0,or/0,or00/0,or00/2,or01/0,or01/2,or02/0,or02/2,or03/0,or03/2,or04/0,or04/2,or05/0,or05/2,or06/0,or06/2,or07/0,or07/2,or08/0,or08/2,or09/0,or09/2,or10/0,or10/2,or11/0,or11/2,or12/0,exo/0,exo00/0,exo00/2,exo01/0,exo01/2,exo02/0,exo02/2,exo03/0,exo03/2,exo04/0,exo04/2,exo05/0,exo05/2,exo06/0,exo06/2,exo07/0,exo07/2,exo08/0,exo08/2,exo09/0,exo09/2,exo10/0,exo10/2,exo11/0,exo11/2,exo12/0,cmp/0,cmp00/0,cmp00/2,cmp01/0,cmp01/2,cmp02/0,cmp02/2,cmp03/0,cmp03/2,cmp04/0,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193982     50    215    10    1583288        0
+After:      15721     35     95     3     139152        0
+GCed :     178261     15    120     7    1444136        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+cmp04/2,cmp05/0,cmp05/2,cmp06/0,cmp06/2,cmp07/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_shift_left/3,do_shift_right/3,do_and/3,do_or/3,do_exclusive_or/3,do_complement/2,END.
+
+[go/0,do_shift_left/3,do_shift_right/3,do_and/3,do_or/3,do_exclusive_or/3,do_complement/2]
+successdone
+Loading ... done
+Module name : b_logic_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Logic (Exception) %%%
+% B_Shift_Left %%%%%%%%%% abcdefghijklmn
+% B_Shift_Right %%%%%%%%% abcdefghijklmn
+% B_And %%%%%%%%%%%%%%%%% abcdefghijkl
+% B_Or %%%%%%%%%%%%%%%%%% abcdefghijkl
+% B_Exclusive_Or %%%%%%%% abcdefghijkl
+% B_Complement %%%%%%%%%% abcdefg
+Total of 1378 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 39129ae328ca1c6c3b56e775f564cd9bf388ddd184602d9a75afc309bedf02d0
+sav 144156fa384472e1feb03c5c078c5897005fedbfae81b77ff723f4275dcf416e

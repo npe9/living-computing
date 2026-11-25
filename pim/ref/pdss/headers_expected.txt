@@ -1,0 +1,16 @@
+# test/ programs whose printed output differs from their own header
+# comment on the reference build (build.sh), with the reason found.
+# check_headers.py fails if this set changes in either direction.
+# Recorded 2026-11-25.
+#
+# Stale headers: every check printed passes; the header lists a
+# different number of checks than the program has.
+b_f_func2_e   header lists abcdef, program has a-k, all pass
+is_type       header lists one check more per group than the program has
+#
+# Behaviour of the 1992 source or of the host libm, not of the port:
+b_f_func2     d: pow(0.0,0.0) is 1.0 in IEEE/C99 libm; the test wants 0.0
+b_f_func2_s   d: the same pow(0.0,0.0)
+g_f_func2     e: the same pow(0.0,0.0), guard form
+b_string_e    c,d of B_Substring and B_Set_Substring: substring at position = length (and of "") succeeds; the test wants range_overflow
+b_code_e      b: code_to_predicate on '$$$SYSTEM':add/3 succeeds; the test wants illegal_input (the original crashed here, see port.diff blt_code.c)

@@ -1,0 +1,36 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_f_tfunc" : Compiling ... go/0,sin/0,sin00/0,sin00/1,sin00ans/1,sin01/0,sin01/1,sin01ans/1,sin02/0,sin02/1,sin02ans/1,sin03/0,sin03/1,sin03ans/1,sin04/0,cos/0,cos00/0,cos00/1,cos00ans/1,cos01/0,cos01/1,cos01ans/1,cos02/0,cos02/1,cos02ans/1,cos03/0,cos03/1,cos03ans/1,cos04/0,tan/0,tan00/0,tan00/1,tan00ans/1,tan01/0,tan01/1,tan01ans/1,tan02/0,tan02/1,tan02ans/1,tan03/0,asn/0,asn00/0,asn00/1,asn00ans/1,asn01/0,asn01/1,asn01ans/1,asn02/0,asn02/1,asn02ans/1,asn03/0,asn03/1,asn04/0,acs/0,acs00/0,acs00/1,acs00ans/1,acs01/0,acs01/1,acs01ans/1,acs02/0,acs02/1,acs02ans/1,acs03/0,acs03/1,acs04/0,atn/0,atn00/0,atn00/1,atn00ans/1,atn01/0,atn01/1,atn01ans/1,atn02/0,atn02/1,atn02ans/1,atn03/0,snh/0,snh00/0,snh00/1,snh00ans/1,snh01/0,snh01/1,snh01ans/1,snh02/0,snh02/1,snh02ans/1,snh03/0,csh/0,csh00/0,csh00/1,csh00ans/1,csh01/0,csh01/1,csh01ans/1,csh02/0,csh02/1,csh02ans/1,csh03/0,tnh/0,tnh00/0,tnh00/1,tnh00ans/1,tnh01/0,tnh01/1,tnh01ans/1,tnh02/0,tnh02/1,tnh02ans/1,tnh03/0,atn2/0,atn200/0,atn200/2,atn200/1,atn201/0,atn201/2,atn201/1,atn202/0,atn202/2,atn202/1,atn203/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_f_tfunc
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Float_Tri_Function %%%
+% G_Float_Sin %%%%%%%%%%% abcd
+% G_Float_Cos %%%%%%%%%%% abcd
+% G_Float_Tan %%%%%%%%%%% abc
+% G_Float_Asin %%%%%%%%%% abcd
+% G_Float_Acos %%%%%%%%%% abcd
+% G_Float_Atan %%%%%%%%%% abc
+% G_Float_Sinh %%%%%%%%%% abc
+% G_Float_Cosh %%%%%%%%%% abc
+% G_Float_Tanh %%%%%%%%%% abc
+% G_Float_Atan2 %%%%%%%%% abc
+Total of 126 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 7cce23aa86be0ac0218f0ed1e71b5c8fc7ee49d7e66d5996aa5070a8b9c3e1c3
+sav c2836b3f771bcd7cfbbbd9a58c2dbf59a269b2a317ba6ff814be38f5c65b9a47

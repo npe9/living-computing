@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_utl.kl1" : Compiling ... send_shell/3,send_shell0/3,protect/2,protect_vector/4,protect_vector0/5,protect_list/3,wait_send/4,check_savedir/5,check_savedir0/7,os_check_loaddir/5,check_loaddir0/7,apply_action/3,apply_action/4,apply_goal/2,make_command/3,make_command/4,copy_args/5,get_option/3,get_option/4,set_option/4,END.
+
+[send_shell/3,protect/2,wait_send/4,check_savedir/5,os_check_loaddir/5,apply_action/3,apply_action/4]
+successdone
+
+exit 0
+asm 4956a6d0f1b049ae05f3e3ab6ea5774911a633f8240a1136ef43ae09ca310943
+sav none

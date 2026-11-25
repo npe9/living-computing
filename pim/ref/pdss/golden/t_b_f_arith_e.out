@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_arith_e" : Compiling ... go/0,add/0,add00/0,add00/2,add01/0,add01/2,add02/0,add02/2,add03/0,add03/2,add04/0,add04/2,add05/0,add05/2,add06/0,add06/2,add07/0,add07/2,add08/0,add08/2,add09/0,add09/2,add10/0,add10/2,add11/0,add11/2,add12/0,add12/2,add13/0,sub/0,sub00/0,sub00/2,sub01/0,sub01/2,sub02/0,sub02/2,sub03/0,sub03/2,sub04/0,sub04/2,sub05/0,sub05/2,sub06/0,sub06/2,sub07/0,sub07/2,sub08/0,sub08/2,sub09/0,sub09/2,sub10/0,sub10/2,sub11/0,sub11/2,sub12/0,sub12/2,sub13/0,mul/0,mul00/0,mul00/2,mul01/0,mul01/2,mul02/0,mul02/2,mul03/0,mul03/2,mul04/0,mul04/2,mul05/0,mul05/2,mul06/0,mul06/2,mul07/0,mul07/2,mul08/0,mul08/2,mul09/0,mul09/2,mul10/0,mul10/2,mul11/0,mul11/2,mul12/0,mul12/2,mul13/0,div/0,div00/0,div00/2,div01/0,div01/2,div02/0,div02/2,div03/0,div03/2,div04/0,div04/2,div05/0,div05/2,div06/0,div06/2,div07/0,div07/2,div08/0,div08/2,div09/0,div09/2,div10/0,div10/2,div11/0,div11/2,div12/0,div12/2,div13/0,div13/2,div14/0,min/0,min00/0,min00/2,min01/0,min01/2,min02/0,min02/2,min03/0,min03/2,min04/0,min04/2,min05/0,min05/2,min06/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_add/3,do_subtract/3,do_multiply/3,do_divide/3,do_minus/2,END.
+
+[go/0,do_add/3,do_subtract/3,do_multiply/3,do_divide/3,do_minus/2]
+successdone
+Loading ... done
+Module name : b_f_arith_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Arithmetic (Exception) %%%
+% B_Float_Add %%%%%%%%%%% abcdefghijklm
+% B_Float_Subtract %%%%%% abcdefghijklm
+% B_Float_Multiply %%%%%% abcdefghijklm
+% B_Float_Divide %%%%%%%% abcdefghijklmn
+% B_Float_Minus %%%%%%%%% abcdef
+Total of 1171 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 331948027e780d24fcb80f281d7c9ba38ca7b0eb8a39f597cbd091fb64b9231e
+sav e3339d4eb72045e963985d9c67cb245be6032d492a60fc2bc2534dd60350062b

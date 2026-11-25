@@ -1,0 +1,32 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/get_cnst" : Compiling ... go/0,atm/0,atm00/0,atm00get/1,atm00/1,atm01/0,atm01get/1,atm01/1,atm02/0,nil/0,nil00/0,nil00get/1,nil00/1,nil01/0,nil01get/1,nil01/1,nil02/0,int/0,int00/0,int00get/1,int00/1,int01/0,int01get/1,int01/1,int02/0,flt/0,flt00/0,flt00get/1,flt00/1,flt01/0,flt01get/1,flt01/1,flt02/0,lst/0,lst00/0,lst00get/1,lst00/1,lst01/0,lst01get/1,lst01/1,lst02/0,vec/0,vec00/0,vec00get/1,vec00/1,vec01/0,vec01get/1,vec01/1,vec02/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : get_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Get_Constant %%%
+% Get_Atom %%%%%%%%%%%%%% ab
+% Get_Nil %%%%%%%%%%%%%%% ab
+% Get_Integer %%%%%%%%%%% ab
+% Get_Float %%%%%%%%%%%%% ab
+% Get_List_Value %%%%%%%% ab
+% Get_Vect_Value %%%%%%%% ab
+Total of 54 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 6e17bf9718438d4b33630780b4bb2305b90126549ee6c82fb0881ae4a6504f8d
+sav 7c92d51e91333324f95261bede5214f14f9d2b5ea4abdc6b44fb9d88cc65dfaa
