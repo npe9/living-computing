@@ -1576,14 +1576,16 @@ end.''', 'simpos')
         # p6, p13; TR-056 p21; held pimmcsp##pseudo_pe_process release/1)
         # runs a boot program (as_boot_program, TM-100 p13) with the
         # printed as_program invoke/1.  boot_probe is an OURS test class.
-        # Injections, observed (2026-11-25; inject from a backup, restore
-        # by copy, cmp clean; test_kl0.py stayed OK in all three):
+        # Injections, observed at step 3i, before the step 3j tests existed
+        # (2026-11-25; inject from a backup, restore by copy, cmp clean;
+        # test_kl0.py stayed OK in all three; I1 and I3 not re-run since):
         #   I1 process.esp self/2 back to :new(Class, P): this test ERROR,
         #      test_printed_process_slots FAIL, nothing else.
         #   I2 the three boot_process_override SIMPOS_MODELS rows deleted:
         #      this test FAIL, nothing else.  Step 3j (two rows are now
-        #      stand-ins): J9, the create/3 row deleted, this test FAIL,
-        #      nothing else (test_kl0.py OK).
+        #      stand-ins; observed with the step 3j tests present): J9, the
+        #      create/3 row deleted, this test FAIL, nothing else
+        #      (test_kl0.py OK).
         #   I3 the dispatch inheritance walk disabled (models keyed on
         #      simpos##process no longer reach boot_process): this test
         #      passes; test_step3f_census_recipes, test_step3g_stream_see
@@ -1710,7 +1712,6 @@ end.'''
         # context, boot_process create/2 and activate/2), and the switch is
         # kl0's dispatcher (OURS).
         # Injections, observed (2026-11-25; from a backup, restored by copy,
-        # cmp clean):
         # cmp clean; test_kl0.py stayed OK in all):
         #   J1 status/3 does not set: this test FAIL, nothing else.
         #   J2 status/3 succeeds on a mismatch: this test FAIL, nothing else.
@@ -1721,6 +1722,14 @@ end.'''
         #      ERROR, nothing else.
         #   J7 the dispatcher does not set `current`: the same two ERROR.
         #   J8 no 63-context limit: this test FAIL, nothing else.
+        #   J10 kl0 'exit' halts instead of dispatching: this test ERROR,
+        #      nothing else.
+        #   J13 clear_masks/1 a no-op (the direct check below): this test
+        #      FAIL, nothing else.
+        #   J14 context activate/1 a no-op: this test and
+        #      test_step3j_fep_device ERROR, nothing else.
+        #   J15 create/3 does not store the context: those two ERROR and
+        #      test_step3i_boot FAIL, nothing else.
         ts, failed = espc.compile_text(self.B3_PROBES, 'simpos')
         self.assertFalse(failed)
         lib = K.load_six()
@@ -1783,6 +1792,10 @@ end.'''
         # has one clause)
         m.reset()
         self.assertFalse(any(True for _ in m.solve_send(p3, 'activate', [cprog, p3])))
+        # clear_masks/1 (the printed activate/2's call): no mask nesting left
+        m.set_slot(p3, 'mask_count', 3)
+        one(p3, 'clear_masks')
+        self.assertEqual(sl(p3)['mask_count'], 0)
 
         # held pimmcsp##pseudo_pe_process release/1 @177-189: a dormant PE
         # process passes status/3 (dormant -> on_release) and reaches the
@@ -1903,6 +1916,8 @@ end.'''
         # Injection, observed (2026-11-25, as in test_step3j_supervisor):
         #   J6 assigned/1 always succeeds: this test, test_fep_census and
         #   test_step3f_census_recipes FAIL, nothing else.
+        #   J11 assign/1 a no-op: this test ERROR, nothing else.
+        #   J12 resign/1 a no-op: the same three as J6 FAIL, nothing else.
         m = K.fep_machine()
         sc = K.make_instance(m, 'pimscsi##pseudo_scsi')
 

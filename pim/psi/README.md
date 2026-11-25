@@ -24,7 +24,7 @@ made here). The labels are repeated in the docstring of `librarian.py`.
 | `kl0_opcodes.tsv` | The interpreter's opcode table and its dispatch: one row per opcode, each with a known-plaintext witness (compiled cells next to the held ESP clause). Hand-written. |
 | `test_kl0.py` | Tests of `kl0.py`: table against handlers, `convert/3` against PIMOS, paragraph classes against their source, the census pinned. It is in `../run_tests.sh` and takes about 2 s. |
 | `espc.py` | Step 3: an ESP compiler (OURS) producing templates and KL0 code that `librarian.py` loads and `kl0.py` runs. Its `compile`, `check` and `behave` commands are below. |
-| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`. |
+| `standin/` | SCAFFOLDING stand-ins for lost `simpos##` classes, compiled by `espc.py` into package `simpos`, each method labelled PRINTED or INTERPOLATED: `process.esp` (TM-100 Fig. 3.1 printed source plus four interpolated methods), `stream.esp` (TM-100 Fig. 3.6 printed source, three marked corrections; since step 3g also the interpolated `see/2`, `try_to_see/2`, `try_to_get/2`), the interpolated `list`, `post_queue`, `waiting_queue`, `process_clock`, `with_link` and `waiting_frame` that the printed code needs, and the interpolated `string` (`append/3`, `copy/3`) and partial `symbolizer` (`string_to_list/3`, `list_to_string/3`); since step 3c, the printed `channel`, `bounded_channel` and `bounded_post_queue` (TM-100 Figs. 3.7, 3.10, 3.11), the interpolated `post_queue_for_message`, `semaphore`, `list_index`, `hash_index` and minimal `standard_editor`, and more of `process`; and three HELD-SOURCE classes, `name`, `e_string` and `pathname`, carried over from morphana's `_simpos/` copies (ICOT Free Software, each method labelled `HELD-SOURCE: file:line`); since step 3d, ten more interpolated classes: `as_class_with_lock`, `with_lock`, `as_message`, `message`, `trace`, `common_network`, `network_listener_buffer`, `alarm_watch`, `time` and a minimal `pmacs_window`; since step 3e, the printed `as_program` (TM-100 Fig. 3.3) and the interpolated `network_node_name`; since step 3i, the interpolated `boot_process`; since step 3j, the interpolated `context` and `as_resource` (basis table in "Step 3j"). |
 | `test_espc.py` | Tests of `espc.py`: emission against the opcode table, the settled language points, structure and behaviour against `paragraph.ptf`, macro banks against kappa2, the stand-ins. It is in `../run_tests.sh` and takes about 17 s of CPU (2026-11-24; wall time varies with the machine's load, 36-43 s at a load average of 116). |
 
 ## How to run
@@ -3154,6 +3154,32 @@ and `boot_process` `create/2` and `activate/2`.
   `change_process/1` and `kill_process/1`, and the zero-argument
   `inhibit_interrupt` and `allow_interrupt` (cil
   `src/cil_kl0.esp`:87-158, names only).
+- Also read for this step: the four other documents in the brief. Each
+  was OCRed whole into scratch, and the hits were read on the page image.
+  - TR-087 PDF p4 (§3.2). "A process executes a given program, which is
+    an instance of a program class. The main goal of the program is
+    defined as an instance predicate". Also, a stream's "retrieve
+    operation is suspended until some object is put". These support the
+    entry's `{Program, invoke}` reaching the program's goal, and a
+    `get/2` that suspends. Nothing on status, contexts or the
+    dispatcher.
+  - TR-059 PDF p30 (folio 28, §5). A device handler is "an interrupt
+    process", which "is dispatched differently from ordinary processes".
+    The hardware dispatches it on an interrupt; a message to its channel
+    "raises a trap to activate" it; finished, it "releases the processor
+    so as to re-dispatch the other processes". Device handlers are
+    "instantiated and activated during a system boot-up procedure". This
+    concerns the file system's disk handlers, not the FEP device
+    processes. The dispatcher here runs the FEP device processes as
+    ordinary processes (OURS). Whether they were interrupt processes is
+    not settled.
+  - TM-388 PDF p18 (§1). The class slot and class method exist to limit
+    or manage instance generation, for instance when "a limited number of
+    resources" is defined. This supports `context`'s class-slot counter
+    and its 63 limit as a pattern. It says nothing about SIMPOS
+    contexts.
+  - TM-115 (the window manual). Nothing on processes, status, contexts
+    or resources; its "dispatch" is input dispatching to windows.
 
 **The stand-ins, method by method.**
 
@@ -3168,7 +3194,7 @@ and `boot_process` `create/2` and `activate/2`.
 | `context:set_entry_point/2`, `activate/1`, `set_priority/2` | `standin/context.esp` | their calls in the printed `activate/2`; the slot comment "Hardware PC" | INTERPOLATED; the slot names OURS |
 | `boot_process:create/2` | `standin/boot_process.esp` | TM-100 PDF p13 and TR-056 PDF p21 (it overrides `:create`; the boot process calls it itself); the printed `create/2` and `create_core/3` without `:new` and without a parent (TM-100 p6) | INTERPOLATED; making the ready queue here, as a list, OURS |
 | `boot_process:activate/2` | `standin/boot_process.esp` | the same prose; the printed `activate/2` without the entry point (the boot program is already running) | INTERPOLATED; Program unused, OURS |
-| the dispatcher (`kl0.py` `Machine.yield_processor`, the `suspend/2` model, the `yield` and `exit` steps) | `kl0.py` | TR-055 PDF p5; TR-056 PDF p18, p21; the printed `suspend/2` (takes the running process out of the ready queue) and `get/2` (reads the stream right after `suspend/2`) | OURS |
+| the dispatcher (`kl0.py` `Machine.yield_processor`, the `suspend/2` model, the `yield` and `exit` steps) | `kl0.py` | TR-055 PDF p5; TR-056 PDF p18, p21; TR-087 PDF p4 (a stream's retrieve "is suspended"); TR-059 PDF p30 differs for interrupt processes (not modelled); the printed `suspend/2` (takes the running process out of the ready queue) and `get/2` (reads the stream right after `suspend/2`) | OURS |
 | `as_resource:assign/1`, `assigned/1`, `resign/1` | `standin/as_resource.esp` | held `pseudo_scsi` `create/4` @71, `close/1` @150-16d, `aborted/1` @26c, `$or$3/1` @5bf and its string "SCSI is not assigned to process"; held source kappa2 `KP_POOL.ESP` (`:assign(Obj)` in its creators, `:resign(Obj)` in `terminate/1` and `kill/1`, `check_resource` reading `Process!resources`, :285-290) and `ITRAPP.ESP`:28-33, :106; the printed slot `resources` (TM-100 Fig. 3.1); TR-285 PDF p11 | INTERPOLATED; that `assigned` asks about the calling process is INFERENCE; appending OURS |
 
 **The dispatcher (OURS).**
@@ -3262,6 +3288,27 @@ every one.
 - J9 the `boot_process` `create/3` refusal row deleted from
   SIMPOS_MODELS: `test_step3i_boot` FAIL, nothing
   else.
+
+A second set (same method) covers what J1-J9 left untested. A direct
+`clear_masks/1` check was added to `test_step3j_supervisor` first. No
+existing assertion read `mask_count` after it, and J13 was not run
+without the check:
+- J10 the `exit` step halts instead of dispatching (`kl0.py`):
+  `test_step3j_supervisor` ERROR, nothing else.
+- J11 `assign/1` a no-op: `test_step3j_as_resource` ERROR, nothing else.
+- J12 `resign/1` a no-op: `test_step3j_as_resource`, `test_fep_census`
+  and `test_step3f_census_recipes` FAIL, nothing else.
+- J13 `clear_masks/1` a no-op: `test_step3j_supervisor` FAIL, nothing
+  else.
+- J14 `context:activate/1` a no-op: `test_step3j_supervisor` and
+  `test_step3j_fep_device` ERROR, nothing else.
+- J15 `process:create/3` does not store the context:
+  `test_step3j_supervisor` and `test_step3j_fep_device` ERROR,
+  `test_step3i_boot` FAIL, nothing else.
+
+Not injected: `context:set_priority/2` and `context:get_number/2`. No
+test reads the priority. `get_number/2` is reached only by the held
+`terminate_core/1`, which no test runs.
 
 **Census, recomputed row by row** (MEASURED 2026-11-25; since step 3i,
 every row is run alone on fresh class objects).

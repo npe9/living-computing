@@ -50,7 +50,7 @@
                 instance_array ;
                 % Relates a process to its context_number.
 
-    % INTERPOLATED: holds the one process; not a printed slot.
+    % INTERPOLATED: holds the running process; not a printed slot.
     attribute   current := 0 ;
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (PROCESS in capitals as printed)
