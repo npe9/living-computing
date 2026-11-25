@@ -63,6 +63,9 @@ DSP_HZ = 50e6
 DSP_CLOCKS_PER_CYCLE = 2
 assert DSP_CLOCKS_PER_CYCLE * CPU_HZ == DSP_HZ
 DSP_OFF_CHIP = 0x10000                            # Appendix A page 4
+# CHOICES['codec']: Be's audio.h AUDIO_DSP_ID; the audio card's AD1849K
+# hangs on that DSP's serial port and BIO0-2 (tools/ad1849.py).
+AUDIO_DSP = 3
 DSP_SHADOW_SIZE = 0x200000
 # CHOICES['scsi-timing']: cycles from a 53C94 command to its interrupt.
 NCR_IRQ_DELAY = 2500
@@ -279,6 +282,14 @@ CHOICES = {
               "--type-at steps on, each byte queued in the VL82C106's "
               "output buffer: scan code set 2, US layout (SET2).  A typed "
               "key is a timed event, so the idle skip stops short of it.",
+    "codec": "With --dsp emulated, the audio card's AD1849K codec "
+             "(tools/ad1849.py, the DSP agent's model) is attached to DSP "
+             "3, Be's AUDIO_DSP_ID, on its serial port and BIO0-2, when "
+             "that DSP is first released (or at --resume if it already "
+             "was).  --codec-in WAV feeds the ADC, one sample per frame; "
+             "--codec-out WAV writes the DAC output when the run ends.  "
+             "--codec-phase stands in for the card's unknown TSIN wiring "
+             "(ad1849.AD1849K control_phase).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -1905,6 +1916,7 @@ class Machine:
         self.typing = collections.deque()   # (model cycle, [scan codes])
         self.dsp_idle_clocks = {}
         self.dsp_watches = {}       # n -> spins the board agreed to watch
+        self.audio_codec = None     # CHOICES['codec']
         self.regs = BoardRegs(self.board)
         io = self.board.io
         for n in range(8):
@@ -1999,6 +2011,7 @@ class Machine:
                     self.dsp_clock[n] = 0
                     self.dsp_steps[n] = 0
                     self.dsp_idle_clocks[n] = 0
+                self.attach_codec()
                 self.dsp_clock[n] = max(self.dsp_clock[n],
                                         self.cpu_frontier()
                                         * DSP_CLOCKS_PER_CYCLE)
@@ -2006,6 +2019,37 @@ class Machine:
                 d.set_interrupt(bool(self.regs.internal & bit))
             elif d is not None:
                 d.hold()
+
+    def upgrade_dsps(self):
+        """--resume only: a snapshot's emulator objects may predate fields
+        a newer tools/dsp3210.py added.  Each missing field takes its
+        value from a freshly built (power-on) emulator; the run says which.
+        That is the right state only for parts the DSP has not used since
+        it was built (the SIO and DMA on a snapshot made before them)."""
+        for n, d in sorted(self.dsps.items()):
+            fresh = self.dsp_class(n, d.bus)
+            pairs = [(d, fresh)]
+            core = getattr(d, "core", None)
+            if core is not None:
+                pairs.append((core, fresh.core))
+            for old, new in pairs:
+                missing = [k for k in vars(new) if not hasattr(old, k)]
+                for k in missing:
+                    v = getattr(new, k)
+                    if callable(v) and getattr(v, "__self__", None) is new:
+                        v = getattr(old, v.__name__)    # rebind a method
+                    setattr(old, k, v)
+                if missing:
+                    print("beboot: DSP%d %s: power-on values for %s"
+                          % (n, type(old).__name__, ", ".join(missing)))
+
+    def attach_codec(self):
+        """CHOICES['codec']: the AD1849K on DSP 3, once."""
+        d = self.dsps.get(AUDIO_DSP)
+        codec = getattr(self, "audio_codec", None)
+        if d is not None and codec is not None and \
+                getattr(d, "codec", None) is not codec:
+            d.attach_codec(codec)
 
     def internal_changed(self, old, new):
         """CHOICES['dsp']: bits 4-6 of the internal interrupt register
@@ -2290,6 +2334,12 @@ def main(argv):
                     help="start typing once this many steps have run")
     ap.add_argument("--dsp", choices=("inert", "emulated"), default="inert",
                     help="the DSP3210s (CHOICES['dsp'])")
+    ap.add_argument("--codec-in", help="16-bit PCM WAV for the audio "
+                    "codec's ADC (CHOICES['codec'])")
+    ap.add_argument("--codec-out", help="write the codec's DAC output to "
+                    "this WAV when the run ends")
+    ap.add_argument("--codec-phase", type=int, choices=(0, 1), default=1,
+                    help="ad1849 control_phase (CHOICES['codec'])")
     args = ap.parse_args(argv)
     if args.resume:
         import pickle
@@ -2331,6 +2381,17 @@ def main(argv):
     m.dsp_mode = args.dsp
     if args.dsp == "emulated":
         m.dsp_class = load_dsp_class()
+        if args.resume:
+            m.upgrade_dsps()
+        import ad1849
+        if getattr(m, "audio_codec", None) is None:
+            m.audio_codec = ad1849.AD1849K(int(DSP_HZ),
+                                           control_phase=args.codec_phase)
+        if args.codec_in:
+            m.audio_codec.load_wav(args.codec_in)
+        m.attach_codec()
+    elif args.codec_in or args.codec_out:
+        ap.error("--codec-in/--codec-out need --dsp emulated")
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
     until = args.until.encode("latin-1") if args.until else None
@@ -2373,6 +2434,15 @@ def main(argv):
         for (what, size, addr), k in sorted(d.bus.outside.items()):
             print("DSP%d %s of size %d at 0x%08x (outside the shadow RAM): "
                   "%d times" % (n, what, size, addr, k))
+    codec = getattr(m, "audio_codec", None)
+    if codec is not None:
+        print("codec (DSP%d): pins %s, %d frames, %d input samples used, "
+              "%d played stretches" % (
+                  AUDIO_DSP, codec.pins, codec.frames, codec.rec_pos,
+                  len(codec.played)))
+        if args.codec_out:
+            print("codec: %d frames written to %s"
+                  % (codec.save_wav(args.codec_out), args.codec_out))
     if m.skips:
         print("idle skip: %d skips, %d steps not executed"
               % (m.skips, m.skipped_steps))

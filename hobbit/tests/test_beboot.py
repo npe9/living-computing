@@ -362,6 +362,9 @@ class FakeDsp:
     def notify_write(self, addr, size=4):
         self.notified.append((addr, size))
 
+    def attach_codec(self, codec):
+        self.codec = codec
+
     def release(self):
         self.log.append("release")
 
@@ -437,6 +440,22 @@ class DspEmulationTest(unittest.TestCase):
         self.assertIs(self.m.dsps[1], d)
         self.assertEqual(d.log, ["release", "hold", "release"])
         self.assertEqual(self.m.dsps_running(), [1, 3])
+
+    def test_codec_on_dsp3_only(self):
+        codec = self.m.audio_codec = object()
+        self.reset(0x30)
+        self.assertFalse(hasattr(self.m.dsps[1], "codec"))
+        self.assertFalse(hasattr(self.m.dsps[2], "codec"))
+        self.reset(0x70)
+        self.assertIs(self.m.dsps[3].codec, codec)
+
+    def test_resume_fills_fields_a_newer_emulator_added(self):
+        self.reset(0x10)
+        d = self.m.dsps[1]
+        d.steps = 7
+        del d.notified, d.clocks              # "added after the snapshot"
+        self.m.upgrade_dsps()
+        self.assertEqual((d.notified, d.clocks, d.steps), ([], 1, 7))
 
     def test_inert_creates_nothing(self):
         self.m.dsp_mode = "inert"
