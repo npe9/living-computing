@@ -490,6 +490,91 @@ function Bool protViolatesEn(StretchStorage st, WordAddr a, Bool enabled);
   return enabled && installed(a) && signalled;
 endfunction
 
+// ---------------------------------------------------------------------
+// >>> VflCommit: THE VFL FAMILIES' WRITES, RETURNED AS DATA
+// (fidelity_plan.md A2, 2026-11-24). <<<  The FpCommit pattern
+// (ebox_roadmap.md step 2, "FIRST FAMILY: FLOATING POINT") applied to
+// vflIntOp and connectiveOp.  Each family of VFL arms is a plain
+// function (no Action) that fills this record where it used to call
+// writeAcc / writeAccFlags / st.writeWord / st.writeWordTail /
+// vflFieldStore; execute() is the one caller that applies it
+// (commitVfl), in the same rule and the same execute() arm as before,
+// so nothing moves in time.
+//
+// THE FIELDS ARE THE LIVE WRITE SITES, counted before the change:
+// the accumulator trio (L/LWF, +/+MG, *, *+, /, LCV, CV, LTRCV, DCV,
+// the CT/CM-to-accumulator connectives), the factor (LFT), the
+// remainder (/), the transit word 15 (LTRCV, LTRS), and a field store
+// -- its first word through writeWord and, for a crossing field whose
+// second word is core storage, that word through writeWordTail (ST,
+// SRD, M+/M+1/M+MG, CM).  A crossing field's second word BELOW 32 is
+// not here: it was already returned (VflOutcome.tailWrite, written by
+// rl_tail_write the next clock).  Nor are the connective counts
+// (VflOutcome.connCounts, already applied by execute()) or the
+// progressive index (vflPending).
+//
+// THE ACCUMULATOR SIGN BYTE IS COMPUTED BY THE FAMILY, from the sign
+// byte as it stands before the rule (the value writeAcc read with
+// st.readAccSign()), so the word is the one writeAcc wrote.
+//
+// NO TWO FIELDS NAME ONE WORD.  Every arm writes either the
+// accumulator group (with at most one of remainder / factor / transit,
+// words 13, 14, 15 -- all distinct from 8, 9, 10) or a
+// field store, never both: the store arms (ST/SRD, M+, CM) write no
+// accumulator word, and the accumulator arms store no field.  So the
+// commit order cannot matter, as commitFp's note says of its own.
+//
+// SUPPRESSION DID NOT MOVE.  `store`/`storeTail` are Valid only where
+// the arm's DS test (protViolates, or vflFieldStorePlan's for the
+// shared field store) already permitted the write.
+// ---------------------------------------------------------------------
+typedef struct {
+  Maybe#(Word64) accLeft;                        // word 8
+  Maybe#(Word64) accRight;                       // word 9
+  Maybe#(Word64) accSign;                        // word 10
+  Maybe#(Word64) factor;                         // word 14
+  Maybe#(Word64) remainder;                      // addrRemainder
+  Maybe#(Word64) transit;                        // word 15
+  Maybe#(Tuple2#(WordAddr, Word64)) store;       // st.writeWord
+  Maybe#(Tuple2#(WordAddr, Word64)) storeTail;   // st.writeWordTail
+} VflCommit deriving (Bits, Eq, FShow);
+
+VflCommit vflNoCommit = VflCommit { accLeft: tagged Invalid,
+                                    accRight: tagged Invalid,
+                                    accSign: tagged Invalid,
+                                    factor: tagged Invalid,
+                                    remainder: tagged Invalid,
+                                    transit: tagged Invalid,
+                                    store: tagged Invalid,
+                                    storeTail: tagged Invalid };
+
+function Action commitVfl(StretchStorage st, VflCommit c);
+  action
+    if (c.accLeft   matches tagged Valid .v) st.writeWord(addrAccLeft, v);
+    if (c.accRight  matches tagged Valid .v) st.writeWord(addrAccRight, v);
+    if (c.accSign   matches tagged Valid .v) st.writeWord(addrAccSignByte, v);
+    if (c.factor    matches tagged Valid .v) st.writeWord(addrFactor, v);
+    if (c.remainder matches tagged Valid .v) st.writeWord(addrRemainder, v);
+    if (c.transit   matches tagged Valid .v) st.writeWord(addrTransit, v);
+    if (c.store     matches tagged Valid .t) st.writeWord(tpl_1(t), tpl_2(t));
+    if (c.storeTail matches tagged Valid .t) st.writeWordTail(tpl_1(t), tpl_2(t));
+  endaction
+endfunction
+
+// writeAccFlags / writeAcc (below), as record updates.  `sb` is the
+// sign byte before the rule (st.readAccSign()).
+function VflCommit vcAccFlags(VflCommit c, Word64 sb, SM128 v, Bit#(3) flags);
+  VflCommit r = c;
+  match {.hi, .lo} = packAcc(v.mag);
+  r.accLeft  = tagged Valid hi;
+  r.accRight = tagged Valid lo;
+  r.accSign  = tagged Valid sbWith(sb, v.sign, flags);
+  return r;
+endfunction
+
+function VflCommit vcAcc(VflCommit c, Word64 sb, SM128 v) =
+  vcAccFlags(c, sb, v, sbFlags(sb));
+
 // >>> ONE VFL FIELD STORE, ONE WORD OR TWO, WITH ITS PROTECTION TEST,
 // 2026-11-17. <<<  Shared by the M+ family and CONNECT TO MEMORY (all
 // four of CM's shapes: one word or crossing, with or without a refill).
@@ -511,10 +596,14 @@ endfunction
 // indicators and counts unset: p.32's "terminated").  A second word below
 // 32 is handed back as the tail for rl_tail_write (ExecDone.tailWrite).
 // `hi`/`lo` are the field's word(s) as read (lo unused for one word).
-function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
-    vflFieldStore(StretchStorage st, BitAddr ea, Bit#(7) len_, Bit#(64) val,
-                  Word64 hi, Word64 lo);
-  actionvalue
+//
+// SINCE A2 (2026-11-24) IT IS A PLAN, NOT A WRITE: vflFieldStorePlan
+// returns the store as VflCommit fields (`store`, `storeTail`) on top of
+// the record it is given, with the same DS predicate deciding them.
+function Tuple3#(Bool, Maybe#(Tuple2#(WordAddr, Word64)), VflCommit)
+    vflFieldStorePlan(StretchStorage st, VflCommit c, BitAddr ea, Bit#(7) len_,
+                      Bit#(64) val, Word64 hi, Word64 lo);
+    VflCommit r = c;
     WordAddr w0 = baWord(ea);
     Bit#(6)  off = baBit(ea);
     Bool fcross = fieldCrosses(ea, len_);
@@ -522,14 +611,24 @@ function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
     Maybe#(Tuple2#(WordAddr, Word64)) tail = tagged Invalid;
     if (!ds) begin
       if (!fcross)
-        st.writeWord(w0, insertFieldBits(hi, off, len_, val));
+        r.store = tagged Valid tuple2(w0, insertFieldBits(hi, off, len_, val));
       else begin
         Tuple2#(Word64, Word64) np = insertFieldBitsPair(hi, lo, off, len_, val);
-        st.writeWord(w0, tpl_1(np));
+        r.store = tagged Valid tuple2(w0, tpl_1(np));
         if ((w0 + 1) < 32) tail = tagged Valid tuple2(w0 + 1, tpl_2(np));
-        else st.writeWordTail(w0 + 1, tpl_2(np));
+        else r.storeTail = tagged Valid tuple2(w0 + 1, tpl_2(np));
       end
     end
+    return tuple3(ds, tail, r);
+endfunction
+
+// The Action form, for the arms not yet converted to VflCommit.
+function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
+    vflFieldStore(StretchStorage st, BitAddr ea, Bit#(7) len_, Bit#(64) val,
+                  Word64 hi, Word64 lo);
+  actionvalue
+    match {.ds, .tail, .c} = vflFieldStorePlan(st, vflNoCommit, ea, len_, val, hi, lo);
+    commitVfl(st, c);
     return tuple2(ds, tail);
   endactionvalue
 endfunction
@@ -3155,7 +3254,59 @@ typedef struct {
   Maybe#(BoxReq) needsBox;
   // A crossing store's second word when it is below 32: see ExecDone.
   Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
+  // Everything else the instruction writes (VflCommit); execute()
+  // applies it with commitVfl.
+  VflCommit commit;
 } VflOutcome;
+
+// ---------------------------------------------------------------------
+// >>> THE VFL FAMILIES AS FUNCTIONS (fidelity_plan.md A2, 2026-11-24). <<<
+// vflIntOp was one 2200-line ActionValue whose thirteen opcode arms
+// wrote the accumulator, the factor, the remainder, the transit word and
+// storage directly.  Each family is now a plain function -- no Action;
+// it may READ storage through `st`'s value methods (readAcc, readFactor,
+// protViolates), as readAcc itself does -- that takes what vflIntOp's
+// preamble computed (VflCtx) and the running state of the call (VflArm),
+// and returns that state with its writes in `commit` (VflCommit, above).
+// vflIntOp dispatches on the opcode and hands the commit back in
+// VflOutcome; execute() applies it.
+//
+// THE ARM BODIES MOVED VERBATIM.  Each family function first binds the
+// names the arms used as vflIntOp locals (vi, ea, len_, needsRead, ind,
+// ...), so an arm's text is the text it had inside vflIntOp, except
+// where it wrote: `writeAcc(st, v)` became `vc = vcAcc(vc, accSb, v)`,
+// and so on, one line for one line.
+// ---------------------------------------------------------------------
+typedef struct {
+  Bit#(6) opKey;        // the code vflIntOp dispatches on (LTRS for decimal *, *+, /)
+  VflInstr vi;
+  Vector#(NPrefetch, Word64) prefetch;
+  Bit#(2) prefetchCount;
+  Maybe#(BoxRsp) boxResult;
+  Bool radixConv;
+  Bool isProgressive;
+  Bit#(7) len_;
+  Bit#(4) bsz;
+  Bool immediate;
+  IndexWord xIdx;
+  BitAddr ea;
+  Bit#(8) offSh;
+  IndexWord vflPx1;
+  Bool vflNeedsRefill;
+} VflCtx;
+
+typedef struct {
+  Maybe#(WordAddr) needsRead;
+  Maybe#(BoxReq) needsBox;
+  Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending;
+  Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts;
+  Maybe#(Tuple2#(WordAddr, Word64)) tailWrite;
+  Word64 ind;
+  Bool vflOk;
+  Bit#(2) vflReadsUsed;
+  Bool vflWriteArmHandled;
+  VflCommit commit;
+} VflArm;
 
 // ---------------------------------------------------------------------
 // THE VFL OPERAND FETCH, ONCE (2026-11-18, plan §1c step 5e stage 2).
@@ -3235,6 +3386,542 @@ function WordAddr vflRmwNextRead(Bit#(2) have, WordAddr w0, Bool crosses,
                                  WordAddr refill) =
   (have == 0) ? w0 : (have == 1 && crosses) ? (w0 + 1) : refill;
 
+// THE LOAD AND ADD FAMILY (A2): L, LWF, + and +MG, moved verbatim from
+// vflIntOp.  Writes: the accumulator (VflCommit's trio).
+function VflArm vflLoadAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
+        case (cx.opKey)
+          6'b000101, 6'b100101: begin // L (Load), LWF -- first arm converted to the
+            // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
+            // Every other arm below still calls readField/readHW/
+            // maybeRefill directly (the OLD, still-synchronous
+            // st.readWord path) -- unconverted, unaffected, working
+            // exactly as before.
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            // >>> DECIMAL LOAD AND LOAD WITH FLAG, 2026-11-16: AN ADD TO
+            // ZERO, THROUGH mkDecBox. <<<  Reference Manual printed p.61:
+            // "The numeric part of the addressed operand is placed in the
+            // accumulator as specified by the offset", modifiers "as in
+            // ADD"; printed p.58: only each byte's four low-order bits,
+            // "the accumulator is always composed of integral 4-bit
+            // bytes"; printed p.57: the offset is "a multiple of four by
+            // ignoring the two low-order bits".  PF "as in ADD" (p.60):
+            // digits overlapping the left end are dropped and PF comes on.
+            //
+            // WHY THE ADDER, AND NOT WIRES: C22-6578 printed p.14's
+            // Method 4 says "The decimal load operation behaves like a
+            // decimal 'add to zero' operation", and printed p.15, comment
+            // (b), says what that does to a byte that is not a digit: "In
+            // the decimal load the 4-bit bytes will not be altered if they
+            // contain what appears to be decimal information.  Otherwise,
+            // carry propagation and assimilation will occur.  The byte
+            // (1 1 1 1)2, for instance, will become (0101)2 with a carry
+            // to the higher byte."  So the operand goes to the box with a
+            // zero accumulator, and mkDecBox's digit step (15 -> 5, carry
+            // one) is that sentence.  The box is asked once every read,
+            // the refill included, is in hand: the accumulator write
+            // commits on the run that makes it (see + below).
+            if (!isValid(needsRead) && vi.m.decimal == 1) begin
+              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.ldDig, .ldHi} = decCompact(sm.mag[63:0], bsz);
+              Bool ldPf = ldHi || (offDec != 0 && (ldDig >> (8'd128 - offDec)) != 0);
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+                // the trailing block asks for the refill word (or refuses)
+              end else if (decOf(boxResult) matches tagged Valid .dr) begin
+                SM128 shifted = SM128 { sign: sm.sign, mag: dr.r };
+                Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
+                vc = vcAccFlags(vc, accSb, shifted, (vi.code == 6'b100101) ? flags : 0);
+                ind = setDataFlagsF(ind, flags);
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, shifted);
+                if (ldPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False });
+                needsRead = tagged Valid 0;
+              end
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              // PF "as in ADD" (printed p.61; p.60's rule), 2026-11-16:
+              // the operand shifted wide, any bit past the left end
+              // dropped and reported (decks/vfl_binary_add_indicators.strap
+              // B11, B12).  Until then the shift dropped them silently.
+              Bit#(256) ldWide = zeroExtend(sm.mag) << offSh;
+              SM128 shifted = SM128 { sign: sm.sign, mag: truncate(ldWide) };
+              // Printed p.57: LOAD WITH FLAG places the flag bits in the
+              // three rightmost bits of the sign byte register, and LOAD
+              // sets those three positions to zero.
+              Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
+              vc = vcAccFlags(vc, accSb, shifted, (vi.code == 6'b100101) ? flags : 0);
+              ind = setDataFlagsF(ind, flags);
+              ind = setBit(ind, ind_MOP, 0);
+              ind = setResultIndicatorsF(ind, shifted);
+              if ((ldWide >> 128) != 0) ind = setBit(ind, ind_PF, 1);
+            end
+          end
+          6'b000001, 6'b100001: begin // + (Add) and +MG (Add to Magnitude)
+            // "-" is + with invert=1, and "-MG" is +MG with invert=1.
+            // Same prefetch/bail-out shape as L above.
+            //
+            // ADD TO MAGNITUDE, Reference Manual printed p.60, and
+            // like its to-memory twin it is three sentences:
+            //
+            //   "The addressed operand is algebraically added to the
+            //   MAGNITUDE of the contents of the accumulator with
+            //   specified offset.  **The accumulator operand is
+            //   assumed positive for purposes of the addition
+            //   itself.**  If the result is positive, the sum is
+            //   placed into the accumulator.  **If the result is
+            //   negative, the ENTIRE ACCUMULATOR IS CLEARED TO
+            //   ZERO.**  In either case the content of the
+            //   accumulator sign byte register is not changed."
+            //
+            // Modifiers and indicators, printed p.61: "Unsigned;
+            // Negative Sign; Radix.  These modifiers operate as in
+            // ADD", and "Lost Carry (LC); Partial Field (PF); Data
+            // Flags (TF, UF, VF); To-Memory Operation (MOP);
+            // Arithmetic Result (RLZ, RZ, RGZ, RN) ... set as in
+            // ADD".  So unlike M+MG, the negative sign modifier here
+            // belongs to the STORAGE operand -- p.60 under ADD:
+            // "This modifier designates whether the sign of the
+            // storage operand is taken as-is or is inverted" -- and
+            // that is the half of printed p.57's table headed
+            // TO-ACCUMULATOR OPERATION.  fieldToSM already applies
+            // it, so nothing changes on that side.
+            //
+            // FIGURE 12 ON p.61 IS THE PROOF, and it is IBM's own
+            // worked example rather than my reading of the prose.
+            // "Given two 64-bit unsigned binary numbers x and y, put
+            // the larger of the two in the accumulator":
+            //
+            //     L  (BU, 64, 8), X, 0
+            //     -MG(BU, 64, 8), Y, 0     note 1
+            //     +  (BU, 64, 8), Y, 0     note 2
+            //
+            //   note 1: result is x-y if x >= y, 0 if x < y
+            //   note 2: result is x   if x >= y, y if x < y
+            //
+            // Note 1 is the whole operation: the accumulator's
+            // magnitude |x| plus the inverted storage operand -y,
+            // clamped to zero when that goes negative.  The deck
+            // decks/plus_mg.strap runs Figure 12 itself.
+            //
+            // "ENTIRE ACCUMULATOR" MEANS ENTIRE, including the bits
+            // below the offset, which is why this clears `mag`
+            // outright rather than masking a field.  p.60 says the
+            // same thing about ADD two paragraphs earlier: "all
+            // add-type operations operate upon the contents of the
+            // entire accumulator ... When this occurs, the whole
+            // contents of the accumulator may be changed, including
+            // the part below the offset."
+            Bool magnitude = (vi.code == 6'b100001);
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead) && vi.m.decimal == 1) begin
+              // >>> DECIMAL ADD AND ADD TO MAGNITUDE, 2026-11-16. <<<
+              // Reference Manual printed p.60 (PDF 63), ADD, Radix: "In
+              // decimal arithmetic, four-bit bytes are used, only the four
+              // low-order bits of each byte in the addressed operand
+              // participate in the operation, and a carry occurs from one
+              // byte to the next when a sum byte exceeds 9.  In decimal
+              // operations, the two low-order bits of the effective
+              // offset are ignored and considered zero."  Indicators,
+              // same page: "Lost Carry (LC).  This indicator is actuated
+              // if information is lost because a carry attempts to
+              // propagate beyond the left end of the accumulator.
+              // Partial Field (PF).  This indicator is turned on if
+              // significant bits of the data field from storage overlap
+              // the left end of the accumulator ... the high-order bits
+              // of the result are dropped.  A partial field condition
+              // will not cause a lost carry indication."  (The BINARY
+              // arm below sets both by the same rule since 2026-11-16.)
+              //
+              // THE SUM IS mkDecBox's (StretchDecBox.bsv), asked for by
+              // the NeedBox bail once every word this instruction reads
+              // is in hand -- INCLUDING a progressive refill: the
+              // accumulator write below commits on the run that makes
+              // it, so the box is asked only on a run that cannot bail
+              // again afterwards.  (With a refill still to come this run
+              // does nothing and the trailing block asks for the word;
+              // with a crossing field AND a refill the trailing block
+              // refuses the operation with OP, before anything is
+              // written.)
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.dDig, .dHi} = decCompact(opnd.mag[63:0], bsz);
+              Bit#(128) dSh = dDig << offDec;
+              Bool dPf = dHi || (offDec != 0 && (dDig >> (8'd128 - offDec)) != 0);
+              SM128 acc = readAcc(st);
+              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
+              Bool dSub = (accUsed.sign != opnd.sign);
+              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+                // the trailing block asks for the refill word (or refuses)
+              end else if (decOf(boxResult) matches tagged Valid .dr) begin
+                // smAdd's sign rule, in the box's terms (StretchDecBox's
+                // header): like signs keep the accumulator's; unlike signs
+                // keep it when |acc| >= |operand| -- so an all-zero sum
+                // keeps it, p.60's "the sign remains as it was" -- and
+                // take the operand's otherwise.
+                SM128 sum = SM128 { sign: (!dSub || dr.carry) ? accUsed.sign : opnd.sign,
+                                    mag: dr.r };
+                SM128 stored = magnitude
+                  ? SM128 { sign: acc.sign, mag: (sum.sign == 0) ? sum.mag : 0 }
+                  : sum;
+                vc = vcAcc(vc, accSb, stored);
+                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+                ind = setBit(ind, ind_MOP, 0);
+                ind = setResultIndicatorsF(ind, stored);
+                if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
+                if (dPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False });
+                needsRead = tagged Valid 0;
+              end
+            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              // PARTIAL FIELD AND LOST CARRY, 2026-11-16 (this arm set
+              // neither until then; the decimal arm above did).  printed
+              // p.60, ADD: PF "is turned on if significant bits of the
+              // data field from storage overlap the left end of the
+              // accumulator ... the high-order bits of the result are
+              // dropped.  A partial field condition will not cause a lost
+              // carry indication.  However, both conditions may arise
+              // during the execution of a single instruction"; LC "is
+              // actuated if information is lost because a carry attempts
+              // to propagate beyond the left end of the accumulator".
+              // printed p.61 sets both for +MG "as in ADD".  So PF is
+              // judged on the operand shifted WIDE, and LC on the carry
+              // out of the 128-bit sum of what is left -- a like-signed
+              // add, since an unlike-signed one is a subtraction and
+              // cannot carry out (decks/vfl_binary_add_indicators.strap
+              // B5-B10).
+              // The rule is binAccAdd's (StretchALU.bsv), shared with *+;
+              // the sum itself is now mkDecBox's (below).
+              SM128 acc = readAcc(st);
+              // "assumed positive for purposes of the addition itself"
+              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
+              // THE SUM IS THE SERIAL ADDER'S, mkDecBox in BINARY mode
+              // (2026-11-19, plan §1c step 5e stage 3).  Buchholz printed
+              // p.208: "variable-field-length (binary or decimal) add
+              // operations ... are executed by the serial unit", and
+              // p.209: "A decimal-correction circuit is switched into the
+              // data path when decimal addition or subtraction is
+              // specified" -- one adder, so the binary add asks the box
+              // the decimal arm above asks, with the correction off.  The
+              // alignment and PF stay here (binAlign, binAccAdd's first
+              // half); the box adds magnitudes, complementing for unlike
+              // signs, and its carry gives smAdd's sign rule and the LC:
+              // like signs, the carry out of bit 127; unlike, True iff
+              // acc >= operand, which keeps the accumulator's sign.
+              // binAccAdd itself stays for *+ (its sum follows the
+              // multiply box's answer, and a second box trip would lose
+              // the product the PF is judged on).
+              match {.addSh, .bPf} = binAlign(opnd, offSh);
+              Bool bSub = accUsed.sign != addSh.sign;
+              if (decOf(boxResult) matches tagged Valid .br) begin
+                SM128 sum = SM128 { sign: (!bSub || br.carry) ? accUsed.sign : addSh.sign,
+                                    mag: br.r };
+                Bool bLc = !bSub && br.carry;
+                // "If the result is positive, the sum is placed into
+                // the accumulator.  If the result is negative, the
+                // entire accumulator is cleared to zero.  In either
+                // case the content of the accumulator sign byte
+                // register is not changed."  The sign kept is the
+                // accumulator's own, both ways -- which also satisfies
+                // p.60's closing rule, "on any operation in which the
+                // result in the accumulator is all zero, the sign
+                // remains as it was before the operation began".
+                SM128 stored = magnitude
+                  ? SM128 { sign: acc.sign,
+                            mag: (sum.sign == 0) ? sum.mag : 0 }
+                  : sum;
+                vc = vcAcc(vc, accSb, stored);
+                // "set according to the contents of the ENTIRE
+                // accumulator when the operation is complete" (p.60,
+                // Arithmetic Result).  A cleared accumulator whose sign
+                // byte stays minus reads RZ AND RN: printed p.47's RN is
+                // "negative whether zero or not".  (Until 2026-11-16 this
+                // comment argued the opposite, that "the sign remains as
+                // it was" required RN off; that sentence is about the
+                // sign kept, not the indicator, and the decimal arm's
+                // A10 already pinned RZ RN for the same case.)
+                ind = setResultIndicatorsF(ind, stored);
+                if (bLc) ind = setBit(ind, ind_LC, 1);
+                if (bPf) ind = setBit(ind, ind_PF, 1);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: addSh.mag,
+                                                                 sub: bSub, binary: True });
+                needsRead = tagged Valid 0;
+              end
+            end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
+// THE COMPARE FAMILY (A2, with load and add): K, KF, KE, KFE, KR and KFR,
+// moved verbatim from vflIntOp.  Writes: none (indicators only).
+function VflArm vflCompareFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
+        case (cx.opKey)
+          6'b010001, 6'b110001,  // K (Compare), KF (Compare Field)
+          6'b010011, 6'b110011,  // KE, KFE (Compare [Field] if Equal)
+          6'b010101, 6'b110101: begin // KR, KFR (Compare [Field] for Range)
+            // >>> KE, KFE, KR AND KFR SHARE THIS ARM, 2026-11-16 (G2.3
+            // stage 2), BOTH RADICES. <<<  Reference Manual printed
+            // pp.65-67, read in the page images.  COMPARE IF EQUAL (p.65):
+            // "If the accumulator-equal indicator is off when this
+            // operation is interpreted, the comparison is not performed
+            // and the comparison result indicators are not changed.
+            // Otherwise, the operation is executed exactly as is
+            // COMPARE."  COMPARE FOR RANGE (p.66): "If the
+            // accumulator-high indicator is off when this operation is
+            // interpreted, the comparison is performed and the comparison
+            // result indicators are not changed.  Otherwise, the
+            // operation is identical to COMPARE except for the setting of
+            // the comparison result indicators.  If the accumulator
+            // operand is equal to or higher than the storage operand, the
+            // accumulator-high indicator is left on.  If the accumulator
+            // operand is less than the storage operand, the AE indicator
+            // is turned on, and AH is turned off."  KFE and KFR are the
+            // same on COMPARE FIELD (pp.66-67).  The data flags and MOP
+            // are "set as in COMPARE" in every case -- the condition
+            // guards only the comparison result indicators -- which is
+            // how KE's "comparison is not performed" is read here: the
+            // operand is still fetched (its flags are reported) and the
+            // result is not used.  CHOSEN; no page says whether a KE with
+            // AE off sets the data flags.
+            //
+            // The codes' low bits: bit 1 (code 0100x1x) marks the
+            // conditional ones, and KE/KR differ in bit 2 -- 010011 KE,
+            // 010101 KR (strap/opcodes.py, from the pocket card).
+            // -> AL/AE/AH.  Same prefetch/bail-out shape as L above.
+            //
+            // COMPARE FIELD, Reference Manual printed p.65, verbatim:
+            //
+            //   "A field in the accumulator is algebraically compared
+            //   with the addressed operand.  **This accumulator field
+            //   is the same length in bytes as the field from storage
+            //   exclusive of the sign byte**, and its location is
+            //   specified by the offset in the usual manner.  **The
+            //   actual accumulator sign is not used by the operation.
+            //   A positive sign is assumed for the accumulator
+            //   field.**  The sign of the storage field is used as
+            //   modified by the sign modifiers.  The comparison
+            //   result indicators are set to describe the accumulator
+            //   field as compared with the storage field.  Neither
+            //   operand is changed by the operation.  The arithmetic
+            //   result indicators are not affected."
+            //
+            // AND THE PROGRAMMING NOTE ON THE SAME PAGE IS THE WHOLE
+            // DIFFERENCE FROM K: "The field comparison operations are
+            // the only arithmetic operations that do not treat the
+            // entire accumulator contents as a single quantity.
+            // Comparisons are made between fields of equal length in
+            // numeric bytes.  For this reason, **no indication is
+            // given in these operations if there is a one-bit in the
+            // accumulator to the left of the field** which is being
+            // compared with the storage operand."
+            //
+            // So K takes everything left of the offset with its real
+            // sign; KF takes a bounded field with a forced positive
+            // sign and ignores whatever is above it.
+            //
+            // ARRIVED VIA MCP, printed p.17 line 30: "KF(BU,48),
+            // X IOCD" -- the compare that decides whether a card
+            // image IS an IOCD card, and so the first of the two
+            // operations standing between MCP and knowing what
+            // devices it has (docs/boot_plan.md A2).
+            Bool fieldCmp = (vi.code[5] == 1);
+            Bool condEq    = (vi.code[4:0] == 5'b10011);   // KE, KFE
+            Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              SM128 acc = readAcc(st);
+              Cmp3 c = CmpEqual;
+              if (fieldCmp) begin
+                // "the same length in bytes as the field from storage
+                // EXCLUSIVE OF THE SIGN BYTE" -- and fieldToSM has
+                // already stripped that byte off `opnd.mag`, so the
+                // two numeric parts are the same width by
+                // construction.  A length at or below the sign byte
+                // leaves no numeric part at all; comparing zero
+                // against zero is what that degenerates to and the
+                // guard keeps the subtraction from wrapping.
+                Bit#(7) numBits = (vi.m.unsign == 1) ? len_
+                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+                // numBits is at most `len_`, and effLength caps that
+                // at 64, so a 128-bit mask never saturates and needs
+                // no guard.
+                Bit#(128) nmask = (128'b1 << numBits) - 1;
+                // "A positive sign is assumed for the accumulator
+                // field", and the mask is what implements "no
+                // indication is given ... if there is a one-bit in
+                // the accumulator to the left of the field".
+                SM128 accF = SM128 { sign: 0, mag: (acc.mag >> offSh) & nmask };
+                c = smCompare(accF, opnd);
+              end else begin
+                // COMPARE, p.65: "The contents of the accumulator
+                // **LEFT OF THE SPECIFIED OFFSET** are algebraically
+                // compared with the addressed operand.  **The bits to
+                // the right of the offset do not participate in the
+                // comparison.**"
+                //
+                // This arm used to shift the OPERAND left by the
+                // offset and compare it against the whole
+                // accumulator.  That gives the same answer whenever
+                // the accumulator's low `offset` bits are zero, and a
+                // different one when they are not: those bits then
+                // break a tie the page excludes them from.  Measured,
+                // accumulator 0x101 against an eight-bit 1 at offset
+                // 8 -- the manual says equal, the old code said the
+                // accumulator was high.
+                //
+                // NOTHING IN THE SUITE CAUGHT IT and nothing could:
+                // at offset 0, or whenever the high parts already
+                // differ, the two readings agree, and that covers
+                // every K in several hundred listing-verified
+                // sections.  decks/compare_offset.strap was written
+                // to FAIL first and did.
+                //
+                // The same page's other clause needs no code: "if
+                // the field length and offset are such that
+                // high-order positions of the storage field compare
+                // with positions to the left of the left end of the
+                // accumulator, the accumulator field is extended by
+                // adding zeros to its left" -- which a 128-bit
+                // magnitude does for free.
+                SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
+                c = smCompare(accSh, opnd);
+              end
+              // >>> DECIMAL K, KF, KE, KFE, KR, KFR, 2026-11-16. <<<
+              // "Radix.  These modifiers operate as in ADD" (p.65): four-
+              // bit bytes, the offset's two low-order bits ignored.  And
+              // the Programming Note, item 4: "The comparison is performed
+              // by making a subtraction and testing the result.  A decimal
+              // digit with byte size less than four is handled as in any
+              // other subtraction."  So the decimal magnitudes go to
+              // mkDecBox as a subtraction: no end carry means the
+              // accumulator's is the smaller, an all-zero difference means
+              // equal.  Signs as smCompare's (p.65 item 1: "+x > +y > +0 =
+              // -0 > -y > -x").  Compare writes no storage and no
+              // accumulator, so the box may be asked on any run that has
+              // the operand; a later refill bail just asks it again.
+              Bit#(8) offDec = offSh & 8'hFC;
+              match {.kDig, .kHi} = decCompact(opnd.mag[63:0], bsz);
+              Bit#(7) kNum = (vi.m.unsign == 1) ? len_
+                           : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
+              Bit#(128) kAccMag = fieldCmp
+                ? ((acc.mag >> offDec) & decDigitMask(decDigitCount(kNum, bsz)))
+                : (acc.mag >> offDec);
+              Bit#(1) kAccSign = fieldCmp ? 0 : acc.sign;
+              Bool ah0 = (ind[63 - ind_AH] == 1);
+              Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
+              if (vi.m.decimal == 1 && !skipCmp) begin
+                if (decOf(boxResult) matches tagged Valid .kr) begin
+                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
+                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
+                  // magnitude order from the subtraction (a digit beyond
+                  // the 32nd makes the storage operand the larger)
+                  Cmp3 m = kHi ? CmpLow
+                         : (kr.r == 0) ? CmpEqual
+                         : kr.carry ? CmpHigh : CmpLow;
+                  c = (as_ != bs_) ? ((as_ == 1) ? CmpLow : CmpHigh)
+                    : (as_ == 0) ? m
+                    : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False });
+                  needsRead = tagged Valid 0;
+                end
+              end
+              if (skipCmp) begin
+                // KE/KFE with AE off: comparison indicators unchanged
+              end else if (condRange && !ah0) begin
+                // KR/KFR with AH off: comparison indicators unchanged
+              end else if (condRange) begin
+                if (c == CmpLow) begin
+                  ind = setBit(ind, ind_AE, 1);
+                  ind = setBit(ind, ind_AH, 0);
+                end
+              end else
+                ind = setAccCmpIndicatorsF(ind, c);
+            end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
              Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
@@ -3245,6 +3932,7 @@ function ActionValue#(VflOutcome)
     Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = tagged Invalid;
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
+    VflCommit vc = vflNoCommit;   // the families' writes (VflCommit)
     Word64 ind = ind0;
 
       Bool isProgressive = (vi.a.p != 0 && vi.a.p != 4);
@@ -3449,77 +4137,32 @@ function ActionValue#(VflOutcome)
                        || (vi.m.decimal == 1 && (vi.code == 6'b011001     // *
                                               || vi.code == 6'b111001     // *+
                                               || vi.code == 6'b011101));  // /
-        case (ltrsAction ? 6'b111101 : vi.code)
-          6'b000101, 6'b100101: begin // L (Load), LWF -- first arm converted to the
-            // prefetch/bail-out staging (docs/phase2_arm_inventory.md).
-            // Every other arm below still calls readField/readHW/
-            // maybeRefill directly (the OLD, still-synchronous
-            // st.readWord path) -- unconverted, unaffected, working
-            // exactly as before.
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            // >>> DECIMAL LOAD AND LOAD WITH FLAG, 2026-11-16: AN ADD TO
-            // ZERO, THROUGH mkDecBox. <<<  Reference Manual printed p.61:
-            // "The numeric part of the addressed operand is placed in the
-            // accumulator as specified by the offset", modifiers "as in
-            // ADD"; printed p.58: only each byte's four low-order bits,
-            // "the accumulator is always composed of integral 4-bit
-            // bytes"; printed p.57: the offset is "a multiple of four by
-            // ignoring the two low-order bits".  PF "as in ADD" (p.60):
-            // digits overlapping the left end are dropped and PF comes on.
-            //
-            // WHY THE ADDER, AND NOT WIRES: C22-6578 printed p.14's
-            // Method 4 says "The decimal load operation behaves like a
-            // decimal 'add to zero' operation", and printed p.15, comment
-            // (b), says what that does to a byte that is not a digit: "In
-            // the decimal load the 4-bit bytes will not be altered if they
-            // contain what appears to be decimal information.  Otherwise,
-            // carry propagation and assimilation will occur.  The byte
-            // (1 1 1 1)2, for instance, will become (0101)2 with a carry
-            // to the higher byte."  So the operand goes to the box with a
-            // zero accumulator, and mkDecBox's digit step (15 -> 5, carry
-            // one) is that sentence.  The box is asked once every read,
-            // the refill included, is in hand: the accumulator write
-            // commits on the run that makes it (see + below).
-            if (!isValid(needsRead) && vi.m.decimal == 1) begin
-              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              Bit#(8) offDec = offSh & 8'hFC;
-              match {.ldDig, .ldHi} = decCompact(sm.mag[63:0], bsz);
-              Bool ldPf = ldHi || (offDec != 0 && (ldDig >> (8'd128 - offDec)) != 0);
-              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-                // the trailing block asks for the refill word (or refuses)
-              end else if (decOf(boxResult) matches tagged Valid .dr) begin
-                SM128 shifted = SM128 { sign: sm.sign, mag: dr.r };
-                Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
-                writeAccFlags(st, shifted, (vi.code == 6'b100101) ? flags : 0);
-                ind = setDataFlagsF(ind, flags);
-                ind = setBit(ind, ind_MOP, 0);
-                ind = setResultIndicatorsF(ind, shifted);
-                if (ldPf) ind = setBit(ind, ind_PF, 1);
-              end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: 0, b: ldDig << offDec, sub: False, binary: False });
-                needsRead = tagged Valid 0;
-              end
-            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 sm = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              // PF "as in ADD" (printed p.61; p.60's rule), 2026-11-16:
-              // the operand shifted wide, any bit past the left end
-              // dropped and reported (decks/vfl_binary_add_indicators.strap
-              // B11, B12).  Until then the shift dropped them silently.
-              Bit#(256) ldWide = zeroExtend(sm.mag) << offSh;
-              SM128 shifted = SM128 { sign: sm.sign, mag: truncate(ldWide) };
-              // Printed p.57: LOAD WITH FLAG places the flag bits in the
-              // three rightmost bits of the sign byte register, and LOAD
-              // sets those three positions to zero.
-              Bit#(3) flags = immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign);
-              writeAccFlags(st, shifted, (vi.code == 6'b100101) ? flags : 0);
-              ind = setDataFlagsF(ind, flags);
-              ind = setBit(ind, ind_MOP, 0);
-              ind = setResultIndicatorsF(ind, shifted);
-              if ((ldWide >> 128) != 0) ind = setBit(ind, ind_PF, 1);
-            end
+        // What the family functions take (VflCtx, VflArm): the values
+        // above, and this call's running state as it stands here.
+        VflCtx cx = VflCtx { opKey: ltrsAction ? 6'b111101 : vi.code,
+                             vi: vi, prefetch: prefetch,
+                             prefetchCount: prefetchCount,
+                             boxResult: boxResult, radixConv: radixConv,
+                             isProgressive: isProgressive, len_: len_,
+                             bsz: bsz, immediate: immediate, xIdx: xIdx,
+                             ea: ea, offSh: offSh, vflPx1: vflPx1,
+                             vflNeedsRefill: vflNeedsRefill };
+        VflArm armIn = VflArm { needsRead: needsRead, needsBox: needsBox,
+                                vflPending: vflPending,
+                                connCounts: connCounts,
+                                tailWrite: tailWrite, ind: ind,
+                                vflOk: vflOk, vflReadsUsed: vflReadsUsed,
+                                vflWriteArmHandled: vflWriteArmHandled,
+                                commit: vc };
+        case (cx.opKey)
+          6'b000101, 6'b100101,
+          6'b000001, 6'b100001: begin // vflLoadAddFamily
+            VflArm fr = vflLoadAddFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           6'b001101, 6'b101101: begin // ST (Store) and SRD (Store
             // Rounded) -- prefetch/bail-out shape,
@@ -3829,206 +4472,6 @@ function ActionValue#(VflOutcome)
                 end else
                   needsRead = tagged Valid vflRmwNextRead(prefetchCount, w0, False,
                                                           zeroExtend(vflPx1.refill));
-              end
-            end
-          end
-          6'b000001, 6'b100001: begin // + (Add) and +MG (Add to Magnitude)
-            // "-" is + with invert=1, and "-MG" is +MG with invert=1.
-            // Same prefetch/bail-out shape as L above.
-            //
-            // ADD TO MAGNITUDE, Reference Manual printed p.60, and
-            // like its to-memory twin it is three sentences:
-            //
-            //   "The addressed operand is algebraically added to the
-            //   MAGNITUDE of the contents of the accumulator with
-            //   specified offset.  **The accumulator operand is
-            //   assumed positive for purposes of the addition
-            //   itself.**  If the result is positive, the sum is
-            //   placed into the accumulator.  **If the result is
-            //   negative, the ENTIRE ACCUMULATOR IS CLEARED TO
-            //   ZERO.**  In either case the content of the
-            //   accumulator sign byte register is not changed."
-            //
-            // Modifiers and indicators, printed p.61: "Unsigned;
-            // Negative Sign; Radix.  These modifiers operate as in
-            // ADD", and "Lost Carry (LC); Partial Field (PF); Data
-            // Flags (TF, UF, VF); To-Memory Operation (MOP);
-            // Arithmetic Result (RLZ, RZ, RGZ, RN) ... set as in
-            // ADD".  So unlike M+MG, the negative sign modifier here
-            // belongs to the STORAGE operand -- p.60 under ADD:
-            // "This modifier designates whether the sign of the
-            // storage operand is taken as-is or is inverted" -- and
-            // that is the half of printed p.57's table headed
-            // TO-ACCUMULATOR OPERATION.  fieldToSM already applies
-            // it, so nothing changes on that side.
-            //
-            // FIGURE 12 ON p.61 IS THE PROOF, and it is IBM's own
-            // worked example rather than my reading of the prose.
-            // "Given two 64-bit unsigned binary numbers x and y, put
-            // the larger of the two in the accumulator":
-            //
-            //     L  (BU, 64, 8), X, 0
-            //     -MG(BU, 64, 8), Y, 0     note 1
-            //     +  (BU, 64, 8), Y, 0     note 2
-            //
-            //   note 1: result is x-y if x >= y, 0 if x < y
-            //   note 2: result is x   if x >= y, y if x < y
-            //
-            // Note 1 is the whole operation: the accumulator's
-            // magnitude |x| plus the inverted storage operand -y,
-            // clamped to zero when that goes negative.  The deck
-            // decks/plus_mg.strap runs Figure 12 itself.
-            //
-            // "ENTIRE ACCUMULATOR" MEANS ENTIRE, including the bits
-            // below the offset, which is why this clears `mag`
-            // outright rather than masking a field.  p.60 says the
-            // same thing about ADD two paragraphs earlier: "all
-            // add-type operations operate upon the contents of the
-            // entire accumulator ... When this occurs, the whole
-            // contents of the accumulator may be changed, including
-            // the part below the offset."
-            Bool magnitude = (vi.code == 6'b100001);
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead) && vi.m.decimal == 1) begin
-              // >>> DECIMAL ADD AND ADD TO MAGNITUDE, 2026-11-16. <<<
-              // Reference Manual printed p.60 (PDF 63), ADD, Radix: "In
-              // decimal arithmetic, four-bit bytes are used, only the four
-              // low-order bits of each byte in the addressed operand
-              // participate in the operation, and a carry occurs from one
-              // byte to the next when a sum byte exceeds 9.  In decimal
-              // operations, the two low-order bits of the effective
-              // offset are ignored and considered zero."  Indicators,
-              // same page: "Lost Carry (LC).  This indicator is actuated
-              // if information is lost because a carry attempts to
-              // propagate beyond the left end of the accumulator.
-              // Partial Field (PF).  This indicator is turned on if
-              // significant bits of the data field from storage overlap
-              // the left end of the accumulator ... the high-order bits
-              // of the result are dropped.  A partial field condition
-              // will not cause a lost carry indication."  (The BINARY
-              // arm below sets both by the same rule since 2026-11-16.)
-              //
-              // THE SUM IS mkDecBox's (StretchDecBox.bsv), asked for by
-              // the NeedBox bail once every word this instruction reads
-              // is in hand -- INCLUDING a progressive refill: the
-              // accumulator write below commits on the run that makes
-              // it, so the box is asked only on a run that cannot bail
-              // again afterwards.  (With a refill still to come this run
-              // does nothing and the trailing block asks for the word;
-              // with a crossing field AND a refill the trailing block
-              // refuses the operation with OP, before anything is
-              // written.)
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              Bit#(8) offDec = offSh & 8'hFC;
-              match {.dDig, .dHi} = decCompact(opnd.mag[63:0], bsz);
-              Bit#(128) dSh = dDig << offDec;
-              Bool dPf = dHi || (offDec != 0 && (dDig >> (8'd128 - offDec)) != 0);
-              SM128 acc = readAcc(st);
-              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
-              Bool dSub = (accUsed.sign != opnd.sign);
-              if (vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-                // the trailing block asks for the refill word (or refuses)
-              end else if (decOf(boxResult) matches tagged Valid .dr) begin
-                // smAdd's sign rule, in the box's terms (StretchDecBox's
-                // header): like signs keep the accumulator's; unlike signs
-                // keep it when |acc| >= |operand| -- so an all-zero sum
-                // keeps it, p.60's "the sign remains as it was" -- and
-                // take the operand's otherwise.
-                SM128 sum = SM128 { sign: (!dSub || dr.carry) ? accUsed.sign : opnd.sign,
-                                    mag: dr.r };
-                SM128 stored = magnitude
-                  ? SM128 { sign: acc.sign, mag: (sum.sign == 0) ? sum.mag : 0 }
-                  : sum;
-                writeAcc(st, stored);
-                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-                ind = setBit(ind, ind_MOP, 0);
-                ind = setResultIndicatorsF(ind, stored);
-                if (!dSub && dr.carry) ind = setBit(ind, ind_LC, 1);
-                if (dPf) ind = setBit(ind, ind_PF, 1);
-              end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: dSh, sub: dSub, binary: False });
-                needsRead = tagged Valid 0;
-              end
-            end else if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
-              // PARTIAL FIELD AND LOST CARRY, 2026-11-16 (this arm set
-              // neither until then; the decimal arm above did).  printed
-              // p.60, ADD: PF "is turned on if significant bits of the
-              // data field from storage overlap the left end of the
-              // accumulator ... the high-order bits of the result are
-              // dropped.  A partial field condition will not cause a lost
-              // carry indication.  However, both conditions may arise
-              // during the execution of a single instruction"; LC "is
-              // actuated if information is lost because a carry attempts
-              // to propagate beyond the left end of the accumulator".
-              // printed p.61 sets both for +MG "as in ADD".  So PF is
-              // judged on the operand shifted WIDE, and LC on the carry
-              // out of the 128-bit sum of what is left -- a like-signed
-              // add, since an unlike-signed one is a subtraction and
-              // cannot carry out (decks/vfl_binary_add_indicators.strap
-              // B5-B10).
-              // The rule is binAccAdd's (StretchALU.bsv), shared with *+;
-              // the sum itself is now mkDecBox's (below).
-              SM128 acc = readAcc(st);
-              // "assumed positive for purposes of the addition itself"
-              SM128 accUsed = magnitude ? SM128 { sign: 0, mag: acc.mag } : acc;
-              // THE SUM IS THE SERIAL ADDER'S, mkDecBox in BINARY mode
-              // (2026-11-19, plan §1c step 5e stage 3).  Buchholz printed
-              // p.208: "variable-field-length (binary or decimal) add
-              // operations ... are executed by the serial unit", and
-              // p.209: "A decimal-correction circuit is switched into the
-              // data path when decimal addition or subtraction is
-              // specified" -- one adder, so the binary add asks the box
-              // the decimal arm above asks, with the correction off.  The
-              // alignment and PF stay here (binAlign, binAccAdd's first
-              // half); the box adds magnitudes, complementing for unlike
-              // signs, and its carry gives smAdd's sign rule and the LC:
-              // like signs, the carry out of bit 127; unlike, True iff
-              // acc >= operand, which keeps the accumulator's sign.
-              // binAccAdd itself stays for *+ (its sum follows the
-              // multiply box's answer, and a second box trip would lose
-              // the product the PF is judged on).
-              match {.addSh, .bPf} = binAlign(opnd, offSh);
-              Bool bSub = accUsed.sign != addSh.sign;
-              if (decOf(boxResult) matches tagged Valid .br) begin
-                SM128 sum = SM128 { sign: (!bSub || br.carry) ? accUsed.sign : addSh.sign,
-                                    mag: br.r };
-                Bool bLc = !bSub && br.carry;
-                // "If the result is positive, the sum is placed into
-                // the accumulator.  If the result is negative, the
-                // entire accumulator is cleared to zero.  In either
-                // case the content of the accumulator sign byte
-                // register is not changed."  The sign kept is the
-                // accumulator's own, both ways -- which also satisfies
-                // p.60's closing rule, "on any operation in which the
-                // result in the accumulator is all zero, the sign
-                // remains as it was before the operation began".
-                SM128 stored = magnitude
-                  ? SM128 { sign: acc.sign,
-                            mag: (sum.sign == 0) ? sum.mag : 0 }
-                  : sum;
-                writeAcc(st, stored);
-                // "set according to the contents of the ENTIRE
-                // accumulator when the operation is complete" (p.60,
-                // Arithmetic Result).  A cleared accumulator whose sign
-                // byte stays minus reads RZ AND RN: printed p.47's RN is
-                // "negative whether zero or not".  (Until 2026-11-16 this
-                // comment argued the opposite, that "the sign remains as
-                // it was" required RN off; that sentence is about the
-                // sign kept, not the indicator, and the decimal arm's
-                // A10 already pinned RZ RN for the same case.)
-                ind = setResultIndicatorsF(ind, stored);
-                if (bLc) ind = setBit(ind, ind_LC, 1);
-                if (bPf) ind = setBit(ind, ind_PF, 1);
-              end else begin
-                needsBox  = tagged Valid (tagged BoxDec DecReq { a: accUsed.mag, b: addSh.mag,
-                                                                 sub: bSub, binary: True });
-                needsRead = tagged Valid 0;
               end
             end
           end
@@ -4667,194 +5110,13 @@ function ActionValue#(VflOutcome)
               end
             end
           end
-          6'b010001, 6'b110001,  // K (Compare), KF (Compare Field)
-          6'b010011, 6'b110011,  // KE, KFE (Compare [Field] if Equal)
-          6'b010101, 6'b110101: begin // KR, KFR (Compare [Field] for Range)
-            // >>> KE, KFE, KR AND KFR SHARE THIS ARM, 2026-11-16 (G2.3
-            // stage 2), BOTH RADICES. <<<  Reference Manual printed
-            // pp.65-67, read in the page images.  COMPARE IF EQUAL (p.65):
-            // "If the accumulator-equal indicator is off when this
-            // operation is interpreted, the comparison is not performed
-            // and the comparison result indicators are not changed.
-            // Otherwise, the operation is executed exactly as is
-            // COMPARE."  COMPARE FOR RANGE (p.66): "If the
-            // accumulator-high indicator is off when this operation is
-            // interpreted, the comparison is performed and the comparison
-            // result indicators are not changed.  Otherwise, the
-            // operation is identical to COMPARE except for the setting of
-            // the comparison result indicators.  If the accumulator
-            // operand is equal to or higher than the storage operand, the
-            // accumulator-high indicator is left on.  If the accumulator
-            // operand is less than the storage operand, the AE indicator
-            // is turned on, and AH is turned off."  KFE and KFR are the
-            // same on COMPARE FIELD (pp.66-67).  The data flags and MOP
-            // are "set as in COMPARE" in every case -- the condition
-            // guards only the comparison result indicators -- which is
-            // how KE's "comparison is not performed" is read here: the
-            // operand is still fetched (its flags are reported) and the
-            // result is not used.  CHOSEN; no page says whether a KE with
-            // AE off sets the data flags.
-            //
-            // The codes' low bits: bit 1 (code 0100x1x) marks the
-            // conditional ones, and KE/KR differ in bit 2 -- 010011 KE,
-            // 010101 KR (strap/opcodes.py, from the pocket card).
-            // -> AL/AE/AH.  Same prefetch/bail-out shape as L above.
-            //
-            // COMPARE FIELD, Reference Manual printed p.65, verbatim:
-            //
-            //   "A field in the accumulator is algebraically compared
-            //   with the addressed operand.  **This accumulator field
-            //   is the same length in bytes as the field from storage
-            //   exclusive of the sign byte**, and its location is
-            //   specified by the offset in the usual manner.  **The
-            //   actual accumulator sign is not used by the operation.
-            //   A positive sign is assumed for the accumulator
-            //   field.**  The sign of the storage field is used as
-            //   modified by the sign modifiers.  The comparison
-            //   result indicators are set to describe the accumulator
-            //   field as compared with the storage field.  Neither
-            //   operand is changed by the operation.  The arithmetic
-            //   result indicators are not affected."
-            //
-            // AND THE PROGRAMMING NOTE ON THE SAME PAGE IS THE WHOLE
-            // DIFFERENCE FROM K: "The field comparison operations are
-            // the only arithmetic operations that do not treat the
-            // entire accumulator contents as a single quantity.
-            // Comparisons are made between fields of equal length in
-            // numeric bytes.  For this reason, **no indication is
-            // given in these operations if there is a one-bit in the
-            // accumulator to the left of the field** which is being
-            // compared with the storage operand."
-            //
-            // So K takes everything left of the offset with its real
-            // sign; KF takes a bounded field with a forced positive
-            // sign and ignores whatever is above it.
-            //
-            // ARRIVED VIA MCP, printed p.17 line 30: "KF(BU,48),
-            // X IOCD" -- the compare that decides whether a card
-            // image IS an IOCD card, and so the first of the two
-            // operations standing between MCP and knowing what
-            // devices it has (docs/boot_plan.md A2).
-            Bool fieldCmp = (vi.code[5] == 1);
-            Bool condEq    = (vi.code[4:0] == 5'b10011);   // KE, KFE
-            Bool condRange = (vi.code[4:0] == 5'b10101);   // KR, KFR
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
-              SM128 acc = readAcc(st);
-              Cmp3 c = CmpEqual;
-              if (fieldCmp) begin
-                // "the same length in bytes as the field from storage
-                // EXCLUSIVE OF THE SIGN BYTE" -- and fieldToSM has
-                // already stripped that byte off `opnd.mag`, so the
-                // two numeric parts are the same width by
-                // construction.  A length at or below the sign byte
-                // leaves no numeric part at all; comparing zero
-                // against zero is what that degenerates to and the
-                // guard keeps the subtraction from wrapping.
-                Bit#(7) numBits = (vi.m.unsign == 1) ? len_
-                                : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
-                // numBits is at most `len_`, and effLength caps that
-                // at 64, so a 128-bit mask never saturates and needs
-                // no guard.
-                Bit#(128) nmask = (128'b1 << numBits) - 1;
-                // "A positive sign is assumed for the accumulator
-                // field", and the mask is what implements "no
-                // indication is given ... if there is a one-bit in
-                // the accumulator to the left of the field".
-                SM128 accF = SM128 { sign: 0, mag: (acc.mag >> offSh) & nmask };
-                c = smCompare(accF, opnd);
-              end else begin
-                // COMPARE, p.65: "The contents of the accumulator
-                // **LEFT OF THE SPECIFIED OFFSET** are algebraically
-                // compared with the addressed operand.  **The bits to
-                // the right of the offset do not participate in the
-                // comparison.**"
-                //
-                // This arm used to shift the OPERAND left by the
-                // offset and compare it against the whole
-                // accumulator.  That gives the same answer whenever
-                // the accumulator's low `offset` bits are zero, and a
-                // different one when they are not: those bits then
-                // break a tie the page excludes them from.  Measured,
-                // accumulator 0x101 against an eight-bit 1 at offset
-                // 8 -- the manual says equal, the old code said the
-                // accumulator was high.
-                //
-                // NOTHING IN THE SUITE CAUGHT IT and nothing could:
-                // at offset 0, or whenever the high parts already
-                // differ, the two readings agree, and that covers
-                // every K in several hundred listing-verified
-                // sections.  decks/compare_offset.strap was written
-                // to FAIL first and did.
-                //
-                // The same page's other clause needs no code: "if
-                // the field length and offset are such that
-                // high-order positions of the storage field compare
-                // with positions to the left of the left end of the
-                // accumulator, the accumulator field is extended by
-                // adding zeros to its left" -- which a 128-bit
-                // magnitude does for free.
-                SM128 accSh = SM128 { sign: acc.sign, mag: acc.mag >> offSh };
-                c = smCompare(accSh, opnd);
-              end
-              // >>> DECIMAL K, KF, KE, KFE, KR, KFR, 2026-11-16. <<<
-              // "Radix.  These modifiers operate as in ADD" (p.65): four-
-              // bit bytes, the offset's two low-order bits ignored.  And
-              // the Programming Note, item 4: "The comparison is performed
-              // by making a subtraction and testing the result.  A decimal
-              // digit with byte size less than four is handled as in any
-              // other subtraction."  So the decimal magnitudes go to
-              // mkDecBox as a subtraction: no end carry means the
-              // accumulator's is the smaller, an all-zero difference means
-              // equal.  Signs as smCompare's (p.65 item 1: "+x > +y > +0 =
-              // -0 > -y > -x").  Compare writes no storage and no
-              // accumulator, so the box may be asked on any run that has
-              // the operand; a later refill bail just asks it again.
-              Bit#(8) offDec = offSh & 8'hFC;
-              match {.kDig, .kHi} = decCompact(opnd.mag[63:0], bsz);
-              Bit#(7) kNum = (vi.m.unsign == 1) ? len_
-                           : ((len_ > zeroExtend(bsz)) ? (len_ - zeroExtend(bsz)) : 0);
-              Bit#(128) kAccMag = fieldCmp
-                ? ((acc.mag >> offDec) & decDigitMask(decDigitCount(kNum, bsz)))
-                : (acc.mag >> offDec);
-              Bit#(1) kAccSign = fieldCmp ? 0 : acc.sign;
-              Bool ah0 = (ind[63 - ind_AH] == 1);
-              Bool skipCmp = condEq && !(ind[63 - ind_AE] == 1);
-              if (vi.m.decimal == 1 && !skipCmp) begin
-                if (decOf(boxResult) matches tagged Valid .kr) begin
-                  Bit#(1) as_ = (kAccMag == 0) ? 0 : kAccSign;
-                  Bit#(1) bs_ = (kDig == 0 && !kHi) ? 0 : opnd.sign;
-                  // magnitude order from the subtraction (a digit beyond
-                  // the 32nd makes the storage operand the larger)
-                  Cmp3 m = kHi ? CmpLow
-                         : (kr.r == 0) ? CmpEqual
-                         : kr.carry ? CmpHigh : CmpLow;
-                  c = (as_ != bs_) ? ((as_ == 1) ? CmpLow : CmpHigh)
-                    : (as_ == 0) ? m
-                    : (m == CmpLow) ? CmpHigh : (m == CmpHigh) ? CmpLow : CmpEqual;
-                end else begin
-                  needsBox  = tagged Valid (tagged BoxDec DecReq { a: kAccMag, b: kDig, sub: True, binary: False });
-                  needsRead = tagged Valid 0;
-                end
-              end
-              if (skipCmp) begin
-                // KE/KFE with AE off: comparison indicators unchanged
-              end else if (condRange && !ah0) begin
-                // KR/KFR with AH off: comparison indicators unchanged
-              end else if (condRange) begin
-                if (c == CmpLow) begin
-                  ind = setBit(ind, ind_AE, 1);
-                  ind = setBit(ind, ind_AH, 0);
-                end
-              end else
-                ind = setAccCmpIndicatorsF(ind, c);
-            end
+          6'b010001, 6'b110001, 6'b010011, 6'b110011, 6'b010101, 6'b110101: begin // vflCompareFamily
+            VflArm fr = vflCompareFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           6'b000011: begin // LCV (Load Converted)
             // Reference Manual printed pp.71-73.  Same
@@ -5432,7 +5694,7 @@ function ActionValue#(VflOutcome)
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
                       connCounts: connCounts, needsBox: needsBox,
-                      tailWrite: tailWrite};
+                      tailWrite: tailWrite, commit: vc};
   endactionvalue
 endfunction
 
@@ -5812,7 +6074,7 @@ function ActionValue#(VflOutcome)
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
                       connCounts: connCounts, needsBox: tagged Invalid,
-                      tailWrite: tailWrite};
+                      tailWrite: tailWrite, commit: vflNoCommit};
   endactionvalue
 endfunction
 
@@ -7193,6 +7455,7 @@ function ActionValue#(ExecDispatch)
         vflPending = vo.vflPending;
         ind        = vo.ind;
         tailWrite  = vo.tailWrite;
+        commitVfl(st, vo.commit);   // the arms' writes (VflCommit)
         // LTRS's counts (location 7), after vflIntOp's own writes: see
         // VflOutcome's connCounts comment and the Connective case below.
         if (vo.connCounts matches tagged Valid {.lzcv, .aocv})
@@ -8080,6 +8343,7 @@ function ActionValue#(ExecDispatch)
         // the connective operations": so the counts go into the tail word
         // here and win over the stored bits there.
         tailWrite  = countsOverTail(co.tailWrite, co.connCounts);
+        commitVfl(st, co.commit);   // the arms' writes (VflCommit)
         // The counts, written HERE rather than inside connectiveOp --
         // see VflOutcome's own comment.  After the function has done
         // every write of its own, which is both what the scheduler
