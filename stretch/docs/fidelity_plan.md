@@ -337,6 +337,13 @@ A model that matches every page and does not fit has not met the goal.
 - **F0. Re-measure on master.** Every multi-cycle box since 2026-10-16
   should have moved COMB. Run it when no suite is running: it took about
   3 hours at full load. Record per-module LUT4 in `fpga_feasibility.md`.
+  **RUN 2026-11-25** (`fpga_feasibility.md` §11, `fpga/synth_core.sh`,
+  reconstructed). Per-module yosys figures: 686,817 LUT4 (`-noabc9`,
+  an upper bound) and 102,219 FF in all. 82% of the core's flip-flops
+  are two fixtures held in registers: `mkDiskSourceSmall` (65,536) and
+  the console capture `consoleImg` (16,384). Move them out (D3, a BRAM
+  or UART console), then re-run F0 fixture-free to read the core's own
+  logic. nextpnr was not run.
 - **F1. A design rule for A3/A4.**
   - The units are built at the machine's own widths: the SAU a byte pair
     per 0.6 µs step (Buchholz p.209), the PAU's one shared multiplier

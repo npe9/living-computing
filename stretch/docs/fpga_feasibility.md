@@ -2666,3 +2666,77 @@ load average was 25-170 during this work). The census predicts that the
 sixteen double-dabble steps a clock (`cvtBitsPerCycle`), 512 digit
 adjusters. Fewer bits a clock is the obvious trade, bounded by the
 callers' budgets (DCV's decimal 18 clocks is the smallest).
+
+## 11. F0: the whole core re-measured on master (2026-11-25)
+
+`docs/fidelity_plan.md` F0. Master at 61e18dc1, after the box-release
+rewrite (div, decimal, VFL multiplier), the D2 disk image and M-a.
+
+**Script.** `fpga/synth_core.sh`, RECONSTRUCTED: §9.2's
+`out_pnr/synth_core.sh` was never committed and is not on this machine.
+It applies §9.2's recorded changes (a)-(d) to stock `synth_ecp5`, yosys
+0.51. Those are: `stat` after `map_ffs`; the coarse stage pasted with
+`share` removed; `-noabc9`; and RTLIL checkpoints. `BRAM1.v` and the
+other bsc library modules are read as real Verilog. It takes
+`OUTDIR [TOP] [flat|hier]`.
+
+This run is `hier`: bsc's `(* synthesize *)` boundaries are kept, so
+`stat` reports each box. That is F0's per-module figure. §9.3's runs
+flattened, so the totals are not strictly comparable. bsc cannot
+optimise across those boundaries either, so the difference is only what
+yosys would propagate across them. Command:
+`nice fpga/synth_core.sh OUT mkStretchCore hier`. It took 178 min, with
+the suite and other projects' runs going.
+
+**LUT4 here is a `-noabc9` PESSIMISTIC upper bound** (§9.2 c, up to about
+2.5x). DP16KD, MULT18X18D and TRELLIS_FF are mapper-independent.
+
+| module | LUT4 | CCU2C | PFUMX | L6MUX21 | TRELLIS_FF | DP16KD | MULT18X18D |
+|---|---|---|---|---|---|---|---|
+| `mkStretchCore` (its own logic) | 661,332 | 29,610 | 59,597 | 8,868 | 100,012 | 0 | 94 |
+| `mkFpBox` | 7,920 | 321 | 2,537 | 1,326 | 540 | 0 | 3 |
+| `mkDivBox` | 6,489 | 939 | 2,179 | 1,258 | 330 | 0 | 0 |
+| `mkCvtBox` | 5,987 | 504 | 1,570 | 648 | 269 | 0 | 0 |
+| `mkDecBox` | 1,098 | 84 | 212 | 30 | 401 | 0 | 0 |
+| `mkVflBox` | 404 | 30 | 55 | 4 | 149 | 0 | 3 |
+| BRAM1 (x6) / SizedFIFOs | ~800 | | | | 168 | 384 | |
+| **whole design** | **686,817** | **31,488** | **67,890** | **13,346** | **102,219** | **384** | **100** |
+
+The boxes measured alone take seconds each, and the alone figures
+agree with the in-core ones within 6%. `mkFpDivBox` (2,364 LUT4 alone)
+is not instantiated by the core.
+
+**The finding: TRELLIS_FF rose from 12,449 (§9.3.3) to 102,219, and the
+cause is two device fixtures held in flip-flops.** The core's state
+registers, summed by name from the generated `mkStretchCore.v` (only
+registers with a `$D_IN`), come to 100,669 bits:
+
+| register family | bits | what it is |
+|---|---|---|
+| `ioDev_disk_img_*` (1,024 x 64) | 65,536 | `mkDiskSourceSmall`'s two arcs (`StretchDiskSource.bsv`) |
+| `ioDev_consoleImg_*` (256 x 64) | 16,384 | the console typewriter capture (`StretchIO.bsv` `consoleImg`) |
+| `ixRec_*` | 4,448 | interruption recovery records |
+| `ioDev_printerImg_*`, `ioDev_readerImg_*` | 2,048 each | printer / reader images |
+| everything else | ~10,200 | the machine's real state |
+
+So 82% of the core's flip-flops are two simulation fixtures. Each is a
+`Vector` of `Reg`. A `Vector` of `Reg` cannot map to block RAM, and its
+read and write ports become wide muxes and decoders. That is very
+probably a large share of the 661k LUT4 too. The share is NOT measured:
+it would take a whole-core run with the fixtures removed, another three
+hours.
+
+Without these two fixtures, the rest of the core's state is about
+19,000 bits, in line with §9.3.3 plus the boxes added since.
+
+**What this means for the plan:**
+- The fixtures are the first fit item, ahead of any box. On the board
+  the disk is SDRAM (the disk plan's D3, `mkDiskSourceSdram`). The
+  console capture should be a BRAM FIFO, or the UART. Neither should
+  be in the bitstream as registers.
+- A next F0 run should synthesise with a fixture-free disk and console
+  (a `-D` build flag), so that the core's own logic can be read off.
+- F1's per-box deltas can use the same script on one box at a time
+  (seconds each).
+- nextpnr was not run, so there is no TRELLIS_COMB or IO figure this
+  time. §9.3.6c's 448% COMB stands as the last placed measurement.
