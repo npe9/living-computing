@@ -115,6 +115,9 @@ python3 "$here/golden/check_golden.py"
 "$hobbit/bsv/run_mmu.sh"
 "$hobbit/bsv/run_event.sh"
 "$hobbit/bsv/run_core_mmu.sh"
+# A byte store into an unmapped page: exception 9 at the store (s9term join
+# record 308,543,068).
+"$hobbit/bsv/run_core_mmu_store.sh"
 # The bus face and the timers behind it.
 "$hobbit/bsv/run_bus.sh"
 "$hobbit/bsv/run_timer.sh"
@@ -229,6 +232,52 @@ for n in 009 022 023 024; do
     python3 "$here/hri_check.py" --dut-lines "$tmp/$n.sem" \
         --spec-lines "$here/golden/$n.trace"
 done
+
+# 025 runs on the privileged harness (tests/golden/README.md): PSW.V = 1,
+# a page table with a read-only page, a fault vector.  A store to that
+# page takes exception 9 at the store and does not retire (s9term boot
+# record 2,893,033), and nothing EU_S1 held retires during the sequence
+# (record 3,298,054).  Three ways, the reference with --system.
+"$hobbit/bsv/run_golden.sh" 025 > "$tmp/025.model.raw"
+grep '^HRI ' "$tmp/025.model.raw" > "$tmp/025.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/025.model" \
+    --spec-lines "$here/golden/025.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/025.hex" \
+    --sp 0x100 --msp 0x180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000020 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 200c=00003001 2>/dev/null \
+    | grep '^HRI ' > "$tmp/025.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/025.sem" \
+    --spec-lines "$here/golden/025.trace"
+
+# 026: ENTER's store check (p. 3-21; boot record 22,533,287): exception 8
+# with SP and MSP unchanged, the handler's records after it.
+"$hobbit/bsv/run_golden.sh" 026 > "$tmp/026.model.raw"
+grep '^HRI ' "$tmp/026.model.raw" > "$tmp/026.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/026.model" \
+    --spec-lines "$here/golden/026.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/026.hex" \
+    --sp 0x5100 --msp 0x5180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000008 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 2014=00005003 2>/dev/null \
+    | grep '^HRI ' > "$tmp/026.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/026.sem" \
+    --spec-lines "$here/golden/026.trace"
+
+# 027: a fetch fault is an instruction's own (s9term join record
+# 287,416,554): two NOPs at the end of a mapped page retire although the
+# prefetch window reaches the unmapped page after it.  025's tables.
+"$hobbit/bsv/run_golden.sh" 027 > "$tmp/027.model.raw"
+grep '^HRI ' "$tmp/027.model.raw" > "$tmp/027.model"
+python3 "$here/hri_check.py" --dut-lines "$tmp/027.model" \
+    --spec-lines "$here/golden/027.trace"
+python3 "$hobbit/sem/hobbit_sem.py" --image "$here/golden/027.hex" \
+    --sp 0x100 --msp 0x180 --psw 0x10200 --isp 0x200 --vb 0x40 \
+    --system --stb 0x1000 --poke 44=00000020 --poke 1000=00002001 \
+    --poke 2000=00000003 --poke 200c=00003001 2>/dev/null \
+    | grep '^HRI ' > "$tmp/027.sem"
+python3 "$here/hri_check.py" --dut-lines "$tmp/027.sem" \
+    --spec-lines "$here/golden/027.trace"
 
 # The kernel boot on the core, a short sample (docs/p9boot.md, "The boot
 # on the core"): the shipped s9term from the ROM hand-off, physical
