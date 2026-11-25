@@ -200,14 +200,14 @@ trace (both writes, nothing else new).  The test now finds the first
 goal's record after the shoen record and the Report variable (where
 create_shoen writes it), SH_GOAL being 0 once the shoen is started;
 the line numbers of the injections above are from before.
-Re-pinned for R8 (2026-11-25), 4511 -> 5534 trace lines: a shoen starts
+Re-pinned for R7L (2026-11-25), 4511 -> 5534 trace lines: a shoen starts
 with no resource (VPIM _INIT_SHOEN_RESOURCE = 0), so each part's first
 goal parks and resource_low is reported; after each part's first run
 the bench answers as PIMOS's task manager does (driver.Script.
 fund_parked, kernel/init/init.kl1:84-89), and each report has
 resource_low, resource_added after started (EXPECT's FUNDED).  The
 records are unchanged.  The fault injections above were observed
-before R8, on the trace as it was then.
+before R7L, on the trace as it was then.
 """
 import os
 import sys
@@ -243,7 +243,7 @@ def stream(*msgs, closed=False):
 # every shoen made so far as (count, status, parent: its number among
 # the shoen, None for the root).
 DONE3 = [(0, 'terminated', None)] * 3
-# R8 (2026-11-25): a shoen has no resource until it is given some, so
+# R7L (2026-11-25): a shoen has no resource until it is given some, so
 # its first goal parks and resource_low is reported; the bench answers
 # as PIMOS's task manager does (driver.Script.fund_parked), and the goal
 # is released after resource_added
@@ -350,7 +350,7 @@ def script():
     s.newvar(8)
     execute(0, 2, 3, 8)
     s.run()
-    s.fund_parked(9)                               # R8: resource_low answered
+    s.fund_parked(9)                               # R7L: resource_low answered
     s.out(5)
     s.out(8)
 
@@ -412,7 +412,7 @@ def script():
     # it itself: the unbound tail is in the inner's shoen record.
     s.label('nested: the inner report closed')
     m = s.live()
-    # the newest shoen record (R8: the live trace since the funding no
+    # the newest shoen record (R7L: the live trace since the funding no
     # longer holds the inner's handle)
     inner = max({c[1] for c in m.mem.values() if c[0] == pimm.SHREC})
     s.setslot(14, m.mem[inner + L.SH_REPORT])
@@ -595,7 +595,7 @@ def main(argv):
         return 1
     print('pimm lockstep shoen: PASS (create_shoen, start_shoen and termination on the '
           'Bluespec core, %d trace lines identical to the reference model: the image\'s '
-          'shoen:execute/4 runs a goal in a shoen and reports started, terminated; a '
+          'shoen:execute/4 runs a goal in a shoen and reports started, resource_low, resource_added (the bench funding it), terminated; a '
           'shoen not started stays dormant; one whose goal suspends ends when the goal '
           'does; a nested shoen ends and its parent, holding its control/2, does not)'
           % s.counts['lines'])

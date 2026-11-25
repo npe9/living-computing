@@ -453,7 +453,7 @@ def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
             if m.scsi_poll():
                 skips = 0
                 continue
-            # R8: an alarm armed (set_timer to a time still to come):
+            # R7L: an alarm armed (set_timer to a time still to come):
             # the clock moved on to it, and the next run's first goal
             # switch fires it -- after the device, before the FEP's
             # scripted events, as lockstep_shell.play (driver ALARM).

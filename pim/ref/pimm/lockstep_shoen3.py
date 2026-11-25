@@ -204,7 +204,7 @@ value checks; each in a private copy):
   in the root, not in the    length (6960 for 7092, fourteen parts) sees it; the
   failing goal's shoen       shoen then ends before its handler runs,
                              but the Report's order is the same.
-Re-pinned for R8 (2026-11-25), 9198 -> 11963 trace lines: a shoen starts
+Re-pinned for R7L (2026-11-25), 9198 -> 11963 trace lines: a shoen starts
 with no resource, so each shoen's first goal parks (`E park`, now in
 TAKEN for every part that makes one but add_resource, whose Control
 funds it before its goal is taken) and resource_low is reported; the
@@ -212,13 +212,34 @@ monitors fund their shoens, the bench the rest (driver.Script.
 fund_parked).  allow_resource_report's report is now [started,
 resource_report_allowed, resource_low, resource_added | _]: the flag is
 clear when its goal parks.  The fault injections above were observed
-before R8.  Four parts more (18 -> 22, 11963 -> 13165 lines): `resource:
+before R7L.  Four parts more (18 -> 22, 11963 -> 13165 lines): `resource:
 silent` funds a shoen with 2, which execute/4's reduction uses, so
 hash/3's goal parks with none left and nothing is reported (the flag
 set by the first resource_low); `resource: reported again` sends
 allow_shoen_resource_report first (its stub at the root), and the
 second park reports resource_low again; each `, funded` part funds it
 fully and binds X, and the shoen ends.
+
+Observed R7L resource injections into bsv/PimmShBox.bsv, 2026-11-25,
+each from a backup copy, `run_pimm_lockstep.sh` on each test in turn,
+restored by copy and cmp'd (the first difference; shoen = this file's
+stage 1, lockstep_shoen.py; shoen2 = lockstep_shoen2.py):
+  a reduction charges 1, not 2     shoen run L297; shoen2 ipl_monitor
+                                   L440; shoen3 failure L410; prio
+                                   execute/7 L447; atom go1 L612 (sord,
+                                   timer PASS: no shoen)
+  no ancestor charged              shoen nested L650; shoen2 nested L898;
+                                   shoen3 raise in control/2 L968 (prio,
+                                   atom PASS: no nested shoen)
+  the flag not set at a park       shoen run L167; shoen2 ipl_monitor
+  (resource_low at every park)     L201; shoen3 failure L171; prio
+                                   execute/7 L317; atom go1 L371
+  allow leaves the flag set        shoen2 ipl_monitor L401; shoen3
+                                   failure L371; atom go1 L571 (shoen,
+                                   prio PASS: no second resource_low)
+  add releases no parked goal      shoen run L271; shoen2 ipl_monitor
+                                   L379; shoen3 failure L349; prio
+                                   execute/7 L421; atom go1 L549
 """
 import os
 import sys
@@ -355,7 +376,7 @@ def script():
     s.newvar(8)                                    # Report
     goal(execute4, 0, 2, 3, 8)
     s.run()
-    s.fund_parked(9)                               # R8: the task manager's answer
+    s.fund_parked(9)                               # R7L: the task manager's answer
     s.out(8)
     s.label('stop: stopped')
     s.cons(15, 4, A('stop'), None)                 # C' in 5
@@ -495,7 +516,7 @@ def script():
     s.fund_parked(15)
     s.out(8)
 
-    # (k) R8: resource_low is reported once until allow_resource_report
+    # (k) R7L: resource_low is reported once until allow_resource_report
     # (the flag, pimm_layout RSC_REPORT_DISALLOWED).  hash/3 in a shoen,
     # Control [start | C]: its first goal parks and reports resource_low;
     # funded with 2 (one reduction's worth: execute/4's own reduction
@@ -567,7 +588,7 @@ def exception(kind, info, code):
     return ('exception', kind, info, code, ((kind, info), 'shut'))
 
 
-# R8: every shoen starts with no resource, so its first goal parks
+# R7L: every shoen starts with no resource, so its first goal parks
 # (`E park`) and resource_low is reported; the image's monitors answer
 # add_resource and allow_resource_report (as PIMOS's task manager,
 # kernel/init/init.kl1:84-89), and where none listens the bench does
@@ -651,7 +672,7 @@ EXPECT = [
                                                                    (1, 'started', None, 0, -1),
                                                                    (1, 'started', None, 0, -1)]),
     ('execute1', [STREAM(*LOW)], [], R11),
-    # R8: the parked goal counts (SH_COUNT 1) until it ends
+    # R7L: the parked goal counts (SH_COUNT 1) until it ends
     ('resource: silent', [STREAM(*LOW)], [],
      R11 + [(1, 'started', None, 0, -1)]),
     ('resource: silent, funded', [STREAM(*LOW, 'resource_added', 'terminated')], [],
@@ -668,12 +689,12 @@ EXPECT = [
 # The goals left waiting, by hand: `stop` and `abort inner` leave their
 # root shoen's control/2 and report/2 (no monitor closes them); `abort
 # outer` the inner's report/2, a goal of the aborted outer that waits on
-# the inner's report stream.  The goals discarded were woken first.  R8:
+# the inner's report stream.  The goals discarded were woken first.  R7L:
 # the two `resource` parts' shoens leave their control/2 and report/2
 # too (14 -> 18).
 WAITING = 18
 # the lines that say a goal was discarded or parked, per part
-# R8: plus one `E park` for each shoen's first goal, parked for resource
+# R7L: plus one `E park` for each shoen's first goal, parked for resource
 # (add_resource's goal was funded by its Control before it was taken)
 P1, P2 = ['E park'], ['E park', 'E park']
 TAKEN = {'failure': P1, 'failure, mask 1 << 25': P1, 'raise/3': P1,

@@ -92,7 +92,7 @@ module mkPimmDriver#(String scriptFile, String heap)(Empty);
       Tape:   begin hasTape <= True; tp <= truncate(cell_.val); end
       // a checkpoint's state, given to the core silently (PimmCore.restore)
       Restore: core.restore(a, cell_);
-      // R8: idle, an alarm armed: the clock moved on to it (driver.py ALARM)
+      // R7L: idle, an alarm armed: the clock moved on to it (driver.py ALARM)
       Alarm:  core.skipToAlarm;
       default: fatal("driver: operation not implemented");
     endcase

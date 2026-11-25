@@ -161,7 +161,7 @@ create (6 shoen made: 6 lines), and start_shoen empties the parked
 list, SH_GOAL := 0 (6 starts: 6 lines); counted on the reference's
 trace (both writes, nothing else new).  The line numbers of the injections
 above are from before.
-Re-pinned for R8 (2026-11-25), 4702 -> 6172 trace lines: a shoen starts
+Re-pinned for R7L (2026-11-25), 4702 -> 6172 trace lines: a shoen starts
 with no resource.  The image's monitors (ipl_monitor/3, bios_monitor/3,
 top_level_monitor/4) answer resource_low on the Control with
 add_resource(16#"3FFFFFFF", 16#"FFFFFFFF") and allow_resource_report,
@@ -170,7 +170,7 @@ resource_report_allowed and the Control streams the two messages;
 `closed control` and `running` have no monitor on a live Control, and
 the bench funds them (driver.Script.fund_parked).  return_resource is
 now that amount less what the trace counts as consumed (RETURNED).  The
-fault injections above were observed before R8.
+fault injections above were observed before R7L.
 """
 import os
 import re
@@ -281,7 +281,7 @@ def script():
     s.newvar(11)                                   # Shut
     goal(top_monitor, 8, 9, 10, 11)
     s.run()
-    s.fund_parked(12)                              # R8: the task manager's answer
+    s.fund_parked(12)                              # R7L: the task manager's answer
     for k in (5, 8, 9, 11):
         s.out(k)
 
@@ -330,7 +330,7 @@ def stream(*msgs, closed=True):
     return stage1.stream(*msgs, closed=closed)
 
 
-# R8: a shoen starts with no resource (VPIM _INIT_SHOEN_RESOURCE), so
+# R7L: a shoen starts with no resource (VPIM _INIT_SHOEN_RESOURCE), so
 # its first goal parks and resource_low is reported.  The image's own
 # monitors answer add_resource(16#"3FFFFFFF", 16#"FFFFFFFF") and
 # allow_resource_report, as PIMOS's task manager does (kernel/init/

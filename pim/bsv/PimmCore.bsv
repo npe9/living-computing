@@ -60,7 +60,7 @@ interface PimmCore;
   // pointer; 1..3 the exec stage's (PimmExec.restore); 4, 16..31 the
   // SCSI box's (PimmScsiBox.restore).  Nothing is traced
   method Action restore(Bit#(8) which, Cell c);
-  // R8: the driver's ALARM: the clock moved on to the armed alarm's time
+  // R7L: the driver's ALARM: the clock moved on to the armed alarm's time
   method Action skipToAlarm;
 endinterface
 
@@ -88,7 +88,7 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   Reg#(Bool)  outsideUnify <- mkReg(False);   // a unifyReq is in the data box
   Reg#(Bool)  outsideWake  <- mkReg(False);   // ... and its wake in the goal box
   Reg#(Addr)  takenPc <- mkRegU;              // a goal of a shoen being checked
-  // R8: the next goal is asked for here, the alarm fired first if its
+  // R7L: the next goal is asked for here, the alarm fired first if its
   // time has come (pimm.py run: before pick)
   FIFO#(Bool) pickQ  <- mkFIFO;
   Reg#(Bool)  firing <- mkReg(False);

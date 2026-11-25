@@ -1,8 +1,8 @@
 // PIM/m core: the shoen box.  Stages 1 to 3 of the shoen:
 // create_shoen, start_shoen, termination, shoen_statistics,
 // remove_shoen; (stage 3) the exception path, stop_shoen, abort_shoen
-// and the check of a goal taken from the ready queue.  No resource or
-// profile: the exec stage refuses those built-ins.
+// and the check of a goal taken from the ready queue; (R7L) the
+// resource, below.  No profile: the exec stage refuses those built-ins.
 //
 // What is PIM/m-sourced here: the handle's tag (38h SHREC, PIMOS
 // debugger/inspector/tagtbl.kl1) and the report stream's codes (8
@@ -45,8 +45,8 @@
 //                 the reduction cell (PIMOS manual e-shoen.tex:234:
 //                 "twice of the number of reductions"; 10 then 9 at
 //                 once is VPIM's, f_shoen_control.psl.c:691-727)
-//   remove(h)     a terminated shoen: {14, 0, 0} (return_resource: no
-//                 resource here, OURS), the report stream closed (its
+//   remove(h)     a terminated shoen: {14, H, L} (return_resource, H:L
+//                 the resource left, 0 if none; R7L), the report stream closed (its
 //                 tail unified with []), the status REMOVED; one not
 //                 terminated: its remove cell set, removed when it
 //                 terminates (VPIM f_shoen_control.psl.c:547-575,
@@ -83,7 +83,7 @@
 // goals that waited on it; the record's tail is then the new cell.  A
 // tail that someone has bound to a value stops the simulation.
 //
-// R8 (2026-11-25), the resource (ref/pimm/pimm.py end_reduction,
+// R7L (2026-11-25), the resource (ref/pimm/pimm.py end_reduction,
 // taken_check, i_add_shoen_resource, i_allow_shoen_resource_report,
 // remove say what is sourced where; the PIMOS manual e-shoen.tex:31,
 // 42, 179, 224, 246):
@@ -122,7 +122,7 @@ interface PimmShBox;
   method Action ended;
   method Action statistics(Cell handle);
   method Action remove(Cell handle);
-  method Action addResource(Cell handle, Bit#(32) hi, Bit#(32) lo);   // 2026-11-24; R8 the amount
+  method Action addResource(Cell handle, Bit#(32) hi, Bit#(32) lo);   // 2026-11-24; R7L the amount
   method Action allowReport(Cell handle);   // 2026-11-24
   // stage 3
   method Action exception(Bit#(32) num, Bit#(32) tag, Cell b, Cell c, Bit#(8) argn);
@@ -157,7 +157,7 @@ typedef enum { ShIdle, ShC1, ShC2, ShC3, ShC4, ShC5, ShC6, ShC7,
                ShX13, ShX14, ShX15, ShX16,
                ShP1, ShP2, ShA1, ShA2, ShA3, ShA4,
                ShH1, ShH2, ShH3, ShH4, ShH5, ShH6,
-               // R8: the resource
+               // R7L: the resource
                ShC11, ShC12, ShC13, ShN1, ShN2, ShN3, ShN4,
                ShH7, ShH8, ShH9, ShH11, ShU1, ShU2, ShU3, ShU4, ShU5,
                ShW1, ShW2, ShY1, ShY2, ShN5, ShU6 } ShState deriving (Bits, Eq);
@@ -192,7 +192,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
   Reg#(Addr)     xa     <- mkRegU;     // ... a vector being written
   Reg#(Addr)     park   <- mkRegU;     // check: the innermost stopped shoen, or 0
   Reg#(Bool)     aborting <- mkReg(False);  // the end of a termination answers abort
-  // R8: the resource
+  // R7L: the resource
   Reg#(Bool)     parkStop <- mkRegU;   // check: park is a STOPPED shoen (else exhausted)
   Reg#(Bit#(32)) rhi    <- mkRegU;     // a resource left's high half, as read
   Reg#(Bit#(64)) rleft  <- mkRegU;     // add: the resource left after the add
@@ -259,7 +259,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
   endfunction
 
   // the removal of a terminated shoen: return_resource with the
-  // resource left (R8; ShY1, ShY2), the close, then on to next
+  // resource left (R7L; ShY1, ShY2), the close, then on to next
   function Action removal(ShState next);
     action
       afterK <= next;
@@ -291,7 +291,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
             mem.read(gbox.shoen + shRed);
             st <= ShE0;
           end
-          else begin                                // R8: the resource first
+          else begin                                // R7L: the resource first
             mem.read(gbox.shoen + shRscHi);
             st <= ShN1;
           end
@@ -324,7 +324,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
         sh <= cellAddr(h);
         report(fromInteger(lay_REPORT_STOPPED), ShP1);
       end
-      // add_resource: resource_added, then the amount added (R8, ShU*)
+      // add_resource: resource_added, then the amount added (R7L, ShU*)
       tagged AddRes .q: begin
         sh <= cellAddr(q.h);
         ahi <= q.hi;
@@ -332,7 +332,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
         report(fromInteger(lay_REPORT_RESOURCE_ADDED), ShU1);
       end
       // allow_resource_report: resource_report_allowed, then the flag
-      // cleared (R8, ShW*)
+      // cleared (R7L, ShW*)
       tagged AllowRep .h: begin
         sh <= cellAddr(h);
         report(fromInteger(lay_REPORT_RESOURCE_REPORT_ALLOWED), ShW1);
@@ -409,7 +409,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
     st <= ShC11;
   endrule
 
-  // R8: no resource yet, reports allowed
+  // R7L: no resource yet, reports allowed
   rule create11 (st == ShC11);
     mem.write(sh + shRscHi, intC(0));
     st <= ShC12;
@@ -756,7 +756,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
       mem.read(sh + shParent);
       st <= ShH2;
     end
-    else if (park == 0) begin          // R8: has it resource left?
+    else if (park == 0) begin          // R7L: has it resource left?
       mem.read(sh + shRscHi);
       st <= ShH7;
     end
@@ -850,7 +850,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
     st <= ShIdle;
   endrule
 
-  // ---- R8: the resource taken at the end of a run ----------------------
+  // ---- R7L: the resource taken at the end of a run ----------------------
   // 2 for each of the run's red reductions, from sh and each shoen above
   rule charge1 (st == ShN1);
     let c <- mem.data;
@@ -896,7 +896,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
     end
   endrule
 
-  // ---- R8: add_resource after its report ---------------------------------
+  // ---- R7L: add_resource after its report ---------------------------------
   rule addRes1 (st == ShU1);
     mem.read(sh + shRscHi);
     st <= ShU2;
@@ -942,7 +942,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
     else answer(?, ?, True);
   endrule
 
-  // ---- R8: allow_resource_report after its report -----------------------
+  // ---- R7L: allow_resource_report after its report -----------------------
   rule allow1 (st == ShW1);
     mem.read(sh + shRscFl);
     st <= ShW2;
@@ -954,7 +954,7 @@ module mkPimmShBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox, PimmRegs regs)(Pi
     answer(?, ?, True);
   endrule
 
-  // ---- R8: the removal's return_resource: what is left, 0 if none -------
+  // ---- R7L: the removal's return_resource: what is left, 0 if none -------
   rule remove3 (st == ShY1);
     let c <- mem.data;
     rhi <= c.val;

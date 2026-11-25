@@ -80,7 +80,7 @@ interface PimmExec;
   // new_atom's counter, 2 the clock's ticks, 3 the instructions since
   // the last tick (pimm.py steps // 423 and steps % 423)
   method Action restore(Bit#(8) which, Bit#(32) v);
-  // R8: the clock as the last instruction read it (pimm.py timer() at
+  // R7L: the clock as the last instruction read it (pimm.py timer() at
   // a goal switch), and the clock moved on k ticks while the machine
   // waits for an alarm (pimm.py alarm_skip)
   method Bit#(48) now;
@@ -222,7 +222,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   // ^NewX), registers y and z
   Bool isExtFloat = op == 16'h236e && x == 8;
   // ... and 2, 3 the guards extended_floating_point_less_than and
-  // _not_less_than(X, Y), registers y and z (R8, 2026-11-25; pimm.py
+  // _not_less_than(X, Y), registers y and z (R7L, 2026-11-25; pimm.py
   // ext_float_compare)
   Bool isExtCmp = op == 16'h236e && (x == 2 || x == 3);
   // a vector pointer, short (0..6 elements, the size in the tag) or long
@@ -995,13 +995,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       else guardFail;
     end
     else if (isExtCmp) begin
-      // R8: anything but two extended floats (tag 3Fh) fails; two are
+      // R7L: anything but two extended floats (tag 3Fh) fails; two are
       // refused, none can be made here (pimm.py ext_float_compare)
       if (a.tag == 8'h3f && b.tag == 8'h3f) stop(EndUnimp);
       else guardFail;
     end
     else if (op == op_string_less_than || op == op_string_not_less_than) begin
-      // R8: two strings, ordered by the string box (pimm.py
+      // R7L: two strings, ordered by the string box (pimm.py
       // string_order); anything else fails; rule sCompare
       if (!isStrg(a) || !isStrg(b)) guardFail;
       else begin
@@ -1781,7 +1781,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_set_timer) begin
-      // set_timer(Time, ^Wakeup): the timer box (R8, PimmTBox.bsv): a
+      // set_timer(Time, ^Wakeup): the timer box (R7L, PimmTBox.bsv): a
       // time reached, (now - Time) mod 2^32 < 2^31, gives Wakeup = now
       // (the clock's lower 32 bits); one still to come arms the alarm,
       // Wakeup a fresh variable bound when the time comes; rule timerSet
@@ -2442,7 +2442,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     finish(tagged Next afterBuiltin);
   endrule
 
-  // string_less_than succeeds on -1, string_not_less_than on 0 or 1 (R8)
+  // string_less_than succeeds on -1, string_not_less_than on 0 or 1 (R7L)
   rule sCompare (st == XSCmp);
     let r <- sbox.result;
     Bool less = r.a.val[31] == 1;
@@ -3005,7 +3005,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
     else if (op == op_add_shoen_resource) begin
       if (vals[0].tag != tag_SHREC || !isInt(vals[1]) || !isInt(vals[2])) stop(EndUnimp);
       else begin
-        shbox.addResource(vals[0], vals[1].val, vals[2].val);   // R8: High, Low
+        shbox.addResource(vals[0], vals[1].val, vals[2].val);   // R7L: High, Low
         st <= XShS;
       end
     end

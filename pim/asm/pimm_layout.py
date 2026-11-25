@@ -44,7 +44,7 @@ of PIMOS's debugger/inspector/tagtbl.kl1, what it points at is ours):
                 resource LEFT, two's complement: the sum of the shoen's
                 add_resource amounts less what the goals of it and of
                 every shoen inside it have consumed, 2 a reduction}
-                (R8, 2026-11-25; 0 at creation, VPIM's
+                (R7L, 2026-11-25; 0 at creation, VPIM's
                 _INIT_SHOEN_RESOURCE, f_shoen_main.psl.c)
     +SH_RSC_FLAGS {INT, bit 0: resource reports disallowed}: clear at
                 creation (VPIM's status word starts 0; manual
@@ -94,7 +94,7 @@ REPORT_RESOURCE_ADDED = 5
 # allow_shoen_resource_report (2026-11-24): 7 `resource_report_allowed`
 # (pimos.vmac, the same table; manual e-shoen.tex 174-180, 254-262)
 REPORT_RESOURCE_REPORT_ALLOWED = 7
-# resource_low (R8, 2026-11-25): 6 (pimos.vmac:185 shoen#resource_low;
+# resource_low (R7L, 2026-11-25): 6 (pimos.vmac:185 shoen#resource_low;
 # the image's report/2 and kernel/builtin/shoen.kl1:220 translate it)
 REPORT_RESOURCE_LOW = 6
 EXC_REDUCTION_FAILURE, EXC_RAISED = 9, 16

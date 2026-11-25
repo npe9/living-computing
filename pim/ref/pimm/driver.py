@@ -61,7 +61,7 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          (set_timer to a time still to come): the clock
                          is moved on to the alarm's time
                          (pimm.Machine.alarm_skip), so the next RUN's
-                         first goal switch fires it.  R8, 2026-11-25
+                         first goal switch fires it.  R7L, 2026-11-25
 
 The device tape.  The bench has no device: scsi_init and scsi_command
 (bsv/PimmScsiBox.bsv) put each command on the core's port, and the
@@ -167,7 +167,7 @@ class Script:
         self._op(POLL)
 
     def fund_parked(self, slot, hi=0x3FFFFFFF, lo=0xFFFFFFFF, once=False):
-        """The bench as PIMOS's task manager (R8, 2026-11-25): a shoen
+        """The bench as PIMOS's task manager (R7L, 2026-11-25): a shoen
         starts with no resource (VPIM f_shoen_main.psl.c
         _INIT_SHOEN_RESOURCE 0), so its first goal parks and reports
         resource_low, which the kernel's task_manager answers with

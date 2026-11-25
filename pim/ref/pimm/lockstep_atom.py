@@ -133,7 +133,7 @@ lines, both models identical and every check passing (the server
 still asked exactly the two requests).  The goals run in another
 order, and each pickup that splices the list writes one link more.
 The injections' line numbers above are as observed before it.
-Re-pinned for R8 (2026-11-25), 1300 -> 1565 trace lines, every value
+Re-pinned for R7L (2026-11-25), 1300 -> 1565 trace lines, every value
 unchanged: a shoen now starts with no resource (VPIM's
 _INIT_SHOEN_RESOURCE is 0), so the BIOS's shoen has three more record
 cells written at create (SH_RSC_HI/LO/FLAGS), its first goal parks (one

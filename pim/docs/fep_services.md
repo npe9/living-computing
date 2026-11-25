@@ -282,7 +282,11 @@ in order of creation, so the numbers shift with the order.
    and nothing is sent (`bios/boot/sysTman.kl1`:28-33); if not,
    `timer:create` sends 310 and every alarm is a 303 (34-35,
    `bios/boot/timer.kl1`:30, 60-62). The run takes the first branch
-   (§1.4 stop table, `system_timer`/`set_timer` implemented).
+   (§1.4 stop table, `system_timer`/`set_timer` implemented). So
+   `set_timer` to a time still to come (`ts`'s `on_after`, R7L
+   2026-11-25) is the processor's own alarm, not a FEP service: no
+   wire, nothing in `fep.py` or `PimmFepEmu.bsv` (`pimm_semantics.md`
+   `set_timer`).
 4. Syslog: **wire 203** `{Id, 203, "", 0, 0, "pimos:pimos.syslog"}`
    (`bios/boot/syslog.kl1`:33). Done. Afterwards only `putb(Buffer)`
    becomes **111** on that device (86-89); the only users found are

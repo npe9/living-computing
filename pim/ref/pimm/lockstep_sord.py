@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lockstep: string_less_than and string_not_less_than's order, the
 extended-float comparison guards on other arguments, and a string
-unified with itself (R8, 2026-11-25: all three met by the KL1 Listener
+unified with itself (R7L, 2026-11-25: all three met by the KL1 Listener
 on the goal typed at its prompt).
 
     python3 ref/pimm/lockstep_sord.py --script FILE     write the script
@@ -50,6 +50,19 @@ Parts, R as the manual's order gives it (1: S1 < S2), not from a model:
   xf          q(1, 2, R) and q(a, 2, R) for x = 2 and 3: the guard
               fails, R = 0 (no Unimplemented)
   self        r("ab", R): R = 1, the string unified with itself
+
+Observed fault injections into the Bluespec, 2026-11-25, each from a
+backup copy, `bsv/run_pimm_lockstep.sh sord` (and timer, which PASSED
+each time), restored by copy and cmp'd:
+  PimmSBox compare: the words signed        part 1 (words), line 148
+  PimmSBox compare: the width order flipped part 2 (widths), line 24
+  PimmSBox compare: the counts ignored      part 3 (counts), line 56
+  the ext-float guard on a non-float refused
+  (E unimp), not failed                     part 5 (xf), line 30
+  same-string unify refused (E unimp)       part 6 (self), line 23
+NOT separable: the word-count tier from the element-count tier ("abcd"
+"abcde" differs in both), so an injection dropping only the word count
+is caught by the element count (inferred from the parts, not injected).
 """
 import os
 import sys

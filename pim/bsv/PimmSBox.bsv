@@ -14,7 +14,7 @@
 //   hashStr(s)         a = the hash code of the string (PDSS's function)
 //   equal(s1, s2)      ok is whether the strings are the same, word for word
 //   compare(s1, s2)    a = {INT, -1, 0 or 1}, s1's order against s2's for
-//                      string_less_than and string_not_less_than (R8,
+//                      string_less_than and string_not_less_than (R7L,
 //                      2026-11-25; ref/pimm/pimm.py string_order, after
 //                      VPIM s_WhichIsLessString and the PIMOS manual
 //                      e-builtin.tex:813): the element sizes, then the
@@ -366,7 +366,7 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     end
   endrule
 
-  // compare (R8): s2's descriptor in e2, then the words up to the shorter
+  // compare (R7L): s2's descriptor in e2, then the words up to the shorter
   function Action order(Bool less, Bool more);
     action
       answer(intC(less ? 32'hffffffff : (more ? 1 : 0)), ?);

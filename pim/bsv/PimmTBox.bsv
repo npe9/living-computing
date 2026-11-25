@@ -1,4 +1,4 @@
-// PIM/m core: the timer box, the processor's alarm (R8, 2026-11-25).
+// PIM/m core: the timer box, the processor's alarm (R7L, 2026-11-25).
 // One alarm, as VPIM keeps one for each processor (interpreter/
 // klb_pimos.psl.c kblt_b_set_timer: the PE's AlarmTimerVar and
 // _SetAlarmTimer; functions/f_event_external_int.psl.c
