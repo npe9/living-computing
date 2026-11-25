@@ -1204,11 +1204,11 @@ MEASURED counts are scratch surveys of the eleven packages.
 | blt 9a, 9b | `inhibit_interrupt`, `allow_interrupt`: no-ops here (OURS: no interrupts are modelled) | TERMCODE.ESP:181-193, two brackets in source order; 14 and 17 uses, all `00 00 00` |
 | pmi b1 | `put_vector_1` A | HLCAPRSUB.ESP:426-427 `{Group}`; 342 uses, one element cell after each |
 | pmi b5 | `put_vector_5` A | receiver.esp:680-681 (A = 0), KP_MDMUGT.ESP:92-94 (A = 1); 144 uses, five elements after each |
-| pmi b6 | `put_vector_6` A | p_MAIN.esp:443-444 (A = 0), KP_MDMART.ESP:81-82 (A = 1); 174 uses, six elements |
+| pmi b6 | `put_vector_6` A | p_MAIN.esp:443-444 (A = 0), KP_MDMSCT.ESP:142-144 (A = 1); 174 uses, six elements |
 | pmi b7 | `put_vector_n` A, 0, n | p_icon.esp:226-229, n = 7; 67 uses, n elements after each, second byte 0 in all. A != 0 is not witnessed with source and refuses |
 | blt 50 | `and` A, B, ^R | TERMCODE.ESP:188 (R = A), :85 (R = B) |
-| blt 51 | `or` A, B, ^R | KP_TIMER.ESP:44, KP_DBO.ESP:403-404 (R != A) |
-| blt 54 | `shift_left` X, N, ^R | KP_DBO.ESP:400-404 (R != X), KP_TIMER.ESP:43 |
+| blt 51 | `or` A, B, ^R | KP_TIMER.ESP:44, CONVERTER.ESP:41-45 (R != A) |
+| blt 54 | `shift_left` X, N, ^R | CONVERTER.ESP:41-45 (R != X), KP_TIMER.ESP:43 |
 | blt 55 | `shift_right` X, N, ^R | KP_TIMER.ESP:45 |
 | blt 49, R != A | as before | c_grade_ex.esp:26 `49 00 0a 07` |
 | blt 40, R != A | as before | p_wwin.esp:418-422 `40 00 01 01`, `40 00 02 02` |
@@ -1236,7 +1236,7 @@ Tests (`test_kl0.py` `Step3eRows`):
 - `test_vector_puts`: HLCAPRSUB.ESP's `make_nest_vector(2, a, F)` gives
   `{{a}}` on the held code. The handlers for b5, b6 and b7 are checked
   for length, the element pointer and b7's refusals.
-- `test_bit_operations`: KP_DBO.ESP's `get_integer` on the held code is
+- `test_bit_operations`: `kappa_converter`'s `get_integer` (CONVERTER.ESP:41-45) on the held code is
   `(H << 16) | L`, and `0x8000 << 16` refuses. TERMCODE.ESP's `and(Count,1,0)`
   disjunction gives 4 for 4 and 6 for 5. The handlers for shift_right,
   and, or and the refusals are checked too.
@@ -1273,6 +1273,9 @@ stops. A scratch probe (2026-11-24) measured the cases:
   constant;
 - 13 were sends to a slot whose constant is the atom `none`, and 1 to a
   `nil` slot.
+
+(The probe ran before this milestone's opcode rows, when the total was
+138. After the rows it is 153, and 139 of them are slot constants.)
 
 kl0 now marks an integer that a slot's template constant put there
 (`SlotConstant`, an `int` subclass, OURS). Arithmetic on it gives plain
@@ -1382,7 +1385,22 @@ exception).
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
-  to be found (`kl0.py census` lists them).
+  to be found (`kl0.py census` lists them). Step 3e's state of the FEP
+  blockers:
+  - pmi c6 (21 methods): a multi-way switch with packed words. It needs
+    ce and ff, which have no rows. Deferred.
+  - blt 0d (10): witnessed as `object/3`, but not added. kappa2
+    `user_if/pb/som.esp:191-194` has `Sheet = Obj!current_sheet,
+    object(Sheet,_,_)`, which compiles to `0d 00 01 02` with Sheet in
+    A0. What the two outputs receive is not settled.
+  - blt 1a (6): witnessed as `new_stack_vector(^V, N)`, but not added.
+    kappa2 `HLCANACOM.ESP:552-554` has `stack_vector(Base_attr,Len),
+    new_stack_vector(Checked_attr,Len)`, which compiles to `06 00 04`,
+    `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
+  - blt 6f: witnessed as `list_to_vector`, but not added: its third
+    argument is not settled.
+  - pmi b7 with A != 0: no witness whose source is held was found. The
+    `performance_pes initiate/2` use has no held source.
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are

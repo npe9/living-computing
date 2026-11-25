@@ -625,7 +625,7 @@ class Step3eRows(unittest.TestCase):
         km.reset()
         s = K.Str('')
         s.set_codes([0x0001, 0x0203, 0x7fff, 0x8000, 0x0005])
-        # shift_left and or on held code: KP_DBO.ESP:400-404 get_integer
+        # shift_left and or on held code: CONVERTER.ESP:41-45 get_integer
         # is (H << 16) | L of two string elements
         got = [K.call_class_method(km, 'kappa##kappa_converter', 'get_integer', [s, i, K.Var()])[0][2]
                for i in (0, 1)]

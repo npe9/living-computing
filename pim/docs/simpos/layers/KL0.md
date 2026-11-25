@@ -213,7 +213,7 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     (`HLCAPRSUB.ESP:427`, `receiver.esp:680`, `p_MAIN.esp:444`, `p_icon.esp:229`). MEASURED: every
     held use is followed by exactly that many element cells;
   - `and`, `or`, `shift_left` and `shift_right` (TR-044 A.6) are blt 50, 51, 54 and 55, written
-    `X, Y, ^R` (`TERMCODE.ESP:85, 188`, `KP_DBO.ESP:403-404`, `KP_TIMER.ESP:43-45`). The 32-bit
+    `X, Y, ^R` (`TERMCODE.ESP:85, 188`, `CONVERTER.ESP:41-45`, `KP_TIMER.ESP:43-45`). The 32-bit
     word's sign and overflow are not printed, so negative operands and results of 2**31 or more
     are refused;
   - blt 40 and 49 take the result in another register (`p_wwin.esp:420`, `c_grade_ex.esp:26`).
