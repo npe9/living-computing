@@ -254,6 +254,10 @@ cts_post.esp:18-21) and the new guards (injected the same way; observed):
     errors; test_espc passes;
   - c8's zero-high-half guard removed: only test_switch_on_vector_else
     fails; test_espc passes.
+Step 3i's blt 05 heap_vector (test_heap_vector: KPEXTENT.ESP:109-120;
+injected the same way; observed):
+  - the heap check dropped (any vector answers): only test_heap_vector
+    fails; test_espc passes.
 """
 import os
 import sys
@@ -310,8 +314,8 @@ class Table(unittest.TestCase):
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
         # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
-        # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a
-        self.assertEqual(len(rows), 141)
+        # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05
+        self.assertEqual(len(rows), 142)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1255,6 +1259,30 @@ class Step3iRows(unittest.TestCase):
         self.assertEqual(m.x[0], 21)
         with self.assertRaises(K.Refusal):
             m.op_new_stack_vector(fake, 0, 2, 0, 1, 0)
+
+    def test_heap_vector(self):
+        # blt 05 heap_vector(V, ^N) (step 3i): KPEXTENT.ESP:109-120, on the
+        # cells of check_last/1 @1d4 `05 00 00 00` and get_address/3 @19c
+        # `05 01 02 00`; a heap vector answers its length, a stack vector,
+        # an atom or an unbound variable fails (as blt 06 the reverse)
+        m = kappa_machine()
+        code = m.code('kappa##kappaFLM_extent_manager')
+        hv = K.Vec([A('x'), A('end_of_extent')], heap=True)
+
+        def at(off, reg, x):
+            w = code.cells[off][3]
+            m.reset()
+            m.x[reg] = x
+            m.handlers[('blt', '05')](code, off, (w >> 16) & 255, (w >> 8) & 255, w & 255, w)
+            return m.pc
+        self.assertEqual(at(0x1d4, 0, hv), (code, 0x1d5))
+        self.assertEqual(m.x[0], 2)
+        self.assertEqual(at(0x19c, 1, hv), (code, 0x19d))
+        self.assertEqual(m.x[2], 2)
+        for x in (K.Vec([A('x')]), A('a'), K.Var()):
+            self.assertNotEqual(at(0x19c, 1, x), (code, 0x19d), x)
+        with self.assertRaises(K.Refusal):
+            m.op_heap_vector(types.SimpleNamespace(id='test', cells={}), 0, 1, 2, 1, 0)
 
     def test_switch_on_list_nil(self):
         # pmi c9's first target is [] only (step 3i): fts##post_cts local

@@ -1831,6 +1831,21 @@ class Machine:
         else:
             self.fail()
 
+    def op_heap_vector(self, code, off, a, b, c, v):
+        # blt 05 (step 3i): heap_vector(V, ^N), the heap counterpart of blt
+        # 06: kappa2 kernel/flm/KPEXTENT.ESP:109-112 check_last/1 @1d4
+        # `05 00 00 00` and :118-120 get_address/3 @19c `05 01 02 00` (Pool
+        # in A1, L to A2, then `46 02 01 02` L-1 and vector_element)
+        t = deref(self.x[a])
+        if c:
+            raise Refusal('operand', '%s @%x: blt 05 %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        if isinstance(t, Vec) and t.heap:
+            self.x[b] = len(t.args)
+            self.nxt(code, off)
+        else:
+            self.fail()
+
     def op_integer(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()

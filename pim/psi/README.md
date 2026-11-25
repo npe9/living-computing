@@ -3054,8 +3054,21 @@ not in the class. Six packages unchanged.
 - blt 0d `object/3`: a fresh search of kappa2, paragraph and the pimos
   sources finds 94 `object(...)` calls; every three-argument one has
   both outputs `_`. Nothing settles what they receive.
-- blt a8 and 05: not reattempted beyond the census; no held source line
-  is paired with them yet.
+- blt a8: all 9 held uses are in pimscsi (`scsi_device_bus_management`
+  check_TMSG_list/9 and free_HMCB/2, `scsi_device_interrupt_management`
+  polling/1 and /3, `scsi_dummy_handler` reset_interrupt/2), whose
+  source is not held. None in paragraph, kappa or fts. Stays refused.
+
+**blt 05 `heap_vector` V, ^N (DONE, reattempted):** 428 held uses, 357
+of them in packages with held source. kappa2 `kernel/flm/KPEXTENT.ESP`
+:109-112 `check_last/1` @1d4 `05 00 00 00` and :118-120 `get_address/3`
+@19c `05 01 02 00` (`heap_vector(Pool, L), vector_element(Pool, L-1,
+end_of_extent)`: Pool in A1, L to A2, then `46 02 01 02` and `20 01 02
+01`). It is the heap counterpart of blt 06 `stack_vector`: a heap vector
+answers its length, anything else fails. Only a zero third byte (all
+428). Census: six packages and both FEP censuses unchanged. Test
+`test_heap_vector`; injection, observed: the heap check dropped (any
+vector answers): only `test_heap_vector` fails; `test_espc` passes.
 
 Injected into kl0.py from a backup, restored by cp, cmp-checked; the
 observed failure sets are in `test_kl0.py`'s header (seven injections;
