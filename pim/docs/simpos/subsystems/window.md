@@ -1551,8 +1551,8 @@ meaning.
 | `get_named_yank/3` | c | 2 | **UNSPECIFIED** | — | first use cil/src/ds_bep.esp:2312 | — |
 | `get_parsing_operator/2` | i | 22 | **UNSPECIFIED** | — | first use cal-esp/cal2.12/translate.esp:93 | — |
 | `get_plane_count/2` | c | 2 | [bitmap] sent by paragraph##runtime_monitor local put_pool/1; args: _ | USAGE | paragraph.ptf class paragraph##runtime_monitor local put_pool/1 (kl0 run, SIMPOS sends stubbed) (ptf) | ptf 1992 |
-| `get_position/3` | i | 27 | [window(system, owner unstated)] :get_position(W,^X,^Y) | PRINTED-INTERFACE | TM-115 p63 (tm115) | 1.0 (1985) |
-| `get_size/3` | ci | 132 | [window(system, owner unstated)] :get_size(W,^Width,^Height) provided by the window system | PRINTED-INTERFACE | TM-115 p50,p63 (tm115) | 1.0 (1985) |
+| `get_position/3` | i | 27 | [window(system, owner unstated)] :get_position(W,^X,^Y) | PRINTED-INTERFACE | TM-115 p64 (tm115) | 1.0 (1985) |
+| `get_size/3` | ci | 132 | [window(system, owner unstated)] :get_size(W,^Width,^Height) provided by the window system | PRINTED-INTERFACE | TM-115 p50,p64 (tm115) | 1.0 (1985) |
 | ″ |  |  | [screen] sent by pimfep##pimos_fep_superviser local position/6; args: _, _ | USAGE | pimfep.ptf class pimfep##pimos_fep_superviser local position/6 (kl0 run, SIMPOS sends stubbed) (ptf) | ptf 1993 |
 | `get_slot/3` | ci | 10 | (INFERENCE) ESP object-level slot access by name, inherited by every class (not window-specific); see shell.md | INFERENCE | (in meaning) | — |
 | `get_superior/2` | i | 4 | **UNSPECIFIED** | — | first use euod/DEF/def.esp:982 | — |
@@ -1639,7 +1639,7 @@ meaning.
 | `set_permission/2` | i | 5 | [standard_io_window] :set_permission(W,out) output permission (TM-125 lists WAIT/NOTIFY/OUTPUT/SHOW, held code uses out and show) (call shape USAGE; … | INFERENCE | gog-esp/DISPB3.ESP:377 (ifs_window) | held 3.x-7.x |
 | `set_position/3` | i | 37 | [standard_io_window] move the window to X,Y; held: set_position/3 on inferior_window, standard_superior_window (not standard_io_window): VARIANT of c… | PRINTED | Giho 8609 p19-20 (ipsj) | 2.0 (1986) |
 | ″ |  |  | [inferior_window] after-demon in held kappa##pb_operate_icon_window with no held primary: SIMPOS supplies the primary (one of with_superior_input_buf… | USAGE | kappa.ptf class kappa##pb_operate_icon_window (ptf) | ptf 1992 |
-| `set_size/3` | i | 56 | [window(system, owner unstated)] :set_size(W,Width,Height) | PRINTED-INTERFACE | TM-115 p63 (tm115) | 1.0 (1985) |
+| `set_size/3` | i | 56 | [window(system, owner unstated)] :set_size(W,Width,Height) | PRINTED-INTERFACE | TM-115 p64 (tm115) | 1.0 (1985) |
 | ″ |  |  | [pmacs_window] set_size(W,manipulator,_) | USAGE | pimfep.ptf pimfep##pimos_window_editor set_size/3 (kl0 run) (ptf) | ptf 1993 |
 | `set_slot/3` | c | 2 | (INFERENCE) ESP object-level slot assignment by name (not window-specific); see shell.md | INFERENCE | (in meaning) | — |
 | `set_superior/2` | i | 16 | [window] :set_superior(W,Superior_window) [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p15 (trtm_window) | 1.0 (1985) |

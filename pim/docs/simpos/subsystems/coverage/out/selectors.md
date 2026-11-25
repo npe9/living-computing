@@ -81,7 +81,7 @@
 | `get_border_width/2` | i | 12 | **UNSPECIFIED** | — | first use cil/src/ds_brs.esp:279 | — |
 | `get_buffer_instance/3` | c | 37 | [editor_text_buffer] sent by pimfep##pimos_window_editor instance select_buffer/4; args: _, _ | USAGE | pimfep.ptf class pimfep##pimos_window_editor instance select_buffer/4 (kl0 run, SIMPOS sends stubbed) (ptf) | ptf 1993 |
 | `get_buffer_instance_list/2` | c | 2 | c: list of pool buffers (USAGE call site cil/src/ms_mdm.esp:1646; §2.11) | USAGE | (in meaning) | — |
-| `get_character_font/2` | c | 1 | **UNSPECIFIED** | — | first use cal-esp/cal2.12/grmenu.esp:135 | — |
+| `get_character_font/2` | c | 1 | [with_character] called 1 times by helic2 (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | helic2.tar.Z/helic2/IF/PROGRAM/LEGAL/ESP/grmenu.esp:132 (fixpoint_fe) | IFS 1989-95 |
 | `get_cursor_position/3` | i | 1 | [standard_io_window] cursor column,row | USAGE | gog-esp/IN_WINDOW.ESP:23 (ifs_window) | held 3.x-7.x |
 | `get_derived_rule_data/5` | i | 1 | **UNSPECIFIED** | — | first use euod/DB/db1.esp:229 | — |
 | `get_editor/2` | i | 21 | [pmacs_window] editor object of the window | USAGE | disc/exshow.esp:29 (ifs_window) | held 3.x-7.x |
@@ -102,15 +102,15 @@
 | `get_mouse_position/3` | i | 5 | [window] mouse X,Y in window; held: get_mouse_position/3 on as_markers / as_mouse_input nature sets | SCREENSHOT | 36239 p5 (ipsj) | 2.50 (1986) |
 | ″ |  |  | [as_markers] mouse position in window coordinates; (nature where defined, by usage: as_mouse_input) | USAGE | cal-esp/cal2.12/grmenu.esp:51 (ifs_window) | held 3.x-7.x |
 | `get_named_yank/3` | c | 2 | **UNSPECIFIED** | — | first use cil/src/ds_bep.esp:2312 | — |
-| `get_parsing_operator/2` | i | 22 | **UNSPECIFIED** | — | first use cal-esp/cal2.12/translate.esp:93 | — |
+| `get_parsing_operator/2` | i | 22 | [standard_input_file] called 9 times by cbcdss,examds,pax,quixote (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | cbcdss.tar.Z/cbsdss/psData.esp:44 (fixpoint_fe) | IFS 1989-95 |
 | `get_plane_count/2` | c | 2 | [bitmap] sent by paragraph##runtime_monitor local put_pool/1; args: _ | USAGE | paragraph.ptf class paragraph##runtime_monitor local put_pool/1 (kl0 run, SIMPOS sends stubbed) (ptf) | ptf 1992 |
-| `get_position/3` | i | 27 | [window(system, owner unstated)] :get_position(W,^X,^Y) | PRINTED-INTERFACE | TM-115 p63 (tm115) | 1.0 (1985) |
-| `get_size/3` | ci | 132 | [window(system, owner unstated)] :get_size(W,^Width,^Height) provided by the window system | PRINTED-INTERFACE | TM-115 p50,p63 (tm115) | 1.0 (1985) |
+| `get_position/3` | i | 27 | [window(system, owner unstated)] :get_position(W,^X,^Y) | PRINTED-INTERFACE | TM-115 p64 (tm115) | 1.0 (1985) |
+| `get_size/3` | ci | 132 | [window(system, owner unstated)] :get_size(W,^Width,^Height) provided by the window system | PRINTED-INTERFACE | TM-115 p50,p64 (tm115) | 1.0 (1985) |
 | ″ |  |  | [screen] sent by pimfep##pimos_fep_superviser local position/6; args: _, _ | USAGE | pimfep.ptf class pimfep##pimos_fep_superviser local position/6 (kl0 run, SIMPOS sends stubbed) (ptf) | ptf 1993 |
 | `get_slot/3` | ci | 10 | (INFERENCE) ESP object-level slot access by name, inherited by every class (not window-specific); see shell.md | INFERENCE | (in meaning) | — |
 | `get_superior/2` | i | 4 | **UNSPECIFIED** | — | first use euod/DEF/def.esp:982 | — |
 | `get_text_window/2` | i | 1 | **UNSPECIFIED** | — | first use gog-esp/DISPB1.ESP:217 | — |
-| `get_unparsing_operator/2` | i | 4 | **UNSPECIFIED** | — | first use kappa2/kappa2/tool/del_tool/KP_DEL.ESP:164 | — |
+| `get_unparsing_operator/2` | i | 4 | [standard_io_buffer] called 2 times by quixote (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | quixote.tar.gz/src/QS/pm/pm_io.esp:12 (fixpoint_fe) | IFS 1989-95 |
 | `get_window/2` | i | 188 | [standard_editor] editor -> its window | USAGE | pimfep.ptf pimfep##pimos_window_editor (kl0 run) (ptf) | ptf 1993 |
 | `get_with_prompt/3` | i | 2 | [editor_main_window] prompt in echo area and read answer | USAGE | cal-esp/deb2.12/dedit.esp:318 (ifs_window) | held 3.x-7.x |
 | `getb/3` | i | 6 | [standard_io_buffer] :getb(Buf,String,Size) whole contents | USAGE | cil/src/ms_ist.esp:1813 (ifs_window) | held 3.x-7.x |
@@ -186,21 +186,21 @@
 | `set_label_font/2` | i | 55 | [standard_io_window] font for label/title | USAGE | txtstrct/ctx_system.esp:422 (ifs_window) | held 3.x-7.x |
 | `set_margins/5` | i | 1 | [window] :set_margins(W,Left,Right,Head,Tail) dots [possible defining mixin: with_margin -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p16 (folio 15) (trtm_window) | 1.0 (1985) |
 | `set_marker_type/3` | i | 2 | [window] :set_marker_type(W,Marker,Type) Type box or line [possible defining mixin: as_markers -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p17 (trtm_window) | 1.0 (1985) |
-| `set_max_depth/2` | i | 2 | **UNSPECIFIED** | — | first use cal-esp/deb2.12/dmenu.esp:879 | — |
-| `set_max_length/2` | i | 2 | **UNSPECIFIED** | — | first use cal-esp/deb2.12/dmenu.esp:880 | — |
+| `set_max_depth/2` | i | 2 | [standard_io_buffer] called 1 times by dulcinea (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | dulcinea.tar.Z/dul/dul_if.esp:233 (fixpoint_fe) | IFS 1989-95 |
+| `set_max_length/2` | i | 2 | [standard_io_buffer] called 1 times by dulcinea (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | dulcinea.tar.Z/dul/dul_if.esp:234 (fixpoint_fe) | IFS 1989-95 |
 | `set_mode/2` | i | 1 | **UNSPECIFIED** | — | first use kwic-esp-002/kwic-esp/src/inEditor2.esp:377 | — |
 | `set_name/2` | i | 8 | (W,String) window name, distinct from title (USAGE call site euod/RULED/ruled1.esp:623; meaning INFERENCE; §2.2) | USAGE | (in meaning) | — |
-| `set_parsing_operator/2` | i | 5 | **UNSPECIFIED** | — | first use cil/src/ds_bep.esp:2620 | — |
+| `set_parsing_operator/2` | i | 5 | [standard_input_file] called 9 times by cbcdss,quixote (front-end census; also in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | cbcdss.tar.Z/cbsdss/adviser.esp:736 (fixpoint_fe) | IFS 1989-95 |
 | `set_permission/2` | i | 5 | [standard_io_window] :set_permission(W,out) output permission (TM-125 lists WAIT/NOTIFY/OUTPUT/SHOW, held code uses out and show) (call shape USAGE; … | INFERENCE | gog-esp/DISPB3.ESP:377 (ifs_window) | held 3.x-7.x |
 | `set_position/3` | i | 37 | [standard_io_window] move the window to X,Y; held: set_position/3 on inferior_window, standard_superior_window (not standard_io_window): VARIANT of c… | PRINTED | Giho 8609 p19-20 (ipsj) | 2.0 (1986) |
 | ″ |  |  | [inferior_window] after-demon in held kappa##pb_operate_icon_window with no held primary: SIMPOS supplies the primary (one of with_superior_input_buf… | USAGE | kappa.ptf class kappa##pb_operate_icon_window (ptf) | ptf 1992 |
-| `set_size/3` | i | 56 | [window(system, owner unstated)] :set_size(W,Width,Height) | PRINTED-INTERFACE | TM-115 p63 (tm115) | 1.0 (1985) |
+| `set_size/3` | i | 56 | [window(system, owner unstated)] :set_size(W,Width,Height) | PRINTED-INTERFACE | TM-115 p64 (tm115) | 1.0 (1985) |
 | ″ |  |  | [pmacs_window] set_size(W,manipulator,_) | USAGE | pimfep.ptf pimfep##pimos_window_editor set_size/3 (kl0 run) (ptf) | ptf 1993 |
 | `set_slot/3` | c | 2 | (INFERENCE) ESP object-level slot assignment by name (not window-specific); see shell.md | INFERENCE | (in meaning) | — |
 | `set_superior/2` | i | 16 | [window] :set_superior(W,Superior_window) [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p15 (trtm_window) | 1.0 (1985) |
 | `set_title/2` | i | 111 | [window] :set_title(W,String) label string [possible defining mixin: with_label -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p15 (trtm_window) | 1.0 (1985) |
 | ″ |  |  | [pmacs_window] PIMOS set_title/4 | USAGE | pimfep.ptf pimfep##pimos_window_editor (kl0 run) (ptf) | ptf 1993 |
-| `set_unparsing_operator/2` | i | 2 | **UNSPECIFIED** | — | first use kwic-esp-002/kwic-esp/src/inEditor2.esp:157 | — |
+| `set_unparsing_operator/2` | i | 2 | [standard_io_buffer] called 3 times by cbcdss,quixote (front-end census; NOT in the 15-program census); meaning not stated in the source | CENSUS (FRONT-END CALL SITES; NO MEANING, SO COVERAGE.PY DOES NOT COUNT IT) | cbcdss.tar.Z/cbsdss/k_repair.esp:31 (fixpoint_fe) | IFS 1989-95 |
 | `show/1` | i | 170 | [window] :show(W) show the window on the screen [possible defining mixin: window -- INFERENCE; TM-125 attaches methods to no class] | PRINTED-INTERFACE | TM-125 p16 (trtm_window) | 1.0 (1985) |
 | ″ |  |  | [standard_io_window] display; after:show demon used to drain input with read_sense; after-demon on it at cal-esp/cal2.12/cwindow.esp:202 | USAGE | disc/demo_bun_cut.esp:47 (ifs_window) | held 3.x-7.x |
 | `show_buffer/1` | i | 3 | [pmacs_window] redisplay buffer | USAGE | papyrus_src/demo/EDITOR/main_window.esp.1:133 (ifs_window) | held 3.x-7.x |

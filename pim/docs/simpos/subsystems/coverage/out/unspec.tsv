@@ -1,4 +1,3 @@
-get_parsing_operator/2	22	cal-esp/cal2.12/translate.esp:93	standard_input_file,standard_io_buffer,cal_window
 clear_input/1	13	kappa2/kappa2/user_if/pb/typewin.esp:325	standard_editor,pmacs_standard_editor
 get_border_width/2	12	cil/src/ds_brs.esp:279	standard_superior_window,labeled_superior_window
 call_color_manipulator/2	9	kappa2/kappa2/user_if/pb/pcn.esp:3210	color_manipulator
@@ -6,10 +5,8 @@ other_window/1	8	euod/DB/db2.esp:145	standard_editor
 exe_help_menu/3	7	fuzclust/fuzclust/src/ahp_tool.graph:176	net_talk_window
 get_fullpath_name/3	6	cal-esp/deb2.12/deb_cont.esp:302	cal_window
 mark/1	6	cal-esp/deb2.12/dedit.esp:418	standard_editor,pmacs_standard_editor
-set_parsing_operator/2	5	cil/src/ds_bep.esp:2620	standard_input_file,standard_input_text_buffer_accessor
 assign_window/1	4	cil/src/ms_cfm.esp:119	with_shared_window
 get_superior/2	4	euod/DEF/def.esp:982	essential_window,standard_window
-get_unparsing_operator/2	4	kappa2/kappa2/tool/del_tool/KP_DEL.ESP:164	standard_io_buffer
 create_window/2	3	icotext/src/imi_main.esp:251	imi_attribute_menu,imi_attribute_sub_menu,kakari_attribute_menu
 get_activity/2	3	knov/src/system/cg.esp:158	standard_io_window
 get_margins/5	3	euod/PROOF/proof1.esp:867	labeled_superior_window,standard_superior_window
@@ -20,9 +17,6 @@ get_marker_position/4	2	kwic-esp-002/kwic-esp/src/displays.esp:1870	as_markers
 get_named_yank/3	2	cil/src/ds_bep.esp:2312	editor_yank_buffer
 see_region/2	2	cal-esp/deb2.12/dedit.esp:495	standard_editor
 set_help_font/2	2	fuzclust/fuzclust/src/cliant.grape:354	multiple_select_scrolling_menu
-set_max_depth/2	2	cal-esp/deb2.12/dmenu.esp:879	standard_io_buffer
-set_max_length/2	2	cal-esp/deb2.12/dmenu.esp:880	standard_io_buffer
-set_unparsing_operator/2	2	kwic-esp-002/kwic-esp/src/inEditor2.esp:157	standard_output_file,standard_output_text_buffer_accessor
 add_named_yank/3	1	cil/src/ds_bep.esp:3515	editor_yank_buffer
 assign_input_window/2	1	euod/DB/db3.esp:1280	ras_with_input_window
 beginning_of_line/1	1	euod/DEF/def.esp:34	standard_editor
@@ -32,7 +26,6 @@ cursor_with_mouse/1	1	papyrus_src/demo/EDITOR/my_point.esp.1:23	pmacs_standard_e
 exchange_point/1	1	papyrus_src/demo/EDITOR/my_syntax.esp.1:34	pmacs_standard_editor
 gen_menu_win/3	1	sum/src/you_edit.v32:2050	gen_menu_win
 get_and_set_icon_id/3	1	icotext/src/window_test.esp:34	utls_icon
-get_character_font/2	1	cal-esp/cal2.12/grmenu.esp:135	with_character
 get_derived_rule_data/5	1	euod/DB/db1.esp:229	ras_with_input_window
 get_inference_rule/5	1	euod/DB/db3.esp:97	ras_with_input_window
 get_interface/2	1	kappa2/kappa2/utility/rep/REPTABLE.ESP:799	standard_editor

@@ -511,6 +511,28 @@ and stand-in `simpos##` classes. In order:
        printed or held.
      - Step 3f's INTERPOLATED and OURS parts re-checked against their
        sources (`source_check_2026-11-24.md` §7).
+   - *2026-11-25, step 3h* (`../../psi/README.md`, the "Step 3h"
+     sections):
+     - The six untraced pimscsi failures are held behaviour: initiator
+       methods on a target-mode receiver (lun 0) fail at
+       `check_argument/2`'s `initiator` clause. The six
+       `not_less_than` stops are the census's unbound run-time unit.
+       Neither changes.
+     - pmi 34/35 (`get_vector_4/5`) and blt e1 (`integer/1` as a
+       test-and-branch) are KNOWN-PLAINTEXT on paragraph source.
+       `process:children/2` is stood in (INTERPOLATED, TM-100 Fig. 3.1
+       and kappa2 `FMP.ESP`:621-625). `status/3` was searched for again
+       in TM-100 pp7-10 and every held archive; nothing was found, so it
+       stays refused.
+     - A recipe for `pimos_tcpip_socket`: the front end is pushed with
+       the printed `assign/1` and popped with `resign_core/1`.
+     - Six packages unchanged at 311 / 12 / 206 / 1. Plain FEP 808 / 163
+       / 432 becomes 810 / 165 / 428. With recipes, 831 / 161 / 411
+       becomes 836 / 164 / 403.
+     - The four items step 3f's re-check left unread are re-read
+       (`source_check_2026-11-24.md` §8). One cross-reference, §6.1
+       step 4's `{Id, 5}`, is still unread. The TM-115 `get_position` page is fixed in the generated
+       tables.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

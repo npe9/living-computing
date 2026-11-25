@@ -836,8 +836,12 @@ class Machine:
         the package of the class that sent the library call; else the one
         loaded class `*##c`.  None if none is loaded; refused if several
         are.  INTERPOLATED: the own package first is the static lookup rule
-        of a bare class name (subsystems/librarian.md §1.4, TM-388 pp92-101,
-        ESP manual program-e.tex:5250-5934); that the run-time lookup
+        of a bare class name, PRINTED in TM-388 PDF p94 (folio 82: "(1)
+        every class in the self package") and the p95 worked example
+        (subsystems/librarian.md §1.4; ESP manual program-e.tex:5250-5934).
+        TM-388 binds it when a class is stored (PDF p93, folio 81) and
+        at macro expansion (p98, folio 86), and says nothing of a run-time
+        lookup (pp92-101 read as images, 2026-11-25); that the run-time lookup
         follows it, and that the "own" package is the sender's (not the
         process's default package, kappa2 HLCLIB.ESP:30-31 `:get_package(
         Process, P)`), are INFERENCE (gaps.md, librarian row 1: the
@@ -1331,6 +1335,17 @@ class Machine:
     # blt f2 (step 3e): as f0, the difference UNKNOWN (kl0_opcodes.tsv)
     op_if_identical_f2 = op_if_identical
 
+    # blt e1 (step 3h): integer(A_A) as a test-and-branch
+    def op_if_integer(self, code, off, a, b, c, v):
+        if b:
+            raise Refusal('operand', '%s @%x: blt e1 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        x = deref(self.x[a])
+        if isinstance(x, int) and not isinstance(x, bool):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1401,6 +1416,19 @@ class Machine:
 
     def op_get_vector_3(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.get_struct(a, 'vec', 3) else self.fail()
+
+    # pmi 34, 35 (step 3h): witnessed with a zero second and third byte only
+    def _get_vector_k(self, code, off, a, b, c, k):
+        if b or c:
+            raise Refusal('operand', '%s @%x: pmi %02x %02x %02x %02x: only zero second and third bytes '
+                          'are witnessed' % (code.id, off, 0x30 + k, a, b, c))
+        self.nxt(code, off) if self.get_struct(a, 'vec', k) else self.fail()
+
+    def op_get_vector_4(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 4)
+
+    def op_get_vector_5(self, code, off, a, b, c, v):
+        self._get_vector_k(code, off, a, b, c, 5)
 
     # unify
     def _uvar(self, store, i, code, off):
@@ -2097,11 +2125,9 @@ SIMPOS_MODELS = {
 
 # class -> (creator selector, arity, the cells read), all class methods of
 # the class itself; each stops before its `activate/2` send.  Not here:
-# pimos_tcpip_socket create_socket/9 (@21-69) reads the calling process's
-# invocation stack (`:invocation_stack(P, L)`, `:get_first(L, Prog)`,
-# @4d-59) before activate/2; the process stand-in has no such accessor,
-# and the census's process runs no program, so the stack is empty.
-# pimos_string_io_invoker create_string_io/10 has its own recipe below
+# pimos_tcpip_socket create_socket/9 (@21-69), which reads the calling
+# process's invocation stack: it has its own recipe below (step 3h,
+# _tcpip_socket).  pimos_string_io_invoker create_string_io/10 has its own recipe below
 # (STRING_IO_PROGRAMS).
 # Step 3g: the fourth field is the argument that holds the output
 # stream, the fifth the one that holds the device id, read from the
@@ -2260,6 +2286,60 @@ def _string_io_device(m, cid):
     raise Refusal('recipe', 'create_string_io/10 for %s does not reach activate/2' % cid)
 
 
+# pimos_tcpip_socket (step 3h).  create_socket/9 (@21-69) takes the
+# calling program from the top of its process's invocation stack
+# (`:self(#process,P)`, `:invocation_stack(P,L)`, `:get_first(L,Prog)`,
+# @4d-59) and stores it as the device's fep_object (@5f-61), its process
+# as fep_process; A0 goes to set_output_stream/2 (@3d-40), A3 to
+# set_device_id/2 (@49-4c).  The caller is the front end: the device
+# creators are reached from pimos_scsi_front_end's local create_device/4
+# (@409, fep_services.md §6.1), through refute_command/3 (@30b) and
+# loop/2 (@2bd), and its goal/1 runs `loop` in its own process
+# (tag_catch/9 with `loop`, @c5-c9).  Its goal runs with the front end
+# pushed on that process's stack (TM-100 PDF p11: "On invocation of a
+# program, the program is pushed onto the invocation stack of the
+# process and the instance predicate :goal(Program) is called";
+# as_program assign/1, Fig. 3.3).  So the recipe pushes a front end with
+# the printed assign/1, runs the creator stopped before activate/2, and
+# pops it with the printed resign_core/1.  INFERENCE: that the front
+# end, not another program, is on top.  OURS: the front end is new/2's
+# instance (its creator create/6 is not run).
+TCPIP = 'pimfep##pimos_tcpip_socket'
+FRONT_END = 'pimfep##pimos_scsi_front_end'
+
+
+def _tcpip_socket(m):
+    """The socket create_socket/9 makes, called with a front end on top of
+    the census process's invocation stack, stopped before activate/2."""
+    fe = make_instance(m, FRONT_END)
+    m.reset()
+    if not any(True for _ in m.solve_send(fe, 'assign', [fe])):
+        raise Refusal('recipe', 'assign/1 of the front end fails')
+    try:
+        m.reset()
+        (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
+        args = [Var() for _ in range(8)]
+        args[0], args[3] = st[0], REQUEST_ID
+        m.stop_before = {('activate', 2)}
+        try:
+            for _ in m.solve_send(ClassRef(TCPIP), 'create_socket', args + [ClassRef(TCPIP)]):
+                break
+        except CreatorStopped as e:
+            dev = e.args[2][0]
+            if isinstance(dev, Instance) and dev.cid == TCPIP:
+                return dev
+            raise Refusal('recipe', 'create_socket/9: activate/2 of %r' % (dev,))
+        except Refusal as e:
+            raise Refusal('recipe', 'create_socket/9 stops: %s: %s' % (e.cause, e.detail))
+        finally:
+            m.stop_before = None
+        raise Refusal('recipe', 'create_socket/9 does not reach activate/2')
+    finally:
+        m.reset()
+        for _ in m.solve_send(fe, 'resign_core', [fe]):
+            break
+
+
 def _pimos_window(m):
     """pimos_window create_pimos_window/3 (held, @19-34: `:create(
     #pimos_window, [{size,70,110}, {editor,#pimos_window_editor}], _, W)`,
@@ -2301,6 +2381,7 @@ def _by_new_send(m, cid):
 # class -> a function of the machine giving the receiver (OURS)
 RECIPES = dict({cid: (lambda m, c=cid: _creator_device(m, c)) for cid in DEVICE_CREATORS},
                **{cid: (lambda m, c=cid: _string_io_device(m, c)) for cid in STRING_IO_PROGRAMS},
+               **{TCPIP: _tcpip_socket},
                **{'pimfep##pimos_window': _pimos_window,
                   'pimfep##pimos_window_editor': _pimos_window_editor,
                   'pimfep##remote_pimfep_executor':

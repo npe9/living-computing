@@ -1204,7 +1204,23 @@ end.''', 'simpos')
         # p_MAIN.esp, receiver.esp): 808 / 163 / 432 (login_server
         # device_abort/1 succeeds, checked alone; nine pimscsi methods fail
         # on the census's unbound first argument, as in the recipe census)
-        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 163, 'refused': 432, 'exception': 16,
+        # 2026-11-25, step 3h: pmi 34/35 witnessed (receiver.esp:669, :680):
+        # 808 / 165 / 430.  Two rows leave refused for failure, both on the
+        # census's unbound arguments (net_spawn_user take_ip_address/3 in
+        # the e_string stand-in, scsi receive_command/3 at check_argument's
+        # `string` clause, blt 0b on an unbound); two scsi_device rows stop
+        # later, at an unbound receiver.  Not progress
+        # step 3h: blt e1 witnessed (p_what.esp:88, g_window.esp:147):
+        # 808 / 165 / 430 -> 809 / 165 / 429.  pimos_fep_initiation_table
+        # set_scsi_init_list/2 succeeds (checked alone: the census's unbound
+        # list becomes four non-integers, each stored as nil; unbound
+        # probing, not progress); six rows stop later
+        # step 3h: process:children/2 (INTERPOLATED): pimos_scsi_front_end
+        # exit/1 succeeds (809 -> 810, 429 -> 428).  Checked alone: on the
+        # census's front end fep_type is the template constant 0 (create/6
+        # writes it, @50), so the shutdown branch is skipped, and the
+        # census's process has no children.  A census artifact, not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 810, 'failure': 165, 'refused': 428, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1256,13 +1272,25 @@ end.''', 'simpos')
         # device_abort/1, abort_string_io/2) were checked alone on a fresh
         # machine; the nine failures (pimscsi cmt, scsi, scsi_communicator
         # check_argument/2, low_if/2, send_request/5, receive_request/5)
-        # are the census's unbound first argument meeting a first clause
-        # that binds it and cuts (check_argument/2 @b7 `get r0, initiator`,
-        # `dc 02`): not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 161, 'refused': 411,
+        # are not progress.  Step 3h traced the six low_if/send_request/
+        # receive_request rows (test_step3h_scsi_mode): initiator methods
+        # on a receiver in target mode (lun 0, an integer), held behaviour
+        # step 3h: pmi 34/35 witnessed: 831 / 163 / 409 (the same four rows
+        # as the plain census move)
+        # step 3h: blt e1 witnessed: 831 / 163 / 409 -> 832 / 163 / 408 (the
+        # same seven rows as the plain census)
+        # step 3h: process:children/2: the same row, 833 / 163 / 407.
+        # step 3h: pimos_tcpip_socket's recipe: 836 / 164 / 403, slot
+        # constants 96 -> 93.  attention/1, bind/4 and flush/3 succeed
+        # (each checked alone: a reply put on the output stream);
+        # abort_loop/1 fails (try_to_see/2 on the empty input stream);
+        # loop_main/1 waits in see/2 ('would suspend')
+        self.assertEqual((len(rows), out), (1420, {'success': 836, 'failure': 164, 'refused': 403,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 96)
+        self.assertEqual(slot_const, 93)
+        self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
+        self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'bind/4')][0], 'success')
         # the four string-I/O programs, made by create_string_io/10
         # step 3g: a device's loop_main/1 waits in stream see/2 on its
         # empty input stream ('would suspend'), as do the 17 goal/1,
@@ -1277,7 +1305,8 @@ end.''', 'simpos')
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
                          ('refused', 'would suspend'))
         self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 17)
+        # 17, and since step 3h pimos_tcpip_socket loop_main/1: 18
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 18)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -1417,7 +1446,8 @@ end.''', 'simpos')
             finally:
                 m.stop_before = None
         # the census's process runs no program: get_first/2 fails on the
-        # empty stack, so the creator fails (tcpip has no recipe).  The
+        # empty stack, so the creator fails (since step 3h the tcpip recipe
+        # pushes a front end first: test_step3h_tcpip_recipe).  The
         # machine is shared: empty the stack first
         self.send(stack, 'clear')
         self.assertEqual(create_socket(), [])
@@ -1432,6 +1462,107 @@ end.''', 'simpos')
             self.assertEqual(sl['device_id'], K.REQUEST_ID)
         finally:
             self.send(stack, 'clear')
+
+    def test_step3h_tcpip_recipe(self):
+        # step 3h: pimos_tcpip_socket's recipe (kl0 _tcpip_socket): a front
+        # end pushed by the printed as_program assign/1, create_socket/9
+        # run to activate/2, the front end popped by resign_core/1
+        m = K.fep_machine()
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        pco = m.lib.build('simpos##process')
+        stack = K.deref(proc.slots[m.lib.slot_number(pco, 'instance', 'invocation_stack')])
+        self.send(stack, 'clear')
+        dev = K.RECIPES[K.TCPIP](m)
+        co = m.lib.build(dev.cid)
+        sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual((sl['fep_object'].cid, sl['fep_process'], sl['device_id'], sl['output_stream'].cid),
+                         (K.FRONT_END, proc, K.REQUEST_ID, 'simpos##stream'))
+        # the stack is left as it was found
+        self.assertEqual(K.resolve(stack.slots[0]), K.NIL)
+        # attention/1 puts {Id, 3} on the output stream, as the timer's does
+        q = K.resolve(sl['output_stream'].slots[0].slots[0])
+        self.assertEqual(q, K.NIL)
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(dev, 'attention', [dev])))
+        q = K.resolve(sl['output_stream'].slots[0].slots[0])
+        self.assertEqual(K.deref(q.args[0]).codes(), [16, 0, 3, 0])
+
+    def test_step3h_children(self):
+        # process:children/2 (step 3h, INTERPOLATED: TM-100 Fig. 3.1's slot
+        # children_processes; kappa2 FMP.ESP:621-625).  It answers the
+        # slot's list; held pimos_scsi_front_end exterminate_child/0
+        # (@50e-51e) takes its contents and sends exterminate/1 to each
+        m = self.m
+        m.reset()
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        co = m.lib.build('simpos##process')
+        kids = proc.slots[m.lib.slot_number(co, 'instance', 'children_processes')]
+        L = K.Var()
+        self.assertEqual([K.resolve(L) is K.deref(kids) for _ in m.solve_send(proc, 'children', [L, proc])], [True])
+        cid = 'pimfep##pimos_scsi_front_end'
+
+        def exit1():
+            m.reset()
+            fe = K.make_instance(m, cid)
+            try:
+                return 'success' if any(True for _ in m.solve_send(fe, 'exit', [fe])) else 'failure'
+            except K.Refusal as e:
+                return e.detail
+        self.send(kids, 'clear')
+        try:
+            # no children: exit/1 succeeds (its fep_type is the template
+            # constant 0, which create/6 overwrites, @50: no shutdown branch)
+            self.assertEqual(exit1(), 'success')
+            # one child: the loop sends it exterminate/1 (not stood in)
+            self.assertEqual(len(self.send(kids, 'add_last', proc)), 1)
+            self.assertIn('exterminate/1', exit1())
+        finally:
+            self.send(kids, 'clear')
+
+    def test_step3h_scsi_mode(self):
+        # step 3h: the six pimscsi failures of step 3g, traced.  cmt and scsi
+        # check their arguments in scsi_communicator check_arguments/2
+        # (@130-147): each element goes to check_argument/2 (@93-10d).  The
+        # `initiator` clause (@b7-bd) needs Obj!lun = initiator, which
+        # scsi_common_if create/3 writes (@22-25); the `target` clause
+        # (@be-c4) needs an integer lun, which create/4 writes (@46-49).
+        # The census's new/2 instance keeps lun = 0, a target, as held
+        # scsi_handler initiate_device/7 leaves the scsi it makes with
+        # :new (@3cb-3d3, no lun written).  So low_if/2, send_request/5
+        # and receive_request/5, which list `initiator`, fail through
+        # @13f-147 (status software, detail arguments): held behaviour.
+        m = self.m
+
+        def run(cid, sel, lun):
+            m.reset()
+            o = K.make_instance(m, cid)
+            if lun is not None:
+                self.assertEqual(len(self.send(o, 'set_lun', lun)), 1)
+            name, n = sel.split('/')
+            try:
+                r = 'success' if any(True for _ in m.solve_send(o, name, [K.Var() for _ in range(int(n) - 1)] + [o])) \
+                    else 'failure'
+            except K.Refusal as e:
+                r = e.cause
+            co = m.lib.build(cid)
+            s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, o.slots)}
+            return r, s['status'], s['detail']
+        sw = (K.Atom('software'), K.Atom('arguments'))
+        for cid in ('pimscsi##cmt', 'pimscsi##scsi'):
+            for sel in ('low_if/2', 'send_request/5', 'receive_request/5'):
+                self.assertEqual(run(cid, sel, None), ('failure',) + sw, (cid, sel))
+                # an initiator (lun := initiator by the held set_lun/2) gets
+                # past `initiator`: low_if/2 to an opcode (blt e0, past the
+                # blt e1 of include_item_1/3 since step 3h), the others to
+                # the unit check on the census's unbound unit
+                want = 'opcode' if sel == 'low_if/2' else 'unbound argument'
+                self.assertEqual(run(cid, sel, K.Atom('initiator'))[0], want, (cid, sel))
+            # a target method: on lun 0 it reaches the unbound unit; on an
+            # initiator it fails at `target` (@c3, integer(lun))
+            self.assertEqual(run(cid, 'send_data/4', None)[0], 'unbound argument')
+            self.assertEqual(run(cid, 'send_data/4', K.Atom('initiator')), ('failure',) + sw)
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,
