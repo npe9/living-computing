@@ -24,10 +24,10 @@
 %        the port's (a Unix path has no logical names), as the sweep reads
 %        it.
 % Kept, labelled `% [CESP, kept]`: `use_package(lax).` (espc.py ignores
-% it), and append/4's `:convert_to_8(#cesp##string, ...)`, which turns
-% the result into an 8-bit string for CESP; what SIMPOS's append/4 did
-% instead is not evidenced, so it is not guessed (kl0 refuses the send,
-% class cesp##string not loaded).
+% it).  append/4's `:convert_to_8(#cesp##string, ...)`, which turns the
+% result into an 8-bit string for CESP, was kept and refused until step
+% 3l; since step 3l it is replaced, `% [SIMPOS form inferred 8]`, by an
+% INFERENCE (SIMPOS strings are 16-bit: no conversion; see append/4).
 % Not carried by the port, and so not here: remote_or_local/6 (the
 % spelling of its held callers: cal-esp deb2.12/init.esp:314, cil
 % src/ds_fep.esp:909),
@@ -69,7 +69,16 @@ class   pathname    has
 % HELD-SOURCE: pathname.esp:29
 :append(Class,Upath,Dpath,Pathname):-
         append(Upath,Dpath,Pathname0) ,
-        :convert_to_8(#cesp##string,Pathname0,Pathname);   % [CESP, kept]
+        Pathname = Pathname0 ;   % [SIMPOS form inferred 8, step 3l]
+        % The port's line was
+        %   :convert_to_8(#cesp##string,Pathname0,Pathname);   % [CESP, kept]
+        % INFERENCE (step 3l, under the owner's rule of 2026-11-25): SIMPOS
+        % strings are 16-bit (docs/simpos/layers/FORMATS.md §5; ESP's
+        % default double_bytes), so SIMPOS's append/4 has no conversion to
+        % 8 bits and returns the joined string as it is.  The call was the
+        % CESP port's (CESP strings are 8-bit).  Basis of the run: held
+        % pimfep##simpos_user create/4 @36-3c sends
+        % :append(#pathname, "user:", Name, Dir) with 16-bit strings.
 
 % :append_names/3
 % HELD-SOURCE: pathname.esp:34

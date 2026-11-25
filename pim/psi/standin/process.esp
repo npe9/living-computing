@@ -151,6 +151,11 @@
     % the printed create_core/3 does (TM-100 Fig. 3.1, PDF p8), since
     % add_child/2 is now stood in (below).
 
+    % :world(#process, World) -- the calling process's world.  PRINTED
+    % interface (TR-056 PDF p25, folio 23: "Though this is a class
+    % predicate, this call returns the working world of the calling
+    % process"); the body is INTERPOLATED (step 3l).
+    :world(Class, World) :- :self(Class, P), World = P!world ;
 
     instance
 
@@ -204,7 +209,12 @@
     % INTERPOLATED: see the slot accessors above.
     :set_world(Process, X) :- Process!world := X ;
     % INTERPOLATED: see the slot accessors above.
-    :password_list(Process, X) :- X = Process!password_list ;
+    % Step 3l: a process with no list yet gets one (OURS: made on first
+    % use, as simpos_user setup_process/2 @ee-f9 sends set_access_mode/2
+    % to the answer; standin/password_list.esp).
+    :password_list(Process, X) :- X = Process!password_list, X \== 0, ! ;
+    :password_list(Process, X) :-
+        :new(#password_list, X), Process!password_list := X ;
     % INTERPOLATED: see the slot accessors above.
     :set_password_list(Process, X) :- Process!password_list := X ;
 

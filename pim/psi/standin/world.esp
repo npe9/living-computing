@@ -1,0 +1,55 @@
+% SCAFFOLDING stand-in for SIMPOS's class `world`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of
+% `world` is printed or held.  Step 3l, route step B7
+% (docs/simpos/boot_route.md).  MINIMAL: what login sends.
+%
+% PRINTED (prose and interface; page images read 2026-11-25):
+%   - TR-056 PDF p25 (folio 23): `World = [..., Directory1, ...,
+%     Directory2, ...]`; "The working world is kept in an instance slot of
+%     the process and is retrieved at any time by :world(#process,World)".
+%   - TR-524 PDF p9 (folio 8): "The notion of a world, which is a set of
+%     aliases, is introduced.  An alias may be defined for any pathname"
+%     ("snoopy" for ">sys>user>gee": "snoopy:humm.txt").
+% USAGE (held cells, read 2026-11-25): pimfep##simpos_user class create/4
+% @2d-48: `:create(#world, W)`, `:append(#pathname, "user:", Name, Dir)`,
+% `:define(W, "me", [Dir])`, `:set_default_logical_name(W, "me")`; the
+% held login files' `define` items (shell.md §4.2.2): `"Name" := [Path,
+% ...]`, searched in order, "me" may be redefined.
+% Representation (OURS): the aliases as a list of [Name | Directories],
+% the newest first (a list, not a vector: a slot keeps a list's values,
+% kl0 resolve_value, while a stack vector may not be written to a slot,
+% TM-388 PDF p110, folio 98) (so a redefinition shadows the older one); the
+% default logical name; and a class slot `system` holding the aliases
+% every world sees (`user` := [">sys>user"], set by psi/simpos_fs.py
+% mount/1: INFERENCE from TM-143 p3 and the held homes `>sys>user>NAME`,
+% shell.md §4.1).  The lookup itself is kl0's directory_retrieve (Python),
+% which reads these slots.
+
+class world has
+
+% OURS: the aliases every world sees (see above); [] until mounted.
+attribute system := [];
+
+% :create(#world, W) -- an empty world.  INTERPOLATED from the held send in
+% simpos_user create/4 @2d-31 and TR-524 PDF p9 (a set of aliases).
+:create(Class, W) :- :new(Class, W);
+
+instance
+
+% OURS representation (see the head comment).
+attribute aliases := [], default := 0;
+
+% :define(W, Name, Directories) -- INTERPOLATED from the held send in
+% simpos_user create/4 @41-43 (`:define(W, "me", [Dir])`) and the held
+% login files' `define` items: Name is a string, Directories a list of
+% pathname strings searched in order.  A later define of the same name
+% shadows the earlier one (OURS: the list is searched newest first).
+:define(W, Name, Directories) :-
+        W!aliases := [[Name | Directories] | W!aliases];
+
+% :set_default_logical_name(W, Name) -- INTERPOLATED from the held send in
+% simpos_user create/4 @45-48 and TM-229 p5 (= IPSJ 36239 p4, prose: "a
+% default directory used when none is given").
+:set_default_logical_name(W, Name) :- W!default := Name;
+
+end.

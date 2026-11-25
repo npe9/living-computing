@@ -598,12 +598,12 @@ class Standins(unittest.TestCase):
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
-            'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
+            'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
             'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
-            'simpos##trace', 'simpos##waiting_frame', 'simpos##waiting_queue',
-            'simpos##with_link', 'simpos##with_lock'])
+            'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
+            'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
         held = {
@@ -1280,7 +1280,11 @@ end.''', 'simpos')
         # and stop at class_object of 1900544 on the not_assigned path.
         # Not progress: the held rows' outcomes are unchanged (767 / 221 /
         # 415 over the 1,420)
-        self.assertEqual((len(rows), out), (1466, {'success': 801, 'failure': 233, 'refused': 415, 'exception': 16,
+        # step 3l: simpos_user create/4 now fails at identify/4 (no user is
+        # registered in a census row: the registry is a class slot, which
+        # the census drops), where it was refused: not progress.  801 /
+        # 234 / 414
+        self.assertEqual((len(rows), out), (1466, {'success': 801, 'failure': 234, 'refused': 414, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
@@ -1374,8 +1378,9 @@ end.''', 'simpos')
         # editor's get_position/3 and get_inside_size/3 pass put_integer
         # `ffff` and stop at put/2 on the window's unset output stream (a
         # slot constant, the step 3g artifact).  828 / 234 / 387, slot
-        # constants 105 -> 107
-        self.assertEqual((len(rows), out), (1466, {'success': 828, 'failure': 234, 'refused': 387,
+        # constants 105 -> 107.  Step 3l: simpos_user create/4 fails at
+        # identify/4 (no registry in a census row): 828 / 235 / 386
+        self.assertEqual((len(rows), out), (1466, {'success': 828, 'failure': 235, 'refused': 386,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 107)
@@ -2185,6 +2190,82 @@ end.'''
         with self.assertRaises(K.Refusal) as cm:
             any(True for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str('>sys'), D]))
         self.assertIn('no file system is mounted', cm.exception.detail)
+
+    def login(self, m, name='pmpsi', password='pmpsi'):
+        # step 3l, B7: the held pimfep##simpos_user create/4 (identify,
+        # world, "me" := ["user:NAME"], default "me") and setup_process/2
+        # on the calling process.  -> (simpos_user, process) or None
+        m.reset()
+        r = K.call_class_method(m, 'pimfep##simpos_user', 'create', [K.Str(name), K.Str(password), K.Var()])
+        if not r:
+            return None
+        su = r[0][2]
+        m.reset()
+        (p,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])[0]
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(su, 'setup_process', [p, su])))
+        return su, p
+
+    def test_step3l_b7(self):
+        # step 3l, docs/simpos/boot_route.md B7: login.  The held
+        # pimfep##simpos_user create/4 and setup_process/2 run to their ends
+        # on the stand-ins user, world and password_list (INTERPOLATED from
+        # those held sends; the registry, the password and the rank OURS)
+        # and pathname append/4 (HELD-SOURCE, its CESP conversion replaced
+        # by an INFERENCE).  The logged-in process's world then resolves
+        # `me:` (directory_retrieve, step 3l B5).
+        # Injections, observed (2026-11-25; each from a backup copy,
+        # restored by copy, cmp clean):
+        #   M1 identify/4 ignores the password (user.esp): this test FAIL,
+        #      nothing else.
+        #   M2 define/3 appends instead of prepending, so a redefinition
+        #      does not shadow (world.esp): this test FAIL, nothing else.
+        #   M3 retrieve ignores the world's default logical name (kl0.py):
+        #      this test FAIL, nothing else.
+        #   M4 pathname append/4 back to the port's convert_to_8: this test
+        #      ERROR, nothing else.
+        #   test_kl0.py stayed OK in M1-M4.
+        m = self.fs_machine()
+        D = K.ClassRef('simpos##directory')
+
+        def full_name(path):
+            m.reset()
+            f = K.Var()
+            for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str(path), f, D]):
+                return K.deref(f).text
+            return None
+        # before login: no world, so me: and a bare name miss
+        self.assertIsNone(full_name('me:login.com'))
+        self.assertEqual(full_name('user:pmpsi>login.com'), '>sys>user>pmpsi>login.com.1')
+        # a wrong password: identify/4 fails, so create/4 fails
+        self.assertIsNone(self.login(m, password='wrong'))
+        self.assertIsNone(self.login(m, name='nobody'))
+        su, p = self.login(m)
+        self.assertEqual(su.cid, 'pimfep##simpos_user')
+        u = m.get_slot(p, 'user')
+        self.assertEqual((u.cid, m.get_slot(u, 'name').text), ('simpos##user', 'pmpsi'))
+        w = m.get_slot(p, 'world')
+        self.assertIs(m.get_slot(su, 'world'), w)
+        self.assertEqual(m.get_slot(w, 'default').text, 'me')
+        pl = m.get_slot(p, 'password_list')
+        self.assertEqual(m.get_slot(pl, 'access_mode'), K.Atom('general'))
+        self.assertEqual([x.text for x in self._walk(m.get_slot(pl, 'passwords'))], ['pmpsi'])
+        # the printed class form :world(#process, W) (TR-056 PDF p25)
+        m.reset()
+        self.assertIs(K.call_class_method(m, 'simpos##process', 'world', [K.Var()])[0][0], w)
+        m.reset()
+        self.assertIs(K.call_class_method(m, 'simpos##user', 'user', [K.Var()])[0][0], u)
+        # me: = user:pmpsi = >sys>user>pmpsi; a bare name is under me:
+        self.assertEqual(full_name('me:login.com'), '>sys>user>pmpsi>login.com.1')
+        self.assertEqual(full_name('login.com'), '>sys>user>pmpsi>login.com.1')
+        self.assertEqual(full_name('me:'), '>sys>user>pmpsi')
+        self.assertIsNone(full_name('pimos:pimfep.image'))
+        # a later define shadows an earlier one (login.com redefines "me")
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(
+            w, 'define', [K.Str('me'), K.Cons(K.Str('>sys>csp'), K.NIL), w])))
+        self.assertEqual(full_name('me:INSTALL.DIR'), '>sys>csp>INSTALL.DIR')
+        self.assertIsNone(full_name('me:login.com'))
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:

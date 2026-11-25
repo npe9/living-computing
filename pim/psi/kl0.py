@@ -1151,7 +1151,8 @@ class Machine:
             t = deref(t)
             while isinstance(t, Cons):
                 e = deref(t.args[0])
-                if isinstance(e, Vec) and len(e.args) == 2 and isinstance(deref(e.args[0]), Str):
+                # [Name | Directories] (standin/world.esp, OURS)
+                if isinstance(e, Cons) and isinstance(deref(e.args[0]), Str):
                     dirs, d = [], deref(e.args[1])
                     while isinstance(d, Cons):
                         x = deref(d.args[0])

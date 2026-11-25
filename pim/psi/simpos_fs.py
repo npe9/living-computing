@@ -153,4 +153,19 @@ def mount(m):
             m.set_slot(f, 'contents', s)
         add(directory(d), base, f)
     m.set_slot(K.ClassRef('simpos##directory'), 'root', root)
+    # step 3l, B7 (OURS): the alias every world sees, `user` := [">sys>user"]
+    # (INFERENCE: TM-143 p3 and the held homes >sys>user>NAME, shell.md
+    # §4.1), and the one registered user (standin/user.esp's head
+    # comment: name INFERENCE, password and rank OURS)
+    if 'simpos##world' in m.lib.templates:
+        m.set_slot(K.ClassRef('simpos##world'), 'system',
+                   K.Cons(K.Cons(K.Str('user'), K.Cons(K.Str('>sys>user'), K.NIL)), K.NIL))
+    if 'simpos##user' in m.lib.templates:
+        m.reset()
+        U = K.ClassRef('simpos##user')
+        for _ in m.solve_send(U, 'register', [K.Str(USER), K.Str(PASSWORD), K.Atom('general'), U]):
+            break
     return root
+
+
+USER, PASSWORD = 'pmpsi', 'pmpsi'   # INFERENCE (the name), OURS (the password)
