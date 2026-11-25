@@ -98,6 +98,11 @@ interface PimmScsiBox;
   // the device
   method ActionValue#(ScsiOut) devReq;
   method Action devResp(ScsiIn r);
+  // a checkpoint (ref/pimm/lockstep_shell.py), between runs: 4 the
+  // commands so far (Id); 16..26 a waiting command's fields, in the
+  // order of ScsiCmdState, into a staging register; 31 the staged
+  // command onto the waiting list (pimm.py scsi_waiting, oldest first)
+  method Action restore(Bit#(8) which, Cell c);
 endinterface
 
 typedef union tagged {
@@ -152,6 +157,7 @@ module mkPimmScsiBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmScsiBox);
   Reg#(Cell)      data   <- mkRegU;      // Data
   Reg#(Bit#(2))   ui     <- mkRegU;      // the poll: the variable being unified
   Reg#(ScsiResult) answer <- mkRegU;     // a finished command's, during its poll
+  Reg#(ScsiCmdState) staged <- mkRegU;   // a checkpoint's waiting command, being given
 
   function Addr toAddr(Bit#(32) v) = truncate(v);      // through 32 bits
   function Bit#(32) wordsOf(Bit#(32) bytes) = (bytes + 3) >> 2;
@@ -530,6 +536,29 @@ module mkPimmScsiBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmScsiBox);
     return outQ.first;
   endmethod
   method Action devResp(ScsiIn r) = inQ.enq(r);
+  method Action restore(Bit#(8) which, Cell c) if (st == BIdle);
+    let s = staged;
+    case (which)
+      4: count <= c.val;
+      16: s.unit = unpack(c.val);
+      17: s.lun = unpack(c.val);
+      18: s.dir = unpack(c.val);
+      19: s.length = unpack(c.val);
+      20: s.cdb = c;
+      21: s.cdbLen = c.val;
+      22: s.bufw = c;
+      23: s.bufLen = c.val;
+      24: s.v0 = c;
+      25: s.v1 = c;
+      26: s.v2 = c;
+      31: begin
+        if (nWaiting == 4) fatal("scsi: more than four commands wait for the device");
+        waiting.enq(staged);
+        nWaiting <= nWaiting + 1;
+      end
+    endcase
+    staged <= s;
+  endmethod
 endmodule
 
 endpackage

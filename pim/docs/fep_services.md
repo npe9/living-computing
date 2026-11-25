@@ -750,6 +750,27 @@ overwritten.)
 | 2-5 | n1..n4 as received: lengths of RN, RP, UN, UP |
 | then | Node, RN, RP, UN, UP |
 
+The ID, read again 2026-11-24 (`python3 -I psi/fepread/ptfread.py
+pimfep pimos_remote_login_socket_table get_key`; P-f3 of
+`simpos/source_check_2026-11-24.md`). `get_key/2` (@a8-b2) sends
+`:get_keys/2` to the table (@ac-ad), puts the integer 0 in r2 (@af,
+`a7 02 00 00`, put_integer, witnessed) and the key list in r0 and r1
+(@b0-b1), and executes `get_key/4` (@b2). `get_key/4` (@b7-cf) has
+three clauses: `[K|_]` with K equal to the candidate (`2a`, `41`,
+`23`, witnessed) cuts, adds 1 (`blt 45 04 01 02`, witnessed) and
+scans the whole list again (r0 := r5, the saved list); `[_|T]` goes on
+with T; `[]` gives the candidate (`26`, `23`, `d2`, witnessed). So the
+key is the smallest integer from 0 not in the list, and 0 when the
+table is empty. Opcodes on that path with no witness: `62` (the call
+@b2, read as a local execute like `61`), `a5` (@b0, read as put_value
+of a Y), `c9` with its integer (@b7-b8, the switch on r0's type),
+`e5`/`e3`/`e1` (@cc-ce) and `fe` (@cf); the 0 and the scan do not rest
+on them. Grade: READ, with those readings as INFERENCE. `fep.py`
+sends 0 (`LOGIN`) since 2026-11-24; it sent 1, OURS, before. The
+change moves the kernel tape's three replier texts (element 0, `0001`
+to `0000`) and the run: 20 fewer instructions to the prompt and to
+PIMOS END (`binary_reverse_engineering.md` §1.4).
+
 Node is `"local"` for a local login (constant); for `lia` and `tcpip`
 it is looked up from the peer's address (SIMPOS tables). This is
 PIMOS's `get_node_info/3` layout (§3 step 12): CROSS-END. The record
@@ -1142,7 +1163,7 @@ are of that code (`"pimos:pimos.syslog"` begins 2370h, 2369h).
 
 | Element | Field | Decoder | Value | Mark |
 |---|---|---|---|---|
-| 0 | ID | `login.kl1`:1247; echoed as element 0 of every replier text and in `io(2, [ID])` | 1 | OURS (U2: the real requester's range) |
+| 0 | ID | `login.kl1`:1247; echoed as element 0 of every replier text and in `io(2, [ID])` | 0 | READ (§6.5: the smallest integer from 0 not a key of the replier's socket table, `pimos_remote_login_socket_table` `get_key/2` @a8-b2 starts `get_key/4` @b7-cf at the integer 0; re-read 2026-11-24, `source_check_2026-11-24.md` 4.19, P-f3). It was 1, OURS, until 2026-11-24 |
 | 1-5 | the lengths of Node, RN, RP, UN, UP, in elements | 1248-1252 | 5, 5, 0, 5, 0 | follow from the strings |
 | 6.. | Node | 1253-1258: `"local"` makes the I/O node this FEP's number; any other string is a remote node's name | `"local"` | SOURCED (1256; the manual: "If you login from SIMPOS on the FEP, type ``local.''", `e-login.tex`:46) |
 | | RN | the SIMPOS user: the file, window and string-I/O requests' User, the confirm, the default home | `"pmpsi"` | OURS; the name is HELD (`login.com`'s `"me" := ["user:pmpsi"]`), that it is the SIMPOS user is INFERENCE |

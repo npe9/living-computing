@@ -9,6 +9,12 @@
 // answers the reference model's device gave, in order, after the
 // script's END.  Each command the core puts on its port is printed as a
 // B line from what the core sent, then answered from the tape.
+//
+// mkPimmShellTb is the same bench on a checkpoint: the heap of a saved
+// machine loaded into the core's memory (checkpoint/heap.hex), the
+// script checkpoint/script.hex, which begins with the RESTORE
+// operations that give the core the rest of the saved machine
+// (ref/pimm/lockstep_shell.py, bsv/run_pimm_shell.sh).
 package PimmDriverTb;
 
 import RegFile::*;
@@ -18,15 +24,25 @@ import PimmCore::*;
 import PimmScsiBox::*;
 
 typedef enum { End, NewVar, Arg, ArgC, Spawn, Run, Out, Unify, UnifyC,
-               NewStr, SetEl, Ptr, Slot, SetW, Poll, Tape } Kind deriving (Bits, Eq);
+               NewStr, SetEl, Ptr, Slot, SetW, Poll, Tape, Restore } Kind deriving (Bits, Eq);
 
 // the device: idle, printing a command's CDB, printing a SEND's bytes,
 // giving an answer's bytes
 typedef enum { DevIdle, DevCdb, DevData, DevAnswer } DevState deriving (Bits, Eq);
 
 module mkPimmDriverTb(Empty);
-  PimmCore core <- mkPimmCore("generated/pimm_ipl.hex");
-  RegFile#(Bit#(24), Bit#(64)) script <- mkRegFileFullLoad("generated/pimm_script.hex");
+  let d <- mkPimmDriver("generated/pimm_script.hex", "");
+  return d;
+endmodule
+
+module mkPimmShellTb(Empty);
+  let d <- mkPimmDriver("checkpoint/script.hex", "checkpoint/heap.hex");
+  return d;
+endmodule
+
+module mkPimmDriver#(String scriptFile, String heap)(Empty);
+  PimmCore core <- mkPimmCore("generated/pimm_ipl.hex", heap);
+  RegFile#(Bit#(24), Bit#(64)) script <- mkRegFileFullLoad(scriptFile);
   RegFile#(Bit#(4), Cell) slot <- mkRegFileFull;
 
   Reg#(Bit#(24)) ip      <- mkReg(0);
@@ -74,6 +90,8 @@ module mkPimmDriverTb(Empty);
       Slot:   slot.upd(sa, cell_);
       Poll:   begin core.scsiPoll; answer = True; end
       Tape:   begin hasTape <= True; tp <= truncate(cell_.val); end
+      // a checkpoint's state, given to the core silently (PimmCore.restore)
+      Restore: core.restore(a, cell_);
       default: fatal("driver: operation not implemented");
     endcase
     if (answer) awaited <= True;

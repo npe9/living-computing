@@ -115,6 +115,11 @@ END********", {-1, 80} received, nothing held, the stop "nothing left
 to run, 253 goals waiting"; most at once: 4 replies queued, 2 files,
 1 appending, 1 timer, 3 string-I/O, 1 window, 2 held; the largest
 request 88 bytes.
+Re-recorded 2026-11-24 with the login record's ID 0 (fep.py LOGIN, read
+from pimfep's get_key/4; it was 1, OURS): the same 220 calls, 155
+answered, 4 events; the three replier texts' element 0 is 0000 for
+0001; 8,766,319 instructions to PIMOS END (20 fewer), the prompt at
+8,587,072.
 """
 import os
 import struct
@@ -417,6 +422,8 @@ def direct_kernel_sections():
 # the script of the direct kernel tape (its `script` line), in place of
 # fep.py's one login: two logins and two lines, so that the order of the
 # events, the lowest device first and an event that waits are tried
+# (OURS: both logins carry fep.LOGIN's ID 0, where the PSI's rule,
+# fep_services.md 6.5, would give the second 1)
 DIRECT_KERNEL_SCRIPT = [('login', fepm.LOGIN), ('getl', 'dir'), ('login', fepm.LOGIN),
                         ('getl', 'x')]
 
@@ -692,7 +699,8 @@ NOTES = {
                      'sections added, the close on an appending device out of the errors',
     'kernel': 'Re-recorded 2026-11-24 after the merger change (the merger acts at '
               'unification, docs/pimm_semantics.md merge: the conversation moves), and '
-              'to PIMOS END: --kernel PKL --type shutdown --type yes',
+              'to PIMOS END: --kernel PKL --type shutdown --type yes; and again with '
+              'the login ID 0 (fep.py LOGIN, P-f3): the replier texts\' element 0 moves',
 }
 
 
