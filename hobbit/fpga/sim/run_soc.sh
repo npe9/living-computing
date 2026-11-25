@@ -33,6 +33,15 @@
 # "the host's console differs from the reference boot's" (cmp: EOF on
 # console), rc=1; reverted by the reverse patch, identical to the
 # pre-injection copy.
+# SOC_RTL=63 (the SONIC and EspLink too): the same console, "SOC sonic
+# dma: 9 reads, 0 writes reached the SDRAM, 0 refused", rc=0.
+# Discriminating: with rtl/hobbit_soc.v's `dma_wants` forced to 1'b0
+# (the arbiter never grants the SONIC), OBSERVED "SOC sonic dma: 0 reads",
+# "SOC end: a stall or the clock limit; 2679121 records", "console 9
+# bytes" and "the host's console differs from the reference boot's",
+# rc=1; reverted by the reverse edit, identical to the pre-injection copy.
+# SOC_ESP_PTY=PATH bridges EspLink's pins to a second pseudo-terminal
+# for fpga/esp32_ethrelay/host/relay_host (fpga/README.md, "Devices").
 #
 # Result, 2026-11-24: `run_soc.sh 2893000` prints "MATCH: 2893000 records
 # agree in every field but cyc (2865913 also agree in cyc)" and "SOC

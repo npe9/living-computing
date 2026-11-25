@@ -26,7 +26,7 @@ before the devices are RTL:
 
 --rtl N names the devices the bitstream has as RTL (hobbit_soc's DEV_RTL,
 fpga/socdev/HobbitSocDevs.bsv's bits: 0 incon/ioctl/irq, 1 Quart, 2 RTC,
-3 IIC, 4 Lcdisp); their accesses never arrive here. With bit 0 the host
+3 IIC, 4 Lcdisp, 5 SONIC); their accesses never arrive here. With bit 0 the host
 sends its forwarded devices' interrupt sources ('S') to the RTL Irq instead
 of a level. With bit 1 the console is the 'C' bytes of the RTL Quart, and
 typed bytes go out as 'K'.
@@ -129,6 +129,13 @@ class Host:
         self.reads = self.writes = self.errors = 0
         self.src = 0
         self.err_seen = {}
+        self.seen = b""
+        self.script = []
+        for item in args.type:
+            wait, sep, reply = item.partition("=")
+            if not sep:
+                raise SystemExit("p9host: --type wants TEXT=REPLY")
+            self.script.append((p9boot.unescape(wait), p9boot.unescape(reply)))
 
     def sync(self):
         self.link.write(b"P")
@@ -210,6 +217,8 @@ class Host:
             src = b.irq.status()
             if rtl & 2:
                 src &= ~(1 << 1)        # the RTL Quart drives bit 1
+            if rtl & 32:
+                src &= ~(1 << 9)        # the RTL SONIC drives bit 9
             if src != self.src:
                 self.src = src
                 self.link.write(b"S" + struct.pack(">H", src))
@@ -227,6 +236,13 @@ class Host:
         if self.console:
             self.console.write(new)
             self.console.flush()
+        # --type TEXT=REPLY: p9boot's CHOICES['console-input'], keyed on
+        # the console's text (the kernel's prompts appear on channel 0).
+        self.seen += new
+        while self.script and self.script[0][0] in self.seen:
+            wait, reply = self.script.pop(0)
+            self.seen = self.seen[self.seen.index(wait) + len(wait):]
+            self.type(reply)
 
     def type(self, data):
         if self.args.rtl & 2:
@@ -274,6 +290,10 @@ def main(argv):
     ap.add_argument("--iolog", metavar="FILE",
                     help="every forwarded access: R|W addr value clock")
     ap.add_argument("--max-clocks", type=int, default=0)
+    ap.add_argument("--type", action="append", default=[],
+                    metavar="TEXT=REPLY",
+                    help="once the console shows TEXT, type REPLY (as "
+                         "p9boot.py --type); repeatable, in order")
     ap.add_argument("--interactive", action="store_true",
                     help="type stdin into the console (Quart channel 0)")
     ap.add_argument("--rtl", type=lambda v: int(v, 0), default=0,

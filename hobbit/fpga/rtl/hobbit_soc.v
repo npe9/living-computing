@@ -30,7 +30,8 @@ module hobbit_soc #(
     parameter SD_T_PWR = 5000,
     parameter SD_T_REFI = 180,
     // Which devices are RTL (fpga/socdev/HobbitSocDevs.bsv's `rtl` bits:
-    // 0 incon/ioctl/irq, 1 Quart, 2 RTC, 3 IIC, 4 Lcdisp); the rest forward.
+    // 0 incon/ioctl/irq, 1 Quart, 2 RTC, 3 IIC, 4 Lcdisp, 5 SONIC); the
+    // rest forward.
     parameter [7:0]  DEV_RTL = 8'h00,
     parameter [31:0] RTC_TICKS = 25000000,
     parameter [55:0] RTC_START = 56'h93010301120000,
@@ -42,6 +43,14 @@ module hobbit_soc #(
     input  wire        rst,          // synchronous, active high
     input  wire        gclk,
     output reg         cpu_ce,
+    // Lcdisp's scan port (pixel clock domain), for the HDMI path.
+    input  wire        pclk,
+    input  wire [17:0] scan_addr,
+    output wire [7:0]  scan_data,
+    // EspLink: the ESP32's GPIO16 (txd), GPIO17 (rxd) and GPIO4 (RTS).
+    output wire        esp_txd,
+    input  wire        esp_rxd,
+    input  wire        esp_rts,
     // Host link.
     input  wire        rxd,
     output wire        txd,
@@ -134,7 +143,9 @@ module hobbit_soc #(
         .aux_wdata(aux_wdata), .aux_done(aux_done), .aux_rdata(aux_rdata),
         .bk_valid(bk_valid), .bk_we(bk_we), .bk_addr(bk_addr),
         .bk_wdata(bk_wdata), .bk_be(bk_be), .bk_done(bk_done),
-        .bk_rdata(bk_rdata));
+        .bk_rdata(bk_rdata),
+        .snoop_valid(dma_wr_done), .snoop_addr(snoop_a),
+        .snoop_wdata(snoop_d), .snoop_be(snoop_be_r));
 
     // ---- backend router ------------------------------------------------
     wire is_ram = (bk_addr[31:25] == 7'b1000000);
@@ -143,11 +154,37 @@ module hobbit_soc #(
     wire        sd_ready, sd_rsp_valid, sd_init;
     wire [31:0] sd_rdata;
     reg         sd_issued;
+
+    // ---- SDRAM arbiter: the core's memory service and the SONIC's DMA ----
+    // One request at a time; the core's side goes first when both wait.
+    // A DMA word outside RAM is not sent to the SDRAM: a read of it is
+    // answered 0 and a write dropped (dma_bad counts them).
+    wire        dma_rdy;                 // a DMA request is offered
+    wire [68:0] dma_req;                 // SonicDmaReq: addr, write, wdata, be
+    wire        dma_rd_rdy;
+    reg         dma_get, dma_put;
+    reg  [31:0] dma_put_d;
+    wire [31:0] dma_addr  = dma_req[68:37];
+    wire        dma_write = dma_req[36];
+    wire [31:0] dma_wdata = dma_req[35:4];
+    wire [3:0]  dma_be    = dma_req[3:0];
+    wire        dma_in_ram = (dma_addr[31:25] == 7'b1000000);
+    reg         sd_busy, sd_dma, sd_dma_we;
+    reg  [15:0] dma_bad;
+    reg         dma_wr_done;             // a DMA write reached the SDRAM
+    wire bk_wants  = bk_valid && !bk_done && is_ram && !sd_issued;
+    wire dma_wants = dma_rdy && !dma_get && !dma_put;
+    wire sd_req_valid = !sd_busy && (bk_wants || (dma_wants && dma_in_ram));
+    wire grant_bk = bk_wants;
+    wire sd_go = sd_req_valid && sd_ready;
     sdram_word #(.T_PWR(SD_T_PWR), .T_REFI(SD_T_REFI)) sdram (
         .clk(clk), .rst(rst),
-        .req_valid(bk_valid && is_ram && !sd_issued), .req_ready(sd_ready),
-        .req_we(bk_we), .req_addr(bk_addr[24:2]), .req_wdata(bk_wdata),
-        .req_be(bk_be), .rsp_valid(sd_rsp_valid), .rsp_rdata(sd_rdata),
+        .req_valid(sd_req_valid), .req_ready(sd_ready),
+        .req_we(grant_bk ? bk_we : dma_write),
+        .req_addr(grant_bk ? bk_addr[24:2] : dma_addr[24:2]),
+        .req_wdata(grant_bk ? bk_wdata : dma_wdata),
+        .req_be(grant_bk ? bk_be : dma_be),
+        .rsp_valid(sd_rsp_valid), .rsp_rdata(sd_rdata),
         .init_done(sd_init),
         .sd_cs_n(sd_cs_n), .sd_ras_n(sd_ras_n), .sd_cas_n(sd_cas_n),
         .sd_we_n(sd_we_n), .sd_ba(sd_ba), .sd_a(sd_a), .sd_dqm(sd_dqm),
@@ -170,13 +207,62 @@ module hobbit_soc #(
     wire [31:0] io_rdata;
     reg         io_issued;
 
+    // The DMA side: the request is taken (EN_dmaReq_get) when its SDRAM
+    // access is issued, or at once when it is outside RAM; a read's word
+    // is put back (EN_dmaRdata_put) when the SDRAM answers.  dma_addr and
+    // its fields stay valid until the take, which is the clock of issue.
+    always @(posedge clk) begin
+        dma_get <= 1'b0; dma_put <= 1'b0;
+        if (rst) begin
+            sd_busy <= 1'b0; sd_dma <= 1'b0; dma_bad <= 0;
+        end else begin
+            if (sd_go) begin
+                sd_busy <= 1'b1; sd_dma <= !grant_bk;
+                sd_dma_we <= !grant_bk && dma_write;
+            end
+            if (sd_busy && sd_rsp_valid) begin
+                sd_busy <= 1'b0;
+                if (sd_dma && !sd_dma_we) begin dma_put <= 1'b1; dma_put_d <= sd_rdata; end
+            end
+            if (!grant_bk && dma_wants && !dma_in_ram && !sd_busy) begin
+                dma_bad <= dma_bad + 1;
+                if (!dma_write) begin dma_put <= 1'b1; dma_put_d <= 32'd0; end
+            end
+        end
+    end
+    // dmaReq_get is taken on the clock its SDRAM request is issued (or
+    // refused); the write's snoop data are its fields that clock, held.
+    reg [31:0] snoop_a, snoop_d; reg [3:0] snoop_be_r; reg snoop_pend;
+    wire dma_take = (sd_go && !grant_bk) ||
+                    (!grant_bk && dma_wants && !dma_in_ram && !sd_busy);
+    always @(posedge clk) begin
+        dma_wr_done <= 1'b0;
+        if (rst) snoop_pend <= 1'b0;
+        else if (sd_go && !grant_bk && dma_write) begin
+            snoop_pend <= 1'b1; snoop_a <= dma_addr; snoop_d <= dma_wdata;
+            snoop_be_r <= dma_be;
+        end else if (snoop_pend && sd_busy && sd_rsp_valid) begin
+            snoop_pend <= 1'b0; dma_wr_done <= 1'b1;
+        end
+    end
+`ifdef VERILATOR
+    // Simulation only: how much SONIC DMA the run did (run_soc.sh prints it).
+    reg [31:0] dma_nrd = 0, dma_nwr = 0;
+    always @(posedge clk)
+        if (sd_go && !grant_bk) begin
+            if (dma_write) dma_nwr <= dma_nwr + 1; else dma_nrd <= dma_nrd + 1;
+        end
+    final $display("SOC sonic dma: %0d reads, %0d writes reached the SDRAM, %0d refused",
+                   dma_nrd, dma_nwr, dma_bad);
+`endif
+
     always @(posedge clk) begin
         bk_done <= 1'b0;
         if (rst) begin
             sd_issued <= 1'b0; rom_busy <= 1'b0; io_issued <= 1'b0;
         end else if (bk_valid && !bk_done) begin
             if (is_ram) begin
-                if (!sd_issued && sd_ready) sd_issued <= 1'b1;
+                if (!sd_issued && sd_go && grant_bk) sd_issued <= 1'b1;
                 if (sd_issued && sd_rsp_valid) begin
                     bk_done <= 1'b1; bk_rdata <= sd_rdata; sd_issued <= 1'b0;
                 end
@@ -217,7 +303,11 @@ module hobbit_soc #(
     mkHobbitSocDevs #(.rtl(DEV_RTL), .ticksPerSec(RTC_TICKS),
                       .startBcd(RTC_START), .mcpMode(RTC_MCP),
                       .i2cQuarter(RTC_I2CQ)) devs (
-        .CLK(clk), .RST_N(!rst),
+        .CLK(clk), .RST_N(!rst), .CLK_pclk(pclk),
+        .EN_dmaReq_get(dma_take), .dmaReq_get(dma_req), .RDY_dmaReq_get(dma_rdy),
+        .dmaRdata_put(dma_put_d), .EN_dmaRdata_put(dma_put), .RDY_dmaRdata_put(dma_rd_rdy),
+        .espTxd(esp_txd), .espPins_rxd(esp_rxd), .espPins_rts(esp_rts),
+        .scan_read_a(scan_addr), .EN_scan_read(1'b1), .scan_data(scan_data),
         .claims_pa(bk_addr), .claims(dev_claims),
         .req_pa(bk_addr), .req_wdata(bk_wdata), .req_be(bk_be),
         .req_write(bk_we), .EN_req(dev_take_req), .RDY_req(dev_rdy_req),

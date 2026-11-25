@@ -17,6 +17,13 @@
 //   2             RTC + NVRAM      0xB8002000-0xB8003FFF
 //   3             IIC + EEPROM     0xB0000080-0xB0000087
 //   4             Lcdisp           0xB0003000-0xB0003007
+//   5             SONIC            0xA4400000-0xA44000FF
+//
+// The SONIC's DMA (`dmaReq`/`dmaRdata`, fpga/dev/sonic.md) goes to
+// hobbit_soc's SDRAM arbiter; its frames go through EspLink to the ESP32
+// pins (`esp*`, docs/ulx3s_ethernet.md, 2.5 Mbaud = 10 clocks per bit).
+// Lcdisp's frame store is scanned out in the pixel clock domain (`scan`,
+// `pclk`) by the HDMI path in the board top (fpga/dev/hdmi_*).
 //
 // Interrupts: Irq.sources gets every source each clock. Bit 1 is the
 // Quart's irq (or the host's, when the Quart is forwarded), and bits 5,
@@ -33,8 +40,11 @@ import HobbitIntc :: *;
 import Rtc :: *;
 import Iic :: *;
 import LcdLcdisp :: *;
+import Sonic :: *;
+import EspLink :: *;
+import Connectable :: *;
 
-typedef enum { DNone, DIncon, DIoctl, DIrq, DQuart, DRtc, DIic, DLcd } Dev
+typedef enum { DNone, DIncon, DIoctl, DIrq, DQuart, DRtc, DIic, DLcd, DSonic } Dev
   deriving (Bits, Eq);
 
 interface HobbitSocDevs;
@@ -53,6 +63,16 @@ interface HobbitSocDevs;
   // Any device's fault flag (a register access p9boot would refuse).
   (* always_ready *) method Bit#(8) faults;
   (* always_ready *) method Bit#(8) iicLed;
+  // The SONIC's DMA master: one 32-bit word per request, reads answered
+  // in order.
+  interface Get#(SonicDmaReq) dmaReq;
+  interface Put#(Bit#(32)) dmaRdata;
+  // EspLink's pins: txd to the ESP32's GPIO16 (L1); rxd from GPIO17 (N3)
+  // and RTS from GPIO4 (H1).
+  (* always_ready *) method Bit#(1) espTxd;
+  (* always_ready, always_enabled *) method Action espPins(Bit#(1) rxd, Bit#(1) rts);
+  // Lcdisp's scan port, in the pixel clock domain.
+  interface LcdScan scan;
 endinterface
 
 function Dev decode(Bit#(8) rtl, Bit#(32) pa);
@@ -64,13 +84,15 @@ function Dev decode(Bit#(8) rtl, Bit#(32) pa);
   else if (pa >= 32'hB8002000 && pa < 32'hB8004000 && rtl[2] == 1) d = DRtc;
   else if (pa >= 32'hB0000080 && pa < 32'hB0000088 && rtl[3] == 1) d = DIic;
   else if (pa >= 32'hB0003000 && pa < 32'hB0003008 && rtl[4] == 1) d = DLcd;
+  else if (pa >= 32'hA4400000 && pa < 32'hA4400100 && rtl[5] == 1) d = DSonic;
   return d;
 endfunction
 
 // clksPerBit 1302 = 19200 baud and ctNum/ctDen = 1152/125000 at 25 MHz
 // (fpga/dev/quart/README.md); ticksPerSec is CLK's frequency.
 (* synthesize *)
-module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
+module mkHobbitSocDevs#(Clock pclk,
+                        parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
                         parameter Bit#(56) startBcd, parameter Bit#(2) mcpMode,
                         parameter Bit#(16) i2cQuarter)(HobbitSocDevs);
   Clock clk <- exposeCurrentClock;
@@ -80,7 +102,11 @@ module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
   HobbitQuart quart <- mkHobbitQuart(1302, 1152, 125000);
   RtcIfc rtc <- mkRtc(ticksPerSec, startBcd, mcpMode, i2cQuarter);
   IicIfc iic <- mkIic;
-  Lcdisp lcd <- mkLcdisp(clk);       // scanned out by the HDMI top, later
+  Lcdisp lcd <- mkLcdisp(pclk);
+  HobbitSonic sonic <- mkSonic;
+  EspLink esp <- mkEspLink(10);       // 25 MHz / 2.5 Mbaud
+  mkConnection(sonic.tx, esp.tx);
+  mkConnection(esp.rx, sonic.rx);
 
   Reg#(Dev) pend <- mkReg(DNone);
   FIFOF#(Bit#(32)) respQ <- mkFIFOF;
@@ -96,6 +122,7 @@ module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
   rule drive_sources;
     Bit#(16) s = hostSrcW;
     if (rtl[1] == 1) s[1] = pack(quart.irq);
+    if (rtl[5] == 1) s[9] = pack(sonic.irq);
     irq.sources(s);
   endrule
 
@@ -106,6 +133,7 @@ module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
   rule r_rtc (pend == DRtc); let v <- rtc.response; respQ.enq(v); pend <= DNone; endrule
   rule r_iic (pend == DIic); let v <- iic.response; respQ.enq(v); pend <= DNone; endrule
   rule r_lcd (pend == DLcd); let v <- lcd.resp; respQ.enq(v); pend <= DNone; endrule
+  rule r_sonic (pend == DSonic); let v <- sonic.resp; respQ.enq(v); pend <= DNone; endrule
 
   method Bool claims(Bit#(32) pa) = decode(rtl, pa) != DNone;
 
@@ -120,6 +148,7 @@ module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
       DRtc:   rtc.request(truncate(pa - 32'hB8002000), wdata, be, write);
       DIic:   iic.request(truncate(pa - 32'hB0000080), wdata, be, write);
       DLcd:   lcd.req(truncate(pa - 32'hB0003000), wdata, be, write);
+      DSonic: sonic.req(truncate(pa - 32'hA4400000), wdata, be, write);
     endcase
     if (d == DNone) respQ.enq(0);      // not claimed: never sent here
     else pend <= d;
@@ -139,9 +168,14 @@ module mkHobbitSocDevs#(parameter Bit#(8) rtl, parameter Bit#(32) ticksPerSec,
   method Bit#(1) i2cSdaLow = rtl[2] == 1 ? rtc.i2cSdaLow : 0;
   method Action i2cPins(Bit#(1) scl, Bit#(1) sda) = rtc.i2cPins(scl, sda);
   method Bit#(8) faults = {3'b0, pack(lcd.overruns != 0), pack(iic.fault != 0),
-                           pack(rtc.fault != 0), pack(quart.fault),
+                           pack(rtc.fault != 0), pack(quart.fault || sonic.fault),
                            pack(incon.fault || ioctl.fault || irq.fault)};
   method Bit#(8) iicLed = iic.led;
+  interface dmaReq = sonic.dma.req;
+  interface dmaRdata = sonic.dma.rdata;
+  method Bit#(1) espTxd = esp.txd;
+  method Action espPins(Bit#(1) rxd, Bit#(1) rts) = esp.pins(rxd, rts);
+  interface scan = lcd.scan;
 endmodule
 
 endpackage

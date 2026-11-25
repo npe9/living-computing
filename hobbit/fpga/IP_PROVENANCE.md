@@ -180,3 +180,22 @@ Apache-2.0 and may be copied in with attribution.
 unchanged, and their own entries above cover them. bsc's library cells
 (`RegFileLoad.v`, `BRAM2.v`, `FIFO2.v`, `SizedFIFO.v`) are read from the
 bsc 2026.01 installation at build time and are not copied.
+
+## The SONIC, EspLink and HDMI scan-out in the SoC, 2026-11-24
+
+**Copied: nothing from outside the repository.** The following were
+written for this project:
+* the DMA arbiter and the write snoop in `rtl/hobbit_soc.v` and
+  `rtl/hobbit_soc_mem.v`;
+* the EspLink pins, `wifi_en`/`wifi_gpio0` and the scan-out wiring in
+  `rtl/ulx3s_hobbit_top.v`;
+* the second pseudo-terminal bridge (`SOC_ESP_PTY`) in `sim/soc_main.cpp`.
+
+The `EHXPLLL` instance in `rtl/ulx3s_hobbit_top.v` (25 MHz in; 325 MHz
+shift and 65 MHz pixel clocks) is copied from this repository's own
+`fpga/dev/hdmi_lcd_top.v`, with its comment. `dev/hdmi_scan.v` and
+`dev/hdmi_tmds.v` (`hdmi_scan`, `dvi_ser`) are read in place by
+`build_soc.sh`, and `dev/Sonic.bsv` and `dev/EspLink.bsv` are imported
+unchanged. Their own entries above cover them: `hdmi_tmds.v`'s TMDS
+encoder derives from npe9/flute-ulx3s, Apache-2.0. No new third-party
+file is involved.

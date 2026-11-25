@@ -14,13 +14,17 @@
 # SOC_RTL=N chooses the RTL devices (hobbit_soc's DEV_RTL, the bits of
 # fpga/socdev/HobbitSocDevs.bsv; default 0, every device forwarded).
 #
+# nextpnr runs at seed 2 with --placer-heap-timingweight 50 and
+# --tmg-ripup: with the defaults the 325 MHz HDMI shift clock failed on
+# seeds 1-5 (fpga/README.md, "The HDMI scan-out").
+#
 # Nothing here touches the board.
 set -eu
 cd "$(dirname "$0")"
 FPGA=$(pwd)
 STUB=0
 if [ "${1:-}" = stub ]; then STUB=1; shift; fi
-SEED=${1:-1}
+SEED=${1:-2}
 RTL=$((${SOC_RTL:-0}))
 B=build/soc
 [ $STUB = 1 ] && B=build/soc-stub
@@ -85,7 +89,8 @@ cp dev/rtc_nvram.hex dev/iic_eeprom.hex "$B/"
 (cd "$B" && yosys -p "$CPUREADS $DEVV $LIBREADS \
           read_verilog $FPGA/rtl/uart8n1.v $FPGA/rtl/hostlink.v $FPGA/rtl/sdram_word.v \
                        $FPGA/rtl/hobbit_soc_mem.v $FPGA/rtl/hobbit_soc.v \
-                       $FPGA/rtl/ulx3s_hobbit_top.v; \
+                       $FPGA/rtl/ulx3s_hobbit_top.v \
+                       $FPGA/dev/hdmi_scan.v $FPGA/dev/hdmi_tmds.v; \
           chparam -set DEV_RTL $RTL ulx3s_hobbit_top; \
           synth_ecp5 -top ulx3s_hobbit_top -json top.json" \
       -l yosys.log > /dev/null)
@@ -94,6 +99,7 @@ nextpnr-ecp5 --85k --package CABGA381 --speed 6 \
   --json "$B/top.json" --lpf ulx3s_soc.lpf \
   --textcfg "$B/top.config" \
   --freq 25 --timing-allow-fail --seed "$SEED" \
+  --placer-heap-timingweight 50 --tmg-ripup \
   --log "$B/nextpnr.log" > /dev/null 2>&1 || {
   echo "build_soc.sh: nextpnr failed; its utilisation and error:" >&2
   grep -E 'Total LUT4s|TRELLIS_COMB|TRELLIS_FF|DP16KD|MULT18X18D|ERROR' "$B/nextpnr.log" | head -12 >&2

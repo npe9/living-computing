@@ -32,12 +32,54 @@ module ulx3s_hobbit_top #(
     // (fpga/dev/rtc.md, "The MCP7940N"), open drain, driven by mkRtc
     // when the RTC is RTL (hobbit_soc's DEV_RTL bit 2), released otherwise.
     inout  wire        gpdi_sda,
-    inout  wire        gpdi_scl
+    inout  wire        gpdi_scl,
+    // HDMI (GPDI): the Lcdisp frame store scanned out (fpga/dev/hdmi_lcd.md).
+    output wire [3:0]  gpdi_dp,
+    // The ESP32 Ethernet relay's link (docs/ulx3s_ethernet.md): GPIO16
+    // (L1) FPGA -> ESP32, GPIO17 (N3) ESP32 -> FPGA, GPIO4 (H1) RTS.
+    output wire        wifi_gpio0,
+    output wire        wifi_gpio16,
+    input  wire        wifi_gpio17,
+    input  wire        wifi_gpio4
 );
     wire scl_low, sda_low;
     assign gpdi_scl = scl_low ? 1'b0 : 1'bz;
     assign gpdi_sda = sda_low ? 1'b0 : 1'bz;
-    assign wifi_en = 1'b0;           // the ESP32 stays in reset
+    // The ESP32 runs the relay when the SONIC is RTL (DEV_RTL bit 5), and
+    // is held in reset otherwise; GPIO0 high keeps it out of download mode.
+    assign wifi_gpio0 = 1'b1;
+
+    // The video PLL of fpga/dev/hdmi_lcd_top.v: 325 MHz shift clock
+    // (sclk), 65 MHz pixel clock (pclk), from the 25 MHz board clock.
+    wire sclk, pclk, pll_locked;
+    (* FREQUENCY_PIN_CLKI="25" *)
+    (* FREQUENCY_PIN_CLKOP="325" *)
+    (* FREQUENCY_PIN_CLKOS="65" *)
+    (* ICP_CURRENT="12" *) (* LPF_RESISTOR="8" *) (* MFG_ENABLE_FILTEROPAMP="1" *) (* MFG_GMCREF_SEL="2" *)
+    EHXPLLL #(
+        .PLLRST_ENA("DISABLED"), .INTFB_WAKE("DISABLED"), .STDBY_ENABLE("DISABLED"),
+        .DPHASE_SOURCE("DISABLED"), .OUTDIVIDER_MUXA("DIVA"), .OUTDIVIDER_MUXB("DIVB"),
+        .OUTDIVIDER_MUXC("DIVC"), .OUTDIVIDER_MUXD("DIVD"),
+        .CLKI_DIV(1), .CLKFB_DIV(13), .FEEDBK_PATH("CLKOP"),
+        .CLKOP_ENABLE("ENABLED"), .CLKOP_DIV(2),  .CLKOP_CPHASE(1), .CLKOP_FPHASE(0),
+        .CLKOS_ENABLE("ENABLED"), .CLKOS_DIV(10), .CLKOS_CPHASE(9), .CLKOS_FPHASE(0)
+    ) video_pll (
+        .RST(1'b0), .STDBY(1'b0), .CLKI(CLK),
+        .CLKOP(sclk), .CLKOS(pclk), .CLKFB(sclk),
+        .PHASESEL0(1'b0), .PHASESEL1(1'b0), .PHASEDIR(1'b1),
+        .PHASESTEP(1'b1), .PHASELOADREG(1'b1), .PLLWAKESYNC(1'b0),
+        .ENCLKOP(1'b0), .LOCK(pll_locked)
+    );
+    wire [17:0] scan_addr;
+    wire [7:0]  scan_data;
+    wire [9:0]  tmds_r, tmds_g, tmds_b;
+    wire        ptog;
+    hdmi_scan scan (
+        .pclk(pclk), .rd_addr(scan_addr), .rd_data(scan_data),
+        .tmds_r(tmds_r), .tmds_g(tmds_g), .tmds_b(tmds_b), .ptog(ptog),
+        .dbg_grey(), .dbg_de(), .dbg_hs(), .dbg_vs());
+    dvi_ser ser (.sclk(sclk), .ptog(ptog), .tmds_r(tmds_r), .tmds_g(tmds_g),
+                 .tmds_b(tmds_b), .gpdi_dp(gpdi_dp));
     assign sdram_cke = 1'b1;
 
     reg [7:0] por = 8'd0;
@@ -47,6 +89,7 @@ module ulx3s_hobbit_top #(
         else if (por != 8'hFF) por <= por + 1'b1;
         rst <= (por != 8'hFF);
     end
+    assign wifi_en = DEV_RTL[5] ? !rst : 1'b0;
 
     wire cpu_ce, gclk;
     DCCA core_clk_gate (.CLKI(CLK), .CE(cpu_ce), .CLKO(gclk));
@@ -62,6 +105,8 @@ module ulx3s_hobbit_top #(
 
     hobbit_soc #(.DEV_RTL(DEV_RTL)) soc (
         .clk(CLK), .rst(rst), .gclk(gclk), .cpu_ce(cpu_ce),
+        .pclk(pclk), .scan_addr(scan_addr), .scan_data(scan_data),
+        .esp_txd(wifi_gpio16), .esp_rxd(wifi_gpio17), .esp_rts(wifi_gpio4),
         .rxd(ftdi_txd), .txd(ftdi_rxd),
         .sd_cs_n(sdram_cs_n), .sd_ras_n(sdram_ras_n), .sd_cas_n(sdram_cas_n),
         .sd_we_n(sdram_we_n), .sd_ba(sdram_ba), .sd_a(sdram_a),

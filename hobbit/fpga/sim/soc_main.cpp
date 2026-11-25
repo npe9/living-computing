@@ -121,6 +121,68 @@ static void pty_open(const char *namefile) {
     printf("SOC pty: %s\n", ptsname(pty_fd));
     fflush(stdout);
 }
+// $SOC_ESP_PTY: EspLink's pins (2.5 Mbaud at 25 MHz: 10 clocks per bit)
+// bridged to a second pseudo-terminal, for the host build of the ESP32
+// relay (fpga/esp32_ethrelay/host/relay_host, stdin/stdout on it).  RTS
+// is held low (go): the relay's queue stands for the firmware's FIFO.
+struct Uart8n1 {
+    int cpb;
+    std::deque<uint8_t> tx; int tx_bit = -1, tx_cnt = 0; uint16_t tx_sh = 0;
+    int rx_state = 0, rx_cnt = 0, rx_n = 0; uint8_t rx_sh = 0;
+    std::vector<uint8_t> rx;
+    int line_out(void) {                 // the bit to drive this clock
+        if (tx_bit < 0 && !tx.empty()) {
+            tx_sh = (uint16_t)(0x200 | (tx.front() << 1)); tx.pop_front();
+            tx_bit = 0; tx_cnt = cpb;
+        }
+        if (tx_bit < 0) return 1;
+        int b = (tx_sh >> tx_bit) & 1;
+        if (--tx_cnt == 0) { tx_cnt = cpb; if (++tx_bit == 10) tx_bit = -1; }
+        return b;
+    }
+    void line_in(int b) {
+        switch (rx_state) {
+        case 0: if (!b) { rx_state = 1; rx_cnt = cpb / 2; } break;
+        case 1: if (--rx_cnt == 0) { if (b) rx_state = 0; else { rx_state = 2; rx_cnt = cpb; rx_n = 0; rx_sh = 0; } } break;
+        case 2:
+            if (--rx_cnt == 0) {
+                rx_cnt = cpb;
+                if (rx_n < 8) { rx_sh |= (uint8_t)(b << rx_n); rx_n++; }
+                else { rx.push_back(rx_sh); rx_state = 0; }
+            }
+            break;
+        }
+    }
+};
+static Uart8n1 esp = {10};
+static int esp_fd = -1;
+static unsigned long esp_in, esp_out;
+static void esp_open(const char *namefile) {
+    esp_fd = posix_openpt(O_RDWR | O_NOCTTY);
+    if (esp_fd < 0 || grantpt(esp_fd) || unlockpt(esp_fd)) { perror("soc: esp pty"); exit(1); }
+    struct termios t;
+    tcgetattr(esp_fd, &t); cfmakeraw(&t); tcsetattr(esp_fd, TCSANOW, &t);
+    fcntl(esp_fd, F_SETFL, O_NONBLOCK);
+    FILE *f = fopen(namefile, "w");
+    if (!f) { perror(namefile); exit(1); }
+    fprintf(f, "%s\n", ptsname(esp_fd));
+    fclose(f);
+    printf("SOC esp pty: %s\n", ptsname(esp_fd));
+    fflush(stdout);
+}
+static void esp_pty_step(void) {
+    uint8_t b[256];
+    if (esp.tx.size() < 64) {
+        ssize_t n = read(esp_fd, b, sizeof b);
+        for (ssize_t i = 0; i < n; i++) esp.tx.push_back(b[i]);
+        if (n > 0) esp_in += n;
+    }
+    if (!esp.rx.empty()) {
+        ssize_t n = write(esp_fd, esp.rx.data(), esp.rx.size());
+        if (n > 0) { esp_out += n; esp.rx.erase(esp.rx.begin(), esp.rx.begin() + n); }
+    }
+}
+
 static void pty_step(void) {
     uint8_t b[256];
     if (txq.size() < 64) {
@@ -211,6 +273,9 @@ int main(int argc, char **argv) {
     unsigned long words = 0;
     const char *load = getenv("SOC_LOAD");
     const char *ptyname = getenv("SOC_PTY");
+    const char *espname = getenv("SOC_ESP_PTY");
+    if (espname && *espname) esp_open(espname);
+    top->esp_rxd = 1; top->esp_rts = 0;
     if (ptyname && *ptyname) {
         pty_open(ptyname);                 // the host loads and starts it
     } else if (load && *load) {
@@ -258,6 +323,11 @@ int main(int argc, char **argv) {
     while (clocks < limit) {
         load_next();
         uart_step();
+        if (esp_fd >= 0) {
+            top->esp_rxd = esp.line_out();
+            esp.line_in(top->esp_txd);
+            if ((clocks & 63) == 0) esp_pty_step();
+        }
         // The replayed interrupts: one in the queue at a time.
         uint32_t n = pk_irq_at();
         top->arm_en = 0;
@@ -303,6 +373,8 @@ int main(int argc, char **argv) {
                loadq.size(), load_wait ? ", one unanswered" : "");
         if (!loadq.empty() || load_wait) { printf("SOC FAIL: the load did not complete\n"); why = 1; }
     }
+    if (esp_fd >= 0)
+        printf("SOC esp link: %lu bytes to the relay, %lu from it\n", esp_out, esp_in);
     static const char *whys[] = {"the reference's last record", "a failed check", "the core stopped", "a stall or the clock limit"};
     printf("SOC end: %s; %u records, %llu core clocks, %llu system clocks "
            "(%.2f per core clock), %lu forwarded reads, %lu forwarded writes\n",
