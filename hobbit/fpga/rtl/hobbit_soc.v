@@ -25,6 +25,9 @@
 // module changes on the falling edge only (the ECP5 DCCA in the board top,
 // an AND in simulation).  `cpu_ce` is high throughout reset so the core's
 // synchronous reset sees edges.
+`ifndef HOBBIT_SOC_SETTLE
+`define HOBBIT_SOC_SETTLE 1
+`endif
 module hobbit_soc #(
     parameter CPB = 25,              // host link: 25 MHz / 1 Mbaud
     parameter SD_T_PWR = 5000,
@@ -37,7 +40,10 @@ module hobbit_soc #(
     parameter [55:0] RTC_START = 56'h93010301120000,
     parameter [1:0]  RTC_MCP = 2'd3,
     parameter [15:0] RTC_I2CQ = 16'd63,
-    parameter QUART_CPB = 1302                  // the console tunnel's rate
+    parameter QUART_CPB = 1302,                 // the console tunnel's rate
+    // hobbit_soc_mem's SETTLE; the board and the co-simulation use the
+    // same default (run_soc.sh can override it for the injection test).
+    parameter SOC_SETTLE = `HOBBIT_SOC_SETTLE
 ) (
     input  wire        clk,
     input  wire        rst,          // synchronous, active high
@@ -92,8 +98,10 @@ module hobbit_soc #(
     wire [31:0] c_rdAddr;
     wire [31:0] c_rdData;
     wire [64:0] c_memWr, c_tblWr, c_evWr;
+    wire [3:0]  c_memWrBe;
+    wire        c_rdMerge, c_rdSpec, c_rdNack;
     wire [1039:0] c_window;
-    wire [725:0] c_probes;
+    wire [857:0] c_probes;          // 26 probes of 33 bits
     wire        c_rdy_go;
     wire [31:0] c_pc;
     wire        go_valid;
@@ -102,10 +110,14 @@ module hobbit_soc #(
     wire        dev_il6;
     wire        fire;
 
+    // SYSCLK: the core's arrays read on the free-running clock between
+    // core edges (fpga/sysram_filter.py, rtl/hobbit_sysregfile.v).
     mkHobbitSocCpu cpu (
-        .CLK(gclk), .RST_N(~rst),
+        .SYSCLK(clk), .CLK(gclk), .RST_N(~rst),
         .rdReq(c_rdReq), .rdAddr(c_rdAddr), .rdData_d(c_rdData),
         .memWr(c_memWr), .tblWr(c_tblWr), .evWr(c_evWr),
+        .memWrBe(c_memWrBe), .rdMerge(c_rdMerge),
+        .rdSpec(c_rdSpec), .rdNack_n(c_rdNack),
         .window_w(c_window), .probes(c_probes),
         .go_entry(go_entry), .EN_go(go_valid && c_rdy_go), .RDY_go(c_rdy_go),
         .running(running),
@@ -133,10 +145,14 @@ module hobbit_soc #(
     reg         bk_done;
     reg  [31:0] bk_rdata;
 
-    hobbit_soc_mem mem (
+    // SETTLE: the longest chain of core arrays a probe depends on
+    // (rtl/hobbit_soc_mem.v).
+    hobbit_soc_mem #(.NPROBE(26), .SETTLE(SOC_SETTLE)) mem (
         .clk(clk), .rst(rst),
         .cpu_rdReq(c_rdReq), .cpu_rdAddr(c_rdAddr), .cpu_rdData(c_rdData),
         .cpu_memWr(c_memWr), .cpu_tblWr(c_tblWr), .cpu_evWr(c_evWr),
+        .cpu_memWrBe(c_memWrBe), .cpu_rdMerge(c_rdMerge),
+        .cpu_rdSpec(c_rdSpec), .cpu_rdNack(c_rdNack),
         .cpu_window(c_window), .cpu_probes(c_probes),
         .fire(fire), .edge_now(edge_now && !rst), .core_clocks(core_clocks),
         .aux_valid(aux_valid), .aux_we(aux_we), .aux_addr(aux_addr),
@@ -269,7 +285,11 @@ module hobbit_soc #(
             end else if (is_rom) begin
                 if (!rom_busy) begin
                     rom_busy <= 1'b1;
-                    if (bk_we) rom[bk_addr[13:2]] <= bk_wdata;
+                    // Byte lanes, as the SDRAM's DQM.
+                    if (bk_we && bk_be[0]) rom[bk_addr[13:2]][7:0]   <= bk_wdata[7:0];
+                    if (bk_we && bk_be[1]) rom[bk_addr[13:2]][15:8]  <= bk_wdata[15:8];
+                    if (bk_we && bk_be[2]) rom[bk_addr[13:2]][23:16] <= bk_wdata[23:16];
+                    if (bk_we && bk_be[3]) rom[bk_addr[13:2]][31:24] <= bk_wdata[31:24];
                     rom_q <= rom[bk_addr[13:2]];
                 end else begin
                     rom_busy <= 1'b0; bk_done <= 1'b1; bk_rdata <= rom_q;
@@ -352,7 +372,7 @@ module hobbit_soc #(
         .mem_wdata(aux_wdata), .mem_done(aux_done), .mem_rdata(aux_rdata),
         .go_valid(go_valid), .go_entry(go_entry), .go_taken(go_taken),
         .fwd_valid(bk_valid && !is_ram && !is_rom && !dev_claims && io_issued),
-        .fwd_we(bk_we), .fwd_addr(bk_addr), .fwd_wdata(bk_wdata),
+        .fwd_we(bk_we), .fwd_be(bk_be), .fwd_addr(bk_addr), .fwd_wdata(bk_wdata),
         .fwd_done(fwd_done), .fwd_rdata(fwd_rdata), .host_il(host_il),
         .host_src(host_src),
         .con_valid(con_valid), .con_byte(con_byte), .con_taken(con_taken),

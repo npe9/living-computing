@@ -134,11 +134,21 @@ interface HobbitCore;
   // KCALL reads in EU_S2 (vbProbe).  The machine never reads this; the ULX3S top
   // has those words in its combinational window before it lets the
   // clock edge happen (fpga/README.md, "The core's combinational reads").
-  method Vector#(21, Maybe#(Word)) combProbes();
+  method Vector#(25, Maybe#(Word)) combProbes();
   // VB, which KCALL reads in EU_S2 (`events.memRead(vb)`): the 22nd
   // probe, separate because it is read before EU_S3's commit writes VB
   // and the other probes after the commit's wires.
   method Word vbProbe();
+  // This clock's data-memory write's byte enables and whether its read is
+  // a merge word (HobbitStackCache memWrBe/memRdMerge): for a bus with
+  // byte lanes (HobbitSocCpu).  Memories that store whole words ignore
+  // them, the write's word being merge-complete.
+  method Bit#(4) memWrBe();
+  method Bool memRdMerge();
+  // The operand read's speculation and the memory's refusal of it
+  // (HobbitStackCache memRdSpec/rdNack).
+  method Bool memRdSpec();
+  method Action setRdNack(Bool n);
 endinterface
 
 // One architectural write.  `addr` is the word address and `mask` the byte
@@ -262,7 +272,27 @@ endfunction
 // p. 3-34: C is set when the unsigned product overflows the destination's
 // width, V when the signed product does; the stored product is the low
 // 32 bits, truncated again by the store.
+//
+// One 32 x 32 product serves both flags (docs/fpga_area.md): the signed
+// 64-bit product of the sign-extended operands is the unsigned one less
+// b * 2^32 when a is negative and less a * 2^32 when b is negative,
+// modulo 2^64.  mulArithRef is the former two-product form, which
+// HobbitArithTb compares this one with.
 function Arith mulArith(Word a, Word b, Word sizeBytes);
+  Bit#(64) up = zeroExtend(a) * zeroExtend(b);
+  Bit#(64) corr = ((a[31] == 1'b1) ? {b, 32'd0} : 64'd0) +
+                  ((b[31] == 1'b1) ? {a, 32'd0} : 64'd0);
+  Int#(64) sp = unpack(up - corr);
+  Bit#(6) bits = truncate(sizeBytes << 3);
+  Bit#(64) umax = (64'd1 << bits) - 1;
+  Int#(64) smax = unpack((64'd1 << (bits - 1)) - 1);
+  Int#(64) smin = -unpack(64'd1 << (bits - 1));
+  return Arith { r: truncate(up),
+                 c: up > umax,
+                 v: (sp > smax) || (sp < smin) };
+endfunction
+
+function Arith mulArithRef(Word a, Word b, Word sizeBytes);
   Bit#(64) up = zeroExtend(a) * zeroExtend(b);
   Int#(64) sa = unpack(signExtend(a));
   Int#(64) sb = unpack(signExtend(b));
@@ -279,6 +309,36 @@ endfunction
 // Two's-complement division truncating toward zero, remainder carrying the
 // dividend's sign (p. 3-17, p. 3-39; the rounding rule is a named choice in
 // sem/README.md).  `ovf` is the 0x80000000 / -1 case (p. 3-17).
+//
+// The datapath computes all four divide instructions on one 32-bit
+// unsigned restoring divider (divUnit), on the operands' magnitudes for
+// the signed forms (docs/fpga_area.md).  divSigned is the former 64-bit
+// form, kept as the reference HobbitArithTb compares divUnit with.
+function Tuple2#(Word, Word) udivmod32(Word n, Word d);
+  Bit#(33) r = 0;
+  Word q = n;
+  for (Integer i = 0; i < 32; i = i + 1) begin
+    r = { r[31:0], q[31] };
+    q = q << 1;
+    Bit#(34) t = { 1'b0, r } - { 2'b0, d };
+    if (t[33] == 1'b0) begin
+      r = truncate(t);
+      q[0] = 1'b1;
+    end
+  end
+  return tuple2(q, truncate(r));
+endfunction
+
+// Quotient and remainder of a / b: signed (truncating toward zero, the
+// remainder carrying the dividend's sign) or unsigned.  b == 0 is the
+// callers' case (the exception, and a result of 0).
+function Tuple2#(Word, Word) divUnit(Bool sgn, Word a, Word b);
+  Bool na = sgn && (a[31] == 1'b1);
+  Bool nb = sgn && (b[31] == 1'b1);
+  match { .uq, .ur } = udivmod32(na ? -a : a, nb ? -b : b);
+  return tuple2((na != nb) ? -uq : uq, na ? -ur : ur);
+endfunction
+
 function Tuple3#(Word, Word, Bool) divSigned(Word a, Word b);
   Int#(64) x = unpack(signExtend(a));
   Int#(64) y = unpack(signExtend(b));
@@ -404,6 +464,7 @@ typedef struct {
   // External-memory operands (see "Memory operands" in mkHobbitEuS1).
   Bool   memMiss;      // a needed word is still in memory: not ready
   Word   memMissAddr;  // the first such word's address
+  Bool   memMissMerge; // ... wanted only to merge a byte or half store into
   Bool   ptMem;        // the pointed-to word lies outside the stack cache
   Word   ptWord;       // ... and this is it, in-flight writers applied
   Bool   pt2Mem;       // the same for the destination's pointed-to word
@@ -804,6 +865,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                      base: base, nextPc: npc, sinceCmp: dcmp,
                      extra: extra, bad: bad,
                      memMiss: memMiss, memMissAddr: memMissAddr,
+                     memMissMerge: False,
                      ptMem: ptMem, ptWord: ptWord,
                      pt2Mem: pt2Mem, pt2Word: pt2Word };
   endfunction
@@ -852,6 +914,11 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       Bool bad = False;
       Bool miss = False;
       Word missAddr = 0;
+      // The missing word is wanted only as the merge word of a byte or
+      // half-word store the instruction does not read (mergeStore): its
+      // bytes outside the store's lanes are all it contributes, and a
+      // byte-enabled write needs none of them (HobbitStackCache memReq).
+      Bool missMerge = False;
       Bool ptMem = False;
       Word ptWord = 0;
       Bool pt2Mem = False;
@@ -918,6 +985,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
                       (!modeIsImm(d.dst.mode) && (modeSize(d.dst.mode) < 4));
           if (need && !r.ok && !miss) begin
             miss = True; missAddr = r.wa;
+            missMerge = !opReadsDst(d.op) && !modeIsIndirect(d.dst.mode);
           end
         end
         // The pointed-to word, exactly when EU_S2 will want one (the same
@@ -934,6 +1002,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           ptMem = fromS1; ptWord = r.w;
           if (!r.ok) begin
             miss = True; missAddr = pa;
+            missMerge = !srcInd && !opReadsDst(d.op);
           end
         end
         // Both operands indirect: the destination's pointed-to word as
@@ -945,6 +1014,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
           pt2Mem = fromS1b; pt2Word = r2.w;
           if (!r2.ok) begin
             miss = True; missAddr = pa2;
+            missMerge = !opReadsDst(d.op);
           end
         end
         // CRET (p. 3-15) and KRET (p. 3-30) read the interrupt stack's
@@ -979,6 +1049,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
       EuS1Out o = mkOut(e, pcR, spb, mspb, srcV, srcEa, dstV, dstEa, dstW,
                         retPc, bad, sinceCmp, miss, missAddr, ptMem, ptWord,
                         pt2Mem, pt2Word);
+      o.memMissMerge = miss && missMerge;
       o.dqmMem  = dqmM;
       o.dqmIdx  = dqmM ? dqmIdx : 0;
       o.dqmLast = dqmLast;
@@ -1060,7 +1131,7 @@ module mkHobbitEuS1#(HobbitDecodeStore ic, HobbitStackCache sc,
   // empties anyway.
   rule fetchOperand (active && !squash && fullR && !eventActive &&
                      !s2Taken && curOut().memMiss && sc.memIdle());
-    sc.memReq(curOut().memMissAddr);
+    sc.memReq(curOut().memMissAddr, curOut().memMissMerge, !drained);
   endrule
 
   // The single writer of the latches.  The word on the memory port is
@@ -1473,6 +1544,10 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
     Bool hasTag = False;
     Bool ilToAcc = !modeIsImm(d.dst.mode) && (sz == 4) &&
                    (i.dstEa == i.csp + 4);
+    // The one divider of the four divide instructions (divUnit).
+    Bool divSgn = (d.op == OP_DIV) || (d.op == OP_DIV3) ||
+                  (d.op == OP_REM) || (d.op == OP_REM3);
+    match { .divQuo, .divRem } = divUnit(divSgn, dst, src);
 
     case (d.op)
       OP_MOV: res = src;
@@ -1507,22 +1582,22 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
       end
       OP_DIV, OP_DIV3: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = divQ(dst, src);
+        res = (src == 0) ? 0 : divQuo;
         pu = pswCVKeepC((dst == 32'h80000000) && (src == 32'hFFFFFFFF));
       end
       OP_REM, OP_REM3: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = divR(dst, src);
+        res = (src == 0) ? 0 : divRem;
         pu = pswCVKeepC(False);              // V always cleared, C unchanged
       end
       OP_UDIV: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = (src == 0) ? 0 : (dst / src);
+        res = (src == 0) ? 0 : divQuo;
         pu = pswCKeepV(False);               // C cleared, V unchanged
       end
       OP_UREM: begin
         if (src == 0) begin fatal = True; divZero = True; end
-        res = (src == 0) ? 0 : (dst % src);
+        res = (src == 0) ? 0 : divRem;
         pu = pswCKeepV(False);
       end
       OP_TADD, OP_TSUB: begin
@@ -1733,6 +1808,7 @@ module mkHobbitEuS2#(Reg#(Word) psw, Reg#(Bool) kl, Reg#(Word) vb,
     ScCmd cmd = ScCmd { op: (trap || fatal || i.ispMode) ? BX_NONE
                                                          : boxOpOf(d.op),
                         we: wr.we, waddr: wr.addr, wdata: wr.wdata,
+                        wbe: wr.mask[3:0],
                         spBefore: i.spBefore, mspBefore: i.mspBefore,
                         spAfter: after.sp,
                         mspAfter: cretCatch ? after.sp : after.msp,
@@ -2002,9 +2078,37 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   // (a fault there resets the part, p. 3-29), the unimplemented
   // sequence's *(CSP) = PC, and the drain words (DQM's tail, the
   // interlocked accumulator), which still fault after their commit.
+  //
+  // Every caller asks about the held bundle `inD`, so the stage makes two
+  // write translations a clock, not one per call site: `wfA` is the
+  // store's word, or for ENTER the new SP, and `wfB` is ENTER's new MSP.
+  // Their walks are the data face's probes (`writeProbes`): on the SoC a
+  // walk reads only words the top has put in its window, and a walk
+  // nothing probed reads zeros and faults (fpga/README.md, "The core's
+  // arrays on the system clock"), noted by `noteWriteChecks`.
+  Bool wfEnter = (inD.e.d.op == OP_ENTER);
+  Word wfA = wfEnter ? (inD.spAfter & 32'hFFFFFFFC) : inD.cmd.waddr;
+  Word wfB = inD.mspAfter & 32'hFFFFFFFC;
+  Bool wfAFaults = dface.writeFaults(wfA);
+  Bool wfBFaults = dface.writeFaults(wfB);
+
+  // A walk is noted when a caller can use its answer: the store's (or
+  // ENTER's SP) when storeFaults/enterFault would ask, ENTER's MSP when
+  // enterFault would.
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule noteWriteChecks;
+    Bool on = inFull && eventsOn && (inD.e.d.tr == TR_NONE) && !inD.fatal;
+    Bool aOn = on && (wfEnter ? (psw[9] == 1'b1)
+                              : (!inD.silent && !inD.kcall && sc.toMemory(inD.cmd)));
+    Bool bOn = on && wfEnter && (psw[9] == 1'b1) &&
+               (inD.mspAfter != inD.mspBefore);
+    dface.noteWrites(aOn ? tagged Valid wfA : tagged Invalid,
+                     bOn ? tagged Valid wfB : tagged Invalid);
+  endrule
+
   function Bool storeFaults(EuS2Out o) =
     eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal && !o.silent &&
-    !o.kcall && sc.toMemory(o.cmd) && dface.writeFaults(o.cmd.waddr);
+    !o.kcall && sc.toMemory(o.cmd) && (o.e.d.op != OP_ENTER) && wfAFaults;
 
   // ENTER's check (p. 3-21, read from the page image): "If virtual
   // addressing is enabled, the target address and the new MSP, if the MSP
@@ -2022,10 +2126,9 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     Maybe#(Word) r = tagged Invalid;
     if (eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal &&
         (o.e.d.op == OP_ENTER) && (psw[9] == 1'b1)) begin
-      if (dface.writeFaults(o.spAfter & 32'hFFFFFFFC))
+      if (wfAFaults)
         r = tagged Valid o.spAfter;
-      else if ((o.mspAfter != o.mspBefore) &&
-               dface.writeFaults(o.mspAfter & 32'hFFFFFFFC))
+      else if ((o.mspAfter != o.mspBefore) && wfBFaults)
         r = tagged Valid o.mspAfter;
     end
     return r;
@@ -2972,9 +3075,15 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Bool eventActive() = eventActiveR;
   method Word eventMemRead(Word a) = events.memRead(a);
   method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
-  method Vector#(21, Maybe#(Word)) combProbes() =
-    append(mmu.walkProbes, events.combProbes);
+  method Vector#(25, Maybe#(Word)) combProbes() =
+    append(append(mmu.walkProbes, events.combProbes), dataFace.writeProbes);
   method Word vbProbe() = vbR;
+  method Bit#(4) memWrBe() = sc.memWrBe;
+  method Bool memRdMerge() = sc.memRdMerge;
+  method Bool memRdSpec() = sc.memRdSpec;
+  method Action setRdNack(Bool n);
+    sc.rdNack(n);
+  endmethod
 
   method Bit#(32) dbgBoundary() =
     { 4'b0, s3.dbgStop,

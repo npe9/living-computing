@@ -118,6 +118,8 @@ python3 "$here/golden/check_golden.py"
 "$hobbit/bsv/run_mmu.sh"
 "$hobbit/bsv/run_event.sh"
 "$hobbit/bsv/run_core_mmu.sh"
+# The EU's divider and multiplier against the forms they replaced.
+"$hobbit/bsv/run_arith.sh"
 # A byte store into an unmapped page: exception 9 at the store (s9term join
 # record 308,543,068).
 "$hobbit/bsv/run_core_mmu_store.sh"

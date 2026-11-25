@@ -307,8 +307,20 @@ The probes are computed in the core (`HobbitCore.combProbes`,
 replicate the walk's predicate (translation on, no TLB hit, no NPSR hit)
 for the four noted face translations. They also cover the event unit's
 frame and vector translations and the vector word, plus VB, which KCALL
-reads in EU_S2. Nothing in the machine reads them, so every simulation
-is unchanged.
+reads in EU_S2. EU_S3's write checks are covered too: the store's word
+and ENTER's new SP and MSP (`HobbitMmuMem.noteWrites`/`writeProbes`,
+26 probes in all). Nothing in the machine reads them, so every
+simulation is unchanged.
+
+The write checks arrived with the Plan 9 core-boot work, which checks
+a store before it commits (exception 9, p. 1-38). Without their probes,
+OBSERVED at the merge on 2026-11-25: "P9KERN FAIL: device write
+00000000 to b0003000 after record 128152" and "FAIL at record 126896:
+we, addr, mask, trap differ". On the SoC the store's walk read zeros
+from the window and faulted. EU_S3 notes the addresses through a wire,
+as the faces note theirs. When the top's sampling rule read EU_S3's
+registers directly, bsc broke a rule cycle by never firing `launch`,
+and the run retired 0 records.
 
 A probe that depends on a word just fetched (a page entry selected by a
 segment entry) settles in a second round. The window is read through
@@ -322,6 +334,109 @@ clock period. It derives the gated clock's constraint through the DCCA
 (checked on a two-register prototype before this design: "Derived
 frequency constraint of 25.0 MHz for net gclk", with both crossings
 reported and timed).
+
+### The core's arrays on the system clock
+
+Between two core edges the core's registers hold, so every RegFile read
+address holds too, for the ten or so system clocks the adapter takes.
+The SoC uses that time to put the core's arrays in block RAM.
+
+* `sysram_filter.py` rewrites each bsc `RegFile` instance in
+  `mkHobbitSocCpu.v` into `HobbitSysRegFile` (`rtl/hobbit_sysregfile.v`)
+  and gives the module a `SYSCLK` input. `build_soc.sh`, `area_cpu.sh`
+  and `sim/run_soc.sh` all build from the filtered file.
+* `HobbitSysRegFile` keeps one block-RAM copy per read port. Every copy
+  is written on the core clock. Each copy's read register is clocked by
+  SYSCLK from the port's current address, so once the address has been
+  stable for one system clock the port shows what bsc's combinational
+  RegFile would.
+* The BSV is unchanged, and Bluesim keeps RegFile semantics.
+
+The probes must not be sampled before the arrays settle.
+`tools/sysram_depth.py` reads the bound from the netlist:
+
+* After a core edge, the longest chain of block-RAM reads into the probe
+  port is 2: a decode-store read that addresses a stack-cache bank.
+* After an `rdData` or window change it is 0.
+* From a core edge to the probe sample, `hobbit_soc_mem` spends at least
+  four system clocks (S_WR, S_RD, S_SETTLE, S_PROBE).
+
+So its SETTLE (`HOBBIT_SOC_SETTLE`, default 1) holds with margin **in
+simulation**, where logic has no delay. The bound counts block-RAM stages,
+not the combinational delay of each one. On hardware the probe sample is
+also bounded by that delay:
+the core's own paths are about 190 to 240 ns in the post-placement
+estimate (nextpnr, 2026-11-24, unrouted), against the 40 ns that one
+system clock gives at 25 MHz. A stage then needs about
+ceil(t_stage / 40 ns) system clocks, roughly 5, so the hardware's
+SETTLE has to be sized from routed timing, not from the stage count
+alone. That is pending.
+
+Under `HOBBIT_SIM` the co-simulation checks these assumptions at every
+core edge:
+
+* **SYSRAM STALE**: a read port differs from a combinational read.
+* **PROBE STALE**: a probe is missing from the window.
+* **WINDOW DUPLICATE**: two valid window entries share an address, which
+  `HobbitSocCpu.winRead`'s AND-OR relies on never happening.
+* **EDGE STALE**: two core edges fall in consecutive system clocks out
+  of reset.
+
+Any of them ends the run with a failure. The injections that show the
+first three firing are in `docs/fpga_area.md`.
+
+### Byte enables and device reads
+
+A device register read is a side effect: a FIFO pops, a status bit
+clears. So the SoC reads a device exactly when the reference boot does,
+once per recorded read, and never on a path the core then squashes.
+`fpga/sim/run_soc.sh` fails unless p9kern's account ends
+"0 repeated, 0 unrecorded". `fpga/sim/io_reads.py WORKDIR` lists any
+forwarded read with no reference partner.
+
+Before this change the boot forwarded 16,497 device reads for the
+reference's 181:
+
+* **16,314 merge reads.** A byte or half-word store needs the rest of
+  its word only to merge into it, and the core read that word first. The
+  LCD's half-word stores (to b0003000/b0003004, mask 3) each read the
+  register they were about to write. Now:
+  * the core tells the adapter which bytes a store writes (`memWrBe`, from
+    the store's mask);
+  * it flags a read that is wanted only as such a merge word (`rdMerge`;
+    EU_S1 sets it when the instruction does not read its destination);
+  * the adapter makes no bus read for a merge word to a device, and writes
+    with the store's own byte enables. The SDRAM uses its DQM lanes, the
+    ROM block writes per lane, and the host link's F frame carries the
+    enables (`{3'b0, be, we}` in byte 1).
+
+  p9kern checks each forwarded write's enables against the recording's
+  mask.
+* **2 speculative reads.** These were SONIC `cr` reads at a4400000, from
+  a poll loop whose backward branch is predicted taken, on the wrong path
+  past the loop's exit. An operand read is now flagged `rdSpec` when an
+  older instruction is still in EU_S2/S3, or a frame or the stack cache is
+  still busy (EU_S1's `drained` is false). The adapter declines such a
+  read to a device:
+  * it makes no bus read;
+  * it raises `rdNack` until the next core edge;
+  * the stack cache then reports the port word as not live, and EU_S1
+    asks again once it is drained.
+
+  A read of memory is never declined.
+
+  Only operand reads carry `rdSpec`. Instruction prefetch and the stack
+  cache's refill read text and stack, which are RAM in every run so far;
+  a device address on those reads would still be forwarded.
+
+Result, 2026-11-24 (`run_soc.sh 2893000`):
+* the same MATCH and HRI lines, byte for byte;
+* 181 forwarded reads, all 181 recorded reads replayed, 0 repeated,
+  0 unrecorded.
+
+The core clock total moved, from 9,920,333 to 9,920,614: a declined
+read waits for the instructions ahead. The injections that show the
+checks discriminating are in `fpga/sim/run_soc.sh`'s header.
 
 ### Memory map
 
@@ -357,7 +472,7 @@ access is forwarded over the host link. That includes the ROM above
 | `I` l1 | interrupt level from the host's models (7 = none) | |
 | `S` s2 | the host models' interrupt sources, for an RTL Irq | |
 | `K` c1 | a byte typed on the console, for an RTL Quart | `C` c1: a byte an RTL Quart's channel 0 sent |
-| | | `F` k1 a4 d4 clk5: a forwarded access (k = 0 read, 1 write); the board waits for `D` |
+| | | `F` k1 a4 d4 clk5: a forwarded access (k = {3'b0, be[3:0], we}: we 0 read, 1 write, be the write's byte enables); the board waits for `D` |
 | | | `T` clk5: every 2^18 core clocks |
 
 `clk5` is the core's own clock count, which is the host models' time base.
@@ -387,6 +502,10 @@ P9KERN devices: 181 of 181 recorded reads replayed, 0 repeated, 16316
 MATCH: 2893000 records agree in every field but cyc (2865913 also agree in cyc)
 SOC console: 74 bytes, identical to the reference boot's
 ```
+
+That run predates the byte enables. With them the same run gives
+9,920,614 core clocks and 181 forwarded reads, with 0 unrecorded (see
+"Byte enables and device reads").
 
 The same run's 2,893,000 HRI lines (`grep '^HRI' core.log`) are
 byte-identical, `cyc` included, to the bare core's for the same records
@@ -423,6 +542,75 @@ stores, and either a guarantee or a drain that keeps an I/O-space read from
 being issued twice or speculatively.
 
 ### Area, Fmax and the clock (step 1)
+
+#### After the area work (2026-11-24)
+
+The privileged core is down from 116,562 LUT-equivalents to 60,090
+(`docs/fpga_area.md` has the milestones and the method). That is under
+the 65k budget the devices need room beside. After the merge of the
+Plan 9 core-boot work (2026-11-25) it measures 65,547, just over that
+budget (`docs/fpga_area.md`). "LUT-eq" is
+LUT4 + 2 x CCU2C + 6 x DPR16X4, the formula that reproduces nextpnr's
+"Total LUT4s".
+
+`./build_soc.sh 1` on the area milestones' last tree (milestone 8,
+without stack-cache copy C or the byte enables, all devices forwarded):
+
+```
+nextpnr: Total LUT4s:  61569/83640   73%
+         TRELLIS_COMB: 62451/83640   74%
+```
+
+The design packs and places. It was not routed:
+* router1 still had 153k of 244k arcs to route after two hours;
+* router2 stayed at about 48k overused wires from iteration 5 to 9.
+
+Both runs were stopped, so there is no bitstream. The post-placement
+timing estimate:
+
+```
+Max frequency for clock 'gclk':                4.24 MHz (FAIL at 25.00 MHz)
+Max frequency for clock '$glbnet$CLK$TRELLIS_IO_IN': 5.17 MHz (FAIL at 25.00 MHz)
+```
+
+nextpnr times every path in one system clock. The core's paths are
+multi-cycle by design: the adapter gives the core several system clocks
+between edges. So the 25 MHz failure is not by itself the hardware's
+limit, and the router's congestion may partly be timing pressure. But
+the estimate also means a core path takes about 5 system clocks, which
+SETTLE = 1 does not provide (see "The core's arrays on the system
+clock"). Sizing SETTLE, or adding multi-cycle constraints, needs routed
+timing. That is open.
+
+The full SoC with every RTL device was built in a scratch tree: this
+branch's tip (byte enables included) merged with the SoC device branch
+(`SOC_RTL=31`: incon/ioctl/irq, Quart, RTC, IIC, Lcdisp; no HDMI, which
+is not committed yet), `./build_soc.sh 1`:
+
+```
+nextpnr: Total LUT4s:  64835/83640   77%
+         TRELLIS_COMB: 65989/83640   78%
+         TRELLIS_FF:   11937/83640   14%
+         TRELLIS_RAMW:     4/10455    0%
+         DP16KD:          59/  208   28%
+         MULT18X18D:       4/  156    2%
+         DCCA:             2/   56    3%
+         TRELLIS_IO:      54/  365   14%
+Max frequency for clock 'gclk':                4.30 MHz (FAIL at 25.00 MHz)
+Max frequency for clock '$glbnet$CLK$TRELLIS_IO_IN': 5.24 MHz (FAIL at 25.00 MHz)
+```
+
+It places; the frequencies are the post-placement estimate. Routing
+(256,662 arcs) is the open step, as above.
+
+The devices are all in the netlist (the yosys log elaborates
+mkHobbitSocDevs with DEV_RTL = 31: incon, ioctl, irq, RTC, IIC,
+Lcdisp). But the Lcdisp frame RAM is pruned: without the HDMI top
+nothing reads its scan port, so the DP16KD count (59) is the core's
+alone. The HDMI build adds that block RAM and the scan-out logic, which
+this count leaves out.
+
+#### Before the area work
 
 `./build_soc.sh` (seed 1) on 2026-11-24:
 
@@ -503,18 +691,10 @@ about 2.4 MHz. Wall-clock speed is not a goal (see "Building"),
 and nothing depends on it except the host models' time base, which is the
 core's own clock count.
 
-What would make it fit (not done here):
-
-* Move the prefetch ways (combinational-read `RegFile`s, replicated per
-  read port into DPR16X4 plus mux trees) into DP16KD. The gated clock
-  allows this: a block RAM read on the free-running clock settles inside
-  the ~10 system clocks between core edges. The bound above is at most
-  12.9k COMB.
-* The remaining ~87k COMB is spread across the pipeline's datapath:
-  stack cache, operand and result muxes, MMU, event unit. It has to
-  shrink by about a third, for example by multi-cycling the rare paths on
-  the gated clock or by moving the stack cache to block RAM. That is core
-  work, and it needs the lead's decision on scope.
+What made it fit: the eight milestones of `docs/fpga_area.md`. They
+moved the prefetch ways, the decode store and the stack cache into block
+RAM on the system clock, and cut the replicated translations and window
+reads.
 
 ### The kernel load (step 3)
 

@@ -225,6 +225,13 @@ typedef struct {
   Word     ste;      // raw segment-table entry
 } MmuWalk deriving (Bits);
 
+// A noted reference with the translation and walk its clock computed.
+typedef struct {
+  MmuReq  req;
+  MmuResp resp;
+  MmuWalk walk;
+} MmuNote deriving (Bits);
+
 function Maybe#(MmuTlbEntry) findTlb(Vector#(32, MmuTlbEntry) v,
                                     Bit#(10) seg, Bit#(10) vpn);
   Maybe#(MmuTlbEntry) r = tagged Invalid;
@@ -316,10 +323,18 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   Reg#(Bit#(32)) faultsR <- mkReg(0);
   Reg#(Bit#(32)) pteWritesR <- mkReg(0);
 
+  // A note carries its reference's translation and walk, computed in the
+  // noting rule from the same state `translate` reads (the clock's TLBs,
+  // NPSRs and tables), so the step rule and walkProbes use them instead
+  // of translating each noted reference twice more (docs/fpga_area.md).
+  // The text note is the exception: it is made from more call sites than
+  // translate is (the prefetch's noteFetch has two callers that translate
+  // nothing), so it is carried as the reference and translated once, here,
+  // on the wire.
   Wire#(Maybe#(MmuReq)) noteTextW <- mkDWire(tagged Invalid);
-  Wire#(Maybe#(MmuReq)) noteText2W <- mkDWire(tagged Invalid);
-  Wire#(Maybe#(MmuReq)) noteDataW <- mkDWire(tagged Invalid);
-  Wire#(Maybe#(MmuReq)) noteData2W <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(MmuNote)) noteText2W <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(MmuNote)) noteDataW <- mkDWire(tagged Invalid);
+  Wire#(Maybe#(MmuNote)) noteData2W <- mkDWire(tagged Invalid);
   Wire#(Maybe#(Word))   flushPteW <- mkDWire(tagged Invalid);
   Wire#(Bool)           flushAllW <- mkDWire(False);
   Wire#(Bool)           resetW <- mkDWire(False);
@@ -392,7 +407,10 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
     return r;
   endfunction
 
-  function MmuResp translateFn(MmuReq r);
+  // The translation with its walk passed in: `w` must be walk(r).  A
+  // write to a TLB page whose M bit is clear is not a hit: it walks to
+  // set M, so its response has hit False and noteProbe probes its walk.
+  function MmuResp translateFnW(MmuReq r, MmuWalk w);
     if (!r.enabled)
       return mkResp(True, True, False, r.va, MMU_OK);
     else begin
@@ -416,36 +434,49 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
             return mkResp(f == MMU_OK, True, False,
                           { n.base, r.va[21:0] }, f);
           end
-        end else begin
-          let w = walk(r);
+        end else
           return mkResp(w.valid, False, w.paged, w.pa,
                         w.valid ? MMU_OK : w.fault);
-        end
       end
     end
   endfunction
 
-  function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r);
+  function MmuResp translateFn(MmuReq r) = translateFnW(r, walk(r));
+
+  function MmuNote noteOf(MmuReq r);
+    let w = walk(r);
+    return MmuNote { req: r, resp: translateFnW(r, w), walk: w };
+  endfunction
+
+  // The physical words a walk reads for a translation, from the
+  // translation itself: a walk is evaluated exactly when the translation
+  // is not a hit (translation off, a TLB hit and an NPSR hit all return
+  // hit), and its page entry is read only when the segment entry it read
+  // (walk.ste) is valid and paged.  Built on noteOf, the expression
+  // `translate` is, so a probe of a reference some rule also translates
+  // shares that rule's logic (docs/fpga_area.md).
+  function Vector#(2, Maybe#(Word)) noteProbe(Maybe#(MmuNote) m);
     Vector#(2, Maybe#(Word)) v = replicate(tagged Invalid);
-    if (r.enabled) begin
-      let hitE = r.isText
-                   ? findTlb(tlbText, r.va[31:22], r.va[21:12])
-                   : findTlb(tlbData, r.va[31:22], r.va[21:12]);
-      let n = r.isText ? npsrText : npsrData;
-      Bool npsrHit = n.valid && (n.seg == r.va[31:22]);
-      if (!isValid(hitE) && !npsrHit) begin
-        Word vs = steAddr(r.va);
-        v[0] = tagged Valid vs;
-        Word ste0 = tbl.read(vs);
-        if ((ste0[0] == 1'b1) && (ste0[3] == 1'b0))
-          v[1] = tagged Valid pteAddr(ste0, r.va);
-      end
+    if (m matches tagged Valid .n &&& !n.resp.hit) begin
+      v[0] = tagged Valid steAddr(n.req.va);
+      if ((n.walk.ste[0] == 1'b1) && (n.walk.ste[3] == 1'b0))
+        v[1] = tagged Valid pteAddr(n.walk.ste, n.req.va);
     end
     return v;
   endfunction
 
-  function Vector#(2, Maybe#(Word)) noteProbe(Maybe#(MmuReq) m) =
-    isValid(m) ? walkProbeFn(validValue(m)) : replicate(tagged Invalid);
+  function Vector#(2, Maybe#(Word)) walkProbeFn(MmuReq r) =
+    noteProbe(tagged Valid noteOf(r));
+
+  // A text note is a text reference (every caller's request has isText
+  // set, and the step rule refills the text structures from it); saying
+  // so here keeps the data TLB's lookup out of its translation.
+  function MmuReq asText(MmuReq r) =
+    MmuReq { va: r.va, isText: True, isWrite: r.isWrite, user: r.user,
+             enabled: r.enabled };
+  Maybe#(MmuNote) noteTextN = isValid(noteTextW)
+                                ? tagged Valid noteOf(asText(validValue(noteTextW)))
+                                : tagged Invalid;
 
   rule step;
     Vector#(32, MmuTlbEntry) nt = tlbText;
@@ -500,9 +531,10 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
       end
 
       // ---- text note ------------------------------------------------
-      if (isValid(noteTextW)) begin
-        let r = validValue(noteTextW);
-        let resp = translateFn(r);
+      if (isValid(noteTextN)) begin
+        let nText = validValue(noteTextN);
+        let r = nText.req;
+        let resp = nText.resp;
         if (resp.fault != MMU_OK)
           nFaults = nFaults + 1;
         else if (resp.hit)
@@ -510,7 +542,7 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
         else begin
           nMss = nMss + 1;
           nWalks = nWalks + 1;
-          let w = walk(r);
+          let w = nText.walk;
           if (w.valid) begin
             if (w.paged) begin
               let np = pteAfterRef(w.pte, r.isWrite);
@@ -543,8 +575,9 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
 
       // ---- text note ------------------------------------------------
       if (isValid(noteText2W)) begin
-        let r = validValue(noteText2W);
-        let resp = translateFn(r);
+        let nText2 = validValue(noteText2W);
+        let r = nText2.req;
+        let resp = nText2.resp;
         if (resp.fault != MMU_OK)
           nFaults = nFaults + 1;
         else if (resp.hit)
@@ -552,7 +585,7 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
         else begin
           nMss = nMss + 1;
           nWalks = nWalks + 1;
-          let w = walk(r);
+          let w = nText2.walk;
           if (w.valid) begin
             if (w.paged) begin
               let np = pteAfterRef(w.pte, r.isWrite);
@@ -585,8 +618,9 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
 
       // ---- data note ------------------------------------------------
       if (isValid(noteDataW)) begin
-        let r = validValue(noteDataW);
-        let resp = translateFn(r);
+        let nData = validValue(noteDataW);
+        let r = nData.req;
+        let resp = nData.resp;
         if (resp.fault != MMU_OK)
           nFaults = nFaults + 1;
         else if (resp.hit)
@@ -594,7 +628,7 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
         else begin
           nMss = nMss + 1;
           nWalks = nWalks + 1;
-          let w = walk(r);
+          let w = nData.walk;
           if (w.valid) begin
             if (w.paged) begin
               let np = pteAfterRef(w.pte, r.isWrite);
@@ -627,8 +661,9 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
       end
       // ---- data note ------------------------------------------------
       if (isValid(noteData2W)) begin
-        let r = validValue(noteData2W);
-        let resp = translateFn(r);
+        let nData2 = validValue(noteData2W);
+        let r = nData2.req;
+        let resp = nData2.resp;
         if (resp.fault != MMU_OK)
           nFaults = nFaults + 1;
         else if (resp.hit)
@@ -636,7 +671,7 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
         else begin
           nMss = nMss + 1;
           nWalks = nWalks + 1;
-          let w = walk(r);
+          let w = nData2.walk;
           if (w.valid) begin
             if (w.paged) begin
               let np = pteAfterRef(w.pte, r.isWrite);
@@ -691,7 +726,7 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   method MmuResp translate(MmuReq r) = translateFn(r);
   method Vector#(2, Maybe#(Word)) walkProbe(MmuReq r) = walkProbeFn(r);
   method Vector#(8, Maybe#(Word)) walkProbes() =
-    append(append(noteProbe(noteTextW), noteProbe(noteText2W)),
+    append(append(noteProbe(noteTextN), noteProbe(noteText2W)),
            append(noteProbe(noteDataW), noteProbe(noteData2W)));
 
   method Action noteText(MmuReq r);
@@ -699,15 +734,15 @@ module mkHobbitMmu#(MmuTables tbl)(HobbitMmu);
   endmethod
 
   method Action noteText2(MmuReq r);
-    noteText2W <= tagged Valid r;
+    noteText2W <= tagged Valid noteOf(r);
   endmethod
 
   method Action noteData(MmuReq r);
-    noteDataW <= tagged Valid r;
+    noteDataW <= tagged Valid noteOf(r);
   endmethod
 
   method Action noteData2(MmuReq r);
-    noteData2W <= tagged Valid r;
+    noteData2W <= tagged Valid noteOf(r);
   endmethod
 
   method Action setStb(Word stb);
@@ -770,6 +805,17 @@ interface HobbitMmuMem;
   // p. 1-38).  The `kernelNow` override is not applied: KCALL's frame is
   // not checked this way (p. 3-29).
   method Bool writeFaults(Word a);
+  // The SoC top's probes of this clock's writeFaults walks (fpga/README.md,
+  // "The core's arrays on the system clock"): its memory cannot answer a
+  // combinational read, so every walk a rule evaluates must be probed, and
+  // a walk nothing probed reads zeros.  EU_S3 notes the (at most two)
+  // addresses it checks; `writeProbes` is HobbitMmu walkProbe of each.
+  // Noted through a wire, as `noteData` is, so the top's probe sampling
+  // reads no pipeline register (reading EU_S3's directly put the sampling
+  // rule in a cycle with the core's launch, which bsc broke by never
+  // firing the launch).
+  method Action noteWrites(Maybe#(Word) a, Maybe#(Word) b);
+  method Vector#(4, Maybe#(Word)) writeProbes();
 endinterface
 
 module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
@@ -782,11 +828,16 @@ module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
   Wire#(Maybe#(MmuMemFault)) faultWW <- mkDWire(tagged Invalid);
   Wire#(Bool) clearW <- mkDWire(False);
   Wire#(Bool) kernelW <- mkDWire(False);
+  Wire#(Vector#(2, Maybe#(MmuReq))) writeNoteW <- mkDWire(replicate(tagged Invalid));
 
   function MmuReq req(Word a, Bool wr) =
     MmuReq { va: a, isText: isText, isWrite: wr,
              user: (psw[10] == 1'b1) && !(wr && kernelW),
              enabled: (psw[16] == 1'b1) };
+
+  function MmuReq writeReq(Word a) =
+    MmuReq { va: a, isText: isText, isWrite: True,
+             user: (psw[10] == 1'b1), enabled: (psw[16] == 1'b1) };
 
   rule latch;
     if (clearW) begin
@@ -843,10 +894,17 @@ module mkHobbitMmuMem#(HobbitMem phys, HobbitMmu mmu, Bool isText,
   method Action kernelNow();
     kernelW <= True;
   endmethod
-  method Bool writeFaults(Word a) =
-    mmu.translate(MmuReq { va: a, isText: isText, isWrite: True,
-                           user: (psw[10] == 1'b1),
-                           enabled: (psw[16] == 1'b1) }).fault != MMU_OK;
+  method Bool writeFaults(Word a) = mmu.translate(writeReq(a)).fault != MMU_OK;
+  method Action noteWrites(Maybe#(Word) a, Maybe#(Word) b);
+    function Maybe#(MmuReq) rq(Maybe#(Word) m) =
+      isValid(m) ? tagged Valid writeReq(validValue(m)) : tagged Invalid;
+    writeNoteW <= cons(rq(a), cons(rq(b), nil));
+  endmethod
+  method Vector#(4, Maybe#(Word)) writeProbes();
+    function Vector#(2, Maybe#(Word)) pr(Maybe#(MmuReq) m) =
+      isValid(m) ? mmu.walkProbe(validValue(m)) : replicate(tagged Invalid);
+    return append(pr(writeNoteW[0]), pr(writeNoteW[1]));
+  endmethod
 endmodule
 
 
