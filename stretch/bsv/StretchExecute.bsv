@@ -93,9 +93,10 @@ import StretchStorage::*;
 import StretchMemory::*;  // installed(): the address-invalid bound
 import StretchIO::*;
 import StretchDivBox::*;       // DivReq/DivRsp/mkDivBox: the divide box
-import StretchDecBox::*;       // DecReq/DecRsp/mkDecBox: the decimal adder box
-import StretchCvtBox::*;       // CvtReq/CvtRsp/mkCvtBox: the radix converter (DCV)
-import StretchVflBox::*;       // VflReq/VflRsp/mkVflBox: the VFL arithmetic box
+import StretchSAU::*;          // mkSAU, the serial arithmetic unit (2026-11-25,
+                               // fidelity_plan A3): the serial adder's
+                               // DecReq/DecRsp, the multiplier's VflReq/VflRsp
+                               // and the converter's CvtReq/CvtRsp
 import StretchFpBox::*;        // FpReq/FpRsp/mkFpBox: the floating-point box
 import StretchDiskSource::*;   // DiskIndex / ArcAddr / arcWords, for
                                 // the disk arms of the IoOp case
@@ -3114,6 +3115,15 @@ typedef struct {
 // the multiply of `*`, `D*` and `*+`.  An arm that asked it takes
 // `fpOf(boxResult)`.  boxKindOf is Bit#(3) for it, and mkEBox's
 // `boxKind` with it.
+//
+// THREE OF THE FIVE ARE ONE UNIT SINCE 2026-11-25 (fidelity_plan.md A3
+// half (a)): the decimal adder, the converter and the VFL multiplier are
+// the three request classes of mkSAU (StretchSAU.bsv), one module with
+// one state machine.  The tags below and boxKindOf's numbers are KEPT
+// per class: the arms read their answers by class, and StretchCore's
+// boxReleases releases the level for the adder (1) and the multiplier
+// (3) but not the converter (2).  mkEBox maps 1, 2 and 3 to the one
+// unit's request, responseReady and response.
 typedef union tagged {
   DivReq BoxDiv;
   DecReq BoxDec;
@@ -9252,16 +9262,15 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // precisely what the combinational arm did on every run, so the
   // behaviour is unchanged in that corner too.
   DivBox                   divBox        <- mkDivBox;
-  // THE DECIMAL ADDER (StretchDecBox.bsv), the second box, 2026-11-16,
-  // and the RADIX CONVERTER (StretchCvtBox.bsv, for DCV), the third, the
-  // same day.  `boxKind` (boxKindOf: 0 divider, 1 decimal adder, 2
-  // converter) says which the held instruction is waiting on.  It is
-  // meaningful only while `boxWait` is set.
-  DecBox                   decBox        <- mkDecBox;
-  CvtBox                   cvtBox        <- mkCvtBox;
-  // THE VFL ARITHMETIC BOX (StretchVflBox.bsv), the fourth, 2026-11-18:
-  // boxKind 3.
-  VflBox                   vflBox        <- mkVflBox;
+  // THE SERIAL ARITHMETIC UNIT (StretchSAU.bsv, mkSAU; fidelity_plan.md
+  // A3, 2026-11-25), one module for what were the decimal adder
+  // (mkDecBox, 2026-11-16), the radix converter (mkCvtBox, the same day)
+  // and the VFL multiplier (mkVflBox, 2026-11-18).  `boxKind` (boxKindOf:
+  // 0 divider, 1 the SAU's adder, 2 its converter, 3 its multiplier, 4
+  // the FP box) says which the held instruction is waiting on, and for
+  // 1-3 which view of the SAU's answer it takes.  It is meaningful only
+  // while `boxWait` is set.
+  SAU                      sau           <- mkSAU;
   // THE FLOATING-POINT BOX (StretchFpBox.bsv), the fifth, 2026-11-19:
   // boxKind 4, which is why boxKind is three bits wide.
   FpBox                    fpBox         <- mkFpBox;
@@ -9318,9 +9327,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // so the first thing this instruction waits for is the box.
         case (rq) matches
           tagged BoxDiv .d: divBox.request(d);
-          tagged BoxDec .d: decBox.request(d);
-          tagged BoxCvt .d: cvtBox.request(d);
-          tagged BoxVfl .d: vflBox.request(d);
+          tagged BoxDec .d: sau.request(tagged SauAdd d);
+          tagged BoxCvt .d: sau.request(tagged SauCvt d);
+          tagged BoxVfl .d: sau.request(tagged SauMul d);
           tagged BoxFp  .d: fpBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
@@ -9348,9 +9357,7 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
   // read: see its declaration.
   method Bool canResume() = isValid(held)
                             && (subjReady
-                                || (boxWait ? (boxKind == 1 ? decBox.responseReady()
-                                               : boxKind == 2 ? cvtBox.responseReady()
-                                               : boxKind == 3 ? vflBox.responseReady()
+                                || (boxWait ? ((boxKind == 1 || boxKind == 2 || boxKind == 3) ? sau.responseReady()
                                                : boxKind == 4 ? fpBox.responseReady()
                                                               : divBox.responseReady())
                                             : st.responseReady()));
@@ -9433,9 +9440,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     Maybe#(BoxRsp)     rbox = tagged Invalid;
 
     if (boxWait) begin
-      rbox = tagged Valid (boxKind == 1 ? tagged RspDec decBox.response()
-                         : boxKind == 2 ? tagged RspCvt cvtBox.response()
-                         : boxKind == 3 ? tagged RspVfl vflBox.response()
+      rbox = tagged Valid (boxKind == 1 ? tagged RspDec sauDecRsp(sau.response())
+                         : boxKind == 2 ? tagged RspCvt sauCvtRsp(sau.response())
+                         : boxKind == 3 ? tagged RspVfl sauVflRsp(sau.response())
                          : boxKind == 4 ? tagged RspFp fpBox.response()
                                         : tagged RspDiv divBox.response());
       // `boxWait` is cleared below, in the arms of the dispatch that do
@@ -9652,9 +9659,9 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
         // read first, then the box.  The word stays in `prefetch`.
         case (rq) matches
           tagged BoxDiv .d: divBox.request(d);
-          tagged BoxDec .d: decBox.request(d);
-          tagged BoxCvt .d: cvtBox.request(d);
-          tagged BoxVfl .d: vflBox.request(d);
+          tagged BoxDec .d: sau.request(tagged SauAdd d);
+          tagged BoxCvt .d: sau.request(tagged SauCvt d);
+          tagged BoxVfl .d: sau.request(tagged SauMul d);
           tagged BoxFp  .d: fpBox.request(d);
         endcase
         boxKind <= boxKindOf(rq);
