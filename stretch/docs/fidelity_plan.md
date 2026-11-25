@@ -218,8 +218,15 @@ DONE 2026-11-25, six commits, one per family, on the batch51 base
   - Inside execution (the plan's "44" metric: not `commitFp`, not the
     helper bodies): **43 → 18**. What is left is `execute` 9,
     `dirIndexOp` 7, `ioOpExec` 1 and `mkEBox` 1.
-  - Whole file: 60 → 40. Of the 40, `commitVfl` has 8 and `commitFp`
-    has 7.
+  - Whole file: 60 → 34. Of the 34, `commitVfl` has 8, `commitFp`
+    has 7 and the `writeHWWithWord` helper has 1. (An earlier count of 40
+    in this section was taken before `writeAcc` and `writeAccFlags`,
+    with three sites each, were deleted.)
+  - What the zero covers: `vflIntOp`, `connectiveOp` and the family
+    functions. Two of `execute`'s nine remaining sites are VFL's: the
+    `st.setConnectiveCounts` calls that apply `connCounts` for LTRS and
+    for the connectives. They were already a return-and-apply channel
+    before A2 (`VflOutcome.connCounts`), and are left as they were.
 - Verified:
   - The atlas TSVs (`--tsv`) are byte-identical (`cmp`) to the
     pre-edit baseline for every family state. The VFL pages, PDF
@@ -239,6 +246,18 @@ DONE 2026-11-25, six commits, one per family, on the batch51 base
   (767), `ioOpExec` (495) and `dirIndexOp` (427) are outside A2's
   scope, and so is `mkEBox`, a module of 496 lines.
 - No box module changed, so the F1 per-box LUT4 figures stand.
+- Left open:
+  - The families are plain functions, but they are not free of `st` as
+    `fpStoreClass` and `fpArithClass` are. They READ through it: 11
+    `st.readAccSign`, 10 `readAcc(st)`, 4 `protViolates(st, ...)`, 3
+    `dfSignal(st, ...)` and 1 `st.readFactor`, plus
+    `vflFieldStorePlan`'s `protViolates`. Passing those values in is the
+    next step toward boxes that can be tested without storage, and
+    needs its own verification run.
+  - No injection has yet pinned `commitVfl`'s field-to-word mapping
+    (for example, swapping `accLeft` and `accRight`). The atlas cannot
+    see a swap like that. The suite's value checks are the oracle; the
+    injection the roadmap asks for is still to be run.
 
 **A3. `mkSAU`, the serial arithmetic unit.**
 - One multi-cycle module, stepping a byte at a time per the 0.3

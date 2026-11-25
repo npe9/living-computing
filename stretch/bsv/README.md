@@ -1745,7 +1745,8 @@ seen (`eboxClocks` gets the decoded instruction).
   it, p.22's order), the `M+` arm's `mCross`, and a three-word
   `prefetch` (`NPrefetch`). Oracle `decks/vfl_cross_tomemory.strap`.
   **ONE STORE PATH FOR M+ AND CM, 2026-11-17**: `vflFieldStore`
-  (StretchExecute.bsv) writes one word or two and makes p.32's DS test on
+  (StretchExecute.bsv; since A2, 2026-11-25, the pure `vflFieldStorePlan`,
+  which returns the write as `VflCommit` fields) writes one word or two and makes p.32's DS test on
   every word the field touches.  CONNECT TO MEMORY's two ONE-WORD stores
   (`writeFieldWithHi`, now deleted) had made none: a CM into a protected
   word was stored and DS stayed off.  On DS, M+ and CM now set neither
