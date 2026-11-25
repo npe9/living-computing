@@ -44,11 +44,16 @@
 //   - reset: the frame is cleared (81,920 cycles) and the index built;
 //             commands wait until both finish.
 //
-// Cycles (MEASURED by WinFbBoxTb; no timing is claimed for the PSI): a
-// blit step is 2 cycles per destination word for a fill (1 where the
-// word is wholly inside and the op does not read the frame), 4 for a
-// source in memory; a line dot is 2; a dump word is 2.  A one-word
-// carried funnel would bring copies to ~2 (plan §2.4 estimates 1-2);
+// Cycles (no timing is claimed for the PSI).  Per destination word: a
+// fill 1 (set/reset/copy/reverse, a whole word) or 2 (xor, or an edge
+// word); a blit from memory 3 (whole word, copy/reverse) or 4.  A line
+// dot is 4 cycles, a dump word 2.  MEASURED 2026-11-25 in WinFbBoxTb,
+// one command over an empty stream: clear 1280x984 78,721 cycles
+// (the plan §2.4 estimate is 78,720); xor fill 1280x984 157,441;
+// scroll 1280x964 by 20 lines 231,361 (plan: ~157,000); 100 glyphs
+// 9,772 (~98 each; plan ~64); a 1,280-dot diagonal 5,121 (plan
+// ~2,560); save + restore 400x300 46,502.  A carried funnel word and
+// overlapped source/destination reads would bring copies to ~2 a word;
 // that is left for H3, when the box is synthesized.
 //
 // Unimplemented cases fail loud: a font that is not f822 or has more

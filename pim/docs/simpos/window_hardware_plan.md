@@ -739,6 +739,13 @@ Sizes are rough, in lines of BSV plus Python, tests included.
 | H12 | **(c1) the microcoded PU**: `PimPU`'s datapath built to Fig. 3-25, its WCS loaded with `syspsi` and `sysidat`; each field settled in `asm/mekbn.py` first | rung P2 (`../pimos_roadmap.md` §9): the held microcode decodes KL0 instructions; then P3 against (c2)'s traces at instruction boundaries; then `pimm.MEkbn` (Pseudo PIM/m) on the same datapath | P1-P3 | open (large) |
 | H13 | **SIMPOS → FEP → PIMOS on one board**: a PU in KL0 mode running the stand-ins and held `pimfep`, linked by `PimmScsiBox` to a PU in KL1 mode running PIMOS (or one PU switching modes, as Pseudo PIM/m) | P5 on hardware: `pimfep` in place of `mkPimmFepEmu`; Login PIMOS → `Shell>> ` on the monitor | P5 | open; needs `mkPimmCore` synthesized and SDRAM-backed |
 
+**Status (2026-11-25): H0 and H1 built in Bluesim.** `../../psi/winfb.py` (the Python reference; its
+header freezes the command format and every OURS choice), `../../bsv/WinFbBox.bsv` (`mkWinFbBox`: all
+of fill, line, glyph, copy, save/restore, dump; save areas and test_11 in block RAM),
+`../../bsv/WinFbBoxTb.bsv`, `../../bsv/run_win_tb.sh` (in `../../run_tests.sh`): 11 streams PBM- and
+status-identical by `cmp`; the injected faults and what each failed are in the runner's header.
+Not yet: synthesis (H3), the scan-out (H2).
+
 **Order:**
 - H0-H3 are all Bluesim and synthesis. They need no board, and nothing from the owner but review.
 - H4, H5 and H7 need the board, a monitor and input devices.

@@ -494,7 +494,12 @@ def s_copy_overlap(_seed):
           'copy 100 100 64 48 0 0 copy',
           'copy 1200 1000 200 200 10 600 copy',
           'copy 10 600 200 200 1250 990 copy',
-          'copy 3000 0 10 10 0 0 copy', 'end']
+          'copy 3000 0 10 10 0 0 copy',
+          # a source whose last dot is the first of a word, the funnel
+          # needing that word (catches a short source-word range)
+          'fill 16 700 1 1 set', 'fill 48 700 3 1 set',
+          'copy 1 700 16 1 0 701 copy', 'copy 33 700 16 1 70 702 copy',
+          'end']
     return '\n'.join(L)
 
 
@@ -502,7 +507,8 @@ def s_save_restore(_seed):
     """Hide/show: a window saved, drawn over, restored exactly."""
     L = ['fill 200 200 300 200 set', 'fill 202 202 296 196 reset',
          'fill 210 210 50 14 set', 'fill 211 230 77 3 xor',
-         'save 0 205 205 123 77 0', 'save 1 600 600 17 5 1000',
+         'save 0 205 207 123 77 0', 'save 1 600 611 17 5 1000',
+         'fill 590 600 40 30 xor',
          'fill 150 150 400 400 xor', 'dump',
          'restore 0 copy', 'dump',
          'fill 0 0 1280 1024 set', 'restore 1 copy', 'restore 0 copy',

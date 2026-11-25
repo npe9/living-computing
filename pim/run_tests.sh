@@ -82,4 +82,8 @@ bsv/run_fepemu.sh
 echo "=== formal BMC (fixed PASS, buggy FAIL) ==="
 bsv/formal/run_formal.sh
 
+# --- window framebuffer box (window_hardware_plan.md H0/H1) ---
+echo "=== Bluesim window framebuffer box against psi/winfb.py (PBM lockstep) ==="
+bsv/run_win_tb.sh
+
 echo "=== pim suite: PASS ==="

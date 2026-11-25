@@ -477,6 +477,11 @@ Sizes are rough, counted in lines of ESP stand-in plus Python, and include the t
 | M10 | **Pmacs proper**: buffers, mode line, echo line, the EDITOR MENU, a minimal default key set (OURS, gap G6), the papyrus/cal editor subclasses | `test_win_m10_pmacs`: the held `disc/exshow.esp` sequence (create, get_editor, read_file, command_interpret) edits and saves a file in `simpos_fs` | — | ~1200 |
 | M11 | **Live view and IFS applications.** The browser canvas; then IFS programs one at a time (W§7's order) once their non-window needs are met | per program, a pinned screen and transcript | — | open |
 
+**Status (2026-11-25):** M5's device layer exists as `../../psi/winfb.py` (framebuffer, the §4.1
+primitives as a frozen command stream, PBM P4, test_11 glyphs; tests `../../psi/test_winfb.py`),
+written first for the hardware plan's H0. It is not yet reached from `SIMPOS_MODELS`; M5's PNG
+writer, borders and status band are still to do.
+
 M0-M4 make the FEP route usable from a keyboard, about 1,200 lines. M5-M7 make it look like
 SIMPOS, about 1,100. M8-M10 serve the IFS applications.
 

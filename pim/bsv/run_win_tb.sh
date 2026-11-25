@@ -19,8 +19,31 @@
 # INJECTED FAULTS (AGENTS.md "How work is verified here" 2), each made in
 # WinFbBox.bsv from a backup copy, built into a separate WIN_BUILD, then
 # undone by copying the backup back (cmp clean, git diff empty).  The
-# OBSERVED mismatching streams (PBM and/or status) were:
-#   (filled in below from the runs of 2026-11-25)
+# OBSERVED mismatching streams (PBM and/or status), 2026-11-25; every
+# stream not listed stayed byte-identical:
+#   1 bit order (the dump sends words LSB-leftmost; plan §4 (1)):
+#       all 11
+#   2 exclusive_or acts as set (plan §4 (2)): all 11
+#   3 glyph record x and y swapped (plan §4 (3)):
+#       glyphs, rand_h1_1, rand_h1_2
+#   4 the fill's right-edge mask one dot short (plan §4 (4)):
+#       all but lines (10)
+#   5 copy: the source's last word one short (jHi = (sx+w-2)>>4):
+#       copy_overlap, rand_h0_1, rand_h0_2, rand_h0_3, rand_h1_2
+#   6 restore draws with the slot's x and y swapped:
+#       save_restore, rand_h0_1..3, rand_h1_1, rand_h1_2
+#   7 overlapping copy, rows always top-down:
+#       copy_overlap, rand_h0_1..3, rand_h1_1, rand_h1_2
+#   8 overlapping copy, words always left to right:
+#       copy_overlap, rand_h0_2
+#   9 line: Bresenham's x step on e2 > dy, not >=:
+#       lines, rand_h1_1, rand_h1_2
+#  10 save: the overflow check one word short (need >= size):
+#       save_restore, rand_h1_2
+# A first pass missed 5 and 6 in the directed streams (only the random
+# ones caught them: save_restore saved at x = y, copy_overlap had no
+# source ending on a word's first dot); both streams were then changed
+# and every injection re-run, giving the sets above.
 set -eu
 cd "$(dirname "$0")"
 
