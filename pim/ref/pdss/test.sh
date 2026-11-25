@@ -38,9 +38,10 @@
 #     reports removed (gcblind.py) all 186 still match -- only the
 #     byte-exact transcript catches it.
 #   - NULL path to opendir (sysdep.c pdss_opendir calls opendir(path)
-#     unguarded): dirsmoke PASSes on build-native (macOS's opendir
-#     fails cleanly) and FAILs on build-asan, SEGV in pdss_opendir on
-#     cd("~nosuchuserxyz"), exit 134; "FAIL (dirsmoke, asan build)".
+#     unguarded): every earlier step passes, dirsmoke PASSes on
+#     build-native (macOS's opendir fails cleanly) and FAILs on
+#     build-asan, SEGV in pdss_opendir on cd("~nosuchuserxyz"), exit
+#     134; "pdss: FAIL (dirsmoke, asan build)", rc 1.
 HERE=$(cd "$(dirname "$0")" && pwd)
 T=timeout; command -v timeout >/dev/null 2>&1 || T=
 python3 -I "$HERE/tools/posixcheck.py" >/dev/null || { python3 -I "$HERE/tools/posixcheck.py"; echo "pdss: FAIL (POSIX use outside sysdep.[ch])"; exit 1; }

@@ -19,13 +19,18 @@
 # and restored from it, diff clean):
 #   - both NULL guards removed (pdss_chdir returns chdir(dir),
 #     pdss_opendir calls opendir(path)): build-native still PASSes --
-#     macOS's opendir and chdir return an error for a NULL path -- and
+#     macOS's opendir returns an error for a NULL path (chdir is never
+#     given one, see below) -- and
 #     build-asan FAILs: ASan's opendir interceptor reads the NULL path,
 #     "AddressSanitizer: SEGV on unknown address 0x000000000000" in
 #     pdss_opendir from blt_b_test_directory (blt_iodev.c:780), on
 #     cd("~nosuchuserxyz"): the transcript stops there, exit status 134
 #     (abort) instead of 0, x1.tmp and x2.tmp not removed.
-#   - only the pdss_opendir guard removed: the same build-asan FAIL.
+#   - only the pdss_opendir guard removed: the same build-asan FAIL;
+#     through ./test.sh, everything before it passes (queens, small
+#     heap, conformance against golden32/, test/ headers, dirsmoke on
+#     build-native) and test.sh stops with
+#     "pdss: FAIL (dirsmoke, asan build)", rc 1.
 #   - only the pdss_chdir guard removed: PASS on both.  The shell never
 #     passes chdir a NULL path: Micro PIMOS's cd (runtime/fildev.kl1)
 #     calls directory_pathname only after test_directory succeeded, and
@@ -73,10 +78,10 @@ for i, b in enumerate(blocks):
         lines = ["<host>"]                # root's home is the host's
     elif c.startswith("ls("):
         lines = sorted(lines[:-1]) + lines[-1:]   # readdir order
-    print("%-24s %s" % (c, " | ".join(lines)))
+    print(("%-24s %s" % (c, " | ".join(lines))).rstrip())
 PY
 echo "exit: $rc" >> "$S/got"
-echo "left: $(cd "$S/home" && ls | sort | tr '\n' ' ')" >> "$S/got"
+echo "left: $(cd "$S/home" && ls | sort | tr '\n' ' ' | sed 's/ $//')" >> "$S/got"
 if cmp -s "$S/got" "$HERE/dirsmoke.expected"; then
   echo "dirsmoke: PASS ($(basename "$B"))"
 else

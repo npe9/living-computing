@@ -132,11 +132,12 @@ commit order (`git log -- src/emulator`):
   `cd("~root")` (result masked: the host's), `cd` and `ls` on an unknown
   `~user`, and a wildcard `rm`. An unknown `~user` makes
   `expand_path_name` return NULL, which `blt_b_test_directory` passes
-  on to `opendir`. Observed 2026-11-25: macOS's own `opendir` and
-  `chdir` return an error for it (the plain build printed "No such
-  directory"), while ASan's `opendir` interceptor reads the string and
+  on to `opendir`. Observed 2026-11-25: macOS's own `opendir` returns
+  an error for it (the plain build printed "No such directory"), while ASan's `opendir` interceptor reads the string and
   dies (SEGV at address 0 in `pdss_opendir`). What SunOS 4 did with a
-  NULL path, and whether glibc's `opendir` reads it, were not observed
+  NULL path, what any C library's `chdir` does with one (no command
+  passes it one, below), and whether glibc's `opendir` reads it, were
+  not observed
   (no SunOS or Linux host here; an earlier draft of this README said
   SunOS returned EFAULT, which nothing checked). `pdss_opendir` and `pdss_chdir` now fail on NULL and
   PDSS prints "No such directory". The `pdss_chdir` guard is defensive:
@@ -267,8 +268,10 @@ Leads (not tested here; exact commands):
   Desktop is a host action outside this repository). With it running,
   copy the tree to a scratch directory inside the container (the build
   trees are written next to the scripts) and run there, e.g.
-  `docker run --rm --name pdss-linux -v "$PWD":/w:ro gcc:14 sh -c 'cp -R /w/pim/ref/pdss /tmp/p && cd /tmp/p && ./test.sh && CC="gcc -std=c11" ./modern.sh native'`,
-  with `--platform linux/amd64` for x86_64.
+  `docker run --rm --name pdss-linux -v "$PWD":/w:ro gcc:14 sh -c 'cp -R /w/pim/ref/pdss /tmp/p && cd /tmp/p && rm -rf build-* && ./test.sh && rm -rf build-native && CC="gcc -std=c11" ./modern.sh native && PDSS_GOLDEN=$PWD/golden32 ./conformance.sh build-native fast'`,
+  with `--platform linux/amd64` for x86_64. (The `rm -rf build-native`
+  matters: `modern.sh` reuses the objects of an existing tree, so a
+  changed `CC` alone recompiles nothing.)
 - Big-endian: no big-endian toolchain with a C library is installed
   (`m68k-elf-gcc` has no libc; `qemu-system-ppc`/`-s390x` are
   installed without a guest, and a guest image would have to be
@@ -301,28 +304,37 @@ path `snprintf`s, intended), and 5 `-Wmaybe-uninitialized` (6 before
   `blt_b_get_print_image` checks the *dereferenced* type but passes
   the undereferenced cell (and `Valueof(mode)`, `Valueof(left)` of
   undereferenced cells), so a reference argument would reach the switch
-  with none of its cases. Lead, not fixed: not reached. A probe
-  (a `fprintf` in a `default:` case, removed again) fired in none of
-  the 186 conformance jobs (which run the unparser, its only library
-  caller) nor in four programs aimed at it (2026-11-25): the argument
-  bound after the call, so the built-in suspends and resumes; bound
-  through a second variable before it; passed through a clause head,
-  both bound later and bound before; all printed the right image. The
-  emulator appears to hand built-ins dereferenced registers; not
-  proved.
+  with none of its cases. Lead, not fixed: not reached. Probes
+  (2026-11-25; `fprintf` to stderr, removed again, sources restored
+  from backups): one on the built-in's suspend path, one printing the
+  undereferenced cell's type at the call, one in a `default:` case of
+  the switch. Over the 186 conformance jobs (the unparser is the only
+  library caller) the built-in was called 698,479 times (ATOM 394,137,
+  INT 301,698, FLOAT 2,458, STRING 186) and suspended 19,372 times,
+  and the cell it was given was never a REF; the `default:` probe never
+  fired. `probes/gpi.kl1` aims at it: `go` and `go3` (argument bound
+  after the call) each suspended once and were then called with an
+  ATOM; `go2` (bound through a second variable first) with an ATOM,
+  `go4` with an INT; each printed the right image. So the resumed
+  built-in sees dereferenced registers on every path tried; not proved
+  for all.
 - `goal.c` `popup_suspension_stack` `srec`: in the `MHOOK` case, when
   the variable's newest record already belongs to the goal, no record
   is taken and the code after the switch writes `srec->other` with the
   previous iteration's record (or, on the first, an unset pointer).
-  Lead, not fixed: not reached. The same probe method fired in no
-  conformance job nor in a program that makes a goal suspend on three
-  variables, resume on one and suspend again on the other two (both
-  goal orders). Reading: `same_var_exist` keeps one entry per variable
-  within a popup, and resuming a multiply-waiting goal
-  (`wakeup_goals_v`, `goal.c`) frees all its other records, so a
-  running goal owns no record to find; the branch looks unreachable
-  unless some other path enqueues a goal with records still hung.
-  Not proved.
+  Lead, not fixed: not reached. Probes as above, at the multiple-wait
+  entry (with the goal's module:predicate and the number of variables)
+  and in the skipped branch: the multiple-wait entry fired 180,016
+  times over the conformance jobs and the branch never. With
+  `probes/mw.kl1`: `mw:go` printed `mw:p vars=3` and then, after `r`
+  bound X, `mw:p vars=2` (a goal suspending again on variables it had
+  waited on before); `mw:go2` only `vars=3` (q bound Y first); `mw:go3`
+  `vars=3` then `vars=2`; the branch fired in none. Reading:
+  `same_var_exist` keeps one entry per variable within a popup, and
+  resuming a multiply-waiting goal (`wakeup_goals_v`, `goal.c`) frees
+  all its other records, so a running goal owns no record to find;
+  the branch looks unreachable unless some other path enqueues a goal
+  with records still hung. Not proved.
 - `goal.c` `move_suspension_queue` `tmp_grec` and `emulate.c`
   `new_grec`: set on the paths the callers take (a non-empty queue; a
   goal-creating instruction before use), not proved. Not changed.
@@ -377,9 +389,11 @@ and reverted from the backup (2026-11-25). Observed:
   `build-native` (macOS's `opendir` fails cleanly) and fails on
   `build-asan`: SEGV at address 0 in `pdss_opendir` from
   `blt_b_test_directory`, on `cd("~nosuchuserxyz")`, exit status 134,
-  the later commands never run; `pdss: FAIL (dirsmoke, asan build)`.
-  The `pdss_chdir` guard removed as well: the same. That guard removed
-  alone: passes on both (unreachable from the shell, see "Portable C").
+  the later commands never run. Through `./test.sh`: every earlier step
+  passes, then `pdss: FAIL (dirsmoke, asan build)`. The `pdss_chdir`
+  guard removed as well (`dirsmoke.sh` alone): the same. That guard
+  removed alone: passes on both (unreachable from the shell, see
+  "Portable C"); no test covers it.
 
 The 2026-11-20 injections into the reference port (`RADDR` back to
 `long`; `=\=` computing `<`) and the baseline's (`atof` undeclared:

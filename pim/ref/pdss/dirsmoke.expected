@@ -11,6 +11,6 @@ pwd.                     world = <home> | yes.
 ls("~nosuchuserxyz/*").  Unknown user "nosuchuserxyz". | Not found. | no.
 rm("~/x*.tmp").          Done. | yes.
 ls("~/x*").              Not found. | no.
-halt.                    
+halt.
 exit: 0
-left: y.keep 
+left: y.keep
