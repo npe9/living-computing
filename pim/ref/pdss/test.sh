@@ -13,7 +13,11 @@
 #      the .asm/.sav sums included.
 #   3. Each test/ program's console output against its own header comment
 #      (check_headers.py; headers_expected.txt lists ICOT's own 7 misses).
-#   4. The same conformance on the lp64rec build (the record sizes of the
+#   4. dirsmoke.sh: the directory commands (ls, cd, pwd, "~", "~user",
+#      a wildcard rm), which no conformance job reaches, on the default
+#      build and on an ASan build (dirsmoke.expected); the NULL-path
+#      guard in pdss_opendir is caught only under ASan on macOS.
+#   5. The same conformance on the lp64rec build (the record sizes of the
 #      2026 reference port, README "Record sizes") against golden/, which
 #      was recorded from that port: the in-tree source is the reference
 #      port's behaviour, GC schedule included.
@@ -33,6 +37,10 @@
 #     GC report's live-cell counts; with the GC
 #     reports removed (gcblind.py) all 186 still match -- only the
 #     byte-exact transcript catches it.
+#   - NULL path to opendir (sysdep.c pdss_opendir calls opendir(path)
+#     unguarded): dirsmoke PASSes on build-native (macOS's opendir
+#     fails cleanly) and FAILs on build-asan, SEGV in pdss_opendir on
+#     cd("~nosuchuserxyz"), exit 134; "FAIL (dirsmoke, asan build)".
 HERE=$(cd "$(dirname "$0")" && pwd)
 T=timeout; command -v timeout >/dev/null 2>&1 || T=
 python3 -I "$HERE/tools/posixcheck.py" >/dev/null || { python3 -I "$HERE/tools/posixcheck.py"; echo "pdss: FAIL (POSIX use outside sysdep.[ch])"; exit 1; }
@@ -57,7 +65,16 @@ fi
 PDSS_GOLDEN="$HERE/golden32" "$HERE/conformance.sh" "$B" fast || { echo "pdss: FAIL (conformance, default build)"; exit 1; }
 python3 -I "$HERE/check_headers.py" "$B/test" "$B/conf" --expect "$HERE/headers_expected.txt" -q \
   || { echo "pdss: FAIL (test/ headers)"; exit 1; }
+"$HERE/dirsmoke.sh" "$B" || { echo "pdss: FAIL (dirsmoke, default build)"; exit 1; }
+A=$("$HERE/modern.sh" asan); rc=$?
+if [ $rc = 0 ]; then
+  A=$(echo "$A" | tail -1)
+  "$HERE/dirsmoke.sh" "$A" || { echo "pdss: FAIL (dirsmoke, asan build)"; exit 1; }
+  DS="directory commands on the default and ASan builds"
+else   # a host without the sanitizer runtime: say so, do not fail
+  DS="directory commands on the default build only (no ASan build: $(echo "$A" | tail -1))"
+fi
 L=$("$HERE/modern.sh" lp64rec) || { echo "$L" | tail -20; echo "pdss: FAIL (build, lp64rec)"; exit 1; }
 L=$(echo "$L" | tail -1)
 "$HERE/conformance.sh" "$L" fast || { echo "pdss: FAIL (conformance, lp64rec build against the reference port's golden/)"; exit 1; }
-echo "pdss: PASS (in-tree source; KL1 compiler ran on it; 4, 6, 8 queens give 2, 4, 92 solutions; $gcs collections survived; conformance against golden32/ and, with the reference port's record sizes, golden/)"
+echo "pdss: PASS (in-tree source; KL1 compiler ran on it; 4, 6, 8 queens give 2, 4, 92 solutions; $gcs collections survived; $DS; conformance against golden32/ and, with the reference port's record sizes, golden/)"
