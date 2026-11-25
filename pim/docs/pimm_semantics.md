@@ -264,6 +264,12 @@ compared on it (`ref/pimm/lockstep_jtoa.py`, `bsv/run_pimm_lockstep.sh`):
                    unit u, LUN l, the CDB's bytes in hex, direction d
                    (0 none, 1 out, 2 in), length n, and for a SEND
                    (d = 1, n > 0) the n bytes sent, in hex
+    K gc lo hp to top sum
+                   a garbage collection (R7G, ref/pimm/pimm_gc.py,
+                   INFERENCE/OURS) at a goal switch: the old heap
+                   [lo, hp), the new [to, top), from the load address,
+                   and an FNV-1 checksum of the new heap's cells (tag,
+                   then value); its own writes are not traced
 
 Every register and memory write is traced, whoever makes it: an
 instruction, the scheduler taking a goal, a wake-up, or the bench

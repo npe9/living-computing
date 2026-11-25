@@ -950,26 +950,51 @@ the device are given it again whenever the machine runs dry.
     to the task table: `shell:shell`, `Job_1` and `ts:go`, each
     running, with its limit and consumption (the R7L resource: the
     shell's task 2,000,000,000, `tos.kl1`'s jobs 1,000,000,000).
-  - `gc`: `refused: collect_garbage`, kept refused. The built-in is
-    23:77 with no operands (`library/assembler/inst_tab.kl1`:132), a
-    guard of class user with no inputs or outputs
-    (`library/compiler/blt.kl1`:126-127). Its only callers are
-    `gcCall :- collect_garbage | true` and the same form with a stream
-    (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It is in neither
-    VPIM's built-in table nor the manual. The Pseudo PIM/m microprogram
-    has an entry named `collect_garbage` at `02d5`
-    (`pseudo_pimm_microcode.md` line 211). Taking it as a guard that
-    succeeds would give the shell's answer but not the collection, and
-    that would be a fake success. A staged plan:
-    1. Read the microprogram's `02d5` routine through
-       `pimmutil##rassy`, as for the other entries, for what it does
-       with the heap and what it reports.
-    2. Write a copying collector on the reference, rooted at the goal
-       records, the hooks and the registers, that keeps `lockstep_*`
-       green with `collect_garbage` run between parts.
-    3. On the core, add a box of its own (the PimmPBox pattern: its own
-       memory port and a stack in a register file), with a lockstep
-       test that compares the heap after a collection.
+  - `gc` (R7G, 2026-11-25; the owner's rule of 2026-11-25, "it's okay
+    to infer what you don't have": an INFERENCE, labelled so). The
+    built-in is 23:77 with no operands
+    (`library/assembler/inst_tab.kl1`:132), a guard of class user with
+    no inputs or outputs (`library/compiler/blt.kl1`:126-127). Its only
+    callers are `gcCall :- collect_garbage | true` and the same form
+    with a stream (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It
+    is in neither VPIM's built-in table nor the manual. The staged plan
+    and where each stage is:
+    1. **Read (stage 1).** The Pseudo PIM/m microprogram's entry
+       `collect_garbage` (`pseudo_pimm_microcode.md` line 211) is three
+       microinstructions, `02d5`-`02d7` (`asm/mekbn.py --rtl 02d5 24`):
+       `MAR1<-R05; MDR1<-#wide; MDR2<-{ex_float tag,0}`, then
+       `XR<-W1f; YR<-#34; MAR1<-MAR1 add_with_one MDR1`, then
+       `W1f<-XR em2_19 YR; [MAR1]<-MDR2 | end`. It copies nothing: it
+       writes one cell and changes the work register `W1f`, and ends.
+       INFERENCE: `W1f` holds request flags and the collection is made
+       later, out of the instruction, as VPIM's is (an event:
+       `f_gc_in_cluster.psl.c` f_RequestLocalGC, :68).
+    2. **The reference's collector (stage 2, done).**
+       `ref/pimm/pimm_gc.py`, INFERENCE/OURS, by ANALOGY with VPIM's
+       copying collector (TM-1044 chapter 11, `s11.tex`;
+       `f_gc_in_cluster.psl.c` f_GCPreProcedure_Sub :216-245 for its
+       roots, f_CopyGCMainLOOP_Sub :286). `collect_garbage` asks; the
+       collection is made at the next goal switch (no register is live
+       there, so none is a root, and neither are a bench's slots: a
+       collection while a bench holds heap words is not supported).
+       Roots: the ready queue, the merger's lists, the alarm's
+       variable, the waiting SCSI commands, the current shoen. Records
+       are copied behind a header of tag 3Ch, forwarding marks are tag
+       3Dh (both OURS, in no PIMOS table); the to-space alternates
+       between above the heap and the heap's first cell. One `K gc`
+       trace line per collection, with an FNV-1 checksum of the new
+       heap (`docs/pimm_semantics.md`, Trace). The test
+       `ref/pimm/r7g_gc.py`: `gc`, the compile into `work`, `gc`, the
+       Listener's sieve, run with and without the collection (the
+       request dropped): the same window, 1,752,873 instructions,
+       reductions, 1607 suspended goals, and the same trace but for
+       what moves (M lines, addresses, the pc of moved code). The
+       first collection takes the heap from 77.86M cells to 1.88M.
+       Three injections observed in its header. Gated
+       (`Machine.ahead`) until the core has its collector.
+    3. On the core, a box of its own (the PimmPBox pattern: its own
+       memory port), the same algorithm step for step, with a lockstep
+       test on the K line's checksum.
     4. Add APPS `gc`.
   - `ls`: needs 204 (directory), not served; its contents would be
     OURS. Checked 2026-11-25: 204's own reply is documented (`{Id,
