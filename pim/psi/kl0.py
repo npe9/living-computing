@@ -694,6 +694,19 @@ class Machine:
             # the receiver is last (register 1), the information first
             raise Raised(resolve(self.x[0]))
         model = SIMPOS_MODELS.get((cid, section, name, arity))
+        if model is None and cid in self.lib.templates:
+            # step 3i: a modelled method is inherited (the census process is
+            # a boot_process, which inherits process's suspend/2): the first
+            # class in the receiver's inheritance order with a model, unless
+            # a class before it defines the method itself
+            for anc in self.lib.build(cid).order:
+                model = SIMPOS_MODELS.get((anc, section, name, arity))
+                if model is not None:
+                    break
+                t = self.lib.templates.get(anc)
+                if t is not None and any((p.name, p.arity) == (name, arity) for p in
+                                         (t.class_preds if section == 'class' else t.instance_preds)):
+                    break
         if model is not None:
             return model(self)
         if cid not in self.lib.templates:
@@ -924,11 +937,26 @@ class Machine:
         one process and has no scheduler, so a process that suspends here
         (stream get/2 or see/2 on an empty stream) waits for a put or a
         resume that nothing can make.  Run, the printed body would fail
-        for the census's process (status nil: `:self(#process, P)` makes
-        it with new/2 and nothing activates it), and the wait would show
-        as a clean failure.  So it refuses, cause 'would suspend'."""
+        for the census's process (status `active` since step 3i, when
+        `:self(#process, P)` makes the boot process; nil before: neither
+        is `ready` or `suspended`), and the wait would show as a clean
+        failure.  So it refuses, cause 'would suspend'.  Since step 3i
+        the census process is a boot_process, which inherits this model
+        (dispatch looks the model up along the inheritance order)."""
         reason = resolve(self.x[0])
         raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
+
+    def boot_process_override(self):
+        """boot_process's own :create and :activate, refused (step 3i).
+        PRINTED that they exist: TM-100 PDF p13 ("class 'boot_process'
+        inherits class 'process' and overrides the predicates, :create and
+        :activate") and TR-056 PDF p21 (the boot process calls them itself
+        to come under the supervisor).  Their bodies are not printed, and
+        the arities are not given (process has create/2, printed, and
+        create/3, interpolated; both are refused).  Without this, kl0
+        would run the inherited process versions in their place."""
+        raise Refusal('simpos', 'boot_process overrides :create and :activate '
+                      '(TM-100 p13, TR-056 p21); the bodies are not printed')
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -2084,6 +2112,13 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
+    # step 3i: boot_process overrides :create and :activate (TM-100 p13,
+    # TR-056 p21); the overriding bodies are not printed, and the
+    # inherited process versions would run in their place, so they are
+    # refused here (standin/boot_process.esp)
+    ('simpos##boot_process', 'class', 'create', 2): Machine.boot_process_override,
+    ('simpos##boot_process', 'class', 'create', 3): Machine.boot_process_override,
+    ('simpos##boot_process', 'instance', 'activate', 2): Machine.boot_process_override,
 }
 
 

@@ -2916,6 +2916,63 @@ Injected from a backup (the reset line removed), restored by cp,
 cmp-checked. Observed: `test_step3i_census_order`, `test_fep_census` and
 `test_step3f_census_recipes` fail; `test_kl0.py` passes.
 
+### Step 3i: the boot process (2026-11-25)
+
+The first step on the boot route (`../docs/simpos/boot_route.md`, B2).
+TM-100 p6 and p13 and TR-056 p21 say SIMPOS starts in one process, the
+boot process, which runs a boot program (`as_boot_program`) and whose
+class overrides `:create` and `:activate`. The held class
+`pimmcsp##pseudo_pe_process` (a `process` subclass) names it: its
+`release/1` (@177-189) sends `:get_instance(#boot_process, B)` and
+then `:request(B, release, Self)`.
+
+**Stand-ins.**
+- `standin/boot_process.esp` (INTERPOLATED): `nature process`, a class
+  slot `instance`, `get_instance/2` (the running process, if it is the
+  boot process) and `boot/2` (make it once, status `active`). The
+  selector `boot/2` is OURS.
+- `standin/as_boot_program.esp` (INTERPOLATED, TM-100 p13): `nature
+  as_program`, no methods of its own.
+- `standin/process.esp` `self/2`: the census's and the tests' first
+  process is now made by `boot/2`, so it is the boot process.
+- `kl0.py`: `boot_process`'s own `create/2`, `create/3` and
+  `activate/2` are refused (`boot_process overrides :create and
+  :activate ... the bodies are not printed`). A model keyed on a class
+  now also serves its subclasses (`dispatch` walks the inheritance
+  order, stopping at an ancestor that defines the method).
+
+**`status/3` has a second held call site.** Step 3h searched source
+text and found only TM-100's `:status(Process, dormant, on_activate)`.
+The compiled `pseudo_pe_process release/1` sends `:status(Self,
+dormant, on_release)` (@17a-17e). `status/3` stays refused: there is
+still no definition, and the only held `status/3` methods are on
+`pimscsi`'s `pseudo_scsi` and `scsi_communicator`, which are not
+processes.
+
+Effect, row by row (MEASURED 2026-11-25): six packages identical; plain
+FEP 757 / 219 / 427 and recipes 782 / 220 / 401, unchanged. Nine rows
+change detail only, from `simpos##process:X` to `simpos##boot_process:X`
+(`exterminate/1`, `throwing_hook/7`, `standard_output/2`, `wait/1`,
+`get_name/2`).
+
+Test (`test_espc.py` `test_step3i_boot`): an OURS `boot_probe` (nature
+`as_boot_program`) created and invoked with the printed `as_program`
+methods sees itself on top of the boot process's stack, the process
+`active` and `get_instance/2` answering it; afterwards the stack is
+empty; the overrides refuse; a second process from `create/3` is
+dormant with the boot process as parent, and its `activate/2` stops at
+`status/3`; `pseudo_pe_process release/1` reaches `status/3` with
+`[dormant, on_release, ...]`.
+
+Injected from a backup, restored by cp, cmp-checked (`test_kl0.py`
+passed in each). Observed:
+- `self/2` back to `:new`: `test_step3i_boot` errors,
+  `test_printed_process_slots` fails.
+- the three override rows removed: only `test_step3i_boot` fails.
+- the inheritance walk disabled: `test_step3f_census_recipes`,
+  `test_step3g_stream_see` and `test_stream_runs` fail (the `suspend/2`
+  model no longer reaches the boot process); `test_step3i_boot` passes.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

@@ -1,0 +1,67 @@
+% SCAFFOLDING stand-in for SIMPOS's class `boot_process`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the class is
+% lost, and no body of it is printed.  Step 3i, the first step of
+% docs/simpos/boot_route.md (route step B2).
+%
+% What is PRINTED (prose only, page images re-read 2026-11-25):
+%   - TM-100 PDF p6 (folio 4): "a boot process, which is created and
+%     activated by the hardware, not by another process, when the system
+%     is bootstrapped.  The multiple process environment in SIMPOS is
+%     initiated on the boot process.  The supervisor must make it under
+%     its control, after the system has started."
+%   - TM-100 PDF p13 (folio 11): "A boot process is a sole instance of
+%     class 'boot_process', which executes the boot program inheriting
+%     class 'as_boot_program'. ... class 'boot_process' inherits class
+%     'process' and overrides the predicates, :create and :activate."
+%   - TR-056 PDF p21 (folio 19): the overrides are there "so that the boot
+%     process comes under control of the supervisor after the system has
+%     started, by the boot process itself calling these operations."
+% What is HELD (compiled, pimmcsp.ptf): pimmcsp##pseudo_pe_process, a
+% held subclass of simpos##process, release/1 @177-189:
+%     :status(Self, dormant, on_release),
+%     :get_instance(#boot_process, Boot),          % @17f-183
+%     :request(Boot, release, Self)                % @184-189
+% the only held reference to the class (docs/simpos/required/
+% ptf_class_refs.tsv: pimmcsp 1).
+%
+% Stood in:
+%   - nature process (PRINTED, TM-100 p13);
+%   - the class slot `instance` and class method get_instance/2:
+%     INTERPOLATED from the held call site above and "sole instance";
+%     the slot's name is OURS;
+%   - boot/2, the hardware's act of creating and activating the boot
+%     process: OURS (a selector of ours, not SIMPOS's), called by the
+%     stand-in process:self/2 when no process exists yet.  The status it
+%     sets, `active`, is the parenthesised value of the printed status
+%     slot (TM-100 Fig. 3.1, PDF p8: "nil(=dead), dormant, suspended,
+%     ready, (active)").
+% Not stood in, so refused loudly (kl0 SIMPOS_MODELS): the overriding
+% class create/2 and instance activate/2 (bodies not printed; the
+% inherited process versions would be wrong, TR-056 p21), and
+% request/3 (no source says what a request does).
+
+class boot_process has
+
+    nature      process ;
+
+    % INTERPOLATED (name OURS): the sole instance (TM-100 p13).
+    attribute   instance := 0 ;
+
+    % :get_instance(#boot_process, Boot) -- the boot process.
+    % INTERPOLATED from pimmcsp##pseudo_pe_process release/1 @17f-183
+    % (held cells) and TM-100 p13 "a sole instance".  The machine is
+    % booted first if it is not yet (:self/2 makes the boot process).
+    :get_instance(Class, Boot) :-
+        :self(#process, _Running),
+        Boot = Class!instance, Boot \== 0 ;
+
+    % :boot(#boot_process, Boot) -- what the hardware does at bootstrap:
+    % make the one boot process and activate it.  INTERPOLATED from TM-100
+    % p6 and TR-056 p21 (prose); the selector boot/2 is OURS, not SIMPOS's.
+    % Called only by process:self/2.
+    :boot(Class, Boot) :-
+        :new(Class, Boot),
+        Class!instance := Boot,
+        Boot!status := active ;
+
+end.

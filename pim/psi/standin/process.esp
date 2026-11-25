@@ -29,7 +29,8 @@
 % self/2, inhibit_interrupt/1, allow_interrupt/1, tag_catch/5, /6, /9,
 % create/3, allow_forced_event/1 and inhibit_forced_event/1.
 % Model (INTERPOLATED): one running process (the machine runs one), made
-% on first use and kept in a class slot.  create/3 makes further process
+% on first use and kept in a class slot.  Since step 3i that process is
+% the boot process, an instance of the stand-in boot_process.esp.  create/3 makes further process
 % objects, dormant; nothing runs them (kl0 runs one goal at a time), so
 % activating one stops at the printed activate/2's lost `context` calls.
 
@@ -78,8 +79,13 @@
     % as a process instance; the class-predicate form matches TR-056 p25's
     % `:world(#process,World)`; 46 pimfep methods send it (psi/README.md,
     % "The ESP compiler").  The body is not printed anywhere held.
+    % Step 3i: when no process exists yet, the one made is the boot
+    % process (INTERPOLATED: TM-100 p6, "created and activated by the
+    % hardware, not by another process, when the system is bootstrapped";
+    % boot_process.esp), so the machine's first process is a
+    % boot_process, as on the PSI.  Before step 3i it was a plain process.
     :self(Class, P) :- P = Class!current, P \== 0, !;
-    :self(Class, P) :- :new(Class, P), Class!current := P;
+    :self(Class, P) :- :boot(#boot_process, P), Class!current := P;
 
     % :inhibit_interrupt(#process) / :allow_interrupt(#process) bracket a
     % critical section.

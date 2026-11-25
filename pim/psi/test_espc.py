@@ -588,8 +588,8 @@ class Standins(unittest.TestCase):
 
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
-            'simpos##alarm_watch', 'simpos##as_class_with_lock', 'simpos##as_message',
-            'simpos##as_program',
+            'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
+            'simpos##as_message', 'simpos##as_program', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
@@ -780,14 +780,18 @@ class Standins(unittest.TestCase):
 
     def test_printed_process_slots(self):
         # :self(#process,P) makes the process with :new, which runs the
-        # printed slot initialisers (TM-100 Fig. 3.1): four lists and a clock
+        # printed slot initialisers (TM-100 Fig. 3.1): four lists and a clock.
+        # Since step 3i the first process is the boot process (a
+        # boot_process, no slots of its own), activated: status `active`
         (a,) = K.call_class_method(self.m, 'simpos##process', 'self', [K.Var()])
+        self.assertEqual(a[0].cid, 'simpos##boot_process')
         co = self.m.lib.build('simpos##process')
+        self.assertEqual(len(co.instance_slots), len(self.m.lib.build('simpos##boot_process').instance_slots))
         got = {e.name: v for e, v in zip(co.instance_slots, a[0].slots)}
         for n in ('suspend_reasons', 'children_processes', 'invocation_stack', 'resources'):
             self.assertEqual(got[n].cid, 'simpos##list', n)
         self.assertEqual(got['clock'].cid, 'simpos##process_clock')
-        self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'nil'))
+        self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'active'))
         self.assertTrue(co.complete)
 
     def send(self, obj, name, *args):
@@ -1505,6 +1509,96 @@ end.''', 'simpos')
         self.assertEqual(by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][:2],
                          ('refused', 'simpos'))
         self.assertIn('pmacs_window:putl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
+
+    def test_step3i_boot(self):
+        # step 3i, docs/simpos/boot_route.md B2: the boot process (TM-100
+        # p6, p13; TR-056 p21; held pimmcsp##pseudo_pe_process release/1)
+        # runs a boot program (as_boot_program, TM-100 p13) with the
+        # printed as_program invoke/1.  boot_probe is an OURS test class.
+        # Injections, observed (2026-11-25; inject from a backup, restore
+        # by copy, cmp clean; test_kl0.py stayed OK in all three):
+        #   I1 process.esp self/2 back to :new(Class, P): this test ERROR,
+        #      test_printed_process_slots FAIL, nothing else.
+        #   I2 the three boot_process_override SIMPOS_MODELS rows deleted:
+        #      this test FAIL, nothing else.
+        #   I3 the dispatch inheritance walk disabled (models keyed on
+        #      simpos##process no longer reach boot_process): this test
+        #      passes; test_step3f_census_recipes, test_step3g_stream_see
+        #      and test_stream_runs FAIL (the suspend/2 model is inherited).
+        ts, failed = espc.compile_text('''class boot_probe has
+nature as_boot_program;
+instance
+attribute seen_p, seen_b, seen_top, seen_status;
+:goal(Prog) :- :self(#process, P), :get_instance(#boot_process, B),
+    :invocation_stack(P, S), :get_first(S, Top),
+    Prog!seen_p := P, Prog!seen_b := B, Prog!seen_top := Top,
+    Prog!seen_status := P!status;
+end.''', 'simpos')
+        self.assertFalse(failed)
+        lib = K.load_six()
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib)
+        probe = K.ClassRef('simpos##boot_probe')
+        boot = K.ClassRef('simpos##boot_process')
+
+        def one(recv, sel, *args):
+            m.reset()
+            sols = [[K.deref(a) for a in args] for _ in m.solve_send(recv, sel, list(args) + [recv])]
+            self.assertEqual(len(sols[:1]), 1, sel)
+            return sols[0]
+        (prog,) = one(probe, 'create', K.Var())          # printed as_program create/2
+        self.assertEqual(prog.cid, 'simpos##boot_probe')
+        one(prog, 'invoke')                              # printed invoke/1
+        pco = m.lib.build('simpos##boot_probe')
+        seen = {e.name: K.deref(v) for e, v in zip(pco.instance_slots, prog.slots)}
+        p = seen['seen_p']
+        # the program ran in the boot process, the sole boot_process
+        self.assertEqual(p.cid, 'simpos##boot_process')
+        self.assertIs(seen['seen_b'], p)
+        self.assertIs(seen['seen_top'], prog)
+        self.assertEqual(seen['seen_status'], K.Atom('active'))
+        (b,) = one(boot, 'get_instance', K.Var())
+        self.assertIs(b, p)
+        # after invoke/1: the stack is empty and the printed resign/1 let
+        # the process die (status nil, TM-100 p11)
+        bco = m.lib.build('simpos##boot_process')
+        st = {e.name: K.deref(v) for e, v in zip(bco.instance_slots, p.slots)}
+        self.assertEqual(st['status'], K.Atom('nil'))
+        self.assertEqual(len(one(st['invocation_stack'], 'empty')), 0)
+        # boot_process's own :create and :activate: overridden, not printed
+        for recv, sel, n in ((p, 'activate', 2), (boot, 'create', 2), (boot, 'create', 3)):
+            m.reset()
+            with self.assertRaises(K.Refusal) as cm:
+                any(True for _ in m.solve_send(recv, sel, [K.Var() for _ in range(n - 1)] + [recv]))
+            self.assertEqual(cm.exception.cause, 'simpos')
+            self.assertIn('overrides', cm.exception.detail)
+        # the next route step (B3) is blocked: a second process is made,
+        # its parent the boot process, and activate/2 stops at status/3
+        areas = K.Cons(K.Atom('free'), K.Cons(K.Atom('free'), K.Cons(K.Atom('free'), K.Cons(
+            K.Atom('free'), K.Atom('[]')))))
+        (p2, _a) = one(K.ClassRef('simpos##process'), 'create', K.Var(), areas)
+        pco2 = m.lib.build('simpos##process')
+        s2 = {e.name: K.deref(v) for e, v in zip(pco2.instance_slots, p2.slots)}
+        self.assertEqual((p2.cid, s2['status']), ('simpos##process', K.Atom('dormant')))
+        self.assertIs(s2['parent_process'], p)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(p2, 'activate', [prog, p2]))
+        self.assertIn('simpos##process:status/3', cm.exception.detail)
+        # the held second call site of status/3: pimmcsp##pseudo_pe_process
+        # release/1 @17a-17e, (dormant, on_release), before its
+        # :get_instance(#boot_process, _) @17f-183
+        m.reset()
+        pe = K.make_instance(m, 'pimmcsp##pseudo_pe_process')
+        m.stop_before = {('status', 3)}
+        try:
+            with self.assertRaises(K.CreatorStopped) as cm:
+                any(True for _ in m.solve_send(pe, 'release', [pe]))
+        finally:
+            m.stop_before = None
+        self.assertEqual(cm.exception.args[2][:2], [K.Atom('dormant'), K.Atom('on_release')])
+        self.assertIs(cm.exception.args[2][2], pe)
 
     def test_step3h_tcpip_recipe(self):
         # step 3h: pimos_tcpip_socket's recipe (kl0 _tcpip_socket): a front
