@@ -1512,3 +1512,23 @@ SIMPOS 2.52 naming study), in `lit/ipsj/`. It has a line in
 search") and one in `lit/SHA256SUMS`, where the `SOURCES.tsv` line was
 recomputed. The Usenet mailbox archives read during the search were
 kept in scratch only.
+
+## Addendum 2026-11-24 (second): the preserved-machines and catalogue search
+
+Findings: `docs/simpos/subsystems/search_machines_2026-11-24b.md` and
+`docs/psi_acquisition.md` section 15. Three files were added, on disk
+only because no redistribution terms are stated:
+- `lit/theses/tsukuba_20781_maeda1994_1.pdf` and
+  `lit/theses/tsukuba_20781_maeda1994_A1300.pdf`: 前田恭伸's 1994
+  Tsukuba doctoral thesis (甲第1300号) and its summary. Appendix A
+  summarises Common ESP syntax. Appendix B (pp. A-4 to A-34) prints the
+  CESP source of the thesis's RARCOM system.
+- `lit/journals/jstage-jssst_5_1_62_mizoguchi_esp.pdf`: 溝口文雄,
+  「ソフトウェア評論 ESP」, コンピュータソフトウェア 5(1), 1988,
+  pp. 62-68.
+
+Each has a line in `lit/SOURCES.tsv` (retrieval "fetched 2026-11-24,
+SIMPOS machines search") and one in `lit/SHA256SUMS`, where the
+`SOURCES.tsv` line was recomputed. The files are in the gitignored
+directories of the worktree the search ran in. They must be copied to
+the main checkout's directories of the same name.

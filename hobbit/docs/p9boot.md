@@ -1094,7 +1094,45 @@ such.
   in the release.  The first console line depends on it (1364 pages).
 * **ram-init** — RAM the image does not load reads as 0.
 * **ppage0** — the ROM's hand-off page (`rom.h` `PPage0`): memsize,
-  argc = 0, `env.nentry` = 0, everything else 0, except:
+  argc = 0, `env.nentry` = 0, everything else 0, except the fpi word
+  below.  argc is at PPage0+0x100 and the Env at +0x200 (see "PPage0's
+  argc and Env offsets", below).
+
+#### PPage0's argc and Env offsets (2026-11-24)
+
+Until 2026-11-24 `PPAGE0_ARGC` and `PPAGE0_ENV` were 0x200 and 0x300,
+taken from `rom.h`'s comments.  The struct puts them at **0x100** and
+**0x200**: 16 vectors, 12 saved registers, 4 spare words, memsize, fpi
+and 30 spare words come first (`docs/boot_rom.md` section 4, where the
+ROM's own hand-off is dumped).  romboot.c's `b` writes the struct's
+offsets, and s9term reads them.  Recording the bus reads of PPage0 above
+0x100 on the run to `root is from` (`tests/test_p9boot.py`
+`PromptTest.test_ppage0_offsets`) shows exactly two words read:
+**+0x100 by `arginit`** (rammain.c:82, `ppage0->argc`) and **+0x200 by
+`bootenvget`** (rammain.c:51, `env.nentry`, once for each of `sysname`,
+`station` and `fs`).
+
+**What changed: nothing in any run.**  Under the old constants, +0x100
+was never written and read 0 (CHOICES `ram-init`), and the 0 written as
+"argc" at +0x200 was read as `env.nentry` = 0.  The word written at
++0x300 lies in `env.entry[3]` and is never read.  So s9term saw argc = 0
+and nentry = 0 before and after.  The run to the prompt is unchanged
+(PromptTest: 22,537,007 instructions, 22,890,757 cycles, the screen
+byte for byte), and so is the first line (FirstLineTest: 2,131,084).
+No step count was re-pinned.  Injecting the old constants back fails
+only `test_ppage0_offsets`, which shows the reads above.
+
+**What the real ROM passes is different, and it matters.**  `b` leaves
+argc ≥ 1 (argv[0] is whatever the command line left, `b`;
+romboot.c:530-538) and the NVRAM's Env, whose defaults include
+`fs=incon!nj/astro/Nfs`.  `arginit` hands /boot the ROM's argv plus `fs`
+(rammain.c:82-84), so /boot gets argc 2, does not set `-p`
+(boot/boot.c:47-48) and takes `fs` as its root without asking
+(`rootserver`, :79 and :164-170).  With the ROM's default Env, s9term
+attaches incon and stops in `inconpoll` (the incon is not modelled);
+with `e fs il` at the ROM's monitor it boots over IL with no `root is
+from` prompt (`docs/boot_rom.md` section 5).  p9boot's argc = 0 with an
+empty `fs` is the case where /boot prompts: argc 1, so `-p`.
 * **fpi-vector** — PPage0+0x74, which `_virtual` copies into VB+8 and
   VB+12 (the trapped-niladic and unimplemented-instruction vectors),
   holds a sentinel in the ROM's range: the release ships no ROM image

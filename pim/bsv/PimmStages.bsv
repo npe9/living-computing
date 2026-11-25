@@ -74,6 +74,10 @@ interface PimmExec;
   method Bit#(32) reductions;                  // the goal's so far: executes, proceed
   method Action enq(Fetched f);
   method ActionValue#(Step) out;
+  // a checkpoint (ref/pimm/lockstep_shell.py), between runs: 1
+  // new_atom's counter, 2 the clock's ticks, 3 the instructions since
+  // the last tick (pimm.py steps // 423 and steps % 423)
+  method Action restore(Bit#(8) which, Bit#(32) v);
 endinterface
 
 typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
@@ -3053,6 +3057,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   method Bit#(32) reductions = nRed;
 
   method Action enq(Fetched f) = inQ.enq(f);
+  method Action restore(Bit#(8) which, Bit#(32) v);
+    case (which)
+      1: nextAtom <= truncate(v);
+      2: ticks <= zeroExtend(v);
+      3: tickSub <= truncate(v);
+    endcase
+  endmethod
   method ActionValue#(Step) out;
     outQ.deq;
     return outQ.first;

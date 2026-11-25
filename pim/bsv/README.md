@@ -239,6 +239,7 @@ merger timing change, which moved the count): the IPL's `load/4` on the whole he
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
+
 State: 168
 instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
 both models; 165 without our three stubs; the earlier 128 and 130 were
@@ -260,6 +261,76 @@ its profile built-ins and a unification failure inside a shoen stop the model, `
 Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
+
+### The lockstep from a saved machine (`run_pimm_shell.sh`)
+
+`run_pimm_shell.sh PKL [--type LINE ...]` runs PIMOS on the core from
+a machine the reference saved, compared line by line with the
+reference model (`../ref/pimm/lockstep_shell.py`). It is outside the
+suite because the saved machines are ~1.1 GB pickles, not in git, that
+the IPL's link takes 15-50 minutes to make. How they are made:
+
+    python3 ref/pimm/longrun_ipl.py --reference --save LINK.pkl
+    python3 ref/pimm/longrun_ipl.py --load LINK.pkl --go --fep --save-prompt PROMPT.pkl
+
+The second command takes about 85 s and saves the machine at the
+shell's prompt: run dry after the login, the window's `getl` held by
+`fep.py`, one RECEIVE waiting in the SCSI box. The core is given the
+saved heap as a file (`PimmMem.bsv`: the heap RAM loads it on the
+bench `mkPimmShellTb`, so nothing is traced). It is also given what of
+the machine is not in memory, by the script's RESTORE operations
+(`PimmCore.restore`): the heap pointer, `new_atom`'s counter, the clock
+(ticks and the instructions since the last one), the SCSI box's command
+count and its waiting commands. The run queue, the merger's lists and
+the current shoen are empty between runs; `lockstep_shell.py` asserts
+this. The reference runs with `Machine.ahead` off. After the RESTOREs
+the script is `go()`'s loop as RUN and POLL; the device is the tape of
+`fep.py`'s answers, and `Fep.idle()`, the scripted events, belongs to
+the reference alone.
+
+Measured 2026-11-24, every line identical (`PINNED` in
+`lockstep_shell.py`), on a shared machine, with the login record's ID
+0 (`fep.py` `LOGIN`, P-f3; the checkpoints made afresh under it). With
+the ID 1 every count was 20 instructions higher, the link row 30 trace
+lines longer (20,107,047), and the windows from the prompt the same
+length:
+
+| From | Typed | Instructions of `go()` | Trace lines | Ends |
+|---|---|---|---|---|
+| the prompt | `shutdown`, `yes` | 8,587,072 to 8,766,319 (179,247) | 878,180 | `PIMOS END********`, nothing left to run, 253 goals waiting |
+| the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,072 to 8,760,665 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
+| the link | `shutdown`, `yes` | 0 to 8,766,319 | 20,107,017 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
+
+The last row is the first time PIMOS's start, the login and the shell
+have run on the Bluespec core: everything `longrun_ipl.py --go --fep`
+does after the link, 221 device answers on the tape, 5,859 splices of
+the merger's list (300 onto a list that is not empty). No divergence was found, so nothing in the
+core was changed. The splice-order injection into the goal box (the
+merger's list) fails the first row at line 8,429
+(`lockstep_merge.py`'s header; on the checkpoint made with the login ID
+1).
+
+Which RESTOREs the first row checks (2026-11-24, on the checkpoint made
+with the login ID 1, before P-f3; the window is the same length): each RESTORE word of
+its script replaced in turn by a silent SLOT, the same length, and the
+run compared again.
+
+| RESTORE dropped | Result |
+|---|---|
+| 0, the heap pointer | FAIL at line 4, instruction 0: `M 77959241` on the reference, `M 32768` on the core (the reset value) |
+| 1, `new_atom`'s counter | PASS: not caught |
+| 2, the clock's ticks | PASS: not caught |
+| 3, the instructions since the last tick | PASS: not caught |
+| 4, the SCSI command count | FAIL at line 6,231, instruction 718: `R 11 0000000080` on the reference, `R 11 0000000000` on the core |
+| 31, the waiting RECEIVE's push | FAIL at line 1, instruction 0: `B 7 1 0820004000 2 16384` on the reference, `Q` on the core |
+
+So the window from the prompt runs no `new_atom` and no instruction
+that reads the clock (`system_timer` and the timer instructions write
+the clock's bits to a register, which the trace shows: INFERENCE from
+the PASS, not counted). RESTOREs 1-3 are
+unchecked by this window; a window that reads them is still to be
+found. RESTOREs 16-26 (the waiting command's fields) were not dropped
+one by one; dropping the push (31) removes them all.
 
 ## FPGA flow (ULX3S / ECP5)
 
@@ -357,8 +428,8 @@ the top of 48 bits, unjis's readings of a name, overlapping device
 sets, holds, events under a script of two logins and two lines), and
 every `FepError` next to them; `kernel`: every call PIMOS's start made
 of `Fep.command` and `Fep.idle` to PIMOS END after a typed
-`shutdown` and `yes`, 8,766,339 instructions, recorded under the merger
-rule; 8,586,110 to the prompt before it) is replayed into a fresh
+`shutdown` and `yes`, 8,766,319 instructions, recorded under the merger
+rule and re-recorded with the login ID 0 (8,766,339 with the ID 1); 8,586,110 to the prompt before it) is replayed into a fresh
 `fep.Fep` for the expected answers and into the emulator, over a card
 with decoy entries (a prefix and an extension of each real name, ahead of
 it), on three benches (the image file; the SPI reader with a

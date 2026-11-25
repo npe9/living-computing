@@ -87,6 +87,9 @@ interface PimmGBox;
   method Action unpark(Addr g);                // answered by done
   method Action applyGoal(Cell a, Cell b);     // answered by done
   method Addr takenGoal;
+  // a checkpoint (ref/pimm/lockstep_shell.py): the heap pointer of the
+  // machine saved, between runs, the queues empty
+  method Action setHp(Addr a);
 endinterface
 
 typedef union tagged {
@@ -625,6 +628,9 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method Action recordFor(Addr sh, Addr c, Bit#(8) argn) =
     reqQ.enq(tagged RecordFor { sh: sh, code: c, argn: argn });
   method Action unpark(Addr goal) = reqQ.enq(tagged Release goal);
+  method Action setHp(Addr a) if (st == GIdle);
+    hp <= a;
+  endmethod
 endmodule
 
 endpackage

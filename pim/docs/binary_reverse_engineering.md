@@ -532,7 +532,7 @@ the device are given it again whenever the machine runs dry.
   | 620 `io(0, ..)`, `io(2, ..)` on the replier | `[1, ""]` | §6.4, §7.5 |
   | 620 `io(1, Text)` on the replier | `[1, "\0"]` (one character, 0: sent), the text written to the stand-in's log. §7.5 has `""`; §6.4's reading of `pimfep.ptf` is kept, and PIMOS reads neither | §6.4 |
   | 620 `io(0, "local")` / `io(0, "tcpip")` on the server | `[1, ""]` / `[5]` (the tcpip service refused, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`) | §7.5 |
-  | 620 `io(1, ..)` on the local server | held; answered at the idle with `[1, NI]`, the login record: Node `"local"`, RN `"pmpsi"` (SOURCED, INSTALL's user), RP `""`, UN `"pimos"`, UP `""` (HELD FILE: `pimos.logins`, all six with empty passwords), ID 1 (OURS, §7.5; §6.5 has 0 for a first login) | §6.5, §7.5 |
+  | 620 `io(1, ..)` on the local server | held; answered at the idle with `[1, NI]`, the login record: Node `"local"`, RN `"pmpsi"` (SOURCED, INSTALL's user), RP `""`, UN `"pimos"`, UP `""` (HELD FILE: `pimos.logins`, all six with empty passwords), ID 0 (READ, §6.5: pimfep's `get_key/4`, the smallest free key from 0; it was 1, OURS, until P-f3 of `simpos/source_check_2026-11-24.md`) | §6.5, §7.5 |
   | 620 `io(0, ..)` on `simpos_user_device` | `[1, ">sys>user>" ++ RN]` | §7.5, `login_p.kl1`:63 |
   | 104 `create` of a window | `[1]` | §6.8, §7.5 |
   | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
@@ -620,7 +620,7 @@ the device are given it again whenever the machine runs dry.
   `io(1)` aborted with 70 and answered 6, the syslog file), then `{-1,
   80}`. Console: `Shutdown started`, `User Server End`, `Statistics in
   PIMOS:`, 0, 790104, `PIMOS END********`; the run ends at 8,766,339
-  instructions, nothing left to run, 253 goals waiting.
+  instructions (8,766,319 with the login ID 0, below), nothing left to run, 253 goals waiting.
   `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`.
 
   Why the third branch: the shell's `start_main` (`shell/main/
@@ -631,7 +631,8 @@ the device are given it again whenever the machine runs dry.
   has neither, and `shutdown_body` takes the third branch, a window of
   its own titled SHUTDOWN. The first branch (`make_window = no`,
   "Shutdown procedure starts." then "Really(yes/no)? " on the job's
-  own I/O) is a telnet login's: READ from the code, not run. The
+  own I/O) is a telnet login's: READ from the code, not run (why not,
+  below). The
   second (`top_task` set) is the login as the user `shutdown`, the
   manual's footnote (held `pimos.logins`: program
   `pimos::shutdown:go`): `login_p:top` sets `top_task` and applies the
@@ -644,6 +645,51 @@ the device are given it again whenever the machine runs dry.
   branch's (a window made for the job), is WITHDRAWN: the branch with
   a window of its own is the third, and the manual's "displayed in the
   window" fits it as well as the others.
+
+  **Why the first branch is not run (2026-11-24).** `make_window = no`
+  is set by one predicate only, `telnet_login:login/2`
+  (`server/login/login/tlogin.kl1`:87-93), the goal of a telnet
+  login's task. Reaching it with `fep.py` needs four things the held
+  material does not give:
+  1. a telnet login service. `login:go`'s first argument must hold a
+     `{Fep, telnet(Port), Node}` entry (`login.kl1`:26-31, 834-838 to
+     `telnet_login:make_telnet/2`). The held `pimos.conf` has such a
+     line, `login:go([{0,local,0},{0,tcpip,0},{0,telnet(5023),0}],[],off)`,
+     but it is commented out (its first character is the JIS `%`,
+     21:73, read from the bytes); the live line is local and tcpip
+     only (`fep_services.md` §3, step 8). Serving another `pimos.conf`
+     would be OURS in place of the held file;
+  2. the FEP's socket service. The telnet server
+     (`server/telnet/tel_sv.kl1`) asks the kernel for a `socket`
+     and sends `listen({Port}, 5)`, `set_option([reuseaddr,
+     keepalive])`, `receive_timeout(0)`, then `accept` (63, 72, 81, 192). On the wire these
+     are the FEP commands 800-812 (`pimos.vmac`:104-118) of
+     `bios/fep_module/soc_dvc.kl1`, whose request and normal-reply forms are
+     tabulated in `fep_services.md` §2.7. `fep.py` implements none of
+     them, and the PSI's own answers (class `pimos_tcpip_socket`) are
+     not held as source, so the values (an accepted connection's
+     address, what a client sends) would be OURS;
+  3. a telnet client's byte stream. `tel_ses.kl1` (1,233 lines) does the
+     telnet negotiation over the accepted socket. The session's
+     `get_attributes` must answer `normal(telnet, [ip_address(Add), _])`
+     (`tlogin.kl1`:144-145);
+  4. the TELNET USER FILE `pimos:pimos.telnet`. It is opened after the
+     password is accepted (`tlogin.kl1`:156-158), and without it the
+     session answers "Sorry! Please make a TELNET USER FILE." (175) and ends.
+     It is not in `pimosobj.tar.Z`: the archive's listing has no member
+     named `pimos.telnet` (nor any with `telnet` in its name). Its
+     grammar is in the source (`io_node_check2`, `tlogin.kl1`:198-230:
+     `user(UN, Fep, IONODE, RUN[, Dir])` or `user(UN, [ionode(Add,
+     Node, UN, Dir) ..])`), so a file would be OURS.
+  The evidence needed to run it faithfully: a `pimos.conf` with the
+  telnet line live, from an installation (the commented-out line shows
+  that one was used at ICOT); the PSI's `pimos_tcpip_socket` answers,
+  from `pimfep.ptf` once its methods run under the KL0 interpreter
+  (`environment_audit.md` §8.3, the PSI side); and a held
+  `pimos.telnet`. Without them, the only way to run the branch is a
+  stand-in made of three OURS pieces, so it is left unrun. The second
+  branch, `top_task` set, was run once by a probe, outside the suite
+  (above).
 
   Against the manual (`e-sysman.tex`:121-144), line by line
   (re-checked against the primary sources 2026-11-24,
@@ -704,10 +750,45 @@ the device are given it again whenever the machine runs dry.
   shell read-opens `pimos:pimos.groups` (201, device 34), one `getb`,
   writes its two lines to the window (111) and closes the file (60);
   `cat` stops at the file's empty last line, as the manual says, and
-  the shell writes `Shell>> ` again: 8,760,685 instructions, 1,224
+  the shell writes `Shell>> ` again: 8,760,665 instructions (8,760,685
+  with the login ID 1), 1,224
   goals waiting, the next `getl` held. The text written is the held
   file's. No transcript of it is printed in the manual. Needed
   `fep.py`'s JIS table to have `"`, `(`, `)`, `=` (row above).
+
+  **Both commands on the Bluespec core (2026-11-24).** The core runs
+  them in lockstep with the reference from a saved machine
+  (`bsv/run_pimm_shell.sh`, `ref/pimm/lockstep_shell.py`; how the
+  machine is saved and given to the core: `bsv/README.md`, "The
+  lockstep from a saved machine"). From the prompt (8,587,072
+  instructions with the login ID 0; 8,587,092 with the ID 1), every trace line was identical: `shutdown`/`yes` to
+  `PIMOS END********` (179,247 instructions, 878,180 lines; 43 device
+  answers on the tape) and the `cat` to `Shell>> ` again (173,593
+  instructions, 731,110 lines). The reference ran with `Machine.ahead`
+  off and gave the same counts as above, so nothing in these runs is
+  the reference's alone. From the machine saved after the
+  link, the whole of `go()` (the start, the login, the shell, then
+  `shutdown`/`yes`), 8,766,339 instructions, 20,107,047 lines were
+  identical, with 221 device answers. No divergence was found.
+  Re-run with the login record's ID 0 (P-f3 below): from the prompt
+  the same two windows (179,247 and 173,593 instructions, 878,180 and
+  731,110 lines), and from the link 8,766,319 instructions, 20,107,017
+  lines, all identical.
+
+  **The login record's ID is 0 (2026-11-24, P-f3 of
+  `simpos/source_check_2026-11-24.md`).** `fep.py` sent the ID 1, OURS.
+  The held pimfep gives the smallest integer from 0 not a key of the
+  replier's socket table, so 0 for the first login
+  (`pimos_remote_login_socket_table` `get_key/2`, `get_key/4`; the walk
+  and its unwitnessed opcodes are in `fep_services.md` §6.5). It was
+  re-read in the held object and `fep.py` now sends 0. What moved: the
+  three replier texts' element 0 on the wire (`kernel.tape` re-recorded:
+  the same 220 calls, 155 answered, 4 events), and the run, by 20
+  instructions: the prompt at 8,587,072, PIMOS END at 8,766,319, the
+  `cat`'s end at 8,760,665. The console, the device log and the stops
+  are unchanged. Where the 20 instructions go was not traced. The FEP
+  emulator needs no change: its card's login record is made by
+  `fep.login_record` (`tools/mkfepcard.py`).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
@@ -771,7 +852,8 @@ the device are given it again whenever the machine runs dry.
   60 on the append-opened file (`[1]`) and `{-1, 80}` (no reply).
   `kernel.tape` re-recorded under the merger rule and on to PIMOS END
   (`record_fep.py --kernel PKL --type shutdown --type yes`: 220 calls,
-  155 answered, 4 events; 8,766,339 instructions), `late.tape`
+  155 answered, 4 events; 8,766,339 instructions; re-recorded with the
+  login ID 0, the same calls, 8,766,319), `late.tape`
   re-recorded (its RECEIVE retries move under the merger rule), the
   other IPL parts re-recorded for the clock lines alone, and
   `direct_kernel` given the new answers' edges and errors (377 commands,
