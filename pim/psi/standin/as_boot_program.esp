@@ -1,0 +1,23 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_boot_program`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS.  Step 3i
+% (docs/simpos/boot_route.md, route step B2).
+%
+% PRINTED (prose only): TM-100 PDF p13 (folio 11): the boot process
+% "executes the boot program inheriting class 'as_boot_program'".  No
+% method of the class is printed, and no held class inherits it
+% (docs/simpos/subsystems/notes/ifs_libshell.md §1.4; the eleven held
+% packages name it nowhere, MEASURED 2026-11-25).
+%
+% INTERPOLATED: nature as_program.  A program is what a process runs
+% (TM-100 PDF p6, "(2) Program": an instance of a program class, invoked
+% with :invoke(Program) and entered at :goal(Program)); as_program is
+% the printed program mixin (TM-100 Fig. 3.3).  That as_boot_program
+% inherits it is an INFERENCE from the name and from the other program
+% kinds (as_server_program, as_interrupt_program, as_trap_program;
+% subsystems/shell.md §1.2).  Empty otherwise.
+
+class as_boot_program has
+
+    nature      as_program ;
+
+end.

@@ -2844,6 +2844,269 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
 - No pop: only `test_step3h_tcpip_recipe` fails. No census row depends
   on the stack being emptied.
 
+### Step 3i: the census made order-independent (2026-11-25)
+
+Step 3h left `pimfep_message_log dump_log/1` and `/2` as "a census
+order effect". The shared state is the machine's **class slots**. Until
+step 3i every census row ran on one `Machine`, so a class slot written by
+one row was read by every later row. The old code was run on a fresh
+machine, writer row then reader row (MEASURED 2026-11-25):
+
+- `set_log_table/2`, called with the census's unbound argument, sets
+  `log_table` to that variable. `dump_log/1` and `/2` then stop at
+  `vector_element on _G`. Alone, `log_table` is its template constant
+  `none`.
+- `log/2` makes the table, and `set_position/2` sets `position` to an
+  unbound variable. `initialize/2` then stops at `index on _G`.
+- `assign/1` rows push their program on the one census process, which
+  is kept in `process`'s class slot `current`. Later `resign/1` and
+  `resign_core/1` rows pop it and succeed. Alone, the stack is empty and
+  they fail.
+
+**The change (OURS).** `kl0.census_of` drops the class slots before
+every row. Class objects then take their initial values again on first
+access (TM-388 p.49), and each row gets a new census process. A row's
+outcome is what it is alone on a fresh machine. The one-row body is now
+`census_row/6`.
+
+**Checked.** Every row of both FEP censuses was run alone on its own new
+`fep_machine()`: 1,420 plain rows and 1,420 recipe rows. Each agrees with
+the census (0 differences; the script is not kept).
+
+**Effect, row by row (MEASURED 2026-11-25).**
+
+- Six packages: identical, row by row (311 / 12 / 206 / 1).
+- Plain FEP: 810 / 165 / 428 becomes **757 / 219 / 427** (exception 16,
+  step limit 1). 70 rows move, all order effects:
+  - 54 `resign/1` and `resign_core/1` rows go from success to failure:
+    the row's own process has an empty program stack.
+  - `pimos_socket_manager_table` and `pseudo_scsi` `locked/1` fail: no
+    earlier `lock/1`.
+  - `pimos_tcpip_socket create_socket/9` fails at `get_first/2` (@4d-59):
+    its process's invocation stack is empty. Before, an earlier row's
+    program was on top and it went on to `status/3`. The recipe pushes a
+    front end first (step 3h).
+  - `pseudo_scsi shutdown/1` goes from success to refused (built-in
+    `class_object` of the integer 1900544). `initialize/2` and
+    `pseudo_scsi_handler send_to_PE/2` change their detail.
+  - `pimos_remote_login_replier` `io/4`, `io/5` and `do_io/6` go from
+    failure to refused, at `class_object/2` (no primary in the held
+    classes; the stand-in `as_program` is an ancestor).
+  - `pimfep_message_log`: `initialize/2`, `dump_log/2`, `sorted_log/2`
+    and `sorted_log_string/2` succeed, and `dump_log/1`, `sorted_log/1`
+    and `sorted_log_string/1` stop at `pmacs_window:putl/2` (not stood
+    in). The four successes are paths on an empty log (`log_table` is
+    `none`); run after `initialize/2` the sorted ones reach
+    `sorted_sequence:create/2`. Not progress.
+- With recipes: 836 / 164 / 403 becomes **782 / 220 / 401**, the same
+  order effects (55 resign rows; `io/4` was already refused). Slot
+  constants go from 93 to 94: `pseudo_scsi_handler send_to_PE/2` used to
+  meet an earlier row's unbound value.
+
+None of the drop is lost progress. The successes removed were each
+produced by a row that ran earlier.
+
+Test (`test_espc.py` `test_step3i_census_order`): the census run
+backwards (classes and each class's methods reversed) equals the forward
+one row for row, plain and with recipes; and `dump_log/1` reaches
+`pmacs_window:putl/2`. `test_fep_census` and
+`test_step3f_census_recipes` are re-pinned.
+
+Injected from a backup (the reset line removed), restored by cp,
+cmp-checked. Observed: `test_step3i_census_order`, `test_fep_census` and
+`test_step3f_census_recipes` fail; `test_kl0.py` passes.
+
+### Step 3i: the boot process (2026-11-25)
+
+The first step on the boot route (`../docs/simpos/boot_route.md`, B2).
+TM-100 p6 and p13 and TR-056 p21 say SIMPOS starts in one process, the
+boot process, which runs a boot program (`as_boot_program`) and whose
+class overrides `:create` and `:activate`. The held class
+`pimmcsp##pseudo_pe_process` (a `process` subclass) names it: its
+`release/1` (@177-189) sends `:get_instance(#boot_process, B)` and
+then `:request(B, release, Self)`.
+
+**Stand-ins.**
+- `standin/boot_process.esp` (INTERPOLATED): `nature process`, a class
+  slot `instance`, `get_instance/2` (the running process, if it is the
+  boot process) and `boot/2` (make it once, status `active`). The
+  selector `boot/2` is OURS.
+- `standin/as_boot_program.esp` (INTERPOLATED, TM-100 p13): `nature
+  as_program`, no methods of its own.
+- `standin/process.esp` `self/2`: the census's and the tests' first
+  process is now made by `boot/2`, so it is the boot process.
+- `kl0.py`: `boot_process`'s own `create/2`, `create/3` and
+  `activate/2` are refused (`boot_process overrides :create and
+  :activate ... the bodies are not printed`). A model keyed on a class
+  now also serves its subclasses (`dispatch` walks the inheritance
+  order, stopping at an ancestor that defines the method).
+
+**`status/3` has a second held call site.** Step 3h searched source
+text and found only TM-100's `:status(Process, dormant, on_activate)`.
+The compiled `pseudo_pe_process release/1` sends `:status(Self,
+dormant, on_release)` (@17a-17e). `status/3` stays refused: there is
+still no definition, and the only held `status/3` methods are on
+`pimscsi`'s `pseudo_scsi` and `scsi_communicator`, which are not
+processes.
+
+Effect, row by row (MEASURED 2026-11-25): six packages identical; plain
+FEP 757 / 219 / 427 and recipes 782 / 220 / 401, unchanged. Nine rows
+change detail only, from `simpos##process:X` to `simpos##boot_process:X`
+(`exterminate/1`, `throwing_hook/7`, `standard_output/2`, `wait/1`,
+`get_name/2`).
+
+Test (`test_espc.py` `test_step3i_boot`): an OURS `boot_probe` (nature
+`as_boot_program`) created and invoked with the printed `as_program`
+methods sees itself on top of the boot process's stack, the process
+`active` and `get_instance/2` answering it; afterwards the stack is
+empty; the overrides refuse; a second process from `create/3` is
+dormant with the boot process as parent, and its `activate/2` stops at
+`status/3`; `pseudo_pe_process release/1` reaches `status/3` with
+`[dormant, on_release, ...]`.
+
+Injected from a backup, restored by cp, cmp-checked (`test_kl0.py`
+passed in each). Observed:
+- `self/2` back to `:new`: `test_step3i_boot` errors,
+  `test_printed_process_slots` fails.
+- the three override rows removed: only `test_step3i_boot` fails.
+- the inheritance walk disabled: `test_step3f_census_recipes`,
+  `test_step3g_stream_see` and `test_stream_runs` fail (the `suspend/2`
+  model no longer reaches the boot process); `test_step3i_boot` passes.
+
+### Step 3i: pmi 3b, 6c, c8 and blt 00, e0 (2026-11-25)
+
+Five rows, each KNOWN-PLAINTEXT on held source (`kl0_opcodes.tsv` has
+the cells; `test_kl0.py` `Step3iRows` runs each beside its source):
+
+- **pmi 3b `get_val_var_list` A, H, T**: as 2b, but the car is unified
+  with X_H before X_T := cdr. Witness: kappa2 `utility/tool/LOADER.ESP`
+  :118-126 `append/3` (kappa_loader local @90), clauses 2 and 3.
+- **pmi 6c `execute_local_switch`**: a last call to a local predicate
+  whose first instruction is a switch, with the switch's four targets
+  carried in two words after the call, relative to cell + 3. The
+  dispatch follows the entry switch's rule. Witnesses: `append/3`'s two
+  recursive calls (a c9 entry), RDMSOPE.ESP:285-291
+  `get_BFS_list_only/2` @6cd (a c6 entry), BCMGETREC.ESP:124-160 @54,
+  @5d (c8 entries). MEASURED over the held corpus: 1,556 uses; 1,133
+  enter a c9, c6 00 00 00 or c8 with R 0 and the same targets as the
+  entry, and are run. 423 refuse: 183 whose const target is one cell
+  before their c9's (what that cell does for a constant is not
+  settled), and 240 with another entry (c7, ...). (Superseded below by
+  the c9 fix: 168 of the 183 are now run, 15 still refuse.)
+- **pmi c8 `switch_on_vector_else`**: unbound -> cell + 2 + W, a vector
+  -> cell + 2, anything else -> cell + 3 + s16. Witness:
+  HLCSESITTK.ESP:408-424 `optimum_set_left_set/7` @234 (clause 1
+  `@anb`, clause 2 `_`); also BCMGETREC.ESP. That a list takes the else
+  target is an INFERENCE, from the 57 held 6c calls into a c8: each
+  carries c8's else target as its list target.
+- **blt 00 `atom` X** and **blt e0 `if_atom`**, the plain and
+  test-and-branch forms (as 01 and e1). Witnesses: g_window.esp:146-149
+  @709, bar2_h.esp:135 @574 (X = 2), as_pred.esp:419 and :421-422.
+  `[]` counts as an atom: INFERENCE.
+
+The step 3h leads are settled: pmi 6c on `append/3` as predicted, blt e0
+on as_pred.esp (not g_window.esp:148, which is blt 00), and pmi c8 on a
+held kappa2 source (step 3h had looked only in paragraph).
+
+Effect, row by row (MEASURED 2026-11-25, recomputed after each row):
+
+- Six packages: 311 / 12 / 206 / 1 becomes **317 / 12 / 200 / 1**. The
+  five 6c rows (mpsicsp `csp_csbreak_address_table`, `kl1_tag`) enter
+  another switch and still refuse, now as `operand`. Of the 8 c8 rows, 6 succeed (`csp_user_command`
+  `create/5` and `set_command_name/2`, `rasm_one_word/3`,
+  `graphics_item` `set_item/2` and `get_item/2`). Each meets the c8 only
+  with the census's unbound argument (traced), which takes the try chain
+  and is bound by the first clause: unbound probing, not progress.
+- Plain FEP: 757 / 219 / 427 becomes **763 / 221 / 419**:
+  - the five `pseudo_scsi` rows at 6c @13d go on into local `command/2`
+    (a c6 entry). `command/2` and `command_with_hook/2` succeed: the
+    unbound argument takes clause 1, `command([], _)` (@305-307). Not
+    progress. `send_data/4`, `receive_data/4` and `receive_command/3`
+    stop at `as_resource assigned/1`, which is not printed;
+  - `cmt` and `scsi` `transfer/6` fail at `scsi_communicator
+    include_item_1/3` @261-275: the unbound item is neither an integer
+    (e1) nor an atom (e0). Not progress;
+  - the four `expand/7` macro rows succeed on the unbound argument (c8's
+    try chain, the first clause's get_constant). Not progress.
+- With recipes: 782 / 220 / 401 becomes **788 / 222 / 393**, the same
+  rows.
+
+None of the successes is progress. The rows matter as opcodes no longer
+in the way: `assigned/1` is the new real stop.
+
+**blt 1a `new_stack_vector` ^V, N** (step 3h: "the initial elements are
+not settled"), reattempted with a fresh search of held source. kappa2
+`user_if/pb/mcd.esp`:112-116 `make_term/5` builds each condition with
+`new_stack_vector(Cond,3)` and then `vector_element(Cond,0,=)` and the
+like. Compiled (`pb_siki_make_cond` @bc-c9), each `vector_element` is a
+`blt 20` read followed by a `get` that unifies the element with the
+constant. With any bound initial element the predicate could never
+succeed, so each element is a fresh unbound variable (INFERENCE from held
+source). V != N: `KP_BFMOM.ESP`:181-185 `statistics/3` @93 `1a 02 00
+00` (size 21 in A0, the vector to A2). Plain FEP becomes **768 / 221 /
+414**, with recipes **793 / 222 / 388**: `melt_arguments/2` (3 classes)
+and `melt_method/3` (2) succeed because `valid_size` is its template
+slot constant 0 and the melted vector is `{}` (a census artifact, not
+progress); `scsi_communicator melt_method/3` stops at `get_content/2`,
+not in the class. Six packages unchanged.
+
+**Reattempted, still blocked:**
+- blt 0d `object/3`: a fresh search of kappa2, paragraph and the pimos
+  sources finds 94 `object(...)` calls; every three-argument one has
+  both outputs `_`. Nothing settles what they receive.
+- blt a8: all 9 held uses are in pimscsi (`scsi_device_bus_management`
+  check_TMSG_list/9 and free_HMCB/2, `scsi_device_interrupt_management`
+  polling/1 and /3, `scsi_dummy_handler` reset_interrupt/2), whose
+  source is not held. None in paragraph, kappa or fts. Stays refused.
+
+**blt 05 `heap_vector` V, ^N (DONE, reattempted):** 428 held uses, 357
+of them in packages with held source. kappa2 `kernel/flm/KPEXTENT.ESP`
+:109-112 `check_last/1` @1d4 `05 00 00 00` and :118-120 `get_address/3`
+@19c `05 01 02 00` (`heap_vector(Pool, L), vector_element(Pool, L-1,
+end_of_extent)`: Pool in A1, L to A2, then `46 02 01 02` and `20 01 02
+01`). It is the heap counterpart of blt 06 `stack_vector`: a heap vector
+answers its length, anything else fails. Only a zero third byte (all
+428). Census: six packages and both FEP censuses unchanged. Test
+`test_heap_vector`; injection, observed: the heap check dropped (any
+vector answers): only `test_heap_vector` fails; `test_espc` passes.
+
+Injected into kl0.py from a backup, restored by cp, cmp-checked; the
+observed failure sets are in `test_kl0.py`'s header (seven injections;
+commit a5b10266's message says eight, which was a miscount).
+
+**A fault in pmi c9, fixed: its first target is `[]` only.** The 183
+refused 6c calls pointed at it. In 168 of them the call's [] target is
+a `26 00 00 00` get_nil A0, and the c9's target is the cell after it:
+the c9 skips the check. MEASURED: 520 of the 2,172 held c9s have a
+`d2` (cut_proceed) as their first target. Until step 3i
+`op_switch_on_list` sent every atomic value there, so a non-nil atom
+succeeded where the source fails. Witness: fts##post_cts local
+`post_cts_list/1` @5b (utter `source/FTS/cts_post.esp`:18-21
+`post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`), whose
+first target is @66 `d2`, past the clause's get_nil @65. TM-444's
+labels for the instruction, `jump_on_non_list Ai,Lnil,Lels,Lvar`, say
+the same. Now `[]` takes the first target and any other constant the
+"anything else" target. The 168 6c calls whose [] target is that
+get_nil run (for `[]` the same path); 15 whose target is another switch
+still refuse.
+
+Effect (MEASURED 2026-11-25): six packages unchanged. Plain FEP 768 /
+221 / 414 becomes **767 / 221 / 415**, with recipes 793 / 222 / 388
+becomes **792 / 222 / 389**. `scsi shutdown/1` no longer succeeds:
+`scsi_low_if` local `check_status/3` @115 had sent the atom
+`handler_dead` to its [] target (@121 `d2`). It now takes @125 and
+raises (`scsi_error raise/5`, not held). That success was the fault.
+
+Test `test_switch_on_list_nil`: `post_cts_list/1` succeeds on `[]` and
+an unbound argument, and fails on `foo`, 5 and a string. Injections,
+observed: c9 sending any atomic value to its first target again:
+`test_switch_on_list_nil`, `test_fep_census` and
+`test_step3f_census_recipes` fail. The 6c targets-differ guard removed:
+only `test_other_entries_refused` errors; no census row changes. c8's
+high-half guard removed: only `test_switch_on_vector_else` fails. The
+e0 second-byte and 1a third-byte guards were not injected; no held use
+reaches either.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -2864,6 +3127,7 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
     kappa2 `HLCANACOM.ESP:552-554` has `stack_vector(Base_attr,Len),
     new_stack_vector(Checked_attr,Len)`, which compiles to `06 00 04`,
     `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
+    (Step 3i: DONE, on mcd.esp:112-116; see "Step 3i: pmi 3b, 6c, c8".)
   - blt 6f: witnessed as `list_to_vector`, but not added: its third
     argument is not settled.
   - blt 0d, 1a and 6f stay refused after step 3f. Another call site
@@ -2922,6 +3186,8 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
     - `process:children/2`: stood in by step 3h (INTERPOLATED).
       `add_child/2` is not, so the list is always empty.
     - Step 3h's leads, not taken:
+      - Step 3i settled pmi c8, pmi 6c (with 3b) and blt e0 / 00 (the
+        "Step 3i: pmi 3b, 6c, c8" section). What step 3h wrote of them:
       - pmi c8 (4 recipe rows, 8 six-package rows): one word follows.
         In `runtime_monitor` local `set_attr/2` @655 (`c8 00 00 58`,
         word 0x12), cell + 2 + word lands on @669, an `e4`
@@ -2944,7 +3210,16 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
         machine, `dump_log/1` goes on to `pmacs_window:putl/2` (not
         stood in) and `dump_log/2` succeeds. It is a census order
         effect: an earlier row leaves the class slot `log_table` holding
-        a table.
+        a table. (Step 3i: settled; the census drops class slots per
+        row.)
+      - Left by step 3i: pmi 6c into a c7 or another entry (240 held
+        uses; the five six-package rows, mpsicsp
+        `csp_csbreak_address_table` csp_mm_reg/3 and
+        csp_logical_register/3 and `kl1_tag` integer_to_mnemonic/3,
+        mnemonic_to_integer/3 and is_cdesc/2, all enter a c7
+        switch_on_constant: @23, @ba, @2ac) and with a [] target that
+        is another switch (15); `as_resource assigned/1` (3 pseudo_scsi
+        rows), not printed.
     - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
       set_default_node/2` @29-34, which stores the answer in the class
       slot `default_spawn_node`). No held or printed source gives the

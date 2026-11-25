@@ -694,6 +694,19 @@ class Machine:
             # the receiver is last (register 1), the information first
             raise Raised(resolve(self.x[0]))
         model = SIMPOS_MODELS.get((cid, section, name, arity))
+        if model is None and cid in self.lib.templates:
+            # step 3i: a modelled method is inherited (the census process is
+            # a boot_process, which inherits process's suspend/2): the first
+            # class in the receiver's inheritance order with a model, unless
+            # a class before it defines the method itself
+            for anc in self.lib.build(cid).order:
+                model = SIMPOS_MODELS.get((anc, section, name, arity))
+                if model is not None:
+                    break
+                t = self.lib.templates.get(anc)
+                if t is not None and any((p.name, p.arity) == (name, arity) for p in
+                                         (t.class_preds if section == 'class' else t.instance_preds)):
+                    break
         if model is not None:
             return model(self)
         if cid not in self.lib.templates:
@@ -924,11 +937,26 @@ class Machine:
         one process and has no scheduler, so a process that suspends here
         (stream get/2 or see/2 on an empty stream) waits for a put or a
         resume that nothing can make.  Run, the printed body would fail
-        for the census's process (status nil: `:self(#process, P)` makes
-        it with new/2 and nothing activates it), and the wait would show
-        as a clean failure.  So it refuses, cause 'would suspend'."""
+        for the census's process (status `active` since step 3i, when
+        `:self(#process, P)` makes the boot process; nil before: neither
+        is `ready` or `suspended`), and the wait would show as a clean
+        failure.  So it refuses, cause 'would suspend'.  Since step 3i
+        the census process is a boot_process, which inherits this model
+        (dispatch looks the model up along the inheritance order)."""
         reason = resolve(self.x[0])
         raise Refusal('would suspend', 'process suspend/2 on %r: one process, no scheduler' % (reason,))
+
+    def boot_process_override(self):
+        """boot_process's own :create and :activate, refused (step 3i).
+        PRINTED that they exist: TM-100 PDF p13 ("class 'boot_process'
+        inherits class 'process' and overrides the predicates, :create and
+        :activate") and TR-056 PDF p21 (the boot process calls them itself
+        to come under the supervisor).  Their bodies are not printed, and
+        the arities are not given (process has create/2, printed, and
+        create/3, interpolated; both are refused).  Without this, kl0
+        would run the inherited process versions in their place."""
+        raise Refusal('simpos', 'boot_process overrides :create and :activate '
+                      '(TM-100 p13, TR-056 p21); the bodies are not printed')
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -1158,15 +1186,105 @@ class Machine:
         self.stack.pop()
         self.pc = (code, off + 2 + s16(v))
 
+    def op_execute_local_switch(self, code, off, a, b, c, v):
+        """pmi 6c (step 3i): a last call to a local predicate whose first
+        instruction is a switch on A_R, with the switch's four targets
+        carried in the call itself (relative to cell + 3) so the callee's
+        switch is skipped.  Witnesses, both on held source:
+        - a `c9` switch_on_list entry: kappa##kappa_loader local
+          append/3 @90 (LOADER.ESP:118-126), both uses (@94, @a3);
+        - a `c6 00 00 00` switch_on_term entry: kappaRDM_manager
+          get_BFS_list_only/2 @6b7 (RDMSOPE.ESP:285-291), the use @6cd;
+        - a `c8` entry: kappaBCM_get_primitive_record get_attr_value/6
+          @133 and get_table_value/6 @19c (BCMGETREC.ESP:124-160), the
+          uses @5d and @54: other is c8's vector path, const and list
+          both its else target.
+        The dispatch follows the entry's own rule (op_switch_on_list,
+        op_switch_on_term, op_switch_on_vector_else).  Only those entries,
+        R = 0, and targets equal to the entry switch's are run; any other
+        refuses (MEASURED over the held corpus in kl0_opcodes.tsv's row)."""
+        w1, w2 = self.operand(code, off)[3], code.cells[off + 2][3]
+        entry = off + 2 + s16(w1 >> 16)
+        e = code.cells.get(entry)
+        base = off + 3
+        const, other, unb, lst = base + s16(v), base + s16(w1), base + s16(w2 >> 16), base + s16(w2)
+        op = e[3] >> 24 if e is not None and e[1] == 0x20 else None
+        if a != 0 or op not in (0xc9, 0xc6, 0xc8) or (e[3] >> 16) & 255 != a or (op == 0xc6 and e[3] & 0xffff):
+            raise Refusal('operand', '%s @%x: pmi 6c to @%x: only a c9, c8 or c6 00 00 00 entry with R = 0 '
+                          'is witnessed' % (code.id, off, entry))
+        if op == 0xc9:
+            ew = code.cells[entry + 1][3]
+            theirs = (entry + 2 + s16(e[3]), entry + 2 + s16(ew >> 16), entry + 2 + s16(ew), entry + 2)
+            # 168 held 6c calls name the cell before c9's nil target, a
+            # `26 00 00 00` get_nil A0 that c9 skips: for [] the same path
+            g = code.cells.get(const)
+            if const + 1 == theirs[0] and g is not None and g[1] == 0x20 and g[3] == 0x26000000:
+                theirs = (const,) + theirs[1:]
+        elif op == 0xc8:
+            els = entry + 3 + s16(e[3])
+            theirs = (els, entry + 2, entry + 2 + s16(self._word(code, entry + 1)), els)
+        else:
+            eb, x1, x2 = entry + 3, self._word(code, entry + 1), self._word(code, entry + 2)
+            theirs = (eb, eb + x1, eb + (x2 >> 16), eb + (x2 & 0xffff))
+        if (const, other, unb, lst) != theirs:
+            raise Refusal('operand', '%s @%x: pmi 6c targets differ from the %02x at @%x' % (code.id, off, op, entry))
+        self.call_local(code, off, entry, last=True)
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, unb)
+        elif isinstance(t, Cons):
+            self.pc = (code, lst)
+        elif op == 0xc9:
+            self.pc = (code, const if t is NIL else other)
+        elif op == 0xc8:
+            self.pc = (code, other if isinstance(t, Vec) else const)
+        elif isinstance(t, Atom):
+            self.pc = (code, const)
+        elif isinstance(t, Vec):
+            self.pc = (code, other)
+        else:
+            raise Refusal('operand', '%s @%x: pmi 6c to a c6 on %s: only unbound, atom, list and vector are '
+                          'witnessed' % (code.id, off, type(t).__name__))
+
     # indexing
+    def op_switch_on_vector_else(self, code, off, a, b, c, v):
+        """pmi c8 (step 3i): R; next word W.  A_R unbound -> cell + 2 + W
+        (the try chain over every clause), a vector -> cell + 2 (a `ce`
+        or the vector clauses' chain), anything else -> cell + 3 + s16 (the
+        clauses whose first argument is not a vector, or `fe`).  Witness:
+        kappaHLC_SIT_taker optimum_set_left_set/7 @234 (HLCSESITTK.ESP:
+        408-424, clause 1 `@anb`, clause 2 `_`): c8 00 00 19, W 7.  A list
+        takes the else target: INFERENCE, from the 57 held 6c calls into a
+        c8, whose list and const targets are all c8's else target.  Only
+        R = 0 is witnessed (all 328 held uses)."""
+        w = self._word(code, off + 1)
+        if a != 0 or w >> 16:
+            raise Refusal('operand', '%s @%x: pmi c8 %02x, word %08x: only R = 0 and a zero high half are '
+                          'witnessed' % (code.id, off, a, w))
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, off + 2 + s16(w))
+        elif isinstance(t, Vec):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
     def op_switch_on_list(self, code, off, a, b, c, v):
+        # step 3i: the first target is [] only (TM-444's Lnil).  Before, any
+        # atomic value went there.  Witness: fts##post_cts local
+        # post_cts_list/1 @5b (utter source/FTS/cts_post.esp:18-21
+        # `post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`): its
+        # nil target is @66 `d2`, past the clause's own get_nil @65, so a
+        # non-nil atom sent there would succeed where the source fails.
+        # MEASURED: 520 of the 2,172 held c9s have a `d2` (cut_proceed) as
+        # their first target, which would accept any atom unchecked
         t = deref(self.x[a])
         w = self.operand(code, off)[3]
         if isinstance(t, Var):
             self.pc = (code, off + 2 + s16(w))
         elif isinstance(t, Cons):
             self.pc = (code, off + 2)
-        elif is_atomic(t):
+        elif t is NIL:
             self.pc = (code, off + 2 + s16(v))
         else:
             self.pc = (code, off + 2 + s16(w >> 16))
@@ -1346,6 +1464,17 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    def op_if_atom(self, code, off, a, b, c, v):
+        # blt e0 (step 3i): as e1 with atom/1's test (paragraph as_pred.esp
+        # :419 and :421); [] counts as an atom (NIL is an Atom: INFERENCE)
+        if b:
+            raise Refusal('operand', '%s @%x: blt e0 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        if isinstance(deref(self.x[a]), Atom):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1409,6 +1538,17 @@ class Machine:
             return self.fail()
         el = self.S[0]
         self.x[b], self.x[c] = el[0], el[1]
+        self.nxt(code, off)
+
+    def op_get_val_var_list(self, code, off, a, b, c, v):
+        # pmi 3b (step 3i): as 2b, but the car is unified with X_H (a value)
+        # before X_T := cdr; H may equal T (kappa_loader append/3 @9f)
+        if not self.get_struct(a, 'list', 2):
+            return self.fail()
+        el = self.S[0]
+        if not self.unify(el[0], self.x[b]):
+            return self.fail()
+        self.x[c] = el[1]
         self.nxt(code, off)
 
     def op_get_vector_2(self, code, off, a, b, c, v):
@@ -1624,6 +1764,22 @@ class Machine:
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
         self.nxt(code, off)
 
+    def op_new_stack_vector(self, code, off, a, b, c, v):
+        # blt 1a (step 3i): new_stack_vector(^V, N); each element a fresh
+        # unbound variable (INFERENCE: kappa2 user_if/pb/mcd.esp:112-116
+        # `new_stack_vector(Cond,3), vector_element(Cond,0,=), ...` compiles
+        # to `1a 00 00 00`, then `blt 20` and `get r0, =`, which unify each
+        # element with a constant; with any bound initial value make_term/5
+        # could never succeed).  V != N: kappaBFM_other_disposition_manager
+        # statistics/3 @93 `1a 02 00 00` (KP_BFMOM.ESP:181-185, the size 21
+        # in A0 from `a7 00 00 15`, INFO out in A2).  Only a zero third
+        # byte is witnessed
+        if c:
+            raise Refusal('operand', '%s @%x: blt 1a %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        self.x[a] = Vec([Var() for _ in range(self._int(self.x[b], 'new_stack_vector'))])
+        self.nxt(code, off)
+
     def _str(self, t, what):
         t = deref(t)
         if not isinstance(t, Str):
@@ -1675,9 +1831,28 @@ class Machine:
         else:
             self.fail()
 
+    def op_heap_vector(self, code, off, a, b, c, v):
+        # blt 05 (step 3i): heap_vector(V, ^N), the heap counterpart of blt
+        # 06: kappa2 kernel/flm/KPEXTENT.ESP:109-112 check_last/1 @1d4
+        # `05 00 00 00` and :118-120 get_address/3 @19c `05 01 02 00` (Pool
+        # in A1, L to A2, then `46 02 01 02` L-1 and vector_element)
+        t = deref(self.x[a])
+        if c:
+            raise Refusal('operand', '%s @%x: blt 05 %02x %02x %02x: only a zero third byte is witnessed' % (
+                code.id, off, a, b, c))
+        if isinstance(t, Vec) and t.heap:
+            self.x[b] = len(t.args)
+            self.nxt(code, off)
+        else:
+            self.fail()
+
     def op_integer(self, code, off, a, b, c, v):
         t = deref(self.x[a])
         self.nxt(code, off) if isinstance(t, int) and not isinstance(t, bool) else self.fail()
+
+    def op_atom(self, code, off, a, b, c, v):
+        # blt 00 (step 3i): g_window.esp:148 @709 (A0), bar2_h.esp:135 @574 (A2)
+        self.nxt(code, off) if isinstance(deref(self.x[a]), Atom) else self.fail()
 
     def op_unbound(self, code, off, a, b, c, v):
         self.nxt(code, off) if isinstance(deref(self.x[a]), Var) else self.fail()
@@ -2084,6 +2259,13 @@ SIMPOS_MODELS = {
     ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
     ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
     ('simpos##process', 'instance', 'suspend', 2): Machine.process_suspend,
+    # step 3i: boot_process overrides :create and :activate (TM-100 p13,
+    # TR-056 p21); the overriding bodies are not printed, and the
+    # inherited process versions would run in their place, so they are
+    # refused here (standin/boot_process.esp)
+    ('simpos##boot_process', 'class', 'create', 2): Machine.boot_process_override,
+    ('simpos##boot_process', 'class', 'create', 3): Machine.boot_process_override,
+    ('simpos##boot_process', 'instance', 'activate', 2): Machine.boot_process_override,
 }
 
 
@@ -2409,32 +2591,56 @@ def census(m=None, max_steps=20000):
     return census_of(m, m.lib.free_of_simpos(six, 'union'))
 
 
-def census_of(m, classes, recipes=None):
+def census_of(m, classes, recipes=None, reverse=False):
     """census(): every method of CLASSES, each called once.  RECIPES
     (step 3f): class -> a function making the instance receiver (RECIPES
-    above); a class without one gets new/2's instance."""
+    above); a class without one gets new/2's instance.
+
+    Each row starts from freshly generated class objects (step 3i, OURS):
+    the class slots are dropped before every call, so they take their
+    initial values again on first access (TM-388 p.49), and the census
+    process (stand-in process's class slot `current`) is a new one.  A
+    row's outcome is then what it is alone on a fresh machine, whatever
+    rows ran before it.  Before step 3i one machine's class slots were
+    shared by every row, so a row could read what an earlier row left
+    (pimfep_message_log dump_log/1 read the `log_table` that
+    set_log_table/2 had set to an unbound variable; resign/1 and
+    resign_core/1 popped a program that an earlier row's assign/1 had
+    pushed on the shared process's stack; psi/README.md "Step 3i").  REVERSE runs
+    the classes and each class's methods in the opposite order (the test
+    of that independence, test_espc.py test_step3i_census_order)."""
     rows = []
-    for cid in classes:
+    for cid in (list(classes)[::-1] if reverse else classes):
         co = m.lib.build(cid)
-        for section, table in (('class', co.class_methods), ('instance', co.instance_methods)):
-            for (name, n), meth in table.items():
-                sel = '%s/%d' % (name, n)
-                try:
-                    # step 3g: a request for a device command handler
-                    # (REQUEST_ID), only where the receiver has a recipe
-                    lead = (request_args(m, cid, name, n)
-                            if section == 'instance' and recipes and cid in recipes else [])
-                    recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
-                    regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
-                    ok = any(True for _ in m.solve_send(recv, name, regs))
-                    rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
-                except Refusal as e:
-                    rows.append((cid, section, sel, 'refused', e.cause, e.detail))
-                except Raised as e:
-                    rows.append((cid, section, sel, 'exception', 'raise', repr(e.info)))
-                except StepLimit:
-                    rows.append((cid, section, sel, 'step limit', '', ''))
+        calls = [(section, name, n)
+                 for section, table in (('class', co.class_methods), ('instance', co.instance_methods))
+                 for (name, n) in table]
+        for section, name, n in (calls[::-1] if reverse else calls):
+            m.class_slots = {}
+            rows.append(census_row(m, cid, section, name, n, recipes))
     return rows
+
+
+def census_row(m, cid, section, name, n, recipes=None):
+    """One census row: NAME/N of CID called once with unbound arguments
+    (census_of above).  -> (class, section, selector, outcome, cause,
+    detail)."""
+    sel = '%s/%d' % (name, n)
+    try:
+        # step 3g: a request for a device command handler
+        # (REQUEST_ID), only where the receiver has a recipe
+        lead = (request_args(m, cid, name, n)
+                if section == 'instance' and recipes and cid in recipes else [])
+        recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
+        regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
+        ok = any(True for _ in m.solve_send(recv, name, regs))
+        return (cid, section, sel, 'success' if ok else 'failure', '', '')
+    except Refusal as e:
+        return (cid, section, sel, 'refused', e.cause, e.detail)
+    except Raised as e:
+        return (cid, section, sel, 'exception', 'raise', repr(e.info))
+    except StepLimit:
+        return (cid, section, sel, 'step limit', '', '')
 
 
 FEP_PACKAGES = ('pimfep', 'pimscsi')

@@ -48,7 +48,7 @@ def clip(s,n=150):
 def esc(s): return re.sub(r'\s+',' ',(s or '')).replace('|','\\|')
 OVR={('create','2'):'class-method constructor without options (PRINTED-INTERFACE TM-125 p13); see §3.1 (window), §2.8 (standard_io_buffer)',
      ('create','3'):'class-method constructor (PRINTED-INTERFACE TM-125 p13-14); per-class argument order in §3.1 (windows: options list first; files/buffers/fonts differ)',
-     ('create','4'):'pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE disc/exshow.esp:23, cal-esp/deb2.12/dmenu.esp:1214); see §2.11, §3.1',
+     ('create','4'):'pmacs_window (Opts,_,^W) and editor_text_buffer (^Buf,Name,Size) variants (USAGE kwic-esp src/inEditor1.esp:151-152 for pmacs_window, cal-esp/deb2.12/dmenu.esp:1214; disc/exshow.esp:23-25 sends pmacs_window create/3 and editor_text_buffer create/4, corrected 2026-11-24, re-read 2026-11-25); see §2.11, §3.1',
      ('close_input','1'):'close a standard_input_file opened with create/3 (USAGE: cal-esp/cal2.12/control.esp:193)',
      ('close_output','1'):'close (and write out) a standard_output_file (USAGE: cal-esp/cal2.12/control.esp:360)',
      ('get_slot','3'):'(INFERENCE) ESP object-level slot access by name, inherited by every class (not window-specific); see shell.md',

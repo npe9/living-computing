@@ -588,8 +588,8 @@ class Standins(unittest.TestCase):
 
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
-            'simpos##alarm_watch', 'simpos##as_class_with_lock', 'simpos##as_message',
-            'simpos##as_program',
+            'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
+            'simpos##as_message', 'simpos##as_program', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
@@ -780,14 +780,18 @@ class Standins(unittest.TestCase):
 
     def test_printed_process_slots(self):
         # :self(#process,P) makes the process with :new, which runs the
-        # printed slot initialisers (TM-100 Fig. 3.1): four lists and a clock
+        # printed slot initialisers (TM-100 Fig. 3.1): four lists and a clock.
+        # Since step 3i the first process is the boot process (a
+        # boot_process, no slots of its own), activated: status `active`
         (a,) = K.call_class_method(self.m, 'simpos##process', 'self', [K.Var()])
+        self.assertEqual(a[0].cid, 'simpos##boot_process')
         co = self.m.lib.build('simpos##process')
+        self.assertEqual(len(co.instance_slots), len(self.m.lib.build('simpos##boot_process').instance_slots))
         got = {e.name: v for e, v in zip(co.instance_slots, a[0].slots)}
         for n in ('suspend_reasons', 'children_processes', 'invocation_stack', 'resources'):
             self.assertEqual(got[n].cid, 'simpos##list', n)
         self.assertEqual(got['clock'].cid, 'simpos##process_clock')
-        self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'nil'))
+        self.assertEqual((got['mask_count'], repr(got['status'])), (0, 'active'))
         self.assertTrue(co.complete)
 
     def send(self, obj, name, *args):
@@ -1220,7 +1224,48 @@ end.''', 'simpos')
         # census's front end fep_type is the template constant 0 (create/6
         # writes it, @50), so the shutdown branch is skipped, and the
         # census's process has no children.  A census artifact, not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 810, 'failure': 165, 'refused': 428, 'exception': 16,
+        # step 3i: every row from freshly generated class objects (kl0
+        # census_of; test_step3i_census_order): 810 / 165 / 428 -> 757 /
+        # 219 / 427.  70 rows move, all order effects (each checked alone
+        # on a new machine, psi/README.md "Step 3i"): 54 resign/1 and
+        # resign_core/1 rows fail on the row's own empty program stack;
+        # two locked/1 fail unlocked; pseudo_scsi shutdown/1 and three
+        # remote_login_replier rows refuse; create_socket/9 fails (no
+        # program on its process's stack); four pimfep_message_log rows
+        # succeed on the empty log (`none`), not progress
+        # step 3i: pmi 3b and 6c witnessed (LOADER.ESP:118-126,
+        # RDMSOPE.ESP:285-291): 757 / 219 / 427 -> 759 / 219 / 425.  The
+        # five pseudo_scsi rows that stopped at 6c @13d run into local
+        # command/2 (a c6 entry): command/2 and command_with_hook/2 succeed
+        # (the census's unbound first argument takes clause 1,
+        # `command([], _)`; unbound probing, not progress); send_data/4,
+        # receive_data/4 and receive_command/3 stop at the unprinted
+        # as_resource assigned/1
+        # step 3i: blt 00 and e0 witnessed (g_window.esp:148, bar2_h.esp:135,
+        # as_pred.esp:419-422): 759 / 219 / 425 -> 759 / 221 / 423.  cmt
+        # and scsi transfer/6 go from blt e0 (scsi_communicator
+        # include_item_1/3 @26b) to failure: the census's unbound item is
+        # neither an integer nor an atom (unbound probing, not progress)
+        # step 3i: pmi c8 witnessed (HLCSESITTK.ESP:408-424): 759 / 221 / 423
+        # -> 763 / 221 / 419.  The four expand/7 (scsi_fep_macro,
+        # scsi_macro, pseudo_scsi_macro, scsi_macro_core) succeed: the
+        # census's unbound first argument takes c8's try chain and the
+        # first clause's get_constant binds it (unbound probing, not
+        # progress)
+        # step 3i: blt 1a new_stack_vector (mcd.esp:112-116, KP_BFMOM.ESP:
+        # 181-185): 763 / 221 / 419 -> 768 / 221 / 414.  melt_arguments/2
+        # (cmt, scsi, scsi_communicator) and melt_method/3 (cmt, scsi)
+        # succeed: valid_size is its template slot constant 0, so the
+        # melted vector is {} (a census artifact, not progress);
+        # scsi_communicator melt_method/3 stops at get_content/2, not in
+        # the class
+        # step 3i: pmi c9's first target is [] only (cts_post.esp:18-21):
+        # 768 / 221 / 414 -> 767 / 221 / 415.  scsi shutdown/1 no longer
+        # succeeds: scsi_low_if local check_status/3 @115 sent the atom
+        # handler_dead to its nil target (@121 `d2`, past the get_nil @120);
+        # it now takes the other target @125 and raises (scsi_error
+        # raise/5, not held).  The success was the c9 fault, not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 767, 'failure': 221, 'refused': 415, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1285,10 +1330,21 @@ end.''', 'simpos')
         # (each checked alone: a reply put on the output stream);
         # abort_loop/1 fails (try_to_see/2 on the empty input stream);
         # loop_main/1 waits in see/2 ('would suspend')
-        self.assertEqual((len(rows), out), (1420, {'success': 836, 'failure': 164, 'refused': 403,
+        # step 3i: every row from freshly generated class objects: 836 /
+        # 164 / 403 -> 782 / 220 / 401, the same order effects as the
+        # plain census (55 resign rows here, two remote_login_replier);
+        # slot constants 93 -> 94 (pseudo_scsi_handler send_to_PE/2, which
+        # met an earlier row's unbound value before)
+        # step 3i: pmi 3b and 6c: the same five pseudo_scsi rows, 784 / 220
+        # / 399 (two successes on an unbound argument, not progress); blt 00
+        # and e0: the same two transfer/6 rows fail, 784 / 222 / 397; pmi
+        # c8: the same four expand/7 succeed, 788 / 222 / 393; blt 1a: the
+        # same six melt rows, 793 / 222 / 388; c9 [] only: scsi shutdown/1
+        # raises, 792 / 222 / 389
+        self.assertEqual((len(rows), out), (1420, {'success': 792, 'failure': 222, 'refused': 389,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 93)
+        self.assertEqual(slot_const, 94)
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'bind/4')][0], 'success')
         # the four string-I/O programs, made by create_string_io/10
@@ -1463,6 +1519,125 @@ end.''', 'simpos')
         finally:
             self.send(stack, 'clear')
 
+    def test_step3i_census_order(self):
+        # step 3i: each census row starts from freshly generated class
+        # objects (kl0 census_of drops the class slots before every call),
+        # so a row's outcome does not depend on the rows before it.  The
+        # census run backwards (classes and each class's methods in the
+        # opposite order) must give the same row, row for row, plain and
+        # with recipes.  Variable names are normalised.
+        # Injected (2026-11-25) from a backup, restored by cp, cmp-checked.
+        # Observed:
+        # - the reset line removed: this test, test_fep_census and
+        #   test_step3f_census_recipes fail; test_kl0.py passes
+        def norm(rows):
+            return {r[:3]: (r[3], r[4], re.sub(r'_G\d+', '_G', r[5])) for r in rows}
+        for recipes in (None, K.RECIPES):
+            m = K.fep_machine()
+            classes = [c for c in m.lib.templates if c.split('##')[0] in K.FEP_PACKAGES]
+            fwd = norm(K.census_of(m, classes, recipes))
+            bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
+            self.assertEqual(len(fwd), 1420)
+            diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
+            self.assertEqual(diff, [], recipes is not None)
+        # the order effect step 3h left open: set_log_table/2's unbound
+        # argument no longer reaches dump_log/1, which goes on to the
+        # message window (pmacs_window putl/2, not stood in)
+        by = norm(K.census_fep(K.fep_machine()))
+        self.assertEqual(by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][:2],
+                         ('refused', 'simpos'))
+        self.assertIn('pmacs_window:putl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
+
+    def test_step3i_boot(self):
+        # step 3i, docs/simpos/boot_route.md B2: the boot process (TM-100
+        # p6, p13; TR-056 p21; held pimmcsp##pseudo_pe_process release/1)
+        # runs a boot program (as_boot_program, TM-100 p13) with the
+        # printed as_program invoke/1.  boot_probe is an OURS test class.
+        # Injections, observed (2026-11-25; inject from a backup, restore
+        # by copy, cmp clean; test_kl0.py stayed OK in all three):
+        #   I1 process.esp self/2 back to :new(Class, P): this test ERROR,
+        #      test_printed_process_slots FAIL, nothing else.
+        #   I2 the three boot_process_override SIMPOS_MODELS rows deleted:
+        #      this test FAIL, nothing else.
+        #   I3 the dispatch inheritance walk disabled (models keyed on
+        #      simpos##process no longer reach boot_process): this test
+        #      passes; test_step3f_census_recipes, test_step3g_stream_see
+        #      and test_stream_runs FAIL (the suspend/2 model is inherited).
+        ts, failed = espc.compile_text('''class boot_probe has
+nature as_boot_program;
+instance
+attribute seen_p, seen_b, seen_top, seen_status;
+:goal(Prog) :- :self(#process, P), :get_instance(#boot_process, B),
+    :invocation_stack(P, S), :get_first(S, Top),
+    Prog!seen_p := P, Prog!seen_b := B, Prog!seen_top := Top,
+    Prog!seen_status := P!status;
+end.''', 'simpos')
+        self.assertFalse(failed)
+        lib = K.load_six()
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib)
+        probe = K.ClassRef('simpos##boot_probe')
+        boot = K.ClassRef('simpos##boot_process')
+
+        def one(recv, sel, *args):
+            m.reset()
+            sols = [[K.deref(a) for a in args] for _ in m.solve_send(recv, sel, list(args) + [recv])]
+            self.assertEqual(len(sols[:1]), 1, sel)
+            return sols[0]
+        (prog,) = one(probe, 'create', K.Var())          # printed as_program create/2
+        self.assertEqual(prog.cid, 'simpos##boot_probe')
+        one(prog, 'invoke')                              # printed invoke/1
+        pco = m.lib.build('simpos##boot_probe')
+        seen = {e.name: K.deref(v) for e, v in zip(pco.instance_slots, prog.slots)}
+        p = seen['seen_p']
+        # the program ran in the boot process, the sole boot_process
+        self.assertEqual(p.cid, 'simpos##boot_process')
+        self.assertIs(seen['seen_b'], p)
+        self.assertIs(seen['seen_top'], prog)
+        self.assertEqual(seen['seen_status'], K.Atom('active'))
+        (b,) = one(boot, 'get_instance', K.Var())
+        self.assertIs(b, p)
+        # after invoke/1: the stack is empty and the printed resign/1 let
+        # the process die (status nil, TM-100 p11)
+        bco = m.lib.build('simpos##boot_process')
+        st = {e.name: K.deref(v) for e, v in zip(bco.instance_slots, p.slots)}
+        self.assertEqual(st['status'], K.Atom('nil'))
+        self.assertEqual(len(one(st['invocation_stack'], 'empty')), 0)
+        # boot_process's own :create and :activate: overridden, not printed
+        for recv, sel, n in ((p, 'activate', 2), (boot, 'create', 2), (boot, 'create', 3)):
+            m.reset()
+            with self.assertRaises(K.Refusal) as cm:
+                any(True for _ in m.solve_send(recv, sel, [K.Var() for _ in range(n - 1)] + [recv]))
+            self.assertEqual(cm.exception.cause, 'simpos')
+            self.assertIn('overrides', cm.exception.detail)
+        # the next route step (B3) is blocked: a second process is made,
+        # its parent the boot process, and activate/2 stops at status/3
+        areas = K.Cons(K.Atom('free'), K.Cons(K.Atom('free'), K.Cons(K.Atom('free'), K.Cons(
+            K.Atom('free'), K.Atom('[]')))))
+        (p2, _a) = one(K.ClassRef('simpos##process'), 'create', K.Var(), areas)
+        pco2 = m.lib.build('simpos##process')
+        s2 = {e.name: K.deref(v) for e, v in zip(pco2.instance_slots, p2.slots)}
+        self.assertEqual((p2.cid, s2['status']), ('simpos##process', K.Atom('dormant')))
+        self.assertIs(s2['parent_process'], p)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(p2, 'activate', [prog, p2]))
+        self.assertIn('simpos##process:status/3', cm.exception.detail)
+        # the held second call site of status/3: pimmcsp##pseudo_pe_process
+        # release/1 @17a-17e, (dormant, on_release), before its
+        # :get_instance(#boot_process, _) @17f-183
+        m.reset()
+        pe = K.make_instance(m, 'pimmcsp##pseudo_pe_process')
+        m.stop_before = {('status', 3)}
+        try:
+            with self.assertRaises(K.CreatorStopped) as cm:
+                any(True for _ in m.solve_send(pe, 'release', [pe]))
+        finally:
+            m.stop_before = None
+        self.assertEqual(cm.exception.args[2][:2], [K.Atom('dormant'), K.Atom('on_release')])
+        self.assertIs(cm.exception.args[2][2], pe)
+
     def test_step3h_tcpip_recipe(self):
         # step 3h: pimos_tcpip_socket's recipe (kl0 _tcpip_socket): a front
         # end pushed by the printed as_program assign/1, create_socket/9
@@ -1554,10 +1729,13 @@ end.''', 'simpos')
             for sel in ('low_if/2', 'send_request/5', 'receive_request/5'):
                 self.assertEqual(run(cid, sel, None), ('failure',) + sw, (cid, sel))
                 # an initiator (lun := initiator by the held set_lun/2) gets
-                # past `initiator`: low_if/2 to an opcode (blt e0, past the
-                # blt e1 of include_item_1/3 since step 3h), the others to
-                # the unit check on the census's unbound unit
-                want = 'opcode' if sel == 'low_if/2' else 'unbound argument'
+                # past `initiator`: low_if/2 to include_item_1/3 (@261), the
+                # others to the unit check on the census's unbound unit.
+                # Step 3h stopped low_if/2 at blt e0 @26b; since step 3i
+                # (blt e0 witnessed) the unbound item is neither an integer
+                # nor an atom, e1 and e0 both jump, and it fails: unbound
+                # probing, not progress
+                want = 'failure' if sel == 'low_if/2' else 'unbound argument'
                 self.assertEqual(run(cid, sel, K.Atom('initiator'))[0], want, (cid, sel))
             # a target method: on lun 0 it reaches the unbound unit; on an
             # initiator it fails at `target` (@c3, integer(lun))

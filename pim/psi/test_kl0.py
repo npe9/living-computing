@@ -215,6 +215,49 @@ p_MAIN.esp:723; injected the same way; observed):
     test_step3f_census_recipes and test_step3h_scsi_mode fail;
   - the non-zero second byte refusal removed: only test_if_integer
     fails; test_espc passes.
+Step 3i's rows (Step3iRows: pmi 3b get_val_var_list, pmi 6c
+execute_local_switch; LOADER.ESP:118-126 and RDMSOPE.ESP:285-291;
+2026-11-25; injected into kl0.py from a backup, restored by cp and
+cmp-checked; both test files run; observed):
+  - 3b not unifying the car with X_H: test_append and
+    test_get_bfs_list_only fail here; test_espc passes;
+  - 6c sending a list to its const target: test_append and
+    test_get_bfs_list_only fail here; test_espc test_fep_census and
+    test_step3f_census_recipes fail;
+  - 6c refusing a c6 entry: test_get_bfs_list_only errors here; test_espc
+    test_fep_census and test_step3f_census_recipes fail.
+Step 3i's blt 00 atom and blt e0 if_atom (test_atom: as_pred.esp:419-422,
+g_window.esp:146-149, bar2_h.esp:135; injected the same way; observed):
+  - e0's branch inverted (jump on an atom): only test_atom fails; test_espc
+    passes;
+  - blt 00 succeeding on anything: only test_atom fails; test_espc passes.
+Step 3i's pmi c8 switch_on_vector_else (test_switch_on_vector_else:
+HLCSESITTK.ESP:408-424, BCMGETREC.ESP:124-160; injected the same way;
+observed):
+  - c8 sending an unbound argument to its vector path: test_census and
+    test_switch_on_vector_else fail here; test_espc test_fep_census and
+    test_step3f_census_recipes fail;
+  - 6c into a c8 swapping the vector and else targets: only
+    test_switch_on_vector_else fails; test_espc passes.
+Step 3i's blt 1a new_stack_vector (test_new_stack_vector: mcd.esp:112-116,
+KP_BFMOM.ESP:181-185; injected the same way; observed):
+  - elements 0 instead of fresh variables: only test_new_stack_vector
+    fails; test_espc passes;
+  - V and N swapped: test_new_stack_vector errors here; test_espc
+    test_fep_census and test_step3f_census_recipes fail.
+Step 3i's pmi c9 fix ([] only to the first target; test_switch_on_list_nil:
+cts_post.esp:18-21) and the new guards (injected the same way; observed):
+  - c9 sending any atomic value to its first target: test_switch_on_list_nil
+    fails here; test_espc test_fep_census and test_step3f_census_recipes
+    fail;
+  - the 6c targets-differ guard removed: only test_other_entries_refused
+    errors; test_espc passes;
+  - c8's zero-high-half guard removed: only test_switch_on_vector_else
+    fails; test_espc passes.
+Step 3i's blt 05 heap_vector (test_heap_vector: KPEXTENT.ESP:109-120;
+injected the same way; observed):
+  - the heap check dropped (any vector answers): only test_heap_vector
+    fails; test_espc passes.
 """
 import os
 import sys
@@ -270,8 +313,9 @@ class Table(unittest.TestCase):
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
-        # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1
-        self.assertEqual(len(rows), 135)
+        # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
+        # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05
+        self.assertEqual(len(rows), 142)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -869,12 +913,12 @@ class Step3gSwitches(unittest.TestCase):
         self.assertEqual(run(A('foo')), [])            # atom, no clause: the cc chain's fe
         self.assertEqual(run(K.Vec([A('a')])), [])     # vector: ff to fe
         self.assertEqual(repr(run(K.Var())), '[[[], []]]')   # the e4 chain, clause 1 cuts
-        # a list reaches clause 2 (@6c5 2b, past its e2), which stops at the
-        # unrowed pmi 3b @6c9: the dispatch itself is what is checked
-        with self.assertRaises(K.Refusal) as e:
-            run(K.Cons(K.Vec([1, A('s1')]), K.NIL))
-        self.assertIn('pmi 3b', str(e.exception))
-        self.assertIn('@6c9', str(e.exception))
+        # a list reaches clause 2 (@6c5 2b, past its e2).  Until step 3i it
+        # stopped at the unrowed pmi 3b @6c9; now 3b and the recursive
+        # pmi 6c @6cd (to this c6) run it to the end
+        self.assertEqual(repr(run(K.Cons(K.Vec([1, A('s1')]), K.NIL))), '[[[{1,s1}], [s1]]]')
+        two = K.Cons(K.Vec([1, A('s1')]), K.Cons(K.Vec([2, A('s2')]), A('end')))
+        self.assertEqual(repr(run(two)), '[[[{1,s1},{2,s2}|end], [s1,s2|end]]]')
         for x in (5, K.Str('ab')):
             with self.assertRaises(K.Refusal) as e:
                 run(x)
@@ -1084,6 +1128,195 @@ class Step3hRows(unittest.TestCase):
             self.assertEqual(m.pc, (fake, 1))
 
 
+class Step3iRows(unittest.TestCase):
+    """pmi 3b get_val_var_list and pmi 6c execute_local_switch (step 3i),
+    on kappa##kappa_loader local append/3 @90 beside its held source,
+    kappa2 utility/tool/LOADER.ESP:118-126:
+        append([],[],[]):-!;
+        append([],[O|Ol],[O|C]):-!, append([],Ol,C);
+        append([D|Dl],O,[D|C]):- append(Dl,O,C);
+    Each answer below is the one the source gives."""
+
+    def append(self, *args):
+        m = kappa_machine()
+        cid = 'kappa##kappa_loader'
+        (p,) = [p for p in m.lib.templates[cid].locals if (p.name, p.arity, p.offset) == ('append', 3, 0x90)]
+        m.reset()
+        return [repr([K.resolve(a) for a in args]) for _ in m.solve((m.code(cid), p.offset), list(args))]
+
+    @staticmethod
+    def lst(*xs):
+        t = K.NIL
+        for x in reversed(xs):
+            t = K.Cons(x, t)
+        return t
+
+    def test_append(self):
+        L, a, b, c = self.lst, A('a'), A('b'), A('c')
+        self.assertEqual(self.append(K.NIL, K.NIL, K.Var()), ['[[], [], []]'])
+        # clause 3 twice through 6c @94 (c9 list target), then clause 2's
+        # 6c @a3 (c9 const target) and clause 1
+        self.assertEqual(self.append(L(a, b), L(c), K.Var()), ['[[a,b], [c], [a,b,c]]'])
+        self.assertEqual(self.append(K.NIL, L(a, b), K.Var()), ['[[], [a,b], [a,b]]'])
+        # 3b unifies the car with X_H: a wrong third argument fails
+        self.assertEqual(self.append(L(a), L(b), L(a, b)), ['[[a], [b], [a,b]]'])
+        self.assertEqual(self.append(L(a), L(b), L(a, c)), [])
+        self.assertEqual(self.append(L(b), L(b), L(a, b)), [])
+        # an unbound first argument takes the c9's unbound target (e5 chain)
+        self.assertEqual(self.append(K.Var(), K.NIL, L(a)), ['[[a], [], [a]]'])
+        self.assertEqual(self.append(A('x'), K.NIL, K.Var()), [])
+
+    def test_atom(self):
+        # blt e0 (if_atom) and blt 00 (atom/1), step 3i, on paragraph code
+        # beside its source; Step3hRows.run_or runs a local predicate
+        run = Step3hRows('test_if_integer').run_or
+        sym = 'send simpos##symbolizer:'
+        # as_pred.esp:419 `( atom(Atom),! ; integer(Atom),!)`: e0 @1009
+        cid = 'paragraph##as_draw_predicate'
+        for x, n in ((A('a'), 1), (K.NIL, 1), (5, 1), (K.Str('ab'), 0), (K.Var(), 0)):
+            self.assertEqual(run(cid, '$or$26', [x])[0], n, x)
+        # as_pred.esp:421-422: an atom goes to get_atom_string/3, an integer
+        # to get_number_string/3, anything else fails
+        self.assertEqual(run(cid, '$or$27', [A('a'), K.Var()]), ('simpos', sym + 'get_atom_string/3'))
+        self.assertEqual(run(cid, '$or$27', [5, K.Var()]), ('simpos', sym + 'get_number_string/3'))
+        self.assertEqual(run(cid, '$or$27', [K.Str('ab'), K.Var()])[0], 0)
+        # g_window.esp:146-149: e1 then blt 00 @709 on the same register
+        cid = 'paragraph##g_window'
+        self.assertEqual(run(cid, '$or$12', [A('a'), K.Var()]), ('simpos', sym + 'get_atom_string/3'))
+        self.assertEqual(run(cid, '$or$12', [5, K.Var()]), ('simpos', sym + 'get_number_string/3'))
+        self.assertEqual(run(cid, '$or$12', [K.Str('ab'), K.Var()])[0], 0)
+        # X != 0 (bar2_h.esp:135 @574 `00 02`): the register named is read
+        m = machine()
+        fake = types.SimpleNamespace(id='test', cells={})
+        m.reset()
+        m.x[0], m.x[2] = 5, A('x_name_value')
+        m.op_atom(fake, 0, 2, 0, 0, 0)
+        self.assertEqual(m.pc, (fake, 1))
+        with self.assertRaises(K.Refusal):
+            m.op_if_atom(fake, 0, 0, 1, 3, 0)
+
+    def test_switch_on_vector_else(self):
+        # pmi c8 (step 3i) on kappaHLC_SIT_taker optimum_set_left_set/7 @234
+        # (HLCSESITTK.ESP:408-424: clause 1 `@anb`, clause 2 `_`), and the
+        # 6c calls into the c8s of BCMGETREC.ESP:124-160 (both clauses a
+        # vector), each first-argument type
+        m = kappa_machine()
+
+        def at(cid, off, x, op):
+            code = m.code(cid)
+            w = code.cells[off][3]
+            m.reset()
+            m.x[0] = x
+            op(code, off, (w >> 16) & 255, (w >> 8) & 255, w & 255, w)
+            return m.pc[1]
+        cid = 'kappa##kappaHLC_SIT_taker'
+        sw = m.op_switch_on_vector_else
+        self.assertEqual(at(cid, 0x234, K.Var(), sw), 0x23d)                  # e4, both clauses
+        self.assertEqual(at(cid, 0x234, K.Vec([A('@'), A('anb')]), sw), 0x236)  # ce
+        for x in (A('foo'), 3, K.Cons(A('a'), K.NIL), K.Str('s')):
+            self.assertEqual(at(cid, 0x234, x, sw), 0x250, x)                # clause 2
+        cid = 'kappa##kappaBCM_get_primitive_record'
+        ex = m.op_execute_local_switch
+        for off, chain, fail in ((0x5d, 0x135, 0x17c), (0x54, 0x19e, 0x1c6)):
+            self.assertEqual(at(cid, off, K.Var(), ex), chain)
+            self.assertEqual(at(cid, off, K.Vec([A('t'), 1]), ex), chain)
+            self.assertEqual(at(cid, off, A('foo'), ex), fail)
+            self.assertEqual(at(cid, off, K.Cons(A('a'), K.NIL), ex), fail)
+        with self.assertRaises(K.Refusal):
+            sw(types.SimpleNamespace(id='test', cells={1: (0, 0x00, 0, 3)}), 0, 1, 0, 5, 0xc8010005)
+        # a non-zero high half in W (no held use) refuses
+        m.reset()
+        m.x[0] = K.Var()
+        with self.assertRaises(K.Refusal):
+            sw(types.SimpleNamespace(id='test', cells={1: (0, 0x00, 0, 0x00010003)}), 0, 0, 0, 5, 0xc8000005)
+
+    def test_new_stack_vector(self):
+        # blt 1a (step 3i): kappa2 user_if/pb/mcd.esp:112-116 make_term/5
+        # (pb_siki_make_cond @a3): new_stack_vector(Cond,3), then each
+        # element unified with a constant or an argument; the last clause
+        # (no cut in the source) gives Flag = 1
+        m = kappa_machine()
+        cid = 'kappa##pb_siki_make_cond'
+        (p,) = [p for p in m.lib.templates[cid].locals if p.offset == 0xa3]
+
+        def run(op):
+            args = [A(op), A('age'), 30, K.Var(), K.Var()]
+            m.reset()
+            return [repr([K.resolve(a) for a in args][3:]) for _ in m.solve((m.code(cid), p.offset), args)]
+        r = run('=')
+        self.assertEqual((len(r), r[0]), (2, '[{=,age,30}, 0]'))
+        self.assertTrue(r[1].startswith('[_G') and r[1].endswith(', 1]'), r[1])
+        self.assertEqual(run('<')[0], '[{<,age,30}, 0]')
+        self.assertEqual(len(run('foo')), 1)
+        # V != N (KP_BFMOM.ESP:181-185 @93 `1a 02 00 00`): size in A0, vector to A2
+        fake = types.SimpleNamespace(id='test', cells={})
+        m.reset()
+        m.x[0] = 21
+        m.op_new_stack_vector(fake, 0, 2, 0, 0, 0)
+        v = K.deref(m.x[2])
+        self.assertEqual(len(v.args), 21)
+        self.assertTrue(all(isinstance(K.deref(e), K.Var) for e in v.args))
+        self.assertEqual(m.x[0], 21)
+        with self.assertRaises(K.Refusal):
+            m.op_new_stack_vector(fake, 0, 2, 0, 1, 0)
+
+    def test_heap_vector(self):
+        # blt 05 heap_vector(V, ^N) (step 3i): KPEXTENT.ESP:109-120, on the
+        # cells of check_last/1 @1d4 `05 00 00 00` and get_address/3 @19c
+        # `05 01 02 00`; a heap vector answers its length, a stack vector,
+        # an atom or an unbound variable fails (as blt 06 the reverse)
+        m = kappa_machine()
+        code = m.code('kappa##kappaFLM_extent_manager')
+        hv = K.Vec([A('x'), A('end_of_extent')], heap=True)
+
+        def at(off, reg, x):
+            w = code.cells[off][3]
+            m.reset()
+            m.x[reg] = x
+            m.handlers[('blt', '05')](code, off, (w >> 16) & 255, (w >> 8) & 255, w & 255, w)
+            return m.pc
+        self.assertEqual(at(0x1d4, 0, hv), (code, 0x1d5))
+        self.assertEqual(m.x[0], 2)
+        self.assertEqual(at(0x19c, 1, hv), (code, 0x19d))
+        self.assertEqual(m.x[2], 2)
+        for x in (K.Vec([A('x')]), A('a'), K.Var()):
+            self.assertNotEqual(at(0x19c, 1, x), (code, 0x19d), x)
+        with self.assertRaises(K.Refusal):
+            m.op_heap_vector(types.SimpleNamespace(id='test', cells={}), 0, 1, 2, 1, 0)
+
+    def test_switch_on_list_nil(self):
+        # pmi c9's first target is [] only (step 3i): fts##post_cts local
+        # post_cts_list/1 @5b (utter source/FTS/cts_post.esp:18-21
+        # `post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`) sends
+        # [] to @66 `d2`, past the clause's get_nil @65.  A non-nil atom or
+        # an integer must fail, as the source does
+        lib = K.LB.Librarian()
+        lib.load_held(pkgs=['fts'])
+        m = K.Machine(lib)
+        cid = 'fts##post_cts'
+        (p,) = [p for p in lib.templates[cid].locals if (p.name, p.offset) == ('post_cts_list', 0x5b)]
+
+        def n(x):
+            m.reset()
+            return sum(1 for _ in m.solve((m.code(cid), p.offset), [x]))
+        self.assertEqual([n(x) for x in (K.NIL, A('foo'), 5, K.Str('s'))], [1, 0, 0, 0])
+        self.assertEqual(n(K.Var()), 1)    # the try chain, clause 1 ([]) cuts
+
+    def test_other_entries_refused(self):
+        # a 6c whose entry is not a c9 or a c6 00 00 00, and a 6c whose
+        # targets differ from its entry's (MEASURED: 297 and 183 held uses)
+        m = machine()
+        for e, w in ((0xc7000000, 0), (0xc9000005, 0x00170015)):
+            code = types.SimpleNamespace(id='test', cells={
+                0: (0, 0x20, 0, e), 1: (0, 0x00, 0, w),
+                4: (0, 0x20, 0, 0x6c000000), 5: (0, 0x00, 0, 0xfffa0012), 6: (0, 0x00, 0, 0x000ffffb)})
+            m.reset()
+            m.x[0] = K.NIL
+            with self.assertRaises(K.Refusal) as r:
+                m.op_execute_local_switch(code, 4, 0, 0, 0, 0x6c000000)
+            self.assertEqual(r.exception.cause, 'operand')
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -1102,7 +1335,13 @@ class Census(unittest.TestCase):
         # 2026-11-25: string/3 a type test (fails on an unbound argument):
         # csp_default_write write/2 goes on and runs into the step limit
         # step 3g: pmi c3 witnessed: pe_registers register_type/3 succeeds
-        self.assertEqual(out, {'refused': 206, 'success': 311, 'failure': 12, 'step limit': 1})
+        # step 3i: pmi c8 witnessed (HLCSESITTK.ESP:408-424): of its 8 rows
+        # 6 succeed (csp_user_command create/5 and set_command_name/2 in
+        # pimmcsp, set_command_name/2 in mpsicsp, rasm_one_word/3,
+        # graphics_item set_item/2 and get_item/2).  Each reaches the c8
+        # only with the census's unbound argument, which takes the try
+        # chain and the first clause binds it: unbound probing, not progress
+        self.assertEqual(out, {'refused': 200, 'success': 317, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -1144,9 +1383,13 @@ class Census(unittest.TestCase):
             # bottom_icon) go on to an execute_graphics_command/2 sent to
             # an unbound receiver: 'operand' 7 -> 3, 'unbound receiver'
             # 16 -> 20
-            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 3, 'pool': 1,
-            'missing opcode pmi c8': 8,
-            'missing opcode pmi 6c': 5,
+            # step 3i: pmi 6c rowed; its 5 rows here (mpsicsp
+            # csp_csbreak_address_table, kl1_tag) enter a switch other than
+            # c9 / c6 00 00 00 and refuse as 'operand' (3 -> 8)
+            # step 3i: pmi c8: mpsicsp csp_user_command create/5 goes on to
+            # pmi a6 ('operand' 8 -> 9), graphics_item match/2 to an
+            # equal_string on an unbound argument (22 -> 23)
+            'receiver a slot constant': 9, 'unbound argument': 23, 'operand': 9, 'pool': 1,
             'missing opcode blt f4': 8, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
             # step 3g: pmi c3 (retry) witnessed: pe_registers

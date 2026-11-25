@@ -575,7 +575,10 @@ READ in `pimos_scsi_front_end` (the main loop `$or$0/3`: `get/3`,
    that id (`device_table`, `get_at/5`). The device's own process
    takes it (`as_pimos_device` local `refute/3`), converts the command
    number to its name and sends `:refute(Device, Name, Vector)`; a
-   failure is answered `{Id, 5}`. For a window the device
+   failure is answered `{Id, 5}` (re-read from the cells 2026-11-25:
+   the local's second clause @14e-165 gets Id from the raw message,
+   replies `{Id, 5}`, and then fails; `simpos/source_check_2026-11-24.md`
+   §9). For a window the device
    (`pimos_window_process put/2`) hands the message to its
    `pimos_window`, whose `kl1_message/2` does the same on the window's
    **editor**. So a device command is the instance method of that

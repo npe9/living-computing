@@ -533,6 +533,25 @@ and stand-in `simpos##` classes. In order:
        (`source_check_2026-11-24.md` §8). One cross-reference, §6.1
        step 4's `{Id, 5}`, is still unread. The TM-115 `get_position` page is fixed in the generated
        tables.
+   - *2026-11-25, step 3i* (`../../psi/README.md`, the "Step 3i"
+     sections):
+     - The census is order-independent: class slots are dropped before
+       each row. Plain FEP 810 / 165 / 428 becomes 757 / 219 / 427, with
+       recipes 836 / 164 / 403 becomes 782 / 220 / 401. Every removed
+       success was produced by an earlier row. Six packages unchanged.
+     - `boot_route.md` written: the path to a SIMPOS top level, step by
+       step, cited. Its step B2 is taken: the census's process is now a
+       boot process (INTERPOLATED, TM-100 p6/p13, TR-056 p21, held
+       `pseudo_pe_process release/1`). Totals unchanged.
+     - window.md appendix A and §2.14 equal their generators; §6.1 step
+       4's `{Id, 5}` re-read from the cells (`source_check` §9).
+     - pmi 3b, 6c, c8 and blt 00, e0, 1a are KNOWN-PLAINTEXT on held
+       kappa2 and paragraph source. Six packages 317 / 12 / 200 / 1,
+       plain FEP 767 / 221 / 415, with recipes 792 / 222 / 389. Every new
+       success is a census artifact (an unbound argument meeting the
+       first clause, or a template slot constant), not progress; the new
+       real stop is `as_resource assigned/1`. A fault in pmi c9 was found
+       and fixed: its first target is `[]` only (cts_post.esp:18-21).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
