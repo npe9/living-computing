@@ -16,7 +16,7 @@
 ! is damaged in the scan and reads as a comma by position only.
 !
 ! >>> SINCE 2026-11-16 (G2.3 stage 1) THE MODEL PERFORMS THE DECIMAL LOAD,
-! >>> as an add to zero through the decimal box (bsv/StretchDecBox.bsv),
+! >>> as an add to zero through the decimal box (bsv/StretchSAU.bsv),
 ! >>> which is this page's own description; the checks are now the
 ! >>> hand-derived values below.  Until then it refused it (OP) and the
 ! >>> deck pinned the refusal: <<<
