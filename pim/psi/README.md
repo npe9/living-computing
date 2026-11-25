@@ -2294,7 +2294,8 @@ Effect, row by row (MEASURED 2026-11-25):
     - `pimos_string_io_invoker close/3`;
     - `pimos_socket_receiver close/3`;
     - `pimos_tcpip_socket` `bind/4`, `flush/3`, `abort_getb/3` and
-      `abort_accept/3`. tcpip has no recipe (`invocation_stack/2`).
+      `abort_accept/3`. tcpip has no recipe (`invocation_stack/2`;
+      step 3h gives it one, and `bind/4` and `flush/3` then succeed).
 - One row outside the 45 also moves: `pimos_remote_login_server io/4`,
   from `equal_string` on an unbound argument to failure.
 - **The `pimos_file` correction moves 4 more rows:**
@@ -2775,6 +2776,74 @@ own two-argument methods, on other classes. A stand-in would be
 invented, and the rows would move on only to the also unprinted
 `entry_of_invoke/2`.
 
+### Step 3h: a recipe for `pimos_tcpip_socket` (2026-11-25)
+
+`create_socket/9` (@21-69) takes the calling program from the top of
+its process's invocation stack: `:self(#process,P)`,
+`:invocation_stack(P,L)`, `:get_first(L,Prog)` (@4d-59). It stores it
+as the device's `fep_object`, with the process as `fep_process`. A0
+goes to `set_output_stream/2` (@3d-40), A3 to `set_device_id/2`
+(@49-4c).
+
+**Which program is on top: the front end (INFERENCE).**
+- The device creators are reached from `pimos_scsi_front_end`'s local
+  `create_device/4` (@409; `fep_services.md` §6.1), through
+  `refute_command/3` (@30b) and the local `loop` (@2bd).
+- The front end's `goal/1` runs `loop` in its own process: `tag_catch/9`
+  with the atom `loop` (@c5-c9). The supervisor gets a new process and
+  `activate/2` (@a4-b9).
+- A program's goal runs with the program pushed on its process's stack.
+  TM-100 PDF p11: "On invocation of a program, the program is pushed
+  onto the invocation stack of the process and the instance predicate
+  :goal(Program) is called" (`as_program` `assign/1`, Fig. 3.3).
+- Held code also reads the socket's `fep_object` again: `do_accept/3`
+  (@419-424) passes it to the accepted socket's `set_socket/5`.
+
+**The recipe** (kl0 `_tcpip_socket`, OURS):
+1. push a front end with the printed `assign/1`;
+2. run `create_socket/9` with a new stream in A0 and `REQUEST_ID` in A3,
+   stopped before `activate/2`, as the other creators are;
+3. pop the front end with the printed `resign_core/1`, so the census
+   process's stack is left as it was found.
+
+The front end is new/2's instance (OURS): its creator `create/6` is not
+run.
+
+Effect, row by row (MEASURED 2026-11-25). The plain census is unchanged
+(it uses no recipes). With recipes, 833 / 163 / 407 becomes 836 / 164 /
+403, and slot constants go from 96 to 93. Five rows move, each checked
+alone on a fresh machine:
+
+- `attention/1`, `bind/4` and `flush/3` succeed. Each puts its reply on
+  the output stream, as the timer's do (`attention/1` puts `[16, 0, 3,
+  0]`). They were slot constants or `set_string_element` on an unbound
+  Id before. These are held reply paths given an OURS request, not a
+  running front end.
+- `abort_loop/1` fails: `try_to_see/2` (@30e) on the empty input
+  stream fails, as stood in.
+- `loop_main/1` waits in `see/2` (`would suspend`), as the other devices'
+  do.
+
+`abort_getb/3` and `abort_accept/3` still stop at `set_string_element`.
+Their reply `{Id, X}` has an unbound X, which the census does not give.
+`create_socket/9` itself (a class row) still stops at
+`process:status/3`.
+
+Test (`test_espc.py` `test_step3h_tcpip_recipe`):
+- the socket's `fep_object` is a front end, its `fep_process` the census
+  process, its device id 16 and its output stream a stream;
+- the stack is empty again after the recipe;
+- `attention/1` puts `[16, 0, 3, 0]`.
+
+`test_step3f_census_recipes` pins the totals, the 93 slot constants, and
+the 18 `would suspend` rows.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+- No push: `test_step3h_tcpip_recipe` errors and
+  `test_step3f_census_recipes` fails.
+- No pop: only `test_step3h_tcpip_recipe` fails. No census row depends
+  on the stack being emptied.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -2838,14 +2907,44 @@ invented, and the rows would move on only to the also unprinted
       (`ffff`, editor `get_position/3`, `get_inside_size/3`), revealed
       by step 3g.
     - `process:invocation_stack/2`: stood in by step 3g
-      (INTERPOLATED). tcpip still has no recipe: a fresh census process
-      has no program on its stack, and pushing the front end's program
-      would invent the caller.
-    - `process:status/3` (11 plain-census creator rows). It has one
-      printed call, `:status(Process, dormant, on_activate)` in
-      `activate/2` (TM-100 Fig. 3.1), and no definition. A stand-in
-      would only move the rows to `entry_of_invoke/2` (also not printed)
-      and then to the hardware `context`. Not added.
+      (INTERPOLATED). Step 3g held that pushing the front end would
+      invent the caller. Step 3h read the front end's `goal/1`: it runs
+      `loop` in its own process (`tag_catch/9`, @c5-c9), and the
+      creators are reached from that loop. So the caller is the front
+      end (INFERENCE), and tcpip now has a recipe that pushes one. The
+      front end itself is new/2's instance (OURS).
+    - `process:status/3` (11 plain-census creator rows, 12 with
+      recipes). It has one printed call, `:status(Process, dormant,
+      on_activate)` in `activate/2` (TM-100 Fig. 3.1), and no
+      definition. Step 3h searched every held archive again and found
+      none. A stand-in would only move the rows to `entry_of_invoke/2`
+      (also not printed) and then to the hardware `context`. Not added.
+    - `process:children/2`: stood in by step 3h (INTERPOLATED).
+      `add_child/2` is not, so the list is always empty.
+    - Step 3h's leads, not taken:
+      - pmi c8 (4 recipe rows, 8 six-package rows): one word follows.
+        In `runtime_monitor` local `set_attr/2` @655 (`c8 00 00 58`,
+        word 0x12), cell + 2 + word lands on @669, an `e4`
+        try-chain head, and the `ce` follows at cell + 2. A
+        `switch_on_term` for vector-or-unbound clauses would fit. Its
+        source is not held: no file of the 83 paragraph sources has
+        `set_attr(` or a runtime monitor. So it needs another witness.
+      - pmi 6c (5 recipe rows, 5 six-package rows): two words follow.
+        1,520 uses, all in kappa and utter (none in paragraph). kappa2
+        `LOADER.ESP`:118-126 `append/3` (kappa_loader local `append/3`
+        @90) is a candidate witness, not yet read cell by cell.
+      - blt e0 (151 held uses) and blt 00 (`atom/1`): the branch
+        and plain forms of the atom test, by analogy with e1 and 01.
+        They need their own witnesses. g_window.esp:148 `atom(N),!` @709
+        is a candidate for blt 00.
+      - The 6 `not_less_than`-on-unbound pimscsi rows and the 9
+        `set_string_element` rows stay as unbound probing.
+      - `pimfep_message_log dump_log/1` and `/2` stop at `vector_element`
+        on an unbound element only in the census. Alone on a fresh
+        machine, `dump_log/1` goes on to `pmacs_window:putl/2` (not
+        stood in) and `dump_log/2` succeeds. It is a census order
+        effect: an earlier row leaves the class slot `log_table` holding
+        a table.
     - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
       set_default_node/2` @29-34, which stores the answer in the class
       slot `default_spawn_node`). No held or printed source gives the

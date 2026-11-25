@@ -1279,11 +1279,18 @@ end.''', 'simpos')
         # as the plain census move)
         # step 3h: blt e1 witnessed: 831 / 163 / 409 -> 832 / 163 / 408 (the
         # same seven rows as the plain census)
-        # step 3h: process:children/2: the same row, 833 / 163 / 407
-        self.assertEqual((len(rows), out), (1420, {'success': 833, 'failure': 163, 'refused': 407,
+        # step 3h: process:children/2: the same row, 833 / 163 / 407.
+        # step 3h: pimos_tcpip_socket's recipe: 836 / 164 / 403, slot
+        # constants 96 -> 93.  attention/1, bind/4 and flush/3 succeed
+        # (each checked alone: a reply put on the output stream);
+        # abort_loop/1 fails (try_to_see/2 on the empty input stream);
+        # loop_main/1 waits in see/2 ('would suspend')
+        self.assertEqual((len(rows), out), (1420, {'success': 836, 'failure': 164, 'refused': 403,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 96)
+        self.assertEqual(slot_const, 93)
+        self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
+        self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'bind/4')][0], 'success')
         # the four string-I/O programs, made by create_string_io/10
         # step 3g: a device's loop_main/1 waits in stream see/2 on its
         # empty input stream ('would suspend'), as do the 17 goal/1,
@@ -1298,7 +1305,8 @@ end.''', 'simpos')
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
                          ('refused', 'would suspend'))
         self.assertIn('stream', by[('pimos_timer', 'instance', 'loop_main/1')][2])
-        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 17)
+        # 17, and since step 3h pimos_tcpip_socket loop_main/1: 18
+        self.assertEqual(sum(1 for r in rows if r[4] == 'would suspend'), 18)
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
@@ -1438,7 +1446,8 @@ end.''', 'simpos')
             finally:
                 m.stop_before = None
         # the census's process runs no program: get_first/2 fails on the
-        # empty stack, so the creator fails (tcpip has no recipe).  The
+        # empty stack, so the creator fails (since step 3h the tcpip recipe
+        # pushes a front end first: test_step3h_tcpip_recipe).  The
         # machine is shared: empty the stack first
         self.send(stack, 'clear')
         self.assertEqual(create_socket(), [])
@@ -1453,6 +1462,31 @@ end.''', 'simpos')
             self.assertEqual(sl['device_id'], K.REQUEST_ID)
         finally:
             self.send(stack, 'clear')
+
+    def test_step3h_tcpip_recipe(self):
+        # step 3h: pimos_tcpip_socket's recipe (kl0 _tcpip_socket): a front
+        # end pushed by the printed as_program assign/1, create_socket/9
+        # run to activate/2, the front end popped by resign_core/1
+        m = K.fep_machine()
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        pco = m.lib.build('simpos##process')
+        stack = K.deref(proc.slots[m.lib.slot_number(pco, 'instance', 'invocation_stack')])
+        self.send(stack, 'clear')
+        dev = K.RECIPES[K.TCPIP](m)
+        co = m.lib.build(dev.cid)
+        sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual((sl['fep_object'].cid, sl['fep_process'], sl['device_id'], sl['output_stream'].cid),
+                         (K.FRONT_END, proc, K.REQUEST_ID, 'simpos##stream'))
+        # the stack is left as it was found
+        self.assertEqual(K.resolve(stack.slots[0]), K.NIL)
+        # attention/1 puts {Id, 3} on the output stream, as the timer's does
+        q = K.resolve(sl['output_stream'].slots[0].slots[0])
+        self.assertEqual(q, K.NIL)
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(dev, 'attention', [dev])))
+        q = K.resolve(sl['output_stream'].slots[0].slots[0])
+        self.assertEqual(K.deref(q.args[0]).codes(), [16, 0, 3, 0])
 
     def test_step3h_children(self):
         # process:children/2 (step 3h, INTERPOLATED: TM-100 Fig. 3.1's slot
