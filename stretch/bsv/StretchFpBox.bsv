@@ -6,7 +6,7 @@
 // owner's rule is that its expensive datapath lives in "MULTI-CYCLE,
 // stateful 'box' sub-modules ... instantiated once, with request/
 // response methods" -- Piccolo's and Flute's mkFBox -- not inlined into
-// the E-box rule.  This box has mkVflBox's shape (StretchVflBox.bsv):
+// the E-box rule.  This box has mkVflBox's shape (StretchSAU.bsv):
 // instantiated ONCE in mkEBox (boxKind 4), reached through execute()'s
 // `NeedBox` bail, a request method, a responseReady poll and a response
 // value.  The request is a tagged union so that further classes join it
@@ -329,7 +329,7 @@ endmodule
 
 // ---------------------------------------------------------------------
 // mkFpBox's OWN TESTBENCH, in the same file, as mkVflBoxTb is in
-// StretchVflBox.bsv: the box is testable without instantiating storage.
+// StretchSAU.bsv: the box is testable without instantiating storage.
 //
 // THREE CHECKS PER VECTOR:
 //   (a) the whole answer, bit for bit, against the ONE-STEP REFERENCE --

@@ -1,7 +1,7 @@
 ! vfl_dcv.strap -- CONVERT DOUBLE (DCV, code 59), built 2026-11-16.
 ! Reference Manual 22-6530-2 printed p.74 (PDF 77), read in the page
 ! image; the arm's comment in bsv/StretchExecute.bsv quotes it whole.
-! The conversion is mkCvtBox's (bsv/StretchCvtBox.bsv).
+! The conversion is mkCvtBox's (bsv/StretchSAU.bsv).
 !
 ! BLOCK F IS IBM's OWN PROGRAM: Figure 19, "Radix Conversion", printed
 ! p.74, its five statements as printed.  "Given two four-digit signed

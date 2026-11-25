@@ -54,7 +54,7 @@ import StretchStorage::*;
 //                   SRD's rounding is a decimal add (mkDecBox).
 //   +, +MG, M+, M+1, M+MG
 //                   decimal addition (printed pp.60-63), through
-//                   mkDecBox (StretchDecBox.bsv).
+//                   mkDecBox (StretchSAU.bsv).
 //
 //   K, KF, KE, KFE, KR, KFR
 //                   decimal comparison (printed pp.65-67), a subtraction

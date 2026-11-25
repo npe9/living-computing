@@ -96,7 +96,7 @@
 !     12:34:56 is above nine.
 !   (2026-11-17: binaryToBcd is deleted; CV and LTRCV convert in
 !     mkCvtBox.  The box's double dabble without its add-three
-!     (StretchCvtBox.bsv, `dg + 3` -> `dg`), so the digits come out
+!     (StretchSAU.bsv, `dg + 3` -> `dg`), so the digits come out
 !     binary, fails cv_mcp_hours_decimal (0x0C), cv_mcp_time_hhmmss
 !     (0xC2238) and cv_reads_at_implied_68 (0x5A) here, nine DCV and
 !     three vfl_binary_memadd_indicators checks, and nothing in

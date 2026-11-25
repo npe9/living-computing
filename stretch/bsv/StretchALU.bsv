@@ -108,7 +108,7 @@ function Bit#(7) connLeftZeros(Bit#(128) v, Bit#(8) width);
   return truncate((hi == 0) ? width : (width - hi));
 endfunction
 
-// THE RADIX CONVERSIONS ARE mkCvtBox's (StretchCvtBox.bsv), 2026-11-17.
+// THE RADIX CONVERSIONS ARE mkCvtBox's (StretchSAU.bsv), 2026-11-17.
 // bcdToBinary (sixteen constant multiply-adds) and binaryToBcd (twenty-
 // four 96-bit divides by ten) used to be here and were called inline
 // from execute()'s CV, LCV and LTRCV arms; docs/fpga_feasibility.md
@@ -411,7 +411,7 @@ endfunction
 
 // =====================================================================
 // DECIMAL VFL ARITHMETIC'S BYTE PLACEMENT (2026-11-16, G2.3).  Wiring
-// only: the decimal SUM is mkDecBox's (StretchDecBox.bsv), and these
+// only: the decimal SUM is mkDecBox's (StretchSAU.bsv), and these
 // four functions move bytes between a storage field of any byte size and
 // the accumulator's four-bit digits, which is all p.58 asks of them.
 // Each is a per-byte-size case whose arms elaborate to wires, the shape
