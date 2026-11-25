@@ -529,8 +529,9 @@ and stand-in `simpos##` classes. In order:
      - Six packages unchanged at 311 / 12 / 206 / 1. Plain FEP 808 / 163
        / 432 becomes 810 / 165 / 428. With recipes, 831 / 161 / 411
        becomes 836 / 164 / 403.
-     - The step 3f re-check is finished (`source_check_2026-11-24.md`
-       §8). The TM-115 `get_position` page is fixed in the generated
+     - The four items step 3f's re-check left unread are re-read
+       (`source_check_2026-11-24.md` §8). One cross-reference, §6.1
+       step 4's `{Id, 5}`, is still unread. The TM-115 `get_position` page is fixed in the generated
        tables.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a

@@ -786,20 +786,21 @@ Not re-read:
 - `fep_services.md` §6.4 (the string-I/O programs' table);
 - the rest of `create_string_io/10` beyond @28-2d.
 
-So this re-check is PARTIAL.
+So this re-check is PARTIAL. Step 3h re-read the four items: §8.
 
 ## §8 The rest of §7, re-checked in step 3h (2026-11-25)
 
 This section re-reads the four items that §7 left unread. Page images
 were made with `pdftoppm` and read by eye. Cells come from the
 `ptfread` listings of `pimfep.ptf`. Pool constants were resolved with
-kl0's `Code.pool_term`. With these, §7 is COMPLETE.
+kl0's `Code.pool_term`. With these, §7's four items are re-read. One
+cross-reference stays unread: §6.1 step 4's `{Id, 5}`.
 
 | Item | Re-read | Verdict |
 |---|---|---|
 | TM-100 Fig. 3.1 (`process:activate/2`; step 3h also uses it for `children/2`) | TM-100 PDF p7-p10 as images, against `printed/listings/tm0100_p07-p10` | CONFIRMED: the transcriptions match. No page defines `status/3`. |
 | TM-388 pp92-101 (the own-package rule kl0's `lib_class_named` uses for `get_class_object/3`) | PDF p92-p101 (folios 80-89, §3.8 "Multi-Class Name Space (Package)") as images | CONFIRMED as a static rule (details below the table) |
-| `fep_services.md` §6.4 (the three string-I/O programs) | `create_string_io/10` @15-55, its locals (see the next row), `as_pimos_string_io_device do_io/6` @71-89, `pimos_remote_login_server reset/2` @17e-1c3 | CONFIRMED, for what was re-read (details below the table) |
+| `fep_services.md` §6.4 (the three string-I/O programs) | `create_string_io/10` @15-55, its locals (see the next row), `as_pimos_string_io_device do_io/6` @71-89, the server's, replier's and `simpos_user_device`'s `io/4` and locals | CONFIRMED, except the `{Id, 5}` of §6.1 step 4, which was not re-read (details below the table) |
 | `create_string_io/10` beyond @28-2d | @15-55, `get_class_object/3` @5a-86, `create/3` @8b-98, `initiate_string_io_device/7` @9d-bd | CONFIRMED (details below the table) |
 | TM-115 `get_position/3` page (§7: CORRECTED, generated tables not fixed) | TM-115 PDF p63 and p64 as images | FIXED (details below the table) |
 
@@ -835,13 +836,40 @@ docstring now cites these pages; no code changes.
   `{Id, 1}`.
 - 620, `do_io/6`: by `73 R n` (the receiver is in R) the cells are
   `:io(Self, Command, To_fep, From_fep)` @79-7e and
-  `:reply_message(Self, {Id, 1, From_fep})` @82-89. From_fep is
-  checked at @80-81 (call to @e6).
-- The server's three type atoms `local_login`, `lia` and `tcpip` are
-  in `reset/2` @18e, @1a4 and @1b5.
-- Not re-read: the string constants (`"local"`, `"lia"`, `"tcpip"`,
-  the 0/1 character, `">"`), the `{Id, 5}` path, and
-  `simpos_user_device`'s argument layout.
+  `:reply_message(Self, {Id, 1, From_fep})` @82-89. Around the send,
+  @78 calls `allow_forced_event/0` (@bf) and @7f calls
+  `inhibit_forced_event/0` (@ae).
+- From_fep: @80-81 call `check_from_fep_string/1` (@e6-eb). If From_fep
+  is unbound (blt e6) it becomes the pool's `string#''` (@e7).
+  Otherwise `string/3` must give size 16 (@e9-ea). CONFIRMED.
+- Aborts: `io/5` (@36-55) runs `do_io` under `tag_catch/9` with the tag
+  `pimos_abort` and the handler `abort_string_io`. `abort_string_io/2`
+  (@60-6c) replies `{Id, 6}` (`47 00 00 06`), which agrees with §6.7.
+  The `{Id, 5}` for a failed `io/4` is not in these cells: it is §6.1
+  step 4's dispatcher, which was not re-read here.
+- `pimos_remote_login_server`:
+  - `io/4` @8a holds `string#''`.
+  - `server_type/2` @768 holds the strings `"local"`, `"lia"` and
+    `"tcpip"` (@76a, @76f, @774).
+  - `reset/2` holds the atoms `local_login`, `lia` and `tcpip` (@18e,
+    @1a4, @1b5).
+  - CONFIRMED.
+- `pimos_remote_login_replier`: `io/4` @9c and @a7 hold `string#''`.
+  `check_status/3` @176 holds `string#'<0000>'`, and @17b and @17e
+  hold `string#'<0001>'`: one character, 0 or 1. CONFIRMED.
+- `simpos_user_device` `io/4` @33-88 switches on the Command: 0 @3c,
+  1 @58, 2 @70.
+  - Each case calls `melt/4` (@8d-9d). `melt/4` checks that the
+    string's size is 16 and its length is at least 2. Element 0 is
+    Name's length, element 1 is Pass's, and the two substrings start
+    at 2.
+  - Command 0 calls `$or$2/4`: `identify/4`, else `regist/4` (@e0-e7).
+    Then it sends `world/2` and calls `$or$3/2` (@ba), which sends
+    `default_logical_name/2`. Its pool holds `string#'>'` (@da).
+  - Commands 1 and 2 send `identify/4`, then `fullname/2` or
+    `nickname/2`.
+  - Before- and after-demons toggle forced events (@19, @26).
+  - CONFIRMED.
 
 ### `create_string_io/10` beyond @28-2d
 
@@ -883,7 +911,12 @@ Two drifts surfaced in the re-run. Both predate step 3h:
   `get_unparsing_operator/2`, `set_max_depth/2`, `set_max_length/2`,
   `set_parsing_operator/2` and `set_unparsing_operator/2`. They are
   committed as generated.
-- `window.md` appendix A is not a byte copy of `selectors.md`. Five
-  rows differ (`create/4`, `getl/2`, `putt/2` and two `″` rows), as
-  they did before step 3h. Only the three citation cells were changed;
-  the appendix is otherwise left as it was.
+- `window.md` appendix A is not a byte copy of `selectors.md`. After
+  the re-run, 12 generated rows are not in it:
+  - five that already differed before step 3h (`create/4`, `getl/2`,
+    `putt/2` and two `″` rows);
+  - the seven new CENSUS rows above, which are still UNSPECIFIED in
+    the appendix.
+
+  Only the three citation cells were changed. Bringing the appendix in
+  line with the generator is open.
