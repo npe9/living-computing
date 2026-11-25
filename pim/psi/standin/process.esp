@@ -334,6 +334,20 @@
     :no_program(Process) :-
         :empty(Process!invocation_stack) ;
 
+    % :invocation_stack(Process, Stack) -- the invocation stack itself,
+    % the list object (its first element the running program).
+    % INTERPOLATED (step 3g), as the slot accessors above, from: the
+    % printed slot invocation_stack, a list (TM-100 Fig. 3.1, PDF p8);
+    % the held source kappa-p.tar.Z src/emu/kappaPITR.esp:13-14
+    % (`:self(#process, Proc), :get_first(Proc!invocation_stack, Prog)`,
+    % then Prog!kappa_in_stream: the first element is the program that
+    % called); the held compiled caller pimfep##pimos_tcpip_socket
+    % create_socket/9 (@4d-59: `:self(#process,P)`,
+    % `:invocation_stack(P,L)`, `:get_first(L,Prog)`, the same sequence
+    % through a method).  That the method answers the list object, not a
+    % copy, is OURS.
+    :invocation_stack(Process, Stack) :- Stack = Process!invocation_stack ;
+
     % :die(Process) -- the process terminates.
     % INTERPOLATED (step 3e) from: the printed as_program:resign/1 (above)
     % and the printed status slot's comment "nil(=dead)" (Fig. 3.1, PDF

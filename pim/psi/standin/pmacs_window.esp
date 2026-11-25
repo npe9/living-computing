@@ -71,9 +71,13 @@ attribute activity := 0;
 % census --fep --recipes, 2026-11-25).  The selectors and argument forms
 % are from window.md §2.1-2.3 (PRINTED-INTERFACE: TM-125 p15-16 for
 % set_size/3, set_position/3, set_title/2, activate/1, show/1, hide/1,
-% deactivate/1; TM-115 p50 and p63 for get_size/3 and get_position/3;
+% deactivate/1; TM-115 p50 and p64 for get_size/3 and get_position/3;
 % TM-112 p16 for set_font/2; USAGE for reshape/5, set_text_size/3,
-% get_text_size/3, get_title/2, get_font/2, beep/1, flash/1).  Model
+% get_text_size/3, get_font/2, beep/1, flash/1).  Step 3g's re-check
+% (source_check_2026-11-24.md §7, page images): get_position/3 is on
+% TM-115 PDF p64 (folio 59), not p63, and the same page prints
+% `:get_title(Instance,^Title)` (PRINTED-INTERFACE, for a menu window,
+% 1985) and `:get_size(Instance,^Width,^Height)`.  Model
 % (OURS): each value is a slot, set by the setter and read back by the
 % getter; nothing is displayed, so the display methods succeed and do
 % nothing.  The initial values are OURS (0, an empty title); the font
@@ -88,7 +92,8 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % INTERPOLATED from: window.md §2.1 set_position/3 (TM-125 p15).
 :set_position(Window, X, Y) :-
         Window!x := X, Window!y := Y;
-% INTERPOLATED from: window.md §2.1 get_position/3 (TM-115 p63).
+% INTERPOLATED from: window.md §2.1 get_position/3 (TM-115 PDF p64,
+% folio 59; cited as p63 before step 3g's re-check).
 :get_position(Window, X, Y) :-
         X = Window!x, Y = Window!y;
 % INTERPOLATED from: window.md §2.1 set_size/3 (TM-125 p15).
@@ -113,7 +118,9 @@ attribute x := 0, y := 0, width := 0, height := 0,
 % INTERPOLATED from: window.md §2.2 set_title/2 (TM-125 p15).
 :set_title(Window, T) :-
         Window!title := T;
-% INTERPOLATED from: window.md §2.2 get_title/2 (USAGE, 111 uses).
+% INTERPOLATED from: window.md §2.2 get_title/2 (USAGE, 111 uses;
+% PRINTED-INTERFACE TM-115 PDF p64, folio 59, `:get_title(Instance,
+% ^Title)`, found by step 3g's re-check).
 :get_title(Window, T) :-
         T = Window!title;
 % INTERPOLATED from: window.md §2.2 set_font/2 (TM-112 p16).

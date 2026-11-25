@@ -34,6 +34,7 @@ The docs outside `psi/` were corrected in place:
 6. [§4 FEP protocol claims marked OURS or INFERENCE](#4-fep-protocol-claims-marked-ours-or-inference-in-fep_servicesmd)
 7. [§5 Proposed changes to pim/psi/](#5-proposed-changes-to-pimpsi-ready-to-apply-not-applied)
 8. [§6 Open after this check](#6-open-after-this-check)
+9. [§7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)](#7-step-3fs-interpolated-and-ours-parts-re-checked-2026-11-25)
 
 ## How the check was done
 
@@ -726,3 +727,40 @@ applied as proposed unless the note says otherwise.
   Manual" (its `\title`), but points readers to the "PIMOS 2.5 Manual".
 - The OCR corpus covers about half the held TR/TM pages. It covers all
   of the SIMPOS-related pages but TM-305.
+
+## §7 Step 3f's INTERPOLATED and OURS parts, re-checked (2026-11-25)
+
+Step 3f (`../../psi/README.md`, the "Step 3f" sections) added kl0's
+library and symbolizer models, 17 `pmacs_window` methods and the
+census recipes. Each was labelled INTERPOLATED or OURS from cited
+pages and lines. Step 3g re-read every citation:
+
+- TR/TM pages as page images (`pdftoppm`, read by eye). TM-115 was also
+  OCRed whole with tesseract, as a lead only.
+- Source lines in the held archives.
+- Compiled cells in the `ptfread` listings.
+
+Page numbers are PDF pages, with the printed folio where it differs.
+
+| Item (step 3f) | Cited basis | Re-read | Verdict |
+|---|---|---|---|
+| `library:assign/1` succeeds, binds nothing (INTERPOLATED) | kappa2 `HLCLIB.ESP`:29, `LOADCH.ESP`:64, `LOADER.ESP`:251 | each is the first library send of its clause (`:assign(#library)` before `get_package`/`make_package`, before the hash-index creation, before `check_info`) | CONFIRMED as call sites; what it binds is still NO SOURCE FOUND |
+| `library:check_info/3`: "both try `template_file` (then `make_class_object/2`) and `object`" | `LOADER.ESP`:252-256; pimfep `pimos_string_io_invoker` local `get_class_object/3` @5a-80 | LOADER tries `object` first, then `template_file` and `make_class_object`. The pimfep cells try `template_file` first (@60-63, `make_class_object/2` @68), then `object` (@76-79). | CORRECTED: the order differs between the two callers. The model (`object` succeeds for a loaded class, `template_file` fails) answers the same in either order, so no code changes |
+| `library:get_class_object/3` (INTERPOLATED name and lookup) | `subsystems/librarian.md` §1.4; HLCLIB.ESP:30-31 | TR-283 PDF p18 (folio 16) Table 4 prints `class library :get_class_object/c2` (image read). HLCLIB.ESP:30-31 `:get_package(Process,Default_Package)` re-read | UPGRADED: the interface (a class method, two arguments) is PRINTED-INTERFACE. The lookup rule stays INTERPOLATED/INFERENCE |
+| `symbolizer:enter_atom/3` | TR-283 p18 Table 4; paragraph `p_wshell.esp`:211; `create_string_io/10` @28-2d | Table 4 `:enter_atom/c2` (image). p_wshell.esp:211 `:enter_atom(#symbolizer,Var,C1)`, then `Var` as a key. Cells @28-2d: the pool `#simpos##symbolizer`, `73 02 03 enter_atom/3` | CONFIRMED. The atom's name being the string's text stays OURS |
+| `pmacs_window` `set_size/3`, `set_position/3`, `set_title/2` | TM-125 p15-16 | TM-125 PDF p15 (folio 14) §5.3 prints `:set_size(Window, Width, Height)`, `:set_position(Window, X, Y)` and `:set_title(Window, String)` | CONFIRMED |
+| `activate/1`, `show/1`, `deactivate/1`, `hide/1` | TM-125 p15-16 | TM-125 PDF p16 (folio 15) §5.4 prints all four | CONFIRMED |
+| `get_size/3` | TM-115 p50 | PDF p50 (folio 45) names `:get_size` "provided by the window system", without arguments. PDF p64 (folio 59) prints `:get_size(Instance,^Width,^Height)` | CONFIRMED. PDF p64 is the better citation (it gives the arity) |
+| `get_position/3` | TM-115 p63 | PDF p63 (folio 58) and folio 63 (PDF p68) do not print it. It is on PDF p64 (folio 59, "Page 4-26"): `:get_position(Instance,^X,^Y)` | CORRECTED: the citation is PDF p64. Fixed in `standin/pmacs_window.esp` and `subsystems/window.md` |
+| `get_title/2` (USAGE only) | none printed | TM-115 PDF p64 prints `:get_title(Instance,^Title)` among the parameters_display_menu methods that "just call the method of the menu which has the same name" | UPGRADED to PRINTED-INTERFACE, for a menu window (1985) |
+| `set_font/2` | TM-112 p16 | TM-112 PDF p16 (folio 12) §3.6 prints `:set_font(Window,Font)` | CONFIRMED |
+| `reshape/5`, `set_text_size/3`, `get_text_size/3`, `get_font/2`, `beep/1`, `flash/1` (USAGE only) | held `.ptf` sends | the TM-115 OCR has no hit for any of them | unchanged: USAGE only |
+| Model: a setter writes a slot that its getter reads back; initial values 0 and an empty title; the display methods do nothing | OURS | no source can confirm a model | unchanged: OURS |
+| Recipes: "the creators' A0 is the stream the device answers on" (INFERENCE) | front end `create_device/4` @42e-447 | @42e-431 `fep_output_stream/2` into Y9; @43c `33 02` builds a 3-vector whose first element is Y9 (`44 09`), with Y10 and Y11 new; `refute/3` @446-447; `add_at/5` @448-452 | CONFIRMED for the front end's three elements |
+| the same, per creator | timer `create_timer/9` @19-48 and others | pimos_file `create/9` (called from `read_open/10`, which shifts the message): A0 is the open mode, A1 the output stream, A4 the device id. tcpip `create_socket/9`: A0 to `set_output_stream/2` (@3d-40), A3 to `set_device_id/2` (@49-4c) | CONTRADICTED for pimos_file. Step 3f's recipe put the stream in the open-mode argument. Corrected in step 3g: `DEVICE_CREATORS` now gives each creator's positions |
+| the front end's stream is a `simpos##stream` | `fep_scsi_output create/7` @32-3b | `pool[f] = #simpos##stream`, `create/2`, then `set_fep_output_stream/2` | CONFIRMED |
+| the string-I/O class names | PIMOS `pass_body.kl1`:68 | `STR = [create(string#"pimos_standard_io_window",Win)]` | CONFIRMED |
+| test claim "the timer's device id is unbound" | step 3f test | step 3g gives it REQUEST_ID (16) | SUPERSEDED (test updated in step 3g) |
+
+Not re-read: TM-100 Fig. 3.1 (`process:activate/2`), which step 3e's
+check (§1) already read as an image.

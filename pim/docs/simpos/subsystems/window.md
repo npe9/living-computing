@@ -362,7 +362,7 @@ USAGE).
 | `set_size/3` `(W,Wd,Ht)` | resize. `set_size(W,manipulator,_)` lets the user sweep the new size | PRINTED-INTERFACE TM-125 p15; USAGE pimfep device set_size/3 (ptf) | all |
 | `set_position/3` `(W,X,Y)` | move, in the superior's coordinates. `set_position(W,manipulator,_)` lets the user place it | PRINTED-INTERFACE TM-125 p15; USAGE (ptf W4; kwic windows.esp:84-89) | all |
 | `reshape/5` `(W,X,Y,Wd,Ht)` | move and resize at once; `reshape(W,manipulator,_,_,_)` sweeps it | USAGE cal-esp/cal2.12/cpwindow.esp:85 (72 uses, unattributed); pimfep reshape_by_mouse (ptf) | held |
-| `get_size/3`, `get_position/3` | outer size; position in the superior | PRINTED-INTERFACE TM-115 p50, p63 | all |
+| `get_size/3`, `get_position/3` | outer size; position in the superior | PRINTED-INTERFACE TM-115 p50, p64 (folio 59: `:get_size(Instance,^Width,^Height)`, `:get_position(Instance,^X,^Y)`; cited as p63 until the step 3g re-check, `../source_check_2026-11-24.md` §7) | all |
 | `get_inside_size/3` | inside (client) size in dots; used to lay out panes | SCREENSHOT IPSJ 36239 p5; USAGE | 2.50; held |
 | `set_text_size/3`, `get_text_size/3` `(W,Cols,Rows)` | Pmacs-window size in characters | USAGE pimfep device reshape/7, get_inside_size/3 (ptf.md W6) | ptf 1994 |
 | `set_inside_units/3` `(W,UX,UY)`, `get_inside_units/3` | grid unit for inside coordinates. The default is the `font_13` space cell (TM-115 p41); TM-125 Table 1 gives "1 dot". VARIANT | PROSE TM-115 p41, p80; SCREENSHOT IPSJ 36239 p5; USAGE | 1.0-held |
@@ -378,7 +378,7 @@ the screen. TM-115 p29 says the manager "does not allow a window to go out of th
 
 | method | meaning | grade, cite |
 |---|---|---|
-| `set_title/2`, `get_title/2` | label string | PRINTED-INTERFACE TM-125 p15; USAGE (111 uses) |
+| `set_title/2`, `get_title/2` | label string | PRINTED-INTERFACE TM-125 p15 (set_title); TM-115 p64, folio 59 (`:get_title(Instance,^Title)`, a menu window, step 3g re-check); USAGE (111 uses) |
 | `set_top_title/2`, `set_bottom_title/2` | the two labels of with_two_labels | PRINTED-INTERFACE TM-125 p15 |
 | `set_label_position/2` `(W,top\|bottom)` | where the label is drawn | PRINTED-INTERFACE TM-125 p15 |
 | `set_label_flag/2` | label on or off (INFERENCE from the option `label_flag(off)`) | UNSPECIFIED (1 use) |

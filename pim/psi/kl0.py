@@ -143,6 +143,30 @@ class Atom:
 NIL = Atom('[]')
 
 
+class Functor:
+    """The key `pmi ce` (switch_on_vector, step 3g) puts in its register
+    for a vector {Name, ...} of N elements, and the key cell a `cc` or a
+    hash table after it holds: tag 01 with the low byte N, printed by
+    ptfread as the selector Name/N.  N is the vector's length, element 0
+    included (MEASURED with source: receiver.esp:669-680 `init(pe_view,PE,
+    Wid)`, `init(htree_view)`, `init(htree_view,{Id,Nid},Depth,Wid)` are
+    the three keys init/4, init/2, init/5 of receiver send/3's cd04
+    table @126).  The representation is OURS; interned, so `is` compares."""
+    table = {}
+    __slots__ = ('name', 'n')
+
+    def __new__(cls, name, n):
+        f = Functor.table.get((name, n))
+        if f is None:
+            f = object.__new__(cls)
+            f.name, f.n = name, n
+            Functor.table[(name, n)] = f
+        return f
+
+    def __repr__(self):
+        return '%s/%d' % (self.name, self.n)
+
+
 class Cons:
     __slots__ = ('args',)
 
@@ -597,6 +621,19 @@ class Machine:
             return Atom(code.sym(c[3]))
         raise Refusal('operand', '%s: constant cell %s' % (code.id, P.show(dict(syms=code.t.symbols), c)))
 
+    def key_cell(self, code, c):
+        """A cc constant or a hash key: as const_cell, and also the vector
+        key cell (tag 01, low byte N != 0) that follows a `pmi ce`
+        (Functor, step 3g)."""
+        if c[1] == 0x01 and c[2] != 0:
+            return Functor(code.sym(c[3]), c[2])
+        return self.const_cell(code, c)
+
+    @staticmethod
+    def key_match(k, t):
+        return (isinstance(k, int) and isinstance(t, int) and t == k) or \
+            (isinstance(k, (Atom, Functor)) and t is k)
+
     # -- calls -------------------------------------------------------------
     def call_local(self, code, off, target, last, dealloc=False):
         p = code.preds.get(target)
@@ -830,7 +867,11 @@ class Machine:
         """:check_info(#library, Name, Kind).  INTERPOLATED from: kappa2
         LOADER.ESP:252-256 and pimfep pimos_string_io_invoker local
         get_class_object/3 (@5a-80), which try Kind `template_file` (then
-        make_class_object/2) and `object`, and then get_class_object/3.
+        make_class_object/2) and `object`, and then get_class_object/3
+        (LOADER `object` first, pimfep `template_file` first: step 3g's
+        re-check, source_check_2026-11-24.md §7; either order answers
+        the same here).  get_class_object/c2 and enter_atom/c2 are
+        printed in TR-283 PDF p18 (folio 16) Table 4.
         OURS: every class here is loaded as a class object, so `object`
         succeeds for a loaded class and `template_file` fails."""
         name, kind = deref(self.x[0]), deref(self.x[1])
@@ -1138,8 +1179,8 @@ class Machine:
 
     def op_if_constant(self, code, off, a, b, c, v):
         t = deref(self.x[a])
-        k = self.const_cell(code, self.operand(code, off))
-        if (isinstance(k, int) and isinstance(t, int) and t == k) or (isinstance(k, Atom) and t is k):
+        k = self.key_cell(code, self.operand(code, off))
+        if self.key_match(k, t):
             self.pc = (code, off + 3 + s16(v))
         else:
             self.pc = (code, off + 2)
@@ -1158,21 +1199,95 @@ class Machine:
 
     def op_hash_constant(self, code, off, cell):
         mask, miss, ents = cell[3]
-        t = deref(self.x[self.switch_reg(code, off)])
+        t = deref(self.x[self.switch_reg(code, off, cell)])
         for key, _idx, tgt in ents:
-            k = self.const_cell(code, (0,) + key)
-            if (isinstance(k, int) and isinstance(t, int) and k == t) or (isinstance(k, Atom) and t is k):
+            if self.key_match(self.key_cell(code, (0,) + key), t):
                 self.pc = (code, tgt + 1)
                 return
         # not found: cell + 2 + the header word ptfdump calls `size` (the cell
         # after the table, or a catch-all clause; psi/fepread/ptfread.py)
         self.pc = (code, off + 2 + miss)
 
-    def switch_reg(self, code, off):
-        c = code.cells.get(off - 2)
-        if c is None or c[1] != 0x20 or c[3] >> 24 != 0xc7:
-            raise Refusal('code', '%s @%x: hash table not after switch_on_constant' % (code.id, off))
-        return (c[3] >> 16) & 255
+    def switch_reg(self, code, off, cell):
+        """The register a hash table looks up: the low byte of its op
+        (cdNN), which is the register its switch named (step 3g, MEASURED:
+        cd00 after all 116 c7 (R 00) and all 7 c6 (R 00); cdNN after every
+        ce 00 NN, 20 tables, in the six source-held packages).  Only those
+        three placements are witnessed; any other refuses."""
+        reg = cell[2] & 0xff
+        for back, op, named in ((2, 0xc7, 16), (3, 0xc6, 16), (2, 0xce, 8)):
+            c = code.cells.get(off - back)
+            if c is not None and c[1] == 0x20 and c[3] >> 24 == op:
+                if (c[3] >> named) & 255 != reg:
+                    raise Refusal('operand', '%s @%x: hash table cd%02x after pmi %02x naming %02x' % (
+                        code.id, off, reg, op, (c[3] >> named) & 255))
+                return reg
+        raise Refusal('code', '%s @%x: hash table not after a switch (c7, c6, ce)' % (code.id, off))
+
+    def _word(self, code, at):
+        c = code.cells.get(at)
+        if c is None or c[1] != 0x00:
+            raise Refusal('code', '%s @%x: no integer word' % (code.id, at))
+        return c[3]
+
+    def op_switch_on_term(self, code, off, a, b, c, v):
+        """pmi c6 (step 3g): R; word W1; word W2; base = cell + 3.  A_R
+        unbound -> base + hi16(W2), atom -> base (the cc chain or hash
+        table), list -> base + lo16(W2), vector -> base + W1.  Witnessed
+        with source: kappaRDM_manager get_BFS_list_only/2 @6b7
+        (RDMSOPE.ESP:285-291) and view_selector make_com/3 @46e
+        (p_MAIN.esp:479-689).  An integer, a string or an object, and
+        non-zero second/third bytes, are not witnessed and refuse."""
+        if v & 0xffff:
+            raise Refusal('operand', '%s @%x: pmi c6 %02x %02x %02x: only 00 00 00 is witnessed' % (
+                code.id, off, a, b, c))
+        w1, w2 = self._word(code, off + 1), self._word(code, off + 2)
+        base = off + 3
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            self.pc = (code, base + (w2 >> 16))
+        elif isinstance(t, Atom):
+            self.pc = (code, base)
+        elif isinstance(t, Cons):
+            self.pc = (code, base + (w2 & 0xffff))
+        elif isinstance(t, Vec):
+            self.pc = (code, base + w1)
+        else:
+            raise Refusal('operand', '%s @%x: pmi c6 on %s: only unbound, atom, list and vector are witnessed' % (
+                code.id, off, type(t).__name__))
+
+    def op_switch_on_vector(self, code, off, a, b, c, v):
+        """pmi ce (step 3g): R, K; word W; base = cell + 2.  A_R is a vector
+        (c6 sends only vectors here).  Its element 0 unbound -> base +
+        lo16(W) (a retry chain over the vector clauses); an atom -> X_K :=
+        the key Name/N (N the vector's length) and fall through to base (a
+        cc chain on X_K or the hash table cdKK).  Witnessed with source:
+        view_selector make_com/3 @4bb (p_MAIN.esp:579-657) and receiver
+        send/3 @124 (receiver.esp:38-684).  hi16(W) is the miss target in
+        both and is not taken here: what else takes it is UNSETTLED, so
+        any other element 0 refuses."""
+        if c != 0:
+            raise Refusal('operand', '%s @%x: pmi ce %02x %02x %02x: third byte not 0' % (code.id, off, a, b, c))
+        w = self._word(code, off + 1)
+        t = deref(self.x[a])
+        if not isinstance(t, Vec) or not t.args:
+            raise Refusal('operand', '%s @%x: pmi ce on %r: only a non-empty vector is witnessed' % (code.id, off, t))
+        e = deref(t.args[0])
+        if isinstance(e, Var):
+            self.pc = (code, off + 2 + (w & 0xffff))
+        elif isinstance(e, Atom):
+            self.x[b] = Functor(e.name, len(t.args))
+            self.pc = (code, off + 2)
+        else:
+            raise Refusal('operand', '%s @%x: pmi ce, element 0 %r: only unbound or an atom is witnessed' % (
+                code.id, off, e))
+
+    def op_jump(self, code, off, a, b, c, v):
+        """pmi ff (step 3g): go to cell + 2 + s16.  Byte A is 00 in all 956
+        held uses; another refuses."""
+        if a != 0:
+            raise Refusal('operand', '%s @%x: pmi ff %02x: only 00 is witnessed' % (code.id, off, a))
+        self.pc = (code, off + 2 + s16(v))
 
     def op_if_unbound(self, code, off, a, b, c, v):
         if isinstance(deref(self.x[a]), Var):

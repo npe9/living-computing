@@ -145,6 +145,16 @@
    fail; blt 48 R != A refused again: test_step3f_census_recipes fails,
    and in test_kl0.py test_result_register errors and test_census
    fails.
+15. Step 3g (2026-11-25): pmi c6/ce/c3/c1/ff and tables cd03/cd04
+   (test_kl0.py Step3gSwitches, which lists the injections): plain FEP
+   census 808 / 163 / 432, recipes 831 / 161 / 411.  ce's key length
+   N - 1 and ff's target cell + 3 each fail test_fep_census and
+   test_step3f_census_recipes here.
+16. Step 3g (2026-11-25, test_step3g_invocation_stack): process
+   invocation_stack/2 (INTERPOLATED).  Injected into standin/process.esp
+   from a backup, restored by cp, cmp-checked, observed: answering a new
+   empty list fails test_step3g_invocation_stack, test_fep_census and
+   test_step3f_census_recipes; test_kl0.py passes.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -1190,7 +1200,11 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1420, {'success': 807, 'failure': 154, 'refused': 442, 'exception': 16,
+        # 2026-11-25, step 3g: pmi c6/ce/c3/c1/ff witnessed (RDMSOPE.ESP,
+        # p_MAIN.esp, receiver.esp): 808 / 163 / 432 (login_server
+        # device_abort/1 succeeds, checked alone; nine pimscsi methods fail
+        # on the census's unbound first argument, as in the recipe census)
+        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 163, 'refused': 432, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1237,7 +1251,15 @@ end.''', 'simpos')
         # pimos_file's corrected recipe: 809 / 154 / 440 -> 829 / 152 / 422;
         # 10 editor replies reach the unset window process (slot
         # constants 86 -> 96)
-        self.assertEqual((len(rows), out), (1420, {'success': 829, 'failure': 152, 'refused': 422,
+        # step 3g: pmi c6/ce/c3/c1/ff and tables cd03/cd04 witnessed: 829 /
+        # 152 / 422 -> 831 / 161 / 411.  The two successes (login_server
+        # device_abort/1, abort_string_io/2) were checked alone on a fresh
+        # machine; the nine failures (pimscsi cmt, scsi, scsi_communicator
+        # check_argument/2, low_if/2, send_request/5, receive_request/5)
+        # are the census's unbound first argument meeting a first clause
+        # that binds it and cuts (check_argument/2 @b7 `get r0, initiator`,
+        # `dc 02`): not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 161, 'refused': 411,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 96)
@@ -1364,6 +1386,50 @@ end.''', 'simpos')
         # get_command/3 element 2, disassemble/3 element 3)
         self.assertEqual(replies('attention', 1), [[16, 0, 3, 0]])
         self.assertEqual(replies('close', 3), [[16, 0, 1, 0], [16, 0, 903, 0]])
+
+    def test_step3g_invocation_stack(self):
+        # process:invocation_stack/2 (step 3g, INTERPOLATED: TM-100 Fig.
+        # 3.1's slot; kappa-p kappaPITR.esp:13-14).  It answers the stack
+        # list itself; held pimos_tcpip_socket create_socket/9 then takes
+        # the calling program with get_first/2 (@4d-59) and stores it as
+        # the device's fep_object before activate/2
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##as_program', 'create', [K.Var()])
+        prog = r[0]
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        co = m.lib.build('simpos##process')
+        stack = proc.slots[m.lib.slot_number(co, 'instance', 'invocation_stack')]
+        cid = 'pimfep##pimos_tcpip_socket'
+
+        def create_socket():
+            (st,) = K.call_class_method(m, 'simpos##stream', 'create', [K.Var()])
+            args = [K.Var() for _ in range(8)]
+            args[0], args[3] = st[0], K.REQUEST_ID
+            m.stop_before = {('activate', 2)}
+            try:
+                return [None for _ in m.solve_send(K.ClassRef(cid), 'create_socket', args + [K.ClassRef(cid)])]
+            except K.CreatorStopped as e:
+                dev = e.args[2][0]
+                dco = m.lib.build(dev.cid)
+                return {x.name.split('$')[-1]: K.deref(v) for x, v in zip(dco.instance_slots, dev.slots)}
+            finally:
+                m.stop_before = None
+        # the census's process runs no program: get_first/2 fails on the
+        # empty stack, so the creator fails (tcpip has no recipe)
+        self.assertEqual(create_socket(), [])
+        self.assertEqual(len(self.send(proc, 'add_program', prog)), 1)
+        try:
+            L = K.Var()
+            self.assertEqual([K.resolve(L) is stack for _ in m.solve_send(proc, 'invocation_stack', [L, proc])],
+                             [True])
+            sl = create_socket()
+            self.assertIs(sl['fep_object'], prog)
+            self.assertIs(sl['fep_process'], proc)
+            self.assertEqual(sl['device_id'], K.REQUEST_ID)
+        finally:
+            self.send(stack, 'clear')
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,
