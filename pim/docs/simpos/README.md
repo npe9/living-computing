@@ -416,6 +416,12 @@ and stand-in `simpos##` classes. In order:
        census generator learns that `time` `now/2` returns an instance,
        so `required/classes.tsv`'s `time` row has get_count/2 and
        set_count/2 (3,474 keys in all). Census unchanged.
+     - 2026-11-25, the opcode table: TM-444/TR-236 mnemonics bound to
+       numbers as INFERENCE with their counts (pmi 42-45, a4, a5, 24, 2b;
+       blt 45/46/48/49 from cil's `cil_kl0.esp`), second witnesses, and
+       blt 19 with V != N witnessed and executed: six-package census 310
+       / 12 / 208, FEP one method from refused to the step limit, none
+       out of success.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

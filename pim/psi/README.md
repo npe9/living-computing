@@ -1457,6 +1457,52 @@ line for source citations. The status of each is marked in that file's
 - `test_espc.test_source_check_labels` pins the corrected statements
   and the absence of the stale ones.
 
+### The source check applied: the opcode table (2026-11-25)
+
+The §5 proposals P-k0 to P-k9 for `kl0_opcodes.tsv`, each re-checked:
+the witness cells re-read with `fepread/ptfread.py`, the source lines
+in fresh extractions, the counts re-run by an independent clause-scoped
+def-use count (each clause starts at the entry and after every try
+instruction).
+
+- Mnemonics bound to numbers (INFERENCE bindings, each with its count;
+  the handler is unchanged, renamed or aliased):
+  - pmi 42 `unify_value_p` (Y made by unify_variable_p in 1,277 of
+    2,785 uses), 44 `unify_local_value_p` (Y never made by
+    unify_variable_p, 0 of 6,805; by put_variable_p in 3,690), 43
+    `unify_value_t`, 45 `unify_local_value_t` (X a head argument or its
+    copy in 6,451 of 6,639): TM-444 PDF p31 ex. 8, TR-236 Fig. 1. kl0
+    has no local stack, so the local forms unify as the others (OURS).
+  - pmi a4 `put_local_value`, a5 `put_unsafe_value` (TM-444 PDF
+    p30-31), 24 `get_builtin_variable` (TR-236 Fig. 1; 5,331 of 5,773
+    follow a built-in, against at most 172 of 28,529 pmi 20), 2b
+    `get_var_var_list` (TM-444 PDF p16).
+  - blt 45/46/48/49 `add_constant`, `subtract_constant`,
+    `multiply_constant`, `divide_constant` (held cil `cil_kl0.esp`:82,
+    264, 173, 117). The census's refusal text changes with the name
+    (four paragraph draw/2 rows).
+- Witnesses: blt 6e's `devide_value/5` is @ab, not @ad; second
+  witnesses for e6, f0, 2a, 2b, a0, blt 27, dd, e4, c5 (a non-zero
+  offset, h_grade_n.esp:507-512), each settling an operand the first
+  left open; d1, 60, e2, e6 and pmi 49 quote their source verbatim.
+- Operands: c4/c5's first byte is n, the argument registers saved
+  (TR-236 `try_me_else L,N`), the arity in 5,209 of 7,993 c4 and
+  arity+1 in 2,784. The audit's rule "arity+1 when the A_arity barrier
+  is live" is not exact (543 of the 2,784 are in predicates that keep no
+  barrier there), so the row gives the counts and leaves it open. blt
+  0b/1c's third operand is the element Size (TR-044 A.2-A.3 PDF p39).
+- Behaviour: blt 19 `new_heap_vector` with V != N is witnessed
+  (kappa##format_conv sv_to_hv/2 @1b `19 02 04 00`, FMT_CONV.ESP:13-16),
+  so kl0 no longer refuses it. Censuses, row by row: six packages 307 /
+  12 / 211 becomes 310 / 12 / 208 (booking_table, local_node_manager and
+  remote_cell_table create/2 succeed; four other rows stop later); FEP
+  one row, packet32 initiate/1, goes from refused to the step limit
+  (787 / 123 / 476 refused / 16 / 1 step limit). No method leaves
+  success. Injection recorded in `test_kl0.py`'s header.
+- Not applied (P-k10): pmi c6 as an UNKNOWN row and blt 6f: each needs
+  an implementation, witness entries and tests, and blt 6f's third
+  argument is not settled. The other P-k10 rows were added by step 3e.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

@@ -147,6 +147,13 @@ Step 3e's census semantics (2026-11-24, same method; observed):
     errors here; test_espc test_fep_census;
   - raise/2 fails instead: test_uncaught_exception here; test_espc
     test_fep_census.
+The source check's opcode rows (2026-11-25, injected into kl0.py, restored
+by cp from a backup and cmp-checked; observed):
+  - blt 19 new_heap_vector refusing V != N again: test_result_register
+    errors and test_census fails here; test_espc test_fep_census fails.
+  The mnemonic renames (42-45, a4, a5, 24, 2b, blt 45/46/48/49) change
+  only names: a row without a handler under its name stops Machine()
+  with ValueError, so every test that builds a machine would error.
 """
 import os
 import sys
@@ -318,8 +325,8 @@ class Table(unittest.TestCase):
         # the result in another register than the operand
         m.reset()
         m.x[0], m.x[4] = 7, 30
-        m.op_add_immediate(None, 0, 0, 1, 6, None)
-        m.op_subtract_immediate(None, 0, 4, 11, 0, None)
+        m.op_add_constant(None, 0, 0, 1, 6, None)
+        m.op_subtract_constant(None, 0, 4, 11, 0, None)
         self.assertEqual((m.x[0], m.x[6], m.x[4]), (19, 8, 30))
         # p_tgraph.esp:70-72 `a1 00 02`: one new variable in A0 and X2
         m.reset()
@@ -657,18 +664,23 @@ class Step3eRows(unittest.TestCase):
                 op(code, 0, 0, 1, 2, 0)
 
     def test_result_register(self):
-        # R != A for divide_immediate (c_grade_ex.esp:26 `49 00 0a 07`) and
+        # R != A for divide_constant (c_grade_ex.esp:26 `49 00 0a 07`) and
         # add (p_wwin.esp:420 `40 00 01 01`): the result lands in A_R, A_A
         # keeps its value
         m = machine()
         code = self.cell()
         m.reset()
         m.x[0] = 37
-        m.op_divide_immediate(code, 0, 0, 10, 7, 0x000a07)
+        m.op_divide_constant(code, 0, 0, 10, 7, 0x000a07)
         self.assertEqual((m.x[7], m.x[0]), (3, 37))
         m.x[0], m.x[1] = 5, 9
         m.op_add(code, 0, 0, 1, 1, 0x000101)
         self.assertEqual((m.x[1], m.x[0]), (14, 5))
+        # V != N for new_heap_vector (FMT_CONV.ESP:13-16 `19 02 04 00`):
+        # the vector lands in A_V, A_N keeps the length
+        m.x[4] = 3
+        m.op_new_heap_vector(code, 0, 2, 4, 0, 0x020400)
+        self.assertEqual((len(m.x[2].args), m.x[2].heap, m.x[4]), (3, True, 3))
 
 
 class Step3eCensus(unittest.TestCase):
@@ -720,7 +732,11 @@ class Census(unittest.TestCase):
         # step 3e's pmi ca: 4 refused methods now succeed (array_index_buffer
         # and wshell_buffer set_all_at/2, reset_all_at/2) and 1 fails
         # (csp_fep_main_program get/4); was 216 / 303 / 11
-        self.assertEqual(out, {'refused': 211, 'success': 307, 'failure': 12})
+        # 2026-11-25: blt 19 new_heap_vector with V != N witnessed
+        # (FMT_CONV.ESP:13-16): the 7 methods refused there go on; three
+        # succeed (booking_table, local_node_manager, remote_cell_table
+        # create/2), the others stop later
+        self.assertEqual(out, {'refused': 208, 'success': 310, 'failure': 12})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -748,7 +764,12 @@ class Census(unittest.TestCase):
             # step 3e: the 8 sends to an integer still holding its slot's
             # template constant are named so (the census makes receivers
             # with new/2, not through their creators)
-            'receiver a slot constant': 8, 'unbound argument': 21, 'operand': 14,
+            # 2026-11-25: blt 19 V != N witnessed: 'operand' 14 -> 7; of the
+            # 7, three succeed, two stop at an unbound new_heap_vector length
+            # ('unbound argument' 21 -> 23), dummy_kl1_value_cell unify/2 at a
+            # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
+            # constant ('pool' 1)
+            'receiver a slot constant': 9, 'unbound argument': 23, 'operand': 7, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,

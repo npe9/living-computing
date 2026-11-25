@@ -690,6 +690,17 @@ applied as proposed unless the note says otherwise.
 | P-s18 | APPLIED | |
 | P-s19 | APPLIED | |
 | P-s20 | APPLIED | |
+| P-k0 | APPLIED | `@ab` read from the cells |
+| P-k1 | APPLIED | counts re-run independently (clause-scoped def-use): 44's Y never from 40/46 (0 of 6,805); 45's X a head argument in 6,451 of 6,639 |
+| P-k2 | APPLIED | pmi 24: 5,331 of 5,773 follow a built-in cell |
+| P-k3 | APPLIED | handlers renamed; the census refusal text follows the name |
+| P-k4 | APPLIED, and executed | kl0 no longer refuses blt 19 V != N; census moves in `psi/README.md` |
+| P-k5 | APPLIED, reworded | the rule "arity+1 when the barrier is live" is not exact: of 2,784 arity+1 c4, 2,241 are in predicates keeping a barrier in A_arity and 543 are not; the row gives the counts. c5 witness: h_grade_n.esp:507-512 @368 |
+| P-k6 | APPLIED | every cell and source line re-read |
+| P-k7 | APPLIED | TR-044 PDF p39 read as an image; TERMCODE.ESP:183's size 8 is a `string/3` call |
+| P-k8 | APPLIED | TM-444 PDF p12-14 and TR-236 PDF p5 read as images; cited in the meaning, mnemonics not renamed |
+| P-k9 | APPLIED | all five quotes re-read verbatim |
+| P-k10 | ALREADY DONE except c6 and blt 6f | b1/b5/b6/b7, ca, 9a/9b, 50/51/54/55, f2 by step 3e; c6 and 6f NOT APPLIED: each needs an implementation and tests, and 6f's third argument is unsettled |
 | P-f1 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
 | P-f2 | APPLIED | also `psi/fepread/ptfread.py`'s docstring, which said the same |
 | P-f3 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |

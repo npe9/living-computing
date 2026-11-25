@@ -1070,12 +1070,15 @@ end.''', 'simpos')
         # {editor, Class} option and activity slot: 787 success
         # (fep_node_table initiate/1, local_node_name/2, pimos_window
         # create_pimos_window/3), 477 refused (13 more stop later); no
-        # method left success.
+        # method left success.  2026-11-25: blt 19 V != N witnessed
+        # (FMT_CONV.ESP:13-16): packet32 initiate/1 goes on from its
+        # new_heap_vector and runs into the step limit (476 refused).
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 787, 'failure': 123, 'refused': 477, 'exception': 16}))
+        self.assertEqual((len(rows), out), (1403, {'success': 787, 'failure': 123, 'refused': 476, 'exception': 16,
+                                                   'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 
