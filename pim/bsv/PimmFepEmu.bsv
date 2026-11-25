@@ -25,7 +25,7 @@
 //   io 620 on them (fep.Fep.string_io: the replier's [1, ""] and [1,
 //   "\0\0"], the local server's [1, ""] and its io(1) HELD, tcpip [5], the
 //   user device's [1, ">sys>user>" ++ the name it is given]); the window
-//   create 104 and calls 127 130 132 141 142 143 111 112: [1]; getl 110
+//   create 104 and calls 126 127 130 132 141 142 143 111 112: [1]; getl 110
 //   HELD; 60 on a string-I/O device or a window: [1]; 70 on a device
 //   with a held request: that request answered [6]; 112 on a read file:
 //   [1]; and fep.Fep.idle(), the EVENT (below).
@@ -272,10 +272,11 @@ Int#(32) stAborted = 6;
 Bit#(32) fepDate  = 33742;            // fep.DATE
 Bit#(48) msPerDay = 86400000;
 
-// fep.WINDOW_ANSWERED: reshape, set_title, set_font, activate,
-// deactivate, show, putb, flush
+// fep.WINDOW_ANSWERED: reshape_by_mouse (2026-11-24, the listener's
+// window), reshape, set_title, set_font, activate, deactivate, show,
+// putb, flush
 function Bool windowAnswered(Int#(32) c) =
-   c == 127 || c == 130 || c == 132 || c == 141 || c == 142 || c == 143 || c == reqPutb
+   c == 126 || c == 127 || c == 130 || c == 132 || c == 141 || c == 142 || c == 143 || c == reqPutb
    || c == reqFlush;
 
 typedef 1024 BodyMax;

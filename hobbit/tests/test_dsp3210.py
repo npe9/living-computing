@@ -1,0 +1,1511 @@
+#!/usr/bin/env python3
+"""tools/dsp3210dis.py and tools/dsp3210.py, the Hobbit BeBox's DSP3210s
+(docs/dsp3210.md).
+
+Three parts.  The decoder tests pin the encodings to the manual's own
+encoded examples (WE DSP3210 Information Manual, Sept 1991, section 4.6;
+page numbers printed on the page).  The module tests disassemble Be's
+DSP code from the Nov 1994 disk and skip, loudly, when the image (held
+out of git: docs/bebox/MANIFEST.md) is absent; no Be or AT&T code is in
+this file, only instruction words, addresses and short decoded texts.
+The model tests run hand-encoded programs on a flat bus; the serial
+port tests use a loopback device, the codec tests tools/ad1849.py
+(AD1849K data sheet REV. 0, docs/dsp3210/MANIFEST.md).
+
+Discriminating checks, observed 2026-11-24 with the disk image present
+(HOBBIT_9308000058 set).  Each injection is a text edit, reverted by the
+exact reverse edit, with the file then compared byte for byte against its
+copy from before.  Run with python -B: an injection of the same size
+inside one second leaves a stale .pyc that Python trusts.  Observed
+failures:
+
+- dsp3210dis, branch dispatch back to `op >> 1 == 0` (the first draft's
+  bug that made I/O-condition branches "reserved"):
+  test_io_condition_branch.
+- dsp3210dis, B and M of the do formats swapped:
+  test_do_forms, test_os_boot_mover.
+- dsp3210, the delayed branch made immediate (_branch calls _jump):
+  test_call_absolute, test_call_return, test_dau_condition_latency,
+  test_delayed_branch, test_interrupt_after_branch, test_loop_counter,
+  test_os_boot_standalone, test_reset_release_run.
+- dsp3210, the pc read as address + 4 instead of + 8: test_call_return,
+  test_dau_condition_latency, test_delayed_branch,
+  test_interrupt_after_branch, test_interrupt_is_a_level,
+  test_loop_counter, test_os_boot_standalone, test_reset_release_run.
+- dsp3210, do-loop body one instruction short (end = start + 4*K):
+  test_do_loop, test_do_register_count_and_direct,
+  test_interrupt_in_do_loop, test_os_boot_standalone.
+- dsp3210, `do K, rM` taking the count from the L field:
+  test_do_register_count_and_direct, test_os_boot_standalone.
+- dsp3210, DA memory write committed at once (countdown 1, not 4):
+  test_da_write_latency.
+- dsp3210, DAU condition from the current flags (dflag_hist[-1]):
+  test_dau_condition_latency.
+- dsp3210, multiplier input from two instructions back, not three (the
+  first draft's bug): test_multiplier_latency.
+- dsp3210, float_to_dsp's negative mantissa as sign-magnitude:
+  test_float_format.
+- dsp3210, int16 storing 32 bits: test_float16_int16.
+- dsp3210, SHIFT-OR keeping only rS's low half: test_shift_or.
+- dsp3210, (short) logical shifts sign-extended: test_ca_alu.
+- dsp3210, rotate right not through the carry: test_ca_alu.
+- dsp3210, BRC=1 boot taking the address from header bytes 4-7: every
+  test that boots the model (26), test_alu_flags .. test_wrapper.
+- dsp3210, interrupt vector r22 + 8*(n-1): test_bio_and_irq,
+  test_idle_skip, test_interrupt_after_branch, test_interrupt_in_do_loop,
+  test_interrupt_is_a_level, test_timer_interrupt.
+- dsp3210, interrupts taken right after a branch (no p. 7-7 lockout):
+  test_interrupt_after_branch, test_interrupt_is_a_level.
+- dsp3210, interrupt entry one cycle instead of two (goto + nop):
+  test_interrupt_in_do_loop.
+- dsp3210, IREQ latched on its rising edge instead of a level:
+  test_interrupt_is_a_level.
+- dsp3210, cycles_until_event one cycle long (skips onto the tick):
+  test_idle_skip.
+- dsp3210, skip() not counting the timer down: test_idle_skip.
+- dsp3210, notify_write never ending a spin: test_skip_equals_stepping.
+- dsp3210, spin skip jumping period-1 cycles per iteration:
+  test_skip_equals_stepping.
+- dsp3210, spin skip not advancing the timer: test_skip_equals_stepping.
+- dsp3210, spin proven despite side effects (the clean check dropped):
+  test_bus_write_is_not_a_spin, test_memory_counter_is_not_a_spin.
+- dsp3210, bus writes not breaking a spin: test_bus_write_is_not_a_spin.
+
+- dsp3210, ibuf ignoring IN (no bit reversal for LSB first):
+  test_programmed_lsb_first.
+- dsp3210, a slot of 31 bit clocks: test_clock_divider,
+  test_init_handshake, test_programmed_msb_first.
+- dsp3210, the bit clock CKI/(2*ICN), not /(4*ICN): AudioDriverTest
+  (setUpClass), test_clock_divider, test_programmed_msb_first.
+- dsp3210, DMA frame complete one transfer late: test_input_dma_stops,
+  test_output_dma_reloads, test_tone_through_dma.
+- dsp3210, pointer writes in reload mode also loading the current
+  register: test_output_dma_reloads.
+- dsp3210, reading ibuf not clearing ibf: test_ibf_interrupt,
+  test_tone_through_dma.
+- dsp3210, dmac ICS taken as changing bits 4, 5: AudioDriverTest
+  (setUpClass), test_input_dma_stops.
+- dsp3210, no ibf/obe interrupt requests: test_ibf_interrupt.
+- dsp3210, the slot horizon one cycle long:
+  test_skip_with_dma_equals_stepping.
+- dsp3210, skip() not advancing the serial clock:
+  test_skip_with_dma_equals_stepping.
+- dsp3210, input DMA leaving ibf set: test_input_dma_stops,
+  test_skip_with_dma_equals_stepping, test_tone_through_dma.
+- dsp3210, a DMA write leaving a proven spin in place (no _unspin):
+  test_dma_write_ends_spin.  (Its first two versions, a loop that
+  exits at once on the new value, failed nothing: skipping runs to the
+  loop head before jumping, so only a loop that sees the change one
+  iteration late exposes it.)
+- ad1849, 193 autocalibration frames:
+  test_data_mode_rate_and_autocalibration, test_tone_through_dma.
+- ad1849, divide factors 448/384 swapped:
+  test_data_mode_rate_and_autocalibration, test_init_handshake,
+  test_tone_through_dma.
+- ad1849, DCB sent in bit 57: test_first_word_is_the_defaults.
+- ad1849, DCB read from bit 59: AudioDriverTest (setUpClass),
+  test_echo_and_dcb_handshake.
+- ad1849, 1 dB attenuation steps: test_attenuation_and_mono.
+- ad1849, SY high in the second slot: test_init_handshake.
+- ad1849, control_phase defaulting to 0: AudioDriverTest (setUpClass).
+  (Before the driver test took the codec's default, this injection
+  failed nothing; the test was changed and the injection re-run.)
+
+Tried and not discriminating: doblock taking K from its field instead
+of forcing 0.  Every doblock in the code has K = 0 encoded.
+"""
+import os
+import struct
+import sys
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+HOBBIT = os.path.dirname(HERE)
+sys.path.insert(0, os.path.join(HOBBIT, "tools"))
+import ad1849  # noqa: E402
+import dsp3210  # noqa: E402
+import dsp3210dis as dis  # noqa: E402
+import befs1  # noqa: E402
+
+DISK = os.environ.get("HOBBIT_9308000058") or os.path.join(
+    HOBBIT, "build", "bebox", "hdd-hobbit-9308000058", "hobbit-9308000058.img")
+FETCH = "sh hobbit/docs/bebox/fetch.sh"
+
+
+def text(w, addr=0x100):
+    return dis.decode(w, addr).text
+
+
+# --------------------------------------------------------------- encoders
+# Field packers for Table 10-1 (p. 10-1..10-2); register codes Table 10-2.
+R = {"r%d" % i: i for i in range(15)}
+R.update({"r%d" % (15 + i): 17 + i for i in range(5)})
+R.update({"r20": 24, "r21": 25, "r22": 26, "pc": 15, "pcsh": 30, "-1": 22, "+1": 23})
+COND = {"true": 1, "false": 0, "ne": 4, "eq": 5, "gt": 12, "lt": 11, "mi": 3,
+        "vs": 7, "ibe": 32, "obe": 35, "alt": 19, "age": 18}
+
+
+def br(cond, rb, n=0):                  # 0b
+    return (1 << 31) | (COND[cond] << 21) | (R[rb] << 16) | (n & 0xFFFF)
+
+
+def loopc(rm, rb, n):                   # 3a
+    return (0b000011 << 26) | (R[rm] << 21) | (R[rb] << 16) | (n & 0xFFFF)
+
+
+def do_imm(k, l):                       # 3b
+    return (0b1000110 << 25) | (k << 11) | l
+
+
+def call(rb, n, rm):                    # 4a
+    return (0b000100 << 26) | (R[rm] << 21) | (R[rb] << 16) | (n & 0xFFFF)
+
+
+def add3(rd, rs, n, long=True):         # 5a/5b
+    return ((1 if long else 0) << 31) | (0b00101 << 26) | (R[rd] << 21) | (R[rs] << 16) | (n & 0xFFFF)
+
+
+def alu(f, rd, rs1, rs2, cond="true", long=True):   # 6a/6b
+    return ((1 if long else 0) << 31) | (0b001100 << 25) | (f << 21) | (R[rd] << 16) \
+        | (R[rs1] << 11) | (COND[cond] << 5) | R[rs2]
+
+
+def alui(f, rd, n, long=True):          # 6c/6d
+    return ((1 if long else 0) << 31) | (0b001101 << 25) | (f << 21) | (R[rd] << 16) | (n & 0xFFFF)
+
+
+def set24(rd, m):                       # 8b
+    return (0b110 << 29) | ((m >> 16) << 21) | (R[rd] << 16) | (m & 0xFFFF)
+
+
+def mov(t, w, rh, rp, ri="r0"):         # 7c
+    return (1 << 31) | (0b001110 << 25) | (t << 24) | (w << 21) | (R[rh] << 16) | (R[rp] << 11) | R[ri]
+
+
+def iomov(t, w, rh, io):                # 7b
+    return (1 << 31) | (0b001110 << 25) | (t << 24) | (w << 21) | (R[rh] << 16) | (1 << 10) | io
+
+
+def daop(p, i=0):
+    return (p << 3) | i
+
+
+def da(fmt, m, f, s, n, x, y, z):       # formats 1-3
+    return (fmt << 29) | (m << 26) | (f << 24) | (s << 23) | (n << 21) | (x << 14) | (y << 7) | z
+
+
+def special(g, n, y, z):                # format 5
+    return (0b01111 << 27) | (g << 23) | (n << 21) | (y << 7) | z
+
+
+NOP = 0x80000000
+WAITI = iomov(1, 7, "r0", 10)
+NOWRITE = 0b0000111
+ACC = lambda i: i  # noqa: E731
+
+
+class DecoderTest(unittest.TestCase):
+    """Encodings against the manual's examples (section 4.6)."""
+
+    def test_control_examples(self):
+        self.assertEqual(text(0x80000000), "nop")                      # NOP p. 4-62
+        self.assertEqual(text(0x80340000), "return (r18)")             # RETURN p. 4-65
+        self.assertEqual(text(0x803E0000), "ireturn")                  # IRETURN p. 4-58
+        # GOTO-COND p. 4-48: 10000 000010 00001 0x0800
+        self.assertEqual(text(0x80410800), "if (pl) goto r1+2048")
+        # GOTO-LOOP p. 4-49: 000011 00001 00010 0xff55
+        self.assertEqual(text(0x0C22FF55, 0x200), "if (r1-- >= 0) goto r2-171")
+
+    def test_alu_examples(self):
+        # INCR/DECR p. 4-55: if(vs) r5 = r5 + 1, (short)
+        self.assertEqual(text(alu(0, "r5", "r5", "+1", "vs", long=False)),
+                         "if (vs) r5 = (short) r5 + 1")
+        # SUBTRACT p. 4-84: if(mi) r10 = -r5
+        self.assertEqual(text(0x988A0065), "if (mi) r10 = -r5")
+        # SET p. 4-70: r2 = 0x800 as 16-bit add to r0
+        self.assertEqual(text(0x14400800), "r2 = (short) 2048")
+        # SHIFT-OR p. 4-75: 100100 00010 00001 0x0800
+        self.assertEqual(text(0x90410800), "r2 = r1 <<| 0x0800")
+
+    def test_da_example(self):
+        # FMULT-ACC-STORE p. 4-40: *r1++ = a0 = a1 - *r2-- * *r3++r17
+        w = da(3, 1, 0, 1, 0, 0b0011011, 0b0010110, 0b0001111)
+        self.assertEqual(w, 0x6486CB0F)
+        self.assertEqual(text(w), "*r1++ = a0 = a1 - *r2-- * *r3++r17")
+
+    def test_io_condition_branch(self):
+        # Be's audio driver polls the SIO with "if (obf) goto ." (C = 100010)
+        self.assertEqual(text(0x844FFFF8, 0x830), "if (obf) goto 0x830")
+        self.assertEqual(text(0x840FFFF8, 0x830), "if (ibe) goto 0x830")
+
+    def test_do_forms(self):
+        self.assertEqual(text(0x8C00056C), "do 0, 1388")
+        self.assertEqual(text(0x8E800002), "doblock r2  /* K=0 */")    # M = bit 23
+        self.assertEqual(text(0x8F000002), "dolock 0, r2")             # B = bit 24
+        self.assertEqual(text(0x8E001805), "do 3, r5")
+
+    def test_reserved(self):
+        self.assertFalse(dis.decode(0x00000000).valid)                 # 0a
+        self.assertFalse(dis.decode(0x08000000).valid)                 # 2a
+
+
+def disk_or_skip(test):
+    if not os.path.exists(DISK):
+        test.skipTest("Nov 1994 disk image absent; fetch it with: " + FETCH)
+
+
+def module_words(path):
+    vol = befs1.Volume(DISK)
+    data = vol.read(vol.lookup(path))
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        out = os.path.join(t, "m")
+        with open(out, "wb") as f:
+            f.write(data)
+        return dis.Coff(out)
+
+
+class ModuleTest(unittest.TestCase):
+    """Be's DSP code on the Nov 1994 disk."""
+
+    def get(self, path):
+        disk_or_skip(self)
+        return module_words(path)
+
+    def listing(self, coff):
+        import io
+        buf = io.StringIO()
+        stats = dis.disassemble(coff, buf)
+        return buf.getvalue(), stats
+
+    def test_tnop_module(self):
+        """mml/tnop against mml/tnop.s, word for word (13 words)."""
+        text_, st = self.listing(self.get("/system/vcos/mml/tnop"))
+        self.assertEqual(st, {"words": 13, "reserved": 0})
+        for want in ("r1 = r1 - 1", "if (gt) goto 0x7c", "return (r18)",
+                     "do 0, 1388", "goto 0x68"):
+            self.assertIn(want, text_)
+
+    def test_vftax_module(self):
+        text_, st = self.listing(self.get("/system/vcos/mml/vftax"))
+        self.assertEqual(st, {"words": 72, "reserved": 0})
+        for want in ("a2 = dsp(*r2)", "a3 = float16(*r1++)", "do 3, r5",
+                     "a0 = a1 + a2 * a3", "*r3++ = a0 = int16(a0)",
+                     "if (gt) r6 = r2", "r5 = r6 >> 1"):
+            self.assertIn(want, text_)
+
+    def test_os_boot_mover(self):
+        text_, st = self.listing(self.get("/system/vcos/mml/os"))
+        self.assertEqual(st["words"], 491)
+        self.assertIn("r22 = pc+208  /* 0x130 */", text_)
+        self.assertIn("doblock r4  /* K=0 */", text_)
+        self.assertIn("pcw = (short) r10", text_)
+
+
+# ------------------------------------------------------------- the model
+
+class Bus:
+    def __init__(self):
+        self.mem = {}
+
+    def read(self, a, size):
+        return int.from_bytes(bytes(self.mem.get(a + i, 0) for i in range(size)), "big")
+
+    def write(self, a, size, v):
+        for i, b in enumerate(v.to_bytes(size, "big")):
+            self.mem[a + i] = b
+
+    def words(self, a, ws):
+        for i, w in enumerate(ws):
+            self.write(a + 4 * i, 4, w)
+
+
+CODE = 0x60001000
+
+
+def machine(prog, base=CODE):
+    bus = Bus()
+    bus.words(base, prog)
+    # boot block (BRC = 1): address MSB first, count 0, in word low bytes
+    for i, b in enumerate(base.to_bytes(4, "big")):
+        bus.write(0x60000000 + 4 * i, 4, b)
+    d = dsp3210.DSP3210(bus.read, bus.write)
+    d.reset()
+    d.r = [0] * 32       # drop the boot ROM's r1/r2/r5 left-overs
+    return d, bus
+
+
+def run(d, n):
+    for _ in range(n):
+        d.step()
+
+
+class FloatTest(unittest.TestCase):
+    def test_float_format(self):
+        # p. 3-8: N = M * 2^(e-128), M = (-2)^s + 0.f
+        self.assertEqual(dsp3210.float_to_dsp(1.0), 0x00000080)
+        self.assertEqual(dsp3210.float_to_dsp(-1.0), 0x8000007F)
+        self.assertEqual(dsp3210.float_to_dsp(-0.75), 0xC000007F)
+        self.assertEqual(dsp3210.float_to_dsp(-2.0), 0x80000080)
+        self.assertEqual(dsp3210.dsp_to_float(0x7FFFFFFF), (2 - 2 ** -23) * 2.0 ** 127)
+        self.assertEqual(dsp3210.dsp_to_float(0x12345600), 0.0)       # e = 0: zero
+
+    def test_ieee(self):
+        # 8.2.4.1: infinities clamp, e = 0 is zero
+        self.assertEqual(dsp3210.ieee_to_dsp(0x3F800000), 0x80)
+        self.assertEqual(dsp3210.ieee_to_dsp(0x7F800000), 0x7FFFFFFF)
+        self.assertEqual(dsp3210.ieee_to_dsp(0xFF800000), 0x800000FF)
+        self.assertEqual(dsp3210.ieee_to_dsp(0x80000000), 0)
+        self.assertEqual(dsp3210.dsp_to_ieee(0x8000007F), 0xBF800000)
+
+
+class ModelTest(unittest.TestCase):
+    def test_boot_rom_brc1(self):
+        d, _ = machine([NOP])
+        self.assertEqual(d.boot_state, ("brc1", CODE, 0))
+        self.assertEqual(d.pc, CODE)
+        self.assertTrue(d.ior[dsp3210.PCW] & dsp3210.PCW_CPN)
+
+    def test_boot_rom_brc1_copy(self):
+        bus = Bus()
+        hdr = (0xE100).to_bytes(4, "big") + (8).to_bytes(4, "big")
+        for i, b in enumerate(hdr + bytes([0x80, 0, 0, 0, 0x80, 0, 0, 0])):
+            bus.write(0x60000000 + 4 * i, 4, b)
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        d.reset()
+        self.assertEqual(d.pc, 0xE100)
+        self.assertEqual(d.load(0xE100, 4), NOP)
+        self.assertEqual(d.load(0xE104, 4), NOP)
+
+    def test_delayed_branch(self):
+        prog = [br("true", "pc", 8),            # 0: goto 0x10
+                add3("r1", "r0", 1),            # 4: delay slot: runs
+                add3("r2", "r0", 2),            # 8: skipped
+                add3("r3", "r0", 3),            # c: skipped
+                add3("r4", "r0", 4)]            # 10: target
+        d, _ = machine(prog)
+        run(d, 3)
+        self.assertEqual((d.r[1], d.r[2], d.r[3], d.r[4]), (1, 0, 0, 4))
+
+    def test_call_return(self):
+        prog = [call("pc", 8, "r18"),           # 0: call 0x10, r18 = 8
+                add3("r1", "r0", 1),            # 4: delay slot
+                add3("r2", "r0", 2),            # 8: return lands here
+                NOP,                            # c
+                br("true", "r18"),              # 10: return (r18)
+                add3("r3", "r0", 3)]            # 14: delay slot
+        d, _ = machine(prog)
+        run(d, 5)
+        self.assertEqual(d.r[R["r18"]], CODE + 8)
+        self.assertEqual((d.r[1], d.r[2], d.r[3]), (1, 2, 3))
+
+    def test_loop_counter(self):
+        prog = [add3("r1", "r0", 2),            # 0
+                add3("r2", "r2", 1),            # 4: body
+                loopc("r1", "pc", -12),         # 8: if (r1-- >= 0) goto 4
+                NOP]                            # c
+        d, _ = machine(prog)
+        run(d, 1 + 3 * 3)
+        self.assertEqual(d.r[2], 3)
+        self.assertEqual(d.r[1] & 0xFFFFFFFF, 0xFFFFFFFF)
+
+    def test_do_loop(self):
+        prog = [do_imm(1, 4),                   # do next 2 insns 5 times
+                add3("r1", "r1", 1),
+                add3("r2", "r2", 2),
+                add3("r3", "r3", 3)]
+        d, _ = machine(prog)
+        run(d, 1 + 2 * 5 + 1)
+        self.assertEqual((d.r[1], d.r[2], d.r[3]), (5, 10, 3))
+
+    def test_alu_flags(self):
+        prog = [set24("r1", 0x7FFF),
+                add3("r2", "r1", 1, long=False),     # 16-bit overflow
+                set24("r3", 5),
+                alu(4, "r4", "r3", "r3"),            # 0: z
+                alui(13, "r1", 1)]                   # r1 $>>= 1
+        d, _ = machine(prog)
+        run(d, 2)
+        self.assertEqual(d.r[2], 0xFFFF8000)        # sign-extended (short)
+        self.assertEqual((d.flags["v"], d.flags["n"]), (1, 1))
+        run(d, 3)
+        self.assertEqual(d.r[1], 0x3FFF)
+        d2, _ = machine([set24("r3", 5), alu(4, "r4", "r3", "r3")])
+        run(d2, 2)
+        self.assertEqual((d2.r[4], d2.flags["z"]), (0, 1))
+
+    def test_shift_or(self):
+        # SHIFT-OR p. 4-75: N << 16 OR'ed with all of rS, always 32-bit
+        prog = [set24("r1", 0x345678),
+                0x90410800,                         # r2 = r1 <<| 0x0800
+                0x90220800]                         # r1 = r2 <<| 0x0800 (OR again)
+        d, _ = machine(prog)
+        run(d, 2)
+        self.assertEqual(d.r[2], 0x08345678)
+        run(d, 1)
+        self.assertEqual(d.r[1], 0x08345678)
+
+    # F, long, rS1, rS2, carry in -> rD, (n, z, v, c); rD None: not stored.
+    # Pages: ADD 4-21, ADD-CARRY REV 4-24, AND 4-25, AND-COMPLEMENT 4-26,
+    # BIT TEST 4-27, COMPARE 4-30, EXCLUSIVE OR 4-34, OR 4-64, ROTATE
+    # LEFT/RIGHT 4-66/4-67, SHIFT LEFT 4-73, SHIFT RIGHT 4-76, SHIFT
+    # RIGHT-ARITH 4-78, SUBTRACT 4-83; flag rules Table 4-1 (p. 4-3).
+    ALU_CASES = [
+        (0, 1, 0x7FFFFFFF, 1, 0, 0x80000000, (1, 0, 1, 0)),
+        (0, 1, 0xFFFFFFFF, 1, 0, 0, (0, 1, 0, 1)),
+        (0, 0, 0x7FFF, 1, 0, 0xFFFF8000, (1, 0, 1, 0)),     # short: sign-extends
+        (4, 1, 0, 1, 0, 0xFFFFFFFF, (1, 0, 0, 1)),          # borrow
+        (3, 1, 7, 7, 0, 3, (0, 0, 0, 1)),                   # rS1 = rS2: >> 1, LSB to c
+        (14, 1, 0xF0F0, 0xFF00, 1, 0xF000, (0, 0, 0, 0)),
+        (6, 1, 0xF0F0, 0xFF00, 1, 0x00F0, (0, 0, 0, 0)),
+        (10, 1, 0xF0F0, 0xFF00, 1, 0xFFF0, (0, 0, 0, 0)),
+        (8, 1, 0xF0F0, 0xFF00, 1, 0x0FF0, (0, 0, 0, 0)),
+        (1, 1, 0x40000000, 1, 0, 0x80000000, (1, 0, 0, 0)), # v = c = 0
+        (1, 0, 0x4001, 1, 0, 0x00008002, (1, 0, 0, 0)),     # short: upper 16 zero
+        (12, 0, 0xFFFF8000, 4, 0, 0x00000800, (0, 0, 0, 0)),
+        (13, 0, 0x8000, 4, 0, 0xFFFFF800, (1, 0, 0, 0)),
+        (13, 1, 0x80000000, 31, 0, 0xFFFFFFFF, (1, 0, 0, 0)),
+        (9, 1, 2, 0, 1, 0x80000001, (1, 0, 0, 0)),          # through carry
+        (11, 1, 0x80000000, 0, 1, 1, (0, 0, 1, 1)),
+        (15, 1, 0x10, 0x01, 0, None, (0, 1, 0, 0)),         # btst: flags only
+        (7, 1, 5, 5, 0, None, (0, 1, 0, 0)),                # compare
+    ]
+
+    def test_ca_alu(self):
+        for f, e, a, b, cin, want, flags in self.ALU_CASES:
+            with self.subTest(f=f, long=e, a=hex(a), b=hex(b)):
+                d, _ = machine([alu(f, "r3", "r1", "r2", long=bool(e))])
+                d.r[1], d.r[2], d.r[3] = a, b, 0x5A5A5A5A
+                d.flags["c"] = cin
+                run(d, 1)
+                self.assertEqual(d.r[3], 0x5A5A5A5A if want is None else want)
+                self.assertEqual(tuple(d.flags[k] for k in "nzvc"), flags)
+
+    def test_ca_conditional_and_immediate(self):
+        # p. 4-21: a false COND changes neither rD nor the flags
+        d, _ = machine([alu(0, "r3", "r1", "r2", "eq"),
+                        alui(12, "r1", 4),                  # r1 = r1 >> 4 (6c)
+                        alui(14, "r2", 0xFF0F)])            # r2 = r2 & N, N sign-extended
+        d.r[1], d.r[2] = 0x100, 0x1234
+        d.flags.update(n=1, z=0, v=1, c=1)
+        run(d, 1)
+        self.assertEqual(d.r[3], 0)
+        self.assertEqual(tuple(d.flags[k] for k in "nzvc"), (1, 0, 1, 1))
+        run(d, 2)
+        self.assertEqual((d.r[1], d.r[2]), (0x10, 0x1204))
+
+    def test_load_store(self):
+        # 7c, Table 10-1; W = 1 char (sign-extends), 2 ushort, 3 short
+        prog = [set24("r1", 0xE000),
+                set24("r2", 0xFF34),
+                mov(1, 2, "r2", "r1", "+1"),        # *r1++ = (short) r2
+                add3("r1", "r1", -2),
+                mov(0, 1, "r3", "r1"),              # r3 = (char) *r1
+                mov(0, 2, "r4", "r1", "+1"),        # r4 = (ushort) *r1++
+                add3("r1", "r1", -2),
+                mov(0, 3, "r5", "r1")]              # r5 = (short) *r1
+        d, _ = machine(prog)
+        run(d, 8)
+        self.assertEqual(d.load(0xE000, 2), 0xFF34)
+        self.assertEqual(d.r[3], 0xFFFFFFFF)
+        self.assertEqual(d.r[4], 0xFF34)
+        self.assertEqual(d.r[5], 0xFFFFFF34)
+        self.assertEqual(d.r[1], 0xE000)
+
+    def test_mac(self):
+        # a0 = 0.0 + Y*X from on-chip memory: 1.5 * -0.75
+        prog = [set24("r1", 0xE000),
+                set24("r2", 0xE004),
+                da(3, 4, 0, 0, 0, daop(2), daop(1), NOWRITE),   # a0 = *r1 * *r2
+                NOP]
+        d, _ = machine(prog)
+        d.store(0xE000, 4, dsp3210.float_to_dsp(1.5))
+        d.store(0xE004, 4, dsp3210.float_to_dsp(-0.75))
+        run(d, 4)
+        self.assertEqual(d.acc[0], -1.125)
+        self.assertEqual(text(prog[2]), "a0 = *r1 * *r2")
+
+    def test_multiplier_latency(self):
+        # Latency 2, p. 4-14, the manual's example:
+        #   I1 a0 = a0 + *r1 * *r2;  I2 a0 = a0 + a1;  I3;  I4 a2 = a0 * a0;
+        #   I5 a1 = a2 + a0.  I4's multiplier sees a0 from I1.  In I5, a2
+        #   feeds the adder (no latency: I4's value) and a0 is in the X
+        #   field, a multiplier input, so it is I2's value.
+        A0, A1, A2 = daop(0, 0), daop(0, 1), daop(0, 2)
+        prog = [set24("r1", 0xE000), set24("r2", 0xE004),
+                da(3, 0, 0, 0, 0, daop(2), daop(1), NOWRITE),    # I1: a0 += 2 * 3
+                da(1, 5, 0, 0, 0, A1, A0, NOWRITE),             # I2: a0 = a0 + 1.0*a1
+                NOP,                                             # I3
+                da(3, 4, 0, 0, 2, A0, A0, NOWRITE),             # I4: a2 = 0 + a0*a0
+                da(1, 5, 0, 0, 1, A0, A2, NOWRITE)]             # I5: a1 = a2 + 1.0*a0
+        d, _ = machine(prog)
+        d.store(0xE000, 4, dsp3210.float_to_dsp(2.0))
+        d.store(0xE004, 4, dsp3210.float_to_dsp(3.0))
+        d.acc[0], d.acc[1] = 1.0, 100.0
+        run(d, 2)
+        run(d, 1)
+        self.assertEqual(d.acc[0], 7.0)                 # I1
+        run(d, 1)
+        self.assertEqual(d.acc[0], 107.0)               # I2 (adder: current a1)
+        run(d, 2)
+        self.assertEqual(d.acc[2], 49.0)                # I4: a0 of I1, not 107
+        run(d, 1)
+        self.assertEqual(d.acc[1], 49.0 + 107.0)        # I5: a2 of I4, a0 of I2
+
+    def test_float16_int16(self):
+        # FLOAT16 p. 4-38, INT16 p. 4-56 (16-bit memory operands)
+        prog = [set24("r1", 0xE000), set24("r2", 0xE010),
+                special(2, 0, daop(1), NOWRITE),            # a0 = float16(*r1)
+                special(3, 1, daop(0, 3), daop(2))]         # *r2 = a1 = int16(a3)
+        self.assertEqual(text(prog[2]), "a0 = float16(*r1)")
+        self.assertEqual(text(prog[3]), "*r2 = a1 = int16(a3)")
+        d, _ = machine(prog + [NOP] * 4)
+        d.store(0xE000, 2, 0xFFFD)                      # -3
+        d.acc[3] = -1234.25
+        d.store(0xE010, 4, 0x11112222)
+        run(d, 4 + 4)
+        self.assertEqual(d.acc[0], -3.0)
+        self.assertEqual(d.load(0xE010, 2), (-1234) & 0xFFFF)
+        self.assertEqual(d.load(0xE012, 2), 0x2222)     # a 16-bit store
+
+    def test_do_register_count_and_direct(self):
+        # do K, rM (format 3c, p. 4-31): the body runs rM + 1 times;
+        # 7a direct *L loads and stores (pp. 4-59, 4-80)
+        def direct(t, w, rh, l):
+            return (0b001110 << 25) | (t << 24) | (w << 21) | (R[rh] << 16) | l
+        prog = [add3("r5", "r0", 2),
+                (0b1000111 << 25) | (0 << 11) | R["r5"],    # do 0, r5
+                add3("r1", "r1", 1),
+                direct(0, 3, "r3", 0xE010),                  # r3 = (short) *0xE010
+                direct(1, 7, "r3", 0xE014)]                  # *0xE014 = (long) r3
+        self.assertEqual(text(prog[1]), "do 0, r5")
+        self.assertEqual(text(prog[3]), "r3 = (short) *0xe010")
+        d, _ = machine(prog)
+        d.store(0xE010, 2, 0x8001)
+        run(d, 2 + 3 + 2)
+        self.assertEqual(d.r[1], 3)
+        self.assertEqual(d.load(0xE014, 4), 0xFFFF8001)
+
+    def test_call_absolute(self):
+        # 8c call M (rM), M zero-extended 24 bits (CALL p. 4-28); code
+        # on-chip so that M can reach it
+        d, _ = machine([NOP])
+        prog = [(0b111 << 29) | (0 << 21) | (R["r18"] << 16) | 0xE110,   # call 0xE110 (r18)
+                add3("r1", "r0", 1), add3("r2", "r0", 2), NOP,
+                br("true", "r18"), add3("r3", "r0", 3)]
+        for i, w in enumerate(prog):
+            d.store(0xE100 + 4 * i, 4, w)
+        d._jump(0xE100)
+        run(d, 5)
+        self.assertEqual(d.r[R["r18"]], 0xE108)
+        self.assertEqual((d.r[1], d.r[2], d.r[3]), (1, 2, 3))
+
+    def test_da_write_latency(self):
+        # p. 4-14 Latency 1: a DA write is readable four instructions later
+        z = daop(3)                              # *r3
+        prog = [set24("r3", 0xE000),
+                special(4, 0, ACC(1), z),        # *r3 = a0 = round(a1)
+                mov(0, 7, "r4", "r3"),           # +1: old value
+                NOP, NOP,
+                mov(0, 7, "r5", "r3")]           # +4: new value
+        d, _ = machine(prog)
+        d.acc[1] = 2.0
+        d.store(0xE000, 4, 0x11111111)
+        run(d, 6)
+        self.assertEqual(d.r[4], 0x11111111)
+        self.assertEqual(d.r[5], dsp3210.float_to_dsp(2.0))
+
+    def test_dau_condition_latency(self):
+        # p. 4-15 Latency 4: the condition is the flags of four insns before
+        prog = [special(4, 0, ACC(1), NOWRITE),  # a0 = round(a1) = -1: N
+                br("alt", "pc", 16),             # +1: still the old flags
+                NOP,
+                NOP,
+                br("alt", "pc", 4),              # +4: sees N
+                NOP,
+                add3("r1", "r0", 1),             # skipped by the second branch
+                add3("r2", "r0", 2)]
+        d, _ = machine(prog)
+        d.acc[1] = -1.0
+        run(d, 7)
+        self.assertEqual((d.r[1], d.r[2]), (0, 2))
+
+    HANDLER = [add3("r9", "r9", 1), 0x803E0000]       # r9 += 1; ireturn
+
+    def irq_machine(self, body):
+        prog = [set24("r22", 0xE800), set24("r1", 0x100),
+                iomov(1, 3, "r1", 8)] + body           # emr: EXT0 (bit 8)
+        d, _ = machine(prog)
+        for i, w in enumerate(self.HANDLER):
+            d.store(0xE800 + 8 * 8 + 4 * i, 4, w)
+        run(d, 3)
+        return d
+
+    def test_interrupt_after_branch(self):
+        # p. 7-7: a branch is not interruptible, so the delay slot runs
+        # before the interrupt, and the return goes to the target.
+        d = self.irq_machine([br("true", "pc", 8),          # c: goto 0x1c
+                              add3("r5", "r0", 5),          # 10: delay slot
+                              add3("r2", "r0", 2),          # 14: skipped
+                              add3("r3", "r0", 3),          # 18: skipped
+                              add3("r4", "r0", 4), NOP, NOP])
+        run(d, 1)                                    # the branch
+        d.set_irq(0, 1)
+        run(d, 1)                                    # delay slot, not the interrupt
+        self.assertEqual((d.r[5], d.in_interrupt), (5, False))
+        run(d, 1)                                    # entry
+        self.assertTrue(d.in_interrupt)
+        self.assertEqual(d.pcsh, CODE + 0x1C)
+        d.set_irq(0, 0)
+        run(d, 4)                                    # nop, r9, ireturn, r4
+        self.assertEqual((d.r[2], d.r[3], d.r[4], d.r[9]), (0, 0, 4, 1))
+
+    def test_interrupt_in_do_loop(self):
+        # 7.5.1: do-loop state is shadowed; the loop finishes its count
+        d = self.irq_machine([do_imm(1, 4),
+                              add3("r1", "r1", 1),
+                              add3("r2", "r2", 2),
+                              add3("r3", "r3", 3)])
+        d.r[1] = 0
+        run(d, 4)                                    # do, then mid-body
+        d.set_irq(0, 1)
+        run(d, 1)
+        self.assertTrue(d.in_interrupt)
+        d.set_irq(0, 0)
+        run(d, 11)                                   # 16 in all: 12 + entry 2 + handler 2
+        self.assertEqual((d.r[1], d.r[2], d.r[3], d.r[9]), (5, 10, 3, 1))
+
+    def test_interrupt_is_a_level(self):
+        # IR0N held: taken again after ireturn and one base instruction
+        d = self.irq_machine([add3("r1", "r1", 1), br("true", "pc", -12), NOP])
+        d.r[1] = 0
+        d.set_irq(0, 1)
+        run(d, 20)
+        self.assertGreaterEqual(d.r[9], 3)
+        self.assertGreaterEqual(d.r[1], 1)
+        d.set_irq(0, 0)
+        run(d, 5)                                    # finish a handler in progress
+        n = d.r[9]
+        run(d, 20)
+        self.assertEqual(d.r[9], n)
+
+    def test_timer_interrupt(self):
+        # The timer (p. 9-?) counts down at CKI/2 with tcon = 1; at zero it
+        # latches vector 9 (Table 9-?), enabled by emr bit 9; waiti stops
+        # until then; the vector is r22 + 8*9; ireturn goes back to pcsh.
+        vec = 0xE800
+        prog = [set24("r22", vec),
+                set24("r1", 0x200),                   # emr bit 9: timer
+                iomov(1, 3, "r1", 8),                 # emr = (short) r1
+                WAITI,                                # c
+                add3("r7", "r0", 7),                  # 10: after the return
+                NOP, NOP, NOP]
+        d, bus = machine(prog)
+        for i, w in enumerate([add3("r9", "r0", 9), 0x803E0000]):
+            d.store(vec + 8 * 9 + 4 * i, 4, w)
+        run(d, 3)                                    # r22, r1, emr
+        self.assertEqual(d.ior[dsp3210.EMR], 0x200)
+        d.store(0x414, 4, 40)                        # timer = 40
+        d.store(0x413, 1, 0x01)                      # enable, CKI/2
+        run(d, 1)                                    # waiti
+        self.assertTrue(d.waiting)
+        run(d, 15)                                   # 2 counts per insn
+        self.assertTrue(d.waiting)
+        self.assertEqual(d.r[9], 0)
+        run(d, 8)                                    # entry (2), handler (2), r7
+        self.assertEqual(d.r[9], 9)
+        self.assertEqual(d.r[7], 7)
+        self.assertFalse(d.in_interrupt)
+        self.assertEqual(d.pcsh, CODE + 0x10)
+
+
+class InterfaceTest(unittest.TestCase):
+    """The calls tools/beboot.py makes (docs/dsp3210.md "Interface")."""
+
+    def test_reset_release_run(self):
+        bus = Bus()
+        bus.words(CODE, [add3("r1", "r1", 1), br("true", "pc", -12), NOP])
+        for i, b in enumerate(CODE.to_bytes(4, "big")):
+            bus.write(0x60000000 + 4 * i, 4, b)
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        self.assertTrue(d.idle)                       # held in reset
+        self.assertEqual(d.run(10), 0)
+        d.release()
+        self.assertEqual(d.ior[dsp3210.PCW] & 0x3C00, 0x3C00)   # Boot= 0x3d80
+        d.r[1] = 0
+        self.assertEqual(d.run(9), 9)
+        self.assertEqual(d.r[1], 3)                   # add, goto, delay add ...
+        d.hold_reset()
+        self.assertEqual(d.run(5), 0)
+        self.assertEqual(d.r[1], 3)
+        self.assertEqual(d.cycles, 24)
+
+    def test_bio_and_irq(self):
+        seen = []
+        prog = [set24("r22", 0xE800), set24("r1", 0x8000),
+                iomov(1, 3, "r1", 8),                 # emr: EXT1 only
+                set24("r3", 0x41E), set24("r2", 2),
+                mov(1, 2, "r2", "r3"),                # bio = 2: BIO0 high
+                WAITI, NOP, NOP]
+        d, _ = machine(prog)
+        d.on_bio = seen.append
+        d.store(0xE800 + 8 * 15, 4, add3("r9", "r0", 9))
+        d.store(0xE800 + 8 * 15 + 4, 4, 0x803E0000)
+        d.run(7)
+        self.assertEqual(seen, [1])
+        self.assertTrue(d.waiting)
+        self.assertTrue(d.idle)
+        d.set_irq(1, 1)                               # IREQ1
+        self.assertFalse(d.idle)
+        d.run(3)
+        self.assertEqual(d.r[9], 9)
+
+
+class BoardBus:
+    """beboot's bus shape: write(addr, value, size), pins(name, level)."""
+
+    def __init__(self):
+        self.b = Bus()
+        self.pinlog = []
+
+    def read(self, a, size):
+        return self.b.read(a, size)
+
+    def write(self, a, value, size):
+        self.b.write(a, size, value)
+
+    def pins(self, name, level):
+        self.pinlog.append((name, level))
+
+
+class BeBootTest(unittest.TestCase):
+    """The Dsp3210 wrapper beboot drives, and that a run pickles."""
+
+    def test_idle_skip(self):
+        # mml/schedule's shape: timer interrupt enabled, waiti between
+        # ticks.  skip(clocks_until_event()) then stepping must reach the
+        # interrupt on the same cycle as stepping all the way.
+        def build():
+            bus = BoardBus()
+            prog = [set24("r22", 0xE800), set24("r1", 0x200),
+                    iomov(1, 3, "r1", 8), WAITI, add3("r7", "r0", 7), NOP, NOP]
+            bus.b.words(CODE, prog)
+            for i, b in enumerate(CODE.to_bytes(4, "big")):
+                bus.b.write(0x60000000 + 4 * i, 4, b)
+            d = dsp3210.Dsp3210(1, bus)
+            d.release()
+            d.core.store(0xE800 + 72, 4, add3("r9", "r0", 9))
+            d.core.store(0xE800 + 76, 4, 0x803E0000)
+            for _ in range(3):
+                d.step()
+            d.core.store(0x414, 4, 1001)
+            d.core.store(0x413, 1, 0x23)              # enable, reload, CKI/4
+            d.step()                                  # waiti
+            return d
+        a, b = build(), build()
+        self.assertEqual(a.clocks_until_event(), 4 * 999)
+        clocks = 0
+        while a.core.r[9] != 9:
+            clocks += a.step()
+        b.skip(b.clocks_until_event())
+        self.assertEqual(b.clocks_until_event(), 0)  # the tick lands next cycle
+        n = 0
+        while b.core.r[9] != 9:
+            n += b.step()
+        self.assertEqual(n + 4 * 999, clocks)
+        self.assertEqual(a.core.timer_count, b.core.timer_count)
+        with self.assertRaises(dsp3210.DspError):
+            build().skip(4 * 1000)
+
+    def test_wrapper(self):
+        import pickle
+        bus = BoardBus()
+        prog = [set24("r3", 0x41E), set24("r2", 2 << 2),
+                mov(1, 2, "r2", "r3"),                # bio: BIO1 high
+                add3("r1", "r1", 1), br("true", "pc", -12), NOP]
+        bus.b.words(CODE, prog)
+        for i, b in enumerate(CODE.to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, b)
+        d = dsp3210.Dsp3210(2, bus)
+        self.assertEqual(d.step(), 4)                 # in reset: time passes
+        d.release()
+        self.assertEqual(d.pc, CODE)
+        for _ in range(3):
+            d.step()
+        self.assertEqual(bus.pinlog, [("bio1", 1)])
+        d2 = pickle.loads(pickle.dumps(d))
+        for x in (d, d2):
+            x.core.r[1] = 0
+            for _ in range(6):
+                x.step()
+        self.assertEqual(d.core.r[1], d2.core.r[1])
+        self.assertEqual(d.pc, d2.pc)
+        d.hold()
+        self.assertTrue(d.idle)
+
+
+
+def relocate(coff, symbols):
+    """Lay out a VCOS module at its paddrs and apply its COFF relocations
+    (10-byte entries: vaddr, symbol index, type).  Types as observed in
+    mml/os: 44 a 32-bit word, 46 the 24-bit immediate of a format 8b
+    `rN = (ushort24) A` (Ne bits 28-21 high, N bits 15-0 low), 47 the N of
+    the `rN <<| N` after it, which takes bits 31-16 of the pair's value.
+    The value is symbols[index] + A.  be.oem/audio adds 57/58, the same
+    pair where A is a section's header address rather than its data
+    address (`r3 = 0x38` for _main at paddr 0x38), and 59, a 32-bit word
+    (its iparam buffer pointers).  The type meanings are INFERRED from
+    the code pairs they land on, and the symbol values are the caller's:
+    the module's symbol table is absent (symptr 0x382b lies past the end),
+    so what vcas_server's loader gives each index is not known."""
+    img = bytearray(max(s["paddr"] + s["size"] for s in coff.sections))
+    for sec in coff.sections:
+        img[sec["paddr"]:sec["paddr"] + sec["size"]] = coff.data(sec)
+    pair = {}
+    unresolved = []
+    for sec in coff.sections:
+        for k in range(sec["nreloc"]):
+            e = coff.blob[sec["relptr"] + 10 * k: sec["relptr"] + 10 * k + 10]
+            va, sym, typ = struct.unpack(">IIH", e)
+            if sym not in symbols:
+                unresolved.append((sec["name"], va, sym, typ))
+                continue
+            w = struct.unpack(">I", img[va:va + 4])[0]
+            if typ in (44, 59):
+                w = (w + symbols[sym]) & 0xFFFFFFFF
+            elif typ in (46, 57):
+                v = (((w >> 21) & 0xFF) << 16 | (w & 0xFFFF)) + symbols[sym]
+                pair[va + 4] = v
+                w = (w & 0xE01F0000) | ((v >> 16) & 0xFF) << 21 | (v & 0xFFFF)
+            elif typ in (47, 58):
+                w = (w & 0xFFFF0000) | (pair[va] >> 16) & 0xFFFF
+            else:
+                raise AssertionError("relocation type %d" % typ)
+            img[va:va + 4] = struct.pack(">I", w)
+    return img, unresolved
+
+
+class VcosBootTest(unittest.TestCase):
+    """mml/os's __boot from Be's boot block, standing alone: the BRC = 1
+    ROM path enters the module in host memory, __boot sets up the timer
+    and pcw, copies __vcos on-chip with doblock and enters it.
+
+    Inputs that are INFERRED, not read from the loader: the module image at
+    DSP 0x60010000; symbol 12 (the vector table's handler pointers) is the
+    module base; 63/68 put __vcos's copy at on-chip 0xE000 (68 is 0x20
+    past 63, as the copy starts at the section header while the return
+    address counts from the code); 81 (r21, the stack) at 0xE400; pcw
+    word 0x128 holds vcos.cfg's Boot= 0x3d80.  The run ends where __vcos
+    reads its execution-list pointer, which the host has not set: a
+    load through 0, the boot ROM, which is not modelled."""
+
+    BASE = 0x60010000
+
+    def test_os_boot_standalone(self):
+        disk_or_skip(self)
+        coff = module_words("/system/vcos/mml/os")
+        b = self.BASE
+        img, unresolved = relocate(coff, {12: b, 63: 0xE000 - 0x69C,
+                                          68: 0xE000 - 0x69C + 0x20,
+                                          81: 0xE400 - 0x69C})
+        # the five external symbols of __vcos, and __ModH's
+        self.assertEqual(sorted(u[2] for u in unresolved), [13, 56, 58, 59, 62, 76])
+        img[0x128:0x12C] = struct.pack(">I", 0x3D80)
+        bus = Bus()
+        for i, x in enumerate(img):
+            bus.mem[b + i] = x
+        for i, x in enumerate((b + 0x58).to_bytes(4, "big")):
+            bus.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        d.reset(0xF0)
+        seen = []
+        with self.assertRaisesRegex(dsp3210.DspError, "data read of boot ROM 0x0"):
+            for _ in range(1000):
+                seen.append(d.pc)
+                d.step()
+        self.assertEqual(d.steps, 176)                      # the 177th faults
+        self.assertEqual(seen[-1], 0xE114)
+        self.assertEqual(d.mmio[0x413], 0x2F)               # timer running
+        self.assertEqual(d.ior[dsp3210.PCW], 0x3D80)
+        self.assertEqual(d.ior[dsp3210.DAUC], 12)
+        self.assertEqual(d.r[26], b + 0x130)                # vector table
+        self.assertIn(0xE108, seen)                         # __vcos entered on-chip
+        self.assertEqual(d.ram[:0x188], bytes(img[0x67C:0x67C + 0x188]))
+
+
+
+class WatchBus(BoardBus):
+    """A board that agrees to report writes to watched words."""
+
+    def __init__(self):
+        super().__init__()
+        self.watched = []
+
+    def watch(self, ranges):
+        self.watched = list(ranges)
+        return True
+
+
+class SpinSkipTest(unittest.TestCase):
+    """VCOS's empty-list poll skipped versus stepped: identical state.
+
+    The standalone boot of VcosBootTest, with the execution-list pointer
+    word (module 0x768, copied on-chip to 0xE0EC) pointing at a zero
+    word in host memory: an empty list (INFERRED layout: __vcos reads
+    *(*0xE0EC) and polls while it is zero)."""
+
+    BASE = VcosBootTest.BASE
+    HEAD = BASE + 0xF00                 # the list head word, host memory
+
+    def boot(self):
+        disk_or_skip(self)
+        coff = module_words("/system/vcos/mml/os")
+        b = self.BASE
+        img, _ = relocate(coff, {12: b, 63: 0xE000 - 0x69C,
+                                 68: 0xE000 - 0x69C + 0x20, 81: 0xE400 - 0x69C})
+        img[0x128:0x12C] = struct.pack(">I", 0x3D80)
+        img[0x768:0x76C] = struct.pack(">I", self.HEAD)
+        img += bytes(0x1000 - len(img))
+        # one task entry: word 0 next (none), word 20 its code
+        img[0xE00:0xE04] = struct.pack(">I", 0)
+        img[0xE14:0xE18] = struct.pack(">I", b + 0xE40)
+        for i, w in enumerate([add3("r9", "r9", 1), br("true", "r18"), NOP]):
+            img[0xE40 + 4 * i:0xE44 + 4 * i] = struct.pack(">I", w)
+        bus = WatchBus()
+        for i, x in enumerate(img):
+            bus.b.mem[b + i] = x
+        for i, x in enumerate((b + 0x58).to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.Dsp3210(1, bus)
+        d.release()
+        return d, bus
+
+    def state(self, d):
+        c = d.core
+        return (c._snap(), bytes(c.ram), c.timer_count, c.timer_frac,
+                c.steps, c.cycles, d.pc)
+
+    def test_skip_equals_stepping(self):
+        a, abus = self.boot()
+        b, bbus = self.boot()
+        window = 300000                              # instruction cycles
+        for _ in range(window):
+            a.step()
+        done, skipped = 0, 0
+        while done < window:
+            h = b.clocks_until_event()
+            if h:
+                n = min(h // 4, window - done)
+                b.skip(4 * n)
+                skipped += n
+                done += n
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, window * 9 // 10)    # it did skip
+        self.assertIn((self.HEAD, 4), bbus.watched)      # the polled word
+        self.assertEqual(self.state(a), self.state(b))
+        # the board puts a task on the list: the spin ends at once
+        for d, bus in ((a, abus), (b, bbus)):
+            bus.b.write(self.HEAD, 4, self.BASE + 0xE00)
+            d.notify_write(self.HEAD, 4)
+        self.assertEqual(b.clocks_until_event(), 0)
+        for d in (a, b):
+            for _ in range(20000):
+                d.step()
+        self.assertGreater(a.core.r[9], 0)                # the task ran
+        self.assertEqual(self.state(a), self.state(b))
+
+    def test_no_watch_no_skip(self):
+        d, bus = self.boot()
+        bus.watch = None
+        for _ in range(50000):
+            d.step()
+        self.assertEqual(d.clocks_until_event(), 0)
+
+
+class SpinRulesTest(unittest.TestCase):
+    """Loops whose registers repeat but which still do something are not
+    spins: a changing on-chip word, and a bus write (a possible doorbell)."""
+
+    def run_loop(self, prog):
+        bus = WatchBus()
+        bus.b.words(CODE, prog)
+        for i, b in enumerate(CODE.to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, b)
+        d = dsp3210.Dsp3210(1, bus)
+        d.release()
+        d.core.r = [0] * 32
+        seen = 0                    # steps at which a skip was offered
+        for _ in range(2000):
+            d.step()
+            seen += d.clocks_until_event() != 0      # None (no horizon) too
+        return d, seen
+
+    def test_memory_counter_is_not_a_spin(self):
+        d, seen = self.run_loop([set24("r1", 0xE000),
+                                 mov(0, 7, "r3", "r1"),        # 4: r3 = *r1
+                                 add3("r3", "r3", 1),
+                                 mov(1, 7, "r3", "r1"),        # *r1 = r3
+                                 br("true", "pc", -20),        # 10: goto 4
+                                 add3("r3", "r0", 0)])         # r3 = 0
+        self.assertEqual(seen, 0)
+        self.assertGreater(d.core.load(0xE000, 4), 300)
+
+    def test_bus_write_is_not_a_spin(self):
+        d, seen = self.run_loop([set24("r5", 0x1800), set24("r6", 0x6000),
+                                 0x90C56000,                   # r6 = r5 <<| 0x6000
+                                 mov(1, 7, "r0", "r6"),        # c: *r6 = r0
+                                 br("true", "pc", -12),        # 10: goto c
+                                 NOP])
+        self.assertEqual(seen, 0)
+
+
+# ------------------------------------------------------------ serial port
+
+def absmem(t, w, rh, n):                # 7a: rH <-> *N, e.g. `r4 = (long) *0x0404`
+    return (0b000111 << 26) | (t << 24) | (w << 21) | (R[rh] << 16) | (n & 0xFFFF)
+
+
+def rev32(w):
+    return int(format(w, "032b")[::-1], 2)
+
+
+class Loop:
+    """A serial device: sends `words` in turn (then 0), records what it got
+    and the core step at which each slot ended."""
+
+    def __init__(self, words=(), clk=None):
+        self.words = list(words)
+        self.got, self.at = [], []
+        self.clk = clk
+        self.sy = 0
+        self.core = None
+
+    def clock(self):
+        return self.clk
+
+    def exchange(self, w):
+        self.got.append(w)
+        self.at.append(self.core.steps if self.core else None)
+        return self.words.pop(0) if self.words else 0
+
+
+# ICN = 1 (CKI / 4 a bit: 32 instructions a slot), OUT = IN = 1 (MSB
+# first), OLEN = 011 and ILEN = 11 (32 bits), AIC = 1 (internal ICK).
+IOC_INT = 0x00130CD0
+SELF = [br("true", "pc", -8), NOP]           # goto .
+
+
+def sio_machine(prog, dev):
+    d, bus = machine(prog)
+    d.sio_dev = dev
+    dev.core = d
+    return d, bus
+
+
+class SioTest(unittest.TestCase):
+    """The serial port and its DMA (manual 9.1, 9.2) against a loopback
+    device."""
+
+    def loopback(self, ioc):
+        prog = [set24("r1", ioc), absmem(1, 7, "r1", 0x40C),       # ioc = r1
+                set24("r2", 0x123456), absmem(1, 7, "r2", 0x408),  # obuf = r2
+                br("ibe", "pc", -8), NOP,                          # 10: wait ibf
+                absmem(0, 7, "r3", 0x404)] + SELF                  # r3 = ibuf
+        dev = Loop([0xCAFEF00D])
+        d, _ = sio_machine(prog, dev)
+        run(d, 300)
+        return d, dev
+
+    def test_programmed_msb_first(self):
+        # p. 9-9: obuf -> output shift register at a slot end, so the word
+        # goes out in the slot after; ibuf takes the slot's input (p. 9-6).
+        d, dev = self.loopback(IOC_INT)
+        self.assertEqual(dev.got[:3], [0, 0x123456, 0x123456])   # underrun: again
+        self.assertEqual(d.r[3], 0xCAFEF00D)
+        # 9.1.5.1, p. 9-12: bit clock CKI / (4 * ICN), 32 bits a slot
+        self.assertEqual({b - a for a, b in zip(dev.at, dev.at[1:])}, {32})
+
+    def test_programmed_lsb_first(self):
+        d, dev = self.loopback(IOC_INT & ~0x30000)              # IN = OUT = 0
+        self.assertEqual(dev.got[1], rev32(0x123456))
+        self.assertEqual(d.r[3], rev32(0xCAFEF00D))
+
+    def test_clock_divider(self):
+        d, dev = self.loopback(IOC_INT | 0x200000)                # ICN = 3
+        self.assertEqual({b - a for a, b in zip(dev.at, dev.at[1:])}, {96})
+
+    def test_input_dma_stops(self):
+        dev = Loop([0x11111111 * k for k in range(1, 7)])
+        d, _ = sio_machine(SELF, dev)
+        d.store(0x40C, 4, IOC_INT)
+        d.store(0x420, 4, 0xE800)          # idp
+        d.store(0x42A, 2, 12)              # icnt: (4 - 1) * 4 bytes
+        d.store(0x433, 1, 0x30)            # ICS | IDE, stop mode (Listing 9-2)
+        run(d, 32 * 8)
+        self.assertEqual([d.load(0xE800 + 4 * k, 4) for k in range(5)],
+                         [0x11111111, 0x22222222, 0x33333333, 0x44444444, 0])
+        self.assertEqual(d.dma["i"]["en"], 0)
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAIN)
+        self.assertEqual(d.load(0x433, 1), 0)
+
+    def test_output_dma_reloads(self):
+        dev = Loop()
+        d, _ = sio_machine(SELF, dev)
+        for a, ws in ((0xE800, [0xA0, 0xA1]), (0xE900, [0xB0, 0xB1])):
+            for k, w in enumerate(ws):
+                d.store(a + 4 * k, 4, w)
+        d.store(0x40C, 4, IOC_INT)
+        d.store(0x424, 4, 0xE800)          # odp, stop mode: current and next
+        d.store(0x42E, 2, 4)               # ocnt: 2 transfers
+        d.store(0x433, 1, 0x07)            # OCS | ODE | ORS
+        d.store(0x424, 4, 0xE900)          # reload mode: next only (p. 9-19)
+        self.assertEqual(d.load(0x424, 4), 0xE800)     # reads the current
+        run(d, 32 * 8)
+        self.assertEqual(dev.got[1:7], [0xA0, 0xA1, 0xB0, 0xB1, 0xB0, 0xB1])
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAOUT)
+        self.assertEqual(d.load(0x433, 1), 0x06)
+
+    def test_ibf_interrupt(self):
+        # 9.1.6.2: emr bit 11; reading ibuf clears ibf, so one per slot
+        prog = [set24("r22", 0xE800), set24("r1", 0x800), iomov(1, 3, "r1", 8),
+                set24("r2", IOC_INT), absmem(1, 7, "r2", 0x40C),
+                br("true", "pc", -8), add3("r7", "r0", 0)]   # goto .; a nop
+        # that is not `nop`: 0x80000000 decodes as a conditional goto, after
+        # which the model takes no interrupt (p. 7-7).
+        dev = Loop(list(range(1, 40)))
+        d, _ = sio_machine(prog, dev)
+        handler = [absmem(0, 7, "r3", 0x404), add3("r9", "r9", 1), 0x803E0000]
+        for i, w in enumerate(handler):
+            d.store(0xE800 + 8 * dsp3210.VEC_SIOIN + 4 * i, 4, w)
+        run(d, 330)
+        self.assertGreaterEqual(len(dev.got), 9)
+        self.assertEqual((d.r[9], d.r[3]), (len(dev.got), len(dev.got)))
+
+    def test_skip_with_dma_equals_stepping(self):
+        # waiti with input DMA in reload mode: cycles_until_event() is the
+        # next slot end, and skipping to it gives the stepped state.
+        def build():
+            dev = Loop(list(range(1, 200)))
+            d, _ = sio_machine([WAITI, NOP], dev)
+            d.store(0x40C, 4, IOC_INT | 0x400000)        # ICN = 5
+            d.store(0x420, 4, 0xE800)
+            d.store(0x42A, 2, 12)
+            d.store(0x433, 1, 0x70)                      # ICS | IDE | IRS
+            run(d, 2)
+            return d, dev
+        a, adev = build()
+        b, bdev = build()
+        n, skipped = 6000, 0
+        run(a, n)
+        done = 0
+        while done < n:
+            h = b.cycles_until_event()
+            if h:
+                h = min(h, n - done)
+                b.skip(h)
+                skipped += h
+                done += h
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, n * 0.9)
+        self.assertEqual(adev.got, bdev.got)
+        self.assertEqual(a.ram, b.ram)
+        self.assertEqual((a.dma, a.sio_acc, a.irq_latched),
+                         (b.dma, b.sio_acc, b.irq_latched))
+
+    def test_dma_write_ends_spin(self):
+        # A loop polling an on-chip word is a proven spin; input DMA then
+        # writes that word.  The loop sees the change one iteration late
+        # (r4 is last iteration's r3), so at its head right after the DMA
+        # it is not a fixed point: skipping must stop, as stepping does.
+        def build():
+            dev = Loop([5])
+            prog = [set24("r1", 0xE800),
+                    add3("r4", "r3", 0),                       # 4: r4 = r3
+                    mov(0, 7, "r3", "r1"),                     # 8: r3 = *r1
+                    alu(7, "r0", "r4", "r0"),                  # c: r4 - 0
+                    br("eq", "pc", -20), add3("r7", "r0", 0),  # 10: if (eq) goto 4
+                    add3("r9", "r0", 9),
+                    br("true", "pc", -8), add3("r10", "r10", 1)]  # 1c: count
+            d, _ = sio_machine(prog, dev)
+            d.on_watch = lambda reads: True
+            d.store(0x40C, 4, IOC_INT | 0xE00000)        # ICN = 15
+            d.store(0x420, 4, 0xE800)
+            d.store(0x42A, 2, 0)                         # one transfer
+            d.store(0x433, 1, 0x30)
+            return d
+        a, b = build(), build()
+        n, skipped, done = 3000, 0, 0
+        run(a, n)
+        while done < n:
+            h = b.cycles_until_event()
+            if h:
+                h = min(h, n - done)
+                b.skip(h)
+                skipped += h
+                done += h
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, 300)
+        self.assertEqual((a.r[9], b.r[9]), (9, 9))
+        self.assertEqual((a.r[10], a.pc, a.steps), (b.r[10], b.pc, b.steps))
+
+    def test_unmodelled_length_fails_loud(self):
+        dev = Loop()
+        d, _ = sio_machine(SELF, dev)
+        d.store(0x40C, 4, (IOC_INT & ~0x1C00) | 0x0800)  # OLEN = 010, 16 bits
+        with self.assertRaisesRegex(dsp3210.DspError, "OLEN=2 not modelled"):
+            run(d, 40)
+
+
+# ------------------------------------------------------------ AD1849K
+
+def frame(c, w0, w1):
+    return c.exchange(w0), c.exchange(w1)
+
+
+def ctl(dfr=0, st=0, df=0, mck=1, ms=1, dcb=0):
+    """A control word as Be's driver builds it (0x20 in byte 1, FSEL 0)."""
+    return ((0x20 | dcb << 2) << 24 | (dfr << 3 | st << 2 | df) << 16
+            | (mck << 4 | ms << 1) << 8)
+
+
+class CodecTest(unittest.TestCase):
+    """tools/ad1849.py against the AD1849K data sheet, REV. 0."""
+
+    def control(self):
+        c = ad1849.AD1849K(control_phase=0)
+        c.pin("reset", 1)
+        return c
+
+    def test_first_word_is_the_defaults(self):
+        # p. 16 defaults, p. 20: the first control-mode word has DCB = 1
+        c = self.control()
+        self.assertEqual(frame(c, 0, 0), (0x24010900, 0xC0002200))
+
+    def test_echo_and_dcb_handshake(self):
+        c = self.control()
+        a, b = ctl(dfr=5, st=1, mck=2), ctl(dfr=5, st=1, mck=2, dcb=1)
+        frame(c, a, 0)
+        self.assertEqual(frame(c, a, 0x1234), (a, 0))           # echo, next frame
+        self.assertEqual(frame(c, b, 0), (a, 0x1234))
+        self.assertEqual(c.log[-1][1], "dcb1")
+        self.assertEqual(frame(c, ctl(), 0), (b, 0))            # DCB = 1 echoed
+        self.assertEqual(frame(c, ctl(), 0), (0, 0))            # then three-state
+        self.assertEqual((c.dfr, c.st, c.mck), (5, 1, 2))       # later words ignored
+
+    def test_data_mode_rate_and_autocalibration(self):
+        c = self.control()
+        for w in (ctl(dfr=5, st=1, mck=2), ctl(dfr=5, st=1, mck=2, dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        # p. 12: 16.9344 MHz / 384 = 44.1 kHz; 64-bit frames, SCLK = 64 FS
+        self.assertEqual(c.clock(), (50000000 * 384, 64 * 16934400))
+        outs = [frame(c, 0x10002000, 0x00000000)[1] for _ in range(196)]
+        self.assertEqual([o >> 23 & 1 for o in outs[:194]], [1] * 194)   # ADI
+        self.assertEqual(outs[195] >> 23 & 1, 0)
+        seg = c.played[-1]
+        self.assertEqual((seg[0], seg[1]), (44100.0, 2))
+        v = struct.unpack("<%dh" % (len(seg[2]) // 2), bytes(seg[2]))
+        self.assertEqual(v[:388], (0,) * 388)                   # calibrating
+        self.assertEqual(v[388:], (0x1000, 0x2000) * 2)
+
+    def test_attenuation_and_mono(self):
+        c = self.control()
+        for w in (ctl(), ctl(dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        c.autocal = 1
+        frame(c, 0, 0)
+        frame(c, 0x40007FFF, 4 << 24)                           # LO = 4: 6 dB
+        frame(c, 0x40007FFF, 63 << 24)                          # LO = 63: mute
+        seg = c.played[-1]
+        self.assertEqual(seg[1], 1)                             # ST = 0: mono
+        self.assertEqual(struct.unpack("<3h", bytes(seg[2])), (0, 8211, 0))
+
+    def test_companding(self):
+        # G.711 codes as the data sheet's DF = 1, 2 (p. 12)
+        self.assertEqual([ad1849.ulaw_decode(b) for b in (0xFF, 0x80, 0x00, 0x7F)],
+                         [0, 32124, -32124, 0])
+        self.assertEqual([ad1849.alaw_decode(b) for b in (0xD5, 0x55, 0xAA)],
+                         [8, -8, 32256])
+        for x in (0, 100, -100, 1000, -5000, 32000):
+            self.assertLess(abs(ad1849.ulaw_decode(ad1849.ulaw_encode(x)) - x),
+                            max(8, abs(x) // 16))
+            self.assertLess(abs(ad1849.alaw_decode(ad1849.alaw_encode(x)) - x),
+                            max(16, abs(x) // 16))
+
+    def test_wav_round_trip(self):
+        import tempfile
+        c = self.control()
+        for w in (ctl(st=1), ctl(st=1, dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        c.autocal = 1
+        with tempfile.TemporaryDirectory() as t:
+            src = os.path.join(t, "in.wav")
+            import wave
+            with wave.open(src, "wb") as w:
+                w.setnchannels(2)
+                w.setsampwidth(2)
+                w.setframerate(8000)
+                w.writeframes(struct.pack("<4h", 300, -300, 400, -400))
+            c.load_wav(src)
+            outs = [frame(c, 0x01000200, 0)[0] for _ in range(3)]
+            self.assertEqual(outs, [0, 300 << 16 | (-300 & 0xFFFF),
+                                    400 << 16 | (-400 & 0xFFFF)])
+            dst = os.path.join(t, "out.wav")
+            self.assertEqual(c.save_wav(dst), 3)
+            with wave.open(dst, "rb") as w:
+                self.assertEqual((w.getnchannels(), w.getframerate()), (2, 8000))
+                self.assertEqual(w.readframes(3)[4:], struct.pack("<4h", 256, 512, 256, 512))
+
+    def test_attach_codec_bio(self):
+        # Be's driver: bio = 0x15 (BIO0-2 low), then bio = 2 (BIO0 high)
+        bus = BoardBus()
+        prog = [set24("r3", 7), absmem(1, 0, "r3", 0x41B),      # bioc: 0-2 out
+                set24("r3", 0x15), absmem(1, 3, "r3", 0x41E),
+                set24("r3", 2), absmem(1, 3, "r3", 0x41E)] + SELF
+        bus.b.words(CODE, prog)
+        for i, x in enumerate(CODE.to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.Dsp3210(3, bus)
+        c = ad1849.AD1849K()
+        d.attach_codec(c)
+        d.release()
+        for _ in range(4):
+            d.step()
+        self.assertEqual(c.mode, "reset")
+        for _ in range(2):
+            d.step()
+        self.assertEqual((c.pins["reset"], c.mode), (1, "control"))
+        self.assertIn(("bio0", 1), bus.pinlog)
+        import pickle
+        self.assertEqual(pickle.loads(pickle.dumps(d)).codec.mode, "control")
+
+
+class AudioDriverTest(unittest.TestCase):
+    """Be's be.oem/audio `init` (_c_init, 0x794) standing alone, with the
+    AD1849K on the serial port: codec reset, control mode, the DCB
+    handshake, data mode at 44.1 kHz stereo, DMA running; then a tone put
+    in the next output DMA buffer comes out of the codec, and input samples
+    land in the next input buffer.
+
+    INFERRED inputs: the module is laid out flat at DSP 0x60010000 with
+    every relocation symbol the module base (no loader: buffers then sit
+    past the image, which the init alone tolerates); the iparam words are
+    the host's (control 13: 44.1 kHz, PCM 16, stereo; frame control
+    0xC0400000: lines and speaker on, no attenuation); FrameSize 64 bytes
+    (32 frames a DMA buffer); pcw 0x3d80 as VCOS boots it; the return
+    address is a `goto .` stub."""
+
+    B = 0x60010000
+    N = 32
+    STUB = B + 0x1F00
+
+    @classmethod
+    def boot(cls, phase=None):
+        coff = module_words("/system/vcos/be.oem/audio")
+        syms = set()
+        for s in coff.sections:
+            for k in range(s["nreloc"]):
+                syms.add(struct.unpack(">IIH", coff.blob[s["relptr"] + 10 * k:
+                                                         s["relptr"] + 10 * k + 10])[1])
+        img, unresolved = relocate(coff, {s: cls.B for s in syms})
+        assert not unresolved
+        img += bytes(0x2000)
+        img[0xD18:0xD1C] = struct.pack(">I", cls.N * 2)       # FrameSize
+        img[0xCC0:0xCC4] = struct.pack(">I", 13)
+        img[0xCC4:0xCC8] = struct.pack(">I", 0xC0400000)
+        img[0x1F00:0x1F08] = struct.pack(">II", 0x802FFFF8, NOP)   # goto .
+        bus = Bus()
+        for i, x in enumerate(img):
+            bus.mem[cls.B + i] = x
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        d.reset(0xF0)
+        d.boot_state = None
+        d.ior[dsp3210.PCW] = 0x3D80
+        d.r = [0] * 32
+        d.r[R["r18"]] = cls.STUB
+        d.r[R["r21"]] = 0xE400
+        d._jump(cls.B + 0x794)
+        codec = (ad1849.AD1849K() if phase is None       # the model's default
+                 else ad1849.AD1849K(control_phase=phase))
+        d.sio_dev = codec
+        d.on_bio = codec.bio
+        n = 0
+        while d.pc != cls.STUB and n < 1200000:
+            d.step()
+            n += 1
+        return d, bus, codec, n
+
+    @classmethod
+    def setUpClass(cls):
+        if os.path.exists(DISK):
+            cls.run_ = cls.boot()
+
+    def setUp(self):
+        disk_or_skip(self)
+        self.d, self.bus, self.codec, self.n = self.run_
+
+    def test_init_handshake(self):
+        d, c = self.d, self.codec
+        self.assertEqual(d.pc, self.STUB)
+        # observed: 1,112,843 instructions, 50 ms of them the RESET wait
+        self.assertEqual(self.n, 1112843)
+        self.assertEqual([e for _, e in c.log],
+                         ["control", "dcb0", "dcb1",
+                          "data master 44100 Hz stereo DF=0"])
+        self.assertEqual([f for f, _ in c.log], [0, 1, 507, 508])
+        self.assertEqual(d.sio_ioc, 0x00030CC0)
+        self.assertEqual((c.pins, c.mck, c.ms), (dict(reset=1, pdn=0, dc=1), 2, 1))
+        self.assertEqual((d.dma["o"]["en"], d.dma["o"]["rs"], d.dma["i"]["en"],
+                          d.dma["i"]["rs"]), (1, 1, 1, 1))
+
+    def test_tone_through_dma(self):
+        import copy
+        import math
+        d, bus = copy.deepcopy((self.d, self.bus))
+        c = d.sio_dev
+        out_next, in_next = d.dma["o"]["np"], d.dma["i"]["np"]
+        tone = [int(8000 * math.sin(2 * math.pi * k / self.N)) for k in range(self.N)]
+        for k, x in enumerate(tone):
+            bus.write(out_next + 8 * k, 4, (x & 0xFFFF) << 16 | (-x & 0xFFFF))
+            bus.write(out_next + 8 * k + 4, 4, 0xC0400000)
+        c.record = [(100 * k, -100 * k) for k in range(1000)]
+        run(d, 300 * 284)
+        self.assertEqual(c.log[-1], (702, "calibrated"))
+        seg = c.played[-1][2]
+        v = struct.unpack("<%dh" % (len(seg) // 2), bytes(seg))
+        left = v[0::2]
+        self.assertEqual(left[:194], (0,) * 194)
+        # after the mute buffer, the reload buffer over and over
+        # after calibration: the reload buffer over and over (the mute
+        # buffer went out during calibration), so some phase of the tone
+        win = left[200:200 + 3 * self.N]
+        self.assertIn(win, [tuple(tone * 4)[j:j + 3 * self.N] for j in range(self.N)])
+        self.assertEqual(v[1::2][200:200 + 3 * self.N], tuple(-x for x in win))
+        # the input buffer: ADC samples (L:R) and the register word, ADI = 0
+        ins = [bus.read(in_next + 4 * k, 4) for k in range(4)]
+        self.assertEqual(ins[1::2], [0xC0400000] * 2)
+        left0 = ins[0] >> 16
+        self.assertEqual((ins[2] >> 16) - left0, 100)
+        self.assertEqual((ins[0] & 0xFFFF, ins[2] & 0xFFFF),
+                         (-left0 & 0xFFFF, -(left0 + 100) & 0xFFFF))
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAIN)
+
+    def test_other_control_phase_fails(self):
+        # control_phase = 0: get_in_frame_sync keeps r9 in the second
+        # half of the codec's word, so the DCB = 1 word is never taken and
+        # D/C goes high with the reset defaults (MCK = 0).  The phase is a
+        # stand-in for the board's TSIN timing (tools/ad1849.py).
+        with self.assertRaisesRegex(ad1849.CodecError, "MCK=0"):
+            self.boot(phase=0)
+
+
+if __name__ == "__main__":
+    unittest.main()

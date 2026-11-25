@@ -85,8 +85,15 @@ typedef enum {
                     // instead of stopping here; the harnesses stop it by
                     // their PC limit or their clock limit.
   TR_FETCH_FAULT,   // MMU fetch translation fault (Table 1-26 0x7, p. 1-38)
-  TR_UNIMP_REG      // CPU escape naming control register 0 or 13..15:
+  TR_UNIMP_REG,     // CPU escape naming control register 0 or 13..15:
                     // exception 6 (Table 1-24 p. 1-26, p. 1-27)
+  TR_WRITE_FAULT,   // a store whose translation faults, found by EU_S3
+                    // before it commits: exception 9 at the store's own
+                    // PC (Table 1-26, p. 1-38; HobbitCore `storeFaults`).
+                    // Never produced by the decoder.
+  TR_ENTER_FAULT    // ENTER's check of its target and new MSP (p. 3-21):
+                    // exception 8 after the flush, SP and MSP unchanged
+                    // (HobbitCore `enterFault`).  Never decoded.
 } TrapReason deriving (Eq, Bits);
 
 // Operand addressing mode after decode: the four-bit code of Table 1-21
@@ -479,6 +486,8 @@ function String trapText(TrapReason t);
     TR_FETCH_MISS:  return "fetch missed the 3 KB prefetch window (Figure 1-1, p. 1-2)";
     TR_FETCH_FAULT: return "MMU fetch fault (Table 1-26 0x7, p. 1-38)";
     TR_UNIMP_REG:   return "unimplemented control register (p. 1-27)";
+    TR_WRITE_FAULT: return "MMU write fault (Table 1-26 0x9, p. 1-38)";
+    TR_ENTER_FAULT: return "ENTER's store check, read fault (p. 3-21)";
     default:        return "none";
   endcase
 endfunction

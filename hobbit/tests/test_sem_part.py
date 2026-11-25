@@ -223,6 +223,21 @@ class Part92020STest(unittest.TestCase):
         self.assertEqual(h.part_info("92020S").stack_cache_bytes, h.SCSIZE)
 
 
+# The privileged goldens' harness (tests/golden/README.md, "The
+# privileged harness"): the arguments tests/run_tests.sh gives them.
+_SYS = ["--psw", "0x10200", "--isp", "0x200", "--vb", "0x40", "--system",
+        "--stb", "0x1000", "--poke", "1000=00002001", "--poke",
+        "2000=00000003"]
+PRIVILEGED = {
+    "025": ["--sp", "0x100", "--msp", "0x180"] + _SYS
+           + ["--poke", "44=00000020", "--poke", "200c=00003001"],
+    "026": ["--sp", "0x5100", "--msp", "0x5180"] + _SYS
+           + ["--poke", "44=00000008", "--poke", "2014=00005003"],
+    "027": ["--sp", "0x100", "--msp", "0x180"] + _SYS
+           + ["--poke", "44=00000020", "--poke", "200c=00003001"],
+}
+
+
 class GoldenUnderBothPartsTest(unittest.TestCase):
     def test_golden_traces_identical_under_92020s(self):
         # Binary compatibility (MPR 7:14 p. 1; AT&T, 18 Oct 1993): every
@@ -239,6 +254,8 @@ class GoldenUnderBothPartsTest(unittest.TestCase):
                     "--msp", "0x180"]
             if n == "017":
                 args += ["--psw", "0x8600"]
+            if n in PRIVILEGED:
+                args = args[:4] + PRIVILEGED[n]
             base = subprocess.run(args, capture_output=True, text=True)
             alt = subprocess.run(args + ["--part", "92020S",
                                          "--borrow-92010-timing"],

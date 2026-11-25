@@ -1,0 +1,8 @@
+# Held on disk, not in git: the AT&T DSP3210 manual and data sheet here are
+# scans of 1991-93 AT&T Microelectronics publications, re-hosted on GitHub
+# by a hobbyist in a repository without a licence, and they show no
+# redistribution terms (this repository is public).  MANIFEST.md and
+# SHA256SUMS list every file with its URL, size and SHA-256; fetch.sh
+# fetches them again and checks them.
+*.pdf
+*.pdf.part

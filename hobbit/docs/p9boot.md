@@ -1466,7 +1466,20 @@ hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
 P9KERN_SIM=verilator hobbit/bsv/run_p9kern.sh 2893000 [WORKDIR]
 # the suite's sample (tests/run_tests.sh): to main and the first ORI
 hobbit/bsv/run_p9kern.sh 300000 WORKDIR
+# to `root is from` (tests/test_p9boot.py PromptTest's choices), the
+# trace compressed and streamed, the recording kept between runs:
+# 22,537,089 records, 11.6 min on Bluesim, 5.9 min with
+# P9KERN_SIM=verilator (build included; the same 49,455,865 clocks);
+# 22,537,091 on the reference with the Quart bids (49,454,593 clocks),
+# 2026-11-24 on a loaded machine
+P9KERN_STREAM=1 P9KERN_KEEP_REC=1 hobbit/bsv/run_p9kern.sh 23000000 WORKDIR \
+    --counter-period 0.04 --until 'root is from'
 ```
+
+Arguments after WORKDIR go to `p9coreboot.py record`.  `P9KERN_STREAM=1`
+pipes the simulator into the comparison (which stops it at the first
+difference) and keeps only its non-HRI lines (`core.log`); a plain trace
+is ~127 bytes a record, and a boot is hundreds of millions.
 
 * `tools/p9coreboot.py record` runs `p9boot.Boot` unchanged -- it
   imports it and wraps `hobbit_sem.step`, `hobbit_sem.take_interrupt`
@@ -1479,9 +1492,14 @@ hobbit/bsv/run_p9kern.sh 300000 WORKDIR
   It turns the idle skip off (`CHOICES['idle-skip']`): the skip retires
   idle-loop laps without executing them, and the core executes every
   lap, so with the skip on the record numbers would not line up.
-  Device DMA into RAM (SONIC's descriptors and buffers, after `/boot`
-  starts BOOTP) is not in the replay yet: the core's RAM would not see
-  it.
+  A RAM write made by a device (SONIC's descriptors and buffers, once
+  `/boot` starts BOOTP) is recorded as `R n pa data mask` and made in the
+  core's RAM by `p9kern.c` once the core has retired `n` records
+  (2026-11-24; not yet exercised by a run that reads such a word).  The
+  interrupt sequence's frame writes are the CPU's and are not `R` lines.
+  `record` takes p9boot's choices too: `--type TEXT=REPLY` (the console
+  script), `--think`, `--ether-replay PCAP` (the join replayed), and
+  `--zstd`, which keeps the reference trace compressed.
 * `bsv/P9KernTb.bsv` starts `mkHobbitCoreSystem` at the entry with
   every control register 0, as `Boot` starts the reference (physical
   addressing, CSP = ISP, kernel level).  `bsv/p9kern.c` is its board:
@@ -1543,9 +1561,10 @@ The choices:
    testbench to check.  If the boundary falls between a host and its
    folded branch -- two records, two reference steps -- the host commits
    alone and squashes to the branch, which the interrupt then saves
-   (`splitHere`; not exercised yet).  The first interrupt of the boot is
-   after record 2,848,972 (level 6, saved PC 0x800041ec, in `spllo`);
-   it is the only one before 2,893,000.
+   (`splitHere`; first exercised at the second interrupt, 3,298,054).
+   The first interrupt of the boot is after record 2,848,972 (level 6,
+   saved PC 0x800041ec, in `spllo`); 26 are taken before `root is
+   from`.
 
 ### What the core gained: the privileged machine
 
@@ -1610,7 +1629,31 @@ one commit rule:
 
 ### How far it gets
 
-Every record matches through **2,893,000**, on the reference as merged
+**The whole join matches: all 715,866,474 records of the reference's
+boot to rc's `% ` and `echo hello` agree in every field but `cyc`**
+(2026-11-24, Verilator, 1,481,832,578 clocks, 5 h 37 min on a loaded
+machine; 647 interrupts taken; 7,058 of 7,058 device reads replayed,
+276,537 of 276,537 device writes matched, 164,766 SONIC writes into RAM
+applied; 365,517,389 records also agree in `cyc`; the console, 279
+bytes, identical to the reference's, BOOTP, `init: starting /bin/rc`,
+`% ` and `hello` in it).  The recording: `run_p9kern.sh 720000000 DIR
+--type 'il]: =\r' --type 'user[none]: =\r' --type '% =echo hello\r'
+--ether-replay tests/net/join_echo.pcap --until '% echo hello\nhello\n% '`,
+on the reference with the Quart's SC68C94 bids, before master's
+exception-record cost (58332b49, `cyc` only, which the comparison does
+not read) and the PPAGE0 offsets (b86ab109, which moved no step pins).
+The core ran with the two fixes the join found, §1d #13 (the first
+difference had been record 287,416,554, just before BOOTP) and #14
+(308,543,068, just before `init`).
+
+Before the join: **every record matches through 22,537,091, the record at which `/boot`'s
+`root is from` reaches `screenputs`** (2026-11-24, re-pinned on the
+reference with the Quart's SC68C94 FIFOs and bids; the PromptTest's
+choices, `--counter-period 0.04`; on Verilator 49,454,593 clocks, 26
+interrupts taken, 481 device reads replayed, 16,576 device writes
+matched, the console identical; 12,730,803 records also agree in `cyc`.
+Before the Quart change: 22,537,089, also on Bluesim).  Before
+that, through **2,893,000** on the reference as merged
 2026-11-23 (EEPROM, rtc and SONIC models; the idle skip off for the
 recording).  The record numbers are that reference's; on the one before
 it (no EEPROM/rtc reads) the boot reached `netadd` at 2,658,001 and
@@ -1633,6 +1676,20 @@ it (no EEPROM/rtc reads) the boot reached `netadd` at 2,658,001 and
 | 2,886,866 | **`/boot` runs in user mode** (its first instruction, `0x1020`) |
 | 2,886,867 | its first fetch fault, a `trap=1` record (§1d #8) |
 | 2,888,578 | `/boot`'s first system call, `KCALL` (§1d #7) |
+| 2,893,033 | `evenaddr`'s store to a user address faults (§1d #9) |
+| 2,900,889 | `execregs`: `/boot` execs |
+| 2,930,659 | `syssleep` |
+| 3,298,054 | the second interrupt, at a host/fold boundary (§1d #10) |
+| 3,298,146 | `clockintr` |
+| 22,495,384 | `sysopen`, `consopen` |
+| 22,533,287 | `/boot`'s `ENTER` into an unmapped stack page (§1d #11) |
+| 22,536,781 | `syswrite`, then `conswrite` (22,537,011): `root is from` |
+| 287,416,554 | two NOPs at the end of a mapped page; the prefetch window reaches the unmapped page after it (§1d #13) |
+| ~287.8M | BOOTP, then the IL session to the 1e file server |
+| 308,543,068 | a byte store into an unmapped page: exception 9, not 8 (§1d #14) |
+| ~311M | `init: starting /bin/rc` |
+| ~618M | rc's `% ` |
+| 715,866,474 | `hello` and the next `% `: the reference's last record |
 
 and the console is the reference's, byte for byte:
 
@@ -1642,20 +1699,38 @@ and the console is the reference's, byte for byte:
 
 ### What blocks the core next
 
-1. **A write fault on a committed store** (record 2,893,033, the
-   kernel's `evenaddr` writing a user address, `0xffbfffec`): the
-   reference takes the exception at the store, which does not retire
-   (a `trap=1` record, no write); the core has already retired the store
-   when the stack cache's memory port reports the fault, and then takes
-   the exception.  A store whose translation can fault has to be checked
-   before it commits (or its record held until its write is accepted).
-2. **The operand-fault record** (§1d #8) has met no case before record
-   2,893,000: no operand read faults there.  It is untested.
-3. **Device DMA** (SONIC, once `/boot` starts BOOTP) is not in the
-   replay.
-4. **The reference walks the tables at every access**; the core's TLBs
-   and NPSRs cache entries (the walk writes R/M back when it fills one).
-   Software that changes a table and flushes behaves the same on both;
-   software that relies on a stale entry, or on R/M being set by an
-   access that hit the TLB, would not.  Nothing up to record 2,825,000
-   differed.
+1. **Cycles, not records.**  The join matches in every field but `cyc`
+   (above); 365,517,389 of the 715,866,474 records also agree in `cyc`.
+   The rest is the cycle-accuracy work (`docs/cycle_accuracy_plan.md`),
+   and the join recording is its oracle.  The join is not in the suite:
+   recording it takes hours (~62,000 records/s) and the core's run
+   5.6 h on Verilator, so it is a manual check (`run_p9kern.sh` with the
+   arguments above, `P9KCLOCKS=4000000 P9KERN_SIM=verilator
+   P9KERN_STREAM=1 P9KERN_KEEP_REC=1`).
+2. **The operand-fault record** (§1d #8) is now exercised by the join:
+   its recording holds 16 read faults, including operand reads of
+   unmapped user pages (records 287,778,910, 317,910,315, 322,367,286
+   and others) and `nextelem`'s kernel read of a user address
+   (287,762,641), and all matched.  It still has no golden (the MMU
+   core makes no record for it in the golden harness).
+3. **ENTER's check** (§1d #11) has golden 026 and seven more cases in
+   the join (record 286,973,393 and on).  The store-fault check does
+   not cover KCALL's frame, the unimplemented sequence's `*(CSP)` or the
+   drain words (§1d #9); the join met none of them.
+4. **The reference walks the tables at every access; the core's TLBs and
+   NPSRs cache entries.  Decided from the PRM (2026-11-24): the TLB is
+   the part's (p. 2-1), and the two agree for software that keeps Table
+   2-3's rule** -- "If a direct write to the memory copy of the page
+   table entry changes this bit, the entry should be flushed from the TLB
+   using the FLUSHPTE instruction".  The 1e kernel does: `putmmu`,
+   `mmu.c` and `rammain.c` flush after every PTE store
+   (`tools/plan9-1e/sys/src/9/hobbit`), and nothing reads R or M back.
+   One case did diverge and was the core's: a write that hits an entry a
+   read filled never set M, where Table 2-3 bit 4 and Table 2-4 (p. 2-9,
+   only "TLB/NPSR hit and M bit previously set" is free) say it does.
+   `putmmu` copies a PTE's old bits 4..10 into the new one (`*entry =
+   (*entry & (0x7F<<4))|pa`), so a missing M would show as a store's data
+   in the trace.  Fixed: a TLB entry carries M as memory has it, and a
+   write to an entry without M walks and sets it (§1d #12).  A stale
+   entry after a PTE store without FLUSHPTE would still differ (the
+   reference sees the store at once); the kernel makes none.

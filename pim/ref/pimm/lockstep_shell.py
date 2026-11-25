@@ -12,6 +12,11 @@ typed, compared line by line with the reference model.
     sim_pimm_shell | python3 ref/pimm/lockstep_shell.py compare DIR
     python3 ref/pimm/lockstep_shell.py splices PKL [--type LINE ...]
         the reference alone: the merger's splices onto a non-empty list
+    python3 ref/pimm/lockstep_shell.py apps PKL DIR [NAME ...]
+        the commands past the shell (APPS below, or those named): PKL
+        loaded once, DIR/heap.hex written once, then each command
+        played from the prompt in a forked process of its own into
+        DIR/NAME/checkpoint (run by bsv/run_pimm_apps.sh)
 
 Run by bsv/run_pimm_shell.sh.  NOT part of run_tests.sh: the saved
 machines are ~1.1 GB pickles that the IPL's link makes in 15-50 min
@@ -64,6 +69,24 @@ RESTORE word of the script replaced by a silent SLOT 15):
     B 7 1 0820004000 2 16384 / Q
 The splice-order injection into PimmGBox (lockstep_merge.py's header)
 fails the same run at line 8429.
+
+Observed injections on the commands past the shell (2026-11-24, the
+prompt checkpoint with the login ID 0, run_pimm_apps.sh KEEP=1; the
+same SLOT 15 in place of the RESTORE word):
+  echo_new_atom, 1  FAIL at line 25012, instruction 8124:
+    R 8 0200012731 / R 8 0200010000
+  echo_new_atom, 2 and 3  PASS (no clock read)
+  compile_exit, 1  PASS (no new_atom)
+  compile_exit, 2  FAIL at line 828137, instruction 234242:
+    R 9 000007611f / R 9 000000022a
+  compile_exit, 3  FAIL at the same line: R 9 000007611f / R 9 000007611e
+  compile_missing, 2  FAIL at line 1484817, instruction 288608:
+    R 9 000007619f / R 9 00000002aa
+  compile_missing, 3  PASS, as predicted: the checkpoint is 236
+    instructions past a tick, and the one system_timer read falls 357
+    after a tick, so the core's late tick has come by then
+(bsv/README.md, "Which RESTOREs the commands check"; pinned in DROPPED
+below, run by run_pimm_apps.sh INJECT=1 or --inject WORK.)
 """
 import json
 import os
@@ -88,6 +111,52 @@ PINNED = {
     ('prompt', ('shutdown', 'yes')): (878180, 179247),
     ('prompt', ('cat <= file("pimos:pimos.groups")',)): (731110, 173593),
     ('link', ('shutdown', 'yes')): (20107017, 8766319),
+    # the commands past the shell, APPS (bsv/run_pimm_apps.sh)
+    ('prompt', ('pwd',)): (229102, 29867),
+    ('prompt', ('echo("a b c")',)): (482259, 118027),
+    ('prompt', ('echo([a,b,c])',)): (509143, 127373),
+    ('prompt', ('echo(zorkqx)',)): (489049, 121155),
+    ('prompt', ('usage(echo)',)): (520129, 133233),
+    ('prompt', ('help',)): (324411, 36685),
+    ('prompt', ('who',)): (555038, 146977),
+    ('prompt', ('set hl=20', 'history')): (441489, 56133),
+    ('prompt', ('rs', '')): (800789, 190791),
+    ('prompt', ('versions',)): (610006, 114472),
+    ('prompt', ('compile', '!exit')): (1029437, 255083),
+    ('prompt', ('compile', 'sample1', '!exit')): (1770029, 318476),
+}
+# The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
+# 1.4, "Commands past the shell", has each against what the primers and
+# the manual print): name -> (the lines typed at the prompt, the window's
+# text after them as the reference model writes it: every putb of a
+# window or string-I/O window, in order).  bsv/run_pimm_apps.sh runs
+# them all on both models (measured 2026-11-24; the counts in PINNED)
+APPS = {
+    'pwd': (('pwd',),
+        (' The value of task: directory is ">sys>user>pmpsi" . \n', 'Shell>> ')),
+    'echo_string': (('echo("a b c")',),
+        ('"a b c"\n', 'Shell>> ')),
+    'echo_list': (('echo([a,b,c])',),
+        ('[a,b,c]\n', 'Shell>> ')),
+    'echo_new_atom': (('echo(zorkqx)',),
+        ('zorkqx\n', 'Shell>> ')),
+    'usage_echo': (('usage(echo)',),
+        ('Usage : echo(Data)\n', 'Shell>> ')),
+    'help': (('help',),
+        (' stop | stop JobNo\n kill , kill JobNo , kill all ,\n fore , fore JobNo ,\n back , back JobNo ,\n status  ,  exit  ,  help ,\n history [ N ] ,\n  ( N must be a positive integer. ) ,\n last_error , inspect ,\n alias Key [ = Value ] , unalias Key , alias ,\n  ( Key must be a atom. ) ,\n  ( Value must be a string. ) ,\n cd Directory , popd , dirs ,\n pushd [ Directory | Number ] ,\n take FileName ,\n do [ CmdLine1, CmdLine2, ... ] ,\n  ( Each CmdLine must be a string. ) ,\n\n getenv , getenv Key ,\n unsete', 'nv Key ,\n setenv Key = Value ,\n\n get , get Key ,\n unset Key ,\n  ( Key = rscinc | rscinc(JobNo) | prompt | echo\n          | node | minprio | maxprio | hl\n          | pl | pd | pal | psl | dir )\n set Key = Value ,\n    rscinc = Inc | rscinc(JobNo) = Inc\n      ( Inc = N | {High, Low} | infinite )\n      ( 1000000000 >= N, High, Low > 0 )\n  | prompt = Prompt\n  | echo = on | off\n  | node = NodeNo      ( NodeNo > 0 )\n  | minprio = Min | maxprio = Max\n      ( 4000 >= Min, Max > 0 )\n  | hl = Len', 'gth\n      ( Length >= 0  |  Length = infinite )\n  | pl = Length      | pd = Depth\n  | pal = Length     | psl = Length\n      ( Length >= 0  ,  Depth >= 0 )\n', 'Shell>> ')),
+    'who': (('who',),
+        ('pimos:  0  20-May-1993  00:00:30  0  0  pmpsi  local  \n', 'Shell>> ')),
+    'history': (('set hl=20', 'history'),
+        (' The value of hl is 20 .\n', 'Shell>> ', '  4 : history \n', 'Shell>> ')),
+    'rs': (('rs', ''),
+        ('+-----+-------+-------+\n|RscID|RscType|RscName|\n+-----+-------+-------+\n9 , task , "shell:shell" \n   1 , std_switch , "inOutInter" \n   2 , in_out_inter , "inOutInter" \n   5 , atom , "atom" \n   26 , atom , "atom" \n   28 , task , "Job_1" \n      1 , std_switch , "inOutInter" \n      6 , atom , "atom" \n      9 , task , "rs:go" \n         1 , std_switch , "inOutInter" \n         3 , in_out_inter , "inOutInter" \n         7 , atom , "atom" \n         11 , atom , "atom" \n      10 , in_out_inter , ', '"inOutInter" \n', 'OK? ', 'Shell>> ')),
+    'versions': (('versions',),
+        (' Module not found !! ( versions:go ) \n  [ Job#1, Node#0, PE#0 ]\n', 'Shell>> ', ' Job 1 was aborted . \n')),
+    'compile_exit': (('compile', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ', 'Shell>> ')),
+    'compile_missing': (('compile', 'sample1', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample1\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
+
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -251,15 +320,12 @@ def play(m, loaded, kind, lines, sink, stats=None):
     return ops, events, stop, dev
 
 
-def make(argv):
-    pkl, out = argv[2], argv[3]
-    lines = typed(argv)
+def record(m, loaded, kind, lines, out, before, gaps):
+    """Play the lines on m and write the window's files to out: the
+    reference's trace, the script and want.json (heap.hex apart)."""
     os.makedirs(out, exist_ok=True)
-    m, loaded, info, kind = load(pkl)
-    m.ahead = '--ahead' in argv
-    gaps = write_heap(m, os.path.join(out, 'heap.hex'))
     tape0 = len(m.scsi_tape)
-    before = info.get('prompt', {}).get('instructions', 0)
+    log0 = len(m.fep.log) if m.fep is not None else 0
     stats = dict(splices=0, onto_nonempty=0)
     with open(os.path.join(out, 'trace'), 'w', buffering=1 << 22) as f:
         sink = Sink(f)
@@ -271,11 +337,56 @@ def make(argv):
                 from_instruction=before, to_instruction=before + sink.instructions,
                 operations=len(ops), tape=len(m.scsi_tape) - tape0, events=events,
                 console=cons.console(sink.kept), stop=stop, heap_gaps=gaps,
-                fep_messages=len(dev.messages), held=dev.held, **stats)
+                fep_messages=len(dev.messages), held=dev.held,
+                window=[t for _d, t in dev.log[log0:]], **stats)
     with open(os.path.join(out, 'want.json'), 'w') as f:
         json.dump(want, f, indent=1, default=str)
     say('made: %r' % (want,))
+    return want
+
+
+def make(argv):
+    pkl, out = argv[2], argv[3]
+    lines = typed(argv)
+    os.makedirs(out, exist_ok=True)
+    m, loaded, info, kind = load(pkl)
+    m.ahead = '--ahead' in argv
+    gaps = write_heap(m, os.path.join(out, 'heap.hex'))
+    before = info.get('prompt', {}).get('instructions', 0)
+    record(m, loaded, kind, lines, out, before, gaps)
     return 0
+
+
+def apps(argv):
+    """apps PKL DIR [NAME ...]: the prompt checkpoint loaded once, its
+    heap written once (DIR/heap.hex), then each command of APPS (or
+    those named) played from it in a process of its own (fork), its
+    files in DIR/NAME/checkpoint/ with heap.hex linked."""
+    pkl, out = argv[2], argv[3]
+    names = argv[4:] or list(APPS)
+    for n in names:
+        if n not in APPS:
+            raise SystemExit('lockstep_shell: no command %r in APPS' % n)
+    os.makedirs(out, exist_ok=True)
+    m, loaded, info, kind = load(pkl)
+    if kind != 'prompt':
+        raise SystemExit('lockstep_shell: apps runs from a prompt checkpoint')
+    m.ahead = False
+    gaps = write_heap(m, os.path.join(out, 'heap.hex'))
+    before = info['prompt']['instructions']
+    bad = 0
+    for n in names:
+        d = os.path.join(out, n, 'checkpoint')
+        pid = os.fork()
+        if pid == 0:
+            try:
+                record(m, loaded, kind, list(APPS[n][0]), d, before, gaps)
+                os.symlink(os.path.join('..', '..', 'heap.hex'), os.path.join(d, 'heap.hex'))
+            finally:
+                os._exit(0 if os.path.exists(os.path.join(d, 'heap.hex')) else 1)
+        _p, st = os.waitpid(pid, 0)
+        bad += st != 0
+    return 1 if bad else 0
 
 
 def compare(argv):
@@ -316,10 +427,16 @@ def compare(argv):
     if pin is not None and pin != (n, ins):
         print('%s: FAIL, %d lines, %d instructions, pinned %r' % (name, n, ins, pin))
         return 1
+    app = [k for k, (t, _w) in APPS.items() if tuple(t) == tuple(want['typed'])]
+    if want['kind'] == 'prompt' and app and APPS[app[0]][1] is not None \
+            and want.get('window') != list(APPS[app[0]][1]):
+        print('%s: FAIL, the window %r; APPS %r has %r'
+              % (name, want.get('window'), app[0], APPS[app[0]][1]))
+        return 1
     print('%s: PASS (instructions %d to %d of go(), %d trace lines identical to the reference '
-          'model; console %r; %s; %.0f s to the compare%s)'
+          'model; console %r; window %r; %s; %.0f s to the compare%s)'
           % (name, want['from_instruction'], want['to_instruction'], n, want['console'],
-             want['stop'], time.time() - T0, '' if pin else '; NOT PINNED'))
+             want.get('window'), want['stop'], time.time() - T0, '' if pin else '; NOT PINNED'))
     return 0
 
 
@@ -336,6 +453,50 @@ def splices(argv):
     return 0
 
 
+# The RESTORE injections on the commands past the shell (bsv/README.md,
+# "Which RESTOREs the commands check"): (APPS name, RESTORE number) ->
+# the trace line the compare fails at with that RESTORE dropped, or
+# None for a PASS (not caught; compile_missing's 3 is the control the
+# clock's phase predicts).  run_pimm_apps.sh with INJECT=1 runs them
+DROPPED = {
+    ('echo_new_atom', 1): 25012, ('echo_new_atom', 2): None, ('echo_new_atom', 3): None,
+    ('compile_exit', 1): None, ('compile_exit', 2): 828137, ('compile_exit', 3): 828137,
+    ('compile_missing', 2): 1484817, ('compile_missing', 3): None,
+}
+
+
+def drop(argv):
+    """drop WHICH SRC DST: SRC's first RESTORE of register WHICH (the
+    script word 10WW...) replaced by a silent SLOT 15 of the same
+    length, so the tape's offset holds"""
+    which, src, dst = int(argv[2]), argv[3], argv[4]
+    with open(src) as f:
+        lines = f.read().split('\n')
+    hit = [i for i, w in enumerate(lines) if w.startswith('10%02x' % which)]
+    if not hit:
+        print('drop: no RESTORE %d in %s' % (which, src))
+        return 1
+    lines[hit[0]] = '0c0f000000000000'
+    with open(dst, 'w') as f:
+        f.write('\n'.join(lines))
+    return 0
+
+
+def dropped(argv):
+    """dropped NAME WHICH: the start of what the compare must print"""
+    want = DROPPED[(argv[2], int(argv[3]))]
+    print('PASS' if want is None else 'FAIL at line %d of the trace' % want)
+    return 0
+
+
+def drops(argv):
+    """drops [NAME ...]: the pairs of DROPPED, 'NAME WHICH' a line"""
+    for (name, which) in DROPPED:
+        if len(argv) <= 2 or name in argv[2:]:
+            print(name, which)
+    return 0
+
+
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else ''
     if cmd == 'make':
@@ -344,5 +505,9 @@ if __name__ == '__main__':
         sys.exit(compare(sys.argv))
     if cmd == 'splices':
         sys.exit(splices(sys.argv))
+    if cmd == 'apps':
+        sys.exit(apps(sys.argv))
+    if cmd in ('drop', 'dropped', 'drops'):
+        sys.exit(globals()[cmd](sys.argv))
     print(__doc__)
     sys.exit(2)

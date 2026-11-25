@@ -640,6 +640,8 @@ assert PROSA_LAYOUT["11C11IPL"] == (MCP_AT, IPL_AREA_WORDS)
 assert PROSA_LAYOUT["11D11MCP"] == (COMM_AT, MCP_SIZE_WORDS)
 RECORD_WORDS = -(-(len(PROSA_WORDS) + 4) // CHUNK_STRIDE) * CHUNK_STRIDE
 PROSA_ARCS = RECORD_WORDS // CHUNK_STRIDE
+# PROSA_EXTRA's beyond-PROSA entries start at S SYRFT's track (prosa_dict)
+assert prosa_dict.beyond_arc(len(PROSA_WORDS)) == -(-PROSA_ARCS // 8) * 8
 
 # >>> XUPDAT IS PUNCHED BY THE TAPE'S MAKER, NOT BY THE ASSEMBLER. <<<
 # Printed p.15 lines 15-16 assemble "XIN BE,XINEND-XIN  -SIZE OF IPL

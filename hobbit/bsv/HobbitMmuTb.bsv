@@ -112,6 +112,7 @@ module mkHobbitMmuTb(Empty);
 
   MmuReq qPage1  = req(32'h00001123, False, False, False);
   MmuReq qPage1W = req(32'h00003123, False, True,  False);
+  MmuReq qPage1Wr = req(32'h00001123, False, True,  False);
   MmuReq qPage0  = req(32'h00000123, True,  False, False);
   MmuReq qNonp   = req(32'h00401234, False, False, False);
   MmuReq qBound  = req(32'h00420000, False, False, False);
@@ -292,7 +293,40 @@ module mkHobbitMmuTb(Empty);
     end
   endrule
 
+  // ---- M on a write that hits an entry a read filled ----------------
+  // Table 2-3 bit 4 (p. 2-7): M is "Set to 1 when a write occurs within
+  // the page"; Table 2-4 (p. 2-9): only a write that hits with M already
+  // set costs nothing, so one that hits without it walks.  The STB write
+  // of s9 emptied the TLB; page 1's PTE has R (s2) but not M.
+  // Observed 2026-11-24: with `translateFn` treating such a write as a hit,
+  // write_without_m_walks and write_hit_sets_m fail, nothing else.
   rule s12 (st == 12);
+    mmu.noteData(qPage1);                 // a read fills page 1
+    st <= 13;
+  endrule
+
+  rule s13 (st == 13);
+    let rw = mmu.translate(qPage1Wr);
+    let a <- chkf(mmu.translate(qPage1).hit, "read_after_fill_hits");
+    let b <- chkf(!rw.hit && (rw.fault == MMU_OK) &&
+                  (rw.pa == 32'h00020123), "write_without_m_walks");
+    let c <- chkf((tbl.read(32'h1004) & 32'h10) == 0, "pte_m_clear_before");
+    passes <= passes + b2w(a) + b2w(b) + b2w(c);
+    fails  <= fails + b2w(!a) + b2w(!b) + b2w(!c);
+    mmu.noteData(qPage1Wr);
+    st <= 14;
+  endrule
+
+  rule s14 (st == 14);
+    let a <- chkf((tbl.read(32'h1004) & 32'h18) == 32'h18,
+                  "write_hit_sets_m");
+    let b <- chkf(mmu.translate(qPage1Wr).hit, "write_hits_once_m_set");
+    passes <= passes + b2w(a) + b2w(b);
+    fails  <= fails + b2w(!a) + b2w(!b);
+    st <= 15;
+  endrule
+
+  rule s15 (st == 15);
     $display("MMU RESULT %0d PASS %0d FAIL", passes, fails);
     $finish;
   endrule

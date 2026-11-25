@@ -8643,6 +8643,12 @@ interface EBox;
   // box (boxKind 4) and nothing else.  While it is, start() may be called
   // for an I-BOX instruction "beside" it: see start().
   method Bool fpBoxWaiting();
+  // ... AND FOR EVERY BOX (2026-11-23): Valid boxKind while the held
+  // instruction is a look-ahead level's waiting on a box and nothing else
+  // (0 divider, 1 decimal adder, 2 converter, 3 VFL multiplier, 4 FP).
+  // StretchCore decides which kinds release their level (its per-box
+  // switches); start()'s beside contract is the same for all.
+  method Maybe#(Bit#(3)) laBoxWaiting();
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();   // the held instruction
   method ActionValue#(Maybe#(ExecDone)) resume();
 endinterface
@@ -8743,13 +8749,13 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
     // program.  An EX dispatched here bails immediately for its subject
     // word and becomes the held instruction; resume() takes it from
     // there.
-    // >>> BESIDE A HELD FP-BOX INSTRUCTION, 2026-11-19. <<<  The core
-    // calls start() while `held` is occupied only for an I-box
-    // instruction, and only while fpBoxWaiting() (StretchCore's
-    // rl_prepare).  That instruction runs if it COMPLETES at once; if it
+    // >>> BESIDE A HELD FP-BOX INSTRUCTION, 2026-11-19 (ANY BOX SINCE
+    // 2026-11-23). <<<  The core calls start() while `held` is occupied
+    // only for an I-box instruction, and only while laBoxWaiting() names a
+    // box that releases its level (StretchCore's boxReleases, rl_prepare).  That instruction runs if it COMPLETES at once; if it
     // would bail (a read, a box) it is REFUSED -- nothing is asked,
     // nothing is held, `held` is untouched -- and returns Invalid, which
-    // the caller knows from having seen fpBoxWaiting() first.  execute()
+    // the caller knows from having seen laBoxWaiting() first.  execute()
     // commits nothing on a bail, so a refused run has no effect.
     Bool beside = isValid(held);
     let r <- execute(st, io, pc, len, di, pf, cnt, intIC, notSubject,
@@ -8810,6 +8816,8 @@ module mkEBox #(StretchStorage st, StretchIO io) (EBox);
                                             : st.responseReady()));
   method Bit#(16) boxClocks() = boxWait ? truncate(clock - boxT0) : 0;
   method Bool fpBoxWaiting() = isValid(held) && boxWait && boxKind == 4 && owner == OwnerLA;
+  method Maybe#(Bit#(3)) laBoxWaiting() = (isValid(held) && boxWait && owner == OwnerLA)
+                                          ? tagged Valid boxKind : tagged Invalid;
   method Bit#(16) boxCharge() = (boxWait && boxKind == 0 && divBox.responseReady())
                                 ? divBox.response().fpExtra : 0;
   method Tuple3#(HWordAddr, InstrLen, DecodedInstr) pending();

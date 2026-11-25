@@ -29,11 +29,11 @@ if printf '%s\n' "$out" | grep -q '^FAIL'; then
   exit 1
 fi
 passes=$(printf '%s\n' "$out" | grep -c '^PASS ' || true)
-if [ "$passes" -ne 41 ]; then
-  echo "run_mmu: $passes PASS lines, want 41" >&2
+if [ "$passes" -ne 46 ]; then
+  echo "run_mmu: $passes PASS lines, want 46" >&2
   exit 1
 fi
-printf '%s\n' "$out" | grep '^MMU RESULT 41 PASS 0 FAIL$' >/dev/null || {
+printf '%s\n' "$out" | grep '^MMU RESULT 46 PASS 0 FAIL$' >/dev/null || {
   echo "run_mmu: final count line missing or wrong" >&2
   exit 1
 }

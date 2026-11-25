@@ -35,10 +35,15 @@ Each device is a standalone module (BSV preferred; Verilog only for
 reused IP) behind one simple register port, so the devices can be built
 and tested in parallel and dropped into the SoC top unchanged:
 
-    req:  addr[11:0] (offset in the device window), wdata[31:0],
+    req:  addr[12:0] (offset in the device window), wdata[31:0],
           byte-enable[3:0], write
     resp: rdata[31:0], one response per request, any latency
     irq:  level output(s)
+
+The offset is 13 bits (widened from 12 on 2026-11-24) so that the RTC's
+8 KB window at IONAK +0x2000-0x3FFF fits one device. A device with a
+smaller window ignores the high bits it does not decode. The SoC passes
+`addr - window base`.
 
 The SoC top (`fpga/` + `bsv/HobbitUlx3s*.bsv`) owns address decoding,
 the SDRAM, clocks and reset, and the core's bus. Each device ships
