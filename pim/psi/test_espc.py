@@ -603,7 +603,7 @@ class Standins(unittest.TestCase):
             'simpos##semaphore', 'simpos##standard_editor',
             'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
-            'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
+            'simpos##window_pane', 'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
         # predicates espc refuses; every other stand-in compiles whole
         held = {
@@ -1300,8 +1300,14 @@ end.''', 'simpos')
         # assigned/1 is as_resource's alone (assign/1 is as_program's too)
         self.assertEqual(sorted(r[3] for r in rows if r[2] == 'assigned/1'), ['failure'] * 6)
         # slot constants 154 -> 157 in step 3l: the login requester's three
-        # rows (get_number/2 to its process's unset context)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 157)
+        # rows (get_number/2 to its process's unset context); 157 -> 154 in
+        # window M0: font create/3 now reads its file, and the census mounts
+        # no file system, so those three rows stop earlier, at directory
+        # retrieve/3 (a stop of the census machine, not of the route)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 154)
+        self.assertEqual(sorted(r[2] for r in rows if r[0] == 'pimfep##pimos_login_requester'
+                                and 'no file system is mounted' in r[5]),
+                         ['goal/1', 'initiate/1', 'invoke/1'])
         self.assertNotIn('simpos##process:status/3', {K.simpos_target(r[5]) for r in rows})
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1399,7 +1405,7 @@ end.''', 'simpos')
         self.assertEqual((len(rows), out), (1468, {'success': 832, 'failure': 235, 'refused': 384,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 110)   # step 3l: 107 -> 110, as in test_fep_census
+        self.assertEqual(slot_const, 107)   # step 3l: 107 -> 110, window M0: 110 -> 107, as in test_fep_census
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -2884,6 +2890,221 @@ end.'''
         self.assertEqual([getattr(s[n], 'cid', s[n]) for n in
                           ('input_stream', 'output_stream', 'creation_status_stream')],
                          ['simpos##stream'] * 3)
+
+
+class Window(unittest.TestCase):
+    """Window milestones M0, M3 (core) and M5 (docs/simpos/
+    window_environment_plan.md §5): the font file read, the window
+    stand-ins drawing through the display device (psi/windev.py, OURS; the
+    window manager is the ESP stand-in standin/window_pane.esp, OURS), and
+    the Login PIMOS window as a LIVE run of the held requester draws it.
+    The boot helpers are Standins' (step 3l/3m)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.ts = espc.standins()
+
+    fs_machine = Standins.fs_machine
+    boot_to_top = Standins.boot_to_top
+    _walk = staticmethod(Standins._walk)
+    keys = staticmethod(Standins.keys)
+    jstr = staticmethod(Standins.jstr)
+    pimos_texts = staticmethod(Standins.pimos_texts)
+    B8_PROBES = Standins.B8_PROBES
+    B3M_PROBES = Standins.B3M_PROBES
+    PIMOS_OK = Standins.PIMOS_OK
+
+    def test_win_m0_font(self):
+        # M0: psdpim's FONT.DIR placed under font: (simpos_fs.py: HELD
+        # INSTALL line, OURS directory >sys>font and alias), and font
+        # create/3 reading it through the device (load_font/5, f822).
+        # Injections: see test_win_m5_login_screen's header.
+        import windev
+        import winfb
+        pop = {p: n for p, n, _c in FS.population()}
+        fonts = sorted(p for p in pop if p.startswith('>sys>font>'))
+        self.assertEqual(fonts, ['>sys>font>' + n for n in (
+            'csp.icon', 'csppestate.font', 'performance.font', 'test_10.font',
+            'test_11.font', 'test_11b.font', 'tiny_7.font')])
+        self.assertEqual(FS.raw_of('>sys>font>test_11.font'), winfb.font_bytes())
+        m = self.fs_machine()
+
+        def create(name):
+            m.reset()
+            r = K.call_class_method(m, 'simpos##font', 'create', [K.Str(name), K.Var()])
+            return r[0][1] if r else None
+        f = create('font:test_11.font')
+        self.assertEqual([m.get_slot(f, k) for k in ('id', 'width', 'height')], [0, 11, 14])
+        self.assertEqual(m.get_slot(f, 'name').text, 'font:test_11.font')
+        # test_11b: same header, different glyphs: a font the command set
+        # cannot draw (winfb's freeze: font 0 only) gets an id of its own
+        f = create('font:test_11b.font')
+        self.assertEqual([m.get_slot(f, k) for k in ('id', 'width', 'height')], [1, 11, 14])
+        f = create('font:test_10.font')
+        self.assertEqual([m.get_slot(f, k) for k in ('id', 'width', 'height')], [2, 10, 11])
+        # a name with no file fails (INFERENCE, the plan's M0 row); a file
+        # that is not an f822 font fails too (csp.icon)
+        self.assertIsNone(create('font:font_13.font'))
+        self.assertIsNone(create('font:csp.icon'))
+        # the 'A' of the file the device decoded: the plan §1.4's 48 dots
+        fr = windev.device(m).frame
+        self.assertEqual(fr.glyph(0, 0x2341, 0, 0, 3), winfb.OK)
+        self.assertEqual(fr.count(), 48)
+
+    def pane(self, m, x, y, cols, rows):
+        m.reset()
+        ((*_, p),) = K.call_class_method(m, 'simpos##window_pane', 'create', [x, y, cols, rows, 0, K.Var()])
+        return p
+
+    @staticmethod
+    def send(m, obj, sel, *args):
+        m.reset()
+        return any(True for _ in m.solve_send(obj, sel, list(args) + [obj]))
+
+    @staticmethod
+    def jis(codes):
+        s = K.Str('')
+        s.set_codes(codes)
+        return s
+
+    def test_win_pane(self):
+        # M3/M5, directed: window_pane.esp (OURS) on the device, alone.
+        # The live route never fills its 40 x 7 window, so scrolling, wrap,
+        # key#lf/key#cr, the label's cut and the missing-glyph box are
+        # pinned here.  Every check reads the FRAMEBUFFER back
+        # (windev.read_cells), not a shadow.  Injections: see
+        # test_win_m5_login_screen's header.
+        import windev
+        import winfb
+        m = self.fs_machine()
+        p = self.pane(m, 100, 50, 10, 3)
+        g = {k: m.get_slot(p, k) for k in ('x', 'y', 'w', 'h', 'left', 'top', 'iw', 'ih')}
+        # 10 x 3 cells of 11 x 14, 2-dot border, 1-dot margins, a label
+        # strip of 16 and a 1-dot rule (window_pane.esp's head)
+        self.assertEqual(g, {'x': 100, 'y': 50, 'w': 116, 'h': 65, 'left': 103, 'top': 70,
+                             'iw': 110, 'ih': 42})
+        fr = windev.device(m).frame
+
+        def text():
+            return windev.read_cells(fr, g['left'], g['top'], 10, 3)
+
+        def label():
+            return windev.read_cells(fr, g['left'], g['y'] + 3, 10, 1)[0]
+        # the empty pane: a 2-dot border and the rule, nothing else
+        self.assertEqual(fr.count(), 116 * 65 - 112 * 61 + 112)
+        self.assertTrue(self.send(m, p, 'set_title', K.Str('A title longer than the strip')))
+        self.assertEqual(label(), 'A title lo')
+        self.assertTrue(self.send(m, p, 'select'))
+        self.assertEqual(text(), ['#', '', ''])
+        self.assertTrue(self.send(m, p, 'put_string', K.Str('Hello')))
+        self.assertEqual(text(), ['Hello#', '', ''])
+        self.assertTrue(self.send(m, p, 'new_line'))
+        # a line longer than the pane goes on in the next row
+        self.assertTrue(self.send(m, p, 'put_string', K.Str('abcdefghijklmno')))
+        self.assertEqual(text(), ['Hello', 'abcdefghij', 'klmno#'])
+        # a newline on the last row scrolls: up one row, the last cleared
+        self.assertTrue(self.send(m, p, 'new_line'))
+        self.assertEqual(text(), ['abcdefghij', 'klmno', '#'])
+        # key#lf (10) inside a string breaks the line; key#cr (13) returns
+        self.assertTrue(self.send(m, p, 'put_string', self.jis(
+            K.Str('xyz').codes() + [10] + K.Str('qq').codes() + [13] + K.Str('Z').codes())))
+        self.assertEqual(text(), ['klmno', 'xyz', 'Z[q]'])
+        # a code test_11 lacks (16#2422, hiragana) shows the 0xffff box
+        self.assertTrue(self.send(m, p, 'put_code', 0x2422))
+        self.assertEqual(text(), ['klmno', 'xyz', 'Z<ffff>#'])
+        self.assertEqual(fr.status.count(winfb.MISSING), 1)
+        # deselect: the block cursor is erased (xor twice); select again
+        self.assertTrue(self.send(m, p, 'deselect'))
+        self.assertTrue(self.send(m, p, 'put_code', 0x2341))
+        self.assertEqual(text(), ['klmno', 'xyz', 'Z<ffff>A'])
+        self.assertTrue(self.send(m, p, 'clear'))
+        self.assertEqual(text(), ['', '', ''])
+        self.assertEqual(label(), 'A title lo')
+        # the device's log is a winfb command stream: replayed, the same frame
+        self.assertEqual(winfb.run_stream(windev.device(m).stream_text()).pbm(), fr.pbm())
+        self.assertTrue(self.send(m, p, 'erase'))
+        self.assertEqual(fr.count(), 0)
+
+    # the live screens: keys typed (None: the password's first three
+    # letters, not ended), the window's text read back from the frame, the
+    # cursor's cell (col, row)
+    SCREENS = {
+        'name': (['local'], ['Enter FEP node name--------->', 'local',
+                             'Enter your PIMOS user name-->', '#', '', '', ''], (0, 3)),
+        'password': (['local', 'pimos', None], ['Enter FEP node name--------->', 'local',
+                                                'Enter your PIMOS user name-->', 'pimos',
+                                                'Enter your PIMOS password--->', '#', ''], (0, 5)),
+        'login': (['local', 'pimos', ''], ['Your request is accepted.', 'Login procedure starts.',
+                                           'OK. Your initial program starts.', '', 'Good luck!',
+                                           '', '#'], (0, 6)),
+    }
+    # (sha256 of the frame's PBM, set dots), MEASURED 2026-11-25
+    PINS = {
+        'name': ('d134cbfaa83e9844279330dd13fdfcf6b290c5917c8ca83ed187788eaa248de8', 5196),
+        # the same frame as after 'local', 'pimos' alone: the password's
+        # letters draw nothing (echo inhibited by the held read/4 @122)
+        'password': ('380d5779597c6dbfcb0693e668963f97c2d362970178979a6957132ed42fca44', 6265),
+        'login': ('c4e83dfdbe355ecfb4204087dca9561872a31c04caee94e8681fd0a505809350', 5959),
+    }
+
+    def screen(self, keys):
+        # boot -> system menu -> Login PIMOS -> KEYS, with the 3m probe for
+        # PIMOS (OURS) on the far side.  -> (machine, window, device)
+        import windev
+        ev = [K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])]
+        for k in keys:
+            if k is None:
+                ev += [K.Vec([K.Atom('key'), c]) for c in K.Str('sec').codes()]
+            else:
+                ev += self.keys(k)
+        m, r = self.boot_to_top(ev, probes=self.B3M_PROBES, boot='b3m_boot',
+                                before=self.pimos_texts(self.PIMOS_OK))
+        self.assertEqual(r.cause, 'would suspend')
+        (p,) = self._walk(m.get_slot(K.ClassRef('simpos##coordinator'), 'started'))
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        return m, p, m.get_slot(top, 'window'), windev.device(m)
+
+    def test_win_m5_login_screen(self):
+        # M5 (and M3's core): the Login PIMOS window drawn by a LIVE run.
+        # The boot of step 3l/3m (B8 probe, coordinator, the held login.com
+        # menu) starts the HELD pimfep##pimos_login_requester; its held
+        # initiate/1 and read/4 send create/3, set_font/2 (font:test_11.font,
+        # now read from the placed HELD file), set_title/2, activate/1,
+        # clear/1, show/1, putl/2, read/2, getl/2 to the standard_io_window
+        # stand-in, which draws through window_pane.esp (OURS) and the
+        # device (OURS) with the HELD font's glyphs.  Nothing here types the
+        # strings: the prompts are the requester's pool strings, the replies
+        # the 3m probe's (OURS stand-in for PIMOS, fep_services.md §7).
+        # What is pinned, per stage: the window's text read back from the
+        # frame by glyph matching, its label, its place, the cursor's
+        # cell, and the frame's PBM sha256 and dot count; the device's
+        # command log replays through winfb.run_stream to the same frame and
+        # the PNG (windev.png_bytes) decodes back to it.  psi/winshot.py
+        # writes these screens as PNGs.
+        # Injections, observed: INJECTIONS_PLACEHOLDER
+        import windev
+        import winfb
+        for stage, (keys, lines, cell) in self.SCREENS.items():
+            with self.subTest(stage=stage):
+                m, p, w, dev = self.screen(keys)
+                pane = m.get_slot(w, 'pane')
+                g = [m.get_slot(pane, k) for k in ('x', 'y', 'w', 'h', 'cols', 'rows')]
+                # 40 x 7 cells of test_11 (the held size option), centred on
+                # the 1280 x 944 screen (OURS for the manipulator position)
+                self.assertEqual(g, [417, 411, 446, 121, 40, 7])
+                self.assertEqual((m.get_slot(pane, 'col'), m.get_slot(pane, 'row')), cell)
+                n = m.get_slot(m.get_slot(p, 'context'), 'number')
+                fr = dev.frame
+                self.assertEqual(windev.read_cells(fr, 420, 414, 40, 1), ['Pimos remote login %d' % n])
+                self.assertEqual(windev.read_cells(fr, 420, 431, 40, 7), lines)
+                # nothing is drawn outside the window's rectangle
+                inside = sum(bin((fr.rows[y] >> (1280 - 417 - 446)) & ((1 << 446) - 1)).count('1')
+                             for y in range(411, 411 + 121))
+                self.assertEqual(inside, fr.count())
+                self.assertEqual(set(fr.status), {winfb.OK})
+                self.assertEqual((windev.pbm_sha256(fr), fr.count()), self.PINS.get(stage))
+                self.assertEqual(winfb.run_stream(dev.stream_text()).pbm(), fr.pbm())
+                self.assertEqual(windev.png_rows(windev.png_bytes(fr)), fr.rows)
 
 
 if __name__ == '__main__':

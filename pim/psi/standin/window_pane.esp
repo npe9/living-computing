@@ -1,0 +1,217 @@
+% SCAFFOLDING, OURS: the screen part of one text window, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: `window_pane`
+% is not a SIMPOS class name, and no window-system class body is held
+% (docs/simpos/subsystems/window.md §0.3).  Window milestones M3/M5
+% (docs/simpos/window_environment_plan.md §4.1): the window stand-ins
+% (standard_io_window.esp, pmacs_window.esp) keep their SIMPOS-visible
+% state and hand the drawing to a pane; the pane decides every rectangle,
+% glyph position, scroll and cursor, and sends only the device primitives
+% of simpos##bitmap_display (psi/windev.py: kl0 models, each one command
+% of the frozen winfb set).  So the window manager is ESP, as SIMPOS's was
+% on the PSI/UX (Giho 9106 p86, PROSE: the SIMPOS window manager made the
+% drawing requests, a window server outside SIMPOS drew them).
+%
+% THE LOOK, each choice with its basis (window.md §4.2-§4.3 and the plan
+% §3's common look):
+%   - white screen, black text: SCREENSHOT simpos.wmv@0-10, esp.wmv@110-121
+%     (window.md §4.2);
+%   - a single-line border, 2 dots: PRINTED-INTERFACE TM-125 p15 (the
+%     default border width, window.md §2.2, §4.3); no shadow (SCREENSHOT);
+%   - margins of 1 dot: PRINTED-INTERFACE TM-125 p16 (window.md §2.2);
+%   - the label: a strip inside the top border, the title left-aligned in
+%     the label font, a rule under it (SCREENSHOT simpos.wmv@0, @117,
+%     @124, window.md §4.3).  The strip is one cell high plus 2 dots, the
+%     title 1 dot below the border and at the text's left edge, the rule
+%     1 dot: OURS;
+%   - the text cursor a solid block (SCREENSHOT IPSJ 36239 p5, simpos.wmv@0,
+%     window.md §2.3, §4.3), the size of the font's space character (PROSE
+%     TM-115 p16-17, window.md §2.2), drawn by exclusive_or (OURS) only
+%     while the window is the selected one (TM-126 p7, PROSE: the selected
+%     window's cursor blinks; it does not blink here, OURS);
+%   - text in character cells, rows from the top (TM-125 level, window.md
+%     §2.3); a line that reaches the last column goes on in the next row
+%     (OURS); a newline past the last row scrolls the text up one row by a
+%     copy and clears the last row (scroll/2's "positive = up",
+%     PRINTED-INTERFACE TM-125 p16; that output scrolls is INFERENCE);
+%   - code 10 (key#lf) in a string breaks the line and 13 (key#cr) returns
+%     to column 0 (INFERENCE from window.md §2.3: write_lines/2 breaks at
+%     key#lf, and SIMPOS's newline is the pair cr, lf);
+%   - glyphs are drawn `copy` (opaque, OURS), so text overwrites what is
+%     under it; a code the font lacks shows the font's 0xffff box (the
+%     device's MISSING, never silent).
+% Coordinates are dots on the device's frame; the pane is not clipped
+% against other windows (one window on the route; save areas are M7).
+
+class window_pane has
+
+% :create(#window_pane, X, Y, Cols, Rows, Font, Pane) -- INTERPOLATED
+% (selector and body OURS) from the layout above: a pane of Cols x Rows
+% cells of Font at the outer top-left (X, Y), or centred on the screen
+% when X is the atom `manipulator` (OURS: the held option
+% {position, manipulator} lets the user sweep the place with the mouse,
+% window.md §4.5; no mouse is modelled).  Font is a font stand-in or 0
+% (the device's OURS substitute for the default font_13).  The pane is
+% drawn at once: cleared, bordered, its rule.
+:create(Class, X, Y, Cols, Rows, Font, Pane) :-
+        :new(Class, Pane),
+        metrics(Font, Id, Cw, Ch),
+        Pane!font := Id, Pane!cw := Cw, Pane!ch := Ch,
+        Pane!cols := Cols, Pane!rows := Rows,
+        times(Cols, Cw, 0, Iw), times(Rows, Ch, 0, Ih),
+        Pane!iw := Iw, Pane!ih := Ih,
+        sizes(Pane, Iw + 6, Ih + Ch + 9),
+        place(Pane, X, Y),
+        Pane!left := Pane!x + 3, Pane!top := Pane!y + Ch + 6,
+        Pane!cx := Pane!left, Pane!cy := Pane!top,
+        frame(Pane);
+
+instance
+
+% OURS representation: the outer rectangle (x, y, w, h), the inside's
+% top-left (left, top) and size in dots (iw, ih), the cell (cw, ch) and
+% the font's device id, the size in cells, the cursor's cell (col, row)
+% and its top-left dot (cx, cy), whether the cursor is wanted (selected)
+% and whether it is drawn now, and the title drawn.  The cursor's dot is
+% kept beside its cell because KL0 multiplies two registers with no
+% witnessed opcode (espc refuses X*Y): every position is a sum.
+attribute x := 0, y := 0, w := 0, h := 0, left := 0, top := 0,
+          iw := 0, ih := 0, cw := 0, ch := 0, font := 0, cols := 0,
+          rows := 0, col := 0, row := 0, cx := 0, cy := 0, want := off,
+          cursor := off, title := 0;
+
+% :set_title(Pane, Title) -- INTERPOLATED (body OURS) from window.md §2.2
+% set_title/2 (PRINTED-INTERFACE TM-125 p15) and §4.3 (the label strip):
+% the strip is cleared and the title drawn in it, cut to the strip.
+:set_title(Pane, Title) :-
+        Pane!title := Title,
+        :fill(#bitmap_display, Pane!x + 2, Pane!y + 2, Pane!w - 4,
+              Pane!ch + 2, reset),
+        label(Pane, Title);
+
+% :put_string(Pane, String) -- INTERPOLATED (body OURS) from window.md
+% §2.3 write_line/2 and §2.4 putl/2: each code at the cursor, which moves
+% on.
+:put_string(Pane, String) :-
+        cursor_off(Pane),
+        string(String, N, _),
+        put_codes(Pane, String, 0, N),
+        cursor_on(Pane);
+
+% :put_code(Pane, Code) -- INTERPOLATED (body OURS) from window.md §2.3
+% write/2 (PRINTED-INTERFACE TM-125 p16): one character at the cursor.
+:put_code(Pane, Code) :-
+        cursor_off(Pane),
+        put_char(Pane, Code),
+        cursor_on(Pane);
+
+% :new_line(Pane) -- INTERPOLATED (body OURS) from window.md §2.3 (the
+% newline) and §2.4 putl/2 ("then a newline").
+:new_line(Pane) :-
+        cursor_off(Pane),
+        newline(Pane),
+        cursor_on(Pane);
+
+% :clear(Pane) -- INTERPOLATED (body OURS) from window.md §2.3 clear/1
+% ("clear the window and home the cursor", INFERENCE there).
+:clear(Pane) :-
+        cursor_off(Pane),
+        :fill(#bitmap_display, Pane!left, Pane!top, Pane!iw, Pane!ih, reset),
+        Pane!col := 0, Pane!row := 0,
+        Pane!cx := Pane!left, Pane!cy := Pane!top,
+        cursor_on(Pane);
+
+% :select(Pane) and :deselect(Pane) -- INTERPOLATED (body OURS) from
+% TM-126 p7 (PROSE, window.md §4.1): the selected window shows its
+% cursor.
+:select(Pane) :- Pane!want := on, cursor_on(Pane);
+% INTERPOLATED (body OURS): see select/1.
+:deselect(Pane) :- cursor_off(Pane), Pane!want := off;
+
+% :erase(Pane) -- INTERPOLATED (body OURS) from window.md §2.1 kill/1:
+% the window leaves the screen; its rectangle is cleared (OURS: nothing
+% was under it on the route; save areas are M7).
+:erase(Pane) :-
+        Pane!want := off, Pane!cursor := off,
+        :fill(#bitmap_display, Pane!x, Pane!y, Pane!w, Pane!h, reset);
+
+local
+
+% N x C as a sum (OURS: see the slots)
+times(0, _, P, P) :- !;
+times(N, C, P0, P) :- times(N - 1, C, P0 + C, P);
+
+% (the outer size is passed in, not assigned after the slots above: espc
+% then reused Ih's register for a slot name, a compiler fault noted in
+% psi/README.md "Window M0/M3/M5")
+sizes(Pane, W, H) :- Pane!w := W, Pane!h := H;
+
+metrics(0, Id, Cw, Ch) :- !, :default_font(#bitmap_display, Id, Cw, Ch);
+metrics(Font, Id, Cw, Ch) :- Id = Font!id, Cw = Font!width, Ch = Font!height;
+
+place(Pane, manipulator, _) :- !,
+        :get_size(#bitmap_display, Sw, Sh),
+        Pane!x := (Sw - Pane!w) / 2, Pane!y := (Sh - Pane!h) / 2;
+place(Pane, X, Y) :- Pane!x := X, Pane!y := Y;
+
+% the rectangle set, its inside reset (a 2-dot border), the rule under
+% the label strip
+frame(Pane) :-
+        :fill(#bitmap_display, Pane!x, Pane!y, Pane!w, Pane!h, set),
+        :fill(#bitmap_display, Pane!x + 2, Pane!y + 2, Pane!w - 4,
+              Pane!h - 4, reset),
+        :fill(#bitmap_display, Pane!x + 2, Pane!y + Pane!ch + 4,
+              Pane!w - 4, 1, set);
+
+label(Pane, Title) :-
+        string(Title, N, _), !,
+        label_codes(Pane, Title, 0, N, Pane!left);
+label(_, _);
+
+label_codes(_, _, I, N, _) :- I >= N, !;
+label_codes(Pane, _, _, _, X) :- X + Pane!cw > Pane!x + Pane!w - 3, !;
+label_codes(Pane, Title, I, N, X) :-
+        string_element(Title, I, C),
+        :glyph(#bitmap_display, Pane!font, C, X, Pane!y + 3, copy),
+        label_codes(Pane, Title, I + 1, N, X + Pane!cw);
+
+put_codes(_, _, I, N) :- I >= N, !;
+put_codes(Pane, S, I, N) :-
+        string_element(S, I, C),
+        put_char(Pane, C),
+        put_codes(Pane, S, I + 1, N);
+
+put_char(Pane, 10) :- !, newline(Pane);
+put_char(Pane, 13) :- !, Pane!col := 0, Pane!cx := Pane!left;
+put_char(Pane, C) :-
+        Pane!col >= Pane!cols, !,
+        newline(Pane),
+        put_char(Pane, C);
+put_char(Pane, C) :-
+        :glyph(#bitmap_display, Pane!font, C, Pane!cx, Pane!cy, copy),
+        Pane!col := Pane!col + 1, Pane!cx := Pane!cx + Pane!cw;
+
+% the next row, or (on the last) the text up one row and the last cleared
+newline(Pane) :-
+        Pane!col := 0, Pane!cx := Pane!left,
+        Pane!row + 1 < Pane!rows, !,
+        Pane!row := Pane!row + 1, Pane!cy := Pane!cy + Pane!ch;
+newline(Pane) :-
+        :copy(#bitmap_display, Pane!left, Pane!top + Pane!ch,
+              Pane!iw, Pane!ih - Pane!ch, Pane!left, Pane!top, copy),
+        :fill(#bitmap_display, Pane!left, Pane!top + Pane!ih - Pane!ch,
+              Pane!iw, Pane!ch, reset);
+
+% the block cursor: drawn by exclusive_or, so drawing it twice erases it
+cursor_off(Pane) :- Pane!cursor == on, !, block(Pane), Pane!cursor := off;
+cursor_off(_);
+
+cursor_on(Pane) :-
+        Pane!want == on, Pane!cursor == off, Pane!col < Pane!cols, !,
+        block(Pane), Pane!cursor := on;
+cursor_on(_);
+
+block(Pane) :-
+        :fill(#bitmap_display, Pane!cx, Pane!cy, Pane!cw, Pane!ch,
+              exclusive_or);
+
+end.
