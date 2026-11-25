@@ -3502,8 +3502,8 @@ normalised).
 Under the owner's rule of 2026-11-25 ("It's okay to infer what you don't
 have"), the boot route (`../docs/simpos/boot_route.md`) is taken from B5
 to B8 with labelled stand-ins. Every inference is listed with its basis
-in `../docs/simpos/source_check_2026-11-24.md` §11. Five commits: four with their tests (`test_espc.py`) and one of
-docs:
+in `../docs/simpos/source_check_2026-11-24.md` §11. Six commits: four with their tests (`test_espc.py`), one of docs,
+and one re-observing the injections. The tests:
 
 | Step | What runs | Label | Test |
 |---|---|---|---|
