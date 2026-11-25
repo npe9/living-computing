@@ -1381,6 +1381,42 @@ exception).
   census's unbound options matched `{editor, Class}` and left the class
   unbound.
 
+### Step 3e: witness citations corrected, and the census after the merge (2026-11-25)
+
+Three witness citations were re-read against the held kappa2 source
+(`held.src_files('kappa2')`) and corrected. Only the citations change;
+no handler does.
+
+- `kappa##kappa_converter get_integer/4` (blt 51 R != A, blt 54) is
+  `kernel/cnv/CONVERTER.ESP:41-45`, a four-argument class method of
+  `kappa_converter`. The 3-argument `get_integer` at KP_DBO.ESP:400-404
+  belongs to `kappaDBO_obj`, so it was the wrong file.
+- `kappa##kappaMDM_schema_table search_record/5` (pmi b6, A != 0) is
+  `kernel/mdm/KP_MDMSCT.ESP:132, 142-144`. The KP_MDMART.ESP clause is
+  `kappaMDM_access_right_table`'s.
+- blt 49's R != A cells in `color_grade_example draw/2` are at @3f-41
+  (read from the loaded template), not @19.
+
+After merging master at 296806e2, both censuses were rerun and compared
+row by row with the tree before the merge (6c2fe38c, from `git
+archive`). Both are identical: FEP 1,403 methods, 787 succeed / 123 fail
+/ 477 refused / 16 exception, and the six-package census 530 methods,
+307 / 12 / 211. The later merge of master at 710f3933 changed nothing in
+`pim/`, and the totals were the same after it.
+
+Step 3e as a whole, compared method by method with the tree at step 3d
+(4e6a69ad, from `git archive`):
+
+- FEP: 1,265 methods, 665 / 113 / 487 becomes 1,403, 787 / 123 / 477
+  / 16 exception.
+  - 138 methods are new (109 succeed, 28 refuse, 1 fails).
+  - 14 move from refused to success, 8 from refused to failure, and 16
+    from refused to exception.
+  - One method moves out of success: `pimos_remote_login_socket_table
+    locked/1`, the census order effect of blt f2 (above).
+- Six packages: 303 / 11 / 216 becomes 307 / 12 / 211. Four refused
+  methods succeed, one fails, and none moves out of success.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

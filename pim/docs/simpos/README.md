@@ -402,6 +402,12 @@ and stand-in `simpos##` classes. In order:
      - The next blockers: the slot constants (139, by making receivers
        through their creators), pmi c6 21, `library:assign/1` 12,
        `process:status/3` 11, blt 0d 10.
+     - 2026-11-25: three witness citations were corrected after a re-read
+       against held kappa2 (CONVERTER.ESP for `get_integer/4`, KP_MDMSCT.ESP
+       for b6, blt 49's offset). After merging master (296806e2, then
+       710f3933), the census is identical row by row. Against step 3d,
+       row by row, the only method out of success is the blt f2 census
+       order effect (`psi/README.md`).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
