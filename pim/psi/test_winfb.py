@@ -178,6 +178,15 @@ class TestGlyph(unittest.TestCase):
                        for i in range(11)) for j in range(14)]
         self.assertEqual(got, self.A)
 
+    def test_missing_glyph_is_visible(self):
+        # test_11's 0xffff record, drawn for a code the font lacks: a
+        # boxed '?' of 50 dots (read 2026-11-25), so a gap is never blank
+        fr = run('glyph 0 0x2122 0 0 set')
+        self.assertEqual(fr.status, [F.MISSING])
+        self.assertEqual(fr.count(), 50)
+        self.assertEqual([fr.dot(x, 0) for x in range(11)], [1] * 11)
+        self.assertEqual([fr.dot(0, y) for y in range(11)], [1] * 11)
+
     def test_login_prompt_all_held(self):
         codes = F.jis_text(F.LOGIN_PROMPT)
         self.assertEqual(len(codes), 29)
