@@ -91,6 +91,17 @@
    unbound, fails; no stop before activate/2, errors (the creator
    reaches process:status/3); the executor made by make_instance, fails.
    Each touches only test_step3f_census_recipes.
+   Then (test_step3f_library_and_symbolizer) kl0's library and
+   symbolizer models and the string-I/O recipe; census pins 790 / 442
+   plain, 792 / 440 and 85 slot constants with recipes.  Injected into
+   kl0.py the same way, observed: assign/1 failing, fails
+   test_fep_census, test_step3f_census_recipes and
+   test_step3f_library_and_symbolizer; the own-package rule dropped,
+   fails test_step3f_census_recipes and errors
+   test_step3f_library_and_symbolizer; template_file succeeding, fails
+   both step 3f tests; enter_atom reading its first argument as the
+   string, fails test_step3f_census_recipes and errors
+   test_step3f_library_and_symbolizer.  test_kl0.py passes each time.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -1118,11 +1129,16 @@ end.''', 'simpos')
         # at a slot constant), and pimos_file resign_core/1 leaves success
         # (a census order effect: alone, on a fresh machine, it fails
         # before and after).
+        # 2026-11-25, step 3f: the library (assign/1, check_info/3,
+        # get_class_object/3) and symbolizer enter_atom/3 models: 11
+        # refused methods stop later, remote_stream create_to_fep/3 leaves
+        # refused for success, create_from_fep/4 stops at an unbound
+        # receiver; none leaves success.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 789, 'failure': 154, 'refused': 443, 'exception': 16,
+        self.assertEqual((len(rows), out), (1403, {'success': 790, 'failure': 154, 'refused': 442, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1154,10 +1170,15 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 791, 'failure': 154, 'refused': 441,
+        self.assertEqual((len(rows), out), (1403, {'success': 792, 'failure': 154, 'refused': 440,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 101)
+        self.assertEqual(slot_const, 85)
+        # the four string-I/O programs, made by create_string_io/10
+        for c in K.STRING_IO_PROGRAMS:
+            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2], ('refused', 'simpos'), c)
+        self.assertEqual(by[('as_pimos_string_io_device', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'receiver a slot constant'))
         # a device with a recipe goes on to the stream stand-in's missing
         # see/2; the abstract as_pimos_device (no creator) still refuses
         self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
@@ -1173,6 +1194,50 @@ end.''', 'simpos')
         self.assertIn('pimfep##pimos_window:get_interpreter/2',
                       by[('pimos_window_editor', 'instance', 'clear/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
+
+    def test_step3f_library_and_symbolizer(self):
+        # SIMPOS's library and the symbolizer's atom table (kl0
+        # SIMPOS_MODELS, INTERPOLATED, OURS)
+        m = K.fep_machine()
+
+        def call(cid, name, args):
+            # the models are not templates: send directly (call_class_method
+            # builds the class first)
+            m.reset()
+            regs = list(args) + [K.ClassRef(cid)]
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(K.ClassRef(cid), name, regs)]
+        m.reset()
+        self.assertEqual(len(call('simpos##library', 'assign', [])), 1)
+        a = K.Atom('pimfep##pimos_timer')
+        for kind, n in (('object', 1), ('template_file', 0)):
+            m.reset()
+            self.assertEqual(len(call('simpos##library', 'check_info', [a, K.Atom(kind)])), n)
+        m.reset()
+        self.assertEqual(len(call('simpos##library', 'check_info',
+                                                 [K.Atom('no_such_class'), K.Atom('object')])), 0)
+        m.reset()
+        (r,) = call('simpos##library', 'get_class_object', [a, K.Var()])
+        self.assertEqual(r[1].cid, 'pimfep##pimos_timer')
+        # a bare name two loaded packages define, with no sending class
+        # (a direct call): refused
+        with self.assertRaises(K.Refusal):
+            call('simpos##library', 'get_class_object',
+                                [K.Atom('pimos_remote_login_replier'), K.Var()])
+        m.reset()
+        (r,) = call('simpos##symbolizer', 'enter_atom', [K.Var(), K.Str('abc')])
+        self.assertIs(r[0], K.Atom('abc'))
+        m.reset()
+        with self.assertRaises(K.Refusal):
+            call('simpos##symbolizer', 'enter_atom', [K.Var(), K.Var()])
+        # create_string_io/10 makes the named program in pimfep (the
+        # sender's package; pimmcsp has a class of the same name)
+        dev = K.RECIPES['pimfep##pimos_remote_login_replier'](m)
+        self.assertEqual(dev.cid, 'pimfep##pimos_remote_login_replier')
+        co = m.lib.build(dev.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual([getattr(s[n], 'cid', s[n]) for n in
+                          ('input_stream', 'output_stream', 'creation_status_stream')],
+                         ['simpos##stream'] * 3)
 
 
 if __name__ == '__main__':

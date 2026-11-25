@@ -1725,6 +1725,113 @@ test, and `test_kl0.py` passes.
   `process:status/3`.
 - The executor made by `make_instance`: fails.
 
+### Step 3f: the library and the symbolizer's atom table (2026-11-25)
+
+SIMPOS's `library` (the Librarian) and `symbolizer` are not held. Four
+of their class methods cannot be ESP stand-ins: they answer from the
+loader's tables and from the atom table. So kl0 models them in Python
+(`SIMPOS_MODELS`, OURS). Each docstring cites its sources, and any
+other method still refuses as SIMPOS.
+
+- `:assign(#library)`. INTERPOLATED from its call sites: it is the
+  first library send of its clause, before `check_info/3`,
+  `get_class_object/3` or `make_package/2` (kappa2 HLCLIB.ESP:29,
+  LOADCH.ESP:64, LOADER.ESP:251; the pimfep and pimscsi sends that the
+  plain census stopped at, 12 rows). What it
+  binds is UNKNOWN (`subsystems/gaps.md`, librarian row 4). It succeeds
+  and changes nothing.
+- `:check_info(#library, Name, Kind)`. INTERPOLATED from kappa2
+  LOADER.ESP:252-256 and `pimos_string_io_invoker`'s local
+  `get_class_object/3` (@5a-80). Both try `template_file` (then
+  `make_class_object/2`) and `object`, then `get_class_object/3`. OURS:
+  every class here is loaded as a class object, so `object` succeeds
+  for a loaded class and `template_file` fails.
+- `:get_class_object(#library, Name, Class)`. The class an atom names:
+  `pkg##c` exactly; else `c` in the sending class's package; else the
+  one loaded `*##c`. A class not loaded, or a name two packages share
+  with no sender, refuses.
+  - INTERPOLATED: "own package first" is the static rule for a bare
+    class name (`subsystems/librarian.md` §1.4, TM-388 pp92-101).
+  - INFERENCE: that the run-time lookup follows it, and that "own"
+    means the sender's package, not the process's default package
+    (HLCLIB.ESP:30-31 `:get_package(Process, P)`).
+  - The rule is needed: pimfep and pimmcsp both define
+    `pimos_remote_login_replier`, `_server`, `simpos_user_device` and
+    `pimos_timer`.
+- `:enter_atom(#symbolizer, Atom, String)`. PRINTED interface: TR-283
+  p18 (folio 16), Table 4, lists `:enter_atom/c2` (atom <-> string).
+  The argument order is from paragraph `p_wshell.esp`:211 (`substring(
+  C0,1,Len-1,C1), :enter_atom(#symbolizer,Var,C1), :get_at(Obj!var,St,
+  Var)`: the atom first, then used as a key) and `create_string_io/10`
+  @28-2d. The atom's name is the string's text (OURS).
+- `NAMED_NOT_DEFINED.md`'s `:status/2` and kl0's `process:status/3` are
+  the same method. The doc counts the arguments without the receiver.
+
+**The string-I/O recipe.** `pimos_string_io_invoker
+create_string_io/10` (@15-45) makes the program PIMOS names by command
+601 (`fep_services.md` §6.4):
+
+1. It tests A8 as a 16-bit string (@1d-1e).
+2. It makes the string an atom (@28-2d) and takes the class from the
+   library (local `get_class_object/3`).
+3. It creates the object (local `create/3`) and gives it its streams
+   and device id (local `initiate_string_io_device/7` @9d-b6).
+4. Then it sends activate/2.
+
+`RECIPES` now passes the class name as that string for
+`pimos_remote_login_replier`, `pimos_remote_login_server`,
+`simpos_user_device` and `pimos_standard_io_window` (PIMOS's
+`pass_body.kl1`:68). It stops before activate/2, as the device creators
+do.
+
+Effect, method by method:
+
+- Plain `census --fep`: 789 / 154 / 443 becomes 790 / 154 / 442.
+  - `remote_stream create_to_fep/3` goes from refused to success.
+  - `create_from_fep/4` stops at an unbound receiver (its
+    `convert_con_req/6` is sent to an argument).
+  - 11 others stop later:
+    - `create_from_remote_fep/4` at
+      `network_node_name:network_type/3`;
+    - `create_to_remote_fep/5` at `nline:connect/5`;
+    - `initiate_to_fep/1` at `get_class_object/3` of `nline` (not
+      loaded);
+    - `pimscsi_fep`'s and `pseudo_scsi_fep`'s `goal/1` and `invoke/1`
+      at `standard_input_file:create/3`;
+    - `nise_scsi_fep`'s three at `mpsicsp##nise_scsi` (not loaded);
+    - `remote_pimfep_invoker goal/1` at its `convert_con_req/6`
+      (SIMPOS).
+  - None leaves success.
+- With recipes: 791 / 154 / 441 becomes 792 / 154 / 440, and the slot
+  constants go from 101 to 85. The 16 rows of the four string-I/O
+  programs move:
+  - `goal/1`, `loop_main/1` and `invoke/1` (12) to `stream:see/2`;
+  - `attention/1` (4) to `set_string_element` on an unbound argument.
+- Not progress in itself. `stream:see/2` is now the commonest stop
+  (every device `loop_main/1`), and no held or printed source defines
+  it: TM-100 Fig. 3.6 prints `create/2`, `put/2` and `get/2` only, and
+  the kappa2 `:see(Buffer,Size,MDU)` sends (mdu TABLE.ESP:518) are to a
+  buffer.
+
+Test (`test_espc.py` `test_step3f_library_and_symbolizer`): each model
+on its own (assign, both kinds of `check_info`, `get_class_object`
+qualified and ambiguous, `enter_atom` and its refusal), and the replier
+made by `create_string_io/10` in pimfep with its three streams.
+`test_step3f_census_recipes` pins the four programs' `loop_main/1`
+refusal at SIMPOS, and the abstract `as_pimos_string_io_device` still at
+a slot constant. Four injections into `kl0.py`, from a backup, restored
+by cp, cmp-checked. Observed, `test_kl0.py` passing each time:
+
+- assign/1 failing: test_fep_census, test_step3f_census_recipes and
+  test_step3f_library_and_symbolizer fail.
+- The own-package rule dropped: test_step3f_census_recipes fails and
+  test_step3f_library_and_symbolizer errors.
+- `template_file` succeeding as `object` does: test_step3f_census_recipes
+  and test_step3f_library_and_symbolizer fail.
+- enter_atom reading its first argument as the string:
+  test_step3f_census_recipes fails and test_step3f_library_and_symbolizer
+  errors.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

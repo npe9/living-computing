@@ -445,6 +445,14 @@ and stand-in `simpos##` classes. In order:
        (41 fewer). The rows go on to real gaps, not success: the
        `pmacs_window` window protocol (21 rows), `stream:see/2`, and
        `directory:retrieve/4`.
+     - kl0 models four SIMPOS methods in Python (OURS, INTERPOLATED from
+       call sites): `library` `assign/1`, `check_info/3` and
+       `get_class_object/3` (own package first), and `symbolizer`
+       `enter_atom/3` (interface PRINTED, TR-283 p18). With them,
+       `create_string_io/10` makes the four string-I/O programs, which
+       are now recipes too. Plain census 790 / 154 / 442; with recipes
+       792 / 154 / 440 and 85 slot constants. `stream:see/2` (no source)
+       is now the commonest stop.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

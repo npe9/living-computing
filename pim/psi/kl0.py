@@ -449,6 +449,7 @@ class Machine:
         # census recipes (step 3f, OURS): a send whose (name, arity) is in
         # this set raises CreatorStopped instead of being dispatched
         self.stop_before = None
+        self.sender = None
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -492,6 +493,7 @@ class Machine:
 
     # -- running -----------------------------------------------------------
     def reset(self):
+        self.sender = None
         self.x = collections.defaultdict(Var)
         self.env = None
         self.cont = None
@@ -626,6 +628,7 @@ class Machine:
             raise Refusal('code', '%s @%x: no selector after the send' % (code.id, off))
         name, arity = code.sym(sel_cell[3]), sel_cell[2]
         recv = deref(self.x[R])
+        self.sender = code.id   # the sending class (lib_class_named)
         if dealloc:
             self.cont, self.env = self.env.cont, self.env.prev
         elif not last:
@@ -648,6 +651,9 @@ class Machine:
         if cid == 'simpos##undefined_method' and name == 'raise' and arity == 2:
             # the receiver is last (register 1), the information first
             raise Raised(resolve(self.x[0]))
+        model = SIMPOS_MODELS.get((cid, section, name, arity))
+        if model is not None:
+            return model(self)
         if cid not in self.lib.templates:
             raise Refusal('simpos', 'send %s:%s/%d (%s class not loaded)' % (cid, name, arity, section))
         co = self.lib.build(cid)
@@ -776,6 +782,91 @@ class Machine:
             self.cont = env.cont
             return self.proceed()
         raise Refusal('code', 'synthetic op %r' % (op,))
+
+    # -- SIMPOS's library and atom table (step 3f, OURS) --------------------
+    # Not held, and not writable as ESP stand-ins: they answer from the
+    # loader's own tables (the Librarian, psi/librarian.py, OURS) and from
+    # the atom table.  Each method below names the call sites it is
+    # INTERPOLATED from; what is not modelled refuses.
+
+    def lib_class_named(self, name):
+        """The loaded class an atom names: `pkg##c` exactly; else `c` in
+        the package of the class that sent the library call; else the one
+        loaded class `*##c`.  None if none is loaded; refused if several
+        are.  INTERPOLATED: the own package first is the static lookup rule
+        of a bare class name (subsystems/librarian.md §1.4, TM-388 pp92-101,
+        ESP manual program-e.tex:5250-5934); that the run-time lookup
+        follows it, and that the "own" package is the sender's (not the
+        process's default package, kappa2 HLCLIB.ESP:30-31 `:get_package(
+        Process, P)`), are INFERENCE (gaps.md, librarian row 1: the
+        resolution order is not known)."""
+        if '##' in name:
+            return name if name in self.lib.templates else None
+        own = '%s##%s' % ((self.sender or '').split('##')[0], name)
+        if own in self.lib.templates:
+            return own
+        hits = [c for c in self.lib.templates if c.split('##', 1)[1] == name]
+        if len(hits) > 1:
+            raise Refusal('simpos', 'library: %s names %s' % (name, ' '.join(hits)))
+        return hits[0] if hits else None
+
+    def library_assign(self):
+        """:assign(#library).  INTERPOLATED from: the call sites, each the
+        first library send of its clause, before check_info/3,
+        get_class_object/3 or make_package/2 (kappa2 kernel/hlc/HLCLIB.ESP:29,
+        utility/tool/LOADCH.ESP:64, LOADER.ESP:251; pimfep
+        pimos_string_io_invoker create_string_io/10 @2e-31, and the other
+        pimfep/pimscsi sends the plain census stopped at).  What it binds
+        is UNKNOWN (gaps.md, librarian row 4); it succeeds and changes
+        nothing here."""
+        self.proceed()
+
+    def library_check_info(self):
+        """:check_info(#library, Name, Kind).  INTERPOLATED from: kappa2
+        LOADER.ESP:252-256 and pimfep pimos_string_io_invoker local
+        get_class_object/3 (@5a-80), which try Kind `template_file` (then
+        make_class_object/2) and `object`, and then get_class_object/3.
+        OURS: every class here is loaded as a class object, so `object`
+        succeeds for a loaded class and `template_file` fails."""
+        name, kind = deref(self.x[0]), deref(self.x[1])
+        if isinstance(name, Var) or isinstance(kind, Var):
+            raise Refusal('unbound argument', 'library check_info/3 on %r, %r' % (name, kind))
+        if not isinstance(name, Atom) or not isinstance(kind, Atom) or \
+                kind.name not in ('object', 'template_file'):
+            raise Refusal('simpos', 'library check_info/3 on %r, %r' % (name, kind))
+        if kind.name == 'object' and self.lib_class_named(name.name):
+            return self.proceed()
+        return self.fail()
+
+    def library_get_class_object(self):
+        """:get_class_object(#library, Name, Class).  INTERPOLATED from the
+        same call sites and fep_services.md §6.4 (601: "the class object of
+        that name is taken from simpos##library").  A class not loaded here
+        is refused (fail or raise is not known, gaps.md librarian row 1)."""
+        name = deref(self.x[0])
+        if not isinstance(name, Atom):
+            raise Refusal('unbound argument' if isinstance(name, Var) else 'simpos',
+                          'library get_class_object/3 on %r' % (name,))
+        cid = self.lib_class_named(name.name)
+        if cid is None:
+            raise Refusal('simpos', 'library get_class_object/3: %s is not loaded' % name.name)
+        return self.proceed() if self.unify(self.x[1], ClassRef(cid)) else self.fail()
+
+    def symbolizer_enter_atom(self):
+        """:enter_atom(#symbolizer, Atom, String).  PRINTED interface: TR-283
+        p18 (folio 16) Table 4 lists :enter_atom/c2 of class symbolizer,
+        atom <-> string conversion.  The direction and argument order are
+        INTERPOLATED from the call sites: paragraph p_wshell.esp:211 and
+        304-305 (`substring(C0,1,Len-1,C1), :enter_atom(#symbolizer,Var,C1),
+        :get_at(Obj!var,St,Var)`: the string second, the atom first and
+        then used as a key) and pimfep pimos_string_io_invoker
+        create_string_io/10 @28-2d (A0 a new variable, A1 the 16-bit name
+        string tested at @1d-1e).  The atom is the string's text (OURS)."""
+        s = deref(self.x[1])
+        if not isinstance(s, Str):
+            raise Refusal('unbound argument' if isinstance(s, Var) else 'built-in',
+                          'symbolizer enter_atom/3 on %r' % (s,))
+        return self.proceed() if self.unify(self.x[0], Atom(s.text)) else self.fail()
 
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
@@ -1818,6 +1909,16 @@ def make_instance(m, cid):
         raise Refusal('new fails', '%s: slot %s initialisation fails' % (cid, e.args[0].name))
 
 
+# (class, section, selector, arity) -> the Machine method that models it
+# (step 3f, OURS; each method's docstring has its sources)
+SIMPOS_MODELS = {
+    ('simpos##library', 'class', 'assign', 1): Machine.library_assign,
+    ('simpos##library', 'class', 'check_info', 3): Machine.library_check_info,
+    ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
+    ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
+}
+
+
 # -- census recipes (step 3f) ----------------------------------------------
 #
 # The census makes a receiver with new/2, so a slot that the class's
@@ -1860,8 +1961,8 @@ def make_instance(m, cid):
 # invocation stack (`:invocation_stack(P, L)`, `:get_first(L, Prog)`,
 # @4d-59) before activate/2; the process stand-in has no such accessor,
 # and the census's process runs no program, so the stack is empty.
-# pimos_string_io_invoker create_string_io/10 stops at simpos##symbolizer
-# enter_atom/3 and simpos##library assign/1 (@28-31), not stood in.
+# pimos_string_io_invoker create_string_io/10 has its own recipe below
+# (STRING_IO_PROGRAMS).
 DEVICE_CREATORS = {
     'pimfep##pimos_timer': ('create_timer', 9, '@19-48'),
     'pimfep##pimos_file': ('create', 9, '@19-52'),
@@ -1891,6 +1992,45 @@ def _creator_device(m, cid):
     finally:
         m.stop_before = None
     raise Refusal('recipe', '%s %s/%d does not reach activate/2' % (cid, sel, n))
+
+
+# The string-I/O programs PIMOS opens by command 601 (docs/fep_services.md
+# §6.4: pimos_remote_login_replier, _server and simpos_user_device in its
+# table; pimos_standard_io_window from PIMOS server/user/pass_body.kl1:68).
+# pimos_string_io_invoker create_string_io/10 (@15-45) tests A8 as a
+# 16-bit string (@1d-1e), makes it an atom (symbolizer enter_atom/3,
+# @28-2d), takes the class of that name from the library (its local
+# get_class_object/3 @5a-80), creates the object (local create/3 @8b-91),
+# gives it its streams and device id (local initiate_string_io_device/7
+# @9d-b6) and then sends activate/2 (@42-45).  The recipe passes the class
+# name as that string (OURS: as PIMOS would send it) and stops before
+# activate/2, as for the device creators.
+STRING_IO_PROGRAMS = ('pimfep##pimos_remote_login_replier', 'pimfep##pimos_remote_login_server',
+                      'pimfep##simpos_user_device', 'pimfep##pimos_standard_io_window')
+
+
+def _string_io_device(m, cid):
+    """The object create_string_io/10 makes for CID's name, stopped before
+    its activate/2."""
+    inv = 'pimfep##pimos_string_io_invoker'
+    m.reset()
+    (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
+    args = [st[0]] + [Var() for _ in range(8)]
+    args[8] = Str(cid.split('##')[1])
+    m.stop_before = {('activate', 2)}
+    try:
+        for _ in m.solve_send(ClassRef(inv), 'create_string_io', args + [ClassRef(inv)]):
+            break
+    except CreatorStopped as e:
+        dev = e.args[2][0]
+        if isinstance(dev, Instance) and dev.cid == cid:
+            return dev
+        raise Refusal('recipe', 'create_string_io/10 for %s: activate/2 of %r' % (cid, dev))
+    except Refusal as e:
+        raise Refusal('recipe', 'create_string_io/10 for %s stops: %s: %s' % (cid, e.cause, e.detail))
+    finally:
+        m.stop_before = None
+    raise Refusal('recipe', 'create_string_io/10 for %s does not reach activate/2' % cid)
 
 
 def _pimos_window(m):
@@ -1933,6 +2073,7 @@ def _by_new_send(m, cid):
 
 # class -> a function of the machine giving the receiver (OURS)
 RECIPES = dict({cid: (lambda m, c=cid: _creator_device(m, c)) for cid in DEVICE_CREATORS},
+               **{cid: (lambda m, c=cid: _string_io_device(m, c)) for cid in STRING_IO_PROGRAMS},
                **{'pimfep##pimos_window': _pimos_window,
                   'pimfep##pimos_window_editor': _pimos_window_editor,
                   'pimfep##remote_pimfep_executor':
