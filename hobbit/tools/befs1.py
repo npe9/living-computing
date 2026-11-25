@@ -55,7 +55,8 @@ class Entry:
 
 class Volume:
     def __init__(self, path):
-        self.f = open(path, "rb")
+        # A path, or a file object (beboot's disk with its write overlay).
+        self.f = open(path, "rb") if isinstance(path, str) else path
         self.f.seek(0, 2)
         self.image_size = self.f.tell()
         h = self.sectors(0, 1, check=False)

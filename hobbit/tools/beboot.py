@@ -30,6 +30,7 @@ The images are untrusted data: run with `python3 -I`.
 import argparse
 import bisect
 import collections
+import functools
 import os
 import sys
 
@@ -679,6 +680,31 @@ INT_DISCONNECT, INT_BUS_SERVICE, INT_FUNCTION_COMPLETE = 0x20, 0x10, 0x08
 INT_ILLEGAL, INT_SCSI_RESET = 0x40, 0x80
 
 
+class DiskReader:
+    """seek/tell/read over a ScsiDisk, overlay included."""
+
+    def __init__(self, disk):
+        self.disk, self.pos = disk, 0
+
+    def seek(self, pos, whence=0):
+        self.pos = (pos if whence == 0 else self.pos + pos if whence == 1
+                    else self.disk.blocks * 512 + pos)
+        return self.pos
+
+    def tell(self):
+        return self.pos
+
+    def read(self, n):
+        out = bytearray()
+        end = min(self.pos + n, self.disk.blocks * 512)
+        while self.pos < end:
+            lba, off = divmod(self.pos, 512)
+            chunk = self.disk.read_block(lba)[off:off + end - self.pos]
+            out += chunk
+            self.pos += len(chunk)
+        return bytes(out)
+
+
 class ScsiDisk:
     """A direct-access target backed by a disk image, read only: writes go
     to an in-memory overlay (CHOICES['disk-writes']), never to the file.
@@ -703,6 +729,16 @@ class ScsiDisk:
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.f = open(state["f"], "rb")
+
+    def store(self, lba, n, data):
+        self.writes += n
+        for i in range(n):
+            self.overlay[lba + i] = bytes(data[512 * i:512 * (i + 1)])
+
+    def reader(self):
+        """A read-only file object over the image with the overlay
+        applied (for befs1.Volume: --extract)."""
+        return DiskReader(self)
 
     def read_block(self, lba):
         if lba in self.overlay:
@@ -755,11 +791,9 @@ class ScsiDisk:
                 return 0, b"".join(self.read_block(lba + i)
                                    for i in range(n)), 0, None
 
-            def store(data, lba=lba, n=n):
-                self.writes += n
-                for i in range(n):
-                    self.overlay[lba + i] = bytes(data[512 * i:512 * (i + 1)])
-            return 0, None, 512 * n, store
+            # A bound method in a partial, not a closure: a write in
+            # flight must survive --save.
+            return 0, None, 512 * n, functools.partial(self.store, lba, n)
         raise Stop("SCSI %s: command 0x%02x not modelled (CDB %s)"
                    % (self.name, op, cdb.hex()))
 
@@ -2334,6 +2368,9 @@ def main(argv):
                     help="start typing once this many steps have run")
     ap.add_argument("--dsp", choices=("inert", "emulated"), default="inert",
                     help="the DSP3210s (CHOICES['dsp'])")
+    ap.add_argument("--extract", action="append", default=[],
+                    metavar="BEPATH=OUT", help="when the run ends, copy "
+                    "this file from SCSI target 0, disk writes included")
     ap.add_argument("--codec-in", help="16-bit PCM WAV for the audio "
                     "codec's ADC (CHOICES['codec'])")
     ap.add_argument("--codec-out", help="write the codec's DAC output to "
@@ -2474,6 +2511,18 @@ def main(argv):
             with open(args.screen, "wb") as f:
                 f.write(data)
             print("beboot: screen written to %s" % args.screen)
+    for spec in args.extract:
+        bepath, out = spec.split("=", 1)
+        try:
+            vol = befs1.Volume(m.disks[0].reader())
+            data = vol.read(vol.lookup(bepath))
+        except Exception as exc:
+            print("beboot: --extract %s: %s" % (bepath, exc))
+        else:
+            with open(out, "wb") as f:
+                f.write(data)
+            print("beboot: %s (%d bytes) written to %s"
+                  % (bepath, len(data), out))
     if args.save:
         import pickle
         m.trace = None

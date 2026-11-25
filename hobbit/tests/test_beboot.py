@@ -76,6 +76,9 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
 - Typing (CHOICES['typing']): no break code: test_scan_codes,
   test_keys_are_paced_and_bound_the_idle_skip; no pacing, or keys not
   timed events: test_keys_are_paced_and_bound_the_idle_skip.
+- Disk overlay (2026-11-25): a SCSI write in flight held as a closure
+  again: test_write_in_flight_pickles_and_reads_back (error, pickling);
+  DiskReader reading the image file under the overlay: the same test.
 - With BEBOOT_LONG=1, the idle skip leaving R16 of _null_thread unchanged:
   MountTest.test_idle_skip_changes_nothing only (MountTest's header).
 """
@@ -382,6 +385,37 @@ class FakeDsp:
             self.ops.pop(0)(self.bus)
         self.steps += 1
         return self.clocks
+
+
+class DiskOverlayTest(unittest.TestCase):
+    """CHOICES['disk-writes']: the overlay, as a write in flight survives
+    --save and as --extract reads it."""
+
+    def test_write_in_flight_pickles_and_reads_back(self):
+        import pickle
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "four-blocks.img")
+            image = bytes(range(256)) * 8
+            with open(path, "wb") as f:
+                f.write(image)
+            d = beboot.ScsiDisk(path, "test")
+            st, _, need, store = d.execute(
+                bytes([0x2A, 0, 0, 0, 0, 1, 0, 0, 1, 0]))   # WRITE(10) LBA 1
+            self.assertEqual((st, need), (0, 512))
+            store = pickle.loads(pickle.dumps(store))       # rebinds a copy
+            store(b"\xAA" * 512)
+            self.assertEqual(store.func.__self__.overlay[1], b"\xAA" * 512)
+            d.store(1, 1, b"\xAA" * 512)
+            r = d.reader()
+            self.assertEqual(r.seek(0, 2), 2048)
+            r.seek(500)
+            self.assertEqual(r.read(600), image[500:512] + b"\xAA" * 512
+                             + image[1024:1100])
+            r.seek(2040)
+            self.assertEqual(r.read(100), image[2040:])
+            d.f.close()
+            store.func.__self__.f.close()
 
 
 class TypingTest(unittest.TestCase):
