@@ -11,7 +11,8 @@ a top level. This page gives:
 - which of these exist today, and what blocks each.
 
 It then names the first step that is unblocked. Step 3i took B2, step
-3j B3, and step 3k B4 for the FEP timer (§4).
+3j B3, step 3k B4 for the FEP timer, and step 3l B5 to B8 as labelled
+stand-ins, under the owner's rule of 2026-11-25 (§4.4).
 
 Labels, as elsewhere in `docs/simpos/`:
 
@@ -56,10 +57,10 @@ from it.
 | **B2** | **The hardware creates and activates the boot process, which runs the boot program** | PRINTED prose: TM-100 p6, p13; TR-056 p21; HELD: `pimmcsp##pseudo_pe_process` `release/1` | **Step 3i:** stand-ins `boot_process` and `as_boot_program` (INTERPOLATED); the machine's first process is the boot process; the printed `as_program` `invoke/1` runs a boot program in it | **DONE as a stand-in** (§4). The real boot program is lost. |
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
 | B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
-| B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE | BLOCKED in part: no `directory`, `user`, `world` or file system stand-in. |
-| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal | BLOCKED: the coordinator is a process of its own, which B3 now allows; but its class and the window bodies are lost (`subsystems/window.md`). |
-| B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors | BLOCKED: `user` and `world` are known by USAGE only; reading `login.com` needs B5's file system. |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept) | BLOCKED on B6. |
+| B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE. **Step 3l:** `directory` (`retrieve/3,4` and the node methods, INTERPOLATED) over an OURS tree built from the HELD psdpim archive and its `INSTALL` placement; `node_full_name/3` (INFERENCE) | **DONE as a stand-in** (§4.4). The real file system is lost; the tree holds only what PIM/m installs. |
+| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3` | **The coordinator: DONE as a stand-in** (§4.4). The window system is not: no `standard_io_window`, no font, no bitmap. The menu is a list, not a window. |
+| B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors. **Step 3l:** `user`, `world`, `password_list` (INTERPOLATED from the held sends; registry and password OURS); the held `create/4` and `setup_process/2` run to their ends | **DONE as a stand-in** (§4.4). |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program stops at its first window send, `standard_io_window:create/3`. |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -236,7 +237,7 @@ What stays open, labelled in the stand-ins:
   and `activate`. So the 11 device creators' `activate/2` now stop at
   the missing ready queue, not at `status/3`.
 
-### B4-B6. Devices, services, coordinator (BLOCKED)
+### B4-B6. Devices, services, coordinator (B4 BLOCKED for SIMPOS's handlers; B5, B6 stood in by step 3l, §4.4)
 
 - TR-059 p30 (folio 28), page image read 2026-11-25: "A device handler is
   instantiated and activated during a system boot-up procedure." A
@@ -270,7 +271,7 @@ What stays open, labelled in the stand-ins:
   §2.5). It needs a process of its own, which B3 now provides. Its class
   is lost.
 
-### B7. Login (BLOCKED)
+### B7. Login (stood in by step 3l, §4.4)
 
 - What login does (PRINTED prose, TM-181 p3, TM-229 p5-p6):
   1. set the system-menu items;
@@ -289,10 +290,10 @@ What stays open, labelled in the stand-ins:
   and passwords.
 - Exists: `pathname` (HELD-SOURCE) and the printed process slots `user`
   and `world`, with interpolated accessors.
-- Missing: `user` (`identify/4` is one census stop) and `world`, both
-  known by USAGE only.
+- Missing until step 3l: `user` (`identify/4` is one census stop) and
+  `world`, both known by USAGE only. Step 3l stands them in (§4.4).
 
-### B8. The top level (BLOCKED)
+### B8. The top level (reached as a stand-in by step 3l, §4.4)
 
 The 1.0 debugger dialogue (TM-134 p71, PRINTED) starts a program in a
 new process: `:create(#c,O).`, `:create(#process,P).`,
@@ -485,25 +486,63 @@ not change it.
 - The SIMPOS handlers themselves are still lost.
 - B5 to B8 are as in §2.
 
+### 4.4 B5 to B8 (step 3l)
+
+Under the owner's rule of 2026-11-25 ("It's okay to infer what you don't
+have"). The basis table, the injections and the census are in
+`../../psi/README.md`, "Step 3l"; every inference is listed in
+`source_check_2026-11-24.md` §11.
+
+- **B5** (`test_step3l_b5`). `psi/simpos_fs.py` mounts a file tree
+  (OURS) of what a PSI with PIM/m installed holds: the HELD psdpim
+  archive's files, placed by the HELD `psdpim/INSTALL` lines, `me:` =
+  `>sys>user>pmpsi` (INFERENCE). `directory:retrieve/3,4` resolves
+  `>`-absolute names, `Alias:rest` through the calling process's world,
+  bare names under its default logical name, and `.N` versions. A miss
+  fails, as the held callers' fallback clauses require. The held
+  `pimos_file check_file_size/1` runs on it (a hit, a directory, a
+  miss), and the held `net_spawn_user set_default_node/2` runs through
+  `node_full_name/3`.
+- **B7** (`test_step3l_b7`). The held `pimfep##simpos_user create/4`
+  and `setup_process/2` run to their ends on the stand-ins `user`,
+  `world` and `password_list`: a wrong password or an unknown user
+  fails; after login the process's world resolves `me:login.com` and a
+  bare `login.com`.
+- **B6** (`test_step3l_b6_b8`). The boot program logs in, then starts a
+  coordinator process. It reads the HELD `me:login.com` (three clauses:
+  `menu`, `define`, `package`), defines `me:`, `root:`, `sys:`, `pmpsi:`,
+  `mpsi:` and `pimos:` in the world (three are checked by the test), keeps the menu's two columns (7 and 3 items),
+  and answers `information(package, user)`.
+- **B8** (`test_step3l_b6_b8`). The events `invoke_system_menu` (the
+  printed action's name, TR-046 PDF p28) and `{select, "Login PIMOS"}`
+  (OURS) make the coordinator create `pimfep##pimos_login_requester`
+  and activate it in a new process, its child, which shares the world.
+  The held requester runs `goal/1` and `initiate/1` to
+  `:create(#standard_io_window, W, [...])` (@af-b4), refused: the class
+  is not stood in. A select with no menu shown starts nothing.
+
+**Where the route stops now.** At SIMPOS's window system. The started
+login requester's next sends are `font:create/3` ("font:test_11.font"),
+`set_font/2`, `set_label_font/2`, `set_title/2`, `activate/1`, then
+`read/4`'s `clear/1`, `show/1`, `putl/2` of `Enter FEP node
+name--------->` and `read/2`. The window classes are lost
+(`subsystems/window.md`); a stand-in for them would be OURS throughout.
+
 ## 5. Next
 
-B4 is done for the FEP timer as a stand-in. Under the owner's rule of
-2026-11-25 ("It's okay to infer what you don't have"), the next steps
-are taken as labelled INFERENCE or OURS when no source is held. In
-order:
+B5 to B8 run as stand-ins (§4.4). Open, in order:
 
-1. B5's `directory` with an OURS file-system population
-   (`directory:retrieve/3,4`, the step 3i examination below), then
-   `node_full_name/3`.
-2. B7's `user` and `world` (USAGE): `identify/4`, `world:create/2`,
-   `define/3`, `set_default_logical_name/2`, in the order of
-   `pimfep##simpos_user create/4`.
-3. A coordinator process with a system menu that has the two PIM/m
-   items of §1 (B6).
-4. Also on the way: blt 0d (10 stops in each FEP census) and blt a8 (2); `get_interpreter/2` and
-   `has_been_reshaped/1`; the timer's `on_after`.
+1. B6's window system: a minimal OURS `standard_io_window` and `font`
+   (a transcript, an input stream), to take the login requester to its
+   prompt and its wait for a node name.
+2. The FEP census side items: blt 0d (10 stops in each FEP census) and
+   blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
+   timer's `on_after` (303) with an alarm process; `terminate_core`'s
+   PCB word 15; `create/3`'s `instance_array` entry.
+3. B4's SIMPOS device handlers (lost).
 
-**B5's `directory`, examined in step 3i (PARTIAL).** The interface is
+**B5's `directory`, examined in step 3i (PARTIAL; stood in by step 3l,
+§4.4).** The interface is
 printed (TR-056 p22-p24; TR-524 p36-p37), and the held callers settle
 what a miss does: it fails, and the caller takes another clause.
 - `pimfep##pimos_fep_superviser` local `full_pathname/1` @1bc: clause 1

@@ -3490,6 +3490,64 @@ normalised).
 - The `create/2` correction and `instance_array`: all three censuses
   re-run after them, row by row: no row changes.
 
+### Step 3l: route steps B5 to B8, the directory, login, the coordinator (2026-11-25)
+
+Under the owner's rule of 2026-11-25 ("It's okay to infer what you don't
+have"), the boot route (`../docs/simpos/boot_route.md`) is taken from B5
+to B8 with labelled stand-ins. Every inference is listed with its basis
+in `../docs/simpos/source_check_2026-11-24.md` §11. Three commits, each
+with its test (`test_espc.py`):
+
+| Step | What runs | Label | Test |
+|---|---|---|---|
+| B5 | `directory:retrieve/3,4` (kl0 models), `root/2`, `is_directory/1`, `not_directory/1`, `size/2`, `full_name/2` (`standin/directory.esp`, `binary_file.esp`) over the file tree of `simpos_fs.py` | interface PRINTED (TR-056 PDF p22-p23, TR-524 PDF p9, p36-p37); argument order and miss = failure from HELD cells; tree OURS, its placement and contents HELD (`psdpim/INSTALL`, the archive) | `test_step3l_b5` |
+| B5 | `network_node_name:node_full_name/3` | INFERENCE from the two held senders | `test_step3l_b5` |
+| B7 | the held `pimfep##simpos_user` `create/4` and `setup_process/2` run to their ends on `user`, `world`, `password_list` (new stand-ins) | USAGE (held sends); registry, password, rank OURS; `pathname append/4`'s CESP `convert_to_8` replaced (INFERENCE: SIMPOS strings are 16-bit) | `test_step3l_b7` |
+| B6 | a coordinator process (`coordinator.esp`, `coordinator_program.esp`) reads the HELD `me:login.com` through `standard_input_file` `gett/2` (kl0 model; reader `esp_reader.py` OURS), applies its `define`, holds its `menu`, answers `information/3` | INTERPOLATED from TR-061, TR-046 PDF p26-p28, TM-181 p3, TM-229 p5-p6; state, selectors and events OURS | `test_step3l_b6_b8` |
+| B8 | `invoke_system_menu`, then `{select, "Login PIMOS"}`: the item's class is created and activated in a new process (TM-134 p71's printed dialogue) | events OURS; the started program HELD | `test_step3l_b6_b8` |
+
+**Where it stops.** The started process runs the held
+`pimfep##pimos_login_requester` `goal/1` and `initiate/1` to its first
+window send, `:create(#standard_io_window, W, [{size, ...}, ...])`
+(@af-b4), refused: `simpos##standard_io_window` is not stood in. Its
+next steps would be a font, the window's title and label, then
+`read/4`, which prints `Enter FEP node name--------->` and reads the
+answer. Every other process (the coordinator, the boot program) waits
+on its stream.
+
+**Injections, observed** (each from a backup copy, restored by copy, `cmp`
+clean; `test_kl0.py` OK in all; the full lists are in each test's
+header):
+
+- L1-L4 (version ignored, a miss returning the parent, the full name
+  without its version, `not_directory/1` failing): `test_step3l_b5`
+  FAIL only. L5 (`node_full_name/3` for any name): `test_step3l_b5`,
+  `test_fep_census`, `test_step3f_census_recipes` FAIL.
+- M1-M3 (password ignored, `define/3` appending, no default logical
+  name): `test_step3l_b7` FAIL only; M4 (`convert_to_8` back):
+  `test_step3l_b7` ERROR only.
+- N1 (`gett/2` not advancing): `test_step3l_b6_b8` ERROR (step limit);
+  N2-N5 (`define` taken as an item, a select without the menu shown,
+  `##` not in atoms, `information/3` for an absent key):
+  `test_step3l_b6_b8` FAIL only.
+
+**Census, recomputed row by row** against the step 3k merge a74f2fd6
+(MEASURED 2026-11-25, `_G` numbering normalised; no row new or gone):
+
+- Six packages: 318 / 12 / 199, unchanged.
+- Plain FEP: 801 / 233 / 415 → **801 / 234 / 414**. The one outcome
+  change is `simpos_user` `create/4`, refused → failure: the census
+  machine registers no user, so `identify/4` fails. Not progress. Ten
+  more rows move their stop: `set_default_node/2` to `equal_string` on
+  its unbound name; nine to `directory retrieve: no file system is
+  mounted` (the census mounts none).
+- With recipes: 828 / 234 / 387 → **828 / 235 / 386**: the same
+  `create/4` move; 16 rows move their stop, the six recipe rows of
+  `pimos_directory` and `pimos_file` to `retrieve` on an unbound
+  pathname.
+- No census row reaches further because of B5-B8: the route's progress
+  is in the three tests, which mount the file system and log in.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

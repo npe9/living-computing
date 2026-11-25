@@ -1062,3 +1062,57 @@ and held pool strings with `asm/ptfread.py <pkg> --strings`.
   - CONTRADICTED: 0.
 - The `create/2` correction: `standin/process.esp` now runs `:create_core(Class, Process, Context)`, labelled
   CORRECTED. The printed line is kept in the comment above it.
+
+## §11 Step 3l: the inferences of route steps B5 to B8 (2026-11-25)
+
+Step 3l works under the owner's rule of 2026-11-25, "It's okay to infer what you don't have". This section lists every
+INFERENCE the step makes, with its basis, and the OURS choices beside them. Each is also labelled where it is made
+(the file named). Held cells were read with `psi/fepread/ptfread.py` and `psi/librarian.py class X --listing`; held
+source by path and line; page images with `pdftoppm -r 150`. The tests are `psi/test_espc.py` `test_step3l_b5`,
+`test_step3l_b7` and `test_step3l_b6_b8`. The census effect is in `psi/README.md` "Step 3l".
+
+### §11.1 INFERENCE
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `me:` is `>sys>user>pmpsi` | the HELD login.com defines `"me" := [ "user:pmpsi" ]`; `user:` = `>sys>user` from TM-143 p3 and every held home directory `>sys>user>NAME` (`subsystems/shell.md` §4.1) | `psi/simpos_fs.py` `ME`; `standin/world.esp` |
+| 2 | A file's full pathname carries its version; a directory's does not | TR-524 PDF p9 (folio 8) `>sys>user>gee>humm.txt.3`; HELD source cal-esp `cal2.12/control.esp`:1135-1136 and chal `control.esp`:947-948 strip a version from `retrieve/4`'s answer (`del_version_number`, :969-974) | `kl0.py` `directory_retrieve` |
+| 3 | `retrieve/3,4` fails on a miss | every held caller has a fallback clause after it: `pimos_fep_superviser` `full_pathname/1` @1c6, `pimos_file` `remove/2` @1e3; kappa2 `SRVCNF.ESP`:394-396, `BCKFIF.ESP`:464-471 (HELD source) | `kl0.py` `directory_retrieve` |
+| 4 | `node_full_name/3` succeeds for the node's own name and fails otherwise | its two held senders, `net_spawn_user` `set_default_node/2` @29-36 and `get_your_node/3` @13b-163, whose later clauses take the name as an IP address | `standin/network_node_name.esp` |
+| 5 | `user:identify/4` fails, rather than raises, on a wrong name or password | its held send, `simpos_user` `create/4` @1a-24, is the first goal of a clause; a failure fails login | `standin/user.esp` |
+| 6 | `user:passwords/3` gives `[Password]` as its third argument; the second is unused | its one held send, `simpos_user` `setup_process/2` @e3-109, which passes only the third argument on, to `set_passwords/2` | `standin/user.esp` |
+| 7 | A password list is an object with an access mode and passwords; the process makes one on first use | `simpos_user` `setup_process/2` @ee-102: `password_list/2`, `set_access_mode/2`, `set_passwords/2` | `standin/password_list.esp`, `process.esp` |
+| 8 | `pathname append/4` needs no `convert_to_8` | `convert_to_8` is a send to `cesp##string`, the CESP port's class, not SIMPOS's; SIMPOS strings are 16-bit (the held login files and the held cells' pool strings) | `standin/pathname.esp` |
+| 9 | `standard_input_file gett/2` fails at the end of the file | HELD source utter `source/QXT/trans.esp`:20-24 (a `gett` loop ended by its last clause); kwic-esp `src/systems.esp`:368-374 (tests `end_of_input/1` first) | `kl0.py` `input_gett` |
+| 10 | `pkg##name` is read as one atom | the library takes a class name as an atom (`kl0` `lib_class_named`); the login files' menu items name classes so (`shell.md` §4.2.2) | `psi/esp_reader.py` |
+| 11 | `coordinator:information/3` fails when the item is absent | every held caller has a fallback clause (`shell.md` §2.5: `pimos_fep_superviser` `full_pathname/1` @1c6-1ce, `pimos_login_requester` `close/2` @149-14e) | `standin/coordinator.esp` |
+
+KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `{f, a, b}` (kwic-esp
+`src/systems.esp`:380-383, `dbUtil.esp`:1437). The reader uses this.
+
+### §11.2 OURS (choices, no source)
+
+- The file tree as a whole (`psi/simpos_fs.py`):
+  - only what PIM/m installs, every version 1;
+  - `>sys>csp>MPSI.DIR` and `PIMOS.DIR` empty, the FONT.DIR files left out;
+  - no host prefix (`icpsi277::`) in a full name;
+  - the aliases every world sees, `world`'s class slot `system` (`user` := `>sys>user`).
+- The user registry (`user`'s class slot `users`, `register/4`), the password `pmpsi` and the rank `general`.
+- The world's representation: a list of `[Name | Directories]`, newest first. It is a list because a slot keeps a
+  list's values and may not hold a stack vector (TM-388 PDF p110, folio 98).
+- The coordinator:
+  - its state in class slots;
+  - its selectors `start/1`, `read_login_file/1` and `event/2`;
+  - the events `invoke_system_menu` (the name of TR-046 PDF p28's printed action) and `{select, Label}`;
+  - the menu as the login file's item columns (no `menu_item` or `multi_column_menu`: those classes are lost).
+- The term reader (`psi/esp_reader.py`) and its operator priorities (Prolog's).
+- The tests' boot program (`b8_boot`), which logs in and starts the coordinator itself.
+
+### §11.3 What was re-read for this step
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| `psdpim/INSTALL`, the placement lines | the archive member | CONFIRMED, quoted in `psi/simpos_fs.py` |
+| `psdpim/INSTALL.DIR/login.com`: `menu`, `define`, `package` | decoded from the archive (16-bit JIS) | CONFIRMED: menu columns of seven and three items; six `define` names; `package :- user` |
+| TR-524 PDF p9, p36, p37 | page images | CONFIRMED: the version suffix; Table 3 `retrieve/c`; App. A `local_logical_file`'s `retrieve/4` |
+| `pimos_login_requester` `initiate/1` @ad-b4 | listing | CONFIRMED: `:create(#standard_io_window, W, [{size, ...}, {position, manipulator}, {nature, [with_icon]}])`, where the route stops |
