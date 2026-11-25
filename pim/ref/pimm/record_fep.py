@@ -478,7 +478,8 @@ def direct_login_sections(std):
         window(28), r,
         sd(28, 127, 200, 200, 47, 14), r, sd(28, 127, 1, 2, 3, 4, 5, 6), r,  # six arguments
         sd(28, 130, fj('PIMOS')), r, sd(28, 132, 5), r, sd(28, 141), r, sd(28, 142), r,
-        sd(28, 143), r, sd(28, fepm.PUTB, fj('Shell>> ')), r, sd(28, fepm.FLUSH, 9), r,
+        sd(28, 143), r, sd(28, 126), r,                           # 126: the listener's window
+        sd(28, fepm.PUTB, fj('Shell>> ')), r, sd(28, fepm.FLUSH, 9), r,
         sd(28, fepm.GETL), r,                                     # held
         IDLE, r, r,                                               # the login, to 24
         sd(24, fepm.IO, 1, fj('  ')), r,                          # held again

@@ -89,19 +89,30 @@ CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
 # docs/fep_services.md 2 (the commands, from pimos.vmac):
 FEP_ATTRIBUTES, CREATE_STRING_IO, IO = 240, 601, 620
 CREATE_WINDOW, GETL, PUTB, FLUSH = 104, 110, 111, 112
-WINDOW_ANSWERED = (127, 130, 132, 141, 142, 143, PUTB, FLUSH)  # reshape, set_title,
-# set_font, activate, deactivate, show, putb, flush: {Id, 1}
-# (fep_services.md 6.8, READ for 127, 132, 143; 7.5)
+WINDOW_ANSWERED = (126, 127, 130, 132, 141, 142, 143, PUTB, FLUSH)  # reshape_by_mouse,
+# reshape, set_title, set_font, activate, deactivate, show, putb, flush:
+# {Id, 1} (fep_services.md 6.8, READ for 127, 132, 143; 7.5).  126
+# (2026-11-24, the listener's window): {Id, 1} is PIMOS's form
+# (bios/fep_module/win_dvc.kl1:357-363); the PSI's handler is
+# pimos_window_editor reshape_by_mouse/3 (fep_services.md 6.2), its
+# answer taken to be the class's {Id, 1} as 6.8 reads for the three
+# (INFERENCE); where the operator puts the window with the mouse is
+# not a value PIMOS is told
 ABORTED = 6                        # fep#aborted (pimos.vmac)
 # Text as the PSI keeps it: 16-bit JIS X 0208, two bytes a character,
 # the high byte first (fep_services.md 7.5): the letters and digits in
 # row 23, the punctuation of asm/psdpim.py's table in row 21
 _PUNCT = {' ': 0x21, ',': 0x24, '.': 0x25, ':': 0x27, '_': 0x32, '/': 0x3f,
           '-': 0x5d, '<': 0x63, '>': 0x64, '!': 0x2a, '?': 0x29, '*': 0x76,
-          # PIMOS's own table, server/telnet/code_cv.kl1:154-182
+          # PIMOS's own table, server/telnet/code_cv.kl1:152-251
           # (table_ascii_to_jis): for a typed command line's quotes,
-          # brackets and the shell's <= and =>
-          '"': 0x49, '(': 0x4a, ')': 0x4b, '=': 0x61}
+          # brackets and the shell's <= and =>, and (2026-11-24) the
+          # rest of its printable ASCII, for the commands of
+          # lockstep_shell.py's APPS
+          '"': 0x49, '(': 0x4a, ')': 0x4b, '=': 0x61,
+          '#': 0x74, '$': 0x70, '%': 0x73, '&': 0x75, "'": 0x47, '+': 0x5c,
+          ';': 0x28, '@': 0x77, '[': 0x4e, '\\': 0x40, ']': 0x4f, '^': 0x30,
+          '`': 0x46, '{': 0x50, '|': 0x43, '}': 0x51, '~': 0x41}
 
 
 def jis(text):
@@ -118,7 +129,7 @@ def unjis(data):
     for i in range(0, len(data) - 1, 2):
         hi, lo = data[i], data[i + 1]
         out += chr(lo) if hi == 0x23 else back[lo] if hi == 0x21 and lo in back \
-            else '<%02x%02x>' % (hi, lo)
+            else '\n' if (hi, lo) == (0, 10) else '<%02x%02x>' % (hi, lo)
     return out
 
 

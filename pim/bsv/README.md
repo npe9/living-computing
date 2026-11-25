@@ -332,6 +332,37 @@ unchecked by this window; a window that reads them is still to be
 found. RESTOREs 16-26 (the waiting command's fields) were not dropped
 one by one; dropping the push (31) removes them all.
 
+### Commands past the shell (`run_pimm_apps.sh`)
+
+`run_pimm_apps.sh PROMPT.pkl [NAME ...]` types each command line of
+`APPS` in `../ref/pimm/lockstep_shell.py` at the prompt of the saved
+machine, on the reference and on the core, and compares them line by
+line, the counts against `PINNED` and the window's text against
+`APPS`. The checkpoint is loaded once and its heap written once; each
+command is played in a process of its own (`lockstep_shell.py apps`).
+Outside the suite, like `run_pimm_shell.sh`. Ends with
+`pimm lockstep apps: PASS` or the names that failed. What each prints
+and how it stands against the primers and manuals:
+`../docs/binary_reverse_engineering.md` 1.4, "Commands past the shell".
+
+Measured 2026-11-24 from the prompt checkpoint (login ID 0, 8,587,072
+instructions), every line identical:
+
+| Name | Typed | Instructions | Trace lines | SCSI commands on the tape |
+|---|---|---|---|---|
+| pwd | `pwd` | 29,867 | 229,102 | 21 |
+| echo_string | `echo("a b c")` | 118,027 | 482,259 | 25 |
+| echo_list | `echo([a,b,c])` | 127,373 | 509,143 | 25 |
+| echo_new_atom | `echo(zorkqx)` | 121,155 | 489,049 | 25 |
+| usage_echo | `usage(echo)` | 133,233 | 520,129 | 25 |
+| help | `help` | 36,685 | 324,411 | 27 |
+| who | `who` | 146,977 | 555,038 | 25 |
+| history | `set hl=20`, `history` | 56,133 | 441,489 | 41 |
+| rs | `rs`, (empty) | 190,791 | 800,789 | 36 |
+| versions | `versions` | 114,472 | 610,006 | 38 |
+| compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
+| compile_missing | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | 94 |
+
 ## FPGA flow (ULX3S / ECP5)
 
 `PimUlx3s.bsv` and `Top.v` are a downstream check, not the architecture.

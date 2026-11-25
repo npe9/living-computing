@@ -790,6 +790,78 @@ the device are given it again whenever the machine runs dry.
   emulator needs no change: its card's login record is made by
   `fep.login_record` (`tools/mkfepcard.py`).
 
+  **Commands past the shell (2026-11-24, R6 on to R7).** Twelve
+  command lines typed at the prompt of the machine saved there (login
+  ID 0), each from the prompt alone, on the reference model and then
+  in lockstep on the core (`bsv/run_pimm_apps.sh`; the lines and the
+  window's text: `APPS` in `ref/pimm/lockstep_shell.py`, the counts:
+  `PINNED`). "Window" is every `putb` (111) of a window or string-I/O
+  device after the line, as `fep.py` received it. Every run ends at the
+  next `Shell>> ` with the next `getl` held (versions: after it, the
+  job's abort message), no console line, no stop of the model.
+
+  | Typed | Instructions | Trace lines | Window | Against a printed transcript |
+  |---|---|---|---|---|
+  | `pwd` | 29,867 | 229,102 | ` The value of task: directory is ">sys>user>pmpsi" . ` | primer (PIMOS 2.5, `primer25.tex`:1223-1227) prints `Shell> pwd` / `sys>user>feldmark`: see below |
+  | `echo("a b c")` | 118,027 | 482,259 | `"a b c"` | the primer's `echo` (`primer25.tex`:1937-1940): the same form |
+  | `echo([a,b,c])` | 127,373 | 509,143 | `[a,b,c]` | the same |
+  | `echo(zorkqx)` | 121,155 | 489,049 | `zorkqx` | none; one `new_atom`, the counter 75,569 to 75,570 (the probe below) |
+  | `usage(echo)` | 133,233 | 520,129 | `Usage : echo(Data)` | none; the string is the held `echo.kl1`'s |
+  | `help` | 36,685 | 324,411 | the shell's help text, 3 `putb`s | none printed whole; the text is the held source's |
+  | `who` | 146,977 | 555,038 | `pimos:  0  20-May-1993  00:00:30  0  0  pmpsi  local  ` | none; the layout is `who.kl1`'s; the user, node and time are `fep.py`'s (OURS) |
+  | `set hl=20`, `history` | 56,133 | 441,489 | ` The value of hl is 20 .`, then `  4 : history ` | `e-shell.tex`'s `LineNo : CommandLine` form |
+  | `rs`, (empty line) | 190,791 | 800,789 | the resource tree, `+-----+-------+-------+` / `\|RscID\|RscType\|RscName\|` and 15 rows, then `OK? ` | the manual's described table (`e-shell.tex`); the IDs are this run's |
+  | `versions` | 114,472 | 610,006 | ` Module not found !! ( versions:go ) ` / `  [ Job#1, Node#0, PE#0 ]`, then ` Job 1 was aborted . ` | the module is named `ipl_versions` (`versions.kl1`:7) and not loaded under `versions`: the held source's behaviour, not a model fault (INFERENCE: which module list a 3.6 installation linked is not held) |
+  | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
+  | `compile`, `sample1`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample1`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample1`, `.aya`, `.mac`, `.kl1`, each 5) and `fep.py` holds no home files |
+
+  `pwd` against the primer, each difference root-caused: the prompt
+  `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
+  2.5); the sentence is `msgs.kl1`:318, `" The value of ~t is ~t . ~n"`,
+  reached from `comexe.kl1`:139 (pwd is `getenv(task:directory)`), the
+  form the 3.0 manual prints for `getenv` (`e-shell.tex`); the space in
+  `task: directory` is `uparse.kl1`'s `checkQuote` (572-576: an
+  ordinary atom after a special one is written after a space); the
+  directory is the home `fep.py` gives (OURS, user `pmpsi`).
+
+  What these needed: the rest of printable ASCII in `fep.py`'s JIS
+  table, from PIMOS's own `table_ascii_to_jis` (`code_cv.kl1`:152-251;
+  17 were missing, among them `[`, `]`, `;`, `|`), and 0x000A read as
+  a newline. No model change.
+
+  Tried and stopped, each root-caused, none in the suite (a probe that
+  forks the saved machine per command line):
+  - `cat <= file("pimos:pimos.groups") | lc` (a pipe): "EXCEPTION WAS
+    OCCURRED in PIMOS" on the console (`bios.kl1`:157-164), a
+    reduction failure of `task_stdio:invoke_std_handler/3`
+    (`kernel/stdio/std.kl1`:281-296) with the vector
+    `{in(..), out(..), *}`: no clause takes an unbound third element.
+    Why the `inter` element is unbound was not traced.
+  - `listener`: the window it opens sends 126 (`reshape_by_mouse`), now
+    answered `[1]` (`fep_services.md` §4); then a 201 of
+    `listener.com` (5) and 130; then a reduction failure in
+    `listener_task_monitor:create/15`
+    (`debugger/listener/task_mon.kl1`:13), whose only clause wants the
+    task's first report to be `resource_low`. The model never reports
+    `resource_low` (`pimm.py`:2631, OURS: no source gives the
+    threshold).
+  - `ts`: `refused: add_bignum` (not implemented). `gc`: `refused:
+    collect_garbage`. `ls`: needs 204 (directory), not served; its
+    contents would be OURS.
+  - The primer's `sample1` (`primer25.tex`:592-605, the sieve), served
+    by the probe as a home file with 222's attributes in the format of
+    `fileutil.kl1` `normalize_date_time`:31-58 (the values OURS) and
+    221's path: the compiler prints `Compile File :
+    >sys>user>pmpsi>sample1.kl1` (the primer's form) and stops at
+    `refused: a merger input bound to a vector of seven or more`
+    (`pimm.py` `i_merge_in`; the core stops the same, `stop(EndUnimp)`).
+    With the probe's own long-vector merge (the size and elements from
+    the vector's descriptor) it merges two vectors of 9, reads the file
+    (210, 550 bytes) and stops at 556,699 instructions at `refused:
+    wait_value: an element (21, ...)`, an element tag the model does
+    not wait on. So R7 waits on the long-vector merge and that wait,
+    then whatever comes next; the home-file service would be OURS.
+
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
   it gives 23,348 at `jump`, as the earlier cache patched with the new

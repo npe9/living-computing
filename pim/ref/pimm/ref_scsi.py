@@ -460,11 +460,58 @@ def shutdown_window():
     return bad
 
 
+def jis_table():
+    """fep.py's text code against PIMOS's own ASCII-to-JIS table
+    (server/telnet/code_cv.kl1 table_ascii_to_jis/2, read from
+    pimos.tar.Z): every printable ASCII character (32-126) the same
+    two bytes both ways, 95 of them; and the window commands of the
+    listener's window, 126 reshape_by_mouse answered {Id, 1}
+    (bios/fep_module/win_dvc.kl1:357-363).
+
+    Observed injection (2026-11-24): fep.py's '~' set to 0x31 and 126
+    taken out of WINDOW_ANSWERED; this check then gave exactly
+    [('jis', '~', b'!1', b'!A'), ('126', 'device 34: request [126]')]
+    and nothing else; fep.py restored from a copy, clean again."""
+    import io
+    import re
+    import subprocess
+    import tarfile
+    tar = os.path.join(HERE, '..', '..', 'docs', 'nonlocal', 'pimos.tar.Z')
+    raw = subprocess.run(['gzip', '-dc', tar], stdout=subprocess.PIPE, check=True).stdout
+    with tarfile.open(fileobj=io.BytesIO(raw)) as tf:
+        for e in tf.getmembers():
+            if e.name.endswith('src/server/telnet/code_cv.kl1'):
+                text = tf.extractfile(e).read().decode('latin1')
+    table = {int(n): bytes.fromhex(j) for n, j in re.findall(
+        r'^table_ascii_to_jis\((\d+),Jis\):- true \| Jis=16#"([0-9A-Fa-f]{4})"', text, re.M)}
+    bad = []
+    printable = [n for n in range(32, 127)]
+    if sorted(n for n in table if 32 <= n < 127) != printable:
+        bad.append(('code_cv.kl1 rows', len(table)))
+    for n in printable:
+        ch = chr(n)
+        try:
+            got = fepm.jis(ch)
+        except KeyError:
+            got = None
+        if got != table.get(n) or fepm.unjis(table.get(n, b'')) != ch:
+            bad.append(('jis', ch, got, table.get(n)))
+    f = fepm.Fep(None)
+    try:
+        if f.request(34, [fepm.CREATE_WINDOW, b'', fepm.jis('pmpsi'), b'']) != [fepm.NORMAL] \
+                or f.request(34, [126]) != [fepm.NORMAL]:
+            bad.append(('126',))
+    except fepm.FepError as e:
+        bad.append(('126', str(e)))
+    return bad
+
+
 def main(argv):
     if '--real' in argv:
         return real(int(argv[argv.index('--real') + 1]))
     bad = [('event list',) + x for x in event_list()]
     bad += [('shutdown window',) + x for x in shutdown_window()]
+    bad += [('jis table',) + x for x in jis_table()]
     for label, files, device in PARTS:
         m, v, opened = boot(listing(files), **device)
         b = check(label, files, device, m, v, opened)
