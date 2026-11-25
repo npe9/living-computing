@@ -2754,6 +2754,10 @@ whose `put` and `read` have no guard) instead of a `Vector` of `Reg`.
     change.
   - `rl_io`'s block in `mkStretchCore.sched` is byte-identical to
     master's (md5 compared).
+  - The two decks that use this source were run with
+    `STRETCH_HALT_REPORT=1` at 7e78395e and after the change. Their halt
+    clocks are identical: `io_disk` 2,030 and the stall variant 6,623,
+    with 40 memory reads each.
   - Power-on zero comes from a 1,024-bit written mask. A BRAM powers on
     at `'hAAAA...`, both in Bluesim and in `BRAM2.v`.
   - `peek` is gone. Nothing called it.
@@ -2802,8 +2806,21 @@ The design-hierarchy figures:
 | `mkStretchCore` own logic, before | 661,332 | 29,610 | 59,597 | 8,868 | 100,012 | 0 | 94 |
 | `mkStretchCore` own logic, after | 344,369 | 29,605 | 51,817 | 8,593 | 19,310 | 0 | 94 |
 
-Each of the two new `BRAM2`s maps to 4 DP16KD, which is the +8. The
-boxes' figures are unchanged within yosys noise.
+Each of the two new `BRAM2`s maps to 4 DP16KD, which is the +8.
+
+**The flip-flop delta closes to the bit.** It is −81,920 (the two
+images), +1,281 (the two masks and `consoleRdReal`), −63
+(`ioDev_disk_resp` went from 65 bits to 2): −80,702 in all. That equals
+both the Verilog sum and the core's TRELLIS_FF delta.
+
+**The boxes' LUT4 moved by up to 9% though their source did not.** This
+commit's parent 7e78395e has no `bsv/` change since §11's 61e18dc1
+(`git diff --stat` is empty). The figures, before and after: `mkFpBox`
+7,920 → 7,235, `mkDivBox` 6,489 → 6,858, `mkCvtBox` 5,987 → 5,629,
+`mkDecBox` 1,098 → 1,095, `mkVflBox` 404 → 404. That is yosys run-to-run
+variation in `-noabc9` mapping on identical input, so read any LUT4
+difference under about 10% as noise. The core's own 317k drop is far
+outside it.
 
 **What it says:**
 - The two fixtures cost 317k of the core's own 661k LUT4 (48%), as well
@@ -2813,13 +2830,15 @@ boxes' figures are unchanged within yosys noise.
   4x an 85F's 83,640 LUT4, before any abc9 credit (§9.6.1, up to 2.5x).
 - 392 DP16KD against 208 is still F2's problem: core storage accounts
   for 384 of them.
-- **Still in flip-flops:**
-  - `ioDev_printerImg` and `ioDev_readerImg`, 2,048 bits each;
-  - the 16-word tape, 1,024 bits.
-
-  `rl_io` reads the card reader combinationally, in the clock it moves
-  the word. A BRAM there would move the machine's timing unless the
-  read were issued a clock early, so that is a separate change.
+- **Still in flip-flops** (5,120 bits):
+  - `ioDev_printerImg`, 2,048 bits. The machine only writes it and the
+    testbench reads it, exactly as with the console, so the same
+    conversion applies directly. It is an easy follow-up.
+  - `ioDev_readerImg`, 2,048 bits. `rl_io` reads it combinationally, in
+    the clock it moves the word. A BRAM there would move the machine's
+    timing unless the read were issued a clock early, so that is a
+    separate change.
+  - The 16-word tape, 1,024 bits.
 - **The disk's written mask costs about 4,900 LUT4** (`-noabc9`;
   `mkDiskSourceSmall` synthesised alone: 4,904 LUT4, 1,026 FF, 4 DP16KD).
   A per-arc mask would be smaller, but it would change what a

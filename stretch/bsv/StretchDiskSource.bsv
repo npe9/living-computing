@@ -5,8 +5,8 @@
 // WHY AN INTERFACE AND NOT A Vector IN StretchIO.  A disk unit is
 // 2,097,152 words (Reference Manual printed p.157), which is 16 MiB
 // and is never going to be registers.  The tape learned this lesson
-// first and the shape is copied from it deliberately: a register- (in
-// fact RegFile-) backed source small enough to test against, and room
+// first and the shape is copied from it deliberately: a small source
+// (block RAM since 2026-11-25; see below) to test against, and room
 // for a host-file or SD-backed one behind the same three methods.
 //
 // THE GEOMETRY IS ARCHITECTURAL AND IS NOT NEGOTIABLE, even in the

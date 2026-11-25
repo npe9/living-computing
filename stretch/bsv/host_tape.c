@@ -63,7 +63,7 @@ void     host_tape_write_word(uint32_t i, uint64_t d)
    here rather than in a host_disk.c so that every build that already
    links host_tape.c gets it with no change to its link line.  A full
    353, 2^21 words (Reference Manual printed p.157), zero at power-on
-   as mkDiskSourceSmall's registers are; 16 MB of host memory.
+   as mkDiskSourceSmall's platter reads (its written mask); 16 MB of host memory.
 
    THE IMAGE FILE (docs/disk_subsystem.md §9c).  The format is the
    tape's: 8 bytes per word, big-endian (byte 0 is IBM bits 0-7), word
