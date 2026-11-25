@@ -870,21 +870,63 @@ the device are given it again whenever the machine runs dry.
     gave nothing to `Dist`. That happens when the old kind came out
     as `[]` (`stdio_old_check([], ...)`, 117-122) or when the branch's
     answer was not `normal`. Which of the two it is, is the next probe.
+    Re-run 2026-11-25 on the R7L model (a scratch probe from the
+    prompt checkpoint, not in the repository): no window text; one
+    reduction failure (exception 9) after the cat's file is read (where
+    the PROBE above met one; its arguments not decoded); then the run is dry with 1,373 goals waiting, a hang and
+    not a refusal. Every shoen the pipe made has resource left and no
+    goal parked, so it is not R7L's resource: `cat`'s shoen has
+    terminated; `lc`'s is STARTED, its one goal `loop` waiting on its
+    input; the job's shoen holds two `check_NewCode_and_NewArgV_in_exception`
+    goals (the image's `shoen` module), which wait for an answer to the
+    exceptions raised in it that never comes, and the pipe server a
+    `srcClosedNormalPipe`. So the hang is the reduction failure's
+    consequence, not a second fault (that the one reduction failure is
+    still `invoke_std_handler`'s was not decoded on this run: its
+    arguments were not printed). One observation for the next probe:
+    a `task_std_handler:in_outInter` goal was made, invoke_std_handler's
+    clause for `in` plus an inherited `out_inter` (`kernel/stdio/
+    std.kl1`:284-286), so one task's inheritance did give its branch.
+    Which task's vector lacked `inter` is not settled: `cat`'s `<=
+    file(..)` may give it its own `in`, so its old kind may be `inter`
+    rather than `in_inter`. The probe item 3 asks for (print each
+    `stdio_old_check` goal's Type and each `make_branch` answer) was
+    not run.
   - `listener`: the window it opens sends 126 (`reshape_by_mouse`), now
     answered `[1]` (`fep_services.md` §4); then a 201 of
-    `listener.com` (5) and 130; then (PROBE) a reduction failure in
-    `listener_task_monitor:create/15`
+    `listener.com` (5) and 130; then (PROBE, 2026-11-24) a reduction
+    failure in `listener_task_monitor:create/15`
     (`debugger/listener/task_mon.kl1`:13), whose only clause wants the
-    task's first report to be `resource_low`. The model never reports
-    `resource_low` (`pimm.py`:2631, OURS: no source gives the
-    threshold).
+    task's first report to be `resource_low`. R7L (2026-11-25): a shoen
+    starts with no resource and its first goal reports `resource_low`
+    (`pimm_semantics.md` "Shoen", Resource), and the Listener runs, in
+    lockstep, the primer's goal (APPS `listener_sieve`,
+    `primer25.tex`:1343-1349): `*** KL1 LISTENER (V 3.600 20-May-93)
+    ***`, `[1] `, `default_package(work).`, `[2] `,
+    `sample1:sieve([1,2,3],E,O).`, then ` E =[2]` and ` O =[1,3]`,
+    then `[3] `; 1,575,086 instructions, 7,144,906 trace lines. On the
+    way it needed `string_less_than` (the goal's variables sorted) and
+    the extended-float guards failing on other arguments (the held
+    sorter, `utility/sorter/sorter.kl1`:51-71), and a string unified
+    with itself (`lockstep_sord.py`). The primer typesets `E = [2]`;
+    the held unparser puts a space between a variable and a special
+    atom and none after `=` before `[` (`utility/ioutls/uparse.kl1`:
+    573-604, `checkQuote`), and the Listener prints the vector `{=,
+    variable(K), WT}` through it (`debugger/listener/buffer.kl1`:
+    97-106), so ` E =[2]` is the held source's text.
   - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
     `add_bignum` in on both models (VPIM's edges, `pimm.py`
     `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs
     in lockstep (APPS `ts`, 68,783 instructions, 184,130 lines) to
     `refused: set_timer to a time still to come (643223, now 483224)`
-    before writing anything: an alarm, which neither model keeps
-    (`pimm.py` `i_set_timer`). That is the next stop.
+    before writing anything: an alarm, which neither model kept
+    (`pimm.py` `i_set_timer`). R7L (2026-11-25): the alarm is on both
+    models (VPIM `kblt_b_set_timer`, `pimm_semantics.md` `set_timer`,
+    `PimmTBox.bsv`), and `ts`, then the empty line at its `OK? `,
+    runs in lockstep (APPS `ts`, 160,945 instructions, 705,103 lines)
+    to the task table: `shell:shell`, `Job_1` and `ts:go`, each
+    running, with its limit and consumption (the R7L resource: the
+    shell's task 2,000,000,000, `tos.kl1`'s jobs 1,000,000,000).
   - `gc`: `refused: collect_garbage`, kept refused. The built-in is
     23:77 with no operands (`library/assembler/inst_tab.kl1`:132), a
     guard of class user with no inputs or outputs
@@ -907,7 +949,11 @@ the device are given it again whenever the machine runs dry.
        test that compares the heap after a collection.
     4. Add APPS `gc`.
   - `ls`: needs 204 (directory), not served; its contents would be
-    OURS.
+    OURS. Checked 2026-11-25: 204's own reply is documented (`{Id,
+    1}`, `fep_services.md` §2.3), but `ls` then lists with 237
+    `listing_all`, whose `File_names` the directory device passes on
+    unread (`bios/fep_module/dir_dvc.kl1`:253-256): its form is the
+    PSI's, not held (U7). Not done.
   - **R7, the primer's sample1** (2026-11-25; the PROBE that stood
     here, 2026-11-24, is replaced by committed runs). The home
     directory holds `sample1.kl1`, its text the primer's

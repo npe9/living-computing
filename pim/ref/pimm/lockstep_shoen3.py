@@ -204,6 +204,42 @@ value checks; each in a private copy):
   in the root, not in the    length (6960 for 7092, fourteen parts) sees it; the
   failing goal's shoen       shoen then ends before its handler runs,
                              but the Report's order is the same.
+Re-pinned for R7L (2026-11-25), 9198 -> 11963 trace lines: a shoen starts
+with no resource, so each shoen's first goal parks (`E park`, now in
+TAKEN for every part that makes one but add_resource, whose Control
+funds it before its goal is taken) and resource_low is reported; the
+monitors fund their shoens, the bench the rest (driver.Script.
+fund_parked).  allow_resource_report's report is now [started,
+resource_report_allowed, resource_low, resource_added | _]: the flag is
+clear when its goal parks.  The fault injections above were observed
+before R7L.  Four parts more (18 -> 22, 11963 -> 13165 lines): `resource:
+silent` funds a shoen with 2, which execute/4's reduction uses, so
+hash/3's goal parks with none left and nothing is reported (the flag
+set by the first resource_low); `resource: reported again` sends
+allow_shoen_resource_report first (its stub at the root), and the
+second park reports resource_low again; each `, funded` part funds it
+fully and binds X, and the shoen ends.
+
+Observed R7L resource injections into bsv/PimmShBox.bsv, 2026-11-25,
+each from a backup copy, `run_pimm_lockstep.sh` on each test in turn,
+restored by copy and cmp'd (the first difference; shoen = this file's
+stage 1, lockstep_shoen.py; shoen2 = lockstep_shoen2.py):
+  a reduction charges 1, not 2     shoen run L297; shoen2 ipl_monitor
+                                   L440; shoen3 failure L410; prio
+                                   execute/7 L447; atom go1 L612 (sord,
+                                   timer PASS: no shoen)
+  no ancestor charged              shoen nested L650; shoen2 nested L898;
+                                   shoen3 raise in control/2 L968 (prio,
+                                   atom PASS: no nested shoen)
+  the flag not set at a park       shoen run L167; shoen2 ipl_monitor
+  (resource_low at every park)     L201; shoen3 failure L171; prio
+                                   execute/7 L317; atom go1 L371
+  allow leaves the flag set        shoen2 ipl_monitor L401; shoen3
+                                   failure L371; atom go1 L571 (shoen,
+                                   prio PASS: no second resource_low)
+  add releases no parked goal      shoen run L271; shoen2 ipl_monitor
+                                   L379; shoen3 failure L349; prio
+                                   execute/7 L421; atom go1 L549
 """
 import os
 import sys
@@ -218,7 +254,7 @@ import lockstep_shoen as stage1  # noqa: E402
 import lockstep_shoen2 as stage2  # noqa: E402
 import pimm_layout as L  # noqa: E402
 
-PINNED = dict(parts=18, lines=9198)
+PINNED = dict(parts=22, lines=13165)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 STATUS = {L.DORMANT: 'dormant', L.STARTED: 'started', L.TERMINATED: 'terminated',
           L.REMOVED: 'removed', L.STOPPED: 'stopped'}
@@ -340,6 +376,7 @@ def script():
     s.newvar(8)                                    # Report
     goal(execute4, 0, 2, 3, 8)
     s.run()
+    s.fund_parked(9)                               # R7L: the task manager's answer
     s.out(8)
     s.label('stop: stopped')
     s.cons(15, 4, A('stop'), None)                 # C' in 5
@@ -372,6 +409,7 @@ def script():
     s.newvar(3)                                    # the outer Report
     goal(execute4, 9, 1, 2, 3)
     s.run()
+    s.fund_parked(14)                              # the outer, then the inner
     for k in (8, 3):
         s.out(k)
     s.label('abort inner: aborted')
@@ -402,6 +440,7 @@ def script():
     s.newvar(15)                                   # Shut
     goal(top_monitor, 3, 6, 10, 15)
     s.run()
+    s.fund_parked(14)                              # the inner (the monitor funds the outer)
     s.out(3)
     s.label('abort outer: aborted')
     s.unifyc(10, I(1))
@@ -458,6 +497,7 @@ def script():
     s.newvar(8)                                    # Report
     goal(execute4, 0, 2, 3, 8)
     s.run()
+    s.fund_parked(9)
     s.out(8)
 
     # (j) create_shoen's distributed form (2026-11-24): shoen:execute1/7
@@ -472,6 +512,54 @@ def script():
     s.setslot(11, I(-1))
     s.newvar(8)                                    # Report
     goal(P('shoen', 'execute1/7'), 0, 2, 4, 5, 11, 3, 8)
+    s.run()
+    s.fund_parked(15)
+    s.out(8)
+
+    # (k) R7L: resource_low is reported once until allow_resource_report
+    # (the flag, pimm_layout RSC_REPORT_DISALLOWED).  hash/3 in a shoen,
+    # Control [start | C]: its first goal parks and reports resource_low;
+    # funded with 2 (one reduction's worth: execute/4's own reduction
+    # takes it), the shoen's next goal, hash/3's, is taken with none left
+    # and parks, and nothing is reported (the flag set by the first
+    # report); funded again, it runs, suspends on X, and X bound ends it
+    s.label('resource: silent')
+    code('ipl_pool', 'hash/3', 0)
+    s.vector(2, 12, [None, None, None])            # X in 12
+    s.cons(3, 13, A('start'), None)                # C in 14
+    s.newvar(8)                                    # Report
+    goal(execute4, 0, 2, 3, 8)
+    s.run()
+    s.fund_parked(9, hi=0, lo=2, once=True)
+    s.out(8)
+    s.label('resource: silent, funded')
+    s.fund_parked(9)
+    s.unifyc(12, I(-7))
+    s.run()
+    s.out(8)
+
+    # (l) the same with allow_shoen_resource_report (its stub at the
+    # root, as the bench funds) after the first report: the flag is
+    # cleared, and the second park reports resource_low again
+    s.label('resource: reported again')
+    code('ipl_pool', 'hash/3', 0)
+    s.vector(2, 12, [None, None, None])            # X in 12
+    s.cons(3, 13, A('start'), None)                # C in 14
+    s.newvar(8)                                    # Report
+    goal(execute4, 0, 2, 3, 8)
+    s.run()
+    m = s.live()
+    sh = max(c[1] for c in m.mem.values() if c[0] == pimm.SHREC)
+    s.argc(1, (pimm.SHREC, sh))
+    s.newvar(9)
+    s.arg(2, 9)
+    s.spawn(m.stubs['allow_shoen_resource_report']['addr'], 2)
+    s.run()
+    s.fund_parked(9, hi=0, lo=2, once=True)
+    s.out(8)
+    s.label('resource: reported again, funded')
+    s.fund_parked(9)
+    s.unifyc(12, I(-7))
     s.run()
     s.out(8)
     return s
@@ -500,9 +588,19 @@ def exception(kind, info, code):
     return ('exception', kind, info, code, ((kind, info), 'shut'))
 
 
+# R7L: every shoen starts with no resource, so its first goal parks
+# (`E park`) and resource_low is reported; the image's monitors answer
+# add_resource and allow_resource_report (as PIMOS's task manager,
+# kernel/init/init.kl1:84-89), and where none listens the bench does
+# (driver.Script.fund_parked).  RETURNED: stage 2's, the funded amount
+# less what the trace says was consumed.
+LOW = stage2.LOW
+MONITORED = stage2.MONITORED
+RETURNED = stage2.RETURNED
+
+
 def ended(i, *before):
-    return ('started',) + before + ('terminated', 'statistics_started', STATS(i),
-                                    ('return_resource', 0, 0))
+    return MONITORED + before + ('terminated', 'statistics_started', STATS(i), RETURNED(i))
 
 
 FAIL_INFO = (0, CLOSE_FEP, ('shut', 0))            # {Node, Code, ArgV}
@@ -516,10 +614,13 @@ R5 = STOP('terminated', 0)
 AB = lambda o, i: R5 + [o, i]                      # noqa: E731
 R7 = AB((0, 'terminated', None, 0, -1), (1, 'removed', 6, 0, -1))
 AO = lambda o, i: R7 + [o, i]                      # noqa: E731
+R11 = AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [
+    (0, 'removed', None, 0, 1), (1, 'started', None, 0, -1), (1, 'started', None, 0, -1),
+    (1, 'started', None, 0, -1)]
 EXPECT = [
     ('failure',
      [STREAM(*ended(0, exception('reduction_failure', FAIL_INFO, IPL_DUMMY)), closed=True),
-      ['statistics'], 'shut'],
+      [('add_resource', 0x3FFFFFFF, -1), 'allow_resource_report', 'statistics'], 'shut'],
      ['EXCEPTION WAS OCCURRED in IPL : error code:', 'reduction_failure', 'vector',
       'Statistics in Resource:', STATS(0), 'SCSI-FEP END********'],
      R0),
@@ -540,23 +641,23 @@ EXPECT = [
       'shut', 'shut'],
      ['EXCEPTION WAS OCCURRED in BIOS : error code:', 'raised', 'vector'],
      R3),
-    ('stop', [STREAM('started')], [], STOP('started')),
-    ('stop: stopped', [STREAM('started', 'stopped')], [], STOP('stopped')),
-    ('stop: woken, parked', [None, STREAM('started', 'stopped')], [], STOP('stopped')),
-    ('stop: started again', [7, STREAM('started', 'stopped', 'started', 'terminated')], [], R5),
-    ('abort inner', [STREAM('started'), STREAM('started')], [],
+    ('stop', [STREAM(*LOW)], [], STOP('started')),
+    ('stop: stopped', [STREAM(*LOW, 'stopped')], [], STOP('stopped')),
+    ('stop: woken, parked', [None, STREAM(*LOW, 'stopped')], [], STOP('stopped')),
+    ('stop: started again', [7, STREAM(*LOW, 'stopped', 'started', 'terminated')], [], R5),
+    ('abort inner', [STREAM(*LOW), STREAM(*LOW)], [],
      AB((3, 'started', None, 0, -1), (1, 'started', 6, 0, -1))),
     ('abort inner: aborted',
-     [STREAM('started', 'aborted', 'terminated', ('return_resource', 0, 0), closed=True),
-      STREAM('started', 'terminated')], [], R7),
+     [STREAM(*LOW, 'aborted', 'terminated', RETURNED(7), closed=True),
+      STREAM(*LOW, 'terminated')], [], R7),
     ('abort inner: woken', [None], [], R7),
-    ('abort outer', [STREAM('started')], [],
+    ('abort outer', [STREAM(*MONITORED)], [],
      AO((3, 'started', None, 0, -1), (1, 'started', 8, 0, -1))),
     ('abort outer: aborted',
-     [STREAM('started', 'aborted', 'terminated', ('return_resource', 0, 0), closed=True),
-      'shut', STREAM('started')], [],
+     [STREAM(*MONITORED, 'aborted', 'terminated', RETURNED(8), closed=True),
+      'shut', STREAM(*LOW)], [],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1))),
-    ('abort outer: woken', [None, STREAM('started')], [],
+    ('abort outer: woken', [None, STREAM(*LOW)], [],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1))),
     ('raise/3, tag 3, mask 1',
      [STREAM(*ended(10, exception('raised', (0, ('shut', 1), None), TOP_DUMMY)), closed=True),
@@ -566,24 +667,42 @@ EXPECT = [
     ('add_resource', [STREAM('started', 'resource_added')], [],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
                                                                    (1, 'started', None, 0, -1)]),
-    ('allow_resource_report', [STREAM('started', 'resource_report_allowed')], [],
+    ('allow_resource_report', [STREAM('started', 'resource_report_allowed', *LOW[1:])], [],
      AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
                                                                    (1, 'started', None, 0, -1),
                                                                    (1, 'started', None, 0, -1)]),
-    ('execute1', [STREAM('started')], [],
-     AO((3, 'removed', None, 0, -1), (1, 'started', 8, 0, -1)) + [(0, 'removed', None, 0, 1),
-                                                                   (1, 'started', None, 0, -1),
-                                                                   (1, 'started', None, 0, -1),
-                                                                   (1, 'started', None, 0, -1)]),
+    ('execute1', [STREAM(*LOW)], [], R11),
+    # R7L: the parked goal counts (SH_COUNT 1) until it ends
+    ('resource: silent', [STREAM(*LOW)], [],
+     R11 + [(1, 'started', None, 0, -1)]),
+    ('resource: silent, funded', [STREAM(*LOW, 'resource_added', 'terminated')], [],
+     R11 + [(0, 'terminated', None, 0, -1)]),
+    ('resource: reported again',
+     [STREAM('started', 'resource_low', 'resource_report_allowed', 'resource_added',
+             'resource_low')], [],
+     R11 + [(0, 'terminated', None, 0, -1), (1, 'started', None, 0, -1)]),
+    ('resource: reported again, funded',
+     [STREAM('started', 'resource_low', 'resource_report_allowed', 'resource_added',
+             *LOW[1:], 'terminated')], [],
+     R11 + [(0, 'terminated', None, 0, -1), (0, 'terminated', None, 0, -1)]),
 ]
 # The goals left waiting, by hand: `stop` and `abort inner` leave their
 # root shoen's control/2 and report/2 (no monitor closes them); `abort
 # outer` the inner's report/2, a goal of the aborted outer that waits on
-# the inner's report stream.  The goals discarded were woken first.
-WAITING = 14
+# the inner's report stream.  The goals discarded were woken first.  R7L:
+# the two `resource` parts' shoens leave their control/2 and report/2
+# too (14 -> 18).
+WAITING = 18
 # the lines that say a goal was discarded or parked, per part
-TAKEN = {'stop: woken, parked': ['E park'], 'abort inner: woken': ['E aborted'],
-         'abort outer: woken': ['E aborted', 'E aborted']}
+# R7L: plus one `E park` for each shoen's first goal, parked for resource
+# (add_resource's goal was funded by its Control before it was taken)
+P1, P2 = ['E park'], ['E park', 'E park']
+TAKEN = {'failure': P1, 'failure, mask 1 << 25': P1, 'raise/3': P1,
+         'raise in control/2': P2, 'stop': P1,
+         'stop: woken, parked': ['E park'], 'abort inner': P2, 'abort inner: woken': ['E aborted'],
+         'abort outer': P2, 'abort outer: woken': ['E aborted', 'E aborted'],
+         'raise/3, tag 3, mask 1': P1, 'allow_resource_report': P1, 'execute1': P1,
+         'resource: silent': P2, 'resource: reported again': P2}
 
 
 def jis_text(v):
@@ -644,14 +763,17 @@ def check(m, snaps, parts):
     known = stage1.handles(lines, m.load)
     stage2.counted = counted                      # the rule with E fail
     stats, own, total = stage2.expected_stats(m, lines, known)
+
+    def spent(a):
+        return 2 * total(a, own)
     for k, vals, cons_, recs in EXPECT:
         got_vals, got_recs = snaps[k]
-        want = stage2.fill(vals, stats, known)
+        want = stage2.fill(vals, stats, known, spent)
         if jis_text(got_vals) != want:
             bad.append((k, 'values', jis_text(got_vals), want))
         c = console(parts[k], m)
         wantc = []
-        for x in stage2.fill(cons_, stats, known):
+        for x in stage2.fill(cons_, stats, known, spent):
             wantc += list(x[1:]) if isinstance(x, tuple) else [x]
         if c != wantc:
             bad.append((k, 'console', c, wantc))

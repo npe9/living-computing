@@ -133,6 +133,14 @@ lines, both models identical and every check passing (the server
 still asked exactly the two requests).  The goals run in another
 order, and each pickup that splices the list writes one link more.
 The injections' line numbers above are as observed before it.
+Re-pinned for R7L (2026-11-25), 1300 -> 1565 trace lines, every value
+unchanged: a shoen now starts with no resource (VPIM's
+_INIT_SHOEN_RESOURCE is 0), so the BIOS's shoen has three more record
+cells written at create (SH_RSC_HI/LO/FLAGS), its first goal parks (one
+`E park`), resource_low goes to top:bios_monitor/3, and the monitor
+answers add_resource and allow_resource_report on the Control: 112 more
+instructions and 4 more goals, counted on the reference's trace against
+the base commit's (aab75b28).
 """
 import os
 import sys
@@ -144,7 +152,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=4, lines=1300)
+PINNED = dict(parts=4, lines=1565)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 GO1 = 17391                 # top:go1/4, its first instruction current_node 4, 5
 MERGE = GO1 + 2             # merge 6, 6

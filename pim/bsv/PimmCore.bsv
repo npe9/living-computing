@@ -25,6 +25,7 @@ import PimmShBox::*;
 import PimmScsiBox::*;
 import PimmPBox::*;
 import PimmStages::*;
+import PimmTBox::*;
 
 interface PimmCore;
   method Action newVar;                         // a fresh unbound variable
@@ -59,6 +60,8 @@ interface PimmCore;
   // pointer; 1..3 the exec stage's (PimmExec.restore); 4, 16..31 the
   // SCSI box's (PimmScsiBox.restore).  Nothing is traced
   method Action restore(Bit#(8) which, Cell c);
+  // R7L: the driver's ALARM: the clock moved on to the armed alarm's time
+  method Action skipToAlarm;
 endinterface
 
 // heap: "" for an empty heap, else a checkpoint's heap (PimmMem)
@@ -76,7 +79,8 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   PimmShBox shbox <- mkPimmShBox(mem.port[8], gbox, dbox, regs);
   PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
   PimmPBox  pbox  <- mkPimmPBox(mem.port[10], dbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi, pbox);
+  PimmTBox  tbox  <- mkPimmTBox(gbox, dbox);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi, pbox, tbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -84,6 +88,10 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   Reg#(Bool)  outsideUnify <- mkReg(False);   // a unifyReq is in the data box
   Reg#(Bool)  outsideWake  <- mkReg(False);   // ... and its wake in the goal box
   Reg#(Addr)  takenPc <- mkRegU;              // a goal of a shoen being checked
+  // R7L: the next goal is asked for here, the alarm fired first if its
+  // time has come (pimm.py run: before pick)
+  FIFO#(Bool) pickQ  <- mkFIFO;
+  Reg#(Bool)  firing <- mkReg(False);
 
   rule toExec;
     let f <- fetch.out;
@@ -106,11 +114,26 @@ module mkPimmCore#(String image, String heap)(PimmCore);
 
   rule reduction_ended;
     shbox.ended;
-    gbox.pickup;
+    pickQ.enq(True);
   endrule
 
   rule begin_run;
     runQ.deq;
+    pickQ.enq(True);
+  endrule
+
+  rule pick_or_fire (!firing);
+    pickQ.deq;
+    if (tbox.armed && reached(tbox.time_, exec.now[31:0])) begin
+      tbox.fire(exec.now[31:0]);
+      firing <= True;
+    end
+    else gbox.pickup;
+  endrule
+
+  rule alarm_fired (firing);
+    tbox.fired;
+    firing <= False;
     gbox.pickup;
   endrule
 
@@ -144,7 +167,7 @@ module mkPimmCore#(String image, String heap)(PimmCore);
     end
     else begin
       $display(k == 1 ? "E aborted" : "E park");
-      gbox.pickup;
+      pickQ.enq(True);
     end
   endrule
 
@@ -203,6 +226,10 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   method Action scsiResp(ScsiIn r) = scsi.devResp(r);
   method Action scsiPoll = scsi.poll;
   method ActionValue#(Bit#(32)) scsiPolled = scsi.polled;
+  method Action skipToAlarm;
+    if (!tbox.armed) fatal("ALARM with no alarm armed");
+    else exec.skip(tbox.time_ - exec.now[31:0]);
+  endmethod
   method Action restore(Bit#(8) which, Cell c);
     if (which == 0) gbox.setHp(cellAddr(c));
     else if (which < 4) exec.restore(which, c.val);

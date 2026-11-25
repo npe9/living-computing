@@ -70,9 +70,10 @@ instruction and is tested by trace comparison with it.
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
-| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`) |
+| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`); the order of two strings for `string_less_than` and `string_not_less_than` (R7L, `lockstep_sord.py`) |
 | `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
-| `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
+| `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard); (R7L) the resource: left at create 0, taken at the end of each run from the shoen and those above it, a goal parked when none is left with `resource_low` once until allowed, `add_shoen_resource` releasing them, `allow_shoen_resource_report`, `return_resource` of what is left |
+| `PimmTBox.bsv` | timer box (R7L): the processor's one alarm, `set_timer` to a time still to come; checked at each goal switch by the core's `pick_or_fire`, fired with the time, the waiting goals woken (`lockstep_timer.py`) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
 | `PimmStages.bsv` | fetch stage; execute stage (clause selection, the variables guards met unbound) |
 | `PimmCore.bsv` | the modules above and the rules that move an instruction between them |
@@ -312,6 +313,16 @@ length:
 | the prompt | `cat <= file("pimos:pimos.groups")` | 8,587,072 to 8,760,665 (173,593) | 731,110 | `Shell>> ` again, nothing left to run, 1,224 goals waiting |
 | the link | `shutdown`, `yes` | 0 to 8,766,319 | 20,107,017 | `PIMOS END********`, nothing left to run, 253 goals waiting; 21 min in all, 897 s of it the Bluesim run and compare |
 
+Re-measured 2026-11-25 with R7L's resource model (shoen records of 11
+cells, the checkpoints made afresh; every line identical, the new
+counts in `PINNED`):
+
+| From | Typed | Instructions of `go()` | Trace lines | Ends |
+|---|---|---|---|---|
+| the prompt | `shutdown`, `yes` | 8,595,408 to 8,775,555 (180,147) | 912,901 | nothing left to run, 250 goals waiting |
+| the prompt | `cat <= file("pimos:pimos.groups")` | 8,595,408 to 8,769,465 (174,057) | 778,956 | nothing left to run, 1,222 goals waiting |
+| the link | `shutdown`, `yes` | 0 to 8,775,555 | 20,435,590 | as the prompt's row |
+
 The last row is the first time PIMOS's start, the login and the shell
 have run on the Bluespec core: everything `longrun_ipl.py --go --fep`
 does after the link, 221 device answers on the tape, 5,859 splices of
@@ -357,26 +368,30 @@ Outside the suite, like `run_pimm_shell.sh`. Ends with
 and how it stands against the primers and manuals:
 `../docs/binary_reverse_engineering.md` 1.4, "Commands past the shell".
 
-Measured 2026-11-24 from the prompt checkpoint (login ID 0, 8,587,072
-instructions), every line identical:
+Measured 2026-11-25 (R7L) from a prompt checkpoint made with R7L's
+resource model (login ID 0, 8,595,408 instructions), every line
+identical; each row re-measured so, since the shoen record grew to
+11 cells (a checkpoint made before 2026-11-25 has 8-cell records and
+is not loadable: make it again with the two commands above):
 
 | Name | Typed | Instructions | Trace lines | SCSI commands on the tape |
 |---|---|---|---|---|
-| pwd | `pwd` | 29,867 | 229,102 | 21 |
-| echo_string | `echo("a b c")` | 118,027 | 482,259 | 25 |
-| echo_list | `echo([a,b,c])` | 127,373 | 509,143 | 25 |
-| echo_new_atom | `echo(zorkqx)` | 121,155 | 489,049 | 25 |
-| usage_echo | `usage(echo)` | 133,233 | 520,129 | 25 |
-| help | `help` | 36,685 | 324,411 | 27 |
-| who | `who` | 146,977 | 555,038 | 25 |
-| history | `set hl=20`, `history` | 56,133 | 441,489 | 41 |
-| rs | `rs`, (empty) | 190,791 | 800,789 | 36 |
-| versions | `versions` | 114,472 | 610,006 | 38 |
-| compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
-| compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
-| compile_sample1 | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | 149 |
-| compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | 178 |
-| ts | `ts` | 68,783 | 184,130 | 3 |
+| pwd | `pwd` | 29,867 | 238,706 | 21 |
+| echo_string | `echo("a b c")` | 119,086 | 517,878 | 25 |
+| echo_list | `echo([a,b,c])` | 128,432 | 549,572 | 25 |
+| echo_new_atom | `echo(zorkqx)` | 122,214 | 525,706 | 25 |
+| usage_echo | `usage(echo)` | 134,283 | 559,339 | 25 |
+| help | `help` | 36,685 | 340,013 | 27 |
+| who | `who` | 148,036 | 594,630 | 25 |
+| history | `set hl=20`, `history` | 56,133 | 460,085 | 41 |
+| rs | `rs`, (empty) | 191,871 | 866,760 | 36 |
+| versions | `versions` | 114,507 | 640,392 | 38 |
+| compile_exit | `compile`, `!exit` | 256,137 | 1,108,374 | 45 |
+| compile_missing | `compile`, `sample2`, `!exit` | 319,530 | 1,859,522 | 94 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 974,813 | 4,546,925 | 149 |
+| compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,009,886 | 4,865,583 | 178 |
+| ts | `ts`, (empty) | 160,945 | 705,103 | 34 |
+| listener_sieve | `compile`, `!package work`, `sample1`, `!exit`, `listener`, `default_package(work).`, `sample1:sieve([1,2,3],E,O).` | 1,575,086 | 7,144,906 | 249 |
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
@@ -419,15 +434,24 @@ counts 187, so it is one tick behind only for a read fewer than 236
 instructions after one of the reference's ticks: the read is 135 after
 one in compile_exit (caught), 357 in compile_missing (not caught).
 
+Re-derived for R7L's checkpoint (2026-11-25; its RESTORE 2 is 483,081
+ticks, RESTORE 3 112 instructions past the last): with RESTORE 3
+dropped the core counts 423 to its next tick where the reference
+counts 311, so it is a tick behind only for a read fewer than 112
+after one of the reference's ticks. The compile's `system_timer` read
+is now 264 after one in compile_exit (not caught) and 63 in
+compile_missing (caught), so the two commands traded roles: the table
+below is the R7L run, and compile_exit's 3 is now the control.
+
 | Command | RESTORE dropped | Result |
 |---|---|---|
-| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 25,012, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
+| echo_new_atom | 1, `new_atom`'s counter | FAIL at line 27,640, instruction 8,124: `R 8 0200012731` on the reference, `R 8 0200010000` on the core (the atom numbered from the reset value) |
 | echo_new_atom | 2, 3 | PASS: no clock read |
 | compile_exit | 1 | PASS: no `new_atom` |
-| compile_exit | 2, the ticks | FAIL at line 828,137, instruction 234,242: `R 9 000007611f` / `R 9 000000022a` |
-| compile_exit | 3, the instructions since the tick | FAIL at the same line: `R 9 000007611f` / `R 9 000007611e`, one tick short |
-| compile_missing | 2 | FAIL at line 1,484,817, instruction 288,608: `R 9 000007619f` / `R 9 00000002aa` |
-| compile_missing | 3 | PASS, as predicted: the read falls past the 236 |
+| compile_exit | 2, the ticks | FAIL at line 902,215, instruction 235,341: `R 9 0000076135` / `R 9 000000022c` |
+| compile_exit | 3, the instructions since the tick | PASS, as predicted: the read falls 264 past a tick, past the 112 |
+| compile_missing | 2 | FAIL at line 1,568,167, instruction 289,707: `R 9 00000761b6` / `R 9 00000002ad` |
+| compile_missing | 3 | FAIL at the same line, as predicted (63 past a tick): `R 9 00000761b6` / `R 9 00000761b5`, one tick short |
 | pwd | 16-21: unit, lun, direction, length, the cdb's word, the cdb's length | FAIL at line 1: the trace's first command line (`B 7 1 0820004000 2 16384` on the reference) |
 | pwd | 22, the buffer's word | FAIL at line 12, a write of the data |
 | pwd | 23, the buffer's length | FAIL at line 4 |
