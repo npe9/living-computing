@@ -15,7 +15,15 @@ It builds on these pages and does not repeat them:
 - `../environment_audit.md` area G and `../pimos_roadmap.md` §9 (rungs P0-P5).
 
 **Grades.** As S§0:
-- PRINTED, PROSE, SCREENSHOT, USAGE and INFERENCE are the source grades.
+- PRINTED, PROSE, SCREENSHOT, USAGE and INFERENCE are the source grades. READ is
+  `../psi_microword.md`'s label for "printed in the thesis", read on a page image; it counts as
+  PRINTED or PROSE.
+- "computed" is arithmetic done here on sourced or MEASURED numbers. "repo" points at a file in
+  this repository that states the fact.
+- **CHECK** marks a standard figure written from memory and not sourced in this session. Examples
+  are the CEA-861/VESA DMT porch and sync numbers, the `ODDRX2F` alternative and 18 Kbit per
+  DP16KD. Each must be checked against its standard or the Lattice datasheet (FPGA-DS-02012)
+  before a test pins it.
 - OURS marks a choice made here.
 - MEASURED marks a number produced in this session by a command given in Appendix A.
 
@@ -153,10 +161,11 @@ element are **one chip**:
   a cache with a KL0/KL1 flag per entry; a mismatch traps to a microprogram that reloads the entry.
   This was "used for pseudo-PIM (KL0 and KL1 on one PSI-III)".
 - The thesis also says PSI-II/III machines served as a debugging bench, running "pseudo PIM"
-  with KL0 and KL1 together (p.146, READ, same file §3c). The held Pseudo PIM/m microprogram
-  `pimm.MEkbn` is that firmware, and its words 0..57ff equal image 1 of the KL0 control store
-  `syspsi` (MEASURED by `binary_reverse_engineering.md` §3; `../environment_audit.md` area G). The
-  two languages' microcode share a base.
+  with KL0 and KL1 together (p.146, READ, same file §3c). The held Pseudo PIM/m file
+  `pimm.MEkbn` carries both languages. Its image 1 (22,528 addresses) "is identical to `syspsi`
+  `0..57ff`, the KL0 side", and its image 2 is the KL1 microprogram (MEASURED by a delegated run,
+  `binary_reverse_engineering.md` §3; `../environment_audit.md` area G). So the held firmware for
+  KL0 and KL1 on one PSI-III exists, as two images.
 
 **So the "PSI CPU" question is not a new machine.** It is the PIM/m PU we are already building,
 made to run KL0/ESP as well as KL1.
@@ -178,8 +187,8 @@ made to run KL0/ESP as well as KL1.
 |---|---|---|---|---|---|
 | **(a) host kl0 + display/input on the FPGA** | kl0 on the Mac; `SIMPOS_MODELS`' `bitmap_display` entries send primitives over the UART | S§4.1; the PSI/UX window-server split (PROSE) | ready to build | needs no CPU; lockstep with the Python layer is free | the CPU is not hardware; link bandwidth (§3.4) |
 | **(c1) microcode: the PU runs the held PSI-III control store** | `PimPU`'s WCS loaded with `syspsi`, with the decode table `sysidat` and `sysinit`; the datapath built to the microword, so the held KL0 firmware executes KL0 | Fig. 3-25 field layout (READ), which the held stores fit (MEASURED, `../psi_microword.md` §4, §7; `asm/mekbn.py --check`); `sysidat` start addresses land 471 of 471 (MEASURED, same §4.4); TR-733 fig. 4 for PIM/m (READ); `rassy` value tables (`binary_reverse_engineering.md` §3) | **partly decoded**: the layout is read, but these remain open (`../psi_microword.md` §7 "Still open"): CCF's coding, MCF, TGIF 3, AS1F 2/3, AS2F values, JMPF 2 and bit 26, ALF 2 vs 3, EM2 operations. The decode-entry packing is open (§4.4). `sysinit` is "not characterised". That `syspsi` holds KL0 is "probable, not settled" (`../environment_audit.md` area G). The PSI-III tag and word format are "NOT FOUND in the thesis" (`../psi_microword.md` §3b). The I/O bus and timer are outside the PU (thesis p.130) | **the real machine**: the held firmware defines KL0, so nothing is interpolated at the instruction level; the same work gives a cycle-level PIM/m PU (rungs P1/P2 are "one piece of work" with it, `../environment_audit.md` area G); then `pimm.MEkbn` (Pseudo PIM/m) runs on it too | reverse engineering, "not transcription" (`../psi_acquisition.md` §8); every open field must be settled by measurement against the held words; long |
-| **(c2) instruction level: a KL0 front end on our core** | a KL0 decode-and-execute front end added to the Bluespec core, reusing its boxes; checked in lockstep against `psi/kl0.py`, as `pimm.py` checks the core today | KL0 opcodes from `psi/kl0_opcodes.tsv` (each row with a known-plaintext witness, `../../psi/README.md`); the PSI-II instruction word `001111 \| class(2) \| code(8) \| operand(24)` (TR-265, READ, area G); `sysidat` covers every opcode the held `.ptf` use (`../environment_audit.md` area G); the ESP object layout of Fig. A-1 (thesis App. A, READ) | not started. kl0 runs the FEP census: 829 success, 235 failure, 385 refused, with recipes (S§2.1). The boxes it could share exist and are tested: unify/deref `PimmDBox`; hashing `PimmHBox`, which ESP's method and slot tables need (Fig. A-1); strings `PimmSBox`, which KL0's bulk `and_`/`or_`/`xor_`/`copy_string_elements` need (S§1.5); timer `PimmTBox`; SCSI `PimmScsiBox`. The diagnostic KL1-B bench has a choice-point stack (`PimKL1BCpTb`, `../../bsv/README.md`) (INFERENCE: these are the boxes that fit) | **fast and checkable**: the oracle exists and is the same program the display runs on, so a lockstep failure points at one instruction; it puts SIMPOS-side code on our hardware soonest | an instruction-level model, like `mkPimmCore`: no timing claimed, not the PSI's mechanism (the PSI ran KL0 from microcode); new state KL1-B lacks (KL0's backtracking, trail, local and global stacks, cut, ESP objects); kl0.py has no cell format, so a cell encoding must be chosen (OURS) and the lockstep compared at the level of instructions and dereferenced register values, not memory cells, until kl0 gains one |
-| (b) a soft RISC-V CPU running a port of kl0 | e.g. the sibling flute-lx50 core | — | — | stands alone | a second kl0 to keep in step, on a CPU that is not the PSI | **dropped**: (c2) gives the same standalone result on the right machine |
+| **(c2) instruction level: a KL0 front end on our core** | a KL0 decode-and-execute front end added to the Bluespec core, reusing its boxes; checked in lockstep against `psi/kl0.py`, as `pimm.py` checks the core today | KL0 opcodes from `psi/kl0_opcodes.tsv` (each row with a known-plaintext witness, `../../psi/README.md`); the instruction format as `psi/kl0.py` decodes it from the held code (`kl0_opcodes.tsv`'s class and opcode columns; the PSI-II word `001111 \| class(2) \| code(8) \| operand(24)` of TR-265, READ, area G, is lineage only); `sysidat` "covers every opcode the six `.ptf` files use" (`../environment_audit.md` area G); the ESP object layout of Fig. A-1 (thesis App. A, READ) | not started. kl0 runs the FEP census: 829 success, 235 failure, 385 refused, with recipes (S§2.1). The boxes it could share exist and are tested: unify/deref `PimmDBox`; hashing `PimmHBox`, which ESP's method and slot tables need (Fig. A-1); strings `PimmSBox`, which KL0's bulk `and_`/`or_`/`xor_`/`copy_string_elements` need (S§1.5); timer `PimmTBox`; SCSI `PimmScsiBox`. The diagnostic KL1-B bench has a choice-point stack (`PimKL1BCpTb`, `../../bsv/README.md`) (INFERENCE: these are the boxes that fit) | **fast and checkable**: the oracle exists and is the same program the display runs on, so a lockstep failure points at one instruction; it puts SIMPOS-side code on our hardware soonest | an instruction-level model, like `mkPimmCore`: no timing claimed, not the PSI's mechanism (the PSI ran KL0 from microcode); new state KL1-B lacks (KL0's backtracking, trail, local and global stacks, cut, ESP objects); kl0.py has no cell format, so a cell encoding must be chosen (OURS) and the lockstep compared at the level of instructions and dereferenced register values, not memory cells, until kl0 gains one |
+| (b) a soft RISC-V CPU running a port of kl0 | e.g. the sibling flute-lx50 core | — | **dropped**: (c2) gives the same standalone result on the right machine | stands alone | a second kl0 to keep in step, on a CPU that is not the PSI |
 
 **Recommended staging (changed by this fact):**
 1. **Display: (a)**, host kl0 over the link, H0-H9. The display boxes never depend on which CPU
@@ -261,8 +270,8 @@ display**. The full chain Login PIMOS → FEP → PIMOS on one board needs the P
 | Mitsubishi PSI-II physical size | **not held** (S§6 Q1) | — |
 
 **Choice (OURS, following S§1.1's INFERENCE):** a 1,280-wide, one-bit frame of 944 + S lines.
-- With S = 40 the frame is 1,280×984. S = 40 is two lines at test_11's line height `0x14` = 20
-  (S§1.4 header); it is S§1.1's "two lines of the status font", with test_11 standing in for the
+- With S = 40 the frame is 1,280×984 (INFERENCE). S = 40 is two lines at test_11's line height
+  `0x14` = 20, a header field that S§1.4 itself labels "line height?". It is S§1.1's "two lines of the status font", with test_11 standing in for the
   status font, which is not held.
 - The buffer is **1,280×1,024**, for three reasons:
   - it is a power-friendly 80 words × 1,024 rows;
@@ -285,23 +294,26 @@ constraints drive only the `_dp` pins as `IO_TYPE=LVCMOS33D`, which "drives each
 its paired _dn pin ... as the complement" (`flute-lx50/constraints/ulx3s_85f.lpf` lines 74-83).
 
 The pins are ordinary I/O, not SERDES. A 10:1 TMDS serializer is built from `ODDRX1F` (2 bits per
-clock) at 5× the pixel clock, or `ODDRX2F` at 2.5× with an edge clock. ULX3S MANUAL.md (fetched
+clock) at 5× the pixel clock, or `ODDRX2F` at 2.5× with an edge clock (CHECK). ULX3S MANUAL.md (fetched
 2026-11-25) says only "4 TMDS+- video out differential pairs", 220 nF (later 22 nF) coupling, and
 mentions 800×600 and 1024×768 (for their WiFi interference). It states no maximum.
 
 | mode | pixel clock | TMDS lane rate | ODDRX1F shift clock | status | grade |
 |---|---|---|---|---|---|
-| 640×480@60 | 25 MHz | 250 Mbit/s | 125 MHz | **runs on this board model**: flute-lx50's DVI, `ODDRX1F`, serializer routed at 122 MHz against 125 (its README "HDMI output") | sibling project's record, not re-run here |
-| 1280×1024@60 VESA DMT (htotal 1688, vtotal 1066) | 108 MHz | 1,080 Mbit/s | 540 MHz | `ecppll -i 25 -o 540`: "Warning: Output frequency 540MHz not in range (10MHz, 400MHz)"; skeleton sclk **426.26 MHz FAIL at 541.71**, pclk 88.21 FAIL at 108.34 | MEASURED (Appendix A) |
+| 640×480@60 | 25 MHz | 250 Mbit/s | 125 MHz | **runs on this board model**: flute-lx50's DVI, `ODDRX1F`, its README ("HDMI output") says the old shared-phase serializer routed at 122 MHz against the 125 MHz shift clock, and lx49's per-lane load flags fixed it; no post-fix figure is given | sibling project's record, not re-run here |
+| 1280×1024@60 VESA DMT (htotal 1688, vtotal 1066: CHECK) | 108 MHz | 1,080 Mbit/s | 540 MHz | `ecppll -i 25 -o 540`: "Warning: Output frequency 540MHz not in range (10MHz, 400MHz)"; skeleton sclk **426.26 MHz FAIL at 541.71**, pclk 88.21 FAIL at 108.34 | MEASURED (Appendix A) |
 | 1280×1024 CVT-RB-like @60 | ≈91 MHz | ≈910 Mbit/s | ≈455 MHz | over the 400 MHz PLL limit `ecppll` enforces | computed |
-| **1920×1080@30 (CEA-861 VIC 34 timing, htotal 2200, vtotal 1125), 1,280×1,024 letterboxed 1:1 at (320,28)** | 74.25 nominal; **74 MHz** from the PLL (29.9 Hz) | 740 Mbit/s | 370 MHz | skeleton **closes**: sclk 399.52 / 429.37 / 391.85 MHz, pclk 87.93 / 98.31 / 95.63 MHz on seeds 1/2/3 | MEASURED |
+| **1920×1080@30 (CEA-861 VIC 34 timing, htotal 2200, vtotal 1125: CHECK), 1,280×1,024 letterboxed 1:1 at (320,28)** | 74.25 nominal; **74 MHz** from the PLL (29.9 Hz) | 740 Mbit/s | 370 MHz | skeleton **closes**: sclk 399.52 / 429.37 / 391.85 MHz, pclk 87.93 / 98.31 / 95.63 MHz on seeds 1/2/3 | MEASURED |
 | **1280×1024 reduced blanking (OURS: htotal 1440, vtotal 1054)** | 75 MHz → 49.4 Hz | 750 Mbit/s | 375 MHz | skeleton **closes**: sclk 420.88, pclk 94.87 (seed 1) | MEASURED; monitor acceptance unknown |
 | 1280×720@60 (CEA) | 74.25 MHz | 742.5 Mbit/s | 371.25 MHz | same clocks as the 1080p30 row; shows 720 of the 984 lines, so needs a vertical pan (a register) | computed; OURS |
 | 1024×768@60 VESA | 65 MHz | 650 Mbit/s | 325 MHz | 1,024 of 1,280 columns: pan both ways, or reduce | computed; OURS |
 
-**Caveat on "closes".** nextpnr checks the fabric registers that feed the `ODDRX1F`s. It does not
-check the I/O buffer's toggle rate at 740 Mbit/s on LVCMOS33D, or signal quality through the
-coupling capacitors.
+**Caveat on "closes".** "Closes" means each clock's own Fmax passes. nextpnr checks the fabric
+registers that feed the `ODDRX1F`s. It does not check:
+- the I/O buffer's toggle rate at 740 Mbit/s on LVCMOS33D;
+- signal quality through the coupling capacitors;
+- the pclk → sclk word transfer. That transfer is reported as a 1.24-1.29 ns cross-domain delay,
+  MEASURED, but not checked against the clocks' phase relation (§5.2).
 - What is proven on this board model is 250 Mbit/s.
 - That ECP5 boards commonly run 720p or 1080p30 DVI this way is a community lead, not verified this
   session (one web search found nothing specific; the Lattice datasheet FPGA-DS-02012 was not
@@ -325,7 +337,7 @@ All modes are one timing table in `mkWinScanOut`, chosen by a parameter.
 | quantity | value | grade |
 |---|---|---|
 | 1,280×1,024×1 | 1,310,720 bits = 81,920 16-bit words | computed |
-| ECP5 LFE5U-85F block RAM | **208 DP16KD** (18 Kbit each; 16 Kbit as 1,024×16) | MEASURED (nextpnr utilisation report, "DP16KD: 80/ 208") |
+| ECP5 LFE5U-85F block RAM | **208 DP16KD** (18 Kbit each, CHECK; used here as 1,024×16 = 16 Kbit) | MEASURED (nextpnr utilisation report, "DP16KD: 80/ 208") |
 | framebuffer in DP16KD | **80 blocks, 38%** | MEASURED |
 | logic of the 85F | 83,640 TRELLIS_COMB / 83,640 TRELLIS_FF; 4 EHXPLLL; 56 DCCA | MEASURED (same report) |
 | the board's part | `--85k --package CABGA381 --speed 6`, the repo's target (`../../bsv/run_fepemu_fpga.sh`, `run_fpga_build.sh`) | USAGE (repo) |
@@ -409,9 +421,11 @@ Computed from the header table; the file-length identity is S§1.4's MEASURED ch
 4. For a standalone board (later), the files go on the SD card next to the FEP's (`tools/mkfepcard.py`
    already places held files there) and are read through `mkPimmSdBlock`.
 
-**Code lookup.** JIS X 0208 codes are sparse, so the cache keeps a 94×94 index (8,836 entries × 8
-bits ≈ 5 DP16KD, OURS) from code to record. The box can then take the JIS code itself, as
-`fb_glyph` does, and the command format stays the same on both sides.
+**Code lookup.** JIS X 0208 codes are sparse, so the cache keeps a 94×94 index for rows and columns 21-7E (8,836 entries × 8
+bits ≈ 5 DP16KD, OURS) from code to record. The codes outside it are test_11's control codes 0-0x1f
+and its 0xffff entry (S§1.4), 33 in all, which take a small direct table beside it. The box can
+then take the JIS code itself, as `fb_glyph` does, and the command format stays the same on both
+sides.
 
 **A missing glyph draws S§1.4's "missing glyph" box**, so a gap is never silent.
 
@@ -562,7 +576,7 @@ All benches run in Bluesim, the repo's pattern:
 | bench | what it checks | oracle | injected fault that must fail it |
 |---|---|---|---|
 | `WinFbBoxTb` | a command stream (from a file) through `mkWinFbBox`; the frame dumped as **PBM P4** | the Python device layer run on the same stream, its PBM compared **byte for byte** (`cmp`), like `run_pimm_lockstep.sh` | (1) swap the MSB/LSB bit order: every glyph row differs; (2) `exclusive_or` acting as `set`: the XOR-twice-erases case fails (cf. M8); (3) the glyph record's x and y swapped: the 'A' at 16#2341 fails its 48 set dots (cf. M0); (4) the fill's right-edge mask one dot short: the border dot count fails (cf. M5) |
-| `WinScanOutTb` | one frame of the selected mode: hsync/vsync/de counts per line and per frame, against the mode table | the table (VESA or CEA numbers, or OURS for reduced blanking) | hsync one dot late: the line-timing check fails |
+| `WinScanOutTb` | one frame of the selected mode: hsync/vsync/de counts per line and per frame, against the mode table | the table (VESA or CEA numbers, CHECKed against the standards before they are pinned; OURS for reduced blanking) | hsync one dot late: the line-timing check fails |
 | `WinTmdsTb` | the serializer's four lanes captured for one frame; decoded by a Python TMDS decoder (OURS, stdlib) back to pixels, sync and control periods | the decoded image equals the PBM; running disparity stays bounded; control symbols in blanking | flip one disparity branch: the balance check fails; a lane's load phase off by one: every symbol misframed |
 | `WinInputTb` | §3.3 wire-level round trip | the event script itself | swap make/break handling: key-up events appear as presses |
 | `WinLinkTb` | host-link framing: records in, primitives out, CRC | the host-side encoder | drop one byte: the CRC failure is reported, not drawn |
@@ -610,6 +624,10 @@ Tools: yosys 0.51, nextpnr-ecp5 0.6, `--85k --package CABGA381 --speed 6`.
 | mode 1, 1280×1024@60, seed 1 | 1,426 | 375 | 80 | 1 | **88.21 FAIL at 108.34** | **426.26 FAIL at 541.71** | 106.55 |
 | mode 2, 1280×1024 RB@49, seed 1 | 1,444 | 375 | 80 | 1 | 94.87 PASS at 75.00 | 420.88 PASS at 375.09 | 112.11 |
 
+The pclk → sclk cross-domain "Max delay" is 1.24, 1.24 and 1.25 ns (mode 0, seeds 1-3), 1.47 ns
+(mode 1) and 1.29 ns (mode 2), MEASURED. It is reported, not timed against a phase relation
+(§5.2). The `<async>` → 25 MHz paths are the `ftdi_txd` pin input.
+
 yosys's own cell count for mode 0: 1,165 LUT4 + 69 CCU2C, 375 TRELLIS_FF, 80 DP16KD, 4 ODDRX1F. The
 FEP emulator's figures are in yosys's LUT4 terms, so 1,165 + 2 × 69 ≈ **1,303 LUT4** is the figure
 to compare with them.
@@ -649,7 +667,7 @@ fixed one.
 | clock | source | used by |
 |---|---|---|
 | 25 MHz | board oscillator, G2 (`ulx3s_85f.lpf`) | system domain: drawing engine, link, input, FEP emulator (35.03 MHz Fmax, PASS at 25) |
-| 370 MHz shift + 74 MHz pixel | **one EHXPLLL**: `ecppll -i 25 -o 370 --clkout1 74` → CLKI_DIV 5, CLKFB_DIV 74, VCO 740 MHz, CLKOP ÷2 = 370, CLKOS ÷10 = 74 (MEASURED output) | scan-out, TMDS, serializer; the pixel and shift clocks are phase-locked from one VCO, so the serializer's load needs no synchronizer |
+| 370 MHz shift + 74 MHz pixel | **one EHXPLLL**: `ecppll -i 25 -o 370 --clkout1 74` → CLKI_DIV 5, CLKFB_DIV 74, VCO 740 MHz, CLKOP ÷2 = 370, CLKOS ÷10 = 74 (MEASURED output) | scan-out, TMDS, serializer; the pixel and shift clocks are phase-locked from one VCO, so the serializer's load uses no synchronizer. nextpnr reports the pclk → sclk transfer (`h0 <= t0`) as a cross-domain "Max delay" of 1.24 / 1.24 / 1.25 ns (mode 0, seeds 1-3) and 1.29 ns (mode 2), MEASURED, under one 2.70 ns shift period. It is **reported, not checked** against the two outputs' phase relation, so H2 must simulate the load phase and H3 must constrain it |
 | 375 + 75 MHz | `ecppll -i 25 -o 375 --clkout1 75` (VCO 750) | mode 2 |
 | 12 MHz (USB low-speed) | a second PLL output, or a 48 MHz output ÷4 | the HID host (later) |
 
