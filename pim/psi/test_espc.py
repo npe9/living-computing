@@ -593,15 +593,15 @@ class Standins(unittest.TestCase):
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
             'simpos##binary_file', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
-            'simpos##common_network', 'simpos##context', 'simpos##date_time',
-            'simpos##directory',
+            'simpos##common_network', 'simpos##context', 'simpos##coordinator',
+            'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
             'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
-            'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
+            'simpos##standard_input_file', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
             'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
@@ -2169,10 +2169,11 @@ end.'''
         # held pimos_fep_superviser local full_pathname/1 @1bc: clause 1
         # misses "pimos:pimfep.image" (no world defines pimos: yet, and the
         # image is not in the archive), so clause 2 asks the coordinator
-        # for an image file name: the coordinator is not stood in (B6)
+        # for an image file name: until B6 (test_step3l_b6_b8) that send
+        # refused (class not loaded); now no login file was read, the
+        # coordinator has no such item, and full_pathname/1 fails
         r = self.run_local(m, 'pimfep##pimos_fep_superviser', 0x1bc, [K.Var()])
-        self.assertEqual(r[:2], ('refused', 'simpos'))
-        self.assertIn('simpos##coordinator:information/3', r[2])
+        self.assertEqual(r, 'fail')
         # held pimfep##net_spawn_user set_default_node/2 @29-36 with this
         # node's name (network_node_name's "psi", OURS): its full name is
         # stored; another name fails (INFERENCE: get_your_node/3's later
@@ -2266,6 +2267,130 @@ end.'''
             w, 'define', [K.Str('me'), K.Cons(K.Str('>sys>csp'), K.NIL), w])))
         self.assertEqual(full_name('me:INSTALL.DIR'), '>sys>csp>INSTALL.DIR')
         self.assertIsNone(full_name('me:login.com'))
+
+    B8_PROBES = '''class b8_boot has
+nature as_boot_program;
+instance
+attribute events := 0;
+:goal(Prog) :-
+    :create(#boot_process, B), :activate(B, Prog),
+    :create(#pimfep##simpos_user, "pmpsi", "pmpsi", SU),
+    :self(#process, P), :setup_process(SU, P),
+    :start(#coordinator),
+    put_events(Prog!events),
+    :create(#stream, Idle), :get(Idle, _);
+local
+put_events([]) :- !;
+put_events([E|Es]) :- :put(#coordinator!events, E), put_events(Es);
+end.'''
+
+    def boot_to_top(self, events):
+        # step 3l, B2-B8 on one machine: the boot program (OURS probe) comes
+        # under the supervisor (B3), logs in as pmpsi with the held
+        # simpos_user create/4 and setup_process/2 (B7), starts the
+        # coordinator process (B6, OURS), puts EVENTS on the coordinator's
+        # stream (OURS: standing in for the mouse and the menu's answer)
+        # and waits for ever on a stream of its own.  -> (machine, the
+        # refusal that ended the run)
+        m = self.fs_machine(self.B8_PROBES)
+        (prog,) = K.call_class_method(m, 'simpos##b8_boot', 'create', [K.Var()])[0]
+        t = K.NIL
+        for e in reversed(events):
+            t = K.Cons(e, t)
+        m.set_slot(prog, 'events', t)
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(prog, 'invoke', [prog]))
+        return m, cm.exception
+
+    @staticmethod
+    def jstr(text):
+        s = K.Str('')
+        s.text = text
+        return s
+
+    def test_step3l_b6_b8(self):
+        # step 3l, docs/simpos/boot_route.md B6 and B8: from the boot process
+        # to a program started from the system menu.  The coordinator
+        # (standin/coordinator.esp, coordinator_program.esp: OURS, labelled)
+        # reads the HELD login.com through standard_input_file gett/2 (the
+        # reader OURS, psi/esp_reader.py), applies its `define` to the
+        # world, holds its `menu` columns and answers information/3.  On
+        # `invoke_system_menu` (the printed translation-table action, TR-046
+        # PDF p28) and {select, "Login PIMOS"} (OURS) it starts the item's
+        # class in a new process the way TM-134 p71 prints: create, create
+        # (#process), activate.  The held pimfep##pimos_login_requester then
+        # runs in that process to its first SIMPOS window send.
+        # Injections, observed (2026-11-25; each from a backup copy,
+        # restored by copy, cmp clean):
+        #   N1 gett/2 does not advance (kl0.py): this test ERROR
+        #      (kl0.StepLimit 600001: the login file is read for ever),
+        #      nothing else.
+        #   N2 a `define` item is taken as a user item (coordinator.esp):
+        #      this test FAIL, nothing else.
+        #   N3 a select searches the menu, shown or not (coordinator.esp,
+        #      the guard dropped too): this test FAIL ('simpos' !=
+        #      'would suspend': the no-menu select started the item),
+        #      nothing else.
+        #   N4 the reader's atoms without `##` (esp_reader.py): this test
+        #      FAIL (refused "standard_input_file: reader: expected '}',
+        #      got ('op', '##')"), nothing else.
+        #   N5 information/3 succeeds with [] for an absent key
+        #      (coordinator.esp): this test FAIL, nothing else.
+        #   test_kl0.py stayed OK in N1-N5.  (A first run had
+        #   test_step3l_b5 FAIL in all five: its pin of the B6 blocker,
+        #   coordinator information/3 not loaded, was stale; corrected.)
+        login = self.jstr('Login PIMOS')
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])])
+        # the furthest point: the held login requester's initiate/1 sends
+        # :create(#standard_io_window, W, [{size, ...}, ...]) (@af-b4), a
+        # SIMPOS window class not stood in
+        self.assertEqual(r.cause, 'simpos')
+        self.assertIn('simpos##standard_io_window:create/3', r.detail)
+        C = K.ClassRef('simpos##coordinator')
+        # the login file was read: menu columns, user items, define
+        menu = [self._walk(c) for c in self._walk(m.get_slot(C, 'menu'))]
+        self.assertEqual([len(c) for c in menu], [7, 3])
+        self.assertEqual([K.deref(i.args[0]).text for i in menu[1]],
+                         ['Pseudo Multi-PSI', 'Login PIMOS', '(Pseudo)Multi-PSI Installer'])
+        self.assertEqual(K.deref(menu[1][1].args[1]), K.Atom('pimfep##pimos_login_requester'))
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##coordinator', 'information',
+                                             [K.Atom('package'), K.Var()])[0][1], K.Atom('user'))
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'simpos##coordinator', 'information',
+                                             [K.Atom('pimos_login_additional_function'), K.Var()]), [])
+        D = K.ClassRef('simpos##directory')
+
+        def full_name(path):
+            m.reset()
+            f = K.Var()
+            for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str(path), f, D]):
+                return K.deref(f).text
+            return None
+        self.assertEqual(full_name('pimos:'), '>sys>csp>PIMOS.DIR')
+        self.assertEqual(full_name('sys:PIMM.PARAM'), '>sys>csp>SYSTEM.DIR>PIMM.PARAM.1')
+        self.assertEqual(full_name('pmpsi:pimm.MEkbn'), '>sys>csp>PMPSI.DIR>pimm.MEkbn.1')
+        # the started process: the coordinator's child, running the
+        # requester (on top of its invocation stack), world inherited
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        self.assertIs(m.running_process(), p)
+        cp = m.get_slot(C, 'process')
+        self.assertIs(m.get_slot(p, 'parent_process'), cp)
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        self.assertEqual(top.cid, 'pimfep##pimos_login_requester')
+        self.assertIs(m.get_slot(p, 'world'), m.get_slot(cp, 'world'))
+        # the coordinator waits on its stream, the boot process on its own
+        self.assertEqual(m.get_slot(cp, 'status'), K.Atom('suspended'))
+        # held pimos_fep_superviser full_pathname/1 now finds pimos: (the
+        # login file's define) without the image, and the coordinator
+        # has no pimfep_superviser_image_file_name item: it fails
+        self.assertEqual(self.run_local(m, 'pimfep##pimos_fep_superviser', 0x1bc, [K.Var()]), 'fail')
+        # a select with no menu shown starts nothing: every process waits
+        m, r = self.boot_to_top([K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])])
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertIn('no process is ready', r.detail)
+        self.assertEqual(m.get_slot(C, 'started'), K.NIL)
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:

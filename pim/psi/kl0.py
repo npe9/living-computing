@@ -1133,6 +1133,42 @@ class Machine:
             return self.fail()
         return self.proceed()
 
+    def input_terms(self, inp):
+        """The terms of a standard_input_file's file (psi/esp_reader.py,
+        OURS) and its position."""
+        import esp_reader
+        f = self.get_slot(inp, 'file')
+        text = self.get_slot(f, 'contents') if isinstance(f, Instance) else None
+        if not isinstance(text, Str):
+            raise Refusal('simpos', 'standard_input_file: %r holds no text here' % (f,))
+        import simpos_fs
+        try:
+            terms = esp_reader.read_terms(sys.modules[__name__], simpos_fs.text_of(text.codes()))
+        except ValueError as e:
+            raise Refusal('simpos', 'standard_input_file: %s' % e)
+        return terms, self.get_slot(inp, 'position')
+
+    def input_gett(self):
+        """:gett(In, Term) -- the next term, or failure at the end.
+        INTERPOLATED: the held send (pimos_login_requester items_list/3
+        @17b-17e); the end fails (INFERENCE from held source utter
+        QXT/trans.esp:20-24, whose gett loop is ended by its last clause,
+        and kwic systems.esp:368-374, which tests end_of_input/1 first).
+        The reader is OURS (psi/esp_reader.py)."""
+        inp = deref(self.x[1])
+        terms, pos = self.input_terms(inp)
+        if pos >= len(terms):
+            return self.fail()
+        self.set_slot(inp, 'position', pos + 1)
+        return self.proceed() if self.unify(self.x[0], terms[pos]) else self.fail()
+
+    def input_end(self):
+        """:end_of_input(In) -- INTERPOLATED from held source kwic-esp
+        src/systems.esp:368-369 and dbUtil.esp:1433-1434 (ANALOGY): true
+        when every term has been read."""
+        terms, pos = self.input_terms(deref(self.x[0]))
+        return self.proceed() if pos >= len(terms) else self.fail()
+
     def world_aliases(self):
         """[(name, [dir text, ...])]: the calling process's world first,
         then the system aliases (OURS, see directory_retrieve)."""
@@ -2630,6 +2666,9 @@ SIMPOS_MODELS = {
     # standin/directory.esp, psi/simpos_fs.py)
     ('simpos##directory', 'class', 'retrieve', 3): lambda m: m.directory_retrieve(3),
     ('simpos##directory', 'class', 'retrieve', 4): lambda m: m.directory_retrieve(4),
+    # step 3l, B6: reading terms (standin/standard_input_file.esp)
+    ('simpos##standard_input_file', 'instance', 'gett', 2): Machine.input_gett,
+    ('simpos##standard_input_file', 'instance', 'end_of_input', 1): Machine.input_end,
 }
 
 
