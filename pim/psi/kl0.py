@@ -1331,6 +1331,17 @@ class Machine:
     # blt f2 (step 3e): as f0, the difference UNKNOWN (kl0_opcodes.tsv)
     op_if_identical_f2 = op_if_identical
 
+    # blt e1 (step 3h): integer(A_A) as a test-and-branch
+    def op_if_integer(self, code, off, a, b, c, v):
+        if b:
+            raise Refusal('operand', '%s @%x: blt e1 %02x %02x %02x: only a zero second byte is witnessed'
+                          % (code.id, off, a, b, c))
+        x = deref(self.x[a])
+        if isinstance(x, int) and not isinstance(x, bool):
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):

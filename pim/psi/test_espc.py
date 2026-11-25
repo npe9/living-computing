@@ -1210,7 +1210,12 @@ end.''', 'simpos')
         # the e_string stand-in, scsi receive_command/3 at check_argument's
         # `string` clause, blt 0b on an unbound); two scsi_device rows stop
         # later, at an unbound receiver.  Not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 808, 'failure': 165, 'refused': 430, 'exception': 16,
+        # step 3h: blt e1 witnessed (p_what.esp:88, g_window.esp:147):
+        # 808 / 165 / 430 -> 809 / 165 / 429.  pimos_fep_initiation_table
+        # set_scsi_init_list/2 succeeds (checked alone: the census's unbound
+        # list becomes four non-integers, each stored as nil; unbound
+        # probing, not progress); six rows stop later
+        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 165, 'refused': 429, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1267,7 +1272,9 @@ end.''', 'simpos')
         # on a receiver in target mode (lun 0, an integer), held behaviour
         # step 3h: pmi 34/35 witnessed: 831 / 163 / 409 (the same four rows
         # as the plain census move)
-        self.assertEqual((len(rows), out), (1420, {'success': 831, 'failure': 163, 'refused': 409,
+        # step 3h: blt e1 witnessed: 831 / 163 / 409 -> 832 / 163 / 408 (the
+        # same seven rows as the plain census)
+        self.assertEqual((len(rows), out), (1420, {'success': 832, 'failure': 163, 'refused': 408,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 96)
@@ -1474,8 +1481,9 @@ end.''', 'simpos')
             for sel in ('low_if/2', 'send_request/5', 'receive_request/5'):
                 self.assertEqual(run(cid, sel, None), ('failure',) + sw, (cid, sel))
                 # an initiator (lun := initiator by the held set_lun/2) gets
-                # past `initiator`: low_if/2 to blt e1, the others to the
-                # unit check on the census's unbound unit
+                # past `initiator`: low_if/2 to an opcode (blt e0, past the
+                # blt e1 of include_item_1/3 since step 3h), the others to
+                # the unit check on the census's unbound unit
                 want = 'opcode' if sel == 'low_if/2' else 'unbound argument'
                 self.assertEqual(run(cid, sel, K.Atom('initiator'))[0], want, (cid, sel))
             # a target method: on lun 0 it reaches the unbound unit; on an

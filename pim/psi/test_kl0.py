@@ -208,6 +208,13 @@ files run; observed):
     here; test_espc test_fep_census and test_step3f_census_recipes fail;
   - the non-zero second/third byte refusal removed: only
     test_nonzero_bytes_refused fails; test_espc passes.
+Step 3h's blt e1 (if_integer: p_what.esp:88, g_window.esp:147,
+p_MAIN.esp:723; injected the same way; observed):
+  - the branch inverted (jump on an integer): test_if_integer and
+    test_census fail here; test_espc test_fep_census,
+    test_step3f_census_recipes and test_step3h_scsi_mode fail;
+  - the non-zero second byte refusal removed: only test_if_integer
+    fails; test_espc passes.
 """
 import os
 import sys
@@ -263,8 +270,8 @@ class Table(unittest.TestCase):
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
         # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
         # step 3e's pmi ca and blt f2, 125 before step 3g's seven (pmi c1
-        # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35
-        self.assertEqual(len(rows), 134)
+        # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1
+        self.assertEqual(len(rows), 135)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1020,6 +1027,46 @@ class Step3hRows(unittest.TestCase):
         self.assertEqual(self.send3(K.Vec([A('init'), A('htree_view'), 7, 3, 4])),
                          ('result', "string#'abnormal'"))
 
+    def run_or(self, cid, name, args):
+        m = machine()
+        code = m.code(cid)
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        try:
+            n = sum(1 for _ in m.solve((code, ps[(name, len(args))].offset), args))
+            return n, [K.resolve(a) for a in args]
+        except K.Refusal as e:
+            return e.cause, e.detail.split(' (')[0]
+
+    def test_if_integer(self):
+        # blt e1 (step 3h): integer/1 as a test-and-branch.
+        # what_manipulator $or$3/2 (p_what.esp:87-89 `(Code==exit,!;
+        # integer(Code),!,:select(W,Code); Code==previous_page,!,
+        # :previous_page(W); ...`), W unbound: an integer goes on to select/2
+        # (@53b), anything else jumps to @53d, the previous_page test
+        cid = 'paragraph##what_manipulator'
+        self.assertEqual(self.run_or(cid, '$or$3', [A('exit'), K.Var()])[0], 1)
+        self.assertEqual(self.run_or(cid, '$or$3', [5, K.Var()]),
+                         ('unbound receiver', 'send select/2 to an unbound receiver'))
+        self.assertEqual(self.run_or(cid, '$or$3', [A('previous_page'), K.Var()]),
+                         ('unbound receiver', 'send previous_page/1 to an unbound receiver'))
+        # an unbound Code is not an integer: e1 jumps, and it does not
+        # reach select/2
+        self.assertNotEqual(self.run_or(cid, '$or$3', [K.Var(), K.Var()])[1:],
+                            ('send select/2 to an unbound receiver',))
+        # A != 0: view_selector $or$11/5 (p_MAIN.esp:723 `(integer(N),
+        # N>Max,!,F1=1,N1=Max;F1=F,N1=N)`, registers F, N, F1, Max, N1): a
+        # non-integer N takes F1=F, N1=N (@a2e-a2f); an integer goes on
+        # to the unrowed blt f4 (N>Max)
+        cid = 'paragraph##view_selector'
+        n, r = self.run_or(cid, '$or$11', [A('f'), A('t'), K.Var(), 9, K.Var()])
+        self.assertEqual((n, r[2], r[4]), (1, A('f'), A('t')))
+        self.assertEqual(self.run_or(cid, '$or$11', [K.Var(), 3, K.Var(), 9, K.Var()]),
+                         ('opcode', 'blt f4'))
+        m = machine()
+        fake = types.SimpleNamespace(id='test', cells={})
+        with self.assertRaises(K.Refusal):
+            m.op_if_integer(fake, 0, 0, 1, 3, 0)
+
     def test_nonzero_bytes_refused(self):
         m = machine()
         fake = types.SimpleNamespace(id='test', cells={})
@@ -1072,7 +1119,10 @@ class Census(unittest.TestCase):
         # unbound/1 (blt 10, step 3c) takes the three `blt 10` methods on:
         # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
-            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 20,
+            # step 3h: blt e1 witnessed: 10 csp_pe_control rows go on to a
+            # slot their class lacks ('no slot' 30 -> 40), 4 state_pe rows to
+            # blt f4 (4 -> 8)
+            'no method': 56, 'no slot': 40, 'built-in': 24, 'unbound receiver': 20,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)
             # and up_down_icon code/4 at an unbound argument.  Step 3e:
@@ -1095,9 +1145,9 @@ class Census(unittest.TestCase):
             # an unbound receiver: 'operand' 7 -> 3, 'unbound receiver'
             # 16 -> 20
             'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 3, 'pool': 1,
-            'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
+            'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
-            'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
+            'missing opcode blt f4': 8, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
             # step 3g: pmi c3 (retry) witnessed: pe_registers
             # register_type/3 succeeds (its unbound first argument takes

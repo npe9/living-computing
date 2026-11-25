@@ -2585,7 +2585,8 @@ Test (`test_espc.py` `test_step3h_scsi_mode`): a pin of held behaviour.
 - On lun 0, the three initiator methods fail with status `software`,
   detail `arguments`.
 - With `lun := initiator`, written by the held `set_lun/2`, they get
-  past it: `low_if/2` to blt e1, the other two to the unit check.
+  past it: `low_if/2` to an opcode (blt e1 before the next milestone,
+  blt e0 after it), the other two to the unit check.
 - `send_data/4` reaches the unit check on lun 0 and fails at `target`
   on an initiator.
 
@@ -2644,6 +2645,75 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
   `test_handlers_are_the_table` and (error) `test_nonzero_bytes_refused`
   fail; so do `test_fep_census` and `test_step3f_census_recipes`.
 - The byte refusal removed: only `test_nonzero_bytes_refused` fails.
+
+### Step 3h: blt e1, `integer/1` as a test-and-branch (2026-11-25)
+
+The census's commonest missing opcode (7 recipe rows, 14 six-package
+rows). It was listed as seen only in `$or$` predicates whose source is
+not held. In fact 16 of its 156 uses in the source-held packages are in
+paragraph, and a `$or$`'s source is the disjunction in its parent
+clause.
+
+**KNOWN-PLAINTEXT** (release 3200 source against the 3500 object):
+
+- `what_manipulator` `$or$3/2` @53a `e1 00 00 01`, then `74 01 02
+  select/2`. That is p_what.esp:87-89 `(Code==exit,!; integer(Code),!,
+  :select(W,Code); Code==previous_page,!, ...`. The `==exit` test is
+  @537-539. The else lands on @53d = @53a + 2 + 1, the `previous_page`
+  test.
+- `g_window` `$or$12/2` @704 `e1 00 00 03`. That is g_window.esp:147-149
+  `( integer(N),!, :get_number_string(#symbolizer,N,P1); atom(N),!,
+  :get_atom_string(#symbolizer,N,P1))`. The integer branch @705-708
+  ends in an execute. The else lands on @709 = @704 + 2 + 3, the `atom`
+  test (blt 00, not rowed).
+- A != 0: `view_selector` `$or$11/5` @a29 `e1 01 00 03`. That is
+  p_MAIN.esp:723 `(integer(N),N>Max,!,F1=1,N1=Max;F1=F,N1=N)`, with N in
+  A1. The else lands on @a2e-a2f, `F1=F` and `N1=N`.
+
+So e1 is blt 01 (`integer/1`, which fails) as a test-and-branch: go on
+if A_A is an integer, else jump to cell + 2 + u8, as f0 does for `==`.
+That 0xe0 | n is the branch form of blt n is a NAMING INFERENCE only.
+blt e0 (151 held uses) beside blt 00 (`atom`, unrowed) fits it, but
+neither is added. The second byte is 0 in all 208 held uses; a
+non-zero one refuses.
+
+Effect, row by row (MEASURED 2026-11-25):
+
+- Six packages: totals unchanged (311 / 12 / 206 / 1). 14 rows stop
+  later:
+  - 10 `csp_pe_control` rows go on to a slot write (`Obj!start := on`,
+    @1af; `mpc`, @1f3 onwards) on a receiver whose class has no slots.
+    The class has no natures and no slots of its own, so the slots must
+    come from a class that inherits it. That is a census artifact of
+    instantiating it alone.
+  - 4 `state_pe` rows go on to blt f4 (unrowed).
+- Plain `census --fep`: 808 / 165 / 430 becomes 809 / 165 / 429. With
+  recipes, 831 / 163 / 409 becomes 832 / 163 / 408. The same seven rows
+  move:
+  - `pimos_fep_initiation_table set_scsi_init_list/2` succeeds. Checked
+    alone: the census's unbound list becomes four unbound elements.
+    Each is not an integer, so each is stored as `nil` (@149-152).
+    Unbound probing, not progress.
+  - cmt `test_unit_ready/1`, `inquiry/1` and `request_sense/2` go on to
+    a pool constant of kind `raw` (`$or$2/2` @e6, `pmi 29 01 ff 29`, the
+    else of its `e1`), which kl0 does not model.
+  - cmt and scsi `transfer/6` go on to blt e0.
+  - `mbus_allocator allocate_without_check/4` goes on to a SIMPOS class
+    not loaded.
+
+Test (`test_kl0.py` `test_if_integer`). Each case runs the held
+`$or$` predicate:
+- `exit` succeeds;
+- 5 reaches `select/2`, sent to the unbound W;
+- `previous_page` reaches `previous_page/1`;
+- an unbound Code does not reach `select/2`;
+- in view_selector, `t` takes `F1=F, N1=N` and 3 reaches blt f4.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+- The branch inverted: `test_if_integer` and `test_census` fail; so do
+  `test_espc.py`'s `test_fep_census`, `test_step3f_census_recipes` and
+  `test_step3h_scsi_mode`.
+- The byte refusal removed: only `test_if_integer` fails.
 
 ## Open
 
