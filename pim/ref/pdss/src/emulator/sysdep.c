@@ -92,7 +92,10 @@ void pdss_stop_self(void)
 int pdss_getpid(void) { return (int)getpid(); }
 void pdss_pause(void) { pause(); }
 unsigned pdss_alarm(unsigned seconds) { return alarm(seconds); }
-int pdss_chdir(const char *dir) { return chdir(dir); }
+/* A NULL path (expand_path_name failed, e.g. "~nosuchuser") fails as
+   the call did on SunOS (EFAULT), instead of crashing as modern C
+   libraries do. */
+int pdss_chdir(const char *dir) { return dir ? chdir(dir) : -1; }
 int pdss_unlink(const char *file) { return unlink(file); }
 
 const char *pdss_home_of(const char *user)
@@ -116,7 +119,7 @@ struct pdss_dir { DIR *d; };
 PDSS_DIR *pdss_opendir(const char *path)
 {
     PDSS_DIR *r;
-    DIR *d = opendir(path);
+    DIR *d = path ? opendir(path) : NULL;	/* NULL path: see pdss_chdir */
     if(!d) return NULL;
     r = malloc(sizeof *r);
     if(!r){ closedir(d); return NULL; }

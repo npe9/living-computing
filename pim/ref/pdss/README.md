@@ -91,13 +91,21 @@ commit order (`git log -- src/emulator`):
   assembler's and the reader's temporary areas align blocks for the
   structs they hold (they were 4-byte aligned, enough when a pointer
   was 4 bytes).
-- **No undefined or implementation-defined integer behaviour.** Values
-  that must wrap as 32-bit two's complement are computed unsigned and
-  converted with `pdss_s32` (by arithmetic, not a cast); priorities,
+- **Integer overflow and sign-bit shifts.** UBSan is silent on all 186
+  conformance jobs. Values found to wrap as 32-bit two's complement are
+  computed unsigned and converted with `pdss_s32` (by arithmetic, not a
+  cast); priorities,
   string descriptors, string elements and the packing of characters
   into string words (a byte of 0x80 or more shifted left 24) no longer
   shift into the sign bit of an `int`; integer literals at `INT32_MIN`
-  no longer overflow. Byte order: strings are packed into words, and
+  no longer overflow. Not yet routed through `pdss_s32`: the casts of a
+  `PREF` to `int32_t`/`int` when a reference is stored in a cell or a
+  counter field (`cell.h` `SetObjectof` and friends, `port.h`
+  `pdss_v_ptr`, `gc_dead.c`, `saveload.c`, `print.c` `HashIndex`) and
+  the assembler's label offsets (`assemble.c` `LabOffset`), which rely
+  on the conversion of an out-of-range unsigned value to a signed one
+  wrapping, as it does on every two's-complement compiler (GCC and clang
+  document it; UBSan does not check it). Byte order: strings are packed into words, and
   code words and save files read and written, by shifts and `memcpy`;
   no source views a cell's storage as bytes, and no `#if` selects on a
   machine or a byte order (checked by grep).
@@ -117,7 +125,15 @@ commit order (`git log -- src/emulator`):
   else does not compile; `tools/posixcheck.py` (run by `test.sh`)
   checks that no other built source includes a non-ISO header or names
   a POSIX function. A port to a system without POSIX replaces
-  `sysdep.h` and `sysdep.c`.
+  `sysdep.h` and `sysdep.c`. The conformance jobs do not reach the
+  directory commands; `ls`, `cd`, `pwd`, `cd("~root")`, `cd` to an
+  unknown `~user` and a wildcard `rm` were run once by hand under ASan
+  (2026-11-25; no report, two files removed). That run found a crash:
+  an unknown `~user` makes `expand_path_name` return NULL, which SunOS's
+  `chdir`/`opendir` rejected (EFAULT) but modern C libraries
+  dereference; `pdss_chdir` and `pdss_opendir` now fail on NULL, and
+  PDSS prints "No such directory" as it did. `alarm`, `pause` and the
+  job-control stop compile but are exercised by no test.
 - **Bugs of the 1992 source fixed on the way**: `atom.c` modified a
   variable twice without a sequence point; `read_line`/`read_buffer`
   returned an uninitialised character after a GC restart or for a
@@ -226,7 +242,11 @@ tables and native predicates a run touches, not the work done.
 Leads (not tested here; exact commands):
 
 - Linux x86_64 or arm64, gcc or clang: `./test.sh && ./test_slow.sh`
-  (the `x86_64` target is macOS-only; on Linux use `native`). Docker is
+  (the `x86_64` target is macOS-only; on Linux use `native`). Every
+  file sees `sigset_t` through `sysdep.h`; glibc hides it under a strict
+  `-std=c11` unless a POSIX feature macro is defined. `modern.sh`
+  passes no `-std`, so the compilers' default (GNU) dialect should do;
+  untested. Docker is
   installed on this host but its daemon was not running:
   `docker run --rm -v "$PWD":/w -w /w/pim/ref/pdss gcc:14 sh -c './test.sh'`.
 - Big-endian: no big-endian toolchain with a C library is installed
@@ -237,8 +257,8 @@ Leads (not tested here; exact commands):
 - 32-bit with a C library: `CC="gcc -m32" ./modern.sh native` on an
   x86_64 Linux with multilib, then `./conformance.sh build-native`
   against `golden32/`.
-- Windows: replace `sysdep.c` (regex, signals, `getcwd`) and the
-  direct POSIX uses listed above; the rest is ISO C.
+- Windows: replace `sysdep.h` and `sysdep.c` (regex, signal masks and
+  job control, the wrapped calls, directories); the rest is ISO C.
 
 Remaining compiler warnings with `-Wall -Wextra` (Apple clang 21,
 arm64): 661 `-Wpointer-sign` (`CHAR` is `unsigned char` and is passed

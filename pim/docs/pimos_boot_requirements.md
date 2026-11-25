@@ -559,7 +559,7 @@ The 2026-11-20 port kept pointers in `int` and ran only x86_64 below
 table for outside addresses) where it kept pointers, so cells stay 8
 bytes as in 1992; the code is written not to depend on word size,
 byte order, alignment or the signedness of `char`, and POSIX is
-confined to one file. Tested: clang and GCC 15, natively on arm64 and
+confined to two files (`sysdep.h`, `sysdep.c`). Tested: clang and GCC 15, natively on arm64 and
 under Rosetta on x86_64, with plain `char` signed and unsigned, and
 under ASan and UBSan (silent); all give byte-identical transcripts and
 save files. The 1992 save files, written big-endian on a SPARC, load.
