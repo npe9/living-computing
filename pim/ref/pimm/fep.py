@@ -82,7 +82,7 @@ conversation").
 import struct
 
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
-READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT = 201, 203, 210, 60, 70
+READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT, TERMINATE = 201, 203, 210, 60, 70, 80
 CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
 # docs/fep_services.md 2 (the commands, from pimos.vmac):
 FEP_ATTRIBUTES, CREATE_STRING_IO, IO = 240, 601, 620
@@ -95,7 +95,11 @@ ABORTED = 6                        # fep#aborted (pimos.vmac)
 # the high byte first (fep_services.md 7.5): the letters and digits in
 # row 23, the punctuation of asm/psdpim.py's table in row 21
 _PUNCT = {' ': 0x21, ',': 0x24, '.': 0x25, ':': 0x27, '_': 0x32, '/': 0x3f,
-          '-': 0x5d, '<': 0x63, '>': 0x64, '!': 0x2a, '?': 0x29, '*': 0x76}
+          '-': 0x5d, '<': 0x63, '>': 0x64, '!': 0x2a, '?': 0x29, '*': 0x76,
+          # PIMOS's own table, server/telnet/code_cv.kl1:154-182
+          # (table_ascii_to_jis): for a typed command line's quotes,
+          # brackets and the shell's <= and =>
+          '"': 0x49, '(': 0x4a, ')': 0x4b, '=': 0x61}
 
 
 def jis(text):
@@ -126,6 +130,11 @@ ATTRIBUTES = [0, jis('SIMPOS V7'), jis('PSI'), jis('V0.45'), jis('>'), jis('.'),
 # the string-I/O programs 601 makes (fep_services.md 6.4)
 REPLIER, SERVER, USER_DEVICE = ('pimos_remote_login_replier', 'pimos_remote_login_server',
                                 'simpos_user_device')
+# the string-I/O window PIMOS opens for shutdown_body's third branch
+# (server/user/shutdown_b.kl1:39-53; also pass_body.kl1:68,
+# su_body.kl1:51): its io/4 takes window codes (fep_services.md 2.6,
+# 6.4), PSI side, not held
+STD_WINDOW = 'pimos_standard_io_window'
 # The scripted login (fep_services.md 7.5): Node "local" (SOURCED,
 # login.kl1:1256), RN "pmpsi" and RP "" (OURS; the name HELD in
 # login.com), UN "pimos" and UP "" (HELD FILE, pimos.logins), the ID 1
@@ -234,6 +243,7 @@ class Fep:
         self.log = []           # (device id, text): the replier's texts, a window's putb
         self.ticks = 0          # the machine's clock (1/16 msec), set by pimm.py
         self.appended = {}      # path -> the bytes appended to it (OURS)
+        self.terminated = False  # {-1, 80} received: the link closed
         self.replies = []       # packets to give, in order
         self.stopped = False
 
@@ -263,6 +273,21 @@ class Fep:
         if name == SERVER and command == 1 and dev in self.listening:
             # waits for a login: held (fep_services.md 7.3 row 1)
             self.held[dev] = 'login'
+            return None
+        if name == STD_WINDOW and command in (104, 130, 141, 111):
+            # 104 its place and size ({324, 328, 40, 6} from
+            # shutdown_b.kl1:43-47), 130 its title, 141 activate, 111
+            # putb: [1, ""], OURS (the PSI's class is not held; the
+            # window device's own 104/130/141/111 answer {Id, 1},
+            # fep_services.md 2.6, and 620's reply carries a string,
+            # 6.4).  A 111's text goes to the log
+            if command == 111:
+                self.log.append((dev, unjis(data)))
+            return [NORMAL, b'']
+        if name == STD_WINDOW and command == 110:
+            # getl: held, as the window's 110, until the next typed line
+            # (Fep.idle answers it [1, LINE], the form of 620's reply)
+            self.held[dev] = 'getl'
             return None
         if name == USER_DEVICE and command == 0:
             # [len Name, len Pass] ++ Name ++ Pass: the user's home,
@@ -429,7 +454,7 @@ class Fep:
             # program named (fep_services.md 6.4); the three a login
             # uses
             name = unjis(msg[4])
-            if name not in (REPLIER, SERVER, USER_DEVICE):
+            if name not in (REPLIER, SERVER, USER_DEVICE, STD_WINDOW):
                 raise FepError('device %d: create_string_io of %r' % (dev, name))
             self.strio[dev] = name
             return [NORMAL]
@@ -485,6 +510,21 @@ class Fep:
         if cmd == CLOSE and len(msg) == 1 and dev in self.files:
             del self.files[dev]
             return [NORMAL]
+        if cmd == CLOSE and len(msg) == 1 and dev in self.appending:
+            # {Id, 60} on the file append-opened (the syslog's, at
+            # PIMOS's end after a shutdown): a file's close, as a read
+            # file's (bios/fep_module/file_dvc.kl1 device_terminate;
+            # fep_services.md 2.2).  What was appended stays in
+            # Fep.appended
+            del self.appending[dev]
+            return [NORMAL]
+        if cmd == TERMINATE and len(msg) == 1 and dev == -1:
+            # {-1, 80}, fep#terminate: sent when the link's stream
+            # closes, at PIMOS's end; no reply is read
+            # (bios/fep_module/scsi_fep.kl1:234; fep_services.md 1,
+            # 2.1).  Noted, not answered
+            self.terminated = True
+            return None
         if cmd == ABORT and len(msg) == 1:
             return None
         raise FepError('device %d: request %r' % (dev, msg))

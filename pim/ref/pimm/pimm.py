@@ -158,6 +158,18 @@ class _Mem(dict):
 
 
 class Machine:
+    # the merger's list (2026-11-24): ready goals of the stub merge_in,
+    # taken before the ready queue (Machine.ready, Machine.run).  mq is
+    # its head; mwh, mwt the goals made ready since the last pickup, in
+    # the order they were made ready.  Class defaults: a machine pickled
+    # before them has none.  So a message bound to a merger input reaches
+    # the output in the order of the unifications and before what the
+    # binding reduction spawned, as VPIM (f_reduce_merger_unify.psl.c),
+    # KLIC (runtime/gmerge.c) and PDSS (emulator/unify.c) do it AT the
+    # unification; doing it at the next goal switch is OURS
+    # (docs/pimm_semantics.md, merge)
+    mq = mwh = mwt = 0
+
     def __init__(self, image=None, heap=HEAP, size=MEMORY_CELLS):
         self.im = image or kbndis.Image()
         self.load = self.im.load
@@ -273,10 +285,25 @@ class Machine:
                 if st & 3 == SUSPENDED:
                     self.event('W %d' % (g - self.load))
                     self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
-                    self.mem[g + G_LINK] = (INT, self.rq)
-                    self.rq = g
+                    self.ready(g)
                     self.nsusp -= 1
                 s = self.mem[s + S_NEXT][1]
+
+    def ready(self, g):
+        """A woken goal goes on the ready queue, or, a goal of the stub
+        merge_in, at the end of the merger's list (docs/pimm_semantics.md,
+        merge: a goal record made READY, a vector's element, stays on the
+        ready queue)."""
+        if self.mem[g + G_CODE][1] == self.load + self.stubs['$merge_in']['addr']:
+            self.mem[g + G_LINK] = (INT, 0)
+            if self.mwh:
+                self.mem[self.mwt + G_LINK] = (INT, g)
+            else:
+                self.mwh = g
+            self.mwt = g
+        else:
+            self.mem[g + G_LINK] = (INT, self.rq)
+            self.rq = g
 
     def unify(self, a, b):
         a, b = self.deref(a), self.deref(b)
@@ -643,10 +670,11 @@ class Machine:
         if pc is not None:
             self.spawn(pc, args)
         before = self.steps
-        while self.rq:
-            g = self.rq
+        while True:
+            g = self.pick()
+            if not g:
+                break
             self.event('G %d' % (g - self.load))
-            self.rq = self.mem[g + G_LINK][1]
             st = self.mem[g + G_STATUS][1]        # shoen << 2 | status
             self.shoen = self.load + (st >> 2) if st >> 2 else 0
             self.mem[g + G_STATUS] = (INT, st & ~3 | TAKEN)
@@ -666,6 +694,23 @@ class Machine:
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
         return self.steps - before
+
+    def pick(self):
+        """The next goal to run, taken off its list, or 0.  The goals
+        made ready since the last pickup go to the front of the
+        merger's list (in the order they were made ready), and that
+        list is taken before the ready queue."""
+        if self.mwh:
+            self.mem[self.mwt + G_LINK] = (INT, self.mq)
+            self.mq, self.mwh, self.mwt = self.mwh, 0, 0
+        if self.mq:
+            g = self.mq
+            self.mq = self.mem[g + G_LINK][1]
+        else:
+            g = self.rq
+            if g:
+                self.rq = self.mem[g + G_LINK][1]
+        return g
 
     def abandon(self):
         """Forget that goals are suspended (a test's way of ending a run).
@@ -2324,7 +2369,8 @@ class Machine:
     # record {output}{count} and the first input variable in three
     # cells; its code is the stub merge_in (asm/pimm_stubs.py), which
     # is not a PIM/m instruction.  So the output appears after a goal
-    # switch, not at the unification.  A vector on the input adds as
+    # switch, not at the unification; a woken merge_in is taken before
+    # any other goal (the merger's list, Machine.ready and pick).  A vector on the input adds as
     # many inputs as it has elements (i_merge_in); anything but a
     # list, [] or a vector, or a
     # variable is the machine's illegal_merger_input exception:

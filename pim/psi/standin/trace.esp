@@ -1,0 +1,21 @@
+% SCAFFOLDING stand-in for SIMPOS's class `trace`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `trace` is printed or held, and NO TRACER IS MODELLED.  Its one method is
+% INTERPOLATED (labelled) from:
+%   - pimfep##as_pimos_string_io_device trace_string_io/1 (held .ptf,
+%     @a5): `:trace(#trace)` as a last call, after a neck cut, with no
+%     other goal (docs/simpos/subsystems/shell.md:438);
+%   - kwic-esp autoTracer.esp:23 `:trace(#trace,X)` (shell.md:437, a
+%     second arity, UNSPECIFIED there);
+%   - the debugger's trace mode, documented as a screen and its commands
+%     (TM-181 pp.4-5; shell.md §3), which this stand-in does not provide.
+% Model (OURS): trace/1 succeeds and does nothing.  A method that succeeds
+% only through it says nothing about tracing.
+
+class trace has
+
+% INTERPOLATED from: the pimfep call `:trace(#trace)` (see above).  It
+% does nothing: no debugger is modelled (OURS).
+:trace(Class);
+
+end.

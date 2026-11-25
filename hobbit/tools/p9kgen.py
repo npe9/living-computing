@@ -58,6 +58,7 @@ are then copied to OUT/.  OUT/p9kgen.log records every program run, its
 arguments, instruction count, system calls and wall time.
 
     python3 tools/p9kgen.py --out /tmp/kgen [--conf term] [--no-boot]
+    python3 tools/p9kgen.py --out K --conf rom    # TYPE=rom: -Drom
 """
 
 import argparse
@@ -80,6 +81,19 @@ S9TERM = REL / "hobbit" / "s9term"
 CONFLIST = ["cpu", "term", "termlocal", "bart", "rom"]  # hobbit/mkfile
 O = "z"                                                # hobbit/mkfile: O=z
 CFLAGS = ["-w", "-Dram"]                               # -w -D$TYPE, TYPE=ram
+
+
+def default_type(conf):
+    """$TYPE for a configuration: the mkfile's default `ram`, except
+    `rom`, whose rule (9rom: roml.$O, lib$TYPE.a) and rommain.c need
+    `mk CONF=rom TYPE=rom 9rom` (docs/boot_rom.md: an assumption -- the
+    mkfile does not say how it was invoked)."""
+    return "rom" if conf == "rom" else "ram"
+
+
+def cflags(ktype):
+    """hobbit/mkfile: CFLAGS=-w -D$TYPE."""
+    return ["-w", "-D" + ktype]
 BOOT_CFLAGS = ["-w"]                                   # boot/mkfile
 BOOT_OFILES = ["async", "aux", "boot", "bboot", "dosboot", "bri", "cache",
                "cyc", "datakit", "dk", "getpasswd", "hybrid", "ip", "key",
@@ -395,7 +409,8 @@ def make_tree(root):
     (pathlib.Path(root) / "tmp").mkdir()
 
 
-def generate(out, conf="term", boot=True, log=sys.stderr):
+def generate(out, conf="term", boot=True, log=sys.stderr, ktype=None):
+    CFLAGS = cflags(ktype or default_type(conf))
     out = pathlib.Path(out)
     root = out / "root"
     if root.exists():
@@ -526,6 +541,8 @@ def main(argv):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", required=True, help="the build directory")
     ap.add_argument("--conf", default="term")
+    ap.add_argument("--type", help="$TYPE (default ram; rom for "
+                    "--conf rom): CFLAGS -D$TYPE")
     ap.add_argument("--no-boot", action="store_true",
                     help="skip the boot program (zc, ar, zl: the long part)")
     args = ap.parse_args(argv)
@@ -533,7 +550,8 @@ def main(argv):
     out.mkdir(parents=True, exist_ok=True)
     with open(out / "p9kgen.log", "w") as log:
         t0 = time.time()
-        products, rc = generate(out, args.conf, not args.no_boot, log)
+        products, rc = generate(out, args.conf, not args.no_boot, log,
+                                args.type)
         report = check(products, args.conf)
         total = sum(r[2] for r in rc.runs)
         log.write("total: %d programs, %d instructions, %.1f s\n"

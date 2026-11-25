@@ -1174,9 +1174,9 @@ class Machine:
     op_put_value_p_a5 = op_put_value_p
 
     def op_put_variable_t(self, code, off, a, b, c, v):
-        if a != b:
-            raise Refusal('operand', 'pmi a1 %02x %02x: A != X unwitnessed' % (a, b))
-        self.x[a] = Var()
+        # A != X witnessed (step 3d): p_tgraph.esp:70-72 `a1 00 02`, both
+        # registers hold the one new variable
+        self.x[a] = self.x[b] = Var()
         self.nxt(code, off)
 
     def op_put_value_p_block(self, code, off, a, b, c, v):
@@ -1260,10 +1260,14 @@ class Machine:
                     'subtract')
 
     def op_add_immediate(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'add') + b, 'add_immediate')
+        # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
+        self.x[c] = self._int(self.x[a], 'add') + b
+        self.nxt(code, off)
 
     def op_subtract_immediate(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - b, 'subtract_immediate')
+        # R != A is witnessed (as_pred.esp:254-256 `46 04 0b 00`, step 3d)
+        self.x[c] = self._int(self.x[a], 'subtract') - b
+        self.nxt(code, off)
 
     def op_multiply_immediate(self, code, off, a, b, c, v):
         self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_immediate')
@@ -1397,6 +1401,49 @@ class Machine:
                 return self.nxt(code, off, 2)
             i += 1
         self.fail()
+
+    # -- step 3d rows (2026-11-24): vector_to_list, set_subvector, the
+    # empty and four-element vectors (psi/kl0_opcodes.tsv)
+    def op_vector_to_list(self, code, off, a, b, c, v):
+        t = deref(self.x[a])
+        if isinstance(t, Var):
+            raise Refusal('unbound argument', 'vector_to_list on %r' % t)
+        if not isinstance(t, Vec) or t.heap:
+            # every witness checks stack_vector/2 first; a heap vector is
+            # unwitnessed, anything else is not a vector
+            raise Refusal('built-in', 'vector_to_list on %r' % t)
+        tail = deref(self.x[b])
+        if tail is not NIL:
+            # only `[]` is settled by plaintext (vrm.esp:595 passes `_`)
+            raise Refusal('operand', 'vector_to_list with tail %r: unwitnessed' % tail)
+        out = NIL
+        for e in reversed(t.args):
+            out = Cons(e, out)
+        self.x[c] = out
+        self.nxt(code, off)
+
+    def op_set_subvector(self, code, off, a, b, c, v):
+        s, z, low = self.ext_cell(code, off, 'set_subvector')
+        if z or low:
+            raise Refusal('operand', 'set_subvector operand cell with low bytes set: unwitnessed')
+        vec = self._vec(self.x[a], 'set_subvector').args
+        p, n = self._int(self.x[b], 'set_subvector'), self._int(self.x[c], 'set_subvector')
+        sub = self._vec(self.x[s], 'set_subvector').args
+        if p < 0 or n < 0 or p + n > len(vec) or len(sub) != n:
+            raise Refusal('built-in', 'set_subvector %d+%d of %d from %d' % (p, n, len(vec), len(sub)))
+        for i in range(n):
+            vec[p + i] = deref(sub[i])
+        self.nxt(code, off, 2)
+
+    def op_put_vector_0(self, code, off, a, b, c, v):
+        self.x[a] = Vec([])
+        self.nxt(code, off)
+
+    def op_put_vector_4(self, code, off, a, b, c, v):
+        new = Vec([Var(), Var(), Var(), Var()])
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
 
     def op_set_string_element(self, code, off, a, b, c, v):
         s = self._str(self.x[a], 'set_string_element')

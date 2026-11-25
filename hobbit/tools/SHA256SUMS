@@ -106,3 +106,5 @@ eecef4d74fcd1274d24f2c67fdddd9d754c1f9fe6e1dc33664145098befb4625  plan9-1e/hobbi
 076bc2a6f240101e9c9ef2136a410fb88129f180e61ab3a9831047253c1547fe  plan9-1e/sys/src/cmd/rl.c
 9a671504e6decfd4a4a4eb041d209b87f3677e8b8147b40a19cf8e69488598cb  plan9-1e/sys/src/cmd/size.c
 8b671a0e79e3df595473878c9c3dfa37a18b5838937d8c7097b3f0446bb1afe6  plan9-1e/sys/src/cmd/xd.c
+37758ddbe5dea53fd3c841e3d5e37b5d8ac1e46804fd5e4cfb84138044e5980a  plan9-1e/hobbit/lib/libmach.a
+7f8e2a54e6355b3d2355aa385373e883d489c85753a3f6924db4e2a4ebdf2fb2  plan9-1e/sys/src/libmach/executable.c

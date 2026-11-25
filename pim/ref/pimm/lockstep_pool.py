@@ -56,6 +56,15 @@ All in the first part, at the trace line shown:
   merge returns the output as input   87: R 3
   put_vector_0 makes []               309: R 0
 
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 9113 -> 9134 trace
+lines, both models identical and all 38 answers unchanged: one input,
+so the order of the requests cannot change; the goals run in another
+order and each pickup that splices the list writes one link more.  The
+injections' line numbers above are as observed before it.
+(lockstep_merge.py is the test of the order itself.)
+
 Not caught: merge_in accepted outside its stub (no code holds it),
 and the refusals (a vector or a non-stream on the input, an output
 that is not a variable) are not run.
@@ -69,7 +78,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=2, lines=9113, answers=38)
+PINNED = dict(parts=2, lines=9134, answers=38)
 
 
 def requests(names):
