@@ -2158,6 +2158,171 @@ Observed, with `test_kl0.py` passing each time:
 - kl0's suspend/2 model removed: `test_step3f_census_recipes`,
   `test_step3g_stream_see` and `test_stream_runs` fail.
 
+### Step 3g: census requests, and blt 48 with R != A (2026-11-25)
+
+**Where a request sits, read from held code.**
+
+- *A device command.* The device's local `refute/3` (`as_pimos_device`
+  @129-145) handles it:
+  - `fep_message_assembler disassemble/3` (@8f-ac) takes message
+    elements 0 and 2 (@96-9b) and the argument list, and makes the list
+    `[Id, Code | Args]`;
+  - blt 6f (`list_to_vector`, unwitnessed) makes it a vector;
+  - `convert/3` gives the command's name;
+  - `:refute(Device, Name, Vector)` calls the handler.
+
+  So a handler's A0 is the request's Id and A1 its code. The other
+  readers agree:
+  - `get_device_id/3` reads element 0 (@3c-44);
+  - `get_command/3` reads element 2 (@14-1c);
+  - `close/3` replies `{A0, 1}` (@6e-77).
+
+  That the vector's elements arrive in order is `fep_services.md`
+  §6.1's INFERENCE. A window passes its commands on to its editor the
+  same way: `pimos_window kl1_message/2` (@77-98) disassembles,
+  converts, calls `get_editor/2`, and sends `:refute(Editor, Name,
+  Vector)`.
+- *An abort handler* takes its request's Id as A0. `simpos_user_device
+  io/5` (@36-4c) catches `pimos_abort` with `abort_string_io` and `{Y0}`,
+  where Y0 is its own A0. `pimos_timer on_after/4` (@63-7d) does the
+  same with `abort_timer` and `{Y0, X8}`.
+- *A creator's device id* is the first element of the create message.
+  Each creator keeps it for `:set_device_id(Dev, Y)` and for its
+  creation reply `{Y, 1}`:
+  - `create_timer/9`: A3 (@1d, @41-44, @52-58);
+  - `directory/10`: A3;
+  - `create_with_buffer/10`: A3;
+  - `create_string_io/10`: A3 (@19, @3b, @4f-51);
+  - `pimos_file create/9`: A4. Its callers `read_open/10` and the other
+    open handlers (@67-72) put the open mode (`read`) in A0, which
+    shifts the message one place.
+- *PIMOS gives device ids from 16*: `scsi_fep.kl1` `create/2` (22-23)
+  seeds `id_manager/3`, which answers `normal(ID, Stream)` and goes on
+  with ID+1 (131-141, 157-160).
+
+**The values (OURS), kl0 `REQUEST_ID`, `request_args`.**
+
+- Creators: the device id is 16, the first id PIMOS gives.
+- Command handlers: an instance method of an heir of `as_pimos_device`
+  or of `pimos_window_editor`, whose class has a recipe, with arity 3 or
+  more, and whose name the held `fep_command_code_table convert/3` maps
+  to a code. It gets A0 = 16 and A1 = that code. The other arguments
+  stay unbound.
+- Abort handlers (`abort_string_io/2`, `abort_timer/3`, `abort_getb/3`,
+  `abort_accept/3`) get A0 = 16.
+- Plain `census --fep` is unchanged.
+
+**A step 3f recipe was wrong (CONTRADICTED by the cells).** The
+`pimos_file` recipe put the output stream in A0 of `create/9`. A0 is
+the open mode (`set_open_mode`, @4b-4e). The output stream is A1
+(@37-3a), which stayed unbound. So step 3f's `pimos_file goal/1` and
+`invoke/1` successes, and its `initiate/1` failure, ran with a stream as
+the open mode. `DEVICE_CREATORS` now names each creator's output-stream
+and device-id arguments, and gives `pimos_file` A0 = `read` (OURS: the
+mode `read_open/10` passes).
+
+**blt 48 with R != A: KNOWN-PLAINTEXT, row widened.** The witness is
+`paragraph##scroll_bar_icon` `$or$0/3`, against `p_hwin.esp`:229-236:
+
+    :code(Icon,X,Y,Code):- Height=Icon!height/4,
+        (Y=<Height,!, Code=previous_page; Y=<(Height*2),!, Code=previous_one;
+         Y=<(Height*3),!, Code=next_one; Code=next_page);
+
+- `code/4` @14-16 puts Height in A0 (`27 03 00 00`, `49 00 04 00`) and
+  executes `$or$0` with Y in A1.
+- @282 is `48 00 02 03`: A3 := Height * 2, in a temporary.
+- @283 is `67 03 01 00`: not_less_than(A3, A1), which is `Y =< Height*2`
+  with the operands swapped (as `=<` compiles; step 3c). Then the cut,
+  and the atom `previous_one` into A2.
+- @288-289 are the same with 3 (`48 00 03 03`) for `next_one`.
+- The source is release 3200 against the object's 3500 (Inputs, above).
+
+Effect, row by row (MEASURED 2026-11-25):
+
+- **Six packages:** 310 / 12 / 207 / 1, totals unchanged. Four `draw/2`
+  rows (`predicate_top_icon`, `predicate_bottom_icon`,
+  `scroll_top_icon`, `scroll_bottom_icon`) move from `operand` to an
+  `execute_graphics_command/2` sent to an unbound receiver.
+- **FEP plain:** identical, 807 / 154 / 442 / 16 / 1.
+- **FEP with recipes:** 809 / 154 / 440 / 16 / 1 becomes 829 / 152 /
+  422 / 16 / 1. Slot constants go from 86 to 96. Of the 45 rows that
+  stopped at `set_string_element` on an unbound argument, each was
+  traced:
+  - 21 succeed. Each was checked alone on a fresh machine.
+    - `close/3` and `attention/1` of `pimos_timer`, `pimos_directory`,
+      `pimos_window_process`, `simpos_user_device`,
+      `pimos_remote_login_replier`, `_server` and
+      `pimos_standard_io_window`;
+    - `abort_timer/3`, and `abort_string_io/2` of `simpos_user_device`,
+      the replier and `pimos_standard_io_window`;
+    - `pimos_file` `flush/3`, `ungetb/4` and `attention/1`.
+
+    What they do is put the reply on the device's output stream. A
+    timer's `attention/1` puts `[16, 0, 3, 0]`, and its `close/3` puts
+    `[16, 0, 1, 0]` then `[16, 0, 903, 0]` (`test_step3g_requests`).
+    The layout `[Id, 0, Status, count]` fits the readers above. These
+    are real held paths given an OURS request. They are not a running
+    front end.
+  - 10 `pimos_window_editor` replies reach a slot constant:
+    `set_position/5`, `close/3`, `activate/3`, `hide/3`,
+    `deactivate/3`, `show/3`, `beep/3`, `set_title/4`, `flush/3` and
+    `set_position_by_mouse/3`. Each is a `put/2` in `as_pimos_device`
+    @fc, on a window process whose output stream is unset. The window's
+    `pimos_window_process` is set only by `pimos_window_process
+    initiate/1` (@f0-10d), a process body that never runs. This is an
+    artifact, of the kind tabled in step 3f.
+  - 2 stop at an operand: editor `get_position/3` and
+    `get_inside_size/3`, at `put_integer` with immediate `ffff` (the
+    sign of a 16-bit immediate is unwitnessed).
+  - 2 stop at an opcode:
+    - editor `get_title/3` goes past `pad_string/2` and blt 48 (now
+      witnessed) to blt 36 in `fep_message_assembler` @122;
+    - `pimos_remote_login_server abort_string_io/2` stops at pmi ff
+      (@783).
+  - 1, `pimos_file close/3`, is now `receiver not an object`: it sends
+    `class_object/2` to `none`, the file object that only `initiate/1`'s
+    open would set.
+  - 9 still stop at `set_string_element` on an unbound argument. Each
+    has a receiver with no recipe, made by new/2, so it has no device
+    id and gets no request:
+    - `as_pimos_device close/3`;
+    - `as_pimos_string_io_device` `close/3` and `abort_string_io/2`;
+    - `pimos_string_io_invoker close/3`;
+    - `pimos_socket_receiver close/3`;
+    - `pimos_tcpip_socket` `bind/4`, `flush/3`, `abort_getb/3` and
+      `abort_accept/3`. tcpip has no recipe (`invocation_stack/2`).
+- One row outside the 45 also moves: `pimos_remote_login_server io/4`,
+  from `equal_string` on an unbound argument to failure.
+- **The `pimos_file` correction moves 4 more rows:**
+  - `initiate/1`, `goal/1` and `invoke/1` now reach
+    `simpos##directory:retrieve/3`, a class not loaded (failure,
+    success and success before);
+  - `getb/4`, from failure to `receiver not an object` (`end_of_input/1`
+    to `none`).
+- `pimscsi_fep resign_core/1` moves from failure to success. It is the
+  known order effect: alone, it fails.
+
+Tests:
+
+- `test_espc.py` `test_step3g_requests`: `request_args`, and the timer's
+  replies.
+- `test_step3f_census_recipes`: the totals, 96 slot constants, the
+  `pimos_file` recipe, the eight `attention/1` successes, and
+  `get_title/3` at blt 36.
+- `test_kl0.py` `test_result_register`: blt 48 R != A and the witness's
+  cells. `test_census` pins the six-package moves.
+
+Injected from a backup, restored by cp, cmp-checked. Observed:
+
+- creators' device id left unbound: `test_step3g_requests` errors and
+  `test_step3f_census_recipes` fails;
+- `pimos_file`'s stream back in A0: `test_step3f_census_recipes`
+  errors;
+- the command-receiver check dropped: `test_step3f_census_recipes` and
+  `test_step3g_requests` fail;
+- blt 48 R != A refused again: `test_step3f_census_recipes` fails, and
+  `test_result_register` (error) and `test_census` fail.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
@@ -2217,10 +2382,15 @@ Observed, with `test_kl0.py` passing each time:
       callback (`pmacs_window`, not stood in).
     - The census's unbound request arguments: device replies refuse at
       `set_string_element` on an unbound argument (25 rows plain, 45
-      with recipes). The request Id is the argument in the one row
-      traced, `get_title/3` (see the recomputed accounting). Given an Id, the
-      traced `get_title/3` goes on to blt 48 (`multiply_constant`) with
-      R != A, which is unwitnessed.
+      with recipes). Step 3g: the recipe census gives requests (OURS
+      values in held-code positions) and blt 48 R != A is witnessed; of
+      the 45, 21 succeed, 9 remain (receivers with no recipe), and the
+      rest stop at named gaps (see "Step 3g: census requests"). The
+      plain census still leaves requests unbound (25 rows).
+    - blt 36 (editor `get_title/3`'s reply assembly,
+      `fep_message_assembler` @122) and put_integer's 16-bit sign
+      (`ffff`, editor `get_position/3`, `get_inside_size/3`), revealed
+      by step 3g.
     - `process:invocation_stack/2`, not stood in: it stops the tcpip
       `create_socket` creator, so tcpip has no recipe.
     - `process:status/3` (11 plain-census creator rows). It has one

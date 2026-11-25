@@ -1452,7 +1452,10 @@ class Machine:
         self.nxt(code, off)
 
     def op_multiply_constant(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_constant')
+        # R != A is witnessed (step 3g: p_hwin.esp:233 `Y=<(Height*2)`,
+        # paragraph##scroll_bar_icon $or$0/3 @282 `48 00 02 03`)
+        self.x[c] = self._int(self.x[a], 'multiply') * b
+        self.nxt(code, off)
 
     def op_divide_constant(self, code, off, a, b, c, v):
         x = self._int(self.x[a], 'divide')
@@ -1983,21 +1986,107 @@ SIMPOS_MODELS = {
 # and the census's process runs no program, so the stack is empty.
 # pimos_string_io_invoker create_string_io/10 has its own recipe below
 # (STRING_IO_PROGRAMS).
+# Step 3g: the fourth field is the argument that holds the output
+# stream, the fifth the one that holds the device id, read from the
+# registers kept for `:set_output_stream(Dev, Y)` and `:set_device_id(Dev,
+# Y)`; the sixth fixes other arguments.
+#   - create_timer/9: Y0 = A0 (@1a) to set_output_stream (@35-38); Y3 =
+#     A3 (@1d) to set_device_id (@41-44).
+#   - pimos_file create/9 is called by read_open/10, write_open/10 and
+#     append_open/10 (@67-72, @77-..), which put the open mode in A0
+#     (`read` at @70) and shift the message one place: Y1 = A1 (@1b) to
+#     set_output_stream (@37-3a), Y4 = A4 (@1e) to set_device_id
+#     (@43-46), Y0 = A0 to set_open_mode (@4b-4e).  The recipe gives A0
+#     `read`, as read_open/10 does (OURS: read, not write or append).
+#     Step 3f's recipe put the stream in A0 (the open mode) and left the
+#     output stream unbound: corrected here.
+#   - directory/10: Y0 = A0 (@18) to set_output_stream (@34-37); Y3 =
+#     A3 (@1b) to set_device_id (@41-43).
+#   - create_with_buffer/10: Y0 = A0 (@57) to set_output_stream
+#     (@73-76); Y3 = A3 (@5a) to set_device_id (@80-82).
 DEVICE_CREATORS = {
-    'pimfep##pimos_timer': ('create_timer', 9, '@19-48'),
-    'pimfep##pimos_file': ('create', 9, '@19-52'),
-    'pimfep##pimos_directory': ('directory', 10, '@17-4e'),
-    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86'),
+    'pimfep##pimos_timer': ('create_timer', 9, '@19-48', 0, 3, {}),
+    'pimfep##pimos_file': ('create', 9, '@19-52', 1, 4, {0: 'read'}),
+    'pimfep##pimos_directory': ('directory', 10, '@17-4e', 0, 3, {}),
+    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86', 0, 3, {}),
 }
+
+
+# The request a census row is given (step 3g, OURS: the values chosen
+# here; where each sits is read from held code).
+#
+# A creator's device-id argument (A3, A4 for pimos_file: DEVICE_CREATORS)
+# is the new device's id, the first element of PIMOS's create message:
+# create_timer/9 keeps it (Y3, @1d) for
+# `:set_device_id(Dev, Y3)` (@41-44) and its creation reply `{Y3, 1}`
+# (@52-58); create_string_io/10 the same (Y3 @19, into
+# initiate_string_io_device/7 @3b, reply @4f-51).  That the front end's
+# :refute passes the message's elements in order after its own three is
+# fep_services.md §6.1's INFERENCE.  PIMOS gives device ids from 16:
+# scsi_fep.kl1 create/2 (`create(16, SCSI, Result)`, 22-23) seeds
+# id_manager/3, which answers `normal(ID, Stream)` and goes on with ID+1
+# (131-141, 157-160).  So REQUEST_ID is 16, the first id given (OURS:
+# the first, not another).
+#
+# A device command reaches its handler as `:refute(Device, Name, Vector)`
+# from the device's local refute/3 (as_pimos_device @129-145):
+# fep_message_assembler disassemble/3 (@8f-ac) builds the list [Id, Code
+# | Args] from the message's elements 0 and 2 (@96-9b) and the argument
+# list, and list_to_vector (blt 6f, unwitnessed) makes the vector; the
+# command's name is convert/3 of the code (@13a-13f).  So a handler's A0
+# is the request's Id and A1 its code (fep_services.md §6.1: arity is
+# PIMOS's argument count + 3; close/3 replies `{A0, 1}`, @6e-77).  A
+# window's commands go the same way to its editor: pimos_window
+# kl1_message/2 (@77-98) disassembles, converts, takes get_editor/2 and
+# sends `:refute(Editor, Name, Vector)`.  So the handlers are the
+# instance methods of as_pimos_device's heirs and of pimos_window_editor
+# (COMMAND_RECEIVERS).  The census gives such a method, when its class
+# has a recipe, its arity is 3 or more and the held
+# fep_command_code_table convert/3 maps its name to a code, A0 =
+# REQUEST_ID and A1 = that code (request_args).  Its other arguments stay
+# unbound.
+#
+# The abort handlers a request's tag_catch/9 names take that request's Id
+# as A0: io/5 (@36-4c, simpos_user_device) catches `pimos_abort` with
+# abort_string_io and the vector {Y0}, Y0 its own A0; on_after/4 (@63-7d,
+# pimos_timer) with abort_timer and {Y0, X8}.  (pimos_tcpip_socket's
+# abort_getb, @13a, and abort_accept, @1e4, are the same pattern; that
+# class has no recipe.)  So the census gives these A0 = REQUEST_ID only.
+REQUEST_ID = 16
+COMMAND_RECEIVERS = ('pimfep##as_pimos_device', 'pimfep##pimos_window_editor')
+ABORT_HANDLERS = {('abort_string_io', 2), ('abort_timer', 3), ('abort_getb', 3), ('abort_accept', 3)}
+
+
+def request_args(m, cid, name, n):
+    """The leading request arguments for a census call of instance method
+    NAME/N of CID (see REQUEST_ID): [REQUEST_ID, Code] for a command
+    handler, [REQUEST_ID] for an abort handler, or []."""
+    if not any(c in COMMAND_RECEIVERS for c in m.lib.build(cid).order):
+        return []
+    if (name, n) in ABORT_HANDLERS:
+        return [REQUEST_ID]
+    if n < 3:
+        return []
+    try:
+        sols = call_class_method(m, 'pimfep##fep_command_code_table', 'convert', [Var(), Atom(name)], limit=1)
+    except Refusal:
+        return []
+    if not sols or not isinstance(deref(sols[0][0]), int):
+        return []
+    return [REQUEST_ID, deref(sols[0][0])]
 
 
 def _creator_device(m, cid):
     """The device CID's held creator makes (DEVICE_CREATORS), stopped
-    before its activate/2."""
-    sel, n, _cells = DEVICE_CREATORS[cid]
+    before its activate/2.  The device id argument is REQUEST_ID."""
+    sel, n, _cells, outarg, idarg, fixed = DEVICE_CREATORS[cid]
     m.reset()
     (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
-    args = [st[0]] + [Var() for _ in range(n - 2)]
+    args = [Var() for _ in range(n - 1)]
+    args[outarg] = st[0]
+    args[idarg] = REQUEST_ID
+    for i, a in fixed.items():
+        args[i] = Atom(a)
     m.stop_before = {('activate', 2)}
     try:
         for _ in m.solve_send(ClassRef(cid), sel, args + [ClassRef(cid)]):
@@ -2036,6 +2125,7 @@ def _string_io_device(m, cid):
     m.reset()
     (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
     args = [st[0]] + [Var() for _ in range(8)]
+    args[3] = REQUEST_ID
     args[8] = Str(cid.split('##')[1])
     m.stop_before = {('activate', 2)}
     try:
@@ -2132,8 +2222,12 @@ def census_of(m, classes, recipes=None):
             for (name, n), meth in table.items():
                 sel = '%s/%d' % (name, n)
                 try:
+                    # step 3g: a request for a device command handler
+                    # (REQUEST_ID), only where the receiver has a recipe
+                    lead = (request_args(m, cid, name, n)
+                            if section == 'instance' and recipes and cid in recipes else [])
                     recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
-                    regs = [Var() for _ in range(n - 1)] + [recv]
+                    regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
                     ok = any(True for _ in m.solve_send(recv, name, regs))
                     rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
                 except Refusal as e:

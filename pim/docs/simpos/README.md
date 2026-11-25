@@ -489,6 +489,14 @@ and stand-in `simpos##` classes. In order:
        `process:suspend/2` as `would suspend` (one process, no
        scheduler). The 17 recipe rows that stopped at `see/2` now wait
        there on an empty input stream; the totals are unchanged.
+     - Census requests (OURS values in positions read from held code:
+       Id 16, PIMOS's first device id, and the command's code) and blt
+       48 with R != A (KNOWN-PLAINTEXT, `p_hwin.esp`:233). Step 3f's
+       `pimos_file` recipe had the stream in the open-mode argument:
+       corrected. Plain census unchanged; with recipes 829 / 152 / 422 /
+       16 / 1. 21 device replies succeed (each checked alone): they put
+       `{Id, Status}` on the output stream. Six packages: four `draw/2`
+       rows go on; totals unchanged.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

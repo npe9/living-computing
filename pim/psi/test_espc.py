@@ -130,6 +130,21 @@
    kl0's suspend/2 model removed (the printed body runs and fails),
    fails test_step3f_census_recipes, test_step3g_stream_see and
    test_stream_runs.
+14. Step 3g (2026-11-25, test_step3g_requests): census requests (kl0
+   REQUEST_ID = 16, request_args, COMMAND_RECEIVERS, ABORT_HANDLERS;
+   the creators' device-id and output-stream positions read per
+   creator, which corrects step 3f's pimos_file recipe).  Recipe census
+   829 / 152 / 422, 96 slot constants (test_step3f_census_recipes).
+   Injected into kl0.py from a backup copy, restored by cp,
+   cmp-checked, observed (test_kl0.py passing each time unless said):
+   the creators' device id left unbound: test_step3g_requests errors,
+   test_step3f_census_recipes fails; pimos_file's stream back in A0
+   with no open mode: test_step3f_census_recipes errors; the
+   command-receiver check dropped (pimos_window's get_position/3 given
+   a request): test_step3f_census_recipes and test_step3g_requests
+   fail; blt 48 R != A refused again: test_step3f_census_recipes fails,
+   and in test_kl0.py test_result_register errors and test_census
+   fails.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -1184,7 +1199,8 @@ end.''', 'simpos')
         m = K.fep_machine()
         # pimos_timer create_timer/9 stopped before activate/2: the device
         # has the two streams its creator made with stream/2 and the output
-        # stream the recipe passed; device_id stays the unbound A3
+        # stream the recipe passed; device_id is REQUEST_ID, the A3 the
+        # recipe passes since step 3g (unbound before)
         dev = K.RECIPES['pimfep##pimos_timer'](m)
         co = m.lib.build(dev.cid)
         s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
@@ -1192,7 +1208,14 @@ end.''', 'simpos')
                           ('input_stream', 'output_stream', 'creation_status_stream')],
                          ['simpos##stream'] * 3)
         self.assertIsNot(s['input_stream'], s['creation_status_stream'])
-        self.assertIsInstance(s['device_id'], K.Var)
+        self.assertEqual(s['device_id'], K.REQUEST_ID)
+        # pimos_file (step 3g): the stream is the output stream (A1, as
+        # read_open/10 shifts the message), the open mode `read`, the id 16
+        f = K.RECIPES['pimfep##pimos_file'](m)
+        co = m.lib.build(f.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, f.slots)}
+        self.assertEqual((s['output_stream'].cid, s['open_mode'], s['device_id']),
+                         ('simpos##stream', K.Atom('read'), 16))
         # the window's editor points back at it
         ed = K.RECIPES['pimfep##pimos_window_editor'](m)
         self.assertEqual(ed.cid, 'pimfep##pimos_window_editor')
@@ -1210,10 +1233,14 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 154, 'refused': 440,
+        # step 3g: the requests (REQUEST_ID and the command's code) and
+        # pimos_file's corrected recipe: 809 / 154 / 440 -> 829 / 152 / 422;
+        # 10 editor replies reach the unset window process (slot
+        # constants 86 -> 96)
+        self.assertEqual((len(rows), out), (1420, {'success': 829, 'failure': 152, 'refused': 422,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 86)
+        self.assertEqual(slot_const, 96)
         # the four string-I/O programs, made by create_string_io/10
         # step 3g: a device's loop_main/1 waits in stream see/2 on its
         # empty input stream ('would suspend'), as do the 17 goal/1,
@@ -1232,19 +1259,30 @@ end.''', 'simpos')
         self.assertNotIn('simpos##stream:see/2', {K.simpos_target(r[5]) for r in rows})
         self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
                          ('refused', 'receiver a slot constant'))
-        # pimos_file: initiate/1 runs its open on the unbound pathname and
-        # fails; goal/1 then takes its error clause (put(error)) and succeeds
-        self.assertEqual(by[('pimos_file', 'instance', 'initiate/1')][0], 'failure')
-        self.assertEqual(by[('pimos_file', 'instance', 'goal/1')][0], 'success')
+        # pimos_file: with the open mode `read` (step 3g), initiate/1 and
+        # goal/1 reach the SIMPOS directory (step 3f's failure and
+        # success were on a stream in the open-mode argument)
+        for sel in ('initiate/1', 'goal/1'):
+            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'simpos'))
+            self.assertIn('simpos##directory:retrieve/3', by[('pimos_file', 'instance', sel)][2])
+        # step 3g: the device replies to the request REQUEST_ID
+        for c in ('pimos_timer', 'pimos_directory', 'pimos_window_process', 'pimos_file',
+                  'simpos_user_device', 'pimos_remote_login_replier', 'pimos_standard_io_window',
+                  'pimos_remote_login_server'):
+            self.assertEqual(by[(c, 'instance', 'attention/1')][0], 'success', c)
+        self.assertEqual(by[('pimos_timer', 'instance', 'close/3')][0], 'success')
+        self.assertEqual(by[('pimos_timer', 'instance', 'abort_timer/3')][0], 'success')
         # the editor reaches pimos_window's lost pmacs_window protocol
         # (get_interpreter/2 is not stood in)
         self.assertIn('pimfep##pimos_window:get_interpreter/2',
                       by[('pimos_window_editor', 'instance', 'clear/3')][2])
         # with the interpolated geometry and title (step 3f), get_title/3
-        # runs through the window and stops at its reply, on the census's
-        # unbound request; set_size/3 at the has_been_reshaped/1 callback
+        # runs through the window to its reply; with the request (step 3g)
+        # and blt 48 R != A, the reply's assembly stops at blt 36;
+        # set_size/3 at the has_been_reshaped/1 callback
         self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')][:2],
-                         ('refused', 'unbound argument'))
+                         ('refused', 'opcode'))
+        self.assertIn('blt 36', by[('pimos_window_editor', 'instance', 'get_title/3')][2])
         self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
 
@@ -1295,6 +1333,37 @@ end.''', 'simpos')
         self.assertEqual(cm.exception.cause, 'opcode')
         self.assertIn('blt 6f', cm.exception.detail)
         self.assertEqual(repr(K.resolve(inp.slots[0].slots[0])), '[]')
+
+    def test_step3g_requests(self):
+        # step 3g: census requests (kl0 REQUEST_ID, request_args, OURS
+        # values in held-code positions).  A command handler of a class
+        # with a recipe gets [Id, Code], the code from the held
+        # fep_command_code_table convert/3; an abort handler [Id]; a
+        # method of a class that receives no commands, nothing
+        m = K.fep_machine()
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_timer', 'close', 3), [16, 60])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_window_editor', 'get_title', 3), [16, 131])
+        self.assertEqual(K.request_args(m, 'pimfep##simpos_user_device', 'abort_string_io', 2), [16])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_window', 'get_position', 3), [])
+        self.assertEqual(K.request_args(m, 'pimfep##pimos_timer', 'attention', 1), [])
+
+        def replies(name, n):
+            dev = K.RECIPES['pimfep##pimos_timer'](m)
+            co = m.lib.build(dev.cid)
+            sl = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+            lead = K.request_args(m, dev.cid, name, n)
+            regs = lead + [K.Var() for _ in range(n - 1 - len(lead))] + [dev]
+            self.assertTrue(any(True for _ in m.solve_send(dev, name, regs)))
+            q, out = K.resolve(sl['output_stream'].slots[0].slots[0]), []
+            while isinstance(q, K.Cons):
+                out.append(K.deref(q.args[0]).codes())
+                q = K.deref(q.args[1])
+            return out
+        # the replies the device puts on its output stream: {Id, Status} as
+        # [Id, 0, Status, 0] (get_device_id/3 reads element 0,
+        # get_command/3 element 2, disassemble/3 element 3)
+        self.assertEqual(replies('attention', 1), [[16, 0, 3, 0]])
+        self.assertEqual(replies('close', 3), [[16, 0, 1, 0], [16, 0, 903, 0]])
 
     def test_step3f_window_protocol(self):
         # pmacs_window's geometry, title and display methods (step 3f,

@@ -141,6 +141,11 @@ Step 3e's rows 9a/9b, b1/b5/b6/b7, 50/51/54/55 and R != A for 40/49
     test_result_register and test_step3c_cells.
   test_espc passes under every injection but the first: its census pins
   see only the opcodes' presence, not their arithmetic.
+  - (step 3g, 2026-11-25) multiply_constant with R != A refused again
+    (blt 48, witness p_hwin.esp:233 `48 00 02 03`): test_result_register
+    errors and test_census fails here; test_espc
+    test_step3f_census_recipes fails (editor get_title/3 back at the
+    operand refusal).
 Step 3e's census semantics (2026-11-24, same method; observed):
   - slot constants not marked: test_census and test_slot_constant here;
     test_espc test_get_window;
@@ -748,6 +753,19 @@ class Step3eRows(unittest.TestCase):
         m.x[4] = 3
         m.op_new_heap_vector(code, 0, 2, 4, 0, 0x020400)
         self.assertEqual((len(m.x[2].args), m.x[2].heap, m.x[4]), (3, True, 3))
+        # step 3g: R != A for multiply_constant (p_hwin.esp:233
+        # `Y=<(Height*2)`, `48 00 02 03`): A3 := A0 * 2, A0 keeps Height
+        m.x[0], m.x[3] = 7, 99
+        m.op_multiply_constant(code, 0, 0, 2, 3, 0x000203)
+        self.assertEqual((m.x[3], m.x[0]), (14, 7))
+        # the witness's cells: the two products into the temporary A3, each
+        # compared with Y (A1) by not_less_than(A3, A1)
+        t = machine().lib.templates['paragraph##scroll_bar_icon']
+        cells = {c[0]: c for p in t.preds() if p.name == '$or$0' and p.arity == 3 for c in p.cells}
+        self.assertEqual([cells[o][3] for o in (0x282, 0x283, 0x288, 0x289)],
+                         [0x48000203, 0x67030100, 0x48000303, 0x67030100])
+        cells = {c[0]: c for p in t.preds() if p.name == 'code' and p.arity == 4 for c in p.cells}
+        self.assertEqual([cells[o][3] for o in (0x14, 0x15)], [0x27030000, 0x49000400])
 
 
 class Step3eCensus(unittest.TestCase):
@@ -822,7 +840,7 @@ class Census(unittest.TestCase):
         # unbound/1 (blt 10, step 3c) takes the three `blt 10` methods on:
         # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
-            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 16,
+            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 20,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)
             # and up_down_icon code/4 at an unbound argument.  Step 3e:
@@ -839,7 +857,12 @@ class Census(unittest.TestCase):
             # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
             # constant ('pool' 1)
             # string/3 a type test: 'unbound argument' 23 -> 22
-            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 7, 'pool': 1,
+            # step 3g: multiply_constant R != A witnessed (p_hwin.esp:233):
+            # the four draw/2 (predicate_top/bottom_icon, scroll_top/
+            # bottom_icon) go on to an execute_graphics_command/2 sent to
+            # an unbound receiver: 'operand' 7 -> 3, 'unbound receiver'
+            # 16 -> 20
+            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 3, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
