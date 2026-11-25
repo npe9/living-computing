@@ -561,6 +561,17 @@ lives in beboot:
   record does not play through). No DSP access fell outside its window,
   so the DSP-to-host interrupt route has still not been seen in use.
   Cost: 2,767 s user for 120M instructions.
+- What was recorded (a rerun with `--extract /echotemp`, input a
+  synthetic WAV: 44.1 kHz stereo, 440 Hz left and 1 kHz right,
+  amplitude 8000). At the end of the record, back at the menu, `/echotemp` on the
+  disk is 272,640 bytes, raw 16-bit big-endian stereo with no header
+  that we could see. It is 195 zero frames (780 bytes; whether a header
+  or the codec's first frames was not determined), then 67,965 frames
+  that equal the input, sample for sample, from its second frame on.
+  That is 1.54 s of the 2 s asked for. The DSP consumed 91,034 input
+  frames (2.06 s), and no disk block was written after the flush at
+  about 296M. So the rest is probably still in the kernel's disk cache;
+  this was not checked.
 - SER2 shows "getsc" / "ok" exchanges during `/apps/sound` (with either
   DSP choice); they were not examined.
 
