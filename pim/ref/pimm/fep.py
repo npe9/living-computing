@@ -94,6 +94,7 @@ import struct
 TEST_UNIT_READY, RECEIVE, SEND, INQUIRY = 0x00, 0x08, 0x0a, 0x12
 READ_OPEN, APPEND_OPEN, GETB, CLOSE, ABORT, TERMINATE = 201, 203, 210, 60, 70, 80
 PATHNAME, ATTRIBUTES_OF = 221, 222   # pimos.vmac:77 fep#pathname, :138 fep#attributes
+DIRECTORY, LISTING_ALL = 204, 237  # fep#directory, fep#listing_all (docs/fep_services.md 2.3)
 CREATE_TIMER = 310                 # pimos.vmac:146 fep#create_timer
 # docs/fep_services.md 2 (the commands, from pimos.vmac):
 FEP_ATTRIBUTES, CREATE_STRING_IO, IO = 240, 601, 620
@@ -130,6 +131,29 @@ def jis(text):
         out += b'\x00\x0a' if ch == '\n' else bytes([0x23, ord(ch)]) if ch.isalnum() \
             else bytes([0x21, _PUNCT[ch]])
     return out
+
+
+# The one wildcard listing_all is served for (OURS): ls's own, "*.*"
+# (shell/utils/ls.kl1:31, 40, when 240's Directory is ">"), as the
+# directory device sends it under Code 0, its JIS bytes
+# (server/fep/file/dir_dvc.kl1:244-249 change_element_size(WC, 8, WC0))
+LISTING_WILDCARD = jis('*.*')
+
+
+def listing(names):
+    """237's answer string for these entry names (R7, ls, 2026-11-25):
+    INFERENCE from PIMOS's reader, the PSI's form not being held (U7).
+    server/fep/file/dir_dvc.kl1:303-330 (return_filenames0/3,
+    filenames/4, if_lf/8) widens the reply's string to 16 bits for Code
+    0 and cuts it at each element 10, an LF, into the names; so one
+    string, 16-bit JIS, each name ended by an LF here (as 222's fields
+    are, attribute_string).  A name is an entry of the directory, not a
+    whole path: shell/utils/pathname.kl1 loop/5 puts the directory and
+    ">" in front of it, and is_directory_or_file/4 counts its periods
+    (two: a file, name.type.version; none or one: a directory), so a
+    file is listed with its version, as 221 gives the home file's
+    pathname (longrun_ipl.home_file, ".1")."""
+    return jis(''.join(n + '\n' for n in names))
 
 
 def unjis(data):
@@ -264,7 +288,7 @@ class Fep:
     ABSENT = (0, 1, 2, 3, 4, 5)
 
     def __init__(self, open_file, getb_unit=1, limit=None, max_buffer=None, lag=False,
-                 getb_bytes=None, lines=()):
+                 getb_bytes=None, lines=(), list_dir=None):
         """open_file(path bytes) -> the file's bytes, or None.  For
         tests: limit, the number of commands after which the device
         stops answering; max_buffer, another buffer size; lag, every
@@ -272,8 +296,11 @@ class Fep:
         is not ready when it is asked for); getb_bytes, the bytes a
         getb gives whatever it asks for; lines, the lines typed after
         the login, one per held getl (110), in order (OURS, the event
-        list: fep_services.md 7.5)."""
+        list: fep_services.md 7.5); list_dir(path bytes) -> 237's answer
+        for "*.*" in that directory (listing()), or None: no such
+        directory (204 answered 5), None for no directories at all."""
         self.open_file = open_file
+        self.list_dir = list_dir
         self.getb_unit = getb_unit
         self.limit = limit
         self.lag = lag
@@ -285,6 +312,7 @@ class Fep:
         self.messages = []      # ('>' or '<', device id, [command or status, args...])
         self.partial = {}       # device id -> the pieces of a continued message
         self.files = {}         # device id -> [bytes, position]
+        self.dirs = {}          # device id -> 237's answer for "*.*" (204)
         self.appending = {}     # device id -> the path it appends to
         self.timers = set()     # device ids of timers made
         self.strio = {}         # device id -> the string-I/O program's name (601)
@@ -303,7 +331,8 @@ class Fep:
 
     def known(self, dev):
         return (dev in self.files or dev in self.appending or dev in self.timers
-                or dev in self.strio or dev in self.windows)
+                or dev in self.strio or dev in self.windows
+                or dev in getattr(self, 'dirs', {}))
 
     def string_io(self, dev, name, command, data):
         """620 io(Command, Data) on a string-I/O device (fep_services.md
@@ -486,6 +515,32 @@ class Fep:
             # file_dvc.kl1:324).  Read under Code 0 only because 240's
             # OS begins "SIMPOS" (file_dvcb.kl1 attributes0/4)
             return [NORMAL, self.files[dev][0].attributes]
+        if cmd == DIRECTORY and len(msg) == 5 and not self.known(dev):
+            # {Id, 204, Node, User, Password, Path}: {Id, 1}
+            # (bios/fep_module/dir_dvc.kl1:24 device_create; docs/
+            # fep_services.md 2.3), 5 for a directory the FEP does not
+            # have (OURS: list_dir's None).  R7, ls (2026-11-25)
+            if not isinstance(msg[4], bytes) or len(msg[4]) % 2:
+                raise FepError('directory of %r: not a 16-bit path' % (msg[4],))
+            got = getattr(self, 'list_dir', None)
+            got = got(msg[4]) if got is not None else None
+            if got is None:
+                return [ABNORMAL]
+            if not hasattr(self, 'dirs'):
+                self.dirs = {}  # a Fep saved before R7 has none
+            self.dirs[dev] = got
+            return [NORMAL]
+        if cmd == LISTING_ALL and len(msg) == 2 and dev in getattr(self, 'dirs', {}) \
+                and msg[1] == LISTING_WILDCARD:
+            # {Id, 237, Wildcard}: {Id, 1, File_names} (dir_dvc.kl1:253-
+            # 256), the string listing() makes: INFERENCE (its header).
+            # Another wildcard is not served (FepError)
+            return [NORMAL, self.dirs[dev]]
+        if cmd == CLOSE and len(msg) == 1 and dev in getattr(self, 'dirs', {}):
+            # {Id, 60} at the directory stream's end (dir_dvc.kl1
+            # device_io1 fep#nil, then device_terminate): [1], as a file's
+            del self.dirs[dev]
+            return [NORMAL]
         if cmd == APPEND_OPEN and len(msg) == 5 and dev not in self.files \
                 and dev not in self.appending:
             # {Id, 203, "", User, Password, Path}: fep#append_open

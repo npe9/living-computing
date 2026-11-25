@@ -53,6 +53,10 @@ PIMOS's files in SIMPOS's file system on a PSI disk):
         read_open (fep#read_open 201, argument 4): 16-bit JIS, high byte
         first, as ref_scsi.py's open_file receives them.  The emulator
         compares bytes; no JIS table in hardware.  Zeros after.
+        (2026-11-25, R7, ls) bit 31 of the name length set: a DIRECTORY
+        (fep.py 204, Fep.list_dir), the name its path as 204 gives it,
+        the "file" 237's answer for fep.LISTING_WILDCARD (fep.listing);
+        read_open does not find it, 204 finds nothing else
    240  the file's pathname, 221's answer string: first block, 244
         length in bytes; 248 its attributes, 222's: first block, 252
         length (2026-11-25, a home file, fep.FileData: the bytes fep.py
@@ -142,6 +146,18 @@ def held():
     return out
 
 
+class DirEntry(bytes):
+    """A directory's entry: its data is 237's answer (fep.listing)."""
+
+
+def dirs():
+    """[(path bytes, DirEntry)]: the directories 204 opens
+    (longrun_ipl.home_listing; R7, ls, 2026-11-25): the home."""
+    import longrun_ipl as lr
+    path = jis_bytes(lr.HOME)
+    return [(path, DirEntry(lr.home_listing(path)))]
+
+
 def objects():
     """[(path bytes, contents)]: every file of the held object directory
     (docs/nonlocal/pimosobj.tar.Z, object/) as pimos:NAME, the kernel's
@@ -149,7 +165,7 @@ def objects():
     object/* to pimos:)."""
     import longrun_ipl as lr
     lr.held_object('')
-    return [(jis_bytes('pimos:' + n), lr._held[n]) for n in sorted(lr._held)] + homes()
+    return [(jis_bytes('pimos:' + n), lr._held[n]) for n in sorted(lr._held)] + homes() + dirs()
 
 
 def homes():
@@ -198,7 +214,8 @@ def decoys(entries):
     for name, _ in entries:
         for k, alt in (('prefix', name[:-2]), ('extension', name + jis_bytes('x'))):
             body = ('DECOY %s of %s\n' % (k, name_text(name))).encode()
-            out.append((alt, body + bytes(len(body) % 2)))
+            body += bytes(len(body) % 2)
+            out.append((alt, DirEntry(body) if isinstance(_, DirEntry) else body))
     return out
 
 
@@ -216,7 +233,8 @@ def build(entries, note, tables=None):
     at = 1 + dir_blocks
     directory, files = b'', b''
     for name, data in entries:
-        entry = struct.pack('>IIII', len(name), at, len(data), sum32(data))
+        flag = 1 << 31 if isinstance(data, DirEntry) else 0
+        entry = struct.pack('>IIII', len(name) | flag, at, len(data), sum32(data))
         entry += name + bytes(240 - 16 - len(name))
         files += data + bytes(-len(data) % BLOCK)
         at += -(-len(data) // BLOCK)
@@ -251,9 +269,10 @@ def parse(img):
     for i in range(count):
         e = img[first * BLOCK + i * ENTRY:][:ENTRY]
         nl, start, length, s = struct.unpack('>IIII', e[:16])
+        isdir, nl = bool(nl >> 31), nl & 0x7fffffff
         pb, pl, ab, al = struct.unpack('>IIII', e[240:256])
         data = img[start * BLOCK:start * BLOCK + length]
-        out.append(dict(name=e[16:16 + nl], start=start, length=length, sum=s,
+        out.append(dict(name=e[16:16 + nl], start=start, length=length, sum=s, dir=isdir,
                         ok=len(data) == length and sum32(data) == s, data=data,
                         pathname=img[pb * BLOCK:pb * BLOCK + pl] if pb else b'',
                         attributes=img[ab * BLOCK:ab * BLOCK + al] if ab else b''))
@@ -286,8 +305,9 @@ def list_image(path):
     print('  %-6s %-9s %-9s %-8s %s' % ('entry', 'block', 'bytes', 'sum32', 'name'))
     bad = 0
     for i, e in enumerate(entries):
-        print('  %-6d %-9d %-9d %08x %s%s%s' % (i, e['start'], e['length'], e['sum'],
+        print('  %-6d %-9d %-9d %08x %s%s%s%s' % (i, e['start'], e['length'], e['sum'],
                                                name_text(e['name']),
+                                               '   (a directory: 237)' if e['dir'] else '',
                                                '' if e['ok'] else '   BAD (sum or length)',
                                                '   (221: %s; 222: %d bytes)'
                                                % (name_text(e['pathname']), len(e['attributes']))
@@ -333,7 +353,7 @@ def main(argv):
     h, got = parse(img)
     assert [e['name'] for e in got] == [n for n, _ in entries]
     assert all(e['ok'] and e['data'] == d and (e['pathname'], e['attributes']) == info(d)
-               for e, (_, d) in zip(got, entries))
+               and e['dir'] == isinstance(d, DirEntry) for e, (_, d) in zip(got, entries))
     assert (h['attributes'], h['script']) == tables
     print('mkfepcard: wrote %s, %d entries, %d bytes' % (out, len(entries), len(img)))
     return 0

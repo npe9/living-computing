@@ -158,6 +158,9 @@ PINNED = {
     ('prompt', ('echo("a b c") | cat | lc',)): (2123497, 501560),
     ('prompt', ('grep(":-") <= file("sample1.kl1") | lc => window("out")',)): (2038170, 465694),
     ('prompt', ('grep(":-") <= file("sample1.kl1") | lc',)): (957748, 286597),
+    # R7 ls (2026-11-25): the home directory through 204 and 237, the
+    # listing's form INFERENCE (fep.listing), on both models
+    ('prompt', ('ls',)): (768488, 164287),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -289,6 +292,17 @@ APPS = {
     # the same line counts 5
     'pipe_primer': (('grep(":-") <= file("sample1.kl1") | lc',),
         ()),
+    # R7 ls (2026-11-25): ls.kl1 opens the directory (204), lists "*.*"
+    # (237) and prints each entry with its directory in front (shell/
+    # utils/pathname.kl1 loop/5), one a line.  The FEP's answer is
+    # INFERENCE from that reader (fep.listing: entries LF-ended, a file
+    # with its version), so the line is ours too: the primer prints no
+    # ls.  The home has the one file, sample1.kl1.  Injection (OBSERVED
+    # 2026-11-25): home_listing without the version (".1") gives
+    # ' >sys>user>pmpsi>sample1.kl1>' (taken for a directory) and the
+    # counts (768817, 164311): FAIL against this row and PINNED
+    'ls': (('ls',),
+        (' >sys>user>pmpsi>sample1.kl1.1\n', 'Shell>> ')),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -425,10 +439,12 @@ def play(m, loaded, kind, lines, sink, stats=None):
         op((driver.SPAWN, 2, 0, (0, pimm.predicate(im, 'top', 'go_pimos1/2'))))
         op((driver.ARGC, 1, 0, boot))
         op((driver.SPAWN, 1, 0, (0, pimm.predicate(im, 'ipl', 'make_boot_info/1'))))
-        dev = m.fep = fepm.Fep(longrun.kernel_file, getb_unit=2, lines=lines)
+        dev = m.fep = fepm.Fep(longrun.kernel_file, getb_unit=2, lines=lines,
+                               list_dir=longrun.home_listing)
     else:
         dev = m.fep
         dev.open_file = longrun.kernel_file
+        dev.list_dir = longrun.home_listing     # R7, ls (a machine saved before it has none)
         dev.script = [('getl', line) for line in lines]
     events = []
     stop = None

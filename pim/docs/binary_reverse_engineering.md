@@ -996,12 +996,26 @@ the device are given it again whenever the machine runs dry.
        memory port), the same algorithm step for step, with a lockstep
        test on the K line's checksum.
     4. Add APPS `gc`.
-  - `ls`: needs 204 (directory), not served; its contents would be
-    OURS. Checked 2026-11-25: 204's own reply is documented (`{Id,
-    1}`, `fep_services.md` §2.3), but `ls` then lists with 237
-    `listing_all`, whose `File_names` the directory device passes on
-    unread (`bios/fep_module/dir_dvc.kl1`:253-256): its form is the
-    PSI's, not held (U7). Not done.
+  - **`ls`** (R7, 2026-11-25; INFERENCE, the owner's rule of
+    2026-11-25 "It's okay to infer what you don't have"). 204's own
+    reply is documented (`{Id, 1}`, `fep_services.md` §2.3); the
+    listing comes from 237 `listing_all`, whose `File_names` the
+    directory device passes on unread (`bios/fep_module/dir_dvc.kl1`
+    :253-256), its form the PSI's, not held (U7). It is inferred from
+    PIMOS's reader, `server/fep/file/dir_dvc.kl1`:244-330: the
+    wildcard goes out as 8-bit JIS (`change_element_size(WC, 8, WC0)`,
+    `"*.*"` is `21 76 21 25 21 76`), the reply is widened to 16 bits
+    and cut at each LF into names; `shell/utils/pathname.kl1` loop/5
+    puts the directory and `>` in front of each, and
+    `is_directory_or_file/4` takes a name of two periods for a file,
+    so a file is listed with its version. `fep.listing` makes that
+    string (each name LF-ended), `longrun_ipl.home_listing` the home's
+    (`sample1.kl1.1`), and `ls` prints ` >sys>user>pmpsi>sample1.kl1.1`
+    then `Shell>> ` (APPS `ls`, in lockstep on both models, 164,287
+    instructions, 768,488 trace lines). The FEP emulator serves it
+    from a card entry flagged a directory; the tapes' "direct kernel"
+    section 12 checks 204/237/60 and eight refusals byte for byte.
+    The primer prints no `ls`, so nothing compares its text.
   - **R7, the primer's sample1** (2026-11-25; the PROBE that stood
     here, 2026-11-24, is replaced by committed runs). The home
     directory holds `sample1.kl1`, its text the primer's

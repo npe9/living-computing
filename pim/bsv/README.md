@@ -396,6 +396,7 @@ is not loadable: make it again with the two commands above):
 | pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
 | pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
 | pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
+| ls (R7) | `ls` | 164,287 | 768,488 | 32 |
 
 R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
 1.4, "R7P, the pipe"): the four rows above, measured on both models
@@ -406,6 +407,13 @@ printed, is the held PIMOS's own failure (a reduction failure in
 `task_stdio:invoke_std_handler/3`, the console's `EXCEPTION WAS
 OCCURRED in PIMOS : error code:`, nothing written, the run dry with
 1,373 goals waiting), the same on both models.
+
+R7 `ls` (2026-11-25): the home directory through 204 and 237
+(`ref/pimm/fep.py` `listing`, the reply's form INFERENCE from PIMOS's
+reader, `../docs/fep_services.md` U7), ` >sys>user>pmpsi>sample1.kl1.1`
+then the prompt, on both models; the FEP emulator serves the same
+(`PimmFepEmu.bsv`, a card entry flagged a directory), checked by the
+"direct kernel" tape's section 12 (`run_fepemu.sh`).
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
