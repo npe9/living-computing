@@ -194,7 +194,9 @@ a backup, restored by cp and cmp-checked; both test files run; observed):
     error here; test_espc passes;
   - the pmi c3 row dropped: test_make_com and test_receiver_send error,
     test_census and test_handlers_are_the_table fail here; test_espc
-    passes.
+    passes;
+  - cc reading its constant with const_cell (no vector keys): only
+    test_get_tap_type errors; test_espc passes.
 """
 import os
 import sys
@@ -860,6 +862,26 @@ class Step3gSwitches(unittest.TestCase):
                 run(x)
             self.assertEqual(e.exception.cause, 'operand')
             self.assertIn('pmi c6 on', str(e.exception))
+
+    def test_get_tap_type(self):
+        # a `cc` chain on ce's register: kappa2 KP_MDMSCT.ESP:316-321
+        # `get_tap_type(primitive,tap_primitive):-!; ...
+        # get_tap_type(primitive(table),tap_primitive_table):-!;
+        # get_tap_type(table(id),tap_table_id):-!; ...`, compiled into
+        # kappaMDM_schema_table @1c2: c6, ce 00 02 @1ce, `cc 02 ..
+        # primitive/2` -> @1e5, `cc 02 .. table/2` -> @1e9, fe
+        m = kappa_machine()
+        cid = 'kappa##kappaMDM_schema_table'
+
+        def run(a0):
+            return [repr(r[1]) for r in self.run_local(m, cid, 'get_tap_type', 2, 0x1c2, [a0, K.Var()])]
+        self.assertEqual(run(A('primitive')), ['tap_primitive'])
+        self.assertEqual(run(K.Vec([A('primitive'), A('table')])), ['tap_primitive_table'])
+        self.assertEqual(run(K.Vec([A('table'), A('id')])), ['tap_table_id'])
+        self.assertEqual(run(K.Vec([A('table'), A('x')])), [])
+        self.assertEqual(run(K.Vec([A('foo'), 1])), [])
+        # N counts: a 3-vector's key primitive/3 is not primitive/2
+        self.assertEqual(run(K.Vec([A('primitive'), A('table'), A('z')])), [])
 
     def test_make_com(self):
         # p_MAIN.esp:479-689: twenty atom clauses (cd00 @471), seventeen

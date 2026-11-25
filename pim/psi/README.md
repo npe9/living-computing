@@ -305,8 +305,9 @@ PSI's KL0 firmware is lost, and nothing here emulates it. It is a
 WAM-shaped machine (`../docs/simpos/layers/KL0.md` §3) whose
 instruction set is exactly the rows of `kl0_opcodes.tsv`.
 
-**Opcodes are named only from known plaintext.** Each of the 125 rows
-(100 at step 2, nine more at step 3c, four at step 3d, twelve at step 3e)
+**Opcodes are named only from known plaintext.** Each of the 132 rows
+(100 at step 2, nine more at step 3c, four at step 3d, twelve at step 3e,
+seven at step 3g)
 cites a predicate whose compiled cells sit next to the held ESP clause
 they came from (`pkg##class pred/arity @cell`, source file, clause).
 An opcode without a row is refused loudly (`Refusal`, cause
@@ -1854,7 +1855,7 @@ gains 17 of them, every one INTERPOLATED and labelled from
 
 - PRINTED-INTERFACE: TM-125 p15-16 for `set_size/3`, `set_position/3`,
   `set_title/2`, `activate/1`, `show/1`, `hide/1` and `deactivate/1`;
-  TM-115 p50 and p63 for `get_size/3` and `get_position/3`; TM-112 p16
+  TM-115 p50 and p63-64 (the methods on p64: step 3g, source check §7) for `get_size/3` and `get_position/3`; TM-112 p16
   for `set_font/2`.
 - USAGE only: `reshape/5`, `set_text_size/3`, `get_text_size/3`,
   `get_title/2`, `get_font/2`, `beep/1` and `flash/1`.
@@ -2360,7 +2361,9 @@ puts there):
   first). Element 0 an atom: X_K := the key Name/N and fall through, to
   a `cc` chain testing register K or to the table cdKK. **K is a
   register, not an arity**: pimscsi's `ce 00 0b` is followed by
-  `cc 0b ...`, and every one of the 20 cdNN tables follows a `ce 00 NN`.
+  `cc 0b ...`, and each of 20 cdNN tables directly follows a `ce 00 NN`
+  (MEASURED over nine listings: the six source-held packages and
+  pimfep, pimscsi, pimmcsp; two more follow a ce with an `e2` between).
   **N is the vector's length**, element 0 included: receiver's cd04
   table has the three keys init/4, init/2 and init/5 for `init(pe_view,
   PE,Wid)` (:669-675, a c5 c3 c3 c1 chain), `init(htree_view)` (:678) and
@@ -2413,10 +2416,12 @@ Effect, method by method:
     `abort_string_io/2` too, with its recipe and request.
   - 9 fail: pimscsi `cmt`'s and `scsi`'s `check_argument/2`, `low_if/2`,
     `send_request/5`, `receive_request/5`, and `scsi_communicator
-    check_argument/2`. Not progress: the census's unbound first argument
-    takes clause 1, which binds it to `initiator` (`get r0`, @b8), cuts
-    (`dc 02`) and then fails on the slot it compares.
-  - 8 stop at `not_less_than` on an unbound argument (cmt and scsi
+    check_argument/2`. Not progress. The cause was traced for
+    `check_argument/2` only: the census's unbound first argument takes
+    clause 1, which binds it to `initiator` (`get r0`, @b8), cuts (`dc
+    02`) and then fails on the slot it compares. The other five were
+    checked alone but not traced.
+  - 6 stop at `not_less_than` on an unbound argument (cmt and scsi
     `send_data/4`, `receive_data/4`, `request/4`).
   - `pimfep_message_log dump_log/1` and `/2` reach `vector_element` on an
     unbound argument.
@@ -2435,6 +2440,11 @@ Tests (`test_kl0.py` `Step3gSwitches`):
 - `test_receiver_send`: `goal_name`, both `view_mode` clauses, the
   catch-all for a vector, an atom and a list, clause 1 for an unbound
   message, the three init keys, and the refusals.
+- `test_get_tap_type`: kappaMDM_schema_table `get_tap_type/2` @1ce
+  (KP_MDMSCT.ESP:316-321), the witness for `cc` testing a vector key on
+  the register ce loaded: `primitive`, `{primitive,table}` and
+  `{table,id}` take their clauses; `{table,x}`, `{foo,1}` and
+  `{primitive,table,z}` fail.
 - `test_handlers_are_the_table` (132 rows) and `test_census` pin the
   counts; `test_espc.py` pins the FEP censuses.
 
@@ -2453,7 +2463,9 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
   error, and `test_espc.py` passes;
 - the c3 row dropped from the table: `test_make_com` and
   `test_receiver_send` error, `test_census` and
-  `test_handlers_are_the_table` fail, and `test_espc.py` passes.
+  `test_handlers_are_the_table` fail, and `test_espc.py` passes;
+- cc reading its constant with `const_cell` (no vector keys): only
+  `test_get_tap_type` errors, and `test_espc.py` passes.
 
 ### Step 3g: `process:invocation_stack/2` (2026-11-25)
 

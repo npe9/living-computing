@@ -1417,7 +1417,9 @@ end.''', 'simpos')
             finally:
                 m.stop_before = None
         # the census's process runs no program: get_first/2 fails on the
-        # empty stack, so the creator fails (tcpip has no recipe)
+        # empty stack, so the creator fails (tcpip has no recipe).  The
+        # machine is shared: empty the stack first
+        self.send(stack, 'clear')
         self.assertEqual(create_socket(), [])
         self.assertEqual(len(self.send(proc, 'add_program', prog)), 1)
         try:

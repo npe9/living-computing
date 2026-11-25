@@ -455,7 +455,7 @@ and stand-in `simpos##` classes. In order:
        is now the commonest stop.
      - `pmacs_window` gains its geometry, title, font and display
        methods (INTERPOLATED from `subsystems/window.md` §2.1-2.3, TM-125
-       p15-16, TM-115 p50, p63), as slots and no-ops. The census has
+       p15-16, TM-115 p50, p63-64), as slots and no-ops. The census has
        1,420 methods: the 17 new ones are inherited by `pimos_window` and
        succeed, which is not progress. Plain 807 / 154 / 442; with
        recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their

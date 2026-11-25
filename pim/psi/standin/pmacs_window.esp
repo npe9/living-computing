@@ -82,8 +82,9 @@ attribute activity := 0;
 % getter; nothing is displayed, so the display methods succeed and do
 % nothing.  The initial values are OURS (0, an empty title); the font
 % starts as 0, since no font object is stood in.  What `manipulator` in
-% place of a coordinate does (the user places the window, TM-125 p15) is
-% not modelled: it is stored like a number.
+% place of a coordinate does (the user places the window; cited as
+% TM-125 p15, but step 3g's re-check found the word on neither PDF p15
+% nor p16, so USAGE only) is not modelled: it is stored like a number.
 
 % INTERPOLATED: the representation (OURS); see the note above.
 attribute x := 0, y := 0, width := 0, height := 0,

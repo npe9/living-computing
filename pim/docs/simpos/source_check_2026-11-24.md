@@ -701,7 +701,7 @@ applied as proposed unless the note says otherwise.
 | P-k7 | APPLIED | TR-044 PDF p39 read as an image; TERMCODE.ESP:183's size 8 is a `string/3` call |
 | P-k8 | APPLIED | TM-444 PDF p12-14 and TR-236 PDF p5 read as images; cited in the meaning, mnemonics not renamed |
 | P-k9 | APPLIED | all five quotes re-read verbatim |
-| P-k10 | ALREADY DONE except c6 and blt 6f | b1/b5/b6/b7, ca, 9a/9b, 50/51/54/55, f2 by step 3e; c6 and 6f NOT APPLIED: each needs an implementation and tests, and 6f's third argument is unsettled |
+| P-k10 | ALREADY DONE except c6 and blt 6f | b1/b5/b6/b7, ca, 9a/9b, 50/51/54/55, f2 by step 3e; c6 and 6f NOT APPLIED: each needs an implementation and tests, and 6f's third argument is unsettled. c6 APPLIED in step 3g (2026-11-25, with ce, c3, c1, ff, cd03, cd04; §7 and `../../psi/README.md`) |
 | P-f1 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
 | P-f2 | APPLIED | also `psi/fepread/ptfread.py`'s docstring, which said the same |
 | P-f3 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
@@ -733,7 +733,8 @@ applied as proposed unless the note says otherwise.
 Step 3f (`../../psi/README.md`, the "Step 3f" sections) added kl0's
 library and symbolizer models, 17 `pmacs_window` methods and the
 census recipes. Each was labelled INTERPOLATED or OURS from cited
-pages and lines. Step 3g re-read every citation:
+pages and lines. Step 3g re-read the citations in the table below
+(the rest are listed after it as not re-read):
 
 - TR/TM pages as page images (`pdftoppm`, read by eye). TM-115 was also
   OCRed whole with tesseract, as a lead only.
@@ -751,7 +752,7 @@ Page numbers are PDF pages, with the printed folio where it differs.
 | `pmacs_window` `set_size/3`, `set_position/3`, `set_title/2` | TM-125 p15-16 | TM-125 PDF p15 (folio 14) §5.3 prints `:set_size(Window, Width, Height)`, `:set_position(Window, X, Y)` and `:set_title(Window, String)` | CONFIRMED |
 | `activate/1`, `show/1`, `deactivate/1`, `hide/1` | TM-125 p15-16 | TM-125 PDF p16 (folio 15) §5.4 prints all four | CONFIRMED |
 | `get_size/3` | TM-115 p50 | PDF p50 (folio 45) names `:get_size` "provided by the window system", without arguments. PDF p64 (folio 59) prints `:get_size(Instance,^Width,^Height)` | CONFIRMED. PDF p64 is the better citation (it gives the arity) |
-| `get_position/3` | TM-115 p63 | PDF p63 (folio 58) and folio 63 (PDF p68) do not print it. It is on PDF p64 (folio 59, "Page 4-26"): `:get_position(Instance,^X,^Y)` | CORRECTED: the citation is PDF p64. Fixed in `standin/pmacs_window.esp` and `subsystems/window.md` |
+| `get_position/3` | TM-115 p63 | PDF p63 (folio 58) and folio 63 (PDF p68) do not print it. It is on PDF p64 (folio 59, "Page 4-26"): `:get_position(Instance,^X,^Y)` | CORRECTED: the citation is PDF p64. PDF p63 opens the parameters_display_menu section (4.14) that the methods belong to, which is likely why `subsystems/notes/tm115.md` and `tm115.tsv` cite p63. Fixed in `standin/pmacs_window.esp`, `subsystems/window.md` §2.1 and the README texts; the generated notes tables (`tm115.tsv` and the coverage outputs built from it) are left as they are |
 | `get_title/2` (USAGE only) | none printed | TM-115 PDF p64 prints `:get_title(Instance,^Title)` among the parameters_display_menu methods that "just call the method of the menu which has the same name" | UPGRADED to PRINTED-INTERFACE, for a menu window (1985) |
 | `set_font/2` | TM-112 p16 | TM-112 PDF p16 (folio 12) §3.6 prints `:set_font(Window,Font)` | CONFIRMED |
 | `reshape/5`, `set_text_size/3`, `get_text_size/3`, `get_font/2`, `beep/1`, `flash/1` (USAGE only) | held `.ptf` sends | the TM-115 OCR has no hit for any of them | unchanged: USAGE only |
@@ -762,5 +763,26 @@ Page numbers are PDF pages, with the printed folio where it differs.
 | the string-I/O class names | PIMOS `pass_body.kl1`:68 | `STR = [create(string#"pimos_standard_io_window",Win)]` | CONFIRMED |
 | test claim "the timer's device id is unbound" | step 3f test | step 3g gives it REQUEST_ID (16) | SUPERSEDED (test updated in step 3g) |
 
-Not re-read: TM-100 Fig. 3.1 (`process:activate/2`), which step 3e's
-check (§1) already read as an image.
+Also re-read, with less depth:
+
+- `reshape/5` USAGE cal-esp `cal2.12/cpwindow.esp`:85
+  (`:reshape(Window!ctree_window, 0,0,Width,Height-NH)`): CONFIRMED.
+- `create_pimos_window/3` @19-34: the pool `#pimfep##pimos_window_editor`,
+  `create/4` with `{size,70,110}`, a slot write @32. CONFIRMED in shape.
+- The executor's after-demon @40-48: a class-slot read (`blt 27`), then
+  instance-slot writes (`blt 2f`). CONFIRMED in shape; the slot names
+  were not re-derived.
+- `manipulator` in place of a coordinate ("the user places the window",
+  cited as TM-125 p15 in `standin/pmacs_window.esp`): NOT CONFIRMED.
+  Neither TM-125 PDF p15 nor p16 prints the word. It stays USAGE
+  (`subsystems/window.md`'s ptf rows) until a page is found.
+
+Not re-read:
+
+- TM-100 Fig. 3.1 (`process:activate/2`), which step 3e's check (§1)
+  already read as an image;
+- TM-388 pp92-101 (the own-package rule for `get_class_object/3`);
+- `fep_services.md` §6.4 (the string-I/O programs' table);
+- the rest of `create_string_io/10` beyond @28-2d.
+
+So this re-check is PARTIAL.

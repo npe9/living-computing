@@ -1212,8 +1212,10 @@ class Machine:
         """The register a hash table looks up: the low byte of its op
         (cdNN), which is the register its switch named (step 3g, MEASURED:
         cd00 after all 116 c7 (R 00) and all 7 c6 (R 00); cdNN after every
-        ce 00 NN, 20 tables, in the six source-held packages).  Only those
-        three placements are witnessed; any other refuses."""
+        ce 00 NN, 20 tables, over nine listings: the six source-held
+        packages and pimfep, pimscsi, pimmcsp; two more cdNN tables
+        follow a ce with an e2 between).  Only those three placements
+        are witnessed; any other refuses."""
         reg = cell[2] & 0xff
         for back, op, named in ((2, 0xc7, 16), (3, 0xc6, 16), (2, 0xce, 8)):
             c = code.cells.get(off - back)
