@@ -427,6 +427,14 @@ A model that matches every page and does not fit has not met the goal.
   the console capture `consoleImg` (16,384). Move them out (D3, a BRAM
   or UART console), then re-run F0 fixture-free to read the core's own
   logic. nextpnr was not run.
+  **FIXTURES MOVED TO BLOCK RAM, 2026-11-25** (`fpga_feasibility.md`
+  §11.1). Both are now `BRAMCore`s with a written mask. The disk read
+  keeps its one-clock latency, so no cycle count moved. The console's
+  testbench read became a request and a response. The re-run gives
+  369,181 LUT4, 21,517 FF and 392 DP16KD for the whole design; the
+  core's own logic is 344,369 LUT4 and 19,310 FF. The fixtures were 48%
+  of the core's LUT4. Still in registers: the reader, printer and tape
+  images (5,120 bits).
 - **F1. A design rule for A3/A4.**
   - The units are built at the machine's own widths: the SAU a byte pair
     per 0.6 µs step (Buchholz p.209), the PAU's one shared multiplier
@@ -438,7 +446,9 @@ A model that matches every page and does not fit has not met the goal.
 - **F2. Core storage to SDRAM.** This is the 184% DP16KD, done the
   same way as the disk plan's D3 (`~/.claude/plans/zazzy-noodling-sloth.md`).
 - **F3. The I/O boundary.** The 1,066% IO is unwrapped ports. Write a
-  ULX3S top (D4's).
+  ULX3S top (D4's). The console paper's testbench port
+  (`io.readConsoleReq`/`readConsoleResp`, since 2026-11-25) is the port
+  a UART drain would read on the board.
 - Exit: nextpnr places and routes the six-unit core on an 85F. If it
   cannot, partitioning is recorded as an owner decision with the
   measured numbers.

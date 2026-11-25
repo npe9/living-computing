@@ -10487,6 +10487,13 @@ run "FLOATING-POINT BOX (multiply and add; against the one-step reference, liter
 # sits after `cd "$BSV_DIR"`, so a bare ./run_fpcommit_test.sh is looked
 # for in bsv/ and not found.
 run "THE FP COMMIT RECORD: BOTH CLASSES PURE, 128 OPCODES SWEPT (no storage instantiated)" "$TESTS_DIR/run_fpcommit_test.sh"
+
+# The disk's two arcs and the console's paper are BRAMCores since
+# 2026-11-25 (fidelity_plan.md F0; they were 81,920 flip-flops).  No deck
+# reads unwritten disk or checks unwritten paper, so the power-on-zero
+# masks and the held read are pinned here, alone.  Absolute path, as
+# above.  Injections and observed failure sets: StretchFixtureTest.bsv.
+run "DISK AND CONSOLE FIXTURES AS BLOCK RAM: ZERO UNTIL WRITTEN, READ HELD ACROSS A WRITE" "$TESTS_DIR/run_fixture_test.sh"
 # -- 1b. StretchDecode's instruction formats swept against the length
 # tag jb_ax3a p.140 states, over all 2^14 half-words (both with the
 # address field zeroed and all ones).  Not a program: it drives
