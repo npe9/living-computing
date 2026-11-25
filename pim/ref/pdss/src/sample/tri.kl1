@@ -1,0 +1,251 @@
+/*-----------------------------------------------------------------------------
+Program: Triangle 
+Author:  A. Okumura (after E. Tick's Prolog version)
+Date:    August 8 1988
+Modified: Y. Kimura
+Date:    October 21 1988
+
+Notes:
+0. To run:
+      ?- triangle.
+
+1. To run:
+      ?- go(N).
+output N should be 133.
+
+2. This program has been automatically translated from Prolog, and then
+optimized by hand using unfolding rules.
+-----------------------------------------------------------------------------*/
+:- module triangle.
+:- public triangle/0, go/1.
+
+triangle :- true | go(N).
+
+go(N) :- true |
+   'sweeper$playS'('L1'('L0'),3,b(1,1,1,1,1, 0,1,0,0,1, 1,1,1,0,1),A,[]),
+    count(A,N).
+
+count(L,N) :- true | count(L,0,N).
+count([],M,N) :- true | M = N.
+count([X|Xs],M,N) :- M1 := M+1 | count(Xs,M1,N).
+
+'sweeper$playS'(A,B,C,D,E) :- true |
+   'playS/3#1'(A,B,C,D,F), 'playS/3#2'(A,B,C,F,E).
+
+'playS/3#1'(A,B,C,D,E) :- B<13 |
+   'sweeper$smove'('L2'(A,B),C,D,E).
+otherwise.
+'playS/3#1'(A,B,C,D,E) :- true | D=E.
+
+'playS/3#2'(A,13,B,C,D) :- true |
+   'cont$playS/3'(A,[],C,D).
+otherwise.
+'playS/3#2'(A,B,C,D,E) :- true | D=E.
+
+'cont$playS/3'('L3'(A,B),C,D,E) :- true |
+   'cont$playS/3'(A,[B|C],D,E).
+'cont$playS/3'('L1'('L0'),B,C,D) :- true | C = [B|D].
+
+% for an unknown reason, the following two clauses, when merged,
+% cause an overflow of some sort in Sato's emulator.  Keep as is...
+'sweeper$smove'(A,B,C,D) :- true |
+       'smove/3#1'(A,B,C,E), 'smove/3#2'(A,B,E,F), 'smove/3#3'(A,B,F,G),
+	'smove/3#4'(A,B,G,H), 'smove/3#5'(A,B,H,I), 'smove/3#6'(A,B,I,J),
+	'smove/3#7'(A,B,J,K), 'smove/3#8'(A,B,K,L), 'smove/3#9'(A,B,L,M),
+	'smove/3#10'(A,B,M,N), 'smove/3#11'(A,B,N,O), 'smove/3#12'(A,B,O,P),
+	'smove/3#13'(A,B,P,Q), 'smove/3#14'(A,B,Q,R), 'smove/3#15'(A,B,R,S),
+	'smove/3#16'(A,B,S,T), 'smove/3#17'(A,B,T,U), 'smove/3#18'(A,B,U,V),
+	foobar(A,B,V,D).     
+
+foobar(A,B,V,D) :- true |
+	'smove/3#19'(A,B,V,W), 'smove/3#20'(A,B,W,X), 'smove/3#21'(A,B,X,Y),
+	'smove/3#22'(A,B,Y,Z), 'smove/3#23'(A,B,Z,A1), 'smove/3#24'(A,B,A1,B1),
+       'smove/3#25'(A,B,B1,C1),'smove/3#26'(A,B,C1,D1),'smove/3#27'(A,B,D1,E1),
+       'smove/3#28'(A,B,E1,F1),'smove/3#29'(A,B,F1,G1),'smove/3#30'(A,B,G1,H1),
+       'smove/3#31'(A,B,H1,I1),'smove/3#32'(A,B,I1,J1),'smove/3#33'(A,B,J1,K1),
+       'smove/3#34'(A,B,K1,L1),'smove/3#35'(A,B,L1,M1),'smove/3#36'(A,B,M1,D).
+
+'smove/3#1'(A,b(1,1,B,0,C,D,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,1,b(0,0,B,1,C,D,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#1'(A,BB,N,O) :- true | N=O.
+
+'smove/3#2'(A,b(B,1,C,1,D,E,0,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,2,b(B,0,C,0,D,E,1,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#2'(A,BB,N,O) :- true | N=O.
+
+'smove/3#3'(A,b(B,C,D,1,E,F,1,G,H,I,0,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,3,b(B,C,D,0,E,F,0,G,H,I,1,J,K,L,M),N,O).
+otherwise.
+'smove/3#3'(A,BB,N,O) :- true | N=O.
+
+'smove/3#4'(A,b(B,C,1,D,1,E,F,0,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,4,b(B,C,0,D,0,E,F,1,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#4'(A,BB,N,O) :- true | N=O.
+
+'smove/3#5'(A,b(B,C,D,E,1,F,G,1,H,I,J,0,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,5,b(B,C,D,E,0,F,G,0,H,I,J,1,K,L,M),N,O).
+otherwise.
+'smove/3#5'(A,BB,N,O) :- true | N=O.
+
+'smove/3#6'(A,b(B,C,D,E,F,1,G,H,1,I,J,K,0,L,M),N,O) :- true |
+   'cont$smove/3'(A,6,b(B,C,D,E,F,0,G,H,0,I,J,K,1,L,M),N,O).
+otherwise.
+'smove/3#6'(A,BB,N,O) :- true | N=O.
+
+'smove/3#7'(A,b(1,B,1,C,D,0,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,7,b(0,B,0,C,D,1,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#7'(A,BB,N,O) :- true | N=O.
+
+'smove/3#8'(A,b(B,C,1,D,E,1,F,G,H,0,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,8,b(B,C,0,D,E,0,F,G,H,1,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#8'(A,BB,N,O) :- true | N=O.
+
+'smove/3#9'(A,b(B,C,D,E,F,1,G,H,I,1,J,K,L,M,0),N,O) :- true |
+   'cont$smove/3'(A,9,b(B,C,D,E,F,0,G,H,I,0,J,K,L,M,1),N,O).
+otherwise.
+'smove/3#9'(A,BB,N,O) :- true | N=O.
+
+'smove/3#10'(A,b(B,1,C,D,1,E,F,G,0,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,10,b(B,0,C,D,0,E,F,G,1,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#10'(A,BB,N,O) :- true | N=O.
+
+'smove/3#11'(A,b(B,C,D,E,1,F,G,H,1,I,J,K,L,0,M),N,O) :- true |
+   'cont$smove/3'(A,11,b(B,C,D,E,0,F,G,H,0,I,J,K,L,1,M),N,O).
+otherwise.
+'smove/3#11'(A,BB,N,O) :- true | N=O.
+
+'smove/3#12'(A,b(B,C,D,1,E,F,G,1,H,I,J,K,0,L,M),N,O) :- true |
+   'cont$smove/3'(A,12,b(B,C,D,0,E,F,G,0,H,I,J,K,1,L,M),N,O).
+otherwise.
+'smove/3#12'(A,BB,N,O) :- true | N=O.
+
+'smove/3#13'(A,b(B,C,D,E,F,G,H,I,J,K,1,1,0,L,M),N,O) :- true |
+   'cont$smove/3'(A,13,b(B,C,D,E,F,G,H,I,J,K,0,0,1,L,M),N,O).
+otherwise.
+'smove/3#13'(A,BB,N,O) :- true | N=O.
+
+'smove/3#14'(A,b(B,C,D,E,F,G,H,I,J,K,L,1,1,0,M),N,O) :- true |
+   'cont$smove/3'(A,14,b(B,C,D,E,F,G,H,I,J,K,L,0,0,1,M),N,O).
+otherwise.
+'smove/3#14'(A,BB,N,O) :- true | N=O.
+
+'smove/3#15'(A,b(B,C,D,E,F,G,H,I,J,K,L,M,1,1,0),N,O) :- true |
+   'cont$smove/3'(A,15,b(B,C,D,E,F,G,H,I,J,K,L,M,0,0,1),N,O).
+otherwise.
+'smove/3#15'(A,BB,N,O) :- true | N=O.
+
+'smove/3#16'(A,b(B,C,D,E,F,G,1,1,0,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,16,b(B,C,D,E,F,G,0,0,1,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#16'(A,BB,N,O) :- true | N=O.
+
+'smove/3#17'(A,b(B,C,D,E,F,G,H,1,1,0,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,17,b(B,C,D,E,F,G,H,0,0,1,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#17'(A,BB,N,O) :- true | N=O.
+
+'smove/3#18'(A,b(B,C,D,1,1,0,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,18,b(B,C,D,0,0,1,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#18'(A,BB,N,O) :- true | N=O.
+
+'smove/3#19'(A,b(0,1,B,1,C,D,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,19,b(1,0,B,0,C,D,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#19'(A,BB,N,O) :- true | N=O.
+
+'smove/3#20'(A,b(B,0,C,1,D,E,1,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,20,b(B,1,C,0,D,E,0,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#20'(A,BB,N,O) :- true | N=O.
+
+'smove/3#21'(A,b(B,C,D,0,E,F,1,G,H,I,1,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,21,b(B,C,D,1,E,F,0,G,H,I,0,J,K,L,M),N,O).
+otherwise.
+'smove/3#21'(A,BB,N,O) :- true | N=O.
+
+'smove/3#22'(A,b(B,C,0,D,1,E,F,1,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,22,b(B,C,1,D,0,E,F,0,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#22'(A,BB,N,O) :- true | N=O.
+
+'smove/3#23'(A,b(B,C,D,E,0,F,G,1,H,I,J,1,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,23,b(B,C,D,E,1,F,G,0,H,I,J,0,K,L,M),N,O).
+otherwise.
+'smove/3#23'(A,BB,N,O) :- true | N=O.
+
+'smove/3#24'(A,b(B,C,D,E,F,0,G,H,1,I,J,K,1,L,M),N,O) :- true |
+   'cont$smove/3'(A,24,b(B,C,D,E,F,1,G,H,0,I,J,K,0,L,M),N,O).
+otherwise.
+'smove/3#24'(A,BB,N,O) :- true | N=O.
+
+'smove/3#25'(A,b(0,B,1,C,D,1,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,25,b(1,B,0,C,D,0,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#25'(A,BB,N,O) :- true | N=O.
+
+'smove/3#26'(A,b(B,C,0,D,E,1,F,G,H,1,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,26,b(B,C,1,D,E,0,F,G,H,0,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#26'(A,BB,N,O) :- true | N=O.
+
+'smove/3#27'(A,b(B,C,D,E,F,0,G,H,I,1,J,K,L,M,1),N,O) :- true |
+   'cont$smove/3'(A,27,b(B,C,D,E,F,1,G,H,I,0,J,K,L,M,0),N,O).
+otherwise.
+'smove/3#27'(A,BB,N,O) :- true | N=O.
+
+'smove/3#28'(A,b(B,0,C,D,1,E,F,G,1,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,28,b(B,1,C,D,0,E,F,G,0,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#28'(A,BB,N,O) :- true | N=O.
+
+'smove/3#29'(A,b(B,C,D,E,0,F,G,H,1,I,J,K,L,1,M),N,O) :- true |
+   'cont$smove/3'(A,29,b(B,C,D,E,1,F,G,H,0,I,J,K,L,0,M),N,O).
+otherwise.
+'smove/3#29'(A,BB,N,O) :- true | N=O.
+
+'smove/3#30'(A,b(B,C,D,0,E,F,G,1,H,I,J,K,1,L,M),N,O) :- true |
+   'cont$smove/3'(A,30,b(B,C,D,1,E,F,G,0,H,I,J,K,0,L,M),N,O).
+otherwise.
+'smove/3#30'(A,BB,N,O) :- true | N=O.
+
+'smove/3#31'(A,b(B,C,D,E,F,G,H,I,J,K,0,1,1,L,M),N,O) :- true |
+   'cont$smove/3'(A,31,b(B,C,D,E,F,G,H,I,J,K,1,0,0,L,M),N,O).
+otherwise.
+'smove/3#31'(A,BB,N,O) :- true | N=O.
+
+'smove/3#32'(A,b(B,C,D,E,F,G,H,I,J,K,L,0,1,1,M),N,O) :- true |
+   'cont$smove/3'(A,32,b(B,C,D,E,F,G,H,I,J,K,L,1,0,0,M),N,O).
+otherwise.
+'smove/3#32'(A,BB,N,O) :- true | N=O.
+
+'smove/3#33'(A,b(B,C,D,E,F,G,H,I,J,K,L,M,0,1,1),N,O) :- true |
+   'cont$smove/3'(A,33,b(B,C,D,E,F,G,H,I,J,K,L,M,1,0,0),N,O).
+otherwise.
+'smove/3#33'(A,BB,N,O) :- true | N=O.
+
+'smove/3#34'(A,b(B,C,D,E,F,G,0,1,1,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,34,b(B,C,D,E,F,G,1,0,0,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#34'(A,BB,N,O) :- true | N=O.
+
+'smove/3#35'(A,b(B,C,D,E,F,G,H,0,1,1,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,35,b(B,C,D,E,F,G,H,1,0,0,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#35'(A,BB,N,O) :- true | N=O.
+
+'smove/3#36'(A,b(B,C,D,0,1,1,E,F,G,H,I,J,K,L,M),N,O) :- true |
+   'cont$smove/3'(A,36,b(B,C,D,1,0,0,E,F,G,H,I,J,K,L,M),N,O).
+otherwise.
+'smove/3#36'(A,BB,N,O) :- true | N=O.
+
+'cont$smove/3'('L2'(A,B),C,D,E,F) :- G := B+1 |
+   'sweeper$playS'('L3'(A,C),G,D,E,F).
+
+

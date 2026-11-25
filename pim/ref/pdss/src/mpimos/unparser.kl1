@@ -1,0 +1,561 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_unparser.
+:- public create/2,make_variable_name/2.
+:- implicit type:shared.
+
+create(Req,Op):-
+     true|
+	do(Req,10,10,na,Op).
+
+do([putt(Term,SList)|NReq],Len,Dep,Vm,OpH):-
+     true|
+	term(0,Term,SList,[],Len,Dep,Vm,0,OpH,OpT,0,_,1200),
+	do(NReq,Len,Dep,Vm,OpT).
+do([puttq(Term,SList)|NReq],Len,Dep,Vm,OpH):-
+     true|
+	term(0,Term,SList,[],Len,Dep,Vm,1,OpH,OpT,0,_,1200),
+	do(NReq,Len,Dep,Vm,OpT).
+do([putet(Term,SList)|NReq],Len,Dep,Vm,OpH):-
+     true|
+	term(1,Term,SList,[],Len,Dep,Vm,1,OpH,OpT,0,_,1200),
+	do(NReq,Len,Dep,Vm,OpT).
+do([print_length(Len)|NReq],_,Dep,Vm,Op):-
+     integer(Len)|
+	do(NReq,Len,Dep,Vm,Op).
+do([print_depth(Dep)|NReq],Len,_,Vm,Op):-
+     integer(Dep)|
+	do(NReq,Len,Dep,Vm,Op).
+do([print_var_mode(na)|NReq],Len,Dep,_,Op):- % na : $VAR(N)     -> A,B,...
+     true|				     %      $VAR(N,Str) -> Str
+	do(NReq,Len,Dep,na,Op).
+do([print_var_mode(nu)|NReq],Len,Dep,_,Op):- % nu : $VAR(N),$VAR(N,Str) -> _N
+     true|
+	do(NReq,Len,Dep,nu,Op).
+do([print_var_mode(di)|NReq],Len,Dep,_,Op):- % nu : $VAR(N)     -> $VAR(N)
+     true|				     %      $VAR(N,Str) -> $VAR(N,Str)
+	do(NReq,Len,Dep,di,Op).
+do([],_,_,_,OpH):-
+     true|
+	OpH = [].
+
+
+term('$VAR'(N),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    N>=0 |
+	OpH = OpL,
+	{{ variable1(N,TKH,TKL,Len,Dep,Vm,Qm,PL,PT) }}.
+term('$VAR'(N,Str),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    N>=0,
+    string(Str,_,8)|
+	OpH = OpL,
+	{{ variable2(N,TKH,TKL,Len,Dep,Vm,Qm,PL,PT,Str) }}.
+term({PDSS,NTerm},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    PDSS =:= 16#"50445353" |
+	term(NTerm,TKH,TKL,Len,Dep,di,Qm,OpH,OpL,PL,PT,Pro).
+otherwise.
+term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)--> &type=1,
+    true |
+	ex_term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro).
+otherwise.
+term(Term,TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,Pro)-->
+    atom(Term) |
+	{{ atom(Term,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro) }}.
+term(Term,TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    integer(Term) |
+	get_print_image(Term,Qm,PL,St,_,PT),
+	TKH=[St|TKL], OpH=OpL.
+term(Term,TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    floating_point(Term) |
+	get_print_image(Term,Qm,PL,St,_,PT),
+	TKH=[St|TKL], OpH=OpL.
+term(Term,TKH,TKL,Len,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    string(Term,L,T) |
+	{{ string(Term,L,T,TKH,TKL,Len,Qm,PL,PT) }},
+	OpH=OpL.
+term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    list(Term) |
+	list(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT).
+term({},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,_)-->
+    true |
+	PT = #"}",
+	TKH=[string#"{}"|TKL], OpH=OpL.
+term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    vector(Term,L), L>1, vector_element(Term,0,F), atom(F), F\=[] |
+	functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,L).
+otherwise.
+term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    vector(Term,L), L>=1 |
+	vector(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,L).
+otherwise.
+term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,Pro)-->
+    true |
+	PT = #"""",
+	TKH=[string#"$SpecialData"|TKL], OpH=OpL.
+
+ex_term(atom(Term),TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,Pro)-->
+    atom(Term) |
+	{{ atom(Term,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro) }}.
+ex_term(integer(Term),TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    integer(Term) |
+	get_print_image(Term,Qm,PL,St,_,PT),
+	TKH=[St|TKL], OpH=OpL.
+ex_term(floating_point(Term),TKH,TKL,_,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    floating_point(Term) |
+	get_print_image(Term,Qm,PL,St,_,PT),
+	TKH=[St|TKL], OpH=OpL.
+ex_term(string(Term,L,T),TKH,TKL,Len,_,_,Qm,OpH,OpL,PL,PT,_)-->
+    string(Term,L,T) |
+	{{ string(Term,L,T,TKH,TKL,Len,Qm,PL,PT) }},
+	OpH=OpL.
+ex_term(list(Term),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    list(Term) |
+	list(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT).
+ex_term(vector({},0),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,_)-->
+    true |
+	PT = #"}",
+	TKH=[string#"{}"|TKL], OpH=OpL.
+ex_term(vector(Term,L),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    vector(Term,L), L>1, vector_element(Term,0,atom(F)), atom(F), F\=[] |
+	functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,L).
+otherwise.
+ex_term(vector(Term,L),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro)-->
+    vector(Term,L), L>=1 |
+	vector(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,L).
+otherwise.
+ex_term(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,Pro)-->
+    true |
+	PT = #"""",
+	TKH=[string#"???"|TKL], OpH=OpL.
+
+atom(Atom,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro):-
+    true |
+	OpH=[operator(Atom,OpDef)|Op2],
+	atom(Atom,TKH,TKL,Qm,Op2,OpL,PL,PT,Pro,OpDef).
+
+atom(',',TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,[]):-
+    true |
+	get_comma_image(Qm,PL,S0,PT),
+	TKH=[S0|TKL], OpH=OpL.
+atom(Atom,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,[]):-
+    Atom \= ',' |
+	get_print_image(Atom,Qm,PL,S0,_,PT),
+	TKH=[S0|TKL], OpH=OpL.
+atom(Atom,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,[{P,T}|OpDef]):-
+    P=<Pro |
+	atom(Atom,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,OpDef).
+atom(',',TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,[{P,T}|OpDef]):-
+    P>Pro |
+	get_comma_image(Qm,#"(",S1,_),
+	PT = #")",
+     	parenthesis_left_space(PL,TKH,TK1),
+	TK1=[string#"(",S1,string#")"|TKL], OpH=OpL.
+atom(Atom,TKH,TKL,Qm,OpH,OpL,PL,PT,Pro,[{P,T}|OpDef]):-
+    P>Pro , Atom \= ',' |
+	get_print_image(Atom,Qm,#"(",S1,_,_),
+	PT = #")",
+     	parenthesis_left_space(PL,TKH,TK1),
+	TK1=[string#"(",S1,string#")"|TKL], OpH=OpL.
+
+get_comma_image(0,_,S,PT):-
+    true|
+	S = string#",", PT = #",".
+get_comma_image(1,#"'",S,PT):-
+    true|
+	S = string#" ','", PT = #"'".
+get_comma_image(1,PL,S,PT):-
+    PL >= #"0", PL =< #"9"|
+	S = string#" ','", PT = #"'".
+otherwise.
+get_comma_image(_,_,S,PT):-
+    true|
+	S = string#"','", PT = #"'".
+
+variable1(N,TKH,TKL,Len,Dep,na,Qm,PL,PT):-
+    true|
+	PT = #"A",
+	make_variable_name(N,S0),
+	variable_left_space(PL,TKH,TK),
+	TK = [S0|TKL].
+variable1(N,TKH,TKL,Len,Dep,nu,Qm,PL,PT):-
+    true|
+%%%%	get_print_image(N,Qm,#"_",St,_,PT),
+	get_print_image(N,Qm,0,St,_,PT),
+	variable_left_space(PL,TKH,TK),
+	TK = [string#"_",St|TKL].
+variable1(N,TKH,TKL,Len,Dep,di,Qm,PL,PT):-
+    true|
+	PT = #")",
+	get_print_image('$VAR',Qm,PL,S0,_,_),
+	get_print_image(N,Qm,#"(",S1,_,_),
+	TKH = [S0,string#"(",S1,string#")"|TKL].
+
+
+variable2(N,TKH,TKL,Len,Dep,na,Qm,PL,PT,Str):-
+    true|
+	PT = #"A",
+	variable_left_space(PL,TKH,TK),
+	TK = [Str|TKL].
+variable2(N,TKH,TKL,Len,Dep,nu,Qm,PL,PT,Str):-
+    true|
+%%%%	get_print_image(N,Qm,#"_",St,_,PT),
+	get_print_image(N,Qm,0,St,_,PT),
+	variable_left_space(PL,TKH,TK),
+	TK = [string#"_",St|TKL].
+variable2(N,TKH,TKL,Len,Dep,di,Qm,PL,PT,Str):-
+    true|
+	PT = #")",
+	get_print_image('$VAR',Qm,PL,S0,_,_),
+	get_print_image(N,Qm,#"(",S1,_,_),
+	get_print_image(Str,Qm,#",",S2,_,_),
+	TKH = [S0,string#"(",S1,string#",",S2,string#")"|TKL].
+
+variable_left_space(PL,TKH,TKL):-
+    #"0" =< PL, PL =< #"9"|
+	TKH = [string#" "|TKL].
+variable_left_space(PL,TKH,TKL):-
+    #"A" =< PL, PL =< #"Z"|
+	TKH = [string#" "|TKL].
+variable_left_space(PL,TKH,TKL):-
+    #"a" =< PL, PL =< #"z"|
+	TKH = [string#" "|TKL].
+variable_left_space(#"_",TKH,TKL):-
+    true|
+	TKH = [string#" "|TKL].
+otherwise.
+variable_left_space(_,TKH,TKL):-
+    true|
+	TKH = TKL.
+
+make_variable_name(N,NS):-
+    N >= 0|
+	NN := N/26,
+	E0 := N mod 26,
+	E  := E0 + #"A",
+	new_string(S0,1,8),
+	set_string_element(S0,0,E,S1),
+	make_variable_name0(NN,S1,NS).
+
+make_variable_name0(0,S0,NS):-
+     true|
+	NS = S0.
+make_variable_name0(N,S0,NS):-
+     N > 0|
+	NN := N/26,
+	E0 := N mod 26,
+	E  := E0 + #"A",
+	new_string(S,1,8),
+	set_string_element(S,0,E,S1),
+	append_string(S1,S0,S2),
+	make_variable_name0(NN,S2,NS).
+
+
+string(String,L,8,TKH,TKL,Len,Qm,PL,PT):-
+    true|
+ 	get_print_image(String,Qm,PL,S0,_,PT),
+ 	TKH = [S0|TKL].
+otherwise.
+string(String,L,N,TKH,TKL,Len,Qm,_,PT):-
+     true|
+	get_print_image(N,Qm,#"(",S1,_,_),
+	TKH = [string#" string(",S1,string#")#"|TK2],
+	PT = #"}",
+	string_args(String,0,L,TK2,TKL,Qm,Len).
+
+string_args(_,_,0,TKH,TKL,_,_):-
+     true|
+	TKH = [string#"{}"|TKL].
+otherwise.
+string_args(_,_,_,TKH,TKL,_,0):-
+     true|
+	TKH = [string#"{...}"|TKL].
+string_args(String,C,L,TKH,TKL,Qm,Len):-
+     Len > 0|
+	string_element(String,C,E,NString),
+	get_print_image(E,Qm,#"{",S1,_,_),
+	TKH = [string#"{",S1|TK2],
+	NC := C + 1,
+	NLen := Len - 1,
+	string_args2(NString,NC,L,TK2,TKL,Qm,NLen).
+
+string_args2(String,L,L,TKH,TKL,Qm,_):-
+     true|
+	TKH = [string#"}"|TKL].
+otherwise.
+string_args2(String,C,L,TKH,TKL,Qm,Len):-
+     C =< Len|
+	string_element(String,C,E,NString),
+	get_print_image(E,Qm,#",",S1,_,_),
+	TKH = [string#",",S1|TK2],
+	NC := C + 1,
+	NLen := Len - 1,
+	string_args2(NString,NC,L,TK2,TKL,Qm,NLen).
+string_args2(_,C,L,TKH,TKL,Qm,Len):-
+     C > Len|
+	TKH = [string#"...}"|TKL].
+
+
+list([Head|Tail],TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT)-->
+    Dep>0 |
+	Dep2 := Dep-1, LL := Len-1,
+	TKH=[string#"["|TK2],
+	term(Head,TK2,TK3,Len,Dep2,Vm,Qm,OpH,Op2,#"[",PL,999),
+	list(Tail,TK3,TKL,Len,Dep2,Vm,Qm,Op2,OpL,LL,PL,PT).
+list(List,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT)-->
+    Dep=<0 |
+	PT = #"]",
+	TKH=[string#"[...]"|TKL], OpH=OpL.
+
+list([Head|Tail],TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=0,
+    L>0 |
+	LL := L-1,
+	TKH=[string#","|TK2],
+	term(Head,TK2,TK3,Len,Dep,Vm,Qm,OpH,Op2,#",",PL,999),
+	list(Tail,TK3,TKL,Len,Dep,Vm,Qm,Op2,OpL,LL,PL,PT).
+list([Head|Tail],TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=0,
+    L=<0 |
+	PT = #"]",
+	TKH=[string#",...]"|TKL], OpH=OpL.
+list([],TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=0,
+    true |
+	PT = #"]",
+	TKH=[string#"]"|TKL], OpH=OpL.
+list(list([Head|Tail]),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=1,
+    L>0 |
+	LL := L-1,
+	TKH=[string#","|TK2],
+	term(Head,TK2,TK3,Len,Dep,Vm,Qm,OpH,Op2,#",",PL,999),
+	list(Tail,TK3,TKL,Len,Dep,Vm,Qm,Op2,OpL,LL,PL,PT).
+list(list([Head|Tail]),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=1,
+    L=<0 |
+	PT = #"]",
+	TKH=[string#",...]"|TKL], OpH=OpL.
+list(atom([]),TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)--> &type=1,
+    true |
+	PT = #"]",
+	TKH=[string#"]"|TKL], OpH=OpL.
+otherwise.
+list(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,_,PT)-->
+    true |
+	TKH=[string#"|"|TK2],
+	PT = #"]",
+	term(Term,TK2,[string#"]"|TKL],Len,Dep,Vm,Qm,OpH,OpL,#"|",_,999).
+
+
+functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,2)-->
+    Dep>0 |
+	Dep2 := Dep-1,
+	OpH=[operator(F,OpDef)|Op2],
+	functor1(Term,TKH,TKL,Len,Dep2,Vm,Qm,Op2,OpL,PL,PT,Pro,F,OpDef).
+functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,3)-->
+    Dep>0 |
+	Dep2 := Dep-1,
+	OpH=[operator(F,OpDef)|Op2],
+	functor2(Term,TKH,TKL,Len,Dep2,Vm,Qm,Op2,OpL,PL,PT,Pro,F,OpDef).
+functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,A)-->
+    Dep=<0 |
+	get_print_image(F,Qm,PL,S0,_,_),
+	PT = #")",
+	TKH=[S0,string#"(...)"|TKL], OpH=OpL.
+otherwise.
+functor(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,A)-->
+    true |
+	Dep2 := Dep-1,
+	functor3(Term,TKH,TKL,Len,Dep2,Vm,Qm,OpH,OpL,PL,PT,F,A).
+
+functor1(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[])-->
+    true |
+	functor3(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,F,2).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,fx}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL,S0,_,PL2),
+	TKH=[S0|TK2],
+	term(A1,TK2,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL2,PT,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,fy}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL,S0,_,PL2),
+	TKH=[S0|TK2],
+	term(A1,TK2,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL2,PT,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xf}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL2,S0,_,PT),
+	term(A1,TKH,[S0|TKL],Len,Dep,Vm,Qm,OpH,OpL,PL,PL2,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,yf}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL2,S0,_,PT),
+	term(A1,TKH,[S0|TKL],Len,Dep,Vm,Qm,OpH,OpL,PL,PL2,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,fx}|OpDef])-->
+    P>Pro |
+	PP := P-1,
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	get_print_image(F,Qm,#"(",S1,_,PL1),
+	TK1=[string#"(",S1|TK2],
+	PT = #")",
+	term(A1,TK2,[string#")"|TKL],Len,Dep,Vm,Qm,OpH,OpL,PL1,_,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,fy}|OpDef])-->
+    P>Pro |
+	PP := P-1,
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	get_print_image(F,Qm,#"(",S1,_,PL1),
+	TK1=[string#"(",S1|TK2],
+	PT = #")",
+	term(A1,TK2,[string#")"|TKL],Len,Dep,Vm,Qm,OpH,OpL,PL1,_,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xf}|OpDef])-->
+    P>Pro |
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	PP := P-1,
+	get_print_image(F,Qm,PL1,S1,_,_),
+	TK1=[string#"("|TK2],
+	PT = #")",
+	term(A1,TK2,[S1,string#")"|TKL],Len,Dep,Vm,Qm,OpH,OpL,#"(",PL1,PP).
+functor1({_,A1},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,yf}|OpDef])-->
+    P>Pro |
+	PP := P-1,
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	TK1=[string#"("|TK2],
+	PT = #")",
+	get_print_image(F,Qm,PL1,S1,_,_),
+	term(A1,TK2,[S1,string#")"|TKL],Len,Dep,Vm,Qm,OpH,OpL,#"(",PL1,PP).
+otherwise.
+functor1(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[_|OpDef])-->
+    true |
+	functor1(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,OpDef).
+
+functor2(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[])-->
+    true |
+	functor3(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,F,3).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xfx}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL2,S0,_,PL3),
+	term(A1,TKH,[S0|TK2],Len,Dep,Vm,Qm,OpH,Op2,PL,PL2,PP),
+	term(A2,TK2,TKL,Len,Dep,Vm,Qm,Op2,OpL,PL3,PT,PP).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,yfx}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL2,S0,_,PL3),
+	term(A1,TKH,[S0|TK2],Len,Dep,Vm,Qm,OpH,Op2,PL,PL2,P),
+	term(A2,TK2,TKL,Len,Dep,Vm,Qm,Op2,OpL,PL3,PT,PP).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xfy}|OpDef])-->
+    P=<Pro |
+	PP := P-1,
+	get_print_image(F,Qm,PL2,S0,_,PL3),
+	term(A1,TKH,[S0|TK2],Len,Dep,Vm,Qm,OpH,Op2,PL,PL2,PP),
+	term(A2,TK2,TKL,Len,Dep,Vm,Qm,Op2,OpL,PL3,PT,P).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xfx}|OpDef])-->
+    P>Pro |
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	PP := P-1,
+	get_print_image(F,Qm,PL1,S1,_,PL2),
+	PT = #")",
+	TK1=[string#"("|TK2],
+	term(A1,TK2,[S1|TK3],Len,Dep,Vm,Qm,OpH,Op2,#"(",PL1,PP),
+	term(A2,TK3,[string#")"|TKL],Len,Dep,Vm,Qm,Op2,OpL,PL2,_,PP).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,yfx}|OpDef])-->
+    P>Pro |
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	PP := P-1,
+	get_print_image(F,Qm,PL1,S1,_,PL2),
+	TK1=[string#"("|TK2],
+	PT = #")",
+	term(A1,TK2,[S1|TK3],Len,Dep,Vm,Qm,OpH,Op2,#"(",PL1,P),
+	term(A2,TK3,[string#")"|TKL],Len,Dep,Vm,Qm,Op2,OpL,PL2,_,PP).
+functor2({_,A1,A2},TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[{P,xfy}|OpDef])-->
+    P>Pro |
+     	{{ parenthesis_left_space(PL,TKH,TK1) }},
+	PP := P-1,
+	get_print_image(F,Qm,PL1,S1,_,PL2),
+	TK1=[string#"("|TK2],
+	PT = #")",
+	term(A1,TK2,[S1|TK3],Len,Dep,Vm,Qm,OpH,Op2,#"(",PL1,PP),
+	term(A2,TK3,[string#")"|TKL],Len,Dep,Vm,Qm,Op2,OpL,PL2,_,P).
+otherwise.
+functor2(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,[_|OpDef])-->
+    true |
+	functor2(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,Pro,F,OpDef).
+
+functor3(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,PL,PT,F,A)-->
+    true|
+	get_print_image(F,Qm,PL,S0,_,_),
+	TKH=[S0,string#"("|TK2],
+	PT = #")",
+	set_vector_element(Term,1,A1,[],Ter2),
+	term(A1,TK2,TK3,Len,Dep,Vm,Qm,OpH,Op2,#"(",_,999),
+	functor32(Ter2,TK3,TKL,Len,Dep,Vm,Qm,Op2,OpL,A,2).
+
+functor32(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,A,P)-->
+    P<A, P=<Len |
+	PP := P+1,
+	TKH=[string#","|TK2],
+	set_vector_element(Term,P,A1,[],Ter2),
+	term(A1,TK2,TK3,Len,Dep,Vm,Qm,OpH,Op2,#",",_,999),
+	functor32(Ter2,TK3,TKL,Len,Dep,Vm,Qm,Op2,OpL,A,PP).
+functor32(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,A,P)-->
+    P<A, P>Len |
+	TKH=[string#",...)"|TKL], OpH=OpL.
+functor32(Term,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,A,P)-->
+    P>=A |
+	TKH=[string#")"|TKL], OpH=OpL.
+
+
+vector(Vector,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,L)-->
+    Dep>0 |
+	Dep2 := Dep-1,
+	TKH=[string#"{"|TK2],
+	PT = #"}",
+	set_vector_element(Vector,0,A1,[],Ter2),
+	term(A1,TK2,TK3,Len,Dep2,Vm,Qm,OpH,Op2,#"{",PL,999),
+	vector0(Ter2,TK3,TKL,Len,Dep2,Vm,Qm,Op2,OpL,L,1).
+vector(Vector,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,_,PT,L)-->
+    Dep=<0 |
+	TKH=[string#"{...}"|TKL],
+	PT = #"}", OpH=OpL.
+
+vector0(Vector,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,P)-->
+    P<L, P=<Len |
+	PP := P+1,
+	TKH=[string#","|TK2],
+	set_vector_element(Vector,P,A1,[],Ter2),
+	term(A1,TK2,TK3,Len,Dep,Vm,Qm,OpH,Op2,#",",_,999),
+	vector0(Ter2,TK3,TKL,Len,Dep,Vm,Qm,Op2,OpL,L,PP).
+vector0(_,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,P)-->
+    P<L, P>Len |
+	TKH=[string#",...}"|TKL], OpH=OpL.
+vector0(_,TKH,TKL,Len,Dep,Vm,Qm,OpH,OpL,L,P)-->
+    P>=L |
+	TKH=[string#"}"|TKL], OpH=OpL.
+
+
+parenthesis_left_space(0,TKH,TKL):-
+     true|
+	TKH = TKL.
+parenthesis_left_space(#"!",TKH,TKL):-
+     true|
+	TKH = TKL.
+parenthesis_left_space(#",",TKH,TKL):-
+     true|
+	TKH = TKL.
+parenthesis_left_space(PL,TKH,TKL):-
+     PL >= #"(", PL =< #")"|
+	TKH = TKL.
+parenthesis_left_space(#"[",TKH,TKL):-
+     true|
+	TKH = TKL.
+parenthesis_left_space(#"]",TKH,TKL):-
+     true|
+	TKH = TKL.
+parenthesis_left_space(PL,TKH,TKL):-
+     PL >= #"{", PL =< #"}"|
+	TKH = TKL.
+otherwise.
+parenthesis_left_space(PL,TKH,TKL):-
+     true|
+	TKH = [string#" "|TKL].

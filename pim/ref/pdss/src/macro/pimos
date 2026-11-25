@@ -1,0 +1,168 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% :- user_macro pimos.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   stream message macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Common Status
+fep#nil             => 0 .   fep#normal          => 1 .
+fep#eod             => 2 .   fep#control_c       => 3 .   fep#attention   => 3 .
+fep#continue        => 4 .   fep#abnormal        => 5 .
+fep#aborted         => 6 .   fep#yes             => 7 .
+fep#no              => 8 .   fep#wake_up         => 9 .
+
+fep#reset               => 50 .          % reset(?abort,?attention,^st,?cdr)
+fep#next_attention      => 51 .          % next_attention(^att,^st,?cdr)
+fep#close               => 60 .          % close(^st,?cdr)
+fep#abort               => 70 .          % abort 
+
+%% Window Manager
+fep#window                  => 100 .     % window(?window,^st,?cdr)
+    %%  Window Manager Commands
+    fep#create              => 101 .     % create(?window,^st,?cdr)
+    fep#create_with_buffer  => 102 .     % create_with_buffer(buf,?window,^st,?cdr)
+    fep#get_max_size        => 103 .     % get_max_size(x,y,font,^c,^l,^st,?cdr)
+        %% Window IO commands
+        fep#getl            => 110 .     % getl(^string,^st,?cdr)
+        fep#putb            => 111 .     % putb(string,^st,?cdr)
+        fep#flush           => 112 .     % flush(^st,?cdr)
+        fep#beep            => 113 .     % beep(^st,?cdr)
+        %% Set/Get Position and Size
+        fep#set_size        => 120 .     % set_size(^st,?cdr)
+        fep#set_inside_size => 121 .     % set_inside_size(chr,lin,^st,?cdr)
+        fep#get_inside_size => 122 .     % get_inside_size(^chr,^lin,^st,?cdr)
+        fep#set_position_by_mouse => 123 . % set_position_by_mouse(^st,?cdr)
+        fep#set_position    => 124 .     % set_position(x,y,^st,?cdr)
+        fep#get_position    => 125 .     % get_position(^x,^y,^st,?cdr)
+        fep#reshape_by_mouse => 126 .    % reshape_by_mouse(^st,?cdr)
+        fep#reshape         => 127 .     % reshape(x,y,chr,lin,^st,?cdr)
+        %% Set/Get Window Title and Font
+        fep#set_title       => 130 .     % set_title(string,^st,?cdr)
+        fep#get_title       => 131 .     % get_title(^string,^st,?cdr)
+        fep#set_font        => 132 .     % set_font(string,^st,?cdr)
+        fep#get_font        => 133 .     % get_font(^string,^st,?cdr)
+        %% Other Window Controls
+        fep#select_buffer   => 140 .     % select_buffer(string,^st,?cdr)
+        fep#activate        => 141 .     % activate(^st,?cdr)
+        fep#deactivate      => 142 .     % deactivate(^st,?cdr)
+        fep#show            => 143 .     % show(^st,?cdr)
+        fep#hide            => 144 .     % hide(^st,?cdr)
+        fep#clear           => 145 .     % clear(^st,?cdr)
+        fep#buffer_name     => 146 .     % buffer_name(string,^st,?cdr)
+
+%% File Manager
+fep#file                    => 200 .     % file(?file,^st,?cdr)
+    %% File Manager Commands
+    fep#read_open           => 201 .     % read_open(string,?file,^st,?cdr)
+    fep#write_open          => 202 .     % write_open(string,?file,^st,?cdr)
+    fep#append_open         => 203 .     % append_open(string,?file,^st,?cdr)
+    fep#directory           => 204 .     % directory(string,?dir,^st,?cdr)
+        %% File IO Commands
+        fep#getb            => 210 .     % getb(number,^string,^st,?cdr)
+%%      fep#putb            => 111 .     % putb(string,^st,?cdr)
+        %% Get File Status
+        fep#end_of_file     => 220 .     % end_of_file(^eof,^st,?cdr)
+        fep#pathname        => 221 .     % pathname(^string,^st,?cdr)
+        %% Directory Control Commands
+        fep#listing         => 230 .     % listing(string,?filenames,^st,?cdr)
+        fep#delete          => 231 .     % delete(string,^st,?cdr)
+        fep#undelete        => 232 .     % undelete(string,^st,?cdr)
+        fep#purge           => 233 .     % purge(string,^st,?cdr)
+        fep#deleted         => 234 .     % deleted(string,?filenames,^st,?cdr)
+        fep#expunge         => 235 .     % expunge(^st,?cdr)
+            %% Filenames Stream Command
+            fep#next_filename => 236 .   % next_filename(^string,^st,?cdr)
+
+%% Timer Manager
+fep#timer                   => 300 .     % timer(?timer,^st,?cdr)
+    %% Timer Commands
+    fep#get_count           => 301 .     % get_count(?count,^st,?cdr)
+    fep#on_at               => 302 .     % on_at(count,^now,^st,?cdr)
+    fep#on_after            => 303 .     % on_after(count,^now,^st,?cdr)
+
+%% IPL
+fep#ipl                     => 400 .     % ipl(?ipl,^st,?cdr)
+
+%% SYMBOL
+fep#symbol                  => 500 .     % symbol(?symbol,^st,?cdr)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       shoen stream macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% for control stream 
+shoen#start                   => start  .
+shoen#stop                    => stop  .
+shoen#abort                   => abort  .
+shoen#statistics              => statistics  .
+shoen#add_resource(X)         => add_resource(X)  .
+shoen#allow_resource_report   => allow_resource_report  .
+
+%% for report stream 
+shoen#aborted                  => aborted  .
+shoen#exception(EC,OP,Argv,NewCode,NewArgv)
+                               => {exception,EC,OP,Argv,NewCode,NewArgv}  .
+shoen#failure(Code,Argv,NewCode,NewArgv)
+                               => {failure,Code,Argv,NewCode,NewArgv}  .
+shoen#raised(Info1,Info2,NewCode,NewArgv)
+                               => {raised,Info1,Info2,NewCode,NewArgv}  .
+shoen#resource_added           => resource_added  .
+shoen#resource_low             => resource_low  .
+shoen#resource_report_allowed  => resource_report_allowed  .
+shoen#started                  => started  .
+shoen#statistics(Info)         => {statistics,Info}  .
+shoen#statistics_started       => statistics_started  .
+shoen#stopped                  => stopped  .
+shoen#terminated               => terminated  .
+shoen#unification_failure(X,Y,NewCode,NewArgv)
+                               => {unification_failure,X,Y,NewCode,NewArgv}  .
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       pseudo builtin macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+builtin#apply(Code,Argvect)     => apply(Code,Argvect) .
+builtin#merge_in(In1,In2,In)    => In = {In1,In2}  .
+
+builtin#substring(S,P,L,SubS,NewS)
+        => substring(S,P,L,SubS,NewS)  .
+builtin#copy_string_elements(S1,P1,L,S2,P2,NewS1,NewS2)
+        => mpimos_utility:copy_string_elements(S1,P1,L,S2,P2,NewS1,NewS2)  .
+builtin#set_substring(S1,P1,L,S2,NewS1,NewS2)
+        => mpimos_utility:copy_string_elements(S1,P1,L,S2,0,NewS1,NewS2)  .
+builtin#set_substring(S1,P1,L,S2,NewS1)
+        => mpimos_utility:copy_string_elements(S1,P1,L,S2,0,NewS1,_)  .
+builtin#append_string(String_list,Appended_string)
+        => mpimos_utility:append_string(String_list,Appended_string)  .
+builtin#append_string(String1,String2,Appended_string)
+        => append_string(String1,String2,Appended_string)  .
+
+builtin#atom_number(X,N)        => atom_number(X,N)  .
+
+builtin#hash(X,H,NewX)          => hasher:hash(X,H,NewX)  .
+
+builtin#new_string(X,S)         => new_string(X,S,8) .
+
+builtin#code(X)                 => X = {A,B,C}, atom(A), atom(B), integer(C) .
+
+builtin#module(X)               => atom(X) .
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       exception tag macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+pimos_tag#task  => 1 .
+pimos_tag#pimos => 2 .
+pimos_tag#job   => 16 .
+pimos_tag#tos   => 32 .
+pimos_tag#shell => 64 .
+
+pimos_tag#error => 1024 .
+
+shell_tag#none  => 0 .
+shell_tag#tos   => 64 .
+%shell_tag#job   => 4160749618 .
+shell_tag#job   => -134217678 .

@@ -1,0 +1,188 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       P D S S    V 2. 5        使用手引用スタイルファイル (日本語版)       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\def\@options{\def\@ptsize{0}\let\@elt\relax
+  \@for\@tempa:=\@optionlist\do
+    {\@ifundefined{ds@\@tempa}{\xdef\@optionfiles{\@optionfiles 
+       \@elt \@tempa.sty\relax}}{\csname ds@\@tempa\endcsname}}}
+\input jarticle.sty
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Load font for title.
+\jfont\dmHUGE=dm10 scaled \magstep5
+\def\titlefont{\Huge\dmHUGE}
+
+\sectionfont{\jLARGE\dg\bf}{\jLarge\dg\bf}{\jlarge\dg\bf}
+\def\BF{\dg\bf}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Special character:  _ & ^
+\catcode`\^=\active \def^{{\tt\char94}}
+\catcode`\_=\active \def_{{\tt\char95}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Spacing.
+\jasciikanjiskip 0.1em plus 0.1em minus 0.07em
+\jintercharskip  0.0em plus 0.05em
+\parindent\jspaceskip
+\parskip 1pt plus 0.5pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Head & Foot
+\addtolength{\topmargin}{1em}
+\def\ps@pdss{
+  \def\@evenhead{\underline{\makebox[\textwidth][l]
+                          {\rule{1em}{0em}p.\thepage\rule{2em}{0em}\leftmark}}}
+  \def\@oddhead{\underline{\makebox[\textwidth][r]
+                         {\rightmark\rule{2em}{0em}p.\thepage\rule{1em}{0em}}}}
+  \def\@oddfoot{}
+  \def\@evenfoot{}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Sectioning.
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\def\Section#1{\newpage\section{#1}\def\sectionname{#1}\markboth{#1}{#1}}
+\def\SubSection#1{\subsection{#1}
+  \markboth{\sectionname\ ---\ #1}{\sectionname\ ---\ #1}}
+\def\SubSubSection{\subsubsection}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Enumerate, Itemize.
+\topsep  2pt plus 0.5pt
+\itemsep 0pt plus 0.3pt
+\parsep  0pt plus 0.3pt
+
+\leftmargini   25pt  \leftmarginii 22pt
+\leftmarginiii 19pt  \leftmarginiv 17pt
+\leftmarginv   10pt  \leftmarginvi 10pt
+\leftmargin\leftmargini
+\labelwidth\leftmargini\advance\labelwidth-\labelsep
+\labelsep 5pt
+
+\def\@listi{\leftmargin\leftmargini}
+\def\@listii{\leftmargin\leftmarginii
+  \labelwidth\leftmarginii\advance\labelwidth-\labelsep}
+\def\@listiii{\leftmargin\leftmarginiii
+  \labelwidth\leftmarginiii\advance\labelwidth-\labelsep}
+\def\@listiv{\leftmargin\leftmarginiv
+  \labelwidth\leftmarginiv\advance\labelwidth-\labelsep}
+\def\@listv{\leftmargin\leftmarginv
+  \labelwidth\leftmarginv\advance\labelwidth-\labelsep}
+\def\@listvi{\leftmargin\leftmarginvi
+  \labelwidth\leftmarginvi\advance\labelwidth-\labelsep}
+
+\def\labelenumi{\arabic{enumi}.} 
+\def\labelenumii{\alph{enumii}.}
+\def\labelenumiii{\roman{enumiii}.}
+
+\def\labelitemi{$\bullet$}
+\def\labelitemii{$\circ$}
+\def\labelitemiii{$\diamond$}
+\def\labelitemiv{$\cdot$}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Float
+\def\fnum@figure{\BF 図 \thefigure}
+\def\fnum@table{\BF 表 \thetable}
+\def\thefigure{\@arabic\c@figure}
+\def\thetable{\@arabic\c@table}
+
+\setcounter{topnumber}{10}
+\def\topfraction{.99}
+\setcounter{bottomnumber}{10}
+\def\bottomfraction{.99}
+\setcounter{totalnumber}{10}
+\def\textfraction{.0}
+\def\floatpagefraction{.0}
+\setcounter{dbltopnumber}{10}
+\def\dbltopfraction{.99}
+\def\dblfloatpagefraction{.0}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Table of contents.
+\def\l@section#1{\addvspace{1ex}\@dottedtocline{1}{0em}{1.5em}{\BF#1}}
+\def\l@subsection{\@dottedtocline{2}{1em}{2.3em}}
+\def\l@subsubsection{\@dottedtocline{3}{2em}{3.2em}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  History & Appendix.
+\def\BeginHistory{
+  \addcontentsline{toc}{section}{改定履歴}}
+\def\History#1#2#3{
+  \subsection*{#1版 $\Rightarrow$ #2版 (#3)}
+  \addcontentsline{toc}{subsection}{#1版 $\Rightarrow$ #2版 (#3)}
+  \markboth{改定履歴}{改定履歴}}
+
+\def\BeginAppendix{
+  \addtocounter{section}{1}
+  \setcounter{subsection}{0}
+  \addcontentsline{toc}{section}{付録}
+  \markboth{付録}{付録}}
+\def\Appendix#1{
+  \newpage
+  \addtocounter{subsection}{1}
+  \subsection*{付録-\arabic{subsection}\hspace{1em}#1}
+  \addcontentsline{toc}{subsection}{付録-\arabic{subsection}\hspace{1em}#1}
+  \markboth{付録\ ---\ #1}{付録\ ---\ #1}}
+\def\AppendixLabel#1{
+  \@bsphack\if@filesw {\let\thepage\relax
+    \xdef\@gtempa{\write\@auxout{\string
+      \newlabel{#1}{{付録-\arabic{subsection}}{\thepage}}}}}\@gtempa
+    \if@nobreak \ifvmode\nobreak\fi\fi\fi\@esphack}
+
+\newif\if@restonecol
+\def\theindex{\@restonecoltrue\if@twocolumn\@restonecolfalse\fi
+  \columnseprule \z@
+  \columnsep 35pt\twocolumn[\section*{索引}\hbox{}\par]
+  \addcontentsline{toc}{section}{索引}
+  \markboth{索引}{索引}\parindent\z@
+  \parskip\z@ plus .3pt\relax\let\item\@idxitem}
+\def\@idxitem{\par\hangindent 40pt}
+\def\subitem{\par\hangindent 40pt \hspace*{20pt}}
+\def\subsubitem{\par\hangindent 40pt \hspace*{30pt}}
+\def\endtheindex{\if@restonecol\onecolumn\else\clearpage\fi}
+\def\indexspace{\par \vskip 10pt plus 5pt minus 3pt\relax}
+
+\def\makeindex{\if@filesw \newwrite\@indexfile
+  \immediate\openout\@indexfile=\jobname.idx
+  \def\index{\@bsphack\begingroup
+             \def\protect####1{\string####1\space}\@mysanitize
+             \@wrindex\@indexfile}\typeout
+  {Writing index file \jobname.idx }\fi}
+\def\@wrindex#1#2{\let\thepage\relax
+   \xdef\@gtempa{\write#1{\string
+      \indexentry{#2}{\thepage}}}\endgroup\@gtempa
+   \if@nobreak \ifvmode\nobreak\fi\fi\@esphack}
+\def\@mysanitize{\@makeother\ \@makeother\\\@makeother\$\@makeother\&%
+\@makeother\#\@makeother\%\@makeother\~}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Macros #1
+\def\SS#1{{#1}}
+\def\NewpageDouble{\newpage\ifodd\c@page\else\hbox{}\markboth{}{}\newpage\fi}
+\def\EndDocument{\newpage\ifodd\c@page\else\hbox{}\thispagestyle{empty}\fi}
+\def\UnderlineIndex#1{\par\pagebreak[2]\noindent
+  \rule{0em}{2em}\underline{\BF #1}\vspace{1ex}\par}
+\def\Caution{\makebox[30pt]{【注意】}\ }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Macros #2
+\def\ControlMessage#1{\item[] \hskip -2em {\BF #1}\\}
+\def\ReportedMessage#1{\item[] \hskip -2em {\BF #1}\\}
+\def\Builtin#1#2#3{\item[] \hskip -2em {\BF #1#2 :: #3}\index{#1}\\}
+\def\Macro{\item[] \hskip -2em }
+\def\MpShellCommand#1#2{\item[] \hskip -2em {\BF #1#2}\index{#1}\\}
+\def\MpIOCreate#1{\item[] \hskip -2em {\BF #1}\index{create}\\}
+\def\MpIOCommand#1#2{\item[] \hskip -2em {\BF #1#2}\index{#1}\\}
+\def\MpDirCreate#1{\item[] \hskip -2em {\BF #1}\index{create}\\}
+\def\MpDirCommand#1#2{\item[] \hskip -2em {\BF #1#2}\index{#1}\\}
+\def\MpDevCreate#1{\item[] \hskip -2em {\BF #1}\\}
+\def\TrCommand#1#2{\item[] \hskip -2em {\BF #1 :: #2}\\}
+\def\DevCreate#1{\item[] \hskip -2em {\bf #1}\\}
+\def\DevCommand#1{\item[] \hskip -2em {\bf #1}\\}
+\def\EmacsCommand#1{\item[] \hskip -2em {\bf #1}}
+\def\PimosUtlCommand#1{\item[] \hskip -2em {\bf #1}\\}

@@ -1,0 +1,417 @@
+%%% KL1-B Test for B_Code (Exception) %%%
+% B_Predicate_To_Code %%% abcdefghijklmnop
+% B_Code_To_Predicate %%% abcdefghijklmnopqrstuvwxyz
+% B_Apply %%%%%%%%%%%%%%% abcdefghijklmnopqrstuvwxyzABCDEF
+
+:- module b_code_e.
+:- public go/0,get/1
+,do_predicate_to_code/3,do_code_to_predicate/1,do_apply/2.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Code (Exception) %%%"), put_console(key#lf) | ptc.
+
+ptc:- put_console(ascii#"% B_Predicate_To_Code %%% ") | ptc00.
+
+ptc00:- true | execute_in_shoen(do_predicate_to_code,{'$$$SYSTEM',add,3},R), ptc00(R).
+ptc00(success):- put_console(c#"a") | ptc01.
+otherwise.
+ptc00(_):- put_console(c#"*") | ptc01.
+
+ptc01:- true | execute_in_shoen(do_predicate_to_code,{1234,get,1},R), ptc01(R).
+ptc01(illegal_input):- put_console(c#"b") | ptc02.
+otherwise.
+ptc01(_):- put_console(c#"*") | ptc02.
+
+ptc02:- true | execute_in_shoen(do_predicate_to_code,{12.34,get,1},R), ptc02(R).
+ptc02(illegal_input):- put_console(c#"c") | ptc03.
+otherwise.
+ptc02(_):- put_console(c#"*") | ptc03.
+
+ptc03:- true | execute_in_shoen(do_predicate_to_code,{[list],get,1},R), ptc03(R).
+ptc03(illegal_input):- put_console(c#"d") | ptc04.
+otherwise.
+ptc03(_):- put_console(c#"*") | ptc04.
+
+ptc04:- true | execute_in_shoen(do_predicate_to_code,{{0},get,1},R), ptc04(R).
+ptc04(illegal_input):- put_console(c#"e") | ptc05.
+otherwise.
+ptc04(_):- put_console(c#"*") | ptc05.
+
+ptc05:- true | execute_in_shoen(do_predicate_to_code,{ascii#"Str",get,1},R), ptc05(R).
+ptc05(illegal_input):- put_console(c#"f") | ptc06.
+otherwise.
+ptc05(_):- put_console(c#"*") | ptc06.
+
+ptc06:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,1234,1},R), ptc06(R).
+ptc06(illegal_input):- put_console(c#"g") | ptc07.
+otherwise.
+ptc06(_):- put_console(c#"*") | ptc07.
+
+ptc07:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,12.34,1},R), ptc07(R).
+ptc07(illegal_input):- put_console(c#"h") | ptc08.
+otherwise.
+ptc07(_):- put_console(c#"*") | ptc08.
+
+ptc08:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,[list],1},R), ptc08(R).
+ptc08(illegal_input):- put_console(c#"i") | ptc09.
+otherwise.
+ptc08(_):- put_console(c#"*") | ptc09.
+
+ptc09:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,{0},1},R), ptc09(R).
+ptc09(illegal_input):- put_console(c#"j") | ptc10.
+otherwise.
+ptc09(_):- put_console(c#"*") | ptc10.
+
+ptc10:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,ascii#"Str",1},R), ptc10(R).
+ptc10(illegal_input):- put_console(c#"k") | ptc11.
+otherwise.
+ptc10(_):- put_console(c#"*") | ptc11.
+
+ptc11:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,get,atom},R), ptc11(R).
+ptc11(illegal_input):- put_console(c#"l") | ptc12.
+otherwise.
+ptc11(_):- put_console(c#"*") | ptc12.
+
+ptc12:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,get,12.34},R), ptc12(R).
+ptc12(illegal_input):- put_console(c#"m") | ptc13.
+otherwise.
+ptc12(_):- put_console(c#"*") | ptc13.
+
+ptc13:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,get,[list]},R), ptc13(R).
+ptc13(illegal_input):- put_console(c#"n") | ptc14.
+otherwise.
+ptc13(_):- put_console(c#"*") | ptc14.
+
+ptc14:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,get,{0}},R), ptc14(R).
+ptc14(illegal_input):- put_console(c#"o") | ptc15.
+otherwise.
+ptc14(_):- put_console(c#"*") | ptc15.
+
+ptc15:- true | execute_in_shoen(do_predicate_to_code,{b_code_e,get,ascii#"Str"},R), ptc15(R).
+ptc15(illegal_input):- put_console(c#"p") | ptc16.
+otherwise.
+ptc15(_):- put_console(c#"*") | ptc16.
+
+ptc16:- put_console(key#lf) | ctp.
+
+ctp:- put_console(ascii#"% B_Code_To_Predicate %%% ") | ctp00.
+
+ctp00:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,not_public,0}},R), ctp00(R).
+ctp00(success):- put_console(c#"a") | ctp01.
+otherwise.
+ctp00(_):- put_console(c#"*") | ctp01.
+
+ctp01:- true | execute_in_shoen(do_code_to_predicate,{{'$$$SYSTEM',add,3}},R), ctp01(R).
+ctp01(illegal_input):- put_console(c#"b") | ctp02.
+otherwise.
+ctp01(_):- put_console(c#"*") | ctp02.
+
+ctp02:- true | execute_in_shoen(do_code_to_predicate,{{no_module,get,1}},R), ctp02(R).
+ctp02(illegal_input):- put_console(c#"c") | ctp03.
+otherwise.
+ctp02(_):- put_console(c#"*") | ctp03.
+
+ctp03:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,no_predicate,1}},R), ctp03(R).
+ctp03(illegal_input):- put_console(c#"d") | ctp04.
+otherwise.
+ctp03(_):- put_console(c#"*") | ctp04.
+
+ctp04:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,2}},R), ctp04(R).
+ctp04(illegal_input):- put_console(c#"e") | ctp05.
+otherwise.
+ctp04(_):- put_console(c#"*") | ctp05.
+
+ctp05:- true | execute_in_shoen(do_code_to_predicate,{atom},R), ctp05(R).
+ctp05(illegal_input):- put_console(c#"f") | ctp06.
+otherwise.
+ctp05(_):- put_console(c#"*") | ctp06.
+
+ctp06:- true | execute_in_shoen(do_code_to_predicate,{1234},R), ctp06(R).
+ctp06(illegal_input):- put_console(c#"g") | ctp07.
+otherwise.
+ctp06(_):- put_console(c#"*") | ctp07.
+
+ctp07:- true | execute_in_shoen(do_code_to_predicate,{12.34},R), ctp07(R).
+ctp07(illegal_input):- put_console(c#"h") | ctp08.
+otherwise.
+ctp07(_):- put_console(c#"*") | ctp08.
+
+ctp08:- true | execute_in_shoen(do_code_to_predicate,{[list]},R), ctp08(R).
+ctp08(illegal_input):- put_console(c#"i") | ctp09.
+otherwise.
+ctp08(_):- put_console(c#"*") | ctp09.
+
+ctp09:- true | execute_in_shoen(do_code_to_predicate,{ascii#"Str"},R), ctp09(R).
+ctp09(illegal_input):- put_console(c#"j") | ctp10.
+otherwise.
+ctp09(_):- put_console(c#"*") | ctp10.
+
+ctp10:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get}},R), ctp10(R).
+ctp10(illegal_input):- put_console(c#"k") | ctp11.
+otherwise.
+ctp10(_):- put_console(c#"*") | ctp11.
+
+ctp11:- true | execute_in_shoen(do_code_to_predicate,{{1234,get,1}},R), ctp11(R).
+ctp11(illegal_input):- put_console(c#"l") | ctp12.
+otherwise.
+ctp11(_):- put_console(c#"*") | ctp12.
+
+ctp12:- true | execute_in_shoen(do_code_to_predicate,{{12.34,get,1}},R), ctp12(R).
+ctp12(illegal_input):- put_console(c#"m") | ctp13.
+otherwise.
+ctp12(_):- put_console(c#"*") | ctp13.
+
+ctp13:- true | execute_in_shoen(do_code_to_predicate,{{[list],get,1}},R), ctp13(R).
+ctp13(illegal_input):- put_console(c#"n") | ctp14.
+otherwise.
+ctp13(_):- put_console(c#"*") | ctp14.
+
+ctp14:- true | execute_in_shoen(do_code_to_predicate,{{{0},get,1}},R), ctp14(R).
+ctp14(illegal_input):- put_console(c#"o") | ctp15.
+otherwise.
+ctp14(_):- put_console(c#"*") | ctp15.
+
+ctp15:- true | execute_in_shoen(do_code_to_predicate,{{ascii#"Str",get,1}},R), ctp15(R).
+ctp15(illegal_input):- put_console(c#"p") | ctp16.
+otherwise.
+ctp15(_):- put_console(c#"*") | ctp16.
+
+ctp16:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,1234,1}},R), ctp16(R).
+ctp16(illegal_input):- put_console(c#"q") | ctp17.
+otherwise.
+ctp16(_):- put_console(c#"*") | ctp17.
+
+ctp17:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,12.34,1}},R), ctp17(R).
+ctp17(illegal_input):- put_console(c#"r") | ctp18.
+otherwise.
+ctp17(_):- put_console(c#"*") | ctp18.
+
+ctp18:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,[list],1}},R), ctp18(R).
+ctp18(illegal_input):- put_console(c#"s") | ctp19.
+otherwise.
+ctp18(_):- put_console(c#"*") | ctp19.
+
+ctp19:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,{0},1}},R), ctp19(R).
+ctp19(illegal_input):- put_console(c#"t") | ctp20.
+otherwise.
+ctp19(_):- put_console(c#"*") | ctp20.
+
+ctp20:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,ascii#"Str",1}},R), ctp20(R).
+ctp20(illegal_input):- put_console(c#"u") | ctp21.
+otherwise.
+ctp20(_):- put_console(c#"*") | ctp21.
+
+ctp21:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,atom}},R), ctp21(R).
+ctp21(illegal_input):- put_console(c#"v") | ctp22.
+otherwise.
+ctp21(_):- put_console(c#"*") | ctp22.
+
+ctp22:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,12.34}},R), ctp22(R).
+ctp22(illegal_input):- put_console(c#"w") | ctp23.
+otherwise.
+ctp22(_):- put_console(c#"*") | ctp23.
+
+ctp23:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,[list]}},R), ctp23(R).
+ctp23(illegal_input):- put_console(c#"x") | ctp24.
+otherwise.
+ctp23(_):- put_console(c#"*") | ctp24.
+
+ctp24:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,{0}}},R), ctp24(R).
+ctp24(illegal_input):- put_console(c#"y") | ctp25.
+otherwise.
+ctp24(_):- put_console(c#"*") | ctp25.
+
+ctp25:- true | execute_in_shoen(do_code_to_predicate,{{b_code_e,get,ascii#"Str"}},R), ctp25(R).
+ctp25(illegal_input):- put_console(c#"z") | ctp26.
+otherwise.
+ctp25(_):- put_console(c#"*") | ctp26.
+
+ctp26:- put_console(key#lf) | apl.
+
+apl:- put_console(ascii#"% B_Apply %%%%%%%%%%%%%%% ") | apl00.
+
+apl00:- true | execute_in_shoen(do_apply,{{'$$$SYSTEM',add,3},{1,2,_}},R), apl00(R).
+apl00(success):- put_console(c#"a") | apl01.
+otherwise.
+apl00(_):- put_console(c#"*") | apl01.
+
+apl01:- true | execute_in_shoen(do_apply,{{no_module,get,1},{A}},R), apl01(R).
+apl01(module_not_found):- put_console(c#"b") | apl02.
+otherwise.
+apl01(_):- put_console(c#"*") | apl02.
+
+apl02:- true | execute_in_shoen(do_apply,{{b_code_e,no_predicate,1},{A}},R), apl02(R).
+apl02(predicate_not_found):- put_console(c#"c") | apl03.
+otherwise.
+apl02(_):- put_console(c#"*") | apl03.
+
+apl03:- true | execute_in_shoen(do_apply,{{b_code_e,not_public,0},{}},R), apl03(R).
+apl03(predicate_not_found):- put_console(c#"d") | apl04.
+otherwise.
+apl03(_):- put_console(c#"*") | apl04.
+
+apl04:- true | execute_in_shoen(do_apply,{{b_code_e,get,2},{A,B}},R), apl04(R).
+apl04(predicate_not_found):- put_console(c#"e") | apl05.
+otherwise.
+apl04(_):- put_console(c#"*") | apl05.
+
+apl05:- true | execute_in_shoen(do_apply,{atom,{A}},R), apl05(R).
+apl05(illegal_input):- put_console(c#"f") | apl06.
+otherwise.
+apl05(_):- put_console(c#"*") | apl06.
+
+apl06:- true | execute_in_shoen(do_apply,{1234,{A}},R), apl06(R).
+apl06(illegal_input):- put_console(c#"g") | apl07.
+otherwise.
+apl06(_):- put_console(c#"*") | apl07.
+
+apl07:- true | execute_in_shoen(do_apply,{12.34,{A}},R), apl07(R).
+apl07(illegal_input):- put_console(c#"h") | apl08.
+otherwise.
+apl07(_):- put_console(c#"*") | apl08.
+
+apl08:- true | execute_in_shoen(do_apply,{[list],{A}},R), apl08(R).
+apl08(illegal_input):- put_console(c#"i") | apl09.
+otherwise.
+apl08(_):- put_console(c#"*") | apl09.
+
+apl09:- true | execute_in_shoen(do_apply,{ascii#"Str",{A}},R), apl09(R).
+apl09(illegal_input):- put_console(c#"j") | apl10.
+otherwise.
+apl09(_):- put_console(c#"*") | apl10.
+
+apl10:- true | execute_in_shoen(do_apply,{{b_code_e,get},{A}},R), apl10(R).
+apl10(illegal_input):- put_console(c#"k") | apl11.
+otherwise.
+apl10(_):- put_console(c#"*") | apl11.
+
+apl11:- true | execute_in_shoen(do_apply,{{1234,get,1},{A}},R), apl11(R).
+apl11(illegal_input):- put_console(c#"l") | apl12.
+otherwise.
+apl11(_):- put_console(c#"*") | apl12.
+
+apl12:- true | execute_in_shoen(do_apply,{{12.34,get,1},{A}},R), apl12(R).
+apl12(illegal_input):- put_console(c#"m") | apl13.
+otherwise.
+apl12(_):- put_console(c#"*") | apl13.
+
+apl13:- true | execute_in_shoen(do_apply,{{[list],get,1},{A}},R), apl13(R).
+apl13(illegal_input):- put_console(c#"n") | apl14.
+otherwise.
+apl13(_):- put_console(c#"*") | apl14.
+
+apl14:- true | execute_in_shoen(do_apply,{{{0},get,1},{A}},R), apl14(R).
+apl14(illegal_input):- put_console(c#"o") | apl15.
+otherwise.
+apl14(_):- put_console(c#"*") | apl15.
+
+apl15:- true | execute_in_shoen(do_apply,{{ascii#"Str",get,1},{A}},R), apl15(R).
+apl15(illegal_input):- put_console(c#"p") | apl16.
+otherwise.
+apl15(_):- put_console(c#"*") | apl16.
+
+apl16:- true | execute_in_shoen(do_apply,{{b_code_e,1234,1},{A}},R), apl16(R).
+apl16(illegal_input):- put_console(c#"q") | apl17.
+otherwise.
+apl16(_):- put_console(c#"*") | apl17.
+
+apl17:- true | execute_in_shoen(do_apply,{{b_code_e,12.34,1},{A}},R), apl17(R).
+apl17(illegal_input):- put_console(c#"r") | apl18.
+otherwise.
+apl17(_):- put_console(c#"*") | apl18.
+
+apl18:- true | execute_in_shoen(do_apply,{{b_code_e,[list],1},{A}},R), apl18(R).
+apl18(illegal_input):- put_console(c#"s") | apl19.
+otherwise.
+apl18(_):- put_console(c#"*") | apl19.
+
+apl19:- true | execute_in_shoen(do_apply,{{b_code_e,{0},1},{A}},R), apl19(R).
+apl19(illegal_input):- put_console(c#"t") | apl20.
+otherwise.
+apl19(_):- put_console(c#"*") | apl20.
+
+apl20:- true | execute_in_shoen(do_apply,{{b_code_e,ascii#"Str",1},{A}},R), apl20(R).
+apl20(illegal_input):- put_console(c#"u") | apl21.
+otherwise.
+apl20(_):- put_console(c#"*") | apl21.
+
+apl21:- true | execute_in_shoen(do_apply,{{b_code_e,get,atom},{A}},R), apl21(R).
+apl21(illegal_input):- put_console(c#"v") | apl22.
+otherwise.
+apl21(_):- put_console(c#"*") | apl22.
+
+apl22:- true | execute_in_shoen(do_apply,{{b_code_e,get,12.34},{A}},R), apl22(R).
+apl22(illegal_input):- put_console(c#"w") | apl23.
+otherwise.
+apl22(_):- put_console(c#"*") | apl23.
+
+apl23:- true | execute_in_shoen(do_apply,{{b_code_e,get,[list]},{A}},R), apl23(R).
+apl23(illegal_input):- put_console(c#"x") | apl24.
+otherwise.
+apl23(_):- put_console(c#"*") | apl24.
+
+apl24:- true | execute_in_shoen(do_apply,{{b_code_e,get,{0}},{A}},R), apl24(R).
+apl24(illegal_input):- put_console(c#"y") | apl25.
+otherwise.
+apl24(_):- put_console(c#"*") | apl25.
+
+apl25:- true | execute_in_shoen(do_apply,{{b_code_e,get,ascii#"Str"},{A}},R), apl25(R).
+apl25(illegal_input):- put_console(c#"z") | apl26.
+otherwise.
+apl25(_):- put_console(c#"*") | apl26.
+
+apl26:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},atom},R), apl26(R).
+apl26(illegal_input):- put_console(c#"A") | apl27.
+otherwise.
+apl26(_):- put_console(c#"*") | apl27.
+
+apl27:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},1234},R), apl27(R).
+apl27(illegal_input):- put_console(c#"B") | apl28.
+otherwise.
+apl27(_):- put_console(c#"*") | apl28.
+
+apl28:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},12.34},R), apl28(R).
+apl28(illegal_input):- put_console(c#"C") | apl29.
+otherwise.
+apl28(_):- put_console(c#"*") | apl29.
+
+apl29:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},[list]},R), apl29(R).
+apl29(illegal_input):- put_console(c#"D") | apl30.
+otherwise.
+apl29(_):- put_console(c#"*") | apl30.
+
+apl30:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},ascii#"Str"},R), apl30(R).
+apl30(illegal_input):- put_console(c#"E") | apl31.
+otherwise.
+apl30(_):- put_console(c#"*") | apl31.
+
+apl31:- true | execute_in_shoen(do_apply,{{b_code_e,get,1},{A,B}},R), apl31(R).
+apl31(illegal_input):- put_console(c#"F") | apl32.
+otherwise.
+apl31(_):- put_console(c#"*") | apl32.
+
+apl32:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X):- true | X=done.
+not_public:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_code_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(17,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=module_not_found, C=[abort].
+shoen_check([exception(18,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=predicate_not_found, C=[abort].
+
+do_predicate_to_code(X,Y,Z):- true | predicate_to_code(X,Y,Z,A).
+do_code_to_predicate(X):- true | code_to_predicate(X,A,B,C,D).
+do_apply(X,Y):- true | apply(X,Y).

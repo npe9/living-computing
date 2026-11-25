@@ -1,0 +1,84 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module queue.
+:- with_macro pimos.
+:- public queue/1.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% queue(In)
+%%      In      :: Input stream from users
+
+queue(In) :- true |
+        merge(In,In1),
+        queue(In1,L,L,0).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% queue(In,L,L1,Count)
+%%      L,L1    :: d-List of elements
+%%      Count   :: the number of elements
+
+queue([empty(YorN)|In],L,L1,C) :- true |
+        empty(C,YorN),
+        queue(In,L,L1,C).
+queue([put(X)|In],L,L1,C) :- true |
+        L1=[X|L2],
+        queue(In,L,L2,~(C+1)).
+queue([get(X)|In],L,L2,C) :- true |
+        get(C,C1,X,L,L1),
+        queue(In,L1,L2,C1).
+queue([get_all(A)|In],L,L1,_) :- true |
+        A=L,L1=[],
+        queue(In,M,M,0).
+queue([get_if_any(X)|In],L,L2,C) :- true |
+        get_if_any(C,C1,X,L,L1),
+        queue(In,L1,L2,C1).
+queue([carbon_copy(A)|In],L,L2,C) :- true |
+        carbon_copy(C,L,L1,A),
+        queue(In,L1,L2,C).
+queue([do(List)|In],L,L1,C) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        queue(In1,L,L1,C).
+queue([],_,_,_) :- true | true.
+otherwise.
+queue([Msg|_],_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(queue,string#"illegal_message_protocol"),Msg).
+
+empty(0,YorN) :- true | YorN=yes.
+empty(C,YorN) :- C>0 | YorN=no.
+
+get(C,C1,X,L,L1) :- C>0 |
+        X=E,
+        L=[E|L1],
+        C1:=C-1.
+get(0,_,X,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(queue,string#"tried_to_get_nonexistent_element"),get(X)).
+
+get_if_any(C,C1,X,L,L1) :- C>0 |
+        X={E},
+        L=[E|L1],
+        C1:=C-1.
+get_if_any(0,C1,X,L,L1) :- true |
+        X={},C1:=0,L1=L.
+
+carbon_copy(0,L,L1,A) :- true | L=L1,A=[].
+otherwise.
+carbon_copy(C,[E|L],L1,A) :- true |
+        A=[E|A1],
+        L1=[E|L2],
+        carbon_copy(~(C-1),L,L2,A1).
+
+prepend([A|X],Y,Z) :- true |
+        Z=[A|Z1],
+        prepend(X,Y,Z1).
+prepend([],Y,Z) :- true | Y=Z.
+

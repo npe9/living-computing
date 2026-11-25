@@ -1,0 +1,349 @@
+%%% KL1-B Test for B_Float_Arithmetic (Exception) %%%
+% B_Float_Add %%%%%%%%%%% abcdefghijklm
+% B_Float_Subtract %%%%%% abcdefghijklm
+% B_Float_Multiply %%%%%% abcdefghijklm
+% B_Float_Divide %%%%%%%% abcdefghijklmn
+% B_Float_Minus %%%%%%%%% abcdef
+
+:- module b_f_arith_e.
+:- public go/0
+,do_add/3,do_subtract/3,do_multiply/3,do_divide/3,do_minus/2.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Arithmetic (Exception) %%%"), put_console(key#lf) | add.
+
+add:- put_console(ascii#"% B_Float_Add %%%%%%%%%%% ") | add00.
+
+add00:- true | execute_in_shoen(do_add,{3.0e38,3.0e38,Z},R), add00(R,Z).
+add00(floating_point_error,_):- put_console(c#"a") | add01.
+otherwise.
+add00(_,_):- put_console(c#"*") | add01.
+
+add01:- true | execute_in_shoen(do_add,{3.0e38,-3.0e38,Z},R), add01(R,Z).
+add01(success,_):- put_console(c#"b") | add02.
+otherwise.
+add01(_,_):- put_console(c#"*") | add02.
+
+add02:- true | execute_in_shoen(do_add,{3.0e38,1234,Z},R), add02(R,Z).
+add02(illegal_input,_):- put_console(c#"c") | add03.
+otherwise.
+add02(_,_):- put_console(c#"*") | add03.
+
+add03:- true | execute_in_shoen(do_add,{3.0e38,atom,Z},R), add03(R,Z).
+add03(illegal_input,_):- put_console(c#"d") | add04.
+otherwise.
+add03(_,_):- put_console(c#"*") | add04.
+
+add04:- true | execute_in_shoen(do_add,{3.0e38,[list],Z},R), add04(R,Z).
+add04(illegal_input,_):- put_console(c#"e") | add05.
+otherwise.
+add04(_,_):- put_console(c#"*") | add05.
+
+add05:- true | execute_in_shoen(do_add,{3.0e38,{0,1},Z},R), add05(R,Z).
+add05(illegal_input,_):- put_console(c#"f") | add06.
+otherwise.
+add05(_,_):- put_console(c#"*") | add06.
+
+add06:- true | execute_in_shoen(do_add,{3.0e38,ascii#"String",Z},R), add06(R,Z).
+add06(illegal_input,_):- put_console(c#"g") | add07.
+otherwise.
+add06(_,_):- put_console(c#"*") | add07.
+
+add07:- true | execute_in_shoen(do_add,{-3.0e38,-3.0e38,Z},R), add07(R,Z).
+add07(floating_point_error,_):- put_console(c#"h") | add08.
+otherwise.
+add07(_,_):- put_console(c#"*") | add08.
+
+add08:- true | execute_in_shoen(do_add,{1234,0.0,Z},R), add08(R,Z).
+add08(illegal_input,_):- put_console(c#"i") | add09.
+otherwise.
+add08(_,_):- put_console(c#"*") | add09.
+
+add09:- true | execute_in_shoen(do_add,{atom,0.0,Z},R), add09(R,Z).
+add09(illegal_input,_):- put_console(c#"j") | add10.
+otherwise.
+add09(_,_):- put_console(c#"*") | add10.
+
+add10:- true | execute_in_shoen(do_add,{[list],0.0,Z},R), add10(R,Z).
+add10(illegal_input,_):- put_console(c#"k") | add11.
+otherwise.
+add10(_,_):- put_console(c#"*") | add11.
+
+add11:- true | execute_in_shoen(do_add,{{0,1},0.0,Z},R), add11(R,Z).
+add11(illegal_input,_):- put_console(c#"l") | add12.
+otherwise.
+add11(_,_):- put_console(c#"*") | add12.
+
+add12:- true | execute_in_shoen(do_add,{ascii#"String",0.0,Z},R), add12(R,Z).
+add12(illegal_input,_):- put_console(c#"m") | add13.
+otherwise.
+add12(_,_):- put_console(c#"*") | add13.
+
+add13:- put_console(key#lf) | sub.
+
+sub:- put_console(ascii#"% B_Float_Subtract %%%%%% ") | sub00.
+
+sub00:- true | execute_in_shoen(do_subtract,{3.0e38,3.0e38,Z},R), sub00(R,Z).
+sub00(success,_):- put_console(c#"a") | sub01.
+otherwise.
+sub00(_,_):- put_console(c#"*") | sub01.
+
+sub01:- true | execute_in_shoen(do_subtract,{3.0e38,-3.0e38,Z},R), sub01(R,Z).
+sub01(floating_point_error,_):- put_console(c#"b") | sub02.
+otherwise.
+sub01(_,_):- put_console(c#"*") | sub02.
+
+sub02:- true | execute_in_shoen(do_subtract,{3.0e38,1234,Z},R), sub02(R,Z).
+sub02(illegal_input,_):- put_console(c#"c") | sub03.
+otherwise.
+sub02(_,_):- put_console(c#"*") | sub03.
+
+sub03:- true | execute_in_shoen(do_subtract,{3.0e38,atom,Z},R), sub03(R,Z).
+sub03(illegal_input,_):- put_console(c#"d") | sub04.
+otherwise.
+sub03(_,_):- put_console(c#"*") | sub04.
+
+sub04:- true | execute_in_shoen(do_subtract,{3.0e38,[list],Z},R), sub04(R,Z).
+sub04(illegal_input,_):- put_console(c#"e") | sub05.
+otherwise.
+sub04(_,_):- put_console(c#"*") | sub05.
+
+sub05:- true | execute_in_shoen(do_subtract,{3.0e38,{0,1},Z},R), sub05(R,Z).
+sub05(illegal_input,_):- put_console(c#"f") | sub06.
+otherwise.
+sub05(_,_):- put_console(c#"*") | sub06.
+
+sub06:- true | execute_in_shoen(do_subtract,{3.0e38,ascii#"String",Z},R), sub06(R,Z).
+sub06(illegal_input,_):- put_console(c#"g") | sub07.
+otherwise.
+sub06(_,_):- put_console(c#"*") | sub07.
+
+sub07:- true | execute_in_shoen(do_subtract,{-3.0e38,3.0e38,Z},R), sub07(R,Z).
+sub07(floating_point_error,_):- put_console(c#"h") | sub08.
+otherwise.
+sub07(_,_):- put_console(c#"*") | sub08.
+
+sub08:- true | execute_in_shoen(do_subtract,{1234,0.0,Z},R), sub08(R,Z).
+sub08(illegal_input,_):- put_console(c#"i") | sub09.
+otherwise.
+sub08(_,_):- put_console(c#"*") | sub09.
+
+sub09:- true | execute_in_shoen(do_subtract,{atom,0.0,Z},R), sub09(R,Z).
+sub09(illegal_input,_):- put_console(c#"j") | sub10.
+otherwise.
+sub09(_,_):- put_console(c#"*") | sub10.
+
+sub10:- true | execute_in_shoen(do_subtract,{[list],0.0,Z},R), sub10(R,Z).
+sub10(illegal_input,_):- put_console(c#"k") | sub11.
+otherwise.
+sub10(_,_):- put_console(c#"*") | sub11.
+
+sub11:- true | execute_in_shoen(do_subtract,{{0,1},0.0,Z},R), sub11(R,Z).
+sub11(illegal_input,_):- put_console(c#"l") | sub12.
+otherwise.
+sub11(_,_):- put_console(c#"*") | sub12.
+
+sub12:- true | execute_in_shoen(do_subtract,{ascii#"String",0.0,Z},R), sub12(R,Z).
+sub12(illegal_input,_):- put_console(c#"m") | sub13.
+otherwise.
+sub12(_,_):- put_console(c#"*") | sub13.
+
+sub13:- put_console(key#lf) | mul.
+
+mul:- put_console(ascii#"% B_Float_Multiply %%%%%% ") | mul00.
+
+mul00:- true | execute_in_shoen(do_multiply,{3.0e38,3.0e38,Z},R), mul00(R,Z).
+mul00(floating_point_error,_):- put_console(c#"a") | mul01.
+otherwise.
+mul00(_,_):- put_console(c#"*") | mul01.
+
+mul01:- true | execute_in_shoen(do_multiply,{3.0e38,-3.0e38,Z},R), mul01(R,Z).
+mul01(floating_point_error,_):- put_console(c#"b") | mul02.
+otherwise.
+mul01(_,_):- put_console(c#"*") | mul02.
+
+mul02:- true | execute_in_shoen(do_multiply,{3.0e38,0.0,Z},R), mul02(R,Z).
+mul02(success,_):- put_console(c#"c") | mul03.
+otherwise.
+mul02(_,_):- put_console(c#"*") | mul03.
+
+mul03:- true | execute_in_shoen(do_multiply,{3.0e38,1234,Z},R), mul03(R,Z).
+mul03(illegal_input,_):- put_console(c#"d") | mul04.
+otherwise.
+mul03(_,_):- put_console(c#"*") | mul04.
+
+mul04:- true | execute_in_shoen(do_multiply,{3.0e38,atom,Z},R), mul04(R,Z).
+mul04(illegal_input,_):- put_console(c#"e") | mul05.
+otherwise.
+mul04(_,_):- put_console(c#"*") | mul05.
+
+mul05:- true | execute_in_shoen(do_multiply,{3.0e38,[list],Z},R), mul05(R,Z).
+mul05(illegal_input,_):- put_console(c#"f") | mul06.
+otherwise.
+mul05(_,_):- put_console(c#"*") | mul06.
+
+mul06:- true | execute_in_shoen(do_multiply,{3.0e38,{0,1},Z},R), mul06(R,Z).
+mul06(illegal_input,_):- put_console(c#"g") | mul07.
+otherwise.
+mul06(_,_):- put_console(c#"*") | mul07.
+
+mul07:- true | execute_in_shoen(do_multiply,{3.0e38,ascii#"String",Z},R), mul07(R,Z).
+mul07(illegal_input,_):- put_console(c#"h") | mul08.
+otherwise.
+mul07(_,_):- put_console(c#"*") | mul08.
+
+mul08:- true | execute_in_shoen(do_multiply,{1234,0.0,Z},R), mul08(R,Z).
+mul08(illegal_input,_):- put_console(c#"i") | mul09.
+otherwise.
+mul08(_,_):- put_console(c#"*") | mul09.
+
+mul09:- true | execute_in_shoen(do_multiply,{atom,0.0,Z},R), mul09(R,Z).
+mul09(illegal_input,_):- put_console(c#"j") | mul10.
+otherwise.
+mul09(_,_):- put_console(c#"*") | mul10.
+
+mul10:- true | execute_in_shoen(do_multiply,{[list],0.0,Z},R), mul10(R,Z).
+mul10(illegal_input,_):- put_console(c#"k") | mul11.
+otherwise.
+mul10(_,_):- put_console(c#"*") | mul11.
+
+mul11:- true | execute_in_shoen(do_multiply,{{0,1},0.0,Z},R), mul11(R,Z).
+mul11(illegal_input,_):- put_console(c#"l") | mul12.
+otherwise.
+mul11(_,_):- put_console(c#"*") | mul12.
+
+mul12:- true | execute_in_shoen(do_multiply,{ascii#"String",0.0,Z},R), mul12(R,Z).
+mul12(illegal_input,_):- put_console(c#"m") | mul13.
+otherwise.
+mul12(_,_):- put_console(c#"*") | mul13.
+
+mul13:- put_console(key#lf) | div.
+
+div:- put_console(ascii#"% B_Float_Divide %%%%%%%% ") | div00.
+
+div00:- true | execute_in_shoen(do_divide,{3.0e38,-3.0e38,Z},R), div00(R,Z).
+div00(success,_):- put_console(c#"a") | div01.
+otherwise.
+div00(_,_):- put_console(c#"*") | div01.
+
+div01:- true | execute_in_shoen(do_divide,{3.0e38,0.0,Z},R), div01(R,Z).
+div01(floating_point_error,_):- put_console(c#"b") | div02.
+otherwise.
+div01(_,_):- put_console(c#"*") | div02.
+
+div02:- true | execute_in_shoen(do_divide,{3.0e38,0.5,Z},R), div02(R,Z).
+div02(floating_point_error,_):- put_console(c#"c") | div03.
+otherwise.
+div02(_,_):- put_console(c#"*") | div03.
+
+div03:- true | execute_in_shoen(do_divide,{3.0e38,1234,Z},R), div03(R,Z).
+div03(illegal_input,_):- put_console(c#"d") | div04.
+otherwise.
+div03(_,_):- put_console(c#"*") | div04.
+
+div04:- true | execute_in_shoen(do_divide,{3.0e38,atom,Z},R), div04(R,Z).
+div04(illegal_input,_):- put_console(c#"e") | div05.
+otherwise.
+div04(_,_):- put_console(c#"*") | div05.
+
+div05:- true | execute_in_shoen(do_divide,{3.0e38,[list],Z},R), div05(R,Z).
+div05(illegal_input,_):- put_console(c#"f") | div06.
+otherwise.
+div05(_,_):- put_console(c#"*") | div06.
+
+div06:- true | execute_in_shoen(do_divide,{3.0e38,{0,1},Z},R), div06(R,Z).
+div06(illegal_input,_):- put_console(c#"g") | div07.
+otherwise.
+div06(_,_):- put_console(c#"*") | div07.
+
+div07:- true | execute_in_shoen(do_divide,{3.0e38,ascii#"String",Z},R), div07(R,Z).
+div07(illegal_input,_):- put_console(c#"h") | div08.
+otherwise.
+div07(_,_):- put_console(c#"*") | div08.
+
+div08:- true | execute_in_shoen(do_divide,{-3.0e38,0.5,Z},R), div08(R,Z).
+div08(floating_point_error,_):- put_console(c#"i") | div09.
+otherwise.
+div08(_,_):- put_console(c#"*") | div09.
+
+div09:- true | execute_in_shoen(do_divide,{1234,0.0,Z},R), div09(R,Z).
+div09(illegal_input,_):- put_console(c#"j") | div10.
+otherwise.
+div09(_,_):- put_console(c#"*") | div10.
+
+div10:- true | execute_in_shoen(do_divide,{atom,0.0,Z},R), div10(R,Z).
+div10(illegal_input,_):- put_console(c#"k") | div11.
+otherwise.
+div10(_,_):- put_console(c#"*") | div11.
+
+div11:- true | execute_in_shoen(do_divide,{[list],0.0,Z},R), div11(R,Z).
+div11(illegal_input,_):- put_console(c#"l") | div12.
+otherwise.
+div11(_,_):- put_console(c#"*") | div12.
+
+div12:- true | execute_in_shoen(do_divide,{{0,1},0.0,Z},R), div12(R,Z).
+div12(illegal_input,_):- put_console(c#"m") | div13.
+otherwise.
+div12(_,_):- put_console(c#"*") | div13.
+
+div13:- true | execute_in_shoen(do_divide,{ascii#"String",0.0,Z},R), div13(R,Z).
+div13(illegal_input,_):- put_console(c#"n") | div14.
+otherwise.
+div13(_,_):- put_console(c#"*") | div14.
+
+div14:- put_console(key#lf) | min.
+
+min:- put_console(ascii#"% B_Float_Minus %%%%%%%%% ") | min00.
+
+min00:- true | execute_in_shoen(do_minus,{3.0e38,Z},R), min00(R,Z).
+min00(success,_):- put_console(c#"a") | min01.
+otherwise.
+min00(_,_):- put_console(c#"*") | min01.
+
+min01:- true | execute_in_shoen(do_minus,{1234,Z},R), min01(R,Z).
+min01(illegal_input,_):- put_console(c#"b") | min02.
+otherwise.
+min01(_,_):- put_console(c#"*") | min02.
+
+min02:- true | execute_in_shoen(do_minus,{atom,Z},R), min02(R,Z).
+min02(illegal_input,_):- put_console(c#"c") | min03.
+otherwise.
+min02(_,_):- put_console(c#"*") | min03.
+
+min03:- true | execute_in_shoen(do_minus,{[list],Z},R), min03(R,Z).
+min03(illegal_input,_):- put_console(c#"d") | min04.
+otherwise.
+min03(_,_):- put_console(c#"*") | min04.
+
+min04:- true | execute_in_shoen(do_minus,{{0,1},Z},R), min04(R,Z).
+min04(illegal_input,_):- put_console(c#"e") | min05.
+otherwise.
+min04(_,_):- put_console(c#"*") | min05.
+
+min05:- true | execute_in_shoen(do_minus,{ascii#"String",Z},R), min05(R,Z).
+min05(illegal_input,_):- put_console(c#"f") | min06.
+otherwise.
+min05(_,_):- put_console(c#"*") | min06.
+
+min06:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_f_arith_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(5,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=floating_point_error, C=[abort].
+
+do_add(X,Y,Z):- true | Z$:=X+Y.
+do_subtract(X,Y,Z):- true | Z$:=X-Y.
+do_multiply(X,Y,Z):- true | Z$:=X*Y.
+do_divide(X,Y,Z):- true | Z$:=X/Y.
+do_minus(X,Z):- true | Z$:= -X.

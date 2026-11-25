@@ -1,0 +1,92 @@
+%%% KL1-B Test for Set_Value %%%
+% Set_Value %%%%%%%%%%%%% abcdef
+% Set_Marked_Value %%%%%% abcdef
+
+:- module set_val.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Set_Value %%%"), put_console(key#lf) | val.
+
+val:- put_console(ascii#"% Set_Value %%%%%%%%%%%%% ") | val00.
+
+val00:- true | val00set(atom).
+val00set(X):- true | dummy, val00(X).
+val00(atom):- put_console(c#"a") | val01.
+alternatively.
+val00(_):- put_console(c#"*") | val01.
+
+val01:- true | val01set(1234).
+val01set(X):- true | dummy, val01(X).
+val01(1234):- put_console(c#"b") | val02.
+alternatively.
+val01(_):- put_console(c#"*") | val02.
+
+val02:- true | val02set(12.34).
+val02set(X):- true | dummy, val02(X).
+val02(12.34):- put_console(c#"c") | val03.
+alternatively.
+val02(_):- put_console(c#"*") | val03.
+
+val03:- true | val03set([list]).
+val03set(X):- true | dummy, val03(X).
+val03([list]):- put_console(c#"d") | val04.
+alternatively.
+val03(_):- put_console(c#"*") | val04.
+
+val04:- true | val04set({0,1}).
+val04set(X):- true | dummy, val04(X).
+val04({0,1}):- put_console(c#"e") | val05.
+alternatively.
+val04(_):- put_console(c#"*") | val05.
+
+val05:- true | val05set(ascii#"String").
+val05set(X):- true | dummy, val05(X).
+val05(ascii#"String"):- put_console(c#"f") | val06.
+alternatively.
+val05(_):- put_console(c#"*") | val06.
+
+val06:- put_console(key#lf) | mrk.
+
+mrk:- put_console(ascii#"% Set_Marked_Value %%%%%% ") | mrk00.
+
+mrk00:- true | mrk00(atom).
+mrk00(X):- true | dummy, mrk00(X,X).
+mrk00(atom,atom):- put_console(c#"a") | mrk01.
+alternatively.
+mrk00(_,_):- put_console(c#"*") | mrk01.
+
+mrk01:- true | mrk01(1234).
+mrk01(X):- true | dummy, mrk01(X,X).
+mrk01(1234,1234):- put_console(c#"b") | mrk02.
+alternatively.
+mrk01(_,_):- put_console(c#"*") | mrk02.
+
+mrk02:- true | mrk02(12.34).
+mrk02(X):- true | dummy, mrk02(X,X).
+mrk02(12.34,12.34):- put_console(c#"c") | mrk03.
+alternatively.
+mrk02(_,_):- put_console(c#"*") | mrk03.
+
+mrk03:- true | mrk03([list]).
+mrk03(X):- true | dummy, mrk03(X,X).
+mrk03([list],[list]):- put_console(c#"d") | mrk04.
+alternatively.
+mrk03(_,_):- put_console(c#"*") | mrk04.
+
+mrk04:- true | mrk04({0,1}).
+mrk04(X):- true | dummy, mrk04(X,X).
+mrk04({0,1},{0,1}):- put_console(c#"e") | mrk05.
+alternatively.
+mrk04(_,_):- put_console(c#"*") | mrk05.
+
+mrk05:- true | mrk05(ascii#"String").
+mrk05(X):- true | dummy, mrk05(X,X).
+mrk05(ascii#"String",ascii#"String"):- put_console(c#"f") | mrk06.
+alternatively.
+mrk05(_,_):- put_console(c#"*") | mrk06.
+
+mrk06:- put_console(key#lf) | done.
+
+done:- true | true.
+
+dummy:- true | true.

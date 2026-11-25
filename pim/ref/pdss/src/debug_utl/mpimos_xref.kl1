@@ -1,0 +1,859 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990.					 %
+%  Institute for New Generation Computer Technology, Japan.		 %
+%  ALL RIGHTS RESERVED.							 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	KL1 Cross Reference			%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_xref.
+:- public go/2,go/3,go_f/3,go_f/4.
+
+%%  go(FileList,Option).
+go(FileList,Op):-
+    true|
+	mpimos_window:create([show|Window],string#"xref"),
+	start(Window,WL,FileList,Op),
+	end(success,WL).
+
+%%  go(FileList,Option,WindowName).
+go(FileList,Op,WN):-
+    true|
+	mpimos_window:create([show|Window],WN),
+	start(Window,WL,FileList,Op),
+	end(success,WL).
+
+%%  go_f(FileList,Option,FileName).
+go_f(FileList,Op,FileName):-
+    true|
+	mpimos_window:create([show|Window],string#"xref"),
+	mpimos_file:create(File,FileName,w),
+	start_f(Window,WL,File,[close(F)],FileList,Op),
+	end(F,WL).
+
+%%  go_f(FileList,Option,FileName,WindowName).
+go_f(FileList,Op,FileName,WN):-
+    true|
+	mpimos_window:create([show|Window],WN),
+	mpimos_file:create(File,FileName,w),
+	start_f(Window,WL,File,[close(F)],FileList,Op),
+	end(F,WL).
+
+:- local_implicit out : oldnew.
+
+start(FileList,Option) -->
+    true|
+	{{ option(Option,Prog,Update,Output),
+	   output_option(Output,OP) }},
+	loop(MTS1,FileList,Prog,success),
+	&out <<= [putl(string#"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		  flush(_)],
+	mpimos_xref_table:module_table(MTS,MRT,GRT,BRT,Update),
+	{{ init_module_table(MTS,MTS1) }},
+	&out <<= [nl,flush(_)],
+	referred_result(MRT,GRT,BRT,OP).
+
+start_f(File,FileL,FileList,Option) -->
+    true|
+	{{ option(Option,Prog,Update,Output),
+	   output_file_option(Output,OP) }},
+	loop(MTS1,FileList,Prog,success),
+	&out <<= [putl(string#"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+		  flush(_)],
+	mpimos_xref_table:module_table(MTS,MRT,GRT,BRT,Update),
+	{{ init_module_table(MTS,MTS1) }},
+	&out <<= [nl,flush(_)],
+	{{ referred_result(File,FileL,MRT,GRT,BRT,OP) }}.
+
+end(success,Window):-
+    true|
+	Window = [nl,putb(string#"DONE."),getl(_)].
+
+option(short,PR,UD,OP):-
+    true|
+	PR = short,
+	UD = protect,
+	OP = check.
+option(short(O),PR,UD,OP):-
+    true|
+	PR = short,
+	option(O,_,UD,OP).
+option(update,PR,UD,OP):-
+    true|
+	PR = long,
+	UD = update,
+	OP = check.
+option(update(O),PR,UD,OP):-
+    true|
+	UD = update,
+	option(O,PR,_,OP).
+otherwise.
+option(O,PR,UD,OP):-
+    true|
+	PR = long,
+	UD = protect,
+	OP = O.
+
+output_option(list,   Op):- true    | Op = {list,no,no,no}.
+output_option(l,      Op):- true    | Op = {list,no,no,no}.
+output_option(system, Op):- true    | Op = {no,system,no,no}.
+output_option(s,      Op):- true    | Op = {no,system,no,no}.
+output_option(builtin,Op):- true    | Op = {no,no,builtin,no}.
+output_option(b,      Op):- true    | Op = {no,no,builtin,no}.
+output_option(guard,  Op):- true    | Op = {no,no,no,guard}.
+output_option(g,      Op):- true    | Op = {no,no,no,guard}.
+output_option(all,    Op):- true    | Op = {list,system,builtin,guard}.
+output_option(a,      Op):- true    | Op = {list,system,builtin,guard}.
+output_option([],     Op):- true    | Op = [].
+output_option(L,      Op):- list(L) | Op = L.
+otherwise.
+output_option(_,      Op):- true    | Op = check.
+
+output_file_option(system, Op):- true    | Op = {no,system,no,no}.
+output_file_option(s,      Op):- true    | Op = {no,system,no,no}.
+output_file_option(builtin,Op):- true    | Op = {no,no,builtin,no}.
+output_file_option(b,      Op):- true    | Op = {no,no,builtin,no}.
+output_file_option(guard,  Op):- true    | Op = {no,no,no,guard}.
+output_file_option(g,      Op):- true    | Op = {no,no,no,guard}.
+output_file_option(all,    Op):- true    | Op = {list,system,builtin,guard}.
+output_file_option(a,      Op):- true    | Op = {list,system,builtin,guard}.
+output_file_option([],     Op):- true    | Op = [].
+output_file_option(L,      Op):- list(L) | Op = L.
+otherwise.
+output_file_option(_,      Op):- true    | Op = {list,no,no,no}.
+
+:- local_implicit out : oldnew,
+		  mts : stream.
+
+loop([FileName|FL],Op,LCF) -->
+    wait(LCF)|
+	{{ mpimos_file:create(In,FileName,r,FS) }},
+	&out <<= [putl(string#"*********************************************"),
+		  putb(string#"File Name : "),putt(FileName),putl(string#"."),
+		  flush(F)],
+	open_check(In,FileName,Op,CF,F,FS),
+	&out <<= [nl],
+	loop(FL,Op,CF).
+loop([],_,_) -->
+    true|
+	true.
+
+open_check(Out,OutL,MTS,In,FN,Op,CF,done,success):-
+    true|
+	{{ message_distributer(Message,Error),
+	   kl1cmp_reader:create_reader(In,[close(CF)],ReadError,[],ReadStream),
+	   kl1cmp_macro:generate_macro_expander(ReadStream,[],MacroError,[],
+						MacroArg,MacroStream),
+	   kl1cmp_macro_arg:init_macro_table(MacroArg0),
+	   merge(MacroArg,MacroArg0), merge({ReadError,MacroError},Error),
+	   Out = {Message,XOut},
+	   pre_xref(XOut,Out1,MacroStream,[],PTS,MTS,Op,PL,PL,RT,FN,done),
+	   mpimos_xref_table:predicate_table(Out1,OutL,PTS,RT) }}.
+open_check(In,_,_,CF,done,error(S)) -->
+    true|
+	&out <<= [putb(string#">>> Error !! "),putt(S),putl(string#"."),
+		  flush(_)],
+	In = [],
+	CF = error(S).
+
+:- local_implicit window:stream.
+
+message_distributer([display(X)|S1]) --> true |
+    &window<<=[putt(X)],
+    message_distributer(S1).
+message_distributer([ttynl|S1]) --> true |
+    &window<<=[nl],
+    message_distributer(S1).
+message_distributer([ttyput(X)|S1]) --> true |
+    &window<<=[putc(X)],
+    message_distributer(S1).
+message_distributer([error_message(Msg, Cls)|S1]) --> true |
+ {{ error(&window, Msg, Cls)}},
+    message_distributer(S1).
+message_distributer([warning_message(Msg, Cls)|S1]) --> true |
+ {{ warning(&window, Msg, Cls)}},
+    message_distributer(S1).
+message_distributer([]) --> true | true.
+otherwise.
+message_distributer([Msg|S1]) --> true |
+    &window<<=[putt(string#"Strange I/O command found"), nl, putt(Msg), nl],
+    message_distributer(S1).
+
+:- local_implicit io:stream.
+error(Msg, Cls) --> true |
+   &io<<=[nl,putb(string#">>> Error !! "),putb(Msg),putb(string#" ::: ")],
+   output_error(Cls).
+
+warning(Msg, Cls) --> true |
+   &io<<=[nl,putb(string#">>> Warning ? "),putb(Msg),putb(string#" ::: ")],
+   output_error(Cls).
+
+output_error([E|R]) --> true |
+   &io<<=[puttq(E)],
+   output_error(R).
+output_error([]) --> true | &io<<=[nl].
+otherwise.
+output_error(X) --> true |
+   &io<<=[puttq(X),nl].
+
+:- local_implicit out : oldnew,
+		  in  : oldnew,
+		  pts : stream,
+		  mts : stream,
+		  op  : shared.
+
+%%  get declaration.
+pre_xref(PL,PS,RT,FN,F) -->
+    wait(F)|
+	&in <<= [read_predicate(Term,P)],
+	pre_xref0(PL,PS,RT,FN,Term,P).
+
+pre_xref0(_,_,_,_,_,end_of_file) -->
+    true|
+	&out <<= [putl(string#">>> Error !! module is not specified."),nl,
+		  flush(_)].
+pre_xref0(PL,PS,RT,FN,DL,directive) -->
+    true|
+	pre_xref_directive(PL,PS,RT,FN,DL).
+otherwise.
+pre_xref0(_,_,_,_,Term,P) -->
+    true|
+	&out <<= [putl(string#">>> Error !! module is not specified."),nl,
+		  flush(_)],
+	xref0('??module??',Term,P).
+
+pre_xref_directive(PL,PS,RT,FN,[(:- module Module)|DL]) -->
+    atom(Module)|
+	&mts <<= [entry(Module,PL,RT,FN,S)],
+	{{ wait_module_entry(&out,S) }},
+	&out <<= [flush(F)],
+	pre_xref_module_wait(Module,PL,PS,DL,F).
+pre_xref_directive(PL,PS,RT,FN,[(:- public Public)|DL]) -->
+    true|
+	{{ public_entry(&out,&pts,PS,NPS,Public) }},
+	&out <<= [flush(F)],
+	pre_xref_directive_wait(PL,NPS,RT,FN,DL,F).
+pre_xref_directive(PL,PS,RT,FN,[]) -->
+    true|
+	&out <<= [putl(string#">>> Error !! module is not specified."),nl,
+		  flush(F)],
+	xref('??module??',done).
+
+pre_xref_directive_wait(PL,PS,RT,FN,DL,F) -->
+    wait(F)|
+	pre_xref_directive(PL,PS,RT,FN,DL).
+
+:- local_implicit out : oldnew,
+		  in  : oldnew,
+		  pts : stream,
+		  mts : stream,
+		  op  : shared,
+		  mdl : shared.
+
+%%  get declaration (after module).
+pre_xref_module(PL,PS,[(:- module Module)|DL]) -->
+    atom(Module)|
+	&out <<= [putb(string#">>> Error !! module declaration is duplicated ::: "),
+		  putb(string#":- module "),putt(Module),putl(string#"."),
+		  flush(F)],
+	pre_xref_module_wait(PL,PS,DL,F).
+pre_xref_module(PL,PS,[(:- public Public)|DL]) -->
+    true|
+	{{ public_entry(&out,&pts,PS,NPS,Public) }},
+	&out <<= [flush(F)],
+	pre_xref_module_wait(PL,NPS,DL,F).
+pre_xref_module(PL,PS,[]) -->
+    true|
+	PS = [],
+	{{ wait_public(&out,PL) }},
+	&out <<= [flush(F)],
+	xref(F).
+
+pre_xref_module_wait(PL,PS,DL,F) -->
+    wait(F)|
+	pre_xref_module(PL,PS,DL).
+
+%%  get clause.
+xref(done) -->
+    true|
+	&in <<= [read_predicate(Term,P)],
+	xref0(Term,P).
+
+xref0(_,end_of_file) -->
+    true|
+	true.
+xref0([],directive) -->
+    true|
+	xref(done).
+xref0([(:- Dec)|DL],directive) -->
+    true|
+	&out <<= [nl,putb(string#">>> Error !! illegal declaration ::: :- "),
+		  putt(Dec),putl(string#".")],
+	xref0(DL,directive).
+xref0(PL,P/A) -->
+    true|
+	&pts <<= [entry(P,A,S)],
+	{{ wait_entry(&out,S) }},
+	xref_predicate(1,_,PL,P/A),
+	{{ predicate_info(&out,&op,P,A) }},
+	&out <<= [flush(F)],
+	xref(F).
+
+:- local_implicit out : oldnew,
+		  in  : oldnew,
+		  pts : stream,
+		  mts : stream,
+		  op  : shared,
+		  mdl : shared,
+		  cn  : oldnew.
+
+xref_predicate((Head:-('|'(Guard,Body))),P) -->
+    true|
+	{{ guard_check(&out,&mts,&mdl,(P/ &cn(old)),Guard),
+	   body_check(&out,&pts,&mts,&mdl,(P/ &cn(old)),Body) }},
+	&cn++ .
+xref_predicate(otherwise,_) -->
+    true|
+	true.
+xref_predicate(alternatively,_) -->
+    true|
+	true.
+xref_predicate([L|PL],P) -->
+    true|
+	xref_predicate(L,P),
+	xref_predicate(PL,P).
+xref_predicate([],_) -->
+    true|
+	true.
+
+:- local_implicit out : oldnew.
+
+%%  wait status of entry module to table.
+wait_module_entry({success,M}) -->
+    true|
+	&out <<= [putb(string#"Module : "),putt(M),putl(string#".")].
+wait_module_entry({doubly,M}) -->
+    true|
+	&out <<= [putb(string#">>> Error !! doubly defined module ::: "),
+		  putt(M),putl(string#".")].
+
+wait_public(PL) -->
+    PL\=[]|
+	&out <<= [putb(string#"Public : ")],
+	out_convert(PL),
+	&out <<= [putl(string#"."),nl].
+wait_public([]) -->
+    true|
+	&out <<= [putl(string#">>> Error !! no public declaration. "),nl].
+
+%%  wait status of entry predicate to table.
+wait_entry({none,_,_}) -->
+    true|
+	true.
+wait_entry({doubly,P,A}) -->
+    true|
+	&out <<= [nl,putb(string#">>> Error !! doubly defined ::: "),putt(P/A),
+		  putl(string#".")].
+otherwise.
+wait_entry({_,P,A}) -->
+    true|
+	&out <<= [nl,putb(string#">>> Warning ? overlapped builtin predicate ::: "),
+		  putt(P/A),putl(string#".")].
+
+predicate_info(long,P,A) -->
+    true|
+	&out <<= [putt(P/A),putb(string#", ")].
+predicate_info(short,_,_) -->
+    true|
+	true.
+
+:- local_implicit out : oldnew,
+		  pts : stream,
+		  pl  : oldnew.
+
+%%  get public predicate.
+public_entry(P/A) -->
+    atom(P),A>=0|
+	&pts <<= [call(P,A,'public declaration')],
+	&pl <<= [{P,A}].
+public_entry((P1,P2)) -->
+    true|
+	public_entry(P1),
+	public_entry(P2).
+otherwise.
+public_entry(P) -->
+    true|
+	&out <<= [putb(string#">>> Error !! illegal public declaration ::: "),
+		  putt(P),putl(string#".")].
+
+:- local_implicit out : oldnew,
+		  mts : stream,
+		  mdl : shared,
+		  c   : shared.
+
+%%  check guard goals.
+guard_check(true) -->
+    true|
+	true.
+guard_check(A=B) -->
+    true|
+	true.
+guard_check(A:=B) -->
+    true|
+	{{ expression(&mts,((&mdl):(&c)),guard_builtin,B) }}.
+guard_check(A$:=B) -->
+    true|
+	{{ float_expression(&mts,((&mdl):(&c)),guard_builtin,B) }}.
+guard_check((G1,G2)) -->
+    true|
+	guard_check(G1),
+	guard_check(G2).
+otherwise.
+guard_check(Guard) -->
+    true|
+	{{ kl1cmp_blttbl:builtin(Guard,Blt,In,_,_,_,Type) }},
+	guard_builtin_check(Guard,Blt,In,Type).
+
+guard_builtin_check(_,Blt,In,relop) -->
+    vector(Blt,L),vector_element(Blt,0,PN)|
+	LL := L - 1,
+	&mts <<= [guard_builtin(PN,LL,((&mdl):(&c)))],
+	{{ expression_check_list(&mts,((&mdl):(&c)),guard_builtin,In) }}.
+guard_builtin_check(_,Blt,In,float_relop) -->
+    vector(Blt,L),vector_element(Blt,0,PN)|
+	LL := L - 1,
+	&mts <<= [guard_builtin(PN,LL,((&mdl):(&c)))],
+	{{ float_expression_check_list(&mts,((&mdl):(&c)),guard_builtin,In) }}.
+guard_builtin_check(Guard,_,_,Type) -->
+    Type\=none,Type\=relop,Type\=float_relop, atom(Guard)|
+	&mts <<= [guard_builtin(Guard,0,((&mdl):(&c)))].
+guard_builtin_check(Guard,_,_,Type) -->
+    Type\=none,Type\=relop,Type\=float_relop,
+    vector(Guard,L),L>=2,vector_element(Guard,0,PN),atom(PN)|
+	LL := L - 1,
+	&mts <<= [guard_builtin(PN,LL,((&mdl):(&c)))].
+guard_builtin_check(Guard,_,_,none) -->
+    true|
+	&out <<= [nl,
+		  putb(string#">>> Error !! guard goal not implemented ::: "),
+		  putt(Guard),putb(string#" in "),putt(&c),putl(string#".")].
+
+:- local_implicit out : oldnew,
+		  pts : stream,
+		  mts : stream,
+		  mdl : shared,
+		  c   : shared.
+
+%%  check body goals.
+body_check(true) -->
+    true|
+	true.
+body_check(A=B) -->
+    true|
+	true.
+body_check(A:=B) -->
+    true|
+	{{ expression(&mts,((&mdl):(&c)),body_builtin,B) }}.
+body_check(A$:=B) -->
+    true|
+	{{ float_expression(&mts,((&mdl):(&c)),body_builtin,B) }}.
+body_check((B1,B2)) -->
+    true|
+	body_check(B1),
+	body_check(B2).
+body_check(Body@Pragma) -->
+    true|
+	body_check(Body).
+body_check(M:P@Pragma) -->
+    true|
+	body_check(M:P).
+otherwise.
+body_check(M:P) -->
+    atom(M),atom(P)|
+	&mts <<= [call(M,P,0,(&mdl):(&c))].
+body_check(M:P) -->
+    atom(M),vector(P,L),L>=2,vector_element(P,0,PN),atom(PN)|
+	LL := L - 1,
+	&mts <<= [call(M,PN,LL,(&mdl):(&c))].
+otherwise.
+body_check(Body) -->
+    true|
+	{{ kl1cmp_blttbl:active_builtin(Body,_,_,_,Type) }},
+	body_builtin_check(Body,Type).
+
+body_builtin_check(Body,Type) -->
+    Type\=none,atom(Body)|
+	&mts <<= [body_builtin(Body,0,(&mdl):(&c))].
+body_builtin_check(Body,Type) -->
+    Type\=none,vector(Body,L),L>=2,vector_element(Body,0,PN),atom(PN)|
+	LL := L - 1,
+	&mts <<= [body_builtin(PN,LL,(&mdl):(&c))].
+body_builtin_check(Body,none) -->
+    atom(Body)|
+	&pts <<= [call(Body,0,&c)].
+body_builtin_check(Body,none) -->
+    vector(Body,L),L>=2,vector_element(Body,0,PN),atom(PN)|
+	LL := L - 1,
+	&pts <<= [call(PN,LL,&c)].
+otherwise.
+body_builtin_check(Body,none) -->
+    true|
+	&out <<= [nl,putb(string#">>> Error !! illegal body goal ::: "),
+		  putt(Body),putb(string#" in "),putt(&c),putl(string#".")].
+
+:- local_implicit mts : stream,
+		  c   : shared,
+		  pos : shared.
+
+expression(int(B)) -->
+    true|
+	{{ kl1cmp_blttbl:expression(_,_,int(B),Y,In,_) }},
+	float_expression_check(Y,In).
+otherwise.
+expression(B) -->
+    true|
+	{{ kl1cmp_blttbl:expression(_,_,B,Y,In,_) }},
+	expression_check(Y,In).
+
+expression_check(Blt,In) -->
+    vector(Blt,L), vector_element(Blt,0,F)|
+	LL := L - 1,
+	&mts <<= [{&pos,F,LL,&c}],
+	expression_check_list(In).
+expression_check(true,_) -->
+    true|
+	true.
+
+expression_check_list([X,_|L]) -->
+    true|
+	expression(X),
+	expression_check_list(L).
+expression_check_list([]) -->
+    true|
+	true.
+
+float_expression(float(B)) -->
+    true|
+	{{ kl1cmp_blttbl:float_expression(_,_,float(B),Y,In,_) }},
+	expression_check(Y,In).
+otherwise.
+float_expression(B) -->
+    true|
+	{{ kl1cmp_blttbl:float_expression(_,_,B,Y,In,_) }},
+	float_expression_check(Y,In).
+
+float_expression_check(integer_to_floating_point(_,_),In) -->
+    true|
+	&mts <<= [{&pos,integer_to_floating_point,2,&c}],
+	expression_check_list(In).
+otherwise.
+float_expression_check(Blt,In) -->
+    vector(Blt,L), vector_element(Blt,0,F)|
+	LL := L - 1,
+	&mts <<= [{&pos,F,LL,&c}],
+	float_expression_check_list(In).
+float_expression_check(true,_) -->
+    true|
+	true.
+
+float_expression_check_list([X,_|L]) -->
+    true|
+	float_expression(X),
+	float_expression_check_list(L).
+float_expression_check_list([]) -->
+    true|
+	true.
+
+:- local_implicit out : oldnew.
+
+%%  put referred result.
+referred_result(_,_,_,check) -->
+    true|
+	true.
+referred_result(RT,GRT,BRT,RefL) -->
+    list(RefL)|
+	put_referred(RefL,RT,GRT,BRT).
+otherwise.
+referred_result(RT,GRT,BRT,Op) -->
+    true|
+	merge(RT,RL),
+	merge(GRT,GRL),
+	merge(BRT,BRL),
+	{{ mpimos_utility:qsortv(RL,0,SRL) }},
+	referred_result_list(SRL,Op,done),
+	referred_result_guard(GRL,Op),
+	referred_result_body(BRL,Op).
+
+referred_result_list([],_,_) -->
+    true|
+	true.
+referred_result_list([MP|MRL],Op,S) -->
+    wait(S)|
+	set_vector_element(MP,3,RT,SRL,NMP),
+	merge(RT,RL),
+	{{ mpimos_utility:qsortv(RL,0,SRL) }},
+	referred_result_one(NMP,Op),
+	&out <<= [flush(F)],
+	referred_result_list(MRL,Op,F).
+
+referred_result_one(MP,_) -->
+    vector_element(MP,3,[])|
+	true.
+otherwise.
+referred_result_one({_,M,PL,RL,F},{list,_,_,_}) -->
+    string(F,_,_),PL\=[]|
+	&out <<= [putl(string#"============================================="),
+		  putb(string#"File Name : "),putt(F),putl(string#"."),
+		  putb(string#"Module : "),putt(M),putl(string#"."),
+		  putb(string#"Public : ")],
+	out_convert(PL),
+	&out <<= [putl(string#"."),nl],
+	referred_table(RL),
+	&out <<= [nl].
+referred_result_one({_,M,[],RL,F},{list,_,_,_}) -->
+    string(F,_,_)|
+	&out <<= [putl(string#"============================================="),
+		  putb(string#"File Name : "),putt(F),putl(string#"."),
+		  putb(string#"Module : "),putt(M),putl(string#"."),nl],
+	referred_table(RL),
+	&out <<= [nl].
+referred_result_one({_,M,PL,RL,[]},{_,system,_,_}) -->
+    true|
+	&out <<= [putl(string#"============================================="),
+		  putb(string#"Module : "),putt(M),putl(string#"."),
+		  putb(string#"Public : ")],
+	out_convert(PL),
+	&out <<= [putl(string#"."),nl],
+	referred_table(RL),
+	&out <<= [nl].
+otherwise.
+referred_result_one(_,_) -->
+    true|
+	true.
+
+referred_table([{_,P,A,CL}|RL]) -->
+    true|
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(P/A),nl,
+		  putl(string#"+-----------------------------------")],
+	out_convert_v(CL),
+	referred_table(RL).
+referred_table([]) -->
+    true|
+	true.
+
+referred_result_guard([],_) -->
+    true|
+	true.
+referred_result_guard(_,{_,_,_,no}) -->
+    true|
+	true.
+referred_result_guard(GRL,{_,_,_,guard}) -->
+    list(GRL)|
+	&out <<= [putl(string#"============================================="),
+		  putl(string#"Guard builtin predicates.")],
+	referred_result_builtin(GRL).
+
+referred_result_body([],_) -->
+    true|
+	true.
+referred_result_body(_,{_,_,no,_}) -->
+    true|
+	true.
+referred_result_body(BRL,{_,_,builtin,_}) -->
+    list(BRL)|
+	&out <<= [putl(string#"============================================="),
+		  putl(string#"Body builtin predicates.")],
+	referred_result_builtin(BRL).
+
+referred_result_builtin([]) -->
+    true|
+	true.
+referred_result_builtin([{P,A,CL}|RL]) -->
+    true|
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(P/A),nl,
+		  putl(string#"+-----------------------------------")],
+	out_convert_v(CL),
+	referred_result_builtin(RL).
+
+put_referred([],_,_,_) -->
+    true|
+	true.
+put_referred([Module|Ref],RT,GRT,BRT) -->
+    atom(Module)|
+	{{ get_list_from_table(Module,RT,NRT,RL,NRL) }},
+	put_module_result(NRL,RL,Module),
+	put_referred(Ref,NRT,GRT,BRT).
+put_referred([P/A|Ref],RT,GRT,BRT) -->
+    atom(P),A>=0|
+	&out <<= [putl(string#"=============================================")],
+	{{ get_list_from_table(P,BRT,NBRT,RL,NRL) }},
+	put_one_builtin(NRL,RL,P,A,string#""),
+	put_referred(Ref,RT,GRT,NBRT).
+put_referred([guard(P/A)|Ref],RT,GRT,BRT) -->
+    atom(P),A>=0|
+	&out <<= [putl(string#"=============================================")],
+	{{ get_list_from_table(P,GRT,NGRT,RL,NRL) }},
+	put_one_builtin(NRL,RL,P,A,string#" (Guard)"),
+	put_referred(Ref,RT,NGRT,BRT).
+put_referred([M:P/A|Ref],RT,GRT,BRT) -->
+    atom(M),atom(P),A>=0|
+	{{ get_list_from_table(M,RT,NRT,RL,NRL) }},
+	&out <<= [putl(string#"=============================================")],
+	put_predicate_result(NRL,RL,M,P,A),
+	put_referred(Ref,NRT,GRT,BRT).
+otherwise.
+put_referred([R|Ref],RT,GRT,BRT) -->
+    true|
+	&out <<= [putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+		  putb(string#"|  "),putt(R),
+		  putl(string#" ::: illegal format."),
+		  putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")],
+	put_referred(Ref,RT,GRT,BRT).
+
+:- local_implicit out : oldnew,
+		  pl  : stream.
+
+put_module_result([],Module) -->
+    true|
+	&out <<= [putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+		  putb(string#"|  "),putt(Module),
+		  putl(string#" ::: undefined module."),
+		  putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")].
+put_module_result([MP|RL],Module) -->
+    vector_element(MP,1,Module)|
+	&pl = [MP|RL],
+	set_vector_element(MP,3,RT,SRL,NMP),
+	merge(RT,R),
+	{{ mpimos_utility:qsortv(R,0,SRL),
+	   referred_result_one(&out,NMP,{list,system,builtin,guard}) }}.
+otherwise.
+put_module_result([MP|RL],Module) -->
+    true|
+	&pl <<= [MP],
+	put_module_result(RL,Module).
+
+put_predicate_result([],M,P,A) -->
+    true|
+	&out <<= [putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+		  putb(string#"|  "),putt(M:P/A),
+		  putl(string#" ::: undefined module."),
+		  putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")].
+put_predicate_result([MP|RL],M,P,A) -->
+    vector_element(MP,1,M),vector_element(MP,3,PT),vector(PT,L),L>0|
+	set_vector_element(MP,3,RT,NRT,NMP),
+	&pl = [NMP|RL],
+	{{ get_list_from_table(P,RT,NRT,PRL,NPRL),
+	   put_one_predicate(&out,NPRL,PRL,M,P,A) }}.
+put_predicate_result([MP|RL],M,P,A) -->
+    vector_element(MP,1,M),vector_element(MP,3,{})|
+	&pl = [MP|RL],
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(M:P/A),nl,
+		  putl(string#"+-----------------------------------")].
+otherwise.
+put_predicate_result([MP|RL],M,P,A) -->
+    true|
+	&pl <<= [MP],
+	put_predicate_result(RL,M,P,A).
+
+put_one_predicate([],M,P,A) -->
+    true|
+	&out <<= [putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+		  putb(string#"|  "),putt(M:P/A),
+		  putl(string#" ::: undefined predicate."),
+		  putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")].
+put_one_predicate([PAC|RL],M,P,A) -->
+    vector_element(PAC,1,P),vector_element(PAC,2,A)|
+	set_vector_element(PAC,3,CL,CL,NPAC),
+	&pl = [NPAC|RL],
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(M:P/A),nl,
+		  putl(string#"+-----------------------------------")],
+	{{ out_convert_v(&out,CL) }},
+	&out <<= [nl].
+otherwise.
+put_one_predicate([PA|RL],M,P,A) -->
+    true|
+	&pl <<= [PA],
+	put_one_predicate(RL,M,P,A).
+
+put_one_builtin([],P,A,Pos) -->
+    true|
+	{{ check_builtin_type(P,A,Type),
+	   put_one_builtin_no_entry(&out,Type,P,A,Pos) }}.
+put_one_builtin([{P,A,CL}|RL],P,A,Pos) -->
+    true|
+	&pl = [{P,A,CL}|RL],
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(P/A),putl(Pos),
+		  putl(string#"+-----------------------------------")],
+	{{ out_convert_v(&out,CL) }},
+	&out <<= [nl].
+otherwise.
+put_one_builtin([PAC|RL],P,A,Pos) -->
+    true|
+	&pl <<= [PAC],
+	put_one_builtin(RL,P,A,Pos).
+
+:- local_implicit out : oldnew.
+
+put_one_builtin_no_entry(Type,P,A,Pos) -->
+    Type\=none|
+	&out <<= [putl(string#"+-----------------------------------"),
+		  putb(string#"|  "),putt(P/A),putl(Pos),
+		  putl(string#"+-----------------------------------")].
+put_one_builtin_no_entry(none,P,A,Pos) -->
+    true|
+	&out <<= [putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"),
+		  putb(string#"|  "),putt(P/A),putb(Pos),
+		  putl(string#" ::: not builtin predicate."),
+		  putl(string#"+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")].
+
+%%  utility.
+check_builtin_type(P,0,Type):-
+    true|
+	kl1cmp_blttbl:active_builtin(P,_,_,_,Type).
+check_builtin_type(P,A,Type):-
+    A>0|
+	AA := A + 1,
+	new_vector(V,AA),
+	set_vector_element(V,0,_,P,PV),
+	kl1cmp_blttbl:active_builtin(PV,_,_,_,Type).
+
+out_convert([]) -->
+    true|
+	true.
+out_convert([{P,A}|PL]) -->
+    true|
+	&out <<= [putt(P/A)],
+	out_convert1(PL).
+
+out_convert1([]) -->
+    true|
+	true.
+out_convert1([{P,A}|PL]) -->
+    true|
+	&out <<= [putb(string#", "),putt(P/A)],
+	out_convert1(PL).
+
+out_convert_v([]) -->
+    true|
+	true.
+out_convert_v([P|PL]) -->
+    true|
+	&out <<= [tab(4),putt(P),nl],
+	out_convert_v(PL).
+
+get_list_from_table(P,T,NT,L,NL):-
+    true|
+	hash(P,Value,_), HV := Value mod 16,
+	set_vector_element(T,HV,L,NL,NT).
+
+init_module_table(MTS,MTSL) :-
+    true |
+	mpimos_xref_table:init_module_table(MTS,MTSL).

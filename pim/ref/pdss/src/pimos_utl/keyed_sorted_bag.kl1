@@ -1,0 +1,1499 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module keyed_sorted_bag.
+:- with_macro pimos.
+:- public keyed_sorted_bag/2,keyed_sorted_set/2,sorted_bag/2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_sorted_bag(Comparator,In)
+%%      Comparator :: = ascending/descending/Code of the user defined comparator module
+%%      In      :: Input stream from users
+
+keyed_sorted_bag(Comp,In) :- true |
+        merge(In,In1),
+        keyed_sorted_bag(Comp,In1,{}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_sorted_bag(Comp,In,T)
+%%      Comp    :: ascending/descending/Code of the comparator
+%%      In      :: Input stream from users
+%%      T       :: splay tree
+
+keyed_sorted_bag(Comp,[empty(YorN)|In],T) :- true |
+        empty(T,YorN,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[empty(Key,YorN)|In],T) :- true |
+        empty(Comp,T,Key,YorN,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[put(Key,Data)|In],T) :- true |
+        put(Comp,T,Key,Data,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get(Key,Data)|In],T) :- true |
+        get(Comp,T,Key,Data,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_all(A)|In],T) :- true |
+        get_all(T,A,[],Comp),
+        keyed_sorted_bag(Comp,In,{}).
+
+keyed_sorted_bag(Comp,[get_all(Key,A)|In],T) :- true |
+        get_all_with_key(Comp,T,Key,A,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_and_put(Key,OldD,NewD)|In],T) :- true |
+        get_and_put(Comp,T,Key,OldD,NewD,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_if_any(Key,Data)|In],T) :- true |
+        get_if_any(Comp,T,Key,Data,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_if_any_and_put(Key,OldD,NewD)|In],T) :- true |
+        get_if_any_and_put(Comp,T,Key,OldD,NewD,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_and_put_if_any(Key,X,Y,Y1)|In],T) :- true |
+        get_and_put_if_any(Comp,T,Key,X,Y,Y1,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[carbon_copy(A)|In],T) :- true |
+        carbon_copy(T,A,[],T1,Comp),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[carbon_copy(Key,A)|In],T) :- true |
+        carbon_copy_with_key(Comp,T,Key,A,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_max_if_any(X)|In],T) :- true |
+        get_max_if_any(T,X,T1,Comp),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[get_min_if_any(X)|In],T) :- true |
+        get_min_if_any(T,X,T1,Comp),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[do(List)|In],T) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        keyed_sorted_bag(Comp,In1,T).
+
+keyed_sorted_bag(Comp,[clear|In],_) :- true |
+        keyed_sorted_bag(Comp,In,{}).
+
+keyed_sorted_bag(Comp,[depth(N)|In],T) :- true |
+        depth(T,N,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[count(N)|In],T) :- true |                % number of nodes in the tree
+        count(T,N,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[data_count(N)|In],T) :- true |
+        data_count(T,N,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(Comp,[possessory_rate(N)|In],T) :- true |
+        possessory_rate(T,N,T1),
+        keyed_sorted_bag(Comp,In,T1).
+
+keyed_sorted_bag(_,[],_) :- true | true.
+
+otherwise.
+keyed_sorted_bag(_,[Msg|_],_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_bag,string#"illegal_message_protocol"),Msg).
+
+prepend([A|X],Y,Z) :- true |
+        Z=[A|Z1],
+        prepend(X,Y,Z1).
+prepend([],Y,Z) :- true | Y=Z.
+
+
+% *** empty/1 ***
+empty({},YorN,T) :- true | YorN=yes,T={}.
+otherwise.
+empty(T,YorN,T1) :- true | YorN=no,T=T1.
+
+% *** empty/2 ***
+empty(Comp,T,Key,YorN,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        empty(Res,YorN).
+
+empty({GLorR,PLorR,T,GP,P,T1},YorN) :- true |
+        YorN=no,
+        splay(GLorR,PLorR,T,GP,P,T1).
+empty({LorR,T,Parent,T1},YorN) :- true |
+        YorN=no,
+        splay(LorR,T,Parent,T1).
+empty({T,T1},YorN) :- true |
+        YorN=no,
+        T=T1.
+empty({_},YorN) :- true | YorN=yes.
+
+% *** put ***
+put(Comp,T,Key,Data,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        put(Res,Key1,Data).
+
+put({K,X},Key,Data) :- true |
+        K=Key,
+        D=[Data|D1],
+        X={1,D,D1,E,E}.
+put({K,K1,{C,D,D1,E,E1},X},Key,Data) :- true |
+        K1=K,
+        D1=[Data|D2],
+        E1=[Key|E2],
+        X={~(C+1),D,D2,E,E2}.
+
+% *** get ***
+get(Comp,T,Key,Data,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get(Res,Data).
+
+get({GLorR,PLorR,{_,{1,[D|_],_,_,_},L,R},GP,P,T},Data) :- true |
+        Data=D,
+        join(L,R,SubT),
+        splay0(GLorR,PLorR,SubT,GP,P,T).
+get({GLorR,PLorR,{_,{C,[D|D0],D1,E,E1},L,R},GP,P,T},Data) :- C>1 |
+        Data=D,
+        E=[K|E0],
+        splay(GLorR,PLorR,{K,{~(C-1),D0,D1,E0,E1},L,R},GP,P,T).
+get({LorR,{_,{1,[D|_],_,_,_},L,R},Parent,T},Data) :- true |
+        Data=D,
+        join(L,R,SubT),
+        stay(LorR,SubT,Parent,T).
+get({LorR,{_,{C,[D|D0],D1,E,E1},L,R},Parent,T},Data) :- C>1 |
+        Data=D,
+        E=[K|E0],
+        splay(LorR,{K,{~(C-1),D0,D1,E0,E1},L,R},Parent,T).
+get({{_,{1,[D|_],_,_,_},L,R},T},Data) :- true |
+        Data=D,
+        join(L,R,T).
+get({{_,{C,[D|D0],D1,E,E1},L,R},T},Data) :- C>1 |
+        Data=D,
+        E=[K|E0],
+        T={K,{~(C-1),D0,D1,E0,E1},L,R}.
+get({Key},Data) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_bag,string#"tried_to_get_nonexistent_element"),get(Key,Data)).
+
+% *** get_all/1 ***
+get_all(T,A,A1,ascending) :- true |
+        get_all(T,A,A1).
+get_all(T,A,A1,descending) :- true |
+        get_all_descending(T,A,A1).
+%get_all(T,A,A1,Comp) :- code(Comp,_,_,_) |
+get_all(T,A,A1,Comp) :- builtin#code(Comp) |
+        get_all(T,A,A1).
+
+get_all({Key,{_,[Data|D],D1,E,E1},L,R},A,A3) :- true |
+        D1=[],E1=[],
+        get_all(L,A,[{Key,Data}|A1]),
+        get_elements(E,D,A1,A2),
+        get_all(R,A2,A3).
+get_all({},A,A1) :- true | A=A1.
+
+get_all_descending({Key,{_,[Data|D],D1,E,E1},L,R},A,A3) :- true |
+        D1=[],E1=[],
+        get_all_descending(R,A,[{Key,Data}|A1]),
+        get_elements(E,D,A1,A2),
+        get_all_descending(L,A2,A3).
+get_all_descending({},A,A1) :- true | A=A1.
+
+get_elements([Key|E],[Data|D],A,A1) :- true |
+        A=[{Key,Data}|A0],
+        get_elements(E,D,A0,A1).
+get_elements([],[],A,A1) :- true | A=A1.
+
+% *** get_all/2 ***
+get_all_with_key(Comp,T,Key,A,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get_all_with_key(Res,A).
+
+get_all_with_key({GLorR,PLorR,{_,{_,D,D1,_,_},L,R},GP,P,T},A) :- true |
+        D1=[],
+        A=D,
+        join(L,R,SubT),
+        splay0(GLorR,PLorR,SubT,GP,P,T).
+get_all_with_key({LorR,{_,{_,D,D1,_,_},L,R},Parent,T},A) :- true |
+        D1=[],
+        A=D,
+        join(L,R,SubT),
+        stay(LorR,SubT,Parent,T).
+get_all_with_key({{_,{_,D,D1,_,_},L,R},T},A) :- true |
+        D1=[],
+        A=D,
+        join(L,R,T).
+get_all_with_key({_},A) :- true | A=[].
+
+% *** get_and_put ***
+get_and_put(Comp,T,Key,Old,New,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        get_and_put(Res,Key1,Old,New).
+
+get_and_put({_,K,{C,[Data|D],D1,E,E1},X},Key,Old,New) :- true |
+        K=Key,
+        Old=Data,
+        X={C,[New|D],D1,E,E1}.
+get_and_put({_,_},Key,Old,New) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_bag,string#"tried_to_get_nonexistent_element"),
+            get_and_put(Key,Old,New)).
+
+% *** get_if_any ***
+get_if_any(Comp,T,Key,Data,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get_if_any(Res,Data).
+
+get_if_any({GLorR,PLorR,{_,{1,[D|_],_,_,_},L,R},GP,P,T},Data) :- true |
+        Data={D},
+        join(L,R,SubT),
+        splay0(GLorR,PLorR,SubT,GP,P,T).
+get_if_any({GLorR,PLorR,{_,{C,[D|D0],D1,E,E1},L,R},GP,P,T},Data) :- C>1 |
+        Data={D},
+        E=[K|E0],
+        splay(GLorR,PLorR,{K,{~(C-1),D0,D1,E0,E1},L,R},GP,P,T).
+get_if_any({LorR,{_,{1,[D|_],_,_,_},L,R},Parent,T},Data) :- true |
+        Data={D},
+        join(L,R,SubT),
+        stay(LorR,SubT,Parent,T).
+get_if_any({LorR,{_,{C,[D|D0],D1,E,E1},L,R},Parent,T},Data) :- C>1 |
+        Data={D},
+        E=[K|E0],
+        splay(LorR,{K,{~(C-1),D0,D1,E0,E1},L,R},Parent,T).
+get_if_any({{_,{1,[D|_],_,_,_},L,R},T},Data) :- true |
+        Data={D},
+        join(L,R,T).
+get_if_any({{_,{C,[D|D0],D1,E,E1},L,R},T},Data) :- C>1 |
+        Data={D},
+        E=[K|E0],
+        T={K,{~(C-1),D0,D1,E0,E1},L,R}.
+get_if_any({_},Data) :- true |
+        Data={}.
+
+% *** get_if_any_and_put ***
+get_if_any_and_put(Comp,T,Key,Old,New,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        get_if_any_and_put(Res,Key1,Old,New).
+
+get_if_any_and_put({_,K,{C,[Data|D],D1,E,E1},X},Key,Old,New) :- true |
+        K=Key,
+        Old={Data},
+        X={C,[New|D],D1,E,E1}.
+get_if_any_and_put({K,X},Key,Old,New) :- true |
+        K=Key,
+        Old={},
+        D=[New|D1],
+        X={1,D,D1,E,E}.
+
+% *** get_and_put_if_any ***
+get_and_put_if_any(Comp,T,Key,X,Y,Y1,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get_and_put_if_any(Res,X,Y,Y1).
+
+get_and_put_if_any({GLorR,PLorR,{K,{C,[D|D0],D1,E,E1},L,R},GP,P,T},X,Y,Y1) :- true |
+        X={D},
+        Y1={},
+        splay(GLorR,PLorR,{K,{C,[Y|D0],D1,E,E1},L,R},GP,P,T).
+get_and_put_if_any({LorR,{K,{C,[D|D0],D1,E,E1},L,R},Parent,T},X,Y,Y1) :- true |
+        X={D},
+        Y1={},
+        splay(LorR,{K,{C,[Y|D0],D1,E,E1},L,R},Parent,T).
+get_and_put_if_any({{K,{C,[D|D0],D1,E,E1},L,R},T},X,Y,Y1) :- true |
+        X={D},
+        Y1={},
+        T={K,{C,[Y|D0],D1,E,E1},L,R}.
+get_and_put_if_any({_},X,Y,Y1) :- true |
+        X={},
+        Y1={Y}.
+
+% *** carbon_copy/1 ***
+carbon_copy(T,A,A1,T1,ascending) :- true |
+        carbon_copy(T,A,A1,T1).
+carbon_copy(T,A,A1,T1,descending) :- true |
+        carbon_copy_descending(T,A,A1,T1).
+%carbon_copy(T,A,A1,T1,Comp) :- code(Comp,_,_,_) |
+carbon_copy(T,A,A1,T1,Comp) :- builtin#code(Comp) |
+        carbon_copy(T,A,A1,T1).
+
+carbon_copy({Key,{C,[Data|D],D1,E,E1},L,R},A,A3,T) :- true |
+        D1=[],E1=[],
+        T={Key,{C,[Data|ND],ND1,NE,NE1},L1,R1},
+        carbon_copy(L,A,[{Key,Data}|A1],L1),
+        carbon_copy_elements(E,D,NE,NE1,ND,ND1,A1,A2),
+        carbon_copy(R,A2,A3,R1).
+carbon_copy({},A,A1,T) :- true | A=A1,T={}.
+
+carbon_copy_descending({Key,{C,[Data|D],D1,E,E1},L,R},A,A3,T) :- true |
+        D1=[],E1=[],
+        T={Key,{C,[Data|ND],ND1,NE,NE1},L1,R1},
+        carbon_copy_descending(R,A,[{Key,Data}|A1],L1),
+        carbon_copy_elements(E,D,NE,NE1,ND,ND1,A1,A2),
+        carbon_copy_descending(L,A2,A3,R1).
+carbon_copy_descending({},A,A1,T) :- true | A=A1,T={}.
+
+carbon_copy_elements([Key|E],[Data|D],NE,NE1,ND,ND1,A,A1) :- true |
+        NE=[Key|NE0],
+        ND=[Data|ND0],
+        A=[{Key,Data}|A0],
+        carbon_copy_elements(E,D,NE0,NE1,ND0,ND1,A0,A1).
+carbon_copy_elements([],[],NE,NE1,ND,ND1,A,A1) :- true |
+        NE=NE1,
+        ND=ND1,
+        A=A1.
+
+% *** carbon_copy/2 ***
+carbon_copy_with_key(Comp,T,Key,A,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        carbon_copy_with_key(Res,A).
+
+carbon_copy_with_key({GLorR,PLorR,{K,{C,D,D1,E,E1},L,R},GP,P,T},A) :- true |
+        D1=[],
+        carbon_copy_elements(D,ND,ND1,A),
+        splay(GLorR,PLorR,{K,{C,ND,ND1,E,E1},L,R},GP,P,T).
+carbon_copy_with_key({LorR,{K,{C,D,D1,E,E1},L,R},Parent,T},A) :- true |
+        D1=[],
+        carbon_copy_elements(D,ND,ND1,A),
+        splay(LorR,{K,{C,ND,ND1,E,E1},L,R},Parent,T).
+carbon_copy_with_key({{K,{C,D,D1,E,E1},L,R},T},A) :- true |
+        D1=[],
+        carbon_copy_elements(D,ND,ND1,A),
+        T={K,{C,ND,ND1,E,E1},L,R}.
+carbon_copy_with_key({_},A) :- true | A=[].
+
+carbon_copy_elements([Data|D],ND,ND1,A) :- true |
+        ND=[Data|ND0],
+        A=[Data|A1],
+        carbon_copy_elements(D,ND0,ND1,A1).
+carbon_copy_elements([],ND,ND1,A) :-true | ND=ND1,A=[].
+
+% *** get_max_if_any ***
+get_max_if_any(T,X,T1,ascending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_any(T0,X,T1).
+get_max_if_any(T,X,T1,descending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_any(T0,X,T1).
+%get_max_if_any(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_max_if_any(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_max(T,T0),
+        do_get_max_if_any(T0,X,T1).
+
+do_get_max_if_any({K,{C,[D|D0],D1,E,E1},L,R},X,T) :- C>1 |
+        X={K,D},
+        E=[K0|E0],
+        T={K0,{~(C-1),D0,D1,E0,E1},L,R}.
+do_get_max_if_any({K,{1,[D|_],_,_,_},L,_},X,T) :- true |
+        X={K,D},
+        T=L.
+do_get_max_if_any({},X,T) :- true |
+        X={},T={}.
+
+% *** get_min_if_any ***
+get_min_if_any(T,X,T1,ascending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_any(T0,X,T1).
+get_min_if_any(T,X,T1,descending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_any(T0,X,T1).
+%get_min_if_any(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_min_if_any(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_min(T,T0),
+        do_get_min_if_any(T0,X,T1).
+
+do_get_min_if_any({K,{C,[D|D0],D1,E,E1},L,R},X,T) :- C>1 |
+        X={K,D},
+        E=[K0|E0],
+        T={K0,{~(C-1),D0,D1,E0,E1},L,R}.
+do_get_min_if_any({K,{1,[D|_],_,_,_},_,R},X,T) :- true |
+        X={K,D},
+        T=R.
+do_get_min_if_any({},X,T) :- true |
+        X={},T={}.
+
+%%%%% not open to the public
+% *** depth ***
+depth(T,N,T1) :- true |
+        depth_checker(In0,0,N),
+        merge(In,In0),
+        depth(T,In,0,T1).
+
+depth({K,X,L,R},In,C,T) :- true |
+        T={K,X,L1,R1},
+        In={In1,In2},
+        C1:=C+1,
+        depth(L,In1,C1,L1),
+        depth(R,In2,C1,R1).
+depth({},In,C,T) :- true |
+        In=[C],
+        T={}.
+
+depth_checker([C|In],N0,N) :- C>N0 |
+        depth_checker(In,C,N).
+otherwise.
+depth_checker([_|In],N0,N) :- true |
+        depth_checker(In,N0,N).
+depth_checker([],N0,N) :- true | N:=N0.
+
+% *** count ***
+count(T,N,T1) :- true |
+        counter(In0,0,N),
+        merge(In,In0),
+        do_count(T,In,T1).
+
+do_count({K,X,L,R},In,T) :- true |
+        In=[1|In0],
+        In0={In1,In2},
+        T={K,X,L1,R1},
+        do_count(L,In1,L1),
+        do_count(R,In2,R1).
+do_count({},In,T) :- true | In=[],T={}.
+
+counter([C|In],I,N) :- true |
+        counter(In,~(I+C),N).
+counter([],I,N) :- true | N:=I.
+
+% *** data_count ***
+data_count(T,N,T1) :- true |
+        counter(In0,0,N),
+        merge(In,In0),
+        do_data_count(T,In,T1).
+
+do_data_count({K,{C,D,D1,E,E1},L,R},In,T) :- true |
+        In=[C|In0],
+        In0={In1,In2},
+        T={K,{C,D,D1,E,E1},L1,R1},
+        do_data_count(L,In1,L1),
+        do_data_count(R,In2,R1).
+do_data_count({},In,T) :- true | In=[],T={}.
+
+% *** possessory_rate ***
+possessory_rate(T,N,T1) :- true |
+        depth(T,Depth,T0),
+        count(T0,Count,T1),
+        N:=Count*100/((1<<Depth)-1).
+
+
+% *** down ***
+down(T,T1,Key,Key1,Res,Comp) :- atom(Comp) |
+        T1={K1,X1,L1,R1},
+        down_def(T,{K1,X1,L1,R1},Key,Key1,Res).
+%down(T,T1,Key,Key1,Res,Comp) :- code(Comp,_,_,_) |
+down(T,T1,Key,Key1,Res,Comp) :- builtin#code(Comp) |
+        T1={K1,X1,L1,R1},
+        down_cod(T,{K1,X1,L1,R1},Key,Key1,Res,Comp).
+
+down_def({K,X,L,R},T1,Key,Key1,Res) :- K=Key,
+    T1={K1,X1,L1,R1} |
+        Key=Key1,
+        L=L1,R=R1,
+        Res={K,K1,X,X1}.
+down_def({K,X,L,R},T1,Key,Key1,Res) :- K<Key |
+        down_def_r(R,T1,Key,Key1,Res,{K,X,L,_}).
+down_def({K,X,L,R},T1,Key,Key1,Res) :- K>Key |
+        down_def_l(L,T1,Key,Key1,Res,{K,X,_,R}).
+down_def({K,X,L,R},T1,Key,Key1,Res) :- K$<Key |
+        down_def_r(R,T1,Key,Key1,Res,{K,X,L,_}).
+down_def({K,X,L,R},T1,Key,Key1,Res) :- K$>Key |
+        down_def_l(L,T1,Key,Key1,Res,{K,X,_,R}).
+down_def({K,X,L,R},T1,Key,Key1,Res) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V<V1 |
+        down_def_r(R,T1,Key,Key1,Res,{K,X,L,_}).
+down_def({K,X,L,R},T1,Key,Key1,Res) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V>V1 |
+        down_def_l(L,T1,Key,Key1,Res,{K,X,_,R}).
+%down_def({K,X,L,R},T1,Key,Key1,Res) :- string_less_than(K,Key) |
+%        down_def_r(R,T1,Key,Key1,Res,{K,X,L,_}).
+%down_def({K,X,L,R},T1,Key,Key1,Res) :- string_less_than(Key,K) |
+%        down_def_l(L,T1,Key,Key1,Res,{K,X,_,R}).
+down_def({},T1,Key,Key1,Res) :-
+    T1={K1,X1,L1,R1} |
+        Key=Key1,L1={},R1={},
+        Res={K1,X1}.
+otherwise.
+down_def({K,X,L,R},T1,Key,Key1,Res) :- true |
+        comparator:sort(K,Key,Sml,Lag,YorN),
+        wait_def({Sml,X,L,R},T1,Lag,Key1,Res,YorN).
+
+wait_def({K,X,L,R},T1,Key,Key1,Res,no) :- true |
+        down_def_r(R,T1,Key,Key1,Res,{K,X,L,_}).
+wait_def({Key,X,L,R},T1,K,Key1,Res,yes) :- true |
+        down_def_l(L,T1,Key,Key1,Res,{K,X,_,R}).
+
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- RK=Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        Key=Key1,
+        L1={K,X,L,RL},R1=RR,
+        Res={RK,K1,RX,X1}.
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- RK<Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={RK,RX,{K,X,L,RL},Lx},
+        down_def(RR,{K1,X1,Lx,R1},Key,Key1,Res).
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- RK>Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+        down_def(RL,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- RK$<Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={RK,RX,{K,X,L,RL},Lx},
+        down_def(RR,{K1,X1,Lx,R1},Key,Key1,Res).
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- RK$>Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+        down_def(RL,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- atom(RK),atom(Key),
+    tag_and_value(RK,_,V),tag_and_value(Key,_,V1),V<V1,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={RK,RX,{K,X,L,RL},Lx},
+        down_def(RR,{K1,X1,Lx,R1},Key,Key1,Res).
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- atom(RK),atom(Key),
+    tag_and_value(RK,_,V),tag_and_value(Key,_,V1),V>V1,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+        down_def(RL,{K1,X1,Lx,Rx},Key,Key1,Res).
+%down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- string_less_than(RK,Key),
+%    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+%        L1={RK,RX,{K,X,L,RL},Lx},
+%        down_def(RR,{K1,X1,Lx,R1},Key,Key1,Res).
+%down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- string_less_than(Key,RK),
+%    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+%        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+%        down_def(RL,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_r({},{K1,X1,L1,R1},Key,Key1,Res,{K,X,L,_}) :- true |
+        Key=Key1,
+        L1={K,X,L,{}},R1={},
+        Res={K1,X1}.
+otherwise.
+down_def_r({RK,RX,RL,RR},T1,Key,Key1,Res,T0) :- true |
+        comparator:sort(RK,Key,Sml,Lag,YorN),
+        wait_def_r2({Sml,RX,RL,RR},T1,Lag,Key1,Res,T0,YorN).
+
+wait_def_r2({RK,RX,RL,RR},T1,Key,Key1,Res,T0,no) :-
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={RK,RX,{K,X,L,RL},Lx},
+        down_def(RR,{K1,X1,Lx,R1},Key,Key1,Res).
+wait_def_r2({Key,RX,RL,RR},T1,RK,Key1,Res,T0,yes) :-
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+        down_def(RL,{K1,X1,Lx,Rx},Key,Key1,Res).
+
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- LK=Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        Key=Key1,
+        L1=LL,R1={K,X,LR,R},
+        Res={LK,K1,LX,X1}.
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- LK<Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+        down_def(LR,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- LK>Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        R1={LK,LX,Rx,{K,X,LR,R}},
+        down_def(LL,{K1,X1,L1,Rx},Key,Key1,Res).
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- LK$<Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+        down_def(LR,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- LK$>Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        R1={LK,LX,Rx,{K,X,LR,R}},
+        down_def(LL,{K1,X1,L1,Rx},Key,Key1,Res).
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- atom(LK),atom(Key),
+    tag_and_value(LK,_,V),tag_and_value(Key,_,V1),V<V1,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+        down_def(LR,{K1,X1,Lx,Rx},Key,Key1,Res).
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- atom(LK),atom(Key),
+    tag_and_value(LK,_,V),tag_and_value(Key,_,V1),V>V1,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        R1={LK,LX,Rx,{K,X,LR,R}},
+        down_def(LL,{K1,X1,L1,Rx},Key,Key1,Res).
+%down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- string_less_than(LK,Key),
+%    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+%        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+%        down_def(LR,{K1,X1,Lx,Rx},Key,Key1,Res).
+%down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- string_less_than(Key,LK),
+%    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+%        R1={LK,LX,Rx,{K,X,LR,R}},
+%        down_def(LL,{K1,X1,L1,Rx},Key,Key1,Res).
+down_def_l({},{K1,X1,L1,R1},Key,Key1,Res,{K,X,_,R}) :- true |
+        Key=Key1,
+        L1={},R1={K,X,{},R},
+        Res={K1,X1}.
+otherwise.
+down_def_l({LK,LX,LL,LR},T1,Key,Key1,Res,T0) :- true |
+        comparator:sort(LK,Key,Sml,Lag,YorN),
+        wait_def_l2({Sml,LX,LL,LR},T1,Lag,Key1,Res,T0,YorN).
+
+wait_def_l2({LK,LX,LL,LR},T1,Key,Key1,Res,T0,no) :-
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+        down_def(LR,{K1,X1,Lx,Rx},Key,Key1,Res).
+wait_def_l2({Key,LX,LL,LR},T1,LK,Key1,Res,T0,yes) :-
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        R1={LK,LX,Rx,{K,X,LR,R}},
+        down_def(LL,{K1,X1,L1,Rx},Key,Key1,Res).
+
+down_cod({K,X,L,R},T1,Key,Key1,Res,Comp) :- K=Key,
+    T1={K1,X1,L1,R1} |
+        Key=Key1,
+        L=L1,R=R1,
+        Res={K,K1,X,X1}.
+down_cod({},T1,Key,Key1,Res,_) :-
+    T1={K1,X1,L1,R1} |
+        Key=Key1,L1={},R1={},
+        Res={K1,X1}.
+otherwise.
+down_cod({K,X,L,R},T1,Key,Key1,Res,Comp) :- true |
+        builtin#apply(Comp,{K,Key,Sml,Lag,YorN}),
+        wait_cod({Sml,X,L,R},T1,Lag,Key1,Res,Comp,YorN).
+
+wait_cod({K,X,L,R},T1,Key,Key1,Res,Comp,no) :- true |
+        down_cod_r(R,T1,Key,Key1,Res,Comp,{K,X,L,_}).
+wait_cod({Key,X,L,R},T1,K,Key1,Res,Comp,yes) :- true |
+        down_cod_l(L,T1,Key,Key1,Res,Comp,{K,X,_,R}).
+
+down_cod_r({RK,RX,RL,RR},T1,Key,Key1,Res,Comp,T0) :- RK=Key,
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        Key=Key1,
+        L1={K,X,L,RL},R1=RR,
+        Res={RK,K1,RX,X1}.
+down_cod_r({},{K1,X1,L1,R1},Key,Key1,Res,Comp,{K,X,L,_}) :- true |
+        Key=Key1,
+        L1={K,X,L,{}},R1={},
+        Res={K1,X1}.
+otherwise.
+down_cod_r({RK,RX,RL,RR},T1,Key,Key1,Res,Comp,T0) :- true |
+        builtin#apply(Comp,{RK,Key,Sml,Lag,YorN}),
+        wait_cod_r2({Sml,RX,RL,RR},T1,Lag,Key1,Res,Comp,T0,YorN).
+
+wait_cod_r2({RK,RX,RL,RR},T1,Key,Key1,Res,Comp,T0,no) :-
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={RK,RX,{K,X,L,RL},Lx},
+        down_cod(RR,{K1,X1,Lx,R1},Key,Key1,Res,Comp).
+wait_cod_r2({Key,RX,RL,RR},T1,RK,Key1,Res,Comp,T0,yes) :-
+    T1={K1,X1,L1,R1},T0={K,X,L,_} |
+        L1={K,X,L,Lx},R1={RK,RX,Rx,RR},
+        down_cod(RL,{K1,X1,Lx,Rx},Key,Key1,Res,Comp).
+
+down_cod_l({LK,LX,LL,LR},T1,Key,Key1,Res,Comp,T0) :- LK=Key,
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        Key=Key1,
+        L1=LL,R1={K,X,LR,R},
+        Res={LK,K1,LX,X1}.
+down_cod_l({},{K1,X1,L1,R1},Key,Key1,Res,_,{K,X,_,R}) :- true |
+        Key=Key1,
+        L1={},R1={K,X,{},R},
+        Res={K1,X1}.
+otherwise.
+down_cod_l({LK,LX,LL,LR},T1,Key,Key1,Res,Comp,T0) :- true |
+        builtin#apply(Comp,{LK,Key,Sml,Lag,YorN}),
+        wait_cod_l2({Sml,LX,LL,LR},T1,Lag,Key1,Res,Comp,T0,YorN).
+
+wait_cod_l2({LK,LX,LL,LR},T1,Key,Key1,Res,Comp,T0,no) :-
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        L1={LK,LX,LL,Lx},R1={K,X,Rx,R},
+        down_cod(LR,{K1,X1,Lx,Rx},Key,Key1,Res,Comp).
+wait_cod_l2({Key,LX,LL,LR},T1,LK,Key1,Res,Comp,T0,yes) :-
+    T1={K1,X1,L1,R1},T0={K,X,_,R} |
+        R1={LK,LX,Rx,{K,X,LR,R}},
+        down_cod(LL,{K1,X1,L1,Rx},Key,Key1,Res,Comp).
+
+% *** down_for_get ***
+down_for_get({K,X,L,R},T,Key,Res,_) :- K=Key |   % found at the top of the tree
+        Res={{K,X,L,R},T}.
+down_for_get({},T,Key,Res,_) :- true |             % whole tree is empty
+        T={},
+        Res={Key}.
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- K<Key,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(R,{K0,X0,L0,R0},Key,Res,Comp,right,{K,X,L,_}).
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- K>Key,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(L,{K0,X0,L0,R0},Key,Res,Comp,left,{K,X,_,R}).
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- K$<Key,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(R,{K0,X0,L0,R0},Key,Res,Comp,right,{K,X,L,_}).
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- K$>Key,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(L,{K0,X0,L0,R0},Key,Res,Comp,left,{K,X,_,R}).
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V<V1,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(R,{K0,X0,L0,R0},Key,Res,Comp,right,{K,X,L,_}).
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V>V1,atom(Comp) |
+        T={K0,X0,L0,R0},
+        downG(L,{K0,X0,L0,R0},Key,Res,Comp,left,{K,X,_,R}).
+otherwise.
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- atom(Comp) |
+        T={K0,X0,L0,R0},
+        comparator:sort(K,Key,Sml,Lag,YorN),
+        waitG({Sml,X,L,R},{K0,X0,L0,R0},Lag,Res,Comp,YorN).
+%down_for_get({K,X,L,R},T,Key,Res,Comp) :- code(Comp,_,_,_) |
+down_for_get({K,X,L,R},T,Key,Res,Comp) :- builtin#code(Comp) |
+        T={K0,X0,L0,R0},
+        builtin#apply(Comp,{K,Key,Sml,Lag,YorN}),
+        waitG({Sml,X,L,R},{K0,X0,L0,R0},Lag,Res,Comp,YorN).
+
+waitG({K,X,L,R},T,Key,Res,Comp,no) :- true |
+        downG(R,T,Key,Res,Comp,right,{K,X,L,_}).
+waitG({Key,X,L,R},T,K,Res,Comp,yes) :- true |
+        downG(L,T,Key,Res,Comp,left,{K,X,_,R}).
+
+downG({K,X,L,R},T,Key,Res,_,LorR,Parent) :- K=Key |
+        Res={LorR,{K,X,L,R},Parent,T}.
+downG({},T,Key,Res,_,LorR,Parent) :- true |
+        Res={Key},
+        stay(LorR,{},Parent,T).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- K<Key,atom(Comp) |
+        downG_again(R,T,Key,Res,Comp,LorR,Parent,right,{K,X,L,_}).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- K>Key,atom(Comp) |
+        downG_again(L,T,Key,Res,Comp,LorR,Parent,left,{K,X,_,R}).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- K$<Key,atom(Comp) |
+        downG_again(R,T,Key,Res,Comp,LorR,Parent,right,{K,X,L,_}).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- K$>Key,atom(Comp) |
+        downG_again(L,T,Key,Res,Comp,LorR,Parent,left,{K,X,_,R}).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V<V1,atom(Comp) |
+        downG_again(R,T,Key,Res,Comp,LorR,Parent,right,{K,X,L,_}).
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V>V1,atom(Comp) |
+        downG_again(L,T,Key,Res,Comp,LorR,Parent,left,{K,X,_,R}).
+otherwise.
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- atom(Comp) |
+        comparator:sort(K,Key,Sml,Lag,YorN),
+        waitG_LorR({Sml,X,L,R},T,Lag,Res,Comp,LorR,Parent,YorN).
+%downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- code(Comp,_,_,_) |
+downG({K,X,L,R},T,Key,Res,Comp,LorR,Parent) :- builtin#code(Comp) |
+        builtin#apply(Comp,{K,Key,Sml,Lag,YorN}),
+        waitG_LorR({Sml,X,L,R},T,Lag,Res,Comp,LorR,Parent,YorN).
+
+waitG_LorR({K,X,L,R},T,Key,Res,Comp,LorR,Parent,no) :- true |
+        downG_again(R,T,Key,Res,Comp,LorR,Parent,right,{K,X,L,_}).
+waitG_LorR({Key,X,L,R},T,K,Res,Comp,LorR,Parent,yes) :- true |
+        downG_again(L,T,Key,Res,Comp,LorR,Parent,left,{K,X,_,R}).
+
+downG_again({K,X,L,R},T,Key,Res,_,GLorR,GP,PLorR,P) :- K=Key |
+        Res={GLorR,PLorR,{K,X,L,R},GP,P,T}.
+downG_again({},T,Key,Res,_,GLorR,GP,PLorR,P) :- true |
+        Res={Key},
+        splay0(GLorR,PLorR,{},GP,P,T).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- K<Key,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(R,{Kx,Xx,Lx,Rx},Key,Res,Comp,right,{K,X,L,_}).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- K>Key,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(L,{Kx,Xx,Lx,Rx},Key,Res,Comp,left,{K,X,_,R}).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- K$<Key,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(R,{Kx,Xx,Lx,Rx},Key,Res,Comp,right,{K,X,L,_}).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- K$>Key,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(L,{Kx,Xx,Lx,Rx},Key,Res,Comp,left,{K,X,_,R}).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V<V1,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(R,{Kx,Xx,Lx,Rx},Key,Res,Comp,right,{K,X,L,_}).
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- atom(K),atom(Key),
+    tag_and_value(K,_,V),tag_and_value(Key,_,V1),V>V1,atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        downG(L,{Kx,Xx,Lx,Rx},Key,Res,Comp,left,{K,X,_,R}).
+otherwise.
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- atom(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        comparator:sort(K,Key,Sml,Lag,YorN),
+        waitG({Sml,X,L,R},{Kx,Xx,Lx,Rx},Lag,Res,Comp,YorN).
+%downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- code(Comp,_,_,_) |
+downG_again({K,X,L,R},T,Key,Res,Comp,GLorR,GP,PLorR,P) :- builtin#code(Comp) |
+        splay(GLorR,PLorR,{Kx,Xx,Lx,Rx},GP,P,T),
+        builtin#apply(Comp,{K,Key,Sml,Lag,YorN}),
+        waitG({Sml,X,L,R},{Kx,Xx,Lx,Rx},Lag,Res,Comp,YorN).
+
+stay(left,SubT,{K,X,_,R},{K0,X0,L0,R0}) :- true |
+        K0=K,X0=X,L0=SubT,R0=R.
+stay(right,SubT,{K,X,L,_},{K0,X0,L0,R0}) :- true |
+        K0=K,X0=X,L0=L,R0=SubT.
+
+splay(left,{K,X,L,R},{PK,PX,_,PR},{K0,X0,L0,R0}) :- true |
+        K0=K,X0=X,L0=L,R0={PK,PX,R,PR}.
+splay(right,{K,X,L,R},{PK,PX,PL,_},{K0,X0,L0,R0}) :- true |
+        K0=K,X0=X,L0={PK,PX,PL,L},R0=R.
+
+splay0(GLorR,left,SubT,GP,{PK,PX,_,PR},T) :- true |
+        splay(GLorR,{PK,PX,SubT,PR},GP,T).
+splay0(GLorR,right,SubT,GP,{PK,PX,PL,_},T) :- true |
+        splay(GLorR,{PK,PX,PL,SubT},GP,T).
+
+%%splay0(left,left,SubT,{GK,GX,_,GR},{PK,PX,_,PR},T) :- true |
+%%        T={PK,PX,SubT,{GK,GX,PR,GR}}.
+%%splay0(left,right,SubT,{GK,GX,_,GR},{PK,PX,PL,_},T) :- true |
+%%        T={PK,PX,PL,{GK,GX,SubT,GR}}.
+%%splay0(right,left,SubT,{GK,GX,GL,_},{PK,PX,_,PR},T) :- true |
+%%        T={PK,PX,{GK,GX,GL,SubT},PR}.
+%%splay0(right,right,SubT,{GK,GX,GL,_},{PK,PX,PL,_},T) :_ true |
+%%        T={PK,PX,{GK,GX,GL,PL},SubT}.
+
+splay(left,left,{Kx,Xx,Lx,Rx},{GK,GX,_,GR},{PK,PX,_,PR},{K0,X0,L0,R0}) :- true |
+        K0=Kx,X0=Xx,L0=Lx,R0={PK,PX,Rx,{GK,GX,PR,GR}}.
+splay(left,right,{Kx,Xx,Lx,Rx},{GK,GX,_,GR},{PK,PX,PL,_},{K0,X0,L0,R0}) :- true |
+        K0=Kx,X0=Xx,L0={PK,PX,PL,Lx},R0={GK,GX,Rx,GR}.
+splay(right,left,{Kx,Xx,Lx,Rx},{GK,GX,GL,_},{PK,PX,_,PR},{K0,X0,L0,R0}) :- true |
+        K0=Kx,X0=Xx,L0={GK,GX,GL,Lx},R0={PK,PX,Rx,PR}.
+splay(right,right,{Kx,Xx,Lx,Rx},{GK,GX,GL,_},{PK,PX,PL,_},{K0,X0,L0,R0}) :- true |
+        K0=Kx,X0=Xx,L0={PK,PX,{GK,GX,GL,PL},Lx},R0=Rx.
+
+% *** join ***
+join({CK,CX,CL,CR},R,T) :- true |
+        T={K0,X0,L0,R},
+        splay_at_max(CR,{K0,X0,L0,_},{CK,CX,CL,_}).
+join({},{RK,RX,RL,RR},T) :- true |
+        T={RK,RX,RL,RR}.
+join({},{},T) :- true | T={}.
+
+splay_at_max({K,X,L,R},T) :- true |
+        T={K0,X0,L0,R0},
+        splay_at_max(R,{K0,X0,L0,R0},{K,X,L,_}).
+splay_at_max({},T) :- true | T={}.
+
+splay_at_max({K,X,L,R},T,Parent) :- true |
+        splay_at_max2(R,T,Parent,{K,X,L,_}).
+splay_at_max({},{K0,X0,L0,R0},{K,X,L,_}) :- true |
+        K0=K,X0=X,L0=L,R0={}.
+
+splay_at_max2({K,X,L,R},{Kx,Xx,L0,Rx},{GK,GX,GL,_},{PK,PX,PL,_}) :- true |
+        L0={PK,PX,{GK,GX,GL,PL},Lx},
+        splay_at_max(R,{Kx,Xx,Lx,Rx},{K,X,L,_}).
+splay_at_max2({},{K0,X0,L0,R0},{GK,GX,GL,_},{PK,PX,PL,_}) :- true |
+        K0=PK,X0=PX,L0={GK,GX,GL,PL},R0={}.
+
+splay_at_min({K,X,L,R},T) :- true |
+        T={K0,X0,L0,R0},
+        splay_at_min(L,{K0,X0,L0,R0},{K,X,_,R}).
+splay_at_min({},T) :- true | T={}.
+
+splay_at_min({K,X,L,R},T,Parent) :- true |
+        splay_at_min2(L,T,Parent,{K,X,_,R}).
+splay_at_min({},{K0,X0,L0,R0},{K,X,_,R}) :- true |
+        K0=K,X0=X,L0={},R0=R.
+
+splay_at_min2({K,X,L,R},{Kx,Xx,Lx,R0},{GK,GX,_,GR},{PK,PX,_,PR}) :- true |
+        R0={PK,PX,Rx,{GK,GX,PR,GR}},
+        splay_at_min(L,{Kx,Xx,Lx,Rx},{K,X,_,R}).
+splay_at_min2({},{K0,X0,L0,R0},{GK,GX,_,GR},{PK,PX,_,PR}) :- true |
+        K0=PK,X0=PX,L0={},R0={GK,GX,PR,GR}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_sorted_set(Comparator,In)
+%%      Comparator :: ascending/descending/Code of the user defined comparator module
+%%      In      :: Input stream from users
+
+keyed_sorted_set(Comp,In) :- true |
+        merge(In,In1),
+        keyed_sorted_set(Comp,In1,{}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_sorted_set(Comp,In,T)
+%%      Comp    :: ascending/descending/Code of the comparator
+%%      In      :: Input stream from users
+%%      T       :: splay tree
+
+keyed_sorted_set(Comp,[empty(YorN)|In],T) :- true |
+        empty(T,YorN,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[empty(Key,YorN)|In],T) :- true |
+        empty(Comp,T,Key,YorN,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[put(Key,Data,OldData)|In],T) :- true |
+        putS(Comp,T,Key,Data,OldData,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get(Key,Data)|In],T) :- true |
+        getS(Comp,T,Key,Data,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_all(A)|In],T) :- true |
+        get_allS(T,A,[],Comp),
+        keyed_sorted_set(Comp,In,{}).
+
+keyed_sorted_set(Comp,[get_all(Key,A)|In],T) :- true |
+        get_all_with_keyS(Comp,T,Key,A,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_and_put(Key,OldD,NewD)|In],T) :- true |
+        get_and_putS(Comp,T,Key,OldD,NewD,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_if_any(Key,Data)|In],T) :- true |
+        get_if_anyS(Comp,T,Key,Data,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_if_any_and_put(Key,OldD,NewD)|In],T) :- true |
+        get_if_any_and_putS(Comp,T,Key,OldD,NewD,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_and_put_if_any(Key,X,Y,Y1)|In],T) :- true |
+        get_and_put_if_anyS(Comp,T,Key,X,Y,Y1,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[carbon_copy(A)|In],T) :- true |
+        carbon_copyS(T,A,[],T1,Comp),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[carbon_copy(Key,A)|In],T) :- true |
+        carbon_copy_with_keyS(Comp,T,Key,A,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_max_if_any(X)|In],T) :- true |
+        get_max_if_anyS(T,X,T1,Comp),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[get_min_if_any(X)|In],T) :- true |
+        get_min_if_anyS(T,X,T1,Comp),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[do(List)|In],T) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        keyed_sorted_set(Comp,In1,T).
+
+keyed_sorted_set(Comp,[depth(N)|In],T) :- true |
+        depth(T,N,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[count(N)|In],T) :- true |
+        count(T,N,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[data_count(N)|In],T) :- true |       % same as 'count'
+        count(T,N,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(Comp,[possessory_rate(N)|In],T) :- true |
+        possessory_rate(T,N,T1),
+        keyed_sorted_set(Comp,In,T1).
+
+keyed_sorted_set(_,[],_) :- true | true.
+
+otherwise.
+keyed_sorted_set(_,[Msg|_],_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_set,string#"illegal_message_protocol"),Msg).
+
+
+% *** put ***
+putS(Comp,T,Key,Data,OldData,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        putS(Res,Key1,Data,OldData).
+
+putS({K,X},Key,Data,OldData) :- true |
+        K=Key,
+        X=Data,
+        OldData={}.
+putS({K,K1,X,X1},_,Data,OldData) :- true |
+        K1=K,
+        X1=Data,
+        OldData={X}.
+
+% *** get ***
+getS(Comp,T,Key,Data,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        getS(Res,Data).
+
+getS({GLorR,PLorR,{_,X,L,R},GP,P,T},Data) :- true |
+        Data=X,
+        join(L,R,SubT),
+        splay0(GLorR,PLorR,SubT,GP,P,T).
+getS({LorR,{_,X,L,R},Parent,T},Data) :- true |
+        Data=X,
+        join(L,R,SubT),
+        stay(LorR,SubT,Parent,T).
+getS({{_,X,L,R},T},Data) :- true |
+        Data=X,
+        join(L,R,T).
+getS({Key},Data) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_set,string#"tried_to_get_nonexistent_element"),
+            get(Key,Data)).
+
+% *** get_all/1 ***
+get_allS(T,A,A1,ascending) :- true |
+        get_allS(T,A,A1).
+get_allS(T,A,A1,descending) :- true |
+        get_allS_descending(T,A,A1).
+%get_allS(T,A,A1,Comp) :- code(Comp,_,_,_) |
+get_allS(T,A,A1,Comp) :- builtin#code(Comp) |
+        get_allS(T,A,A1).
+
+get_allS({K,X,L,R},A,A1) :- true |
+        get_allS(L,A,[{K,X}|A0]),
+        get_allS(R,A0,A1).
+get_allS({},A,A1) :- true | A=A1.
+
+get_allS_descending({K,X,L,R},A,A1) :- true |
+        get_allS_descending(R,A,[{K,X}|A0]),
+        get_allS_descending(L,A0,A1).
+get_allS_descending({},A,A1) :- true | A=A1.
+
+% *** get_all/2 ***
+get_all_with_keyS(Comp,T,Key,A,T1) :- true |
+        get_if_anyS(Comp,T,Key,Data,T1),
+        get_all_with_keyS(Data,A).
+
+get_all_with_keyS({Data},A) :- true | A=[Data].
+get_all_with_keyS({},A) :- true | A=[].
+
+% *** get_and_put ***
+get_and_putS(Comp,T,Key,Old,New,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        get_and_putS(Res,Key1,Old,New).
+
+get_and_putS({_,K,X,X1},Key,Old,New) :- true |
+        K=Key,
+        Old=X,
+        X1=New.
+get_and_putS({_,_},Key,Old,New) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_sorted_set,string#"tried_to_get_nonexistent_element"),
+            get_and_put(Key,Old,New)).
+
+% *** get_if_any ***
+get_if_anyS(Comp,T,Key,Data,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get_if_anyS(Res,Data).
+
+get_if_anyS({GLorR,PLorR,{_,X,L,R},GP,P,T},Data) :- true |
+        Data={X},
+        join(L,R,SubT),
+        splay0(GLorR,PLorR,SubT,GP,P,T).
+get_if_anyS({LorR,{_,X,L,R},Parent,T},Data) :- true |
+        Data={X},
+        join(L,R,SubT),
+        stay(LorR,SubT,Parent,T).
+get_if_anyS({{_,X,L,R},T},Data) :- true |
+        Data={X},
+        join(L,R,T).
+get_if_anyS({_},Data) :- true |
+        Data={}.
+
+% *** get_if_any_and_put ***
+get_if_any_and_putS(Comp,T,Key,Old,New,T1) :- true |
+        down(T,T1,Key,Key1,Res,Comp),
+        get_if_any_and_putS(Res,Key1,Old,New).
+
+get_if_any_and_putS({_,K,X,X1},Key,Old,New) :- true |
+        K=Key,
+        Old={X},
+        X1=New.
+get_if_any_and_putS({K,X},Key,Old,New) :- true |
+        K=Key,
+        Old={},
+        X=New.
+
+% *** get_and_put_if_any ***
+get_and_put_if_anyS(Comp,T,Key,X,Y,Y1,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        get_and_put_if_anyS(Res,X,Y,Y1).
+
+get_and_put_if_anyS({GLorR,PLorR,{K,E,L,R},GP,P,T},X,Y,Y1) :- true |
+        X={E},
+        Y1={},
+        splay(GLorR,PLorR,{K,Y,L,R},GP,P,T).
+get_and_put_if_anyS({LorR,{K,E,L,R},Parent,T},X,Y,Y1) :- true |
+        X={E},
+        Y1={},
+        splay(LorR,{K,Y,L,R},Parent,T).
+get_and_put_if_anyS({{K,E,L,R},T},X,Y,Y1) :- true |
+        X={E},
+        Y1={},
+        T={K,Y,L,R}.
+get_and_put_if_anyS({_},X,Y,Y1) :- true |
+        X={},
+        Y1={Y}.
+
+% *** carbon_copy/1 ***
+carbon_copyS(T,A,A1,T1,ascending) :- true |
+        carbon_copyS(T,A,A1,T1).
+carbon_copyS(T,A,A1,T1,descending) :- true |
+        carbon_copyS_descending(T,A,A1,T1).
+%carbon_copyS(T,A,A1,T1,Comp) :- code(Comp,_,_,_) |
+carbon_copyS(T,A,A1,T1,Comp) :- builtin#code(Comp) |
+        carbon_copyS(T,A,A1,T1).
+
+carbon_copyS({K,X,L,R},A,A1,T) :- true |
+        T={K,X,L1,R1},
+        carbon_copyS(L,A,[{K,X}|A0],L1),
+        carbon_copyS(R,A0,A1,R1).
+carbon_copyS({},A,A1,T) :- true | A=A1,T={}.
+
+carbon_copyS_descending({K,X,L,R},A,A1,T) :- true |
+        T={K,X,L1,R1},
+        carbon_copyS_descending(R,A,[{K,X}|A0],L1),
+        carbon_copyS_descending(L,A0,A1,R1).
+carbon_copyS_descending({},A,A1,T) :- true | A=A1,T={}.
+
+% *** carbon_copy/2 ***
+carbon_copy_with_keyS(Comp,T,Key,A,T1) :- true |
+        down_for_get(T,T1,Key,Res,Comp),
+        carbon_copy_with_keyS(Res,A).
+
+carbon_copy_with_keyS({GLorR,PLorR,{K,X,L,R},GP,P,T},A) :- true |
+        A=[X],
+        splay(GLorR,PLorR,{K,X,L,R},GP,P,T).
+carbon_copy_with_keyS({LorR,{K,X,L,R},Parent,T},A) :- true |
+        A=[X],
+        splay(LorR,{K,X,L,R},Parent,T).
+carbon_copy_with_keyS({{K,X,L,R},T},A) :- true |
+        A=[X],
+        T={K,X,L,R}.
+carbon_copy_with_keyS({_},A) :- true | A=[].
+
+% *** get_max_if_any ***
+get_max_if_anyS(T,X,T1,ascending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_anyS(T0,X,T1).
+get_max_if_anyS(T,X,T1,descending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_anyS(T0,X,T1).
+%get_max_if_anyS(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_max_if_anyS(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_max(T,T0),
+        do_get_max_if_anyS(T0,X,T1).
+
+do_get_max_if_anyS({K,X,L,_},Max,T) :- true |
+        Max={K,X},
+        T=L.
+do_get_max_if_anyS({},Max,T) :- true |
+        Max={},T={}.
+
+% *** get_min_if_any ***
+get_min_if_anyS(T,X,T1,ascending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_anyS(T0,X,T1).
+get_min_if_anyS(T,X,T1,descending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_anyS(T0,X,T1).
+%get_min_if_anyS(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_min_if_anyS(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_min(T,T0),
+        do_get_min_if_anyS(T0,X,T1).
+
+do_get_min_if_anyS({K,X,_,R},Max,T) :- true |
+        Max={K,X},
+        T=R.
+do_get_min_if_anyS({},Max,T) :- true |
+        Max={},T={}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sorted_bag(Comparator,In)
+%%      Comparator :: ascending/descending/Code of the user defined comparator module
+%%      In      :: Input stream from users
+
+sorted_bag(Comp,In) :- true |
+        merge(In,In1),
+        sorted_bag(Comp,In1,{}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sorted_bag(Comp,In,T)
+%%      Comp    :: ascending/descending/Code of the comparator
+%%      In      :: Input stream from users
+%%      T       :: splay tree
+
+sorted_bag(Comp,[empty(YorN)|In],T) :- true |
+        empty(T,YorN,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[put(Data)|In],T) :- true |
+        putSB(Comp,T,Data,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[get(Data)|In],T) :- true |
+        getSB(T,Data,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[get_all(A)|In],T) :- true |
+        get_allSB(T,A,[],Comp),
+        sorted_bag(Comp,In,{}).
+
+sorted_bag(Comp,[get_if_any(Data)|In],T) :- true |
+        get_if_anySB(T,Data,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[carbon_copy(A)|In],T) :- true |
+        carbon_copySB(T,A,[],T1,Comp),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[get_max_if_any(X)|In],T) :- true |
+        get_max_if_anySB(T,X,T1,Comp),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[get_min_if_any(X)|In],T) :- true |
+        get_min_if_anySB(T,X,T1,Comp),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[do(List)|In],T) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        sorted_bag(Comp,In1,T).
+
+sorted_bag(Comp,[depth(N)|In],T) :- true |
+        depth(T,N,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[count(N)|In],T) :- true |                % number of nodes in the tree
+        count(T,N,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[data_count(N)|In],T) :- true |
+        data_countSB(T,N,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(Comp,[possessory_rate(N)|In],T) :- true |
+        possessory_rate(T,N,T1),
+        sorted_bag(Comp,In,T1).
+
+sorted_bag(_,[],_) :- true | true.
+
+otherwise.
+sorted_bag(_,[Msg|_],_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(sorted_bag,string#"illegal_message_protocol"),Msg).
+
+
+% *** put ***
+putSB(Comp,T,Data,T1) :- true |
+        down(T,T1,Data,Data1,Res,Comp),
+        putSB(Res,Data1).
+
+putSB({D,X},Data) :- true |
+        D=Data,
+        X={0,E,E}.
+putSB({D,D1,{C,E,E1},X},Data) :- true |
+        D1=D,
+        E1=[Data|E2],
+        X={~(C+1),E,E2}.
+
+% *** get ***
+getSB(T,Data,T1) :- true |
+        down_for_getSB(T,T1,Res),
+        getSB(Res,Data).
+
+getSB({{D,{0,_,_},_,R},GP,P,T},Data) :- true |
+        Data=D,
+        splay0(left,left,R,GP,P,T).
+getSB({{D,{C,E,E1},L,R},GP,P,T},Data) :- C>0 |
+        Data=D,
+        E=[D1|E0],
+        splay(left,left,{D1,{~(C-1),E0,E1},L,R},GP,P,T).
+getSB({{D,{0,_,_},_,R},Parent,T},Data) :- true |
+        Data=D,
+        stay(left,R,Parent,T).
+getSB({{D,{C,E,E1},L,R},Parent,T},Data) :- C>0 |
+        Data=D,
+        E=[D1|E0],
+        splay(left,{D1,{~(C-1),E0,E1},L,R},Parent,T).
+getSB({{D,{0,_,_},_,R},T},Data) :- true |
+        Data=D,
+        T=R.
+getSB({{D,{C,E,E1},L,R},T},Data) :- C>0 |
+        Data=D,
+        E=[D1|E0],
+        T={D1,{~(C-1),E0,E1},L,R}.
+getSB({},Data) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(sorted_bag,string#"tried_to_get_nonexistent_element"),
+            get(Data)).
+
+% *** get_all/1 ***
+get_allSB(T,A,A1,ascending) :- true |
+        get_allSB(T,A,A1).
+get_allSB(T,A,A1,descending) :- true |
+        get_allSB_descending(T,A,A1).
+%get_allSB(T,A,A1,Comp) :- code(Comp,_,_,_) |
+get_allSB(T,A,A1,Comp) :- builtin#code(Comp) |
+        get_allSB(T,A,A1).
+
+get_allSB({D,{_,E,E1},L,R},A,A3) :- true |
+        E1=[],
+        get_allSB(L,A,[D|A1]),
+        get_elementsSB(E,A1,A2),
+        get_allSB(R,A2,A3).
+get_allSB({},A,A1) :- true | A=A1.
+
+get_allSB_descending({D,{_,E,E1},L,R},A,A3) :- true |
+        E1=[],
+        get_allSB_descending(R,A,[D|A1]),
+        get_elementsSB(E,A1,A2),
+        get_allSB_descending(L,A2,A3).
+get_allSB_descending({},A,A1) :- true | A=A1.
+
+get_elementsSB([Data|D],A,A1) :- true |
+        A=[Data|A0],
+        get_elementsSB(D,A0,A1).
+get_elementsSB([],A,A1) :- true | A=A1.
+
+% *** get_if_any ***
+get_if_anySB(T,Data,T1) :- true |
+        down_for_getSB(T,T1,Res),
+        get_if_anySB(Res,Data).
+
+get_if_anySB({{D,{0,_,_},_,R},GP,P,T},Data) :- true |
+        Data={D},
+        splay0(left,left,R,GP,P,T).
+get_if_anySB({{D,{C,E,E1},L,R},GP,P,T},Data) :- C>0 |
+        Data={D},
+        E=[D1|E0],
+        splay(left,left,{D1,{~(C-1),E0,E1},L,R},GP,P,T).
+get_if_anySB({{D,{0,_,_},_,R},Parent,T},Data) :- true |
+        Data={D},
+        stay(left,R,Parent,T).
+get_if_anySB({{D,{C,E,E1},L,R},Parent,T},Data) :- C>0 |
+        Data={D},
+        E=[D1|E0],
+        splay(left,{D1,{~(C-1),E0,E1},L,R},Parent,T).
+get_if_anySB({{D,{0,_,_},_,R},T},Data) :- true |
+        Data={D},
+        T=R.
+get_if_anySB({{D,{C,E,E1},L,R},T},Data) :- C>0 |
+        Data={D},
+        E=[D1|E0],
+        T={D1,{~(C-1),E0,E1},L,R}.
+get_if_anySB({},Data) :- true |
+        Data={}.
+
+% *** carbon_copy/1 ***
+carbon_copySB(T,A,A1,T1,ascending) :- true |
+        carbon_copySB(T,A,A1,T1).
+carbon_copySB(T,A,A1,T1,descending) :- true |
+        carbon_copySB_descending(T,A,A1,T1).
+%carbon_copySB(T,A,A1,T1,Comp) :- code(Comp,_,_,_) |
+carbon_copySB(T,A,A1,T1,Comp) :- builtin#code(Comp) |
+        carbon_copySB(T,A,A1,T1).
+
+carbon_copySB({Data,{C,E,E1},L,R},A,A3,T) :- true |
+        E1=[],
+        T={Data,{C,NE,NE1},L1,R1},
+        carbon_copySB(L,A,[Data|A1],L1),
+        carbon_copy_elementsSB(E,NE,NE1,A1,A2),
+        carbon_copySB(R,A2,A3,R1).
+carbon_copySB({},A,A1,T) :- true | A=A1,T={}.
+
+carbon_copySB_descending({Data,{C,E,E1},L,R},A,A3,T) :- true |
+        E1=[],
+        T={Data,{C,NE,NE1},L1,R1},
+        carbon_copySB_descending(R,A,[Data|A1],L1),
+        carbon_copy_elementsSB(E,NE,NE1,A1,A2),
+        carbon_copySB_descending(L,A2,A3,R1).
+carbon_copySB_descending({},A,A1,T) :- true | A=A1,T={}.
+
+carbon_copy_elementsSB([Data|E],NE,NE1,A,A1) :- true |
+        NE=[Data|NE0],
+        A=[Data|A0],
+        carbon_copy_elementsSB(E,NE0,NE1,A0,A1).
+carbon_copy_elementsSB([],NE,NE1,A,A1) :- true |
+        NE=NE1,
+        A=A1.
+
+% *** get_max_if_any ***
+get_max_if_anySB(T,X,T1,ascending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_anySB(T0,X,T1).
+get_max_if_anySB(T,X,T1,descending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_anySB(T0,X,T1).
+%get_max_if_anySB(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_max_if_anySB(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_max(T,T0),
+        do_get_max_if_anySB(T0,X,T1).
+
+do_get_max_if_anySB({D,{C,E,E1},L,R},X,T) :- C>0 |
+        X={D},
+        E=[D1|E0],
+        T={D1,{~(C-1),E0,E1},L,R}.
+do_get_max_if_anySB({D,{0,_,_},L,_},X,T) :- true |
+        X={D},
+        T=L.
+do_get_max_if_anySB({},X,T) :- true |
+        X={},T={}.
+
+% *** get_min_if_any ***
+get_min_if_anySB(T,X,T1,ascending) :- true |
+        splay_at_min(T,T0),
+        do_get_min_if_anySB(T0,X,T1).
+get_min_if_anySB(T,X,T1,descending) :- true |
+        splay_at_max(T,T0),
+        do_get_max_if_anySB(T0,X,T1).
+%get_min_if_anySB(T,X,T1,Comp) :- code(Comp,_,_,_) |
+get_min_if_anySB(T,X,T1,Comp) :- builtin#code(Comp) |
+        splay_at_min(T,T0),
+        do_get_min_if_anySB(T0,X,T1).
+
+do_get_min_if_anySB({D,{C,E,E1},L,R},X,T) :- C>0 |
+        X={D},
+        E=[D1|E0],
+        T={D1,{~(C-1),E0,E1},L,R}.
+do_get_min_if_anySB({D,{0,_,_},_,R},X,T) :- true |
+        X={D},
+        T=R.
+do_get_min_if_anySB({},X,T) :- true |
+        X={},T={}.
+
+%%%%% not open to the public
+% *** data_count ***
+data_countSB(T,N,T1) :- true |
+        counter(In0,0,N),
+        merge(In,In0),
+        do_data_countSB(T,In,T1).
+
+do_data_countSB({K,{C,E,E1},L,R},In,T) :- true |
+        In=[~(C+1)|In0],
+        In0={In1,In2},
+        T={K,{C,E,E1},L1,R1},
+        do_data_countSB(L,In1,L1),
+        do_data_countSB(R,In2,R1).
+do_data_countSB({},In,T) :- true | In=[],T={}.
+
+
+% *** down_for_get ***
+down_for_getSB({},T,Res) :- true |                % whole tree is empty
+        T={},
+        Res={}.
+down_for_getSB({D,X,{},R},T,Res) :- true |
+        Res={{D,X,{},R},T}.
+otherwise.
+down_for_getSB({D,X,L,R},T,Res) :- true |
+        downGSB(L,T,Res,{D,X,_,R}).
+
+downGSB({D,X,{},R},T,Res,Parent) :- true |
+        Res={{D,X,{},R},Parent,T}.
+otherwise.
+downGSB({D,X,L,R},T,Res,Parent) :- true |
+        downG_againSB(L,T,Res,Parent,{D,X,_,R}).
+
+downG_againSB({D,X,{},R},T,Res,GP,P) :- true |
+        Res={{D,X,{},R},GP,P,T}.
+otherwise.
+downG_againSB({D,X,L,R},T,Res,GP,P) :- true |
+        splay(left,left,{Dx,Xx,Lx,Rx},GP,P,T),
+        downGSB(L,{Dx,Xx,Lx,Rx},Res,{D,X,_,R}).
+

@@ -1,0 +1,228 @@
+%------------------------------------------------------------------------------
+% Program: Semigroup
+% Author:  N. Ichiyoshi
+% Date:    July 28 1988
+% Modified: Y. Kimura
+% Date:    October 21 1988
+% 
+% Notes:
+% 0. To run:
+% 	?- semi.
+% 1. To run:
+% 	?- go(N).
+% the output N should be 309.
+% 2. this version does NOT include generators in final count (c.f. Prolog)
+%------------------------------------------------------------------------------
+:- module semi.
+:- public semi/0, go/1.
+
+semi :- true | go(N).
+
+go(N) :- true | 
+    generators(Gens), 
+    go1(Gens, Out),
+    count(Out, N). 
+
+go1(Gens, Out) :- true |
+    gen_g(Gens, Gin, Fin, Gout, Fout),
+    gen_gen(Gens, Gin, NGin),
+    connect(Gout, Fin),
+    ends(Fout, _, _, NGin, Gens, Out-[]).
+
+count(L,N) :- true | count(L,0,N).
+count([],M,N) :- true | M = N.
+count([X|Xs],M,N) :- M1 := M+1 | count(Xs,M1,N).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% g(+Gin, +Fin, -Gout, -Fout, +E)
+%
+%	Gin	: input generator stream
+%	Fin	: input filter stream
+%	Gout	: output generator stream
+%	Fout	: output filter stream
+%	E	: element (self)
+%
+g([gen(X,P,P0)|Gin1], Fin, Gout, Fout, E) :- true |
+    mult(E, X, EX),
+    P0 = [EX|P1],
+    Gout = [gen(X,P,P1)|Gout1],
+    g(Gin1, Fin, Gout1, Fout, E).
+g([begin|Gin1], Fin, Gout, Fout, E) :- true |
+    Gout = [begin|Gout1],
+    g(Gin1, Fin, Gout1, Fout, E).
+g([end|Gin1], Fin, Gout, Fout, E) :- true |
+    Gout = [end|Gin1],
+    f(Fin, Fout, E).
+
+% f(+Fin,-Fout, +E)
+%
+%	filters out E from stream Fin to give Fout as result
+%
+%	Fin	: input stream of elements to be filtered
+%	Fout	: output stream of elements filtered
+%	E	: element (self)
+%
+f([X|Fin1], Fout, E) :- X = E | f(Fin1,Fout, E).
+f([], Fout, E) :-       true  |	Fout = [].
+otherwise.
+f([X|Fin1], Fout, E) :- true  | Fout = [X|Fout1],    f(Fin1, Fout1, E).
+
+% gen_g(+Xs, -G0, -F0, +G, +F)
+%
+%	creates NS1.
+%
+%	Xs	: list of elements
+%	G0	: input generator stream
+%	F0	: input filter stream
+%	G	: output generator stream
+%	F	: output filter stream
+%
+gen_g([X|Xs], G0,F0,G,F) :- true |
+    g(G0,F0,G1,F1, X),
+    gen_g(Xs, G1,F1,G,F).
+gen_g([], G0,F0,G,F) :- true |
+    G0 = G,
+    F0 = F.
+
+% ends(+Fout,+Gout,-Gin,-OGin, +Gen, -Out)
+%
+%	Fout	: output filter stream 		... (NSn*G)\Sn
+%	Gout	: output generator stream 	... NSn*G
+%	Gin	: input generator stream
+%	OGin	: old input generator stream
+%	Gen	: list of original generators	... G
+%       Out     : output D-list stream
+%
+ends([begin,end|_], _, Gin, OGin, _, O1-O2) :- true | Gin=[], OGin=[], O1=O2.
+ends([begin,X|Fout2], _, _, OGin, Gens, Out) :- X \= end |
+    gen_gen(Gens,NGin0,NGin),
+    ends([X|Fout2],NGin0,NGin,OGin, Gens, Out).
+ends([end|Fout1], Gout, Gin, OGin, Gens, Out) :- true |
+    connect(Gout, OGin),
+    ends(Fout1, _, _, Gin, Gens, Out).
+otherwise.
+ends([X|Fout1], Gout, Gin, OGin, Gens, O1-O3) :- true |   
+    O1 = [X|O2],    %  ET 3-8-88: output...
+    g(Gout, Fout1, NewGout, NewFout, X),
+    ends(NewFout, NewGout, Gin, OGin, Gens, O2-O3).
+
+% gen_gen(+Gens, +G0,?G)
+%
+%	creates d-list representation of {}*G (see Notes on Representation).
+%
+%	Gens	: set of generators g1, ..., gK.
+%	G0-G	: d-list to represent the list
+%			[gen(g1,G10,G1), ..., gen(gK,GK0,GK), end]
+%
+gen_gen(Gens, G0,G) :- true |
+    G0 = [begin|G1],
+    gen_gen1(Gens, G1,G).
+
+gen_gen1([X|Xs], G0,G) :- true |
+    G0 = [gen(X,P,P)|G1],
+    gen_gen1(Xs, G1,G).
+gen_gen1([], G0,G) :- true |
+    G0 = [end|G].
+
+% connect(+G, -F)	: connects gen-stream to filter stream
+%
+%	(see Notes on Representation (3) )
+%
+%	G	: stream of d-lists representing generated elements
+%	F	: stream of generated elements to be filtered
+%
+connect([gen(_,P0,P)|G1], F) :- true |
+    F = P0,
+    connect(G1, P).
+connect([begin|G1], F) :- true |
+    F = [begin|F1],
+    connect(G1, F1).
+connect([end|G1], F) :- true |
+    F = [end|G1].
+
+% mult(+X, +Y, -Z)
+%	X	: X = [X1, X2, ...]
+%	Y	: Y = [Y1, Y2, ...]
+%	Z	: Z = X*Y = [X1*Y1, X2*Y2, ...]
+%
+mult([X|Xs], [Y|Ys], Out) :- true |
+    Out = [Z|Zs],
+    m(X, Y, Z),
+    mult(Xs, Ys, Zs).
+mult([], [], Z) :- true | Z=[].
+
+%----------------------------------------------------------------------
+%	Multiplication Rule for the Direct Product of 
+%	the 5-element Bradt Semigroup B2
+%----------------------------------------------------------------------
+
+%	Bradt semigroup B2 = { c, e, f, a, b }.
+%
+%	Multiplication table for B2 :
+%
+%		| c   e	  f   a   b
+%	     ---+-------------------
+%	      c | c   c   c   c   c
+%	      e | c   e   c   a   c
+%	      f | c   c   f   c   b
+%	      a | c   c   a   c   e
+%	      b | c   b   c   f   c
+
+m(e,c,Z):- true | Z=c. 
+m(f,c,Z):- true | Z=c. 
+m(a,c,Z):- true | Z=c. 
+m(b,c,Z):- true | Z=c. 
+m(c,c,Z):- true | Z=c.
+
+m(e,e,Z):- true | Z=e. 
+m(f,e,Z):- true | Z=c. 
+m(a,e,Z):- true | Z=c. 
+m(b,e,Z):- true | Z=b. 
+m(c,e,Z):- true | Z=c.
+
+m(e,f,Z):- true | Z=c. 
+m(f,f,Z):- true | Z=f. 
+m(a,f,Z):- true | Z=a. 
+m(b,f,Z):- true | Z=c. 
+m(c,f,Z):- true | Z=c.
+
+m(e,a,Z):- true | Z=a. 
+m(f,a,Z):- true | Z=c. 
+m(a,a,Z):- true | Z=c. 
+m(b,a,Z):- true | Z=f. 
+m(c,a,Z):- true | Z=c.
+
+m(e,b,Z):- true | Z=c. 
+m(f,b,Z):- true | Z=b. 
+m(a,b,Z):- true | Z=e. 
+m(b,b,Z):- true | Z=c. 
+m(c,b,Z):- true | Z=c.
+
+% generators are 4 lists of 40 elements each...
+% 147+4 solutions...
+%generators(IL) :- true |
+%    IL = [
+%          [c,c,c,c,c, e,e,e,e,e, f,f,f,f,f, a,a,a,a,a, b,b,b,b,b, f,f,f,f,f, 
+%           a,a,a,a,a, b,b,b,b,b],
+%          [c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, 
+%           c,e,f,a,b, c,e,f,a,b],
+%          [c,c,c,c,c, e,e,e,e,e, f,f,f,f,f, b,b,b,b,b, a,a,a,a,a, e,e,e,e,e, 
+%           b,b,b,b,b, a,a,a,a,a],
+%          [c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,a,b, 
+%           c,e,f,b,a, c,e,f,b,a]
+%	].
+
+% 309+4 solutions...
+generators(IL) :- true |
+    IL = [
+          [c,c,c,c,c, e,e,e,e,e, f,f,f,f,f, a,a,a,a,a, b,b,b,b,b, f,f,f,f,f, 
+           b,b,b,b,b, a,a,a,a,a],
+          [c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, c,e,f,a,b, 
+           c,f,e,a,b, c,e,f,a,b],
+          [c,c,c,c,c, e,e,e,e,e, f,f,f,f,f, b,b,b,b,b, a,a,a,a,a, e,e,e,e,e, 
+           a,a,a,a,a, f,f,f,f,f],
+          [c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,b,a, c,e,f,a,b, 
+           c,e,f,b,a, c,e,f,b,a]
+	].
+
+

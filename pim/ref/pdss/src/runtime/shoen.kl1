@@ -1,0 +1,310 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module 'Sho-en'.
+:- public create/8, create/7, execute/8, execute/7, raise/3.
+:- with_macro pdss.
+
+create(ModuleName,PredicateName,Args,PrioMin,PrioMax,Tag,Control,Report) :-
+    true |
+    vector(Args,Arity,NewArgs),
+    create_shoen({ModuleName,PredicateName,Arity}, NewArgs,
+		 PrioMin, PrioMax, Tag, Shoen, Report),
+    shoen(Control, Shoen, PrioMin, PrioMax).
+
+create(Code,Args,PrioMin,PrioMax,Tag,Control,Report) :-
+    true |
+    create_shoen(Code, Args, PrioMin, PrioMax, Tag, Shoen, Report),
+    shoen(Control, Shoen, PrioMin, PrioMax).
+
+shoen([start|Cntrl], Shoen, Min, Max) :- wait(Shoen) |
+    start_shoen(Shoen, NewShoen),
+    shoen(Cntrl, NewShoen, Min, Max).
+shoen([stop|Cntrl], Shoen, Min, Max) :- wait(Shoen) |
+    stop_shoen(Shoen, NewShoen),
+    shoen(Cntrl, NewShoen, Min, Max).
+shoen([abort|Cntrl], Shoen, Min, Max) :- wait(Shoen) |
+    abort_shoen(Shoen, NewShoen),
+    shoen(Cntrl, NewShoen, Min, Max).
+shoen([more_reduction(R)|Cntrl], Shoen, Min, Max) :- wait(Shoen) |
+    shoen_add_resource(Shoen, R, NewShoen),
+    shoen(Cntrl, NewShoen, Min, Max).
+shoen([priority(Min,Max)|Cntrl], Shoen, _, _) :- wait(Shoen) |
+    shoen(Cntrl, Shoen, Min, Max).
+shoen([statistics(Info)|Cntrl], Shoen, Min, Max) :- wait(Shoen) |
+    shoen_statistics(Shoen, Reductions, NewShoen),
+    Info = {Reductions},
+    shoen(Cntrl, NewShoen, Min, Max).
+shoen([remove], Shoen, _, _) :- wait(Shoen) |
+    remove_shoen(Shoen).
+shoen([], Shoen, _, _) :- wait(Shoen) |
+    stop_shoen(Shoen, NewShoen1),
+    abort_shoen(NewShoen1, NewShoen), remove_shoen(NewShoen).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   Normal shoen execution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+execute(Module,Predicate,Args,PrioMin,PrioMax,Tag,Control,Report) :-
+    true |
+    vector(Args,Arity,NewArgs),
+    create_shoen({Module,Predicate,Arity}, NewArgs,
+		 PrioMin,PrioMax, Tag, Shoen, SReport),
+    merge(Rep,Report),
+    normal(Control,SReport,Rep,Shoen).
+
+execute(Code,Args,PrioMin,PrioMax,Tag,Control,Report) :-
+    true|
+    create_shoen(Code, Args, PrioMin,PrioMax, Tag, Shoen, SReport),
+    merge(Rep,Report),
+    normal(Control,SReport,Rep,Shoen).
+
+normal(Ctrl,SR,Rep,Shoen):- wait(Ctrl), wait(Shoen) |
+    normal_control(Ctrl,SR,Rep,Shoen).
+alternatively.
+normal(Ctrl,SR,Rep,Shoen):- wait(SR), wait(Shoen) |
+    normal_report(Ctrl,SR,Rep,Shoen).
+
+normal_control([start|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [started|NewRep],
+    start_shoen(Shoen, NewShoen),
+    shoen_add_resource(NewShoen, 0, NewShoen1),
+    normal(Ctrl,SR,NewRep,NewShoen1).
+normal_control([stop|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [stopped|NewRep],
+    stop_shoen(Shoen, NewShoen),
+    normal(Ctrl,SR,NewRep,NewShoen).
+normal_control([abort|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [aborted|NewRep],
+    abort_shoen(Shoen, NewShoen),
+    normal(Ctrl,SR,NewRep,NewShoen).
+normal_control([add_resource(R)|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [resource_added|NewRep],
+    add_resource(R,SR,NewSR,Shoen,NewShoen),
+    normal(Ctrl,NewSR,NewRep,NewShoen).
+normal_control([allow_resource_report|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [resource_report_allowed|NewRep],
+    normal(Ctrl,SR,NewRep,Shoen).
+normal_control([statistics|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [statistics_started|{StRep,NewRep}],
+    shoen_statistics(Shoen, Info, NewShoen),
+    statistics(Info,StRep),
+    normal(Ctrl,SR,NewRep,NewShoen).
+normal_control([],SR,Rep,Shoen):- true |
+    stop_shoen(Shoen, NewShoen),
+    abort_shoen(NewShoen, NewShoen1),
+    remove_shoen(NewShoen1),
+    removed(SR,Rep).
+
+normal_report(Ctrl,[reduction_limit|SR],Rep,Shoen):- true |
+    Rep = [resource_low|NewRep],
+    reported(Ctrl,SR,NewRep,Shoen).
+normal_report(Ctrl,[succeeded|SR],Rep,Shoen):- true |
+    Rep = [terminated|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+normal_report(Ctrl,[aborted|SR],Rep,Shoen):- true |
+    Rep = [terminated|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+normal_report(Ctrl,[X|SR],Rep,Shoen):-
+    X\=reduction_limit, X\=succeeded, X\=aborted |
+    report_handler(X,Rep,NewRep),
+    normal(Ctrl,SR,NewRep,Shoen).
+
+reported(Ctrl,SR,Rep,Shoen):- wait(Ctrl), wait(Shoen) |
+    reported_control(Ctrl,SR,Rep,Shoen).
+alternatively.
+reported(Ctrl,SR,Rep,Shoen):- wait(SR), wait(Shoen) |
+    reported_report(Ctrl,SR,Rep,Shoen).
+
+reported_control([start|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [started|NewRep],
+    start_shoen(Shoen, NewShoen),
+    reported(Ctrl,SR,NewRep,NewShoen).
+reported_control([stop|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [stopped|NewRep],
+    stop_shoen(Shoen, NewShoen),
+    reported(Ctrl,SR,NewRep,NewShoen).
+reported_control([abort|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [aborted|NewRep],
+    abort_shoen(Shoen, NewShoen),
+    reported(Ctrl,SR,NewRep,NewShoen).
+reported_control([add_resource(R)|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [resource_added|NewRep],
+    add_resource(R,SR,NewSR,Shoen,NewShoen),
+    reported(Ctrl,NewSR,NewRep,NewShoen).
+reported_control([allow_resource_report|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [resource_report_allowed|NewRep],
+    normal(Ctrl,SR,NewRep,Shoen).
+reported_control([statistics|Ctrl],SR,Rep,Shoen):- true |
+    Rep = [statistics_started|{StRep,NewRep}],
+    shoen_statistics(Shoen, Info, NewShoen),
+    statistics(Info,StRep),
+    reported(Ctrl,SR,NewRep,NewShoen).
+reported_control([],SR,Rep,Shoen):- true |
+    stop_shoen(Shoen, NewShoen),
+    abort_shoen(NewShoen, NewShoen1),
+    remove_shoen(NewShoen1),
+    removed_reported(SR,Rep).
+
+reported_report(Ctrl,[reduction_limit|SR],Rep,Shoen):- true |
+    reported_low(Ctrl,SR,Rep,Shoen).
+reported_report(Ctrl,[succeeded|SR],Rep,Shoen):- true |
+    Rep = [terminated|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+reported_report(Ctrl,[aborted|SR],Rep,Shoen):- true |
+    Rep = [terminated|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+reported_report(Ctrl,[X|SR],Rep,Shoen):-
+    X\=reduction_limit, X\=succeeded, X\=aborted |
+    report_handler(X,Rep,NewRep),
+    reported(Ctrl,SR,NewRep,Shoen).
+
+reported_low([start|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [started|NewRep],
+    start_shoen(Shoen, NewShoen),
+    reported_low(Ctrl,SR,NewRep,NewShoen).
+reported_low([stop|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [stopped|NewRep],
+    stop_shoen(Shoen, NewShoen),
+    reported_low(Ctrl,SR,NewRep,NewShoen).
+reported_low([abort|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [aborted|NewRep],
+    abort_shoen(Shoen, NewShoen),
+    reported_low(Ctrl,SR,NewRep,NewShoen).
+reported_low([add_resource(R)|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [resource_added|NewRep],
+    shoen_add_resource(Shoen, R, NewShoen),
+    reported(Ctrl,SR,NewRep,NewShoen).
+reported_low([allow_resource_report|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [resource_report_allowed,resource_low|NewRep],
+    normal(Ctrl,SR,NewRep,Shoen).
+reported_low([statistics|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [statistics_started|{NewRep,StRep}],
+    shoen_statistics(Shoen, Info, NewShoen),
+    statistics(Info,StRep),
+    reported_low(Ctrl,SR,NewRep,NewShoen).
+reported_low([],SR,Rep,Shoen):- wait(Shoen) |
+    stop_shoen(Shoen, NewShoen),
+    abort_shoen(NewShoen, NewShoen1),
+    remove_shoen(NewShoen1),
+    removed(SR,Rep).
+
+exit([start|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [started|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+exit([stop|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [stopped|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+exit([abort|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [aborted|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+exit([add_resource(_)|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [resource_added|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+exit([allow_resource_report|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [resource_report_allowed|NewRep],
+    exit(Ctrl,SR,NewRep,Shoen).
+exit([statistics|Ctrl],SR,Rep,Shoen):- wait(Shoen) |
+    Rep = [statistics_started|{StRep,NewRep}],
+    shoen_statistics(Shoen, Info, NewShoen),
+    statistics(Info,StRep),
+    exit(Ctrl,SR,NewRep,NewShoen).
+exit([],_,Rep,Shoen):- wait(Shoen) |
+    Rep = [],
+    remove_shoen(Shoen).
+
+removed([reduction_limit|SR],Rep):- true |
+    Rep = [resource_low|NewRep],
+    removed_reported(SR,NewRep).
+removed([succeeded|_],Rep):- true |
+    Rep = [terminated].
+removed([aborted|_],Rep):- true |
+    Rep = [terminated].
+removed([X|SR],Rep):-
+    X\=reduction_limit, X\=succeeded, X\=aborted |
+    report_handler(X,Rep,NewRep),
+    removed(SR,NewRep).
+
+removed_reported([reduction_limit|SR],Rep):- true |
+    removed_reported(SR,Rep).
+removed_reported([succeeded|_],Rep):- true |
+    Rep = [terminated].
+removed_reported([aborted|_],Rep):- true |
+    Rep = [terminated].
+removed_reported([X|SR],Rep):-
+    X\=reduction_limit, X\=succeeded, X\=aborted |
+    report_handler(X,Rep,NewRep),
+    removed_reported(SR,NewRep).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+report_handler(exception(EC,Op,Argv,Pos,Caller,NewCode,NewArgv),Rep,NewRep):-
+    EC \= excp#illegal_merger_input |
+    Rep = [exception(EC,{0,Caller,Op,Pos,Argv},NewCode,NewArgv)|NewRep].
+report_handler(exception(EC,MI,FMI,Caller,UCode,NewCode,NewArgv),Rep,NewRep):-
+    EC = excp#illegal_merger_input | % 16#"F6" is opcode of merge/2
+    Rep = [exception(EC,{0,Caller,16#"F6",MI,FMI},NewCode,NewArgv)|NewRep].
+report_handler(exception(EC,Op,Argv,Caller,NewCode,NewArgv),Rep,NewRep):-
+    EC \= excp#unification_failure |
+    Rep = [exception(EC,{0,Caller,Op,Argv},NewCode,NewArgv)|NewRep].
+report_handler(exception(EC,X,Y,Caller,NewCode,NewArgv),Rep,NewRep):-
+    EC = excp#unification_failure |
+    Rep = [exception(EC,{0,X,Y},NewCode,NewArgv)|NewRep].
+report_handler(exception(EC,Code,Argv,NewCode,NewArgv),Rep,NewRep):-
+    true |
+    Rep = [exception(EC,{0,Code,Argv},NewCode,NewArgv)|NewRep].
+report_handler(raised(Type,Info,NewCode,NewArgv),Rep,NewRep):-
+    true |
+    Rep = [exception(excp#raised,{0,Type,Info},NewCode,NewArgv)|NewRep].
+report_handler(deadlock(Type,Caller,Locked),Rep,NewRep):-
+    true |
+    Rep = [deadlock(excp#deadlock,{0,Caller,Type,Locked})|NewRep].
+
+add_resource(R,[reduction_limit|SR],NewSR,Shoen,NewShoen):-
+    true |
+    add_resource(R,SR,NewSR,Shoen,NewShoen).
+add_resource(R,[X|SR],NewSR,Shoen,NewShoen):-
+    X\=reduction_limit |
+    NewSR = [X|NNSR],
+    add_resource(R,SR,NNSR,Shoen,NewShoen).
+alternatively.
+add_resource(R,SR,NewSR,Shoen,NewShoen):-
+    true |
+    SR = NewSR,
+    shoen_add_resource(Shoen, R, NewShoen).
+
+statistics(Info,Rep):- wait(Info) |
+    Rep = [statistics({Info})].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%analyze_goal(Module:Goal, Code, Args) :- atom(Goal) |
+%    Code = {Module,Goal,0}, new_vector(Args, 0).
+%analyze_goal(Module:Goal, Code, Args) :- vector(Goal, Size) |
+%    Code = {Module,PName,Arity},
+%    Arity := Size-1,
+%    new_vector(Args0, Arity),
+%    set_vector_element(Goal, 0, PName, PName, NG),
+%    copy_args(0, Arity, NG, Args0, Args).
+%
+%copy_args(K, N, T, As, As1) :- K<N |
+%    K1 := K+1,
+%    set_vector_element(T, K1, Ek, _, NT),
+%    set_vector_element(As, K, _, Ek, NAs),
+%    copy_args(K1, N, NT, NAs, As1).
+%copy_args(N, N, _, Args1, Args2) :- wait(Args1) | Args2=Args1.
+%
+%exception_handling([], _) :- true |
+%    true.
+%exception_handling(true, _) :- true |
+%    true.
+%exception_handling(Code, Args) :-
+%    vector_element(Code,0,Module),
+%    vector_element(Code,1,PName)|
+%    apply(Module,PName,Args).
+
+%%%% raise
+raise(Tag,Type,Info) :- true | raise(Tag,Type,Info).

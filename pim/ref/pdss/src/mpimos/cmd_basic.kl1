@@ -1,0 +1,449 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_basic.
+:- public is_command/2,do_command/2,help/2.
+:- with_macro pdss.
+
+is_command(help,	        X):- true| X = yes.
+is_command(help(_),	        X):- true| X = yes.
+is_command(gc,		        X):- true| X = yes.
+is_command(gc(_),	        X):- true| X = yes.
+is_command(stat(_),             X):- true| X = yes.
+is_command(take(_),             X):- true| X = yes.
+is_command(cputime(_),          X):- true| X = yes.
+is_command(cputime,             X):- true| X = yes.
+is_command(display(_),	        X):- true| X = yes.
+is_command(display_value(_,_),  X):- true| X = yes.
+is_command(window(_),	        X):- true| X = yes.
+is_command(apply(_,_),		X):- true| X = yes.
+is_command(apply(_,_,_),	X):- true| X = yes.
+is_command(stat,	        X):- true| X = yes.
+is_command(add_op(_,_,_),	X):- true| X = yes.
+is_command(remove_op(_,_,_),	X):- true| X = yes.
+is_command(remove_op(_),	X):- true| X = yes.
+is_command(operator(_),		X):- true| X = yes.
+is_command(operator(_,_),	X):- true| X = yes.
+is_command(replace_op_pool(_,_),X):- true| X = yes.
+is_command(change_op_pool(_),   X):- true| X = yes.
+is_command(halt,	        X):- true| X = yes.
+otherwise.
+is_command(_,                   X):- true| X = no.
+
+
+do_command(halt,_):-
+     halt(0)| true.
+do_command(gc,SS):-
+     request_gc(0)| SS = [].
+do_command(gc(h),SS):-
+     request_gc(0)| SS = [].
+do_command(gc(all),SS):-
+     request_gc(1)| SS = [].
+do_command(apply(ComN,ArgL),SS):-
+     atom(ComN)|
+	mpimos_cmd_utl:apply_action(ComN,ArgL,SS).
+do_command(apply(Module:Predicate,ArgL),SS):-
+     atom(Module),
+     atom(Predicate)|
+	mpimos_cmd_utl:apply_action(Module:Predicate,ArgL,SS).
+do_command(apply(ComN,ArgL,Op),SS):-
+     atom(ComN)|
+	mpimos_cmd_utl:apply_action(ComN,ArgL,Op,SS).
+do_command(apply(Module:Predicate,Op,ArgL),SS):-
+     atom(Module),
+     atom(Predicate)|
+	mpimos_cmd_utl:apply_action(Module:Predicate,ArgL,Op,SS).
+do_command(add_op(Precedence,Type,Op),SS):-
+     1=<Precedence, Precedence=<1200,
+     atom(Type),atom(Op)|
+	SS=[window([add_op(Precedence,Type,Op)])].
+do_command(remove_op(Precedence,Type,Op),SS):-
+     1=<Precedence, Precedence=<1200,
+     atom(Type),atom(Op)|
+	SS=[window([operator(Op,DefL)])|SS1],
+	member({Precedence,Type},DefL,S),
+	remove_operator(S,Precedence,Type,Op,SS1).
+do_command(remove_op(Op),SS):-
+     atom(Op),Op\=[]|
+	SS=[window([operator(Op,DefL)])|SS1],
+	remove_operator_all(DefL,Op,SS1).
+do_command(remove_op(OpL),SS):-
+     list(OpL)|
+	mpimos_cmd_utl:apply_action(remove_op,OpL,SS).
+do_command(remove_op([]),SS):-
+     true|
+	SS = [].
+do_command(operator(Op),SS):-
+     atom(Op), Op \= []|
+	SS=[window([operator(Op,DefL)])|SS1],
+	mpimos_cmd_utl:send_shell(window(MS),SS1,[window([flush(F)])]),
+	display_operator(DefL,MS),
+	wait(F).
+do_command(operator(OpL),SS):-
+     list(OpL)|
+	mpimos_cmd_utl:apply_action(operator,OpL,SS).
+do_command(operator([]),SS):-
+     true|
+	SS = [].
+do_command(operator(Op,DefL),SS):-
+     atom(Op)|
+	SS=[window([operator(Op,DL)])],
+	mpimos_cmd_utl:protect(DL,DefL).
+do_command(replace_op_pool(OldPool,NewPool),SS):-
+     true|
+	SS=[window([replace_op_pool(Pool,Pool)])|SS2],
+	mpimos_cmd_utl:protect(Pool,OldPool),
+	change_op_pool(NewPool,Tmp,Tmp,SS2).
+do_command(change_op_pool(NewPool),SS):-
+     true|
+	change_op_pool(NewPool,Tmp,Tmp,SS).
+do_command(stat,SS):-
+     statistics(_,Heap,UHeap,Code,UCode,_)|
+	FHeap := Heap - UHeap,
+	FCode := Code - UCode,
+	mpimos_cmd_utl:send_shell(
+		window([putb(string#"Used Heap size is "),
+			putt(UHeap),putl(string#" words."),
+			putb(string#"Free Heap size is "),
+			putt(FHeap),putl(string#" words."),
+			putb(string#"Used Code size is "),
+			putt(UCode),putl(string#" bytes."),
+			putb(string#"Free Code size is "),
+			putt(FCode),putl(string#" bytes.")]),
+			SS,[window([flush(EF)])]),
+	wait(EF).
+do_command(stat(ComL),SS):-
+     list(ComL)|
+	mpimos_cmd_utl:apply_action(stat,ComL,SS).
+do_command(stat([]),SS):-
+    true|
+	SS = [].
+do_command(take(F),SS):-
+     string(F,_,8)|
+	mpimos_file:create(File,F,r,St),
+	take_action(St,File,SS).
+do_command(take(FA),SS):-
+     atom(FA), FA \= []|
+	atom_name(FA,F),
+	do_command(take(F),SS).
+do_command(take(FL),SS):-
+    list(FL)|
+	mpimos_cmd_utl:apply_action(take,FL,SS).
+do_command(take([]),SS):-
+    true|
+	SS = [].
+do_command(cputime(T),SS):-
+     get_cpu_time(T0)|
+	T = T0,
+	SS = [].
+do_command(cputime,SS):-
+     get_cpu_time(T0)|
+	SS = [window([putb(string#"cputime = "),putt(T0),nl,flush(F)])],
+	wait(F).
+do_command(display(Mess),SS):-
+     true|
+	mpimos_cmd_utl:send_shell(window(Mess),SS,[window([flush(F)])]),
+	wait(F).
+do_command(display_value(VNL,MVL),SS):-
+     wait(MVL)|
+	mpimos_utility:freeze(MVL,FVL),
+	display_value_action(VNL,FVL,SS).
+do_command(window(IO),SS):-
+     true|
+	SS = [getuc(UN)],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"WINDOW",SUN,WN),
+	mpimos_window:create([show,do(IO),nl,
+			      putb(string#"Done(type any key) ?"),getl(_)],WN).
+do_command(help,SS):-
+     true|
+	SS = [getenv(modules,Modules)|SS1],
+	get_help_menu(1,Modules,MS),
+	mpimos_cmd_utl:send_shell(
+		window([putl(string#"There are following help menu.")|MS]),
+		SS1,[window([flush(F)])]),
+	wait(F).
+do_command(help(HelpNumber),SS):-
+     integer(HelpNumber) |
+	SS = [getenv(modules,Modules)|SS1],
+	get_help_message(1,HelpNumber,Modules,MS),
+	mpimos_cmd_utl:send_shell(window(MS),SS1,[window([flush(F)])]),
+	wait(F).
+do_command(help(HelpItem),SS):-
+     atom(HelpItem) |
+	SS = [getenv(modules,Modules)|SS1],
+	get_help_message_item(HelpItem,Modules,MS),
+	mpimos_cmd_utl:send_shell(window(MS),SS1,[window([flush(F)])]),
+	wait(F).
+otherwise.
+do_command(stat(ExpMTerm),SS):-
+     true|
+	SS = {SS1,SS4},
+	mpimos_command_interpreter:command_analyzer(ExpMTerm,SS4,ExGoals),
+	stat_action(SS1,ExGoals).
+otherwise.
+do_command(Com,SS):-
+     true|
+	mpimos_utility:freeze(Com,FCom),
+	mpimos_cmd_utl:send_shell(window(
+			[putb(string#"ArgumentError detected in "),
+			 putt(FCom),nl]),SS,[window([flush(EF)])]),
+	fail_action(EF).
+
+get_help_menu(N,[Module|ML],MS) :-
+    true |
+	apply({Module,help,2},{item,Item}),
+	apply({Module,help,2},{menu,Menu}),
+	atom_name(Item,ItemS),
+	string(ItemS,SL,_,NItemS),
+	MS = [putb(string#"   help("),putt(N),putb(string#"),help("),
+	      putb(NItemS),putb(string#")"),
+	      tab(~(10-SL)),putb(string#"--- "),putb(Menu),nl|MS2],
+	N2 := N + 1,
+	get_help_menu(N2,ML,MS2).
+get_help_menu(_,[],MS) :-
+    true |
+	MS = [putl(string#"   help(all)               --- print all help messages.")].
+
+
+get_help_message(N,HelpN,[_|ML],MS) :-
+    HelpN \= N |
+	N2 := N + 1,
+	get_help_message(N2,HelpN,ML,MS).
+get_help_message(_,_,[],MS) :-
+    true |
+	MS = [putl(string#"Illegal help number !!")].
+get_help_message(N,N,[Module|_],MS) :-
+    true |
+	apply({Module,help,2},{message,Msg}),
+	display_message(Msg,MS).
+
+get_help_message_item(all,ML,MS) :-
+    true |
+	all_help_message(ML,MS).
+get_help_message_item(HelpItem,ML,MS) :-
+    HelpItem \= all |
+	get_help_message_item1(HelpItem,ML,MS).
+
+get_help_message_item1(HelpItem,[Module|ML],MS) :-
+    true |
+	apply({Module,help,2},{item,Item}),
+	wait_help_item(HelpItem,Item,Module,ML,MS).
+get_help_message_item1(_,[],MS) :-
+    true |
+	MS = [putl(string#"Illegal help item !!")].
+
+wait_help_item(Item,Item,Module,_,MS) :-
+    true|
+	apply({Module,help,2},{message,Msg}),
+	display_message(Msg,MS).
+wait_help_item(HelpItem,Item,_,ML,MS) :-
+    HelpItem\=Item|
+	get_help_message_item1(HelpItem,ML,MS).
+
+all_help_message([Module|ML],MS) :-
+    true |
+	apply({Module,help,2},{message,Msg}),
+	display_message(Msg,MSO),
+	MS = [do(MSO)|MSL],
+	all_help_message1(ML,MSL).
+
+all_help_message1([Module|ML],MS) :-
+    true |
+	apply({Module,help,2},{message,Msg}),
+	display_message(Msg,MSO),
+	MS = [nl,do(MSO)|MSL],
+	all_help_message1(ML,MSL).
+all_help_message1([],MS) :-
+    true |
+	MS = [].
+
+display_message([Line|Msg],W):-
+     wait(Line) |
+	W = [tab(3),putl(Line)|W2],
+	display_message(Msg,W2).
+display_message([],W):-
+     true |
+	W = [].
+
+
+display_value_action([VName|TVN],[Value|TV],SS):-
+     string(VName,_,8),
+     wait(Value)|
+	mpimos_cmd_utl:send_shell(window([putb(VName),putb(string#" = "),
+					  putt(Value),nl]),SS,SS1),
+	display_value_action(TVN,TV,SS1).
+display_value_action([error(X)|_],_,SS):-
+     true|
+	mpimos_utility:freeze(X,FX),
+	SS = [window([putb(string#"Illegal format ::: "),putt(FX),nl,
+		      flush(EF)])],
+	error_action(EF,aborted).
+display_value_action([],[],SS):-
+     true|
+	SS = [window([flush(EF)])],
+	wait(EF).
+
+
+stat_action(SS,Goals):-
+    wait(Goals) |
+	vector_element(Red0,0,Red,_),
+	T := T1 - T0,
+	mpimos_command_interpreter:command_analyzer((
+		cputime(T0);
+		mpimos_command_interpreter:unit(Goals,success,_,Red0);
+		cputime(T1);
+		display([putb(string#"Total of "),
+			 putt(Red), putb(string#" reductions in "),
+			 putt(T),putl(string#" msec.")])),
+		SS,ExE),
+	mpimos_command_interpreter:apply_goals(ExE).
+
+
+take_action(success,File,SS):-
+     true|
+	File = [getft(FTerm,VN)|NFile],
+	take_action0(success,FTerm,VN,NFile,SS).
+take_action(error(cannot_open_file),File,SS):-
+     true|
+	File = [],
+	SS = [window([putb(string#"Error take/1 command ::::: File not found !!"),
+		      nl,flush(F)])],
+	fail_action(F).
+
+take_action0(_,end_of_file,_,File,SS):-
+     true|
+	File = [],SS = [].
+otherwise.
+take_action0(Res0,FTerm,VN,File,SS):-
+     wait(Res0)|
+	SS = [macro_expander(expand(FTerm,VN,ExpFTerm,NVN))|{SS1,SS2}],
+	mpimos_utility:melt(ExpFTerm,NVN,ExpMTerm),
+	mpimos_command_interpreter:command_analyzer(ExpMTerm,SS1,ExGoals),
+	mpimos_command_interpreter:unit(ExGoals,success,Res,_),
+	File = [getft(FTerm1,VN1)|NFile],
+	take_action0(Res,FTerm1,VN1,NFile,SS2).
+
+
+fail_action(F):-
+     wait(F)|
+	raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+remove_operator(true,P,T,O,SS):-
+    true|
+	SS = [window([remove_op(P,T,O)])].
+remove_operator(false,_,_,_,SS):-
+    true|
+	SS = [window([putl(string#"Undefined."),flush(F)])],
+	wait(F).
+
+remove_operator_all(DefL,O,SS):-
+    list(DefL)|
+	SS = [window([remove_op(O)])].
+remove_operator_all([],_,SS):-
+    true|
+	SS = [window([putl(string#"Undefined."),flush(F)])],
+	wait(F).
+
+member(_,[],S):-
+    true|
+	S = false.
+member(X,[X|_],S):-
+    true|
+	S = true.
+member(X,[Y|L],S):-
+    X\=Y|
+	member(X,L,S).
+
+display_operator([],MS):-
+    true|
+	MS = [putl(string#"Undefined.")].
+display_operator([{Prec,Type}|DL],MS):-
+    true|
+	MS = [putb(string#"Definition = {"),
+	      putt(Prec),putc(#","),putt(Type),putc(#"}")|MSL],
+	display_operator1(DL,MSL).
+
+display_operator1([],MS):-
+    true|
+	MS = [putl(string#".")].
+display_operator1([{Prec,Type}|DL],MS):-
+    true|
+	MS = [putb(string#", {"),
+	      putt(Prec),putc(#","),putt(Type),putc(#"}")|MSL],
+	display_operator1(DL,MSL).
+
+change_op_pool([{Op,Defs}|Pool],New,Tmp,SS) :-
+    atom(Op) |
+	Tmp = [{Op,NDefs}|TmpL],
+	check_op_defs(Pool,New,TmpL,SS,Defs,NDefs).
+change_op_pool([],New,Tmp,SS) :-
+    true |
+	Tmp = [],
+	SS = [window([change_op_pool(New)])].
+otherwise.
+change_op_pool(X,New,Tmp,SS) :-
+    true |
+	mpimos_utility:freeze(X,FX),
+	mpimos_cmd_utl:send_shell(window(
+		[putb(string#"Illegal Format in Operator Pool ::: "),
+		 putt(FX),nl]),SS,[window([flush(EF)])]),
+	fail_action(EF).
+
+check_op_defs(Pool,New,Tmp,SS,[{Prec,Type}|Defs],NDefs) :-
+    Prec >=1, Prec =< 1200, atom(Type) |
+	NDefs = [{Prec,Type}|NDefsL],
+	check_op_defs(Pool,New,Tmp,SS,Defs,NDefsL).
+check_op_defs(Pool,New,Tmp,SS,[],NDefs) :-
+    true |
+	NDefs = [],
+	change_op_pool(Pool,New,Tmp,SS).
+otherwise.
+check_op_defs(Pool,New,Tmp,SS,X,NDefs) :-
+    true |
+	mpimos_utility:freeze(X,FX),
+	mpimos_cmd_utl:send_shell(window(
+		[putb(string#"Illegal Format in Operator Definition ::: "),
+		 putt(FX),nl]),SS,[window([flush(EF)])]),
+	fail_action(EF).
+
+wait(X):- wait(X)| true.
+
+error_action(F,T):-
+     wait(F),
+     wait(T)|
+	raise(shoen_tag#mpimos_unit,shell(T),_).
+
+help(menu,MSG):-
+    true |
+	MSG = string#"take,apply,gc,cputime,stat,halt,etc.".
+help(item,MSG):-
+    true |
+	MSG = basic.
+help(message,MSG):-
+     true|
+    MSG = [string#"There are following basic commands.",
+   string#"Module:Goal        --- Invoke the goal Module:Goal.",
+   string#"take(FILE)         --- Execute command FILE.",
+   string#"apply(COMMAND,ARGS) -- Execute the same COMMAND with another ARGS.",
+   string#"gc                 --- Do garbage collection.",
+   string#"gc(h)              --- Do garbage collection of heap area.",
+   string#"gc(all)            --- Do garbage collection of heap & code area.",
+   string#"cputime            --- Print cputime.",
+   string#"cputime(TIME)      --- Get cputime to TIME.",
+   string#"stat               --- Print state of memory.",
+   string#"stat(COMMAND)      --- Print COMMAND execution time and reduction number.",
+   string#"window(STREAM)     --- Create WINDOW and send commands to STREAM.",
+   string#"add_op(PREC,TY,OP) --- Add operator to shell-window.",
+   string#"remove_op(PREC,TY,OP)- Remove operator from shell-window.",
+   string#"remove_op(OP)      --- Remove operator from shell-window.",
+   string#"operator(OP)       --- Print operator definition of OP.",
+   string#"operator(OP,DEFL)  --- Get operator definition of OP to DEFL.",
+   string#"replace_op_pool(OLD,NEW)",
+   string#"                   --- Replace operator pool OLD to NEW.",
+   string#"change_op_pool(NEW)--- Change operator pool to NEW.",
+   string#"halt               --- Exit PDSS system."].

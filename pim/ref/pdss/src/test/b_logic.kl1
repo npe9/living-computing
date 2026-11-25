@@ -1,0 +1,164 @@
+%%% KL1-B Test for B_Logic %%%
+% B_Shift_Left %%%%%%%%%% abc
+% B_Shift_Right %%%%%%%%% abc
+% B_And %%%%%%%%%%%%%%%%% abcd
+% B_Or %%%%%%%%%%%%%%%%%% abcd
+% B_Exclusive_Or %%%%%%%% abcd
+% B_Complement %%%%%%%%%% abc
+
+:- module b_logic.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Logic %%%"), put_console(key#lf) | shl.
+
+shl:- put_console(ascii#"% B_Shift_Left %%%%%%%%%% ") | shl00.
+
+shl00:- true | shl00(16#"5A5A5A5A",0).
+shl00(X,Y):- true | Z:=X<<Y, shl00(Z).
+shl00(16#"5A5A5A5A"):- put_console(c#"a") | shl01.
+otherwise.
+shl00(_):- put_console(c#"*") | shl01.
+
+shl01:- true | shl01(16#"5A5A5A5A",3).
+shl01(X,Y):- true | Z:=X<<Y, shl01(Z).
+shl01(16#"D2D2D2D0"):- put_console(c#"b") | shl02.
+otherwise.
+shl01(_):- put_console(c#"*") | shl02.
+
+shl02:- true | shl02(16#"5A5A5A5A",31).
+shl02(X,Y):- true | Z:=X<<Y, shl02(Z).
+shl02(0):- put_console(c#"c") | shl03.
+otherwise.
+shl02(_):- put_console(c#"*") | shl03.
+
+shl03:- put_console(key#lf) | shr.
+
+shr:- put_console(ascii#"% B_Shift_Right %%%%%%%%% ") | shr00.
+
+shr00:- true | shr00(16#"5A5A5A5A",0).
+shr00(X,Y):- true | Z:=X>>Y, shr00(Z).
+shr00(16#"5A5A5A5A"):- put_console(c#"a") | shr01.
+otherwise.
+shr00(_):- put_console(c#"*") | shr01.
+
+shr01:- true | shr01(16#"5A5A5A5A",3).
+shr01(X,Y):- true | Z:=X>>Y, shr01(Z).
+shr01(16#"0B4B4B4B"):- put_console(c#"b") | shr02.
+otherwise.
+shr01(_):- put_console(c#"*") | shr02.
+
+shr02:- true | shr02(16#"5A5A5A5A",31).
+shr02(X,Y):- true | Z:=X>>Y, shr02(Z).
+shr02(0):- put_console(c#"c") | shr03.
+otherwise.
+shr02(_):- put_console(c#"*") | shr03.
+
+shr03:- put_console(key#lf) | and.
+
+and:- put_console(ascii#"% B_And %%%%%%%%%%%%%%%%% ") | and00.
+
+and00:- true | and00(16#"5A5A5A5A",16#"5A5A5A5A").
+and00(X,Y):- true | Z:=X/\Y, and00(Z).
+and00(16#"5A5A5A5A"):- put_console(c#"a") | and01.
+otherwise.
+and00(_):- put_console(c#"*") | and01.
+
+and01:- true | and01(16#"5A5A5A5A",0).
+and01(X,Y):- true | Z:=X/\Y, and01(Z).
+and01(0):- put_console(c#"b") | and02.
+otherwise.
+and01(_):- put_console(c#"*") | and02.
+
+and02:- true | and02(16#"5A5A5A5A",3).
+and02(X,Y):- true | Z:=X/\Y, and02(Z).
+and02(2):- put_console(c#"c") | and03.
+otherwise.
+and02(_):- put_console(c#"*") | and03.
+
+and03:- true | and03(16#"5A5A5A5A",-1).
+and03(X,Y):- true | Z:=X/\Y, and03(Z).
+and03(16#"5A5A5A5A"):- put_console(c#"d") | and04.
+otherwise.
+and03(_):- put_console(c#"*") | and04.
+
+and04:- put_console(key#lf) | or.
+
+or:- put_console(ascii#"% B_Or %%%%%%%%%%%%%%%%%% ") | or00.
+
+or00:- true | or00(16#"5A5A5A5A",16#"5A5A5A5A").
+or00(X,Y):- true | Z:=X\/Y, or00(Z).
+or00(16#"5A5A5A5A"):- put_console(c#"a") | or01.
+otherwise.
+or00(_):- put_console(c#"*") | or01.
+
+or01:- true | or01(16#"5A5A5A5A",0).
+or01(X,Y):- true | Z:=X\/Y, or01(Z).
+or01(16#"5A5A5A5A"):- put_console(c#"b") | or02.
+otherwise.
+or01(_):- put_console(c#"*") | or02.
+
+or02:- true | or02(16#"5A5A5A5A",3).
+or02(X,Y):- true | Z:=X\/Y, or02(Z).
+or02(16#"5A5A5A5B"):- put_console(c#"c") | or03.
+otherwise.
+or02(_):- put_console(c#"*") | or03.
+
+or03:- true | or03(16#"5A5A5A5A",-1).
+or03(X,Y):- true | Z:=X\/Y, or03(Z).
+or03(-1):- put_console(c#"d") | or04.
+otherwise.
+or03(_):- put_console(c#"*") | or04.
+
+or04:- put_console(key#lf) | exo.
+
+exo:- put_console(ascii#"% B_Exclusive_Or %%%%%%%% ") | exo00.
+
+exo00:- true | exo00(16#"5A5A5A5A",16#"5A5A5A5A").
+exo00(X,Y):- true | Z:=X xor Y, exo00(Z).
+exo00(0):- put_console(c#"a") | exo01.
+otherwise.
+exo00(_):- put_console(c#"*") | exo01.
+
+exo01:- true | exo01(16#"5A5A5A5A",0).
+exo01(X,Y):- true | Z:=X xor Y, exo01(Z).
+exo01(16#"5A5A5A5A"):- put_console(c#"b") | exo02.
+otherwise.
+exo01(_):- put_console(c#"*") | exo02.
+
+exo02:- true | exo02(16#"5A5A5A5A",3).
+exo02(X,Y):- true | Z:=X xor Y, exo02(Z).
+exo02(16#"5A5A5A59"):- put_console(c#"c") | exo03.
+otherwise.
+exo02(_):- put_console(c#"*") | exo03.
+
+exo03:- true | exo03(16#"5A5A5A5A",-1).
+exo03(X,Y):- true | Z:=X xor Y, exo03(Z).
+exo03(16#"A5A5A5A5"):- put_console(c#"d") | exo04.
+otherwise.
+exo03(_):- put_console(c#"*") | exo04.
+
+exo04:- put_console(key#lf) | cmp.
+
+cmp:- put_console(ascii#"% B_Complement %%%%%%%%%% ") | cmp00.
+
+cmp00:- true | cmp00(16#"5A5A5A5A").
+cmp00(X):- true | Z:= \(X), cmp00ans(Z).
+cmp00ans(16#"A5A5A5A5"):- put_console(c#"a") | cmp01.
+otherwise.
+cmp00ans(_):- put_console(c#"*") | cmp01.
+
+cmp01:- true | cmp01(0).
+cmp01(X):- true | Z:= \(X), cmp01ans(Z).
+cmp01ans(-1):- put_console(c#"b") | cmp02.
+otherwise.
+cmp01ans(_):- put_console(c#"*") | cmp02.
+
+cmp02:- true | cmp02(-1).
+cmp02(X):- true | Z:= \(X), cmp02ans(Z).
+cmp02ans(0):- put_console(c#"c") | cmp03.
+otherwise.
+cmp02ans(_):- put_console(c#"*") | cmp03.
+
+cmp03:- put_console(key#lf) | done.
+
+done:- true | true.

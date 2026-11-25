@@ -1,0 +1,140 @@
+%%% KL1-B Test for B_Atom (Exception) %%%
+% B_Intern_Atom %%%%%%%%% abcdefg
+% B_Atom_Name %%%%%%%%%%% abcdef
+% B_Atom_Number %%%%%%%%% abcdefg
+
+:- module b_atom_e.
+:- public go/0
+,do_intern_atom/1,do_atom_name/1,do_atom_number/1.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Atom (Exception) %%%"), put_console(key#lf) | iat.
+
+iat:- put_console(ascii#"% B_Intern_Atom %%%%%%%%% ") | iat00.
+
+iat00:- true | AV={ascii#""}, execute_in_shoen(do_intern_atom,AV,R), iat00(R).
+iat00(success):- put_console(c#"a") | iat01.
+otherwise.
+iat00(_):- put_console(c#"*") | iat01.
+
+iat01:- true | AV={S}, new_string(S,1,32), execute_in_shoen(do_intern_atom,AV,R), iat01(R).
+iat01(illegal_input):- put_console(c#"b") | iat02.
+otherwise.
+iat01(_):- put_console(c#"*") | iat02.
+
+iat02:- true | AV={atom}, execute_in_shoen(do_intern_atom,AV,R), iat02(R).
+iat02(illegal_input):- put_console(c#"c") | iat03.
+otherwise.
+iat02(_):- put_console(c#"*") | iat03.
+
+iat03:- true | AV={1234}, execute_in_shoen(do_intern_atom,AV,R), iat03(R).
+iat03(illegal_input):- put_console(c#"d") | iat04.
+otherwise.
+iat03(_):- put_console(c#"*") | iat04.
+
+iat04:- true | AV={12.34}, execute_in_shoen(do_intern_atom,AV,R), iat04(R).
+iat04(illegal_input):- put_console(c#"e") | iat05.
+otherwise.
+iat04(_):- put_console(c#"*") | iat05.
+
+iat05:- true | AV={[list]}, execute_in_shoen(do_intern_atom,AV,R), iat05(R).
+iat05(illegal_input):- put_console(c#"f") | iat06.
+otherwise.
+iat05(_):- put_console(c#"*") | iat06.
+
+iat06:- true | AV={{0}}, execute_in_shoen(do_intern_atom,AV,R), iat06(R).
+iat06(illegal_input):- put_console(c#"g") | iat07.
+otherwise.
+iat06(_):- put_console(c#"*") | iat07.
+
+iat07:- put_console(key#lf) | ana.
+
+ana:- put_console(ascii#"% B_Atom_Name %%%%%%%%%%% ") | ana00.
+
+ana00:- true | AV={''}, execute_in_shoen(do_atom_name,AV,R), ana00(R).
+ana00(success):- put_console(c#"a") | ana01.
+otherwise.
+ana00(_):- put_console(c#"*") | ana01.
+
+ana01:- true | AV={1234}, execute_in_shoen(do_atom_name,AV,R), ana01(R).
+ana01(illegal_input):- put_console(c#"b") | ana02.
+otherwise.
+ana01(_):- put_console(c#"*") | ana02.
+
+ana02:- true | AV={12.34}, execute_in_shoen(do_atom_name,AV,R), ana02(R).
+ana02(illegal_input):- put_console(c#"c") | ana03.
+otherwise.
+ana02(_):- put_console(c#"*") | ana03.
+
+ana03:- true | AV={[list]}, execute_in_shoen(do_atom_name,AV,R), ana03(R).
+ana03(illegal_input):- put_console(c#"d") | ana04.
+otherwise.
+ana03(_):- put_console(c#"*") | ana04.
+
+ana04:- true | AV={{0}}, execute_in_shoen(do_atom_name,AV,R), ana04(R).
+ana04(illegal_input):- put_console(c#"e") | ana05.
+otherwise.
+ana04(_):- put_console(c#"*") | ana05.
+
+ana05:- true | AV={ascii#"Str"}, execute_in_shoen(do_atom_name,AV,R), ana05(R).
+ana05(illegal_input):- put_console(c#"f") | ana06.
+otherwise.
+ana05(_):- put_console(c#"*") | ana06.
+
+ana06:- put_console(key#lf) | anu.
+
+anu:- put_console(ascii#"% B_Atom_Number %%%%%%%%% ") | anu00.
+
+anu00:- true | AV={''}, execute_in_shoen(do_atom_number,AV,R), anu00(R).
+anu00(success):- put_console(c#"a") | anu01.
+otherwise.
+anu00(_):- put_console(c#"*") | anu01.
+
+anu01:- true | AV={A}, new_atom(A), execute_in_shoen(do_atom_number,AV,R), anu01(R).
+anu01(success):- put_console(c#"b") | anu02.
+otherwise.
+anu01(_):- put_console(c#"*") | anu02.
+
+anu02:- true | AV={1234}, execute_in_shoen(do_atom_number,AV,R), anu02(R).
+anu02(illegal_input):- put_console(c#"c") | anu03.
+otherwise.
+anu02(_):- put_console(c#"*") | anu03.
+
+anu03:- true | AV={12.34}, execute_in_shoen(do_atom_number,AV,R), anu03(R).
+anu03(illegal_input):- put_console(c#"d") | anu04.
+otherwise.
+anu03(_):- put_console(c#"*") | anu04.
+
+anu04:- true | AV={[list]}, execute_in_shoen(do_atom_number,AV,R), anu04(R).
+anu04(illegal_input):- put_console(c#"e") | anu05.
+otherwise.
+anu04(_):- put_console(c#"*") | anu05.
+
+anu05:- true | AV={{0}}, execute_in_shoen(do_atom_number,AV,R), anu05(R).
+anu05(illegal_input):- put_console(c#"f") | anu06.
+otherwise.
+anu05(_):- put_console(c#"*") | anu06.
+
+anu06:- true | AV={ascii#"Str"}, execute_in_shoen(do_atom_number,AV,R), anu06(R).
+anu06(illegal_input):- put_console(c#"g") | anu07.
+otherwise.
+anu06(_):- put_console(c#"*") | anu07.
+
+anu07:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_atom_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+
+do_intern_atom(X):- true | intern_atom(A,X).
+do_atom_name(X):- true | atom_name(X,A).
+do_atom_number(X):- true | atom_number(X,A).

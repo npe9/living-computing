@@ -1,0 +1,241 @@
+%%% KL1-B Test for G_Float_Function_2_Args %%%
+% G_Float_Min %%%%%%%%%%% abcdefghi
+% G_Float_Max %%%%%%%%%%% abcdefghi
+% G_Float_Pow %%%%%%%%%%% abcdefghij
+
+:- module g_f_func2.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Float_Function_2_Args %%%"), put_console(key#lf) | min.
+
+min:- put_console(ascii#"% G_Float_Min %%%%%%%%%%% ") | min00.
+
+min00:- true | min00(12.34,12.34).
+min00(X,Y):- Z$:=min(X,Y) | min00(Z).
+otherwise.
+min00(_,_):- put_console(c#"*") | min01.
+min00(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"a") | min01.
+otherwise.
+min00(_):- put_console(c#"*") | min01.
+
+min01:- true | min01(12.34,0.0).
+min01(X,Y):- Z$:=min(X,Y) | min01(Z).
+otherwise.
+min01(_,_):- put_console(c#"*") | min02.
+min01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | min02.
+otherwise.
+min01(_):- put_console(c#"*") | min02.
+
+min02:- true | min02(12.34,-12.34).
+min02(X,Y):- Z$:=min(X,Y) | min02(Z).
+otherwise.
+min02(_,_):- put_console(c#"*") | min03.
+min02(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"c") | min03.
+otherwise.
+min02(_):- put_console(c#"*") | min03.
+
+min03:- true | min03(0.0,12.34).
+min03(X,Y):- Z$:=min(X,Y) | min03(Z).
+otherwise.
+min03(_,_):- put_console(c#"*") | min04.
+min03(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"d") | min04.
+otherwise.
+min03(_):- put_console(c#"*") | min04.
+
+min04:- true | min04(0.0,0.0).
+min04(X,Y):- Z$:=min(X,Y) | min04(Z).
+otherwise.
+min04(_,_):- put_console(c#"*") | min05.
+min04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | min05.
+otherwise.
+min04(_):- put_console(c#"*") | min05.
+
+min05:- true | min05(0.0,-12.34).
+min05(X,Y):- Z$:=min(X,Y) | min05(Z).
+otherwise.
+min05(_,_):- put_console(c#"*") | min06.
+min05(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"f") | min06.
+otherwise.
+min05(_):- put_console(c#"*") | min06.
+
+min06:- true | min06(-12.34,12.34).
+min06(X,Y):- Z$:=min(X,Y) | min06(Z).
+otherwise.
+min06(_,_):- put_console(c#"*") | min07.
+min06(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"g") | min07.
+otherwise.
+min06(_):- put_console(c#"*") | min07.
+
+min07:- true | min07(-12.34,0.0).
+min07(X,Y):- Z$:=min(X,Y) | min07(Z).
+otherwise.
+min07(_,_):- put_console(c#"*") | min08.
+min07(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"h") | min08.
+otherwise.
+min07(_):- put_console(c#"*") | min08.
+
+min08:- true | min08(-12.34,-12.34).
+min08(X,Y):- Z$:=min(X,Y) | min08(Z).
+otherwise.
+min08(_,_):- put_console(c#"*") | min09.
+min08(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"i") | min09.
+otherwise.
+min08(_):- put_console(c#"*") | min09.
+
+min09:- put_console(key#lf) | max.
+
+max:- put_console(ascii#"% G_Float_Max %%%%%%%%%%% ") | max00.
+
+max00:- true | max00(12.34,12.34).
+max00(X,Y):- Z$:=max(X,Y) | max00(Z).
+otherwise.
+max00(_,_):- put_console(c#"*") | max01.
+max00(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"a") | max01.
+otherwise.
+max00(_):- put_console(c#"*") | max01.
+
+max01:- true | max01(12.34,0.0).
+max01(X,Y):- Z$:=max(X,Y) | max01(Z).
+otherwise.
+max01(_,_):- put_console(c#"*") | max02.
+max01(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"b") | max02.
+otherwise.
+max01(_):- put_console(c#"*") | max02.
+
+max02:- true | max02(12.34,-12.34).
+max02(X,Y):- Z$:=max(X,Y) | max02(Z).
+otherwise.
+max02(_,_):- put_console(c#"*") | max03.
+max02(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"c") | max03.
+otherwise.
+max02(_):- put_console(c#"*") | max03.
+
+max03:- true | max03(0.0,12.34).
+max03(X,Y):- Z$:=max(X,Y) | max03(Z).
+otherwise.
+max03(_,_):- put_console(c#"*") | max04.
+max03(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"d") | max04.
+otherwise.
+max03(_):- put_console(c#"*") | max04.
+
+max04:- true | max04(0.0,0.0).
+max04(X,Y):- Z$:=max(X,Y) | max04(Z).
+otherwise.
+max04(_,_):- put_console(c#"*") | max05.
+max04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | max05.
+otherwise.
+max04(_):- put_console(c#"*") | max05.
+
+max05:- true | max05(0.0,-12.34).
+max05(X,Y):- Z$:=max(X,Y) | max05(Z).
+otherwise.
+max05(_,_):- put_console(c#"*") | max06.
+max05(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"f") | max06.
+otherwise.
+max05(_):- put_console(c#"*") | max06.
+
+max06:- true | max06(-12.34,12.34).
+max06(X,Y):- Z$:=max(X,Y) | max06(Z).
+otherwise.
+max06(_,_):- put_console(c#"*") | max07.
+max06(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"g") | max07.
+otherwise.
+max06(_):- put_console(c#"*") | max07.
+
+max07:- true | max07(-12.34,0.0).
+max07(X,Y):- Z$:=max(X,Y) | max07(Z).
+otherwise.
+max07(_,_):- put_console(c#"*") | max08.
+max07(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"h") | max08.
+otherwise.
+max07(_):- put_console(c#"*") | max08.
+
+max08:- true | max08(-12.34,-12.34).
+max08(X,Y):- Z$:=max(X,Y) | max08(Z).
+otherwise.
+max08(_,_):- put_console(c#"*") | max09.
+max08(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"i") | max09.
+otherwise.
+max08(_):- put_console(c#"*") | max09.
+
+max09:- put_console(key#lf) | pow.
+
+pow:- put_console(ascii#"% G_Float_Pow %%%%%%%%%%% ") | pow00.
+
+pow00:- true | pow00(12.34,0.0).
+pow00(X,Y):- Z$:= X** Y | pow00(Z).
+otherwise.
+pow00(_,_):- put_console(c#"*") | pow01.
+pow00(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"a") | pow01.
+otherwise.
+pow00(_):- put_console(c#"*") | pow01.
+
+pow01:- true | pow01(12.34,2.0).
+pow01(X,Y):- Z$:= X** Y | pow01(Z).
+otherwise.
+pow01(_,_):- put_console(c#"*") | pow02.
+pow01(Z):- 152.276-1.0e-3$<Z, Z$< 152.276+1.0e-3, put_console(c#"b") | pow02.
+otherwise.
+pow01(_):- put_console(c#"*") | pow02.
+
+pow02:- true | pow02(12.34,-2.0).
+pow02(X,Y):- Z$:= X** Y | pow02(Z).
+otherwise.
+pow02(_,_):- put_console(c#"*") | pow03.
+pow02(Z):- 0.00656704-1.0e-8$<Z, Z$< 0.00656704+1.0e-8, put_console(c#"c") | pow03.
+otherwise.
+pow02(_):- put_console(c#"*") | pow03.
+
+pow03:- true | pow03(12.34,50.0).
+pow03(X,Y):- Z$:= X** Y, put_console(c#"*") | pow04.
+otherwise.
+pow03(_,_):- put_console(c#"d") | pow04.
+
+pow04:- true | pow04(0.0,0.0).
+pow04(X,Y):- Z$:= X** Y | pow04(Z).
+otherwise.
+pow04(_,_):- put_console(c#"*") | pow05.
+pow04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | pow05.
+otherwise.
+pow04(_):- put_console(c#"*") | pow05.
+
+pow05:- true | pow05(0.0,2.0).
+pow05(X,Y):- Z$:= X** Y | pow05(Z).
+otherwise.
+pow05(_,_):- put_console(c#"*") | pow06.
+pow05(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"f") | pow06.
+otherwise.
+pow05(_):- put_console(c#"*") | pow06.
+
+pow06:- true | pow06(0.0,-2.0).
+pow06(X,Y):- Z$:= X** Y, put_console(c#"*") | pow07.
+otherwise.
+pow06(_,_):- put_console(c#"g") | pow07.
+
+pow07:- true | pow07(-12.34,0.0).
+pow07(X,Y):- Z$:= X** Y | pow07(Z).
+otherwise.
+pow07(_,_):- put_console(c#"*") | pow08.
+pow07(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"h") | pow08.
+otherwise.
+pow07(_):- put_console(c#"*") | pow08.
+
+pow08:- true | pow08(-12.34,2.0).
+pow08(X,Y):- Z$:= X** Y | pow08(Z).
+otherwise.
+pow08(_,_):- put_console(c#"*") | pow09.
+pow08(Z):- 152.276-1.0e-3$<Z, Z$< 152.276+1.0e-3, put_console(c#"i") | pow09.
+otherwise.
+pow08(_):- put_console(c#"*") | pow09.
+
+pow09:- true | pow09(-12.34,-2.0).
+pow09(X,Y):- Z$:= X** Y | pow09(Z).
+otherwise.
+pow09(_,_):- put_console(c#"*") | pow10.
+pow09(Z):- 0.00656704-1.0e-8$<Z, Z$< 0.00656704+1.0e-8, put_console(c#"j") | pow10.
+otherwise.
+pow09(_):- put_console(c#"*") | pow10.
+
+pow10:- put_console(key#lf) | done.
+
+done:- true | true.

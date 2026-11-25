@@ -14,6 +14,32 @@ The source is not copied here. `build.sh` unpacks
 `port.diff`, adds `port_low.c`, compiles, and reassembles the KL1
 libraries from their `.asm` files.
 
+## The source in tree: `src/`
+
+`src/` is the PDSS V2.52.20 distribution, `docs/nonlocal/pdss.tar.Z`
+(SHA-256 `3da79c34abf3bcd5f30d0b178b869ee25b4cc544de82713552721da94888c13c`),
+imported unedited with the tarball's own layout: `emulator/` (the C
+program), `runtime/`, `mpimos/`, `compiler/`, `debug_utl/`,
+`pimos_utl/` (KL1 sources and their `.asm`), `compiler_pl/` (the
+Prolog-hosted bootstrap compiler), `test/`, `sample/`, `macro/`,
+`emacs/`, `doc.e/`, `doc.j/`, and the top-level `README`, `INSTALL`,
+`CONTENTS`, `COPYRIGHT` and `LOG.*` files. Of the archive's 412 files,
+342 are imported. The 70 left out are build products, listed in
+`pristine.excluded`: the 68 `*.sav` save files, which `pdssasm` rebuilds
+from the `*.asm`, and the two `*.dvi` files, which TeX builds from the
+`.tex`. `./pristine.sh DIR` re-extracts the archive and checks it
+against `pristine.sha256`, which holds the sums of the 342 imported
+files.
+
+The import is two commits. "pristine import of the PDSS V2.52.20
+emulator sources" brought in `emulator/` and `COPYRIGHT`, with the
+emulator then at `src/` itself; a pure rename later moved it to
+`src/emulator/`. "the rest of the distribution, pristine" brought in
+everything else. Every later change is an ordinary commit on top, so
+`git log -- src` and `git diff <import> -- src` (or
+`./pristine.sh /tmp/o && diff -ru /tmp/o src`) record every change made
+to ICOT's code.
+
 ## What the port changes
 
 PDSS assumes a 32-bit machine in three ways. The port keeps the source
@@ -122,5 +148,11 @@ runtime is built: roadmap decision 3 in `docs/pimos_roadmap.md`.
 
 ## Licence
 
-PDSS is ICOT Free Software; see `COPYRIGHT` in the archive. The files
-here are a patch and a shim, not a redistribution of the source.
+PDSS is ICOT Free Software. `src/COPYRIGHT` (Japanese: `src/COPYRIGHT.J`)
+is the package's "TERMS AND CONDITIONS FOR USE OF ICOT FREE SOFTWARE".
+Section 2 allows free use, modification, copying and distribution, on
+the condition in section 3 that its NO WARRANTY text goes with any
+distribution. `src/` is such a distribution, and the terms come with it
+unedited. The IFS archive's own statement of the terms is cited in
+`docs/nonlocal/IFS_MANIFEST.md`, "Terms of use". The changes made here
+fall under the same terms.

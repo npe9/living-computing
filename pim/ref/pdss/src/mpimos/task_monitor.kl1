@@ -1,0 +1,678 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_task_monitor.
+:- public create/12, error_monitor/2, error_monitor/3.
+:- with_macro pdss.
+
+%% Create task monitor.
+%% create(MN,PN,AR,Pmin,Pmax,Tag,RQ,RPM,SS,ER,SH,TN).
+%%     MN  : ModuleName
+%%     PN  : PredicateName
+%%     AR  : Arguments
+%%     Pmin: Priority min
+%%     Pmax: Priority max
+%%     Tag : Tag
+%%     RQ  : RequestStream from task manager
+%%     RPM : ReportStream to task manager
+%%     SS  : SystemStream
+%%     ER  : ErrorStream
+%%     SH  : ShellStream
+%%     TN  : TaskName
+
+create(MN,PN,AR,Pmin,Pmax,Tag,RQ,RPM,SS,ER,SH,TN):-
+    true |
+    'Sho-en':create(MN,PN,AR,Pmin,Pmax,Tag,CT,RPT) @ priority(*,4096),
+    merge(SS1,SS), merge(ER1,ER),
+    monitor(RPT,CT,RQ,RPM,SS1,ER1,SH,stop,TF,TN).
+
+
+%% Task Monitor.
+%% monitor(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN).
+%%     RPT : ReportStream from task
+%%     CT  : ControlStream to task
+%%     RQ  : RequestStream from task manager
+%%     RPM : ReportStream to task manager
+%%     SS  : SystemStream
+%%     ER  : ErrorStream
+%%     SH  : ShellStream
+%%     ST  : Status
+%%     TF  : TerminationFlag
+%%     TN  : TaskName
+
+%% Request Stream monitor.
+monitor(RPT,CT,[start|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [start|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,active,TF,TN).
+monitor(RPT,CT,[stop|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [stop|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,stop,TF,TN).
+monitor(RPT,CT,[abort|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [abort|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,abort,TF,TN).
+monitor(RPT,CT,[statistics(Info)|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [statistics(Info)|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,ST,TF,TN).
+monitor(RPT,CT,[remove|_],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [], TF = die, RPM = [], SS = [], ER = [], SH = [].
+monitor(RPT,CT,[more_reduction(R)|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [more_reduction(R)|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,ST,TF,TN).
+monitor(RPT,CT,[priority(Min,Max)|RQ],RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    CT = [priority(Min,Max)|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,ST,TF,TN).
+
+%% Report Stream monitor.
+alternatively.
+monitor([exception(EC,Op,AR,Pos,UC,NC,_)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC \= excp#illegal_merger_input | %% builtin predicate
+    code_table(EC,Message),
+    mpimos_opcode_table:op(Op,Builtin),
+    construct_goal(Builtin,AR,Goal),
+    code_to_procedure(UC,Procedure),
+    ER = [do([nl,
+	      putb(string#"Exception   : "),putb(Message),
+              putb(string#" (Arg "),putt(Pos),putl(string#")"),
+              putb(string#"Goal        : "),putt(Goal),nl,
+	      putb(string#"Occurred in : "),putt(Procedure),nl,
+	      flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+monitor([exception(EC,Op,AR,UC,NC,_)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC \= excp#unification_failure | %% builtin predicate
+    code_table(EC,Message),
+    mpimos_opcode_table:op(Op,Builtin),
+    construct_goal(Builtin,AR,Goal),
+    code_to_procedure(UC,Procedure),
+    ER = [do([nl,
+	      putb(string#"Exception   : "),putb(Message),nl,
+              putb(string#"Goal        : "),putt(Goal),nl,
+	      putb(string#"Occurred in : "),putt(Procedure),nl,
+	      flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+monitor([exception(EC,X,_,MC,UC,NC,_)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC = excp#illegal_merger_input |
+    code_table(EC,Message),
+    mpimos_utility:freeze(X,FMD),
+    code_to_procedure(MC,MProcedure),
+    code_to_procedure(UC,UProcedure),
+    ER = [do([nl,
+	      putb(string#"Exception    : "),putb(Message),nl,
+	      putb(string#"merge/2 in   : "),putt(MProcedure),nl,
+              putb(string#"Illegal Data : "),putt(FMD),nl,
+	      putb(string#"Unified in   : "),putt(UProcedure),nl,
+	      flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+monitor([exception(EC,X,Y,UC,NC,_)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC = excp#unification_failure |
+    code_table(EC,Message),
+    mpimos_utility:freeze(X,FX),
+    mpimos_utility:freeze(Y,FY),
+    code_to_procedure(UC,Procedure),
+    ER = [do([nl,
+	      putb(string#"Exception   : "),putb(Message),nl,
+              putb(string#"Goal        : "),putt(FX),putb(string#" = "),
+		putt(FY),nl,
+	      putb(string#"Occurred in : "),putt(Procedure),nl,
+	      flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+monitor([exception(EC,Code,AR,NC,NAR)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC = excp#module_not_found |
+    CT = [stop|CT1],
+    SH = [getenv(auto_load,AL)|SH1],
+    wait_auto_load_env(RPT,CT1,RQ,RPM,SS,ER,SH1,ST,TF,TN,AL,Code,AR,NC,NAR).
+monitor([exception(EC,Code,AR,NC,_)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    EC \= excp#module_not_found |
+    code_table(EC,Message),
+    code_to_goal(Code,AR,Goal),
+    ER = [do([nl,
+	      putb(string#"Exception : "),putb(Message),nl,
+              putb(string#"Goal      : "),putt(Goal),nl,flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+monitor([reduction_limit|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    RPM = [reduction_limit(RQ1)|RPM1],
+    merge({RQ1,RQ},RQ2),
+    monitor(RPT,CT,RQ2,RPM1,SS,ER,SH,ST,TF,TN).
+monitor([deadlock(0,_,LockedGoals)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    deadlock_table(0,Message),
+    put_procedures_list(LockedGoals,PL),
+    ER = [do([nl,
+	      putb(Message),nl,
+              putb(string#"Goals : "),do(PL),nl,
+	      flush(WSt)])|ER1],
+    CT = [stop|CT1],
+    wait_flush(RPM,[deadlock|RPM1],WSt),
+    wait_request(RQ,RQ1,RSt),
+    wait_flush(RPT,CT1,RQ1,RPM1,SS,ER1,SH,ST,TF,TN,RSt).
+monitor([deadlock(Type,PG,LockedGoals)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    Type > 0 |
+    deadlock_table(Type,Message),
+    occured_table(Type,Occured),
+    code_to_procedure(PG,Procedure),
+    put_procedures_list(LockedGoals,PL),
+    ER = [do([nl,
+	      putb(Message),nl,
+              putb(string#"Goals : "),do(PL),nl,
+	      putb(Occured),putb(string#" in : "),putt(Procedure),nl,
+	      flush(WSt)])|ER1],
+    CT = [stop|CT1],
+    wait_flush(RPM,[deadlock|RPM1],WSt),
+    wait_request(RQ,RQ1,RSt),
+    wait_flush(RPT,CT1,RQ1,RPM1,SS,ER1,SH,ST,TF,TN,RSt).
+monitor([raised(Type,Info,NC,NAR)|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,Type,Info,NC,NAR).
+monitor([aborted|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    RPM = [aborted|RPM1],
+    monitor(RPT,CT,RQ,RPM1,SS,ER,SH,ST,TF,TN).
+monitor([succeeded|RPT],CT,RQ,RPM,SS,ER,SH,ST,TF,TN):-
+    true |
+    RPM = [succeeded|RPM1],
+    monitor(RPT,CT,RQ,RPM1,SS,ER,SH,ST,TF,TN).
+
+
+%% Change Codes.
+%% code_table(CO,M).
+%%     CO  : Code
+%%     M   : Message
+
+code_table(excp#illegal_input,       M):-true|M=string#"Illegal Input".
+code_table(excp#range_overflow,      M):-true|M=string#"Range Overflow".
+code_table(excp#integer_overflow,    M):-true|M=string#"Integer Overflow".
+code_table(excp#floating_point_error,M):-true|M=string#"Floating Point Error".
+code_table(excp#illegal_merger_input,M):-true|M=string#"Illegal Merger Input".
+code_table(excp#reduction_failure,   M):-true|M=string#"Reduction Failed".
+code_table(excp#unification_failure, M):-true|M=string#"Unification Failed".
+code_table(excp#incorrect_priority,  M):-true|M=string#"Incorrect Priority".
+code_table(excp#module_not_found,    M):-true|M=string#"Module Not Found".
+code_table(excp#predicate_not_found, M):-true|M=string#"Predicate Not Found".
+otherwise.
+code_table(_,M):-true|M=string#"??? undefined exception code ???".
+
+
+%% Change deadlock type.
+%% deadlock_table(T,MS).
+%%     T   : Type
+%%     MS  : Message
+
+deadlock_table( 0,MS):- true |
+	MS = string#"Deadlock detected (by global GC).".
+deadlock_table(10,MS):- true |
+	MS = string#"Deadlock detected ('void' suspended).".
+deadlock_table(11,MS):- true |
+	MS = string#"Deadlock detected ('waiting' suspended).".
+deadlock_table(12,MS):- true |
+	MS = string#"Deadlock detected ('merger-input' suspended).".
+deadlock_table(20,MS):- true |
+	MS = string#"Deadlock detected ('waiting' = 'void').".
+deadlock_table(21,MS):- true |
+	MS = string#"Deadlock will occur ('merger-input' = 'void').".
+deadlock_table(22,MS):- true |
+	MS = string#"Deadlock detected ('waiting' = 'waiting').".
+deadlock_table(23,MS):- true |
+	MS = string#"Deadlock detected ('waiting' = 'merger-input').".
+deadlock_table(24,MS):- true |
+	MS = string#"Deadlock will occur ('merger-input' = 'merger-input').".
+deadlock_table(30,MS):- true |
+	MS = string#"Deadlock detected ('waiting' was collected).".
+deadlock_table(31,MS):- true |
+	MS = string#"Deadlock will occur ('merger-input' was collected).".
+otherwise.
+deadlock_table( _,MS):- true | MS = string#"??? undefined deadlock type ???".
+
+occured_table(10,MS):- true | MS = string#"Suspended".
+occured_table(11,MS):- true | MS = string#"Suspended".
+occured_table(12,MS):- true | MS = string#"Suspended".
+occured_table(20,MS):- true | MS = string#"Unified".
+occured_table(21,MS):- true | MS = string#"Unified".
+occured_table(22,MS):- true | MS = string#"Unified".
+occured_table(23,MS):- true | MS = string#"Unified".
+occured_table(24,MS):- true | MS = string#"Unified".
+occured_table(30,MS):- true | MS = string#"Collected".
+occured_table(31,MS):- true | MS = string#"Collected.".
+
+%%%% Construct GOAL from functor and arguments
+construct_goal(PName,Args,Goal) :- atom(PName), vector(Args,0) |
+    Goal = PName.
+construct_goal(PName,Args,Goal) :- atom(PName), vector(Args,Size), Size > 0 |
+    S := Size + 1,
+    mpimos_utility:freeze(Args,FArgs),
+    new_vector(Term, S),
+    set_vector_element(Term, 0, _, PName, NT),
+    copy_args(0, Size, FArgs, NT, Goal).
+
+copy_args(K, N, As, T, G) :- K<N |
+    K1 := K+1,
+    set_vector_element(As, K, Ek, [], NAs),
+    set_vector_element(T, K1, _, Ek, NT),
+    copy_args(K1, N, NAs, NT, G).
+copy_args(N, N, _, Args, G) :- true | G=Args.
+
+%%%% Code to procedure
+code_to_procedure({Module,Predicate,Arity},Procedure):-
+    true |
+    Procedure = (Module:Predicate/Arity).
+code_to_procedure(merge({Module,Predicate,Arity}),Procedure):-
+    true |
+    atom_name(Module,MStr), append_string(string#"in ",MStr,InModuleStr),
+    intern_atom(InModule,InModuleStr),
+    Procedure = 'merge/2'(InModule:Predicate/Arity).
+
+%%%% Code to GOAL
+code_to_goal({Module,Pred,_},Argv,Goal) :- true |
+	construct_goal(Pred,Argv,G),
+	Goal = (Module:G).
+
+put_procedures_list([PG|PL],L):-
+    true|
+	code_to_procedure(PG,P),
+	L = [putt(P)|LL],
+	put_procedures_list(PL,LL,4).
+
+put_procedures_list([PG|PL],L,N):-
+    N > 0 |
+	code_to_procedure(PG,P),
+	L = [putb(string#", "),putt(P)|LL],
+	NN := N - 1,
+	put_procedures_list(PL,LL,NN).
+put_procedures_list([],L,_):-
+    true|
+	L = [].
+put_procedures_list(PL,L,0):-
+    PL\=[]|
+	L = [putb(string#", ...")].
+
+%% Wait auto_load environment.
+%% wait_auto_load_env(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,AL,Goal,NewGoal).
+%%     RPT     : ReportStream from task
+%%     CT      : ControlStream to task
+%%     RQ      : RequestStream from task manager
+%%     RPM     : ReportStream to task manager
+%%     SS      : SystemStream
+%%     ER      : ErrorStream
+%%     SH      : ShellStream
+%%     ST      : Status
+%%     TF      : TerminationFlag
+%%     TN      : TaskName
+%%     AL      : Auto_load value
+%%     Code    : Code of goal
+%%     AR      : Arguments of goal
+%%     NC      : Code of new goal
+%%     NAR     : Arguments of new goal
+
+wait_auto_load_env(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,yes,Code,AR,NC,NAR):-
+    Code = {MN,PN,A} |
+	SS = [code_manager:get_all_modules(Modules)|SS1],
+	member(Modules,MN,MS),
+	wait_loaded_status(RPT,CT,RQ,RPM,SS1,ER,SH,ST,TF,TN,MS,Code,AR,NC,NAR).
+wait_auto_load_env(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,no,Code,AR,NC,_):-
+    true |
+    code_table(excp#module_not_found,Message),
+    code_to_goal(Code,AR,Goal),
+    ER = [do([nl,
+	      putb(string#"Exception : "),putb(Message),nl,
+              putb(string#"Goal      : "),putt(Goal),nl,flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+otherwise.
+wait_auto_load_env(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,AL,_,_,NC,_):-
+    true |
+    ER = [do([nl,
+	      putb(string#"Illegal environment variable ::: "),
+	      putb(string#"auto_load = "),putt(AL),nl,flush(WSt)])|ER1],
+    NC = [],
+    CT = [abort|CT1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+
+wait_loaded_status(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,no,{MN,PN,A},AR,NC,NAR):-
+    true |
+    ER = [do([putt(MN),putb(string#" : Auto loading ... "),flush(WSt)])|ER1],
+    NC = {MN,PN,A}, NAR = AR,
+    SH = [getenv(loaddir,LDirS)|SH1],
+    wait_flush(CT,CT1,WSt),
+    auto_load(RPT,CT1,RQ,RPM,SS,ER1,SH1,ST,TF,TN,MN,LDirS).
+wait_loaded_status(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,yes,Code,AR,NC,NAR):-
+    true |
+    NC = Code, NAR = AR,
+    CT = [start|CT1],
+    monitor(RPT,CT1,RQ,RPM,SS,ER,SH,ST,TF,TN).
+
+auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,MN,[Dir|LD]):-
+    string(Dir,_,_)|
+    mpimos_cmd_utl:os_check_loaddir(Dir,LDir,_,SH,SH1),
+    SS = [code_manager:auto_load_module(LDir,MN,CSt)|SS1],
+    wait_auto_load(RPT,CT,RQ,RPM,SS1,ER,SH1,ST,TF,TN,MN,LD,CSt).
+auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,_,[]):-
+    true|
+    ER = [do([putl(string#"Error <this module is not saved>"),flush(WSt)])|ER1],
+    wait_flush(CT,[abort|CT1],WSt),
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,abort,TF,TN).
+otherwise.
+auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,MN,LD):-
+    true|
+    ER = [do([nl,
+	      putb(string#"Illegal environment variable ::: "),
+	      putb(string#"loaddir = "),putt(LD),nl,flush(WSt)])|ER1],
+    wait_flush(CT,[abort|CT1],WSt),
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,abort,TF,TN).
+
+wait_auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,_,_,success):-
+    true |
+    ER = [do([putl(string#"done"),flush(WSt)])|ER1],
+    wait_flush(CT,[start|CT1],WSt),
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,active,TF,TN).
+wait_auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,MN,LD,this_module_not_saved):-
+    true |
+    auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,MN,LD).
+wait_auto_load(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,_,_,memory_limit):-
+    true |
+    ER = [do([putl(string#"Error <memory limit>"),flush(WSt)])|ER1],
+    wait_flush(CT,[abort|CT1],WSt),
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT1,RQ,RPM1,SS,ER1,SH,abort,TF,TN).
+
+member([X|L],X,S) :- true | S = yes.
+member([Y|L],X,S) :- X\=Y | member(L,X,S).
+member([],_,S) :- true | S = no.
+
+%% Request from OS.
+%% request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,Type,Info,NC,NAR).
+%%     RPT     : ReportStream from task
+%%     CT      : ControlStream to task
+%%     RQ      : RequestStream from task manager
+%%     RPM     : ReportStream to task manager
+%%     SS      : SystemStream
+%%     ER      : ErrorStream
+%%     SH      : ShellStream
+%%     ST      : Status
+%%     TF      : TerminationFlag
+%%     TN      : TaskName
+%%     Type    : Type of raise
+%%     Info    : Information of raise
+%%     NC      : Code of new goal
+%%     NAR     : Arguments of new goal
+
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,window,Info,NC,NAR):-
+    true |
+    NC = {mpimos_window,request,7}, NAR = {Info,WS,TF,TC,VI,VO,SysStr},
+    valve(SysStr,SS1,TF),
+    valve(VI,VO,TF),
+    interrupt_handler(TC,RQ1,WS,TF) @ priority(*,4088),
+    SS = {SS1,SS2},
+    merge({RQ,RQ1},RQ2),
+    monitor(RPT,CT,RQ2,RPM,SS2,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,file,Info,NC,NAR):-
+    true |
+    SH = [getenv(world,DN)|SH1],
+    NC = {mpimos_file,request,4}, NAR = {Info,DN,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH1,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,directory,Info,NC,NAR):-
+    true |
+    SH = [getenv(world,DN)|SH1],
+    NC = {mpimos_directory,request,4}, NAR = {Info,DN,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH1,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,device_window,Info,NC,NAR):-
+    true |
+    NC = {mpimos_window_device,window_request,3}, NAR = {Info,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,device_file,Info,NC,NAR):-
+    true |
+    SH = [getenv(world,DN)|SH1],
+    NC = {mpimos_file_device,file_request,4}, NAR = {Info,DN,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH1,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,device_timer,Info,NC,NAR):-
+    true |
+    NC = {mpimos_timer_device,timer_request,3}, NAR = {Info,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,code_manager,Info,NC,NAR):-
+    true |
+    NC = {mpimos_code_manager,request,3}, NAR = {Info,TF,SysStr},
+    valve(SysStr,SS1,TF),
+    SS = {SS1,SS2},
+    monitor(RPT,CT,RQ,RPM,SS2,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,shell(X),Info,NC,NAR):-
+    atom(X) |
+    RPM = [raised(shell(X),Info,NC,NAR)|RPM1],
+    monitor(RPT,CT,RQ,RPM1,SS,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,warning,Info,NC,NAR):-
+    true |
+    NC = {mpimos_task_monitor,error_monitor,2}, NAR = {Info,ErrStr},
+    valve(ErrStr,ER1,TF),
+    ER = {ER1,ER2},
+    monitor(RPT,CT,RQ,RPM,SS,ER2,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,error,Info,NC,NAR):-
+    true |
+    NC = {mpimos_task_monitor,error_monitor,3}, NAR = {Info,ErrStr,TF},
+    valve(ErrStr,ER1,RQ1,TF),
+    ER = {ER1,ER2},
+    merge({RQ,RQ1},RQ2),
+    monitor(RPT,CT,RQ2,RPM,SS,ER2,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,after_care,Info,NC,_):-
+    true |
+    NC = [],
+    RPM = [after_care(Info)|RPM1],
+    monitor(RPT,CT,RQ,RPM1,SS,ER,SH,ST,TF,TN).
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,'$PIMOS$'(ErrID,ErrInfo),Info,NC,NAR):-
+    true |
+    NC = {pimos_utility_error,error,3}, NAR = {ErrID,ErrInfo,Info},
+    monitor(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN).
+otherwise.
+request(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,Type,_,NC,_):-
+    true |
+    NC = [],
+    ER = [do([nl,putb(string#"Undefined raise type : "),putt(Type),nl,
+          flush(WSt)])|ER1],
+    wait_flush(RPM,RPM1,WSt),
+    monitor(RPT,CT,RQ,RPM1,SS,ER1,SH,ST,TF,TN).
+
+%% Valve.
+%% valve(In,Out,TF).
+%%     In  : InputStream with valve
+%%     Out : OutputStream
+%%     TF  : TerminationFlag
+
+valve(In,  Out, die):- true | Out = [].
+valve([],  Out,  TF):- true | Out = [].
+valve([X|In],Out,TF):- true | Out = [X|Out1], valve(In,Out1,TF).
+
+%% Valve(error).
+%% valve(ErrStr,ER,RQ,TF).
+%%     ErrStr : ErrorStream with valve
+%%     ER     : ErrorStream
+%%     RQ     : RequestStream
+%%     TF     : TerminationFlag
+
+valve(ErrStr,    ER,RQ,die):- true | ER = [], RQ = [].
+valve([],        ER,RQ, TF):- true | ER = [], RQ = [abort].
+valve([X|ErrStr],ER,RQ, TF):- true | ER = [X|ER1], valve(ErrStr,ER1,RQ,TF).
+
+%% Interrupt_handler.
+%% interrupt_handler(TC,RQ,WS,TF).
+%%     TC : TaskControl
+%%     RQ : RequestStream
+%%     WS : WindowStream
+%%     TF : TerminationFlag
+
+interrupt_handler(_,RQ,WS,die):-
+    true |
+    RQ=[], WS=[].
+interrupt_handler([],RQ,WS,TF):-
+    true |
+    RQ=[], WS=[].
+interrupt_handler([1|TC],RQ,WS,TF):-
+    true |
+    RQ=[abort], WS=[].
+interrupt_handler([2|TC],RQ,WS,TF):-
+    true |
+    RQ=[statistics(Info)|RQ1],
+    vector_element(Info,0,Reduction,_),
+    mpimos_utility:integer_to_string(Reduction,R),
+    new_string(NL0,1,8),
+    set_string_element(NL0,0,10,NL),
+    WS=[do([putb(string#"Current: {",_),putb(R,_),
+	    putb(string#"} reductions so far.",_),putb(NL,_)])|WS1],
+    interrupt_handler(TC,RQ1,WS1,TF).
+
+%% Error monitor.
+%% error_monitor(Info,ER).
+%%     Info : Information of raise(error or warning)
+%%     ER   : ErrorStream
+
+error_monitor(Info,ER):-
+    true |
+    error_monitor(Info,NInfo,done,S),
+    wait_done(S,ER,NInfo).
+
+%% Error monitor.
+%% error_monitor(Info,ER,TF).
+%%     Info : Information of raise(error or warning)
+%%     ER   : ErrorStream
+%%     TF   : TerminationFlag (for dummy)
+
+error_monitor(Info,ER,TF):-
+    true |
+    error_monitor(Info,NInfo,done,S),
+    wait_done(S,ER,NInfo),
+    dummy(TF).
+
+dummy(TF) :- wait(TF) | true.
+
+%% Error monitor.
+%% error_monitor(Info,NInfo,S1,S2).
+%%     Info  : Information
+%%     NInfo : NewInformation
+%%     S1    : Status(done)
+%%     S2    : Status
+
+error_monitor([H|T],NInfo,S1,S2):-
+    true |
+    NInfo = [NInfoH|NInfoT],
+    error_monitor(H,NInfoH,S1,S3),
+    error_monitor(T,NInfoT,S3,S2).
+error_monitor(Info,NInfo,S1,S2):-
+    atom(Info) |
+    NInfo = Info, S1 = S2.
+error_monitor(Info,NInfo,S1,S2):-
+    integer(Info) |
+    NInfo = Info, S1 = S2.
+error_monitor(Info,NInfo,S1,S2):-
+    floating_point(Info) |
+    NInfo = Info, S1 = S2.
+error_monitor(Info,NInfo,S1,S2):-
+    string(Info) |
+    NInfo = Info, S1 = S2.
+error_monitor(flush(F),NInfo,S1,S2):-
+    true |
+	NInfo = flush(F0),
+	S1 = S2,
+	wait_flush_status(F0,F).
+error_monitor(Info, NInfo,S1,S2):-
+    vector(Info,S) |
+    new_vector(T,S),
+    unify_vector(0,S,Info,T,NInfo,S1,S2).
+
+%% Wait status(done).
+%% wait_flush_status(S,F)
+%%     S    : StatusFromOS
+%%     F    : StatusToUser
+wait_flush_status(done,F):-
+    true |
+	F = done.
+
+%% Wait status(done).
+%% wait_done(S,ER,Info)
+%%     S    : Status
+%%     ER   : ErrorStream
+%%     Info : Information(new)
+
+wait_done(S,ER,Info):-
+    wait(S) |
+    ER = [nl,do(Info),flush(WSt)].
+
+%% Unify vector information.
+%% unify_vector(P,S,Info,T,NInfo,S1,S2).
+%%     P     : Position
+%%     S     : Size of vector
+%%     Info  : Information
+%%     T     : Vector
+%%     NInfo : NewInformation
+%%     S1    : Status
+%%     S2    : Status
+
+unify_vector(P,S,Info,T,NInfo,S1,S2):-
+    P < S |
+    vector_element(Info,P,E,Info1),
+    set_vector_element(T,P,_,E1,T1),
+    error_monitor(E,E1,S1,S3),
+    P1 := P + 1,
+    unify_vector(P1,S,Info1,T1,NInfo,S3,S2).
+unify_vector(S,S,Info,T,NInfo,S1,S2):-
+    true |
+    NInfo = T, S1 = S2.
+
+
+%% Wait status from window
+%% wait_flush(S1,S2,WSt).
+%%     S1  : Stream
+%%     S2  : Stream tail
+%%     WSt : Status of window(done)
+
+wait_flush(S1,S2,done):-
+    true |
+    S1 = S2.
+
+wait_flush(RPT,CT,[Cmd|RQ],RPM,SS,ER,SH,ST,TF,TN,_):-
+    true |
+    monitor(RPT,CT,[Cmd|RQ],RPM,SS,ER,SH,ST,TF,TN).
+alternatively.
+wait_flush(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN,S):-
+    wait(S) |
+    monitor(RPT,CT,RQ,RPM,SS,ER,SH,ST,TF,TN).
+
+wait_request(S1,S2,F):-
+    wait(S1) |
+    S1 = S2, F = done.

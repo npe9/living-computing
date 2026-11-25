@@ -1,0 +1,426 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_module_pool.
+:- public create/2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Create module pool
+%% create(MP,N).
+%%	MP  :: Message Stream to This Process
+%%	N   :: Pool Size
+
+create(MP,N):-
+    true|
+	make_pool(POOL,N),
+	module_pool_start(MP,POOL,N).
+
+module_pool_start(MP,POOL,N):-
+    vector(POOL,_)|
+	module_pool(MP,POOL,N).
+
+
+make_pool(NewPOOL,N):-
+    true|
+	new_vector(POOL,N),
+	set_dummy(POOL,N,NewPOOL).
+
+%% Set Dummy Process
+%% set_dummy(HT,N).
+%%	HT  :: Hash Table
+%%	N   :: Hash Table Size
+
+set_dummy(POOL,N,NewPOOL):-
+    N =< 0|
+	POOL = NewPOOL.
+set_dummy(POOL,N,NewPOOL):-
+    N > 0|
+	NN := N - 1,
+	create_dummy(DUMMY),
+	set_vector_element(POOL,NN,_,DUMMY,NPOOL),
+	set_dummy(NPOOL,NN,NewPOOL).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Module Pool Process
+%% module_pool(MP,HashTable,N)
+%%	MP  :: Message Stream to This Process
+%%      HT  :: Hash Table
+%% 	N   :: Pool Size
+
+module_pool([],_,_):- true|true.
+module_pool([un_saved_modules(SaD,Modules)|NMP],HT,N):-
+    true|
+	all_un_saved_modules(SaD,Modules,HT,N,NHT),
+	module_pool(NMP,NHT,N).
+module_pool([modules(Modules)|NMP],HT,N):-
+    true|
+	all_modules(Modules,HT,N,NHT),
+	module_pool(NMP,NHT,N).
+module_pool([save_all(Code,NCode,SaD,S)|NMP],HT,N):-
+    true|
+	save_all(HT,N,NHT,Code,NCode,SaD,S),
+	module_pool(NMP,NHT,N).
+otherwise.
+module_pool([Comm|NMP],HT,N):-
+    true|
+	get_module_name(Comm,ModName),
+	hash(ModName,Value,_), Key := Value mod N,
+	set_vector_element(HT,Key,RQ,NRQ,NHT),
+	RQ = [Comm|NRQ],
+	module_pool(NMP,NHT,N).
+
+%% Save All UN_Saved Modules
+%% save_all(HT,N,NHT,Code,NCode,SaD,S)
+%%	HT   :: Hash Table
+%%	N    :: Hash Table Size
+%%	NHT  :: New Hash Table
+%%	Code :: Code Device Stream
+%%	NCode:: New Code Device Stream
+%%      SaD  :: directry psss (atom) for save files
+%%	ASL  :: save success module list
+
+save_all(HT,N,NNHT,Code,NNCode,SaD,ASL):-
+    N > 0|
+	NN := N - 1,
+	set_vector_element(HT,NN,RQ,NRQ,NHT),
+	RQ = [save_un_saved(Code,NCode,SaD,SL)|NRQ],
+	append(SL,NSL,ASL),
+	save_all(NHT,NN,NNHT,NCode,NNCode,SaD,NSL).
+save_all(HT,N,NHT,Code,NCode,_,S):-
+    N =< 0|
+	S = [],
+	NCode = Code,
+	NHT = HT.
+%% Get All UN_Saved Modules
+%% all_un_saved_modules(SaD,MS,HT,N,NHT)
+%%      SaD :: Saved directory pass
+%%	MS  :: UN_Saved Module Name LIST
+%%	HT  :: Hash Table
+%%	N   :: Hash Table Size
+%%	NHT :: New Hash Table
+%%
+
+all_un_saved_modules(SaD,Modules,HT,N,NNHT):-
+    N > 0|
+	NN := N - 1,
+	set_vector_element(HT,NN,RQ,NRQ,NHT),
+	RQ = [un_saved_modules(SaD,Mods)|NRQ],
+	append(Mods,NModules,Modules),
+	all_un_saved_modules(SaD,NModules,NHT,NN,NNHT).
+all_un_saved_modules(_,Modules,HT,N,NHT):-
+    N =< 0|
+	Modules = [],
+	HT = NHT.
+
+%% Get All Modules
+%% all_modules(MS,HT,N,NHT)
+%%	MS  :: Module Name LIST
+%%	HT  :: Hash Table
+%%	N   :: Hash Table Size
+%%	NHT :: New Hash Table
+%%
+
+all_modules(Modules,HT,N,NNHT):-
+    N > 0|
+	NN := N - 1,
+	set_vector_element(HT,NN,RQ,NRQ,NHT),
+	RQ = [get_modules(Mods)|NRQ],
+	append(Mods,NModules,Modules),
+	all_modules(NModules,NHT,NN,NNHT).
+all_modules(Modules,HT,N,NHT):-
+    N =< 0|
+	Modules = [],
+	HT = NHT.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Create module infomation process
+%% create_module(IN,OUT,MN,IF).
+%%	IN  :: Message Stream to this process
+%%	OUT :: Message Stream from this process to next module process
+%%	MN  :: Module Name (atom)
+%%	IF  :: Module Infomation
+
+create_module(IN,OUT,ModName,Info):-
+    true|
+	information_analyzer(Info,_,Public),
+	module(IN,OUT,ModName,Public).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Module information process
+%% module(IN,OUT,MN,USF,SD).
+%%	IN  :: Message Stream to this process
+%%	OUT :: Message Stream from this process to next module process
+%%	MN  :: Module Name (atom)
+%%	USF :: Un Saved Module Flag
+%%	SD  :: List of save_dir name
+
+
+module([member(Name,S)|NIN],OUT,Name,SAVEdir):-
+    true|
+	S = yes,
+	module(NIN,OUT,Name,SAVEdir).
+module([up_date(Name,Info)|NIN],OUT,Name,_):-
+    true|
+	information_analyzer(Info,_,SAVEdir),
+	module(NIN,OUT,Name,SAVEdir).
+module([delete(Name)|NIN],OUT,Name,_):-
+    true|
+	NIN = OUT.
+module([save_un_saved(Code,NNCode,SaD,SL)|NIN],OUT,Name,SAVEdir):-
+    true|
+	member(SAVEdir,SaD,MF),
+	wait_member(MF,save_un_saved(Code,NNCode,SaD,SL),
+		    NIN,OUT,Name,SAVEdir).
+module([save(Name,S,Code,NCode,SaD)|NIN],OUT,Name,SAVEdir):-
+    true|
+	member(SAVEdir,SaD,MF),
+	wait_member(MF,save(S,Code,NCode,SaD),
+		    NIN,OUT,Name,SAVEdir).
+module([load(Name,S,Code,NCode,_)|NIN],OUT,Name,SAVEdir):-
+    true|
+	S = success,
+	NCode = Code,
+	module(NIN,OUT,Name,SAVEdir).
+module([save_dirs(Name,SAVEdir0)|NIN],OUT,Name,SAVEdir):-
+    true|
+	SAVEdir0 = SAVEdir,
+	module(NIN,OUT,Name,SAVEdir).
+module([get_modules(Mods)|NIN],OUT,Name,SAVEdir):-
+    true|
+	Mods = [Name|NMods],
+	OUT = [get_modules(NMods)|NOUT],
+	module(NIN,NOUT,Name,SAVEdir).
+module([un_saved_modules(SaD,Mod)|NIN],OUT,Name,SAVEdir):-
+    true|
+	member(SAVEdir,SaD,MF),
+	wait_member(MF,un_saved_modules(SaD,Mod),NIN,OUT,Name,SAVEdir).
+otherwise.
+module([Comm|NIN],OUT,Name,SAVEdir):-
+    true|
+	OUT = [Comm|NOUT],
+	module(NIN,NOUT,Name,SAVEdir).
+
+
+%% Module information process wait member status
+%% wait_member(MS,Com,IN,OUT,Name,SD)
+%%      MS     :: Member status
+%%      Com    :: Command term
+%%	IN     :: Message Stream to this process
+%%	OUT    :: Message Stream from this process to next module process
+%%	Mame   :: Module Name (atom)
+%%      SD     :: Saved pass list
+
+wait_member(fail,save_un_saved(Code,NNCode,SaD,SL),
+            IN,OUT,Name,SAVEdir):-
+     true|
+	atom_name(Name,SName),
+	mpimos_utility:string_append([SaD,string#"/",SName,string#".sav"],File),
+	Code = [save_module(Name,File,SS)|NCode],
+	module_wait_save_un_saved(IN,OUT,Name,SAVEdir,NCode,NNCode,SS,SL,SaD).
+wait_member(success,save_un_saved(Code,NNCode,SaD,SL),
+            IN,OUT,Name,SAVEdir):-
+     true|
+	OUT = [save_un_saved(Code,NNCode,SaD,SL)|NOUT],
+	module(IN,NOUT,Name,SAVEdir).
+wait_member(success,save(S,Code,NCode,_),IN,OUT,Name,SAVEdir):-
+     true|
+	S = success,
+	NCode = Code,
+	module(IN,OUT,Name,SAVEdir).
+wait_member(fail,save(S,Code,NCode,SaD),IN,OUT,Name,SAVEdir):-
+    true|
+	atom_name(Name,SName),
+	mpimos_utility:string_append([SaD,string#"/",SName,string#".sav"],File),
+	Code = [save_module(Name,File,SS)|NCode],
+	module_wait_save(IN,OUT,Name,SAVEdir,S,SS,SaD).
+wait_member(fail,un_saved_modules(SaD,Mod),IN,OUT,Name,SAVEdir):-
+     true|
+	Mod = [Name|NMod],
+	OUT = [un_saved_modules(SaD,NMod)|NOUT],
+	module(IN,NOUT,Name,SAVEdir).
+wait_member(success,un_saved_modules(SaD,Mod),IN,OUT,Name,SAVEdir):-
+     true|
+	OUT = [un_saved_modules(SaD,Mod)|NOUT],
+	module(IN,NOUT,Name,SAVEdir).
+
+
+
+%% Module information process wait save un_saved module
+%% module_wait_save_un_saved(IN,OUT,MN,PI,Code,NCode,S,SS,SaD).
+%%	IN   :: Message Stream to this process
+%%	OUT  :: Message Stream from this process to next module process
+%%	MN   :: Module Name (atom)
+%%	PI   :: Public Predicate Infomation
+%%	Code :: Code Device Stream
+%%	NCode:: New Code Device Stream
+%%	SL   :: Saved module name list
+%%	SS   :: Stats of save_module
+%%	SaD  :: Save directory pass
+
+module_wait_save_un_saved(IN,OUT,Name,SAVEdir,Code,NCode,success,SL,SaD):-
+    true|
+	SL = [Name|NSL],
+	OUT = [save_un_saved(Code,NCode,SaD,NSL)|NOUT],
+	module(IN,NOUT,Name,[SaD|SAVEdir]).
+module_wait_save_un_saved(IN,OUT,Name,SAVEdir,Code,NCode,SS,SL,SaD):-
+    SS \= success|
+	OUT = [save_un_saved(Code,NCode,SaD,SL)|NOUT],
+	module(IN,NOUT,Name,SAVEdir).
+
+
+%% Module information process wait save
+%% module_wait_save(IN,OUT,MN,PI,S,SS,SaD).
+%%	IN  :: Message Stream to this process
+%%	OUT :: Message Stream from this process to next module process
+%%	MN  :: Module Name (atom)
+%%	PI  :: Public Predicate Infomation
+%%	S   :: Stats
+%%	SS  :: Stats of save_module
+%%	SaD :: Save directory pass
+
+module_wait_save(IN,OUT,Name,SAVEdir,S,success,SaD):-
+    true|
+	S = success,
+	module(IN,OUT,Name,[SaD|SAVEdir]).
+module_wait_save(IN,OUT,Name,SAVEdir,S,SS,_):-
+    SS \= success|
+	S = SS,
+	module(IN,OUT,Name,SAVEdir).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Create dummy process
+%% create_dummy(DU).
+%%	DU  :: Message Stream to this process
+
+create_dummy(DUMMY):- true| dummy(DUMMY).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Dummy process
+%% dummy(DU).
+%%	DU  :: Message Stream to this process
+
+dummy([up_date(ModName,Info)|RQ]):-
+    true|
+	create_module(RQ,NRQ,ModName,Info),
+	dummy(NRQ).
+dummy([member(_,S)|NDummy]):-
+    true|
+	S = no,
+	dummy(NDummy).
+dummy([save_un_saved(Code,NCode,_,SL)|NDummy]):-
+    true|
+	SL = [],
+	NCode = Code,
+	dummy(NDummy).
+dummy([save(_,S,Code,NCode,_)|NDummy]):-
+    true|
+	S = module_not_found,
+	NCode = Code,
+	dummy(NDummy).
+dummy([load(MoN,S,Code,NNCode,SaD)|NDummy]):-
+    true|
+	atom_name(MoN, SMoN),
+	mpimos_utility:string_append([SaD,string#"/",SMoN,string#".sav"],File),
+	Code = [load_module(_,File,SS)|NCode],
+	dummy_wait_load(NDummy,MoN,NCode,NNCode,S,SS,SaD).
+dummy([saved(_,S)|NDummy]):-
+    true|
+	S = no,
+	dummy(NDummy).
+dummy([un_saved_modules(_,Mod)|NDummy]):-
+    true|
+	Mod = [],
+	dummy(NDummy).
+dummy([get_modules(Mod)|NDummy]):-
+    true|
+	Mod = [],
+	dummy(NDummy).
+otherwise.
+dummy([Comm|NDummy]):-
+    true|
+	dummy(NDummy).
+
+
+%% Dummy process wait load
+%% dummy_wait_load(DU,MoN,S,SS,SaD).
+%%	DU  :: Message Stream to this process
+%%	MoN :: Module Name (atom)
+%%	S   :: Stats
+%%	SS  :: Stats of save_module
+%%	SaD :: Save directory pass
+
+dummy_wait_load(Dummy,MoN,Code,NCode,S,success,SaD):-
+    true|
+	S = success,
+	NCode = Code,
+	create_module(Dummy,NDummy,MoN,[no,[SaD]]),
+	dummy(NDummy).
+otherwise.
+dummy_wait_load(Dummy,_,Code,NCode,S,_,_):-
+    true|
+	S = this_module_not_saved,
+	NCode = Code,
+	dummy(Dummy).
+
+
+%% Get Module Name from Command Term
+%% get_module_name(Comm,MN)
+%%	Comm  :: Command Term
+%%      MN    :: Module Name (atom)
+
+get_module_name(member(Mod,_),ModN):-          true | Mod = ModN.
+get_module_name(save(Mod,_,_,_,_),ModN):-      true | Mod = ModN.
+get_module_name(load(Mod,_,_,_,_),ModN):-      true | Mod = ModN.
+get_module_name(saved(Mod,_),ModN):-           true | Mod = ModN.
+get_module_name(up_date(Mod,_),ModN):-         true | Mod = ModN.
+get_module_name(delete(Mod),ModN):-            true | Mod = ModN.
+get_module_name(save_dirs(Mod,_),ModN):-       true | Mod = ModN.
+
+%% member(ML,E,S)
+%%	ML :: members list
+%%      E  :: element
+%%      S  :: status
+
+member([H|_],H,F):- true | F = success.
+member([H|T],S,F):- H \= S | member(T,S,F).
+member([],_,F):- true | F = fail.
+
+%% delete_member(ML,Se,SL)
+%%	ML :: members list
+%%      Se :: self
+%%      SL :: status list
+
+%delete_member([H|T],H,F):- true | F = T.
+%delete_member([H|T],S,F):- H \= S | F = [H|NF],delete_member(T,S,NF).
+%delete_member([],_,F):- true | F = [].
+
+%% Append
+%% append(L1,L2,L3)
+%%	L1  :: LIST
+%%      L2  :: LIST
+%%      L3  :: Appended LIST
+
+append([H|T],L2,L3):-
+     true|
+	L3 = [H|NL3],
+	append(T,L2,NL3).
+append([],L2,L3):-
+     true|
+	L3 = L2.
+
+
+%% Information Analyzer
+%% information_analyzer(Info,USMF,SAVEdir)
+%%	Info   :: module information
+%%      USMF   :: unsaved module flag
+%%	SAVEdir :: public predicate information
+
+information_analyzer([USMF0,SAVEdir0],USMF,SAVEdir):-
+     true|
+	USMF0 = USMF,
+	SAVEdir0 = SAVEdir.

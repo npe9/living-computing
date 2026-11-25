@@ -1,0 +1,569 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	Pre-processor
+% 	     for
+% 'put_structure_constant' instruction
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_struct.
+:- public struct_processor/5,
+          test/0, calcurate_right_hand/4.
+
+:- local_implicit source:oldnew, code:oldnew.
+
+struct_processor(Str) --> true |
+   {{ struct_header(&code, Module) }},
+   struct_processor(Str, [], Module).
+
+struct_header(Code, CodeL, Module) :-
+   list(CodeL) |
+   Code = [begin_const_section(Module)|CodeL].
+struct_header(Code, [], _) :-
+   true |
+   Code = [].
+
+struct_processor([read_predicate(Clauses, Dir)|Cdr], [], Mod) --> true |
+   &source <<=[read_predicate(Clauses0, Dir0)],
+ {{struct_process(&code, Clauses0, Dir0, Clauses, Dir,[], Mod1)}},
+   struct_processor(Cdr, Mod1, Mod).
+struct_processor([read_predicate(Clauses, Dir)|Cdr], Mod0, Mod) --> Mod0\=[] |
+   &source <<=[read_predicate(Clauses0, Dir0)],
+ {{struct_process(&code, Clauses0, Dir0, Clauses, Dir, _, _),
+   Mod0=Mod}},
+   struct_processor_(Cdr).
+struct_processor([], Mod0, Mod) --> true | {{Mod=Mod0}}.
+struct_processor([], [], Mod) --> true | {{Mod=dummy}}.
+
+struct_processor_([read_predicate(Clauses, Dir)|Cdr]) --> true |
+   &source <<=[read_predicate(Clauses0, Dir0)],
+ {{struct_process(&code, Clauses0, Dir0, Clauses, Dir, _, _)}},
+   struct_processor_(Cdr).
+struct_processor_([]) --> true | true.
+
+:- local_implicit const:oldnew.
+struct_process(Clauses, F/A, NewClauses, Pred, Mod0, Mod) --> true |
+ {{label_generator(LabelOut, F/A),
+   merge(LabelIn, LabelOut),
+   Pred=F/A, Mod0=Mod}},
+   convert_clauses(LabelIn, Clauses, NewClauses).
+struct_process(Dir0, directive, Dir, Pred, Mod0, Mod) --> true |
+ {{find_module_declaration(Dir0, Mod0, Mod),
+   Dir=Dir0, Pred=directive}}.
+otherwise.
+struct_process(Dir0, Pred0, Dir, Pred, Mod0, Mod) --> atom(Pred0) |
+ {{Dir0=Dir, Pred=Pred0, Mod0=Mod}}.
+
+find_module_declaration([(:- module Mod0)|_], _, Mod) :- true |
+ {{Mod0=Mod}}.
+otherwise.
+find_module_declaration([_|Rest], Mod0, Mod) :- true |
+  find_module_declaration(Rest, Mod0, Mod).
+find_module_declaration([], Mod0, Mod) :- true | Mod0=Mod.
+
+%%%%%%%%%%% Label generator %%%%%%%%%%%%%%%
+
+label_generator(Str, F/A) :- true |
+   atom_name(F, Fstr),
+   convert_integer_to_string(A, Astr),
+   append_string(string#"$SCNST", Fstr, Fstr1),
+   append_string(Fstr1, string#"_", Label0),
+   append_string(Label0, Astr, Label1),
+   append_string(Label1, string#"_", Label2),
+   label_generator(Str, Label2, 0).
+
+label_generator([new_label(L)|Cdr], Label0, N) :- true |
+ {{convert_integer_to_string(N, Nstr),
+   append_string(Label0, Nstr, Label),
+   N1 := N+1,
+   L='$SCNST'(Label)}},
+   label_generator(Cdr, Label0, N1).
+label_generator([], _, _) :- true | true.
+
+%%%%%%%%%% Convert Clause %%%%%%%%%%
+:- local_implicit const:oldnew, label:stream.
+
+convert_clauses([Block|Rest], NewCLS) --> true |
+   convert_one_block(Block, NewBlock),
+ {{NewCLS=[NewBlock|NewRest]}},
+   convert_clauses(Rest, NewRest).
+convert_clauses([], NewCLS) --> true |
+   NewCLS=[].
+
+convert_one_block([(H:-'|'(G,B))|Rest], NewBlock) --> true |
+
+   convert_one_term(passive, H, H1),
+   convert_terms(passive, G, G1),
+   convert_terms(active, B, B1),
+% added 881017
+ {{convert_guard_unify(H1, H2, G1, G2, B1, B2)}},
+   NewBlock=[(H2:-'|'(G2,B2))|NewBlockCdr],
+   convert_one_block(Rest, NewBlockCdr).
+convert_one_block([otherwise|Rest], NewBlock) --> true |
+   NewBlock=[otherwise|NewBlockCdr],
+   convert_one_block(Rest, NewBlockCdr).
+convert_one_block([alternatively|Rest], NewBlock) --> true |
+   NewBlock=[alternatively|NewBlockCdr],
+   convert_one_block(Rest, NewBlockCdr).
+convert_one_block([], New) --> true | New=[].
+
+convert_guard_unify(H0, H, G0, G, B0, B) :- true |
+   extract_struct_unify(Lists, [], G0, G1, true),
+   convert_arg_to_list(Lists, H0, H, G1, G, B0, B).
+
+:- local_implicit struct:oldnew.
+extract_struct_unify((X,Y), G0, G) --> true |
+   extract_struct_unify(X, G0, G1),
+   extract_struct_unify(Y, G1, G).
+otherwise.
+extract_struct_unify((X=[Car|Cdr]), G0, G) --> true |
+   &struct <<= [(X=[Car|Cdr])],
+ {{G0=G}}.
+extract_struct_unify(([Car|Cdr]=X), G0, G) --> true |
+   &struct <<= [(X=[Car|Cdr])],
+ {{G0=G}}.
+extract_struct_unify(('$VAR'(N0,S0)='$VAR'(N1,S1)), G0, G) -->
+	integer(N0), string(S0, _, 8),
+	integer(N1), string(S1, _, 8) |
+ {{G0=('$VAR'(N0,S0)='$VAR'(N1,S1),G)}}.
+otherwise.
+extract_struct_unify((Vect='$VAR'(N1,S1)), G0, G) -->
+	vector(Vect, _),
+	integer(N1), string(S1, _, 8) |
+   &struct <<= [('$VAR'(N1,S1)=Vect)],
+ {{G0=G}}.
+extract_struct_unify(('$VAR'(N0,S0)=Vect), G0, G) -->
+	 vector(Vect,_),
+	integer(N0), string(S0, _, 8) |
+   &struct <<= [('$VAR'(N0,S0)=Vect)],
+ {{G0=G}}.
+otherwise.
+extract_struct_unify(X, G0, G) --> true |
+ {{G0=(X,G)}}.
+
+convert_arg_to_list([X=Str|Cdr], H0, H, G0, G, B0, B) :- vector(H0, N) |
+   convert_arg_to_list_one_goal(0, N, X, Str, H0, H1),
+   convert_arg_to_list_one_part(X, Str, G0, G1, true),
+   convert_arg_to_list_one_part(X, Str, B0, B1, true),
+   convert_arg_to_list(Cdr, H1, H, G1, G, B1, B).
+convert_arg_to_list([X=Str|Cdr], H0, H, G0, G, B0, B) :- atom(H0) |
+   convert_arg_to_list_one_part(X, Str, G0, G1, true),
+   convert_arg_to_list_one_part(X, Str, B0, B1, true),
+   convert_arg_to_list(Cdr, H0, H, G1, G, B1, B).
+convert_arg_to_list([], H0, H, G0, G, B0, B) :- true |
+   H0=H, G0=G, B0=B.
+
+convert_arg_to_list_one_part(X, Str, (Goal0,Goal1), G0, G) :- true |
+   convert_arg_to_list_one_part(X, Str, Goal0, G0, G1),
+   convert_arg_to_list_one_part(X, Str, Goal1, G1, G).
+otherwise.
+convert_arg_to_list_one_part(X, Str, Goal0, G0, G) :- vector(Goal0, N) |
+   convert_arg_to_list_one_goal(0, N, X, Str, Goal0, Goal1),
+   G0=(Goal1, G).
+convert_arg_to_list_one_part(_, _, Goal0, G0, G) :- atom(Goal0) |
+   G0=(Goal0, G).
+
+convert_arg_to_list_one_goal(A, N, X, Str, Goal0, Goal) :- A<N |
+   set_vector_element(Goal0, A, Arg, NewArg, Goal1),
+   convert_one_arg_to_list(X, Str, Arg, NewArg),
+   A1 := A+1,
+   convert_arg_to_list_one_goal(A1, N, X, Str, Goal1, Goal).
+convert_arg_to_list_one_goal(N, N, _, _, Goal0, Goal) :- true |
+   Goal0=Goal.
+
+convert_one_arg_to_list(X, Str, X, NewArg) :- true |
+   NewArg=Str.
+otherwise.
+convert_one_arg_to_list(_, _, '$VAR'(N,S), NewArg) :-
+		integer(N), string(S, _, 8) |
+   NewArg='$VAR'(N,S).
+convert_one_arg_to_list(X, Str, [Car|Cdr], NewArg) :- true |
+   convert_one_arg_to_list(X, Str, Car, NewCar),
+   convert_one_arg_to_list(X, Str, Cdr, NewCdr),
+   NewArg=[NewCar|NewCdr].
+otherwise.
+convert_one_arg_to_list(X, Str, Vect, NewArg) :- vector(Vect, N) |
+   convert_one_vect_arg_to_list(0, N, X, Str, Vect, NewArg).
+otherwise.
+convert_one_arg_to_list(_, _, X, NewArg) :- true |
+   X=NewArg.
+
+convert_one_vect_arg_to_list(A, N, X, Str, Vect, NewVect) :- A<N |
+   A1 := A+1,
+   set_vector_element(Vect, A, Arg, NewArg, Vect1),
+   convert_one_arg_to_list(X, Str, Arg, NewArg),
+   convert_one_vect_arg_to_list(A1, N, X, Str, Vect1, NewVect).
+convert_one_vect_arg_to_list(N, N, _, _, Vect, NewVect) :- true |
+   Vect=NewVect.
+
+:- local_implicit const:oldnew, label:stream, sw:shared.
+convert_terms((Goal,Rest), NewTerm) --> true |
+   convert_terms(Goal, NewGoal),
+ {{NewTerm=(NewGoal, NewGoalRest)}},
+   convert_terms(Rest, NewGoalRest).
+otherwise.
+convert_terms(Goal, NewGoal) --> true |
+   convert_one_term(Goal, NewGoal).
+
+convert_one_term((Module:Goal), NewModuleGoal) --> true |
+   convert_one_term(Goal, NewGoal),
+ {{NewModuleGoal=(Module:NewGoal)}}.
+convert_one_term((Goal@Pri), NewGoalPri) --> true |
+   convert_one_term(Goal, NewGoal),
+ {{NewGoalPri=(NewGoal@Pri)}}.
+% added 881017
+convert_one_term(Goal, NewGoal) --> vector(Goal, N) |
+ {{convert_args(&sw, 0, N, Goal, MidGoal),
+%% 890817
+%%   make_constant_code(&const, &label, 0, N, MidGoal, NewGoal)}}.
+   make_constant_code(&const, &label, &sw, 0, N, MidGoal, NewGoal)}}.
+convert_one_term(Goal, NewGoal) --> atom(Goal) | {{Goal=NewGoal}}.
+
+:- local_implicit sw:shared.
+convert_args(A, N, Old, New) --> A<N |
+ {{set_vector_element(Old, A, OldArg, NewArg, Old1)}},
+   convert_one_arg(1, _, OldArg, NewArg),
+ {{A1 := A+1}},
+   convert_args(A1, N, Old1, New).
+convert_args(N, N, Old, New) --> true | Old=New.
+
+:- local_implicit sw:shared, ans:oldnew.
+
+convert_one_arg(Old, New) --> atom(Old) |
+ {{New=Old}}.
+convert_one_arg(Old, New) --> integer(Old) |
+ {{New=Old}}.
+convert_one_arg(Old, New) --> floating_point(Old) |
+ {{New=Old}}.
+convert_one_arg('$VAR'(N,S), New) --> integer(N), string(S, _, 8) |
+ {{New='$VAR'(N,S)}},
+   &ans<=0.
+convert_one_arg(Old, New) --> string(Old, N, Size) |
+ {{New='$STR'(Old, N, Size)}}.
+convert_one_arg([Car|Cdr], New) --> &sw=active |
+ {{convert_one_arg(&sw, 1, AnsCar, Car, NewCar),
+   convert_one_arg(&sw, 1, AnsCdr, Cdr, NewCdr),
+   Ans0 := AnsCar /\ AnsCdr,
+   check_list_constant_or_not(Ans0, Ans, [NewCar|NewCdr], New)}},
+   &ans <= Ans.
+otherwise.
+convert_one_arg(Vect, New) --> vector(Vect, N), &sw=active |
+ {{convert_vect_args(&sw, 1, AnsVect, 0, N, Vect, New0),
+   check_vect_constant_or_not(AnsVect, Ans, N, New0, New)}},
+   &ans <= Ans.
+convert_one_arg([Car|Cdr], New) --> &sw = passive |
+ {{convert_one_arg(&sw, 1, _, Car, NewCar),
+   convert_one_arg(&sw, 1, _, Cdr, NewCdr),
+   New=[NewCar|NewCdr]}},
+   &ans <= 0.
+convert_one_arg(Vect, New) --> vector(Vect, N), &sw=passive |
+ {{convert_vect_args(&sw, 0, _, 0, N, Vect, New)}},
+   &ans <= 0.
+
+convert_vect_args(A, N, Old, New) --> A<N |
+ {{set_vector_element(Old, A, OldElm, NewElm, Mid),
+   A1 := A+1,
+   convert_one_arg(&sw, 1, Ans, OldElm, NewElm),
+   &ans <= &ans /\ Ans}},
+   convert_vect_args(A1, N, Mid, New).
+convert_vect_args(N, N, Old, New) --> true | {{Old=New}}.
+
+check_list_constant_or_not(0, Ans, Old, New) :- true |
+ {{New=Old,
+   Ans=0}}.
+check_list_constant_or_not(1, Ans, [Car|Cdr], New) :- true |
+ {{New='$LIST'(List), List=[Car|Cdr],
+   Ans=1}}.
+
+check_vect_constant_or_not(0, Ans, _, Old, New) :- true |
+ {{New=Old,
+   Ans=0}}.
+check_vect_constant_or_not(1, Ans, N, Old, New) :- true |
+ {{New='$VECT'(Old, N),
+   Ans=1}}.
+
+define_desc(Str, Desc, Word, IntList) :- string(Str, Len, EleSize) |
+   ElmNum := 32 / EleSize,
+   Word0 := Len / ElmNum,
+   LastUsed := Len mod ElmNum,
+   not_used(ElmNum, LastUsed, NotUsed, Word0, Word),
+   define_type(EleSize, NotUsed, Desc),
+   new_string(AddStr, NotUsed, EleSize),
+   append_string(Str, AddStr, Str1),
+   define_int(Word, 0, ElmNum, Str1, IntList).
+
+not_used(Num, Last, Not, Word0, Word) :- Last\=0 |
+   Not := Num-Last,
+   Word := Word0+1.
+not_used(_, 0, Not, Word0, Word) :- true |
+   Not=0,
+   Word=Word0.
+
+define_type(0, NotUsed, Desc) :- true |
+   Desc := NotUsed << 3.
+otherwise.
+define_type(Size, NotUsed, Desc) :- Size < 4 |
+   Desc := ((Size /\ 1) << 7) \/ (NotUsed << 3) \/ 1.
+otherwise.
+define_type(Size, NotUsed, Desc) :- Size < 8 |
+   Desc := ((Size /\ 3) << 6) \/ (NotUsed << 3) \/ 2.
+otherwise.
+define_type(Size, NotUsed, Desc) :- Size < 16 |
+   Desc := ((Size /\ 7) << 5) \/ (NotUsed << 3) \/ 3.
+otherwise.
+define_type(Size, NotUsed, Desc) :- Size < 32 |
+   Desc := ((Size /\ 15) << 4) /\ (NotUsed << 3) \/ 4.
+otherwise.
+define_type(32, _, Desc) :- true |
+   Desc = 5.
+
+convert_integer_to_string(Int, Str) :- Int >= 10 |
+  Mod := Int mod 10,
+  Int0 := Int / 10,
+  substring(string#"0123456789", Mod, 1, OneStr, _),
+  append_string(Str1, OneStr, Str),
+  convert_integer_to_string(Int0, Str1).
+otherwise.
+convert_integer_to_string(Int, Str) :- true |
+  substring(string#"0123456789", Int, 1, Str, _).
+
+define_int(WordNum0, Pos0, ElmNum, Str0, IntList0) :- WordNum0 \= 0 |
+  WordNum := WordNum0 - 1,
+  substring(Str0, Pos0, ElmNum, OneWordStr, Str),
+  define_one_word(ElmNum, OneWordStr, 0, Int0),
+  IntList0=[Int0|IntList],
+  Pos := Pos0 + ElmNum,
+  define_int(WordNum, Pos, ElmNum, Str, IntList).
+define_int(0, _, _, _, IntList) :- true | IntList=[].
+
+define_one_word(Pos0, Str0, Int0, Int) :- Pos0 > 0, string(Str0, _, Size) |
+   Pos := Pos0-1,
+   string_element(Str0, Pos, Ele, Str),
+   Int1 := (Int0 << Size) + Ele,
+   define_one_word(Pos, Str, Int1, Int).
+define_one_word(0, _, Int0, Int) :- true |
+   Int0=Int.
+
+:- local_implicit flg:oldnew.
+
+calcurate_right_hand(Right, Ans) --> true |
+   is_integer(Right, NewRight),
+   decision_on_flg(NewRight, Ans).
+
+decision_on_flg(Right, NewRight) --> &flg(old)=1 |
+ {{calcurate(Right, NewRight)}}.
+decision_on_flg(Right, NewRight) --> &flg(old)=0 |
+ {{Right=NewRight}}.
+
+is_integer('$VAR'(X, Y), New) --> integer(X), string(Y, _, 8) |
+ {{New='$VAR'(X, Y)}},
+   &flg <= 0.
+otherwise.
+is_integer({Op, X, Y}, New) --> integer(X), integer(Y) |
+ {{New={Op, X, Y}}}.
+is_integer(X, New) --> integer(X) |
+ {{New=X}}.
+otherwise.
+is_integer({Op, X, Y}, New) --> integer(X) |
+ {{calcurate_right_hand(1, ResY, Y, NewY)}},
+   &flg  <= &flg /\ ResY,
+ {{New={Op, X, NewY}}}.
+is_integer({Op, X, Y}, New) --> integer(Y) |
+ {{calcurate_right_hand(1, ResX, X, NewX)}},
+   &flg <= &flg /\ ResX,
+ {{New={Op, NewX, Y}}}.
+otherwise.
+is_integer({Op, X, Y}, New) --> true |
+ {{calcurate_right_hand(1, ResX, X, NewX),
+   calcurate_right_hand(1, ResY, Y, NewY)}},
+   &flg <= ResX /\ ResY,
+ {{New={Op, NewX, NewY}}}.
+otherwise.
+is_integer(In, Out) --> true |
+   &flg <= 0,
+ {{In=Out}}.
+
+calcurate((X+Y), Ans) :- integer(X), integer(Y) |
+   Ans := X+Y.
+calcurate((X-Y), Ans) :- integer(X), integer(Y) |
+   Ans := X-Y.
+calcurate((X*Y), Ans) :- integer(X), integer(Y) |
+   Ans := X*Y.
+calcurate((X/Y), Ans) :- integer(X), integer(Y) |
+   Ans := X/Y.
+calcurate((X mod Y), Ans) :- integer(X), integer(Y) |
+   Ans := X mod Y.
+calcurate((-Y), Ans) :- integer(Y) |
+   Ans := -Y.
+calcurate(abs(X), Ans) :- X>=0 |			% 890324 SSL:Nishizaki
+   Ans := X.
+calcurate(abs(X), Ans) :- X<0 |				% 890324 SSL:Nishizaki
+   Ans := -X.
+calcurate(min(X,Y), Ans) :- X=<Y |			% 890324 SSL:Nishizaki
+   Ans := X.
+calcurate(min(X,Y), Ans) :- X>Y |			% 890324 SSL:Nishizaki
+   Ans := Y.
+calcurate(max(X,Y), Ans) :- X>=Y |			% 890324 SSL:Nishizaki
+   Ans := X.
+calcurate(max(X,Y), Ans) :- X<Y |			% 890324 SSL:Nishizaki
+   Ans := Y.
+calcurate((X/\Y), Ans) :- integer(X), integer(Y) |
+   Ans := (X/\Y).
+calcurate((X\/Y), Ans) :- integer(X), integer(Y) |
+   Ans := (X\/Y).
+calcurate((X xor Y), Ans) :- integer(X), integer(Y) |	% 881227
+   Ans := X xor Y.					% SSL:Nishizaki
+calcurate(\(X), Ans) :- integer(X) |			% 881227
+   Ans := \(X).						% SSL:Nishizaki
+calcurate((X<<Y), Ans) :- integer(X), integer(Y) |
+   Ans := (X<<Y).
+calcurate((X>>Y), Ans) :- integer(X), integer(Y) |
+   Ans := (X>>Y).
+otherwise.
+calcurate(Ans0, Ans) :- true |
+   Ans0=Ans.
+
+%%:- local_implicit const:oldnew, label:stream.
+:- local_implicit const:oldnew, label:stream, sw:shared. %% 890817
+make_constant_code(A, N, Old0, New) --> A<N |
+ {{set_vector_element(Old0, A, OldArg, NewArg, Old1),
+   A1 := A+1}},
+   check_constant_top(OldArg, NewArg),
+   make_constant_code(A1, N, Old1, New).
+make_constant_code(N, N, Old, New) --> true | {{Old=New}}.
+
+check_constant_top(Int0, Int) --> integer(Int0) | {{Int0=Int}}.
+check_constant_top(Float0, Float) --> floating_point(Float0) |{{Float0=Float}}.
+check_constant_top(Atom0, Atom) --> atom(Atom0) | {{Atom0=Atom}}.
+check_constant_top('$VAR'(N, Str), NewVar) --> integer(N), string(Str, _, 8) |
+ {{NewVar='$VAR'(N, Str)}}.
+check_constant_top('$LIST'(List), New) --> List=[_|_],
+%% 890817
+		&sw = active |
+   &label <<= [new_label(Label), new_label(ListLabel)],
+%% 890817
+%%   construct_constant_code(List, ListLabel),
+ {{construct_constant_code(&const, &label, List, ListLabel)}},
+   &const <<= [Label, define_list(ListLabel)],
+ {{New=Label}}.
+check_constant_top('$VECT'(Vect, N), New) --> vector(Vect, N),
+%% 890817
+		&sw = active |
+   &label <<= [new_label(Label), new_label(VectLabel)],
+%% 890817
+%%   construct_constant_code(Vect, VectLabel),
+ {{construct_constant_code(&const, &label, Vect, VectLabel)}},
+   &const <<= [Label, define_vector(VectLabel)],
+ {{New=Label}}.
+check_constant_top('$STR'(Str, _, _), New) --> string(Str, _, _) |
+   &label <<= [new_label(Label), new_label(StrLabel)],
+ {{define_desc(Str, Desc, Word, IntList)}},
+   &const <<= [StrLabel, define_desc(Desc, Word)],
+ {{make_define_int(&const, IntList)}},
+   &const <<= [Label, define_string(StrLabel)],
+ {{New=Label}}.
+otherwise.
+check_constant_top([Car|Cdr], NewArg) --> true |
+   check_constant_top(Car, NewCar),
+   check_constant_top(Cdr, NewCdr),
+ {{NewArg=[NewCar|NewCdr]}}.
+check_constant_top(Vect, NewVect) --> vector(Vect, N) |
+   check_constant_top_vect(0, N, Vect, NewVect).
+
+check_constant_top_vect(A, N, Vect0, Vect) --> A<N |
+ {{set_vector_element(Vect0, A, Arg, NewArg, Vect1)}},
+   check_constant_top(Arg, NewArg),
+ {{A1 := A+1}},
+   check_constant_top_vect(A1, N, Vect1, Vect).
+check_constant_top_vect(N, N, Vect0, Vect) --> true |{{Vect0=Vect}}.
+
+:- local_implicit const:oldnew.
+make_define_int([Int|Rest]) --> true |
+   &const <<= [define_integer(Int)],
+   make_define_int(Rest).
+make_define_int([]) --> true | true.
+
+:- local_implicit const:oldnew, label:stream.
+construct_constant_code([Car|Cdr], Label) --> true |
+   &label <<= [new_label(CarLabel), new_label(CdrLabel)],
+   construct_constant_code_element(Cdr, CdrLabel, CdrType),
+   construct_constant_code_element(Car, CarLabel, CarType),
+   &const <<= [Label, CarType, CdrType].
+construct_constant_code(Vect, Label) --> vector(Vect, N) |
+   construct_constant_code_element(ElemTypeList0, ElemTypeList, 0, N, Vect),
+   &const<<=[Label, define_desc(0, N)],
+ {{'C'(&const, ElemTypeList0, ElemTypeList)}}.
+construct_constant_code(Str, Label) --> string(Str, _, _) |
+ {{define_desc(Str, Desc, Word, IntList)}},
+   &const <<= [Label, define_desc(Desc, Word)],
+ {{make_define_int(&const, IntList)}}.
+
+'C'(S0, S1, S2, S3) :- true | S0=S2, S1=S3.
+
+:- local_implicit code:oldnew, label:stream, elm:oldnew.
+construct_constant_code_element(A, N, Vect) --> A<N |
+ {{set_vector_element(Vect, A, Elem, [], Vect1),
+   A1 := A+1}},
+   &label <<= [new_label(Label)],
+ {{construct_constant_code_element(&code, &label, Elem, Label, Type)}},
+   &elm <<= [Type],
+   construct_constant_code_element(A1, N, Vect1).
+construct_constant_code_element(N, N, _) --> true | true.
+
+:- local_implicit code:oldnew, label:stream.
+construct_constant_code_element('$LIST'(List), Label, Type) --> List=[_|_] |
+ {{Type=define_list(Label)}},
+   construct_constant_code(List, Label).
+construct_constant_code_element('$VECT'(Vect, N), Label,
+			Type) --> vector(Vect, N) |
+ {{Type=define_vector(Label)}},
+   construct_constant_code(Vect, Label).
+construct_constant_code_element('$STR'(Str, N, Size), Label,
+			Type) --> string(Str, N, Size) |
+ {{Type=define_string(Label)}},
+   construct_constant_code(Str, Label).
+construct_constant_code_element(Atom, _, Type) --> atom(Atom) |
+ {{Type=define_atom(Atom)}}.
+construct_constant_code_element(Int, _, Type) --> integer(Int) |
+ {{Type=define_integer(Int)}}.
+construct_constant_code_element(Float, _, Type) --> floating_point(Float) |
+ {{Type=define_float(Float)}}.
+
+%%%%%%%%%%%%
+%  Test
+%%%%%%%%%%%%
+
+test :- true |
+   mpimos_file:create(File, string#"test.kl1", r),
+   window:create([show|Wind], string#"test"),
+   kl1cmp_reader:create_reader(File, [], Wind0, [], Reader),
+   struct_processor(Reader, [], Const, [], Compiler),
+   compiler(Wind1, [], Compiler, []),
+   merge({Wind1, Wind0, Const}, WindBuf),
+   out_to_stream(Wind, [], WindBuf).
+
+:- local_implicit wind:oldnew, reader:oldnew.
+compiler --> true |
+   &reader<<=[read_predicate(Clause, Dir)],
+    check_clause(Dir, Clause).
+
+check_clause(end_of_file, Clause) --> true | {{Clause=end_of_file}}.
+otherwise.
+check_clause(_, Clause) --> true |
+   &wind<<=[Clause, nl],
+   &reader<<=[read_predicate(NewClause, NewDir)],
+   check_clause(NewDir, NewClause).
+
+:- local_implicit wind:oldnew.
+
+out_to_stream([One|Rest]) --> true |
+   &wind<<=[putt(One), flush(_), nl],
+   out_to_stream(Rest).
+otherwise.
+out_to_stream([]) --> true | &wind<<=[getl(_)].
+

@@ -1,0 +1,160 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pdss_code_device.
+:- public do/1.
+:- with_macro pdss.
+
+do(Req):- true|do(Req,success).
+
+do([assemble_module(ModuleName,FileName, Status)|Req],BS):-
+    wait(BS) |
+    assemble_module(M,FileName,S),
+    wait_assemble_module(ModuleName,FileName,Status,M,S),
+    do(Req,Status).
+do([load_module(ModuleName, FileName, Status)|Req],BS):-
+    wait(BS)|
+    load_module(M, FileName, S),
+    wait_load_module(ModuleName,FileName,Status,M,S),
+    do(Req,Status).
+do([save_module(ModuleName, FileName, Status)|Req],BS):-
+    wait(BS)|
+    save_module(ModuleName, FileName, S),
+    status(S,Status),
+    do(Req,Status).
+do([remove_module(Module, Status)|Req],BS):-
+    wait(BS)|
+    remove_module(Module, S),
+    status(S,Status),
+    do(Req,Status).
+do([debug(Mode,Status)|Req],BS):-
+    wait(BS)|
+    do_debug(Mode,Status),
+    do(Req,Status).
+do([backtrace(Mode,Status)|Req],BS):-
+    wait(BS)|
+    do_backtrace(Mode,Status),
+    do(Req,Status).
+do([trace_module(ModuleName, Mode, Status)|Req],BS):-
+    wait(BS)|
+    do_trace_module(ModuleName, Mode, Status),
+    do(Req,Status).
+do([get_module_status(ModuleName, Mode, Status)|Req],BS):-
+    wait(BS)|
+    get_module_status(ModuleName, M, S),
+    mode(M,Mode),
+    status(S,Status),
+    do(Req,Status).
+do([spy_predicate(ModuleName, PredicateName, Arity ,Mode, Status)|Req],BS):-
+    wait(BS)|
+    do_spy_predicate(ModuleName, PredicateName, Arity ,Mode, Status),
+    do(Req,Status).
+do([get_spied_predicates(ModuleName, PredicateList, Status)|Req],BS):-
+    wait(BS)|
+    get_spied_predicates(ModuleName, PredicateList, S),
+    status(S,Status),
+    do(Req,Status).
+do([get_public_predicates(ModuleName, Public, Status)|Req],BS):-
+    wait(BS)|
+    get_public_predicates(ModuleName, Public, S),
+    status(S,Status),
+    do(Req,Status).
+do([],_) :- true | true.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+wait_assemble_module(ModuleName,FileName,Status,_,coddev#request_gc) :-
+    true |
+	assemble_module(M,FileName,S),
+	wait_assemble_module2(ModuleName,Status,M,S).
+otherwise.
+wait_assemble_module(ModuleName,_,Status,M,S) :-
+    true |
+	ModuleName = M,
+	status(S,Status).
+
+wait_assemble_module2(ModuleName,Status,M,coddev#request_gc) :-
+    true |
+	ModuleName = M,
+	Status = memory_limit.
+otherwise.
+wait_assemble_module2(ModuleName,Status,M,S) :-
+    true |
+	ModuleName = M,
+	status(S,Status).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+wait_load_module(ModuleName,FileName,Status,_,coddev#request_gc) :-
+    true |
+	load_module(M,FileName,S),
+	wait_load_module2(ModuleName,Status,M,S).
+otherwise.
+wait_load_module(ModuleName,_,Status,M,S) :-
+    true |
+	ModuleName = M,
+	status(S,Status).
+
+wait_load_module2(ModuleName,Status,M,coddev#request_gc) :-
+    true |
+	ModuleName = M,
+	Status = memory_limit.
+otherwise.
+wait_load_module2(ModuleName,Status,M,S) :-
+    true |
+	ModuleName = M,
+	status(S,Status).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+do_debug(on,Status) :- set_trace_switch(1)|
+	Status = success.
+do_debug(off,Status) :- set_trace_switch(0)|
+	Status = success.
+otherwise.
+do_debug(_,Status) :- true|
+	Status = undefined_mode.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+do_backtrace(on,Status) :- set_backtrace_switch(1)|
+	Status = success.
+do_backtrace(off,Status) :- set_backtrace_switch(0)|
+	Status = success.
+otherwise.
+do_backtrace(_,Status) :- true|
+	Status = undefined_mode.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+do_trace_module(ModuleName,on,Status) :- true|
+	trace_module(ModuleName,1,S),
+	status(S,Status).
+do_trace_module(ModuleName,off,Status) :- true|
+	trace_module(ModuleName,0,S),
+	status(S,Status).
+otherwise.
+do_trace_module(_,_,Status) :- true|
+	Status = undefined_mode.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+do_spy_predicate(ModuleName,PredicateName,Arity,on,Status) :- true|
+	spy_predicate({ModuleName,PredicateName,Arity},1,S),
+	status(S,Status).
+do_spy_predicate(ModuleName,PredicateName,Arity,off,Status) :- true|
+	spy_predicate({ModuleName,PredicateName,Arity},0,S),
+	status(S,Status).
+otherwise.
+do_spy_predicate(_,_,_,_,Status) :- true|
+	Status = undefined_mode.
+
+status(coddev#success,             Sts) :- true | Sts = success.
+status(coddev#module_not_found,    Sts) :- true | Sts = module_not_found.
+status(coddev#predicate_not_found, Sts) :- true | Sts = predicate_not_found.
+status(coddev#module_protected,    Sts) :- true | Sts = module_protected.
+status(coddev#native_code_module,  Sts) :- true | Sts = native_code_module.
+status(coddev#cannot_open_file,    Sts) :- true | Sts = cannot_open_file.
+status(coddev#load_error,          Sts) :- true | Sts = load_error.
+
+mode(1, Mode) :- true | Mode = on.
+mode(0, Mode) :- true | Mode = off.
+mode([],Mode) :- true | Mode = [].

@@ -1,0 +1,111 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+iodev#success		=> 0.
+iodev#io_table_full	=> 1.
+iodev#cannot_open_file	=> 2.
+iodev#end_of_file	=> 3.
+iodev#eof_in_quote	=> 4.
+iodev#request_gc	=> 6.
+
+coddev#success			=> 0.
+coddev#module_not_found		=> 1.
+coddev#predicate_not_found	=> 2.
+coddev#module_protected		=> 3.
+coddev#native_code_module	=> 4.
+coddev#cannot_open_file		=> 5.
+coddev#load_error		=> 6.
+coddev#request_gc		=> 7.
+
+fep#nil		=> 'fep#nil'.
+fep#normal	=> 'fep#normal'.
+fep#eod		=> 'fep#eod'.	    % not used in Micro-PIMOS
+fep#control_c	=> 'fep#control_c'. % not used in Micro-PIMOS
+fep#attention	=> 'fep#attention'. % not used in Micro-PIMOS
+fep#continue	=> 'fep#continue'.  % not used in Micro-PIMOS
+fep#abnormal	=> 'fep#abnormal'.
+fep#aborted	=> 'fep#aborted'.   % not used in Micro-PIMOS
+fep#yes		=> 'fep#yes'.
+fep#no		=> 'fep#no'.
+fep#wake_up	=> 'fep#wake_up'.
+
+fep#abort	=> 'fep#abort'.
+
+% not used in PIMOS
+fep#read	=> 'fep#read'.
+fep#write	=> 'fep#write'.
+fep#append	=> 'fep#append'.
+fep#end_of_file	=> 'fep#end_of_file'.
+fep#manipulator	=> 'fep#manipulator'.
+
+%%%% exception code %%%%
+excp#deadlock			=> 11.
+
+excp#illegal_input		=>  0.
+excp#range_overflow		=>  1.
+excp#integer_overflow		=>  3.
+excp#floating_point_error	=>  5.
+
+excp#illegal_merger_input	=>  8.
+excp#reduction_failure		=>  9.
+excp#unification_failure	=> 10.
+
+excp#raised			=> 12.
+
+excp#incorrect_priority		=> 16.
+excp#module_not_found		=> 17.
+excp#predicate_not_found	=> 18.
+
+%%%% shoen exception tag %%%%
+shoen_tag#mpimos_request	=>       65536.	% Bit 16
+shoen_tag#mpimos_unit		=>      131072.	% Bit 17
+shoen_tag#mpimos_error		=>      262144.	% Bit 18
+
+shoen_tag#deadlock		=>     1048576.	% Bit 20
+
+shoen_tag#illegal_input		=>     2097152.	% Bit 21
+shoen_tag#range_overflow	=>     4194304.	% Bit 22
+shoen_tag#integer_overflow	=>     8388608.	% Bit 23
+shoen_tag#floating_point_error	=>    16777216.	% Bit 24
+
+shoen_tag#illegal_merger_input	=>    67108864.	% Bit 26
+shoen_tag#reduction_failure	=>   134217728.	% Bit 27
+shoen_tag#unification_failure	=>   268435456.	% Bit 28
+
+shoen_tag#incorrect_priority	=>   536870912.	% Bit 29
+shoen_tag#module_not_found	=>  1073741824.	% Bit 30
+shoen_tag#predicate_not_found	=> -2147483648.	% Bit 31
+
+shoen_tag#all			=> -1.
+
+default#string		=>	8.
+
+builtin#apply(Code,Argvect)     => apply(Code,Argvect) .
+builtin#merge_in(In1,In2,In)    => In = {In1,In2}  .
+
+builtin#substring(S,P,L,SubS,NewS)
+        => substring(S,P,L,SubS,NewS)  .
+%builtin#copy_string_elements(S1,P1,L,S2,P2,NewS1,NewS2)
+%        => builtin_utility:copy_string_elements(S1,P1,L,S2,P2,NewS1,NewS2)  .
+%builtin#set_substring(S1,P1,L,S2,NewS1,NewS2)
+%        => builtin_utility:copy_string_elements(S1,P1,L,S2,0,NewS1,NewS2)  .
+%builtin#set_substring(S1,P1,L,S2,NewS1)
+%        => builtin_utility:copy_string_elements(S1,P1,L,S2,0,NewS1,_)  .
+builtin#append_string(String_list,Appended_string)
+        => mpimos_utility:string_append(String_list,Appended_string)  .
+builtin#append_string(String1,String2,Appended_string)
+        => append_string(String1,String2,Appended_string)  .
+
+builtin#atom_number(X,N)        => atom_number(X,N)  .
+
+builtin#hash(X,H,NewX)          => hasher:hash(X,H,NewX)  .
+
+builtin#new_string(X,S)         => new_string(X,S,8) .
+
+builtin#code(X)                 => X = {A,B,C}, atom(A), atom(B), integer(C) .
+
+builtin#module(X)               => atom(X) .

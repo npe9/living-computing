@@ -1,0 +1,375 @@
+%%% KL1-B Test for B_Float_Function_1_Arg (Exception) %%%
+% B_Float_Abs %%%%%%%%%%% abcdefg
+% B_Float_Floor %%%%%%%%% abcdefg
+% B_Float_Sqrt %%%%%%%%%% abcdefgh
+% B_Float_Ln %%%%%%%%%%%% abcdefgh
+% B_Float_Log %%%%%%%%%%% abcdefgh
+% B_Float_Exp %%%%%%%%%%% abcdefgh
+% B_Integer_To_Float %%%% abcdef
+% B_Float_To_Integer %%%% abcdefgh
+
+:- module b_f_func1_e.
+:- public go/0
+,do_abs/2,do_floor/2,do_sqrt/2,do_ln/2,do_log/2,do_exp/2,do_float/2,do_int/2.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Function_1_Arg (Exception) %%%"), put_console(key#lf) | abs.
+
+abs:- put_console(ascii#"% B_Float_Abs %%%%%%%%%%% ") | abs00.
+
+abs00:- true | execute_in_shoen(do_abs,{11111111111.1,Z},R), abs00(R,Z).
+abs00(success,_):- put_console(c#"a") | abs01.
+otherwise.
+abs00(_,_):- put_console(c#"*") | abs01.
+
+abs01:- true | execute_in_shoen(do_abs,{-11111111111.1,Z},R), abs01(R,Z).
+abs01(success,_):- put_console(c#"b") | abs02.
+otherwise.
+abs01(_,_):- put_console(c#"*") | abs02.
+
+abs02:- true | execute_in_shoen(do_abs,{1234,Z},R), abs02(R,Z).
+abs02(illegal_input,_):- put_console(c#"c") | abs03.
+otherwise.
+abs02(_,_):- put_console(c#"*") | abs03.
+
+abs03:- true | execute_in_shoen(do_abs,{atom,Z},R), abs03(R,Z).
+abs03(illegal_input,_):- put_console(c#"d") | abs04.
+otherwise.
+abs03(_,_):- put_console(c#"*") | abs04.
+
+abs04:- true | execute_in_shoen(do_abs,{[list],Z},R), abs04(R,Z).
+abs04(illegal_input,_):- put_console(c#"e") | abs05.
+otherwise.
+abs04(_,_):- put_console(c#"*") | abs05.
+
+abs05:- true | execute_in_shoen(do_abs,{{0,1},Z},R), abs05(R,Z).
+abs05(illegal_input,_):- put_console(c#"f") | abs06.
+otherwise.
+abs05(_,_):- put_console(c#"*") | abs06.
+
+abs06:- true | execute_in_shoen(do_abs,{ascii#"String",Z},R), abs06(R,Z).
+abs06(illegal_input,_):- put_console(c#"g") | abs07.
+otherwise.
+abs06(_,_):- put_console(c#"*") | abs07.
+
+abs07:- put_console(key#lf) | flr.
+
+flr:- put_console(ascii#"% B_Float_Floor %%%%%%%%% ") | flr00.
+
+flr00:- true | execute_in_shoen(do_floor,{11111111111.1,Z},R), flr00(R,Z).
+flr00(success,_):- put_console(c#"a") | flr01.
+otherwise.
+flr00(_,_):- put_console(c#"*") | flr01.
+
+flr01:- true | execute_in_shoen(do_floor,{-11111111111.1,Z},R), flr01(R,Z).
+flr01(success,_):- put_console(c#"b") | flr02.
+otherwise.
+flr01(_,_):- put_console(c#"*") | flr02.
+
+flr02:- true | execute_in_shoen(do_floor,{1234,Z},R), flr02(R,Z).
+flr02(illegal_input,_):- put_console(c#"c") | flr03.
+otherwise.
+flr02(_,_):- put_console(c#"*") | flr03.
+
+flr03:- true | execute_in_shoen(do_floor,{atom,Z},R), flr03(R,Z).
+flr03(illegal_input,_):- put_console(c#"d") | flr04.
+otherwise.
+flr03(_,_):- put_console(c#"*") | flr04.
+
+flr04:- true | execute_in_shoen(do_floor,{[list],Z},R), flr04(R,Z).
+flr04(illegal_input,_):- put_console(c#"e") | flr05.
+otherwise.
+flr04(_,_):- put_console(c#"*") | flr05.
+
+flr05:- true | execute_in_shoen(do_floor,{{0,1},Z},R), flr05(R,Z).
+flr05(illegal_input,_):- put_console(c#"f") | flr06.
+otherwise.
+flr05(_,_):- put_console(c#"*") | flr06.
+
+flr06:- true | execute_in_shoen(do_floor,{ascii#"String",Z},R), flr06(R,Z).
+flr06(illegal_input,_):- put_console(c#"g") | flr07.
+otherwise.
+flr06(_,_):- put_console(c#"*") | flr07.
+
+flr07:- put_console(key#lf) | srt.
+
+srt:- put_console(ascii#"% B_Float_Sqrt %%%%%%%%%% ") | srt00.
+
+srt00:- true | execute_in_shoen(do_sqrt,{100.0,Z},R), srt00(R,Z).
+srt00(success,_):- put_console(c#"a") | srt01.
+otherwise.
+srt00(_,_):- put_console(c#"*") | srt01.
+
+srt01:- true | execute_in_shoen(do_sqrt,{0.0,Z},R), srt01(R,Z).
+srt01(success,_):- put_console(c#"b") | srt02.
+otherwise.
+srt01(_,_):- put_console(c#"*") | srt02.
+
+srt02:- true | execute_in_shoen(do_sqrt,{-100.0,Z},R), srt02(R,Z).
+srt02(floating_point_error,_):- put_console(c#"c") | srt03.
+otherwise.
+srt02(_,_):- put_console(c#"*") | srt03.
+
+srt03:- true | execute_in_shoen(do_sqrt,{1234,Z},R), srt03(R,Z).
+srt03(illegal_input,_):- put_console(c#"d") | srt04.
+otherwise.
+srt03(_,_):- put_console(c#"*") | srt04.
+
+srt04:- true | execute_in_shoen(do_sqrt,{atom,Z},R), srt04(R,Z).
+srt04(illegal_input,_):- put_console(c#"e") | srt05.
+otherwise.
+srt04(_,_):- put_console(c#"*") | srt05.
+
+srt05:- true | execute_in_shoen(do_sqrt,{[list],Z},R), srt05(R,Z).
+srt05(illegal_input,_):- put_console(c#"f") | srt06.
+otherwise.
+srt05(_,_):- put_console(c#"*") | srt06.
+
+srt06:- true | execute_in_shoen(do_sqrt,{{0,1},Z},R), srt06(R,Z).
+srt06(illegal_input,_):- put_console(c#"g") | srt07.
+otherwise.
+srt06(_,_):- put_console(c#"*") | srt07.
+
+srt07:- true | execute_in_shoen(do_sqrt,{ascii#"String",Z},R), srt07(R,Z).
+srt07(illegal_input,_):- put_console(c#"h") | srt08.
+otherwise.
+srt07(_,_):- put_console(c#"*") | srt08.
+
+srt08:- put_console(key#lf) | ln.
+
+ln:- put_console(ascii#"% B_Float_Ln %%%%%%%%%%%% ") | ln00.
+
+ln00:- true | execute_in_shoen(do_ln,{100.0,Z},R), ln00(R,Z).
+ln00(success,_):- put_console(c#"a") | ln01.
+otherwise.
+ln00(_,_):- put_console(c#"*") | ln01.
+
+ln01:- true | execute_in_shoen(do_ln,{0.0,Z},R), ln01(R,Z).
+ln01(floating_point_error,_):- put_console(c#"b") | ln02.
+otherwise.
+ln01(_,_):- put_console(c#"*") | ln02.
+
+ln02:- true | execute_in_shoen(do_ln,{-100.0,Z},R), ln02(R,Z).
+ln02(floating_point_error,_):- put_console(c#"c") | ln03.
+otherwise.
+ln02(_,_):- put_console(c#"*") | ln03.
+
+ln03:- true | execute_in_shoen(do_ln,{1234,Z},R), ln03(R,Z).
+ln03(illegal_input,_):- put_console(c#"d") | ln04.
+otherwise.
+ln03(_,_):- put_console(c#"*") | ln04.
+
+ln04:- true | execute_in_shoen(do_ln,{atom,Z},R), ln04(R,Z).
+ln04(illegal_input,_):- put_console(c#"e") | ln05.
+otherwise.
+ln04(_,_):- put_console(c#"*") | ln05.
+
+ln05:- true | execute_in_shoen(do_ln,{[list],Z},R), ln05(R,Z).
+ln05(illegal_input,_):- put_console(c#"f") | ln06.
+otherwise.
+ln05(_,_):- put_console(c#"*") | ln06.
+
+ln06:- true | execute_in_shoen(do_ln,{{0,1},Z},R), ln06(R,Z).
+ln06(illegal_input,_):- put_console(c#"g") | ln07.
+otherwise.
+ln06(_,_):- put_console(c#"*") | ln07.
+
+ln07:- true | execute_in_shoen(do_ln,{ascii#"String",Z},R), ln07(R,Z).
+ln07(illegal_input,_):- put_console(c#"h") | ln08.
+otherwise.
+ln07(_,_):- put_console(c#"*") | ln08.
+
+ln08:- put_console(key#lf) | log.
+
+log:- put_console(ascii#"% B_Float_Log %%%%%%%%%%% ") | log00.
+
+log00:- true | execute_in_shoen(do_log,{100.0,Z},R), log00(R,Z).
+log00(success,_):- put_console(c#"a") | log01.
+otherwise.
+log00(_,_):- put_console(c#"*") | log01.
+
+log01:- true | execute_in_shoen(do_log,{0.0,Z},R), log01(R,Z).
+log01(floating_point_error,_):- put_console(c#"b") | log02.
+otherwise.
+log01(_,_):- put_console(c#"*") | log02.
+
+log02:- true | execute_in_shoen(do_log,{-100.0,Z},R), log02(R,Z).
+log02(floating_point_error,_):- put_console(c#"c") | log03.
+otherwise.
+log02(_,_):- put_console(c#"*") | log03.
+
+log03:- true | execute_in_shoen(do_log,{1234,Z},R), log03(R,Z).
+log03(illegal_input,_):- put_console(c#"d") | log04.
+otherwise.
+log03(_,_):- put_console(c#"*") | log04.
+
+log04:- true | execute_in_shoen(do_log,{atom,Z},R), log04(R,Z).
+log04(illegal_input,_):- put_console(c#"e") | log05.
+otherwise.
+log04(_,_):- put_console(c#"*") | log05.
+
+log05:- true | execute_in_shoen(do_log,{[list],Z},R), log05(R,Z).
+log05(illegal_input,_):- put_console(c#"f") | log06.
+otherwise.
+log05(_,_):- put_console(c#"*") | log06.
+
+log06:- true | execute_in_shoen(do_log,{{0,1},Z},R), log06(R,Z).
+log06(illegal_input,_):- put_console(c#"g") | log07.
+otherwise.
+log06(_,_):- put_console(c#"*") | log07.
+
+log07:- true | execute_in_shoen(do_log,{ascii#"String",Z},R), log07(R,Z).
+log07(illegal_input,_):- put_console(c#"h") | log08.
+otherwise.
+log07(_,_):- put_console(c#"*") | log08.
+
+log08:- put_console(key#lf) | exp.
+
+exp:- put_console(ascii#"% B_Float_Exp %%%%%%%%%%% ") | exp00.
+
+exp00:- true | execute_in_shoen(do_exp,{100.0,Z},R), exp00(R,Z).
+exp00(floating_point_error,_):- put_console(c#"a") | exp01.
+otherwise.
+exp00(_,_):- put_console(c#"*") | exp01.
+
+exp01:- true | execute_in_shoen(do_exp,{0.0,Z},R), exp01(R,Z).
+exp01(success,_):- put_console(c#"b") | exp02.
+otherwise.
+exp01(_,_):- put_console(c#"*") | exp02.
+
+exp02:- true | execute_in_shoen(do_exp,{-100.0,Z},R), exp02(R,Z).
+exp02(success,_):- put_console(c#"c") | exp03.
+otherwise.
+exp02(_,_):- put_console(c#"*") | exp03.
+
+exp03:- true | execute_in_shoen(do_exp,{1234,Z},R), exp03(R,Z).
+exp03(illegal_input,_):- put_console(c#"d") | exp04.
+otherwise.
+exp03(_,_):- put_console(c#"*") | exp04.
+
+exp04:- true | execute_in_shoen(do_exp,{atom,Z},R), exp04(R,Z).
+exp04(illegal_input,_):- put_console(c#"e") | exp05.
+otherwise.
+exp04(_,_):- put_console(c#"*") | exp05.
+
+exp05:- true | execute_in_shoen(do_exp,{[list],Z},R), exp05(R,Z).
+exp05(illegal_input,_):- put_console(c#"f") | exp06.
+otherwise.
+exp05(_,_):- put_console(c#"*") | exp06.
+
+exp06:- true | execute_in_shoen(do_exp,{{0,1},Z},R), exp06(R,Z).
+exp06(illegal_input,_):- put_console(c#"g") | exp07.
+otherwise.
+exp06(_,_):- put_console(c#"*") | exp07.
+
+exp07:- true | execute_in_shoen(do_exp,{ascii#"String",Z},R), exp07(R,Z).
+exp07(illegal_input,_):- put_console(c#"h") | exp08.
+otherwise.
+exp07(_,_):- put_console(c#"*") | exp08.
+
+exp08:- put_console(key#lf) | itf.
+
+itf:- put_console(ascii#"% B_Integer_To_Float %%%% ") | itf00.
+
+itf00:- true | execute_in_shoen(do_float,{100.0,Z},R), itf00(R,Z).
+itf00(illegal_input,_):- put_console(c#"a") | itf01.
+otherwise.
+itf00(_,_):- put_console(c#"*") | itf01.
+
+itf01:- true | execute_in_shoen(do_float,{1234,Z},R), itf01(R,Z).
+itf01(success,_):- put_console(c#"b") | itf02.
+otherwise.
+itf01(_,_):- put_console(c#"*") | itf02.
+
+itf02:- true | execute_in_shoen(do_float,{atom,Z},R), itf02(R,Z).
+itf02(illegal_input,_):- put_console(c#"c") | itf03.
+otherwise.
+itf02(_,_):- put_console(c#"*") | itf03.
+
+itf03:- true | execute_in_shoen(do_float,{[list],Z},R), itf03(R,Z).
+itf03(illegal_input,_):- put_console(c#"d") | itf04.
+otherwise.
+itf03(_,_):- put_console(c#"*") | itf04.
+
+itf04:- true | execute_in_shoen(do_float,{{0,1},Z},R), itf04(R,Z).
+itf04(illegal_input,_):- put_console(c#"e") | itf05.
+otherwise.
+itf04(_,_):- put_console(c#"*") | itf05.
+
+itf05:- true | execute_in_shoen(do_float,{ascii#"String",Z},R), itf05(R,Z).
+itf05(illegal_input,_):- put_console(c#"f") | itf06.
+otherwise.
+itf05(_,_):- put_console(c#"*") | itf06.
+
+itf06:- put_console(key#lf) | fti.
+
+fti:- put_console(ascii#"% B_Float_To_Integer %%%% ") | fti00.
+
+fti00:- true | execute_in_shoen(do_int,{100.0,Z},R), fti00(R,Z).
+fti00(success,_):- put_console(c#"a") | fti01.
+otherwise.
+fti00(_,_):- put_console(c#"*") | fti01.
+
+fti01:- true | execute_in_shoen(do_int,{11111111111.1,Z},R), fti01(R,Z).
+fti01(integer_overflow,_):- put_console(c#"b") | fti02.
+otherwise.
+fti01(_,_):- put_console(c#"*") | fti02.
+
+fti02:- true | execute_in_shoen(do_int,{-11111111111.1,Z},R), fti02(R,Z).
+fti02(integer_overflow,_):- put_console(c#"c") | fti03.
+otherwise.
+fti02(_,_):- put_console(c#"*") | fti03.
+
+fti03:- true | execute_in_shoen(do_int,{1234,Z},R), fti03(R,Z).
+fti03(illegal_input,_):- put_console(c#"d") | fti04.
+otherwise.
+fti03(_,_):- put_console(c#"*") | fti04.
+
+fti04:- true | execute_in_shoen(do_int,{atom,Z},R), fti04(R,Z).
+fti04(illegal_input,_):- put_console(c#"e") | fti05.
+otherwise.
+fti04(_,_):- put_console(c#"*") | fti05.
+
+fti05:- true | execute_in_shoen(do_int,{[list],Z},R), fti05(R,Z).
+fti05(illegal_input,_):- put_console(c#"f") | fti06.
+otherwise.
+fti05(_,_):- put_console(c#"*") | fti06.
+
+fti06:- true | execute_in_shoen(do_int,{{0,1},Z},R), fti06(R,Z).
+fti06(illegal_input,_):- put_console(c#"g") | fti07.
+otherwise.
+fti06(_,_):- put_console(c#"*") | fti07.
+
+fti07:- true | execute_in_shoen(do_int,{ascii#"String",Z},R), fti07(R,Z).
+fti07(illegal_input,_):- put_console(c#"h") | fti08.
+otherwise.
+fti07(_,_):- put_console(c#"*") | fti08.
+
+fti08:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_f_func1_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(5,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=floating_point_error, C=[abort].
+
+shoen_check([exception(3,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=integer_overflow, C=[abort].
+
+do_abs(X,Z):- true | Z$:=abs(X).
+do_floor(X,Z):- true | Z$:=floor(X).
+do_sqrt(X,Z):- true | Z$:=sqrt(X).
+do_ln(X,Z):- true | Z$:=ln(X).
+do_log(X,Z):- true | Z$:=log(X).
+do_exp(X,Z):- true | Z$:=exp(X).
+do_float(X,Z):- true | Z$:=float(X).
+do_int(X,Z):- true | Z:=int(X).

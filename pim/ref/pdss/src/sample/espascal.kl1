@@ -1,0 +1,434 @@
+/*-----------------------------------------------------------------------------
+Program:  Pascal's Triangle
+Author:   E. Sugino
+Modified: E. Tick
+Date:     July 27 1988
+Modified: Y. Kimura
+Date:     October 21 1988
+
+Notes:
+0. To run:
+    ?- pascal.
+1. To run:
+    ?- go(N,R).
+where input N is the number of rows to calculate and output R is the Nth row.
+
+2. example: for N = 20:
+R = [[1,0],[20,0],[190,0],[1140,0],[4845,0],[15504,0],[38760,0],[77520,0],
+     [25970,1],[67960,1],[84756,1],[67960,1],[25970,1],[77520,0],[38760,0],
+     [15504,0],[4845,0],[1140,0],[190,0],[20,0],[1,0]]
+
+2. This is a much simplified version of the original program, and only
+calculates the Nth row from scratch.  Note that without bignums, we can
+calculate as large as the 33rd row, with a maximum coefficient of
+1,166,803,110.  This is equivalent to [3110,11668].
+-----------------------------------------------------------------------------*/
+:- module pascal.
+:- public pascal/0, go/1,go/2.
+
+pascal :- true | go(100).
+
+go(N) :- N > 0 |
+    pascal_data([data(N,_)],1,[[1,0],[1,0]],1).
+
+go(N, Result) :- N > 0 |
+    pascal_data([data(N,Result)],1,[[1,0],[1,0]],1).
+
+pascal_data([data(N,D)|S],N,Data,Max) :- true | 
+    D = Data,
+    pascal_data(S,N,Data,Max).
+pascal_data([data(N,D)|S],M,Data,Max) :- N =\= M,N =< Max | 
+    pascal_data(S,M,Data,Max).
+pascal_data([data(N,D)|S],Max,Data,Max) :- Max < N,M1 := Max + 1 |
+    new_pascal(M1,N,Data,D,S),
+    pascal_data(S,Max,Data,N).
+pascal_data([data(N,D)|S],M,Data,Max) :-  Max < N, M < Max |
+    pascal_data(S,M,Data,N).
+pascal_data([],_,_,_) :- true | true.
+   
+new_pascal(N,N,Data,D,Stream) :- true | 
+    make_pascal_data(Data,D),
+    pascal_data(Stream,N,D,N).
+new_pascal(N,M,Data,D,Stream) :- N < M, N1 := N+1 |
+    make_pascal_data(Data,Data1),
+    pascal_data(Stream,N,Data1,M),
+    new_pascal(N1,M,Data1,D,Stream).
+
+/* bignum version... */
+make_pascal_data([F1,F2|Data],New) :- true |
+    big_plus(Nf2,F1,F2),
+    New = [F1,Nf2|New1],
+    make_pascal_data([F2|Data],New1,[Nf2,F1]).
+
+make_pascal_data([N],New,E) :- true | New = [N].
+make_pascal_data([A,A|C],New,E) :- true |
+    big_plus(B,A,A), 
+    New = [B|E].
+otherwise.
+make_pascal_data([A,B|C],New,E) :- true |
+    big_grt(A,B,Status),
+    make_pascal_data1(Status,A,B,C,New,E).
+
+make_pascal_data1(yes,_,_,_,New,E) :- true | New = E.
+make_pascal_data1( no,A,B,C,New,E) :- true |
+    big_plus(D,A,B),
+    New = [D|New1],
+    make_pascal_data([B|C],New1,[D|E]).
+
+/* normal version...
+make_pascal_data([F1,F2|Data],New) :- Nf2 := F1+F2 |
+    New = [F1,Nf2|New1],
+    make_pascal_data([F2|Data],New1,[Nf2,F1]).
+make_pascal_data([N],New,E) :- true | New = [N].
+make_pascal_data([A,A|C],New,E) :- B := A+A | New = [B|E].
+make_pascal_data([A,B|C],New,E) :- A > B | New = E.
+make_pascal_data([A,B|C],New,E) :- A < B, D := A+B |
+    New = [D|New1],
+    make_pascal_data([B|C],New1,[D|E]).
+*/
+
+/*-----------------------------------------------------------------------------
+Program: Bignum for Pascal Benchmark
+Author:  R. O'Keefe (translated to FGHC by E. Tick, revised by A. Okumura)
+Date:    July 26 1988
+*/
+
+% this interface is meant to save storage...
+big_plus(X,Y,Z) :- true |
+    eval('+'(real(+,Y,[1]),real(+,Z,[1])),real(+,X,[1])).
+
+big_grt(X,Y,Status) :- true |
+    eval(real(+,X,[1]),A),
+    eval(real(+,Y,[1]),B),
+    comq(A, B, 100000, R), 
+    getstatus(R, '>', Status).
+
+getstatus(X,X,Status) :- true | Status = yes.
+otherwise.
+getstatus(_,_,Status) :- true | Status = no.
+
+eval('+'(X,Y), C) :- true | 
+    eval(X, A), 
+    eval(Y, B), 
+    addq(A, B, 100000, C).
+otherwise.
+eval(X,Y) :- true | X = Y.
+
+%------------------------------------------------------------------------------
+
+comq(A,A,_,S) :- true | S = '='.
+otherwise.
+comq(real('+',Na,Da), real('+',Nb,Db), R, S) :- true |
+    muln(Na, Db, R, Xa),
+    muln(Nb, Da, R, Xb),
+    comn(Xa, Xb, '=', S).
+comq(real('+',Na,Da), real('-',Nb,Db), R, S) :- true | S = '>'.
+comq(real('-',Na,Da), real('+',Nb,Db), R, S) :- true | S = '<'.
+comq(real('-',Na,Da), real('-',Nb,Db), R, S) :- true |
+    muln(Na, Db, R, Xa),
+    muln(Nb, Da, R, Xb),    
+    comn(Xb, Xa, '=', S).
+comq(Na, real('+',Nb,Db), R, S) :- Na >= 0 |
+    muln([Na], Db, R, Xa), 
+    comn(Xa, Nb, =, S).
+comq(Na, real('-',Nb,Db), R, S) :- Na >= 0 | S = '>'.
+comq(Na, real('+',Nb,Db), R, S) :- Na < 0 | S = '<'.
+comq(Na, real('-',Nb,Db), R, S) :- Na < 0, Nz := (0-Na) |
+    muln([Nz], Db, R, Xa),
+    comn(Nb, Xa, '=', S).
+comq(real('+',Na,Da), Nb, R, S) :- Nb >= 0 |
+    muln([Nb], Da, R, Xb),
+    comn(Na, Xb, '=', S).
+comq(real('+',Na,Da), Nb, R, S) :- Nb < 0 | S = '>'.
+comq(real('-',Na,Da), Nb, R, S) :- Nb >= 0 | S = '<'.
+comq(real('-',Na,Da), Nb, R, S) :- Nb < 0, Nz := (0-Nb) |
+    muln([Nz], Da, R, Xb),  
+    comn(Xb, Na, '=', S).
+comq(Na, Nb, R, S) :- Na > Nb  | S = '>'.
+comq(Na, Nb, R, S) :- Nb >= Na | S = '<'.
+
+%------------------------------------------------------------------------------
+
+addq(A, B, R, S) :- true |
+    real(A, R, Sa, Na, Da),
+    real(B, R, Sb, Nb, Db),
+    muln(Na, Db, R, Xa),
+    muln(Nb, Da, R, Xb),
+    addz(Sa,Xa, Sb,Xb, R, Sc,Xc),
+    gcdn(Xc, Da, R, _, Nx, Ya),
+    gcdn(Nx, Db, R, _, Nc, Yb),
+    muln(Ya, Yb, R, Dc), 
+    standardise(real(Sc, Nc, Dc),S).
+
+%------------------------------------------------------------------------------
+
+muln([], _, _, S) :- true | S = [].
+muln(_, [], _, S) :- true | S = [].
+otherwise.
+muln(A, B, R, C) :- true | muln(A, B, [], R, C).
+
+muln([], _, Ac, _, Out) :- true | Out = Ac.
+muln([D1|T1], N2, Ac, R, Out) :- true | 
+    Out = [D3|Pr],
+    mul1(N2, D1, R, P2),
+    addn(Ac, P2, 0, R, Sm),
+    conn1(D3, An, Sm), 
+    muln(T1, N2, An,R, Pr).
+
+mul1(_, 0, _, Pr) :- true | Pr = [].
+otherwise.
+mul1(A, M, R, Pr) :- true |
+    mul1(A, M, 0, R, Pr).
+
+mul1([D1|T1], M, C, R, Out) :- 
+    D2 := (D1*M+C) mod R,
+    Co := (D1*M+C) / R |
+    Out = [D2|T2],
+    mul1(T1, M, Co, R, T2).
+mul1(     [], _, 0, _, Out) :- true | Out = [].
+otherwise.
+mul1(     [], _, C, _, Out) :- true | Out = [C].
+
+%------------------------------------------------------------------------------
+
+addz('+',A,'+',B,R,S,C) :- true | S = '+', addn(A, B, 0, R, C).
+addz('+',A,'-',B,R,S,C) :- true |          subn(A, B, R, S, C).
+addz('-',A,'+',B,R,S,C) :- true |          subn(B, A, R, S, C).
+addz('-',A,'-',B,R,S,C) :- true | S = '-', addn(B, A, 0, R, C).
+
+addn([D1|T1], [D2|T2], Cin, R, Out) :- 
+    Sum := D1+D2+Cin,
+      X := Sum mod 262144 |
+    add2(T1, T2, R, Out, Sum, X).
+addn([], L, 0, _, Out) :- true | Out=L.
+addn(L, [], 0, _, Out) :- true | Out=L.
+addn([], L, 1, R, M)   :- true | add1(L, R, M).
+addn(L, [], 1, R, M)   :- true | add1(L, R, M).
+
+add1([M|T], R, Out) :- N := M+1 | add3(N,T,R,Out).
+add1([],    _, Out) :- true | Out = [1].
+
+add3(N,T,R,Out) :- N < R | Out = [N|T].
+otherwise.
+% Prolog is funny: it checks that R =:= N, but it should not fail!
+add3(N,T,R,Out) :- true | add1(T,R,S), Out = [0|S].
+
+add2(T1, T2, R, Out, Sum, X) :- X >= R, D3 := X-R |
+    Out = [D3|T3],
+    addn(T1, T2, 1, R, T3).
+otherwise.
+add2(T1, T2, R, Out, Sum, X) :- true |
+    Out = [Sum|T3],
+    addn(T1, T2, 0, R, T3).
+
+%------------------------------------------------------------------------------
+
+gcdn([], [], R, O1, O2, O3) :- true | O1 = [], O2 = undefined, O3 = undefined.
+gcdn([],  B, R, O1, O2, O3) :- B \= [] | O1=B, O2 = [], O3 = [1].
+gcdn( A, [], R, O1, O2, O3) :- A \= [] | O1=A, O2 = [1], O3 = [].
+otherwise.
+gcdn([1], B, _, O1, O2, O3) :- true | O1 = [1], O2 = [1], O3 =   B.
+gcdn(A, [1], _, O1, O2, O3) :- true | O1 = [1], O2 =   A, O3 = [1].
+otherwise.
+gcdn(A, B, R, D, M, N) :- true |      %  A, B > 1
+    gcdn(A, B, R, D),
+    divn(A, D, R, M, _),
+    divn(B, D, R, N, _).
+
+gcdn(A, B, R, D) :- true |      %  A, B >= 1 
+    comn(A, B, '=', S), 
+    gcdn(S, A, B, R, D).
+
+gcdn('=', A, _, _, D) :- true | D = A.
+gcdn('<',[], B, _, D) :- true | D = B.
+gcdn('<', A, B, R, D) :- A \= [] |
+    estg(B, A, R, E),
+    muln(E, A, R, P),
+    subn(B, P, R, _, M), 
+    gcdn(A, M, R, D).
+gcdn('>', A,[], _, D) :- true | D = A.
+gcdn('>', A, B, R, D) :- B \= [] |
+    estg(A, B, R, E),
+    muln(E, B, R, P),
+    subn(A, P, R, _, M), 
+    gcdn(M, B, R, D).
+
+estg(A, [B], R, E) :- true |
+    div1(A, B, R, Q, X),
+    estg1(X, B, Q, R, E).
+otherwise.  
+estg([_|A], [_|B], R, E) :- true |
+    estg(A, B, R, E).
+
+estg1(X, B, Q, R, E) :- F := X*2,  F =< B | E = Q.
+otherwise.
+estg1(X, B, Q, R, E) :- true | add1(Q, R, E).
+
+%------------------------------------------------------------------------------
+
+% we know that this failure (division by zero) never occurs in benchmark.
+% divn(A, [], R, _, _) :- !, fail. % division by 0 is undefined
+
+divn(A,[1], R, A, X) :- true | X = [].   % a very common special case
+divn(A,[B], R, Q, X) :- true |           % nearly as common a case
+    div1(A, B, R, Q, Y),
+    conn(Y, [], X).
+otherwise.
+divn(A,  B, R, Q, X) :-               
+    comn(A, B, '=', S),
+    divn1(S, A, B, R, Q, X).
+
+divn1('<', A, _, _, Q, X) :- true | Q = [], X = A.
+divn1('=', _, _, _, Q, X) :- true | Q = [1], X = [].
+divn1('>', A, B, R, Q, X) :- true | divm(A, B, R, Q, X).
+
+% mode(+,+,-)
+conn(0, [], Out) :- true | Out = [].
+otherwise.
+conn(D, T, Out) :- true | Out = [D|T].
+
+% mode(-,-,+) 
+conn1(D, T,    []) :- true | D = 0, T = [].
+conn1(D, T, [X|Y]) :- true | D = X, T = Y.
+
+div1([], _, _, Q1, X1) :- true | Q1 = [], X1 = 0.
+div1([D1|T1], B1, R, Q1, X1) :- true |
+    div1(T1, B1, R, Q2, X2),
+    div11(X2,R,D1,B1,Q2,Q1).
+
+div11(X2,R,D1,B1,Q2,Q1) :- 
+    D2 := (X2*R+D1) / B1,
+    X1 := (X2*R+D1) mod B1 |
+    conn(D2, Q2, Q1).
+
+% divm(A, B, R, Q, X) is called with A > B > R
+divm([D1|T1], B, R, Q1, X1) :- true |
+    divm(T1, B, R, Q2, X2),
+    conn(D1, X2, T2),
+    div2(T2, B, R, D2, X1),
+    conn(D2, Q2, Q1).
+divm([], B, R, O1, O2) :- true | O1 = [], O2 = [].
+
+div2(A, B, R, Q, X) :- true |
+    estd(A, B, R, E), 
+    chkd(A, B, R, E, 0, Q, P), 
+    subn(A, P, R, S, X).   
+
+estd([A0,A1,A2], [B0,B1], R, E) :- 
+    F := R/2, B1 >= F, G := (A2*R+A1)/B1 | 
+    E = G.
+otherwise.
+estd([A0,A1,A2], [B0,B1], R, E) :- 
+    L := (A2*R+A1)/(B1+1) |
+    mul1([B0,B1],    L, R, P),
+    subn([A0,A1,A2], P, R, S, N),
+    estd(N, [B0,B1], R, M),
+    estd1(L,M,E).
+estd([A0,A1], [B0,B1], R, E) :-
+    F := (A1*R+A0+1)/(B1*R+B0) |
+    E = F.
+estd([A0], _, _, E) :- true | E = 0.
+otherwise.
+estd([A0|Ar], [B0|Br], R, E) :- true |
+    estd(Ar, Br, R, E).
+estd([], _, _, E) :- true | E = 0.
+
+estd1(L,M,E) :- F := L+M | E=F.
+
+chkd(A, B, R, E, 3, _, _) :- true | true.
+otherwise.
+chkd(A, B, R, E, K, E, P) :- true |
+    mul1(B, E, R, P),
+    comn(P, A, '<', S),
+    chkd1(S, A, B, R, E, K, Q, P).
+
+chkd1('<', A, B, R, E, K, Q, P) :- true | true.
+otherwise.
+chkd1(_, A, B, R, E, K, Q, P) :- 
+    L := K+1, F := E-1 |
+    chkd(A, B, R, F, L, Q, P).
+
+%------------------------------------------------------------------------------
+
+subn(A, B, R, S, C) :- true |
+    comn(A, B, '=', O),
+    subn(O, A, B, R, S, C).
+
+subn('<', A, B, R, F, C) :- true | 
+    F = '-',
+    subp(B, A, 0, R, D), 
+    prune(D, C).
+subn('>', A, B, R, F, C) :- true |  
+    F = '+',
+    subp(A, B, 0, R, D), 
+    prune(D, C).
+subn('=', A, B, R, F, C) :- true | 
+    F = '+', C = [].
+
+prune([], Out) :- true | Out = [].
+prune([0|L], M ) :- true |
+    prune(L, T),
+    prune1(T, M).
+otherwise.
+prune([D|L], Out) :- true | 
+    Out = [D|M],
+    prune(L, M).
+
+prune1([], M) :- true | M = [].
+otherwise.
+prune1(T, M) :- true | M = [0|T].
+
+subp([D1|T1], [D2|T2], Bin, R, M) :- S := D1-D2-Bin |
+    subp1(S, T1, T2, R, M).
+subp(L, [], 0, _, M) :- true | M = L.
+subp(L, [], 1, R, M) :- true | sub1(L, R, M).
+
+subp1(S, T1, T2, R, M) :- S >= 0 |
+    M = [S|T3],
+    subp(T1, T2, 0, R, T3).
+otherwise.
+subp1(S, T1, T2, R, M) :- D3 := S+R |
+    M = [D3|T3],
+    subp(T1, T2, 1, R, T3).
+
+sub1([0|T], R, Out) :- K := R-1 | Out = [K|S], sub1(T, R, S).
+otherwise.
+sub1([N|T], _, Out) :- M := N-1 | Out = [M|T].
+
+%------------------------------------------------------------------------------
+comn([D1|T1], [D2|T2], D, S) :- true |
+    com1(D1, D2, D, N), 
+    comn(T1, T2, N, S).
+comn([], [], D, S) :- true | S = D.
+comn([],  L, D, S) :- L \= [] | S = '<'.
+comn(L,  [], D, S) :- L \= [] | S = '>'.
+
+com1(X, X, D, E) :-  true | E = D.
+com1(X, Y, _, E) :- X < Y | E = '<'.
+com1(X, Y, _, E) :- X > Y | E = '>'.
+
+%------------------------------------------------------------------------------
+
+real(    undefined, R, O1, O2, O3) :- true | 
+    O1 = '+', O2 = [], O3 = [].
+real(real(S, N, D), R, O1, O2, O3) :- true | 
+    O1 = S, O2 = N, O3 = D.
+real(N, R, O1, L, O3) :- N >= 0 | 
+    O1 = '+', O3 = [1], binrad(N, R, L).
+real(N, R, O1, L, O3) :-  N  < 0, M := (0-N) | 
+    O1 = '-', O3 = [1], binrad(M, R, L).
+
+binrad(0, R, Out) :- true | Out = [].
+otherwise.
+binrad(N, R, Out) :- K := N/R, M := N mod R |
+    Out = [M|T],
+    binrad(K, R, T).
+
+standardise(real('+',[N],[1]), Ans) :- true | Ans = N.
+standardise(real('-',[N],[1]), Ans) :- F := (0-N) | Ans = F.
+standardise(real(  S,  N, []), Ans) :- true | Ans = undefined.
+standardise(real(  _, [],[1]), Ans) :- true | Ans = 0. 
+otherwise.
+standardise(Number, Ans) :- true | Ans = Number.
+
+

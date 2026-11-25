@@ -1,0 +1,257 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS Directory Request Monitor.
+
+:- module mpimos_directory.
+:- public create/3, os_create/6, request/4.
+:- with_macro pdss.
+
+%%  Create directory.
+%%  create(Req,DN,Sts).
+%%	Req :: Request stream from user.
+%%	DN  :: Directory name.
+%%	Sts :: Status.
+
+create(Req,DN,Sts) :-
+    true |
+	raise(shoen_tag#mpimos_request,directory,create(Req,DN,Sts)),
+	consume_resource(2).
+
+%%  Directory request.
+%%  request(Info,WDN,TF,SS).
+%%	Info : Raised information.
+%%	WDN :: Current directory.
+%%	TF  :: Termination flag.
+%%	SS  :: System stream.
+
+request(create(Req,DN,Sts),WDN,TF,SS) :-
+    string(DN,_,8) |
+	mpimos_utility:pathname(WDN,DN,DPN),
+	wait_directory(Req,DPN,Sts,TF,SS).
+otherwise.
+request(create(Req,DN,Sts),WDN,TF,SS) :-
+    true |
+	SS = [],
+	consume_resource(1),
+	create_error(bad_directory_name_type,DN,status(Sts)).
+
+%%  Wait directory name.
+%%  wait_directory(Req,DN,Sts,TF,SS).
+%%	Req :: Request stream from user.
+%%	DN  :: Directory name.
+%%	Sts :: Create Information.
+%%	TF  :: Termintaion flag.
+%%	SS  :: System stream.
+
+wait_directory(Req,DN,Sts,TF,SS) :-
+    wait(DN) |
+	SS = [file_manager:directory(PR,DN,Status,TF)],
+	consume_resource(10),
+	create_monitor(Req,PR,DPN,Status,status(Sts)).
+
+%%  OS create directory
+%%  os_create(Req,TF,SS,ST,Sts).
+%%	Req :: Request stream from user.
+%%	DN  :: Directory name.
+%%	TF  :: Termintaion flag.
+%%	SS  :: System stream.
+%%	ST  :: System stream tail.
+%%	Sts :: Create Information.
+
+os_create(Req,DN,TF,SS,ST,Sts) :-
+    wait(DN) |
+	SS = [file_manager:directory(PR,DN,Status,TF)|ST],
+	create_monitor(Req,PR,DN,Status,status(Sts)).
+
+%%  Create monitor.
+%%  create_monitor(Req,PR,DN,S,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to directory (protected).
+%%	DN  :: Directory name.
+%%	S   :: Result of open directory.
+%%	Sts :: Information.
+
+create_monitor(Req,PR,DN,fep#normal,Sts) :-
+    true |
+	consume_resource(2),
+	merge(Req,Req2),
+	create_success(Sts),
+	PR = [pathname(PN,Status)|PR2],
+	wait_pathname(Req2,PR2,atr(DN),PN,Status).
+create_monitor(Req,PR,DN,fep#abnormal,Sts) :-
+    true |
+	PR = [],
+	create_error(cannot_access,DN,Sts).
+
+create_success(status(S)) :- true | S = success.
+
+create_error(Info,DN,status(S)) :-
+    true |
+	S = error(Info).
+
+%%  Request stream monitor.
+%%  monitor(Req,PR,Atr,SS,TF).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to directory (protected).
+%%	Atr :: Attribute of directory.
+
+%% Directory pathname.
+monitor([pathname(PN)|Req],PR,Atr) :-
+    true |
+	vector_element(Atr,1,PN,Atr2),
+	monitor(Req,PR,Atr2).
+
+%%  Listing file names.
+monitor([listing(WildCard,FNs,Sts)|Req],PR,Atr) :-
+    string(WildCard,_,8) |
+	PR = [listing(WildCard,LR,S)|PR2],
+	consume_resource(3),
+	listing(Req,PR2,Atr,LR,FNs,S,Sts).
+
+%%  Delete files.
+monitor([delete(WildCard,Sts)|Req],PR,Atr) :-
+    string(WildCard,_,8) |
+	PR = [delete(WildCard,S)|PR2],
+	consume_resource(3),
+	delete(Req,PR2,Atr,S,Sts).
+
+%%  Open file.
+monitor([open(In,FN,Md,Sts)|Req],PR,Atr) :-
+    true |
+	vector_element(Atr,1,DN,Atr2),
+	mpimos_utility:pathname(DN,FN,PFN),
+	mpimos_file:create(In,PFN,Md,S),
+	open(Req,PR,Atr2,S,Sts).
+
+%%  Do commands.
+monitor([do([H|T])|Req],PR,Atr) :-
+    true |
+	append([H|T],Req,Req2),
+	monitor(Req2,PR,Atr).
+monitor([do([])|Req],PR,Atr) :-
+    true |
+	monitor(Req,PR,Atr).
+
+%%  Termination.
+monitor([],PR,Atr) :-
+    true |
+	PR = [],
+	consume_resource(2).
+
+%%  Illegal command.
+otherwise.
+monitor([Cmd|Req],PR,Atr) :-
+    true |
+	command_error(warning,illegal_command,Cmd,Atr,Atr2),
+	monitor(Req,PR,Atr2).
+
+wait_pathname(Req,PR,Atr,PN,fep#normal) :-
+    string(PN,_,8) |
+	monitor(Req,PR,atr(PN)).
+
+%%  Listing file names.
+%%  listing(Req,PR,Atr,LR,FNs,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to directory.
+%%	Atr :: Attribute of directory.
+%%	LR  :: Listing request stream.
+%%	FNs :: File names list.
+%%	S   :: Result of listing executed.
+%%	Sts :: Information.
+
+listing(Req,PR,Atr,LR,FNs,fep#normal,Sts) :-
+    true |
+	LR = [next_file_name(FN,S)|LR2],
+	consume_resource(2),
+	make_list(Req,PR,Atr,LR2,FNs,FN,S,Sts).
+listing(Req,PR,Atr,LR,FNs,fep#abnormal,Sts) :-
+    true |
+	FNs = [],
+	LR = [],
+	consume_resource(1),
+	Sts = error(cannot_listing),
+	monitor(Req,PR,Atr).
+
+make_list(Req,PR,Atr,LR,FNs,FN,fep#normal,Sts) :-
+    true |
+	FNs = [FN|FNs2],
+	LR = [next_file_name(FN2,S)|LR2],
+	consume_resource(2),
+	make_list(Req,PR,Atr,LR2,FNs2,FN2,S,Sts).
+make_list(Req,PR,Atr,LR,FNs,FN,fep#end_of_file,Sts) :-
+    true |
+	FNs = [],
+	LR = [],
+	consume_resource(2),
+	Sts = success,
+	monitor(Req,PR,Atr).
+
+%%  Delete files.
+%%  delete(Req,PR,Atr,S,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to directory.
+%%	Atr :: Attribute of directory.
+%%	S   :: Result of delete execution.
+%%	Sts :: Information.
+
+delete(Req,PR,Atr,fep#normal,Sts) :-
+    true |
+	Sts = success,
+	monitor(Req,PR,Atr).
+delete(Req,PR,Atr,fep#abnormal,Sts) :-
+    true |
+	Sts = error(cannot_delete),
+	monitor(Req,PR,Atr).
+
+%%  Open file.
+%%  open(Req,PR,Atr,S,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to directory.
+%%	Atr :: Attribute of directory.
+%%	S   :: Result of open.
+%%	Sts :: Information.
+
+open(Req,PR,Atr,S,Sts) :-
+    wait(S) |
+	Sts = S,
+	monitor(Req,PR,Atr).
+
+%%  Command error.
+%%  command_error(Type,Info,Cmd,Atr,NAtr).
+%%	Type : Error type.
+%%	Info : Infomation of error.
+%%	Cmd :: Executed command.
+%%	Atr :: Attribute of file.
+%%	NAtr : Attribute of file (new).
+
+command_error(Type,Info,Cmd,Atr,NAtr) :-
+    true |
+	mpimos_utility:freeze(Cmd,FC),
+	vector_element(Atr,1,DN,NAtr),
+	message(Info,Msg),
+	raise_error(Type,DN,[putb(string#" / "),putb(Msg),putb(string#" : "),putt(FC)]).
+
+%%  Raise error.
+%%  raise_error(Ty,DN,PL).
+%%	Ty :: Error nype.
+%%	DN :: Direcory name.
+%%	PL :: Output list.
+
+raise_error(Ty,DN,PL) :-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in directory ("),
+	       putt(DN),putb(string#")"),do(PL),putb(string#"."),nl]),
+	consume_resource(5).
+
+message(illegal_command,Msg) :- true | Msg = string#"illegal command".
+
+%%  append(X,Y,Z).
+
+append([X|XL],Y,Z) :- true | Z = [X|ZL], append(XL,Y,ZL).
+append([],    Y,Z) :- true | Y = Z.

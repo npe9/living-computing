@@ -1,0 +1,87 @@
+%%% KL1-B Test for B_Vector (Suspend) %%%
+% B_Vector %%%%%%%%%%%%%% abc
+% B_New_Vector %%%%%%%%%% ab
+% B_Vector_Element %%%%%% abc
+% B_Set_Vector_Element %% abc
+
+:- module b_vector_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Vector (Suspend) %%%"), put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% B_Vector %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vector(X,A,B), unify(X,{}), vec00(A,B).
+vec00(0,{}):- put_console(c#"a") | vec01.
+otherwise.
+vec00(_,_):- put_console(c#"*") | vec01.
+
+vec01:- true | vector(X,A,B), unify(X,{E,1}), E=(0), vec01(A,B).
+vec01(2,{0,1}):- put_console(c#"b") | vec02.
+otherwise.
+vec01(_,_):- put_console(c#"*") | vec02.
+
+vec02:- true | vector(X,A,B), unify(X,{0,1}), vec02(A,B).
+vec02(2,{0,1}):- put_console(c#"c") | vec03.
+otherwise.
+vec02(_,_):- put_console(c#"*") | vec03.
+
+vec03:- put_console(key#lf) | nvc.
+
+nvc:- put_console(ascii#"% B_New_Vector %%%%%%%%%% ") | nvc00.
+
+nvc00:- true | new_vector(A,X), unify(X,0), nvc00(A).
+nvc00({}):- put_console(c#"a") | nvc01.
+otherwise.
+nvc00(_):- put_console(c#"*") | nvc01.
+
+nvc01:- true | new_vector(A,X), unify(X,2), nvc01(A).
+nvc01({0,0}):- put_console(c#"b") | nvc02.
+otherwise.
+nvc01(_):- put_console(c#"*") | nvc02.
+
+nvc02:- put_console(key#lf) | vce.
+
+vce:- put_console(ascii#"% B_Vector_Element %%%%%% ") | vce00.
+
+vce00:- true | vector_element(X,Y,A,B), unify(X,Y,{E,1,2},0), E=(0), vce00(A,B).
+vce00(0,{0,1,2}):- put_console(c#"a") | vce01.
+otherwise.
+vce00(_,_):- put_console(c#"*") | vce01.
+
+vce01:- true | vector_element(X,Y,A,B), unify(X,Y,{0,1,2},0), vce01(A,B).
+vce01(0,{0,1,2}):- put_console(c#"b") | vce02.
+otherwise.
+vce01(_,_):- put_console(c#"*") | vce02.
+
+vce02:- true | vector_element(X,Y,A,B), unify(X,Y,{0,1,2},2), vce02(A,B).
+vce02(2,{0,1,2}):- put_console(c#"c") | vce03.
+otherwise.
+vce02(_,_):- put_console(c#"*") | vce03.
+
+vce03:- put_console(key#lf) | sve.
+
+sve:- put_console(ascii#"% B_Set_Vector_Element %% ") | sve00.
+
+sve00:- true | set_vector_element(X,Y,A,Z,B), unify(X,Y,Z,{E,1,2},0,3), E=(0), sve00(A,B).
+sve00(0,{3,1,2}):- put_console(c#"a") | sve01.
+otherwise.
+sve00(_,_):- put_console(c#"*") | sve01.
+
+sve01:- true | set_vector_element(X,Y,A,Z,B), unify(X,Y,Z,{0,1,2},0,3), sve01(A,B).
+sve01(0,{3,1,2}):- put_console(c#"b") | sve02.
+otherwise.
+sve01(_,_):- put_console(c#"*") | sve02.
+
+sve02:- true | set_vector_element(X,Y,A,Z,B), unify(X,Y,Z,{0,1,2},2,3), sve02(A,B).
+sve02(2,{0,1,3}):- put_console(c#"c") | sve03.
+otherwise.
+sve02(_,_):- put_console(c#"*") | sve03.
+
+sve03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,A):- true | X=A.
+unify(X,Y,A,B):- true | X=A, Y=B.
+unify(X,Y,Z,A,B,C):- true | X=A, Y=B, Z=C.

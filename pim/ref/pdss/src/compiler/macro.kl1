@@ -1,0 +1,1148 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%
+%
+% MACRO EXPANDER FOR
+%
+% KL1/KL1 compiler
+%
+%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_macro.
+:- public test/0,
+	  generate_macro_expander/6.
+
+
+test :- true |
+	kl1cmp_macro_arg:init_macro_table(TblStream0),
+	merge(TblStream, TblStream0),
+	window:create(Wind0, string#"test"),
+        mpimos_file:create(File0, string#"test.kl1", r),
+	kl1cmp_reader:create_reader(File0, [], Rwind0, [], Read_pred),
+	merge({Rwind0, Mwind, Cwind}, Wind1),
+        out_to_dlist(Wind0, [getl(_)], Wind1),
+        generate_macro_expander(Read_pred, [], Mwind, [], TblStream, Out_pred),
+        compiler(Out_pred, [], Cwind, []).
+
+:- local_implicit in:oldnew, out:oldnew.
+compiler --> true |
+   &in<<=[read_predicate(Clause, Pred)],
+   compiler_(Clause, Pred).
+
+compiler_(_, end_of_file) --> true | true .
+compiler_(_, []) --> true | true.
+otherwise.
+compiler_(Clause, Dir) --> true |
+   &out<<=[putt(Clause), nl, putt(Dir), nl, flush(_)],
+   &in<<=[read_predicate(NextClause, NextDir)],
+   compiler_(NextClause, NextDir).
+%%%%%%%%%%%%%%%%%
+% expand clauses
+%%%%%%%%%%%%%%%%%
+:- local_implicit in:oldnew, out:oldnew, macro:stream.
+
+generate_macro_expander(OutPred) --> true |
+   &in<<=[read_predicate(Dir0, Pred0)],
+   dispatch_case_on_pred(Pred0, Dir0, OutPred).
+
+dispatch_case_on_pred(directive, Dir0,
+		[read_predicate(Dir, Pred)|Cdr]) --> true |
+ {{kl1cmp_mtbl:generate_macro_table_process(&out, &macro(oldnew), TblStream,
+				Dir0, Dir),
+   Pred=directive}},
+   &in<<=[read_predicate(Cls1, Pred1)],
+   macro_expander([], _, TblStream, [], Cls1, Pred1, Cdr).
+otherwise.
+dispatch_case_on_pred(Pred, Cls0, Cdr) --> true |
+ {{kl1cmp_mtbl:generate_macro_table_process(&out, &macro(oldnew),
+						TblStream, [], _)}},
+   macro_expander([], _, TblStream, [], Cls0, Pred, Cdr).
+
+:- local_implicit in:oldnew, out:oldnew, macro:stream, ex:oldnew, tbl:oldnew.
+
+macro_expander(Clauses0, Pred0,	[read_predicate(Clauses, Pred)|Cdr]) -->
+	Pred0\=end_of_file, Pred0\=directive |
+   expand_clauses(Clauses0, Clauses, Pred0),
+ {{Pred=Pred0}},
+   &in<<=[read_predicate(NextClauses, NextPred)],
+   macro_expander(NextClauses, NextPred, Cdr).
+macro_expander(Dir0, directive, [read_predicate(Dir, Pred)|Cdr]) --> true |
+ {{Pred=directive,
+   check_directives(&out, &macro(oldnew), &tbl, Dir0, Dir)}},
+   &in <<= [read_predicate(NextClauses, NextPred)],
+   macro_expander(NextClauses, NextPred, Cdr).
+macro_expander(_, end_of_file, Cdr) --> true |
+   {{ after_eof(Cdr, &ex(old)) }}.
+
+after_eof([read_predicate(Clauses, Pred)|Cdr], [{M:F/A,ExP}|Ex]) :-
+    true |
+    new_external_clause(ExP,M,F,A,Clauses),
+    Pred=ExP/A,
+    after_eof(Cdr, Ex).
+after_eof([read_predicate(Clauses, Pred)|Cdr], [{F/A@Pragma,ExP,_}|Ex]) :-
+    true |
+    new_pragma_clause(ExP,Pragma,F,A,Ar,Clauses),
+    Pred=ExP/Ar,
+    after_eof(Cdr, Ex).
+after_eof([read_predicate(Clauses, Pred)|Cdr], []) :- true |
+    Clauses=end_of_file, Pred=end_of_file,
+    after_eof(Cdr, []).
+after_eof([], _) :- true | true.
+
+new_external_clause(ExP,M,F,A,ExC) :- A>0 |
+    L := A + 1,
+    new_vector(H,L), set_vector_element(H,0,_,ExP,NH),
+    new_vector(B,L), set_vector_element(B,0,_,F,NB),
+    new_clause_args(1,L,NH,Head,NB,Pred),
+    ExC = [[(Head:-'|'(true,M:Pred))]].
+new_external_clause(ExP,M,F,0,ExC) :- true |
+    ExC = [[(ExP:-'|'(true,M:F))]].
+
+new_pragma_clause(ExP,Pragma,F,A,Ar,ExC) :- A>0, vector(Pragma,PL) |
+    L := A + 1,
+    new_vector(H,L), set_vector_element(H,0,_,ExP,NH),
+    new_vector(B,L), set_vector_element(B,0,_,F,NB),
+    new_clause_args(1,L,NH,Head0,NB,Pred),
+    add_pragma_args(Head0,A,Pragma,Head),
+    Ar := A + PL - 1,
+    ExC = [[(Head:-'|'(true,Pred@Pragma))]].
+new_pragma_clause(ExP,Pragma,F,0,Ar,ExC) :- vector(Pragma,PL) |
+    add_pragma_args(ExP,0,Pragma,Head),
+    Ar := PL - 1,
+    ExC = [[(Head:-'|'(true,F@Pragma))]].
+
+new_clause_args(P,L,H,NH,B,NB) :- P<L |
+    VN := P-1,
+    kl1cmp_reader:convert_integer_to_string(VN,VNS),
+    append_string(string#"GenVar",VNS,VS),
+    Var = '$VAR'(VN,VS),
+    set_vector_element(H,P,_,Var,H1),
+    set_vector_element(B,P,_,Var,B1),
+    P1 := P + 1,
+    new_clause_args(P1,L,H1,NH,B1,NB).
+new_clause_args(L,L,H,NH,B,NB) :- true | NH = H, NB = B.
+
+new_clause_head(P,L,H,NH) :- P<L |
+    VN := P-1,
+    kl1cmp_reader:convert_integer_to_string(VN,VNS),
+    append_string(string#"GenVar",VNS,VS),
+    Var = '$VAR'(VN,VS),
+    set_vector_element(H,P,_,Var,H1),
+    P1 := P + 1,
+    new_clause_head(P1,L,H1,NH).
+new_clause_head(L,L,H,NH) :- true | NH = H.
+
+:- local_implicit out:oldnew, macro:oldnew, tbl:oldnew.
+
+check_directives([(:- local_implicit A)|Cdr], Dir) --> true |
+ {{kl1cmp_mtbl:make_table(&out, Ltbl, [], A)}},
+   &tbl <<= [replace_local(Ltbl)],
+   check_directives(Cdr, Dir).
+check_directives([(:- local_implicit)|Cdr], Dir) --> true |
+   &tbl <<= [replace_local([])],
+   check_directives(Cdr, Dir).
+check_directives([(:- with_macro A)|Cdr], Dir) --> true |
+ {{kl1cmp_macro_arg:read_macro_file(&out, &macro, A)}},
+   check_directives(Cdr, Dir).
+otherwise.
+check_directives([Dir|Cdr], NewDir) --> true |
+   NewDir=[Dir|NewDirCdr],
+   check_directives(Cdr, NewDirCdr).
+check_directives([], NewDir) --> true | NewDir=[].
+
+:- local_implicit in:oldnew, out:oldnew, macro:stream, ex:oldnew, tbl:oldnew.
+
+expand_clauses([Block|Rest], Out, Pred) --> true |
+   expand_clauses(Block, OutBlock, Pred),
+ {{Out=[OutBlock|OutRest]}},
+   expand_clauses(Rest, OutRest, Pred).
+expand_clauses([], Out, _) --> true | {{Out=[]}}.
+otherwise.
+expand_clauses(Clause, Out, Pred) --> true |
+   expand_one_clause(Clause, Out, Pred).
+
+expand_one_clause((H:-'|'(G,B)), Out, _) --> true |
+ {{kl1cmp_reader:count_variables((H+G+B), 0, Na),
+   kl1cmp_normalize:variable_generator(Na, _, VarStr0),
+   merge(VarStr, VarStr0),
+   &tbl<<=[new_var_stream(VarStr)],
+   convert_one_goal(&out, &macro, &ex, &tbl,
+		    non_expand, 0, head, HG, [], H),
+   arity_in_origin(H, A0),
+   split_head_and_new_goal(HG,G1,H1,G2),
+   Out=(H2:-'|'(G2,B1)),
+   convert_term(&out, &macro, &ex, &tbl, non_expand, A0, H1,
+				H2, G, G1, B, B1, [])}}.
+expand_one_clause((H-->'|'(G,B)), Out, _/A)--> true |
+ {{kl1cmp_reader:count_variables((H+G+B), 0, Na),
+   kl1cmp_normalize:variable_generator(Na, _, VarStr0),
+   merge(VarStr, VarStr0)}},
+   &tbl<<=[new_var_stream(VarStr), init_tables(Args)],
+ {{convert_one_goal(&out, &macro, &ex, &tbl,
+		    non_expand, 0, head, HG, [], H),
+   copy_implicit_args_head(Args, A, H1, H2),
+   arity_in_origin(H, A0),
+   convert_term(&out, &macro, &ex, &tbl, expand,
+			A0, H2, H3, G, G1, B, B1, Term),
+   split_head_and_new_goal(HG,G1,H1,G2),
+   Out=((H3:-'|'(G2,B1)))}},
+   &tbl<<=[terminate(Term)].
+expand_one_clause(end_of_file, Clause, _) --> true |
+ {{Clause=end_of_file}}.
+expand_one_clause(otherwise, Clause, _) --> true |
+ {{Clause=otherwise}}.
+expand_one_clause(alternatively, Clause, _) --> true |
+  {{Clause=alternatively}}.
+
+split_head_and_new_goal([Head],G0,H,G) :- true |
+	G = G0, H = Head.
+split_head_and_new_goal([Goal|HG],G0,H,G) :- HG \= [] |
+	convert_COMMA_to_list(GL,GL0,G0),
+	convert_list_to_COMMA(GL,G),
+	split_head_and_new_goal1([Goal|HG],H,GL0).
+
+split_head_and_new_goal1([Head],H,GL) :- true |
+	GL = [], H = Head.
+split_head_and_new_goal1([Goal|HG],H,GL) :- HG \= [] |
+	GL = [Goal|GL2],
+	split_head_and_new_goal1(HG,H,GL2).
+
+arity_in_origin(Head, Ari) :- vector(Head, A) | {{Ari=A}}.
+arity_in_origin(Head, Ari) :- atom(Head) | {{Ari=1}}.
+
+copy_implicit_args_head(Args, Ari, H0, NewH) :- vector(H0, N) |
+    Ari1 := Ari + 1,
+    new_vector(NewH0, Ari1),
+    set_vector_element(H0, 0, Func, [], H1),
+    set_vector_element(NewH0, 0, _, Func, NewH1),
+    copy_implicit_args(Args, 1, Ari2, NewH1, NewH2),
+    copy_original_args(Ari2, 1, N, H1, NewH2, NewH).
+copy_implicit_args_head(Args, Ari, H0, NewH) :- atom(H0) |
+    new_vector(NewH0, Ari1),
+    set_vector_element(NewH0, 0, _, H0, NewH1),
+    copy_implicit_args(Args, 1, Ari1, NewH1, NewH).
+
+:- local_implicit io:oldnew, macro:stream, ex:oldnew, tbl:oldnew, sw:shared.
+convert_term(A, H0, H, G0, G, B0, B, Term) --> vector(H0, N) |
+ {{ExpandedArgNum := N-A, convert_head_macro(&macro, 1, N, H0, H)}},
+   convert_goals(ExpandedArgNum, guard, G0, [], G),
+   convert_goals(ExpandedArgNum, body, B0, Term, B).
+convert_term(_, H0, H, G0, G, B0, B, Term) --> atom(H0) |
+ {{H0=H}},
+   convert_goals(0, guard, G0, [], G),
+   convert_goals(0, body,  B0, Term, B).
+
+:- local_implicit macro:stream.
+convert_head_macro(A, N, H0, H) --> A<N |
+ {{set_vector_element(H0, A, Old, New, H1), A1 := A+1}},
+   convert_head_macro_arg(Old, New),
+   convert_head_macro(A1, N, H1, H).
+convert_head_macro(N, N, H0, H) --> true | {{H0=H}}.
+
+convert_head_macro_arg('$VAR'(N,S), New) --> integer(N), string(S, _, 8) |
+   {{New='$VAR'(N,S)}}.
+convert_head_macro_arg(Atom, New) --> atom(Atom) |
+   {{New=Atom}}.
+convert_head_macro_arg(Int, New) --> integer(Int) |
+   {{New=Int}}.
+convert_head_macro_arg(Float, New) --> floating_point(Float) |
+   {{New=Float}}.
+convert_head_macro_arg([Car|Cdr], New) --> true |
+    convert_head_macro_arg(Car, NewCar),
+    convert_head_macro_arg(Cdr, NewCdr),
+   {{New=[NewCar|NewCdr]}}.
+convert_head_macro_arg(Str, New) --> string(Str) |
+   {{New=Str}}.
+convert_head_macro_arg(Macro, New) --> vector(Macro, 3),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Key),
+		vector_element(Macro, 2, Arg) |
+	&macro <<= [get_macro_arg(Key, Arg, New)].
+convert_head_macro_arg(Macro, New) --> vector(Macro, 2),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Arg) |
+	&macro <<= [get_macro_arg(none, Arg, New)].
+otherwise.
+convert_head_macro_arg(Vect, New) --> vector(Vect, N) |
+    convert_head_macro(0, N, Vect, New).
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		ex:oldnew,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared.
+
+convert_goals(Goals, Terminate, NewGoals) --> true |
+ {{convert_COMMA_to_list(ListGoals, [], Goals)}},
+   convert_macros(NewListGoals, Terminate, ListGoals),
+ {{convert_list_to_COMMA(NewListGoals, NewGoals)}}.
+
+:- local_implicit goalslist:oldnew.
+convert_COMMA_to_list((G1,G2)) --> true |
+   convert_COMMA_to_list(G1),
+   convert_COMMA_to_list(G2).
+otherwise.
+convert_COMMA_to_list(G1) --> true |
+   &goalslist <<= [G1].
+
+convert_list_to_COMMA([G1|Cdr], NewGoals) :- Cdr\=[] |
+   NewGoals = (G1,Rest),
+   convert_list_to_COMMA(Cdr, Rest).
+convert_list_to_COMMA([G], NewGoals) :- true | NewGoals=G.
+%%%%%%%%%%%%%%%%%%%%%%% Expand and convert macros %%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		ex:oldnew,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared,
+		goal:oldnew.
+
+convert_macros([Goal|Rest]) --> true |
+   convert_one_goal(Goal),
+   convert_macros(Rest).
+convert_macros([]) --> true | true.
+
+convert_one_goal({ReducedMacros}) --> vector(ReducedMacros, N)|
+   convert_reduced_macros(0, N, ReducedMacros).
+otherwise.
+convert_one_goal(Goal) --> true |
+   convert_one_goal(outside, Goal).
+
+convert_reduced_macros(A, N, ReducedMacros0) --> A<N |
+ {{set_vector_element(ReducedMacros0, A, Goal, [], ReducedMacros),
+   A1 := A+1}},
+   convert_one_goal(inside, Goal),
+   convert_reduced_macros(A1, N, ReducedMacros).
+convert_reduced_macros(N, N, _) --> true | true.
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		ex:oldnew,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared,
+		goal:oldnew,
+		braket:shared.
+
+convert_one_goal((Module:Goal@Pragma)) --> true |
+   {{convert_one_goal_(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+			Goal, NewGoal)}},
+   {{make_external_goal(Module, NewGoal, ExGoal, &ex)}},
+     &braket <= inside,
+     convert_one_goal((ExGoal@Pragma)).
+convert_one_goal((Goal@Pragma1@Pragma2)) --> true |
+   {{convert_one_goal_(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+			Goal, NewGoal)}},
+   vector(Pragma2, A0, Pragma22),
+   {{expand_explicit_args(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+		A0, _, Pragma22, NewPragma)}},
+   {{make_pragma_goal(NewPragma, NewGoal, ExGoal, 0, &ex)}},
+     &braket <= inside,
+     convert_one_goal((ExGoal@Pragma1)).
+otherwise.
+convert_one_goal((Module:Goal)) --> true |
+   {{convert_one_goal_(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+			Goal, NewGoal)}},
+   &goal <<= [(Module:NewGoal)].
+convert_one_goal((Goal@Pragma)) --> true |
+   {{convert_one_goal_(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+			Goal, NewGoal)}},
+   vector(Pragma, A0, Pragma1),
+   {{expand_explicit_args(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+		A0, _, Pragma1, NewPragma)}},
+   &goal <<= [(NewGoal@NewPragma)].
+otherwise.
+convert_one_goal(Goal) --> true |
+   {{convert_one_goal_(&io,&macro,&tbl,&sw,&exargs,&part,&goal,&braket,
+			Goal, NewGoal)}},
+   &goal <<= [NewGoal].
+
+make_external_goal(Module, Goal, ExGoal, [], Ex) :-
+   vector(Goal,L) |
+   atom_name(Module,ML), atom_name(F,FL),
+   A := L - 1, kl1cmp_reader:convert_integer_to_string(A,AL),
+   append_list([string#"$",ML,string#":",FL,string#"/",AL],PL),
+   intern_atom(ExP,PL),
+   set_vector_element(Goal,0,F,ExP,ExGoal),
+   Ex = [{Module:F/A,ExP}].
+make_external_goal(Module, F, ExGoal, [], Ex) :-
+   atom(F) |
+   atom_name(Module,ML), atom_name(F,FL),
+   append_list([string#"$",ML,string#":",FL,string#"/0"],PL),
+   intern_atom(ExP,PL),
+   ExGoal = F,
+   Ex = [{Module:F/0,ExP}].
+make_external_goal(Module, Goal, ExGoal, [{Module:F/A,ExP}|Ex], Ex1) :-
+   vector(Goal,L), vector_element(Goal,0,F), A := L - 1 |
+   Ex1 = [{Module:F/A,ExP}|Ex],
+   set_vector_element(Goal,0,_,ExP,ExGoal).
+make_external_goal(Module, F, ExGoal, [{Module:F/0,ExP}|Ex], Ex1) :-
+   true |
+   ExGoal = F,
+   Ex1 = [{Module:F/0,ExP}|Ex].
+otherwise.
+make_external_goal(Module, Goal, ExGoal, [OneEx|Ex], Ex1) :- true |
+   Ex1 = [OneEx|Ex2],
+   make_external_goal(Module, Goal, ExGoal, Ex, Ex2).
+
+make_pragma_goal(Pragma, Goal, ExGoal, UN, [], Ex) :-
+   vector(Goal,L), vector_element(Pragma,0,PG) |
+   atom_name(PG,PGL), atom_name(F,FL),
+   A := L - 1, kl1cmp_reader:convert_integer_to_string(A,AL),
+   kl1cmp_reader:convert_integer_to_string(UN,UNL),
+   append_list([string#"$",FL,string#"/",AL,string#"@",PGL,UNL],PL),
+   intern_atom(ExP,PL),
+   set_vector_element(Goal,0,F,ExP,Goal1),
+   add_pragma_args(Goal1,A,Pragma,ExGoal),
+   Ex = [{F/A@Pragma,ExP,UN}].
+make_pragma_goal(Pragma, F, ExGoal, UN, [], Ex) :-
+   atom(F), vector_element(Pragma,0,PG) |
+   atom_name(PG,PGL), atom_name(F,FL),
+   kl1cmp_reader:convert_integer_to_string(UN,UNL),
+   append_list([string#"$",FL,string#"/0@",PGL,UNL],PL),
+   intern_atom(ExP,PL),
+   add_pragma_args(ExP,0,Pragma,ExGoal),
+   Ex = [{F/0@Pragma,ExP,UN}].
+make_pragma_goal(Pragma, Goal, ExGoal, _, [{F/A@Pragma,ExP,UN}|Ex], Ex1) :-
+   vector(Goal,L), vector_element(Goal,0,F), A := L - 1 |
+   Ex1 = [{F/A@Pragma,ExP,UN}|Ex],
+   set_vector_element(Goal,0,_,ExP,Goal1),
+   add_pragma_args(Goal1,A,Pragma,ExGoal).
+make_pragma_goal(Pragma, F, ExGoal, _, [{F/0@Pragma,ExP,UN}|Ex], Ex1) :-
+   atom(F) |
+   Ex1 = [{F/0@Pragma,ExP,UN}|Ex],
+   add_pragma_args(ExP,0,Pragma,ExGoal).
+otherwise.
+make_pragma_goal(Pragma, Goal, ExGoal, _, [{G,ExP,UN}|Ex], Ex1) :- true |
+   Ex1 = [{G,ExP,UN}|Ex2],
+   UN1 := UN + 1,
+   make_pragma_goal(Pragma, Goal, ExGoal, UN1, Ex, Ex2).
+otherwise.
+make_pragma_goal(Pragma, Goal, ExGoal, UN, [OneEx|Ex], Ex1) :- true |
+   Ex1 = [OneEx|Ex2],
+   make_pragma_goal(Pragma, Goal, ExGoal, UN, Ex, Ex2).
+
+add_pragma_args(Goal,A,Pragma,ExGoal) :-
+    A>0, vector(Pragma,L) |
+    PA := L - 1,
+    GA := A + L,
+    new_vector(EG,GA),
+    set_vector_element(Goal,0,F,[],Goal0),
+    set_vector_element(EG,0,_,F,EG0),
+    add_pragma_args_1(1,A,Goal0,1,EG0,EG1),
+    add_pragma_args_1(1,PA,Pragma,~(A+1),EG1,ExGoal).
+add_pragma_args(F,0,Pragma,ExGoal) :-
+    vector(Pragma,L) |
+    PA := L - 1,
+    new_vector(EG,L),
+    set_vector_element(EG,0,_,F,EG1),
+    add_pragma_args_1(1,PA,Pragma,1,EG1,ExGoal).
+
+add_pragma_args_1(AP,M,V,P,EG,ExGoal) :- AP =< M |
+    set_vector_element(V,AP,E,[],NV),
+    set_vector_element(EG,P,_,E,NEG),
+    add_pragma_args_1(~(AP+1),M,NV,~(P+1),NEG,ExGoal).
+add_pragma_args_1(AP,M,_,_,EG,ExGoal) :- AP > M |
+    ExGoal = EG.
+
+append_list([One|T],L) :- true | append_list(One,T,L).
+
+append_list(S,[One|T],L) :- true |
+   append_string(S,One,NS), append_list(NS,T,L).
+append_list(S,[],L) :- true | L = S.
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared,
+		goal:oldnew,
+		braket:shared.
+
+convert_one_goal_((X=Y), NewGoal) --> &part=body |
+   convert_unify(X, Y, NewGoal).
+convert_one_goal_((X:=Y), NewGoal) --> &part=body |
+   convert_becomes(X, Y, NewGoal).
+convert_one_goal_((X$:=Y), NewGoal) --> &part=body |
+   convert_float_becomes(X, Y, NewGoal).
+convert_one_goal_((X<=Y), NewGoal) --> &part=body, &sw=expand |
+   convert_single_op(X, Y, NewGoal).
+convert_one_goal_((X$<=Y), NewGoal) --> &part=body, &sw=expand |
+   convert_float_single_op(X, Y, NewGoal).
+convert_one_goal_((X<<=Y), NewGoal) --> &part=body, &sw=expand |
+   convert_double_op(X, Y, NewGoal).
+convert_one_goal_(merge(X,Y,Z), NewGoal) --> &part=body |
+   convert_one_goal_(merge({X,Y},Z), NewGoal).
+convert_one_goal_(merge_in(X,Y,Z), NewGoal) --> &part=body |
+   convert_one_goal_((Z={X,Y}), NewGoal).
+convert_one_goal_(floating_point(X), NewGoal) --> &part=guard |
+   convert_one_goal_(float(X), NewGoal).
+convert_one_goal_(true, NewGoal) --> true |
+ {{NewGoal=true}}.
+convert_one_goal_(Goal, NewGoal) --> vector(Goal, 3),
+				vector_element(Goal, 0, '#'),
+				vector_element(Goal, 1, Key),
+				atom(Key),
+				vector_element(Goal, 2, Macro) |
+   &macro <<= [get_macro_arg(Key, Macro, NewGoal0)],
+% {{check_define_macro(&io, NewGoal0, NewGoal1)}},
+%   convert_one_goal_(NewGoal1, NewGoal).
+ {{check_define_macro(&io, NewGoal0, NewGoal)}}.
+otherwise.
+convert_one_goal_(Goal, NewGoal) --> &part=body |
+ {{kl1cmp_blttbl:active_builtin(Goal, _, _, _, Type)}},
+   convert_one_body_goal(Type, Goal, NewGoal).
+otherwise.
+convert_one_goal_(Goal, NewGoal) --> vector(Goal, N) |
+   expand_explicit_args(N, _, Goal, NewGoal).
+convert_one_goal_(Goal, NewGoal) --> atom(Goal) |
+ {{NewGoal=Goal}}.
+
+convert_one_body_goal(_, {'&', {(++), Arg}}, NewGoal) -->
+		&sw=expand, atom(Arg) |
+   convert_single_op({'&', Arg}, ({'&', Arg} + 1), NewGoal).
+convert_one_body_goal(_, {'&', {(--), Arg}}, NewGoal) -->
+		&sw=expand, atom(Arg) |
+   convert_single_op({'&', Arg}, ({'&', Arg} - 1), NewGoal).
+otherwise.
+convert_one_body_goal(none, Goal, NewGoal) -->
+				     &exargs\=0,
+				     &braket=outside,
+				     vector(Goal, A0) |
+   expand_explicit_args(A0, A1, Goal, Goal1),
+ {{A := A1 + &exargs,
+   new_vector(NewGoal0, A),
+   set_vector_element(Goal1, 0, Func, _, _),
+   &tbl <<= [get_all_args(ArgList)]}},
+   copy_implicit_args(ArgList, A1, Goal1, NewGoal0, NewGoal).
+convert_one_body_goal(none, Goal, NewGoal) -->
+					&exargs \= 0,
+					&braket=outside,
+					atom(Goal) |
+ {{A := &exargs + 1,
+   new_vector(NewGoal0, A),
+   &tbl <<= [get_all_args(ArgList)]}},
+   copy_implicit_args(ArgList, 1, {Goal}, NewGoal0, NewGoal).
+otherwise.
+convert_one_body_goal(_, Goal, NewGoal) --> vector(Goal, A0) |
+   expand_explicit_args(A0, _, Goal, NewGoal).
+convert_one_body_goal(_, Goal, NewGoal) --> atom(Goal) |
+ {{Goal=NewGoal}}.
+
+copy_implicit_args(Args, A0, Goal0, NewGoal0, NewGoal) --> true |
+ {{set_vector_element(Goal0, 0, Func, [], Goal1),
+   set_vector_element(NewGoal0, 0, _, Func, NewGoal1),
+   copy_implicit_args(Args, 1, A1, NewGoal1, NewGoal2),
+   copy_original_args(A1, 1, A0, Goal1, NewGoal2, NewGoal)}}.
+
+copy_implicit_args([Arg|Rest], A0, A, NewGoal0, NewGoal) :- true |
+   set_vector_element(NewGoal0, A0, _, Arg, NewGoal1),
+   A1 := A0+1,
+   copy_implicit_args(Rest, A1, A, NewGoal1, NewGoal).
+otherwise.
+copy_implicit_args([], A0, A, NewGoal0, NewGoal) :- true |
+   A0=A, NewGoal0=NewGoal.
+
+copy_original_args(NewArgNum, Num, Ari, Goal0, NewGoal0, NewGoal) :-
+			Num < Ari |
+   set_vector_element(Goal0, Num, Arg, [], Goal1),
+   set_vector_element(NewGoal0, NewArgNum, _, Arg, NewGoal1),
+   NewArgNum1 := NewArgNum + 1,
+   Num1 := Num + 1,
+   copy_original_args(NewArgNum1, Num1, Ari, Goal1, NewGoal1, NewGoal).
+copy_original_args(_, Ari, Ari, _, NewGoal0, NewGoal) :- true |
+   NewGoal0=NewGoal.
+
+convert_unify(Left, Right, NewGoal) --> true |
+   convert_arg_ref(Left, NewLeft),
+   convert_arg_ref(Right, NewRight),
+ {{NewGoal=(NewLeft=NewRight)}}.
+
+convert_becomes(Left, Right, NewGoal) --> integer(Right) |
+   convert_unify(Left, Right, NewGoal).
+convert_becomes(Left, {'$VAR', N, S}, NewGoal) -->
+		integer(N), string(S, _, 8) |
+   convert_unify(Left, {'$VAR', N, S}, NewGoal).
+otherwise.
+convert_becomes(Left, Right, NewGoal) --> true |
+ {{kl1cmp_struct:calcurate_right_hand(1, _, Right, Right1)}},
+   convert_arg_ref(Right1, NewRight),
+   convert_arg_set(Left, NewLeft),
+   convert_math_macro(NewLeft, NewRight, NewGoal).
+
+convert_math_macro(Left, Right, NewGoal) --> integer(Right) |	% 881227
+	NewGoal = (Left = Right).				% SSL:Nishizaki
+convert_math_macro(Left, Right, NewGoal) -->			% 920214
+    Right = {'$VAR', N, S}, integer(N), string(S, _, 8) |	% SSL:Nishizaki
+	NewGoal = (Left = Right).
+convert_math_macro(Left, int(Right), NewGoal) --> true |
+ {{kl1cmp_blttbl:expression(&io, int(Right), NewGoal, In, Left)}},
+   convert_float_inner_math_macro(In).
+otherwise.
+convert_math_macro(Left, Right, NewGoal) --> true |
+ {{kl1cmp_blttbl:expression(&io, Right, NewGoal, In, Left)}},
+   convert_inner_math_macro(In).
+
+convert_inner_math_macro([Org, New|Rest]) -->
+	Org='$VAR'(N,S), integer(N), string(S, _, 8) |
+ {{Org=New}},
+   convert_inner_math_macro(Rest).
+convert_inner_math_macro([Int, New|Rest]) --> integer(Int) |
+ {{Int=New}},
+   convert_inner_math_macro(Rest).
+convert_inner_math_macro([int(Org), New|Rest]) --> true |
+   &tbl <<= [new_variable(New)],
+ {{kl1cmp_blttbl:expression(&io, int(Org), NewOrg, In, New)}},
+   convert_float_inner_math_macro(In),
+   convert_inner_math_macro(Rest),
+   &goal <<= [NewOrg].
+otherwise.
+convert_inner_math_macro([Org, New|Rest]) --> true |
+   &tbl <<= [new_variable(New)],
+ {{kl1cmp_blttbl:expression(&io, Org, NewOrg, In, New)}},
+   convert_inner_math_macro(In),
+   convert_inner_math_macro(Rest),
+   &goal <<= [NewOrg].
+convert_inner_math_macro([]) --> true | true.
+
+convert_float_becomes(Left, Right, NewGoal) --> floating_point(Right) |
+   convert_unify(Left, Right, NewGoal).
+convert_float_becomes(Left, {'$VAR', N, S}, NewGoal) -->
+		integer(N), string(S, _, 8) |
+   convert_unify(Left, {'$VAR', N, S}, NewGoal).
+otherwise.
+convert_float_becomes(Left, Right, NewGoal) --> true |
+   convert_arg_ref(Right, NewRight),
+   convert_arg_set(Left, NewLeft),
+   convert_float_math_macro(NewLeft, NewRight, NewGoal).
+
+convert_float_math_macro(Left, Right, NewGoal) --> floating_point(Right) |
+	NewGoal = (Left = Right).
+convert_float_math_macro(Left, Right, NewGoal) -->		% 920214
+    Right = {'$VAR', N, S}, integer(N), string(S, _, 8) |	% SSL:Nishizaki
+	NewGoal = (Left = Right).
+convert_float_math_macro(Left, float(Right), NewGoal) --> true |
+ {{kl1cmp_blttbl:float_expression(&io, float(Right), NewGoal, In, Left)}},
+   convert_inner_math_macro(In).
+otherwise.
+convert_float_math_macro(Left, Right, NewGoal) --> true |
+ {{kl1cmp_blttbl:float_expression(&io, Right, NewGoal, In, Left)}},
+   convert_float_inner_math_macro(In).
+
+convert_float_inner_math_macro([Org, New|Rest]) -->
+	Org='$VAR'(N,S), integer(N), string(S, _, 8) |
+ {{Org=New}},
+   convert_float_inner_math_macro(Rest).
+convert_float_inner_math_macro([Float, New|Rest]) --> floating_point(Float) |
+ {{Float=New}},
+   convert_float_inner_math_macro(Rest).
+convert_float_inner_math_macro([float(Org), New|Rest]) --> true |
+   &tbl <<= [new_variable(New)],
+ {{kl1cmp_blttbl:float_expression(&io, float(Org), NewOrg, In, New)}},
+   convert_inner_math_macro(In),
+   convert_float_inner_math_macro(Rest),
+   &goal <<= [NewOrg].
+otherwise.
+convert_float_inner_math_macro([Org, New|Rest]) --> true |
+   &tbl <<= [new_variable(New)],
+ {{kl1cmp_blttbl:float_expression(&io, Org, NewOrg, In, New)}},
+   convert_float_inner_math_macro(In),
+   convert_float_inner_math_macro(Rest),
+   &goal <<= [NewOrg].
+convert_float_inner_math_macro([]) --> true | true.
+
+convert_arg_ref('$VAR'(N,S), New) --> integer(N), string(S, _, 8) |
+ {{New='$VAR'(N,S)}}.
+convert_arg_ref(Atom, New) --> atom(Atom) |
+ {{New=Atom}}.
+convert_arg_ref(Int, New) --> integer(Int) |
+ {{Int=New}}.
+convert_arg_ref(Float, New) --> floating_point(Float) |
+ {{Float=New}}.
+convert_arg_ref(Str, New) --> string(Str) |
+ {{Str=New}}.
+convert_arg_ref([Car|Cdr], New) --> true |
+%   convert_arg_ref(Car, NewCar),
+%   convert_arg_ref(Cdr, NewCdr),
+% {{New=[NewCar|NewCdr]}}.
+   expand_explicit_args(2, _, car(Car), NewCar),
+   convert_arg_ref(Cdr, NewCdr),
+ {{convert_arg_ref_list(NewCar,NewCdr,New)}}.
+convert_arg_ref({'&', Arg}, New) --> atom(Arg), &sw=expand |
+   &tbl <<= [get_old(Arg, New0)],
+ {{check_arg(&io, &tbl, New0, New)}}.
+convert_arg_ref({'&', {Arg, old}}, New) --> atom(Arg), &sw=expand |
+   &tbl <<= [get_old(Arg, New0)],
+ {{check_arg(&io, &tbl, New0, New)}}.
+convert_arg_ref({'&', {Arg, Pos}}, New) -->
+		integer(Pos), atom(Arg), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   convert_arg_ref_macro(Type, Arg, Pos, New).
+convert_arg_ref({'&', {Arg, '$VAR'(N,S)}}, New) -->
+		integer(N), string(S, _, 8), atom(Arg), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   convert_arg_ref_macro(Type, Arg, '$VAR'(N,S), New).
+convert_arg_ref({'&', {Arg, oldnew}}, New) -->
+		atom(Arg), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   convert_arg_ref_macro(Type, Arg, oldnew, New).
+convert_arg_ref(Macro, New) --> vector(Macro, 3),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Key),
+		vector_element(Macro, 2, Arg),
+		atom(Key) |
+   &macro <<= [get_macro_arg(Key, Arg, New0)],
+ {{check_define_macro(&io, New0, New)}}.
+convert_arg_ref(Macro, New) --> vector(Macro, 3),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Key),
+		vector_element(Macro, 2, Arg),
+		Key >= 2, Key =< 36 |
+   &macro <<= [get_macro_arg(Key, Arg, New0)],
+ {{check_define_macro(&io, New0, New)}}.
+convert_arg_ref(Macro, New) --> vector(Macro, 2),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Arg) |
+   &macro <<= [get_macro_arg(none, Arg, New0)],
+ {{check_define_macro(&io, New0, New)}}.
+convert_arg_ref(Macro, NewArg) --> vector(Macro, 2),
+		vector_element(Macro, 0, '~'),
+		vector_element(Macro, 1, {++, Arg}),
+		atom(Arg) |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0)],
+ {{check_arg(&io, &tbl, Old0, NewArg),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [(New := NewArg + 1)].
+otherwise.
+convert_arg_ref(Macro, New) --> vector(Macro, 2),
+		vector_element(Macro, 0, '~'),
+		vector_element(Macro, 1, Right) |
+   &tbl <<=[new_variable(New)],
+   convert_becomes(New, Right, NewGoal),
+   &goal <<= [NewGoal].
+convert_arg_ref(Macro, New) --> vector(Macro, 2),
+		vector_element(Macro, 0, '$~'),
+		vector_element(Macro, 1, Right) |
+   &tbl <<=[new_variable(New)],
+   convert_float_becomes(New, Right, NewGoal),
+   &goal <<= [NewGoal].
+otherwise.
+convert_arg_ref(Vect, New) --> &braket = becomes, vector(Vect, N) |
+   convert_arg_ref_vect(0, N, Vect, New).
+convert_arg_ref(Vect, New) --> &braket \= becomes, vector(Vect, N) |
+    expand_explicit_args(N, _, Vect, New).
+
+convert_arg_ref_macro(oldnew, Arg, Pos, New) --> &part = guard |
+   &tbl <<= [get_old(Arg, Old0), new_variable(New)],
+ {{check_arg(&io, &tbl, Old0, Old)}},
+   &goal <<= [vector_element(Old, Pos, New)].
+convert_arg_ref_macro(oldnew, Arg, Pos, Elm) --> &part = body |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [set_vector_element(Old, Pos, Elm, Elm, New)].
+convert_arg_ref_macro(string, Arg, Pos, New) --> &part = guard |
+   &tbl <<= [get_old(Arg, Old0), new_variable(New)],
+ {{check_arg(&io, &tbl, Old0, Old)}},
+   &goal <<= [string_element(Old, Pos, New)].
+convert_arg_ref_macro(string, Arg, Pos, Elm) --> &part = body |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [string_element(Old, Pos, Elm, New)].
+convert_arg_ref_macro(shared, Arg, Pos, New) --> &part = guard |
+   &tbl <<= [get_old(Arg, Old0), new_variable(New)],
+ {{check_arg(&io, &tbl, Old0, Old)}},
+   &goal <<= [vector_element(Old, Pos, New)].
+convert_arg_ref_macro(shared, Arg, Pos, Elm) --> &part = body |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [set_vector_element(Old, Pos, Elm, Elm, New)].
+convert_arg_ref_macro(stream, Arg, oldnew, New) --> &part = body |
+   &tbl <<= [get_old_and_new(Arg, OldNew0)],
+ {{check_arg(&io, &tbl, OldNew0, [Old|New])}}.
+otherwise.
+convert_arg_ref_macro(_, Arg, Pos, Elm) --> true |
+   &io <<= [error_message(string#"Invalid macro type : ", [Arg, Pos])],
+   &tbl <<= [new_variable(Elm)].
+
+convert_arg_ref_list(car(NewCar),NewCdr,New) :- true |
+   New = [NewCar|NewCdr].
+convert_arg_ref_list(car(NewCar0,NewCar1),NewCdr,New) :- true |
+   New = [NewCar0,NewCar1|NewCdr].
+
+convert_arg_ref_vect(A, N, Vect0, Vect) --> A<N |
+ {{set_vector_element(Vect0, A, Elm, NewElm, Vect1)}},
+   convert_arg_ref(Elm, NewElm),
+ {{A1 := A+1}},
+   convert_arg_ref_vect(A1, N, Vect1, Vect).
+convert_arg_ref_vect(N, N, Vect0, Vect) --> true | {{Vect0=Vect}}.
+
+convert_arg_set('$VAR'(N,S), New) --> integer(N), string(S, _, 8) |
+ {{New='$VAR'(N,S)}}.
+convert_arg_set(Atom, New) --> atom(Atom) |
+ {{New=Atom}}.
+convert_arg_set(Int, New) --> integer(Int) |
+ {{New=Int}}.
+convert_arg_set(Float, New) --> floating_point(Float) |
+ {{New=Float}}.
+convert_arg_set(Str, New) --> string(Str) |
+ {{New=Str}}.
+convert_arg_set([Car|Cdr], New) --> true |
+   convert_arg_ref(Car, NewCar),
+   convert_arg_ref(Cdr, NewCdr),
+ {{New=[NewCar|NewCdr]}}.
+convert_arg_set({'&', Arg}, New) --> atom(Arg), &sw=expand |
+   &tbl <<= [get_new(Arg, NewArg0)],
+ {{check_arg(&io, &tbl, NewArg0, New)}}.
+convert_arg_set({'&', {Arg, Pos}}, New) -->
+		atom(Arg), integer(Pos), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   convert_arg_set_macro(Type, Arg, Pos, New).
+convert_arg_set({'&', {Arg, '$VAR'(N,S)}}, New) -->
+	atom(Arg), string(S, _, 8), integer(N), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   convert_arg_set_macro(Type, Arg, '$VAR'(N,S), New).
+convert_arg_set(Macro, New) --> vector(Macro, 3),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Key),
+		vector_element(Macro, 2, Arg) |
+   &macro <<= [get_macro_arg(Key, Arg, New)].
+convert_arg_set(Macro, New) --> vector(Macro, 2),
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Arg) |
+   &macro <<= [get_macro_arg(none, Arg, New)].
+%otherwise.
+%convert_arg_set(Arg, New) -->
+%		vector(Arg, _), vector_element(Arg, 0, '&'), &sw=expand |
+%   &io <<= [warning_message("Invalid macro arg : ",
+%		[Arg])],
+% {{New=Arg}}.
+otherwise.
+convert_arg_set(Vect, New) --> vector(Vect, N) |
+   convert_arg_set_vect(0, N, Vect, New).
+
+convert_arg_set_macro(oldnew, Arg, Pos, Elm) --> &part = body |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Void),
+			new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [set_vector_element(Old, Pos, Void, Elm, New)].
+convert_arg_set_macro(shared, Arg, Pos, Elm) --> &part = body |
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Void),
+			new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [set_vector_element(Old, Pos, Void, Elm, New)].
+convert_arg_set_macro(string, Arg, Pos, Elm) --> &part = body |
+    &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Elm)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &goal <<= [string_element(Old, Pos, Elm, New)].
+
+convert_arg_set_vect(A, N, Vect0, New) --> A<N |
+ {{set_vector_element(Vect0, A, Elm, NewElm, Vect1)}},
+   convert_arg_ref(Elm, NewElm),
+ {{A1 := A+1}},
+   convert_arg_set_vect(A1, N, Vect1, New).
+convert_arg_set_vect(N, N, Vect0, New) --> true | Vect0=New.
+
+expand_explicit_args(Ari, NewAri, Goal0, Goal) --> true|
+   extract_goal_args(Args, [], 0, Ari, 0, NewAri,  Goal0),
+   new_vector(NewGoal, NewAri),
+ {{copy_explicit_args(0, Args, NewGoal, Goal)}}.
+
+copy_explicit_args(A, [Arg|Rest], NewGoal, Goal) :- true |
+   set_vector_element(NewGoal, A, _, Arg, NewGoal1),
+   A1 := A+1,
+   copy_explicit_args(A1, Rest, NewGoal1, Goal).
+copy_explicit_args(_, [], NewGoal, Goal) :- true |
+   NewGoal=Goal.
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared,
+		goal:oldnew,
+		braket:shared,
+		args:oldnew.
+
+extract_goal_args(Cnt, Ari, NewAri0, NewAri, Goal0) --> Cnt<Ari |
+ {{set_vector_element(Goal0, Cnt, Arg, [], Goal1),
+   Cnt1 := Cnt+1}},
+   extract_one_goal_arg(NewAri0, NewAri1, Arg),
+   extract_goal_args(Cnt1, Ari, NewAri1, NewAri, Goal1).
+extract_goal_args(Ari, Ari, NewAri0, NewAri, _) --> true | {{NewAri0=NewAri}}.
+
+extract_one_goal_arg(NewAri0, NewAri, '$VAR'(N,S)) -->
+		integer(N), string(S, _, 8) |
+   &args <<= ['$VAR'(N,S)],
+ {{NewAri := NewAri0+1}}.
+extract_one_goal_arg(NewAri0, NewAri, Atom) --> atom(Atom) |
+   &args <<= [Atom],
+ {{NewAri := NewAri0+1}}.
+extract_one_goal_arg(NewAri0, NewAri, Int) --> integer(Int) |
+   &args <<= [Int],
+ {{NewAri := NewAri0+1}}.
+extract_one_goal_arg(NewAri0, NewAri, Float) --> floating_point(Float) |
+   &args <<= [Float],
+ {{NewAri := NewAri0+1}}.
+extract_one_goal_arg(NewAri0, NewAri, Str) --> string(Str) |
+   &args <<= [Str],
+ {{NewAri := NewAri0+1}}.
+extract_one_goal_arg(NewAri0, NewAri, [Car|Cdr]) --> true |
+ {{NewAri := NewAri0+1,
+   convert_arg_ref(&io, &macro, &tbl, &sw, &exargs, &part, &goal, &braket,
+		Car, NewCar),
+   convert_arg_ref(&io, &macro, &tbl, &sw, &exargs, &part, &goal, &braket,
+		Cdr, NewCdr)}},
+   &args <<= [[NewCar|NewCdr]].
+extract_one_goal_arg(NewAri0, NewAri, {'&', Arg}) --> atom(Arg), &sw=expand |
+   &tbl <<= [get_type(Arg, Type)],
+   extract_one_goal_macro_arg(NewAri0, NewAri, Type, {'&', Arg}).
+extract_one_goal_arg(NewAri0, NewAri, {'&', {Arg, oldnew}}) -->
+    atom(Arg), &sw=expand |			% 890512 Nishizaki
+   &tbl <<= [get_type(Arg, Type)],
+   extract_one_goal_macro_arg(NewAri0, NewAri, Type, {'&', {Arg, oldnew}}).
+otherwise.
+extract_one_goal_arg(NewAri0, NewAri, Arg) --> true |
+ {{convert_arg_ref(&io, &macro, &tbl, &sw, &exargs, &part, &goal, &braket,
+			Arg, NewArg),
+   NewAri := NewAri0+1}},
+   &args <<= [NewArg].
+
+extract_one_goal_macro_arg(NewAri0, NewAri, oldnew, {'&', Arg}) -->
+		atom(Arg), &sw=expand |
+   &tbl<<=[get_old(Arg, Old0), get_new(Arg, New0)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &args <<= [Old, New],
+ {{NewAri := NewAri0+2}}.
+extract_one_goal_macro_arg(NewAri0, NewAri, string, {'&', Arg}) -->
+		atom(Arg), &sw=expand |
+   &tbl<<=[get_old(Arg, Old0), get_new(Arg, New0)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &args <<= [Old, New],
+ {{NewAri := NewAri0+2}}.
+extract_one_goal_macro_arg(NewAri0, NewAri, shared, {'&', {Arg, oldnew}}) -->
+		atom(Arg), &sw=expand |		% 890512 Nishizaki
+   &tbl<<=[get_old(Arg, Old0), get_new(Arg, New0)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New)}},
+   &args <<= [Old, New],
+ {{NewAri := NewAri0+2}}.
+extract_one_goal_macro_arg(NewAri0, NewAri, stream, {'&', {Arg, oldnew}}) -->
+		atom(Arg), &sw=expand |		% 890512 Nishizaki
+   &tbl<<=[get_old_and_new(Arg, OldNew0)],
+ {{check_arg(&io, &tbl, OldNew0, [Old|New])}},
+   &args <<= [Old, New],
+ {{NewAri := NewAri0+2}}.
+otherwise.
+extract_one_goal_macro_arg(NewAri0, NewAri, _, Macro) --> true |
+ {{convert_arg_ref(&io, &macro, &tbl, &sw, &exargs, &part, &goal, &braket,
+		Macro, NewArg)}},
+   &args <<= [NewArg],
+ {{NewAri := NewAri0+1}}.
+
+:- local_implicit
+		io:oldnew,
+		macro:stream,
+		tbl:oldnew,
+		sw:shared,
+		exargs:shared,
+		part:shared,
+		goal:oldnew,
+		braket:shared.
+
+convert_single_op(X, Y, NewGoal) --> true |
+ {{expression(Y, YY, Type)}},
+   case_on_right_hand(Type, X, YY, NewGoal).
+
+case_on_right_hand(arith, X, Y, NewGoal) --> true |
+   &braket <= becomes,
+   convert_becomes(X, Y, NewGoal).
+case_on_right_hand(none, X, Y, NewGoal) --> true |
+   convert_arg_ref(Y, NewY),
+   convert_arg_set(X, NewX),
+ {{NewGoal=(NewX=NewY)}}.
+
+convert_float_single_op(X, Y, NewGoal) --> true |
+ {{float_expression(Y, YY, Type)}},
+   case_on_float_right_hand(Type, X, YY, NewGoal).
+
+case_on_float_right_hand(arith, X, Y, NewGoal) --> true |
+   &braket <= becomes,
+   convert_float_becomes(X, Y, NewGoal).
+case_on_float_right_hand(none, X, Y, NewGoal) --> true |
+   convert_arg_ref(Y, NewY),
+   convert_arg_set(X, NewX),
+ {{NewGoal=(NewX=NewY)}}.
+
+convert_double_op({'&', Arg}, Y, NewGoal) --> atom(Arg) |
+   convert_arg_ref(Y, NewY),
+   &tbl <<=[get_old_and_new(Arg, [Old0|New])],
+ {{check_arg(&io, &tbl, Old0, Old),
+   out_to_dlist(NewRight, New, NewY),
+   NewGoal=(Old=NewRight)}}.
+convert_double_op({'&', {Arg, Pos}}, Y, NewGoal) --> atom(Arg), integer(Pos) |
+   convert_arg_ref(Y, NewY),
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Cdr)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New),
+   out_to_dlist(NewRight, Cdr, NewY),
+   NewGoal=(set_vector_element(Old, Pos, NewRight, Cdr, New))}}.
+convert_double_op({'&', {Arg, '$VAR'(N,S)}}, Y, NewGoal) -->
+	atom(Arg), integer(N), string(S, _, 8) |
+   convert_arg_ref(Y, NewY),
+   &tbl <<= [get_old(Arg, Old0), get_new(Arg, New0), new_variable(Cdr)],
+ {{check_arg(&io, &tbl, Old0, Old),
+   check_arg(&io, &tbl, New0, New),
+   out_to_dlist(NewRight, Cdr, NewY),
+   NewGoal=(set_vector_element(Old, '$VAR'(N,S), NewRight, Cdr, New))}}.
+
+%convert_double_ref({'&', {Arg, Pos}}, Y, NewGoal) --> atom(Arg), integer(Pos) |
+%   convert_arg_ref(Y, NewY),
+%   &tbl <<= [get_ref(Arg, Old0), get_new(Arg, New0)],
+% {{check_arg(&io, &tbl, Old0, Old),
+%   check_arg(&io, &tbl, New0, New),
+%   out_to_dlist(NewRight, New, NewY),
+%   NewGoal=(set_vector_element(Old, Pos, NewRight, NewY, New))}}.
+%convert_double_ref({'&', {Arg, '$VAR'(N,S)}}, Y, NewGoal) -->
+%	atom(Arg), integer(N), string(S, _, 8) |
+%   convert_arg_ref(Y, NewY),
+%   &tbl <<= [get_ref(Arg, Old0), get_new(Arg, New0)],
+% {{check_arg(&io, &tbl, Old0, Old),
+%   check_arg(&io, &tbl, New0, New),
+%   out_to_dlist(NewRight, New, NewY),
+%   NewGoal=(set_vector_element(Old, '$VAR'(N,S), NewRight, NewY, New))}}.
+
+expression(X1+X2,Y,Type) :- true |
+   Y=X1+X2, Type=arith.
+expression(X1-X2,Y,Type) :- true |
+   Y=X1-X2, Type=arith.
+expression(X1*X2,Y,Type) :- true |
+   Y=X1*X2, Type=arith.
+expression(X1/X2,Y,Type) :- true |
+   Y=X1/X2, Type=arith.
+expression(X1 mod X2,Y,Type) :- true |
+   Y=X1 mod X2, Type=arith.
+expression(X1 << X2,Y,Type) :- true |
+   Y=X1 << X2, Type=arith.
+expression(X1 >> X2,Y,Type) :- true |
+   Y=X1 >> X2, Type=arith.
+expression(X1/\X2,Y,Type) :- true |
+   Y=X1/\X2, Type=arith.
+expression(X1\/X2,Y,Type) :- true |
+   Y=X1\/X2, Type=arith.
+expression(X1 xor X2,Y,Type) :- true |	% 881227
+   Y=X1 xor X2, Type=arith.		% SSL:Nishizaki
+expression(\(X1),Y,Type) :- true |	% 880605
+   Y= \(X1), Type=arith.		% SSL:Nishizaki
+expression(-X2,Y,Type) :- true |
+   Y= -X2, Type=arith.
+expression(abs(X2),Y,Type) :- true |
+   Y=abs(X2), Type=arith.
+expression(min(X1,X2),Y,Type) :- true |
+   Y=min(X1,X2), Type=arith.
+expression(max(X1,X2),Y,Type) :- true |
+   Y=max(X1,X2), Type=arith.
+expression(int(X1),Y,Type) :- true |
+   Y=max(X1), Type=arith.
+otherwise.
+expression(X,Y,Type) :- true |
+   Y=X, Type=none.
+
+float_expression(X1+X2,Y,Type) :- true |
+   Y=X1+X2, Type=arith.
+float_expression(X1-X2,Y,Type) :- true |
+   Y=X1-X2, Type=arith.
+float_expression(X1*X2,Y,Type) :- true |
+   Y=X1*X2, Type=arith.
+float_expression(X1/X2,Y,Type) :- true |
+   Y=X1/X2, Type=arith.
+float_expression(-X2,Y,Type) :- true |
+   Y= -X2, Type=arith.
+float_expression(abs(X2),Y,Type) :- true |
+   Y=abs(X2), Type=arith.
+float_expression(min(X1,X2),Y,Type) :- true |
+   Y=min(X1,X2), Type=arith.
+float_expression(max(X1,X2),Y,Type) :- true |
+   Y=max(X1,X2), Type=arith.
+float_expression(floor(X1),Y,Type) :- true |
+   Y=floor(X1), Type=arith.
+float_expression(sqrt(X1),Y,Type) :- true |
+   Y=sqrt(X1), Type=arith.
+float_expression(ln(X1),Y,Type) :- true |
+   Y=ln(X1), Type=arith.
+float_expression(log(X1),Y,Type) :- true |
+   Y=log(X1), Type=arith.
+float_expression(exp(X1),Y,Type) :- true |
+   Y=exp(X1), Type=arith.
+float_expression(X1**X2,Y,Type) :- true |
+   Y=X1**X2, Type=arith.
+float_expression(sin(X1),Y,Type) :- true |
+   Y=sin(X1), Type=arith.
+float_expression(cos(X1),Y,Type) :- true |
+   Y=cos(X1), Type=arith.
+float_expression(tan(X1),Y,Type) :- true |
+   Y=tan(X1), Type=arith.
+float_expression(asin(X1),Y,Type) :- true |
+   Y=asin(X1), Type=arith.
+float_expression(acos(X1),Y,Type) :- true |
+   Y=acos(X1), Type=arith.
+float_expression(atan(X1),Y,Type) :- true |
+   Y=atan(X1), Type=arith.
+float_expression(sinh(X1),Y,Type) :- true |
+   Y=sinh(X1), Type=arith.
+float_expression(cosh(X1),Y,Type) :- true |
+   Y=cosh(X1), Type=arith.
+float_expression(tanh(X1),Y,Type) :- true |
+   Y=tanh(X1), Type=arith.
+float_expression(float(X1),Y,Type) :- true |
+   Y=float(X1), Type=arith.
+otherwise.
+float_expression(X,Y,Type) :- true |
+   Y=X, Type=none.
+
+:- local_implicit io:oldnew, tbl:oldnew.
+check_arg(not_found(OrgArg), Arg) --> true |
+   &io <<= [error_message(string#"Invalid Macro arg. Replaced by Void. ",
+		[{'&', OrgArg}])],
+   &tbl <<= [new_variable(Arg)].
+otherwise.
+check_arg(Arg0, Arg) --> true | {{Arg0=Arg}}.
+
+:- local_implicit io:oldnew.
+check_define_macro('$NOT_FOUND'(Old), Arg) --> true |
+%   &io <<= [error_message(string#"Not defined macro. Replaced by '0'",
+%		[Old])],
+% {{Arg=0}}.
+    Arg = Old. % 890511 Nishizaki
+otherwise.
+check_define_macro(Arg0, Arg) --> true | {{Arg0=Arg}}.
+
+out_to_dlist(Head0, Tail, [One|Rest]) :- true |
+   Head0=[One|Head],
+   out_to_dlist(Head, Tail, Rest).
+out_to_dlist(Head, Tail, []) :-  true | Head = Tail.

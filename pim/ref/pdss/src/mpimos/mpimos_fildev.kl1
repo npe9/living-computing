@@ -1,0 +1,484 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% I/O monitors for Micro-PIMOS. : Support File & Directory.
+%% M-PSI FEP(V0.9) compatible version.
+
+:- module mpimos_file_device.
+:- public files/1, file_request/4.
+:- with_macro pdss.
+
+%%%% Create File Process.
+files(Command):-
+    true |
+	raise(shoen_tag#mpimos_request,device_file,Command),
+	consume_resource(2).
+
+%%%% File Manager Commands (from task monitor).
+file_request(open(PathName,Mode,Command,Status,Cdr),DN,TF,SS):-
+    string(PathName,_,8), atom(Mode) |
+	mpimos_utility:pathname(DN,PathName,FN),
+	SS=[file_manager:device_create(FS,FN,Mode,S,TF)|SS2],
+	consume_resource(11),
+	file_wait_created(Command,FS,PathName,Mode,Status,S),
+	file_request(Cdr,DN,TF,SS2).
+file_request(directory(PathName,Command,Status,Cdr),DN,TF,SS):-
+    string(PathName,_,8) |
+	mpimos_utility:pathname(DN,PathName,FN),
+	SS=[file_manager:directory(DS,FN,S,TF)|SS2],
+	consume_resource(10),
+	directory_wait_created(Command,DS,PathName,Status,S),
+	file_request(Cdr,DN,TF,SS2).
+file_request([],DN,TF,SS):- true | SS=[], consume_resource(1).
+otherwise.
+file_request(X,DN,TF,SS):-
+    true |
+	SS=[],
+	consume_resource(1),
+	file_error(error,illegal_command,X).
+
+%%%% File (wait status of create_file command).
+file_wait_created(Command,FS,Nam,fep#read,Status,fep#normal):-
+    true |
+	consume_resource(1),
+	Status=fep#normal,
+	rfile_wait_reset(Command,FS,status(Nam,fep#read)).
+file_wait_created(Command,FS,Nam,Mode,Status,fep#normal):-
+    Mode\=fep#read |
+	Status=fep#normal,
+	wfile_wait_reset(Command,FS,status(Nam,Mode)).
+file_wait_created(Command,FS,Nam,Mode,Status,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	FS=[].
+
+%%%% Read Mode File (wait reset command).
+rfile_wait_reset(reset(Abort,Attention,Status,Cdr),FS,Nam):-
+    true |
+	FS=[reset(Abt,_,S)|NFS],
+	consume_resource(2),
+	rfile_wait_status(Cdr,NFS,Abort,Abt,Nam,Status,S).
+rfile_wait_reset(next_attention(Attention,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	rfile_not_reset(Cdr,FS,Nam,next_attention(Attention,_,_)).
+%% Get Commands.
+rfile_wait_reset(getb(Size,Buffer,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	rfile_not_reset(Cdr,FS,Nam,getb(Size,Buffer,_,_)).
+%% Put Commands.
+rfile_wait_reset(putb(Buffer,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,not_write_mode,putb(Buffer,_,_),Nam,NNam),
+	rfile_wait_reset(Cdr,FS,NNam).
+%% Control Commands.
+rfile_wait_reset(end_of_file(Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	rfile_not_reset(Cdr,FS,Nam,end_of_file(_,_)).
+rfile_wait_reset(pathname(PathName,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	rfile_not_reset(Cdr,FS,Nam,pathname(PathName,_,_)).
+rfile_wait_reset(close(Status),FS,Nam):-
+    true |
+	FS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+rfile_wait_reset([],FS,Nam):-
+    true |
+	FS=[],
+	consume_resource(2).
+otherwise.
+rfile_wait_reset(X,FS,Nam):-
+    true |
+	file_error(error,illegal_command,X,Nam,_).
+
+rfile_not_reset(Command,FS,Nam,X):-
+    true |
+	file_error(warning,file_not_reset,X,Nam,NNam),
+	rfile_wait_reset(Command,FS,NNam).
+
+%%%% Read Open File (normal status).
+rfile(Command,FS,fep#abort,Abt,Nam):-
+    true |
+	Abt=fep#abort,
+	consume_resource(2),
+	rfile_wait_reset(Command,FS,Nam).
+alternatively.
+rfile(Command,FS,Ab,Abt,Nam):-
+    wait(Command) |
+	rfile_com(Command,FS,Ab,Abt,Nam).
+
+rfile_com(reset(Abort,Attention,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,file_already_reset,
+		   reset(Abort,Attention,_,_),Nam,NNam),
+	rfile(Cdr,FS,Ab,Abt,NNam).
+rfile_com(next_attention(Attention,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#normal,
+	rfile(Cdr,FS,Ab,Abt,Nam).
+%% Get Commands.
+rfile_com(getb(Size,Buffer,Status,Cdr),FS,Ab,Abt,Nam):-
+    Size>0 |
+	FS=[getb(B,Size,S)|NFS],
+	consume_resource(3),
+	rfile_wait_buffer(Cdr,NFS,Ab,Abt,Nam,Buffer,Status,B,S).
+%% Put Commands.
+rfile_com(putb(Buffer,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,not_write_mode,putb(Buffer,_,_),Nam,NNam),
+	rfile(Cdr,FS,Ab,Abt,NNam).
+%% Control Commands.
+rfile_com(end_of_file(Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	FS=[end_of_file(S)|NFS],
+	consume_resource(2),
+	rfile_wait_status(Cdr,NFS,Ab,Abt,Nam,Status,S).
+rfile_com(pathname(PathName,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	FS=[pathname(P,S)|NFS],
+	consume_resource(2),
+	rfile_wait_pathname(Cdr,NFS,Ab,Abt,Nam,PathName,Status,P,S).
+rfile_com(close(Status),FS,Ab,Abt,Nam):-
+    true |
+	FS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+rfile_com([],FS,Ab,Abt,Nam):-
+    true |
+	FS=[],
+	consume_resource(2).
+otherwise.
+rfile_com(X,FS,Ab,Abt,Nam):-
+    true |
+	file_error(illegal_command,X,Nam).
+
+%%%% Read Open File (wait status of command).
+rfile_wait_status(Command,FS,Ab,Abt,Nam,Status,S):-
+    wait(S) |
+	Status=S,
+	rfile(Command,FS,Ab,Abt,Nam).
+
+%%%% Read Open File (wait status of read_buffer command).
+rfile_wait_buffer(Command,FS,fep#abort,Abt,Nam,Buffer,Status,B,S):-
+    true |
+	Abt=fep#abort,
+	consume_resource(2),
+	rfile_wait_aborted(Command,FS,Nam,Buffer,Status,B,S).
+alternatively.
+rfile_wait_buffer(Command,FS,Ab,Abt,Nam,Buffer,Status,B,fep#normal):-
+    string(B,_,8) |
+	Buffer=B,
+	Status=fep#normal,
+	rfile(Command,FS,Ab,Abt,Nam).
+rfile_wait_buffer(Command,FS,Ab,Abt,Nam,Buffer,Status,fep#nil,fep#end_of_file):-
+    true |
+	Buffer=fep#nil,
+	Status=fep#end_of_file,
+	rfile(Command,FS,Ab,Abt,Nam).
+rfile_wait_buffer(Command,FS,Ab,Abt,Nam,Buffer,Status,B,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	rfile(Command,FS,Ab,Abt,Nam).
+
+%%%% Read Open File (wait status of pathname command).
+rfile_wait_pathname(Command,FS,Ab,Abt,Nam,PathName,Status,P,fep#normal):-
+    string(P,_,8) |
+	PathName=P,
+	Status=fep#normal,
+	rfile(Command,FS,Ab,Abt,Nam).
+
+%%%% Read Open File (wait aborted of getl command).
+rfile_wait_aborted(Command,FS,Nam,_,Status,_,fep#abort):-
+    true |
+	Status=fep#abort,
+	rfile_wait_reset(Command,FS,Nam).
+rfile_wait_aborted(Command,FS,Nam,Buffer,Status,B,fep#normal):-
+    string(B,_,8) |
+	Buffer=B,
+	Status=fep#normal,
+	rfile_wait_reset(Command,FS,Nam).
+rfile_wait_aborted(Command,FS,Nam,_,Status,_,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	rfile_wait_reset(Command,FS,Nam).
+
+
+%%%% Write Mode File (wait reset command).
+wfile_wait_reset(reset(Abort,Attention,Status,Cdr),FS,Nam):-
+    true |
+	FS=[reset(Abt,_,S)|NFS],
+	consume_resource(2),
+	wfile_wait_status(Cdr,NFS,Abort,Abt,Nam,Status,S).
+wfile_wait_reset(next_attention(Attention,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	wfile_not_reset(Cdr,FS,Nam,next_attention(Attention,_,_)).
+%% Get Command.
+wfile_wait_reset(getb(Size,Buffer,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,not_read_mode,getb(Size,Buffer,_,_),Nam,NNam),
+	wfile_wait_reset(Cdr,FS,NNam).
+%% Put Command.
+wfile_wait_reset(putb(Buffer,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	wfile_not_reset(Cdr,FS,Nam,putb(Buffer,_,_)).
+%% Control Commands.
+wfile_wait_reset(end_of_file(Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	wfile_not_reset(Cdr,FS,Nam,end_of_file(_,_)).
+wfile_wait_reset(pathname(PathName,Status,Cdr),FS,Nam):-
+    true |
+	Status=fep#abnormal,
+	wfile_not_reset(Cdr,FS,Nam,pathname(PathName,_,_)).
+wfile_wait_reset(close(Status),FS,Nam):-
+    true |
+	FS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+wfile_wait_reset([],FS,Nam):-
+    true |
+	FS=[],
+	consume_resource(2).
+otherwise.
+wfile_wait_reset(X,FS,Nam):-
+    true |
+	file_error(error,illegal_command,X,Nam,_).
+
+wfile_not_reset(Command,FS,Nam,X):-
+    true |
+	file_error(warning,file_not_reset,X,Nam,NNam),
+	wfile_wait_reset(Command,FS,NNam).
+
+%%%% Write Open File (normal status).
+wfile(Command,FS,fep#abort,Abt,Nam):-
+    true |
+	Abt=fep#abort,
+	wfile_wait_reset(Command,FS,Nam).
+alternatively.
+wfile(Command,FS,fep#abort,Abt,Nam):-
+    wait(Command) |
+	wfile_com(Command,FS,Ab,Abt,Nam).
+
+wfile_com(reset(Abort,Attention,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,file_already_reset,
+		   reset(Abort,Attention,_,_),Nam,NNam),
+	wfile(Cdr,FS,Ab,Abt,NNam).
+wfile_com(next_attention(Attention,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#normal,
+	wfile(Cdr,FS,Ab,Abt,Nam).
+%% Get Command.
+wfile_com(getb(Size,Buffer,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	Status=fep#abnormal,
+	file_error(warning,not_read_mode,getb(Size,Buffer,_,_),Nam,NNam),
+	wfile(Cdr,FS,Ab,Abt,NNam).
+%% Put Command.
+wfile_com(putb(Buffer,Status,Cdr),FS,Ab,Abt,Nam):-
+    string(Buffer,_,8) |
+	FS=[putb(Buffer,S)|NFS],
+	consume_resource(3),
+	wfile_wait_status(Cdr,NFS,Ab,Abt,Nam,Status,S).
+%% Control Commands.
+wfile_com(end_of_file(Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	FS=[end_of_file(S)|NFS],
+	consume_resource(2),
+	wfile_wait_status(Cdr,NFS,Ab,Abt,Nam,Status,S).
+wfile_com(pathname(PathName,Status,Cdr),FS,Ab,Abt,Nam):-
+    true |
+	FS=[pathname(P,S)|NFS],
+	consume_resource(2),
+	wfile_wait_pathname(Cdr,NFS,Ab,Abt,Nam,PathName,Status,P,S).
+wfile_com(close(Status),FS,Ab,Abt,Nam):-
+    true |
+	FS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+wfile_com([],FS,Ab,Abt,Nam):-
+    true |
+	FS=[],
+	consume_resource(2).
+otherwise.
+wfile_com(X,FS,Ab,Abt,Nam):-
+    true |
+	file_error(error,illegal_command,X,Nam,_).
+
+%%%% Write Open File (wait status of command).
+wfile_wait_status(Cdr,FS,Ab,Abt,Nam,Status,S):-
+    wait(S) |
+	Status=S,
+	wfile(Cdr,FS,Ab,Abt,Nam).
+
+%%%% Write Open File (wait status of pathname command).
+wfile_wait_pathname(Cdr,FS,Ab,Abt,Nam,PathName,Status,P,fep#normal):-
+    string(P,_,8) |
+	PathName=P,
+	Status=fep#normal,
+	wfile(Cdr,FS,Ab,Abt,Nam).
+
+%%%% Directory (wait status of testing directory).
+directory_wait_created(Command,DS,PathName,Status,fep#normal):-
+    true |
+	consume_resource(1),
+	Status=fep#normal,
+	directory(Command,DS,status(PathName)).
+directory_wait_created(Command,DS,PathName,Status,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	DS=[].
+
+%%%% Directory (normal status).
+directory(pathname(PathName,Status,Cdr),DS,Nam):-
+    true |
+	DS=[pathname(P,S)|NDS],
+	consume_resource(2),
+	directory_wait_pathname(Cdr,NDS,Nam,PathName,Status,P,S).
+directory(listing(Wildcard,NameList,Status,Cdr),DS,Nam):-
+    string(Wildcard,_,8) |
+	DS=[listing(Wildcard,NL,S)|NDS],
+	consume_resource(3),
+	directory_wait_listing(Cdr,NDS,Nam,NameList,Status,NL,S).
+directory(delete(Wildcard,Status,Cdr),DS,Nam):-
+    string(Wildcard,_,8) |
+	DS=[delete(Wildcard,S)|NDS],
+	consume_resource(3),
+	directory_wait_delete(Cdr,NDS,Nam,Status,S).
+%% Dummy.
+directory(undelete(Wildcard,Status,Cdr),DS,Nam):-
+    string(Wildcard,_,8) |
+	Status=fep#normal,
+	directory(Cdr,DS,Nam).
+directory(purge(Wildcard,Status,Cdr),DS,Nam):-
+    string(Wildcard,_,8) |
+	Status=fep#normal,
+	directory(Cdr,DS,Nam).
+directory(deleted(Wildcard,NameList,Status,Cdr),DS,Nam):-
+    string(Wildcard,_,8) |
+	DS=[deleted(Wildcard,NL,S)|NDS],
+	consume_resource(2),
+	directory_wait_listing(Cdr,NDS,Nam,NameList,Status,NL,S).
+directory(expunge(Status,Cdr),DS,Nam):-
+    true |
+	Status=fep#normal,
+	directory(Cdr,DS,Nam).
+directory([],DS,Nam):-
+    true |
+	DS=[],
+	consume_resource(2).
+otherwise.
+directory(X,DS,Nam):-
+    true |
+	directory_error(error,illegal_command,X,Nam,_).
+
+
+%%%% Path-Name.
+directory_wait_pathname(Command,DS,Nam,PathName,Status,P,fep#normal):-
+    string(P,_,8) |
+	PathName=P,
+	Status=fep#normal,
+	directory(Command,DS,Nam).
+
+%%%% Listing Command.
+directory_wait_listing(Command,DS,Nam,NameList,Status,NL,S):-
+    wait(S) |
+	Status=S,
+	listing(NameList,NL,Nam),
+	directory(Command,DS,Nam).
+
+listing(next_file_name(Name,Status,Cdr),NL,Nam):-
+    true |
+	NL=[next_file_name(N,S)|NNL],
+	consume_resource(2),
+	listing_wait_name(Cdr,NNL,Nam,Name,Status,N,S).
+listing([],NL,Nam):-
+    true |
+	NL=[],
+	consume_resource(2).
+otherwise.
+listing(X,NL,Nam):-
+    true |
+	directory_error(error,illegal_listing,X,Nam,_).
+
+listing_wait_name(NameList,NL,Nam,Name,Status,N,fep#normal):-
+    string(N,_,8) |
+	Name=N,
+	Status=fep#normal,
+	listing(NameList,NL,Nam).
+listing_wait_name(NameList,NL,Nam,Name,Status,fep#nil,fep#end_of_file):-
+    true |
+	Name=fep#nil,
+	Status=fep#end_of_file,
+	listing(NameList,NL,Nam).
+listing_wait_name(NameList,NL,Nam,Name,Status,N,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	listing(NameList,NL,Nam).
+
+%%%% Delete Command.
+directory_wait_delete(Command,DS,Nam,Status,S):-
+    wait(S) |
+	Status=S,
+	directory(Command,DS,Nam).
+
+
+%%%% Wait status of close command.
+wait_close(Status,fep#normal):-
+    true |
+	Status=fep#normal.
+
+%%%% Display Error.
+file_error(Type,Info,Cmd):-
+    true |
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"file : "),putb(Msg),putb(string#" / "),putt(FC,10,5)]).
+
+file_error(Type,Info,Cmd,Nam,NNam):-
+    true |
+	vector_element(Nam,1,FN,Nam1),
+	vector_element(Nam1,2,Md,NNam),
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"file ("),putt(FN),putb(string#","),putt(Md),putb(string#") / "),
+		    putb(Msg),putb(string#" : "),putt(FC,10,5)]).
+
+directory_error(Type,Info,Cmd,Nam,NNam):-
+    true |
+	vector_element(Nam,1,DN,NNam),
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"directory ("),putt(DN),putb(string#") / "),
+		    putb(Msg),putb(string#" : "),putt(FC,10,5)]).
+
+raise_error(Ty,PL):-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in "),do(PL),putb(string#"."),nl]),
+	consume_resource(5).
+
+message(illegal_command,     Msg) :- true | Msg=string#"illegal command".
+message(file_not_reset,      Msg) :- true | Msg=string#"file is not reset".
+message(file_already_reset,  Msg) :- true | Msg=string#"file is already reset".
+message(not_read_mode,       Msg) :- true | Msg=string#"file is not read mode".
+message(not_write_mode,      Msg) :- true | Msg=string#"file is not write mode".
+message(illegal_listing,     Msg) :- true | Msg=string#"illegal listing command".

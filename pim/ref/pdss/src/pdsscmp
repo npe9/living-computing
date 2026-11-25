@@ -1,0 +1,266 @@
+comp=/usr/local/src/pdss/compiler_pl/kl1cmp
+tran=/usr/local/src/pdss/compiler_pl/pdsstrans
+save=/usr/local/src/pdss/emulator/pdssasm
+pdss=/usr/local/src/pdss/emulator/pdss
+stup=/usr/local/src/pdss/emulator/KL1CMP
+
+mode=user
+indx=1
+mrbopt=3
+mrbgc=1
+assm=1
+odir=`pwd`/
+
+test -f ${comp}
+use_kl1_kl1_compiler=$?
+
+trap '
+    rm -f /tmp/pdss$$_*
+    echo "pdsscmp: keyboard interrupt - aborted."
+    exit 1
+' 1 2 3 13 15
+
+if [ $# = 0 ]
+then
+    if [ ${use_kl1_kl1_compiler} = 1 ]
+    then
+	echo '
+  pdsscmp [ option ]  filename ...
+    option:
+	+a / -a ... Assemble ON/OFF. Default is ON.
+	-o=Dir  ... Output Directory. Default is current working directory.
+    filename:
+	xxx.kl1 ... Compile, Translate & Assemble xxx.kl1 ==> xxx.asm & xxx.sav
+	xxx.asm ... Assemble                      xxx.asm ==> xxx.sav
+	xxx     ... Compile, Translate & Assemble xxx.kl1 ==> xxx.asm & xxx.sav
+'
+    else
+	echo '
+  pdsscmp [ option ]  filename ...
+    option:
+	+i / -i ... Indexing ON/OFF. Default is ON.
+	+a / -a ... Assemble ON/OFF. Default is ON.
+	+m / -m ... MRB-GC Instructions ON/OFF. Default is ON.
+	-o=Dir  ... Output Directory. Default is current working directory.
+    filename:
+	xxx.kl1 ... Compile, Translate & Assemble xxx.kl1 ==> xxx.asm & xxx.sav
+	xxx.asm ... Assemble                      xxx.asm ==> xxx.sav
+	xxx     ... Compile, Translate & Assemble xxx.kl1 ==> xxx.asm & xxx.sav
+'
+    fi
+    exit 0
+fi
+
+if [ ${use_kl1_kl1_compiler} = 1 ]
+then
+    echo \*\*\*\* KL1 Compiler/Translator/Assembler for PDSS \(V2.52-KL1\)
+else
+    echo \*\*\*\* KL1 Compiler/Translator/Assembler for PDSS \(V2.52-Prolog\)
+fi
+
+for arg
+do
+    case ${arg} in
+	-i)	indx=0; continue;;
+	+i)	indx=1; continue;;
+	-a)	assm=0; continue;;
+	+a)	assm=1; continue;;
+	-s)	mode=user; continue;;
+	+s)	mode=pdss; continue;;
+	-m)	mrbgc=0; continue;;
+	+m)	mrbgc=1; continue;;
+	-o=*)	odir=`echo ${arg} | sed 's|^-o=\(.*\)|\1/|'`; continue;;
+	-*)	echo "pdsscmp: unknown option: ${arg}" >& 2; exit 1;;
+	+*)	echo "pdsscmp: unknown option: ${arg}" >& 2; exit 1;;
+	/*.kl1)	fcomp=1; fsave=${assm};;
+	/*.asm)	fcomp=0; fsave=${assm};;
+	/*)	fcomp=1; fsave=${assm};;
+	*.kl1)	fcomp=1; fsave=${assm}; arg=`pwd`/${arg};;
+	*.asm)	fcomp=0; fsave=${assm}; arg=`pwd`/${arg};;
+	*)	fcomp=1; fsave=${assm}; arg=`pwd`/${arg};;
+    esac
+    name=`echo ${arg} | sed '
+s|\(.*\)\.kl1|\1|
+s|\(.*\)\.klb|\1|
+s|\(.*\)\.asm|\1|
+'`
+    bnam=`basename ${name}`
+
+    echo \<\<\< ${name} \>\>\>
+    if [ ${fcomp} = 1 ]
+    then
+	if [ ${use_kl1_kl1_compiler} = 1 ]
+	then
+
+	    ${pdss} ${stup} +t << END_OF_INPUT
+no.
+3.
+'${name}.kl1'.
+'${odir}${bnam}.asm'.
+END_OF_INPUT
+	    if [ $? != 0 ]
+	    then
+		echo "pdsscmp: cannot continue - exit."
+		exit 1
+	    fi
+
+	else
+
+	    rm -f /tmp/pdss$$_error
+	    ${comp} << END_OF_INPUT 2>&1 | sed -n '
+/\*\*\*\*\*\*\*/{
+s|.*\*\*\*\*\*\*\*|%%%% Compile Error in '"${name}"':|p
+w '"/tmp/pdss$$_error"'
+: l_emsg
+n
+/^	/{
+p
+b l_emsg
+}
+}
+/%%%% ERROR/{
+s|ERROR!!|ERROR|
+s|.*%%%% ERROR|%%%% Compile Error in '"${name}"':|p
+w '"/tmp/pdss$$_error"'
+b
+}
+/%%% ERROR !!/{
+s|.*%%% ERROR !!|%%%% Compile Error in '"${name}"':|p
+w '"/tmp/pdss$$_error"'
+n
+p
+b
+}
+/%%% WARNING/{
+s|.*%%% WARNING !!|%%%% Warning in '"${name}"':|p
+b
+}
+/%%%% WARNING/{
+s|.*%%%% WARNING !!|%%%% Warning in '"${name}"':|p
+n
+p
+b
+}
+/%%%% Warning/{
+s|.*%%%% Warning!!!|%%%% Warning in '"${name}"':|p
+n
+p
+b
+}
+/%%% Error/{
+s|.*%%% Error|%%%% Macro Error in '"${name}"':|p
+w '"/tmp/pdss$$_error"'
+b
+}
+/^\*\* /{
+s|^\*\* |%%%% Syntax Error in '"${name}"': |p
+w '"/tmp/pdss$$_error"'
+n
+p
+b
+}
+/{ERROR:/{
+s|.*{ERROR:\(.*\)\}|%%%% Error in '"${name}"': \1|p
+w '"/tmp/pdss$$_error"'
+b
+}
+/\*\*\*\* KL1/{
+p
+}
+'
+${mode}.
+${indx}.
+${mrbopt}.
+'${name}.kl1'.
+'/tmp/pdss$$_${bnam}.klb'.
+END_OF_INPUT
+	    if [ -s /tmp/pdss$$_error ]
+	    then
+		rm -f /tmp/pdss$$_*
+		echo "pdsscmp: cannot continue - exit."
+		exit 1
+	    fi
+
+	    rm -f /tmp/pdss$$_error
+	    ${tran} << END_OF_INPUT 2>&1 | sed -n '
+/^ \*\* Syntax Error/{
+s|^ \*\* Syntax Error|%%%% Translate Error in '"${name}"': Error|p
+w '"/tmp/pdss$$_error"'
+b
+}
+/\*error\.\.\.\./{
+s|.*\*error\.\.\.\.|%%%% Translate Error in '"${name}"': |p
+w '"/tmp/pdss$$_error"'
+b
+}
+/^\*\* /{
+s|^\*\* |%%%% Translate Error in '"${name}"': |p
+w '"/tmp/pdss$$_error"'
+n
+p
+b
+}
+/{ERROR:/{
+s|.*{ERROR:\(.*\)\}|%%%% Error in '"${name}"': \1|p
+w '"/tmp/pdss$$_error"'
+}
+'
+${mrbgc}.
+'/tmp/pdss$$_${bnam}.klb'.
+'${odir}${bnam}.asm'.
+END_OF_INPUT
+	    if [ -s /tmp/pdss$$_error ]
+	    then
+		rm -f /tmp/pdss$$_*
+		echo "pdsscmp: cannot continue - exit."
+		exit 1
+	    fi
+
+	fi
+    else
+	if [ ${name} != ${odir}${bnam} ]
+	then
+	    cp ${name}.asm ${odir}${bnam}.asm
+	fi
+    fi
+
+    if [ ${fsave} = 1 ]
+    then
+	rm -f /tmp/pdss$$_error
+	${save} ${odir}${bnam} | sed -n '
+/>>> Assembler:/{
+s|>>> Assembler:|%%%% Assembler Error in '"${name}"':|p
+w '"/tmp/pdss$$_error"'
+b
+}
+/^....: /{
+s|^\(....: .*\)$|\1|p
+b
+}
+/^Error open/{
+i\
+%%%% Assembler Error in '"${name}"': Cannot read file.
+w '"/tmp/pdss$$_error"'
+b
+}
+/^Can not/{
+i\
+%%%% Assembler Error in '"${name}"': Cannot write file.
+w '"/tmp/pdss$$_error"'
+b
+}
+/\*\*\*\* PDSS-ASM/{
+p
+}
+'
+	if [ -s /tmp/pdss$$_error ]
+	then
+	    rm -f /tmp/pdss$$_*
+	    echo "pdsscmp: cannot continue - exit."
+	    exit 1
+	fi
+    fi
+
+done
+rm -f /tmp/pdss$$_*
+exit 0

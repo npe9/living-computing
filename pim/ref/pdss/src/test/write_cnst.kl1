@@ -1,0 +1,83 @@
+%%% KL1-B Test for Write_Constant %%%
+% Write_Car_Constant %%%% abcd
+% Write_Cdr_Constant %%%% abcd
+% Write_Element_Constant  abcd
+
+:- module write_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Write_Constant %%%"), put_console(key#lf) | car.
+
+car:- put_console(ascii#"% Write_Car_Constant %%%% ") | car00.
+
+car00:- true | car00([atom|V]), V=[].
+car00([atom|_]):- put_console(c#"a") | car01.
+alternatively.
+car00(_):- put_console(c#"*") | car01.
+
+car01:- true | car01([[]|V]), V=[].
+car01([[]|_]):- put_console(c#"b") | car02.
+alternatively.
+car01(_):- put_console(c#"*") | car02.
+
+car02:- true | car02([1234|V]), V=[].
+car02([1234|_]):- put_console(c#"c") | car03.
+alternatively.
+car02(_):- put_console(c#"*") | car03.
+
+car03:- true | car03([12.34|V]), V=[].
+car03([12.34|_]):- put_console(c#"d") | car04.
+alternatively.
+car03(_):- put_console(c#"*") | car04.
+
+car04:- put_console(key#lf) | cdr.
+
+cdr:- put_console(ascii#"% Write_Cdr_Constant %%%% ") | cdr00.
+
+cdr00:- true | cdr00([V|atom]), V=[].
+cdr00([_|atom]):- put_console(c#"a") | cdr01.
+alternatively.
+cdr00(_):- put_console(c#"*") | cdr01.
+
+cdr01:- true | cdr01([V|[]]), V=[].
+cdr01([_|[]]):- put_console(c#"b") | cdr02.
+alternatively.
+cdr01(_):- put_console(c#"*") | cdr02.
+
+cdr02:- true | cdr02([V|1234]), V=[].
+cdr02([_|1234]):- put_console(c#"c") | cdr03.
+alternatively.
+cdr02(_):- put_console(c#"*") | cdr03.
+
+cdr03:- true | cdr03([V|12.34]), V=[].
+cdr03([_|12.34]):- put_console(c#"d") | cdr04.
+alternatively.
+cdr03(_):- put_console(c#"*") | cdr04.
+
+cdr04:- put_console(key#lf) | elm.
+
+elm:- put_console(ascii#"% Write_Element_Constant  ") | elm00.
+
+elm00:- true | elm00({V,atom}), V=[].
+elm00({_,atom}):- put_console(c#"a") | elm01.
+alternatively.
+elm00(_):- put_console(c#"*") | elm01.
+
+elm01:- true | elm01({V,[]}), V=[].
+elm01({_,[]}):- put_console(c#"b") | elm02.
+alternatively.
+elm01(_):- put_console(c#"*") | elm02.
+
+elm02:- true | elm02({V,1234}), V=[].
+elm02({_,1234}):- put_console(c#"c") | elm03.
+alternatively.
+elm02(_):- put_console(c#"*") | elm03.
+
+elm03:- true | elm03({V,12.34}), V=[].
+elm03({_,12.34}):- put_console(c#"d") | elm04.
+alternatively.
+elm03(_):- put_console(c#"*") | elm04.
+
+elm04:- put_console(key#lf) | done.
+
+done:- true | true.

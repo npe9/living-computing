@@ -1,0 +1,738 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   Output Module for
+%
+%   KL1/KL1 compiler
+%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_output.
+:- public write_code_end/3, write_code_header/4, write_label/3,
+	erace_or_convert_instruction/8, write_vector/3,
+	write_rkp_information/6, write_messages/3, convert_code_for_PDSS/3,
+	write_object_code/3, write_otherwise/3, write_alternatively/2,
+	output_const_code/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Object listing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit io:oldnew.
+write_vector(P/A/C) --> true |
+     &io<<=[putc(#"'")],
+      write_vect(P/A/C),
+     &io<<=[putc(#"'")].
+otherwise.
+write_vector(P/A) --> true |		% 90.3.13 Nishizaki
+     &io<<=[putc(#"'")],
+      write_vect(P/A/top),
+     &io<<=[putc(#"'")].
+otherwise.
+write_vector(A) --> true|
+     &io<<=[puttq(A)].
+
+:- local_implicit io:oldnew.
+write_vect(P/A) --> true |
+   {{convert_vector_to_string(P/A, Str),
+     intern_atom(NewAtom, Str)}},
+    &io<<=[putt(NewAtom)].
+
+convert_vector_to_string(F/A, Str) :- true |
+    convert_vector_to_string(F, Fstr),
+    convert_vector_to_string(A, Astr),
+    string_append([Fstr, string#"_", Astr], Str).
+convert_vector_to_string(A, Str) :- integer(A) |
+    convert_integer_to_string(A, Str).
+convert_vector_to_string(A, Str) :- atom(A) |
+    atom_name(A, Str).
+
+string_append([H], Str) :- true | Str=H.
+otherwise.
+string_append([H|T], Str) :- true |
+    string_append(T, Str0),
+    append_string(H, Str0, Str).
+
+convert_integer_to_string(A, Str) :- A < 10 |
+    convert_one_integer_to_string(string#"0123456789", A, Str).
+otherwise.
+convert_integer_to_string(A, Str) :- A1 := A / 10, M := A mod 10 |
+    convert_integer_to_string(A1, Str1),
+    convert_one_integer_to_string(string#"0123456789", M, E),
+    append_string(Str1, E, Str).
+
+convert_one_integer_to_string(St, P, E) :- true |
+   substring(St, P, 1, E, _).
+
+%:- mode erace_or_convert_instruction(+, +, +, +, -, -, ?).
+erace_or_convert_instruction(From0, To0, Reg0, Type0, Code0, Code, PC0,
+			[H|T]) :- true |
+   erace_or_convert_one_instruction(From0, From, To0, To, Reg0, Reg,
+	Type0, Type, Code0, Code1, PC0, H),
+   PC1 := PC0+1,
+   erace_or_convert_instruction(From, To, Reg, Type, Code1, Code, PC1, T).
+erace_or_convert_instruction(_, _, _, _, Code0, Code, _, []) :- true |
+   Code0=Code.
+
+:- local_implicit from:oldnew, to:oldnew, reg:oldnew,
+	type:oldnew, code:oldnew, pc:shared.
+erace_or_convert_gc_instruction([H|T]) --> true |
+   erace_or_convert_one_instruction(H),
+   &pc <= &pc + 1,
+   erace_or_convert_gc_instruction(T).
+erace_or_convert_gc_instruction([]) --> true | true.
+
+erace_or_convert_one_instruction(wait_variable('$VAR'(X, _),'$VAR'(Y, _))) -->
+   vector_element(&reg(old), X, R), vector_element(&reg(old), Y, R)|
+   {{set_type_for_wait_variable(&type, X, Y)}}.
+erace_or_convert_one_instruction(put_value('$VAR'(X, _),'$VAR'(Y, _))) -->
+    vector_element(&reg(old), X, R), vector_element(&reg(old), Y, R) |
+   true.
+erace_or_convert_one_instruction(trans_value('$VAR'(X, _),'$VAR'(Y, _))) -->
+    vector_element(&reg(old), X, R), vector_element(&reg(old), Y, R) |
+   true.
+erace_or_convert_one_instruction(get_list_value('$VAR'(X, _),'$VAR'(Y, _)))-->
+   vector_element(&reg(old), X, R), vector_element(&reg(old), Y, R) |
+   true.
+erace_or_convert_one_instruction(integer('$VAR'(X, _))) -->
+	vector_element(&type(old), X, integer),
+	vector_element(&from(old), X, F),
+	vector_element(&to(old), X, T), F =< &pc, T >= &pc | true.
+erace_or_convert_one_instruction(float('$VAR'(X, _))) -->
+	vector_element(&type(old), X, float),
+	vector_element(&from(old), X, F),
+	vector_element(&to(old), X, T), F =< &pc, T >= &pc | true.
+erace_or_convert_one_instruction(vector('$VAR'(X, _))) -->
+	vector_element(&type(old), X, vector),
+	vector_element(&from(old), X, F),
+	vector_element(&to(old), X, T), F =< &pc, T >= &pc | true.
+erace_or_convert_one_instruction(string('$VAR'(X, _))) -->
+	vector_element(&type(old), X, string),
+	vector_element(&from(old), X, F),
+	vector_element(&to(old), X, T), F =< &pc, T >= &pc | true.
+erace_or_convert_one_instruction(get_marked_value(Ai,Aj)) --> true |
+  {{convert_variable(&reg, &code, put_marked_value(Ai,Ai)),
+    convert_variable(&reg, &code, get_value(Ai,Aj))}}.
+erace_or_convert_one_instruction(commit) --> true | true.
+erace_or_convert_one_instruction('$Gc_code'(Code)) --> true |
+    erace_or_convert_gc_instruction(Code).
+otherwise.
+erace_or_convert_one_instruction(wait_variable(Ai, Aj)) --> true |
+  {{convert_variable(&reg, &code, put_value(Aj, Ai))}}.
+erace_or_convert_one_instruction(trans_value(Ai, Aj)) --> true |
+  {{convert_variable(&reg, &code, put_value(Ai, Aj))}}.
+otherwise.
+erace_or_convert_one_instruction(Code0) --> true |
+  {{obtain_type_info(&type, Code0),    % debug 871014
+     convert_variable(&reg, &code, Code0)}}.
+
+:- local_implicit type:oldnew.
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), X, integer) |
+  set_vector_element(Y, integer).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), Y, integer) |
+  set_vector_element(X, integer).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), X, float) |
+  set_vector_element(Y, float).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), Y, float) |
+  set_vector_element(X, float).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), X, vector) |
+  set_vector_element(Y, vector).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), Y, vector) |
+  set_vector_element(X, vector).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), X, string) |
+  set_vector_element(Y, string).
+set_type_for_wait_variable(X, Y) -->
+	vector_element(&type(old), Y, string) |
+  set_vector_element(X, string).
+otherwise.
+set_type_for_wait_variable(_, _) --> true | true.
+
+obtain_type_info(integer('$VAR'(N, _))) --> true |
+    set_vector_element(N, integer).
+obtain_type_info(float('$VAR'(N, _))) --> true |
+    set_vector_element(N, float).
+obtain_type_info(vector('$VAR'(N, _))) --> true |
+    set_vector_element(N, vector).
+obtain_type_info(string('$VAR'(N, _))) --> true |
+    set_vector_element(N, string).
+obtain_type_info(builtin(X)) --> true |
+  {{kl1cmp_blttbl:builtin(X, _, _, _, _, Post, _)}},
+    obtain_builtin_info(Post).
+obtain_type_info(wait_variable('$VAR'(M, _), '$VAR'(N, _))) -->
+   vector_element(&type(old), N, integer) |
+   set_vector_element(M, integer).
+obtain_type_info(wait_variable('$VAR'(M, _), '$VAR'(N, _))) -->
+   vector_element(&type(old), N, float) |
+   set_vector_element(M, float).
+obtain_type_info(wait_variable('$VAR'(M, _), '$VAR'(N, _))) -->
+   vector_element(&type(old), N, vector) |
+   set_vector_element(M, vector).
+obtain_type_info(wait_variable('$VAR'(M, _), '$VAR'(N, _))) -->
+   vector_element(&type(old), N, vector) |
+   set_vector_element(M, vector).
+obtain_type_info(wait_variable('$VAR'(M, _), '$VAR'(N, _))) -->
+   vector_element(&type(old), N, string) |
+   set_vector_element(M, string).
+otherwise.
+obtain_type_info(_) --> true | true.
+
+obtain_builtin_info([integer('$VAR'(N, _))|L]) --> true |
+   set_vector_element(N, integer),
+   obtain_builtin_info(L).
+obtain_builtin_info([float('$VAR'(N, _))|L]) --> true |
+   set_vector_element(N, float),
+   obtain_builtin_info(L).
+obtain_builtin_info([vector('$VAR'(N, _))|L]) --> true |
+   set_vector_element(N, vector),
+   obtain_builtin_info(L).
+obtain_builtin_info([string('$VAR'(N, _))|L]) --> true |
+   set_vector_element(N, string),
+   obtain_builtin_info(L).
+otherwise.
+obtain_builtin_info([_|L]) --> true |
+   obtain_builtin_info(L).
+obtain_builtin_info([]) --> true | true.
+
+:- local_implicit reg:oldnew, code:oldnew.
+convert_variable(X) --> atom(X) |
+   &code<<=[X].
+convert_variable(X) --> integer(X) |
+   &code<<=[X].
+convert_variable(X) --> floating_point(X) |
+   &code<<=[X].
+convert_variable(builtin(X)) --> true |
+   convert_variable(X).
+otherwise.
+convert_variable(X) --> vector(X, A) |
+   convert_args(A, X).
+
+convert_args(0, X) --> true | &code <<=[X].
+convert_args(A, X) --> true |
+   {{A1 := A-1, set_vector_element(X, A1, Arg, New_arg, X1)}},
+    convert_one_arg(Arg, New_arg),
+    convert_args(A1, X1).
+
+convert_one_arg(Arg, New_arg) --> atom(Arg) | {{New_arg = Arg}}.
+convert_one_arg(Arg, New_arg) --> integer(Arg) | {{New_arg = Arg}}.
+convert_one_arg(Arg, New_arg) --> floating_point(Arg) | {{New_arg = Arg}}.
+convert_one_arg('$VAR'(N, _), New_arg) --> true |
+  {{ref_vector_element(&reg, N, New_arg)}}.
+otherwise.
+convert_one_arg(Arg, New_arg) --> true | {{Arg=New_arg}}.
+
+:- local_implicit io:oldnew.
+write_object_code([H|T]) --> true |
+   write_one_object_code(H),
+   write_object_code(T).
+write_object_code([]) --> true | true.
+
+write_one_object_code(Code) --> atom(Code) |
+   &io<<=[putc(9), putt(Code), nl].
+write_one_object_code(Code) --> integer(Code) |
+   &io<<=[putc(9), putt(Code), nl].
+write_one_object_code(Code) --> floating_point(Code) |
+   &io<<=[putc(9), putt(Code), nl].
+write_one_object_code(Code) --> vector(Code, N) |
+  {{set_vector_element(Code, 0, Op, [], Code1), N1 := N-1}},
+    &io<<=[putc(9), putt(Op), putc(9)],
+    write_args(N1, 1, Code1).
+write_one_object_code([]) --> true | true.
+
+write_args(1, A, Code) --> true |
+   {{set_vector_element(Code, A, Arg, [], _)}},
+    write_one_arg(Arg),
+    &io<<=[nl].
+otherwise.
+write_args(N, A, Code) --> true |
+   {{set_vector_element(Code, A, Arg, [], Code1), N1 := N-1, A1 := A+1}},
+     write_one_arg(Arg),
+    &io<<=[putt(',')],
+     write_args(N1, A1, Code1).
+
+write_one_arg(Arg) --> integer(Arg) | &io<<=[puttq(Arg)].
+write_one_arg(Arg) --> floating_point(Arg) | &io<<=[puttq(Arg)].
+write_one_arg('|') --> true | &io<<=[putb(string#"'|'")].
+write_one_arg('!') --> true | &io<<=[putb(string#"'!'")].
+write_one_arg(Arg) --> atom(Arg),Arg\='|',Arg\='!' | &io<<=[puttq(Arg)].
+otherwise. % vector
+write_one_arg(Arg) --> true |
+   write_vector(Arg).
+
+% for PDSS
+write_otherwise(Pred) --> true |
+   &io<<=[putc(9), putt('otherwise'), putc(9)],
+    write_vector(Pred),
+   &io<<=[nl].
+
+% for PDSS
+write_alternatively --> true |
+   &io<<=[putc(9), putt(read_eagerly), nl].
+
+:- local_implicit code:oldnew.
+convert_code_for_PDSS(Code) --> true |			% 890412 Nishizaki
+    optimize,
+    convert_code_for_PDSS(list(0,car),_,Code).
+
+:- local_implicit code:oldnew, struct:oldnew.
+convert_code_for_PDSS([H|T]) --> true |
+    tbl(H),
+    convert_code_for_PDSS(T).
+convert_code_for_PDSS([]) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Object listing  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit io:oldnew.
+write_label(Label) --> true |
+    write_vector(Label),
+    &io<<=[putt(':'), nl].
+
+write_code_header(F/A, Module) --> true |
+    &io<<=[putc(9), putt(module_entry), putc(9),
+      puttq(Module), nl,
+      putc(9), putt(predicate), putc(9), 	% 890412 Nishizaki
+      puttq(F), putt(','), puttq(A), nl].
+write_code_header([], Module) --> true | true.
+
+write_code_end(Pred) --> true |
+    &io<<=[putc(9), putt(suspend), putc(9), putc(9)],
+    write_vector(Pred), &io<<=[nl].
+
+:- local_implicit io:oldnew, error:oldnew.
+write_rkp_information(Module, Ext) --> true |
+   write_module(Module, M),
+   &io<<= [puttq(M), putt(':'), nl,
+     putc(9),
+     puts(string#"module"),
+     putc(9), puttq(M), nl],
+    write_public(Ext).
+
+write_public([F/A|X]) --> true |
+    &io<<=[putc(9),putt(entry), putc(9),
+     puttq(F), putt(','),
+     puttq(A), putt(',')],
+   {{write_vector(&io, F/A)}},
+     &io<<=[nl],
+     write_public(X).
+write_public([]) --> true | true.
+otherwise.
+write_public([A|X]) --> true |
+     &error<<=[error_message(string#"Invalid public declaration. Ignored.", [A])],
+     write_public(X).
+
+
+write_module([], M) --> true | {{ M=[] }},
+   &error<<=[error_message(string#"No module is specified.", [])].
+otherwise.
+write_module(Module, M) --> true |
+   Module=M.
+
+:- local_implicit io:oldnew.
+write_messages([One|Msg]) --> true |
+   &io<<=[putc(9), putt(message),
+    putc(9), putt(One), nl],
+   write_messages(Msg).
+write_messages([]) --> true | &io<<=[nl].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%% TBL %%%%%%%%%%%%%%%%%%%%%%%%%%
+:- local_implicit code:oldnew, struct:oldnew.
+tbl(execute(PrN/Ar)) --> true | &code<<=[execute(Ar,PrN/Ar)].
+tbl(execute_ext(PrN/Ar,Mod)) --> true | &code<<=[execute_external(Mod,PrN,Ar)].
+tbl(create_goal(PN/Na)) --> true | &code<<=[create_goal(Na)].
+tbl(create_with_priority(PN/Na,Xi)) --> true | &code<<=[create_goal(Na)].
+tbl(create_ext(PN/Na,Mod)) --> true | &code<<=[create_goal(Na)].
+tbl(create_ext_with_priority(PN/Na,Mod,Xi)) --> true | true.
+tbl(create_to_processor(PN/Na,Proc)) --> true | &code<<=[create_goal(Na)].
+tbl(create_to_node(PN/Na,Node)) --> true | &code<<=[create_goal(Na)].
+tbl(enqueue_goal(PN/Na)) --> true | &code<<=[enqueue_goal(Na,PN/Na)].
+tbl(enqueue_to_processor(PN/Na,Proc)) --> true |
+	&code<<=[enqueue_goal(Na,PN/Na)].
+tbl(enqueue_to_node(PN/Na,Node)) --> true |
+	&code<<=[enqueue_goal(Na,PN/Na)].
+tbl(enqueue_with_priority(PN/Na,Xi)) --> true |
+	&code<<=[enqueue_goal_with_priority(Na,PN/Na,Xi)].
+tbl(enqueue_ext(PN/Na,Mod)) --> true |
+	&code<<=[enqueue_goal_external(Mod,PN,Na)].
+%tbl(enqueue_ext_with_priority(P/A,Xi,Mod)) --> true |
+%	&code<<=[enqueue_goal_external_with_priority(Mod,P,A,Xi)].
+
+tbl(wait_list(Xi)) --> true | &code<<=[list(Xi)], &struct <= list(Xi,car).
+
+tbl(wait_constant([],Xi)) --> true | &code<<=[wait_nil(Xi)].
+tbl(wait_constant(C,Xi)) --> atom(C),C\=[] | &code<<=[wait_atom(Xi,C)].
+tbl(wait_constant(C,Xi)) --> integer(C) | &code<<=[wait_integer(Xi,C)].
+tbl(wait_constant(C,Xi)) --> floating_point(C) | &code<<=[wait_float(Xi,C)].
+tbl(wait_vector(Xi,NAr)) --> true |
+	&code<<=[wait_vector(Xi,NAr)], &struct <= vector(Xi,0).
+
+tbl(read_variable(0)) --> true |
+    ( &struct(old)=list(L,car) -> &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) -> true;
+      &struct(old)=vector(V,Idx) -> Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(read_variable(Xi)) --> Xi>0 |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[read_car(L,Xi)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[read_cdr(L,Xi)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[read_element(V,Idx,Xi)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+
+tbl(put_value(0,Xj)) --> true | true.
+tbl(put_value(Xi,0)) --> true | true.
+tbl(put_value(Xs,Xd)) --> Xs>0, Xd>0 | &code<<=[put_value(Xd,Xs)].
+tbl(put_marked_value(Xs,Xd)) --> true | &code<<=[put_marked_value(Xd,Xs)].
+
+tbl(set_value(Xi,Gi)) --> true | &code<<=[set_value(Gi,Xi)].
+tbl(set_marked_value(Xi,Gi)) --> true | &code<<=[set_marked_value(Gi,Xi)].
+
+tbl(write_value(Xi)) --> true |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_value(L,Xi)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_value(L,Xi)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_value(V,Idx,Xi)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_marked_value(Xi)) --> true |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_marked_value(L,Xi)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_marked_value(L,Xi)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_marked_value(V,Idx,Xi)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+
+tbl(put_constant(_,0)) --> true | true.
+tbl(put_constant([],Xi)) --> Xi>0 | &code<<=[put_nil(Xi)].
+tbl(put_constant(C,Xi)) --> Xi>0,atom(C),C\=[] | &code<<=[put_atom(Xi,C)].
+tbl(put_constant(C,Xi)) --> Xi>0,integer(C) | &code<<=[put_integer(Xi,C)].
+tbl(put_constant(C,Xi)) --> Xi>0,floating_point(C) | &code<<=[put_float(Xi,C)].
+tbl(put_list(Xi)) --> true | &code<<=[put_list(Xi)], &struct<=list(Xi,car).
+tbl(put_vector(Xi,NAr)) --> true |
+	&code<<=[put_vector(Xi,NAr)], &struct<=vector(Xi,0).
+tbl(put_structured_constant(Lab,Xi)) --> true |
+	&code<<=[put_structured_constant(Xi,Lab)].
+
+tbl(set_constant([],Gi)) --> true | &code<<=[set_nil(Gi)].
+tbl(set_constant(C,Gi)) --> atom(C),C\=[] | &code<<=[set_atom(Gi,C)].
+tbl(set_constant(C,Gi)) --> integer(C) | &code<<=[set_integer(Gi,C)].
+tbl(set_constant(C,Gi)) --> floating_point(C) | &code<<=[set_float(Gi,C)].
+
+tbl(write_constant([])) --> true |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_nil(L)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_nil(L)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_nil(V,Idx)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_constant(C)) --> atom(C), C\=[] |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_atom(L,C)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_atom(L,C)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_atom(V,Idx,C)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_constant(C)) --> integer(C) |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_integer(L,C)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_integer(L,C)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_integer(V,Idx,C)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_constant(C)) --> floating_point(C) |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_float(L,C)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_float(L,C)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_float(V,Idx,C)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+
+tbl(put_variable(0,0)) --> true | true.
+tbl(put_variable(Xi,0)) --> Xi>0 | &code<<=[put_void(Xi)].
+tbl(put_variable(0,Xj)) --> Xj>0 | &code<<=[put_void(Xj)].
+
+tbl(set_variable(0,Gi)) --> true | &code<<=[set_void(Gi)].
+tbl(set_variable(Xi,0)) --> true | &code<<=[put_void(Xi)].
+tbl(set_variable(Xi,Gi)) --> Xi>0, Gi>0 | &code<<=[set_variable(Gi,Xi)].
+tbl(set_marked_variable(Xi,Gi)) --> true |
+	&code<<=[set_marked_variable(Gi,Xi)].
+
+tbl(write_variable(0)) --> true |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_void(L)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_void(L)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_void(V,Idx)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_variable(Xi)) --> Xi>0 |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_variable(L,Xi)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_variable(L,Xi)];
+      &struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_variable(V,Idx,Xi)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+tbl(write_marked_variable(Xi)) --> true |
+    ( &struct(old)=list(L,car) ->
+	&code<<=[write_car_marked_variable(L,Xi)], &struct<=list(L,cdr);
+      &struct(old)=list(L,cdr) ->
+	&code<<=[write_cdr_marked_variable(L,Xi)];
+&struct(old)=vector(V,Idx) ->
+	&code<<=[write_element_marked_variable(V,Idx,Xi)],
+	Next:=Idx+1, &struct<=vector(V,Next) ).
+
+tbl(get_constant([],Xi)) --> true | &code<<=[get_nil(Xi)].
+tbl(get_constant(C,Xi)) --> atom(C),C\=[] | &code<<=[get_atom(Xi,C)].
+tbl(get_constant(C,Xi)) --> integer(C) | &code<<=[get_integer(Xi,C)].
+tbl(get_constant(C,Xi)) --> floating_point(C) | &code<<=[get_float(Xi,C)].
+tbl(get_list_value(Xi,Xj)) --> true | &code<<=[get_list_value(Xj,Xi)].
+tbl(get_vector_value(Xi,Xj)) --> true | &code<<=[get_vector_value(Xj,Xi)].
+
+tbl(collect_stack) --> true | true.
+tbl(mark_element(As,P,Se)) --> true |
+	&code<<=[mark_element(As,P),put_marked_value(Se,Se)].
+
+tbl(diff(X1,X2)) --> true | &code<<=[g_diff(X1,X2)].
+tbl(equal(X1,X2)) --> true | &code<<=[g_equal(X1,X2)].
+tbl(not_equal(X1,X2)) --> true | &code<<=[g_not_equal(X1,X2)].
+tbl(less_than(X1,X2)) --> true | &code<<=[g_less_than(X1,X2)].
+tbl(not_less_than(X1,X2)) --> true | &code<<=[g_not_less_than(X1,X2)].
+tbl(add(X1,X2,X3)) --> true | &code<<=[g_add(X1,X2,X3)].
+tbl(subtract(X1,X2,X3)) --> true | &code<<=[g_subtract(X1,X2,X3)].
+tbl(multiply(X1,X2,X3)) --> true | &code<<=[g_multiply(X1,X2,X3)].
+tbl(divide(X1,X2,X3)) --> true | &code<<=[g_divide(X1,X2,X3)].
+tbl(modulo(X1,X2,X3)) --> true | &code<<=[g_modulo(X1,X2,X3)].
+tbl(minus(X1,X2)) --> true | &code<<=[g_minus(X1,X2)].
+tbl(abs(X1,X2)) --> true | &code<<=[g_abs(X1,X2)].
+tbl(min(X1,X2,X3)) --> true | &code<<=[g_min(X1,X2,X3)].
+tbl(max(X1,X2,X3)) --> true | &code<<=[g_max(X1,X2,X3)].
+tbl(and(X1,X2,X3)) --> true | &code<<=[g_and(X1,X2,X3)].
+tbl(or(X1,X2,X3)) --> true | &code<<=[g_or(X1,X2,X3)].
+tbl(exclusive_or(X1,X2,X3)) --> true | &code<<=[g_exclusive_or(X1,X2,X3)].
+tbl(complement(X1,X2)) --> true | &code<<=[g_complement(X1,X2)].
+tbl(increment(X1,X2)) --> true | &code<<=[g_increment(X1,X2)].
+tbl(decrement(X1,X2)) --> true | &code<<=[g_decrement(X1,X2)].
+tbl(abs(X1,X2)) --> true | &code<<=[g_abs(X1,X2)].
+tbl(min(X1,X2,X3)) --> true | &code<<=[g_min(X1,X2,X3)].
+tbl(max(X1,X2,X3)) --> true | &code<<=[g_max(X1,X2,X3)].
+tbl(shift_left(X1,X2,X3)) --> true | &code<<=[g_shift_left(X1,X2,X3)].
+tbl(shift_right(X1,X2,X3)) --> true | &code<<=[g_shift_right(X1,X2,X3)].
+tbl(vector(X1,X2)) --> true | &code<<=[g_vector(X1,X2)].
+tbl(vector_element(X1,X2,X3)) --> true | &code<<=[g_vector_element(X1,X2,X3)].
+tbl(string(X1,X2,X3)) --> true | &code<<=[g_string(X1,X2,X3)].
+tbl(string_element(X1,X2,X3)) --> true | &code<<=[g_string_element(X1,X2,X3)].
+tbl(floating_point_equal(X1,X2)) --> true | &code<<=[g_float_equal(X1,X2)].
+tbl(floating_point_not_equal(X1,X2)) --> true |
+	&code<<=[g_float_not_equal(X1,X2)].
+tbl(floating_point_less_than(X1,X2)) --> true |
+	&code<<=[g_float_less_than(X1,X2)].
+tbl(floating_point_not_less_than(X1,X2)) --> true |
+	&code<<=[g_float_not_less_than(X1,X2)].
+tbl(floating_point_add(X1,X2,X3)) --> true | &code<<=[g_float_add(X1,X2,X3)].
+tbl(floating_point_subtract(X1,X2,X3)) --> true |
+	&code<<=[g_float_subtract(X1,X2,X3)].
+tbl(floating_point_multiply(X1,X2,X3)) --> true |
+	&code<<=[g_float_multiply(X1,X2,X3)].
+tbl(floating_point_divide(X1,X2,X3)) --> true |
+	&code<<=[g_float_divide(X1,X2,X3)].
+tbl(floating_point_minus(X1,X2)) --> true | &code<<=[g_float_minus(X1,X2)].
+tbl(floating_point_abs(X1,X2)) --> true | &code<<=[g_float_abs(X1,X2)].
+tbl(floating_point_min(X1,X2,X3)) --> true | &code<<=[g_float_min(X1,X2,X3)].
+tbl(floating_point_max(X1,X2,X3)) --> true | &code<<=[g_float_max(X1,X2,X3)].
+tbl(floating_point_floor(X1,X2)) --> true | &code<<=[g_float_floor(X1,X2)].
+tbl(floating_point_sqrt(X1,X2)) --> true | &code<<=[g_float_sqrt(X1,X2)].
+tbl(floating_point_ln(X1,X2)) --> true | &code<<=[g_float_ln(X1,X2)].
+tbl(floating_point_log(X1,X2)) --> true | &code<<=[g_float_log(X1,X2)].
+tbl(floating_point_exp(X1,X2)) --> true | &code<<=[g_float_exp(X1,X2)].
+tbl(floating_point_pow(X1,X2,X3)) --> true | &code<<=[g_float_pow(X1,X2,X3)].
+tbl(floating_point_sin(X1,X2)) --> true | &code<<=[g_float_sin(X1,X2)].
+tbl(floating_point_cos(X1,X2)) --> true | &code<<=[g_float_cos(X1,X2)].
+tbl(floating_point_tan(X1,X2)) --> true | &code<<=[g_float_tan(X1,X2)].
+tbl(floating_point_asin(X1,X2)) --> true | &code<<=[g_float_asin(X1,X2)].
+tbl(floating_point_acos(X1,X2)) --> true | &code<<=[g_float_acos(X1,X2)].
+tbl(floating_point_atan(X1,X2)) --> true | &code<<=[g_float_atan(X1,X2)].
+tbl(floating_point_atan(X1,X2,X3)) --> true |
+	&code<<=[g_float_atan2(X1,X2,X3)].
+tbl(floating_point_sinh(X1,X2)) --> true | &code<<=[g_float_sinh(X1,X2)].
+tbl(floating_point_cosh(X1,X2)) --> true | &code<<=[g_float_cosh(X1,X2)].
+tbl(floating_point_tanh(X1,X2)) --> true | &code<<=[g_float_tanh(X1,X2)].
+tbl(floating_point_to_integer(X1,X2)) --> true |
+	&code<<=[g_float_to_integer(X1,X2)].
+tbl(integer_to_floating_point(X1,X2)) --> true |
+	&code<<=[g_integer_to_float(X1,X2)].
+tbl(halt(X1)) --> true | &code<<=[g_halt(X1)].
+tbl(request_gc(X1)) --> true | &code<<=[g_request_gc(X1)].
+tbl(set_scheduling_switch(X1)) --> true |
+	&code<<=[g_set_scheduling_switch(X1)].
+tbl(set_trace_switch(X1)) --> true | &code<<=[g_set_trace_switch(X1)].
+tbl(set_backtrace_switch(X1)) --> true | &code<<=[g_set_backtrace_switch(X1)].
+tbl(device_dup_check(X1)) --> true | &code<<=[g_device_dup_check(X1)].
+tbl(tag_and_value(X1,X2,X3)) --> true | &code<<=[g_tag_and_value(X1,X2,X3)].
+tbl(register_tag_and_value(X1,X2,X3)) --> true |
+	&code<<=[g_register_tag_and_value(X1,X2,X3)].
+tbl(word(X1,X2,X3)) --> true | &code<<=[g_word(X1,X2,X3)].
+tbl(set_tag_and_value(X1,X2,X3)) --> true |
+	&code<<=[g_set_tag_and_value(X1,X2,X3)].
+otherwise.
+tbl(Instr) --> true | &code<<=[Instr].
+
+
+set_vector_element(Tabs0, Tabs, Idx, Ele) :- true |
+   set_vector_element(Tabs0, Idx, _, Ele, Tabs).
+
+ref_vector_element(Tabs0, Tabs, Idx, Ele) :- true |
+   set_vector_element(Tabs0, Idx, Ele, Ele, Tabs).
+
+:- local_implicit out:oldnew.
+output_const_code(Msgs) --> true |
+  &out <<= [nl, flush(_)],
+  output_const_code_(Msgs).
+
+output_const_code_(['$SCNST'(Label)|Rest]) --> string(Label, N, _) |
+%  make_atom(Label, AtomLabel),
+  &out <<= [putc(c#"'")],
+  write_string(0, N, Label),
+  &out <<= [putc(c#"'"), putt(':'), nl],
+  output_const_code_(Rest).
+otherwise.
+output_const_code_([One|Rest]) --> vector(One, N) |
+{{set_vector_element(One, 0, Func, [], One1)}},
+  &out <<= [putc(9), putt(Func), putc(9)],
+{{N1 := N-1}},
+  output_const_arg(1, N1, One1),
+  output_const_code_(Rest).
+output_const_code_([]) --> true | true.
+
+write_string(A, N, Str) --> A<N, string_element(Str, A, C) |
+  &out <<= [putc(C)],
+   write_string(~(A+1), N, Str).
+write_string(N, N, _) --> true | true.
+
+output_const_arg(A, N, Instr0) --> A<N |
+ {{set_vector_element(Instr0, A, Arg, [], Instr1)}},
+   output_one_arg(Arg),
+   &out <<= [putt(',')],
+ {{A1 := A+1}},
+   output_const_arg(A1, N, Instr1).
+output_const_arg(N, N, Instr0) --> true |
+ {{set_vector_element(Instr0, N, Arg, [], _)}},
+   output_one_arg(Arg),
+   &out <<= [nl].
+
+output_one_arg('$SCNST'(Label)) --> string(Label, N, _) |
+%   make_atom(Label, AtomLabel),
+%   &out <<= [puttq(AtomLabel)].
+   &out <<= [putc(c#"'")],
+   write_string(0, N, Label),
+   &out <<= [putc(c#"'")].
+otherwise.
+output_one_arg(Arg) --> true |
+   &out <<= [puttq(Arg)].
+
+%%%%%  Optimize KLB Code  %%%%%
+:- local_implicit code:stream.
+optimize([]) --> true | true.
+
+optimize([list(R),read_car(R,H),read_cdr(R,T)|X]) --> true |
+	&code<<=[wait_list_var_var(R,H,T)],
+	optimize(X).
+
+optimize([put_vector(R,N),write_element_atom(R,0,A)|X]) --> true |
+	&code<<=[put_func(R,N,A)],
+	optimize(X).
+
+optimize([put_list(R),write_car_value(R,H),write_cdr_value(R,T)|X]) --> true |
+	&code<<=[put_list_val_val(R,H,T)],
+	optimize(X).
+
+optimize([put_list(R),write_car_value(R,H),write_cdr_variable(R,T)|X]) -->
+    true |
+    ( X = [get_list_value(U,R)|XX] ->
+	&code<<=[get_list_val_var(U,R,H,T)],
+	optimize(XX);
+      otherwise;
+      true ->
+	&code<<=[put_list_val_var(R,H,T)],
+	optimize(X) ).
+
+optimize([read_element(V,I0,R0),read_element(V,I,R)|X]) -->
+    I =:= I0+1, R := R0+1 |
+	optimize([read_elements_inc(V,I0,R0,2)|X]).
+optimize([read_element(V,I0,R0),read_element(V,I,R)|X]) -->
+    I =:= I0+1, R := R0-1  |
+	optimize([read_elements_dec(V,I0,R0,2)|X]).
+optimize([read_elements_inc(V,I0,R0,N),read_element(V,I,R)|X]) -->
+    I =:= I0+N, R := R0+N |
+	NN := N+1,
+	optimize([read_elements_inc(V,I0,R0,NN)|X]).
+optimize([read_elements_dec(V,I0,R0,N),read_element(V,I,R)|X]) -->
+    I =:= I0+N, R := R0-N |
+	NN := N+1,
+	optimize([read_elements_dec(V,I0,R0,NN)|X]).
+
+optimize([write_element_value(V,I0,R0),write_element_value(V,I,R)|X]) -->
+    I =:= I0+1, R := R0+1 |
+	optimize([write_elements_inc(V,I0,R0,2)|X]).
+optimize([write_element_value(V,I0,R0),write_element_value(V,I,R)|X]) -->
+    I =:= I0+1, R := R0-1 |
+	optimize([write_elements_dec(V,I0,R0,2)|X]).
+optimize([write_elements_inc(V,I0,R0,N),write_element_value(V,I,R)|X]) -->
+    I =:= I0+N, R :=R0+N |
+	NN := N+1,
+	optimize([write_elements_inc(V,I0,R0,NN)|X]).
+optimize([write_elements_dec(V,I0,R0,N),write_element_value(V,I,R)|X]) -->
+    I =:= I0+N, R := R0-N |
+	NN := N+1,
+	optimize([write_elements_dec(V,I0,R0,NN)|X]).
+
+optimize([put_value(D0,R0),put_value(D,R)|X]) -->
+    D =:= D0+1, R := R0+1 |
+	optimize([put_values_inc(D0,R0,2)|X]).
+optimize([put_value(D0,R0),put_value(D,R)|X]) -->
+    D =:= D0+1, R := R0-1 |
+	optimize([put_values_dec(D0,R0,2)|X]).
+optimize([put_values_inc(D0,R0,N),put_value(D,R)|X]) -->
+    D =:= D0+N, R := R0+N |
+	NN := N+1,
+	optimize([put_values_inc(D0,R0,NN)|X]).
+optimize([put_values_dec(D0,R0,N),put_value(D,R)|X]) -->
+    D =:= D0+N, R := R0-N |
+	NN := N+1,
+	optimize([put_values_dec(D0,R0,NN)|X]).
+
+optimize([set_value(A0,R0),set_value(A,R)|X]) -->
+    A =:= A0+1, R := R0+1 |
+	optimize([set_values_inc(A0,R0,2)|X]).
+optimize([set_value(A0,R0),set_value(A,R)|X]) -->
+    A =:= A0+1, R := R0-1 |
+	optimize([set_values_dec(A0,R0,2)|X]).
+optimize([set_values_inc(A0,R0,N),set_value(A,R)|X]) -->
+    A =:= A0+N, R := R0+N |
+	NN := N+1,
+	optimize([set_values_inc(A0,R0,NN)|X]).
+optimize([set_values_dec(A0,R0,N),set_value(A,R)|X]) -->
+    A =:= A0+N, R := R0-N |
+	NN := N+1,
+	optimize([set_values_dec(A0,R0,NN)|X]).
+otherwise.
+optimize([Instr|X]) --> true |
+	&code<<=[Instr],
+	optimize(X).

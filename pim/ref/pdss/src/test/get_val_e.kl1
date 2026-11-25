@@ -1,0 +1,273 @@
+%%% KL1-B Test for Get_Value (Exception) %%%
+% (Atom) %%%%%%%%%%%%%%%% abcdefgh
+% (Integer) %%%%%%%%%%%%% abcdefgh
+% (Float) %%%%%%%%%%%%%%% abcdefgh
+% (List) %%%%%%%%%%%%%%%% abcdefg
+% (Vector) %%%%%%%%%%%%%% abcdefgh
+% (String) %%%%%%%%%%%%%% abcdefgh
+% (Undef) %%%%%%%%%%%%%%% abcdefg
+
+:- module get_val_e.
+:- public go/0, unify/2.
+
+go:- put_console(ascii#"%%% KL1-B Test for Get_Value (Exception) %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% (Atom) %%%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | unify_in_shoen(atom,atom,R), atm00(R).
+atm00(success):- put_console(c#"a") | atm01.
+atm00(exception):- put_console(c#"*") | atm01.
+
+atm01:- true | unify_in_shoen([],atom,R), atm01(R).
+atm01(exception):- put_console(c#"b") | atm02.
+atm01(success):- put_console(c#"*") | atm02.
+
+atm02:- true | unify_in_shoen(1234,atom,R), atm02(R).
+atm02(exception):- put_console(c#"c") | atm03.
+atm02(success):- put_console(c#"*") | atm03.
+
+atm03:- true | unify_in_shoen(12.34,atom,R), atm03(R).
+atm03(exception):- put_console(c#"d") | atm04.
+atm03(success):- put_console(c#"*") | atm04.
+
+atm04:- true | unify_in_shoen([list],atom,R), atm04(R).
+atm04(exception):- put_console(c#"e") | atm05.
+atm04(success):- put_console(c#"*") | atm05.
+
+atm05:- true | unify_in_shoen({0,1},atom,R), atm05(R).
+atm05(exception):- put_console(c#"f") | atm06.
+atm05(success):- put_console(c#"*") | atm06.
+
+atm06:- true | unify_in_shoen(ascii#"String",atom,R), atm06(R).
+atm06(exception):- put_console(c#"g") | atm07.
+atm06(success):- put_console(c#"*") | atm07.
+
+atm07:- true | unify_in_shoen(_,atom,R), atm07(R).
+atm07(success):- put_console(c#"h") | atm08.
+atm07(exception):- put_console(c#"*") | atm08.
+
+atm08:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% (Integer) %%%%%%%%%%%%% ") | int00.
+
+int00:- true | unify_in_shoen(atom,1234,R), int00(R).
+int00(exception):- put_console(c#"a") | int01.
+int00(success):- put_console(c#"*") | int01.
+
+int01:- true | unify_in_shoen(1234,1234,R), int01(R).
+int01(success):- put_console(c#"b") | int02.
+int01(exception):- put_console(c#"*") | int02.
+
+int02:- true | unify_in_shoen(123456,1234,R), int02(R).
+int02(exception):- put_console(c#"c") | int03.
+int02(success):- put_console(c#"*") | int03.
+
+int03:- true | unify_in_shoen(12.34,1234,R), int03(R).
+int03(exception):- put_console(c#"d") | int04.
+int03(success):- put_console(c#"*") | int04.
+
+int04:- true | unify_in_shoen([list],1234,R), int04(R).
+int04(exception):- put_console(c#"e") | int05.
+int04(success):- put_console(c#"*") | int05.
+
+int05:- true | unify_in_shoen({0,1},1234,R), int05(R).
+int05(exception):- put_console(c#"f") | int06.
+int05(success):- put_console(c#"*") | int06.
+
+int06:- true | unify_in_shoen(ascii#"String",1234,R), int06(R).
+int06(exception):- put_console(c#"g") | int07.
+int06(success):- put_console(c#"*") | int07.
+
+int07:- true | unify_in_shoen(_,1234,R), int07(R).
+int07(success):- put_console(c#"h") | int08.
+int07(exception):- put_console(c#"*") | int08.
+
+int08:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% (Float) %%%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | unify_in_shoen(atom,12.34,R), flt00(R).
+flt00(exception):- put_console(c#"a") | flt01.
+flt00(success):- put_console(c#"*") | flt01.
+
+flt01:- true | unify_in_shoen(1234,12.34,R), flt01(R).
+flt01(exception):- put_console(c#"b") | flt02.
+flt01(success):- put_console(c#"*") | flt02.
+
+flt02:- true | unify_in_shoen(12.34,12.34,R), flt02(R).
+flt02(success):- put_console(c#"c") | flt03.
+flt02(exception):- put_console(c#"*") | flt03.
+
+flt03:- true | unify_in_shoen(123.456,12.34,R), flt03(R).
+flt03(exception):- put_console(c#"d") | flt04.
+flt03(success):- put_console(c#"*") | flt04.
+
+flt04:- true | unify_in_shoen([list],12.34,R), flt04(R).
+flt04(exception):- put_console(c#"e") | flt05.
+flt04(success):- put_console(c#"*") | flt05.
+
+flt05:- true | unify_in_shoen({0,1},12.34,R), flt05(R).
+flt05(exception):- put_console(c#"f") | flt06.
+flt05(success):- put_console(c#"*") | flt06.
+
+flt06:- true | unify_in_shoen(ascii#"String",12.34,R), flt06(R).
+flt06(exception):- put_console(c#"g") | flt07.
+flt06(success):- put_console(c#"*") | flt07.
+
+flt07:- true | unify_in_shoen(_,12.34,R), flt07(R).
+flt07(success):- put_console(c#"h") | flt08.
+flt07(exception):- put_console(c#"*") | flt08.
+
+flt08:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% (List) %%%%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | unify_in_shoen(atom,[list],R), lst00(R).
+lst00(exception):- put_console(c#"a") | lst01.
+lst00(success):- put_console(c#"*") | lst01.
+
+lst01:- true | unify_in_shoen(1234,[list],R), lst01(R).
+lst01(exception):- put_console(c#"b") | lst02.
+lst01(success):- put_console(c#"*") | lst02.
+
+lst02:- true | unify_in_shoen(12.34,[list],R), lst02(R).
+lst02(exception):- put_console(c#"c") | lst03.
+lst02(success):- put_console(c#"*") | lst03.
+
+lst03:- true | unify_in_shoen([list],[list],R), lst03(R).
+lst03(success):- put_console(c#"d") | lst04.
+lst03(exception):- put_console(c#"*") | lst04.
+
+lst04:- true | unify_in_shoen({0,1},[list],R), lst04(R).
+lst04(exception):- put_console(c#"e") | lst05.
+lst04(success):- put_console(c#"*") | lst05.
+
+lst05:- true | unify_in_shoen(ascii#"String",[list],R), lst05(R).
+lst05(exception):- put_console(c#"f") | lst06.
+lst05(success):- put_console(c#"*") | lst06.
+
+lst06:- true | unify_in_shoen(_,[list],R), lst06(R).
+lst06(success):- put_console(c#"g") | lst07.
+lst06(exception):- put_console(c#"*") | lst07.
+
+lst07:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% (Vector) %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | unify_in_shoen(atom,{0,1},R), vec00(R).
+vec00(exception):- put_console(c#"a") | vec01.
+vec00(success):- put_console(c#"*") | vec01.
+
+vec01:- true | unify_in_shoen(1234,{0,1},R), vec01(R).
+vec01(exception):- put_console(c#"b") | vec02.
+vec01(success):- put_console(c#"*") | vec02.
+
+vec02:- true | unify_in_shoen(12.34,{0,1},R), vec02(R).
+vec02(exception):- put_console(c#"c") | vec03.
+vec02(success):- put_console(c#"*") | vec03.
+
+vec03:- true | unify_in_shoen([list],{0,1},R), vec03(R).
+vec03(exception):- put_console(c#"d") | vec04.
+vec03(success):- put_console(c#"*") | vec04.
+
+vec04:- true | unify_in_shoen({0,1},{0,1},R), vec04(R).
+vec04(success):- put_console(c#"e") | vec05.
+vec04(exception):- put_console(c#"*") | vec05.
+
+vec05:- true | unify_in_shoen({0,1,2},{0,1},R), vec05(R).
+vec05(exception):- put_console(c#"f") | vec06.
+vec05(success):- put_console(c#"*") | vec06.
+
+vec06:- true | unify_in_shoen(ascii#"String",{0,1},R), vec06(R).
+vec06(exception):- put_console(c#"g") | vec07.
+vec06(success):- put_console(c#"*") | vec07.
+
+vec07:- true | unify_in_shoen(_,{0,1},R), vec07(R).
+vec07(success):- put_console(c#"h") | vec08.
+vec07(exception):- put_console(c#"*") | vec08.
+
+vec08:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% (String) %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | unify_in_shoen(atom,ascii#"String",R), str00(R).
+str00(exception):- put_console(c#"a") | str01.
+str00(success):- put_console(c#"*") | str01.
+
+str01:- true | unify_in_shoen(1234,ascii#"String",R), str01(R).
+str01(exception):- put_console(c#"b") | str02.
+str01(success):- put_console(c#"*") | str02.
+
+str02:- true | unify_in_shoen(12.34,ascii#"String",R), str02(R).
+str02(exception):- put_console(c#"c") | str03.
+str02(success):- put_console(c#"*") | str03.
+
+str03:- true | unify_in_shoen([list],ascii#"String",R), str03(R).
+str03(exception):- put_console(c#"d") | str04.
+str03(success):- put_console(c#"*") | str04.
+
+str04:- true | unify_in_shoen({0,1},ascii#"String",R), str04(R).
+str04(exception):- put_console(c#"e") | str05.
+str04(success):- put_console(c#"*") | str05.
+
+str05:- true | unify_in_shoen(ascii#"String",ascii#"String",R), str05(R).
+str05(success):- put_console(c#"f") | str06.
+str05(exception):- put_console(c#"*") | str06.
+
+str06:- true | unify_in_shoen(ascii#"STRING",ascii#"String",R), str06(R).
+str06(exception):- put_console(c#"g") | str07.
+str06(success):- put_console(c#"*") | str07.
+
+str07:- true | unify_in_shoen(_,ascii#"String",R), str07(R).
+str07(success):- put_console(c#"h") | str08.
+str07(exception):- put_console(c#"*") | str08.
+
+str08:- put_console(key#lf) | udf.
+
+udf:- put_console(ascii#"% (Undef) %%%%%%%%%%%%%%% ") | udf00.
+
+udf00:- true | unify_in_shoen(atom,_,R), udf00(R).
+udf00(success):- put_console(c#"a") | udf01.
+udf00(exception):- put_console(c#"*") | udf01.
+
+udf01:- true | unify_in_shoen(1234,_,R), udf01(R).
+udf01(success):- put_console(c#"b") | udf02.
+udf01(exception):- put_console(c#"*") | udf02.
+
+udf02:- true | unify_in_shoen(12.34,_,R), udf02(R).
+udf02(success):- put_console(c#"c") | udf03.
+udf02(exception):- put_console(c#"*") | udf03.
+
+udf03:- true | unify_in_shoen([list],_,R), udf03(R).
+udf03(success):- put_console(c#"d") | udf04.
+udf03(exception):- put_console(c#"*") | udf04.
+
+udf04:- true | unify_in_shoen({0,1},_,R), udf04(R).
+udf04(success):- put_console(c#"e") | udf05.
+udf04(exception):- put_console(c#"*") | udf05.
+
+udf05:- true | unify_in_shoen(ascii#"String",_,R), udf05(R).
+udf05(success):- put_console(c#"f") | udf06.
+udf05(exception):- put_console(c#"*") | udf06.
+
+udf06:- true | unify_in_shoen(_,_,R), udf06(R).
+udf06(success):- put_console(c#"g") | udf07.
+udf06(exception):- put_console(c#"*") | udf07.
+
+udf07:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify_in_shoen(X,Y,R):- true |
+	'Sho-en':execute({get_val_e,unify,2},{X,Y}, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(10,{0,X,Y},NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=exception, C=[abort].
+
+unify(X,Y):- true | X=Y.

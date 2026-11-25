@@ -1,0 +1,233 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Check_Constant %%%
+% Check_Atom %%%%%%%%%%%% abcdef
+% Check_Nil %%%%%%%%%%%%% abcdef
+% Check_Integer %%%%%%%%% abcdefg
+% Check_Float %%%%%%%%%%% abcdefg
+% Check_Vector %%%%%%%%%% abcdefg
+
+:- module check_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Check_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Check_Atom %%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(atom):- put_console(c#"a") | atm01.
+atm00(X):- list(X), put_console(c#"*") | atm01.
+otherwise.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01([]).
+atm01(atom):- put_console(c#"*") | atm02.
+atm01(X):- list(X), put_console(c#"*") | atm02.
+otherwise.
+atm01(_):- put_console(c#"b") | atm02.
+
+atm02:- true | atm02(1234).
+atm02(atom):- put_console(c#"*") | atm03.
+atm02(X):- list(X), put_console(c#"*") | atm03.
+otherwise.
+atm02(_):- put_console(c#"c") | atm03.
+
+atm03:- true | atm03(12.34).
+atm03(atom):- put_console(c#"*") | atm04.
+atm03(X):- list(X), put_console(c#"*") | atm04.
+otherwise.
+atm03(_):- put_console(c#"d") | atm04.
+
+atm04:- true | atm04({0,1}).
+atm04(atom):- put_console(c#"*") | atm05.
+atm04(X):- list(X), put_console(c#"*") | atm05.
+otherwise.
+atm04(_):- put_console(c#"e") | atm05.
+
+atm05:- true | atm05(ascii#"String").
+atm05(atom):- put_console(c#"*") | atm06.
+atm05(X):- list(X), put_console(c#"*") | atm06.
+otherwise.
+atm05(_):- put_console(c#"f") | atm06.
+
+atm06:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Check_Nil %%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | nil00(atom).
+nil00([]):- put_console(c#"*") | nil01.
+nil00(X):- list(X), put_console(c#"*") | nil01.
+otherwise.
+nil00(_):- put_console(c#"a") | nil01.
+
+nil01:- true | nil01([]).
+nil01([]):- put_console(c#"b") | nil02.
+nil01(X):- list(X), put_console(c#"*") | nil02.
+otherwise.
+nil01(_):- put_console(c#"*") | nil02.
+
+nil02:- true | nil02(1234).
+nil02([]):- put_console(c#"*") | nil03.
+nil02(X):- list(X), put_console(c#"*") | nil03.
+otherwise.
+nil02(_):- put_console(c#"c") | nil03.
+
+nil03:- true | nil03(12.34).
+nil03([]):- put_console(c#"*") | nil04.
+nil03(X):- list(X), put_console(c#"*") | nil04.
+otherwise.
+nil03(_):- put_console(c#"d") | nil04.
+
+nil04:- true | nil04({0,1}).
+nil04([]):- put_console(c#"*") | nil05.
+nil04(X):- list(X), put_console(c#"*") | nil05.
+otherwise.
+nil04(_):- put_console(c#"e") | nil05.
+
+nil05:- true | nil05(ascii#"String").
+nil05([]):- put_console(c#"*") | nil06.
+nil05(X):- list(X), put_console(c#"*") | nil06.
+otherwise.
+nil05(_):- put_console(c#"f") | nil06.
+
+nil06:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Check_Integer %%%%%%%%% ") | int00.
+
+int00:- true | int00([list]).
+int00(1234):- put_console(c#"*") | int01.
+int00(X):- atom(X), put_console(c#"*") | int01.
+otherwise.
+int00(_):- put_console(c#"a") | int01.
+
+int01:- true | int01(atom).
+int01(1234):- put_console(c#"*") | int02.
+int01(X):- list(X), put_console(c#"*") | int02.
+otherwise.
+int01(_):- put_console(c#"b") | int02.
+
+int02:- true | int02(1234).
+int02(1234):- put_console(c#"c") | int03.
+int02(X):- atom(X), put_console(c#"*") | int03.
+otherwise.
+int02(_):- put_console(c#"*") | int03.
+
+int03:- true | int03(123456).
+int03(1234):- put_console(c#"*") | int04.
+int03(X):- atom(X), put_console(c#"*") | int04.
+otherwise.
+int03(_):- put_console(c#"d") | int04.
+
+int04:- true | int04(12.34).
+int04(1234):- put_console(c#"*") | int05.
+int04(X):- atom(X), put_console(c#"*") | int05.
+otherwise.
+int04(_):- put_console(c#"e") | int05.
+
+int05:- true | int05({0,1}).
+int05(1234):- put_console(c#"*") | int06.
+int05(X):- atom(X), put_console(c#"*") | int06.
+otherwise.
+int05(_):- put_console(c#"f") | int06.
+
+int06:- true | int06(ascii#"String").
+int06(1234):- put_console(c#"*") | int07.
+int06(X):- atom(X), put_console(c#"*") | int07.
+otherwise.
+int06(_):- put_console(c#"g") | int07.
+
+int07:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Check_Float %%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00([list]).
+flt00(12.34):- put_console(c#"*") | flt01.
+flt00(X):- string(X), put_console(c#"*") | flt01.
+otherwise.
+flt00(_):- put_console(c#"a") | flt01.
+
+flt01:- true | flt01(atom).
+flt01(12.34):- put_console(c#"*") | flt02.
+flt01(X):- string(X), put_console(c#"*") | flt02.
+otherwise.
+flt01(_):- put_console(c#"b") | flt02.
+
+flt02:- true | flt02(1234).
+flt02(12.34):- put_console(c#"*") | flt03.
+flt02(X):- string(X), put_console(c#"*") | flt03.
+otherwise.
+flt02(_):- put_console(c#"c") | flt03.
+
+flt03:- true | flt03(12.34).
+flt03(12.34):- put_console(c#"d") | flt04.
+flt03(X):- string(X), put_console(c#"*") | flt04.
+otherwise.
+flt03(_):- put_console(c#"*") | flt04.
+
+flt04:- true | flt04(123.456).
+flt04(12.34):- put_console(c#"*") | flt05.
+flt04(X):- string(X), put_console(c#"*") | flt05.
+otherwise.
+flt04(_):- put_console(c#"e") | flt05.
+
+flt05:- true | flt05({0,1}).
+flt05(12.34):- put_console(c#"*") | flt06.
+flt05(X):- string(X), put_console(c#"*") | flt06.
+otherwise.
+flt05(_):- put_console(c#"f") | flt06.
+
+flt06:- true | flt06(ascii#"String").
+flt06(12.34):- put_console(c#"*") | flt07.
+flt06(X):- list(X), put_console(c#"*") | flt07.
+otherwise.
+flt06(_):- put_console(c#"g") | flt07.
+
+flt07:- put_console(key#lf) | vct.
+
+vct:- put_console(ascii#"% Check_Vector %%%%%%%%%% ") | vct00.
+
+vct00:- true | vct00([list]).
+vct00({_,_}):- put_console(c#"*") | vct01.
+vct00(X):- integer(X), put_console(c#"*") | vct01.
+otherwise.
+vct00(_):- put_console(c#"a") | vct01.
+
+vct01:- true | vct01(atom).
+vct01({_,_}):- put_console(c#"*") | vct02.
+vct01(X):- integer(X), put_console(c#"*") | vct02.
+otherwise.
+vct01(_):- put_console(c#"b") | vct02.
+
+vct02:- true | vct02(1234).
+vct02({_,_}):- put_console(c#"*") | vct03.
+vct02(X):- list(X), put_console(c#"*") | vct03.
+otherwise.
+vct02(_):- put_console(c#"c") | vct03.
+
+vct03:- true | vct03(12.34).
+vct03({_,_}):- put_console(c#"*") | vct04.
+vct03(X):- integer(X), put_console(c#"*") | vct04.
+otherwise.
+vct03(_):- put_console(c#"d") | vct04.
+
+vct04:- true | vct04({0,1}).
+vct04({_,_}):- put_console(c#"e") | vct05.
+vct04(X):- integer(X), put_console(c#"*") | vct05.
+otherwise.
+vct04(_):- put_console(c#"*") | vct05.
+
+vct05:- true | vct05({0,1,2}).
+vct05({_,_}):- put_console(c#"*") | vct06.
+vct05(X):- integer(X), put_console(c#"*") | vct06.
+otherwise.
+vct05(_):- put_console(c#"f") | vct06.
+
+vct06:- true | vct06(ascii#"String").
+vct06({_,_}):- put_console(c#"*") | vct07.
+vct06(X):- integer(X), put_console(c#"*") | vct07.
+otherwise.
+vct06(_):- put_console(c#"g") | vct07.
+
+vct07:- put_console(key#lf) | done.
+
+done:- true | true.

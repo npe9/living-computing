@@ -1,0 +1,389 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_macro_expander.
+:- public create/1.
+
+create(Req):-
+    true|
+	do(Req).
+
+do([expand(FTerm,VN,ExpFTerm,NVN)|Req]):-
+    true|
+	convert_macro_arg(FTerm,CFTerm),
+	expand_goal(CFTerm, ExpFTerm, VN,NVN),
+ 	do(Req).
+do([]) :- true | true.
+
+expand_goal(A:=B, X, VN,NVN) :- true |
+    expand_expression(B, unify(A,O),X, O, VN,NVN).
+expand_goal(A$:=B, X, VN,NVN) :- true |
+    expand_float_expression(B, unify(A,O),X, O, VN,NVN).
+expand_goal(A=B, X, VN,NVN) :- true |
+    X = unify(A,B), NVN = VN.
+expand_goal((A,B), X, VN,NVN) :- true |
+    expand_goal(A, X1, VN,VN1),
+    expand_goal(B, X2, VN1,NVN),
+    X = (X1,X2).
+expand_goal((A;B), X, VN,NVN) :- true |
+    expand_goal(A, X1, VN,VN1),
+    expand_goal(B, X2, VN1,NVN),
+    X = (X1;X2).
+expand_goal('|'(A,all), X, VN,NVN) :- true |
+    get_all_variables(A,VL),
+    get_variable_name(VL,VNL),
+    expand_goal(A, X1, VN,NVN),
+    X = (X1;display_value(VNL,VL)).
+expand_goal('|'(A,B), X, VN,NVN) :- B\=all |
+    term_to_list(B,VL),
+    get_variable_name(VL,VNL),
+    expand_goal(A, X1, VN,NVN),
+    X = (X1;display_value(VNL,VL)).
+expand_goal(stat(A), X, VN,NVN) :- true |
+    expand_goal(A, X1, VN, NVN),
+    X = stat(X1).
+otherwise.
+expand_goal(Term, X, VN,NVN) :- true |
+    X = Term, NVN = VN.
+
+expand_expression(Integer, H,T, O, VN,NVN) :- integer(Integer) |
+    O= Integer, T=H, NVN=VN.
+expand_expression('$VAR'(N,Name), H,T, O, VN,NVN) :- true |
+    O= '$VAR'(N,Name), T=H, NVN=VN.
+expand_expression((A+B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,add(O1,O2,O)).
+expand_expression((A-B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,subtract(O1,O2,O)).
+expand_expression((A*B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,multiply(O1,O2,O)).
+expand_expression((A/B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,divide(O1,O2,O)).
+expand_expression((A mod B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,modulo(O1,O2,O)).
+expand_expression((A /\ B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,and(O1,O2,O)).
+expand_expression((A \/ B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,or(O1,O2,O)).
+expand_expression((A xor B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,exclusive_or(O1,O2,O)).
+expand_expression((A << B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,shift_left(O1,O2,O)).
+expand_expression((A >> B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,shift_right(O1,O2,O)).
+expand_expression((-(A)), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M, O1, VN1,NVN),
+    T = (M,minus(O1,O)).
+expand_expression((\(A)), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M, O1, VN1,NVN),
+    T = (M,complement(O1,O)).
+expand_expression(abs(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M, O1, VN1,NVN),
+    T = (M,abs(O1,O)).
+expand_expression(min(A,B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,min(O1,O2,O)).
+expand_expression(max(A,B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M1, O1, VN1,VN2),
+    expand_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,max(O1,O2,O)).
+expand_expression(int(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_to_integer(O1,O)).
+otherwise.
+expand_expression(Term, H,T, O, VN,NVN) :- true |
+    O= Term, T=H, NVN=VN.
+
+expand_float_expression(Float, H,T, O, VN,NVN) :- integer(Float) |
+    O= Float, T=H, NVN=VN.
+expand_float_expression('$VAR'(N,Name), H,T, O, VN,NVN) :- true |
+    O= '$VAR'(N,Name), T=H, NVN=VN.
+expand_float_expression((A+B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_add(O1,O2,O)).
+expand_float_expression((A-B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_subtract(O1,O2,O)).
+expand_float_expression((A*B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_multiply(O1,O2,O)).
+expand_float_expression((A/B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_divide(O1,O2,O)).
+expand_float_expression((-(A)), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_minus(O1,O)).
+expand_float_expression(abs(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_abs(O1,O)).
+expand_float_expression(min(A,B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_min(O1,O2,O)).
+expand_float_expression(max(A,B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_max(O1,O2,O)).
+expand_float_expression(floor(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_floor(O1,O)).
+expand_float_expression(sqrt(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_sqrt(O1,O)).
+expand_float_expression(ln(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_ln(O1,O)).
+expand_float_expression(log(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_log(O1,O)).
+expand_float_expression(exp(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_exp(O1,O)).
+expand_float_expression(A**B, H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_pow(O1,O2,O)).
+expand_float_expression(sin(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_sin(O1,O)).
+expand_float_expression(cos(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_cos(O1,O)).
+expand_float_expression(tan(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_tan(O1,O)).
+expand_float_expression(asin(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_asin(O1,O)).
+expand_float_expression(acos(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_acos(O1,O)).
+expand_float_expression(atan(A/B), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M1, O1, VN1,VN2),
+    expand_float_expression(B, M1,M2, O2, VN2,NVN),
+    T = (M2,floating_point_atan(O1,O2,O)).
+expand_float_expression(sinh(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_sinh(O1,O)).
+expand_float_expression(cosh(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_cosh(O1,O)).
+expand_float_expression(tanh(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_tanh(O1,O)).
+expand_float_expression(float(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_expression(A, H,M, O1, VN1,NVN),
+    T = (M,integer_to_floating_point(O1,O)).
+otherwise.
+expand_float_expression(atan(A), H,T, O, VN,NVN) :- true |
+    new_variable(VN,O,VN1),
+    expand_float_expression(A, H,M, O1, VN1,NVN),
+    T = (M,floating_point_atan(O1,O)).
+otherwise.
+expand_float_expression(Term, H,T, O, VN,NVN) :- true |
+    O= Term, T=H, NVN=VN.
+
+
+%%%%%% expand arguments
+convert_macro_arg(X, Y) :- atom(X) | Y=X.
+convert_macro_arg(X, Y) :- integer(X) | Y=X.
+convert_macro_arg(X, Y) :- floating_point(X) | Y=X.
+convert_macro_arg(X, Y) :- string(X) | Y=X.
+convert_macro_arg([Car|Cdr], Y) :- true |
+	convert_macro_arg(Car,ECar),
+	convert_macro_arg(Cdr,ECdr),
+	Y=[ECar|ECdr].
+convert_macro_arg(Key#Arg, Y) :- true |
+	kl1cmp_macro_arg:macro_arg({0},_,1,Key,Arg,NewArg),
+	wait_macro_arg(NewArg,Y).
+convert_macro_arg(#Arg, Y) :- true |
+	kl1cmp_macro_arg:macro_arg({0},_,1,none,Arg,NewArg),
+	wait_macro_arg(NewArg,Y).
+otherwise.
+convert_macro_arg(X, Y) :- vector(X,L) |
+	new_vector(V,L),
+	convert_macro_arg_vect(0,L,X,V,Y).
+otherwise.
+convert_macro_arg(X, Y) :- true | Y=X.
+
+convert_macro_arg_vect(P,L,X,V,Y) :- P<L |
+	set_vector_element(X,P,E,[],NX),
+	convert_macro_arg(E,EE),
+	set_vector_element(V,P,_,EE,NV),
+	P1 := P + 1,
+	convert_macro_arg_vect(P1,L,NX,NV,Y).
+convert_macro_arg_vect(L,L,_,V,Y) :- true |
+	Y=V.
+
+wait_macro_arg('$NOT_FOUND'(Arg),Y) :- true | Y = Arg.
+otherwise.
+wait_macro_arg(NewArg,Y) :- true | Y = NewArg.
+
+%%%%%% get_all_variables %%%%%%
+%% get_all_varilables(Ft,FV).
+%%     Ft :: FrozenTerm
+%%     FV :: List of FrozenVariables
+
+
+get_all_variables(Ft,FV):-
+   true |
+   get_all_variables(Ft,[],FV).
+
+get_all_variables(Ft,FV,FV1):-
+    atom(Ft)|
+    FV1 = FV.
+get_all_variables(Ft,FV,FV1):-
+    integer(Ft)|
+    FV1 = FV.
+get_all_variables(Ft,FV,FV1):-
+    floating_point(Ft)|
+    FV1 = FV.
+get_all_variables(Ft,FV,FV1):-
+    string(Ft)|
+    FV1 = FV.
+get_all_variables([HFt|TFt],VN,VN1):-
+    true |
+    get_all_variables(HFt,VN,VN2),
+    get_all_variables(TFt,VN2,VN1).
+get_all_variables('$VAR'(Num,Str),VN,VN1):-
+    Num>=0, string(Str,_,8)|
+    add_to_list('$VAR'(Num,Str),VN,VN1).
+otherwise.
+get_all_variables(Ft,VN,VN1):-
+    vector(Ft,S)|
+    get_all_variables1(0,S,Ft,VN,VN1).
+
+get_all_variables1(P,S,Ft,VN,VN1):-
+    P < S |
+    vector_element(Ft,P,FE,Ft1),
+    get_all_variables(FE,VN,V1),
+    P1 := P + 1,
+    get_all_variables1(P1,S,Ft1,V1,VN1).
+get_all_variables1(S,S,_,VN,VN1):-
+    true |
+    VN1 = VN.
+
+
+add_to_list('$VAR'(Num,Nam),VN,VN1):-
+    Nam = string#"_", Num>=0 |
+    VN1 = VN.
+otherwise.
+add_to_list(FVar,[],VN1):-
+    true |
+    VN1 = [FVar].
+add_to_list(FVar,[FVar|VN],VN1):-
+    true |
+    VN1 = [FVar|VN].
+add_to_list(FVar,[V|VN],VN1):-
+    FVar \= V |
+    VN1 = [V|VN2],
+    add_to_list(FVar,VN,VN2).
+
+
+term_to_list(T,L):-
+     true|
+	term_to_list(T,L,[]).
+
+term_to_list((H,T),LH,LT):-
+     true|
+	add_to_list(H,LT,L),
+	term_to_list(T,LH,L).
+otherwise.
+term_to_list(T,LH,LT):-
+     true|
+	add_to_list(T,LT,LH).
+
+
+get_variable_name(['$VAR'(Num,Name)|R],VNameL):-
+     Num >= 0, string(Name,_,_)|
+	VNameL = [Name|TVNameL],
+	get_variable_name(R,TVNameL).
+get_variable_name([],VNameL):-
+     true|
+	VNameL = [].
+otherwise.
+get_variable_name([H|T],VNameL):-
+     true|
+	VNameL = [error(H)|TVNameL],
+	get_variable_name(T,TVNameL).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% new_variable(Num,Var,NewNum).
+%%   Num    :: Variable number.
+%%   Var    :: Variable.
+%%   NewNum :: Next variable number.
+
+new_variable(Num,Var,NewNum) :-
+    true |
+	mpimos_utility:integer_to_string(Num,NumString),
+	append_string(string#"_",NumString,VarName),
+	Var = '$VAR'(Num,VarName),
+	NewNum := Num + 1.

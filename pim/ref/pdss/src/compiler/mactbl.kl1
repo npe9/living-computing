@@ -1,0 +1,393 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   Table management process
+%	    for
+%   Macro Expander
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_mtbl.
+:- public generate_macro_table_process/7,
+	  make_table/5.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  genarate macro management
+%	process
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit out:oldnew, macro:oldnew.
+generate_macro_table_process(TblStream, In, Out) --> true |
+    read_declaration([], Gtbl, [], Ltbl, Out, [], In),
+  {{macro_management_process(&out, [], TblStream, Gtbl, Ltbl)}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   macro management process
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- local_implicit out:oldnew, var_no:stream.
+macro_management_process([replace_local(Ltbl)|Cdr], Gtbl0, _) --> true |
+   macro_management_process(Cdr, Gtbl0, Ltbl).
+macro_management_process([new_variable(Arg)|Cdr], Gtbl0, Ltbl0) --> true |
+   &var_no<<=[new_variable(Arg)],
+   macro_management_process(Cdr, Gtbl0, Ltbl0).
+macro_management_process([get_number_of_args(N)|Cdr],
+			Gtbl0, Ltbl0) --> true |
+ {{count_implicit_args(Gtbl1, [], 0, Ng, Gtbl0),
+   count_implicit_args(Ltbl1, [], Ng, N, Ltbl0)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([get_type(Arg, Type)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{find_arg(Gtbl0, Gtbl1, Arg, not_found(Arg), Type1),
+   find_arg(Ltbl0, Ltbl1, Arg, Type1, Type)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([get_all_args(ArgList)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{get_arg(&var_no, ArgList, ArgListMid, Gtbl0, Gtbl1),
+   get_arg(&var_no, ArgListMid, [], Ltbl0, Ltbl1)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([get_one_arg(Arg, Vars)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{find_and_get_arg(&var_no, Vars, VarsMid, Arg,
+				Gtbl0, Gtbl1, not_found(Arg), Flg1),
+   find_and_get_arg(&var_no, VarsMid, [], Arg, Ltbl0, Ltbl1, Flg1, _)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([new_var_stream(NewVar)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{macro_management_process(&out, NewVar, Cdr, Gtbl0, Ltbl0)}}.
+macro_management_process([get_old(Arg, Old)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{get_old(&var_no, Gtbl0, Gtbl1, Arg, not_found(Arg), Old1),
+   get_old(&var_no, Ltbl0, Ltbl1, Arg, Old1, Old)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([get_new(Arg, New)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{get_new(&var_no, Gtbl0, Gtbl1, Arg, not_found(Arg), New1),
+   get_new(&var_no, Ltbl0, Ltbl1, Arg, New1, New)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([terminate(Goal0)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{clear_table(&var_no, Goal0, Goal1, Gtbl0, Gtbl1),
+   clear_table(&var_no, Goal1, [], Ltbl0, Ltbl1)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([init_tables(Args)|Cdr], Gtbl0, Ltbl0) --> true |
+ {{init_table(&var_no, Args, ArgsMid, Gtbl0, Gtbl1),
+   init_table(&var_no, ArgsMid, [], Ltbl0, Ltbl1)}},
+   macro_management_process(Cdr, Gtbl1, Ltbl1).
+macro_management_process([get_old_and_new(Arg, Ref)|Cdr], Gtbl0, Ltbl0) -->
+						true |
+ {{get_old_and_new(&var_no, Gtbl0, Gtbl, Arg, [not_found(Arg)], Ref0),
+   get_old_and_new(&var_no, Ltbl0, Ltbl, Arg, Ref0, Ref)}},
+   macro_management_process(Cdr, Gtbl, Ltbl).
+macro_management_process([], _, _) --> true | true.
+
+find_arg([Vect|Cdr], NewTbl, Arg, Type0, Type) :-
+	vector_element(Vect, 0, Arg0), Arg0 \= Arg |
+   NewTbl=[Vect|NewTblCdr],
+   find_arg(Cdr, NewTblCdr, Arg, Type0, Type).
+find_arg([Vect|Cdr], NewTbl, Arg, _, Type) :-
+	vector_element(Vect, 0, Arg) |
+   set_vector_element(Vect, 1, Type, Type, NewVect),
+   NewTbl=[NewVect|Cdr].
+find_arg(Tbl0, Tbl, _, Type0, Type) :-
+		vector_element(Type0, 0, Func), Func\=not_found |
+   Tbl0=Tbl, Type0=Type.
+find_arg([], Tbl, _, Type0, Type) :- true |
+   Tbl=[], Type0=Type.
+
+:- local_implicit var_no:stream, vars:oldnew.
+get_arg([{Arg, oldnew, Old-Last, _}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(New)],
+ {{NewTbl=[{Arg, oldnew, New-Last, accessed}|NewTblCdr]}},
+   &vars<<=[Old, New],
+   get_arg(Cdr, NewTblCdr).
+get_arg([{Arg, stream, Args-Last}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(New)],
+ {{NewTbl=[{Arg, stream, [New|Args]-Last}|NewTblCdr]}},
+   &vars<<=[New],
+   get_arg(Cdr, NewTblCdr).
+get_arg([{Arg, shared, Old}|Cdr], NewTbl) --> true |
+   NewTbl=[{Arg, shared, Old}|NewTblCdr],
+   &vars<<=[Old],
+   get_arg(Cdr, NewTblCdr).
+get_arg([{Arg, string, Old-Last, _}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(New)],
+ {{NewTbl=[{Arg, string, New-Last, accessed}|NewTblCdr]}},
+   &vars<<=[Old, New],
+   get_arg(Cdr, NewTblCdr).
+get_arg([], NewTbl) --> true |
+   NewTbl=[].
+
+find_and_get_arg(Arg, [Vect|Cdr], NewTbl, Type0, Type) -->
+	 vector_element(Vect, 0, Arg0), Arg0\=Arg |
+   NewTbl=[Vect|NewTblCdr],
+   find_and_get_arg(Arg, Cdr, NewTblCdr, Type0, Type).
+find_and_get_arg(Arg, [Vect0|Cdr], NewTbl, Type0, Type) -->
+		Type0=not_found(_), vector_element(Vect0, 0, Arg) |
+ {{set_vector_element(Vect0, 1, Type0, Type0, Vect1),
+   set_vector_element(Vect1, 2, Args, NewArgs, Vect2)}},
+   insert_arg(Type0, Args, NewArgs),
+ {{Type=found,
+   NewTbl=[Vect2|Cdr]}}.
+find_and_get_arg(_, Tbl0, Tbl, Type0, Type) -->
+	vector_element(Type0, 0, Func), Func \= not_found |
+   Tbl0=Tbl, Type0=Type.
+find_and_get_arg(_, [], Tbl, Type0, Type) --> true | Tbl=[], Type0=Type.
+
+insert_arg(oldnew, Old-Last, NewArg) --> true |
+   &var_no<<=[new_variable(New)],
+   &vars<<=[Old, New],
+   NewArg=New-Last.
+insert_arg(stream, Args-Last, NewArg) --> true |
+   &var_no<<=[new_variable(New)],
+   &vars<<=[New],
+   NewArg=[New|Args]-Last.
+insert_arg(shared, Old, New) --> true |
+   &vars<<=[Old],
+  {{New=Old}}.
+insert_arg(string, Old-Last, NewArg) --> true |
+   &var_no<<=[new_variable(New)],
+   &vars<<=[Old, New],
+   NewArg=New-Last.
+
+:- local_implicit var_no:stream.
+get_old([Rcd|Cdr], NewTbl, Arg, Flg0, Flg) -->
+		Flg0=not_found(_), vector_element(Rcd, 0, Arg0), Arg0\=Arg |
+   NewTbl=[Rcd|NewTblCdr],
+   get_old(Cdr, NewTblCdr, Arg, Flg0, Flg).
+get_old([{Arg, oldnew, Old-Last, AccessedFlg}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   NewTbl=[{Arg, oldnew, Old-Last, AccessedFlg}|Cdr],
+   Flg=Old.
+get_old([{Arg, shared, Ele}|Cdr], NewTbl, Arg, _, Flg) --> true |
+   NewTbl=[{Arg, shared, Ele}|Cdr],
+   Flg=Ele.
+get_old([{Arg, string, Old-Last, AccessedFlg}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   NewTbl=[{Arg, string, Old-Last, AccessedFlg}|Cdr],
+   Flg=Old.
+get_old([{Arg, stream, Args-Last}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   &var_no <<= [new_variable(New)],
+ {{NewTbl=[{Arg, stream, [New|Args]-Last}|Cdr],
+   Flg=New}}.
+otherwise.
+get_old(Tbl, NewTbl, _, Flg0, Flg) -->
+	vector_element(Flg0, 0, Func), Func\=not_found |
+  Tbl=NewTbl, Flg0=Flg.
+get_old([Rcd|Rest], NewTbl, Arg, not_found(Arg), Flg) --> true |
+ {{NewTbl=[Rcd|NewTblRest]}},
+   get_old(Rest, NewTblRest, Arg, not_found(Arg), Flg).
+get_old([], NewTbl, _, Flg0, Flg) --> true |
+   NewTbl=[], Flg0=Flg.
+
+:- local_implicit var_no:stream.
+get_new([{Arg, oldnew, _-Last, AccessedFlg}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   &var_no <<= [new_variable(New)],
+ {{NewTbl=[{Arg, oldnew, New-Last, AccessedFlg}|Cdr],
+   Flg=New}}.
+get_new([{Arg, shared, _}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   &var_no <<= [new_variable(New)],
+ {{NewTbl=[{Arg, shared, New}|Cdr],
+   Flg=New}}.
+get_new([{Arg, stream, Args-Last}|Cdr],
+		NewTbl, Arg, _, Flg) --> true |
+   &var_no <<= [new_variable(New)],
+ {{NewTbl=[{Arg, stream, [New|Args]-Last}|Cdr],
+   Flg=New}}.
+get_new([{Arg, string, _-Last, AccessedFlg}|Cdr],
+			NewTbl, Arg, _, Flg) --> true |
+   &var_no <<= [new_variable(New)],
+ {{NewTbl=[{Arg, string, New-Last, AccessedFlg}|Cdr],
+   Flg=New}}.
+otherwise.
+get_new([Rcd|Cdr], NewTbl, Arg, Flg0, Flg) --> true |
+ {{NewTbl=[Rcd|NewTblCdr]}},
+   get_new(Cdr, NewTblCdr, Arg, Flg0, Flg).
+get_new([], NewTbl, _, Flg0, Flg) --> true |
+ {{Flg0=Flg, NewTbl=[]}}.
+
+:- local_implicit var_no:stream, goals:oldnew.
+clear_table([{Arg, oldnew, Old-Last, Flg}|Cdr], NewTbl) --> true |
+   check_accessed_flg(Flg, Old, Last),
+   NewTbl=[{Arg, oldnew}|NewTblCdr],
+   clear_table(Cdr, NewTblCdr).
+clear_table([{Arg, stream, Args-Out}|Cdr], NewTbl) --> true |
+ {{convert_list_to_vector(Args, ArgsVect),
+   &var_no <<= [new_variable(Out)],
+   &goals <<= [Out=ArgsVect],
+   NewTbl=[{Arg, stream}|NewTblCdr]}},
+   clear_table(Cdr, NewTblCdr).
+clear_table([{Arg, shared, _}|Cdr], NewTbl) --> true |
+   NewTbl=[{Arg, shared}|NewTblCdr],
+   clear_table(Cdr, NewTblCdr).
+clear_table([{Arg, string, Old-Last, Flg}|Cdr], NewTbl) --> true |
+   check_accessed_flg(Flg, Old, Last),
+   NewTbl=[{Arg, string}|NewTblCdr],
+   clear_table(Cdr, NewTblCdr).
+clear_table([], NewTbl) --> true | NewTbl=[].
+
+check_accessed_flg(not_accessed, Old, Last) --> true |
+   &var_no<<=[new_variable(Last)],
+   &goals <<= [Old=Last].
+check_accessed_flg(accessed, Old, Last) --> true |
+   Old=Last.
+
+
+:- local_implicit var_no:stream, vars:oldnew.
+init_table([{Arg, oldnew}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(Old)],
+ {{NewTbl=[{Arg, oldnew, Old-New, not_accessed}|NewTblCdr]}}, % "New" is UNDEF.
+   &vars<<=[Old, New],
+   init_table(Cdr, NewTblCdr).
+init_table([{Arg, stream}|Cdr], NewTbl) --> true |
+   NewTbl=[{Arg, stream, []-Old}|NewTblCdr],
+   &vars<<=[Old],
+   init_table(Cdr, NewTblCdr).
+init_table([{Arg, shared}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(Old)],
+ {{NewTbl=[{Arg, shared, Old}|NewTblCdr]}},
+   &vars<<=[Old],
+   init_table(Cdr, NewTblCdr).
+init_table([{Arg, string}|Cdr], NewTbl) --> true |
+   &var_no<<=[new_variable(Old)],   % New is UNDEF.
+ {{NewTbl=[{Arg, string, Old-New, not_accessed}|NewTblCdr]}},
+   &vars<<=[Old, New],
+   init_table(Cdr, NewTblCdr).
+init_table([], NewTbl) --> true | NewTbl=[].
+
+:- local_implicit tbl:oldnew, nargs:oldnew.
+count_implicit_args([Ele|T]) --> vector_element(Ele, 1, oldnew) |
+    &tbl<<=[Ele],
+    &nargs<= &nargs+2,
+    count_implicit_args(T).
+count_implicit_args([Ele|T]) --> vector_element(Ele, 1, stream) |
+    &tbl<<=[Ele],
+    &nargs<= &nargs+1,
+    count_implicit_args(T).
+count_implicit_args([Ele|T]) --> vector_element(Ele, 1, string) |
+    &tbl<<=[Ele],
+    &nargs<= &nargs+2,
+    count_implicit_args(T).
+count_implicit_args([Ele|T]) --> vector_element(Ele, 1, shared) |
+    &tbl<<=[Ele],
+    &nargs<= &nargs+1,
+    count_implicit_args(T).
+count_implicit_args([]) --> true | true.
+
+:- local_implicit var_no:stream.
+get_old_and_new([{Arg, oldnew, Old-Last, Acc}|Cdr], Tbl, Arg, _, Ref)
+			--> true |
+   &var_no <<= [new_variable(New)],
+   Ref=[Old|New],
+   Tbl=[{Arg, oldnew, New-Last, Acc}|Cdr].
+get_old_and_new([{Arg, stream, Args-Old}|Cdr], Tbl, Arg, _, Ref) --> true |
+   &var_no <<= [new_variable(Old)],
+   Ref=[Old|New],	% "New" is a undefined variable.
+   Tbl=[{Arg, stream, Args-New}|Cdr].
+otherwise.
+get_old_and_new([Rcd|Cdr], Tbl0, Arg, [not_found(Arg)|_], Ref) -->
+		vector_element(Rcd, 0, Arg0), Arg0\=Arg |
+   Tbl0=[Rcd|Tbl],
+   get_old_and_new(Cdr, Tbl, Arg, [not_found(Arg)], Ref).
+otherwise.
+get_old_and_new(Tbl0, Tbl, Arg, Ref0, Ref) --> true |
+   Ref0=Ref,
+   Tbl0=Tbl.
+
+%%%%%%%%%%%%%%%%%%%
+% read declaration
+%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit out:oldnew, macro:oldnew, gtbl:oldnew, ltbl:oldnew,
+		 dec:oldnew.
+read_declaration([(:- implicit Args)|Cdr]) --> &gtbl(old)=[] |
+   {{make_table(&out, Gtbl, [], Args),
+     check_table(&out, Gtbl1, [], Gtbl)}},
+     &gtbl<=Gtbl1,
+     read_declaration(Cdr).
+read_declaration([(:- local_implicit Arg)|Cdr]) --> true |
+   {{make_table(&out, Ltbl, [], Arg),
+     check_table(&out, Ltbl1, [], Ltbl)}},
+     &ltbl<=Ltbl1,
+     read_declaration(Cdr).
+read_declaration([(:- module A)|Cdr]) --> true |
+     &dec<<=[(:- module A)],
+     read_declaration(Cdr).
+read_declaration([(:- public A)|Cdr]) --> true |
+     &dec<<=[(:- public A)],
+     read_declaration(Cdr).
+read_declaration([(:- with_macro A)|Cdr]) --> true |
+   {{kl1cmp_macro_arg:read_macro_file(&out, &macro, A)}},
+     read_declaration(Cdr).
+read_declaration([]) --> true | true.
+otherwise.
+read_declaration([(:- implicit Args)|Cdr]) --> true |
+     &out<<=[error_message(
+		 string#"Grobal implicit declaraiton found irreguraly.",
+		[(:- implicit Args)])],
+     read_declaration(Cdr).
+
+:- local_implicit io:oldnew, tbl:oldnew.
+make_table((X,Y)) --> true |
+    make_table(X),
+    make_table(Y).
+make_table((Arg:Type)) --> true |
+    check_type(Type, Arg).
+otherwise.
+make_table(DEC) --> true |
+    &io<<=[error_message(string#"Invalid implicit declaration ", [DEC])].
+
+check_type(oldnew, Arg) --> true |
+    &tbl<<=[{Arg, oldnew}].
+check_type(stream, Arg) --> true |
+    &tbl<<=[{Arg, stream}].
+check_type(shared, Arg) --> true |
+    &tbl<<=[{Arg, shared}].
+check_type(string, Arg) --> true |
+    &tbl<<=[{Arg, string}].
+otherwise.
+check_type(Type, Arg) --> true |
+    &io<<=[error_message(string#"Invalid type declaration of implicit argument ",
+			[Arg:Type])].
+
+check_table([{Name, Type}|Cdr]) --> true |
+  {{check_table(&io, NewTbl, [], Name, Cdr)}},
+    &tbl<<=[{Name, Type}],
+    check_table(NewTbl).
+check_table([]) --> true | true.
+check_table(Name, [{Name,Type}|Cdr]) --> true |
+    &io<<=[error_message(string#"Duplicated implicit argument. Ignored",
+			[Name:Type])],
+    check_table(Name, Cdr).
+otherwise.
+check_table(Name1, [{Name2,Type}|Cdr]) --> true |
+    &tbl<<=[{Name2,Type}],
+    check_table(Name1, Cdr).
+check_table(_, []) --> true | true.
+
+convert_list_to_vector([], Vect) :- true | Vect=[].
+convert_list_to_vector(List, Vect) :- List=[_|_] |
+   len(0, Len, List, List1, []),
+   check_length_and_copy_elements(Len, List1, 0, Vect).
+
+len(N0, N, [One|Rest], List0, List) :- true |
+   N1 := N0+1,
+   List0=[One|List1],
+   len(N1, N, Rest, List1, List).
+len(N0, N, [], List0, List) :- true | N0 = N, List0=List.
+
+check_length_and_copy_elements(0, [], _, Vect) :- true |
+   Vect=[].
+check_length_and_copy_elements(1, [A], _, Vect) :- true |
+   Vect=A.
+otherwise.
+check_length_and_copy_elements(N, List, 0, Vect) :- true |
+   new_vector(Vect0, N),
+   copy_elements(List, 0, Vect0, Vect).
+
+copy_elements([One|Rest], N, Vect0, Vect) :- true |
+   set_vector_element(Vect0, N, _, One, Vect1),
+   N1 := N + 1,
+   copy_elements(Rest, N1, Vect1, Vect).
+copy_elements([], _, Vect0, Vect) :- true | Vect0=Vect.
+
+

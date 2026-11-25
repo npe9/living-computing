@@ -1,0 +1,75 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module stack.
+:- with_macro pimos.
+:- public stack/2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% stack(In,Name)
+%%      In      :: Input stream from users
+%%      Name    :: Name of the pool (=bag/stack)
+
+stack(In,Name) :- true |
+        merge(In,In1),
+        stack(In1,[],Name).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% stack(In,List,Name)
+%%      List    :: List of elements
+
+stack([empty(YorN)|In],L,Name) :- true |
+        empty(L,L1,YorN),
+        stack(In,L1,Name).
+stack([put(X)|In],L,Name) :- true | stack(In,[X|L],Name).
+stack([get(X)|In],L,Name) :- true |
+        get(L,L1,X,Name),
+        stack(In,L1,Name).
+stack([get_all(A)|In],L,Name) :- true |
+        A=L,
+        stack(In,[],Name).
+stack([get_if_any(X)|In],L,Name) :- true |
+        get_if_any(L,L1,X),
+        stack(In,L1,Name).
+stack([carbon_copy(A)|In],L,Name) :- true |
+        carbon_copy(L,L1,A),
+        stack(In,L1,Name).
+stack([do(List)|In],L,Name) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        stack(In1,L,Name).
+stack([],_,_) :- true | true.
+otherwise.
+stack([Msg|_],_,Name) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(Name,string#"illegal_message_protocol"),Msg).
+
+empty([],L1,YorN) :- true | L1=[],YorN=yes.
+otherwise.
+empty(L,L1,YorN) :- true | L1=L,YorN=no.
+
+get([E|L],L1,X,_) :- true | X=E,L1=L.
+get([],L1,X,Name) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(Name,string#"tried_to_get_nonexistent_element"),get(X)).
+
+get_if_any([E|L],L1,X) :- true | X={E},L1=L.
+get_if_any([],L1,X) :- true | X={},L1=[].
+
+carbon_copy([E|L],L1,A) :- true |
+        A=[E|A1],
+        L1=[E|L2],
+        carbon_copy(L,L2,A1).
+carbon_copy([],L,A) :- true | L=[],A=[].
+
+prepend([A|X],Y,Z) :- true |
+        Z=[A|Z1],
+        prepend(X,Y,Z1).
+prepend([],Y,Z) :- true | Y=Z.
+

@@ -1,0 +1,105 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1990,1991,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module sorter.
+:- with_macro pimos.
+:- public sort/2,sort/3,key_sort/2,key_sort/3,
+        merge/3,merge/4,key_merge/3,key_merge/4.
+
+sort(In,Out) :- true |
+        sort(In,ascending,Out).
+
+key_sort(In,Out) :- true |
+        key_sort(In,ascending,Out).
+
+merge(In,In1,Out) :- true |
+        merger:merge(In,In1,ascending,Out).
+merge(In,In1,Comp,Out) :- true |
+        merger:merge(In,In1,Comp,Out).
+
+key_merge(In,In1,Out) :- true |
+        merger:key_merge(In,In1,ascending,Out).
+key_merge(In,In1,Comp,Out) :- true |
+        merger:key_merge(In,In1,Comp,Out).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% sort(In,Comparator,Out)
+%%      In      :: Input stream of the data to be sorted
+%%      Comparator :: ascending/descending/Code pointer to the user defined comparator module
+%%      Out     :: Output stream of the sorted data
+
+sort(In,Comp,Out) :- true |
+        merge(In,In1),
+        cut_and_sort_respectively(In1,Comp,Ins,0,50),
+        merge_sort(Ins,Comp,Out).
+
+cut_and_sort_respectively([X|In],Comp,Ins,I,N) :- true |
+        Ins=[R1|Ins1],
+        cut(In,Comp,Ins1,~(I+1),N,R),
+        quick_sort:sort([X|R],Comp,R1).
+cut_and_sort_respectively([],_,Ins,_,_) :- true | Ins=[].
+
+cut(In,Comp,Ins,I,N,R) :- I<N,In=[X|In1] |
+        R=[X|R1],
+        cut(In1,Comp,Ins,~(I+1),N,R1).
+cut(In,_,Ins,I,N,R) :- I<N,In=[] | Ins=[],R=[].
+cut(In,Comp,Ins,N,N,R) :- true |
+        R=[],
+        cut_and_sort_respectively(In,Comp,Ins,0,N).
+
+merge_sort([In,In1|Ins],Comp,Out) :- true |
+        do_merge_sort([In,In1|Ins],Comp,Outs),
+        merge_sort(Outs,Comp,Out).
+merge_sort([In],_,Out) :- true | Out=In.
+merge_sort([],_,Out) :- true | Out=[].
+
+do_merge_sort([In,In1|Ins],Comp,Outs) :- true |
+        merger:merge(In,In1,Comp,Out),
+        Outs=[Out|Outs1],
+        do_merge_sort(Ins,Comp,Outs1).
+otherwise.
+do_merge_sort(Ins,_,Outs) :- true | Ins=Outs.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% key_sort(In,Comparator,Out)
+%%      In      :: Input stream of the data to be sorted
+%%      Comparator :: ascending/descending/Code pointer to the user defined comparator module
+%%      Out     :: Output stream of the sorted data
+
+key_sort(In,Comp,Out) :- true |
+        merge(In,In1),
+        kcut_and_sort_respectively(In1,Comp,Ins,0,50),
+        kmerge_sort(Ins,Comp,Out).
+
+kcut_and_sort_respectively([X|In],Comp,Ins,I,N) :- true |
+        Ins=[R1|Ins1],
+        kcut(In,Comp,Ins1,~(I+1),N,R),
+        quick_sort:key_sort([X|R],Comp,R1).
+kcut_and_sort_respectively([],_,Ins,_,_) :- true | Ins=[].
+
+kcut(In,Comp,Ins,I,N,R) :- I<N,In=[X|In1] |
+        R=[X|R1],
+        kcut(In1,Comp,Ins,~(I+1),N,R1).
+kcut(In,_,Ins,I,N,R) :- I<N,In=[] | Ins=[],R=[].
+kcut(In,Comp,Ins,N,N,R) :- true |
+        R=[],
+        kcut_and_sort_respectively(In,Comp,Ins,0,N).
+
+kmerge_sort([In,In1|Ins],Comp,Out) :- true |
+        do_kmerge_sort([In,In1|Ins],Comp,Outs),
+        kmerge_sort(Outs,Comp,Out).
+kmerge_sort([In],_,Out) :- true | Out=In.
+kmerge_sort([],_,Out) :- true | Out=[].
+
+do_kmerge_sort([In,In1|Ins],Comp,Outs) :- true |
+        merger:key_merge(In,In1,Comp,Out),
+        Outs=[Out|Outs1],
+        do_kmerge_sort(Ins,Comp,Outs1).
+otherwise.
+do_kmerge_sort(Ins,_,Outs) :- true | Ins=Outs.
+
