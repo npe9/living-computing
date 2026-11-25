@@ -2116,14 +2116,17 @@ end.'''
         # kl0 models (INTERPOLATED from the printed interfaces, TR-056 PDF
         # p22-p23, TR-524 PDF p9, p36-p37, and the held call sites); the
         # nodes are standin/directory.esp and binary_file.esp.
-        # Injections, observed (2026-11-25; each from a backup copy,
+        # Injections, observed (2026-11-25, re-run at the step 3l window
+        # commit fb5187d5 so later tests count; each from a backup copy,
         # restored by copy, cmp clean):
         #   L1 fs_walk ignores an explicit version (kl0.py): this test FAIL,
         #      nothing else.
         #   L2 a miss succeeds with the parent directory (kl0.py fs_walk
-        #      returns the last node found): this test FAIL, nothing else.
-        #   L3 the full name without the version (kl0.py): this test FAIL,
-        #      nothing else.
+        #      returns the last node found): this test, test_step3l_b7 and
+        #      test_step3l_b6_b8 FAIL, nothing else.
+        #   L3 a file's full name without its version (simpos_fs.py
+        #      mount): this test, test_step3l_b7 and test_step3l_b6_b8
+        #      FAIL, nothing else.
         #   L4 binary_file not_directory/1 fails: this test FAIL, nothing
         #      else.
         #   L5 node_full_name/3 succeeds for any name
@@ -2221,8 +2224,8 @@ end.'''
         # and pathname append/4 (HELD-SOURCE, its CESP conversion replaced
         # by an INFERENCE).  The logged-in process's world then resolves
         # `me:` (directory_retrieve, step 3l B5).
-        # Injections, observed (2026-11-25; each from a backup copy,
-        # restored by copy, cmp clean):
+        # Injections, observed (2026-11-25, re-run at fb5187d5; each from
+        # a backup copy, restored by copy, cmp clean):
         #   M1 identify/4 ignores the password (user.esp): this test FAIL,
         #      nothing else.
         #   M2 define/3 appends instead of prepending, so a redefinition
@@ -2230,7 +2233,8 @@ end.'''
         #   M3 retrieve ignores the world's default logical name (kl0.py):
         #      this test FAIL, nothing else.
         #   M4 pathname append/4 back to the port's convert_to_8: this test
-        #      ERROR, nothing else.
+        #      ERROR (cesp##string not loaded), test_step3l_b6_b8 and
+        #      test_step3l_b8_prompt FAIL (login refused), nothing else.
         #   test_kl0.py stayed OK in M1-M4.
         m = self.fs_machine()
         D = K.ClassRef('simpos##directory')
@@ -2326,26 +2330,23 @@ end.'''
         # PDF p28) and {select, "Login PIMOS"} (OURS) it starts the item's
         # class in a new process the way TM-134 p71 prints: create, create
         # (#process), activate.  The held pimfep##pimos_login_requester then
-        # runs in that process to its first SIMPOS window send.
-        # Injections, observed (2026-11-25; each from a backup copy,
-        # restored by copy, cmp clean):
-        #   N1 gett/2 does not advance (kl0.py): this test ERROR
-        #      (kl0.StepLimit 600001: the login file is read for ever),
-        #      nothing else.
+        # runs in that process (to its prompt: test_step3l_b8_prompt).
+        # Injections, observed (2026-11-25, re-run at fb5187d5; each from
+        # a backup copy, restored by copy, cmp clean):
+        #   N1 gett/2 does not advance (kl0.py): this test and
+        #      test_step3l_b8_prompt ERROR (kl0.StepLimit 600001: the login
+        #      file is read for ever), nothing else.
         #   N2 a `define` item is taken as a user item (coordinator.esp):
-        #      this test FAIL, nothing else.
+        #      this test FAIL (pimos: unresolved), nothing else.
         #   N3 a select searches the menu, shown or not (coordinator.esp,
-        #      the guard dropped too): this test FAIL ('simpos' !=
-        #      'would suspend': the no-menu select started the item),
-        #      nothing else.
+        #      the guard dropped too): this test FAIL (the no-menu select
+        #      started a process), nothing else.
         #   N4 the reader's atoms without `##` (esp_reader.py): this test
-        #      FAIL (refused "standard_input_file: reader: expected '}',
-        #      got ('op', '##')"), nothing else.
+        #      and test_step3l_b8_prompt FAIL (the reader refuses at `##`),
+        #      nothing else.
         #   N5 information/3 succeeds with [] for an absent key
         #      (coordinator.esp): this test FAIL, nothing else.
-        #   test_kl0.py stayed OK in N1-N5.  (A first run had
-        #   test_step3l_b5 FAIL in all five: its pin of the B6 blocker,
-        #   coordinator information/3 not loaded, was stale; corrected.)
+        #   test_kl0.py stayed OK in N1-N5.
         login = self.jstr('Login PIMOS')
         m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])])
         # the stop: until the window stand-ins (test_step3l_b8_prompt) the
@@ -2407,9 +2408,9 @@ end.'''
         # first prompt, and waits in the window's read/2 for a FEP node
         # name.  The title is made by the held title_string/1 (symbolizer
         # and string stand-ins).
-        # Injections, observed (2026-11-25; each from a backup copy,
-        # restored by copy, cmp clean): see the header of
-        # test_step3l_b6_b8 for N1-N5;
+        # Injections, observed (2026-11-25, at fb5187d5; each from a backup
+        # copy, restored by copy, cmp clean; N1, N4 and M4 fail this test
+        # too, see their headers):
         #   P1 putl/2 keeps nothing (standard_io_window.esp): this test
         #      FAIL, nothing else.
         #   P2 read/2 succeeds at once with [] (standard_io_window.esp):

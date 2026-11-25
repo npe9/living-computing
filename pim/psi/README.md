@@ -3464,7 +3464,14 @@ the printed `create_core/3` does, but makes no `instance_array` entry.
 The census's process is not under the supervisor, so `instance_array`
 is not made there. An entry in `create/3` would meet a slot with no
 vector in every census row that creates a process (predicted, not
-measured), so it was left out.
+measured, so it was left out). **Step 3l: MEASURED** (2026-11-25, at
+fb5187d5, the entry `set_vector_element(#process!instance_array, N,
+Process)` after `Process!context := Context`, then reverted by copy):
+six packages unchanged; plain FEP 802 / 234 / 413 → 788 / 233 / 428;
+with recipes 829 / 235 / 385 → 578 / 164 / 707; in `test_espc.py` 8
+ERROR and 2 FAIL, all at `set_vector_element on 0 (a slot constant)`
+(`instance_array` is made only under the supervisor). The prediction
+holds; the entry stays out.
 
 **Census, recomputed row by row** against b62208d4 (MEASURED
 2026-11-25, each row alone on a fresh machine; `_G` numbering
@@ -3495,8 +3502,8 @@ normalised).
 Under the owner's rule of 2026-11-25 ("It's okay to infer what you don't
 have"), the boot route (`../docs/simpos/boot_route.md`) is taken from B5
 to B8 with labelled stand-ins. Every inference is listed with its basis
-in `../docs/simpos/source_check_2026-11-24.md` §11. Four commits, each
-with its test (`test_espc.py`):
+in `../docs/simpos/source_check_2026-11-24.md` §11. Five commits: four with their tests (`test_espc.py`) and one of
+docs:
 
 | Step | What runs | Label | Test |
 |---|---|---|---|
@@ -3520,25 +3527,27 @@ W)` (@af-b4). Its next steps, given an answer, are `feps_menu/2`,
 modelled).
 
 **Injections, observed** (each from a backup copy, restored by copy, `cmp`
-clean; `test_kl0.py` OK in all; the full lists are in each test's
-header):
+clean; `test_kl0.py` OK in all; all eighteen re-run at fb5187d5, so the
+later tests count; the full lists are in each test's header):
 
-- L1-L4 (version ignored, a miss returning the parent, the full name
-  without its version, `not_directory/1` failing): `test_step3l_b5`
-  FAIL only. L5 (`node_full_name/3` for any name): `test_step3l_b5`,
+- L1 (version ignored), L4 (`not_directory/1` failing): `test_step3l_b5`
+  FAIL only. L2 (a miss returning the parent) and L3 (a full name
+  without its version, `simpos_fs.py`): `test_step3l_b5`, `_b7` and
+  `_b6_b8` FAIL. L5 (`node_full_name/3` for any name): `test_step3l_b5`,
   `test_fep_census`, `test_step3f_census_recipes` FAIL.
 - M1-M3 (password ignored, `define/3` appending, no default logical
-  name): `test_step3l_b7` FAIL only; M4 (`convert_to_8` back):
-  `test_step3l_b7` ERROR only.
-- N1 (`gett/2` not advancing): `test_step3l_b6_b8` ERROR (step limit);
-  N2-N5 (`define` taken as an item, a select without the menu shown,
-  `##` not in atoms, `information/3` for an absent key):
-  `test_step3l_b6_b8` FAIL only.
-- P1-P4 (`putl/2` keeps nothing; `read/2` succeeds at once; `get_number/3`
-  gives 0; `font:create/3`'s arguments swapped): P1 `test_step3l_b8_prompt` FAIL only; P2 that test and
-  `test_step3l_b6_b8` FAIL; P3 and P4 that test, `test_fep_census` and
-  `test_step3f_census_recipes` FAIL (the requester's census rows go
-  further), nothing else.
+  name): `test_step3l_b7` FAIL only. M4 (`convert_to_8` back):
+  `test_step3l_b7` ERROR, `_b6_b8` and `_b8_prompt` FAIL.
+- N1 (`gett/2` not advancing): `test_step3l_b6_b8` and `_b8_prompt`
+  ERROR (step limit). N2, N3, N5 (`define` taken as an item, a select
+  without the menu shown, `information/3` for an absent key):
+  `test_step3l_b6_b8` FAIL only. N4 (`##` not in atoms): `_b6_b8` and
+  `_b8_prompt` FAIL.
+- P1 (`putl/2` keeps nothing): `test_step3l_b8_prompt` FAIL only. P2
+  (`read/2` succeeds at once): that test and `_b6_b8` FAIL. P3
+  (`get_number/3` gives 0) and P4 (`font:create/3`'s arguments swapped):
+  that test, `test_fep_census` and `test_step3f_census_recipes` FAIL
+  (the requester's census rows go further).
 
 **Census, recomputed row by row** against the step 3k merge a74f2fd6
 (MEASURED 2026-11-25, `_G` numbering normalised; no row new or gone):
