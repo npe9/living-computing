@@ -347,16 +347,24 @@ class Machine:
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
     # then `words` cells of 32 bits, elements packed from the top.
-    # type 3 = 8-bit elements, 4 = 16-bit, 5 = 32-bit (kbnheap.kl1
-    # string_cdesc); 1-bit strings are not modelled.
+    # type 3 = 8-bit elements, 4 = 16-bit, 5 = 32-bit, 0 = 1-bit
+    # (kbnheap.kl1 string_cdesc:168-175).  The pad is two bits at 27
+    # for types 3..5 and five bits at 27 for type 0: (32 - Len mod 32)
+    # << 27, the 32 of a whole last word falling out of the word.
+    # VPIM: "the element sizes are 1, 8, 16 and 32"
+    # (interpreter/klb_body_blt_struct.psl.c kblt_b_search_character,
+    # its PreCondition); element 0 is the top bit of the first word, as
+    # for the other sizes (2026-11-25, met compiling the primer's
+    # sample1: compiler/reg.kl1 new_string(Str, Size, 1)).
     def string(self, w):
         t, v = self.mem[w[1]]
         if t != CDESC:
             raise RuntimeError('string without a descriptor at %x' % w[1])
-        typ, pad, words = (v >> 24) & 7, (v >> 27) & 3, v & 0xffffff
-        if typ not in (3, 4, 5):
+        typ, words = (v >> 24) & 7, v & 0xffffff
+        pad = (v >> 27) & (31 if typ == 0 else 3)
+        if typ not in (0, 3, 4, 5):
             raise Unimplemented('string element type %d' % typ)
-        size = 1 << typ
+        size = 1 << typ if typ else 1
         per = 32 // size
         out = []
         for i in range(words):
@@ -366,7 +374,7 @@ class Machine:
 
     def new_string(self, n, size):
         """A new string of n zero elements of `size` bits."""
-        if size not in (8, 16, 32) or n < 0:
+        if size not in (1, 8, 16, 32) or n < 0:
             raise Unimplemented('new_string(%d, %d)' % (n, size))
         return self.make_string(size, [0] * n)
 
@@ -388,7 +396,7 @@ class Machine:
         return (INT, elems[i])
 
     def make_string(self, size, elems):
-        typ = {8: 3, 16: 4, 32: 5}[size]
+        typ = {1: 0, 8: 3, 16: 4, 32: 5}[size]
         per = 32 // size
         words = (len(elems) + per - 1) // per
         pad = words * per - len(elems)
@@ -2102,7 +2110,8 @@ class Machine:
         # change_element_size(String, NewElemSize, ^NewString): "the
         # smallest index element occupies the highest order bits";
         # widening pads with zero elements to the boundary (manual).
-        # 8, 16 and 32 bits; a 1-bit string is refused.
+        # To 8, 16 and 32 bits, from any of 1, 8, 16, 32; a change to
+        # 1 bit is refused.
         def f(s, new):
             size, elems = self.need_string(s)
             new = self.need_int(new)
@@ -2141,8 +2150,15 @@ class Machine:
         # (library/compiler/blt.kl1 specialPredicate).  The operation
         # on Len elements of Str1 from Pos1 and of Str2 from Pos2;
         # NewS1 is Str1 with those elements replaced (a copy here),
-        # NewS2 is Str2 (manual).  The vectors of four and three
-        # elements (the shifting and unary forms) are refused.  An
+        # NewS2 is Str2 (manual).  The vector of three is the unary
+        # form, unary_string_operation(Op, Str1, Pos1, Len, NewS1):
+        # {Pos1, Str1, Len}, NewS2 a new variable of the compiler's
+        # (blt.kl1:937-939); VPIM's f_UnaryStringOpe_Sub
+        # (functions/f_reduce_string_ope.psl.c:1206-1229) is the
+        # binary one with String1 and Position1 in place of the second
+        # string's ("Dummy"), so op(e, e) for each element; NewS2 gets
+        # Str1 here (OURS: VPIM's unary built-in has no such output).
+        # The vector of four (the shifting form) is refused.  An
         # element of the vector that is not yet a value is waited for
         # (the manual says the built-in waits; builtin_utility:
         # append_string/2 gives it a new_string whose length is not
@@ -2152,9 +2168,11 @@ class Machine:
 
         def f(op, v):
             op = self.need_int(op)
-            if self.vsize(v) != 5 or not 0 <= op <= 15:
+            if self.vsize(v) not in (3, 5) or not 0 <= op <= 15:
                 raise Unimplemented('string_operation %d on %r' % (op, v))
-            e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(5)]
+            e = [self.deref(self.mem[self.vbase(v) + i]) for i in range(self.vsize(v))]
+            if len(e) == 3:
+                e = e + [e[0], e[1]]
             p1, n, p2 = self.need_int(e[0]), self.need_int(e[2]), self.need_int(e[3])
             size1, s1 = self.need_string(e[1])
             size2, s2 = self.need_string(e[4])
@@ -2172,7 +2190,7 @@ class Machine:
                                | (fn(s1[p1 + i], s2[p2 + i]) & mask) << sh)
             return [new, e[4]]
         self.builtin('string_operation', [x, y, z, w4], f, elements=lambda op, v: (
-            self.unbound_elements(v) if self.vsize(v) == 5 else []))
+            self.unbound_elements(v) if self.vsize(v) in (3, 5) else []))
         return pc + 2
 
     def i_multiply_bignum_word(self, pc, x, y, z, c16):
@@ -2986,6 +3004,33 @@ class Machine:
         if d[0] != CDESC:
             raise Unimplemented('module: no descriptor at %x' % w[1])
         self.reg[y] = (INT, d[1] & 0xffffff)
+
+    def i_module_element(self, pc, x, y, z, c16):
+        # module_element(Module, Position, ^Element), 22:F7 r_r_r
+        # (assembler/inst_tab.kl1:356; compiler/blt.kl1:617-618 the
+        # inputs X1, X2, the output X3).  Element i is the cell i + 1
+        # after the module's descriptor, 0 <= i < the descriptor's
+        # count: the unloader writes {CDESC, 06 << 24 | Length} and
+        # then module_element 0 (the GC size) and on
+        # (library/kbn/kbn.kl1 encode_module:140-158), as i_module
+        # reads the count.  VPIM (interpreter/klb_body_blt_cont.psl.c
+        # kblt_b_module_element) reads the element at the module
+        # pointer plus Position under its own header, with Position
+        # checked against the module's size; a Position out of range,
+        # or a Module not a module, is the built-in's exception there:
+        # refused here.  2026-11-25, met compiling the primer's
+        # sample1 (module_utility, ground_module/3)
+        def f(md, i):
+            i = self.need_int(i)
+            if md[0] != MOD:
+                raise Unimplemented('built-in exception: module_element of %r' % (md,))
+            d = self.mem[md[1]]
+            if d[0] != CDESC:
+                raise Unimplemented('module_element: no descriptor at %x' % md[1])
+            if not 0 <= i < d[1] & 0xffffff:
+                raise Unimplemented('built-in exception: module_element %d' % i)
+            return [self.mem[md[1] + 1 + i]]
+        self.builtin('module_element', [x, y, z], f)
 
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.

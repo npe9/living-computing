@@ -70,7 +70,7 @@ instruction and is tested by trace comparison with it.
 | `PimmDBox.bsv` | data box: multi-cycle dereference and unification |
 | `PimmHBox.bsv` | hash box: the `hash_on_constant` table walk |
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
-| `PimmSBox.bsv` | string box: length and size, element, new string, set element |
+| `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`) |
 | `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
 | `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
@@ -119,7 +119,9 @@ image's own tables have; fourteen instructions, among them
 compiler packs those from the 11th on into a vector, `enqueue_goal`
 spreads it) and `newm` (`ipl_module:load/4` builds five real modules
 as module objects, `new_module`; every cell checked against the file
-and the layout of the image's own modules) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
+and the layout of the image's own modules) and `melem`
+(`module_element` on three image modules, against `asm/kbndis.py`'s
+table, and on a `new_module`'s; rules `modElem1`, `modElem2`) and `file`, `file3` (`ipl_file_decoder:decode/8` on two
 whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
@@ -152,7 +154,9 @@ module). The bench fills a string it has made in place (`SETW`),
 not through `set_string_element`. `unif`: two vectors or two lists
 are unified by a goal of their own (PDSS's way; the stub
 `unify_step`), nine cases with their bindings and two failures.
-`s32`: `new_string` with 32-bit elements. `ipll`: the IPL's
+`s32`: `new_string` with 32-bit elements. `s1`: strings of 1-bit
+elements (the string box's type 0) and the unary `string_operation`
+(a vector of three), a change to 1 bit refused. `ipll`: the IPL's
 `ipl_files/4` reads the held `pimos.ipl` and gives its twenty names. `p2c`: `predicate_to_code` on every predicate
 of the image and the guard `code`. `apply`: `apply(Code, Args)`, with
 `top:go_pimos1/2`'s own. `shoen`: the shoen in its first stage,
@@ -211,8 +215,13 @@ four multiply sites of `scsi_fep` in `pimm_patch_scsifep360E.sav`
 loaded through `ipl_loader:load/4`, about 2.1 M trace lines.
 `rdvc`: the guard `diff`, at `file_request_device:driver_0/10` of
 `pimm_patch_mkdir360E.sav` (loaded as for `xmod`), about 7.4 M trace
-lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`), the
-IPL's pool `ipl_pool:keyed_set/2` given vector keys. `tproc`:
+lines. `pvec`: `wait_value` on two vectors (rules `pv1`..`pv4`, since
+2026-11-25 rule `pv1` and the box `PimmPBox.bsv`), the
+IPL's pool `ipl_pool:keyed_set/2` given vector keys. `pstruct`:
+`wait_value` on nested structures, VPIM's general passive unification
+(`PimmPBox.bsv`), an OURS goal in heap cells: lists, long vectors,
+strings, codes and modules as elements, goals waiting on an element of
+X or Y, the 512-frame stack and its 513th push refused. `tproc`:
 `Goal@processor(P)` with P unbound waits (rules `tq1`..`tq4`, the
 stub `to_processor`, rules `tp0`..`tpE`; from VPIM), at the one site
 of `pimm_patch_scsifep360E.sav`. `timer`: `system_timer` and
@@ -363,7 +372,7 @@ instructions), every line identical:
 | versions | `versions` | 114,472 | 610,006 | 38 |
 | compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
 | compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
-| compile_sample1 | `compile`, `sample1`, `!exit` | 727,607 | 2,563,611 | 58 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | 149 |
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
@@ -374,12 +383,15 @@ both models (first at `refused: a merger input bound to a vector of
 seven or more`; since the long-vector merge, rule `mergeVecL` and
 `lockstep_merge.py` `seven senders`, at `refused: wait_value: an
 element (21, ...)`; since the passive-unification box, `PimmPBox.bsv`,
-at `refused: new_string(15, 1)`; the core's last line `E unimp`, which `compare`
-takes only when the reference's stop is a refusal). At this stop the
-core's last line is the string box's own stop, `E error: new_string:
-element size not 8, 16 or 32`, not `E unimp`, so `run_pimm_apps.sh
-compile_sample1` reports FAIL on that line, every line before it
-identical (2026-11-25; the 1-bit strings come next).
+at `refused: new_string(15, 1)`, where the core's last line was the
+string box's own stop, `E error`, so the compare failed on that line
+alone; since the 1-bit strings, the unary `string_operation` and
+`module_element`, 2026-11-25, `lockstep_s1.py`, `lockstep_melem.py`,
+the compile runs to its end on both models: the window as
+`binary_reverse_engineering.md` 1.4 has it, ending `!ERROR! module
+registration error : pimos:: sample1` and the shell's prompt).
+`new_string` of another size and `change_element_size` to 1 bit are
+now refused by the exec stage (`E unimp`), before the string box.
 
 Which RESTOREs the commands check (2026-11-24, the kept work directory
 of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT

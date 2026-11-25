@@ -85,7 +85,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
-               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XMe1, XMe2, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -202,7 +202,8 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_subtract_bignum || op == op_b_vector
                   || op == op_code_to_predicate || op == op_search_character
                   || op == op_add_extended || op == op_subtract_extended
-                  || op == op_multiply_extended || op == op_divide_extended;
+                  || op == op_multiply_extended || op == op_divide_extended
+                  || op == op_module_element;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1584,17 +1585,20 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_change_element_size) begin
-      // change_element_size(String, Bits, ^NewString)
-      if (!isStrg(a) || !isInt(b)) stop(EndUnimp);
+      // change_element_size(String, Bits, ^NewString): to 8, 16 or 32
+      // bits; to any other size refused (pimm.py)
+      if (!isStrg(a) || !isInt(b) || (b.val != 8 && b.val != 16 && b.val != 32)) stop(EndUnimp);
       else begin
         sbox.changeSize(a, b.val);
         st <= XBStr;
       end
     end
     else if (op == op_string_operation) begin
-      // the binary form only: a vector of five (compiler/blt.kl1); the
+      // the binary form, a vector of five, and the unary, a vector of
+      // three {Pos1, Str1, Len} taken as {Pos1, Str1, Len, Pos1, Str1}
+      // (compiler/blt.kl1:933-939; pimm.py i_string_operation); the
       // operation is checked when the elements are all there
-      if (isLongVec(b) || !isVec(b) || sizeOf(b) != 5) stop(EndUnimp);
+      if (isLongVec(b) || !isVec(b) || (sizeOf(b) != 5 && sizeOf(b) != 3)) stop(EndUnimp);
       else begin
         packK <= 0;
         vbox.element(b, 0);
@@ -1624,8 +1628,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     end
     else if (op == op_new_string) begin
-      // new_string(Length, Bits, ^S)
-      if (!isInt(a) || !isInt(b)) stop(EndUnimp);
+      // new_string(Length, Bits, ^S): 1, 8, 16 or 32 bits, a length
+      // of 0 up; anything else refused (pimm.py new_string)
+      if (!isInt(a) || !isInt(b) || a.val[31] == 1
+          || (b.val != 1 && b.val != 8 && b.val != 16 && b.val != 32)) stop(EndUnimp);
       else begin
         sbox.newStr(a.val, b.val);
         st <= XBStr;
@@ -1684,6 +1690,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         Bit#(24) nameN = truncate(b.val + c.val);
         hbox.entry(a, mkCell(tag_ATOMo, {c.val[7:0], nameN}));
         st <= XP2C;
+      end
+    end
+    else if (op == op_module_element) begin
+      // module_element(Module, Position, ^Element): the cell Position
+      // + 1 after the module's descriptor (pimm.py i_module_element;
+      // rules modElem1, modElem2).  Not a module, or a position not an
+      // integer: the built-in's exception, refused
+      if (a.tag != tag_MOD || !isInt(b)) stop(EndUnimp);
+      else begin
+        smem.read(cellAddr(a));
+        st <= XMe1;
       end
     end
     else if (op == op_new_module) begin
@@ -2279,7 +2296,13 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   rule strOp2 (st == XSo2);
     let v <- dbox.derefResult;
     sv[packK] <= v;
-    if (packK == 4) st <= XSo3;
+    if (packK == 2 && sizeOf(vals[1]) == 3) begin
+      // the unary form: the string and position again as the second
+      sv[3] <= sv[0];
+      sv[4] <= sv[1];
+      st <= XSo3;
+    end
+    else if (packK == 4) st <= XSo3;
     else begin
       packK <= packK + 1;
       vbox.element(vals[1], zeroExtend(packK) + 1);
@@ -2558,6 +2581,22 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule c2p5 (st == XC2P5);
     regs.wr(operand[4], opA);
+    finish(tagged Next afterBuiltin);
+  endrule
+
+  // module_element: the descriptor, its count, then the element
+  rule modElem1 (st == XMe1);
+    let d <- smem.data;
+    if (d.tag != tag_CDESC || vals[1].val >= zeroExtend(d.val[23:0])) stop(EndUnimp);
+    else begin
+      smem.read(cellAddr(vals[0]) + 1 + truncate(vals[1].val));
+      st <= XMe2;
+    end
+  endrule
+
+  rule modElem2 (st == XMe2);
+    let c <- smem.data;
+    regs.wr(z, c);
     finish(tagged Next afterBuiltin);
   endrule
 

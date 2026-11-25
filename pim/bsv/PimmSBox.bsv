@@ -1,9 +1,10 @@
 // PIM/m core: the string box.  Multi-cycle string built-ins over
 // memory.  A string is {STRG, address} -> {CDESC, pad << 27 | type <<
 // 24 | words}, then `words` cells of 32 bits with the elements packed
-// from the top; type 3 is 8-bit elements, 4 is 16-bit, 5 is 32-bit
-// (library/kbn/kbnheap.kl1 string_cdesc; the IPL image's message
-// strings decode this way).
+// from the top; type 3 is 8-bit elements, 4 is 16-bit, 5 is 32-bit,
+// 0 is 1-bit (library/kbn/kbnheap.kl1 string_cdesc:168-175; the IPL
+// image's message strings decode this way).  The pad is two bits at
+// 27 for types 3..5, five bits at 27 for type 0 (2026-11-25).
 //
 //   info(s)            a = {INT, length}, b = {INT, element bits}
 //   element(s, i)      a = {INT, element i}
@@ -14,7 +15,8 @@
 //   equal(s1, s2)      ok is whether the strings are the same, word for word
 //   tryElement(s, i)   the same for a guard: ok is False when i is
 //                      out of range
-//   changeSize(s,bits) a = s with elements of `bits` bits (8, 16, 32).
+//   changeSize(s,bits) a = s with elements of `bits` bits (8, 16, 32;
+//                      from 1, 8, 16 or 32).
 //                      "The smallest index element occupies the
 //                      highest order bits" and widening pads with zero
 //                      elements (PIMOS manual, change_element_size):
@@ -37,8 +39,8 @@
 //                      machine could update in place when s is singly
 //                      referenced; without MRB this box always copies.
 //
-// An index out of range, a size other than 8, 16 or 32 (new strings: 8
-// or 16), strings of different sizes in stringOp, or a pointer that
+// An index out of range, a size other than 1, 8, 16 or 32 (a change
+// to 1 bit), strings of different sizes in stringOp, or a pointer that
 // is not at a descriptor stops the simulation: the built-in's
 // exception is not modelled.
 package PimmSBox;
@@ -96,12 +98,14 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   endfunction
 
   // from a descriptor
-  // lg: log2 of the element bits (3, 4, 5); a word holds 1 << (5 - lg)
+  // lg: log2 of the element bits (0, 3, 4, 5); a word holds 1 << (5 - lg)
   function Bit#(3)  lgOf(Bit#(32) d) = d[26:24];
   function Bit#(24) wordsOf(Bit#(32) d) = d[23:0];
+  function Bit#(32) padOf(Bit#(32) d) =
+    lgOf(d) == 0 ? zeroExtend(d[31:27]) : zeroExtend(d[28:27]);
   function Bit#(32) lengthOf(Bit#(32) d);
     Bit#(32) w = zeroExtend(wordsOf(d));
-    return (w << (5 - lgOf(d))) - zeroExtend(d[28:27]);
+    return (w << (5 - lgOf(d))) - padOf(d);
   endfunction
   function Bit#(32) bitsOf(Bit#(32) d) = 1 << lgOf(d);
 
@@ -114,7 +118,8 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     return (((1 << per) - 1 - sub) << lgOf(d));
   endfunction
   function Bit#(32) maskOf(Bit#(32) d) =
-    lgOf(d) == 5 ? 32'hffffffff : (lgOf(d) == 4 ? 32'h0000ffff : 32'h000000ff);
+    lgOf(d) == 5 ? 32'hffffffff : (lgOf(d) == 4 ? 32'h0000ffff
+                                  : (lgOf(d) == 3 ? 32'h000000ff : 32'h00000001));
 
   function Bit#(32) operate(Bit#(4) o, Bit#(32) a, Bit#(32) b);
     case (o)
@@ -150,8 +155,9 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     rq <= q;
     if (q.k == KNew) begin
       // i = length, e = element bits
-      if (q.e != 8 && q.e != 16 && q.e != 32) fatal("new_string: element size not 8, 16 or 32");
-      Bit#(3) lgE = q.e == 32 ? 5 : (q.e == 16 ? 4 : 3);
+      if (q.e != 1 && q.e != 8 && q.e != 16 && q.e != 32)
+        fatal("new_string: element size not 1, 8, 16 or 32");
+      Bit#(3) lgE = q.e == 32 ? 5 : (q.e == 16 ? 4 : (q.e == 8 ? 3 : 0));
       Bit#(3) sh = 5 - lgE;                     // log2 of the elements in a word
       Bit#(32) words = (q.i + (1 << sh) - 1) >> sh;
       Bit#(32) pad = (words << sh) - q.i;
@@ -170,7 +176,8 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     let c <- mem.data;
     let d = c.val;
     if (c.tag != tag_CDESC) fatal("string without a descriptor");
-    if (d[26:24] != 3 && d[26:24] != 4 && d[26:24] != 5) fatal("string element type not 8, 16 or 32 bits");
+    if (d[26:24] != 0 && d[26:24] != 3 && d[26:24] != 4 && d[26:24] != 5)
+      fatal("string element type not 1, 8, 16 or 32 bits");
     // changeSize: the same words under a new descriptor
     Bit#(3) lgN = rq.i == 8 ? 3 : (rq.i == 16 ? 4 : 5);
     Bit#(32) len = lengthOf(d);

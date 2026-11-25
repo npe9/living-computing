@@ -127,7 +127,7 @@ PINNED = {
     # counts, the same run but for the name); compile_sample1, the
     # primer's file served from the home directory
     ('prompt', ('compile', 'sample2', '!exit')): (1770029, 318476),
-    ('prompt', ('compile', 'sample1', '!exit')): (2563611, 727607),
+    ('prompt', ('compile', 'sample1', '!exit')): (4048964, 973759),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -163,9 +163,19 @@ APPS = {
     'compile_missing': (('compile', 'sample2', '!exit'),
         ('** KL1 Compiler **\n', 'COMPILE> ', '!ERROR! unable to open file : sample2\n', 'Total Number of Error : 1\n', 'COMPILE> ', 'Shell>> ')),
     # the primer's sample1 (primer25.tex:592-605) from the home
-    # directory (longrun_ipl.home_file), R7
+    # directory (longrun_ipl.home_file), R7; the whole compile since
+    # 2026-11-25 (docs/binary_reverse_engineering.md 1.4, "R7, the
+    # compile against the primer": the registration error is PIMOS's
+    # protection for the login user pimos)
     'compile_sample1': (('compile', 'sample1', '!exit'),
-        ('** KL1 Compiler **\n', 'COMPILE> ')),
+        ('** KL1 Compiler **\n', 'COMPILE> ',
+         'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n',
+         "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n",
+         '=>  :- module sample1 .\n',
+         'Compile Succeeded : sample1\n\n',
+         '!ERROR! module registration error : pimos:: sample1\n',
+         'Total Number of Warning : 1\nTotal Number of Error : 1\n',
+         'COMPILE> ', 'Shell>> ')),
 
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote

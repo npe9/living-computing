@@ -814,7 +814,7 @@ the device are given it again whenever the machine runs dry.
   | `versions` | 114,472 | 610,006 | ` Module not found !! ( versions:go ) ` / `  [ Job#1, Node#0, PE#0 ]`, then ` Job 1 was aborted . ` | the module is named `ipl_versions` (`versions.kl1`:7) and not loaded under `versions`: the held source's behaviour, not a model fault (INFERENCE: which module list a 3.6 installation linked is not held) |
   | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
   | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample2`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample2`, `.aya`, `.mac`, `.kl1`, each 5), which holds only `sample1.kl1` (2026-11-25; this row typed `sample1` before, the same counts) |
-  | `compile`, `sample1`, `!exit` | 727,607 | 2,563,611 | as above, then (both models) `refused: new_string(15, 1)` (until 2026-11-25 the long-vector merge, at 608,552 and 2,236,196, then `wait_value` on vectors of vectors, at 612,857 and 2,248,660) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
+  | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | as above, then `Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1`, the with_macro warning, `[sample1.kl1@0] Compile Module : sample1`, `=>  :- module sample1 .`, `Compile Succeeded : sample1`, `!ERROR! module registration error : pimos:: sample1`, the totals, `COMPILE> `, `Shell>> `; nothing left to run (until 2026-11-25 refused: at the long-vector merge, 608,552 and 2,236,196; at `wait_value` on vectors of vectors, 612,857 and 2,248,660; at `new_string(15, 1)`, 727,607 and 2,563,611) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
 
   `pwd` against the primer, each difference root-caused: the prompt
   `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
@@ -895,7 +895,38 @@ the device are given it again whenever the machine runs dry.
     stops at 727,607 instructions, 2,563,611 lines, at `refused: new_string(15, 1)`, in
     `kl1cmp_register`'s fill of a string (`compiler/reg.kl1`, a 1-bit
     string: element type 0, `kbnheap.kl1` `string_cdesc`), which
-    neither model takes yet.
+    neither model took. With 1-bit strings, the unary
+    `string_operation` and `module_element` on both models
+    (2026-11-25, `lockstep_s1.py`, `lockstep_melem.py`) the compile
+    runs to its end: 973,759 instructions, 4,048,964 lines, then nothing left to
+    run, back at `Shell>>`. "R7, the compile against the primer" below
+    has the window line by line.
+  - **R7, the compile against the primer** (2026-11-25, APPS
+    `compile_sample1`, in lockstep on both models). The primer's run
+    (`primer25.tex`:1280-1302) compiles three files; its sample1 part
+    and ours, line by line:
+
+    | The primer | Here | Why they differ |
+    |---|---|---|
+    | `Compile File : **psi***::>sys>**>sample1.kl1.1` | `Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1` | the primer masks the node and directory; ours are the 221 answer, OURS |
+    | (none) | `` !WARNING! no with_macro declaraion. assumed `pimos'. `` | the file has no `with_macro`; the held compiler warns (`compiler/driver.kl1`:708, 716; the same warning commented out at :74). The primer's compiler may have been another version: not settled |
+    | `Compile Module : sample1` | `[sample1.kl1@0] Compile Module : sample1` | the held compiler's form; the primer's is not held |
+    | (none) | `=>  :- module sample1 .` | the held compiler echoes the declaration |
+    | `sieve/3` | (none) | the held compiler's message for each predicate is commented out (`compiler/com3.kl1`:266, `%% &err<<=[message(string#"~T", [Pred/Ari])]`) |
+    | `Compile Succeeded : sample1` | `Compile Succeeded : sample1` | the same |
+    | `"nak::sample1" Loaded` | `!ERROR! module registration error : pimos:: sample1` | PIMOS's own protection: the login user here is `pimos` (UID 101, `fep.py` `LOGIN`, `pimos.logins`), the package `pimos`; `module_table_device` `update_module/9` (`server/module/mod_dvc.kl1`:143-145, 284-286) finds the module new and its `add` answers `protection_violation`, which `wait_reg` (`library/loader/modtbl.kl1`:257-267) prints as this error. Traced 2026-11-25 by a scratch probe hooking `update_module/9` (St0 `normal`, St1 `non_existent`, then the add's status); not kept. The primer's user is `nak`, its package `nak` |
+    | `Compilation(s) Succeeded` | `Total Number of Warning : 1`, `Total Number of Error : 1` | follows from the error |
+
+    So the compiler itself runs as the held source says; the difference
+    that matters is the login. A login as a user who owns a package
+    (the held `pimos.logins` has `pmpsi`, UID 102) would load the
+    module as the primer's does, but it changes the saved machine every
+    command of APPS starts from (`fep.py` `LOGIN`, the prompt
+    checkpoint) and so every pin: not done here. The Listener run
+    (`primer25.tex`:1343, `sample1:sieve([1,2,3],E,O)`) needs the
+    module loaded and the Listener, which stops at
+    `listener_task_monitor:create/15` wanting `resource_low` (above):
+    not reached.
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

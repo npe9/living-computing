@@ -20,7 +20,7 @@ Observed fault injections into the Bluespec, 2026-11-23, restored:
   new_string: 32 taken as 16       s32: line 17 (the descriptor)
   new_string: one word too few     conv: part 1, line 0
 Not run: string_operation, substring, the hash and equality of a
-32-bit string; 1-bit strings are refused.
+32-bit string.  1-bit strings: lockstep_s1.py (2026-11-25).
 """
 import os
 import sys

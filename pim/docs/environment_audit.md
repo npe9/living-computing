@@ -1099,7 +1099,10 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   stopped at the long-vector merge, `compile_sample1`; with that
   merge in on both models it stopped at `wait_value` on vectors of
   vectors; with VPIM's general passive unification on both, at a
-  1-bit string, `refused: new_string(15, 1)`.)
+  1-bit string, `refused: new_string(15, 1)`; with 1-bit strings, the
+  unary `string_operation` and `module_element` the compile runs to
+  `Compile Succeeded : sample1` and PIMOS's registration error for the
+  login user `pimos`, the package's protection.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.
