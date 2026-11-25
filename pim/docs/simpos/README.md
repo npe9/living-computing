@@ -429,6 +429,22 @@ and stand-in `simpos##` classes. In order:
        row. With the type test, FEP is 789 / 154 / 443 / 16 / 1 step
        limit; one method leaves success, a census order effect
        (`psi/README.md`).
+   - *2026-11-25, step 3f* (`../../psi/README.md`, the "Step 3f"
+     sections):
+     - The slot constants (142, not 139: the string type test moved
+       three rows onto one) were traced slot by slot to their held
+       writers. They are census artifacts: device creators, creators
+       storing a caller's argument, process bodies that never run, and
+       one new/2 after-demon that `make_instance` skipped. For four
+       pimscsi slots no writer was found (UNKNOWN).
+     - `kl0.py census --fep --recipes` (OURS) makes receivers by their
+       held creators. The device creators are stopped before the
+       PRINTED `process:activate/2`, which needs the lost `status/3` and
+       `context`. The plain census is unchanged.
+     - With recipes: 791 / 154 / 441 / 16 / 1, and 101 slot constants
+       (41 fewer). The rows go on to real gaps, not success: the
+       `pmacs_window` window protocol (21 rows), `stream:see/2`, and
+       `directory:retrieve/4`.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

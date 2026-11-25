@@ -41,6 +41,7 @@ From `pim/`:
     python3 -I psi/kl0.py convert                 # convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv FILE]     # every method of the 104 classes
     python3 -I psi/kl0.py census --fep [--tsv FILE]   # every method of pimfep and pimscsi, stand-ins loaded
+    python3 -I psi/kl0.py census --fep --recipes      # the same, receivers made by their held creators
     python3 -I psi/kl0.py call paragraph##paragraph_version get_version/2 _
     python3 -I psi/test_espc.py                   # the compiler's tests (~8 s)
     python3 -I psi/espc.py check paragraph kappa2 utter [--tsv FILE]
@@ -1603,6 +1604,126 @@ Open:
 - kl0's unification of heap vectors is element-wise.
 - A substring that shares its parent's storage is not modelled. kl0's
   string built-ins make new strings.
+
+### Step 3f: census receivers made by their held creators (2026-11-25)
+
+**The slot constants are census artifacts, with exceptions.** Before
+this step the FEP census had 142 rows refused as `receiver a slot
+constant` (not 139: the string type test moved three
+`pimos_window_process` rows onto one). A scratch probe named the slot
+behind each row: 22 distinct slots in 30 classes. The slot was then
+looked up in the held cells, for a `set_<slot>/2` call or a `blt 2f`
+slot write:
+
+| Slot (rows before) | Held writer | Verdict |
+|---|---|---|
+| `as_pimos_device`'s `input_stream`, `output_stream`, `creation_status_stream` (59 in 15 classes) | the device creators: `pimos_timer create_timer/9` @19-48, `pimos_file create/9` @19-52, `pimos_directory directory/10` @17-4e and `make_directory/10` @63-9a, `pimos_tcpip_socket create_socket/9` @21-69, `pimos_window_process create_with_buffer/10` @56-86, `pimos_string_io_invoker` local `initiate_string_io_device/7` @9d-b6 | artifact |
+| `pimos_window_editor` `window` (21), `pimos_window` `editor` (1) | `pimos_window create_pimos_window/3` @19-34, through the `pmacs_window` stand-in | artifact |
+| `remote_pimfep_executor` `accept` (1) | its own class after-demon on new/2, @40-48 (`accept` := the class slot `socket`) | artifact: `make_instance` runs no new/2 demon |
+| `fep_scsi_output` `report_stream` (2), `pimfep_message_receiver`/`_sender` `fep` (6), `scsi_stream` `handler` (3), `pimos_socket_receiver` `data_stream` (2), `pimos_scsi_front_end` `input_stream` (1) | a creator class method that stores its caller's argument (`fep_scsi_output create/7` @16-3b, `create/8` @16-2e, `create/6` @22-30, `scsi_stream create/4` @2b-46, `pimos_socket_receiver create/5` @14-25, `pimos_scsi_front_end create/6` @41-5c) | artifact; the value is the caller's, not supplied |
+| `pimos_tcpip_socket` `receive_message_stream` (2), `pimos_window_process` `device_process` and `pimos_window` (2), `pimos_login_requester` `window` (4), `simpos_user` `user` (3) | the object's own process body or set-up (`initiate/1` @a8-c3, `initiate/1` @f0-10d, local `initiate/1` @ad-b8, `setup_process/2` @e3-ed), which runs only once the process does | artifact of a process that never runs |
+| `cmt`, `scsi` `channel` and `sender` (14), `scsi_device`, `scsi_device_bus_management` `handler` (8), `scsi_handler` `devices`, `request_devices`, `channel` (7), `scsi_load_test` `scsi`, `window` (5), `pseudo_scsi_handler` `memory` (1) | for `scsi_load_test` `window`, its class `create/2` and `create/4` (`blt 2f` @59, @72); `pseudo_scsi new/3` sets `sender` (@5c); the creators `scsi_common_if create/3`, `/4` need bound bus and unit numbers (`not_less_than` on the census's unbound argument) | artifact where a writer is found; for `channel`, `devices`, `request_devices` and `memory` no writer was found by name (UNKNOWN) |
+
+**Recipes (OURS).** `kl0.RECIPES` gives the census a way to make a
+receiver the way held code does: it runs the class's held creator,
+through the stand-ins, and takes the object it made. No slot is written
+from Python. `census --fep --recipes` uses them; plain `census --fep`
+is unchanged and keeps its pins.
+
+- The device creators share a prefix: `:create(Class, Dev)`,
+  `:process(Class, .., Dev)`, `:stream(Class, S)`,
+  `:set_input_stream(Dev, S)`, `:set_output_stream(Dev, A0)`, a second
+  `stream/2`, `:set_creation_status_stream(Dev, S2)`,
+  `:set_device_id(Dev, A3)`, then `:activate(Process, Dev)`.
+  activate/2 is the PRINTED `process:activate/2` (TM-100 Fig. 3.1). It
+  needs `status/3` (not printed) and the hardware `context`. So kl0
+  stops the creator before that send (`Machine.stop_before`,
+  `CreatorStopped`) and takes Dev, its first argument: the device as its
+  creator left it, not yet running.
+- The creators' A0 is the stream the device answers on, the caller's.
+  INFERENCE: it is the front end's `fep_output_stream`.
+  `pimos_scsi_front_end create_device/4` reads `fep_output_stream/2`
+  (@42e-431) into the first of the three elements it adds to the message
+  vector before `:refute` (@433-447). In each creator, A1 and A2 then
+  take the device's input stream and its process, which the front end
+  enters in its `device_table` (`add_at/5` @448-452). The front end's
+  stream comes from `fep_scsi_output create/7` (@32-3b), whose class kl0
+  resolves to `simpos##stream`. So the recipe passes a new
+  `simpos##stream` (OURS: a fresh one). The other arguments are unbound,
+  as in the plain census.
+- Recipes run for `pimos_timer`, `pimos_file`, `pimos_directory` and
+  `pimos_window_process`. `pimos_window` and `pimos_window_editor` come
+  from `create_pimos_window/3` and the stand-in's `get_editor/2`.
+  `remote_pimfep_executor` is made by sending `:new`, so that its
+  after-demon runs.
+- Not given a recipe:
+  - `pimos_tcpip_socket create_socket/9` reads the calling process's
+    invocation stack (`:invocation_stack(P, L)`, `:get_first(L, _)`,
+    @4d-59) before activate/2. The process stand-in has no such
+    accessor, and the census's process runs no program.
+  - `pimos_string_io_invoker create_string_io/10` (it makes
+    `pimos_remote_login_replier`, `_server`, `simpos_user_device` and
+    `pimos_standard_io_window`, `fep_services.md` §6.4) stops at
+    `symbolizer:enter_atom/3` and `library:assign/1`.
+  - The argument-supplied slots and the process-body slots of the table
+    above: a recipe would have to invent the caller's value or run a
+    process.
+
+Effect, compared method by method with plain `census --fep` (1,403
+methods, 789 / 154 / 443 / 16 / 1):
+
+- With recipes: 791 succeed, 154 fail, 441 refused, 16 exception, 1 step
+  limit. 101 rows are still `receiver a slot constant`; 41 of the 142
+  left it.
+- Where the 41 went. None of the moves is progress in itself: each is a
+  real held path that now runs further on a census receiver.
+  - 30 stop at a SIMPOS call.
+    - 19 `pimos_window_editor` rows stop at `pimos_window`'s missing
+      `pmacs_window` protocol: `get_interpreter/2`, `set_position/3`,
+      `get_position/3`, `activate/1`, `flash/1`, `beep/1`,
+      `set_title/2`, `get_text_size/3`, `get_font/2`, `get_title/2`,
+      `set_text_size/3`, `reshape/5`. `pimos_window_process` `goal/1`
+      and `invoke/1` stop there too, at `get_interpreter/2`.
+    - The device `loop_main/1` rows stop at `see/2`, which the
+      `stream` stand-in lacks (timer, file, directory; the window
+      process's own stream is the process itself). The timer's `goal/1`
+      and `invoke/1` stop there as well.
+    - `pimos_directory` `initiate/1`, `goal/1` and `invoke/1` stop at
+      `simpos##directory:retrieve/4` (class not loaded).
+  - 5 stop at `set_string_element` on an unbound argument (the
+    `attention/1` rows).
+  - 4 succeed: `pimos_window set_output_stream/2`, `pimos_window_process
+    initiate/1`, and `pimos_file goal/1` and `invoke/1`. pimos_file's
+    goal/1 takes its error clause (`put(error)` on the creation-status
+    stream). Its `initiate/1` (1 row, now `failure`) runs `open` on the
+    census's unbound pathname and fails.
+  - 1 (`pimos_window_editor attention/1`) is still a slot constant, one
+    hop later: the editor's `pimos_window_process` slot.
+- 3 move out of success:
+  - `remote_pimfep_executor goal/1` and `invoke/1` stop at
+    `network_node_name:to_tcpip_address/3`, and `open/1` moves there from
+    failure. With the after-demon run, `accept` holds the class slot's
+    value, so `open/1` gets past the test that used to fail. The plain
+    census's successes were on an instance new/2 could not have made.
+  - `pimscsi_fep resign_core/1` is a census order effect: run alone on a
+    fresh machine it fails, as it now does.
+
+Test (`test_espc.py` `test_step3f_census_recipes`): the timer's three
+streams are `simpos##stream` objects and its device id is unbound; the
+editor and executor recipes; the recipe census totals and its 101 slot
+constants; rows that go on (timer `loop_main/1` at `stream:see/2`, the
+editor at `get_interpreter/2`) while `as_pimos_device` (no creator)
+still refuses. Four injections into `kl0.py`, each from a backup copy,
+restored by cp and checked with cmp. Observed: each fails only this
+test, and `test_kl0.py` passes.
+
+- The `pimos_timer` recipe dropped: errors. Measured separately, the
+  census's slot constants rise from 101 to 105: the timer's `goal/1`,
+  `attention/1`, `loop_main/1` and `invoke/1`.
+- A0 left unbound: fails.
+- No stop before activate/2: errors. The creator runs into
+  `process:status/3`.
+- The executor made by `make_instance`: fails.
 
 ## Open
 

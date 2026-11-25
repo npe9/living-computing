@@ -78,6 +78,19 @@
    option's atom misspelt, each fails only test_step3e_node_and_editor;
    the activity slot removed, or the unbound-options guard removed, each
    errors test_step3e_node_and_editor and fails test_fep_census.
+12. Step 3f (2026-11-25, test_step3f_census_recipes): census receivers
+   made by their held creators (kl0 RECIPES, OURS): the device creators
+   stopped before activate/2, pimos_window's create_pimos_window/3 and
+   its editor, remote_pimfep_executor through :new (its after-demon);
+   the recipe census pinned (791 / 154 / 441 / 16 / 1, 101 slot
+   constants) and the plain census unchanged (test_fep_census).
+   Injected into kl0.py from a backup copy (session inject.py, restored
+   by cp, cmp-checked), observed, test_kl0.py passing each time: the
+   pimos_timer recipe dropped, errors (census slot constants 101 -> 105,
+   the timer's goal/1, attention/1, loop_main/1, invoke/1); A0 left
+   unbound, fails; no stop before activate/2, errors (the creator
+   reaches process:status/3); the executor made by make_instance, fails.
+   Each touches only test_step3f_census_recipes.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -1112,6 +1125,54 @@ end.''', 'simpos')
         self.assertEqual((len(rows), out), (1403, {'success': 789, 'failure': 154, 'refused': 443, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
+
+    def test_step3f_census_recipes(self):
+        # step 3f: receivers made by their held creators (kl0 RECIPES, OURS)
+        m = K.fep_machine()
+        # pimos_timer create_timer/9 stopped before activate/2: the device
+        # has the two streams its creator made with stream/2 and the output
+        # stream the recipe passed; device_id stays the unbound A3
+        dev = K.RECIPES['pimfep##pimos_timer'](m)
+        co = m.lib.build(dev.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual([getattr(s[n], 'cid', s[n]) for n in
+                          ('input_stream', 'output_stream', 'creation_status_stream')],
+                         ['simpos##stream'] * 3)
+        self.assertIsNot(s['input_stream'], s['creation_status_stream'])
+        self.assertIsInstance(s['device_id'], K.Var)
+        # the window's editor points back at it
+        ed = K.RECIPES['pimfep##pimos_window_editor'](m)
+        self.assertEqual(ed.cid, 'pimfep##pimos_window_editor')
+        # remote_pimfep_executor through :new, so its after-demon on new/2
+        # copies the class slot socket into accept
+        ex = K.RECIPES['pimfep##remote_pimfep_executor'](m)
+        co = m.lib.build(ex.cid)
+        s = {e.name: K.deref(v) for e, v in zip(co.instance_slots, ex.slots)}
+        self.assertNotIsInstance(s['accept'], K.SlotConstant)
+        rows = K.census_fep(K.fep_machine(), recipes=K.RECIPES)
+        by = {(r[0].split('##')[1], r[1], r[2]): r[3:] for r in rows}
+        out = {}
+        for r in rows:
+            out[r[3]] = out.get(r[3], 0) + 1
+        self.assertEqual((len(rows), out), (1403, {'success': 791, 'failure': 154, 'refused': 441,
+                                                   'exception': 16, 'step limit': 1}))
+        slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
+        self.assertEqual(slot_const, 101)
+        # a device with a recipe goes on to the stream stand-in's missing
+        # see/2; the abstract as_pimos_device (no creator) still refuses
+        self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'simpos'))
+        self.assertIn('simpos##stream:see/2', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+        self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'receiver a slot constant'))
+        # pimos_file: initiate/1 runs its open on the unbound pathname and
+        # fails; goal/1 then takes its error clause (put(error)) and succeeds
+        self.assertEqual(by[('pimos_file', 'instance', 'initiate/1')][0], 'failure')
+        self.assertEqual(by[('pimos_file', 'instance', 'goal/1')][0], 'success')
+        # the editor reaches pimos_window's lost pmacs_window protocol
+        self.assertIn('pimfep##pimos_window:get_interpreter/2',
+                      by[('pimos_window_editor', 'instance', 'clear/3')][2])
+        self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
 
 
 if __name__ == '__main__':

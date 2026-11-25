@@ -6,6 +6,7 @@ firmware is the authority and is not emulated here.
     python3 -I psi/kl0.py convert            fep_command_code_table:convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv F]   trivial calls on every method of the 104 classes
     python3 -I psi/kl0.py census --fep [--tsv F]   the same over pimfep and pimscsi, stand-ins loaded
+    python3 -I psi/kl0.py census --fep --recipes [--tsv F]   receivers made by their held creators (step 3f)
     python3 -I psi/kl0.py call PKG##CLASS SEL/N [ARG ...]   one class-method call (ints and atoms)
 
 WHAT DRIVES IT
@@ -94,6 +95,12 @@ class Refusal(Exception):
 
 class StepLimit(Exception):
     pass
+
+
+class CreatorStopped(Exception):
+    """A census recipe's creator reached the send it stops before (step 3f,
+    OURS).  args: (name, arity, the argument registers A0..A(arity-1), the
+    receiver last)."""
 
 
 # --------------------------------------------------------------------------
@@ -439,6 +446,9 @@ class Machine:
                 raise ValueError('table row without an implementation: %r' % r['mnemonic'])
             self.handlers[(r['class'], r['opcode'])] = fn
         self.trace = None
+        # census recipes (step 3f, OURS): a send whose (name, arity) is in
+        # this set raises CreatorStopped instead of being dispatched
+        self.stop_before = None
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -623,6 +633,8 @@ class Machine:
         self.dispatch(recv, name, arity)
 
     def dispatch(self, recv, name, arity):
+        if self.stop_before and (name, arity) in self.stop_before:
+            raise CreatorStopped(name, arity, [deref(self.x[i]) for i in range(arity)])
         if isinstance(recv, ClassRef):
             cid, section = recv.cid, 'class'
         elif isinstance(recv, Instance):
@@ -1806,6 +1818,134 @@ def make_instance(m, cid):
         raise Refusal('new fails', '%s: slot %s initialisation fails' % (cid, e.args[0].name))
 
 
+# -- census recipes (step 3f) ----------------------------------------------
+#
+# The census makes a receiver with new/2, so a slot that the class's
+# creator fills still holds its template constant (step 3e).  A recipe
+# makes the receiver the way held code does: it runs the class's HELD
+# creator (a class method of pimfep.ptf, through the stand-ins) and takes
+# the object it made.  The recipes, and running a creator with unbound
+# arguments, are OURS; every send they make goes to held code or to a
+# labelled stand-in, and no slot is written from Python.
+#
+# The device creators (docs/fep_services.md §6.1 step 3: the class
+# methods `:refute(Class, Name, Args)` reaches for a device_create
+# command) all begin with the same prefix: `:create(Class, Dev)`,
+# `:process(Class, .., Dev)`, `:stream(Class, S)`, `:set_input_stream(Dev,
+# S)`, `:set_output_stream(Dev, A0)`, `:stream(Class, S2)`,
+# `:set_creation_status_stream(Dev, S2)`, `:set_device_id(Dev, A3)`, then
+# (after class-specific setters) `:activate(Process, Dev)`.  activate/2 is
+# the PRINTED process:activate/2 (TM-100 Fig. 3.1), which needs the lost
+# `status/3` and hardware `context`, so the recipe stops before that send
+# and takes Dev, its first argument: the device as its creator left it,
+# not yet running.
+#
+# A0, the stream the device answers on, is the caller's.  INFERENCE: it is
+# the front end's fep_output_stream.  pimos_scsi_front_end create_device/4
+# reads fep_output_stream/2 (@42e-431) into the first of the three
+# elements it adds to the message vector before :refute (@433-447), and
+# in each creator A1 and A2 then receive the device's input stream and
+# its process (create_timer/9: stream/2 @2d-30 into A1, process/4 @27-2c
+# with A2), which the front end enters in its device_table (add_at/5
+# @448-452).  The front end's fep_output_stream is made by
+# fep_scsi_output create/7 (@32-3b, `:create(C, S)` then
+# set_fep_output_stream/2), whose class C kl0 resolves to simpos##stream
+# (the stand-in, PRINTED TM-100 Fig. 3.6).  So the recipe passes a new
+# simpos##stream (OURS: a fresh one, not the front end's).  The other
+# arguments are unbound, as in the bare census.
+
+# class -> (creator selector, arity, the cells read), all class methods of
+# the class itself; each stops before its `activate/2` send.  Not here:
+# pimos_tcpip_socket create_socket/9 (@21-69) reads the calling process's
+# invocation stack (`:invocation_stack(P, L)`, `:get_first(L, Prog)`,
+# @4d-59) before activate/2; the process stand-in has no such accessor,
+# and the census's process runs no program, so the stack is empty.
+# pimos_string_io_invoker create_string_io/10 stops at simpos##symbolizer
+# enter_atom/3 and simpos##library assign/1 (@28-31), not stood in.
+DEVICE_CREATORS = {
+    'pimfep##pimos_timer': ('create_timer', 9, '@19-48'),
+    'pimfep##pimos_file': ('create', 9, '@19-52'),
+    'pimfep##pimos_directory': ('directory', 10, '@17-4e'),
+    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86'),
+}
+
+
+def _creator_device(m, cid):
+    """The device CID's held creator makes (DEVICE_CREATORS), stopped
+    before its activate/2."""
+    sel, n, _cells = DEVICE_CREATORS[cid]
+    m.reset()
+    (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
+    args = [st[0]] + [Var() for _ in range(n - 2)]
+    m.stop_before = {('activate', 2)}
+    try:
+        for _ in m.solve_send(ClassRef(cid), sel, args + [ClassRef(cid)]):
+            break
+    except CreatorStopped as e:
+        dev = e.args[2][0]
+        if isinstance(dev, Instance) and dev.cid == cid:
+            return dev
+        raise Refusal('recipe', '%s %s/%d: activate/2 of %r, not a %s' % (cid, sel, n, dev, cid))
+    except Refusal as e:
+        raise Refusal('recipe', '%s %s/%d stops: %s: %s' % (cid, sel, n, e.cause, e.detail))
+    finally:
+        m.stop_before = None
+    raise Refusal('recipe', '%s %s/%d does not reach activate/2' % (cid, sel, n))
+
+
+def _pimos_window(m):
+    """pimos_window create_pimos_window/3 (held, @19-34: `:create(
+    #pimos_window, [{size,70,110}, {editor,#pimos_window_editor}], _, W)`,
+    then W!activity := 1), through the pmacs_window stand-in."""
+    m.reset()
+    sols = call_class_method(m, 'pimfep##pimos_window', 'create_pimos_window', [Var(), Var()], limit=1)
+    if not sols or not isinstance(sols[0][1], Instance):
+        raise Refusal('recipe', 'pimos_window create_pimos_window/3 makes no window')
+    return sols[0][1]
+
+
+def _pimos_window_editor(m):
+    """The editor of a window _pimos_window makes, by the stand-in's
+    get_editor/2 (window.md §2.11 `:get_editor(W, E)`)."""
+    w = _pimos_window(m)
+    m.reset()
+    e = Var()
+    for _ in m.solve_send(w, 'get_editor', [e, w]):
+        break
+    e = deref(e)
+    if not isinstance(e, Instance) or e.cid != 'pimfep##pimos_window_editor':
+        raise Refusal('recipe', 'the window made by create_pimos_window/3 has editor %r' % (e,))
+    return e
+
+
+def _by_new_send(m, cid):
+    """`:new(#cid, O)` sent, so that the class's own new/2 demons run.
+    make_instance builds the instance directly and runs none.  In pimfep
+    and pimscsi only remote_pimfep_executor has one: a class after-demon
+    on new/2 (@40-48) that copies the class slot `socket` into the new
+    instance's `accept` (and `time` likewise)."""
+    m.reset()
+    sols = call_class_method(m, cid, 'new', [Var()], limit=1)
+    if not sols or not isinstance(sols[0][0], Instance):
+        raise Refusal('recipe', '%s new/2 makes no instance' % cid)
+    return sols[0][0]
+
+
+# class -> a function of the machine giving the receiver (OURS)
+RECIPES = dict({cid: (lambda m, c=cid: _creator_device(m, c)) for cid in DEVICE_CREATORS},
+               **{'pimfep##pimos_window': _pimos_window,
+                  'pimfep##pimos_window_editor': _pimos_window_editor,
+                  'pimfep##remote_pimfep_executor':
+                      lambda m: _by_new_send(m, 'pimfep##remote_pimfep_executor')})
+
+
+def recipe_instance(m, cid, recipes):
+    """The census receiver for an instance method: by CID's recipe if it
+    has one, else new/2 (make_instance)."""
+    r = recipes.get(cid) if recipes else None
+    return r(m) if r is not None else make_instance(m, cid)
+
+
 def census(m=None, max_steps=20000):
     """Every method of the classes that need no SIMPOS, called once with
     unbound arguments (the receiver: the class, or a fresh instance).
@@ -1820,8 +1960,10 @@ def census(m=None, max_steps=20000):
     return census_of(m, m.lib.free_of_simpos(six, 'union'))
 
 
-def census_of(m, classes):
-    """census(): every method of CLASSES, each called once."""
+def census_of(m, classes, recipes=None):
+    """census(): every method of CLASSES, each called once.  RECIPES
+    (step 3f): class -> a function making the instance receiver (RECIPES
+    above); a class without one gets new/2's instance."""
     rows = []
     for cid in classes:
         co = m.lib.build(cid)
@@ -1829,7 +1971,7 @@ def census_of(m, classes):
             for (name, n), meth in table.items():
                 sel = '%s/%d' % (name, n)
                 try:
-                    recv = ClassRef(cid) if section == 'class' else make_instance(m, cid)
+                    recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
                     regs = [Var() for _ in range(n - 1)] + [recv]
                     ok = any(True for _ in m.solve_send(recv, name, regs))
                     rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
@@ -1854,12 +1996,14 @@ def fep_machine(max_steps=20000):
     return Machine(lib, max_steps=max_steps)
 
 
-def census_fep(m=None):
+def census_fep(m=None, recipes=None):
     """The census of pimfep's and pimscsi's methods (PIM/m's front end,
-    docs/simpos/README.md §5), stand-ins loaded, in template order."""
+    docs/simpos/README.md §5), stand-ins loaded, in template order.
+    RECIPES=RECIPES makes the receivers of those classes by their held
+    creators (step 3f); the default is new/2 for every class."""
     if m is None:
         m = fep_machine()
-    return census_of(m, [cid for cid in m.lib.templates if cid.split('##')[0] in FEP_PACKAGES])
+    return census_of(m, [cid for cid in m.lib.templates if cid.split('##')[0] in FEP_PACKAGES], recipes)
 
 
 def simpos_target(detail):
@@ -1892,7 +2036,8 @@ def main(argv):
               % ' '.join(r['shadowed']))
         return 0
     if argv and argv[0] == 'census':
-        rows = census_fep() if '--fep' in argv else census()
+        rows = (census_fep(recipes=RECIPES if '--recipes' in argv else None)
+                if '--fep' in argv else census())
         c = collections.Counter(r[3] for r in rows)
         print('%d methods of %d classes: %s' % (len(rows), len({r[0] for r in rows}), dict(c)))
         rk = collections.Counter(refusal_key(r[4], r[5]) for r in rows if r[3] == 'refused')
