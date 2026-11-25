@@ -1000,24 +1000,14 @@ function SM128 readAcc(StretchStorage st) = accToSM(st.readAccLeft(), st.readAcc
 // LCV needs a sign byte whose FLAG BITS ARE CLEARED -- printed p.72,
 // "the four low-order bits of the sign byte register are cleared" --
 // where every other operation preserves them.  So it needs its own
-// single write, not a correction applied after writeAcc.  Writing it
+// single write, not a correction applied after vcAcc.  Writing it
 // the obvious way first is how the rule above got learned.
-function Action writeAccFlags(StretchStorage st, SM128 v, Bit#(3) flags) =
-  action
-    let {hi,lo} = packAcc(v.mag);
-    st.writeWord(addrAccLeft, hi);
-    st.writeWord(addrAccRight, lo);
-    st.writeWord(addrAccSignByte, sbWith(st.readAccSign(), v.sign, flags));
-  endaction;
-
-function Action writeAcc(StretchStorage st, SM128 v) =
-  action
-    let {hi,lo} = packAcc(v.mag);
-    st.writeWord(addrAccLeft, hi);
-    st.writeWord(addrAccRight, lo);
-    Word64 sb = st.readAccSign();
-    st.writeWord(addrAccSignByte, sbWith(sb, v.sign, sbFlags(sb)));
-  endaction;
+//
+// SINCE A2 (2026-11-24) there is no Action form: the VFL arms that wrote
+// the accumulator through writeAcc / writeAccFlags fill VflCommit with
+// vcAcc / vcAccFlags instead, and commitVfl makes the one write of each
+// word.  The rule above still holds there -- each of the three words
+// has one writeWord call site in commitVfl.
 
 // Floating-point arithmetic result indicators (p.85): RLZ/RZ/RGZ from
 // the fraction result's sign and zero-ness, RN = negative.
@@ -3212,6 +3202,13 @@ typedef union tagged {
 // progressive-index block is guarded on `!isValid(needsRead)`, so an
 // arm that has already asked for a read suppresses it), which is why
 // it is threaded through rather than merely returned.
+//
+// SINCE A2 (2026-11-24) IT WRITES NOTHING.  Its opcode arms are family
+// functions (vflLoadAddFamily ... vflDecimalFamily, below VflArm), each a
+// plain function returning its writes as a VflCommit; vflIntOp keeps the
+// shared preamble, the dispatch, the unimplemented-code arm (its $display
+// is the one Action left) and the progressive-index block, and hands the
+// commit back in VflOutcome.commit for execute() to apply.
 // ---------------------------------------------------------------------
 typedef struct {
   Maybe#(WordAddr) needsRead;
@@ -5476,6 +5473,121 @@ function VflArm vflConvertTransitFamily(StretchStorage st, VflCtx cx, VflArm a0)
                     vflWriteArmHandled: vflWriteArmHandled, commit: vc };
 endfunction
 
+// THE DECIMAL FAMILY (A2): LOAD TRANSIT AND SET, which is also the action
+// of decimal *, *+ and / (printed pp.68-70; vflIntOp's ltrsAction), moved
+// verbatim from vflIntOp.  Writes: the transit word; the counts go back
+// through connCounts as before.
+function VflArm vflDecimalFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
+        case (cx.opKey)
+          6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
+            // LOAD TRANSIT AND SET, Reference Manual printed p.67 (PDF 70),
+            // read in the page image:
+            //
+            //   "The transit register (location 15), the left zeros
+            //   counter, and the all-ones counter are cleared.  A four-bit
+            //   sign byte, in which the leftmost bit is set to the sign of
+            //   the addressed storage operand as modified by the negative
+            //   sign modifier, is placed in the four low-order bits of the
+            //   transit register.  The remaining three bits of this sign
+            //   byte are zero.  The numeric part of the addressed operand
+            //   is positioned immediately to the left of this sign byte in
+            //   the transit register.  The effective offset specified by
+            //   the instruction is placed in the all-ones counter (bits
+            //   44-50 of location 7).  The two high-order bits of the left
+            //   zeros counter (bits 17-18 of location 7) are set to ones."
+            //
+            // and p.68 (PDF 71): BTR or DTR "depending on the value of the
+            // radix modifier"; PF if the numeric part "contains more than
+            // 60 significant bits ... the transit register is loaded up to
+            // its left end.  Higher-order bits are lost"; data flags and
+            // MOP "as in ADD"; RLZ/RZ/RGZ/RN "according to the contents of
+            // the transit register".  The same page's table gives the two
+            // left-zeros bits: MULTIPLY 00, DIVIDE 01, MULTIPLY AND ADD
+            // 10, LOAD TRANSIT AND SET 11.  The accumulator is not touched.
+            //
+            // THE EFFECTIVE OFFSET is vi.a.offset as vflSecondIndex left
+            // it (the second half's I field, printed p.21).  All seven
+            // bits, in decimal too: p.60's "two low-order bits ... ignored"
+            // is ADD's (CHOSEN; decks/vfl_ltrs.strap).
+            //
+            // A DECIMAL OPERAND'S NUMERIC PART IS LOADED AS FOUR-BIT
+            // DIGITS, zones dropped (decCompact): "Radix.  This modifier
+            // operates as in ADD" (p.68), and ADD's decimal operand "is
+            // converted to a four-bit byte for processing" (p.58).  CHOSEN;
+            // the page does not show a decimal transit register.
+            //
+            // THE COUNTS go back through connCounts and are written by the
+            // caller after this function's own writes -- the connectives'
+            // route to location 7 (VflOutcome's comment).
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              Bit#(128) num = opnd.mag;
+              Bool numHi = False;
+              if (vi.m.decimal == 1) begin
+                match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
+                num = dg; numHi = dhi;
+              end
+              Bit#(60) n60 = truncate(num);
+              vc.transit = tagged Valid ((zeroExtend(n60) << 4)
+                                        | (zeroExtend(opnd.sign) << 3));
+              Bit#(2) lzHigh = case (vi.code)
+                                 6'b011001: 2'b00;   // *
+                                 6'b011101: 2'b01;   // /
+                                 6'b111001: 2'b10;   // *+
+                                 default:   2'b11;   // LTRS
+                               endcase;
+              connCounts = tagged Valid tuple2({lzHigh, 5'b0}, vi.a.offset);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              if (numHi || (num >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+              SM128 trv = SM128 { sign: opnd.sign, mag: zeroExtend(n60) };
+              if (vi.m.decimal == 1) begin
+                ind = setBit(ind, ind_DTR, 1);
+                ind = setResultIndicatorsF(ind, trv);
+              end else begin
+                ind = setBit(ind, ind_BTR, 1);
+                ind = setResultIndicatorsF(ind, trv);
+              end
+            end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
              Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
@@ -5770,80 +5882,13 @@ function ActionValue#(VflOutcome)
             vflReadsUsed = fr.vflReadsUsed;
             vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
-          6'b111101: begin // LTRS (Load Transit and Set), and decimal *, *+, /
-            // LOAD TRANSIT AND SET, Reference Manual printed p.67 (PDF 70),
-            // read in the page image:
-            //
-            //   "The transit register (location 15), the left zeros
-            //   counter, and the all-ones counter are cleared.  A four-bit
-            //   sign byte, in which the leftmost bit is set to the sign of
-            //   the addressed storage operand as modified by the negative
-            //   sign modifier, is placed in the four low-order bits of the
-            //   transit register.  The remaining three bits of this sign
-            //   byte are zero.  The numeric part of the addressed operand
-            //   is positioned immediately to the left of this sign byte in
-            //   the transit register.  The effective offset specified by
-            //   the instruction is placed in the all-ones counter (bits
-            //   44-50 of location 7).  The two high-order bits of the left
-            //   zeros counter (bits 17-18 of location 7) are set to ones."
-            //
-            // and p.68 (PDF 71): BTR or DTR "depending on the value of the
-            // radix modifier"; PF if the numeric part "contains more than
-            // 60 significant bits ... the transit register is loaded up to
-            // its left end.  Higher-order bits are lost"; data flags and
-            // MOP "as in ADD"; RLZ/RZ/RGZ/RN "according to the contents of
-            // the transit register".  The same page's table gives the two
-            // left-zeros bits: MULTIPLY 00, DIVIDE 01, MULTIPLY AND ADD
-            // 10, LOAD TRANSIT AND SET 11.  The accumulator is not touched.
-            //
-            // THE EFFECTIVE OFFSET is vi.a.offset as vflSecondIndex left
-            // it (the second half's I field, printed p.21).  All seven
-            // bits, in decimal too: p.60's "two low-order bits ... ignored"
-            // is ADD's (CHOSEN; decks/vfl_ltrs.strap).
-            //
-            // A DECIMAL OPERAND'S NUMERIC PART IS LOADED AS FOUR-BIT
-            // DIGITS, zones dropped (decCompact): "Radix.  This modifier
-            // operates as in ADD" (p.68), and ADD's decimal operand "is
-            // converted to a four-bit byte for processing" (p.58).  CHOSEN;
-            // the page does not show a decimal transit register.
-            //
-            // THE COUNTS go back through connCounts and are written by the
-            // caller after this function's own writes -- the connectives'
-            // route to location 7 (VflOutcome's comment).
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              Bit#(128) num = opnd.mag;
-              Bool numHi = False;
-              if (vi.m.decimal == 1) begin
-                match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
-                num = dg; numHi = dhi;
-              end
-              Bit#(60) n60 = truncate(num);
-              st.writeWord(addrTransit, (zeroExtend(n60) << 4)
-                                        | (zeroExtend(opnd.sign) << 3));
-              Bit#(2) lzHigh = case (vi.code)
-                                 6'b011001: 2'b00;   // *
-                                 6'b011101: 2'b01;   // /
-                                 6'b111001: 2'b10;   // *+
-                                 default:   2'b11;   // LTRS
-                               endcase;
-              connCounts = tagged Valid tuple2({lzHigh, 5'b0}, vi.a.offset);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
-              if (numHi || (num >> 60) != 0) ind = setBit(ind, ind_PF, 1);
-              SM128 trv = SM128 { sign: opnd.sign, mag: zeroExtend(n60) };
-              if (vi.m.decimal == 1) begin
-                ind = setBit(ind, ind_DTR, 1);
-                ind = setResultIndicatorsF(ind, trv);
-              end else begin
-                ind = setBit(ind, ind_BTR, 1);
-                ind = setResultIndicatorsF(ind, trv);
-              end
-            end
+          6'b111101: begin // vflDecimalFamily
+            VflArm fr = vflDecimalFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           default: begin
             $display("StretchCore:   OP site = vflIntOp/unimplemented-code  code=%b decimal=%0d",
