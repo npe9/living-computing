@@ -274,7 +274,7 @@ interrupts masked, little-endian, with VB = 0.
 | 0x04C, 0x050, 0x068, 0x06C | config, psw, r0, r16 at softreset | `raml.s:304-307` (a RAM kernel's softreset) | -- (`r`) |
 | 0x074 | fpi entry (`fprt0` in the ROM) | `roml.s:29` | `raml.s:85-86` copies it into the niladic and unimplemented vectors |
 | 0x080 | memsize | `rommain.c:90` | `rammain.c:142-168` (meminit, confinit) |
-| 0x100 | argc, argv[8] (0x104), argbuf[220] (0x124) | `romboot.c:536-539, 760` | `rammain.c:82-83` (arginit) |
+| 0x100 | argc, argv[8] (0x104), argbuf[220] (0x124) | `romboot.c:535-538, 760` | `rammain.c:82-84` (arginit: /boot's argv is the ROM's plus `fs`) |
 | 0x200 | Env (nentry, sum[4], 11 x {name[16], value[48]}) | `romboot.c:93` | `rammain.c:47-73`: sysname, station, fs |
 
 **The offsets in `rom.h`'s comments are wrong.**  The header says fpi
@@ -289,10 +289,11 @@ consequences: the ROM's own `softreset` (`roml.s:340-342`) saves PSW,
 CONFIG and R0 at RAMBASE+0x124/0x128/0x12C -- inside `argbuf`, where the
 next command line overwrites them, and not where `registers` reads them
 (so after a ROM-kernel crash `r` shows CONFIG, PSW and r0 as 0; seen on
-the model, section 5); and `tools/p9boot.py`'s `PPAGE0_ARGC` (0x200) and
-`PPAGE0_ENV` (0x300), taken from the comments, are the wrong words
-(harmless there: it writes zeros into zeroed RAM; left as an open item
-for that file).
+the model, section 5); and `tools/p9boot.py`'s `PPAGE0_ARGC` and
+`PPAGE0_ENV` were 0x200 and 0x300, taken from the comments, until
+2026-11-24.  They are now 0x100/0x200; no run changed, because s9term
+saw argc 0 and nentry 0 either way (`docs/p9boot.md`, "PPage0's argc
+and Env offsets").
 
 The loaded kernel keeps the ROM mapped: `raml.s:36` maps VROMBASE onto
 PROMBASE for 128 pages, user-executable, so user processes' floating
@@ -441,67 +442,112 @@ only boot method booting(8) says Hobbit boards used.
 `--join OUT` boots the 1e 386 file server in QEMU (`tools/p9join.py`'s
 `start_server`, `docs/qemu_1e_server.md`; lockstep clock) with the
 SONIC on its wire (UDP ports 10931/10932), and `--kernel` names the
-image the ROM should load so the hand-off can be checked against it:
-
-```sh
-sh hobbit/tools/qemu1e/build.sh                       # once, ~15 min
-python3 hobbit/tools/p9rom.py --join hobbit/build/rom/join1 \
-    --kernel hobbit/tools/plan9-1e/hobbit/s9term \
-    --type '>>>=b -s il /hobbit/s9term\r' --until 'root is from' \
-    --max-steps 400000000 --progress 10000000
-```
+image the ROM should load so the hand-off can be checked against it.
+After the hand-off, `--type` replies go to s9term's keyboard (Quart
+channel 2, scan codes; ROM_CHOICES `console-input`).  The command for
+the run to rc is under "third run" below.
 
 Without a network the same `b` stops at the first frame: `sonic ether:
 52 54 00 00 0b 0b` is printed and the SONIC transmits a BOOTP request.
 
-**Observed 2026-11-24: the ROM loaded s9term from the file server and
-started it.**  uart0, byte for byte (CR LF as LF):
+**Observed 2026-11-24 (first run): the ROM loaded s9term from the file
+server and started it.**  `build/rom/join1`, before p9rom had the idle
+skip: uart0 to s9term's first line, the hand-off at step 139,546,042,
+the run ended at its 400 M limit (20.0 s of model time) idling before
+s9term's prompt.  The second run, below, replaces it.
+
+**Observed 2026-11-24 (second run): the default Env takes the root from
+incon.**  The same command, with the idle skip and `--until '% '`, got
+past s9term's start and stopped at **`inconpoll`** (incon +0x4 not
+modelled) at step 528,055,503, where s9term would have prompted.  The
+cause is the Env the ROM hands over.  `arginit` gives /boot the ROM's
+argv plus the Env's `fs` (`rammain.c:82-84`): here `b` and
+`incon!nj/astro/Nfs`.  So /boot has argc 2, does not set `-p`
+(`boot/boot.c:47-48`) and takes `fs` as the root without asking
+(`rootserver`, `:79`, `:164-170`).  That attaches incon.  The prompt
+p9boot's runs see is the empty-`fs` case (`docs/p9boot.md`, "PPage0's
+argc and Env offsets").  So on a real board the NVRAM's `fs` chooses
+s9term's root, and the ROM's default chooses Datakit.
+
+**Observed 2026-11-24 (third run): the ROM to rc's prompt.**  With
+`fs=il` set at the monitor first:
+
+```sh
+sh hobbit/tools/qemu1e/build.sh                       # once, ~15 min
+python3 hobbit/tools/p9rom.py --join hobbit/build/rom/join3 \
+    --kernel hobbit/tools/plan9-1e/hobbit/s9term \
+    --type '>>>=e fs il\r' --type '>>>=b -s il /hobbit/s9term\r' \
+    --type 'user[none]: =\r' --until '% ' --max-steps 3000000000 \
+    --progress 20000000
+```
+
+uart0, byte for byte (CR LF as LF):
 
 ```
 200 free pages, 800K bytes, swap 800K, highwater 40K, headroom 48K
 Hobbit ROM Sat Nov  7 04:28:37 GMT 1992
+>>>e fs il
 >>>b -s il /hobbit/s9term
 sonic ether: 52 54 00 00 0b 0b
 arp: rcvd for 10.9.0.1
 nop...session.../hobbit/s9term...
 219968+70388+98476 entry: 0x80004000
 1364 free pages, 5456K bytes, swap 27856K, highwater 272K, headroom 340K
+sonic ether: 52 54 00 00 0b 0b
+user[none]: 
+arp: rcvd for 10.9.0.1
+nop...session...time...
+init: starting /bin/rc
+
+init: starting /bin/rc
+% 
 ```
 
-The last line is **s9term's own first console line**, the same bytes
-`tools/p9boot.py` gets when it loads s9term itself (`docs/p9boot.md`,
-"The first console line"): s9term sized its memory from the ROM's
-PPage0.memsize (8 MB -> 1364 pages).  On the wire (281 frames,
-`build/rom/join1/hobbit.pcap`, not committed): BOOTP request and reply
-(10.9.0.2, the server's file field `/hobbit/s9term`, which `romboot`
-does not use), ARP, the IL connection to 17008 (the server's console
-logs the BOOTP reply and "il call for il17008"), then the 9P exchange,
-with the file's data frames between model time 1.45 s and 6.40 s.
+Everything from `1364 free pages` on is s9term's.  There is no `root is
+from` line: /boot took `il` from `fs` (above).
 
-The hand-off, captured at the first kernel-mode instruction in RAM
-(step 139,546,042): **PC 0x80004000** (s9term's entry), **PSW 0**,
-**VB 0**, **CONFIG 0x3F0000** (PM|PE|IE|SE|PX|KL, `gotopc`); RAM at
-s9term's text and data addresses equal to the file's 219,968 and 70,388
-bytes, word for word; PPage0 memsize 0x800000, fpi 0xC00227C0
-(`fprt0` in the ROM), argc 1 with argv[0] = `b` (the command word left
-in argbuf: `bootcmd` sets argv[1..] only, "we don't really care what
-the 0'th argument is", `9/boot/romboot.c:530-538`), and the
-NVRAM's Env at 0x200.
+| event | instruction | model time |
+|---|---:|---:|
+| `>>>` (then `e fs il` typed) | 681,566 | 0.036 s |
+| `b -s il /hobbit/s9term` typed | 774,952 | |
+| ROM's BOOTP request (frame 0) | | 0.060 s |
+| **hand-off** to 0x80004000 | **281,845,240** | ~14.1 s |
+| s9term's own BOOTP request (frame 397) | | 28.48 s |
+| Return typed at `user[none]: ` | 571,773,056 | |
+| **rc's `% ` on uart0** | **2,056,900,324** | 102.92 s |
 
-The run ended at its 400,000,000-instruction limit (20.0 s of model
-time, several hours of host time with QEMU in lockstep) with s9term
-idling in `runproc`, before its `root is from` prompt.  That is a
-matter of time, not a fault: the hand-off came at 6.997 s of model time
-(`build/rom/join1.out`), and at the Quart counter's hardware rate s9term
-reaches that prompt 14.367 s after its own start (`docs/p9boot.md`,
-"How far it gets"), so about 21.4 s here; this harness has no idle skip
-to get there sooner.  The prompt would show on uart0 as well as the
-screen (`docs/p9boot.md`, "The console"), so `--until 'root is from'`
-can match given a higher `--max-steps`.  Not run further.  What s9term
-gets from the ROM differs from `tools/p9boot.py`'s PPage0: argv[0] is
-`b`, fpi points into the ROM (`fprt0`) rather than at a stand-in, and
-the Env is the NVRAM's.  This path is a live run (QEMU, wall clock); it
-is not in the regression suite.
+2,037,660,148 of those instructions are idle laps retired by 796 skips
+(ROM_CHOICES `idle-skip`), with 1285 interrupts and 1026 frames.  Host
+time was about 8 minutes with QEMU in lockstep.  The hand-off: PC
+0x80004000, PSW 0, VB 0, CONFIG 0x3F0000 (PM|PE|IE|SE|PX|KL, `gotopc`).
+RAM at s9term's text and data equals the file's 219,968 and 70,388
+bytes, word for word.  PPage0 holds memsize 0x800000, fpi 0xC00227C0
+(`fprt0` in the ROM), argc 1 with argv[0] = `b`, and the NVRAM's Env at
+0x200.  argv[0] is the command word left in argbuf: `bootcmd` sets
+argv[1..] only, "we don't really care what the 0'th argument is"
+(`9/boot/romboot.c:530-538`).
+
+On the wire (`tests/net/rom_join.pcap`, sha256 `f74abe00...dd62bd0e`):
+- Frames 0-396 are the ROM's load: BOOTP request and reply (10.9.0.2;
+  the reply's file field `/hobbit/s9term` is not used by `romboot`),
+  ARP, IL to 17008, 9P, and the file's data.
+- Frames 397 on are s9term's own boot: a second BOOTP, IL, the attach
+  as `none`, the time, `/hobbit/init`, termrc, rc.
+
+From s9term's start to rc took 88.8 s of model time; p9join's own boot
+of s9term reached rc in about 18 s.  The server's replies fall on 50 ms
+boundaries of model time (for example 76.95, 77.15, 77.35 s), so
+QEMU's lockstep quantum appears to pace the exchange.  This was not
+investigated.
+
+The run is a live one (QEMU, the wall clock).  Its replay is in the
+suite (section 8).
+
+The idle skip is p9boot's own function, in the ROM's `runproc` and,
+after the hand-off, s9term's.  It changes no step count: reset to `>>>`
+and on through `e` gives the same instructions (716,845), cycles,
+PC, PSW, uart0, interrupts and every RAM word with and without it.  On
+that path it retired 18,064 laps.
 
 ## 6. What the ULX3S port needs from this
 
@@ -600,10 +646,17 @@ memsize and the fpi word; `e`'s output and the Env in NVRAM; memsize for
 4 and 16 MB; the bus error without aliasing.  Four injections (ROM
 words big-endian; mkrom without the swap; no aliasing; aliasing over the
 SONIC's range) and the failures observed are in the test's header.
-Not covered: the hand-off capture and the loaded-image comparison
-(`record_handoff`, `compare_loaded` in `tools/p9rom.py`) run only on the
-live join path; their result above was observed once, and no test shows
-the comparison failing on a corrupted image.
+`TestRomJoinReplay` (~100 s) replays `tests/net/rom_join.pcap`
+(ETHER_CHOICES `replay`: the model's frames must equal the recording,
+and the server's arrive at their recorded cycle offsets).  It covers
+`e fs il`, `b`, the hand-off (step 281,845,240, PC, PSW, VB, CONFIG,
+memsize, argc/argv, fpi = `fprt0`) and s9term's first line.  It also
+checks `compare_loaded` both ways: the loaded image equals the file;
+and at the same hand-off a flipped text word, a flipped data word and
+the image placed 4 bytes high are each reported.  `TestRomJoinToRc`
+(`P9ROM_LONG=1`, ~6 min) replays on to rc's `% `: 2,056,900,324
+instructions, every recorded frame used.  The injections and the
+failures observed are in the test's header.
 
 ## 9. Open questions
 
@@ -618,10 +671,10 @@ the comparison failing on a corrupted image.
   corresponds to), how RAM above the fitted size decoded (the ROM
   assumes it aliases), and the incon/Datakit interface, which no model
   here implements.
-* The 9rom build was run once; a second build to show it reproducible
-  (as was done for 9term) has not been run.
-* Found here, not fixed here: `tools/p9boot.py`'s `PPAGE0_ARGC` and
-  `PPAGE0_ENV` follow `rom.h`'s wrong comments (section 4); `roml.s`'s
+* Why the file-server exchange after the hand-off runs about 5 times
+  slower in model time than p9join's (section 5).  The 50 ms spacing
+  of the server's replies suggests the lockstep quantum.
+* Found here, not fixed here: `roml.s`'s
   softreset saves PSW/CONFIG/R0 inside `argbuf` (section 4), which
   clobbers the arguments if a crash comes back to the ROM; and `_copy`
   reads one halfword past the data image (section 5), harmless only if

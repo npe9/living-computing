@@ -15,6 +15,16 @@
 
 * TestRomMemory: memsize follows the RAM fitted (4, 16 MB), and with no
   aliasing meminit takes a bus error at 0x80800080.
+* TestRomJoinReplay (~100 s): `e fs il` and `b -s il /hobbit/s9term`
+  against tests/net/rom_join.pcap, the wire of the live tools/p9rom.py
+  --join run of 2026-11-24 (docs/boot_rom.md section 5, "third run";
+  sha256 f74abe00196d2b00042e970234711635b3643692d275060d030c6f7bdd62bd0e),
+  replayed (p9boot ETHER_CHOICES['replay']).  It checks the frames sent,
+  the hand-off at step 281,845,240 (PC, PSW, VB, CONFIG, PPage0), RAM =
+  the s9term file (p9rom.compare_loaded) plus three controls at the
+  same hand-off that must differ, and s9term's first line on uart0.
+* TestRomJoinToRc (P9ROM_LONG=1, ~6 min): the same replay on to rc's
+  `% ` at 2,056,900,324 instructions, every recorded frame used.
 
 Injections, each applied alone, the whole file run, then reverted by the
 exact reverse replacement (file byte-identical afterwards); OBSERVED:
@@ -31,6 +41,22 @@ exact reverse replacement (file byte-identical afterwards); OBSERVED:
    becomes RAM; etherreset's `while(sonic->cr & Rrra)` never ends):
    FAIL test_env, test_prompt, test_sizes (262 s: the runs go to their
    step limits).
+5. tools/p9rom.py compare_loaded compares the text only (no data
+   segment), TestRomJoinReplay alone: FAIL test_wrong_loads_are_caught
+   only ('text 219968 and data 70388 bytes equal' for the flipped data
+   word).
+6. compare_loaded reads RAM 4 bytes above each word (a wrong load
+   address), TestRomJoinReplay alone: FAIL test_loaded_image_is_the_file
+   ('70240 words differ, first at 0x80004000') and
+   test_wrong_loads_are_caught.
+(5 and 6 by build/rom/inject2.py, the file's sha256 equal afterwards.)
+7. one extra cycle after every idle-skip check in RomRun.run (the
+   skipped path no longer the executed one), TestRomIdleSkip alone:
+   FAIL test_same_run (713225 != 716845: the `e` reply comes out at a
+   different instruction).
+* TestRomIdleSkip (~20 s): ROM_CHOICES['idle-skip'] leaves the run to
+  `>>>` and through `e` (716,845 instructions) the same in cycles, PC,
+  PSW, uart0, interrupts and every RAM word as with the skip off.
 """
 
 import hashlib
@@ -237,6 +263,149 @@ class TestRomMemory(unittest.TestCase):
         st = r.run(5_000_000)
         self.assertIn("BUS ERROR at meminit", st)
         self.assertIn("0x80800080", st)
+
+
+class TestRomIdleSkip(unittest.TestCase):
+    def test_same_run(self):
+        _image()
+        import p9rom
+        runs = []
+        for skip in (True, False):
+            r = p9rom.RomRun(ROM9)
+            r.idle_skip = skip
+            r.until = b">>>"
+            r.run(5_000_000)
+            r.script = [(b">>>", b"e\r")]
+            r.script_from = len(r.uart(0)) - 3
+            self.assertIn("uart0 printed", r.run(5_000_000))
+            st = r.state
+            runs.append((r.steps, r.cycles, st.pc, st.psw, r.uart(0),
+                         r.interrupts, dict(r.board.ram), r.skipped_steps))
+        on, off = runs
+        self.assertEqual(on[0], 716845)
+        self.assertEqual(on[:-1], off[:-1])
+        self.assertEqual((on[-1], off[-1]), (18064, 0))
+
+
+ROM_JOIN_PCAP = HERE / "net" / "rom_join.pcap"
+S9TERM = HOBBIT / "tools" / "plan9-1e" / "hobbit" / "s9term"
+
+
+def rom_join_replay(until, max_steps):
+    """The ROM's `b` over IL, the server's frames replayed from
+    tests/net/rom_join.pcap (p9boot ETHER_CHOICES['replay']).  At the
+    hand-off it also runs p9rom.compare_loaded on two wrong loads, as
+    controls: one RAM word of s9term's text, then one of its data, with
+    a bit flipped, and the
+    image placed 4 bytes higher than it was linked (r.controls)."""
+    _image()
+    import p9boot
+    import p9exec
+    import p9rom
+    r = p9rom.RomRun(ROM9)
+    kimg = p9exec.read_kernel(str(S9TERM))
+    r.kimg = kimg
+    r.next_syms = p9boot.Symbols(p9exec.kernel_symbols(kimg))
+    r.script = [(b">>>", b"e fs il\r"),
+                (b">>>", b"b -s il /hobbit/s9term\r"),
+                (b"user[none]: ", b"\r")]
+    replay = p9boot.Replay(str(ROM_JOIN_PCAP), p9boot.EEPROM_EA)
+    r.attach(p9boot.Wire(r.sonic.clock, replay=replay))
+    r.rom_fprt0 = r.syms.by_name["fprt0"]
+    r.controls = {}
+    record = r.record_handoff
+
+    def record_and_controls():
+        h = record()
+        ram = r.board.ram
+        for name, a in (("text", kimg["textbase"] + 0x1000),
+                        ("data", kimg["database"] + 0x100)):
+            ram[a] ^= 1
+            r.controls[name] = p9rom.compare_loaded(r, kimg)
+            ram[a] ^= 1
+        shifted = dict(kimg, textbase=kimg["textbase"] + 4,
+                       database=kimg["database"] + 4)
+        r.controls["shifted"] = p9rom.compare_loaded(r, shifted)
+        return h
+    r.record_handoff = record_and_controls
+    r.until = until
+    status = r.run(max_steps)
+    return r, replay, status
+
+
+class TestRomJoinReplay(unittest.TestCase):
+    """`e fs il`, then `b -s il /hobbit/s9term` against the 1e file
+    server, replayed: the frames of the live run (docs/boot_rom.md
+    section 5) up to the hand-off and s9term's first line.  Checks the
+    frames the model sends against the recording, the hand-off state,
+    and RAM at s9term's text and data against the file
+    (p9rom.compare_loaded)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r, cls.replay, cls.status = rom_join_replay(
+            b"headroom 340K", HANDOFF_STEPS + 3_000_000)
+
+    def test_handoff(self):
+        h = self.r.handoff
+        self.assertEqual((h["step"], h["pc"], h["psw"], h["vb"],
+                          h["config"]),
+                         (HANDOFF_STEPS, 0x80004000, 0, 0, 0x3F0000))
+        self.assertEqual((h["memsize"], h["argc"], h["argv"]),
+                         (8 << 20, 1, [b"b"]))
+        self.assertEqual(h["fpi"], self.r.rom_fprt0)
+
+    def test_loaded_image_is_the_file(self):
+        self.assertEqual(self.r.handoff["loaded"],
+                         "text 219968 and data 70388 bytes equal")
+
+    def test_wrong_loads_are_caught(self):
+        # the controls: the same comparison, the same RAM, a wrong load
+        self.assertEqual(self.r.controls["text"],
+                         "1 words differ, first at 0x80005000")
+        self.assertEqual(self.r.controls["data"],
+                         "1 words differ, first at 0x80039c40")
+        self.assertEqual(self.r.controls["shifted"],
+                         "70240 words differ, first at 0x80004004")
+
+    def test_frames_as_recorded(self):
+        self.assertIsNone(self.replay.mismatch)
+
+    def test_s9term_first_line(self):
+        self.assertIn("uart0 printed", self.status)
+        self.assertTrue(self.r.uart(0).endswith(
+            b"219968+70388+98476 entry: 0x80004000\r\n" + S9TERM_LINE))
+
+
+@unittest.skipUnless(os.environ.get("P9ROM_LONG"),
+                     "SKIPPED: P9ROM_LONG=1 replays the ROM's join on "
+                     "to rc's prompt")
+class TestRomJoinToRc(unittest.TestCase):
+    """The same replay on to init and rc's `% ` prompt: every recorded
+    frame used, and the console as the live run's."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.r, cls.replay, cls.status = rom_join_replay(
+            b"% ", RC_STEPS + 1_000_000)
+
+    def test_rc_prompt(self):
+        self.assertIn("uart0 printed", self.status)
+        self.assertEqual(self.r.steps, RC_STEPS)
+        self.assertTrue(self.r.uart(0).endswith(RC_TAIL))
+
+    def test_every_frame(self):
+        self.assertIsNone(self.replay.mismatch)
+        self.assertEqual(self.replay.pos, len(self.replay.steps))
+
+
+S9TERM_LINE = (b"1364 free pages, 5456K bytes, swap 27856K, highwater "
+               b"272K, headroom 340K")
+HANDOFF_STEPS = 281845240
+RC_STEPS = 2056900324
+RC_TAIL = (S9TERM_LINE + b"\r\nsonic ether: 52 54 00 00 0b 0b\r\nuser[none]: "
+           b"\r\narp: rcvd for 10.9.0.1\r\nnop...session...time...\r\n"
+           b"init: starting /bin/rc\r\n\r\ninit: starting /bin/rc\r\n% ")
 
 
 if __name__ == "__main__":

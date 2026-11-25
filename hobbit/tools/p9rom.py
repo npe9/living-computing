@@ -92,7 +92,22 @@ ROM_CHOICES = {
     "irq": "As p9boot: Irq's request is taken at interrupt level 6 "
            "(raml.s/roml.s: _vectors+0x28 = interrupt) when the PSW's "
            "IPL is 7.",
+    "idle-skip": "p9boot's CHOICES['idle-skip'] (the same function), in "
+                 "the running kernel's runproc: the ROM's own (text read "
+                 "from the EPROM, runhiq/runloq at their physical "
+                 "addresses, KDATABASE 0xC0600000 = 0x80200000) and, "
+                 "after the hand-off, the loaded kernel's (--kernel).  "
+                 "Retired laps count as instructions, so step counts are "
+                 "the unskipped run's.  --no-idle-skip turns it off.",
+    "console-input": "--type replies go to Quart channel 0 (the ROM's "
+                     "console) until the hand-off; after it, if the "
+                     "loaded kernel has kbdinit (s9term), to channel 2 as "
+                     "PC scan codes, as p9boot CHOICES['console-keyboard'] "
+                     "types them.",
 }
+
+# roml.s: KDATABASE (virtual 0xC0600000) is physical RAMBASE + 2 MB
+KDATA_VA = 0xC0400000            # virtual address of physical RAMBASE
 
 
 class MirrorBoard(p9boot.Board):
@@ -195,6 +210,15 @@ class RomRun:
         self.next_syms = None       # the loaded kernel's symbols
         self.kimg = None            # the image `b` should have loaded
         self.syms = p9boot.Symbols(p9exec.kernel_symbols(self.k))
+        # ROM_CHOICES['idle-skip']
+        self.idle_skip = True
+        self.idle_last = None
+        self.skipped_steps = self.skipped_cycles = self.skips = 0
+        self.idle_head, self.idle_words = p9boot.find_idle_loop(
+            self, parcel=self._rom_parcel,
+            data_pa=lambda va: va - KDATA_VA + RAMBASE)
+        # ROM_CHOICES['console-input']
+        self.console_channel, self.console_encode = 0, bytes
         self.sysm = hobbit_sem.System(bus=self.board)
         self.sysm.cret_clamp = True     # as p9boot CHOICES['cret-msp']
         # PRM p. 1-35: the reset state; PC 0 (the reset vector, physical)
@@ -211,6 +235,28 @@ class RomRun:
         self.typed = []             # (step, wait, reply)
         self.until = None
         self.watch = {}             # pc -> callable
+
+    def _rom_parcel(self, va):
+        w = self.rom.words[(va - VROMBASE) >> 2]
+        return (w & 0xFFFF) if va & 2 else (w >> 16)
+
+    def next_event(self):
+        """As p9boot Boot.next_event (no timed input script here)."""
+        times = [t for t in (self.quart.next_event(),
+                             self.sonic.next_event()) if t is not None]
+        return min(times) if times else None
+
+    try_idle_skip = p9boot.Boot.try_idle_skip
+
+    def enter_kernel(self, syms):
+        """Go on in the kernel `b` loaded: its symbols, its idle loop, its
+        keyboard (ROM_CHOICES['idle-skip'], ['console-input'])."""
+        self.syms = syms
+        self.idle_last = None
+        self.idle_head, self.idle_words = p9boot.find_idle_loop(self)
+        if "kbdinit" in syms.by_name:
+            self.console_channel = 2
+            self.console_encode = p9boot.p9scancode.Encoder().encode
 
     def uart(self, ch=0):
         return bytes(self.quart.ports[ch]["out"])
@@ -233,7 +279,7 @@ class RomRun:
         it (rom.h; the offsets are the struct's, docs/boot_rom.md)."""
         st, sy, b = self.state, self.sysm, self.board
         pp = RAMBASE
-        argc = b.read(pp + 0x100)
+        argc = b.read(pp + p9boot.PPAGE0_ARGC)
 
         def cstr(pa):
             out = bytearray()
@@ -245,7 +291,7 @@ class RomRun:
             return bytes(out)
         argv = []
         for i in range(argc):
-            ptr = b.read(pp + 0x104 + 4 * i)
+            ptr = b.read(pp + p9boot.PPAGE0_ARGC + 4 + 4 * i)
             argv.append(cstr(ptr) if RAMBASE <= ptr < IOBASE else ptr)
         self.handoff = dict(step=self.steps, pc=st.pc, psw=st.psw,
                             vb=st.vb, config=sy.config,
@@ -273,7 +319,7 @@ class RomRun:
             self.script.pop(0)
             self.script_from = at + len(wait)
             self.typed.append((self.steps, wait, reply))
-            self.quart.feed(0, reply)
+            self.quart.feed(self.console_channel, self.console_encode(reply))
         if self.until is not None and self.until in out[self.script_from:]:
             raise Stop("uart0 printed %r" % self.until)
 
@@ -298,7 +344,7 @@ class RomRun:
                             if self.next_syms is None:
                                 raise Stop("the ROM jumped to 0x%08x in "
                                            "RAM (gotopc)" % pc)
-                            self.syms = self.next_syms
+                            self.enter_kernel(self.next_syms)
                         v = pc + VROMBASE if pc < ROM_BYTES else pc
                         i = bisect.bisect_right(self.syms.addrs, v) - 1
                         if i < 0:
@@ -324,6 +370,8 @@ class RomRun:
                     hobbit_sem.take_interrupt(st, 6)
                     self.interrupts += 1
                     del sysm.events[:]
+                elif st.pc == self.idle_head and self.idle_skip:
+                    self.try_idle_skip(max_steps)
                 if sysm.events:
                     for kind, ident, epc in sysm.events:
                         self.nevents += 1
@@ -409,12 +457,16 @@ def main(argv):
     ap.add_argument("--kernel", help="after gotopc, go on with this "
                     "image's symbols (the file `b` loaded) instead of "
                     "stopping; the hand-off is checked against it")
+    ap.add_argument("--no-idle-skip", action="store_true",
+                    help="execute every lap of runproc's idle loop "
+                    "(ROM_CHOICES['idle-skip'])")
     ap.add_argument("--milestones", action="store_true",
                     help="print every function reached first, in order")
     a = ap.parse_args(argv)
     nv = pathlib.Path(a.nvram).read_bytes() if a.nvram else None
     r = RomRun(a.image, a.memsize, not a.no_mirror, nv,
                strict_rom=a.strict_rom)
+    r.idle_skip = not a.no_idle_skip
     if a.until:
         r.until = unescape(a.until)
     for t in a.type:
@@ -467,8 +519,10 @@ def main(argv):
     if a.join:
         with open(os.path.join(a.join, "uart0"), "wb") as f:
             f.write(r.uart(0))
-    print("p9rom: %d instructions, %d interrupts, model time %.3f s" % (
-        r.steps, r.interrupts, r.cycles / float(p9boot.CPU_HZ)))
+    print("p9rom: %d instructions (%d of them idle laps retired by %d "
+          "skips), %d interrupts, model time %.3f s" % (
+              r.steps, r.skipped_steps, r.skips, r.interrupts,
+              r.cycles / float(p9boot.CPU_HZ)))
     if a.milestones:
         for s, n in r.reached:
             print("p9rom:   %10d  %s" % (s, n))
