@@ -1096,7 +1096,9 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   serving a source file to compile is OURS. 2026-11-25: the home
   holds the primer's `sample1.kl1`, its text the primer's, its 221
   and 222 answers OURS in PIMOS's format; the compile reads it and
-  stops at the long-vector merge, `compile_sample1`.)
+  stopped at the long-vector merge, `compile_sample1`; with that
+  merge in on both models it stops at `wait_value` on vectors of
+  vectors.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.

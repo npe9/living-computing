@@ -362,16 +362,18 @@ instructions), every line identical:
 | versions | `versions` | 114,472 | 610,006 | 38 |
 | compile_exit | `compile`, `!exit` | 255,083 | 1,029,437 | 45 |
 | compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
-| compile_sample1 | `compile`, `sample1`, `!exit` | 608,552 | 2,236,196 | 58 |
+| compile_sample1 | `compile`, `sample1`, `!exit` | 612,857 | 2,248,660 | 58 |
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
 222 in `fep.py`); it now types `sample2`, which the home lacks, the
 same run but for the name (its counts and its two `DROPPED` lines
 unchanged, re-run). compile_sample1 reads the file and ends refused on
-both models (`refused: a merger input bound to a vector of seven or
-more`; the core's last line `E unimp`, which `compare` takes only when
-the reference's stop is a refusal).
+both models (first at `refused: a merger input bound to a vector of
+seven or more`; since the long-vector merge, rule `mergeVecL` and
+`lockstep_merge.py` `seven senders`, at `refused: wait_value: an
+element (21, ...)`; the core's last line `E unimp`, which `compare`
+takes only when the reference's stop is a refusal).
 
 Which RESTOREs the commands check (2026-11-24, the kept work directory
 of the run above, `KEEP=1`): the RESTORE word replaced by a silent SLOT

@@ -91,7 +91,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XProc, XBDiv, XBSInfo, XBSInfo2, XGMul, XPv1, XPv2, XPv3, XPv4,
                XTq1, XTq2, XTq3, XTq4, XSTim, XTp0, XTp1, XTp2, XTpE,
                XSoW,
-               XNode, XSan, XMv1, XMv2, XMv3, XMv4,
+               XNode, XSan, XMvL, XMv1, XMv2, XMv3, XMv4,
                XShF, XCPr1, XCPr2,
                XReuse3,
                XScI1, XScI2, XScC, XScW, XScO1, XScO2, XScO3, XScO4 } XState deriving (Bits, Eq);
@@ -129,6 +129,11 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
   Reg#(Bit#(8))      reuseTag <- mkRegU;
   Reg#(Cell)         vnew    <- mkRegU;
   Reg#(Bit#(8))      packK   <- mkRegU;     // the packed argument in hand
+  // a merger input bound to a vector: its first element, its size, the
+  // element in hand
+  Reg#(Addr)         mvBase  <- mkRegU;
+  Reg#(Bit#(32))     mvN     <- mkRegU;
+  Reg#(Bit#(32))     mvK     <- mkRegU;
   Reg#(Bit#(32))     exLo    <- mkRegU;     // the *_extended built-ins' second output
   Reg#(Bit#(8))      apN     <- mkRegU;     // apply: the number of arguments
   Reg#(Addr)         apAt    <- mkRegU;     // ... and the first one's cell
@@ -2656,12 +2661,28 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       nbox.close(regs.r(y));
       st <= XMi4;
     end
-    else if (isVec(a) && !isLongVec(a)) begin
+    else if (isLongVec(a)) begin
+      // a vector of 7 or more: its size and first element from its
+      // descriptor (2026-11-25; pimm.py i_merge_in)
+      vbox.info(a);
+      st <= XMvL;
+    end
+    else if (isVec(a)) begin
       // a vector: as many inputs as it has elements (TR-466 3.3)
+      mvBase <= cellAddr(a);
+      mvN <= sizeOf(a);
       nbox.spread(regs.r(y), sizeOf(a));
       st <= XMv1;
     end
-    else stop(EndUnimp);                  // a vector of 7 or more, or not a stream
+    else stop(EndUnimp);                  // not a stream
+  endrule
+
+  rule mergeVecL (st == XMvL);
+    let r <- vbox.result;
+    mvBase <= cellAddr(r.b);
+    mvN <= r.a.val;
+    nbox.spread(regs.r(y), r.a.val);
+    st <= XMv1;
   endrule
 
   rule mergeIn1 (st == XMi1);
@@ -2698,17 +2719,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       dbox.unify(r.a, mkCell(tag_ATOMo, 0));
       st <= XUnify;
     end
-    else if (vectorSize(opA) == 0) next;
+    else if (mvN == 0) next;
     else begin
-      packK <= 0;
-      smem.read(cellAddr(opA));
+      mvK <= 0;
+      smem.read(mvBase);
       st <= XMv2;
     end
   endrule
 
   rule mergeVec2 (st == XMv2);
     let c <- smem.data;
-    Addr at = cellAddr(opA) + zeroExtend(packK);
+    Addr at = mvBase + truncate(mvK);
     regs.wa(1, isUnboundCell(c) ? mkCell(tag_REFx, absAddr(at)) : marked(c));
     st <= XMv3;
   endrule
@@ -2721,10 +2742,10 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
 
   rule mergeVec4 (st == XMv4);
     let g <- gbox.recordResult;
-    if (zeroExtend(packK) + 1 == sizeOf(opA)) next;
+    if (mvK + 1 == mvN) next;
     else begin
-      packK <= packK + 1;
-      smem.read(cellAddr(opA) + zeroExtend(packK) + 1);
+      mvK <= mvK + 1;
+      smem.read(mvBase + truncate(mvK + 1));
       st <= XMv2;
     end
   endrule

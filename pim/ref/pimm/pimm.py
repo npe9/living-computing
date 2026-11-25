@@ -2438,17 +2438,27 @@ class Machine:
             # record, as enqueue_goal makes one, so that the Bluespec's
             # goal box makes it the same way (2026-11-23: the records
             # were written straight from cells before, and the core
-            # refused the case).  A vector of seven or more is refused
-            # (as apply refuses one; none is met).
-            if w[0] & ~1 == VECT0 + 14:
-                raise Unimplemented('a merger input bound to a vector of seven or more')
+            # refused the case).  A vector of seven or more
+            # (2026-11-25, met by the compiler on the primer's sample1,
+            # two vectors of 9): the same, its size and elements from
+            # its descriptor (vsize, vbase).  No source bounds the
+            # arity: TR-466 3.3 says "as many input streams as the
+            # arity of the vector"; KLIC's merger takes a vector of any
+            # size the same way (runtime/gmerge.c:81-104: the count
+            # goes up by size - 1, then each element 0..size-1 is
+            # unified with a new input); VPIM's merger takes a long
+            # vector too (functions/f_reduce_merger_unify.psl.c
+            # f_Unify_MGHOK_VECT_Sub, 1487ff, a WARNING for one at
+            # :1499-1500; :210-213 the dispatch).  The order of the goals is
+            # this model's, as for a short vector.
             n = self.vsize(w)
+            base = self.vbase(w)
             count = self.mem[rec + 1][1] - 1 + n
             self.mem[rec + 1] = (INT, count)
             if count == 0:
                 self.unify(self.mem[rec], NIL)
             for i in range(n):
-                self.argv[1] = self.taken(w[1] + i)
+                self.argv[1] = self.taken(base + i)
                 self.argv[2] = self.reg[y]
                 self.record(READY, pc, self.argv[1:3])
         else:

@@ -814,7 +814,7 @@ the device are given it again whenever the machine runs dry.
   | `versions` | 114,472 | 610,006 | ` Module not found !! ( versions:go ) ` / `  [ Job#1, Node#0, PE#0 ]`, then ` Job 1 was aborted . ` | the module is named `ipl_versions` (`versions.kl1`:7) and not loaded under `versions`: the held source's behaviour, not a model fault (INFERENCE: which module list a 3.6 installation linked is not held) |
   | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
   | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample2`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample2`, `.aya`, `.mac`, `.kl1`, each 5), which holds only `sample1.kl1` (2026-11-25; this row typed `sample1` before, the same counts) |
-  | `compile`, `sample1`, `!exit` | 608,552 | 2,236,196 | as above, then (both models) `refused: a merger input bound to a vector of seven or more` | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
+  | `compile`, `sample1`, `!exit` | 612,857 | 2,248,660 | as above, then (both models) `refused: wait_value: an element (21, ...)` (until 2026-11-25 the long-vector merge, at 608,552 and 2,236,196) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
 
   `pwd` against the primer, each difference root-caused: the prompt
   `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
@@ -876,11 +876,20 @@ the device are given it again whenever the machine runs dry.
     `compile_sample1`) then reads it as the primer's compile does:
     201 of `>sys>user>pmpsi>sample1`, `.aya`, `.mac` (5), `.kl1` (1),
     222, 201 of `.pkl1` and `.sav` (5), 221, 222, 221, getb 6001 (the
-    549 characters), getb (2), and stops on both models at 608,552
+    549 characters), getb (2), and stopped on both models at 608,552
     instructions, 2,236,196 trace lines, at `refused: a merger input
     bound to a vector of seven or more` (`pimm.py` `i_merge_in`,
     `PimmStages.bsv` `mergeIn0`), the window `** KL1 Compiler **`,
     `COMPILE> ` only (the compiler's messages come after the parse).
+    The merge of a long vector is in on both models (2026-11-25,
+    `lockstep_merge.py` `seven senders`): two vectors of 9 merged, it
+    stops at 612,857 instructions, 2,248,660 lines, at `refused:
+    wait_value: an element (21, ...)`, in `pimos::keyed_bag`
+    `if_empty/4` (`utility/pool/k_bag.kl1`:155) comparing two vectors
+    whose elements are vectors: the compiler's head-position keys
+    (`library/compiler/index.kl1`:787 `new_register(car(Pos), ...)`,
+    `{car, {arg, 1}}` against `{variable(N), 7}`; atoms named from
+    `loaded`'s name list).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
