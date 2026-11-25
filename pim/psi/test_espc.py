@@ -1259,7 +1259,13 @@ end.''', 'simpos')
         # melted vector is {} (a census artifact, not progress);
         # scsi_communicator melt_method/3 stops at get_content/2, not in
         # the class
-        self.assertEqual((len(rows), out), (1420, {'success': 768, 'failure': 221, 'refused': 414, 'exception': 16,
+        # step 3i: pmi c9's first target is [] only (cts_post.esp:18-21):
+        # 768 / 221 / 414 -> 767 / 221 / 415.  scsi shutdown/1 no longer
+        # succeeds: scsi_low_if local check_status/3 @115 sent the atom
+        # handler_dead to its nil target (@121 `d2`, past the get_nil @120);
+        # it now takes the other target @125 and raises (scsi_error
+        # raise/5, not held).  The success was the c9 fault, not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 767, 'failure': 221, 'refused': 415, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1333,8 +1339,9 @@ end.''', 'simpos')
         # / 399 (two successes on an unbound argument, not progress); blt 00
         # and e0: the same two transfer/6 rows fail, 784 / 222 / 397; pmi
         # c8: the same four expand/7 succeed, 788 / 222 / 393; blt 1a: the
-        # same six melt rows, 793 / 222 / 388
-        self.assertEqual((len(rows), out), (1420, {'success': 793, 'failure': 222, 'refused': 388,
+        # same six melt rows, 793 / 222 / 388; c9 [] only: scsi shutdown/1
+        # raises, 792 / 222 / 389
+        self.assertEqual((len(rows), out), (1420, {'success': 792, 'failure': 222, 'refused': 389,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 94)

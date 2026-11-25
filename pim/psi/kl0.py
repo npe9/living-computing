@@ -1215,6 +1215,11 @@ class Machine:
         if op == 0xc9:
             ew = code.cells[entry + 1][3]
             theirs = (entry + 2 + s16(e[3]), entry + 2 + s16(ew >> 16), entry + 2 + s16(ew), entry + 2)
+            # 168 held 6c calls name the cell before c9's nil target, a
+            # `26 00 00 00` get_nil A0 that c9 skips: for [] the same path
+            g = code.cells.get(const)
+            if const + 1 == theirs[0] and g is not None and g[1] == 0x20 and g[3] == 0x26000000:
+                theirs = (const,) + theirs[1:]
         elif op == 0xc8:
             els = entry + 3 + s16(e[3])
             theirs = (els, entry + 2, entry + 2 + s16(self._word(code, entry + 1)), els)
@@ -1230,7 +1235,7 @@ class Machine:
         elif isinstance(t, Cons):
             self.pc = (code, lst)
         elif op == 0xc9:
-            self.pc = (code, const if is_atomic(t) else other)
+            self.pc = (code, const if t is NIL else other)
         elif op == 0xc8:
             self.pc = (code, other if isinstance(t, Vec) else const)
         elif isinstance(t, Atom):
@@ -1252,24 +1257,34 @@ class Machine:
         takes the else target: INFERENCE, from the 57 held 6c calls into a
         c8, whose list and const targets are all c8's else target.  Only
         R = 0 is witnessed (all 328 held uses)."""
-        if a != 0:
-            raise Refusal('operand', '%s @%x: pmi c8 %02x: only R = 0 is witnessed' % (code.id, off, a))
+        w = self._word(code, off + 1)
+        if a != 0 or w >> 16:
+            raise Refusal('operand', '%s @%x: pmi c8 %02x, word %08x: only R = 0 and a zero high half are '
+                          'witnessed' % (code.id, off, a, w))
         t = deref(self.x[a])
         if isinstance(t, Var):
-            self.pc = (code, off + 2 + s16(self._word(code, off + 1)))
+            self.pc = (code, off + 2 + s16(w))
         elif isinstance(t, Vec):
             self.pc = (code, off + 2)
         else:
             self.pc = (code, off + 3 + s16(v))
 
     def op_switch_on_list(self, code, off, a, b, c, v):
+        # step 3i: the first target is [] only (TM-444's Lnil).  Before, any
+        # atomic value went there.  Witness: fts##post_cts local
+        # post_cts_list/1 @5b (utter source/FTS/cts_post.esp:18-21
+        # `post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`): its
+        # nil target is @66 `d2`, past the clause's own get_nil @65, so a
+        # non-nil atom sent there would succeed where the source fails.
+        # MEASURED: 520 of the 2,172 held c9s have a `d2` (cut_proceed) as
+        # their first target, which would accept any atom unchecked
         t = deref(self.x[a])
         w = self.operand(code, off)[3]
         if isinstance(t, Var):
             self.pc = (code, off + 2 + s16(w))
         elif isinstance(t, Cons):
             self.pc = (code, off + 2)
-        elif is_atomic(t):
+        elif t is NIL:
             self.pc = (code, off + 2 + s16(v))
         else:
             self.pc = (code, off + 2 + s16(w >> 16))

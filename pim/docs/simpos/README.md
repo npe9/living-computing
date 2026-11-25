@@ -547,10 +547,11 @@ and stand-in `simpos##` classes. In order:
        4's `{Id, 5}` re-read from the cells (`source_check` §9).
      - pmi 3b, 6c, c8 and blt 00, e0, 1a are KNOWN-PLAINTEXT on held
        kappa2 and paragraph source. Six packages 317 / 12 / 200 / 1,
-       plain FEP 768 / 221 / 414, with recipes 793 / 222 / 388. Every new
+       plain FEP 767 / 221 / 415, with recipes 792 / 222 / 389. Every new
        success is a census artifact (an unbound argument meeting the
        first clause, or a template slot constant), not progress; the new
-       real stop is `as_resource assigned/1`.
+       real stop is `as_resource assigned/1`. A fault in pmi c9 was found
+       and fixed: its first target is `[]` only (cts_post.esp:18-21).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

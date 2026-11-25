@@ -245,6 +245,15 @@ KP_BFMOM.ESP:181-185; injected the same way; observed):
     fails; test_espc passes;
   - V and N swapped: test_new_stack_vector errors here; test_espc
     test_fep_census and test_step3f_census_recipes fail.
+Step 3i's pmi c9 fix ([] only to the first target; test_switch_on_list_nil:
+cts_post.esp:18-21) and the new guards (injected the same way; observed):
+  - c9 sending any atomic value to its first target: test_switch_on_list_nil
+    fails here; test_espc test_fep_census and test_step3f_census_recipes
+    fail;
+  - the 6c targets-differ guard removed: only test_other_entries_refused
+    errors; test_espc passes;
+  - c8's zero-high-half guard removed: only test_switch_on_vector_else
+    fails; test_espc passes.
 """
 import os
 import sys
@@ -1210,7 +1219,12 @@ class Step3iRows(unittest.TestCase):
             self.assertEqual(at(cid, off, A('foo'), ex), fail)
             self.assertEqual(at(cid, off, K.Cons(A('a'), K.NIL), ex), fail)
         with self.assertRaises(K.Refusal):
-            sw(types.SimpleNamespace(id='test', cells={}), 0, 1, 0, 0, 0)
+            sw(types.SimpleNamespace(id='test', cells={1: (0, 0x00, 0, 3)}), 0, 1, 0, 5, 0xc8010005)
+        # a non-zero high half in W (no held use) refuses
+        m.reset()
+        m.x[0] = K.Var()
+        with self.assertRaises(K.Refusal):
+            sw(types.SimpleNamespace(id='test', cells={1: (0, 0x00, 0, 0x00010003)}), 0, 0, 0, 5, 0xc8000005)
 
     def test_new_stack_vector(self):
         # blt 1a (step 3i): kappa2 user_if/pb/mcd.esp:112-116 make_term/5
@@ -1241,6 +1255,24 @@ class Step3iRows(unittest.TestCase):
         self.assertEqual(m.x[0], 21)
         with self.assertRaises(K.Refusal):
             m.op_new_stack_vector(fake, 0, 2, 0, 1, 0)
+
+    def test_switch_on_list_nil(self):
+        # pmi c9's first target is [] only (step 3i): fts##post_cts local
+        # post_cts_list/1 @5b (utter source/FTS/cts_post.esp:18-21
+        # `post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`) sends
+        # [] to @66 `d2`, past the clause's get_nil @65.  A non-nil atom or
+        # an integer must fail, as the source does
+        lib = K.LB.Librarian()
+        lib.load_held(pkgs=['fts'])
+        m = K.Machine(lib)
+        cid = 'fts##post_cts'
+        (p,) = [p for p in lib.templates[cid].locals if (p.name, p.offset) == ('post_cts_list', 0x5b)]
+
+        def n(x):
+            m.reset()
+            return sum(1 for _ in m.solve((m.code(cid), p.offset), [x]))
+        self.assertEqual([n(x) for x in (K.NIL, A('foo'), 5, K.Str('s'))], [1, 0, 0, 0])
+        self.assertEqual(n(K.Var()), 1)    # the try chain, clause 1 ([]) cuts
 
     def test_other_entries_refused(self):
         # a 6c whose entry is not a c9 or a c6 00 00 00, and a 6c whose

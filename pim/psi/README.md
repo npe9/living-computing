@@ -2991,7 +2991,8 @@ the cells; `test_kl0.py` `Step3iRows` runs each beside its source):
   enter a c9, c6 00 00 00 or c8 with R 0 and the same targets as the
   entry, and are run. 423 refuse: 183 whose const target is one cell
   before their c9's (what that cell does for a constant is not
-  settled), and 240 with another entry (c7, ...).
+  settled), and 240 with another entry (c7, ...). (Superseded below by
+  the c9 fix: 168 of the 183 are now run, 15 still refuse.)
 - **pmi c8 `switch_on_vector_else`**: unbound -> cell + 2 + W, a vector
   -> cell + 2, anything else -> cell + 3 + s16. Witness:
   HLCSESITTK.ESP:408-424 `optimum_set_left_set/7` @234 (clause 1
@@ -3057,7 +3058,41 @@ not in the class. Six packages unchanged.
   is paired with them yet.
 
 Injected into kl0.py from a backup, restored by cp, cmp-checked; the
-observed failure sets are in `test_kl0.py`'s header (eight injections).
+observed failure sets are in `test_kl0.py`'s header (seven injections;
+commit a5b10266's message says eight, which was a miscount).
+
+**A fault in pmi c9, fixed: its first target is `[]` only.** The 183
+refused 6c calls pointed at it. In 168 of them the call's [] target is
+a `26 00 00 00` get_nil A0, and the c9's target is the cell after it:
+the c9 skips the check. MEASURED: 520 of the 2,172 held c9s have a
+`d2` (cut_proceed) as their first target. Until step 3i
+`op_switch_on_list` sent every atomic value there, so a non-nil atom
+succeeded where the source fails. Witness: fts##post_cts local
+`post_cts_list/1` @5b (utter `source/FTS/cts_post.esp`:18-21
+`post_cts_list([]):- !; post_cts_list([Tree|TRest]):- ...`), whose
+first target is @66 `d2`, past the clause's get_nil @65. TM-444's
+labels for the instruction, `jump_on_non_list Ai,Lnil,Lels,Lvar`, say
+the same. Now `[]` takes the first target and any other constant the
+"anything else" target. The 168 6c calls whose [] target is that
+get_nil run (for `[]` the same path); 15 whose target is another switch
+still refuse.
+
+Effect (MEASURED 2026-11-25): six packages unchanged. Plain FEP 768 /
+221 / 414 becomes **767 / 221 / 415**, with recipes 793 / 222 / 388
+becomes **792 / 222 / 389**. `scsi shutdown/1` no longer succeeds:
+`scsi_low_if` local `check_status/3` @115 had sent the atom
+`handler_dead` to its [] target (@121 `d2`). It now takes @125 and
+raises (`scsi_error raise/5`, not held). That success was the fault.
+
+Test `test_switch_on_list_nil`: `post_cts_list/1` succeeds on `[]` and
+an unbound argument, and fails on `foo`, 5 and a string. Injections,
+observed: c9 sending any atomic value to its first target again:
+`test_switch_on_list_nil`, `test_fep_census` and
+`test_step3f_census_recipes` fail. The 6c targets-differ guard removed:
+only `test_other_entries_refused` errors; no census row changes. c8's
+high-half guard removed: only `test_switch_on_vector_else` fails. The
+e0 second-byte and 1a third-byte guards were not injected; no held use
+reaches either.
 
 ## Open
 
@@ -3164,9 +3199,14 @@ observed failure sets are in `test_kl0.py`'s header (eight injections).
         effect: an earlier row leaves the class slot `log_table` holding
         a table. (Step 3i: settled; the census drops class slots per
         row.)
-      - Left by step 3i: pmi 6c into a c7 (and other entries, 240 held
-        uses) and with a const target one cell before its c9's (183);
-        `as_resource assigned/1` (3 pseudo_scsi rows), not printed.
+      - Left by step 3i: pmi 6c into a c7 or another entry (240 held
+        uses; the five six-package rows, mpsicsp
+        `csp_csbreak_address_table` csp_mm_reg/3 and
+        csp_logical_register/3 and `kl1_tag` integer_to_mnemonic/3,
+        mnemonic_to_integer/3 and is_cdesc/2, all enter a c7
+        switch_on_constant: @23, @ba, @2ac) and with a [] target that
+        is another switch (15); `as_resource assigned/1` (3 pseudo_scsi
+        rows), not printed.
     - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
       set_default_node/2` @29-34, which stores the answer in the class
       slot `default_spawn_node`). No held or printed source gives the
