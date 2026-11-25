@@ -9,7 +9,8 @@
    witnessed row, no handler without a row, every row with a witness.
    The four string rows (blt 0b, 1c, 23, 2b) run on their witness
    operands, new_string with S != T included (view_select_menu change/3).
-   Step 3e's rows (Step3eRows) run on held kappa code beside its held
+   Step 3e's census semantics (Step3eCensus): slot constants and the
+   uncaught raise.  Step 3e's rows (Step3eRows) run on held kappa code beside its held
    source where one runs (get_integer, $or$9, make_nest_vector), else on
    the handler.
 2. pimfep##fep_command_code_table:convert/3, both ways, against the
@@ -136,6 +137,16 @@ Step 3e's rows 9a/9b, b1/b5/b6/b7, 50/51/54/55 and R != A for 40/49
     test_result_register and test_step3c_cells.
   test_espc passes under every injection but the first: its census pins
   see only the opcodes' presence, not their arithmetic.
+Step 3e's census semantics (2026-11-24, same method; observed):
+  - slot constants not marked: test_census and test_slot_constant here;
+    test_espc test_get_window;
+  - marked but the dispatch ignores the mark: test_census and
+    test_slot_constant here; test_espc passes (its FEP pin counts
+    outcomes, not causes);
+  - raise/2 not special (refused as SIMPOS again): test_uncaught_exception
+    errors here; test_espc test_fep_census;
+  - raise/2 fails instead: test_uncaught_exception here; test_espc
+    test_fep_census.
 """
 import os
 import sys
@@ -660,6 +671,44 @@ class Step3eRows(unittest.TestCase):
         self.assertEqual((m.x[1], m.x[0]), (14, 5))
 
 
+class Step3eCensus(unittest.TestCase):
+    """Step 3e's census semantics (2026-11-24): slot constants named as
+    receivers, and the uncaught :raise(#undefined_method, ...)."""
+
+    def test_slot_constant(self):
+        # an integer slot's template constant is marked; arithmetic on it
+        # gives plain ints; a send to it is refused with its own cause, a
+        # send to any other integer as before
+        m = machine()
+        cid = 'paragraph##array_index_buffer'
+        m.reset()
+        b = K.make_instance(m, cid)
+        co = m.lib.build(cid)
+        size = b.slots[m.lib.slot_number(co, 'instance', 'size')]
+        self.assertIsInstance(size, K.SlotConstant)
+        self.assertEqual(size, 0)
+        self.assertIs(type(size + 1), int)
+        for recv, cause in ((size, 'receiver a slot constant'), (0, 'receiver not an object')):
+            with self.assertRaises(K.Refusal) as e:
+                m.dispatch(recv, 'put', 2)
+            self.assertEqual(e.exception.cause, cause)
+
+    def test_uncaught_exception(self):
+        # scsi_low_if's class reset/1 raises unless overridden: cmt does not
+        # override it, so the send ends in an uncaught exception whose
+        # information is {Class, undefined_method, Class, {Method, Args, _}}
+        m = machine()
+        m.reset()
+        with self.assertRaises(K.Raised) as e:
+            K.call_class_method(m, 'pimscsi##cmt', 'reset', [])
+        info = e.exception.info
+        self.assertEqual(repr(info.args[1]), 'undefined_method')
+        self.assertEqual(repr(info.args[3].args[0]), 'reset')
+        rows = K.census_of(m, ['pimscsi##cmt'])
+        out = dict((r[2], r[3]) for r in rows if r[1] == 'class')
+        self.assertEqual((out['reset/1'], out['initialize/1']), ('exception', 'exception'))
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -696,7 +745,10 @@ class Census(unittest.TestCase):
             # draw/2 go further: four stop at multiply_immediate (R != A,
             # still unwitnessed), two at a draw_line/8 sent to an unbound
             # window (scroll_bar_icon, up_down_icon)
-            'receiver not an object': 8, 'unbound argument': 21, 'operand': 14,
+            # step 3e: the 8 sends to an integer still holding its slot's
+            # template constant are named so (the census makes receivers
+            # with new/2, not through their creators)
+            'receiver a slot constant': 8, 'unbound argument': 21, 'operand': 14,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,

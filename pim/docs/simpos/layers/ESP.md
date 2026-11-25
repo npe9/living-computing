@@ -166,6 +166,10 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   Built-ins `method_call` and `overridden_method_call` exist (TM-388 App D).
 - **Missing method or slot.** The call goes to `:undefined_method(Obj,Name,ArgVec,Addr)` or
   `:undefined_slot(Obj,Type,Name,Value,Addr)` (TM-388 §3.6).
+  Modelled in `psi/kl0.py` (step 3e, 2026-11-24) only as far as held code goes: pimscsi's
+  `scsi_low_if` sends `:raise(#undefined_method, {Class, undefined_method, Class, {Method,
+  ArgVec, Addr}})` itself, and kl0 ends that send with an uncaught exception (OURS: no handler
+  and no situation stack are modelled). The census counts it as the outcome `exception`.
 - **Indexing** (TM-388 §5.5 pp.134–135):
   - Locals index on argument 1, methods on argument 2 (argument 1 is the object).
   - A stack vector indexes on its first element.

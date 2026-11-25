@@ -603,8 +603,13 @@ class Machine:
             cid, section = recv.cid, 'instance'
         elif isinstance(recv, Var):
             raise Refusal('unbound receiver', 'send %s/%d to an unbound receiver' % (name, arity))
+        elif isinstance(recv, SlotConstant):
+            raise Refusal('receiver a slot constant', 'send %s/%d to %r' % (name, arity, recv))
         else:
             raise Refusal('receiver not an object', 'send %s/%d to %r' % (name, arity, recv))
+        if cid == 'simpos##undefined_method' and name == 'raise' and arity == 2:
+            # the receiver is last (register 1), the information first
+            raise Raised(resolve(self.x[0]))
         if cid not in self.lib.templates:
             raise Refusal('simpos', 'send %s:%s/%d (%s class not loaded)' % (cid, name, arity, section))
         co = self.lib.build(cid)
@@ -797,8 +802,9 @@ class Machine:
                 raise Refusal('simpos', 'slot %s of %s' % (name, obj.cid))
             co, sec = self.lib.build(obj.cid), 'class'
         else:
-            raise Refusal('unbound receiver' if isinstance(obj, Var) else 'receiver not an object',
-                          'slot %s of %r' % (name, obj))
+            raise Refusal('unbound receiver' if isinstance(obj, Var) else
+                          'receiver a slot constant' if isinstance(obj, SlotConstant) else
+                          'receiver not an object', 'slot %s of %r' % (name, obj))
         k = self.lib.slot_number(co, sec, name)
         if k is None:
             raise Refusal('simpos' if not co.complete else 'no slot', 'slot %s of %s' % (name, co.id))
@@ -1685,12 +1691,36 @@ def slot_value(slot):
         raise Refusal('slot init by code', 'slot %s' % slot.name)
     tag = slot.term[0] if slot.term else None
     if tag == 'int':
-        return v
+        return SlotConstant(v)
     if tag == 'atom':
         return Atom(v)
     if tag == 'str':
         return Str(v)
     raise Refusal('operand', 'slot %s: initial value %r' % (slot.name, slot.term))
+
+
+class SlotConstant(int):
+    """An integer as a slot's template constant put it there (new/2 or the
+    class object), not yet assigned by the program (step 3e, OURS).  It is
+    an int in every operation (arithmetic gives plain ints); it only names
+    the refusal when it is sent to or has a slot read: the census makes its
+    receivers with new/2, not through their creators, so a slot the creator
+    would have filled still holds the constant (MEASURED 2026-11-24: 124 of
+    the 138 FEP 'receiver not an object' refusals)."""
+
+    def __repr__(self):
+        return '%d (a slot constant)' % int(self)
+
+
+class Raised(Exception):
+    """An uncaught exception: `:raise(#undefined_method, Info)` (step 3e).
+    TM-388 p.59: a missing method "generates an exception" through
+    :undefined_method/4; no exception handler or situation stack (TR-285
+    p.10) is modelled, so nothing catches it (OURS)."""
+
+    def __init__(self, info):
+        Exception.__init__(self, info)
+        self.info = info
 
 
 class InitFailed(Exception):
@@ -1741,7 +1771,9 @@ def census(m=None, max_steps=20000):
     unbound arguments (the receiver: the class, or a fresh instance).
     -> list of (class, section, selector, outcome, cause, detail).  Outcome:
     'success' (a first solution), 'failure' (clean, no solution), 'refused',
-    'step limit'.  Success and failure count as running to completion."""
+    'exception' (an uncaught `:raise(#undefined_method, ...)`, step 3e),
+    'step limit'.  Success, failure and exception count as running to
+    completion."""
     if m is None:
         m = Machine(load_six(), max_steps=max_steps)
     six = list(m.lib.templates)
@@ -1763,6 +1795,8 @@ def census_of(m, classes):
                     rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
                 except Refusal as e:
                     rows.append((cid, section, sel, 'refused', e.cause, e.detail))
+                except Raised as e:
+                    rows.append((cid, section, sel, 'exception', 'raise', repr(e.info)))
                 except StepLimit:
                     rows.append((cid, section, sel, 'step limit', '', ''))
     return rows

@@ -1258,6 +1258,71 @@ The six-package census keeps its totals (211 / 307 / 12). The six
 later. Four stop at multiply_immediate's R != A, which is still
 unwitnessed. Two stop at a `draw_line/8` sent to an unbound window.
 
+### Step 3e: the census's slot constants and uncaught exceptions (2026-11-24)
+
+Two FEP refusal causes turned out to be the census's own doing, or not a
+gap at all.
+
+**"Receiver not an object": 153, of which 139 are a census artifact.**
+The census makes each receiver with new/2, not through the method that
+creates it in SIMPOS. So a slot that the creator would have filled still
+holds its template constant. A send to it, or a slot read from it, then
+stops. A scratch probe (2026-11-24) measured the cases:
+
+- 124 were sends to an integer slot that still held its template
+  constant;
+- 13 were sends to a slot whose constant is the atom `none`, and 1 to a
+  `nil` slot.
+
+kl0 now marks an integer that a slot's template constant put there
+(`SlotConstant`, an `int` subclass, OURS). Arithmetic on it gives plain
+integers. Only the refusal changes: a send to it, or a slot read from
+it, is refused as **`receiver a slot constant`**.
+
+- After this milestone's rows, 139 FEP refusals carry the new cause.
+  The 14 atom cases stay `receiver not an object`: an atom slot is not
+  marked, since `none` and `nil` are values a program also assigns.
+- The six-package census's 8 such refusals are all slot constants.
+- The fix the cause points at is to make the receivers through their
+  creators. That is not done yet: it is per class (for example
+  `pimos_window create_pimos_window/3` for `pimos_window_editor`).
+
+**`undefined_method:raise/2` (16) is an exception, not a gap.**
+`scsi_low_if`'s class `reset`, `initialize` and `shutdown` send
+`:raise(#undefined_method, {Class, undefined_method, Class, {Method,
+ArgVec, Addr}})` unless a subclass overrides them. TM-388 p.59 says a
+missing method "generates an exception" through `:undefined_method/4`.
+No exception handler, and no situation stack (TR-285 p.10), is modelled,
+so nothing can catch it.
+
+- kl0 now ends such a send with `Raised` (OURS), carrying the
+  information term.
+- The census records it as a new outcome, **`exception`**, an uncaught
+  exception. Like success and failure, it counts as running to
+  completion.
+
+Tests (`test_kl0.py` `Step3eCensus`):
+
+- `test_slot_constant`: an `array_index_buffer`'s `size` is marked, and
+  `size + 1` is a plain int. A send to it gets the new cause; a send to a
+  plain 0 gets the old one.
+- `test_uncaught_exception`: `cmt`'s inherited class `reset/1` raises,
+  with `undefined_method` and `reset` in its information. The census
+  rows of `reset/1` and `initialize/1` are `exception`.
+
+Effect on the FEP census, compared method by method: 1,403 / 784 / 123
+/ 496 becomes 1,403 / 784 / 123 / 480, plus 16 `exception`.
+
+- The 16 move from refused to exception.
+- 148 change only their refusal's cause or detail. 139 take the new
+  cause. In 9 built-in refusals (`string on 0`) the detail now names the
+  slot constant.
+- No method moved out of success.
+
+The six-package census keeps its totals. 32 rows change only their
+refusal: 8 take the new cause, and 24 have details that now name a slot
+constant.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

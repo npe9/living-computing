@@ -780,7 +780,7 @@ class Standins(unittest.TestCase):
         e = K.make_instance(m, cid)
         self.assertEqual(self.send(e, 'get_window', K.Var()), [[0]])
         cause, detail = self.refusal(m, cid, 'instance', 'show/3')
-        self.assertEqual(cause, 'receiver not an object')
+        self.assertEqual(cause, 'receiver a slot constant')
 
     def call(self, cid, sel, args):
         m = self.m
@@ -992,12 +992,18 @@ end.''', 'simpos')
         # 54/55 and R != A for blt 40/49: 784 success (pimfep_message_log
         # log/2, cmt make_CDB/3), 123 failure (as_pimos_string_io_device
         # and pimos_remote_login_replier io/5, which refused at b1), 496
-        # refused (32 more stop later); no method left success.
+        # refused (32 more stop later); no method left success.  Step
+        # 3e's census outcome 'exception': the 16 sends of
+        # :raise(#undefined_method, ...) (scsi_low_if's class reset/
+        # initialize/shutdown, unless overridden) leave refused, 480 refused.
+        # The 139 sends to an integer still holding its slot's template
+        # constant are refused as 'receiver a slot constant', not 'receiver
+        # not an object' (14 remain: atoms none, nil).
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 784, 'failure': 123, 'refused': 496}))
+        self.assertEqual((len(rows), out), (1403, {'success': 784, 'failure': 123, 'refused': 480, 'exception': 16}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
 
