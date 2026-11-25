@@ -10458,17 +10458,28 @@ run "DIVIDE AS AN ITERATIVE BOX (answer bit-exact, cycles structural)" "$TESTS_D
 # vectors with literal answers (0-4 are Reference Manual printed p.60's
 # five examples).  Injection (no recomplement pass) fails vectors 1 and 7
 # only -- the two subtractions without an end carry.
-run "SERIAL ADDER BOX, decimal and binary (p.60 examples; Buchholz p.209; literal answers)" "$TESTS_DIR/run_decbox_test.sh"
+# SINCE 2026-11-25 (fidelity_plan.md A3 half (a)) these three sections
+# run the same vectors on mkSAU, the serial arithmetic unit that absorbed
+# mkDecBox, mkCvtBox and mkVflBox (bsv/StretchSAU.bsv): mkSauAddTb,
+# mkSauCvtTb and mkSauMulTb, with the old literal answers and clocks.
+run "SAU ADDER (was SERIAL ADDER BOX), decimal and binary (p.60 examples; Buchholz p.209; literal answers)" "$TESTS_DIR/run_decbox_test.sh"
 # G2.3, 2026-11-16: mkCvtBox, DCV's radix converter, on 8 vectors with
 # literal answers (2^96 - 1, 10^24 and 10^24 - 1, 32 nines to binary) and
 # literal clock counts (6 and 4).
-run "RADIX CONVERTER BOX (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtbox_test.sh"
+run "SAU CONVERTER (was RADIX CONVERTER BOX) (DCV; literal answers and clocks)" "$TESTS_DIR/run_cvtbox_test.sh"
 # 2026-11-18: mkVflBox, the VFL arithmetic box (stage 1: the binary
 # multiply of * and *+, twelve multiplier bits a clock, Buchholz printed
 # pp.210-211), on 9 vectors with literal products and the literal clock
 # count 4.  Injection (each group's top bit dropped) fails vectors 2 and
 # 4-8 and passes 0, 1 and 3, the control; the box file's header has it.
-run "VFL ARITHMETIC BOX (binary multiply; literal products and clocks)" "$TESTS_DIR/run_vflbox_test.sh"
+run "SAU MULTIPLIER (was VFL ARITHMETIC BOX) (binary multiply; literal products and clocks)" "$TESTS_DIR/run_vflbox_test.sh"
+# 2026-11-25: mkSauMixTb, new with the merge.  The three classes share
+# mkSAU's operand, result, carry and counter registers, so the classes are
+# issued back to back (each request in the clock the last answer is
+# taken) and each answer and clock count is checked against the
+# single-class literals.  Injection (the converter's request leaving the
+# result register as the last class left it): bsv/StretchSAU.bsv's header.
+run "SAU MIXED CLASSES (shared registers; literal answers and clocks)" "$TESTS_DIR/run_saumix_test.sh"
 # 2026-11-19: mkFpBox, the floating-point box (plan §1c step 5f, stage 1:
 # MULTIPLY and MULTIPLY DOUBLE, twelve multiplier bits a clock, Buchholz
 # printed pp.210-211 and Perf. Char. Vol. 1 Table 2's four execution

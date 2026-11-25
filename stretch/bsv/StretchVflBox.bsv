@@ -1,3 +1,12 @@
+// >>> SUPERSEDED 2026-11-25 BY mkSAU (StretchSAU.bsv; docs/fidelity_plan.md
+// A3 half (a)). <<<  Nothing imports this package or instantiates its
+// module any more, and the suite no longer builds its testbench: the
+// datapath, the vectors and the measured injections below were moved,
+// unchanged in rate and value, into the serial arithmetic unit.  The file
+// is kept, not deleted, until the owner approves its removal (AGENTS.md:
+// deleting a file not created in the session is asked first).  The text
+// below is as it stood.
+//
 // StretchVflBox.bsv -- the VFL ARITHMETIC BOX: the expensive datapath of
 // vflIntOp (StretchExecute.bsv) as a multi-cycle box.
 //
