@@ -151,6 +151,13 @@ PINNED = {
     ('prompt', ('ts', '')): (705103, 160945),
     ('prompt', ('compile', '!package work', 'sample1', '!exit', 'listener',
                 'default_package(work).', 'sample1:sieve([1,2,3],E,O).')): (7144906, 1575086),
+    # R7P (2026-11-25), the pipe: measured on the reference
+    # (docs/binary_reverse_engineering.md 1.4, "R7P, the pipe"), then on
+    # both models by bsv/run_pimm_apps.sh
+    ('prompt', ('echo("a b c") | lc',)): (1325831, 311242),
+    ('prompt', ('echo("a b c") | cat | lc',)): (2123497, 501560),
+    ('prompt', ('grep(":-") <= file("sample1.kl1") | lc => window("out")',)): (2038170, 465694),
+    ('prompt', ('grep(":-") <= file("sample1.kl1") | lc',)): (957748, 286597),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -251,6 +258,37 @@ APPS = {
          'COMPILE> ', 'Shell>> ',
          '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n',
          '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
+    # R7P (2026-11-25), the pipe (pimosman e-shell.tex:140-227, the
+    # grammar and its examples; docs/binary_reverse_engineering.md 1.4,
+    # "R7P, the pipe").  The manual's Example 1 form `a | b`: lc
+    # (shell/utils/lc.kl1) counts the one line echo writes
+    'pipe_echo': (('echo("a b c") | lc',),
+        ('$$$ Line = 1 $$$\n', 'Shell>> ')),
+    # three stages, so tos.kl1's createMed (55-68) is run: cat passes
+    # the line on
+    'pipe_three': (('echo("a b c") | cat | lc',),
+        ('$$$ Line = 1 $$$\n', 'Shell>> ')),
+    # the primer's pipe (primer25.tex:1879) in the manual's job form
+    # `a <= in | b => out` (e-shell.tex:227): grep(":-") reads the
+    # primer's sample1.kl1 (the home file, longrun_ipl.HOME_FILES) and
+    # lc counts its lines with ":-": 5, the count of the primer's text
+    # (primer25.tex:592-605: the module and public declarations and
+    # the three clause heads).  lc's output goes to the window "out"
+    # (fep.py's window device; the text is its putb)
+    'pipe_grep': (('grep(":-") <= file("sample1.kl1") | lc => window("out")',),
+        ('$$$ Line = 5 $$$\n', 'Shell>> ')),
+    # the primer's line as printed: the held PIMOS fails it.  The job
+    # has `<=` and no `=>`, so its stdio is {in, out_inter}, served by
+    # task_std_handler:in_outInter, whose make_branch(out_inter) answers
+    # `out` (kernel/stdio/stdhdl.kl1:299-305; the linked binary agrees,
+    # task_std_handler cell 1567 write_atom out); lc's vector is then
+    # {in, out, *} and task_stdio:invoke_std_handler/3 has no clause for
+    # it (kernel/stdio/std.kl1:281-296): a reduction failure, then the
+    # run dry, lc's get_std raises unanswered.  Nothing written.
+    # ref/pimm/r7p_pipe.py changes that one atom on the reference and
+    # the same line counts 5
+    'pipe_primer': (('grep(":-") <= file("sample1.kl1") | lc',),
+        ()),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()

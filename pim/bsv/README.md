@@ -392,6 +392,20 @@ is not loadable: make it again with the two commands above):
 | compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,009,886 | 4,865,583 | 178 |
 | ts | `ts`, (empty) | 160,945 | 705,103 | 34 |
 | listener_sieve | `compile`, `!package work`, `sample1`, `!exit`, `listener`, `default_package(work).`, `sample1:sieve([1,2,3],E,O).` | 1,575,086 | 7,144,906 | 249 |
+| pipe_echo (R7P) | `echo("a b c") \| lc` | 311,242 | 1,325,831 | 25 |
+| pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
+| pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
+| pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
+
+R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
+1.4, "R7P, the pipe"): the four rows above, measured on both models
+from the R7L prompt checkpoint, every line identical. No model was
+changed for them. pipe_echo and pipe_three write `$$$ Line = 1 $$$`,
+pipe_grep `$$$ Line = 5 $$$`; pipe_primer, the primer's line as
+printed, is the held PIMOS's own failure (a reduction failure in
+`task_stdio:invoke_std_handler/3`, the console's `EXCEPTION WAS
+OCCURRED in PIMOS : error code:`, nothing written, the run dry with
+1,373 goals waiting), the same on both models.
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
