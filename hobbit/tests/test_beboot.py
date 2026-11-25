@@ -69,7 +69,10 @@ byte with a copy taken before; the default tests, BEBOOT_LONG unset):
   DSP's old watch kept: test_watched_words_report_other_writes.  BIO
   pins stopping like unknown pins: test_bio_pins_are_latched (error); a
   BIO level not kept: test_bio_pins_are_latched; an unknown pin latched:
-  test_off_window_stops_name_the_dsp.
+  test_off_window_stops_name_the_dsp.  The codec attached to the first
+  DSP instead of DSP 3: test_codec_on_dsp3_only; --resume not filling a
+  missing emulator field: test_resume_fills_fields_a_newer_emulator_added
+  (error); or overwriting fields the snapshot has: the same test.
 - Typing (CHOICES['typing']): no break code: test_scan_codes,
   test_keys_are_paced_and_bound_the_idle_skip; no pacing, or keys not
   timed events: test_keys_are_paced_and_bound_the_idle_skip.
