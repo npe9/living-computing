@@ -25,8 +25,9 @@ Only opcodes with a row in psi/kl0_opcodes.tsv, and only in the operand
 patterns those rows say were witnessed (`Asm` checks every cell
 against the table).  A construct that would need anything else is refused
 with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X+Y`
-on two registers (no witnessed register add), a vector of four or more
-elements built in a body (no witnessed put_vector_n), `=\\=` (no witness of
+on two registers (no witnessed register add), a vector of one, or of five or
+more, elements built in a body (no witnessed put_vector_n; `{}`, two, three
+and four are pmi b0, b2, b3, b4), `=\\=` (no witness of
 what it compiles to), a negative integer immediate (sign unwitnessed).
 
 THE LANGUAGE (layers/ESP.md; TM-388 App. A grammar)
@@ -575,6 +576,9 @@ BUILTINS = {
     # integer cell after the instruction (rows 32 and 5c)
     ('substring', 4): ('32', ('in', 'in', 'in', 'out')),
     ('search_character', 5): ('5c', ('in', 'in', 'in', 'in', 'out')),
+    # step 3d (2026-11-24); set_subvector is two cells, as substring
+    ('vector_to_list', 3): ('6e', ('in', 'in', 'out')),
+    ('set_subvector', 4): ('34', ('in', 'in', 'in', 'in')),
 }
 # comparison macros: source operator -> (blt opcode, swap operands)
 # (witnessed by source text, not by mnemonic: kl0_opcodes.tsv rows 62,
@@ -1109,7 +1113,7 @@ class ClauseCompiler:
             if name not in self.seen:
                 raise CompileRefusal('unbound input', 'variable %s used before it is bound, as a built-in input' % name)
             return R.where[name]
-        if k == 'atom':
+        if k == 'atom' and v[1] != '{}':
             r = pick()
             a.atom('put', r, v[1])
             R.set(r, ('val', id(v)))
@@ -1123,6 +1127,15 @@ class ClauseCompiler:
             r = pick()
             a.pool(0xa9, r, pool_term(v))
             self.cc.ref(v[1])
+            R.set(r, ('val', id(v)))
+            return r
+        if (k == 'vec' and not v[1]) or v == ('atom', '{}'):
+            # `{}` (which the reader gives as the atom '{}') put in a body
+            # is pmi b0, the empty vector (typewin.esp:259, PCAACCA.ESP:93;
+            # kl0_opcodes.tsv row b0, step 3d).  OURS: only this position;
+            # `{}` in a head or inside a structure stays as it was
+            r = pick()
+            a.pmi(0xb0, r)
             R.set(r, ('val', id(v)))
             return r
         if ground(v):
@@ -1235,7 +1248,7 @@ class ClauseCompiler:
             items, tail = v[1], v[2]
         else:
             n = len(v[1])
-            if n not in (2, 3):
+            if n not in (2, 3, 4):
                 raise CompileRefusal('vector of %d elements built in a body' % n,
                                      'no witnessed put_vector_n')
         # nested structures (not the list's cdr chain) first, into temporaries
@@ -1261,7 +1274,7 @@ class ClauseCompiler:
         if k == 'list':
             self.asm.pmi(0xaa, r)
         else:
-            self.asm.pmi(0xb2 if len(els) == 2 else 0xb3, r)
+            self.asm.pmi({2: 0xb2, 3: 0xb3, 4: 0xb4}[len(els)], r)
         R.set(r, ('val', id(v)))
         a = self.asm
         for idx, e in enumerate(els):

@@ -51,7 +51,7 @@ typedef struct {
 } WinEntry deriving (Bits, Eq);
 
 typedef Vector#(NWin, WinEntry) Window;
-typedef Vector#(22, Maybe#(Word)) Probes;
+typedef Vector#(26, Maybe#(Word)) Probes;
 
 // The window's valid entries have distinct addresses (hobbit_soc_mem
 // enters an address only when no entry holds it, and checks that in

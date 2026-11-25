@@ -320,6 +320,15 @@ expression in a head becomes a fresh variable, unified after the last body goal.
 - **Atoms.** cil's KL0 list (`cil/src/cil_kl0.esp`, 176 names) has only `new_atom/1` for
   atoms. So no witnessed built-in turns a string into an atom or back.
 
+*Step 3d (2026-11-24), `../../../psi/README.md` "Step 3d's opcode rows".*
+
+- **Vectors in a body.** `{}` compiles to pmi b0 (typewin.esp:259 `:refute(PBEDIT,Item,{})`
+  → `b0 01`), not to a pool constant; a four-element vector to pmi b4 (p_tgraph.esp:299).
+  Vectors of one, or of five or more, elements stay unwitnessed and refused.
+- **Built-ins.** `vector_to_list/3` (blt 6e; the middle argument read as a tail, INFERENCE)
+  and `set_subvector/4` (blt 34, two cells, TR-044 App A.4 argument order) compile.
+  `espc.py check` gains 31 exact predicates and loses none.
+
 Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
 `bell`, `cr`, `del`, `esc` (line 7117), and pf keys are 1-18. The full special-key code values
 are **UNKNOWN**.

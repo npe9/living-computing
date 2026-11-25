@@ -12,6 +12,14 @@
  *                      device register at physical `pa`
  *   W n pa value mask  the n-th record's instruction wrote a device register
  *   I n level pc       after record n the board raised an interrupt
+ *   R n pa value mask  a device (the SONIC's descriptors and buffers)
+ *                      wrote RAM; made here once the core has retired n
+ *                      records (pk_retired), into the same RAM the core
+ *                      reads.  A stated choice: an operand the core
+ *                      fetched ahead, before the boundary, would hold the
+ *                      old word; the driver reads descriptors only after
+ *                      an interrupt or a register poll, so none is
+ *                      expected, and a stale one would show in the trace.
  *   E n                the reference stopped after record n
  *
  * The machine's physical memory is a sparse 32-bit store: RAM is
@@ -71,6 +79,8 @@ static size_t rd_lo;		/* every D record below this is used */
 static size_t wr_next;
 static Irq *irq;
 static size_t nirq, airq;
+static Dev *dma;		/* R records, in record order */
+static size_t ndma, adma, dma_next;
 static unsigned long spec_reads, wr_bad, rd_dup;
 static FILE *console;
 static int failed;
@@ -178,6 +188,12 @@ init(void)
 				irq[nirq++] = (Irq){a, b, c};
 			}
 			break;
+		case 'R':
+			if (sscanf(line + 1, "%x %x %x %x", &a, &b, &c, &d) == 4) {
+				dma = grow(dma, &adma, ndma, sizeof *dma);
+				dma[ndma++] = (Dev){a, b, c, d, 0};
+			}
+			break;
 		case 'E':
 			sscanf(line + 1, "%x", &end_n);
 			break;
@@ -186,8 +202,8 @@ init(void)
 	fclose(f);
 	console = fopen(cons ? cons : "console", "wb");
 	printf("P9KERN boot: entry %08x, %zu device reads, %zu device writes, "
-	    "%zu interrupts, reference ends at record %u\n",
-	    start_pc, nrd, nwr, nirq, end_n);
+	    "%zu interrupts, %zu device writes into RAM, reference ends at "
+	    "record %u\n", start_pc, nrd, nwr, nirq, ndma, end_n);
 }
 
 static uint32_t
@@ -304,6 +320,17 @@ void
 pk_retired(uint32_t n)
 {
 	retired = n;
+	while (dma_next < ndma && dma[dma_next].n <= n) {
+		Dev *r = &dma[dma_next++];
+		uint32_t a = r->pa & ~3u, m = 0;
+		int i;
+
+		/* mask bit 3 is bits 31:24 (p9coreboot.py, the record's rule) */
+		for (i = 0; i < 4; i++)
+			if (r->mask & (1u << i))
+				m |= 0xFFu << (8 * i);
+		wr(a, (rd(a) & ~m) | (r->v & m));
+	}
 }
 
 /* The MMU's table walk: a combinational read of physical memory. */

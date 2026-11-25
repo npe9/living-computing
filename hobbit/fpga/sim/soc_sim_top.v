@@ -6,7 +6,8 @@
 module soc_sim_top #(
     parameter CPB = 4,
     parameter SD_T_PWR = 5000,
-    parameter SD_T_REFI = 180
+    parameter SD_T_REFI = 180,
+    parameter [7:0] DEV_RTL = 8'h00     // run_soc.sh: SOC_RTL
 ) (
     input  wire        clk,
     input  wire        rst,
@@ -23,7 +24,12 @@ module soc_sim_top #(
     output wire        arm_rdy,
     input  wire        took_en,
     output wire        took_rdy,
-    output wire [31:0] took_pc
+    output wire [31:0] took_pc,
+    // EspLink's pins, bridged by soc_main.cpp (SOC_ESP_PTY) to a host relay
+    // (fpga/esp32_ethrelay/host/relay_host) or left idle.
+    output wire        esp_txd,
+    input  wire        esp_rxd,
+    input  wire        esp_rts
 );
     wire gclk = clk & cpu_ce;
 
@@ -34,12 +40,20 @@ module soc_sim_top #(
     reg  [15:0] dq_iob;
     always @(posedge clk) dq_iob <= m_oe ? m_dq : 16'hFFFF;
 
-    hobbit_soc #(.CPB(CPB), .SD_T_PWR(SD_T_PWR), .SD_T_REFI(SD_T_REFI)) soc (
+    // The RTC's I2C has no MCP7940N here: the lines float high (the
+    // board's pull-ups) and mcpMode 0 keeps the RTC on startBcd.
+    wire scl_low, sda_low;
+    hobbit_soc #(.CPB(CPB), .SD_T_PWR(SD_T_PWR), .SD_T_REFI(SD_T_REFI),
+                 .DEV_RTL(DEV_RTL), .RTC_MCP(2'd0)) soc (
         .clk(clk), .rst(rst), .gclk(gclk), .cpu_ce(cpu_ce),
+        .pclk(clk), .scan_addr(18'd0), .scan_data(),
+        .esp_txd(esp_txd), .esp_rxd(esp_rxd), .esp_rts(esp_rts),
         .rxd(rxd), .txd(txd),
         .sd_cs_n(sd_cs_n), .sd_ras_n(sd_ras_n), .sd_cas_n(sd_cas_n),
         .sd_we_n(sd_we_n), .sd_ba(sd_ba), .sd_a(sd_a), .sd_dqm(sd_dqm),
         .sd_dq_out(sd_dq_out), .sd_dq_oe(sd_dq_oe), .sd_dq_in(dq_iob),
+        .i2c_scl_low(scl_low), .i2c_sda_low(sda_low),
+        .i2c_scl_in(!scl_low), .i2c_sda_in(!sda_low), .dev_faults(),
         .leds(), .retired(retired), .running(running), .stopped(stopped),
         .core_clocks(core_clocks), .hri_valid(), .hri(),
         .arm_en(arm_en), .arm_n(arm_n), .arm_level(arm_level),

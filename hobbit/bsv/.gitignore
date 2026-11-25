@@ -24,6 +24,8 @@ sim_event
 sim_event.so
 sim_core_mmu
 sim_core_mmu.so
+sim_core_mmu_store
+sim_core_mmu_store.so
 p9.img
 P9Image.bsv
 P9Entry.bsv

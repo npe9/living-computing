@@ -68,6 +68,11 @@ rdvc) and restored from a copy, 2026-11-23:
 
 NOT run: two terms that are not atomic (refused), the manual's empty
 vector against an atom (it succeeds, as any structure does).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 7422450 -> 7432352
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
@@ -80,7 +85,7 @@ import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(parts=8, lines=7422450)
+PINNED = dict(parts=8, lines=7432352)
 FILE = 'pimm_patch_mkdir360E.sav'
 MODULE = 'file2request2device'      # the file's spelling of file_request_device
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731

@@ -659,11 +659,12 @@ interface HobbitPrefetch;
   // Record a text translation so the text TLB/NPSR refills (p. 2-1).
   method Action noteFetch(Word addr);
   // PDU_S1's three lines from an 8-byte-aligned a0 -- lineAt(a0),
-  // lineAt(a0 + 8), lineAt(a0 + 16) -- and whether any of the three
-  // translations faults (faultAt), on two translations instead of six
+  // lineAt(a0 + 8), lineAt(a0 + 16) -- and each one's faultAt, on two
+  // translations instead of six
   // (docs/fpga_area.md): a translation depends on the address only
   // through its page, and a0 + 8 shares a page with a0 or with a0 + 16.
-  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)), Bool)
+  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)),
+                 Vector#(3, Bool))
     lines3(Word a0);
 endinterface
 
@@ -853,7 +854,8 @@ module mkHobbitPrefetch#(HobbitMem mem, MemPort port, HobbitMmu mmu,
   // address unchanged (HobbitMmu translateFn).  So a0 + 8, which is on
   // a0's page unless a0 is the page's last line and then on a0 + 16's,
   // takes that page's translation with its own low twelve bits.
-  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)), Bool)
+  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)),
+                 Vector#(3, Bool))
       lines3(Word a0);
     Word a1 = a0 + 8;
     Word a2 = a0 + 16;
@@ -861,8 +863,8 @@ module mkHobbitPrefetch#(HobbitMem mem, MemPort port, HobbitMmu mmu,
     let x2 = mmu.translate(xreq(a2));
     let x1 = (a0[11:3] == 9'h1FF) ? x2 : x0;
     return tuple4(lineOf(x0, a0), lineOf(x1, a1), lineOf(x2, a2),
-                  (x0.fault != MMU_OK) || (x1.fault != MMU_OK) ||
-                  (x2.fault != MMU_OK));
+                  cons(x0.fault != MMU_OK, cons(x1.fault != MMU_OK,
+                       cons(x2.fault != MMU_OK, nil))));
   endmethod
 
 endmodule
@@ -891,13 +893,20 @@ typedef struct {
   Maybe#(Bit#(64)) l0;   // line containing pc & ~7
   Maybe#(Bit#(64)) l1;   // the next line
   Maybe#(Bit#(64)) l2;   // the third line (odd parcel start only)
-  Bool fault;            // MMU fetch translation fault (p. 2-3)
+  Vector#(3, Bool) lfault; // each line's MMU fetch fault (p. 2-3)
 } PduS1Out deriving (Bits);
 
+// The window's parcels and, for each, whether its line's translation
+// faults.  Only an instruction's own parcels can fault it (PDU_S3): the
+// window reaches up to 16 bytes past the PC, so the last instructions
+// of a page sit in a window that overlaps the next one.  Found at record
+// 287,416,554 of the s9term join: `/boot` calls 0x1ffc, whose two NOPs
+// the reference retires before the fetch fault at 0x2000; the core took
+// the fault at 0x1ffc.
 typedef struct {
   Word pc;
   Bool miss;
-  Bool fault;
+  Vector#(6, Bool) pfault;
   Vector#(6, Parcel) parcels;
 } PduS2Out deriving (Bits);
 
@@ -955,10 +964,10 @@ module mkHobbitPduS1#(HobbitPrefetch pf)(HobbitPduS1);
 
   method PduS1Out out;
     Word a0 = pcR & 32'hFFFFFFF8;
-    // lineAt(a0), lineAt(a0 + 8), lineAt(a0 + 16) and the OR of the three
-    // faultAt()s, on two translations (HobbitPrefetch lines3).
-    match { .l0, .l1, .l2, .f } = pf.lines3(a0);
-    return PduS1Out { pc: pcR, l0: l0, l1: l1, l2: l2, fault: f };
+    // lineAt(a0), lineAt(a0 + 8), lineAt(a0 + 16) and each one's
+    // faultAt(), on two translations (HobbitPrefetch lines3).
+    match { .l0, .l1, .l2, .lf } = pf.lines3(a0);
+    return PduS1Out { pc: pcR, l0: l0, l1: l1, l2: l2, lfault: lf };
   endmethod
 
   method Action enq(Word pc) if (!full);
@@ -1026,8 +1035,14 @@ module mkHobbitPduS2(HobbitPduS2);
     let d = inR;
     Word base = d.pc & 32'hFFFFFFFC;
     Bool oddBase = (base[2:0] == 3'b100);
-    Bool have12 = isValid(d.l0) && isValid(d.l1);
-    Bool miss = !have12 || (oddBase && !isValid(d.l2));
+    // A line whose translation faults is there, as zeros: it is never
+    // filled, and only an instruction whose own parcels are in it faults
+    // (PDU_S3).
+    Bool have0 = isValid(d.l0) || d.lfault[0];
+    Bool have1 = isValid(d.l1) || d.lfault[1];
+    Bool have2 = isValid(d.l2) || d.lfault[2];
+    Bool have12 = have0 && have1;
+    Bool miss = !have12 || (oddBase && !have2);
     Bit#(64) l0 = pfcData(d.l0);
     Bit#(64) l1 = pfcData(d.l1);
     Bit#(64) l2 = pfcData(d.l2);
@@ -1038,7 +1053,13 @@ module mkHobbitPduS2(HobbitPduS2);
     Vector#(6, Parcel) ps = (d.pc[1] == 1'b0)
                               ? selEven(w0, w1, w2)
                               : selOdd(w0, w1, w2, w3);
-    return PduS2Out { pc: d.pc, miss: miss, fault: d.fault, parcels: ps };
+    // parcel i is at pc + 2i, in line (pc[2:0] + 2i) >> 3 of the three
+    Vector#(6, Bool) pfs = replicate(False);
+    for (Integer i = 0; i < 6; i = i + 1) begin
+      Bit#(5) off = zeroExtend(d.pc[2:0]) + fromInteger(2 * i);
+      pfs[i] = d.lfault[off[4:3]];
+    end
+    return PduS2Out { pc: d.pc, miss: miss, pfault: pfs, parcels: ps };
   endmethod
 
   method Action enq(PduS1Out d) if (!full);
@@ -1081,8 +1102,16 @@ module mkHobbitPduS3(HobbitPduS3);
     f_reset_rsps.enq(?);
   endrule
 
+  // A fetch fault belongs to the instruction only when one of its own
+  // parcels (`plen`, the CPU escape's included) is in a faulting line; a
+  // faulting parcel reads as 0, so it cannot become a folded branch
+  // (a one-parcel branch has opcode 3..7).
   method PduS3Out out;
-    if (inR.fault)
+    let d = dec.decode(inR.pc, inR.parcels);
+    Bool own = False;
+    for (Integer i = 0; i < 6; i = i + 1)
+      if ((fromInteger(i) < d.plen) && inR.pfault[i]) own = True;
+    if (inR.pfault[0] || own)
       return PduS3Out { pc: inR.pc, miss: False, fault: True,
                         entry: packDecEntry(fetchFaultInstr(inR.pc)) };
     else if (inR.miss)
@@ -1090,7 +1119,7 @@ module mkHobbitPduS3(HobbitPduS3);
                         entry: packDecEntry(fetchMissInstr(inR.pc)) };
     else
       return PduS3Out { pc: inR.pc, miss: False, fault: False,
-                        entry: packDecEntry(dec.decode(inR.pc, inR.parcels)) };
+                        entry: packDecEntry(d) };
   endmethod
 
   method Action enq(PduS2Out d) if (!full);

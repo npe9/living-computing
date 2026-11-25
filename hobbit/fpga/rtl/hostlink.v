@@ -15,6 +15,12 @@
 //   'G' e4               start at entry   'g'
 //   'D' d4               answer to 'F'
 //   'I' l1               interrupt level (7 none, else 0..6)
+//   'S' s2               interrupt sources of the host's models (Irq bits),
+//                        for an RTL Irq (fpga/socdev/HobbitSocDevs.bsv)
+//   'K' c1               a byte typed on the console (an RTL Quart's
+//                        channel 0 receive line)
+//                                         'C' c1              a byte an RTL Quart's
+//                                              channel 0 sent (the console)
 //                                         'F' k1 a4 d4 clk5   forwarded access,
 //                                              k = {3'b0, be[3:0], we}: we 0 read,
 //                                              1 write, be its byte enables; wants 'D'
@@ -51,6 +57,13 @@ module hostlink #(
     output reg         fwd_done,
     output reg  [31:0] fwd_rdata,
     output reg  [2:0]  host_il,
+    output reg  [15:0] host_src,
+    // The console of an RTL Quart, tunnelled: bytes out ('C') and in ('K').
+    input  wire        con_valid,
+    input  wire [7:0]  con_byte,
+    output reg         con_taken,
+    output reg         key_valid,
+    output reg  [7:0]  key_byte,
     // Status.
     input  wire        running,
     input  wire        stopped,
@@ -74,6 +87,7 @@ module hostlink #(
     reg [39:0]  t_next;
     always @(posedge clk) begin
         tx_v <= 1'b0;
+        con_taken <= 1'b0;
         if (rst) begin
             fr_n <= 0; fwd_sent <= 1'b0; t_next <= (40'd1 << TBITS);
         end else begin
@@ -88,6 +102,9 @@ module hostlink #(
             end else if (fwd_valid && !fwd_sent) begin
                 fr <= {8'h46, 3'd0, fwd_be, fwd_we, fwd_addr, fwd_wdata, core_clocks};
                 fr_n <= 15; fwd_sent <= 1'b1;
+            end else if (con_valid && !con_taken) begin
+                fr <= {8'h43, con_byte, 104'd0};
+                fr_n <= 2; con_taken <= 1'b1;
             end else if (core_clocks >= t_next) begin
                 fr <= {8'h54, core_clocks, 72'd0};
                 fr_n <= 6; t_next <= t_next + (40'd1 << TBITS);
@@ -104,9 +121,11 @@ module hostlink #(
     always @(posedge clk) begin
         if (rst) begin
             ph <= 0; reply_req <= 1'b0; mem_valid <= 1'b0; go_valid <= 1'b0;
-            fwd_done <= 1'b0; host_il <= 3'd7;
+            fwd_done <= 1'b0; host_il <= 3'd7; host_src <= 16'd0;
+            key_valid <= 1'b0;
         end else begin
             fwd_done <= 1'b0;
+            key_valid <= 1'b0;
             if (reply_req && fr_n == 0)
                 reply_req <= 1'b0;             // taken by the transmitter this clock
             if (go_valid && go_taken) begin
@@ -126,6 +145,8 @@ module hostlink #(
                 "G": begin need <= 4; ph <= 1; end
                 "D": begin need <= 4; ph <= 1; end
                 "I": begin need <= 1; ph <= 1; end
+                "S": begin need <= 2; ph <= 1; end
+                "K": begin need <= 1; ph <= 1; end
                 default: ;
                 endcase
             end
@@ -156,6 +177,8 @@ module hostlink #(
                         fwd_done <= fwd_valid;
                     end
                     "I": host_il <= rx_b[2:0];
+                    "S": host_src <= {acc[7:0], rx_b};
+                    "K": begin key_valid <= 1'b1; key_byte <= rx_b; end
                     default: ;
                     endcase
                 end else need <= need - 1;

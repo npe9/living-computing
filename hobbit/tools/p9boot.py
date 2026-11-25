@@ -73,7 +73,12 @@ CHOICES = {
                 "Mach pages and _virtual the BSS).",
     "ppage0": "The ROM's hand-off page (rom.h PPage0 at RAMBASE): "
               "memsize as above, argc = 0, env.nentry = 0, everything "
-              "else 0, except the word at 0x74 (below).",
+              "else 0, except the word at 0x74 (below).  The offsets are "
+              "the struct's (argc 0x100, env 0x200: 16 vectors, 12 saved "
+              "registers, 4 spares, memsize, fpi, 30 spares), which "
+              "romboot.c's `b` writes and s9term reads (rammain.c "
+              "arginit, bootenvget); rom.h's comments say 0x200/0x300 "
+              "and are wrong (docs/boot_rom.md section 4).",
     "fpi-vector": "PPage0+0x74, which s9term's _virtual copies into the "
                   "niladic-trap and unimplemented-instruction vectors "
                   "(VB+8, VB+12), holds the entry of the ROM's fpi "
@@ -204,8 +209,9 @@ CHOICES = {
 CPU_HZ = 20000000                   # CHOICES['clock']
 ROM_SENTINEL = VROMBASE + 0xF00     # virtual; physical PROMBASE + 0xF00
 PPAGE0_MEMSIZE = 0x80
-PPAGE0_ARGC = 0x200
-PPAGE0_ENV = 0x300
+PPAGE0_ARGC = 0x100              # rom.h's struct; not its comment's 0x200
+PPAGE0_ENV = 0x200               # (CHOICES['ppage0']); was 0x200/0x300
+                                 # until 2026-11-24, docs/p9boot.md
 PPAGE0_FPI = 0x74
 MEMSIZE = 8 * 1024 * 1024
 
@@ -726,7 +732,7 @@ def text_parcel(board, addr):
     return (w & 0xFFFF) if addr & 2 else (w >> 16)
 
 
-def find_idle_loop(boot):
+def find_idle_loop(boot, parcel=None, data_pa=None):
     """CHOICES['idle-skip']: the idle loop of runproc, checked parcel for
     parcel in the image (a different image makes this fail loudly rather
     than skip the wrong code).  s9term, runproc = 0x80006492:
@@ -736,21 +742,27 @@ def find_idle_loop(boot):
       +0x14  dffc 0000 0000 <runloq+8>   compare $0 with runloq.head
       +0x1e  1ff5                        JMPTY +0x08 (both empty: again)
 
-    Returns the head's address and the two words the loop reads."""
+    Returns the head's address and the two words the loop reads.
+    `parcel(addr)` reads a text parcel (default: RAM, as s9term is
+    loaded) and `data_pa(va)` gives a data word's physical address
+    (default: the same), for a kernel elsewhere (tools/p9rom.py's ROM)."""
     by = boot.syms.by_name
     base = by["runproc"]
     hi, lo = by["runhiq"] + 8, by["runloq"] + 8
+    if parcel is None:
+        parcel = lambda addr: text_parcel(boot.board, addr)
     want = [(base + 0x08, [0xdffc, 0, 0, hi >> 16, hi & 0xFFFF]),
             (base + 0x12, [0x1007]),
             (base + 0x14, [0xdffc, 0, 0, lo >> 16, lo & 0xFFFF]),
             (base + 0x1e, [0x1ff5])]
     for addr, parcels in want:
-        got = [text_parcel(boot.board, addr + 2 * i)
-               for i in range(len(parcels))]
+        got = [parcel(addr + 2 * i) for i in range(len(parcels))]
         if got != parcels:
             raise SystemExit("p9boot: runproc+0x%x is %s, not the idle loop "
                              "CHOICES['idle-skip'] was written for"
                              % (addr - base, " ".join("%04x" % p for p in got)))
+    if data_pa is not None:
+        hi, lo = data_pa(hi), data_pa(lo)
     return base + 0x08, (hi, lo)
 
 

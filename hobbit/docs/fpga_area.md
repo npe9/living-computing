@@ -20,6 +20,22 @@ Since then:
 * The byte-enable commit, which changes the device reads rather than the
   area (fpga/README.md "Byte enables and device reads"), measures 60,090.
   It is the one change that moves the core clock total: 9,920,614.
+* The merge of master's Plan 9 core-boot work (2026-11-25) measures
+  **65,547** (59,327 LUT4, 3,086 CCU2C, 8 DPR16X4, 10,084 FF, 59 DP16KD,
+  4 MULT18X18D). That is 5,457 more than the byte-enable tip, and just
+  over the 65,000 goal. The increase comes with core-boot's new logic
+(not split further by measurement):
+  * the M-bit write walk (`translateFnW`);
+  * the prefetch's fault vector (`lines3`'s `lfault`);
+  * the store and ENTER write checks (`writeFaults`).
+  The write checks' probes cost nothing: with
+  `HobbitMmuMem.writeProbes` tied Invalid (a scratch copy of bsv/,
+  `area_cpu.sh nowp`) the variant measured 59,714 LUT4, no smaller. The co-simulated boot gives
+  the same MATCH, and its record count is unchanged at 2,893,027. It
+  runs one core clock longer, 9,920,615, with 2,865,914 records agreeing
+  in `cyc` (2,865,913 before). The merge brings in core-boot's core
+  changes as well as the probes. The byte-enable tip's HRI was not kept,
+  so the record whose `cyc` moved has not been found.
 
 The milestone co-simulations for 4 to 8 ran before copy C. The C runs
 that cover them are the m8 + C run (same HRI, 9,920,333 core clocks) and

@@ -134,7 +134,7 @@ interface HobbitCore;
   // KCALL reads in EU_S2 (vbProbe).  The machine never reads this; the ULX3S top
   // has those words in its combinational window before it lets the
   // clock edge happen (fpga/README.md, "The core's combinational reads").
-  method Vector#(21, Maybe#(Word)) combProbes();
+  method Vector#(25, Maybe#(Word)) combProbes();
   // VB, which KCALL reads in EU_S2 (`events.memRead(vb)`): the 22nd
   // probe, separate because it is read before EU_S3's commit writes VB
   // and the other probes after the commit's wires.
@@ -1927,6 +1927,8 @@ interface HobbitEuS3;
   method Word trapPc();
   method Parcel trapInsn0();
   method Bool trapNiladic();
+  // The faulting virtual address of a TR_WRITE_FAULT (FAULT, p. 1-39).
+  method Word trapVa();
   method Action clearTrap();
   method Action flush();
   method Word lastPc();
@@ -1943,7 +1945,11 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                      HobbitEvents events, Bool eventsOn,
                      HobbitCtl ctl, HobbitMmu mmu,
                      Maybe#(Bit#(32)) stopR,
-                     HobbitMmuMem dface, Bool sysOn)(HobbitEuS3);
+                     HobbitMmuMem dface, Bool sysOn,
+                     Word excCyc)(HobbitEuS3);
+  // excCyc: an exception record's cost, Table 4-36's Exception row,
+  // 9 + D + A (p. 4-5), as the reference charges it
+  // (hobbit_sem `_system_exception`).
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.  The HRI record is the trace port
   // (Flute's g_pc_trace analogue), not datapath.
@@ -1967,6 +1973,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
   Reg#(Word) trapPcR <- mkReg(0);
   Reg#(Parcel) trapInsn0R <- mkReg(0);
   Reg#(Bool) trapNiladicR <- mkReg(False);
+  Reg#(Word) trapVaR <- mkReg(0);
 
   // The instruction's PSW write and an event's pipeline flush are one-cycle
   // wires so the core's PSW rule sees them in the commit cycle, and the
@@ -2053,8 +2060,84 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     endcase
   endfunction
 
+  // A store whose translation faults is found here, before it commits
+  // (exception 9 is taken at "the PC of faulted instruction", p. 1-38,
+  // and the write fault is signalled "during an address translation",
+  // p. 2-3).  The store is held in this stage, so nothing younger has
+  // committed and it has done nothing yet: the commit rule retires it as
+  // a trap=1 record with no write, no PSW, pointer or control-register
+  // change and no folded branch, and the orchestrator takes the exception
+  // at its PC (the reference's `_system_exception`).  Only a write that
+  // would go to memory is translated (the box says which, `toMemory`;
+  // a word inside the cache's window is not, hobbit_sem `_store_word`),
+  // and the data face makes the same translation the write itself would
+  // (`writeFaults`).  Until 2026-11-24 the store committed, its record
+  // retired with the write, and the exception came a clock later at the
+  // same PC: found at record 2,893,033 of the s9term boot (`evenaddr`
+  // writing the user address 0xffbfffec).  Not covered: KCALL's frame
+  // (a fault there resets the part, p. 3-29), the unimplemented
+  // sequence's *(CSP) = PC, and the drain words (DQM's tail, the
+  // interlocked accumulator), which still fault after their commit.
+  //
+  // Every caller asks about the held bundle `inD`, so the stage makes two
+  // write translations a clock, not one per call site: `wfA` is the
+  // store's word, or for ENTER the new SP, and `wfB` is ENTER's new MSP.
+  // Their walks are the data face's probes (`writeProbes`): on the SoC a
+  // walk reads only words the top has put in its window, and a walk
+  // nothing probed reads zeros and faults (fpga/README.md, "The core's
+  // arrays on the system clock"), noted by `noteWriteChecks`.
+  Bool wfEnter = (inD.e.d.op == OP_ENTER);
+  Word wfA = wfEnter ? (inD.spAfter & 32'hFFFFFFFC) : inD.cmd.waddr;
+  Word wfB = inD.mspAfter & 32'hFFFFFFFC;
+  Bool wfAFaults = dface.writeFaults(wfA);
+  Bool wfBFaults = dface.writeFaults(wfB);
+
+  // A walk is noted when a caller can use its answer: the store's (or
+  // ENTER's SP) when storeFaults/enterFault would ask, ENTER's MSP when
+  // enterFault would.
+  (* fire_when_enabled, no_implicit_conditions *)
+  rule noteWriteChecks;
+    Bool on = inFull && eventsOn && (inD.e.d.tr == TR_NONE) && !inD.fatal;
+    Bool aOn = on && (wfEnter ? (psw[9] == 1'b1)
+                              : (!inD.silent && !inD.kcall && sc.toMemory(inD.cmd)));
+    Bool bOn = on && wfEnter && (psw[9] == 1'b1) &&
+               (inD.mspAfter != inD.mspBefore);
+    dface.noteWrites(aOn ? tagged Valid wfA : tagged Invalid,
+                     bOn ? tagged Valid wfB : tagged Invalid);
+  endrule
+
+  function Bool storeFaults(EuS2Out o) =
+    eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal && !o.silent &&
+    !o.kcall && sc.toMemory(o.cmd) && (o.e.d.op != OP_ENTER) && wfAFaults;
+
+  // ENTER's check (p. 3-21, read from the page image): "If virtual
+  // addressing is enabled, the target address and the new MSP, if the MSP
+  // is updated, are checked to verify that stores are valid at the
+  // current execution level.  If the addresses are not valid, a read fault
+  // exception, exception type 8 ... is flagged for ENTER.  The exception
+  // is processed after any stack flushing is completed."  The reference
+  // checks the new SP, then the new MSP, as stores at the current level
+  // (hobbit_sem `step`), with CSP = SP only, and leaves SP and MSP where
+  // they were, so the ENTER restarts once the kernel has mapped the page.
+  // The answer is the address that failed.  Found at record 22,533,287 of
+  // the s9term boot: /boot's ENTER moving SP 0x1020 down into an unmapped
+  // user stack page.
+  function Maybe#(Word) enterFault(EuS2Out o);
+    Maybe#(Word) r = tagged Invalid;
+    if (eventsOn && (o.e.d.tr == TR_NONE) && !o.fatal &&
+        (o.e.d.op == OP_ENTER) && (psw[9] == 1'b1)) begin
+      if (wfAFaults)
+        r = tagged Valid o.spAfter;
+      else if ((o.mspAfter != o.mspBefore) && wfBFaults)
+        r = tagged Valid o.mspAfter;
+    end
+    return r;
+  endfunction
+
   function Bool squashOf(EuS2Out o);
     if (o.e.d.tr != TR_NONE) return False;
+    else if (storeFaults(o)) return False;
+    else if (isValid(enterFault(o))) return False;
     else if (splitHere(o)) return True;
     else if (o.serialize) return True;
     else if (isCondJumpOp(o.e.d.op) && !o.e.d.fold &&
@@ -2088,7 +2171,8 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                  mem_we: o.wr.we, mem_addr: o.wr.addr,
                  mem_wdata: o.wr.data,
                  mem_wmask: o.wr.we ? o.wr.mask : 8'h00,
-                 trap: (d.tr != TR_NONE), cyc: cyc };
+                 trap: (d.tr != TR_NONE),
+                 cyc: (sysOn && (d.tr == TR_FETCH_FAULT)) ? excCyc : cyc };
   endfunction
 
   function Hri foldRecord(EuS2Out o, Word cyc);
@@ -2118,7 +2202,9 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end
   endrule
 
-  rule commit (!haltR && traceQ.notFull && !flushW);
+  // `!trapPendR`: nothing younger commits behind a trap that has not been
+  // taken yet (ENTER's waits for its flush, `trapPending`).
+  rule commit (!haltR && traceQ.notFull && !flushW && !trapPendR);
     if (pendCatch matches tagged Valid {.csp, .cto}) begin
       // CRET's refill: the cache was emptied at the new SP by the CRET's
       // own command; this CATCH fills it to the restored MSP.
@@ -2175,6 +2261,53 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     end else if (pendFold matches tagged Valid .r) begin
       traceQ.enq(r);
       pendFold <= tagged Invalid;
+    end else if (inFull && !(stopHere && !inD.silent) &&
+                 isValid(enterFault(inD))) begin
+      // ENTER's check failed (`enterFault`): the flush is made -- the
+      // box's ENTER command with the pointers left where they were, so the
+      // flushed blocks stay in the cache too -- and a trap=1 record with
+      // no change goes out; the exception waits for the flush to end
+      // (`trapPending`).
+      let o = inD;
+      let d = o.e.d;
+      let k = o.cmd;
+      k.spAfter  = o.spBefore;
+      k.mspAfter = o.mspBefore;
+      sc.commit(k);
+      traceQ.enq(Hri { valid: True, pc: d.pc, insn0: d.insn0,
+                       insn1: d.insn1,
+                       sp_before: o.spBefore, sp_after: o.spBefore,
+                       msp_before: o.mspBefore, msp_after: o.mspBefore,
+                       mem_we: False, mem_addr: 0, mem_wdata: 0,
+                       mem_wmask: 0, trap: True, cyc: excCyc });
+      ninstr       <= ninstr + 1;
+      lastPcR      <= d.pc;
+      inFull       <= False;
+      trapPendR    <= True;
+      trapReasonR  <= TR_ENTER_FAULT;
+      trapPcR      <= d.pc;
+      trapInsn0R   <= d.insn0;
+      trapNiladicR <= False;
+      trapVaR      <= validValue(enterFault(o));
+    end else if (inFull && !(stopHere && !inD.silent) && storeFaults(inD)) begin
+      // The held store (`storeFaults`): a trap=1 record and exception 9.
+      let o = inD;
+      let d = o.e.d;
+      traceQ.enq(Hri { valid: True, pc: d.pc, insn0: d.insn0,
+                       insn1: d.insn1,
+                       sp_before: o.spBefore, sp_after: o.spBefore,
+                       msp_before: o.mspBefore, msp_after: o.mspBefore,
+                       mem_we: False, mem_addr: 0, mem_wdata: 0,
+                       mem_wmask: 0, trap: True, cyc: excCyc });
+      ninstr       <= ninstr + 1;
+      lastPcR      <= d.pc;
+      inFull       <= False;
+      trapPendR    <= True;
+      trapReasonR  <= TR_WRITE_FAULT;
+      trapPcR      <= d.pc;
+      trapInsn0R   <= d.insn0;
+      trapNiladicR <= False;
+      trapVaR      <= o.cmd.waddr;
     end else if (inFull && !(stopHere && !inD.silent)) begin
       let o = inD;
       let d = o.e.d;
@@ -2382,11 +2515,14 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
     else
       return tagged Invalid;
   endmethod
-  method Bool trapPending() = trapPendR;
+  // ENTER's fault is processed after the flush has completed (p. 3-21).
+  method Bool trapPending() =
+    trapPendR && !((trapReasonR == TR_ENTER_FAULT) && sc.busy);
   method TrapReason trapReason() = trapReasonR;
   method Word trapPc() = trapPcR;
   method Parcel trapInsn0() = trapInsn0R;
   method Bool trapNiladic() = trapNiladicR;
+  method Word trapVa() = trapVaR;
   method Action clearTrap();
     trapPendR <= False;
   endmethod
@@ -2512,8 +2648,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   Maybe#(Bit#(32)) stopAt = intQ.notEmpty
                               ? tagged Valid (tpl_1(intQ.first) - evRecs)
                               : tagged Invalid;
+  Word excCyc = 9 + m.d + m.a;
   HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn, ctl, mmu,
-                                stopAt, dataFace, sysOn);
+                                stopAt, dataFace, sysOn, excCyc);
   HobbitEuS2 s2 <- mkHobbitEuS2(pswR, configKlR, vbR, sc, s3.bypass, events,
                                 sysOn);
 
@@ -2619,8 +2756,18 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
 
   // `!s3.framePending()` holds the pipeline while a KCALL's frame tail
   // drains, so the vector handler cannot read a half-written frame.
-  rule deliver (!eventWanted() && !squash && !s3.framePending() &&
-                !dfOperand && s1.notEmpty && s2.canAccept);
+  //
+  // `!eventActiveR`: the event sequence owns the pipeline from startEvent
+  // to finishEvent.  `eventWanted` is False once the sequence has
+  // started, and EU_S1's `stop` leaves a full slot full, so without this
+  // an instruction EU_S1 held when the event started went on to EU_S2 --
+  // looked up in the decoded store startEvent had just emptied, i.e. an
+  // all-zero entry -- and retired as a record of PC 0.  Found at record
+  // 3,298,054 of the s9term boot, the second interrupt (the first had
+  // found EU_S1 empty).  finishEvent's `s1.start` empties the slot.
+  rule deliver (!eventWanted() && !eventActiveR && !squash &&
+                !s3.framePending() && !dfOperand && s1.notEmpty &&
+                s2.canAccept);
     let o = s1.out;
     s2.enq(o);
     s1.deq(o);
@@ -2646,7 +2793,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
     if (dfOperand) dataFace.clearFault;
   endrule
 
-  rule move2to3 (!eventWanted() && s2.notEmpty && s3.canAccept);
+  rule move2to3 (!eventWanted() && !eventActiveR && s2.notEmpty &&
+                 s3.canAccept);
     s3.enq(s2.out);
     s2.deq;
   endrule
@@ -2704,12 +2852,45 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
         TR_FETCH_MISS:  c.fetchFault = True;
         TR_FETCH_FAULT: c.fetchFault = True;
         TR_UNIMP_REG:   c.unimpReg = True;     // exception 6 (p. 1-27)
+        TR_WRITE_FAULT: begin                  // exception 9 (p. 1-38)
+          c.writeFault = True;
+          c.va = s3.trapVa();
+        end
+        TR_ENTER_FAULT: begin                  // exception 8 (p. 3-21)
+          c.readFault = True;
+          c.va = s3.trapVa();
+        end
         default:        c.illegal  = True;
       endcase
     end
+    // A write fault that reaches the data face after its word was
+    // committed: a drain word (`storeFaults` lists them).  The reference
+    // takes it at the instruction that wrote it, before that retires, so
+    // a privileged run says so by name rather than diverging records on.
+    if (sysOn && df && dataFace.faultWrite())
+      $fwrite(stderr, "CORE late write fault: va 0x%08x after its store committed (last pc 0x%08x)\n",
+              dataFace.faultAddr(), s3.lastPc());
+    // A byte or half-word store is made here as read, merge, write: EU_S1
+    // reads the word its destination lives in.  The part writes the lanes
+    // (BE strobes); no read is made, and a store to a page that cannot be
+    // written is a write fault, exception 9 (p. 2-3, Table 1-26), as the
+    // reference's `_store` translates it.  So a read fault on that word,
+    // for an instruction that writes its destination without reading it,
+    // is the store's write fault.  Found at record 308,543,068 of the
+    // s9term join: /boot's `MOV *R24:UB,*R8:B` into a page not yet mapped
+    // (the kernel's handler stored ID 8 where the reference's stored 9).
+    let fo = s1.out;
+    let fd = fo.e.d;
+    Bool mergeRead = df && dfOperand &&
+      opWritesDst(fd.op) && !opReadsDst(fd.op) &&
+      !modeIsImm(fd.dst.mode) && (modeSize(fd.dst.mode) < 4) &&
+      ((dataFace.faultAddr() & 32'hFFFFFFFC) ==
+       (fo.dstEa & 32'hFFFFFFFC)) &&
+      !(opReadsSrc(fd.op) &&
+        ((fo.srcEa & 32'hFFFFFFFC) == (fo.dstEa & 32'hFFFFFFFC)));
     if (df) begin
-      if (dataFace.faultWrite()) c.writeFault = True;
-      else                       c.readFault  = True;
+      if (dataFace.faultWrite() || mergeRead) c.writeFault = True;
+      else                                    c.readFault  = True;
       c.va = dataFace.faultAddr();
     end
     if (iw) begin
@@ -2736,7 +2917,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
         valid: True, pc: s1.pc, insn0: e.insn0, insn1: e.insn1,
         sp_before: sc.sp, sp_after: 0, msp_before: sc.msp, msp_after: 0,
         mem_we: False, mem_addr: 0, mem_wdata: 0, mem_wmask: 0,
-        trap: True, cyc: 0 };
+        trap: True, cyc: excCyc };
     end
 
     if (!sysOn || (pswR[9] == 1'b1)) events.setShad(sc.shad);
@@ -2894,8 +3075,8 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Bool eventActive() = eventActiveR;
   method Word eventMemRead(Word a) = events.memRead(a);
   method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
-  method Vector#(21, Maybe#(Word)) combProbes() =
-    append(mmu.walkProbes, events.combProbes);
+  method Vector#(25, Maybe#(Word)) combProbes() =
+    append(append(mmu.walkProbes, events.combProbes), dataFace.writeProbes);
   method Word vbProbe() = vbR;
   method Bit#(4) memWrBe() = sc.memWrBe;
   method Bool memRdMerge() = sc.memRdMerge;

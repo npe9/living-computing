@@ -111,6 +111,12 @@ interface HobbitStackCache;
   // through a Wire in the same clock, so the box remains the only
   // writer of its array and its pointers.
   method Action commit(ScCmd c);
+  // Would `c`'s word write go to memory if committed now (outside the
+  // window, or inside it above the refill watermark), rather than into
+  // the array?  The box's own test (`euMemWr` below), asked before the
+  // commit: only a memory write is translated, so only it can fault
+  // (p. 2-3), and EU_S3 checks such a store before it commits.
+  method Bool toMemory(ScCmd c);
 
   method Action reset(Word sp, Word msp);
 
@@ -279,6 +285,11 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
     Word r = (k == 0) ? bankRA.sub(i) : (k == 1) ? bankRB.sub(i) : bankRC.sub(i);
     return (written[i] == 1'b1) ? ((lvt[i] == 1'b1) ? e : r) : 32'd0;
   endfunction
+
+  // A command's word write goes to memory, not the array: outside the
+  // window it installs, or inside it at or above the refill watermark.
+  function Bool memBound(ScCmd c) =
+    c.we && (!inRange(c.waddr, c.spAfter, c.mspAfter) || !(c.waddr < fillR));
 
   function Word readWord(Bit#(2) k, Word addr, Word lo, Word hi);
     return (inRange(addr, lo, hi) && (addr < fillR))
@@ -453,8 +464,7 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
 
     // ---- the single memory write port ------------------------------
     // The flush wins; a non-cached EU write waits in memWrQ.
-    Bool euMemWr = haveCmd && c.we &&
-                   (!inRange(c.waddr, c.spAfter, c.mspAfter) || euUnfilled);
+    Bool euMemWr = haveCmd && memBound(c);
     Bool doMemWr = False;
     Word mwAddr = 0;
     Word mwData = 0;
@@ -527,6 +537,8 @@ module mkHobbitStackCacheT#(HobbitMem mem, HobbitMem tmem,
   method Action commit(ScCmd c);
     cmdW <= tagged Valid c;
   endmethod
+
+  method Bool toMemory(ScCmd c) = memBound(c);
 
   method Action reset(Word spv, Word mspv);
     resetW <= tagged Valid (SpMsp { sp: spv, msp: mspv });

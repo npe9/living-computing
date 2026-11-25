@@ -61,12 +61,13 @@ answers fep.py has for PIMOS's start, and their edges: INQUIRY to unit
 TEST UNIT READY to each absent unit 0-5 (Result NO_DEVICE, also with a
 LUN and CDB bytes fep.py does not look at), append_open (203) with the
 kernel's own message, with an integer path, then read_open, getb and
-close on the appending device; and as one section each, every FepError
+close on the appending device, its close again (the appending one,
+2026-11-24) and append_open after it; and as one section each, every FepError
 nearby: INQUIRY of another length, LUN or direction, or to an absent
 unit; TEST UNIT READY to unit 6, to an absent unit with a direction,
 length or CDB length; append_open twice, on a device with a file open,
-with three arguments; getb, close and putb (111) on a device that only
-appends.  Then (direct_login_sections) the answers from fep_attributes
+with three arguments; getb and putb (111) on a device that only
+appends, close twice and close with an argument.  Then (direct_login_sections) the answers from fep_attributes
 (240) to the shell's prompt: 240 (and cut), the timer with the clock
 at 0, a millisecond before midnight, midnight, the top of 48 bits; the
 files pimos: has and has not, me: and the home; the replier, the local
@@ -78,12 +79,20 @@ waits for its hold, abort of a held request [6], a hold that outlives
 its window's close, devices that are a file and a timer or a window and
 a timer at once (fep.py's order of tests); the event under lag and
 after a refusal; and every FepError (or Python error) next to them.
+Then (2026-11-24, fep.py's answers for a typed shutdown) the string-I/O
+window pimos_standard_io_window: 104, 130, 141, 111 (and cut), getl
+held and answered by the event, close; {-1, 80} twice (no reply); and
+the FepErrors next to them (an integer putb text, io 112 and 127, a
+string command, io while held, a window's own putb, another name, 80
+on device 5, 80 with an argument).
 
 "kernel": recorded from the real PIMOS start, `longrun_ipl.go` on a
 machine `longrun_ipl.py --reference --save PKL` wrote, with
 fepm.Fep replaced as above (go() makes its device as fepm.Fep at call
 time).  Not made by a plain run (it needs PKL, ~1.1 GB, 15-50 min to
-make); `--kernel PKL --check` checks it.  Its last commands move as
+make); `--kernel PKL --type shutdown --type yes --check` checks it
+(--type LINE: longrun_ipl.py's typed lines; the tape's script is then
+fep.py's for those lines).  Its last commands move as
 PIMOS's start goes further (the stop is another agent's work): its
 check is that the replay gives the run's answers and that the first
 ten answered commands are the conversation of
@@ -96,6 +105,21 @@ machine; 50 s): 8,586,110 instructions, 175 calls (126
 answered, 49 not ready), 2 events (the login answered; then nothing
 to answer), the stop "nothing left to run, 1,220 goals waiting" with
 the login server's io(1) and the window's getl held.
+Re-recorded 2026-11-24 after the merger change (docs/pimm_semantics.md
+merge; machine saved under it, heap 73,594,186 cells): to the prompt
+8,587,092 instructions, 178 calls (127 answered); and then, the tape
+on disk, to PIMOS END with --type shutdown --type yes: 8,766,339
+instructions, 220 calls (155 answered, 65 not ready), 4 events (3
+answered: the login, "shutdown", "yes"), the console ending "PIMOS
+END********", {-1, 80} received, nothing held, the stop "nothing left
+to run, 253 goals waiting"; most at once: 4 replies queued, 2 files,
+1 appending, 1 timer, 3 string-I/O, 1 window, 2 held; the largest
+request 88 bytes.
+Re-recorded 2026-11-24 with the login record's ID 0 (fep.py LOGIN, read
+from pimfep's get_key/4; it was 1, OURS): the same 220 calls, 155
+answered, 4 events; the three replier texts' element 0 is 0000 for
+0001; 8,766,319 instructions to PIMOS END (20 fewer), the prompt at
+8,587,072.
 """
 import os
 import struct
@@ -353,7 +377,15 @@ def direct_kernel_sections():
         receive(64),
         send(pkt(16, 0, open_msg(rs.LIST))), receive(64),   # read_open on an appending device
         send(pkt(16, 0, getb(40))), receive(200), send(pkt(16, 0, close)), receive(64),
-        tur_at(5), inquiry()]))
+        tur_at(5), inquiry(),
+        # the close of the append-opened file (2026-11-24: fep.py answers
+        # it [1], the syslog's at PIMOS's end): a file closed twice on one
+        # device (the read file first, then the appending), and the
+        # device appends again after it
+        send(pkt(16, 0, close)), receive(64),
+        send(pkt(20, 0, append_msg(syslog))), receive(64),
+        send(pkt(20, 0, close)), receive(64),
+        send(pkt(20, 0, append_msg(syslog))), receive(64)]))
     # 2. lag: INQUIRY is not held back
     s.append((dict(std, lag=1), [
         send(pkt(16, 0, append_msg(syslog))), inquiry(), receive(64), inquiry(), receive(64)]))
@@ -375,7 +407,10 @@ def direct_kernel_sections():
         [send(pkt(16, 0, open_msg(rs.LIST))), send(pkt(16, 0, append_msg(syslog)))],   # file open
         [send(pkt(16, 0, fepm.pack_message([fepm.APPEND_OPEN, b'', 0, syslog])))],     # 3 args
         [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, getb(10)))],            # getb
-        [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, close))],               # close
+        [send(pkt(16, 0, append_msg(syslog))), send(pkt(16, 0, close)),
+         send(pkt(16, 0, close))],                                                     # close twice
+        [send(pkt(16, 0, append_msg(syslog))),
+         send(pkt(16, 0, fepm.pack_message([fepm.CLOSE, 0])))],                        # close, an argument
         [send(pkt(16, 0, append_msg(syslog))),
          send(pkt(16, 0, fepm.pack_message([111, b'log line'])))],                     # putb
     ]
@@ -387,6 +422,8 @@ def direct_kernel_sections():
 # the script of the direct kernel tape (its `script` line), in place of
 # fep.py's one login: two logins and two lines, so that the order of the
 # events, the lowest device first and an event that waits are tried
+# (OURS: both logins carry fep.LOGIN's ID 0, where the PSI's rule,
+# fep_services.md 6.5, would give the second 1)
 DIRECT_KERNEL_SCRIPT = [('login', fepm.LOGIN), ('getl', 'dir'), ('login', fepm.LOGIN),
                         ('getl', 'x')]
 
@@ -441,7 +478,8 @@ def direct_login_sections(std):
         window(28), r,
         sd(28, 127, 200, 200, 47, 14), r, sd(28, 127, 1, 2, 3, 4, 5, 6), r,  # six arguments
         sd(28, 130, fj('PIMOS')), r, sd(28, 132, 5), r, sd(28, 141), r, sd(28, 142), r,
-        sd(28, 143), r, sd(28, fepm.PUTB, fj('Shell>> ')), r, sd(28, fepm.FLUSH, 9), r,
+        sd(28, 143), r, sd(28, 126), r,                           # 126: the listener's window
+        sd(28, fepm.PUTB, fj('Shell>> ')), r, sd(28, fepm.FLUSH, 9), r,
         sd(28, fepm.GETL), r,                                     # held
         IDLE, r, r,                                               # the login, to 24
         sd(24, fepm.IO, 1, fj('  ')), r,                          # held again
@@ -526,6 +564,40 @@ def direct_login_sections(std):
     # to the data's end); added when an injection went unnoticed
     s.append((std, [strio(26, fepm.USER_DEVICE), r,
                     io(26, 0, b'\x01\x00\x00\x00' + fj('pmpsi')), r]))
+    # 10. what fep.py answers since 2026-11-24 for a typed shutdown
+    # (docs/binary_reverse_engineering.md 1.4 "A command typed"): the
+    # string-I/O window pimos_standard_io_window, its 104 130 141 111
+    # [1, ""] (data not looked at, but putb's), its getl held and
+    # answered by the event as a window's, its close; then {-1, 80}
+    # (terminate): no reply, and the device goes on
+    s.append((std, [
+        strio(24, fepm.SERVER), r, io(24, 0, fj('local')), r, io(24, 1, b''), r,
+        strio(31, fepm.STD_WINDOW), r,
+        io(31, 104, b'\x00\x01'), r, io(31, 104, 324), r,
+        io(31, 130, fj('SHUTDOWN')), r, io(31, 141, b''), r, io(31, 141, 0), r,
+        io(31, 111, fj('Really(yes/no)?')), r, io(31, 111, b''), receive(12), r,  # cut
+        io(31, 110, b''), r,                                      # held
+        IDLE, r,                                                  # the login, to 24
+        IDLE, r,                                                  # getl "dir", to 31
+        io(31, 110, 0), r, IDLE, r,                               # a login: none held
+        IDLE, r,                                                  # nothing held
+        sd(31, fepm.CLOSE), r,
+        sd(-1, fepm.TERMINATE), r, r,                             # nothing comes
+        tur_at(7), sd(-1, fepm.TERMINATE), r,                     # again: noted again
+        sd(24, fepm.ABORT), r]))
+    errs = [
+        [strio(31, fepm.STD_WINDOW), io(31, 111, 5)],            # an integer text
+        [strio(31, fepm.STD_WINDOW), io(31, 112, b'')],          # not answered
+        [strio(31, fepm.STD_WINDOW), io(31, 127, b'')],
+        [strio(31, fepm.STD_WINDOW), io(31, b'', b'')],          # a string command
+        [strio(31, fepm.STD_WINDOW), io(31, 110, b''), io(31, 104, b'')],   # held
+        [strio(31, fepm.STD_WINDOW), sd(31, fepm.PUTB, fj('x'))],  # a window's putb: not one
+        [strio(31, 'pimos_standard_io_windows')],                # another name
+        [sd(5, fepm.TERMINATE)],                                 # not device -1
+        [sd(-1, fepm.TERMINATE, 0)],                             # an argument
+    ]
+    for e in errs:
+        s.append((std, e))
     return s
 
 
@@ -535,7 +607,7 @@ KERNEL_FIRST = [(7, 0x00), (7, 0x12)] + [(u, 0x00) for u in (5, 4, 3, 2, 1, 0)] 
     [(7, fepm.SEND), (7, fepm.RECEIVE)]
 
 
-def record_kernel(pkl):
+def record_kernel(pkl, lines=()):
     import pickle
     import longrun_ipl as lr
     with open(pkl, 'rb') as f:
@@ -543,14 +615,15 @@ def record_kernel(pkl):
     Recording.calls = []
     fepm.Fep = Recording
     try:
-        lr.go(m, loaded, info, [], True)
+        lr.go(m, loaded, info, [], True, lines)
     finally:
         fepm.Fep = ORIGINAL
     dev = Recording.made
     opts = dict(getb_unit=dev.getb_unit, getb_bytes=dev.getb_bytes or 0, lag=int(dev.lag),
                 max_buffer=dev.MAX_BUFFER)
     items, seen = tape_of(Recording.calls)
-    if replay([(opts, items)], [OBJECTS]) != seen:
+    script = ORIGINAL(None, lines=lines).script if lines else None
+    if replay([(opts, items)], [OBJECTS], script) != seen:
         raise SystemExit('record_fep: kernel: a replay into a fresh fep.Fep differs')
     calls = [c for c in items if c[0] != 'ticks']
     done = [c for c, a in zip(calls, seen) if a[0] == 'D']
@@ -564,6 +637,7 @@ def record_kernel(pkl):
           % ('kernel', ncmd, len(done), ncmd - len(done), calls.count(IDLE),
              seen.count(('I', True)), g['instructions'], g['stop'], g['fep'].get('held')))
     print('    console %r' % (g['console'],))
+    print('    log %r; terminated %r' % (dev.log, dev.terminated))
     sizes(opts, items, [OBJECTS])
     return [(opts, items)]
 
@@ -611,9 +685,31 @@ def script_words(script):
     return out
 
 
+# why a tape last changed, as its header says (OURS)
+NOTES = {
+    'late': 'Re-recorded 2026-11-24 after the merger change (the merger acts at '
+            'unification, docs/pimm_semantics.md merge): RECEIVE retries move; and '
+            'the clock (ticks) lines added',
+    'one file': 'Re-recorded 2026-11-24: the clock (ticks) lines added; the commands as before',
+    'two files': 'Re-recorded 2026-11-24: the clock (ticks) lines added; the commands as before',
+    'characters': 'Re-recorded 2026-11-24: the clock (ticks) lines added; the commands as before',
+    'odd': 'Re-recorded 2026-11-24: the clock (ticks) lines added; the commands as before',
+    'small buffer': 'Re-recorded 2026-11-24: the clock (ticks) lines added; the commands as before',
+    'direct kernel': '2026-11-24: fep.py answers 60 on the append-opened file, the '
+                     'string-I/O window pimos_standard_io_window and {-1, 80}; their '
+                     'sections added, the close on an appending device out of the errors',
+    'kernel': 'Re-recorded 2026-11-24 after the merger change (the merger acts at '
+              'unification, docs/pimm_semantics.md merge: the conversation moves), and '
+              'to PIMOS END: --kernel PKL --type shutdown --type yes; and again with '
+              'the login ID 0 (fep.py LOGIN, P-f3): the replier texts\' element 0 moves',
+}
+
+
 def write_tape(path, label, files, sections, script=None):
-    lines = ['# %s: recorded by ref/pimm/record_fep.py (OURS); the commands only' % label,
-             'part %s' % SLUG[label],
+    lines = ['# %s: recorded by ref/pimm/record_fep.py (OURS); the commands only' % label]
+    if label in NOTES:
+        lines.append('# ' + NOTES[label])
+    lines += ['part %s' % SLUG[label],
              'files %s' % ' '.join(files)]
     if script is not None:
         lines.append('script %s' % ' '.join(script_words(script)))
@@ -705,7 +801,7 @@ def most_open(f):
 
 
 def largest_request(cmds):
-    return max([len(c[5]) - 8 for c in cmds if c[4] == 1] or [0])
+    return max([len(c[5]) - 8 for c in cmds if is_command(c) and c[4] == 1] or [0])
 
 
 def most_queued(opts, cmds, files):
@@ -735,7 +831,12 @@ def main(argv):
             sections = direct_kernel_sections()
             script = DIRECT_KERNEL_SCRIPT
         elif label == 'kernel':
-            sections = record_kernel(argv[argv.index('--kernel') + 1])
+            # --type LINE ...: the lines typed (longrun_ipl.py's --type),
+            # the tape's script then fep.py's for them
+            lines = [argv[i + 1] for i, a in enumerate(argv) if a == '--type']
+            sections = record_kernel(argv[argv.index('--kernel') + 1], lines)
+            if lines:
+                script = ORIGINAL(None, lines=lines).script
         else:
             sections = record(label, files, device)
         path = os.path.join(TAPES, SLUG[label] + '.tape')

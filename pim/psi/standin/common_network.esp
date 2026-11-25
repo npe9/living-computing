@@ -1,0 +1,24 @@
+% SCAFFOLDING stand-in for SIMPOS's class `common_network`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `common_network` is printed or held, and NO NETWORK IS MODELLED.  Its one
+% method is INTERPOLATED (labelled) from:
+%   - pimfep##remote_stream's class methods create_from_fep/4,
+%     create_to_fep/3, create_from_remote_fep/4 and
+%     create_to_remote_fep/5, and remote_pimfep_invoker goal/1 (held
+%     .ptf): each sends `:is_installed(#common_network)` first and goes on
+%     to `:assign(#library)` and the stream's creation.  No clause of these
+%     methods handles a network that is not installed: on failure the
+%     method fails;
+%   - docs/simpos/required/classes.tsv (row `common_network`): referenced
+%     only by pimfep and pimmcsp, no other selector.
+% Model (OURS): is_installed/1 succeeds.  The choice follows the callers,
+% which are written for a FEP whose network is installed; it is not
+% evidence that any network runs here.
+
+class common_network has
+
+% INTERPOLATED from: the remote_stream call sites (see above).  OURS: it
+% succeeds.
+:is_installed(Class);
+
+end.

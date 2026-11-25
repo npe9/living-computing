@@ -74,6 +74,16 @@ Into tools/qemu1e/hub.py, same method:
    command-line test cannot see it); that is why test_hub_port_spellings
    was added.  With it: FAIL test_hub_port_spellings only.
 
+Start-up: Rig waits for relay_host's "ready" line (printed once its UDP
+port is bound) before anything is sent.  Without it, test_hub_to_link
+failed on a loaded machine with 23 of 24 frames.  Its first frame reached
+the unbound port and was dropped, and every lockstep wait after it ran
+to its 10 s deadline.  Reproduced 2026-11-24 with 24 busy loops on 16
+CPUs: the first iteration failed (23 != 24, in 242 s).  With the wait,
+it passed 20 of 20 iterations under the same load, 0.4 s each.  After
+the change, injections 1-5 above were re-run, and each gave exactly the
+failure set recorded for it.
+
 The checks *not* made here: that HOST is reached off this host and that
 0.0.0.0 is bound (it needs a second interface); the ESP32's RX FIFO
 overrunning (a pipe never does; docs/ulx3s_ethernet.md section 4).
@@ -81,6 +91,7 @@ overrunning (a pipe never does; docs/ulx3s_ethernet.md section 4).
 import json
 import os
 import random
+import select
 import socket
 import struct
 import subprocess
@@ -198,10 +209,32 @@ class Rig:
              '--queue', str(queue)],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+        self._wait_ready()
         self.out = []           # (type, payload) or ('bad', bytes)
         self.cv = threading.Condition()
         self.reader = threading.Thread(target=self._read, daemon=True)
         self.reader.start()
+
+    def _wait_ready(self, timeout=60):
+        """Blocks until the relay has bound its UDP port (it says so on
+        stderr). Before that, a frame the hub forwards to it is dropped by
+        the kernel: on a loaded machine the relay can start after the test
+        has sent its first frame (test_hub_to_link got 23 of 24 frames)."""
+        fd = self.p.stderr.fileno()
+        line = b''
+        end = time.time() + timeout
+        while not line.endswith(b'\n'):
+            left = end - time.time()
+            if left <= 0 or not select.select([fd], [], [], left)[0]:
+                self.p.kill()
+                raise RuntimeError('relay_host not ready in %ds' % timeout)
+            c = os.read(fd, 1)
+            if not c:
+                raise RuntimeError('relay_host exited: %r' % line)
+            line += c
+        if line != b'relay_host: ready\n':
+            self.p.kill()
+            raise RuntimeError('relay_host: %r' % line)
 
     def _read(self):
         buf = bytearray()

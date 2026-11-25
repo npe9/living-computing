@@ -1,0 +1,35 @@
+% SCAFFOLDING stand-in for SIMPOS's class `network_listener_buffer`,
+% compiled by psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no
+% part of it is printed or held.  It is MINIMAL: only create/4, whose two
+% integer arguments are kept but whose meaning is UNKNOWN.  INTERPOLATED
+% (labelled) from:
+%   - gog-kl1 ESP/COMMU.ESP:124-135 (ICOT Free Software, IFS
+%     exper-apps/pimos/gog-kl1.tar.Z; docs/simpos/subsystems/notes/
+%     fixpoint_fe.tsv:137-139): `:create(#network_listener_buffer, Sb, 16,
+%     16)`, then `:set_send_data_size(Sb, 20)` and `:data_buffer(Sb, Ss)`,
+%     a string the program writes with set_substring/4 and sends;
+%   - pimfep's buffer/2 methods (as_pimos_login_requester,
+%     pimos_login_requester, pimos_remote_login_server and _replier) and
+%     sline_scsi_stream create/4 (held .ptf): `:create(#network_listener_
+%     buffer, Buf, 2, 16)` (`a7 01 00 02`, `a7 02 00 10`) and `(Buf, 16250,
+%     32)` (`a7 01 3f 7a`, `a7 02 00 20`), then `:set_buffer(Self, Buf)`.
+% Not stood in: data_buffer/2, set_send_data_size/2, buffer/3, convert/7
+% (required/classes.tsv): what the integers size is not settled by any
+% held text.
+
+class network_listener_buffer has
+
+% INTERPOLATED from: the call sites above: the buffer comes back in the
+% first argument after the class.  OURS: the two integers are kept, their
+% meaning UNKNOWN.
+:create(Class, Buffer, First, Second) :-
+        :new(Class, Buffer),
+        Buffer!first_argument := First,
+        Buffer!second_argument := Second;
+
+instance
+
+% INTERPOLATED: the representation (OURS).
+attribute first_argument := 0, second_argument := 0;
+
+end.

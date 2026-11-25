@@ -73,6 +73,14 @@ scratch copy of tools/p9boot.py (build/gfx/inject.py):
 * the transmitter bidding with no free count (0x08|ch): FAIL
   test_rx_against_tx_and_counter (the counter's 0x15 wins).
 
+PPage0's offsets (CHOICES['ppage0']; PromptTest.test_ppage0_offsets),
+observed 2026-11-24, injected in tools/p9boot.py and reverted by the
+reverse edit (sha256 equal afterwards): PPAGE0_ARGC/PPAGE0_ENV back at
+rom.h's comment values 0x200/0x300: FAIL test_ppage0_offsets only (the
+reads are (0x100, arginit) and (0x200, bootenvget)); test_prompt passes,
+because both layouts leave s9term argc 0 and nentry 0 (docs/p9boot.md
+"PPage0's argc and Env offsets").
+
 CRET with MSP > SP + 256 (CHOICES['cret-msp']; NoServerTest), observed
 2026-11-23: p9boot not setting System.cret_clamp: FAIL
 test_ten_requests_then_the_prompt only, the run REFUSED at _cret+0x0
@@ -287,6 +295,18 @@ class PromptTest(unittest.TestCase):
         cls.boot = p9boot.Boot(S9TERM)
         cls.boot.quart.period_override = 0.04
         cls.boot.until = b"root is from"
+        # which PPage0 words the kernel reads, and in which function
+        cls.ppage0_reads = set()
+        board, boot = cls.boot.board, cls.boot
+        read = board.read
+
+        def recording_read(pa):
+            if p9boot.RAMBASE + 0x100 <= (pa & ~3) < p9boot.RAMBASE + 0x1000:
+                cls.ppage0_reads.add(
+                    ((pa & ~3) - p9boot.RAMBASE,
+                     boot.syms.func(boot.state.pc)[0]))
+            return read(pa)
+        board.read = recording_read
         cls.status = cls.boot.run(30000000)
 
     def test_prompt(self):
@@ -299,6 +319,14 @@ class PromptTest(unittest.TestCase):
 
     def test_mostly_idle(self):
         self.assertEqual(self.boot.skipped_steps, IDLE["prompt-skipped"])
+
+    def test_ppage0_offsets(self):
+        # CHOICES['ppage0']: s9term reads argc where p9boot writes it
+        # (rammain.c arginit) and env.nentry likewise (bootenvget), and
+        # nothing else of PPage0 above memsize/fpi
+        self.assertEqual(self.ppage0_reads,
+                         {(p9boot.PPAGE0_ARGC, "arginit"),
+                          (p9boot.PPAGE0_ENV, "bootenvget")})
 
 
 class NetworkTest(unittest.TestCase):
