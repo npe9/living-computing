@@ -8,7 +8,9 @@ page numbers printed on the page).  The module tests disassemble Be's
 DSP code from the Nov 1994 disk and skip, loudly, when the image (held
 out of git: docs/bebox/MANIFEST.md) is absent; no Be or AT&T code is in
 this file, only instruction words, addresses and short decoded texts.
-The model tests run hand-encoded programs on a flat bus.
+The model tests run hand-encoded programs on a flat bus; the serial
+port tests use a loopback device, the codec tests tools/ad1849.py
+(AD1849K data sheet REV. 0, docs/dsp3210/MANIFEST.md).
 
 Discriminating checks, observed 2026-11-24 with the disk image present
 (HOBBIT_9308000058 set).  Each injection is a text edit, reverted by the
@@ -69,6 +71,46 @@ failures:
   test_bus_write_is_not_a_spin, test_memory_counter_is_not_a_spin.
 - dsp3210, bus writes not breaking a spin: test_bus_write_is_not_a_spin.
 
+- dsp3210, ibuf ignoring IN (no bit reversal for LSB first):
+  test_programmed_lsb_first.
+- dsp3210, a slot of 31 bit clocks: test_clock_divider,
+  test_init_handshake, test_programmed_msb_first.
+- dsp3210, the bit clock CKI/(2*ICN), not /(4*ICN): AudioDriverTest
+  (setUpClass), test_clock_divider, test_programmed_msb_first.
+- dsp3210, DMA frame complete one transfer late: test_input_dma_stops,
+  test_output_dma_reloads, test_tone_through_dma.
+- dsp3210, pointer writes in reload mode also loading the current
+  register: test_output_dma_reloads.
+- dsp3210, reading ibuf not clearing ibf: test_ibf_interrupt,
+  test_tone_through_dma.
+- dsp3210, dmac ICS taken as changing bits 4, 5: AudioDriverTest
+  (setUpClass), test_input_dma_stops.
+- dsp3210, no ibf/obe interrupt requests: test_ibf_interrupt.
+- dsp3210, the slot horizon one cycle long:
+  test_skip_with_dma_equals_stepping.
+- dsp3210, skip() not advancing the serial clock:
+  test_skip_with_dma_equals_stepping.
+- dsp3210, input DMA leaving ibf set: test_input_dma_stops,
+  test_skip_with_dma_equals_stepping, test_tone_through_dma.
+- dsp3210, a DMA write leaving a proven spin in place (no _unspin):
+  test_dma_write_ends_spin.  (Its first two versions, a loop that
+  exits at once on the new value, failed nothing: skipping runs to the
+  loop head before jumping, so only a loop that sees the change one
+  iteration late exposes it.)
+- ad1849, 193 autocalibration frames:
+  test_data_mode_rate_and_autocalibration, test_tone_through_dma.
+- ad1849, divide factors 448/384 swapped:
+  test_data_mode_rate_and_autocalibration, test_init_handshake,
+  test_tone_through_dma.
+- ad1849, DCB sent in bit 57: test_first_word_is_the_defaults.
+- ad1849, DCB read from bit 59: AudioDriverTest (setUpClass),
+  test_echo_and_dcb_handshake.
+- ad1849, 1 dB attenuation steps: test_attenuation_and_mono.
+- ad1849, SY high in the second slot: test_init_handshake.
+- ad1849, control_phase defaulting to 0: AudioDriverTest (setUpClass).
+  (Before the driver test took the codec's default, this injection
+  failed nothing; the test was changed and the injection re-run.)
+
 Tried and not discriminating: doblock taking K from its field instead
 of forcing 0.  Every doblock in the code has K = 0 encoded.
 """
@@ -80,6 +122,7 @@ import unittest
 HERE = os.path.dirname(os.path.abspath(__file__))
 HOBBIT = os.path.dirname(HERE)
 sys.path.insert(0, os.path.join(HOBBIT, "tools"))
+import ad1849  # noqa: E402
 import dsp3210  # noqa: E402
 import dsp3210dis as dis  # noqa: E402
 import befs1  # noqa: E402
@@ -808,7 +851,10 @@ def relocate(coff, symbols):
     mml/os: 44 a 32-bit word, 46 the 24-bit immediate of a format 8b
     `rN = (ushort24) A` (Ne bits 28-21 high, N bits 15-0 low), 47 the N of
     the `rN <<| N` after it, which takes bits 31-16 of the pair's value.
-    The value is symbols[index] + A.  The type meanings are INFERRED from
+    The value is symbols[index] + A.  be.oem/audio adds 57/58, the same
+    pair where A is a section's header address rather than its data
+    address (`r3 = 0x38` for _main at paddr 0x38), and 59, a 32-bit word
+    (its iparam buffer pointers).  The type meanings are INFERRED from
     the code pairs they land on, and the symbol values are the caller's:
     the module's symbol table is absent (symptr 0x382b lies past the end),
     so what vcas_server's loader gives each index is not known."""
@@ -825,13 +871,13 @@ def relocate(coff, symbols):
                 unresolved.append((sec["name"], va, sym, typ))
                 continue
             w = struct.unpack(">I", img[va:va + 4])[0]
-            if typ == 44:
+            if typ in (44, 59):
                 w = (w + symbols[sym]) & 0xFFFFFFFF
-            elif typ == 46:
+            elif typ in (46, 57):
                 v = (((w >> 21) & 0xFF) << 16 | (w & 0xFFFF)) + symbols[sym]
                 pair[va + 4] = v
                 w = (w & 0xE01F0000) | ((v >> 16) & 0xFF) << 21 | (v & 0xFFFF)
-            elif typ == 47:
+            elif typ in (47, 58):
                 w = (w & 0xFFFF0000) | (pair[va] >> 16) & 0xFFFF
             else:
                 raise AssertionError("relocation type %d" % typ)
@@ -1013,6 +1059,452 @@ class SpinRulesTest(unittest.TestCase):
                                  br("true", "pc", -12),        # 10: goto c
                                  NOP])
         self.assertEqual(seen, 0)
+
+
+# ------------------------------------------------------------ serial port
+
+def absmem(t, w, rh, n):                # 7a: rH <-> *N, e.g. `r4 = (long) *0x0404`
+    return (0b000111 << 26) | (t << 24) | (w << 21) | (R[rh] << 16) | (n & 0xFFFF)
+
+
+def rev32(w):
+    return int(format(w, "032b")[::-1], 2)
+
+
+class Loop:
+    """A serial device: sends `words` in turn (then 0), records what it got
+    and the core step at which each slot ended."""
+
+    def __init__(self, words=(), clk=None):
+        self.words = list(words)
+        self.got, self.at = [], []
+        self.clk = clk
+        self.sy = 0
+        self.core = None
+
+    def clock(self):
+        return self.clk
+
+    def exchange(self, w):
+        self.got.append(w)
+        self.at.append(self.core.steps if self.core else None)
+        return self.words.pop(0) if self.words else 0
+
+
+# ICN = 1 (CKI / 4 a bit: 32 instructions a slot), OUT = IN = 1 (MSB
+# first), OLEN = 011 and ILEN = 11 (32 bits), AIC = 1 (internal ICK).
+IOC_INT = 0x00130CD0
+SELF = [br("true", "pc", -8), NOP]           # goto .
+
+
+def sio_machine(prog, dev):
+    d, bus = machine(prog)
+    d.sio_dev = dev
+    dev.core = d
+    return d, bus
+
+
+class SioTest(unittest.TestCase):
+    """The serial port and its DMA (manual 9.1, 9.2) against a loopback
+    device."""
+
+    def loopback(self, ioc):
+        prog = [set24("r1", ioc), absmem(1, 7, "r1", 0x40C),       # ioc = r1
+                set24("r2", 0x123456), absmem(1, 7, "r2", 0x408),  # obuf = r2
+                br("ibe", "pc", -8), NOP,                          # 10: wait ibf
+                absmem(0, 7, "r3", 0x404)] + SELF                  # r3 = ibuf
+        dev = Loop([0xCAFEF00D])
+        d, _ = sio_machine(prog, dev)
+        run(d, 300)
+        return d, dev
+
+    def test_programmed_msb_first(self):
+        # p. 9-9: obuf -> output shift register at a slot end, so the word
+        # goes out in the slot after; ibuf takes the slot's input (p. 9-6).
+        d, dev = self.loopback(IOC_INT)
+        self.assertEqual(dev.got[:3], [0, 0x123456, 0x123456])   # underrun: again
+        self.assertEqual(d.r[3], 0xCAFEF00D)
+        # 9.1.5.1, p. 9-12: bit clock CKI / (4 * ICN), 32 bits a slot
+        self.assertEqual({b - a for a, b in zip(dev.at, dev.at[1:])}, {32})
+
+    def test_programmed_lsb_first(self):
+        d, dev = self.loopback(IOC_INT & ~0x30000)              # IN = OUT = 0
+        self.assertEqual(dev.got[1], rev32(0x123456))
+        self.assertEqual(d.r[3], rev32(0xCAFEF00D))
+
+    def test_clock_divider(self):
+        d, dev = self.loopback(IOC_INT | 0x200000)                # ICN = 3
+        self.assertEqual({b - a for a, b in zip(dev.at, dev.at[1:])}, {96})
+
+    def test_input_dma_stops(self):
+        dev = Loop([0x11111111 * k for k in range(1, 7)])
+        d, _ = sio_machine(SELF, dev)
+        d.store(0x40C, 4, IOC_INT)
+        d.store(0x420, 4, 0xE800)          # idp
+        d.store(0x42A, 2, 12)              # icnt: (4 - 1) * 4 bytes
+        d.store(0x433, 1, 0x30)            # ICS | IDE, stop mode (Listing 9-2)
+        run(d, 32 * 8)
+        self.assertEqual([d.load(0xE800 + 4 * k, 4) for k in range(5)],
+                         [0x11111111, 0x22222222, 0x33333333, 0x44444444, 0])
+        self.assertEqual(d.dma["i"]["en"], 0)
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAIN)
+        self.assertEqual(d.load(0x433, 1), 0)
+
+    def test_output_dma_reloads(self):
+        dev = Loop()
+        d, _ = sio_machine(SELF, dev)
+        for a, ws in ((0xE800, [0xA0, 0xA1]), (0xE900, [0xB0, 0xB1])):
+            for k, w in enumerate(ws):
+                d.store(a + 4 * k, 4, w)
+        d.store(0x40C, 4, IOC_INT)
+        d.store(0x424, 4, 0xE800)          # odp, stop mode: current and next
+        d.store(0x42E, 2, 4)               # ocnt: 2 transfers
+        d.store(0x433, 1, 0x07)            # OCS | ODE | ORS
+        d.store(0x424, 4, 0xE900)          # reload mode: next only (p. 9-19)
+        self.assertEqual(d.load(0x424, 4), 0xE800)     # reads the current
+        run(d, 32 * 8)
+        self.assertEqual(dev.got[1:7], [0xA0, 0xA1, 0xB0, 0xB1, 0xB0, 0xB1])
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAOUT)
+        self.assertEqual(d.load(0x433, 1), 0x06)
+
+    def test_ibf_interrupt(self):
+        # 9.1.6.2: emr bit 11; reading ibuf clears ibf, so one per slot
+        prog = [set24("r22", 0xE800), set24("r1", 0x800), iomov(1, 3, "r1", 8),
+                set24("r2", IOC_INT), absmem(1, 7, "r2", 0x40C),
+                br("true", "pc", -8), add3("r7", "r0", 0)]   # goto .; a nop
+        # that is not `nop`: 0x80000000 decodes as a conditional goto, after
+        # which the model takes no interrupt (p. 7-7).
+        dev = Loop(list(range(1, 40)))
+        d, _ = sio_machine(prog, dev)
+        handler = [absmem(0, 7, "r3", 0x404), add3("r9", "r9", 1), 0x803E0000]
+        for i, w in enumerate(handler):
+            d.store(0xE800 + 8 * dsp3210.VEC_SIOIN + 4 * i, 4, w)
+        run(d, 330)
+        self.assertGreaterEqual(len(dev.got), 9)
+        self.assertEqual((d.r[9], d.r[3]), (len(dev.got), len(dev.got)))
+
+    def test_skip_with_dma_equals_stepping(self):
+        # waiti with input DMA in reload mode: cycles_until_event() is the
+        # next slot end, and skipping to it gives the stepped state.
+        def build():
+            dev = Loop(list(range(1, 200)))
+            d, _ = sio_machine([WAITI, NOP], dev)
+            d.store(0x40C, 4, IOC_INT | 0x400000)        # ICN = 5
+            d.store(0x420, 4, 0xE800)
+            d.store(0x42A, 2, 12)
+            d.store(0x433, 1, 0x70)                      # ICS | IDE | IRS
+            run(d, 2)
+            return d, dev
+        a, adev = build()
+        b, bdev = build()
+        n, skipped = 6000, 0
+        run(a, n)
+        done = 0
+        while done < n:
+            h = b.cycles_until_event()
+            if h:
+                h = min(h, n - done)
+                b.skip(h)
+                skipped += h
+                done += h
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, n * 0.9)
+        self.assertEqual(adev.got, bdev.got)
+        self.assertEqual(a.ram, b.ram)
+        self.assertEqual((a.dma, a.sio_acc, a.irq_latched),
+                         (b.dma, b.sio_acc, b.irq_latched))
+
+    def test_dma_write_ends_spin(self):
+        # A loop polling an on-chip word is a proven spin; input DMA then
+        # writes that word.  The loop sees the change one iteration late
+        # (r4 is last iteration's r3), so at its head right after the DMA
+        # it is not a fixed point: skipping must stop, as stepping does.
+        def build():
+            dev = Loop([5])
+            prog = [set24("r1", 0xE800),
+                    add3("r4", "r3", 0),                       # 4: r4 = r3
+                    mov(0, 7, "r3", "r1"),                     # 8: r3 = *r1
+                    alu(7, "r0", "r4", "r0"),                  # c: r4 - 0
+                    br("eq", "pc", -20), add3("r7", "r0", 0),  # 10: if (eq) goto 4
+                    add3("r9", "r0", 9),
+                    br("true", "pc", -8), add3("r10", "r10", 1)]  # 1c: count
+            d, _ = sio_machine(prog, dev)
+            d.on_watch = lambda reads: True
+            d.store(0x40C, 4, IOC_INT | 0xE00000)        # ICN = 15
+            d.store(0x420, 4, 0xE800)
+            d.store(0x42A, 2, 0)                         # one transfer
+            d.store(0x433, 1, 0x30)
+            return d
+        a, b = build(), build()
+        n, skipped, done = 3000, 0, 0
+        run(a, n)
+        while done < n:
+            h = b.cycles_until_event()
+            if h:
+                h = min(h, n - done)
+                b.skip(h)
+                skipped += h
+                done += h
+            else:
+                b.step()
+                done += 1
+        self.assertGreater(skipped, 300)
+        self.assertEqual((a.r[9], b.r[9]), (9, 9))
+        self.assertEqual((a.r[10], a.pc, a.steps), (b.r[10], b.pc, b.steps))
+
+    def test_unmodelled_length_fails_loud(self):
+        dev = Loop()
+        d, _ = sio_machine(SELF, dev)
+        d.store(0x40C, 4, (IOC_INT & ~0x1C00) | 0x0800)  # OLEN = 010, 16 bits
+        with self.assertRaisesRegex(dsp3210.DspError, "OLEN=2 not modelled"):
+            run(d, 40)
+
+
+# ------------------------------------------------------------ AD1849K
+
+def frame(c, w0, w1):
+    return c.exchange(w0), c.exchange(w1)
+
+
+def ctl(dfr=0, st=0, df=0, mck=1, ms=1, dcb=0):
+    """A control word as Be's driver builds it (0x20 in byte 1, FSEL 0)."""
+    return ((0x20 | dcb << 2) << 24 | (dfr << 3 | st << 2 | df) << 16
+            | (mck << 4 | ms << 1) << 8)
+
+
+class CodecTest(unittest.TestCase):
+    """tools/ad1849.py against the AD1849K data sheet, REV. 0."""
+
+    def control(self):
+        c = ad1849.AD1849K(control_phase=0)
+        c.pin("reset", 1)
+        return c
+
+    def test_first_word_is_the_defaults(self):
+        # p. 16 defaults, p. 20: the first control-mode word has DCB = 1
+        c = self.control()
+        self.assertEqual(frame(c, 0, 0), (0x24010900, 0xC0002200))
+
+    def test_echo_and_dcb_handshake(self):
+        c = self.control()
+        a, b = ctl(dfr=5, st=1, mck=2), ctl(dfr=5, st=1, mck=2, dcb=1)
+        frame(c, a, 0)
+        self.assertEqual(frame(c, a, 0x1234), (a, 0))           # echo, next frame
+        self.assertEqual(frame(c, b, 0), (a, 0x1234))
+        self.assertEqual(c.log[-1][1], "dcb1")
+        self.assertEqual(frame(c, ctl(), 0), (b, 0))            # DCB = 1 echoed
+        self.assertEqual(frame(c, ctl(), 0), (0, 0))            # then three-state
+        self.assertEqual((c.dfr, c.st, c.mck), (5, 1, 2))       # later words ignored
+
+    def test_data_mode_rate_and_autocalibration(self):
+        c = self.control()
+        for w in (ctl(dfr=5, st=1, mck=2), ctl(dfr=5, st=1, mck=2, dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        # p. 12: 16.9344 MHz / 384 = 44.1 kHz; 64-bit frames, SCLK = 64 FS
+        self.assertEqual(c.clock(), (50000000 * 384, 64 * 16934400))
+        outs = [frame(c, 0x10002000, 0x00000000)[1] for _ in range(196)]
+        self.assertEqual([o >> 23 & 1 for o in outs[:194]], [1] * 194)   # ADI
+        self.assertEqual(outs[195] >> 23 & 1, 0)
+        seg = c.played[-1]
+        self.assertEqual((seg[0], seg[1]), (44100.0, 2))
+        v = struct.unpack("<%dh" % (len(seg[2]) // 2), bytes(seg[2]))
+        self.assertEqual(v[:388], (0,) * 388)                   # calibrating
+        self.assertEqual(v[388:], (0x1000, 0x2000) * 2)
+
+    def test_attenuation_and_mono(self):
+        c = self.control()
+        for w in (ctl(), ctl(dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        c.autocal = 1
+        frame(c, 0, 0)
+        frame(c, 0x40007FFF, 4 << 24)                           # LO = 4: 6 dB
+        frame(c, 0x40007FFF, 63 << 24)                          # LO = 63: mute
+        seg = c.played[-1]
+        self.assertEqual(seg[1], 1)                             # ST = 0: mono
+        self.assertEqual(struct.unpack("<3h", bytes(seg[2])), (0, 8211, 0))
+
+    def test_companding(self):
+        # G.711 codes as the data sheet's DF = 1, 2 (p. 12)
+        self.assertEqual([ad1849.ulaw_decode(b) for b in (0xFF, 0x80, 0x00, 0x7F)],
+                         [0, 32124, -32124, 0])
+        self.assertEqual([ad1849.alaw_decode(b) for b in (0xD5, 0x55, 0xAA)],
+                         [8, -8, 32256])
+        for x in (0, 100, -100, 1000, -5000, 32000):
+            self.assertLess(abs(ad1849.ulaw_decode(ad1849.ulaw_encode(x)) - x),
+                            max(8, abs(x) // 16))
+            self.assertLess(abs(ad1849.alaw_decode(ad1849.alaw_encode(x)) - x),
+                            max(16, abs(x) // 16))
+
+    def test_wav_round_trip(self):
+        import tempfile
+        c = self.control()
+        for w in (ctl(st=1), ctl(st=1, dcb=1)):
+            frame(c, w, 0)
+        c.pin("dc", 1)
+        c.autocal = 1
+        with tempfile.TemporaryDirectory() as t:
+            src = os.path.join(t, "in.wav")
+            import wave
+            with wave.open(src, "wb") as w:
+                w.setnchannels(2)
+                w.setsampwidth(2)
+                w.setframerate(8000)
+                w.writeframes(struct.pack("<4h", 300, -300, 400, -400))
+            c.load_wav(src)
+            outs = [frame(c, 0x01000200, 0)[0] for _ in range(3)]
+            self.assertEqual(outs, [0, 300 << 16 | (-300 & 0xFFFF),
+                                    400 << 16 | (-400 & 0xFFFF)])
+            dst = os.path.join(t, "out.wav")
+            self.assertEqual(c.save_wav(dst), 3)
+            with wave.open(dst, "rb") as w:
+                self.assertEqual((w.getnchannels(), w.getframerate()), (2, 8000))
+                self.assertEqual(w.readframes(3)[4:], struct.pack("<4h", 256, 512, 256, 512))
+
+    def test_attach_codec_bio(self):
+        # Be's driver: bio = 0x15 (BIO0-2 low), then bio = 2 (BIO0 high)
+        bus = BoardBus()
+        prog = [set24("r3", 7), absmem(1, 0, "r3", 0x41B),      # bioc: 0-2 out
+                set24("r3", 0x15), absmem(1, 3, "r3", 0x41E),
+                set24("r3", 2), absmem(1, 3, "r3", 0x41E)] + SELF
+        bus.b.words(CODE, prog)
+        for i, x in enumerate(CODE.to_bytes(4, "big")):
+            bus.b.write(0x60000000 + 4 * i, 4, x)
+        d = dsp3210.Dsp3210(3, bus)
+        c = ad1849.AD1849K()
+        d.attach_codec(c)
+        d.release()
+        for _ in range(4):
+            d.step()
+        self.assertEqual(c.mode, "reset")
+        for _ in range(2):
+            d.step()
+        self.assertEqual((c.pins["reset"], c.mode), (1, "control"))
+        self.assertIn(("bio0", 1), bus.pinlog)
+        import pickle
+        self.assertEqual(pickle.loads(pickle.dumps(d)).codec.mode, "control")
+
+
+class AudioDriverTest(unittest.TestCase):
+    """Be's be.oem/audio `init` (_c_init, 0x794) standing alone, with the
+    AD1849K on the serial port: codec reset, control mode, the DCB
+    handshake, data mode at 44.1 kHz stereo, DMA running; then a tone put
+    in the next output DMA buffer comes out of the codec, and input samples
+    land in the next input buffer.
+
+    INFERRED inputs: the module is laid out flat at DSP 0x60010000 with
+    every relocation symbol the module base (no loader: buffers then sit
+    past the image, which the init alone tolerates); the iparam words are
+    the host's (control 13: 44.1 kHz, PCM 16, stereo; frame control
+    0xC0400000: lines and speaker on, no attenuation); FrameSize 64 bytes
+    (32 frames a DMA buffer); pcw 0x3d80 as VCOS boots it; the return
+    address is a `goto .` stub."""
+
+    B = 0x60010000
+    N = 32
+    STUB = B + 0x1F00
+
+    @classmethod
+    def boot(cls, phase=None):
+        coff = module_words("/system/vcos/be.oem/audio")
+        syms = set()
+        for s in coff.sections:
+            for k in range(s["nreloc"]):
+                syms.add(struct.unpack(">IIH", coff.blob[s["relptr"] + 10 * k:
+                                                         s["relptr"] + 10 * k + 10])[1])
+        img, unresolved = relocate(coff, {s: cls.B for s in syms})
+        assert not unresolved
+        img += bytes(0x2000)
+        img[0xD18:0xD1C] = struct.pack(">I", cls.N * 2)       # FrameSize
+        img[0xCC0:0xCC4] = struct.pack(">I", 13)
+        img[0xCC4:0xCC8] = struct.pack(">I", 0xC0400000)
+        img[0x1F00:0x1F08] = struct.pack(">II", 0x802FFFF8, NOP)   # goto .
+        bus = Bus()
+        for i, x in enumerate(img):
+            bus.mem[cls.B + i] = x
+        d = dsp3210.DSP3210(bus.read, bus.write)
+        d.reset(0xF0)
+        d.boot_state = None
+        d.ior[dsp3210.PCW] = 0x3D80
+        d.r = [0] * 32
+        d.r[R["r18"]] = cls.STUB
+        d.r[R["r21"]] = 0xE400
+        d._jump(cls.B + 0x794)
+        codec = (ad1849.AD1849K() if phase is None       # the model's default
+                 else ad1849.AD1849K(control_phase=phase))
+        d.sio_dev = codec
+        d.on_bio = codec.bio
+        n = 0
+        while d.pc != cls.STUB and n < 1200000:
+            d.step()
+            n += 1
+        return d, bus, codec, n
+
+    @classmethod
+    def setUpClass(cls):
+        if os.path.exists(DISK):
+            cls.run_ = cls.boot()
+
+    def setUp(self):
+        disk_or_skip(self)
+        self.d, self.bus, self.codec, self.n = self.run_
+
+    def test_init_handshake(self):
+        d, c = self.d, self.codec
+        self.assertEqual(d.pc, self.STUB)
+        # observed: 1,112,843 instructions, 50 ms of them the RESET wait
+        self.assertEqual(self.n, 1112843)
+        self.assertEqual([e for _, e in c.log],
+                         ["control", "dcb0", "dcb1",
+                          "data master 44100 Hz stereo DF=0"])
+        self.assertEqual([f for f, _ in c.log], [0, 1, 507, 508])
+        self.assertEqual(d.sio_ioc, 0x00030CC0)
+        self.assertEqual((c.pins, c.mck, c.ms), (dict(reset=1, pdn=0, dc=1), 2, 1))
+        self.assertEqual((d.dma["o"]["en"], d.dma["o"]["rs"], d.dma["i"]["en"],
+                          d.dma["i"]["rs"]), (1, 1, 1, 1))
+
+    def test_tone_through_dma(self):
+        import copy
+        import math
+        d, bus = copy.deepcopy((self.d, self.bus))
+        c = d.sio_dev
+        out_next, in_next = d.dma["o"]["np"], d.dma["i"]["np"]
+        tone = [int(8000 * math.sin(2 * math.pi * k / self.N)) for k in range(self.N)]
+        for k, x in enumerate(tone):
+            bus.write(out_next + 8 * k, 4, (x & 0xFFFF) << 16 | (-x & 0xFFFF))
+            bus.write(out_next + 8 * k + 4, 4, 0xC0400000)
+        c.record = [(100 * k, -100 * k) for k in range(1000)]
+        run(d, 300 * 284)
+        self.assertEqual(c.log[-1], (702, "calibrated"))
+        seg = c.played[-1][2]
+        v = struct.unpack("<%dh" % (len(seg) // 2), bytes(seg))
+        left = v[0::2]
+        self.assertEqual(left[:194], (0,) * 194)
+        # after the mute buffer, the reload buffer over and over
+        # after calibration: the reload buffer over and over (the mute
+        # buffer went out during calibration), so some phase of the tone
+        win = left[200:200 + 3 * self.N]
+        self.assertIn(win, [tuple(tone * 4)[j:j + 3 * self.N] for j in range(self.N)])
+        self.assertEqual(v[1::2][200:200 + 3 * self.N], tuple(-x for x in win))
+        # the input buffer: ADC samples (L:R) and the register word, ADI = 0
+        ins = [bus.read(in_next + 4 * k, 4) for k in range(4)]
+        self.assertEqual(ins[1::2], [0xC0400000] * 2)
+        left0 = ins[0] >> 16
+        self.assertEqual((ins[2] >> 16) - left0, 100)
+        self.assertEqual((ins[0] & 0xFFFF, ins[2] & 0xFFFF),
+                         (-left0 & 0xFFFF, -(left0 + 100) & 0xFFFF))
+        self.assertTrue(d.irq_latched & 1 << dsp3210.VEC_DMAIN)
+
+    def test_other_control_phase_fails(self):
+        # control_phase = 0: get_in_frame_sync keeps r9 in the second
+        # half of the codec's word, so the DCB = 1 word is never taken and
+        # D/C goes high with the reset defaults (MCK = 0).  The phase is a
+        # stand-in for the board's TSIN timing (tools/ad1849.py).
+        with self.assertRaisesRegex(ad1849.CodecError, "MCK=0"):
+            self.boot(phase=0)
 
 
 if __name__ == "__main__":

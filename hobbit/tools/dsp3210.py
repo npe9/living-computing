@@ -44,16 +44,29 @@ What is modelled, with the page each rule comes from:
     input (X, or aM in format 1) is the value computed three instructions
     before, and a DAU condition is the flags of four instructions before;
   - idle skipping for a board: cycles_until_event() / skip(n) jump a
-    DSP waiting in waiti to its next timer tick.
+    DSP waiting in waiti to its next timer tick;
+  - the serial I/O port (9.1, pp. 9-1..9-17) at word level: ibuf/obuf
+    0x404/0x408 and ioc 0x40c (Table 9-1, p. 9-4); obuf and the output
+    shift register, the input shift register and ibuf, double buffered,
+    with the obe/ibf flags (pp. 9-9, 9-6) and the sy flag (p. 4-7); the
+    bit clock from the on-chip generator, CKI / (4 * ICN) (9.1.5.1,
+    p. 9-12), or from the device at the far end (`sio_dev`); 32-bit
+    words, either bit order (IN/OUT, pp. 9-6, 9-10); SIO interrupts on
+    ibf and obe (emr bits 11 and 12, 9.1.6.2, p. 9-16);
+  - the two-channel DMA controller (9.2, pp. 9-18..9-20): idp/odp,
+    icnt/ocnt and dmac (Table 9-3), stop-on-complete and reload modes
+    with current/next registers, transfer size from ISZ/OSZ and the
+    length fields, frame-complete interrupts (emr bits 13 and 14).
 
 Not modelled (each fails loud where reachable, or is documented as a
 stand-in): the 40-bit accumulator's exact rounding (accumulators hold a
 Python float, truncated to the 32-bit format on every store; bit-exact
 DAU arithmetic needs the guard-bit rules of 8.2.3 transcribed), mu-law /
-A-law ic/oc, seed, the serial port's bit timing and DMA (the SIO and DMA
-registers are plain storage; `sio_out`/`sio_in` hooks see obuf writes and
-supply ibuf), dolock bus locking, the error exceptions other than illegal
-opcode.
+A-law ic/oc, seed, the serial port below word level (8-, 16- and
+24-bit lengths fail loud; ILD/OLD/SY are the device's word slots; the
+frame boundary flag fb, the loss-of-sync and sanity errors; the cycle a
+DMA transfer steals is not charged), dolock bus locking, the error
+exceptions other than illegal opcode.
 
 Bus: `read(addr, size)` and `write(addr, size, value)` callbacks, size in
 bytes (1, 2, 4), big-endian values (B/LN = 1, the Be modules' byte order).
@@ -170,8 +183,9 @@ class DSP3210:
         self.bus_write = write
         self.name = name
         self.ram = bytearray(RAM_SIZE)
-        self.sio_out = None        # callback(word) on obuf write
-        self.sio_in = None         # callback() -> word or None for ibuf
+        self.sio_dev = None        # the serial device (see _sio_tick)
+        self.sio_ibuf = 0          # reset leaves ibuf and obuf alone (p. 9-2)
+        self.sio_obuf = 0
         self.on_bio = None         # callback(pins) when the BIO outputs change
         self.on_watch = None       # callback(reads) -> bool: watch these bus words
         self.cycles = 0            # instruction cycles since construction
@@ -210,7 +224,7 @@ class DSP3210:
         if not self.running:
             return True
         return (self.waiting and not self.mmio.get(0x413, 0) & 1
-                and not self._pending())
+                and not self._pending() and self._sio_horizon() is None)
 
     def cycles_until_event(self):
         """Instruction cycles that will pass with nothing happening but the
@@ -228,7 +242,8 @@ class DSP3210:
                 return 0
         elif self._spin is None:
             return 0
-        return self._timer_horizon()
+        t, s = self._timer_horizon(), self._sio_horizon()
+        return t if s is None else s if t is None else min(t, s)
 
     def _timer_horizon(self):
         """Cycles before the one in which the timer reaches zero (it then
@@ -300,6 +315,7 @@ class DSP3210:
         if not self.running or n == 0:
             return
         self._advance_timer(n)
+        self._advance_sio(n)
 
     def _skip_spin(self, n):
         period = self._spin[0]
@@ -311,6 +327,7 @@ class DSP3210:
         self.steps += k
         self.cycles += k
         self._advance_timer(k)
+        self._advance_sio(k)
         self.run(n - k)
 
     def _advance_timer(self, n):
@@ -363,6 +380,7 @@ class DSP3210:
         self._head = None          # target of the last backward branch
         self._trk = None           # an iteration being checked for a fixed point
         self._spin = None          # (period, bus reads) of a proven spin
+        self._sio_reset()
         self.running = True
         self._rom_reset()
 
@@ -462,10 +480,8 @@ class DSP3210:
 
     # MMIO (Figure 3-5, big-endian addresses; mmio.h)
     def _mmio_read(self, off, size):
-        if off == 0x404 and self.sio_in is not None:
-            v = self.sio_in()
-            if v is not None:
-                self.mmio[0x404] = v
+        if 0x404 <= off < 0x410 or 0x420 <= off < 0x434:
+            return self._sio_read(off, size)
         if off == 0x414:
             return self.timer_count & M32
         return self.mmio.get(off, 0) & ((1 << (8 * size)) - 1)
@@ -487,11 +503,12 @@ class DSP3210:
                 self.on_bio(out)
             self.mmio[0x41E] = sum(((out >> i) & 1) << (2 * i + 1) for i in range(8))
             return
+        if 0x404 <= off < 0x410 or 0x420 <= off < 0x434:
+            self._sio_write(off, size, value)
+            return
         self.mmio[off] = value
         if off == 0x414:
             self.timer_count = self.timer_init = value
-        if off == 0x408 and self.sio_out is not None:
-            self.sio_out(value)
 
     # -------------------------------------------------- registers
 
@@ -532,7 +549,8 @@ class DSP3210:
 
     def _pending(self):
         ext = ((self.irq_pins & 1) << VEC_EXT0) | ((self.irq_pins >> 1 & 1) << VEC_EXT1)
-        return (self.irq_latched | ext) & self.ior[EMR] & 0xFF00
+        sio = self.sio_ibf << VEC_SIOIN | self.sio_obe << VEC_SIOOUT
+        return (self.irq_latched | ext | sio) & self.ior[EMR] & 0xFF00
 
     @staticmethod
     def _uninterruptible(w):
@@ -609,6 +627,197 @@ class DSP3210:
                 if tcon & 2:
                     self.timer_count = self.timer_init
 
+    # -------------------------------------------------- serial I/O and DMA
+    # 9.1 (pp. 9-1..9-17) and 9.2 (pp. 9-18..9-20), at word level.  The
+    # device at the far end of the port (`sio_dev`, e.g. tools/ad1849.py)
+    # provides:
+    #   clock()        -> (num, den): num/den CKI per serial bit while it
+    #                     drives the bit clock, else None;
+    #   exchange(word) -> word: one 32-bit slot, both words as on the wire
+    #                     (first bit = bit 31);
+    #   sy             -> the level of SY for the slot about to start.
+    # A slot is 32 bit clocks.  At its end the shifted-in word lands in
+    # ibuf (ibf = 1) and obuf moves to the output shift register (obe = 1,
+    # p. 9-9).  If obuf was not reloaded, its old word goes out again:
+    # INFERRED (the manual gives no underrun rule).  ILD/OLD/SY are taken
+    # to be the device's word and frame boundaries, whether ioc calls them
+    # internal or not.
+
+    def _sio_reset(self):
+        """Reset clears ioc (p. 9-2) and dmac (p. 9-18)."""
+        self.sio_ioc = 0
+        self.sio_ibf = 0
+        self.sio_obe = 1
+        self.sio_osr = 0
+        self.sio_sy = 0
+        self.sio_acc = 0           # CKI x den into the current slot
+        self.sio_clk = None        # (num, den) CKI per bit, None: stopped
+        self.dma = {k: dict(cp=0, np=0, cc=0, nc=0, ctr=0, en=0, rs=0, rb=0)
+                    for k in "io"}
+
+    def _sio_clock(self):
+        """The bit clock: the on-chip generator, CKI / (4 * ICN) (9.1.5.1,
+        p. 9-12), when ioc makes ICK or OCK internal and ICN != 0; else
+        the device's, if it drives one.  That an internal ICK is what
+        clocks the device (the BeBox wiring) is INFERRED from Be's audio
+        driver, which programs AIC = 1 for the AD1849's control mode."""
+        ioc = self.sio_ioc
+        icn = ioc >> 20 & 0xF
+        if ioc & 0x110 and icn:
+            return (4 * icn, 1)
+        if self.sio_dev is not None:
+            return self.sio_dev.clock()
+        return None
+
+    def _dma_wanted(self):
+        return bool(self.dma["i"]["en"] and self.sio_ibf
+                    or self.dma["o"]["en"] and self.sio_obe)
+
+    def _sio_tick(self):
+        clk = self._sio_clock()
+        if clk != self.sio_clk:
+            self.sio_clk = clk
+            self.sio_acc = 0
+        if clk is not None:
+            num, den = clk
+            self.sio_acc += self.CKI_PER_INSN * den
+            if self.sio_acc >= 32 * num:
+                self.sio_acc -= 32 * num
+                self._sio_slot()
+        if self._dma_wanted():
+            self._dma_cycle()
+
+    def _sio_horizon(self):
+        """Instruction cycles before the one that ends a slot, 0 if a DMA
+        request is pending, None if the port is stopped."""
+        if self._dma_wanted():
+            return 0
+        clk = self._sio_clock()
+        if clk is None:
+            return None
+        if clk != self.sio_clk:
+            return 0
+        num, den = clk
+        need = 32 * num - self.sio_acc          # CKI x den to the slot end
+        return max(0, -(-need // (self.CKI_PER_INSN * den)) - 1)
+
+    def _advance_sio(self, n):
+        clk = self._sio_clock()
+        if clk is None or clk != self.sio_clk:
+            return
+        num, den = clk
+        self.sio_acc += n * self.CKI_PER_INSN * den
+        if self.sio_acc >= 32 * num:
+            raise DspError("%s: skip crosses a serial slot" % self.name)
+
+    @staticmethod
+    def _rev32(w):
+        return int(format(w & M32, "032b")[::-1], 2)
+
+    def _sio_slot(self):
+        ioc = self.sio_ioc
+        ilen, olen = ioc >> 6 & 3, ioc >> 10 & 7
+        if ilen not in (0, 3) or olen != 3:
+            raise DspError("%s: SIO length ILEN=%d OLEN=%d not modelled (32-bit "
+                           "words only)" % (self.name, ilen, olen))
+        word = self.sio_dev.exchange(self.sio_osr) if self.sio_dev else 0
+        # IN = 1: MSB first, the wire word as it is (p. 9-6).
+        self.sio_ibuf = word & M32 if ioc >> 16 & 1 else self._rev32(word)
+        self.sio_ibf = 1
+        # OUT = 1: MSB first; OUT = 0: bit 0 of obuf goes first (p. 9-10).
+        self.sio_osr = self.sio_obuf if ioc >> 17 & 1 else self._rev32(self.sio_obuf)
+        self.sio_obe = 1
+        self.sio_sy = int(bool(self.sio_dev.sy)) if self.sio_dev else 0
+
+    def _dma_cycle(self):
+        """One DMA cycle: input, then output (9.1.6.3, p. 9-17).  The
+        transfer is 32 bits unless ISZ/OSZ = 1 with an 8- or 16-bit length
+        (9.2.3, 9.2.4, pp. 9-19, 9-20); those lengths stop at the slot."""
+        ioc = self.sio_ioc
+        if self.dma["i"]["en"] and self.sio_ibf:
+            n = {1: 1, 2: 2}.get(ioc >> 6 & 3, 4) if ioc >> 18 & 1 else 4
+            ch = self.dma["i"]
+            self.sio_ibf = 0
+            self.store(ch["cp"] + ch["ctr"], n, self.sio_ibuf)
+            self._unspin()             # the spin may read what DMA wrote
+            self._dma_step(ch, n, VEC_DMAIN)
+        if self.dma["o"]["en"] and self.sio_obe:
+            n = {1: 1, 2: 2}.get(ioc >> 10 & 7, 4) if ioc >> 19 & 1 else 4
+            ch = self.dma["o"]
+            self.sio_obuf = self.load(ch["cp"] + ch["ctr"], n)
+            self.sio_obe = 0
+            self._dma_step(ch, n, VEC_DMAOUT)
+
+    def _dma_step(self, ch, n, vec):
+        """p. 9-18: the transfer went to pointer + counter; when the
+        counter equals the count the frame is complete: stop (ODE/IDE
+        cleared) or reload current from next; the counter goes to zero
+        and the frame-complete interrupt is requested (p. 9-17)."""
+        if ch["ctr"] == ch["cc"]:
+            ch["ctr"] = 0
+            if ch["rs"]:
+                ch["cp"], ch["cc"] = ch["np"], ch["nc"]
+            else:
+                ch["en"] = 0
+            self.irq_latched |= 1 << vec
+        else:
+            ch["ctr"] = (ch["ctr"] + n) & 0xFFFF
+
+    # MMIO addresses, big-endian (p. 9-1 and 9.2.1, p. 9-18)
+    DMA_REGS = {0x420: ("i", "p", 4), 0x424: ("o", "p", 4),
+                0x42A: ("i", "c", 2), 0x42E: ("o", "c", 2)}
+
+    def _sio_read(self, off, size):
+        if off == 0x404 and size == 4:
+            self.sio_ibf = 0
+            return self.sio_ibuf
+        if off == 0x408 and size == 4:
+            return self.sio_obuf
+        if off == 0x40C and size == 4:
+            return self.sio_ioc
+        if off in self.DMA_REGS and self.DMA_REGS[off][2] == size:
+            k, f, _ = self.DMA_REGS[off]
+            ch = self.dma[k]
+            return ch["cp"] if f == "p" else ch["cc"]   # current (p. 9-18)
+        if off == 0x433 and size == 1:
+            i, o = self.dma["i"], self.dma["o"]
+            return (o["en"] << 1 | o["rs"] << 2 | o["rb"] << 3 |
+                    i["en"] << 5 | i["rs"] << 6 | i["rb"] << 7)
+        raise DspError("%s: SIO/DMA read 0x%x size %d not modelled"
+                       % (self.name, off, size))
+
+    def _sio_write(self, off, size, value):
+        if off == 0x408 and size == 4:
+            self.sio_obuf = value & M32
+            self.sio_obe = 0
+            return
+        if off == 0x40C and size == 4:
+            self.sio_ioc = value & 0x00FFFFFF
+            return
+        if off in self.DMA_REGS and self.DMA_REGS[off][2] == size:
+            k, f, _ = self.DMA_REGS[off]
+            ch = self.dma[k]
+            v = value & (M32 if f == "p" else 0xFFFF)
+            ch["n" + f] = v
+            if not ch["rs"]:           # stop mode: current too, counter 0
+                ch["c" + f] = v
+                ch["ctr"] = 0
+            return
+        if off == 0x433 and size == 1:
+            # Table 9-3 (p. 9-20).  OCS (bit 0) lets bits 1, 2 change; ICS
+            # (bit 4) lets "dmac[4,5]" change, read here as bits 5, 6 (IDE,
+            # IRS), the input twin of the output rule.  IRB/ORB always load.
+            v = value & 0xFF
+            i, o = self.dma["i"], self.dma["o"]
+            if v & 1:
+                o["en"], o["rs"] = v >> 1 & 1, v >> 2 & 1
+            if v & 0x10:
+                i["en"], i["rs"] = v >> 5 & 1, v >> 6 & 1
+            o["rb"], i["rb"] = v >> 3 & 1, v >> 7 & 1
+            return
+        raise DspError("%s: SIO/DMA write 0x%x size %d not modelled"
+                       % (self.name, off, size))
+
     # -------------------------------------------------- conditions
 
     def cond(self, c):
@@ -625,10 +834,10 @@ class DSP3210:
             return bool([not U, U, not N, N, not Z, Z, not V, V,
                          not (N or Z), N or Z][c - 16])
         if 32 <= c < 48:
-            ioc = self.mmio
-            ibf = 0x404 in ioc and ioc.get("ibf", 0)
-            m = {32: not ibf, 33: ibf, 34: False, 35: True,
-                 40: False, 41: True, 42: False, 43: False,
+            self._dirty()              # a serial flag or pin can change
+            ibf, obe, sy = self.sio_ibf, self.sio_obe, self.sio_sy
+            m = {32: not ibf, 33: ibf, 34: not obe, 35: obe,
+                 40: not sy, 41: sy,
                  44: not (self.irq_pins & 1), 45: bool(self.irq_pins & 1),
                  46: not (self.irq_pins & 2), 47: bool(self.irq_pins & 2)}
             if c in m:
@@ -702,6 +911,7 @@ class DSP3210:
         if not self.running:
             return False
         self._tick()
+        self._sio_tick()
         self._drain_writes()
         if self.stall:
             self.stall -= 1
@@ -1150,6 +1360,16 @@ class Dsp3210:
         self.core.on_bio = self._bio
         self.core.on_watch = self._watch
         self._pins = 0
+        self.codec = None
+
+    def attach_codec(self, codec):
+        """Put a serial device on this DSP's SIO, its control pins on BIO
+        (tools/ad1849.py: AD1849K(cki_hz), BIO0 RESET, BIO1 PDN, BIO2 D/C,
+        INFERRED from Be's driver).  On the BeBox this is DSP 3
+        (AUDIO_DSP_ID in Be's audio.h)."""
+        self.codec = codec
+        self.core.sio_dev = codec
+        codec.bio(self._pins)
 
     def _watch(self, reads):
         """A spin was proven: ask the board to report writes to the bus
@@ -1168,6 +1388,8 @@ class Dsp3210:
         self.bus.write(addr, value, size)
 
     def _bio(self, out):
+        if self.codec is not None:
+            self.codec.bio(out)
         for i in range(8):
             if (out ^ self._pins) >> i & 1:
                 self.bus.pins("bio%d" % i, out >> i & 1)

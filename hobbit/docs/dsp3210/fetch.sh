@@ -31,6 +31,10 @@ if [ "${1:-}" != "--check" ]; then
     # AT&T "DSP3210 Digital Signal Processor: The Multimedia Solution" data sheet
     fetch_pdf "$B/AT%26T%20DSP3210%20DSP%20The%20Multimedia%20Solution.pdf" \
       ATT_DSP3210_DSP_The_Multimedia_Solution.pdf
+    # Analog Devices AD1849K SoundPort codec data sheet, REV. 0 (the BeBox
+    # audio card's codec), from the ALSA project's manuals mirror; the
+    # analog.com URLs for it no longer resolve
+    fetch_pdf https://sunsite2.icm.edu.pl/Linux/alsa/manuals/ad/1063_0.pdf AD1849K.pdf
 fi
 
 shasum -a 256 -c SHA256SUMS
