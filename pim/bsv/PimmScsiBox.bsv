@@ -103,6 +103,12 @@ interface PimmScsiBox;
   // order of ScsiCmdState, into a staging register; 31 the staged
   // command onto the waiting list (pimm.py scsi_waiting, oldest first)
   method Action restore(Bit#(8) which, Cell c);
+  // R7G, the garbage collector: the waiting commands, oldest first, each
+  // taken and put back with its cells moved (pimm_gc.py: buffer, CDB,
+  // the three variables), between runs
+  method Bit#(3) nWaitingOf;
+  method ActionValue#(ScsiCmdState) gcTake;
+  method Action gcPut(ScsiCmdState c);
 endinterface
 
 typedef union tagged {
@@ -536,6 +542,14 @@ module mkPimmScsiBox#(MemPort mem, PimmGBox gbox, PimmDBox dbox)(PimmScsiBox);
     return outQ.first;
   endmethod
   method Action devResp(ScsiIn r) = inQ.enq(r);
+  method Bit#(3) nWaitingOf = nWaiting;
+  method ActionValue#(ScsiCmdState) gcTake if (st == BIdle);
+    waiting.deq;
+    return waiting.first;
+  endmethod
+  method Action gcPut(ScsiCmdState c) if (st == BIdle);
+    waiting.enq(c);
+  endmethod
   method Action restore(Bit#(8) which, Cell c) if (st == BIdle);
     let s = staged;
     case (which)

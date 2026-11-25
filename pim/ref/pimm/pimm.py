@@ -14,7 +14,8 @@ records, the ready queue, suspension records and hooked variables are
 cells on the heap (layouts in docs/pimm_semantics.md "Runtime state";
 they are this project's design, the firmware being lost).  One
 processor, a LIFO ready queue without priorities, 8- and 16-bit
-strings.  No garbage collection (the heap only grows); the MRB is
+strings.  Garbage collection only when collect_garbage asks for it
+(R7G, pimm_gc.py, INFERENCE/OURS; otherwise the heap only grows); the MRB is
 kept (docs/pimm_semantics.md "The MRB") but nothing is reclaimed on
 it; the shoen in its first two stages only (create_shoen,
 start_shoen, termination, shoen_statistics, remove_shoen: "the shoen"
@@ -742,6 +743,12 @@ class Machine:
             self.spawn(pc, args)
         before = self.steps
         while True:
+            if self.gc_request:
+                # R7G: the collection collect_garbage asked for, at the
+                # goal switch, before the alarm (pimm_gc.py: INFERENCE)
+                self.gc_request = False
+                import pimm_gc
+                pimm_gc.collect(self)
             if self.alarm_var is not None and self.alarm_due():
                 self.fire_alarm()       # R7L: before the next goal is taken
             g = self.pick()
@@ -3568,6 +3575,19 @@ class Machine:
             raise Unimplemented('enqueue_goal_to_processor %r' % (w,))
         self.record(READY, self.reg[y][1] - self.load, self.reg[:z])
         return None
+
+    # collect_garbage, 23:77, no operands (inst_tab.kl1; the shell's
+    # gc, shell/utils/gc.kl1: `gcCall :- collect_garbage | true`).
+    # R7G, INFERENCE (pimm_gc.py, its header): its microcode, 02d5-02d7,
+    # writes one cell and a work register and ends, so it only asks;
+    # the collection is made at the next goal switch (run).  The guard
+    # succeeds.  The request is not machine memory: no trace line until
+    # the collection's K line.  The core's: PimmGcBox.bsv, the same
+    # collection step for step (lockstep_shell APPS gc, gc_listener)
+    gc_request = False
+
+    def i_collect_garbage(self, pc, x, y, z, c16):
+        self.gc_request = True
 
     def i_read_eagerly(self, pc, x, y, z, c16):
         # What the compiler writes for `alternatively.` (library/

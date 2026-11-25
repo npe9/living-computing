@@ -848,50 +848,73 @@ the device are given it again whenever the machine runs dry.
   memory: a hook printing each reduction failure's arguments, the
   home-file answers, the long-vector merge. It was not kept, so those
   details are recorded here, not reproducible from the repository.
-  - `cat <= file("pimos:pimos.groups") | lc` (a pipe): "EXCEPTION WAS
-    OCCURRED in PIMOS" on the console (`bios.kl1`:157-164). PROBE: a
-    reduction failure of `task_stdio:invoke_std_handler/3`
-    (`kernel/stdio/std.kl1`:281-296) with the vector
-    `{in(..), out(..), *}`. The third element is still the `*` that
-    `std_handler/3` starts the vector with (246): the request list
-    held an `in` and an `out` but no `inter`, and no clause of
-    `invoke_std_handler` takes that. (The atom was read as 65,785, `v`
-    in the module's atom table as `unlsav` writes it, the JIS 21:76 of
-    `*`.) Who should give the `inter`, read 2026-11-25 (source only,
-    not run): the shell's pipe stages ask for `in` and `out` only
-    (`shell/main/tos.kl1`:47, 66, 80, `IO_info`). A task's missing
-    stream is to be inherited from its parent: `inter_check` with the
-    `inter` slot `*` sets the old kind to `inter` (or `in_inter`,
-    `out_inter`, `in_out_inter`; `kernel/stdio/std.kl1`:88-103), and
-    `stdio_old_check` asks the parent's switch to `make_branch` that
-    kind (124-127). Its `normal(E, Id)` answer puts `{inter, Cont,
-    FCode, SShut}` on the same `Dist` list `std_handler` reads
-    (129-133). So the `*` left in the vector means the inherited branch
-    gave nothing to `Dist`. That happens when the old kind came out
-    as `[]` (`stdio_old_check([], ...)`, 117-122) or when the branch's
-    answer was not `normal`. Which of the two it is, is the next probe.
-    Re-run 2026-11-25 on the R7L model (a scratch probe from the
-    prompt checkpoint, not in the repository): no window text; one
-    reduction failure (exception 9) after the cat's file is read (where
-    the PROBE above met one; its arguments not decoded); then the run is dry with 1,373 goals waiting, a hang and
-    not a refusal. Every shoen the pipe made has resource left and no
-    goal parked, so it is not R7L's resource: `cat`'s shoen has
-    terminated; `lc`'s is STARTED, its one goal `loop` waiting on its
-    input; the job's shoen holds two `check_NewCode_and_NewArgV_in_exception`
-    goals (the image's `shoen` module), which wait for an answer to the
-    exceptions raised in it that never comes, and the pipe server a
-    `srcClosedNormalPipe`. So the hang is the reduction failure's
-    consequence, not a second fault (that the one reduction failure is
-    still `invoke_std_handler`'s was not decoded on this run: its
-    arguments were not printed). One observation for the next probe:
-    a `task_std_handler:in_outInter` goal was made, invoke_std_handler's
-    clause for `in` plus an inherited `out_inter` (`kernel/stdio/
-    std.kl1`:284-286), so one task's inheritance did give its branch.
-    Which task's vector lacked `inter` is not settled: `cat`'s `<=
-    file(..)` may give it its own `in`, so its old kind may be `inter`
-    rather than `in_inter`. The probe item 3 asks for (print each
-    `stdio_old_check` goal's Type and each `make_branch` answer) was
-    not run.
+  - **R7P, the pipe** (2026-11-25; R7's pipe step, the tag in the
+    code's comments). `cat <= file("pimos:pimos.groups") | lc` and the
+    primer's own pipe, `grep(":-") <= file("sample1.kl1") | lc`
+    (`primer25.tex`:1879), end with "EXCEPTION WAS OCCURRED in PIMOS"
+    on the console (`bios.kl1`:157-164), nothing written and the run
+    dry (1,373 goals waiting). **The failing path is the held PIMOS's
+    own code, not either model** (settled by a probe that printed each
+    `task_stdio` goal with its arguments, then by a run with one atom
+    of ICOT's code changed; `ref/pimm/r7p_pipe.py`, reference only):
+    1. The job has `<=` and no `=>`, so the shell asks for its `in`
+       only (`shell/main/job.kl1`:66-68, `make_stdio`; the grammar,
+       `e-shell.tex`:140-147, puts `<=` on the job). `check2` then
+       makes its old kind `out_inter` (`kernel/stdio/std.kl1`:20-23,
+       51-54, 96-99), the shell's `inOutInter` switch answers that kind
+       (`kernel/stdio/stdhdl.kl1`:22-27), and the job's vector
+       `{in, out_inter, *}` starts `task_std_handler:in_outInter`
+       (`std.kl1`:290-292). Seen in the probe: the job's
+       `stdio_old_check2` got `normal({out_inter, "inOutInter", ..}, 1)`.
+    2. The pipe's last stage asks for `in` only (`shell/main/tos.kl1`:80),
+       so it inherits `out_inter` from the job: `make_branch(out_inter)`
+       to `in_outInter`. **That clause answers `out`, not `out_inter`**
+       (`stdhdl.kl1`:299-305: `Status = normal(out("in_outInter",
+       ContOI, OIFCode), ID)`), and `stdio_old_check2` takes the kind
+       from the answer (`std.kl1`:129-133). The linked binary agrees:
+       in `task_std_handler` the `switch_on_constant` arm for
+       `out_inter` of `in_outInter/8` leads to a clause whose first
+       `write_atom` is `out` (cell `e019cc0c` of the R7L checkpoint);
+       the `in_out_inter` arm after it writes `out_inter`. Seen in the
+       probe: lc's `stdio_old_check2` got `normal({out, "in_outInter",
+       ..}, 1)`.
+    3. lc's vector is then `{in(..), out(..), *}`, for which
+       `task_stdio:invoke_std_handler/3` has no clause (`std.kl1`:281-
+       296): a reduction failure (exception 9) in the kernel's shoen,
+       answered by the job's handler (it reaches the console's line);
+       lc's `get_std_in`/`get_std_out` raises (exception 16 in its own
+       shoen) are never answered, so lc and the pipe wait: the hang is
+       this failure's consequence. The first stage, asking `out` only,
+       inherits `in_inter` and gets both (`stdhdl.kl1`:290-298), so it
+       runs.
+    Both earlier guesses here (an old kind of `[]`, or an answer that
+    was not `normal`) were wrong: the answer is `normal` with the
+    other kind. Changing that one cell to `write_atom out_inter` on
+    the reference (`r7p_pipe.py`: a change to ICOT's code made to show
+    the cause, not the models' behaviour, used nowhere else) makes the
+    primer's line write `$$$ Line = 5 $$$`, the five lines of the
+    primer's sample1.kl1 (592-605) that hold ":-". Whether PIMOS 2.5,
+    which the primer documents, answered `out_inter` there is not
+    known (its stdio source is not held).
+    The pipes the held code serves run in lockstep on both models
+    (APPS in `lockstep_shell.py`, `bsv/run_pimm_apps.sh`, every line
+    identical, measured 2026-11-25 from the R7L prompt checkpoint):
+
+    | Typed | Instructions | Trace lines | Window |
+    |---|---|---|---|
+    | `echo("a b c") \| lc` (the manual's Example 1 form, `e-shell.tex`:206-209) | 311,242 | 1,325,831 | `$$$ Line = 1 $$$` |
+    | `echo("a b c") \| cat \| lc` (three stages: `tos.kl1`'s `createMed`) | 501,560 | 2,123,497 | `$$$ Line = 1 $$$` |
+    | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` (the primer's job in the manual's `<= .. \| .. =>` form, `e-shell.tex`:227) | 465,694 | 2,038,170 | `$$$ Line = 5 $$$`, to the window `out` |
+    | `grep(":-") <= file("sample1.kl1") \| lc` (the primer's line as printed) | 286,597 | 957,748 | nothing; the console's `EXCEPTION WAS OCCURRED in PIMOS : error code:` |
+
+    With `=>` the job's vector is `{in, out, inter-inherited}`, served
+    by `in_out_inter`, whose `make_branch(out_inter)` answers two
+    branches (`stdhdl.kl1`:399-407), so lc gets its `inter`. The 5 is
+    the count of the primer's text; the 1 is echo's one line (lc,
+    `shell/utils/lc.kl1`, counts lines to end of file). The rows are
+    lockstep compares of code no model change touched, so no
+    injection was made for them; the window check is what separates
+    the held run from the patched one.
   - `listener`: the window it opens sends 126 (`reshape_by_mouse`), now
     answered `[1]` (`fep_services.md` §4); then a 201 of
     `listener.com` (5) and 130; then (PROBE, 2026-11-24) a reduction
@@ -927,33 +950,88 @@ the device are given it again whenever the machine runs dry.
     to the task table: `shell:shell`, `Job_1` and `ts:go`, each
     running, with its limit and consumption (the R7L resource: the
     shell's task 2,000,000,000, `tos.kl1`'s jobs 1,000,000,000).
-  - `gc`: `refused: collect_garbage`, kept refused. The built-in is
-    23:77 with no operands (`library/assembler/inst_tab.kl1`:132), a
-    guard of class user with no inputs or outputs
-    (`library/compiler/blt.kl1`:126-127). Its only callers are
-    `gcCall :- collect_garbage | true` and the same form with a stream
-    (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It is in neither
-    VPIM's built-in table nor the manual. The Pseudo PIM/m microprogram
-    has an entry named `collect_garbage` at `02d5`
-    (`pseudo_pimm_microcode.md` line 211). Taking it as a guard that
-    succeeds would give the shell's answer but not the collection, and
-    that would be a fake success. A staged plan:
-    1. Read the microprogram's `02d5` routine through
-       `pimmutil##rassy`, as for the other entries, for what it does
-       with the heap and what it reports.
-    2. Write a copying collector on the reference, rooted at the goal
-       records, the hooks and the registers, that keeps `lockstep_*`
-       green with `collect_garbage` run between parts.
-    3. On the core, add a box of its own (the PimmPBox pattern: its own
-       memory port and a stack in a register file), with a lockstep
-       test that compares the heap after a collection.
-    4. Add APPS `gc`.
-  - `ls`: needs 204 (directory), not served; its contents would be
-    OURS. Checked 2026-11-25: 204's own reply is documented (`{Id,
-    1}`, `fep_services.md` §2.3), but `ls` then lists with 237
-    `listing_all`, whose `File_names` the directory device passes on
-    unread (`bios/fep_module/dir_dvc.kl1`:253-256): its form is the
-    PSI's, not held (U7). Not done.
+  - `gc` (R7G, 2026-11-25; the owner's rule of 2026-11-25, "it's okay
+    to infer what you don't have": an INFERENCE, labelled so). The
+    built-in is 23:77 with no operands
+    (`library/assembler/inst_tab.kl1`:132), a guard of class user with
+    no inputs or outputs (`library/compiler/blt.kl1`:126-127). Its only
+    callers are `gcCall :- collect_garbage | true` and the same form
+    with a stream (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It
+    is in neither VPIM's built-in table nor the manual. The staged plan
+    and where each stage is:
+    1. **Read (stage 1).** The Pseudo PIM/m microprogram's entry
+       `collect_garbage` (`pseudo_pimm_microcode.md` line 211) is three
+       microinstructions, `02d5`-`02d7` (`asm/mekbn.py --rtl 02d5 24`):
+       `MAR1<-R05; MDR1<-#wide; MDR2<-{ex_float tag,0}`, then
+       `XR<-W1f; YR<-#34; MAR1<-MAR1 add_with_one MDR1`, then
+       `W1f<-XR em2_19 YR; [MAR1]<-MDR2 | end`. It copies nothing: it
+       writes one cell and changes the work register `W1f`, and ends.
+       INFERENCE: `W1f` holds request flags and the collection is made
+       later, out of the instruction, as VPIM's is (an event:
+       `f_gc_in_cluster.psl.c` f_RequestLocalGC, :68).
+    2. **The reference's collector (stage 2, done).**
+       `ref/pimm/pimm_gc.py`, INFERENCE/OURS, by ANALOGY with VPIM's
+       copying collector (TM-1044 chapter 11, `s11.tex`;
+       `f_gc_in_cluster.psl.c` f_GCPreProcedure_Sub :216-245 for its
+       roots, f_CopyGCMainLOOP_Sub :286). `collect_garbage` asks; the
+       collection is made at the next goal switch (no register is live
+       there, so none is a root, and neither are a bench's slots: a
+       collection while a bench holds heap words is not supported).
+       Roots: the ready queue, the merger's lists, the alarm's
+       variable, the waiting SCSI commands, the current shoen. Records
+       are copied behind a header of tag 3Ch, forwarding marks are tag
+       3Dh (both OURS, in no PIMOS table); the to-space alternates
+       between above the heap and the heap's first cell. One `K gc`
+       trace line per collection, with an FNV-1 checksum of the new
+       heap (`docs/pimm_semantics.md`, Trace). The test
+       `ref/pimm/r7g_gc.py`: `gc`, the compile into `work`, `gc`, the
+       Listener's sieve, run with and without the collection (the
+       request dropped): the same window, 1,752,873 instructions,
+       reductions, 1607 suspended goals, and the same trace but for
+       what moves (M lines, addresses, the pc of moved code). The
+       first collection takes the heap from 77.86M cells to 1.88M.
+       Three injections observed in its header. (Gated by
+       `Machine.ahead` until stage 3; no longer.)
+    3. **On the core (stage 3, done).** `bsv/PimmGcBox.bsv`, a box
+       of its own (the PimmPBox pattern: its own memory port,
+       `port[11]`, its writes untraced), the same algorithm step for
+       step, one StmtFSM per routine of `pimm_gc.py`; `PimmCore`
+       collects at `pick_or_fire` before the alarm, as `run()` does.
+    4. **APPS (stage 4, done).** `gc` (89,179 instructions, 368,543
+       trace lines) and `gc_listener` (r7g_gc.py's session: 1,752,873
+       instructions, 7,880,429 lines, both K lines) run in lockstep,
+       every line identical, the K lines' checksums included
+       (`K gc 32768 77892213 77892213 79768684 a8652141`; the second
+       `K gc 77892213 82173730 32768 2452104 638807af`, back to the
+       heap's base). Three injections in the box, observed:
+       `bsv/README.md`, "Commands past the shell". The shell's `gc`
+       prints nothing but its prompt (`shell/utils/gc.kl1` `go/0`:
+       `gcCall` on each other processor, then its own; nothing is
+       written); the manual prints no gc transcript, so the
+       window's only check is that prompt. Not run: a collection with
+       goals parked in a shoen, a `to_processor` goal, a non-empty
+       merger list, an armed alarm (no session here makes them at a
+       collection).
+  - **`ls`** (R7, 2026-11-25; INFERENCE, the owner's rule of
+    2026-11-25 "It's okay to infer what you don't have"). 204's own
+    reply is documented (`{Id, 1}`, `fep_services.md` §2.3); the
+    listing comes from 237 `listing_all`, whose `File_names` the
+    directory device passes on unread (`bios/fep_module/dir_dvc.kl1`
+    :253-256), its form the PSI's, not held (U7). It is inferred from
+    PIMOS's reader, `server/fep/file/dir_dvc.kl1`:244-330: the
+    wildcard goes out as 8-bit JIS (`change_element_size(WC, 8, WC0)`,
+    `"*.*"` is `21 76 21 25 21 76`), the reply is widened to 16 bits
+    and cut at each LF into names; `shell/utils/pathname.kl1` loop/5
+    puts the directory and `>` in front of each, and
+    `is_directory_or_file/4` takes a name of two periods for a file,
+    so a file is listed with its version. `fep.listing` makes that
+    string (each name LF-ended), `longrun_ipl.home_listing` the home's
+    (`sample1.kl1.1`), and `ls` prints ` >sys>user>pmpsi>sample1.kl1.1`
+    then `Shell>> ` (APPS `ls`, in lockstep on both models, 164,287
+    instructions, 768,488 trace lines). The FEP emulator serves it
+    from a card entry flagged a directory; the tapes' "direct kernel"
+    section 12 checks 204/237/60 and eight refusals byte for byte.
+    The primer prints no `ls`, so nothing compares its text.
   - **R7, the primer's sample1** (2026-11-25; the PROBE that stood
     here, 2026-11-24, is replaced by committed runs). The home
     directory holds `sample1.kl1`, its text the primer's

@@ -377,6 +377,18 @@ def home_file(name):
     return _home[name]
 
 
+def home_listing(path):
+    """--fep: 237's answer for the directory 204 opened (path 16-bit
+    JIS, as kernel_file's), or None: the home directory's files
+    (HOME_FILES), each with the version 221 gives it, ".1"
+    (fep.listing; R7, ls, 2026-11-25, the form INFERENCE).  Any other
+    directory: None, answered 5."""
+    name = text_of(struct.unpack('>%dH' % (len(path) // 2), path))
+    if name == HOME:
+        return fepm.listing([n + '.1' for n in sorted(HOME_FILES)])
+    return None
+
+
 def kernel_file(path):
     """--fep: the file the kernel asks the FEP to open (the path is
     16-bit JIS, fep.ATTRIBUTES' Code 0): pimos:NAME from the held
@@ -439,7 +451,7 @@ def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
         # reader shifted by a byte after its first 1,471 bytes
         # (observed: with_console read, then end_of_file, the system/4
         # line lost).  Counted in characters every reply is even
-        dev = m.fep = fepm.Fep(kernel_file, getb_unit=2, lines=lines)
+        dev = m.fep = fepm.Fep(kernel_file, getb_unit=2, lines=lines, list_dir=home_listing)
     skips = 0
     try:
         while True:

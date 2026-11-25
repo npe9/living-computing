@@ -72,6 +72,7 @@ instruction and is tested by trace comparison with it.
 | `PimmGBox.bsv` | goal box: heap pointer, ready queue, goal records, hooks, wake-up, taking the next goal, the goal of a built-in that must wait |
 | `PimmSBox.bsv` | string box: length and size, element, new string, set element; elements of 1, 8, 16 or 32 bits (1 since 2026-11-25, `lockstep_s1.py`); the order of two strings for `string_less_than` and `string_not_less_than` (R7L, `lockstep_sord.py`) |
 | `PimmPBox.bsv` | passive-unification box: `wait_value` on two structures, VPIM's general passive unification with an explicit stack of 512 frames (a register file), on its own memory port (`port[10]`, `MemClients` 11) and the data box for each dereference; answers equal, not equal, wait (the variable to note) or refused (2026-11-25, `lockstep_pstruct.py`) |
+| `PimmGcBox.bsv` | garbage-collection box (R7G, 2026-11-25, INFERENCE/OURS): `ref/pimm/pimm_gc.py`'s copying collector step for step, one StmtFSM per routine (block, data, word, module, code, goal, goals, shoen) and the main one: the roots (the goal box's queues, the timer box's alarm variable, the SCSI box's waiting commands, the current shoen), the scan, the links, the FNV-1 checksum and the `K gc` line; `collect_garbage` asks (exec stage), `PimmCore` `pick_or_fire` collects before the alarm; its own memory port (`port[11]`, `MemClients` 12), writes untraced (`MemPort.quiet`) |
 | `PimmShBox.bsv` | shoen box (stages 1 to 3): the shoen record, the report stream, start, the count and the reductions at the end of a reduction, termination, statistics, remove (and a remove pending until termination); the exception message (the mask walk, the handler's `apply` goal, Info), stop, abort, and the check of each goal taken inside a shoen (run, park, discard); (R7L) the resource: left at create 0, taken at the end of each run from the shoen and those above it, a goal parked when none is left with `resource_low` once until allowed, `add_shoen_resource` releasing them, `allow_shoen_resource_report`, `return_resource` of what is left |
 | `PimmTBox.bsv` | timer box (R7L): the processor's one alarm, `set_timer` to a time still to come; checked at each goal switch by the core's `pick_or_fire`, fired with the time, the waiting goals woken (`lockstep_timer.py`) |
 | `PimmScsiBox.bsv` | SCSI box: `scsi_init` and `scsi_command` (OURS, as the reference model's: the firmware is lost), the device OUTSIDE the core on its port `scsiReq`/`scsiResp`; the commands that wait for the device, and the poll (`scsiPoll`) when the machine has run dry |
@@ -392,6 +393,45 @@ is not loadable: make it again with the two commands above):
 | compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,009,886 | 4,865,583 | 178 |
 | ts | `ts`, (empty) | 160,945 | 705,103 | 34 |
 | listener_sieve | `compile`, `!package work`, `sample1`, `!exit`, `listener`, `default_package(work).`, `sample1:sieve([1,2,3],E,O).` | 1,575,086 | 7,144,906 | 249 |
+| pipe_echo (R7P) | `echo("a b c") \| lc` | 311,242 | 1,325,831 | 25 |
+| pipe_three (R7P) | `echo("a b c") \| cat \| lc` | 501,560 | 2,123,497 | 25 |
+| pipe_grep (R7P) | `grep(":-") <= file("sample1.kl1") \| lc => window("out")` | 465,694 | 2,038,170 | 42 |
+| pipe_primer (R7P) | `grep(":-") <= file("sample1.kl1") \| lc` | 286,597 | 957,748 | 15 |
+| ls (R7) | `ls` | 164,287 | 768,488 | 32 |
+| gc (R7G) | `gc` | 89,179 | 368,543 | 18 |
+| gc_listener (R7G) | `gc`, the compile_work lines, `gc`, the listener_sieve lines | 1,752,873 | 7,880,429 | 283 |
+
+R7P (2026-11-25, the pipe; `../docs/binary_reverse_engineering.md`
+1.4, "R7P, the pipe"): the four rows above, measured on both models
+from the R7L prompt checkpoint, every line identical. No model was
+changed for them. pipe_echo and pipe_three write `$$$ Line = 1 $$$`,
+pipe_grep `$$$ Line = 5 $$$`; pipe_primer, the primer's line as
+printed, is the held PIMOS's own failure (a reduction failure in
+`task_stdio:invoke_std_handler/3`, the console's `EXCEPTION WAS
+OCCURRED in PIMOS : error code:`, nothing written, the run dry with
+1,373 goals waiting), the same on both models.
+
+R7G (2026-11-25, `gc`): `collect_garbage` asks and the core's
+collector (`PimmGcBox.bsv`) copies at the next goal switch, as the
+reference's (`ref/pimm/pimm_gc.py`, INFERENCE/OURS by ANALOGY with
+VPIM's) does; the `K gc` lines are identical, `K gc 32768 77892213
+77892213 79768684 a8652141` (the heap from 77.86M cells to 1.88M), and
+in gc_listener the second, `K gc 77892213 82173730 32768 2452104
+638807af`, back to the heap's base; every later line (addresses
+included) identical. Injections in the box (observed, each FAIL at
+the line given, every other line before it identical): the links
+pass clearing every link, the K line's checksum `0e81de44` (line
+198,832); a mixed block's unbound variable not moved in, the K line
+`... 79768686 763810b1`; a waiting SCSI command's first variable not
+moved, `E error: scsi: a waiting command's variable was not free`
+where the reference writes it (line 254,630).
+
+R7 `ls` (2026-11-25): the home directory through 204 and 237
+(`ref/pimm/fep.py` `listing`, the reply's form INFERENCE from PIMOS's
+reader, `../docs/fep_services.md` U7), ` >sys>user>pmpsi>sample1.kl1.1`
+then the prompt, on both models; the FEP emulator serves the same
+(`PimmFepEmu.bsv`, a card entry flagged a directory), checked by the
+"direct kernel" tape's section 12 (`run_fepemu.sh`).
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and

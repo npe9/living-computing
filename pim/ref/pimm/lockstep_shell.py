@@ -151,6 +151,21 @@ PINNED = {
     ('prompt', ('ts', '')): (705103, 160945),
     ('prompt', ('compile', '!package work', 'sample1', '!exit', 'listener',
                 'default_package(work).', 'sample1:sieve([1,2,3],E,O).')): (7144906, 1575086),
+    # R7P (2026-11-25), the pipe: measured on the reference
+    # (docs/binary_reverse_engineering.md 1.4, "R7P, the pipe"), then on
+    # both models by bsv/run_pimm_apps.sh
+    ('prompt', ('echo("a b c") | lc',)): (1325831, 311242),
+    ('prompt', ('echo("a b c") | cat | lc',)): (2123497, 501560),
+    ('prompt', ('grep(":-") <= file("sample1.kl1") | lc => window("out")',)): (2038170, 465694),
+    ('prompt', ('grep(":-") <= file("sample1.kl1") | lc',)): (957748, 286597),
+    # R7 ls (2026-11-25): the home directory through 204 and 237, the
+    # listing's form INFERENCE (fep.listing), on both models
+    ('prompt', ('ls',)): (768488, 164287),
+    # R7G (2026-11-25): gc, and r7g_gc.py's session, on both models
+    # (the core's collector, bsv/PimmGcBox.bsv), the K lines included
+    ('prompt', ('gc',)): (368543, 89179),
+    ('prompt', ('gc', 'compile', '!package work', 'sample1', '!exit', 'gc', 'listener',
+                'default_package(work).', 'sample1:sieve([1,2,3],E,O).')): (7880429, 1752873),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -251,6 +266,67 @@ APPS = {
          'COMPILE> ', 'Shell>> ',
          '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n',
          '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
+    # R7P (2026-11-25), the pipe (pimosman e-shell.tex:140-227, the
+    # grammar and its examples; docs/binary_reverse_engineering.md 1.4,
+    # "R7P, the pipe").  The manual's Example 1 form `a | b`: lc
+    # (shell/utils/lc.kl1) counts the one line echo writes
+    'pipe_echo': (('echo("a b c") | lc',),
+        ('$$$ Line = 1 $$$\n', 'Shell>> ')),
+    # three stages, so tos.kl1's createMed (55-68) is run: cat passes
+    # the line on
+    'pipe_three': (('echo("a b c") | cat | lc',),
+        ('$$$ Line = 1 $$$\n', 'Shell>> ')),
+    # the primer's pipe (primer25.tex:1879) in the manual's job form
+    # `a <= in | b => out` (e-shell.tex:227): grep(":-") reads the
+    # primer's sample1.kl1 (the home file, longrun_ipl.HOME_FILES) and
+    # lc counts its lines with ":-": 5, the count of the primer's text
+    # (primer25.tex:592-605: the module and public declarations and
+    # the three clause heads).  lc's output goes to the window "out"
+    # (fep.py's window device; the text is its putb)
+    'pipe_grep': (('grep(":-") <= file("sample1.kl1") | lc => window("out")',),
+        ('$$$ Line = 5 $$$\n', 'Shell>> ')),
+    # the primer's line as printed: the held PIMOS fails it.  The job
+    # has `<=` and no `=>`, so its stdio is {in, out_inter}, served by
+    # task_std_handler:in_outInter, whose make_branch(out_inter) answers
+    # `out` (kernel/stdio/stdhdl.kl1:299-305; the linked binary agrees,
+    # task_std_handler cell 1567 write_atom out); lc's vector is then
+    # {in, out, *} and task_stdio:invoke_std_handler/3 has no clause for
+    # it (kernel/stdio/std.kl1:281-296): a reduction failure, then the
+    # run dry, lc's get_std raises unanswered.  Nothing written.
+    # ref/pimm/r7p_pipe.py changes that one atom on the reference and
+    # the same line counts 5
+    'pipe_primer': (('grep(":-") <= file("sample1.kl1") | lc',),
+        ()),
+    # R7 ls (2026-11-25): ls.kl1 opens the directory (204), lists "*.*"
+    # (237) and prints each entry with its directory in front (shell/
+    # utils/pathname.kl1 loop/5), one a line.  The FEP's answer is
+    # INFERENCE from that reader (fep.listing: entries LF-ended, a file
+    # with its version), so the line is ours too: the primer prints no
+    # ls.  The home has the one file, sample1.kl1.  Injection (OBSERVED
+    # 2026-11-25): home_listing without the version (".1") gives
+    # ' >sys>user>pmpsi>sample1.kl1>' (taken for a directory) and the
+    # counts (768817, 164311): FAIL against this row and PINNED
+    'ls': (('ls',),
+        (' >sys>user>pmpsi>sample1.kl1.1\n', 'Shell>> ')),
+    # R7G (2026-11-25): the shell's gc (shell/utils/gc.kl1 go/0:
+    # collect_garbage on each processor; nothing written), then the
+    # collection at the next goal switch on both models, INFERENCE/OURS
+    # (ref/pimm/pimm_gc.py, bsv/PimmGcBox.bsv): one line
+    # `K gc 32768 77892213 77892213 79768684 a8652141`.  gc_listener is
+    # ref/pimm/r7g_gc.py's session: a second K line, `K gc 77892213
+    # 82173730 32768 2452104 638807af`, back to the heap's base.
+    # Injections in PimmGcBox.bsv, OBSERVED on gc (each FAIL at the line
+    # given, every line before it identical): the links pass clearing
+    # every link: line 198,832, the K line's checksum 0e81de44; a mixed
+    # block's unbound variable not moved in: the same line, `... 79768686
+    # 763810b1`; a waiting SCSI command's first variable not moved: line
+    # 254,630, the core's `E error: scsi: a waiting command's variable
+    # was not free` where the reference writes it
+    'gc': (('gc',),
+        ('Shell>> ',)),
+    'gc_listener': (('gc', 'compile', '!package work', 'sample1', '!exit', 'gc', 'listener',
+                     'default_package(work).', 'sample1:sieve([1,2,3],E,O).'),
+        ('Shell>> ', '** KL1 Compiler **\n', 'COMPILE> ', 'Package : work\n!WARNING! not included in the working packages : work\n', 'COMPILE> ', 'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n', "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n", '=>  :- module sample1 .\n', 'Compile Succeeded : sample1\n\n', '"work:: sample1" Loaded\n', 'Total Number of Warning : 1\n', 'COMPILE> ', 'Shell>> ', 'Shell>> ', '*** KL1 LISTENER (V 3.600 20-May-93) ***\nDEFAULT PACKAGE   : pimos\nCURRENT DIRECTORY : >sys>user>pmpsi\n\n', '[1] ', '\n', '[2] ', ' E =[2]\n O =[1,3]\n\n', '[3] ')),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -327,6 +403,10 @@ def restore_ops(m):
     # clock; until R7L set_timer to a time still to come was refused, so
     # no saved machine has one
     assert m.alarm_var is None and m.tick_skip == 0, 'the saved machine has an alarm armed'
+    # R7G: no RESTORE carries the heap's moved start (pimm_gc.py heap_lo;
+    # PimmGcBox's lo starts at the heap's first cell) or a request
+    assert not getattr(m, 'heap_lo', None) and not m.gc_request, \
+        'the saved machine was collected (R7G): not restorable'
     ops = []
 
     def R(which, cell):
@@ -387,10 +467,12 @@ def play(m, loaded, kind, lines, sink, stats=None):
         op((driver.SPAWN, 2, 0, (0, pimm.predicate(im, 'top', 'go_pimos1/2'))))
         op((driver.ARGC, 1, 0, boot))
         op((driver.SPAWN, 1, 0, (0, pimm.predicate(im, 'ipl', 'make_boot_info/1'))))
-        dev = m.fep = fepm.Fep(longrun.kernel_file, getb_unit=2, lines=lines)
+        dev = m.fep = fepm.Fep(longrun.kernel_file, getb_unit=2, lines=lines,
+                               list_dir=longrun.home_listing)
     else:
         dev = m.fep
         dev.open_file = longrun.kernel_file
+        dev.list_dir = longrun.home_listing     # R7, ls (a machine saved before it has none)
         dev.script = [('getl', line) for line in lines]
     events = []
     stop = None

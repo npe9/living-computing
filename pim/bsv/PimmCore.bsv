@@ -26,6 +26,7 @@ import PimmScsiBox::*;
 import PimmPBox::*;
 import PimmStages::*;
 import PimmTBox::*;
+import PimmGcBox::*;
 
 interface PimmCore;
   method Action newVar;                         // a fresh unbound variable
@@ -80,7 +81,8 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   PimmScsiBox scsi <- mkPimmScsiBox(mem.port[9], gbox, dbox);
   PimmPBox  pbox  <- mkPimmPBox(mem.port[10], dbox);
   PimmTBox  tbox  <- mkPimmTBox(gbox, dbox);
-  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi, pbox, tbox);
+  PimmGcBox gcbox <- mkPimmGcBox(mem.port[11], gbox, tbox, scsi);
+  PimmExec  exec  <- mkPimmExec(regs, dbox, hbox, gbox, sbox, vbox, mbox, nbox, mem.port[5], shbox, scsi, pbox, tbox, gcbox);
 
   FIFO#(Bool) runQ   <- mkFIFO;
   FIFO#(End)  endQ   <- mkFIFO;
@@ -92,6 +94,9 @@ module mkPimmCore#(String image, String heap)(PimmCore);
   // time has come (pimm.py run: before pick)
   FIFO#(Bool) pickQ  <- mkFIFO;
   Reg#(Bool)  firing <- mkReg(False);
+  // R7G: a collection collect_garbage asked for, made here first
+  // (pimm.py run: before the alarm)
+  Reg#(Bool)  collecting <- mkReg(False);
 
   rule toExec;
     let f <- fetch.out;
@@ -122,13 +127,23 @@ module mkPimmCore#(String image, String heap)(PimmCore);
     pickQ.enq(True);
   endrule
 
-  rule pick_or_fire (!firing);
+  rule pick_or_fire (!firing && !collecting);
     pickQ.deq;
-    if (tbox.armed && reached(tbox.time_, exec.now[31:0])) begin
+    if (gcbox.requested) begin
+      gcbox.collect;
+      collecting <= True;
+    end
+    else if (tbox.armed && reached(tbox.time_, exec.now[31:0])) begin
       tbox.fire(exec.now[31:0]);
       firing <= True;
     end
     else gbox.pickup;
+  endrule
+
+  rule gc_collected (collecting);
+    gcbox.collected;
+    collecting <= False;
+    pickQ.enq(True);              // then the alarm, then the next goal
   endrule
 
   rule alarm_fired (firing);

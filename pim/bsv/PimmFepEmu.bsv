@@ -50,6 +50,12 @@
 //   on a read file that has them answer [1, the card's string], as
 //   fep.py answers them after read_open in its order of tests; on a file
 //   that has none (every pimos: file) they are refused, as fep.py raises.
+//   AND (2026-11-25, R7, ls): directory 204 on a directory the card holds
+//   (an entry flagged a directory, mkfepcard.py: the home directory, its
+//   data 237's answer, fep.listing, INFERENCE there): [1], else [5];
+//   listing_all 237 with fep.LISTING_WILDCARD ("*.*" in JIS) on it: [1,
+//   the entry's data]; another wildcard is refused, as fep.py raises; 60
+//   on it: [1].  A directory takes a file slot (FileSlot.dir).
 //
 // HELD REQUESTS AND THE EVENT (how the core's SCSI port sees them).  A
 // request fep.py holds (the login server's io(1), a window's getl) gets
@@ -262,6 +268,11 @@ Int#(32) reqAppendOpen = 203;
 Int#(32) reqGetb       = 210;
 Int#(32) reqPathname   = 221;     // fep#pathname (pimos.vmac:77)
 Int#(32) reqFileAttributes = 222; // fep#attributes (pimos.vmac:138)
+Int#(32) reqDirectory  = 204;     // fep#directory (docs/fep_services.md 2.3)
+Int#(32) reqListingAll = 237;     // fep#listing_all
+// fep.LISTING_WILDCARD, the one wildcard 237 is served for: "*.*" in JIS
+function Bit#(8) wildcardByte(UInt#(32) k) =
+   (k == 1 || k == 5) ? 8'h76 : (k == 3) ? 8'h25 : 8'h21;
 Int#(32) reqClose      = 60;
 Int#(32) reqAbort      = 70;
 Int#(32) reqTerminate  = 80;
@@ -508,6 +519,7 @@ typedef struct {
    UInt#(32) plen;
    Bit#(32) ablk;       // 222's, likewise
    UInt#(32) alen;
+   Bool     dir;        // a directory (204): its data is 237's answer
 } FileSlot deriving (Bits, Eq, FShow);
 
 // fep.Fep's device sets for one device id, kept apart as fep.py keeps
@@ -642,6 +654,7 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(Bool)      found <- mkReg(False);
    Reg#(Bool)      same  <- mkReg(False);
    Reg#(UInt#(32)) nl    <- mkReg(0);
+   Reg#(Bool)      wantDir <- mkReg(False);   // the lookup is 204's: a directory's entry
    Reg#(Bit#(32))  fstart <- mkReg(0);
    Reg#(UInt#(32)) flen  <- mkReg(0);
    Reg#(Bit#(32))  fpblk <- mkReg(0);     // the entry's 221 and 222 answers
@@ -674,7 +687,13 @@ module mkPimmFepEmu(PimmFepEmu);
    function Maybe#(UInt#(TLog#(FileSlots))) slotOf(Bit#(32) dev);
       Maybe#(UInt#(TLog#(FileSlots))) r = tagged Invalid;
       for (Integer s = valueOf(FileSlots) - 1; s >= 0; s = s - 1)
-         if (files[s].valid && files[s].dev == dev) r = tagged Valid fromInteger(s);
+         if (files[s].valid && !files[s].dir && files[s].dev == dev) r = tagged Valid fromInteger(s);
+      return r;
+   endfunction
+   function Maybe#(UInt#(TLog#(FileSlots))) dirSlotOf(Bit#(32) dev);
+      Maybe#(UInt#(TLog#(FileSlots))) r = tagged Invalid;
+      for (Integer s = valueOf(FileSlots) - 1; s >= 0; s = s - 1)
+         if (files[s].valid && files[s].dir && files[s].dev == dev) r = tagged Valid fromInteger(s);
       return r;
    endfunction
    function Bool isAppending(Bit#(32) dev);
@@ -747,9 +766,10 @@ module mkPimmFepEmu(PimmFepEmu);
       return r;
    endfunction
    Bool isFile = isValid(slotOf(pdev));
+   Bool isDir = isValid(dirSlotOf(pdev));
    Bool isHeld = isValid(heldOf(pdev));
    // fep.Fep.known
-   Bool known = isFile || isAppending(pdev) || d.timer || d.strio != SNone || d.window;
+   Bool known = isFile || isAppending(pdev) || d.timer || d.strio != SNone || d.window || isDir;
 
    function Action answer(FepAnswerKind k, UInt#(24) n, Bit#(8) y) =
       ansF.enq(FepAnswer { kind: k, result: 0, count: n, why: y });
@@ -883,9 +903,10 @@ module mkPimmFepEmu(PimmFepEmu);
       while (e < dirCount && !found && !cardErr) seq
          cardRd(dirFirst * 512 + pack(e) * 256, True);
          nl <= unpack(w);
-         if (nl == args[3].len) seq
+         // a directory's entry has bit 31 of its name length set
+         if ((nl & 'h7fffffff) == args[3].len && ((nl >> 31) == 1) == wantDir) seq
             action j <= 0; same <= True; endaction
-            while (j < nl && same && !cardErr) seq
+            while (j < (nl & 'h7fffffff) && same && !cardErr) seq
                cardRd(dirFirst * 512 + pack(e) * 256 + 16 + pack(j), False);
                bodyRd(unpack(args[3].v) + j, False);
                action if (w != bw) same <= False; j <= j + 1; endaction
@@ -1012,6 +1033,7 @@ module mkPimmFepEmu(PimmFepEmu);
       if (mcmd == reqReadOpen && nargs == 4 && !isFile) seq
          if (args[3].isInt || pack(args[3].len)[0] == 1) perr <= whyRequest;   // open_file raises
          else seq
+            wantDir <= False;
             lookup;
             if (cardErr) perr <= whyCard;
             else if (!found) queue(plain(pdev, stAbnormal));
@@ -1019,7 +1041,8 @@ module mkPimmFepEmu(PimmFepEmu);
                case (freeSlot()) matches
                   tagged Valid .s: begin
                      files[s] <= FileSlot { valid: True, dev: pdev, start: fstart, len: flen, pos: 0,
-                                            pblk: fpblk, plen: fplen, ablk: fablk, alen: falen };
+                                            pblk: fpblk, plen: fplen, ablk: fablk, alen: falen,
+                                            dir: False };
                      queue(plain(pdev, stNormal));
                   end
                   default: perr <= whyLimit;
@@ -1042,6 +1065,47 @@ module mkPimmFepEmu(PimmFepEmu);
          let f = files[validValue(slotOf(pdev))];
          queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
                            addr: f.ablk * 512, dlen: f.alen });
+      endaction
+      // directory {Id, 204, Node, User, Password, Path} (R7, ls,
+      // 2026-11-25): [1] on a directory the card holds, else [5]
+      else if (mcmd == reqDirectory && nargs == 4 && !known) seq
+         if (args[3].isInt || pack(args[3].len)[0] == 1) perr <= whyRequest;   // list_dir raises
+         else seq
+            wantDir <= True;
+            lookup;
+            if (cardErr) perr <= whyCard;
+            else if (!found) queue(plain(pdev, stAbnormal));
+            else action
+               case (freeSlot()) matches
+                  tagged Valid .s: begin
+                     files[s] <= FileSlot { valid: True, dev: pdev, start: fstart, len: flen, pos: 0,
+                                            pblk: 0, plen: 0, ablk: 0, alen: 0, dir: True };
+                     queue(plain(pdev, stNormal));
+                  end
+                  default: perr <= whyLimit;
+               endcase
+            endaction
+         endseq
+      endseq
+      // listing_all {Id, 237, Wildcard} on it: [1, the entry's data] for
+      // fep.LISTING_WILDCARD; another wildcard is refused
+      else if (mcmd == reqListingAll && nargs == 1 && isDir) seq
+         action same <= !args[0].isInt && args[0].len == 6; j <= 0; endaction
+         while (same && j < 6) seq
+            bodyRd(unpack(args[0].v) + j, False);
+            action if (bw[7:0] != wildcardByte(j)) same <= False; j <= j + 1; endaction
+         endseq
+         if (!same) perr <= whyRequest;
+         else action
+            let f = files[validValue(dirSlotOf(pdev))];
+            queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
+                              addr: f.start * 512, dlen: f.len });
+         endaction
+      endseq
+      // its close: [1]
+      else if (mcmd == reqClose && nargs == 0 && isDir) action
+         files[validValue(dirSlotOf(pdev))] <= unpack(0);
+         queue(plain(pdev, stNormal));
       endaction
       // append_open {Id, 203, "", User, Password, Path}: accepted, [1],
       // whatever the arguments are (fep.py never looks at the path's
