@@ -1890,14 +1890,54 @@ from a backup, restored by cp, cmp-checked. Observed:
 
 `test_kl0.py` passes each time.
 
+### Step 3f: pmi b7 with A != 0 (2026-11-25)
+
+The step 3e row of pmi b7 (`put_vector_n`) refused A != 0 for want of a
+witness whose source is held. A search of the six source-held packages
+(MEASURED 2026-11-25) found 12 uses with A != 0, all with a zero second
+byte. One is lined up with its source:
+
+- `kappa##kappaMDM_manager set_up/2` @e6 is `b7 01 00 09`. Nine `43`
+  element cells follow (@e7-ef), then `a2 00 00` and a send of
+  set_up/3 (@f1-f2).
+- The source is KP_MDM.ESP:89, `:set_up(DBO,OBJuser,{MS_max,MSN,RS_max,
+  RSN,RS_size,MH_max,MHN,IH_max,IHN})`. The nine-element vector is the
+  second argument, so it goes to A1. The two slot writes just before
+  (@e1-e5) are lines 87-88, `OBJ!default_record_extent_size :=` and
+  `OBJ!default_index_extent_parameter :=`.
+- KNOWN-PLAINTEXT. The row now accepts any A. A non-zero second byte
+  still refuses.
+
+Census, row by row: one FEP method stops later in both modes.
+`pimos_fep_superviser error_mode_menu/2` (`b7 05 00 07`) now reaches
+`simpos##standard_choice_window`. Totals are unchanged, and the
+six-package census is unchanged (310 / 12 / 207 / 1).
+
+Test (`test_kl0.py` `test_vector_puts`): b7 with A = 1 makes a
+nine-element vector there; the second byte still refuses; the witness's
+cells are pinned. Injected into `kl0.py` from a backup, restored and
+cmp-checked. Observed:
+
+- A != 0 refused again: test_vector_puts errors.
+- A non-zero second byte accepted: test_vector_puts fails.
+
+`test_espc.py` passes both times: its census pins count the moved row
+as refused either way.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
   predicates whose source is not held. The others have witnesses still
-  to be found (`kl0.py census` lists them). Step 3e's state of the FEP
-  blockers:
+  to be found (`kl0.py census` lists them). The state of the FEP
+  blockers after step 3f:
   - pmi c6 (21 methods): a multi-way switch with packed words. It needs
-    ce and ff, which have no rows. Deferred.
+    ce and ff, which have no rows. Not attempted in step 3f. Witnesses
+    are available: MEASURED 2026-11-25, c6 has 132 uses, ce 262 and ff
+    958 in the six source-held packages (paragraph, kappa, fts, qxt,
+    sancho2, tour). The layout seen at pimscsi `scsi_device`
+    `command_code/2` @361 is: c6; two integer words; a `cc` table of
+    atoms ended by `fe`; a `ce` table of selectors ended by `fe`; then
+    the clauses. The jump bases are not yet read.
   - blt 0d (10): witnessed as `object/3`, but not added. kappa2
     `user_if/pb/som.esp:191-194` has `Sheet = Obj!current_sheet,
     object(Sheet,_,_)`, which compiles to `0d 00 01 02` with Sheet in
@@ -1908,13 +1948,37 @@ from a backup, restored by cp, cmp-checked. Observed:
     `1a 04 04 00`, `23 04 03`. The initial elements are not settled.
   - blt 6f: witnessed as `list_to_vector`, but not added: its third
     argument is not settled.
-  - pmi b7 with A != 0: no witness whose source is held was found. The
-    `performance_pes initiate/2` use has no held source.
+  - blt 0d, 1a and 6f stay refused after step 3f. Another call site
+    does not settle what the outputs receive. Searched without a
+    definition: `docs/simpos/required/builtins.tsv` (names and use
+    counts), `source_check_2026-11-24_opcodes.tsv`, and the cil
+    `cil_kl0.esp` wrapper table (names only).
+  - pmi b7 with A != 0: DONE in step 3f (the section above).
+  - Revealed by the step 3f recipes:
+    - `stream:see/2`, the commonest stop (every device `loop_main/1`).
+      No source: TM-100 Fig. 3.6 prints create/put/get only.
+    - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
+      callback (`pmacs_window`, not stood in).
+    - The census's unbound request arguments: device replies refuse at
+      `set_string_element` (16 rows with recipes).
+    - `process:status/3` (11 plain-census creator rows). It has one
+      printed call, `:status(Process, dormant, on_activate)` in
+      `activate/2` (TM-100 Fig. 3.1), and no definition. A stand-in
+      would only move the rows to `entry_of_invoke/2` (also not printed)
+      and then to the hardware `context`. Not added.
+    - `network_node_name:node_full_name/3` (1 row, `net_spawn_user
+      set_default_node/2` @29-34, which stores the answer in the class
+      slot `default_spawn_node`). No held or printed source gives the
+      form of a full name, so it stays refused.
 - **The after-demon order.** It stays a switch until a SIMPOS trace or
   the loader's own code settles it.
 - **The class `class`.** Its methods (`new`, `get_slot`, ...) are
   SIMPOS or firmware. They are not held. Only `new/2` (slot
   initialisation included) and `refute/3` are modelled (OURS).
+- **The library and the symbolizer** (step 3f). Only `library`
+  `assign/1`, `check_info/3` and `get_class_object/3`, and `symbolizer`
+  `enter_atom/3`, are modelled (OURS, INTERPOLATED). The run-time
+  lookup order is an INFERENCE.
 - **The compiler's unwitnessed constructs.** These have no witnessed
   compiled form yet: `=\=`, `->` and `not`; of `with_macro`, the
   rules with a tail and `==>`. Vectors of one, five, six or n elements
@@ -1922,6 +1986,7 @@ from a backup, restored by cp, cmp-checked. Observed:
   `espc.py` does not emit them yet.
   Each needs a known-plaintext witness, as an opcode does.
 - **The package environment's priority rule** (PRG lines 5496-5501) is
-  not modelled. No held nature needs it.
+  not modelled. No held nature needs it. The step 3f library lookup uses
+  only the sender's package first (INFERENCE).
 - **The descriptor's word layout and the atom numbering** are not held.
   They are UNKNOWN beyond Fig. A-1.

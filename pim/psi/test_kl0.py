@@ -127,6 +127,10 @@ Step 3e's rows 9a/9b, b1/b5/b6/b7, 50/51/54/55 and R != A for 40/49
   - 9a/9b skip a cell: test_interrupt_brackets here; test_espc
     test_fep_census errors;
   - b1 makes two elements, b6 five, b7 n - 1: test_vector_puts only (each);
+  - (step 3f, 2026-11-25) b7 with A != 0 refused again: test_vector_puts
+    errors; a non-zero second byte accepted: test_vector_puts fails;
+    test_espc passes both times (the one moved census row is refused
+    either way);
   - and as or, or as xor, shift_left by n - 1, shift_right by n - 1:
     test_bit_operations only (each);
   - shift_left wraps at 32 bits instead of refusing at 2**31:
@@ -669,16 +673,26 @@ class Step3eRows(unittest.TestCase):
         m = machine()
         code = self.cell()
         for op, a, b, c, n in ((m.op_put_vector_1, 2, 0, 0, 1), (m.op_put_vector_5, 1, 0, 0, 5),
-                               (m.op_put_vector_6, 1, 0, 0, 6), (m.op_put_vector_n, 0, 0, 12, 12)):
+                               (m.op_put_vector_6, 1, 0, 0, 6), (m.op_put_vector_n, 0, 0, 12, 12),
+                               (m.op_put_vector_n, 1, 0, 9, 9)):
             m.reset()
             op(code, 0, a, b, c, (a << 16) | (b << 8) | c)
             t = K.deref(m.x[a])
             self.assertIsInstance(t, K.Vec)
             self.assertEqual((len(t.args), t.heap, m.S[1], m.pc[1]), (n, False, 0, 1))
             self.assertIs(m.S[0], t.args)
-        for a, b in ((1, 0), (0, 1)):
+        for a, b in ((0, 1), (1, 1)):
             with self.assertRaises(K.Refusal):
                 m.op_put_vector_n(code, 0, a, b, 7, (a << 16) | (b << 8) | 7)
+        # step 3f: b7 with A != 0, the witness's cells (KP_MDM.ESP:89
+        # `:set_up(DBO,OBJuser,{MS_max,...,IHN})`, nine elements into A1)
+        t = km.lib.templates['kappa##kappaMDM_manager']
+        cells = {c[0]: c for p in t.preds() if p.name == 'set_up' and p.arity == 2 for c in p.cells}
+        self.assertEqual(cells[0xe6][3], 0xb7010009)
+        self.assertEqual([cells[o][3] >> 24 for o in range(0xe7, 0xf0)], [0x43] * 9)
+        # @f2: a selector cell of arity 3 (set_up/3, the send at @f1)
+        self.assertEqual(cells[0xf2][1:3], (1, 3))
+        self.assertEqual(K.Code(km.lib, t).sym(cells[0xf2][3]), 'set_up')
 
     def test_bit_operations(self):
         km = kappa_machine()

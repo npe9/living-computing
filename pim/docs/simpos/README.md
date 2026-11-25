@@ -461,6 +461,14 @@ and stand-in `simpos##` classes. In order:
        recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their
        reply, on the census's unbound request, and 4 at the
        `has_been_reshaped/1` callback.
+     - pmi b7 with A != 0 witnessed (kappaMDM_manager set_up/2 @e6,
+       KP_MDM.ESP:89) and accepted. One FEP row stops later; totals
+       unchanged.
+     - Still refused: pmi c6, ce and ff (not attempted; 132, 262 and
+       958 uses in the source-held packages), and blt 0d, 1a and 6f
+       (the outputs are not settled). Not stood in: `process:status/3`
+       (it would only move rows to `entry_of_invoke/2`),
+       `node_full_name/3`, and `stream:see/2` (no source).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

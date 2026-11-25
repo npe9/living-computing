@@ -1643,8 +1643,10 @@ class Machine:
         self._put_vector(code, off, a, 6)
 
     def op_put_vector_n(self, code, off, a, b, c, v):
-        if a != 0 or b != 0:
-            raise Refusal('operand', 'put_vector_n %02x %02x %02x: only A = 0, second byte 0 is witnessed with source'
+        # A != 0: witnessed step 3f (kappaMDM_manager set_up/2 @e6,
+        # KP_MDM.ESP:89); a second byte other than 0 is not
+        if b != 0:
+            raise Refusal('operand', 'put_vector_n %02x %02x %02x: only a second byte 0 is witnessed with source'
                           % (a, b, c))
         self._put_vector(code, off, a, c)
 
