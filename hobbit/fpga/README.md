@@ -649,6 +649,21 @@ The wiring:
   pty, UDP to `tools/qemu1e/hub.py`). That is the forwarded/hub option
   for simulation. With bit 5 clear, the SONIC is forwarded to p9host and
   its `--ether-peer` instead.
+
+  Run once, 2026-11-25: `SOC_ESP_PTY=... SOC_HOST=1 SOC_RTL=63 run_soc.sh
+  2893000`, with `relay_host` on the pty and a 60-byte broadcast frame
+  sent to its UDP port every 30 s (40 in all). The run printed:
+  * "SOC esp link: 0 bytes to the relay, 2720 from it", which is 40 frames
+    of 68 wire bytes;
+  * relay_host's `"net_in": 40, "link_out": 40, "dropped": 0`;
+  * the same 74-byte console, identical, with 0 FAULT lines.
+
+  "SOC sonic dma: 9 reads, 0 writes": no frame was received into memory.
+  Whether that is because the receiver is not yet enabled, or because
+  RRA/RDA are not set up this early in the boot, was not checked. So the
+  pty bridge and the relay's link-out are executed, but the SONIC's
+  receive DMA and the snoop are still **built, not executed**, and so is
+  `p9host --type` (no prompt is reached by record 2,893,000).
 * `rtc_nvram.hex` and `iic_eeprom.hex` are copied into the working
   directory of the simulator and of yosys. yosys reads `RegFileLoad.v`
   with `-defer`.
@@ -814,11 +829,20 @@ What is still forwarded with every bit set:
 Verilator).** The SONIC sends nothing until BOOTP, after the `il]:`
 prompt has been answered. p9boot types at record 286,977,111, and BOOTP
 is at 287,845,682 (`tests/test_p9boot.py` STEPS). The whole replayed join
-to `echo hello` is 715,861,422. This run measured 30.9 system clocks a
-record (89.5 M clocks for 2.893 M records) and 114 k system clocks a
-second (13 min, with two nextpnr runs alongside). So the first frame is
-about 8.9 G clocks, roughly 22 hours, away, and the whole join about
-22 G clocks, roughly 54 hours. The frame-level check of the join is
+to `echo hello` is 715,861,422. The SoC runs at 30.9 system clocks a
+record (89.5 M clocks for 2.893 M records). The simulator's speed, as
+measured here on a shared machine:
+* 114 k system clocks a second, with two nextpnr runs alongside;
+* 28 k with both ptys bridged and other agents' builds running (3,220 s
+  for 89.4 M clocks).
+
+So the first frame is about 8.9 G clocks away, which is 22-90 hours, and
+the whole join about 22 G clocks. A quiet machine would be faster, but
+this was not measured. There is a second limit: `core.log` holds one
+127-byte HRI record per instruction (printed by `bsv/HobbitCore.bsv`), so
+288 M records is about 36 GB. A run to BOOTP would have to filter them
+out of the simulator's output in `run_soc.sh`. That option is not
+written. The frame-level check of the join is
 covered instead by the two device runners (`dev/sonic.md`):
 * `sonic_run_tests.sh`: all 276 sent and 339 received frames of
   `join_echo`, every DMA word and register value;
