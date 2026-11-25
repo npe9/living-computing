@@ -358,7 +358,13 @@ completes, and MCP runs a job card through UNCODE, its loader and job end
 (`boot_plan.md`; `NEXT.md` "THE BSS PROCESSOR, RECONSTRUCTED"). The run
 leans on stubs: the dispatcher, `$RET`, and `$SCR`/`$FETCH` over core
 images instead of the disk.
-- **M-a.** Replace `$FETCH`'s core-image stub with MCP's own fetch from
+- **M-a. DONE 2026-11-24.** `check_bss_mcp_go.py` passes with the stub
+  deleted. Every `$FETCH` is now DISK FETCH (pp.311-318), run against the
+  disk saved by the same post-IPL run. BSS, PCBSS and the LB areas are on
+  the tape (PROSA_EXTRA, RECONSTRUCTION). TWS's words are planted
+  (SCAFFOLD). The remaining stubs are listed in the test header. As
+  first written:
+  Replace `$FETCH`'s core-image stub with MCP's own fetch from
   the 353. The simulated disk now holds what IPL writes (D2, merged
   `19b7234`: P1 writes arcs 0-32, 33 arcs, measured), so the stub's
   reason is gone. Exit: `check_bss_mcp_go.py` passes with the stub
@@ -372,7 +378,14 @@ images instead of the disk.
 
 **IBM's own diagnostics as oracles, not yet run** (`archival_inventory.md`):
 - The three memory tests, `ja_bp6a` (6 pp), `ja_bm6a` and `ja_bb6b`,
-  gate A11a, the memory cycle.
+  gate A11a, the memory cycle. `ja_bp6a` is RUN (2026-11-24,
+  `decks/ja_bp6a_memory_patterns.strap`, bit-exact against
+  `verify_ja_bp6a_listing.py`; details in `archival_inventory.md`). It
+  gives A11a no timing: the document states no unit-busy or cycle time.
+  Its PDF p.1 puts the two A boxes at 40 (octal) and the four B boxes at
+  100000, the reverse of `StretchMemory.bsv`'s map. That is open for
+  A11a, and the model is not changed yet. `ja_bm6a` and `ja_bb6b` are
+  next.
 - I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
 - BX-0 (`ka_ex1`) gates A11.
 
