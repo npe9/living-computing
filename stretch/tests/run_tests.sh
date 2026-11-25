@@ -2890,6 +2890,71 @@ run "FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS (p.3-20, p.3-24, Table A-2; MODEL
     "wherea:3328=0x0211600000000000" \
     "stwa:3329=0" "stwb:3330=0x0000200000000000" "stwc:3331=0" \
     "x7:23=0" "x8:24=0" "x9:25=0x0000200000000000"
+# THE DIVIDER RELEASES ITS LEVEL, 2026-11-23 (plan §1c 5f stage 3; the
+# deck's header).  L: the box's level interrupts and lands after it;
+# S: an SX started in the box's hold clocks leaves no trace; T: I-box
+# work beside the held level; I: the interlock.  Sourced pins: WHEREL
+# and WHERES are the instruction after the box's level (p.48), the
+# trails and STWS stay 0 (p.3-24), OUTL and TOUT are the operation's
+# result and ZOUT the Z after it.  CYCLES / MEMREADS are MODEL
+# behaviour.
+# OBSERVED injections (real file StretchCore.bsv, exact inverse edit,
+# cmp IDENTICAL):
+#   RDIV (releaseDivBox := False): CYCLES 891 only (dec, vfl decks unchanged).
+#   K1 (deferIboxStores := False): wheres 0x0213800000000000, stws 0x0000200000000000,
+#     x9 0x0000200000000000, CYCLES 861, MEMREADS 61; case S not recovered.
+#   IH (iboxHazard skipped beside a held level): zout 0x000aaaaaaaaaaaa0 only.
+#   Case L's two NOPs before DONEL's BD: with none, wherel 0 and x7 = x8 =
+#     0x0000200000000000 (docs/NEXT.md item 3; measured on the deck's draft).
+run "BOX LEVEL RELEASE: THE DIVIDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/div_box_release.strap StretchDivBoxRelTb \
+    "PC=4298" \
+    "CYCLES=866+-0" \
+    "MEMREADS=63" \
+    "wherel:3328=0x0211600000000000" "wheres:3329=0x0212e00000000000" \
+    "stws:3330=0" "outl:3331=0x000aaaaaaaaaaaa0" "zout:3332=0" \
+    "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x000aaaaaaaaaaaa0" "tmpt:3334=0"
+# THE DECIMAL ADDER RELEASES ITS LEVEL, 2026-11-23 (plan §1c 5f stage 3; the
+# deck's header).  L: the box's level interrupts and lands after it;
+# S: an SX started in the box's hold clocks leaves no trace; T: I-box
+# work beside the held level; I: the interlock.  Sourced pins: WHEREL
+# and WHERES are the instruction after the box's level (p.48), the
+# trails and STWS stay 0 (p.3-24), OUTL and TOUT are the operation's
+# result and ZOUT the Z after it.  CYCLES / MEMREADS are MODEL
+# behaviour.
+# OBSERVED injections (real file StretchCore.bsv, exact inverse edit,
+# cmp IDENTICAL):
+#   RDEC (releaseDecBox := False): CYCLES 867 only (div, vfl decks unchanged).
+#   K1 (deferIboxStores := False): wheres 0x0213400000000000, stws 0x0000200000000000,
+#     CYCLES 858, MEMREADS 65; case S not recovered.
+#   IH (iboxHazard skipped beside a held level): zout 0x46, CYCLES 855.
+run "BOX LEVEL RELEASE: THE DECIMAL ADDER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/dec_box_release.strap StretchDecBoxRelTb \
+    "PC=4301" \
+    "CYCLES=859+-0" \
+    "MEMREADS=66" \
+    "wherel:3328=0x0211a00000000000" "wheres:3329=0x0213200000000000" \
+    "stws:3330=0" "outl:3331=0x46" "zout:3332=0" \
+    "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x46" "tmpt:3334=0"
+# THE VFL MULTIPLIER RELEASES ITS LEVEL, 2026-11-23 (plan §1c 5f stage 3; the
+# deck's header).  L: the box's level interrupts and lands after it;
+# S: an SX started in the box's hold clocks leaves no trace; T: I-box
+# work beside the held level; I: the interlock.  Sourced pins: WHEREL
+# and WHERES are the instruction after the box's level (p.48), the
+# trails and STWS stay 0 (p.3-24), OUTL and TOUT are the operation's
+# result and ZOUT the Z after it.  CYCLES / MEMREADS are MODEL
+# behaviour.
+# OBSERVED injections (real file StretchCore.bsv, exact inverse edit,
+# cmp IDENTICAL):
+#   RVFL (releaseVflBox := False): CYCLES 949 only (div, dec decks unchanged).
+#   K1 (deferIboxStores := False): wheres 0x0213600000000000, stws 0x0000200000000000,
+#     CYCLES 939, MEMREADS 65; case S not recovered.
+#   IH (iboxHazard skipped beside a held level): zout 0x1400000 only.
+run "BOX LEVEL RELEASE: THE VFL MULTIPLIER (p.3-16, p.3-18, p.48; MODEL)" ./run_program.sh ../decks/vfl_box_release.strap StretchVflBoxRelTb \
+    "PC=4302" \
+    "CYCLES=945+-0" \
+    "MEMREADS=67" \
+    "wherel:3328=0x0211a00000000000" "wheres:3329=0x0213200000000000" \
+    "stws:3330=0" "outl:3331=0x1400000" "zout:3332=0" \
+    "x7:23=0" "x8:24=0" "x9:25=0" "tout:3333=0x1400000" "tmpt:3334=0"
 
 # >>> INTERRUPTION RECOVERY: WHAT IS UNDONE, 2026-11-20 (plan §1c 5f). <<<
 # Perf. Char. Vol. 1 printed p.3-24 (PDF 42) and Buchholz §15.6 as above;
@@ -2907,10 +2972,14 @@ run "FP BOX: AN I-BOX STORE IN THE HOLD CLOCKS (p.3-20, p.3-24, Table A-2; MODEL
 #   J1b no recovery window        wherea, whereb, wherec, x6, CYCLES 484,
 #                                 MEMREADS 42
 #   J4  no removal hold           nothing
+#   (J1b-J5 measured 2026-11-20 against CYCLES 558 / MEMREADS 48.)
+#   CYCLES 558 -> 550, MEMREADS 48 -> 46 with the divider's release
+#   (2026-11-23, plan §1c 5f stage 3): RDIV (releaseDivBox := False) gives
+#   558 / 48 back, values passing.
 run "INTERRUPTION RECOVERY: a younger level, a VFL level, a progressive level (Perf. Char. p.3-24)" ./run_program.sh ../decks/int_recovery_undo.strap StretchIntRecUndoTb \
     "PC=4267" \
-    "CYCLES=558+-0" \
-    "MEMREADS=48" \
+    "CYCLES=550+-0" \
+    "MEMREADS=46" \
     "wherea:3328=0x0212600000000000" "whereb:3329=0x0213A00000000000" "wherec:3330=0x0214C00000000000" \
     "acca:3331=0" "x4:20=0x0348500000000000" \
     "x6:22=0" "x7:23=0" "x8:24=0" "x9:25=0" "x10:26=0" "x11:27=0" "x12:28=0"
@@ -16418,9 +16487,38 @@ run "MCP's loader loads the job reconstructed BSS laid out (C28 p.17)" python3 c
 # fails the six reel checks.
 run "MCP runs GO,FORTRAN from the post-IPL image: job control, resume load, BSS prints p.17's map, leaves by EOJ; the GO phase loads the program, and after the operator readies the OUTPT reel MCP writes the listing and reaches the next job card; a second job card is read, announced and its TYPE card decoded" python3 check_bss_mcp_go.py
 
+# IBM's JA BP6A "MEMORY PATTERN TESTS" (May 5, 1961), the first of the
+# three memory diagnostics fidelity_plan.md names as A11a's oracle.
+# The listing oracle checks all 65 lines against the printed code (97
+# checks; one torn row, MPTDD2 at 100016, unchecked).  The program
+# compares nothing -- "It relies on scoping to detect errors" (writeup
+# PDF p.1) -- so run_ja_bp6a.sh stops it behind a CB at a chosen
+# pattern, dumps core from word 32 to 98303 and compares EVERY word the
+# program has reached against the image computed from its own steps
+# (check_ja_bp6a_dump.py).  Stages: the complementary 1010 and 0101
+# patterns through the B boxes (B3, B4) and the A boxes (A3, A4), and
+# one whole loop (LOOP: Part II's ones-ECC word left in the A boxes,
+# the next pass's zeros in the B boxes, both programs restored).
+# MEASURED in a scratch tree (2026-11-24), StretchMemory with bit 20
+# stuck at 0 on every store to 200000-200777, then reverted:
+#   B3   FAIL  B boxes: 32768 of 65536 words differ, 200000-277777 (the
+#              bad word at 200000 ripples to the top)
+#   B4   PASS  (0101 has bit 20 = 0; a stuck-at-0 cannot show)
+#   A3   FAIL  B boxes: 32768 of 65032, 200000-277777 -- Part I's last
+#   A4   FAIL  pattern, the ones-ECC word, is still in the B boxes
+#   LOOP PASS  (the B boxes hold zeros again)
+# The A boxes passed in every stage, and nothing else failed.
+run "JA BP6A memory patterns listing bit-exact comparison" python3 verify_ja_bp6a_listing.py
+run "JA BP6A memory patterns: 1010 through the B boxes (B3)" ./run_ja_bp6a.sh B3
+run "JA BP6A memory patterns: 0101 through the B boxes (B4)" ./run_ja_bp6a.sh B4
+run "JA BP6A memory patterns: 1010 through the A boxes (A3)" ./run_ja_bp6a.sh A3
+run "JA BP6A memory patterns: 0101 through the A boxes (A4)" ./run_ja_bp6a.sh A4
+run "JA BP6A memory patterns: one whole loop (LOOP)" ./run_ja_bp6a.sh LOOP
+
 # -- cleanup: generated .bsv testbenches and Bluesim build products are
 # not meant to be committed (see .gitignore) --
 rm -f "$BSV_DIR"/StretchProblem*Tb.bsv "$BSV_DIR"/StretchFigure*Tb.bsv "$BSV_DIR"/StretchXwRefillTb.bsv "$BSV_DIR"/StretchIoReaderPrinterTb.bsv "$BSV_DIR"/StretchIoTapeTb.bsv "$BSV_DIR"/StretchIoDiskTb.bsv "$BSV_DIR"/StretchXmitTb.bsv "$BSV_DIR"/StretchLvsTb.bsv "$BSV_DIR"/StretchIboxWenTb.bsv "$BSV_DIR"/StretchIboxCbTb.bsv "$BSV_DIR"/StretchIboxCbrTb.bsv "$BSV_DIR"/StretchLoaderDeckTb.bsv "$BSV_DIR"/StretchLoaderRelTb.bsv "$BSV_DIR"/StretchLoaderFortTb.bsv "$BSV_DIR"/StretchLoaderBssTb.bsv "$BSV_DIR"/StretchLoaderOctalTb.bsv
+rm -f "$BSV_DIR"/StretchJaBp6a*Tb.bsv
 rm -f "$BSV_DIR"/*_sim "$BSV_DIR"/*_sim.so
 rm -rf "$BSV_DIR"/build "$BSV_DIR"/simbuild
 

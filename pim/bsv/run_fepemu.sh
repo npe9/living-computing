@@ -48,7 +48,8 @@ build mkPimmFepEmuSpiSdscTb PimmFepEmuSpiTb.bsv sim_fepemu_spi_sdsc
 SIMS="$SIMS $B/sim_fepemu_spi $B/sim_fepemu_spi_sdsc"
 
 echo "== the direct tapes are what record_fep.py makes now (the kernel tape needs"
-echo "   a saved machine: record_fep.py --kernel PKL --check, by hand)"
+echo "   a saved machine: record_fep.py --kernel PKL --type shutdown --type yes --check,"
+echo "   by hand)"
 python3 ../ref/pimm/record_fep.py --check --part direct
 python3 ../ref/pimm/record_fep.py --check --part direct_kernel
 

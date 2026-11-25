@@ -80,7 +80,14 @@ the bus check; after the merge of d1beeb7b (24 to 28 lines more each
 than before it, where the reference took the merger's vectors under
 Machine.ahead; the cause is not traced line by line) 1,458,322 /
 2,683,031 / 2,654,349 / 2,683,403 / 324,652 / 71,735 trace lines
-(late: 47 B lines, 7 polls that finish), the pins.
+(late: 47 B lines, 7 polls that finish), the pins until 2026-11-24.
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue): 1,458,515 / 2,687,853 /
+2,659,308 / 2,688,840 / 324,527 / 71,510, both models identical; the
+first part's 7 (scsi) unchanged at 1,553.  The wire and the FEP's
+messages of every IPL part are the same before and after (ref_scsi.py,
+compared by hash).
 
 Observed fault injections into bsv/PimmScsiBox.bsv (the last but three
 into the exec stage's hook in PimmStages.bsv), 2026-11-23, each from a
@@ -181,8 +188,8 @@ import pimm  # noqa: E402
 
 PINNED = dict(parts=7, lines=1553)
 # the IPL parts (--part 1..6): trace lines, one part each
-PINNED_IPL = {'one file': 1458322, 'two files': 2683031, 'characters': 2654349,
-              'late': 2683403, 'odd': 324652, 'small buffer': 71735}
+PINNED_IPL = {'one file': 1458515, 'two files': 2687853, 'characters': 2659308,
+              'late': 2688840, 'odd': 324527, 'small buffer': 71510}
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 NIL = (pimm.ATOM, 0)
 BUFFER = 61

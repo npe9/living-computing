@@ -45,6 +45,17 @@ An operation is one 64-bit word: kind, a, b (8 bits each), then a
                          does when the machine has run dry; a script
                          puts it after a RUN, where the reference ran
                          dry with a command waiting (Script.live)
+    RESTORE a cell       the core's state of a saved machine that is not
+                         in its memory, given silently (no trace on
+                         either model: the reference's machine already
+                         has it): a = 0 the heap pointer, 1 new_atom's
+                         counter, 2 the clock's ticks, 3 the instructions
+                         since the last tick, 4 the SCSI commands so
+                         far, 16..26 a waiting SCSI command's fields,
+                         31 that command onto the waiting list.  Only
+                         lockstep_shell.py's scripts, on the bench
+                         mkPimmShellTb, whose heap is the saved
+                         machine's (bsv/PimmCore.bsv restore)
 
 The device tape.  The bench has no device: scsi_init and scsi_command
 (bsv/PimmScsiBox.bsv) put each command on the core's port, and the
@@ -81,11 +92,13 @@ sys.path.insert(0, HERE)
 import pimm  # noqa: E402
 
 (END, NEWVAR, ARG, ARGC, SPAWN, RUN, OUT, UNIFY, UNIFYC, NEWSTR, SETEL, PTR, SLOT,
- SETW, POLL, TAPE) = range(16)
+ SETW, POLL, TAPE, RESTORE) = range(17)
 SCRIPT_BITS = 24            # the driver's script memory holds 1 << 24 operations
 # The script file holds the operations only, so the simulator's first
 # line is its warning that the rest of the memory is not given.
-GAP = "Warning: file 'generated/pimm_script.hex' for memory 'script' has a gap"
+# (the memory is the bench's d_script since mkPimmDriverTb became a
+# wrapper of mkPimmDriver, 2026-11-24: the prefix is matched)
+GAP = "Warning: file 'generated/pimm_script.hex' for memory "
 
 
 class Script:
@@ -260,6 +273,8 @@ class Script:
             slot[a] = c
         elif k == POLL:
             m.scsi_poll()
+        elif k == RESTORE:
+            pass                # the reference's machine has it already
         else:
             raise ValueError(k)
 

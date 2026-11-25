@@ -108,6 +108,43 @@
 // NOT tested: the new OURS limits (DevSlots, HeldSlots, HomeMax, one home
 // reply queued): no tape reaches one.
 //
+// Observed fault injections, 2026-11-24, after the merger change and the
+// typed shutdown (the standard I/O window, 60 on the append-opened file,
+// {-1, 80}), the same way: each into PimmFepEmu.bsv from a copy of the
+// committed file, run_fepemu.sh run, the file restored from the copy
+// (`cmp` equal, `git diff` clean).  All 9 tapes; every one FAILs on F, S
+// and B alike, on only the tapes named, the other seven passing.
+// Command numbers count the events; fepemu_check.py prints at most six
+// per tape, so a run of six is "and after":
+//   the append 60 branch removed           direct_kernel 24-29, kernel
+//                                          217-222 (the syslog's close at
+//                                          PIMOS END refused, why 7)
+//   the append 60 answered 5               direct_kernel 25 29, kernel 218
+//   the append 60 keeps the slot           direct_kernel 26-31 (the next
+//                                          append_open on the device)
+//   601 refuses pimos_standard_io_window   direct_kernel 336-341, kernel
+//                                          184-189
+//   its io 104 dropped                     direct_kernel 338-343, kernel
+//                                          187-192
+//   its io 130 dropped                     direct_kernel 342-347, kernel
+//                                          190-195
+//   its io 141 dropped                     direct_kernel 344-349, kernel
+//                                          193-198
+//   its io 111 dropped                     direct_kernel 348-353, kernel
+//                                          196-201
+//   its 111 integer text accepted          direct_kernel 376 only
+//   its 110 answered [1, ""], not held     direct_kernel 354 357 358 360
+//                                          385, kernel 200 202 203
+//   its 110 held as a login                direct_kernel 357-362, kernel
+//                                          202 203 214 215 216
+//   80 accepted on any device              direct_kernel 389 only
+//   80 answered [1]                        direct_kernel 368 372, kernel 221
+//   the 80 branch removed                  direct_kernel 367-372, kernel
+//                                          220-223
+// Nothing injected passed unnoticed.  The four characters added to
+// unjisChar (" ( ) =) cannot be seen on a tape: no name compared holds
+// them, and a typed line reaches the emulator as card bytes.
+//
 // The card is reached through `card` (a module argument in
 // mkPimmFepEmuBench), so the same bench runs the emulator over the
 // BDPI file (mkPimmFepEmuTb) or over the SPI reader and a card model

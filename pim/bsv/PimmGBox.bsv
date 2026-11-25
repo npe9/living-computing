@@ -17,10 +17,22 @@
 //   alloc       heap cells for another box
 //   hook        add a goal to the goals waiting on an unbound cell
 //   wake        walk a suspension list; each goal still SUSPENDED
-//               becomes READY and goes on the ready queue
-//   pickup      take the newest ready goal: mark it TAKEN, load its
-//               arguments into r0.., answer its code address; or
-//               answer Invalid when the queue is empty
+//               becomes READY and goes on the ready queue, or, a goal
+//               of the stub merge_in, at the end of the merger's list
+//   pickup      the goals the merger's list gained since the last
+//               pickup go to its front, in the order they were made
+//               ready; take its first goal, or else the newest ready
+//               goal: mark it TAKEN, load its arguments into r0..,
+//               answer its code address; or answer Invalid when both
+//               are empty
+//
+// The merger's list (2026-11-24, docs/pimm_semantics.md, merge): a
+// woken goal of merge_in runs before any other goal, so a message
+// bound to a merger input reaches the output before anything the
+// binding reduction spawned runs, in the order of the unifications,
+// and a merger's own output reaching another merger goes ahead of
+// what was already waiting.  VPIM, KLIC and PDSS act AT the
+// unification; acting at the next goal switch instead is OURS.
 //
 // The shoen (asm/pimm_layout.py, docs/pimm_semantics.md "Shoen": this
 // project's design).  A goal record's status cell also says which
@@ -75,6 +87,9 @@ interface PimmGBox;
   method Action unpark(Addr g);                // answered by done
   method Action applyGoal(Cell a, Cell b);     // answered by done
   method Addr takenGoal;
+  // a checkpoint (ref/pimm/lockstep_shell.py): the heap pointer of the
+  // machine saved, between runs, the queues empty
+  method Action setHp(Addr a);
 endinterface
 
 typedef union tagged {
@@ -92,13 +107,17 @@ typedef union tagged {
 } GReq deriving (Bits);
 
 typedef enum { GIdle, GRec1, GRec2, GRec3, GRecArgs, GUg1, GUg2, GUg3, GUg4, GUg5, GUg6, GWArg, GWArg2, GHook1, GHook2, GHook3,
-               GWk0, GWk1, GWk2, GWk3, GWk4, GWk5,
-               GPk1, GPk2, GPk3, GPk4, GPk5,
+               GWk0, GWk1, GWk2, GWk3, GWk3a, GWk3b, GWk4, GWk5,
+               GPkS, GPk1, GPk2, GPk3, GPk4, GPk5,
                GPk0, GCnt0, GCnt, GUgCnt0, GUgCnt, GRl1, GRl2 } GState deriving (Bits, Eq);
 
 module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   Reg#(Addr)   hp <- mkReg(fromInteger(heapStart));   // the next free cell
   Reg#(Addr)   rq <- mkReg(0);                        // the newest ready goal, or 0
+  Reg#(Addr)   mq <- mkReg(0);                        // the merger's list: its first goal, or 0
+  Reg#(Addr)   mwH <- mkReg(0);                       // goals of merge_in woken since the last
+  Reg#(Addr)   mwT <- mkReg(0);                       // pickup: the first and the last, or 0
+  Reg#(Bool)   fromMq <- mkReg(False);                // the goal picked is the merger list's
 
   Reg#(GState)  st    <- mkReg(GIdle);
   Reg#(Cell)    ugA   <- mkRegU;
@@ -253,16 +272,14 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
         st <= GWk0;
       end
       tagged Pickup: begin
-        if (rq == 0) begin
-          cur <= 0;
-          pickQ.enq(tagged Invalid);
+        if (mwH != 0) begin
+          // the goals woken since the last pickup go to the list's front
+          mem.write(mwT + gLink, intC(linkOf(mq)));
+          mq <= mwH;
+          mwH <= 0;
+          mwT <= 0;
         end
-        else begin
-          $display("G %0d", rq);
-          g <= rq;
-          mem.read(rq + gStatus);
-          st <= GPk0;
-        end
+        st <= GPkS;
       end
       tagged RecordFor .q: begin
         g <= hp;
@@ -443,8 +460,33 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   endrule
 
   rule wk3 (st == GWk3);
-    mem.write(g + gLink, intC(linkOf(rq)));
-    rq <= g;
+    mem.read(g + gCode);
+    st <= GWk3a;
+  endrule
+
+  // a goal of merge_in goes at the end of the merger's list, any other
+  // on the ready queue
+  rule wk3a (st == GWk3a);
+    let c <- mem.data;
+    if (c.val == absAddr(mergeInStub)) begin
+      mem.write(g + gLink, intC(0));
+      if (mwH == 0) begin
+        mwH <= g;
+        mwT <= g;
+        st <= GWk4;
+      end
+      else st <= GWk3b;
+    end
+    else begin
+      mem.write(g + gLink, intC(linkOf(rq)));
+      rq <= g;
+      st <= GWk4;
+    end
+  endrule
+
+  rule wk3b (st == GWk3b);
+    mem.write(mwT + gLink, intC(absAddr(g)));
+    mwT <= g;
     st <= GWk4;
   endrule
 
@@ -460,6 +502,28 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   endrule
 
   // ---- pickup ------------------------------------------------------
+  rule pkS (st == GPkS);
+    if (mq != 0) begin
+      $display("G %0d", mq);
+      g <= mq;
+      fromMq <= True;
+      mem.read(mq + gStatus);
+      st <= GPk0;
+    end
+    else if (rq != 0) begin
+      $display("G %0d", rq);
+      g <= rq;
+      fromMq <= False;
+      mem.read(rq + gStatus);
+      st <= GPk0;
+    end
+    else begin
+      cur <= 0;
+      pickQ.enq(tagged Invalid);
+      st <= GIdle;
+    end
+  endrule
+
   // the goal's shoen is the current shoen from here on
   rule pk0 (st == GPk0);
     let c <- mem.data;
@@ -470,7 +534,8 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
 
   rule pk1 (st == GPk1);
     let c <- mem.data;
-    rq <= truncate(c.val);
+    if (fromMq) mq <= truncate(c.val);
+    else rq <= truncate(c.val);
     mem.write(g + gStatus, statusCell(cur, taken));
     st <= GPk2;
   endrule
@@ -563,6 +628,9 @@ module mkPimmGBox#(MemPort mem, PimmRegs regs)(PimmGBox);
   method Action recordFor(Addr sh, Addr c, Bit#(8) argn) =
     reqQ.enq(tagged RecordFor { sh: sh, code: c, argn: argn });
   method Action unpark(Addr goal) = reqQ.enq(tagged Release goal);
+  method Action setHp(Addr a) if (st == GIdle);
+    hp <= a;
+  endmethod
 endmodule
 
 endpackage

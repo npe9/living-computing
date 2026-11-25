@@ -14,6 +14,11 @@
     python3 ref/pimm/longrun_ipl.py --load FILE --go --fep --type LINE [--type LINE ...]
                                     ... and the lines typed into the shell's
                                     window after the login, in order
+    python3 ref/pimm/longrun_ipl.py --load FILE --go --fep --save-prompt FILE2 [--type ..]
+                                    ... and the machine at the shell's prompt
+                                    (run dry after the login, the window's getl
+                                    held) saved to FILE2, for lockstep_shell.py
+                                    (~85 s; FILE2 ~1.2 GB)
 
 Run by bsv/run_pimm_longrun.sh.  NOT part of run_tests.sh.
 
@@ -29,10 +34,17 @@ must be the later one's; no goal left waiting.
 Measured 2026-11-23, the reference model alone (--reference): 844 s,
 of which 416 s making the script; 1,644,180 script operations;
 73,483,342 heap cells; 10,032 atoms, 480 modules, 20 comments.
+After the merger timing change (2026-11-24): 73,594,186 heap cells,
+the rest the same (837 s to the script on a shared machine).
 On BOTH models (bsv/run_pimm_longrun.sh), 2026-11-23: the whole list,
 447,739,516 trace lines identical, every check above passing; 7,350 s
 on a machine shared with other runs (668 s of it making the script).
-That run's simulator was built from the tree of b7187d59.
+That run's simulator was built from the tree of b7187d59, before the
+merger timing change of 2026-11-24 (docs/pimm_semantics.md, merge),
+which moved the count.  Run again 2026-11-24 under the merger rule
+(the simulator built from the tree of 3712bdd9): 448,194,526 trace
+lines identical, every check passing, 7,435 s to the compare on a
+shared machine (546 s of it making the script).
 
 --go (reference model alone, with what only it has: Machine.ahead):
 after the link, top:go_pimos1(Loaded, BootInfo) is started as the IPL
@@ -99,18 +111,29 @@ stops when the script is empty.  With search_character, unbound,
 extended_floating_point, module, the double-precision integers,
 allow_shoen_resource_report, the bignum guards, apply and
 enqueue_goal of more than 16, and create_shoen's distributed form, on
-both models: 8,586,110 instructions; the console "LOCAL  LOGIN
+both models: 8,587,072 instructions with the login ID 0 (fep.py LOGIN,
+2026-11-24, docs/fep_services.md 6.5; 8,587,092 with the ID 1 before
+it; 8,586,110 before the merger
+timing change of 2026-11-24, docs/pimm_semantics.md merge; the cache
+made afresh under it); the console "LOCAL  LOGIN
 SERVICE STARTS ***", 0, "CANNOT MAKE A TCPIP LOGIN SERVICE!!", 0; the
 replier's texts and the window's "Shell>> " in the device's log; the
 stop "nothing left to run, 1,220 goals waiting", the window's getl
 (110) held.
 With --type LINE (any number): each line answers the next held getl
 (fep.py's event list, OURS).  --type shutdown --type yes: the shell
-takes "shutdown" and the job starts shutdown_body:go, then the run
-stops at 8,673,642 instructions, 1,388 goals waiting, the second line
-never asked for: a wait cycle through the user table that the model's
-merger timing makes (docs/binary_reverse_engineering.md 1.4, "A
-command typed").
+takes "shutdown" and the job starts shutdown_body:go, which takes its
+third branch: the string-I/O window pimos_standard_io_window, titled
+SHUTDOWN, asks "Really(yes/no)?" and the second line answers it; the
+console then shows "Shutdown started", "User Server End",
+"Statistics in PIMOS:", 0, 790104, "PIMOS END********" and the run
+ends at 8,766,319 instructions (8,766,339 with the login ID 1), nothing left to run, 253 goals
+waiting (docs/binary_reverse_engineering.md 1.4, "A command typed",
+with the manual compared line by line; before the merger timing
+change a wait cycle through the user table stopped it at 8,673,642).
+--type 'cat <= file("pimos:pimos.groups")': the file read through
+pimos: and written to the window, then Shell>> again: 8,760,665
+instructions (8,760,685 with the login ID 1), 1,224 goals waiting.
 
 N: only the first N files of the list (for a shorter trial; the link
 is then normal only if those files are closed under their calls).
@@ -133,7 +156,11 @@ import lockstep_ipll as ipll  # noqa: E402
 import lockstep_link as link  # noqa: E402
 import lockstep_modc as modc  # noqa: E402
 
-PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=447739516)
+# lines: the Bluesim run of 2026-11-24 under the merger rule (the merger
+# acts at unification, docs/pimm_semantics.md merge), 448,194,526; it was
+# 447,739,516 before that change, which moved it (every lockstep count
+# after a merger moved).  The other values are the reference's, unchanged
+PINNED = dict(files=20, modules=480, atoms=10032, replaced=8, stay=8, lines=448194526)
 T0 = time.time()
 BANNER = 'PIMOS V 3.600 20-May-93'
 
@@ -318,7 +345,24 @@ def kernel_file(path):
     raise fepm.FepError('read_open of %r: no such file is served' % (name,))
 
 
-def go(m, loaded, info, bad, with_fep, lines=()):
+def save_prompt(path, m, loaded, info):
+    """--save-prompt FILE: the machine at the shell's prompt (run dry,
+    no SCSI command moving, the window's getl held), with its device,
+    for lockstep_shell.py.  The device's file server (a function of
+    this module) is not pickled: lockstep_shell.py gives it back."""
+    dev = m.fep
+    tr, m.tr = m.tr, None
+    of, dev.open_file = dev.open_file, None
+    lines, dev.script = dev.script, []
+    info = dict(info, prompt=dict(instructions=tr.instructions, steps=m.steps,
+                                  console=cons.console(tr)))
+    with open(path, 'wb') as f:
+        _pickler(f).dump((m, loaded, info))
+    m.tr, dev.open_file, dev.script = tr, of, lines
+    say('saved the machine at the prompt (%d instructions) to %s' % (tr.instructions, path))
+
+
+def go(m, loaded, info, bad, with_fep, lines=(), save_at=None):
     """top:go_pimos1(Loaded, BootInfo), run until the model refuses
     something.  with_fep: the device ref/pimm/fep.py is attached
     (Machine.fep, as ref_scsi.py attaches it), and when the machine
@@ -361,6 +405,10 @@ def go(m, loaded, info, bad, with_fep, lines=()):
                 continue
             # PIMOS idles: the FEP's next scripted event, if a held
             # request waits for one (fep_services.md 7.5, 7.7 item 1)
+            if save_at and 'getl' in dev.held.values() and \
+                    (not dev.script or dev.script[0][0] == 'getl'):
+                save_prompt(save_at, m, loaded, info)
+                save_at = None
             if not dev.idle():
                 break
             say('fep: a scripted event at %d instructions' % m.tr.instructions)
@@ -436,7 +484,8 @@ def main(argv):
             m, loaded, info = pickle.load(f)
         say('loaded the machine after the link')
         bad = []
-        go(m, loaded, info, bad, '--fep' in argv, typed(argv))
+        go(m, loaded, info, bad, '--fep' in argv, typed(argv),
+           argv[argv.index('--save-prompt') + 1] if '--save-prompt' in argv else None)
         print('pimm longrun ipl --load: %s %r' % ('FAIL' if bad else 'PASS', info['go']))
         return 1 if bad else 0
     n = int(argv[-1]) if argv[-1].isdigit() else None

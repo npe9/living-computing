@@ -34,14 +34,20 @@ typedef struct {
 // Two RAMs behind the one queue: the cells below the heap (the IPL
 // image and the stubs), loaded from the file, and the heap, which is
 // not loaded: a heap cell is written before it is read.  So the file
-// is 2^15 lines whatever the memory's size.
+// is 2^15 lines whatever the memory's size.  A checkpoint's heap
+// (heapFile not "": the lockstep from a saved machine,
+// ref/pimm/lockstep_shell.py) is loaded from its own file, addressed
+// lines (@) from the heap's first cell: loading writes nothing, so
+// nothing of it is traced.
 typedef 15 LowBits;
 
-module mkPimmMem#(String file)(PimmMem);
+module mkPimmMem#(String file, String heapFile)(PimmMem);
   BRAM_Configure cfg = defaultValue;
   cfg.loadFormat = tagged Hex file;
   BRAM1Port#(Bit#(LowBits), Cell) low <- mkBRAM1Server(cfg);
-  BRAM1Port#(Addr, Cell) ram <- mkBRAM1Server(defaultValue);
+  BRAM_Configure hcfg = defaultValue;
+  if (heapFile != "") hcfg.loadFormat = tagged Hex heapFile;
+  BRAM1Port#(Addr, Cell) ram <- mkBRAM1Server(hcfg);
   FIFO#(Bool) fromLow <- mkSizedFIFO(4);
 
   // One request queue for all clients: requests reach the RAM in the

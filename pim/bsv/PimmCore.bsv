@@ -53,10 +53,16 @@ interface PimmCore;
   method Action scsiResp(ScsiIn r);
   method Action scsiPoll;
   method ActionValue#(Bit#(32)) scsiPolled;
+  // a checkpoint (ref/pimm/lockstep_shell.py), between runs, the queues
+  // empty: what of a saved machine is not in its memory.  0 the heap
+  // pointer; 1..3 the exec stage's (PimmExec.restore); 4, 16..31 the
+  // SCSI box's (PimmScsiBox.restore).  Nothing is traced
+  method Action restore(Bit#(8) which, Cell c);
 endinterface
 
-module mkPimmCore#(String image)(PimmCore);
-  PimmMem   mem   <- mkPimmMem(image);
+// heap: "" for an empty heap, else a checkpoint's heap (PimmMem)
+module mkPimmCore#(String image, String heap)(PimmCore);
+  PimmMem   mem   <- mkPimmMem(image, heap);
   PimmRegs  regs  <- mkPimmRegs;
   PimmFetch fetch <- mkPimmFetch(mem.port[0]);
   PimmHBox  hbox  <- mkPimmHBox(mem.port[1]);
@@ -195,6 +201,11 @@ module mkPimmCore#(String image)(PimmCore);
   method Action scsiResp(ScsiIn r) = scsi.devResp(r);
   method Action scsiPoll = scsi.poll;
   method ActionValue#(Bit#(32)) scsiPolled = scsi.polled;
+  method Action restore(Bit#(8) which, Cell c);
+    if (which == 0) gbox.setHp(cellAddr(c));
+    else if (which < 4) exec.restore(which, c.val);
+    else scsi.restore(which, c);
+  endmethod
 endmodule
 
 endpackage

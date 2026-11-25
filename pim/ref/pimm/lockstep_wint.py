@@ -37,6 +37,11 @@ run alone (bsv/run_pimm_lockstep.sh wint) and restored from a copy,
                                      (reference) for 0000ffffff
 NOT caught: a sign taken from bit 15 (the only real operand, -1, is
 -1 either way); positive operands are lockstep_modc.py's (35).
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 2064373 -> 2065889
+trace lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
@@ -48,7 +53,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_link as link  # noqa: E402
 
-PINNED = dict(parts=3, lines=2064373)
+PINNED = dict(parts=3, lines=2065889)
 FILE = 'pimm_patch_scsifep360E.sav'
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 ES = (42, 0xffffff)

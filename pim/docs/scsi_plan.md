@@ -51,14 +51,20 @@ starts from, and the plan's rungs S0..S7, each with what verifies it.
   and the window's `getl`; `longrun_ipl.py` gives the device its
   scripted event (the login of §7.5) when PIMOS idles; eleven more
   instructions on both models (`lockstep_login.py`,
-  `lockstep_shoen3.py`, `lockstep_alt.py`). 8,586,110 instructions:
+  `lockstep_shoen3.py`, `lockstep_alt.py`). 8,587,072 instructions
+  with the login ID 0 (P-f3, 2026-11-24; 8,587,092 with the ID 1, 8,586,110 before the merger timing change of 2026-11-24):
   the local login service starts, the tcpip one is refused, the login
   `pimos` (user `pmpsi`) is accepted, the window `PIMOS CONSOLE` is
   made and the shell writes `Shell>> ` to it; the run ends with its
   `getl` held, 1,220 goals waiting (1.4). With `--type shutdown`
-  the line is taken and the command starts, then stops in a wait cycle
-  that the model's merger timing makes (1.4, "A command typed").)* On the Bluespec core the whole
-  IPL load is identical (447,739,516 trace lines); `--go` has not been
+  the line is taken and the command starts; with the merger acting in
+  the order of the unifications on both models (2026-11-24,
+  `pimm_semantics.md` merge) and `fep.py` answering `shutdown_body`'s
+  string-I/O window, `pimos_standard_io_window`, it runs to `PIMOS
+  END********` (8,766,319 instructions; 8,766,339 with the login ID 1); `cat <= file("pimos:pimos.groups")`
+  reads that file through `pimos:` (1.4, "A command typed").)* On the Bluespec core the whole
+  IPL load is identical (448,194,526 trace lines, re-run
+  2026-11-24 under the merger rule; 447,739,516 before it); `--go` has not been
   run there.
 - `scsi_init` (22:DF) and `scsi_command` (22:DB) exist on the
   **reference model only** (`pimm.py` `i_scsi_init`, `i_scsi_command`,
@@ -193,6 +199,23 @@ thirteenth (the user device's length word, high byte) after a section
 for it was added (`bsv/PimmFepEmuTb.bsv`). The board top synthesizes
 at 14,799 LUT4, 4,243 FF, 3 DP16KD, 36.69 MHz (PASS at 25 MHz), its
 self-test passing in Bluesim on the new `--held` card (54 entries).
+STATUS 2026-11-24, after the merger change (the merger acts at
+unification) and the typed shutdown: it follows `fep.py` to PIMOS END.
+New: 601 of `pimos_standard_io_window`, its 620 io 104/130/141/111
+(`[1, ""]`) and 110 (held, answered by the event), 60 on the
+append-opened file (`[1]`), `{-1, 80}` (no reply). Tapes: `kernel`
+re-recorded from a machine saved under the merger rule and on through
+`--type shutdown --type yes` (`record_fep.py --kernel PKL --type ...`:
+220 calls, 155 answered, 4 events, 8,766,339 instructions; re-recorded
+with the login ID 0, P-f3: the same calls, the replier texts' ID word
+0, 8,766,319 instructions); `late`
+re-recorded (its RECEIVE retries move under the merger rule); the other
+IPL parts re-recorded for their clock lines only; `direct_kernel` with
+the new answers' edges and errors (377 commands, 14 events). 9 tapes,
+827 commands and 18 events, all equal on the three benches; fourteen
+injections into the new paths (`bsv/PimmFepEmuTb.bsv`). The board top
+re-synthesized: 14,816 LUT4, 4,259 FF, 3 DP16KD, 35.03 MHz (PASS at 25
+MHz).
 
 **S2. The device on the bench: a replay of the reference's device.**
 The lockstep bench is scripted, not live. So the reference model,
@@ -276,6 +299,14 @@ OURS answer of `fep.py`; differences are recorded, not smoothed.
   only (no IPL part has a command not ready at a poll: counted on the
   tapes); the copy's pad from old memory fails none (unobservable:
   every string's pad is zero).
+- **S5 reached (2026-11-24).** `pim:go/4`'s whole FEP conversation
+  on the Bluespec core through the tape, past S0's reach: from the
+  machine after the link through the login, the shell and a typed
+  `shutdown`/`yes` to PIMOS END, 221 device answers, 20,107,047 trace
+  lines identical (20,107,017 with the login ID 0, re-run) (`bsv/run_pimm_shell.sh`, `lockstep_shell.py`;
+  outside the suite, the saved machines not in git; `bsv/README.md`,
+  "The lockstep from a saved machine"). Not done: a lockstep part of
+  its own for each new device's first exchange.
 
 ## 4. Order and dependencies
 

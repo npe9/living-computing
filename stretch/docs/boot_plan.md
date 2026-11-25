@@ -2388,6 +2388,11 @@ reader has a deck. This has not been run.
 
 **WHAT WAS FETCHED.** DISK FETCH found 22SCOMD and 22$EOJ. Nothing on this
 path asks for 22LOADER or 22$DUMP, so those two are still unexercised.
+(2026-11-24, fidelity M-a: `tests/check_bss_mcp_go.py` now runs DISK
+FETCH for every `$FETCH` of its GO job, against the disk this IPL
+wrote. 22LOADER is fetched there, from resume load, by YMPFCH. 22$DUMP
+is still unexercised. See `NEXT.md` "MCP'S OWN DISK FETCH SERVES THE
+GO JOB".)
 
 **FOUR MODEL FAULTS, IN THE ORDER MCP FOUND THEM.** Each
 hypothesis was written down with the run that would kill it before any

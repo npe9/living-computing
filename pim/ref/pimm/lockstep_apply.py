@@ -56,6 +56,11 @@ stops the reference model: the lockstep driver cannot play one.
 
 Not run, and refused by both models: a vector of seven or more; the
 manual's exceptions.
+
+Re-pinned for the merger timing change (2026-11-24, docs/
+pimm_semantics.md merge: a woken goal of merge_in goes on the
+merger's list, taken before the ready queue), 138965 -> 138945 trace
+lines, both models identical and every check passing (injection line numbers above, if any, are as observed before it).
 """
 import os
 import sys
@@ -67,7 +72,7 @@ import driver  # noqa: E402
 import pimm  # noqa: E402
 import lockstep_cons as cons  # noqa: E402
 
-PINNED = dict(parts=6, lines=138965)
+PINNED = dict(parts=6, lines=138945)
 I = lambda v: (pimm.INT, v)                        # noqa: E731
 NO_MODULE = 'No PIMOS Top Module'
 

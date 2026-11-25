@@ -862,13 +862,20 @@ typedef struct {
   Maybe#(Bit#(64)) l0;   // line containing pc & ~7
   Maybe#(Bit#(64)) l1;   // the next line
   Maybe#(Bit#(64)) l2;   // the third line (odd parcel start only)
-  Bool fault;            // MMU fetch translation fault (p. 2-3)
+  Vector#(3, Bool) lfault; // each line's MMU fetch fault (p. 2-3)
 } PduS1Out deriving (Bits);
 
+// The window's parcels and, for each, whether its line's translation
+// faults.  Only an instruction's own parcels can fault it (PDU_S3): the
+// window reaches up to 16 bytes past the PC, so the last instructions
+// of a page sit in a window that overlaps the next one.  Found at record
+// 287,416,554 of the s9term join: `/boot` calls 0x1ffc, whose two NOPs
+// the reference retires before the fetch fault at 0x2000; the core took
+// the fault at 0x1ffc.
 typedef struct {
   Word pc;
   Bool miss;
-  Bool fault;
+  Vector#(6, Bool) pfault;
   Vector#(6, Parcel) parcels;
 } PduS2Out deriving (Bits);
 
@@ -930,8 +937,9 @@ module mkHobbitPduS1#(HobbitPrefetch pf)(HobbitPduS1);
                       l0: pf.lineAt(a0),
                       l1: pf.lineAt(a0 + 8),
                       l2: pf.lineAt(a0 + 16),
-                      fault: pf.faultAt(a0) || pf.faultAt(a0 + 8) ||
-                             pf.faultAt(a0 + 16) };
+                      lfault: cons(pf.faultAt(a0),
+                                   cons(pf.faultAt(a0 + 8),
+                                        cons(pf.faultAt(a0 + 16), nil))) };
   endmethod
 
   method Action enq(Word pc) if (!full);
@@ -999,8 +1007,14 @@ module mkHobbitPduS2(HobbitPduS2);
     let d = inR;
     Word base = d.pc & 32'hFFFFFFFC;
     Bool oddBase = (base[2:0] == 3'b100);
-    Bool have12 = isValid(d.l0) && isValid(d.l1);
-    Bool miss = !have12 || (oddBase && !isValid(d.l2));
+    // A line whose translation faults is there, as zeros: it is never
+    // filled, and only an instruction whose own parcels are in it faults
+    // (PDU_S3).
+    Bool have0 = isValid(d.l0) || d.lfault[0];
+    Bool have1 = isValid(d.l1) || d.lfault[1];
+    Bool have2 = isValid(d.l2) || d.lfault[2];
+    Bool have12 = have0 && have1;
+    Bool miss = !have12 || (oddBase && !have2);
     Bit#(64) l0 = pfcData(d.l0);
     Bit#(64) l1 = pfcData(d.l1);
     Bit#(64) l2 = pfcData(d.l2);
@@ -1011,7 +1025,13 @@ module mkHobbitPduS2(HobbitPduS2);
     Vector#(6, Parcel) ps = (d.pc[1] == 1'b0)
                               ? selEven(w0, w1, w2)
                               : selOdd(w0, w1, w2, w3);
-    return PduS2Out { pc: d.pc, miss: miss, fault: d.fault, parcels: ps };
+    // parcel i is at pc + 2i, in line (pc[2:0] + 2i) >> 3 of the three
+    Vector#(6, Bool) pfs = replicate(False);
+    for (Integer i = 0; i < 6; i = i + 1) begin
+      Bit#(5) off = zeroExtend(d.pc[2:0]) + fromInteger(2 * i);
+      pfs[i] = d.lfault[off[4:3]];
+    end
+    return PduS2Out { pc: d.pc, miss: miss, pfault: pfs, parcels: ps };
   endmethod
 
   method Action enq(PduS1Out d) if (!full);
@@ -1054,8 +1074,16 @@ module mkHobbitPduS3(HobbitPduS3);
     f_reset_rsps.enq(?);
   endrule
 
+  // A fetch fault belongs to the instruction only when one of its own
+  // parcels (`plen`, the CPU escape's included) is in a faulting line; a
+  // faulting parcel reads as 0, so it cannot become a folded branch
+  // (a one-parcel branch has opcode 3..7).
   method PduS3Out out;
-    if (inR.fault)
+    let d = dec.decode(inR.pc, inR.parcels);
+    Bool own = False;
+    for (Integer i = 0; i < 6; i = i + 1)
+      if ((fromInteger(i) < d.plen) && inR.pfault[i]) own = True;
+    if (inR.pfault[0] || own)
       return PduS3Out { pc: inR.pc, miss: False, fault: True,
                         entry: packDecEntry(fetchFaultInstr(inR.pc)) };
     else if (inR.miss)
@@ -1063,7 +1091,7 @@ module mkHobbitPduS3(HobbitPduS3);
                         entry: packDecEntry(fetchMissInstr(inR.pc)) };
     else
       return PduS3Out { pc: inR.pc, miss: False, fault: False,
-                        entry: packDecEntry(dec.decode(inR.pc, inR.parcels)) };
+                        entry: packDecEntry(d) };
   endmethod
 
   method Action enq(PduS2Out d) if (!full);
