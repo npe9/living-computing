@@ -130,6 +130,8 @@ PINNED = {
     ('prompt', ('compile', 'sample1', '!exit')): (4048964, 973759),
     # compile_work: the same file into the package work, loaded
     ('prompt', ('compile', '!package work', 'sample1', '!exit')): (4359920, 1008832),
+    # ts, past add_bignum, to its set_timer refusal
+    ('prompt', ('ts',)): (184130, 68783),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -193,6 +195,11 @@ APPS = {
          '"work:: sample1" Loaded\n',
          'Total Number of Warning : 1\n',
          'COMPILE> ', 'Shell>> ')),
+    # `ts` (2026-11-25): past add_bignum, now on both models, it stops
+    # refused at set_timer to a time still to come (an alarm neither
+    # model keeps: pimm.py i_set_timer, PimmStages.bsv op_set_timer),
+    # before writing anything, so its window is empty
+    'ts': (('ts',), ()),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()

@@ -857,7 +857,19 @@ the device are given it again whenever the machine runs dry.
     held an `in` and an `out` but no `inter`, and no clause of
     `invoke_std_handler` takes that. (The atom was read as 65,785, `v`
     in the module's atom table as `unlsav` writes it, the JIS 21:76 of
-    `*`.) Why no `inter` was asked for was not traced.
+    `*`.) Who should give the `inter`, read 2026-11-25 (source only,
+    not run): the shell's pipe stages ask for `in` and `out` only
+    (`shell/main/tos.kl1`:47, 66, 80, `IO_info`). A task's missing
+    stream is to be inherited from its parent: `inter_check` with the
+    `inter` slot `*` sets the old kind to `inter` (or `in_inter`,
+    `out_inter`, `in_out_inter`; `kernel/stdio/std.kl1`:88-103), and
+    `stdio_old_check` asks the parent's switch to `make_branch` that
+    kind (124-127). Its `normal(E, Id)` answer puts `{inter, Cont,
+    FCode, SShut}` on the same `Dist` list `std_handler` reads
+    (129-133). So the `*` left in the vector means the inherited branch
+    gave nothing to `Dist`. That happens when the old kind came out
+    as `[]` (`stdio_old_check([], ...)`, 117-122) or when the branch's
+    answer was not `normal`. Which of the two it is, is the next probe.
   - `listener`: the window it opens sends 126 (`reshape_by_mouse`), now
     answered `[1]` (`fep_services.md` §4); then a 201 of
     `listener.com` (5) and 130; then (PROBE) a reduction failure in
@@ -866,9 +878,36 @@ the device are given it again whenever the machine runs dry.
     task's first report to be `resource_low`. The model never reports
     `resource_low` (`pimm.py`:2631, OURS: no source gives the
     threshold).
-  - `ts`: `refused: add_bignum` (not implemented). `gc`: `refused:
-    collect_garbage`. `ls`: needs 204 (directory), not served; its
-    contents would be OURS.
+  - `ts`: stopped at `refused: add_bignum` until 2026-11-25. With
+    `add_bignum` in on both models (VPIM's edges, `pimm.py`
+    `i_add_bignum`, rules `ba1`..`ba9`, `lockstep_bignum.py`), it runs
+    in lockstep (APPS `ts`, 68,783 instructions, 184,130 lines) to
+    `refused: set_timer to a time still to come (643223, now 483224)`
+    before writing anything: an alarm, which neither model keeps
+    (`pimm.py` `i_set_timer`). That is the next stop.
+  - `gc`: `refused: collect_garbage`, kept refused. The built-in is
+    23:77 with no operands (`library/assembler/inst_tab.kl1`:132), a
+    guard of class user with no inputs or outputs
+    (`library/compiler/blt.kl1`:126-127). Its only callers are
+    `gcCall :- collect_garbage | true` and the same form with a stream
+    (`shell/utils/gc.kl1`:44-45, `seqgc.kl1`:74-75). It is in neither
+    VPIM's built-in table nor the manual. The Pseudo PIM/m microprogram
+    has an entry named `collect_garbage` at `02d5`
+    (`pseudo_pimm_microcode.md` line 211). Taking it as a guard that
+    succeeds would give the shell's answer but not the collection, and
+    that would be a fake success. A staged plan:
+    1. Read the microprogram's `02d5` routine through
+       `pimmutil##rassy`, as for the other entries, for what it does
+       with the heap and what it reports.
+    2. Write a copying collector on the reference, rooted at the goal
+       records, the hooks and the registers, that keeps `lockstep_*`
+       green with `collect_garbage` run between parts.
+    3. On the core, add a box of its own (the PimmPBox pattern: its own
+       memory port and a stack in a register file), with a lockstep
+       test that compares the heap after a collection.
+    4. Add APPS `gc`.
+  - `ls`: needs 204 (directory), not served; its contents would be
+    OURS.
   - **R7, the primer's sample1** (2026-11-25; the PROBE that stood
     here, 2026-11-24, is replaced by committed runs). The home
     directory holds `sample1.kl1`, its text the primer's

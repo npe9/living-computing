@@ -85,7 +85,7 @@ typedef enum { XDecode, XDeref1, XDeref2, XNote2, XUnify, XWake, XHash,
                XSusp1, XSusp2, XSusp3,
                XVar1, XVar2, XEnq, XStrInfo, XStrInfo2, XVec, XRead, XReuse1, XReuse2, XVEl, XBVec, XBVec2,
                XBIn, XBInW, XBGo, XBWait1, XBWait2, XBStr, XBn1, XBn2, XBn3, XBn4, XBn5, XBn6, XBn7, XBn8,
-               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XMe1, XMe2, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
+               XBs1, XBs2, XBs3, XBs4, XBs5, XBs6, XBs7, XBs8, XBs9, XBs10, XBs11, XBsOut, XBOut2, XBVOut, XDiv, XVInfo, XMul, XVPut, XExt, XSCnst, XRAtom, XBVEl, XTagVal, XPack, XBMod, XBHash, XBHash2, XSEq, XShow, XP2C, XP2Ca, XP2Cw1, XP2Cw2, XP2Cw3, XCode1, XCode2, XCode3, XCode4, XC2P1, XC2P2, XC2P3, XC2P4, XC2P5, XAp1, XAp2, XSWh1, XSWh2, XUnb1, XUnb2, XUnb3, XUnb4, XUnb5, XModG, XMe1, XMe2, XBa1, XBa2, XBa3, XBa4, XBa5, XBa6, XBa7, XBa8, XBa9, XApInfo, XMulX, XDivX, XExtLo, XBc1, XBc2, XBc3, XBc4, XBc5, XBc6, XPackInfo,
                XMg0, XMg1, XMg2, XMg3, XMi0, XMi1, XMi2, XMi2w, XMi3, XMiU, XMi4, XUStep, XUL1, XUL2,
                XShIn, XShInW, XShGo, XShC1, XShC2, XShC3, XShS,
                XSEl, XSo1, XSo2, XSo3, XSo4, XMark, XMkEl,
@@ -203,7 +203,7 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
                   || op == op_code_to_predicate || op == op_search_character
                   || op == op_add_extended || op == op_subtract_extended
                   || op == op_multiply_extended || op == op_divide_extended
-                  || op == op_module_element;
+                  || op == op_module_element || op == op_add_bignum;
   // opcode 76 is numbered by its x field: 4 is the guard
   // tag_and_value(X, ^Tag, ^Value), registers y, z and the next cell's
   // top byte
@@ -1605,6 +1605,17 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
         st <= XSo1;
       end
     end
+    else if (op == op_add_bignum) begin
+      // add_bignum(BigX, BigY, ^BigZ): rules ba1..ba9.  Either not a
+      // string: the built-in's exception, refused
+      if (!isStrg(a) || !isStrg(b)) stop(EndUnimp);
+      else begin
+        opA <= a;
+        bsY <= b;
+        sbox.info(a);
+        st <= XBa1;
+      end
+    end
     else if (op == op_subtract_bignum) begin
       // subtract_bignum(BigX, BigY, ^Borrow, ^BigZ): rules bs1..bsOut.
       // Either not a string: the built-in's exception, refused
@@ -2040,6 +2051,140 @@ module mkPimmExec#(PimmRegs regs, PimmDBox dbox, PimmHBox hbox, PimmGBox gbox,
       end
     endaction
   endfunction
+
+  // add_bignum (pimm.py i_add_bignum, after VPIM): both 32-bit
+  // strings with no leading zero word (else the exception); X empty: Y;
+  // Y empty: X; else two passes from the least significant word of the
+  // longer (bsL, bsNL; the shorter bsS, bsOff words shorter), the first
+  // finding the last carry (so the length), the second writing each
+  // word into a new string, then the carry word.  bsSwap: Y is the
+  // longer; bnExtra: the last carry
+  function Action baOut(Cell zc);
+    action
+      regs.wr(z, zc);
+      finish(tagged Next afterBuiltin);
+    endaction
+  endfunction
+
+  function Action baStep(Bit#(32) lw, Bit#(32) sw);
+    action
+      Bit#(33) t = zeroExtend(lw) + zeroExtend(sw) + zeroExtend(bnCarry[0]);
+      bnCarry <= zeroExtend(t[32]);
+      if (!bnPass2) begin
+        if (bnI == 0) begin
+          bnExtra <= t[32] == 1;
+          sbox.newStr(bsNL + zeroExtend(t[32]), 32);
+          st <= XBa7;
+        end
+        else begin
+          bnI <= bnI - 1;
+          sbox.element(bsL, bnI - 1);
+          st <= XBa5;
+        end
+      end
+      else begin
+        sbox.poke(bnDst, bnI + (bnExtra ? 1 : 0), t[31:0]);
+        st <= XBa8;
+      end
+    endaction
+  endfunction
+
+  rule ba1 (st == XBa1);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bnN <= r.a.val;
+      sbox.info(bsY);
+      st <= XBa2;
+    end
+  endrule
+
+  rule ba2 (st == XBa2);
+    let r <- sbox.result;
+    if (r.b.val != 32) stop(EndUnimp);
+    else begin
+      bsM <= r.a.val;
+      if (bnN != 0) begin
+        sbox.element(opA, 0);
+        st <= XBa3;
+      end
+      else if (r.a.val != 0) begin
+        sbox.element(bsY, 0);
+        st <= XBa4;
+      end
+      else baOut(bsY);
+    end
+  endrule
+
+  rule ba3 (st == XBa3);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bsM != 0) begin
+      sbox.element(bsY, 0);
+      st <= XBa4;
+    end
+    else baOut(opA);
+  endrule
+
+  rule ba4 (st == XBa4);
+    let r <- sbox.result;
+    if (r.a.val == 0) stop(EndUnimp);
+    else if (bnN == 0) baOut(bsY);
+    else begin
+      Bool swap = bsM > bnN;
+      Bit#(32) nl = swap ? bsM : bnN;
+      bsSwap <= swap;
+      bnPass2 <= False;
+      bnCarry <= 0;
+      bnI <= nl - 1;
+      sbox.element(swap ? bsY : opA, nl - 1);
+      st <= XBa5;
+    end
+  endrule
+
+  rule ba5 (st == XBa5);
+    let r <- sbox.result;
+    bsW <= r.a.val;
+    if (bnI >= bsOff) begin
+      sbox.element(bsS, bnI - bsOff);
+      st <= XBa6;
+    end
+    else baStep(r.a.val, 0);
+  endrule
+
+  rule ba6 (st == XBa6);
+    let r <- sbox.result;
+    baStep(bsW, r.a.val);
+  endrule
+
+  rule ba7 (st == XBa7);
+    let r <- sbox.result;
+    bnDst <= r.a;
+    bnPass2 <= True;
+    bnCarry <= 0;
+    bnI <= bsNL - 1;
+    sbox.element(bsL, bsNL - 1);
+    st <= XBa5;
+  endrule
+
+  rule ba8 (st == XBa8);
+    let r <- sbox.result;
+    if (bnI != 0) begin
+      bnI <= bnI - 1;
+      sbox.element(bsL, bnI - 1);
+      st <= XBa5;
+    end
+    else if (bnExtra) begin
+      sbox.poke(bnDst, 0, 1);
+      st <= XBa9;
+    end
+    else baOut(bnDst);
+  endrule
+
+  rule ba9 (st == XBa9);
+    let r <- sbox.result;
+    baOut(bnDst);
+  endrule
 
   // bignum_less_than, bignum_not_less_than (bnN, bsM the lengths, bnI,
   // bsW the word of B1 in hand): element size 32 and no leading zero

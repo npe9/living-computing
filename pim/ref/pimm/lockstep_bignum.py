@@ -47,6 +47,22 @@ time_sv.kl1 compare/4, the time equation).  Parts at its stub:
   {4, 9} - {4, 9}      0, {}
   {10} - Y unbound     waits (the stub taken twice); Y := {4}: 0, {6}
 
+add_bignum(BigX, BigY, ^BigZ), 22:B6 r_r_r (2026-11-25, the stop of
+the shell's `ts`): "Adds BigX and BigY" (e-builtin.tex 710-717); VPIM's
+edges (kblt_b_add_bignum, f_Add_BIGNUM_Sub, s_Add_BIGNUM): X empty
+gives Y, Y empty gives X, the sum one word longer only on a last carry.
+Parts at its stub:
+  {5} + {3}                 {8}
+  {ffffffff} + {1}          {1, 0}             a carry out, one word more
+  {1, ffffffff} + {1}       {2, 0}             a carry between words
+  {1} + {2, 3, 4}           {2, 3, 5}          Y the longer
+  {ffffffff, ffffffff} + {ffffffff, ffffffff}
+                            {1, ffffffff, fffffffe}  equal lengths, carry out
+  {7} + {}                  {7}                Y empty: X
+  {} + {7}                  {7}                X empty: Y
+  {} + {}                   {}
+  {9} + Y unbound           waits; Y := {1}: {10}
+
 Not run: a leading zero word, a string not of 32 bits, Y not an
 integer (multiply), the exception; refused by both models.
 
@@ -68,8 +84,18 @@ bn1..bn8, bsv/PimmMBox.bsv multiplyAdd), each run alone
   equal lengths compared wrongly     sub 5 - 3, line 29: M .. fffffffe
                                      for 2
   the empty X with borrow 0          sub empty X, line 25: R 4 0 for 1
+  add_bignum (rules ba1..ba9), 2026-11-25:
+  the carry between words not added  add an inner carry, line 29: M ..
+                                     01 for 02
+  no word for the last carry         add a carry out, line 23: the
+                                     descriptor of 1 word for 2
+  the longer Y not taken as longer   add Y longer, line 27: the
+                                     descriptor of 1 word for 3
+  X empty giving X                   add empty X, line 21: R 3 the X
+                                     string for Y's
 Pins 7 parts / 244 lines -> 16 / 651 (2026-11-24, the subtract parts'
-lines; the multiply parts unchanged).
+lines; the multiply parts unchanged) -> 25 / 981 (2026-11-25, the add
+parts; the others unchanged).
 """
 import os
 import sys
@@ -80,7 +106,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'asm'))
 import driver  # noqa: E402
 import pimm  # noqa: E402
 
-PINNED = dict(parts=16, lines=651)
+PINNED = dict(parts=25, lines=981)
 I = lambda v: (pimm.INT, v & 0xffffffff)           # noqa: E731
 M = 0xffffffff
 CASES = [
@@ -126,6 +152,7 @@ def script():
     s.run()
     s.out(1)
     sub_script(s)
+    add_script(s)
     return s
 
 
@@ -172,10 +199,52 @@ def sub_script(s):
     s.out(3)
 
 
+# add_bignum (2026-11-25): (label, X, Y, Z's words)
+ADD = [
+    ('5 + 3', [5], [3], [8]),
+    ('a carry out', [M], [1], [1, 0]),
+    ('an inner carry', [1, M], [1], [2, 0]),
+    ('Y longer', [1], [2, 3, 4], [2, 3, 5]),
+    ('equal lengths', [M, M], [M, M], [1, M, M - 1]),
+    ('empty Y', [7], [], [7]),
+    ('empty X', [], [7], [7]),
+    ('both empty', [], [], []),
+]
+
+
+def add_script(s):
+    stub = pimm.Machine().stubs['add_bignum']['addr']
+    for label, x, y, _want in ADD:
+        s.label('add ' + label)
+        bignum(s, 0, x)
+        bignum(s, 1, y)
+        s.newvar(2)
+        for k in range(3):
+            s.arg(k + 1, k)
+        s.spawn(stub, 3)
+        s.run()
+        s.out(2)
+    s.label('add Y unbound')
+    bignum(s, 0, [9])
+    s.newvar(1)
+    s.newvar(2)
+    for k in range(3):
+        s.arg(k + 1, k)
+    s.spawn(stub, 3)
+    s.run()
+    bignum(s, 4, [1])
+    s.unify(1, 4)
+    s.run()
+    s.out(2)
+
+
 EXPECT = dict([(label, [want]) for label, _x, _y, want in CASES])
 for _l, _x, _y, (_b, _z) in SUB:
     EXPECT['sub ' + _l] = [_b, (32, _z)]
 EXPECT['sub Y unbound'] = [0, (32, [6])]
+for _l, _x, _y, _z in ADD:
+    EXPECT['add ' + _l] = [(32, _z)]
+EXPECT['add Y unbound'] = [(32, [10])]
 # the outs are read at the end (driver.Script), so both are the answer;
 # that the built-in waited is the stub taken twice in that part
 EXPECT['X unbound'] = [(32, [48]), (32, [48])]
@@ -192,6 +261,10 @@ def check(m, outs, parts=None):
         n = sum(ln.startswith(at) for ln in parts.get('sub Y unbound', []))
         if n != 2:
             bad.append(('sub Y unbound: the stub taken %d times' % n,))
+        at = 'I %d ' % m.stubs['add_bignum']['addr']
+        n = sum(ln.startswith(at) for ln in parts.get('add Y unbound', []))
+        if n != 2:
+            bad.append(('add Y unbound: the stub taken %d times' % n,))
     for k, want in EXPECT.items():
         got = [None if m.unbound(m.deref(w)) else m.term(w) for lab, w in outs if lab == k]
         norm = lambda v: v if v is None or isinstance(v, int) else (v[0], list(v[1]))  # noqa: E731

@@ -2269,6 +2269,45 @@ class Machine:
         if o is None or o < 0:
             return self.guard_fail()
 
+    def i_add_bignum(self, pc, x, y, z, c16):
+        # add_bignum(BigX, BigY, ^BigZ), 22:B6 r_r_r (assembler/
+        # inst_tab.kl1:245; compiler/blt.kl1:718-719 the inputs X, Y,
+        # the output Z): "Adds BigX and BigY and unifies the result with
+        # BigZ" (manual e-builtin.tex 710-717; bignums as
+        # multiply_bignum_word's).  As VPIM (klb_body_blt_bignum.psl.c
+        # kblt_b_add_bignum, f_reduce_bignum.psl.c f_Add_BIGNUM_Sub,
+        # str_bignum.psl.c s_Add_BIGNUM): either not a 32-bit string, or
+        # a leading zero word (X checked first), is the exception,
+        # refused; X empty gives Y itself, Y empty X itself; otherwise
+        # the sum, as long as the longer, one word longer when the last
+        # carry is 1.  The words are written from the least significant
+        # up into a new string of zeros, the carry word last (OURS: the
+        # Bluespec's order).  2026-11-25, met in the shell's `ts`
+        def f(bx, by):
+            sx, ex = self.need_string(bx)
+            sy, ey = self.need_string(by)
+            if sx != 32 or sy != 32 or (ex and ex[0] == 0) or (ey and ey[0] == 0):
+                raise Unimplemented('built-in exception: add_bignum of %r, %r' % (ex[:2], ey[:2]))
+            if not ex:
+                return [by]
+            if not ey:
+                return [bx]
+            vx = vy = 0
+            for e in ex:
+                vx = (vx << 32) | e
+            for e in ey:
+                vy = (vy << 32) | e
+            nl = max(len(ex), len(ey))
+            s = vx + vy
+            extra = 1 if s >> (32 * nl) else 0
+            out = self.new_string(nl + extra, 32)
+            for i in reversed(range(nl)):
+                self.mem[out[1] + 1 + i + extra] = (INT, (s >> (32 * (nl - 1 - i))) & 0xffffffff)
+            if extra:
+                self.mem[out[1] + 1] = (INT, 1)
+            return [out]
+        self.builtin('add_bignum', [x, y, z], f)
+
     def i_subtract_bignum(self, pc, x, y, z, c16):
         # subtract_bignum(BigX, BigY, ^Borrow, ^BigZ), 22:B7 r4
         # (assembler/inst_tab.kl1:246; compiler/blt.kl1 inputs X, Y,

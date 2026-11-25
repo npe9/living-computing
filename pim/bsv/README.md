@@ -376,6 +376,7 @@ instructions), every line identical:
 | compile_missing | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | 94 |
 | compile_sample1 | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | 149 |
 | compile_work | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | 178 |
+| ts | `ts` | 68,783 | 184,130 | 3 |
 
 (2026-11-25) compile_missing typed `sample1` until the home directory
 served the primer's `sample1.kl1` (`longrun_ipl.HOME_FILES`, 221 and
@@ -396,7 +397,10 @@ registration error : pimos:: sample1` and the shell's prompt).
 compile_work (2026-11-25) types the compiler's `!package work` first
 and ends `"work:: sample1" Loaded`, the module loaded
 (`binary_reverse_engineering.md` 1.4; `ref/pimm/r7_sieve.py` runs it,
-reference only).
+reference only). ts (2026-11-25) stopped at `add_bignum` until it
+was in on both models (rules `ba1`..`ba9`, `lockstep_bignum.py`); it
+now ends refused on both models at `set_timer` to a time still to
+come, its window empty (the compare takes the core's `E unimp`).
 `new_string` of another size and `change_element_size` to 1 bit are
 now refused by the exec stage (`E unimp`), before the string box.
 

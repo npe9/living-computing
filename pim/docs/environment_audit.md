@@ -1106,7 +1106,10 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   `!package work` first, `"work:: sample1" Loaded`, `compile_work`,
   and the module's `sieve([1,2,3],E,O)` gives the primer's answer on
   the reference, `ref/pimm/r7_sieve.py`. The Listener, which would run
-  it as the primer does, is not reached.)
+  it as the primer does, is not reached. `ts` is past `add_bignum`,
+  which is now on both models, and stops at `set_timer` to a time
+  still to come. `gc`'s `collect_garbage` is kept refused, with a
+  staged plan in `binary_reverse_engineering.md` 1.4.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.
