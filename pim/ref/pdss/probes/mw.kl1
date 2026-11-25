@@ -1,0 +1,17 @@
+:- module mw.
+:- public go/0, go2/0, go3/0.
+% Probe program for goal.c popup_suspension_stack (README "Remaining
+% compiler warnings"): p suspends on X, Y and Z (a multiple wait of 3);
+% r binding X = d resumes p and q; if p runs first it suspends again on Y
+% and Z (a multiple wait of 2) before q binds Y = b.  go and go2 put the
+% goals in the two orders.
+go :- true | p(X,Y,Z), q(X,Y), r(X).
+go2 :- true | q(X,Y), p(X,Y,Z), r(X).
+% No one binds Y or Z: once X = d, p must suspend again on Y and Z
+% (and is left suspended).
+go3 :- true | p(X,Y,Z), r(X).
+p(a,_,_) :- put_console(c#"a") | true.
+p(_,b,_) :- put_console(c#"b") | true.
+p(_,_,c) :- put_console(c#"c") | true.
+q(d,Y) :- true | Y = b.
+r(X) :- true | X = d.

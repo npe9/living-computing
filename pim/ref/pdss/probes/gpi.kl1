@@ -1,0 +1,16 @@
+% Probe program for string.c get_print_image (README "Remaining
+% compiler warnings"): meaningful only with the probes described there
+% compiled in; not part of test.sh.
+:- module gpi.
+:- public go/0, go2/0, go3/0, go4/0.
+% get_print_image on a variable bound after the call (the built-in
+% suspends and is resumed with the original, now a reference, cell).
+go :- true | get_print_image(X, 0, 0, S, L, T), later(10, X), show(S).
+% ... and on a variable already bound to an atom through another variable.
+go2 :- true | X = Y, Y = abc, get_print_image(X, 0, 0, S, L, T), show(S).
+later(0, X) :- true | X = abc.
+later(N, X) :- N > 0 | N1 := N-1, later(N1, X).
+show(S) :- string(S, _, _), put_console(c#"["), put_console(S), put_console(c#"]") | true.
+go3 :- true | X = Y, h(X, S), later(10, Y), show(S).
+h(X, S) :- true | get_print_image(X, 0, 0, S, _, _).
+go4 :- true | X = Y, Y = 42, h(X, S), show(S).

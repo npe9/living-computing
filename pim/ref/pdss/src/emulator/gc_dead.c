@@ -378,7 +378,9 @@ static int deadlock_link_goals(CELL *c, GOAL_RECORD *goal0)
 
 static int deadlock_report_goal(GOAL_RECORD *goal, int f)
 {
-    register CELL  *func1, *func2, *cons, *goalarg, *vectarg;
+    register CELL  *func1, *func2 = NULL, *cons, *goalarg, *vectarg;
+    /* PORT: func2 is read only when goal->argn != 0, where it was set
+       (gcc -Wmaybe-uninitialized false positive); NULL changes nothing. */
     register PARENT_RECORD  *shoen, *new_shoen;
     register int  argn;
     unsigned int  mod, pred, arity;

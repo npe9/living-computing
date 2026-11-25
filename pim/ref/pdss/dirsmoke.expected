@@ -1,0 +1,16 @@
+ls("../test/b_a*").      <tree>/test/b_arith.kl1 | <tree>/test/b_arith_e.kl1 | <tree>/test/b_arith_s.kl1 | <tree>/test/b_atom.kl1 | <tree>/test/b_atom_e.kl1 | <tree>/test/b_atom_s.kl1 | yes.
+cd("../sample").         world = <tree>/sample | yes.
+pwd.                     world = <tree>/sample | yes.
+cd("~root").             <host>
+pwd.                     <host>
+cd("~").                 world = <home> | yes.
+pwd.                     world = <home> | yes.
+ls("~/x*").              <home>/x1.tmp | <home>/x2.tmp | yes.
+cd("~nosuchuserxyz").    Unknown user "nosuchuserxyz". | No such directory | no.
+pwd.                     world = <home> | yes.
+ls("~nosuchuserxyz/*").  Unknown user "nosuchuserxyz". | Not found. | no.
+rm("~/x*.tmp").          Done. | yes.
+ls("~/x*").              Not found. | no.
+halt.
+exit: 0
+left: y.keep

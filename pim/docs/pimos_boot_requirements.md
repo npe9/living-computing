@@ -552,7 +552,9 @@ it, compiles N-queens; the result prints 2, 4 and 92 solutions for 4,
 6 and 8 queens, and again through four garbage collections with a
 small heap; then all 186 conformance jobs (PDSS's own `test/`, the
 samples, the KL1 compiler on every library source) match their golden
-transcripts byte for byte, GC reports included.
+transcripts byte for byte, GC reports included; and the shell's
+directory commands (`dirsmoke.sh`) run on the default and an ASan
+build.
 
 The 2026-11-20 port kept pointers in `int` and ran only x86_64 below
 2 GB. The source now keeps 32-bit references (arena offsets and a
