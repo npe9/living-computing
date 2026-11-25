@@ -102,6 +102,15 @@
    both step 3f tests; enter_atom reading its first argument as the
    string, fails test_step3f_census_recipes and errors
    test_step3f_library_and_symbolizer.  test_kl0.py passes each time.
+   Then (test_step3f_window_protocol) pmacs_window's interpolated
+   geometry, title and display methods; FEP census 1,420 methods (17 new,
+   inherited by pimos_window), 807 / 442 plain and 809 / 440, 86 slot
+   constants with recipes.  Injected into standin/pmacs_window.esp the
+   same way, observed: get_position/3 answering y, x, fails only
+   test_step3f_window_protocol; reshape/5 not setting the size, the
+   same; activate/1 failing, fails test_fep_census,
+   test_step3d_window_and_timer, test_step3f_census_recipes and
+   test_step3f_window_protocol.  test_kl0.py passes each time.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -981,7 +990,9 @@ end.''', 'simpos')
         (e,) = self.send(w, 'get_editor', K.Var())
         self.assertEqual(self.send(e[0], 'get_window', K.Var()), [[w]])
         cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
-        self.assertIn('simpos##pmacs_window:activate/1', detail)
+        # step 3f: activate/1 is stood in; the text output (window.md
+        # §2.4, putl/2) is not
+        self.assertIn('simpos##pmacs_window:putl/2', detail)
         # trace and network_listener_buffer: the pimfep callers run to a
         # solution (no tracer: OURS).  common_network's callers are
         # covered by test_fep_census only
@@ -1134,11 +1145,14 @@ end.''', 'simpos')
         # refused methods stop later, remote_stream create_to_fep/3 leaves
         # refused for success, create_from_fep/4 stops at an unbound
         # receiver; none leaves success.
+        # 2026-11-25, step 3f: pmacs_window's geometry, title, font and
+        # display methods (INTERPOLATED): 17 new methods, inherited by
+        # pimos_window, all succeed; 3 pimfep_message_log rows stop later.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 790, 'failure': 154, 'refused': 442, 'exception': 16,
+        self.assertEqual((len(rows), out), (1420, {'success': 807, 'failure': 154, 'refused': 442, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1170,10 +1184,10 @@ end.''', 'simpos')
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 792, 'failure': 154, 'refused': 440,
+        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 154, 'refused': 440,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 85)
+        self.assertEqual(slot_const, 86)
         # the four string-I/O programs, made by create_string_io/10
         for c in K.STRING_IO_PROGRAMS:
             self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2], ('refused', 'simpos'), c)
@@ -1191,9 +1205,38 @@ end.''', 'simpos')
         self.assertEqual(by[('pimos_file', 'instance', 'initiate/1')][0], 'failure')
         self.assertEqual(by[('pimos_file', 'instance', 'goal/1')][0], 'success')
         # the editor reaches pimos_window's lost pmacs_window protocol
+        # (get_interpreter/2 is not stood in)
         self.assertIn('pimfep##pimos_window:get_interpreter/2',
                       by[('pimos_window_editor', 'instance', 'clear/3')][2])
+        # with the interpolated geometry and title (step 3f), get_title/3
+        # runs through the window and stops at its reply, on the census's
+        # unbound request; set_size/3 at the has_been_reshaped/1 callback
+        self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')][:2],
+                         ('refused', 'unbound argument'))
+        self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
         self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
+
+    def test_step3f_window_protocol(self):
+        # pmacs_window's geometry, title and display methods (step 3f,
+        # INTERPOLATED from window.md §2.1-2.3): a setter's value is read
+        # back by its getter; reshape/5 sets position and size
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.NIL, K.Var()])
+        w = r[1]
+        self.send(w, 'set_position', 3, 4)
+        self.assertEqual(self.send(w, 'get_position', K.Var(), K.Var()), [[3, 4]])
+        self.send(w, 'reshape', 5, 6, 70, 80)
+        self.assertEqual(self.send(w, 'get_position', K.Var(), K.Var()), [[5, 6]])
+        self.assertEqual(self.send(w, 'get_size', K.Var(), K.Var()), [[70, 80]])
+        self.send(w, 'set_text_size', 80, 24)
+        self.assertEqual(self.send(w, 'get_text_size', K.Var(), K.Var()), [[80, 24]])
+        t = K.Str('log')
+        self.send(w, 'set_title', t)
+        (g,) = self.send(w, 'get_title', K.Var())
+        self.assertIs(g[0], t)
+        for sel in ('activate', 'deactivate', 'show', 'hide', 'beep', 'flash'):
+            self.assertEqual(self.send(w, sel), [[]], sel)
 
     def test_step3f_library_and_symbolizer(self):
         # SIMPOS's library and the symbolizer's atom table (kl0

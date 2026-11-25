@@ -453,6 +453,14 @@ and stand-in `simpos##` classes. In order:
        are now recipes too. Plain census 790 / 154 / 442; with recipes
        792 / 154 / 440 and 85 slot constants. `stream:see/2` (no source)
        is now the commonest stop.
+     - `pmacs_window` gains its geometry, title, font and display
+       methods (INTERPOLATED from `subsystems/window.md` §2.1-2.3, TM-125
+       p15-16, TM-115 p50, p63), as slots and no-ops. The census has
+       1,420 methods: the 17 new ones are inherited by `pimos_window` and
+       succeed, which is not progress. Plain 807 / 154 / 442; with
+       recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their
+       reply, on the census's unbound request, and 4 at the
+       `has_been_reshaped/1` callback.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

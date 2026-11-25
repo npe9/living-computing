@@ -1832,6 +1832,64 @@ by cp, cmp-checked. Observed, `test_kl0.py` passing each time:
   test_step3f_census_recipes fails and test_step3f_library_and_symbolizer
   errors.
 
+### Step 3f: `pmacs_window`'s geometry, title and display methods (2026-11-25)
+
+With recipes, 19 `pimos_window_editor` rows stopped at `pimos_window`
+methods that `pmacs_window` should supply. `standin/pmacs_window.esp`
+gains 17 of them, every one INTERPOLATED and labelled from
+`subsystems/window.md` §2.1-2.3:
+
+- PRINTED-INTERFACE: TM-125 p15-16 for `set_size/3`, `set_position/3`,
+  `set_title/2`, `activate/1`, `show/1`, `hide/1` and `deactivate/1`;
+  TM-115 p50 and p63 for `get_size/3` and `get_position/3`; TM-112 p16
+  for `set_font/2`.
+- USAGE only: `reshape/5`, `set_text_size/3`, `get_text_size/3`,
+  `get_title/2`, `get_font/2`, `beep/1` and `flash/1`.
+
+Model (OURS): each value is a slot that its setter writes and its getter
+reads back. Nothing is displayed, so the display methods succeed and do
+nothing. The initial values (0, an empty title) are OURS. The font
+starts as 0, since no font object is stood in, and a `manipulator`
+coordinate is stored like a number. Not stood in: the text protocol
+(§2.4: `putl/2`, `putf/3`, `getl/2`), `get_interpreter/2`, and the
+`has_been_reshaped/1` callback.
+
+Effect, method by method:
+
+- Plain `census --fep`: 1,403 becomes 1,420 methods. The 17 new rows
+  are the new methods, inherited by `pimos_window`; they all succeed,
+  which is not progress. So 790 / 154 / 442 becomes 807 / 154 / 442.
+  `pimfep_message_log` `dump_log/1`, `sorted_log/1` and
+  `sorted_log_string/1` stop later, past `activate/1`: at pmi ff, or at
+  `sorted_sequence:create/2`. None leaves success.
+- With recipes: 809 / 154 / 440, with the same 17 new successes. The
+  slot constants go from 85 to 86. 17 of the 19 editor rows stop later
+  (`clear/3` and `buffer_name/3` still stop at `get_interpreter/2`):
+  - 11 run through the window and stop at `set_string_element` on an
+    unbound argument, while building their reply. The census leaves
+    the request unbound: `get_title/3`, `get_position/3`, `activate/3`,
+    `show/3`, `hide/3`, `beep/3`, `set_title/4`, `get_inside_size/3`,
+    `flush/3`, `set_position/5`, `set_position_by_mouse/3`.
+  - 4 stop at the `has_been_reshaped/1` callback: `set_size/3`,
+    `reshape/7`, `set_inside_size/5`, `reshape_by_mouse/3`.
+  - 1, `getl/3`, stops at `get_interpreter/2`.
+  - 1, `get_font/3`, sends `pathname/2` to the font, a slot constant.
+  - The 3 message-log rows, as in the plain census.
+
+Test (`test_espc.py` `test_step3f_window_protocol`): each setter's value
+is read back, `reshape/5` sets position and size, and the six display
+methods succeed. `test_step3d_window_and_timer` now expects
+`dump_log/1` to stop at `putl/2`. Three injections into the stand-in,
+from a backup, restored by cp, cmp-checked. Observed:
+
+- `get_position/3` answering y, x: only test_step3f_window_protocol
+  fails.
+- `reshape/5` not setting the size: the same.
+- `activate/1` failing: test_fep_census, test_step3d_window_and_timer,
+  test_step3f_census_recipes and test_step3f_window_protocol fail.
+
+`test_kl0.py` passes each time.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`
