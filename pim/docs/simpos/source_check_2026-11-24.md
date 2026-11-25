@@ -1121,3 +1121,58 @@ KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `
 | `psdpim/INSTALL.DIR/login.com`: `menu`, `define`, `package` | decoded from the archive (16-bit JIS) | CONFIRMED: menu columns of seven and three items; six `define` names; `package :- user` |
 | TR-524 PDF p9, p36, p37 | page images | CONFIRMED: the version suffix; Table 3 `retrieve/c`; App. A `local_logical_file`'s `retrieve/4` |
 | `pimos_login_requester` `initiate/1` @ad-d7, `read/4` @dc-f3, `title_string/1` @2a2-2bf | listing | CONFIRMED: `:create(#standard_io_window, Opts, W)` with Opts `[{size, {ch, 40}, {ch, 7}}, {position, manipulator}, {nature, [with_icon]}]`; the font, title and `activate/1`; `putl/2` of `Enter FEP node name--------->`, then `read/2`, where the route waits |
+
+## §12 Step 3m: the inferences of the login dialogue and the local login (2026-11-25)
+
+Step 3m works under the same rule as §11. Held cells were read with `psi/fepread/ptfread.py` (pimfep, paragraph),
+and held source by path and line. The tests are `psi/test_espc.py` `test_step3m_keyboard` and
+`test_step3m_local_login`, and the `psi/test_kl0.py` row tests. The census effect is in `psi/README.md`
+"Step 3m". The path is in `boot_route.md` §4.5 and §6.
+
+### §12.1 INFERENCE (and INTERPOLATED behaviour)
+
+| # | Inference | Basis | Where |
+|---|---|---|---|
+| 1 | `standard_io_window read/2` gives one character code, and the window's own input queue (`input_data/2`) is read before the keyboard | `pimos_login_requester check_code/4` @1e9-1eb gives a code back with `input_data/2` and reads again; TM-125 p18 (`read`, one character) | `standin/standard_io_window.esp` |
+| 2 | `getl/2` reads to RETURN (13) and leaves it out | the held `read_password/3` loop (@32a-34c) stops at 13; the node name compares equal to `"local"` only without it | `standin/standard_io_window.esp` |
+| 3 | `user:user_password/2` gives the user's password | its one held send, `as_pimos_login_requester create_message/3` @419, whose answer fills the record's RP | `standin/user.esp` |
+| 4 | blt 43 `divide` on integers truncates non-negative operands | witnessed on floats only (h.esp:25 @8e); the same as `divide_constant` | `kl0_opcodes.tsv`, `kl0.py` |
+| 5 | `port connect/2` links both ports, each into the other's `out_port` | TM-100 PDF p16 prose ("out_port ... contains a list of connected ports"), and the held ends: the requester and the server each ask `who_is_connecting_to/2` of their own port and expect one peer, and each receives on its own port what the other sends | `standin/port.esp` |
+| 6 | `port send/2` is the printed `send/3` with the port as the sender | TR-056 PDF p14 (`:send(Channel, Object)`); TM-100 Fig. 3.8 `send/3` | `standin/port.esp` |
+| 7 | `alarm_watch on_after/5 (Time, From, Port, Message)` arms a send of Message to Port, and `wait_and_return/2` waits on Port | `as_pimos_login_requester receive_block/7` @547-558 and `pimos_remote_login_server receive_block/3` @526-537: the waiting end's own port is the fourth argument, the peer the third, and the message a fresh `timeout` | `standin/alarm_watch.esp` |
+| 8 | `message create/2` makes an empty message | four held sends, each followed by `set_content/2` (requester @2fd, @538; server @50d, @5f6) | `standin/message.esp` |
+| 9 | `class_object/2` on an instance gives its class | server `reset/2` @19d and `create_socket/2` @45b send `set_local_server_socket/2` to the answer, and that is a class method of the sender's own class | `kl0.py` `dispatch` |
+| 10 | `class_name/2` on a `simpos##` class gives its name, without the package, as an atom | replier `socket/4` @28f-299 and `socket_type/2` @29e-2b2 compare the answer with `port`, `network_group` and `tcpip_socket`; IPSJ 51390 p.50 names `class_name` as one of the four implicit methods. Classes of other packages are refused | `kl0.py` `dispatch` |
+| 11 | `network_subsystem is_installed/1` fails on this PSI | the replier's `initiate_listener/1` has a second clause (@315-316), `true`, written for a PSI with no network; the model has no LIA or Ethernet (OURS) | `standin/network_subsystem.esp` |
+| 12 | The INFERENCE parts of the opcode rows: blt 36's byte order (16 to 8 bits, high byte first) and its two unknown outputs; blt 35's operand cell (source string, source index) | given in each row's meaning column | `kl0_opcodes.tsv` |
+
+KNOWN-PLAINTEXT rows added in step 3m (each row gives its witness and held source): blt 42, 43, 35, 36, f4, f5;
+pmi d6, a8; blt 41 with R != A.
+
+### §12.2 CORRECTED
+
+- `port.esp` changes TM-100 Fig. 3.8 in two places. Both are labelled in the file, with the printed text quoted:
+  - The figure's `:channel:send(Out_port, Message, Sender)` is written as a local `channel_send/3`. espc has no
+    class-qualified send.
+  - The recursive call is printed with three arguments, `send(Port, Tap, Message)`, and is written with four. No
+    local `send/3` exists, so as printed espc refuses `send/4` and, with it, the whole of `:send/3`.
+
+### §12.3 OURS
+
+- The keyboard: `{key, Code}` events, the coordinator's keyboard stream and its `selected` slot. The window that was
+  last shown reads the keyboard.
+- The window's `history`: the lines put, the codes echoed, the beeps.
+- No clock, so no alarm fires.
+- The probe `b3m_pimos`, which stands in for `login.kl1`. It sends `io/4` straight to the held replier and server,
+  then the texts of `../fep_services.md` §7.3 for a login that succeeds. It checks nothing.
+- The PSI user `pmpsi` with the password `pmpsi` (from §11). These become RN and RP. `ref/pimm/fep.py`'s LOGIN has
+  RP `''` (`boot_route.md` §6.3).
+
+### §12.4 What was re-read for this step
+
+| Cited | Re-read | Verdict |
+|---|---|---|
+| TM-100 PDF p16 (folio 14), Fig. 3.8 | `printed/listings/tm0100_p16.esp` | CONFIRMED: nature `channel`, slot `out_port`, `send/3`, the three-argument recursive call |
+| paragraph `h.esp`:78-135, against `set_x_unit0/2` @208-252 | listing | CONFIRMED: every constant above 32767 is `pmi a8` plus an integer cell; every one below is a `pmi a7` |
+| `pimos_remote_login_server` `local_server_socket/2` @32-38 | listing | CONFIRMED: it fails while the slot is `none` (blt 65), so with no server running the requester writes `Network error.` |
+| `pimos_remote_login_socket_table` `add_at/3` @8c, `initiate/1` @11a | listing | CONFIRMED: `add_at` needs `is_initiated/1`; `initiate/1` is reached from the replier's `initiate/1` |

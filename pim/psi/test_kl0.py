@@ -323,8 +323,9 @@ class Table(unittest.TestCase):
         # c3 c6 ce ff, tables cd03 cd04), 132 before step 3h's pmi 34 35 and blt e1,
         # 135 before step 3i's pmi 3b, 6c, c8 and blt 00, e0, 1a, 05,
         # 142 before step 3k's blt 6f, 94 and 90, 145 before step 3m's
-        # blt 42 and 43
-        self.assertEqual(len(rows), 147)
+        # blt 42 and 43, 147 before step 3m's blt 35, 36, f4, f5 and pmi d6,
+        # 152 before step 3m's pmi a8
+        self.assertEqual(len(rows), 153)
 
     def test_if_identical_f2(self):
         # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
@@ -1109,12 +1110,15 @@ class Step3hRows(unittest.TestCase):
         # A != 0: view_selector $or$11/5 (p_MAIN.esp:723 `(integer(N),
         # N>Max,!,F1=1,N1=Max;F1=F,N1=N)`, registers F, N, F1, Max, N1): a
         # non-integer N takes F1=F, N1=N (@a2e-a2f); an integer goes on
-        # to the unrowed blt f4 (N>Max)
+        # to blt f4 (N>Max; unrowed until step 3m): 3 > 9 is false, so
+        # F1=F, N1=N; 12 > 9 gives F1=1, N1=Max
         cid = 'paragraph##view_selector'
         n, r = self.run_or(cid, '$or$11', [A('f'), A('t'), K.Var(), 9, K.Var()])
         self.assertEqual((n, r[2], r[4]), (1, A('f'), A('t')))
-        self.assertEqual(self.run_or(cid, '$or$11', [K.Var(), 3, K.Var(), 9, K.Var()]),
-                         ('opcode', 'blt f4'))
+        n, r = self.run_or(cid, '$or$11', [A('f'), 3, K.Var(), 9, K.Var()])
+        self.assertEqual((n, r[2], r[4]), (1, A('f'), 3))
+        n, r = self.run_or(cid, '$or$11', [A('f'), 12, K.Var(), 9, K.Var()])
+        self.assertEqual((n, r[2], r[4]), (1, 1, 9))
         m = machine()
         fake = types.SimpleNamespace(id='test', cells={})
         with self.assertRaises(K.Refusal):
@@ -1414,6 +1418,45 @@ class Step3iRows(unittest.TestCase):
             self.assertEqual(r.exception.cause, 'operand')
 
 
+class Step3mRows(unittest.TestCase):
+    """blt f4, f5 and pmi a8 (step 3m) on paragraph##h set_x_unit0/2
+    @208 beside its held source h.esp:78-140 (`0=<X_Max, 100>=X_Max,!,
+    X_Unit=10; 100<X_Max, 200>=X_Max,!, X_Unit=20; ...; 20000<X_Max,
+    50000>=X_Max,!, X_Unit=5000; 50000<X_Max, 100000>=X_Max,!,
+    X_Unit=10000; ...`).  Each boundary takes the clause the source
+    says.  Injections, observed (2026-11-25, from a backup of kl0.py,
+    restored by copy, cmp clean): see psi/README.md "Step 3m" (C8, C11,
+    C15)."""
+
+    def unit(self, x):
+        m = machine()
+        cid = 'paragraph##h'
+        (p,) = [p for p in m.lib.templates[cid].locals if (p.name, p.arity) == ('set_x_unit0', 2)]
+        m.reset()
+        out = K.Var()
+        for _ in m.solve((m.code(cid), p.offset), [x, out]):
+            return K.resolve(out)
+        return 'fail'
+
+    def test_set_x_unit0(self):
+        # f5 (>=) at the boundary: 100 is clause 1's, 200 clause 2's
+        self.assertEqual([self.unit(x) for x in (0, 100, 101, 200, 201)], [10, 10, 20, 20, 50])
+        # pmi a8: 50000 and 100000 are word constants (a7 holds 16 bits)
+        self.assertEqual([self.unit(x) for x in (40000, 50000, 50001, 100000, 100001)],
+                         [5000, 5000, 10000, 10000, 20000])
+        # below the first clause no clause matches
+        self.assertEqual(self.unit(-1), 'fail')
+
+    def test_if_less_than_strict(self):
+        # blt f4 strict: view_selector $or$11/5 (p_MAIN.esp:723 `N>Max`)
+        # with N = Max takes the second branch, F1=F, N1=N
+        cid = 'paragraph##view_selector'
+        n, r = Step3hRows.run_or(Step3hRows(), cid, '$or$11', [A('f'), 9, K.Var(), 9, K.Var()])
+        self.assertEqual((n, r[2], r[4]), (1, A('f'), 9))
+        n, r = Step3hRows.run_or(Step3hRows(), cid, '$or$11', [A('f'), 10, K.Var(), 9, K.Var()])
+        self.assertEqual((n, r[2], r[4]), (1, 1, 9))
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -1442,7 +1485,12 @@ class Census(unittest.TestCase):
         # csp_deref_utility deref/4 succeeds (checked alone on a fresh
         # machine; with the census's unbound arguments, unbound probing,
         # not progress) and collect_vars/5 goes on to `no method` get/4
-        self.assertEqual(out, {'refused': 199, 'success': 318, 'failure': 12, 'step limit': 1})
+        # step 3m (row by row against 167ea83d): pimmcsp
+        # dummy_kl1_value_cell free/1 refused -> success, past the
+        # instance class_object/2 (kl0 dispatch, INTERPOLATED; no source
+        # held).  Nine rows move their stop past blt f4 / f5 (to an
+        # unbound argument or receiver, the census's own)
+        self.assertEqual(out, {'refused': 198, 'success': 319, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -1468,7 +1516,12 @@ class Census(unittest.TestCase):
             # Injection K3 (u16 as before), observed: this test FAIL (and
             # test_espc test_step3k_b4 ERROR, test_step3f_census_recipes
             # FAIL), nothing else.
-            'no method': 57, 'no slot': 40, 'built-in': 24, 'unbound receiver': 20,
+            # step 3m: blt f4, f5 rowed: of their 9 rows, 4 state_pe go on
+            # to an unbound receiver (20 -> 24), 5 to an unbound argument
+            # of if_less_than / if_not_less_than (23 -> 28); pimmcsp
+            # dummy_kl1_value_cell free/1 succeeds past class_object/2
+            # ('no method' 57 -> 56)
+            'no method': 56, 'no slot': 40, 'built-in': 24, 'unbound receiver': 24,
             # step 3d: subtract_immediate with R != A is witnessed, so six
             # methods go further; five stopped at divide_immediate (R != A)
             # and up_down_icon code/4 at an unbound argument.  Step 3e:
@@ -1496,13 +1549,13 @@ class Census(unittest.TestCase):
             # step 3i: pmi c8: mpsicsp csp_user_command create/5 goes on to
             # pmi a6 ('operand' 8 -> 9), graphics_item match/2 to an
             # equal_string on an unbound argument (22 -> 23)
-            'receiver a slot constant': 9, 'unbound argument': 23, 'operand': 7, 'pool': 1,
-            'missing opcode blt f4': 8, 'missing opcode blt 44': 4,
+            'receiver a slot constant': 9, 'unbound argument': 28, 'operand': 7, 'pool': 1,
+            'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
             # step 3g: pmi c3 (retry) witnessed: pe_registers
             # register_type/3 succeeds (its unbound first argument takes
             # the first clause, nifr); refused 207 -> 206
-            'missing opcode blt 63': 2, 'missing opcode blt f5': 1})
+            'missing opcode blt 63': 2})
 
 
 if __name__ == '__main__':

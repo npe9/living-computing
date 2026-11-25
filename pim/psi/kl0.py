@@ -735,6 +735,26 @@ class Machine:
             if section == 'class' and (name, arity) == ('new', 2):
                 # class `class`'s new/2 (TM-388 §3.6), OURS, as the primary
                 return self.run_combined(co, m, ('new',))
+            if section == 'instance' and (name, arity) == ('class_object', 2):
+                # step 3m: :class_object(Object, Class), the generic object
+                # protocol (docs/simpos/subsystems/gaps.md row 4, owner not
+                # settled; not held).  INTERPOLATED from the held senders
+                # pimfep##pimos_remote_login_server reset/2 @19d and
+                # create_socket/2 @45b: the answer receives
+                # set_local_server_socket/2, a class method of the sender's
+                # own class, so it is the object's class (receiver last)
+                return self.proceed() if self.unify(self.x[0], ClassRef(cid)) else self.fail()
+            if section == 'class' and (name, arity) == ('class_name', 2) and cid.startswith('simpos##'):
+                # step 3m: :class_name(Class, Name), one of the four implicit
+                # methods (new, class_name, super, class_object: IPSJ 51390
+                # p.50, PRINTED as a name only).  The answer's form is
+                # INTERPOLATED from the held pimfep##pimos_remote_login_replier
+                # socket/4 @28f-299 and socket_type/2 @29e-2b2: the class of
+                # a socket is named `port` (or network_group, tcpip_socket),
+                # an atom without its package.  For a class of another
+                # package whether the package is part of the name is not
+                # witnessed: refused below
+                return self.proceed() if self.unify(self.x[0], Atom(cid.split('##', 1)[1])) else self.fail()
             if not co.complete:
                 raise Refusal('simpos', 'send %s:%s/%d (not in the held classes; ancestors %s)' % (
                     cid, name, arity, ' '.join(r for r, _s in co.opaque)))
@@ -1436,6 +1456,11 @@ class Machine:
         self.cut_to(self.b0)
         self.fail()
 
+    def op_cut_env_fail(self, code, off, a, b, c, v):
+        # step 3m: pmi d6 (p_MAIN.esp:859, `!, fail` inside an environment)
+        self.cut_to(self.env.b0)
+        self.fail()
+
     def op_call_local(self, code, off, a, b, c, v):
         self.call_local(code, off, off + 2 + s16(v), last=False)
 
@@ -1768,6 +1793,22 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    def op_if_less_than(self, code, off, a, b, c, v):
+        # step 3m: blt f4, less_than as a test-and-branch (h.esp:83-85)
+        x, y = self._int(self.x[a], 'if_less_than'), self._int(self.x[b], 'if_less_than')
+        if x < y:
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
+    def op_if_not_less_than(self, code, off, a, b, c, v):
+        # step 3m: blt f5, not_less_than as a test-and-branch (h.esp:78-81)
+        x, y = self._int(self.x[a], 'if_not_less_than'), self._int(self.x[b], 'if_not_less_than')
+        if x >= y:
+            self.nxt(code, off)
+        else:
+            self.pc = (code, off + 2 + c)
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1963,6 +2004,17 @@ class Machine:
         self.x[a] = s16(v)
         self.nxt(code, off)
 
+    def op_put_integer_word(self, code, off, a, b, c, v):
+        # step 3m: pmi a8 (paragraph h.esp:120-130; kl0_opcodes.tsv): the
+        # integer is the next cell's
+        if b or c:
+            raise Refusal('operand', 'put_integer_word with operand bytes %02x %02x: unwitnessed' % (b, c))
+        w = self.operand(code, off)
+        if w[1] != 0x00 or w[3] >= 1 << 31:
+            raise Refusal('operand', 'put_integer_word: next cell %r unwitnessed' % (w,))
+        self.x[a] = w[3]
+        self.nxt(code, off, 2)
+
     def op_put_constant(self, code, off, a, b, c, v):
         self.x[a] = code.pool_term(off + s16(v))
         self.nxt(code, off)
@@ -2041,8 +2093,10 @@ class Machine:
         self.nxt(code, off)
 
     def op_subtract(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
-                    'subtract')
+        # step 3m: R != A is witnessed (h.esp:28, paragraph##h $or$2/2 @303
+        # `41 02 00 00`)
+        self.x[c] = self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract')
+        self.nxt(code, off)
 
     def op_multiply(self, code, off, a, b, c, v):
         # step 3m: blt 42 (paragraph h.esp:21, kl0_opcodes.tsv); R != A
@@ -2227,6 +2281,53 @@ class Machine:
         t = Str('', s.type)
         t.set_codes(cs[p:p + n])
         self.x[r] = t
+        self.nxt(code, off, 2)
+
+    def op_copy_string_elements(self, code, off, a, b, c, v):
+        # step 3m: blt 35 (kappa2 TERMCODE.ESP:174, :176; kl0_opcodes.tsv)
+        src, q, low = self.ext_cell(code, off, 'copy_string_elements')
+        if low:
+            raise Refusal('operand', 'copy_string_elements operand cell with low bytes set: unwitnessed')
+        d, s = self._str(self.x[a], 'copy_string_elements'), self._str(self.x[src], 'copy_string_elements')
+        p, n = self._int(self.x[b], 'copy_string_elements'), self._int(self.x[c], 'copy_string_elements')
+        i = self._int(self.x[q], 'copy_string_elements')
+        dc, sc = d.codes(), s.codes()
+        if d.type != s.type:
+            raise Refusal('built-in', 'copy_string_elements from a %d-bit into a %d-bit string: unwitnessed'
+                          % (s.type, d.type))
+        if min(p, n, i) < 0 or p + n > len(dc) or i + n > len(sc):
+            raise Refusal('built-in', 'copy_string_elements %d+%d of %d into %d of %d' % (i, n, len(sc), p, len(dc)))
+        dc[p:p + n] = sc[i:i + n]
+        d.set_codes(dc)
+        self.nxt(code, off, 2)
+
+    def op_substring_7(self, code, off, a, b, c, v):
+        # step 3m: blt 36, substring/7 (kappa2 LUUFIF.ESP:2740, :3105;
+        # kl0_opcodes.tsv).  The byte order and the re-reading of the
+        # storage are INFERENCE; the last two outputs are UNKNOWN (unbound)
+        cell = self.operand(code, off)
+        if cell[1] != 0x00:
+            raise Refusal('operand', 'substring/7: operand cell %s' % (P.show(dict(syms=code.t.symbols), cell),))
+        z, r, u, w = cell[3] >> 24 & 255, cell[3] >> 16 & 255, cell[3] >> 8 & 255, cell[3] & 255
+        s = self._str(self.x[a], 'substring/7')
+        cs = s.codes()
+        p, n = self._int(self.x[b], 'substring/7'), self._int(self.x[c], 'substring/7')
+        size = self._int(self.x[z], 'substring/7')
+        if p < 0 or n < 0 or p + n > len(cs):
+            raise Refusal('built-in', 'substring/7 %d+%d of %d' % (p, n, len(cs)))
+        part = cs[p:p + n]
+        if (s.type, size) == (16, 8):
+            out = [y for x in part for y in (x >> 8 & 255, x & 255)]
+        elif (s.type, size) == (8, 16) and n % 2 == 0:
+            out = [part[k] << 8 | part[k + 1] for k in range(0, n, 2)]
+        elif s.type == size:
+            out = part
+        else:
+            raise Refusal('built-in', 'substring/7 from %d to %d bits (%d elements): unwitnessed' % (s.type, size, n))
+        t = Str('', size)
+        t.set_codes(out)
+        self.x[r] = t
+        self.x[u], self.x[w] = Var(), Var()
         self.nxt(code, off, 2)
 
     def op_search_character(self, code, off, a, b, c, v):
