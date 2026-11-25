@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_comp" : Compiling ... go/0,equ/0,equ00/0,equ00/2,equ01/0,equ01/2,equ02/0,equ02/2,equ03/0,equ03/2,equ04/0,equ04/2,equ05/0,equ05/2,equ06/0,equ06/2,equ07/0,equ07/2,equ08/0,equ08/2,equ09/0,neq/0,neq00/0,neq00/2,neq01/0,neq01/2,neq02/0,neq02/2,neq03/0,neq03/2,neq04/0,neq04/2,neq05/0,neq05/2,neq06/0,neq06/2,neq07/0,neq07/2,neq08/0,neq08/2,neq09/0,let/0,let00/0,let00/2,let01/0,let01/2,let02/0,let02/2,let03/0,let03/2,let04/0,let04/2,let05/0,let05/2,let06/0,let06/2,let07/0,let07/2,let08/0,let08/2,let09/0,nlt/0,nlt00/0,nlt00/2,nlt01/0,nlt01/2,nlt02/0,nlt02/2,nlt03/0,nlt03/2,nlt04/0,nlt04/2,nlt05/0,nlt05/2,nlt06/0,nlt06/2,nlt07/0,nlt07/2,nlt08/0,nlt08/2,nlt09/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_comp
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Compare %%%
+% G_Equal %%%%%%%%%%%%%%% abcdefghi
+% G_Not_Equal %%%%%%%%%%% abcdefghi
+% G_Less_Than %%%%%%%%%%% abcdefghi
+% G_Not_Less_Than %%%%%%% abcdefghi
+Total of 86 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 10552215868ac40a6703bebd15c585983b690e8726e29c81e2e699cfa77f78d9
+sav 215747b693f37dcb50ddd975c2118b4453e237f268d6d043f14fa30c0b77405f

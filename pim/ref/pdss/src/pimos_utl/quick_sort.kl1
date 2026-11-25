@@ -1,0 +1,383 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1990,1991,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module quick_sort.
+:- with_macro pimos.
+:- public sort/3,key_sort/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sort(In,Comparator,Out)
+%%      In      :: Input stream of data
+%%      Comparator :: ascending/descending/Code of the user defined comparator module
+%%      Out     :: Output stream of the sorted data
+
+sort(In,Comp,Out) :- true | sort(In,Comp,Out,[]).
+
+sort([X|In],Comp,Out,Out3) :- true |
+        part(In,X,X1,S,L,Out1,Out2,Comp),
+        sort(S,Comp,Out,[X1|Out1]),
+        sort(L,Comp,Out2,Out3).
+sort([],_,Out,Out1) :- true | Out=Out1.
+
+part(In,A,A1,S,L,Out,Out1,ascending) :- atom(A),
+    tag_and_value(A,_,V) |
+        part_atom(In,A,A1,S,L,Out,Out1,V).
+part(In,A,A1,S,L,Out,Out1,descending) :- atom(A),
+    tag_and_value(A,_,V) |
+        part_descending_atom(In,A,A1,S,L,Out,Out1,V).
+otherwise.
+part(In,A,A1,S,L,Out,Out1,ascending) :- true |
+        part(In,A,A1,S,L,Out,Out1).
+part(In,A,A1,S,L,Out,Out1,descending) :- true |
+        part_descending(In,A,A1,S,L,Out,Out1).
+%part(In,A,A1,S,L,Out,Out1,Comp) :- code(Comp,_,_,_) |
+part(In,A,A1,S,L,Out,Out1,Comp) :- builtin#code(Comp) |
+        part_user_defined(In,A,A1,S,L,Out,Out1,Comp).
+
+
+%*** part_ascending ***
+part([X|In],A,A1,S,L,Out,Out1) :- X=A |
+        Out=[X|Out0],
+        part(In,A,A1,S,L,Out0,Out1).
+part([X|In],A,A1,S,L,Out,Out1) :- X<A |
+        S=[X|S1],
+        part(In,A,A1,S1,L,Out,Out1).
+part([X|In],A,A1,S,L,Out,Out1) :- X>A |
+        L=[X|L1],
+        part(In,A,A1,S,L1,Out,Out1).
+part([X|In],A,A1,S,L,Out,Out1) :- X$<A |
+        S=[X|S1],
+        part(In,A,A1,S1,L,Out,Out1).
+part([X|In],A,A1,S,L,Out,Out1) :- X$>A |
+        L=[X|L1],
+        part(In,A,A1,S,L1,Out,Out1).
+%part([X|In],A,A1,S,L,Out,Out1) :- string_less_than(X,A) |
+%        S=[X|S1],
+%        part(In,A,A1,S1,L,Out,Out1).
+%part([X|In],A,A1,S,L,Out,Out1) :- string_less_than(A,X) |
+%        L=[X|L1],
+%        part(In,A,A1,S,L1,Out,Out1).
+part([],A,A1,S,L,Out,Out1) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+part([X|In],A,A1,S,L,Out,Out1) :- true |
+        comparator:sort0(X,A,X1,A0,Res),
+        wait_comp(In,A0,A1,S,L,Out,Out1,X1,Res).
+
+wait_comp(In,A,A1,S,L,Out,Out1,X,less) :- true |
+        S=[X|S1],
+        part(In,A,A1,S1,L,Out,Out1).
+wait_comp(In,A,A1,S,L,Out,Out1,X,greater) :- true |
+        L=[X|L1],
+        part(In,A,A1,S,L1,Out,Out1).
+
+%*** part_ascending for atom ***
+part_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U=V |
+        Out=[X|Out0],
+        part_atom(In,A,A1,S,L,Out0,Out1,V).
+part_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U<V |
+        S=[X|S1],
+        part_atom(In,A,A1,S1,L,Out,Out1,V).
+part_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U>V |
+        L=[X|L1],
+        part_atom(In,A,A1,S,L1,Out,Out1,V).
+part_atom([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+part_atom([X|In],A,A1,S,L,Out,Out1,V) :- true |
+        comparator:sort0(X,A,X1,A0,Res),
+        wait_comp_atom(In,A0,A1,S,L,Out,Out1,V,X1,Res).
+
+wait_comp_atom(In,A,A1,S,L,Out,Out1,V,X,less) :- true |
+        S=[X|S1],
+        part_atom(In,A,A1,S1,L,Out,Out1,V).
+wait_comp_atom(In,A,A1,S,L,Out,Out1,V,X,greater) :- true |
+        L=[X|L1],
+        part_atom(In,A,A1,S,L1,Out,Out1,V).
+
+
+%*** part_descending ***
+part_descending([X|In],A,A1,S,L,Out,Out1) :- X=A |
+        Out=[X|Out0],
+        part_descending(In,A,A1,S,L,Out0,Out1).
+part_descending([X|In],A,A1,S,L,Out,Out1) :- X>A |
+        S=[X|S1],
+        part_descending(In,A,A1,S1,L,Out,Out1).
+part_descending([X|In],A,A1,S,L,Out,Out1) :- X<A |
+        L=[X|L1],
+        part_descending(In,A,A1,S,L1,Out,Out1).
+part_descending([X|In],A,A1,S,L,Out,Out1) :- X$>A |
+        S=[X|S1],
+        part_descending(In,A,A1,S1,L,Out,Out1).
+part_descending([X|In],A,A1,S,L,Out,Out1) :- X$<A |
+        L=[X|L1],
+        part_descending(In,A,A1,S,L1,Out,Out1).
+%part_descending([X|In],A,A1,S,L,Out,Out1) :- string_less_than(A,X) |
+%        S=[X|S1],
+%        part_descending(In,A,A1,S1,L,Out,Out1).
+%part_descending([X|In],A,A1,S,L,Out,Out1) :- string_less_than(X,A) |
+%        L=[X|L1],
+%        part_descending(In,A,A1,S,L1,Out,Out1).
+part_descending([],A,A1,S,L,Out,Out1) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+part_descending([X|In],A,A1,S,L,Out,Out1) :- true |
+        comparator:sort0(X,A,X1,A0,Res),
+        wait_comp_descending(In,A0,A1,S,L,Out,Out1,X1,Res).
+
+wait_comp_descending(In,A,A1,S,L,Out,Out1,X,greater) :- true |
+        S=[X|S1],
+        part_descending(In,A,A1,S1,L,Out,Out1).
+wait_comp_descending(In,A,A1,S,L,Out,Out1,X,less) :- true |
+        L=[X|L1],
+        part_descending(In,A,A1,S,L1,Out,Out1).
+
+%*** part_descending for atom ***
+part_descending_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U=V |
+        Out=[X|Out0],
+        part_descending_atom(In,A,A1,S,L,Out0,Out1,V).
+part_descending_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U>V |
+        S=[X|S1],
+        part_descending_atom(In,A,A1,S1,L,Out,Out1,V).
+part_descending_atom([X|In],A,A1,S,L,Out,Out1,V) :- atom(X),
+    tag_and_value(X,_,U),U<V |
+        L=[X|L1],
+        part_descending_atom(In,A,A1,S,L1,Out,Out1,V).
+part_descending_atom([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+part_descending_atom([X|In],A,A1,S,L,Out,Out1,V) :- true |
+        comparator:sort0(X,A,X1,A0,Res),
+        wait_comp_descending_atom(In,A0,A1,S,L,Out,Out1,V,X1,Res).
+
+wait_comp_descending_atom(In,A,A1,S,L,Out,Out1,V,X,greater) :- true |
+        S=[X|S1],
+        part_descending_atom(In,A,A1,S1,L,Out,Out1,V).
+wait_comp_descending_atom(In,X,A1,S,L,Out,Out1,V,A,less) :- true |
+        L=[X|L1],
+        part_descending_atom(In,A,A1,S,L1,Out,Out1,V).
+
+%*** part_user_defined ***
+part_user_defined([X|In],A,A1,S,L,Out,Out1,Comp) :- X=A |
+        Out=[X|Out0],
+        part_user_defined(In,A,A1,S,L,Out0,Out1,Comp).
+part_user_defined([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+part_user_defined([X|In],A,A1,S,L,Out,Out1,Comp) :- true |
+        builtin#apply(Comp,{X,A,Sml,Lag,YorN}),
+        wait_comp_user_defined(In,Lag,A1,S,L,Out,Out1,Comp,Sml,YorN).
+
+wait_comp_user_defined(In,A,A1,S,L,Out,Out1,Comp,X,no) :- true |
+        S=[X|S1],
+        part_user_defined(In,A,A1,S1,L,Out,Out1,Comp).
+wait_comp_user_defined(In,X,A1,S,L,Out,Out1,Comp,A,yes) :- true |
+        L=[X|L1],
+        part_user_defined(In,A,A1,S,L1,Out,Out1,Comp).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% key_sort(In,Comparator,Out)
+%%      In      :: Input stream of data
+%%      Comparator :: ascending/descending/Code of the user defined comparator module
+%%      Out     :: Output stream of the sorted data
+
+key_sort(In,Comp,Out) :- true | key_sort(In,Comp,Out,[]).
+
+key_sort([{K,D}|In],Comp,Out,Out3) :- true |
+        kpart(In,K,K1,S,L,Out1,Out2,Comp),
+        key_sort(S,Comp,Out,[{K1,D}|Out1]),
+        key_sort(L,Comp,Out2,Out3).
+key_sort([],_,Out,Out1) :- true | Out=Out1.
+otherwise.
+key_sort([X|_],_,Out,Out1) :- true |
+        raise_error(X),
+        Out=Out1.
+
+kpart(In,K,K1,S,L,Out,Out1,ascending) :- atom(K),
+    tag_and_value(K,_,V) |
+        kpart_atom(In,K,K1,S,L,Out,Out1,V).
+kpart(In,K,K1,S,L,Out,Out1,descending) :- atom(K),
+    tag_and_value(K,_,V) |
+        kpart_descending_atom(In,K,K1,S,L,Out,Out1,V).
+otherwise.
+kpart(In,K,K1,S,L,Out,Out1,ascending) :- true |
+        kpart(In,K,K1,S,L,Out,Out1).
+kpart(In,K,K1,S,L,Out,Out1,descending) :- true |
+        kpart_descending(In,K,K1,S,L,Out,Out1).
+%kpart(In,K,K1,S,L,Out,Out1,Comp) :- code(Comp,_,_,_) |
+kpart(In,K,K1,S,L,Out,Out1,Comp) :- builtin#code(Comp) |
+        kpart_user_defined(In,K,K1,S,L,Out,Out1,Comp).
+
+
+%*** kpart_ascending ***
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- K=A |
+        Out=[{K,D}|Out0],
+        kpart(In,A,A1,S,L,Out0,Out1).
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- K<A |
+        S=[{K,D}|S1],
+        kpart(In,A,A1,S1,L,Out,Out1).
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- K>A |
+        L=[{K,D}|L1],
+        kpart(In,A,A1,S,L1,Out,Out1).
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- K$<A |
+        S=[{K,D}|S1],
+        kpart(In,A,A1,S1,L,Out,Out1).
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- K$>A |
+        L=[{K,D}|L1],
+        kpart(In,A,A1,S,L1,Out,Out1).
+%kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- string_less_than(K,A) |
+%        S=[{K,D}|S1],
+%        kpart(In,A,A1,S1,L,Out,Out1).
+%kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- string_less_than(A,K) |
+%        L=[{K,D}|L1],
+%        kpart(In,A,A1,S,L1,Out,Out1).
+kpart([],A,A1,S,L,Out,Out1) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+kpart([{K,D}|In],A,A1,S,L,Out,Out1) :- true |
+        comparator:sort0(K,A,K1,A0,Res),
+        wait_kcomp(In,A0,A1,S,L,Out,Out1,{K1,D},Res).
+otherwise.
+kpart([X|_],_,_,S,L,Out,Out1) :- true |
+        raise_error(X),
+        S=[],L=[],Out=Out1.
+
+wait_kcomp(In,A,A1,S,L,Out,Out1,X,less) :- true |
+        S=[X|S1],
+        kpart(In,A,A1,S1,L,Out,Out1).
+wait_kcomp(In,A,A1,S,L,Out,Out1,X,greater) :- true |
+        L=[X|L1],
+        kpart(In,A,A1,S,L1,Out,Out1).
+
+%*** kpart_ascending for atom ***
+kpart_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U=V |
+        Out=[{K,D}|Out0],
+        kpart_atom(In,A,A1,S,L,Out0,Out1,V).
+kpart_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U<V |
+        S=[{K,D}|S1],
+        kpart_atom(In,A,A1,S1,L,Out,Out1,V).
+kpart_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U>V |
+        L=[{K,D}|L1],
+        kpart_atom(In,A,A1,S,L1,Out,Out1,V).
+kpart_atom([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+kpart_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- true |
+        comparator:sort0(K,A,K1,A0,Res),
+        wait_kcomp_atom(In,A0,A1,S,L,Out,Out1,V,{K1,D},Res).
+otherwise.
+kpart_atom([X|_],_,_,S,L,Out,Out1,_) :- true |
+        raise_error(X),
+        S=[],L=[],Out=Out1.
+
+wait_kcomp_atom(In,A,A1,S,L,Out,Out1,V,X,less) :- true |
+        S=[X|S1],
+        kpart_atom(In,A,A1,S1,L,Out,Out1,V).
+wait_kcomp_atom(In,A,A1,S,L,Out,Out1,V,X,greater) :- true |
+        L=[X|L1],
+        kpart_atom(In,A,A1,S,L1,Out,Out1,V).
+
+
+%*** kpart_descending ***
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- K=A |
+        Out=[{K,D}|Out0],
+        kpart_descending(In,A,A1,S,L,Out0,Out1).
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- K>A |
+        S=[{K,D}|S1],
+        kpart_descending(In,A,A1,S1,L,Out,Out1).
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- K<A |
+        L=[{K,D}|L1],
+        kpart_descending(In,A,A1,S,L1,Out,Out1).
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- K$>A |
+        S=[{K,D}|S1],
+        kpart_descending(In,A,A1,S1,L,Out,Out1).
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- K$<A |
+        L=[{K,D}|L1],
+        kpart_descending(In,A,A1,S,L1,Out,Out1).
+%kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- string_less_than(A,K) |
+%        S=[{K,D}|S1],
+%        kpart_descending(In,A,A1,S1,L,Out,Out1).
+%kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- string_less_than(K,A) |
+%        L=[{K,D}|L1],
+%        kpart_descending(In,A,A1,S,L1,Out,Out1).
+kpart_descending([],A,A1,S,L,Out,Out1) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+kpart_descending([{K,D}|In],A,A1,S,L,Out,Out1) :- true |
+        comparator:sort0(K,A,K1,A0,Res),
+        wait_kcomp_descending(In,A0,A1,S,L,Out,Out1,{K1,D},Res).
+otherwise.
+kpart_descending([X|_],_,_,S,L,Out,Out1) :- true |
+        raise_error(X),
+        S=[],L=[],Out=Out1.
+
+wait_kcomp_descending(In,A,A1,S,L,Out,Out1,X,greater) :- true |
+        S=[X|S1],
+        kpart_descending(In,A,A1,S1,L,Out,Out1).
+wait_kcomp_descending(In,A,A1,S,L,Out,Out1,X,less) :- true |
+        L=[X|L1],
+        kpart_descending(In,A,A1,S,L1,Out,Out1).
+
+
+%*** kpart_descending for atom ***
+kpart_descending_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U=V |
+        Out=[{K,D}|Out0],
+        kpart_descending_atom(In,A,A1,S,L,Out0,Out1,V).
+kpart_descending_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U>V |
+        S=[{K,D}|S1],
+        kpart_descending_atom(In,A,A1,S1,L,Out,Out1,V).
+kpart_descending_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- atom(K),
+    tag_and_value(K,_,U),U<V |
+        L=[{K,D}|L1],
+        kpart_descending_atom(In,A,A1,S,L1,Out,Out1,V).
+kpart_descending_atom([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+kpart_descending_atom([{K,D}|In],A,A1,S,L,Out,Out1,V) :- true |
+        comparator:sort0(K,A,K1,A0,Res),
+        wait_kcomp_descending_atom(In,A0,A1,S,L,Out,Out1,V,{K1,D},Res).
+otherwise.
+kpart_descending_atom([X|_],_,_,S,L,Out,Out1,_) :- true |
+        raise_error(X),
+        S=[],L=[],Out=Out1.
+
+wait_kcomp_descending_atom(In,A,A1,S,L,Out,Out1,V,X,greater) :- true |
+        S=[X|S1],
+        kpart_descending_atom(In,A,A1,S1,L,Out,Out1,V).
+wait_kcomp_descending_atom(In,X,A1,S,L,Out,Out1,V,A,less) :- true |
+        L=[X|L1],
+        kpart_descending_atom(In,A,A1,S,L1,Out,Out1,V).
+
+
+%*** kpart_user_defined ***
+kpart_user_defined([{K,D}|In],A,A1,S,L,Out,Out1,Comp) :- K=A |
+        Out=[{K,D}|Out0],
+        kpart_user_defined(In,A,A1,S,L,Out0,Out1,Comp).
+kpart_user_defined([],A,A1,S,L,Out,Out1,_) :- true | A=A1,S=[],L=[],Out=Out1.
+otherwise.
+kpart_user_defined([{K,D}|In],A,A1,S,L,Out,Out1,Comp) :- true |
+        builtin#apply(Comp,{K,A,Sml,Lag,YorN}),
+        wait_kcomp_user_defined(In,Lag,A1,S,L,Out,Out1,Comp,{Sml,D},YorN).
+otherwise.
+kpart_user_defined([X|_],_,_,S,L,Out,Out1,_) :- true |
+        raise_error(X),
+        S=[],L=[],Out=Out1.
+
+wait_kcomp_user_defined(In,A,A1,S,L,Out,Out1,Comp,X,no) :- true |
+        S=[X|S1],
+        kpart_user_defined(In,A,A1,S1,L,Out,Out1,Comp).
+wait_kcomp_user_defined(In,K,A1,S,L,Out,Out1,Comp,X,yes) :- X={A,D} |
+        L=[{K,D}|L1],
+        kpart_user_defined(In,A,A1,S,L1,Out,Out1,Comp).
+
+raise_error(X) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(key_sort,string#"illegal_data_protocol"),X).
+

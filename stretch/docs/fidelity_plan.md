@@ -46,9 +46,10 @@ pointer.
     remains is spread, not offset.
 - **Structure** (§1c-audit, against Piccolo): 6 of 8 rows match or do
   not apply. The two that differ:
-  - the E-box is still largely an interpreter (`vflIntOp` about 2,200
-    lines; 44 direct state writes inside execution,
-    `ebox_roadmap.md`);
+  - the E-box is still largely an interpreter. When this was written,
+    `vflIntOp` was about 2,200 lines and execution made 44 direct
+    state writes (`ebox_roadmap.md`). Since A2 (2026-11-25) the VFL
+    writes are 0 and 18 remain outside VFL;
   - the arithmetic is only partly in multi-cycle units (`mkPAU` and
     `mkSAU` are NOT STARTED).
 - **Mechanisms the pages describe and the model does differently:**
@@ -175,6 +176,88 @@ or a note that it is illegible.
     outside VFL.
 - It is large. Commit one family per milestone: add/load, store,
   connectives, multiply/divide, conversions, decimal.
+
+DONE 2026-11-25, six commits, one per family, on the batch51 base
+(`StretchExecute.bsv` only, plus these docs):
+- `VflCommit` (accumulator trio, factor, remainder, transit, field store
+  and its core tail) and `commitVfl`. `execute()` applies it after
+  `vflIntOp` and after `connectiveOp`, in the same arm and rule as the
+  writes it replaces. `vflFieldStore` became the pure
+  `vflFieldStorePlan`, with the same DS predicate. `writeAcc`,
+  `writeAccFlags` and `vflFieldStore` are deleted, since nothing calls
+  them now.
+- The thirteen opcode arms were moved verbatim into eight family
+  functions. Each is a plain function over `VflCtx` (the preamble's
+  values) and `VflArm` (the call's running state). The only text
+  changed is at the write sites.
+- Lines per function:
+
+  | family | function | lines |
+  |---|---|---|
+  | add/load | `vflLoadAddFamily` (L, LWF, +, +MG) | 306 |
+  | add/load | `vflCompareFamily` (K ... KFR) | 224 |
+  | store | `vflStoreFamily` (ST, SRD) | 346 |
+  | store | `vflMemAddFamily` (M+, M+1, M+MG) | 315 |
+  | multiply/divide | `vflMulDivFamily` (*, LFT, *+, /) | 391 |
+  | conversions | `vflConvertFamily` (LCV, CV) | 282 |
+  | conversions | `vflConvertTransitFamily` (LTRCV, DCV) | 213 |
+  | decimal | `vflDecimalFamily` (LTRS, decimal *, *+, /) | 110 |
+  | dispatcher | `vflIntOp` (was 2,200) | 381 |
+  | connectives | `connectiveOp` | 336 |
+
+  `vflIntOp` keeps one Action, the unimplemented-code `$display`, and
+  `connectiveOp` keeps two. Neither writes state.
+- Direct state-write call sites, comments stripped. A site is a call of
+  `st.writeWord`, `writeWordTail`, `writeIndex`, `setIndicatorBits`,
+  `setConnectiveCounts` or `setLeftZerosCount`, or of a local Action
+  helper that makes one.
+  - VFL (`vflIntOp` + `connectiveOp`): **25 → 0**. That is 22 + 3:
+    `vflIntOp`'s 22 were 13 `writeAcc`/`writeAccFlags`, 6 `writeWord`,
+    1 `writeWordTail` and 2 `vflFieldStore`, which counts 1 site for 3
+    words.
+  - Inside execution (the plan's "44" metric: not `commitFp`, not the
+    helper bodies): **43 → 18**. What is left is `execute` 9,
+    `dirIndexOp` 7, `ioOpExec` 1 and `mkEBox` 1.
+  - Whole file: 60 → 34. Of the 34, `commitVfl` has 8, `commitFp`
+    has 7 and the `writeHWWithWord` helper has 1. (An earlier count of 40
+    in this section was taken before `writeAcc` and `writeAccFlags`,
+    with three sites each, were deleted.)
+  - What the zero covers: `vflIntOp`, `connectiveOp` and the family
+    functions. Two of `execute`'s nine remaining sites are VFL's: the
+    `st.setConnectiveCounts` calls that apply `connCounts` for LTRS and
+    for the connectives. They were already a return-and-apply channel
+    before A2 (`VflOutcome.connCounts`), and are left as they were.
+- Verified:
+  - The atlas TSVs (`--tsv`) are byte-identical (`cmp`) to the
+    pre-edit baseline for every family state. The VFL pages, PDF
+    102-189, are 18,238 cases. The FP pages, PDF 64-101, are 6,592
+    cases and were run for the first and last states.
+  - The full suite was run in a frozen copy of each state: 15,139 PASS
+    on each, the same as the base. The only FAIL lines are the two
+    `UNREPRODUCED, expected` p359 lines, twice each. The sorted
+    PASS/FAIL lines differ from the base only in temp-directory names
+    and in Python's set order within two assembler messages.
+  - The smoke section (`make run`, `check_schedule.py`) was run for
+    each state on its own.
+  - bsc's `mkStretchCore.sched` is identical to the baseline once
+    generated signal numbers are normalised.
+- Not met: "no execution function over about 400 lines" holds for the
+  VFL functions only. `execute` (about 1,540 lines), `fpArithClass`
+  (767), `ioOpExec` (495) and `dirIndexOp` (427) are outside A2's
+  scope, and so is `mkEBox`, a module of 496 lines.
+- No box module changed, so the F1 per-box LUT4 figures stand.
+- Left open:
+  - The families are plain functions, but they are not free of `st` as
+    `fpStoreClass` and `fpArithClass` are. They READ through it: 11
+    `st.readAccSign`, 10 `readAcc(st)`, 4 `protViolates(st, ...)`, 3
+    `dfSignal(st, ...)` and 1 `st.readFactor`, plus
+    `vflFieldStorePlan`'s `protViolates`. Passing those values in is the
+    next step toward boxes that can be tested without storage, and
+    needs its own verification run.
+  - No injection has yet pinned `commitVfl`'s field-to-word mapping
+    (for example, swapping `accLeft` and `accRight`). The atlas cannot
+    see a swap like that. The suite's value checks are the oracle; the
+    injection the roadmap asks for is still to be run.
 
 **A3. `mkSAU`, the serial arithmetic unit.**
 - One multi-cycle module, stepping a byte at a time per the 0.3
@@ -337,6 +420,13 @@ A model that matches every page and does not fit has not met the goal.
 - **F0. Re-measure on master.** Every multi-cycle box since 2026-10-16
   should have moved COMB. Run it when no suite is running: it took about
   3 hours at full load. Record per-module LUT4 in `fpga_feasibility.md`.
+  **RUN 2026-11-25** (`fpga_feasibility.md` §11, `fpga/synth_core.sh`,
+  reconstructed). Per-module yosys figures: 686,817 LUT4 (`-noabc9`,
+  an upper bound) and 102,219 FF in all. 82% of the core's flip-flops
+  are two fixtures held in registers: `mkDiskSourceSmall` (65,536) and
+  the console capture `consoleImg` (16,384). Move them out (D3, a BRAM
+  or UART console), then re-run F0 fixture-free to read the core's own
+  logic. nextpnr was not run.
 - **F1. A design rule for A3/A4.**
   - The units are built at the machine's own widths: the SAU a byte pair
     per 0.6 µs step (Buchholz p.209), the PAU's one shared multiplier

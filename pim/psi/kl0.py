@@ -6,6 +6,7 @@ firmware is the authority and is not emulated here.
     python3 -I psi/kl0.py convert            fep_command_code_table:convert/3 against pimos.vmac
     python3 -I psi/kl0.py census [--tsv F]   trivial calls on every method of the 104 classes
     python3 -I psi/kl0.py census --fep [--tsv F]   the same over pimfep and pimscsi, stand-ins loaded
+    python3 -I psi/kl0.py census --fep --recipes [--tsv F]   receivers made by their held creators (step 3f)
     python3 -I psi/kl0.py call PKG##CLASS SEL/N [ARG ...]   one class-method call (ints and atoms)
 
 WHAT DRIVES IT
@@ -31,6 +32,11 @@ THE MACHINE (OURS, WAM-shaped as layers/KL0.md §3 describes KL0)
   objects (Var, Atom, int, Cons, Vec, Str, ClassRef, Instance), all on
   one heap, so the safe/unsafe distinctions of the put/unify variants do
   not arise here.
+- SIMPOS methods modelled in Python (step 3f; OURS, INTERPOLATED from
+  call sites): `SIMPOS_MODELS` answers library assign/1, check_info/3,
+  get_class_object/3 and symbolizer enter_atom/3 before a send looks for
+  compiled code.  Everything else of SIMPOS is a stand-in in
+  psi/standin/ or refuses.
 - Cut: a predicate's entry barrier is kept in B0 and also put in register
   A_arity (MEASURED: kappa##kappaDBC_interface pic/1 saves A1 with
   `20 01 00` and cuts with `dd 01 01`; pmi dd/de take the register).
@@ -94,6 +100,12 @@ class Refusal(Exception):
 
 class StepLimit(Exception):
     pass
+
+
+class CreatorStopped(Exception):
+    """A census recipe's creator reached the send it stops before (step 3f,
+    OURS).  args: (name, arity, the argument registers A0..A(arity-1), the
+    receiver last)."""
 
 
 # --------------------------------------------------------------------------
@@ -188,6 +200,9 @@ class Str:
     def set_codes(self, codes):
         self.text = ''.join(P.ch(x) for x in codes)
 
+    # Python equality compares contents, for tests and tables only.  KL0's
+    # unification and `==` do NOT use it: on the PSI two strings unify only
+    # when they are the same stored string (see Machine.unify).
     def __eq__(self, o):
         return isinstance(o, Str) and o.text == self.text
 
@@ -284,6 +299,7 @@ class Code:
         # one is read from its held record on first use
         self.pool = getattr(t, 'pool', None)
         self.lib = lib
+        self.strs = {}      # pool cell -> its string, when POOL_STR_PER_CELL
 
     def sym(self, n):
         return P.sym(dict(syms=self.t.symbols), n)
@@ -294,7 +310,22 @@ class Code:
         k = cell - 13
         if not 0 <= k < len(self.pool):
             raise Refusal('pool', '%s: pool cell %d outside the %d constants read' % (self.id, cell, len(self.pool)))
-        return build(self, self.pool[k])
+        x = self.pool[k]
+        if POOL_STR_PER_CELL and x[0] == 'str':
+            if k not in self.strs:
+                self.strs[k] = build(self, x)
+            return self.strs[k]
+        return build(self, x)
+
+
+# A string constant in a clause: one stored string per pool cell (every
+# load of the cell is the same string), or a fresh string per load?  No
+# held source settles it, and since strings unify only by storage (TM-388
+# PDF p79) the choice is visible.  INFERENCE: a fresh string per load, as
+# kl0 always did, which keeps a constant safe from set_string_element on
+# an earlier load.  True gives one per cell (the census was run both ways,
+# psi/README.md).
+POOL_STR_PER_CELL = False
 
 
 def read_pool(t):
@@ -420,6 +451,10 @@ class Machine:
                 raise ValueError('table row without an implementation: %r' % r['mnemonic'])
             self.handlers[(r['class'], r['opcode'])] = fn
         self.trace = None
+        # census recipes (step 3f, OURS): a send whose (name, arity) is in
+        # this set raises CreatorStopped instead of being dispatched
+        self.stop_before = None
+        self.sender = None
 
     # -- code --------------------------------------------------------------
     def code(self, cid):
@@ -450,12 +485,20 @@ class Machine:
             if len(a.args) != len(b.args):
                 return False
             return all(self.unify(x, y) for x, y in zip(a.args, b.args))
-        if isinstance(a, (Str, ClassRef)) and a == b:
+        # A string unifies only with itself: the same storage (logical
+        # address of the first element, its position in the word, element
+        # length and count).  TM-388 PDF p79 (folio 67): 'abc'='abc', == and
+        # =:= all fail, equal_string/2 succeeds; p117-119 (folio 105-107),
+        # unify rule (iii)b and Table 4-3; p169 (folio 157), ESP's "ABC" =
+        # "ABC" fails; TM-115 PDF p97 (folio 92).  A Str object is one stored
+        # string here, so identity is `is` (tested above).
+        if isinstance(a, ClassRef) and a == b:
             return True
         return False
 
     # -- running -----------------------------------------------------------
     def reset(self):
+        self.sender = None
         self.x = collections.defaultdict(Var)
         self.env = None
         self.cont = None
@@ -590,6 +633,7 @@ class Machine:
             raise Refusal('code', '%s @%x: no selector after the send' % (code.id, off))
         name, arity = code.sym(sel_cell[3]), sel_cell[2]
         recv = deref(self.x[R])
+        self.sender = code.id   # the sending class (lib_class_named)
         if dealloc:
             self.cont, self.env = self.env.cont, self.env.prev
         elif not last:
@@ -597,14 +641,24 @@ class Machine:
         self.dispatch(recv, name, arity)
 
     def dispatch(self, recv, name, arity):
+        if self.stop_before and (name, arity) in self.stop_before:
+            raise CreatorStopped(name, arity, [deref(self.x[i]) for i in range(arity)])
         if isinstance(recv, ClassRef):
             cid, section = recv.cid, 'class'
         elif isinstance(recv, Instance):
             cid, section = recv.cid, 'instance'
         elif isinstance(recv, Var):
             raise Refusal('unbound receiver', 'send %s/%d to an unbound receiver' % (name, arity))
+        elif isinstance(recv, SlotConstant):
+            raise Refusal('receiver a slot constant', 'send %s/%d to %r' % (name, arity, recv))
         else:
             raise Refusal('receiver not an object', 'send %s/%d to %r' % (name, arity, recv))
+        if cid == 'simpos##undefined_method' and name == 'raise' and arity == 2:
+            # the receiver is last (register 1), the information first
+            raise Raised(resolve(self.x[0]))
+        model = SIMPOS_MODELS.get((cid, section, name, arity))
+        if model is not None:
+            return model(self)
         if cid not in self.lib.templates:
             raise Refusal('simpos', 'send %s:%s/%d (%s class not loaded)' % (cid, name, arity, section))
         co = self.lib.build(cid)
@@ -622,6 +676,13 @@ class Machine:
                 # a stand-in (psi/standin/, OURS) has only some of the
                 # lost class's methods: the rest is still SIMPOS
                 raise Refusal('simpos', 'send %s:%s/%d (not in the stand-in)' % (cid, name, arity))
+            partial = [c for c in co.order if getattr(self.lib.templates.get(c), 'standin', False)]
+            if partial:
+                # step 3e: an ancestor is a stand-in, which holds only part
+                # of the lost class, so a missing primary may be in the
+                # lost part: still SIMPOS, as for an unloaded ancestor
+                raise Refusal('simpos', 'send %s:%s/%d (no primary in the held classes; stand-in ancestors %s)'
+                              % (cid, name, arity, ' '.join(partial)))
             if m is None:
                 # not in the class's own table: a method of class `class`
                 # (not held, other than new/2), or one a mixin leaves to
@@ -727,6 +788,91 @@ class Machine:
             return self.proceed()
         raise Refusal('code', 'synthetic op %r' % (op,))
 
+    # -- SIMPOS's library and atom table (step 3f, OURS) --------------------
+    # Not held, and not writable as ESP stand-ins: they answer from the
+    # loader's own tables (the Librarian, psi/librarian.py, OURS) and from
+    # the atom table.  Each method below names the call sites it is
+    # INTERPOLATED from; what is not modelled refuses.
+
+    def lib_class_named(self, name):
+        """The loaded class an atom names: `pkg##c` exactly; else `c` in
+        the package of the class that sent the library call; else the one
+        loaded class `*##c`.  None if none is loaded; refused if several
+        are.  INTERPOLATED: the own package first is the static lookup rule
+        of a bare class name (subsystems/librarian.md §1.4, TM-388 pp92-101,
+        ESP manual program-e.tex:5250-5934); that the run-time lookup
+        follows it, and that the "own" package is the sender's (not the
+        process's default package, kappa2 HLCLIB.ESP:30-31 `:get_package(
+        Process, P)`), are INFERENCE (gaps.md, librarian row 1: the
+        resolution order is not known)."""
+        if '##' in name:
+            return name if name in self.lib.templates else None
+        own = '%s##%s' % ((self.sender or '').split('##')[0], name)
+        if own in self.lib.templates:
+            return own
+        hits = [c for c in self.lib.templates if c.split('##', 1)[1] == name]
+        if len(hits) > 1:
+            raise Refusal('simpos', 'library: %s names %s' % (name, ' '.join(hits)))
+        return hits[0] if hits else None
+
+    def library_assign(self):
+        """:assign(#library).  INTERPOLATED from: the call sites, each the
+        first library send of its clause, before check_info/3,
+        get_class_object/3 or make_package/2 (kappa2 kernel/hlc/HLCLIB.ESP:29,
+        utility/tool/LOADCH.ESP:64, LOADER.ESP:251; pimfep
+        pimos_string_io_invoker create_string_io/10 @2e-31, and the other
+        pimfep/pimscsi sends the plain census stopped at).  What it binds
+        is UNKNOWN (gaps.md, librarian row 4); it succeeds and changes
+        nothing here."""
+        self.proceed()
+
+    def library_check_info(self):
+        """:check_info(#library, Name, Kind).  INTERPOLATED from: kappa2
+        LOADER.ESP:252-256 and pimfep pimos_string_io_invoker local
+        get_class_object/3 (@5a-80), which try Kind `template_file` (then
+        make_class_object/2) and `object`, and then get_class_object/3.
+        OURS: every class here is loaded as a class object, so `object`
+        succeeds for a loaded class and `template_file` fails."""
+        name, kind = deref(self.x[0]), deref(self.x[1])
+        if isinstance(name, Var) or isinstance(kind, Var):
+            raise Refusal('unbound argument', 'library check_info/3 on %r, %r' % (name, kind))
+        if not isinstance(name, Atom) or not isinstance(kind, Atom) or \
+                kind.name not in ('object', 'template_file'):
+            raise Refusal('simpos', 'library check_info/3 on %r, %r' % (name, kind))
+        if kind.name == 'object' and self.lib_class_named(name.name):
+            return self.proceed()
+        return self.fail()
+
+    def library_get_class_object(self):
+        """:get_class_object(#library, Name, Class).  INTERPOLATED from the
+        same call sites and fep_services.md §6.4 (601: "the class object of
+        that name is taken from simpos##library").  A class not loaded here
+        is refused (fail or raise is not known, gaps.md librarian row 1)."""
+        name = deref(self.x[0])
+        if not isinstance(name, Atom):
+            raise Refusal('unbound argument' if isinstance(name, Var) else 'simpos',
+                          'library get_class_object/3 on %r' % (name,))
+        cid = self.lib_class_named(name.name)
+        if cid is None:
+            raise Refusal('simpos', 'library get_class_object/3: %s is not loaded' % name.name)
+        return self.proceed() if self.unify(self.x[1], ClassRef(cid)) else self.fail()
+
+    def symbolizer_enter_atom(self):
+        """:enter_atom(#symbolizer, Atom, String).  PRINTED interface: TR-283
+        p18 (folio 16) Table 4 lists :enter_atom/c2 of class symbolizer,
+        atom <-> string conversion.  The direction and argument order are
+        INTERPOLATED from the call sites: paragraph p_wshell.esp:211 and
+        304-305 (`substring(C0,1,Len-1,C1), :enter_atom(#symbolizer,Var,C1),
+        :get_at(Obj!var,St,Var)`: the string second, the atom first and
+        then used as a key) and pimfep pimos_string_io_invoker
+        create_string_io/10 @28-2d (A0 a new variable, A1 the 16-bit name
+        string tested at @1d-1e).  The atom is the string's text (OURS)."""
+        s = deref(self.x[1])
+        if not isinstance(s, Str):
+            raise Refusal('unbound argument' if isinstance(s, Var) else 'built-in',
+                          'symbolizer enter_atom/3 on %r' % (s,))
+        return self.proceed() if self.unify(self.x[0], Atom(s.text)) else self.fail()
+
     def class_new(self, cid):
         """OURS stand-in for class `class`'s new/2 (TM-388 §3.6): the new
         instance, with constant and `is Class` slot values and the values of
@@ -790,8 +936,9 @@ class Machine:
                 raise Refusal('simpos', 'slot %s of %s' % (name, obj.cid))
             co, sec = self.lib.build(obj.cid), 'class'
         else:
-            raise Refusal('unbound receiver' if isinstance(obj, Var) else 'receiver not an object',
-                          'slot %s of %r' % (name, obj))
+            raise Refusal('unbound receiver' if isinstance(obj, Var) else
+                          'receiver a slot constant' if isinstance(obj, SlotConstant) else
+                          'receiver not an object', 'slot %s of %r' % (name, obj))
         k = self.lib.slot_number(co, sec, name)
         if k is None:
             raise Refusal('simpos' if not co.complete else 'no slot', 'slot %s of %s' % (name, co.id))
@@ -985,6 +1132,18 @@ class Machine:
         else:
             self.pc = (code, off + 2)
 
+    def op_if_not_constant(self, code, off, a, b, c, v):
+        # pmi ca (2026-11-24): a first-clause guard; every held use has R = 0
+        if a != 0 or b != 0:
+            raise Refusal('operand', '%s @%x: pmi ca %02x %02x: only R = 0 is witnessed' % (code.id, off, a, b))
+        t = deref(self.x[a])
+        k = self.const_cell(code, self.operand(code, off))
+        if isinstance(t, Var) or (isinstance(k, int) and isinstance(t, int) and t == k) or \
+                (isinstance(k, Atom) and t is k):
+            self.pc = (code, off + 2)
+        else:
+            self.pc = (code, off + 3 + s16(v))
+
     def op_hash_constant(self, code, off, cell):
         mask, miss, ents = cell[3]
         t = deref(self.x[self.switch_reg(code, off)])
@@ -1011,8 +1170,10 @@ class Machine:
 
     def identical(self, a, b):
         x, y = deref(self.x[a]), deref(self.x[b])
+        # strings: the same storage only (TM-388 PDF p79, p119 Table 4-3),
+        # so `is`, above
         return x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
-            (isinstance(x, (Str, ClassRef)) and x == y)
+            (isinstance(x, ClassRef) and x == y)
 
     def op_identical(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.identical(a, b) else self.fail()
@@ -1038,6 +1199,9 @@ class Machine:
         else:
             self.pc = (code, off + 2 + c)
 
+    # blt f2 (step 3e): as f0, the difference UNKNOWN (kl0_opcodes.tsv)
+    op_if_identical_f2 = op_if_identical
+
     def op_less_than(self, code, off, a, b, c, v):
         x, y = deref(self.x[a]), deref(self.x[b])
         if not (isinstance(x, int) and isinstance(y, int)):
@@ -1062,7 +1226,8 @@ class Machine:
         self.env.y[b] = self.x[a]
         self.nxt(code, off)
 
-    op_get_variable_p_24 = op_get_variable_p
+    # pmi 24 get_builtin_variable (TR-236 Fig. 1): as get_variable_p here
+    op_get_builtin_variable = op_get_variable_p
 
     def op_get_variable_t(self, code, off, a, b, c, v):
         self.x[b] = self.x[a]
@@ -1095,7 +1260,7 @@ class Machine:
     def op_get_list(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.get_struct(a, 'list', 2) else self.fail()
 
-    def op_get_list_vars(self, code, off, a, b, c, v):
+    def op_get_var_var_list(self, code, off, a, b, c, v):
         if not self.get_struct(a, 'list', 2):
             return self.fail()
         el = self.S[0]
@@ -1129,12 +1294,15 @@ class Machine:
     def op_unify_value_p(self, code, off, a, b, c, v):
         self._uval(self.env.y[a], code, off)
 
-    op_unify_value_p_42 = op_unify_value_p
+    # pmi 44 unify_local_value_p (TM-444 p31): kl0 has no local stack to
+    # globalise from, so it unifies as unify_value_p (OURS)
+    op_unify_local_value_p = op_unify_value_p
 
     def op_unify_value_t(self, code, off, a, b, c, v):
         self._uval(self.x[a], code, off)
 
-    op_unify_value_t_43 = op_unify_value_t
+    # pmi 45 unify_local_value_t: as unify_value_t (OURS, as above)
+    op_unify_local_value_t = op_unify_value_t
 
     def op_unify_integer(self, code, off, a, b, c, v):
         self._uval(u16('unify_integer', v), code, off)
@@ -1170,8 +1338,10 @@ class Machine:
         self.x[a] = self.env.y[b]
         self.nxt(code, off)
 
-    op_put_value_p_a4 = op_put_value_p
-    op_put_value_p_a5 = op_put_value_p
+    # pmi a4 put_local_value, a5 put_unsafe_value (TM-444 pp30-31): on the
+    # PSI each may globalise; kl0 has no stacks, so each copies (OURS)
+    op_put_local_value = op_put_value_p
+    op_put_unsafe_value = op_put_value_p
 
     def op_put_variable_t(self, code, off, a, b, c, v):
         # A != X witnessed (step 3d): p_tgraph.esp:70-72 `a1 00 02`, both
@@ -1259,24 +1429,26 @@ class Machine:
         self._arith(code, off, a, b, c, self._int(self.x[a], 'subtract') - self._int(self.x[b], 'subtract'),
                     'subtract')
 
-    def op_add_immediate(self, code, off, a, b, c, v):
+    def op_add_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (bar_v.esp:384 `45 00 01 06`, step 3d)
         self.x[c] = self._int(self.x[a], 'add') + b
         self.nxt(code, off)
 
-    def op_subtract_immediate(self, code, off, a, b, c, v):
+    def op_subtract_constant(self, code, off, a, b, c, v):
         # R != A is witnessed (as_pred.esp:254-256 `46 04 0b 00`, step 3d)
         self.x[c] = self._int(self.x[a], 'subtract') - b
         self.nxt(code, off)
 
-    def op_multiply_immediate(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_immediate')
+    def op_multiply_constant(self, code, off, a, b, c, v):
+        self._arith(code, off, a, b, c, self._int(self.x[a], 'multiply') * b, 'multiply_constant')
 
-    def op_divide_immediate(self, code, off, a, b, c, v):
+    def op_divide_constant(self, code, off, a, b, c, v):
         x = self._int(self.x[a], 'divide')
         if x < 0 or b == 0:
-            raise Refusal('operand', 'divide_immediate %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
-        self._arith(code, off, a, b, c, x // b, 'divide_immediate')
+            raise Refusal('operand', 'divide_constant %d / %d: rounding of a negative quotient unwitnessed' % (x, b))
+        # R != A is witnessed (c_grade_ex.esp:26 `49 00 0a 07`, step 3e)
+        self.x[c] = x // b
+        self.nxt(code, off)
 
     def op_vector_element(self, code, off, a, b, c, v):
         vec = self._vec(self.x[a], 'vector_element').args
@@ -1287,8 +1459,8 @@ class Machine:
         self.nxt(code, off)
 
     def op_new_heap_vector(self, code, off, a, b, c, v):
-        if a != b:
-            raise Refusal('operand', 'new_heap_vector with V != N unwitnessed')
+        # V != N is witnessed (2026-11-25): kappa##format_conv sv_to_hv/2
+        # @1b `19 02 04 00` (FMT_CONV.ESP:13-16, Size in A4, HV out in A2)
         self.x[a] = Vec([0] * self._int(self.x[b], 'new_heap_vector'), heap=True)
         self.nxt(code, off)
 
@@ -1299,6 +1471,12 @@ class Machine:
         return t
 
     def op_string(self, code, off, a, b, c, v):
+        # a type test: string(?String, ^Length, ^Size) is listed under "Data
+        # Type and Attributes" in TR-044 App. A.2 (PDF p39), `?` an argument
+        # of any kind; so it fails on anything but a string, unbound included
+        # (INFERENCE from the listing: no failing call is printed)
+        if not isinstance(deref(self.x[a]), Str):
+            return self.fail()
         s = self._str(self.x[a], 'string')
         self.x[b] = len(s.codes())
         self.x[c] = s.type
@@ -1325,8 +1503,9 @@ class Machine:
     # -- step 3c rows (2026-11-24): add, type tests, equal_string,
     # string_tail, stack_vector (psi/kl0_opcodes.tsv)
     def op_add(self, code, off, a, b, c, v):
-        self._arith(code, off, a, b, c, self._int(self.x[a], 'add') + self._int(self.x[b], 'add'),
-                    'add')
+        # R != A is witnessed (p_wwin.esp:420-422 `40 00 01 01`, step 3e)
+        self.x[c] = self._int(self.x[a], 'add') + self._int(self.x[b], 'add')
+        self.nxt(code, off)
 
     def op_stack_vector(self, code, off, a, b, c, v):
         t = deref(self.x[a])
@@ -1443,6 +1622,71 @@ class Machine:
         new = Vec([Var(), Var(), Var(), Var()])
         self.x[a] = new
         self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    # -- step 3e rows (2026-11-24): the interrupt brackets, the other
+    # vector puts, the bit operations (psi/kl0_opcodes.tsv)
+    def op_inhibit_interrupt(self, code, off, a, b, c, v):
+        # no interrupts are modelled, so there is nothing to hold off (OURS)
+        self.nxt(code, off)
+
+    op_allow_interrupt = op_inhibit_interrupt
+
+    def _put_vector(self, code, off, a, n):
+        new = Vec([Var() for _ in range(n)])
+        self.x[a] = new
+        self.S = [new.args, 0]
+        self.nxt(code, off)
+
+    def op_put_vector_1(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 1)
+
+    def op_put_vector_5(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 5)
+
+    def op_put_vector_6(self, code, off, a, b, c, v):
+        self._put_vector(code, off, a, 6)
+
+    def op_put_vector_n(self, code, off, a, b, c, v):
+        # A != 0: witnessed step 3f (kappaMDM_manager set_up/2 @e6,
+        # KP_MDM.ESP:89); a second byte other than 0 is not
+        if b != 0:
+            raise Refusal('operand', 'put_vector_n %02x %02x %02x: only a second byte 0 is witnessed with source'
+                          % (a, b, c))
+        self._put_vector(code, off, a, c)
+
+    def _bits(self, t, what):
+        x = self._int(t, what)
+        if x < 0:
+            raise Refusal('built-in', '%s on %d: sign and width of the word unwitnessed' % (what, x))
+        return x
+
+    def op_and(self, code, off, a, b, c, v):
+        self.x[c] = self._bits(self.x[a], 'and') & self._bits(self.x[b], 'and')
+        self.nxt(code, off)
+
+    def op_or(self, code, off, a, b, c, v):
+        self.x[c] = self._bits(self.x[a], 'or') | self._bits(self.x[b], 'or')
+        self.nxt(code, off)
+
+    def _shift_count(self, t, what):
+        n = self._int(t, what)
+        if not 0 <= n <= 31:
+            raise Refusal('built-in', '%s by %d bits: unwitnessed' % (what, n))
+        return n
+
+    def op_shift_left(self, code, off, a, b, c, v):
+        x, n = self._bits(self.x[a], 'shift_left'), self._shift_count(self.x[b], 'shift_left')
+        r = x << n
+        if r >= 1 << 31:
+            raise Refusal('built-in', 'shift_left %d by %d overflows: the 32-bit word on overflow is unwitnessed'
+                          % (x, n))
+        self.x[c] = r
+        self.nxt(code, off)
+
+    def op_shift_right(self, code, off, a, b, c, v):
+        x, n = self._bits(self.x[a], 'shift_right'), self._shift_count(self.x[b], 'shift_right')
+        self.x[c] = x >> n
         self.nxt(code, off)
 
     def op_set_string_element(self, code, off, a, b, c, v):
@@ -1597,12 +1841,36 @@ def slot_value(slot):
         raise Refusal('slot init by code', 'slot %s' % slot.name)
     tag = slot.term[0] if slot.term else None
     if tag == 'int':
-        return v
+        return SlotConstant(v)
     if tag == 'atom':
         return Atom(v)
     if tag == 'str':
         return Str(v)
     raise Refusal('operand', 'slot %s: initial value %r' % (slot.name, slot.term))
+
+
+class SlotConstant(int):
+    """An integer as a slot's template constant put it there (new/2 or the
+    class object), not yet assigned by the program (step 3e, OURS).  It is
+    an int in every operation (arithmetic gives plain ints); it only names
+    the refusal when it is sent to or has a slot read: the census makes its
+    receivers with new/2, not through their creators, so a slot the creator
+    would have filled still holds the constant (MEASURED 2026-11-24: 124 of
+    the 138 FEP 'receiver not an object' refusals)."""
+
+    def __repr__(self):
+        return '%d (a slot constant)' % int(self)
+
+
+class Raised(Exception):
+    """An uncaught exception: `:raise(#undefined_method, Info)` (step 3e).
+    TM-388 p.59: a missing method "generates an exception" through
+    :undefined_method/4; no exception handler or situation stack (TR-285
+    p.10) is modelled, so nothing catches it (OURS)."""
+
+    def __init__(self, info):
+        Exception.__init__(self, info)
+        self.info = info
 
 
 class InitFailed(Exception):
@@ -1648,20 +1916,202 @@ def make_instance(m, cid):
         raise Refusal('new fails', '%s: slot %s initialisation fails' % (cid, e.args[0].name))
 
 
+# (class, section, selector, arity) -> the Machine method that models it
+# (step 3f, OURS; each method's docstring has its sources)
+SIMPOS_MODELS = {
+    ('simpos##library', 'class', 'assign', 1): Machine.library_assign,
+    ('simpos##library', 'class', 'check_info', 3): Machine.library_check_info,
+    ('simpos##library', 'class', 'get_class_object', 3): Machine.library_get_class_object,
+    ('simpos##symbolizer', 'class', 'enter_atom', 3): Machine.symbolizer_enter_atom,
+}
+
+
+# -- census recipes (step 3f) ----------------------------------------------
+#
+# The census makes a receiver with new/2, so a slot that the class's
+# creator fills still holds its template constant (step 3e).  A recipe
+# makes the receiver the way held code does: it runs the class's HELD
+# creator (a class method of pimfep.ptf, through the stand-ins) and takes
+# the object it made.  The recipes, and running a creator with unbound
+# arguments, are OURS; every send they make goes to held code or to a
+# labelled stand-in, and no slot is written from Python.
+#
+# The device creators (docs/fep_services.md §6.1 step 3: the class
+# methods `:refute(Class, Name, Args)` reaches for a device_create
+# command) all begin with the same prefix: `:create(Class, Dev)`,
+# `:process(Class, .., Dev)`, `:stream(Class, S)`, `:set_input_stream(Dev,
+# S)`, `:set_output_stream(Dev, A0)`, `:stream(Class, S2)`,
+# `:set_creation_status_stream(Dev, S2)`, `:set_device_id(Dev, A3)`, then
+# (after class-specific setters) `:activate(Process, Dev)`.  activate/2 is
+# the PRINTED process:activate/2 (TM-100 Fig. 3.1), which needs the lost
+# `status/3` and hardware `context`, so the recipe stops before that send
+# and takes Dev, its first argument: the device as its creator left it,
+# not yet running.
+#
+# A0, the stream the device answers on, is the caller's.  INFERENCE: it is
+# the front end's fep_output_stream.  pimos_scsi_front_end create_device/4
+# reads fep_output_stream/2 (@42e-431) into the first of the three
+# elements it adds to the message vector before :refute (@433-447), and
+# in each creator A1 and A2 then receive the device's input stream and
+# its process (create_timer/9: stream/2 @2d-30 into A1, process/4 @27-2c
+# with A2), which the front end enters in its device_table (add_at/5
+# @448-452).  The front end's fep_output_stream is made by
+# fep_scsi_output create/7 (@32-3b, `:create(C, S)` then
+# set_fep_output_stream/2), whose class C kl0 resolves to simpos##stream
+# (the stand-in, PRINTED TM-100 Fig. 3.6).  So the recipe passes a new
+# simpos##stream (OURS: a fresh one, not the front end's).  The other
+# arguments are unbound, as in the bare census.
+
+# class -> (creator selector, arity, the cells read), all class methods of
+# the class itself; each stops before its `activate/2` send.  Not here:
+# pimos_tcpip_socket create_socket/9 (@21-69) reads the calling process's
+# invocation stack (`:invocation_stack(P, L)`, `:get_first(L, Prog)`,
+# @4d-59) before activate/2; the process stand-in has no such accessor,
+# and the census's process runs no program, so the stack is empty.
+# pimos_string_io_invoker create_string_io/10 has its own recipe below
+# (STRING_IO_PROGRAMS).
+DEVICE_CREATORS = {
+    'pimfep##pimos_timer': ('create_timer', 9, '@19-48'),
+    'pimfep##pimos_file': ('create', 9, '@19-52'),
+    'pimfep##pimos_directory': ('directory', 10, '@17-4e'),
+    'pimfep##pimos_window_process': ('create_with_buffer', 10, '@56-86'),
+}
+
+
+def _creator_device(m, cid):
+    """The device CID's held creator makes (DEVICE_CREATORS), stopped
+    before its activate/2."""
+    sel, n, _cells = DEVICE_CREATORS[cid]
+    m.reset()
+    (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
+    args = [st[0]] + [Var() for _ in range(n - 2)]
+    m.stop_before = {('activate', 2)}
+    try:
+        for _ in m.solve_send(ClassRef(cid), sel, args + [ClassRef(cid)]):
+            break
+    except CreatorStopped as e:
+        dev = e.args[2][0]
+        if isinstance(dev, Instance) and dev.cid == cid:
+            return dev
+        raise Refusal('recipe', '%s %s/%d: activate/2 of %r, not a %s' % (cid, sel, n, dev, cid))
+    except Refusal as e:
+        raise Refusal('recipe', '%s %s/%d stops: %s: %s' % (cid, sel, n, e.cause, e.detail))
+    finally:
+        m.stop_before = None
+    raise Refusal('recipe', '%s %s/%d does not reach activate/2' % (cid, sel, n))
+
+
+# The string-I/O programs PIMOS opens by command 601 (docs/fep_services.md
+# §6.4: pimos_remote_login_replier, _server and simpos_user_device in its
+# table; pimos_standard_io_window from PIMOS server/user/pass_body.kl1:68).
+# pimos_string_io_invoker create_string_io/10 (@15-45) tests A8 as a
+# 16-bit string (@1d-1e), makes it an atom (symbolizer enter_atom/3,
+# @28-2d), takes the class of that name from the library (its local
+# get_class_object/3 @5a-80), creates the object (local create/3 @8b-91),
+# gives it its streams and device id (local initiate_string_io_device/7
+# @9d-b6) and then sends activate/2 (@42-45).  The recipe passes the class
+# name as that string (OURS: as PIMOS would send it) and stops before
+# activate/2, as for the device creators.
+STRING_IO_PROGRAMS = ('pimfep##pimos_remote_login_replier', 'pimfep##pimos_remote_login_server',
+                      'pimfep##simpos_user_device', 'pimfep##pimos_standard_io_window')
+
+
+def _string_io_device(m, cid):
+    """The object create_string_io/10 makes for CID's name, stopped before
+    its activate/2."""
+    inv = 'pimfep##pimos_string_io_invoker'
+    m.reset()
+    (st,) = call_class_method(m, 'simpos##stream', 'create', [Var()])
+    args = [st[0]] + [Var() for _ in range(8)]
+    args[8] = Str(cid.split('##')[1])
+    m.stop_before = {('activate', 2)}
+    try:
+        for _ in m.solve_send(ClassRef(inv), 'create_string_io', args + [ClassRef(inv)]):
+            break
+    except CreatorStopped as e:
+        dev = e.args[2][0]
+        if isinstance(dev, Instance) and dev.cid == cid:
+            return dev
+        raise Refusal('recipe', 'create_string_io/10 for %s: activate/2 of %r' % (cid, dev))
+    except Refusal as e:
+        raise Refusal('recipe', 'create_string_io/10 for %s stops: %s: %s' % (cid, e.cause, e.detail))
+    finally:
+        m.stop_before = None
+    raise Refusal('recipe', 'create_string_io/10 for %s does not reach activate/2' % cid)
+
+
+def _pimos_window(m):
+    """pimos_window create_pimos_window/3 (held, @19-34: `:create(
+    #pimos_window, [{size,70,110}, {editor,#pimos_window_editor}], _, W)`,
+    then W!activity := 1), through the pmacs_window stand-in."""
+    m.reset()
+    sols = call_class_method(m, 'pimfep##pimos_window', 'create_pimos_window', [Var(), Var()], limit=1)
+    if not sols or not isinstance(sols[0][1], Instance):
+        raise Refusal('recipe', 'pimos_window create_pimos_window/3 makes no window')
+    return sols[0][1]
+
+
+def _pimos_window_editor(m):
+    """The editor of a window _pimos_window makes, by the stand-in's
+    get_editor/2 (window.md §2.11 `:get_editor(W, E)`)."""
+    w = _pimos_window(m)
+    m.reset()
+    e = Var()
+    for _ in m.solve_send(w, 'get_editor', [e, w]):
+        break
+    e = deref(e)
+    if not isinstance(e, Instance) or e.cid != 'pimfep##pimos_window_editor':
+        raise Refusal('recipe', 'the window made by create_pimos_window/3 has editor %r' % (e,))
+    return e
+
+
+def _by_new_send(m, cid):
+    """`:new(#cid, O)` sent, so that the class's own new/2 demons run.
+    make_instance builds the instance directly and runs none.  In pimfep
+    and pimscsi only remote_pimfep_executor has one: a class after-demon
+    on new/2 (@40-48) that copies the class slot `socket` into the new
+    instance's `accept` (and `time` likewise)."""
+    m.reset()
+    sols = call_class_method(m, cid, 'new', [Var()], limit=1)
+    if not sols or not isinstance(sols[0][0], Instance):
+        raise Refusal('recipe', '%s new/2 makes no instance' % cid)
+    return sols[0][0]
+
+
+# class -> a function of the machine giving the receiver (OURS)
+RECIPES = dict({cid: (lambda m, c=cid: _creator_device(m, c)) for cid in DEVICE_CREATORS},
+               **{cid: (lambda m, c=cid: _string_io_device(m, c)) for cid in STRING_IO_PROGRAMS},
+               **{'pimfep##pimos_window': _pimos_window,
+                  'pimfep##pimos_window_editor': _pimos_window_editor,
+                  'pimfep##remote_pimfep_executor':
+                      lambda m: _by_new_send(m, 'pimfep##remote_pimfep_executor')})
+
+
+def recipe_instance(m, cid, recipes):
+    """The census receiver for an instance method: by CID's recipe if it
+    has one, else new/2 (make_instance)."""
+    r = recipes.get(cid) if recipes else None
+    return r(m) if r is not None else make_instance(m, cid)
+
+
 def census(m=None, max_steps=20000):
     """Every method of the classes that need no SIMPOS, called once with
     unbound arguments (the receiver: the class, or a fresh instance).
     -> list of (class, section, selector, outcome, cause, detail).  Outcome:
     'success' (a first solution), 'failure' (clean, no solution), 'refused',
-    'step limit'.  Success and failure count as running to completion."""
+    'exception' (an uncaught `:raise(#undefined_method, ...)`, step 3e),
+    'step limit'.  Success, failure and exception count as running to
+    completion."""
     if m is None:
         m = Machine(load_six(), max_steps=max_steps)
     six = list(m.lib.templates)
     return census_of(m, m.lib.free_of_simpos(six, 'union'))
 
 
-def census_of(m, classes):
-    """census(): every method of CLASSES, each called once."""
+def census_of(m, classes, recipes=None):
+    """census(): every method of CLASSES, each called once.  RECIPES
+    (step 3f): class -> a function making the instance receiver (RECIPES
+    above); a class without one gets new/2's instance."""
     rows = []
     for cid in classes:
         co = m.lib.build(cid)
@@ -1669,12 +2119,14 @@ def census_of(m, classes):
             for (name, n), meth in table.items():
                 sel = '%s/%d' % (name, n)
                 try:
-                    recv = ClassRef(cid) if section == 'class' else make_instance(m, cid)
+                    recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
                     regs = [Var() for _ in range(n - 1)] + [recv]
                     ok = any(True for _ in m.solve_send(recv, name, regs))
                     rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
                 except Refusal as e:
                     rows.append((cid, section, sel, 'refused', e.cause, e.detail))
+                except Raised as e:
+                    rows.append((cid, section, sel, 'exception', 'raise', repr(e.info)))
                 except StepLimit:
                     rows.append((cid, section, sel, 'step limit', '', ''))
     return rows
@@ -1692,12 +2144,14 @@ def fep_machine(max_steps=20000):
     return Machine(lib, max_steps=max_steps)
 
 
-def census_fep(m=None):
+def census_fep(m=None, recipes=None):
     """The census of pimfep's and pimscsi's methods (PIM/m's front end,
-    docs/simpos/README.md §5), stand-ins loaded, in template order."""
+    docs/simpos/README.md §5), stand-ins loaded, in template order.
+    RECIPES=RECIPES makes the receivers of those classes by their held
+    creators (step 3f); the default is new/2 for every class."""
     if m is None:
         m = fep_machine()
-    return census_of(m, [cid for cid in m.lib.templates if cid.split('##')[0] in FEP_PACKAGES])
+    return census_of(m, [cid for cid in m.lib.templates if cid.split('##')[0] in FEP_PACKAGES], recipes)
 
 
 def simpos_target(detail):
@@ -1730,7 +2184,8 @@ def main(argv):
               % ' '.join(r['shadowed']))
         return 0
     if argv and argv[0] == 'census':
-        rows = census_fep() if '--fep' in argv else census()
+        rows = (census_fep(recipes=RECIPES if '--recipes' in argv else None)
+                if '--fep' in argv else census())
         c = collections.Counter(r[3] for r in rows)
         print('%d methods of %d classes: %s' % (len(rows), len({r[0] for r in rows}), dict(c)))
         rk = collections.Counter(refusal_key(r[4], r[5]) for r in rows if r[3] == 'refused')

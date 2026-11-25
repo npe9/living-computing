@@ -20,11 +20,13 @@ export BLUESPECDIR
   -vdir "$B" -bdir "$B" -info-dir "$B" \
   -p "$SRC:$BLUESPECDIR/Libraries" "$SRC/HobbitSocCpu.bsv" > "$B/bsc.log" 2>&1 \
   || { tail -20 "$B/bsc.log"; exit 1; }
+# The arrays on the system clock, as build_soc.sh builds them.
+python3 sysram_filter.py "$B/mkHobbitSocCpu.v" "$B/mkHobbitSocCpu.sys.v"
 LIBREADS=""
-for m in $(sed -n 's/^  \([A-Z][A-Za-z0-9_]*\)[ #(].*/\1/p' "$B/mkHobbitSocCpu.v" | sort -u); do
+for m in $(sed -n 's/^  \([A-Z][A-Za-z0-9_]*\)[ #(].*/\1/p' "$B/mkHobbitSocCpu.sys.v" | sort -u); do
   [ -f "$BLUESPECDIR/Verilog/$m.v" ] && LIBREADS="$LIBREADS read_verilog $BLUESPECDIR/Verilog/$m.v;"
 done
-yosys -p "read_verilog $B/mkHobbitSocCpu.v; $LIBREADS \
+yosys -p "read_verilog $B/mkHobbitSocCpu.sys.v; read_verilog rtl/hobbit_sysregfile.v; $LIBREADS \
           synth_ecp5 -top mkHobbitSocCpu -json $B/cpu.json" -l "$B/yosys.log" > /dev/null
 sed -n '/=== mkHobbitSocCpu ===/,/^$/p' "$B/yosys.log" | tail -1
 grep -E '^ +(LUT4|PFUMX|L6MUX21|CCU2C|TRELLIS_FF|TRELLIS_DPR16X4|DP16KD|MULT18X18D) ' "$B/yosys.log" | tail -8

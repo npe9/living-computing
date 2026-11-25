@@ -1,0 +1,93 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS File Manager.
+
+:- module mpimos_file_manager.
+:- public create/3.
+:- with_macro pdss.
+
+%%  Create file manager.
+%%  create(FM,FDS,SS).
+%%	FM  :: Request stream from distributor.
+%%	FDS :: File device stream.
+%%	SS  :: System stream.
+
+create(FM,FDS,SS) :-
+    true |
+	manager(FM,FDS,SS,MS,MS).
+
+%%  File manager.
+%%  manager(FM,FDS,SS,MI,MO).
+%%	FM  :: Request stream from distributor.
+%%	FDS :: File device stream.
+%%	SS  :: System stream.
+%%	MI  :: File monitor stream (in).
+%%	MO  :: File monitor stream (out).
+
+manager([create(Req,FileName,Mode,Sts,TF)|FM],FDS,SS,MI,MO) :-
+    true |
+	FDS = open(FileName,Mode,FS,Sts,FDS2),
+	create_file(FM,FDS2,SS,MI,MO,Req,FS,FileName,Mode,TF,Sts,normal).
+manager([device_create(Req,FileName,Mode,Sts,TF)|FM],FDS,SS,MI,MO) :-
+    true |
+	FDS = open(FileName,Mode,FS,Sts,FDS2),
+	create_file(FM,FDS2,SS,MI,MO,Req,FS,FileName,Mode,TF,Sts,device).
+manager([directory(Req,DirName,Sts,TF)|FM],FDS,SS,MI,MO) :-
+    true |
+	FDS = directory(DirName,DS,Sts,FDS2),
+	create_directory(FM,FDS2,SS,MI,MO,Req,DS,DirName,TF,Sts).
+
+%%  Create file process.
+%%  create_file(FM,FDS,SS,MI,MO,Req,FS,FN,Md,TF,Sts,Ty).
+%%	FM  :: Request stream from distributor.
+%%	FDS :: Device stream of file I/O.
+%%	SS  :: System stream.
+%%	MI  :: File monitor stream (in).
+%%	MO  :: File monitor stream (out).
+%%	Req :: Request stream from user.
+%%	FS  :: File stream to device.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+%%	TF  :: Termination flag.
+%%	Sts :: Result of executed command.
+%%	Ty  :: Create type.
+
+create_file(FM,FDS,SS,MI,MO,Req,FS,FN,Md,TF,fep#normal,normal) :-
+    true |
+	mpimos_file_device_driver:create(Req,FS,MI,MS,TF,FN,Md),
+	manager(FM,FDS,SS,MS,MO).
+create_file(FM,FDS,SS,MI,MO,Req,FS,FN,Md,TF,fep#normal,device) :-
+    true |
+	mpimos_file_device_driver:device_create(Req,FS,MI,MS,TF,FN,Md),
+	manager(FM,FDS,SS,MS,MO).
+create_file(FM,FDS,SS,MI,MO,Req,FS,FN,Md,TF,Sts,_) :-
+    Sts \= fep#normal |
+	FS = [],
+	manager(FM,FDS,SS,MI,MO).
+
+%%  Create directory process.
+%%  create_directory(FM,FDS,SS,MI,MO,Req,DS,DN,TF,Sts).
+%%	FM  :: Request stream from distributor.
+%%	FDS :: File device stream.
+%%	SS  :: System stream.
+%%	MI  :: Directory monitor stream (in).
+%%	MO  :: Directory monitor stream (out).
+%%	Req :: Request stream from user.
+%%	DS  :: Directory stream to device.
+%%	DN  :: Directory name.
+%%	TF  :: Termination flag.
+%%	Sts :: Result of executed command.
+
+create_directory(FM,FDS,SS,MI,MO,Req,DS,DN,TF,fep#normal) :-
+    true |
+	mpimos_directory_device_driver:create(Req,DS,MI,MS,TF,DN),
+	manager(FM,FDS,SS,MS,MO).
+create_directory(FM,FDS,SS,MI,MO,Req,DS,DN,TF,Sts) :-
+    Sts \= fep#normal |
+	DS = [],
+	manager(FM,FDS,SS,MI,MO).

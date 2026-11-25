@@ -299,7 +299,12 @@ the clauses it uses, as the tests do.
   two is answered by the run (`switch_on_non_vector` is two) and the
   doc should say so.
 - PDSS: its own `test/` directory has never been run on our port; one
-  bus error is unexplained.
+  bus error is unexplained. (Since done, 2026-11-25: all 80 `test/`
+  programs run under `ref/pdss/conformance.sh`, 73 match their header
+  and the 7 are explained in `ref/pdss/headers_expected.txt`; the bus
+  error happened under an injected fault (`=\=` computing `<`) in the
+  retired reference port and was not pursued.
+  `ref/pdss/README.md`.)
 - The agents' fault injections on `asm/mekbn.py` were not rerun here.
 - `literature_gaps.md` and `icot_databases.md` citations are the
   agents'; only spot checks were made.

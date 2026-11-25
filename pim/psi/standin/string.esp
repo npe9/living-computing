@@ -17,8 +17,11 @@ class string has
 % INTERPOLATED from: the call sites, e.g. paragraph p_what.esp
 % `:append(#string,[S1,"::",S2,":",S3],S0)` and kappa2 inwin.esp
 % `:append(#string,["INPUT WINDOW ","<TYPE : ",Type,">"],Title)` (a list
-% of strings in, a string out; 1,039 sites, requirements.tsv).  Only
-% strings are taken as elements (OURS).
+% of strings in, a string out; 1,039 sites, requirements.tsv), and the
+% held SIMPOS source ported to CESP (morphana _simpos/pathname.esp:80,
+% :86 and name.esp:110, :139, :257, e.g. `:append(#string,[Key,
+% string#".",Version_string],Name)`).  Only strings are taken as
+% elements (OURS).
 :append(Class, List, S) :-
         total(List, 0, L),
         new_string(S, L, 16),
@@ -26,7 +29,10 @@ class string has
 
 % :copy(#string, S, C) -- C is a new string with S's elements and type.
 % INTERPOLATED from: the call sites (cal-esp grmenu.esp:186, kappa2 x3,
-% kwic-esp x3; requirements.tsv) and the name.
+% kwic-esp x3; requirements.tsv) and the name.  The held SIMPOS source
+% e_string.esp:67-70 (morphana _simpos/) copies, then changes the copy
+% element by element (replace/4): the copy is a fresh string, mutable
+% apart from the original.
 :copy(Class, S, C) :-
         string(S, N, T),
         new_string(C, N, T),

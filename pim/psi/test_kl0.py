@@ -9,6 +9,10 @@
    witnessed row, no handler without a row, every row with a witness.
    The four string rows (blt 0b, 1c, 23, 2b) run on their witness
    operands, new_string with S != T included (view_select_menu change/3).
+   Step 3e's census semantics (Step3eCensus): slot constants and the
+   uncaught raise.  Step 3e's rows (Step3eRows) run on held kappa code beside its held
+   source where one runs (get_integer, $or$9, make_nest_vector), else on
+   the handler.
 2. pimfep##fep_command_code_table:convert/3, both ways, against the
    `fep#name => code` macros of PIMOS's pimos.vmac (measured 2026-11-24):
    96 names agree, 4 only in the FEP table, 8 only in PIMOS; code -> name
@@ -102,6 +106,73 @@ files run; observed):
     behaviour census does not see it);
   - put_variable_t (pmi a1) with A != X binds only A_A: only
     test_step3d_cells fails; the FEP census totals are unchanged.
+Step 3e's pmi ca, if_not_constant (2026-11-24, injected into kl0.py with
+the session's inject.py: backup, patch, both test files run, restored with
+cp and checked with cmp; observed):
+  - always jump (equal falls through no more): test_if_not_constant and
+    test_census fail here; test_espc test_census (behaviour) and
+    test_fep_census fail;
+  - never jump: only test_if_not_constant here (set_all/5 has no try chain,
+    so set_all_at fails); test_espc test_fep_census fails;
+  - an unbound A0 jumps: test_if_not_constant and test_census here;
+    test_espc test_fep_census;
+  - the jump base cell + 2 instead of + 3: only test_if_not_constant.
+Step 3e's blt f2, if_identical_f2 (2026-11-24, same method; observed):
+  - inverted (jump when identical): only test_if_identical_f2 here;
+    test_espc test_fep_census fails;
+  - the jump base cell + 3 instead of + 2: test_if_identical_f2 here;
+    test_espc test_fep_census.
+Step 3e's rows 9a/9b, b1/b5/b6/b7, 50/51/54/55 and R != A for 40/49
+(2026-11-24, same method, both test files run; observed):
+  - 9a/9b skip a cell: test_interrupt_brackets here; test_espc
+    test_fep_census errors;
+  - b1 makes two elements, b6 five, b7 n - 1: test_vector_puts only (each);
+  - (step 3f, 2026-11-25) b7 with A != 0 refused again: test_vector_puts
+    errors; a non-zero second byte accepted: test_vector_puts fails;
+    test_espc passes both times (the one moved census row is refused
+    either way);
+  - and as or, or as xor, shift_left by n - 1, shift_right by n - 1:
+    test_bit_operations only (each);
+  - shift_left wraps at 32 bits instead of refusing at 2**31:
+    test_bit_operations only (test_kl0 alone run; first seen passing, when
+    the test's overflow case refused at string_element instead, so the
+    test now checks the refusal is shift_left's);
+  - divide_immediate into A_A: test_result_register only; add into A_A:
+    test_result_register and test_step3c_cells.
+  test_espc passes under every injection but the first: its census pins
+  see only the opcodes' presence, not their arithmetic.
+Step 3e's census semantics (2026-11-24, same method; observed):
+  - slot constants not marked: test_census and test_slot_constant here;
+    test_espc test_get_window;
+  - marked but the dispatch ignores the mark: test_census and
+    test_slot_constant here; test_espc passes (its FEP pin counts
+    outcomes, not causes);
+  - raise/2 not special (refused as SIMPOS again): test_uncaught_exception
+    errors here; test_espc test_fep_census;
+  - raise/2 fails instead: test_uncaught_exception here; test_espc
+    test_fep_census.
+The source check's opcode rows (2026-11-25, injected into kl0.py, restored
+by cp from a backup and cmp-checked; observed):
+  - blt 19 new_heap_vector refusing V != N again: test_result_register
+    errors and test_census fails here; test_espc test_fep_census fails.
+  The mnemonic renames (42-45, a4, a5, 24, 2b, blt 45/46/48/49) change
+  only names and were not injected: Machine() raises ValueError for a
+  table row with no handler of its name (kl0.py load), which the suite
+  runs on every machine it builds.
+String identity (2026-11-25; each injected into kl0.py or
+standin/list_index.esp by the session's variant.py, restored by copy and
+cmp-checked; both test files run; observed):
+  - unify compares strings by content again: test_unify_and_identical
+    only (test_espc passes: equal_key/2 compares contents anyway, and the
+    census's arguments are unbound);
+  - == (identical) compares strings by content again:
+    test_unify_and_identical only;
+  - list_index equal_key/2 reduced to unification: test_espc
+    test_string_keys only;
+  - string/3 refuses a non-string again: test_string_is_a_type_test
+    errors and test_census fails here; test_espc test_list_index,
+    test_hash_index and test_string_keys error (equal_key/2's type test
+    is refused on an atom key) and test_fep_census fails.
 """
 import os
 import sys
@@ -123,6 +194,19 @@ def machine():
     return _M
 
 
+_KM = None
+
+
+def kappa_machine():
+    """A machine with package kappa loaded alone (shared: about 4 s)."""
+    global _KM
+    if _KM is None:
+        lib = K.LB.Librarian()
+        lib.load_held(pkgs=['kappa'])
+        _KM = K.Machine(lib)
+    return _KM
+
+
 def send(m, recv, name, *args):
     """All solutions of :name(recv, args...): each the resolved ARGS."""
     regs = list(args) + [recv]
@@ -142,8 +226,79 @@ class Table(unittest.TestCase):
         ops = {n[3:] for n in dir(K.Machine) if n.startswith('op_')}
         self.assertEqual(ops, {r['mnemonic'] for r in rows})
         # 100 before step 3c's nine rows (blt 01 06 10 16 32 33 40 5c 68),
-        # 109 before step 3d's four (blt 6e 34, pmi b0 b4)
-        self.assertEqual(len(rows), 113)
+        # 109 before step 3d's four (blt 6e 34, pmi b0 b4), 113 before
+        # step 3e's pmi ca and blt f2
+        self.assertEqual(len(rows), 125)
+
+    def test_if_identical_f2(self):
+        # blt f2 (step 3e, 2026-11-24): g_window's two disjunctions, run
+        # on the held code.  $or$0/3 (g_window.esp:15-17 `( Display ==
+        # color,!, create_pairs(Win,ViewMode); true )`): color goes on into
+        # create_pairs, which sends to the unbound window; anything else
+        # jumps to `true`.  $or$1/3 (g_window.esp:24-27 `( ViewMode ==
+        # act,!, :set_view(Win,pe_view) ; :set_gid(Win,Obj!g_id), ...)`):
+        # act sends set_view/2, anything else reads the slot g_id
+        m = machine()
+        cid = 'paragraph##g_window'
+        code = m.code(cid)
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+
+        def run(name, d):
+            try:
+                return sum(1 for _ in m.solve((code, ps[(name, 3)].offset), [K.Var(), K.Var(), A(d)]))
+            except K.Refusal as e:
+                return e.detail.split(' of ')[0].split(' to ')[0]
+        self.assertEqual([run('$or$0', d) for d in ('color', 'act', 'mono')],
+                         ['send set_color_pair/3', 1, 1])
+        self.assertEqual([run('$or$1', d) for d in ('color', 'act', 'mono')],
+                         ['slot g_id', 'send set_view/2', 'slot g_id'])
+
+    def test_if_not_constant(self):
+        # pmi ca (step 3e, 2026-11-24): the first-clause guard.  The handler
+        # on its operands: unbound and equal fall through (cell + 2), any
+        # other bound value jumps (cell + 3 + s16), R != 0 refuses
+        m = machine()
+        code = types.SimpleNamespace(id='test', cells={1: (1, 0x00, 0, 256)},
+                                     t=types.SimpleNamespace(symbols=[]))
+        for x, want in ((K.Var(), 2), (256, 2), (255, 3 + 5), (K.Atom('nil'), 3 + 5),
+                        (K.Cons(1, K.NIL), 3 + 5)):
+            m.reset()
+            m.x[0] = x
+            m.op_if_not_constant(code, 0, 0, 0, 5, 5)
+            self.assertEqual(m.pc[1], want, x)
+        with self.assertRaises(K.Refusal):
+            m.op_if_not_constant(code, 0, 1, 0, 5, 0x01000005)
+        lib = m.lib
+        # no try chain: c_grade_ex.esp-style `set_all(0,P,H,N,M):-!;
+        # set_all(C,...) :- ..., set_all(C-1,...);` (p_buf4.esp:98-102),
+        # array_index_buffer set_all/5 @18a `ca 00 00 01`, integer 0,
+        # `27 00 00 00`, `f0`.  set_all_at(B, 2) on a 3 x 4 buffer sets
+        # element 2 of every row (p_buf4.esp:41-42)
+        cid = 'paragraph##array_index_buffer'
+        m.reset()
+        b = K.make_instance(m, cid)
+        co = lib.build(cid)
+        rows = [K.Vec([0] * 4, heap=True) for _ in range(3)]
+        b.slots[lib.slot_number(co, 'instance', 'root')] = K.Vec(rows, heap=True)
+        b.slots[lib.slot_number(co, 'instance', 'size')] = 3
+        self.assertEqual(len(send(m, b, 'set_all_at', 2)), 1)
+        self.assertEqual([repr(K.resolve(r)) for r in rows], ['{0,0,1,0}'] * 3)
+        # with a try chain: h draw_string/6 @122 (h.esp:189-190
+        # `draw_string(nil,X,Y,List,List,Win):-!; draw_string(S,...) :-
+        # type_check(S,S1),!, Font = Win!font, ...`).  nil and an unbound
+        # first argument take clause 1 (List = List2, S bound to nil); a
+        # string jumps to clause 2, which reads the unbound window's font
+        cid = 'paragraph##h'
+        code = m.code(cid)
+        (p,) = [p for p in lib.templates[cid].locals if (p.name, p.arity) == ('draw_string', 6)]
+        for s in (K.Atom('nil'), K.Var()):
+            L, L2 = K.Var(), K.Var()
+            args = [s, 1, 2, L, L2, K.Var()]
+            sols = [(K.resolve(L) is K.resolve(L2), K.resolve(args[0])) for _ in m.solve((code, p.offset), args)]
+            self.assertEqual(sols, [(True, K.Atom('nil'))], s)
+        with self.assertRaises(K.Refusal) as e:
+            list(m.solve((code, p.offset), [K.Str('ab'), 1, 2, K.Var(), K.Var(), K.Var()]))
+        self.assertEqual(e.exception.cause, 'unbound receiver')
 
     def test_step3d_cells(self):
         # step 3d's rows on their witness operands, handlers alone
@@ -189,8 +344,8 @@ class Table(unittest.TestCase):
         # the result in another register than the operand
         m.reset()
         m.x[0], m.x[4] = 7, 30
-        m.op_add_immediate(None, 0, 0, 1, 6, None)
-        m.op_subtract_immediate(None, 0, 4, 11, 0, None)
+        m.op_add_constant(None, 0, 0, 1, 6, None)
+        m.op_subtract_constant(None, 0, 4, 11, 0, None)
         self.assertEqual((m.x[0], m.x[6], m.x[4]), (19, 8, 30))
         # p_tgraph.esp:70-72 `a1 00 02`: one new variable in A0 and X2
         m.reset()
@@ -224,8 +379,8 @@ class Table(unittest.TestCase):
         m.x[0], m.x[1] = 5, 7
         m.op_add(None, 0, 1, 0, 1, None)
         self.assertEqual(m.x[1], 12)
-        with self.assertRaises(K.Refusal):
-            m.op_add(None, 0, 1, 0, 2, None)    # R != A: unwitnessed
+        m.op_add(None, 0, 1, 0, 2, None)    # R != A: witnessed in step 3e
+        self.assertEqual(m.x[2], 17)
         # `01 01`, `10 00`, `16 00`: type tests fail, never refuse
         for f, x, want in ((m.op_integer, 3, True), (m.op_integer, K.Var(), False),
                            (m.op_integer, K.Atom('a'), False), (m.op_unbound, K.Var(), True),
@@ -256,6 +411,44 @@ class Table(unittest.TestCase):
         m.x[1] = K.Str('ac')
         m.op_equal_string(None, 0, 4, 1, 0, None)
         self.assertIsNone(m.pc)
+
+
+class StringIdentity(unittest.TestCase):
+    """Strings unify only with the same stored string (2026-11-25): TM-388
+    PDF p79 (folio 67), 'abc'='abc', == and =:= fail, equal_string/2
+    succeeds; p117-119 Table 4-3; TM-115 PDF p97.  string/3 is a type test
+    (TR-044 App. A.2 PDF p39)."""
+
+    def test_unify_and_identical(self):
+        m = machine()
+        a, b = K.Str('abc'), K.Str('abc')
+        m.reset()
+        self.assertFalse(m.unify(a, b))
+        self.assertTrue(m.unify(a, a))
+        v = K.Var()
+        self.assertTrue(m.unify(v, a))
+        self.assertTrue(m.unify(v, a))
+        self.assertFalse(m.unify(v, b))
+        m.x[0], m.x[1], m.x[2] = a, b, a
+        self.assertFalse(m.identical(0, 1))
+        self.assertTrue(m.identical(0, 2))
+        m.pc = 'here'
+        m.op_equal_string(None, 0, 0, 1, 0, None)
+        self.assertIsNotNone(m.pc)
+        # a structure holding them: element-wise, so the same rule
+        self.assertFalse(m.unify(K.Vec([a]), K.Vec([b])))
+        self.assertTrue(m.unify(K.Vec([a]), K.Vec([a])))
+
+    def test_string_is_a_type_test(self):
+        m = machine()
+        for x, ok in ((K.Str('ab'), True), (K.Var(), False), (3, False), (K.Atom('ab'), False)):
+            m.reset()
+            m.pc = 'here'
+            m.x[0] = x
+            m.op_string(None, 0, 0, 1, 2, None)
+            self.assertEqual(m.pc is not None, ok, x)
+            if ok:
+                self.assertEqual(m.x[1], 2)
 
 
 class Convert(unittest.TestCase):
@@ -362,9 +555,7 @@ class SlotInit(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        lib = K.LB.Librarian()
-        lib.load_held(pkgs=['kappa'])
-        cls.m = K.Machine(lib)
+        cls.m = kappa_machine()
 
     def new(self, cid):
         m = self.m
@@ -439,6 +630,164 @@ class SlotInit(unittest.TestCase):
         self.assertEqual(t['sit_hv_table'].cid, 'kappa##kappaHLC_SIT_HV_table')
 
 
+class Step3eRows(unittest.TestCase):
+    """Step 3e's rows (2026-11-24): blt 9a/9b, pmi b1/b5/b6/b7, blt 50/51/
+    54/55, and R != A for blt 40 and 49 (psi/kl0_opcodes.tsv), on held code
+    whose source is held where one runs, else on the handler."""
+
+    def cell(self):
+        return types.SimpleNamespace(id='test', cells={}, t=types.SimpleNamespace(symbols=[]))
+
+    def local(self, m, cid, name, regs):
+        code = m.code(cid)
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+        out = []
+        for _ in m.solve((code, ps[(name, len(regs))].offset), regs):
+            out.append(K.resolve(regs[-1]))
+        return out
+
+    def test_interrupt_brackets(self):
+        # blt 9a/9b are no-ops here (no interrupts are modelled): each goes
+        # on to the next cell; pimfep_message_log log/2 (the 9a at @1f,
+        # then its 9b) now runs to one solution
+        m = machine()
+        code = self.cell()
+        for op in (m.op_inhibit_interrupt, m.op_allow_interrupt):
+            m.reset()
+            op(code, 7, 0, 0, 0, 0)
+            self.assertEqual(m.pc[1], 8)
+        m.reset()
+        self.assertEqual(len(K.call_class_method(m, 'pimfep##pimfep_message_log', 'log', [K.Var()])), 1)
+
+    def test_vector_puts(self):
+        # pmi b1 on held code: HLCAPRSUB.ESP:425-427 make_nest_vector(2, a, F)
+        # gives F = {{a}}
+        km = kappa_machine()
+        km.reset()
+        (f,) = self.local(km, 'kappa##kappaHLC_projection_subschema_analyzer', 'make_nest_vector',
+                          [2, A('a'), K.Var()])
+        self.assertEqual(repr(f), '{{a}}')
+        # b5, b6, b7 on the handler: a vector of n new elements in A_A, the
+        # element pointer at its first element; b7 with A != 0 or a second
+        # byte refuses
+        m = machine()
+        code = self.cell()
+        for op, a, b, c, n in ((m.op_put_vector_1, 2, 0, 0, 1), (m.op_put_vector_5, 1, 0, 0, 5),
+                               (m.op_put_vector_6, 1, 0, 0, 6), (m.op_put_vector_n, 0, 0, 12, 12),
+                               (m.op_put_vector_n, 1, 0, 9, 9)):
+            m.reset()
+            op(code, 0, a, b, c, (a << 16) | (b << 8) | c)
+            t = K.deref(m.x[a])
+            self.assertIsInstance(t, K.Vec)
+            self.assertEqual((len(t.args), t.heap, m.S[1], m.pc[1]), (n, False, 0, 1))
+            self.assertIs(m.S[0], t.args)
+        for a, b in ((0, 1), (1, 1)):
+            with self.assertRaises(K.Refusal):
+                m.op_put_vector_n(code, 0, a, b, 7, (a << 16) | (b << 8) | 7)
+        # step 3f: b7 with A != 0, the witness's cells (KP_MDM.ESP:89
+        # `:set_up(DBO,OBJuser,{MS_max,...,IHN})`, nine elements into A1)
+        t = km.lib.templates['kappa##kappaMDM_manager']
+        cells = {c[0]: c for p in t.preds() if p.name == 'set_up' and p.arity == 2 for c in p.cells}
+        self.assertEqual(cells[0xe6][3], 0xb7010009)
+        self.assertEqual([cells[o][3] >> 24 for o in range(0xe7, 0xf0)], [0x43] * 9)
+        # @f2: a selector cell of arity 3 (set_up/3, the send at @f1)
+        self.assertEqual(cells[0xf2][1:3], (1, 3))
+        self.assertEqual(K.Code(km.lib, t).sym(cells[0xf2][3]), 'set_up')
+
+    def test_bit_operations(self):
+        km = kappa_machine()
+        km.reset()
+        s = K.Str('')
+        s.set_codes([0x0001, 0x0203, 0x7fff, 0x8000, 0x0005])
+        # shift_left and or on held code: CONVERTER.ESP:41-45 get_integer
+        # is (H << 16) | L of two string elements
+        got = [K.call_class_method(km, 'kappa##kappa_converter', 'get_integer', [s, i, K.Var()])[0][2]
+               for i in (0, 1)]
+        self.assertEqual(got, [0x00010203, 0x02037fff])
+        # 0x8000 << 16 does not fit below 2**31: refused, not wrapped (the
+        # refusal is shift_left's, not string_element's)
+        with self.assertRaises(K.Refusal) as e:
+            K.call_class_method(km, 'kappa##kappa_converter', 'get_integer', [s, 3, K.Var()])
+        self.assertTrue(e.exception.detail.startswith('shift_left 32768 by 16'), e.exception.detail)
+        # and on held code: TERMCODE.ESP:83-89 `( and(Count,1,0),!, Result =
+        # Count ; Result = Count + 1 )`, $or$9/2
+        self.assertEqual([self.local(km, 'kappa##term_code', '$or$9', [n, K.Var()]) for n in (4, 5)],
+                         [[4], [6]])
+        # shift_right on the handler (KP_TIMER.ESP:45 `55 00 01 00`), R != X
+        m = machine()
+        code = self.cell()
+        m.reset()
+        m.x[0], m.x[1] = 0x50000, 16
+        m.op_shift_right(code, 0, 0, 1, 2, 0x000102)
+        self.assertEqual((m.x[2], m.x[0]), (5, 0x50000))
+        m.x[0], m.x[1] = 0b1100, 0b1010
+        m.op_and(code, 0, 0, 1, 2, 0)
+        m.op_or(code, 0, 0, 1, 3, 0)
+        self.assertEqual((m.x[2], m.x[3]), (0b1000, 0b1110))
+        for op, x, y in ((m.op_shift_right, -8, 1), (m.op_shift_left, 1, 32), (m.op_and, -1, 1),
+                         (m.op_or, 1, -1)):
+            m.x[0], m.x[1] = x, y
+            with self.assertRaises(K.Refusal):
+                op(code, 0, 0, 1, 2, 0)
+
+    def test_result_register(self):
+        # R != A for divide_constant (c_grade_ex.esp:26 `49 00 0a 07`) and
+        # add (p_wwin.esp:420 `40 00 01 01`): the result lands in A_R, A_A
+        # keeps its value
+        m = machine()
+        code = self.cell()
+        m.reset()
+        m.x[0] = 37
+        m.op_divide_constant(code, 0, 0, 10, 7, 0x000a07)
+        self.assertEqual((m.x[7], m.x[0]), (3, 37))
+        m.x[0], m.x[1] = 5, 9
+        m.op_add(code, 0, 0, 1, 1, 0x000101)
+        self.assertEqual((m.x[1], m.x[0]), (14, 5))
+        # V != N for new_heap_vector (FMT_CONV.ESP:13-16 `19 02 04 00`):
+        # the vector lands in A_V, A_N keeps the length
+        m.x[4] = 3
+        m.op_new_heap_vector(code, 0, 2, 4, 0, 0x020400)
+        self.assertEqual((len(m.x[2].args), m.x[2].heap, m.x[4]), (3, True, 3))
+
+
+class Step3eCensus(unittest.TestCase):
+    """Step 3e's census semantics (2026-11-24): slot constants named as
+    receivers, and the uncaught :raise(#undefined_method, ...)."""
+
+    def test_slot_constant(self):
+        # an integer slot's template constant is marked; arithmetic on it
+        # gives plain ints; a send to it is refused with its own cause, a
+        # send to any other integer as before
+        m = machine()
+        cid = 'paragraph##array_index_buffer'
+        m.reset()
+        b = K.make_instance(m, cid)
+        co = m.lib.build(cid)
+        size = b.slots[m.lib.slot_number(co, 'instance', 'size')]
+        self.assertIsInstance(size, K.SlotConstant)
+        self.assertEqual(size, 0)
+        self.assertIs(type(size + 1), int)
+        for recv, cause in ((size, 'receiver a slot constant'), (0, 'receiver not an object')):
+            with self.assertRaises(K.Refusal) as e:
+                m.dispatch(recv, 'put', 2)
+            self.assertEqual(e.exception.cause, cause)
+
+    def test_uncaught_exception(self):
+        # scsi_low_if's class reset/1 raises unless overridden: cmt does not
+        # override it, so the send ends in an uncaught exception whose
+        # information is {Class, undefined_method, Class, {Method, Args, _}}
+        m = machine()
+        m.reset()
+        with self.assertRaises(K.Raised) as e:
+            K.call_class_method(m, 'pimscsi##cmt', 'reset', [])
+        info = e.exception.info
+        self.assertEqual(repr(info.args[1]), 'undefined_method')
+        self.assertEqual(repr(info.args[3].args[0]), 'reset')
+        rows = K.census_of(m, ['pimscsi##cmt'])
+        out = dict((r[2], r[3]) for r in rows if r[1] == 'class')
+        self.assertEqual((out['reset/1'], out['initialize/1']), ('exception', 'exception'))
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))
@@ -447,7 +796,16 @@ class Census(unittest.TestCase):
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual(out, {'refused': 216, 'success': 303, 'failure': 11})
+        # step 3e's pmi ca: 4 refused methods now succeed (array_index_buffer
+        # and wshell_buffer set_all_at/2, reset_all_at/2) and 1 fails
+        # (csp_fep_main_program get/4); was 216 / 303 / 11
+        # 2026-11-25: blt 19 new_heap_vector with V != N witnessed
+        # (FMT_CONV.ESP:13-16): the 7 methods refused there go on; three
+        # succeed (booking_table, local_node_manager, remote_cell_table
+        # create/2), the others stop later
+        # 2026-11-25: string/3 a type test (fails on an unbound argument):
+        # csp_default_write write/2 goes on and runs into the step limit
+        self.assertEqual(out, {'refused': 207, 'success': 310, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -464,13 +822,26 @@ class Census(unittest.TestCase):
         # unbound/1 (blt 10, step 3c) takes the three `blt 10` methods on:
         # two to an unbound argument, one to a method not loaded
         self.assertEqual(rank, {
-            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 14,
+            'no method': 56, 'no slot': 30, 'built-in': 24, 'unbound receiver': 16,
             # step 3d: subtract_immediate with R != A is witnessed, so six
-            # methods go further; five stop at divide_immediate (R != A, still
-            # unwitnessed) and up_down_icon code/4 at an unbound argument
-            'receiver not an object': 8, 'unbound argument': 21, 'operand': 16,
+            # methods go further; five stopped at divide_immediate (R != A)
+            # and up_down_icon code/4 at an unbound argument.  Step 3e:
+            # divide_immediate and add with R != A are witnessed, so the six
+            # draw/2 go further: four stop at multiply_immediate (R != A,
+            # still unwitnessed), two at a draw_line/8 sent to an unbound
+            # window (scroll_bar_icon, up_down_icon)
+            # step 3e: the 8 sends to an integer still holding its slot's
+            # template constant are named so (the census makes receivers
+            # with new/2, not through their creators)
+            # 2026-11-25: blt 19 V != N witnessed: 'operand' 14 -> 7; of the
+            # 7, three succeed, two stop at an unbound new_heap_vector length
+            # ('unbound argument' 21 -> 23), dummy_kl1_value_cell unify/2 at a
+            # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
+            # constant ('pool' 1)
+            # string/3 a type test: 'unbound argument' 23 -> 22
+            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 7, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
-            'missing opcode pmi 6c': 5, 'missing opcode pmi ca': 5,
+            'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,
             'missing opcode pmi 36': 3,
             'missing opcode blt 63': 2, 'missing opcode blt f5': 1,

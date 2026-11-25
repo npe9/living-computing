@@ -1,6 +1,11 @@
 % SCAFFOLDING stand-in for SIMPOS's class `semaphore`, compiled by
-% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
-% `semaphore` is printed.  Every method is INTERPOLATED (labelled) from:
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of
+% TM-100's class `semaphore` is printed.  TR-056 p11 (PDF p13) prints
+% `:p`/`:v`/`:init` bodies of a semaphore built on a stream
+% (`:p(Semaphore) :- :get(Semaphore,Token).`, `:v(Semaphore) :-
+% :put(Semaphore,token).`, `:init(Semaphore,Count)`): an earlier design,
+% with other selectors and no waiting_queue nature, cited here, not
+% transcribed.  Every method is INTERPOLATED (labelled) from:
 %   - TM-100 Fig. 3.9 (PDF p17, docs/simpos/printed/listings/
 %     tm0100_p17.esp): semaphore inherits waiting_queue, and "A semaphore
 %     which is a component of a bounded post queue inherits a waiting
@@ -17,11 +22,15 @@
 
 class semaphore has
 
-% INTERPOLATED from: the nature in TM-100 Fig. 3.9 (see above).
+% READ: TM-100 PDF p16 (folio 14) prose, "A semaphore which is a
+% component of a bounded post queue inherits a waiting queue", and
+% Fig. 3.9 (PDF p17).
 nature waiting_queue;
 
 % INTERPOLATED from: the printed `:create(#semaphore, Semaphore, Limit)`
-% (TM-100 Fig. 3.11, PDF p17); the tokens from TR-056 p11.
+% (TM-100 Fig. 3.11, PDF p17); the tokens from TR-056 p11 (PDF p13): an
+% integer semaphore holds "the specified number of tokens",
+% `:init(Semaphore,Count)`.
 :create(Class, Semaphore, Limit) :-
         :new(Class, Semaphore),
         Semaphore!tokens := Limit;

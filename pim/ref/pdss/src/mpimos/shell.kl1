@@ -1,0 +1,622 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_command_interpreter.
+:- public create/1,kl1cmp_create/1,initenv/3,apply_goals/1,command_analyzer/3,
+	  unit/4.
+:- with_macro pdss.
+
+create(SS):-
+     true|
+	mpimos_window:os_create([show|{IO1,IO2}],string#"SHELL",_,Interrupt,SS,SS1)
+		@ priority(*,4040),
+	mpimos_code_manager:os_get_command_stream(CM,SS1,SS2)
+		@ priority(*,4040),
+	mpimos_directory:os_create([pathname(DD)|DR],string#".",_,SS2,SS3,DSts)
+		@ priority(*,4040),
+  	initenv(RM,RML,DD),
+	resource_manager(RM,IO1,SS3,CM,DR,Interrupt),
+	merge(RM1,RML),
+	start(DSts,DD,IO2,Interrupt,RM1).
+
+start(success,DD,IO,IS,RM):-
+     statistics(_,Heap,_,Code,_,_)|
+	IO=[do([nl,
+		putl(string#"*******************************************"),
+		putl(string#"**** Micro PIMOS (version 2.5) ************"),
+		putl(string#"*******************************************"),
+		putb(string#"World is "),putl(DD),
+		putb(string#"Total heap size is "),putt(Heap),
+		putl(string#" words"),
+		putb(string#"Total code size is "),putt(Code),
+		putl(string#" bytes"),
+		putl(string#"*******************************************"),
+		nl,prompt(_,string#"| ?- ")])|IO1],
+	RM=[system_stream(SS)|RM1],
+	SF=string#"~/.pdssrc",
+	mpimos_file:os_create([],SF,r,_,SS,[],S),
+	startup_file(IO1,IS,RM1,SF,S).
+start(error(cannot_access),_,_,_,_):-
+     put_console(string#"Can't access default directory."), halt(1) |
+	true.
+
+startup_file(IO,IS,RM,SF,success):-
+    true|
+	IO=[putl(string#"Startup file executing ..."),flush(_)|IO1],
+	shell_wait_command(take(SF),0,IO1,IS,RM,0).
+startup_file(IO,IS,RM,_,error(_)):-
+    true|
+	shell_get_command(IO,IS,RM,0).
+
+kl1cmp_create(SS):-
+     true|
+	mpimos_window:os_create([show|{IO1,IO2}],string#"SHELL",_,Interrupt,SS,SS1)
+		@ priority(*,4040),
+	mpimos_code_manager:os_get_command_stream(CM,SS1,SS2)
+		@ priority(*,4040),
+	mpimos_directory:os_create([pathname(DD)|DR],string#".",_,SS2,SS3,_)
+		@ priority(*,4040),
+  	initenv(RM,RML,DD),
+        RML = [setenv(modules,[mpimos_cmd_code,mpimos_cmd_environment])|RMLL],
+	resource_manager(RM,IO1,SS3,CM,DR,Interrupt),
+	merge(RM1,RMLL),
+	shell_wait_command(kl1cmp,0,IO2,Interrupt,RM1,0).
+
+initenv(RM,RML,DD):-
+     true|
+	get_library_directory(Dir),
+	append_string(Dir,string#"/debug_utl",LDir),
+	append_string(Dir,string#"/pimos_utl",UDir),
+	RM = [setenv(world,DD),
+              setenv(trace,off),
+              setenv(backtrace,on),
+              setenv(reduction,10000),
+              setenv(ucounter,0),
+              setenv(plength,20),
+              setenv(pdepth,5),
+              setenv(pvar,nu),
+	      setenv(savedir,string#"~/.PDSSsave"),
+	      setenv(loaddir,[string#"~/.PDSSsave",LDir,UDir]),
+	      setenv(auto_load,yes),
+              setenv(modules,
+		     [mpimos_builtin_predicate,
+		      mpimos_cmd_basic,
+		      mpimos_cmd_code,
+		      mpimos_cmd_directory,
+		      mpimos_cmd_debug,
+		      mpimos_cmd_environment])|RML].
+
+shell_get_command(IO,[_|IS],RM,TC):-
+     true|
+	shell_get_command(IO,IS,RM,TC).
+alternatively.
+shell_get_command(IO,IS,RM,TC):-
+     true|
+	IO = [show,getft(FCom,VN)|IO1],
+	RM = [macro_expander(expand(FCom,VN,ExpFCom,NVN))|NRM],
+	shell_wait_command(ExpFCom,NVN,IO1,IS,NRM,TC).
+
+shell_wait_command(FCom,VN,IO,[_|IS],RM,TC):-
+     true|
+	shell_wait_command(FCom,VN,IO,IS,RM,TC).
+alternatively.
+shell_wait_command(end_of_file,_,_,_,_,_):-
+     halt(0)|
+	true.
+shell_wait_command(FCom,VN,IO,IS,RM,TC):-
+     FCom \= end_of_file|
+	RM = [initenv,setenv(ucounter,1)|NRM],
+	shell_create_task(FCom,VN,IO,IS,NRM,TC).
+
+shell_create_task(FCom,VN,IO,[_|IS],RM,TC):-
+     true|
+	shell_create_task(FCom,VN,IO,IS,RM,TC).
+alternatively.
+shell_create_task(FCom,VN,IO,IS,RM,TC):-
+     true|
+	IO = {IO1,IO2},
+	RM = [system_stream(SS),getenv(reduction,Reduction)|{RM1,RM3,RM4}],
+	valve(TF,RM6,RM4),
+	mpimos_utility:melt(FCom,VN,MCom),
+	ApplyGoals =
+	   [mpimos_command_interpreter:command_analyzer(MCom,
+							RM6,ExGoals),
+	    mpimos_command_interpreter:apply_goals(ExGoals)],
+	Args = {ApplyGoals},
+	new_task_name(TC,TskNm,NTC),
+	mpimos_task_monitor:create(mpimos_command_interpreter,apply_goals,Args,
+				   0,100,shoen_tag#all,
+				   Control,Report,SS,IO1,RM3,TskNm)
+		@ priority(*,4092),
+	reduction_check(Reduction,Report,Control,IS,IO2,RM1,NTC,TskNm,TF,[],
+			normal).
+
+
+reduction_check(Red,Rep,Ctr,IS,IO,RM,TC,TN,TF,AC,AF):-
+     Red>0, Red<100000|
+	R10000 := Red*10000,
+	Ctr=[more_reduction(R10000),start|Ctrl],
+	shell_with_task(Rep,Ctrl,IS,IO,RM,TC,TN,TF,AC,AF).
+otherwise.
+reduction_check(Red,Rep,Ctr,IS,IO,RM,TC,TN,TF,AC,AF):-
+     true|
+	IO = [putb(string#"Illegal environment variable ::: "),
+	      putb(string#"reduction = "),putt(Red),nl,flush(_)|IO1],
+	Ctr=[more_reduction(10000),start|Ctrl],
+	shell_with_task(Rep,Ctrl,IS,IO1,RM,TC,TN,TF,AC,AF).
+
+
+shell_with_task(Rep,Ctrl, [1|IS], IO, RM,TC,TN,TF,AC,_):-
+     true|
+	TF = end,
+	Ctrl=[abort,statistics(Info),remove],
+	IO=[do([putb(string#"Task "),putb(TN),putb(string#"/"),putt(Info),
+		putb(string#" was aborted !!"),nl])|IO1],
+    	after_care(Rep, IS, IO1, RM,TC,AC).
+shell_with_task(Rep,Ctrl, [2|IS], IO, RM,TC,TN,TF,AC,AF):-
+     true|
+    	Ctrl=[statistics(Info)|Ctrl1],
+	IO=[do([putb(string#"Task "),putb(TN),putb(string#": "),putt(Info),
+		putb(string#" reductions so far."),nl,flush(_)])|IO1],
+    	shell_with_task(Rep,Ctrl1, IS, IO1, RM,TC,TN,TF,AC,AF).
+alternatively.
+shell_with_task([succeeded|_],Ctrl, IS, IO, RM,TC,_,_,_,normal):-
+     true|
+    	IO=[do([nl,putl(string#"yes.")])|IO1],
+    	Ctrl=[remove],
+    	shell_get_command(IO1, IS, RM,TC).
+shell_with_task([succeeded|_],Ctrl, IS, IO, RM,TC,_,_,_,after_care):-
+     true|
+    	IO=[do([putl(string#"done. "),nl,putl(string#"no.")])|IO1],
+    	Ctrl=[remove],
+    	shell_get_command(IO1, IS, RM,TC).
+shell_with_task([aborted|Rep],Ctrl, IS, IO, RM,TC,TN,TF,AC,AF):-
+     true|
+	TF = end,
+    	IO=[do([show,putb(string#"Aborted(type RETURN key) ? "),
+		getl(Cmd)])|IO1],
+    	shell_with_task_2(Cmd,IO1,Rep,Ctrl,IS,RM,TC,TN,TF,AC,AF).
+shell_with_task([reduction_limit(Red)|Rep],Ctrl, IS, IO,RM,TC,TN,TF,AC,AF):-
+     true |
+    	IO=[do([show,nl,
+		putb(string#"Task "),putb(TN), putb(string#" was "),
+        	putt(DD), putl(string#" reductions so far."),
+        	putl(string#"This task reached reduction limit."),
+ 		prompt(OLDPrompt,string#"Continue or Abort (c/a) ?- "),
+		getft(Cmd,_),
+		prompt(_,OLDPrompt)])|IO1],
+    Ctrl=[statistics(DD)|Ctrl1],
+    shell_with_task_1(Cmd, Red, IO1, Rep, Ctrl1, IS, RM,TC,TN,TF,AC,AF).
+shell_with_task([deadlock|Rep],Ctrl, IS, IO, RM,TC,TN,TF,AC,AF):-
+     true|
+	IO=[do([show,
+ 		prompt(OLDPrompt,string#"Continue or Abort (c/a) ?- "),
+		getft(Cmd,_),
+		prompt(_,OLDPrompt)])|IO1],
+    	shell_with_task_3(Cmd,IO1,Rep,Ctrl,IS,RM,TC,TN,TF,AC,AF).
+shell_with_task([raised(shell(fail),_,NC,_)|Rep],Ctrl, IS, IO, RM,TC,_,TF,AC,_):-
+     true|
+	NC = [],
+	TF = end,
+	Ctrl = [remove],
+    	after_care(Rep, IS, IO, RM,TC,AC).
+shell_with_task([raised(shell(aborted),_,NC,_)|Rep],Ctrl, IS, IO, RM,TC,TN,TF,AC,AF):-
+     true|
+	NC = [],
+	TF = end,
+    	IO=[do([show,putb(string#"Aborted(type RETURN key) ? "),
+		getl(Cmd)])|IO1],
+    	shell_with_task_0(Cmd,IO1,Rep,Ctrl,IS,RM,TC,TN,TF,AC,AF).
+shell_with_task([raised(shell(X),_,NC,_)|Rep], Ctrl, IS, IO, RM,TC,TN,TF,AC,AF):-
+     X \= aborted,
+     X \= fail|
+	NC = [],
+    	IO=[do([putb(string#"Undefined raise type : "),
+		putt(shell(X)),nl,flush(_)])|IO1],
+    	shell_with_task(Rep,Ctrl, IS, IO1, RM,TC,TN,TF,AC,AF).
+shell_with_task([after_care(Goal)|Rep],Ctrl, IS, IO, RM,TC,TN,TF,AC,AF):-
+     true|
+    	shell_with_task(Rep,Ctrl, IS, IO, RM,TC,TN,TF,[Goal|AC],AF).
+
+shell_with_task_1(N, Red, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,AF):-
+     N>=1 |
+    	Red=[],
+    	reduction_check(N,Rep,Ctrl,IS,IO,RM,TC,TN,TF,AC,AF).
+shell_with_task_1(c, Red, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,AF):-
+     true|
+    	Red=[],
+	RM = [getenv(reduction,Reduction)|RM0],
+    	reduction_check(Reduction,Rep,Ctrl,IS,IO,RM0,TC,TN,TF,AC,AF).
+otherwise.
+shell_with_task_1(_, Red, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,_):-
+     true|
+	TF = end,
+    	Red=[],
+    	IO=[do([putb(string#"Task "),putb(TN),
+        	putl(string#" was aborted !!")])|IO1],
+    	Ctrl=[abort,remove],
+    	after_care(Rep, IS, IO1, RM,TC,AC).
+
+shell_with_task_0(Cmd, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,_):-
+     wait(Cmd)|
+	TF = end,
+    	IO=[do([putb(string#"Task "),putb(TN),
+        	putl(string#" was aborted !!")])|IO1],
+    	Ctrl=[abort,remove],
+    	after_care(Rep, IS, IO1, RM,TC,AC).
+
+shell_with_task_2(Cmd, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,_):-
+     wait(Cmd)|
+	TF = end,
+    	IO=[do([putb(string#"Task "),putb(TN),putb(string#"/"),putt(Red),
+        	putl(string#" was aborted !!")])|IO1],
+    	Ctrl=[statistics(Red),abort,remove],
+    	after_care(Rep, IS, IO1, RM,TC,AC).
+
+shell_with_task_3(c, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,AF):-
+     true|
+	Ctrl = [start|Ctrl0],
+    	shell_with_task(Rep,Ctrl0,IS,IO,RM,TC,TN,TF,AC,AF).
+otherwise.
+shell_with_task_3(_, IO, Rep, Ctrl, IS,RM,TC,TN,TF,AC,_):-
+     true|
+	TF = end,
+    	IO=[do([putb(string#"Task "),putb(TN),putb(string#"/"),putt(Red),
+        	putl(string#" was aborted !!")])|IO1],
+    	Ctrl=[statistics(Red),abort,remove],
+    	after_care(Rep, IS, IO1, RM,TC,AC).
+
+after_care([], IS, IO, RM,TC,AC):-
+    AC\=[]|
+	IO=[do([putl(string#"<<< after care >>>"),flush(_)])|{IO1,IO2}],
+	RM = [system_stream(SS)|{RM1,RM2}],
+	mpimos_task_monitor:create(mpimos_command_interpreter,apply_goals,{AC},
+				   0,100,shoen_tag#all,
+				   [more_reduction(10000),start|Ctrl],Rep,
+				   SS,IO1,RM1,string#"After_care")
+					@ priority(*,4092),
+	shell_with_task(Rep,Ctrl,IS,IO2,RM2,TC,string#"After_care",TF,[],after_care).
+after_care([], IS, IO, RM,TC,[]):-
+    true|
+	IO=[do([nl,putl(string#"no.")])|IO1],
+	shell_get_command(IO1, IS, RM,TC).
+otherwise.
+after_care([_|Rep], IS, IO, RM,TC,AC):-
+    true|
+	after_care(Rep, IS, IO, RM,TC,AC).
+
+new_task_name(Cnt,Name,Cnt1) :-
+     true|
+    	Cnt1 := Cnt+1,
+	mpimos_utility:integer_to_string(Cnt,SCnt),
+	append_string(string#"task_",SCnt,Name).
+
+unit(ExGoals,success,Res,Red):-
+     true|
+	'Sho-en':create(mpimos_command_interpreter,apply_goals,
+			{ExGoals},0,4,shoen_tag#mpimos_unit,CT0,RP),
+	CT0 = [more_reduction(1000000),start|CT],
+	unit_monitor(RP,CT,Res,Red).
+
+unit(_,fail,Res,_):-
+     true|
+	Res = fail.
+unit_monitor([succeeded|_],CT,Res,Red):-
+     true|
+	Res = success,
+	CT = [statistics(Red),remove].
+unit_monitor([aborted|_],CT,Res,Red):-
+     true|
+	raise(shoen_tag#mpimos_unit,shell(aborted),_),
+	Res = fail,
+	CT = [statistics(Red),remove].
+unit_monitor([reduction_limit|RP],CT,Res,Red0):-
+     true|
+	CT = [more_reduction(1000000),start|CT1],
+	unit_monitor(RP,CT1,Res,Red0).
+unit_monitor([raised(shell(fail),Info,NC,_)|_],CT,Res,Red):-
+     true|
+	raise(shoen_tag#mpimos_unit,shell(fail),Info),
+	NC = [],
+	Res = fail,
+	CT = [statistics(Red),remove].
+unit_monitor([raised(shell(aborted),Info,NC,_)|_],CT,Res,Red):-
+     true|
+	raise(shoen_tag#mpimos_unit,shell(aborted),Info),
+	NC = [],
+	Res = fail,
+	CT = [statistics(Red),remove].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+apply_goals([Goal|R]) :-
+     true |
+	apply_goal(Goal),
+	apply_goals(R).
+apply_goals([]) :- true | true.
+
+apply_goal(Goal):-
+     true|
+    	mpimos_utility:get_predicate(Goal, Code, Args),
+    	apply(Code, Args).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% command_analyzer(MeltedComs,ShellStream,ExGoals)
+command_analyzer(MC,SS,EGS) :- true |
+	merge(SSS,SS),
+	merge(EGSS,EGS),
+	command_analyzer_(MC,SSS,EGSS).
+
+command_analyzer_((ME;MR),SS,EGS):-
+     true|
+	SS = {SS2,SS1},
+	trans_element(ME,SS1,ExE),
+	EGS = [mpimos_command_interpreter:unit(ExE,success,F,_)|TEGS],
+	s_command_analyzer(MR,SS2,F,TEGS).
+command_analyzer_((ME,MR),SS,EGS):-
+     true|
+	SS = {SS2,SS1},
+	trans_element(ME,SS1,ExE),
+	EGS = {TEGS,ExE},
+	command_analyzer_(MR,SS2,TEGS).
+otherwise.
+command_analyzer_(ME,SS,EGS):-
+     true|
+	trans_element(ME,SS,EGS).
+
+s_command_analyzer((ME;MR),SS,F0,EGS):-
+     true|
+	SS = {SS2,SS1},
+	trans_element(ME,SS1,ExE),
+	EGS = [mpimos_command_interpreter:unit(ExE,F0,F1,_)|TEGS],
+	s_command_analyzer(MR,SS2,F1,TEGS).
+otherwise.
+s_command_analyzer(ME,SS,F0,EGS):-
+     true|
+	trans_element(ME,SS,ExE),
+	EGS = [mpimos_command_interpreter:unit(ExE,F0,_,_)].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+trans_element(Module:Goal,SS,ExE):-
+     true|
+	ExE = [Module:Goal],
+	SS = [].
+otherwise.
+trans_element(ME,SS0,ExE):-
+     true|
+	SS0 = [getenv(modules,ML)|SS1],
+	is_command([mpimos_cmd_environment|ML],ME,MN,R),
+	trans_element1(R,MN,ME,SS1,ExE,ML).
+
+
+trans_element1(true,MN,ME,SS,ExE,_):-
+     true|
+	ExE = [MN:do_command(ME,SS)].
+trans_element1(abort,_,_,SS,ExE,ML):-
+     true|
+	ExE = [],
+	SS = [window([putl(string#"Environment variable is illegal type !!"),
+	              putb(string#"<<modules>> = "),putt(ML),
+		      nl,flush(F)])],
+	error_action(F,fail).
+otherwise.
+trans_element1(_,_,(ME0,MR0),SS,ExE,_):-
+     true|
+	command_analyzer((ME0,MR0),SS,ExE).
+trans_element1(_,_,(ME0;MR0),SS,ExE,_):-
+     true|
+	command_analyzer((ME0;MR0),SS,ExE).
+otherwise.
+trans_element1(_,_,ME,SS,ExE,_):-
+     true|
+	mpimos_utility:freeze(ME,FE),
+	unknown_command(FE,SS,[window([flush(F)])]),
+	ExE = [],
+	error_action(F,fail).
+
+error_action(F,T):-
+     wait(F)|
+	raise(shoen_tag#mpimos_unit,shell(T),_).
+
+unknown_command(X,SS,SSL) :- wait(X) |
+	SS = [window([putb(string#"Unknown command ::: "),putt(X),nl])|SSL].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+is_command([Module|TML],FE,MN,R):-
+     true|
+	apply({Module,is_command,2},{FE,R0}),
+	is_command0(R0,TML,FE,Module,MN,R).
+is_command([],_,_,R):-
+     true|
+	R = fail.
+otherwise.
+is_command(_,_,_,R):-
+     true|
+	R = abort.
+
+
+is_command0(yes,_,_,Module,MN,R):-
+     true|
+	MN = Module,
+	R = true.
+is_command0(no,TML,FE,_,MN,R):-
+     true|
+	is_command(TML,FE,MN,R).
+
+
+valve(TF,_,OUT):-
+     wait(TF)|
+	OUT = [].
+alternatively.
+valve(TF,[H|T],OUT):-
+     true|
+	OUT = [H|NOUT],
+	valve(TF,T,NOUT).
+valve(_,[],OUT):-
+     true|
+	OUT = [].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+resource_manager(Self,IO,SS,CM,DR,In):-
+     true|
+	make_table(Tbl),
+	mpimos_macro_expander:create(ME),
+	resource_manager0(Self,IO,SS,CM,DR,ME,Tbl,In).
+
+resource_manager0([initenv|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	getenv(trace,TF,Tbl,Tbl1),
+	getenv(backtrace,BF,Tbl1,Tbl2),
+	getenv(plength,PL,Tbl2,Tbl3),
+	getenv(pdepth,PD,Tbl3,Tbl4),
+	getenv(pvar,PV,Tbl4,Tbl5),
+	CM = [debug(TF,St1),backtrace(BF,St2)|NCM],
+	set_print_length(PL,PLS,IO,IO1),
+	set_print_depth(PD,PDS,IO1,IO21),
+	set_print_var_mode(PV,PVS,IO21,IO2),
+	check_env(St1,TF,string#"trace",IO2,IO3),
+	check_env(St2,BF,string#"backtrace",IO3,IO4),
+	check_env(PLS,PL,string#"plength",IO4,IO5),
+	check_env(PDS,PD,string#"pdepth",IO5,IO6),
+	check_env(PVS,PV,string#"pvar",IO6,IO7),
+	resource_manager0(Self,IO7,SS,NCM,DR,ME,Tbl5,In).
+resource_manager0([setenv(Name,Value)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	setenv(Name,Value,Tbl,NTbl),
+	resource_manager0(Self,IO,SS,CM,DR,ME,NTbl,In).
+resource_manager0([getenv(Name,Value)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	getenv(Name,Value,Tbl,NTbl),
+	resource_manager0(Self,IO,SS,CM,DR,ME,NTbl,In).
+resource_manager0([getenv(Names)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	all_env(Names),
+	resource_manager0(Self,IO,SS,CM,DR,ME,Tbl,In).
+resource_manager0([getuc(Num)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	getenv(ucounter,Value,Tbl,NTbl),
+	check_num(Value,Num,IO,NIO),
+	NNum := Num + 1,
+	setenv(ucounter,NNum,NTbl,NNTbl),
+	resource_manager0(Self,NIO,SS,CM,DR,ME,NNTbl,In).
+resource_manager0([system_stream(SS0)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	SS = {SS0,SS1},
+	resource_manager0(Self,IO,SS1,CM,DR,ME,Tbl,In).
+resource_manager0([system(Req)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	SS = [Req|SS1],
+	resource_manager0(Self,IO,SS1,CM,DR,ME,Tbl,In).
+resource_manager0([code(Req)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	CM = [Req|CM1],
+	resource_manager0(Self,IO,SS,CM1,DR,ME,Tbl,In).
+resource_manager0([directory(Req)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	DR = [do(Req)|DR1],
+	resource_manager0(Self,IO,SS,CM,DR1,ME,Tbl,In).
+resource_manager0([window(Req)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	IO = [do(Req)|IO1],
+	resource_manager0(Self,IO1,SS,CM,DR,ME,Tbl,In).
+resource_manager0([interrupt(In0)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	In0 = In,
+	resource_manager0(Self,IO,SS,CM,DR,ME,Tbl,In).
+resource_manager0([macro_expander(Req)|Self],IO,SS,CM,DR,ME,Tbl,In):-
+     true|
+	ME = [Req|ME1],
+	resource_manager0(Self,IO,SS,CM,DR,ME1,Tbl,In).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+make_table(Tbl):-
+     true|
+	env_table(max,Key),
+	new_vector(Tbl,Key).
+
+getenv(Name,V,Tbl,NTbl):-
+     true|
+	env_table(Name,Key),
+	vector_element(Tbl,Key,V,NTbl).
+
+setenv(Name,V,Tbl,NTbl):-
+     true|
+	env_table(Name,Key),
+	set_vector_element(Tbl,Key,_,V,NTbl).
+
+env_table(world,    Key):- true| Key = 0.
+env_table(trace,    Key):- true| Key = 1.
+env_table(backtrace,Key):- true| Key = 2.
+env_table(modules,  Key):- true| Key = 3.
+env_table(reduction,Key):- true| Key = 4.
+env_table(ucounter ,Key):- true| Key = 5.
+env_table(savedir  ,Key):- true| Key = 6.
+env_table(loaddir,  Key):- true| Key = 7.
+env_table(auto_load,Key):- true| Key = 8.
+env_table(plength,  Key):- true| Key = 9.
+env_table(pdepth,   Key):- true| Key = 10.
+env_table(pvar,     Key):- true| Key = 11.
+env_table(max,      Key):- true| Key = 12.
+
+all_env(Envs):- true|Envs = [world,trace,backtrace,modules,
+			     reduction,ucounter,savedir,loaddir,auto_load,
+			     plength,pdepth,pvar].
+
+
+check_env(success,_,_,IO,NIO):-
+     true|
+	IO = NIO.
+otherwise.
+check_env(_,V,VN,IO,NIO):-
+     true|
+	IO = [putb(string#"Illegal environment variable ::: "),
+	      putb(VN),putb(string#" = "),putt(V),nl,flush(_)|NIO].
+
+
+check_num(V,Num,IO,NIO):-
+     integer(V)|
+	Num = V,
+	IO = NIO.
+otherwise.
+check_num(V,Num,IO,NIO):-
+     get_cpu_time(T)|
+	Num = T,
+	check_env(fail,V,string#"ucounter",IO,NIO).
+
+
+set_print_length(PL,PLS,IO,IO2):- PL >= 1 |
+	IO=[print_length(PL)|IO2],
+	PLS=success.
+otherwise.
+set_print_length(PL,PLS,IO,IO2):- true |
+	IO=IO2,
+	PLS=fail.
+
+set_print_depth(PD,PDS,IO,IO2):- PD >= 1 |
+	IO=[print_depth(PD)|IO2],
+	PDS=success.
+otherwise.
+set_print_depth(PD,PDS,IO,IO2):- true |
+	IO=IO2,
+	PDS=fail.
+
+set_print_var_mode(nu,PVS,IO,IO2):- true |
+	IO=[print_var_mode(nu)|IO2],
+	PVS=success.
+set_print_var_mode(na,PVS,IO,IO2):- true |
+	IO=[print_var_mode(na)|IO2],
+	PVS=success.
+otherwise.
+set_print_var_mode(PV,PVS,IO,IO2):- true |
+	IO=IO2,
+	PVS=fail.

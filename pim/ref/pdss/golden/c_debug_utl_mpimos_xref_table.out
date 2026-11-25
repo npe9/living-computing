@@ -1,0 +1,30 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../debug_utl/mpimos_xref_table.kl1" : Compiling ... predicate_table/4,predicate/7,entry_table/7,predicate_reference/5,predicate_reference_entry/4,predicate_ref_entry_list/6,undefined_predicate/3,uncalled_predicate/3,uncalled_predicate_list/3,self_check/4,uncalled_predicate_warning/5,module_table/7,module/14,module_entry_table/10,module_entry_list/10,module_reference/5,module_reference_entry/5,module_ref_entry_list/8,public_ref_entry_list/9,reference_entry/5,ref_entry_list/6,undefined_module/3,undefined_public/3,builtin_reference_entry/3,builtin_ref_entry_list/5,check_builtin_type/3,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193151     50    247    10    1584000        0
+After:      16163     38    120     3     146232        0
+GCed :     176988     12    127     7    1437768        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+set_nil/4,get_list_from_table/5,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193758     48    250     3    1584000        0
+After:     142348     33     91     3    1151432        0
+GCed :      51410     15    159     0     432568        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+init_module_table/2,END.
+
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195505     33    129     3    1582144        0
+After:     150036     30     79     3    1211464        0
+GCed :      45469      3     50     0     370680        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+[predicate_table/4,module_table/7,init_module_table/2]
+successdone
+
+exit 0
+asm 0ff90db62862bcfd33454b352678941c876a344456b0944baebcf8ff4cf84b65
+sav none

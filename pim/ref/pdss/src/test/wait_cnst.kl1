@@ -1,0 +1,233 @@
+%%% KL1-B Test for Wait_Constant %%%
+% Wait_Atom %%%%%%%%%%%%% abcdefgh
+% Wait_Nil %%%%%%%%%%%%%% abcdefgh
+% Wait_Integer %%%%%%%%%% abcdefgh
+% Wait_Float %%%%%%%%%%%% abcdefgh
+% Wait_Vector %%%%%%%%%%% abcdefgh
+
+:- module wait_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Wait_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Wait_Atom %%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(atom):- put_console(c#"a") | atm01.
+alternatively.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01([]).
+atm01(atom):- put_console(c#"*") | atm02.
+alternatively.
+atm01(_):- put_console(c#"b") | atm02.
+
+atm02:- true | atm02(1234).
+atm02(atom):- put_console(c#"*") | atm03.
+alternatively.
+atm02(_):- put_console(c#"c") | atm03.
+
+atm03:- true | atm03(12.34).
+atm03(atom):- put_console(c#"*") | atm04.
+alternatively.
+atm03(_):- put_console(c#"d") | atm04.
+
+atm04:- true | atm04([list]).
+atm04(atom):- put_console(c#"*") | atm05.
+alternatively.
+atm04(_):- put_console(c#"e") | atm05.
+
+atm05:- true | atm05({0,1}).
+atm05(atom):- put_console(c#"*") | atm06.
+alternatively.
+atm05(_):- put_console(c#"f") | atm06.
+
+atm06:- true | atm06(ascii#"String").
+atm06(atom):- put_console(c#"*") | atm07.
+alternatively.
+atm06(_):- put_console(c#"g") | atm07.
+
+atm07:- true | atm07(_).
+atm07(atom):- put_console(c#"*") | atm08.
+alternatively.
+atm07(_):- put_console(c#"h") | atm08.
+
+atm08:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Wait_Nil %%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | nil00(atom).
+nil00([]):- put_console(c#"*") | nil01.
+alternatively.
+nil00(_):- put_console(c#"a") | nil01.
+
+nil01:- true | nil01([]).
+nil01([]):- put_console(c#"b") | nil02.
+alternatively.
+nil01(_):- put_console(c#"*") | nil02.
+
+nil02:- true | nil02(1234).
+nil02([]):- put_console(c#"*") | nil03.
+alternatively.
+nil02(_):- put_console(c#"c") | nil03.
+
+nil03:- true | nil03(12.34).
+nil03([]):- put_console(c#"*") | nil04.
+alternatively.
+nil03(_):- put_console(c#"d") | nil04.
+
+nil04:- true | nil04([list]).
+nil04([]):- put_console(c#"*") | nil05.
+alternatively.
+nil04(_):- put_console(c#"e") | nil05.
+
+nil05:- true | nil05({0,1}).
+nil05([]):- put_console(c#"*") | nil06.
+alternatively.
+nil05(_):- put_console(c#"f") | nil06.
+
+nil06:- true | nil06(ascii#"String").
+nil06([]):- put_console(c#"*") | nil07.
+alternatively.
+nil06(_):- put_console(c#"g") | nil07.
+
+nil07:- true | nil07(_).
+nil07([]):- put_console(c#"*") | nil08.
+alternatively.
+nil07(_):- put_console(c#"h") | nil08.
+
+nil08:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Wait_Integer %%%%%%%%%% ") | int00.
+
+int00:- true | int00(atom).
+int00(1234):- put_console(c#"*") | int01.
+alternatively.
+int00(_):- put_console(c#"a") | int01.
+
+int01:- true | int01(1234).
+int01(1234):- put_console(c#"b") | int02.
+alternatively.
+int01(_):- put_console(c#"*") | int02.
+
+int02:- true | int02(123456).
+int02(1234):- put_console(c#"*") | int03.
+alternatively.
+int02(_):- put_console(c#"c") | int03.
+
+int03:- true | int03(12.34).
+int03(1234):- put_console(c#"*") | int04.
+alternatively.
+int03(_):- put_console(c#"d") | int04.
+
+int04:- true | int04([list]).
+int04(1234):- put_console(c#"*") | int05.
+alternatively.
+int04(_):- put_console(c#"e") | int05.
+
+int05:- true | int05({0,1}).
+int05(1234):- put_console(c#"*") | int06.
+alternatively.
+int05(_):- put_console(c#"f") | int06.
+
+int06:- true | int06(ascii#"String").
+int06(1234):- put_console(c#"*") | int07.
+alternatively.
+int06(_):- put_console(c#"g") | int07.
+
+int07:- true | int07(_).
+int07(1234):- put_console(c#"*") | int08.
+alternatively.
+int07(_):- put_console(c#"h") | int08.
+
+int08:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Wait_Float %%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(atom).
+flt00(12.34):- put_console(c#"*") | flt01.
+alternatively.
+flt00(_):- put_console(c#"a") | flt01.
+
+flt01:- true | flt01(1234).
+flt01(12.34):- put_console(c#"*") | flt02.
+alternatively.
+flt01(_):- put_console(c#"b") | flt02.
+
+flt02:- true | flt02(12.34).
+flt02(12.34):- put_console(c#"c") | flt03.
+alternatively.
+flt02(_):- put_console(c#"*") | flt03.
+
+flt03:- true | flt03(123.456).
+flt03(12.34):- put_console(c#"*") | flt04.
+alternatively.
+flt03(_):- put_console(c#"d") | flt04.
+
+flt04:- true | flt04([list]).
+flt04(12.34):- put_console(c#"*") | flt05.
+alternatively.
+flt04(_):- put_console(c#"e") | flt05.
+
+flt05:- true | flt05({0,1}).
+flt05(12.34):- put_console(c#"*") | flt06.
+alternatively.
+flt05(_):- put_console(c#"f") | flt06.
+
+flt06:- true | flt06(ascii#"String").
+flt06(12.34):- put_console(c#"*") | flt07.
+alternatively.
+flt06(_):- put_console(c#"g") | flt07.
+
+flt07:- true | flt07(_).
+flt07(12.34):- put_console(c#"*") | flt08.
+alternatively.
+flt07(_):- put_console(c#"h") | flt08.
+
+flt08:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Wait_Vector %%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00(atom).
+vec00({_,_}):- put_console(c#"*") | vec01.
+alternatively.
+vec00(_):- put_console(c#"a") | vec01.
+
+vec01:- true | vec01(1234).
+vec01({_,_}):- put_console(c#"*") | vec02.
+alternatively.
+vec01(_):- put_console(c#"b") | vec02.
+
+vec02:- true | vec02(12.34).
+vec02({_,_}):- put_console(c#"*") | vec03.
+alternatively.
+vec02(_):- put_console(c#"c") | vec03.
+
+vec03:- true | vec03([list]).
+vec03({_,_}):- put_console(c#"*") | vec04.
+alternatively.
+vec03(_):- put_console(c#"d") | vec04.
+
+vec04:- true | vec04({0,1}).
+vec04({_,_}):- put_console(c#"e") | vec05.
+alternatively.
+vec04(_):- put_console(c#"*") | vec05.
+
+vec05:- true | vec05({0,1,2}).
+vec05({_,_}):- put_console(c#"*") | vec06.
+alternatively.
+vec05(_):- put_console(c#"f") | vec06.
+
+vec06:- true | vec06(ascii#"String").
+vec06({_,_}):- put_console(c#"*") | vec07.
+alternatively.
+vec06(_):- put_console(c#"g") | vec07.
+
+vec07:- true | vec07(_).
+vec07({_,_}):- put_console(c#"*") | vec08.
+alternatively.
+vec07(_):- put_console(c#"h") | vec08.
+
+vec08:- put_console(key#lf) | done.
+
+done:- true | true.

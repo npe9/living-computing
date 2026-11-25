@@ -1,0 +1,79 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_booter.
+:- public start/0, kl1cmp_start/0, process_name_list/2.
+
+start :- true |
+    pdss_window_device:windows(TTY) @ priority(*,4080),
+    pdss_file_device:files(File) @ priority(*,4040),
+    pdss_timer_device:timer(Timer) @ priority(*,4040),
+    pdss_code_device:do(Code) @ priority(*,4040),
+    start(TTY, File, Timer, Code).
+
+start(TTY, File, Timer, Code) :- true |
+    mpimos_command_interpreter:create(SS1) @ priority(*,4088),
+    mpimos_window_manager:create(WM, TTY, SS2) @ priority(*,4084),
+    mpimos_file_manager:create(FM, File, SS3) @ priority(*,4040),
+    mpimos_timer_manager:create(TM, Timer, SS4) @ priority(*,4040),
+    mpimos_code_manager:create(CM, Code, SS5) @ priority(*,4040),
+    distributor(SS, [{window_manager,WM},{file_manager,FM},
+		     {timer_manager,TM},{code_manager,CM}]) @ priority(*,4040),
+    merge({SS1,SS2,SS3,SS4,SS5},SS).
+
+kl1cmp_start :- true |
+    pdss_window_device:windows(TTY) @ priority(*,4080),
+    pdss_file_device:files(File) @ priority(*,4040),
+    pdss_code_device:do(Code) @ priority(*,4040),
+    kl1cmp_start(TTY, File, Code).
+
+kl1cmp_start(TTY, File, Code) :- true |
+    mpimos_command_interpreter:kl1cmp_create(SS1) @ priority(*,4088),
+    mpimos_window_manager:create(WM, TTY, SS2) @ priority(*,4084),
+    mpimos_file_manager:create(FM, File, SS3) @ priority(*,4040),
+    mpimos_code_manager:create(CM, Code, SS5) @ priority(*,4040),
+    distributor(SS, [{window_manager,WM},{file_manager,FM},
+		     {code_manager,CM}]) @ priority(*,4040),
+    merge({SS1,SS2,SS3,SS5},SS).
+
+distributor([(PN:Req)|SS], Pool) :- true |
+    send(Pool, PN, Req, NewPool),
+    distributor(SS, NewPool).
+otherwise.
+distributor([Req|SS], Pool) :- true |
+    raise(1, 'ERROR', illegal_format(Req)),
+    distributor(SS, Pool).
+distributor([], _) :- true |
+    raise(1, 'ERROR', system_stream_closed).
+
+send(Pool, ProcessName, Request, NewPool) :- true |
+    find(Pool, ProcessName, Status, Stream, Rest),
+    send_request(Status, ProcessName, Request, Stream, Rest, NewPool).
+
+find([{PN,Str}|Rest], PN, Status, Str1, RestPool) :- true |
+    Str1=Str, Status=success, RestPool=Rest.
+otherwise.
+find([{PN,Str}|Rest], PN1, Status, Str1, RestPool) :- true |
+    RestPool=[{PN,Str}|RestPool1],
+    find(Rest, PN1, Status, Str1, RestPool1).
+find([], _, Status, _, RestPool) :- true |
+    RestPool=[], Status=failure.
+
+send_request(success, PN, Request, Stream, Rest, NewPool) :- true |
+    Stream=[Request|NewStream], NewPool=[{PN,NewStream}|Rest].
+otherwise.
+send_request(_, PN, Request, _, Rest, NewPool) :- true |
+    NewPool=Rest,
+    raise(1, 'ERROR', illegal_os_request(PN,Request)).
+
+process_name_list(shell,S) :- true | S=success.
+process_name_list(window_manager,S) :- true | S=success.
+process_name_list(file_manager,S) :- true | S=success.
+process_name_list(timer_manager,S) :- true | S=success.
+process_name_list(code_manager,S) :- true | S=success.
+otherwise.
+process_name_list(_,S) :- true | S=failure.

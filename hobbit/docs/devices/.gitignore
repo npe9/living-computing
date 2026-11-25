@@ -5,3 +5,5 @@
 # fetches them again and checks them.
 *.pdf
 *.pdf.part
+VGADOC_*.TXT
+VGADOC_*.TXT.part

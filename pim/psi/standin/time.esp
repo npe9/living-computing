@@ -8,10 +8,18 @@
 %   - gog-kl1 ESP/PLAYSLOT.ESP:83-84 (ICOT Free Software): `:create(#time,
 %     Time), :set_value(Time,0,0,S,M)` before `:on_after(Watch,Time)`;
 %   - docs/simpos/required/classes.tsv (row `time`): create/2, now/2,
-%     present/2, make_string/6, make_value/6, get_string/2, plus/3,
-%     set_value/5.  set_count/2 is pimfep's, not in that row.
-% Not stood in: now/2, set_value/5 and the rest.  The unit of set_count/2's
-% count is UNKNOWN.
+%     present/2, make_string/6, make_value/6; get_count/2, get_string/2,
+%     get_value/5, minus/3, plus/3, set_count/2, set_value/5.  The scan
+%     gained get_count/set_count/get_value/minus on 2026-11-25, when it
+%     learned that `:now(#time,T)` returns an instance (gog-esp
+%     CH_CLOCK.ESP:33-34 then :59-60 `:get_count(Obj!time,MS),
+%     :set_count(Obj!time,MS+1000)`; the same lines in gog-kl1).
+% Not stood in: get_count/2, now/2, set_value/5 and the rest.
+% The count is in MILLISECONDS: HELD-SOURCE gog-kl1 ESP/CH_CLOCK.ESP:60
+% `:set_count(Obj!time,MS+1000),       % 1000 msec interval`.  PIMOS
+% converts a timer count to msec before fep#on_at and fep#on_after
+% (server/fep/timer/time_dvc.kl1:199-210, `time_unit_translator:
+% trans({Unit,C},msec(C1))`).
 
 class time has
 
@@ -21,7 +29,8 @@ class time has
 
 instance
 
-% INTERPOLATED: the representation (OURS); the unit is UNKNOWN.
+% INTERPOLATED: the representation (OURS).  The count is in
+% MILLISECONDS (HELD-SOURCE: CH_CLOCK.ESP:60, above).
 attribute count := 0;
 
 % INTERPOLATED from: pimos_timer on_after/4 `:set_count(T,N)`.

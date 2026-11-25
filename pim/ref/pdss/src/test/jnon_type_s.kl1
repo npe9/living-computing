@@ -1,0 +1,242 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Jump_On_Non_Type (Suspend) %%%
+% Jump_On_Non_Atm %%%%%%% abcdef
+% Jump_On_Non_Integer %%% abcdef
+% Jump_On_Non_List %%%%%% abcdef
+% Jump_On_Non_Vector %%%% abcdef
+% Jump_On_Non_String %%%% abcdef
+% Jump_On_Non_Float %%%%% abcdef
+
+:- module jnon_type_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Jump_On_Non_Type (Suspend) %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Jump_On_Non_Atm %%%%%%% ") | atm00.
+
+atm00:- true | atm00(X), unify(X,atom).
+atm00(X):- atom(X), put_console(c#"a") | atm01.
+atm00(X):- floating_point(X), put_console(c#"*") | atm01.
+otherwise.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01(X), unify(X,1234).
+atm01(X):- atom(X), put_console(c#"*") | atm02.
+atm01(X):- floating_point(X), put_console(c#"*") | atm02.
+otherwise.
+atm01(_):- put_console(c#"b") | atm02.
+
+atm02:- true | atm02(X), unify(X,[list]).
+atm02(X):- atom(X), put_console(c#"*") | atm03.
+atm02(X):- floating_point(X), put_console(c#"*") | atm03.
+otherwise.
+atm02(_):- put_console(c#"c") | atm03.
+
+atm03:- true | atm03(X), unify(X,{0,1}).
+atm03(X):- atom(X), put_console(c#"*") | atm04.
+atm03(X):- floating_point(X), put_console(c#"*") | atm04.
+otherwise.
+atm03(_):- put_console(c#"d") | atm04.
+
+atm04:- true | atm04(X), unify(X,ascii#"String").
+atm04(X):- atom(X), put_console(c#"*") | atm05.
+atm04(X):- floating_point(X), put_console(c#"*") | atm05.
+otherwise.
+atm04(_):- put_console(c#"e") | atm05.
+
+atm05:- true | atm05(X), unify(X,12.34).
+atm05(X):- atom(X), put_console(c#"*") | atm06.
+atm05(X):- floating_point(X), put_console(c#"f") | atm06.
+
+atm06:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Jump_On_Non_Integer %%% ") | int00.
+
+int00:- true | int00(X), unify(X,atom).
+int00(X):- integer(X), put_console(c#"*") | int01.
+int00(X):- floating_point(X), put_console(c#"*") | int01.
+otherwise.
+int00(_):- put_console(c#"a") | int01.
+
+int01:- true | int01(X), unify(X,1234).
+int01(X):- integer(X), put_console(c#"b") | int02.
+int01(X):- floating_point(X), put_console(c#"*") | int02.
+otherwise.
+int01(_):- put_console(c#"*") | int02.
+
+int02:- true | int02(X), unify(X,[list]).
+int02(X):- integer(X), put_console(c#"*") | int03.
+int02(X):- floating_point(X), put_console(c#"*") | int03.
+otherwise.
+int02(_):- put_console(c#"c") | int03.
+
+int03:- true | int03(X), unify(X,{0,1}).
+int03(X):- integer(X), put_console(c#"*") | int04.
+int03(X):- floating_point(X), put_console(c#"*") | int04.
+otherwise.
+int03(_):- put_console(c#"d") | int04.
+
+int04:- true | int04(X), unify(X,ascii#"String").
+int04(X):- integer(X), put_console(c#"*") | int05.
+int04(X):- floating_point(X), put_console(c#"*") | int05.
+otherwise.
+int04(_):- put_console(c#"e") | int05.
+
+int05:- true | int05(X), unify(X,12.34).
+int05(X):- integer(X), put_console(c#"*") | int06.
+int05(X):- floating_point(X), put_console(c#"f") | int06.
+
+int06:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% Jump_On_Non_List %%%%%% ") | lst00.
+
+lst00:- true | lst00(X), unify(X,atom).
+lst00(X):- list(X), put_console(c#"*") | lst01.
+lst00(X):- floating_point(X), put_console(c#"*") | lst01.
+otherwise.
+lst00(_):- put_console(c#"a") | lst01.
+
+lst01:- true | lst01(X), unify(X,1234).
+lst01(X):- list(X), put_console(c#"*") | lst02.
+lst01(X):- floating_point(X), put_console(c#"*") | lst02.
+otherwise.
+lst01(_):- put_console(c#"b") | lst02.
+
+lst02:- true | lst02(X), unify(X,[list]).
+lst02(X):- list(X), put_console(c#"c") | lst03.
+lst02(X):- floating_point(X), put_console(c#"*") | lst03.
+otherwise.
+lst02(_):- put_console(c#"*") | lst03.
+
+lst03:- true | lst03(X), unify(X,{0,1}).
+lst03(X):- list(X), put_console(c#"*") | lst04.
+lst03(X):- floating_point(X), put_console(c#"*") | lst04.
+otherwise.
+lst03(_):- put_console(c#"d") | lst04.
+
+lst04:- true | lst04(X), unify(X,ascii#"String").
+lst04(X):- list(X), put_console(c#"*") | lst05.
+lst04(X):- floating_point(X), put_console(c#"*") | lst05.
+otherwise.
+lst04(_):- put_console(c#"e") | lst05.
+
+lst05:- true | lst05(X), unify(X,12.34).
+lst05(X):- list(X), put_console(c#"*") | lst06.
+lst05(X):- floating_point(X), put_console(c#"f") | lst06.
+
+lst06:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% Jump_On_Non_Vector %%%% ") | vec00.
+
+vec00:- true | vec00(X), unify(X,atom).
+vec00(X):- vector(X), put_console(c#"*") | vec01.
+vec00(X):- floating_point(X), put_console(c#"*") | vec01.
+otherwise.
+vec00(_):- put_console(c#"a") | vec01.
+
+vec01:- true | vec01(X), unify(X,1234).
+vec01(X):- vector(X), put_console(c#"*") | vec02.
+vec01(X):- floating_point(X), put_console(c#"*") | vec02.
+otherwise.
+vec01(_):- put_console(c#"b") | vec02.
+
+vec02:- true | vec02(X), unify(X,[list]).
+vec02(X):- vector(X), put_console(c#"*") | vec03.
+vec02(X):- floating_point(X), put_console(c#"*") | vec03.
+otherwise.
+vec02(_):- put_console(c#"c") | vec03.
+
+vec03:- true | vec03(X), unify(X,{0,1}).
+vec03(X):- vector(X), put_console(c#"d") | vec04.
+vec03(X):- floating_point(X), put_console(c#"*") | vec04.
+otherwise.
+vec03(_):- put_console(c#"*") | vec04.
+
+vec04:- true | vec04(X), unify(X,ascii#"String").
+vec04(X):- vector(X), put_console(c#"*") | vec05.
+vec04(X):- floating_point(X), put_console(c#"*") | vec05.
+otherwise.
+vec04(_):- put_console(c#"e") | vec05.
+
+vec05:- true | vec05(X), unify(X,12.34).
+vec05(X):- vector(X), put_console(c#"*") | vec06.
+vec05(X):- floating_point(X), put_console(c#"f") | vec06.
+
+vec06:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% Jump_On_Non_String %%%% ") | str00.
+
+str00:- true | str00(X), unify(X,atom).
+str00(X):- string(X), put_console(c#"*") | str01.
+str00(X):- floating_point(X), put_console(c#"*") | str01.
+otherwise.
+str00(_):- put_console(c#"a") | str01.
+
+str01:- true | str01(X), unify(X,1234).
+str01(X):- string(X), put_console(c#"*") | str02.
+str01(X):- floating_point(X), put_console(c#"*") | str02.
+otherwise.
+str01(_):- put_console(c#"b") | str02.
+
+str02:- true | str02(X), unify(X,[list]).
+str02(X):- string(X), put_console(c#"*") | str03.
+str02(X):- floating_point(X), put_console(c#"*") | str03.
+otherwise.
+str02(_):- put_console(c#"c") | str03.
+
+str03:- true | str03(X), unify(X,{0,1}).
+str03(X):- string(X), put_console(c#"*") | str04.
+str03(X):- floating_point(X), put_console(c#"*") | str04.
+otherwise.
+str03(_):- put_console(c#"d") | str04.
+
+str04:- true | str04(X), unify(X,ascii#"String").
+str04(X):- string(X), put_console(c#"e") | str05.
+str04(X):- floating_point(X), put_console(c#"*") | str05.
+otherwise.
+str04(_):- put_console(c#"*") | str05.
+
+str05:- true | str05(X), unify(X,12.34).
+str05(X):- string(X), put_console(c#"*") | str06.
+str05(X):- floating_point(X), put_console(c#"f") | str06.
+
+str06:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Jump_On_Non_Float %%%%% ") | flt00.
+
+flt00:- true | flt00(X), unify(X,atom).
+flt00(1.2):- put_console(c#"*") | flt01.
+flt00(X):- floating_point(X), put_console(c#"*") | flt01.
+flt00(X):- wait(X), put_console(c#"a") | flt01.
+
+flt01:- true | flt01(X), unify(X,1234).
+flt01(1.2):- put_console(c#"*") | flt02.
+flt01(X):- floating_point(X), put_console(c#"*") | flt02.
+flt01(X):- wait(X), put_console(c#"b") | flt02.
+
+flt02:- true | flt02(X), unify(X,[list]).
+flt02(1.2):- put_console(c#"*") | flt03.
+flt02(X):- floating_point(X), put_console(c#"*") | flt03.
+flt02(X):- wait(X), put_console(c#"c") | flt03.
+
+flt03:- true | flt03(X), unify(X,{0,1}).
+flt03(1.2):- put_console(c#"*") | flt04.
+flt03(X):- floating_point(X), put_console(c#"*") | flt04.
+flt03(X):- wait(X), put_console(c#"d") | flt04.
+
+flt04:- true | flt04(X), unify(X,ascii#"String").
+flt04(1.2):- put_console(c#"*") | flt05.
+flt04(X):- floating_point(X), put_console(c#"*") | flt05.
+flt04(X):- wait(X), put_console(c#"e") | flt05.
+
+flt05:- true | flt05(X), unify(X,12.34).
+flt05(1.2):- put_console(c#"*") | flt06.
+flt05(X):- floating_point(X), put_console(c#"f") | flt06.
+flt05(X):- wait(X), put_console(c#"*") | flt06.
+
+flt06:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,Y):- true | X=Y.

@@ -1,0 +1,94 @@
+%%% KL1-B Test for B_Vector %%%
+% B_Vector %%%%%%%%%%%%%% abc
+% B_New_Vector %%%%%%%%%% ab
+% B_Vector_Element %%%%%% abc
+% B_Set_Vector_Element %% abc
+
+:- module b_vector.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Vector %%%"), put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% B_Vector %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00({}).
+vec00(X):- true | vector(X,A,B), vec00ans(A,B).
+vec00ans(0,{}):- put_console(c#"a") | vec01.
+otherwise.
+vec00ans(_,_):- put_console(c#"*") | vec01.
+
+vec01:- true | vec01({E,1}), E=(0).
+vec01(X):- true | vector(X,A,B), vec01ans(A,B).
+vec01ans(2,{0,1}):- put_console(c#"b") | vec02.
+otherwise.
+vec01ans(_,_):- put_console(c#"*") | vec02.
+
+vec02:- true | vec02({0,1}).
+vec02(X):- true | vector(X,A,B), vec02ans(A,B).
+vec02ans(2,{0,1}):- put_console(c#"c") | vec03.
+otherwise.
+vec02ans(_,_):- put_console(c#"*") | vec03.
+
+vec03:- put_console(key#lf) | nvc.
+
+nvc:- put_console(ascii#"% B_New_Vector %%%%%%%%%% ") | nvc00.
+
+nvc00:- true | nvc00(0).
+nvc00(X):- true | new_vector(A,X), nvc00ans(A).
+nvc00ans({}):- put_console(c#"a") | nvc01.
+otherwise.
+nvc00ans(_):- put_console(c#"*") | nvc01.
+
+nvc01:- true | nvc01(2).
+nvc01(X):- true | new_vector(A,X), nvc01ans(A).
+nvc01ans({0,0}):- put_console(c#"b") | nvc02.
+otherwise.
+nvc01ans(_):- put_console(c#"*") | nvc02.
+
+nvc02:- put_console(key#lf) | vce.
+
+vce:- put_console(ascii#"% B_Vector_Element %%%%%% ") | vce00.
+
+vce00:- true | vce00({E,1,2},0), E=(0).
+vce00(X,Y):- true | vector_element(X,Y,A,B), vce00ans(A,B).
+vce00ans(0,{0,1,2}):- put_console(c#"a") | vce01.
+otherwise.
+vce00ans(_,_):- put_console(c#"*") | vce01.
+
+vce01:- true | vce01({0,1,2},0).
+vce01(X,Y):- true | vector_element(X,Y,A,B), vce01ans(A,B).
+vce01ans(0,{0,1,2}):- put_console(c#"b") | vce02.
+otherwise.
+vce01ans(_,_):- put_console(c#"*") | vce02.
+
+vce02:- true | vce02({0,1,2},2).
+vce02(X,Y):- true | vector_element(X,Y,A,B), vce02ans(A,B).
+vce02ans(2,{0,1,2}):- put_console(c#"c") | vce03.
+otherwise.
+vce02ans(_,_):- put_console(c#"*") | vce03.
+
+vce03:- put_console(key#lf) | sve.
+
+sve:- put_console(ascii#"% B_Set_Vector_Element %% ") | sve00.
+
+sve00:- true | sve00({E,1,2},0,3), E=(0).
+sve00(X,Y,Z):- true | set_vector_element(X,Y,A,Z,B), sve00ans(A,B).
+sve00ans(0,{3,1,2}):- put_console(c#"a") | sve01.
+otherwise.
+sve00ans(_,_):- put_console(c#"*") | sve01.
+
+sve01:- true | sve01({0,1,2},0,3).
+sve01(X,Y,Z):- true | set_vector_element(X,Y,A,Z,B), sve01ans(A,B).
+sve01ans(0,{3,1,2}):- put_console(c#"b") | sve02.
+otherwise.
+sve01ans(_,_):- put_console(c#"*") | sve02.
+
+sve02:- true | sve02({0,1,2},2,3).
+sve02(X,Y,Z):- true | set_vector_element(X,Y,A,Z,B), sve02ans(A,B).
+sve02ans(2,{0,1,3}):- put_console(c#"c") | sve03.
+otherwise.
+sve02ans(_,_):- put_console(c#"*") | sve03.
+
+sve03:- put_console(key#lf) | done.
+
+done:- true | true.

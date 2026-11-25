@@ -1,0 +1,54 @@
+!runtime/shoen
+!runtime/coddev
+!runtime/windev
+!runtime/fildev
+!runtime/timdev
+!mpimos/boot
+!mpimos/shell
+!mpimos/macro_ex
+!mpimos/task_monitor
+!mpimos/optbl
+!mpimos/builtin
+!mpimos/cmd_basic
+!mpimos/cmd_code
+!mpimos/cmd_debug
+!mpimos/cmd_dir
+!mpimos/cmd_env
+!mpimos/cmd_utl
+!mpimos/code_man
+!mpimos/module_pool
+!mpimos/pool_mli
+!mpimos/file_man
+ mpimos/dummy_file
+!mpimos/file
+!mpimos/file_drv
+!mpimos/window_man
+ mpimos/dummy_window
+!mpimos/window
+!mpimos/window_drv
+ mpimos/dummy_dir
+!mpimos/dir
+!mpimos/dir_drv
+!mpimos/timer_man
+ mpimos/mpimos_iodev
+!mpimos/mpimos_windev
+!mpimos/mpimos_fildev
+!mpimos/mpimos_timdev
+!mpimos/op
+!mpimos/parser
+!mpimos/unparser
+!mpimos/utl
+!compiler/com
+!compiler/comp
+!compiler/norm
+!compiler/reader
+!compiler/mrb
+!compiler/reg
+!compiler/outp
+!compiler/blt
+!compiler/macro
+!compiler/macarg
+!compiler/mactbl
+!compiler/struct
+
+mpimos_booter:start.

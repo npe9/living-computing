@@ -1,0 +1,115 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS File device driver.
+
+:- module mpimos_file_device_driver.
+:- public create/7, device_create/7.
+:- with_macro pdss.
+
+%%  Create file process.
+%%  create(Req,FS,MI,MO,TF,FN,Md).
+%%	Req :: Request stream from user.
+%%	FS  :: File stream to device.
+%%	MI  :: File monitor stream (in).
+%%	MO  :: File monitor stream (out).
+%%	TF  :: Termination flag.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+
+create(Req,FS,MI,MO,TF,FN,Md) :-
+    true |
+	FS = reset(Abort,_,_,FS2),
+	file(Req,FS2,MI,MO,TF,_,Abort,atr(FN,Md)).
+
+device_create(Req,FS,MI,MO,TF,FN,Md) :-
+    true |
+	file(Req,FS,MI,MO,TF,_,_,atr(FN,Md)).
+
+%%  File process.
+%%  file(Req,FS,MI,MO,TF,AF,Ab,Atr).
+%%	Req :: Request stream from user.
+%%	FS  :: File stream to device.
+%%	MI  :: File monitor stream (in).
+%%	MO  :: File monitor stream (out).
+%%	TF  :: Termination flag.
+%%	AF  :: Abort flag from user.
+%%	Ab  :: Abort flag.
+%%	Atr :: Attribute of file (file-name,mode).
+
+file(Req,FS,MI,MO,TF,fep#abort,Ab,Atr) :-
+    true |
+	Ab = fep#abort,
+	file(Req,FS,MI,MO,TF,_,_,Atr).
+alternatively.
+file(Req,FS,MI,MO,die,AF,Ab,Atr) :-
+    true |
+	FS = [],
+	MI = MO,
+	Ab = fep#abort.
+alternatively.
+file([reset(Abort,_,S)|Req],FS,MI,MO,TF,_,_,Atr) :-
+    true |
+	FS=reset(Ab,_,S,FS2),
+	file(Req,FS2,MI,MO,TF,Abort,Ab,Atr).
+file([getc(Char,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = getc(Char,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([getl(String,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = getl(String,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([getb(String,Len,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = getb(Len,String,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([gettkn(TokenList,Sts,NV)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = gettkn(TokenList,NV,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([putc(Char,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = putc(Char,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([putl(String,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = putl(String,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([putb(String,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = putb(String,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([putt(Term,Len,Dep,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = putt(Term,Len,Dep,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([end_of_file(Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = end_of_file(Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([pathname(PathName,Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = pathname(PathName,Sts,FS2),
+	file(Req,FS2,MI,MO,TF,AF,Ab,Atr).
+file([do(L)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	append(L,Req,Req2),
+	file(Req2,FS,MI,MO,TF,AF,Ab,Atr).
+file([close(Sts)|Req],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = close(Sts),
+	file(Req,_,MI,MO,TF,AF,Ab,Atr).
+file([],FS,MI,MO,TF,AF,Ab,Atr) :-
+    true |
+	FS = [],
+	MI = MO.
+
+%%  append.
+
+append([X|X1],Y,Z) :- true | Z = [X|Z1], append(X1,Y,Z1).
+append([],    Y,Z) :- true | Z = Y.

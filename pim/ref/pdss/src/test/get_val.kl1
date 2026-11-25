@@ -1,0 +1,85 @@
+%%% KL1-B Test for Get_Value %%%
+% (Atom) %%%%%%%%%%%%%%%% ab
+% (Integer) %%%%%%%%%%%%% ab
+% (Float) %%%%%%%%%%%%%%% ab
+% (List) %%%%%%%%%%%%%%%% ab
+% (Vector) %%%%%%%%%%%%%% ab
+
+:- module get_val.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Get_Value %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% (Atom) %%%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | unify(X,atom), atm00(X).
+atm00(atom):- put_console(c#"a") | atm01.
+otherwise.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01(X), unify(X,atom).
+atm01(atom):- put_console(c#"b") | atm02.
+otherwise.
+atm01(_):- put_console(c#"*") | atm02.
+
+atm02:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% (Integer) %%%%%%%%%%%%% ") | int00.
+
+int00:- true | unify(X,1234), int00(X).
+int00(1234):- put_console(c#"a") | int01.
+otherwise.
+int00(_):- put_console(c#"*") | int01.
+
+int01:- true | int01(X), unify(X,1234).
+int01(1234):- put_console(c#"b") | int02.
+otherwise.
+int01(_):- put_console(c#"*") | int02.
+
+int02:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% (Float) %%%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | unify(X,12.34), flt00(X).
+flt00(12.34):- put_console(c#"a") | flt01.
+otherwise.
+flt00(_):- put_console(c#"*") | flt01.
+
+flt01:- true | flt01(X), unify(X,12.34).
+flt01(12.34):- put_console(c#"b") | flt02.
+otherwise.
+flt01(_):- put_console(c#"*") | flt02.
+
+flt02:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% (List) %%%%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | unify(X,[list]), lst00(X).
+lst00([_|_]):- put_console(c#"a") | lst01.
+otherwise.
+lst00(_):- put_console(c#"*") | lst01.
+
+lst01:- true | lst01(X), unify(X,[list]).
+lst01([_|_]):- put_console(c#"b") | lst02.
+otherwise.
+lst01(_):- put_console(c#"*") | lst02.
+
+lst02:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% (Vector) %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | unify(X,{0,1}), vec00(X).
+vec00({_,_}):- put_console(c#"a") | vec01.
+otherwise.
+vec00(_):- put_console(c#"*") | vec01.
+
+vec01:- true | vec01(X), unify(X,{0,1}).
+vec01({_,_}):- put_console(c#"b") | vec02.
+otherwise.
+vec01(_):- put_console(c#"*") | vec02.
+
+vec02:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,Y):- true | X=Y.

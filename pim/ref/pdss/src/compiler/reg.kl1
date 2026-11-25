@@ -1,0 +1,346 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Register Allocation
+%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_register.
+:- public compile_predicate/9.
+
+:- local_implicit io:oldnew, error:oldnew, opt:shared.
+
+%:- mode compile_predicate(+, +, +, +, -, ? ).
+compile_predicate(Module, Blocks, Pred, C0) --> true |
+ {{kl1cmp_output:write_code_header(&io, Pred, Module),
+   kl1cmp_output:write_label(&io, Pred)}},
+   compile_predicate(Blocks, Pred, C0),
+ {{kl1cmp_output:write_code_end(&io, Pred)}}.
+
+compile_predicate([], _, _) --> true | true.
+compile_predicate([One], Pred, C0) --> true |
+  compile_last_one_block(One, Pred, C0).
+compile_predicate( [One_block|Rest], Pred, C0) --> true |
+  compile_one_block( One_block, Pred, C0, C1),
+  compile_predicate(Rest, Pred, C1).
+
+% added 871021 D.Sekita
+compile_last_one_block([otherwise], _, _) --> true |
+  &error<<=[warning_message(string#"There is no cluase after otherwise", [])].
+compile_last_one_block([alternatively], _, _) --> true |
+  &error<<=[warning_message(string#"There is no clause after alternatively", [])].
+otherwise.
+compile_last_one_block([One], Pred, _) --> true |
+  compile_and_output_one_clause(0, One, Pred, 0, _).
+otherwise.
+compile_last_one_block([otherwise|Rest], Pred, C0) --> true |
+{{kl1cmp_output:write_otherwise(&io, Pred)}},
+  compile_last_one_block(Rest, Pred, C0).
+compile_last_one_block([alternatively|Rest], Pred, C0) --> true |
+{{kl1cmp_output:write_alternatively(&io)}},
+  compile_last_one_block(Rest, Pred, C0).
+otherwise.
+compile_last_one_block([One|Rest], Pred, C0) --> true |
+  compile_and_output_one_clause(0, One, Pred, C0, C1),
+%{{kl1cmp_output:write_label(&io, Pred/C0)}},
+  compile_last_one_block(Rest, Pred, C1).
+
+compile_and_output_one_clause(Nopt, One, Pred, C0, C) --> true |
+ {{kl1cmp_reader:herrey(Nv, [], From),
+   kl1cmp_reader:herrey(Nv, [], To),
+   kl1cmp_reader:herrey(Nv, [], Reg),
+   kl1cmp_compile:compile_one_clause(&error, Code0, [],	Nopt, One, Pred/C0,
+	From, From0, To, To0, Reg, Reg0, Argtbl, Nv, PC0, Attr),
+   kl1cmp_mrb:mrb_optimization(MrbCode, [], PC0, PC, From0, From1, To0, To1,
+		&opt, Code0, Nv, Argtbl, Attr),
+   kl1cmp_reader:herrey(PC, [], Used0),
+   register_predefined(From1, From2, To1, To2, Reg0, Reg1, Used0, Used1, Nv),
+   register_preference(&error, success, Ans1,
+		From2, From3, To2, To3, Reg1, Reg2, Used1, Used2, MrbCode),
+   determine_registers(&error, Ans1, Ans, From3, From4, To3, To4, Reg2, Reg3,
+					Used2, _, Nv, 0),
+   output_code_or_retry(&io, &error, &opt, Ans, Nopt, Nv, From4, To4, Reg3,
+	Pred, C0, MrbCode, One),
+   C := C0+1}}.
+
+output_code_or_retry(success, _, Nv, From, To, Reg, Pred, C0,
+	Code, Src) --> true |
+ {{kl1cmp_reader:herrey(Nv, [], Type0),
+   kl1cmp_output:erace_or_convert_instruction(From, To,
+		Reg, Type0, OutCode, [], 0, Code),
+   kl1cmp_output:convert_code_for_PDSS(OutCode1, [], OutCode),
+   kl1cmp_output:write_object_code(&io, OutCode1),
+   kl1cmp_output:write_label(&io, Pred/C0)}}.
+output_code_or_retry(fail, 0, _, _, _, _, Pred, C0, Code, Src) --> true |
+   &error<<=[warning_message(string#"Try to compile once more : ", [Src])],
+   compile_and_output_one_clause(1, Src, Pred, C0, _).
+otherwise.
+output_code_or_retry(_, _, _, _, _, _, _, _, _, Src) --> true |
+   &error<<=[error_message(string#"Insufficient register. deleted : ", [Src])].
+
+:- local_implicit io:oldnew, error:oldnew, opt:shared.
+% This predicate was originaly compile_predicate 870914 D,Sekita
+%:- mode compile_one_block(+, +, +, -, +, -, ?).
+compile_one_block([otherwise|Rest], Pred, C0, C) --> true |
+  {{kl1cmp_output:write_otherwise(&io, Pred)}},
+    compile_one_block(Rest, Pred, C0, C).
+compile_one_block([alternatively|Rest], Pred, C0, C) --> true |
+  {{kl1cmp_output:write_alternatively(&io)}},
+    compile_one_block(Rest, Pred, C0, C).
+otherwise.
+compile_one_block([One|Rest], Pred, C0, C) --> true |
+    compile_and_output_one_clause(0, One, Pred, C0, C1),
+    compile_one_block(Rest, Pred, C1, C).
+compile_one_block([], _, C0, C) --> true | {{C0 = C}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Register allocation  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit from:oldnew, to:oldnew, reg:oldnew, used:oldnew.
+
+register_predefined(0)--> true | true.
+otherwise.
+register_predefined(V)--> V1:=V-1 |
+   init_used_table(V1),
+   register_predefined(V1).
+
+init_used_table(V1) --> vector_element(&reg(old), V1, []) | true.
+init_used_table(V1) --> vector_element(&reg(old), V1, R), integer(R) |
+ {{ref_vector(&from, V1, Fv),
+   ref_vector(&to, V1, Tv),
+   use_register(&used, Fv, Tv, R)}}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Register preferences  %%%%%%%%%%%%%%%%%%%%%%%%%%
+:- local_implicit io:oldnew, ans:oldnew,
+         from:oldnew, to:oldnew, reg:oldnew, used:oldnew.
+
+%:- mode register_preference(+, +, ?, +, -, -, ?).
+register_preference([]) --> true | true.
+register_preference([Instr|Code]) --> true |
+   one_register_pref(Instr),
+   register_preference(Code).
+
+%:- mode one_register_pref(+, +, ?, +, -, -, ?).
+% When call 'one_register_pref_foo', you must notice that the 1st argument
+% must not be alloceted to any register, and 2nd argument must be alloceted
+% to  a register. This source code is wrong in this sense.
+
+one_register_pref(wait_variable('$VAR'(X, _),'$VAR'(Y, _)))--> true |
+    {{ref_vector(&reg, X, Rx),
+      ref_vector(&reg, Y, Ry)}},
+      allocate_on_same_registers(Rx, Ry, X, Y).
+one_register_pref(put_value('$VAR'(X, _),'$VAR'(Y, _))) --> true |
+    {{ref_vector(&reg, X, Rx),
+      ref_vector(&reg, Y, Ry)}},
+      allocate_on_same_registers(Rx, Ry, X, Y).
+one_register_pref(trans_value('$VAR'(X, _),'$VAR'(Y, _))) --> true |
+    {{ref_vector(&reg, X, Rx),
+      ref_vector(&reg, Y, Ry)}},
+      allocate_on_same_registers(Rx, Ry, X, Y).
+otherwise.
+one_register_pref(_) --> true | true.
+allocate_on_same_registers([], [], X, Y) --> true |
+   one_register_pref_bar(X, Y).
+otherwise.
+allocate_on_same_registers(Rx, [], X, Y) --> true |
+   one_register_pref_foo(Y, X, Rx).
+allocate_on_same_registers([], Ry, X, Y) --> true |
+   one_register_pref_foo(X, Y, Ry).
+otherwise.
+allocate_on_same_registers(_, _, _, _) --> true | true.
+
+% There is a preference, lets see if we can use it.
+%%:- mode one_register_pref_foo(+, +, +, +, +, +, -). debug D.Sekita 870825
+one_register_pref_foo(X, Y, R) --> true |
+ {{ref_vector(&from, X, Fx),
+   ref_vector(&from, Y, Fy),
+   ref_vector(&to, X, Tx),
+   ref_vector(&to, Y, Ty),
+   return_less(Fx, Fy, F), return_greater(Ty, Tx, T),
+   register_available(&used, F, Fy, R, yes, PF),
+   register_available(&used, Ty, T, R, PF, PT),
+   decision_on_answer(&used, PT, F, Fy, R),
+   decision_on_answer(&used, PT, Ty, T, R),
+   one_register_pref_foobar_or_not(&from, &to, &reg, PT, X, Y, R, F, T)}}.
+
+:- local_implicit used:oldnew.
+decision_on_answer(yes, P1, P2, R) --> true |
+   use_register(P1, P2, R).
+otherwise.
+decision_on_answer(_, _, _, _) --> true | true.
+
+:- local_implicit from:oldnew, to:oldnew, reg:oldnew.
+one_register_pref_foobar_or_not(yes, X, Y, R, F1, F2) --> true |
+   one_register_pref_foobar(X, Y, R, F1, F2).
+otherwise.
+one_register_pref_foobar_or_not(_, _, _, _, _, _) --> true | true.
+
+
+:- local_implicit io:oldnew, ans:oldnew,
+		from:oldnew, to:oldnew, reg:oldnew, used:oldnew.
+%%:- mode one_register_pref_bar(+, +, +, +, +, -, -, ?).debug D.Sekita 870825
+one_register_pref_bar(X, Y) --> true |
+  {{ref_vector(&from, X, Fx),
+    ref_vector(&from, Y, Fy),
+    ref_vector(&to, X, Tx),
+    ref_vector(&to, Y, Ty),
+    return_less(Fx, Fy, F), return_greater(Ty, Tx, T),
+    number_of_registers(Max),
+    find_free_register(&io, &ans, &used, 1, Max, R, F, T),
+    one_register_pref_foobar(&from, &to, &reg, X, Y, R, F, T)}}.
+
+:- local_implicit from:oldnew, to:oldnew, reg:oldnew.
+one_register_pref_foobar(X, Y, R, F, T) --> true |
+ {{set_vector(&from, X, F),
+   set_vector(&from, Y, F),
+   set_vector(&to, X, T),
+   set_vector(&to, Y, T),
+   set_vector(&reg, X, R),
+   set_vector(&reg, Y, R)}}.
+
+%:- mode return_less(+, +, -).
+return_less(X, Y, Z) :- X < Y | X=Z.
+return_less(X, Y, Z) :- X >= Y | Y=Z.
+
+%:- mode return_greater(+, +, -).
+return_greater(X, Y, Z) :- X > Y | X=Z.
+return_greater(X, Y, Z) :- X =< Y | Y=Z.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Determine registers  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit io:oldnew, ans:oldnew,
+		from:oldnew, to:oldnew, reg:oldnew, used:oldnew.
+%:- mode determine_registers(+, +, +, +, +, -, -, -, +, -, -, ?).
+determine_registers(0, _) --> true | true.
+otherwise.
+determine_registers(V, I) --> vector_element(&reg(old), I, []) |
+  {{ref_vector(&from, I, F),
+    ref_vector(&to, I, T)}},
+    check_void_variable(F, T, I),
+  {{V1 := V-1, I1 := I+1}},
+    determine_registers(V1, I1).
+otherwise.
+determine_registers(V, I) --> true |
+ {{V1 := V-1, I1 := I+1}},
+   determine_registers(V1, I1).
+
+check_void_variable(F, F, I) --> true |
+    {{set_vector(&reg, I, 0)}}.
+otherwise.
+check_void_variable(F, T, I) --> true |
+    {{number_of_registers(Max),
+      find_free_register(&io, &ans, &used, 1, Max, R, F, T),
+      set_vector(&reg, I, R)}}.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Find a free register  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%:- mode number_of_registers(-).
+% The number of th registers of Muti-PSI is 32.
+number_of_registers(X) :- true | X=33.
+
+:- local_implicit io:oldnew, ans:oldnew, used:oldnew.
+
+find_free_register(Max, Max, R, _, _) --> true |
+ {{R=0}},
+   &ans<=fail,
+   &io<<=[warning_message(string#"There are no enough registers :", [])].
+find_free_register(N, Max, R, F, T) --> N < Max |
+ {{register_available(&used, F, T, N, yes, P)}},
+ ( P=yes ->
+    {{N=R, use_register(&used, F, T, R)}} ;
+   P=no ->
+    {{N1 := N+1}},
+     find_free_register(N1, Max, R, F, T)).
+
+:- local_implicit used:oldnew.
+
+%:- mode register_available(+, +, +, +, -).
+register_available(To, To, _, P0, P) --> true |
+  {{P=P0}}.
+otherwise.
+register_available(From, To, R, P0, P) --> true |
+  {{rep_vector(&used, From, N, N1)}},
+    register_available_on_one_pc(N, N1, From, To, R, P0, P).
+
+register_available_on_one_pc([], N, From, To, R, P0, P) --> true |
+  {{From1 := From+1, N=[]}},
+   register_available(From1, To, R, P0, P).
+otherwise.
+register_available_on_one_pc(N, N1, From, To, R, P0, P) --> true |
+  {{get_one_used_element(N, N1, R, Ans)}},
+    register_free_or_not(Ans, From, To, R, P0, P).
+
+register_free_or_not(no, _, _, _, _, P) --> true |
+  {{P=no}}.
+otherwise.
+register_free_or_not(_, From, To, R, P0, P)--> true |
+  {{From1 := From+1}},
+   register_available(From1, To, R, P0, P).
+
+%get_one_used_element(N, N1, R, Ans) :- vector_element(N, R, 1) |
+%   Ans=no, N1=N.
+%otherwise.
+%get_one_used_element(N, N1, _, Ans) :- true | Ans=yes, N=N1.
+
+get_one_used_element(N, N1, R, Ans) :- R1 := R-1, R2 := 1<<R1,
+			E:=N/\ R2, E =\= 0 | Ans= no, N=N1.
+otherwise.
+get_one_used_element(N, N1, _, Ans) :- true | Ans=yes, N=N1.
+
+:- local_implicit used:oldnew.
+
+use_register(From, To, R) --> true |
+ {{number_of_registers(X)}},
+   use_register(X, From, To, R).
+
+use_register(Bref0, Bref, _, To, To, _) :- true | Bref0=Bref.
+otherwise.
+use_register(Bref0, Bref, Max, From, To, R) :- true |
+   set_vector_element(Bref0, From, N, N1, Bref1),
+   allocate_used_table_element(Bref1, Bref, N, N1, Max, From, To, R).
+
+allocate_used_table_element([], N, Max, From, To, R) --> true |
+ {{new_used_table_element(Max, N0),
+   reserve_register(N0, R, N),
+   From1:=From+1}},
+   use_register(Max, From1, To, R).
+otherwise.
+allocate_used_table_element(N, N1, Max, From, To, R) --> true |
+ {{reserve_register(N, R, N1),
+   From1:=From+1}},
+   use_register(Max, From1, To, R).
+
+%reserve_register(N, R, N1) :- true |
+%   set_vector_element(N, R, _, 1, N1).
+
+reserve_register(N, R, N1) :- R > 32 |
+   N=N1.
+otherwise.
+reserve_register(N, 0, N1) :- true | N = N1.
+reserve_register(N, R, N1) :- true |
+   R1 := R-1,
+   N1 := N \/ (1<<R1).
+
+%new_used_table_element(N, Ele) :- true |
+%   kl1cmp_reader:herrey(N, 0, Ele).
+
+new_used_table_element(N, Ele) :- true |
+   Ele = 0.
+
+
+% This predicate make MRB of vector element black.
+ref_vector(Tabs0, Tabs, Pos, Ele) :- true |
+   set_vector_element(Tabs0, Pos, Ele, Ele, Tabs).
+
+set_vector(Tabs0, Tabs, Pos, Ele) :- true |
+   set_vector_element(Tabs0, Pos, _, Ele, Tabs).
+
+rep_vector(Tabs0, Tabs, Pos, OldEle, NewEle) :- true |
+   set_vector_element(Tabs0, Pos, OldEle, NewEle, Tabs).
+
+equal(A, B) :- true | A=B.

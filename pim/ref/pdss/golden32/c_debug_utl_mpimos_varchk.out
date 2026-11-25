@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../debug_utl/mpimos_varchk.kl1" : Compiling ... go/2,go/3,go_f/3,go_p/3,start/4,loop/4,loop0/6,check_directives/5,loop1/5,loop2/7,varchk/5,varchk2/4,varchk3/9,wait_check/10,count/5,count_vector/7,count_goals/8,count_mrb/7,count_mrb_vector/9,option/2,check/4,check0/3,check_tbl/3,make_tbl/6,count_guard/5,count_guard_mrb/7,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195068     50    179    10    1584000        0
+After:      10376     38    107     3      96300        0
+GCed :     184692     12     72     7    1487700        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+count_body/5,count_body_mrb/7,mrb_guard_vector_element/3,mrb_guard_vector_element_mark/3,mrb_guard_vector_element_sub/5,mrb_guard_vector_element_sub_var/5,mrb_body_vector_element/3,END.
+
+[go/2,go/3,go_f/3,start/4,go_p/3]
+successdone
+
+exit 0
+asm 0408e1bcf46d9d628ee2aff604a80b1bd876a37e564da1120e6eaa1fba9204e4
+sav none

@@ -1,8 +1,13 @@
 % SCAFFOLDING stand-in for SIMPOS's class `with_link`, compiled by
 % psi/espc.py into the package `simpos`.  It is NOT SIMPOS.  INTERPOLATED,
 % and empty: TM-100 says only that class process inherits it "to put the
-% process into the ready queue" (PDF p10, docs/simpos/printed/classes.tsv);
-% what it holds is not printed.  It exists so that the printed nature
+% process into the ready queue" (PDF p10, folio 8: one of "two classes
+% for chaining process instances"; docs/simpos/printed/classes.tsv).
+% TM-161 PDF p18 (a call-count profile) prints the row `with_link /
+% get_next / imp / 2`: a method get_next/2, its body not printed.  That
+% this is SIMPOS's with_link rests on the neighbouring SIMPOS rows
+% (list_index, index_entry, list_entry).  The stand-in stays empty.  It
+% exists so that the printed nature
 % list of process (TM-100 Fig. 3.1) names a loaded class and process is
 % not partial.
 

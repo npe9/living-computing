@@ -1,0 +1,50 @@
+%%% KL1-B Test for Set_Constant %%%
+% Set_Atom %%%%%%%%%%%%%% a
+% Set_Nil %%%%%%%%%%%%%%% a
+% Set_Integer %%%%%%%%%%% a
+% Set_Float %%%%%%%%%%%%% a
+
+:- module set_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Set_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Set_Atom %%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | dummy, atm00(atom).
+atm00(atom):- put_console(c#"a") | atm01.
+alternatively.
+atm00(_):- put_console(c#"*") | atm01.
+
+atm01:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Set_Nil %%%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | dummy, nil00([]).
+nil00([]):- put_console(c#"a") | nil01.
+alternatively.
+nil00(_):- put_console(c#"*") | nil01.
+
+nil01:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Set_Integer %%%%%%%%%%% ") | int00.
+
+int00:- true | dummy, int00(1234).
+int00(1234):- put_console(c#"a") | int01.
+alternatively.
+int00(_):- put_console(c#"*") | int01.
+
+int01:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Set_Float %%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | dummy, flt00(12.34).
+flt00(12.34):- put_console(c#"a") | flt01.
+alternatively.
+flt00(_):- put_console(c#"*") | flt01.
+
+flt01:- put_console(key#lf) | done.
+
+done:- true | true.
+
+dummy:- true | true.

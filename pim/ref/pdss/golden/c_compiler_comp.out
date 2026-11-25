@@ -1,0 +1,25 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/comp.kl1" : Compiling ... compile_one_clause/17,devide_tabs/4,initiate_head_arguments/5,keep_head_arguments/5,$keep_head_arguments/5_0/5,ref_to_table/4,set_guard_arg_ref_count/6,$set_guard_arg_ref_count/6_1/7,compile_guard/12,compile_guard_goal/12,compile_guard_integer/11,compile_guard_float/11,compile_guard_vector/11,compile_guard_string/11,compile_guard_wait/11,maybe_suspend_forever/9,compile_get_valuable/13,compile_get_variable/11,compile_get_value/12,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     192412     50    310    10    1583984        0
+After:       9143     38    109     3      88560        0
+GCed :     183269     12    201     7    1495424        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+compile_passive_unify/11,compile_guard_draw/11,set_life_time/6,compile_body/11,compile_body_goal/11,register_body_arguments/6,$compile_put_valuable/12_2/12,compile_put_valuable/12,$compile_put_valuable/12_4/11,$compile_put_valuable/12_5/10,$compile_put_valuable/12_6/11,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     185719     48    763     3    1584000        0
+After:       9828     38    108     3      93856        0
+GCed :     175891     10    655     0    1490144        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+$compile_trans_valuable/12_7/12,$compile_put_valuable/12_3/11,compile_trans_valuable/12,$compile_active_draw/10_8/10,compile_active_draw/10,$compile_set_arg/11_9/11,compile_set_arg/11,$compile_struct/11_10/12,compile_struct/11,newvar/4,refvar/4,usereg/4,get_From_PC/4,set_From_PC/4,get_To_PC/4,set_To_PC/4,set_pass_tbl/3,$how_do_you_do/6_11/6,how_do_you_do/6,how_do_you_foo/6,gen/5,set_mrb_body_ref/4,set_mrb_body_ref00/3,mrb_body_ref/3,Error:Undefined expression, replaced by VOID.
+	+(GenVar14,GenVar17,1)
+increment_bref/3,END.
+
+[compile_one_clause/17]
+errorError <compile_error>
+
+exit 1
+asm 93214e42661106dfd7b04f3ed3b074b7da228986d15a1d8464b86a32efa4e732
+sav none

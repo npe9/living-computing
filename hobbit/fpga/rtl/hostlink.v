@@ -22,7 +22,8 @@
 //                                         'C' c1              a byte an RTL Quart's
 //                                              channel 0 sent (the console)
 //                                         'F' k1 a4 d4 clk5   forwarded access,
-//                                              k = 0 read, 1 write; wants 'D'
+//                                              k = {3'b0, be[3:0], we}: we 0 read,
+//                                              1 write, be its byte enables; wants 'D'
 //                                         'T' clk5            every 2^TBITS core clocks
 //
 // st1 = {6'b0, stopped, running}; clk5 = core clocks (the core's own
@@ -50,6 +51,7 @@ module hostlink #(
     // Forwarded I/O: a request is held until fwd_done.
     input  wire        fwd_valid,
     input  wire        fwd_we,
+    input  wire [3:0]  fwd_be,       // a write's byte enables
     input  wire [31:0] fwd_addr,
     input  wire [31:0] fwd_wdata,
     output reg         fwd_done,
@@ -98,7 +100,7 @@ module hostlink #(
             end else if (reply_req) begin
                 fr <= rp; fr_n <= rp_n;
             end else if (fwd_valid && !fwd_sent) begin
-                fr <= {8'h46, 7'd0, fwd_we, fwd_addr, fwd_wdata, core_clocks};
+                fr <= {8'h46, 3'd0, fwd_be, fwd_we, fwd_addr, fwd_wdata, core_clocks};
                 fr_n <= 15; fwd_sent <= 1'b1;
             end else if (con_valid && !con_taken) begin
                 fr <= {8'h43, con_byte, 104'd0};

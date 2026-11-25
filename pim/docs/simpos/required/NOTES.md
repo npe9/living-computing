@@ -84,11 +84,11 @@ form, so the manual counts the receiver too.
 | how | rule |
 |---|---|
 | `class` | the receiver is `#C` or `#p##C` |
-| `create-bound` | the receiver variable was the single fresh variable of `:create*/new` sent to a class. This is not done when the user class defines its own `create*`, since it may be a factory (9,305 sends left unbound for that reason). |
+| `create-bound` | the receiver variable was the single fresh variable of `:create*/new` sent to a class, or of a listed instance-returning class method (`INSTANCE_RESULT` in `espscan.py`: only `time` `now/2`, READ from gog-esp `CH_CLOCK.ESP`:33-34, 59-60; added 2026-11-25, which gave `time` get_count/2, set_count/2, get_value/5 and minus/3). This is not done when the user class defines its own `create*`, since it may be a factory (9,305 sends left unbound for that reason). |
 | `self` / `self-inherited` | the receiver is the head's first argument |
 | `slot-*` | `X!slot`, with the slot type learned from initialisers and `Obj!slot := X` |
 | `unattributed` | the receiver's type is unknown and no class in the program defines that `name/arity` |
-| `ambiguous-user-or-system` | the receiver's type is unknown and the program defines that `name/arity`, but the selector is also attested directly on a system class somewhere in the corpus (175 selectors, 7,658 uses). These are written as `?`/`ambiguous` rows. Untyped sends of a program-defined selector that no system class is seen with count as internal. |
+| `ambiguous-user-or-system` | the receiver's type is unknown and the program defines that `name/arity`, but the selector is also attested directly on a system class somewhere in the corpus (176 selectors, 7,654 uses). These are written as `?`/`ambiguous` rows. Untyped sends of a program-defined selector that no system class is seen with count as internal. |
 
 - A local predicate inherits argument types from its call sites; this runs as three passes.
 - A send counts as **internal** if `name/arity` is defined:
@@ -158,10 +158,10 @@ kept in the requirement set.
     `ftp_user`, `editor_*`;
   - application classes missing from their archives: sum's `gen_*_win`, icotext's `imi_*`,
     kappa2's `kappaP`.
-- **Requirement rows** (`requirements.tsv`, 3,578 rows):
-  - 1,436 class/instance methods on named classes;
+- **Requirement rows** (`requirements.tsv`, 3,582 rows):
+  - 1,440 class/instance methods on named classes;
   - 706 on nature sets or `<root>`;
-  - 760 unattributed and 175 ambiguous selectors (`?`), each with candidate classes that have
+  - 759 unattributed and 176 ambiguous selectors (`?`), each with candidate classes that have
     the same selector attested directly;
   - 93 inherited slots;
   - plus nature, `#ref` and `ptf-ref` rows.
@@ -232,12 +232,12 @@ kept in the requirement set.
   The full list is `per_program/txtstrct.tsv`. The next smallest is chal (146), but chal also needs
   cal-esp's `cal_window`.
 - **Greedy cover** (`subset_cover.tsv`): txtstrct 138 → chal 245 → utter 403 → knov 580 →
-  disc 741 → icotext 917 → papyrus 1,100 → sum 1,324 → fuzclust 1,538 → gog-esp 1,784 →
-  euod 2,017 → cal-esp 2,314 → kwic-esp 2,593 → cil 2,941 → kappa2 3,470.
-  - **The full source-side set is 3,470 keys.** The 36 `simpos##` classes seen only in compiled
+  disc 741 → icotext 917 → papyrus 1,100 → sum 1,324 → fuzclust 1,538 → gog-esp 1,785 →
+  euod 2,018 → cal-esp 2,315 → kwic-esp 2,595 → cil 2,944 → kappa2 3,474.
+  - **The full source-side set is 3,474 keys.** The 36 `simpos##` classes seen only in compiled
     packages come on top of it.
   - Each prefix satisfies exactly the programs in it, so no program comes free with a smaller one.
-  - kappa2 alone needs 1,359 keys (169 named classes).
+  - kappa2 alone needs 1,362 keys (169 named classes).
 - `units.tsv` breaks programs into subdirectories (e.g. euod's demonstrations). It counts sends in
   raw form and ignores dependencies between directories.
 
@@ -273,8 +273,8 @@ Its method lists have no arity and no class/instance split. Its per-class "uses"
 
 ## Limits
 
-- **Dynamic dispatch.** About 11,800 sends (760 distinct selectors) have an unknown receiver,
-  and 7,658 more are ambiguous. Their
+- **Dynamic dispatch.** About 11,800 sends (759 distinct selectors) have an unknown receiver,
+  and 7,654 more are ambiguous. Their
   candidate classes are only suggestions. Nature sets (706 methods) are not resolved to one class,
   because the method tables of the SIMPOS window mixins are not held.
 - **Typing is per clause and flow-insensitive.** Disjunction scoping is ignored, and only the

@@ -1,0 +1,28 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_raise_s" : Compiling ... go/0,ris/0,ris00/0,ris00/2,ris01/0,ris01/2,ris02/0,ris02/2,ris03/0,done/0,execute_in_shoen/4,shoen_wait/3,shoen_check/3,do_raise/3,unify/6,END.
+
+[go/0,execute_in_shoen/4,do_raise/3]
+successdone
+Loading ... done
+Module name : b_raise_s
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Raise (Suspend) %%%
+% B_Raise %%%%%%%%%%%%%%% abc
+Total of 107 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 15decacbffdeb0ba26b8f83bbde4bb94002297a6d4e1802d6b0253f53aaa9506
+sav b44ea9f2ca7bae6045893d24b9f7cc47e6476988798f2bd396facaecf501857e

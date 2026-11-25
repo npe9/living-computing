@@ -1,0 +1,489 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_debug.
+:- public is_command/2,do_command/2,help/2.
+:- with_macro pdss.
+
+is_command(trace(_),	       X):- true| X = yes.
+%is_command(trace_all,	       X):- true| X = yes.
+is_command(notrace(_),	       X):- true| X = yes.
+%is_command(notrace_all,       X):- true| X = yes.
+is_command(spy(_,_,_),	       X):- true| X = yes.
+is_command(spy(_),	       X):- true| X = yes.
+is_command(spying(_),	       X):- true| X = yes.
+is_command(spying(_,_),	       X):- true| X = yes.
+is_command(nospy(_,_,_),       X):- true| X = yes.
+is_command(nospy(_),	       X):- true| X = yes.
+is_command(debug,	       X):- true| X = yes.
+is_command(nodebug,	       X):- true| X = yes.
+is_command(backtrace,	       X):- true| X = yes.
+is_command(nobacktrace,	       X):- true| X = yes.
+is_command(varchk(_,_,_),      X):- true| X = yes.
+is_command(varchk(_,_),	       X):- true| X = yes.
+is_command(varchk(_),	       X):- true| X = yes.
+is_command(xref(_,_),	       X):- true| X = yes.
+is_command(xref(_),	       X):- true| X = yes.
+is_command(xref(_,_,_),	       X):- true| X = yes.
+is_command(reset_profile(_),   X):- true| X = yes.
+is_command(profile(_,_),       X):- true| X = yes.
+is_command(profile(_),       X):- true| X = yes.
+otherwise.
+is_command(_,X):- true| X = no.
+
+
+
+do_command(debug,SS):-
+     true|
+	SS = [setenv(trace,on),initenv,
+	      window([prompt(_,string#"[debug]?- "),flush(F)])],
+	wait(F).
+do_command(nodebug,SS):-
+     true|
+	SS = [setenv(trace,off),initenv,
+	      window([prompt(_,string#"| ?- "),flush(F)])],
+	wait(F).
+do_command(backtrace,SS):-
+     true|
+	SS = [setenv(backtrace,on),initenv,
+	      window([putb(string#"Setting ... done"),nl,flush(F)])],
+	wait(F).
+do_command(nobacktrace,SS):-
+     true|
+	SS = [setenv(backtrace,off),initenv,
+	      window([putb(string#"Resetting ... done"),nl,flush(F)])],
+	wait(F).
+do_command(trace(ModuleName),SS):-
+     atom(ModuleName),ModuleName\=[]|
+	SS = [code(trace_module(ModuleName,on,St)),
+	      window([putb(string#"Setting ... "),flush(_)])|SS1],
+	wait_debug_mode(St,SS1).
+do_command(trace(ModuleL),SS):-
+    list(ModuleL)|
+	mpimos_cmd_utl:apply_action(trace,ModuleL,SS).
+do_command(trace([]),SS):-
+    true|
+	SS = [].
+do_command(notrace(ModuleName),SS):-
+     atom(ModuleName),ModuleName\=[]|
+	SS = [code(trace_module(ModuleName,off,St)),
+	      window([putb(string#"Resetting ... "),flush(_)])|SS1],
+	write_status(St,SS1).
+do_command(notrace(ModuleL),SS):-
+    list(ModuleL)|
+	mpimos_cmd_utl:apply_action(notrace,ModuleL,SS).
+do_command(notrace([]),SS):-
+    true|
+	SS = [].
+do_command(spy(MoN,PrN,Ar),SS):-
+     atom(MoN),atom(PrN),integer(Ar)|
+	SS = [code(spy_predicate(MoN,PrN,Ar,on,St)),
+	      window([putb(string#"Setting ... "),flush(_)])|SS1],
+	wait_spy_mode(St,MoN,SS1).
+do_command(spy(MoN:PrN/Ar),SS):-
+     atom(MoN),atom(PrN),integer(Ar)|
+	SS = [code(spy_predicate(MoN,PrN,Ar,on,St)),
+	      window([putb(string#"Setting ... "),flush(_)])|SS1],
+	wait_spy_mode(St,MoN,SS1).
+do_command(spying(MoN),SS):-
+     atom(MoN),MoN\=[]|
+	SS = [code(get_spied_predicates(MoN,PreL,St))|SS1],
+	wait_spied_pred(St,PreL,SS1).
+do_command(spying(MoL),SS):-
+    list(MoL)|
+	mpimos_cmd_utl:apply_action(spying,MoL,SS).
+do_command(spying([]),SS):-
+    true|
+	SS = [].
+do_command(spying(MoN,SL),SS):-
+     atom(MoN)|
+	SS = [code(get_spied_predicates(MoN,PreL,St))],
+	wait_spied_pred1(St,PreL,SL).
+do_command(nospy(MoN,PrN,Ar),SS):-
+     atom(MoN),atom(PrN),integer(Ar)|
+	SS = [code(spy_predicate(MoN,PrN,Ar,off,St)),
+	      window([putb(string#"Resetting ... "),flush(_)])|SS1],
+	write_status(St,SS1).
+do_command(nospy(MoN:PrN/Ar),SS):-
+     atom(MoN),atom(PrN),integer(Ar)|
+	SS = [code(spy_predicate(MoN,PrN,Ar,off,St)),
+	      window([putb(string#"Resetting ... "),flush(_)])|SS1],
+	write_status(St,SS1).
+do_command(varchk(FileL,Mode,PF),SS):-
+     list(FileL), atom(Mode), atom(PF)|
+	mpimos_cmd_utl:apply_action(varchk,FileL,(Mode,PF),SS).
+do_command(varchk(FileA,Mode,PF),SS):-
+     atom(FileA)|
+	atom_name(FileA,File),
+	mpimos_utility:extend_name(File,string#"kl1",EFile),
+	varchk(EFile,Mode,PF,SS).
+do_command(varchk(File,Mode,PF),SS):-
+     string(File,_,_)|
+	mpimos_utility:extend_name(File,string#"kl1",EFile),
+	varchk(EFile,Mode,PF,SS).
+do_command(varchk(File,Mode),SS):-
+     true|
+	do_command(varchk(File,Mode,p),SS).
+do_command(varchk(File),SS):-
+     true|
+	do_command(varchk(File,one,p),SS).
+do_command(xref(FileL,Mode),SS):-
+     list(FileL)|
+	SS = [getuc(UN)|SS1],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"xref",SUN,WN),
+	correct_files(FileL,CFileL,SS1,[]),
+	mpimos_xref:go(CFileL,Mode,WN).
+do_command(xref(File,Mode),SS):-
+     string(File,_,_)|
+	do_command(xref([File],Mode),SS).
+do_command(xref(File,Mode),SS):-
+     atom(File)|
+	do_command(xref([File],Mode),SS).
+do_command(xref(File),SS):-
+     true|
+	do_command(xref(File,check),SS).
+do_command(xref(FileL,Mode,OutF),SS):-
+     list(FileL), string(OutF,_,_)|
+	SS = [getuc(UN)|SS1],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"xref",SUN,WN),
+	correct_files(FileL,CFileL,SS1,[]),
+	mpimos_xref:go_f(CFileL,Mode,OutF,WN).
+do_command(xref(File,Mode,OutF),SS):-
+     string(File,_,_)|
+	do_command(xref([File],Mode,OutF),SS).
+do_command(xref(File,Mode,OutF),SS):-
+     atom(File)|
+	do_command(xref([File],Mode,OutF),SS).
+do_command(xref(FileL,Mode,OutFA),SS):-
+     atom(OutFA)|
+	atom_name(OutFA,OutF),
+	do_command(xref(FileL,Mode,OutF),SS).
+do_command(reset_profile(Module),SS):-
+     atom(Module),Module\=[]|
+	reset_profile_info(Module,Status),
+	wait_reset_profile(SS,Module,Status).
+do_command(reset_profile(ModuleL),SS):-
+     list(ModuleL)|
+	mpimos_cmd_utl:apply_action(reset_profile,ModuleL,SS).
+do_command(reset_profile([]),SS):-
+    true|
+	SS = [].
+do_command(profile(ModuleL,Mode),SS):-
+     list(ModuleL),atom(Mode)|
+	SS = [getuc(UN)|SS1],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"profile",SUN,WN),
+	mpimos_window:create([show|W],WN),
+	correct_module(ModuleL,CModuleL,SS1,SS2),
+	profile_info(CModuleL,Mode,W,SS2).
+do_command(profile(Module,Mode),SS):-
+     atom(Module)|
+	do_command(profile([Module],Mode),SS).
+do_command(profile(Module),SS):-
+     true|
+	do_command(profile(Module,call),SS).
+otherwise.
+do_command(Com,SS):-
+     true|
+	mpimos_utility:freeze(Com,FCom),
+	mpimos_cmd_utl:send_shell(window(
+			[putb(string#"ArgumentError detected in "),
+			 putt(FCom),nl]),SS,[window([flush(EF)])]),
+	fail_action(EF).
+
+
+wait_spied_pred(success,[],SS):-
+     true|
+	SS = [window([putb(string#"Empty."),nl,flush(EF)])],
+	wait(EF).
+wait_spied_pred(success,PreL,SS):-
+     PreL \= []|
+	listing_predicates(PreL,SS).
+otherwise.
+wait_spied_pred(St,_,SS):-
+     true|
+	SS = [window([putb(string#"Error  <"),putt(St),putl(string#">"),
+	      flush(EF)])],
+	fail_action(EF).
+
+listing_predicates([],SS):-
+     true|
+	SS = [window([putl(string#"END."),flush(EF)])],
+	wait(EF).
+listing_predicates([{PNa,PNu}|T],SS):-
+     true|
+	SS = [window([putt(PNa),putb(string#"/"),putt(PNu),
+		      putb(string#", ")])|SS1],
+	listing_predicates(T,SS1).
+
+wait_spied_pred1(success,PreL,SL):-
+     true|
+	SL = PreL.
+otherwise.
+wait_spied_pred1(_,_,SL):-
+     true|
+	SL = [].
+
+wait_spy_mode(success,MoN,SS):-
+     true|
+	SS = [code(trace_module(MoN,on,_))|SS1],
+	wait_debug_mode(success,SS1).
+otherwise.
+wait_spy_mode(Status,_,SS):-
+     true|
+	wait_debug_mode(Status,SS).
+
+write_status(success,SS):-
+     true|
+	SS = [window([putl(string#"done"),flush(F)])],
+	wait(F).
+otherwise.
+write_status(Status,SS):-
+     true|
+	SS = [window([putt(Status),nl,flush(F)])],
+	wait(F).
+
+
+
+wait_debug_mode(success,SS):-
+     true|
+	SS = [setenv(trace,on),initenv,
+	      window([putl(string#"done"),prompt(_,string#"[debug]?- "),
+		      flush(EF)])],
+	wait(EF).
+otherwise.
+wait_debug_mode(Status,SS):-
+     true|
+	SS = [window([putb(string#"Error <"),putt(Status),putl(string#">"),
+		      flush(EF)])],
+	fail_action(EF).
+
+correct_module([],CML,SS,SSL):-
+     true|
+	CML = [],
+	SS = SSL.
+correct_module([[]],CML,SS,SSL):-
+     true|
+	CML = [],
+	SS = SSL.
+correct_module([Module|ML],CML,SS,SSL):-
+     atom(Module), Module\=[]|
+	CML = [Module|CML1],
+	correct_module(ML,CML1,SS,SSL).
+otherwise.
+correct_module([Module|_],_,SS,_):-
+     true|
+	mpimos_utility:freeze(Module,FModule),
+	SS = [window([putb(string#"ArgumentError detected in "),
+		      putt(FModule),nl,flush(EF)])],
+	fail_action(EF).
+
+wait_reset_profile(SS,_,0):- %% success
+     true|
+	SS = [].
+otherwise.
+wait_reset_profile(SS,Module,Status):-
+     true|
+	profile_status(Status,S),
+	mpimos_cmd_utl:send_shell(window([putb(string#"Error <"),putt(S),
+					  putb(string#"> "),putt(Module),nl]),
+				  SS,[window([flush(F)])]),
+	wait(F).
+
+profile_info([],_,W,SS):-
+    true|
+	W = [nl,putb(string#"DONE."),getl(_)],
+	SS = [window([flush(EF)])],
+	wait(EF).
+profile_info([Module|ML],Mode,W,SS):-
+    true|
+	get_profile_info(Module,Info,Status),
+	wait_get_profile(Status,Module,Info,Mode,W,WL,SS,SSL),
+	profile_info(ML,Mode,WL,SSL).
+
+wait_get_profile(0,Module,Info,Mode,W,WL,SS,SSL):- %% success
+     true|
+	SS = SSL,
+	W = [putb(string#" Module : "),putt(Module),nl,
+	     putl(Line),
+	     putb(string#" Predicate"),tab(T1),
+	     tab(T2),putb(string#"Call"),tab(T3),putl(string#"Susp"),
+	     putl(Line)|W1],
+	LN := MP + MC + MS + 9,
+	line(#"-",LN,Line),
+	T1 := MP - 6,
+	T2 := MC - 2,
+	T3 := MS - 2,
+	sort_profile_info(Info,SInfo,Mode),
+	put_profile_info(SInfo,W1,WL,Line,6,MP,4,MC,4,MS,0,0).
+otherwise.
+wait_get_profile(Status,Module,_,_,W,WL,SS,SSL):-
+     true|
+	profile_status(Status,S),
+	W = WL,
+	mpimos_cmd_utl:send_shell(window([putb(string#"Error <"),putt(S),
+					  putb(string#"> "),putt(Module),nl]),
+				  SS,[window([flush(F)])|SSL]),
+	wait(F).
+
+sort_profile_info(Info,SInfo,c):-
+    true|
+	mpimos_utility:qsortv(Info,3,InfoA,reverse),
+	mpimos_utility:qsortv(InfoA,2,SInfo,reverse).
+sort_profile_info(Info,SInfo,call):-
+    true|
+	mpimos_utility:qsortv(Info,3,InfoA,reverse),
+	mpimos_utility:qsortv(InfoA,2,SInfo,reverse).
+sort_profile_info(Info,SInfo,s):-
+    true|
+	mpimos_utility:qsortv(Info,2,InfoA,reverse),
+	mpimos_utility:qsortv(InfoA,3,SInfo,reverse).
+sort_profile_info(Info,SInfo,susp):-
+    true|
+	mpimos_utility:qsortv(Info,2,InfoA,reverse),
+	mpimos_utility:qsortv(InfoA,3,SInfo,reverse).
+otherwise.
+sort_profile_info(Info,SInfo,_):-
+    true|
+	SInfo = Info.
+
+put_profile_info([{P,A,CN,SN}|Info],W,WL,Line,LP,MP,LC,MC,LS,MS,SumC,SumS):-
+    true|
+	W = [tab(1),putb(NP),putb(string#"/"),putt(A),tab(T1),
+	     tab(T2),putt(CN),tab(T3),putt(SN),putl(string#" ")|W1],
+	atom_name(P,PS),
+	string(PS,PL,_,NP),
+	width(A, WA), T1 := MP - PL - WA + 2,
+	width(CN,WC), T2 := MC - WC + 2,
+	width(SN,WS), T3 := MS - WS + 2,
+	max(LP,PL,NLP),
+	SumC1 := SumC + CN,
+	SumS1 := SumS + SN,
+	put_profile_info(Info,W1,WL,Line,NLP,MP,LC,MC,LS,MS,SumC1,SumS1).
+put_profile_info([],W,WL,Line,LP,MP,LC,MC,LS,MS,SumC,SumS):-
+    true|
+	W = [putl(Line),
+	     tab(1),putb(string#"Sum"),tab(T1),
+	     tab(T2),putt(SumC),tab(T3),putt(SumS),putl(string#" "),
+	     putl(Line),nl,flush(_)|WL],
+	T1 := MP,
+	T2 := MC - WC + 2,
+	T3 := MS - WS + 2,
+	max(3,LP,MP),
+	width(SumC,WC),max(WC,LC,MC),
+	width(SumS,WS),max(WS,LS,MS).
+
+line(C,N,L):-
+    true|
+	new_string(S,N,8),
+	line(0,N,C,S,L).
+line(N,M,C,S,L):-
+    N<M|
+	set_string_element(S,N,C,NS),
+	N1 := N + 1,
+	line(N1,M,C,NS,L).
+line(M,M,_,S,L):-
+    true|
+	L = S.
+
+width(N,W):-
+    true|
+	width(N,1,W).
+
+width(N,X,W):-
+    A:=N/10, A>0|
+	N1 := N / 10,
+	X1 := X + 1,
+	width(N1,X1,W).
+width(N,X,W):-
+    A:=N/10, A=:=0|
+	W = X.
+
+%max(A,B,M):- A>=B| M = A.
+%max(A,B,M):- A< B| M = B.
+
+profile_status(1,S) :- true | S = module_not_found.
+profile_status(4,S) :- true | S = native_code_module.
+
+varchk(File,Mode,PF,SS):-
+     true|
+	SS = [getuc(UN)],
+	mpimos_utility:integer_to_string(UN,SUN),
+	append_string(string#"varchk",SUN,WN),
+	varchk_go(File,WN,Mode,PF).
+
+varchk_go(File,WN,Mode,short):- true | mpimos_varchk:go(File,WN,Mode).
+varchk_go(File,WN,Mode,    s):- true | mpimos_varchk:go(File,WN,Mode).
+otherwise.
+varchk_go(File,WN,Mode,    _):- true | mpimos_varchk:go_p(File,WN,Mode).
+
+correct_files([],CFL,SS,SSL):-
+    true|
+	CFL = [],
+	SS = SSL.
+correct_files([[]],CFL,SS,SSL):-
+    true|
+	CFL = [],
+	SS = SSL.
+correct_files([File|FL],CFL,SS,SSL):-
+    string(File,_,_)|
+	mpimos_utility:extend_name(File,string#"kl1",EFile),
+	CFL = [EFile|CFL1],
+	correct_files(FL,CFL1,SS,SSL).
+correct_files([File|FL],CFL,SS,SSL):-
+    atom(File),File\=[]|
+	atom_name(File,SFile),
+	mpimos_utility:extend_name(SFile,string#"kl1",EFile),
+	CFL = [EFile|CFL1],
+	correct_files(FL,CFL1,SS,SSL).
+otherwise.
+correct_files([File|_],_,SS,_):-
+    true|
+	mpimos_utility:freeze(File,FFile),
+	SS = [window([putb(string#"ArgumentError detected in "),
+		      putt(FFile),nl,flush(EF)])],
+	fail_action(EF).
+
+fail_action(F):-
+     wait(F)|
+	raise(shoen_tag#mpimos_unit,shell(fail),_).
+
+wait(F):- wait(F)|true.
+
+help(menu,MSG):-
+     true|
+    MSG = string#"trace,debug,spy,etc.".
+help(item,MSG):-
+     true|
+    MSG = debug.
+help(message,MSG):-
+     true|
+    MSG = [string#"There are following debug commands.",
+   string#"trace(MODULE)      --- Set trace mode of MODULE.",
+   string#"notrace(MODULE)    --- Reset trace mode of MODULE.",
+   string#"backtrace          --- Set backtrace mode.",
+   string#"nobacktrace        --- Reset backtrace mode.",
+   string#"debug              --- Set debug mode.",
+   string#"nodebug            --- Reset debug mode.",
+   string#"spying(MODULE)     --- List spied predicates in MODULE.",
+   string#"spying(MODULE,PL)  --- List spied predicates in MODULE to PL.",
+   string#"spy(MODULE,PREDICATE,ARITY), spy(MODULE:PREDICATE/ARITY) ---",
+   string#"                       Set spy mode of MODULE:PREDICATE/ARITY.",
+   string#"nospy(MODULE,PREDICATE,ARITY), nospy(MODULE:PREDICATE/ARITY) ---",
+   string#"                       Reset spy mode of MODULE:PREDICATE/ARITY.",
+   string#"varchk(FILE)       --- Execute variable checker.",
+   string#"varchk(FILE,MODE)  --- Execute variable checker with MODE.",
+   string#"varchk(FILE,MODE,FORM) ---",
+   string#"                       Execute variable checker with MODE & FORM.",
+   string#"xref(FILE)         --- Execute cross reference.",
+   string#"xref(FILE,MODE)    --- Execute cross reference with MODE.",
+   string#"xref(FILE,MODE,OUTF)-- Execute cross reference (list to OUTF).",
+   string#"profile(MODULE)    --- List predicate profile in MODULE.",
+   string#"profile(MODULE,MODE)-- List predicate profile in MODULE with MODE.",
+   string#"reset_profile(MODULE)- Reset predicate profile in MODULE."].

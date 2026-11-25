@@ -1,7 +1,8 @@
 % SCAFFOLDING stand-in for SIMPOS's class `message`, compiled by
-% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
-% `message` is printed.  Every slot and method is INTERPOLATED (labelled)
-% from:
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no code of
+% `message` is printed; its nature and slots are printed in prose
+% (TR-056, below; labelled PRINTED (prose)).  Every method is
+% INTERPOLATED (labelled) from:
 %   - TR-056 p.12 (PDF p14, §4(2)): a message "has a sender slot ..., a
 %     receiver slot ..., and a body (an object to be sent).  Class
 %     'message' inherits class 'as_message' to include the first two
@@ -16,13 +17,14 @@
 
 class message has
 
-% INTERPOLATED from: TR-056 p.12 "Class 'message' inherits class
-% 'as_message'".
+% PRINTED (prose): TR-056 PDF p14, folio 12, "Class 'message' inherits
+% class 'as_message' to include the first two slots".
 nature as_message;
 
 instance
 
-% INTERPOLATED from: TR-056 p.12's "a body (an object to be sent)".
+% PRINTED (prose): TR-056 PDF p14, folio 12, "a body (an object to be
+% sent)"; the slot's NAME `body` is OURS.
 attribute body;
 
 % INTERPOLATED from: the held set_content/2 (required/classes.tsv) and

@@ -1,0 +1,48 @@
+%%% KL1-B Test for B_Raise (Exception) %%%
+% B_Raise %%%%%%%%%%%%%%% abc
+
+:- module b_raise_e.
+:- public go/0,execute_in_shoen/4
+,do_raise/3.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Raise (Exception) %%%"), put_console(key#lf) | ris.
+
+ris:- put_console(ascii#"% B_Raise %%%%%%%%%%%%%%% ") | ris00.
+
+ris00:- true | execute_in_shoen(2,execute_in_shoen,{1,do_raise,{1,key,info},R1},R2), ris00(R1,R2).
+ris00(raised,_):- put_console(c#"a") | ris01.
+otherwise.
+ris00(_,_):- put_console(c#"*") | ris01.
+
+ris01:- true | execute_in_shoen(2,execute_in_shoen,{1,do_raise,{2,struct(key),info(_)},R1},R2), ris01(R1,R2).
+ris01(_,raised):- put_console(c#"b") | ris02.
+otherwise.
+ris01(_,_):- put_console(c#"*") | ris02.
+
+ris02:- true | execute_in_shoen(2,execute_in_shoen,{1,do_raise,{0,key,info},R1},R2), ris02(R1,R2).
+ris02(range_overflow,_):- put_console(c#"c") | ris03.
+otherwise.
+ris02(_,_):- put_console(c#"*") | ris03.
+
+ris03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(T,P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_raise_e,P,L},A, 0,0, ~(T\/16#"00400000"), C0,R0),
+	Red := 100*T,
+	C0 = [add_resource(Red),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(1,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=range_overflow, C=[abort].
+shoen_check([exception(12,{_,key,info},NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=raised, C=[abort].
+shoen_check([exception(12,{_,struct(key),info(_)},NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=raised, C=[abort].
+
+do_raise(X,Y,Z):- true | raise(X,Y,Z).

@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/window.kl1" : Compiling ... create/2,create/3,request/7,os_create/6,create_monitor/5,create_success/1,create_error/4,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194902     50    185    10    1584000        0
+After:      12760     38    109     3     115388        0
+GCed :     182142     12     76     7    1468612        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+monitor/9,closed/9,wait_close/11,flush_buffer/6,get_buffer/4,wait/11,wait/1,wait_char/11,skip_char/11,wait_line/11,wait_buffer/12,wait_token/12,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     167805    168   2118     3    1583996        0
+After:      13354     42    151     3     125436        0
+GCed :     154451    126   1967     0    1458560        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+wait_parse/13,parse_error/13,set_char/10,tab/10,wait_tab_write/10,set_string/10,set_string/12,wait_putb/11,set_string_list/10,set_string_list/13,wait_list_putb/12,wait_add_op/13,wait_remove_op/13,do/3,length/2,length/3,command_error/5,raise_error/3,message/2,END.
+
+[create/2,create/3,request/7,os_create/6]
+successdone
+
+exit 0
+asm 857745fa02fe02a9ab503953d3555f4a18203db683ea9682d8764a000737267b
+sav none

@@ -1,0 +1,40 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS Timer Manager.
+
+:- module mpimos_timer_manager.
+:- public create/3.
+
+%%  Create timer manager.
+%%  create(TM,TDS,SS).
+%%	TM  :: Request stream from distributor.
+%%	TDS :: Timer device stream.
+%%	SS  :: System stream.
+
+create(TM,TDS,SS) :-
+    true |
+	manager(TM,TDS,SS).
+
+%%  Timer manager.
+%%  manager(FM,FDS,SS).
+%%	TM  :: Request stream from distributor.
+%%	TDS :: Timer device stream.
+%%	SS  :: System stream.
+
+manager([get_count(Count,Status)|TM],TDS,SS) :-
+    true |
+	TDS = get_count(Count,Status,TDS2),
+	manager(TM,TDS2,SS).
+manager([on_at(Count,Now,Status)|TM],TDS,SS) :-
+    true |
+	TDS = on_at(Count,Now,Status,TDS2),
+	manager(TM,TDS2,SS).
+manager([on_after(Count,Now,Status)|TM],TDS,SS) :-
+    true |
+	TDS = on_after(Count,Now,Status,TDS2),
+	manager(TM,TDS2,SS).

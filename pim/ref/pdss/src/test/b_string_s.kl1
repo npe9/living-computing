@@ -1,0 +1,142 @@
+%%% KL1-B Test for B_String (Suspend) %%%
+% B_String %%%%%%%%%%%%%% ab
+% B_New_String %%%%%%%%%% ab
+% B_String_Element %%%%%% abc
+% B_Set_String_Element %% abc
+% B_Substring %%%%%%%%%%% abc
+% B_Set_Substring %%%%%%% abc
+% B_Append_String %%%%%%% abc
+
+:- module b_string_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_String (Suspend) %%%"), put_console(key#lf) | str.
+
+str:- put_console(ascii#"% B_String %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | string(X,A,B,C), unify(X,ascii#"ab"), str00(A,B,C).
+str00(2,8,ascii#"ab"):- put_console(c#"a") | str01.
+otherwise.
+str00(_,_,_):- put_console(c#"*") | str01.
+
+str01:- true | string(X,A,B,C), unify(X,S), new_string(S,2,32), str01(A,B,C).
+str01(2,32,S):- string(S,2,32), string_element(S,0,0), string_element(S,1,0), put_console(c#"b") | str02.
+otherwise.
+str01(_,_,_):- put_console(c#"*") | str02.
+
+str02:- put_console(key#lf) | nst.
+
+nst:- put_console(ascii#"% B_New_String %%%%%%%%%% ") | nst00.
+
+nst00:- true | new_string(A,X,Y), unify(X,Y,2,8), nst00(A).
+nst00(S):- string(S,2,8), string_element(S,0,0), string_element(S,1,0), put_console(c#"a") | nst01.
+otherwise.
+nst00(_):- put_console(c#"*") | nst01.
+
+nst01:- true | new_string(A,X,Y), unify(X,Y,2,32), nst01(A).
+nst01(S):- string(S,2,32), string_element(S,0,0), string_element(S,1,0), put_console(c#"b") | nst02.
+otherwise.
+nst01(_):- put_console(c#"*") | nst02.
+
+nst02:- put_console(key#lf) | ste.
+
+ste:- put_console(ascii#"% B_String_Element %%%%%% ") | ste00.
+
+ste00:- true | string_element(X,Y,A,B), unify(X,Y,ascii#"abc",0), ste00(A,B).
+ste00(c#"a",ascii#"abc"):- put_console(c#"a") | ste01.
+otherwise.
+ste00(_,_):- put_console(c#"*") | ste01.
+
+ste01:- true | string_element(X,Y,A,B), unify(X,Y,ascii#"abc",2), ste01(A,B).
+ste01(c#"c",ascii#"abc"):- put_console(c#"b") | ste02.
+otherwise.
+ste01(_,_):- put_console(c#"*") | ste02.
+
+ste02:- true | string_element(X,Y,A,B), unify(X,Y,S,2), new_string(P,3,32), set_string_element(P,2,c#"a",S), ste02(A,B).
+ste02(c#"a",S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), put_console(c#"c") | ste03.
+otherwise.
+ste02(_,_):- put_console(c#"*") | ste03.
+
+ste03:- put_console(key#lf) | sse.
+
+sse:- put_console(ascii#"% B_Set_String_Element %% ") | sse00.
+
+sse00:- true | set_string_element(X,Y,Z,A), unify(X,Y,Z,S,0,c#"a"), new_string(S,3,8), sse00(A).
+sse00(S):- string_element(S,0,c#"a"), string_element(S,1,0), string_element(S,2,0), put_console(c#"a") | sse01.
+otherwise.
+sse00(_):- put_console(c#"*") | sse01.
+
+sse01:- true | set_string_element(X,Y,Z,A), unify(X,Y,Z,ascii#"abc",2,c#"a"), sse01(A).
+sse01(ascii#"aba"):- put_console(c#"b") | sse02.
+otherwise.
+sse01(_):- put_console(c#"*") | sse02.
+
+sse02:- true | set_string_element(X,Y,Z,A), unify(X,Y,Z,S,2,c#"a"), new_string(S,3,32), sse02(A).
+sse02(S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), put_console(c#"c") | sse03.
+otherwise.
+sse02(_):- put_console(c#"*") | sse03.
+
+sse03:- put_console(key#lf) | sst.
+
+sst:- put_console(ascii#"% B_Substring %%%%%%%%%%% ") | sst00.
+
+sst00:- true | substring(X,Y,Z,A,B), unify(X,Y,Z,ascii#"abc",0,0), sst00(A,B).
+sst00(ascii#"",ascii#"abc"):- put_console(c#"a") | sst01.
+otherwise.
+sst00(_,_):- put_console(c#"*") | sst01.
+
+sst01:- true | substring(X,Y,Z,A,B), unify(X,Y,Z,ascii#"abc",1,2), sst01(A,B).
+sst01(ascii#"bc",ascii#"abc"):- put_console(c#"b") | sst02.
+otherwise.
+sst01(_,_):- put_console(c#"*") | sst02.
+
+sst02:- true | substring(X,Y,Z,A,B), unify(X,Y,Z,S,1,2), new_string(P,3,32), set_string_element(P,0,c#"a",Q), set_string_element(Q,1,c#"b",R), set_string_element(R,2,c#"c",S), sst02(A,B).
+sst02(S,T):- string_element(S,0,c#"b"), string_element(S,1,c#"c"), string_element(T,0,c#"a"), string_element(T,1,c#"b"), string_element(T,2,c#"c"), put_console(c#"c") | sst03.
+otherwise.
+sst02(_,_):- put_console(c#"*") | sst03.
+
+sst03:- put_console(key#lf) | sss.
+
+sss:- put_console(ascii#"% B_Set_Substring %%%%%%% ") | sss00.
+
+sss00:- true | set_substring(X,Y,Z,A), unify(X,Y,Z,S,0,ascii#"ab"), new_string(S,3,8), sss00(A).
+sss00(S):- string_element(S,0,c#"a"), string_element(S,1,c#"b"), string_element(S,2,0), put_console(c#"a") | sss01.
+otherwise.
+sss00(_):- put_console(c#"*") | sss01.
+
+sss01:- true | set_substring(X,Y,Z,A), unify(X,Y,Z,ascii#"abc",1,ascii#"ab"), sss01(A).
+sss01(ascii#"aab"):- put_console(c#"b") | sss02.
+otherwise.
+sss01(_):- put_console(c#"*") | sss02.
+
+sss02:- true | set_substring(X,Y,Z,A), unify(X,Y,Z,S,1,T), new_string(S,3,32), new_string(P,2,32), set_string_element(P,0,c#"a",Q), set_string_element(Q,1,c#"b",T), sss02(A).
+sss02(S):- string_element(S,0,0), string_element(S,1,c#"a"), string_element(S,2,c#"b"), put_console(c#"c") | sss03.
+otherwise.
+sss02(_):- put_console(c#"*") | sss03.
+
+sss03:- put_console(key#lf) | ast.
+
+ast:- put_console(ascii#"% B_Append_String %%%%%%% ") | ast00.
+
+ast00:- true | append_string(X,Y,A), unify(X,Y,ascii#"ab",ascii#""), ast00(A).
+ast00(ascii#"ab"):- put_console(c#"a") | ast01.
+otherwise.
+ast00(_):- put_console(c#"*") | ast01.
+
+ast01:- true | append_string(X,Y,A), unify(X,Y,ascii#"ab",ascii#"cd"), ast01(A).
+ast01(ascii#"abcd"):- put_console(c#"b") | ast02.
+otherwise.
+ast01(_):- put_console(c#"*") | ast02.
+
+ast02:- true | append_string(X,Y,A), unify(X,Y,S,T), new_string(S,2,32), new_string(P,2,32), set_string_element(P,0,c#"a",Q), set_string_element(Q,1,c#"b",T), ast02(A).
+ast02(S):- string_element(S,0,0), string_element(S,1,0), string_element(S,2,c#"a"), string_element(S,3,c#"b"), put_console(c#"c") | ast03.
+otherwise.
+ast02(_):- put_console(c#"*") | ast03.
+
+ast03:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,A):- true | X=A.
+unify(X,Y,A,B):- true | X=A, Y=B.
+unify(X,Y,Z,A,B,C):- true | X=A, Y=B, Z=C.

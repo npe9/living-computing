@@ -1,0 +1,88 @@
+%%% KL1-B Test for B_Atom %%%
+% B_New_Atom %%%%%%%%%%%% a
+% B_Intern_Atom %%%%%%%%% abc
+% B_Atom_Name %%%%%%%%%%% abc
+% B_Atom_Number %%%%%%%%% abc
+
+:- module b_atom.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Atom %%%"), put_console(key#lf) | nat.
+
+nat:- put_console(ascii#"% B_New_Atom %%%%%%%%%%%% ") | nat00.
+
+nat00:- true | nat00func.
+nat00func:- true | new_atom(A), nat00ans(A).
+nat00ans(A):- atom(A), put_console(c#"a") | nat01.
+otherwise.
+nat00ans(_):- put_console(c#"*") | nat01.
+
+nat01:- put_console(key#lf) | iat.
+
+iat:- put_console(ascii#"% B_Intern_Atom %%%%%%%%% ") | iat00.
+
+iat00:- true | iat00func(ascii#"abc").
+iat00func(X):- true | intern_atom(A,X), iat00ans(A).
+iat00ans(abc):- put_console(c#"a") | iat01.
+otherwise.
+iat00ans(_):- put_console(c#"*") | iat01.
+
+iat01:- true | iat01func(ascii#"ab""c").
+iat01func(X):- true | intern_atom(A,X), iat01ans(A).
+iat01ans('ab"c'):- put_console(c#"b") | iat02.
+otherwise.
+iat01ans(_):- put_console(c#"*") | iat02.
+
+iat02:- true | iat02func(ascii#"ab'c").
+iat02func(X):- true | intern_atom(A,X), iat02ans(A).
+iat02ans('ab''c'):- put_console(c#"c") | iat03.
+otherwise.
+iat02ans(_):- put_console(c#"*") | iat03.
+
+iat03:- put_console(key#lf) | ana.
+
+ana:- put_console(ascii#"% B_Atom_Name %%%%%%%%%%% ") | ana00.
+
+ana00:- true | ana00func(abc).
+ana00func(X):- true | atom_name(X,A), ana00ans(A).
+ana00ans(ascii#"abc"):- put_console(c#"a") | ana01.
+otherwise.
+ana00ans(_):- put_console(c#"*") | ana01.
+
+ana01:- true | ana01func('ab"c').
+ana01func(X):- true | atom_name(X,A), ana01ans(A).
+ana01ans(ascii#"ab""c"):- put_console(c#"b") | ana02.
+otherwise.
+ana01ans(_):- put_console(c#"*") | ana02.
+
+ana02:- true | ana02func('ab''c').
+ana02func(X):- true | atom_name(X,A), ana02ans(A).
+ana02ans(ascii#"ab'c"):- put_console(c#"c") | ana03.
+otherwise.
+ana02ans(_):- put_console(c#"*") | ana03.
+
+ana03:- put_console(key#lf) | anu.
+
+anu:- put_console(ascii#"% B_Atom_Number %%%%%%%%% ") | anu00.
+
+anu00:- true | anu00func(abc).
+anu00func(X):- true | atom_number(X,A), anu00ans(A).
+anu00ans(N):- integer(N), put_console(c#"a") | anu01.
+otherwise.
+anu00ans(_):- put_console(c#"*") | anu01.
+
+anu01:- true | anu01func('ab"c').
+anu01func(X):- true | atom_number(X,A), anu01ans(A).
+anu01ans(N):- integer(N), put_console(c#"b") | anu02.
+otherwise.
+anu01ans(_):- put_console(c#"*") | anu02.
+
+anu02:- true | anu02func('ab''c').
+anu02func(X):- true | atom_number(X,A), anu02ans(A).
+anu02ans(N):- integer(N), put_console(c#"c") | anu03.
+otherwise.
+anu02ans(_):- put_console(c#"*") | anu03.
+
+anu03:- put_console(key#lf) | done.
+
+done:- true | true.

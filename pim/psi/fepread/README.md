@@ -20,5 +20,7 @@ holds. It is not yet in `run_tests.sh`; it should be.
 | `fepfacts.py` | The facts of §6 computed from the cells. `fepfacts.py handlers` prints §6.2's 63-row table, `extra` what the PSI handles and PIMOS never sends, `strings` the login classes' strings, `facts` the rest |
 | `check.py` | Pins all of it |
 
-Opcode names are not from a document: none is held. A reading that
+Opcode NUMBERS are not printed in any held document; the MNEMONICS are
+(TM-444 PDF p6-16, 30-31; TR-236 PDF p5), so a number is tied to a
+mnemonic only by a witness (`psi/kl0_opcodes.tsv`). A reading that
 rests on an unwitnessed opcode is graded INFERENCE in §6.

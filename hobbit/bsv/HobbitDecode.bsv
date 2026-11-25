@@ -658,6 +658,14 @@ interface HobbitPrefetch;
   method Bool faultAt(Word addr);
   // Record a text translation so the text TLB/NPSR refills (p. 2-1).
   method Action noteFetch(Word addr);
+  // PDU_S1's three lines from an 8-byte-aligned a0 -- lineAt(a0),
+  // lineAt(a0 + 8), lineAt(a0 + 16) -- and each one's faultAt, on two
+  // translations instead of six
+  // (docs/fpga_area.md): a translation depends on the address only
+  // through its page, and a0 + 8 shares a page with a0 or with a0 + 16.
+  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)),
+                 Vector#(3, Bool))
+    lines3(Word a0);
 endinterface
 
 typedef struct {
@@ -775,6 +783,28 @@ module mkHobbitPrefetch#(HobbitMem mem, MemPort port, HobbitMmu mmu,
     end
   endrule
 
+  // A line's lookup, given the translation `xr` of its page (lineAt's
+  // body; only xr.fault and xr.pa[31:12] are used, so a translation of
+  // any address on va's page will do).
+  function Maybe#(Bit#(64)) lineOf(MmuResp xr, Word va);
+    Word addr = { xr.pa[31:12], va[11:0] };
+    Bit#(7) set = addr[9:3];
+    Bit#(22) tag = addr[31:10];
+    PfcLine a0 = way0.sub(set);
+    PfcLine a1 = way1.sub(set);
+    PfcLine a2 = way2.sub(set);
+    Maybe#(Bit#(64)) r = tagged Invalid;
+    if (xr.fault != MMU_OK)
+      r = tagged Invalid;
+    else if ((valid0[set] == 1'b1) && (a0.tag == tag))
+      r = tagged Valid a0.data;
+    else if ((valid1[set] == 1'b1) && (a1.tag == tag))
+      r = tagged Valid a1.data;
+    else if ((valid2[set] == 1'b1) && (a2.tag == tag))
+      r = tagged Valid a2.data;
+    return r;
+  endfunction
+
   method Action startFillAt(Word addr);
     if (!fillingR && !readyR) begin
       fillBase  <= addr & 32'hFFFFFFF8;
@@ -816,24 +846,25 @@ module mkHobbitPrefetch#(HobbitMem mem, MemPort port, HobbitMmu mmu,
     mmu.noteText(xreq(addr));
   endmethod
 
-  method Maybe#(Bit#(64)) lineAt(Word va);
-    let xr = mmu.translate(xreq(va));
-    let addr = xr.pa;
-    Bit#(7) set = addr[9:3];
-    Bit#(22) tag = addr[31:10];
-    PfcLine a0 = way0.sub(set);
-    PfcLine a1 = way1.sub(set);
-    PfcLine a2 = way2.sub(set);
-    Maybe#(Bit#(64)) r = tagged Invalid;
-    if (xr.fault != MMU_OK)
-      r = tagged Invalid;
-    else if ((valid0[set] == 1'b1) && (a0.tag == tag))
-      r = tagged Valid a0.data;
-    else if ((valid1[set] == 1'b1) && (a1.tag == tag))
-      r = tagged Valid a1.data;
-    else if ((valid2[set] == 1'b1) && (a2.tag == tag))
-      r = tagged Valid a2.data;
-    return r;
+  method Maybe#(Bit#(64)) lineAt(Word va) = lineOf(mmu.translate(xreq(va)), va);
+
+  // Every translation is a function of va[31:12] alone (the TLB and NPSR
+  // match, the nonpaged bound in 4 KB units, the walk's entry addresses,
+  // the permission checks) and passes va[11:0] through to the physical
+  // address unchanged (HobbitMmu translateFn).  So a0 + 8, which is on
+  // a0's page unless a0 is the page's last line and then on a0 + 16's,
+  // takes that page's translation with its own low twelve bits.
+  method Tuple4#(Maybe#(Bit#(64)), Maybe#(Bit#(64)), Maybe#(Bit#(64)),
+                 Vector#(3, Bool))
+      lines3(Word a0);
+    Word a1 = a0 + 8;
+    Word a2 = a0 + 16;
+    let x0 = mmu.translate(xreq(a0));
+    let x2 = mmu.translate(xreq(a2));
+    let x1 = (a0[11:3] == 9'h1FF) ? x2 : x0;
+    return tuple4(lineOf(x0, a0), lineOf(x1, a1), lineOf(x2, a2),
+                  cons(x0.fault != MMU_OK, cons(x1.fault != MMU_OK,
+                       cons(x2.fault != MMU_OK, nil))));
   endmethod
 
 endmodule
@@ -933,13 +964,10 @@ module mkHobbitPduS1#(HobbitPrefetch pf)(HobbitPduS1);
 
   method PduS1Out out;
     Word a0 = pcR & 32'hFFFFFFF8;
-    return PduS1Out { pc: pcR,
-                      l0: pf.lineAt(a0),
-                      l1: pf.lineAt(a0 + 8),
-                      l2: pf.lineAt(a0 + 16),
-                      lfault: cons(pf.faultAt(a0),
-                                   cons(pf.faultAt(a0 + 8),
-                                        cons(pf.faultAt(a0 + 16), nil))) };
+    // lineAt(a0), lineAt(a0 + 8), lineAt(a0 + 16) and each one's
+    // faultAt(), on two translations (HobbitPrefetch lines3).
+    match { .l0, .l1, .l2, .lf } = pf.lines3(a0);
+    return PduS1Out { pc: pcR, l0: l0, l1: l1, l2: l2, lfault: lf };
   endmethod
 
   method Action enq(Word pc) if (!full);

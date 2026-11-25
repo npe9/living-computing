@@ -1,0 +1,29 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/qlay" : Compiling ... qlay4/0,qlay5/0,qlay6/0,qlay7/0,qlay8/0,n_queen/2,queen/4,q/4,filter/4,END.
+
+[qlay4/0,qlay5/0,qlay6/0,qlay7/0,qlay8/0]
+successdone
+Loading ... done
+Module name : qlay
+Saving ... done
+
+yes.
+| ?- Total of 145 reductions in N msec.
+
+yes.
+| ?- Total of 1345 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm a12d1527a695d1fa84a1c7f9c844f703e4f062a899bf2fabddd6c4c32aac8d57
+sav 102e9a1c7a47fad8477e2c50a11ff48e46a0bcc7060f84a1b03faa7cbfc38079

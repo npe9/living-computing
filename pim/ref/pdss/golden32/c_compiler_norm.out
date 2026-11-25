@@ -1,0 +1,46 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/norm.kl1" : Compiling ... normalize/11,unique/3,unique/4,normalize_args/13,convert_term_to_list/3,add_trans_instr/5,convert_body_args/7,convert_body_args_one_goal/8,convert_body_one_goal/9,convert_body_one_arg/8,normalize_guard/8,normalize_one_guard/8,dispatch_on_builtin_type/12,normalize_guard_type_or_wait/10,normalize_guard_unify/9,normalize_guard_unify_variable/9,normalize_guard_unify_vect_vect/11,normalize_guard_unify_list_list/9,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194785     50    194    10    1584000        0
+After:       8220     38    105     3      78780        0
+GCed :     186565     12     89     7    1505220        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+compare_vect_elements/11,normalize_structure_args/13,normalize_list_args/11,append_attr/4,ap/3,normalize_one_arg/11,normalize_guard_becomes/9,expand_expression/11,$expand_expression/11_0/9,$expand_expression/11_1/9,expand_expr/10,normalize_guard_float_becomes/9,expand_float_expression/11,$expand_float_expression/11_2/9,$expand_float_expression/11_3/9,expand_float_expr/10,normalize_guard_builtin/11,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193019     48    334     3    1583980        0
+After:      13490     38    130     3     123924        0
+GCed :     179529     10    204     0    1460056        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+concatenate_type_check/5,concatenate/5,normalize_builtin_args/8,normalize_guard_not_unify/9,normalize_guard_not_unify_variable/9,normalize_not_unify_atomic_atomic/9,normalize_not_unify_success/9,normalize_unify_structure_arg/9,normalize_body/8,classify_body/10,classify_one_goal/10,stack/3,classify_one_goal_on_type/6,normalize_body_builtin/6,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     188498     58    661     3    1584812        0
+After:      21828     42    466     3     226116        0
+GCed :     166670     16    195     0    1358696        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+normalize_one_body_builtin/6,normalize_body_builtin_for_pragma/6,normalize_body_becomes/7,Warning:There is no cluase after otherwise
+
+normalize_body_flot_becomes/7,normalize_body_float_becomes/7,expand_body_expression/9,expand_body_expr/8,expand_body_float_expression/9,expand_body_float_expr/8,normalize_pragma/9,take_apart_priority_and_alloc/8,classify_pragma/10,normalize_user_body/6,normalize_last_body_goal/6,normalize_execute_external_call/9,normalize_with_pragma/8,normalize_with_priority_or_alloc/8,normalize_body_goal/6,normalize_external_call/9,
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     187778     52    732     3    1583988        0
+After:      24563     38    416     3     241740        0
+GCed :     163215     14    316     0    1342248        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+extract_args/11,normalize_body_args/6,normalize_body_goal_args/6,extract_and_normalize_fork_args/7,extract_and_normalize_fork_args/10,normalize_argument_put/9,normalize_body_unify/7,normalize_body_unify_variable/7,normalize_body_vector/8,normalize_body_list/7,C/4,normalize_body_structure_args/10,normalize_body_list_args/8,normalize_body_one_arg/8,normalize_body_goal_unify/7,normalize_body_goal_unify_variable/7,max_goal_slots/1,pack_body_goal/2,pack_body_goal/4,copy_args_of_goal/6,
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     189774     48    577     3    1583996        0
+After:      21827     38    104     3     187532        0
+GCed :     167947     10    473     0    1396464        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+copy_args_to_vect/6,normalize_body_one_by_one/7,normalize_both_body/6,normalize_on_type/10,normalize_last_both_body/6,normalize_last_on_type/10,variable_generator/3,convert_integer_to_string/2,END.
+
+[normalize/11,variable_generator/3]
+successdone
+
+exit 0
+asm fdea79ba59dead032c889d0587f711ae26d71ebd86849ab1828dbaa612db704e
+sav none

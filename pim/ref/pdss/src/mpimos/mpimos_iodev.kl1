@@ -1,0 +1,17 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_io_device.
+:- public windows/1, window_request/3, files/1, file_request/4,
+	  timer/1, timer_request/3.
+
+windows(A):-true|mpimos_window_device:windows(A).
+window_request(A,B,C):-true|mpimos_window_device:window_request(A,B,C).
+files(A):-true|mpimos_file_device:files(A).
+file_request(A,B,C,D):-true|mpimos_file_device:file_request(A,B,C,D).
+timer(A):-true|mpimos_timer_device:timer(A).
+timer_request(A,B,C):-true|mpimos_timer_device:timer_request(A,B,C).

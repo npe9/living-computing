@@ -1,0 +1,30 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/file.kl1" : Compiling ... create/3,create/4,request/4,mode_check/7,os_create/7,create_monitor/6,create_success/1,create_error/5,read_mode/5,read_mode_error/6,unify_char/8,skip_char/8,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195083     50    176    10    1583936        0
+After:      11212     38    104     3     102548        0
+GCed :     183871     12     72     7    1481388        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+unify_string/8,make_term/9,check_parse/10,parse_error/10,display_parse_error/4,elements/2,elements/3,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     188800     98    637     3    1584028        0
+After:      21082     42    155     3     187996        0
+GCed :     167718     56    482     0    1396032        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+write_mode/8,flush_buffer/6,get_buffer/4,wait_write/10,wait/2,write_mode_error/9,set_char/9,tab/9,wait_tab_write/9,set_string/9,set_string/11,wait_putb/10,set_string_list/9,set_string_list/12,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     188301    132    656     3    1584108        0
+After:      11742    126    656     3     171492        0
+GCed :     176559      6      0     0    1412616        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+wait_list_putb/11,wait_close/7,closed/5,check_op/6,check_op/9,command_error/5,cannot_write/2,raise_error/4,message/2,append/3,END.
+
+[create/3,create/4,os_create/7,request/4]
+successdone
+
+exit 0
+asm ecaca70570f40817fc07342ced654e935296b146ea9dc47867b3d556c42ea889
+sav none

@@ -1,0 +1,422 @@
+%% bup_3.ghc ICOT (1987-1-7).   PDSS version 10/20,1987.
+%% atarashii, nihon, no, icot, no, pim_group, no, kenkyuusha, wa,
+%% atarashii, nihon, no, icot, no, pim_group, no, computer, wo, kokoromiru.
+
+:- module bup.
+:- public bup/0.
+
+bup :- true | go(3).
+
+go(3) :- true | go3(T).
+
+/*
+go(1) :- true | go1(T), outconv(T,S), out(S).
+go(2) :- true | go2(T), outconv(T,S), out(S).
+go(3) :- true | go3(T), outconv(T,S), out(S).
+go(4) :- true | go4(T), outconv(T,S), out(S).
+go(5) :- true | go5(T), outconv(T,S), out(S).
+
+outconv([H|TL],S):- wait(H) | S=[putt(H,100,100),nl|SL], outconv(TL,SL).
+outconv([]    ,S):- true    | S=[putt('done.'),getl(X)].
+
+out(S):- true |	symbol_name('BUP_OUTPUT',WN), window:create([show|S],WN).
+*/
+
+go1(T) :- true |
+	goal(sentence, T, [kenkyuusha, wa, computer, wo, kokoromiru], []).
+go2(T) :- true |
+	goal(sentence, T, [atarashii, nihon, no, icot, no, pim_group, no,
+         kenkyuusha, wa,
+	 atarashii, computer, wo, kokoromiru], []).
+go3(T) :- true |
+	goal(sentence, T, [atarashii, nihon, no, icot, no, pim_group, no,
+         kenkyuusha, wa,
+         atarashii, nihon, no, icot, no, pim_group, no,
+	 computer, wo, kokoromiru], []).
+go4(T) :- true |
+	goal(sentence, T, [atarashii, nihon, no, icot, no, pim_group, no,
+         kenkyuusha, wa,
+         atarashii, nihon, no, computer, wo, kokoromiru], []).
+go5(T) :- true |
+	goal(sentence, T, [atarashii, nihon, no, icot, no, pim_group, no,
+         kenkyuusha, wa,
+         atarashii, nihon, no, pim_group, no,
+	 computer, wo, kokoromiru], []).
+
+
+goal(Curgoal,Arg,S0,S) :- true |
+	get_dict(RR,Nt,Arg1,S0,S1),
+        link(Res,Nt,Curgoal),
+        pre_c(RR,Res,Nt,Curgoal,Arg1,S1,S,Arg).
+
+pre_c(t,t,Nt,Curgoal,Arg1,S1,S,Arg) :- true |
+        pred_call(Nt,Curgoal,Arg1,S1,S,Arg).
+otherwise.
+pre_c(_,_,Nt,Curgoal,Arg1,S1,S,Arg) :- true |
+	Arg=[],S=[].
+
+get_dict(RR,Nt,F1,[F|R],R1) :- true |
+	dict(Res,Nt,F),get_d(Res,F,R,F1,R1,RR).
+
+get_d(t,F,R,F1,R1,Res) :- true | [F]=F1,R=R1,Res = t.
+get_d(f,_,_,_,_,Res) :- true | Res = f.
+
+
+goal0(Curgoal,Arg,S0,S) :- true |
+	get_dict(RR,Nt,Arg1,S0,S1),
+        link(Res,Nt,Curgoal),
+        pre_c0(RR,Res,Nt,Curgoal,Arg1,S1,S,Arg).
+
+pre_c0(t,t,Nt,Curgoal,Arg1,S1,S,Arg) :- true |
+        pred_call0(Nt,Curgoal,Arg1,S1,S,Arg).
+otherwise.
+pre_c0(_,_,Nt,Curgoal,Arg1,S1,S,Arg) :- true |
+	Arg=[],S=[].
+
+pred_call0(sobj,    A1,A2,A3,A4,A5) :- true | sobj0(A1,A2,A3,A4,A5).
+pred_call0(pred,    A1,A2,A3,A4,A5) :- true | pred0(A1,A2,A3,A4,A5).
+pred_call0(case,    A1,A2,A3,A4,A5) :- true | case0(A1,A2,A3,A4,A5).
+pred_call0(verb,    A1,A2,A3,A4,A5) :- true | verb0(A1,A2,A3,A4,A5).
+pred_call0(adj,     A1,A2,A3,A4,A5) :- true | adj0(A1,A2,A3,A4,A5).
+pred_call0(np,      A1,A2,A3,A4,A5) :- true | np0(A1,A2,A3,A4,A5).
+pred_call0(pro_noun,A1,A2,A3,A4,A5) :- true | pro_noun0(A1,A2,A3,A4,A5).
+pred_call0(gen_noun,A1,A2,A3,A4,A5) :- true | gen_noun0(A1,A2,A3,A4,A5).
+pred_call0(p,       A1,A2,A3,A4,A5) :- true | p0(A1,A2,A3,A4,A5).
+pred_call0(lno,     A1,A2,A3,A4,A5) :- true | lno0(A1,A2,A3,A4,A5).
+pred_call0(pp,      A1,A2,A3,A4,A5) :- true | pp0(A1,A2,A3,A4,A5).
+pred_call0(sentence,A1,A2,A3,A4,A5) :- true | sentence0(A1,A2,A3,A4,A5).
+
+sobj0(A,B,C,D,E) :- A=sobj | D=[C],E=[B].
+otherwise.
+sobj0(A,B,C,D,E) :- true | sobj01(A,B,C,D,E).
+sobj01(A,[B],C,D,E) :- true |
+	link(R,sentence,A),r_sentence0(R,A,[[sentence,B]],C,D,E).
+
+r_sentence0(t,A,B,C,D,E) :- true | sentence0(A,B,C,D,E).
+r_sentence0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+pred0(A,B,C,D,E) :- A=pred | D=[C],E=[B].
+otherwise.
+pred0(A,B,C,D,E) :- true | pred01(A,B,C,D,E).
+pred01(A,[B],C,D,E) :- true |
+	link(R,sobj,A),r_sobj0(R,A,[[sobj,B]],C,D,E).
+
+r_sobj0(t,A,B,C,D,E) :- true | sobj0(A,B,C,D,E).
+r_sobj0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+case0(A,B,C,D,E) :- A=case | D=[C],E=[B].
+otherwise.
+case0(A,B,C,D,E) :- true | case01(A,B,C,D,E).
+case01(A,[B],C,D,E) :- true |
+	link(R,sobj,A),r_g_sobj0(R,A,B,C,D,E).
+
+r_g_sobj0(t,A,B,C,D,E) :- true | goal0(sobj,F,C,G),repeat_sobj0(A,B,F,G,D,E).
+r_g_sobj0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+repeat_sobj0(A,B,F,[],D,E) :- true | D=[],E=[].
+repeat_sobj0(A,B,[[F]|F1],[G|G1],DO,EO) :- true |
+        sobj0(A,[[sobj,B,F]],G,D,E),
+        repeat_sobj0(A,B,F1,G1,D1,E1),
+        merg(D,E,D1,E1,DO,EO).
+
+verb0(A,B,C,D,E) :- A=verb | D=[C],E=[B].
+otherwise.
+verb0(A,B,C,D,E) :- true | verb01(A,B,C,D,E).
+verb01(A,[B],C,D,E) :- true |
+	link(R,pred,A),r_pred0(R,A,[[pred,B]],C,D,E).
+
+r_pred0(t,A,B,C,D,E) :- true | pred0(A,B,C,D,E).
+r_pred0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+adj0(A,B,C,D,E) :- A=adj | D=[C],E=[B].
+otherwise.
+adj0(A,B,C,D,E) :- true | adj01(A,B,C,D,E).
+adj01(A,B,C,D,E) :- true |
+	adj02(A,B,C,D1,E1),adj03(A,B,C,D2,E2),merg(D1,E1,D2,E2,D,E).
+adj02(A,[B],C,D,E) :- true |
+	link(R,pred,A),r_pred0(R,A,[[pred,B]],C,D,E).
+adj03(A,[B],C,D,E) :- true |
+	link(R,np,A),r_g_np0(R,A,B,C,D,E).
+
+r_g_np0(t,A,B,C,D,E) :- true | goal0(np,F,C,G),repeat_np0(A,B,F,G,D,E).
+r_g_np0(f,A,B,C,D,E) :- true | D=[],E = [].
+
+repeat_np0(A,B,F,[],D,E) :- true | D=[],E=[].
+repeat_np0(A,B,[[F]|F1],[G|G1],DO,EO) :- true |
+        np0(A,[[np,B,F]],G,D,E),
+        repeat_np0(A,B,F1,G1,D1,E1),
+        merg(D,E,D1,E1,DO,EO).
+
+np0(A,B,C,D,E) :- A=np | D=[C|D1],E=[B|E1],np03(A,B,C,D1,E1).
+otherwise.
+np0(A,B,C,D,E) :- true | np01(A,B,C,D,E).
+np01(A,B,C,D,E) :- true |
+	np02(A,B,C,D1,E1),np03(A,B,C,D2,E2),merg(D1,E1,D2,E2,D,E).
+np02(A,[B],C,D,E) :- true |
+	link(R,case,A),r_g_case0(R,A,B,C,D,E).
+
+r_g_case0(t,A,B,C,D,E) :- true | goal0(pp,F,C,G),repeat_case0(A,B,F,G,D,E).
+r_g_case0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+repeat_case0(A,B,F,[],D,E) :- true | D=[],E=[].
+repeat_case0(A,B,[[F]|F1],[G|G1],DO,EO) :- true |
+        case0(A,[[case,B,F]],G,D,E),
+        repeat_case0(A,B,F1,G1,D1,E1),
+        merg(D,E,D1,E1,DO,EO).
+
+np03(A,[B],C,D,E) :- true | link(R,np,A),r_g_goal0(R,A,B,C,D,E).
+
+r_g_goal0(t,A,B,C,D,E) :- true | goal0(lno,F,C,G),repeat_goal0(A,B,F,G,D,E).
+r_g_goal0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+repeat_goal0(A,B,[],[],D,E) :- true | D=[],E=[].
+repeat_goal0(A,B,[[F]|F1],[G|G1],DO,EO) :- true |
+	goal0(np,H,G,I),repeat_np0(A,B,F,H,I,D,E),
+	repeat_goal0(A,B,F1,G1,D1,E1),merg(D,E,D1,E1,DO,EO).
+
+repeat_np0(A,B,F,H,[],D,E) :- true | D=[],E=[].
+repeat_np0(A,B,F,[[H]|H1],[I|I1],DO,EO) :- true |
+	np0(A,[[np,B,F,H]],I,D,E),repeat_np0(A,B,F,H1,I1,D1,E1),
+	merg(D,E,D1,E1,DO,EO).
+
+pro_noun0(A,B,C,D,E) :- A=pro_noun | D=[C],E=[B].
+otherwise.
+pro_noun0(A,B,C,D,E) :- true | pro_noun01(A,B,C,D,E).
+pro_noun01(A,[B],C,D,E) :- true | link(R,np,A),r_np0(R,A,[[np,B]],C,D,E).
+
+r_np0(t,A,B,C,D,E) :- true | np0(A,B,C,D,E).
+r_np0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+gen_noun0(A,B,C,D,E) :- A=gen_noun | D=[C],E=[B].
+otherwise.
+gen_noun0(A,B,C,D,E) :- true | gen_noun01(A,B,C,D,E).
+gen_noun01(A,[B],C,D,E) :- true | link(R,np,A),r_np0(R,A,[[np,B]],C,D,E).
+
+p0(A,B,C,D,E) :- A=p | D=[C],E=[B].
+otherwise.
+p0(A,B,C,D,E) :- true | p01(A,B,C,D,E).
+p01(A,B,C,D,E) :- true |
+	p02(A,B,C,D1,E1),p03(A,B,C,D2,E2),merg(D1,E1,D2,E2,D,E).
+p02(A,[B],C,D,E) :- true | link(R,pp,A),r_pp0(R,A,[[pp,B]],C,D,E).
+p03(A,[B],C,D,E) :- true | link(R,pp,A),r_g_pp0(R,A,B,C,D,E).
+
+r_g_pp0(t,A,B,C,D,E) :- true | goal0(p,F,C,G),repeat_pp0(A,B,F,G,D,E).
+r_g_pp0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+r_pp0(t,A,B,C,D,E) :- true | pp0(A,B,C,D,E).
+r_pp0(f,A,B,C,D,E) :- true | D=[],E=[].
+
+repeat_pp0(A,B,F,[],D,E) :- true | D=[],E=[].
+repeat_pp0(A,B,[[F]|F1],[G|G1],DO,EO) :- true |
+	pp0(A,[[pp,B,F]],G,D,E),repeat_pp0(A,B1,F1,G1,D1,E1),
+	merg(D,E,D1,E1,DO,EO).
+
+lno0(A,B,C,D,E) :- A=lno | D=[C],E=[B].
+otherwise.
+lno0(A,B,C,D,E) :- true | D=[], E=[].
+pp0(A,B,C,D,E) :- A=pp | D=[C],E=[B].
+otherwise.
+pp0(A,B,C,D,E) :- true | D=[], E=[].
+
+sentence0(A,B,C,D,E) :- A=sentence | C=[D],E=[B].
+otherwise.
+sentence0(A,B,C,D,E) :- true | D=[], E=[].
+
+% mode marge(+,+,+,+,-,-).
+merg([],[],D,E,DO,EO) :- true | DO=D, EO=E.
+merg(D,E,[],[],DO,EO) :- true | DO=D, EO=E.
+merg([A|X],[B|Y],D,E,DO,EO) :- true |
+	DO =[A|W1],EO =[B|W2],merg(D,E,X,Y,W1,W2).
+merg(D,E,[A|X],[B|Y],DO,EO) :- true |
+	DO =[A|W1],EO =[B|W2],merg(X,Y,D,E,W1,W2).
+
+
+pred_call(sobj,    A1,A2,A3,A4,A5) :- true | sobj(A1,A2,A3,A4,A5).
+pred_call(pred,    A1,A2,A3,A4,A5) :- true | pred(A1,A2,A3,A4,A5).
+pred_call(case,    A1,A2,A3,A4,A5) :- true | case(A1,A2,A3,A4,A5).
+pred_call(verb,    A1,A2,A3,A4,A5) :- true | verb(A1,A2,A3,A4,A5).
+pred_call(adj,     A1,A2,A3,A4,A5) :- true | adj(A1,A2,A3,A4,A5).
+pred_call(np,      A1,A2,A3,A4,A5) :- true | np(A1,A2,A3,A4,A5).
+pred_call(pro_noun,A1,A2,A3,A4,A5) :- true | pro_noun(A1,A2,A3,A4,A5).
+pred_call(gen_noun,A1,A2,A3,A4,A5) :- true | gen_noun(A1,A2,A3,A4,A5).
+pred_call(p,       A1,A2,A3,A4,A5) :- true | p(A1,A2,A3,A4,A5).
+pred_call(lno,     A1,A2,A3,A4,A5) :- true | lno(A1,A2,A3,A4,A5).
+pred_call(pp,      A1,A2,A3,A4,A5) :- true | pp(A1,A2,A3,A4,A5).
+pred_call(sentence,A1,A2,A3,A4,A5) :- true | sentence(A1,A2,A3,A4,A5).
+otherwise.
+pred_call(_,       A1,A2,A3,A4,A5) :- true | A4=[],A5=[].
+
+sobj(A,B,C,D,E) :- A=sobj,D=C | E=[B].
+otherwise.
+sobj(A,B,C,D,E) :- true | sobj1(A,B,C,D,E).
+sobj1(A,[B],C,D,E) :- true |
+	link(R,sentence,A),r_sentence(R,A,[[sentence,B]],C,D,E).
+
+r_sentence(t,A,B,C,D,E) :- true | sentence(A,B,C,D,E).
+r_sentence(f,A,B,C,D,E) :- true | E=[].
+
+pred(A,B,C,D,E) :- A=pred,D=C | E=[B].
+otherwise.
+pred(A,B,C,D,E) :- true | pred1(A,B,C,D,E).
+pred1(A,[B],C,D,E) :- true | link(R,sobj,A),r_sobj(R,A,[[sobj,B]],C,D,E).
+
+r_sobj(t,A,B,C,D,E) :- true | sobj(A,B,C,D,E).
+r_sobj(f,A,B,C,D,E) :- true | E=[].
+
+case(A,B,C,D,E) :- A=case,D=C | E=[B].
+otherwise.
+case(A,B,C,D,E) :- true | case1(A,B,C,D,E).
+case1(A,[B],C,D,E) :- true | link(R,sobj,A),r_g_sobj(R,A,B,C,D,E).
+
+r_g_sobj(t,A,B,C,D,E) :- true | goal0(sobj,F,C,G),repeat_sobj(A,B,F,G,D,E).
+r_g_sobj(f,A,B,C,D,E) :- true | E=[].
+
+repeat_sobj(A,B,F,[],D,E) :- true | E=[].
+repeat_sobj(A,B,[[F]|F1],[G|G1],D,EO) :- true |
+	sobj(A,[[sobj,B,F]],G,D,E),repeat_sobj(A,B,F1,G1,D,E1),merg(E,E1,EO).
+
+verb(A,B,C,D,E) :- A=verb,D=C | E=[B].
+otherwise.
+verb(A,B,C,D,E) :- true | verb1(A,B,C,D,E).
+verb1(A,[B],C,D,E) :- true | link(R,pred,A),r_pred(R,A,[[pred,B]],C,D,E).
+
+r_pred(t,A,B,C,D,E) :- true | pred(A,B,C,D,E).
+r_pred(f,A,B,C,D,E) :- true | E=[].
+
+adj(A,B,C,D,E) :- A=adj,D=C | E=[B].
+otherwise.
+adj(A,B,C,D,E) :- true | adj1(A,B,C,D,E).
+adj1(A,B,C,D,E) :- true | adj2(A,B,C,D,E1),adj3(A,B,C,D,E2),merg(E1,E2,E).
+adj2(A,[B],C,D,E) :- true | link(R,pred,A),r_pred(R,A,[[pred,B]],C,D,E).
+adj3(A,[B],C,D,E) :- true | link(R,np,A),r_g_np(R,A,B,C,D,E).
+
+r_g_np(t,A,B,C,D,E) :- true | goal0(np,F,C,G),repeat_np(A,B,F,G,D,E).
+r_g_np(f,A,B,C,D,E) :- true | E = [].
+
+repeat_np(A,B,F,[],D,E) :- true | E=[].
+repeat_np(A,B,[[F]|F1],[G|G1],D,EO) :- true |
+	np(A,[[np,B,F]],G,D,E),repeat_np(A,B,F1,G1,D,E1),merg(E,E1,EO).
+
+np(A,B,C,D,E) :- A=np,D=C | E=[B|E1],np3(A,B,C,D,E1).
+otherwise.
+np(A,B,C,D,E) :- true | np1(A,B,C,D,E).
+np1(A,B,C,D,E) :- true | np2(A,B,C,D,E1),np3(A,B,C,D,E2),merg(E1,E2,E).
+np2(A,[B],C,D,E) :- true | link(R,case,A),r_g_case(R,A,B,C,D,E).
+
+r_g_case(t,A,B,C,D,E) :- true | goal0(pp,F,C,G),repeat_case(A,B,F,G,D,E).
+r_g_case(f,A,B,C,D,E) :- true | E=[].
+
+repeat_case(A,B,F,[],D,E) :- true | E=[].
+repeat_case(A,B,[[F]|F1],[G|G1],D,EO) :- true |
+      	case(A,[[case,B,F]],G,D,E),repeat_case(A,B,F1,G1,D,E1),merg(E,E1,EO).
+
+np3(A,[B],C,D,E) :- true | link(R,np,A),r_g_goal(R,A,B,C,D,E).
+
+r_g_goal(t,A,B,C,D,E) :- true | goal0(lno,F,C,G),repeat_goal(A,B,F,G,D,E).
+r_g_goal(f,A,B,C,D,E) :- true | E=[].
+
+repeat_goal(A,B,[],[],D,E) :- true | E=[].
+repeat_goal(A,B,[[F]|F1],[G|G1],D,EO) :- true |
+	goal0(np,H,G,I),repeat_np(A,B,F,H,I,D,E),repeat_goal(A,B,F1,G1,D,E1),
+      	merg(E,E1,EO).
+
+repeat_np(A,B,F,H,[],D,E) :- true | E=[].
+repeat_np(A,B,F,[[H]|H1],[I|I1],D,EO) :- true |
+	np(A,[[np,B,F,H]],I,D,E),repeat_np(A,B,F,H1,I1,D,E1),merg(E,E1,EO).
+
+pro_noun(A,B,C,D,E) :- A=pro_noun,D=C | E=[B].
+otherwise.
+pro_noun(A,B,C,D,E) :- true | pro_noun1(A,B,C,D,E).
+pro_noun1(A,[B],C,D,E) :- true | link(R,np,A),r_np(R,A,[[np,B]],C,D,E).
+
+r_np(t,A,B,C,D,E) :- true | np(A,B,C,D,E).
+r_np(f,A,B,C,D,E) :- true | E=[].
+
+gen_noun(A,B,C,D,E) :-  A=gen_noun,D=C | E=[B].
+otherwise.
+gen_noun(A,B,C,D,E) :- true | gen_noun1(A,B,C,D,E).
+gen_noun1(A,[B],C,D,E) :- true | link(R,np,A),r_np(R,A,[[np,B]],C,D,E).
+
+p(A,B,C,D,E) :- A=p,D=C | E=[B].
+otherwise.
+p(A,B,C,D,E) :- true | p1(A,B,C,D,E).
+p1(A,B,C,D,E) :- true | p2(A,B,C,D,E1),p3(A,B,C,D,E2),merg(E1,E2,E).
+p2(A,[B],C,D,E) :- true | link(R,pp,A),r_pp(R,A,[[pp,B]],C,D,E).
+p3(A,[B],C,D,E) :- true | link(R,pp,A),r_g_pp(R,A,B,C,D,E).
+
+r_g_pp(t,A,B,C,D,E) :- true | goal0(p,F,C,G),repeat_pp(A,B,F,G,D,E).
+r_g_pp(f,A,B,C,D,E) :- true | E=[].
+
+r_pp(t,A,B,C,D,E) :- true | pp(A,B,C,D,E).
+r_pp(f,A,B,C,D,E) :- true | E=[].
+
+repeat_pp(A,B,F,[],D,E) :- true | E=[].
+repeat_pp(A,B,[[F]|F1],[G|G1],D,EO) :- true |
+	pp(A,[[pp,B,F]],G,D,E),repeat_pp(A,B,F1,G1,D,E1),merg(E,E1,EO).
+
+lno(A,B,C,D,E) :- A=lno,D=C | E=[B].
+otherwise.
+lno(A,B,C,D,E) :- true | E=[].
+pp(A,B,C,D,E) :- A=pp,D=[C] | E=[B].
+otherwise.
+pp(A,B,C,D,E) :- true | E=[].
+
+sentence(A,B,C,D,E) :- A=sentence,C=D | E=[B].
+otherwise.
+sentence(A,B,C,D,E) :- true | E = [].
+
+
+merg([A|X],Y,Z) :- true | Z=[A|W],merg(Y,X,W).
+merg(X,[A|Y],Z) :- true | Z=[A|W],merg(Y,X,W).
+merg([],Y,Z)    :- true | Z=Y.
+merg(X,[],Z)    :- true | Z=X.
+
+
+dict(R,P,ga)         :- true | P=p,R=t.
+dict(R,P,wa)         :- true | P=p,R=t.
+dict(R,P,ni)         :- true | P=p,R=t.
+dict(R,P,wo)         :- true | P=p,R=t.
+dict(R,P,icot)       :- true | P=pro_noun,R=t.
+dict(R,P,nihon)      :- true | P=pro_noun,R=t.
+dict(R,P,pim_group)  :- true | P=pro_noun,R=t.
+dict(R,G,computer)   :- true | G=gen_noun,R=t.
+dict(R,G,kenkyuusha) :- true | G=gen_noun,R=t.
+dict(R,G,system)     :- true | G=gen_noun,R=t.
+dict(R,A,atarashii)  :- true | A=adj,R=t.
+dict(R,A,muzukashii) :- true | A=adj,R=t.
+dict(R,A,ureshii)    :- true | A=adj,R=t.
+dict(R,V,kokoromiru) :- true | V=verb,R=t.
+dict(R,V,kuraberu)   :- true | V=verb,R=t.
+dict(R,V,omou)       :- true | V=verb,R=t.
+dict(R,L,no)         :- true | L=lno,R=t.
+otherwise.
+dict(R,_,_)          :- true | R=f.
+
+link(R,A,A)           :- true | R=t.
+link(R,adj,np)        :- true | R=t.
+link(R,gen_noun,np)   :- true | R=t.
+link(R,pro_noun,np)   :- true | R=t.
+link(R,p,pp)          :- true | R=t.
+link(R,np,case)       :- true | R=t.
+link(R,adj,case)      :- true | R=t.
+link(R,gen_noun,case) :- true | R=t.
+link(R,pro_noun,case) :- true | R=t.
+link(R,adj,pred)      :- true | R=t.
+link(R,verb,pred)     :- true | R=t.
+link(R,case,sobj)     :- true | R=t.
+link(R,np,sobj)       :- true | R=t.
+link(R,adj,sobj)      :- true | R=t.
+link(R,gen_noun,sobj) :- true | R=t.
+link(R,pro_noun,sobj) :- true | R=t.
+link(R,pred,sobj)     :- true | R=t.
+link(R,verb,sobj)     :- true | R=t.
+link(R,sobj,sentence) :- true | R=t.
+link(R,case,sentence) :- true | R=t.
+link(R,np,sentence)   :- true | R=t.
+link(R,adj,sentence)  :- true | R=t.
+link(R,gen_noun,sentence) :- true | R=t.
+link(R,pro_noun,sentence) :- true | R=t.
+link(R,pred,sentence) :- true | R=t.
+link(R,verb,sentence) :- true | R=t.
+otherwise.
+link(R,_,_)           :- true | R=f.

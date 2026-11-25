@@ -1,0 +1,39 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/dead" : Compiling ... go/1,hooked/1,unfy/2,collect/1,merge/1,read/1,END.
+
+[go/1]
+successdone
+Loading ... done
+Module name : dead
+Saving ... done
+
+yes.
+| ?- %%% MGHOKoo=MGHOKoo
+
+*** Deadlock will occur. [unify(MGHOKo,MGHOKo)]
+*** Unifying two merger input variables.
+*** Unification occurred in dead:unfy/2
+[0002]merge(A^,B~) in dead:merge/1
+[0002]dead:read(B~).
+[0002]merge(C^,D~) in dead:merge/1
+[0002]dead:read(D~).
+
+Deadlock will occur ('merger-input' = 'merger-input').
+Goals : merge/2(in dead:merge/1)
+Unified in : dead:unfy/2
+Continue or Abort (c/a) ?- Task task_1/{24} was aborted !!
+
+no.
+| ?-
+exit 0
+asm bd064b7cfe286a04781a8c7d742654af64d7580004ff38e63c2c7a467c4636c2
+sav 6322f0d7b71062cf8a00f67d8504b155e8241d043697eceb52483fa6f613a014

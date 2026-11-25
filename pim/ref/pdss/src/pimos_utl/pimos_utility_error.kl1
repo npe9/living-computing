@@ -1,0 +1,21 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1991,1992.						 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pimos_utility_error.
+:- with_macro pdss.
+:- public error/3.
+
+error(ErrorID,ErrorInfo,Data) :- true |
+	mpimos_utility:freeze(Data,FData),
+	shoen_raise(ErrorID,ErrorInfo,FData).
+
+shoen_raise(ErrorID,ErrorInfo,Data) :- wait(Data) |
+	raise(shoen_tag#mpimos_error,error,
+	      [putl(string#"PIMOS-UTILITY error reported !!"),
+	       putb(string#"Error>> "),putt(ErrorID),nl,
+	       putb(string#" Info > "),putl(ErrorInfo),
+	       putb(string#" Data > "),puttq(Data),nl]).

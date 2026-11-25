@@ -265,7 +265,7 @@ temporary_single_scrolling_menu	5	in new set	4	0	0
 temporary_standard_io_window	1	in new set	2	1	1		
 temporary_window	8	in new set	35	1	3		activate kill
 throw	13	in new set	12	1	1		
-time	95	in new set	95	5	8		get_string plus set_value
+time	95	in new set	132	5	12		get_count get_string get_value minus plus set_count set_value
 tjbunmyaku	7	package name, not a class	0	5	0	create execute get_data_pool go set_permission	
 trace	6	in new set	1	2	1	notrace	
 trace_exception_handler	15	in new set	20	4	4		

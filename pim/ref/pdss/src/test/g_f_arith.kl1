@@ -1,0 +1,376 @@
+%%% KL1-B Test for G_Float_Arithmetic %%%
+% G_Float_Add %%%%%%%%%%% abcdefghijk
+% G_Float_Subtract %%%%%% abcdefghijk
+% G_Float_Multiply %%%%%% abcdefghijk
+% G_Float_Divide %%%%%%%% abcdefghijk
+% G_Float_Minus %%%%%%%%% abc
+
+:- module g_f_arith.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Float_Arithmetic %%%"), put_console(key#lf) | add.
+
+add:- put_console(ascii#"% G_Float_Add %%%%%%%%%%% ") | add00.
+
+add00:- true | add00(12.34,12.34).
+add00(X,Y):- Z$:=X+Y | add00(Z).
+otherwise.
+add00(_,_):- put_console(c#"*") | add01.
+add00(Z):- 24.68-1.0e-4$<Z, Z$< 24.68+1.0e-4, put_console(c#"a") | add01.
+otherwise.
+add00(_):- put_console(c#"*") | add01.
+
+add01:- true | add01(12.34,0.0).
+add01(X,Y):- Z$:=X+Y | add01(Z).
+otherwise.
+add01(_,_):- put_console(c#"*") | add02.
+add01(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"b") | add02.
+otherwise.
+add01(_):- put_console(c#"*") | add02.
+
+add02:- true | add02(12.34,-12.34).
+add02(X,Y):- Z$:=X+Y | add02(Z).
+otherwise.
+add02(_,_):- put_console(c#"*") | add03.
+add02(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"c") | add03.
+otherwise.
+add02(_):- put_console(c#"*") | add03.
+
+add03:- true | add03(0.0,12.34).
+add03(X,Y):- Z$:=X+Y | add03(Z).
+otherwise.
+add03(_,_):- put_console(c#"*") | add04.
+add03(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"d") | add04.
+otherwise.
+add03(_):- put_console(c#"*") | add04.
+
+add04:- true | add04(0.0,0.0).
+add04(X,Y):- Z$:=X+Y | add04(Z).
+otherwise.
+add04(_,_):- put_console(c#"*") | add05.
+add04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | add05.
+otherwise.
+add04(_):- put_console(c#"*") | add05.
+
+add05:- true | add05(0.0,-12.34).
+add05(X,Y):- Z$:=X+Y | add05(Z).
+otherwise.
+add05(_,_):- put_console(c#"*") | add06.
+add05(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"f") | add06.
+otherwise.
+add05(_):- put_console(c#"*") | add06.
+
+add06:- true | add06(-12.34,12.34).
+add06(X,Y):- Z$:=X+Y | add06(Z).
+otherwise.
+add06(_,_):- put_console(c#"*") | add07.
+add06(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"g") | add07.
+otherwise.
+add06(_):- put_console(c#"*") | add07.
+
+add07:- true | add07(-12.34,0.0).
+add07(X,Y):- Z$:=X+Y | add07(Z).
+otherwise.
+add07(_,_):- put_console(c#"*") | add08.
+add07(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"h") | add08.
+otherwise.
+add07(_):- put_console(c#"*") | add08.
+
+add08:- true | add08(-12.34,-12.34).
+add08(X,Y):- Z$:=X+Y | add08(Z).
+otherwise.
+add08(_,_):- put_console(c#"*") | add09.
+add08(Z):- -24.68-1.0e-4$<Z, Z$< -24.68+1.0e-4, put_console(c#"i") | add09.
+otherwise.
+add08(_):- put_console(c#"*") | add09.
+
+add09:- true | add09(3.0e38,3.0e38).
+add09(X,Y):- Z$:=X+Y, put_console(c#"*") | add10.
+otherwise.
+add09(_,_):- put_console(c#"j") | add10.
+
+add10:- true | add10(-3.0e38,-3.0e38).
+add10(X,Y):- Z$:=X+Y, put_console(c#"*") | add11.
+otherwise.
+add10(_,_):- put_console(c#"k") | add11.
+
+add11:- put_console(key#lf) | sub.
+
+sub:- put_console(ascii#"% G_Float_Subtract %%%%%% ") | sub00.
+
+sub00:- true | sub00(12.34,12.34).
+sub00(X,Y):- Z$:=X-Y | sub00(Z).
+otherwise.
+sub00(_,_):- put_console(c#"*") | sub01.
+sub00(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"a") | sub01.
+otherwise.
+sub00(_):- put_console(c#"*") | sub01.
+
+sub01:- true | sub01(12.34,0.0).
+sub01(X,Y):- Z$:=X-Y | sub01(Z).
+otherwise.
+sub01(_,_):- put_console(c#"*") | sub02.
+sub01(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"b") | sub02.
+otherwise.
+sub01(_):- put_console(c#"*") | sub02.
+
+sub02:- true | sub02(12.34,-12.34).
+sub02(X,Y):- Z$:=X-Y | sub02(Z).
+otherwise.
+sub02(_,_):- put_console(c#"*") | sub03.
+sub02(Z):- 24.68-1.0e-4$<Z, Z$< 24.68+1.0e-4, put_console(c#"c") | sub03.
+otherwise.
+sub02(_):- put_console(c#"*") | sub03.
+
+sub03:- true | sub03(0.0,12.34).
+sub03(X,Y):- Z$:=X-Y | sub03(Z).
+otherwise.
+sub03(_,_):- put_console(c#"*") | sub04.
+sub03(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"d") | sub04.
+otherwise.
+sub03(_):- put_console(c#"*") | sub04.
+
+sub04:- true | sub04(0.0,0.0).
+sub04(X,Y):- Z$:=X-Y | sub04(Z).
+otherwise.
+sub04(_,_):- put_console(c#"*") | sub05.
+sub04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | sub05.
+otherwise.
+sub04(_):- put_console(c#"*") | sub05.
+
+sub05:- true | sub05(0.0,-12.34).
+sub05(X,Y):- Z$:=X-Y | sub05(Z).
+otherwise.
+sub05(_,_):- put_console(c#"*") | sub06.
+sub05(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"f") | sub06.
+otherwise.
+sub05(_):- put_console(c#"*") | sub06.
+
+sub06:- true | sub06(-12.34,12.34).
+sub06(X,Y):- Z$:=X-Y | sub06(Z).
+otherwise.
+sub06(_,_):- put_console(c#"*") | sub07.
+sub06(Z):- -24.68-1.0e-4$<Z, Z$< -24.68+1.0e-4, put_console(c#"g") | sub07.
+otherwise.
+sub06(_):- put_console(c#"*") | sub07.
+
+sub07:- true | sub07(-12.34,0.0).
+sub07(X,Y):- Z$:=X-Y | sub07(Z).
+otherwise.
+sub07(_,_):- put_console(c#"*") | sub08.
+sub07(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"h") | sub08.
+otherwise.
+sub07(_):- put_console(c#"*") | sub08.
+
+sub08:- true | sub08(-12.34,-12.34).
+sub08(X,Y):- Z$:=X-Y | sub08(Z).
+otherwise.
+sub08(_,_):- put_console(c#"*") | sub09.
+sub08(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"i") | sub09.
+otherwise.
+sub08(_):- put_console(c#"*") | sub09.
+
+sub09:- true | sub09(3.0e38,-3.0e38).
+sub09(X,Y):- Z$:=X-Y, put_console(c#"*") | sub10.
+otherwise.
+sub09(_,_):- put_console(c#"j") | sub10.
+
+sub10:- true | sub10(-3.0e38,3.0e38).
+sub10(X,Y):- Z$:=X-Y, put_console(c#"*") | sub11.
+otherwise.
+sub10(_,_):- put_console(c#"k") | sub11.
+
+sub11:- put_console(key#lf) | mul.
+
+mul:- put_console(ascii#"% G_Float_Multiply %%%%%% ") | mul00.
+
+mul00:- true | mul00(12.34,12.34).
+mul00(X,Y):- Z$:=X*Y | mul00(Z).
+otherwise.
+mul00(_,_):- put_console(c#"*") | mul01.
+mul00(Z):- 152.276-1.0e-3$<Z, Z$< 152.276+1.0e-3, put_console(c#"a") | mul01.
+otherwise.
+mul00(_):- put_console(c#"*") | mul01.
+
+mul01:- true | mul01(12.34,0.0).
+mul01(X,Y):- Z$:=X*Y | mul01(Z).
+otherwise.
+mul01(_,_):- put_console(c#"*") | mul02.
+mul01(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | mul02.
+otherwise.
+mul01(_):- put_console(c#"*") | mul02.
+
+mul02:- true | mul02(12.34,-12.34).
+mul02(X,Y):- Z$:=X*Y | mul02(Z).
+otherwise.
+mul02(_,_):- put_console(c#"*") | mul03.
+mul02(Z):- -152.276-1.0e-3$<Z, Z$< -152.276+1.0e-3, put_console(c#"c") | mul03.
+otherwise.
+mul02(_):- put_console(c#"*") | mul03.
+
+mul03:- true | mul03(0.0,12.34).
+mul03(X,Y):- Z$:=X*Y | mul03(Z).
+otherwise.
+mul03(_,_):- put_console(c#"*") | mul04.
+mul03(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"d") | mul04.
+otherwise.
+mul03(_):- put_console(c#"*") | mul04.
+
+mul04:- true | mul04(0.0,0.0).
+mul04(X,Y):- Z$:=X*Y | mul04(Z).
+otherwise.
+mul04(_,_):- put_console(c#"*") | mul05.
+mul04(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"e") | mul05.
+otherwise.
+mul04(_):- put_console(c#"*") | mul05.
+
+mul05:- true | mul05(0.0,-12.34).
+mul05(X,Y):- Z$:=X*Y | mul05(Z).
+otherwise.
+mul05(_,_):- put_console(c#"*") | mul06.
+mul05(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"f") | mul06.
+otherwise.
+mul05(_):- put_console(c#"*") | mul06.
+
+mul06:- true | mul06(-12.34,12.34).
+mul06(X,Y):- Z$:=X*Y | mul06(Z).
+otherwise.
+mul06(_,_):- put_console(c#"*") | mul07.
+mul06(Z):- -152.276-1.0e-3$<Z, Z$< -152.276+1.0e-3, put_console(c#"g") | mul07.
+otherwise.
+mul06(_):- put_console(c#"*") | mul07.
+
+mul07:- true | mul07(-12.34,0.0).
+mul07(X,Y):- Z$:=X*Y | mul07(Z).
+otherwise.
+mul07(_,_):- put_console(c#"*") | mul08.
+mul07(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"h") | mul08.
+otherwise.
+mul07(_):- put_console(c#"*") | mul08.
+
+mul08:- true | mul08(-12.34,-12.34).
+mul08(X,Y):- Z$:=X*Y | mul08(Z).
+otherwise.
+mul08(_,_):- put_console(c#"*") | mul09.
+mul08(Z):- 152.276-1.0e-3$<Z, Z$< 152.276+1.0e-3, put_console(c#"i") | mul09.
+otherwise.
+mul08(_):- put_console(c#"*") | mul09.
+
+mul09:- true | mul09(3.0e38,12.34).
+mul09(X,Y):- Z$:=X*Y, put_console(c#"*") | mul10.
+otherwise.
+mul09(_,_):- put_console(c#"j") | mul10.
+
+mul10:- true | mul10(-3.0e38,12.34).
+mul10(X,Y):- Z$:=X*Y, put_console(c#"*") | mul11.
+otherwise.
+mul10(_,_):- put_console(c#"k") | mul11.
+
+mul11:- put_console(key#lf) | div.
+
+div:- put_console(ascii#"% G_Float_Divide %%%%%%%% ") | div00.
+
+div00:- true | div00(12.34,12.34).
+div00(X,Y):- Z$:=X/Y | div00(Z).
+otherwise.
+div00(_,_):- put_console(c#"*") | div01.
+div00(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"a") | div01.
+otherwise.
+div00(_):- put_console(c#"*") | div01.
+
+div01:- true | div01(12.34,0.0).
+div01(X,Y):- Z$:=X/Y, put_console(c#"*") | div02.
+otherwise.
+div01(_,_):- put_console(c#"b") | div02.
+
+div02:- true | div02(12.34,-12.34).
+div02(X,Y):- Z$:=X/Y | div02(Z).
+otherwise.
+div02(_,_):- put_console(c#"*") | div03.
+div02(Z):- -1.0-1.0e-5$<Z, Z$< -1.0+1.0e-5, put_console(c#"c") | div03.
+otherwise.
+div02(_):- put_console(c#"*") | div03.
+
+div03:- true | div03(0.0,12.34).
+div03(X,Y):- Z$:=X/Y | div03(Z).
+otherwise.
+div03(_,_):- put_console(c#"*") | div04.
+div03(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"d") | div04.
+otherwise.
+div03(_):- put_console(c#"*") | div04.
+
+div04:- true | div04(0.0,0.0).
+div04(X,Y):- Z$:=X/Y, put_console(c#"*") | div05.
+otherwise.
+div04(_,_):- put_console(c#"e") | div05.
+
+div05:- true | div05(0.0,-12.34).
+div05(X,Y):- Z$:=X/Y | div05(Z).
+otherwise.
+div05(_,_):- put_console(c#"*") | div06.
+div05(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"f") | div06.
+otherwise.
+div05(_):- put_console(c#"*") | div06.
+
+div06:- true | div06(-12.34,12.34).
+div06(X,Y):- Z$:=X/Y | div06(Z).
+otherwise.
+div06(_,_):- put_console(c#"*") | div07.
+div06(Z):- -1.0-1.0e-5$<Z, Z$< -1.0+1.0e-5, put_console(c#"g") | div07.
+otherwise.
+div06(_):- put_console(c#"*") | div07.
+
+div07:- true | div07(-12.34,0.0).
+div07(X,Y):- Z$:=X/Y, put_console(c#"*") | div08.
+otherwise.
+div07(_,_):- put_console(c#"h") | div08.
+
+div08:- true | div08(-12.34,-12.34).
+div08(X,Y):- Z$:=X/Y | div08(Z).
+otherwise.
+div08(_,_):- put_console(c#"*") | div09.
+div08(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"i") | div09.
+otherwise.
+div08(_):- put_console(c#"*") | div09.
+
+div09:- true | div09(3.0e38,0.5).
+div09(X,Y):- Z$:=X/Y, put_console(c#"*") | div10.
+otherwise.
+div09(_,_):- put_console(c#"j") | div10.
+
+div10:- true | div10(-3.0e38,0.5).
+div10(X,Y):- Z$:=X/Y, put_console(c#"*") | div11.
+otherwise.
+div10(_,_):- put_console(c#"k") | div11.
+
+div11:- put_console(key#lf) | min.
+
+min:- put_console(ascii#"% G_Float_Minus %%%%%%%%% ") | min00.
+
+min00:- true | min00(12.34).
+min00(X):- Z$:= -X | min00ans(Z).
+otherwise.
+min00(_):- put_console(c#"*") | min01.
+min00ans(Z):- -12.34-1.0e-4$<Z, Z$< -12.34+1.0e-4, put_console(c#"a") | min01.
+otherwise.
+min00ans(_):- put_console(c#"*") | min01.
+
+min01:- true | min01(0.0).
+min01(X):- Z$:= -X | min01ans(Z).
+otherwise.
+min01(_):- put_console(c#"*") | min02.
+min01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | min02.
+otherwise.
+min01ans(_):- put_console(c#"*") | min02.
+
+min02:- true | min02(-12.34).
+min02(X):- Z$:= -X | min02ans(Z).
+otherwise.
+min02(_):- put_console(c#"*") | min03.
+min02ans(Z):- 12.34-1.0e-4$<Z, Z$< 12.34+1.0e-4, put_console(c#"c") | min03.
+otherwise.
+min02ans(_):- put_console(c#"*") | min03.
+
+min03:- put_console(key#lf) | done.
+
+done:- true | true.

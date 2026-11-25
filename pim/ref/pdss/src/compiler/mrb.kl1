@@ -1,0 +1,502 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  MRB Optimization Module
+%	of
+%  KL1/KL1 compiler
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_mrb.
+:- public mrb_optimization/13, compile_for_pdss/6.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Mrb Optimization  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit code:oldnew, pcs:oldnew, from:oldnew, to:oldnew.
+%:- mode mrb_optimization(+, +, +, +, +, +, -, ?).
+mrb_optimization(0, Code0, _, _, _) --> true |
+ {{merge_read_variable(&code, _, [], Code0, [])}}.
+mrb_optimization(1, Code0, Nv, Argtbl0, Attr) --> true |
+   &pcs<=1,
+ {{mrb_passive_code(Guard, [], &pcs, &from, &to, _, _, _, [],
+		Argtbl0, Argtbl, [], Code0, Body0),
+   merge_read_variable(&code, _, [], Guard, [])}},
+   mrb_body_code( Body0, Argtbl).
+mrb_optimization(2, Code0, Nv, Argtbl0, Attr) --> true |
+   &pcs<=1,
+ {{mrb_passive_code(Guard, [], &pcs, &from, &to,
+		_, _, Gc, [], Argtbl0, Argtbl, [], Code0, Body0),
+   merge_read_variable(&code, Gc1, [], Guard, Gc),
+   mrb_update_optimal_code(&to, &pcs(old), NewGc0, [], Gc1, no),
+   unique(NewGc, [], NewGc0)}},
+   mrb_body_code(['$Gc_code'(NewGc)|Body0], Argtbl).
+mrb_optimization(3, Code0, Nv, Argtbl0, Attr) --> true |
+   &pcs<=1,
+ {{mrb_passive_code(Guard, [], &pcs, &from, &to, Mk, Gc, Gc, [],
+		Argtbl0, Argtbl, Attr, Code0, Body0),
+   merge_read_variable(&code, Mk0, [], Guard, Mk),
+   mrb_update_optimal_code(&to, &pcs(old), NewGc0, [], Mk0, no),
+   unique(NewGc, [], NewGc0)}},
+   mrb_body_code(['$Gc_code'(NewGc)|Body0], Argtbl).
+
+:- local_implicit code:oldnew.
+%:- mode copy_element_of_list( +, -, ? ).
+copy_element_of_list( [] ) --> true | true.
+copy_element_of_list( [Car|Cdr] ) --> true |
+   &code<<=[Car], copy_element_of_list( Cdr ).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%  MRB generation for guard  %%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit code:oldnew, pcs:oldnew, from:oldnew,
+		to:oldnew, mk:oldnew, gc:oldnew, argtbl:oldnew.
+
+%:- mode mrb_passive_code(+, -, +, +, -, ?, -, ?).
+mrb_passive_code(_, [commit|Body0], Body) --> true |
+ {{Body0=Body}}.
+mrb_passive_code(Attr0, [One_code|Code0], Body) -->
+   One_code\=commit |
+   mrb_one_passive_code(Attr0, Attr, One_code),
+   mrb_passive_code(Attr, Code0, Body).
+
+:- local_implicit code:oldnew, pcs:oldnew, from:oldnew, to:oldnew,
+		mk:oldnew, gc:oldnew, argtbl:oldnew, attr:oldnew.
+%:- mode mrb_one_passive_code(+, +, +, -, ?, -, ?).
+mrb_one_passive_code(wait_value(Aj, Ai)) --> true |
+% {{latest_occurrence(&to, Aj, Lj),
+%   latest_occurrence(&to, Ai, Li),
+%   latest_or_not(&code, &gc, &pcs(old), collect_value, Aj, Lj),
+%   latest_or_not(&code, &gc, &pcs(old), collect_value, Ai, Li)}},
+  {{latest_occurrence(&to, Ai, Li),
+	body_ref_check(&argtbl, Ai, Ansi),
+	is_not_refed_in_body_and_last(&code, &gc, Ansi, &pcs(old), Li,
+		collect_value(Ai)),
+	latest_occurrence(&to, Aj, Lj),
+	body_ref_check(&argtbl, Aj, Ansj),
+	is_not_refed_in_body_and_last(&code, &gc, Ansj, &pcs(old), Lj,
+		collect_value(Aj))}},
+   &gc<<=[collect_stack], &pcs <= &pcs+1,
+   &code<<=[wait_value(Aj,Ai)],
+ {{manage_vector_element(&mk, &argtbl, &attr, Aj)}}.
+mrb_one_passive_code(wait_variable(Aj, Ai)) --> true |
+% {{latest_occurrence(&to, Aj, Lj),
+%   latest_or_not(&code, &gc, &pcs(old), collect_value, Aj, Lj)}},
+  {{latest_occurrence(&to, Aj, Lj),
+	body_ref_check(&argtbl, Aj, Ans),
+    is_not_refed_in_body_and_last(&code, &gc, Ans, &pcs(old), Lj,
+		collect_value(Aj))}},
+   &pcs <= &pcs + 1,
+   &code<<=[wait_variable(Aj,Ai)],
+ {{manage_vector_element(&mk, &argtbl, &attr, Aj)}}.
+%mrb_one_passive_code(read_value(Aj)) --> true |
+% {{latest_occurrence(&to, Aj, Lj),
+%   latest_or_not(&code, &gc, &pcs(old), Aj, Lj)}},
+%   &pcs <= &pcs+1,
+%   &code<<=[read_value(Aj)],
+% {{manage_vector_element(&mk, &argtbl, &attr, Aj)}}.
+mrb_one_passive_code(read_variable(Aj)) --> true |
+   &pcs <= &pcs+1,
+   &code <<= [read_variable(Aj)],
+ {{manage_vector_element(&mk, &argtbl, &attr, Aj)}}.
+mrb_one_passive_code(wait_list(Ai)) --> true |
+   &code<<=[wait_list(Ai)],
+% {{latest_occurrence(&to, Ai, Li),
+%   latest_or_not(&code, &gc, &pcs(old), collect_list, Ai, Li)}},
+  {{body_ref_check(&argtbl, Ai, Ans),
+    is_not_refed_in_body(&code, &gc, Ans, collect_list(Ai))}},
+   &pcs <= &pcs+1.
+mrb_one_passive_code(wait_vector(Ai,N)) --> true |
+   &code<<=[wait_vector(Ai,N)],
+% {{latest_occurrence(&to, Ai, Li),
+%   latest_or_not(&code, &gc, &pcs(old), collect_vector, Ai, Li)}},
+  {{body_ref_check(&argtbl, Ai, Ans),
+    is_not_refed_in_body(&code, &gc, Ans, collect_vector(Ai))}},
+   &pcs <= &pcs+1.
+otherwise.
+mrb_one_passive_code(One_code) --> true |
+ {{kl1cmp_reader:functor(One_code, _, Arity)}},
+   &pcs <= &pcs+1,
+ {{mrb_void_check(&gc, &pcs, &from, &to, Arity, 1, One_code)}},
+   &code<<=[One_code].
+
+:- local_implicit code:oldnew, gc:oldnew.
+is_not_refed_in_body_and_last(no, LastPC, LastPC, Instr) --> true |
+	&gc <<= [Instr].
+otherwise.
+is_not_refed_in_body_and_last(_, _, _, _) --> true | true.
+
+is_not_refed_in_body(no, Instr) --> true |
+    &gc <<= [Instr].
+is_not_refed_in_body(yes, _) --> true | true.
+
+:- local_implicit mk:oldnew, argtbl:oldnew, attr:oldnew.
+manage_vector_element(Ai) --> true |
+ {{get_var_attr(&attr, Ai, EleAttr)}},
+   manage_vector_element(EleAttr, Ai).
+
+get_var_attr([], Attr, _, Ele) :- true | Ele=[], Attr=[].
+otherwise.
+get_var_attr(Attr0, Attr, '$VAR'(N, _), Ele) :- true |
+   set_vector_element(Attr0, N, Ele, Ele, Attr).
+
+manage_vector_element([element(V,P)|Cdr], E) --> true |
+   manage_vector_element([element(V,P)|Cdr], V, P, E).
+manage_vector_element([], _) --> true | true.
+
+manage_vector_element([element(VV,PP)|Cdr], V, P, E) --> true |
+ {{body_ref_check(&argtbl, VV, AnsV),
+   body_ref_check(&argtbl, E, AnsE)}},
+   mark_element_or_not(AnsV, AnsE, VV, V, P, E),
+   manage_vector_element(Cdr, V, P, E).
+manage_vector_element([], _, _, _) --> true | true.
+
+body_ref_check(Pass0-Active0, Argtbl, '$VAR'(N,_), Ans) :- true |
+   set_vector_element(Active0, N, R, R, Active),
+   body_ref_check(R, Ans),
+   Argtbl=Pass0-Active.
+
+body_ref_check(0, Ans) :- true | Ans = no.
+otherwise.
+body_ref_check(_, Ans) :- true | Ans = yes.
+
+mark_element_or_not(yes, yes, VV, V, P, E) --> true |
+  &mk <<= [mark_element(V,P,E)],
+ {{clear_attr(&attr, V, E)}}.
+mark_element_or_not(no, yes, VV, V, P, E) --> true |
+  &mk <<= [mark_element(V,P,E)],
+ {{clear_attr(&attr, V, E)}}.
+otherwise.
+mark_element_or_not(_, _,  VV, V, P, E) --> true |
+ {{get_var_attr(&attr, VV, EleAttr)}},
+   manage_vector_element(EleAttr, V, P, E).
+
+
+clear_attr(Attr0, Attr, V, '$VAR'(N, _)) :- true |
+   set_vector_element(Attr0, N, OneAttr0, OneAttr, Attr),
+   clear_one_attr(OneAttr0, V, OneAttr).
+
+clear_one_attr([element(V,P,E)|Cdr], V, OneAttr) :- true |
+   clear_one_attr(Cdr, V, OneAttr).
+clear_one_attr([], _, OneAttr) :- true | OneAttr=[].
+otherwise.
+clear_one_attr([E|Cdr], V, OneAttr) :- true |
+   OneAttr=[E|NewCdr],
+   clear_one_attr(Cdr, V, NewCdr).
+
+
+:- local_implicit code:oldnew, gc:oldnew.
+
+%latest_or_not_wait_value(PC, Aj, Ai, Lj, _) --> PC = Lj |
+%%   &code<<=[wait_value(Aj, Ai)],
+%   &gc<<=[collect_value(Aj)].
+%latest_or_not_wait_value(PC, Aj, Ai, _, Li) --> PC = Li |
+%%   &code<<=[wait_value(Ai, Aj)],
+%   &gc<<=[collect_value(Ai)].
+%otherwise.
+%latest_or_not_wait_value(_, Aj, Ai, _, _) --> true |
+%   &code<<=[wait_value(Aj, Ai)].
+
+
+% for the other instructions
+latest_or_not(PC, Instr, Aj, Lj) --> PC = Lj |
+   &gc<<=[{Instr, Aj}].
+otherwise.
+latest_or_not(_, _, _, _) --> true | true.
+
+%%%%%%%%% Merge read_variable %%%%%%%%%
+
+:- local_implicit code:oldnew, mk:oldnew.
+% 890412 Nishizaki
+%merge_read_variable([read_variable(Ai),wait_value(Ai,Aj)|T], Mk0) --> true |
+% {{check_mrb_instr(Mk1, [], Mk0, Ai, no, Ans1),
+%   check_mrb_instr(Mk2, [], Mk1, Aj, Ans1, Ans),
+%   out_read_value(&code, Ans, Ai, Aj)}},
+%   merge_read_variable(T, Mk2).
+%merge_read_variable([read_variable(Ai),wait_value(Aj,Ai)|T], Mk0) --> true |
+% {{check_mrb_instr(Mk1, [], Mk0, Ai, no, Ans1),
+%   check_mrb_instr(Mk2, [], Mk1, Aj, Ans1, Ans),
+%   out_read_value(&code, Ans, Ai, Aj)}},
+%   merge_read_variable(T, Mk2).
+%merge_read_variable([read_variable(Ai),wait_constant(C,Ai)|T], Mk0) --> true |
+% {{check_mrb_instr(Mk1, [], Mk0, Ai, no, Ans),
+%   out_read_constant(&code, Ans, Ai, C)}},
+%   merge_read_variable(T, Mk1).
+%otherwise.
+merge_read_variable([H|T], Mk0) --> true |
+  &code<<=[H],
+   merge_read_variable(T, Mk0).
+merge_read_variable([], Mk0) --> true |
+ {{out_to_stream(&mk, Mk0)}}.
+
+:- local_implicit code:oldnew.
+check_mrb_instr([Instr|T], Ai, no, Ans) --> true |
+   look_for_Ai(Instr, Ai, no, Ans1),
+   check_mrb_instr(T, Ai, Ans1, Ans).
+check_mrb_instr(Code, Ai, yes, Ans) --> true |
+ {{Ans=yes}},
+   out_to_stream(Code).
+check_mrb_instr([], _, Ans1, Ans) --> true |
+ {{Ans1=Ans}}.
+
+look_for_Ai(Instr, Ai, no, Ans) --> vector(Instr, N) |
+  {{look_for_Ai_for_args(N, Instr, InstrN, Ai, no, Ans)}},
+    &code<<=[InstrN].
+look_for_Ai(Instr, Ai, yes, Ans) --> true |
+  {{Ans=yes}},
+    &code<<=[Instr].
+otherwise.
+look_for_Ai(Instr, _, Ans0, Ans) --> true |
+  {{Ans0=Ans}}.
+
+look_for_Ai_for_args(1, Instr, InstrN, _, Ans0, Ans) :- true |
+   Ans0=Ans, Instr=InstrN.
+otherwise.
+look_for_Ai_for_args(N, Instr, InstrN, Ai, no, Ans) :- true |
+   N1 := N-1,
+   set_vector_element(Instr, N1, Aj, Aj, Instr1),
+ {{check_args(Ai, Aj, Ans1)}},
+   look_for_Ai_for_args(N1, Instr1, InstrN, Ai, Ans1, Ans).
+look_for_Ai_for_args(1, Instr, InstrN, _, yes, Ans) :- true |
+ {{Ans=yes, InstrN=Instr}}.
+
+check_args(Ai, Ai, Ans) :- true | Ans = yes.
+otherwise.
+check_args(_, _, Ans) :- true | Ans=no.
+
+out_to_stream([H|T]) --> true |
+   &code<<=[H],
+   out_to_stream(T).
+out_to_stream([]) --> true | true.
+
+out_read_value(yes, Ai, Aj) --> true |
+  &code<<=[read_variable(Ai), wait_value(Aj, Ai)].
+out_read_value(no, Ai, Aj) --> true |
+  &code<<=[read_value(Aj)].
+
+out_read_constant(yes, Ai, Aj) --> true |
+  &code<<=[read_variable(Ai), wait_constant(Ai, Aj)].
+out_read_constant(no, Ai, Aj) --> true |
+  &code<<=[read_constant(Aj)].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MRB void check  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit gc:oldnew, pcs:oldnew, from:oldnew, to:oldnew.
+%:- mode mrb_void_check(+, +, +, +, -, ?).
+mrb_void_check(0, _, _) --> true | true.
+mrb_void_check(A, K, One_code) --> A>0 |
+ {{set_vector_element(One_code, K, Arg, [], One_code1),
+   first_and_latest_occurrence(&from, &to, Arg, First, Last)}},
+   mrb_one_void_check(Arg, First, Last),
+ {{K1 := K + 1, A1 := A - 1}},
+   mrb_void_check(A1, K1, One_code1).
+
+mrb_one_void_check('$VAR'(N, A), First, Last) --> First=:=Last |
+   &gc<<=[collect_value('$VAR'(N, A))].
+otherwise.
+mrb_one_void_check(_, _, _) --> true | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  MRB remove junk  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% The second argument is a flag telling whether we have seen a collect_stack
+% instruction or not.
+
+:- local_implicit to:oldnew, pc:shared, gc:oldnew.
+%:- mode mrb_update_optimal_code(+, +, +, -, -, ?, -, ?).
+mrb_update_optimal_code([], no) --> true | true.
+mrb_update_optimal_code([], yes) --> true |
+  &gc<<=[collect_stack].
+mrb_update_optimal_code([collect_stack|Gc1], _) --> true |
+   mrb_update_optimal_code(Gc1, yes).
+mrb_update_optimal_code([collect_list(Ai)|Gc1], F) --> true |
+ {{set_pc_to_comitted(Ai, &to, &pc)}},
+   &gc<<=[collect_list(Ai)],
+   mrb_update_optimal_code(Gc1, F).
+mrb_update_optimal_code([collect_vector(Ai)|Gc1], F) --> true |
+ {{set_pc_to_comitted(Ai, &to, &pc)}},
+   &gc<<=[collect_vector(Ai)],
+   mrb_update_optimal_code(Gc1, F).
+mrb_update_optimal_code([collect_value(Ai)|Gc1], F) --> true |
+ {{set_pc_to_comitted(Ai, &to, &pc)}},
+   &gc<<=[collect_value(Ai)],
+   mrb_update_optimal_code(Gc1, F).
+mrb_update_optimal_code([mark_element(Ai,P,Aj)|Gc1], F) --> true |
+ {{set_pc_to_comitted(Ai, &to, &pc),
+   set_pc_to_comitted(P, &to, &pc),
+   set_pc_to_comitted(Aj, &to, &pc)}},
+   &gc<<=[mark_element(Ai,P,Aj)],
+   mrb_update_optimal_code(Gc1, F).
+
+set_pc_to_comitted('$VAR'(N, _), To0, To, PC) :- true |
+   set_vector_element(To0, N, OldTo, NewTo, To),
+   return_greater(OldTo, PC, NewTo).
+
+return_greater(OldTo, PC, NewTo) :- OldTo>PC |
+   NewTo=OldTo.
+otherwise.
+return_greater(OldTo, PC, NewTo) :- true |
+   NewTo=PC.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%  MRB generation for body  %%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit code:oldnew, pcs:oldnew, from:oldnew, to:oldnew.
+%:- mode mrb_body_code(+, +, +, -, -, ?).
+mrb_body_code([One_code|Code1], Argtbl0) --> true |
+ {{mrb_one_body_code(&code, Argtbl0, Argtbl, One_code)}},
+   &pcs <= &pcs+1,
+   mrb_body_code(Code1, Argtbl).
+mrb_body_code([], _) --> true | true.
+
+:- local_implicit code:oldnew, ref:oldnew.
+%:- mode mrb_one_body_code(+, +, -, -, ?).
+mrb_one_body_code(trans_value(Aj,Ai)) --> true |
+   &code <<= [trans_value(Aj, Ai)].
+mrb_one_body_code(set_variable(Aj,Ai)) --> true |
+ {{seen_n_times(&ref, Aj, Bj),
+   mrb_black_or_white_var(&code, Bj, set_variable(Aj,Ai),
+				set_marked_variable(Aj,Ai))}}.
+mrb_one_body_code(put_variable(Aj,Ai)) --> true |
+ {{seen_n_times(&ref, Aj, Bj),
+   seen_n_times(&ref, Ai, Bi),
+   mrb_black_or_white_var(&code, Bj, Bi, put_variable(Aj,Ai),
+			          put_marked_variable(Aj,Ai),
+			          put_marked_variable(Ai,Aj))}}.
+mrb_one_body_code(write_variable(Ai)) --> true |
+ {{seen_n_times(&ref, Ai, Bi),
+   mrb_black_or_white_var(&code, Bi, write_variable(Ai),
+			write_marked_variable(Ai))}}.
+mrb_one_body_code(set_value(Aj,Ai)) --> true |
+ {{seen_n_times(&ref, Aj, Pj, Bj),
+   mrb_black_or_white_val(&code, Pj, Bj, Aj, set_value(Aj,Ai),
+				      set_marked_value(Aj,Ai))}}.
+mrb_one_body_code(put_value(Aj,Ai)) --> true |
+ {{seen_n_times(&ref, Aj, Pj, Bj),
+   mrb_black_or_white_val(&code, Pj, Bj, Aj, put_value(Aj,Ai),
+				      put_marked_value(Aj,Ai))}}.
+mrb_one_body_code(write_value(Ai)) --> true |
+ {{seen_n_times(&ref, Ai, Pi, Bi),
+   mrb_black_or_white_val(&code, Pi, Bi, Ai, write_value(Ai),
+					write_marked_value(Ai))}}.
+mrb_one_body_code(get_value(Ai,Aj)) --> true |
+ {{seen_n_times(&ref, Ai, Pi, Bi),
+   seen_n_times(&ref, Aj, Pj, Bj ),
+   mark_or_not_get_arg(&code, Ai, Aj, Pi, Bi, Pj, Bj)}},
+   &code<<=[get_value(Ai,Aj)].
+mrb_one_body_code(get_list_value(Ai,Aj)) --> true |
+ {{seen_n_times(&ref, Ai, Pi, Bi),
+   seen_n_times(&ref, Aj, Pj, Bj ),
+   mark_or_not_get_arg(&code, Ai, Aj, Pi, Bi, Pj, Bj)}},
+   &code<<=[get_list_value(Ai,Aj)].
+mrb_one_body_code(get_vector_value(Ai,Aj)) --> true |
+ {{seen_n_times(&ref, Ai, Pi, Bi),
+   seen_n_times(&ref, Aj, Pj, Bj ),
+   mark_or_not_get_arg(&code, Ai, Aj, Pi, Bi, Pj, Bj)}},
+   &code<<=[get_vector_value(Ai,Aj)].
+mrb_one_body_code(get_constant(C,Ai)) --> true |
+ {{seen_n_times(&ref, Ai, Pi, Bi),
+   mark_or_not_get_constant_arg(&code, Ai, Pi, Bi)}},
+   &code<<=[get_constant(C,Ai)].
+otherwise.
+mrb_one_body_code(One_code) --> true |
+   &code<<=[One_code].
+
+%:- mode seen_n_times(+, +, -, -).
+seen_n_times(Pass-Bodytbl, Argtbl, '$VAR'(N, _), B) :- true |
+    set_vector_element(Bodytbl, N, B, 0, Bodytbl1),
+    Argtbl=Pass-Bodytbl1.   % 871014 debug
+
+%:- mode seen_n_times(+, +, -, -, -).
+seen_n_times(Passtbl0-Bodytbl0, Argtbl, '$VAR'(N, _), P, B) :- true |
+   set_vector_element(Passtbl0, N, P, 0, Passtbl ),
+   set_vector_element(Bodytbl0, N, B, 0, Bodytbl ),
+   Argtbl=Passtbl-Bodytbl.
+
+:- local_implicit code:oldnew.
+mark_or_not_get_arg(Ai, Aj, Pi, Bi, Pj, Bj) --> Pi =:= 0, Bi > 2 |
+	&code<<=[put_marked_value(Ai, Ai), put_marked_value(Aj, Aj)].
+mark_or_not_get_arg(Ai, Aj, Pi, Bi, Pj, Bj) --> Pi =:= 1, Bi > 1 |
+	&code<<=[put_marked_value(Ai, Ai), put_marked_value(Aj, Aj)].
+mark_or_not_get_arg(Ai, Aj, Pi, Bi, Pj, Bj) --> Pj =:= 0, Bj > 2 |
+	&code<<=[put_marked_value(Ai, Ai), put_marked_value(Aj, Aj)].
+mark_or_not_get_arg(Ai, Aj, Pi, Bi, Pj, Bj) --> Pj =:= 1, Bj > 1 |
+	&code<<=[put_marked_value(Ai, Ai), put_marked_value(Aj, Aj)].
+otherwise.
+mark_or_not_get_arg(_, _, _, _, _, _) --> true | true.
+
+mark_or_not_get_constant_arg(Ai, 0, Bi) --> Bi>2 |
+    &code<<=[put_marked_value(Ai,Ai)].
+mark_or_not_get_constant_arg(Ai, 1, Bi) --> Bi>1 |
+    &code<<=[put_marked_value(Ai,Ai)].
+otherwise.
+mark_or_not_get_constant_arg(_, _, _) --> true | true.
+
+
+%%%%%%%%%%%%%%%%  Choose black or white instruction, *_variable  %%%%%%%%%%%%%%
+
+%:- mode mrb_black_or_white_var(+, +, +, -, ?).
+mrb_black_or_white_var(B, White, Black) --> B>2  | &code<<=[Black].
+mrb_black_or_white_var(B, White, Black) --> B=<2 | &code<<=[White].
+
+%:- mode mrb_black_or_white_var(+, +, +, +, +, -, ?).
+mrb_black_or_white_var(Bj, Bi, White, Blackj, Blacki) --> Bj>2 |
+   &code<<=[Blackj].
+mrb_black_or_white_var(Bj, Bi, White, Blackj, Blacki) --> Bi>2 |
+   &code<<=[Blacki].
+mrb_black_or_white_var(Bj, Bi, White, Blackj, Blacki) --> Bi=<2, Bj=<2 |
+   &code<<=[White].
+
+%%%%%%%%%%%%%%%%%%  Choose black or white instruction, *_value  %%%%%%%%%%%%%%%
+
+% Are these conditions really accurate?  How about P=2, B=100?
+
+mrb_black_or_white_val(Pi, Bi, Ai, White, Black) --> Pi =:= 1, Bi > 1 |
+   &code<<=[Black].
+mrb_black_or_white_val(Pi, Bi, Ai, White, Black) --> Pi =:= 0, Bi > 2 |
+   &code<<=[Black].
+otherwise.
+mrb_black_or_white_val(Pi, Bi, Ai, White, Black) --> true |
+   &code<<=[White].
+
+%:- mode first_and_latest_occurrence(+, +, -, -).
+first_and_latest_occurrence(From0, From, To0, To, '$VAR'(N, _),
+			First, Last) :- true |
+    set_vector_element(From0, N, First, First, From),
+    set_vector_element(To0, N, Last, Last, To).
+otherwise.
+first_and_latest_occurrence(From0, From, To0, To, _, First, Last) :- true |
+   First=[], Last=[], From0=From, To0=To.
+
+%:- mode latest_occurrence(+, +, -).
+latest_occurrence(To0, To, '$VAR'(N, _), Last) :- true |
+   set_vector_element(To0, N, Last, Last, To).
+
+compile_for_pdss(Opt, Instream0, Outstream0, Error0, Ext, Ack) :- true |
+   kl1cmp_command:ghccompile(Reader_stream, [], IO0, [], Error1, [], Opt, Ext)
+		@priority('$', -1024),
+   kl1cmp_reader:create_reader(Instream0, [], IO2, [], Reader_stream),
+ {{merge({IO0, IO2, Error1}, S0)}},
+   kl1cmp_command:message_distributer(Outstream0, [close(Ack0)], Error0, [],
+		non_error, Error, S0),
+  (Error=non_error -> Ack=Ack0;
+   Error=error     -> Ack=error).
+
+:- local_implicit out:oldnew.
+unique([One|Rest]) --> true |
+  {{unique(Dif, [], One, Rest)}},
+	&out <<= [One],
+	unique(Dif).
+unique([]) --> true | true.
+
+unique(One, [One|Rest]) --> true |
+	unique(One, Rest).
+unique(One, []) --> true | true.
+otherwise.
+unique(One, [Other|Rest]) --> true |
+	&out <<= [Other],
+	unique(One, Rest).
+

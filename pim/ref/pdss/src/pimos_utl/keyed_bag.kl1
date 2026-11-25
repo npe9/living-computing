@@ -1,0 +1,724 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module keyed_bag.
+:- with_macro pimos.
+:- public keyed_bag/3,keyed_set/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_bag(Hasher,In,Size)
+%%      Hasher  :: =default/Code of the user defined hasher module
+%%      In      :: Input stream from users
+%%      Size    :: Table size
+
+keyed_bag(Hasher,In,Size) :- Size>0 |
+        get_table_size(1,Size,Size1),
+        wait_table_size(Hasher,In,Size1).
+
+wait_table_size(Hasher,In,Size) :- wait(Size) |
+        new_vector(T,Size),
+        merge(In,In1),
+        keyed_bag(Hasher,In1,~(Size-1),0,0,T).
+
+get_table_size(I,N0,N) :- I>=N0 | N:=I.
+get_table_size(I,N0,N) :- I<N0 | get_table_size(~(I<<1),N0,N).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_bag(Hasher,In,N,M,L,T)
+%%      Hasher  :: =default/Code of the hasher
+%%      In      :: Input stream from users
+%%      N       :: the value that is subtracted 1 from the table size
+%%      M       :: the number of entries that have data
+%%      L       :: the number of data in the table
+%%      T       :: hash table
+
+keyed_bag(Hasher,[empty(YorN)|In],N,M,L,T) :- true |
+        empty(M,YorN),
+        keyed_bag(Hasher,In,N,M,L,T).
+
+keyed_bag(Hasher,[empty(Key,YorN)|In],N,M,L,T) :- true |
+        empty(Hasher,Key,YorN,N,T,T1),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[put(Key,Data)|In],N,M,L,T) :- true |
+        put(Hasher,N,M,L,T,Key,Data,N1,M1,L1,T1),
+        keyed_bag(Hasher,In,N1,M1,L1,T1).
+
+keyed_bag(Hasher,[get(Key,Data)|In],N,M,L,T) :- true |
+        get(Hasher,N,M,T,Key,Data,M1,T1,bag),
+        keyed_bag(Hasher,In,N,M1,~(L-1),T1).
+
+keyed_bag(Hasher,[get_all(A)|In],N,_,_,T) :- true |
+        get_all(N,T,T1,A),
+        keyed_bag(Hasher,In,N,0,0,T1).
+
+keyed_bag(Hasher,[get_all(Key,A)|In],N,M,L,T) :- true |
+        get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1),
+        keyed_bag(Hasher,In,N,M1,L1,T1).
+
+keyed_bag(Hasher,[get_and_put(Key,X,Y)|In],N,M,L,T) :- true |
+        get_and_put(Hasher,N,T,Key,X,Y,T1,bag),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[get_if_any(Key,X)|In],N,M,L,T) :- true |
+        get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1),
+        keyed_bag(Hasher,In,N,M1,L1,T1).
+
+keyed_bag(Hasher,[get_if_any_and_put(Key,X,Y)|In],N,M,L,T) :- true |
+        get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,N1,M1,L1,T1),
+        keyed_bag(Hasher,In,N1,M1,L1,T1).
+
+keyed_bag(Hasher,[get_and_put_if_any(Key,X,Y,Y1)|In],N,M,L,T) :- true |
+        get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[carbon_copy(A)|In],N,M,L,T) :- true |
+        carbon_copy(N,T,T1,A),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[carbon_copy(Key,A)|In],N,M,L,T) :- true |
+        carbon_copy(Hasher,N,T,Key,A,T1),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[do(List)|In],N,M,L,T) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        keyed_bag(Hasher,In1,N,M,L,T).
+
+keyed_bag(Hasher,[get_load_factor(A)|In],N,M,L,T) :-
+    NN:=N+1,NNF$:=float(NN),MF$:=float(M),A0$:=MF/NNF |
+        A$:=A0,
+        keyed_bag(Hasher,In,N,M,L,T).
+keyed_bag(Hasher,[get_average_chaining_length(C)|In],N,M,L,T) :- true |
+        get_average_chaining_length(L,M,C),
+        keyed_bag(Hasher,In,N,M,L,T).
+
+keyed_bag(Hasher,[copy(NIn)|In],N,M,L,T) :- true |
+        copy_keyed_bag(Hasher,N,M,L,T,NIn,T1),
+        keyed_bag(Hasher,In,N,M,L,T1).
+
+keyed_bag(Hasher,[clear|In],N,_,_,_) :- true |
+        new_vector(T,~(N+1)),
+        keyed_bag(Hasher,In,N,0,0,T).
+
+keyed_bag(_,[],_,_,_,_) :- true | true.
+
+otherwise.
+keyed_bag(_,[Msg|_],_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_bag,string#"illegal_message_protocol"),Msg).
+
+prepend([A|X],Y,Z) :- true |
+        Z=[A|Z1],
+        prepend(X,Y,Z1).
+prepend([],Y,Z) :- true | Y=Z.
+
+
+% *** empty/1 ***
+empty(M,YorN) :- M>0 | YorN=no.
+empty(0,YorN) :- true | YorN=yes.
+
+% *** empty/2 ***
+empty(Hasher,Key,YorN,N,T,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        if_empty(E,Key,YorN,E1).
+empty(Hasher,Key,YorN,N,T,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        if_empty(E,Key,YorN,E1).
+empty(Hasher,Key,YorN,N,T,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        if_empty(E,Key,YorN,E1).
+otherwise.
+empty(default,Key,YorN,N,T,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        empty_wait_hashed_value(H,Key1,YorN,N,T,T1).
+%empty(Hasher,Key,YorN,N,T,T1) :- code(Hasher,_,_,_) |
+empty(Hasher,Key,YorN,N,T,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        empty_wait_hashed_value(H,Key1,YorN,N,T,T1).
+
+empty_wait_hashed_value(H0,Key,YorN,N,T,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        if_empty(E,Key,YorN,E1).
+
+if_empty(0,_,YorN,E) :- true | YorN=yes,E:=0.
+if_empty({Key,Data,Next},Key,YorN,E) :- true | YorN=no,E={Key,Data,Next}.
+otherwise.
+if_empty({K,Data,Next},Key,YorN,E) :- true |
+        E={K,Data,Next1},
+        if_empty(Next,Key,YorN,Next1).
+
+% *** put ***
+put(Hasher,N,M,L,T,Key,Data,N1,M1,L1,T1) :-
+    NN:=N+1,(NN>>1)+(NN>>2)>M |                 % NN*0.75>M
+        N1:=N,L1:=L+1,
+        do_put(Hasher,N1,M,T,Key,Data,M1,T1).
+otherwise.
+put(Hasher,N,_,L,T,Key,Data,N1,M1,L1,T1) :- true |
+        L1:=L+1,
+        rehash(Hasher,N,T,N1,M0,T0),
+        do_put(Hasher,N1,M0,T0,Key,Data,M1,T1).
+
+do_put(Hasher,N,M,T,Key,Data,M1,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,{Key,Data,E1},T1),
+        get_m_cnt(E,E1,M,M1).
+do_put(Hasher,N,M,T,Key,Data,M1,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,{Key,Data,E1},T1),
+        get_m_cnt(E,E1,M,M1).
+do_put(Hasher,N,M,T,Key,Data,M1,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,{Key,Data,E1},T1),
+        get_m_cnt(E,E1,M,M1).
+otherwise.
+do_put(default,N,M,T,Key,Data,M1,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        put_wait_hashed_value(H,N,M,T,Key1,Data,M1,T1).
+%do_put(Hasher,N,M,T,Key,Data,M1,T1) :- code(Hasher,_,_,_) |
+do_put(Hasher,N,M,T,Key,Data,M1,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        put_wait_hashed_value(H,N,M,T,Key1,Data,M1,T1).
+
+put_wait_hashed_value(H0,N,M,T,Key,Data,M1,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,{Key,Data,E1},T1),
+        get_m_cnt(E,E1,M,M1).
+
+get_m_cnt(0,E1,M,M1) :- true | E1:=0,M1:=M+1.
+otherwise.
+get_m_cnt(E,E1,M,M1) :- true | E=E1,M1:=M.
+
+% *** rehash ***
+rehash(Hasher,OldN,OldT,N,M,T) :- 
+    N0:=(OldN+1)<<1 |
+        N:=N0-1,
+        new_vector(T0,N0),
+        do_rehash(Hasher,OldN,OldT,N,0,M,T0,T).
+
+do_rehash(Hasher,I,OldT,N,M,M1,T,T1) :- I>=0 |
+        set_vector_element(OldT,I,OldE,0,OldT1),
+        rehash_each_entry(OldE,Hasher,N,M,M0,T,T0),
+        do_rehash(Hasher,~(I-1),OldT1,N,M0,M1,T0,T1).
+do_rehash(_,I,_,_,M,M1,T,T1) :- I<0 | M1:=M,T1=T.
+
+rehash_each_entry(0,_,_,M,M1,T,T1) :- true | M1:=M,T1=T.
+rehash_each_entry({K,D,Next},Hasher,N,M,M1,T,T1) :- K>=0,Hasher=default,
+    H:=K/\N |
+        set_vector_element(T,H,E,{K,D,E1},T0),
+        get_m_cnt(E,E1,M,M0),
+        rehash_each_entry(Next,Hasher,N,M0,M1,T0,T1).
+rehash_each_entry({K,D,Next},Hasher,N,M,M1,T,T1) :- K$>=0.0,Hasher=default,
+    H:=int(K)/\N |
+        set_vector_element(T,H,E,{K,D,E1},T0),
+        get_m_cnt(E,E1,M,M0),
+        rehash_each_entry(Next,Hasher,N,M0,M1,T0,T1).
+rehash_each_entry({K,D,Next},Hasher,N,M,M1,T,T1) :- atom(K),Hasher=default,
+    tag_and_value(K,_,V),H:=V/\N |
+        set_vector_element(T,H,E,{K,D,E1},T0),
+        get_m_cnt(E,E1,M,M0),
+        rehash_each_entry(Next,Hasher,N,M0,M1,T0,T1).
+otherwise.
+rehash_each_entry({K,D,Next},default,N,M,M1,T,T1) :- true |
+        hasher:hash(K,H,K1),
+        rehash_wait_hashed_value({K1,D,Next},default,N,M,M1,T,T1,H).
+%rehash_each_entry({K,D,Next},Hasher,N,M,M1,T,T1) :- code(Hasher,_,_,_) |
+rehash_each_entry({K,D,Next},Hasher,N,M,M1,T,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{K,H,K1}),
+        rehash_wait_hashed_value({K1,D,Next},Hasher,N,M,M1,T,T1,H).
+
+rehash_wait_hashed_value({K,D,Next},Hasher,N,M,M1,T,T1,H0) :- H:=H0/\N |
+        set_vector_element(T,H,E,{K,D,E1},T0),
+        get_m_cnt(E,E1,M,M0),
+        rehash_each_entry(Next,Hasher,N,M0,M1,T0,T1).
+
+% *** get ***
+get(Hasher,N,M,T,Key,Data,M1,T1,Name) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get(E,Key,Data,E1,M,M1,off,Name).
+get(Hasher,N,M,T,Key,Data,M1,T1,Name) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get(E,Key,Data,E1,M,M1,off,Name).
+get(Hasher,N,M,T,Key,Data,M1,T1,Name) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get(E,Key,Data,E1,M,M1,off,Name).
+otherwise.
+get(default,N,M,T,Key,Data,M1,T1,Name) :- true |
+        hasher:hash(Key,H,Key1),
+        get_wait_hashed_value(H,N,M,T,Key1,Data,M1,T1,Name).
+%get(Hasher,N,M,T,Key,Data,M1,T1,Name) :- code(Hasher,_,_,_) |
+get(Hasher,N,M,T,Key,Data,M1,T1,Name) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        get_wait_hashed_value(H,N,M,T,Key1,Data,M1,T1,Name).
+
+get_wait_hashed_value(H0,N,M,T,Key,Data,M1,T1,Name) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get(E,Key,Data,E1,M,M1,off,Name).
+
+do_get({Key,D,Next},Key,Data,E,M,M1,S,_) :- true |
+        Data=D,
+        if_subtract_entry_number(S,Next,E,M,M1).
+otherwise.
+do_get({K,D,Next},Key,Data,E,M,M1,_,Name) :- true |
+        E={K,D,Next1},
+        do_get(Next,Key,Data,Next1,M,M1,on,Name).
+do_get(0,Key,Data,_,_,_,_,Name) :- true |
+        raise_error(Name,get(Key,Data)).
+
+if_subtract_entry_number(off,0,E1,M,M1) :- true | E1:=0,M1:=M-1.
+otherwise.
+if_subtract_entry_number(_,E,E1,M,M1) :- true | E1=E,M1:=M.
+
+raise_error(bag,Data) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_bag,string#"tried_to_get_nonexistent_element"),Data).
+raise_error(set,Data) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_set,string#"tried_to_get_nonexistent_element"),Data).
+
+% *** get_all/1 ***
+get_all(I,T,T1,A) :- I>=0 |
+        set_vector_element(T,I,E,0,T0),
+        get_entry(E,A,A1),
+        get_all(~(I-1),T0,T1,A1).
+get_all(I,T,T1,A) :- I<0 | T=T1,A=[].
+
+get_entry({Key,Data,Next},A,A1) :- true |
+        A=[{Key,Data}|A0],
+        get_entry(Next,A0,A1).
+get_entry(0,A,A1) :- true | A=A1.
+
+% *** get_all/2 ***
+get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        get_entry_with_key(E,Key,A,E1,M,M1,L,L1,off).
+get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        get_entry_with_key(E,Key,A,E1,M,M1,L,L1,off).
+get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        get_entry_with_key(E,Key,A,E1,M,M1,L,L1,off).
+otherwise.
+get_all(default,N,M,L,T,Key,A,M1,L1,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        get_all_wait_hashed_value(H,N,M,L,T,Key1,A,M1,L1,T1).
+%get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- code(Hasher,_,_,_) |
+get_all(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        get_all_wait_hashed_value(H,N,M,L,T,Key1,A,M1,L1,T1).
+
+get_all_wait_hashed_value(H0,N,M,L,T,Key,A,M1,L1,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        get_entry_with_key(E,Key,A,E1,M,M1,L,L1,off).
+
+get_entry_with_key({Key,Data,Next},Key,A,E,M,M1,L,L1,S) :- true |
+        A=[Data|A1],
+        get_entry_with_key(Next,Key,A1,E,M,M1,~(L-1),L1,S).
+otherwise.
+get_entry_with_key({K,D,Next},Key,A,E,M,M1,L,L1,_) :- true |
+        E={K,D,Next1},
+        get_entry_with_key(Next,Key,A,Next1,M,M1,L,L1,on).
+get_entry_with_key(0,_,A,E,M,M1,L,L1,S) :- true |
+        A=[],E:=0,L1:=L,
+        if_subtract_entry_number(S,M,M1).
+
+if_subtract_entry_number(off,M,M1) :- true | M1:=M-1.
+if_subtract_entry_number(on,M,M1) :- true | M1:=M.
+
+% *** get_and_put ***
+get_and_put(Hasher,N,T,Key,X,Y,T1,Name) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put(E,Key,X,Y,E1,Name).
+get_and_put(Hasher,N,T,Key,X,Y,T1,Name) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put(E,Key,X,Y,E1,Name).
+get_and_put(Hasher,N,T,Key,X,Y,T1,Name) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put(E,Key,X,Y,E1,Name).
+otherwise.
+get_and_put(default,N,T,Key,X,Y,T1,Name) :- true |
+        hasher:hash(Key,H,Key1),
+        get_and_put_wait_hashed_value(H,N,T,Key1,X,Y,T1,Name).
+%get_and_put(Hasher,N,T,Key,X,Y,T1,Name) :- code(Hasher,_,_,_) |
+get_and_put(Hasher,N,T,Key,X,Y,T1,Name) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        get_and_put_wait_hashed_value(H,N,T,Key1,X,Y,T1,Name).
+
+get_and_put_wait_hashed_value(H0,N,T,Key,X,Y,T1,Name) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put(E,Key,X,Y,E1,Name).
+
+do_get_and_put({Key,Data,Next},Key,X,Y,E,_) :- true |
+        X=Data,
+        E={Key,Y,Next}.
+otherwise.
+do_get_and_put({K,D,Next},Key,X,Y,E,Name) :- true |
+        E={K,D,Next1},
+        do_get_and_put(Next,Key,X,Y,Next1,Name).
+do_get_and_put(0,Key,X,Y,_,Name) :- true |
+        raise_error(Name,get_and_put(Key,X,Y)).
+
+% *** get_if_any ***
+get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any(E,Key,X,E1,M,M1,L,L1,off).
+get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any(E,Key,X,E1,M,M1,L,L1,off).
+get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any(E,Key,X,E1,M,M1,L,L1,off).
+otherwise.
+get_if_any(default,N,M,L,T,Key,X,M1,L1,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        get_if_any_wait_hashed_value(H,N,M,L,T,Key1,X,M1,L1,T1).
+%get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1) :- code(Hasher,_,_,_) |
+get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        get_if_any_wait_hashed_value(H,N,M,L,T,Key1,X,M1,L1,T1).
+
+get_if_any_wait_hashed_value(H0,N,M,L,T,Key,X,M1,L1,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any(E,Key,X,E1,M,M1,L,L1,off).
+
+do_get_if_any({Key,D,Next},Key,X,E,M,M1,L,L1,S) :- true |
+        X={D},L1:=L-1,
+        if_subtract_entry_number(S,Next,E,M,M1).
+otherwise.
+do_get_if_any({K,D,Next},Key,X,E,M,M1,L,L1,_) :- true |
+        E={K,D,Next1},
+        do_get_if_any(Next,Key,X,Next1,M,M1,L,L1,on).
+do_get_if_any(0,_,X,E,M,M1,L,L1,_) :- true | X={},E:=0,M1:=M,L1:=L.
+
+% *** get_if_any_and_put ***
+get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,N1,M1,L1,T1) :- true |
+        do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M0,L1,T0),
+        if_rehash(Hasher,N,T0,N1,M1,T1,M0).
+
+do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M1,L1,T1) :- Key>=0,Hasher=defualt,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any_and_put1(E,Key,X,Y,E1,M,M1,L,L1,off).
+do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M1,L1,T1) :- Key$>=0.0,Hasher=defualt,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any_and_put1(E,Key,X,Y,E1,M,M1,L,L1,off).
+do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M1,L1,T1) :- atom(Key),Hasher=defualt,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any_and_put1(E,Key,X,Y,E1,M,M1,L,L1,off).
+otherwise.
+do_get_if_any_and_put(default,N,M,L,T,Key,X,Y,M1,L1,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        do_get_if_wait_hashed_value(H,N,M,L,T,Key1,X,Y,M1,L1,T1).
+%do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M1,L1,T1) :- code(Hasher,_,_,_) |
+do_get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,M1,L1,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        do_get_if_wait_hashed_value(H,N,M,L,T,Key1,X,Y,M1,L1,T1).
+
+do_get_if_wait_hashed_value(H0,N,M,L,T,Key,X,Y,M1,L1,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_if_any_and_put1(E,Key,X,Y,E1,M,M1,L,L1,off).
+
+do_get_if_any_and_put1({Key,Data,Next},Key,X,Y,E,M,M1,L,L1,_) :- true |
+        X={Data},E={Key,Y,Next},M1:=M,L1:=L.
+otherwise.
+do_get_if_any_and_put1({K,D,Next},Key,X,Y,E,M,M1,L,L1,_) :- true |
+        E={K,D,Next1},
+        do_get_if_any_and_put1(Next,Key,X,Y,Next1,M,M1,L,L1,on).
+do_get_if_any_and_put1(0,Key,X,Y,E,M,M1,L,L1,S) :- true |
+        X={},E={Key,Y,0},L1:=L+1,
+        if_add_entry_number(S,M,M1).
+
+if_add_entry_number(off,M,M1) :- true | M1:=M+1.
+if_add_entry_number(on,M,M1) :- true | M1:=M.
+
+if_rehash(_,N,T,N1,M1,T1,M) :-
+    NN:=N+1,(NN>>1)+(NN>>2)>M |                 % NN*0.75>M
+        N1:=N,T1=T,M1:=M.
+otherwise.
+if_rehash(Hasher,N,T,N1,M1,T1,_) :- true |
+        rehash(Hasher,N,T,N1,M1,T1).
+
+% *** get_and_put_if_any ***
+get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put_if_any(E,Key,X,Y,Y1,E1).
+get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put_if_any(E,Key,X,Y,Y1,E1).
+get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put_if_any(E,Key,X,Y,Y1,E1).
+otherwise.
+get_and_put_if_any(default,N,T,Key,X,Y,Y1,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        get_and_put_if_wait_hashed_value(H,N,T,Key1,X,Y,Y1,T1).
+%get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1) :- code(Hasher,_,_,_) |
+get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        get_and_put_if_wait_hashed_value(H,N,T,Key1,X,Y,Y1,T1).
+
+get_and_put_if_wait_hashed_value(H0,N,T,Key,X,Y,Y1,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        do_get_and_put_if_any(E,Key,X,Y,Y1,E1).
+
+do_get_and_put_if_any({Key,Data,Next},Key,X,Y,Y1,E) :- true |
+        X={Data},
+        E={Key,Y,Next},
+        Y1={}.
+otherwise.
+do_get_and_put_if_any({K,D,Next},Key,X,Y,Y1,E) :- true |
+        E={K,D,Next1},
+        do_get_and_put_if_any(Next,Key,X,Y,Y1,Next1).
+do_get_and_put_if_any(0,_,X,Y,Y1,E) :- true |
+        X={},Y1={Y},E:=0.
+
+% *** carbon_copy/1 ***
+carbon_copy(I,T,T1,A) :- I>=0 |
+        set_vector_element(T,I,E,E1,T0),
+        carbon_copy_entry(E,E1,A,A1),
+        carbon_copy(~(I-1),T0,T1,A1).
+carbon_copy(I,T,T1,A) :- I<0 | T=T1,A=[].
+
+carbon_copy_entry({Key,Data,Next},E,A,A1) :- true |
+        A=[{Key,Data}|A0],
+        E={Key,Data,Next1},
+        carbon_copy_entry(Next,Next1,A0,A1).
+carbon_copy_entry(0,E,A,A1) :- true | E:=0,A=A1.
+
+% *** carbon_copy/2 ***
+carbon_copy(Hasher,N,T,Key,A,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_entry_with_key(E,Key,A,E1).
+carbon_copy(Hasher,N,T,Key,A,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_entry_with_key(E,Key,A,E1).
+carbon_copy(Hasher,N,T,Key,A,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_entry_with_key(E,Key,A,E1).
+otherwise.
+carbon_copy(default,N,T,Key,A,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        carbon_copy_wait_hashed_value(H,N,T,Key1,A,T1).
+%carbon_copy(Hasher,N,T,Key,A,T1) :- code(Hasher,_,_,_) |
+carbon_copy(Hasher,N,T,Key,A,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        carbon_copy_wait_hashed_value(H,N,T,Key1,A,T1).
+
+carbon_copy_wait_hashed_value(H0,N,T,Key,A,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_entry_with_key(E,Key,A,E1).
+
+carbon_copy_entry_with_key({K,Data,Next},Key,A,E) :- K=Key |
+        A=[Data|A1],
+        E={K,Data,Next1},
+        carbon_copy_entry_with_key(Next,Key,A1,Next1).
+otherwise.
+carbon_copy_entry_with_key({K,D,Next},Key,A,E) :- true |
+        E={K,D,Next1},
+        carbon_copy_entry_with_key(Next,Key,A,Next1).
+carbon_copy_entry_with_key(0,_,A,E) :- true | A=[],E:=0.
+
+% *** get_average_chaining_length ***
+get_average_chaining_length(L,M,C) :- 
+    LF$:=float(L),MF$:=float(M),C0$:=LF/MF | C$:=C0.
+get_average_chaining_length(_,0,C) :- true | C$:=0.0.
+
+% *** copy ***
+copy_keyed_bag(Hasher,N,M,L,T,In,T1) :- true |
+        do_copy(N,T,T1,NTable),
+        merge(In,In1),
+        keyed_bag(Hasher,In1,N,M,L,NTable).
+
+copy_keyed_set(Hasher,N,M,L,T,In,T1) :- true |
+        do_copy(N,T,T1,NTable),
+        merge(In,In1),
+        keyed_set(Hasher,In1,N,M,L,NTable).
+
+do_copy(N,T,T1,NTable) :- true |
+        new_vector(NTable0,~(N+1)),
+        do_copy(N,T,T1,NTable0,NTable).
+
+do_copy(N,T,T1,NT,NT1) :- N>=0 |
+        set_vector_element(T,N,E,E1,T0),
+        set_vector_element(NT,N,_,NE,NT0),
+        copy_entry(E,E1,NE),
+        do_copy(~(N-1),T0,T1,NT0,NT1).
+do_copy(N,T,T1,NT,NT1) :- N<0 | T=T1,NT=NT1.
+
+copy_entry({Key,Data,Next},E,NE) :- true |
+        E={Key,Data,Next1},
+        NE={Key,Data,NNextE},
+        copy_entry(Next,Next1,NNextE).
+copy_entry(0,E,NE) :- true | E:=0,NE:=0.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_set(Hasher,In,Size)
+%%      Hasher  :: =default/Code of the user defined hasher module
+%%      In      :: Input stream from users
+%%      Size    :: table size
+
+keyed_set(Hasher,In,Size) :- Size>0 |
+        get_table_size(1,Size,Size1),
+        wait_table_size_set(Hasher,In,Size1).
+
+wait_table_size_set(Hasher,In,Size) :- wait(Size) |
+        new_vector(T,Size),
+        merge(In,In1),
+        keyed_set(Hasher,In1,~(Size-1),0,0,T).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% keyed_set(Hasher,In,N,M,L,T)
+%%      Hasher  :: =default/Code of the hasher
+%%      In      :: Input stream from users
+%%      N       :: the value that is subtracted 1 from the table size
+%%      M       :: the number of entries that have data
+%%      L       :: the number of data in the table
+%%      T       :: hash table
+
+keyed_set(Hasher,[empty(YorN)|In],N,M,L,T) :- true |
+        empty(M,YorN),
+        keyed_set(Hasher,In,N,M,L,T).
+
+keyed_set(Hasher,[empty(Key,YorN)|In],N,M,L,T) :- true |
+        empty(Hasher,Key,YorN,N,T,T1),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(Hasher,[put(Key,X,OldX)|In],N,M,L,T) :- true |
+        get_if_any_and_put(Hasher,N,M,L,T,Key,OldX,X,N1,M1,L1,T1),
+        keyed_set(Hasher,In,N1,M1,L1,T1).
+
+keyed_set(Hasher,[get(Key,Data)|In],N,M,L,T) :- true |
+        get(Hasher,N,M,T,Key,Data,M1,T1,set),
+        keyed_set(Hasher,In,N,M1,~(L-1),T1).
+
+keyed_set(Hasher,[get_all(A)|In],N,_,_,T) :- true |
+        get_all(N,T,T1,A),
+        keyed_set(Hasher,In,N,0,0,T1).
+
+keyed_set(Hasher,[get_all(Key,A)|In],N,M,L,T) :- true |
+        get_at_most_one(Hasher,N,M,L,T,Key,A,M1,L1,T1),
+        keyed_set(Hasher,In,N,M1,L1,T1).
+
+keyed_set(Hasher,[get_and_put(Key,X,Y)|In],N,M,L,T) :- true |
+        get_and_put(Hasher,N,T,Key,X,Y,T1,set),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(Hasher,[get_if_any(Key,X)|In],N,M,L,T) :- true |
+        get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1),
+        keyed_set(Hasher,In,N,M1,L1,T1).
+
+keyed_set(Hasher,[get_if_any_and_put(Key,X,Y)|In],N,M,L,T) :- true |
+        get_if_any_and_put(Hasher,N,M,L,T,Key,X,Y,N1,M1,L1,T1),
+        keyed_set(Hasher,In,N1,M1,L1,T1).
+
+keyed_set(Hasher,[get_and_put_if_any(Key,X,Y,Y1)|In],N,M,L,T) :- true |
+        get_and_put_if_any(Hasher,N,T,Key,X,Y,Y1,T1),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(Hasher,[carbon_copy(A)|In],N,M,L,T) :- true |
+        carbon_copy(N,T,T1,A),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(Hasher,[carbon_copy(Key,A)|In],N,M,L,T) :- true |
+        carbon_copy_at_most_one(Hasher,N,T,Key,A,T1),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(Hasher,[do(List)|In],N,M,L,T) :- true |
+        merge(List,List1),
+        prepend(List1,In,In1),
+        keyed_set(Hasher,In1,N,M,L,T).
+
+keyed_set(Hasher,[get_load_factor(A)|In],N,M,L,T) :-
+    NN:=N+1,NNF$:=float(NN),MF$:=float(M),A0$:=MF/NNF |
+        A$:=A0,
+        keyed_set(Hasher,In,N,M,L,T).
+keyed_set(Hasher,[get_average_chaining_length(C)|In],N,M,L,T) :- true |
+        get_average_chaining_length(L,M,C),
+        keyed_set(Hasher,In,N,M,L,T).
+
+keyed_set(Hasher,[copy(NIn)|In],N,M,L,T) :- true |
+        copy_keyed_set(Hasher,N,M,L,T,NIn,T1),
+        keyed_set(Hasher,In,N,M,L,T1).
+
+keyed_set(_,[],_,_,_,_) :- true | true.
+
+otherwise.
+keyed_set(_,[Msg|_],_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(keyed_set,string#"illegal_message_protocol"),Msg).
+
+% *** get_all/2 ***
+get_at_most_one(Hasher,N,M,L,T,Key,A,M1,L1,T1) :- true |
+        get_if_any(Hasher,N,M,L,T,Key,X,M1,L1,T1),
+        get_at_most_one(X,A).
+
+get_at_most_one({Data},A) :- true | A=[Data].
+get_at_most_one({},A) :- true | A=[].
+
+% *** carbon_copy/2 ***
+carbon_copy_at_most_one(Hasher,N,T,Key,A,T1) :- Key>=0,Hasher=default,
+    H:=Key/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_if_any(E,Key,A,E1).
+carbon_copy_at_most_one(Hasher,N,T,Key,A,T1) :- Key$>=0.0,Hasher=default,
+    H:=int(Key)/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_if_any(E,Key,A,E1).
+carbon_copy_at_most_one(Hasher,N,T,Key,A,T1) :- atom(Key),Hasher=default,
+    tag_and_value(Key,_,V),H:=V/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_if_any(E,Key,A,E1).
+otherwise.
+carbon_copy_at_most_one(default,N,T,Key,A,T1) :- true |
+        hasher:hash(Key,H,Key1),
+        carbon_copy_one_wait_hashed_value(H,N,T,Key1,A,T1).
+%carbon_copy_at_most_one(Hasher,N,T,Key,A,T1) :- code(Hasher,_,_,_) |
+carbon_copy_at_most_one(Hasher,N,T,Key,A,T1) :- builtin#code(Hasher) |
+        builtin#apply(Hasher,{Key,H,Key1}),
+        carbon_copy_one_wait_hashed_value(H,N,T,Key1,A,T1).
+
+carbon_copy_one_wait_hashed_value(H0,N,T,Key,A,T1) :- H:=H0/\N |
+        set_vector_element(T,H,E,E1,T1),
+        carbon_copy_if_any(E,Key,A,E1).
+
+carbon_copy_if_any({Key,D,Next},Key,A,E) :- true |
+        A=[D],
+        E={Key,D,Next}.
+otherwise.
+carbon_copy_if_any({K,D,Next},Key,A,E) :- true |
+        E={K,D,Next1},
+        carbon_copy_if_any(Next,Key,A,Next1).
+carbon_copy_if_any(0,_,A,E) :- true | A=[],E:=0.
+

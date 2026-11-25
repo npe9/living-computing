@@ -19,6 +19,12 @@ notes' fact rows by `tools/coverage.py` and `tools/class_coverage.py`.
 | shell | 115 | 9 | 16 | 33 | 57 |
 | other | 531 | 22 | 75 | 77 | 357 |
 
+2026-11-25: `time` gained four required instance methods (get_count/2, set_count/2, get_value/5,
+minus/3) when the census scan learned that `time` `now/2` returns an instance
+(`../source_check_2026-11-24.md` §5 Status). `coverage/` was regenerated: other is now 535
+methods, 22 / 75 / 27 + 53 / 358 (the four new rows have nothing documented); no other partition's
+files changed.
+
 | partition | classes | some method documented on the class | name documented elsewhere | use only | nothing | no methods required (nature-only or reference) |
 |---|---|---|---|---|---|---|
 | window | 135 | 5 | 67 | 5 | 10 | 48 |
@@ -156,10 +162,10 @@ Key unheld manuals:
 
 | # | gap | dependence | settles it |
 |---|---|---|---|
-| 1 | Exact semantics of `library:get_class_object/3`: does it load on demand, what is the resolution order for `'p##c'` vs `##(p,c)`, and does it fail or raise on absence? | 160 / 11 | Ops 5.0 / MP3001-1 programming volume (library methods); else a kl0.py run of a held .ptf that calls it with a missing class, observing the caller's recovery code |
+| 1 | Exact semantics of `library:get_class_object/3`: does it load on demand, what is the resolution order for `'p##c'` vs `##(p,c)`, and does it fail or raise on absence? | 160 / 11 | Ops 5.0 / MP3001-1 programming volume (library methods); else a kl0.py run of a held .ptf that calls it with a missing class, observing the caller's recovery code. Step 3f (2026-11-25): kl0 models it INTERPOLATED, own (sender's) package first, a missing class refused (`psi/README.md`, "the library and the symbolizer's atom table"); still open |
 | 2 | Class-side `assert/assertz/asserta/retract/retract_all` on `library_utility`: storage (template vs object), persistence on save, interaction with `:node(DB,...)` calls on an instance | 287 / 4 (sum 248) | 「SIMPOSプログラミング説明書」 library section; sum/src/cprolog.v32 read in full (not yet done) for its expectations |
 | 3 | `library_utility:catalogue/3` without a window, in 7.x: accepted source forms (paths, wildcards, terms, term lists), and the Ids it returns for a failed class | 15 / 7, plus every install | the cil copy is 6.1/V6.11. A 7.x Librarian copy (none known); otherwise Ops 5.0 |
-| 4 | What `:assign(#library)` binds | 35 / 6 + ptf | programming manual; a disassembly of a held ptf caller only shows the call |
+| 4 | What `:assign(#library)` binds | 35 / 6 + ptf | programming manual; a disassembly of a held ptf caller only shows the call. Step 3f: kl0 models it as succeeding with no effect (INTERPOLATED from the call sites); still open |
 | 5 | `check_class_id/3` Info codes (0 = not loaded; "8 =< Info means loaded") | 11 / 3 | the programming manual, or more held callers (grep all IFS for check_class_id) |
 | 6 | How Execute reads a command file: `fxd("x.com")` vs bare `CATALOG.COM` vs `fdd("x.com")`; who handles a nested `command("x.COM")` item (the copy's command/2 takes a list only) | kappa 34 command items, 44 fxds; all installs | Ops 5.0 (Execute chapter); TM-785/786 drawing.com / simshow.com contents (not printed; perhaps on the ICOT FTP mirrors) |
 | 7 | Meaning of `fxds` vs `fxd` inside a list (the copy maps only `fxd`) | 44 / 2 | Ops 5.0; any held 5.x+ .com using `fxd(` (grep found none) |
@@ -227,3 +233,17 @@ Spec: pim/docs/simpos/subsystems/shell.md.
 | 28 | `call_counter` setters (17 methods) | 17/1 | named in ESP manual TeX | ESPtex/program-e.tex:10198-10233 read in full |
 | 29 | Status line in 5.x-7.x (fields, indicators, colour on PSI-II) | display fidelity | 1.00-2.50 | TM-785/786 page images (screens 5.0) re-eyed for the bottom band |
 | 30 | Logout effects (process kill order, `exit/1` calls, saver) | session end | `logout -> yes` | 操作説明書 |
+
+## Revealed by the step 3f census (2026-11-25)
+
+The FEP census with receivers made by their held creators
+(`psi/README.md`, "Step 3f" sections) stops at these SIMPOS methods. None
+has a printed or held definition, so none is stood in.
+
+| unknown | rows stopped (`census --fep --recipes`) | known | what would settle it |
+|---|---|---|---|
+| `stream:see/2`: what a device's `loop_main/1` waits on | 17 `goal`/`invoke`/`loop_main` rows, the commonest stop | TM-100 Fig. 3.6 prints `stream` create/put/get only | the I/O manual (not held); a held caller's source |
+| `get_interpreter/2` on a `pimos_window` (owner and answer) | 5 (3 editor, 2 window-process) | name and arity from the held `.ptf` | window manual; TM-125 lists no owner |
+| `has_been_reshaped/1`, the reshape callback | 4 editor rows | called after `set_size/3`, `reshape/7`, `set_inside_size/5`, `reshape_by_mouse/3` | window manual (G11 is the related reshape question) |
+| `process:invocation_stack/2` | the tcpip `create_socket` creator (so tcpip has no census recipe) | name and arity only | TM-100 (prints `process`'s body without it) |
+| `process:status/3` | 11 plain-census creator rows | one printed call in `activate/2` (TM-100 Fig. 3.1) | TM-100's unprinted methods |

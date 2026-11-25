@@ -1,0 +1,175 @@
+/* このテストプログラムはProlog版コンパイラで */
+/* クローズインデキシングを掛けた場合のみ有効 */
+%%% KL1-B Test for Test_Constant %%%
+% Test_Atom %%%%%%%%%%%%% abcdefg
+% Test_Nil %%%%%%%%%%%%%% abcdefg
+% Test_Integer %%%%%%%%%% abcdefg
+% Test_Float %%%%%%%%%%%% abcdefg
+% Test_Arity %%%%%%%%%%%% abcdefg
+
+:- module test_cnst.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Test_Constant %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% Test_Atom %%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom).
+atm00(atom):- put_console(c#"a") | atm01.
+atm00(X):- wait(X), put_console(c#"*") | atm01.
+
+atm01:- true | atm01([]).
+atm01(atom):- put_console(c#"*") | atm02.
+atm01(X):- wait(X), put_console(c#"b") | atm02.
+
+atm02:- true | atm02(1234).
+atm02(atom):- put_console(c#"*") | atm03.
+atm02(X):- wait(X), put_console(c#"c") | atm03.
+
+atm03:- true | atm03(12.34).
+atm03(atom):- put_console(c#"*") | atm04.
+atm03(X):- wait(X), put_console(c#"d") | atm04.
+
+atm04:- true | atm04([list]).
+atm04(atom):- put_console(c#"*") | atm05.
+atm04(X):- wait(X), put_console(c#"e") | atm05.
+
+atm05:- true | atm05({0,1}).
+atm05(atom):- put_console(c#"*") | atm06.
+atm05(X):- wait(X), put_console(c#"f") | atm06.
+
+atm06:- true | atm06(ascii#"String").
+atm06(atom):- put_console(c#"*") | atm07.
+atm06(X):- wait(X), put_console(c#"g") | atm07.
+
+atm07:- put_console(key#lf) | nil.
+
+nil:- put_console(ascii#"% Test_Nil %%%%%%%%%%%%%% ") | nil00.
+
+nil00:- true | nil00(atom).
+nil00([]):- put_console(c#"*") | nil01.
+nil00(X):- wait(X), put_console(c#"a") | nil01.
+
+nil01:- true | nil01([]).
+nil01([]):- put_console(c#"b") | nil02.
+nil01(X):- wait(X), put_console(c#"*") | nil02.
+
+nil02:- true | nil02(1234).
+nil02([]):- put_console(c#"*") | nil03.
+nil02(X):- wait(X), put_console(c#"c") | nil03.
+
+nil03:- true | nil03(12.34).
+nil03([]):- put_console(c#"*") | nil04.
+nil03(X):- wait(X), put_console(c#"d") | nil04.
+
+nil04:- true | nil04([list]).
+nil04([]):- put_console(c#"*") | nil05.
+nil04(X):- wait(X), put_console(c#"e") | nil05.
+
+nil05:- true | nil05({0,1}).
+nil05([]):- put_console(c#"*") | nil06.
+nil05(X):- wait(X), put_console(c#"f") | nil06.
+
+nil06:- true | nil06(ascii#"String").
+nil06([]):- put_console(c#"*") | nil07.
+nil06(X):- wait(X), put_console(c#"g") | nil07.
+
+nil07:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% Test_Integer %%%%%%%%%% ") | int00.
+
+int00:- true | int00(atom).
+int00(1234):- put_console(c#"*") | int01.
+int00(X):- wait(X), put_console(c#"a") | int01.
+
+int01:- true | int01(1234).
+int01(1234):- put_console(c#"b") | int02.
+int01(X):- wait(X), put_console(c#"*") | int02.
+
+int02:- true | int02(123456).
+int02(1234):- put_console(c#"*") | int03.
+int02(X):- wait(X), put_console(c#"c") | int03.
+
+int03:- true | int03(12.34).
+int03(1234):- put_console(c#"*") | int04.
+int03(X):- wait(X), put_console(c#"d") | int04.
+
+int04:- true | int04([list]).
+int04(1234):- put_console(c#"*") | int05.
+int04(X):- wait(X), put_console(c#"e") | int05.
+
+int05:- true | int05({0,1}).
+int05(1234):- put_console(c#"*") | int06.
+int05(X):- wait(X), put_console(c#"f") | int06.
+
+int06:- true | int06(ascii#"String").
+int06(1234):- put_console(c#"*") | int07.
+int06(X):- wait(X), put_console(c#"g") | int07.
+
+int07:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% Test_Float %%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(atom).
+flt00(12.34):- put_console(c#"*") | flt01.
+flt00(X):- wait(X), put_console(c#"a") | flt01.
+
+flt01:- true | flt01(1234).
+flt01(12.34):- put_console(c#"*") | flt02.
+flt01(X):- wait(X), put_console(c#"b") | flt02.
+
+flt02:- true | flt02(12.34).
+flt02(12.34):- put_console(c#"c") | flt03.
+flt02(X):- wait(X), put_console(c#"*") | flt03.
+
+flt03:- true | flt03(123.456).
+flt03(12.34):- put_console(c#"*") | flt04.
+flt03(X):- wait(X), put_console(c#"d") | flt04.
+
+flt04:- true | flt04([list]).
+flt04(12.34):- put_console(c#"*") | flt05.
+flt04(X):- wait(X), put_console(c#"e") | flt05.
+
+flt05:- true | flt05({0,1}).
+flt05(12.34):- put_console(c#"*") | flt06.
+flt05(X):- wait(X), put_console(c#"f") | flt06.
+
+flt06:- true | flt06(ascii#"String").
+flt06(12.34):- put_console(c#"*") | flt07.
+flt06(X):- wait(X), put_console(c#"g") | flt07.
+
+flt07:- put_console(key#lf) | ari.
+
+ari:- put_console(ascii#"% Test_Arity %%%%%%%%%%%% ") | ari00.
+
+ari00:- true | ari00(atom).
+ari00({_,_}):- put_console(c#"*") | ari01.
+ari00(X):- wait(X), put_console(c#"a") | ari01.
+
+ari01:- true | ari01(1234).
+ari01({_,_}):- put_console(c#"*") | ari02.
+ari01(X):- wait(X), put_console(c#"b") | ari02.
+
+ari02:- true | ari02(12.34).
+ari02({_,_}):- put_console(c#"*") | ari03.
+ari02(X):- wait(X), put_console(c#"c") | ari03.
+
+ari03:- true | ari03([list]).
+ari03({_,_}):- put_console(c#"*") | ari04.
+ari03(X):- wait(X), put_console(c#"d") | ari04.
+
+ari04:- true | ari04({0,1}).
+ari04({_,_}):- put_console(c#"e") | ari05.
+ari04(X):- wait(X), put_console(c#"*") | ari05.
+
+ari05:- true | ari05({0,1,2}).
+ari05({_,_}):- put_console(c#"*") | ari06.
+ari05(X):- wait(X), put_console(c#"f") | ari06.
+
+ari06:- true | ari06(ascii#"String").
+ari06({_,_}):- put_console(c#"*") | ari07.
+ari06(X):- wait(X), put_console(c#"g") | ari07.
+
+ari07:- put_console(key#lf) | done.
+
+done:- true | true.

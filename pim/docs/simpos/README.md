@@ -22,7 +22,7 @@ agents report it: each file gives its own method and limits.
 
 ## 1. The target, in one number
 
-**A SIMPOS that runs every surviving ESP program provides 3,470
+**A SIMPOS that runs every surviving ESP program provides 3,474
 distinct requirements** (`required/subset_cover.tsv`). These are
 classes, methods with arity and kind (class or instance), inherited
 slots, built-ins, and system objects reached by pathname. There are
@@ -33,8 +33,8 @@ step exactly satisfying the programs added so far:
 
     txtstrct 138 -> chal 245 -> utter 403 -> knov 580 -> disc 741 ->
     icotext 917 -> papyrus 1,100 -> sum 1,324 -> fuzclust 1,538 ->
-    gog-esp 1,784 -> euod 2,017 -> cal-esp 2,314 -> kwic-esp 2,593 ->
-    cil 2,941 -> kappa2 3,470
+    gog-esp 1,785 -> euod 2,018 -> cal-esp 2,315 -> kwic-esp 2,595 ->
+    cil 2,944 -> kappa2 3,474
 
 That is also the build and test order. Each program is the acceptance
 test for its step, run against the reconstruction and compared with
@@ -48,9 +48,9 @@ The requirements in detail:
   programs; **115 used by one program only and not confirmed**, which
   may be application classes missing from their archives; 3 provided
   by held packages (not SIMPOS); 4 defined in another IFS application.
-- **1,436 methods on named classes and 706 on inherited natures**
+- **1,440 methods on named classes and 706 on inherited natures**
   (`required/requirements.tsv`), with call counts, programs and an
-  example call site. 760 more selectors have a receiver the scan could
+  example call site. 759 more selectors have a receiver the scan could
   not type; they are listed with candidate classes.
 - **93 inherited slots.**
 - **353 built-in predicates** (`required/builtins.tsv`). 176 of them
@@ -373,6 +373,114 @@ and stand-in `simpos##` classes. In order:
      - The next blockers: pmi ca 23, pmi c6 18, blt 9a 12, blt 54 12;
        `undefined_method:raise/2` 16, `library:assign/1` 9,
        `network_node_name` 10.
+   - *2026-11-24, step 3e* (`../../psi/README.md`, the "Step 3e" sections):
+     - Opcode rows: pmi ca (a first-clause guard), blt f2 (`==`, read
+       as f0), blt 9a/9b (interrupt brackets, no-ops here), pmi b1, b5,
+       b6, b7 (vectors of 1, 5, 6 and n elements), blt 50, 51, 54, 55
+       (`and`, `or`, `shift_left`, `shift_right`; the 32-bit word's
+       edges refuse), and R != A for blt 40 and 49. Each row is
+       witnessed by held cells beside their held source.
+     - A PRINTED stand-in: `as_program`, TM-100 Fig. 3.3 verbatim,
+       with `process`'s program stack INTERPOLATED. kl0 keeps a missing
+       primary under a stand-in ancestor as SIMPOS.
+     - The census: a send to an integer still holding its slot's
+       template constant is refused as `receiver a slot constant` (139
+       FEP methods). It is the census's own doing, since receivers are
+       made with new/2, not through their creators.
+       `:raise(#undefined_method, ...)` ends in a new outcome,
+       `exception`: uncaught, since no handler is modelled (TM-388
+       p.59; 16 methods).
+     - INTERPOLATED stand-ins: `network_node_name` (one node name;
+       its value "psi" is OURS), and `pmacs_window`'s `{editor, Class}`
+       option and `activity` slot, from the held cells of `pimos_window`.
+     - Census: 1,403 methods (138 inherited from `as_program`), 787
+       succeed, 123 fail, 16 raise, 477 refuse. No method moved out of
+       success at any step.
+     - Not added: blt 6f `list_to_vector` (its third argument is
+       unsettled) and pmi c6 (a multi-way switch with packed words; it
+       needs ce and ff, which have no rows).
+     - The next blockers: the slot constants (139, by making receivers
+       through their creators), pmi c6 21, `library:assign/1` 12,
+       `process:status/3` 11, blt 0d 10.
+     - 2026-11-25: three witness citations were corrected after a re-read
+       against held kappa2 (CONVERTER.ESP for `get_integer/4`, KP_MDMSCT.ESP
+       for b6, blt 49's offset). After merging master (296806e2, then
+       710f3933), the census is identical row by row. Against step 3d,
+       row by row, the only method out of success is the blt f2 census
+       order effect (`psi/README.md`).
+     - 2026-11-25, the source check applied (`source_check_2026-11-24.md`
+       §5, with a status per item): the stand-ins' labels and citations
+       re-checked against page images and held lines and corrected
+       (`semaphore`, `message`, `as_message`, `stream`, `time`'s
+       milliseconds, `pathname`'s `remote_or_local/6`, and more). The
+       census generator learns that `time` `now/2` returns an instance,
+       so `required/classes.tsv`'s `time` row has get_count/2 and
+       set_count/2 (3,474 keys in all). Census unchanged.
+     - 2026-11-25, the opcode table: TM-444/TR-236 mnemonics bound to
+       numbers as INFERENCE with their counts (pmi 42-45, a4, a5, 24, 2b;
+       blt 45/46/48/49 from cil's `cil_kl0.esp`), second witnesses, and
+       blt 19 with V != N witnessed and executed: six-package census 310
+       / 12 / 208, FEP one method from refused to the step limit, none
+       out of success.
+     - 2026-11-25, strings: kl0 unifies a string (and holds it `==`)
+       only with the same stored string (TM-388 PDF p79, p117-119);
+       string/3 is a type test; list_index's local `equal_key/2`
+       compares string keys by contents. Identity alone moves no census
+       row. With the type test, FEP is 789 / 154 / 443 / 16 / 1 step
+       limit; one method leaves success, a census order effect
+       (`psi/README.md`).
+   - *2026-11-25, step 3f* (`../../psi/README.md`, the "Step 3f"
+     sections):
+     - The slot constants (142, not 139: the string type test moved
+       three rows onto one) were traced slot by slot to their held
+       writers. They are census artifacts: device creators, creators
+       storing a caller's argument, process bodies that never run, and
+       one new/2 after-demon that `make_instance` skipped. For four
+       pimscsi slots no writer was found (UNKNOWN).
+     - `kl0.py census --fep --recipes` (OURS) makes receivers by their
+       held creators. The device creators are stopped before the
+       PRINTED `process:activate/2`, which needs the lost `status/3` and
+       `context`. The plain census is unchanged.
+     - With recipes: 791 / 154 / 441 / 16 / 1, and 101 slot constants
+       (41 fewer). The rows go on to real gaps, not success: the
+       `pmacs_window` window protocol (21 rows), `stream:see/2`, and
+       `directory:retrieve/4`.
+     - kl0 models four SIMPOS methods in Python (OURS, INTERPOLATED from
+       call sites): `library` `assign/1`, `check_info/3` and
+       `get_class_object/3` (own package first), and `symbolizer`
+       `enter_atom/3` (interface PRINTED, TR-283 p18). With them,
+       `create_string_io/10` makes the four string-I/O programs, which
+       are now recipes too. Plain census 790 / 154 / 442; with recipes
+       792 / 154 / 440 and 85 slot constants. `stream:see/2` (no source)
+       is now the commonest stop.
+     - `pmacs_window` gains its geometry, title, font and display
+       methods (INTERPOLATED from `subsystems/window.md` §2.1-2.3, TM-125
+       p15-16, TM-115 p50, p63), as slots and no-ops. The census has
+       1,420 methods: the 17 new ones are inherited by `pimos_window` and
+       succeed, which is not progress. Plain 807 / 154 / 442; with
+       recipes 809 / 154 / 440. 17 editor rows stop later: 11 at their
+       reply, on the census's unbound request, and 4 at the
+       `has_been_reshaped/1` callback.
+     - pmi b7 with A != 0 witnessed (kappaMDM_manager set_up/2 @e6,
+       KP_MDM.ESP:89) and accepted. One FEP row stops later; totals
+       unchanged.
+     - Still refused: pmi c6, ce and ff (not attempted; 132, 262 and
+       958 uses in the source-held packages), and blt 0d, 1a and 6f
+       (the outputs are not settled). Not stood in: `process:status/3`
+       (it would only move rows to `entry_of_invoke/2`),
+       `node_full_name/3`, and `stream:see/2` (no source).
+     - Recomputed row by row from the final TSVs (`psi/README.md`, "the
+       census accounting, recomputed"). Master plain to HEAD plain:
+       1,403 to 1,420 methods, 789 to 807 successes, but 17 of these are
+       the new inherited rows and only 1 is a real move
+       (`remote_stream create_to_fep/3`, on the no-op `assign/1`).
+       Recipes then move 56 slot-constant rows: 4 to success, 1 to
+       failure, 30 to simpos, 20 to `set_string_element` on an
+       unbound argument (the request Id in the one row traced), 1 to `receiver not an object`. The
+       one new slot constant comes from the stand-in's own font 0. Each
+       real success was checked alone on a fresh machine; the two
+       `resign_core/1` successes are order effects (both fail alone).
+       The six-package census is identical to master.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

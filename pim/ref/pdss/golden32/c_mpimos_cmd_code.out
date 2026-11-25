@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_code.kl1" : Compiling ... is_command/2,do_command/2,save_action/3,save_action0/4,wait_save/3,wait_status/1,load_one_file/5,wait_load_one_file/6,save_one_file/4,wait_save_one_file/4,raise_fail/2,save_all_action/2,save_all_action_wait_dir/3,save_all_action/3,save_all_action0/3,save_all_action00/4,listing_action/3,listing_action_wait_dir/4,listing_action0/4,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194230     50    236    10    1583992        0
+After:      33290     38    108     3     279588        0
+GCed :     160940     12    128     7    1304404        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+listing_action00/3,count/2,max_size/2,max_size/3,symbol_to_string/2,display_head/3,line/3,line0/4,display_line/7,display_line0/8,flag/2,put_all/4,public_action/3,display_public/2,return_public/4,abort_action/1,fail_action/1,append_mess/3,compile_one_file/4,compile_one_file/7,compile_wait_in_file/10,compile_wait_out_file/9,wait_compile_one_file/6,return_status/3,wait_comp/1,wait_comp1/5,wait_comp1_load/3,kl1cmp_input_window/7,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     185092    148    871     3    1583996        0
+After:      68923     42    228     3     578764        0
+GCed :     116169    106    643     0    1005232        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+kl1cmp_input_window1/4,wait_kl1cmp/5,wait_kl1cmp_load/4,wait_kl1cmp_save/1,halt/1,compile_action/3,wait_compile/5,wait_compile_load/6,correct_extention/3,delete_extention_one/3,delete_extention_one_1/5,ch_svdir_action/3,ch_svdir_action0/3,wait/1,help/2,END.
+
+[is_command/2,do_command/2,help/2]
+successdone
+
+exit 0
+asm eb8e883ef289a90b375d503c9b201e4cff5cd2f156742d45889bf8119dd692a0
+sav none

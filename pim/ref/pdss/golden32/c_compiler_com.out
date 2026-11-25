@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/com.kl1" : Compiling ... kl1b_version/1,kl1compile/0,check_error/3,my_merge/2,file_open/5,convert_name_to_string/4,status_check/6,compile_for_pdss/6,message_distributer/7,wait_flushed/9,C/4,write_string/3,write_string/5,ghccompile/8,compile_case_on_pred/10,check_end_of_file/10,high_priority_merge/2,out_to_stream/3,tsscomp/1,tsscomp/0,compile_initial_directives/5,compile_initial_directive/5,compile_directives/3,check_module/4,read_and_compile_predicate/7,compile_directives_or_clause/7,wait_compiled/7,error/4,warning/4,output_error/3,create_state/2,access_state/5,conjunction_to_list/3,check_overlapped_builtin/2,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194335     50    217    10    1584008        0
+After:      22758     33    100     3     193868        0
+GCed :     171577     17    117     7    1390140        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+check_overlapped_builtin_type/4,$kl1cmp_reader:create_reader/5/5,END.
+
+[tsscomp/1,tsscomp/0,kl1compile/0,ghccompile/8,message_distributer/7,write_string/3,compile_for_pdss/6]
+successdone
+
+exit 0
+asm b0e4598d6af41a5030ff8158afaf1d2fc2cd22d5e87f32e8ccaa3ae97445ba2e
+sav none

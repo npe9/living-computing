@@ -1,0 +1,16 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/mrb.kl1" : Compiling ... mrb_optimization/13,copy_element_of_list/3,mrb_passive_code/17,mrb_one_passive_code/17,is_not_refed_in_body_and_last/8,is_not_refed_in_body/6,manage_vector_element/7,get_var_attr/4,manage_vector_element/8,manage_vector_element/10,body_ref_check/4,body_ref_check/2,mark_element_or_not/12,clear_attr/4,clear_one_attr/3,latest_or_not/8,merge_read_variable/6,check_mrb_instr/6,look_for_Ai/6,look_for_Ai_for_args/6,check_args/3,out_to_stream/3,out_read_value/5,out_read_constant/5,mrb_void_check/11,mrb_one_void_check/11,mrb_update_optimal_code/7,set_pc_to_comitted/4,return_greater/3,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194186     60    221    10    1583984        0
+After:       4947     38    139     3      56964        0
+GCed :     189239     22     82     7    1527020        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+mrb_body_code/10,mrb_one_body_code/5,seen_n_times/4,seen_n_times/5,mark_or_not_get_arg/8,mark_or_not_get_constant_arg/5,mrb_black_or_white_var/5,mrb_black_or_white_var/7,mrb_black_or_white_val/7,first_and_latest_occurrence/7,latest_occurrence/4,$compile_for_pdss/6_0/3,compile_for_pdss/6,unique/3,unique/4,$kl1cmp_command:ghccompile/8/8,END.
+
+[mrb_optimization/13,compile_for_pdss/6]
+successdone
+
+exit 0
+asm 2e26e833456d9f289d73439662c23abe2d61dc037bd97aef7e4a86875d82a360
+sav none

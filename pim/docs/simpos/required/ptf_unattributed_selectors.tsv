@@ -39,7 +39,7 @@ pimfep	beep	1	6	editor_main_window,essential_temporary_window,standard_io_window
 pimfep	move_to	2	6	
 pimfep	check_info	3	6	library
 pimfep	catch	5	6	
-pimfep	set_count	2	5	
+pimfep	set_count	2	5	time
 pimfep	data_buffer	2	5	network_listener_buffer,string_buffer
 pimfep	free	1	5	
 pimfep	add_last	2	5	list,list_bucket
@@ -120,7 +120,7 @@ pimfep	abort	3	2
 pimfep	shutdown	1	2	
 pimfep	get_program_name	2	2	
 pimfep	set_label_font	2	2	essential_scrolling_menu,imi_super_win,kappaREP_select_menu,labeled_superior_window,menu,pmacs_window,popup_choice_window,standard_io_window
-pimfep	get_count	2	1	
+pimfep	get_count	2	1	time
 pimfep	on_at	2	1	alarm_watch
 pimfep	locked	1	1	{as_class_with_lock|as_event_handler},{as_class_with_lock|as_program},{as_program|as_class_with_lock},{as_program|as_resource|as_class_with_lock},{as_resource|as_program|as_class_with_lock},{as_resource|with_lock}
 pimfep	get_keys	2	1	hash_index,list_index,monogyny_hash_index,monogyny_list_index
@@ -352,7 +352,7 @@ pimmcsp	draw_filled_circle	7	10	standard_io_window
 pimmcsp	get_string	2	9	time
 pimmcsp	set_content	2	9	message
 pimmcsp	set_value	5	9	time
-pimmcsp	set_count	2	9	
+pimmcsp	set_count	2	9	time
 pimmcsp	get_text_size	3	9	
 pimmcsp	send	2	8	<root>,channel,port,rs232c
 pimmcsp	inhibit_forced_event	1	8	
@@ -389,7 +389,7 @@ pimmcsp	get_process	3	5	process
 pimmcsp	size	2	5	expandable_array,standard_io_buffer
 pimmcsp	shut_down	3	4	
 pimmcsp	close_socket	3	4	
-pimmcsp	minus	3	4	
+pimmcsp	minus	3	4	time
 pimmcsp	make_only	3	4	binary_file,fdd_binary_file
 pimmcsp	open	3	4	binary_file,fdd_binary_file
 pimmcsp	draw_filled_ellipse	8	4	{as_graphics|inferior_window}
@@ -434,7 +434,7 @@ pimmcsp	me_psi	1	3	str_machine_id
 pimmcsp	unlock_with_hook	1	3	{as_resource|with_lock}
 pimmcsp	lock_with_hook	1	3	{as_resource|with_lock}
 pimmcsp	get_name	2	3	
-pimmcsp	get_count	2	3	
+pimmcsp	get_count	2	3	time
 pimmcsp	get_inside_size	3	3	essential_window,labeled_superior_window,standard_io_window,standard_superior_window,standard_window,superior_window,{as_superior|with_label|with_border|inferior_window},{as_superior|with_label|with_border|with_key_select|as_mouse_input|with_icon|reshape_notifier|inferior_window}
 pimmcsp	copy_from_string	11	3	{as_graphics|inferior_window}
 pimmcsp	current_program	2	3	
@@ -569,7 +569,7 @@ pimmcsp	connect	4	1
 pimmcsp	show_buffer	2	1	
 pimmcsp	push_to_yank	3	1	pmacs_standard_editor
 pimmcsp	time	3	1	
-pimmcsp	get_value	5	1	
+pimmcsp	get_value	5	1	time
 pimmcsp	$maxdepth	3	1	
 pimmcsp	$maxlength	3	1	
 pimmcsp	$maxlength	2	1	
@@ -720,7 +720,7 @@ pimmutil	get_number_string	3	3	symbolizer
 pimmutil	get_ch_num	3	3	
 pimmutil	string	2	3	
 pimmutil	id	2	3	
-pimmutil	get_value	5	3	
+pimmutil	get_value	5	3	time
 pimmutil	melt	2	3	
 pimmutil	reread	1	3	standard_io_buffer
 pimmutil	hosei	5	3	
@@ -789,7 +789,7 @@ pimmutil	get_atom	3	1	symbolizer
 pimmutil	traveling_path	3	1	
 pimmutil	take_path_table	4	1	
 pimmutil	get_path_table	2	1	
-pimmutil	minus	3	1	
+pimmutil	minus	3	1	time
 pimmutil	draw_rectangle	5	1	standard_io_window,{as_graphics|inferior_window}
 pimmutil	path_table	2	1	
 pimmutil	read_config_file	3	1	
@@ -924,7 +924,7 @@ mpsicspR	get_window	2	5	pmacs_standard_editor,standard_editor
 mpsicspR	activate	2	5	essential_window,process,standard_choice_window,standard_io_window,standard_menu,standard_multi_select_scrolling_menu,standard_scrolling_menu,window_without_label
 mpsicspR	enter_atom	3	4	symbolizer
 mpsicspR	read	2	4	binary_file_tap,choice_window,essential_on_off_menu,essential_scrolling_menu,essential_temporary_window,essential_window,fdd_binary_file_tap,kappaREP_select_menu
-mpsicspR	set_count	2	4	
+mpsicspR	set_count	2	4	time
 mpsicspR	plus	3	4	time
 mpsicspR	on_at	2	4	alarm_watch
 mpsicspR	close_input	1	4	standard_input_file,standard_input_text_buffer_accessor
@@ -980,7 +980,7 @@ mpsicspR	get_default	2	1
 mpsicspR	get_pe	3	1	
 mpsicspR	directory	6	1	directory
 mpsicspR	getb	3	1	standard_input_file,standard_io_buffer
-mpsicspR	get_count	2	1	
+mpsicspR	get_count	2	1	time
 mpsicspR	get_label_flag	2	1	
 mpsicspR	get_process	3	1	process
 mpsicspR	melt	2	1	

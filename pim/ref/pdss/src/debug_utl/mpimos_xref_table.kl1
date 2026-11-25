@@ -1,0 +1,488 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%	KL1 Cross Reference (Tables)		%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_xref_table.
+:- public predicate_table/4,module_table/7,init_module_table/2.
+
+:- local_implicit out : oldnew.
+
+%%  predicate table.
+predicate_table(PTS,RT) -->
+    true|
+	merge(PTS,PTS1),
+	new_vector(V,16),
+	{{ set_nil(0,16,V,PT) }},
+	predicate(PTS1,PT,RT,[],1).
+
+predicate([entry(P,A,S)|PTS],PT,RT,CT,PN) -->
+    true|
+	{{ get_list_from_table(P,PT,NPT,PL,NPL),
+	   entry_table(PN,NPN,NPL,PL,P,A,ES) }},
+	S = {ES,P,A},
+	predicate(PTS,NPT,RT,CT,NPN).
+predicate([call(P,A,C)|PTS],PT,RT,CT,PN) -->
+    true|
+	predicate(PTS,PT,RT,[{P,A,C}|CT],PN).
+predicate([],PT,RT,CT,_) -->
+    true|
+	&out <<= [putl(string#"END"),nl,flush(_)],
+	predicate_reference(PT,RT,CT).
+
+:- local_implicit pn : oldnew,
+		  pl : stream.
+
+entry_table([],P,A,S) -->
+    true|
+	&pl <<= [{&pn(old),P,A,[]}],
+	&pn++,
+	{{ check_builtin_type(P,A,S) }}.
+entry_table([PAC|PL],P,A,S) -->
+    vector_element(PAC,1,P),vector_element(PAC,2,A)|
+	&pl = [PAC|PL],
+	S = doubly.
+otherwise.
+entry_table([PAC|PL],P,A,S) -->
+    true|
+	&pl <<= [PAC],
+	entry_table(PL,P,A,S).
+
+:- local_implicit out : oldnew.
+
+%%  predicate reference.
+predicate_reference(PT,RT,CT) -->
+    true|
+	{{ predicate_reference_entry(PT,RT,CTL,CT) }},
+	merge(CTL,CTL1),
+	undefined_predicate(CTL1),
+	uncalled_predicate(RT).
+
+:- local_implicit pt  : oldnew,
+		  ctl : stream.
+
+predicate_reference_entry([]) -->
+    true|
+	true.
+predicate_reference_entry([{P,A,C}|CT]) -->
+    true|
+	{{ get_list_from_table(P,&pt,PL,RL),
+	   predicate_ref_entry_list(RL,&ctl,PL,P,A,C) }},
+	predicate_reference_entry(CT).
+
+:- local_implicit pl  : stream,
+		  ctl : stream.
+
+predicate_ref_entry_list([],P,A,C) -->
+    true|
+	&ctl <<= [{P,A,C}].
+predicate_ref_entry_list([PAC|PL],P,A,C) -->
+    vector_element(PAC,1,P),vector_element(PAC,2,A)|
+	set_vector_element(PAC,3,CL,[C|CL],NPAC),
+	&pl = [NPAC|PL].
+otherwise.
+predicate_ref_entry_list([PAC|PL],P,A,C) -->
+    true|
+	&pl <<= [PAC],
+	predicate_ref_entry_list(PL,P,A,C).
+
+:- local_implicit out : oldnew.
+
+%%  put undefined procodure.
+undefined_predicate([]) -->
+    true|
+	true.
+undefined_predicate([{P,A,C}|CT]) -->
+    true|
+	&out <<= [putb(string#">>> Error !! undefined predicate ::: "),
+		  putt(P/A),putb(string#" in "),putt(C),putl(string#"."),
+		  flush(_)],
+	undefined_predicate(CT).
+
+%%  put unreferred predicate.
+uncalled_predicate(RT) -->
+    true|
+	merge(RT,RL),
+	{{ mpimos_utility:qsortv(RL,0,SRL) }},
+	uncalled_predicate_list(SRL).
+
+uncalled_predicate_list([]) -->
+    true|
+	true.
+uncalled_predicate_list([{_,P,A,R}|RL]) -->
+    true|
+	{{ self_check(P,A,R,S) }},
+	uncalled_predicate_warning(P,A,S),
+	uncalled_predicate_list(RL).
+
+self_check(_,_,[],S):-
+    true|
+	S = none.
+self_check(P,A,[P/A/C|RL],S):-
+    true|
+	self_check(P,A,RL,S).
+otherwise.
+self_check(P,A,_,S):-
+    true|
+	S = called.
+
+uncalled_predicate_warning(_,_,called) -->
+    true|
+	true.
+uncalled_predicate_warning(P,A,none) -->
+    true|
+	&out <<= [putb(string#">>> Warning ? isolated predicate exists ::: "),
+		  putt(P/A),putl(string#".")].
+
+%%  module table.
+module_table(MTS,RT,GRT,BRT,Op) -->
+    true|
+	merge(MTS,MTS1),
+	new_vector(VM,16), {{ set_nil(0,16,VM,MT) }},
+	new_vector(VG,16), {{ set_nil(0,16,VG,GT) }},
+	new_vector(VB,16), {{ set_nil(0,16,VB,BT) }},
+	module(MTS1,MT,RT,[],GT,GRT,[],BT,BRT,[],1,Op).
+
+module([entry(M,PL,RT,F,S)|MTS],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,MN,Op) -->
+    true|
+	{{ module_entry_table(MT,NMT,MN,NMN,M,PL,RT,F,Op,S) }},
+	module(MTS,NMT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,NMN,Op).
+module([entry(M,PL)|MTS],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,MN,Op) -->
+    true|
+	{{ module_entry_table(MT,NMT,MN,NMN,M,PL,{},[],Op,_) }},
+	module(MTS,NMT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,NMN,Op).
+module([call(M,P,A,C)|MTS],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,MN,Op) -->
+    true|
+	module(MTS,MT,MRT,[{M,P,A,C}|CT],GT,GRT,GCT,BT,BRT,BCT,MN,Op).
+module([guard_builtin(P,A,C)|MTS],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,MN,Op) -->
+    true|
+	module(MTS,MT,MRT,CT,GT,GRT,[{P,A,C}|GCT],BT,BRT,BCT,MN,Op).
+module([body_builtin(P,A,C)|MTS],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,MN,Op) -->
+    true|
+	module(MTS,MT,MRT,CT,GT,GRT,GCT,BT,BRT,[{P,A,C}|BCT],MN,Op).
+module([],MT,MRT,CT,GT,GRT,GCT,BT,BRT,BCT,_,_) -->
+    true|
+	module_reference(MT,MRT,CT),
+	{{ builtin_reference_entry(GT,GRT,GCT) }},
+	{{ builtin_reference_entry(BT,BRT,BCT) }}.
+
+:- local_implicit mt : oldnew,
+		  mn : oldnew.
+
+%%  entry module to table.
+module_entry_table(M,PL,RT,F,Op,S) -->
+    true|
+	{{ get_list_from_table(M,&mt,ML,NML),
+	   module_entry_list(NML,&mn,ML,M,PL,RT,F,Op,S) }}.
+
+:- local_implicit ml : stream,
+		  mn : oldnew.
+
+module_entry_list([],M,PL,RT,F,_,S) -->
+    true|
+	&ml <<= [{&mn(old),M,PL,RT,F}],
+	&mn++,
+	S = {success,M}.
+module_entry_list([MP|ML],M,PL,RT,F,update,S) -->
+    vector_element(MP,1,M)|
+	&ml = [{&mn(old),M,PL,RT,F}|ML],
+	&mn++,
+	S = {success,M}.
+module_entry_list([MP|ML],M,_,_,_,protect,S) -->
+    vector_element(MP,1,M)|
+	&ml = [MP|ML],
+	S = {doubly,M}.
+otherwise.
+module_entry_list([MP|ML],M,PL,RT,F,Op,S) -->
+    true|
+	&ml <<= [MP],
+	module_entry_list(ML,M,PL,RT,F,Op,S).
+
+:- local_implicit out : oldnew.
+
+%% module reference.
+module_reference(MT,RT,CT) -->
+    true|
+	{{ module_reference_entry(MT,RT,CML,CPL,CT) }},
+	merge(CML,CML1),
+	merge(CPL,CPL1),
+	undefined_module(CML1),
+	undefined_public(CPL1).
+
+:- local_implicit mt  : oldnew,
+		  cml : stream,
+		  cpl : stream.
+
+module_reference_entry([{M,P,A,C}|CT]) -->
+    true|
+	{{ get_list_from_table(M,&mt,ML,NML),
+	   module_ref_entry_list(NML,&cml,&cpl,ML,M,P,A,C) }},
+	module_reference_entry(CT).
+module_reference_entry([]) -->
+    true|
+	true.
+
+:- local_implicit ml  : stream,
+		  cml : stream,
+		  cpl : stream.
+
+module_ref_entry_list([],M,P,A,C) -->
+    true|
+	&cml <<= [{M,P,A,C}].
+module_ref_entry_list([MP|ML],M,P,A,C) -->
+    vector_element(MP,1,M)|
+	set_vector_element(MP,2,PL,NPL,MP1),
+	set_vector_element(MP1,3,RT,NRT,NMP),
+	&ml = [NMP|ML],
+	{{ public_ref_entry_list(NPL,RT,NRT,&cpl,PL,M,P,A,C) }}.
+otherwise.
+module_ref_entry_list([MP|ML],M,P,A,C) -->
+    true|
+	&ml <<= [MP],
+	module_ref_entry_list(ML,M,P,A,C).
+
+:- local_implicit pl  : stream,
+		  pt  : oldnew,
+		  cpl : stream.
+
+public_ref_entry_list([],M,P,A,C) -->
+    true|
+	&cpl <<= [{M,P,A,C}].
+public_ref_entry_list([{P,A}|PL],_,P,A,C) -->
+    true|
+	&pl = [{P,A}|PL],
+	{{ reference_entry(&pt,P,A,C) }}.
+otherwise.
+public_ref_entry_list([PA|PL],M,P,A,C) -->
+    true|
+	&pl <<= [PA],
+	public_ref_entry_list(PL,M,P,A,C).
+
+reference_entry({},RT,P,A,C):-
+    true|
+	new_vector(V,16),
+	set_nil(0,16,V,V1),
+	get_list_from_table(P,V1,RT,PL,RL),
+	ref_entry_list(RL,1,PL,P,A,C).
+otherwise.
+reference_entry(PT,RT,P,A,C):-
+    true|
+	get_list_from_table(P,PT,RT,PL,RL),
+	ref_entry_list(RL,1,PL,P,A,C).
+
+:- local_implicit pl : stream,
+		  pn : shared.
+
+ref_entry_list([],P,A,C) -->
+    true|
+	&pl <<= [{(&pn),P,A,[C]}].
+ref_entry_list([PAC|PL],P,A,C) -->
+    vector_element(PAC,1,P),vector_element(PAC,2,A)|
+	set_vector_element(PAC,3,CL,[C|CL],NPAC),
+	&pl = [NPAC|PL].
+otherwise.
+ref_entry_list([PAC|PL],P,A,C) -->
+    true|
+	&pl <<= [PAC],
+	&pn++,
+	ref_entry_list(PL,P,A,C).
+
+:- local_implicit out : oldnew.
+
+%%  put undefined module.
+undefined_module([]) -->
+    true|
+	true.
+undefined_module([{M,P,A,C}|CT]) -->
+    true|
+	&out <<= [putb(string#">>> Warning ? undefined module ::: "),
+		  putt(M:P/A),putb(string#" in "),putt(C),putl(string#".")],
+	undefined_module(CT).
+
+%% put undefined public.
+undefined_public([]) -->
+    true|
+	true.
+undefined_public([{M,P,A,C}|CT]) -->
+    true|
+	&out <<= [putb(string#">>> Error !! undefined public ::: "),
+		  putt(M:P/A),putb(string#" in "),putt(C),putl(string#".")],
+	undefined_public(CT).
+
+%% builtin reference.
+:- local_implicit bltt  : oldnew.
+
+builtin_reference_entry([{P,A,C}|CT]) -->
+    true|
+	{{ get_list_from_table(P,&bltt,BL,RL),
+	   builtin_ref_entry_list(RL,BL,P,A,C) }},
+	builtin_reference_entry(CT).
+builtin_reference_entry([]) -->
+    true|
+	true.
+
+:- local_implicit bltl : stream.
+
+builtin_ref_entry_list([],P,A,C) -->
+    true|
+	&bltl <<= [{P,A,[C]}].
+builtin_ref_entry_list([{P,A,CL}|BL],P,A,C) -->
+    true|
+	&bltl = [{P,A,[C|CL]}|BL].
+otherwise.
+builtin_ref_entry_list([PAC|BL],P,A,C) -->
+    true|
+	&bltl <<= [PAC],
+	builtin_ref_entry_list(BL,P,A,C).
+
+%%  utility.
+check_builtin_type(P,0,Type):-
+    true|
+	kl1cmp_blttbl:active_builtin(P,_,_,_,Type).
+check_builtin_type(P,A,Type):-
+    A>0|
+	AA := A + 1,
+	new_vector(V,AA),
+	set_vector_element(V,0,_,P,PV),
+	kl1cmp_blttbl:active_builtin(PV,_,_,_,Type).
+
+set_nil(N,M,V,NV):-
+    N<M|
+	set_vector_element(V,N,_,[],V1),
+	NN := N + 1,
+	set_nil(NN,M,V1,NV).
+set_nil(M,M,V,NV):-
+    true|
+	V = NV.
+
+get_list_from_table(P,T,NT,L,NL):-
+    true|
+	hash(P,Value,_), HV := Value mod 16,
+	set_vector_element(T,HV,L,NL,NT).
+
+% initialize module table.
+init_module_table(MT,MTL):-
+    true|
+	MT = [
+% runtime
+	entry(pdss_code_device,
+	      [do(1)]),
+	entry('Sho-en',
+	      [create(8),create(7),execute(8),execute(7),raise(3)]),
+	entry(pdss_file_device,
+	      [files(1)]),
+	entry(pdss_timer_device,
+	      [timer(1)]),
+	entry(pdss_window_device,
+	      [windows(1)]),
+% micro pimos
+	entry(mpimos_builtin_predicate,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_booter,
+	      [start(0),kl1cmp_start(0),process_name_list(2)]),
+	entry(mpimos_opcode_table,
+	      [op(2)]),
+	entry(mpimos_cmd_basic,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_cmd_code,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_window,
+	      [create(2),create(3),request(7),os_create(6)]),
+	entry(mpimos_cmd_debug,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_command_interpreter,
+	      [create(1),kl1cmp_create(1),initenv(3),apply_goals(1),command_analyzer(3),unit(4)]),
+	entry(mpimos_cmd_directory,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_cmd_environment,
+	      [is_command(2),do_command(2),help(2)]),
+	entry(mpimos_cmd_utl,
+	      [send_shell(3),protect(2),wait_send(4),check_savedir(5),os_check_loaddir(5),apply_action(3),apply_action(4)]),
+	entry(mpimos_code_manager,
+	      [create(3),request(3),get_command_stream(1),os_get_command_stream(3)]),
+	entry(mpimos_directory,
+	      [create(3),os_create(6),request(4)]),
+	entry(mpimos_utility,
+	      [melt(3),freeze(2),get_predicate(3),write(1),symbol_append(2),string_append(2),symbol_to_string(2),pathname(3),extend_name(3),compress(2),integer_to_string(2),qsort(2),qsort(3),qsortv(3),qsortv(4),report_tokens(3),report_tokens(2),copy_string_elements(7),append_string(2)]),
+	entry(mpimos_file,
+	      [create(3),create(4),os_create(7),request(4)]),
+	entry(mpimos_directory_device_driver,
+	      [create(6)]),
+	entry(directory,
+	      [create(3),os_create(6),request(4)]),
+	entry(file,
+	      [create(3),create(4),os_create(7),request(4)]),
+	entry(window,
+	      [create(2),create(3),request(7),os_create(6)]),
+	entry(mpimos_operator_manipulator,
+	      [create(1)]),
+	entry(mpimos_file_device_driver,
+	      [create(7),device_create(7)]),
+	entry(mpimos_file_manager,
+	      [create(3)]),
+	entry(mpimos_macro_expander,
+	      [create(1)]),
+	entry(mpimos_module_pool,
+	      [create(2)]),
+	entry(mpimos_task_monitor,
+	      [create(12),error_monitor(2),error_monitor(3)]),
+	entry(mpimos_file_device,
+	      [files(1),file_request(4)]),
+	entry(mpimos_parser,
+	      [do(3)]),
+	entry(mpimos_io_device,
+	      [windows(1),window_request(3),files(1),file_request(4),timer(1),timer_request(3)]),
+	entry(mpimos_pretty_printer,
+	      [pprinter(2)]),
+	entry(mpimos_window_device,
+	      [windows(1),window_request(3)]),
+	entry(mpimos_timer_device,
+	      [timer(1),timer_request(3)]),
+	entry(mpimos_varchk,
+	      [go(2),go(3),go_f(3),start(4),go_p(3)]),
+	entry(mpimos_unparser,
+	      [create(2),make_variable_name(2)]),
+	entry(mpimos_xref,
+	      [go(2),go(3),go_f(3),go_f(4)]),
+	entry(mpimos_xref_table,
+	      [predicate_table(4),module_table(7),init_module_table(2)]),
+	entry(mpimos_monogyny_list_index,
+	      [create(1)]),
+	entry(mpimos_timer_manager,
+	      [create(3)]),
+	entry(mpimos_window_device_driver,
+	      [create(7),device_create(6)]),
+	entry(mpimos_window_manager,
+	      [create(3)]),
+% compiler
+	entry(kl1cmp_blttbl,
+	      [builtin(7),active_builtin(5),expression(6),float_expression(6)]),
+	entry(kl1cmp_command,
+	      [tsscomp(1),tsscomp(0),kl1compile(0),ghccompile(8),message_distributer(7),write_string(3),compile_for_pdss(6)]),
+	entry(kl1cmp_compile,
+	      [compile_one_clause(17)]),
+	entry(kl1cmp_macro_arg,
+	      [init_macro_table(1),read_macro_file(5)]),
+	entry(kl1cmp_macro,
+	      [test(0),generate_macro_expander(6)]),
+	entry(kl1cmp_mtbl,
+	      [generate_macro_table_process(7),make_table(5)]),
+	entry(kl1cmp_mrb,
+	      [mrb_optimization(13),compile_for_pdss(6)]),
+	entry(kl1cmp_normalize,
+	      [normalize(11),variable_generator(3)]),
+	entry(kl1cmp_output,
+	      [write_code_end(3),write_code_header(4),write_label(3),erace_or_convert_instruction(8),write_vector(3),write_rkp_information(6),write_messages(3),convert_code_for_PDSS(3),write_object_code(3),write_otherwise(3),write_alternatively(2),output_const_code(3)]),
+	entry(kl1cmp_reader,
+	      [count_variables(3),create_reader(5),create_varchk_reader(5),functor(3),gen_functor(3),herrey(3),trans_io_instr(3),test_reader(0),convert_integer_to_string(2),convert_integer_to_list(3),convert_list_to_string(3)]),
+	entry(kl1cmp_register,
+	      [compile_predicate(9)]),
+	entry(kl1cmp_struct,
+	      [struct_processor(5),test(0),calcurate_right_hand(4)])
+	|MTL].

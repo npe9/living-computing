@@ -1,0 +1,109 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS Window Manager.
+
+:- module mpimos_window_manager.
+:- public create/3.
+:- with_macro pdss.
+
+%%  Create window manager.
+%%  create(RQ,WD,SS).
+%%	RQ :: Request stream from system-distributer.
+%%	WD :: Window dvice stream.
+%%	SS :: System stream.
+
+create(RQ,WD,SS):-
+    true |
+	manager(RQ,SS,WD,LS,LS).
+
+
+%%  Window manager main process.
+%%  manager(RQ,SS,WD,RI,LF).
+%%	RQ :: Request stream from system-distributer.
+%%	SS :: System stream.
+%%	WD :: Window device stream.
+%%	RI :: Loop stream IN.
+%%	LF :: Loop stream OUT.
+
+manager([create(Window,Name,ST,TF,TC)|RQ],SS,WD,RI,LF):-
+    true |
+	WD = create(Name,CS,ST,WDL),
+	wait_create(RQ,SS,WDL,RI,LF,Window,Name,TF,ST,CS,normal(TC)).
+manager([create(Window,Name,ST,TF)|RQ],SS,WD,RI,LF):-
+    true |
+	WD = create(Name,CS,ST,WDL),
+	wait_create(RQ,SS,WDL,RI,LF,Window,Name,TF,ST,CS,device).
+manager([switch(Name)|RQ],SS,WD,RI,LF):-
+    true |
+	LF=[switch(Name,F)|LFL],
+	wait_switch(RQ,SS,WD,RI,LFL,F).
+manager([switch|RQ],SS,WD,RI,LF):-
+    true |
+	LF=[switch_next(F)|LFL],
+	wait_switch(RQ,SS,WD,RI,LFL,F).
+manager([count(NumberOfWindows)|RQ],SS,WD,RI,LF):-
+    true |
+	LF=[count(1)|LFL],
+	RI=[count(NumberOfWindows)|RIL],
+	manager(RQ,SS,WD,RIL,LFL).
+manager([contents(NameListOfWindows)|RQ],SS,WD,RI,LF):-
+    true |
+	LF=[contents(NameListOfWindows)|LFL],
+	RI=[contents([string#"CONSOLE"])|RIL],
+	manager(RQ,SS,WD,RIL,LFL).
+
+
+%%  Manager wait until new window is created.
+%%  wait_create(RQ,SS,WD,RI,LF,WC,NM,TF,ST,CS,TY)
+%%	RQ :: Request stream from system-distributer.
+%%	SS :: System stream.
+%%	WD :: Window device stream.
+%%	RI :: Loop stream IN.
+%%	LF :: Loop stream OUT.
+%%	WC :: Window command stream from user.
+%%	NM :: Name of new window.
+%%	TF :: Termination flag.
+%%	ST :: Status of create_window.
+%%	CS :: Command stream to new window.
+%%	TY :: Window monitor type.
+
+wait_create(RQ,SS,WD,RI,LF,WC,NM,TF,fep#normal,CS,normal(TC)):-
+    true |
+	mpimos_window_device_driver:create(RI,RI0,WC,TF,CS,NM,TC),
+	manager(RQ,SS,WD,RI0,LF).
+wait_create(RQ,SS,WD,RI,LF,WC,NM,TF,fep#normal,CS,device):-
+    true |
+	mpimos_window_device_driver:device_create(RI,RI0,WC,TF,CS,NM),
+	manager(RQ,SS,WD,RI0,LF).
+wait_create(RQ,SS,WD,RI,LF,WC,NM,TF,ST,CS,_):-
+    ST\=fep#normal |
+% ERROR: Can't open window.
+	manager(RQ,SS,WD,RI,LF).
+
+
+%%  Manager wait until current window is switched.
+%%  wait_switch(RQ,SS,WD,RI,LF,F)
+%%	RQ :: Request stream from system-distributer.
+%%	SS :: System stream.
+%%	WD :: Window device stream.
+%%	RI :: Loop stream IN.
+%%	LF :: Loop stream OUT.
+%%	F  :: Ack of switch window.
+
+wait_switch(RQ,SS,WD,RI,LF,success):-
+    true |
+	manager(RQ,SS,WD,RI,LF).
+wait_switch(RQ,SS,WD,[switch(_,_)|RI],LF,_):-
+    true |
+	manager(RQ,SS,WD,RI,LF).
+wait_switch(RQ,SS,WD,[switch(_)|RI],LF,_):-
+    true |
+	manager(RQ,SS,WD,RI,LF).
+wait_switch(RQ,SS,WD,[switch_next(_)|RI],LF,_):-
+    true |
+	manager(RQ,SS,WD,RI,LF).

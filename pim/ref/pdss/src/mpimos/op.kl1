@@ -1,0 +1,277 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%
+%
+%	Operator Table Manipulator
+%
+%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_operator_manipulator.
+:- public create/1.
+
+%
+% create(+Req)
+%
+create(TReq) :- true |
+    make_op_table(OpTbl),
+    init_op_table(Req, TReq),
+    op_table(Req, OpTbl).
+
+make_op_table(X) :- true |
+    new_vector(XX, 16),
+    set_empty(0, 16, XX, X).
+
+set_empty(N, N, V, VV) :- true | VV=V.
+set_empty(K, N, V, VV) :- K\=N |
+    K1 := K+1,
+    set_vector_element(V, K, _, [], V1),
+    set_empty(K1, N, V1, VV).
+
+op_table([], _) :- true | true.
+op_table([attach_op_type(Tokens, NewTokens)|Req], OpTbl) :- true |
+    attach_op_type(Tokens, NewTokens, OpTbl),
+    op_table(Req, OpTbl).
+op_table([add_operator(Prec,Type,Op,Status)|Req], OpTbl) :- true |
+    add_operator(OpTbl, Op,Type,Prec, NewOpTbl, Status),
+    op_table(Req, NewOpTbl).
+op_table([remove_operator(Prec,Type,Op,Status)|Req], OpTbl) :- true |
+    remove_operator(OpTbl, Op,Type,Prec, NewOpTbl, Status),
+    op_table(Req, NewOpTbl).
+op_table([remove_operator(Op,Status)|Req], OpTbl) :- true |
+    remove_operator_all(OpTbl, Op, NewOpTbl, Status),
+    op_table(Req, NewOpTbl).
+op_table([operator(X,Defs)|Req], OpTbl) :- true |
+    list_op(X, Defs, OpTbl,NewOpTbl),
+    op_table(Req, NewOpTbl).
+op_table([replace_operator_pool(OldPool,NewPool)|Req], OpTbl) :- true |
+    merge(OpTbl,OldPool),
+    make_op_table(OT),
+    replace_operator_pool(NewPool,OT,NewOpTbl),
+    op_table(Req, NewOpTbl).
+
+list_op(X, Defs, OpTbl,NewOpTbl) :- atom(X) |
+    search_op_table(X, OpTbl,NewOpTbl, Defs).
+otherwise.
+list_op(X, Defs, OpTbl,NewOpTbl) :- true |
+    Defs=[], NewOpTbl=OpTbl.
+
+attach_op_type([], Ntk, _) :- true | Ntk=[].
+attach_op_type([atom(X)|TL], Ntk, OpTbl) :- true | Ntk=[atom(X,Ops)|Ntk1],
+    search_op_table(X, OpTbl,NewOpTbl, Ops),
+    attach_op_type(TL, Ntk1, NewOpTbl).
+attach_op_type([sign(X)|TL], Ntk, OpTbl) :- true | Ntk=[sign(X,Ops)|Ntk1],
+    search_op_table(X, OpTbl,NewOpTbl, Ops),
+    attach_op_type(TL, Ntk1, NewOpTbl).
+attach_op_type([open(X)|TL], Ntk, OpTbl) :- true | Ntk=[open(X,Ops)|Ntk1],
+    search_op_table(X, OpTbl,NewOpTbl, Ops),
+    attach_op_type(TL, Ntk1, NewOpTbl).
+attach_op_type(['|'|TL], Ntk, OpTbl) :- true | Ntk=[atom('|',Ops)|Ntk1],
+    search_op_table('|', OpTbl,NewOpTbl, Ops),
+    attach_op_type(TL, Ntk1, NewOpTbl).
+otherwise.
+attach_op_type([Token|TL], Ntk, OpTbl) :- true | Ntk=[Token|Ntk1],
+    attach_op_type(TL, Ntk1, OpTbl).
+
+search_op_table(Op, OpTbl,NewOpTbl, Defs) :- true |
+    hash(Op, Value, NewOp), Hv := Value /\ 15,
+    set_vector_element(OpTbl, Hv, Bucket, NewBucket, NewOpTbl),
+    search_table(Bucket, NewOp,Defs, NewBucket).
+
+search_table([], Op,Defs, NewBucket) :- true | NewBucket=[], Defs=[].
+search_table([{Op,Defs}|Bucket], Op,Defs1, NewBucket) :- true |
+    Defs1=Defs, NewBucket=[{Op,Defs}|Bucket].
+otherwise.
+search_table([BE|Bucket], Op,Defs, NewBucket) :- true |
+    NewBucket=[BE|NewBucket1],
+    search_table(Bucket, Op,Defs, NewBucket1).
+
+add_operator(OpTbl, Op,Type,Prec, NewOpTbl, Status) :- true |
+    hash(Op, Value, NewOp), Hv := Value /\ 15,
+    set_vector_element(OpTbl, Hv, Bucket, NewBucket, NewOpTbl),
+    search_table_and_add(Bucket, NewOp,Type,Prec, NewBucket, Status).
+
+search_table_and_add([], Op,Type,Prec, NewBucket, Status) :-
+    true | NewBucket=[{Op,Defs}], Defs=[{Prec,Type}], Status=success.
+search_table_and_add([{Op,Defs}|Bucket], Op,Type,Prec, NewBucket, Status) :-
+    true | NewBucket=[{Op,NewDefs}|Bucket],
+    check_op_defs(Defs, Type,Prec, NewDefs, Status).
+otherwise.
+search_table_and_add([BE|Bucket], Op,Type,Prec, NewBucket, Status) :-
+    true | NewBucket=[BE|NewBucket1],
+    search_table_and_add(Bucket, Op,Type,Prec, NewBucket1, Status).
+
+check_op_defs([], Type,Prec, NewDefs, Status) :- true |
+    NewDefs=[{Prec,Type}], Status=success.
+check_op_defs([{Prec,Type}|Defs], Type,Prec, NewDefs, Status) :- true |
+    NewDefs=[{Prec,Type}|Defs], Status=already_exist.
+otherwise.
+check_op_defs([{P,T}|Defs], Type,Prec, NewDefs, Status) :- true |
+    coexist(T,Type,S),
+    replace_op_defs(Defs, Type,Prec, NewDefs, Status, {P,T},S).
+
+replace_op_defs(Defs, Type,Prec, NewDefs, Status, Def,yes) :- true |
+    NewDefs=[Def|NewDefs1],
+    check_op_defs(Defs, Type,Prec, NewDefs1, Status).
+replace_op_defs(Defs, Type,Prec, NewDefs, Status, _,no) :- true |
+    NewDefs=[{Prec,Type}|Defs], Status=success.
+
+remove_operator(OpTbl, Op,Type,Prec, NewOpTbl, Status) :- true |
+    hash(Op, Value, NewOp), Hv := Value /\ 15,
+    set_vector_element(OpTbl, Hv, Bucket, NewBucket, NewOpTbl),
+    search_table_and_remove(Bucket, NewOp,Type,Prec, NewBucket, Status).
+
+search_table_and_remove([], Op,Type,Prec, NewBucket, Status) :-
+    true | NewBucket=[], Status=not_find(Prec,Type,Op).
+search_table_and_remove([{Op,Defs}|Bucket], Op,Type,Prec, NewBucket,Status) :-
+    true | NewBucket=[{Op,NewDefs}|Bucket],
+    check_op_defs_and_remove(Defs, Type,Prec, NewDefs, Sts),
+    remove_result(Sts, Op,Type,Prec, Status).
+otherwise.
+search_table_and_remove([BE|Bucket], Op,Type,Prec, NewBucket, Status) :-
+    true | NewBucket=[BE|NewBucket1],
+    search_table_and_remove(Bucket, Op,Type,Prec, NewBucket1, Status).
+
+remove_result(not_find, Op,Type,Prec, Status) :- true |
+    Status=not_find(Prec,Type,Op).
+otherwise.
+remove_result(_, _,_,_, Status) :- true | Status=success.
+
+check_op_defs_and_remove([], _,_, NewDefs, Status) :-
+    true | NewDefs=[], Status=not_find.
+check_op_defs_and_remove([{Prec,Type}|Defs], Type,Prec, NewDefs, Status) :-
+    true | NewDefs=Defs, Status=success.
+otherwise.
+check_op_defs_and_remove([Def|Defs], Type,Prec, NewDefs, Status) :-
+    true | NewDefs=[Def|NewDefs1],
+    check_op_defs_and_remove(Defs, Type,Prec, NewDefs1, Status).
+
+remove_operator_all(OpTbl, Op, NewOpTbl, Status) :- true |
+    hash(Op, Value, NewOp), Hv := Value /\ 15,
+    set_vector_element(OpTbl, Hv, Bucket, NewBucket, NewOpTbl),
+    search_table_and_remove_all(Bucket, NewOp, NewBucket, Status).
+
+search_table_and_remove_all([], Op, NewBucket, Status) :-
+    true | NewBucket=[], Status=not_find(Op).
+search_table_and_remove_all([{Op,Defs}|Bucket], Op, NewBucket,Status) :-
+    true | NewBucket=Bucket, Status=success.
+otherwise.
+search_table_and_remove_all([BE|Bucket], Op, NewBucket, Status) :-
+    true | NewBucket=[BE|NewBucket1],
+    search_table_and_remove_all(Bucket, Op, NewBucket1, Status).
+
+replace_operator_pool([{Op,Defs}|Pool],OpTbl,NewOpTbl) :-
+    true |
+	hash(Op, Value, NewOp), Hv := Value /\ 15,
+	set_vector_element(OpTbl, Hv, Bucket, NewBucket, OpTbl2),
+	add_operator_defs(NewOp,Defs,Bucket,NewBucket),
+	replace_operator_pool(Pool,OpTbl2,NewOpTbl).
+replace_operator_pool([],OpTbl,NewOpTbl) :-
+    true |
+	NewOpTbl = OpTbl.
+
+add_operator_defs(Op,[{Prec,Type}|Defs],Bucket,NewBucket) :-
+    true |
+    search_table_and_add(Bucket, Op,Type,Prec, Bucket1, Status),
+    add_operator_defs(Op,Defs,Bucket1,NewBucket).
+add_operator_defs(_,[],Bucket,NewBucket) :-
+    true |
+	NewBucket = Bucket.
+
+coexist(  T,  T,S) :- true | S = no.
+coexist( fx, fy,S) :- true | S = no.
+coexist( fy, fx,S) :- true | S = no.
+coexist( xf, yf,S) :- true | S = no.
+coexist( yf, xf,S) :- true | S = no.
+coexist(xfy,xfx,S) :- true | S = no.
+coexist(xfy,yfx,S) :- true | S = no.
+coexist(xfx,xfy,S) :- true | S = no.
+coexist(xfx,yfx,S) :- true | S = no.
+coexist(yfx,xfy,S) :- true | S = no.
+coexist(yfx,xfx,S) :- true | S = no.
+otherwise.
+coexist(_,_,S) :- true | S = yes.
+
+init_op_table(Req, TReq) :- true |
+    Req=[
+         add_operator(1200, xfx,	(':-'),	_),
+         add_operator(1200, fx,		(':-'),	_),
+         add_operator(1200, xfx,	('-->'),	_),
+         add_operator(1150, fx, 	('public'),	_),
+         add_operator(1150, fx, 	('implicit'),	_),
+         add_operator(1150, fx, 	('local_implicit'),	_),
+         add_operator(1150, fx, 	('with_macro'),	_),
+         add_operator(1150, fx, 	('user_macro'),	_),
+         add_operator(1100, xfy,	(';'),	_),
+         add_operator(1100, xfy,	('|'),	_),
+         add_operator(1090, xfx,	('=>'),	_),
+         add_operator(1050, xfy,	('->'),	_),
+         add_operator(1000, xfy,	(','),	_),
+         add_operator( 800, xfx,	(':'),	_),
+         add_operator( 700, xfx,	('='),	_),
+         add_operator( 700, xfx,	('\='),	_),
+         add_operator( 700, xfx,	('=\='),	_),
+         add_operator( 700, xfx,	('=:='),	_),
+         add_operator( 700, xfx,	('=='),	_),
+         add_operator( 700, xfx,	('<'),	_),
+         add_operator( 700, xfx,	('>'),	_),
+         add_operator( 700, xfx,	('=<'),	_),
+         add_operator( 700, xfx,	('>='),	_),
+         add_operator( 700, xfx,	(':='),	_),
+         add_operator( 700, xfx,	('<='),	_),
+         add_operator( 700, xfx,	('<<='),	_),
+         add_operator( 700, xfx,	('$:='),	_),
+         add_operator( 700, xfx,	('$<='),	_),
+         add_operator( 700, xfx,	('$=:='),	_),
+         add_operator( 700, xfx,	('$=\='),	_),
+         add_operator( 700, xfx,	('$<'),	_),
+         add_operator( 700, xfx,	('$=<'),	_),
+         add_operator( 700, xfx,	('$>'),	_),
+         add_operator( 700, xfx,	('$>='),	_),
+         add_operator( 700, xfy,	('@'),	_),
+         add_operator( 500, yfx,	('+'),	_),
+         add_operator( 500, fx,		('+'),	_),
+         add_operator( 500, yfx,	('-'),	_),
+         add_operator( 500, fx,		('-'),	_),
+         add_operator( 500, yfx,	('/\'),	_),
+         add_operator( 500, yfx,	('\/'),	_),
+         add_operator( 500, yfx,	('xor'),	_),
+         add_operator( 400, yfx,	('*'),	_),
+         add_operator( 400, yfx,	('/'),	_),
+         add_operator( 400, yfx,	('<<'),	_),
+         add_operator( 400, yfx,	('>>'),	_),
+         add_operator( 300, xfx,	('mod'), _),
+         add_operator( 300, xfy,	('**'), _),
+         add_operator( 200, fx,		('&'),	_),
+         add_operator( 150, xf,		('++'),	_),
+         add_operator( 150, xf,		('--'),	_),
+         add_operator( 100, xfx,	('#'),	_),
+         add_operator( 100, fx,		('#'),	_),
+         add_operator(  90, xfx,	('::'),	_),
+         add_operator(  80, fx, 	('module'),	_)
+       |TReq].
+
+
+%%%%%%%%%%   Utility %%%%%%%%%%%%%%%%%%
+%hash_value(X, Size, Hv) :- true |
+%    symbol_name(X, Str),
+%    hash_sub(Str, I),
+%    Hv := I mod Size.
+%
+%hash_sub(Str, I) :- string(Str,Len,_) |
+%    hash_sub(Len, Str, I).
+%
+%hash_sub(1, Str, I) :- true |
+%    string_element(Str,0,E0,_), I := E0+1.
+%hash_sub(2, Str, I) :- true |
+%    string_element(Str,0,E0,St2),
+%    string_element(St2,1,E1,_), I := E0+E1+2.
+%otherwise.
+%hash_sub(Len, Str, I) :- true |
+%    string_element(Str,0,E0,St2),
+%    string_element(St2,1,E1,St3),
+%    string_element(St3,2,E2,_), I := E0+E1+E2+Len.

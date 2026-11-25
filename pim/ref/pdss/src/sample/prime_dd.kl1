@@ -1,0 +1,27 @@
+:- module prime_dd.
+:- public prime/0, go/1.
+
+prime :- go(95).
+
+go(I) :- true | gen(2,Ns), sift(Ns,Ps), driver(Ps,I,_).
+
+gen(N0,[N|Ns1]) :- N1 := N0 + 1 | N = N0, gen(N1,Ns1).
+gen(_,[]) :- true | true.
+
+sift(Xs,[P|Zs1]) :- true | Xs = [P|Xs1], filter(P,Xs1,Ys), sift(Ys,Zs1).
+sift(Xs,[]) :- true | Xs = [].
+
+filter(P,Xs,[Y|Ys1]) :- true | Xs = [X|Xs1], filter(P,X,Xs1,Y,Ys1).
+filter(_,Xs,[]) :- true | Xs = [].
+
+filter(P,X,Xs,Y,Ys1) :- X mod P =\= 0 | Y = X, filter(P,Xs,Ys1).
+filter(P,X,Xs,Y,Ys1) :- X mod P =:= 0 | Xs = [X1|Xs1], filter(P,X1,Xs1,Y,Ys1).
+
+driver(Ns,I,L) :- I1 := I - 1 | Ns = [N|Ns1], driver(Ns1,I1,L,N).
+
+driver(Ns,I,L,P) :-
+    wait(P), I > 0, I1 := I - 1 |
+	L = [P|LL], Ns = [N|Ns1], driver(Ns1,I1,LL,N).
+driver(Ns,I,L,P) :-
+    wait(P), I =< 0 |
+	L = [P], Ns = [].

@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/stack.kl1" : Compiling ... stack/2,stack/3,empty/3,get/4,get_if_any/3,carbon_copy/3,prepend/3,END.
+
+[stack/2]
+successdone
+
+exit 0
+asm 4beb9a41f52ce1aa5a3bde39ff7f22c0e343456be26b471592405f052c4ece05
+sav none

@@ -1,0 +1,131 @@
+%%% KL1-B Test for Read_Variable %%%
+% Read_Car %%%%%%%%%%%%%% abcdef
+% Read_Cdr %%%%%%%%%%%%%% abcdef
+% Read_Element %%%%%%%%%% abcdef
+
+:- module read_var.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Read_Variable %%%"), put_console(key#lf) | car.
+
+car:- put_console(ascii#"% Read_Car %%%%%%%%%%%%%% ") | car00.
+
+car00:- true | car00read([atom]).
+car00read([X|_]):- true | car00(X).
+car00(atom):- put_console(c#"a") | car01.
+alternatively.
+car00(_):- put_console(c#"*") | car01.
+
+car01:- true | car01read([1234]).
+car01read([X|_]):- true | car01(X).
+car01(1234):- put_console(c#"b") | car02.
+alternatively.
+car01(_):- put_console(c#"*") | car02.
+
+car02:- true | car02read([12.34]).
+car02read([X|_]):- true | car02(X).
+car02(12.34):- put_console(c#"c") | car03.
+alternatively.
+car02(_):- put_console(c#"*") | car03.
+
+car03:- true | car03read([[list]]).
+car03read([X|_]):- true | car03(X).
+car03([list]):- put_console(c#"d") | car04.
+alternatively.
+car03(_):- put_console(c#"*") | car04.
+
+car04:- true | car04read([{0,1}]).
+car04read([X|_]):- true | car04(X).
+car04({0,1}):- put_console(c#"e") | car05.
+alternatively.
+car04(_):- put_console(c#"*") | car05.
+
+car05:- true | car05read([ascii#"String"]).
+car05read([X|_]):- true | car05(X).
+car05(ascii#"String"):- put_console(c#"f") | car06.
+alternatively.
+car05(_):- put_console(c#"*") | car06.
+
+car06:- put_console(key#lf) | cdr.
+
+cdr:- put_console(ascii#"% Read_Cdr %%%%%%%%%%%%%% ") | cdr00.
+
+cdr00:- true | cdr00read([[]|atom]).
+cdr00read([_|X]):- true | cdr00(X).
+cdr00(atom):- put_console(c#"a") | cdr01.
+alternatively.
+cdr00(_):- put_console(c#"*") | cdr01.
+
+cdr01:- true | cdr01read([[]|1234]).
+cdr01read([_|X]):- true | cdr01(X).
+cdr01(1234):- put_console(c#"b") | cdr02.
+alternatively.
+cdr01(_):- put_console(c#"*") | cdr02.
+
+cdr02:- true | cdr02read([[]|12.34]).
+cdr02read([_|X]):- true | cdr02(X).
+cdr02(12.34):- put_console(c#"c") | cdr03.
+alternatively.
+cdr02(_):- put_console(c#"*") | cdr03.
+
+cdr03:- true | cdr03read([[]|[list]]).
+cdr03read([_|X]):- true | cdr03(X).
+cdr03([list]):- put_console(c#"d") | cdr04.
+alternatively.
+cdr03(_):- put_console(c#"*") | cdr04.
+
+cdr04:- true | cdr04read([[]|{0,1}]).
+cdr04read([_|X]):- true | cdr04(X).
+cdr04({0,1}):- put_console(c#"e") | cdr05.
+alternatively.
+cdr04(_):- put_console(c#"*") | cdr05.
+
+cdr05:- true | cdr05read([[]|ascii#"String"]).
+cdr05read([_|X]):- true | cdr05(X).
+cdr05(ascii#"String"):- put_console(c#"f") | cdr06.
+alternatively.
+cdr05(_):- put_console(c#"*") | cdr06.
+
+cdr06:- put_console(key#lf) | elm.
+
+elm:- put_console(ascii#"% Read_Element %%%%%%%%%% ") | elm00.
+
+elm00:- true | elm00read({[],atom}).
+elm00read({_,X}):- true | elm00(X).
+elm00(atom):- put_console(c#"a") | elm01.
+alternatively.
+elm00(_):- put_console(c#"*") | elm01.
+
+elm01:- true | elm01read({[],1234}).
+elm01read({_,X}):- true | elm01(X).
+elm01(1234):- put_console(c#"b") | elm02.
+alternatively.
+elm01(_):- put_console(c#"*") | elm02.
+
+elm02:- true | elm02read({[],12.34}).
+elm02read({_,X}):- true | elm02(X).
+elm02(12.34):- put_console(c#"c") | elm03.
+alternatively.
+elm02(_):- put_console(c#"*") | elm03.
+
+elm03:- true | elm03read({[],[list]}).
+elm03read({_,X}):- true | elm03(X).
+elm03([list]):- put_console(c#"d") | elm04.
+alternatively.
+elm03(_):- put_console(c#"*") | elm04.
+
+elm04:- true | elm04read({[],{0,1}}).
+elm04read({_,X}):- true | elm04(X).
+elm04({0,1}):- put_console(c#"e") | elm05.
+alternatively.
+elm04(_):- put_console(c#"*") | elm05.
+
+elm05:- true | elm05read({[],ascii#"String"}).
+elm05read({_,X}):- true | elm05(X).
+elm05(ascii#"String"):- put_console(c#"f") | elm06.
+alternatively.
+elm05(_):- put_console(c#"*") | elm06.
+
+elm06:- put_console(key#lf) | done.
+
+done:- true | true.

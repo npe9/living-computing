@@ -1,0 +1,33 @@
+:- module queen.
+:- public queen4/0, queen5/0, queen6/0, queen7/0, queen8/0.
+
+queen4 :- true | queen([1,2,3,4],[],[],X,[]).
+queen5 :- true | queen([1,2,3,4,5],[],[],X,[]).
+queen6 :- true | queen([1,2,3,4,5,6],[],[],X,[]).
+queen7 :- true | queen([1,2,3,4,5,6,7],[],[],X,[]).
+queen8 :- true | queen([1,2,3,4,5,6,7,8],[],[],X,[]).
+
+%queen4 :- true | queen([1,2,3,4],[],[],X,[]), display(X).
+%queen5 :- true | queen([1,2,3,4,5],[],[],X,[]), display(X).
+%queen6 :- true | queen([1,2,3,4,5,6],[],[],X,[]), display(X).
+%queen7 :- true | queen([1,2,3,4,5,6,7],[],[],X,[]), display(X).
+%queen8 :- true | queen([1,2,3,4,5,6,7,8],[],[],X,[]), display(X).
+
+ 	append([A|X],Y,Z):- true | 			
+		Z=[A|Z1], append(X,Y,Z1).		
+	append([],   Y,Z):- true | Z=Y.
+							
+	queen([P|U],C, L,I,O):- true | 			
+		append(U,C,N), c1(P,1,N,L,L,I,X),	
+		queen(U,[P|C],L,X,O).			
+	queen([],[_|_],_,I,O):- true | I=O.		
+	queen([],[],   L,I,O):- true | I=[L|O].
+
+	c1(T,D,N,[P|R],B,I,O):- T=\= P+D, T=\=P-D, D1:=D+1|	
+		c1(T,D1,N,R,B,I,O).		
+	c1(T,D,N,[P|_],B,I,O):- T=:=P+D | I=O.		
+	c1(T,D,N,[P|_],B,I,O):- T=:=P-D | I=O.		
+	c1(T,D,N,[],   B,I,O):- true    | queen(N,[],[T|B],I,O).
+
+	display(X) :- display_console(X) | true.
+

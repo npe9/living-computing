@@ -5,9 +5,10 @@
 //
 // Every input is folded into a shift register on the core's clock and every
 // output is taken from it, so synthesis keeps all of the adapter's logic
-// (the 16-entry window, the 22 probes, the three write ports) and the
+// (the 16-entry window, the 26 probes, the three write ports) and the
 // gated-clock crossings.  It computes nothing; it is never simulated.
 module mkHobbitSocCpu(
+  input          SYSCLK,
   input          CLK,
   input          RST_N,
   output         rdReq,
@@ -16,8 +17,12 @@ module mkHobbitSocCpu(
   output [64:0]  memWr,
   output [64:0]  tblWr,
   output [64:0]  evWr,
+  output [3:0]   memWrBe,
+  output         rdMerge,
+  output         rdSpec,
+  input          rdNack_n,
   input  [1039:0] window_w,
-  output [725:0] probes,
+  output [857:0] probes,
   input  [31:0]  go_entry,
   input          EN_go,
   output         RDY_go,
@@ -47,19 +52,23 @@ module mkHobbitSocCpu(
     fold[16:0] = fold[16:0] ^ window_w[1039:1024];
     fold[2:0] = fold[2:0] ^ il_level ^ armInterrupt_level;
     fold[3] = fold[3] ^ EN_go ^ EN_armInterrupt ^ EN_takenInterrupt;
+    fold[4] = fold[4] ^ rdNack_n;
   end
 
-  reg [767:0] s;
+  reg [895:0] s;
   always @(posedge CLK)
     if (!RST_N) s <= 768'b0;
-    else s <= {s[735:0], fold} ^ {s[31:0], 736'b0} ^ {24{fold}};
+    else s <= {s[863:0], fold} ^ {s[31:0], 864'b0} ^ {28{fold}};
 
   assign rdReq = s[0];
   assign rdAddr = s[63:32];
   assign memWr = s[200:136];
   assign tblWr = s[300:236];
   assign evWr = s[400:336];
-  assign probes = s[725:0];
+  assign memWrBe = s[404:401];
+  assign rdMerge = s[405];
+  assign rdSpec = s[406];
+  assign probes = s[857:0];
   assign RDY_go = s[1];
   assign running = s[2];
   assign RDY_armInterrupt = s[3];

@@ -1,0 +1,318 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Macro arg convertsion
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_macro_arg.
+:- public	init_macro_table/1,
+	 	read_macro_file/5, macro_arg/6.
+
+init_macro_table(TblStream) :- true |
+   macro_table_size(Size),
+   new_vector(Tbl, Size),
+   macro_table_manager(TblStream, Tbl, Size).
+
+:- local_implicit error:oldnew, tbl:oldnew.
+read_macro_file(FileName) --> atom(FileName) |
+ {{atom_name(FileName, FileStr),
+   get_library_directory(LDir),
+   append_string(LDir,string#"/macro/",MDir),
+   append_string(MDir,FileStr,MFile),
+   mpimos_file:create(Macro, MFile, r, Stat)}},
+   check_file_status(Stat, FileStr, Macro).
+read_macro_file(FileName) --> string(FileName) |
+ {{mpimos_file:create(Macro, FileName, r, Stat)}},
+   check_file_status(Stat, FileName, Macro).
+read_macro_file((FN1,FN2)) --> true |
+	read_macro_file(FN1),
+	read_macro_file(FN2).
+otherwise.
+read_macro_file(FileName) --> true |
+   check_file_status(error(cannot_open_file), FileName, _).
+
+macro_table_size(Size) :- true | Size = 20.
+
+check_file_status(success, _, File) --> true |
+   make_macro_table(File, []).
+otherwise.
+check_file_status(_, FileStr, File) --> true |
+   &error <<= [error_message(string#"Can't open Macro File ", [FileStr])],
+   File=[].
+
+:- local_implicit error:oldnew, tbl:oldnew, file:oldnew.
+make_macro_table --> true |
+   &file <<= [getft(OneDec, _)],
+   check_declaration_and_add_macro(OneDec).
+
+check_declaration_and_add_macro({'=>', Macro, NewArg}) -->
+		vector_element(Macro, 0, '#'),
+		vector_element(Macro, 1, Key),
+		vector_element(Macro, 2, Arg) |
+   &tbl <<= [add_one_macro(Key, Arg, NewArg)],
+   &file <<= [getft(Next, _)],
+   check_declaration_and_add_macro(Next).
+check_declaration_and_add_macro((:- user_macro _)) --> true |
+   &file <<= [getft(Next, _)],
+   check_declaration_and_add_macro(Next).
+check_declaration_and_add_macro(end_of_file) --> true | true.
+otherwise.
+check_declaration_and_add_macro(OtherWise) --> true |
+   &error <<= [error_message(string#"Invalid macro declaration ",
+		[OtherWise])],
+   &file <<= [getft(Next, _)],
+   check_declaration_and_add_macro(Next).
+
+macro_table_manager([add_one_macro(Key, Arg, NewArg)|Cdr], Tbl0, Size)
+					:- true |
+   inkey_to_hash(Key, Arg, NewArg, Size, Tbl0, Tbl),
+   macro_table_manager(Cdr, Tbl, Size).
+macro_table_manager([get_macro_arg(Key, Arg, NewArg)|Cdr],
+			Tbl0, Size) :- true |
+   macro_arg(Tbl0, Tbl, Size, Key, Arg, NewArg),
+   macro_table_manager(Cdr, Tbl, Size).
+macro_table_manager([], _, _) :- true | true.
+
+
+inkey_to_hash(Key, Arg, NewArg, Size, Tbl0, Tbl) :- true |
+   hash(Key, HV, NewKey), Val := HV mod Size,
+   set_vector_element(Tbl0, Val, Old, New, Tbl),
+   inkey_to_hash_2(NewKey, Arg, NewArg, Size, Old, New).
+
+inkey_to_hash_2(Key, Arg, NewArg, Size, 0, New) :- true |
+   new_vector(Tbl0, Size),
+   hash(Arg, HV, Arg1), Val := HV mod Size,
+   set_vector_element(Tbl0, Val, _, [{Key, Arg1, NewArg}], New).
+otherwise.
+inkey_to_hash_2(Key, Arg, NewArg, Size, Old, New) :- true |
+   hash(Arg, HV, Arg1), Val := HV mod Size,
+   set_vector_element(Old, Val, OldEle, NewEle, New),
+   collision_check(OldEle, Key, Arg1, NewArg, NewEle).
+
+collision_check(0, Key, Arg, NewArg, NewEle) :- true |
+   NewEle=[{Key, Arg, NewArg}].
+otherwise.
+collision_check(OldEle, Key, Arg, NewArg, NewEle) :- true |
+   check_old_definitions(OldEle, Key, Arg, NewArg, NewEle).
+
+check_old_definitions([{Key, Arg, _}|Cdr], Key, Arg, NewArg, NewEle) :- true |
+   NewEle=[{Key, Arg, NewArg}|Cdr].
+otherwise.
+check_old_definitions([Def|Cdr], Key, Arg, NewArg, NewEle) :- true |
+   NewEle=[Def|NewCdr],
+   check_old_definitions(Cdr, Key, Arg, NewArg, NewCdr).
+check_old_definitions([], Key, Arg, NewArg, NewEle) :- true |
+   NewEle=[{Key, Arg, NewArg}].
+
+ref_hash_element(Old, New, Key, Arg, NewArg) :- vector(Old, Size) |
+   hash(Arg, HV, Arg1), Val := HV mod Size,
+   set_vector_element(Old, Val, OldEle, NewEle, New),
+   ref_hash_list(OldEle, NewEle, Key, Arg1, NewArg).
+ref_hash_element(0, New, Key, Arg, NewArg) :- Key\=none |
+   NewArg='$NOT_FOUND'({'#', Key, Arg}),
+   New=0.
+ref_hash_element(0, New, none, Arg, NewArg) :- true |
+   NewArg='$NOT_FOUND'({'#', Arg}),
+   New=0.
+
+ref_hash_list([{Key, Arg, NewArg0}|Cdr], NewEle, Key, Arg, NewArg) :-
+				atom(Arg) |
+   NewArg0=NewArg,
+   NewEle=[{Key, Arg, NewArg0}|Cdr].
+ref_hash_list([{Key, ArgVect0, NewArg0}|Cdr], NewEle, Key, ArgVect, NewArg) :-
+	vector_element(ArgVect0, 0, Func), vector_element(ArgVect, 0, Func),
+	vector(ArgVect0, N), vector(ArgVect, N) |
+   copy_macro_args(N, ArgVect0, ArgVect, NewArg0, NewArg),
+   NewEle=[{Key, ArgVect0, NewArg0}|Cdr].
+otherwise.
+ref_hash_list([Rcd|Cdr], NewEle0, Key, Arg, NewArg) :- true |
+   NewEle0=[Rcd|NewEle],
+   ref_hash_list(Cdr, NewEle, Key, Arg, NewArg).
+ref_hash_list([], NewEle, Key, Arg, NewArg) :- Key\=none |
+   NewArg='$NOT_FOUND'({'#', Key, Arg}),
+   NewEle=[].
+ref_hash_list([], NewEle, none, Arg, NewArg) :- true |
+   NewArg='$NOT_FOUND'({'#', Arg}),
+   NewEle=[].
+ref_hash_list(0, NewEle, Key, Arg, NewArg) :- Key\=none |
+   NewArg='$NOT_FOUND'({'#', Key, Arg}),
+   NewEle=[].
+ref_hash_list(0, NewEle, none, Arg, NewArg) :- true |
+   NewArg='$NOT_FOUND'({'#', Arg}),
+   NewEle=[].
+
+copy_macro_args(N, ArgVect0, ArgVect, NewArg0, NewArg) :- vector(NewArg0, NN) |
+   extract_original_args(ArgList, [], 1, N, ArgVect0, ArgVect),
+   new_vector(NewArg1, NN),
+   copy_to_new_arg(0, NN, ArgList, _, NewArg0, NewArg1, NewArg).
+
+:- local_implicit arglist:oldnew.
+extract_original_args(A, N, Origin0, Copy0) --> A<N |
+ {{set_vector_element(Origin0, A, OrgArg, [], Origin),
+   set_vector_element(Copy0, A, NewArg, [], Copy),
+   &arglist <<= [OrgArg, NewArg],
+   A1 := A+1}},
+   extract_original_args(A1, N, Origin, Copy).
+extract_original_args(N, N, _, _) --> true | true.
+
+copy_to_new_arg(A, N, ArgList0, ArgList, Origin0, Copy0, Copy) :- A<N |
+   set_vector_element(Origin0, A, OrgArg, [], Origin),
+   search_new_arg(ArgList0, ArgList1, OrgArg, NewArg),
+   A1 := A+1,
+   set_vector_element(Copy0, A, _, NewArg, Copy1),
+   copy_to_new_arg(A1, N, ArgList1, ArgList, Origin, Copy1, Copy).
+copy_to_new_arg(N, N, ArgList0, ArgList, _, Copy0, Copy) :- true |
+   Copy0=Copy,
+   ArgList0=ArgList.
+
+search_new_arg(ArgList0, ArgList, OrgArg, NewArg) :- atom(OrgArg) |
+   NewArg=OrgArg,
+   ArgList0=ArgList.
+search_new_arg(ArgList0, ArgList, OrgArg, NewArg) :- integer(OrgArg) |
+   NewArg=OrgArg,
+   ArgList0=ArgList.
+search_new_arg(ArgList0, ArgList, OrgArg, NewArg) :- floating_point(OrgArg) |
+   NewArg=OrgArg,
+   ArgList0=ArgList.
+search_new_arg(ArgList0, ArgList, OrgArg, NewArg) :- string(OrgArg) |
+   NewArg=OrgArg,
+   ArgList0=ArgList.
+search_new_arg(ArgList0, ArgList, {'$VAR', N, S}, NewArg) :-
+		integer(N), string(S, _, 8) |
+   search_new_undef_arg(ArgList0, ArgList, N, NewArg).
+search_new_arg(ArgList0, ArgList, [Car|Cdr], NewArg) :- true |
+   search_new_arg(ArgList0, ArgList1, Car, NewCar),
+   search_new_arg(ArgList1, ArgList, Cdr, NewCdr),
+   NewArg=[NewCar|NewCdr].
+otherwise.
+search_new_arg(ArgList0, ArgList, OrgArg, NewArg) :- vector(OrgArg, N) |
+   new_vector(NewArg0, N),
+   copy_to_new_arg(0, N, ArgList0, ArgList, OrgArg, NewArg0, NewArg).
+
+search_new_undef_arg([{'$VAR', N, S}, Copy|Rest],
+		ArgList0, N0, NewArg) :- N =\= N0 |
+   ArgList0=[{'$VAR', N, S}, Copy|ArgList1],
+   search_new_undef_arg(Rest, ArgList1, N0, NewArg).
+otherwise.
+search_new_undef_arg([Org, Copy|Rest], ArgList, _, NewArg) :- true |
+   NewArg=Copy,
+   ArgList=[Org, Copy|Rest].
+search_new_undef_arg([], ArgList, _, NewArg) :- true |
+ {{NewArg=[],
+   ArgList=[]}}.
+
+:- local_implicit tbl:oldnew, size:shared.
+
+macro_arg(Base, Str, NewArg) --> true |
+	macro_arg(Base, Str, NewArg, 0).
+
+macro_arg(Base, Str, NewArg, _) --> integer(Base), string(Str, N, _) |
+ {{convert_string_to_integer(Base, Str, NewArg, N)}}.
+macro_arg(ascii, Str, NewArg, _) --> string(Str, N, _)  |
+% {{convert_string_to_integer(0, N, Str, 0, Num, 10),
+%   set_string_element(string#"0", 0, Num, NewArg)}}.
+ {{NewArg=Str}}.
+macro_arg(string, Str, NewArg, _) --> string(Str) |
+ {{Str=NewArg}}.
+macro_arg(ascii, Char, NewArg, _) --> atom(Char) |
+ {{atom_name(Char, Str),
+   string_element(Str, 0, NewArg, _)}}.
+macro_arg(c, Str, NewArg, _) --> string(Str, 1, _) |
+ {{string_element(Str, 0, NewArg, _)}}.
+macro_arg(none, Str, NewArg, _) --> string(Str, 1, _) |
+ {{string_element(Str, 0, NewArg, _)}}.
+macro_arg((module), X, NewArg, _) --> true | NewArg = X.
+macro_arg(code, (M:P/A), NewArg, _) --> true | NewArg = {M,P,A}.
+macro_arg(key, lf, NewArg, _) --> true | NewArg = 10.
+macro_arg(key, cr, NewArg, _) --> true | NewArg = 13.
+otherwise.
+macro_arg(Key, Arg, NewArg, Dep) --> true |
+ {{hash(Key, HV, NewKey), Val := HV mod &size,
+   'C'(&tbl, Tbl0, Tbl1),
+   set_vector_element(Tbl0, Val, Old, New, Tbl1),
+   ref_hash_element(Old, New, NewKey, Arg, NewArg0)}},
+    macro_arg_result(NewArg, NewArg0, Dep).
+
+macro_arg_result(NewArg, NewArg0, Dep) --> NewArg0 = K#A, Dep < 100 |
+	Dep1 := Dep + 1,
+	macro_arg(K, A, NewArg, Dep1).
+otherwise.
+macro_arg_result(NewArg, NewArg0, _) --> true |
+	NewArg = NewArg0.
+
+'C'(S0, S1, S2, S3) :- true | S0=S2, S1=S3.
+
+convert_string_to_integer(2, Str, NewArg, N) :- true |
+    shift_convert(N, Str, NewArg, 2, 1, 1).
+convert_string_to_integer(4, Str, NewArg, N) :- true |
+    shift_convert(N, Str, NewArg, 4, 2, 3).
+convert_string_to_integer(8, Str, NewArg, N) :- true |
+    shift_convert(N, Str, NewArg, 8, 3, 7).
+convert_string_to_integer(16, Str, NewArg, N) :- true |
+    shift_convert(N, Str, NewArg, 16, 4, 15).
+convert_string_to_integer(32, Str, NewArg, N) :- true |
+    shift_convert(N, Str, NewArg, 32, 5, 31).
+otherwise.
+convert_string_to_integer(Base, Str, NewArg, N) :- true |
+    convert_string_to_integer(0, N, Str, Base, 0, NewArg).
+
+shift_convert(N, Str, NewArg, Base, Shift, First) :-
+    N>0, N=<(32+(Shift-1))/Shift |
+    string_element(Str, 0, Elm, Str1),
+    convert_one_element_to_integer(Elm, OneArg),
+    check_first(N, Str, NewArg, Base, Shift, First, OneArg).
+shift_convert(0, _, NewArg, _, _, _) :- true | NewArg = 0.
+otherwise.
+shift_convert(_, Str, NewArg, Base, _, _) :- true |
+    NewArg = '$NOT_FOUND'({'#', Base, Str}).
+
+check_first(N, Str, NewArg, Base, Shift, First, OneArg) :-
+    OneArg =< First |
+    shift_conv(1, N, Str, Base, Shift, OneArg, NewArg).
+otherwise.
+check_first(_, Str, NewArg, Base, _, First, OneArg) :- true |
+    NewArg = '$NOT_FOUND'({'#', Base, Str}).
+
+shift_conv(P, N, Str, Base, Shift, A, NewArg) :- P<N |
+    string_element(Str, P, Elm, Str1),
+    convert_one_element_to_integer(Elm, OneArg),
+    check_shift_conv(P, N, Str1, Base, Shift, A, NewArg, OneArg).
+shift_conv(P, P, _, _, _, A, NewArg) :- true |
+    NewArg = A.
+
+check_shift_conv(P, N, Str, Base, Shift, A, NewArg, OneArg) :-
+    OneArg < Base |
+    NewA := (A<<Shift)\/OneArg,
+    shift_conv(~(P+1), N, Str, Base, Shift, NewA, NewArg).
+otherwise.
+check_shift_conv(_, _, Str, Base, _, _, NewArg, OneArg) :- true |
+    NewArg = '$NOT_FOUND'({'#', Base, Str}).
+
+convert_string_to_integer(P, N, Str, Base, A, NewArg) :- P<N |
+    string_element(Str, P, Elm, Str1),
+    convert_one_element_to_integer(Elm, OneArg),
+    check_convert(P, N, Str1, Base, A, NewArg, OneArg).
+convert_string_to_integer(P, P, _, _, A, NewArg) :- true |
+    NewArg = A.
+
+check_convert(P, N, Str, Base, A, NewArg, OneArg) :-
+    OneArg < Base, NewA := (A*Base)+OneArg |
+    convert_string_to_integer(~(P+1), N, Str, Base, NewA, NewArg).
+otherwise.
+check_convert(_, _, Str, Base, _, NewArg, OneArg) :- true |
+    NewArg = '$NOT_FOUND'({'#', Base, Str}).
+
+convert_one_element_to_integer(Ele, OneArg) :- Ele >= #"0", Ele =< #"9" |
+ {{OneArg := Ele - #"0"}}.
+convert_one_element_to_integer(Ele, OneArg) :- Ele >= #"a", Ele =< #"z" |
+ {{OneArg := Ele - #"a" + 10}}.
+convert_one_element_to_integer(Ele, OneArg) :- Ele >= #"A", Ele =< #"Z" |
+ {{OneArg := Ele - #"A" + 10}}.
+otherwise.
+convert_one_element_to_integer(_, OneArg) :- true |
+ {{OneArg = '$NOT_FOUND'}}.

@@ -30,6 +30,7 @@ The images are untrusted data: run with `python3 -I`.
 import argparse
 import bisect
 import collections
+import functools
 import os
 import sys
 
@@ -57,11 +58,55 @@ MEMSIZE_WORD = RAM_BASE + 0x48
 
 # CHOICES['clock']
 CPU_HZ = 25e6
+# CHOICES['dsp']: vcos.cfg's DspClock= 50000000; two DSP clocks per Hobbit
+# cycle, counted in integers.
+DSP_HZ = 50e6
+DSP_CLOCKS_PER_CYCLE = 2
+assert DSP_CLOCKS_PER_CYCLE * CPU_HZ == DSP_HZ
+DSP_OFF_CHIP = 0x10000                            # Appendix A page 4
+# CHOICES['codec']: Be's audio.h AUDIO_DSP_ID; the audio card's AD1849K
+# hangs on that DSP's serial port and BIO0-2 (tools/ad1849.py).
+AUDIO_DSP = 3
+DSP_SHADOW_SIZE = 0x200000
 # CHOICES['scsi-timing']: cycles from a 53C94 command to its interrupt.
 NCR_IRQ_DELAY = 2500
 # CHOICES['idle-skip']: the kernel whose idle loop was read.
 IDLE_KERNEL_SHA256 = ("450716b22c33ed105684cdbe660b73e1843f2308b66fa76f2a153be1"
                       "12167b0b")
+
+# CHOICES['typing']: an AT keyboard's scan code set 2 (the controller's
+# mode byte, 0x03, leaves translation off, and the kernel's _kb_inth reads
+# 0xE0, 0xE1 and 0xF0 prefixes), US layout, for the characters --type
+# accepts; and the model time between two keys.
+SET2 = dict(zip("abcdefghijklmnopqrstuvwxyz",
+                (0x1C, 0x32, 0x21, 0x23, 0x24, 0x2B, 0x34, 0x33, 0x43, 0x3B,
+                 0x42, 0x4B, 0x3A, 0x31, 0x44, 0x4D, 0x15, 0x2D, 0x1B, 0x2C,
+                 0x3C, 0x2A, 0x1D, 0x22, 0x35, 0x1A)))
+SET2.update(zip("1234567890", (0x16, 0x1E, 0x26, 0x25, 0x2E, 0x36, 0x3D,
+                                0x3E, 0x46, 0x45)))
+SET2.update({" ": 0x29, "\n": 0x5A, "/": 0x4A, ".": 0x49, "-": 0x4E,
+             ",": 0x41, "=": 0x55, ";": 0x4C, "'": 0x52, "\b": 0x66})
+SET2_SHIFTED = {"_": "-", "+": "=", ":": ";", '"': "'", "?": "/", ">": ".",
+                "<": ","}
+SET2_SHIFT = 0x12
+KEY_INTERVAL = 0.05         # seconds of model time between two keys
+
+
+def scan_codes(ch):
+    """CHOICES['typing']: the make and break codes for one character."""
+    shift = False
+    if ch.isupper():
+        ch, shift = ch.lower(), True
+    elif ch in SET2_SHIFTED:
+        ch, shift = SET2_SHIFTED[ch], True
+    if ch not in SET2:
+        raise SystemExit("beboot: --type: no scan code for %r" % ch)
+    c = SET2[ch]
+    codes = [c, 0xF0, c]
+    if shift:
+        codes = [SET2_SHIFT] + codes + [0xF0, SET2_SHIFT]
+    return codes
+
 
 # CHOICES['floppy']: seconds from a seek's last step (or a recalibrate
 # on cylinder 0) to its interrupt.
@@ -172,6 +217,80 @@ CHOICES = {
                  "R16 by the lap count.  The run is otherwise the same "
                  "instruction for instruction (BootTest checks it against "
                  "a run without the skip).",
+    "display": "Slot 6 holds a Trident TGUI9420-family VGA (TridentVga; "
+               "docs/bebox_hobbit.md 'The display card'): a 1 MB frame "
+               "buffer at 0xD0000000 and its registers at 0xD1000000, VGA "
+               "port p at byte 0xD1000000 + p.  The chip-version register "
+               "reads 0xC3 (TGUI9420DGi in VGADOC's table; app_server "
+               "reads it but does not test it).  The graphics engine "
+               "does app_server's two commands, a fill and a blit, at "
+               "once, so its busy bit never reads set; what the blit's "
+               "direction byte and the unnamed source registers mean is "
+               "read from app_server's _tri_blit1, not from a Trident "
+               "document (none for the 9420's engine was found), and the "
+               "engine stops the run if the linear and x/y addresses it "
+               "is given disagree.  Input status 1 runs from model time "
+               "and the programmed CRTC and clock.  The DAC is taken as "
+               "8 bits per colour: app_server loads /system/Color_map "
+               "through an 8-bit gamma table (_gamma, 0x05..0xFF), so its "
+               "white is 0xFF and its desktop grey 0xDD, which a 6-bit DAC "
+               "would show as 0x3F and 0x1D; which DAC mode the card was "
+               "in is not documented (video_init's own ramp tops out at "
+               "56, a 6-bit-looking scale, before Color_map replaces it).",
+    "dsp": "--dsp inert (the default) or emulated.  Inert: the three "
+           "DSP3210s never run.  Their reset bits in the processor reset "
+           "register (bits 4-6, DSP1-3; Appendix A) and their bits in the "
+           "internal interrupt register are kept as written, so a DSP can "
+           "be 'released' (vcas_server's _veDspStart ORs bit 4 in), but "
+           "it never answers; the run prints each release.  Emulated: "
+           "tools/dsp3210.py's Dsp3210 runs each released DSP (a missing "
+           "emulator stops the run at startup, it never falls back).  A "
+           "rising reset bit calls release(), a falling one hold(); "
+           "internal-interrupt bits 4-6 are a level passed to "
+           "set_interrupt() whenever the register is written, never "
+           "cleared by the board.  The DSPs run 2 clocks per Hobbit cycle "
+           "(50 MHz, vcos.cfg DspClock, against 25 MHz), each released "
+           "DSP stepped up to the slower CPU's time after every CPU "
+           "instruction.  The DSP bus (DspBus): below 0x10000 is the "
+           "DSP's own on-chip space and never reaches the board; from "
+           "0x10000 up is 'Be machine memory' (Appendix A page 4), i.e. "
+           "the Hobbit's physical map, except that the 2 MB shadow RAM "
+           "at 0x60000000 is RAM from 0x08000000: vcas_server clones the "
+           "kernel's whole-RAM area at 0x60000000 and its "
+           "_veLogToDspPhys is the identity, so the VCOS image it writes "
+           "at 0x60000000+x is in RAM at 0x08000000+x.  Bytes and "
+           "half-words sit in the word's lanes big-endian, as the "
+           "Hobbit's do.  Who Am I reads 1-3 during a DSP's access.  "
+           "Arbitration: the DSPs win the bus and may keep it (Appendix "
+           "ch. 1, the draft's least reliable chapter, with no cycle "
+           "counts), so a DSP access costs the CPUs nothing here; no "
+           "stall is modelled.  The idle skip is not taken while an "
+           "emulated DSP executes (clocks_until_event() == 0).  BIO outputs "
+           "are latched and logged, wired to nothing (DspBus.pins); a DSP that "
+           "only the board can wake jumps to the CPUs' time, one in waiti "
+           "skips to its timer tick (skip()), and that tick bounds the "
+           "CPUs' idle skip.  A spinning DSP (the emulator's spin proof) asks "
+           "to have the words it reads watched (DspBus.watch): only "
+           "shadow-RAM words are accepted, and any later store to one by "
+           "a CPU or another DSP is reported (notify_write), which ends "
+           "the spin.  Who clears bits 4-6 of the internal "
+           "interrupt register is not known (vcas_server clears them only "
+           "in _veDspHalt): the level stays until something writes it.  The Hobbit's own accesses to physical "
+           "0x60000000 still stop (none has been seen).",
+    "typing": "--type TEXT presses keys on the keyboard, one character "
+              "(make code, then break code, with a shift around capitals "
+              "and shifted punctuation) every 50 ms of model time, from "
+              "--type-at steps on, each byte queued in the VL82C106's "
+              "output buffer: scan code set 2, US layout (SET2).  A typed "
+              "key is a timed event, so the idle skip stops short of it.",
+    "codec": "With --dsp emulated, the audio card's AD1849K codec "
+             "(tools/ad1849.py, the DSP agent's model) is attached to DSP "
+             "3, Be's AUDIO_DSP_ID, on its serial port and BIO0-2, when "
+             "that DSP is first released (or at --resume if it already "
+             "was).  --codec-in WAV feeds the ADC, one sample per frame; "
+             "--codec-out WAV writes the DAC output when the run ends.  "
+             "--codec-phase stands in for the card's unknown TSIN wiring "
+             "(ad1849.AD1849K control_phase).",
     "interleave": "CPU 2 is held in reset until the kernel sets bit 1 of "
                   "the processor reset register (0x0080001B); it then "
                   "starts at the ELF entry in CPU 1's entry state with its "
@@ -275,6 +394,7 @@ class BoardRegs:
         self.internal = 0
         self.slot_steer = None
         self.io_sources = {}        # bit -> callable() -> bool
+        self.dsp_log = []           # (DSP n, released?) in order
 
     def io_status(self):
         st = 0
@@ -312,14 +432,19 @@ class BoardRegs:
             # known, so a read still stops.
             self.slot_steer = value
         elif reg == 6:
-            if value & ~0x02 & 0xFF:
+            if value & ~0x72 & 0xFF:
                 raise Stop("processor reset register written 0x%02x: "
-                           "a DSP released from reset (not modelled)"
-                           % value)
+                           "a bit Appendix A does not name" % value)
             old, self.reset = self.reset, value
+            for n in (1, 2, 3):
+                bit = 1 << (n + 3)
+                if (value ^ old) & bit:
+                    # CHOICES['dsp']: the bit is kept, no DSP runs.
+                    self.dsp_log.append((n, bool(value & bit)))
             self.board.reset_changed(old, value)
         elif reg == 7:
-            self.internal = value
+            old, self.internal = self.internal, value
+            self.board.internal_changed(old, value)
         else:
             raise Stop("write of 0x%02x to the read-only %s register"
                        % (value, self.NAMES[reg]))
@@ -335,6 +460,9 @@ class WhoAmI:
         self.board = board
 
     def read(self, reg):
+        dsp = getattr(self.board, "dsp_master", None)
+        if dsp:
+            return dsp                        # DSP n -> n (CHOICES['dsp'])
         return 3 + self.board.current_cpu     # CPU 1 -> 4, CPU 2 -> 5
 
     def write(self, reg, value):
@@ -552,6 +680,31 @@ INT_DISCONNECT, INT_BUS_SERVICE, INT_FUNCTION_COMPLETE = 0x20, 0x10, 0x08
 INT_ILLEGAL, INT_SCSI_RESET = 0x40, 0x80
 
 
+class DiskReader:
+    """seek/tell/read over a ScsiDisk, overlay included."""
+
+    def __init__(self, disk):
+        self.disk, self.pos = disk, 0
+
+    def seek(self, pos, whence=0):
+        self.pos = (pos if whence == 0 else self.pos + pos if whence == 1
+                    else self.disk.blocks * 512 + pos)
+        return self.pos
+
+    def tell(self):
+        return self.pos
+
+    def read(self, n):
+        out = bytearray()
+        end = min(self.pos + n, self.disk.blocks * 512)
+        while self.pos < end:
+            lba, off = divmod(self.pos, 512)
+            chunk = self.disk.read_block(lba)[off:off + end - self.pos]
+            out += chunk
+            self.pos += len(chunk)
+        return bytes(out)
+
+
 class ScsiDisk:
     """A direct-access target backed by a disk image, read only: writes go
     to an in-memory overlay (CHOICES['disk-writes']), never to the file.
@@ -565,6 +718,27 @@ class ScsiDisk:
         self.overlay = {}
         self.sense = (0, 0)             # (key, additional sense code)
         self.reads = self.writes = 0
+
+    def __getstate__(self):
+        # A snapshot (--save) keeps the path and the overlay; the image
+        # is reopened, read only, on --resume.
+        state = dict(self.__dict__)
+        state["f"] = self.f.name
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.f = open(state["f"], "rb")
+
+    def store(self, lba, n, data):
+        self.writes += n
+        for i in range(n):
+            self.overlay[lba + i] = bytes(data[512 * i:512 * (i + 1)])
+
+    def reader(self):
+        """A read-only file object over the image with the overlay
+        applied (for befs1.Volume: --extract)."""
+        return DiskReader(self)
 
     def read_block(self, lba):
         if lba in self.overlay:
@@ -617,11 +791,9 @@ class ScsiDisk:
                 return 0, b"".join(self.read_block(lba + i)
                                    for i in range(n)), 0, None
 
-            def store(data, lba=lba, n=n):
-                self.writes += n
-                for i in range(n):
-                    self.overlay[lba + i] = bytes(data[512 * i:512 * (i + 1)])
-            return 0, None, 512 * n, store
+            # A bound method in a partial, not a closure: a write in
+            # flight must survive --save.
+            return 0, None, 512 * n, functools.partial(self.store, lba, n)
         raise Stop("SCSI %s: command 0x%02x not modelled (CDB %s)"
                    % (self.name, op, cdb.hex()))
 
@@ -1157,7 +1329,349 @@ class Vl82c106Kbc:
 # The bus
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# The display card in slot 6: a Trident TGUI9420-family VGA
+# (docs/bebox_hobbit.md "The display card").  Frame buffer at 0xD0000000
+# (1 MB), registers at 0xD1000000 (0x6000 bytes; bebox_hardware.md
+# section 12).  VGA port p is the byte at 0xD1000000 + p, a register per
+# byte, so the bus's byte lanes pick the port (lane 0 = the lowest
+# address) and a sub-word read names its lanes through ``read_mask``
+# (hobbit_sem._read_lanes).  What is modelled is the register file
+# app_server's vgatri800600.c driver touches and nothing else: any other
+# port, index or graphics-engine command stops the run.
+# ---------------------------------------------------------------------------
+
+VGA_FB, VGA_FB_SIZE = 0xD0000000, 1 << 20
+VGA_REGS, VGA_REGS_SIZE = 0xD1000000, 0x6000
+# CHOICES['display']: the chip-version value (3C4 index 0Bh) read back.
+TRIDENT_ID = 0xC3           # TGUI9420DGi (VGADOC TRIDENT.TXT)
+# VGADOC TRIDENT.TXT, 3C4h index 0Dh: the clock table, MHz.
+TRIDENT_CLOCKS = (25.175, 28.322, 44.9, 36, 57.272, 65, 50.35, 40,
+                  88, 98, 118.8, 108, 72, 77, 80, 75)
+# The old graphics engine's register file, by index (XFree86
+# trident_regs.h "Graphics Engine for 9420/9430": STATUS 0x90, MWIDTH
+# 0xB8, MFORMAT 0xBC, STYLE 0xC4, FMIX/BMIX 0xC8, FCOLOUR 0xD8, BCOLOUR
+# 0xDC, DIMXY 0xE0, DESTLINEAR 0xE4, DESTXY 0xF8, COMMAND 0xFC).  0x94,
+# 0x98, 0x9C, 0xE8 and 0xF0 have no name there; app_server writes them
+# as the source side of a blit (0x98/0x9C the same values as 0xB8/0xBC,
+# 0xE8 a linear address, 0xF0 an x/y pair).
+GE_WRITABLE = (0x90, 0x94, 0x98, 0x9C, 0xB8, 0xBC, 0xC4, 0xC8, 0xD8, 0xDC,
+               0xE0, 0xE4, 0xE8, 0xF0, 0xF8, 0xFC)
+GE_INDEX, GE_DATA = 0x217A, 0x217C
+SEQ_MODELLED = (0, 1, 2, 3, 4, 0x0B, 0x0C, 0x0D, 0x0E)
+
+
+class TridentVga:
+    """The VGA register file, the old-style graphics engine and the
+    frame buffer of the BeBox's Trident card (CHOICES['display'])."""
+
+    PORTS = {0x3C0: "attribute index/data", 0x3C1: "attribute data read",
+             0x3C2: "miscellaneous output", 0x3C3: "video enable",
+             0x3C4: "sequencer index", 0x3C5: "sequencer data",
+             0x3C6: "DAC pixel mask", 0x3C7: "DAC read index",
+             0x3C8: "DAC write index", 0x3C9: "DAC data",
+             0x3CC: "miscellaneous output read",
+             0x3CE: "graphics controller index",
+             0x3CF: "graphics controller data", 0x3D4: "CRTC index",
+             0x3D5: "CRTC data", 0x3D6: "enhancement index",
+             0x3D7: "enhancement data", 0x3DA: "input status 1",
+             GE_INDEX: "graphics engine index",
+             GE_DATA: "graphics engine data byte 0",
+             GE_DATA + 1: "graphics engine data byte 1",
+             GE_DATA + 2: "graphics engine data byte 2",
+             GE_DATA + 3: "graphics engine data byte 3"}
+
+    def __init__(self, clock):
+        self.clock = clock              # () -> model seconds
+        self.fb = bytearray(VGA_FB_SIZE)
+        self.enable = 0
+        self.misc = 0
+        self.seq = [0] * 256
+        self.old_mode = {0x0D: 0, 0x0E: 0}     # 3C4 0Dh/0Eh, old mode
+        self.new_mode = True            # VGADOC: reading 0Bh selects new
+        self.crtc = [0] * 256
+        self.gc = [0] * 256
+        self.attr = [0] * 32
+        self.indices = {0x3C4: 0, 0x3CE: 0, 0x3D4: 0, 0x3D6: 0}
+        self.attr_index = 0
+        self.attr_flip = False          # False: 3C0 takes an index next
+        self.pel_mask = 0xFF
+        self.dac = [[0, 0, 0] for _ in range(256)]
+        self.dac_write = [0, 0]         # entry, component
+        self.ge = bytearray(256)
+        self.ge_index = 0
+        self.ops = collections.Counter()
+
+    # -- the bus --------------------------------------------------------
+    def fb_read(self, off):
+        return int.from_bytes(self.fb[off:off + 4], "big")
+
+    def fb_write(self, off, data, mask):
+        if mask == 0xF:
+            self.fb[off:off + 4] = data.to_bytes(4, "big")
+            return
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                self.fb[off + lane] = (data >> (8 * (3 - lane))) & 0xFF
+
+    def reg_read(self, off, mask):
+        value = 0
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                value |= self.read_port(off + lane) << (8 * (3 - lane))
+        return value
+
+    def reg_write(self, off, data, mask):
+        for lane in range(4):
+            if mask & lane_mask(lane):
+                self.write_port(off + lane, (data >> (8 * (3 - lane))) & 0xFF)
+
+    def _stop(self, what):
+        raise Stop("display card (slot 6): %s" % what)
+
+    # -- VGA ports ------------------------------------------------------
+    def read_port(self, port):
+        if port in self.indices:
+            return self.indices[port]
+        if port == 0x3C5:
+            i = self.indices[0x3C4]
+            if i == 0x0B:
+                self.new_mode = True
+                return TRIDENT_ID
+            if i in (0x0D, 0x0E) and not self.new_mode:
+                return self.old_mode[i]
+            if i in SEQ_MODELLED:
+                return self.seq[i]
+            self._stop("read of sequencer/extended index 0x%02x" % i)
+        if port == 0x3D5:
+            return self.crtc[self.indices[0x3D4]]
+        if port == 0x3CF:
+            return self.gc[self.indices[0x3CE]]
+        if port == 0x3DA:
+            self.attr_flip = False
+            return self.input_status()
+        if port == 0x3C3:
+            return self.enable
+        if port == 0x3CC:
+            return self.misc
+        if port == 0x3C6:
+            return self.pel_mask
+        if port == GE_INDEX:
+            return self.ge_index
+        if GE_DATA <= port < GE_DATA + 4:
+            i = self.ge_index + port - GE_DATA
+            if self.ge_index != 0x90:
+                self._stop("read of graphics engine index 0x%02x" % i)
+            # Operations complete at once (CHOICES['display']), so the
+            # status byte's busy bit 7 always reads clear.
+            return 0 if i == 0x90 else self.ge[i]
+        self._stop("read of %s" % self._port_name(port))
+
+    def write_port(self, port, value):
+        if port in self.indices:
+            self.indices[port] = value
+        elif port == 0x3C5:
+            i = self.indices[0x3C4]
+            if i == 0x0B:
+                self.new_mode = False   # writing 0Bh selects old mode
+            elif i in (0x0D, 0x0E) and not self.new_mode:
+                self.old_mode[i] = value
+            elif i in SEQ_MODELLED:
+                self.seq[i] = value
+            else:
+                self._stop("write of 0x%02x to sequencer/extended index "
+                           "0x%02x" % (value, i))
+        elif port == 0x3D5:
+            self.crtc[self.indices[0x3D4]] = value
+        elif port == 0x3CF:
+            self.gc[self.indices[0x3CE]] = value
+        elif port == 0x3C0:
+            if not self.attr_flip:
+                self.attr_index = value
+            elif self.attr_index & 0x1F < 0x15:
+                self.attr[self.attr_index & 0x1F] = value
+            else:
+                self._stop("write of 0x%02x to attribute index 0x%02x"
+                           % (value, self.attr_index))
+            self.attr_flip = not self.attr_flip
+        elif port == 0x3C2:
+            self.misc = value
+        elif port == 0x3C3:
+            self.enable = value
+        elif port == 0x3C6:
+            self.pel_mask = value
+        elif port == 0x3C8:
+            self.dac_write = [value, 0]
+        elif port == 0x3C9:
+            entry, comp = self.dac_write
+            self.dac[entry][comp] = value
+            comp += 1
+            if comp == 3:
+                entry, comp = (entry + 1) & 0xFF, 0
+            self.dac_write = [entry, comp]
+        elif port == GE_INDEX:
+            self.ge_index = value
+        elif GE_DATA <= port < GE_DATA + 4:
+            i = self.ge_index + port - GE_DATA
+            if self.ge_index not in GE_WRITABLE or i > 0xFF:
+                self._stop("write of 0x%02x to graphics engine index 0x%02x"
+                           % (value, i))
+            self.ge[i] = value
+            if i == 0xFF:
+                self.ge_command()
+        else:
+            self._stop("write of 0x%02x to %s" % (value,
+                                                  self._port_name(port)))
+
+    def _port_name(self, port):
+        if port in self.PORTS:
+            return "%s (port 0x%03x)" % (self.PORTS[port], port)
+        return "port 0x%04x (not modelled)" % port
+
+    # -- timing ---------------------------------------------------------
+    def timing(self):
+        """(pixel clock MHz, horizontal total in pixels, vertical total
+        in lines, retrace start line, retrace end line): the standard
+        VGA CRTC fields and the Trident clock select (misc output bits
+        3:2, new mode control 2 bits 0 and 6; VGADOC's table)."""
+        c = self.crtc
+        sel = (((self.misc >> 2) & 3) | (self.seq[0x0D] & 1) << 2 |
+               ((self.seq[0x0D] >> 6) & 1) << 3)
+        htotal = (c[0] + 5) * 8
+        vtotal = (c[6] | (c[7] & 1) << 8 | ((c[7] >> 5) & 1) << 9) + 2
+        vrs = c[0x10] | ((c[7] >> 2) & 1) << 8 | ((c[7] >> 7) & 1) << 9
+        vre = (vrs & ~0xF) | (c[0x11] & 0xF)
+        if vre <= vrs:
+            vre += 16
+        return TRIDENT_CLOCKS[sel], htotal, vtotal, vrs, vre
+
+    def input_status(self):
+        """3DA: bit 3 vertical retrace, bit 0 display disabled, from
+        model time and the programmed timing."""
+        mhz, htotal, vtotal, vrs, vre = self.timing()
+        if htotal <= 40 or vtotal <= 2:
+            self._stop("input status read before the CRTC is programmed")
+        pixel = int(self.clock() * mhz * 1e6) % (htotal * vtotal)
+        line, col = divmod(pixel, htotal)
+        status = 0
+        if vrs <= line < vre:
+            status |= 0x08
+        if line >= self.height() or col >= self.width():
+            status |= 0x01
+        return status
+
+    # -- the graphics engine --------------------------------------------
+    def _ge32(self, i):
+        return int.from_bytes(self.ge[i:i + 4], "little")
+
+    def ge_command(self):
+        cmd = self._ge32(0xFC)
+        pitch = (self._ge32(0xB8) & 0xFFFF) + 1
+        dims = self._ge32(0xE0)
+        w, h = (dims & 0xFFFF) + 1, (dims >> 16) + 1
+        dest = self._ge32(0xE4)
+        dxy = self._ge32(0xF8)
+        if self.ge[0xBC] != 3 or self.ge[0xC8] != 3:
+            self._stop("command 0x%08x with format 0x%02x, mix 0x%02x "
+                       "(only 3 and 3, app_server's, are modelled)"
+                       % (cmd, self.ge[0xBC], self.ge[0xC8]))
+        if cmd == 0x0A000000:           # app_server's area fill
+            if dest != (dxy >> 16) * pitch + (dxy & 0xFFFF):
+                self._stop("fill: linear 0x%x is not y*%d+x for x/y 0x%08x"
+                           % (dest, pitch, dxy))
+            colour = bytes([self.ge[0xD8]]) * w
+            for y in range(h):
+                a = dest + y * pitch
+                self._span(a, w)
+                self.fb[a:a + w] = colour
+            self.ops["fill"] += 1
+        elif cmd & ~0xFF == 0xA8000000 and cmd & 0xFF in (1, 2, 4, 7):
+            # app_server's blit (_tri_blit1): the low byte is 1, 2, 4 or
+            # 7 as the copy runs right/down, right/up, left/down or
+            # left/up, and 0xE8/0xE4 hold the source and destination
+            # corner it starts from.
+            d = cmd & 0xFF
+            xneg, yneg = d in (4, 7), d in (2, 7)
+            src = self._ge32(0xE8)
+            sxy = self._ge32(0xF0)
+            spitch = (self._ge32(0x98) & 0xFFFF) + 1
+            if spitch != pitch or self.ge[0x9C] != 3:
+                self._stop("blit with source pitch %d format 0x%02x, "
+                           "destination pitch %d"
+                           % (spitch, self.ge[0x9C], pitch))
+            for name, lin, xy in (("source", src, sxy),
+                                  ("destination", dest, dxy)):
+                corner = (((xy >> 16) + (h - 1 if yneg else 0)) * pitch +
+                          (xy & 0xFFFF) + (w - 1 if xneg else 0))
+                if lin != corner:
+                    self._stop("blit %s: linear 0x%x is not the corner of "
+                               "x/y 0x%08x, %dx%d, direction %d"
+                               % (name, lin, xy, w, h, d))
+            if xneg:
+                src, dest = src - (w - 1), dest - (w - 1)
+            step = -pitch if yneg else pitch
+            for y in range(h):
+                s, t = src + y * step, dest + y * step
+                self._span(s, w)
+                self._span(t, w)
+                self.fb[t:t + w] = self.fb[s:s + w]
+            self.ops["blit"] += 1
+        else:
+            self._stop("graphics engine command 0x%08x" % cmd)
+
+    def _span(self, a, n):
+        if a < 0 or a + n > VGA_FB_SIZE:
+            self._stop("graphics engine access 0x%x+%d beyond the 1 MB "
+                       "frame buffer" % (a, n))
+
+    # -- the picture ----------------------------------------------------
+    def width(self):
+        return (self.crtc[1] + 1) * 8
+
+    def height(self):
+        c = self.crtc
+        return (c[0x12] | ((c[7] >> 1) & 1) << 8 |
+                ((c[7] >> 6) & 1) << 9) + 1
+
+    def png(self):
+        """The visible picture as a PNG (8-bit RGB): each frame-buffer
+        byte through the pixel mask and the DAC's 8-bit entries
+        (CHOICES['display']).  The
+        geometry is the CRTC's: width (CR01 + 1) * 8, the vertical
+        display end, pitch CR13 * 8 (double-word mode, CR14 bit 6) and
+        the start address CR0C:CR0D in double words, both doubled when
+        old mode control 2 (3C4 0Dh, old) bit 4 turns on paging mode
+        (VGADOC: "the CRTC offset ... should be multiplied by 2, and the
+        Display Start Address ... is in units of 8 bytes")."""
+        import struct
+        import zlib
+        if not self.crtc[0x14] & 0x40:
+            self._stop("screen dump: CRTC 0x14 is not in double-word mode")
+        w, h = self.width(), self.height()
+        paged = 2 if self.old_mode[0x0D] & 0x10 else 1
+        pitch = self.crtc[0x13] * 8 * paged
+        base = ((self.crtc[0x0C] << 8) | self.crtc[0x0D]) * 4 * paged
+        lut = [bytes(self.dac[i]) for i in range(256)]
+        rows = []
+        for y in range(h):
+            a = base + y * pitch
+            rows.append(b"\0" + b"".join(lut[p & self.pel_mask]
+                                         for p in self.fb[a:a + w]))
+
+        def chunk(kind, data):
+            return (struct.pack(">I", len(data)) + kind + data +
+                    struct.pack(">I", zlib.crc32(kind + data) & MASK32))
+        return (b"\x89PNG\r\n\x1a\n" +
+                chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) +
+                chunk(b"IDAT", zlib.compress(b"".join(rows), 6)) +
+                chunk(b"IEND", b""))
+
+
 class Board:
+    # CHOICES['dsp']: RAM words a spinning DSP reads, word -> {n: DSP}
+    # (DspBus.watch); None until a DSP asks.
+    watch = None
+
     def __init__(self, memsize):
         self.ram = {}
         self.ram_hi = RAM_BASE + memsize
@@ -1165,10 +1679,18 @@ class Board:
         self.io = IoWindow(self)
         self.current_cpu = 1
         self.on_reset = None        # callable(old, new) for the run loop
+        self.read_mask = 0xF        # set by hobbit_sem._read_lanes
+        self.vga = None             # the display card, when fitted
+        self.dsp_master = None      # DSP n during its bus access
 
     def reset_changed(self, old, new):
         if self.on_reset is not None:
             self.on_reset(old, new)
+
+    def internal_changed(self, old, new):
+        f = getattr(self, "on_internal", None)
+        if f is not None:
+            f(old, new)
 
     def where(self):
         return "physical"
@@ -1179,6 +1701,11 @@ class Board:
             return self.ram.get(pa, 0)
         if IO_BASE <= pa < IO_BASE + IO_SIZE:
             return self.io.read(pa - IO_BASE)
+        if self.vga is not None:
+            if VGA_FB <= pa < VGA_FB + VGA_FB_SIZE:
+                return self.vga.fb_read(pa - VGA_FB)
+            if VGA_REGS <= pa < VGA_REGS + VGA_REGS_SIZE:
+                return self.vga.reg_read(pa - VGA_REGS, self.read_mask)
         raise Stop(self._nothing(pa, "read"))
 
     def write(self, pa, data, mask):
@@ -1193,10 +1720,21 @@ class Board:
                         expanded |= 0xFF << (8 * bit)
                 old = self.ram.get(pa, 0)
                 self.ram[pa] = (old & ~expanded) | (data & expanded)
+            if self.watch and pa in self.watch:
+                for n, d in list(self.watch[pa].items()):
+                    if n != self.dsp_master:
+                        d.notify_write(pa - RAM_BASE + DSP_SHADOW, 4)
             return
         if IO_BASE <= pa < IO_BASE + IO_SIZE:
             self.io.write(pa - IO_BASE, data & MASK32, mask)
             return
+        if self.vga is not None:
+            if VGA_FB <= pa < VGA_FB + VGA_FB_SIZE:
+                self.vga.fb_write(pa - VGA_FB, data & MASK32, mask)
+                return
+            if VGA_REGS <= pa < VGA_REGS + VGA_REGS_SIZE:
+                self.vga.reg_write(pa - VGA_REGS, data & MASK32, mask)
+                return
         raise Stop(self._nothing(pa, "write of 0x%08x mask %x"
                                  % (data & MASK32, mask)))
 
@@ -1220,6 +1758,140 @@ class Board:
 # ---------------------------------------------------------------------------
 # The machine
 # ---------------------------------------------------------------------------
+
+class DspStop(Stop):
+    """A stop raised while DSP n was running (CHOICES['dsp'])."""
+
+    def __init__(self, n, pc, what):
+        Stop.__init__(self, what)
+        self.n, self.pc = n, pc
+
+
+class DspBus:
+    """CHOICES['dsp']: what DSP n reaches over the BeBus.  The emulator
+    calls read(addr, size) and write(addr, value, size), size 1, 2 or 4,
+    with DSP bus addresses, and pins(name, level) for any output pin it
+    drives (none is wired: every pin stops).  Every access outside the
+    shadow-RAM window is logged (CHOICES['dsp']), and every stop names
+    the DSP, its pc, the access, its size and value."""
+
+    def __init__(self, machine, n):
+        self.m = machine
+        self.n = n
+        self.outside = collections.Counter()   # (what, size, addr) -> count
+        self.watched = ()           # RAM words this DSP's spin reads
+
+    def _stop(self, what):
+        d = self.m.dsps.get(self.n)
+        pc = getattr(d, "pc", None)
+        raise DspStop(self.n, pc, "DSP%d at pc %s: %s" % (
+            self.n, "%08x" % pc if pc is not None else "?", what))
+
+    def _map(self, addr, size, what):
+        if size not in (1, 2, 4) or addr & (size - 1):
+            self._stop("%s: not a naturally aligned byte, half-word or "
+                       "word" % what)
+        if addr < DSP_OFF_CHIP:
+            self._stop("%s: the DSP's own on-chip space, which the "
+                       "emulator handles; it never reaches the bus" % what)
+        if DSP_SHADOW <= addr < DSP_SHADOW + DSP_SHADOW_SIZE:
+            return RAM_BASE + addr - DSP_SHADOW
+        self.outside[(what.split()[0], size, addr)] += 1
+        return addr
+
+    def _access(self, f, what):
+        board = self.m.board
+        board.dsp_master = self.n
+        try:
+            return f()
+        except DspStop:
+            raise
+        except Stop as exc:
+            self._stop("%s: %s" % (what, exc))
+        finally:
+            board.dsp_master = None
+            board.read_mask = 0xF
+
+    def read(self, addr, size):
+        what = "read of size %d at 0x%08x" % (size, addr)
+        pa = self._map(addr, size, what)
+        off = 4 - size - (addr & 3)
+        board = self.m.board
+
+        def go():
+            board.read_mask = ((1 << size) - 1) << off
+            return board.read(pa)
+        word = self._access(go, what)
+        return (word >> (8 * off)) & ((1 << (8 * size)) - 1)
+
+    def write(self, addr, value, size):
+        what = "write of size %d value 0x%x at 0x%08x" % (size, value, addr)
+        pa = self._map(addr, size, what)
+        off = 4 - size - (addr & 3)
+        data = (value & ((1 << (8 * size)) - 1)) << (8 * off)
+        self._access(lambda: self.m.board.write(
+            pa, data, ((1 << size) - 1) << off), what)
+
+    def watch(self, ranges):
+        """The emulator has proven a spin that reads these (addr, size)
+        bus ranges: promise to report later writes to them by anyone
+        else (notify_write), or refuse.  Only shadow-RAM words can be
+        promised; a device register may change on its own."""
+        board = self.m.board
+        if board.watch is None:
+            board.watch = {}
+        for pa in self.watched:
+            board.watch.get(pa, {}).pop(self.n, None)
+            if not board.watch.get(pa, True):
+                del board.watch[pa]
+        self.watched = ()
+        words = []
+        for addr, size in ranges:
+            if not (DSP_SHADOW <= addr
+                    and addr + size <= DSP_SHADOW + DSP_SHADOW_SIZE):
+                return False
+            lo = (addr - DSP_SHADOW) & ~3
+            words.extend(RAM_BASE + a
+                         for a in range(lo, addr + size - DSP_SHADOW, 4))
+        d = self.m.dsps[self.n]
+        for pa in words:
+            board.watch.setdefault(pa, {})[self.n] = d
+        self.watched = tuple(words)
+        self.m.dsp_watches[self.n] = self.m.dsp_watches.get(self.n, 0) + 1
+        return True
+
+    BIO = tuple("bio%d" % i for i in range(8))
+
+    def pins(self, name, level):
+        """CHOICES['dsp']: BIO7..0 reach the DSP's slot connector (slot 1,
+        3 or 5), whose pin table is blank in the Sep 1993 draft and whose
+        cards (the audio codec, the telephone relays) are not modelled:
+        their levels are latched and logged, and drive nothing.  Any
+        other pin stops."""
+        if name not in self.BIO:
+            self._stop("drives its %s pin to %r: not a pin this model "
+                       "knows" % (name, level))
+        if not hasattr(self, "bio"):
+            self.bio = {}
+        self.bio[name] = level
+        self.m.events.append((sum(c.steps for c in self.m.cpus),
+                              "DSP%d %s = %d (pc %08x)" % (
+                                  self.n, name, level,
+                                  self.m.dsps[self.n].pc)))
+
+
+def load_dsp_class():
+    """CHOICES['dsp'] emulated: tools/dsp3210.py's Dsp3210, or stop."""
+    try:
+        import dsp3210
+    except ImportError as exc:
+        raise SystemExit("beboot: --dsp emulated needs tools/dsp3210.py "
+                         "(%s)" % exc)
+    cls = getattr(dsp3210, "Dsp3210", None)
+    if cls is None:
+        raise SystemExit("beboot: tools/dsp3210.py has no Dsp3210 class")
+    return cls
+
 
 class Cpu:
     def __init__(self, n, board, entry, stack):
@@ -1269,6 +1941,16 @@ class Machine:
         self.elf = elf
         self.board = Board(memsize)
         self.board.on_reset = self.reset_changed
+        self.board.on_internal = self.internal_changed
+        self.dsp_mode = "inert"     # CHOICES['dsp']
+        self.dsp_class = None
+        self.dsps = {}              # n -> emulator, once first released
+        self.dsp_clock = {}         # n -> DSP clocks (50 MHz)
+        self.dsp_steps = {}
+        self.typing = collections.deque()   # (model cycle, [scan codes])
+        self.dsp_idle_clocks = {}
+        self.dsp_watches = {}       # n -> spins the board agreed to watch
+        self.audio_codec = None     # CHOICES['codec']
         self.regs = BoardRegs(self.board)
         io = self.board.io
         for n in range(8):
@@ -1281,19 +1963,18 @@ class Machine:
                    "SER1 " + Uart.NAMES[n])
             io.add(port_addr(0x2F8 + n), 3, self.ser2, n,
                    "SER2 " + Uart.NAMES[n])
-        self.rtc = Mc146818(lambda: self.cpus[0].cycles / CPU_HZ)
+        self.rtc = Mc146818(self.seconds)
         io.add(port_addr(0x70), 3, self.rtc, 0, "RTC index")
         io.add(port_addr(0x71), 3, self.rtc, 1, "RTC data")
         self.regs.io_sources[4] = self.rtc_irq
         self.disks = {}
-        self.ncr = Ncr53c94(self.disks, NCR_IRQ_DELAY,
-                            lambda: self.cpus[0].cycles)
+        self.ncr = Ncr53c94(self.disks, NCR_IRQ_DELAY, self.cycles_now)
         for n in range(16):
             io.add(NCR_BASE + 4 * n, 2, self.ncr, n, "53C94 register %d" % n)
         io.add_word(NCR_PDMA, PdmaPort(self.ncr), "53C94 pseudo-DMA")
         self.regs.io_sources[7] = self.ncr.irq
         self.fdc = Mcs3201({1: {"medium": None, "cyl": 0}},
-                           lambda: self.cpus[0].cycles / CPU_HZ)
+                           self.seconds)
         for n in (2, 4, 5, 7):
             io.add(port_addr(0x370 + n), 3, self.fdc, n,
                    "MCS3201 " + Mcs3201.NAMES[n])
@@ -1303,6 +1984,7 @@ class Machine:
         io.add(port_addr(0x64), 3, self.kbc, 4, "keyboard status/command")
         self.regs.io_sources[5] = self.kbc.kbd_irq
         self.regs.io_sources[6] = self.kbc.mouse_irq
+        self.vga = self.board.vga = TridentVga(self.seconds)
         self.par = Parallel()
         for n, name in enumerate(("data", "status", "control")):
             io.add(port_addr(0x378 + n), 3, self.par, n, "printer " + name)
@@ -1331,6 +2013,13 @@ class Machine:
         text = elf.sections[".text"]
         self.text_lo, self.text_hi = text[3], text[3] + text[5]
 
+    def seconds(self):
+        """Model time (CHOICES['clock'])."""
+        return self.cpus[0].cycles / CPU_HZ
+
+    def cycles_now(self):
+        return self.cpus[0].cycles
+
     def rtc_irq(self):
         return False            # no periodic, alarm or update interrupt yet
 
@@ -1343,6 +2032,140 @@ class Machine:
             self.events.append((self.cpus[0].steps, "CPU 2 released"))
         elif old & 2 and not new & 2 and len(self.cpus) == 2:
             raise Stop("CPU 2 put back into reset (not modelled)")
+        if self.dsp_mode != "emulated":
+            return
+        for n in (1, 2, 3):
+            bit = 1 << (n + 3)
+            if not (old ^ new) & bit:
+                continue
+            d = self.dsps.get(n)
+            if new & bit:
+                if d is None:
+                    d = self.dsps[n] = self.dsp_class(n, DspBus(self, n))
+                    self.dsp_clock[n] = 0
+                    self.dsp_steps[n] = 0
+                    self.dsp_idle_clocks[n] = 0
+                self.attach_codec()
+                self.dsp_clock[n] = max(self.dsp_clock[n],
+                                        self.cpu_frontier()
+                                        * DSP_CLOCKS_PER_CYCLE)
+                d.release()
+                d.set_interrupt(bool(self.regs.internal & bit))
+            elif d is not None:
+                d.hold()
+
+    def upgrade_dsps(self):
+        """--resume only: a snapshot's emulator objects may predate fields
+        a newer tools/dsp3210.py added.  Each missing field takes its
+        value from a freshly built (power-on) emulator; the run says which.
+        That is the right state only for parts the DSP has not used since
+        it was built (the SIO and DMA on a snapshot made before them)."""
+        for n, d in sorted(self.dsps.items()):
+            fresh = self.dsp_class(n, d.bus)
+            pairs = [(d, fresh)]
+            core = getattr(d, "core", None)
+            if core is not None:
+                pairs.append((core, fresh.core))
+            for old, new in pairs:
+                missing = [k for k in vars(new) if not hasattr(old, k)]
+                for k in missing:
+                    v = getattr(new, k)
+                    if callable(v) and getattr(v, "__self__", None) is new:
+                        v = getattr(old, v.__name__)    # rebind a method
+                    setattr(old, k, v)
+                if missing:
+                    print("beboot: DSP%d %s: power-on values for %s"
+                          % (n, type(old).__name__, ", ".join(missing)))
+
+    def attach_codec(self):
+        """CHOICES['codec']: the AD1849K on DSP 3, once."""
+        d = self.dsps.get(AUDIO_DSP)
+        codec = getattr(self, "audio_codec", None)
+        if d is not None and codec is not None and \
+                getattr(d, "codec", None) is not codec:
+            d.attach_codec(codec)
+
+    def internal_changed(self, old, new):
+        """CHOICES['dsp']: bits 4-6 of the internal interrupt register
+        are each DSP's interrupt input, a level."""
+        if self.dsp_mode != "emulated":
+            return
+        for n, d in self.dsps.items():
+            bit = 1 << (n + 3)
+            if (old ^ new) & bit:
+                d.set_interrupt(bool(new & bit))
+
+    def type_text(self, text, start_cycle):
+        """CHOICES['typing']: queue `text` from model cycle `start_cycle`."""
+        step = int(KEY_INTERVAL * CPU_HZ)
+        for i, ch in enumerate(text):
+            self.typing.append((start_cycle + i * step, scan_codes(ch)))
+
+    def press_due_keys(self):
+        now = self.cpu_frontier()
+        while self.typing and self.typing[0][0] <= now:
+            _, codes = self.typing.popleft()
+            self.kbc._put(self.kbc.KBD, *codes)
+            self.events.append((sum(c.steps for c in self.cpus),
+                                "key %s" % " ".join("%02x" % b for b in codes)))
+
+    def cpu_frontier(self):
+        return min(c.cycles for c in self.cpus)
+
+    def dsps_running(self):
+        return [n for n in sorted(self.dsps)
+                if self.regs.reset & (1 << (n + 3))]
+
+    def dsp_until(self, d):
+        """DSP clocks until `d` can change on its own: 0 while it executes,
+        None while only the board can wake it (the emulator's
+        clocks_until_event(); an emulator without it reports .idle)."""
+        f = getattr(d, "clocks_until_event", None)
+        if f is not None:
+            return f()
+        return None if getattr(d, "idle", False) else 0
+
+    def dsps_busy(self):
+        """Released DSPs that are executing (not in waiti or reset)."""
+        return [n for n in self.dsps_running()
+                if self.dsp_until(self.dsps[n]) == 0]
+
+    def step_dsps(self):
+        """CHOICES['dsp']: each released DSP runs until its clock reaches
+        two DSP clocks per cycle of the slower CPU."""
+        target = self.cpu_frontier() * DSP_CLOCKS_PER_CYCLE
+        for n in self.dsps_running():
+            d = self.dsps[n]
+            while self.dsp_clock[n] < target:
+                wait = self.dsp_until(d)
+                if wait is None:
+                    # Nothing changes until the board acts, and the board
+                    # acts only between CPU instructions.
+                    self.dsp_idle_clocks[n] += target - self.dsp_clock[n]
+                    self.dsp_clock[n] = target
+                    break
+                if wait:
+                    # Spinning or in waiti until its timer: skip whole
+                    # instruction cycles (4 clocks) up to the event or
+                    # past the CPUs' time by less than one cycle, as a
+                    # step would.
+                    k = min(wait & ~3, (target - self.dsp_clock[n] + 3) & ~3)
+                    if k:
+                        d.skip(k)
+                        self.dsp_idle_clocks[n] += k
+                        self.dsp_clock[n] += k
+                        continue
+                try:
+                    clocks = d.step()
+                except DspStop:
+                    raise
+                except Exception as exc:
+                    pc = getattr(d, "pc", None)
+                    raise DspStop(n, pc, "DSP%d at pc %s: %s: %s" % (
+                        n, "%08x" % pc if pc is not None else "?",
+                        type(exc).__name__, exc))
+                self.dsp_clock[n] += max(int(clocks), 1)
+                self.dsp_steps[n] += 1
 
     def deliver(self, cpu):
         """CHOICES['interrupts']: one interrupt per instruction boundary,
@@ -1374,6 +2197,13 @@ class Machine:
         if self.ncr.int_at is not None:
             due.append(self.ncr.int_at)
         due.extend(t * CPU_HZ for t, _, _ in self.fdc.pending)
+        if getattr(self, "typing", None):
+            due.append(self.typing[0][0])
+        for n in self.dsps_running() if getattr(self, "dsps", None) else ():
+            wait = self.dsp_until(self.dsps[n])
+            if wait:                # a DSP timer tick, in CPU cycles
+                due.append((self.dsp_clock[n] + wait)
+                           // DSP_CLOCKS_PER_CYCLE)
         return min(due) if due else None
 
     def try_idle_skip(self, cpu, budget):
@@ -1382,6 +2212,8 @@ class Machine:
         not computed: its steps, model cycles and the two timers' own
         increments (which differ from model cycles where an instruction
         retires in 0 cycles), between two visits to the head."""
+        if self.dsps_busy():
+            return 0                # CHOICES['dsp']: a DSP shares the time
         sysm = cpu.sysm
         here = (cpu.steps, cpu.cycles, sysm.timer1, sysm.timer2)
         last = cpu.idle_last
@@ -1450,8 +2282,8 @@ class Machine:
         status = "max-steps"
         cpu = self.cpus[0]
         try:
-            total = 0
-            while total < max_steps:
+            total = start = getattr(self, "steps", 0)   # a resumed run counts on
+            while total < start + max_steps:
                 cpu = min(self.cpus, key=lambda c: c.cycles)
                 self.board.current_cpu = cpu.n
                 st = cpu.state
@@ -1476,8 +2308,12 @@ class Machine:
                 total += 1
                 cpu.cycles += max(rec.cyc, 1)
                 self.deliver(cpu)
+                if self.dsps:
+                    self.step_dsps()
+                if self.typing:
+                    self.press_due_keys()
                 if self.idle_skip and cpu.state.pc == self.idle_head:
-                    total += self.try_idle_skip(cpu, max_steps - total)
+                    total += self.try_idle_skip(cpu, start + max_steps - total)
                 if cpu.sysm.events:
                     for kind, ident, epc in cpu.sysm.events:
                         self.events.append((total, "CPU %d %s 0x%x at %s %s" % (
@@ -1491,6 +2327,10 @@ class Machine:
             status = "REFUSED on CPU %d at %s (pc %08x, parcels %s): %s" % (
                 cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc,
                 " ".join("%04x" % p for p in exc.parcels), exc.reason)
+        except DspStop as exc:
+            status = "STOP on DSP%d (CPU %d at %s, pc %08x): %s" % (
+                exc.n, cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc,
+                exc)
         except Stop as exc:
             status = "STOP on CPU %d at %s (pc %08x): %s" % (
                 cpu.n, self.elf.where(cpu.state.pc), cpu.state.pc, exc)
@@ -1514,23 +2354,97 @@ def main(argv):
     ap.add_argument("--show", type=int, default=40,
                     help="print the last N first-reached functions")
     ap.add_argument("--until", help="stop once SER1 has printed this text")
+    ap.add_argument("--save", help="write the machine to this file when "
+                    "the run ends (a snapshot of this model, for --resume)")
+    ap.add_argument("--resume", help="continue a run saved with --save "
+                    "(the snapshot must come from this checkout's beboot)")
+    ap.add_argument("--screen", help="write the display card's picture "
+                    "to this PNG file when the run ends")
     ap.add_argument("--no-idle-skip", action="store_true",
                     help="execute every idle lap (CHOICES['idle-skip'])")
+    ap.add_argument("--type", help="keys to press (CHOICES['typing']); "
+                    "\\n is Return")
+    ap.add_argument("--type-at", type=int, default=0,
+                    help="start typing once this many steps have run")
+    ap.add_argument("--dsp", choices=("inert", "emulated"), default="inert",
+                    help="the DSP3210s (CHOICES['dsp'])")
+    ap.add_argument("--extract", action="append", default=[],
+                    metavar="BEPATH=OUT", help="when the run ends, copy "
+                    "this file from SCSI target 0, disk writes included")
+    ap.add_argument("--codec-in", help="16-bit PCM WAV for the audio "
+                    "codec's ADC (CHOICES['codec'])")
+    ap.add_argument("--codec-out", help="write the codec's DAC output to "
+                    "this WAV when the run ends")
+    ap.add_argument("--codec-phase", type=int, choices=(0, 1), default=1,
+                    help="ad1849 control_phase (CHOICES['codec'])")
     args = ap.parse_args(argv)
-    if not args.disk and not args.kernel:
-        ap.error("give --disk or --kernel")
-    elf, source = read_kernel(args)
-    m = Machine(elf, args.memsize << 20)
+    if args.resume:
+        import pickle
+        with open(args.resume, "rb") as f:
+            m = pickle.load(f)
+        elf, prior = m.elf, m.steps
+        if not hasattr(m.regs, "dsp_log"):     # saved before CHOICES['dsp']
+            m.regs.dsp_log = []
+        if not hasattr(m, "typing"):            # saved before --type
+            m.typing = collections.deque()
+        if not hasattr(m, "dsps"):              # saved before DSP emulation
+            m.board.on_internal = m.internal_changed
+            m.dsp_mode, m.dsp_class = "inert", None
+            m.dsps, m.dsp_clock, m.dsp_steps = {}, {}, {}
+        if not hasattr(m, "dsp_idle_clocks"):
+            m.dsp_idle_clocks = {n: 0 for n in m.dsps}
+        if not hasattr(m, "dsp_watches"):
+            m.dsp_watches = {}
+        if not hasattr(m.board, "dsp_master"):
+            m.board.dsp_master = None
+        if (args.dsp == "emulated" and m.regs.reset & 0x70
+                and m.dsp_mode != "emulated"):
+            raise SystemExit("beboot: %s was saved with a DSP already "
+                             "released (reset register 0x%02x) and inert "
+                             "DSPs; an emulated DSP cannot start mid-run"
+                             % (args.resume, m.regs.reset))
+        print("beboot: resumed %s at %d steps" % (args.resume, prior))
+    else:
+        if not args.disk and not args.kernel:
+            ap.error("give --disk or --kernel")
+        elf, source = read_kernel(args)
+        m = Machine(elf, args.memsize << 20)
+        for i, path in enumerate(args.disk):
+            m.disks[i] = ScsiDisk(path, "target %d" % i)
+        print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
+                                                   args.memsize))
     if args.no_idle_skip:
         m.idle_skip = False
-    for i, path in enumerate(args.disk):
-        m.disks[i] = ScsiDisk(path, "target %d" % i)
-    print("beboot: %s, entry 0x%08x, %d MB" % (source, elf.entry,
-                                               args.memsize))
+    m.dsp_mode = args.dsp
+    if args.dsp == "emulated":
+        m.dsp_class = load_dsp_class()
+        if args.resume:
+            m.upgrade_dsps()
+        import ad1849
+        if getattr(m, "audio_codec", None) is None:
+            m.audio_codec = ad1849.AD1849K(int(DSP_HZ),
+                                           control_phase=args.codec_phase)
+        if args.codec_in:
+            m.audio_codec.load_wav(args.codec_in)
+        m.attach_codec()
+    elif args.codec_in or args.codec_out:
+        ap.error("--codec-in/--codec-out need --dsp emulated")
     if args.trace:
         m.trace = collections.deque(maxlen=args.trace)
-    status = m.run(args.max_steps,
-                   args.until.encode("latin-1") if args.until else None)
+    until = args.until.encode("latin-1") if args.until else None
+    budget = args.max_steps
+    status = "max-steps"
+    if args.type:
+        text = args.type.replace("\\n", "\n").replace("\\b", "\b")
+        ahead = args.type_at - getattr(m, "steps", 0)
+        if ahead > 0:
+            status = m.run(min(ahead, budget), until)
+            budget -= min(ahead, budget)
+        if status == "max-steps" and budget > 0:
+            m.type_text(text, m.cpu_frontier())
+            print("beboot: typing %r from step %d" % (text, m.steps))
+    if status == "max-steps" and budget > 0:
+        status = m.run(budget, until)
     for step, cpu, name in m.reached[-args.show:]:
         print("reached %9d CPU %d %s" % (step, cpu, name))
     for step, what in list(m.events)[-20:]:
@@ -1539,6 +2453,33 @@ def main(argv):
         print("SCSI target %d: %d blocks read, %d written (overlay)"
               % (i, d.reads, d.writes))
     print("interrupts taken: %d" % m.interrupts)
+    for n, run in m.regs.dsp_log:
+        print("DSP%d %s (CHOICES['dsp'] %s)"
+              % (n, "released from reset" if run else "put back into reset",
+                 m.dsp_mode))
+    for n in sorted(m.dsps):
+        d = m.dsps[n]
+        print("DSP%d: %d steps, %d clocks (%d of them skipped, %d spins "
+              "watched), pc %s%s" % (
+            n, m.dsp_steps[n], m.dsp_clock[n], m.dsp_idle_clocks[n],
+            m.dsp_watches.get(n, 0),
+            "%08x" % d.pc if getattr(d, "pc", None) is not None else "?",
+            ", idle" if getattr(d, "idle", False) else ""))
+        if getattr(d.bus, "bio", None):
+            print("DSP%d BIO outputs latched: %s" % (n, " ".join(
+                "%s=%d" % kv for kv in sorted(d.bus.bio.items()))))
+        for (what, size, addr), k in sorted(d.bus.outside.items()):
+            print("DSP%d %s of size %d at 0x%08x (outside the shadow RAM): "
+                  "%d times" % (n, what, size, addr, k))
+    codec = getattr(m, "audio_codec", None)
+    if codec is not None:
+        print("codec (DSP%d): pins %s, %d frames, %d input samples used, "
+              "%d played stretches" % (
+                  AUDIO_DSP, codec.pins, codec.frames, codec.rec_pos,
+                  len(codec.played)))
+        if args.codec_out:
+            print("codec: %d frames written to %s"
+                  % (codec.save_wav(args.codec_out), args.codec_out))
     if m.skips:
         print("idle skip: %d skips, %d steps not executed"
               % (m.skips, m.skipped_steps))
@@ -1556,6 +2497,38 @@ def main(argv):
             print("trace %9d CPU %d %08x %-26s sp %08x msp %08x isp %08x "
                   "psw %08x shad %08x  %s" % (n, c, pc, elf.where(pc), sp, msp,
                                               isp, psw, shad, text))
+    if m.vga.ops or any(m.vga.crtc):
+        mhz, ht, vt, _, _ = m.vga.timing()
+        print("display: %dx%d, %.3f MHz, %.1f kHz, %.1f Hz; engine %s"
+              % (m.vga.width(), m.vga.height(), mhz, mhz * 1e3 / ht,
+                 mhz * 1e6 / ht / vt, dict(m.vga.ops) or "unused"))
+    if args.screen:
+        try:
+            data = m.vga.png()
+        except Stop as exc:
+            print("beboot: no screen: %s" % exc)
+        else:
+            with open(args.screen, "wb") as f:
+                f.write(data)
+            print("beboot: screen written to %s" % args.screen)
+    for spec in args.extract:
+        bepath, out = spec.split("=", 1)
+        try:
+            vol = befs1.Volume(m.disks[0].reader())
+            data = vol.read(vol.lookup(bepath))
+        except Exception as exc:
+            print("beboot: --extract %s: %s" % (bepath, exc))
+        else:
+            with open(out, "wb") as f:
+                f.write(data)
+            print("beboot: %s (%d bytes) written to %s"
+                  % (bepath, len(data), out))
+    if args.save:
+        import pickle
+        m.trace = None
+        with open(args.save, "wb") as f:
+            pickle.dump(m, f, protocol=pickle.HIGHEST_PROTOCOL)
+        print("beboot: machine saved to %s" % args.save)
     print("beboot: " + status)
     return 0
 

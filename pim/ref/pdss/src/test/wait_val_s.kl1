@@ -1,0 +1,450 @@
+%%% KL1-B Test for Wait_Value (Suspend) %%%
+% (Atom) %%%%%%%%%%%%%%%% abcdefghijklmn
+% (Integer) %%%%%%%%%%%%% abcdefghijklmn
+% (Float) %%%%%%%%%%%%%%% abcdefghijklmn
+% (List) %%%%%%%%%%%%%%%% abcdefghijkl
+% (Vector) %%%%%%%%%%%%%% abcdefghijklmn
+% (String) %%%%%%%%%%%%%% abcdefghijklmn
+
+:- module wait_val_s.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Wait_Value (Suspend) %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% (Atom) %%%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(X,atom), unify(X,atom).
+atm00(X,X):- put_console(c#"a") | atm01.
+otherwise.
+atm00(_,_):- put_console(c#"*") | atm01.
+
+atm01:- true | atm01(atom,X), unify(X,atom).
+atm01(X,X):- put_console(c#"b") | atm02.
+otherwise.
+atm01(_,_):- put_console(c#"*") | atm02.
+
+atm02:- true | atm02(X,[]), unify(X,atom).
+atm02(X,X):- put_console(c#"*") | atm03.
+otherwise.
+atm02(_,_):- put_console(c#"c") | atm03.
+
+atm03:- true | atm03([],X), unify(X,atom).
+atm03(X,X):- put_console(c#"*") | atm04.
+otherwise.
+atm03(_,_):- put_console(c#"d") | atm04.
+
+atm04:- true | atm04(X,1234), unify(X,atom).
+atm04(X,X):- put_console(c#"*") | atm05.
+otherwise.
+atm04(_,_):- put_console(c#"e") | atm05.
+
+atm05:- true | atm05(1234,X), unify(X,atom).
+atm05(X,X):- put_console(c#"*") | atm06.
+otherwise.
+atm05(_,_):- put_console(c#"f") | atm06.
+
+atm06:- true | atm06(X,12.34), unify(X,atom).
+atm06(X,X):- put_console(c#"*") | atm07.
+otherwise.
+atm06(_,_):- put_console(c#"g") | atm07.
+
+atm07:- true | atm07(12.34,X), unify(X,atom).
+atm07(X,X):- put_console(c#"*") | atm08.
+otherwise.
+atm07(_,_):- put_console(c#"h") | atm08.
+
+atm08:- true | atm08(X,[list]), unify(X,atom).
+atm08(X,X):- put_console(c#"*") | atm09.
+otherwise.
+atm08(_,_):- put_console(c#"i") | atm09.
+
+atm09:- true | atm09([list],X), unify(X,atom).
+atm09(X,X):- put_console(c#"*") | atm10.
+otherwise.
+atm09(_,_):- put_console(c#"j") | atm10.
+
+atm10:- true | atm10(X,{0,1}), unify(X,atom).
+atm10(X,X):- put_console(c#"*") | atm11.
+otherwise.
+atm10(_,_):- put_console(c#"k") | atm11.
+
+atm11:- true | atm11({0,1},X), unify(X,atom).
+atm11(X,X):- put_console(c#"*") | atm12.
+otherwise.
+atm11(_,_):- put_console(c#"l") | atm12.
+
+atm12:- true | atm12(X,ascii#"String"), unify(X,atom).
+atm12(X,X):- put_console(c#"*") | atm13.
+otherwise.
+atm12(_,_):- put_console(c#"m") | atm13.
+
+atm13:- true | atm13(ascii#"String",X), unify(X,atom).
+atm13(X,X):- put_console(c#"*") | atm14.
+otherwise.
+atm13(_,_):- put_console(c#"n") | atm14.
+
+atm14:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% (Integer) %%%%%%%%%%%%% ") | int00.
+
+int00:- true | int00(X,atom), unify(X,1234).
+int00(X,X):- put_console(c#"*") | int01.
+otherwise.
+int00(_,_):- put_console(c#"a") | int01.
+
+int01:- true | int01(atom,X), unify(X,1234).
+int01(X,X):- put_console(c#"*") | int02.
+otherwise.
+int01(_,_):- put_console(c#"b") | int02.
+
+int02:- true | int02(X,1234), unify(X,1234).
+int02(X,X):- put_console(c#"c") | int03.
+otherwise.
+int02(_,_):- put_console(c#"*") | int03.
+
+int03:- true | int03(1234,X), unify(X,1234).
+int03(X,X):- put_console(c#"d") | int04.
+otherwise.
+int03(_,_):- put_console(c#"*") | int04.
+
+int04:- true | int04(X,123456), unify(X,1234).
+int04(X,X):- put_console(c#"*") | int05.
+otherwise.
+int04(_,_):- put_console(c#"e") | int05.
+
+int05:- true | int05(123456,X), unify(X,1234).
+int05(X,X):- put_console(c#"*") | int06.
+otherwise.
+int05(_,_):- put_console(c#"f") | int06.
+
+int06:- true | int06(X,12.34), unify(X,1234).
+int06(X,X):- put_console(c#"*") | int07.
+otherwise.
+int06(_,_):- put_console(c#"g") | int07.
+
+int07:- true | int07(12.34,X), unify(X,1234).
+int07(X,X):- put_console(c#"*") | int08.
+otherwise.
+int07(_,_):- put_console(c#"h") | int08.
+
+int08:- true | int08(X,[list]), unify(X,1234).
+int08(X,X):- put_console(c#"*") | int09.
+otherwise.
+int08(_,_):- put_console(c#"i") | int09.
+
+int09:- true | int09([list],X), unify(X,1234).
+int09(X,X):- put_console(c#"*") | int10.
+otherwise.
+int09(_,_):- put_console(c#"j") | int10.
+
+int10:- true | int10(X,{0,1}), unify(X,1234).
+int10(X,X):- put_console(c#"*") | int11.
+otherwise.
+int10(_,_):- put_console(c#"k") | int11.
+
+int11:- true | int11({0,1},X), unify(X,1234).
+int11(X,X):- put_console(c#"*") | int12.
+otherwise.
+int11(_,_):- put_console(c#"l") | int12.
+
+int12:- true | int12(X,ascii#"String"), unify(X,1234).
+int12(X,X):- put_console(c#"*") | int13.
+otherwise.
+int12(_,_):- put_console(c#"m") | int13.
+
+int13:- true | int13(ascii#"String",X), unify(X,1234).
+int13(X,X):- put_console(c#"*") | int14.
+otherwise.
+int13(_,_):- put_console(c#"n") | int14.
+
+int14:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% (Float) %%%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(X,atom), unify(X,12.34).
+flt00(X,X):- put_console(c#"*") | flt01.
+otherwise.
+flt00(_,_):- put_console(c#"a") | flt01.
+
+flt01:- true | flt01(atom,X), unify(X,12.34).
+flt01(X,X):- put_console(c#"*") | flt02.
+otherwise.
+flt01(_,_):- put_console(c#"b") | flt02.
+
+flt02:- true | flt02(X,1234), unify(X,12.34).
+flt02(X,X):- put_console(c#"*") | flt03.
+otherwise.
+flt02(_,_):- put_console(c#"c") | flt03.
+
+flt03:- true | flt03(1234,X), unify(X,12.34).
+flt03(X,X):- put_console(c#"*") | flt04.
+otherwise.
+flt03(_,_):- put_console(c#"d") | flt04.
+
+flt04:- true | flt04(X,12.34), unify(X,12.34).
+flt04(X,X):- put_console(c#"e") | flt05.
+otherwise.
+flt04(_,_):- put_console(c#"*") | flt05.
+
+flt05:- true | flt05(12.34,X), unify(X,12.34).
+flt05(X,X):- put_console(c#"f") | flt06.
+otherwise.
+flt05(_,_):- put_console(c#"*") | flt06.
+
+flt06:- true | flt06(X,123.456), unify(X,12.34).
+flt06(X,X):- put_console(c#"*") | flt07.
+otherwise.
+flt06(_,_):- put_console(c#"g") | flt07.
+
+flt07:- true | flt07(123.456,X), unify(X,12.34).
+flt07(X,X):- put_console(c#"*") | flt08.
+otherwise.
+flt07(_,_):- put_console(c#"h") | flt08.
+
+flt08:- true | flt08(X,[list]), unify(X,12.34).
+flt08(X,X):- put_console(c#"*") | flt09.
+otherwise.
+flt08(_,_):- put_console(c#"i") | flt09.
+
+flt09:- true | flt09([list],X), unify(X,12.34).
+flt09(X,X):- put_console(c#"*") | flt10.
+otherwise.
+flt09(_,_):- put_console(c#"j") | flt10.
+
+flt10:- true | flt10(X,{0,1}), unify(X,12.34).
+flt10(X,X):- put_console(c#"*") | flt11.
+otherwise.
+flt10(_,_):- put_console(c#"k") | flt11.
+
+flt11:- true | flt11({0,1},X), unify(X,12.34).
+flt11(X,X):- put_console(c#"*") | flt12.
+otherwise.
+flt11(_,_):- put_console(c#"l") | flt12.
+
+flt12:- true | flt12(X,ascii#"String"), unify(X,12.34).
+flt12(X,X):- put_console(c#"*") | flt13.
+otherwise.
+flt12(_,_):- put_console(c#"m") | flt13.
+
+flt13:- true | flt13(ascii#"String",X), unify(X,12.34).
+flt13(X,X):- put_console(c#"*") | flt14.
+otherwise.
+flt13(_,_):- put_console(c#"n") | flt14.
+
+flt14:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% (List) %%%%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | lst00(X,atom), unify(X,[list]).
+lst00(X,X):- put_console(c#"*") | lst01.
+otherwise.
+lst00(_,_):- put_console(c#"a") | lst01.
+
+lst01:- true | lst01(atom,X), unify(X,[list]).
+lst01(X,X):- put_console(c#"*") | lst02.
+otherwise.
+lst01(_,_):- put_console(c#"b") | lst02.
+
+lst02:- true | lst02(X,1234), unify(X,[list]).
+lst02(X,X):- put_console(c#"*") | lst03.
+otherwise.
+lst02(_,_):- put_console(c#"c") | lst03.
+
+lst03:- true | lst03(1234,X), unify(X,[list]).
+lst03(X,X):- put_console(c#"*") | lst04.
+otherwise.
+lst03(_,_):- put_console(c#"d") | lst04.
+
+lst04:- true | lst04(X,12.34), unify(X,[list]).
+lst04(X,X):- put_console(c#"*") | lst05.
+otherwise.
+lst04(_,_):- put_console(c#"e") | lst05.
+
+lst05:- true | lst05(12.34,X), unify(X,[list]).
+lst05(X,X):- put_console(c#"*") | lst06.
+otherwise.
+lst05(_,_):- put_console(c#"f") | lst06.
+
+lst06:- true | lst06(X,[list]), unify(X,[list]).
+lst06(X,X):- put_console(c#"g") | lst07.
+otherwise.
+lst06(_,_):- put_console(c#"*") | lst07.
+
+lst07:- true | lst07([list],X), unify(X,[list]).
+lst07(X,X):- put_console(c#"h") | lst08.
+otherwise.
+lst07(_,_):- put_console(c#"*") | lst08.
+
+lst08:- true | lst08(X,{0,1}), unify(X,[list]).
+lst08(X,X):- put_console(c#"*") | lst09.
+otherwise.
+lst08(_,_):- put_console(c#"i") | lst09.
+
+lst09:- true | lst09({0,1},X), unify(X,[list]).
+lst09(X,X):- put_console(c#"*") | lst10.
+otherwise.
+lst09(_,_):- put_console(c#"j") | lst10.
+
+lst10:- true | lst10(X,ascii#"String"), unify(X,[list]).
+lst10(X,X):- put_console(c#"*") | lst11.
+otherwise.
+lst10(_,_):- put_console(c#"k") | lst11.
+
+lst11:- true | lst11(ascii#"String",X), unify(X,[list]).
+lst11(X,X):- put_console(c#"*") | lst12.
+otherwise.
+lst11(_,_):- put_console(c#"l") | lst12.
+
+lst12:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% (Vector) %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00(X,atom), unify(X,{0,1}).
+vec00(X,X):- put_console(c#"*") | vec01.
+otherwise.
+vec00(_,_):- put_console(c#"a") | vec01.
+
+vec01:- true | vec01(atom,X), unify(X,{0,1}).
+vec01(X,X):- put_console(c#"*") | vec02.
+otherwise.
+vec01(_,_):- put_console(c#"b") | vec02.
+
+vec02:- true | vec02(X,1234), unify(X,{0,1}).
+vec02(X,X):- put_console(c#"*") | vec03.
+otherwise.
+vec02(_,_):- put_console(c#"c") | vec03.
+
+vec03:- true | vec03(1234,X), unify(X,{0,1}).
+vec03(X,X):- put_console(c#"*") | vec04.
+otherwise.
+vec03(_,_):- put_console(c#"d") | vec04.
+
+vec04:- true | vec04(X,12.34), unify(X,{0,1}).
+vec04(X,X):- put_console(c#"*") | vec05.
+otherwise.
+vec04(_,_):- put_console(c#"e") | vec05.
+
+vec05:- true | vec05(12.34,X), unify(X,{0,1}).
+vec05(X,X):- put_console(c#"*") | vec06.
+otherwise.
+vec05(_,_):- put_console(c#"f") | vec06.
+
+vec06:- true | vec06(X,[list]), unify(X,{0,1}).
+vec06(X,X):- put_console(c#"*") | vec07.
+otherwise.
+vec06(_,_):- put_console(c#"g") | vec07.
+
+vec07:- true | vec07([list],X), unify(X,{0,1}).
+vec07(X,X):- put_console(c#"*") | vec08.
+otherwise.
+vec07(_,_):- put_console(c#"h") | vec08.
+
+vec08:- true | vec08(X,{0,1}), unify(X,{0,1}).
+vec08(X,X):- put_console(c#"i") | vec09.
+otherwise.
+vec08(_,_):- put_console(c#"*") | vec09.
+
+vec09:- true | vec09({0,1},X), unify(X,{0,1}).
+vec09(X,X):- put_console(c#"j") | vec10.
+otherwise.
+vec09(_,_):- put_console(c#"*") | vec10.
+
+vec10:- true | vec10(X,{0,1,2}), unify(X,{0,1}).
+vec10(X,X):- put_console(c#"*") | vec11.
+otherwise.
+vec10(_,_):- put_console(c#"k") | vec11.
+
+vec11:- true | vec11({0,1,2},X), unify(X,{0,1}).
+vec11(X,X):- put_console(c#"*") | vec12.
+otherwise.
+vec11(_,_):- put_console(c#"l") | vec12.
+
+vec12:- true | vec12(X,ascii#"String"), unify(X,{0,1}).
+vec12(X,X):- put_console(c#"*") | vec13.
+otherwise.
+vec12(_,_):- put_console(c#"m") | vec13.
+
+vec13:- true | vec13(ascii#"String",X), unify(X,{0,1}).
+vec13(X,X):- put_console(c#"*") | vec14.
+otherwise.
+vec13(_,_):- put_console(c#"n") | vec14.
+
+vec14:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% (String) %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00(X,atom), unify(X,ascii#"String").
+str00(X,X):- put_console(c#"*") | str01.
+otherwise.
+str00(_,_):- put_console(c#"a") | str01.
+
+str01:- true | str01(atom,X), unify(X,ascii#"String").
+str01(X,X):- put_console(c#"*") | str02.
+otherwise.
+str01(_,_):- put_console(c#"b") | str02.
+
+str02:- true | str02(X,1234), unify(X,ascii#"String").
+str02(X,X):- put_console(c#"*") | str03.
+otherwise.
+str02(_,_):- put_console(c#"c") | str03.
+
+str03:- true | str03(1234,X), unify(X,ascii#"String").
+str03(X,X):- put_console(c#"*") | str04.
+otherwise.
+str03(_,_):- put_console(c#"d") | str04.
+
+str04:- true | str04(X,12.34), unify(X,ascii#"String").
+str04(X,X):- put_console(c#"*") | str05.
+otherwise.
+str04(_,_):- put_console(c#"e") | str05.
+
+str05:- true | str05(12.34,X), unify(X,ascii#"String").
+str05(X,X):- put_console(c#"*") | str06.
+otherwise.
+str05(_,_):- put_console(c#"f") | str06.
+
+str06:- true | str06(X,[list]), unify(X,ascii#"String").
+str06(X,X):- put_console(c#"*") | str07.
+otherwise.
+str06(_,_):- put_console(c#"g") | str07.
+
+str07:- true | str07([list],X), unify(X,ascii#"String").
+str07(X,X):- put_console(c#"*") | str08.
+otherwise.
+str07(_,_):- put_console(c#"h") | str08.
+
+str08:- true | str08(X,{0,1}), unify(X,ascii#"String").
+str08(X,X):- put_console(c#"*") | str09.
+otherwise.
+str08(_,_):- put_console(c#"i") | str09.
+
+str09:- true | str09({0,1},X), unify(X,ascii#"String").
+str09(X,X):- put_console(c#"*") | str10.
+otherwise.
+str09(_,_):- put_console(c#"j") | str10.
+
+str10:- true | str10(X,ascii#"String"), unify(X,ascii#"String").
+str10(X,X):- put_console(c#"k") | str11.
+otherwise.
+str10(_,_):- put_console(c#"*") | str11.
+
+str11:- true | str11(ascii#"String",X), unify(X,ascii#"String").
+str11(X,X):- put_console(c#"l") | str12.
+otherwise.
+str11(_,_):- put_console(c#"*") | str12.
+
+str12:- true | str12(X,ascii#"STRING"), unify(X,ascii#"String").
+str12(X,X):- put_console(c#"*") | str13.
+otherwise.
+str12(_,_):- put_console(c#"m") | str13.
+
+str13:- true | str13(ascii#"STRING",X), unify(X,ascii#"String").
+str13(X,X):- put_console(c#"*") | str14.
+otherwise.
+str13(_,_):- put_console(c#"n") | str14.
+
+str14:- put_console(key#lf) | done.
+
+done:- true | true.
+
+unify(X,Y):- true | X=Y.

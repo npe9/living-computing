@@ -1,0 +1,68 @@
+%%% KL1-B Test for B_Code %%%
+% B_Predicate_To_Code %%% abcd
+% B_Code_To_Predicate %%% ab
+% B_Apply %%%%%%%%%%%%%%% a
+
+:- module b_code.
+:- public go/0,get/1.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Code %%%"), put_console(key#lf) | ptc.
+
+ptc:- put_console(ascii#"% B_Predicate_To_Code %%% ") | ptc00.
+
+ptc00:- true | ptc00(b_code,get,1).
+ptc00(X,Y,Z):- true | predicate_to_code(X,Y,Z,A), ptc00ans(A).
+ptc00ans({b_code,get,1}):- put_console(c#"a") | ptc01.
+otherwise.
+ptc00ans(_):- put_console(c#"*") | ptc01.
+
+ptc01:- true | ptc01(no_module,get,1).
+ptc01(X,Y,Z):- true | predicate_to_code(X,Y,Z,A), ptc01ans(A).
+ptc01ans([]):- put_console(c#"b") | ptc02.
+otherwise.
+ptc01ans(_):- put_console(c#"*") | ptc02.
+
+ptc02:- true | ptc02(b_code,no_predicate,1).
+ptc02(X,Y,Z):- true | predicate_to_code(X,Y,Z,A), ptc02ans(A).
+ptc02ans([]):- put_console(c#"c") | ptc03.
+otherwise.
+ptc02ans(_):- put_console(c#"*") | ptc03.
+
+ptc03:- true | ptc03(b_code,get,2).
+ptc03(X,Y,Z):- true | predicate_to_code(X,Y,Z,A), ptc03ans(A).
+ptc03ans([]):- put_console(c#"d") | ptc04.
+otherwise.
+ptc03ans(_):- put_console(c#"*") | ptc04.
+
+ptc04:- put_console(key#lf) | ctp.
+
+ctp:- put_console(ascii#"% B_Code_To_Predicate %%% ") | ctp00.
+
+ctp00:- true | ctp00({b_code,get,1}).
+ctp00(X):- true | code_to_predicate(X,A,B,C,D), ctp00ans(A,B,C,D).
+ctp00ans(b_code,get,1,F):- integer(F), put_console(c#"a") | ctp01.
+otherwise.
+ctp00ans(_,_,_,_):- put_console(c#"*") | ctp01.
+
+ctp01:- true | ctp01({b_code,not_public,0}).
+ctp01(X):- true | code_to_predicate(X,A,B,C,D), ctp01ans(A,B,C,D).
+ctp01ans(b_code,not_public,0,F):- integer(F), put_console(c#"b") | ctp02.
+otherwise.
+ctp01ans(_,_,_,_):- put_console(c#"*") | ctp02.
+
+ctp02:- put_console(key#lf) | apl.
+
+apl:- put_console(ascii#"% B_Apply %%%%%%%%%%%%%%% ") | apl00.
+
+apl00:- true | apl00({b_code,get,1},{A},A).
+apl00(X,Y,A):- true | apply(X,Y), apl00ans(A).
+apl00ans(done):- put_console(c#"a") | apl01.
+otherwise.
+apl00ans(_):- put_console(c#"*") | apl01.
+
+apl01:- put_console(key#lf) | done.
+
+done:- true | true.
+
+get(X):- true | X=done.
+not_public:- true | true.

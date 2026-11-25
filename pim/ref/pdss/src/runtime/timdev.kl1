@@ -1,0 +1,66 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pdss_timer_device.
+:- public timer/1.
+:- with_macro pdss.
+
+%%%% Timer Commands.
+timer(X):-
+    device_dup_check(2) |
+	timer2(X).
+
+timer2(get_count(Count,Status,Cdr)):-
+    true |
+	get_time_count(Csec,S),
+	Cmsec:=Csec*1000,
+	wait_get_count(Count,Status,Cmsec,S),
+	timer2(Cdr).
+timer2(on_at(Cmsec,Now,Status,Cdr)):-
+    integer(Cmsec) |
+	Csec:=(Cmsec+999)/1000,
+	on_at(Csec,N,S),
+	wait_on_at(Now,Status,N,S),
+	timer2(Cdr).
+timer2(on_after(Cmsec,Now,Status,Cdr)):-
+    integer(Cmsec) |
+	Csec:=(Cmsec+999)/1000,
+	on_after(Csec,N,S),
+	wait_on_after(Now,Status,N,S),
+	timer2(Cdr).
+timer2([]):- true | true.
+
+%%%% wait get_count.
+wait_get_count(Count,Status,C,iodev#success):-
+    true|
+	Count=C,
+	Status=fep#normal.
+wait_get_count(Count,Status,C,S):-
+    S\=iodev#success|
+	Status=fep#abnormal.
+
+%%%% wait on_at.
+wait_on_at(Now,Status,N,iodev#success):-
+    true|
+	Status=fep#normal,
+	wait_now(Now,N).
+wait_on_at(Now,Status,N,S):-
+    S\=iodev#success|
+	Status=fep#abnormal.
+
+%%%% wait on_at.
+wait_on_after(Now,Status,N,iodev#success):-
+    true|
+	Status=fep#normal,
+	wait_now(Now,N).
+wait_on_after(Now,Status,N,S):-
+    S\=iodev#success|
+	Status=fep#abnormal.
+
+wait_now(Now,N):-
+    wait(N)|
+	Now=fep#wake_up.

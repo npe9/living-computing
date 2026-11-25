@@ -1,0 +1,94 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% I/O monitors for Micro-PIMOS. : Timer.
+%% M-PSI FEP(V0.9) compatible version.
+
+:- module mpimos_timer_device.
+:- public timer/1, timer_request/3.
+:- with_macro pdss.
+
+%%%% Create Timer Process.
+timer(Command):-
+    true |
+	raise(shoen_tag#mpimos_request,device_timer,Command),
+	consume_resource(2).
+
+%%%% Timer Manager Commands (from task monitor).
+timer_request(get_count(Count,Status,Cdr),TF,SS):-
+    true|
+	SS=[timer_manager:get_count(C,S)|SS2],
+	consume_resource(9),
+	wait_get_count(Count,Status,C,S),
+	timer_request(Cdr,TF,SS2).
+timer_request(on_at(Count,Now,Status,Cdr),TF,SS):-
+    0=<Count,Count<5*24*60*60*1000|
+	SS=[timer_manager:on_at(Count,N,S)|SS2],
+	consume_resource(9),
+	wait_on_at(Now,Status,N,S),
+	timer_request(Cdr,TF,SS2).
+timer_request(on_after(Count,Now,Status,Cdr),TF,SS):-
+    0=<Count,Count<5*24*60*60*1000|
+	SS=[timer_manager:on_after(Count,N,S)|SS2],
+	consume_resource(9),
+	wait_on_after(Now,Status,N,S),
+	timer_request(Cdr,TF,SS2).
+timer_request([],TF,SS):- true | consume_resource(1).
+otherwise.
+timer_request(X,TF,SS):- true |
+	SS=[],
+	consume_resource(1),
+	timer_error(error,illegal_command,X).
+
+%%%% wait get_count.
+wait_get_count(Count,Status,C,fep#normal):-
+    true|
+	Count=C,
+	Status=fep#normal.
+wait_get_count(Count,Status,C,S):-
+    S\=fep#normal|
+	Status=fep#abnormal.
+
+%%%% wait on_at.
+wait_on_at(Now,Status,N,fep#normal):-
+    true|
+	Status=fep#normal,
+	wait_now(Now,N).
+wait_on_at(Now,Status,N,S):-
+    S\=fep#normal|
+	Status=fep#abnormal.
+
+%%%% wait on_at.
+wait_on_after(Now,Status,N,fep#normal):-
+    true|
+	Status=fep#normal,
+	wait_now(Now,N).
+wait_on_after(Now,Status,N,S):-
+    S\=fep#normal|
+	Status=fep#abnormal.
+
+wait_now(Now,N):-
+    wait(N)|
+	consume_resource(1),
+	Now=fep#wake_up.
+
+%%%% Display Error.
+timer_error(Type,Info,Cmd):-
+    true |
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"timer / "),putb(Msg),putb(string#" : "),
+		     putt(FC,10,5)]).
+
+raise_error(Ty,PL):-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in "),do(PL),putb(string#"."),nl]),
+	consume_resource(5).
+
+message(illegal_command,     Msg) :- true | Msg=string#"illegal command".

@@ -1,0 +1,44 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../compiler/blt.kl1" : Compiling ...
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195350     50    160    10    1584344        0
+After:      62460     38    124     3     514612        0
+GCed :     132890     12     36     7    1069732        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195312     48    169     3    1583948        0
+After:      39279     38    106     3     327356        0
+GCed :     156033     10     63     0    1256592        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+builtin/7,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     195512     48    159     3    1583996        0
+After:      35671     38    105     3     298388        0
+GCed :     159841     10     54     0    1285608        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     191125     48    487     3    1584804        0
+After:      16561     38    110     3     145900        0
+GCed :     174564     10    377     0    1438904        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+active_builtin/5,$expression/6_0/7,expression/6,
+GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     189348     48    619     3    1583996        0
+After:       5728     42    152     3      64788        0
+GCed :     183620      6    467     0    1519208        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+$expression/6_1/7,float_expression/6,END.
+
+[builtin/7,active_builtin/5,expression/6,float_expression/6]
+successdone
+
+exit 0
+asm d71099d6e0e7941f6d03e2c3f08d0c8261903c0df1a01ef8d0edb832aeea1c16
+sav none

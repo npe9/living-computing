@@ -67,6 +67,53 @@
    :lock and :unlock; pimscsi cmt keeps a sender and a body;
    pmacs_window and its standard_editor point at each other; the FEP
    census is 1,265 methods, 665 success.
+11. Step 3e (2026-11-24): the PRINTED as_program (TM-100 Fig. 3.3) with
+   process's interpolated program stack (assign/resign_core/invoke), and
+   kl0's rule that a missing primary under a stand-in ancestor stays
+   SIMPOS; the FEP census pinned (1,403 methods, 782 success).  Then
+   (test_step3e_node_and_editor) the interpolated network_node_name and
+   pmacs_window's {editor, Class} option and activity slot; the FEP
+   census pinned again (787 success, 16 exception).  Injected into the
+   stand-ins from a backup copy, observed: node_name/2 answering 0, the
+   option's atom misspelt, each fails only test_step3e_node_and_editor;
+   the activity slot removed, or the unbound-options guard removed, each
+   errors test_step3e_node_and_editor and fails test_fep_census.
+12. Step 3f (2026-11-25, test_step3f_census_recipes): census receivers
+   made by their held creators (kl0 RECIPES, OURS): the device creators
+   stopped before activate/2, pimos_window's create_pimos_window/3 and
+   its editor, remote_pimfep_executor through :new (its after-demon);
+   the recipe census pinned (791 / 154 / 441 / 16 / 1, 101 slot
+   constants) and the plain census unchanged (test_fep_census).
+   Injected into kl0.py from a backup copy (session inject.py, restored
+   by cp, cmp-checked), observed, test_kl0.py passing each time: the
+   pimos_timer recipe dropped, errors (census slot constants 101 -> 105,
+   the timer's goal/1, attention/1, loop_main/1, invoke/1); A0 left
+   unbound, fails; no stop before activate/2, errors (the creator
+   reaches process:status/3); the executor made by make_instance, fails.
+   Each touches only test_step3f_census_recipes.  Re-run 2026-11-25
+   against the tightened executor check (accept the string
+   'pimos_scsi_fep_control', time 10; both are 0 from make_instance):
+   test_step3f_census_recipes fails, nothing else.
+   Then (test_step3f_library_and_symbolizer) kl0's library and
+   symbolizer models and the string-I/O recipe; census pins 790 / 442
+   plain, 792 / 440 and 85 slot constants with recipes.  Injected into
+   kl0.py the same way, observed: assign/1 failing, fails
+   test_fep_census, test_step3f_census_recipes and
+   test_step3f_library_and_symbolizer; the own-package rule dropped,
+   fails test_step3f_census_recipes and errors
+   test_step3f_library_and_symbolizer; template_file succeeding, fails
+   both step 3f tests; enter_atom reading its first argument as the
+   string, fails test_step3f_census_recipes and errors
+   test_step3f_library_and_symbolizer.  test_kl0.py passes each time.
+   Then (test_step3f_window_protocol) pmacs_window's interpolated
+   geometry, title and display methods; FEP census 1,420 methods (17 new,
+   inherited by pimos_window), 807 / 442 plain and 809 / 440, 86 slot
+   constants with recipes.  Injected into standin/pmacs_window.esp the
+   same way, observed: get_position/3 answering y, x, fails only
+   test_step3f_window_protocol; reshape/5 not setting the size, the
+   same; activate/1 failing, fails test_fep_census,
+   test_step3d_window_and_timer, test_step3f_census_recipes and
+   test_step3f_window_protocol.  test_kl0.py passes each time.
 
 Discriminating (2026-11-24; each bug injected into espc.py from a backup
 copy in the session scratchpad, the observed failures recorded, the file
@@ -139,6 +186,17 @@ restored with cp and checked with cmp):
     network_listener_buffer create/4 failing, and trace trace/1
     failing: each test_step3d_window_and_timer and test_fep_census
     fail.
+  - step 3e (same method, the session's inject.py; observed): kl0's
+    stand-in-ancestor rule disabled: test_step3e_as_program and
+    test_fep_census fail; process die/1 doing nothing, and no_program/1
+    always failing: each only test_step3e_as_program fails.
+  - source check (2026-11-25, observed): standin/pathname.esp put back
+    to its committed text (`remove_or_local/6`), restored by cp from a
+    backup and cmp-checked: only test_source_check_labels fails.
+  - string identity (2026-11-25): the four injections (unify and ==
+    by content again, equal_key/2 as unification, string/3 refusing a
+    non-string) and what each fails in both files are in test_kl0.py's
+    header.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
@@ -339,10 +397,12 @@ class Behaviour(unittest.TestCase):
         # code succeeds.  Step 3d (`{}`, four-element vectors,
         # set_subvector): 92 / 86 / 42 / 7 before; array_index_buffer's and
         # wshell_buffer's put_contents_with_key/2 now compile and succeed
-        # on both sides
-        self.assertEqual(dict(self.r['census']), {'same outcome': 94, 'both refused': 86,
+        # on both sides.  Step 3e's pmi ca (kl0): 94 / 86 / 40 / 7 before;
+        # array_index_buffer's and wshell_buffer's set_all_at/2 and
+        # reset_all_at/2 now run the held code too, and agree
+        self.assertEqual(dict(self.r['census']), {'same outcome': 98, 'both refused': 86,
                                                   'refused compiled only': 40,
-                                                  'refused held only': 7})
+                                                  'refused held only': 3})
 
 
 class MacroBank(unittest.TestCase):
@@ -488,10 +548,12 @@ class Standins(unittest.TestCase):
     def test_compiled_whole(self):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##alarm_watch', 'simpos##as_class_with_lock', 'simpos##as_message',
+            'simpos##as_program',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
+            'simpos##network_node_name',
             'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
@@ -538,6 +600,34 @@ class Standins(unittest.TestCase):
                 self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x
                                     or re.search(r'HELD-SOURCE: \w+\.esp:\d+', x) for x in block),
                                 (t.id, p.name))
+
+    def test_source_check_labels(self):
+        # docs/simpos/source_check_2026-11-24.md §5, applied 2026-11-25:
+        # each corrected statement is pinned, and each stale one is absent.
+        def text(name):
+            with open(os.path.join(espc.STANDIN, name + '.esp')) as f:
+                return f.read()
+        must = {
+            'time': ['MILLISECONDS', 'CH_CLOCK.ESP:60'],                 # P-s15
+            'pathname': ['remote_or_local/6'],                            # P-s7
+            'semaphore': ['no body of\n% TM-100', 'TR-056 p11 (PDF p13)'],  # P-s1
+            'message': ['PRINTED (prose): TR-056 PDF p14'],               # P-s14
+            'with_lock': ['functions.esp:763-836'],                       # P-s13
+            'list_index': ['equal_key'],                                  # P-s2
+            'trace': ['autoTracer.esp:23'],                               # P-s16
+        }
+        never = {
+            'pathname': ['remove_or_local'],
+            'stream': ['no stand-in yet'],
+            'message': ['no part of\n% `message` is printed'],
+            'as_message': ['no part of\n% `as_message` is printed'],
+        }
+        for name, xs in must.items():
+            for x in xs:
+                self.assertIn(x, text(name), name)
+        for name, xs in never.items():
+            for x in xs:
+                self.assertNotIn(x, text(name), name)
 
     def test_self(self):
         (a,) = K.call_class_method(self.m, 'simpos##process', 'self', [K.Var()])
@@ -735,6 +825,27 @@ class Standins(unittest.TestCase):
         self.assertEqual(got['get_contents_with_key'], ['[[[{a,k1},{b,k2},{c,k1}]]]'])
         self.assertEqual(got['remove_at'], ['[[a,k1]]', '[[c,k1]]', '[]'])
 
+    def test_string_keys(self):
+        # strings unify only by storage (TM-388 PDF p79), so list_index's
+        # equal_key/2 compares string keys by contents, as held callers need
+        # (p_wshell.esp:102/:396 set and read "$from" with two literals);
+        # other keys still by unification.  Each key below is a distinct
+        # Str with the same contents as the one added.
+        for cid, args in (('simpos##list_index', [K.Var()]), ('simpos##hash_index', [K.Var(), 3])):
+            (r,) = K.call_class_method(self.m, cid, 'create', args)
+            ix = r[0]
+            R = lambda x: repr(x).replace(' ', '')
+            self.assertEqual(len(self.send(ix, 'add_at', K.Atom('v1'), K.Str('$from'))), 1)
+            self.assertEqual(len(self.send(ix, 'add_at', K.Atom('v2'), K.Atom('k'))), 1)
+            self.assertEqual(R(self.send(ix, 'get_at', K.Var(), K.Str('$from'))), '[[v1,string#\'$from\']]', cid)
+            self.assertEqual(self.send(ix, 'get_at', K.Var(), K.Str('$fro')), [], cid)
+            self.assertEqual(R(self.send(ix, 'get_contents_at', K.Var(), K.Str('$from'))),
+                             '[[[v1],string#\'$from\']]', cid)
+            self.assertEqual(R(self.send(ix, 'get_at', K.Var(), K.Atom('k'))), '[[v2,k]]', cid)
+            self.assertEqual(R(self.send(ix, 'remove_at', K.Var(), K.Str('$from'))),
+                             '[[v1,string#\'$from\']]', cid)
+            self.assertEqual(self.send(ix, 'get_at', K.Var(), K.Str('$from')), [], cid)
+
     def test_process_create(self):
         # the interpolated process create/3 (as pimfep's as_pimos_device
         # process/4 sends it) makes a dormant process whose parent is the
@@ -769,7 +880,7 @@ class Standins(unittest.TestCase):
         e = K.make_instance(m, cid)
         self.assertEqual(self.send(e, 'get_window', K.Var()), [[0]])
         cause, detail = self.refusal(m, cid, 'instance', 'show/3')
-        self.assertEqual(cause, 'receiver not an object')
+        self.assertEqual(cause, 'receiver a slot constant')
 
     def call(self, cid, sel, args):
         m = self.m
@@ -882,7 +993,9 @@ end.''', 'simpos')
         (e,) = self.send(w, 'get_editor', K.Var())
         self.assertEqual(self.send(e[0], 'get_window', K.Var()), [[w]])
         cause, detail = self.refusal(m, 'pimfep##pimfep_message_log', 'class', 'dump_log/1')
-        self.assertIn('simpos##pmacs_window:activate/1', detail)
+        # step 3f: activate/1 is stood in; the text output (window.md
+        # §2.4, putl/2) is not
+        self.assertIn('simpos##pmacs_window:putl/2', detail)
         # trace and network_listener_buffer: the pimfep callers run to a
         # solution (no tracer: OURS).  common_network's callers are
         # covered by test_fep_census only
@@ -893,6 +1006,77 @@ end.''', 'simpos')
             regs = [K.Var() for _ in range(n - 1)] + [o]
             m.reset()
             self.assertTrue(any(True for _ in m.solve_send(o, sel, regs)), cid)
+
+    def test_step3e_node_and_editor(self):
+        # network_node_name (INTERPOLATED): both selectors give the one
+        # name, OURS "psi"; fep_node_table's initiate/1 stores it
+        m = self.m
+        for sel in ('get_my_node', 'node_name'):
+            m.reset()
+            self.assertEqual(repr(K.call_class_method(m, 'simpos##network_node_name', sel, [K.Var()])),
+                             "[[string#'psi']]", sel)
+        o = K.make_instance(m, 'pimfep##fep_node_table')
+        m.reset()
+        self.assertTrue(any(True for _ in m.solve_send(o, 'initiate', [o])))
+        # pmacs_window's {editor, Class} option (step 3e): pimos_window's
+        # create_pimos_window/3 makes a window whose editor is a
+        # pimos_window_editor, and sets its activity slot to 1; without
+        # the option the editor is a standard_editor and activity 0
+        m.reset()
+        (r,) = K.call_class_method(m, 'pimfep##pimos_window', 'create_pimos_window', [K.Var(), K.Var()])
+        w = r[1]
+        co = m.lib.build(w.cid)
+        s = {e.name: v for e, v in zip(co.instance_slots, w.slots)}
+        self.assertEqual((s['editor'].cid, s['activity']), ('pimfep##pimos_window_editor', 1))
+        self.assertEqual(self.send(s['editor'], 'get_window', K.Var()), [[w]])
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.Var(), K.Var()])
+        co = m.lib.build(r[1].cid)
+        s = {e.name: v for e, v in zip(co.instance_slots, r[1].slots)}
+        self.assertEqual((s['editor'].cid, s['activity']), ('simpos##standard_editor', 0))
+
+    def test_step3e_as_program(self):
+        # as_program, PRINTED (TM-100 Fig. 3.3), with process's
+        # add_program/2, remove_program/2, no_program/1 and die/1
+        # (INTERPOLATED from it and TM-100 p11's prose)
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##as_program', 'create', [K.Var()])
+        prog = r[0]
+        self.assertEqual(prog.cid, 'simpos##as_program')
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        co = m.lib.build('simpos##process')
+        k_status = m.lib.slot_number(co, 'instance', 'status')
+        stack = proc.slots[m.lib.slot_number(co, 'instance', 'invocation_stack')]
+
+        def contents():
+            (c,) = self.send(stack, 'get_contents', K.Var())
+            return repr(c[0])
+        # the machine's one process is shared with the other tests: its
+        # status and stack are put back whatever happens here
+        saved = proc.slots[k_status]
+        try:
+            proc.slots[k_status] = K.Atom('ready')
+            self.assertEqual(len(self.send(prog, 'assign')), 1)
+            self.assertEqual((contents(), proc.slots[k_status]), ('[<simpos##as_program>]', K.Atom('ready')))
+            # resign_core pops and leaves the process alive; resign on the
+            # root program pops and kills it ("nil(=dead)")
+            self.assertEqual(len(self.send(prog, 'resign_core')), 1)
+            self.assertEqual((contents(), proc.slots[k_status]), ('[]', K.Atom('ready')))
+            self.assertEqual(len(self.send(prog, 'invoke')), 1)
+            self.assertEqual((contents(), proc.slots[k_status]), ('[]', K.Atom('nil')))
+        finally:
+            proc.slots[k_status] = saved
+            self.send(stack, 'clear')
+        # a held class inherits create/2: an instance of itself
+        (r,) = K.call_class_method(m, 'pimfep##pimos_timer', 'create', [K.Var()])
+        self.assertEqual(r[0].cid, 'pimfep##pimos_timer')
+        # a demon-only combination with a stand-in ancestor stays SIMPOS:
+        # the stand-in is part of the lost class (kl0, step 3e)
+        cause, detail = self.refusal(m, 'pimfep##pimos_window_editor', 'instance', 'carriage_return/1')
+        self.assertEqual(cause, 'simpos')
+        self.assertIn('stand-in ancestors simpos##standard_editor simpos##as_program', detail)
 
     def test_fep_census(self):
         # kl0's census of pimfep and pimscsi (stand-ins loaded), 2026-11-24.
@@ -918,13 +1102,191 @@ end.''', 'simpos')
         # pmacs_window): 1,265 (36 inherited lock/unlock/locked methods,
         # 32 success, 4 locked/1 failure), 665 success (26 that refused),
         # 113 failure (8 that refused: tables empty after lock/1), 487
-        # refused; no method moved out of success.
+        # refused; no method moved out of success.  Step 3e's pmi ca: 666
+        # success (remote_pimfep_executor check_status/3), 486 refused; 22
+        # more refused methods stop later.  Step 3e's blt f2: 667 success
+        # (pimos_window_editor abort_getl/1, cmt show_status/1), 120
+        # failure (6 that refused), 478 refused; pimos_remote_login_
+        # socket_table locked/1 moved from success to failure: add_at/3,
+        # which runs before it, used to refuse at f2 with the table still
+        # locked, and now fails and unlocks it (locked/1 fails on a fresh
+        # machine with or without f2, like the other tables' locked/1).
+        # Step 3e's PRINTED as_program, process's interpolated program
+        # stack, and kl0's rule that a missing primary under a stand-in
+        # ancestor stays SIMPOS: 1,403 methods (138 inherited: create/2,
+        # assign/1, invoke/1, resign/1, resign_core/1: create/2 in 26 classes, the others in 28),
+        # 782 success (109 of the new ones, and 6 create methods that
+        # stopped at create/2), 121 failure (pimos_timer resign_core/1 on
+        # the shared process's empty stack), 500 refused; no method left
+        # success.  Step 3e's rows blt 9a/9b, pmi b1/b5/b6/b7, blt 50/51/
+        # 54/55 and R != A for blt 40/49: 784 success (pimfep_message_log
+        # log/2, cmt make_CDB/3), 123 failure (as_pimos_string_io_device
+        # and pimos_remote_login_replier io/5, which refused at b1), 496
+        # refused (32 more stop later); no method left success.  Step
+        # 3e's census outcome 'exception': the 16 sends of
+        # :raise(#undefined_method, ...) (scsi_low_if's class reset/
+        # initialize/shutdown, unless overridden) leave refused, 480 refused.
+        # The 139 sends to an integer still holding its slot's template
+        # constant are refused as 'receiver a slot constant', not 'receiver
+        # not an object' (14 remain: atoms none, nil).
+        # Step 3e's stand-ins network_node_name and pmacs_window's
+        # {editor, Class} option and activity slot: 787 success
+        # (fep_node_table initiate/1, local_node_name/2, pimos_window
+        # create_pimos_window/3), 477 refused (13 more stop later); no
+        # method left success.  2026-11-25: blt 19 V != N witnessed
+        # (FMT_CONV.ESP:13-16): packet32 initiate/1 goes on from its
+        # new_heap_vector and runs into the step limit (476 refused).
+        # 2026-11-25: strings unify by storage only (no row moves: the
+        # census's arguments are unbound) and string/3 is a type test
+        # that fails on a non-string: 33 methods leave refused (30 to
+        # failure, 3 to success), 6 stop later (3 at a missing opcode, 3
+        # at a slot constant), and pimos_file resign_core/1 leaves success
+        # (a census order effect: alone, on a fresh machine, it fails
+        # before and after).
+        # 2026-11-25, step 3f: the library (assign/1, check_info/3,
+        # get_class_object/3) and symbolizer enter_atom/3 models: 11
+        # refused methods stop later, remote_stream create_to_fep/3 leaves
+        # refused for success, create_from_fep/4 stops at an unbound
+        # receiver; none leaves success.
+        # 2026-11-25, step 3f: pmacs_window's geometry, title, font and
+        # display methods (INTERPOLATED): 17 new methods, inherited by
+        # pimos_window, all succeed; 3 pimfep_message_log rows stop later.
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1265, {'success': 665, 'failure': 113, 'refused': 487}))
+        self.assertEqual((len(rows), out), (1420, {'success': 807, 'failure': 154, 'refused': 442, 'exception': 16,
+                                                   'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
+
+    def test_step3f_census_recipes(self):
+        # step 3f: receivers made by their held creators (kl0 RECIPES, OURS)
+        m = K.fep_machine()
+        # pimos_timer create_timer/9 stopped before activate/2: the device
+        # has the two streams its creator made with stream/2 and the output
+        # stream the recipe passed; device_id stays the unbound A3
+        dev = K.RECIPES['pimfep##pimos_timer'](m)
+        co = m.lib.build(dev.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual([getattr(s[n], 'cid', s[n]) for n in
+                          ('input_stream', 'output_stream', 'creation_status_stream')],
+                         ['simpos##stream'] * 3)
+        self.assertIsNot(s['input_stream'], s['creation_status_stream'])
+        self.assertIsInstance(s['device_id'], K.Var)
+        # the window's editor points back at it
+        ed = K.RECIPES['pimfep##pimos_window_editor'](m)
+        self.assertEqual(ed.cid, 'pimfep##pimos_window_editor')
+        # remote_pimfep_executor through :new, so its after-demon on new/2
+        # copies the class slot socket into accept: that slot's own
+        # template constant, a string (one template constant for another)
+        ex = K.RECIPES['pimfep##remote_pimfep_executor'](m)
+        co = m.lib.build(ex.cid)
+        s = {e.name: K.deref(v) for e, v in zip(co.instance_slots, ex.slots)}
+        self.assertIsInstance(s['accept'], K.Str)
+        self.assertEqual(s['accept'].text, 'pimos_scsi_fep_control')
+        self.assertEqual(s['time'], 10)
+        rows = K.census_fep(K.fep_machine(), recipes=K.RECIPES)
+        by = {(r[0].split('##')[1], r[1], r[2]): r[3:] for r in rows}
+        out = {}
+        for r in rows:
+            out[r[3]] = out.get(r[3], 0) + 1
+        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 154, 'refused': 440,
+                                                   'exception': 16, 'step limit': 1}))
+        slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
+        self.assertEqual(slot_const, 86)
+        # the four string-I/O programs, made by create_string_io/10
+        for c in K.STRING_IO_PROGRAMS:
+            self.assertEqual(by[(c.split('##')[1], 'instance', 'loop_main/1')][:2], ('refused', 'simpos'), c)
+        self.assertEqual(by[('as_pimos_string_io_device', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'receiver a slot constant'))
+        # a device with a recipe goes on to the stream stand-in's missing
+        # see/2; the abstract as_pimos_device (no creator) still refuses
+        self.assertEqual(by[('pimos_timer', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'simpos'))
+        self.assertIn('simpos##stream:see/2', by[('pimos_timer', 'instance', 'loop_main/1')][2])
+        self.assertEqual(by[('as_pimos_device', 'instance', 'loop_main/1')][:2],
+                         ('refused', 'receiver a slot constant'))
+        # pimos_file: initiate/1 runs its open on the unbound pathname and
+        # fails; goal/1 then takes its error clause (put(error)) and succeeds
+        self.assertEqual(by[('pimos_file', 'instance', 'initiate/1')][0], 'failure')
+        self.assertEqual(by[('pimos_file', 'instance', 'goal/1')][0], 'success')
+        # the editor reaches pimos_window's lost pmacs_window protocol
+        # (get_interpreter/2 is not stood in)
+        self.assertIn('pimfep##pimos_window:get_interpreter/2',
+                      by[('pimos_window_editor', 'instance', 'clear/3')][2])
+        # with the interpolated geometry and title (step 3f), get_title/3
+        # runs through the window and stops at its reply, on the census's
+        # unbound request; set_size/3 at the has_been_reshaped/1 callback
+        self.assertEqual(by[('pimos_window_editor', 'instance', 'get_title/3')][:2],
+                         ('refused', 'unbound argument'))
+        self.assertIn('has_been_reshaped/1', by[('pimos_window_editor', 'instance', 'set_size/3')][2])
+        self.assertEqual(by[('pimos_window', 'instance', 'set_output_stream/2')][0], 'success')
+
+    def test_step3f_window_protocol(self):
+        # pmacs_window's geometry, title and display methods (step 3f,
+        # INTERPOLATED from window.md §2.1-2.3): a setter's value is read
+        # back by its getter; reshape/5 sets position and size
+        m = self.m
+        m.reset()
+        (r,) = K.call_class_method(m, 'simpos##pmacs_window', 'create', [K.NIL, K.Var()])
+        w = r[1]
+        self.send(w, 'set_position', 3, 4)
+        self.assertEqual(self.send(w, 'get_position', K.Var(), K.Var()), [[3, 4]])
+        self.send(w, 'reshape', 5, 6, 70, 80)
+        self.assertEqual(self.send(w, 'get_position', K.Var(), K.Var()), [[5, 6]])
+        self.assertEqual(self.send(w, 'get_size', K.Var(), K.Var()), [[70, 80]])
+        self.send(w, 'set_text_size', 80, 24)
+        self.assertEqual(self.send(w, 'get_text_size', K.Var(), K.Var()), [[80, 24]])
+        t = K.Str('log')
+        self.send(w, 'set_title', t)
+        (g,) = self.send(w, 'get_title', K.Var())
+        self.assertIs(g[0], t)
+        for sel in ('activate', 'deactivate', 'show', 'hide', 'beep', 'flash'):
+            self.assertEqual(self.send(w, sel), [[]], sel)
+
+    def test_step3f_library_and_symbolizer(self):
+        # SIMPOS's library and the symbolizer's atom table (kl0
+        # SIMPOS_MODELS, INTERPOLATED, OURS)
+        m = K.fep_machine()
+
+        def call(cid, name, args):
+            # the models are not templates: send directly (call_class_method
+            # builds the class first)
+            m.reset()
+            regs = list(args) + [K.ClassRef(cid)]
+            return [[K.resolve(a) for a in args] for _ in m.solve_send(K.ClassRef(cid), name, regs)]
+        m.reset()
+        self.assertEqual(len(call('simpos##library', 'assign', [])), 1)
+        a = K.Atom('pimfep##pimos_timer')
+        for kind, n in (('object', 1), ('template_file', 0)):
+            m.reset()
+            self.assertEqual(len(call('simpos##library', 'check_info', [a, K.Atom(kind)])), n)
+        m.reset()
+        self.assertEqual(len(call('simpos##library', 'check_info',
+                                                 [K.Atom('no_such_class'), K.Atom('object')])), 0)
+        m.reset()
+        (r,) = call('simpos##library', 'get_class_object', [a, K.Var()])
+        self.assertEqual(r[1].cid, 'pimfep##pimos_timer')
+        # a bare name two loaded packages define, with no sending class
+        # (a direct call): refused
+        with self.assertRaises(K.Refusal):
+            call('simpos##library', 'get_class_object',
+                                [K.Atom('pimos_remote_login_replier'), K.Var()])
+        m.reset()
+        (r,) = call('simpos##symbolizer', 'enter_atom', [K.Var(), K.Str('abc')])
+        self.assertIs(r[0], K.Atom('abc'))
+        m.reset()
+        with self.assertRaises(K.Refusal):
+            call('simpos##symbolizer', 'enter_atom', [K.Var(), K.Var()])
+        # create_string_io/10 makes the named program in pimfep (the
+        # sender's package; pimmcsp has a class of the same name)
+        dev = K.RECIPES['pimfep##pimos_remote_login_replier'](m)
+        self.assertEqual(dev.cid, 'pimfep##pimos_remote_login_replier')
+        co = m.lib.build(dev.cid)
+        s = {e.name.split('$')[-1]: K.deref(v) for e, v in zip(co.instance_slots, dev.slots)}
+        self.assertEqual([getattr(s[n], 'cid', s[n]) for n in
+                          ('input_stream', 'output_stream', 'creation_status_stream')],
+                         ['simpos##stream'] * 3)
 
 
 if __name__ == '__main__':

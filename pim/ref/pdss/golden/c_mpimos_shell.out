@@ -1,0 +1,23 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/shell.kl1" : Compiling ... create/1,start/5,startup_file/5,kl1cmp_create/1,initenv/3,shell_get_command/4,shell_wait_command/6,shell_create_task/6,reduction_check/11,shell_with_task/10,shell_with_task_1/12,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     192121     50    337    10    1584000        0
+After:      48868     38    105     3     405560        0
+GCed :     143253     12    232     7    1178440        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+shell_with_task_0/11,shell_with_task_2/11,shell_with_task_3/11,after_care/6,new_task_name/3,unit/4,unit_monitor/4,apply_goals/1,apply_goal/1,command_analyzer/3,command_analyzer_/3,s_command_analyzer/4,trans_element/3,trans_element1/6,error_action/2,unknown_command/3,is_command/4,is_command0/6,valve/3,resource_manager/6,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194528     48    188     3    1584000        0
+After:      71062     38    105     3     583496        0
+GCed :     123466     10     83     0    1000504        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+resource_manager0/8,make_table/1,getenv/4,setenv/4,env_table/2,all_env/1,check_env/5,check_num/4,set_print_length/4,set_print_depth/4,set_print_var_mode/4,$mpimos_window:os_create/6/6,$mpimos_code_manager:os_get_command_stream/3/3,$mpimos_directory:os_create/6/6,$mpimos_task_monitor:create/12/12,END.
+
+[create/1,kl1cmp_create/1,initenv/3,apply_goals/1,command_analyzer/3,unit/4]
+successdone
+
+exit 0
+asm 0a390dc794a93ee02516b228668a4558ea932d29970fb09eb56f4ad7c2310c46
+sav none

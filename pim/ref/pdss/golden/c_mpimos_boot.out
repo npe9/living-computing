@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/boot.kl1" : Compiling ... start/0,start/4,kl1cmp_start/0,kl1cmp_start/3,distributor/2,send/4,find/5,send_request/6,process_name_list/2,$pdss_window_device:windows/1/1,$pdss_file_device:files/1/1,$pdss_timer_device:timer/1/1,$pdss_code_device:do/1/1,$mpimos_command_interpreter:create/1/1,$mpimos_window_manager:create/3/3,$mpimos_file_manager:create/3/3,$mpimos_timer_manager:create/3/3,$mpimos_code_manager:create/3/3,$mpimos_command_interpreter:kl1cmp_create/1/1,END.
+
+[start/0,kl1cmp_start/0,process_name_list/2]
+successdone
+
+exit 0
+asm db3f2333eed4a8c78e508d6cf30c30465499bb81154b6fd7db1312b2f2186387
+sav none

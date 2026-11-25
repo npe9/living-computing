@@ -1,0 +1,344 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1991,1992.				 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_builtin_predicate.
+:- public is_command/2,do_command/2,help/2.
+
+is_command(true,	                  X):- true | X=yes.
+is_command(unify(_,_),                    X):- true | X=yes.
+is_command(add(_,_,_),                    X):- true | X=yes.
+is_command(subtract(_,_,_),               X):- true | X=yes.
+is_command(multiply(_,_,_),               X):- true | X=yes.
+is_command(divide(_,_,_),                 X):- true | X=yes.
+is_command(modulo(_,_,_),                 X):- true | X=yes.
+is_command(minus(_,_),                    X):- true | X=yes.
+is_command(shift_left(_,_,_),             X):- true | X=yes.
+is_command(shift_right(_,_,_),            X):- true | X=yes.
+is_command(and(_,_,_),                    X):- true | X=yes.
+is_command(or(_,_,_),                     X):- true | X=yes.
+is_command(exclusive_or(_,_,_),           X):- true | X=yes.
+is_command(complement(_,_),               X):- true | X=yes.
+is_command(increment(_,_),                X):- true | X=yes.
+is_command(decrement(_,_),                X):- true | X=yes.
+is_command(abs(_,_),                      X):- true | X=yes.
+is_command(min(_,_,_),                    X):- true | X=yes.
+is_command(max(_,_,_),                    X):- true | X=yes.
+is_command(unbound(_,_,_,_),              X):- true | X=yes.
+is_command(unbound(_,_),                  X):- true | X=yes.
+is_command(hash(_,_,_),                   X):- true | X=yes.
+is_command(vector(_,_,_),                 X):- true | X=yes.
+is_command(new_vector(_,_),               X):- true | X=yes.
+is_command(vector_element(_,_,_,_),       X):- true | X=yes.
+is_command(set_vector_element(_,_,_,_,_), X):- true | X=yes.
+is_command(string(_,_,_,_),               X):- true | X=yes.
+is_command(new_string(_,_,_),             X):- true | X=yes.
+is_command(string_element(_,_,_,_),       X):- true | X=yes.
+is_command(set_string_element(_,_,_,_),   X):- true | X=yes.
+is_command(substring(_,_,_,_,_),          X):- true | X=yes.
+is_command(set_substring(_,_,_,_),        X):- true | X=yes.
+is_command(append_string(_,_,_),          X):- true | X=yes.
+is_command(string_and(_,_,_,_),           X):- true | X=yes.
+is_command(string_or(_,_,_,_),            X):- true | X=yes.
+is_command(string_exclusive_or(_,_,_,_),  X):- true | X=yes.
+is_command(string_complement(_,_),        X):- true | X=yes.
+is_command(intern_atom(_,_),              X):- true | X=yes.
+is_command(atom_name(_,_),                X):- true | X=yes.
+is_command(atom_number(_,_),              X):- true | X=yes.
+is_command(new_atom(_),                   X):- true | X=yes.
+is_command(predicate_to_code(_,_,_,_),    X):- true | X=yes.
+is_command(code_to_predicate(_,_,_,_,_),  X):- true | X=yes.
+is_command(apply(_,ArgV),                 X):- vector(ArgV) | X=yes.
+is_command(merge(_,_),                    X):- true | X=yes.
+is_command(raise(_,_,_),	          X):- true | X=yes.
+is_command(consume_resource(_),	          X):- true | X=yes.
+is_command(current_processor(_,_,_),	  X):- true | X=yes.
+is_command(current_node(_,_),		  X):- true | X=yes.
+is_command(current_priority(_,_,_),	  X):- true | X=yes.
+is_command(floating_point_add(_,_,_),     X):- true | X=yes.
+is_command(floating_point_subtract(_,_,_),X):- true | X=yes.
+is_command(floating_point_multiply(_,_,_),X):- true | X=yes.
+is_command(floating_point_divide(_,_,_),  X):- true | X=yes.
+is_command(floating_point_minus(_,_),     X):- true | X=yes.
+is_command(floating_point_abs(_,_),       X):- true | X=yes.
+is_command(floating_point_min(_,_,_),     X):- true | X=yes.
+is_command(floating_point_max(_,_,_),     X):- true | X=yes.
+is_command(floating_point_floor(_,_),     X):- true | X=yes.
+is_command(floating_point_sqrt(_,_),      X):- true | X=yes.
+is_command(floating_point_ln(_,_),        X):- true | X=yes.
+is_command(floating_point_log(_,_),       X):- true | X=yes.
+is_command(floating_point_exp(_,_),       X):- true | X=yes.
+is_command(floating_point_pow(_,_,_),     X):- true | X=yes.
+is_command(floating_point_sin(_,_),       X):- true | X=yes.
+is_command(floating_point_cos(_,_),       X):- true | X=yes.
+is_command(floating_point_tan(_,_),       X):- true | X=yes.
+is_command(floating_point_asin(_,_),      X):- true | X=yes.
+is_command(floating_point_acos(_,_),      X):- true | X=yes.
+is_command(floating_point_atan(_,_),      X):- true | X=yes.
+is_command(floating_point_atan(_,_,_),    X):- true | X=yes.
+is_command(floating_point_sinh(_,_),      X):- true | X=yes.
+is_command(floating_point_cosh(_,_),      X):- true | X=yes.
+is_command(floating_point_tanh(_,_),      X):- true | X=yes.
+is_command(floating_point_to_integer(_,_),X):- true | X=yes.
+is_command(integer_to_floating_point(_,_),X):- true | X=yes.
+otherwise.
+is_command(_, X):- true | X=no.
+
+do_command(true,SS):- true|
+    SS = [].
+do_command(unify(A,B),SS):- true|
+    SS = [],
+    A = B.
+do_command(add(A,B,C), SS):- true |
+    SS = [],
+    add(A,B,C).
+do_command(subtract(A,B,C), SS):- true |
+    SS = [],
+    subtract(A,B,C).
+do_command(multiply(A,B,C), SS):- true |
+    SS = [],
+    multiply(A,B,C).
+do_command(divide(A,B,C), SS):- true |
+    SS = [],
+    divide(A,B,C).
+do_command(modulo(A,B,C), SS):- true |
+    SS = [],
+    modulo(A,B,C).
+do_command(minus(A,B), SS):- true |
+    SS = [],
+    minus(A,B).
+do_command(shift_left(A,B,C), SS):- true |
+    SS = [],
+    shift_left(A,B,C).
+do_command(shift_right(A,B,C), SS):- true |
+    SS = [],
+    shift_right(A,B,C).
+do_command(and(A,B,C), SS):- true |
+    SS = [],
+    and(A,B,C).
+do_command(or(A,B,C), SS):- true |
+    SS = [],
+    or(A,B,C).
+do_command(exclusive_or(A,B,C), SS):- true |
+    SS = [],
+    exclusive_or(A,B,C).
+do_command(complement(A,B), SS):- true |
+    SS = [],
+    complement(A,B).
+do_command(increment(A,B), SS):- true |
+    SS = [],
+    increment(A,B).
+do_command(decrement(A,B), SS):- true |
+    SS = [],
+    decrement(A,B).
+do_command(abs(A,B), SS):- true |
+    SS = [],
+    abs(A,B).
+do_command(min(A,B,C), SS):- true |
+    SS = [],
+    min(A,B,C).
+do_command(max(A,B,C), SS):- true |
+    SS = [],
+    max(A,B,C).
+do_command(unbound(A,B,C,D), SS):- true |
+    SS = [],
+    unbound(A,B,C,D).
+do_command(unbound(A,B), SS):- true |
+    SS = [],
+    unbound(A,B).
+do_command(hash(A,B,C), SS):- true |
+    SS = [],
+    hash(A,B,C).
+do_command(vector(A,B,C), SS):- true |
+    SS = [],
+    vector(A,B,C).
+do_command(new_vector(A,B), SS):- true |
+    SS = [],
+    new_vector(A,B).
+do_command(vector_element(A,B,C,D), SS):- true |
+    SS = [],
+    vector_element(A,B,C,D).
+do_command(set_vector_element(A,B,C,D,E), SS):- true |
+    SS = [],
+    set_vector_element(A,B,C,D,E).
+do_command(string(A,B,C,D), SS):- true |
+    SS = [],
+    string(A,B,C,D).
+do_command(new_string(A,B,C), SS):- true |
+    SS = [],
+    new_string(A,B,C).
+do_command(string_element(A,B,C,D), SS):- true |
+    SS = [],
+    string_element(A,B,C,D).
+do_command(set_string_element(A,B,C,D), SS):- true |
+    SS = [],
+    set_string_element(A,B,C,D).
+do_command(substring(A,B,C,D,E), SS):- true |
+    SS = [],
+    substring(A,B,C,D,E).
+do_command(set_substring(A,B,C,D), SS):- true |
+    SS = [],
+    set_substring(A,B,C,D).
+do_command(append_string(A,B,C), SS):- true |
+    SS = [],
+    append_string(A,B,C).
+do_command(string_and(A,B,C,D), SS):- true |
+    SS = [],
+    string_and(A,B,C,D).
+do_command(string_or(A,B,C,D), SS):- true |
+    SS = [],
+    string_or(A,B,C,D).
+do_command(string_exclusive_or(A,B,C,D), SS):- true |
+    SS = [],
+    string_exclusive_or(A,B,C,D).
+do_command(string_complement(A,B), SS):- true |
+    SS = [],
+    string_complement(A,B).
+do_command(intern_atom(A,B), SS):- true |
+    SS = [],
+    intern_atom(A,B).
+do_command(atom_name(A,B), SS):- true |
+    SS = [],
+    atom_name(A,B).
+do_command(atom_number(A,B), SS):- true |
+    SS = [],
+    atom_number(A,B).
+do_command(new_atom(A), SS):- true |
+    SS = [],
+    new_atom(A).
+do_command(predicate_to_code(A,B,C,D), SS):- true |
+    SS = [],
+    predicate_to_code(A,B,C,D).
+do_command(code_to_predicate(A,B,C,D,E), SS):- true |
+    SS = [],
+    code_to_predicate(A,B,C,D,E).
+do_command(apply(A,B), SS):- true |
+    SS = [],
+    apply(A,B).
+do_command(merge(A,B), SS):- true |
+    SS = [],
+    merge(A,B).
+do_command(raise(A,B,C), SS):- true |
+    SS = [],
+    raise(A,B,C).
+do_command(consume_resource(A), SS):- true |
+    SS = [],
+    consume_resource(A).
+do_command(current_processor(A,B,C), SS):- true |
+    SS = [],
+    current_processor(A,B,C).
+do_command(current_node(A,B), SS):- true |
+    SS = [],
+    current_node(A,B).
+do_command(current_priority(A,B,C), SS):- true |
+    SS = [],
+    current_priority(A,B,C).
+do_command(floating_point_add(A,B,C), SS):- true |
+    SS = [],
+    floating_point_add(A,B,C).
+do_command(floating_point_subtract(A,B,C), SS):- true |
+    SS = [],
+    floating_point_subtract(A,B,C).
+do_command(floating_point_multiply(A,B,C), SS):- true |
+    SS = [],
+    floating_point_multiply(A,B,C).
+do_command(floating_point_divide(A,B,C), SS):- true |
+    SS = [],
+    floating_point_divide(A,B,C).
+do_command(floating_point_minus(A,B), SS):- true |
+    SS = [],
+    floating_point_minus(A,B).
+do_command(floating_point_abs(A,B), SS):- true |
+    SS = [],
+    floating_point_abs(A,B).
+do_command(floating_point_min(A,B,C), SS):- true |
+    SS = [],
+    floating_point_min(A,B,C).
+do_command(floating_point_max(A,B,C), SS):- true |
+    SS = [],
+    floating_point_max(A,B,C).
+do_command(floating_point_floor(A,B), SS):- true |
+    SS = [],
+    floating_point_floor(A,B).
+do_command(floating_point_sqrt(A,B), SS):- true |
+    SS = [],
+    floating_point_sqrt(A,B).
+do_command(floating_point_ln(A,B), SS):- true |
+    SS = [],
+    floating_point_ln(A,B).
+do_command(floating_point_log(A,B), SS):- true |
+    SS = [],
+    floating_point_log(A,B).
+do_command(floating_point_exp(A,B), SS):- true |
+    SS = [],
+    floating_point_exp(A,B).
+do_command(floating_point_pow(A,B,C), SS):- true |
+    SS = [],
+    floating_point_pow(A,B,C).
+do_command(floating_point_sin(A,B), SS):- true |
+    SS = [],
+    floating_point_sin(A,B).
+do_command(floating_point_cos(A,B), SS):- true |
+    SS = [],
+    floating_point_cos(A,B).
+do_command(floating_point_tan(A,B), SS):- true |
+    SS = [],
+    floating_point_tan(A,B).
+do_command(floating_point_asin(A,B), SS):- true |
+    SS = [],
+    floating_point_asin(A,B).
+do_command(floating_point_acos(A,B), SS):- true |
+    SS = [],
+    floating_point_acos(A,B).
+do_command(floating_point_atan(A,B), SS):- true |
+    SS = [],
+    floating_point_atan(A,B).
+do_command(floating_point_atan(A,B,C), SS):- true |
+    SS = [],
+    floating_point_atan(A,B,C).
+do_command(floating_point_sinh(A,B), SS):- true |
+    SS = [],
+    floating_point_sinh(A,B).
+do_command(floating_point_cosh(A,B), SS):- true |
+    SS = [],
+    floating_point_cosh(A,B).
+do_command(floating_point_tanh(A,B), SS):- true |
+    SS = [],
+    floating_point_tanh(A,B).
+do_command(floating_point_to_integer(A,B), SS):- true |
+    SS = [],
+    floating_point_to_integer(A,B).
+do_command(integer_to_floating_point(A,B), SS):- true |
+    SS = [],
+    integer_to_floating_point(A,B).
+
+
+%do_command(Command, System):- vector(Command, N) |
+%	NN := N-1, new_vector(Args, NN),
+%	do_command(Command, Args, NN).
+%
+%do_command(Command, Args, 0):- true |
+%	set_vector_element(Command, 0, Proc, _, _),
+%	apply(pdss_runtime_body_builtin, Proc, Args).
+%do_command(Command, Args, N):- N > 0 |
+%	NN := N-1,
+%	set_vector_element(Command, N, Arg, _, Command2),
+%	set_vector_element(Args, NN, _, Arg, Args2),
+%	do_command(Command2, Args2, NN).
+
+help(menu,MSG):-
+     true | MSG = string#"builtin predicates (body).".
+help(item,MSG):-
+     true | MSG = builtin.
+help(message,MSG):-
+     true | MSG =
+	[string#"You can use body builtin predicates as commands.",
+	 string#"Beside, there are following macros.",
+	 string#"Unification  ---  unify(A,B)  or  A = B.",
+	 string#"Arithmetic Expression",
+	 string#"             ---  A := <arithmetic expression>.",
+	 string#"Floating Point Arithmetic Expression",
+	 string#"             ---  A $:= <arithmetic expression>."].

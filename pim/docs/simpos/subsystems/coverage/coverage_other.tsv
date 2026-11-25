@@ -84,11 +84,13 @@ mathematical_functions	class	sqrt	3	13	3	NONE
 monogyny_hash_index	instance	get_keys	2	13	3	USAGE-unowned
 alarm_watch	instance	wait	1	13	3	NONE
 stream	instance	put	2	13	1	NONE
+time	instance	get_string	2	12	5	NONE
 symbolizer	class	get_ch_string_token	3	12	4	NONE
 set	instance	get_contents	2	12	5	USAGE-unowned
 monogyny_hash_index	instance	put_contents_with_key	2	12	4	NONE
 ras_text_utility	class	backup	2	12	1	NONE
 alarm_watch	class	create	2	12	3	DOC-unowned
+time	instance	set_value	5	12	3	NONE
 alarm_watch	instance	on_after	2	12	3	NONE
 list	instance	remove_last	2	12	3	NONE
 trans_buffer	class	term_to_string	3	12	1	NONE
@@ -96,8 +98,8 @@ time	class	present	2	12	1	NONE
 list_stack	class	create	2	11	5	DOC-unowned
 set	class	create	2	11	5	DOC-unowned
 wildcard	class	string	4	11	2	NONE
-time	instance	set_value	5	11	3	NONE
 network_listener_buffer	class	create	4	11	3	USAGE-unowned
+time	instance	get_count	2	11	3	NONE
 date	class	now	2	10	4	NONE
 set	instance	add	2	10	5	NONE
 mathematical_functions	class	max	3	10	3	NONE
@@ -119,6 +121,7 @@ laxinf	class	get_sem_obj	3	9	1	NONE
 hash_index	instance	stick_tap	2	9	2	NONE
 port	class	create	2	8	3	DOC-unowned
 search_table	instance	get_table	3	8	4	NONE
+time	instance	minus	3	8	3	NONE
 pathname	class	check_pathname	3	8	3	USAGE
 name	class	ident_type	3	8	2	DOC-class
 table	class	n	3	8	1	NONE
@@ -148,6 +151,7 @@ vkey4_table	class	get_pos	4	6	1	NONE
 hash_index	instance	put_contents_with_key	2	6	2	NONE
 imi_set_data	class	get_child_str	3	6	1	NONE
 channel	class	create	2	6	1	DOC-unowned
+time	instance	get_value	5	6	1	NONE
 character	class	is_alphabetic	2	6	2	NONE
 binary_file_tap	class	create	3	6	1	DOC-unowned
 binary_file	class	open	5	6	1	NONE
@@ -298,7 +302,6 @@ sorted_sequence	instance	stick_tap	2	2	1	NONE
 ftp_user	instance	dir_command	3	2	1	NONE
 ftp_user	instance	lcwd_command	2	2	1	NONE
 port	instance	receive	2	2	1	NONE
-time	instance	get_string	2	2	1	NONE
 list	instance	get_last	2	2	2	NONE
 array	instance	put_contents	2	2	2	NONE
 imi_set_data	class	get_children	3	2	1	NONE
@@ -429,6 +432,7 @@ ftp_user	instance	pass_command	3	1	1	NONE
 ftp_user	instance	cwd_command	2	1	1	NONE
 ftp_user	instance	type_command	2	1	1	NONE
 ftp_user	instance	quit	1	1	1	NONE
+time	instance	set_count	2	1	1	NONE
 alarm_watch	instance	on_at	2	1	1	NONE
 as_pimos_string_io_device	class	new	2	1	1	DOC-unowned
 expandable_array	instance	empty	1	1	1	NONE

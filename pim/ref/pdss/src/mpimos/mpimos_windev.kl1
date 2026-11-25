@@ -1,0 +1,405 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% I/O monitors for Micro-PIMOS. : Support Window.
+%% M-PSI FEP(V0.9) compatible version.
+
+:- module mpimos_window_device.
+:- public windows/1, window_request/3.
+:- with_macro pdss.
+
+%%%% Create window process.
+windows(X):-
+    true |
+	raise(shoen_tag#mpimos_request,device_window,X),
+	consume_resource(2).
+
+%%%% Window Manager Commands (from task monitor).
+window_request(create(BufferName,Window,Status,Cdr),TF,SS):-
+    string(BufferName,_,8) |
+	SS=[window_manager:create(WS,BufferName,S,TF)|SS2],
+	consume_resource(10),
+	window_wait_created(Window,WS,BufferName,Status,S),
+	window_request(Cdr,TF,SS2).
+window_request(create(Window,Status,Cdr),TF,SS):-
+    true |
+	Status=fep#abnormal,
+	window_error(warning,unsupported,create(Window,_,_)),
+	window_request(Cdr,TF,SS).
+window_request(get_max_size(X,Y,Path,W,H,Status,Cdr),TF,SS):-
+    integer(X), integer(Y), string(Path,_,8) |
+	W=80, H=40,
+	Status=fep#normal,
+	window_request(Cdr,TF,SS).
+window_request([],TF,SS):- true | SS=[], consume_resource(1).
+otherwise.
+window_request(X,TF,SS):-
+    true |
+	SS=[],
+	consume_resource(1),
+	window_error(error,illegal_command,X).
+
+%%%% Window (wait status of create window command).
+window_wait_created(Command,WS,Nam,Status,fep#normal):-
+    true |
+	consume_resource(1),
+	Status=fep#normal,
+	window_wait_reset(Command,WS,status(Nam)).
+window_wait_created(Command,WS,Nam,Status,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	WS=[].
+
+%%%% Window (wait reset command).
+window_wait_reset(reset(Abort,Attention,Status,Cdr),WS,Nam):-
+    true |
+	WS=[reset(Abt,Int,S)|NWS],
+	consume_resource(2),
+	window_wait_status(Cdr,NWS,Abort,Abt,Attention,Int,Nam,Status,S).
+window_wait_reset(close(Status),WS,Nam):-
+    true |
+	WS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+window_wait_reset([],WS,Nam):-
+    true |
+	WS=[],
+	consume_resource(2).
+window_wait_reset(next_attention(Attention,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,next_attention(Attention,_,_)).
+%% Get Commands.
+window_wait_reset(getl(Line,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,getl(Line,_,_)).
+%% Put Commands.
+window_wait_reset(putb(Buffer,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,putb(Buffer,_,_)).
+%% Control Commands.
+window_wait_reset(flush(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,flush(_,_)).
+window_wait_reset(beep(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,beep(_,_)).
+window_wait_reset(activate(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,activate(_,_)).
+window_wait_reset(deactivate(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,deactivate(_,_)).
+window_wait_reset(show(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,show(_,_)).
+window_wait_reset(hide(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,hide(_,_)).
+window_wait_reset(clear(Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,clear(_,_)).
+%% Dummy.
+window_wait_reset(set_inside_size(W,H,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_insize_size(W,H,_,_)).
+window_wait_reset(set_size(fep#manipulator,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_size(fep#manipulator,_,_)).
+window_wait_reset(set_position(X,Y,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_position(X,Y,_,_)).
+window_wait_reset(set_position(fep#manipulator,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_position(fep#manipulator,_,_)).
+window_wait_reset(reshape(X,Y,W,H,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,reshape(X,Y,W,H,_,_)).
+window_wait_reset(reshape(fep#manipulator,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,reshape(fep#manipulator,_,_)).
+window_wait_reset(set_title(Title,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_title(Title,_,_)).
+window_wait_reset(set_font(Path,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,set_font(Path,_,_)).
+window_wait_reset(select_buffer(BufferName,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_error(warning,unsupported,
+		     select_buffer(BufferName,_,_),Nam,NNam),
+	window_wait_reset(Cdr,WS,NNam).
+window_wait_reset(get_inside_size(W,H,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,get_inside_size(W,H,_,_)).
+window_wait_reset(get_position(X,Y,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,get_position(X,Y,_,_)).
+window_wait_reset(get_title(Title,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_not_reset(Cdr,WS,Nam,get_title(Title,_,_)).
+window_wait_reset(get_font(Path,Status,Cdr),WS,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_error(warning,unsupported,get_font(Path,_,_),Nam,NNam),
+	window_wait_reset(Cdr,WS,NNam).
+otherwise.
+window_wait_reset(X,WS,Nam):-
+    true |
+	window_error(error,illegal_command,X,Nam,_).
+
+window_not_reset(Command,WS,Nam,X):-
+    true |
+	window_error(warning,window_not_reset,X,Nam,NNam),
+	window_wait_reset(Command,WS,NNam).
+
+%%%% Window (normal status).
+window(Command,WS,fep#abort,Abt,_,_,Nam):-
+    true |
+	Abt=fep#abort,
+	consume_resource(2),
+	window_wait_reset(Command,WS,Nam).
+window(Command,WS,Ab,Abt,Atn,Code,Nam):-
+    wait(Code) |
+	consume_resource(2),
+	Atn=Code,
+	window(Command,WS,Ab,Abt,_,_,Nam).
+alternatively.
+window(Command,WS,Ab,Abt,Atn,Code,Nam):-
+    wait(Command) |
+	window_com(Command,WS,Ab,Abt,Atn,Code,Nam).
+
+window_com(reset(Abort,Attention,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_error(warning,window_already_reset,
+		     reset(Abort,Attention,_,_),Nam,NNam),
+	window(Cdr,WS,Ab,Abt,Atn,Int,NNam).
+window_com(next_attention(Attention,Status,Cdr),WS,Ab,Abt,_,_,Nam):-
+    true |
+	WS=[next_attention(Int,S)|NWS],
+	consume_resource(2),
+	window_wait_status(Cdr,NWS,Ab,Abt,Attention,Int,Nam,Status,S).
+%% Get Command.
+window_com(getl(Line,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[getl(L,S)|NWS],
+	consume_resource(3),
+	window_wait_line(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Line,Status,L,S).
+%% Put Command.
+window_com(putb(Buffer,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[putb(Buffer,S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+%% Control Commands.
+window_com(flush(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(beep(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	new_string(S,1,8), set_string_element(S,0,7,B),
+	WS=[putb(B,S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+window_com(activate(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[show(S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+window_com(deactivate(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[hide(S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+window_com(show(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[show(S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+window_com(hide(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[hide(S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+window_com(clear(Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	new_string(S,1,8), set_string_element(S,0,12,C),
+	WS=[putb(C,S)|NWS],
+	consume_resource(3),
+	window_wait_status(Cdr,NWS,Ab,Abt,Atn,Int,Nam,Status,S).
+%% Dummy.
+window_com(set_inside_size(W,H,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    integer(W), integer(H) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(set_size(fep#manipulator,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(set_position(X,Y,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    integer(X), integer(Y) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(set_position(fep#manipulator,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(reshape(X,Y,W,H,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    integer(X), integer(Y), integer(W), integer(H) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(reshape(fep#manipulator,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(set_title(Title,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    string(Title,_,8) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(set_font(Path,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    string(Path,_,8) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(select_buffer(BufferName,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    string(BufferName,_,8) |
+	Status=fep#abnormal,
+	window_error(warning,unsupported,
+		     select_buffer(BufferName,_,_),Nam,NNam),
+	window(Cdr,WS,Ab,Abt,Atn,Int,NNam).
+window_com(get_inside_size(W,H,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	W=80, H=20,
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(get_position(X,Y,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	X=0, Y=0,
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+window_com(get_title(Title,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	vector_element(Nam,1,Title,NNam),
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,NNam).
+window_com(get_font(Path,Status,Cdr),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	Status=fep#abnormal,
+	window_error(warning,unsupported,get_font(Path,_,_),Nam,NNam),
+	window(Cdr,WS,Ab,Abt,Atn,Int,NNam).
+window_com(close(Status),WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	WS=[close(S)],
+	consume_resource(2),
+	wait_close(Status,S).
+window_com([],WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	consume_resource(2),
+	WS=[].
+otherwise.
+window_com(X,WS,Ab,Abt,Atn,Int,Nam):-
+    true |
+	window_error(error,illegal_command,X,Nam,_).
+
+%%%% Window (wait status of commands).
+window_wait_status(Cdr,WS,Ab,Abt,Atn,Int,Nam,Status,S):-
+    wait(S) |
+	Status=fep#normal,
+	window(Cdr,WS,Ab,Abt,Atn,Int,Nam).
+
+%%%% Window (wait status of getl command).
+window_wait_line(Command,WS,fep#abort,Abt,_,_,Nam,Line,Status,L,S):-
+    true |
+	Abt=fep#abort,
+	consume_resource(2),
+	window_wait_aborted(Command,WS,Nam,Line,Status,L,S).
+window_wait_line(Command,WS,Ab,Abt,Atn,Code,Nam,Line,Status,L,S):-
+    wait(Code) |
+	consume_resource(2),
+	Atn=Code,
+	window_wait_line(Command,WS,Ab,Abt,_,_,Nam,Line,Status,L,S).
+alternatively.
+window_wait_line(Command,WS,Ab,Abt,Atn,Int,Nam,Line,Status,L,fep#normal):-
+    string(L,_,8) |
+	Line=L,
+	Status=fep#normal,
+	window(Command,WS,Ab,Abt,Atn,Int,Nam).
+window_wait_line(Command,WS,Ab,Abt,Atn,Int,Nam,Line,Status,L,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	window(Command,WS,Ab,Abt,Atn,Int,Nam).
+
+%%%% Window (wait aborted of getl command).
+window_wait_aborted(Cdr,WS,Nam,_,Status,_,fep#abort):-
+    true |
+	Status=fep#abort,
+	window_wait_reset(Cdr,WS,Nam).
+window_wait_aborted(Cdr,WS,Nam,Line,Status,L,fep#normal):-
+    string(L,_,8) |
+	Line=L,
+	Status=fep#normal,
+	window_wait_reset(Cdr,WS,Nam).
+window_wait_aborted(Cdr,WS,Nam,_,Status,_,fep#abnormal):-
+    true |
+	Status=fep#abnormal,
+	window_wait_reset(Cdr,WS,Nam).
+
+%%%% Wait status of close command.
+wait_close(Status,fep#normal):-
+    true |
+	Status=fep#normal.
+
+%%%% Display Error.
+window_error(Type,Info,Cmd):-
+    true |
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"window / "),putb(Msg),putb(string#" : "),
+		     putt(FC,10,5)]).
+
+window_error(Type,Info,Cmd,Nam,NNam):-
+    true |
+	vector_element(Nam,1,WN,NNam),
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,
+		    [putb(string#"window ("),putt(WN),putb(string#") / "),
+		    putb(Msg),putb(string#" : "),putt(FC,10,5)]).
+
+raise_error(Ty,PL):-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in "),do(PL),putb(string#"."),nl]),
+	consume_resource(5).
+
+message(illegal_command,     Msg) :- true | Msg=string#"illegal command".
+message(unsupported,         Msg) :- true | Msg=string#"unsupported command by PDSS".
+message(window_not_reset,    Msg) :- true | Msg=string#"window is not reset".
+message(window_already_reset,Msg) :- true | Msg=string#"window is already reset".

@@ -1,0 +1,19 @@
+%%%%%%%%%%
+:- module bestpath.
+:- with_macro pimos.
+:- public go/3,go/4,test/0,test1/0,test2/0.
+
+test :- true | go(1,1,2,{0,0,0,0}).
+test1 :- true | go(2,2,1,{0,0,0,0}).
+test2 :- true | go(1,1,20,{0,0,0,0}).
+
+go(UX,UY,U) :- true | go(UX,UY,U,1).
+
+go(UX,UY,U,Start) :- true |
+	RParam={13,13,13,99,99,100},
+	get_id(Start,UX,U,Start1),
+	bp:bp(UX,UY,U,RParam,Start1,all,_,[]).
+
+get_id({Ui,Vi,Mi,Ni},U,M,ID) :- true |
+	ID:=(U*M)*(M*Vi+Ni)+(Ui*M)+Mi+1.
+get_id(ID0,_,_,ID) :- integer(ID0) | ID:=ID0.

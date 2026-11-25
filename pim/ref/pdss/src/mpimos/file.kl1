@@ -1,0 +1,1058 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%  Micro-PIMOS File Request Monitor.
+
+:- module mpimos_file.
+:- public create/3, create/4, os_create/7, request/4.
+:- with_macro pdss.
+
+%%  Create file.
+%%  create(Req,FN,Md).
+%%	Req :: Request stream from user.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+
+create(Req,FN,Md) :-
+    true |
+	raise(shoen_tag#mpimos_request,file,create(Req,FN,Md)),
+	consume_resource(2).
+
+%%  Create file.
+%%  create(Req,FN,Md,Sts).
+%%	Req :: Request stream from user.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+%%	Sts :: Status information.
+
+create(Req,FN,Md,Sts) :-
+    true |
+	raise(shoen_tag#mpimos_request,file,create(Req,FN,Md,Sts)),
+	consume_resource(2).
+
+%%  File request.
+%%  request(Info,TF,DN,SS).
+%%	Info : Raised information.
+%%	DN  :: Current directory name.
+%%	TF  :: Termination flag.
+%%	SS  :: System stream.
+
+request(create(Req,FN,Md),DN,TF,SS) :-
+    string(FN,_,8) |
+	mpimos_utility:pathname(DN,FN,PN),
+	mode_check(Req,FN,Md,PN,TF,SS,no_status).
+request(create(Req,FN,Md,Sts),DN,TF,SS) :-
+    string(FN,_,8) |
+	mpimos_utility:pathname(DN,FN,PN),
+	mode_check(Req,FN,Md,PN,TF,SS,status(Sts)).
+otherwise.
+request(create(Req,FN,Md),DN,TF,SS) :-
+    true |
+	SS = [],
+	consume_resource(1),
+	create_error(bad_file_name_type,Req,FN,Md,no_status).
+request(create(Req,FN,Md,Sts),DN,TF,SS) :-
+    true |
+	SS = [],
+	consume_resource(1),
+	create_error(bad_file_name_type,Req,FN,Md,status(Sts)).
+
+%%  Open mode check.
+%%  mode_check(Req,FN,Md,PN,TF,SS,Sts).
+%%	Req :: Request stream from user.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+%%	PN  :: File name (full path).
+%%	TF  :: Terminarion flag.
+%%	SS  :: System stream.
+%%	Sts :: Status Information flag (no_status,status(S)).
+
+mode_check(Req,FN,r,PN,TF,SS,Sts) :-
+    wait(PN) |
+	SS = [file_manager:create(PR,PN,fep#read,Status,TF)],
+	consume_resource(11),
+	create_monitor(Req,PR,FN,r,Status,Sts).
+mode_check(Req,FN,w,PN,TF,SS,Sts) :-
+    wait(PN) |
+	SS = [file_manager:create(PR,PN,fep#write,Status,TF)],
+	consume_resource(11),
+	create_monitor(Req,PR,FN,w,Status,Sts).
+mode_check(Req,FN,a,PN,TF,SS,Sts) :-
+    wait(PN) |
+	SS = [file_manager:create(PR,PN,fep#append,Status,TF)],
+	consume_resource(11),
+	create_monitor(Req,PR,FN,a,Status,Sts).
+otherwise.
+mode_check(Req,FN,Md,PN,TF,SS,Sts) :-
+    atom(Md) |
+	SS = [],
+	consume_resource(1),
+	create_error(bad_open_mode,Req,FN,Md,Sts).
+otherwise.
+mode_check(Req,FN,Md,PN,TF,SS,Sts) :-
+    true |
+	SS = [],
+	consume_resource(1),
+	create_error(bad_open_mode_type,Req,FN,Md,Sts).
+
+%%  OS create file.
+%%  os_create(Req,FN,Md,TF,SS,ST,Sts).
+%%	Req :: Request stream from user.
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+%%	TF  :: Termination flag.
+%%	SS  :: System stream.
+%%	ST  :: System stream tail.
+%%	Sts :: Create information.
+
+os_create(Req,FN,r,TF,SS,ST,Sts) :-
+    wait(FN) |
+	SS = [file_manager:create(PR,FN,fep#read,Status,TF)|ST],
+	create_monitor(Req,PR,FN,r,Status,status(Sts)).
+os_create(Req,FN,w,TF,SS,ST,Sts) :-
+    wait(FN) |
+	SS = [file_manager:create(PR,FN,fep#write,Status,TF)|ST],
+	create_monitor(Req,PR,FN,w,Status,status(Sts)).
+os_create(Req,FN,a,TF,SS,ST,Sts) :-
+    wait(FN) |
+	SS = [file_manager:create(PR,FN,fep#append,Status,TF)|ST],
+	create_monitor(Req,PR,FN,a,Status,status(Sts)).
+
+%%  Create monitor.
+%%  create_monitor(Req,PR,FN,Md,S,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	FN  :: File name.
+%%	Md  :: Open mode.
+%%	S   :: Result of command execution.
+%%	Sts :: Status Information flag (no_status,status(S)).
+
+create_monitor(Req,PR,FN,r,fep#normal,Sts) :-
+    true |
+	consume_resource(2),
+	merge(Req,Req2),
+	create_success(Sts),
+	mpimos_operator_manipulator:create(OpT),
+	mpimos_parser:do(Par,OpT1),
+	merge({OpT1,OpT2},OpT),
+	read_mode(Req2,PR,OpT2,Par,atr(FN,r,100,100,2048,reading)).
+create_monitor(Req,PR,FN,Md,fep#normal,Sts) :-
+    Md \= r |
+	consume_resource(2),
+	merge(Req,Req2),
+	create_success(Sts),
+	mpimos_operator_manipulator:create(OpT),
+	mpimos_unparser:create([print_length(100),print_depth(100),
+				print_var_mode(na)|UnP],OpT1),
+	merge({OpT1,OpT2},OpT),
+	new_string(Bf,2048,8),
+	write_mode(Req2,PR,OpT2,UnP,atr(FN,Md,100,100,2048,writing),Bf,2048,0).
+create_monitor(Req,PR,FN,Md,fep#abnormal,Sts) :-
+    true |
+	PR = [],
+	create_error(cannot_open_file,Req,FN,Md,Sts).
+
+create_success(no_status) :- true | true.
+create_success(status(S)) :- true | S = success.
+
+create_error(Info,Req,FN,Md,no_status) :-
+    true |
+	mpimos_utility:freeze(FN,FFN), mpimos_utility:freeze(Md,FMd),
+	message(Info,Msg),
+	raise_error(error,FFN,FMd,[putb(string#" / "),putb(Msg)]),
+	closed(Req,_,_,_,atr(FN,Md,100,100,2048,closed)).
+create_error(Info,Req,FN,Md,status(S)) :-
+    true |
+	S = error(Info),
+	closed(Req,_,_,_,atr(FN,Md,100,100,2048,closed)).
+
+%%  Request stream monitor (read mode).
+%%  read_mode(Req,PR,OpT,Par,Atr).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	Par :: Parser stream.
+%%	Atr :: Attribute of file.
+
+%%  Do command.
+read_mode([do([H|T])|Req],PR,OpT,Par,Atr) :-
+    true |
+	append([H|T],Req,Req2),
+	read_mode(Req2,PR,OpT,Par,Atr).
+read_mode([do([])|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode(Req,PR,OpT,Par,Atr).
+
+%%  Input commands.
+read_mode([getc(Char)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [getc(Char2,S)|PR2],
+	consume_resource(3),
+	unify_char(Req,PR2,OpT,Par,Atr,S,Char2,Char).
+read_mode([getl(Str)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [getl(Str2,S)|PR2],
+	consume_resource(3),
+	unify_string(Req,PR2,OpT,Par,Atr,S,Str2,Str).
+read_mode([getb(Buf,Len)|Req],PR,OpT,Par,Atr) :-
+    Len > 0 |
+	PR = [getb(Buf2,Len,S)|PR2],
+	consume_resource(3),
+	unify_string(Req,PR2,OpT,Par,Atr,S,Buf2,Buf).
+read_mode([gett(Term)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [gettkn(TkL,S,NV2)|PR2],
+	consume_resource(3),
+	make_term(Req,PR2,OpT,Par,Atr,S,gett(Term),TkL,NV2).
+read_mode([gett(Term,St)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [gettkn(TkL,S,NV2)|PR2],
+	consume_resource(3),
+	make_term(Req,PR2,OpT,Par,Atr,S,gett(Term,St),TkL,NV2).
+read_mode([getft(Term,NV)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [gettkn(TkL,S,NV2)|PR2],
+	consume_resource(3),
+	make_term(Req,PR2,OpT,Par,Atr,S,getft(Term,NV),TkL,NV2).
+read_mode([getft(Term,NV,St)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [gettkn(TkL,S,NV2)|PR2],
+	consume_resource(3),
+	make_term(Req,PR2,OpT,Par,Atr,S,getft(Term,NV,St),TkL,NV2).
+read_mode([getet(Term,NV,St)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [gettkn(TkL,S,NV2)|PR2],
+	consume_resource(3),
+	make_term(Req,PR2,OpT,Par,Atr,S,getet(Term,NV,St),TkL,NV2).
+read_mode([skip(Char)|Req],PR,OpT,Par,Atr) :-
+    Char >= 0, Char =< 255 |
+	PR = [getc(Char2,S)|PR2],
+	consume_resource(3),
+	skip_char(Req,PR2,OpT,Par,Atr,S,Char2,Char).
+
+%%  Output commands (error).
+read_mode([putc(Char)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putc(Char)).
+read_mode([putl(Str)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putl(Str)).
+read_mode([putb(Buf)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putb(Buf)).
+read_mode([putb(Buf,Count)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putb(Buf,Count)).
+read_mode([putt(Term)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putt(Term)).
+read_mode([putt(Term,Len,Dep)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putt(Term,Len,Dep)).
+read_mode([puttq(Term)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,puttq(Term)).
+read_mode([puttq(Term,Len,Dep)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,puttq(Term,Len,Dep)).
+read_mode([putet(Term)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putet(Term)).
+read_mode([putet(Term,Len,Dep)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,putet(Term,Len,Dep)).
+read_mode([nl|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,nl).
+read_mode([tab(N)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,tab(N)).
+
+%%  Set attribute.
+read_mode([print_length(Len)|Req],PR,OpT,Par,Atr) :-
+    Len > 0 |
+	set_vector_element(Atr,3,_,Len,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+read_mode([print_depth(Dep)|Req],PR,OpT,Par,Atr) :-
+    Dep > 0 |
+	set_vector_element(Atr,4,_,Dep,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+read_mode([print_var_mode(VM)|Req],PR,OpT,Par,Atr) :-
+    atom(VM) |
+	read_mode(Req,PR,OpT,Par,Atr).
+read_mode([buffer_length(Len)|Req],PR,OpT,Par,Atr) :-
+    Len > 0 |
+	set_vector_element(Atr,5,_,Len,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+
+%%  Operator commands.
+read_mode([add_op(Prec,Type,OpName)|Req],PR,OpT,Par,Atr) :-
+    Prec >= 1, Prec =< 1200, atom(Type), atom(OpName) |
+	OpT = [add_operator(Prec,Type,OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,Par,Atr,Status).
+read_mode([remove_op(Prec,Type,OpName)|Req],PR,OpT,Par,Atr) :-
+    Prec >= 1, Prec =< 1200, atom(Type), atom(OpName) |
+	OpT = [remove_operator(Prec,Type,OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,Par,Atr,Status).
+read_mode([remove_op(OpName)|Req],PR,OpT,Par,Atr) :-
+    atom(OpName) |
+	OpT = [remove_operator(OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,Par,Atr,Status).
+read_mode([operator(OpName,Defs)|Req],PR,OpT,Par,Atr) :-
+    atom(OpName) |
+	OpT = [operator(OpName,Defs)|OpT2],
+	read_mode(Req,PR,OpT2,Par,Atr).
+read_mode([replace_op_pool(OldPool,NewPool)|Req],PR,OpT,Par,Atr) :-
+    true |
+	OpT = [replace_operator_pool(OldPool,NewPool)|OpT2],
+	read_mode(Req,PR,OpT2,Par,Atr).
+read_mode([change_op_pool(NewPool)|Req],PR,OpT,Par,Atr) :-
+    true |
+	OpT = [replace_operator_pool(_,NewPool)|OpT2],
+	read_mode(Req,PR,OpT2,Par,Atr).
+
+%%  Flush buffer (error).
+read_mode([flush(Sts)|Req],PR,OpT,Par,Atr) :-
+    true |
+	read_mode_error(Req,PR,OpT,Par,Atr,flush(_)).
+
+%%  Close file.
+read_mode([close(Sts)|Req],PR,OpT,Par,Atr) :-
+    true |
+	PR = [close(S)|PR2],
+	wait_close(Req,PR2,OpT,Par,Atr,S,Sts).
+
+%%  Termination.
+read_mode([],PR,OpT,Par,Atr) :-
+    true |
+	PR = [],
+	OpT = [], Par = [].
+
+%%  Illegal command.
+otherwise.
+read_mode([Cmd|Req],PR,OpT,Par,Atr) :-
+    true |
+	command_error(warning,illegal_command,Cmd,Atr,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+otherwise.
+read_mode(Req,PR,OpT,Par,Atr) :-
+    true |
+	command_error(error,not_command_stream,Req,Atr,_).
+
+read_mode_error(Req,PR,OpT,Par,Atr,Cmd) :-
+    true |
+	command_error(warning,not_write_mode,Cmd,Atr,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+
+%%  Unify got character data.
+%%  unify_char(Req,PR,OpT,Par,Atr,Sts,In,Out).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	Par :: Parser stream.
+%%	Atr :: Attribute of file.
+%%	Sts :: Result of command execution.
+%%	In  :: Got data.
+%%	Out :: Out data.
+
+unify_char(Req,PR,OpT,Par,Atr,fep#normal,In,Out) :-
+    integer(In) |
+	Out = In,
+	read_mode(Req,PR,OpT,Par,Atr).
+unify_char(Req,PR,OpT,Par,Atr,fep#end_of_file,In,Out) :-
+    true |
+	Out = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+unify_char(Req,PR,OpT,Par,Atr,fep#abnormal,In,Out) :-
+    true |
+	Out = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+
+skip_char(Req,PR,OpT,Par,Atr,fep#normal,In,Char) :-
+    In =:= Char |
+	read_mode(Req,PR,OpT,Par,Atr).
+skip_char(Req,PR,OpT,Par,Atr,fep#normal,In,Char) :-
+    In =\= Char |
+	PR = [getc(Char2,S)|PR2],
+	consume_resource(3),
+	skip_char(Req,PR2,OpT,Par,Atr,S,Char2,Char).
+skip_char(Req,PR,OpT,Par,Atr,fep#end_of_file,_,_) :-
+    true |
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+skip_char(Req,PR,OpT,Par,Atr,fep#abnormal,_,_) :-
+    true |
+	read_mode(Req,PR,OpT,Par,Atr).
+
+%%  Unify got string data.
+%%  unify_string(Req,PR,OpT,Par,Atr,Sts,In,Out).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	Par :: Parser stream.
+%%	Atr :: Attribute of file.
+%%	Sts :: Result of command execution.
+%%	In  :: Got data.
+%%	Out :: Out data.
+
+unify_string(Req,PR,OpT,Par,Atr,fep#normal,In,Out) :-
+    string(In) |
+	Out = In,
+	read_mode(Req,PR,OpT,Par,Atr).
+unify_string(Req,PR,OpT,Par,Atr,fep#end_of_file,In,Out) :-
+    true |
+	Out = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+unify_string(Req,PR,OpT,Par,Atr,fep#abnormal,In,Out) :-
+    true |
+	Out = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+
+%%  Make term.
+%%  make_term(Req,PR,OpT,Par,Atr,Sts,Cmd,TL,Tm,NV2,NV).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	Par :: Parser stream.
+%%	Atr :: Attribute of file.
+%%	Sts :: Result of command execution.
+%%	Cmd :: Executed command (gett,getft).
+%%	TL  :: Token list.
+%%	Tm  :: Term.
+%%	NV2 :: Number of Variables (in).
+%%	NV  :: Number of Variables (out).
+
+make_term(Req,PR,OpT,Par,Atr,fep#normal,Cmd,TL,NV2) :-
+    vector_element(Cmd,0,C), C\=getet |
+	Par = [parse(TL,Tm2,Status)|Par2],
+	check_parse(Req,PR,OpT,Par2,Atr,Status,Cmd,Tm2,NV2,TL).
+make_term(Req,PR,OpT,Par,Atr,fep#normal,Cmd,TL,NV2) :-
+    vector_element(Cmd,0,getet) |
+	Par = [parse_ex(TL,Tm2,Status)|Par2],
+	check_parse(Req,PR,OpT,Par2,Atr,Status,Cmd,Tm2,NV2,TL).
+% End of File
+make_term(Req,PR,OpT,Par,Atr,fep#end_of_file,gett(Term),TL,_) :-
+    true |
+	Term = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#end_of_file,gett(Term,S),TL,_) :-
+    true |
+	Term = end_of_file, S = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#end_of_file,getft(Term,NV),TL,NV2) :-
+    true |
+	Term = end_of_file, NV = 0,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#end_of_file,getft(Term,NV,S),TL,NV2) :-
+    true |
+	Term = end_of_file, NV = 0, S = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#end_of_file,getet(Term,NV,S),TL,NV2) :-
+    true |
+	Term = end_of_file, NV = 0, S = end_of_file,
+	set_vector_element(Atr,6,_,read_end,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+% After End of File
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,gett(Term),_,_) :-
+    vector_element(Atr,6,read_end) |
+	Term = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,gett(Term,S),_,_) :-
+    vector_element(Atr,6,read_end) |
+	Term = end_of_file, S = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getft(Term,NV),_,_) :-
+    vector_element(Atr,6,read_end) |
+	Term = end_of_file, NV = 0,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getft(Term,NV,S),_,_) :-
+    vector_element(Atr,6,read_end) |
+	Term = end_of_file, NV = 0, S = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getet(Term,NV,S),_,_) :-
+    vector_element(Atr,6,read_end) |
+	Term = end_of_file, NV = 0, S = end_of_file,
+	read_mode(Req,PR,OpT,Par,Atr).
+% End of File in Quote
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,gett(Term),TL,_) :-
+    vector_element(Atr,6,reading) |
+	elements(TL,TLN), Pos := TLN - 1,
+	Term = end_of_file,
+	vector_element(Atr,1,FN,Atr2),
+	display_parse_error(eof_in_quote,TL,Pos,FN),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,gett(Term,S),TL,_) :-
+    vector_element(Atr,6,reading) |
+	Term = TL, S = eof_in_quote,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getft(Term,NV),TL,_) :-
+    vector_element(Atr,6,reading) |
+	elements(TL,TLN), Pos := TLN - 1,
+	Term = end_of_file, NV = 0,
+	vector_element(Atr,1,FN,Atr2),
+	display_parse_error(eof_in_quote,TL,Pos,FN),
+	read_mode(Req,PR,OpT,Par,Atr2).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getft(Term,NV,S),TL,NV2) :-
+    vector_element(Atr,6,reading) |
+	Term = TL, NV = NV2, S = eof_in_quote,
+	read_mode(Req,PR,OpT,Par,Atr).
+make_term(Req,PR,OpT,Par,Atr,fep#abnormal,getet(Term,NV,S),TL,NV2) :-
+    vector_element(Atr,6,reading) |
+	Term = TL, NV = NV2, S = eof_in_quote,
+	read_mode(Req,PR,OpT,Par,Atr).
+
+check_parse(Req,PR,OpT,Par,Atr,parsed,gett(Term),Tm2,0,TL) :-
+    true |
+	Tm2 = Term,
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,gett(Term),Tm2,NV2,TL) :-
+    NV2 > 0 |
+	mpimos_utility:melt(Tm2,NV2,Term),
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,gett(Term,S),Tm2,0,TL) :-
+    true |
+	Tm2 = Term, S = success,
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,gett(Term,S),Tm2,NV2,TL) :-
+    NV2 > 0 |
+	mpimos_utility:melt(Tm2,NV2,Term),
+	S = success,
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,getft(Term,NV),Tm2,NV2,TL) :-
+    true |
+	Term = Tm2, NV = NV2,
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,getft(Term,NV,S),Tm2,NV2,TL) :-
+    true |
+	Term = Tm2, NV = NV2, S = success,
+	read_mode(Req,PR,OpT,Par,Atr).
+check_parse(Req,PR,OpT,Par,Atr,parsed,getet(Term,NV,S),Tm2,NV2,TL) :-
+    true |
+	Term = Tm2, NV = NV2, S = success,
+	read_mode(Req,PR,OpT,Par,Atr).
+% Parse Error
+check_parse(Req,PR,OpT,Par,Atr,error(Pos,_),Cmd,_,NV2,TL) :-
+    true |
+	parse_error(Req,PR,OpT,Par,Atr,syntax_error,Cmd,NV2,TL,Pos).
+check_parse(Req,PR,OpT,Par,Atr,ambiguous(Pos,_),Cmd,_,NV2,TL) :-
+    true |
+	parse_error(Req,PR,OpT,Par,Atr,ambiguous,Cmd,NV2,TL,Pos).
+check_parse(Req,PR,OpT,Par,Atr,remained(_,RL),Cmd,_,NV2,TL) :-
+    true |
+	elements(TL,TLN),
+	elements(RL,RLN),
+	Pos := TLN - RLN,
+	parse_error(Req,PR,OpT,Par,Atr,syntax_error,Cmd,NV2,TL,Pos).
+
+parse_error(Req,PR,OpT,Par,Atr,Info,gett(Term),_,TL,Pos) :-
+    true |
+	vector_element(Atr,1,FN,Atr2),
+	display_parse_error(Info,TL,Pos,FN),
+	read_mode([gett(Term)|Req],PR,OpT,Par,Atr2).
+parse_error(Req,PR,OpT,Par,Atr,Info,gett(Term,S),_,TL,Pos) :-
+    true |
+	Term = TL, S = {Info,Pos},
+	read_mode(Req,PR,OpT,Par,Atr).
+parse_error(Req,PR,OpT,Par,Atr,Info,getft(Term,NV),_,TL,Pos) :-
+    true |
+	vector_element(Atr,1,FN,Atr2),
+	display_parse_error(Info,TL,Pos,FN),
+	read_mode([getft(Term,NV)|Req],PR,OpT,Par,Atr2).
+parse_error(Req,PR,OpT,Par,Atr,Info,getft(Term,NV,S),NV2,TL,Pos) :-
+    true |
+	Term = TL, NV = NV2, S = {Info,Pos},
+	read_mode(Req,PR,OpT,Par,Atr).
+parse_error(Req,PR,OpT,Par,Atr,Info,getet(Term,NV,S),NV2,TL,Pos) :-
+    true |
+	Term = TL, NV = NV2, S = {Info,Pos},
+	read_mode(Req,PR,OpT,Par,Atr).
+
+display_parse_error(Info,TL,Pos,FN) :-
+    true |
+	mpimos_utility:report_tokens(TL,Pos,T),
+	message(Info,Msg),
+	raise_error(warning,FN,r,
+		[nl,putb(string#"**** "),putb(Msg),putl(string#" ****"),
+		 do(T)]).
+
+elements(L,N) :- true | elements(L,N,0).
+
+elements([_|L],N,M) :- true | M2 := M + 1, elements(L,N,M2).
+elements([],   N,M) :- true | N = M.
+
+%%  Request stream monitor (write mode).
+%%  write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	UnP :: Unparser stream.
+%%	Atr :: Attribute of file.
+%%	Bf  :: Output buffer.
+%%	BL  :: Buffer length.
+%%	BC  :: Buffer counter.
+
+%%  Do command.
+write_mode([do([H|T])|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	append([H|T],Req,Req2),
+	write_mode(Req2,PR,OpT,UnP,Atr,Bf,BL,BC).
+write_mode([do([])|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+
+%%  Input commands (error).
+write_mode([getc(Char)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getc(Char)).
+write_mode([getl(Str)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getl(Str)).
+write_mode([getb(Buf,Len)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getb(Buf,Len)).
+write_mode([gett(Term)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,gett(Term)).
+write_mode([gett(Term,S)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,gett(Term,S)).
+write_mode([getft(Term,NV)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getft(Term,NV)).
+write_mode([getft(Term,NV,S)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getft(Term,NV,S)).
+write_mode([getet(Term,NV,S)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,getet(Term,NV,S)).
+write_mode([skip(Char)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,skip(Char)).
+
+%%  Output commands.
+write_mode([putc(Char)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Char >= 0, Char =< 255 |
+	set_char(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Char).
+write_mode([putl(Str)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    string(Str,_,8) |
+	set_string([nl|Req],PR,OpT,UnP,Atr,Bf,BL,BC,Str).
+write_mode([putb(Buf)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    string(Buf,_,8) |
+	set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Buf).
+write_mode([putb(Buf,Count)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    string(Buf,L,8), Count >= 0 |
+	get_buffer(Buf,L,Count,NewBuf),
+	set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,NewBuf).
+write_mode([putt(Term)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term) |
+	UnP = [putt(Term,SL)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr,Bf,BL,BC,SL).
+write_mode([putt(Term,Len,Dep)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term), Len > 0, Dep > 0 |
+	vector_element(Atr,3,PL,Atr2),
+	vector_element(Atr2,4,PD,Atr3),
+	UnP = [print_length(Len),print_depth(Dep),putt(Term,SL),
+	       print_length(PL),print_depth(PD)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr3,Bf,BL,BC,SL).
+write_mode([puttq(Term)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term) |
+	UnP = [puttq(Term,SL)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr,Bf,BL,BC,SL).
+write_mode([puttq(Term,Len,Dep)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term), Len > 0, Dep > 0 |
+	vector_element(Atr,3,PL,Atr2),
+	vector_element(Atr2,4,PD,Atr3),
+	UnP = [print_length(Len),print_depth(Dep),puttq(Term,SL),
+	       print_length(PL),print_depth(PD)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr3,Bf,BL,BC,SL).
+write_mode([putet(Term)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term) |
+	UnP = [putet(Term,SL)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr,Bf,BL,BC,SL).
+write_mode([putet(Term,Len,Dep)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    wait(Term), Len > 0, Dep > 0 |
+	vector_element(Atr,3,PL,Atr2),
+	vector_element(Atr2,4,PD,Atr3),
+	UnP = [print_length(Len),print_depth(Dep),putet(Term,SL),
+	       print_length(PL),print_depth(PD)|UnP2],
+	set_string_list(Req,PR,OpT,UnP2,Atr3,Bf,BL,BC,SL).
+write_mode([nl|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	set_char(Req,PR,OpT,UnP,Atr,Bf,BL,BC,10).
+write_mode([tab(N)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    N >= 0, N < 1000 |
+	tab(Req,PR,OpT,UnP,Atr,Bf,BL,BC,N).
+
+%%  Set attribute.
+write_mode([print_length(Len)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Len > 0 |
+	UnP = [print_length(Len)|UnP2],
+	set_vector_element(Atr,3,_,Len,Atr2),
+	write_mode(Req,PR,OpT,UnP2,Atr2,Bf,BL,BC).
+write_mode([print_depth(Dep)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Dep > 0 |
+	UnP = [print_depth(Dep)|UnP2],
+	set_vector_element(Atr,4,_,Dep,Atr2),
+	write_mode(Req,PR,OpT,UnP2,Atr2,Bf,BL,BC).
+write_mode([print_var_mode(VM)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    atom(VM) |
+	UnP = [print_var_mode(VM)|UnP2],
+	write_mode(Req,PR,OpT,UnP2,Atr,Bf,BL,BC).
+write_mode([buffer_length(Len)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Len > 0 |
+	set_vector_element(Atr,5,_,Len,Atr2),
+	new_string(NewBf,Len,8),
+	substring(Bf,0,BC,OS,_),
+	set_string(Req,PR,OpT,UnP,Atr2,NewBf,Len,0,OS).
+
+%%  Operator commands.
+write_mode([add_op(Prec,Type,OpName)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Prec >= 1, Prec =< 1200, atom(Type), atom(OpName) |
+	OpT = [add_operator(Prec,Type,OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,UnP,Atr,Bf,BL,BC,Status).
+write_mode([remove_op(Prec,Type,OpName)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    Prec >= 1, Prec =< 1200, atom(Type), atom(OpName) |
+	OpT = [remove_operator(Prec,Type,OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,UnP,Atr,Bf,BL,BC,Status).
+write_mode([remove_op(OpName)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    atom(OpName) |
+	OpT = [remove_operator(OpName,Status)|OpT2],
+	check_op(Req,PR,OpT2,UnP,Atr,Bf,BL,BC,Status).
+write_mode([operator(OpName,Defs)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    atom(OpName) |
+	OpT = [operator(OpName,Defs)|OpT2],
+	write_mode(Req,PR,OpT2,UnP,Atr,Bf,BL,BC).
+write_mode([replace_op_pool(OldPool,NewPool)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	OpT = [replace_operator_pool(OldPool,NewPool)|OpT2],
+	write_mode(Req,PR,OpT2,UnP,Atr,Bf,BL,BC).
+write_mode([change_op_pool(NewPool)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	OpT = [replace_operator_pool(_,NewPool)|OpT2],
+	write_mode(Req,PR,OpT2,UnP,Atr,Bf,BL,BC).
+
+%%  Flush buffer.
+write_mode([flush(Sts)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	flush_buffer(Bf,BC,PR,NBf,NPR,S),
+	wait_write(Req,NPR,OpT,UnP,Atr,NBf,BL,0,S,Sts).
+
+%%  Close file.
+write_mode([close(Sts)|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	substring(Bf,0,BC,OutStr,NBf),
+	PR = [putb(OutStr,_),close(S)|PR2],
+	consume_resource(2),
+	wait_close(Req,PR2,OpT,UnP,Atr,S,Sts).
+
+%%  Termination.
+write_mode([],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	substring(Bf,0,BC,OutStr,NBf),
+	PR = [putb(OutStr,S)],
+	consume_resource(2),
+	OpT = [], UnP = [],
+	wait(S,Atr).
+
+%%  Illegal command.
+otherwise.
+write_mode([Cmd|Req],PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	command_error(warning,illegal_command,Cmd,Atr,Atr2),
+	write_mode(Req,PR,OpT,UnP,Atr2,Bf,BL,BC).
+otherwise.
+write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC) :-
+    true |
+	command_error(error,not_command_stream,Req,Atr,_).
+
+%% flush buffer.
+flush_buffer(Bf,BC,PR,NBf,NPR,S) :-
+    BC > 0 |
+	substring(Bf,0,BC,OutStr,NBf),
+	PR = [putb(OutStr,S)|NPR],
+	consume_resource(3).
+flush_buffer(Bf,0,PR,NBf,NPR,S) :-
+    true |
+	NBf = Bf,
+	NPR = PR,
+	S = fep#normal.
+
+get_buffer(Buffer,Len,Count,NewBuffer) :-
+    Len > Count |
+	substring(Buffer,0,Count,NewBuffer,_).
+get_buffer(Buffer,Len,Count,NewBuffer) :-
+    Len =< Count |
+	NewBuffer = Buffer.
+
+%%  wait status.
+wait_write(Req,PR,OpT,UnP,Atr,Bf,BL,BC,fep#normal,S) :-
+    true |
+	S = done,
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+wait_write(Req,PR,OpT,UnP,Atr,Bf,BL,BC,fep#abnormal,S) :-
+    true |
+	S = done,
+	cannot_write(Atr,Atr2),
+	write_mode(Req,PR,OpT,UnP,Atr2,Bf,BL,BC).
+
+wait(fep#normal  ,Atr) :- true | true.
+wait(fep#abnormal,Atr) :- true | cannot_write(Atr,_).
+
+write_mode_error(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Cmd) :-
+    true |
+	command_error(warning,not_read_mode,Cmd,Atr,Atr2),
+	write_mode(Req,PR,OpT,UnP,Atr2,Bf,BL,BC).
+
+%%  Set character to buffer.
+set_char(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Char) :-
+    BC < BL |
+	set_string_element(Bf,BC,Char,NBf),
+	BC2 := BC + 1,
+	write_mode(Req,PR,OpT,UnP,Atr,NBf,BL,BC2).
+set_char(Req,PR,OpT,UnP,Atr,Bf,BL,BL,Char) :-
+    true |
+	flush_buffer(Bf,BL,PR,NBf,NPR,S),
+	set_string_element(NBf,0,Char,NNBf),
+	wait_write(Req,NPR,OpT,UnP,Atr,NNBf,BL,1,S,_).
+
+%%  Tab (set spaces to buffer).
+tab(Req,PR,OpT,UnP,Atr,Bf,BL,BC,0) :-
+    true |
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+otherwise.
+tab(Req,PR,OpT,UnP,Atr,Bf,BL,BC,N) :-
+    BC < BL |
+	set_string_element(Bf,BC,32,NBf),
+	BC2 := BC + 1, N2 := N - 1,
+	tab(Req,PR,OpT,UnP,Atr,NBf,BL,BC2,N2).
+tab(Req,PR,OpT,UnP,Atr,Bf,BL,BL,N) :-
+    true |
+	flush_buffer(Bf,BL,PR,NBf,NPR,S),
+	wait_tab_write(Req,NPR,OpT,UnP,Atr,NBf,BL,S,N).
+
+wait_tab_write(Req,PR,OpT,UnP,Atr,Bf,BL,fep#normal,N) :-
+    true |
+	tab(Req,PR,OpT,UnP,Atr,Bf,BL,0,N).
+wait_tab_write(Req,PR,OpT,UnP,Atr,Bf,BL,fep#abnormal,N) :-
+    true |
+	cannot_write(Atr,Atr2),
+	tab(Req,PR,OpT,UnP,Atr2,Bf,BL,0,N).
+
+%%  Set string to buffer.
+set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str) :-
+    string(Str,0,8) |
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str) :-
+    string(Str,SL,8), SL > 0 |
+	Left := BL - BC,
+	set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str,SL,Left).
+
+set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str,SL,0) :-
+    true |
+	flush_buffer(Bf,BL,PR,NBf,NPR,S),
+	wait_putb(Req,NPR,OpT,UnP,Atr,NBf,BL,S,Str,SL).
+otherwise.
+set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str,SL,Left) :-
+    SL =< Left |
+	set_substring(Bf,BC,Str,NBf),
+	BC2 := BC + SL,
+	write_mode(Req,PR,OpT,UnP,Atr,NBf,BL,BC2).
+set_string(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Str,SL,Left) :-
+    SL > Left |
+	substring(Str,0,Left,S2,NStr),
+	set_substring(Bf,BC,S2,NBf),
+	flush_buffer(NBf,BL,PR,NNBf,NPR,S),
+	SL2 := SL - Left,
+	substring(NStr,Left,SL2,Str2,_),
+	wait_putb(Req,NPR,OpT,UnP,Atr,NNBf,BL,S,Str2,SL2).
+
+wait_putb(Req,PR,OpT,UnP,Atr,Bf,BL,fep#normal,Str,SL) :-
+    true |
+	set_string(Req,PR,OpT,UnP,Atr,Bf,BL,0,Str,SL,BL).
+wait_putb(Req,PR,OpT,UnP,Atr,Bf,BL,fep#abnormal,Str,SL) :-
+    true |
+	cannot_write(Atr,Atr2),
+	set_string(Req,PR,OpT,UnP,Atr2,Bf,BL,0,Str,SL,BL).
+
+%%  Set string list to buffer.
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,[]) :-
+    true |
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,[Str|SList]) :-
+    string(Str,0,8) |
+	set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,SList).
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,[Str|SList]) :-
+    string(Str,SL,8), SL > 0 |
+	Left := BL - BC,
+	set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,SList,Str,SL,Left).
+
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,SList,Str,SL,0) :-
+    true  |
+	flush_buffer(Bf,BL,PR,NBf,NPR,S),
+	wait_list_putb(Req,NPR,OpT,UnP,Atr,NBf,BL,S,SList,Str,SL).
+otherwise.
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,SList,Str,SL,Left) :-
+    SL =< Left |
+	set_substring(Bf,BC,Str,NBf),
+	BC2 := BC + SL,
+	set_string_list(Req,PR,OpT,UnP,Atr,NBf,BL,BC2,SList).
+set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,BC,SList,Str,SL,Left) :-
+    SL > Left |
+	substring(Str,0,Left,S2,NStr),
+	set_substring(Bf,BC,S2,NBf),
+	flush_buffer(NBf,BL,PR,NNBf,NPR,S),
+	SL2 := SL - Left,
+	substring(NStr,Left,SL2,Str2,_),
+	wait_list_putb(Req,NPR,OpT,UnP,Atr,NNBf,BL,S,SList,Str2,SL2).
+
+wait_list_putb(Req,PR,OpT,UnP,Atr,Bf,BL,fep#normal,SList,Str,SL) :-
+    true |
+	set_string_list(Req,PR,OpT,UnP,Atr,Bf,BL,0,SList,Str,SL,BL).
+wait_list_putb(Req,PR,OpT,UnP,Atr,Bf,BL,fep#abnormal,SList,Str,SL) :-
+    true |
+	cannot_write(Atr,Atr2),
+	set_string_list(Req,PR,OpT,UnP,Atr2,Bf,BL,0,SList,Str,SL,BL).
+
+%%  Wait close status.
+%%  wait_close(Req,PR,OpT,PUP,Atr,S,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	PUP :: Parser of Unparser stream.
+%%	Atr :: Attribute of file.
+%%	S   :: Result of close executed.
+%%	Sts :: Status information.
+
+wait_close(Req,PR,OpT,PUP,Atr,fep#normal,Sts) :-
+    true |
+	Sts = success,
+	closed(Req,PR,OpT,PUP,Atr).
+
+closed([],PR,OpT,PUP,Atr) :-
+    true |
+	PR = [],
+	OpT = [], PUP = [].
+closed([Cmd|Req],PR,OpT,PUP,Atr) :-
+    true |
+	command_error(warning,file_not_open,Cmd,Atr,Atr2),
+	closed(Req,PR,OpT,PUP,Atr2).
+
+%%  Check operator command (read_mode).
+%%  check_op(Req,PR,OpT,UnP,Atr,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	Par :: Parser stream.
+%%	Atr :: Attribute of file.
+%%	Sts :: Result of operator command execution.
+
+check_op(Req,PR,OpT,Par,Atr,not_find(Pr,Ty,Op)) :-
+    true |
+	command_error(warning,operator_not_found,remove_op(Pr,Ty,Op),Atr,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+check_op(Req,PR,OpT,Par,Atr,not_find(Op)) :-
+    true |
+	command_error(warning,operator_not_found,remove_op(Pr,Ty,Op),Atr,Atr2),
+	read_mode(Req,PR,OpT,Par,Atr2).
+otherwise.
+check_op(Req,PR,OpT,Par,Atr,Sts) :-
+    true |
+	read_mode(Req,PR,OpT,Par,Atr).
+
+%%  Check operator command (write_mode).
+%%  check_op(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Sts).
+%%	Req :: Request stream from user.
+%%	PR  :: Request stream to file (protected).
+%%	OpT :: Operator table.
+%%	UnP :: Unparser stream.
+%%	Atr :: Attribute of file.
+%%	Bf  :: Output buffer.
+%%	BL  :: Buffer length.
+%%	BC  :: Buffer counter.
+%%	Sts :: Result of operator command execution.
+
+check_op(Req,PR,OpT,UnP,Atr,Bf,BL,BC,not_find(Pr,Ty,Op)) :-
+    true |
+	command_error(warning,operator_not_found,remove_op(Pr,Ty,Op),Atr,Atr2),
+	write_mode(Req,PR,OpT,UnP,Atr2,Bf,BL,BC).
+otherwise.
+check_op(Req,PR,OpT,UnP,Atr,Bf,BL,BC,Sts) :-
+    true |
+	write_mode(Req,PR,OpT,UnP,Atr,Bf,BL,BC).
+
+%%  Command error.
+%%  command_error(Type,Info,Cmd,Atr,NAtr).
+%%	Type : Error type.
+%%	Info : Infomation of error.
+%%	Cmd :: Executed command.
+%%	Atr :: Attribute of file.
+%%	NAtr : Attribute of file (new).
+
+command_error(Type,Info,Cmd,Atr,NAtr) :-
+    true |
+	vector_element(Atr,1,FN,Atr2),
+	vector_element(Atr2,2,Md,NAtr),
+	message(Info,Msg),
+	mpimos_utility:freeze(Cmd,FC),
+	raise_error(Type,FN,Md,[putb(string#" / "),putb(Msg),
+				putb(string#" : "),putt(FC)]).
+
+%%  Cannot read.
+%cannot_read(Atr,Atr2) :-
+%    true |
+%	vector_element(Atr,1,FN,Atr2),
+%	raise_error(warning,FN,r,
+%		    [putb(string#" : cannot read for unknown reason")]).
+
+%%  Cannot write.
+cannot_write(Atr,Atr2) :-
+    true |
+	vector_element(Atr,1,FN,Atr1),
+	vector_element(Atr1,2,Md,Atr2),
+	raise_error(warning,FN,Md,
+		    [putb(string#" : cannot write for unknown reason")]).
+
+%%  Raise error.
+%%  raise_error(Ty,FN,Md,PL).
+%%	Ty :: Error type.
+%%	FN :: File name.
+%%	Md :: Open mode.
+%%	PL :: Output list.
+
+raise_error(Ty,FN,Md,PL) :-
+    true |
+	raise(shoen_tag#mpimos_error,Ty,
+	      [putb(string#">>> error in file ("),
+	       putt(FN),putb(string#","),putt(Md),putb(string#")"),do(PL),
+	       putl(string#".")]),
+	consume_resource(5).
+
+
+message(cannot_open_file,    Msg) :- true | Msg=string#"cannot open file".
+message(bad_file_name_type,  Msg) :- true | Msg=string#"file-name is not string".
+message(bad_open_mode_type,  Msg) :- true | Msg=string#"open-mode is not atom".
+message(bad_open_mode,       Msg) :- true | Msg=string#"open-mode is not {r,w,a}".
+message(file_not_open,       Msg) :- true | Msg=string#"file is not open".
+message(not_read_mode,       Msg) :- true | Msg=string#"input-command in write mode".
+message(not_write_mode,      Msg) :- true | Msg=string#"output-command in read mode".
+message(eof_in_quote,        Msg) :- true | Msg=string#"end-of-file in quote".
+message(illegal_command,     Msg) :- true | Msg=string#"illegal command".
+message(not_command_stream,  Msg) :- true | Msg=string#"command-stream is not list".
+message(syntax_error,        Msg) :- true | Msg=string#"Syntax Error".
+message(ambiguous,           Msg) :- true | Msg=string#"Ambiguous Expression".
+message(operator_not_found,  Msg) :- true | Msg=string#"cannot remove operator".
+
+%%  append(X,Y,Z).
+
+append([X|XL],Y,Z) :- true | Z = [X|ZL], append(XL,Y,ZL).
+append([],    Y,Z) :- true | Y = Z.

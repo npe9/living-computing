@@ -1,0 +1,41 @@
+:- module dead.
+:- public go/1.
+
+go(0):- display_console('%%% 0') |
+	go(10), go(11), go(12),
+	go(20), go(21), go(22), go(23), go(24),
+	go(30), go(31).
+
+go(10):- display_console('%%% wait(VOID)') |
+	hooked(_).
+go(11):- display_console('%%% wait(HOOKoo)') |
+	hooked(X), hooked(X).
+go(12):- display_console('%%% wait(MGHOKoo)') |
+	merge(X), hooked(X).
+
+go(20):- display_console('%%% VOID=HOOKoo') |
+	 hooked(X), unfy(_,X).
+go(21):- display_console('%%% VOID=MGHOKoo') |
+	 merge(X), unfy(_,X).
+go(22):- display_console('%%% HOOKoo=HOOKoo') |
+	 hooked(X), hooked(Y), unfy(X,Y).
+go(23):- display_console('%%% HOOKoo=MGHOKoo') |
+	 hooked(X), merge(Y), unfy(X,Y).
+go(24):- display_console('%%% MGHOKoo=MGHOKoo') |
+	 merge(X), merge(Y), unfy(X,Y).
+
+go(30):- display_console('%%% collect(HOOKoo)') |
+	 hooked(X), collect(X).
+go(31):- display_console('%%% collect(MGHOKoo)') |
+	 merge(X), collect(X).
+
+
+hooked(a):- true | true.
+
+unfy(X,Y):- true | X=Y.
+
+collect(X):- true | true.
+
+merge(X):- true | merge(X,O), read(O).
+read([]):- true | true.
+read([_|L]):- true | read(L).

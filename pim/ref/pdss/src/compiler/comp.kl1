@@ -1,0 +1,575 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%
+%
+%  COMPILE MODULE OF
+%
+%   KL1/KL1 Compiler
+%
+%%%%%%%%%%%%%%%%%%%%%
+
+:- module kl1cmp_compile.
+:- public compile_one_clause/17.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%  Compiling one clause, pass 1  %%%%%%%%%%%%%%%%%%%%%%
+
+% The clause will have its variables numbered.
+% Find out how many variables there are.
+% When normalization introduces new variables, ensure that they are
+% properly numbered.
+
+% The output stream contains code and I/O commands.
+
+:- local_implicit error:oldnew,
+		instr:oldnew.
+
+%:- mode compile_one_clause(+, +, ? , -, -, -, -, ?).
+compile_one_clause(Nopt, Clause, Fail, From, FromR, To, ToR, Reg, RegR,
+		Argtbl, Nv, PC, Attr) --> true |
+ {{Argtbl = Passtbl-Bodytbl,
+   kl1cmp_reader:count_variables(Clause, 0, Nvc),
+   kl1cmp_normalize:normalize(&error, Nopt, Clause,
+	Nvc, Nv, H, G, B, Attr0, Attr)}},
+ {{ kl1cmp_reader:herrey(Nv, [], Attr0),
+    kl1cmp_reader:functor(H, _, A),
+    initiate_head_arguments(From-To-Reg, Tabs1, A, H, 0)}},
+   compile_guard(Tabs1, Tabs2, 1, PC1, 1, Keep, [try_me_else|G], Fail),
+ {{keep_head_arguments(Tabs2, Tabs3, A, H, Keep),
+   kl1cmp_reader:herrey(Nv, 0, Passtbl0),
+   kl1cmp_reader:herrey(Nv, 0, Bodytbl0),
+   set_guard_arg_ref_count(Tabs3, Tabs4, Passtbl0, Passtbl, Nv, PC1)}},
+   compile_body(Tabs4, Tabs5, PC1, PC, Bodytbl0, Bodytbl, [commit|B]),
+ {{devide_tabs(Tabs5, FromR, ToR, RegR)}}.
+%   write('% After compile_body: ' ), nl,        % debug 870818 D.Sekita
+%   dump_tables( Tabs ).                         % debug 870818 D.Sekita
+
+devide_tabs(A-B-C, D, E, F) :- true |
+   A=D, B=E, C=F.
+
+
+:- local_implicit tabs:oldnew.
+%:- mode initiate_head_arguments(+, +, +, +, -).
+initiate_head_arguments(0, _, _) --> true | true.
+initiate_head_arguments(K, X, F) --> K>0 |
+ {{set_vector_element(X, K, A, A, X1)}},
+   newvar(A, F),
+   usereg(A, K),
+ {{K1 := K-1}},
+   initiate_head_arguments(K1, X1, F).
+
+%:- mode keep_head_arguments(+, +, +, +, -).
+keep_head_arguments(0, _, _) --> true | true.
+keep_head_arguments(K, X, T) --> K>0 |
+ {{set_vector_element(X, K, A, A, X1)}},
+   ref_to_table(A, Res),
+    ( Res < T -> refvar(A, T) ;
+      Res >= T -> true),
+ {{K1 := K-1}},
+   keep_head_arguments(K1, X1, T).
+
+%:- mode ref_to_table(+, +, -).
+ref_to_table(From-To-Reg, Tabs, '$VAR'(N, _), Res) :- true |
+   set_vector_element(To, N, Res, Res, To1),
+   Tabs=From-To1-Reg.
+
+:- local_implicit tabs:oldnew, passtbl:oldnew.
+%:- mode set_guard_arg_ref_count(+, +, +, +, -).
+set_guard_arg_ref_count(0, _) --> true | true.
+set_guard_arg_ref_count(Nv, PC) --> Nv>0 |
+ {{N := Nv - 1,
+  get_From_PC(&tabs, N, V)}},
+    ( V = [] -> true;
+      V < PC -> {{set_pass_tbl(&passtbl, N)}};
+      V >= PC -> true ),
+   set_guard_arg_ref_count(N, PC).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  Compilation of guard  %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% deleted jump label 870912 D.Sekita
+
+:- local_implicit error:oldnew,
+		instr:oldnew,
+		tabs:oldnew,
+		pcs:oldnew,
+		keeps:oldnew.
+%:- mode compile_guard(+, +, +, +, +, -, ?).
+compile_guard([], _) --> true | true.
+compile_guard([H|T], Fail) --> true |
+   compile_guard_goal(H, Fail),
+   compile_guard(T, Fail).
+
+%:- mode compile_guard_goal(+, +, +, +, +, -, ?).
+compile_guard_goal(integer(X), Fail) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   compile_guard_integer(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(float(X), Fail) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   compile_guard_float(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(vector(X), Fail) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   compile_guard_vector(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(string(X), Fail) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   compile_guard_string(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(wait(X), Fail)--> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   compile_guard_wait(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(X=YY, Fail) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   how_do_you_foo(&tabs, &pcs, YY, WhenY),
+   compile_get_valuable(&error, &instr, &pcs, &keeps,
+		WhenX, X, YY, WhenY, Fail)}}.
+compile_guard_goal(unify(XX), Fail) --> true |
+ {{how_do_you_foo(&tabs, &pcs, XX, WhenX),
+   compile_passive_unify(&error, &instr, &pcs, &keeps, XX, WhenX, Fail)}}.
+compile_guard_goal(builtin(X), _) --> X = vector_element(V,P,E) |
+ {{&keeps <= &pcs(old),
+   set_life_time(&tabs, &pcs, 4, X),
+   how_do_you_do(&tabs, ~(&pcs+1),_, P, _), % Keep Position for mark_element ??
+   gen(&instr, &pcs, builtin(X))}}.
+compile_guard_goal(builtin(X), _) -->
+    vector(X,N), vector_element(X,0,E), E\=vector_element |
+ {{&keeps <= &pcs(old),
+   set_life_time(&tabs, &pcs, N, X),
+   gen(&instr, &pcs, builtin(X))}}.
+compile_guard_goal(builtin(X), _) --> atom(X) |
+ {{&keeps <= &pcs(old),
+   gen(&instr, &pcs, builtin(X))}}.
+compile_guard_goal(draw(X), Fail) --> true |
+ {{how_do_you_foo(&tabs, &pcs, X, WhenX),
+   compile_guard_draw(&error, &instr, &pcs, &keeps, X, WhenX, Fail)}}.
+compile_guard_goal(try_me_else, Fail) --> true |
+ {{&keeps <= &pcs(old),
+   gen(&instr, &pcs, try_me_else(Fail))}}.
+
+:- local_implicit	error:oldnew,
+			instr:oldnew,
+			pcs:oldnew,
+			keeps:oldnew.
+
+%:- mode compile_guard_integer(+, +, +, +, +, -, ?).
+compile_guard_integer(X, _, _) --> integer(X) | true.
+compile_guard_integer(X, WhenX, _) --> X='$VAR'(_, _) |
+ {{&keeps <= &pcs(old)}},
+   maybe_suspend_forever(WhenX),
+ {{gen(&instr, &pcs, integer(X))}}.
+
+%:- mode compile_guard_float(+, +, +, +, +, -, ?).
+compile_guard_float(X, _, _) --> floating_point(X) | true.
+compile_guard_float(X, WhenX, _) --> X='$VAR'(_, _) |
+ {{&keeps <= &pcs(old)}},
+   maybe_suspend_forever(WhenX),
+ {{gen(&instr, &pcs, float(X))}}.
+
+%:- mode compile_guard_vector(+, +, +, +, +, -, ?).
+%compile_guard_vector(X, _, _) --> vector(X) | true.
+compile_guard_vector(X, WhenX, _) --> X='$VAR'(_, _) |
+ {{&keeps <= &pcs(old)}},
+   maybe_suspend_forever(WhenX),
+ {{gen(&instr, &pcs, vector(X))}}.
+
+%:- mode compile_guard_string(+, +, +, +, +, -, ?).
+compile_guard_string('$SCNST'(_), _, _) --> true | true.
+compile_guard_string(X, WhenX, _) --> X='$VAR'(_, _) |
+ {{&keeps <= &pcs(old)}},
+   maybe_suspend_forever(WhenX),
+ {{gen(&instr, &pcs, string(X))}}.
+
+%:- mode compile_guard_wait(+, +, +, +, +, -, ?).
+compile_guard_wait(X, WhenX, _) --> X='$VAR'(_, _) |
+ {{&keeps <= &pcs(old)}},
+   maybe_suspend_forever(WhenX),
+ {{gen(&instr, &pcs, wait(X))}}.
+otherwise.
+compile_guard_wait(_, _, _) --> true |
+   true.
+
+%:- mode maybe_suspend_forever(+, -, ?).
+maybe_suspend_forever(I) --> integer(I) | true.
+maybe_suspend_forever([]) --> true |
+   &error<<=[warning_message(string#"The clause will suspend forever.", [])].
+
+%:- mode compile_get_valuable(+, +, +, +, +, +, +, +, -, ?).
+compile_get_valuable([], X, YY, WhenY, _) --> true |
+   compile_get_variable(YY, WhenY, X).
+compile_get_valuable(WhenX, X, YY, WhenY, Fail) --> integer(WhenX) |
+   compile_get_value(YY, WhenY, X, Fail).
+
+%:- mode compile_get_variable(+, +, +, +, -, ?).
+compile_get_variable(var(Y), WhenY, X) --> integer(WhenY) |
+  {{gen(&instr, &pcs, wait_variable(X, Y))}}.
+compile_get_variable(atomic(Y), _, X) --> true |
+  {{gen(&instr, &pcs, put_constant(Y, X))}}.
+%compile_get_variable(string(Y), _, X) --> true |
+%  {{gen(&instr, &pcs, put_structured_constant(Y, X))}}.
+compile_get_variable(struct(Y), _, X) --> true |
+  {{intern_atom(AtomY, Y),
+    gen(&instr, &pcs, put_structured_constant(AtomY, X))}}.
+compile_get_variable(list, _, X) --> true |
+   &error<<=
+   [error_message(string#"Explicit list is not implemented in guard builtin input argument.",
+    [X])].
+compile_get_variable(vector(N), _, X) --> true |
+   &error<<=
+   [error_message(string#"Explicit vector is not implemented in guard builtin input argument.",
+    [X])].
+compile_get_variable(var(Y), [], X) --> true |
+   &error<<=
+   [warning_message(
+	string#"Variable to variable unification is not implemented in guards.",
+	[X=Y])].
+otherwise.
+compile_get_variable(YY, _, _) --> true |
+   &error<<=
+   [error_message(string#"Declined attempt to unify with an uninitialized variable.",
+    [YY])].
+
+%:- mode compile_get_value(+, +, +, +, +, +, -, ?).
+% The last argument is the fail label.
+compile_get_value(var(Y), [], X, _) --> true |
+ {{gen(&instr, &pcs, wait_variable(Y, X))}}.
+compile_get_value(var(Y), WhenY, X, _) --> integer(WhenY) |
+   &keeps <= &pcs(old),
+ {{gen(&instr, &pcs, wait_value(X, Y))}}.
+compile_get_value(atomic(Y), _, X, _) --> true |
+   &keeps <= &pcs(old),
+ {{gen(&instr, &pcs, wait_constant(Y, X))}}.
+compile_get_value(list, _, X, _) --> true |
+   &keeps <= &pcs(old),
+ {{gen(&instr, &pcs, wait_list(X))}}.
+compile_get_value(vector(N), _, X, _) --> true |
+ {{&keeps <= &pcs(old),
+   gen(&instr, &pcs, wait_vector(X, N))}}.
+
+%:- mode compile_passive_unify(+, +, +, +, +, -, ?).
+% The last argument is fail label.
+compile_passive_unify(var(X), [], _) --> true |
+ {{gen(&instr, &pcs, read_variable(X))}}.
+compile_passive_unify(var(X), WhenX, _) --> integer(WhenX) |
+ {{&keeps <= &pcs(old),
+   gen(&instr, &pcs, read_value(X))}}.
+compile_passive_unify(atomic(X), _, _) --> true |
+ {{&keeps <= &pcs(old),
+   gen(&instr, &pcs, read_constant(X))}}.
+
+%:- mode compile_guard_draw(+, +, +, +, +, -, ? ).
+compile_guard_draw(var(X), [], _) --> true |
+  {{gen(&instr, &pcs, write_variable(X))}}.
+compile_guard_draw(var(X), _, _) --> true |
+  {{gen(&instr, &pcs, write_value(X))}}.
+compile_guard_draw(atomic(X), _, _) --> true |
+  {{gen(&instr, &pcs, write_constant(X))}}.
+
+% update life time for variables in arguments of built-in predicate.
+
+:- local_implicit	tabs:oldnew,
+			pcs:oldnew.
+%:- mode set_life_time(+, +, +, +, -).
+set_life_time(0, _) --> true | true.
+set_life_time(N, X) --> N>0 |
+ {{set_vector_element(X, N1, A, [], X1)}},
+   how_do_you_do(A, _),
+ {{N1 := N-1}},
+   set_life_time(N1, X1).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  compilation of body  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit	error:oldnew,
+			instr:oldnew,
+			tabs:oldnew,
+			pcs:oldnew,
+			brefs:oldnew.
+
+%:- mode compile_body(+, +, +, +, -, ?).
+compile_body([H|T]) --> true |
+   compile_body_goal(H),
+   compile_body(T).
+compile_body([]) --> true | true.
+
+%:- mode compile_body_goal(+, +, +, +, -, ?).
+compile_body_goal(X=YY) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   how_do_you_foo(&tabs, &pcs, YY, WhenY),
+   mrb_body_ref(&brefs, X),
+   compile_put_valuable(&error, &instr, &pcs, &brefs,
+	YY, WhenY, X, WhenX)}}.
+compile_body_goal(X==var(YY)) --> true | % for body reference only
+% {{how_do_you_do(&tabs, &pcs, X, WhenX),
+%   how_do_you_foo(&tabs, &pcs, YY, WhenY),
+ {{mrb_body_ref(&brefs, YY)}}.
+%   compile_trans_valuable(&error, &instr, &pcs, &brefs,
+%	YY, WhenY, X, WhenX)}}.
+compile_body_goal(draw(XX)) --> true |
+ {{how_do_you_foo(&tabs, &pcs, XX, WhenX),
+   compile_active_draw(&error, &instr, &pcs, &brefs,
+	XX, WhenX)}}.
+compile_body_goal(Arg:=XX) --> true |
+ {{how_do_you_foo(&tabs, &pcs, XX, WhenX),
+   compile_set_arg(&error, &instr, &pcs, &brefs,
+	XX, WhenX, Arg)}}.
+compile_body_goal(Arg$:=XX) --> true |
+ {{how_do_you_foo(&tabs, &pcs, XX, WhenX),
+   compile_set_arg(&error, &instr, &pcs, &brefs,
+	XX, WhenX, Arg)}}.
+compile_body_goal(blt(X)) --> vector(X, N) |
+ {{set_life_time(&tabs, &pcs, N, X),
+   set_mrb_body_ref(&brefs, N, X),
+   gen(&instr, &pcs, builtin(X))}}.
+compile_body_goal(blt(X)) --> atom(X) | true.
+compile_body_goal(X<=YY) --> true |
+ {{how_do_you_do(&tabs, &pcs, X, WhenX),
+   how_do_you_foo(&tabs, &pcs, YY, WhenY),	% always integer(WhenY)
+   compile_struct(&error, &instr, &pcs, &brefs,
+	YY, WhenX, X)}}.
+compile_body_goal(create_goal(X)) --> true |
+  {{gen(&instr, &pcs, create_goal(X))}}.
+compile_body_goal(create_ext(X, Y))-->true|
+  {{gen(&instr, &pcs, create_ext(X,Y))}}.
+compile_body_goal(create_with_priority(X, Y)) --> true |
+  {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, create_with_priority(X, Y))}}.
+compile_body_goal(create_to_processor(X, Y)) --> true |
+  {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, create_to_processor(X, Y))}}.
+compile_body_goal(create_to_node(X, Y)) --> true |
+  {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, create_to_node(X, Y))}}.
+%compile_body_goal(create_with_priority_to_processor(X, Y, Z)) --> true |
+%  {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+%   refvar(&tabs, Z, &pcs(old)),  mrb_body_ref(&brefs, Z),
+%   gen(&instr, &pcs, create_with_priority_to_processor(X, Y, Z))}}.
+%compile_body_goal(create_ext_with_priority(X, Y, Z)) --> true |
+% {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+%   gen(&instr, &pcs, create_ext_with_priority(X, Y, Z))}}.
+compile_body_goal(enqueue_goal(X)) --> true |
+ {{gen(&instr, &pcs, enqueue_goal(X))}}.
+compile_body_goal(enqueue_with_priority(X, Y)) --> true |
+ {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, enqueue_with_priority(X, Y))}}.
+compile_body_goal(enqueue_to_processor(X, Y)) --> true |
+ {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, enqueue_to_processor(X, Y))}}.
+compile_body_goal(enqueue_to_node(X, Y)) --> true |
+ {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+   gen(&instr, &pcs, enqueue_to_node(X, Y))}}.
+%compile_body_goal(enqueue_with_priority_to_processor(X, Y, Z)) --> true |
+% {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+%   refvar(&tabs, Z, &pcs(old)), mrb_body_ref(&brefs, Z),
+%   gen(&instr, &pcs, enqueue_with_priority_to_processor(X, Y, Z))}}.
+compile_body_goal(enqueue_ext(X, Y)) --> true |
+ {{gen(&instr, &pcs, enqueue_ext(X, Y))}}.
+%compile_body_goal(enqueue_ext_with_priority(X, Y, Z)) --> true |
+% {{refvar(&tabs, Y, &pcs(old)), mrb_body_ref(&brefs, Y),
+%   gen(&instr, &pcs, enqueue_ext_with_priority(X, Y, Z))}}.
+compile_body_goal(execute(X)) --> true |
+ {{kl1cmp_reader:functor(X, F, A),
+   register_body_arguments(&tabs, &pcs, A, X),
+   gen(&instr, &pcs, execute(F/A))}}.
+compile_body_goal(execute_ext(X, Y)) --> true |
+ {{kl1cmp_reader:functor( X, F, A ),
+   register_body_arguments(&tabs, &pcs, A, X),
+   gen(&instr, &pcs, execute_ext(F/A, Y))}}.			% 86.12.25
+compile_body_goal(proceed) --> true |
+ {{gen(&instr, &pcs, proceed)}}.
+compile_body_goal(commit) --> true |
+ {{gen(&instr, &pcs, commit)}}.
+
+:- local_implicit tabs:oldnew, pcs:oldnew.
+
+%:- mode register_body_arguments(+, +, +, +, -).
+register_body_arguments(0, _) --> true| true.
+register_body_arguments(K, X) --> K>0 |
+ {{set_vector_element(X, K, A, [], X1),
+   refvar(&tabs, A, &pcs(old)), usereg(&tabs, A, K),
+   K1 := K-1}},
+   register_body_arguments(K1, X1).
+
+
+:- local_implicit error:oldnew, instr:oldnew, pcs:oldnew, brefs:oldnew.
+
+%:- mode compile_put_valuable(+, +, +, +, +, +, -, ?).
+compile_put_valuable(var(Y), WhenY, X, WhenX) --> true |
+ {{ mrb_body_ref(&brefs, Y)}},
+ ( WhenX=[], WhenY=[]       ->     {{gen(&instr, &pcs, put_variable(Y, X))}} ;
+   WhenX=[], integer(WhenY) ->     {{gen(&instr, &pcs, put_value(Y, X))}} ;
+   integer(WhenX), WhenY=[] ->     {{gen(&instr, &pcs, put_value(X, Y))}} ;
+   integer(WhenX), integer(WhenY) -> {{gen(&instr, &pcs, get_value(Y, X))}} ).
+compile_put_valuable(atomic(C), WhenY, X, WhenX) --> true |
+ ( WhenX=[]       -> {{gen(&instr, &pcs, put_constant(C, X))}} ;
+   integer(WhenX) -> {{gen(&instr, &pcs, get_constant(C, X))}} ).
+% added for the implementation of 'put_strucured_constant'
+compile_put_valuable(struct(A), WhenY, X, WhenX) --> true |
+ (WhenX=[]        -> {{intern_atom(AtomA, A),
+		gen(&instr, &pcs, put_structured_constant(AtomA, X))}};
+  integer(WhenX)  -> {{gen(&instr, &pcs, get_constant(A, X))}}).
+compile_put_valuable(list, WhenY, X, WhenX) --> true |
+ ( WhenX=[]       -> {{gen(&instr, &pcs, put_list(X))}} ;
+   integer(WhenX) -> {{gen(&instr, &pcs, get_list(X))}} ).
+compile_put_valuable(vector(N), WhenY, X, WhenX) --> true |
+ ( WhenX=[]       -> {{gen(&instr, &pcs, put_vector(X, N))}} ;
+   integer(WhenX) -> {{gen(&instr, &pcs, get_vector(X, N))}} ).
+
+compile_trans_valuable(var(Y), WhenY, X, WhenX) --> true |
+ {{ mrb_body_ref(&brefs, Y)}},
+ ( WhenX=[], WhenY=[]       ->     {{gen(&instr, &pcs,
+		put_variable(Y, X))}} ;
+   WhenX=[], integer(WhenY) ->     {{gen(&instr, &pcs,
+		trans_value(Y, X))}} ;
+   integer(WhenX), WhenY=[] ->     {{gen(&instr, &pcs,
+		trans_value(X, Y))}} ;
+   integer(WhenX), integer(WhenY) -> {{gen(&instr, &pcs, get_value(Y, X))}} ).
+
+%:- mode compile_active_draw(+, +, +, +, -, ?).
+compile_active_draw(var(X), WhenX) --> true |
+ {{mrb_body_ref(&brefs, X)}},
+    ( WhenX=[]       -> {{gen(&instr, &pcs, write_variable(X))}} ;
+      integer(WhenX) -> {{gen(&instr, &pcs, write_value(X))}} ).
+compile_active_draw(atomic(C), _) --> true |
+ {{gen(&instr, &pcs, write_constant(C))}}.
+
+%:- mode compile_set_arg(+, +, +, +, +, -, ?).
+compile_set_arg(var(X), WhenX, Arg) --> true |
+ {{mrb_body_ref(&brefs, X)}},
+    ( WhenX=[]       -> {{gen(&instr, &pcs, set_variable(X, Arg))}} ;
+      integer(WhenX) -> {{gen(&instr, &pcs, set_value(X, Arg))}} ).
+compile_set_arg(atomic(C), _, Arg) --> true |
+ {{gen(&instr, &pcs, set_constant(C, Arg))}}.
+
+
+%:- mode compile_struct(+, +, +, +, +, -, ?).
+compile_struct(YY, WhenX, X) --> true |
+ {{mrb_body_ref(&brefs, Y),
+   mrb_body_ref(&brefs, X)}},
+ ( WhenX=[], YY=list(Z) -> {{ Z=Y, gen(&instr, &pcs, put_value(Y, X))}} ;
+   WhenX=[], YY=vector(Z) -> {{ Z=Y, gen(&instr, &pcs, put_value(Y, X))}} ;
+   integer(WhenX), YY=list(Z) -> {{ Z=Y, gen(&instr, &pcs,
+						 get_list_value(Y, X))}} ;
+   integer(WhenX), YY=vector(Z) ->
+   {{ Z=Y, gen(&instr, &pcs, get_vector_value(Y, X))}}).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  tracking variables  %%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%:- mode newvar(+, +, +, -).
+newvar(From0-To0-Reg, Tabs, '$VAR'(X, _), PC) :- true |
+   Tabs = From-To-Reg,
+   set_vector_element(From0, X, _, PC, From),
+   set_vector_element(To0, X, _, PC, To).
+
+%:- mode refvar(+, +, +, -).
+refvar(From-To0-Reg, Tabs, '$VAR'(X, _), PC) :- true |
+   Tabs = From-To-Reg,
+   set_vector_element(To0, X, _, PC, To).
+otherwise.
+refvar(Tabs0, Tabs, _, _) :- true |
+   Tabs0=Tabs.
+
+%:- mode usereg(+, +, +, -).
+usereg(From-To-Reg0, Tabs, '$VAR'(X, _), N) :- true |
+   Tabs=From-To-Reg,
+   set_vector_element(Reg0, X, _, N, Reg).
+otherwise.
+usereg(Tabs0, Tabs, _, _) :- true |
+  Tabs0=Tabs.
+
+get_From_PC(From0-To-Reg, Tabs, Nv, PC) :- true |
+   set_vector_element(From0, Nv, PC, PC, From),
+   Tabs = From-To-Reg.
+
+set_From_PC(From0-To-Reg, Tabs, Nv, PC) :- true |
+   set_vector_element(From0, Nv, _, PC, From),
+   Tabs = From-To-Reg.
+
+get_To_PC(From-To0-Reg, Tabs, Nv, PC) :- true |
+   set_vector_element(To0, Nv, PC, PC, To),
+   Tabs = From-To-Reg.
+
+set_To_PC(From-To0-Reg, Tabs, Nv, PC) :- true |
+   set_vector_element(To0, Nv, _, PC, To),
+   Tabs = From-To-Reg.
+
+set_pass_tbl(Pass0, Pass, N) :- true |
+   set_vector_element(Pass0, N, _, 1, Pass).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  more tracking of variables  %%%%%%%%%%%%%%%%%%%%%%%
+
+% 1. the first argument is a variable which has never been seen before.
+%    it is entered in the from and to tables and [] is returned.
+% 2. the first argument is a variable which has been seen before.
+%    its entry in the to table is updated and its value in the from table is
+%    returned.
+% 3. the first argument is not a variable.  [] is returned.
+
+:- local_implicit tabs:oldnew, pcs:oldnew.
+
+%:- mode how_do_you_do(+, +, +, ?, -).
+how_do_you_do('$VAR'(N, _), Acq) --> true |
+ {{get_From_PC(&tabs, N, Acq)}},
+  ( Acq=[] -> {{set_From_PC(&tabs, N, &pcs(old))}};
+    integer(Acq) -> true ),
+ {{set_To_PC(&tabs, N, &pcs(old))}}.
+otherwise.
+how_do_you_do(_, Acq) --> true | {{Acq = []}}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  tracking terms  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 1. if the first argument is var(v), list(v) or vector(v), say
+%    how_do_you_do to v (see above).
+% 2. if the first argument is none of these, return [].
+
+%:- mode how_do_you_foo(+, +, +, ?, -).
+how_do_you_foo(var(V), Acq) --> true |
+   how_do_you_do(V, Acq).
+how_do_you_foo(list(V), Acq) --> true |
+   how_do_you_do(V, Acq).
+how_do_you_foo(vector(V), Acq) --> true |
+   how_do_you_do(V, Acq).
+otherwise.
+how_do_you_foo(_, Acq) --> true | {{Acq=[]}}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%  random utility predicates  %%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit instr:oldnew, pcs:oldnew.
+%:- mode gen(+, +, -, -, -).
+gen(Instr) --> true |
+	&instr <<= [Instr],
+	&pcs <= &pcs + 1.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  mrb support  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- local_implicit brefs:oldnew.
+
+set_mrb_body_ref(0, _) --> true | true.
+set_mrb_body_ref(N, X0)--> N > 0 |			%%880427-KH
+  {{set_vector_element(X0,N1,A,[],X)}},				%%880427-KH
+    set_mrb_body_ref00(A),
+  {{N1 := N-1}},
+    set_mrb_body_ref(N1, X).
+
+set_mrb_body_ref00(A) --> atom(A) | true.		%%880427-KH
+set_mrb_body_ref00(A) --> integer(A) | true.		%%880427-KH
+set_mrb_body_ref00(A) --> floating_point(A) | true.	%%880427-KH
+set_mrb_body_ref00(A) --> list(A) | true.		%%880427-KH
+set_mrb_body_ref00(A) --> string(A) | true.		%%880427-KH
+set_mrb_body_ref00(A) --> A='$VAR'(_,_) | mrb_body_ref(A).
+otherwise.
+set_mrb_body_ref00(A) --> vector(A, K) |
+ {{K1 := K-1}},
+   set_mrb_body_ref(K1, A).
+
+:- local_implicit brefs:oldnew.
+%:- mode mrb_body_ref(+, +, -).
+mrb_body_ref('$VAR'(X, _)) --> true |
+   increment_bref(X).
+otherwise.
+mrb_body_ref(_) --> true | true.
+
+increment_bref(Bref0, Bref, X) :- true |
+  set_vector_element(Bref0, X, R0, R, Bref),
+  increment(R0, R).
+
+%increment(R0, R) :- true | R := R0+1.

@@ -1,0 +1,208 @@
+%%% KL1-B Test for G_Compare %%%
+% G_Equal %%%%%%%%%%%%%%% abcdefghi
+% G_Not_Equal %%%%%%%%%%% abcdefghi
+% G_Less_Than %%%%%%%%%%% abcdefghi
+% G_Not_Less_Than %%%%%%% abcdefghi
+
+:- module g_comp.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Compare %%%"), put_console(key#lf) | equ.
+
+equ:- put_console(ascii#"% G_Equal %%%%%%%%%%%%%%% ") | equ00.
+
+equ00:- true | equ00(1234,1234).
+equ00(X,Y):- X=:=Y, put_console(c#"a") | equ01.
+otherwise.
+equ00(_,_):- put_console(c#"*") | equ01.
+
+equ01:- true | equ01(1234,0).
+equ01(X,Y):- X=:=Y, put_console(c#"*") | equ02.
+otherwise.
+equ01(_,_):- put_console(c#"b") | equ02.
+
+equ02:- true | equ02(1234,-1234).
+equ02(X,Y):- X=:=Y, put_console(c#"*") | equ03.
+otherwise.
+equ02(_,_):- put_console(c#"c") | equ03.
+
+equ03:- true | equ03(0,1234).
+equ03(X,Y):- X=:=Y, put_console(c#"*") | equ04.
+otherwise.
+equ03(_,_):- put_console(c#"d") | equ04.
+
+equ04:- true | equ04(0,0).
+equ04(X,Y):- X=:=Y, put_console(c#"e") | equ05.
+otherwise.
+equ04(_,_):- put_console(c#"*") | equ05.
+
+equ05:- true | equ05(0,-1234).
+equ05(X,Y):- X=:=Y, put_console(c#"*") | equ06.
+otherwise.
+equ05(_,_):- put_console(c#"f") | equ06.
+
+equ06:- true | equ06(-1234,1234).
+equ06(X,Y):- X=:=Y, put_console(c#"*") | equ07.
+otherwise.
+equ06(_,_):- put_console(c#"g") | equ07.
+
+equ07:- true | equ07(-1234,0).
+equ07(X,Y):- X=:=Y, put_console(c#"*") | equ08.
+otherwise.
+equ07(_,_):- put_console(c#"h") | equ08.
+
+equ08:- true | equ08(-1234,-1234).
+equ08(X,Y):- X=:=Y, put_console(c#"i") | equ09.
+otherwise.
+equ08(_,_):- put_console(c#"*") | equ09.
+
+equ09:- put_console(key#lf) | neq.
+
+neq:- put_console(ascii#"% G_Not_Equal %%%%%%%%%%% ") | neq00.
+
+neq00:- true | neq00(1234,1234).
+neq00(X,Y):- X=\=Y, put_console(c#"*") | neq01.
+otherwise.
+neq00(_,_):- put_console(c#"a") | neq01.
+
+neq01:- true | neq01(1234,0).
+neq01(X,Y):- X=\=Y, put_console(c#"b") | neq02.
+otherwise.
+neq01(_,_):- put_console(c#"*") | neq02.
+
+neq02:- true | neq02(1234,-1234).
+neq02(X,Y):- X=\=Y, put_console(c#"c") | neq03.
+otherwise.
+neq02(_,_):- put_console(c#"*") | neq03.
+
+neq03:- true | neq03(0,1234).
+neq03(X,Y):- X=\=Y, put_console(c#"d") | neq04.
+otherwise.
+neq03(_,_):- put_console(c#"*") | neq04.
+
+neq04:- true | neq04(0,0).
+neq04(X,Y):- X=\=Y, put_console(c#"*") | neq05.
+otherwise.
+neq04(_,_):- put_console(c#"e") | neq05.
+
+neq05:- true | neq05(0,-1234).
+neq05(X,Y):- X=\=Y, put_console(c#"f") | neq06.
+otherwise.
+neq05(_,_):- put_console(c#"*") | neq06.
+
+neq06:- true | neq06(-1234,1234).
+neq06(X,Y):- X=\=Y, put_console(c#"g") | neq07.
+otherwise.
+neq06(_,_):- put_console(c#"*") | neq07.
+
+neq07:- true | neq07(-1234,0).
+neq07(X,Y):- X=\=Y, put_console(c#"h") | neq08.
+otherwise.
+neq07(_,_):- put_console(c#"*") | neq08.
+
+neq08:- true | neq08(-1234,-1234).
+neq08(X,Y):- X=\=Y, put_console(c#"*") | neq09.
+otherwise.
+neq08(_,_):- put_console(c#"i") | neq09.
+
+neq09:- put_console(key#lf) | let.
+
+let:- put_console(ascii#"% G_Less_Than %%%%%%%%%%% ") | let00.
+
+let00:- true | let00(1234,1234).
+let00(X,Y):- X<Y, put_console(c#"*") | let01.
+otherwise.
+let00(_,_):- put_console(c#"a") | let01.
+
+let01:- true | let01(1234,0).
+let01(X,Y):- X<Y, put_console(c#"*") | let02.
+otherwise.
+let01(_,_):- put_console(c#"b") | let02.
+
+let02:- true | let02(1234,-1234).
+let02(X,Y):- X<Y, put_console(c#"*") | let03.
+otherwise.
+let02(_,_):- put_console(c#"c") | let03.
+
+let03:- true | let03(0,1234).
+let03(X,Y):- X<Y, put_console(c#"d") | let04.
+otherwise.
+let03(_,_):- put_console(c#"*") | let04.
+
+let04:- true | let04(0,0).
+let04(X,Y):- X<Y, put_console(c#"*") | let05.
+otherwise.
+let04(_,_):- put_console(c#"e") | let05.
+
+let05:- true | let05(0,-1234).
+let05(X,Y):- X<Y, put_console(c#"*") | let06.
+otherwise.
+let05(_,_):- put_console(c#"f") | let06.
+
+let06:- true | let06(-1234,1234).
+let06(X,Y):- X<Y, put_console(c#"g") | let07.
+otherwise.
+let06(_,_):- put_console(c#"*") | let07.
+
+let07:- true | let07(-1234,0).
+let07(X,Y):- X<Y, put_console(c#"h") | let08.
+otherwise.
+let07(_,_):- put_console(c#"*") | let08.
+
+let08:- true | let08(-1234,-1234).
+let08(X,Y):- X<Y, put_console(c#"*") | let09.
+otherwise.
+let08(_,_):- put_console(c#"i") | let09.
+
+let09:- put_console(key#lf) | nlt.
+
+nlt:- put_console(ascii#"% G_Not_Less_Than %%%%%%% ") | nlt00.
+
+nlt00:- true | nlt00(1234,1234).
+nlt00(X,Y):- X>=Y, put_console(c#"a") | nlt01.
+otherwise.
+nlt00(_,_):- put_console(c#"*") | nlt01.
+
+nlt01:- true | nlt01(1234,0).
+nlt01(X,Y):- X>=Y, put_console(c#"b") | nlt02.
+otherwise.
+nlt01(_,_):- put_console(c#"*") | nlt02.
+
+nlt02:- true | nlt02(1234,-1234).
+nlt02(X,Y):- X>=Y, put_console(c#"c") | nlt03.
+otherwise.
+nlt02(_,_):- put_console(c#"*") | nlt03.
+
+nlt03:- true | nlt03(0,1234).
+nlt03(X,Y):- X>=Y, put_console(c#"*") | nlt04.
+otherwise.
+nlt03(_,_):- put_console(c#"d") | nlt04.
+
+nlt04:- true | nlt04(0,0).
+nlt04(X,Y):- X>=Y, put_console(c#"e") | nlt05.
+otherwise.
+nlt04(_,_):- put_console(c#"*") | nlt05.
+
+nlt05:- true | nlt05(0,-1234).
+nlt05(X,Y):- X>=Y, put_console(c#"f") | nlt06.
+otherwise.
+nlt05(_,_):- put_console(c#"*") | nlt06.
+
+nlt06:- true | nlt06(-1234,1234).
+nlt06(X,Y):- X>=Y, put_console(c#"*") | nlt07.
+otherwise.
+nlt06(_,_):- put_console(c#"g") | nlt07.
+
+nlt07:- true | nlt07(-1234,0).
+nlt07(X,Y):- X>=Y, put_console(c#"*") | nlt08.
+otherwise.
+nlt07(_,_):- put_console(c#"h") | nlt08.
+
+nlt08:- true | nlt08(-1234,-1234).
+nlt08(X,Y):- X>=Y, put_console(c#"i") | nlt09.
+otherwise.
+nlt08(_,_):- put_console(c#"*") | nlt09.
+
+nlt09:- put_console(key#lf) | done.
+
+done:- true | true.

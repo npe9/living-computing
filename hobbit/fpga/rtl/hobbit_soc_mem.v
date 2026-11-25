@@ -22,11 +22,27 @@
 //      else is entered as 0 (a device register is never walked).
 //   4. Only then does it set fire.
 //
-// So a core clock costs at least five system clocks, plus the memory's.
-// The core counts its own clocks, so its cycle counts do not change.
+// So a core clock costs at least four system clocks plus SETTLE, plus the
+// memory's.  The core counts its own clocks, so its cycle counts do not
+// change.
+//
+// SETTLE is how many system clocks the core's logic is given, after the
+// last change to its inputs (a core edge, rdData, the window), before the
+// probes are sampled.  The core's arrays read on the system clock
+// (rtl/hobbit_sysregfile.v), one clock per array a value passes through
+// on its way to a probe, so SETTLE must be at least the longest such
+// chain.  That bounds zero-delay simulation only: on hardware each stage
+// also needs its combinational path to settle, about ceil(t / 40 ns)
+// system clocks at 25 MHz, and the post-placement estimate puts the
+// core's paths near 200 ns (fpga/README.md, "The core's arrays on the
+// system clock"), so a hardware SETTLE is sized from routed timing.
+// HOBBIT_SIM checks it at every core edge: a valid probe in RAM
+// or ROM that the window does not hold prints PROBE STALE and stops the
+// run (fpga/README.md, "The core's arrays on the system clock").
 module hobbit_soc_mem #(
     parameter NWIN = 16,
-    parameter NPROBE = 22
+    parameter NPROBE = 26,
+    parameter SETTLE = 1
 ) (
     input  wire                 clk,
     input  wire                 rst,
@@ -37,6 +53,16 @@ module hobbit_soc_mem #(
     input  wire [64:0]          cpu_memWr,
     input  wire [64:0]          cpu_tblWr,
     input  wire [64:0]          cpu_evWr,
+    // cpu_memWr's byte enables, and whether cpu_rdReq's word is only the
+    // merge word of a byte or half-word store (HobbitSocCpu memWrBe,
+    // rdMerge): such a read is not made of a device, whose register reads
+    // are side effects; the store's byte-enabled write needs none of it.
+    input  wire [3:0]           cpu_memWrBe,
+    input  wire                 cpu_rdMerge,
+    // cpu_rdReq's read is speculative; cpu_rdNack says, until the next
+    // core edge, that this adapter declined it (a device read only).
+    input  wire                 cpu_rdSpec,
+    output reg                  cpu_rdNack,
     output wire [NWIN*65-1:0]   cpu_window,
     input  wire [NPROBE*33-1:0] cpu_probes,
     // Gating.
@@ -75,8 +101,12 @@ module hobbit_soc_mem #(
     reg        rpend;
     reg [31:0] ra;               // address of the word on rdData
     reg        rnew;             // a read was captured at this edge
+    reg        rmerge;           // ... and it is a merge word (cpu_rdMerge)
+    reg        rspec;            // ... or speculative (cpu_rdSpec)
+    reg [3:0]  wbe0;             // the memory write's byte enables
     reg [1:0]  wi;               // write in flight
     reg [NPROBE*33-1:0] pq;      // probes, registered
+    reg [3:0]  settle_n;         // system clocks spent in S_SETTLE
 
     reg        win_v [0:NWIN-1];
     reg [31:0] win_a [0:NWIN-1];
@@ -142,7 +172,10 @@ module hobbit_soc_mem #(
                 cpu_rdData <= merge(cpu_rdData, snoop_wdata, snoop_be);
         end
         if (rst) begin
-            st <= S_SETTLE; fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0;
+            st <= S_SETTLE; settle_n <= 0;
+            fire <= 1'b0; wpend <= 0; rpend <= 0; rnew <= 0; rmerge <= 0;
+            rspec <= 0; cpu_rdNack <= 1'b0;
+            wbe0 <= 4'hF;
             bk_valid <= 1'b0; core_clocks <= 0; wptr <= 0; ra <= 0;
             cpu_rdData <= 0;
             for (i = 0; i < NWIN; i = i + 1) begin
@@ -155,17 +188,24 @@ module hobbit_soc_mem #(
                 fire <= 1'b0;
                 wpend <= {cpu_evWr[64], cpu_tblWr[64], cpu_memWr[64]};
                 wa[0] <= cpu_memWr[63:32]; wd[0] <= cpu_memWr[31:0];
+                wbe0 <= cpu_memWrBe;
                 wa[1] <= cpu_tblWr[63:32]; wd[1] <= cpu_tblWr[31:0];
                 wa[2] <= cpu_evWr[63:32];  wd[2] <= cpu_evWr[31:0];
                 rpend <= cpu_rdReq;
                 rnew <= cpu_rdReq;
+                rmerge <= cpu_rdReq && cpu_rdMerge;
+                rspec <= cpu_rdReq && cpu_rdSpec;
+                cpu_rdNack <= 1'b0;
                 if (cpu_rdReq) ra <= cpu_rdAddr;
                 st <= S_WR;
             end else case (st)
             S_WR: if (!bk_valid) begin
                 if (wpend != 0) begin
                     wi <= wpend[0] ? 2'd0 : wpend[1] ? 2'd1 : 2'd2;
-                    bk_valid <= 1'b1; bk_we <= 1'b1; bk_be <= 4'hF;
+                    // The memory face's write keeps its byte lanes; the
+                    // PTE writeback and the event frame are whole words.
+                    bk_valid <= 1'b1; bk_we <= 1'b1;
+                    bk_be <= wpend[0] ? wbe0 : 4'hF;
                     bk_addr <= wpend[0] ? wa[0] : wpend[1] ? wa[1] : wa[2];
                     bk_wdata <= wpend[0] ? wd[0] : wpend[1] ? wd[1] : wd[2];
                 end else st <= S_RD;
@@ -178,7 +218,25 @@ module hobbit_soc_mem #(
                     cpu_rdData <= bk_wdata;
             end
             S_RD: if (!rpend) st <= S_SETTLE;
-                else if (!bk_valid) begin
+                else if (rmerge && !is_mem(ra)) begin
+                    // A device's merge word is not read: the store that
+                    // wants it writes its own lanes only (bk_be), and a
+                    // device register read is a side effect.  The core
+                    // sees 0 in the other lanes, which nothing it records
+                    // or stores depends on (HobbitStackCache memReq).
+                    rpend <= 1'b0; rnew <= 1'b0; rmerge <= 1'b0;
+                    cpu_rdData <= 32'd0;
+                    st <= S_SETTLE;
+                end else if (rspec && !is_mem(ra)) begin
+                    // A speculative device read is declined, not made:
+                    // the core drops the word and asks again when the
+                    // instructions ahead of the one that wants it are
+                    // done (HobbitStackCache rdNack).
+                    rpend <= 1'b0; rnew <= 1'b0; rspec <= 1'b0;
+                    cpu_rdNack <= 1'b1;
+                    cpu_rdData <= 32'd0;
+                    st <= S_SETTLE;
+                end else if (!bk_valid) begin
                     bk_valid <= 1'b1; bk_we <= 1'b0; bk_be <= 4'hF;
                     bk_addr <= ra;
                 end else if (bk_done) begin
@@ -186,7 +244,11 @@ module hobbit_soc_mem #(
                     cpu_rdData <= bk_rdata;
                     st <= S_SETTLE;
                 end
-            S_SETTLE: st <= S_PROBE;     // the probes settle on the new state
+            S_SETTLE:                    // the probes settle on the new state
+                if (settle_n + 1 >= SETTLE) begin
+                    settle_n <= 0;
+                    st <= S_PROBE;
+                end else settle_n <= settle_n + 1'b1;
             S_PROBE: begin pq <= cpu_probes; pi <= 0; st <= S_CHECK; end
             S_CHECK:
                 if (aux_valid) begin
@@ -236,4 +298,52 @@ module hobbit_soc_mem #(
             endcase
         end
     end
+
+`ifdef HOBBIT_SIM
+    // Probe freshness: on a core edge every valid probe in RAM or ROM must
+    // be in the window, as the probes the core shows *now* (not the ones
+    // sampled in S_PROBE) -- a probe that moved after the sample, because
+    // an array read had not settled, would otherwise be walked as 0.
+    // Window uniqueness: HobbitSocCpu's winRead ORs the words of every
+    // matching valid entry, which is the priority select only while no
+    // two valid entries hold one address (a fill is made on a miss only).
+    integer pp, ww, w2;
+    reg hit_now;
+    // Out of reset two core edges are never in consecutive system clocks
+    // (S_WR, S_RD, S_SETTLE, S_PROBE and S_CHECK lie between them), which
+    // rtl/hobbit_sysregfile.v's check relies on to tell reset's edges from
+    // the run's.
+    reg edge_q;
+    always @(posedge clk) begin
+        edge_q <= !rst && edge_now;
+        if (!rst && edge_now && edge_q) begin
+            $display("EDGE STALE at core clock %0d: two core edges in consecutive system clocks",
+                     core_clocks);
+            $finish;
+        end
+        if (!rst && edge_now) begin
+            for (ww = 0; ww < NWIN; ww = ww + 1)
+                for (w2 = ww + 1; w2 < NWIN; w2 = w2 + 1)
+                    if (win_v[ww] && win_v[w2] && win_a[ww] == win_a[w2]) begin
+                        $display("WINDOW DUPLICATE at core clock %0d: entries %0d and %0d both hold %08x",
+                                 core_clocks, ww, w2, win_a[ww]);
+                        $finish;
+                    end
+            for (pp = 0; pp < NPROBE; pp = pp + 1) begin
+                if (cpu_probes[pp*33 + 32] &&
+                    is_mem({cpu_probes[pp*33+2 +: 30], 2'b00})) begin
+                    hit_now = 1'b0;
+                    for (ww = 0; ww < NWIN; ww = ww + 1)
+                        if (win_v[ww] && win_a[ww] == {cpu_probes[pp*33+2 +: 30], 2'b00})
+                            hit_now = 1'b1;
+                    if (!hit_now) begin
+                        $display("PROBE STALE at core clock %0d: probe %0d %08x not in the window",
+                                 core_clocks, pp, {cpu_probes[pp*33+2 +: 30], 2'b00});
+                        $finish;
+                    end
+                end
+            end
+        end
+    end
+`endif
 endmodule

@@ -1,0 +1,31 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/set_cnst" : Compiling ... go/0,atm/0,atm00/0,atm00/1,atm01/0,nil/0,nil00/0,nil00/1,nil01/0,int/0,int00/0,int00/1,int01/0,flt/0,flt00/0,flt00/1,flt01/0,done/0,dummy/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : set_cnst
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for Set_Constant %%%
+% Set_Atom %%%%%%%%%%%%%% a
+% Set_Nil %%%%%%%%%%%%%%% a
+% Set_Integer %%%%%%%%%%% a
+% Set_Float %%%%%%%%%%%%% a
+Total of 26 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm af56fcf1507cd445f29d1767a6506075c8534ff41e6cc6c740b6abe218e1f20f
+sav 5b101d485375ece2f71380f77fa0bfc2cf657ec0c111514d4518ee82955dc1a5

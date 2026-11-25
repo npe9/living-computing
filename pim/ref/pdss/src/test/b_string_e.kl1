@@ -1,0 +1,626 @@
+%%% KL1-B Test for B_String (Exception) %%%
+% B_String %%%%%%%%%%%%%% abcdef
+% B_New_String %%%%%%%%%% abcdefghijklmno
+% B_String_Element %%%%%% abcdefghijklmn
+% B_Set_String_Element %% abcdefghijklmnopqrstu
+% B_Substring %%%%%%%%%%% abcdefghijklmnopqrstu
+% B_Set_Substring %%%%%%% abcdefghijklmnopqrstuv
+% B_Append_String %%%%%%% abcdefghijklm
+
+:- module b_string_e.
+:- public go/0
+,do_string/1,do_new_string/2,do_string_element/2,do_set_string_element/3,do_substring/3,do_set_substring/3,do_append_string/2.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_String (Exception) %%%"), put_console(key#lf) | str.
+
+str:- put_console(ascii#"% B_String %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | execute_in_shoen(do_string,{ascii#""},R), str00(R).
+str00(success):- put_console(c#"a") | str01.
+otherwise.
+str00(_):- put_console(c#"*") | str01.
+
+str01:- true | execute_in_shoen(do_string,{atom},R), str01(R).
+str01(illegal_input):- put_console(c#"b") | str02.
+otherwise.
+str01(_):- put_console(c#"*") | str02.
+
+str02:- true | execute_in_shoen(do_string,{1234},R), str02(R).
+str02(illegal_input):- put_console(c#"c") | str03.
+otherwise.
+str02(_):- put_console(c#"*") | str03.
+
+str03:- true | execute_in_shoen(do_string,{12.34},R), str03(R).
+str03(illegal_input):- put_console(c#"d") | str04.
+otherwise.
+str03(_):- put_console(c#"*") | str04.
+
+str04:- true | execute_in_shoen(do_string,{[list]},R), str04(R).
+str04(illegal_input):- put_console(c#"e") | str05.
+otherwise.
+str04(_):- put_console(c#"*") | str05.
+
+str05:- true | execute_in_shoen(do_string,{{0}},R), str05(R).
+str05(illegal_input):- put_console(c#"f") | str06.
+otherwise.
+str05(_):- put_console(c#"*") | str06.
+
+str06:- put_console(key#lf) | nst.
+
+nst:- put_console(ascii#"% B_New_String %%%%%%%%%% ") | nst00.
+
+nst00:- true | execute_in_shoen(do_new_string,{0,1},R), nst00(R).
+nst00(success):- put_console(c#"a") | nst01.
+otherwise.
+nst00(_):- put_console(c#"*") | nst01.
+
+nst01:- true | execute_in_shoen(do_new_string,{0,32},R), nst01(R).
+nst01(success):- put_console(c#"b") | nst02.
+otherwise.
+nst01(_):- put_console(c#"*") | nst02.
+
+nst02:- true | execute_in_shoen(do_new_string,{-1,8},R), nst02(R).
+nst02(range_overflow):- put_console(c#"c") | nst03.
+otherwise.
+nst02(_):- put_console(c#"*") | nst03.
+
+nst03:- true | execute_in_shoen(do_new_string,{0,-1},R), nst03(R).
+nst03(range_overflow):- put_console(c#"d") | nst04.
+otherwise.
+nst03(_):- put_console(c#"*") | nst04.
+
+nst04:- true | execute_in_shoen(do_new_string,{0,33},R), nst04(R).
+nst04(range_overflow):- put_console(c#"e") | nst05.
+otherwise.
+nst04(_):- put_console(c#"*") | nst05.
+
+nst05:- true | execute_in_shoen(do_new_string,{atom,8},R), nst05(R).
+nst05(illegal_input):- put_console(c#"f") | nst06.
+otherwise.
+nst05(_):- put_console(c#"*") | nst06.
+
+nst06:- true | execute_in_shoen(do_new_string,{12.34,8},R), nst06(R).
+nst06(illegal_input):- put_console(c#"g") | nst07.
+otherwise.
+nst06(_):- put_console(c#"*") | nst07.
+
+nst07:- true | execute_in_shoen(do_new_string,{[list],8},R), nst07(R).
+nst07(illegal_input):- put_console(c#"h") | nst08.
+otherwise.
+nst07(_):- put_console(c#"*") | nst08.
+
+nst08:- true | execute_in_shoen(do_new_string,{{0},8},R), nst08(R).
+nst08(illegal_input):- put_console(c#"i") | nst09.
+otherwise.
+nst08(_):- put_console(c#"*") | nst09.
+
+nst09:- true | execute_in_shoen(do_new_string,{ascii#"Str",8},R), nst09(R).
+nst09(illegal_input):- put_console(c#"j") | nst10.
+otherwise.
+nst09(_):- put_console(c#"*") | nst10.
+
+nst10:- true | execute_in_shoen(do_new_string,{0,atom},R), nst10(R).
+nst10(illegal_input):- put_console(c#"k") | nst11.
+otherwise.
+nst10(_):- put_console(c#"*") | nst11.
+
+nst11:- true | execute_in_shoen(do_new_string,{0,12.34},R), nst11(R).
+nst11(illegal_input):- put_console(c#"l") | nst12.
+otherwise.
+nst11(_):- put_console(c#"*") | nst12.
+
+nst12:- true | execute_in_shoen(do_new_string,{0,[list]},R), nst12(R).
+nst12(illegal_input):- put_console(c#"m") | nst13.
+otherwise.
+nst12(_):- put_console(c#"*") | nst13.
+
+nst13:- true | execute_in_shoen(do_new_string,{0,{0}},R), nst13(R).
+nst13(illegal_input):- put_console(c#"n") | nst14.
+otherwise.
+nst13(_):- put_console(c#"*") | nst14.
+
+nst14:- true | execute_in_shoen(do_new_string,{0,ascii#"Str"},R), nst14(R).
+nst14(illegal_input):- put_console(c#"o") | nst15.
+otherwise.
+nst14(_):- put_console(c#"*") | nst15.
+
+nst15:- put_console(key#lf) | ste.
+
+ste:- put_console(ascii#"% B_String_Element %%%%%% ") | ste00.
+
+ste00:- true | execute_in_shoen(do_string_element,{ascii#"abc",0},R), ste00(R).
+ste00(success):- put_console(c#"a") | ste01.
+otherwise.
+ste00(_):- put_console(c#"*") | ste01.
+
+ste01:- true | execute_in_shoen(do_string_element,{ascii#"abc",-1},R), ste01(R).
+ste01(range_overflow):- put_console(c#"b") | ste02.
+otherwise.
+ste01(_):- put_console(c#"*") | ste02.
+
+ste02:- true | execute_in_shoen(do_string_element,{ascii#"abc",3},R), ste02(R).
+ste02(range_overflow):- put_console(c#"c") | ste03.
+otherwise.
+ste02(_):- put_console(c#"*") | ste03.
+
+ste03:- true | execute_in_shoen(do_string_element,{ascii#"",0},R), ste03(R).
+ste03(range_overflow):- put_console(c#"d") | ste04.
+otherwise.
+ste03(_):- put_console(c#"*") | ste04.
+
+ste04:- true | execute_in_shoen(do_string_element,{atom,0},R), ste04(R).
+ste04(illegal_input):- put_console(c#"e") | ste05.
+otherwise.
+ste04(_):- put_console(c#"*") | ste05.
+
+ste05:- true | execute_in_shoen(do_string_element,{1234,0},R), ste05(R).
+ste05(illegal_input):- put_console(c#"f") | ste06.
+otherwise.
+ste05(_):- put_console(c#"*") | ste06.
+
+ste06:- true | execute_in_shoen(do_string_element,{12.34,0},R), ste06(R).
+ste06(illegal_input):- put_console(c#"g") | ste07.
+otherwise.
+ste06(_):- put_console(c#"*") | ste07.
+
+ste07:- true | execute_in_shoen(do_string_element,{[list],0},R), ste07(R).
+ste07(illegal_input):- put_console(c#"h") | ste08.
+otherwise.
+ste07(_):- put_console(c#"*") | ste08.
+
+ste08:- true | execute_in_shoen(do_string_element,{{0},0},R), ste08(R).
+ste08(illegal_input):- put_console(c#"i") | ste09.
+otherwise.
+ste08(_):- put_console(c#"*") | ste09.
+
+ste09:- true | execute_in_shoen(do_string_element,{ascii#"a",atom},R), ste09(R).
+ste09(illegal_input):- put_console(c#"j") | ste10.
+otherwise.
+ste09(_):- put_console(c#"*") | ste10.
+
+ste10:- true | execute_in_shoen(do_string_element,{ascii#"a",12.34},R), ste10(R).
+ste10(illegal_input):- put_console(c#"k") | ste11.
+otherwise.
+ste10(_):- put_console(c#"*") | ste11.
+
+ste11:- true | execute_in_shoen(do_string_element,{ascii#"a",[list]},R), ste11(R).
+ste11(illegal_input):- put_console(c#"l") | ste12.
+otherwise.
+ste11(_):- put_console(c#"*") | ste12.
+
+ste12:- true | execute_in_shoen(do_string_element,{ascii#"a",{0}},R), ste12(R).
+ste12(illegal_input):- put_console(c#"m") | ste13.
+otherwise.
+ste12(_):- put_console(c#"*") | ste13.
+
+ste13:- true | execute_in_shoen(do_string_element,{ascii#"a",ascii#"Str"},R), ste13(R).
+ste13(illegal_input):- put_console(c#"n") | ste14.
+otherwise.
+ste13(_):- put_console(c#"*") | ste14.
+
+ste14:- put_console(key#lf) | sse.
+
+sse:- put_console(ascii#"% B_Set_String_Element %% ") | sse00.
+
+sse00:- true | execute_in_shoen(do_set_string_element,{ascii#"abc",0,c#"x"},R), sse00(R).
+sse00(success):- put_console(c#"a") | sse01.
+otherwise.
+sse00(_):- put_console(c#"*") | sse01.
+
+sse01:- true | execute_in_shoen(do_set_string_element,{ascii#"abc",-1,c#"x"},R), sse01(R).
+sse01(range_overflow):- put_console(c#"b") | sse02.
+otherwise.
+sse01(_):- put_console(c#"*") | sse02.
+
+sse02:- true | execute_in_shoen(do_set_string_element,{ascii#"abc",3,c#"x"},R), sse02(R).
+sse02(range_overflow):- put_console(c#"c") | sse03.
+otherwise.
+sse02(_):- put_console(c#"*") | sse03.
+
+sse03:- true | execute_in_shoen(do_set_string_element,{ascii#"",0,c#"x"},R), sse03(R).
+sse03(range_overflow):- put_console(c#"d") | sse04.
+otherwise.
+sse03(_):- put_console(c#"*") | sse04.
+
+sse04:- true | execute_in_shoen(do_set_string_element,{ascii#"abc",0,-1},R), sse04(R).
+sse04(range_overflow):- put_console(c#"e") | sse05.
+otherwise.
+sse04(_):- put_console(c#"*") | sse05.
+
+sse05:- true | execute_in_shoen(do_set_string_element,{ascii#"",0,16#"100"},R), sse05(R).
+sse05(range_overflow):- put_console(c#"f") | sse06.
+otherwise.
+sse05(_):- put_console(c#"*") | sse06.
+
+sse06:- true | execute_in_shoen(do_set_string_element,{atom,0,0},R), sse06(R).
+sse06(illegal_input):- put_console(c#"g") | sse07.
+otherwise.
+sse06(_):- put_console(c#"*") | sse07.
+
+sse07:- true | execute_in_shoen(do_set_string_element,{1234,0,0},R), sse07(R).
+sse07(illegal_input):- put_console(c#"h") | sse08.
+otherwise.
+sse07(_):- put_console(c#"*") | sse08.
+
+sse08:- true | execute_in_shoen(do_set_string_element,{12.34,0,0},R), sse08(R).
+sse08(illegal_input):- put_console(c#"i") | sse09.
+otherwise.
+sse08(_):- put_console(c#"*") | sse09.
+
+sse09:- true | execute_in_shoen(do_set_string_element,{[list],0,0},R), sse09(R).
+sse09(illegal_input):- put_console(c#"j") | sse10.
+otherwise.
+sse09(_):- put_console(c#"*") | sse10.
+
+sse10:- true | execute_in_shoen(do_set_string_element,{{0},0,0},R), sse10(R).
+sse10(illegal_input):- put_console(c#"k") | sse11.
+otherwise.
+sse10(_):- put_console(c#"*") | sse11.
+
+sse11:- true | execute_in_shoen(do_set_string_element,{ascii#"a",atom,0},R), sse11(R).
+sse11(illegal_input):- put_console(c#"l") | sse12.
+otherwise.
+sse11(_):- put_console(c#"*") | sse12.
+
+sse12:- true | execute_in_shoen(do_set_string_element,{ascii#"a",12.34,0},R), sse12(R).
+sse12(illegal_input):- put_console(c#"m") | sse13.
+otherwise.
+sse12(_):- put_console(c#"*") | sse13.
+
+sse13:- true | execute_in_shoen(do_set_string_element,{ascii#"a",[list],0},R), sse13(R).
+sse13(illegal_input):- put_console(c#"n") | sse14.
+otherwise.
+sse13(_):- put_console(c#"*") | sse14.
+
+sse14:- true | execute_in_shoen(do_set_string_element,{ascii#"a",{0},0},R), sse14(R).
+sse14(illegal_input):- put_console(c#"o") | sse15.
+otherwise.
+sse14(_):- put_console(c#"*") | sse15.
+
+sse15:- true | execute_in_shoen(do_set_string_element,{ascii#"a",ascii#"Str",0},R), sse15(R).
+sse15(illegal_input):- put_console(c#"p") | sse16.
+otherwise.
+sse15(_):- put_console(c#"*") | sse16.
+
+sse16:- true | execute_in_shoen(do_set_string_element,{ascii#"a",0,atom},R), sse16(R).
+sse16(illegal_input):- put_console(c#"q") | sse17.
+otherwise.
+sse16(_):- put_console(c#"*") | sse17.
+
+sse17:- true | execute_in_shoen(do_set_string_element,{ascii#"a",0,12.34},R), sse17(R).
+sse17(illegal_input):- put_console(c#"r") | sse18.
+otherwise.
+sse17(_):- put_console(c#"*") | sse18.
+
+sse18:- true | execute_in_shoen(do_set_string_element,{ascii#"a",0,[list]},R), sse18(R).
+sse18(illegal_input):- put_console(c#"s") | sse19.
+otherwise.
+sse18(_):- put_console(c#"*") | sse19.
+
+sse19:- true | execute_in_shoen(do_set_string_element,{ascii#"a",0,{0}},R), sse19(R).
+sse19(illegal_input):- put_console(c#"t") | sse20.
+otherwise.
+sse19(_):- put_console(c#"*") | sse20.
+
+sse20:- true | execute_in_shoen(do_set_string_element,{ascii#"a",0,ascii#"Str"},R), sse20(R).
+sse20(illegal_input):- put_console(c#"u") | sse21.
+otherwise.
+sse20(_):- put_console(c#"*") | sse21.
+
+sse21:- put_console(key#lf) | sst.
+
+sst:- put_console(ascii#"% B_Substring %%%%%%%%%%% ") | sst00.
+
+sst00:- true | execute_in_shoen(do_substring,{ascii#"abc",0,0},R), sst00(R).
+sst00(success):- put_console(c#"a") | sst01.
+otherwise.
+sst00(_):- put_console(c#"*") | sst01.
+
+sst01:- true | execute_in_shoen(do_substring,{ascii#"abc",-1,0},R), sst01(R).
+sst01(range_overflow):- put_console(c#"b") | sst02.
+otherwise.
+sst01(_):- put_console(c#"*") | sst02.
+
+sst02:- true | execute_in_shoen(do_substring,{ascii#"abc",3,0},R), sst02(R).
+sst02(range_overflow):- put_console(c#"c") | sst03.
+otherwise.
+sst02(_):- put_console(c#"*") | sst03.
+
+sst03:- true | execute_in_shoen(do_substring,{ascii#"",0,0},R), sst03(R).
+sst03(range_overflow):- put_console(c#"d") | sst04.
+otherwise.
+sst03(_):- put_console(c#"*") | sst04.
+
+sst04:- true | execute_in_shoen(do_substring,{ascii#"abc",0,-1},R), sst04(R).
+sst04(range_overflow):- put_console(c#"e") | sst05.
+otherwise.
+sst04(_):- put_console(c#"*") | sst05.
+
+sst05:- true | execute_in_shoen(do_substring,{ascii#"abc",0,4},R), sst05(R).
+sst05(range_overflow):- put_console(c#"f") | sst06.
+otherwise.
+sst05(_):- put_console(c#"*") | sst06.
+
+sst06:- true | execute_in_shoen(do_substring,{atom,0,0},R), sst06(R).
+sst06(illegal_input):- put_console(c#"g") | sst07.
+otherwise.
+sst06(_):- put_console(c#"*") | sst07.
+
+sst07:- true | execute_in_shoen(do_substring,{1234,0,0},R), sst07(R).
+sst07(illegal_input):- put_console(c#"h") | sst08.
+otherwise.
+sst07(_):- put_console(c#"*") | sst08.
+
+sst08:- true | execute_in_shoen(do_substring,{12.34,0,0},R), sst08(R).
+sst08(illegal_input):- put_console(c#"i") | sst09.
+otherwise.
+sst08(_):- put_console(c#"*") | sst09.
+
+sst09:- true | execute_in_shoen(do_substring,{[list],0,0},R), sst09(R).
+sst09(illegal_input):- put_console(c#"j") | sst10.
+otherwise.
+sst09(_):- put_console(c#"*") | sst10.
+
+sst10:- true | execute_in_shoen(do_substring,{{0},0,0},R), sst10(R).
+sst10(illegal_input):- put_console(c#"k") | sst11.
+otherwise.
+sst10(_):- put_console(c#"*") | sst11.
+
+sst11:- true | execute_in_shoen(do_substring,{ascii#"a",atom,0},R), sst11(R).
+sst11(illegal_input):- put_console(c#"l") | sst12.
+otherwise.
+sst11(_):- put_console(c#"*") | sst12.
+
+sst12:- true | execute_in_shoen(do_substring,{ascii#"a",12.34,0},R), sst12(R).
+sst12(illegal_input):- put_console(c#"m") | sst13.
+otherwise.
+sst12(_):- put_console(c#"*") | sst13.
+
+sst13:- true | execute_in_shoen(do_substring,{ascii#"a",[list],0},R), sst13(R).
+sst13(illegal_input):- put_console(c#"n") | sst14.
+otherwise.
+sst13(_):- put_console(c#"*") | sst14.
+
+sst14:- true | execute_in_shoen(do_substring,{ascii#"a",{0},0},R), sst14(R).
+sst14(illegal_input):- put_console(c#"o") | sst15.
+otherwise.
+sst14(_):- put_console(c#"*") | sst15.
+
+sst15:- true | execute_in_shoen(do_substring,{ascii#"a",ascii#"Str",0},R), sst15(R).
+sst15(illegal_input):- put_console(c#"p") | sst16.
+otherwise.
+sst15(_):- put_console(c#"*") | sst16.
+
+sst16:- true | execute_in_shoen(do_substring,{ascii#"a",0,atom},R), sst16(R).
+sst16(illegal_input):- put_console(c#"q") | sst17.
+otherwise.
+sst16(_):- put_console(c#"*") | sst17.
+
+sst17:- true | execute_in_shoen(do_substring,{ascii#"a",0,12.34},R), sst17(R).
+sst17(illegal_input):- put_console(c#"r") | sst18.
+otherwise.
+sst17(_):- put_console(c#"*") | sst18.
+
+sst18:- true | execute_in_shoen(do_substring,{ascii#"a",0,[list]},R), sst18(R).
+sst18(illegal_input):- put_console(c#"s") | sst19.
+otherwise.
+sst18(_):- put_console(c#"*") | sst19.
+
+sst19:- true | execute_in_shoen(do_substring,{ascii#"a",0,{0}},R), sst19(R).
+sst19(illegal_input):- put_console(c#"t") | sst20.
+otherwise.
+sst19(_):- put_console(c#"*") | sst20.
+
+sst20:- true | execute_in_shoen(do_substring,{ascii#"a",0,ascii#"Str"},R), sst20(R).
+sst20(illegal_input):- put_console(c#"u") | sst21.
+otherwise.
+sst20(_):- put_console(c#"*") | sst21.
+
+sst21:- put_console(key#lf) | sss.
+
+sss:- put_console(ascii#"% B_Set_Substring %%%%%%% ") | sss00.
+
+sss00:- true | execute_in_shoen(do_set_substring,{ascii#"abc",0,ascii#""},R), sss00(R).
+sss00(success):- put_console(c#"a") | sss01.
+otherwise.
+sss00(_):- put_console(c#"*") | sss01.
+
+sss01:- true | execute_in_shoen(do_set_substring,{ascii#"abc",-1,ascii#""},R), sss01(R).
+sss01(range_overflow):- put_console(c#"b") | sss02.
+otherwise.
+sss01(_):- put_console(c#"*") | sss02.
+
+sss02:- true | execute_in_shoen(do_set_substring,{ascii#"abc",3,ascii#""},R), sss02(R).
+sss02(range_overflow):- put_console(c#"c") | sss03.
+otherwise.
+sss02(_):- put_console(c#"*") | sss03.
+
+sss03:- true | execute_in_shoen(do_set_substring,{ascii#"",0,ascii#""},R), sss03(R).
+sss03(range_overflow):- put_console(c#"d") | sss04.
+otherwise.
+sss03(_):- put_console(c#"*") | sss04.
+
+sss04:- true | execute_in_shoen(do_set_substring,{ascii#"abc",0,ascii#"defg"},R), sss04(R).
+sss04(range_overflow):- put_console(c#"e") | sss05.
+otherwise.
+sss04(_):- put_console(c#"*") | sss05.
+
+sss05:- true | execute_in_shoen(do_set_substring,{ascii#"abc",0,S},R), new_string(S,0,32), sss05(R).
+sss05(illegal_input):- put_console(c#"f") | sss06.
+otherwise.
+sss05(_):- put_console(c#"*") | sss06.
+
+sss06:- true | execute_in_shoen(do_set_substring,{S,0,ascii#"abc"},R), new_string(S,0,32), sss06(R).
+sss06(illegal_input):- put_console(c#"g") | sss07.
+otherwise.
+sss06(_):- put_console(c#"*") | sss07.
+
+sss07:- true | execute_in_shoen(do_set_substring,{atom,0,ascii#""},R), sss07(R).
+sss07(illegal_input):- put_console(c#"h") | sss08.
+otherwise.
+sss07(_):- put_console(c#"*") | sss08.
+
+sss08:- true | execute_in_shoen(do_set_substring,{1234,0,ascii#""},R), sss08(R).
+sss08(illegal_input):- put_console(c#"i") | sss09.
+otherwise.
+sss08(_):- put_console(c#"*") | sss09.
+
+sss09:- true | execute_in_shoen(do_set_substring,{12.34,0,ascii#""},R), sss09(R).
+sss09(illegal_input):- put_console(c#"j") | sss10.
+otherwise.
+sss09(_):- put_console(c#"*") | sss10.
+
+sss10:- true | execute_in_shoen(do_set_substring,{[list],0,ascii#""},R), sss10(R).
+sss10(illegal_input):- put_console(c#"k") | sss11.
+otherwise.
+sss10(_):- put_console(c#"*") | sss11.
+
+sss11:- true | execute_in_shoen(do_set_substring,{{0},0,ascii#""},R), sss11(R).
+sss11(illegal_input):- put_console(c#"l") | sss12.
+otherwise.
+sss11(_):- put_console(c#"*") | sss12.
+
+sss12:- true | execute_in_shoen(do_set_substring,{ascii#"a",atom,ascii#""},R), sss12(R).
+sss12(illegal_input):- put_console(c#"m") | sss13.
+otherwise.
+sss12(_):- put_console(c#"*") | sss13.
+
+sss13:- true | execute_in_shoen(do_set_substring,{ascii#"a",12.34,ascii#""},R), sss13(R).
+sss13(illegal_input):- put_console(c#"n") | sss14.
+otherwise.
+sss13(_):- put_console(c#"*") | sss14.
+
+sss14:- true | execute_in_shoen(do_set_substring,{ascii#"a",[list],ascii#""},R), sss14(R).
+sss14(illegal_input):- put_console(c#"o") | sss15.
+otherwise.
+sss14(_):- put_console(c#"*") | sss15.
+
+sss15:- true | execute_in_shoen(do_set_substring,{ascii#"a",{0},ascii#""},R), sss15(R).
+sss15(illegal_input):- put_console(c#"p") | sss16.
+otherwise.
+sss15(_):- put_console(c#"*") | sss16.
+
+sss16:- true | execute_in_shoen(do_set_substring,{ascii#"a",ascii#"Str",ascii#""},R), sss16(R).
+sss16(illegal_input):- put_console(c#"q") | sss17.
+otherwise.
+sss16(_):- put_console(c#"*") | sss17.
+
+sss17:- true | execute_in_shoen(do_set_substring,{ascii#"a",0,atom},R), sss17(R).
+sss17(illegal_input):- put_console(c#"r") | sss18.
+otherwise.
+sss17(_):- put_console(c#"*") | sss18.
+
+sss18:- true | execute_in_shoen(do_set_substring,{ascii#"a",0,12.34},R), sss18(R).
+sss18(illegal_input):- put_console(c#"s") | sss19.
+otherwise.
+sss18(_):- put_console(c#"*") | sss19.
+
+sss19:- true | execute_in_shoen(do_set_substring,{ascii#"a",0,1234},R), sss19(R).
+sss19(illegal_input):- put_console(c#"t") | sss20.
+otherwise.
+sss19(_):- put_console(c#"*") | sss20.
+
+sss20:- true | execute_in_shoen(do_set_substring,{ascii#"a",0,[list]},R), sss20(R).
+sss20(illegal_input):- put_console(c#"u") | sss21.
+otherwise.
+sss20(_):- put_console(c#"*") | sss21.
+
+sss21:- true | execute_in_shoen(do_set_substring,{ascii#"a",0,{0}},R), sss21(R).
+sss21(illegal_input):- put_console(c#"v") | sss22.
+otherwise.
+sss21(_):- put_console(c#"*") | sss22.
+
+sss22:- put_console(key#lf) | ast.
+
+ast:- put_console(ascii#"% B_Append_String %%%%%%% ") | ast00.
+
+ast00:- true | execute_in_shoen(do_append_string,{ascii#"",ascii#""},R), ast00(R).
+ast00(success):- put_console(c#"a") | ast01.
+otherwise.
+ast00(_):- put_console(c#"*") | ast01.
+
+ast01:- true | execute_in_shoen(do_append_string,{ascii#"abc",S},R), new_string(S,0,32), ast01(R).
+ast01(illegal_input):- put_console(c#"b") | ast02.
+otherwise.
+ast01(_):- put_console(c#"*") | ast02.
+
+ast02:- true | execute_in_shoen(do_append_string,{S,ascii#"abc"},R), new_string(S,0,32), ast02(R).
+ast02(illegal_input):- put_console(c#"c") | ast03.
+otherwise.
+ast02(_):- put_console(c#"*") | ast03.
+
+ast03:- true | execute_in_shoen(do_append_string,{atom,ascii#""},R), ast03(R).
+ast03(illegal_input):- put_console(c#"d") | ast04.
+otherwise.
+ast03(_):- put_console(c#"*") | ast04.
+
+ast04:- true | execute_in_shoen(do_append_string,{1234,ascii#""},R), ast04(R).
+ast04(illegal_input):- put_console(c#"e") | ast05.
+otherwise.
+ast04(_):- put_console(c#"*") | ast05.
+
+ast05:- true | execute_in_shoen(do_append_string,{12.34,ascii#""},R), ast05(R).
+ast05(illegal_input):- put_console(c#"f") | ast06.
+otherwise.
+ast05(_):- put_console(c#"*") | ast06.
+
+ast06:- true | execute_in_shoen(do_append_string,{[list],ascii#""},R), ast06(R).
+ast06(illegal_input):- put_console(c#"g") | ast07.
+otherwise.
+ast06(_):- put_console(c#"*") | ast07.
+
+ast07:- true | execute_in_shoen(do_append_string,{{0},ascii#""},R), ast07(R).
+ast07(illegal_input):- put_console(c#"h") | ast08.
+otherwise.
+ast07(_):- put_console(c#"*") | ast08.
+
+ast08:- true | execute_in_shoen(do_append_string,{ascii#"",atom},R), ast08(R).
+ast08(illegal_input):- put_console(c#"i") | ast09.
+otherwise.
+ast08(_):- put_console(c#"*") | ast09.
+
+ast09:- true | execute_in_shoen(do_append_string,{ascii#"",1234},R), ast09(R).
+ast09(illegal_input):- put_console(c#"j") | ast10.
+otherwise.
+ast09(_):- put_console(c#"*") | ast10.
+
+ast10:- true | execute_in_shoen(do_append_string,{ascii#"",12.34},R), ast10(R).
+ast10(illegal_input):- put_console(c#"k") | ast11.
+otherwise.
+ast10(_):- put_console(c#"*") | ast11.
+
+ast11:- true | execute_in_shoen(do_append_string,{ascii#"",[list]},R), ast11(R).
+ast11(illegal_input):- put_console(c#"l") | ast12.
+otherwise.
+ast11(_):- put_console(c#"*") | ast12.
+
+ast12:- true | execute_in_shoen(do_append_string,{ascii#"",{0}},R), ast12(R).
+ast12(illegal_input):- put_console(c#"m") | ast13.
+otherwise.
+ast12(_):- put_console(c#"*") | ast13.
+
+ast13:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_string_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(1,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=range_overflow, C=[abort].
+
+do_string(X):- true | string(X,A,B,C).
+do_new_string(X,Y):- true | new_string(A,X,Y).
+do_string_element(X,Y):- true | string_element(X,Y,A,B).
+do_set_string_element(X,Y,Z):- true | set_string_element(X,Y,Z,A).
+do_substring(X,Y,Z):- true | substring(X,Y,Z,A,B).
+do_set_substring(X,Y,Z):- true | set_substring(X,Y,Z,A).
+do_append_string(X,Y):- true | append_string(X,Y,A).

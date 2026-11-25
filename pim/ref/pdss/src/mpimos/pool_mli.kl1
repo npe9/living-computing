@@ -1,0 +1,74 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_monogyny_list_index.
+:- public create/1.
+
+create(LI):-
+     true|
+	monogyny_list_index(LI,IN,IN).
+
+
+monogyny_list_index([],First,Last):-
+     true|
+	First = [],
+	monogyny_list_index(_,_,Last).
+monogyny_list_index([Comm|NLI],First,Last):-
+     true|
+	First = [Comm|NFirst],
+	monogyny_list_index(NLI,NFirst,Last).
+monogyny_list_index(LI,First,[clear|NLast]):-
+     true|
+	monogyny_list_index(LI,First,NLast).
+monogyny_list_index(LI,First,[count(C)|NLast]):-
+     true|
+	C = 0,
+	monogyny_list_index(LI,First,Nlast).
+monogyny_list_index(LI,First,[put_at(Data,Key)|NLast]):-
+     true|
+	entry(NLast,NNLast,Data,Key),
+	monogyny_list_index(LI,First,NNLast).
+monogyny_list_index(LI,First,[remove_at(_,_,S)|NLast]):-
+     true|
+	S = fail,
+	monogyny_list_index(LI,First,NLast).
+monogyny_list_index(LI,First,[get_at(_,_,S)|NLast]):-
+     true|
+	S = fail,
+	monogyny_list_index(LI,First,NLast).
+monogyny_list_index(_,_,[]):- true| true.
+
+entry([],OUT,_,_):-
+     true|
+	OUT = [].
+entry([clear|NIN],OUT,_,_):-
+     true|
+	OUT = [clear|NOUT],
+	NIN = NOUT.
+entry([count(C)|NIN],OUT,Data,Key):-
+     true|
+	C := 1 + NC,
+	OUT = [count(NC)|NOUT],
+	entry(NIN,NOUT,Data,Key).
+entry([put_at(Data,Key)|NIN],OUT,_,Key):-
+     true|
+	entry(NIN,OUT,Data,Key).
+entry([remove_at(Data0,Key,S)|NIN],OUT,Data,Key):-
+     true|
+	Data0 = Data,
+	S = success,
+	NIN = OUT.
+entry([get_at(Data0,Key,S)|NIN],OUT,Data,Key):-
+     true|
+	S = success,
+	Data0 = Data,
+	entry(NIN,OUT,Data,Key).
+otherwise.
+entry([Comm|NIN],OUT,Data,Key):-
+     true|
+	OUT = [Comm|NOUT],
+	entry(NIN,NOUT,Data,Key).

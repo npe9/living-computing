@@ -1,0 +1,34 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/g_diff" : Compiling ... go/0,atm/0,atm00/0,atm00/2,atm01/0,atm01/2,atm02/0,atm02/2,atm03/0,atm03/2,atm04/0,atm04/2,atm05/0,atm05/2,atm06/0,atm06/2,atm07/0,atm07/2,atm08/0,int/0,int00/0,int00/2,int01/0,int01/2,int02/0,int02/2,int03/0,int03/2,int04/0,int04/2,int05/0,int05/2,int06/0,int06/2,int07/0,int07/2,int08/0,flt/0,flt00/0,flt00/2,flt01/0,flt01/2,flt02/0,flt02/2,flt03/0,flt03/2,flt04/0,flt04/2,flt05/0,flt05/2,flt06/0,flt06/2,flt07/0,flt07/2,flt08/0,lst/0,lst00/0,lst00/2,lst01/0,lst01/2,lst02/0,lst02/2,lst03/0,lst03/2,lst04/0,lst04/2,lst05/0,lst05/2,lst06/0,lst06/2,lst07/0,vec/0,vec00/0,vec00/2,vec01/0,vec01/2,vec02/0,vec02/2,vec03/0,vec03/2,vec04/0,vec04/2,vec05/0,vec05/2,vec06/0,vec06/2,vec07/0,vec07/2,vec08/0,str/0,str00/0,str00/2,str01/0,str01/2,str02/0,str02/2,str03/0,str03/2,str04/0,str04/2,str05/0,str05/2,str06/0,str06/2,str07/0,str07/2,str08/0,udf/0,udf00/0,udf00/2,udf01/0,udf01/2,udf02/0,udf02/2,udf03/0,udf03/2,udf04/0,udf04/2,udf05/0,udf05/2,udf06/0,udf06/2,udf07/0,done/0,END.
+
+[go/0]
+successdone
+Loading ... done
+Module name : g_diff
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for G_Diff %%%
+% (Atom) %%%%%%%%%%%%%%%% abcdefgh
+% (Integer) %%%%%%%%%%%%% abcdefgh
+% (Float) %%%%%%%%%%%%%%% abcdefgh
+% (List) %%%%%%%%%%%%%%%% abcdefg
+% (Vector) %%%%%%%%%%%%%% abcdefgh
+% (String) %%%%%%%%%%%%%% abcdefgh
+% (Undef) %%%%%%%%%%%%%%% abcdefg
+Total of 128 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 389b725f4d2db7554927dad98656788a20e0b7b8d52a70dbd06e6e212e52775b
+sav fb043bf970a94298312631e8b88843a4c590adaf9abd4860a4206826b3c56b09

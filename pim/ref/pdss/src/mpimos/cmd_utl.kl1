@@ -1,0 +1,206 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_cmd_utl.
+:- public send_shell/3, protect/2, wait_send/4,
+   check_savedir/5, os_check_loaddir/5,
+   apply_action/3, apply_action/4.
+
+send_shell(Mess,SS,NSS):-
+     true|
+	protect(Mess,PMess),
+	send_shell0(PMess,SS,NSS).
+
+send_shell0(PMess,SS,NSS):-
+     wait(PMess)|
+	SS = [PMess|NSS].
+
+protect(IN,OUT):-
+     atom(IN)|
+	OUT = IN.
+protect(IN,OUT):-
+     integer(IN)|
+	OUT = IN.
+protect(IN,OUT):-
+     floating_point(IN)|
+	OUT = IN.
+protect(IN,OUT):-
+     string(IN)|
+	OUT = IN.
+protect([H|T],OUT):-
+     true|
+	protect(H,PH),
+	protect(T,PT),
+	protect_list(PH,PT,OUT).
+protect(IN,OUT):-
+     vector(IN,N)|
+	new_vector(OUT0,N),
+	NN := N - 1,
+	protect_vector(IN,OUT,OUT0,NN).
+
+protect_vector(IN,OUT,OUT0,N):-
+     vector_element(IN,N,INE)|
+	protect(INE,OUTE),
+	protect_vector0(IN,OUT,OUTE,OUT0,N).
+protect_vector(_,OUT,OUT0,N):-
+     N < 0|
+	OUT = OUT0.
+
+protect_vector0(IN,OUT,OUTE,OUT0,N):-
+     wait(OUTE)|
+	set_vector_element(OUT0,N,_,OUTE,NOUT0),
+	NN := N - 1,
+	protect_vector(IN,OUT,NOUT0,NN).
+
+protect_list(PH,PT,OUT):-
+     wait(PH),
+     wait(PT)|
+	OUT = [PH|PT].
+
+wait_send([H|T],Mess,SS,NSS):-
+     wait(H)|
+	wait_send(T,Mess,SS,NSS).
+wait_send([],Mess,SS,NSS):-
+     true|
+	SS = [Mess|NSS].
+
+
+
+check_savedir(SDir,NSDir,S,SS,NSS):-
+     string(SDir,_,8)|
+	mpimos_directory:create(DS,SDir,S0),
+	check_savedir0(S0,S,DS,SDir,NSDir,SS,NSS).
+otherwise.
+check_savedir(SDir,NSDir,S,SS,NSS):-
+     true|
+	check_savedir0(fail,S,_,SDir,NSDir,SS,NSS).
+
+check_savedir0(success,S,DS,_,NSDir,SS,NSS):-
+     true|
+	S = success,
+	DS = [pathname(NSDir)],
+	SS = NSS.
+otherwise.
+check_savedir0(_,S,_,SDir,NSDir,SS,NSS):-
+     true|
+	S = fail,
+	NSDir = string#"~/.PDSSsave",
+	SS = [window([putb(string#"Illegal environment variable ::: savedir = "),
+		      putt(SDir),nl,flush(_)])|NSS].
+
+os_check_loaddir(SDir,NSDir,S,SS,NSS):-
+     string(SDir,_,8)|
+	SS = [system_stream(SystemStream)|SS1],
+	mpimos_directory:os_create(DS,SDir,_,SystemStream,[],S0),
+	check_loaddir0(S0,S,DS,SDir,NSDir,SS1,NSS).
+otherwise.
+os_check_loaddir(SDir,NSDir,S,SS,NSS):-
+     true|
+	check_loaddir0(fail,S,_,SDir,NSDir,SS,NSS).
+
+check_loaddir0(success,S,DS,_,NSDir,SS,NSS):-
+     true|
+	S = success,
+	DS = [pathname(NSDir)],
+	SS = NSS.
+otherwise.
+check_loaddir0(_,S,_,SDir,NSDir,SS,NSS):-
+     true|
+	S = fail,
+	NSDir = string#"~/.PDSSsave",
+	SS = [window([putb(string#"Illegal environment variable ::: loaddir = "),
+		      putt(SDir),nl,flush(_)])|NSS].
+
+apply_action(Module:Pred,[Arg|TArgs],SS):-
+     true|
+	SS = {SS2,SS1},
+	make_command(Pred,Arg,Com),
+	apply_goal(Module:Com,SS1),
+	apply_action(Module:Pred,TArgs,SS2).
+apply_action(ComN,[Arg|TArgs],SS):-
+     atom(ComN)|
+	SS = {SS2,SS1},
+	make_command(ComN,Arg,Com),
+	apply_goal(Com,SS1),
+	apply_action(ComN,TArgs,SS2).
+apply_action(_,[],SS):-
+     true|
+	SS = [].
+
+apply_action(Module:Pred,[Arg|TArgs],Op,SS):-
+     true|
+	SS = {SS2,SS1},
+	make_command(Pred,Arg,Op,Com),
+	apply_goal(Module:Com,SS1),
+	apply_action(Module:Pred,TArgs,Op,SS2).
+apply_action(ComN,[Arg|TArgs],Op,SS):-
+     atom(ComN)|
+	SS = {SS2,SS1},
+	make_command(ComN,Arg,Op,Com),
+	apply_goal(Com,SS1),
+	apply_action(ComN,TArgs,Op,SS2).
+apply_action(_,[],_,SS):-
+     true|
+	SS = [].
+
+apply_goal(Com,SS):-
+    true|
+	mpimos_command_interpreter:command_analyzer(Com,SS,ExGoals),
+	mpimos_command_interpreter:apply_goals(ExGoals).
+
+make_command(ComN,Args,Com) :- vector(Args,Size), Size > 0 |
+    S := Size + 1,
+    new_vector(Term, S),
+    set_vector_element(Term, 0, _, ComN, NT),
+    copy_args(0, Size, Args, NT, Com).
+alternatively.
+make_command(ComN,Args,Com) :- true | Com = {ComN,Args}.
+
+make_command(ComN,Args,Op,Com) :- vector(Args,Size), Size > 0 |
+    get_option(Op,OL,ON),
+    S := Size + 1 + ON,
+    new_vector(Term, S),
+    set_vector_element(Term, 0, _, ComN, NT),
+    copy_args(0, Size, Args, NT, ComT),
+    set_option(ComT,~(Size+1),OL,Com).
+alternatively.
+make_command(ComN,Arg,Op,Com) :- true |
+    get_option(Op,OL,ON),
+    S := 2 + ON,
+    new_vector(Term, S),
+    set_vector_element(Term, 0, _, ComN, NT),
+    set_vector_element(NT, 1, _, Arg, ComT),
+    set_option(ComT,2,OL,Com).
+
+copy_args(K, N, As, T, G) :- K<N |
+    K1 := K+1,
+    set_vector_element(As, K, Ek, [], NAs),
+    set_vector_element(T, K1, _, Ek, NT),
+    copy_args(K1, N, NAs, NT, G).
+copy_args(N, N, _, Args, G) :- true | G=Args.
+
+get_option(Op,OL,ON) :- true | get_option(Op,OL,1,ON).
+
+get_option((Op1,OpL),OL,N,ON) :-
+    true |
+	OL = [Op1|OLL],
+	N1 := N + 1,
+	get_option(OpL,OLL,N1,ON).
+alternatively.
+get_option(Op,OL,N,ON) :-
+    true |
+	OL = [Op],
+	ON = N.
+
+set_option(Tmp,P,[Op|OpL],Com) :-
+    true |
+	set_vector_element(Tmp,P,_,Op,NewTmp),
+	P1 := P + 1,
+	set_option(NewTmp,P1,OpL,Com).
+set_option(Tmp,_,[],Com) :-
+    true |
+	Com = Tmp.

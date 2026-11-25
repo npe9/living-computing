@@ -1,0 +1,577 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_utility.
+:- public melt/3, freeze/2, get_predicate/3, write/1,
+	  symbol_append/2, string_append/2,symbol_to_string/2,pathname/3,
+	  extend_name/3, compress/2,integer_to_string/2,
+	  qsort/2, qsort/3, qsortv/3, qsortv/4,
+	  report_tokens/3, report_tokens/2,
+	  copy_string_elements/7,
+	  append_string/2.
+:- with_macro pdss.
+
+%%%% melt(FrozenTerm, VN, MeltedTerm)
+melt(Ft, 0, Mt) :- true | Mt=Ft.
+melt(Ft, Vn, Mt) :- Vn>0 |
+    new_vector(VarTbl, Vn),
+    set_empty(0,Vn, VarTbl,VarTbl1),
+    melt_term(Ft,Mt, VarTbl1,VarTbl2, Vn),
+    unify_variables_table_entry(0,Vn, VarTbl2).
+
+set_empty(N, N, V, VV) :- true | VV=V.
+set_empty(K, N, V, VV) :- K\=N |
+    K1 := K+1,
+    set_vector_element(V, K, _, [], V1),
+    set_empty(K1, N, V1, VV).
+
+melt_term(X,Y, Vt,Vt1, Vn) :- atom(X) | Y=X, Vt1=Vt.
+melt_term(X,Y, Vt,Vt1, Vn) :- integer(X) | Y=X, Vt1=Vt.
+melt_term(X,Y, Vt,Vt1, Vn) :- floating_point(X) | Y=X, Vt1=Vt.
+melt_term(X,Y, Vt,Vt1, Vn) :- string(X) | Y=X, Vt1=Vt.
+melt_term([Car|Cdr],List, Vt,Vt2, Vn) :- true |
+    List=[Ncar|Ncdr],
+    melt_term(Car,Ncar, Vt,Vt1, Vn),
+    melt_term(Cdr,Ncdr, Vt1,Vt2, Vn).
+melt_term('$VAR'(N,S),Y, Vt,Vt1, Vn) :- N>=0, N<Vn, string(S,_,8) |
+    enter(N,Y, Vt,Vt1).
+otherwise.
+melt_term(X,Y, Vt,Vt2, Vn) :- vector(X,Size) |
+    new_vector(V, Size),
+    melt_args(0,Size, X,V, Vt,Vt2, Vn, Y).
+
+melt_args(N,N, _,V, Vt,Vt2, Vn, Y) :- true | Y=V, Vt2=Vt.
+otherwise.
+melt_args(K,N, X,V, Vt,Vt2, Vn, Y) :- true |
+    K1 := K+1,
+    set_vector_element(X,K,Xk,[],X1),
+    melt_term(Xk,Vk, Vt,Vt1, Vn),
+    set_vector_element(V,K,_,Vk,V1),
+    melt_args(K1,N, X1,V1, Vt1,Vt2, Vn, Y).
+
+enter(P,V, Vt,Vt1) :- true | set_vector_element(Vt,P,E,[V|E],Vt1).
+
+unify_variables_table_entry(N,N, _) :- true | true.
+otherwise.
+unify_variables_table_entry(K,N, Vt) :- true |
+    K1 := K+1,
+    set_vector_element(Vt,K,Vk,_,Vt1),
+    unify_elements(Vk),
+    unify_variables_table_entry(K1,N, Vt1).
+
+unify_elements([X]) :- true | true.
+unify_elements([X,Y]) :- true | X=Y.
+unify_elements([X,Y|Z]) :- list(Z) | X=Y, unify_elements([Y|Z]).
+
+%% freeze(MeltedTerm, FrozenTerm).
+freeze(In,Out):-
+    true |
+	freeze(In,Tmp,0,Max,[],_,di,200),
+	wait_freeze(Max,Tmp,Out).
+
+wait_freeze(F,Tmp,Out) :- wait(F) | Out = Tmp.
+
+freeze(In,Out,K1,K2,U1,U2,Q,D) :- D>=0 |
+    unbound(In,R),
+    wait_unbound_result(R,Out,K1,K2,U1,U2,Q,D).
+freeze(In,Out,K1,K2,U1,U2,Q,D) :- D<0  | Out='...', K2=K1,U2=U1.
+
+wait_unbound_result({_,Addr,In},Out,K1,K2,U1,U2,Q,D):- % unbound
+    true |
+    Out = '$VAR'(Addr,VarStr),
+    get_variable_number(Addr,K1,K2,U1,U2,VarNum),
+    mpimos_unparser:make_variable_name(VarNum,VarStr).
+wait_unbound_result({In},Out,K1,K2,U1,U2,Q,D):- % bound
+    true |
+    unify(In,Out,K1,K2,U1,U2,Q,D).
+
+get_variable_number(R,K1,K2,[{R,VN}|U1],U2,VarNum):-
+    true |
+    VarNum = VN,
+    K2 = K1,
+    U2 = [{R,VN}|U1].
+get_variable_number(R,K1,K2,[{S,VN}|U1],U2,VarNum):-
+    R\=S |
+    U2 = [{S,VN}|U3],
+    get_variable_number(R,K1,K2,U1,U3,VarNum).
+get_variable_number(R,K1,K2,[],U2,VarNum):-
+    true |
+    VarNum = K1,
+    K2 := K1 + 1,
+    U2 = [{R,VarNum}].
+
+unify([H|T],Out,K1,K2,U1,U2,Q,D):-
+    true |
+    D1 := D-1, D2 := D-2,
+    Out = [H1|T1],
+    freeze(H,H1,K1,K3,U1,U3,Q,D2), freeze(T,T1,K3,K2,U3,U2,Q,D1).
+unify(In,Out,K1,K2,U1,U2,Q,D):-
+    vector(In,S) |
+    DD := D-2,
+    new_vector(V,S), unify_vector(0,S,In,V,Out2,K1,K3,U1,U2,Q,DD,D),
+    unify_variable(Out2,Out,K3,K2,Q).
+otherwise.
+unify(In,Out,K1,K2,U1,U2,Q,D):-
+    true |
+    Out = In, K2 = K1, U2 = U1.
+
+unify_vector(P,S,In,V,Out,K1,K2,U1,U2,Q,D,L) :-
+    P < S, L >= 0 |
+    set_vector_element(In,P,E,[],In1),
+    set_vector_element(V,P,_,E1,V1),
+    freeze(E,E1,K1,K3,U1,U3,Q,D),
+    P1 := P + 1,
+    LL := L - 1,
+    unify_vector(P1,S,In1,V1,Out,K3,K2,U3,U2,Q,D,LL).
+unify_vector(P,S,In,V,Out,K1,K2,U1,U2,Q,D,L) :-
+    P < S, L < 0 |
+    unify_vector(P,S,In,V,Out,K1,K2,U1,U2,Q,-1,1000000).
+unify_vector(S,S,In,V,Out,K1,K2,U1,U2,Q,D,L) :-
+    true |
+    Out = V, K2 = K1, U2 = U1.
+
+unify_variable('$VAR'(N),Out,K1,K2,no) :-
+    integer(N) |
+	Out = '$VAR'(N),
+	K2 = K1.
+unify_variable('$VAR'(N),Out,K1,K2,di) :-
+    integer(N) |
+	new_vector(O,2),
+	set_vector_element(O,0,_,16#"50445353",O1),
+	set_vector_element(O1,1,_,'$VAR'(N),Out),
+	K2 = K1.
+unify_variable('$VAR'(N,Str),Out,K1,K2,no) :-
+    integer(N), string(Str,_,8) |
+	Out = '$VAR'(N,Str),
+	K2 = K1.
+unify_variable('$VAR'(N,Str),Out,K1,K2,di) :-
+    integer(N), string(Str,_,8) |
+	new_vector(O,2),
+	set_vector_element(O,0,_,16#"50445353",O1),
+	set_vector_element(O1,1,_,'$VAR'(N,Str),Out),
+	K2 = K1.
+otherwise.
+unify_variable(In,Out,K1,K2,Q) :-
+    true |
+	Out = In,
+	K2 = K1.
+
+%%%%%%% get_predicate(Term, Functor, Arguments) %%%%%%
+get_predicate(Module:Goal, Code, Args) :- atom(Goal) |
+    Code={Module,Goal,0}, Args={}.
+get_predicate(Module:Goal, Code, Args1) :- vector(Goal, Size) |
+    S := Size-1,
+    Code={Module,PName,S},
+    new_vector(Args, S),
+    set_vector_element(Goal, 0, PName, [], NG),
+    copy_args(0, S, NG, Args, Args1).
+otherwise.
+get_predicate(Goal, PName, Args) :- true |
+    mpimos_utility:freeze(Goal,FG),
+    raise(shoen_tag#mpimos_error,warning,
+	  [putb(string#"illegal goal format ("),putt(FG),putb(string#")."),nl]).
+
+copy_args(K, N, T, As, As1) :- K<N |
+    K1 := K+1,
+    set_vector_element(T, K1, Ek, [], NT),
+    set_vector_element(As, K, _, Ek, NAs),
+    copy_args(K1, N, NT, NAs, As1).
+copy_args(N, N, _, Args1, Args2) :- wait(Args1) | Args2=Args1.
+
+%%%%%%%% write/1 %%%%%%%
+write([]) :- true | true.
+write([A|B]) :- wait(A), display_console(A) | write(B).
+otherwise.
+write(X) :- wait(X),display_console(X) | true.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Symbol Append
+%% symbol_append(AL,A).
+%%	AL  :: Atom LIST
+%%	A   :: Atom
+
+
+symbol_append(L,A):- true|
+	symbol_to_string(L,SL),
+	string_append(SL,S),
+	intern_atom(S,A).
+
+symbol_to_string([AH|AT],SL):- true|
+	atom_name(AH,SH),
+	symbol_to_string(AT,ST),
+	SL = [SH|ST].
+symbol_to_string([],SL):- true|
+	SL = [].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% String Append
+%% string_append(SL,S).
+%%	SL  :: String LIST
+%%	S   :: String
+
+string_append(L,S):-
+     true|
+	string_append(L,0,S).
+
+string_append([],MS,S):-
+     true|
+	S = MS.
+string_append([SE|TS],0,S):-
+     true|
+	string_append(TS,SE,S).
+otherwise.
+string_append([SE|TS],MS,S):-
+     true|
+	append_string(MS,SE,NMS),
+	string_append(TS,NMS,S).
+
+%%%%%% expand path-name %%%%%%
+%% pathname(DName, PName, NPName).
+%%     DName  :: DirectoryName
+%%     PName  :: PathName
+%%     NPName :: NewPathName
+
+pathname(DName, PName, NPName):-
+    string(DName,_,8) |
+    compress(DName,CDName),
+    compress(PName,CPName),
+    pathname1(CDName, CPName, NPName).
+otherwise.
+pathname(DName, PName, NPName):-
+    true |
+    raise(shoen_tag#mpimos_error,warning,
+	  [putb(string#"Illegal environment valiable ::: world = "),putt(DName),nl]),
+    compress(PName,CPName),
+    pathname1(string#".",CPName,NPName).
+
+pathname1(DName, PName, NPName):-
+    string_element(PName, 0, #"/") |
+    NPName = PName.
+pathname1(DName, PName, NPName):-
+    string_element(PName, 0, #"~") |
+    NPName = PName.
+otherwise.
+pathname1(DName, PName, NPName):-
+    string(DName,L,8), E := L - 1, string_element(DName, E, #"/") |
+    append_string(DName, PName, NPName).
+otherwise.
+pathname1(DName, PName, NPName):-
+    true |
+    append_string(DName, string#"/", NPName1),
+    append_string(NPName1, PName, NPName).
+
+%%%%%% extend name %%%%%%
+%% extend_name(PName,Ex,NPName).
+%%     PName  :: Path-name.
+%%     Ex     :: Extend-name.
+%%     NPName :: New path-name.
+
+extend_name(PathName,Ex,Extended) :-
+    true |
+	compress(PathName,CPathName),
+	extend(CPathName,Ex,Extended).
+
+extend(PathName,Ex,Extended) :-
+    string(PathName,PL,8) |
+	PE := PL - 1,
+	extend(PathName,Ex,Extended,PE).
+
+extend(PathName,Ex,Extended,P) :-
+    string_element(PathName,P,#".") |
+	Extended = PathName.
+extend(PathName,Ex,Extended,P) :-
+    string_element(PathName,P,#"/") |
+	append_string(PathName,string#".",PN),
+	append_string(PN,Ex,Extended).
+extend(PathName,Ex,Extended,P) :-
+    P < 0 |
+	append_string(PathName,string#".",PN),
+	append_string(PN,Ex,Extended).
+otherwise.
+extend(PathName,Ex,Extended,P) :-
+    true |
+	P2 := P - 1,
+	extend(PathName,Ex,Extended,P2).
+
+%% compress string (get rid of spaces & tabs).
+compress(Str,NewStr) :-
+    true |
+	compress(Str,0,NewStr,0).
+
+compress(Str,P1,New,P2):-
+    string_element(Str,P1,#" ") |
+	P01 := P1 + 1,
+	compress(Str,P01,New,P2).
+compress(Str,P1,New,P2):-
+    string_element(Str,P1,9) | % tab
+	P01 := P1 + 1,
+	compress(Str,P01,New,P2).
+compress(Str,P1,New,P2):-
+    string_element(Str,P1,E), E \= #" ", E \= 9 |
+	set_string_element(New0,P2,E,New),
+	P01 := P1 + 1,
+	P02 := P2 + 1,
+	compress(Str,P01,New0,P02).
+compress(Str,P1,New,P2):-
+    string(Str,P1,_) |
+	new_string(New,P2,8).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% integer_to_string(I,S).
+%%   I :: Integer
+%%   S :: String
+
+integer_to_string(I,S):-
+     I>0|
+	integer_to_element_list(I,EL,EN,0),
+	element_list_to_string(1,EL,EN,S).
+integer_to_string(0,S):-
+     true|
+	S = string#"0".
+integer_to_string(I,S):-
+     I<0|
+	NI := -I,
+	integer_to_element_list(NI,EL,EN,0),
+	element_list_to_string(0,EL,EN,S).
+
+element_list_to_string(1,EL,EN,S):-
+     true|
+	new_string(S0,EN,8),
+	element_list_to_string0(EL,EN,S0,S).
+element_list_to_string(0,EL,EN0,S):-
+     true|
+	EN := EN0 + 1,
+	new_string(S0,EN,8),
+	element_list_to_string0(EL,EN,S0,S1),
+	set_string_element(S1,0,#"-",S).
+
+
+element_list_to_string0([E|T],C,S0,S):-
+     true|
+	SE := #"0" + E,
+	NC := C - 1,
+	set_string_element(S0,NC,SE,S1),
+	element_list_to_string0(T,NC,S1,S).
+element_list_to_string0([],_,S0,S):-
+     true|
+	S0 = S.
+
+integer_to_element_list(I,EL,EN,EC):-
+     I>0|
+	E := I mod 10,
+	EL = [E|NEL],
+	NI := I/10,
+	NEC := EC + 1,
+	integer_to_element_list(NI,NEL,EN,NEC).
+otherwise.
+integer_to_element_list(_,EL,EN,EC):-
+     true|
+	EL = [],
+	EN = EC.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% qsort(List,SortedList).
+%% qsort(List,SortedList,Mode).
+
+qsort(XL,SL):- true| qsortn(XL,SL,[]).
+
+qsort(XL,SL,normal):- true| qsortn(XL,SL,[]).
+qsort(XL,SL,reverse):- true| qsortr(XL,SL,[]).
+
+qsortn([X|XL],SLH,SLT):-
+    true|
+	part(XL,X,S,L),
+	qsortn(S,SLH,[X|LL]),
+	qsortn(L,LL,SLT).
+qsortn([],SLH,SLT):-
+    true|
+	SLH = SLT.
+
+qsortr([X|XL],SLH,SLT):-
+    true|
+	part(XL,X,S,L),
+	qsortr(L,SLH,[X|LL]),
+	qsortr(S,LL,SLT).
+qsortr([],SLH,SLT):-
+    true|
+	SLH = SLT.
+
+part([X|XL],Y,S,L):-
+    X>Y|
+	L = [X|L1],
+	part(XL,Y,S,L1).
+part([X|XL],Y,S,L):-
+    X=<Y|
+	S = [X|S1],
+	part(XL,Y,S1,L).
+part([],_,S,L):-
+    true|
+	S = [],
+	L = [].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% qsortv(List,Position,SortedList).
+%% qsortv(List,Position,SortedList,Mode).
+
+qsortv(XL,P,SL):- true| qsortvn(XL,P,SL,[]).
+
+qsortv(XL,P,SL,normal):- true| qsortvn(XL,P,SL,[]).
+qsortv(XL,P,SL,reverse):- true| qsortvr(XL,P,SL,[]).
+
+qsortvn([X|XL],P,SLH,SLT):-
+    true|
+	partv(XL,X,P,S,L),
+	qsortvn(S,P,SLH,[X|LL]),
+	qsortvn(L,P,LL,SLT).
+qsortvn([],_,SLH,SLT):-
+    true|
+	SLH = SLT.
+
+qsortvr([X|XL],P,SLH,SLT):-
+    true|
+	partv(XL,X,P,S,L),
+	qsortvr(L,P,SLH,[X|LL]),
+	qsortvr(S,P,LL,SLT).
+qsortvr([],_,SLH,SLT):-
+    true|
+	SLH = SLT.
+
+partv([X|XL],Y,P,S,L):-
+    vector_element(X,P,XN),vector_element(Y,P,YN),XN>YN|
+	L = [X|L1],
+	partv(XL,Y,P,S,L1).
+partv([X|XL],Y,P,S,L):-
+    vector_element(X,P,XN),vector_element(Y,P,YN),XN=<YN|
+	S = [X|S1],
+	partv(XL,Y,P,S1,L).
+partv([],_,_,S,L):-
+    true|
+	S = [],
+	L = [].
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Convert Tokens to Display Messages     %
+% (Syntax Error or Ambiguous Expression) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+report_tokens(Tokens,Pos,DL) :- true | report_tokens(Tokens,0,Pos,DL).
+
+report_tokens(Tokens,Pos,Pos,DL):-
+    true |
+	DL=[nl,putl(string#"*** here ***")|DL2],
+	report_remains(Tokens,DL2).
+report_tokens([X|Tokens],P,Pos,DL):-
+    P<Pos |
+	PP:=P+1,
+	report_one(X,DL,DL2),
+	report_tokens(Tokens,PP,Pos,DL2).
+
+report_remains([X|Tokens],DL):-
+    true |
+	report_one(X,DL,DL2),
+	report_remains(Tokens,DL2).
+report_remains([],DL):-
+    true |
+	DL=[putc(#"."),nl].
+
+report_tokens([X|Tokens],DL):-
+    true |
+	report_one(X,DL,DL2),
+	report_tokens(Tokens,DL2).
+report_tokens([],DL):-
+    true |
+	DL=[nl,putl(string#"*** here ***")].
+
+report_one('$VAR'(_,Str),H,L):- true | H=[putb(Str),putc(#" ")|L].
+report_one(atom(X),      H,L):- true | H=[putt(X),putc(#" ")|L].
+report_one(sign(X),      H,L):- true | H=[putt(X),putc(#" ")|L].
+report_one(open(X),      H,L):- true | H=[putt(X),putc(#"("),putc(#" ")|L].
+report_one(integer(X),   H,L):- X>=0 | H=[putt(X),putc(#" ")|L].
+report_one(integer(X),   H,L):- X<0  | H=[putb(string#"2147483648 ")|L].
+report_one(float(X),     H,L):- true | H=[putt(X),putc(#" ")|L].
+report_one(string(X),    H,L):- true | H=[putt(X),putc(#" ")|L].
+report_one(illegal(X),   H,L):- true | H=[putb(X),putc(#" ")|L].
+report_one(end,          H,L):- true | H=L.
+otherwise.
+report_one(C,            H,L):- true | H=[putt(C),putc(#" ")|L].
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% from PIMOS
+
+% :- module builtin_utility.
+% :- public copy_string_elements/7,
+%           append_string/2.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% copy_string_elements(S1, P1, L, S2, P2, ^NewS1, ^NewS2)
+%%      S1      :: Destination string
+%%      P1      :: Destination string position 
+%%      L       :: Length of copied string
+%%      S2      :: Source string
+%%      P2      :: Source string position
+%%      NewS1   :: New destination string
+%%      NewS2   :: New source string
+
+copy_string_elements(S1, P1, L, S2, P2, NewS1, NewS2) :- 
+          P1 >= 0, P2 >= 0, L >= 0,
+          string(S1, SL1, Type),
+          string(S2, SL2, Type) |
+     copy_string_elements1(S1, P1, L, S2, P2, SL1, SL2, NewS1, NewS2).
+
+
+copy_string_elements1(S1, P1, 0, S2, P2, SL1, SL2, NewS1, NewS2) :- true |
+    NewS1 = S1, NewS2 = S2.
+otherwise.
+copy_string_elements1(S1, P1, L, S2, P2, SL1, SL2, NewS1, NewS2) :-
+          P1 < SL1,
+          P2 < SL2,
+          L1 := L + P1, L1 =< SL1 |
+     copy_string_elements2(L, P1, SL1, P2, SL2, S1, S2, NewS1, NewS2).
+
+
+copy_string_elements2(0, P1, SL1, P2, SL2, S1, S2, NewS1, NewS2) :- true |
+     NewS1 = S1, NewS2 = S2.
+otherwise.
+%copy_string_elements2(L, SL1, SL1, P2, SL2, S1, S2, NewS1, NewS2) :- true |
+%     NewS1 = S1, NewS2 = S2.
+copy_string_elements2(L, P1, SL1, SL2, SL2, S1, S2, NewS1, NewS2) :- true |
+     NewS2 = S2,
+     copy_zero(P1, SL1, S1, NewS1).
+otherwise.
+copy_string_elements2(L, P1, SL1, P2, SL2, S1, S2, NewS1, NewS2) :- 
+          string_element(S2, P2, Chara) |
+     set_string_element(S1, P1, Chara, S11),
+     copy_string_elements2(~(L-1), ~(P1+1), SL1, ~(P2+1), SL2, 
+                                             S11, S2, NewS1, NewS2).
+
+copy_zero(SL1, SL1, S1, NewS1) :- true |
+     NewS1 = S1.
+otherwise.
+copy_zero(P1, SL1, S1, NewS1) :- true |
+     set_string_element(S1, P1, 0, S11),
+     copy_zero(~(P1+1), SL1, S11, NewS1).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% append_string(List, S)
+%%      List    :: List of string
+%%      S       :: Appended string
+
+append_string([H|List], S) :- string(H, _, Type) |
+     new_string(S1, L, Type),
+     append_string([H|List], 0, S1, Type, L, S).
+append_string([], S) :- true |
+    S = string#"".
+
+append_string([H|T], P, S, Type, P1, S1) :- string(H, L, Type) |
+     copy_string_elements(S, P, L, H, 0, S11, _),
+     append_string(T, ~(P+L), S11, Type, P1, S1).
+append_string([], P, S, Type, P1, S1) :- true |
+     P1 = P, S1 = S.

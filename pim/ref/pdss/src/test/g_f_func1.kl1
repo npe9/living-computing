@@ -1,0 +1,256 @@
+%%% KL1-B Test for G_Float_Function_1_Arg %%%
+% G_Float_Abs %%%%%%%%%%% abc
+% G_Float_Floor %%%%%%%%% abcde
+% G_Float_Sqrt %%%%%%%%%% abc
+% G_Float_Ln %%%%%%%%%%%% abc
+% G_Float_Log %%%%%%%%%%% abc
+% G_Float_Exp %%%%%%%%%%% abcd
+% G_Integer_To_Float %%%% abc
+% G_Float_To_Integer %%%% abcde
+
+:- module g_f_func1.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Float_Function_1_Arg %%%"), put_console(key#lf) | abs.
+
+abs:- put_console(ascii#"% G_Float_Abs %%%%%%%%%%% ") | abs00.
+
+abs00:- true | abs00(100.0).
+abs00(X):- Z$:=abs(X) | abs00ans(Z).
+otherwise.
+abs00(_):- put_console(c#"*") | abs01.
+abs00ans(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"a") | abs01.
+otherwise.
+abs00ans(_):- put_console(c#"*") | abs01.
+
+abs01:- true | abs01(0.0).
+abs01(X):- Z$:=abs(X) | abs01ans(Z).
+otherwise.
+abs01(_):- put_console(c#"*") | abs02.
+abs01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | abs02.
+otherwise.
+abs01ans(_):- put_console(c#"*") | abs02.
+
+abs02:- true | abs02(-100.0).
+abs02(X):- Z$:=abs(X) | abs02ans(Z).
+otherwise.
+abs02(_):- put_console(c#"*") | abs03.
+abs02ans(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"c") | abs03.
+otherwise.
+abs02ans(_):- put_console(c#"*") | abs03.
+
+abs03:- put_console(key#lf) | flr.
+
+flr:- put_console(ascii#"% G_Float_Floor %%%%%%%%% ") | flr00.
+
+flr00:- true | flr00(100.0).
+flr00(X):- Z$:=floor(X) | flr00ans(Z).
+otherwise.
+flr00(_):- put_console(c#"*") | flr01.
+flr00ans(Z):- 100.0-1.0e-3$<Z, Z$< 100.0+1.0e-3, put_console(c#"a") | flr01.
+otherwise.
+flr00ans(_):- put_console(c#"*") | flr01.
+
+flr01:- true | flr01(0.0).
+flr01(X):- Z$:=floor(X) | flr01ans(Z).
+otherwise.
+flr01(_):- put_console(c#"*") | flr02.
+flr01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | flr02.
+otherwise.
+flr01ans(_):- put_console(c#"*") | flr02.
+
+flr02:- true | flr02(-100.0).
+flr02(X):- Z$:=floor(X) | flr02ans(Z).
+otherwise.
+flr02(_):- put_console(c#"*") | flr03.
+flr02ans(Z):- -100.0-1.0e-3$<Z, Z$< -100.0+1.0e-3, put_console(c#"c") | flr03.
+otherwise.
+flr02ans(_):- put_console(c#"*") | flr03.
+
+flr03:- true | flr03(11111111111.1).
+flr03(X):- Z$:=floor(X) | flr03ans(Z).
+otherwise.
+flr03(_):- put_console(c#"*") | flr04.
+flr03ans(Z):- 1.11111e10-1.0e5$<Z, Z$< 1.11111e10+1.0e5, put_console(c#"d") | flr04.
+otherwise.
+flr03ans(_):- put_console(c#"*") | flr04.
+
+flr04:- true | flr04(-11111111111.1).
+flr04(X):- Z$:=floor(X) | flr04ans(Z).
+otherwise.
+flr04(_):- put_console(c#"*") | flr05.
+flr04ans(Z):- -1.11111e10-1.0e5$<Z, Z$< -1.11111e10+1.0e5, put_console(c#"e") | flr05.
+otherwise.
+flr04ans(_):- put_console(c#"*") | flr05.
+
+flr05:- put_console(key#lf) | srt.
+
+srt:- put_console(ascii#"% G_Float_Sqrt %%%%%%%%%% ") | srt00.
+
+srt00:- true | srt00(100.0).
+srt00(X):- Z$:=sqrt(X) | srt00ans(Z).
+otherwise.
+srt00(_):- put_console(c#"*") | srt01.
+srt00ans(Z):- 10.0-1.0e-4$<Z, Z$< 10.0+1.0e-4, put_console(c#"a") | srt01.
+otherwise.
+srt00ans(_):- put_console(c#"*") | srt01.
+
+srt01:- true | srt01(0.0).
+srt01(X):- Z$:=sqrt(X) | srt01ans(Z).
+otherwise.
+srt01(_):- put_console(c#"*") | srt02.
+srt01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | srt02.
+otherwise.
+srt01ans(_):- put_console(c#"*") | srt02.
+
+srt02:- true | srt02(-100.0).
+srt02(X):- Z$:=sqrt(X), put_console(c#"*") | srt03.
+otherwise.
+srt02(_):- put_console(c#"c") | srt03.
+
+srt03:- put_console(key#lf) | ln.
+
+ln:- put_console(ascii#"% G_Float_Ln %%%%%%%%%%%% ") | ln00.
+
+ln00:- true | ln00(100.0).
+ln00(X):- Z$:=ln(X) | ln00ans(Z).
+otherwise.
+ln00(_):- put_console(c#"*") | ln01.
+ln00ans(Z):- 4.60517-1.0e-5$<Z, Z$< 4.60517+1.0e-5, put_console(c#"a") | ln01.
+otherwise.
+ln00ans(_):- put_console(c#"*") | ln01.
+
+ln01:- true | ln01(0.0).
+ln01(X):- Z$:=ln(X), put_console(c#"*") | ln02.
+otherwise.
+ln01(_):- put_console(c#"b") | ln02.
+
+ln02:- true | ln02(-100.0).
+ln02(X):- Z$:=ln(X), put_console(c#"*") | ln03.
+otherwise.
+ln02(_):- put_console(c#"c") | ln03.
+
+ln03:- put_console(key#lf) | log.
+
+log:- put_console(ascii#"% G_Float_Log %%%%%%%%%%% ") | log00.
+
+log00:- true | log00(100.0).
+log00(X):- Z$:=log(X) | log00ans(Z).
+otherwise.
+log00(_):- put_console(c#"*") | log01.
+log00ans(Z):- 2.0-1.0e-5$<Z, Z$< 2.0+1.0e-5, put_console(c#"a") | log01.
+otherwise.
+log00ans(_):- put_console(c#"*") | log01.
+
+log01:- true | log01(0.0).
+log01(X):- Z$:=log(X), put_console(c#"*") | log02.
+otherwise.
+log01(_):- put_console(c#"b") | log02.
+
+log02:- true | log02(-100.0).
+log02(X):- Z$:=log(X), put_console(c#"*") | log03.
+otherwise.
+log02(_):- put_console(c#"c") | log03.
+
+log03:- put_console(key#lf) | exp.
+
+exp:- put_console(ascii#"% G_Float_Exp %%%%%%%%%%% ") | exp00.
+
+exp00:- true | exp00(100.0).
+exp00(X):- Z$:=exp(X), put_console(c#"*") | exp01.
+otherwise.
+exp00(_):- put_console(c#"a") | exp01.
+
+exp01:- true | exp01(0.0).
+exp01(X):- Z$:=exp(X) | exp01ans(Z).
+otherwise.
+exp01(_):- put_console(c#"*") | exp02.
+exp01ans(Z):- 1.0-1.0e-5$<Z, Z$< 1.0+1.0e-5, put_console(c#"b") | exp02.
+otherwise.
+exp01ans(_):- put_console(c#"*") | exp02.
+
+exp02:- true | exp02(2.0).
+exp02(X):- Z$:=exp(X) | exp02ans(Z).
+otherwise.
+exp02(_):- put_console(c#"*") | exp03.
+exp02ans(Z):- 7.38906-1.0e-5$<Z, Z$< 7.38906+1.0e-5, put_console(c#"c") | exp03.
+otherwise.
+exp02ans(_):- put_console(c#"*") | exp03.
+
+exp03:- true | exp03(-2.0).
+exp03(X):- Z$:=exp(X) | exp03ans(Z).
+otherwise.
+exp03(_):- put_console(c#"*") | exp04.
+exp03ans(Z):- 0.135335-1.0e-6$<Z, Z$< 0.135335+1.0e-6, put_console(c#"d") | exp04.
+otherwise.
+exp03ans(_):- put_console(c#"*") | exp04.
+
+exp04:- put_console(key#lf) | itf.
+
+itf:- put_console(ascii#"% G_Integer_To_Float %%%% ") | itf00.
+
+itf00:- true | itf00(1234).
+itf00(X):- Z$:=float(X) | itf00ans(Z).
+otherwise.
+itf00(_):- put_console(c#"*") | itf01.
+itf00ans(Z):- 1234.0-1.0e-2$<Z, Z$< 1234.0+1.0e-2, put_console(c#"a") | itf01.
+otherwise.
+itf00ans(_):- put_console(c#"*") | itf01.
+
+itf01:- true | itf01(0).
+itf01(X):- Z$:=float(X) | itf01ans(Z).
+otherwise.
+itf01(_):- put_console(c#"*") | itf02.
+itf01ans(Z):- 0.0-1.0e-5$<Z, Z$< 0.0+1.0e-5, put_console(c#"b") | itf02.
+otherwise.
+itf01ans(_):- put_console(c#"*") | itf02.
+
+itf02:- true | itf02(-1234).
+itf02(X):- Z$:=float(X) | itf02ans(Z).
+otherwise.
+itf02(_):- put_console(c#"*") | itf03.
+itf02ans(Z):- -1234.0-1.0e-2$<Z, Z$< -1234.0+1.0e-2, put_console(c#"c") | itf03.
+otherwise.
+itf02ans(_):- put_console(c#"*") | itf03.
+
+itf03:- put_console(key#lf) | fti.
+
+fti:- put_console(ascii#"% G_Float_To_Integer %%%% ") | fti00.
+
+fti00:- true | fti00(100.0).
+fti00(X):- Z:=int(X) | fti00ans(Z).
+otherwise.
+fti00(_):- put_console(c#"*") | fti01.
+fti00ans(100):- put_console(c#"a") | fti01.
+otherwise.
+fti00ans(_):- put_console(c#"*") | fti01.
+
+fti01:- true | fti01(0.0).
+fti01(X):- Z:=int(X) | fti01ans(Z).
+otherwise.
+fti01(_):- put_console(c#"*") | fti02.
+fti01ans(0):- put_console(c#"b") | fti02.
+otherwise.
+fti01ans(_):- put_console(c#"*") | fti02.
+
+fti02:- true | fti02(-100.0).
+fti02(X):- Z:=int(X) | fti02ans(Z).
+otherwise.
+fti02(_):- put_console(c#"*") | fti03.
+fti02ans(-100):- put_console(c#"c") | fti03.
+otherwise.
+fti02ans(_):- put_console(c#"*") | fti03.
+
+fti03:- true | fti03(11111111111.1).
+fti03(X):- Z:=int(X), put_console(c#"*") | fti04.
+otherwise.
+fti03(_):- put_console(c#"d") | fti04.
+
+fti04:- true | fti04(-11111111111.1).
+fti04(X):- Z:=int(X), put_console(c#"*") | fti05.
+otherwise.
+fti04(_):- put_console(c#"e") | fti05.
+
+fti05:- put_console(key#lf) | done.
+
+done:- true | true.

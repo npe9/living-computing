@@ -1,0 +1,207 @@
+%%% KL1-B Test for B_Float_Function_2_Args (Exception) %%%
+% B_Float_Min %%%%%%%%%%% abcdef
+% B_Float_Max %%%%%%%%%%% abcdef
+% B_Float_Pow %%%%%%%%%%% abcdef
+
+:- module b_f_func2_e.
+:- public go/0
+,do_min/3,do_max/3,do_pow/3.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Float_Function_2_Args (Exception) %%%"), put_console(key#lf) | min.
+
+min:- put_console(ascii#"% B_Float_Min %%%%%%%%%%% ") | min00.
+
+min00:- true | execute_in_shoen(do_min,{12.34,0.0,Z},R), min00(R,Z).
+min00(success,_):- put_console(c#"a") | min01.
+otherwise.
+min00(_,_):- put_console(c#"*") | min01.
+
+min01:- true | execute_in_shoen(do_min,{0.0,1234,Z},R), min01(R,Z).
+min01(illegal_input,_):- put_console(c#"b") | min02.
+otherwise.
+min01(_,_):- put_console(c#"*") | min02.
+
+min02:- true | execute_in_shoen(do_min,{0.0,atom,Z},R), min02(R,Z).
+min02(illegal_input,_):- put_console(c#"c") | min03.
+otherwise.
+min02(_,_):- put_console(c#"*") | min03.
+
+min03:- true | execute_in_shoen(do_min,{0.0,[list],Z},R), min03(R,Z).
+min03(illegal_input,_):- put_console(c#"d") | min04.
+otherwise.
+min03(_,_):- put_console(c#"*") | min04.
+
+min04:- true | execute_in_shoen(do_min,{0.0,{0,1},Z},R), min04(R,Z).
+min04(illegal_input,_):- put_console(c#"e") | min05.
+otherwise.
+min04(_,_):- put_console(c#"*") | min05.
+
+min05:- true | execute_in_shoen(do_min,{0.0,ascii#"String",Z},R), min05(R,Z).
+min05(illegal_input,_):- put_console(c#"f") | min06.
+otherwise.
+min05(_,_):- put_console(c#"*") | min06.
+
+min06:- true | execute_in_shoen(do_min,{1234,0.0,Z},R), min06(R,Z).
+min06(illegal_input,_):- put_console(c#"g") | min07.
+otherwise.
+min06(_,_):- put_console(c#"*") | min07.
+
+min07:- true | execute_in_shoen(do_min,{atom,0.0,Z},R), min07(R,Z).
+min07(illegal_input,_):- put_console(c#"h") | min08.
+otherwise.
+min07(_,_):- put_console(c#"*") | min08.
+
+min08:- true | execute_in_shoen(do_min,{[list],0.0,Z},R), min08(R,Z).
+min08(illegal_input,_):- put_console(c#"i") | min09.
+otherwise.
+min08(_,_):- put_console(c#"*") | min09.
+
+min09:- true | execute_in_shoen(do_min,{{0,1},0.0,Z},R), min09(R,Z).
+min09(illegal_input,_):- put_console(c#"j") | min10.
+otherwise.
+min09(_,_):- put_console(c#"*") | min10.
+
+min10:- true | execute_in_shoen(do_min,{ascii#"String",0.0,Z},R), min10(R,Z).
+min10(illegal_input,_):- put_console(c#"k") | min11.
+otherwise.
+min10(_,_):- put_console(c#"*") | min11.
+
+min11:- put_console(key#lf) | max.
+
+max:- put_console(ascii#"% B_Float_Max %%%%%%%%%%% ") | max00.
+
+max00:- true | execute_in_shoen(do_max,{12.34,0.0,Z},R), max00(R,Z).
+max00(success,_):- put_console(c#"a") | max01.
+otherwise.
+max00(_,_):- put_console(c#"*") | max01.
+
+max01:- true | execute_in_shoen(do_max,{0.0,1234,Z},R), max01(R,Z).
+max01(illegal_input,_):- put_console(c#"b") | max02.
+otherwise.
+max01(_,_):- put_console(c#"*") | max02.
+
+max02:- true | execute_in_shoen(do_max,{0.0,atom,Z},R), max02(R,Z).
+max02(illegal_input,_):- put_console(c#"c") | max03.
+otherwise.
+max02(_,_):- put_console(c#"*") | max03.
+
+max03:- true | execute_in_shoen(do_max,{0.0,[list],Z},R), max03(R,Z).
+max03(illegal_input,_):- put_console(c#"d") | max04.
+otherwise.
+max03(_,_):- put_console(c#"*") | max04.
+
+max04:- true | execute_in_shoen(do_max,{0.0,{0,1},Z},R), max04(R,Z).
+max04(illegal_input,_):- put_console(c#"e") | max05.
+otherwise.
+max04(_,_):- put_console(c#"*") | max05.
+
+max05:- true | execute_in_shoen(do_max,{0.0,ascii#"String",Z},R), max05(R,Z).
+max05(illegal_input,_):- put_console(c#"f") | max06.
+otherwise.
+max05(_,_):- put_console(c#"*") | max06.
+
+max06:- true | execute_in_shoen(do_max,{1234,0.0,Z},R), max06(R,Z).
+max06(illegal_input,_):- put_console(c#"g") | max07.
+otherwise.
+max06(_,_):- put_console(c#"*") | max07.
+
+max07:- true | execute_in_shoen(do_max,{atom,0.0,Z},R), max07(R,Z).
+max07(illegal_input,_):- put_console(c#"h") | max08.
+otherwise.
+max07(_,_):- put_console(c#"*") | max08.
+
+max08:- true | execute_in_shoen(do_max,{[list],0.0,Z},R), max08(R,Z).
+max08(illegal_input,_):- put_console(c#"i") | max09.
+otherwise.
+max08(_,_):- put_console(c#"*") | max09.
+
+max09:- true | execute_in_shoen(do_max,{{0,1},0.0,Z},R), max09(R,Z).
+max09(illegal_input,_):- put_console(c#"j") | max10.
+otherwise.
+max09(_,_):- put_console(c#"*") | max10.
+
+max10:- true | execute_in_shoen(do_max,{ascii#"String",0.0,Z},R), max10(R,Z).
+max10(illegal_input,_):- put_console(c#"k") | max11.
+otherwise.
+max10(_,_):- put_console(c#"*") | max11.
+
+max11:- put_console(key#lf) | pow.
+
+pow:- put_console(ascii#"% B_Float_Pow %%%%%%%%%%% ") | pow00.
+
+pow00:- true | execute_in_shoen(do_pow,{12.34,-12.34,Z},R), pow00(R,Z).
+pow00(success,_):- put_console(c#"a") | pow01.
+otherwise.
+pow00(_,_):- put_console(c#"*") | pow01.
+
+pow01:- true | execute_in_shoen(do_pow,{0.0,1234,Z},R), pow01(R,Z).
+pow01(illegal_input,_):- put_console(c#"b") | pow02.
+otherwise.
+pow01(_,_):- put_console(c#"*") | pow02.
+
+pow02:- true | execute_in_shoen(do_pow,{0.0,atom,Z},R), pow02(R,Z).
+pow02(illegal_input,_):- put_console(c#"c") | pow03.
+otherwise.
+pow02(_,_):- put_console(c#"*") | pow03.
+
+pow03:- true | execute_in_shoen(do_pow,{0.0,[list],Z},R), pow03(R,Z).
+pow03(illegal_input,_):- put_console(c#"d") | pow04.
+otherwise.
+pow03(_,_):- put_console(c#"*") | pow04.
+
+pow04:- true | execute_in_shoen(do_pow,{0.0,{0,1},Z},R), pow04(R,Z).
+pow04(illegal_input,_):- put_console(c#"e") | pow05.
+otherwise.
+pow04(_,_):- put_console(c#"*") | pow05.
+
+pow05:- true | execute_in_shoen(do_pow,{0.0,ascii#"String",Z},R), pow05(R,Z).
+pow05(illegal_input,_):- put_console(c#"f") | pow06.
+otherwise.
+pow05(_,_):- put_console(c#"*") | pow06.
+
+pow06:- true | execute_in_shoen(do_pow,{1234,0.0,Z},R), pow06(R,Z).
+pow06(illegal_input,_):- put_console(c#"g") | pow07.
+otherwise.
+pow06(_,_):- put_console(c#"*") | pow07.
+
+pow07:- true | execute_in_shoen(do_pow,{atom,0.0,Z},R), pow07(R,Z).
+pow07(illegal_input,_):- put_console(c#"h") | pow08.
+otherwise.
+pow07(_,_):- put_console(c#"*") | pow08.
+
+pow08:- true | execute_in_shoen(do_pow,{[list],0.0,Z},R), pow08(R,Z).
+pow08(illegal_input,_):- put_console(c#"i") | pow09.
+otherwise.
+pow08(_,_):- put_console(c#"*") | pow09.
+
+pow09:- true | execute_in_shoen(do_pow,{{0,1},0.0,Z},R), pow09(R,Z).
+pow09(illegal_input,_):- put_console(c#"j") | pow10.
+otherwise.
+pow09(_,_):- put_console(c#"*") | pow10.
+
+pow10:- true | execute_in_shoen(do_pow,{ascii#"String",0.0,Z},R), pow10(R,Z).
+pow10(illegal_input,_):- put_console(c#"k") | pow11.
+otherwise.
+pow10(_,_):- put_console(c#"*") | pow11.
+
+pow11:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_f_func2_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(5,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=floating_point_error, C=[abort].
+
+do_min(X,Y,Z):- true | Z$:=min(X,Y).
+do_max(X,Y,Z):- true | Z$:=max(X,Y).
+do_pow(X,Y,Z):- true | Z$:= X** Y.

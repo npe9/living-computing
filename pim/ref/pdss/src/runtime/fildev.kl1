@@ -1,0 +1,550 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module pdss_file_device.
+:- public files/1.
+:- with_macro pdss.
+
+%%%% File Manager Commands.
+files(Command):-
+    device_dup_check(1) |
+	files2(Command).
+
+files2(open(PathName,Mode,Command,Status,Cdr)):-
+    string(PathName,_,8) |
+	create_file(S,ID),
+	file_wait_created(Command,ID,PathName,Mode,Status,S),
+	files2(Cdr).
+files2(directory(PathName,Command,Status,Cdr)):-
+    string(PathName,_,8) |
+	test_directory(PathName,S),
+	wait_test_directory(Command,PathName,Status,S),
+	files2(Cdr).
+files2([]):- true | true.
+
+
+%%%% File (wait status of create_file command).
+file_wait_created(Command,ID,Nam,fep#read,Status,iodev#success):-
+    integer(ID) |
+	open_file(ID,Nam,0,S,NID),
+	rfile_wait_open(Command,NID,Nam,Status,S).
+file_wait_created(Command,ID,Nam,fep#write,Status,iodev#success):-
+    integer(ID) |
+	open_file(ID,Nam,1,S,NID),
+	wfile_wait_open(Command,NID,Nam,Status,S).
+file_wait_created(Command,ID,Nam,fep#append,Status,iodev#success):-
+    integer(ID) |
+	open_file(ID,Nam,2,S,NID),
+	wfile_wait_open(Command,NID,Nam,Status,S).
+otherwise.
+file_wait_created(Command,ID,Nam,Mode,Status,iodev#success):-
+    true |
+	Status=fep#abnormal,
+	remove_file(ID,_).
+file_wait_created(Command,ID,Nam,Mode,Status,iodev#io_table_full):-
+    true |
+	Status=fep#abnormal.
+
+%%%% Read Mode File (wait status of open_file command).
+rfile_wait_open(Command,ID,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	rfile_wait_reset(Command,ID,Nam).
+rfile_wait_open(Command,ID,Nam,Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal,
+	remove_file(ID,_).
+
+%%%% Read Mode File (wait reset command).
+rfile_wait_reset(reset(Abort,Attention,Status,Cdr),ID,Nam):-
+    true |
+	Status=fep#normal,
+	rfile(Cdr,Abort,ID,Nam).
+rfile_wait_reset(close(Status),ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+rfile_wait_reset([],ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Read Open File (normal status).
+rfile(Command,fep#abort,ID,Nam):-
+    true |
+	rfile_wait_reset(Command,ID,Nam).
+alternatively.
+rfile(next_attention(Attention,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#normal,
+	rfile(Cdr,Abt,ID,Nam).
+%% Get Commands.
+rfile(getc(Char,Status,Cdr),Abt,ID,Nam):-
+    integer(ID) |
+	read_char(ID,C,S,NID),
+	rfile_wait_char(Cdr,Abt,NID,Nam,Char,Status,C,S).
+rfile(getl(Line,Status,Cdr),Abt,ID,Nam):-
+    integer(ID) |
+	read_line(ID,L,S,NID),
+	rfile_wait_line(Cdr,Abt,NID,Nam,Line,Status,L,S).
+rfile(getb(Size,Buffer,Status,Cdr),Abt,ID,Nam):-
+    integer(ID) |
+	read_buffer(ID,Size,B,S,NID),
+	rfile_wait_buffer(Cdr,Abt,NID,Nam,Buffer,Status,B,S).
+rfile(gettkn(Token,NVar,Status,Cdr),Abt,ID,Nam):-
+    integer(ID) |
+	read_token(ID,T,N,S,NID),
+	rfile_wait_token(Cdr,Abt,NID,Nam,Token,NVar,Status,T,N,S).
+%% Control Commands.
+rfile(end_of_file(Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#no,
+	rfile(Cdr,Abt,ID,Nam).
+rfile(pathname(PathName,Status,Cdr),Abt,ID,Nam):-
+    true |
+	PathName=Nam,
+	Status=fep#normal,
+	rfile(Cdr,Abt,ID,Nam).
+rfile(close(Status),Abt,ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+rfile([],Abt,ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Read Open File (wait status of read_char command).
+rfile_wait_char(Command,fep#abort,ID,Nam,Char,Status,C,S):-
+    true |
+	Status=fep#abort,
+	rfile_wait_reset(Command,ID,Nam).
+alternatively.
+rfile_wait_char(Command,Abt,ID,Nam,Char,Status,C,iodev#success):-
+    true |
+	Char=C,
+	Status=fep#normal,
+	rfile(Command,Abt,ID,Nam).
+rfile_wait_char(Command,Abt,ID,Nam,Char,Status,C,iodev#end_of_file):-
+    true |
+	Char=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Command,Abt,ID,Nam).
+
+%%%% Read Open File (wait status of read_line command).
+rfile_wait_line(Command,fep#abort,ID,Nam,Line,Status,L,S):-
+    true |
+	Status=fep#abort,
+	rfile_wait_reset(Command,ID,Nam).
+alternatively.
+rfile_wait_line(Command,Abt,ID,Nam,Line,Status,L,iodev#success):-
+    true |
+	Line=L,
+	Status=fep#normal,
+	rfile(Command,Abt,ID,Nam).
+rfile_wait_line(Command,Abt,ID,Nam,Line,Status,L,iodev#end_of_file):-
+    string(L,S,_), S>=1 |
+	Line=L,
+	Status=fep#normal,
+	eof(Command,Abt,ID,Nam).
+rfile_wait_line(Command,Abt,ID,Nam,Line,Status,L,iodev#end_of_file):-
+    string(L,0,_) |
+	Line=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Command,Abt,ID,Nam).
+
+%%%% Read Open File (wait status of read_buffer command).
+rfile_wait_buffer(Command,fep#abort,ID,Nam,Buffer,Status,B,S):-
+    true |
+	Status=fep#abort,
+	rfile_wait_reset(Command,ID,Nam).
+alternatively.
+rfile_wait_buffer(Command,Abt,ID,Nam,Buffer,Status,B,iodev#success):-
+    true |
+	Buffer=B,
+	Status=fep#normal,
+	rfile(Command,Abt,ID,Nam).
+rfile_wait_buffer(Command,Abt,ID,Nam,Buffer,Status,B,iodev#end_of_file):-
+    string(B,S,_), S>=1 |
+	Buffer=B,
+	Status=fep#normal,
+	eof(Command,Abt,ID,Nam).
+rfile_wait_buffer(Command,Abt,ID,Nam,Buffer,Status,B,iodev#end_of_file):-
+    string(B,0,_) |
+	Buffer=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Command,Abt,ID,Nam).
+
+%%%% Read Open File (wait status of read_token command).
+rfile_wait_token(Command,fep#abort,ID,Nam,Token,NVar,Status,T,N,S):-
+    true |
+	Status=fep#abort,
+	rfile_wait_reset(Command,ID,Nam).
+alternatively.
+rfile_wait_token(Command,Abt,ID,Nam,Token,NVar,Status,T,N,iodev#success):-
+    true |
+	Token=T, NVar=N,
+	Status=fep#normal,
+	rfile(Command,Abt,ID,Nam).
+rfile_wait_token(Command,Abt,ID,Nam,Token,NVar,Status,[A,B|C],N,iodev#end_of_file):-
+    true |
+	Token=[A,B|C], NVar=N,
+	Status=fep#normal,
+	eof(Command,Abt,ID,Nam).
+rfile_wait_token(Command,Abt,ID,Nam,Token,NVar,Status,[end],N,iodev#end_of_file):-
+    true |
+	Token=fep#nil, NVar=0,
+	Status=fep#end_of_file,
+	eof2(Command,Abt,ID,Nam).
+rfile_wait_token(Command,Abt,ID,Nam,Token,NVar,Status,T,N,iodev#eof_in_quote):-
+    true |
+	Token=T, NVar=N,
+	Status=fep#abnormal,
+	eof(Command,Abt,ID,Nam).
+
+
+%%%% Read Open File (EOF: wait reset command).
+eof_wait_reset(reset(Abort,Attention,Status,Cdr),ID,Nam):-
+    true |
+	Status=fep#normal,
+	eof(Cdr,Abort,ID,Nam).
+eof_wait_reset(close(Status),ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+eof_wait_reset([],ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Read Open File (EOF: normal status).
+eof(Command,fep#abort,ID,Nam):-
+    true |
+	eof_wait_reset(Command,ID,Nam).
+alternatively.
+eof(next_attention(Attention,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#normal,
+	eof(Cdr,Abt,ID,Nam).
+%% Get Commands.
+eof(getc(Char,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Char=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Cdr,Abt,ID,Nam).
+eof(getl(Line,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Line=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Cdr,Abt,ID,Nam).
+eof(getb(Size,Buffer,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Buffer=fep#nil,
+	Status=fep#end_of_file,
+	eof2(Cdr,Abt,ID,Nam).
+eof(gettkn(Token,NVar,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Token=fep#nil, NVar=0,
+	Status=fep#end_of_file,
+	eof2(Cdr,Abt,ID,Nam).
+%% Control Commands.
+eof(end_of_file(Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#yes,
+	eof(Cdr,Abt,ID,Nam).
+eof(pathname(PathName,Status,Cdr),Abt,ID,Nam):-
+    true |
+	PathName=Nam,
+	Status=fep#normal,
+	eof(Cdr,Abt,ID,Nam).
+eof(close(Status),Abt,ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+eof([],Abt,ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+
+%%%% Read Open File (EOF2: wait reset command).
+eof2_wait_reset(reset(Abort,Attention,Status,Cdr),ID,Nam):-
+    true |
+	Status=fep#normal,
+	eof2(Cdr,Abort,ID,Nam).
+eof2_wait_reset(close(Status),ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+eof2_wait_reset([],ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Read Open File (EOF2: normal status).
+eof2(Command,fep#abort,ID,Nam):-
+    true |
+	eof2_wait_reset(Command,ID,Nam).
+alternatively.
+eof2(next_attention(Attention,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#normal,
+	eof2(Cdr,Abt,ID,Nam).
+%% Get Commands.
+eof2(getc(Char,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#abnormal,
+	eof2(Cdr,Abt,ID,Nam).
+eof2(getl(Line,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#abnormal,
+	eof2(Cdr,Abt,ID,Nam).
+eof2(getb(Size,Buffer,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#abnormal,
+	eof2(Cdr,Abt,ID,Nam).
+eof2(gettkn(Token,NVar,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#abnormal,
+	eof2(Cdr,Abt,ID,Nam).
+%% Control Commands.
+eof2(end_of_file(Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#yes,
+	eof2(Cdr,Abt,ID,Nam).
+eof2(pathname(PathName,Status,Cdr),Abt,ID,Nam):-
+    true |
+	PathName=Nam,
+	Status=fep#normal,
+	eof2(Cdr,Abt,ID,Nam).
+eof2(close(Status),Abt,ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+eof2([],Abt,ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+
+%%%% Write Mode File (wait status of open_file command).
+wfile_wait_open(Command,ID,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	wfile_wait_reset(Command,ID,Nam).
+wfile_wait_open(Command,ID,Nam,Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal,
+	remove_file(ID,_).
+
+%%%% Write Mode File (wait reset command).
+wfile_wait_reset(reset(Abort,Attention,Status,Cdr),ID,Nam):-
+    true |
+	Status=fep#normal,
+	wfile(Cdr,Abort,ID,Nam).
+wfile_wait_reset(close(Status),ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+wfile_wait_reset([],ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Write Open File (normal status).
+wfile(Command,fep#abort,ID,Nam):-
+    true |
+	wfile_wait_reset(Command,ID,Nam).
+alternatively.
+wfile(next_attention(Attention,Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#normal,
+	wfile(Cdr,Abt,ID,Nam).
+%% Put Commands.
+wfile(putc(Char,Status,Cdr),Abt,ID,Nam):-
+    integer(ID), integer(Char) |
+	write_char(ID,Char,S,NID),
+	wfile_wait_status(Cdr,Abt,NID,Nam,Status,S).
+wfile(putl(Line,Status,Cdr),Abt,ID,Nam):-
+    integer(ID), string(Line,_,8) |
+	write_line(ID,Line,S,NID),
+	wfile_wait_status(Cdr,Abt,NID,Nam,Status,S).
+wfile(putb(Buffer,Status,Cdr),Abt,ID,Nam):-
+    integer(ID), string(Buffer,_,8) |
+	write_buffer(ID,Buffer,S,NID),
+	wfile_wait_status(Cdr,Abt,NID,Nam,Status,S).
+wfile(putt(Term,Length,Depth,Status,Cdr),Abt,ID,Nam):-
+    integer(ID) |
+	write_term(ID,Term,Length,Depth,S,NID),
+	wfile_wait_status(Cdr,Abt,NID,Nam,Status,S).
+%% Control Commands.
+wfile(end_of_file(Status,Cdr),Abt,ID,Nam):-
+    true |
+	Status=fep#yes,
+	wfile(Cdr,Abt,ID,Nam).
+wfile(pathname(PathName,Status,Cdr),Abt,ID,Nam):-
+    true |
+	PathName=Nam,
+	Status=fep#normal,
+	wfile(Cdr,Abt,ID,Nam).
+wfile(close(Status),Abt,ID,Nam):-
+    integer(ID) |
+	Status=fep#normal,
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+wfile([],Abt,ID,Nam):-
+    integer(ID) |
+	close_file(ID,_,NID),
+	remove_file(NID,_).
+
+%%%% Write Open File (wait status of write_xxx command).
+wfile_wait_status(Cdr,Abt,ID,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	wfile(Cdr,Abt,ID,Nam).
+
+
+%%%% Directory (wait status of test directory & pwd).
+wait_test_directory(Command,PathName,Status,iodev#success):-
+    true |
+	directory_pathname(PathName,Nam,S),
+	wait_pathname(Command,Nam,Status,S).
+wait_test_directory(Command,PathName,Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal.
+
+wait_pathname(Command,Nam,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	directory(Command,Nam).
+wait_pathname(Command,Nam,Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal.
+
+%%%% Directory (normal status).
+directory(pathname(PathName,Status,Cdr),Nam):-
+    true |
+	PathName=Nam,
+	Status=fep#normal,
+	directory(Cdr,Nam).
+directory(listing(Wildcard,NameList,Status,Cdr),Nam):-
+    string(Wildcard,_,8) |
+	listing_files(Nam,Wildcard,FL,S),
+	wait_listing(Nam,Wildcard,NameList,FL,Status,S),
+	directory(Cdr,Nam).
+directory(delete(Wildcard,Status,Cdr),Nam):-
+    string(Wildcard,_,8) |
+	delete_files(Nam,Wildcard,S),
+	wait_delete(Status,S),
+	directory(Cdr,Nam).
+%% Dummy.
+directory(undelete(Wildcard,Status,Cdr),Nam):-
+    string(Wildcard,_,8) |
+	Status=fep#normal,
+	directory(Cdr,Nam).
+directory(purge(Wildcard,Status,Cdr),Nam):-
+    string(Wildcard,_,8) |
+	Status=fep#normal,
+	directory(Cdr,Nam).
+directory(deleted(Wildcard,NameList,Status,Cdr),Nam):-
+    string(Wildcard,_,8) |
+	listing_done1(NameList),
+	Status=fep#normal,
+	directory(Cdr,Nam).
+directory(expunge(Status,Cdr),Nam):-
+    true |
+	Status=fep#normal,
+	directory(Cdr,Nam).
+directory([],Nam):-
+    true |
+	true.
+
+
+%%%% Listing Command.
+wait_listing(Nam,Wildcard,NameList,FL,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	listing_one_file(NameList,FL).
+wait_listing(Nam,Wildcard,NameList,FL,Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal.
+wait_listing(Nam,Wildcard,NameList,FL,Status,iodev#request_gc):-
+    true |
+	listing_files(Nam,Wildcard,FL1,S),
+	wait_listing1(NameList,FL1,Status,S).
+
+wait_listing1(NameList,FL,Status,iodev#success):-
+    true |
+	Status=fep#normal,
+	listing_one_file(NameList,FL).
+wait_listing1(NameList,FL,Status,S):-
+    S\=iodev#success |
+	Status=fep#abnormal.
+
+%%%% Return file name list.
+listing_one_file(next_file_name(Name,Status,Cdr),[File|FL]):-
+    true |
+	Name=File,
+	Status=fep#normal,
+	listing_one_file(Cdr,FL).
+listing_one_file(next_file_name(Name,Status,Cdr),[]):-
+    true |
+	Name=fep#nil,
+	Status=fep#end_of_file,
+	listing_done2(Cdr).
+listing_one_file([],FL):-
+    true |
+	true.
+
+listing_done1(next_file_name(Name,Status,Cdr)):-
+    true |
+	Name=fep#nil,
+	Status=fep#end_of_file,
+	listing_done2(Cdr).
+listing_done1([]):-
+    true |
+	true.
+
+listing_done2(next_file_name(Name,Status,Cdr)):-
+    true |
+	Status=fep#abnormal,
+	listing_done2(Cdr).
+listing_done2([]):-
+    true |
+	true.
+
+%%%% Delete Command.
+wait_delete(Status,iodev#success):-
+    true |
+	Status=fep#normal.
+wait_delete(Status,iodev#cannot_open_file):-
+    true |
+	Status=fep#abnormal.
+
+%%%% Expand Path Name.
+%expand(Directory,Wildcard,Expanded):-
+%    string_element(Wildcard,0,47) |  %% 47='/'
+%	Expanded=Wildcard.
+%expand(Directory,Wildcard,Expanded):-
+%    string_element(Wildcard,0,126) |  %% 126='~'
+%	Expanded=Wildcard.
+%otherwise.
+%expand(Directory,Wildcard,Expanded):-
+%    string(Directory,L,8), E:=L-1, string_element(Directory,E,47) |  %% 47='/'
+%	append_string(Directory,Wildcard,Expanded).
+%otherwise.
+%expand(Directory,Wildcard,Expanded):-
+%    true |
+%	append_string(Directory,"/",XX2),
+%	append_string(XX2,Wildcard,Expanded).

@@ -1,0 +1,35 @@
+....................................................
+
+*******************************************
+**** Micro PIMOS (version 2.5) ************
+*******************************************
+World is <world>
+Total heap size is 200000 words
+Total code size is 272544 bytes
+*******************************************
+
+| ?- "../conf/b_f_func1_e" : Compiling ... go/0,abs/0,abs00/0,abs00/2,abs01/0,abs01/2,abs02/0,abs02/2,abs03/0,abs03/2,abs04/0,abs04/2,abs05/0,abs05/2,abs06/0,abs06/2,abs07/0,flr/0,flr00/0,flr00/2,flr01/0,flr01/2,flr02/0,flr02/2,flr03/0,flr03/2,flr04/0,flr04/2,flr05/0,flr05/2,flr06/0,flr06/2,flr07/0,srt/0,srt00/0,srt00/2,srt01/0,srt01/2,srt02/0,srt02/2,srt03/0,srt03/2,srt04/0,srt04/2,srt05/0,srt05/2,srt06/0,srt06/2,srt07/0,srt07/2,srt08/0,ln/0,ln00/0,ln00/2,ln01/0,ln01/2,ln02/0,ln02/2,ln03/0,ln03/2,ln04/0,ln04/2,ln05/0,ln05/2,ln06/0,ln06/2,ln07/0,ln07/2,ln08/0,log/0,log00/0,log00/2,log01/0,log01/2,log02/0,log02/2,log03/0,log03/2,log04/0,log04/2,log05/0,log05/2,log06/0,log06/2,log07/0,log07/2,log08/0,exp/0,exp00/0,exp00/2,exp01/0,exp01/2,exp02/0,exp02/2,exp03/0,exp03/2,exp04/0,exp04/2,exp05/0,exp05/2,exp06/0,exp06/2,exp07/0,exp07/2,exp08/0,itf/0,itf00/0,itf00/2,itf01/0,itf01/2,itf02/0,itf02/2,itf03/0,itf03/2,itf04/0,itf04/2,itf05/0,itf05/2,itf06/0,fti/0,fti00/0,fti00/2,fti01/0,fti01/2,fti02/0,fti02/2,fti03/0,fti03/2,fti04/0,fti04/2,fti05/0,fti05/2,fti06/0,fti06/2,fti07/0,fti07/2,fti08/0,done/0,execute_in_shoen/3,shoen_wait/3,shoen_check/3,do_abs/2,do_floor/2,do_sqrt/2,do_ln/2,do_log/2,do_exp/2,do_float/2,do_int/2,END.
+
+[go/0,do_abs/2,do_floor/2,do_sqrt/2,do_ln/2,do_log/2,do_exp/2,do_float/2,do_int/2]
+successdone
+Loading ... done
+Module name : b_f_func1_e
+Saving ... done
+
+yes.
+| ?- %%% KL1-B Test for B_Float_Function_1_Arg (Exception) %%%
+% B_Float_Abs %%%%%%%%%%% abcdefg
+% B_Float_Floor %%%%%%%%% abcdefg
+% B_Float_Sqrt %%%%%%%%%% abcdefgh
+% B_Float_Ln %%%%%%%%%%%% abcdefgh
+% B_Float_Log %%%%%%%%%%% abcdefgh
+% B_Float_Exp %%%%%%%%%%% abcdefgh
+% B_Integer_To_Float %%%% abcdef
+% B_Float_To_Integer %%%% abcdefgh
+Total of 1162 reductions in N msec.
+
+yes.
+| ?-
+exit 0
+asm 8d60add8b718bf6adbeb5a77f2d21fc6c38deb7ebfd9a750531639d84c23424d
+sav b42f46da23c3fb4f01140496e6d6beeac783af108143d6ac17eaa18956c5edff

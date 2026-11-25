@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/timer_man.kl1" : Compiling ... create/3,manager/3,END.
+
+[create/3]
+successdone
+
+exit 0
+asm 21cef14237a7d93fbed9e3542739007e4345394a3856b1b57db162dfac084ba1
+sav none

@@ -26,8 +26,9 @@ patterns those rows say were witnessed (`Asm` checks every cell
 against the table).  A construct that would need anything else is refused
 with `CompileRefusal(construct, detail)`, naming the construct: e.g. `X+Y`
 on two registers (no witnessed register add), a vector of one, or of five or
-more, elements built in a body (no witnessed put_vector_n; `{}`, two, three
-and four are pmi b0, b2, b3, b4), `=\\=` (no witness of
+more, elements built in a body (not emitted yet: `{}`, two, three and four
+are pmi b0, b2, b3, b4; kl0 has rows for b1, b5, b6, b7 since step 3e, but
+espc does not use them), `=\\=` (no witness of
 what it compiles to), a negative integer immediate (sign unwitnessed).
 
 THE LANGUAGE (layers/ESP.md; TM-388 App. A grammar)
@@ -554,7 +555,7 @@ def small(v):
 BUILTINS = {
     # name/arity: (blt opcode, operand roles) -- roles: 'in' an input
     # register, 'out' an output register.  Each from a witnessed row.
-    ('new_heap_vector', 2): ('19', ('out', 'in')),      # V = N only
+    ('new_heap_vector', 2): ('19', ('out', 'in')),      # emitted V = N (V != N held too)
     ('first', 2): ('21', ('in', 'out')),
     ('second', 2): ('22', ('in', 'out')),
     ('vector_element', 3): ('20', ('in', 'in', 'out')),

@@ -1,0 +1,37 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/parser.kl1" : Compiling ... do/2,check_result/6,term/10,term_tail/11,term_tail_1/12,fork_term_tail/13,
+GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     194424     50    192    10    1584000        0
+After:       8678     38    159     3      92568        0
+GCed :     185746     12     33     7    1491432        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+fork_term_tail_1/13,tail/13,wait_op_result_2/13,tail_op/11,apply_infix/9,apply_infix_rst/11,apply_open_infix_rst/12,check_ambiguity2/13,check_ambiguity2_sub/9,term_tail_parenthesis/13,term_open_rst/13,
+GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193146     48    278     3    1584000        0
+After:       8038     42    136     3      83664        0
+GCed :     185108      6    142     0    1500336        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+term_list/9,term_list_rst/12,term_list_comma_rst/10,term_list_sub_rst/6,term_brace_rst/12,term_brace/9,term_brace_comma_rst/10,after_sign/12,check_sign/15,after_atom/12,fork_after_atom/15,try_prefix_1/13,try_prefix/13,
+GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     189804     52    488     3    1584000        0
+After:      10677     42    130     3     103992        0
+GCed :     179127     10    358     0    1480008        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+try_prefix_rst/13,wait_fork_result/12,after_not_op_atom/13,check_ambiguity/11,check_retry/10,fork_retry/9,wait_retry_rst/10,check_retry_ambiguity/10,term_bracket_rst/12,list_tail/8,list_tail_bar_rst/6,list_tail_comma_rst/10,list_tail_rst/9,list_tail_rst/13,term_parenthesis_rst/12,get_parsed_result/2,get_retry_parsed_result/2,analyze_parsed_result/4,retry_result/2,select_error/2,select_error/4,
+GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
+Used :     193752     52    236     3    1584000        0
+After:      12133     42    118     3     113880        0
+GCed :     181619     10    118     0    1470120        0
+             word    rec    rec   rec       byte     byte
+GC Time: N msec
+select_error2/3,select_error2/5,length/4,make_vect/3,set_elements/5,one_term/5,one_term/6,one_term/7,END.
+
+[do/2]
+successdone
+
+exit 0
+asm 01536c6856c995908525beac347856627bd64ad2cfcf4bcc8dac31081d19720d
+sav none

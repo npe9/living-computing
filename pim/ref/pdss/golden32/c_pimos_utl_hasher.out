@@ -1,0 +1,11 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/hasher.kl1" : Compiling ... Warning:This predicate overlapped with builtin predicate
+	hash/3
+hash/3,hash0/4,hash_int/2,hash_list/4,hash_vect/5,wait_hashed_value/5,END.
+
+[hash/3]
+successdone
+
+exit 0
+asm fad236fcc84f9172db13da35c90e16dcd297242f0a57322ad69c45756b549204
+sav none

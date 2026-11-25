@@ -140,7 +140,7 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
   **micro**-reverse-assembler. Check whether they also name KL0 opcodes before relying on them.
 - MEASURED 2026-11-24, from known plaintext:
   - 96 opcodes (70 class-0, 22 class-1, 3 atom-cell forms, the `cd00` hash table) were named
-    at first; 113 now (72 class-0, 37 class-1, after steps 3c and 3d). They are in
+    at first; 125 now (77 class-0, 44 class-1, after steps 3c, 3d and 3e). They are in
     `../../../psi/kl0_opcodes.tsv`. Each row's witness pairs the compiled cells with the held
     ESP clause they came from. `../../../psi/kl0.py` executes exactly these rows. 44 rows are
     witnessed independently by `../../../psi/fepread/witness.py`, and both are cited.
@@ -152,6 +152,23 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     - `blt 66 A B` tests A_A < A_B; `blt 67 A B` tests A_A >= A_B.
     - `blt 48`/`49` multiply and divide by an 8-bit immediate.
   - The names are OURS. Their mnemonics follow §3's groups where a group fits.
+  - 2026-11-25 (`../source_check_2026-11-24.md` §5): where TM-444 or TR-236 prints a mnemonic
+    that the held cells single out, the row now carries it as an INFERENCE binding with its
+    count: pmi 42/43 `unify_value_p/t`, 44/45 `unify_local_value_p/t` (TM-444 PDF p31 ex. 8),
+    a4 `put_local_value`, a5 `put_unsafe_value`, 24 `get_builtin_variable` (TR-236 PDF p5
+    Fig. 1), 2b `get_var_var_list` (TM-444 PDF p16); blt 45/46/48/49 `add_/subtract_/
+    multiply_/divide_constant` (held cil `cil_kl0.esp`). The indexing and cut rows cite
+    `jump_on_non_list`, `jump_on_non_constant`, `jump_on_value`, `hash_on_value`, `cut_me`,
+    `cut_me_and_proceed`, `cut_me_and_fail` in their meaning without renaming. The numbers
+    themselves are still printed nowhere.
+
+**Unification of strings** (KNOWN, TM-388 PDF p79 and p117-119 Table 4-3): two strings unify,
+and are `==`, only when they are the same stored string; `equal_string/2` compares contents.
+`string/3` is listed as a type test (TR-044 App. A.2, PDF p39, `string(?String, ^Length,
+^Size)`); kl0 makes it fail on a non-string (INFERENCE: no failing call is printed). Open:
+Table 4-3 makes `==` on stack vectors element-wise and on heap vectors address-only, while
+kl0's `==` (pmi 62, blt f0/f2) is object identity for both and its unification is
+element-wise for both; neither is settled by a witness yet.
 
 ## 4. Built-in predicates
 
@@ -198,6 +215,25 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     TR-044 App A.4);
   - add_immediate and subtract_immediate with the result in another register (`bar_v.esp:384`,
     `as_pred.esp:254`), and `put_variable_t A, X` with A != X (`p_tgraph.esp:70-72`).
+- Step 3e (2026-11-24, same table) witnesses pmi ca, a first-clause guard: `ca 00 00 n` and a
+  constant cell; if A0 is bound and not the constant, jump to cell + 3 + n (the second clause),
+  else fall through (`h.esp:189` `draw_string(nil,...):-!;`, `c_grade_ex.esp:125`
+  `set_pattern(256,_,_,_):-!;`). The unbound case is INFERENCE from the source. All 1,025 held
+  uses have R = 0 (MEASURED). It also witnesses blt f2 as `==` in a test-and-branch, read as blt f0
+  (`g_window.esp:15`, `( Display == color,!, ... ; true )`: `f2 02 03 00`). The difference from f0
+  is UNKNOWN.
+- Step 3e also witnesses, each on held kappa or paragraph code beside its source
+  (`psi/README.md`, "the interrupt brackets, the vector puts, the bit operations"):
+  - `inhibit_interrupt` / `allow_interrupt` are blt 9a / 9b, no operands (`TERMCODE.ESP:181-193`).
+    They are no-ops in the interpreter (OURS: no interrupts are modelled);
+  - vectors of one, five and six elements are pmi b1, b5, b6; `b7 A 0 n` puts an n-element vector
+    (`HLCAPRSUB.ESP:427`, `receiver.esp:680`, `p_MAIN.esp:444`, `p_icon.esp:229`). MEASURED: every
+    held use is followed by exactly that many element cells;
+  - `and`, `or`, `shift_left` and `shift_right` (TR-044 A.6) are blt 50, 51, 54 and 55, written
+    `X, Y, ^R` (`TERMCODE.ESP:85, 188`, `CONVERTER.ESP:41-45`, `KP_TIMER.ESP:43-45`). The 32-bit
+    word's sign and overflow are not printed, so negative operands and results of 2**31 or more
+    are refused;
+  - blt 40 and 49 take the result in another register (`p_wwin.esp:420`, `c_grade_ex.esp:26`).
 - OVW (lines 2662–2704) states that categories (7) system control and (8) language-processing
   support are **not described** in the user manuals.
 

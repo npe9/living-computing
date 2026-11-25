@@ -1,0 +1,1013 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1988,1989,1990,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module mpimos_parser.
+:- public do/2.
+:- implicit type : shared,
+	    optbl : stream.
+
+do([parse(TL, Term, Status)|S], OpTbl) :- true |
+    OpTbl = {OT1,OT2},
+    term(0, OT1, TL,TTail, 0,1200, 1,_, Term1,Rst),
+    check_result(TL, TTail, Term,Status, Term1,Rst),
+    do(S, OT2).
+do([parse_ex(TL, Term, Status)|S], OpTbl) :- true |
+    OpTbl = {OT1,OT2},
+    term(1, OT1, TL,TTail, 0,1200, 1,_, Term1,Rst),
+    check_result(TL, TTail, Term,Status, Term1,Rst),
+    do(S, OT2).
+do([], OpTbl) :- true | OpTbl = [].
+
+check_result(_, [end], Term,Status, Term1,parsed) :- true |
+    Term=Term1, Status=parsed.
+check_result(Tokens, _, _, Status, _,error(Ps,_)) :- true |
+    Status=error(Ps,Tokens).
+check_result(Tokens, _, _, Status, _,ambiguous(Ps,_)) :- true |
+    Status=ambiguous(Ps,Tokens).
+check_result(TL, TTail, Term,Status, Term1,retry(Rst)) :- true |
+    check_result(TL, TTail, Term,Status, Term1,Rst).
+otherwise.
+check_result(_, TTail, _, Status, Term1,parsed) :- true |
+    Status=remained(Term1,TTail).
+
+%
+% term(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%      +Position,-NewPosition, -Term,-Result)
+%
+%                    1, 2,  3, 4,   5,  6, 7,  8
+term(['$VAR'(N, S)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, '$VAR'(N, S)).
+term([atom(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	&optbl <<= [operator(X,OPs)],
+	Ps2 := Ps0+1,
+	after_atom(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X,OPs).
+term(['|'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	&optbl <<= [operator('|',OPs)],
+	Ps2 := Ps0+1,
+	after_atom(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, '|',OPs).
+term([sign(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	&optbl <<= [operator(X,OPs)],
+	Ps2 := Ps0+1,
+	after_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X,OPs).
+term([open(F)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |  %%%
+	Ps2 := Ps0+1,
+	term(Th,Tt1, 0,999, Ps2,Ps3, T0, Rst1),
+	term_open_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, F,T0,Rst1).
+term([integer(N)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> N>=0 | % Normal integer
+	Ps2 := Ps0+1,
+	one_term(integer,N,X),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term([integer(N)|Th],_, _,_, Ps0,_, _,Rst) --> N<0 | % Minimum integer
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,[illegal(string#"-2147483648")|Th]).
+term([float(N)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	one_term(floating_point,N,X),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term(['[',']'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+2,
+	one_term(atom,[],X),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term(['[',Token1|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> Token1 \= ']' |
+	Ps2 := Ps0+1,
+	term([Token1|Th],Tt1, 0,999, Ps2,Ps3, T0,Rst1),
+	term_bracket_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, T0,Rst1).
+term(['('|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tt1, 0,1200, Ps2,Ps3, T0,Rst1),
+	term_parenthesis_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, T0,Rst1).
+term(['{','}'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+2,
+	one_term(vector,{},0,X),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term(['{',Token|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> Token \= '}' |
+	Ps2 := Ps0+1,
+	term([Token|Th],Tt1, 0,999, Ps2,Ps3, T0,Rst1),
+	term_brace_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, T0,Rst1).
+term([string(S)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst) --> string(S,Size,ESize) |
+	Ps2 := Ps0+1,
+	one_term(string,S,Size,ESize,X),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term([illegal(X)|Th],_, _,_, Ps0,_, _,Rst) --> true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,[illegal(X)|Th]).
+otherwise.
+term(Th,_, _,_, Ps0,_, _,Rst) --> true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,Th).
+
+%
+% term_tail(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	    +Position,-NewPosition, -Term,-Result, +Head)
+%
+term_tail([(',')|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X) -->
+	P0 < 1000, 1000 =< P1 |		% logical and
+	Ps2 := Ps0+1,
+	term(Th,Tt1, 0,1000, Ps2,Ps3, T0,Rst1),
+	term_tail_parenthesis(Tt1,Tt, 1000,P1, Ps3,Ps1, T,Rst, X,T0,Rst1).
+term_tail([(',')|Th],Tt, _,P1, Ps0,Ps1, T,Rst, X) -->
+	P1 =< 999 |			% argument separator
+	T = X, Tt = [','|Th], Rst = parsed, Ps1 := Ps0-1.
+term_tail([atom(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X) --> true |
+	&optbl <<= [operator(Op,OPs)],
+	term_tail_1([atom(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,OPs).
+term_tail(['|'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X) --> true |
+	&optbl <<= [operator('|',OPs)],
+	term_tail_1(['|'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,OPs).
+term_tail([sign(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X) --> true |
+	&optbl <<= [operator(Op,OPs)],
+	term_tail_1([sign(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,OPs).
+term_tail([open(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X) --> true |
+	&optbl <<= [operator(Op,OPs)],
+	term_tail_1([open(Op)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,OPs).
+term_tail([')'|Th],Tt, _,_, Ps0,Ps1, T,Rst, X) --> true |
+	T = X, Tt = [')'|Th], Rst = parsed, Ps1 := Ps0-1.
+term_tail([']'|Th],Tt, _,_, Ps0,Ps1, T,Rst, X) --> true |
+	T = X, Tt = [']'|Th], Rst = parsed, Ps1 := Ps0-1.
+term_tail(['}'|Th],Tt, _,_, Ps0,Ps1, T,Rst, X) --> true |
+	T = X, Tt = ['}'|Th], Rst = parsed, Ps1 := Ps0-1.
+term_tail([end],Tt, _,_, Ps0,Ps1, T,Rst, X) --> true |
+	T = X, Tt = [end], Rst = parsed, Ps1 := Ps0-1.
+otherwise.
+term_tail(Th,_, _,_, Ps0,_, _,Rst, _) --> true |
+	Ps1 := Ps0-1, Rst = error(Ps1,Th).
+
+%
+% term_tail_1(+TokenList,-RestOfTokenList,
+%	+AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,  +Head,+(Prec,Kind)List)
+%
+term_tail_1(Th,_, _,_, Ps0,_, _,Rst, _,[]) --> true |
+	Ps2 := Ps0-1, Rst = error(Ps2,Th).
+otherwise.
+term_tail_1(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, X,OPs) --> true |
+	Ps2 := Ps0-1,
+	fork_term_tail(Th, P0,P1, Ps0, 0,Nm, 0,Rm, [],Chain, OPs),
+	check_ambiguity2(Th,Tt, P1, Ps2,Ps1, T,Rst, X, Nm,Rm,Chain).
+
+%
+% fork_term_tail(+TokenList, +AllowedMin,+AllowedMax, +Position,
+%	+NumberOfNormalCandidate, -NumberOfNormalCandidate,
+%	+NumberOfRetryCandidate, -NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList,
+%	+(Prec,Kind)List)
+%
+fork_term_tail(_, _,_, _, K,N, Q,R, Lt,Rt, []) --> true | N = K, Q = R, Rt = Lt.
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,Kind}|OPs]) -->
+	Prec =< P1 |
+	tail(Th, P0,Prec, Ps0, K,K1, Q,Q1, Lt,Md, Kind),
+	fork_term_tail(Th, P0,P1, Ps0, K1,N, Q1,R, Md,Rt, OPs).
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,yfx}|OPs]) -->
+	Prec > P1 |
+        K1 := K+1, Ps1 := Ps0-1, Rt = [parsed(Th,Ps1)|Md],
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Lt,Md, OPs).
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xfx}|OPs]) -->
+	Prec-1 > P1 |
+	K1 := K+1, Ps1 := Ps0-1, Rt = [parsed(Th,Ps1)|Md],
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Lt,Md, OPs).
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xfy}|OPs]) -->
+	Prec-1 > P1 |
+	K1 := K+1, Ps1 := Ps0-1, Rt=[parsed(Th,Ps1)|Md],
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Lt,Md, OPs).
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xf}|OPs]) -->
+	Prec-1 > P1 |
+	K1 := K+1, Ps1 := Ps0-1, Rt=[parsed(Th,Ps1)|Md],
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Lt,Md, OPs).
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,yf}|OPs]) -->
+	Prec > P1 |
+	K1 := K+1, Ps1 := Ps0-1, Rt=[parsed(Th,Ps1)|Md],
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Lt,Md, OPs).
+otherwise.
+fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [_|OPs]) -->
+	true |
+	fork_term_tail(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+
+fork_term_tail_1(_, _,_, _, K,N, Q,R, Lt,Rt, []) --> true | N = K, Q=R, Rt = Lt.
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,Kind}|OPs]) -->
+	Prec =< P1 |
+	tail(Th, P0,Prec, Ps0, K,K1, Q,R, Lt,Md, Kind),
+	fork_term_tail_1(Th, P0,P1, Ps0, K1,N, Q,R, Md,Rt, OPs).
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,yfx}|OPs]) -->
+	Prec > P1 |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xfx}|OPs]) -->
+	Prec-1 > P1 |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xfy}|OPs]) -->
+	Prec-1 > P1 |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,xf}|OPs]) -->
+	Prec-1 > P1 |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [{Prec,yf}|OPs]) -->
+	Prec > P1 |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+otherwise.
+fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, [_|OPs]) -->
+	true |
+	fork_term_tail_1(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, OPs).
+
+%
+% tail(+TokenList, +AllowedMin,+Precedence, +Position,
+%      +NumberOfNormalCandidate,-NumberOfNormalCandidate,
+%      +NumberOfRetryCandidate,-NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList, +Kind)
+%
+tail(Th, P0,Prec, Ps0, K,N, Q,R, Lt,Rt, Kind) --> true |
+	tail_op(Th,Tt, P0,Prec, Ps0,Ps1, T,Rst, Kind),
+	wait_op_result_2(Tt, Prec, Ps1, K,N, Q,R, Lt,Rt, T,Rst).
+
+%
+% wait_op_reult_2(+TokenList, +Precedence, +Position,
+%	+NumberOfNormalCandidate,-NumberOfNormalCandidate,
+%	+NumberOfRetryCandidate,-NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList,
+%	+Term,+PreResult)
+%
+wait_op_result_2(Tt, Prec, Ps1, K,N, Q,R, Lt,Rt, T,parsed) --> true |
+	N := K+1, Q = R,
+	Rt=[parsed(T,Tt,Prec, Ps1)|Lt].
+wait_op_result_2(Tt, Prec, Ps1, K,N, Q,R, Lt,Rt, T,retry(parsed)) --> true |
+	N = K, R := Q+1,
+	Rt=[retry(parsed(T,Tt,Prec, Ps1))|Lt].
+otherwise.
+wait_op_result_2(_, _, _, K,N, Q,R, Lt,Rt, _,Rst) --> true |
+	N = K, Q = R, Rt = [Rst|Lt].
+
+%
+% tail_op(+TokenList,-RestOfTokenList, +AllowedMin, +OpPrec,
+%	  +Position,-NewPosition, -Term,-Result, +OpKind)
+%
+tail_op(Th,Tt, P0,P, Ps0,Ps1, T,Rst, xfx) --> P0 < P |
+	P1 := P-1,
+	apply_infix(Th,Tt, P1, Ps0,Ps1, T,Rst).
+tail_op(Th,Tt, P0,P, Ps0,Ps1, T,Rst, xfy) --> P0 < P |
+	apply_infix(Th,Tt, P, Ps0,Ps1, T,Rst).
+tail_op(Th,Tt, P0,P, Ps0,Ps1, T,Rst, yfx) --> P0 =< P |
+	P1 := P-1,
+	apply_infix(Th,Tt, P1, Ps0,Ps1, T,Rst).
+tail_op([atom(Op)|Th],Tt, P0,P, Ps0,Ps1, T,Rst, xf) --> P0 < P |
+	T = postfix(Op),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+tail_op([atom(Op)|Th],Tt, P0,P, Ps0,Ps1, T,Rst, yf) --> P0 =< P |
+	T = postfix(Op),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+tail_op(['|'|Th],Tt, P0,P, Ps0,Ps1, T,Rst, xf) --> P0 < P |
+	T = postfix('|'),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+tail_op(['|'|Th],Tt, P0,P, Ps0,Ps1, T,Rst, yf) --> P0 =< P |
+	T = postfix('|'),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+tail_op([sign(Op)|Th],Tt, P0,P, Ps0,Ps1, T,Rst, xf) --> P0 < P |
+	T = postfix(Op),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+tail_op([sign(Op)|Th],Tt, P0,P, Ps0,Ps1, T,Rst, yf) --> P0 =< P |
+	T = postfix(Op),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+otherwise.
+tail_op(Th,_, _,_, Ps0,_, _,Rst, _) --> true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,Th).
+
+%
+% apply_infix(+TokenList,-RestOfTokenList, +AllowedMax, +Position,-NewPosition,
+%	-Term,-Result)
+%
+apply_infix([atom(Op)|Th],Tt, P, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tm, 0,P, Ps2,Ps3, Y,Rst1),
+	apply_infix_rst(Tm,Tt, Ps3,Ps1, T,Rst, Y,Op, Rst1).
+apply_infix(['|'|Th],Tt, P, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tm, 0,P, Ps2,Ps3, Y,Rst1),
+	apply_infix_rst(Tm,Tt, Ps3,Ps1, T,Rst, Y,'|', Rst1).
+apply_infix([sign(Op)|Th],Tt, P, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tm, 0,P, Ps2,Ps3, Y,Rst1),
+	apply_infix_rst(Tm,Tt, Ps3,Ps1, T,Rst, Y,Op, Rst1).
+apply_infix([open(Op)|Th],Tt, P, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tm, 0,1200, Ps2,Ps3, Y, Rst1),
+	apply_open_infix_rst(Tm,Tt, P,Ps3, Ps1, T,Rst, Y,Op, Rst1).
+
+%
+% apply_infix_rst(+TokenList,-RestofTokenList, +Position,-NewPosition,
+%	-Term,-Result, +PreTerm,+TokenOp, +PreResult)
+%
+apply_infix_rst(Th,Tt, Ps0,Ps1, T,Rst, Y,Op, parsed) --> true |
+	T = infix(Op,Y),
+	Rst = parsed, Tt = Th, Ps1 = Ps0.
+apply_infix_rst(Th,Tt, Ps0,Ps1, T,Rst, Y,Op, retry(parsed)) --> true |
+	T = infix(Op,Y),
+	Rst = retry(parsed), Tt = Th, Ps1 = Ps0.
+otherwise.
+apply_infix_rst(_,_, _,_, _,Rst, _,_, Rst1) --> true |
+	Rst = Rst1.
+
+
+apply_open_infix_rst(Th,Tt, P, Ps0,Ps1, T,Rst, Y,Op, retry(R)) --> true |
+	{{ retry_result(Rst,Rst1) }},
+	apply_open_infix_rst(Th,Tt, P, Ps0,Ps1, T,Rst1, Y,Op, R).
+apply_open_infix_rst([')',Token|Th],Tt, P, Ps0,Ps1, T,Rst, Y,Op, parsed) -->
+        Token\=end |
+	Ps2 := Ps0+2,
+	term_tail([Token|Th],Tm, 0,P, Ps2,Ps3, Z,Rst1, Y),
+	apply_infix_rst(Tm,Tt, Ps3,Ps1, T,Rst, Z,Op, Rst1).
+apply_open_infix_rst([')',end|Th],Tt, _, Ps0,Ps1, T,Rst, Y,Op, parsed) -->
+	true |
+	T = infix(Op,Y),
+	Rst=parsed, Tt=[end|Th], Ps1=Ps0.
+apply_open_infix_rst([Token|Th],_, _, Ps0,_, _,Rst, _,_, parsed) -->
+	Token \= ')' |
+	Rst=error(Ps0,[Token|Th]).
+otherwise.
+apply_open_infix_rst(_,_, _, _,_, _,Rst, _,_, Rst1) --> true |
+	Rst=Rst1.
+
+%
+% check_ambiguity2(+TokenList,-RestOfTokenList, +AllowedMax,
+%	+Position,-NewPosition, -Term,-Result, +Head,
+%	+NumberOfNormalCandidate,+NumberOfRetryCandidate, +CandidateList)
+%
+check_ambiguity2(Tokens,_, _, Ps0,_, _,Rst, _, 0,0,[]) --> true |
+	Rst = error(Ps0,Tokens).
+check_ambiguity2(_,_, _, _,_, _,Rst, _, 0,0,Rsts) --> Rsts \= [] |
+	{{ select_error(Rsts,Rst) }}.
+check_ambiguity2(Tokens,_, _, Ps0,_, _,Rst, _, Nm,_,Rsts) -->
+    Rsts \= [], Nm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_ambiguity2(Tokens,_, _, Ps0,_, _,Rst, _, 0,Rm,Rsts) -->
+    Rsts \= [], Rm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_ambiguity2(_,Tt, P1, _,Ps1, T,Rst, X, 1,_,Rsts) --> true |
+	{{ get_parsed_result(Rsts, Rst1) }},
+	check_ambiguity2_sub(Tt, P1, Ps1, T,Rst, X, Rst1).
+check_ambiguity2(_,Tt, P1, _,Ps1, T,Rst, X, 0,1,Rsts) --> true |
+	{{ get_retry_parsed_result(Rsts, Rst1),
+	   retry_result(Rst,Rst2) }},
+	check_ambiguity2_sub(Tt, P1, Ps1, T,Rst2, X, Rst1).
+
+%
+% check_ambiguity2_sub(-RestOfTokenList, -NewPosition, +AllowedMax,
+%	-Term,-Result, +Head, +PursedResult)
+%
+check_ambiguity2_sub(Tt, P1, Ps1, T,Rst, X, parsed(infix(Op,Y),Th,P0,Ps0)) -->
+	true |
+	Ps2 := Ps0+1,
+	one_term(atom,Op,A), one_term(vector,{A,X,Y},3,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+check_ambiguity2_sub(Tt, P1, Ps1, T,Rst, X, parsed(postfix(Op),Th,P0,Ps0)) -->
+	true |
+	Ps2 := Ps0+1,
+	one_term(atom,Op,A), one_term(vector,{A,X},2,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+check_ambiguity2_sub(Tt, _, Ps1, T,Rst, X, parsed(Tokens,Ps0)) --> true |
+	T = X, Tt = Tokens, Rst = parsed, Ps1 = Ps0.
+
+%
+% term_tail_parenthesis(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,
+%	+Head,+PreTerm,+PreResult)
+%
+term_tail_parenthesis(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, X,Y,parsed) -->
+	true |
+	Ps2 := Ps0+1,
+	one_term(atom,',',A), one_term(vector,{A,X,Y},3,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+term_tail_parenthesis(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, X,Y,retry(parsed)) -->
+	true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst1) }},
+	one_term(atom,',',A), one_term(vector,{A,X,Y},3,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst1, Z).
+otherwise.
+term_tail_parenthesis(_,_, _,_, _,_, _,Rst, _,_,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% term_open_rst(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,
+%	+Functor, +PreTerm, +PreResult)
+%
+term_open_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,T0,parsed) --> true |
+	Ps2 := Ps0+1,
+	term_list(Th,Tt1, Ps2,Ps3, Lh,[], Rst1),
+	one_term(atom,F,X),
+	term_list_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, [X,T0|Lh],Rst1).
+term_open_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,T0,retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	term_list(Th,Tt1, Ps2,Ps3, Lh,[], Rst1),
+	one_term(atom,F,X),
+	term_list_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst2, [X,T0|Lh],Rst1).
+otherwise.
+term_open_rst(_,_, _,_, _,_, _,Rst, _,_,Rst1) -->  true |
+	Rst = Rst1.
+
+%
+% term_list(+TokenListHead,-RestOfTokenList, +Position,-NewPosition,
+% 		-TermList,?TokenListTail, -Result)
+%
+term_list([')'|Th],Tt, Ps0,Ps1, Lh,Lt, Rst) --> true |
+	Tt = Th, Rst = parsed, Lt = Lh, Ps1 = Ps0.
+term_list([(',')|Th],Tt, Ps0,Ps1, Lh,Lt, Rst) --> true |
+	Ps2 := Ps0+1, Lh=[T|Lh1],
+	term(Th,Tt1, 0,999, Ps2,Ps3, T,Rst1),
+	term_list_comma_rst(Tt1,Tt, Ps3,Ps1, Lh1,Lt, Rst, Rst1).
+otherwise.
+term_list(Th,_, Ps0,_, _,_, Rst) -->  %%% Token \= ')', Token \= ',' |
+	true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,Th).
+
+%
+% term_list_rst(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,
+%	+TermList, +PreResult)
+%
+term_list_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, L,parsed) -->
+	true |
+	Ps2 := Ps0+1,
+	{{ make_vect(L,X,S) }},
+	one_term(vector,X,S,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+term_list_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, L,retry(parsed)) -->
+	true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst1),
+	   make_vect(L,X,S) }},
+	one_term(vector,X,S,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst1, Z).
+otherwise.
+term_list_rst(_,_, _,_, _,_, _,Rst, _,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% term_list_comma_rst(+TokenList,-RestOfTokenList, +Position,-NewPosition,
+%	-TermListHead, ?TermListTail, -Result, +PreResult)
+%
+term_list_comma_rst(Th,Tt, Ps0,Ps1, Lh,Lt, Rst, parsed) --> true |
+	Ps2 := Ps0+1,
+	term_list(Th,Tt, Ps2,Ps3, Lh,Lt, Rst1),
+	term_list_sub_rst(Ps3,Ps1, Rst, Rst1).
+term_list_comma_rst(Th,Tt, Ps0,Ps1, Lh,Lt, Rst, retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	term_list(Th,Tt, Ps2,Ps3, Lh,Lt, Rst1),
+	term_list_sub_rst(Ps3,Ps1, Rst2, Rst1).
+otherwise.
+term_list_comma_rst(_,_, _,_, _,_, Rst, Rst1) -->
+        true | Rst = Rst1.
+
+%
+% term_list_sub_rst(+Position,-NewPosition, -Result, +PreResult)
+%
+term_list_sub_rst(Ps0,Ps1, Rst, parsed) --> true |
+	Rst = parsed, Ps1 = Ps0.
+term_list_sub_rst(Ps0,Ps1, Rst, retry(parsed)) --> true |
+	Rst = retry(parsed), Ps1 = Ps0.
+otherwise.
+term_list_sub_rst(_,_, Rst, Rst1) --> true | Rst = Rst1.
+
+%
+% term_brace_rst(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,
+%	+PreTerm,+PreResult)
+%
+term_brace_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, T0,parsed) --> true |
+	Ps2 := Ps0+1,
+	term_brace(Th,Tt1, Ps2,Ps3, Lh,[], Rst1),
+	term_list_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, [T0|Lh],Rst1).
+term_brace_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, T0,retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	term_brace(Th,Tt1, Ps2,Ps3, Lh,[], Rst1),
+	term_list_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst2, [T0|Lh],Rst1).
+otherwise.
+term_brace_rst(_,_, _,_, _,_, _,Rst, _,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% term_brace(?TokenListTail,-RestOfTokenList, +Position,-NewPosition,
+% 		-TermList,-TokenListHead, -Result)
+%
+term_brace(['}'|Th],Tt, Ps0,Ps1, Lh,Lt, Rst) --> true |
+	Tt = Th, Rst = parsed, Lt = Lh, Ps1 = Ps0.
+term_brace([(',')|Th],Tt, Ps0,Ps1, Lh,Lt, Rst) --> true |
+	Ps2 := Ps0+1, Lh=[T|Lh1],
+	term(Th,Tt1, 0,999, Ps2,Ps3, T,Rst1),
+	term_brace_comma_rst(Tt1,Tt, Ps3,Ps1, Lh1,Lt, Rst, Rst1).
+otherwise.
+term_brace(Th,_, Ps0,_, _,_, Rst) -->  %%% Token \= ')', Token \= ',' |
+	true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,Th).
+
+%
+% term_brace_comma_rst(+TokenList,-RestOfTokenList, +Position,-NewPosition,
+%	-TermListHead, ?TermListTail, -Result, +PreResult)
+%
+term_brace_comma_rst(Th,Tt, Ps0,Ps1, Lh,Lt, Rst, parsed) --> true |
+	Ps2 := Ps0+1,
+	term_brace(Th,Tt, Ps2,Ps3, Lh,Lt, Rst1),
+	term_list_sub_rst(Ps3,Ps1, Rst, Rst1).
+term_brace_comma_rst(Th,Tt, Ps0,Ps1, Lh,Lt, Rst, retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	term_brace(Th,Tt, Ps2,Ps3, Lh,Lt, Rst1),
+	term_list_sub_rst(Ps3,Ps1, Rst2, Rst1).
+otherwise.
+term_brace_comma_rst(_,_, _,_, _,_, Rst, Rst1) -->
+        true | Rst = Rst1.
+
+%
+% after_sign(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	     +Position,-NewPosition, -Term,-Result, +Atom,+OPs).
+%
+after_sign([integer(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, -,OPs) -->
+    X>=0 | % Normal integer
+	L := -X, Ps2 := Ps0+1,		% L := -X
+	one_term(integer,L,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T1,Rst1, Z),
+	check_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, -,OPs,integer(X), T1,Rst1).
+after_sign([integer(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, -,OPs) -->
+    X<0 | % Minimum integer
+	Ps2 := Ps0+1,
+	one_term(integer,X,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T1,Rst1, Z),
+	check_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, -,OPs,integer(X), T1,Rst1).
+after_sign([integer(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, +,OPs) -->
+    X>=0 | % Normal integer
+	Ps2 := Ps0+1,
+	one_term(integer,X,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T1,Rst1, Z),
+	check_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, +,OPs,integer(X), T1,Rst1).
+after_sign([integer(X)|Th],_, _,_, Ps0,_, _,Rst, +,_) -->
+    X<0 | % Minimum integer
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,[illegal(string#"-2147483648")|Th]).
+after_sign([float(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, -,OPs) --> true |
+	L $:= -X, Ps2 := Ps0+1,		% L $:= -X
+	one_term(floating_point,L,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T1,Rst1, Z),
+	check_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, -,OPs,float(X), T1,Rst1).
+after_sign([float(X)|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, +,OPs) --> true |
+	Ps2 := Ps0+1,
+	one_term(floating_point,X,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T1,Rst1, Z),
+	check_sign(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, +,OPs,float(X), T1,Rst1).
+
+%
+% check_sign(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	     +Position,-NewPosition, -Term,-Result, +Atom,+OPs,+Token,
+%	     +TermAfterSignEvaluated,+ResultAfterSignEvaluated).
+%
+
+check_sign(_,_, _,_, _,_, T,Rst, _,_,_, T1,retry(parsed)) --> true |
+	T = T1, Rst = retry(parsed).
+check_sign(_,_, _,_, _,_, T,Rst, _,_,_, T1,parsed) --> true |
+	T = T1, Rst = parsed.
+otherwise.
+check_sign(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,OPs,Token, _,_) --> true |
+	Ps1 := Ps0-1, Ps2 := Ps1-2,
+	fork_after_atom([Token|Th], P0,P1, Ps1, 0,Nm, 0,Rm,[],Chain, F,1200,OPs),
+	{{ retry_result(Rst,Rst1) }},
+	check_ambiguity([sign(F),Token|Th],Tt, Ps2,Ps1,T,Rst1,Nm,Rm,Chain).
+
+%
+% after_atom(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	     +Position,-NewPosition, -Term,-Result, +Atom,+OPs).
+%
+after_atom(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,[]) --> true |
+	Ps2 := Ps0-2,
+	after_not_op_atom(Th, P0,P1, Ps0, 0,Nm, 0,Rm, [],Chain, F),
+	check_ambiguity([atom(F)|Th],Tt, Ps2,Ps1, T,Rst, Nm,Rm,Chain).
+otherwise.
+after_atom(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,OPs) --> true |
+	Ps2 := Ps0-2,
+	fork_after_atom(Th, P0,P1, Ps0, 0,Nm, 0,Rm,[],Chain, F,1200,OPs),
+	check_ambiguity([atom(F)|Th],Tt, Ps2,Ps1, T,Rst, Nm,Rm,Chain).
+
+%
+% fork_after_atom(+TokenList, +AllowedMin,+AllowedMax, +PositionOfAtom,
+%	+NumberOfCandidate,-NumberOfCandidate,
+%	+NumberOfRetryCandidate,-NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList, +Atom,+MinPrec,+{Prec,Kind}List)
+%
+fork_after_atom(Th, _,P1, Ps0, K,N, Q,R, Lt,Rt, F,MP,[]) --> true |
+	after_not_op_atom(Th, MP,P1, Ps0, K,N, Q,R, Lt,Rt, F).
+fork_after_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F,MP,[{Prec,_}|OPs]) -->
+	Prec > P1 |
+	min(MP,Prec,NMP),
+	fork_after_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F,NMP,OPs).
+fork_after_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F,MP,[{Prec,_}|OPs]) -->
+	Prec < P0 |
+	min(MP,Prec,NMP),
+	fork_after_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F,NMP,OPs).
+fork_after_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F,MP,[{Prec,Kind}|OPs]) -->
+	P0 < Prec, Prec =< P1 |
+	try_prefix_1(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,Kind),
+	wait_fork_result(Tt, Ps1, K,K1, Q,Q1, Lt,Md, T,Rst),
+	min(MP,Prec,NMP),
+	fork_after_atom(Th, P0,P1, Ps0, K1,N, Q1,R, Md,Rt, F,NMP,OPs).
+
+%
+% try_prefix_1(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition,-Term,-Result,
+%	+Op,+Precedence,+OpType)
+%
+try_prefix_1(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,fx) --> true |
+	PP := Prec-1,
+	try_prefix(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,PP).
+try_prefix_1(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,fy) --> true |
+	try_prefix(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,Prec).
+otherwise.
+try_prefix_1(Th,_, _,_, Ps0,_, _,Rst, _,_,_) -->
+	true | Rst = error(Ps0,Th).
+
+%
+% try_prefix(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result,
+%	+Op,+Precedence,+NewAllowedMax)
+%
+try_prefix(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,Prec,P) --> true |
+	term(Th,Tt1, P0,P, Ps0,Ps2, X,Rst1),
+	try_prefix_rst(Tt1,Tt, Prec,P1, Ps2,Ps1, T,Rst, F,X,Rst1).
+
+%
+% try_prefix_rst(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	+Position,-NewPosition, -Term,-Result, +Op,+PreTerm,+PreResult)
+%
+try_prefix_rst([sign(Op)|Th],_, P0,P1, Ps0,_, _,Rst, F,X,retry(parsed)) -->
+    true |
+	one_term(atom,F,A), one_term(vector,{A,X},2,Z),
+	Rst = retry(term_tail([sign(Op)|Th],P0,P1,Ps0,Z)).
+try_prefix_rst([sign(Op)|Th],_, P0,P1, Ps0,_, _,Rst, F,X,parsed) -->
+    true |
+	one_term(atom,F,A), one_term(vector,{A,X},2,Z),
+	Rst = retry(term_tail([sign(Op)|Th],P0,P1,Ps0,Z)).
+try_prefix_rst(_,_, _,_, _,_, _,Rst, _,_,Rst1) --> Rst1\=parsed |
+	Rst = Rst1.
+otherwise.
+try_prefix_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,X,parsed) --> true |
+	Ps2 := Ps0+1,
+	one_term(atom,F,A), one_term(vector,{A,X},2,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+try_prefix_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F,X,retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst1) }},
+	one_term(atom,F,A), one_term(vector,{A,X},2,Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst1, Z).
+
+%
+% wait_fork_result(-RestOfTokenList, +Position,
+%	+NumberOfNormalCandidate,-NumberOfNormalCandidate,
+%	+CandidateList,-CandidateList, +PreTerm,+PreResult)
+%
+wait_fork_result(Tt, Ps, K,N, Q,R, Lt,Rt, T,parsed) --> true |
+	N := K+1, Q = R,
+	Rt = [parsed(T,Tt,Ps)|Lt].
+wait_fork_result(Tt, Ps, K,N, Q,R, Lt,Rt, T,retry(parsed)) --> true |
+	N = K, R := Q+1,
+	Rt = [retry(parsed(T,Tt,Ps))|Lt].
+otherwise.
+wait_fork_result(_, _, K,N, Q,R, Lt,Rt, _,Rst) --> true |
+	N = K, Q = R,
+	Rt = [Rst|Lt].
+
+%
+% after_not_op_atom(+TokenList, +AllowedMin,+AllowedMax, +PositionOfAtom,
+%	+NumberOfCandidate,-NumberOfCandidate,
+%	+NumberOfRetryCandidate,-NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList, +Atom)
+%
+after_not_op_atom([sign(Op)|Th], P0,P1, Ps0, K,N, Q,R, Lt,Rt, F) --> true |
+	N = K, Q = R,
+	one_term(atom,F,A),
+	Rt = [retry(term_tail([sign(Op)|Th],P0,P1,Ps0,A))|Lt].
+otherwise.
+after_not_op_atom(Th, P0,P1, Ps0, K,N, Q,R, Lt,Rt, F) --> true |
+	one_term(atom,F,A),
+	term_tail(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, A),
+	wait_fork_result(Tt, Ps1, K,N, Q,R, Lt,Rt, T,Rst).
+
+%
+% check_ambiguity(+TokenList,-RestOfTokenList, +PositionOfOp,-NewPosition,
+%	-Term,-Result, +NumberOfNormalCandidate,+NumberOfRetryCandidate,
+%	+CandidateList)
+%
+check_ambiguity(Tokens,_, Ps0,_, _,Rst, 0,0,[]) --> true |
+	Rst = error(Ps0,Tokens).
+check_ambiguity(Tokens,Tt, Ps0,Ps1, T,Rst, 0,0,Rsts) --> Rsts \= [] |
+	{{ select_error2(Rsts,Error,RetryL) }},
+	check_retry(T,Tt,Ps1,Ps0,Tokens,Rst,Error,RetryL).
+check_ambiguity(Tokens,_, Ps0,_, _,Rst, Nm,_,Rsts) --> Rsts \= [], Nm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_ambiguity(Tokens,_, Ps0,_, _,Rst, 0,Rm,Rsts) --> Rsts \= [], Rm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_ambiguity(_,Tt, _,Ps1, T,Rst, 1,_,Rsts) --> true |
+	{{ get_parsed_result(Rsts, Parsed),
+	   analyze_parsed_result(Parsed,T,Tt,Ps1) }},
+	Rst = parsed.
+check_ambiguity(_,Tt, _,Ps1, T,Rst, 0,1,Rsts) --> true |
+	{{ get_retry_parsed_result(Rsts, Parsed),
+	   analyze_parsed_result(Parsed,T,Tt,Ps1) }},
+	Rst = retry(parsed).
+
+%
+% check_retry(-Term,-RestOfTokenList,-NewPosition,+PositionOfOp,+TokenList,
+%	-Result,+ErrorResult,+RetryResultList)
+%
+check_retry(T,Tt,Ps1,Ps0,Tokens,Rst,Error,RetryL) --> RetryL \= [] |
+	fork_retry(0,Nm,0,Rm,[],Check,RetryL),
+	{{ check_retry_ambiguity(T,Tt,Ps1,Ps0,Tokens,Rst,Error,Nm,Rm,Check) }}.
+check_retry(_,_,_,_,_,Rst,Error,[]) --> true |
+	Rst = Error.
+
+%
+% fork_retry(+NumberOfCandidate,-NumberOfCandidate,
+%	+NumberOfRetryCandidate,-NumberOfRetryCandidate,
+%	+CandidateList,-CandidateList,+RetryResultList)
+%
+fork_retry(K,N,Q,R,Lt,Rt,[term_tail(Th,P0,P1,Ps0,F)|RL]) --> true |
+	term_tail(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, F),
+	{{ wait_retry_rst(K,M,Q,Q1,Lt,Mt,T,Tt,Ps1,Rst) }},
+	fork_retry(M,N,Q1,R,Mt,Rt,RL).
+fork_retry(K,N,Q,R,Lt,Rt,[]) --> true |
+	N = K, Q = R, Rt = Lt.
+
+%
+% wait_retry_rst(+NumberOfCandidate,-NumberOfCandidate,
+%	+NumberOfRetryCandidate,-NumberOfRetryCandidate,+CandidateList,
+%	-CandidateList,+Term,+RestOfTokenList,+NewPosition,+PreResult)
+%
+wait_retry_rst(K,N,Q,R,Lt,Rt,T,Tt,Ps1,retry(parsed)) :- true |
+	N = K, R := Q+1,
+	Rt = [retry(parsed(T,Tt,Ps1))|Lt].
+wait_retry_rst(K,N,Q,R,Lt,Rt,T,Tt,Ps1,parsed) :- true |
+	N := K+1, Q = R,
+	Rt = [parsed(T,Tt,Ps1)|Lt].
+otherwise.
+wait_retry_rst(K,N,Q,R,Lt,Rt,_,_,_,Rst) :- true |
+	N = K, Q = R, Rt = [Rst|Lt].
+
+%
+% check_retry_ambiguity(-Term,+RestOfTokenList,+NewPosition,+PositionOfOp,
+%	+Tokens,-Result,+ErrorResult,+NumberOfNormalCandidate,
+%	+NumberOfRetryNormalCandidate,+CandidateList).
+%
+check_retry_ambiguity(_,_,_,_,_,Rst,Error,0,0,[]) :- true |
+	Rst = Error.
+check_retry_ambiguity(_,_,_,_,_,Rst,Error,0,0,Rsts) :- Rsts \= [] |
+	select_error2([Error|Rsts],Rst,_).
+check_retry_ambiguity(_,_,_,Ps0,Tokens,Rst,_,Nm,_,Rsts) :- Rsts \= [], Nm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_retry_ambiguity(_,_,_,Ps0,Tokens,Rst,_,0,Rm,Rsts) :- Rsts \= [], Rm > 1 |
+	Rst = ambiguous(Ps0,Tokens).
+check_retry_ambiguity(T,Tt,Ps1,_,_,Rst,_,1,_,Rsts) :- true |
+	get_parsed_result(Rsts, Parsed),
+	analyze_parsed_result(Parsed,T,Tt,Ps1),
+	Rst = retry(parsed).
+check_retry_ambiguity(T,Tt,Ps1,_,_,Rst,_,0,1,Rsts) :- true |
+	get_retry_parsed_result(Rsts, Parsed),
+	analyze_parsed_result(Parsed,T,Tt,Ps1),
+	Rst = retry(parsed).
+
+%
+% term_bracket_rst(+TokenList,-RestOfTokenList, +AllowedMax,+AllowedMin,
+%	 +Position,-NewPosition, -Term,-Result, +PreResult,+PreTerm)
+%
+term_bracket_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, H, parsed) --> true |
+	Ps2 := Ps0+1,
+	list_tail(Th,Tt1, Ps2,Ps3, L, Rst1),
+	list_tail_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst, H,L,Rst1).
+term_bracket_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, H, retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	list_tail(Th,Tt1, Ps2,Ps3, L, Rst1),
+	list_tail_rst(Tt1,Tt, P0,P1, Ps3,Ps1, T,Rst2, H,L,Rst1).
+otherwise.
+term_bracket_rst(_,_, _,_, _,_, _,Rst, _,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% list_tail(+TokenList,-NewTokenList, +Position,-NewPosition,
+%	-TermList,-Result)
+%
+list_tail([']'|Th],Tt, Ps0,Ps1, T,Rst) --> true |
+	one_term(atom,[],T), Th = Tt, Rst = parsed, Ps1 = Ps0.
+list_tail(['|'|Th],Tt, Ps0,Ps1, T,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tt1, 0,999, Ps2,Ps3, T,Rst1),
+	{{ list_tail_bar_rst(Tt1,Tt, Ps3,Ps1, Rst, Rst1) }}.
+list_tail([','|Th],Tt, Ps0,Ps1, Term,Rst) --> true |
+	Ps2 := Ps0+1,
+	term(Th,Tt1, 0,999, Ps2,Ps3, H,Rst1),
+	list_tail_comma_rst(Tt1,Tt, Ps3,Ps1, Term,Rst, H,Rst1).
+otherwise.
+list_tail(Th,_, Ps0,_, _,Rst) --> true |
+	Ps2 := Ps0-1,
+	Rst = error(Ps2,Th).
+
+%
+% list_tail_bar_rst(+TokenList,-RestOfTokenList, +Position,-NewPosition,
+%	-Result, +PreResult)
+%
+list_tail_bar_rst([']'|Th],Tt, Ps0,Ps1, Rst, parsed) :- true |
+	Tt = Th, Rst = parsed, Ps1 := Ps0+1.
+list_tail_bar_rst([']'|Th],Tt, Ps0,Ps1, Rst, retry(parsed)) :- true |
+	Tt = Th, Rst = retry(parsed), Ps1 := Ps0+1.
+list_tail_bar_rst([Token|Th],_, Ps0,_, Rst,parsed) :- Token \= ']' |
+	Rst = error(Ps0, [Token|Th]).
+list_tail_bar_rst([Token|Th],_, Ps0,_, Rst,retry(parsed)) :- Token \= ']' |
+	Rst = error(Ps0, [Token|Th]).
+list_tail_bar_rst(_,_, _,_, Rst, Rst1) :- Rst1 \= parsed | Rst = Rst1.
+
+%
+% list_tail_comma_rst(+TokenList,-RestOfTokenList, +Position,-NewPosition,
+%	-Term,-Result, +PreTerm,+PreResult)
+%
+list_tail_comma_rst(Th,Tt, Ps0,Ps1, Term,Rst, H,parsed) --> true |
+	Ps2 := Ps0+1,
+	list_tail(Th,Tt, Ps2,Ps3, T, Rst1),
+	list_tail_rst(Ps3,Ps1, Term,Rst, H,T,Rst1).
+list_tail_comma_rst(Th,Tt, Ps0,Ps1, Term,Rst, H,retry(parsed)) --> true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst2) }},
+	list_tail(Th,Tt, Ps2,Ps3, T, Rst1),
+	list_tail_rst(Ps3,Ps1, Term,Rst2, H,T,Rst1).
+otherwise.
+list_tail_comma_rst(_,_, _,_, _,Rst, _,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% list_tail_rst(+Position,-NewPosition, -Term, -Result,
+%	+PrePreTerm,+PreTerm,+PreResult)
+%
+list_tail_rst(Ps0,Ps1, Term,Rst, H,T,parsed) --> true |
+	one_term(list,[H|T],Term), Rst = parsed, Ps1 = Ps0.
+list_tail_rst(Ps0,Ps1, Term,Rst, H,T,retry(parsed)) --> true |
+	one_term(list,[H|T],Term), Rst = retry(parsed), Ps1 = Ps0.
+otherwise.
+list_tail_rst(_,_, _,Rst, _,_,Rst1) --> true | Rst = Rst1.
+
+%
+% list_tail_rst(+TokenList,-RestOfTokenList, +AllowedMax,+AllowedMin,
+%	+Position,-NewPosition,	-Term,-Result, +PreTerm,+TermList,+PreResult)
+%
+list_tail_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, H,L,parsed) -->
+	true |
+	Ps2 := Ps0+1,
+	one_term(list,[H|L],Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, Z).
+list_tail_rst(Th,Tt, P0,P1, Ps0,Ps1, T,Rst, H,L,retry(parsed)) -->
+	true |
+	Ps2 := Ps0+1,
+	{{ retry_result(Rst,Rst1) }},
+	one_term(list,[H|L],Z),
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst1, Z).
+otherwise.
+list_tail_rst(_,_, _,_, _,_, _,Rst, _,_,Rst1) --> true |
+	Rst = Rst1.
+
+%
+% term_parenthesis_rst(+TokenList,-RestOfTokenList, +AllowedMin,+AllowedMax,
+%	 +Position,-NewPosition, -Term,-Result, +PreTerm,+PreResult)
+%
+term_parenthesis_rst([')'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,parsed) -->
+	true |
+	Ps2 := Ps0+2,
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst, X).
+term_parenthesis_rst([')'|Th],Tt, P0,P1, Ps0,Ps1, T,Rst, X,retry(parsed)) -->
+	true |
+	Ps2 := Ps0+2,
+	{{ retry_result(Rst,Rst1) }},
+	term_tail(Th,Tt, P0,P1, Ps2,Ps1, T,Rst1, X).
+term_parenthesis_rst([Token1|Th],_, _,_, Ps0,_, _,Rst, _,parsed) -->
+	Token1 \= ')' |
+	Rst = error(Ps0,Th).
+term_parenthesis_rst([Token1|Th],_, _,_, Ps0,_, _,Rst, _,retry(parsed)) -->
+	Token1 \= ')' |
+	Rst = error(Ps0,Th).
+term_parenthesis_rst(_,_, _,_, _,_, _,Rst, _,Rst1) --> Rst1 \= parsed |
+	Rst = Rst1.
+
+%
+% get_parsed_result(+ResultList, -PursedResult)
+%
+get_parsed_result([Rst|_], Z) :- vector_element(Rst,0,parsed) |
+	Z = Rst.
+otherwise.
+get_parsed_result([_|Y], Z) :- true |
+	get_parsed_result(Y, Z).
+
+%
+% get_retry_parsed_result(+ResultList, -PursedResult)
+%
+get_retry_parsed_result([retry(Rst)|_], Z) :- vector_element(Rst,0,parsed) |
+	Z = Rst.
+otherwise.
+get_retry_parsed_result([_|Y], Z) :- true |
+	get_retry_parsed_result(Y, Z).
+
+%
+% analyze_parsed_result(+PursedResult, -Term, -RestOfTokenList, -Position)
+%
+analyze_parsed_result(parsed(T0,Tt0,Ps0),T,Tt,Ps) :- true |
+	T = T0, Tt = Tt0, Ps = Ps0.
+
+retry_result(Rst,parsed) :- true | Rst = retry(parsed).
+retry_result(Rst,retry(parsed)) :- true | Rst = retry(parsed).
+retry_result(Rst,retry(Error)) :- Error \= parsed | Rst = Error.
+otherwise.
+retry_result(Rst,Error) :- true | Rst = Error.
+
+%
+% select_error(ErrorList, -SelectedError)
+%
+select_error([error(Ps,Tkn)|Rsts],Rst) :- true |
+	select_error(Rsts,Ps,error(Ps,Tkn),Rst).
+select_error([ambiguous(Ps,Tkn)|Rsts],Rst) :- true |
+	select_error(Rsts,Ps,ambiguous(Ps,Tkn),Rst).
+
+%
+% select_error(ErrorList, +ErrorPositionMax, +ErrorCandidate, -SelectedError)
+%
+select_error([],_,Me,Rst) :- true | Rst = Me.
+select_error([error(Ps,Tkn)|Rsts],Max,_,Rst) :- Ps > Max |
+	select_error(Rsts,Ps,error(Ps,Tkn),Rst).
+select_error([ambiguous(Ps,Tkn)|Rsts],Max,_,Rst) :- Ps > Max |
+	select_error(Rsts,Ps,ambiguous(Ps,Tkn),Rst).
+select_error([error(Ps,_)|Rsts],Max,Me,Rst) :- Ps =< Max |	% otherwise
+	select_error(Rsts,Max,Me,Rst).
+select_error([ambiguous(Ps,_)|Rsts],Max,Me,Rst) :- Ps =< Max |
+	select_error(Rsts,Max,Me,Rst).
+
+%
+% select_error2(ErrorList, -SelectedError)
+%
+select_error2([],_,RetryL) :- true |
+	RetryL = [].
+select_error2([error(Ps,Tkn)|Rsts],Error,RetryL) :- true |
+	select_error2(Rsts,Ps,error(Ps,Tkn),Error,RetryL).
+select_error2([ambiguous(Ps,Tkn)|Rsts],Error,RetryL) :- true |
+	select_error2(Rsts,Ps,ambiguous(Ps,Tkn),Error,RetryL).
+select_error2([retry(Goal)|Rsts],Error,RetryL) :- true |
+	RetryL = [Goal|RetryLL],
+	select_error2(Rsts,Error,RetryLL).
+
+%
+% select_error2(ErrorList, +ErrorPositionMin, +ErrorCandidate, -SelectedError)
+%
+select_error2([],_,Me,Error,RetryL) :- true | Error = Me, RetryL = [].
+select_error2([error(Ps,Tkn)|Rsts],Min,_,Error,RetryL) :- Ps < Min |
+	select_error2(Rsts,Ps,error(Ps,Tkn),Error,RetryL).
+select_error2([ambiguous(Ps,Tkn)|Rsts],Min,_,Error,RetryL) :- Ps < Min |
+	select_error2(Rsts,Ps,ambiguous(Ps,Tkn),Error,RetryL).
+select_error2([error(Ps,_)|Rsts],Min,Me,Error,RetryL) :- Ps >= Min |
+	select_error2(Rsts,Min,Me,Error,RetryL).
+select_error2([ambiguous(Ps,_)|Rsts],Min,Me,Error,RetryL) :- Ps >= Min |
+	select_error2(Rsts,Min,Me,Error,RetryL).
+select_error2([retry(Goal)|Rsts],Min,Me,Error,RetryL) :- true |
+	RetryL = [Goal|RetryLL],
+	select_error2(Rsts,Min,Me,Error,RetryLL).
+
+%%%%%%%%%%%%%%%%%%%%
+%
+%	Library
+%
+%%%%%%%%%%%%%%%%%%%%
+
+%
+% length(+List, +Counter,-ListLength, NewList)
+%
+length([], N,M, NL) :- true | M = N, NL=[].
+length([A|X], N,M, NL) :- true | N1 := N+1, NL=[A|NL1], length(X, N1,M, NL1).
+
+%
+% make_vect(+List, -Vect, -Length)
+%
+make_vect(List, Vect, N) :- true |
+    length(List, 0,N, NewList),
+    new_vector(V, N),
+    set_elements(NewList, V,Vect, 0, N).
+
+set_elements([], V,VV, _,_) :- true | VV=V.
+set_elements([E|L], V,VV, K,N) :- true |
+    K1 := K+1,
+    set_vector_element(V,K,_,E,NV),
+    set_elements(L, NV,VV, K1,N).
+
+one_term(Type,X,Term) --> &type = 0 | Term = X.		% Normal Term
+one_term(Type,X,Term) --> &type = 1 | Term = {Type,X}.	% Typed Term
+
+one_term(Type,X,L,Term) --> &type = 0 | Term = X.		% Normal Term
+one_term(Type,X,L,Term) --> &type = 1 | Term = {Type,X,L}.	% Typed Term
+
+one_term(Type,X,L,S,Term) --> &type = 0 | Term = X.		% Normal Term
+one_term(Type,X,L,S,Term) --> &type = 1 | Term = {Type,X,L,S}.	% Typed Term

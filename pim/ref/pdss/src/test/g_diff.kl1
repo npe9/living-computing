@@ -1,0 +1,313 @@
+%%% KL1-B Test for G_Diff %%%
+% (Atom) %%%%%%%%%%%%%%%% abcdefgh
+% (Integer) %%%%%%%%%%%%% abcdefgh
+% (Float) %%%%%%%%%%%%%%% abcdefgh
+% (List) %%%%%%%%%%%%%%%% abcdefg
+% (Vector) %%%%%%%%%%%%%% abcdefgh
+% (String) %%%%%%%%%%%%%% abcdefgh
+% (Undef) %%%%%%%%%%%%%%% abcdefg
+
+:- module g_diff.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for G_Diff %%%"), put_console(key#lf) | atm.
+
+atm:- put_console(ascii#"% (Atom) %%%%%%%%%%%%%%%% ") | atm00.
+
+atm00:- true | atm00(atom,atom).
+atm00(X,Y):- diff(X,Y), put_console(c#"*") | atm01.
+alternatively.
+atm00(_,_):- put_console(c#"a") | atm01.
+
+atm01:- true | atm01([],atom).
+atm01(X,Y):- diff(X,Y), put_console(c#"b") | atm02.
+alternatively.
+atm01(_,_):- put_console(c#"*") | atm02.
+
+atm02:- true | atm02(1234,atom).
+atm02(X,Y):- diff(X,Y), put_console(c#"c") | atm03.
+alternatively.
+atm02(_,_):- put_console(c#"*") | atm03.
+
+atm03:- true | atm03(12.34,atom).
+atm03(X,Y):- diff(X,Y), put_console(c#"d") | atm04.
+alternatively.
+atm03(_,_):- put_console(c#"*") | atm04.
+
+atm04:- true | atm04([list],atom).
+atm04(X,Y):- diff(X,Y), put_console(c#"e") | atm05.
+alternatively.
+atm04(_,_):- put_console(c#"*") | atm05.
+
+atm05:- true | atm05({0,1},atom).
+atm05(X,Y):- diff(X,Y), put_console(c#"f") | atm06.
+alternatively.
+atm05(_,_):- put_console(c#"*") | atm06.
+
+atm06:- true | atm06(ascii#"String",atom).
+atm06(X,Y):- diff(X,Y), put_console(c#"g") | atm07.
+alternatively.
+atm06(_,_):- put_console(c#"*") | atm07.
+
+atm07:- true | atm07(_,atom).
+atm07(X,Y):- diff(X,Y), put_console(c#"*") | atm08.
+alternatively.
+atm07(_,_):- put_console(c#"h") | atm08.
+
+atm08:- put_console(key#lf) | int.
+
+int:- put_console(ascii#"% (Integer) %%%%%%%%%%%%% ") | int00.
+
+int00:- true | int00(atom,1234).
+int00(X,Y):- diff(X,Y), put_console(c#"a") | int01.
+alternatively.
+int00(_,_):- put_console(c#"*") | int01.
+
+int01:- true | int01(1234,1234).
+int01(X,Y):- diff(X,Y), put_console(c#"*") | int02.
+alternatively.
+int01(_,_):- put_console(c#"b") | int02.
+
+int02:- true | int02(123456,1234).
+int02(X,Y):- diff(X,Y), put_console(c#"c") | int03.
+alternatively.
+int02(_,_):- put_console(c#"*") | int03.
+
+int03:- true | int03(12.34,1234).
+int03(X,Y):- diff(X,Y), put_console(c#"d") | int04.
+alternatively.
+int03(_,_):- put_console(c#"*") | int04.
+
+int04:- true | int04([list],1234).
+int04(X,Y):- diff(X,Y), put_console(c#"e") | int05.
+alternatively.
+int04(_,_):- put_console(c#"*") | int05.
+
+int05:- true | int05({0,1},1234).
+int05(X,Y):- diff(X,Y), put_console(c#"f") | int06.
+alternatively.
+int05(_,_):- put_console(c#"*") | int06.
+
+int06:- true | int06(ascii#"String",1234).
+int06(X,Y):- diff(X,Y), put_console(c#"g") | int07.
+alternatively.
+int06(_,_):- put_console(c#"*") | int07.
+
+int07:- true | int07(_,1234).
+int07(X,Y):- diff(X,Y), put_console(c#"*") | int08.
+alternatively.
+int07(_,_):- put_console(c#"h") | int08.
+
+int08:- put_console(key#lf) | flt.
+
+flt:- put_console(ascii#"% (Float) %%%%%%%%%%%%%%% ") | flt00.
+
+flt00:- true | flt00(atom,12.34).
+flt00(X,Y):- diff(X,Y), put_console(c#"a") | flt01.
+alternatively.
+flt00(_,_):- put_console(c#"*") | flt01.
+
+flt01:- true | flt01(1234,12.34).
+flt01(X,Y):- diff(X,Y), put_console(c#"b") | flt02.
+alternatively.
+flt01(_,_):- put_console(c#"*") | flt02.
+
+flt02:- true | flt02(12.34,12.34).
+flt02(X,Y):- diff(X,Y), put_console(c#"*") | flt03.
+alternatively.
+flt02(_,_):- put_console(c#"c") | flt03.
+
+flt03:- true | flt03(123.456,12.34).
+flt03(X,Y):- diff(X,Y), put_console(c#"d") | flt04.
+alternatively.
+flt03(_,_):- put_console(c#"*") | flt04.
+
+flt04:- true | flt04([list],12.34).
+flt04(X,Y):- diff(X,Y), put_console(c#"e") | flt05.
+alternatively.
+flt04(_,_):- put_console(c#"*") | flt05.
+
+flt05:- true | flt05({0,1},12.34).
+flt05(X,Y):- diff(X,Y), put_console(c#"f") | flt06.
+alternatively.
+flt05(_,_):- put_console(c#"*") | flt06.
+
+flt06:- true | flt06(ascii#"String",12.34).
+flt06(X,Y):- diff(X,Y), put_console(c#"g") | flt07.
+alternatively.
+flt06(_,_):- put_console(c#"*") | flt07.
+
+flt07:- true | flt07(_,12.34).
+flt07(X,Y):- diff(X,Y), put_console(c#"*") | flt08.
+alternatively.
+flt07(_,_):- put_console(c#"h") | flt08.
+
+flt08:- put_console(key#lf) | lst.
+
+lst:- put_console(ascii#"% (List) %%%%%%%%%%%%%%%% ") | lst00.
+
+lst00:- true | lst00(atom,[list]).
+lst00(X,Y):- diff(X,Y), put_console(c#"a") | lst01.
+alternatively.
+lst00(_,_):- put_console(c#"*") | lst01.
+
+lst01:- true | lst01(1234,[list]).
+lst01(X,Y):- diff(X,Y), put_console(c#"b") | lst02.
+alternatively.
+lst01(_,_):- put_console(c#"*") | lst02.
+
+lst02:- true | lst02(12.34,[list]).
+lst02(X,Y):- diff(X,Y), put_console(c#"c") | lst03.
+alternatively.
+lst02(_,_):- put_console(c#"*") | lst03.
+
+lst03:- true | lst03([list],[list]).
+lst03(X,Y):- diff(X,Y), put_console(c#"*") | lst04.
+alternatively.
+lst03(_,_):- put_console(c#"d") | lst04.
+
+lst04:- true | lst04({0,1},[list]).
+lst04(X,Y):- diff(X,Y), put_console(c#"e") | lst05.
+alternatively.
+lst04(_,_):- put_console(c#"*") | lst05.
+
+lst05:- true | lst05(ascii#"String",[list]).
+lst05(X,Y):- diff(X,Y), put_console(c#"f") | lst06.
+alternatively.
+lst05(_,_):- put_console(c#"*") | lst06.
+
+lst06:- true | lst06(_,[list]).
+lst06(X,Y):- diff(X,Y), put_console(c#"*") | lst07.
+alternatively.
+lst06(_,_):- put_console(c#"g") | lst07.
+
+lst07:- put_console(key#lf) | vec.
+
+vec:- put_console(ascii#"% (Vector) %%%%%%%%%%%%%% ") | vec00.
+
+vec00:- true | vec00(atom,{0,1}).
+vec00(X,Y):- diff(X,Y), put_console(c#"a") | vec01.
+alternatively.
+vec00(_,_):- put_console(c#"*") | vec01.
+
+vec01:- true | vec01(1234,{0,1}).
+vec01(X,Y):- diff(X,Y), put_console(c#"b") | vec02.
+alternatively.
+vec01(_,_):- put_console(c#"*") | vec02.
+
+vec02:- true | vec02(12.34,{0,1}).
+vec02(X,Y):- diff(X,Y), put_console(c#"c") | vec03.
+alternatively.
+vec02(_,_):- put_console(c#"*") | vec03.
+
+vec03:- true | vec03([list],{0,1}).
+vec03(X,Y):- diff(X,Y), put_console(c#"d") | vec04.
+alternatively.
+vec03(_,_):- put_console(c#"*") | vec04.
+
+vec04:- true | vec04({0,1},{0,1}).
+vec04(X,Y):- diff(X,Y), put_console(c#"*") | vec05.
+alternatively.
+vec04(_,_):- put_console(c#"e") | vec05.
+
+vec05:- true | vec05({0,1,2},{0,1}).
+vec05(X,Y):- diff(X,Y), put_console(c#"f") | vec06.
+alternatively.
+vec05(_,_):- put_console(c#"*") | vec06.
+
+vec06:- true | vec06(ascii#"String",{0,1}).
+vec06(X,Y):- diff(X,Y), put_console(c#"g") | vec07.
+alternatively.
+vec06(_,_):- put_console(c#"*") | vec07.
+
+vec07:- true | vec07(_,{0,1}).
+vec07(X,Y):- diff(X,Y), put_console(c#"*") | vec08.
+alternatively.
+vec07(_,_):- put_console(c#"h") | vec08.
+
+vec08:- put_console(key#lf) | str.
+
+str:- put_console(ascii#"% (String) %%%%%%%%%%%%%% ") | str00.
+
+str00:- true | str00(atom,ascii#"String").
+str00(X,Y):- diff(X,Y), put_console(c#"a") | str01.
+alternatively.
+str00(_,_):- put_console(c#"*") | str01.
+
+str01:- true | str01(1234,ascii#"String").
+str01(X,Y):- diff(X,Y), put_console(c#"b") | str02.
+alternatively.
+str01(_,_):- put_console(c#"*") | str02.
+
+str02:- true | str02(12.34,ascii#"String").
+str02(X,Y):- diff(X,Y), put_console(c#"c") | str03.
+alternatively.
+str02(_,_):- put_console(c#"*") | str03.
+
+str03:- true | str03([list],ascii#"String").
+str03(X,Y):- diff(X,Y), put_console(c#"d") | str04.
+alternatively.
+str03(_,_):- put_console(c#"*") | str04.
+
+str04:- true | str04({0,1},ascii#"String").
+str04(X,Y):- diff(X,Y), put_console(c#"e") | str05.
+alternatively.
+str04(_,_):- put_console(c#"*") | str05.
+
+str05:- true | str05(ascii#"String",ascii#"String").
+str05(X,Y):- diff(X,Y), put_console(c#"*") | str06.
+alternatively.
+str05(_,_):- put_console(c#"f") | str06.
+
+str06:- true | str06(ascii#"STRING",ascii#"String").
+str06(X,Y):- diff(X,Y), put_console(c#"g") | str07.
+alternatively.
+str06(_,_):- put_console(c#"*") | str07.
+
+str07:- true | str07(_,ascii#"String").
+str07(X,Y):- diff(X,Y), put_console(c#"*") | str08.
+alternatively.
+str07(_,_):- put_console(c#"h") | str08.
+
+str08:- put_console(key#lf) | udf.
+
+udf:- put_console(ascii#"% (Undef) %%%%%%%%%%%%%%% ") | udf00.
+
+udf00:- true | udf00(atom,_).
+udf00(X,Y):- diff(X,Y), put_console(c#"*") | udf01.
+alternatively.
+udf00(_,_):- put_console(c#"a") | udf01.
+
+udf01:- true | udf01(1234,_).
+udf01(X,Y):- diff(X,Y), put_console(c#"*") | udf02.
+alternatively.
+udf01(_,_):- put_console(c#"b") | udf02.
+
+udf02:- true | udf02(12.34,_).
+udf02(X,Y):- diff(X,Y), put_console(c#"*") | udf03.
+alternatively.
+udf02(_,_):- put_console(c#"c") | udf03.
+
+udf03:- true | udf03([list],_).
+udf03(X,Y):- diff(X,Y), put_console(c#"*") | udf04.
+alternatively.
+udf03(_,_):- put_console(c#"d") | udf04.
+
+udf04:- true | udf04({0,1},_).
+udf04(X,Y):- diff(X,Y), put_console(c#"*") | udf05.
+alternatively.
+udf04(_,_):- put_console(c#"e") | udf05.
+
+udf05:- true | udf05(ascii#"String",_).
+udf05(X,Y):- diff(X,Y), put_console(c#"*") | udf06.
+alternatively.
+udf05(_,_):- put_console(c#"f") | udf06.
+
+udf06:- true | udf06(_,_).
+udf06(X,Y):- diff(X,Y), put_console(c#"*") | udf07.
+alternatively.
+udf06(_,_):- put_console(c#"g") | udf07.
+
+udf07:- put_console(key#lf) | done.
+
+done:- true | true.

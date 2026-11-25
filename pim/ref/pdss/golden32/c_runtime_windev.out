@@ -1,0 +1,9 @@
+.......................................
+Assemble : Optimize : KL1 File : ASM File : "../runtime/windev.kl1" : Compiling ... windows/1,windows2/1,window_wait_created/6,window_wait_reset/4,window/6,window_wait_status/8,window_wait_char/10,window_wait_line/10,window_wait_buffer/10,window_wait_token/12,unsupported/1,END.
+
+[windows/1]
+successdone
+
+exit 0
+asm 3076fa3a590ce20f6028cdd6c2f55c5429def2ddbb63447d6ab254ddb974b278
+sav none

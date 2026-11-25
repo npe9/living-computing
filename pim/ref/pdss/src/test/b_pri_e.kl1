@@ -1,0 +1,132 @@
+%%% KL1-B Test for B_Priority (Exception) %%%
+% B_Rate %%%%%%%%%%%%%%%% abcdefghi
+% B_Rltv %%%%%%%%%%%%%%%% abcdefghij
+
+:- module b_pri_e.
+:- public go/0
+,dummy0/1,dummy1/1.
+
+go:- put_console(ascii#"%%% KL1-B Test for B_Priority (Exception) %%%"), put_console(key#lf) | rat.
+
+rat:- put_console(ascii#"% B_Rate %%%%%%%%%%%%%%%% ") | rat00.
+
+rat00:- true | execute_in_shoen(dummy0,{0},R), rat00(R).
+rat00(success):- put_console(c#"a") | rat01.
+otherwise.
+rat00(_):- put_console(c#"*") | rat01.
+
+rat01:- true | execute_in_shoen(dummy0,{4096},R), rat01(R).
+rat01(success):- put_console(c#"b") | rat02.
+otherwise.
+rat01(_):- put_console(c#"*") | rat02.
+
+rat02:- true | execute_in_shoen(dummy0,{-1},R), rat02(R).
+rat02(incorrect_priority):- put_console(c#"c") | rat03.
+otherwise.
+rat02(_):- put_console(c#"*") | rat03.
+
+rat03:- true | execute_in_shoen(dummy0,{4097},R), rat03(R).
+rat03(incorrect_priority):- put_console(c#"d") | rat04.
+otherwise.
+rat03(_):- put_console(c#"*") | rat04.
+
+rat04:- true | execute_in_shoen(dummy0,{atom},R), rat04(R).
+rat04(illegal_input):- put_console(c#"e") | rat05.
+otherwise.
+rat04(_):- put_console(c#"*") | rat05.
+
+rat05:- true | execute_in_shoen(dummy0,{12.34},R), rat05(R).
+rat05(illegal_input):- put_console(c#"f") | rat06.
+otherwise.
+rat05(_):- put_console(c#"*") | rat06.
+
+rat06:- true | execute_in_shoen(dummy0,{[list]},R), rat06(R).
+rat06(illegal_input):- put_console(c#"g") | rat07.
+otherwise.
+rat06(_):- put_console(c#"*") | rat07.
+
+rat07:- true | execute_in_shoen(dummy0,{{0}},R), rat07(R).
+rat07(illegal_input):- put_console(c#"h") | rat08.
+otherwise.
+rat07(_):- put_console(c#"*") | rat08.
+
+rat08:- true | execute_in_shoen(dummy0,{ascii#"Str"},R), rat08(R).
+rat08(illegal_input):- put_console(c#"i") | rat09.
+otherwise.
+rat08(_):- put_console(c#"*") | rat09.
+
+rat09:- put_console(key#lf) | rtv.
+
+rtv:- put_console(ascii#"% B_Rltv %%%%%%%%%%%%%%%% ") | rtv00.
+
+rtv00:- true | execute_in_shoen(dummy1,{0},R), rtv00(R).
+rtv00(success):- put_console(c#"a") | rtv01.
+otherwise.
+rtv00(_):- put_console(c#"*") | rtv01.
+
+rtv01:- true | execute_in_shoen(dummy1,{4096},R), rtv01(R).
+rtv01(success):- put_console(c#"b") | rtv02.
+otherwise.
+rtv01(_):- put_console(c#"*") | rtv02.
+
+rtv02:- true | execute_in_shoen(dummy1,{-4096},R), rtv02(R).
+rtv02(success):- put_console(c#"c") | rtv03.
+otherwise.
+rtv02(_):- put_console(c#"*") | rtv03.
+
+rtv03:- true | execute_in_shoen(dummy1,{4097},R), rtv03(R).
+rtv03(incorrect_priority):- put_console(c#"d") | rtv04.
+otherwise.
+rtv03(_):- put_console(c#"*") | rtv04.
+
+rtv04:- true | execute_in_shoen(dummy1,{-4097},R), rtv04(R).
+rtv04(incorrect_priority):- put_console(c#"e") | rtv05.
+otherwise.
+rtv04(_):- put_console(c#"*") | rtv05.
+
+rtv05:- true | execute_in_shoen(dummy1,{atom},R), rtv05(R).
+rtv05(illegal_input):- put_console(c#"f") | rtv06.
+otherwise.
+rtv05(_):- put_console(c#"*") | rtv06.
+
+rtv06:- true | execute_in_shoen(dummy1,{12.34},R), rtv06(R).
+rtv06(illegal_input):- put_console(c#"g") | rtv07.
+otherwise.
+rtv06(_):- put_console(c#"*") | rtv07.
+
+rtv07:- true | execute_in_shoen(dummy1,{[list]},R), rtv07(R).
+rtv07(illegal_input):- put_console(c#"h") | rtv08.
+otherwise.
+rtv07(_):- put_console(c#"*") | rtv08.
+
+rtv08:- true | execute_in_shoen(dummy1,{{0}},R), rtv08(R).
+rtv08(illegal_input):- put_console(c#"i") | rtv09.
+otherwise.
+rtv08(_):- put_console(c#"*") | rtv09.
+
+rtv09:- true | execute_in_shoen(dummy1,{ascii#"Str"},R), rtv09(R).
+rtv09(illegal_input):- put_console(c#"j") | rtv10.
+otherwise.
+rtv09(_):- put_console(c#"*") | rtv10.
+
+rtv10:- put_console(key#lf) | done.
+
+done:- true | true.
+
+execute_in_shoen(P,A,R):- vector(A,L) |
+	'Sho-en':execute({b_pri_e,P,L},A, 0,0, -1, C0,R0),
+	C0 = [add_resource(100),start|C],
+	shoen_wait(R0,R,C).
+
+shoen_wait([resource_added,started|R0],R,C):- true | shoen_check(R0,R,C).
+
+shoen_check([terminated|_],R,C):- true |
+	R=success, C=[].
+shoen_check([exception(0,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=illegal_input, C=[abort].
+shoen_check([exception(16,_,NewCode,NewArgv)|_],R,C):- true |
+	NewCode=[], R=incorrect_priority, C=[abort].
+
+dummy0(X):- true | dummy@priority(*,X).
+dummy1(X):- true | dummy@priority($,X).
+dummy:- true | true.

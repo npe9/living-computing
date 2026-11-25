@@ -1,0 +1,132 @@
+%%% KL1-B Test for Set_Variable %%%
+% Set_Void %%%%%%%%%%%%%% a
+% Set_Variable %%%%%%%%%% abcdef
+% Set_Marked_Variable %%% abcdef
+
+:- module set_var.
+:- public go/0.
+
+go:- put_console(ascii#"%%% KL1-B Test for Set_Variable %%%"), put_console(key#lf) | vid.
+
+vid:- put_console(ascii#"% Set_Void %%%%%%%%%%%%%% ") | vid00.
+
+vid00:- true | dummy, vid00(_).
+vid00(X):- wait(X), put_console(c#"*") | vid01.
+alternatively.
+vid00(_):- put_console(c#"a") | vid01.
+
+vid01:- put_console(key#lf) | var.
+
+var:- put_console(ascii#"% Set_Variable %%%%%%%%%% ") | var00.
+
+var00:- true | dummy, var00(X,X).
+var00(X,Y):- wait(X), put_console(c#"*") | var01.
+var00(X,Y):- wait(Y), put_console(c#"*") | var01.
+alternatively.
+var00(X,Y):- true | Y=atom, var00(X).
+var00(atom):- put_console(c#"a") | var01.
+alternatively.
+var00(_):- put_console(c#"*") | var01.
+
+var01:- true | dummy, var01(X,X).
+var01(X,Y):- wait(X), put_console(c#"*") | var02.
+var01(X,Y):- wait(Y), put_console(c#"*") | var02.
+alternatively.
+var01(X,Y):- true | Y=1234, var01(X).
+var01(1234):- put_console(c#"b") | var02.
+alternatively.
+var01(_):- put_console(c#"*") | var02.
+
+var02:- true | dummy, var02(X,X).
+var02(X,Y):- wait(X), put_console(c#"*") | var03.
+var02(X,Y):- wait(Y), put_console(c#"*") | var03.
+alternatively.
+var02(X,Y):- true | Y=12.34, var02(X).
+var02(12.34):- put_console(c#"c") | var03.
+alternatively.
+var02(_):- put_console(c#"*") | var03.
+
+var03:- true | dummy, var03(X,X).
+var03(X,Y):- wait(X), put_console(c#"*") | var04.
+var03(X,Y):- wait(Y), put_console(c#"*") | var04.
+alternatively.
+var03(X,Y):- true | Y=[list], var03(X).
+var03([list]):- put_console(c#"d") | var04.
+alternatively.
+var03(_):- put_console(c#"*") | var04.
+
+var04:- true | dummy, var04(X,X).
+var04(X,Y):- wait(X), put_console(c#"*") | var05.
+var04(X,Y):- wait(Y), put_console(c#"*") | var05.
+alternatively.
+var04(X,Y):- true | Y={0,1}, var04(X).
+var04({0,1}):- put_console(c#"e") | var05.
+alternatively.
+var04(_):- put_console(c#"*") | var05.
+
+var05:- true | dummy, var05(X,X).
+var05(X,Y):- wait(X), put_console(c#"*") | var06.
+var05(X,Y):- wait(Y), put_console(c#"*") | var06.
+alternatively.
+var05(X,Y):- true | Y=ascii#"String", var05(X).
+var05(ascii#"String"):- put_console(c#"f") | var06.
+alternatively.
+var05(_):- put_console(c#"*") | var06.
+
+var06:- put_console(key#lf) | mrk.
+
+mrk:- put_console(ascii#"% Set_Marked_Variable %%% ") | mrk00.
+
+mrk00:- true | dummy, mrk00(X,X,X).
+mrk00(X,Y,_):- wait(X), put_console(c#"*") | mrk01.
+mrk00(X,Y,_):- wait(Y), put_console(c#"*") | mrk01.
+mrk00(X,Y,_):- true | Y=atom, mrk00(X).
+mrk00(atom):- put_console(c#"a") | mrk01.
+alternatively.
+mrk00(_):- put_console(c#"*") | mrk01.
+
+mrk01:- true | dummy, mrk01(X,X,X).
+mrk01(X,Y,_):- wait(X), put_console(c#"*") | mrk02.
+mrk01(X,Y,_):- wait(Y), put_console(c#"*") | mrk02.
+mrk01(X,Y,_):- true | Y=1234, mrk01(X).
+mrk01(1234):- put_console(c#"b") | mrk02.
+alternatively.
+mrk01(_):- put_console(c#"*") | mrk02.
+
+mrk02:- true | dummy, mrk02(X,X,X).
+mrk02(X,Y,_):- wait(X), put_console(c#"*") | mrk03.
+mrk02(X,Y,_):- wait(Y), put_console(c#"*") | mrk03.
+mrk02(X,Y,_):- true | Y=12.34, mrk02(X).
+mrk02(12.34):- put_console(c#"c") | mrk03.
+alternatively.
+mrk02(_):- put_console(c#"*") | mrk03.
+
+mrk03:- true | dummy, mrk03(X,X,X).
+mrk03(X,Y,_):- wait(X), put_console(c#"*") | mrk04.
+mrk03(X,Y,_):- wait(Y), put_console(c#"*") | mrk04.
+mrk03(X,Y,_):- true | Y=[list], mrk03(X).
+mrk03([list]):- put_console(c#"d") | mrk04.
+alternatively.
+mrk03(_):- put_console(c#"*") | mrk04.
+
+mrk04:- true | dummy, mrk04(X,X,X).
+mrk04(X,Y,_):- wait(X), put_console(c#"*") | mrk05.
+mrk04(X,Y,_):- wait(Y), put_console(c#"*") | mrk05.
+mrk04(X,Y,_):- true | Y={0,1}, mrk04(X).
+mrk04({0,1}):- put_console(c#"e") | mrk05.
+alternatively.
+mrk04(_):- put_console(c#"*") | mrk05.
+
+mrk05:- true | dummy, mrk05(X,X,X).
+mrk05(X,Y,_):- wait(X), put_console(c#"*") | mrk06.
+mrk05(X,Y,_):- wait(Y), put_console(c#"*") | mrk06.
+mrk05(X,Y,_):- true | Y=ascii#"String", mrk05(X).
+mrk05(ascii#"String"):- put_console(c#"f") | mrk06.
+alternatively.
+mrk05(_):- put_console(c#"*") | mrk06.
+
+mrk06:- put_console(key#lf) | done.
+
+done:- true | true.
+
+dummy:- true | true.

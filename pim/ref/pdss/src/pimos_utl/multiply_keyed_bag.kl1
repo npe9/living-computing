@@ -1,0 +1,1164 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  PDSS (PIMOS Development Support System)  Version 2.52		 %
+%  (C) Copyright 1990,1991,1992.					 %
+%  Institute for New Generation Computer Technology (ICOT), Japan.	 %
+%  Read "../COPYRIGHT" for detailed information.			 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+:- module multiply_keyed_bag.
+:- with_macro pimos.
+:- public multiply_keyed_bag/3.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% multiply_keyed_bag(Fmt,Init,In)
+%%      Fmt     :: Data format
+%%      Init    :: Information for initialization
+%%      In      :: Input stream from users
+
+multiply_keyed_bag(Fmt,Init,In) :- true |
+        init_datafile(Init,D,N,P,PR),
+        init_indexes(Fmt,N,Ni,Li,Vi,DS),
+        merge(In,In1),
+        multiply_keyed_bag(In1,Ni,Li,Vi,D,DS,0,N,0,P,PR).
+
+init_datafile(Init,D,N,P,PR) :- true |
+        get_param(Init,1,N,0.5,PR),
+        get_packing_size(~(int(float(N)*PR)),P),
+        new_vector(D,N).
+
+get_param(N,_,N1,P,P1) :- N>0 | N1:=N,P=P1.
+get_param([size(N)|Init],_,N1,P,P1) :- N>0 |
+        get_param(Init,N,N1,P,P1).
+get_param([packing_ratio(Q)|Init],N,N1,_,P1) :- 0.0$<Q,Q$=<1.0 |
+        get_param(Init,N,N1,Q,P1).
+get_param([],N,N1,P,P1) :- true | N1:=N,P=P1.
+otherwise.
+get_param([P|_],_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter"),P).
+otherwise.
+get_param(Init,_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter"),Init).
+
+get_packing_size(P0,P) :- P0>0 | P:=P0.
+get_packing_size(0,P) :- true | P:=1.
+
+init_indexes(Fmt,N,Ni,Li,Vi,DS) :- vector(Fmt,DS0),DS0>0 |
+        DS:=DS0,
+        new_vector(Vi0,DS),
+        pool:keyed_set(Ni0),
+        init_indexes(Fmt,N,~(DS-1),Ni0,Ni,Li,Vi0,Vi).
+otherwise.
+init_indexes(Fmt,_,_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_data_format"),Fmt).
+
+init_indexes(Fmt,N,I,Ni,Ni1,L,V,V1) :- I>=0 |
+        set_vector_element(Fmt,I,E,0,Fmt1),
+        set_vector_element(V,I,_,Index,V0),
+        if_generate_index(E,N,I,Ni,Ni0,L,L1,Index),
+        init_indexes(Fmt1,N,~(I-1),Ni0,Ni1,L1,V0,V1).
+init_indexes(_,_,I,Ni,Ni1,L,V,V1) :- I<0 |
+        Ni=Ni1,L=[],V=V1.
+
+if_generate_index(Name,_,I,Ni,Ni1,L,L1,Index) :- atom(Name) |
+        Ni=[put(Name,I,Old)|Ni1],
+        if_succeeded(Name,Old),
+        Index:=0,L=L1.
+if_generate_index({Name,Type},N,I,Ni,Ni1,L,L1,Index) :- atom(Name) |
+        Ni=[put(Name,I,Old)|Ni1],
+        if_succeeded(Name,Old),
+        generate_index(Type,Index,[],N,I,L,L1).
+if_generate_index({Name,Type,Init},N,I,Ni,Ni1,L,L1,Index) :- atom(Name) |
+        Ni=[put(Name,I,Old)|Ni1],
+        if_succeeded(Name,Old),
+        generate_index(Type,Index,Init,N,I,L,L1).
+otherwise.
+if_generate_index(Name,_,_,Ni,Ni1,_,_,_) :- true |
+        Ni=Ni1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_attribute_name"),Name).
+
+if_succeeded(_,{}) :- true | true.
+otherwise.
+if_succeeded(Name,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"doubly_defined_attribute_name"),Name).
+
+generate_index(ordered,Index,Init,_,I,L,L1) :- true |
+        L=[I|L1],
+        ordered_index(Init,Index,ascending).
+generate_index(hashed,Index,Init,N,I,L,L1) :- true |
+        L=[I|L1],
+        hashed_index(Init,Index,default,ascending,N).
+generate_index(none,Index,Init,_,_,L,L1) :- true |
+        L=L1,
+        no_index(Init,Index,ascending).
+otherwise.
+generate_index(Type,_,_,_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_index_type"),Type).
+
+%ordered_index([comparator(Comp)|Init],Index,_) :- code(Comp,5,_,_) |
+ordered_index([comparator(Comp)|Init],Index,_) :- builtin#code(Comp) |
+        ordered_index(Init,Index,Comp).
+ordered_index([comparator(ascending)|Init],Index,_) :- true |
+        ordered_index(Init,Index,ascending).
+ordered_index([comparator(descending)|Init],Index,_) :- true |
+        ordered_index(Init,Index,descending).
+ordered_index([],Index,Comp) :- true |
+        Index={ordered,In},
+        pool:keyed_sorted_bag(Comp,In).
+otherwise.
+ordered_index([P|_],_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_ordered_index"),P).
+otherwise.
+ordered_index(Init,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_ordered_index"),Init).
+
+hashed_index([index_size(N)|Init],Index,Hasher,Comp,_) :- N>0 |
+        hashed_index(Init,Index,Hasher,Comp,N).
+%hashed_index([hasher(Hasher)|Init],Index,_,Comp,N) :- code(Hasher,3,_,_) |
+hashed_index([hasher(Hasher)|Init],Index,_,Comp,N) :- builtin#code(Hasher) |
+        hashed_index(Init,Index,Hasher,Comp,N).
+hashed_index([hasher(default)|Init],Index,_,Comp,N) :- true |
+        hashed_index(Init,Index,default,Comp,N).
+%hashed_index([comparator(Comp)|Init],Index,Hasher,_,N) :- code(Comp,5,_,_) |
+hashed_index([comparator(Comp)|Init],Index,Hasher,_,N) :- builtin#code(Comp) |
+        hashed_index(Init,Index,Hasher,Comp,N).
+hashed_index([comparator(ascending)|Init],Index,Hasher,_,N) :- true |
+        hashed_index(Init,Index,Hasher,ascending,N).
+hashed_index([comparator(descending)|Init],Index,Hasher,_,N) :- true |
+        hashed_index(Init,Index,Hasher,descending,N).
+hashed_index([],Index,Hasher,Comp,N) :- true |
+        Index={hashed,In,Comp},
+        pool:keyed_bag(Hasher,In,N).
+otherwise.
+hashed_index([P|_],_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_hashed_index"),P).
+otherwise.
+hashed_index(Init,_,_,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_hashed_index"),Init).
+
+no_index([comparator(ascending)|Init],Index,_) :- true |
+        no_index(Init,Index,ascending).
+no_index([comparator(descending)|Init],Index,_) :- true |
+        no_index(Init,Index,descending).
+%no_index([comparator(Comp)|Init],Index,_) :- code(Comp,5,_,_) |
+no_index([comparator(Comp)|Init],Index,_) :- builtin#code(Comp) |
+        no_index(Init,Index,Comp).
+no_index([],Index,Comp) :- true |
+        Index=none(Comp).
+otherwise.
+no_index([P|_],_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_no_index"),P).
+otherwise.
+no_index(Init,_,_) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_initiation_parameter_for_no_index"),Init).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% multiply_keyed_bag(In,Ni,Li,Vi,D,DS,I,N,J,P,PR)
+%%      In      :: Input stream from users (merged)
+%%      Ni      :: Output stream to the index name table (pool:keyed_bag)
+%%      Li      :: List of the index pointers
+%%      Vi      :: Output streams to the indexes (vector)
+%%      D       :: Main data file (vector)
+%%      DS      :: Data size
+%%      I       :: Data count
+%%      N       :: Main data file size
+%%      J       :: Deleted data count
+%%      P       :: Packing size
+%%      PR      :: Packing ratio
+
+multiply_keyed_bag([empty(YorN)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        empty(~(I-J),YorN),
+        multiply_keyed_bag(In,Ni,Li,Vi,D,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([empty(C,YorN)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        empty(C,YorN,Ni,Ni1,Vi,Vi1,D,D1,I,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([put(X)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        put(Li,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,X,DS,put,_),
+        multiply_keyed_bag(In,Ni,Li,Vi1,D1,DS,I1,N1,J1,P1,PR).
+
+multiply_keyed_bag([get(C,X)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X,get),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([getp(C,F,X)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get(C,Li,Ni,Ni0,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X0,getp(F1)),
+        get_part(F,F1,X0,X,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([get_if_any(C,X)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_if_any(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([getp_if_any(C,F,X)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_if_any(C,Li,Ni,Ni0,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X0),
+        get_part_if_any(F,X0,X,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([max_if_any(Attr,Key)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        max_if_any(Attr,Key,Vi,Vi1,D,D1,get_max_if_any,I,Ni,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([min_if_any(Attr,Key)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        max_if_any(Attr,Key,Vi,Vi1,D,D1,get_min_if_any,I,Ni,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([get_all(A)|In],Ni,Li,Vi,D,DS,I,N,_,P,PR) :- true |
+        get_all(0,I,D,D1,A),
+        clear_indexes(Li,Vi,Vi1),
+        multiply_keyed_bag(In,Ni,Li,Vi1,D1,DS,0,N,0,P,PR).
+
+multiply_keyed_bag([getp_all(F,A)|In],Ni,Li,Vi,D,DS,I,N,_,P,PR) :- true |
+        get_all(0,I,D,D1,A0),
+        get_part_all(F,A0,A,Ni,Ni1,DS),
+        clear_indexes(Li,Vi,Vi1),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,0,N,0,P,PR).
+
+multiply_keyed_bag([get_all(C,A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_all(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,A),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([getp_all(C,F,A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_all(C,Li,Ni,Ni0,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,A0),
+        get_part_all(F,A0,A,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N,J1,P,PR).
+
+multiply_keyed_bag([carbon_copy(A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        carbon_copy(0,N,D,D1,A),
+        multiply_keyed_bag(In,Ni,Li,Vi,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([carbon_copyp(F,A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        carbon_copy(0,N,D,D1,A0),
+        get_part_all(F,A0,A,Ni,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([carbon_copy(C,A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        carbon_copy(C,A,Ni,Ni1,Vi,Vi1,D,D1,I,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([carbon_copyp(C,F,A)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        carbon_copy(C,A0,Ni,Ni0,Vi,Vi1,D,D1,I,DS),
+        get_part_all(F,A0,A,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([get_and_put(C,X,X1)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_and_put(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,DS,X,X1,get_and_put),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([getp_and_put(C,F,X,X1)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_and_put(C,Li,Ni,Ni0,Vi,Vi1,D,D1,I,DS,Y,Y1,getp_and_put(F1)),
+        get_part_and_put(F,F1,Y,Y1,X,X1,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([get_if_any_and_put(C,X,X1)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_if_any_and_put(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,X,X1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I1,N1,J1,P1,PR).
+
+multiply_keyed_bag([get_and_put_if_any(C,X,X1,X2)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_and_put_if_any(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,DS,X,X1,X2,get_and_put_if_any),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([getp_and_put_if_any(C,F,X,X1,X2)|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        get_and_put_if_any(C,Li,Ni,Ni0,Vi,Vi1,D,D1,I,DS,Y,Y1,_,getp_and_put_if_any),
+        get_part_and_put_if_any(F,Y,Y1,X,X1,X2,Ni0,Ni1,DS),
+        multiply_keyed_bag(In,Ni1,Li,Vi1,D1,DS,I,N,J,P,PR).
+
+multiply_keyed_bag([pack|In],Ni,Li,Vi,D,DS,I,N,J,P,PR) :- true |
+        pack(Li,Vi,Vi1,D,D1,N),
+        multiply_keyed_bag(In,Ni,Li,Vi1,D1,DS,~(I-J),N,0,P,PR).
+
+multiply_keyed_bag([],Ni,Li,Vi,_,_,_,_,_,_,_) :- true |
+        Ni=[],
+        terminate_indexes(Li,Vi).
+
+otherwise.
+multiply_keyed_bag([Msg|_],Ni,Li,Vi,_,_,_,_,_,_,_) :- true |
+        Ni=[],
+        terminate_indexes(Li,Vi),
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_message_protocol"),Msg).
+
+terminate_indexes([I|L],V) :- true |
+        set_vector_element(V,I,E,E1,V1),
+        get_index_stream(E,E1,[],_),
+        terminate_indexes(L,V1).
+terminate_indexes([],_) :- true | true.
+
+
+%*** empty ***
+empty(0,YorN) :- true | YorN=yes.
+empty(N,YorN) :- N>0 | YorN=no.
+
+%*** empty_with_condition ***
+empty(C,YorN,Ni,Ni1,Vi,Vi1,D,D1,I,DS) :- true |
+        get_data_ids(C,_,Ni,Ni1,Vi,Vi1,D,D0,I,L,DS),
+        if_empty(L,D0,D1,YorN).
+
+if_empty([P|_],D,D1,YorN) :- vector_element(D,P,E),vector(E,_) |
+        D=D1,YorN=no.
+if_empty([P|L],D,D1,YorN) :- vector_element(D,P,0) |
+        if_empty(L,D,D1,YorN).
+if_empty([],D,D1,YorN) :- true |
+        D=D1,YorN=yes.
+
+%*** put ***
+put(Li,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,_,X,DS,_,_) :- vector(X,DS),I<N |
+        I1:=I+1,N1:=N,J1:=J,P1:=P,
+        set_vector_element(D,I,_,X1,D1),
+        add_to_indexes(Li,Vi,Vi1,X,X1,I).
+put(Li,Vi,Vi1,D,D1,N,I1,N,N1,J,J1,_,P1,PR,X,DS,_,_) :- vector(X,DS) |
+        remake_and_put(Li,Vi,Vi1,D,D1,X,I1,N,N1,J,J1,PR,P1).
+otherwise.
+put(_,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,_,X,_,put,_) :- true |
+        Vi=Vi1,D=D1,I=I1,N=N1,J=J1,P=P1,
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_data_format in put"),X).
+put(_,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,_,X,_,get_if_any_and_put,C) :- true |
+        Vi=Vi1,D=D1,I=I1,N=N1,J=J1,P=P1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in get_if_any_and_put"),X).
+
+remake_and_put(Li,Vi,Vi2,D,D1,X,I1,N,N1,J,J1,PR,P1) :- true |
+        I:=N-J,
+        N1:=N*2,I1:=I+1,J1:=0,P1:=int(float(N1)*PR),
+        clear_indexes(Li,Vi,Vi0),
+        new_vector(ND0,N1),
+        remake(0,N,Li,Vi0,Vi1,D,0,ND0,ND1),
+        set_vector_element(ND1,I,_,X1,D1),
+        add_to_indexes(Li,Vi1,Vi2,X,X1,I).
+
+%*** get ***
+get(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X,Msg) :- true |
+        get_data_ids(C,C1,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get(L,Li,X,Msg,Vi0,Vi1,D0,D1,I,I1,N,J,J1,P,C1).
+
+do_get([Q|_],Li,X,_,Vi,Vi1,D,D1,I,I1,N,J,J1,P,_) :- vector_element(D,Q,E),vector(E,_) |
+        set_vector_element(D,Q,X,0,D0),
+        if_pack(P,Li,J,J1,Vi,Vi1,D0,D1,I,I1,N).
+do_get([Q|L],Li,X,Msg,Vi,Vi1,D,D1,I,I1,N,J,J1,P,C) :- vector_element(D,Q,0) |
+        do_get(L,Li,X,Msg,Vi,Vi1,D,D1,I,I1,N,J,J1,P,C).
+do_get([],_,X,Msg,Vi,Vi1,_,_,_,_,_,_,_,_,C) :- true |
+        Vi=Vi1,
+        raise_message(Msg,C,X).
+
+raise_message(Msg,C,X) :- atom(Msg) |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"tried_to_get_nonexistent_element"),{Msg,C,X}).
+raise_message({Msg,F},C,X) :- wait(F) |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"tried_to_get_nonexistent_element"),{Msg,C,F,X}).
+
+if_pack(P,_,J,J1,Vi,Vi1,D,D1,I,I1,_) :- J<P |
+        Vi=Vi1,D=D1,I1:=I,J1:=J+1.
+if_pack(P,Li,J,J1,Vi,Vi1,D,D1,I,I1,N) :- J>=P |
+        I1:=I-P,J1:=0,
+        pack(Li,Vi,Vi1,D,D1,N).
+
+%*** get_if_any ***
+get_if_any(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,X) :- true |
+        get_data_ids(C,_,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get_if_any(L,Li,X,P,Vi0,Vi1,D0,D1,I,I1,N,J,J1).
+
+do_get_if_any([Q|_],Li,X,P,Vi,Vi1,D,D1,I,I1,N,J,J1) :- vector_element(D,Q,E),vector(E,_) |
+        set_vector_element(D,Q,X,0,D0),
+        if_pack(P,Li,J,J1,Vi,Vi1,D0,D1,I,I1,N).
+do_get_if_any([Q|L],Li,X,P,Vi,Vi1,D,D1,I,I1,N,J,J1) :- vector_element(D,Q,0) |
+        do_get_if_any(L,Li,X,P,Vi,Vi1,D,D1,I,I1,N,J,J1).
+do_get_if_any([],_,X,_,Vi,Vi1,D,D1,I,I1,_,J,J1) :- true |
+        X={},Vi=Vi1,D=D1,I1:=I,J1:=J.
+
+%*** max_if_any ***
+max_if_any(Attr,Key,Vi,Vi1,D,D1,Msg,I,Ni,Ni1,DS) :- 0=<Attr,Attr<DS |
+        Ni=Ni1,
+        set_vector_element(Vi,Attr,E,E1,Vi1),
+        if_ordered_index(Attr,Key,E,E1,D,D1,Msg,I).
+max_if_any(Attr,Key,Vi,Vi1,D,D1,Msg,I,Ni,Ni1,_) :- atom(Attr) |
+        Ni=[carbon_copy(Attr,PtrL)|Ni1],
+        get_attr_position(PtrL,Attr,P),
+        set_vector_element(Vi,P,E,E1,Vi1),
+        if_ordered_index(P,Key,E,E1,D,D1,Msg,I).
+otherwise.
+max_if_any(Attr,_,Vi,Vi1,_,_,_,_,Ni,Ni1,_) :- true |
+        Vi=Vi1,Ni=Ni1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_attribute_name"),Attr).
+
+if_ordered_index(_,Key,ordered(In),E1,D,D1,Msg,_) :- true |
+        In=[{Msg,Res}|In0],
+        E1=ordered(In1),
+        max(Res,Key,In0,In1,D,D1,Msg).
+if_ordered_index(P,Key,hashed(In,Comp),E1,D,D1,Msg,I) :- true |
+        E1=hashed(In,Comp),
+        max_sequential(~(I-1),D,D1,P,Key,Comp,Msg).
+if_ordered_index(P,Key,none(Comp),E1,D,D1,Msg,I) :- true |
+        E1=none(Comp),
+        max_sequential(~(I-1),D,D1,P,Key,Comp,Msg).
+if_ordered_index(P,Key,0,E1,D,D1,Msg,I) :- true |
+        E1=none(ascending),
+        max_sequential(~(I-1),D,D1,P,Key,ascending,Msg).
+
+max({K,P},Key,In,In1,D,D1,_) :- vector_element(D,P,E),vector(E,_) |
+        Key={K},D=D1,
+        In=[put(K,P)|In1].
+max({_,P},Key,In,In1,D,D1,Msg) :- vector_element(D,P,0) |
+        In=[{Msg,Res}|In0],
+        max(Res,Key,In0,In1,D,D1,Msg).
+max({},Key,In,In1,D,D1,_) :- true |
+        Key={},In=In1,D=D1.
+
+max_sequential(I,D,D1,P,Key,Comp,Msg) :- true |
+        get_and_put_all(I,D,D1,A,B,P),
+        max_sequential(A,B,Key,Comp,Msg).
+
+get_and_put_all(I,D,D1,A,B,P) :- I>=0 |
+        set_vector_element(D,I,X,X1,D0),
+        if_empty_element(X,X1,P,A,A1,B,B1),
+        get_and_put_all(~(I-1),D0,D1,A1,B1,P).
+get_and_put_all(I,D,D1,A,B,_) :- I<0 |
+        D=D1,A=[],B=[].
+
+if_empty_element(X,X1,P,A,A1,B,B1) :- vector(X,_) |
+        set_vector_element(X,P,E,E1,X1),
+        A=[E|A1],B=[E1|B1].
+if_empty_element(0,X1,_,A,A1,B,B1) :- true |
+        X1:=0,A=A1,B=B1.
+
+max_sequential([E|A],[E1|B],Key,Comp,Msg) :- true |
+        max_seq(A,B,Key,Comp,E,E1,Msg).
+max_sequential([],[],Key,_,_) :- true |
+        Key={}.
+
+max_seq(A,B,Key,Comp,E,E1,get_max_if_any) :- true |
+        do_max_seq(A,B,Key,Comp,E,E1).
+max_seq(A,B,Key,Comp,E,E1,get_min_if_any) :- true |
+        do_min_seq(A,B,Key,Comp,E,E1).
+
+do_max_seq([F|A],[F1|B],Key,Comp,E,E1) :- true |
+        builtin#apply(Comp,{E,F,Sml,Lag,YorN}),
+        wait_compared_max(A,B,Key,Comp,Sml,E1,Lag,F1,YorN).
+do_max_seq([],[],Key,_,E,E1) :- true |
+        E=E1,Key={E1}.
+
+wait_compared_max(A,B,Key,Comp,E,E1,F,F1,no) :- true |
+        E=E1,
+        do_max_seq(A,B,Key,Comp,F,F1).
+wait_compared_max(A,B,Key,Comp,F,E1,E,F1,yes) :- true |
+        F=F1,
+        do_max_seq(A,B,Key,Comp,E,E1).
+
+do_min_seq([F|A],[F1|B],Key,Comp,E,E1) :- true |
+        builtin#apply(Comp,{E,F,Sml,Lag,YorN}),
+        wait_compared_min(A,B,Key,Comp,Sml,E1,Lag,F1,YorN).
+do_min_seq([],[],Key,_,E,E1) :- true |
+        E=E1,Key={E1}.
+
+wait_compared_min(A,B,Key,Comp,E,E1,F,F1,no) :- true |
+        F=F1,
+        do_min_seq(A,B,Key,Comp,E,E1).
+wait_compared_min(A,B,Key,Comp,F,E1,E,F1,yes) :- true |
+        E=E1,
+        do_min_seq(A,B,Key,Comp,F,F1).
+
+%*** get_all ***
+get_all(I,N,D,D1,A) :- I<N |
+        set_vector_element(D,I,E,0,D0),
+        if_get_all(E,A,A1),
+        get_all(~(I+1),N,D0,D1,A1).
+get_all(N,N,D,D1,A) :- true | D=D1,A=[].
+
+if_get_all(0,A,A1) :- true | A=A1.
+if_get_all(E,A,A1) :- vector(E,_) | A=[E|A1].
+
+%*** get_all_with_condition ***
+get_all(C,_,Ni,Ni1,Vi,Vi1,D,D1,I,I1,_,_,J1,_,DS,A) :- 0=<C,C<DS |
+        Ni=Ni1,I1:=0,J1:=0,
+        set_vector_element(Vi,C,E,E1,Vi1),
+        get_all_i(E,E1,D,D1,I,C,A).
+get_all(C,_,Ni,Ni1,Vi,Vi1,D,D1,I,I1,_,_,J1,_,_,A) :- atom(C) |
+        Ni=[carbon_copy(C,PtrL)|Ni1],
+        I1:=0,J1:=0,
+        get_attr_position(PtrL,C,P),
+        set_vector_element(Vi,P,E,E1,Vi1),
+        get_all_i(E,E1,D,D1,I,P,A).
+get_all(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,J,J1,P,DS,A) :- vector(C,_) |
+        get_data_ids(C,_,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get_all(L,Li,P,A,Vi0,Vi1,D0,D1,I,I1,N,J,J1).
+otherwise.
+get_all(C,_,Ni,Ni1,Vi,Vi1,D,D1,I,I1,_,J,J1,_,_,_) :- true |
+        Ni=Ni1,Vi=Vi1,D=D1,I1:=I,J1:=J,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_attribute_name"),C).
+
+get_all_i(ordered(In),E1,D,D1,_,_,A) :- true |
+        E1=ordered(In1),
+        In=[get_all(L)|In1],
+        get_ids_only(L,L1),
+        do_get_all_i(L1,D,D1,A).
+get_all_i(hashed(In,Comp),E1,D,D1,_,_,A) :- true |
+        E1=hashed(In1,Comp),
+        In=[get_all(L)|In1],
+        get_ids_only(L,L1),
+        do_get_all_i(L1,D,D1,A).
+get_all_i(none(Comp),E1,D,D1,I,P,A) :- true |
+        E1=none(Comp),
+        get_all(0,I,D,D1,A0),
+        sort(A0,P,A,Comp).
+get_all_i(0,E1,D,D1,I,P,A) :- true |
+        E1=none(ascending),
+        get_all(0,I,D,D1,A0),
+        sort(A0,P,A,ascending).
+
+sort(A,P,A1,Comp) :- true |
+        trans_datalist(A,P,B),
+        sorter:key_sort(B,Comp,B1),
+        return_datalist(B1,P,A1).
+
+trans_datalist([E|A],P,B) :- true |
+        set_vector_element(E,P,K,0,E1),
+        B=[{K,E1}|B1],
+        trans_datalist(A,P,B1).
+trans_datalist([],_,B) :- true | B=[].
+
+return_datalist([{K,E}|B],P,A) :- true |
+        set_vector_element(E,P,_,K,E1),
+        A=[E1|A1],
+        return_datalist(B,P,A1).
+return_datalist([],_,A) :- true | A=[].
+
+get_ids_only([{_,P}|L],L1) :- true |
+        L1=[P|L2],
+        get_ids_only(L,L2).
+get_ids_only([],L1) :- true | L1=[].
+
+do_get_all_i([P|L],D,D1,A) :- true |
+        set_vector_element(D,P,E,0,D0),
+        A=[E|A1],
+        do_get_all_i(L,D0,D1,A1).
+do_get_all_i([],D,D1,A) :- true | D=D1,A=[].
+
+do_get_all([Q|L],Li,P,A,Vi,Vi1,D,D1,I,I1,N,J,J1) :- vector_element(D,Q,E),vector(E,_) |
+        set_vector_element(D,Q,X,0,D0),
+        A=[X|A1],
+        do_get_all(L,Li,P,A1,Vi,Vi1,D0,D1,I,I1,N,~(J+1),J1).
+do_get_all([Q|L],Li,P,A,Vi,Vi1,D,D1,I,I1,N,J,J1) :- vector_element(D,Q,0) |
+        do_get_all(L,Li,P,A,Vi,Vi1,D,D1,I,I1,N,J,J1).
+do_get_all([],Li,P,A,Vi,Vi1,D,D1,I,I1,N,J,J1) :- true |
+        A=[],
+        if_pack(P,Li,J,J1,Vi,Vi1,D,D1,I,I1,N).
+
+%*** carbon_copy ***
+carbon_copy(I,N,D,D1,A) :- I<N |
+        set_vector_element(D,I,E,E1,D0),
+        if_carbon_copy(E,E1,A,A1),
+        carbon_copy(~(I+1),N,D0,D1,A1).
+carbon_copy(N,N,D,D1,A) :- true | D=D1,A=[].
+
+if_carbon_copy(0,E1,A,A1) :- true | E1:=0,A=A1.
+if_carbon_copy(E,E1,A,A1) :- vector(E,_) | E=E1,A=[E|A1].
+
+%*** carbon_copy_with_condition ***
+carbon_copy(C,A,Ni,Ni1,Vi,Vi1,D,D1,I,DS) :- 0=<C,C<DS |
+        Ni=Ni1,
+        set_vector_element(Vi,C,E,E1,Vi1),
+        carbon_copy_i(E,E1,D,D1,I,C,A).
+carbon_copy(C,A,Ni,Ni1,Vi,Vi1,D,D1,I,_) :- atom(C) |
+        Ni=[carbon_copy(C,PtrL)|Ni1],
+        get_attr_position(PtrL,C,P),
+        set_vector_element(Vi,P,E,E1,Vi1),
+        carbon_copy_i(E,E1,D,D1,I,P,A).
+otherwise.
+carbon_copy(C,A,Ni,Ni1,Vi,Vi1,D,D1,I,DS) :- true |
+        get_data_ids(C,_,Ni,Ni1,Vi,Vi1,D,D0,I,L,DS),
+        do_carbon_copy(L,D0,D1,A).
+
+carbon_copy_i(ordered(In),E1,D,D1,_,_,A) :- true |
+        E1=ordered(In1),
+        In=[carbon_copy(L)|In1],
+        get_ids_only(L,L1),
+        do_carbon_copy_i(L1,D,D1,A).
+carbon_copy_i(hashed(In,Comp),E1,D,D1,_,_,A) :- true |
+        E1=hashed(In1,Comp),
+        In=[carbon_copy(L)|In1],
+        get_ids_only(L,L1),
+        do_carbon_copy_i(L1,D,D1,A).
+carbon_copy_i(none(Comp),E1,D,D1,I,P,A) :- true |
+        E1=none(ascending),
+        carbon_copy(0,I,D,D1,A0),
+        sort(A0,P,A,Comp).
+carbon_copy_i(0,E1,D,D1,I,P,A) :- true |
+        E1=none(ascending),
+        carbon_copy(0,I,D,D1,A0),
+        sort(A0,P,A,ascending).
+
+do_carbon_copy_i([P|L],D,D1,A) :- true |
+        set_vector_element(D,P,E,E,D0),
+        A=[E|A1],
+        do_carbon_copy_i(L,D0,D1,A1).
+do_carbon_copy_i([],D,D1,A) :- true | D=D1,A=[].
+
+do_carbon_copy([Q|L],D,D1,A) :- vector_element(D,Q,E),vector(E,_) |
+        set_vector_element(D,Q,E,E,D0),
+        A=[E|A1],
+        do_carbon_copy(L,D0,D1,A1).
+do_carbon_copy([Q|L],D,D1,A) :- vector_element(D,Q,0) |
+        do_carbon_copy(L,D,D1,A).
+do_carbon_copy([],D,D1,A) :- true | D=D1,A=[].
+
+%*** get_and_put ***
+get_and_put(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,DS,X,X1,Msg) :- true |
+        get_data_ids(C,C1,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get_and_put(L,Li,X,X1,Vi0,Vi1,D0,D1,DS,Msg,C1).
+
+do_get_and_put([Q|_],Li,Old,New0,Vi,Vi1,D,D1,DS,Msg,C) :- vector_element(D,Q,E),vector(E,_) |
+        set_vector_element(D,Q,Old0,New,D1),
+        modify_indexes(Li,Vi,Vi1,Old0,Old,New0,New,Q,DS,Msg,C).
+do_get_and_put([Q|L],Li,X,X1,Vi,Vi1,D,D1,DS,Msg,C) :- vector_element(D,Q,0) |
+        do_get_and_put(L,Li,X,X1,Vi,Vi1,D,D1,DS,Msg,C).
+do_get_and_put([],_,X,X1,Vi,Vi1,_,_,_,Msg,C) :- true |
+        Vi=Vi1,
+        raise_message(Msg,C,X,X1).
+
+raise_message(Msg,C,X,X1) :- atom(Msg) |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"tried_to_get_nonexistent_element"),{Msg,C,X,X1}).
+raise_message({Msg,F},C,X,X1) :- wait(F) |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"tried_to_get_nonexistent_element"),{Msg,C,F,X,X1}).
+
+%*** get_if_any_and_put ***
+get_if_any_and_put(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,X,X1,DS) :- true |
+        get_data_ids(C,C1,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get_if_any_and_put(L,Li,X,X1,Vi0,Vi1,D0,D1,I,I1,N,N1,J,J1,P,P1,PR,DS,
+                        get_if_any_and_put,C1).
+
+do_get_if_any_and_put([Q|_],Li,Old,New0,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,_,DS,Msg,C) :-
+    vector_element(D,Q,E),vector(E,_) |
+        I1:=I,N1:=N,J1:=J,P1:=P,
+        set_vector_element(D,Q,Old0,New,D1),
+        modify_indexes(Li,Vi,Vi1,Old0,Old,New0,New,Q,DS,Msg,C).
+do_get_if_any_and_put([Q|L],Li,Old,New0,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,DS,Msg,C) :-
+    vector_element(D,Q,0) |
+        do_get_if_any_and_put(L,Li,Old,New0,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,DS,Msg,C).
+do_get_if_any_and_put([],Li,X,X1,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,DS,Msg,C) :- true |
+        X={},
+        put(Li,Vi,Vi1,D,D1,I,I1,N,N1,J,J1,P,P1,PR,X1,DS,Msg,C).
+
+%*** get_and_put_if_any ***
+get_and_put_if_any(C,Li,Ni,Ni1,Vi,Vi1,D,D1,I,DS,X,X1,X2,Msg) :- true |
+        get_data_ids(C,C1,Ni,Ni1,Vi,Vi0,D,D0,I,L,DS),
+        do_get_and_put_if_any(L,Li,X,X1,Vi0,Vi1,D0,D1,X2,DS,Msg,C1).
+
+do_get_and_put_if_any([Q|_],Li,Old,New0,Vi,Vi1,D,D1,X2,DS,Msg,C) :-
+    vector_element(D,Q,E),vector(E,_) |
+        X2={},
+        set_vector_element(D,Q,Old0,New,D1),
+        modify_indexes(Li,Vi,Vi1,Old0,Old,New0,New,Q,DS,Msg,C).
+do_get_and_put_if_any([Q|L],Li,X,X1,Vi,Vi1,D,D1,X2,DS,Msg,C) :- vector_element(D,Q,0) |
+        do_get_and_put_if_any(L,Li,X,X1,Vi,Vi1,D,D1,X2,DS,Msg,C).
+do_get_and_put_if_any([],_,X,X1,Vi,Vi1,D,D1,X2,_,_,_) :- true |
+        X={},X1=X2,Vi=Vi1,D=D1.
+
+
+get_data_ids({=,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- 0=<Idx,Idx<DS |
+        NC={=,Idx,Key},
+        Ni=Ni1,
+        get_ids(Idx,Key,I,L,Vi,Vi1,D,D1).
+get_data_ids({=,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,_) :- atom(Idx) |
+        NC={=,Idx,Key},
+        Ni=[carbon_copy(Idx,PtrL)|Ni1],
+        get_attr_position(PtrL,Idx,P),
+        get_ids(P,Key,I,L,Vi,Vi1,D,D1).
+
+get_data_ids({equal,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- 0=<Idx,Idx<DS |
+        NC={equal,Idx,Key},
+        Ni=Ni1,
+        get_ids(Idx,Key,I,L,Vi,Vi1,D,D1).
+get_data_ids({equal,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,_) :- atom(Idx) |
+        NC={equal,Idx,Key},
+        Ni=[carbon_copy(Idx,PtrL)|Ni1],
+        get_attr_position(PtrL,Idx,P),
+        get_ids(P,Key,I,L,Vi,Vi1,D,D1).
+
+get_data_ids({\=,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- 0=<Idx,Idx<DS |
+        NC={\=,Idx,Key},
+        Ni=Ni1,
+        get_ids(Idx,Key,I,L0,Vi,Vi1,D,D1),
+        do_not(L0,L,I).
+get_data_ids({\=,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,_) :- atom(Idx) |
+        NC={\=,Idx,Key},
+        Ni=[carbon_copy(Idx,PtrL)|Ni1],
+        get_attr_position(PtrL,Idx,P),
+        get_ids(P,Key,I,L0,Vi,Vi1,D,D1),
+        do_not(L0,L,I).
+
+get_data_ids({not_equal,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- 0=<Idx,Idx<DS |
+        NC={not_equal,Idx,Key},
+        Ni=Ni1,
+        get_ids(Idx,Key,I,L0,Vi,Vi1,D,D1),
+        do_not(L0,L,I).
+get_data_ids({not_equal,Idx,Key},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,_) :- atom(Idx) |
+        NC={not_equal,Idx,Key},
+        Ni=[carbon_copy(Idx,PtrL)|Ni1],
+        get_attr_position(PtrL,Idx,P),
+        get_ids(P,Key,I,L0,Vi,Vi1,D,D1),
+        do_not(L0,L,I).
+
+get_data_ids({/\,C,C1},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={/\,NC0,NC1},
+        get_data_ids(C,NC0,Ni,Ni0,Vi,Vi0,D,D0,I,L0,DS),
+        get_data_ids(C1,NC1,Ni0,Ni1,Vi0,Vi1,D0,D1,I,L1,DS),
+        do_and(L0,L1,L).
+get_data_ids({and,C,C1},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={and,NC0,NC1},
+        get_data_ids(C,NC0,Ni,Ni0,Vi,Vi0,D,D0,I,L0,DS),
+        get_data_ids(C1,NC1,Ni0,Ni1,Vi0,Vi1,D0,D1,I,L1,DS),
+        do_and(L0,L1,L).
+
+get_data_ids({\/,C,C1},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={\/,NC0,NC1},
+        get_data_ids(C,NC0,Ni,Ni0,Vi,Vi0,D,D0,I,L0,DS),
+        get_data_ids(C1,NC1,Ni0,Ni1,Vi0,Vi1,D0,D1,I,L1,DS),
+        do_or(L0,L1,L).
+get_data_ids({or,C,C1},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={or,NC0,NC1},
+        get_data_ids(C,NC0,Ni,Ni0,Vi,Vi0,D,D0,I,L0,DS),
+        get_data_ids(C1,NC1,Ni0,Ni1,Vi0,Vi1,D0,D1,I,L1,DS),
+        do_or(L0,L1,L).
+
+get_data_ids({\,C},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={\,NC1},
+        get_data_ids(C,NC1,Ni,Ni1,Vi,Vi1,D,D1,I,L0,DS),
+        do_not(L0,L,I).
+get_data_ids({not,C},NC,Ni,Ni1,Vi,Vi1,D,D1,I,L,DS) :- true |
+        NC={not,NC1},
+        get_data_ids(C,NC1,Ni,Ni1,Vi,Vi1,D,D1,I,L0,DS),
+        do_not(L0,L,I).
+
+otherwise.
+get_data_ids(C,NC,Ni,Ni1,Vi,Vi1,D,D1,_,L,_) :- true |
+        C=NC,Ni=Ni1,Vi=Vi1,D=D1,L=[],
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_condition"),C).
+
+get_attr_position([P0],_,P) :- true | P:=P0.
+get_attr_position([],Idx,P) :- true |
+        P:=0,
+%        shoen:raise(pimos_tag#error,
+        raise(pimos_tag#error,
+            '$PIMOS$'(multiply_keyed_bag,string#"illegal_attribute_name"),Idx).
+
+get_ids(P,Key,I,L,Vi,Vi1,D,D1) :- true |
+        set_vector_element(Vi,P,E,E1,Vi1),
+        do_get_ids(P,Key,I,L,E,E1,D,D1).
+
+do_get_ids(_,Key,_,L,ordered(In),E1,D,D1) :- true |
+        E1=ordered(In1),
+        D=D1,
+        In=[carbon_copy(Key,L)|In1].
+do_get_ids(_,Key,_,L,hashed(In,Comp),E1,D,D1) :- true |
+        E1=hashed(In1,Comp),
+        D=D1,
+        In=[carbon_copy(Key,L)|In1].
+do_get_ids(P,Key,I,L,none(Comp),E1,D,D1) :- true |
+        E1=none(Comp),
+        sequential_search(P,Key,I,L,0,D,D1).
+do_get_ids(P,Key,I,L,0,E1,D,D1) :- true |
+        E1:=0,
+        sequential_search(P,Key,I,L,0,D,D1).
+
+sequential_search(P,Key,I,L,J,D,D1) :- I>J |
+        set_vector_element(D,J,X,X1,D0),
+        if_same_key(X,X1,Key,Key1,L,L1,J,P),
+        sequential_search(P,Key1,I,L1,~(J+1),D0,D1).
+sequential_search(_,_,I,L,I,D,D1) :- true |
+        L=[],D=D1.
+
+if_same_key(0,X1,Key,Key1,L,L1,_,_) :- true |
+        X1:=0,Key=Key1,L=L1.
+if_same_key(X,X1,Key,Key1,L,L1,J,P) :- vector(X,_) |
+        set_vector_element(X,P,E,E1,X1),
+        check_if_same_key(E,E1,Key,Key1,L,L1,J).
+
+check_if_same_key(E,E1,Key,Key1,L,L1,J) :- E=Key |
+        E=E1,Key=Key1,L=[J|L1].
+otherwise.
+check_if_same_key(E,E1,Key,Key1,L,L1,_) :- true |
+        E=E1,Key=Key1,L=L1.
+
+do_and(X,Y,Z) :- true |
+        sorter:sort(X,X1),
+        sorter:sort(Y,Y1),
+        do_do_and(X1,Y1,Z).
+
+do_do_and([P|X],[Q|Y],Z) :- P<Q |
+        get_away_x(X,Y,Z,Q).
+do_do_and([P|X],[Q|Y],Z) :- P>Q |
+        get_away_y(X,Y,Z,P).
+do_do_and([P|X],[P|Y],Z) :- true |
+        Z=[P|Z1],
+        do_do_and(X,Y,Z1).
+do_do_and([],_,Z) :- true | Z=[].
+do_do_and(_,[],Z) :- true | Z=[].
+
+get_away_x([P|X],Y,Z,Q) :- P<Q |
+        get_away_x(X,Y,Z,Q).
+get_away_x([P|X],Y,Z,Q) :- P>Q |
+        get_away_y(X,Y,Z,P).
+get_away_x([P|X],Y,Z,P) :- true |
+        Z=[P|Z1],
+        do_do_and(X,Y,Z1).
+get_away_x([],_,Z,_) :- true |
+        Z=[].
+
+get_away_y(X,[Q|Y],Z,P) :- Q<P |
+        get_away_y(X,Y,Z,P).
+get_away_y(X,[Q|Y],Z,P) :- Q>P |
+        get_away_x(X,Y,Z,Q).
+get_away_y(X,[Q|Y],Z,Q) :- true |
+        Z=[Q|Z1],
+        do_do_and(X,Y,Z1).
+get_away_y(_,[],Z,_) :- true |
+        Z=[].
+
+do_or(X,Y,Z) :- true |
+        sorter:sort(X,X1),
+        sorter:sort(Y,Y1),
+        do_do_or(X1,Y1,Z).
+
+do_do_or([P|X],[Q|Y],Z) :- P<Q |
+        Z=[P|Z1],
+        consume_x(X,Y,Z1,Q).
+do_do_or([P|X],[Q|Y],Z) :- P>Q |
+        Z=[Q|Z1],
+        consume_y(X,Y,Z1,P).
+do_do_or([P|X],[P|Y],Z) :- true |
+        Z=[P|Z1],
+        do_do_or(X,Y,Z1).
+do_do_or([],Y,Z) :- true | Y=Z.
+do_do_or(X,[],Z) :- true | X=Z.
+
+consume_x([P|X],Y,Z,Q) :- P<Q |
+        Z=[P|Z1],
+        consume_x(X,Y,Z1,Q).
+consume_x([P|X],Y,Z,Q) :- P>Q |
+        Z=[Q|Z1],
+        consume_y(X,Y,Z1,P).
+consume_x([P|X],Y,Z,P) :- true |
+        Z=[P|Z1],
+        do_do_or(X,Y,Z1).
+consume_x([],Y,Z,Q) :- true |
+        Z=[Q|Y].
+
+consume_y(X,[Q|Y],Z,P) :- Q<P |
+        Z=[Q|Z1],
+        consume_y(X,Y,Z1,P).
+consume_y(X,[Q|Y],Z,P) :- Q>P |
+        Z=[P|Z1],
+        consume_x(X,Y,Z1,Q).
+consume_y(X,[Q|Y],Z,Q) :- true |
+        Z=[Q|Z1],
+        do_do_or(X,Y,Z1).
+consume_y(X,[],Z,P) :- true |
+        Z=[P|X].
+
+do_not(L,L1,N) :- true |
+        sorter:sort(L,L0),
+        do_do_not(L0,L1,N,0).
+
+do_do_not([P|L],L1,N,I) :- P>I |
+        L1=[I|L2],
+        do_do_not([P|L],L2,N,~(I+1)).
+do_do_not([P|L],L1,N,P) :- true |
+        do_do_not(L,L1,N,~(P+1)).
+do_do_not([],L,N,I) :- true |
+        append_rest(I,L,N).
+
+append_rest(I,L,N) :- I<N |
+        L=[I|L1],
+        append_rest(~(I+1),L1,N).
+append_rest(N,L,N) :- true |
+        L=[].
+
+
+add_to_indexes([I|Li],Vi,Vi1,X,X1,P) :- true |
+        set_vector_element(Vi,I,E,E1,Vi0),
+        get_index_stream(E,E1,In,In1),
+        vector_element(X,I,K,X0),
+        In=[put(K,P)|In1],
+        add_to_indexes(Li,Vi0,Vi1,X0,X1,P).
+add_to_indexes([],Vi,Vi1,X,X1,_) :- true | Vi=Vi1,X=X1.
+
+get_index_stream(ordered(St),E1,In,In1) :- true |
+        In=St,E1=ordered(In1).
+get_index_stream(hashed(St,Comp),E1,In,In1) :- true |
+        In=St,E1=hashed(In1,Comp).
+
+modify_indexes(Li,Vi,Vi1,X,X1,Y,Y1,P,DS,Msg,C) :- true |
+        modify_indexes(Li,Vi,Vi1,X,X1,P,Ky_list),
+        unify_new_keyes(Li,Ky_list,Y,Y1,DS,Msg,C).
+
+modify_indexes([I|Li],Vi,Vi1,X,X1,P,Ky_list) :- true |
+        set_vector_element(Vi,I,E,E1,Vi0),
+        get_index_stream(E,E1,In,In1),
+        vector_element(X,I,Kx,X0),
+        In=[get_all(Kx,A)|In0],
+        modify_index(A,P,In0,In1,Kx,Ky0),
+        Ky_list=[Ky0|Ky_list1],
+        modify_indexes(Li,Vi0,Vi1,X0,X1,P,Ky_list1).
+modify_indexes([],Vi,Vi1,X,X1,_,Ky_list) :- true |
+        Vi=Vi1,X=X1,Ky_list=[].
+
+unify_new_keyes(Li,Ky_list,Y,Y1,DS,_,_) :- vector(Y,DS) |
+        unify_new_keyes(Li,Ky_list,Y,Y1).
+otherwise.
+unify_new_keyes(_,_,Y,Y1,_,get_and_put,C) :- true |
+        Y1:=0,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in get_and_put"),Y).
+unify_new_keyes(_,_,Y,Y1,_,get_if_any_and_put,C) :- true |
+        Y1:=0,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in get_if_any_and_put"),Y).
+unify_new_keyes(_,_,Y,Y1,_,get_and_put_if_any,C) :- true |
+        Y1:=0,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in get_and_put_if_any"),Y).
+
+unify_new_keyes([I|Li],[Ky0|Ky_list],Y,Y1) :- true |
+        vector_element(Y,I,Ky,Y0),
+        Ky0=Ky,
+        unify_new_keyes(Li,Ky_list,Y0,Y1).
+unify_new_keyes([],[],Y,Y1) :- true | Y=Y1.
+
+modify_indexes([I|Li],Vi,Vi1,X,X1,Y,Y1,P) :- true |
+        set_vector_element(Vi,I,E,E1,Vi0),
+        get_index_stream(E,E1,In,In1),
+        vector_element(X,I,Kx,X0),
+        vector_element(Y,I,Ky,Y0),
+        In=[get_all(Kx,A)|In0],
+        modify_index(A,P,In0,In1,Kx,Ky),
+        modify_indexes(Li,Vi0,Vi1,X0,X1,Y0,Y1,P).
+modify_indexes([],Vi,Vi1,X,X1,Y,Y1,_) :- true |
+        Vi=Vi1,X=X1,Y=Y1.
+
+modify_index([P|A],P,In,In1,E,F) :- true |
+        In=[put(F,P)|In0],
+        return_ids(A,E,In0,In1).
+modify_index([Q|A],P,In,In1,E,F) :- Q=\=P |
+        In=[put(E,Q)|In0],
+        modify_index(A,P,In0,In1,E,F).
+
+return_ids([P|A],E,In,In1) :- true |
+        In=[put(E,P)|In0],
+        return_ids(A,E,In0,In1).
+return_ids([],_,In,In1) :- true | In=In1.
+
+%*** remake ***
+remake(I,N,Li,Vi,Vi1,D,P,ND,ND1) :- I<N |
+        set_vector_element(D,I,X,0,D1),
+        if_move_element(Li,Vi,Vi0,X,P,P1,ND,ND0),
+        remake(~(I+1),N,Li,Vi0,Vi1,D1,P1,ND0,ND1).
+remake(N,N,_,Vi,Vi1,_,_,ND,ND1) :- true |
+        Vi=Vi1,ND=ND1.
+
+if_move_element(Li,Vi,Vi1,X,P,P1,ND,ND1) :- vector(X,_) |
+        set_vector_element(ND,P,_,X1,ND1),
+        add_to_indexes(Li,Vi,Vi1,X,X1,P),
+        P1:=P+1.
+if_move_element(_,Vi,Vi1,0,P,P1,ND,ND1) :- true |
+        Vi=Vi1,P1:=P,ND=ND1.
+
+clear_indexes([I|Li],Vi,Vi1) :- true |
+        set_vector_element(Vi,I,E,E1,Vi0),
+        get_index_stream(E,E1,In,In1),
+%        In=[get_all(_)|In1],
+        In=[clear|In1],
+        clear_indexes(Li,Vi0,Vi1).
+clear_indexes([],Vi,Vi1) :- true | Vi=Vi1.
+
+%*** pack ***
+pack(Li,Vi,Vi1,D,D1,N) :- true |
+        clear_indexes(Li,Vi,Vi0),
+        do_pack(Li,Vi0,Vi1,D,D1,0,~(N-1)).
+
+do_pack(Li,Vi,Vi1,D,D1,Top,Bot) :- Top<Bot |
+        find_space(Li,Vi,Vi1,D,D1,Top,Bot).
+do_pack(_,Vi,Vi1,D,D1,Top,Bot) :- Top>=Bot |
+        Vi=Vi1,D=D1.
+
+find_space(Li,Vi,Vi1,D,D1,Top,Bot) :- vector_element(D,Top,0) |
+        find_element(Li,Vi,Vi1,D,D1,Top,Bot).
+otherwise.
+find_space(Li,Vi,Vi1,D,D1,Top,Bot) :- true |
+        do_pack(Li,Vi,Vi1,D,D1,~(Top+1),Bot).
+
+find_element(Li,Vi,Vi1,D,D1,Top,Bot) :- Top<Bot |
+        do_find_element(Li,Vi,Vi1,D,D1,Top,Bot).
+find_element(_,Vi,Vi1,D,D1,Top,Bot) :- Top>=Bot |
+        Vi=Vi1,D=D1.
+
+do_find_element(Li,Vi,Vi1,D,D1,Top,Bot) :- vector_element(D,Bot,0) |
+        find_element(Li,Vi,Vi1,D,D1,Top,~(Bot-1)).
+otherwise.
+do_find_element(Li,Vi,Vi1,D,D2,Top,Bot) :- true |
+        set_vector_element(D,Bot,X,0,D0),
+        set_vector_element(D0,Top,_,X1,D1),
+        add_to_indexes(Li,Vi,Vi0,X,X1,Top),
+        do_pack(Li,Vi0,Vi1,D1,D2,~(Top+1),~(Bot-1)).
+
+
+%*** get_part ***
+get_part(F,F1,X,Y,Ni,Ni1,DS) :- true |
+        get_format(F,F1,N,L,Ni,Ni1,DS),
+        new_vector(Y0,N),
+        part(L,_,X,Y0,Y,0).
+
+part([I|L],L1,X,Y,Y1,J) :- true |
+        set_vector_element(X,I,E,0,X1),
+        set_vector_element(Y,J,_,E,Y0),
+        L1=[I|L2],
+        part(L,L2,X1,Y0,Y1,~(J+1)).
+part([],L1,_,Y,Y1,_) :- true | L1=[],Y=Y1.
+
+%*** get_part_if_any ***
+get_part_if_any(F,X,Y,Ni,Ni1,DS) :- true |
+        get_format(F,_,N,L,Ni,Ni1,DS),
+        do_get_part_if_any(L,X,Y,DS,N).
+
+do_get_part_if_any(L,X,Y,DS,N) :- vector(X,DS) |
+        new_vector(Y0,N),
+        part(L,_,X,Y0,Y,0).
+do_get_part_if_any(_,{},Y,_,_) :- true | Y={}.
+
+%*** get_part_all ***
+get_part_all(F,A0,A,Ni,Ni1,DS) :- true |
+        get_format(F,_,N,L,Ni,Ni1,DS),
+        get_part_all(L,A0,A,N).
+
+get_part_all(L,[X|A],A1,N) :- true |
+        new_vector(Y0,N),
+        part(L,L1,X,Y0,Y,0),
+        A1=[Y|A2],
+        get_part_all(L1,A,A2,N).
+get_part_all(_,[],A,_) :- true | A=[].
+
+%*** get_part_and_put ***
+get_part_and_put(F,F1,X,X1,P,P1,Ni,Ni1,DS) :- true |
+        get_format(F,F1,N,L,Ni,Ni1,DS),
+        new_vector(P0,N),
+        get_part_and_put1(L,X,X1,P0,P,InP,0),
+        unify_part(InP,P1,N,getp_and_put).
+
+get_part_and_put1([I|L],X,X1,P,P1,InP,J) :- true |
+        set_vector_element(X,I,E,E1,X0),
+        set_vector_element(P,J,_,E,P0),
+        InP=[E1|InP1],
+        get_part_and_put1(L,X0,X1,P0,P1,InP1,~(J+1)).
+get_part_and_put1([],X,X1,P,P1,InP,_) :- true |
+        X=X1,P=P1,InP=[].
+
+unify_part(InP,P,N,_) :- vector(P,N) |
+        do_unify_part(InP,P,0).
+otherwise.
+unify_part(_,P,_,getp_and_put) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in getp_and_put"),P).
+unify_part(_,P,_,getp_and_put_if_any) :- true |
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_data_format in getp_and_put_if_any"),P).
+
+do_unify_part([E|InP],P,J) :- true |
+        set_vector_element(P,J,E,0,P1),
+        do_unify_part(InP,P1,~(J+1)).
+do_unify_part([],_,_) :- true | true.
+
+%*** get_part_and_put_if_any ***
+get_part_and_put_if_any(F,X,X1,P,P1,P2,Ni,Ni1,DS) :- true |
+        get_format(F,_,N,L,Ni,Ni1,DS),
+        get_part_and_put_if_any1(L,X,X1,P,P1,P2,DS,N).
+
+get_part_and_put_if_any1(L,X,X1,P,P1,P2,DS,N) :- vector(X,DS) |
+        new_vector(P0,N),
+        P2={},
+        get_part_and_put1(L,X,X1,P0,P,InP,0),
+        unify_part(InP,P1,N,getp_and_put_if_any).
+get_part_and_put_if_any1(_,{},_,P,P1,P2,_,_) :- true |
+        P={},P1=P2.
+
+%*** get_format ***
+get_format(F,F1,N,L,Ni,Ni1,DS) :- vector(F,N0),N0>0 |
+        N:=N0,
+        get_format(F,F1,N,L,Ni,Ni1,DS,0).
+otherwise.
+get_format(F,F1,N,L,Ni,Ni1,_) :- true |
+        F=F1,N:=0,L=[],Ni=Ni1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_format_for_partial_reference"),F).
+
+get_format(F,F1,N,L,Ni,Ni1,DS,I) :- I<N |
+        set_vector_element(F,I,E,E,F0),
+        if_correct(E,L,L1,DS,Ni,Ni0),
+        get_format(F0,F1,N,L1,Ni0,Ni1,DS,~(I+1)).
+get_format(F,F1,N,L,Ni,Ni1,_,N) :- true |
+        F=F1,L=[],Ni=Ni1.
+
+if_correct(Attr,L,L1,DS,Ni,Ni1) :- 0=<Attr,Attr<DS |
+        Ni=Ni1,L=[Attr|L1].
+if_correct(Attr,L,L1,_,Ni,Ni1) :- atom(Attr) |
+        Ni=[carbon_copy(Attr,Res)|Ni1],
+        if_if_correct(Attr,L,L1,Res).
+otherwise.
+if_correct(Attr,_,_,_,Ni,Ni1) :- true |
+        Ni=Ni1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_attribute_name"),Attr).
+
+if_if_correct(_,L,L1,[P]) :- true | L=[P|L1].
+if_if_correct(Attr,L,L1,[]) :- true |
+        L=L1,
+%        shoen:raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+        raise(pimos_tag#error,'$PIMOS$'(multiply_keyed_bag,
+	    string#"illegal_attribute_name"),Attr).
+

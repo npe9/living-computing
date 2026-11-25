@@ -37,6 +37,7 @@ matter were read from the page image (`pdftoppm -r 120 -f N -l N`).
 | `1990_VTI_Computer_Products.pdf` | VLSI Technology *Computer Products* data manual, 1990 | **VL82C106** PC/AT Combo I/O (Hobbit BeBox, `../bebox_hardware.md` §7); **VL16C452** dual UART | VL82C106 p. 6-185..6-220 = PDF p. 440..475 (keyboard controller p. 6-197 = PDF p. 452; parallel port pp. 6-192..193 = PDF p. 447..448); VL16C452 p. 6-60/6-61 = PDF p. 315/316 (p. 6-N = PDF p. N+255 in chapter 6) | 30,319,538 | `70b0860b28d64988d8715bba51197e557e341a260e191eaab52af30eb65ad38e` |
 | `MCS3201_IBM_PC_XT_AT_Floppy_Disk_Controller_1991.pdf` | Motorola **MCS3201** floppy disk controller data sheet, 1991 | Hobbit BeBox floppy controller (§8) | whole file, 26 pages | 1,209,745 | `ae038594d5423c585c1d752c678712904f97e0f5f2aa49f2f806e5bf9e3c7b5d` |
 | `am53c94.pdf` | AMD **Am53C94/Am53C96** data sheet, Publication 16506 Rev. C, 1993 | Hobbit BeBox SCSI (§9). Printed page numbers match the Be draft's cites: p. 17 transfer counter, p. 22 internal state, p. 29 clock factor, p. 32 data alignment | whole file, 63 pages | 593,862 | `b24f3de1560b7880f984bdd5026da2f522022bf754dc5e19273fed2e2a195335` |
+| `VGADOC_TRIDENT.TXT` | Finn Thoegersen's VGADOC 4b, the Trident chapter (`TRIDENT.TXT`): Trident SVGA registers by port and index, from vendor material and probing | Hobbit BeBox display card (`../bebox_hobbit.md` "The display card"): 3C4h index 0Bh chip version table and the old/new mode switch, index 0Dh/0Eh mode controls and the clock table | whole file, plain text; cited by register heading | 20,956 | `6de3bc454e4f98f646d3a3b36627e18579406f4d5af77adbd35a6b21cb6b915f` |
 | `NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf` | NCR 53C94/95/96 data sheet, February 1990 (image-only scan) | The original of the Am53C94's register set | whole file, 64 pages | 3,002,374 | `b084320157a0684955a4ab2f8587a776179dd8e7c15a1fce855d08af116cbdd1` |
 
 URLs (all under `https://bitsavers.trailing-edge.com/components/`):
@@ -56,6 +57,20 @@ Not on bitsavers: `am53c94.pdf` from
 NCR sheet from
 <https://cdn.hackaday.io/files/18974811783616/NCR_53C94_53C95_53C96_Data_Sheet_Feb90.pdf>.
 The Hobbit BeBox rows were added 2026-11-24 for `../bebox_hardware.md`.
+`VGADOC_TRIDENT.TXT` is the copy MIT 6.1810 serves,
+<https://pdos.csail.mit.edu/6.1810/2017/readings/hardware/vgadoc/TRIDENT.TXT>
+(VGADOC4B.ZIP, also on the HPAVC CD-ROM at discmaster.textfiles.com); the
+file states no terms, so it is held like the PDFs.
+
+Cited, not held: XFree86/X.Org's Trident driver header `trident_regs.h`
+(Alan Hourihane, 1992-2003, MIT-style licence), section "Graphics Engine
+for 9420/9430": the old engine's index port and register names (STATUS
+0x90, MWIDTH 0xB8, MFORMAT 0xBC, STYLE 0xC4, FMIX/BMIX 0xC8, FCOLOUR 0xD8,
+BCOLOUR 0xDC, DIMXY 0xE0, DESTLINEAR 0xE4, DESTXY 0xF8, COMMAND 0xFC, busy
+bit 0x80).  Read from Debian's xserver-xorg-video-trident 1:1.4.0-3,
+<https://sources.debian.org/data/main/x/xserver-xorg-video-trident/1:1.4.0-3/src/trident_regs.h>,
+13,706 bytes, SHA-256
+`79afccda5b1bda799e75dd7713f590431dbdd52f44db0a581d076a7a70517b34`.
 
 ### Dates against the board
 
@@ -113,6 +128,12 @@ The kernel `s9term` was built 1992-11-07 (`docs/s9term.md`), so the board is
   No keyboard model or protocol document was found.  `deviic.c`'s header
   plans a later "keyboard and finger-mouse" on the IIC bus.
 - **A 1990-1992 PCF8582(A) / PCF8584 data sheet** (see "Dates" above).
+- **A Trident TGUI9420/9430 data sheet.**  Not on bitsavers
+  (no `components/trident/`), no sheet on vgamuseum.info's TGUI9420DGi
+  page (its Trident spec sheets found are for later parts: Blade, ProVidia),
+  and none found by web search (2026-11-24).  VGADOC notes that Ferraro's *Programmer's Guide to the
+  EGA, VGA and Super VGA Cards* (3rd ed.) documents "the accelerator
+  registers at 21xAh"; that book was not found online.
 - **AT&T DSP3210 Information Manual** (for the Hobbit BeBox's three DSPs,
   `../bebox_hardware.md` §13).  Not on bitsavers (`components/att/dsp/` has
   DSP16 and DSP32C material only).  Found later (2026-11-24) on GitHub, the

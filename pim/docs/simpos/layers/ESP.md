@@ -38,6 +38,13 @@ and `!slot` access. TR-044 is the 1984 dialect; its differences are listed in §
   `word#`, `double_bytes#`, `bytes#`, `bits#` applied to a vector. The 32-bit literal spelling
   is UNKNOWN. A plain `"..."` holds 16-bit JIS characters on PSI: PRG line 7129 says `jis#` is
   unnecessary on PSI. MEASURED: SIMPOS text files are 16-bit JIS (FORMATS.md §5).
+- **Strings unify by storage, not contents** (KNOWN). A string is a structure with side effects:
+  `"ABC" = "ABC"` fails in ESP (TM-388 PDF p169, folio 157), and `'abc'='abc'`, `==` and `=:=`
+  all fail in KL0 (p79, folio 67); two references to one string succeed. Equality is the same
+  logical address of the first element, its position in the word, element length and count
+  (p117-119, folio 105-107, unify rule (iii)b and Table 4-3; TM-115 PDF p97, folio 92; ESP manual
+  `program-e.tex`:7174 for `=:=`). Only `equal_string/2` compares contents. `psi/kl0.py` follows
+  this since 2026-11-25 (`psi/README.md`).
 - **Character and constant macros**: `#"c"`, `Radix#"digits"`, `key#name`, `ascii#name`, and others (§7).
 
 ## 2. Source file (KNOWN, TM-388 §3.9 pp.90–93)
@@ -166,6 +173,10 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   Built-ins `method_call` and `overridden_method_call` exist (TM-388 App D).
 - **Missing method or slot.** The call goes to `:undefined_method(Obj,Name,ArgVec,Addr)` or
   `:undefined_slot(Obj,Type,Name,Value,Addr)` (TM-388 §3.6).
+  Modelled in `psi/kl0.py` (step 3e, 2026-11-24) only as far as held code goes: pimscsi's
+  `scsi_low_if` sends `:raise(#undefined_method, {Class, undefined_method, Class, {Method,
+  ArgVec, Addr}})` itself, and kl0 ends that send with an uncaught exception (OURS: no handler
+  and no situation stack are modelled). The census counts it as the outcome `exception`.
 - **Indexing** (TM-388 §5.5 pp.134–135):
   - Locals index on argument 1, methods on argument 2 (argument 1 is the object).
   - A stack vector indexes on its first element.
@@ -416,6 +427,9 @@ TR-005 (1983) is an even earlier, module-based ESP and is not normative.
 ## 12. Open items for the language
 
 - After-demon order (§5).
+- Whether a string constant in a clause is one stored string per constant or a fresh one per
+  execution: no source found. `psi/kl0.py` makes a fresh one per load (INFERENCE), and the census
+  is the same either way (2026-11-25).
 - The full operator table (§8).
 - Standard-macro constant tables.
 - The exact library-lookup semantics of `include` and `use_macro`.

@@ -8,7 +8,9 @@
 % inherits class 'waiting_frame'", and from the printed stream:put/2 and
 % get/2 that call it (Fig. 3.6).
 % Model (OURS): the processes as a Prolog list in one slot, first hooked
-% first; not the printed doubly-linked list through waiting_frame.
+% first; not the printed doubly-linked list through waiting_frame.  A
+% list cannot be saved in a slot on the PSI (TM-388 PDF p138, folio
+% 126).
 
 class waiting_queue has
 
@@ -19,7 +21,8 @@ class waiting_queue has
 
 instance
 
-% INTERPOLATED: the representation (OURS).
+% INTERPOLATED: the representation (OURS; a list cannot be saved in a
+% slot on the PSI, TM-388 PDF p138).
 attribute frames := [];
 
 % INTERPOLATED from: the printed stream:put/2, `:empty(Stream!
@@ -31,7 +34,9 @@ attribute frames := [];
         append(Queue!frames, [Frame], E), Queue!frames := E;
 % INTERPOLATED from: the printed stream:put/2, `:unhook(Stream!
 % waiting_queue, Process)` before `:resume(Process, ...)` (PDF p14): Process
-% is an output, the first frame hooked; fails when the queue is empty.
+% is an output, the first frame hooked.  That it fails when the queue is
+% empty is OURS: the printed put/2 calls unhook only after `:empty`
+% fails.
 :unhook(Queue, Frame) :-
         [Frame|E] = Queue!frames, Queue!frames := E;
 
