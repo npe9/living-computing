@@ -233,3 +233,17 @@ Spec: pim/docs/simpos/subsystems/shell.md.
 | 28 | `call_counter` setters (17 methods) | 17/1 | named in ESP manual TeX | ESPtex/program-e.tex:10198-10233 read in full |
 | 29 | Status line in 5.x-7.x (fields, indicators, colour on PSI-II) | display fidelity | 1.00-2.50 | TM-785/786 page images (screens 5.0) re-eyed for the bottom band |
 | 30 | Logout effects (process kill order, `exit/1` calls, saver) | session end | `logout -> yes` | 操作説明書 |
+
+## Revealed by the step 3f census (2026-11-25)
+
+The FEP census with receivers made by their held creators
+(`psi/README.md`, "Step 3f" sections) stops at these SIMPOS methods. None
+has a printed or held definition, so none is stood in.
+
+| unknown | rows stopped (`census --fep --recipes`) | known | what would settle it |
+|---|---|---|---|
+| `stream:see/2`: what a device's `loop_main/1` waits on | 17 `goal`/`invoke`/`loop_main` rows, the commonest stop | TM-100 Fig. 3.6 prints `stream` create/put/get only | the I/O manual (not held); a held caller's source |
+| `get_interpreter/2` on a `pimos_window` (owner and answer) | 5 (3 editor, 2 window-process) | name and arity from the held `.ptf` | window manual; TM-125 lists no owner |
+| `has_been_reshaped/1`, the reshape callback | 4 editor rows | called after `set_size/3`, `reshape/7`, `set_inside_size/5`, `reshape_by_mouse/3` | window manual (G11 is the related reshape question) |
+| `process:invocation_stack/2` | the tcpip `create_socket` creator (so tcpip has no census recipe) | name and arity only | TM-100 (prints `process`'s body without it) |
+| `process:status/3` | 11 plain-census creator rows | one printed call in `activate/2` (TM-100 Fig. 3.1) | TM-100's unprinted methods |

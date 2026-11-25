@@ -475,9 +475,10 @@ and stand-in `simpos##` classes. In order:
        the new inherited rows and only 1 is a real move
        (`remote_stream create_to_fep/3`, on the no-op `assign/1`).
        Recipes then move 56 slot-constant rows: 4 to success, 1 to
-       failure, 30 to simpos, 20 to `set_string_element` on the
-       census's unbound request Id, 1 to `receiver not an object`. The
-       one new slot constant comes from the stand-in's own font 0. The
+       failure, 30 to simpos, 20 to `set_string_element` on an
+       unbound argument (the request Id in the one row traced), 1 to `receiver not an object`. The
+       one new slot constant comes from the stand-in's own font 0. Each
+       real success was checked alone on a fresh machine; the two
        `resign_core/1` successes are order effects (both fail alone).
        The six-package census is identical to master.
 4. **The PSI-III microcode emulator** becomes the authority on what

@@ -90,7 +90,10 @@
    the timer's goal/1, attention/1, loop_main/1, invoke/1); A0 left
    unbound, fails; no stop before activate/2, errors (the creator
    reaches process:status/3); the executor made by make_instance, fails.
-   Each touches only test_step3f_census_recipes.
+   Each touches only test_step3f_census_recipes.  Re-run 2026-11-25
+   against the tightened executor check (accept the string
+   'pimos_scsi_fep_control', time 10; both are 0 from make_instance):
+   test_step3f_census_recipes fails, nothing else.
    Then (test_step3f_library_and_symbolizer) kl0's library and
    symbolizer models and the string-I/O recipe; census pins 790 / 442
    plain, 792 / 440 and 85 slot constants with recipes.  Injected into

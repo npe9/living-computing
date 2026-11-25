@@ -2020,9 +2020,30 @@ atoms (MEASURED 2026-11-25). Only one is found, `pmi-atom get r76,
 title` at pimscsi `scsi_load_test` @cc, and it is a unify with an atom,
 not a slot access. So no held code reads or writes an invented slot.
 
+**Rows that are called real were checked alone** (MEASURED 2026-11-25:
+each method on a fresh machine). With recipes, `pimos_file goal/1` and
+`invoke/1`, `pimos_window_process initiate/1` and `pimos_window
+set_output_stream/2` succeed alone, and `pimos_file initiate/1` fails
+alone. Plain, `remote_stream create_to_fep/3` succeeds alone. Only the
+two `resign_core/1` rows are order effects.
+
+**The 20 unbound-argument rows by class.** The 12 editor rows are the
+11 named in the `pmacs_window` section plus `deactivate/3`, which that
+list missed. The 8 `attention/1` rows are one per class: `pimos_timer`,
+`pimos_file`, `pimos_directory`, `pimos_window_process`,
+`pimos_remote_login_replier`, `pimos_remote_login_server`,
+`simpos_user_device` and `pimos_standard_io_window`. The milestone
+sections' partial counts are superseded by these. Only `get_title/3`
+was traced to the request Id. That the other rows at
+`set_string_element` stop on the same unbound request is INFERENCE,
+from the shared reply path.
+
 Test (`test_espc.py` `test_step3f_census_recipes`): the executor's
 `accept` is now pinned as the string `'pimos_scsi_fep_control'`, and
-`time` as 10.
+`time` as 10. Both are template constants (`time` is still a slot
+constant). Made by `make_instance` instead, both are 0 (MEASURED), so
+both assertions fail under the step 3f "executor made by
+`make_instance`" injection.
 
 ## Open
 
@@ -2037,7 +2058,26 @@ Test (`test_espc.py` `test_step3f_census_recipes`): the executor's
     sancho2, tour). The layout seen at pimscsi `scsi_device`
     `command_code/2` @361 is: c6; two integer words; a `cc` table of
     atoms ended by `fe`; a `ce` table of selectors ended by `fe`; then
-    the clauses. The jump bases are not yet read.
+    the clauses. A bounded read of that predicate (2026-11-25, listing
+    only; pimscsi's source is not held, so it is no witness, and no row
+    is added) found:
+    - Each atom entry `cc 00 00 k` at cell c lands on the clause that
+      unifies that atom at c + 2 + k: `download` @364 k=28 lands at
+      @38e, and `diagnose` @366 k=2a lands at @392.
+    - The selector entries do not fit that rule. `sense/2` @36b k=0c and
+      `read_trace/2` @36f k=16 land on their clauses (`pmi 32`, then
+      `atom get r76, sense` / `read_trace`, @37a and @388) at c + 3 + k.
+      `trace/2` @36d k=02 lands at @372, a block of e1-e5/ff cells. So
+      the base differs by one cell, or the `02` byte matters. UNSETTLED.
+    - The first integer (5) at @362 brings @364 + 5 = @369, the `ce`
+      cell. That fits a table offset from the first `cc`, but it is one
+      instance.
+    - 0x150031 at @363: @364 + 0x31 = @395, the predicate's final `fe`;
+      @364 + 0x15 = @379, an `e4` cell just before the `sense` clause.
+      Perhaps fail and otherwise targets, but this is a guess and is not
+      used.
+    The next step is the same read on a c6 predicate whose source is held
+    (paragraph, kappa, fts, qxt, sancho2, tour), which is still not done.
   - blt 0d (10): witnessed as `object/3`, but not added. kappa2
     `user_if/pb/som.esp:191-194` has `Sheet = Obj!current_sheet,
     object(Sheet,_,_)`, which compiles to `0d 00 01 02` with Sheet in
@@ -2060,8 +2100,9 @@ Test (`test_espc.py` `test_step3f_census_recipes`): the executor's
     - `pimos_window`'s `get_interpreter/2` and the `has_been_reshaped/1`
       callback (`pmacs_window`, not stood in).
     - The census's unbound request arguments: device replies refuse at
-      `set_string_element` on the unbound request Id (25 rows plain, 45
-      with recipes; see the recomputed accounting). Given an Id, the
+      `set_string_element` on an unbound argument (25 rows plain, 45
+      with recipes). The request Id is the argument in the one row
+      traced, `get_title/3` (see the recomputed accounting). Given an Id, the
       traced `get_title/3` goes on to blt 48 (`multiply_constant`) with
       R != A, which is unwitnessed.
     - `process:invocation_stack/2`, not stood in: it stops the tcpip
