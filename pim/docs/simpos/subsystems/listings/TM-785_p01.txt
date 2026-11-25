@@ -1,0 +1,4 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p01 ====
+Cover: ICOT Technical Memorandum TM-0785, 「PSI図形ツールのインストール方法」, 東 吉郎, August 1989.
+

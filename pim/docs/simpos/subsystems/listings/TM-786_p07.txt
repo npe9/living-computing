@@ -1,0 +1,14 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p7 (folio -4-) (2)修正 ====
+For modifying a saved SIM照 (>sys>simshow>Qbox>*.*).
+ ① select "修正"  ② a list of SIMPOS照会書 files is shown; select the file:
+   +SIMPOS照会書一覧+
+   |  ***ABORT***      |
+   | O/sim_error..1    |
+   | O/manu_error..1   |
+   | pmacs_quest..1    |
+   | window_error..1   |
+   | window_error..2   |
+   (file names shown as name..version; first item ***ABORT***)
+ ③ input screen appears; thereafter as 新規作成.
+

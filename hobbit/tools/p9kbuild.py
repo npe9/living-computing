@@ -100,6 +100,7 @@ import os
 import pathlib
 import re
 import shutil
+import struct
 import sys
 import time
 
@@ -287,12 +288,25 @@ def xd_r_1x_sed(data):
 #: sys/src/9/hobbit/mkfile OBJ, with ${TYPE}main = rammain and the three
 #: lists spliced in where the mkfile has them.
 OBJ_HEAD = ["trap", "alarm", "alloc", "chan", "clock", "dev", "fault",
-            "latin1", "taslock", "segment", "swap", "rammain", "mmu", "net",
+            "latin1", "taslock", "segment", "swap", "${TYPE}main", "mmu", "net",
             "page", "pgrp", "print", "proc", "qlock", "queue", "sysfile",
             "sysproc"]
 OBJ_TAIL = ["stream", "fcall", "fprt0", "fpihobbit", "fpi"]
 CONFLIST = ["cpu", "term", "termlocal", "bart", "rom"]
 CFLAGS = ["-w", "-Dram"]
+
+
+def ktype(a):
+    """$TYPE: --type, else the mkfile's `ram`, except `rom` for CONF=rom
+    (p9kgen.default_type: the 9rom rule links roml.$O and lib$TYPE.a, and
+    ${TYPE}main is rommain; docs/boot_rom.md)."""
+    t = getattr(a, "type", None)
+    return t or ("rom" if a.conf == "rom" else "ram")
+
+
+def cflags(t):
+    """hobbit/mkfile: CFLAGS=-w -D$TYPE."""
+    return ["-w", "-D" + t]
 
 
 def kgen_lists(kgen):
@@ -306,17 +320,19 @@ def kgen_lists(kgen):
     return out
 
 
-def kernel_objects(conf, lists=None):
-    """$OBJ; `lists` (kgen_lists) replaces the hand-written lists."""
+def kernel_objects(conf, lists=None, t="ram"):
+    """$OBJ for TYPE `t`; `lists` (kgen_lists) replaces the hand-written
+    lists."""
     def lst(kind):
         names = (lists[kind] if lists is not None else
                  read_list(LISTS / ("%s.%slist" % (conf, kind))))
         return [n[:-2] if n.endswith(".z") else n for n in names]
-    return OBJ_HEAD + lst("dev") + lst("misc") + lst("stream") + OBJ_TAIL
+    head = [o.replace("${TYPE}", t) for o in OBJ_HEAD]
+    return head + lst("dev") + lst("misc") + lst("stream") + OBJ_TAIL
 
 
-def kernel_command(name, hobbit_dir, port_dir):
-    """The rule portmkfile/mkfile apply to `name`.z."""
+def kernel_command(name, hobbit_dir, port_dir, CFLAGS=CFLAGS):
+    """The rule portmkfile/mkfile apply to `name`.z (CFLAGS -w -D$TYPE)."""
     pfiles = {p.stem for p in port_dir.glob("*.c")} - {"fcall"}
     local_c = (hobbit_dir / (name + ".c")).exists()
     if name in pfiles and local_c:
@@ -431,7 +447,12 @@ def target_kernel(a):
         a.init_h = a.init_h or str(kg / "init.h")
         lists = kgen_lists(kg)
         for kind in ("dev", "stream", "misc"):
-            hand = read_list(LISTS / ("%s.%slist" % (a.conf, kind)))
+            hf = LISTS / ("%s.%slist" % (a.conf, kind))
+            if not hf.exists():
+                log.note("%slist from %s (%d objects; no hand list for %s)"
+                         % (kind, kg, len(lists[kind]), a.conf))
+                continue
+            hand = read_list(hf)
             log.note("%slist from %s: %s the hand list (%d objects)"
                      % (kind, kg, "same as" if hand == lists[kind]
                         else "DIFFERENT from", len(lists[kind])))
@@ -446,14 +467,18 @@ def target_kernel(a):
         (hdir / "devtab.h").write_text(devtab_h(hdir, CONFLIST))
         log.note("devtab.h PROVISIONAL: mkdevh transcribed in Python, "
                  "sha256 %s" % sha(hdir / "devtab.h"))
-    objs = kernel_objects(a.conf, lists)
+    t = ktype(a)
+    tl = t + "l"                    # ${TYPE}l.s: raml.s or roml.s
+    log.note("TYPE=%s: CFLAGS %s, %smain, %s.s, lib%s.a"
+             % (t, " ".join(cflags(t)), t, tl, t))
+    objs = kernel_objects(a.conf, lists, t)
     only = set(a.only.split(",")) if a.only else None
     want = [o for o in objs if only is None or o in only]
-    if only and only - set(objs) - {"raml"}:
+    if only and only - set(objs) - {tl}:
         raise SystemExit("p9kbuild: not in $OBJ: %s"
-                         % ", ".join(sorted(only - set(objs) - {"raml"})))
+                         % ", ".join(sorted(only - set(objs) - {tl})))
 
-    if "rammain" in want:
+    if t + "main" in want:
         if a.init_h:
             shutil.copy(a.init_h, hdir / "init.h")
             log.note("init.h from %s" % a.init_h)
@@ -471,16 +496,16 @@ def target_kernel(a):
             body = xd_r_1x_sed((hdir / "init.out").read_bytes())
             (hdir / "init.h").write_text(
                 "uchar initcode[]={\n" + "\n".join(body) + "\n};\n")
-            provisional.add("rammain")
+            provisional.add(t + "main")
             log.note("init.h PROVISIONAL: xd|sed transcribed, sha256 %s"
                      % sha(hdir / "init.h"))
 
     specs = []
     for o in want:
-        tool, args = kernel_command(o, hdir, pdir)
+        tool, args = kernel_command(o, hdir, pdir, cflags(t))
         specs.append((o, cwd, tool, args))
-    if only is None or "raml" in only:
-        specs.append(("raml", cwd, "za", ["raml.s"]))
+    if only is None or tl in only:
+        specs.append((tl, cwd, "za", [tl + ".s"]))
     t0 = time.time()
     print("p9kbuild: %d steps, %d processes" % (len(specs), a.jobs))
     res = run_many(root, a.jobs, specs, a.max_steps)
@@ -503,13 +528,14 @@ def target_kernel(a):
         print("p9kbuild: FAILED: " + " ".join(failed))
         return 1
     if only is None and not a.no_library:
-        lib = make_library(root, cwd, "libram.a", [o + ".z" for o in objs],
+        libname = "lib%s.a" % t
+        lib = make_library(root, cwd, libname, [o + ".z" for o in objs],
                            log, a.max_steps)
-        log.note("libram.a %d bytes sha256 %s"
-                 % (lib.stat().st_size, sha(lib)))
-        print("p9kbuild: libram.a %d bytes sha256 %s"
-              % (lib.stat().st_size, sha(lib)))
-        shutil.copy2(lib, build / "libram.a")
+        log.note("%s %d bytes sha256 %s"
+                 % (libname, lib.stat().st_size, sha(lib)))
+        print("p9kbuild: %s %d bytes sha256 %s"
+              % (libname, lib.stat().st_size, sha(lib)))
+        shutil.copy2(lib, build / libname)
     return 0
 
 
@@ -525,6 +551,16 @@ LIBRAM_SHA256 = ("f709cea932f1a3694a08a93f4eb013c4"
 #: sys/src/9/hobbit/mkfile, rule `9term 9bart 9termlocal`.
 LINK_FLAGS = ["-l", "-R4", "-H1", "-T0x80004000", "-E0x80004000"]
 LINK_LIBS = ["-lgnot", "-lg", "-lc"]
+#: sys/src/9/hobbit/mkfile, rule `9rom` (and `9cpu`'s libraries).
+ROM_LINK_FLAGS = ["-l", "-H1", "-T0xC0000000", "-D0xC0604000", "-E0x0"]
+ROM_LINK_LIBS = ["-lc"]
+ROM_DATA, ROM_ENTRY = 0xC0604000, 0x0
+#: The sha256 of `9rom` as `link --conf rom` made it once (2026-11-24,
+#: docs/boot_rom.md) from p9kgen --conf rom's inputs and librom.a
+#: 4a19874b...; tools/p9kbuild/9rom is that image.  `link --conf rom
+#: --check` fails on any other.
+NINEROM_SHA256 = ("b83c5f86d7fedac49faca067cef8c458"
+                  "654fdf897f02bbc781fe33912744ae85")
 #: The sha256 of `9term` as the recorded command makes it from the
 #: generated inputs of tools/p9kgen.py and libram.a f709cea9...
 #: (docs/plan9_boot_plan.md A3).  `link --check` fails on any other.
@@ -564,11 +600,18 @@ def target_link(a):
     kg = pathlib.Path(a.kgen)
     build = pathlib.Path(a.build)
     build.mkdir(parents=True, exist_ok=True)
-    libram = pathlib.Path(a.libram or build / "libram.a")
+    conf = a.conf
+    t = ktype(a)
+    tl, libname = t + "l", "lib%s.a" % t
+    CFLAGS = cflags(t)
+    if conf == "rom":
+        flags, libs = ROM_LINK_FLAGS, ROM_LINK_LIBS
+    else:
+        flags, libs = LINK_FLAGS, LINK_LIBS
+    libram = pathlib.Path(a.libram or build / libname)
     if not libram.exists():
         raise SystemExit("p9kbuild: no %s (run the kernel target first, or "
                          "give --libram)" % libram)
-    conf = a.conf
     target = "9" + conf
     root = stage(build, "link-" + conf)
     cwd = "sys/src/9/hobbit"
@@ -581,14 +624,15 @@ def target_link(a):
     for name in (conf + ".c", "boot%s.root.c" % conf, "devtab.h", "init.h"):
         shutil.copy(kg / name, hdir / name)
         log.note("input %s from %s sha256 %s" % (name, kg, sha(hdir / name)))
-    shutil.copy(libram, hdir / "libram.a")
-    log.note("input libram.a from %s sha256 %s"
-             % (libram, sha(hdir / "libram.a")))
-    for lib in ("libgnot.a", "libg.a", "libc.a"):
+    shutil.copy(libram, hdir / libname)
+    log.note("input %s from %s sha256 %s"
+             % (libname, libram, sha(hdir / libname)))
+    log.note("TYPE=%s; link flags %s" % (t, " ".join(flags + libs)))
+    for lib in ("libgnot.a", "libg.a", "libc.a", "libmach.a"):
         log.note("input /hobbit/lib/%s (vendored) sha256 %s"
                  % (lib, sha(root / "hobbit/lib" / lib)))
     log.note("KERNDATE %d from %s/kerndate" % (kerndate, kg))
-    specs = [("raml", cwd, "za", ["raml.s"]),
+    specs = [(tl, cwd, "za", [tl + ".s"]),
              (conf, cwd, "zc", CFLAGS + ["-DKERNDATE=%d" % kerndate,
                                          conf + ".c"]),
              ("boot%s.root" % conf, cwd, "zc",
@@ -600,16 +644,16 @@ def target_link(a):
         if not ok(res[key]) or not (hdir / (key + ".z")).exists():
             raise SystemExit("p9kbuild: %s failed: %s"
                              % (key, res[key]["status"]))
-    for key in ("raml", conf, "boot%s.root" % conf):
+    for key in (tl, conf, "boot%s.root" % conf):
         theirs = kg / (key + ".z")
         if theirs.exists():
             log.note("%s.z %s the one in %s" % (
                 key, "same as" if theirs.read_bytes() ==
                 (hdir / (key + ".z")).read_bytes() else "DIFFERENT from",
                 kg))
-    args = (["-o", target] + LINK_FLAGS +
-            ["raml.z", conf + ".z", "boot%s.root.z" % conf, "libram.a"] +
-            LINK_LIBS)
+    args = (["-o", target] + flags +
+            [tl + ".z", conf + ".z", "boot%s.root.z" % conf, libname] +
+            libs)
     r = run_tool(root, cwd, "zl", args, a.link_steps)
     report("zl", r)
     out = hdir / target
@@ -636,12 +680,37 @@ def target_link(a):
         print("p9kbuild: FAILED: size printed %r, the header says %r"
               % (r["console"], want))
         return 1
-    problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k))
-    log.note("p9exec.check_kernel: %s" % ("; ".join(problems) or "passes"))
-    status = p9kcmp.compare(p9kcmp.Image(out), p9kcmp.Image(p9kcmp.S9TERM))
-    log.note("p9kcmp against s9term: exit %d" % status)
+    if conf == "rom":
+        problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k),
+                                       ROM_DATA, ROM_ENTRY)
+        log.note("p9exec.check_kernel (-D 0x%x -E 0x%x): %s" % (
+            ROM_DATA, ROM_ENTRY, "; ".join(problems) or "passes"))
+        status = 0
+        com = mkrom(out.read_bytes())
+        (build / (target + ".com")).write_bytes(com)
+        msg = ("%s.com (mkrom.c transcribed) %d bytes sha256 %s"
+               % (target, len(com), hashlib.sha256(com).hexdigest()))
+        log.note(msg)
+        print("p9kbuild: " + msg)
+        for line in rom_fit(k):
+            log.note(line)
+            print("p9kbuild: " + line)
+    else:
+        problems = p9exec.check_kernel(k, p9exec.kernel_symbols(k))
+        log.note("p9exec.check_kernel: %s"
+                 % ("; ".join(problems) or "passes"))
+        status = p9kcmp.compare(p9kcmp.Image(out),
+                                p9kcmp.Image(p9kcmp.S9TERM))
+        log.note("p9kcmp against s9term: exit %d" % status)
     if problems or status:
+        print("p9kbuild: FAILED: " + "; ".join(problems))
         return 1
+    if a.check and conf == "rom":
+        if digest != NINEROM_SHA256:
+            print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
+                  % (target, digest, NINEROM_SHA256))
+            return 1
+        print("p9kbuild: %s is the recorded image" % target)
     if a.check and conf == "term":
         if digest != NINETERM_SHA256:
             print("p9kbuild: FAILED: %s sha256 %s, recorded %s"
@@ -649,6 +718,54 @@ def target_link(a):
             return 1
         print("p9kbuild: %s is the recorded image" % target)
     return 0
+
+
+# --------------------------------------------------------------------
+# The EPROM image: mkrom.c
+# --------------------------------------------------------------------
+
+#: libmach executable.c: a `-H1` file (magic 0x161<<16) is a "hobbit plan
+#: 9 boot image", type FHOBBITB, cracked by hobbitboot(): txtoff =
+#: sizeof(struct mipsexec)+4 = 80, txtsz = the header's text, datoff =
+#: txtoff + txtsz.  mkrom.c's `case FHOBBIT` (txtoff = 32, txtsz -= 32)
+#: is for a z.out (Z_MAGIC) and does not apply.
+MKROM_TXTOFF = 80
+
+
+def mkrom(blob):
+    """sys/src/9/hobbit/mkrom.c on a -H1 image, transcribed: segment()
+    copies each whole 4-byte group b0 b1 b2 b3 of the text, then of the
+    data, as b2 b3 b0 b1 (a trailing partial group is dropped, with
+    mkrom's "bytes left" warning), then (txtsz+datsz)%4 zero bytes are
+    appended -- mkrom.c:93, which pads by the remainder, not up to a
+    multiple of 4."""
+    w = struct.unpack_from(">20I", blob)
+    if w[0] != 0x161 << 16:
+        raise SystemExit("mkrom: not a -H1 image")
+    txtsz, datsz = w[6], w[7]
+    out = bytearray()
+    for off, n in ((MKROM_TXTOFF, txtsz), (MKROM_TXTOFF + txtsz, datsz)):
+        seg = blob[off:off + n]
+        for i in range(0, len(seg) - 3, 4):
+            b0, b1, b2, b3 = seg[i:i + 4]
+            out += bytes((b2, b3, b0, b1))
+    out += bytes((txtsz + datsz) % 4)
+    return bytes(out)
+
+
+#: roml.s:46: the ROM's segment-table entry, NPSTE(PROMBASE, 64, STE_V):
+#: 64 pages of 4 KB at KZERO = VROMBASE.
+ROM_STE_BYTES = 64 * 4096
+
+
+def rom_fit(k):
+    """Does the ROM's text plus its data image (roml.s copies etext..
+    to KDATABASE+0x4000) fit the 64-page ROM segment?"""
+    need = k["text"] + k["data"]
+    return ["9rom text %d + data %d = %d bytes; the ROM STE maps %d "
+            "(roml.s:46): %s" % (k["text"], k["data"], need, ROM_STE_BYTES,
+                                 "fits" if need <= ROM_STE_BYTES
+                                 else "DOES NOT FIT")]
 
 
 #: tools/p9kbuild/fpi.rom: the fpi target's product, as tools/p9boot.py
@@ -667,7 +784,8 @@ def target_fpi(a):
     log.note("p9kbuild fpi; columns: step, command, status, instructions, "
              "syscalls, seconds, size, sha256, note, console")
     names = ["fprt0", "fpihobbit", "fpi"]
-    specs = [(n, cwd) + kernel_command(n, hdir, pdir) for n in names]
+    specs = [(n, cwd) + kernel_command(n, hdir, pdir, cflags("ram"))
+             for n in names]
     res = run_many(root, a.jobs, specs, a.max_steps)
     for n in names:
         log.line(n, res[n], hdir / (n + ".z"))
@@ -919,7 +1037,7 @@ def target_all(a):
     stages = []
     t0 = time.time()
     with open(kg / "p9kgen.log", "w") as klog:
-        products, rc = p9kgen.generate(kg, a.conf, True, klog)
+        products, rc = p9kgen.generate(kg, a.conf, True, klog, ktype(a))
         report = p9kgen.check(products, a.conf)
         for what, good in report:
             klog.write("%s: %s\n" % ("same" if good else "DIFFERENT", what))
@@ -936,7 +1054,7 @@ def target_all(a):
     a.kgen = str(kg)
     for name, fn in (("kernel", target_kernel), ("link", target_link)):
         if name == "link":
-            a.libram = str(build / "libram.a")
+            a.libram = str(build / ("lib%s.a" % ktype(a)))
             a.check = True
         t0 = time.time()
         n0 = len(LOGS)
@@ -948,10 +1066,10 @@ def target_all(a):
         if status:
             note("FAILED: %s exited %d" % (name, status))
             return status
-    lib = build / "libram.a"
+    lib = build / ("lib%s.a" % ktype(a))
     img = build / ("9" + a.conf)
-    note("libram.a %d bytes sha256 %s (%s LIBRAM_SHA256)"
-         % (lib.stat().st_size, sha(lib),
+    note("%s %d bytes sha256 %s (%s LIBRAM_SHA256)"
+         % (lib.name, lib.stat().st_size, sha(lib),
             "=" if sha(lib) == LIBRAM_SHA256 else "DIFFERENT from"))
     note("%s %d bytes sha256 %s%s" % (
         img.name, img.stat().st_size, sha(img),
@@ -971,6 +1089,9 @@ def main(argv):
                     help="build directory (each target's staged tree is "
                     "BUILD/<target>/root)")
     ap.add_argument("--conf", default="term")
+    ap.add_argument("--type", help="$TYPE: CFLAGS -D$TYPE, ${TYPE}main, "
+                    "${TYPE}l.s, lib$TYPE.a (default ram; rom for --conf "
+                    "rom)")
     ap.add_argument("--only", help="comma-separated subset (object stems)")
     ap.add_argument("-j", "--jobs", type=int, default=8)
     ap.add_argument("--max-steps", type=int, default=MAX_STEPS)

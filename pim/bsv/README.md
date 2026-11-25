@@ -123,7 +123,12 @@ whole real object files, one and three modules, from the magic number
 to the atom table; `set_atom`, `calculate_priority_from_minimum`,
 `enqueue_goal_with_priority` with the priority dropped) and `pool` (the built-in merger, under
 `ipl_pool:keyed_set/2`, against a dictionary; the merger is a waiting
-goal here, `PimmNBox.bsv`, not the machine's merger cell) and `load` (`ipl_loader:load_file/9`
+goal here, `PimmNBox.bsv`, not the machine's merger cell) and `merge`
+(the same pool's merger with two and three inputs bound in one step:
+they reach the pool in the order they were bound, as VPIM, KLIC and
+PDSS pass them on at the unification; a woken `merge_in` goes on the
+goal box's merger's list, `PimmGBox.bsv`, taken before the ready
+queue, 2026-11-24) and `load` (`ipl_loader:load_file/9`
 loads a real object file with the IPL's own buffer reader, checksum
 and atom-number pool; a file with its checksum altered is refused;
 `string_operation`, `change_element_size`, 32-bit strings) and `mrb`
@@ -227,15 +232,18 @@ a command not ready at a poll; the copy's pad bytes from old memory
 fail none (every string has zero pad).
 
 `run_pimm_longrun.sh` is the long run, outside the suite (about two
-hours; run whole on both models 2026-11-23: 447,739,516 trace lines
-identical): the IPL's `load/4` on the whole held `pimos.ipl`,
+hours; run whole on both models 2026-11-24, under the merger rule:
+448,194,526 trace lines identical, every check passing, 7,435 s to the
+compare on a shared machine; 447,739,516 on 2026-11-23, before the
+merger timing change, which moved the count): the IPL's `load/4` on the whole held `pimos.ipl`,
 twenty files, compared line by line with the reference model, the
 answer checked to be `normal` with the code of `pim:go/4`
 (`ref/pimm/longrun_ipl.py`).
-State: 152
-instructions (a recount, 2026-11-24: 152 handlers in `pimm.py`, all on
-both models; 149 without our three stubs; the earlier 128 and 130 were
-increments); goals as
+State: 168
+instructions (a recount, 2026-11-24: 168 handlers in `pimm.py`, all on
+both models; 165 without our three stubs; the earlier 128 and 130 were
+increments; the eleven since 157 are those met between the login and
+the shell's prompt, `ref/pimm/lockstep_login.py`); goals as
 records in memory on a ready queue; a goal that cannot choose a clause
 is written back, hooked on the variables it waits for, and woken when
 one is bound; a body built-in with an unbound input becomes a goal of
@@ -246,8 +254,9 @@ updates in place on it (`PimmVBox.bsv`); nothing is reclaimed and strings are al
 (`../docs/pimm_semantics.md` "The MRB"). The shoen: `create_shoen`, `start_shoen`, termination, `shoen_statistics` and `remove_shoen`
 (a goal knows its shoen, a shoen counts its goals and children and its reductions, and reports `started`,
 `terminated`, `statistics_started`, `statistics`, `return_resource` and its close),
-the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`;
-its resource and profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
+the exception message for a reduction failure and `raise`, `stop_shoen`, `abort_shoen`,
+`add_shoen_resource` and `allow_shoen_resource_report` (acknowledged, no resource counted);
+its profile built-ins and a unification failure inside a shoen stop the model, `resource_low` is never reported.
 Not modelled: garbage collection, priorities, built-in
 exceptions (they stop the model). The bench model and its benches are
 untouched and still run.
@@ -296,16 +305,33 @@ abort 70; statuses 1, 2, 5), and what `fep.py` has for PIMOS's start
 (INQUIRY 12h to unit 7, five bytes `03 00 07 00 00`; TEST UNIT READY to
 the absent units 0-5, Result `800h`, decided in `Fep.command` as in
 `fep.py`, so in the emulator and not the adapter; `append_open` 203,
-answered `[1]`), answering as `fep.py` does byte for byte, with its OURS
-choices. `fep.py` on master (2026-11-24) serves no `putb` (111) and no
-close of an appending device: both raise there, so both are refused
-here, and the emulator keeps no log yet (the card stays read-only; an
-in-memory log is to come with `fep.py`'s `putb`). Each file's header says what is OURS and what
-comes from `fep.py` and the PIMOS source.
+answered `[1]`), and (2026-11-24, `fep.py` with PIMOS's start reaching
+the shell's prompt, `../docs/fep_services.md` §6-§7) the timer
+(`create_timer` 310, `get_date_time` 304 from the clock the `setTime`
+input gives, its close), `fep_attributes` 240, the pimos: files from
+the card (`mkfepcard.py --held` puts the held object directory there; a
+name not on the card is 5: `autoload.tbl`, `me:`, the home), the login's
+string-I/O programs (601, 620 on the replier, the local and tcpip
+servers, `simpos_user_device`), the window calls (104, 127, 130, 132,
+141-143, 111, 112), close (60) of every kind, 112 on a read file, and
+the **held requests** (the login server's io(1), a window's getl 110):
+no reply when they arrive, so the core's RECEIVE stays outstanding
+(`FepNotReady`, the waiting list of `PimmScsiBox` polled, as `pimm.py`
+does with `fep.py`'s `None`), until the **event** (`idle`, the bench's
+question when the machine has run dry, `Fep.idle()`) takes the next
+entry of the card's script and answers the lowest device holding that
+kind; 70 on a held device answers it `[6]`. `fep.py`'s constants are on
+the card, not in hardware: the attributes message and the script
+(`mkfepcard.fep_tables`), so a scripted line `fep.py` gains is a new
+card. Answering as `fep.py` does byte for byte, with its OURS
+choices. `putb` (111), `getb` and close on a device that only appends
+still raise in `fep.py`, so they are refused here, and no log is kept
+(the card stays read-only). Each file's header says what is OURS and
+what comes from `fep.py` and the PIMOS source.
 
 | file | what it is |
 |---|---|
-| `PimmFepEmu.bsv` | `mkPimmFepEmu`: the FEP. `Server#(FepCmd, FepAnswer)` (unit, LUN, CDB, direction, length; answer done / not ready / refused), `sendData` / `recvData` byte streams, `configure` (`fep.py`'s test options), `maxBuffer` (16000, for `scsi_init`), and an `SdBlockClient` for the card |
+| `PimmFepEmu.bsv` | `mkPimmFepEmu`: the FEP. `Server#(FepCmd, FepAnswer)` (unit, LUN, CDB, direction, length; answer done / not ready / refused), `sendData` / `recvData` byte streams, `configure` (`fep.py`'s test options), `idle` (the event; answered on `cmd.response`), `setTime` (the FEP's clock), `maxBuffer` (16000, for `scsi_init`), and an `SdBlockClient` for the card |
 | `PimmSdTypes.bsv` | the block interface: 512-byte block reads, an `err` byte on failure, no write |
 | `PimmSdBlock.bsv` | `mkPimmSdBlock`: the microSD slot in SPI mode (our own design; read-only by construction; no tristate) |
 | `PimmSdBlockFile.bsv`, `.c` | the card as a host image file through BDPI (Bluesim only, opened `rb`) |
@@ -318,25 +344,46 @@ comes from `fep.py` and the PIMOS source.
 | `PimmFepUlx3sTb.bsv` | the self-test in Bluesim over the SPI reader and card model |
 | `run_fepemu_fpga.sh` | the self-test in Bluesim, then yosys / nextpnr-ecp5 / ecppack |
 | `../tools/mkfepcard.py` | builds a card image (format in its header), `--list` reads one |
-| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py`, two direct sequences of OURS (`direct`: what the IPL never does; `direct_kernel`: the answers for PIMOS's start and their edges), and `kernel`, recorded from PIMOS's start (`--kernel PKL`, a machine `longrun_ipl.py --reference --save` wrote) |
+| `../ref/pimm/record_fep.py`, `../ref/pimm/fep_tapes/` | records the commands `ref_scsi.py`'s parts give `fep.py`, two direct sequences of OURS (`direct`: what the IPL never does; `direct_kernel`: the answers for PIMOS's start and their edges), and `kernel`, recorded from PIMOS's start to PIMOS END after a typed shutdown (`--kernel PKL --type shutdown --type yes`, a machine `longrun_ipl.py --reference --save` wrote); a tape also holds the clock (`ticks N`) and the events (`idle`) |
 
 **Verification.** `run_fepemu.sh`: each tape (one file, two files,
 characters, late, odd, small buffer: every call `ref_scsi.py`'s machine
 run made of `Fep.command`, retries and unanswered RECEIVEs included;
 `direct`: a failed open, abort, a request in two packets, a reply cut
 three times, two devices, each `FepError`; `direct_kernel`: INQUIRY,
-the absent units, `append_open` and every `FepError` next to them;
-`kernel`: every call PIMOS's start made of `Fep.command`) is replayed into a fresh
+the absent units, `append_open`, then everything from 240 to the
+shell's prompt with its edges (cut replies, the clock at midnight and at
+the top of 48 bits, unjis's readings of a name, overlapping device
+sets, holds, events under a script of two logins and two lines), and
+every `FepError` next to them; `kernel`: every call PIMOS's start made
+of `Fep.command` and `Fep.idle` to PIMOS END after a typed
+`shutdown` and `yes`, 8,766,339 instructions, recorded under the merger
+rule; 8,586,110 to the prompt before it) is replayed into a fresh
 `fep.Fep` for the expected answers and into the emulator, over a card
 with decoy entries (a prefix and an extension of each real name, ahead of
 it), on three benches (the image file; the SPI reader with a
-block-addressed card; with a byte-addressed card). 9 tapes, 293 commands
-(2026-11-24; 7 and 230 before the kernel's two),
-all answers equal on all three. Injected faults and what each was
-observed to fail: the header of `PimmFepEmuTb.bsv`.
+block-addressed card; with a byte-addressed card). 9 tapes, 827
+commands and 18 events (2026-11-24, to PIMOS END: the standard I/O
+window, the append-opened file's close, terminate; 714 commands and 12
+events to the shell's prompt before; 293
+commands before), all answers equal on all three. Injected faults and
+what each was observed to fail: the header of `PimmFepEmuTb.bsv`.
 
 **Synthesis** (`run_fepemu_fpga.sh`, yosys 0.51, nextpnr-ecp5 --85k,
-2026-11-24, with INQUIRY, the absent units and `append_open`): 10,499
+2026-11-24, to the shell's prompt: the timer and its clock, 240,
+string-I/O, windows, holds and the event; re-run 2026-11-24 after the
+standard I/O window, the append-opened file's close and terminate were
+added: 14,816 LUT4 (11,440 logic, 3,166 carry, 140 RAM), 4,259
+TRELLIS_FF, 3 DP16KD, 19 I/O, **35.03 MHz** (PASS at 25 MHz); before
+them): 14,799 LUT4 (11,423 logic,
+3,166 carry, 140 RAM), 4,243 TRELLIS_FF, 3 DP16KD, 19 I/O; **36.69
+MHz** (PASS at 25 MHz). +4,300 LUT4 and +1,078 FF over the line below
+(not broken down: the eight device slots, four hold slots, the 32-byte
+home buffer, the name comparator and the clock's divider are the
+likely shares); no BRAM added, the constants being on the card. The
+self-test now drives `setTime` from a 1/16-msec counter so the time
+path is built; nothing on the board top calls `idle` (the core's
+port, not yet connected, would). Before (with INQUIRY, the absent units and `append_open`): 10,499
 LUT4 (8,011 logic, 2,278 carry, 140 RAM), 3,165 TRELLIS_FF, 3 DP16KD,
 19 I/O; **42.50 MHz** (PASS at 25 MHz). Before them (2026-11-23):
 10,039 LUT4 (7,553 logic), 3,099 FF, 3 DP16KD, 40.39 MHz: +460 LUT4,

@@ -1,0 +1,15 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p12 (folio -7-) ====
+図2-6 描画属性ウインドウ: ① line width 1-4, ② line type, ③ logical operation, ④ fill-border on/off,
+⑤ next-pattern arrows, ⑥ fill pattern.
+The figure window's figures fall into three kinds: ① line figures, ② filled figures, ③ characters.
+Line figures use line type (②) and width (①). Filled figures use the border flag (④) and pattern (⑥).
+Clicking ⑤ shows the next pattern candidates. The logical operation is ③: set, reset,
+xor(exclusive_or) and color (colour selection). color opens Fig. 2-7:
+       +--+---+---+---+---+---+
+       |■ | 0 | 2 | 4 |   |   |   ① current colour   ② registered colours   (カラー表示ウインドウ)
+       |  | 1 | 3 | 5 |   |   |
+       +--+---+---+---+---+---+
+       | →  ←  add  change  exit |   (カラーメニュー)
+       図2-7 カラー設定ウインドウ
+

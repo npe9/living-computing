@@ -18,6 +18,8 @@ port from the same `plan9-1e.tar.bz2`, run in `qemu-system-i386`.
 | 5a. auth server | **yes**: fs9 runs 1e's `auth/keyfs` and the auth services; a 9pc terminal logs in as `glenda` with her password, checked by `aux/check` (a wrong one is refused and `/boot` asks again) |
 | 5b. CPU-server kernel | **yes**: `9pccpu` (the release's `pc` config with `cpuserver = 1`, `boot cpu`) built *in the guest* by 1e's `mk`/`8c`/`8l`, booted in a third QEMU with its root from fs9 |
 | 5c. `cpu` | **yes**: `cpu -h cpu9` from the terminal; rexauth on fs9 says `user glenda to cpu9 ok`; on the remote side `/dev/sysname` is `cpu9` and the terminal's tree is on `/mnt/term` |
+| 5d. glenda's profile | **yes**: from the overlay; rc on the console by default, 8½ when `/usr/glenda/lib/8half` exists |
+| 5e. the Hobbit on the network | **yes**: s9term on the model, on the hub beside fs9 and cpu9 (`p9join.py --hub`), logs in as glenda (a wrong password refused) and runs `cpu -h cpu9` (`docs/p9boot.md` "On the 1e network"); in a separate two-machine run with fs9 alone, 8½ starts for glenda ("8½ as glenda") |
 
 Three bytes-level patches to the shipped kernels were needed for QEMU's
 devices, each found with a QEMU trace (below).  Every path and length
@@ -436,8 +438,10 @@ Ethernet address in the `hobbit` entry still to fix.
 
 Three machines, joined by `tools/qemu1e/hub.py` (a dgram netdev joins
 only two ends; the hub repeats each frame on every other port, as a
-coax segment would).  Names, addresses and passwords are in
-`tools/qemu1e/net1e.py` and `ndb.local`:
+coax segment would).  Ports off this host (`HUB:HOST:PEER`, and
+`HUB:learn` for a peer whose address is not known in advance, such as
+the ULX3S's ESP32 relay) are in `docs/ulx3s_ethernet.md` §5.  Names,
+addresses and passwords are in `tools/qemu1e/net1e.py` and `ndb.local`:
 
 | machine | ip, ether | kernel, root | roles |
 |---|---|---|---|
@@ -509,7 +513,8 @@ garbage.  On the CPU server the same lack makes `boot/key.c` print
 `fs.img` (written) and runs `/authinit` (`authinit.rc`), as 1e's
 administrator would: `disk/kfscmd 'newuser glenda'` (kfs `con.c`
 `cmd_newuser`: `/adm/users`, `/usr/glenda/{tmp,lib,bin}`, which
-`/lib/namespace` needs), an empty `lib/profile`, `auth/adduser glenda`
+`/lib/namespace` needs), her `lib/profile` copied from the overlay
+(5d; until 2026-11-24 an empty one), `auth/adduser glenda`
 and `auth/adduser -h cpu9`, typing the passwords at `readln.c`'s
 `Password:`/`Confirm password:`.  Observed: `user glenda installed for
 Plan 9`, `/mnt/keys/cpu9/ishost`, and at the next `/serve` `2 keys
@@ -700,6 +705,70 @@ terminal's tree is on `/mnt/term`, served back by the terminal's
 `exportfs` (`cpu.c`).  Hub frames, fs9/term/cpu9 ports: 2023, 784,
 1058.
 
+### 5d. glenda's profile
+
+The release has no `glenda` (only `/usr/tor`); `authinit.rc` makes her
+with `kfscmd newuser`, which creates `/usr/glenda/{tmp,lib,bin}` and
+`bin/{rc,mips,386,68020,sparc}` (kfs `con.c` `cmd_newuser`) but no
+profile.  Her profile is `tools/qemu1e/overlay/sys/lib/qemu1e/glenda/
+profile`, unpacked with the release (so the kfs has
+`/sys/lib/qemu1e/glenda/profile`) and copied to `/usr/glenda/lib/profile`
+by `authinit.rc` after `newuser` (an overlay `/usr/glenda` made before
+`newuser` would change what it creates and who owns it).
+
+It is gated: it does nothing, so a log-in ends at rc on the console as
+the tests expect (`net_test.py`, `il_term_test.py`, `p9join.py --hub`
+all wait for `% `), unless `/usr/glenda/lib/8half` exists; then, for
+`service=terminal`, it does what `/usr/tor/lib/profile` does: binds
+`$home/tmp` on `/tmp` and `$home/bin/rc` after `/bin`, sets tor's font
+and prompt, and `exec 8½ -i 'window ''0 0 785 602'' rc' -s -f $font`
+(tor's `bin/rc/8½start` is that one `window` line; 8½ `main.c` runs
+`-i`'s string with `rc -c`, so no `8½start` file is needed).  tor's
+`bind -a $home/bin/$cputype /bin` is left out: `newuser` makes no
+`bin/hobbit`, and the first version printed `bind /usr/glenda/bin/hobbit
+/bin: file does not exist` on the Hobbit.  The profile ends with `echo
+-n`: its status is init's, and ending on the failed `if` made init print
+`init: rc exit status: rc 9:test 16:false` at every log-in.  The gate is
+a choice of this network, not 1e's: the file is made per run on fs9's
+`-snapshot` console (`p9join.py --fs9-cmd '> /n/kfs/usr/glenda/lib/
+8half'`), so the disk keeps the default.  8½ as glenda on the Hobbit:
+`docs/p9boot.md` "8½ as glenda".
+
+Verified 2026-11-24: `build.sh` from the tarball into an empty
+`build/qemu` (`overlay: /sys/lib/qemu1e/glenda/profile`, authinit PASS,
+the cpu kernel's sum OK), then `net_test.py` PASS on it (the terminal's
+log-in screen as before, no `rc exit status`); `P9PORT=10985
+probe-tcp.sh` PASS (`walk: server has 13447 paths, list 12878; missing
+0, length differs 0, extra 569`: three paths more than in 5a, the
+overlay's `/sys/lib/qemu1e`, `.../glenda` and `.../glenda/profile`);
+`il_term_test.py` PASS as `none` and as `TERMUSER=glenda` (`check: user
+glenda ok`).
+
+On an existing build, `overlay.sh` puts a changed profile at
+`/sys/lib/qemu1e/glenda/profile` but does not install it in her home:
+`authinit.py` runs once (a second run stops at `user glenda already
+exists`).  Copy it on the floppy system (`cp /n/kfs/sys/lib/qemu1e/
+glenda/profile /n/kfs/usr/glenda/lib/profile`, after `disk/kfs` and
+`kfscmd allow` as `overlay.script` does), or rebuild.
+
+### 5e. The Hobbit on the network
+
+`tools/p9join.py --hub` attaches the Hobbit model (s9term on
+`tools/p9boot.py`) to `hub.py` in the terminal's place, beside fs9 and
+cpu9; the commands, transcripts and the lockstep over two QEMUs are in
+`docs/p9boot.md` "On the 1e network".  In short (run `live4`,
+2026-11-24, on the fresh build above): a wrong password is refused
+(`check: bad user response`; `/boot` asks `user[glenda]` again), then
+glenda logs in (`check: user glenda ok`, no `password not checked!`),
+and at the Hobbit's rc, after `ip/ipconfig` (termrc's hobbit case starts
+no ARP answerer), `cpu -h cpu9` gives `cpu9% ` with `/dev/sysname`
+`cpu9`, `/dev/user` `glenda`, and `/mnt/term/hobbit` listing the
+Hobbit's `/hobbit`; fs9 logs two `rexauth: user glenda to cpu9 ok`.
+Hub frames received from fs9, the Hobbit, cpu9: 1889, 661, 1067; 2158
+frames not repeated to the Hobbit's port, which is filtered to its own
+address and broadcast (`hub.py` `filters`).  `tests/test_p9hub.py`
+replays the Hobbit's side without QEMU.
+
 ### Reproducing
 
 `build.sh` now ends with the two new steps, `authinit.py` and
@@ -728,10 +797,12 @@ Everything runs `-snapshot` except `build.sh`, `overlay.sh` and
 
 ### What is left
 
-* The Hobbit: s9term's `/boot` dials `il!$auth!17024` too, so with its
-  SONIC on the hub (`hub.py` takes any number of `HUB:PEER` ports) it
-  could log in as glenda and `cpu -h cpu9`; that join has not been run.
-  `p9join.py` still pairs the model with fs9 alone on 10901/10902.
+* The Hobbit's `ip/ipconfig` is typed at its rc before `cpu`: the
+  release's termrc has no `ip/ipconfig` in its `*hobbit*` case (5e).
+  Whether 1993's Hobbit terminals reached CPU servers over Datakit
+  instead (termrc binds `#t` only) is not known here.
+* `cpu` from the Hobbit inside 8½ (a window's rc) has not been run; the
+  8½ run as glenda stops at 8½start's window.
 * cpu9's listeners are typed, not in `cpurc`: the release's `cpurc` has
   no case for this machine, and the overlay adds files without
   replacing any.
@@ -759,4 +830,7 @@ Everything runs `-snapshot` except `build.sh`, `overlay.sh` and
 | `tools/qemu1e/authinit.rc`, `authinit.py` | the auth database and the user glenda (5a) |
 | `tools/qemu1e/overlay/rc/bin/service.9fs/il1702[0-4]` | the auth services, as the release's `service.auth` |
 | `tools/qemu1e/overlay/sys/src/9/pc/pccpu`, `mkcpu.rc`, `cpukernel.sh`, `cpukernel.script` | the CPU-server kernel, built in the guest (5b) |
-| `tools/qemu1e/hub.py`, `net1e.py`, `net_test.py` | a dgram hub; the network's names and passwords; the three-machine test (5c) |
+| `tools/qemu1e/hub.py`, `net1e.py`, `net_test.py` | a dgram hub (per-port destination filter, segment pcap); the network's names and passwords; the three-machine test (5c) |
+| `tools/qemu1e/overlay/sys/lib/qemu1e/glenda/profile` | glenda's profile, copied into her home by `authinit.rc`; 8½ when `lib/8half` exists (5d) |
+| `tools/p9join.py --hub` | the Hobbit model on the hub with fs9 and cpu9, lockstep over both QEMUs (5e; `docs/p9boot.md`) |
+| `tests/test_p9hub.py`, `tests/net/hub_cpu.pcap` | the Hobbit's log-in and `cpu`, replayed without QEMU (5e) |

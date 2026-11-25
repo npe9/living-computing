@@ -1,0 +1,85 @@
+% TM-125 "The Concepts and Facilities of SIMPOS Window System" (J. Tsuji (Mitsubishi), S. Uchida (ICOT), July 1985)
+% PDF pages 3, 5, 6, 7 (printed "Page 2", "Page 4", "Page 5", "Page 6"): chapter 2 Concepts, and Figure 4.
+% Read by eye at 130dpi (work/trtm_window/tm0125/p-0N.png); Figure 4 at 500dpi (h-07.png, f4r*.png, f4l.png, f4b.png).
+% Prose is PARAPHRASED (not verbatim) except short quoted phrases; lists and figure text are transcribed.
+% Section numbering as printed: "2.7 Menu Window" and "2.7 Choice Window" (the TOC on PDF p2 says 2.8 Choice Window).
+
+--- 2.1 Window System (PDF p3)
+ - PSI is multi-process but has ONE console; the window system supplies "logical terminals named window"
+   on bitmap display, keyboard and mouse.
+ - Window system controls window allocation and the data path from input devices to processes;
+   inter-process communication management is the coordinator's job (refs Tsuji 84 = TR-046, Kurokawa 84 = TR-061).
+ - Fig 1 (PDF p4): Coordinator + Processes / Window Subsystem / Bitmap Display, Mouse, Keyboard handlers,
+   Kana-Kanji Translation Module (already in tm0125_p04.txt).
+
+--- 2.3 Hierarchy of Window (PDF p5)
+ - Example motivation: an editor window with a text window and a command-input window as sub-windows.
+ - Tree: SCREEN at the top; ordinary windows are sub-windows of the screen; any window may have sub-windows.
+   Sub-windows are managed by their superior window (screen manages ordinary windows).
+
+--- 2.4 Input Management (PDF p5)
+ - Keyboard: not shared; its input goes to the one "SELECTED WINDOW", which the user determines.
+ - Mouse: associated with the mouse cursor, roams the whole screen, shared by displayed windows; mouse input
+   goes to "the shown window on which the mouse cursor is positioned".
+
+--- 2.5 Output Management (PDF p5-6)
+ - Statuses: exposed/deexposed and shown/unshown.
+   exposed  = a sub-window not hidden by another sub-window of the same superior; deexposed = hidden.
+              (status among siblings of the same superior)
+   shown    = the window is exposed AND all its ancestors are exposed -> fully shown on the screen.
+   unshown  = the window or any ancestor is deexposed.
+ - Output permission: four types; the user selects one per window:
+   1) WAIT    wait to output until the window becomes fully shown on the screen.
+   2) NOTIFY  display a message telling the user the window wants to output, through a special window
+              ("NOTIFY WINDOW", prepared by the system).
+   3) OUTPUT  do the output immediately; if unshown, output goes to the bitmap area that saves the window's
+              display image, and only the shown part appears on screen.
+   4) SHOW    show the window compulsorily and do the output.
+   Caveats printed: OUTPUT may leave output unseen; SHOW changes the selected window (keyboard input then goes
+   to the newly shown window). Authors recommend WAIT and NOTIFY normally.
+ - Kanji: PSI uses 16-bit character data; kanji handled the same as alphabetic characters by the window system.
+
+--- 2.6 Temporary Window (PDF p6-7)
+ - Appears at the position of the mouse cursor; disappears when the mouse cursor goes out of it.
+ - Features: 1) never hidden by an ordinary window; 2) when no longer needed it is taken off the screen, not
+   hidden; 3) it saves the display image of the area it covers.
+ - (4.2, PDF p11 = folio 10: as_popup_window: a popup window is a temporary window NOT removed when the mouse exits.)
+
+--- 2.7 Menu Window (PDF p7)
+ - Accepts only mouse input (pointing and click); no keyboard input, no output request. User moves the mouse
+   cursor onto an item and clicks; the prepared operation is done for that item.
+
+--- "2.7" [=2.8] Choice Window (PDF p7)
+ - For items with many alternatives or typed values. Shows item label and the alternatives or the current value.
+   Value items (SIZE, POSITION ...) are changed by selecting the item and typing; enumerated items (PERMISSION,
+   FONT ...) show the current element in reverse video and are changed by clicking.
+
+== Figure 4. Choice Window (PDF p7) -- screenshot, SIMPOS 1.0. Low-resolution halftone; «?» = illegible.
+   Background windows: "librarian_1" (label, top), "debugger_1" (top label) with ESP interaction
+   ":- :makew(#top|v1).  > Success !!", ":- :clear(#top«?»", ":- :angen(#an«?»  > Fail !!",
+   ":- :killw(#top«?»  > Fail !!", ":- :set(#top|v«?»" ... ; a second "debugger_1" label at the BOTTOM edge;
+   a window labelled "KOEBUG«?»" containing "[and,desu]", "[rollsan,desu]" «?», "['mr. Roll']" «?».
+   Choice window (no visible label), items and values:
+      SIZE(WIDTH)      1000
+      SIZE(HEIGHT)     500
+      POSITION(X)      200
+      POSITION(Y)      200
+      MOUSE_MARKER     1
+      LABEL            KOEBUG«?»
+      NAME             KOEBUG«?»
+      MARGIN(LEFT)     1
+      MARGIN(RIGHT)    1
+      MARGIN(HEAD)     1
+      MARGIN(TAIL)     1
+      BORDER           2
+      PERMISSION       out«?»  [wait]  show  notify        ([x] = reverse video = current; 'out' likely 'output' truncated)
+      FONT             [«?» font name, illegible]  ank_24  kanji_24
+      LABEL_FONT       [«?» font name, illegible]  ank_24  kanji_24
+      LABEL_POSITION   [top]  bottom
+      BACKGROUND       [white]  black
+                  do_it □    abort □
+   Status line (bottom, 2 rows, inverse video, mostly illegible): "screen" (boxed) ; "SIMPOS Version «?»" ;
+   "[«?»_choice_menu/4]" «?» ; date/time «?».
+   Reading: the choice window is the window manipulator's ATTRIBUTE function (TM-125 p8 item 8 "Change the
+   window's attribute by choice window") -- INFERENCE. Font names "ank_24", "kanji_24" (ANK = alphanumeric/kana
+   font, 24 dots) are legible.

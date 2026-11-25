@@ -1,0 +1,5 @@
+# ESP-IDF build products, and sdkconfig, which holds the WiFi password.
+build/
+sdkconfig
+sdkconfig.old
+managed_components/

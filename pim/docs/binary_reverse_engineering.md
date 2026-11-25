@@ -488,9 +488,196 @@ the device are given it again whenever the machine runs dry.
   | `FepError`: device 17, `create_timer` (310) | answered (below) | 61,795 |
   | `FepError`: device 17, `get_date_time` (304) | answered (below) | 64,017 |
   | `multiply_bignum_word` (`multiply_bignum_by_word`), `timer_calc:trans` | implemented, after VPIM (`lockstep_bignum.py`) | 65,471 |
-  | `subtract_bignum` | **the stop now** (below) | 65,482 |
+  | `subtract_bignum(32#{}, 32#{0})`, the `32#{0}` from the clock at 0 (`timeSdvc.kl1`) | the clock now advances with the instructions (`pimm.py` `INSTRUCTIONS_PER_TICK`, `lockstep_timer.py`), so the bignum is not `{0}`; `subtract_bignum` implemented, after VPIM (`lockstep_bignum.py`) | 65,482 |
+  | `FepError`: device 17, `close` (60), the timer device's end | answered (the table of FEP answers) | 66,016 |
+  | `get_constant` | implemented (`lockstep_alt.py`) | 72,642 |
+  | body `vector/3` (`b_vector`) | implemented (`lockstep_alt.py`) | 74,704 |
+  | `code_to_predicate` | implemented (`lockstep_alt.py`) | 74,724 |
+  | unification of two vectors of seven or more | the `unify_step` goal, the sizes compared in its steps (`lockstep_alt.py`) | 74,759 |
+  | `add_shoen_resource` | implemented, `resource_added` reported (`lockstep_shoen3.py`) | 75,014 |
+  | `FepError`: device 18, `fep_attributes` (240) | answered (`docs/fep_services.md` §6.3, §7.8; below) | 92,797 |
+  | `search_character`, reading `pimos.conf` | implemented (`lockstep_alt.py`) | 139,747 |
+  | `FepError`: device 20, `flush` (112) of a read file | answered `[1]` (`file_dvc.kl1`:314) | 6,675,822 |
+  | nothing left to run, no login: `pimos.conf` read as `with_console` then `end_of_file` | the kernel asks `getb` for `Size*2+1` bytes and a reply of an odd count is widened by a zero byte, so the data came one byte late; the stand-in now counts the kernel's `getb` in characters (`Fep(getb_unit=2)`, OURS, from this observation; the IPL works either way) | 7,754,386 |
+  | the login: PIMOS idles with the server's `io(1)` pending | the scripted login of §7.5 at the idle (`Fep.idle()`, `longrun_ipl.py` `go()`) | 8,067,269 (the event) |
+  | `enqueue_goal_external` of 12 arguments | the vector spread as `enqueue_goal`'s (`lockstep_load.py`'s instruction; the spread `lockstep_login.py`) | 8,144,967 |
+  | `unbound` | implemented, after VPIM (`lockstep_login.py`) | 8,145,997 |
+  | guard `extended_floating_point` | implemented, a type test (`lockstep_login.py`) | 8,146,451 |
+  | guard `module` | implemented (`lockstep_login.py`) | 8,147,246 |
+  | `apply` of a vector of 7 or more | implemented (`lockstep_login.py`) | 8,192,723 |
+  | `add_extended` (and the three others) | implemented, after VPIM (`lockstep_login.py`) | 8,194,757 |
+  | `allow_shoen_resource_report` | implemented, `resource_report_allowed` reported (`lockstep_shoen3.py`) | 8,194,822 |
+  | guard `bignum_not_less_than` (and `bignum_less_than`) | implemented, after VPIM (`lockstep_login.py`) | 8,247,127 |
+  | `create_shoen` with `{MinPrio, MaxPrio}`, `{MinNode, NumNode}` (`shoen:execute1/7`) | accepted and dropped as the integers are (`lockstep_shoen3.py`) | 8,256,632 |
+  | `enqueue_goal` of 17 arguments | the spread of a vector of 7 or more (`lockstep_login.py`) | 8,463,929 |
+  | **the shell's prompt**: `Shell>> ` written to the window (111), its `getl` (110) held | the end of rung R6's first half (`docs/fep_services.md` §7.6) | 8,587,092, 1,220 goals waiting (8,586,110 before the merger timing change of 2026-11-24) |
 
-  The stop now: `subtract_bignum(32#{}, 32#{0})` (`server/fep/timer/timeSdvc.kl1` `get_date_time/5` or `get_on_at_time/5`). The `32#{0}` is not zero-suppressed: `timer_calc:dbl_to_bignum(0, L)` makes `32#{L}`, and L, the system timer's low word, is 0 because the model's clock stands at 0 (OURS, `lockstep_timer.py`). VPIM (`klb_body_blt_bignum.psl.c` `kblt_b_subtract_bignum`) takes a leading zero word as the built-in's exception. A real clock past boot is not 0, so the way on is a decision about the clock (a clock that advances, or a fixed non-zero time), not about the built-in. `subtract_bignum` is not implemented.
+  The counts after the login are those of the run with `getb_unit=2`;
+  the two before it (139,747 and 6,675,822) are from runs before that
+  change.
+
+  The clock (2026-11-24, the session lead's decision): one tick of the system timer (1/16 msec, 48 bits, manual `e-builtin.tex`:1537-1549) every 423 instructions executed. The rate is 615 KLIPS on `append` (`M92` p. 425) at this image's 11 instructions per `append/3` reduction (`scsi_fep_module`); equal cost per instruction is OURS. `get_date_time` keeps the date 20-May-1993; its time of day follows the same clock, so midnight is the boot.
+
+  240 (device 18, a file device made by `fep_file_device:device_create/5`, `bios/fep_module/file_dvc.kl1`:43-52, `{DevID, 240, Node}`, `fep#fep_attributes`, `pimos.vmac`:87; the reply read by `fep_util:set_value/2` as `{DevID, Status, Code, OS, Host, FepVer, Dir, FileVer, Comment}`, the seven values kept by `server/fep/fep/fep_sv.kl1` `get_fep_attributes5`) is answered `[1, 0, "SIMPOS V7", "PSI", "V0.45", ">", ".", ""]` in JIS (`fep.py` `ATTRIBUTES`): the fifth value is the path delimiter, `">"` for SIMPOS (`docs/fep_services.md` §7.8, `fileRdvc.kl1`:124-126); OS must begin `"SIMPOS"` (§7.8, `file_dvcb.kl1`:557-562); `"V0.45"` is `pimfep.ptf`'s `pimos_scsi_front_end` version; `"V7"` and `"PSI"` are OURS (§6.3).
+
+  The FEP answers added for the login (`ref/pimm/fep.py`, 2026-11-24, following `docs/fep_services.md` §6 and §7.5; the commands the run gave are in `longrun_ipl.py`'s log):
+
+  | Command | Answer | Source |
+  |---|---|---|
+  | 201 `read_open` of `pimos:NAME` | the held `pimosobj.tar.Z` `object/NAME` (`longrun_ipl.py` `kernel_file`; held and read: `pimos.conf`, `pimos.logins`, `pimos.groups`), 5 when not there (`autoload.tbl`) | §7.2 |
+  | 201 of `me:NAME` or of the home `>sys>user>RN>NAME` | 5 (`me:pimos.init`, `shell.com`, `pimos.com`: INSTALL puts none there, so the prompt is the default) | §7.2, §7.8 |
+  | 210 `getb` of the kernel | the count read in characters (`getb_unit=2`): OURS, from the run (above) | the run |
+  | 112 `flush` of a read file | `[1]` | `file_dvc.kl1`:314 |
+  | 601 `create` of a string-I/O device `pimos_remote_login_replier`, `pimos_remote_login_server`, `simpos_user_device` | `[1]`; any other name refused | §6.4, §7.5 |
+  | 620 `io(0, ..)`, `io(2, ..)` on the replier | `[1, ""]` | §6.4, §7.5 |
+  | 620 `io(1, Text)` on the replier | `[1, "\0"]` (one character, 0: sent), the text written to the stand-in's log. §7.5 has `""`; §6.4's reading of `pimfep.ptf` is kept, and PIMOS reads neither | §6.4 |
+  | 620 `io(0, "local")` / `io(0, "tcpip")` on the server | `[1, ""]` / `[5]` (the tcpip service refused, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`) | §7.5 |
+  | 620 `io(1, ..)` on the local server | held; answered at the idle with `[1, NI]`, the login record: Node `"local"`, RN `"pmpsi"` (SOURCED, INSTALL's user), RP `""`, UN `"pimos"`, UP `""` (HELD FILE: `pimos.logins`, all six with empty passwords), ID 1 (OURS, §7.5; §6.5 has 0 for a first login) | §6.5, §7.5 |
+  | 620 `io(0, ..)` on `simpos_user_device` | `[1, ">sys>user>" ++ RN]` | §7.5, `login_p.kl1`:63 |
+  | 104 `create` of a window | `[1]` | §6.8, §7.5 |
+  | 127, 130, 132, 141, 142, 143, 111 `putb`, 112 `flush` on a window | `[1]`; a 111's text written to the log | §6.8, §7.5 |
+  | 110 `getl` on a window | held; answered at the idle by the next typed line, `[1, LINE]` in JIS with no newline (`Fep(lines=..)`, `longrun_ipl.py --type LINE`; the event list OURS, the reply's form `bios/fep_module/win_dvc.kl1`:307-312; whether the FEP sends a newline is not known, §7.5). Without `--type` the run ends there | §7.5 |
+  | 60 `close` of a string-I/O device or a window | `[1]` | §4, §7.5 |
+  | 70 on a held request | `[6]` (met at the shutdown: the local server's held `io(1)`; a 70 on anything else has no reply) | §6.7, §7.1 |
+  | 601 `create` of the string-I/O device `pimos_standard_io_window` (added 2026-11-24 for `shutdown`) | `[1]` | §6.4, `shutdown_b.kl1`:41-42 |
+  | 620 `io(104, ..)`, `io(130, ..)`, `io(141, ..)`, `io(111, Text)` on it (added 2026-11-24) | `[1, ""]`, OURS: the PSI's class is not held; the window device's own 104/130/141/111 answer `{Id, 1}` (§2.6) and a 620 reply carries a string (§6.4). A 111's text to the log | §2.6, §6.4 |
+  | 620 `io(110, "")` on it (added 2026-11-24) | held, as a window's 110; answered at the idle by the next typed line, `[1, LINE]` | §7.5 |
+  | 60 `close` of the file append-opened (`pimos:pimos.syslog`, at PIMOS's end; added 2026-11-24) | `[1]`, as a read file's close; the appended bytes stay in `Fep.appended`. The FEP emulator (`bsv/PimmFepEmu.bsv`) follows it, and the 601/620 rows above and the `{-1, 80}` row below, since 2026-11-24 (until then it refused this 60: `bsv/run_fepemu.sh`'s `direct_kernel` tape FAILed at its command 49, "emulator refused (why 7); fep.py done") | §2.2 |
+  | `{-1, 80}`, `fep#terminate`, when the link's stream closes at PIMOS's end (added 2026-11-24) | no reply (none is read); noted as `Fep.terminated` | §1, `scsi_fep.kl1`:234 |
+  | the typed line's characters (2026-11-24) | `"`, `(`, `)`, `=` added to `fep.py`'s JIS table, from PIMOS's own `server/telnet/code_cv.kl1`:154-182 (`table_ascii_to_jis`) | `code_cv.kl1` |
+
+  What the console shows: `PIMOS V 3.600 20-May-93`, `LOCAL  LOGIN SERVICE STARTS ***`, 0, `CANNOT MAKE A TCPIP LOGIN SERVICE!!`, 0; the replier's texts `Login procedure starts.`, `OK. Your initial program starts.`, `Good luck!` in the stand-in's log; the window `PIMOS CONSOLE` (127: at 200, 200, 47 by 14) and in it `Shell>> `, as §7.6 predicts.
+
+  **A command typed (2026-11-24, rung R6's second half: reached on the reference model, see the end of this item).**
+  `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`
+  (`shutdown` is the one command whose run the manual prints whole:
+  `e-sysman.tex`:121-144). The held 110 is answered `[1, "shutdown"]`;
+  the window device then sends a 70 with nothing held (no reply, §6.7);
+  the shell resolves `get_code pimos shutdown go 0` and the job runs
+  `shutdown:go`, `privilege:execute(shutdown_body:go, ..)`, a task by
+  `execute_super`, and `shutdown_body:go` asks
+  `getenv(task:make_window)`. Under the merger timing before
+  2026-11-24 the run then stopped: 8,673,642
+  instructions, nothing left to run, 1,388 goals waiting, the second
+  line never asked for. Nothing was refused. The cause is a wait
+  cycle (traced with probes outside the tree):
+  - the privilege task's `getenv` waits behind that task's
+    `internal_handler:env_check/5` (`kernel/task/int_hdl.kl1`:481,
+    493-499), which sent `get_info(Uid, _)` to the user table with Uid
+    UNBOUND: the task's Info is not yet built, because
+    `param_check3`'s `node_check` waits for the parent's
+    `task:io_node` (336-340);
+  - the parent (the job's task) holds its environment in its own
+    `env_check`, waiting for its `get_info(101, _)`;
+  - in the user table's `keyed_set` (`utility/pool/k_bag.kl1`:479)
+    the unbound-key request is AHEAD of the 101 one: the guard
+    `Key >= 0` suspends with the table, and the 101 request waits on
+    its output. The job's request was issued at about 8,656,499
+    instructions, the privilege task's at about 8,663,512: the table
+    took them in the other order.
+  The order is the model's merger: a merger input here is a goal
+  (`merge_in`), so a message reaches the output only when that goal
+  runs, and on the LIFO ready queue it runs after everything its
+  waker's reduction spawned (docs/pimm_semantics.md, the merger,
+  "after a goal switch, not at the unification": OURS). VPIM
+  (`f_reduce_merger_unify.psl.c`: the MGHOK cell, a vector's elements
+  connected in the same unification), KLIC (`runtime/gmerge.c`: the
+  merger object's unify method appends the message during the
+  unification) and PDSS (`emulator/unify.c` `active_unify_stream_*`)
+  agree: the merger acts AT the unification. Two probes, the tree not
+  edited: (a) the woken `merge_in` goals lifted to the top of the
+  ready queue at the end of each reduction, and (b) a merger vector's
+  elements readied first-element-first: either way the cycle does not
+  form, `shutdown_body` takes its third branch (`make_window` and
+  `top_task` both absent from the job's environment,
+  `shutdown_b.kl1`:39-53) and asks for a string-I/O device
+  `pimos_standard_io_window` (601), which `fep.py` refuses (FepError,
+  8,689,393 instructions with (a)). **Changed on both models
+  (2026-11-24)**: a woken `merge_in` goes on a merger's list taken
+  before the ready queue, in the order the goals were woken
+  (`pimm_semantics.md`, merge; `lockstep_merge.py`); every count after
+  the first merger moved (the lockstep pins, `ref_scsi.py`'s heap
+  cells; the wire is the same). The untyped run (a cache made afresh
+  under the new rule) now ends at 8,587,092 instructions, 1,220 goals
+  waiting, the same console and device log, but NOT the same FEP
+  conversation: 119 messages for 118 (old rule run from its own
+  cache, compared line by line): the timer's 304 answers another time
+  (it is counted from the instructions), a 70 on the timer device
+  (17) is new, the closes of devices 20, 21, 22 come in another order
+  and the `Shell>> ` write (111) comes earlier. A tape recorded from
+  the login before this change does not match it; with `--type shutdown
+  --type yes` the cycle does not form, `shutdown_body` takes its third
+  branch and the run stops at the 601 of `pimos_standard_io_window`
+  (FepError, 8,690,718 instructions).
+
+  **The shutdown runs to its end (2026-11-24, reference model).** With
+  the answers in the table above (601 of `pimos_standard_io_window`,
+  its 620s, the 60 on the syslog file, 80): `io(104, {324, 328, 40,
+  6})`, `io(130, "SHUTDOWN")`, `io(141)`, `io(111, "Really(yes/no)?")`,
+  `io(110)` answered "yes" by the second typed line; `wait_ans`
+  (`shutdown_b.kl1`:71-73) raises `shut_down`; the devices are closed
+  (the replier, the window, the string-I/O window, the server's held
+  `io(1)` aborted with 70 and answered 6, the syslog file), then `{-1,
+  80}`. Console: `Shutdown started`, `User Server End`, `Statistics in
+  PIMOS:`, 0, 790104, `PIMOS END********`; the run ends at 8,766,339
+  instructions, nothing left to run, 253 goals waiting.
+  `longrun_ipl.py --load FILE --go --fep --type shutdown --type yes`.
+
+  Why the third branch: the shell's `start_main` (`shell/main/
+  shell.kl1`:88-103) finds `task:make_window` unset and `task:top_task`
+  set (by `login_p:top`, `login_p.kl1`:94) and UNSETS `top_task`
+  before running; `make_window` is set only by the telnet login
+  (`tlogin.kl1`:93, `no`). So a command typed to a local login's shell
+  has neither, and `shutdown_body` takes the third branch, a window of
+  its own titled SHUTDOWN. The first branch (`make_window = no`,
+  "Shutdown procedure starts." then "Really(yes/no)? " on the job's
+  own I/O) is a telnet login's: READ from the code, not run. The
+  second (`top_task` set) is the login as the user `shutdown`, the
+  manual's footnote (held `pimos.logins`: program
+  `pimos::shutdown:go`): `login_p:top` sets `top_task` and applies the
+  program with no shell between. A probe outside the tree (`fep.py`'s
+  login record with UN `shutdown`, then the line `yes`) gave "Shutdown
+  procedure starts." and "Really(yes/no)? " on the `PIMOS CONSOLE`
+  window, then the same console lines to `PIMOS END********` (769,710
+  for the count): the second branch, run once, not in the suite.
+  The earlier reading here, that the manual's transcript is the first
+  branch's (a window made for the job), is WITHDRAWN: the branch with
+  a window of its own is the third, and the manual's "displayed in the
+  window" fits it as well as the others.
+
+  Against the manual (`e-sysman.tex`:121-144), line by line:
+  - "Reply yes to the shutdown confirmation message that is displayed
+    in the window": the third branch's window. The prompt printed is
+    `Really(yes/no) ?`; the source's third branch writes
+    `Really(yes/no)?` (no space before `?`; its parentheses are the
+    16-bit string's), the first branch `Really(yes/no)? ` (a space
+    after). Neither is the manual's exactly: a difference between the
+    manual and the held source, not met by the model.
+  - `Shutdown started`: the same (`kernel/init/init.kl1`:313).
+  - `login Server End`: ours `User Server End`, the held source's
+    (`server/login/init/usersvman.kl1`:195). The manual's string is
+    not in the held source at all (searched); that it is another
+    version's is INFERENCE.
+  - `Statistics in PIMOS:` then two integers: the same line
+    (`bios/boot/bios.kl1`:145-147); the values are the report's
+    `statistics(ResH, ResL)`, high and low words: the manual's 0 and
+    000954C2h (611,522), ours 0 and 790,104 (C0E58h), the model's own
+    count (not traced further).
+  - `PIMOS END********`: the same (`bios.kl1`:167).
+  - The prefix `PE00(00) @ DC> ` and the `(  INTo) 00 ` form of an
+    integer are the console's display, not in PIMOS's strings; this
+    model's console list has the bare strings and integers.
+
+  **A second command: a file read through `pimos:` (2026-11-24).**
+  `--type 'cat <= file("pimos:pimos.groups")'` (`cat`, `e-shutil.tex`:
+  152-154; `<=` the job's standard input, `e-shell.tex`:218-226): the
+  shell read-opens `pimos:pimos.groups` (201, device 34), one `getb`,
+  writes its two lines to the window (111) and closes the file (60);
+  `cat` stops at the file's empty last line, as the manual says, and
+  the shell writes `Shell>> ` again: 8,760,685 instructions, 1,224
+  goals waiting, the next `getl` held. The text written is the held
+  file's. No transcript of it is printed in the manual. Needed
+  `fep.py`'s JIS table to have `"`, `(`, `)`, `=` (row above).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made
@@ -514,12 +701,14 @@ the device are given it again whenever the machine runs dry.
   | 9 | 7, 0 | SEND, the packet of device 16: `append_open` (203, `macro/pimos/pimos/pimos.vmac`:69), `{16, 203, "", 0, 0, "pimos:pimos.syslog"}` in JIS, the kernel's syslog (`bios/boot/syslog.kl1` `wait_status1/3`, on every boot) | accepted, `[1]` (normal), OURS: the stand-in keeps what is appended in memory (`Fep.appended`), as a FEP holding the file would append to it. PIMOS also takes an abnormal answer, with "SYSLOG ERROR: reason / cannot open file pimos:pimos.syslog" on the console (`syslog.kl1`); the real FEP's answer is not held |
   | 10 | 7, 1 | RECEIVE, the reply | as before |
   | 11-12 | 7, 0 then 1 | SEND and RECEIVE, device 17: `create_timer` (310, `pimos.vmac`:146), `{17, 310, Node, User, Password}`, the kernel's timer device (`bios/fep_module/time_dvc.kl1` `device_create/5`) | accepted, `[1]`, OURS: a FEP that has a timer. `reply/9` goes on to `device_process`, the timer's requests; an abnormal answer would end the device |
-  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, 0]`, OURS: a fixed clock, so every run is the same (`fep.py` `DATE`, `TIME`). The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`); the time is 00:00:00 (milliseconds from midnight, `utility/timer/time.kl1`) |
+  | 13-14 | 7, 0 then 1 | SEND and RECEIVE, device 17: `get_date_time` (304, `pimos.vmac`:95), `{17, 304}` (`time_dvc.kl1` `device_io1/13`: the reply `{Status, Date, Time}`) | `[1, 33742, T]`, OURS, the same on every run. The date is the banner's, 20-May-1993, as PIMOS counts dates (days from 01-Jan-1901, `utility/timer/date.kl1` `get_date_count`). T, milliseconds from midnight (`utility/timer/time.kl1`), follows the machine's clock (`pimm.py` `timer()`, 2026-11-24; it was 0): midnight is the moment the processor booted. PIMOS keeps the difference of the two as its time equation (`server/fep/fep/time_sv.kl1` `wait_date_time/2`, `compare/4`). In the long run T = 28,927: the cached machine's clock includes the whole IPL load |
+  | 15-16 | 7, 0 then 1 | SEND and RECEIVE, device 17: `close` (60), `{17, 60}`, the timer device's end when its stream ends (`time_dvc.kl1` `device_io1/13`, then `device_terminate/5`) | accepted, `[1]`, OURS, as a file's close (2026-11-24) |
 
-  New FEP commands for the FEP emulator (`bsv/PimmFepEmu.bsv`), not
-  on its tapes: INQUIRY to unit 7; TEST UNIT READY to units 0-5; the
-  packets `append_open` (203), `create_timer` (310) and
-  `get_date_time` (304).
+  The FEP commands of this table are all on the FEP emulator's tapes
+  (`bsv/PimmFepEmu.bsv`; 2026-11-24, below): INQUIRY to unit 7; TEST
+  UNIT READY to units 0-5; the packets `append_open` (203),
+  `create_timer` (310), `get_date_time` (304) and the timer's `close`
+  (60).
 
   Unit 6 is PIM/m's own (`scsi_where`) and is not asked.
   The FEP emulator (`bsv/PimmFepEmu.bsv`, `bsv/run_fepemu.sh`) answers
@@ -529,6 +718,34 @@ the device are given it again whenever the machine runs dry.
   PKL`), and `direct_kernel.tape` its edges. `putb` (111), which the
   syslog sends next by the source, is refused there as `fep.py` refuses
   it today.
+  2026-11-24, later: the emulator follows `fep.py` to the shell's
+  prompt. Every answer of the login run above (240, the pimos: files
+  and the 5s for `autoload.tbl`, `me:` and the home, 601/620 for the
+  replier, the servers and `simpos_user_device`, the window calls, 110
+  held, 60 on string-I/O and windows, 70 on a held request [6], 112 on
+  a read file, getb counted in characters) and the event: the held
+  io(1) is a RECEIVE that stays outstanding (not ready at every poll)
+  until `Fep.idle()`'s scripted login, which the emulator takes from
+  the card's script (`tools/mkfepcard.py` writes `fep.Fep().script`
+  and `fep.ATTRIBUTES` there, and `--held` the held object directory as
+  pimos:NAME). `kernel.tape` re-recorded to the prompt (175 calls, 126
+  answered, the clock and 2 events on the tape: 8,586,110 instructions,
+  the same as `longrun_ipl.py --load ... --go --fep`); `direct_kernel`
+  holds every new answer's edges. All equal on the three benches
+  (`bsv/run_fepemu.sh`); the design and the recipe for the next answer
+  (a scripted line for the held 110 is a new card, not new hardware):
+  `bsv/PimmFepEmu.bsv`'s header.
+  2026-11-24, after the merger change and the typed shutdown: the
+  emulator also answers 601 of `pimos_standard_io_window`, its 620
+  io 104/130/141/111 (`[1, ""]`) and 110 (held, answered by the event),
+  60 on the append-opened file (`[1]`) and `{-1, 80}` (no reply).
+  `kernel.tape` re-recorded under the merger rule and on to PIMOS END
+  (`record_fep.py --kernel PKL --type shutdown --type yes`: 220 calls,
+  155 answered, 4 events; 8,766,339 instructions), `late.tape`
+  re-recorded (its RECEIVE retries move under the merger rule), the
+  other IPL parts re-recorded for the clock lines alone, and
+  `direct_kernel` given the new answers' edges and errors (377 commands,
+  14 events). 9 tapes, all equal on the three benches.
 - **Goal@node(N) with N unbound** (decided 2026-11-24 by the session
   lead: follow VPIM, which KLIC agrees with; implemented, `lockstep_tproc.py`,
   labelled "carried over from VPIM, agreeing with KLIC; the PIM/m

@@ -1,0 +1,33 @@
+% SCAFFOLDING stand-in for SIMPOS's class `as_message`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
+% `as_message` is printed.  Every slot and method is INTERPOLATED
+% (labelled) from:
+%   - TR-056 p.12 (PDF p14, §4(2)): "A message is intended to be
+%     self-descriptive and has a sender slot (a channel for reply, if
+%     available), a receiver slot (a channel to receive it), and a body
+%     ... Class 'message' inherits class 'as_message' to include the first
+%     two slots.  This mixin class can be used for any other message
+%     classes." (docs/simpos/printed/parts/TR-056.classes.tsv:19-20);
+%   - the printed channel (TM-100 Fig. 3.7, PDF p15): `:set_sender(Message,
+%     Sender)` before a put, `:get_sender(Message, Sender)` after a get;
+%   - pimscsi's cmt and scsi (natures ... `simpos##message`), whose
+%     return/1 sends `:get_sender(Self, Sender)` to the message itself.
+% Model (OURS): the two slots as attributes, initially 0 (a slot declared
+% without a value compiles to 0, psi/README.md "Slot flags").
+
+class as_message has
+
+instance
+
+% INTERPOLATED from: TR-056 p.12's "a sender slot" and "a receiver slot".
+attribute sender, receiver;
+
+% INTERPOLATED from: TM-100 Fig. 3.7 `:set_sender(Message, Sender)`.
+:set_sender(Message, Sender) :-
+        Message!sender := Sender;
+% INTERPOLATED from: TM-100 Fig. 3.7 `:get_sender(Message, Sender)`.
+:get_sender(Message, Sender) :-
+        Sender = Message!sender;
+% The receiver slot has no accessor here: no held program calls one.
+
+end.

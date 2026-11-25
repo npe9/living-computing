@@ -226,6 +226,153 @@ and stand-in `simpos##` classes. In order:
    in the order of §1 and in reference-count order (`symbolizer`,
    `string`, `process`, `font`, ...), labelled as scaffolding, with
    the printed source of §2 used verbatim wherever it exists.
+   *Status 2026-11-24: started, OURS, `../../psi/espc.py` (tested in
+   `run_tests.sh` by `test_espc.py`).* It emits only opcodes with a
+   row in `kl0_opcodes.tsv` and refuses any other construct by name.
+   - Structure, against the held `.ptf` (`espc.py check`). Paragraph:
+     all 109 classes with source compile. Natures and demon sets agree
+     in 109 of 109, slots and the method sets in 108. The two misses
+     are the 3200/3500 version slot and two unparsed items of
+     `h_grade`. Of 1,051 predicates compared, 247 are cell for cell
+     identical (991 and 243 before the string built-ins, step 3b).
+     That is 23.5% of the compared predicates and 11.6% of all 2,123
+     held predicates of those classes. Kappa2: all 739
+     classes compile now that macro banks are expanded (`with_macro`,
+     TM-388 §3.7.3; before, 404 were refused whole); 9,971 predicates
+     compared, 1,323 exact (13.3%), and 10,641 and 1,361 with the
+     string built-ins. 109 of the exact ones have source clauses a
+     bank rule changed: the structural witness of the expansion.
+     Utter compares 521, 101 exact (19.4%); 10 of its
+     classes use banks whose source is not held. The
+     differences are classified in `../../psi/README.md`. The largest
+     classes are held code using opcodes not in the table (212 in
+     paragraph) and differences of moves and environment only (189).
+   - Behaviour (`espc.py behave`). The compiled paragraph classes run
+     alone in a library, so every class a call reaches was compiled
+     here. They give the same answers as `paragraph.ptf` to every call
+     `test_kl0.py` makes. The exception is `paragraph_version`, which
+     gives the source's "3200". Over kl0's census of `paragraph.ptf`,
+     88 methods have the same outcome, and none has a different
+     outcome.
+   - Stand-ins, in `../../psi/standin/` and labelled scaffolding.
+     The owner allowed interpolating SIMPOS (2026-11-24). Each method
+     is labelled PRINTED (verbatim) or INTERPOLATED (with its sources:
+     the interface, the call sites, the manuals). The stand-ins are:
+     `process` (ours; its `self/2` is called by the printed
+     `stream`, but its body is not printed) and `stream` (TM-100
+     Fig. 3.6 printed source, with three marked corrections to the
+     print). They were chosen by what pimfep's methods reach first,
+     not by reference count. Called with unbound arguments, the
+     pimfep methods refuse at `process:self/2` (46 methods),
+     `stream:create/2` (15) and `process:create/3` (14). None of them
+     reaches `symbolizer` or `string` first, although their code sends
+     `string:append/3` 24 times and `symbolizer:get_number/3` 10 times.
+     `pimfep##pimos_timer:on_after/4` used to refuse at
+     `simpos##process:self/2`. It now refuses at
+     `simpos##process:tag_catch/9`.
+   - *2026-11-24, later:* kl0's `new/2` runs slots initialised by
+     code. The calling convention is measured: all 424 held
+     initialisers have arity 1, with the value in A0. The semantics
+     are TM-388 §3.5 pp.49-50. `process` now carries the printed
+     TM-100 Fig. 3.1 body. The classes that body and `stream` create
+     or inherit are interpolated stand-ins: `list`, `post_queue`,
+     `waiting_queue`, `process_clock`, `with_link` and
+     `waiting_frame`.
+     - `pimos_timer:stream/2` now succeeds, and the printed
+       `put/2`/`get/2` run first in, first out.
+     - Over pimfep and pimscsi (`kl0.py census --fep`), 195 methods
+       stopped at `new/2`. Now none do: 14 more succeed, 112 reach a
+       SIMPOS call and 69 reach an unnamed opcode.
+     - The next blocking classes are `channel:create/2` (69 methods),
+       `hash_index:create/3` (58), `list_index:create/2` (20) and
+       `process:create/3` (14). See `../../psi/README.md`.
+   - *2026-11-24, step 3b:* the compiler expands `with_macro` macro
+     banks (TM-388 §3.7.3; above). Four string built-ins have
+     known-plaintext rows (blt 0b, 1c, 23, 2b), and class `class`'s
+     `:refute` (TM-388 p.46) is modelled. New interpolated stand-ins:
+     `string` (`append/3`, `copy/3`) and `process`'s `tag_catch/5`,
+     `/6`, `/9`, which call through `:refute` (TR-285 §4.2: catch is
+     a multiple-level cut; no throw is modelled), and a partial
+     `symbolizer` (`string_to_list/3`, `list_to_string/3`). Its other
+     25 selectors are not stood in: no witnessed built-in converts
+     atoms and strings, and number conversion needs `X/Y`.
+     - `pimos_timer:on_after/4` now gets through `tag_catch/9` into
+       its own `do_on_after/3` and stops at
+       `process:allow_forced_event/1`.
+     - Census of pimfep and pimscsi: 515 of 1,228 methods succeed (501
+       before), 51 fail cleanly, 662 refuse; none changed between
+       success and failure. The next blockers: `channel:create/2` (114
+       methods), `hash_index:create/3` (58), `list_index:create/2`
+       (20), `process:create/3` (14),
+       `process:allow_forced_event/1` (9).
+   - *2026-11-24, step 3c:* stand-ins for those blockers. PRINTED,
+     verbatim: `channel` (TM-100 Fig. 3.7), `bounded_channel` and
+     `bounded_post_queue` (Figs. 3.10, 3.11; their demons run).
+     INTERPOLATED: `post_queue_for_message`, `semaphore`, `list_index`
+     and `hash_index` (on the entry layout that kappa2's
+     `KPPOOL.ESP` and `SVHSH_IDX.ESP` read from the base classes),
+     `process:create/3`, `allow_forced_event/1` and slot accessors, and
+     a minimal `standard_editor` (`get_window/2`, the unloaded ancestor
+     of `pimfep##pimos_window_editor`). An espc argument-placement bug
+     found on the way is fixed (no `check` count moved).
+     - Census of pimfep and pimscsi: 605 of 1,229 methods succeed (515
+       before), 63 fail cleanly (12 on an empty index or queue), 561
+       refuse; none changed between success and failure.
+     - The next blockers: missing opcodes (blt 06 65 methods, pmi b0
+       29, pmi b4 21, ...); the `lock/1` of four pimfep tables, in a
+       `simpos##` ancestor; `trace:trace/1`,
+       `common_network:is_installed/1`,
+       `network_listener_buffer:create/4` (5 each); and class
+       `pmacs_window`, without which `pimos_window_editor`'s window is 0.
+   - *2026-11-24, step 3c, second part:* nine opcode rows from known
+     plaintext:
+     - `add` (blt 40);
+     - `integer`, `unbound`, `bound` (blt 01, 10, 16);
+     - `stack_vector` (blt 06);
+     - `equal_string` (blt 68), `string_tail` (blt 33);
+     - `substring` (blt 32) and `search_character` (blt 5c), two cells
+       long.
+
+     Three HELD-SOURCE classes: morphana's `_simpos/` `name`,
+     `e_string` and `pathname`, SIMPOS's own as copied for Common ESP
+     (ICOT Free Software). In `pathname`, the port's `/` is restored to
+     `>`, and its commented-out clauses are restored, each marked. The
+     symbolizer's `get_number/3` and `get_number_string/3` work on
+     integers.
+     - Census: 607 succeed, 101 fail (38 more, the census's unbound
+       arguments failing a type test), 521 refuse.
+     - pmi b0 has no witness. (Corrected at step 3d: it has, below.)
+     - The next blockers: blt 6e (38, in `fep_message_assembler`, no
+       source), pmi b0 29, pmi b4 21, the SIMPOS calls above, and
+       `alarm_watch:create/2`.
+   - *2026-11-24, step 3d, opcodes:* all three blockers have witnesses
+     in kappa2, paragraph and utter (`../../psi/README.md` "Step 3d").
+     - `vector_to_list` (blt 6e; only the tail `[]` runs),
+       `set_subvector` (blt 34, two cells), `{}` (pmi b0) and a
+       four-element vector (pmi b4);
+     - add_immediate, subtract_immediate and put_variable_t with the
+       result in a second register.
+     - espc puts `{}` and four-element vectors; `check` gains 31 exact
+       predicates and loses none.
+     - Census: still 607 / 101 / 521, but 93 refused methods get
+       further. They now stop at the census's unbound arguments, at
+       pmi ca and c6, and at SIMPOS (`undefined_method:raise/2`, 16).
+   - *2026-11-24, step 3d, stand-ins:* no printed or held body exists for
+     the step 3c class blockers, so ten classes are INTERPOLATED, each
+     method labelled with its sources and what is OURS:
+     `as_class_with_lock` and `with_lock` (`lock/1` with `unlock/1` as its
+     alternative, from kappa2 `LOADER.ESP:133-153`), `as_message` and
+     `message` (TR-056 p.12), `trace`, `common_network`,
+     `network_listener_buffer`, `alarm_watch`, `time` and a minimal
+     `pmacs_window` (`../../psi/README.md` "Step 3d's stand-ins").
+     - Census: 1,265 methods (36 inherited lock methods), 665 succeed,
+       113 fail, 487 refuse; no method moved out of success.
+     - Not stood in: `undefined_method:raise/2` (an exception, TM-388
+       p.59; kl0 models none), `library:assign/1` (the Librarian, not
+       held), `pmacs_window`'s window protocol.
+     - The next blockers: pmi ca 23, pmi c6 18, blt 9a 12, blt 54 12;
+       `undefined_method:raise/2` 16, `library:assign/1` 9,
+       `network_node_name` 10.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.
@@ -240,3 +387,19 @@ The first deliverable that matters to PIM/m: `pimfep.ptf` and
 Media (`../psi_acquisition.md` §6, §9 leads) would replace most of §4.
 The JAIST library's KL0 manual (MP7002-1) and SIMPOS manuals
 (MP3001-1, MP3002-1) would settle §3's KL0 gaps and much of §4.
+
+## 7. The window system, the Librarian and the shell (2026-11-24)
+
+`subsystems/window.md`, `librarian.md` and `shell.md` specify SIMPOS's
+three user-facing subsystems for stand-in builders. Each claim is cited
+and graded, and tagged with a version from 1.00 to 7.x/A22. The sources
+are TR/TM pages read by eye, the IPSJ papers, the IFS sources, the
+`.ptf` packages run under `../../psi/kl0.py`, and the ICOT museum video.
+Also in `subsystems/`:
+- `gaps.md`: what is still unknown, ranked;
+- `finds.md`: possible SIMPOS code. `cil/src/ds_bep.esp` carries a
+  patched copy of three SIMPOS 6.1 Librarian classes, and `cal-esp`
+  has a debugger derived from SIMPOS's;
+- `classes_added.tsv`: classes found beyond `printed/` and `required/`;
+- `notes/`, `listings/`, `coverage/` and `tools/`: the evidence and
+  the measurement against `required/`.

@@ -166,11 +166,10 @@ def check_trace(stem, parcels, words, errs):
         if count is None:
             continue
         # An exception record (trap=1, no write: the privileged harness,
-        # README "The privileged harness") has no printed occupancy: the
-        # exception sequence is not priced in Chapter 4, and its cyc is 0,
-        # the reference model's convention (hobbit_sem _system_exception).
+        # README "The privileged harness") costs Table 4-36's Exception
+        # row, 9 + D + A (p. 4-5), and is followed by its handler's records.
         exception = bool(g["trap"]) and g["we"] == 0
-        if g["cyc"] == 0 and not is_branch(first, count) and not exception:
+        if g["cyc"] == 0 and not is_branch(first, count):
             errs.append("%s: cyc=0 on a non-branch; only a folded branch takes no "
                         "time (p. 4-3 note, Table 4-35 p. 4-5)"
                         % where)

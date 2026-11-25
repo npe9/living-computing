@@ -128,6 +128,17 @@ interface HobbitCore;
   method Bit#(64) dbgState();
   // Harness probe: EU_S3's boundary state and the orchestrator's.
   method Bit#(32) dbgBoundary();
+  // Every physical word the machine may read combinationally this clock
+  // through `tbl` and the event memory: the MMU's walks for the faces'
+  // references, the event unit's (HobbitEvents combProbes) and VB, which
+  // KCALL reads in EU_S2 (vbProbe).  The machine never reads this; the ULX3S top
+  // has those words in its combinational window before it lets the
+  // clock edge happen (fpga/README.md, "The core's combinational reads").
+  method Vector#(21, Maybe#(Word)) combProbes();
+  // VB, which KCALL reads in EU_S2 (`events.memRead(vb)`): the 22nd
+  // probe, separate because it is read before EU_S3's commit writes VB
+  // and the other probes after the commit's wires.
+  method Word vbProbe();
 endinterface
 
 // One architectural write.  `addr` is the word address and `mask` the byte
@@ -1858,7 +1869,11 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                      HobbitEvents events, Bool eventsOn,
                      HobbitCtl ctl, HobbitMmu mmu,
                      Maybe#(Bit#(32)) stopR,
-                     HobbitMmuMem dface, Bool sysOn)(HobbitEuS3);
+                     HobbitMmuMem dface, Bool sysOn,
+                     Word excCyc)(HobbitEuS3);
+  // excCyc: an exception record's cost, Table 4-36's Exception row,
+  // 9 + D + A (p. 4-5), as the reference charges it
+  // (hobbit_sem `_system_exception`).
   // structure follows Flute (Bluespec, Inc., Apache-2.0) — see
   // docs/bluespec_architecture.md.  The HRI record is the trace port
   // (Flute's g_pc_trace analogue), not datapath.
@@ -2053,7 +2068,8 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                  mem_we: o.wr.we, mem_addr: o.wr.addr,
                  mem_wdata: o.wr.data,
                  mem_wmask: o.wr.we ? o.wr.mask : 8'h00,
-                 trap: (d.tr != TR_NONE), cyc: cyc };
+                 trap: (d.tr != TR_NONE),
+                 cyc: (sysOn && (d.tr == TR_FETCH_FAULT)) ? excCyc : cyc };
   endfunction
 
   function Hri foldRecord(EuS2Out o, Word cyc);
@@ -2160,7 +2176,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                        sp_before: o.spBefore, sp_after: o.spBefore,
                        msp_before: o.mspBefore, msp_after: o.mspBefore,
                        mem_we: False, mem_addr: 0, mem_wdata: 0,
-                       mem_wmask: 0, trap: True, cyc: 0 });
+                       mem_wmask: 0, trap: True, cyc: excCyc });
       ninstr       <= ninstr + 1;
       lastPcR      <= d.pc;
       inFull       <= False;
@@ -2179,7 +2195,7 @@ module mkHobbitEuS3#(HobbitStackCache sc, Reg#(Word) psw,
                        sp_before: o.spBefore, sp_after: o.spBefore,
                        msp_before: o.mspBefore, msp_after: o.mspBefore,
                        mem_we: False, mem_addr: 0, mem_wdata: 0,
-                       mem_wmask: 0, trap: True, cyc: 0 });
+                       mem_wmask: 0, trap: True, cyc: excCyc });
       ninstr       <= ninstr + 1;
       lastPcR      <= d.pc;
       inFull       <= False;
@@ -2529,8 +2545,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   Maybe#(Bit#(32)) stopAt = intQ.notEmpty
                               ? tagged Valid (tpl_1(intQ.first) - evRecs)
                               : tagged Invalid;
+  Word excCyc = 9 + m.d + m.a;
   HobbitEuS3 s3 <- mkHobbitEuS3(sc, pswR, events, eventsOn, ctl, mmu,
-                                stopAt, dataFace, sysOn);
+                                stopAt, dataFace, sysOn, excCyc);
   HobbitEuS2 s2 <- mkHobbitEuS2(pswR, configKlR, vbR, sc, s3.bypass, events,
                                 sysOn);
 
@@ -2797,7 +2814,7 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
         valid: True, pc: s1.pc, insn0: e.insn0, insn1: e.insn1,
         sp_before: sc.sp, sp_after: 0, msp_before: sc.msp, msp_after: 0,
         mem_we: False, mem_addr: 0, mem_wdata: 0, mem_wmask: 0,
-        trap: True, cyc: 0 };
+        trap: True, cyc: excCyc };
     end
 
     if (!sysOn || (pswR[9] == 1'b1)) events.setShad(sc.shad);
@@ -2955,6 +2972,9 @@ module mkHobbitCoreImpl#(HobbitMem mem, Word pcLimit, MemCycles m,
   method Bool eventActive() = eventActiveR;
   method Word eventMemRead(Word a) = events.memRead(a);
   method Action eventMemWrite(Word a, Word v) = events.memWrite(a, v);
+  method Vector#(21, Maybe#(Word)) combProbes() =
+    append(mmu.walkProbes, events.combProbes);
+  method Word vbProbe() = vbR;
 
   method Bit#(32) dbgBoundary() =
     { 4'b0, s3.dbgStop,

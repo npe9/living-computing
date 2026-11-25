@@ -305,12 +305,13 @@ The record conventions this adds:
 * **The exception record.**  An instruction that takes an exception does
   not complete (p. 1-38): its record is `trap=1` with no write, the
   pointers as before (the sequence's SP = SHAD leaves SP alone when SHAD
-  = SP), and `cyc=0`.  Chapter 4 prints no occupancy for the exception
-  sequence; 0 is the reference model's convention
-  (`hobbit_sem._system_exception`), not a printed number.
+  = SP), and `cyc=12`: Table 4-36's Exception row, 9 + D + A (p. 4-5),
+  with the model's D = 2, A = 1 (named choices; `hobbit_sem._system_exception`).  (The
+  first version of this section said 0, on the wrong claim that
+  Chapter 4 prints no exception cost.)
 * **After it** come the handler's records, at `*(VB+4)`.
-* `check_golden.py` accepts `cyc=0` and a following record on an
-  exception record only (a `trap=1` line with `we=0`); the
+* `check_golden.py` accepts a following record after an exception
+  record only (a `trap=1` line with `we=0`); the
   unimplemented-instruction trap (`we=1`, 006) still ends the run.
 
 ## What `check_golden.py` enforces

@@ -829,6 +829,20 @@ Not done: the Bluespec core has not run any of this; 8½ (bitmap and
 mouse) is not modelled; the server's ack-0 IL sync race is a 1e bug,
 not removed, not seen since (0 of 612 probe dials, 0 of 9 live runs).
 
+## The Hobbit on the 1e network (2026-11-24): authenticated log-in, `cpu`, 8½ as glenda
+
+On the reference model, s9term joins the three-machine 1e network of
+`tools/qemu1e` (fs9: file and auth server; cpu9: a CPU server) through
+`tools/qemu1e/hub.py` (`tools/p9join.py --hub`, one lockstep time base
+over both QEMUs): glenda's wrong password is refused and her right one
+accepted by fs9's check service (no `password not checked!`), and
+`cpu -h cpu9` from the Hobbit's rc runs commands on cpu9 with the
+Hobbit's name space on `/mnt/term`; with her profile's 8½ gate, 8½
+starts for glenda as it does for tor.  `tests/test_p9hub.py` replays
+the log-in in the suite (and `cpu`, with `P9HUB_CPU=1`).  Details:
+docs/p9boot.md "On the 1e network", "8½ as glenda";
+docs/qemu_1e_server.md 5d, 5e.
+
 ## A4/A5 status, our 9term (2026-11-24): the kernel built here boots and passes the A5 script
 
 The `9term` A3 linked (sha256 `002880c0...`) boots on the reference
@@ -876,7 +890,8 @@ Details, milestones and choices: `docs/p9boot.md`.
   run otherwise unchanged instruction for instruction (pinned: the 25 Hz
   prompt run still takes 22,530,554 instructions, now in 29 s instead of
   6 min).  At the formula's own clock rate the prompt comes after
-  286,970,654 instructions (286,977,189 with the EEPROM), 14.4 s of
+  286,970,654 instructions (286,977,189 with the EEPROM; 286,977,105
+  since the exception record costs `9 + D + A`, 2026-11-24), 14.4 s of
   model time, ~30 s of host time, so
   `--counter-period` is no longer needed.
 * Console input: s9term's console is a serial terminal on Quart channel
@@ -888,7 +903,8 @@ Details, milestones and choices: `docs/p9boot.md`.
   52:54:00:00:0b:0b, the one the QEMU server's ndb gives the Hobbit), the
   DP83932 is modelled as devether.c uses it (CAM, RRA/RDA, TDA, isr/imr,
   IRQ 9; QEMU's dp8393x.c followed where the driver is silent), and
-  /boot's BOOTP request leaves at 287,845,754 instructions, decoding
+  /boot's BOOTP request leaves at 287,845,754 instructions (287,845,670
+  since the exception record's cost, 2026-11-24), decoding
   byte for byte (`--pcap`).
 * The join (tools/p9join.py): s9term on the model, its SONIC's frames
   on QEMU's `-netdev dgram` pair to the 1e 386 file server

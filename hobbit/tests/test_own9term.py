@@ -76,8 +76,10 @@ PROMPT = b"root is from (il, tcp, incon, 9600, 19200)[il]: "
 ETHERLINE = b"sonic ether: 52 54 00 00 0b 0b\n"
 # "prompt" re-pinned 22515681 -> 22515687 when the Quart's interrupt bids
 # were corrected (docs/devices/README.md; master's p9boot.py still gives
-# 22515681, checked 2026-11-24).
-STEPS = {"main": 128548, "first-line": 2135886, "prompt": 22515687}
+# 22515681, checked 2026-11-24), then 22515687 -> 22515615 when an
+# exception's record began to cost Table 4-36's 9 + D + A instead of 0
+# (sem/hobbit_sem.py _system_exception; measured with both changes).
+STEPS = {"main": 128548, "first-line": 2135886, "prompt": 22515615}
 
 
 class EncoderTest(unittest.TestCase):

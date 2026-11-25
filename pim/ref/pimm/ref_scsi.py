@@ -87,7 +87,8 @@ directory (the tree itself was not edited):
         KeyError)
   pimm.py scsi_do: TransferredLength is the buffer's length
         caught ONLY by the pinned heap cells (458,899 for 388,311 in
-        "one file"); Files and Loaded are the same.  The IPL cuts a
+        "one file", under the merger timing before 2026-11-24); Files
+        and Loaded are the same.  The IPL cuts a
         reply by its own length words
   pimm.py: a merger input bound to a vector refused (as before)
         Unimplemented in the first part: the path is run
@@ -114,6 +115,17 @@ NOT caught:
     bound every time (the wait is NOT run).
 Not run at all: wait_vector_1.
 
+Also checked, with no machine (event_list, 2026-11-24): fep.py's
+scripted events, OURS: the login, then each typed line (Fep(lines=..),
+longrun_ipl.py --type) answers the next held getl (110) of a window
+with [1, the line in JIS], in order; nothing is answered while the
+login is the next event or after the script.  Observed injections into
+fep.py (backed up, restored, compared byte for byte):
+  the lines taken in reverse order
+        the script check fails, and the answers swap: 'shutdown'
+        gets '#y#e#s', 'yes' gets '#s#h#u#t#d#o#w#n'
+  a newline (0x000A) appended to each answer
+        both answers differ, by the trailing 00 0A
 Not run: top:go/4 and the shoens; an open that fails; a read error;
 abort (70); attention (status 3); a message the IPL sends in more
 than one packet; REQUEST SENSE; more than one processor.
@@ -160,9 +172,14 @@ PARTS = [('one file', [HASH], {}),
          ('small buffer', [HASH], dict(max_buffer=512))]
 # part "odd", as observed 2026-11-23: the loader's answer
 ODD = ('abnormal', (8, [ord(c) for c in 'internal error while reading unloaded file']))
-# pinned, as observed 2026-11-23: (commands on the bus, heap cells)
-PINNED = {'one file': (19, 388311), 'two files': (31, 684498), 'characters': (29, 664477),
-          'late': (31, 684648), 'odd': (21, 218326), 'small buffer': (13, 35968)}
+# pinned, as observed 2026-11-24: (commands on the bus, heap cells).
+# Re-pinned for the merger timing change (2026-11-24, docs/
+# pimm_semantics.md merge: a woken merge_in runs before other goals);
+# the heap moved (388,311 684,498 664,477 684,648 218,326 35,968
+# before), the commands did not, and every part's wire and FEP
+# messages are identical before and after (compared by hash).
+PINNED = {'one file': (19, 388339), 'two files': (31, 686310), 'characters': (29, 666351),
+          'late': (31, 686718), 'odd': (21, 218229), 'small buffer': (13, 35849)}
 
 
 FILES = {}          # the .sav files read so far, by path
@@ -377,10 +394,77 @@ def real(limit):
     return 0
 
 
+def event_list():
+    """fep.py's scripted events (OURS): the login, then each typed line
+    answers the next held getl (110) of a window, in order, with
+    [1, the line in JIS] (bios/fep_module/win_dvc.kl1:307-312: the
+    reply {DevID, Status, Line}).  A getl is not answered while the
+    login is the next event, nor when the script is empty.  Device
+    28 as in the run (binary_reverse_engineering.md 1.4)."""
+    bad = []
+    f = fepm.Fep(lambda path: None, lines=('shutdown', 'yes'))
+    if f.script != [('login', fepm.LOGIN), ('getl', 'shutdown'), ('getl', 'yes')]:
+        bad.append(('script', f.script))
+    if f.request(28, [fepm.CREATE_WINDOW, b'', b'', b'']) != [fepm.NORMAL]:
+        bad.append(('create_window',))
+    if f.request(28, [fepm.GETL]) is not None:
+        bad.append(('getl not held',))
+    if f.idle():
+        bad.append(('a getl answered before the login',))
+    f.script.pop(0)                     # as if the login had been answered
+    for line in ('shutdown', 'yes'):
+        if not f.idle() or f.messages[-1] != ('<', 28, [fepm.NORMAL, fepm.jis(line)]):
+            bad.append(('answer', line, f.messages[-1:]))
+        if f.request(28, [fepm.GETL]) is not None:
+            bad.append(('getl not held again',))
+    if f.idle():
+        bad.append(('answered after the script ended',))
+    return bad
+
+
+def shutdown_window():
+    """fep.py's answers for shutdown_body's third branch (OURS,
+    binary_reverse_engineering.md 1.4; server/user/shutdown_b.kl1:39-53,
+    71-73): 601 of pimos_standard_io_window, 620 io(104), io(130),
+    io(141), io(111) answered [1, ""], io(110) held and answered by
+    the next typed line; then PIMOS's end: 60 on the file append-opened
+    answered [1], {-1, 80} noted with no reply.  The messages as the
+    run sends them (device 34, the syslog's 16).
+
+    Observed faults, 2026-11-24, each in a copy of fep.py's source
+    loaded in place of it (the file untouched): 110 answered at once
+    -> '110 not held', '110 answer'; 111 not logged -> '111 not
+    logged'; 80, the 60 on the appended file, the 601 each refused ->
+    FepError raised (ref_scsi.py stops with it)."""
+    bad = []
+    f = fepm.Fep(lambda path: None, lines=('yes',))
+    f.script.pop(0)                     # as if the login had been answered
+    win = fepm.jis(fepm.STD_WINDOW)
+    if f.request(34, [fepm.CREATE_STRING_IO, b'', fepm.jis('pmpsi'), b'', win]) != [fepm.NORMAL]:
+        bad.append(('601',))
+    for code, data in ((104, bytes.fromhex('0144014800280006')), (130, fepm.jis('SHUTDOWN')),
+                       (141, b''), (111, fepm.jis('Really(yes/no)?'))):
+        if f.request(34, [fepm.IO, code, data]) != [fepm.NORMAL, b'']:
+            bad.append(('620', code))
+    if f.log[-1:] != [(34, 'Really(yes/no)?')]:
+        bad.append(('111 not logged', f.log[-1:]))
+    if f.request(34, [fepm.IO, 110, b'']) is not None:
+        bad.append(('110 not held',))
+    if not f.idle() or f.messages[-1] != ('<', 34, [fepm.NORMAL, fepm.jis('yes')]):
+        bad.append(('110 answer', f.messages[-1:]))
+    if f.request(16, [fepm.APPEND_OPEN, b'', 0, 0, fepm.jis('pimos:pimos.syslog')]) \
+            != [fepm.NORMAL] or f.request(16, [fepm.CLOSE]) != [fepm.NORMAL]:
+        bad.append(('60 on the file appended',))
+    if f.request(-1, [fepm.TERMINATE]) is not None or not f.terminated:
+        bad.append(('80',))
+    return bad
+
+
 def main(argv):
     if '--real' in argv:
         return real(int(argv[argv.index('--real') + 1]))
-    bad = []
+    bad = [('event list',) + x for x in event_list()]
+    bad += [('shutdown window',) + x for x in shutdown_window()]
     for label, files, device in PARTS:
         m, v, opened = boot(listing(files), **device)
         b = check(label, files, device, m, v, opened)

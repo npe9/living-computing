@@ -1,0 +1,14 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p28 (folio -23-) ====
+3.3 図形描画プログラム. Fig. 3-2 example settings: data file graph.draw, base X 20, base Y 30, class name
+graph_drawing, method instance, method name draw, output file, output name graph.
+(図形描画プログラムの例)   [300dpi crop]
+   class graph_drawing has
+   instance
+   % インスタンス属性スロット
+     attribute
+       base_x := 20,     % move the whole figure in X by the slot value
+       base_y := 30,     % ... in Y
+       font_bank         % holds the font objects
+       ;
+

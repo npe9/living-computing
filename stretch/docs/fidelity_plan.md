@@ -323,6 +323,66 @@ milestone for, found by the 2026-11-24 refresh; Ref. Manual pp.43-51):
 Exit: a deck per item, with its injection; §1a's interrupt and EXIC rows
 done.
 
+## The board: the model must also FIT (added 2026-11-24)
+
+The project's target is the ULX3S-85F (`fpga_feasibility.md`), and this
+plan said nothing about it. The last whole-core place-and-route
+(2026-10-16, §9.3.6a) measured:
+- `TRELLIS_COMB` at 375,223 against 83,640 (448%);
+- `DP16KD` at 384 against 208 (184%);
+- `TRELLIS_IO` at 1,066%, from the unwrapped ports.
+
+A model that matches every page and does not fit has not met the goal.
+
+- **F0. Re-measure on master.** Every multi-cycle box since 2026-10-16
+  should have moved COMB. Run it when no suite is running: it took about
+  3 hours at full load. Record per-module LUT4 in `fpga_feasibility.md`.
+- **F1. A design rule for A3/A4.**
+  - The units are built at the machine's own widths: the SAU a byte pair
+    per 0.6 µs step (Buchholz p.209), the PAU's one shared multiplier
+    tree (Fig. 14.7).
+  - A unit that wraps a combinational 64-bit function in a request and
+    response does not count.
+  - Each A-milestone reports its LUT4 delta (per-module `yosys stat`,
+    minutes, not the 3-hour run) beside its atlas delta.
+- **F2. Core storage to SDRAM.** This is the 184% DP16KD, done the
+  same way as the disk plan's D3 (`~/.claude/plans/zazzy-noodling-sloth.md`).
+- **F3. The I/O boundary.** The 1,066% IO is unwrapped ports. Write a
+  ULX3S top (D4's).
+- Exit: nextpnr places and routes the six-unit core on an 85F. If it
+  cannot, partitioning is recorded as an owner decision with the
+  measured numbers.
+
+**MCP: from stubs to MCP's own paths (added 2026-11-24).** IPL
+completes, and MCP runs a job card through UNCODE, its loader and job end
+(`boot_plan.md`; `NEXT.md` "THE BSS PROCESSOR, RECONSTRUCTED"). The run
+leans on stubs: the dispatcher, `$RET`, and `$SCR`/`$FETCH` over core
+images instead of the disk.
+- **M-a.** Replace `$FETCH`'s core-image stub with MCP's own fetch from
+  the 353. The simulated disk now holds what IPL writes (D2, merged
+  `19b7234`: P1 writes arcs 0-32, 33 arcs, measured), so the stub's
+  reason is gone. Exit: `check_bss_mcp_go.py` passes with the stub
+  deleted.
+- **M-b.** Then `$SCR`, `$RET` and the dispatcher, each the same way.
+- **M-c.** A warm start needs C22-6678-1 p.32's "Disk IPL" card deck,
+  which the repo does not hold. Search for it (G5), and reconstruct it
+  only if it is lost, labelled RECONSTRUCTION.
+- STRAP II and FORTRAN IV compiling under MCP, and the DCP (boot plan
+  M4), follow. Their code status is in `archival_inventory.md`.
+
+**IBM's own diagnostics as oracles, not yet run** (`archival_inventory.md`):
+- The three memory tests, `ja_bp6a` (6 pp), `ja_bm6a` and `ja_bb6b`,
+  gate A11a, the memory cycle.
+- I-Box 2 and 3 (`jb_ax2a`, `jb_ax3a`, surveyed only) gate A8.
+- BX-0 (`ka_ex1`) gates A11.
+
+Transcribe and check each against its printed machine-code column with
+`listing_oracle.py` (track B) before its milestone starts.
+
+**Tooling:** `atlas_oracle.py` builds into the shared `bsv/build`, and a
+suite run after it in the same tree failed the smoke test's schedule
+check (2026-11-23, transmit diagnosis). Give it its own `-bdir`.
+
 ## Track B, beside track A
 
 - 0.2 and 0.3 above.

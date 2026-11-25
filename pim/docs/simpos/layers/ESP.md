@@ -161,7 +161,7 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
   | `:m(Obj,A...)` | Dispatch on the first argument: a class object selects class methods, an instance selects instance methods |
   | `Class:m(ClassObj,...)` | Class method of a named ancestor |
   | `:Class:m(Inst,...)` | Instance method of a named ancestor |
-  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46) |
+  | `:refute(Obj, Name, ArgVector)` | Dynamic call (TM-388 p.46). Modelled in `psi/kl0.py` (OURS, 2026-11-24): the vector's elements become the arguments after the receiver; `psi/test_espc.py` test_refute sends `put/2` to a stream through it |
   
   Built-ins `method_call` and `overridden_method_call` exist (TM-388 App D).
 - **Missing method or slot.** The call goes to `:undefined_method(Obj,Name,ArgVec,Addr)` or
@@ -181,6 +181,20 @@ SIMPOS loader/librarian, not by the compiler. It must be reconstructed as part o
 
 Initialisation runs as an after-demon of `new`. MEASURED: these compile to kind-0x22/0x32
 predicates, e.g. `display_pos/1` in `time_graph_window` from p_tgraph.esp:81.
+
+*2026-11-24, witnessed and run (`pim/psi/kl0.py`, `test_kl0.py`):*
+
+- **Calling convention** (MEASURED). All 424 initialisers in the eleven packages have arity 1.
+  There is no receiver argument, and the value comes back in A0.
+- **Semantics** (TM-388 §3.5 pp.49-50, page images).
+  - Instance slots are filled when `new` makes the instance. Class slots are filled "when the
+    class is generated".
+  - A failing initialiser makes `new` fail, or leaves the class not generated.
+  - The order of the initialisers "is uncertain".
+  - An initialiser cannot use the object being made.
+  - For work that needs the object, TM-388 recommends an after-demon of `new`, whose second
+    argument "has already been unified with the instance object".
+  - `slot is Class` stores a new instance of Class (p.49).
 
 **Rules:**
 
@@ -228,6 +242,15 @@ Pattern => Expansion [when Gen] [where Check] [with Clauses] [by Var] :- Cond
 **Macro banks:** `macro_bank N [with_macro M] has [nature...;] ... end.` Every bank inherits
 `esp_macro_expander`, which provides `expand_clause/5` and `expand_goals/3`.
 
+*Witness (2026-11-24):* `psi/espc.py` (OURS) expands a class's
+`with_macro` bank's plain `Pattern => Expansion` rules, the bank's
+natures' rules after its own, top-down and again on the result. On
+kappa2 all 739 classes with source then compile, and 109 predicates
+whose source a bank rule changed are cell for cell identical to
+`kappa.ptf` (`psi/test_espc.py` MacroBank). Rules with a tail
+(`when`/`where`/`with`/`by`/`:-`), `==>` and the backquote are not
+modelled; a predicate that meets one is refused.
+
 **Standard macros** (TM-388 App C pp.143–144):
 
 | Group | Macros |
@@ -257,8 +280,56 @@ Comparison mappings, as printed in PRG lines 7161-7168:
 | `X > Y` | `less_than(Y,X)` |
 | `X >= Y` | `not_less_than(Y,X)` |
 
-The `=<`/`>=` rows look swapped. They are recorded as printed and should be checked against
-compiled code. Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
+The `=<`/`>=` rows look swapped. They are recorded as printed. **Settled against compiled code
+(2026-11-24): the print is swapped.** `X =< Y` compiles to `not_less_than(Y,X)` (blt 67 with Y
+first) and `X >= Y` to `not_less_than(X,Y)`. The witness is p_icon.esp `Y =< Icon!height/2`: the held
+cells of `paragraph##predicate_num_switch_icon` are `67 03 01`, with A3 = height/2 and A1 = Y
+(`../../../psi/kl0_opcodes.tsv`, row blt 67). `psi/espc.py` compiles it that way. Its cells for
+that `$or$` run to the answers the source predicts (228 → inc, 229 → dec;
+`psi/test_espc.py`). An injection that drops the swap fails those tests. `<` and `>` agree with
+the print.
+
+The compiler also follows TM-388 p.66 on head macros, quoted above: a slot or arithmetic
+expression in a head becomes a fresh variable, unified after the last body goal. Held
+`paragraph##list_index_buffer count/2` (`:count(Obj,Obj!count):-!;`: the neck cut, then the slot read and the unification) is compiled that way, and
+`espc.py` matches its cells exactly.
+
+*Step 3c (2026-11-24): new witnesses, `../../../psi/kl0_opcodes.tsv`.*
+
+- **Addition.** `X + Y` on two registers compiles to `add` (blt 40), with the result over the
+  first operand, as `X - Y` does with blt 41. Witnesses: h.esp:186 `Width2 = Width + X_Max`
+  → `40 01 00 01`, and receiver.esp:1398.
+- **Two-cell built-ins.** `substring/4` (blt 32) and `search_character/5` (blt 5c) take more
+  operands than one cell holds. The fourth and fifth operands go in the high bytes of an
+  `integer` cell after the instruction. Witnesses: p_wshell.esp:467 and kappa PCPSDSTR.ESP:155.
+  `espc.py` emits both forms that way.
+- **Outcome.** `espc.py check` gives:
+
+  | Program | Compared | Exact | Before (compared / exact) |
+  |---|---|---|---|
+  | paragraph | 1,234 | 256 | 1,051 / 247 |
+  | kappa2 | 12,479 | 1,485 | 10,641 / 1,361 |
+  | utter | 559 | 109 | 521 / 101 |
+
+  No predicate that matched exactly before stopped matching.
+- **Still refused.** `X * Y`, `X / Y` on two registers, `divide_with_remainder/4`,
+  `set_substring/4` and `->` have no row and are refused.
+- **Number conversion.** The stand-in symbolizer's `get_number/3` and
+  `get_number_string/3` (INTERPOLATED) are written on the immediate forms with a register-held
+  `#"0"`.
+- **Atoms.** cil's KL0 list (`cil/src/cil_kl0.esp`, 176 names) has only `new_atom/1` for
+  atoms. So no witnessed built-in turns a string into an atom or back.
+
+*Step 3d (2026-11-24), `../../../psi/README.md` "Step 3d's opcode rows".*
+
+- **Vectors in a body.** `{}` compiles to pmi b0 (typewin.esp:259 `:refute(PBEDIT,Item,{})`
+  → `b0 01`), not to a pool constant; a four-element vector to pmi b4 (p_tgraph.esp:299).
+  Vectors of one, or of five or more, elements stay unwitnessed and refused.
+- **Built-ins.** `vector_to_list/3` (blt 6e; the middle argument read as a tail, INFERENCE)
+  and `set_subvector/4` (blt 34, two cells, TR-044 App A.4 argument order) compile.
+  `espc.py check` gains 31 exact predicates and loses none.
+
+Collation rules are in PRG lines 7173-7179. The key names are `abort`, `help`,
 `bell`, `cr`, `del`, `esc` (line 7117), and pf keys are 1-18. The full special-key code values
 are **UNKNOWN**.
 

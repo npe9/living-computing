@@ -1,0 +1,40 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p03 (folio -1-) ====
+Read by eye; 400dpi crops of the command lines and of the error window.
+PSI図形ツールのインストール方法
+(1) インストール方法
+  ①ライブラリアンを生成する。                  [create a Librarian]
+  ②フロッピーをユニット0に入れる。             [put the floppy into unit 0]
+  ③ライブラリアンの「Execute」を選択する。     [select the Librarian's "Execute"]
+  ④Command>fdd(" drawing.com " ) と入力後、リターンキーを入力する。
+       [type this after the prompt, then Return; printed with spaces inside the quotes, underlined]
+  ⑤FDD mount ok?
+      Input unit No. (0):0
+     ユニット番号「0」を入力する（リターンキーは不要）。   [type unit number 0; no Return needed]
+  ⑥約1分かけてインストールされる。              [installs in about one minute]
+◆ If package drawing already exists, the following error message is shown. Choose either to continue
+  (the existing package drawing is deleted and created anew) or to abort.
+  Screen image: two panes, each with an inverse-video title bar.
+  +-[Error occurred in librarian_59( process 59 )]------------------+
+  | Package  drawing  already exists                                |
+  | Cannot load package_template_file                               |
+  |                                                                 |
+  +-[Error handling menu:]------------------------------------------+
+  |   Erase existing package and continue                           |
+  |   Inspect the information of this event                         |
+  |   Return to librarian top level                                 |
+  +-----------------------------------------------------------------+
+  (In the image the word "drawing" is in a different, larger face from the rest of the text: it looks
+   pasted in, perhaps substituted for another package name.)
+・処理を続行する場合（新バージョンをインストールする場合） [to continue, i.e. to install a new version]
+  ①「Erase existing package and continue 」を選択する。
+  ②続行するかどうかの確認画面が、もう一度表示される。  [the "continue?" confirmation appears again]
+       +Really?+     (title bar inverse)
+       | ERASE |
+       | STOP  |
+  ③ Select "ERASE" to continue or "STOP" to stop.
+  ④ After "ERASE", installation takes about one minute.
+・処理を中止する場合 [to abort]
+  ①「Return to librarian top level 」を選択する。
+  ②ライブラリアンの画面に戻る。  [back to the Librarian screen]
+

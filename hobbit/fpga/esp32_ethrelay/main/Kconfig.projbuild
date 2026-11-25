@@ -1,0 +1,63 @@
+menu "Ethernet relay"
+
+    config RELAY_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+
+    config RELAY_WIFI_PASSWORD
+        string "WiFi password"
+        default ""
+        help
+            Set with menuconfig; it lands in sdkconfig, which is
+            gitignored (.gitignore here).  Never commit it.
+
+    config RELAY_HUB_HOST
+        string "hub.py host (IPv4 address)"
+        default "192.168.1.10"
+
+    config RELAY_HUB_PORT
+        int "hub.py port for this board (HUB in HUB:learn)"
+        default 10911
+        range 1 65535
+
+    config RELAY_LOCAL_PORT
+        int "local UDP port"
+        default 10912
+        range 1 65535
+
+    config RELAY_UART_BAUD
+        int "UART baud to the FPGA"
+        default 2500000
+        help
+            2500000 divides both the FPGA's 25 MHz (10 clocks a bit) and
+            the ESP32's 80 MHz APB clock (32) exactly.  5000000 (5 and 16)
+            is the ESP32's maximum (SOC_UART_BITRATE_MAX).
+
+    config RELAY_UART_TX_GPIO
+        int "UART TX GPIO (to FPGA N3, wifi_gpio17)"
+        default 17
+
+    config RELAY_UART_RX_GPIO
+        int "UART RX GPIO (from FPGA L1, wifi_gpio16)"
+        default 16
+
+    config RELAY_UART_RTS_GPIO
+        int "UART RTS GPIO (to FPGA H1, wifi_gpio4), -1 for none"
+        default 4
+        range -1 39
+        help
+            Hardware flow control towards the ESP32: RTS rises when the
+            128-byte RX FIFO holds rx_flow_ctrl_thresh bytes, and the
+            FPGA's esplink must not start another byte while it is high.
+            GPIO4 is not a strap pin; it is the SD card's DAT1 (sd_d[1]),
+            unused when the card runs in SPI mode or is absent.
+
+    config RELAY_UART_RX_BUF
+        int "UART driver RX ring, bytes"
+        default 8192
+
+    config RELAY_UART_TX_BUF
+        int "UART driver TX ring, bytes (the queue towards the FPGA)"
+        default 16384
+
+endmenu

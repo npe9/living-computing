@@ -1,0 +1,22 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p32 (folio -27-) ==== [400dpi crop of the draw/4 clause]
+   % draw/4   Add the base values to the X and Y coordinates of each drawing record in local
+   %   predicate data/2, and draw by backtracking.
+   draw(Window, Base_x, Base_y, Object) :-
+       data(Method, Args),
+       modify(Method, Base_x, Base_y, Args, Arguments, Object),
+       :refute(Window, Method, Arguments),
+       fail
+       ;
+   draw(Window, Base_x, Base_y, Object) ;
+   % modify/6   add the base values per drawing method.
+   modify(draw_line, Base_x, Base_y, Args, Arguments, Object) :- !,
+       stack_vector(Args, Length),
+       new_stack_vector(Arguments, Length),
+       adjust(Base_x, 0, Args, Arguments),
+       adjust(Base_y, 1, Args, Arguments),
+       adjust(Base_x, 2, Args, Arguments),
+       adjust(Base_y, 3, Args, Arguments),
+       copy_element(Length-1, Args, Arguments)
+       ;
+

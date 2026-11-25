@@ -1,0 +1,11 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p11 (folio -8-) ====
+ (3)再編集: back to the SIMPOS照会書 screen with the content so far.
+ (4)セーブ: save to own PSI. ① "セーブ" ② file-name input screen ③ type name, Return:
+        | ファイル名を入力して下さい  : simsho_error |
+    ④ saved under directory ">sys>simshow>Qbox".  ◆ retrievable via "修正".
+ (5)終了: ① "終了" ② 終了 screen:
+        +終 了+
+        | YES |   -> system ends
+        | N O |   -> back to sub-menu
+

@@ -9,35 +9,87 @@
 // answers, byte for byte, which bsv/run_fepemu.sh checks against fep.py
 // itself on every command of ref/pimm/ref_scsi.py's parts.
 //
-// AND WHAT fep.py HAS FOR PIMOS's START (2026-11-24, fep.py on master):
-// INQUIRY (12h) to unit 7, LUN 0, 255 bytes in: five bytes 03 00 07 00 00;
-// TEST UNIT READY to an absent unit, 0-5: Result noDevice (800h).  fep.py
-// decides absence in Fep.command, ahead of its unit and LUN checks and
-// with no look at the LUN or CDB bytes 1-4, so it is decided here, in the
-// same place, and not in the adapter to the core.  append_open (203,
-// four arguments, a device with no file open and not appending): [1],
-// whatever the path; the device is noted as appending (AppendSlots).
-// fep.py on master serves NO putb (111) and no getb or close on a device
-// that only appends: it raises on each, so each is refused here, and no
-// log is kept (fep.py's Fep.appended stays empty).  The card is never
-// written either way: an in-memory log comes with fep.py's putb.
+// AND WHAT fep.py HAS FOR PIMOS's START TO THE SHELL'S PROMPT (fep.py on
+// master, 2026-11-24, docs/fep_services.md 6 and 7):
+//   INQUIRY (12h) to unit 7: 03 00 07 00 00; TEST UNIT READY to an absent
+//   unit 0-5: Result noDevice (800h), decided here as fep.py decides it in
+//   Fep.command, before the unit and LUN checks; append_open 203: [1]
+//   (AppendSlots; no log is kept, fep.py keeps one in memory only);
+//   create_timer 310: [1]; get_date_time 304: [1, 33742, T], T =
+//   (clock / 16) mod 86,400,000, the clock the setTime input last gave
+//   (fep.py's Fep.ticks, which the reference model sets from the
+//   machine's timer before each command); 60 on a timer: [1];
+//   fep_attributes 240: fep.ATTRIBUTES, the message held on the card
+//   (mkfepcard.py writes fep.py's own); create_string_io 601 of the three
+//   programs a login uses (the name compared as fep.unjis decodes it);
+//   io 620 on them (fep.Fep.string_io: the replier's [1, ""] and [1,
+//   "\0\0"], the local server's [1, ""] and its io(1) HELD, tcpip [5], the
+//   user device's [1, ">sys>user>" ++ the name it is given]); the window
+//   create 104 and calls 127 130 132 141 142 143 111 112: [1]; getl 110
+//   HELD; 60 on a string-I/O device or a window: [1]; 70 on a device
+//   with a held request: that request answered [6]; 112 on a read file:
+//   [1]; and fep.Fep.idle(), the EVENT (below).
+//   AND (fep.py after the merger change and the typed shutdown,
+//   2026-11-24, docs/fep_services.md 2, docs/binary_reverse_engineering.md
+//   1.4 "A command typed"): 601 of fep.STD_WINDOW, the string-I/O window
+//   "pimos_standard_io_window" that shutdown_body's question opens; io 620
+//   on it: 104, 130, 141 and 111 (putb, a string) [1, ""], 110 (getl)
+//   HELD, answered by the event as a window's getl; 60 on the
+//   append-opened file (the syslog's, at PIMOS's end): [1]; {-1, 80}
+//   (terminate): no reply (fep.py notes Fep.terminated; nothing is kept
+//   here).  Nothing else fep.py answers is missing here: any other io on
+//   the window, or 80 on another device, is refused as fep.py raises.  The files of pimos: are
+//   whatever the card holds under those names (mkfepcard.py --held puts
+//   the held object directory there, as longrun_ipl.kernel_file serves
+//   it); a name not on the card is answered 5 (autoload.tbl, me:, the
+//   home directory), as fep.py's open_file None is.
+//
+// HELD REQUESTS AND THE EVENT (how the core's SCSI port sees them).  A
+// request fep.py holds (the login server's io(1), a window's getl) gets
+// no reply when it arrives: the emulator notes the device and the kind
+// (HeldSlots), and every RECEIVE with nothing else queued is answered
+// FepNotReady, so the core's RECEIVE stays outstanding: PimmScsiBox keeps
+// it in its waiting list and gives it again at each poll, exactly as
+// pimm.py's scsi_waiting / scsi_poll do with fep.py's None.  An answer
+// comes only from an EVENT: `idle`, the bench's question when the machine
+// has run dry and no waiting command moves (longrun_ipl.go calls
+// Fep.idle() there).  The emulator takes the next entry of the card's
+// script (the kind, login 1 or getl 2, and the reply's string: mkfepcard
+// writes fep.Fep().script, so a new scripted line in fep.py is a new
+// card, not new hardware); if a device holds a request of that kind (the
+// lowest device id, as fep.py's sorted(held)), the reply [1, string] is
+// queued and the script moves on; the answer to `idle` is 1 then, 0
+// otherwise.  The next poll's RECEIVE takes the reply.  70 on a held
+// device ends the hold with [6].  A close (60) does not end a hold
+// (fep.py keeps held[dev] then too).
 //
 // ADDING THE NEXT COMMAND fep.py ANSWERS (the recipe):
 //   1. a message (fep.Fep.request): one `else if (mcmd == ...)` branch in
-//      `serve`, queueing a ReplyDesc (status, and card data if any); a SCSI
-//      command (fep.Fep.command): one `else if (op == ...)` in
-//      `oneCommand`, in fep.py's order of tests.  A constant next to
-//      reqAppendOpen / opInquiry; new state cleared in `main`'s configure.
+//      `serve`, IN fep.py's ORDER OF TESTS (the device sets overlap: one
+//      device can be a file, a timer and a window at once), queueing a
+//      ReplyDesc.  The kinds: RStatus [status]; RString [status, string]
+//      with the string from the card (a file's data, the script), zeros,
+//      or the home buffer; RDate [status, date, time]; RRaw a whole
+//      message from the card (a constant answer: put fep.py's constant on
+//      the card in mkfepcard.fep_tables and its address in the header,
+//      as fep.ATTRIBUTES).  A new event kind (fep.Fep.idle) needs only
+//      a code in mkfepcard.SCRIPT_KINDS and the hold that waits for it.
+//      A SCSI command (fep.Fep.command): one `else if (op == ...)` in
+//      `oneCommand`, in fep.py's order.  A constant next to the others;
+//      new state cleared in `main`'s configure.
 //   2. one line or section in record_fep.direct_kernel_sections (the
 //      answer and the FepError next to it), then
 //      `python3 ref/pimm/record_fep.py --part direct_kernel`; and, if the
-//      kernel now reaches it, `--kernel PKL` again for the kernel tape.
+//      kernel now reaches it, `--kernel PKL --type shutdown --type yes`
+//      again for the kernel tape.
 //   3. bsv/run_fepemu.sh; one injection into the new branch, its observed
 //      failures in PimmFepEmuTb.bsv's header.
-//   direct_kernel's error sections hold putb (111), and getb and close
-//   on a device that only appends, as tripwires: when fep.py answers one,
+//   direct_kernel's error sections hold putb (111) and getb on a device
+//   that only appends, as tripwires: when fep.py answers one,
 //   run_fepemu.sh fails on that line until the emulator follows; move
-//   that line out of the error sections then.
+//   that line out of the error sections then.  (The close was such a
+//   tripwire until fep.py answered it, 2026-11-24: run_fepemu.sh failed
+//   at direct_kernel command 49 until this module followed.)
 //
 // FROM PIMOS SOURCE (through fep.py, whose header cites each):
 //   the CDBs (TEST UNIT READY 00h, RECEIVE 08h, SEND 0Ah; group 0, the
@@ -53,31 +105,41 @@
 //   when a request's last packet arrives, and a RECEIVE with nothing
 //   queued is not answered (FepNotReady: the caller holds the command and
 //   offers it again, as pimm.py's scsi_poll does); an open of a file that
-//   is not there gives status 5; getb's unit (getbUnit bytes, 1); a getb
-//   at the end of the data gives status 2 every time; a reply longer than
-//   the RECEIVE is cut into continued packets (the first piece the
-//   header with flag 1 and as much of the rest as fits, the rest keeping
-//   the original header); close gives status 1; abort gives nothing.
-//   fep.py's test knobs are the configure() inputs: getbUnit, getbBytes
-//   (fep.py's getb_bytes), lag (every RECEIVE refused once), maxBuffer.
-//   fep.py's `limit` is not here.  Anything fep.py raises FepError (or
-//   Python raises) on is answered FepRefused, and every command after it
-//   too, until configure(): fep.py's caller has stopped by then.
+//   is not there gives status 5; getb's unit (getbUnit bytes, 1; the
+//   kernel's tape 2); a getb at the end of the data gives status 2 every
+//   time; a reply longer than the RECEIVE is cut into continued packets
+//   (the first piece the header with flag 1 and as much of the rest as
+//   fits, the rest keeping the original header); close gives status 1;
+//   abort with nothing held gives nothing; the date 33742 and the time
+//   from the clock; the attributes and the script (on the card, as fep.py
+//   has them).  fep.py's test knobs are the configure() inputs: getbUnit,
+//   getbBytes (fep.py's getb_bytes), lag (every RECEIVE refused once),
+//   maxBuffer.  fep.py's `limit` is not here.  Anything fep.py raises
+//   FepError (or Python raises) on is answered FepRefused, and every
+//   command after it too, until configure(): fep.py's caller has stopped
+//   by then.
 // OURS AND NOT fep.py's (limits of a small machine; each is answered
-//   FepRefused, why 8, where fep.py would go on; none is met by any
-//   ref_scsi.py part, whose largest request is 120 bytes, at most two
-//   files open, two replies queued: ref/pimm/record_fep.py prints them):
+//   FepRefused, why 8, where fep.py would go on; record_fep.py --kernel
+//   prints what the kernel's start uses, to PIMOS END after a typed
+//   shutdown: a request of 88 bytes, 2 files, 1 appending, 1 timer, 3
+//   string-I/O, 1 window, 2 held, 4 replies queued):
 //   a request message of at most BodyMax (1024) bytes; FileSlots (4)
 //   files open; ReplySlots (8) replies queued; AppendSlots (2) devices
-//   appending (the kernel opens one, its syslog); one continued request
+//   appending; DevSlots (8) devices that are timers, string-I/O programs
+//   or windows; HeldSlots (4) held requests; one continued request
 //   message in assembly at a time; a getb whose size is negative; a
-//   RECEIVE shorter than 8 bytes that would have to be cut.
+//   RECEIVE shorter than 8 bytes that would have to be cut; the user
+//   device's name at most HomeMax (32) bytes, and one such reply queued
+//   at a time; a card with no attributes or script answers 240 and the
+//   event with why 9.
 // AND, DIFFERENT FROM ref_scsi.py's open_file, NOT fep.py: a name is
 //   matched byte for byte against the card's directory.  ref_scsi.py
 //   decodes it by asm/psdpim.py's JIS table first, which raises on a code
 //   outside the table (here: status 5) and maps every row but 23 to row
 //   21's punctuation (here: only the exact bytes match).  The IPL's names
-//   are all rows 21 and 23.
+//   are all rows 21 and 23.  longrun_ipl.kernel_file raises on a name
+//   outside pimos:, me: and the home directory; here such a name is
+//   answered 5 (none is asked on the kernel's tape).
 // AND ONE CHANGE ON THE ORACLE'S SIDE: ref_scsi.py's open_file raises
 //   (UnboundLocalError in lockstep_file.file_words) for a name under
 //   >sys>csp>PIMOS.DIR> that the archive does not hold, where fep.py's
@@ -90,10 +152,10 @@
 // methods, a small sequencer): mkFepCardBytes is a byte/word reader over
 // the block client with a one-block cache (one BRAM); mkFepBody is the
 // request-message buffer (one BRAM); mkPimmFepEmu's StmtFSM takes one
-// command at a time: classify, take a SEND's data, parse, serve, answer.
-// The reply bytes are never stored: a queued reply is a descriptor
-// (device, status, the card address and length of its data, how far a
-// cut has given it), and a RECEIVE makes the bytes from it.
+// command or event at a time: classify, take a SEND's data, parse, serve,
+// answer.  The reply bytes are never stored: a queued reply is a
+// descriptor (device, status, kind, the card address and length of its
+// data, how far a cut has given it), and a RECEIVE makes the bytes from it.
 
 package PimmFepEmu;
 
@@ -101,6 +163,7 @@ import ClientServer::*;
 import GetPut::*;
 import FIFOF::*;
 import Vector::*;
+import List::*;
 import BRAMCore::*;
 import StmtFSM::*;
 import PimmSdTypes::*;
@@ -127,7 +190,9 @@ typedef enum { FepDone, FepNotReady, FepRefused } FepAnswerKind deriving (Bits, 
 
 // FepDone: fep.py's (result, bytes): result 0 but for an absent unit's
 // TEST UNIT READY (noDevice), count the bytes received (0 but for
-// RECEIVE and INQUIRY).  FepNotReady: fep.py's None.
+// RECEIVE and INQUIRY).  To `idle`: FepDone with result 1 if a reply was
+// queued, 0 if not (fep.Fep.idle's True / False), count 0.
+// FepNotReady: fep.py's None.
 // FepRefused: fep.py raised; `why` says where (OURS, for a person).
 typedef struct {
    FepAnswerKind kind;
@@ -145,7 +210,7 @@ Bit#(8) whyFlag      = 5;   // a packet flag not 0 or 1
 Bit#(8) whyMessage   = 6;   // a message that does not unpack
 Bit#(8) whyRequest   = 7;   // a request fep.py does not serve
 Bit#(8) whyLimit     = 8;   // a limit of OURS (see the header)
-Bit#(8) whyCard      = 9;   // the card: not mounted, or a read failed
+Bit#(8) whyCard      = 9;   // the card: not mounted, a read failed, no attributes/script
 Bit#(8) whyAfter     = 10;  // an earlier command was refused
 
 typedef struct {
@@ -164,8 +229,16 @@ interface PimmFepEmu;
    interface Put#(Bit#(8)) sendData;
    interface Get#(Bit#(8)) recvData;
    interface SdBlockClient card;
-   // a fresh device (fep.Fep()) with these options; the card stays mounted
+   // a fresh device (fep.Fep()) with these options; the card stays
+   // mounted, the clock goes back to 0 (a fresh Fep's ticks)
    method Action configure(FepConfig c);
+   // the event (fep.Fep.idle): answered on cmd.response, in turn with
+   // the commands
+   method Action idle;
+   // the FEP's clock, 1/16 msec, 48 bits (fep.Fep.ticks; pimm.py's
+   // timer()): get_date_time's time of day follows it.  Given before the
+   // command it is for; a board would drive it from a counter
+   method Action setTime(Bit#(48) t);
    method UInt#(24) maxBuffer;
    method FepMount mounted;
 endinterface
@@ -177,20 +250,106 @@ Bit#(8)  opSend          = 8'h0a;
 Bit#(8)  opInquiry       = 8'h12;
 Bit#(32) noDevice        = 32'h800;   // fep.NO_DEVICE: completion code 8, OURS as fep.py's
 Bit#(32) absentLast      = 5;         // fep.Fep.ABSENT: units 0..5
-Int#(32) reqReadOpen = 201;
+Int#(32) reqReadOpen   = 201;
 Int#(32) reqAppendOpen = 203;
-Int#(32) reqGetb     = 210;
-Int#(32) reqClose    = 60;
-Int#(32) reqAbort    = 70;
+Int#(32) reqGetb       = 210;
+Int#(32) reqClose      = 60;
+Int#(32) reqAbort      = 70;
+Int#(32) reqTerminate  = 80;
+Int#(32) reqCreateTimer = 310;
+Int#(32) reqGetDateTime = 304;
+Int#(32) reqAttributes = 240;
+Int#(32) reqCreateStrIo = 601;
+Int#(32) reqIo         = 620;
+Int#(32) reqCreateWindow = 104;
+Int#(32) reqGetl       = 110;
+Int#(32) reqPutb       = 111;
+Int#(32) reqFlush      = 112;
 Int#(32) stNormal = 1;
 Int#(32) stEod    = 2;
 Int#(32) stAbnormal = 5;
+Int#(32) stAborted = 6;
+Bit#(32) fepDate  = 33742;            // fep.DATE
+Bit#(48) msPerDay = 86400000;
+
+// fep.WINDOW_ANSWERED: reshape, set_title, set_font, activate,
+// deactivate, show, putb, flush
+function Bool windowAnswered(Int#(32) c) =
+   c == 127 || c == 130 || c == 132 || c == 141 || c == 142 || c == 143 || c == reqPutb
+   || c == reqFlush;
 
 typedef 1024 BodyMax;
 typedef 4    FileSlots;
 typedef 8    ReplySlots;
 typedef 2    AppendSlots; // devices appending at once (OURS; the kernel opens one, its syslog)
-typedef 4    MaxArgs;     // fep.py serves nothing with more than 4 arguments
+typedef 8    DevSlots;    // timers, string-I/O devices, windows (OURS; the kernel: 5 at most)
+typedef 4    HeldSlots;   // held requests (OURS; the kernel: 2)
+typedef 4    MaxArgs;     // arguments kept; more are parsed, not kept (no answer reads them)
+typedef 32   HomeMax;     // bytes of the user device's name (OURS)
+
+// ---------------------------------------------------------------
+// Text: fep.unjis, one character at a time, and the names compared.
+// ---------------------------------------------------------------
+// a 16-bit JIS character as fep.unjis reads it: row 23 the low byte,
+// row 21 the punctuation of fep._PUNCT; anything else is '<hex>' there,
+// which no name here holds (Invalid)
+function Maybe#(Bit#(8)) unjisChar(Bit#(8) hi, Bit#(8) lo);
+   Maybe#(Bit#(8)) r = tagged Invalid;
+   if (hi == 8'h23) r = tagged Valid lo;
+   else if (hi == 8'h21)
+      case (lo)
+         8'h21: r = tagged Valid 32;    // ' '
+         8'h24: r = tagged Valid 44;    // ','
+         8'h25: r = tagged Valid 46;    // '.'
+         8'h27: r = tagged Valid 58;    // ':'
+         8'h32: r = tagged Valid 95;    // '_'
+         8'h3f: r = tagged Valid 47;    // '/'
+         8'h5d: r = tagged Valid 45;    // '-'
+         8'h63: r = tagged Valid 60;    // '<'
+         8'h64: r = tagged Valid 62;    // '>'
+         8'h2a: r = tagged Valid 33;    // '!'
+         8'h29: r = tagged Valid 63;    // '?'
+         8'h76: r = tagged Valid 42;    // '*'
+         // fep._PUNCT's four since 2026-11-24 (a typed line's); no name
+         // compared here holds them, so they cannot be seen on a tape
+         8'h49: r = tagged Valid 34;    // '"'
+         8'h4a: r = tagged Valid 40;    // '('
+         8'h4b: r = tagged Valid 41;    // ')'
+         8'h61: r = tagged Valid 61;    // '='
+      endcase
+   return r;
+endfunction
+
+function Bit#(8) charAt(String s, UInt#(32) i);
+   List#(Char) cs = stringToCharList(s);
+   Bit#(8) r = 0;
+   for (Integer k = 0; k < List::length(cs); k = k + 1)
+      if (i == fromInteger(k)) r = fromInteger(charToInteger(List::head(List::drop(k, cs))));
+   return r;
+endfunction
+
+// the names compared (fep.REPLIER, SERVER, USER_DEVICE; the server's
+// kinds "local" and "tcpip"; fep.STD_WINDOW, the string-I/O window of
+// shutdown_body's question)
+typedef 6 NNames;
+function String nameOf(Integer n) = case (n)
+   0: "pimos_remote_login_replier";
+   1: "pimos_remote_login_server";
+   2: "simpos_user_device";
+   3: "local";
+   4: "tcpip";
+   default: "pimos_standard_io_window";
+endcase;
+function UInt#(32) nameLen(Integer n) = fromInteger(stringLength(nameOf(n)));
+
+// jis(">sys>user>"), the user's home ahead of the name (fep.py
+// string_io; login_p.kl1:63)
+function Bit#(8) homePrefix(UInt#(32) i);
+   String s = ">sys>user>";
+   Bit#(8) c = charAt(s, i >> 1);
+   Bool punct = c == 62;
+   return (pack(i)[0] == 0) ? (punct ? 8'h21 : 8'h23) : (punct ? 8'h64 : c);
+endfunction
 
 // ---------------------------------------------------------------
 // mkFepCardBytes: bytes and big-endian words at a card byte address,
@@ -337,15 +496,48 @@ typedef struct {
    UInt#(32) pos;
 } FileSlot deriving (Bits, Eq, FShow);
 
-// A queued reply: [status] or [status, data]; the data is `dlen` bytes
-// of the card from byte address `addr`.
+// fep.Fep's device sets for one device id, kept apart as fep.py keeps
+// them (timers, strio, windows, listening): a slot is in use while any
+// is set
+typedef enum { SNone, SReplier, SServer, SUserDevice, SStdWindow } StrIo deriving (Bits, Eq, FShow);
+typedef struct {
+   Bit#(32) dev;
+   Bool     timer;
+   StrIo    strio;
+   Bool     window;
+   Bool     listening;
+} DevSlot deriving (Bits, Eq, FShow);
+
+function Bool inUse(DevSlot d) = d.timer || d.strio != SNone || d.window || d.listening;
+
+// a held request (fep.Fep.held): the device and the kind of event that
+// answers it, the codes of the card's script (mkfepcard.SCRIPT_KINDS)
+Bit#(32) heldLogin = 1;
+Bit#(32) heldGetl  = 2;
+typedef struct { Bool valid; Bit#(32) dev; Bit#(32) kind; } HeldSlot deriving (Bits, Eq, FShow);
+
+// A queued reply, after the packet's 8-byte header:
+//   RStatus  [status]
+//   RString  [status, a string of dlen bytes]: the card's from `addr`
+//            (SrcCard), zeros (SrcZero), or ">sys>user>" and the home
+//            buffer (SrcHome)
+//   RDate    [status, fep.DATE, `addr` (the time of day)]
+//   RRaw     dlen bytes of the card from `addr`, the whole message
+typedef enum { RStatus, RString, RDate, RRaw } ReplyKind deriving (Bits, Eq, FShow);
+typedef enum { SrcCard, SrcZero, SrcHome } StrSrc deriving (Bits, Eq, FShow);
 typedef struct {
    Bit#(32)  dev;
    Int#(32)  status;
-   Bool      hasData;
+   ReplyKind kind;
+   StrSrc    src;
    Bit#(32)  addr;
    UInt#(32) dlen;
 } ReplyDesc deriving (Bits, Eq, FShow);
+
+function ReplyDesc plain(Bit#(32) dev, Int#(32) st) =
+   ReplyDesc { dev: dev, status: st, kind: RStatus, src: SrcZero, addr: 0, dlen: 0 };
+function ReplyDesc zeros(Bit#(32) dev, UInt#(32) n) =
+   ReplyDesc { dev: dev, status: stNormal, kind: RString, src: SrcZero, addr: 0, dlen: n };
 
 typedef struct {
    Bool      isInt;
@@ -360,8 +552,12 @@ endfunction
 function UInt#(32) pad4(UInt#(32) n) = unpack((~pack(n) + 1) & 3);
 
 // the length of a reply packet as fep.py packs it
-function UInt#(32) replyLen(ReplyDesc d) =
-   d.hasData ? 20 + d.dlen + pad4(d.dlen) : 16;
+function UInt#(32) replyLen(ReplyDesc d) = case (d.kind)
+   RStatus: 16;
+   RString: 20 + d.dlen + pad4(d.dlen);
+   RDate:   32;
+   default: 8 + d.dlen;
+endcase;
 
 // ---------------------------------------------------------------
 // mkPimmFepEmu
@@ -376,11 +572,19 @@ module mkPimmFepEmu(PimmFepEmu);
    FIFOF#(Bit#(8))   sendF <- mkFIFOF;
    FIFOF#(Bit#(8))   recvF <- mkFIFOF;
    FIFOF#(FepConfig) cfgF  <- mkFIFOF;
+   FIFOF#(void)      idleF <- mkFIFOF;
 
    Reg#(FepConfig) cfg <- mkReg(fepDefault);
    Reg#(FepMount)  mnt <- mkReg(MountNotYet);
    Reg#(UInt#(32)) dirCount <- mkReg(0);
    Reg#(Bit#(32))  dirFirst <- mkReg(0);
+   // the card's fep.py constants (header words 32-44): the attributes
+   // message and the script, block and length; 0 none
+   Reg#(Bit#(32))  attrBlk  <- mkReg(0);
+   Reg#(UInt#(32)) attrLen  <- mkReg(0);
+   Reg#(Bit#(32))  scrBlk   <- mkReg(0);
+   Reg#(UInt#(32)) scrLen   <- mkReg(0);
+   Reg#(Bit#(48))  now      <- mkReg(0);   // the clock (setTime)
 
    // fep.Fep's state
    Reg#(Bool)      dead     <- mkReg(False);
@@ -393,8 +597,14 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(Bit#(32))  partDev  <- mkReg(0);
    Reg#(UInt#(32)) partLen  <- mkReg(0);
    // fep.Fep.appending: the devices an append_open accepted (the path and
-   // fep.Fep.appended are not kept: nothing on master appends yet)
+   // fep.Fep.appended are not kept: fep.py keeps them in memory only, and
+   // no answer reads them); a close (60) frees the slot
    Vector#(AppendSlots, Reg#(Maybe#(Bit#(32)))) appending <- replicateM(mkReg(tagged Invalid));
+   Vector#(DevSlots, Reg#(DevSlot))   devs <- replicateM(mkReg(unpack(0)));
+   Vector#(HeldSlots, Reg#(HeldSlot)) held <- replicateM(mkReg(unpack(0)));
+   Reg#(UInt#(32)) scrPos   <- mkReg(0);     // the script's next entry (fep.Fep.script[0])
+   Vector#(HomeMax, Reg#(Bit#(8))) home <- replicateM(mkReg(0));
+   Reg#(Bool)      homeBusy <- mkReg(False); // a SrcHome reply is queued
 
    // the command in hand
    Reg#(FepCmd)    cur   <- mkRegU;
@@ -409,7 +619,7 @@ module mkPimmFepEmu(PimmFepEmu);
    // the message
    Reg#(Int#(32))  mcmd  <- mkReg(0);
    Reg#(Int#(32))  nargs <- mkReg(0);
-   Vector#(MaxArgs, Reg#(Int#(32))) lens <- replicateM(mkReg(0));
+   Reg#(Int#(32))  alen  <- mkReg(0);
    Vector#(MaxArgs, Reg#(MsgArg))   args <- replicateM(mkReg(unpack(0)));
    Reg#(UInt#(32)) at    <- mkReg(0);
    Reg#(UInt#(32)) j     <- mkReg(0);
@@ -422,10 +632,20 @@ module mkPimmFepEmu(PimmFepEmu);
    Reg#(UInt#(32)) flen  <- mkReg(0);
    Reg#(Bit#(32))  w     <- mkReg(0);     // a card word read
    Reg#(Bit#(32))  bw    <- mkReg(0);     // a body word read
+   // a name compared (fep.unjis), the time of day, the home's name
+   Vector#(NNames, Reg#(Bool)) nm <- replicateM(mkReg(False));
+   Reg#(Bit#(8))   hb    <- mkReg(0);
+   Reg#(Bit#(48))  rem   <- mkReg(0);
+   Reg#(UInt#(5))  kd    <- mkReg(0);
+   Reg#(UInt#(32)) hn    <- mkReg(0);
    // a RECEIVE
    Reg#(UInt#(32)) cnt   <- mkReg(0);
    Reg#(Bool)      cont  <- mkReg(False);
    Reg#(UInt#(32)) kk    <- mkReg(0);
+   // the event
+   Reg#(Bit#(32))  skind <- mkReg(0);
+   Reg#(UInt#(32)) slen  <- mkReg(0);
+   Reg#(Bit#(32))  evOut <- mkReg(0);
 
    function Bit#(32) cdbLenOf(FepCmd c) = {8'h0, c.cdb[2], c.cdb[3], c.cdb[4]};
    Bit#(8)  op    = cur.cdb[0];
@@ -457,6 +677,61 @@ module mkPimmFepEmu(PimmFepEmu);
          if (!files[s].valid) r = tagged Valid fromInteger(s);
       return r;
    endfunction
+   // the device's sets: its slot, or a free one; `d` what it is now
+   function Maybe#(UInt#(TLog#(DevSlots))) devSlotOf(Bit#(32) dev);
+      Maybe#(UInt#(TLog#(DevSlots))) r = tagged Invalid;
+      for (Integer s = valueOf(DevSlots) - 1; s >= 0; s = s - 1)
+         if (inUse(devs[s]) && devs[s].dev == dev) r = tagged Valid fromInteger(s);
+      if (!isValid(r))
+         for (Integer s = valueOf(DevSlots) - 1; s >= 0; s = s - 1)
+            if (!inUse(devs[s])) r = tagged Valid fromInteger(s);
+      return r;
+   endfunction
+   DevSlot d0 = DevSlot { dev: pdev, timer: False, strio: SNone, window: False, listening: False };
+   DevSlot d = case (devSlotOf(pdev)) matches
+                  tagged Valid .s &&& inUse(devs[s]): devs[s];
+                  default: d0;
+               endcase;
+   // a device's sets changed, written back, and its reply queued (a full
+   // table or queue refuses, why 8)
+   function Action setDev(DevSlot n, ReplyDesc r) = action
+      case (devSlotOf(pdev)) matches
+         tagged Valid .s &&& replies.notFull: begin devs[s] <= n; replies.enq(r); end
+         default: perr <= whyLimit;
+      endcase
+   endaction;
+   function Maybe#(UInt#(TLog#(HeldSlots))) heldOf(Bit#(32) dev);
+      Maybe#(UInt#(TLog#(HeldSlots))) r = tagged Invalid;
+      for (Integer s = valueOf(HeldSlots) - 1; s >= 0; s = s - 1)
+         if (held[s].valid && held[s].dev == dev) r = tagged Valid fromInteger(s);
+      return r;
+   endfunction
+   function Action hold(Bit#(32) kind) = action
+      Maybe#(UInt#(TLog#(HeldSlots))) r = tagged Invalid;
+      for (Integer s = valueOf(HeldSlots) - 1; s >= 0; s = s - 1)
+         if (!held[s].valid) r = tagged Valid fromInteger(s);
+      case (r) matches
+         tagged Valid .s: held[s] <= HeldSlot { valid: True, dev: pdev, kind: kind };
+         default: perr <= whyLimit;
+      endcase
+   endaction;
+   // fep.Fep.idle's choice: the lowest device id holding this kind
+   function Maybe#(UInt#(TLog#(HeldSlots))) heldFor(Bit#(32) kind);
+      Maybe#(UInt#(TLog#(HeldSlots))) r = tagged Invalid;
+      for (Integer s = 0; s < valueOf(HeldSlots); s = s + 1)
+         if (held[s].valid && held[s].kind == kind) begin
+            Bool lower = case (r) matches
+                            tagged Valid .b: (unpack(held[s].dev) < Int#(32)'(unpack(held[b].dev)));
+                            default: True;
+                         endcase;
+            if (lower) r = tagged Valid fromInteger(s);
+         end
+      return r;
+   endfunction
+   Bool isFile = isValid(slotOf(pdev));
+   Bool isHeld = isValid(heldOf(pdev));
+   // fep.Fep.known
+   Bool known = isFile || isAppending(pdev) || d.timer || d.strio != SNone || d.window;
 
    function Action answer(FepAnswerKind k, UInt#(24) n, Bit#(8) y) =
       ansF.enq(FepAnswer { kind: k, result: 0, count: n, why: y });
@@ -482,27 +757,40 @@ module mkPimmFepEmu(PimmFepEmu);
       action let r <- body.reads.response.get; bw <= r; endaction
    endseq;
 
-   function Action queue(ReplyDesc d) = action
-      if (replies.notFull) replies.enq(d); else perr <= whyLimit;
+   function Action queue(ReplyDesc r) = action
+      if (replies.notFull) replies.enq(r); else perr <= whyLimit;
    endaction;
 
    // the byte k of a RECEIVE's piece, but for the card's data
-   function Bit#(8) pieceByte(ReplyDesc d, UInt#(32) k);
-      Bit#(8) r = 0;
-      if (k < 4) r = byteOf(d.dev, k);
-      else if (k < 8) r = (k == 7 && cont) ? 1 : 0;
+   function Bit#(8) pieceByte(ReplyDesc r, UInt#(32) k);
+      Bit#(8) x = 0;
+      if (k < 4) x = byteOf(r.dev, k);
+      else if (k < 8) x = (k == 7 && cont) ? 1 : 0;
       else begin
          UInt#(32) p = skip + k - 8;
-         if (p >= 8 && p < 12) r = byteOf(pack(d.status), p - 8);
-         else if (p >= 12 && p < 16) r = (p == 15 && d.hasData) ? 1 : 0;
-         else if (p >= 16 && p < 20) r = byteOf(pack(d.dlen), p - 16);
+         if (p >= 8 && p < 12) x = byteOf(pack(r.status), p - 8);
+         else if (p >= 12 && p < 16)
+            x = (p == 15) ? (r.kind == RString ? 1 : r.kind == RDate ? 2 : 0) : 0;
+         else if (r.kind == RString) begin
+            if (p < 20) x = byteOf(pack(r.dlen), p - 16);
+            else if (p < 20 + r.dlen && r.src == SrcHome)
+               x = (p < 40) ? homePrefix(p - 20) : home[p - 40];
+         end
+         else if (r.kind == RDate) begin
+            if (p < 24) x = 8'hff;
+            else if (p < 28) x = byteOf(fepDate, p - 24);
+            else x = byteOf(r.addr, p - 28);
+         end
       end
-      return r;
+      return x;
    endfunction
-   function Bool pieceIsData(ReplyDesc d, UInt#(32) k);
+   function Bool pieceIsCard(ReplyDesc r, UInt#(32) k);
       UInt#(32) p = skip + k - 8;
-      return k >= 8 && d.hasData && p >= 20 && p < 20 + d.dlen;
+      return k >= 8 && ((r.kind == RString && r.src == SrcCard && p >= 20 && p < 20 + r.dlen)
+                        || r.kind == RRaw);
    endfunction
+   function Bit#(32) cardAddr(ReplyDesc r, UInt#(32) k) =
+      r.addr + pack(skip + k - 8) - (r.kind == RRaw ? 8 : 20);
 
    // ---- mount: the card's header ---------------------------------
    Stmt mount = seq
@@ -515,6 +803,14 @@ module mkPimmFepEmu(PimmFepEmu);
       dirCount <= unpack(w);
       cardRd(12, True);
       dirFirst <= w;
+      cardRd(32, True);
+      attrBlk <= w;
+      cardRd(36, True);
+      attrLen <= unpack(w);
+      cardRd(40, True);
+      scrBlk <= w;
+      cardRd(44, True);
+      scrLen <= unpack(w);
       cardRd(20, True);
       action
          if (w != 256 || cardErr || mnt == MountBad) mnt <= MountBad;
@@ -523,6 +819,7 @@ module mkPimmFepEmu(PimmFepEmu);
    endseq;
 
    // ---- the message: fep.unpack_message -------------------------
+   // every argument is walked; the first MaxArgs are kept
    Stmt parse = seq
       if (bodyLen < 8) perr <= whyMessage;
       else seq
@@ -530,33 +827,29 @@ module mkPimmFepEmu(PimmFepEmu);
          mcmd <= unpack(bw);
          bodyRd(4, True);
          nargs <= unpack(bw);
-         // more than four arguments: fep.py unpacks them and then serves
-         // nothing (request() raises); a refusal either way
-         if (nargs < 0) perr <= whyMessage;
-         else if (nargs > fromInteger(valueOf(MaxArgs))) perr <= whyRequest;
+         if (nargs < 0 || nargs > fromInteger(valueOf(BodyMax))) perr <= whyMessage;
          else if (8 + 4 * unpack(pack(nargs)) > bodyLen) perr <= whyMessage;
          else seq
-            j <= 0;
-            while (j < unpack(pack(nargs))) seq
-               bodyRd(8 + 4 * j, True);
-               action lens[j] <= unpack(bw); j <= j + 1; endaction
-            endseq
             action at <= 8 + 4 * unpack(pack(nargs)); j <= 0; endaction
             while (j < unpack(pack(nargs)) && perr == 0) seq
-               if (lens[j] == -1) seq
+               bodyRd(8 + 4 * j, True);
+               alen <= unpack(bw);
+               if (alen == -1) seq
                   if (at + 4 > bodyLen) perr <= whyMessage;
                   else seq
                      bodyRd(at, True);
                      action
-                        args[j] <= MsgArg { isInt: True, v: bw, len: 0 };
+                        if (j < fromInteger(valueOf(MaxArgs)))
+                           args[j] <= MsgArg { isInt: True, v: bw, len: 0 };
                         at <= at + 4;
                      endaction
                   endseq
                endseq
-               else if (lens[j] < -1 || lens[j] > fromInteger(valueOf(BodyMax))) perr <= whyMessage;
+               else if (alen < -1 || alen > fromInteger(valueOf(BodyMax))) perr <= whyMessage;
                else action
-                  UInt#(32) ln = unpack(pack(lens[j]));
-                  args[j] <= MsgArg { isInt: False, v: pack(at), len: ln };
+                  UInt#(32) ln = unpack(pack(alen));
+                  if (j < fromInteger(valueOf(MaxArgs)))
+                     args[j] <= MsgArg { isInt: False, v: pack(at), len: ln };
                   at <= at + ln + pad4(ln);
                endaction
                j <= j + 1;
@@ -590,20 +883,117 @@ module mkPimmFepEmu(PimmFepEmu);
       endseq
    endseq;
 
-   // ---- a request: fep.Fep.request -------------------------------
+   // ---- a string argument as fep.unjis reads it, against the names:
+   // nm[n] is True when its text is nameOf(n) -----------------------
+   function Stmt names(MsgArg a) = seq
+      action
+         for (Integer n = 0; n < valueOf(NNames); n = n + 1)
+            nm[n] <= !a.isInt && (a.len >> 1) == nameLen(n);
+         j <= 0;
+      endaction
+      while (j < (a.len >> 1) && (nm[0] || nm[1] || nm[2] || nm[3] || nm[4] || nm[5])) seq
+         bodyRd(unpack(a.v) + 2 * j, False);
+         hb <= bw[7:0];
+         bodyRd(unpack(a.v) + 2 * j + 1, False);
+         action
+            let c = unjisChar(hb, bw[7:0]);
+            for (Integer n = 0; n < valueOf(NNames); n = n + 1)
+               if (!isValid(c) || validValue(c) != charAt(nameOf(n), j)) nm[n] <= False;
+            j <= j + 1;
+         endaction
+      endseq
+   endseq;
+
+   // ---- fep.Fep.string_io: io(args[0], args[1]) on d.strio --------
+   Int#(32) ioCmd = unpack(args[0].v);
+   Bool ioInt = args[0].isInt;
+   Stmt stringIo = seq
+      if (ioInt && d.strio == SReplier && (ioCmd == 0 || ioCmd == 2))
+         queue(zeros(pdev, 0));
+      else if (ioInt && d.strio == SReplier && ioCmd == 1) action
+         // a text for the user: fep.py logs data[2:] (no log here); an
+         // integer raises there
+         if (args[1].isInt) perr <= whyRequest;
+         else queue(zeros(pdev, 2));
+      endaction
+      else if (ioInt && d.strio == SServer && ioCmd == 0) seq
+         if (args[1].isInt) perr <= whyRequest;        // unjis of an integer raises
+         else seq
+            names(args[1]);
+            if (nm[3]) action
+               setDev(DevSlot { dev: pdev, timer: d.timer, strio: d.strio, window: d.window,
+                                listening: True },
+                      zeros(pdev, 0));
+            endaction
+            else if (nm[4]) queue(plain(pdev, stAbnormal));
+            else perr <= whyRequest;
+         endseq
+      endseq
+      else if (ioInt && d.strio == SServer && ioCmd == 1 && d.listening)
+         hold(heldLogin);                               // no reply: held
+      // the standard I/O window (fep.STD_WINDOW): 104 its place, 130 its
+      // title, 141 activate, 111 putb: [1, ""]; putb's text is unjis'd
+      // (logged) there, so it must be a string; the others' data is not
+      // looked at
+      else if (ioInt && d.strio == SStdWindow
+               && (ioCmd == reqCreateWindow || ioCmd == 130 || ioCmd == 141 || ioCmd == reqPutb))
+         action
+            if (ioCmd == reqPutb && args[1].isInt) perr <= whyRequest;
+            else queue(zeros(pdev, 0));
+         endaction
+      // its getl (110): held until the next scripted line, as a window's
+      else if (ioInt && d.strio == SStdWindow && ioCmd == reqGetl)
+         hold(heldGetl);                                // no reply: held
+      else if (ioInt && d.strio == SUserDevice && ioCmd == 0) seq
+         // [len Name, len Pass] ++ Name ++ Pass: the reply ">sys>user>"
+         // ++ data[4:4+2n], n = int.from_bytes(data[:2]), as Python
+         // slices it
+         if (args[1].isInt) perr <= whyRequest;
+         else if (homeBusy) perr <= whyLimit;
+         else seq
+            action hn <= 0; j <= 0; endaction
+            if (args[1].len >= 1) seq
+               bodyRd(unpack(args[1].v), False);
+               hn <= unpack(zeroExtend(bw[7:0]));
+            endseq
+            if (args[1].len >= 2) seq
+               bodyRd(unpack(args[1].v) + 1, False);
+               hn <= hn << 8 | unpack(zeroExtend(bw[7:0]));
+            endseq
+            action
+               UInt#(32) stop = min(args[1].len, 4 + 2 * hn);
+               hn <= stop > 4 ? stop - 4 : 0;
+            endaction
+            if (hn > fromInteger(valueOf(HomeMax))) perr <= whyLimit;
+            else seq
+               while (j < hn) seq
+                  bodyRd(unpack(args[1].v) + 4 + j, False);
+                  action home[j] <= bw[7:0]; j <= j + 1; endaction
+               endseq
+               action
+                  homeBusy <= True;
+                  queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcHome,
+                                    addr: 0, dlen: 20 + hn });
+               endaction
+            endseq
+         endseq
+      endseq
+      else perr <= whyRequest;
+   endseq;
+
+   // ---- a request: fep.Fep.request, its tests in its order ---------
    Stmt serve = seq
-      if (mcmd == reqReadOpen && nargs == 4 && !isValid(slotOf(pdev))) seq
+      if (mcmd == reqReadOpen && nargs == 4 && !isFile) seq
          if (args[3].isInt || pack(args[3].len)[0] == 1) perr <= whyRequest;   // open_file raises
          else seq
             lookup;
             if (cardErr) perr <= whyCard;
-            else if (!found) queue(ReplyDesc { dev: pdev, status: stAbnormal, hasData: False,
-                                               addr: 0, dlen: 0 });
+            else if (!found) queue(plain(pdev, stAbnormal));
             else action
                case (freeSlot()) matches
                   tagged Valid .s: begin
                      files[s] <= FileSlot { valid: True, dev: pdev, start: fstart, len: flen, pos: 0 };
-                     queue(ReplyDesc { dev: pdev, status: stNormal, hasData: False, addr: 0, dlen: 0 });
+                     queue(plain(pdev, stNormal));
                   end
                   default: perr <= whyLimit;
                endcase
@@ -614,17 +1004,79 @@ module mkPimmFepEmu(PimmFepEmu);
       // whatever the arguments are (fep.py never looks at the path's
       // bytes: no open_file), if the device has no file and is not
       // appending
-      else if (mcmd == reqAppendOpen && nargs == 4 && !isValid(slotOf(pdev)) && !isAppending(pdev))
+      else if (mcmd == reqAppendOpen && nargs == 4 && !isFile && !isAppending(pdev))
          action
             case (freeAppend()) matches
                tagged Valid .s: begin
                   appending[s] <= tagged Valid pdev;
-                  queue(ReplyDesc { dev: pdev, status: stNormal, hasData: False, addr: 0, dlen: 0 });
+                  queue(plain(pdev, stNormal));
                end
                default: perr <= whyLimit;
             endcase
          endaction
-      else if (mcmd == reqGetb && nargs == 1 && isValid(slotOf(pdev))) action
+      // create_timer {Id, 310, Node, User, Password}: [1]
+      else if (mcmd == reqCreateTimer && nargs == 3 && !d.timer) action
+         setDev(DevSlot { dev: pdev, timer: True, strio: d.strio, window: d.window,
+                          listening: d.listening },
+                plain(pdev, stNormal));
+      endaction
+      // fep_attributes {Id, 240, Node}: fep.ATTRIBUTES, the card's message
+      else if (mcmd == reqAttributes && nargs == 1 && !known) action
+         if (attrLen == 0) perr <= whyCard;
+         else queue(ReplyDesc { dev: pdev, status: stNormal, kind: RRaw, src: SrcCard,
+                                addr: attrBlk * 512, dlen: attrLen });
+      endaction
+      // create_string_io {C, 601, Node, User, Password, Name}
+      else if (mcmd == reqCreateStrIo && nargs == 4 && !known) seq
+         names(args[3]);
+         if (args[3].isInt || !(nm[0] || nm[1] || nm[2] || nm[5])) perr <= whyRequest;
+         else action
+            setDev(DevSlot { dev: pdev, timer: d.timer,
+                             strio: nm[0] ? SReplier : nm[1] ? SServer
+                                    : nm[2] ? SUserDevice : SStdWindow,
+                             window: d.window, listening: d.listening },
+                   plain(pdev, stNormal));
+         endaction
+      endseq
+      else if (mcmd == reqIo && nargs == 2 && d.strio != SNone && !isHeld)
+         stringIo;
+      // create_window {W, 104, Node, User, Password}
+      else if (mcmd == reqCreateWindow && nargs == 3 && !known) action
+         setDev(DevSlot { dev: pdev, timer: d.timer, strio: d.strio, window: True,
+                          listening: d.listening },
+                plain(pdev, stNormal));
+      endaction
+      // the window calls answered [1]; putb's text is unjis'd (logged)
+      // there, so it must be a string
+      else if (windowAnswered(mcmd) && d.window && !isHeld) action
+         if (mcmd == reqPutb && (nargs < 1 || args[0].isInt)) perr <= whyRequest;
+         else queue(plain(pdev, stNormal));
+      endaction
+      else if (mcmd == reqGetl && d.window && !isHeld)
+         hold(heldGetl);                                // no reply: held
+      // close of a string-I/O device or a window: [1] (a hold stays)
+      else if (mcmd == reqClose && nargs == 0 && (d.strio != SNone || d.window)) action
+         setDev(DevSlot { dev: pdev, timer: d.timer, strio: SNone, window: False,
+                          listening: False },
+                plain(pdev, stNormal));
+      endaction
+      // abort of a held request: that request answered [6]
+      else if (mcmd == reqAbort && nargs == 0 && isHeld) action
+         held[validValue(heldOf(pdev))] <= unpack(0);
+         queue(plain(pdev, stAborted));
+      endaction
+      // get_date_time {Id, 304}: [1, DATE, (clock / 16) mod one day]
+      else if (mcmd == reqGetDateTime && nargs == 0 && d.timer) seq
+         action rem <= now >> 4; kd <= 18; endaction
+         while (kd != 0) action
+            Bit#(48) sub = msPerDay << (kd - 1);
+            if (rem >= sub) rem <= rem - sub;
+            kd <= kd - 1;
+         endaction
+         queue(ReplyDesc { dev: pdev, status: stNormal, kind: RDate, src: SrcZero,
+                           addr: truncate(rem), dlen: 0 });
+      endseq
+      else if (mcmd == reqGetb && nargs == 1 && isFile) action
          let s = validValue(slotOf(pdev));
          let f = files[s];
          Int#(32) n0 = unpack(args[0].v);
@@ -636,18 +1088,37 @@ module mkPimmFepEmu(PimmFepEmu);
          if (cfg.getbBytes == 0 && !args[0].isInt) perr <= whyRequest;
          else if (size < 0) perr <= whyLimit;
          else if (chunk == 0)
-            queue(ReplyDesc { dev: pdev, status: stEod, hasData: False, addr: 0, dlen: 0 });
+            queue(plain(pdev, stEod));
          else begin
-            queue(ReplyDesc { dev: pdev, status: stNormal, hasData: True,
+            queue(ReplyDesc { dev: pdev, status: stNormal, kind: RString, src: SrcCard,
                               addr: f.start * 512 + pack(f.pos), dlen: chunk });
             files[s] <= FileSlot { valid: True, dev: f.dev, start: f.start, len: f.len,
                                    pos: f.pos + chunk };
          end
       endaction
-      else if (mcmd == reqClose && nargs == 0 && isValid(slotOf(pdev))) action
-         files[validValue(slotOf(pdev))] <= unpack(0);
-         queue(ReplyDesc { dev: pdev, status: stNormal, hasData: False, addr: 0, dlen: 0 });
+      // the timer's close: [1]
+      else if (mcmd == reqClose && nargs == 0 && d.timer) action
+         setDev(DevSlot { dev: pdev, timer: False, strio: d.strio, window: d.window,
+                          listening: d.listening },
+                plain(pdev, stNormal));
       endaction
+      // flush of a read file: [1]
+      else if (mcmd == reqFlush && nargs == 0 && isFile)
+         queue(plain(pdev, stNormal));
+      else if (mcmd == reqClose && nargs == 0 && isFile) action
+         files[validValue(slotOf(pdev))] <= unpack(0);
+         queue(plain(pdev, stNormal));
+      endaction
+      // the close of the append-opened file (the syslog's, at PIMOS's
+      // end): [1], as a read file's
+      else if (mcmd == reqClose && nargs == 0 && isAppending(pdev)) action
+         for (Integer s = 0; s < valueOf(AppendSlots); s = s + 1)
+            if (appending[s] == tagged Valid pdev) appending[s] <= tagged Invalid;
+         queue(plain(pdev, stNormal));
+      endaction
+      // {-1, 80}, terminate (the link's stream closed, at PIMOS's end):
+      // noted there (fep.Fep.terminated), not answered; nothing kept here
+      else if (mcmd == reqTerminate && nargs == 0 && pdev == 32'hffffffff) noAction;
       else if (mcmd == reqAbort && nargs == 0) noAction;
       else perr <= whyRequest;
    endseq;
@@ -689,8 +1160,8 @@ module mkPimmFepEmu(PimmFepEmu);
          else seq
             answer(FepDone, truncate(cnt), 0);
             while (kk < cnt) seq
-               if (pieceIsData(replies.first, kk)) seq
-                  cardRd(replies.first.addr + pack(skip + kk - 8 - 20), False);
+               if (pieceIsCard(replies.first, kk)) seq
+                  cardRd(cardAddr(replies.first, kk), False);
                   action recvF.enq(w[7:0]); kk <= kk + 1; endaction
                endseq
                else action recvF.enq(pieceByte(replies.first, kk)); kk <= kk + 1; endaction
@@ -698,9 +1169,42 @@ module mkPimmFepEmu(PimmFepEmu);
             action
                if (cardErr) dead <= True;
                if (cont) skip <= skip + cnt - 8;
-               else begin replies.deq; skip <= 8; end
+               else begin
+                  if (replies.first.kind == RString && replies.first.src == SrcHome)
+                     homeBusy <= False;
+                  replies.deq; skip <= 8;
+               end
             endaction
          endseq
+      endseq
+   endseq;
+
+   // ---- the event: fep.Fep.idle ------------------------------------
+   Stmt doIdle = seq
+      if (dead) refuse(whyAfter);
+      else if (mnt != MountOk) refuse(whyCard);
+      else if (scrPos >= scrLen) answerResult(0);       // the script is done
+      else seq
+         action cardErr <= False; perr <= 0; evOut <= 0; endaction
+         cardRd(scrBlk * 512 + pack(scrPos), True);
+         skind <= w;
+         cardRd(scrBlk * 512 + pack(scrPos) + 4, True);
+         slen <= unpack(w);
+         action
+            if (cardErr) perr <= whyCard;
+            else case (heldFor(skind)) matches
+               tagged Valid .s: begin
+                  queue(ReplyDesc { dev: held[s].dev, status: stNormal, kind: RString,
+                                    src: SrcCard, addr: scrBlk * 512 + pack(scrPos) + 8,
+                                    dlen: slen });
+                  held[s] <= unpack(0);
+                  scrPos <= scrPos + 8 + slen + pad4(slen);
+                  evOut <= 1;
+               end
+               default: noAction;                       // nothing holds that kind
+            endcase
+         endaction
+         if (perr != 0) refuse(perr); else answerResult(evOut);
       endseq
    endseq;
 
@@ -750,15 +1254,22 @@ module mkPimmFepEmu(PimmFepEmu);
    Stmt main = seq
       mount;
       while (True) seq
-         await(cfgF.notEmpty || cmdF.notEmpty);
+         await(cfgF.notEmpty || cmdF.notEmpty || idleF.notEmpty);
          if (cfgF.notEmpty) action
             cfg <= cfgF.first; cfgF.deq;
             dead <= False;
             for (Integer s = 0; s < valueOf(FileSlots); s = s + 1) files[s] <= unpack(0);
             for (Integer s = 0; s < valueOf(AppendSlots); s = s + 1) appending[s] <= tagged Invalid;
+            for (Integer s = 0; s < valueOf(DevSlots); s = s + 1) devs[s] <= unpack(0);
+            for (Integer s = 0; s < valueOf(HeldSlots); s = s + 1) held[s] <= unpack(0);
             replies.clear;
             skip <= 8; lagged <= False; partValid <= False; partLen <= 0;
+            scrPos <= 0; homeBusy <= False;
          endaction
+         else if (idleF.notEmpty) seq
+            idleF.deq;
+            doIdle;
+         endseq
          else oneCommand;
       endseq
    endseq;
@@ -777,7 +1288,14 @@ module mkPimmFepEmu(PimmFepEmu);
    interface Put sendData = toPut(sendF);
    interface Get recvData = toGet(recvF);
    interface SdBlockClient card = cardB.card;
-   method Action configure(FepConfig c) = cfgF.enq(c);
+   method Action configure(FepConfig c);
+      cfgF.enq(c);
+      now <= 0;
+   endmethod
+   method Action idle = idleF.enq(?);
+   method Action setTime(Bit#(48) t);
+      now <= t;
+   endmethod
    method UInt#(24) maxBuffer = cfg.maxBuffer;
    method FepMount mounted = mnt;
 endmodule

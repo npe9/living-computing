@@ -31,10 +31,18 @@ python3 "$here/test_p9kcmp.py"
 python3 "$here/test_hobbit_asm.py"
 python3 "$here/test_hri_check.py"
 python3 "$here/test_cyc_classify.py"
+# The timing twin (sem/hobbit_timing.py, plan milestone C2): its base cyc
+# equals every golden's hand-derived cyc, and its synthetic rules hold;
+# za and zc are checked in run_p9host_tests.sh.
+python3 "$here/test_hobbit_timing.py"
 python3 "$here/test_sem_extended.py"
 # The privileged machine (hobbit_sem.System): CPU escape, CSP = ISP, MMU,
 # events -- what tools/p9boot.py boots the shipped kernel with.
 python3 "$here/test_sem_system.py"
+# The part switch: --part 92020S (docs/att92020.md) -- its ID, its
+# refusals where no source speaks, every golden program identical to the
+# 92010's; 92020M/MX refused.
+python3 "$here/test_sem_part.py"
 # A4: the shipped kernel s9term boots on the reference model: pageinit's
 # console line, /boot's prompt, the BOOTP request, the no-server path,
 # and a replay of the join with the 1e file server through init, rc's
@@ -47,6 +55,10 @@ python3 "$here/test_p9boot.py"
 # product: the image tests skip, printing the command, when
 # build/p9kbuild/9term (or $HOBBIT_9TERM) is not the recorded image.
 python3 "$here/test_own9term.py"
+# The boot ROM (docs/boot_rom.md): the 9rom rule and mkrom.c, the
+# committed tools/p9kbuild/9rom, and that image run from reset to its
+# `>>>` monitor and `e` on tools/p9rom.py (~30 s).
+python3 "$here/test_p9rom.py"
 # The terminal (tools/p9term.py): the screen bitmap, the LCD panel built
 # from screenupdate's writes, the Mouse Systems mouse on Quart channel 3
 # and timed input, at /boot's prompt (~1 min); s9term's gtexture alone;
@@ -54,13 +66,29 @@ python3 "$here/test_own9term.py"
 # (EightHalfReplayTest, the longest part; P9TERM_8HALF=ls replays the
 # mouse-swept window and `ls` in it as well).
 python3 "$here/test_p9term.py"
+# The Hobbit on the three-machine 1e network (fs9, cpu9, the model on
+# tools/qemu1e/hub.py), replayed: glenda's wrong password refused and the
+# right one accepted by fs9's auth server, every frame as recorded (~80 s;
+# P9HUB_CPU=1 replays on through `cpu -h cpu9` and its output, ~8 min).
+python3 "$here/test_p9hub.py"
 python3 "$here/test_p9shim.py"
+# The ULX3S ESP32 Ethernet relay: its link protocol (C, built with cc)
+# against tools/qemu1e/hub.py, and the s9term session replayed through it
+# at 2.5 Mbaud (docs/ulx3s_ethernet.md; ~5 s).
+python3 "$here/test_ethrelay.py"
 # A2 on the reference model: the shipped za/zl run on sem/hobbit_sem.py
 # (tools/p9run.py) and reproduce the shipped libc objects byte for byte.
 python3 "$here/test_p9run.py"
 # A3: every byte of the shipped __.SYMDEF tables past a name's NUL is
 # accounted for (libmach's readar replayed; /mips/bin/rl's stack frames).
 python3 "$here/test_p9symdef.py"
+# The Hobbit BeBox board (tools/beboot.py, docs/bebox_hobbit.md): device
+# tests against the data-sheet pages, and Be's Nov 1994 kernel from the
+# `be` disk to "Disk cache is" (~2 min; skips, printing the fetch command,
+# when build/bebox is not on disk).  BEBOOT_LONG=1 boots on to the root
+# volume's mount and checks the idle skip against a run without it
+# (~20 min).
+python3 -I "$here/test_beboot.py"
 # A3: the shipped zc reproduces shipped libc.a members, one file from each
 # libc directory (a sample of `tools/p9kbuild.py libc --check`: 102 files,
 # 94 identical, the 8 others built from assembler -- the long command in

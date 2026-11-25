@@ -1,0 +1,23 @@
+% TM-786 「オンラインSIMPOS照会書 操作説明書」 (Online SIMPOS inquiry form, operating manual), 東 吉郎, August 1989.
+==== PDF p6 (folio -3-) 3. 操作方法 / 3.1 初期メニュー ====
+Starting it shows the initial menu:
+   +SIMPOS照会書+ (title bar, shaded)
+   | 新規作成   | ...(1). 新規SIM照の作成      [new]
+   | 修  正     | ...(2). 既存SIM照の修正      [modify existing]
+   | 回答閲覧   | ...(3). 問い合せ及び回答の閲覧 [view inquiries and answers]
+   | 終  了     | ...(4). 終了                 [quit]
+ (1)新規作成: ①select "新規作成" ②the SIM照 input screen appears:
+   Screen (full-width window; title bar inverse video):
+   S I M P O S 照 会 書                                      (終了 = ^x^z)
+   ユーザ識別番号 : [ ]                 連絡員名   : [ ]
+   事  由         : [クレーム] 問い合せ その他      使用者名 : [ ]
+   件  名         : [******,......]      Phone      : [ ]
+   発生日付       : [14-Jun-89]          SIMPOS版名 : [5.0?]   (value blurred: "5.0HC"/"5.0"+cursor?)
+   サイト名       : [ ]                  Firm版名   : [ ]
+   PSI No.        : [icpsi116]           CSP版名    : [ ]
+                                         添付資料   : 有り [無し]
+   +---------------- free-text area (cursor box at top-left) ----------------+
+   (fields are inverse-video boxes; choice items show the selected one inverted)
+   ③When input is complete, end input with C-x C-z.  (注意) 「件名」and「連絡員名」are mandatory.
+   ④The sub-menu appears (3.2).
+

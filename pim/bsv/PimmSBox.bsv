@@ -29,6 +29,10 @@
 //                      Operations") of itself and the element of s2
 //                      from p2; b = s2.  The copy is made first, then
 //                      one word is rewritten per element.
+//   search(s, i, e, c) a = {INT, the index of the first element equal
+//                      to c from i to e, e included}, from the rear when
+//                      e < i; -1 if none (search_character).  One word
+//                      read per element
 //   setElement(s,i,e)  a = a copy of s with element i set to e.  The
 //                      machine could update in place when s is singly
 //                      referenced; without MRB this box always copies.
@@ -59,16 +63,17 @@ interface PimmSBox;
   method Action equal(Cell s1, Cell s2);
   method Action show(Cell s);
   method Action poke(Cell s, Bit#(32) i, Bit#(32) w);
+  method Action search(Cell s, Bit#(32) i, Bit#(32) e, Bit#(32) c);
   method ActionValue#(SResult) result;
 endinterface
 
-typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow, KPoke } SKind deriving (Bits, Eq);
+typedef enum { KInfo, KElem, KTry, KNew, KSet, KChg, KOp, KHash, KEq, KShow, KPoke, KSrch } SKind deriving (Bits, Eq);
 
 typedef struct { SKind k; Cell s; Bit#(32) i; Bit#(32) e; Cell s2; Bit#(32) p2; Bit#(4) op; }
   SReq deriving (Bits);
 
 typedef enum { SIdle, SDesc, SDesc2, SElem, SAlloc, SWrDesc, SFill, SCopyRd, SCopyWr,
-               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3, SShow1, SShow2 }
+               SOp0, SOp1, SOp2, SHash1, SHash2, SEq0, SEq1, SEq2, SEq3, SShow1, SShow2, SSrch }
   SState deriving (Bits, Eq);
 
 module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
@@ -190,6 +195,14 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
       if (rq.i >= zeroExtend(wordsOf(d))) fatal("poke: word out of range");
       mem.write(src + 1 + toAddr(truncate(rq.i)), intC(rq.e));
       answer(rq.s, ?);
+    end
+    else if (rq.k == KSrch) begin
+      // i = Start, e = End, p2 = the code
+      if (rq.i >= lengthOf(d) || rq.e >= lengthOf(d)) fatal("search_character: out of range");
+      if (lgOf(d) != 5 && (rq.p2 & ~maskOf(d)) != 0) fatal("search_character: code too wide");
+      j <= rq.i;
+      mem.read(src + 1 + toAddr(wordIx(d, rq.i)));
+      st <= SSrch;
     end
     else if (rq.k == KShow) begin
       traceS(c);
@@ -336,6 +349,18 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
     end
   endrule
 
+  // search: element j in hand
+  rule srch (st == SSrch);
+    let c <- mem.data;
+    if (((c.val >> shiftOf(desc, j)) & maskOf(desc)) == rq.p2) answer(intC(j), ?);
+    else if (j == rq.e) answer(intC(32'hffffffff), ?);
+    else begin
+      Bit#(32) nj = rq.e > rq.i ? j + 1 : j - 1;
+      j <= nj;
+      mem.read(src + 1 + toAddr(wordIx(desc, nj)));
+    end
+  endrule
+
   rule gotElem (st == SElem);
     let c <- mem.data;
     answer(intC((c.val >> shiftOf(desc, rq.i)) & maskOf(desc)), ?);
@@ -401,6 +426,8 @@ module mkPimmSBox#(MemPort mem, PimmGBox gbox)(PimmSBox);
   method Action hashStr(Cell s) = reqQ.enq(mk(KHash, s, ?, ?));
   method Action show(Cell s) = reqQ.enq(mk(KShow, s, ?, ?));
   method Action poke(Cell s, Bit#(32) i, Bit#(32) w) = reqQ.enq(mk(KPoke, s, i, w));
+  method Action search(Cell s, Bit#(32) i, Bit#(32) e, Bit#(32) c) =
+    reqQ.enq(SReq { k: KSrch, s: s, i: i, e: e, s2: ?, p2: c, op: ? });
   method Action equal(Cell s1, Cell s2) =
     reqQ.enq(SReq { k: KEq, s: s1, i: ?, e: ?, s2: s2, p2: ?, op: ? });
   method ActionValue#(SResult) result;

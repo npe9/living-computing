@@ -1,0 +1,350 @@
+subsystem	class	kind	member	arity	natures_or_slots	meaning	grade	citation	version_or_year
+SHELL	login.com	command	menu	0		defines the system menu: option goals then items_list(Columns)	USAGE	disc/login.com:3-47; gog-esp/login.com:6-24; kappa2/kappa2/login.com:9-32	SIMPOS 6.2-8 (1990-93)
+SHELL	login.com	command	define	0		defines logical names: "Name" := [Path,...], resolved in order	USAGE	disc/login.com:49-55; gog-esp/login.com:30-58; kappa2/kappa2/login.com:34-83	SIMPOS 6.2-8 (1990-93)
+SHELL	login.com	command	package	0		default package at login (one atom)	USAGE	disc/login.com:57; gog-esp/login.com:60; kappa2/kappa2/login.com:85	SIMPOS 6.2-8 (1990-93)
+SHELL	login.com	command	shell_transient	0		list of {Name,'pkg##class'} registering shell commands	USAGE	gog-esp/login.com:26-28; kappa2/kappa2/login.com:87-101	SIMPOS 6.2-8 (1990-93)
+SHELL	login.com	command	items_list	1		list of columns, each a list of {"Label",Target}	USAGE	disc/login.com:5-47; kappa2/kappa2/login.com:11-32	SIMPOS 6.2-8
+SHELL	login.com	command	area_limit	1		menu option area_limit(free); INFERENCE: area limit of menu-started processes	USAGE	gog-esp/login.com:7	1992-93
+SHELL	login.com	command	font	1		menu option: system-menu font file	USAGE	kappa2/kappa2/login.com:10	SIMPOS 7/8
+SHELL	system_menu	menu_item	debugger		target=debugger	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	pmacs		target=pmacs	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	file		target=file_manipulator	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	librarian		target=librarian	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	shell		target=shell	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	spooler		target=spooler_manipulator	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	pattern editor		target=pattern_editor	standard system-menu item restated in every held login.com	USAGE	disc/login.com:6-12; gog-esp/login.com:9-17; kappa2/kappa2/login.com:12-18	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	no_select			target meaning non-selectable label/separator	USAGE	disc/login.com:5,13,23; kappa2/kappa2/init/sample/login.com:20-22	SIMPOS 6.2-8
+SHELL	system_menu	menu_item	others>user>maintenance>register		Username, Password, Rank	register a user; reply "User cgs registered"	PROSE	gog-esp/INSTALL.e:24-31	1992-93
+SHELL	system_menu	menu_item	logout>yes			log out	PROSE	gog-esp/INSTALL.e:34	1992-93
+SHELL	system_menu	menu_item	TCP-IP>reset network			reset network	PROSE	fuzclust/fuzclust/README:139	SIMPOS 7.1
+SHELL	system_menu	event	double right click			opens the system menu; select with left click; sweep two corners for the window	PROSE	utter/INSTALL:30-38; gog-esp/INSTALL.e:25	SIMPOS 7.1
+SHELL	login	message	user     >			login prompt (then password >)	PROSE	gog-esp/INSTALL.e:19-20	1992-93
+SHELL	console	message	Do you want to Halt? (Y/N/T)			console BREAK prompt; T then "> K nn" kills process nn; INFERENCE: CSP monitor, not SIMPOS	PROSE	fuzclust/fuzclust/README:143-159	SIMPOS 7.1
+SHELL	shell	message	$			shell prompt	PROSE	kwic-esp/INSTALL:89-99	SIMPOS 7.1
+SHELL	shell	command	alias	2		alias Name pkg##class. binds a command name to a program class	PROSE	kwic-esp/INSTALL:91-99; INSTALL.j:118-128	SIMPOS 7.1
+SHELL	shell	command	call	1		call Class runs a program class	PROSE	cil/INSTALL:18; INSTALL.j:18	SIMPOS 8.1
+SHELL	shell	option	{			in "dtc +s { file"; INFERENCE: stdin redirection (dtCompiler reads declaration from stdin)	INFERENCE	kwic-esp/INSTALL:92; kwic-esp-002/kwic-esp/src/dtCompiler.esp:60	SIMPOS 7.1
+SHELL	shell_transient	command	far		class=superuser##file_backup	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	make_sort_table		class=kappaMST_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	search_pattern		class=kappaSDT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	create_copy_table		class=kappaCCT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	delete_table		class=kappaDTT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	create_table		class=kappaCTT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	search_record		class=kappaKST_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	loading		class=kappaLDT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	unloading		class=kappaULT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	read_index		class=kappaRIT_process	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	delete_record		class=kappa_delete_tool	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell_transient	command	update_record		class=kappa_update_tool	shell command bound in login.com	USAGE	kappa2/kappa2/login.com:89-100	SIMPOS 7/8 (1992)
+SHELL	shell	option	loading [-t NUM] [-s NUM] TableName			usage line; check_args expects "-","s",NUM as separate strings	USAGE	kappa2/kappa2/utility/tool/LDTPR.SHELL:35,80-88	1992
+SHELL	as_program	class	as_program			program nature: 164 held classes inherit it	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21; cil/src/ms_cdn.esp:43 (164 classes, census in notes 1.4)	SIMPOS 5.1-8.1
+SHELL	as_server_program	class	as_server_program			server program nature: 6 held classes	USAGE	gog-esp/REMOTE_P.ESP:11; kappa2/kappa2/kernel/net/REMUSR.ESP:17	SIMPOS 7-8
+SHELL	as_program	imethod	goal	1		entry point run in the program process	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21-46; cil/src/ms_cdn.esp:43	SIMPOS 5.1-8.1
+SHELL	as_program	cmethod	create	2		usually :new(Class,Obj); overridden by 27 classes	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:11-12	1992
+SHELL	as_program	imethod	cut_off	1		cleanup hook; INFERENCE: called when the process is cut off	USAGE	cil/src/ms_cdn.esp:120-121	SIMPOS 8.1
+SHELL	as_program	imethod	exit	1		INFERENCE: called when the program is ended from outside	USAGE	cil/src/ms_cdn.esp:53-54	SIMPOS 8.1
+SHELL	as_program	imethod	current_state	2	initiation_table	fills SIMPOS initiation_table for the process saver	USAGE	cil/src/ms_cdn.esp:537-548; cil/src/ds_brs.esp:2654	SIMPOS 8.1
+SHELL	as_program	imethod	get_arguments	2		returns the shell argument list as a list of strings	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:29-31; kappa2/kappa2/utility/tool/LDTPR.SHELL:26-56	1992
+SHELL	rsx_tool_macro	cmethod	goal	2		kwic macro-inserted class method :goal(Class,ArgL): save std devices, convert ArgL, new, save_arguments, goal/1, restore; only caller dbDM :test (programmatic stand-in for the shell, INFERENCE)	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47	SIMPOS 7.1
+SHELL	as_program	imethod	save_arguments	2		store converted flat string list on the program; unattributed in B-scan; INFERENCE: as_program setter	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47	SIMPOS 7.1
+SHELL	as_program	imethod	parse_arguments	2		returns {Positional,Named}, Named = [{NameString,Value}]; inherited from as_program (B-scan self-inherited)	USAGE	kwic-esp-002/kwic-esp/src/dtCompiler.esp:42; kwic-esp-002/kwic-esp/src/dbDM.esp:41; kwic-esp-002/kwic-esp/src/dbUtil.esp:68	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	+(Opts)			each option -> two strings "+",NameString (sign then name)	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	-(Opts)			each option -> two strings "-",NameString	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	&([{Name,V}])			named value -> three strings "&",NameString,Value	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	stdIn(S)			rebinds standard input	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	stdOut(S)			rebinds standard output	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	rsx_tool_macro	option	stdMsg(S)			rebinds standard message	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:60-89	SIMPOS 7.1
+SHELL	process	imethod	standard_input	2		process stdin stream (shell-redirectable)	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21-46	SIMPOS 7-8.1
+SHELL	process	imethod	standard_output	2		process stdout stream	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21-46	SIMPOS 7-8.1
+SHELL	process	imethod	standard_message	2		process message stream for prompts/errors	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21-46	SIMPOS 7-8.1
+SHELL	process	imethod	set_standard_input	2		rebind stdin	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47	SIMPOS 7-8.1
+SHELL	process	imethod	set_standard_output	2		rebind stdout	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47,71-76	SIMPOS 7-8.1
+SHELL	process	imethod	set_standard_message	2		rebind message stream	USAGE	kwic-esp-002/kwic-esp/src/v2_tool.mac:39-47,71-76	SIMPOS 7-8.1
+SHELL	process	imethod	set_area_limit_execution	7		shell commands: (P,free,default,free,middle,nil,nil); cil_install (Ctx,free,free,free,free,_,_)	USAGE	kappa2/kappa2/utility/tool/CCTPR.SHELL:21-46; cil/src/INSTALL.esp:44-46	SIMPOS 7-8.1
+SHELL	process	imethod	catch	5		(P,"Skip this class",Obj,Method,ArgVector); INFERENCE: runs call, error menu offers skip	USAGE	cil/src/ds_bep.esp:2007-2008	SIMPOS 7-8.1
+SHELL	process	imethod	throwing_hook	7		INFERENCE: run Obj1:M1(A1), cleanup Obj2:M2(A2) on throw	USAGE	cil/src/ds_bep.esp:2186-2188	SIMPOS 7-8.1
+SHELL	process	imethod	get_library_environment	3		(P,Name,Mode); names catalogue_mode error_mode skip_mode source_file_mode node_name	USAGE	cil/src/ds_bep.esp:3236-3238	SIMPOS 7-8.1
+SHELL	process	imethod	set_library_environment	3		set librarian mode per process	USAGE	cil/src/ds_bep.esp:3228-3234; cil/src/INSTALL.esp:47-48	SIMPOS 7-8.1
+SHELL	process	imethod	check_library_environment	3		test librarian mode	USAGE	cil/src/ds_bep.esp:2991	SIMPOS 7-8.1
+SHELL	process	imethod	get_package	2		process default package	USAGE	cil/src/ds_bep.esp:3147	SIMPOS 7-8.1
+SHELL	process	imethod	set_package	2		set process default package	USAGE	cil/src/ds_bep.esp:3037; chal/cal_start.esp:13	SIMPOS 7-8.1
+SHELL	process	imethod	user	2		process owner user object	USAGE	cil/src/ds_bep.esp:3142-3145	SIMPOS 7-8.1
+SHELL	process	imethod	activate	2		start program object in process	USAGE	cil/src/ms_cdn.esp:348	SIMPOS 7-8.1
+SHELL	process	imethod	exterminate	1		kill process	USAGE	kappa2/kappa2/kernel/svm/SVCTL.ESP:800	SIMPOS 7-8.1
+SHELL	process	cmethod	self	2		current process	USAGE	cal-esp/cal2.12/control.esp:65	SIMPOS 7-8.1
+SHELL	process	cmethod	create	3		mode list [free,free,query,middle] or [free,default,free,middle]	USAGE	cil/src/ms_cdn.esp:347; kappa2/kappa2/utility/tool/LOADER.ESP:53	SIMPOS 7-8.1
+SHELL	process	cmethod	get_number	3		process number shown in window labels	USAGE	cil/src/ms_cdn.esp:219-220	SIMPOS 7-8.1
+SHELL	library_utility	keycode	mouse#mm			read_sense code that aborts librarian output (prints aborted.)	USAGE	cil/src/ds_bep.esp:3477-3488	SIMPOS 6.1 patch (1991)
+SHELL	library_utility	keycode	control#"c"			read_sense code that aborts librarian output (prints aborted.)	USAGE	cil/src/ds_bep.esp:3477-3488	SIMPOS 6.1 patch (1991)
+SHELL	library_utility	keycode	key#abort			read_sense code that aborts librarian output (prints aborted.)	USAGE	cil/src/ds_bep.esp:3477-3488	SIMPOS 6.1 patch (1991)
+LIBRARIAN	librarian	menu_item	Package>Other Command>Load package template			prompt Directory Name>; then LOAD ALL	PROSE	utter/INSTALL:40-58	SIMPOS 7.1
+LIBRARIAN	librarian	menu_item	Package>Other command>Load one package			input file names	PROSE	papyrus/INSTALL:39-41	SIMPOS 7.0
+LIBRARIAN	librarian	menu_item	package>set_default_package			set default package	PROSE	kwic-esp/INSTALL.j:106-107	SIMPOS 7.1
+LIBRARIAN	librarian	menu_item	catalogue			catalogue wildcard path	PROSE	kwic-esp/INSTALL.j:108-110	SIMPOS 7.1
+LIBRARIAN	librarian	menu_item	save>menu>SAVE ALL			save everything	PROSE	kwic-esp/INSTALL.j:111	SIMPOS 7.1
+LIBRARIAN	librarian	menu_item	Execute			prompt Command>; run command file (fxd("cgscmp.com"). or CATALOG.COM)	PROSE	gog-esp/INSTALL.e:49-50; kappa2/INSTALL:39	1992-93; SIMPOS 7/8
+LIBRARIAN	librarian	menu_item	catalog			catalog window; comma-separated wildcard list	PROSE	euod/INSTALL:43-50	SIMPOS 6/7
+LIBRARIAN	librarian	menu_item	Save templates			save templates	PROSE	kappa2/INSTALL:40	SIMPOS 7/8
+LIBRARIAN	librarian	menu_item	public class			set classes public	PROSE	cal-esp/INSTALL:32-33	SIMPOS 7.0
+LIBRARIAN	librarian	menu_item	create package (ENVIRONMENT)			make package with environment	PROSE	cal-esp/INSTALL:22-28	SIMPOS 7.0
+LIBRARIAN	librarian	menu_item	create package environment (ELEMENTS)			environment = list of packages	PROSE	cal-esp/INSTALL:24-25	SIMPOS 7.0
+LIBRARIAN	librarian	message	save all asserted predicates?			save asks about asserted predicates; answer save	PROSE	sum/INSTALL:26-29	SIMPOS 3-5
+LIBRARIAN	pmacs	command	M-x catalogue_and_save			catalogue current buffer and save	PROSE	chal/INSTALL:5-11	PSI-II/UX
+LIBRARIAN	pmacs	command	M-x set_package			prompt Package Name(user):	PROSE	chal/INSTALL:5-11	PSI-II/UX
+LIBRARIAN	command_file	command	make_environment	2		create package environment Env with element list; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:2	1992-93
+LIBRARIAN	command_file	command	save_environment	1		save environment; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:3	1992-93
+LIBRARIAN	command_file	command	make_package	2		create package with environment; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:4	1992-93
+LIBRARIAN	command_file	command	save_package	1		save package; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:5	1992-93
+LIBRARIAN	command_file	command	use_package	1		set current package; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:6	1992-93
+LIBRARIAN	command_file	command	fxds	1		catalogue listed files in order (macros first); arity as written, no receiver	USAGE	gog-esp/cgscmp.com:7-214; kappa2/kappa2/kernel/hlc/CATALOG2.COM:7-120	1992-93
+LIBRARIAN	command_file	command	save_all_classes	0		save every catalogued class; arity as written, no receiver	USAGE	gog-esp/cgscmp.com:215	1992-93
+LIBRARIAN	command_file	command	command	1		run another command file; arity as written, no receiver	USAGE	kappa2/kappa2/CATALOG.COM:2-6	1992-93
+LIBRARIAN	command_file	command	load	1		load a class; arity as written, no receiver	USAGE	kappa2/kappa2/init/ipl.com:7	1992-93
+LIBRARIAN	command_file	command	refute	1		execute a goal; arity as written, no receiver	USAGE	kappa2/kappa2/init/ipl.com:8-11	1992-93
+LIBRARIAN	command_file	command	fxd	1		typed at Execute to run a command file (gog prose); CONFLICT: cil dispatch maps fxd(P) to catalogue	PROSE	gog-esp/INSTALL.e:50; cil/src/ds_bep.esp:3395	1992-93 / SIMPOS 6.1 patch
+LIBRARIAN	kappa_loader	cmethod	ipl_load	3	as_class_with_lock,as_program	(Class,ExtraClassNames,N): preload classes in new process; N/3 scales progress meter (270 in ipl.com)	USAGE	kappa2/kappa2/utility/tool/LOADER.ESP:62-66,96-101	1991-92
+LIBRARIAN	library	cmethod	get_class_object	3		name -> class object	USAGE	cal-esp/cal2.12/control.esp:224	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_class_object	2		make/load class object	USAGE	cal-esp/cal2.12/control.esp:223	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	assign	1		called before queries; meaning OPEN	USAGE	kappa2/kappa2/utility/tool/LOADER.ESP:160-163	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	check_info	3		(Id,template|object|template_file) test	USAGE	kappa2/kappa2/utility/tool/LOADER.ESP:170	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	check_package	2		package exists	USAGE	cal-esp/deb2.12/init.esp:974	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	check_package	3		resolve package	USAGE	cil/src/ds_bep.esp:2809	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	check_class_id	3		"8 =< Info means loaded" (cil comment)	USAGE	cil/src/ms_cdn.esp:69-74	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_class_id	5		class id lookup	USAGE	cal-esp/deb2.12/init.esp:960	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_class_id	6		class id lookup	USAGE	cil/src/ds_bep.esp:1921	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_class_id_in_package	6		lookup in package	USAGE	cil/src/ds_bep.esp:2720	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_class_id_in_environment	6		lookup via environment	USAGE	cil/src/ds_bep.esp:2828	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_package	2		create package	USAGE	cil/src/INSTALL.esp:227	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_package_forcedly	2		create package, replacing	USAGE	cil/src/ms_ist.esp:857	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	delete_package	2		delete package	USAGE	cil/src/ms_ist.esp:858	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	delete_package_forcedly	2		delete package	USAGE	gog-esp/CGS_INSTALLER.esp:374	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	delete_environment_forcedly	2		delete environment	USAGE	gog-esp/CGS_INSTALLER.esp:376	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	change_environment_in_package	3		set package environment (e.g. simpos)	USAGE	cil/src/INSTALL.esp:228	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	load_package_template	3		load .ptf	USAGE	cil/src/ms_ist.esp:859	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	save_package_template	3		save .ptf	USAGE	cil/src/ms_ist.esp:388	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	catalogue_class	2		register new class name	USAGE	cil/src/ds_bep.esp:2723	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	abolish	2		remove class	USAGE	cil/src/ds_bep.esp:1995	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	abolish_class_object	2		drop class object	USAGE	cil/src/ds_bep.esp:2729	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	register	2		register class ids without compiling	USAGE	cil/src/ds_bep.esp:2127	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	define_public_classes	2		make classes public	USAGE	cil/src/ds_bep.esp:1961	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_changed_classes	2		classes changed since save	USAGE	cil/src/ds_bep.esp:1841	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_class_descriptor	6		class descriptor CD	USAGE	cil/src/ds_bep.esp:1976	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	is_name_only_class	3		name registered, no template	USAGE	cil/src/ds_bep.esp:1981	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_class_template_from_internal_format	4		compile expanded definition	USAGE	cil/src/ds_bep.esp:2867	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	update_class_source_file	4		record source file and version	USAGE	cil/src/ds_bep.esp:3003	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_names	4		names	USAGE	cil/src/ds_bep.esp:3059	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_class_template	2		rebuild from template file	USAGE	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:91	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	make_class_template_from_source	3		compile source	USAGE	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:94	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_version	6		version	USAGE	kappa2/kappa2/kernel/hlc/HLCLIB.ESP:90	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	write_class_template	2		write template file	USAGE	cil/src/ms_mdm.esp:1954	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	delete	2		delete	USAGE	cil/src/ms_mdm.esp:1960	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_all_predicates_with_information	4		predicate info	USAGE	cil/src/ms_mdm.esp:2131	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_predicates_with_information	4		predicate info	USAGE	cil/src/ms_mdm.esp:2133	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_a_code	7		CAL debugger use	USAGE	cal-esp/deb2.12/purs.esp:153	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_a_name	8		CAL debugger use	USAGE	cal-esp/deb2.12/output.esp:605	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	stick_predicate_tap	2		CAL debugger use	USAGE	cal-esp/deb2.12/pmod.esp:516	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	is_ipl_class_object	2		class is in IPL area	USAGE	cal-esp/deb2.12/pmod.esp:387	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_direct_superclasses	3		superclasses	USAGE	cal-esp/deb2.12/pmod.esp:404	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_direct_referred_classes	3		referred classes	USAGE	cal-esp/deb2.12/pmod.esp:410	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	get_exist_class	4		CAL debugger use	USAGE	cal-esp/deb2.12/pmod.esp:532	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	set_error_mode	1		librarian error mode on	USAGE	cal-esp/deb2.12/purs.esp:525	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library	cmethod	reset_error_mode	1		librarian error mode reset	USAGE	cal-esp/deb2.12/purs.esp:526	SIMPOS 6.1-8.1 (1988-93)
+LIBRARIAN	library_utility	imethod	catalogue	3		catalogue paths or term list, return ids	USAGE	cal-esp/cal2.12/graph.esp:93	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	save	2		save class templates	USAGE	gog-esp/PAT_DATA.ESP:90	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	load	2		load classes from templates	USAGE	kappa2/kappa2/utility/tool/LOADER.ESP:196	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	delete	2		delete classes	USAGE	kwic-esp-002/kwic-esp/src/dbDM.esp:1132	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	get_classes_with_wildcard	5		wildcard class lookup	USAGE	kwic-esp-002/kwic-esp/src/dbDM.esp:1131	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	get_package	2		current package	USAGE	gog-esp/CGS_INSTALLER.esp:341	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	set_package	2		set current package	USAGE	gog-esp/CGS_INSTALLER.esp:345	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	set_output	2		librarian message window	USAGE	gog-esp/CGS_INSTALLER.esp:343	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	remove_output	1		detach message window	USAGE	gog-esp/CGS_INSTALLER.esp:344	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	load_environment_for_package_template	3		load .env file	USAGE	gog-esp/CGS_INSTALLER.esp:379	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	load_package_template	3		load .ptf file	USAGE	gog-esp/CGS_INSTALLER.esp:381	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	get_direct_superclasses	3		used as package-exists test	USAGE	gog-esp/CGS_INSTALLER.esp:371	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	imethod	get_class_id_atom_list	4		ids	USAGE	sum/src/main.wkm:68	SIMPOS 6-8 (1990-93)
+LIBRARIAN	library_utility	cmethod	create	2		create librarian object without window	USAGE	cal-esp/cal2.12/graph.esp:66; cil/src/INSTALL.esp:14	SIMPOS 6-8
+LIBRARIAN	library_utility	cmethod	assert	3		dynamic clause in a catalogued class used as database: (#library_utility,ClassObj,Term)	USAGE	cal-esp/cal2.12/graph.esp:176,215,237; sum/src/cprolog.v32:160	SIMPOS 5-7
+LIBRARIAN	library_utility	cmethod	asserta	3		dynamic clause in a catalogued class used as database: (#library_utility,ClassObj,Term)	USAGE	cal-esp/cal2.12/graph.esp:176,215,237; sum/src/cprolog.v32:160	SIMPOS 5-7
+LIBRARIAN	library_utility	cmethod	assertz	3		dynamic clause in a catalogued class used as database: (#library_utility,ClassObj,Term)	USAGE	cal-esp/cal2.12/graph.esp:176,215,237; sum/src/cprolog.v32:160	SIMPOS 5-7
+LIBRARIAN	library_utility	cmethod	retract	3		dynamic clause in a catalogued class used as database: (#library_utility,ClassObj,Term)	USAGE	cal-esp/cal2.12/graph.esp:176,215,237; sum/src/cprolog.v32:160	SIMPOS 5-7
+LIBRARIAN	library_utility	cmethod	retract_all	4		dynamic clause in a catalogued class used as database: (#library_utility,ClassObj,Term)	USAGE	cal-esp/cal2.12/graph.esp:176,215,237; sum/src/cprolog.v32:160	SIMPOS 5-7
+OTHER	coordinator	cmethod	get_instance	2		SIMPOS coordinator instance	USAGE	cal-esp/deb2.12/dmenu.esp:865	SIMPOS 7-8.1
+OTHER	coordinator	cmethod	information	3			USAGE	kwic-esp-002/kwic-esp/src/dbUtil.esp:225	SIMPOS 7-8.1
+OTHER	coordinator	cmethod	login_user	2		logged-in user	USAGE	kappa2/kappa2/kernel/net/REMAITR.ESP:230	SIMPOS 7-8.1
+OTHER	coordinator	cmethod	whiteboard	2		system whiteboard	USAGE	kappa2/kappa2/user_if/pb/pcn.esp:4840	SIMPOS 7-8.1
+OTHER	user	cmethod	login_user	2		logged-in user	USAGE	kappa2/kappa2/user_if/pb/kcm.esp:78	SIMPOS 7-8.1
+OTHER	user	cmethod	user	2			USAGE	kappa2/kappa2/kernel/svm/SVCTL.ESP:1703	SIMPOS 7-8.1
+OTHER	user	cmethod	user_list	2		registered users	USAGE	kappa2/kappa2/utility/mdu/USER.ESP:452	SIMPOS 7-8.1
+OTHER	inspector	cmethod	create	2			USAGE	cal-esp/deb2.12/pmod.esp:686	SIMPOS 7-8.1
+OTHER	inspector	imethod	inspect	2		inspect object	USAGE	kappa2/kappa2/user_if/pb/pcn.esp:4835	SIMPOS 7-8.1
+OTHER	interpreter	cmethod	create	3			USAGE	cal-esp/deb2.12/deb.esp:212	SIMPOS 7-8.1
+OTHER	interpreter	cmethod	interpret	2		interpret goal	USAGE	cil/src/cil_kl0.esp:314	SIMPOS 7-8.1
+OTHER	esp_compiler	cmethod	compile	4			USAGE	cal-esp/deb2.12/cm.esp:703	SIMPOS 7-8.1
+OTHER	kl0_compiler	cmethod	compile_one_predicate	6			USAGE	cal-esp/deb2.12/cm.esp:705	SIMPOS 7-8.1
+OTHER	directory	cmethod	retrieve	3		file object by path	USAGE	cal-esp/deb2.12/init.esp:991	SIMPOS 7-8.1
+OTHER	directory	cmethod	retrieve	4		file object and path	USAGE	cil/src/INSTALL.esp:140	SIMPOS 7-8.1
+OTHER	directory	cmethod	make	4		make directory	USAGE	cil/src/INSTALL.esp:142	SIMPOS 7-8.1
+OTHER	directory	cmethod	retrieve_with_wildcard	3		wildcard	USAGE	kwic-esp-002/kwic-esp/src/dbDM.esp:131	SIMPOS 7-8.1
+OTHER	window	imethod	get_interpreter	2		window command interpreter	USAGE	kwic-esp-002/kwic-esp/src/dtCompiler.esp:31; cil/src/ms_msm.esp:497	SIMPOS 7-8.1
+OTHER	command_interpreter	imethod	command_interpret	1		run read-execute loop	USAGE	cil/src/ms_msm.esp:498	SIMPOS 7-8.1
+OTHER	esp_manual	message	Package-name ## class-name			cross-package class reference; # prefix = class object	PROSE	ESPtex/overview-e.tex:2539-2560	1990
+OTHER	esp_manual	command	use_package	1		declares package of following classes in a source file	PROSE	ESPtex/program-e.tex:5262-5263	1990
+OTHER	esp_manual	command	use_macro	1		file-wide macro bank; default esp_macro_expander (CONFLICT: cil 6.1 copy uses simpos##esp_macro_expander_for_compiler)	PROSE	ESPtex/program-e.tex:7721-7733	1990
+OTHER	esp_manual	message	externally declared class			only externally declared classes visible without ##; set in the librarian	PROSE	ESPtex/program-e.tex:5456	1990
+OTHER	esp_manual	message	package environment			one per package; set when librarian creates package; simpos env inherited by user env	PROSE	ESPtex/program-e.tex:5331,5398,5560	1990
+OTHER	esp_manual	message	SIMPOS manual set			4 volumes: Overview, Operations, Programming, Japanese document edition	PROSE	ESPtex/overview-e.tex:186-241; ESPtex-j/overview-j.tex:199-249	1990
+POSSIBLE_SIMPOS_CODE	library_utility	class	spec_ds##library_utility		librarian_version,librarian_class_generator,librarian_delete,librarian_package,librarian_spy,librarian_reference,librarian_fdd,librarian_subroutine,as_assert_utility	SIMPOS 6.1 Librarian class copied and patched by CIL team	USAGE	cil/src/ds_bep.esp:1774,3123	SIMPOS 6.1; patched 88-91
+POSSIBLE_SIMPOS_CODE	library_utility	slot	standard_output			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	text_window			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	flash_flag			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	package			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	name			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	library_environment			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	yank_on_off			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	slot	debug_flag			instance slot	USAGE	cil/src/ds_bep.esp:3170-3177	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	cmethod	create	3		create with user window	USAGE	cil/src/ds_bep.esp:3160-3162	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	command	2		command-list interpreter: fxd->catalogue, save, load, delete, else :refute(UT,Name,Args)	USAGE	cil/src/ds_bep.esp:3182-3183,3381-3411	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	set_output	2		set text window	USAGE	cil/src/ds_bep.esp:3189-3203	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	remove_output	1			USAGE	cil/src/ds_bep.esp:3204-3207	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	reset_output	2			USAGE	cil/src/ds_bep.esp:3208-3212	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	set_name	2			USAGE	cil/src/ds_bep.esp:3214-3216	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	get_name	2			USAGE	cil/src/ds_bep.esp:3214-3216	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	check_window_object	2			USAGE	cil/src/ds_bep.esp:3218-3223	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	set_mode	1		copy process modes	USAGE	cil/src/ds_bep.esp:3225-3226	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	set_mode	3		set_library_environment	USAGE	cil/src/ds_bep.esp:3228-3234	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	get_mode	3		get_library_environment	USAGE	cil/src/ds_bep.esp:3236-3238	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	get_package	2			USAGE	cil/src/ds_bep.esp:3240-3243	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	message	2		to text window	USAGE	cil/src/ds_bep.esp:3245-3255	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	message	3			USAGE	cil/src/ds_bep.esp:3245-3255	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	message	4			USAGE	cil/src/ds_bep.esp:3245-3255	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	writef	3			USAGE	cil/src/ds_bep.esp:3257-3261	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	writet	2			USAGE	cil/src/ds_bep.esp:3257-3261	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	putl	2		to standard_output	USAGE	cil/src/ds_bep.esp:3263-3276	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	putl	3			USAGE	cil/src/ds_bep.esp:3263-3276	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	putl	4			USAGE	cil/src/ds_bep.esp:3263-3276	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	putf	3			USAGE	cil/src/ds_bep.esp:3263-3276	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	putt	2			USAGE	cil/src/ds_bep.esp:3263-3276	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	display_text_window	6		prints Type, Time, Heap	USAGE	cil/src/ds_bep.esp:3306-3322	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	response_time	5			USAGE	cil/src/ds_bep.esp:3324-3327	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	display_response_time	6			USAGE	cil/src/ds_bep.esp:3329-3333	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	get_library_utility	2		returns self	USAGE	cil/src/ds_bep.esp:3335	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	set_response_time_flag	2			USAGE	cil/src/ds_bep.esp:3336-3337	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	create_window	2		standard_io_window size(manipulator)	USAGE	cil/src/ds_bep.esp:3339-3343	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	create_pmacs_window	2		pmacs_window	USAGE	cil/src/ds_bep.esp:3345-3349	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	check_subclass	2			USAGE	cil/src/ds_bep.esp:3351-3352	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	compile	2		stub	USAGE	cil/src/ds_bep.esp:3358-3361	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	uncompile	2		stub	USAGE	cil/src/ds_bep.esp:3358-3361	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	abolish_interpretive_code	2		stub	USAGE	cil/src/ds_bep.esp:3358-3361	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	library_utility	imethod	abolish_compiled_code	2		stub	USAGE	cil/src/ds_bep.esp:3358-3361	SIMPOS 6.1 patch (1991)
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	class	librarian_class_generator		librarian_read_term	mixin of library_utility	USAGE	cil/src/ds_bep.esp:1777-1785	SIMPOS 6.1; yasuko 28-Jul-88
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	catalogue	2		generate templates, push yanks	USAGE	cil/src/ds_bep.esp:1799-1803	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	catalogue	3			USAGE	cil/src/ds_bep.esp:1805-1809	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	catalogue	4		option save	USAGE	cil/src/ds_bep.esp:1811-1816	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	register	3		register without compile	USAGE	cil/src/ds_bep.esp:1818-1823	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	register	2			USAGE	cil/src/ds_bep.esp:1825-1827	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	load	2		load from template files; Loading <id>...	USAGE	cil/src/ds_bep.esp:1829-1831,1967-2012	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	save	2		Saving <id>...	USAGE	cil/src/ds_bep.esp:1836-1838,2060-2107	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	save_changed_classes	1			USAGE	cil/src/ds_bep.esp:1840-1843	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	save_non_saved_classes	1		save menu via simpos##librarian_menu	USAGE	cil/src/ds_bep.esp:1845-1856	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	get_classes_from_source	3			USAGE	cil/src/ds_bep.esp:1858-1862	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	read_and_get	5			USAGE	cil/src/ds_bep.esp:1864-1867	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	close_and_get	4			USAGE	cil/src/ds_bep.esp:1864-1867	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	imethod	get_temp_list	3			USAGE	cil/src/ds_bep.esp:1870-1871	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_read_term	class	librarian_read_term		librarian_catalogue,as_class_maker,compiler_error_reporter	reader/cataloguer; from <M-KONDOH.LIBRARIAN>ZREAD.ESP 2-Jul-86	USAGE	cil/src/ds_bep.esp:2327-2331	1986-91
+POSSIBLE_SIMPOS_CODE	librarian_read_term	cmethod	make_class_template_from_source	3			USAGE	cil/src/ds_bep.esp:2341-2349	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	cmethod	make_class_template_from_catalogued	4			USAGE	cil/src/ds_bep.esp:2354-2362	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	cmethod	make_class_template_for_auto_catalogue	4		template path >sys>library>Pkg>template>Class.template; from V5.0	USAGE	cil/src/ds_bep.esp:2364-2378	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	read_term_and_catalogue	3		accepts terms since V6.11	USAGE	cil/src/ds_bep.esp:2398-2400	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	catalogue_remote_or_fdd	5		copy via >sys>librarian>esp	USAGE	cil/src/ds_bep.esp:2410-2415	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	catalogue_by_tap	6			USAGE	cil/src/ds_bep.esp:2420-2421	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	close_and_abolish	3			USAGE	cil/src/ds_bep.esp:2426-2429	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	set_operators	4			USAGE	cil/src/ds_bep.esp:2434-2455	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	librarian_read_term	imethod	special_terms	4			USAGE	cil/src/ds_bep.esp:2460-2461	SIMPOS 5.0-6.11
+POSSIBLE_SIMPOS_CODE	library_utility	message	illegal command			librarian message	USAGE	cil/src/ds_bep.esp:3381-3411	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	aborted.			librarian message	USAGE	cil/src/ds_bep.esp:3477-3488	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Catalogging "<path>"...			librarian message	USAGE	cil/src/ds_bep.esp:2018-2041	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	File <f> not found.			librarian message	USAGE	cil/src/ds_bep.esp:2018-2041	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Class <c> template file not found 			librarian message	USAGE	cil/src/ds_bep.esp:1967-2012	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Class <c> not catalogued			librarian message	USAGE	cil/src/ds_bep.esp:1967-2012	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Load <id> failed.			librarian message	USAGE	cil/src/ds_bep.esp:1967-2012	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Class <c> template not found.			librarian message	USAGE	cil/src/ds_bep.esp:2060-2107	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	Save <id> failed.			librarian message	USAGE	cil/src/ds_bep.esp:2060-2107	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	This system has no librarian window interface!!			librarian message	USAGE	cil/src/ds_bep.esp:1845-1856	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	illegal source specification :			librarian message	USAGE	cil/src/ds_bep.esp:1773-3518	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	illegal definition :			librarian message	USAGE	cil/src/ds_bep.esp:1773-3518	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	include file not found:			librarian message	USAGE	cil/src/ds_bep.esp:1773-3518	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	message	   copy failed.			librarian message	USAGE	cil/src/ds_bep.esp:1773-3518	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	builtin	class	builtin			KL0 builtins for local interpreter; <M-KONDOH.SUBROUTINE>BUILT1.ESP.11	USAGE	cil/src/cil_kl0.esp:43-74	1986
+POSSIBLE_SIMPOS_CODE	cal_debugger	class	cal_debugger		command_interpreter,as_cal_debugger_initiation,as_cal_debugger_entry,as_cal_interpreter_information_processing,as_cal_debugger_kernel,as_debugger_break_processing,save_debugger_state,as_program	CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/deb.esp:20	1987-91
+POSSIBLE_SIMPOS_CODE	command_interpreter	class	command_interpreter		cal_purs_builtin	CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/cm.esp:20	1987-91
+POSSIBLE_SIMPOS_CODE	as_cal_debugger_entry	class	as_cal_debugger_entry			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/entry.esp:17	1987-91
+POSSIBLE_SIMPOS_CODE	as_gate_menu_processing	class	as_gate_menu_processing			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/gmenu.esp:22	1987-91
+POSSIBLE_SIMPOS_CODE	as_state_menu_processing	class	as_state_menu_processing			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/stat.esp:23	1987-91
+POSSIBLE_SIMPOS_CODE	save_debugger_state	class	save_debugger_state			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/save.esp:17	1987-91
+POSSIBLE_SIMPOS_CODE	as_debugger_menu_processing	class	as_debugger_menu_processing		slots inspector,library_utility,string_io	CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/dmenu.esp:17	1987-91
+POSSIBLE_SIMPOS_CODE	cal_debugger_io	class	cal_debugger_io		as_debugger_goal_input,as_debugger_input_buffer_processing,...	CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/io.esp:17	1987-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	class	debugger_window_parameter			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/winpar.esp:15	1987-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	class	cal_purs_builtin			CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/purs.esp:9	1987-91
+POSSIBLE_SIMPOS_CODE	trace_protection_manipulator	class	trace_protection_manipulator		as_program,trace_protector	CAL debugger class derived from SIMPOS debugger (<SIMPOS.E.DEBUGGER>SAVE.ESP.3 1987)	USAGE	cal-esp/deb2.12/pmod.esp:600	1987-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	input_string			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Mode_Leash			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Command window			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Variable			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Debugger Menu			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	To whiteboard			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	From whiteboard			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	State window			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Operator window			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	debugger_window_parameter	message	Place menu			debugger window label (+ process number)	USAGE	cal-esp/deb2.12/winpar.esp:207-227	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	library_error_mode(off)			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	reset_inspector			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	trace_simpos			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	set_prompt("system_mode>")			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	area_limit_off			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	heap_on			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	time_on			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	cal_purs_builtin	menu_item	system_help			super-command menu item (sample)	USAGE	cal-esp/deb2.12/purs.esp:975-1021	1988-91
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_version			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_class_generator			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_delete			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_package			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_spy			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_reference			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_fdd			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	librarian_subroutine			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	library_utility	nature	as_assert_utility			nature of SIMPOS 6.1 library_utility copy; defined nowhere in cil except librarian_class_generator	USAGE	cil/src/ds_bep.esp:3123	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_class_generator	nature	librarian_read_term			nature	USAGE	cil/src/ds_bep.esp:1777	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_read_term	nature	librarian_catalogue			nature, not defined in cil (SIMPOS mixin)	USAGE	cil/src/ds_bep.esp:2331	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_read_term	nature	as_class_maker			nature, not defined in cil (SIMPOS mixin)	USAGE	cil/src/ds_bep.esp:2331	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	librarian_read_term	nature	compiler_error_reporter			nature, not defined in cil (SIMPOS mixin)	USAGE	cil/src/ds_bep.esp:2331	SIMPOS 6.1 patch
+POSSIBLE_SIMPOS_CODE	cal_debugger_io	nature	as_debugger_goal_input			SIMPOS debugger mixin referenced, not defined in cal-esp	USAGE	cal-esp/deb2.12/io.esp:20	1988-91
+POSSIBLE_SIMPOS_CODE	cal_debugger_io	nature	as_debugger_input_buffer_processing			SIMPOS debugger mixin referenced, not defined in cal-esp	USAGE	cal-esp/deb2.12/io.esp:20	1988-91
+POSSIBLE_SIMPOS_CODE	cal_debugger	nature	as_program			the CAL debugger is a program	USAGE	cal-esp/deb2.12/deb.esp:20	1988-91
+LIBRARIAN	kappa_loader	nature	as_class_with_lock			class-level lock; :lock has :unlock as its alternative	USAGE	kappa2/kappa2/utility/tool/LOADER.ESP:20-22,144-146	1991-92
+POSSIBLE_SIMPOS_CODE	debugger	slot	font			send seen 3x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/purs.esp:823	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger	slot	user_command_items			send seen 2x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/purs.esp:91	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_error	cmethod	raise	4		send seen 3x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/dmenu.esp:555	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_error	cmethod	raise	5		send seen 9x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/cm.esp:466	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_error_with_retry	cmethod	raise	4		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/winpar.esp:267	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_gate	cmethod	new	2		send seen 5x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/init.esp:693	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_gate	imethod	set	3		send seen 10x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/init.esp:704	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_recorder	cmethod	save	3		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/break.esp:109	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_stop_watch	cmethod	create	2		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/cm.esp:1189	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_variable_with_name	cmethod	check_and_get	4		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/dmenu.esp:777	SIMPOS 6-8
+POSSIBLE_SIMPOS_CODE	debugger_variable_with_name	cmethod	check_and_set	4		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/dmenu.esp:699	SIMPOS 6-8
+OTHER	directory	cmethod	change_directory	3		send seen 2x; meaning not established beyond the call site	USAGE	knov/src/system/fman.esp:33	SIMPOS 6-8
+OTHER	directory	cmethod	current_directory	3		send seen 5x; meaning not established beyond the call site	USAGE	cal-esp/cal2.12/file.esp:60	SIMPOS 6-8
+OTHER	directory	cmethod	delete	3		send seen 3x; meaning not established beyond the call site	USAGE	euod/BUP/bup.esp:162	SIMPOS 6-8
+OTHER	directory	cmethod	delete	4		send seen 1x; meaning not established beyond the call site	USAGE	cil/src/ds_edt.esp:997	SIMPOS 6-8
+OTHER	directory	cmethod	directory	5		send seen 3x; meaning not established beyond the call site	USAGE	cil/src/ms_ist.esp:466	SIMPOS 6-8
+OTHER	directory	cmethod	directory	6		send seen 6x; meaning not established beyond the call site	USAGE	cal-esp/cal2.12/file.esp:77	SIMPOS 6-8
+OTHER	directory	cmethod	kill	3		send seen 2x; meaning not established beyond the call site	USAGE	cil/src/ms_ist.esp:468	SIMPOS 6-8
+OTHER	directory	cmethod	make	3		send seen 3x; meaning not established beyond the call site	USAGE	cil/src/ds_bep.esp:3077	SIMPOS 6-8
+OTHER	directory	cmethod	parent_directory	5		send seen 4x; meaning not established beyond the call site	USAGE	cil/src/ds_bep.esp:3104	SIMPOS 6-8
+OTHER	directory	cmethod	remove	4		send seen 9x; meaning not established beyond the call site	USAGE	cil/src/ms_ist.esp:1234	SIMPOS 6-8
+OTHER	directory	cmethod	rename	5		send seen 9x; meaning not established beyond the call site	USAGE	cil/src/ms_ist.esp:1242	SIMPOS 6-8
+OTHER	directory	cmethod	retrieve_with_wildcard	4		send seen 13x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/create.esp:445	SIMPOS 6-8
+OTHER	inspector	cmethod	create	3		send seen 1x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/dmenu.esp:535	SIMPOS 6-8
+SHELL	process	cmethod	create	2		send seen 64x; meaning not established beyond the call site	USAGE	cal-esp/cal2.12/cal_pmacs.esp:32	SIMPOS 6-8
+SHELL	process	cmethod	get_process	3		send seen 3x; meaning not established beyond the call site	USAGE	cal-esp/deb2.12/purs.esp:544	SIMPOS 6-8
+SHELL	process	imethod	post	1		send seen 1x; meaning not established beyond the call site	USAGE	papyrus_src/demo/EDITOR/editor_def.esp.1:28	SIMPOS 6-8

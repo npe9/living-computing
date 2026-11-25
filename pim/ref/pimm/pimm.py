@@ -59,12 +59,24 @@ VDESC = 0x0d                # kbnheap.kl1 tag(vdesc)
 LIST = 0x04                 # {LIST, address} -> car, cdr; nil is the atom 0
 NIL = (ATOM, 0)
 FLT = 0x30                  # a floating point number (kbn.TAGS FLTo): not modelled
+M32 = 0xffffffff
+EXFLT = 0x3f                # an extended floating point (kbn.TAGS, kbnheap.kl1): not modelled
 NEW_ATOM0 = 0x10000         # the first atom new_atom gives: ours
 VECT0 = 0x10                # VECTn (n = 1..6) is VECT0 + 2n, low bit as o/x
 # A shoen's handle: {SHREC, the address of its shoen record}.  The tag
 # is PIM/m-sourced (PIMOS debugger/inspector/tagtbl.kl1, 16#"38" SHREC);
 # what it points at is OURS (asm/pimm_layout.py).  From 20h: no MRB bit.
 SHREC = 0x38
+# THE CLOCK (system_timer, set_timer; fep.py's time of day): it advances
+# with the instructions both models execute, one tick of the system
+# timer (1/16 msec, PIMOS manual e-builtin.tex:1537-1549) every
+# INSTRUCTIONS_PER_TICK instructions, counted before the instruction
+# that reads it.  The rate: 615 KLIPS on append for one PIM/m processor
+# (FGCS'92, M92 p. 425; docs/pim_architecture.md), the image's own
+# append/3 (scsi_fep_module) taking 11 instructions a reduction, so
+# 615000 * 11 instructions a second, 62.5 usec * 6.765e6 = 422.8 per
+# tick.  That every instruction costs the same is OURS.
+INSTRUCTIONS_PER_TICK = 423
 from pimm_layout import (G_LINK, G_STATUS, G_CODE, G_ARGN, G_ARGS,  # noqa: E402
                          READY, SUSPENDED, TAKEN, S_NEXT, S_GOAL, S_SIZE,
                          MEMORY_CELLS, HEAP)
@@ -76,7 +88,8 @@ from pimm_layout import (SH_REDUCTIONS, SH_REMOVE, REMOVED,  # noqa: E402
                          REPORT_RETURN_RESOURCE)
 from pimm_layout import (SH_MASK, STOPPED, REPORT_ABORTED,  # noqa: E402
                          REPORT_EXCEPTION, REPORT_STOPPED,
-                         EXC_REDUCTION_FAILURE, EXC_RAISED)
+                         EXC_REDUCTION_FAILURE, EXC_RAISED, REPORT_RESOURCE_ADDED,
+                         REPORT_RESOURCE_REPORT_ALLOWED)
 
 
 class Unimplemented(Exception):
@@ -145,6 +158,18 @@ class _Mem(dict):
 
 
 class Machine:
+    # the merger's list (2026-11-24): ready goals of the stub merge_in,
+    # taken before the ready queue (Machine.ready, Machine.run).  mq is
+    # its head; mwh, mwt the goals made ready since the last pickup, in
+    # the order they were made ready.  Class defaults: a machine pickled
+    # before them has none.  So a message bound to a merger input reaches
+    # the output in the order of the unifications and before what the
+    # binding reduction spawned, as VPIM (f_reduce_merger_unify.psl.c),
+    # KLIC (runtime/gmerge.c) and PDSS (emulator/unify.c) do it AT the
+    # unification; doing it at the next goal switch is OURS
+    # (docs/pimm_semantics.md, merge)
+    mq = mwh = mwt = 0
+
     def __init__(self, image=None, heap=HEAP, size=MEMORY_CELLS):
         self.im = image or kbndis.Image()
         self.load = self.im.load
@@ -260,10 +285,25 @@ class Machine:
                 if st & 3 == SUSPENDED:
                     self.event('W %d' % (g - self.load))
                     self.mem[g + G_STATUS] = (INT, st & ~3 | READY)
-                    self.mem[g + G_LINK] = (INT, self.rq)
-                    self.rq = g
+                    self.ready(g)
                     self.nsusp -= 1
                 s = self.mem[s + S_NEXT][1]
+
+    def ready(self, g):
+        """A woken goal goes on the ready queue, or, a goal of the stub
+        merge_in, at the end of the merger's list (docs/pimm_semantics.md,
+        merge: a goal record made READY, a vector's element, stays on the
+        ready queue)."""
+        if self.mem[g + G_CODE][1] == self.load + self.stubs['$merge_in']['addr']:
+            self.mem[g + G_LINK] = (INT, 0)
+            if self.mwh:
+                self.mem[self.mwt + G_LINK] = (INT, g)
+            else:
+                self.mwh = g
+            self.mwt = g
+        else:
+            self.mem[g + G_LINK] = (INT, self.rq)
+            self.rq = g
 
     def unify(self, a, b):
         a, b = self.deref(a), self.deref(b)
@@ -286,7 +326,7 @@ class Machine:
             if a[1] != b[1]:
                 raise Unimplemented('unify of two string objects')
             return
-        if a[0] & ~1 == LIST or VECT0 + 2 <= a[0] & ~1 <= VECT0 + 12:
+        if a[0] & ~1 == LIST or VECT0 + 2 <= a[0] & ~1 <= VECT0 + 14:
             # Two lists, or two vectors of the same size (of up to six:
             # the size is in the tag, so the tags were equal).  Not
             # unified here: a goal is made that unifies the elements
@@ -295,11 +335,14 @@ class Machine:
             # make_unify_vector_vector_goal_and_enqueue).  What PIM/m's
             # firmware did is not known.  The goal's code is the stub
             # unify_step (asm/pimm_stubs.py).  The same object against
-            # itself makes a goal too, as in PDSS.
+            # itself makes a goal too, as in PDSS.  Two vectors of seven
+            # or more (2026-11-24): their sizes are in memory, so they
+            # are compared in the goal's steps, not here (OURS; PDSS
+            # active_unify_with_vector compares the lengths first: a
+            # failure either way)
             self.record(READY, self.stubs['$unify_step']['addr'], [a, b, (INT, 0)])
             return
-        # a vector of seven or more (its size is in memory), a module,
-        # anything else
+        # a module, anything else
         raise Unimplemented('unify of %r and %r' % (a, b))
 
     # strings: {STRG, address} -> {CDESC, pad << 27 | type << 24 | words},
@@ -627,10 +670,11 @@ class Machine:
         if pc is not None:
             self.spawn(pc, args)
         before = self.steps
-        while self.rq:
-            g = self.rq
+        while True:
+            g = self.pick()
+            if not g:
+                break
             self.event('G %d' % (g - self.load))
-            self.rq = self.mem[g + G_LINK][1]
             st = self.mem[g + G_STATUS][1]        # shoen << 2 | status
             self.shoen = self.load + (st >> 2) if st >> 2 else 0
             self.mem[g + G_STATUS] = (INT, st & ~3 | TAKEN)
@@ -650,6 +694,23 @@ class Machine:
         if self.nsusp:
             raise Suspend('%d goals still suspended' % self.nsusp)
         return self.steps - before
+
+    def pick(self):
+        """The next goal to run, taken off its list, or 0.  The goals
+        made ready since the last pickup go to the front of the
+        merger's list (in the order they were made ready), and that
+        list is taken before the ready queue."""
+        if self.mwh:
+            self.mem[self.mwt + G_LINK] = (INT, self.mq)
+            self.mq, self.mwh, self.mwt = self.mwh, 0, 0
+        if self.mq:
+            g = self.mq
+            self.mq = self.mem[g + G_LINK][1]
+        else:
+            g = self.rq
+            if g:
+                self.rq = self.mem[g + G_LINK][1]
+        return g
 
     def abandon(self):
         """Forget that goals are suspended (a test's way of ending a run).
@@ -1288,6 +1349,22 @@ class Machine:
         q = abs(a) // abs(b)
         self.reg[z] = (INT, (-q if (a < 0) != (b < 0) else q) & 0xffffffff)
 
+    def i_extended_floating_point(self, pc, x, y, z, c16):
+        # guard extended_floating_point(X, ^NewX), function 8 of 23:6E
+        # f_r_r (assembler/inst_tab.kl1:104), registers y and z; X an
+        # input waited for before it, NewX an output (compiler/blt.kl1
+        # builtin(extended_floating_point(X1, X2)): In [X1], Out [X2],
+        # Pre [wait]).  The type test: an extended floating point has
+        # its own tag, 3Fh (library/kbn/kbnheap.kl1, asm/kbn.py TAGS
+        # ex_float).  Anything else fails (2026-11-24, met in pim:go/4
+        # after the login, on a non-float); an unbound X is noted.  An
+        # extended float is refused: none can be made here, and what
+        # NewX is is not documented
+        w = self.g_word(y)
+        if w is None or w[0] != EXFLT:
+            return self.guard_fail()
+        raise Unimplemented('extended_floating_point of an extended float')
+
     def i_floating_point(self, pc, x, y, z, c16):
         # guard floating_point(X): "If X is a floating point, this
         # predicate succeeds, otherwise it fails" (PDSS manual); an
@@ -1393,6 +1470,15 @@ class Machine:
         var = self.new_var()
         self.reg[x] = (REF + 1, var[1])
         self.reg[y] = (REF + 1, var[1])
+
+    def i_get_constant(self, pc, x, y, z, c16):
+        # get_constant(X, C), 23:B8 r_c40 (assembler/inst_tab.kl1:174):
+        # r[x] unified with the constant, the whole next cell, as
+        # put_constant's.  The compiler writes it for an atomic constant
+        # that is not an atom nor [] (library/compiler/comp.kl1
+        # compile_put_valuable, instrtbl.kl1 convert_instr)
+        self.unify(self.reg[x], self.cells[pc + 1])
+        return pc + 2
 
     def i_get_integer(self, pc, x, y, z, c16):
         self.unify(self.reg[x], (INT, sx16(c16) & 0xffffffff))
@@ -1647,11 +1733,18 @@ class Machine:
         # with X1, and the lower 32 bits ... with X2. Suspend,
         # Exception: None" (manual, e-builtin.tex:1537-1549).  VPIM
         # gives X1 = 0 and X2 the current time (klb_pimos.psl.c
-        # kblt_system_timer, "just for PIM/s").  The CLOCK IS OURS: no
-        # time passes on this model, it stands at 0 (X1 = 0, X2 = 0),
-        # written r[x] then r[y]; set_timer agrees with it.
-        self.reg[x] = (INT, 0)
-        self.reg[y] = (INT, 0)
+        # kblt_system_timer, "just for PIM/s").  The clock (2026-11-24;
+        # it stood at 0 before): self.timer(), 48 bits, X1 its upper 16,
+        # X2 its lower 32, written r[x] then r[y]
+        t = self.timer()
+        self.reg[x] = (INT, (t >> 32) & 0xffff)
+        self.reg[y] = (INT, t & 0xffffffff)
+
+    def timer(self):
+        """The system timer, in 1/16 msec: the instructions executed
+        before this one, INSTRUCTIONS_PER_TICK to a tick (OURS rate,
+        above), 48 bits."""
+        return ((self.steps - 1) // INSTRUCTIONS_PER_TICK) & 0xffffffffffff
 
     def i_set_timer(self, pc, x, y, z, c16):
         # set_timer(Time, ^Wakeup), 22:FF r_r (blt.kl1:702-704: input
@@ -1664,11 +1757,14 @@ class Machine:
         # With this model's clock at 0 (system_timer, OURS) a time
         # reached gives Wakeup = 0; a time still to come would never
         # come, and is refused rather than left waiting silently.
+        # The clock is self.timer() (2026-11-24; it stood at 0): a time
+        # reached gives Wakeup = the timer's low 32 bits, now
         def f(t):
             t = self.need_int(t)
-            if (0 - t) & 0xffffffff >= 1 << 31:
-                raise Unimplemented('set_timer to a time still to come (%d)' % t)
-            return [(INT, 0)]
+            now = self.timer() & 0xffffffff
+            if (now - t) & 0xffffffff >= 1 << 31:
+                raise Unimplemented('set_timer to a time still to come (%d, now %d)' % (t, now))
+            return [(INT, now)]
         self.builtin('set_timer', [x, y], f)
 
     def i_current_node(self, pc, x, y, z, c16):
@@ -1682,6 +1778,26 @@ class Machine:
         # input: it never waits (no stub), and r[x] is written first.
         self.reg[x] = (INT, 0)
         self.reg[y] = (INT, 1)
+
+    def i_unbound(self, pc, x, y, z, c16):
+        # unbound(X, ^Result), 22:EF r_r (assembler/inst_tab.kl1:348):
+        # "If X is an undefined variable ... a vector {Id, Address,
+        # NewX} is unified with Result ... If X has been instantiated,
+        # a vector composed of only one element {NewX}"; it neither
+        # suspends nor raises (PIMOS manual, e-builtin.tex 102-109).
+        # As VPIM (klb_body_blt_cont.psl.c kblt_b_unbound): X
+        # dereferenced; unbound, {the cluster number, the variable's
+        # address as an integer, the reference}; else {X}.  The
+        # cluster is 0, one here (ours, as current_node).  Not a
+        # waiting built-in: its stub is never used
+        v = self.deref(self.reg[x])
+        if self.unbound(v):
+            w, a = self.vnew(3)
+            self.mem[a], self.mem[a + 1], self.mem[a + 2] = (INT, 0), (INT, v[1]), v
+        else:
+            w, a = self.vnew(1)
+            self.mem[a] = v
+        self.reg[y] = w
 
     def i_enqueue_goal_with_priority(self, pc, x, y, z, c16):
         # two cells: the priority's register, the label; the arity in
@@ -1740,14 +1856,23 @@ class Machine:
         # them, so the firmware must spread the vector; where it does
         # is not known.  Here it is spread as the goal is made, and
         # this model's record holds every argument.
+        self.spread_args(x, 'enqueue_goal')
+        self.record(READY, pc + 2 + sx16(c16), self.argv[1:x + 1])
+
+    def spread_args(self, x, what):
+        """Arguments 11 on, packed by the compiler into a vector in the
+        11th, spread into the argument registers (enqueue_goal).  A
+        vector of 7 or more (more than 16 arguments; 2026-11-24, met in
+        pim:go/4 after the login) is spread the same way, from its
+        descriptor's first element; its size must be the arguments
+        left over."""
         if x > 11:
             v = self.argv[11]
-            if x > 16 or v[0] & ~1 != VECT0 + 2 * (x - 10):
-                raise Unimplemented('enqueue_goal %d without its argument vector' % x)
+            if self.vsize(v) != x - 10:
+                raise Unimplemented('%s %d without its argument vector' % (what, x))
             base = self.vbase(v)
             for i in range(x - 10):
                 self.argv[11 + i] = self.taken(base + i)
-        self.record(READY, pc + 2 + sx16(c16), self.argv[1:x + 1])
 
     def i_execute(self, pc, x, y, z, c16):
         # the same goal goes on as a reduction of the predicate at the label
@@ -1784,9 +1909,11 @@ class Machine:
     def i_enqueue_goal_external(self, pc, x, y, z, c16):
         # enqueue_goal with the predicate found as execute_external
         # finds it (the same operand type, assembler/klb_opr.kl1
-        # p(c8_c16_ext)).  More than 11 arguments is refused.
-        if x > 11:
-            raise Unimplemented('enqueue_goal_external %d' % x)
+        # p(c8_c16_ext)).  More than 11 arguments: the vector of those
+        # from the 11th on spread as enqueue_goal spreads it
+        # (2026-11-24; met in pim:go/4 after the login), before the
+        # predicate is looked up
+        self.spread_args(x, 'enqueue_goal_external')
         self.record(READY, self.external(pc, c16, 'enqueue_goal_external'), self.argv[1:x + 1])
 
     def external(self, pc, c16, what):
@@ -2029,6 +2156,146 @@ class Machine:
             return [out]
         self.builtin('multiply_bignum_word', [x, y, z], f)
 
+    # The guards bignum_less_than(B1, B2), 23:B6, and
+    # bignum_not_less_than(B1, B2), 23:B7, r_r (assembler/inst_tab.kl1:
+    # 171-172; compiler/blt.kl1:399-404, both waited for): "32-bit
+    # strings ... handled as though they represented unsigned integer
+    # values.  The MSB is the zeroth element and is zero suppressed";
+    # succeeds if B1 < B2 (B1 >= B2); "Fail: If either ... is anything
+    # other than a 32-bit string multiple precision integer" (PIMOS
+    # manual, e-builtin.tex 665-697).  As VPIM (klb_guard_blt_bignum.
+    # psl.c, str_bignum.psl.c s_IfBignumLessThan, s_CompareBIGNUM): an
+    # element size other than 32 or a leading zero word fails either
+    # guard; then the longer is the larger, equal lengths compared word
+    # by word from element 0, unsigned.  An unbound one is noted and
+    # the guard fails (as every two-operand guard here).  2026-11-24,
+    # met in pim:go/4 after the login
+    def bignum_order(self, x, y):
+        a, b = self.g_word(x), self.g_word(y)
+        if a is None or b is None:
+            return None
+        nums = []
+        for w in (a, b):
+            if w[0] & ~1 != STRG or (self.mem[w[1]][1] >> 24) & 7 != 5:
+                return None
+            _, e = self.string(w)
+            if e and e[0] == 0:
+                return None
+            nums.append(e)
+        ea, eb = nums
+        if len(ea) != len(eb):
+            return -1 if len(ea) < len(eb) else 1
+        return (ea > eb) - (ea < eb)
+
+    def i_bignum_less_than(self, pc, x, y, z, c16):
+        o = self.bignum_order(x, y)
+        if o is None or o >= 0:
+            return self.guard_fail()
+
+    def i_bignum_not_less_than(self, pc, x, y, z, c16):
+        o = self.bignum_order(x, y)
+        if o is None or o < 0:
+            return self.guard_fail()
+
+    def i_subtract_bignum(self, pc, x, y, z, c16):
+        # subtract_bignum(BigX, BigY, ^Borrow, ^BigZ), 22:B7 r4
+        # (assembler/inst_tab.kl1:246; compiler/blt.kl1 inputs X, Y,
+        # outputs Borrow, Z): "The difference between BigX and BigY is
+        # calculated and the absolute value of that result is unified
+        # with BigZ.  If the result was non-negative 0, otherwise 1, is
+        # unified with Borrow" (manual e-builtin.tex 720-727; bignums as
+        # multiply_bignum_word's).  The edges as VPIM's
+        # (klb_body_blt_bignum.psl.c kblt_b_subtract_bignum,
+        # f_reduce_bignum.psl.c f_Subtract_BIGNUM_Sub, str_bignum.psl.c
+        # s_Subtract_BIGNUM): a leading zero word in either (checked X
+        # then Y), or either not a 32-bit string, is the exception,
+        # refused; Y empty gives X itself and 0; X empty, Y itself and 1;
+        # equal, the empty string and 0; otherwise the difference of the
+        # larger and the smaller, its leading zero words dropped.  The
+        # kept words are written from the least significant up into a
+        # new string of zeros (OURS: the Bluespec's order)
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(bx, by):
+            sx, ex = self.need_string(bx)
+            sy, ey = self.need_string(by)
+            if sx != 32 or sy != 32 or (ex and ex[0] == 0) or (ey and ey[0] == 0):
+                raise Unimplemented('built-in exception: subtract_bignum of %r, %r' % (ex[:2], ey[:2]))
+            if not ey:
+                return [(INT, 0), bx]
+            if not ex:
+                return [(INT, 1), by]
+            vx = vy = 0
+            for e in ex:
+                vx = (vx << 32) | e
+            for e in ey:
+                vy = (vy << 32) | e
+            if vx == vy:
+                return [(INT, 0), self.new_string(0, 32)]
+            borrow = 1 if vx < vy else 0
+            n = len(ey) if borrow else len(ex)
+            d = abs(vx - vy)
+            words = [(d >> (32 * (n - 1 - i))) & 0xffffffff for i in range(n)]
+            k = next(i for i, w in enumerate(words) if w)
+            out = self.new_string(n - k, 32)
+            for i in reversed(range(k, n)):
+                self.mem[out[1] + 1 + i - k] = (INT, words[i])
+            return [(INT, borrow), out]
+        self.builtin('subtract_bignum', [x, y, z, w4], f)
+        return pc + 2
+
+    # The double-precision integer built-ins, 22:B2..B5 (assembler/
+    # inst_tab.kl1:241-244; directions compiler/blt.kl1:706-717), the
+    # operands read as 32-bit unsigned: "the lower 32 bits of their sum
+    # is unified with Zl and the carry with Zh"; "Y is subtracted from
+    # X ... Borrow"; "the upper 32 bits of the product are unified with
+    # Zh and the lower 32 bits with Zl"; the 64-bit Xh:Xl divided by Y,
+    # quotient Z and remainder Mod, a quotient wider than 32 bits or Y
+    # = 0 the exception (PIMOS manual, e-builtin.tex 615-660, where it
+    # is spelt devide_extended).  As VPIM (klb_body_blt_bignum.psl.c
+    # kblt_b_*_extended): Z of subtract_extended is X - Y modulo 2^32;
+    # divide_extended's exception is Xh >= Y, unsigned.  A non-integer
+    # is the exception: refused.  2026-11-24, met in pim:go/4 after
+    # the login.  Zh (Borrow, Z) is written first
+    def i_add_extended(self, pc, x, y, z, c16):
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(a, b):
+            s = (self.need_int(a) & M32) + (self.need_int(b) & M32)
+            return [(INT, s >> 32), (INT, s & M32)]
+        self.builtin('add_extended', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_subtract_extended(self, pc, x, y, z, c16):
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(a, b):
+            a, b = self.need_int(a) & M32, self.need_int(b) & M32
+            return [(INT, 1 if a < b else 0), (INT, (a - b) & M32)]
+        self.builtin('subtract_extended', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_multiply_extended(self, pc, x, y, z, c16):
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(a, b):
+            p = (self.need_int(a) & M32) * (self.need_int(b) & M32)
+            return [(INT, p >> 32), (INT, p & M32)]
+        self.builtin('multiply_extended', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_divide_extended(self, pc, x, y, z, c16):
+        w = self.cells[pc + 1][1]
+
+        def f(h, lo, d):
+            h, lo, d = self.need_int(h) & M32, self.need_int(lo) & M32, self.need_int(d) & M32
+            if d == 0 or h >= d:
+                raise Unimplemented('built-in exception: divide_extended %d:%d by %d' % (h, lo, d))
+            q, r = divmod(h << 32 | lo, d)
+            return [(INT, q), (INT, r)]
+        self.builtin('divide_extended', [x, y, z, w >> 24, w >> 16 & 0xff], f)
+        return pc + 2
+
     def i_new_string(self, pc, x, y, z, c16):
         # new_string(^S, Length, ElementSize): r[z] := string of r[x] zeros
         def f(n, size):
@@ -2061,6 +2328,36 @@ class Machine:
         self.builtin('b_string_element', [x, y, z, w4], f)
         return pc + 2
 
+    def i_search_character(self, pc, x, y, z, c16):
+        # search_character(String, Start, End, CharacterCode, ^Position,
+        # ^NewString), 22:D9 r6 (assembler/inst_tab.kl1:321): the first
+        # element equal to CharacterCode from Start to End, End
+        # included, searching from the rear when End < Start; -1 if
+        # none; NewString is String (PIMOS manual, e-builtin.tex
+        # 928-942; VPIM kblt_b_search_character, the same, operands
+        # A1..A6 in that order).  Start or End outside the string, or a
+        # code too wide for its elements (negative only for 32-bit
+        # strings), is the built-in's exception: refused
+        w = self.cells[pc + 1][1]
+        ops = [x, y, z, w >> 24, w >> 16 & 0xff, w >> 8 & 0xff]
+
+        def f(s, a, b, c):
+            size, elems = self.need_string(s)
+            a, b, c = self.need_int(a), self.need_int(b), self.need_int(c)
+            if not (0 <= a < len(elems) and 0 <= b < len(elems)):
+                raise Unimplemented('built-in exception: search_character range')
+            if size == 32:
+                c &= 0xffffffff
+            elif not 0 <= c < 1 << size:
+                raise Unimplemented('built-in exception: search_character code')
+            step = 1 if b >= a else -1
+            for i in range(a, b + step, step):
+                if elems[i] == c:
+                    return [(INT, i), s]
+            return [(INT, 0xffffffff), s]
+        self.builtin('search_character', ops, f)
+        return pc + 2
+
     # The merger.  merge(In, ^Out) "creates a built-in constant time
     # merger" (manual); the compiler makes it merge(Out, ^In): the first
     # operand is the output stream as given, the second receives the
@@ -2072,7 +2369,8 @@ class Machine:
     # record {output}{count} and the first input variable in three
     # cells; its code is the stub merge_in (asm/pimm_stubs.py), which
     # is not a PIM/m instruction.  So the output appears after a goal
-    # switch, not at the unification.  A vector on the input adds as
+    # switch, not at the unification; a woken merge_in is taken before
+    # any other goal (the merger's list, Machine.ready and pick).  A vector on the input adds as
     # many inputs as it has elements (i_merge_in); anything but a
     # list, [] or a vector, or a
     # variable is the machine's illegal_merger_input exception:
@@ -2168,11 +2466,20 @@ class Machine:
         if pc != self.stubs['$unify_step']['addr']:
             raise Unimplemented('unify_step at %d' % pc)
         a, b, i = self.reg[x], self.reg[y], self.reg[z][1]
-        n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
+        if a[0] & ~1 == VECT0 + 14:
+            # vectors of seven or more: the sizes, compared at every
+            # step, and the elements from the descriptors
+            n = self.vsize(a)
+            if self.vsize(b) != n:
+                raise Fail('unify of vectors of %d and %d' % (n, self.vsize(b)))
+            ba, bb = self.vbase(a), self.vbase(b)
+        else:
+            n = 2 if a[0] & ~1 == LIST else (a[0] & ~1) - VECT0 >> 1
+            ba, bb = a[1], b[1]
         if i == n:
             return None
-        ea = self.taken(a[1] + i, single=not a[0] & 1)
-        eb = self.taken(b[1] + i, single=not b[0] & 1)
+        ea = self.taken(ba + i, single=not a[0] & 1)
+        eb = self.taken(bb + i, single=not b[0] & 1)
         self.reg[z] = (INT, i + 1)
         self.unify(ea, eb)
         return pc
@@ -2272,13 +2579,18 @@ class Machine:
         # so is a vector of seven or more (its size is in memory).  The
         # empty vector makes a goal of no argument (2026-11-24: met in
         # pim:go/4 with the device).
+        # A vector of 7 to 16 elements (2026-11-24, met in pim:go/4
+        # after the login): its elements from the descriptor's first,
+        # every one into an argument register, as enqueue_goal's
+        # spread leaves a goal of more than 11 (OURS, that limit's)
         def f(code, args):
             n = self.vsize(args)
             head = self.mem[code[1] - 2] if code[0] == COD else None
-            if head is None or head[0] != PREDH or n is None or n > 6 or n != head[1] >> 24:
+            if head is None or head[0] != PREDH or n is None or n > 16 or n != head[1] >> 24:
                 raise Unimplemented('built-in exception: apply(%r, %r)' % (code, args))
+            base = self.vbase(args) if n else 0
             for i in range(n):
-                self.argv[i + 1] = self.taken(args[1] + i, single=not args[0] & 1)
+                self.argv[i + 1] = self.taken(base + i, single=not args[0] & 1)
             self.record(READY, code[1] - self.load, self.argv[1:n + 1])
             return []
         self.builtin('apply', [x, y], f)
@@ -2297,7 +2609,7 @@ class Machine:
         #
         # What it DOES is not PIM/m-sourced:
         #  - MinPrio, MaxPrio and ExcepMask are waited for, must be
-        #    integers (shoen:execute1/7 passes vectors: refused) and
+        #    integers (or two 2-vectors, shoen:execute1/7's, below) and
         #    are then DROPPED: no priorities and no exceptions here
         #    (OURS, as enqueue_goal_with_priority drops its priority);
         #  - a shoen record (OURS, asm/pimm_layout.py): dormant, count
@@ -2323,8 +2635,15 @@ class Machine:
         r7 = self.cells[pc + 1][1]
         regs = [x, y, z, r7 >> 24, r7 >> 16 & 255, r7 >> 8 & 255, r7 & 255]
 
+        # The distributed form (2026-11-24, met in pim:go/4 after the
+        # login): shoen:execute1/7 passes {MinPrio, MaxPrio} and
+        # {MinNode, NumNode} in place of MinPrio and MaxPrio
+        # (kernel/builtin/shoen.kl1 execute/9, execute1/7).  Two
+        # 2-vectors there are accepted and dropped as the integers are,
+        # their elements not read (OURS: one node, no priorities)
         def f(lo, hi, mask, _code, _argv):
-            for w in (lo, hi, mask):
+            two = self.vsize(lo) == 2 and self.vsize(hi) == 2
+            for w in (mask,) if two else (lo, hi, mask):
                 if w[0] & ~1 != INT:
                     raise Unimplemented('create_shoen(%r, %r, %r, ..)' % (lo, hi, mask))
             self.argv[1] = self.reg[regs[3]]          # as they are
@@ -2512,6 +2831,54 @@ class Machine:
             return [h]
         self.builtin('shoen_statistics', [x, y], f)
 
+    def i_add_shoen_resource(self, pc, x, y, z, c16):
+        # add_shoen_resource(Shoen, High, Low, ^NewShoen), 22:E5 r4
+        # (inst_tab.kl1:337; blt.kl1 active_builtin(add_shoen_resource(
+        # X1,X2,X3,X4)), class pimos): the shoen's add_resource(H, L),
+        # "A value of which the upper 32 bits are expressed in Amount_h
+        # and the lower 32 bits ... in Amount_l is added to the upper
+        # bound value of the resource consumption amount", acknowledged
+        # by resource_added (manual e-shoen.tex:166-172, 254-262), 5
+        # (pimos.vmac).  VPIM (f_shoen_control.psl.c
+        # f_AddShoenResource_Sub) reports 5 first, then adds, and
+        # reports return_resource only when the bound passes 2^63;
+        # NewShoen is the handle.  No resource is counted here (as at
+        # create_shoen, OURS): the amount is checked and not kept, so
+        # nothing is returned.  Refused: anything but a handle, High or
+        # Low not an integer (the exception); a closed report stream
+        w4 = self.cells[pc + 1][1] >> 24
+
+        def f(h, hi, lo):
+            if h[0] != SHREC:
+                raise Unimplemented('add_shoen_resource(%r)' % (h,))
+            self.need_int(hi)
+            self.need_int(lo)
+            self.report(h[1], REPORT_RESOURCE_ADDED)
+            return [h]
+        self.builtin('add_shoen_resource', [x, y, z, w4], f)
+        return pc + 2
+
+    def i_allow_shoen_resource_report(self, pc, x, y, z, c16):
+        # allow_shoen_resource_report(Shoen, ^NewShoen), 22:E7 r_r
+        # (inst_tab.kl1:339; blt.kl1:595 In [X1], Out [X2], class
+        # pimos): the shoen's allow_resource_report (shoen.kl1:131),
+        # "Allows a report to be sent as the amount of consumed
+        # resource has nearly reached its upper bound", acknowledged
+        # by resource_report_allowed (manual e-shoen.tex:174-180,
+        # 254-262), 7 (pimos.vmac).  VPIM (f_shoen_control.psl.c
+        # f_AllowShoenResourceReport_Sub) reports it, then clears the
+        # shoen's report-disallowed flag; NewShoen is the handle.  No
+        # resource is counted here (OURS, as add_shoen_resource), so
+        # there is no flag and resource_low is never reported.
+        # Refused: anything but a handle (the exception); a closed
+        # report stream.  2026-11-24, met in pim:go/4 after the login
+        def f(h):
+            if h[0] != SHREC:
+                raise Unimplemented('allow_shoen_resource_report(%r)' % (h,))
+            self.report(h[1], REPORT_RESOURCE_REPORT_ALLOWED)
+            return [h]
+        self.builtin('allow_shoen_resource_report', [x, y], f)
+
     def i_remove_shoen(self, pc, x, y, z, c16):
         # remove_shoen(Shoen), 22:E4, r (inst_tab.kl1, blt.kl1: PIM/m-
         # sourced; the image's control/2 calls it when the control
@@ -2535,6 +2902,26 @@ class Machine:
                 self.mem[sh + SH_REMOVE] = (INT, 1)
             return []
         self.builtin('remove_shoen', [x], f)
+
+    def i_module(self, pc, x, y, z, c16):
+        # guard module(X, ^Size), 23:FB r_r (assembler/inst_tab.kl1:
+        # 214): "Unifies the size of the module X with Size.  Suspend:
+        # X uninstantiated.  Fail: X anything other than a module"
+        # (PIMOS manual, e-builtin.tex 86-92).  Size is the count in
+        # the module's descriptor, the elements after it: the
+        # unloader writes it as the module's length and reads
+        # module_element 0 .. Length - 1 (library/unloader/
+        # encoder.kl1 encode_module/7), the loader puts 06000000h \/
+        # (vector size - 1) there (i_new_module).  VPIM reads its own
+        # header's size word (kblt_module).  2026-11-24, met in
+        # pim:go/4 after the login
+        w = self.g_word(x)
+        if w is None or w[0] != MOD:
+            return self.guard_fail()
+        d = self.mem[w[1]]
+        if d[0] != CDESC:
+            raise Unimplemented('module: no descriptor at %x' % w[1])
+        self.reg[y] = (INT, d[1] & 0xffffff)
 
     def i_code(self, pc, x, y, z, c16):
         # guard code(X, ^Arity, ^Module, ^Position), 23:FA, r4.
@@ -2642,6 +3029,48 @@ class Machine:
                 raise Unimplemented('hash of %r' % (w,))
             return [(INT, h & 0xffffffff), w]
         self.builtin('hash', [x, y, z], f)
+
+    def i_code_to_predicate(self, pc, x, y, z, c16):
+        # code_to_predicate(Code, ^Module, ^Name, ^Arity, ^Info), 22:F4
+        # r5 (assembler/inst_tab.kl1:353): "Unifies a module to which
+        # Code belongs with Module, a predicate atom with Name, argument
+        # count with Arity, and 1-word information (contents of <Code
+        # address - 3>) for software with Info.  Exception: If Code is
+        # anything other than a code" (PIMOS manual, e-builtin.tex
+        # 1304-1311, "for the Multi-PSI and PIM/m"): refused.  The
+        # predicate is laid out Name, 0, the head, the length, then the
+        # code (assembler/assemble.kl1 make_pred_head), so Name is Code
+        # - 4 and Info Code - 3; the module as the guard code finds it.
+        # VPIM (klb_body_blt_cont.psl.c kblt_b_code_to_predicate) gives
+        # Name the atom tag and Arity the integer tag, MRB off
+        w4, w5 = self.cells[pc + 1][1] >> 24, self.cells[pc + 1][1] >> 16 & 0xff
+
+        def f(c):
+            if c[0] != COD:
+                raise Unimplemented('built-in exception: code_to_predicate(%r)' % (c,))
+            head = self.mem[c[1] - 2]
+            m = c[1] - 2 - (head[1] & 0xffffff)
+            name = self.mem[c[1] - 4]
+            if head[0] != PREDH or self.mem[m][0] != CDESC or name[0] & ~1 != ATOM:
+                raise Unimplemented('code_to_predicate: no predicate head before %x' % c[1])
+            return [(MOD, m), (ATOM, name[1]), (INT, head[1] >> 24), self.mem[c[1] - 3]]
+        self.builtin('code_to_predicate', [x, y, z, w4, w5], f)
+        return pc + 2
+
+    def i_b_vector(self, pc, x, y, z, c16):
+        # body vector(X, ^Size, ^NewVector), 22:CA r_r_r (assembler/
+        # inst_tab.kl1:298): "The size of the vector X is unified with
+        # Size, and X is unified with NewVector.  Exception: If X is
+        # anything other than a vector" (PIMOS manual, e-builtin.tex
+        # 750-755): refused.  r[y] := the size, then r[z] := X.  VPIM
+        # (kblt_b_vector_size) copies a vector whose MRB is on, to give
+        # NewVector a single reference; the same term, so OURS: X itself
+        def f(v):
+            n = self.vsize(v)
+            if n is None:
+                raise Unimplemented('built-in exception: vector')
+            return [(INT, n), v]
+        self.builtin('b_vector', [x, y, z], f)
 
     def i_b_vector_element(self, pc, x, y, z, c16):
         # vector_element(V, I, ^E, ^V1): r[z] := element, r[w] := the vector
@@ -2889,6 +3318,7 @@ class Machine:
         self.event('B %d %d %s %d %d%s' % (cmd['unit'], cmd['lun'], bytes(cmd['cdb']).hex(),
                                            cmd['dir'], cmd['length'],
                                            ' ' + out.hex() if cmd['dir'] == 1 and out else ''))
+        self.fep.ticks = self.timer()     # the FEP's time of day follows the clock
         got = self.fep.command(cmd['unit'], cmd['lun'], bytes(cmd['cdb']), cmd['length'],
                                cmd['dir'], out)
         self.scsi_tape.append(got)

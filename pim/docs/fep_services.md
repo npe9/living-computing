@@ -425,12 +425,15 @@ Weaker than the source allows, or to check:
 - 60 is answered only for a device opened with 201. The source
   closes every device (a timer after step 5, the appended syslog at
   shutdown, each window). (The other agent has since added a timer
-  close; not in this tree.)
+  close; not in this tree.) (2026-11-24: `fep.py` now closes timers,
+  string-I/O devices, windows and the appended file too.)
 - 70 is given no reply for any device. Right for the IPL's client;
   the PSI assembles none either (§6.7), but it answers the request
   the 70 interrupts with status 6, which `fep.py` does not. Whether
   the kernel's client waits for that is U6.
-- 80 with device id -1 raises `FepError`.
+- 80 with device id -1 raises `FepError`. (2026-11-24: now noted with
+  no reply, and the appended syslog's 60 answered `[1]`, both met at
+  the end of a typed `shutdown`; `binary_reverse_engineering.md` 1.4.)
 - No reply is ever unsolicited: no attention (`{Id, 3}`), no deferred
   reply (303's alarm, the pending `io(1)`). The reply queue is one
   FIFO, which is enough, but a reply must be able to stay owed while
@@ -1209,6 +1212,10 @@ is around it:
    and is offered the command again, which is right, but has no source
    of events: a scripted login needs a trigger there too (a tape entry
    "at idle, queue this packet"), and the tapes a record kind for it.
+   DONE 2026-11-24: the emulator's `idle` input takes the next entry
+   of a script on the card (`tools/mkfepcard.py` writes
+   `fep.Fep().script`), the tapes have `idle` and `ticks` records, and
+   `kernel.tape` runs to the prompt (`bsv/PimmFepEmu.bsv`'s header).
 6. **A clock** is not needed for the prompt (the BIOS timer is local,
    step 3 of §3), but a 303 alarm would be a third kind of held
    reply, by the same table.

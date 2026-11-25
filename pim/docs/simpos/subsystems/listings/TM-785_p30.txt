@@ -1,0 +1,27 @@
+% TM-785 「PSIの図形ツールのインストール方法」 / 「PSI図形ツール 説明書」, 東 吉郎, August 1989 (cover p1).
+==== PDF p30 (folio -25-) ==== [300dpi crop]
+   local
+   % ローカル述語
+   % get_window/1   If arg 1 is unbound, create the window from local predicates window_class/1 and
+   %   initiation_parameter/1 and set colours; if it is a window object, set its colours.
+   get_window(Window) :-
+       unbound(Window), !,
+       window_class(Class),
+       initiation_parameter(Init),
+       :create(Class, Init, Window),
+       set_color(Window)
+       ;
+   get_window(Window) :-
+       set_color(Window)
+       ;
+   % window_class/1
+   window_class(Class) :-
+       Class = #standard_window
+       ;
+   % initiation_parameter/1
+   initiation_parameter(Init) :-
+       Init = [
+               size(1280, 944)
+              ]
+       ;
+
