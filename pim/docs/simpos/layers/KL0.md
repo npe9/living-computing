@@ -162,6 +162,14 @@ Mnemonics carry `_t` / `_p` for temporary and permanent operands, and the argume
     `cut_me_and_proceed`, `cut_me_and_fail` in their meaning without renaming. The numbers
     themselves are still printed nowhere.
 
+**Unification of strings** (KNOWN, TM-388 PDF p79 and p117-119 Table 4-3): two strings unify,
+and are `==`, only when they are the same stored string; `equal_string/2` compares contents.
+`string/3` is listed as a type test (TR-044 App. A.2, PDF p39, `string(?String, ^Length,
+^Size)`); kl0 makes it fail on a non-string (INFERENCE: no failing call is printed). Open:
+Table 4-3 makes `==` on stack vectors element-wise and on heap vectors address-only, while
+kl0's `==` (pmi 62, blt f0/f2) is object identity for both and its unification is
+element-wise for both; neither is settled by a witness yet.
+
 ## 4. Built-in predicates
 
 **KNOWN lists:**

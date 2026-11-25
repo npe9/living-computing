@@ -704,6 +704,7 @@ applied as proposed unless the note says otherwise.
 | P-f1 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
 | P-f2 | APPLIED | also `psi/fepread/ptfread.py`'s docstring, which said the same |
 | P-f3 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
+| P-k1 string audit | APPLIED | TM-388 PDF p79, p117-119, p169 and TM-115 PDF p97 read as images: strings unify only by storage. kl0 follows (unify, `==`); string/3 a type test (TR-044 PDF p39); list_index `equal_key/2` compares string keys by contents. Census effect in `psi/README.md` |
 | §6 `classes.tsv` | APPLIED (generator) | `asm/simpos_census/espscan.py` `INSTANCE_RESULT`: `time` `now/2` returns an instance (CH_CLOCK.ESP:33-34, 59-60); the scan rerun, every table regenerated; only `time`'s sends move |
 
 ## §6 Open after this check

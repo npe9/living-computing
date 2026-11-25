@@ -1503,6 +1503,88 @@ instruction).
   an implementation, witness entries and tests, and blt 6f's third
   argument is not settled. The other P-k10 rows were added by step 3e.
 
+### Strings unify by storage (2026-11-25)
+
+kl0's unification and `==` compared strings by contents. The PSI's do
+not. Read from the page images:
+
+- TM-388 PDF p79 (folio 67): `'abc'='abc'`, `'abc'=='abc'` and
+  `'abc'=:='abc'` all fail; `equal_string('abc','abc')` succeeds; two
+  references to one string succeed.
+- TM-388 PDF p117-119 (folio 105-107): unify rule (iii)b and Table 4-3.
+  Two strings are equal when they have the same logical address of the
+  first element, its position in the word, element length and count.
+- TM-388 PDF p169 (folio 157): in ESP, `"ABC" = "ABC"` fails. TM-115 PDF
+  p97 (folio 92) says the same; the ESP manual (`program-e.tex`:7174)
+  says it of `=:=`.
+
+So kl0 now unifies a string, and holds it `==`, only with the same `Str`
+object (one `Str` is one stored string). Python's `Str.__eq__` still
+compares contents, for tests and tables; KL0 never uses it.
+
+Two changes go with it:
+
+- `string/3` (blt 0b) is a type test. TR-044 App. A.2 (PDF p39) lists
+  `string(?String, ^Length, ^Size)` under "Data Type and Attributes".
+  kl0 now fails on a non-string, unbound included, where it refused
+  (INFERENCE: no failing call is printed).
+- `list_index` compares keys with a local `equal_key/2`. TM-161 PDF p18
+  names it; its body is not printed. Strings are compared by contents
+  (`equal_string/2`), anything else by unification. Held callers need
+  this: paragraph `p_wshell.esp` sets `"$from"` at :102 and reads it
+  with another literal at :396, through `add_at`/`get_at` on a
+  list_index (:95-99). The body is INTERPOLATED, and that the contents
+  are compared there is INFERENCE.
+
+A string constant in a clause stays a fresh string at each load
+(`POOL_STR_PER_CELL = False`, INFERENCE: no source says whether it is
+one stored string per constant).
+
+Censuses, row by row, against the tree before this change:
+
+- Identity alone (string/3 as before): no row changes in either census.
+  The census calls methods with unbound arguments, so no two strings
+  meet. One string per pool cell instead: also no change.
+- With the type test, six packages: `csp_default_write write/2` goes
+  from refused to the step limit. Totals 310 / 12 / 207 refused / 1 step
+  limit.
+- FEP, 40 rows: 789 succeed, 154 fail, 443 refused, 16 raise, 1 step
+  limit (was 787 / 123 / 476 / 16 / 1).
+  - Refused to failure (30): `simpos_user_device` io/4, io/5, do_io/6;
+    `simpos_user` login_password/2; `remote_stream` put/2; `pimos_window`
+    kl1_message/2; `pimos_window_editor` putb/4, ungetb/4;
+    `fep_message_assembler` get_command/3, divide_message/4,
+    connection_flag/3, get_device_id/3, disassemble/3;
+    `message_converter` convert/3; `remote_pimfep_executor` open/1;
+    `pimos_file` putb/4; `pimos_string_io_invoker` create_string_io/10;
+    `pimos_fep_initiation_table` initialize/2,
+    set_initiation_file_name/2; `net_spawn_user` server_name/3;
+    `pimos_tcpip_socket` putb/5, connect/4; `pimos_standard_io_window`
+    io/4, io/5, do_io/6; `pimos_fep_superviser` command_menu/2;
+    `scsi_stream` put/2; `hmcb_log` message/3; `scsi_load_test`
+    send_request/1, receive_request/1.
+  - Refused to success (3): `remote_pimfep_executor` goal/1, receive/3,
+    invoke/1.
+  - Still refused, later (6): `pimos_window_process` goal/1,
+    initiate/1, invoke/1 at a slot constant; `packet32` set_message/2
+    at blt 0c; `scsi_handler` take_buffer/3 and take_TMSG/2 at blt 7f.
+  - Success to failure (1): `pimos_file resign_core/1`. This is a census
+    order effect. Run alone on a fresh machine it fails both before and
+    after the change: the invocation stack it pops is empty. In the
+    census it had succeeded on a program left there by an earlier call.
+
+Tests: `test_kl0.StringIdentity` and `test_espc.test_string_keys`. Four
+injections are recorded in `test_kl0.py`'s header.
+
+Open:
+
+- Table 4-3 makes `==` element-wise on stack vectors and address-only on
+  heap vectors. kl0's `==` (pmi 62, blt f0/f2) is object identity for
+  both.
+- kl0's unification of heap vectors is element-wise.
+- A substring that shares its parent's storage is not modelled. kl0's
+  string built-ins make new strings.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

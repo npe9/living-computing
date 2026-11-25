@@ -188,6 +188,9 @@ class Str:
     def set_codes(self, codes):
         self.text = ''.join(P.ch(x) for x in codes)
 
+    # Python equality compares contents, for tests and tables only.  KL0's
+    # unification and `==` do NOT use it: on the PSI two strings unify only
+    # when they are the same stored string (see Machine.unify).
     def __eq__(self, o):
         return isinstance(o, Str) and o.text == self.text
 
@@ -284,6 +287,7 @@ class Code:
         # one is read from its held record on first use
         self.pool = getattr(t, 'pool', None)
         self.lib = lib
+        self.strs = {}      # pool cell -> its string, when POOL_STR_PER_CELL
 
     def sym(self, n):
         return P.sym(dict(syms=self.t.symbols), n)
@@ -294,7 +298,22 @@ class Code:
         k = cell - 13
         if not 0 <= k < len(self.pool):
             raise Refusal('pool', '%s: pool cell %d outside the %d constants read' % (self.id, cell, len(self.pool)))
-        return build(self, self.pool[k])
+        x = self.pool[k]
+        if POOL_STR_PER_CELL and x[0] == 'str':
+            if k not in self.strs:
+                self.strs[k] = build(self, x)
+            return self.strs[k]
+        return build(self, x)
+
+
+# A string constant in a clause: one stored string per pool cell (every
+# load of the cell is the same string), or a fresh string per load?  No
+# held source settles it, and since strings unify only by storage (TM-388
+# PDF p79) the choice is visible.  INFERENCE: a fresh string per load, as
+# kl0 always did, which keeps a constant safe from set_string_element on
+# an earlier load.  True gives one per cell (the census was run both ways,
+# psi/README.md).
+POOL_STR_PER_CELL = False
 
 
 def read_pool(t):
@@ -450,7 +469,14 @@ class Machine:
             if len(a.args) != len(b.args):
                 return False
             return all(self.unify(x, y) for x, y in zip(a.args, b.args))
-        if isinstance(a, (Str, ClassRef)) and a == b:
+        # A string unifies only with itself: the same storage (logical
+        # address of the first element, its position in the word, element
+        # length and count).  TM-388 PDF p79 (folio 67): 'abc'='abc', == and
+        # =:= all fail, equal_string/2 succeeds; p117-119 (folio 105-107),
+        # unify rule (iii)b and Table 4-3; p169 (folio 157), ESP's "ABC" =
+        # "ABC" fails; TM-115 PDF p97 (folio 92).  A Str object is one stored
+        # string here, so identity is `is` (tested above).
+        if isinstance(a, ClassRef) and a == b:
             return True
         return False
 
@@ -1036,8 +1062,10 @@ class Machine:
 
     def identical(self, a, b):
         x, y = deref(self.x[a]), deref(self.x[b])
+        # strings: the same storage only (TM-388 PDF p79, p119 Table 4-3),
+        # so `is`, above
         return x is y or (isinstance(x, int) and isinstance(y, int) and x == y) or \
-            (isinstance(x, (Str, ClassRef)) and x == y)
+            (isinstance(x, ClassRef) and x == y)
 
     def op_identical(self, code, off, a, b, c, v):
         self.nxt(code, off) if self.identical(a, b) else self.fail()
@@ -1335,6 +1363,12 @@ class Machine:
         return t
 
     def op_string(self, code, off, a, b, c, v):
+        # a type test: string(?String, ^Length, ^Size) is listed under "Data
+        # Type and Attributes" in TR-044 App. A.2 (PDF p39), `?` an argument
+        # of any kind; so it fails on anything but a string, unbound included
+        # (INFERENCE from the listing: no failing call is printed)
+        if not isinstance(deref(self.x[a]), Str):
+            return self.fail()
         s = self._str(self.x[a], 'string')
         self.x[b] = len(s.codes())
         self.x[c] = s.type

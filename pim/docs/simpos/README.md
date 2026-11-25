@@ -422,6 +422,13 @@ and stand-in `simpos##` classes. In order:
        blt 19 with V != N witnessed and executed: six-package census 310
        / 12 / 208, FEP one method from refused to the step limit, none
        out of success.
+     - 2026-11-25, strings: kl0 unifies a string (and holds it `==`)
+       only with the same stored string (TM-388 PDF p79, p117-119);
+       string/3 is a type test; list_index's local `equal_key/2`
+       compares string keys by contents. Identity alone moves no census
+       row. With the type test, FEP is 789 / 154 / 443 / 16 / 1 step
+       limit; one method leaves success, a census order effect
+       (`psi/README.md`).
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

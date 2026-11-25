@@ -34,11 +34,15 @@
 % OURS: a new entry goes at the end of the chain (insertion order);
 % several entries may share a key (KPPOOL.ESP's get_all/3 and
 % remove_all/3 collect every object under one key, and p_wshell.esp
-% removes before it adds); keys are matched by unification.  SIMPOS
-% matched them with a local `equal_key/2` (TM-161 PDF p18, the row
-% `list_index / equal_key / local / 2`; its body is not printed).  kl0's
-% unification compares strings by content, which the PSI's does not
-% (TM-388 PDF p79, folio 67).
+% removes before it adds).  Keys are matched by a local `equal_key/2`,
+% as SIMPOS's were (TM-161 PDF p18, the row `list_index / equal_key /
+% local / 2`; its body is not printed): strings by their contents,
+% anything else by unification.  On the PSI two strings unify only when
+% they are the same stored string (TM-388 PDF p79, folio 67), and held
+% programs set and read a key with two different literals (paragraph
+% p_wshell.esp:102 `:setenv(Obj,"$from","1")`, :396 `:getenv(Obj,"$from",
+% FS0)`, through add_at/get_at on a list_index, :95-99), so the contents
+% are compared somewhere: INFERENCE that it is in equal_key/2.
 
 class list_index has
 
@@ -105,7 +109,7 @@ add_last(E, Object, Key, E) :-
 find(E, Object, Key) :-
         E \== '$$void',
         vector_element(E, 2, K),
-        K = Key, !,
+        equal_key(K, Key), !,
         second(E, Object);
 find(E, Object, Key) :-
         E \== '$$void',
@@ -114,7 +118,7 @@ find(E, Object, Key) :-
 unlink(E, Object, Key, Next) :-
         E \== '$$void',
         vector_element(E, 2, K),
-        K = Key, !,
+        equal_key(K, Key), !,
         second(E, Object),
         first(E, Next);
 unlink(E, Object, Key, E) :-
@@ -132,9 +136,14 @@ pairs(E, [{Object, Key}|L]) :-
 keys('$$void', []) :- !;
 keys(E, [Key|L]) :-
         vector_element(E, 2, Key), first(E, Next), keys(Next, L);
+% INTERPOLATED: the body (TM-161 PDF p18 names equal_key/2 only).  A
+% string key matches a string of the same contents (equal_string/2); any
+% other key is matched by unification (KPPOOL.ESP's walk).
+equal_key(K, Key) :- string(K, _, _), string(Key, _, _), !, equal_string(K, Key);
+equal_key(K, K);
 all_at('$$void', [], _) :- !;
 all_at(E, [Object|L], Key) :-
-        vector_element(E, 2, K), K = Key, !,
+        vector_element(E, 2, K), equal_key(K, Key), !,
         second(E, Object), first(E, Next), all_at(Next, L, Key);
 all_at(E, L, Key) :-
         first(E, Next), all_at(Next, L, Key);

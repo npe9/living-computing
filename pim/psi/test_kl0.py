@@ -154,6 +154,20 @@ by cp from a backup and cmp-checked; observed):
   The mnemonic renames (42-45, a4, a5, 24, 2b, blt 45/46/48/49) change
   only names: a row without a handler under its name stops Machine()
   with ValueError, so every test that builds a machine would error.
+String identity (2026-11-25; each injected into kl0.py or
+standin/list_index.esp by the session's variant.py, restored by copy and
+cmp-checked; both test files run; observed):
+  - unify compares strings by content again: test_unify_and_identical
+    only (test_espc passes: equal_key/2 compares contents anyway, and the
+    census's arguments are unbound);
+  - == (identical) compares strings by content again:
+    test_unify_and_identical only;
+  - list_index equal_key/2 reduced to unification: test_espc
+    test_string_keys only;
+  - string/3 refuses a non-string again: test_string_is_a_type_test
+    errors and test_census fails here; test_espc test_list_index,
+    test_hash_index and test_string_keys error (equal_key/2's type test
+    is refused on an atom key) and test_fep_census fails.
 """
 import os
 import sys
@@ -392,6 +406,44 @@ class Table(unittest.TestCase):
         m.x[1] = K.Str('ac')
         m.op_equal_string(None, 0, 4, 1, 0, None)
         self.assertIsNone(m.pc)
+
+
+class StringIdentity(unittest.TestCase):
+    """Strings unify only with the same stored string (2026-11-25): TM-388
+    PDF p79 (folio 67), 'abc'='abc', == and =:= fail, equal_string/2
+    succeeds; p117-119 Table 4-3; TM-115 PDF p97.  string/3 is a type test
+    (TR-044 App. A.2 PDF p39)."""
+
+    def test_unify_and_identical(self):
+        m = machine()
+        a, b = K.Str('abc'), K.Str('abc')
+        m.reset()
+        self.assertFalse(m.unify(a, b))
+        self.assertTrue(m.unify(a, a))
+        v = K.Var()
+        self.assertTrue(m.unify(v, a))
+        self.assertTrue(m.unify(v, a))
+        self.assertFalse(m.unify(v, b))
+        m.x[0], m.x[1], m.x[2] = a, b, a
+        self.assertFalse(m.identical(0, 1))
+        self.assertTrue(m.identical(0, 2))
+        m.pc = 'here'
+        m.op_equal_string(None, 0, 0, 1, 0, None)
+        self.assertIsNotNone(m.pc)
+        # a structure holding them: element-wise, so the same rule
+        self.assertFalse(m.unify(K.Vec([a]), K.Vec([b])))
+        self.assertTrue(m.unify(K.Vec([a]), K.Vec([a])))
+
+    def test_string_is_a_type_test(self):
+        m = machine()
+        for x, ok in ((K.Str('ab'), True), (K.Var(), False), (3, False), (K.Atom('ab'), False)):
+            m.reset()
+            m.pc = 'here'
+            m.x[0] = x
+            m.op_string(None, 0, 0, 1, 2, None)
+            self.assertEqual(m.pc is not None, ok, x)
+            if ok:
+                self.assertEqual(m.x[1], 2)
 
 
 class Convert(unittest.TestCase):
@@ -736,7 +788,9 @@ class Census(unittest.TestCase):
         # (FMT_CONV.ESP:13-16): the 7 methods refused there go on; three
         # succeed (booking_table, local_node_manager, remote_cell_table
         # create/2), the others stop later
-        self.assertEqual(out, {'refused': 208, 'success': 310, 'failure': 12})
+        # 2026-11-25: string/3 a type test (fails on an unbound argument):
+        # csp_default_write write/2 goes on and runs into the step limit
+        self.assertEqual(out, {'refused': 207, 'success': 310, 'failure': 12, 'step limit': 1})
         # the one method the register cut (pmi dd/de) decides here: it fails
         # cleanly with unbound arguments (no source held)
         (r,) = [r for r in rows if r[:3] == ('pimmcsp##pseudo_csp_csbreak_address_table',
@@ -769,7 +823,8 @@ class Census(unittest.TestCase):
             # ('unbound argument' 21 -> 23), dummy_kl1_value_cell unify/2 at a
             # slot constant (8 -> 9), wshell_buffer create/2 at a float pool
             # constant ('pool' 1)
-            'receiver a slot constant': 9, 'unbound argument': 23, 'operand': 7, 'pool': 1,
+            # string/3 a type test: 'unbound argument' 23 -> 22
+            'receiver a slot constant': 9, 'unbound argument': 22, 'operand': 7, 'pool': 1,
             'missing opcode blt e1': 14, 'missing opcode pmi c8': 8,
             'missing opcode pmi 6c': 5,
             'missing opcode blt f4': 4, 'missing opcode blt 44': 4,

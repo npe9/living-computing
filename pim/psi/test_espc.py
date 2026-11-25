@@ -157,6 +157,10 @@ restored with cp and checked with cmp):
   - source check (2026-11-25, observed): standin/pathname.esp put back
     to its committed text (`remove_or_local/6`), restored by cp from a
     backup and cmp-checked: only test_source_check_labels fails.
+  - string identity (2026-11-25): the four injections (unify and ==
+    by content again, equal_key/2 as unification, string/3 refusing a
+    non-string) and what each fails in both files are in test_kl0.py's
+    header.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
@@ -785,6 +789,27 @@ class Standins(unittest.TestCase):
         self.assertEqual(got['get_contents_with_key'], ['[[[{a,k1},{b,k2},{c,k1}]]]'])
         self.assertEqual(got['remove_at'], ['[[a,k1]]', '[[c,k1]]', '[]'])
 
+    def test_string_keys(self):
+        # strings unify only by storage (TM-388 PDF p79), so list_index's
+        # equal_key/2 compares string keys by contents, as held callers need
+        # (p_wshell.esp:102/:396 set and read "$from" with two literals);
+        # other keys still by unification.  Each key below is a distinct
+        # Str with the same contents as the one added.
+        for cid, args in (('simpos##list_index', [K.Var()]), ('simpos##hash_index', [K.Var(), 3])):
+            (r,) = K.call_class_method(self.m, cid, 'create', args)
+            ix = r[0]
+            R = lambda x: repr(x).replace(' ', '')
+            self.assertEqual(len(self.send(ix, 'add_at', K.Atom('v1'), K.Str('$from'))), 1)
+            self.assertEqual(len(self.send(ix, 'add_at', K.Atom('v2'), K.Atom('k'))), 1)
+            self.assertEqual(R(self.send(ix, 'get_at', K.Var(), K.Str('$from'))), '[[v1,string#\'$from\']]', cid)
+            self.assertEqual(self.send(ix, 'get_at', K.Var(), K.Str('$fro')), [], cid)
+            self.assertEqual(R(self.send(ix, 'get_contents_at', K.Var(), K.Str('$from'))),
+                             '[[[v1],string#\'$from\']]', cid)
+            self.assertEqual(R(self.send(ix, 'get_at', K.Var(), K.Atom('k'))), '[[v2,k]]', cid)
+            self.assertEqual(R(self.send(ix, 'remove_at', K.Var(), K.Str('$from'))),
+                             '[[v1,string#\'$from\']]', cid)
+            self.assertEqual(self.send(ix, 'get_at', K.Var(), K.Str('$from')), [], cid)
+
     def test_process_create(self):
         # the interpolated process create/3 (as pimfep's as_pimos_device
         # process/4 sends it) makes a dormant process whose parent is the
@@ -1073,11 +1098,18 @@ end.''', 'simpos')
         # method left success.  2026-11-25: blt 19 V != N witnessed
         # (FMT_CONV.ESP:13-16): packet32 initiate/1 goes on from its
         # new_heap_vector and runs into the step limit (476 refused).
+        # 2026-11-25: strings unify by storage only (no row moves: the
+        # census's arguments are unbound) and string/3 is a type test
+        # that fails on a non-string: 33 methods leave refused (30 to
+        # failure, 3 to success), 6 stop later (3 at a missing opcode, 3
+        # at a slot constant), and pimos_file resign_core/1 leaves success
+        # (a census order effect: alone, on a fresh machine, it fails
+        # before and after).
         rows = K.census_fep(K.fep_machine())
         out = {}
         for r in rows:
             out[r[3]] = out.get(r[3], 0) + 1
-        self.assertEqual((len(rows), out), (1403, {'success': 787, 'failure': 123, 'refused': 476, 'exception': 16,
+        self.assertEqual((len(rows), out), (1403, {'success': 789, 'failure': 154, 'refused': 443, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
