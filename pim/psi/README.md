@@ -3733,8 +3733,8 @@ pinned `lockstep_shell.APPS['pwd']`.
 
 **RP.** It stays `pmpsi`, the PSI user's registered password (OURS,
 step 3l). The held requester sends it, and the held
-`simpos_user_device` identifies with it. `fep.LOGIN`'s `''` was not
-changed.
+`simpos_user_device` identifies with it. Both values, this one and
+`fep.LOGIN`'s `''` (not changed), are still unsourced.
 
 **Tests** (`test_fep_bridge.py`, 4 in the suite in 4 s, 1 opt-in):
 - `Assembler`: the held assemble/3 equals `fep.pack_message` on five
@@ -3746,11 +3746,20 @@ changed.
 - `test_live` (`FEP_BRIDGE_PKL=...`): the live run against the tape.
   Measured: 38 s, 15.5 GB resident.
 
-Eleven injections were made, each into the file from a backup copy,
-copied back, and checked with cmp. The observed failures are in the
-test's header. Nine are discriminated. Two (blt 0d always failing, and
-exterminate/1 not yielding) change nothing on this path and are
-recorded so.
+Eleven injections were made against `test_fep_bridge.py`, each into
+the file from a backup copy, copied back, and checked with cmp. The
+observed failures are in the test's header. Nine are discriminated
+there. Two change nothing on this path, as traced: blt 0d always
+failing (it meets only the atom `nil` here) and `exterminate/1` not
+yielding (each dying process calls it last). They are discriminated by
+new unit tests:
+- `test_kl0.py` `Step3nRows`: `get_vector_6`, `object/3` and
+  `subvector` on held code, with four injections.
+- `test_espc.py` `test_step3n_exterminate`: a process that kills itself
+  runs nothing after.
+- `test_espc.py` `test_step3n_monogyny_list_index`: `put_at/3`
+  replaces.
+Each has its observed failures in its header.
 
 **Census, recomputed row by row** against 2eda555c (MEASURED
 2026-11-25, `_G` numbering normalised):
@@ -3761,17 +3770,19 @@ recorded so.
   (`test_espc.py` `test_census`) goes from 98 / 86 / 40 / 3 to
   101 / 86 / 40 / 0.
 - **Plain FEP:** 806 / 234 / 411 becomes **810 / 238 / 403** (1,468
-  rows). 16 rows change:
+  rows). 15 rows change:
   - Real: the front end's `create/6` goes from refused to success. It
     is the path of the bridged run.
-  - blt 0d's 10 rows go on. 3 succeed and 1 fails on the census's
-    unbound argument, which `object/3` fails on: not progress. The
-    other 6 stop later.
+  - blt 0d's 10 rows go on. 3 succeed and 1 fails. Traced: in these
+    rows `object/3` meets only a slot's initial value (the atoms `none`
+    and `nil`, or a census slot constant) and fails on it. These are
+    census artifacts, not progress. The other 6 stop later.
   - simpos_user `identify/4`, `regist/4` and `setup_process/4` go from
     refused to failure: an empty index in a census row.
   - `exterminate_fep/1` moves to the census's missing ready queue.
-- **With recipes:** 832 / 235 / 384 becomes **837 / 239 / 375**.
-  - The same 16 rows.
+- **With recipes:** 832 / 235 / 384 becomes **837 / 239 / 375**. 17
+  rows change.
+  - The same 15 rows.
   - The replier's `io/5` goes from refused to success: the assembler's
     16-to-32 path, real.
   - The editor's `get_title/3` moves to an unset output stream (a slot

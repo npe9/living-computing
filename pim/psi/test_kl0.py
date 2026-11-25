@@ -1458,6 +1458,62 @@ class Step3mRows(unittest.TestCase):
         self.assertEqual((n, r[2], r[4]), (1, 1, 9))
 
 
+class Step3nRows(unittest.TestCase):
+    """Step 3n's rows on held code: pmi 36 get_vector_6, blt 0d object/3
+    (INFERENCE) and blt 30 subvector.
+    Injections, observed (2026-11-25, kl0.py from a backup, restored by
+    copy, cmp clean; the failures of this file):
+      N1 get_vector_6 takes 5 elements: test_get_vector_6 ERROR (no
+         solution for the 6-vector) and Census.test_census FAIL.
+      N2 (F9) object/3 always fails: test_object FAIL.
+      N3 object/3 always succeeds: test_object FAIL.
+      N4 subvector copies the elements as fresh variables:
+         test_subvector FAIL."""
+
+    def test_get_vector_6(self):
+        # paragraph##graph_status_element create/3 @19 `36 00`, then six
+        # unify_variable_p (p_MAIN.esp:202 `:create(C,{View,Type,From,Num,
+        # To,Wid},Obj)`): a 6-vector is taken, a 5-vector is not
+        m = machine()
+        cid = 'paragraph##graph_status_element'
+        m.reset()
+        (s,) = K.call_class_method(m, cid, 'create', [K.Vec([1, 2, 3, 4, 5, 6]), K.Var()])
+        self.assertEqual(K.deref(s[1]).cid, cid)
+        m.reset()
+        self.assertEqual(K.call_class_method(m, cid, 'create', [K.Vec([1, 2, 3, 4, 5]), K.Var()]), [])
+
+    def test_object(self):
+        # pimscsi##scsi_dummy_handler local initiate/2 @2d: try_me_else,
+        # `0d 00 02 03` on A0, cut, proceed: an object takes clause 1 and
+        # succeeds; an integer goes to clause 2, which fails here (the
+        # census machine has no handler class objects).  No source is held
+        # for pimscsi, so this pins the INFERENCE (an object, not an
+        # integer, passes), it does not witness it
+        m = machine()
+        cid = 'pimscsi##scsi_dummy_handler'
+        ps = {(p.name, p.arity): p for p in m.lib.templates[cid].locals}
+
+        def run(a0):
+            m.reset()
+            return sum(1 for _ in m.solve((m.code(cid), ps[('initiate', 2)].offset), [a0, K.Var()]))
+        self.assertEqual(run(K.ClassRef(cid)), 1)
+        self.assertEqual(run(5), 0)
+
+    def test_subvector(self):
+        # kappa##kappaHLC_builtin_common except_unique/2 @1f3-209
+        # (HLCCMPS.ESP:169-176): the new vector's head and tail are
+        # subvectors unified with the old one's, so the new vector holds
+        # the old elements only if a subvector shares its vector's terms
+        km = kappa_machine()
+        cid = 'kappa##kappaHLC_builtin_common'
+        ps = {(p.name, p.arity): p for p in km.lib.templates[cid].locals}
+        v = K.Var()
+        km.reset()
+        got = [repr(K.resolve(v)) for _ in km.solve((km.code(cid), ps[('except_unique', 2)].offset),
+                                                    [K.Vec([A(x) for x in 'abcde']), v])]
+        self.assertEqual(got, ['{a,b,{unique,no},d,e}'])
+
+
 class Census(unittest.TestCase):
     def test_census(self):
         rows = K.census(K.Machine(K.load_six()))

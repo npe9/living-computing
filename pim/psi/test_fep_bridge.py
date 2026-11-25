@@ -46,12 +46,18 @@ of this file, the live test skipped):
   F8 kl0.py pathname_remote_or_local: the local part not given: Tape FAIL
   F11 kl0.py world_root_path: Root ">" ++ the logical name, not the
      directory's full name: Tape FAIL
-  Not observed, recorded as such: F9 blt 0d object/3 always failing, and
-  F10 exterminate/1 not giving the processor away, change nothing here
-  (no test fails): on this path the front end's delete_remote_stream/2
-  answers the tcpip server's 60 the same way by either clause, and
-  exit_program/1's process ends anyway when its program returns.  Each
-  is needed only so that the run does not refuse.
+  Not observed here, recorded as such (no test in this file fails):
+  F9 blt 0d object/3 always failing.  Traced (2026-11-25, the replay with
+     object/3 logged): it is met three times, all at the front end's
+     delete_remote_stream/2 @879, always on the atom nil, and fails
+     there, so its success branch is not on this path.  The row is needed
+     only so that the run does not refuse; test_kl0.py Step3nRows
+     test_object pins it (F9 FAILS there).
+  F10 exterminate/1 not giving the processor away.  Traced: three
+     string-I/O device processes (devices 25, 26, 29) exterminate
+     themselves, each as exit_program/1's last call, so nothing of theirs
+     runs after it either way.  test_espc.py test_step3n_exterminate
+     discriminates it (F10 FAILS there).
 """
 import json
 import os

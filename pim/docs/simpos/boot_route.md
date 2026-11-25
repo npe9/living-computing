@@ -794,11 +794,12 @@ setup_process/4`: `identify/4`, else `regist/4`, through a
 path (`world default_logical_name/2`, `root_path/3`, `pathname
 remote_or_local/6`; §13.1 rows 7-9).
 
-**RP.** It is settled as far as the sources go. The held requester
-sends its SIMPOS user's `:user_password` (`pmpsi`, registered in step
-3l, OURS), and the held `simpos_user_device` identifies with it. With an
-empty password the probe's user is not found (§13.3). `fep.LOGIN`'s
-`''` is OURS too and was not changed.
+**RP.** Its value is still unsourced on both sides. What the run does
+settle is where it comes from: the held requester sends its SIMPOS
+user's `:user_password`, and the held `simpos_user_device` identifies
+with it. Here that is `pmpsi`, registered in step 3l (OURS). An empty
+password only disagrees with that OURS registry: the probe's user is not
+found (§13.3). `fep.LOGIN`'s `''` is OURS too and was not changed.
 
 **Not on the PSI.** The shell's window. `pimos_window_editor`'s
 `putb/4` and `getl/3` run into the lost PMACS editor

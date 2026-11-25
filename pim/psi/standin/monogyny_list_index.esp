@@ -16,14 +16,16 @@
 %     the list_index protocol plus put_at/3.
 % INFERENCE: it is a list_index (nature list_index: the same selectors)
 % that holds ONE object per key ("monogyny"): put_at/3 replaces what the
-% key held.  Only put_at/3 is new here; the rest is the list_index
-% stand-in's.
+% key held.  Only put_at/3 is new here; the rest, create/2 included, is
+% the list_index stand-in's.
 
 class monogyny_list_index has
 nature list_index;
 
-% INTERPOLATED from: users/3 above, as list_index:create/2.
-:create(Class, Index) :- :new(Class, Index);
+% create/2 is list_index's (inherited: users/3 above sends
+% `:create(#monogyny_list_index, U)`).  A create/2 here as well is
+% combined with the inherited one (the Librarian's inheritance; measured
+% 2026-11-25: two solutions, two indexes).
 
 instance
 
