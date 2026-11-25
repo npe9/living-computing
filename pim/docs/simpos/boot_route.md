@@ -58,9 +58,9 @@ from it.
 | **B3** | **The boot process brings itself under the supervisor, and the multiple-process environment starts on it** | PRINTED prose: TR-056 p16, p19, p21; TM-100 p6, p13; TR-055 p5; PRINTED code: `process:activate/2`, `suspend/2`, `resume/2` (TM-100 Fig. 3.1), `stream` `put/2`, `get/2` (Fig. 3.6); HELD: `pseudo_pe_process` `release/1`, `$or$5/2` | **Step 3j:** `status/3`, `clear_masks/1`, `entry_of_invoke/2`, class `context`, `boot_process` `create/2` and `activate/2`, all INTERPOLATED; a dispatcher in `kl0.py` (OURS). A second process runs, and the two talk through a stream | **DONE as a stand-in** (§4). The real supervisor is lost. |
 | B4 | Device handlers are instantiated and activated | PRINTED prose: TR-059 p30 (folio 28); TM-100 p6; PRINTED code: part of `interrupt_process` (TM-100 Fig. 3.4) | Step 3j: not the SIMPOS handlers, but PIM/m's FEP devices run as processes: the held `pimos_timer` `create_timer/9` runs to its end under the supervisor. **Step 3k:** blt 6f (KNOWN-PLAINTEXT) and `boot_process:request/3` (INTERPOLATED); a request to the timer's device process round-trips: `close` (60), `get_count` (301), `get_date_time` (304) (§4.3) | **DONE for the FEP timer, as a stand-in.** The SIMPOS handlers stay lost: their classes and the device list are not held, and `interrupt_process` is printed only in part (its dispatch is elided). Not reached: `on_after` (303) and `terminate_core` (blt 90 has a row since step 3k, but reads a hardware PCB word). |
 | B5 | Supervisor services: the system directory, the library, users, worlds, the file system | PRINTED interfaces: TR-056 p20-p25 (library, `directory`, worlds), TR-524 App. A (file classes), TR-059 p23-p27 | `library` partly modelled in Python (step 3f); `pathname` HELD-SOURCE. **Step 3l:** `directory` (`retrieve/3,4` and the node methods, INTERPOLATED) over an OURS tree built from the HELD psdpim archive and its `INSTALL` placement; `node_full_name/3` (INFERENCE) | **DONE as a stand-in** (§4.4). The real file system is lost; the tree holds only what PIM/m installs. |
-| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3` | **The coordinator: DONE as a stand-in** (§4.4). The window system is not: no `standard_io_window`, no font, no bitmap. The menu is a list, not a window. |
+| B6 | The coordinator and the window system start | PRINTED 1984 code: TR-046 p26-p28, TR-061 p13; prose `shell.md` §1.1; window mixins (TM-065, TM-125) | `pmacs_window` and `standard_editor` stand-ins, minimal. **Step 3l:** a coordinator process (OURS state and selectors, INTERPOLATED behaviour) reads `me:login.com` through `standard_input_file` (INTERPOLATED; reader OURS), applies its `define`, holds its `menu`, answers `information/3`; `standard_io_window` and `font` (OURS bodies, held selectors) | **The coordinator: DONE as a stand-in** (§4.4). The window system only as far as the login requester's first prompt: a window is a transcript and an input stream; no bitmap, no menu window (the menu is a list). |
 | B7 | Login: the user, the world, `me:login.com`, the system-menu items | PRINTED prose: TM-134 p66, p68; TM-181 p3; TM-229 p5-p6; HELD code: `pimfep##simpos_user` `create/4`, `setup_process/2` | the process slots `user` and `world` (PRINTED, TM-100 Fig. 3.1) with interpolated accessors. **Step 3l:** `user`, `world`, `password_list` (INTERPOLATED from the held sends; registry and password OURS); the held `create/4` and `setup_process/2` run to their ends | **DONE as a stand-in** (§4.4). |
-| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program stops at its first window send, `standard_io_window:create/3`. |
+| B8 | The top level: the system menu starts a program in a new process | PRINTED dialogue: TM-134 p71 (`:create(#c,O). :create(#process,P). :activate(P,O).`) | `activate/2` runs since step 3j; since step 3k the printed `create/2` runs, its `create_core(PROCESS, ...)` corrected to `Class` (labelled, printed text kept). **Step 3l:** `invoke_system_menu`, then `{select, "Login PIMOS"}` (events OURS) start the held `pimfep##pimos_login_requester` in a new process | **REACHED as a stand-in** (§4.4). The started program puts its first prompt and waits for a FEP node name; every process waits. |
 
 ### B0. The console processor (PRINTED prose, HELD files)
 
@@ -517,24 +517,31 @@ have"). The basis table, the injections and the census are in
   printed action's name, TR-046 PDF p28) and `{select, "Login PIMOS"}`
   (OURS) make the coordinator create `pimfep##pimos_login_requester`
   and activate it in a new process, its child, which shares the world.
-  The held requester runs `goal/1` and `initiate/1` to
-  `:create(#standard_io_window, W, [...])` (@af-b4), refused: the class
-  is not stood in. A select with no menu shown starts nothing.
+  A select with no menu shown starts nothing.
+- **B8, the prompt** (`test_step3l_b8_prompt`). The held requester runs
+  `goal/1`, `initiate/1` and `read/4` on the stand-ins
+  `standard_io_window` and `font` (bodies OURS; selectors and argument
+  order HELD, `:create(#standard_io_window, Opts, W)` @af-b4,
+  `:create(#font, "font:test_11.font", F)` @b9-be) and
+  `process:get_number/3` (INFERENCE). It titles its window `Pimos remote
+  login N` (its held `title_string/1`), puts `Enter FEP node
+  name--------->` and waits in `read/2`.
 
-**Where the route stops now.** At SIMPOS's window system. The started
-login requester's next sends are `font:create/3` ("font:test_11.font"),
-`set_font/2`, `set_label_font/2`, `set_title/2`, `activate/1`, then
-`read/4`'s `clear/1`, `show/1`, `putl/2` of `Enter FEP node
-name--------->` and `read/2`. The window classes are lost
-(`subsystems/window.md`); a stand-in for them would be OURS throughout.
+**Where the route stops now.** Every process waits: the login
+requester for a node name typed in its window, the coordinator for an
+event, the boot program on its own stream. This is §1's target, the
+system menu up and `Login PIMOS` started from it, reached with
+stand-ins. Not modelled: keyboard input to a window, so the requester's
+`feps_menu/2`, `check_code/4` and `getl/2` are not reached. The real
+window classes are lost (`subsystems/window.md`).
 
 ## 5. Next
 
 B5 to B8 run as stand-ins (§4.4). Open, in order:
 
-1. B6's window system: a minimal OURS `standard_io_window` and `font`
-   (a transcript, an input stream), to take the login requester to its
-   prompt and its wait for a node name.
+1. Keyboard input to a window (OURS), to take the login requester past
+   its prompt: `feps_menu/2`, `check_code/4`, `getl/2`, then the user
+   name and password (`inhibit_echo/1`, `read_password/3`).
 2. The FEP census side items: blt 0d (10 stops in each FEP census) and
    blt a8 (2); `get_interpreter/2` and `has_been_reshaped/1`; the
    timer's `on_after` (303) with an alarm process; `terminate_core`'s

@@ -157,6 +157,15 @@
     % process"); the body is INTERPOLATED (step 3l).
     :world(Class, World) :- :self(Class, P), World = P!world ;
 
+    % :get_number(#process, Process, N) -- step 3l.  INTERPOLATED
+    % (INFERENCE) from its held senders: pimfep##pimos_login_requester
+    % title_string/1 @2a4-2ae (`:self(#process, P)`, then this, the number
+    % turned into a string for the window's title) and pimmcsp##
+    % pseudo_pe_process get_pe_process_number/2 @220-226.  N is the number
+    % of the process's context, the index the printed create_core/3 files
+    % it under in instance_array (TM-100 Fig. 3.1, PDF p8): INFERENCE.
+    :get_number(Class, Process, N) :- :get_number(Process!context, N) ;
+
     instance
 
     % PRINTED: TM-100 Fig. 3.1, PDF p8 (all instance slots)

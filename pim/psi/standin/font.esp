@@ -1,0 +1,24 @@
+% SCAFFOLDING stand-in for SIMPOS's class `font`, compiled by psi/espc.py
+% into the package `simpos`.  It is NOT SIMPOS: no part of it is printed
+% or held, and NO GLYPH IS MODELLED.  Step 3l, route step B6 (the window
+% system), MINIMAL: a font is its file's name.
+% USAGE (held cells, read 2026-11-25): pimfep##pimos_login_requester
+% local initiate/1 @b9-c6 (`:create(#font, "font:test_11.font", F)`, A0
+% the name and A1 the new font by the cells @b9-be; then
+% `:set_font(W, F)`, `:set_label_font(W, F)`) and initiate_additional_
+% function/1 @2ce-2d3.  The font file is not read: psdpim's FONT.DIR is
+% not placed (psi/simpos_fs.py), and nothing on the route draws (OURS).
+
+class font has
+
+% :create(#font, Name, F) -- INTERPOLATED (body OURS) from the sends above.
+:create(Class, Name, F) :-
+        :new(Class, F),
+        F!name := Name;
+
+instance
+
+% OURS representation.
+attribute name := 0;
+
+end.

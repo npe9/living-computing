@@ -1,0 +1,63 @@
+% SCAFFOLDING stand-in for SIMPOS's class `standard_io_window`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: the window
+% classes are lost (docs/simpos/subsystems/window.md), and NO DISPLAY IS
+% MODELLED.  Step 3l, route step B6 (the window system), MINIMAL: what
+% pimfep##pimos_login_requester sends before it waits for its first
+% answer.  A window here is a transcript (the lines put, newest first) and
+% an input stream (the keyboard, OURS: a `stream`, TM-100 Fig. 3.6, so a
+% read waits until a term is put).
+% USAGE (held cells, read 2026-11-25), pimfep##pimos_login_requester:
+%   - local initiate/1 @af-d7: `:create(#standard_io_window, Opts, W)`
+%     (the argument order of the cells @af-b4: A0 the options, A1 the new
+%     window, as pmacs_window's create/3; Opts pool[10]: size {ch,40} by {ch,7}, position manipulator, nature
+%     [with_icon]), set_font/2, set_label_font/2, set_title/2,
+%     activate/1;
+%   - local read/4 @dc-f3: clear/1, show/1, `:putl(W, "Enter FEP node
+%     name--------->")`, `:read(W, Node)`; then getl/2, inhibit_echo/1,
+%     permit_echo/1 (not stood in: the route stops before them).
+% Everything below is OURS in its body; each method's selector is held.
+
+class standard_io_window has
+
+% :create(#standard_io_window, Options, W) -- INTERPOLATED (body OURS):
+% the options are kept, not acted on.
+:create(Class, Options, W) :-
+        :new(Class, W),
+        W!options := Options,
+        :create(#stream, Input),
+        W!input := Input;
+
+instance
+
+% OURS representation (see above).
+attribute options := [], font := 0, label_font := 0, title := 0,
+          active := 0, shown := 0, transcript := [], input := 0;
+
+% INTERPOLATED (body OURS) from initiate/1 @c2.
+:set_font(W, F) :- W!font := F;
+
+% INTERPOLATED (body OURS) from initiate/1 @c6.
+:set_label_font(W, F) :- W!label_font := F;
+
+% INTERPOLATED (body OURS) from initiate/1 @cc.
+:set_title(W, T) :- W!title := T;
+
+% INTERPOLATED (body OURS) from initiate/1 @d7.
+:activate(W) :- W!active := 1;
+
+% INTERPOLATED (body OURS) from read/4 @e8: clear empties the transcript.
+:clear(W) :- W!transcript := [];
+
+% INTERPOLATED (body OURS) from read/4 @eb: show marks the window shown.
+:show(W) :- W!shown := 1;
+
+% :putl(W, Line) -- INTERPOLATED (body OURS) from read/4 @ef: the line
+% joins the transcript.
+:putl(W, Line) :- W!transcript := [Line | W!transcript];
+
+% :read(W, Term) -- INTERPOLATED (body OURS) from read/4 @f3: the next
+% term typed, taken from the window's input stream; with none, the
+% process waits (stream get/2, TM-100 Fig. 3.6).
+:read(W, Term) :- :get(W!input, Term);
+
+end.

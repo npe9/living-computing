@@ -1086,6 +1086,7 @@ source by path and line; page images with `pdftoppm -r 150`. The tests are `psi/
 | 9 | `standard_input_file gett/2` fails at the end of the file | HELD source utter `source/QXT/trans.esp`:20-24 (a `gett` loop ended by its last clause); kwic-esp `src/systems.esp`:368-374 (tests `end_of_input/1` first) | `kl0.py` `input_gett` |
 | 10 | `pkg##name` is read as one atom | the library takes a class name as an atom (`kl0` `lib_class_named`); the login files' menu items name classes so (`shell.md` §4.2.2) | `psi/esp_reader.py` |
 | 11 | `coordinator:information/3` fails when the item is absent | every held caller has a fallback clause (`shell.md` §2.5: `pimos_fep_superviser` `full_pathname/1` @1c6-1ce, `pimos_login_requester` `close/2` @149-14e) | `standin/coordinator.esp` |
+| 12 | `process:get_number/3` gives the number of the process's context | its held senders, `pimos_login_requester` `title_string/1` @2a4-2ae and `pseudo_pe_process` `get_pe_process_number/2` @220-226; the printed `create_core/3` files a process under its context's number in `instance_array` (TM-100 Fig. 3.1, PDF p8) | `standin/process.esp` |
 
 KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `{f, a, b}` (kwic-esp
 `src/systems.esp`:380-383, `dbUtil.esp`:1437). The reader uses this.
@@ -1106,6 +1107,10 @@ KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `
   - the events `invoke_system_menu` (the name of TR-046 PDF p28's printed action) and `{select, Label}`;
   - the menu as the login file's item columns (no `menu_item` or `multi_column_menu`: those classes are lost).
 - The term reader (`psi/esp_reader.py`) and its operator priorities (Prolog's).
+- `standard_io_window` and `font` (step 3l's fourth commit): a window is its options, fonts, title, a transcript of
+  the lines put and an input stream that `read/2` waits on; a font is its file's name, the file not read. Their
+  selectors and argument order are HELD: `pimos_login_requester` `initiate/1` @af-d7, `read/4` @dc-f3, and
+  `pimos_fep_superviser` `create_log_size_input_window/1` @47f-485 (the options first, the window second).
 - The tests' boot program (`b8_boot`), which logs in and starts the coordinator itself.
 
 ### §11.3 What was re-read for this step
@@ -1115,4 +1120,4 @@ KNOWN from held source, not inference: a compound term `f(a, b)` is the vector `
 | `psdpim/INSTALL`, the placement lines | the archive member | CONFIRMED, quoted in `psi/simpos_fs.py` |
 | `psdpim/INSTALL.DIR/login.com`: `menu`, `define`, `package` | decoded from the archive (16-bit JIS) | CONFIRMED: menu columns of seven and three items; six `define` names; `package :- user` |
 | TR-524 PDF p9, p36, p37 | page images | CONFIRMED: the version suffix; Table 3 `retrieve/c`; App. A `local_logical_file`'s `retrieve/4` |
-| `pimos_login_requester` `initiate/1` @ad-b4 | listing | CONFIRMED: `:create(#standard_io_window, W, [{size, ...}, {position, manipulator}, {nature, [with_icon]}])`, where the route stops |
+| `pimos_login_requester` `initiate/1` @ad-d7, `read/4` @dc-f3, `title_string/1` @2a2-2bf | listing | CONFIRMED: `:create(#standard_io_window, Opts, W)` with Opts `[{size, {ch, 40}, {ch, 7}}, {position, manipulator}, {nature, [with_icon]}]`; the font, title and `activate/1`; `putl/2` of `Enter FEP node name--------->`, then `read/2`, where the route waits |

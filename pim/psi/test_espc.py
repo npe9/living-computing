@@ -595,13 +595,13 @@ class Standins(unittest.TestCase):
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##coordinator',
             'simpos##coordinator_program', 'simpos##date_time', 'simpos##directory',
-            'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
+            'simpos##e_string', 'simpos##font', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
             'simpos##password_list', 'simpos##pathname', 'simpos##pmacs_window', 'simpos##post_queue',
             'simpos##post_queue_for_message', 'simpos##process', 'simpos##process_clock',
             'simpos##semaphore', 'simpos##standard_editor',
-            'simpos##standard_input_file', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
+            'simpos##standard_input_file', 'simpos##standard_io_window', 'simpos##stream', 'simpos##string', 'simpos##symbolizer', 'simpos##time',
             'simpos##trace', 'simpos##user', 'simpos##waiting_frame', 'simpos##waiting_queue',
             'simpos##with_link', 'simpos##with_lock', 'simpos##world'])
         # the HELD-SOURCE classes (morphana _simpos/, step 3c) keep the
@@ -1283,14 +1283,19 @@ end.''', 'simpos')
         # step 3l: simpos_user create/4 now fails at identify/4 (no user is
         # registered in a census row: the registry is a class slot, which
         # the census drops), where it was refused: not progress.  801 /
-        # 234 / 414
-        self.assertEqual((len(rows), out), (1466, {'success': 801, 'failure': 234, 'refused': 414, 'exception': 16,
+        # 234 / 414.  Step 3l, the window stand-ins: pimos_fep_superviser
+        # log_size_input_window/2 makes its window (OURS) and succeeds; the
+        # login requester's three rows move to get_number/2 on its
+        # process's context, unset in a census row.  802 / 234 / 413
+        self.assertEqual((len(rows), out), (1466, {'success': 802, 'failure': 234, 'refused': 413, 'exception': 16,
                                                    'step limit': 1}))
         eoi = [r[3] for r in rows if r[2] == 'entry_of_invoke/2']
         self.assertEqual((len(eoi), set(eoi)), (28, {'success'}))
         # assigned/1 is as_resource's alone (assign/1 is as_program's too)
         self.assertEqual(sorted(r[3] for r in rows if r[2] == 'assigned/1'), ['failure'] * 6)
-        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 154)
+        # slot constants 154 -> 157 in step 3l: the login requester's three
+        # rows (get_number/2 to its process's unset context)
+        self.assertEqual(sum(1 for r in rows if r[4] == 'receiver a slot constant'), 157)
         self.assertNotIn('simpos##process:status/3', {K.simpos_target(r[5]) for r in rows})
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1379,11 +1384,12 @@ end.''', 'simpos')
         # `ffff` and stop at put/2 on the window's unset output stream (a
         # slot constant, the step 3g artifact).  828 / 234 / 387, slot
         # constants 105 -> 107.  Step 3l: simpos_user create/4 fails at
-        # identify/4 (no registry in a census row): 828 / 235 / 386
-        self.assertEqual((len(rows), out), (1466, {'success': 828, 'failure': 235, 'refused': 386,
+        # identify/4 (no registry in a census row): 828 / 235 / 386; the
+        # window stand-ins, as in test_fep_census: 829 / 235 / 385
+        self.assertEqual((len(rows), out), (1466, {'success': 829, 'failure': 235, 'refused': 385,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 107)
+        self.assertEqual(slot_const, 110)   # step 3l: 107 -> 110, as in test_fep_census
         self.assertEqual(by[('pimos_timer', 'instance', 'get_count/3')][0], 'success')
         self.assertEqual(by[('pimos_timer', 'instance', 'get_date_time/3')][0], 'success')
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
@@ -2342,11 +2348,12 @@ end.'''
         #   coordinator information/3 not loaded, was stale; corrected.)
         login = self.jstr('Login PIMOS')
         m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), login])])
-        # the furthest point: the held login requester's initiate/1 sends
-        # :create(#standard_io_window, W, [{size, ...}, ...]) (@af-b4), a
-        # SIMPOS window class not stood in
-        self.assertEqual(r.cause, 'simpos')
-        self.assertIn('simpos##standard_io_window:create/3', r.detail)
+        # the stop: until the window stand-ins (test_step3l_b8_prompt) the
+        # held login requester's initiate/1 stopped at its first window
+        # send, :create(#standard_io_window, Opts, W) (@af-b4); now every
+        # process waits, the requester's last
+        self.assertEqual(r.cause, 'would suspend')
+        self.assertIn('no process is ready', r.detail)
         C = K.ClassRef('simpos##coordinator')
         # the login file was read: menu columns, user items, define
         menu = [self._walk(c) for c in self._walk(m.get_slot(C, 'menu'))]
@@ -2391,6 +2398,50 @@ end.'''
         self.assertEqual(r.cause, 'would suspend')
         self.assertIn('no process is ready', r.detail)
         self.assertEqual(m.get_slot(C, 'started'), K.NIL)
+
+    def test_step3l_b8_prompt(self):
+        # step 3l, B8 continued: the started pimfep##pimos_login_requester
+        # runs its held initiate/1 and read/4 on the stand-ins
+        # standard_io_window and font (OURS bodies, held selectors and
+        # argument order) and process get_number/3 (INFERENCE), to its
+        # first prompt, and waits in the window's read/2 for a FEP node
+        # name.  The title is made by the held title_string/1 (symbolizer
+        # and string stand-ins).
+        # Injections, observed (2026-11-25; each from a backup copy,
+        # restored by copy, cmp clean): see the header of
+        # test_step3l_b6_b8 for N1-N5;
+        #   P1 putl/2 keeps nothing (standard_io_window.esp): this test
+        #      FAIL, nothing else.
+        #   P2 read/2 succeeds at once with [] (standard_io_window.esp):
+        #      this test and test_step3l_b6_b8 FAIL (a 'simpos' refusal
+        #      past the prompt, not 'would suspend'), nothing else.
+        #   P3 get_number/3 gives 0 (process.esp): this test FAIL ('Pimos
+        #      remote login 0'), test_fep_census and
+        #      test_step3f_census_recipes FAIL (the requester's census rows
+        #      pass get_number: 803 / 830 successes), nothing else.
+        #   P4 font create/3 takes (F, Name) (font.esp): this test FAIL
+        #      (the window's font is a slot constant), test_fep_census and
+        #      test_step3f_census_recipes FAIL (803 / 830), nothing else.
+        #   test_kl0.py stayed OK in P1-P4.
+        m, r = self.boot_to_top([K.Atom('invoke_system_menu'), K.Vec([K.Atom('select'), self.jstr('Login PIMOS')])])
+        self.assertEqual(r.cause, 'would suspend')
+        C = K.ClassRef('simpos##coordinator')
+        (p,) = self._walk(m.get_slot(C, 'started'))
+        self.assertIn('%r is suspended' % (p,), r.detail)
+        top = K.deref(K.resolve(m.get_slot(m.get_slot(p, 'invocation_stack'), 'elements')).args[0])
+        w = m.get_slot(top, 'window')
+        self.assertEqual(w.cid, 'simpos##standard_io_window')
+        self.assertEqual([K.deref(x).text for x in self._walk(m.get_slot(w, 'transcript'))],
+                         ['Enter FEP node name--------->'])
+        self.assertEqual(m.get_slot(w, 'shown'), 1)
+        self.assertEqual(m.get_slot(w, 'active'), 1)
+        self.assertEqual(m.get_slot(m.get_slot(w, 'font'), 'name').text, 'font:test_11.font')
+        self.assertIs(m.get_slot(w, 'label_font'), m.get_slot(w, 'font'))
+        n = m.get_slot(m.get_slot(p, 'context'), 'number')
+        self.assertEqual(m.get_slot(w, 'title').text, 'Pimos remote login %d' % n)
+        opts = self._walk(m.get_slot(w, 'options'))
+        self.assertEqual(K.deref(K.deref(opts[1]).args[1]), K.Atom('manipulator'))
+        self.assertEqual(m.get_slot(p, 'status'), K.Atom('suspended'))
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:
