@@ -4579,6 +4579,402 @@ function VflArm vflMemAddFamily(StretchStorage st, VflCtx cx, VflArm a0);
                     vflWriteArmHandled: vflWriteArmHandled, commit: vc };
 endfunction
 
+// THE MULTIPLY AND DIVIDE FAMILY (A2): *, LFT, *+ and / (binary; their
+// decimal forms are LOAD TRANSIT AND SET's action, vflDecimalFamily), moved
+// verbatim from vflIntOp.  Writes: the accumulator, the factor (LFT) and
+// the remainder (/).
+function VflArm vflMulDivFamily(StretchStorage st, VflCtx cx, VflArm a0);
+    VflInstr vi = cx.vi;
+    Vector#(NPrefetch, Word64) prefetch = cx.prefetch;
+    Bit#(2) prefetchCount = cx.prefetchCount;
+    Maybe#(BoxRsp) boxResult = cx.boxResult;
+    Bool radixConv = cx.radixConv;
+    Bool isProgressive = cx.isProgressive;
+    Bit#(7) len_ = cx.len_;
+    Bit#(4) bsz = cx.bsz;
+    Bool immediate = cx.immediate;
+    IndexWord xIdx = cx.xIdx;
+    BitAddr ea = cx.ea;
+    Bit#(8) offSh = cx.offSh;
+    IndexWord vflPx1 = cx.vflPx1;
+    Bool vflNeedsRefill = cx.vflNeedsRefill;
+    Maybe#(WordAddr) needsRead = a0.needsRead;
+    Maybe#(BoxReq) needsBox = a0.needsBox;
+    Maybe#(Tuple2#(Bit#(4), IndexWord)) vflPending = a0.vflPending;
+    Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = a0.connCounts;
+    Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = a0.tailWrite;
+    Word64 ind = a0.ind;
+    Bool vflOk = a0.vflOk;
+    Bit#(2) vflReadsUsed = a0.vflReadsUsed;
+    Bool vflWriteArmHandled = a0.vflWriteArmHandled;
+    VflCommit vc = a0.commit;
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
+        case (cx.opKey)
+          6'b011001: begin // * (Multiply)
+            // MULTIPLY, Reference Manual printed p.68, and the
+            // binary half of the operation is two sentences:
+            //
+            //   "If binary is specified, the product of the addressed
+            //   operand and the accumulator field specified by the
+            //   offset is placed into the CLEARED ACCUMULATOR AT
+            //   OFFSET 20.  Neither operand may exceed 48 SIGNIFICANT
+            //   NUMERIC BITS.  If decimal is specified, this operation
+            //   has the same action as LOAD TRANSIT AND SET, except
+            //   that the two high-order bits of the left zeros counter
+            //   are set to zeros."
+            //
+            // OFFSET 20 IS A CONSTANT, NOT THE INSTRUCTION'S OFFSET.
+            // The offset field selects the ACCUMULATOR OPERAND -- the
+            // field whose low-order bit sits at the offset, exactly as
+            // in ADD -- and then the product is deposited at a FIXED
+            // position, 20, wherever that operand came from.  Reading
+            // "at offset 20" as "at the offset, 20 being an example"
+            // is the easy mistake and it is wrong: p.71 confirms the
+            // constant independently, "DCV is used instead of CV
+            // because of the offset of 20", i.e. the 96-bit product
+            // MULTIPLY leaves behind is the same fixed 20/96 field
+            // that CONVERT DOUBLE reads, whose "implied offset of 20
+            // and ... length is 96 numeric bits" is stated on p.70.
+            // 20 + 96 = 116, so the product cannot overflow the
+            // 128-bit accumulator and no truncation arises.
+            //
+            // 48 x 48 IS WHY THE PRODUCT IS 96 BITS.  "Neither operand
+            // may exceed 48 significant numeric bits" is not advice:
+            // printed p.68 under Partial Field says what happens when
+            // it is exceeded, "only the 48 low-order bits of the
+            // oversized operand are used in the operation.  If the
+            // accumulator operand was oversized, the higher-order bits
+            // are lost."  So the model truncates to 48 and raises PF
+            // rather than refusing, and the truncation is of the LOW
+            // 48 bits -- the high bits are what is discarded.
+            //
+            // DECIMAL IS REFUSED ABOVE, with the rest of the decimal
+            // VFL set: the decimal action is LOAD TRANSIT AND SET's,
+            // which the model does not implement either, and p.68's
+            // own Programming Note describes decimal MULTIPLY as an
+            // automatic subroutine entry via the decimal-transit
+            // indicator rather than a multiplication.
+            //
+            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p72.strap uses
+            // "*(BU,24)" inside the channel-assignment arithmetic and
+            // the model set Operation Code Invalid on it, which is the
+            // OP refusal docs/NEXT.md records being chased from the
+            // boot trail.  Both that use and IBM's own worked example
+            // (C22-6578 Problem 2.10, docs/vfl_arith_spec.md) are
+            // BINARY UNSIGNED, so the signed product's sign is stated
+            // nowhere in the corpus and exercised nowhere in it; the
+            // algebraic product below is the conventional reading of
+            // "Unsigned; Negative Sign.  These modifiers operate as in
+            // ADD" and is marked here as the one unverified detail.
+            //
+            // Same prefetch/bail-out shape as + above.
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              SM128 acc = readAcc(st);
+              // "the accumulator field specified by the offset"
+              Bit#(128) accOp = acc.mag >> offSh;
+              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchVflBox.bsv,
+              // 2026-11-18): the PAU's multiplier, twelve multiplier bits
+              // a clock, reached by the NeedBox bail exactly as decimal
+              // + reaches mkDecBox.  Every write and every indicator is
+              // on the answered run; the run that asks writes nothing.
+              if (vflOf(boxResult) matches tagged Valid .mr) begin
+                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+                ind = setBit(ind, ind_MOP, 0);
+                // "either operand exceeds 48 significant bits in length"
+                if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
+                  ind = setBit(ind, ind_PF, 1);
+                Bit#(96) prod = mr.prod;
+                // "placed into the CLEARED accumulator at offset 20" --
+                // cleared means cleared, so every other accumulator bit
+                // goes to zero, including the bits below 20 and the ones
+                // the accumulator operand itself came from.
+                SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
+                                    mag: zeroExtend(prod) << 20 };
+                vc = vcAcc(vc, accSb, res);
+                // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
+                // operation, these indicators are set as in ADD."
+                ind = setResultIndicatorsF(ind, res);
+              end else begin
+                needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                              VflMulReq { mcand: accOp[47:0], mpr: opnd.mag[47:0] }));
+                needsRead = tagged Valid 0;
+              end
+            end
+          end
+          6'b001011, 6'b111001: begin // LFT (Load Factor), *+ (Multiply and Add)
+            // Reference Manual printed p.69 (PDF p.72), read at the
+            // ink.  LOAD FACTOR: "The factor register (FT) is cleared.
+            // A four-bit sign byte, in which the leftmost bit is the
+            // sign of the addressed storage operand as modified by the
+            // negative sign modifier, is placed in the four low-order
+            // bits of FT.  The remaining three bits of this sign byte
+            // are zero.  The numeric part of the addressed operand is
+            // positioned to the left of this sign byte in FT."  PF if
+            // the numeric part has more than 60 significant bits;
+            // result indicators "according to the contents of the
+            // factor register"; "The accumulator contents are not
+            // affected ... The offset has no meaning".
+            //
+            // MULTIPLY AND ADD, binary: "the multiplicand field in the
+            // factor register (FT) is multiplied by the addressed
+            // storage operand.  Neither multiplicand nor multiplier
+            // may exceed 48 significant numeric bits.  The product is
+            // algebraically added to the accumulator contents as
+            // specified by the offset."  PF if either factor exceeds
+            // 48 bits (the 48 low-order bits are used), or if product
+            // bits pass the accumulator's left end; FT is unchanged.
+            // Decimal *+ never reaches this arm: it is LOAD TRANSIT AND
+            // SET's action (p.69) and is dispatched to the LTRS arm.
+            //
+            // ARRIVED VIA MCP: printed p.95 lines 49 and 55 and p.96
+            // lines 1-2, MOVE's table layout -- "LFT,TIODCT(TMXA)
+            // -NUMBER OF IODS TO FACTOR REG" then "*I+,TFLLGN,46 -ADD
+            // FILE AREA TABLE LENGHT".  Both set OP until 2026-11-06.
+            //
+            // Lost Carry "as in ADD": binAccAdd, ADD's own rule, since
+            // 2026-11-16.  Same prefetch/bail-out shape as + above.
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              if (vi.code == 6'b001011) begin
+                // >>> DECIMAL LFT, BUILT 2026-11-16 (G2.3). <<<  printed
+                // p.69, LOAD FACTOR's Modifiers: "Unsigned; Negative
+                // Sign; Radix.  These modifiers operate as in ADD."  So
+                // a decimal operand's bytes become four-bit digits (ADD's
+                // Radix, printed p.60, and p.58: "each byte of the storage
+                // operand is converted to a four-bit byte ... by the
+                // addition of high-order zeros" -- the zones dropped), and
+                // the numeric part placed left of the sign byte is those
+                // digits: LTRS's arm does the same for the transit
+                // register (decCompact).  PF's "more than 60 significant
+                // bits" is then more than fifteen digits.  No DTR: p.69
+                // names none for LFT.  CHOSEN, as LTRS's: a digit that is
+                // not a digit goes in as its four bits.
+                Bit#(128) numSrc = opnd.mag;
+                Bool numHi = False;
+                if (vi.m.decimal == 1) begin
+                  match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
+                  numSrc = dg; numHi = dhi;
+                end
+                if (numHi || (numSrc >> 60) != 0) ind = setBit(ind, ind_PF, 1);
+                Bit#(60) num = truncate(numSrc);
+                vc.factor = tagged Valid ((zeroExtend(num) << 4)
+                                         | (zeroExtend(opnd.sign) << 3));
+                ind = setResultIndicatorsF(ind,
+                        SM128 { sign: opnd.sign, mag: zeroExtend(num) });
+              end else begin
+                Word64 ft = st.readFactor();
+                Bit#(60) mcand = truncate(ft >> 4);
+                Bit#(1)  ftSign = ft[3];
+                if ((mcand >> 48) != 0 || (opnd.mag >> 48) != 0)
+                  ind = setBit(ind, ind_PF, 1);
+                // THE PRODUCT IS mkVflBox's, as for `*` (that arm's note):
+                // the run that asks writes nothing -- the accumulator write
+                // below is on the answered run only, and the indicators
+                // set above are discarded with the bail (execute()'s foot
+                // returns before setIndicatorBits).
+                if (vflOf(boxResult) matches tagged Valid .mr) begin
+                  Bit#(96) prod = mr.prod;
+                  // "Lost Carry (LC).  In a binary operation, this
+                  // indicator is set as in ADD" (printed p.69, read in the
+                  // page image), and the product's PF "if the offset is
+                  // such that significant bits of the product attempt to
+                  // combine with accumulator positions to the left of the
+                  // left end of the accumulator" -- ADD's PF, the product
+                  // being the addend.  So the add is ADD's own rule,
+                  // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
+                  BinAccAdd ba = binAccAdd(readAcc(st),
+                                   SM128 { sign: ftSign ^ opnd.sign,
+                                           mag: zeroExtend(prod) }, offSh);
+                  vc = vcAcc(vc, accSb, ba.sum);
+                  ind = setResultIndicatorsF(ind, ba.sum);
+                  if (ba.lc) ind = setBit(ind, ind_LC, 1);
+                  if (ba.pf) ind = setBit(ind, ind_PF, 1);
+                end else begin
+                  needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
+                                VflMulReq { mcand: mcand[47:0], mpr: opnd.mag[47:0] }));
+                  needsRead = tagged Valid 0;
+                end
+              end
+              // "To-Memory Operation (MOP) ... set as in ADD", and ADD
+              // turns it off (p.60).
+              ind = setBit(ind, ind_MOP, 0);
+            end
+          end
+          6'b011101: begin // / (Divide)
+            // DIVIDE, Reference Manual printed p.70, and the binary
+            // operation is one long paragraph there:
+            //
+            //   "If a binary operation is specified, the ENTIRE
+            //   ACCUMULATOR CONTENTS TO THE LEFT OF THE OFFSET are
+            //   divided by the addressed storage field.  Accumulator
+            //   positions to the right of the offset are ignored.  At
+            //   the completion of the operation, the quotient is
+            //   placed in the CLEARED ACCUMULATOR AT THE SPECIFIED
+            //   OFFSET, and the remainder with sign is placed in the
+            //   REMAINDER REGISTER (RM).  Both dividend and divisor
+            //   are treated as integers, and only the integral part
+            //   of the quotient is developed.  The length of the
+            //   dividend to the left of the offset cannot exceed 96
+            //   significant bits, and the divisor cannot exceed 48
+            //   significant numeric bits.  THE SIGN OF THE QUOTIENT
+            //   REPLACES THE SIGN BIT IN THE ACCUMULATOR SIGN BYTE
+            //   REGISTER.  Bits 60-63 of RM form a four-bit remainder
+            //   sign byte with bit 60, the sign bit, SET TO THE
+            //   ORIGINAL ACCUMULATOR SIGN.  Bits 61-63 are set to
+            //   zero.  Bits 0-59 of RM are replaced by the integer
+            //   remainder with the LOW-ORDER REMAINDER BIT IN BIT
+            //   POSITION 59 of the remainder register."
+            //
+            // THE OFFSET IS NOT A CONSTANT HERE, WHICH IS THE WHOLE
+            // DIFFERENCE FROM MULTIPLY.  `*` selects its accumulator
+            // operand by the offset and then deposits at a fixed 20;
+            // `/` selects its dividend by the offset and deposits the
+            // quotient BACK AT THAT SAME OFFSET.  The CE manual
+            // R23-9694 printed p.121 states it twice over: "the
+            // rightmost bit of the quotient is always found at the
+            // offset specified in the instruction.  The bits to the
+            // right of the offset are zero."
+            //
+            // AND THE CE MANUAL ADDS A RULE THE REFERENCE MANUAL DOES
+            // NOT HAVE, printed p.121 under Zero Divisor: "If the
+            // divisor contains over 48 bits, but THE LOW-ORDER 48
+            // BITS ARE ZERO, both the PF and ZD indicators are turned
+            // on."  So the zero test is on the TRUNCATED divisor, not
+            // on the field as written -- a 49-bit divisor of 2**48
+            // divides by zero.  Testing the untruncated value would
+            // pass every obvious test and be wrong exactly there.
+            //
+            // THE TWO SIGNS GO TO DIFFERENT PLACES AND THAT IS NOT A
+            // TYPO.  The accumulator's sign byte receives the
+            // QUOTIENT's sign; RM's four-bit sign byte receives the
+            // ORIGINAL ACCUMULATOR's sign, because the remainder of
+            // an integer division carries the dividend's sign and the
+            // dividend came from the accumulator.  A reader who
+            // "fixes" these to agree breaks the remainder.
+            //
+            // "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY PERFORMED
+            // BY PAU" (R23-9694 printed p.121), which is where the 96
+            // and the 48 come from, the same way they do for `*`:
+            // they are the double-precision and single-precision
+            // fraction lengths of the floating-point unit.  See
+            // docs/vfl_arith_spec.md.
+            //
+            // ARRIVED VIA MCP.  printed p.24 lines 21 and 24 are the
+            // time conversion, "/I(BU,6), 60, -60" twice -- divide
+            // the 26-bit time clock by sixty for seconds, then again
+            // for minutes -- and the OP locator put the model's first
+            // refusal of the whole boot at 001213.00, which is line
+            // 21.  The offset is -60, seven-bit two's complement 68,
+            // and line 19's "L(BU,26), $TC, -60" put the clock there.
+            //
+            // Same prefetch/bail-out shape as + and * above.
+            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
+            Bit#(64) raw = vf.raw;
+            vflReadsUsed = vf.used;
+            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
+            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
+              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
+              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
+              ind = setBit(ind, ind_MOP, 0);
+              SM128 acc = readAcc(st);
+              // "the entire accumulator contents TO THE LEFT OF the
+              // offset ... positions to the right of the offset are
+              // ignored"
+              Bit#(128) dividend = acc.mag >> offSh;
+              // "more than 96 significant bits in the accumulator to
+              // the left of the offset, or ... the divisor exceeds 48
+              // significant bits.  In such a case, only the low-order
+              // 96 or 48 bits are used"
+              if ((dividend >> 96) != 0 || (opnd.mag >> 48) != 0)
+                ind = setBit(ind, ind_PF, 1);
+              Bit#(96) dvd = truncate(dividend);
+              Bit#(96) dsr = zeroExtend(opnd.mag[47:0]);
+              if (dsr == 0) begin
+                // "turned on if the binary divisor is zero.  THE
+                // DIVISION IS NOT ATTEMPTED, and both the accumulator
+                // and the remainder register remain unchanged."  So
+                // this arm writes nothing at all -- not the
+                // accumulator, not RM, and not the arithmetic result
+                // indicators, which printed p.70 says "describe the
+                // quotient" and there is no quotient.
+                ind = setBit(ind, ind_ZD, 1);
+              end else if (divOf(boxResult) matches tagged Invalid) begin
+                // >>> THE DIVISION ITSELF IS NOT DONE HERE ANY MORE,
+                // 2026-11-15. <<<  This arm used to compute
+                // `dvd / dsrSafe` and `dvd % dsrSafe` in place: a
+                // 96-bit combinational divide and remainder by a
+                // variable divisor, measured alone at 118,755 LUT4 +
+                // 22,896 CCU2C -- twice the ULX3S this model has to
+                // fit.  It now asks mkEBox's divide box for them
+                // (ExecDispatch's NeedBox) and is re-run when they
+                // arrive.  "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY
+                // PERFORMED BY PAU" (R23-9694 printed p.121): the box
+                // is that unit, and the floating-point divides share
+                // it.
+                //
+                // NOTHING IS WRITTEN ON THIS RUN.  `ind` (PF, the data
+                // flags, MOP) is discarded with the bail and
+                // recomputed on the re-run, exactly as on a read bail;
+                // needsRead is the placeholder that makes every
+                // existing bail guard apply (see ExecDispatch).
+                //
+                // THE ZERO DIVISOR NEVER GETS HERE, which is p.70's
+                // "THE DIVISION IS NOT ATTEMPTED" as structure: no
+                // request is made.  (It is also why the old
+                // `dsrSafe = (dsr == 0) ? 1 : dsr` is gone.  That was
+                // there because both sides of a BSV `if` are
+                // elaborated and Bluesim's wide `/` trapped with a
+                // floating point exception on the discarded side; a
+                // restoring loop has nothing to trap on.)
+                needsBox  = tagged Valid (tagged BoxDiv DivReq { dvd: dvd, dvs: dsr[47:0],
+                                                                     fpFixed: 0, fpDbl: False });
+                needsRead = tagged Valid 0;
+              end else begin
+                Bit#(96) q    = validValue(divOf(boxResult)).q;
+                Bit#(96) rem_ = zeroExtend(validValue(divOf(boxResult)).rem);
+                // "the quotient is placed in the cleared accumulator
+                // at the specified offset", and the quotient's sign
+                // "replaces the sign bit in the accumulator sign byte
+                // register".  writeAcc writes exactly that bit and
+                // keeps the byte's flags.
+                SM128 quot = SM128 { sign: acc.sign ^ opnd.sign,
+                                     mag: zeroExtend(q) << offSh };
+                vc = vcAcc(vc, accSb, quot);
+                // RM, to the bit.  IBM numbers from the left, this
+                // model's Bit#(64) from the right, so IBM bit k is
+                // BSV bit 63-k: the remainder's low-order bit at IBM
+                // 59 is BSV 4, and the sign bit at IBM 60 is BSV 3.
+                // The slice rem_[59:0] cannot lose anything -- a
+                // remainder is strictly less than its divisor and the
+                // divisor is at most 48 bits -- so sixty bits is
+                // twelve more than it can ever need.
+                Bit#(64) remBits = zeroExtend(rem_[59:0]);
+                Bit#(64) rmSign  = zeroExtend(acc.sign);
+                vc.remainder = tagged Valid ((remBits << 4) | (rmSign << 3));
+                ind = setResultIndicatorsF(ind, quot);
+              end
+            end
+          end
+          default: begin end   // vflIntOp dispatches only this family's codes here
+        endcase
+    return VflArm { needsRead: needsRead, needsBox: needsBox,
+                    vflPending: vflPending, connCounts: connCounts,
+                    tailWrite: tailWrite, ind: ind, vflOk: vflOk,
+                    vflReadsUsed: vflReadsUsed,
+                    vflWriteArmHandled: vflWriteArmHandled, commit: vc };
+endfunction
+
 function ActionValue#(VflOutcome)
     vflIntOp(StretchStorage st, VflInstr vi,
              Vector#(NPrefetch, Word64) prefetch, Bit#(2) prefetchCount, Word64 ind0,
@@ -4829,361 +5225,15 @@ function ActionValue#(VflOutcome)
             vflReadsUsed = fr.vflReadsUsed;
             vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
-          6'b011001: begin // * (Multiply)
-            // MULTIPLY, Reference Manual printed p.68, and the
-            // binary half of the operation is two sentences:
-            //
-            //   "If binary is specified, the product of the addressed
-            //   operand and the accumulator field specified by the
-            //   offset is placed into the CLEARED ACCUMULATOR AT
-            //   OFFSET 20.  Neither operand may exceed 48 SIGNIFICANT
-            //   NUMERIC BITS.  If decimal is specified, this operation
-            //   has the same action as LOAD TRANSIT AND SET, except
-            //   that the two high-order bits of the left zeros counter
-            //   are set to zeros."
-            //
-            // OFFSET 20 IS A CONSTANT, NOT THE INSTRUCTION'S OFFSET.
-            // The offset field selects the ACCUMULATOR OPERAND -- the
-            // field whose low-order bit sits at the offset, exactly as
-            // in ADD -- and then the product is deposited at a FIXED
-            // position, 20, wherever that operand came from.  Reading
-            // "at offset 20" as "at the offset, 20 being an example"
-            // is the easy mistake and it is wrong: p.71 confirms the
-            // constant independently, "DCV is used instead of CV
-            // because of the offset of 20", i.e. the 96-bit product
-            // MULTIPLY leaves behind is the same fixed 20/96 field
-            // that CONVERT DOUBLE reads, whose "implied offset of 20
-            // and ... length is 96 numeric bits" is stated on p.70.
-            // 20 + 96 = 116, so the product cannot overflow the
-            // 128-bit accumulator and no truncation arises.
-            //
-            // 48 x 48 IS WHY THE PRODUCT IS 96 BITS.  "Neither operand
-            // may exceed 48 significant numeric bits" is not advice:
-            // printed p.68 under Partial Field says what happens when
-            // it is exceeded, "only the 48 low-order bits of the
-            // oversized operand are used in the operation.  If the
-            // accumulator operand was oversized, the higher-order bits
-            // are lost."  So the model truncates to 48 and raises PF
-            // rather than refusing, and the truncation is of the LOW
-            // 48 bits -- the high bits are what is discarded.
-            //
-            // DECIMAL IS REFUSED ABOVE, with the rest of the decimal
-            // VFL set: the decimal action is LOAD TRANSIT AND SET's,
-            // which the model does not implement either, and p.68's
-            // own Programming Note describes decimal MULTIPLY as an
-            // automatic subroutine entry via the decimal-transit
-            // indicator rather than a multiplication.
-            //
-            // ARRIVED VIA MCP.  decks/mcp_bootstrap_p72.strap uses
-            // "*(BU,24)" inside the channel-assignment arithmetic and
-            // the model set Operation Code Invalid on it, which is the
-            // OP refusal docs/NEXT.md records being chased from the
-            // boot trail.  Both that use and IBM's own worked example
-            // (C22-6578 Problem 2.10, docs/vfl_arith_spec.md) are
-            // BINARY UNSIGNED, so the signed product's sign is stated
-            // nowhere in the corpus and exercised nowhere in it; the
-            // algebraic product below is the conventional reading of
-            // "Unsigned; Negative Sign.  These modifiers operate as in
-            // ADD" and is marked here as the one unverified detail.
-            //
-            // Same prefetch/bail-out shape as + above.
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              SM128 acc = readAcc(st);
-              // "the accumulator field specified by the offset"
-              Bit#(128) accOp = acc.mag >> offSh;
-              // THE 48 x 48 PRODUCT IS mkVflBox's (StretchVflBox.bsv,
-              // 2026-11-18): the PAU's multiplier, twelve multiplier bits
-              // a clock, reached by the NeedBox bail exactly as decimal
-              // + reaches mkDecBox.  Every write and every indicator is
-              // on the answered run; the run that asks writes nothing.
-              if (vflOf(boxResult) matches tagged Valid .mr) begin
-                ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-                ind = setBit(ind, ind_MOP, 0);
-                // "either operand exceeds 48 significant bits in length"
-                if ((accOp >> 48) != 0 || (opnd.mag >> 48) != 0)
-                  ind = setBit(ind, ind_PF, 1);
-                Bit#(96) prod = mr.prod;
-                // "placed into the CLEARED accumulator at offset 20" --
-                // cleared means cleared, so every other accumulator bit
-                // goes to zero, including the bits below 20 and the ones
-                // the accumulator operand itself came from.
-                SM128 res = SM128 { sign: acc.sign ^ opnd.sign,
-                                    mag: zeroExtend(prod) << 20 };
-                writeAcc(st, res);
-                // "Arithmetic Result (RLZ, RZ, RGZ, RN).  In a binary
-                // operation, these indicators are set as in ADD."
-                ind = setResultIndicatorsF(ind, res);
-              end else begin
-                needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
-                              VflMulReq { mcand: accOp[47:0], mpr: opnd.mag[47:0] }));
-                needsRead = tagged Valid 0;
-              end
-            end
-          end
-          6'b001011, 6'b111001: begin // LFT (Load Factor), *+ (Multiply and Add)
-            // Reference Manual printed p.69 (PDF p.72), read at the
-            // ink.  LOAD FACTOR: "The factor register (FT) is cleared.
-            // A four-bit sign byte, in which the leftmost bit is the
-            // sign of the addressed storage operand as modified by the
-            // negative sign modifier, is placed in the four low-order
-            // bits of FT.  The remaining three bits of this sign byte
-            // are zero.  The numeric part of the addressed operand is
-            // positioned to the left of this sign byte in FT."  PF if
-            // the numeric part has more than 60 significant bits;
-            // result indicators "according to the contents of the
-            // factor register"; "The accumulator contents are not
-            // affected ... The offset has no meaning".
-            //
-            // MULTIPLY AND ADD, binary: "the multiplicand field in the
-            // factor register (FT) is multiplied by the addressed
-            // storage operand.  Neither multiplicand nor multiplier
-            // may exceed 48 significant numeric bits.  The product is
-            // algebraically added to the accumulator contents as
-            // specified by the offset."  PF if either factor exceeds
-            // 48 bits (the 48 low-order bits are used), or if product
-            // bits pass the accumulator's left end; FT is unchanged.
-            // Decimal *+ never reaches this arm: it is LOAD TRANSIT AND
-            // SET's action (p.69) and is dispatched to the LTRS arm.
-            //
-            // ARRIVED VIA MCP: printed p.95 lines 49 and 55 and p.96
-            // lines 1-2, MOVE's table layout -- "LFT,TIODCT(TMXA)
-            // -NUMBER OF IODS TO FACTOR REG" then "*I+,TFLLGN,46 -ADD
-            // FILE AREA TABLE LENGHT".  Both set OP until 2026-11-06.
-            //
-            // Lost Carry "as in ADD": binAccAdd, ADD's own rule, since
-            // 2026-11-16.  Same prefetch/bail-out shape as + above.
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
-              if (vi.code == 6'b001011) begin
-                // >>> DECIMAL LFT, BUILT 2026-11-16 (G2.3). <<<  printed
-                // p.69, LOAD FACTOR's Modifiers: "Unsigned; Negative
-                // Sign; Radix.  These modifiers operate as in ADD."  So
-                // a decimal operand's bytes become four-bit digits (ADD's
-                // Radix, printed p.60, and p.58: "each byte of the storage
-                // operand is converted to a four-bit byte ... by the
-                // addition of high-order zeros" -- the zones dropped), and
-                // the numeric part placed left of the sign byte is those
-                // digits: LTRS's arm does the same for the transit
-                // register (decCompact).  PF's "more than 60 significant
-                // bits" is then more than fifteen digits.  No DTR: p.69
-                // names none for LFT.  CHOSEN, as LTRS's: a digit that is
-                // not a digit goes in as its four bits.
-                Bit#(128) numSrc = opnd.mag;
-                Bool numHi = False;
-                if (vi.m.decimal == 1) begin
-                  match {.dg, .dhi} = decCompact(opnd.mag[63:0], bsz);
-                  numSrc = dg; numHi = dhi;
-                end
-                if (numHi || (numSrc >> 60) != 0) ind = setBit(ind, ind_PF, 1);
-                Bit#(60) num = truncate(numSrc);
-                st.writeWord(addrFactor, (zeroExtend(num) << 4)
-                                         | (zeroExtend(opnd.sign) << 3));
-                ind = setResultIndicatorsF(ind,
-                        SM128 { sign: opnd.sign, mag: zeroExtend(num) });
-              end else begin
-                Word64 ft = st.readFactor();
-                Bit#(60) mcand = truncate(ft >> 4);
-                Bit#(1)  ftSign = ft[3];
-                if ((mcand >> 48) != 0 || (opnd.mag >> 48) != 0)
-                  ind = setBit(ind, ind_PF, 1);
-                // THE PRODUCT IS mkVflBox's, as for `*` (that arm's note):
-                // the run that asks writes nothing -- the accumulator write
-                // below is on the answered run only, and the indicators
-                // set above are discarded with the bail (execute()'s foot
-                // returns before setIndicatorBits).
-                if (vflOf(boxResult) matches tagged Valid .mr) begin
-                  Bit#(96) prod = mr.prod;
-                  // "Lost Carry (LC).  In a binary operation, this
-                  // indicator is set as in ADD" (printed p.69, read in the
-                  // page image), and the product's PF "if the offset is
-                  // such that significant bits of the product attempt to
-                  // combine with accumulator positions to the left of the
-                  // left end of the accumulator" -- ADD's PF, the product
-                  // being the addend.  So the add is ADD's own rule,
-                  // binAccAdd.  (Until 2026-11-16 this set PF but no LC.)
-                  BinAccAdd ba = binAccAdd(readAcc(st),
-                                   SM128 { sign: ftSign ^ opnd.sign,
-                                           mag: zeroExtend(prod) }, offSh);
-                  writeAcc(st, ba.sum);
-                  ind = setResultIndicatorsF(ind, ba.sum);
-                  if (ba.lc) ind = setBit(ind, ind_LC, 1);
-                  if (ba.pf) ind = setBit(ind, ind_PF, 1);
-                end else begin
-                  needsBox  = tagged Valid (tagged BoxVfl (tagged VflMul
-                                VflMulReq { mcand: mcand[47:0], mpr: opnd.mag[47:0] }));
-                  needsRead = tagged Valid 0;
-                end
-              end
-              // "To-Memory Operation (MOP) ... set as in ADD", and ADD
-              // turns it off (p.60).
-              ind = setBit(ind, ind_MOP, 0);
-            end
-          end
-          6'b011101: begin // / (Divide)
-            // DIVIDE, Reference Manual printed p.70, and the binary
-            // operation is one long paragraph there:
-            //
-            //   "If a binary operation is specified, the ENTIRE
-            //   ACCUMULATOR CONTENTS TO THE LEFT OF THE OFFSET are
-            //   divided by the addressed storage field.  Accumulator
-            //   positions to the right of the offset are ignored.  At
-            //   the completion of the operation, the quotient is
-            //   placed in the CLEARED ACCUMULATOR AT THE SPECIFIED
-            //   OFFSET, and the remainder with sign is placed in the
-            //   REMAINDER REGISTER (RM).  Both dividend and divisor
-            //   are treated as integers, and only the integral part
-            //   of the quotient is developed.  The length of the
-            //   dividend to the left of the offset cannot exceed 96
-            //   significant bits, and the divisor cannot exceed 48
-            //   significant numeric bits.  THE SIGN OF THE QUOTIENT
-            //   REPLACES THE SIGN BIT IN THE ACCUMULATOR SIGN BYTE
-            //   REGISTER.  Bits 60-63 of RM form a four-bit remainder
-            //   sign byte with bit 60, the sign bit, SET TO THE
-            //   ORIGINAL ACCUMULATOR SIGN.  Bits 61-63 are set to
-            //   zero.  Bits 0-59 of RM are replaced by the integer
-            //   remainder with the LOW-ORDER REMAINDER BIT IN BIT
-            //   POSITION 59 of the remainder register."
-            //
-            // THE OFFSET IS NOT A CONSTANT HERE, WHICH IS THE WHOLE
-            // DIFFERENCE FROM MULTIPLY.  `*` selects its accumulator
-            // operand by the offset and then deposits at a fixed 20;
-            // `/` selects its dividend by the offset and deposits the
-            // quotient BACK AT THAT SAME OFFSET.  The CE manual
-            // R23-9694 printed p.121 states it twice over: "the
-            // rightmost bit of the quotient is always found at the
-            // offset specified in the instruction.  The bits to the
-            // right of the offset are zero."
-            //
-            // AND THE CE MANUAL ADDS A RULE THE REFERENCE MANUAL DOES
-            // NOT HAVE, printed p.121 under Zero Divisor: "If the
-            // divisor contains over 48 bits, but THE LOW-ORDER 48
-            // BITS ARE ZERO, both the PF and ZD indicators are turned
-            // on."  So the zero test is on the TRUNCATED divisor, not
-            // on the field as written -- a 49-bit divisor of 2**48
-            // divides by zero.  Testing the untruncated value would
-            // pass every obvious test and be wrong exactly there.
-            //
-            // THE TWO SIGNS GO TO DIFFERENT PLACES AND THAT IS NOT A
-            // TYPO.  The accumulator's sign byte receives the
-            // QUOTIENT's sign; RM's four-bit sign byte receives the
-            // ORIGINAL ACCUMULATOR's sign, because the remainder of
-            // an integer division carries the dividend's sign and the
-            // dividend came from the accumulator.  A reader who
-            // "fixes" these to agree breaks the remainder.
-            //
-            // "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY PERFORMED
-            // BY PAU" (R23-9694 printed p.121), which is where the 96
-            // and the 48 come from, the same way they do for `*`:
-            // they are the double-precision and single-precision
-            // fraction lengths of the floating-point unit.  See
-            // docs/vfl_arith_spec.md.
-            //
-            // ARRIVED VIA MCP.  printed p.24 lines 21 and 24 are the
-            // time conversion, "/I(BU,6), 60, -60" twice -- divide
-            // the 26-bit time clock by sixty for seconds, then again
-            // for minutes -- and the OP locator put the model's first
-            // refusal of the whole boot at 001213.00, which is line
-            // 21.  The offset is -60, seven-bit two's complement 68,
-            // and line 19's "L(BU,26), $TC, -60" put the clock there.
-            //
-            // Same prefetch/bail-out shape as + and * above.
-            VflFetch vf = vflFetchOperand(immediate, ea, len_, prefetch, prefetchCount);
-            Bit#(64) raw = vf.raw;
-            vflReadsUsed = vf.used;
-            if (vf.read matches tagged Valid .ra) needsRead = tagged Valid ra;
-            if (!isValid(needsRead) && !vflRefillOutstanding(vflNeedsRefill, prefetchCount, vflReadsUsed)) begin
-              SM128 opnd = fieldToSM(raw, len_, bsz, vi.m.unsign, vi.m.invert);
-              ind = setDataFlagsF(ind, immediate ? 0 : fieldFlags(raw, bsz, vi.m.unsign));
-              ind = setBit(ind, ind_MOP, 0);
-              SM128 acc = readAcc(st);
-              // "the entire accumulator contents TO THE LEFT OF the
-              // offset ... positions to the right of the offset are
-              // ignored"
-              Bit#(128) dividend = acc.mag >> offSh;
-              // "more than 96 significant bits in the accumulator to
-              // the left of the offset, or ... the divisor exceeds 48
-              // significant bits.  In such a case, only the low-order
-              // 96 or 48 bits are used"
-              if ((dividend >> 96) != 0 || (opnd.mag >> 48) != 0)
-                ind = setBit(ind, ind_PF, 1);
-              Bit#(96) dvd = truncate(dividend);
-              Bit#(96) dsr = zeroExtend(opnd.mag[47:0]);
-              if (dsr == 0) begin
-                // "turned on if the binary divisor is zero.  THE
-                // DIVISION IS NOT ATTEMPTED, and both the accumulator
-                // and the remainder register remain unchanged."  So
-                // this arm writes nothing at all -- not the
-                // accumulator, not RM, and not the arithmetic result
-                // indicators, which printed p.70 says "describe the
-                // quotient" and there is no quotient.
-                ind = setBit(ind, ind_ZD, 1);
-              end else if (divOf(boxResult) matches tagged Invalid) begin
-                // >>> THE DIVISION ITSELF IS NOT DONE HERE ANY MORE,
-                // 2026-11-15. <<<  This arm used to compute
-                // `dvd / dsrSafe` and `dvd % dsrSafe` in place: a
-                // 96-bit combinational divide and remainder by a
-                // variable divisor, measured alone at 118,755 LUT4 +
-                // 22,896 CCU2C -- twice the ULX3S this model has to
-                // fit.  It now asks mkEBox's divide box for them
-                // (ExecDispatch's NeedBox) and is re-run when they
-                // arrive.  "AS IN MULTIPLY, THIS OPERATION IS ACTUALLY
-                // PERFORMED BY PAU" (R23-9694 printed p.121): the box
-                // is that unit, and the floating-point divides share
-                // it.
-                //
-                // NOTHING IS WRITTEN ON THIS RUN.  `ind` (PF, the data
-                // flags, MOP) is discarded with the bail and
-                // recomputed on the re-run, exactly as on a read bail;
-                // needsRead is the placeholder that makes every
-                // existing bail guard apply (see ExecDispatch).
-                //
-                // THE ZERO DIVISOR NEVER GETS HERE, which is p.70's
-                // "THE DIVISION IS NOT ATTEMPTED" as structure: no
-                // request is made.  (It is also why the old
-                // `dsrSafe = (dsr == 0) ? 1 : dsr` is gone.  That was
-                // there because both sides of a BSV `if` are
-                // elaborated and Bluesim's wide `/` trapped with a
-                // floating point exception on the discarded side; a
-                // restoring loop has nothing to trap on.)
-                needsBox  = tagged Valid (tagged BoxDiv DivReq { dvd: dvd, dvs: dsr[47:0],
-                                                                     fpFixed: 0, fpDbl: False });
-                needsRead = tagged Valid 0;
-              end else begin
-                Bit#(96) q    = validValue(divOf(boxResult)).q;
-                Bit#(96) rem_ = zeroExtend(validValue(divOf(boxResult)).rem);
-                // "the quotient is placed in the cleared accumulator
-                // at the specified offset", and the quotient's sign
-                // "replaces the sign bit in the accumulator sign byte
-                // register".  writeAcc writes exactly that bit and
-                // keeps the byte's flags.
-                SM128 quot = SM128 { sign: acc.sign ^ opnd.sign,
-                                     mag: zeroExtend(q) << offSh };
-                writeAcc(st, quot);
-                // RM, to the bit.  IBM numbers from the left, this
-                // model's Bit#(64) from the right, so IBM bit k is
-                // BSV bit 63-k: the remainder's low-order bit at IBM
-                // 59 is BSV 4, and the sign bit at IBM 60 is BSV 3.
-                // The slice rem_[59:0] cannot lose anything -- a
-                // remainder is strictly less than its divisor and the
-                // divisor is at most 48 bits -- so sixty bits is
-                // twelve more than it can ever need.
-                Bit#(64) remBits = zeroExtend(rem_[59:0]);
-                Bit#(64) rmSign  = zeroExtend(acc.sign);
-                st.writeWord(addrRemainder, (remBits << 4) | (rmSign << 3));
-                ind = setResultIndicatorsF(ind, quot);
-              end
-            end
+          6'b011001,
+          6'b001011, 6'b111001,
+          6'b011101: begin // vflMulDivFamily
+            VflArm fr = vflMulDivFamily(st, cx, armIn);
+            needsRead = fr.needsRead;   needsBox = fr.needsBox;
+            vflPending = fr.vflPending; connCounts = fr.connCounts;
+            tailWrite = fr.tailWrite;   ind = fr.ind;   vflOk = fr.vflOk;
+            vflReadsUsed = fr.vflReadsUsed;
+            vflWriteArmHandled = fr.vflWriteArmHandled;   vc = fr.commit;
           end
           6'b001001, 6'b101011, 6'b101001: begin // vflMemAddFamily
             VflArm fr = vflMemAddFamily(st, cx, armIn);
