@@ -1591,7 +1591,24 @@ one commit rule:
 
 ### How far it gets
 
-**Every record matches through 22,537,091, the record at which `/boot`'s
+**The whole join matches: all 715,866,474 records of the reference's
+boot to rc's `% ` and `echo hello` agree in every field but `cyc`**
+(2026-11-24, Verilator, 1,481,832,578 clocks, 5 h 37 min on a loaded
+machine; 647 interrupts taken; 7,058 of 7,058 device reads replayed,
+276,537 of 276,537 device writes matched, 164,766 SONIC writes into RAM
+applied; 365,517,389 records also agree in `cyc`; the console, 279
+bytes, identical to the reference's, BOOTP, `init: starting /bin/rc`,
+`% ` and `hello` in it).  The recording: `run_p9kern.sh 720000000 DIR
+--type 'il]: =\r' --type 'user[none]: =\r' --type '% =echo hello\r'
+--ether-replay tests/net/join_echo.pcap --until '% echo hello\nhello\n% '`,
+on the reference with the Quart's SC68C94 bids, before master's
+exception-record cost (58332b49, `cyc` only, which the comparison does
+not read) and the PPAGE0 offsets (b86ab109, which moved no step pins).
+The core ran with the two fixes the join found, §1d #13 (the first
+difference had been record 287,416,554, just before BOOTP) and #14
+(308,543,068, just before `init`).
+
+Before the join: **every record matches through 22,537,091, the record at which `/boot`'s
 `root is from` reaches `screenputs`** (2026-11-24, re-pinned on the
 reference with the Quart's SC68C94 FIFOs and bids; the PromptTest's
 choices, `--counter-period 0.04`; on Verilator 49,454,593 clocks, 26
@@ -1629,6 +1646,12 @@ it (no EEPROM/rtc reads) the boot reached `netadd` at 2,658,001 and
 | 22,495,384 | `sysopen`, `consopen` |
 | 22,533,287 | `/boot`'s `ENTER` into an unmapped stack page (§1d #11) |
 | 22,536,781 | `syswrite`, then `conswrite` (22,537,011): `root is from` |
+| 287,416,554 | two NOPs at the end of a mapped page; the prefetch window reaches the unmapped page after it (§1d #13) |
+| ~287.8M | BOOTP, then the IL session to the 1e file server |
+| 308,543,068 | a byte store into an unmapped page: exception 9, not 8 (§1d #14) |
+| ~311M | `init: starting /bin/rc` |
+| ~618M | rc's `% ` |
+| 715,866,474 | `hello` and the next `% `: the reference's last record |
 
 and the console is the reference's, byte for byte:
 
@@ -1638,17 +1661,24 @@ and the console is the reference's, byte for byte:
 
 ### What blocks the core next
 
-1. **The join** (BOOTP, the IL session, `init: starting /bin/rc` at
-   ~311M records, the `% ` prompt at ~618M): needs the recording with
-   `--type 'il]: =\r' --type 'user[none]: =\r' --ether-replay
-   tests/net/join_echo.pcap` (hours at ~62,000 records/s), the `R`
-   replay of SONIC's DMA (written, unexercised), and Verilator for the
-   core's part (`P9KERN_SIM=verilator`, ~3x Bluesim).
-2. **The operand-fault record** (§1d #8) has met no case before record
-   22,537,091: no operand read faults there.  It is untested.
-3. **ENTER's check** (§1d #11) has no golden; the boot is its only test.
-   The store-fault check does not cover KCALL's frame, the
-   unimplemented sequence's `*(CSP)` or the drain words (§1d #9).
+1. **Cycles, not records.**  The join matches in every field but `cyc`
+   (above); 365,517,389 of the 715,866,474 records also agree in `cyc`.
+   The rest is the cycle-accuracy work (`docs/cycle_accuracy_plan.md`),
+   and the join recording is its oracle.  The join is not in the suite:
+   recording it takes hours (~62,000 records/s) and the core's run
+   5.6 h on Verilator, so it is a manual check (`run_p9kern.sh` with the
+   arguments above, `P9KCLOCKS=4000000 P9KERN_SIM=verilator
+   P9KERN_STREAM=1 P9KERN_KEEP_REC=1`).
+2. **The operand-fault record** (§1d #8) is now exercised by the join:
+   its recording holds 16 read faults, including operand reads of
+   unmapped user pages (records 287,778,910, 317,910,315, 322,367,286
+   and others) and `nextelem`'s kernel read of a user address
+   (287,762,641), and all matched.  It still has no golden (the MMU
+   core makes no record for it in the golden harness).
+3. **ENTER's check** (§1d #11) has golden 026 and seven more cases in
+   the join (record 286,973,393 and on).  The store-fault check does
+   not cover KCALL's frame, the unimplemented sequence's `*(CSP)` or the
+   drain words (§1d #9); the join met none of them.
 4. **The reference walks the tables at every access; the core's TLBs and
    NPSRs cache entries.  Decided from the PRM (2026-11-24): the TLB is
    the part's (p. 2-1), and the two agree for software that keeps Table

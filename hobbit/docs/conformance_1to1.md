@@ -367,6 +367,11 @@ stale entry would differ only for software that breaks that rule.
 
 Rows 9 and 10 were found in that order: the store fault moved the first
 difference from 2,893,033 to 3,298,054, the event hold to 22,533,287.
+Rows 13 and 14 came from the join (`docs/p9boot.md`, "How far it
+gets"): the fetch window moved the first difference from 287,416,554 to
+308,543,068, the byte store's write fault past the end.  With both, all
+715,866,474 records of the boot to rc's `% ` and `echo hello` agree in
+every field but `cyc` (2026-11-24).
 
 Injections, each reverted by its exact reverse and the diff checked:
 

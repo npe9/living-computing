@@ -946,8 +946,13 @@ system call (2,888,578).  Since 2026-11-24 every record matches through
 **22,537,091** (re-pinned on the Quart's SC68C94 bids), where `/boot` prints `root is from` (PromptTest's
 choices), after three fixes: precise store faults (2,893,033), no
 retirement during an event sequence (3,298,054), ENTER's store check
-(22,533,287).  Next: the join (BOOTP, `init: starting /bin/rc`, the
-prompt), with SONIC's DMA replayed and the core on Verilator.  Findings:
+(22,533,287).  Since later on 2026-11-24 **the whole join matches**:
+all 715,866,474 records of the boot through BOOTP, `init: starting
+/bin/rc`, rc's `% ` and `echo hello` agree in every field but `cyc`,
+with SONIC's DMA replayed (164,766 writes into RAM) and the core on
+Verilator, after two more fixes: a fetch fault is an instruction's own
+(287,416,554) and a byte store's merge read is the store's write fault
+(308,543,068).  Next: `cyc` (365,517,389 records agree in it).  Findings:
 docs/conformance_1to1.md §1d.  The suite runs the first 300,000
 records, on Bluesim and on Verilator.
 
