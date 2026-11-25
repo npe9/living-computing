@@ -348,6 +348,21 @@
     % copy, is OURS.
     :invocation_stack(Process, Stack) :- Stack = Process!invocation_stack ;
 
+    % :children(Process, List) -- the list of the process's children.
+    % INTERPOLATED (step 3h), as invocation_stack/2, from: the printed
+    % slot children_processes, a list, and create_core/3's
+    % `:add_child(Self_process, Process)` (TM-100 Fig. 3.1, PDF p8); the
+    % held source kappa2 utility/fmp/FMP.ESP:621-625 (`:self(#process,
+    % SelfProcess), :children(SelfProcess, ChildrenProcessList), (
+    % :empty(ChildrenProcessList), ...`: a list object) and KFILMP.ESP:
+    % 202-203; the held compiled callers pimfep##pimos_scsi_front_end
+    % local exterminate_child/0 (@50e-51e: `:self(#process,P)`,
+    % `:children(P,L)`, `:get_contents(L,Cs)`) and
+    % pimmcsp##remote_device_manager exit/1 (@8b-97, the same).  That the
+    % method answers the slot's list object is OURS.  add_child/2 is
+    % still not stood in, so the list stays empty.
+    :children(Process, List) :- List = Process!children_processes ;
+
     % :die(Process) -- the process terminates.
     % INTERPOLATED (step 3e) from: the printed as_program:resign/1 (above)
     % and the printed status slot's comment "nil(=dead)" (Fig. 3.1, PDF

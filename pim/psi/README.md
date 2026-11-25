@@ -2715,6 +2715,66 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
   `test_step3h_scsi_mode`.
 - The byte refusal removed: only `test_if_integer` fails.
 
+### Step 3h: `process:children/2`, and `status/3` searched again (2026-11-25)
+
+**`children/2` (INTERPOLATED, `standin/process.esp`)** answers the
+printed slot `children_processes`, a list, in the same way
+`invocation_stack/2` answers its slot. The basis:
+
+- the slot and `create_core/3`'s `:add_child(Self_process, Process)`
+  (TM-100 Fig. 3.1, PDF p8; page image re-read 2026-11-25);
+- the held source kappa2 `utility/fmp/FMP.ESP`:621-625
+  (`:self(#process,SelfProcess), :children(SelfProcess,
+  ChildrenProcessList), ( :empty(ChildrenProcessList),!, ...`: a list
+  object) and `KFILMP.ESP`:202-203;
+- the held compiled callers `pimos_scsi_front_end` local
+  `exterminate_child/0` (@50e-51e: `self/2`, `children/2`,
+  `get_contents/2`, then a loop sending `exterminate/1` to each) and
+  pimmcsp `remote_device_manager exit/1` (@8b-97, the same).
+
+That it answers the slot's list object is OURS. `add_child/2` is still
+not stood in, so the list stays empty unless a test fills it.
+
+Effect, row by row (MEASURED 2026-11-25):
+
+- Six packages: identical.
+- In both FEP censuses, one row moves: `pimos_scsi_front_end exit/1`
+  goes from simpos to success (plain 809 / 165 / 429 to 810 / 165 /
+  428; with recipes 832 / 163 / 408 to 833 / 163 / 407). Checked alone,
+  it is a census artifact and not progress:
+  - the front end's `fep_type` is the template constant 0, which its
+    creator `create/6` overwrites (`set_fep_type/2`, @50). So
+    `shutdown_scsi/2` (@4e7) takes neither the `pseudo_scsi` nor the
+    `pimscsi` clause.
+  - the census's process has no children.
+
+Test (`test_espc.py` `test_step3h_children`):
+- `children/2` answers the slot's list;
+- `exit/1` succeeds with no children;
+- with one child in the list, the held loop sends it `exterminate/1`,
+  which is not stood in.
+
+Injected into the stand-in from a backup, restored by cp, cmp-checked.
+Observed:
+- `children/2` answering a new empty list: only `test_step3h_children`
+  fails, and `test_kl0.py` passes;
+- `children/2` removed: `test_step3h_children` errors, and
+  `test_fep_census` and `test_step3f_census_recipes` fail.
+
+**`process:status/3` stays refused (12 recipe rows, every device
+creator's `activate/2`).** TM-100 Fig. 3.1 (PDF p7-p10, page images
+re-read 2026-11-25) prints one call, `:status(Process, dormant,
+on_activate)` in `activate/2`, and no definition. The page says the
+code given is "not complete". The held corpus was searched again on
+2026-11-25: every member of every archive under `docs/nonlocal`
+(`ifs/`, `icot-other/`, the top-level archives), in memory, for
+`:status(` with `dormant`, `ready`, `suspended`, `nil` or `dead`, and
+for `on_activate`, `entry_of_invoke` and `set_entry_point`. There is no
+hit for any of them. The only `:status(` sends are kappa2's and Tour's
+own two-argument methods, on other classes. A stand-in would be
+invented, and the rows would move on only to the also unprinted
+`entry_of_invoke/2`.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

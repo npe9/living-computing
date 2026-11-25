@@ -1215,7 +1215,12 @@ end.''', 'simpos')
         # set_scsi_init_list/2 succeeds (checked alone: the census's unbound
         # list becomes four non-integers, each stored as nil; unbound
         # probing, not progress); six rows stop later
-        self.assertEqual((len(rows), out), (1420, {'success': 809, 'failure': 165, 'refused': 429, 'exception': 16,
+        # step 3h: process:children/2 (INTERPOLATED): pimos_scsi_front_end
+        # exit/1 succeeds (809 -> 810, 429 -> 428).  Checked alone: on the
+        # census's front end fep_type is the template constant 0 (create/6
+        # writes it, @50), so the shutdown branch is skipped, and the
+        # census's process has no children.  A census artifact, not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 810, 'failure': 165, 'refused': 428, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1274,7 +1279,8 @@ end.''', 'simpos')
         # as the plain census move)
         # step 3h: blt e1 witnessed: 831 / 163 / 409 -> 832 / 163 / 408 (the
         # same seven rows as the plain census)
-        self.assertEqual((len(rows), out), (1420, {'success': 832, 'failure': 163, 'refused': 408,
+        # step 3h: process:children/2: the same row, 833 / 163 / 407
+        self.assertEqual((len(rows), out), (1420, {'success': 833, 'failure': 163, 'refused': 407,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
         self.assertEqual(slot_const, 96)
@@ -1447,6 +1453,39 @@ end.''', 'simpos')
             self.assertEqual(sl['device_id'], K.REQUEST_ID)
         finally:
             self.send(stack, 'clear')
+
+    def test_step3h_children(self):
+        # process:children/2 (step 3h, INTERPOLATED: TM-100 Fig. 3.1's slot
+        # children_processes; kappa2 FMP.ESP:621-625).  It answers the
+        # slot's list; held pimos_scsi_front_end exterminate_child/0
+        # (@50e-51e) takes its contents and sends exterminate/1 to each
+        m = self.m
+        m.reset()
+        (s,) = K.call_class_method(m, 'simpos##process', 'self', [K.Var()])
+        proc = s[0]
+        co = m.lib.build('simpos##process')
+        kids = proc.slots[m.lib.slot_number(co, 'instance', 'children_processes')]
+        L = K.Var()
+        self.assertEqual([K.resolve(L) is K.deref(kids) for _ in m.solve_send(proc, 'children', [L, proc])], [True])
+        cid = 'pimfep##pimos_scsi_front_end'
+
+        def exit1():
+            m.reset()
+            fe = K.make_instance(m, cid)
+            try:
+                return 'success' if any(True for _ in m.solve_send(fe, 'exit', [fe])) else 'failure'
+            except K.Refusal as e:
+                return e.detail
+        self.send(kids, 'clear')
+        try:
+            # no children: exit/1 succeeds (its fep_type is the template
+            # constant 0, which create/6 overwrites, @50: no shutdown branch)
+            self.assertEqual(exit1(), 'success')
+            # one child: the loop sends it exterminate/1 (not stood in)
+            self.assertEqual(len(self.send(kids, 'add_last', proc)), 1)
+            self.assertIn('exterminate/1', exit1())
+        finally:
+            self.send(kids, 'clear')
 
     def test_step3h_scsi_mode(self):
         # step 3h: the six pimscsi failures of step 3g, traced.  cmt and scsi
