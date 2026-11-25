@@ -1,0 +1,4 @@
+# The repo root ignores .claude/; keep stretch's project skills in git.
+!.claude/
+.claude/*
+!.claude/skills/
