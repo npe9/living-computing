@@ -5,7 +5,7 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#ifndef mips
+#if 0 /* PORT: no a.out native-code loading; was #ifndef mips */
 
 #include <a.out.h>
 #include <sys/file.h>

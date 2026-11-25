@@ -11,6 +11,9 @@
 #include "memory.h"
 #include "io.h"
 #include "instr.h"
+/* PORT: forward declarations */
+static CHAR *wildcard_to_regular_expression();
+
 
 
 /*************************************************************************
@@ -827,6 +830,7 @@ blt_b_directory_pathname(name, exname, status)
 	}else{
 	    getwd(path);
 	    chdir(here);
+	    pdss_world(path);  /* PORT: test hook, see port_low.c */
 	    SetAll(exname, STRING, convert_to_kl1_string(path), MRBOFF);
 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
 	}

@@ -12,6 +12,37 @@
 #include "instr.h"
 #include "ctype.h"
 #include "tracer.h"
+/* PORT: forward declarations */
+static int scan_command_name();
+static int display_command_help();
+static int initialize_tracer_command_table();
+static int initialize_tracer_command_table2();
+static int initialize_tracer_command_table3();
+static int trace_on();
+static int trace_stop();
+static int trace_set_count();
+static int trace_depth_first();
+static int trace_breadth_first();
+static int trace_random_enqueue();
+static int trace_set_rewrite_status();
+static int trace_set_debug_flag();
+static int trace_set_predicate_spy();
+static int trace_set_goal_spy();
+static int trace_where_called_from();
+static int trace_inspect_ready_queue();
+static int trace_inspect_variable();
+static int trace_set_variable();
+static int trace_set_gate_switch();
+static int trace_monitor_stream();
+static int trace_scan_integer();
+static int scan_module_and_predicate();
+static unsigned int make_module_predicate_atom();
+static int write_priority();
+static int write_mode();
+static int display_ready_queues();
+static int display_merge_tree();
+static int display_queue_more();
+
 
 /*** Trace Status ***/
 int trace_status    = STEP_TRACE;

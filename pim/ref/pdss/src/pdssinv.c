@@ -11,10 +11,11 @@
 #include "klb.h"
 #include "instr.h"
 
-main(argc, argv)
+main(argc, argv_)
     int	 argc;
-    CHAR **argv;
+    char **argv_;
 {
+    CHAR **argv = (CHAR **)argv_;  /* PORT */
     CHAR file_name[256];
     int	 i, len;
     OBJ	 *module_top;

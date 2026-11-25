@@ -1,9 +1,9 @@
 .......................................
 Assemble : Optimize : KL1 File : ASM File : "../mpimos/cmd_basic.kl1" : Compiling ... is_command/2,do_command/2,get_help_menu/3,get_help_message/4,get_help_message_item/3,get_help_message_item1/3,wait_help_item/5,all_help_message/2,all_help_message1/2,display_message/2,display_value_action/3,stat_action/2,take_action/3,take_action0/5,fail_action/1,remove_operator/5,remove_operator_all/3,member/3,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     192903     50    269    10    1582736        0
-After:      32262     35     93     3     271240        0
-GCed :     160641     15    176     7    1311496        0
+Used :     192836     50    269    10    1582200        0
+After:      32227     35     93     3     270960        0
+GCed :     160609     15    176     7    1311240        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 display_operator/2,display_operator1/2,change_op_pool/4,check_op_defs/6,wait/1,error_action/2,help/2,END.

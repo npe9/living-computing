@@ -9,8 +9,22 @@
 #include  "memory.h"
 #include  "io.h"
 #include  "klb.h"
+/* PORT: forward declarations */
+static int print_sub();
+static int print_list();
+static int print_vector();
+static int print_nbit_string();
+static int fprint_string2();
+static int putc2();
+static int print_nue();
+static int initializr_var_table();
+static CHAR *lookup_var_name();
+static CHAR *gen_name();
+static int get_var_number();
 
-static FILE *file = stdout;
+
+static FILE *file = NULL;  /* PORT: set to stdout on first use */
+#define file (*(file ? &file : (file = stdout, &file)))
 static int  deadlock = NO;
 static int  var_mode = PRINT_VAR_MODE_ABC;
 static int  length;

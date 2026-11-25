@@ -82,6 +82,30 @@ int main(int argc, char **argv)
 #endif /* PDSS_NO_LOW */
 
 #include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+/* PORT (test hook): with PDSS_WORLD set, directory_pathname reports the
+ * directory pdss started in (Micro PIMOS's "World is") as that string.
+ * The real path is stored in the heap, so its length shifts every later
+ * GC; conformance.sh sets PDSS_WORLD so transcripts do not depend on
+ * where the tree is.  Unset, nothing changes. */
+void pdss_world(char *path)
+{
+    static char start[1024];
+    const char *w = getenv("PDSS_WORLD");
+    size_t n;
+    char buf[1024];
+    if (!w) return;
+    if (!start[0] && !getcwd(start, sizeof start)) return;
+    n = strlen(start);
+    if (strncmp(path, start, n) == 0 && (path[n] == 0 || path[n] == '/')) {
+        snprintf(buf, sizeof buf, "%s%s", w, path + n);
+        strcpy(path, buf);
+    }
+}
+
 /* PORT: BSD re_comp/re_exec over POSIX basic regular expressions. */
 #include <regex.h>
 static regex_t re_cur; static int re_have;

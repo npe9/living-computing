@@ -9,6 +9,16 @@
 #include "memory.h"
 #include "io.h"
 #include "klb.h"
+/* PORT: forward declarations */
+static int collect_value_sub();
+static int detect_deadlock_by_collect_value_sub();
+static int is_deadlock_occurred_really();
+static int display_deadlock_suspended_goals();
+static int display_deadlock_suspended_goal();
+static int report_deadlock_suspended_goals();
+static int report_deadlock_suspended_goal();
+static int report_deadlock_suspended_merger();
+
 
 
 /*************************************************************************

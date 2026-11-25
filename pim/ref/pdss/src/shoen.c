@@ -8,6 +8,14 @@
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
+/* PORT: forward declarations */
+static int delete_from_and_tree();
+static int resource_divide_to_children();
+static int divide_resource();
+static int shoen_active_unify_with_list();
+static int dump_shoen_tree();
+static int dump_shoen_tree_sub();
+
 
 PARENT_RECORD *grand_mother;  /** Root of Shoen Tree **/
 CELL *result_of_grand_mother;

@@ -1,9 +1,9 @@
 .......................................
 Assemble : Optimize : KL1 File : ASM File : "../runtime/fildev.kl1" : Compiling ... files/1,files2/1,file_wait_created/6,rfile_wait_open/5,rfile_wait_reset/3,rfile/4,rfile_wait_char/8,rfile_wait_line/8,rfile_wait_buffer/8,rfile_wait_token/10,eof_wait_reset/3,eof/4,eof2_wait_reset/3,eof2/4,wfile_wait_open/5,wfile_wait_reset/3,wfile/4,wfile_wait_status/6,wait_test_directory/4,wait_pathname/4,directory/2,wait_listing/6,wait_listing1/4,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194036     50    222    10    1583984        0
-After:       5538     38    130     3      62432        0
-GCed :     188498     12     92     7    1521552        0
+Used :     194728     50    176    10    1584000        0
+After:       5324     38    127     3      60424        0
+GCed :     189404     12     49     7    1523576        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 listing_one_file/2,listing_done1/1,listing_done2/1,wait_delete/2,END.

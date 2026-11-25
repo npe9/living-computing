@@ -3,20 +3,21 @@
 *******************************************
 **** Micro PIMOS (version 2.5) ************
 *******************************************
+World is <world>
 Total heap size is 200000 words
 Total code size is 272544 bytes
 *******************************************
 
 | ?- "../conf/espascal" : Compiling ... pascal/0,go/1,go/2,pascal_data/4,new_pascal/5,make_pascal_data/2,make_pascal_data/3,make_pascal_data1/6,big_plus/3,big_grt/3,getstatus/3,eval/2,comq/4,addq/4,muln/4,muln/5,mul1/4,mul1/5,addz/7,addn/5,add1/3,add3/4,add2/6,gcdn/6,gcdn/4,gcdn/5,estg/4,Warning:Commit operator not found :
 	divn(A,B,R,Q,X):-comn(A,B,=,S),divn1(S,A,B,R,Q,X)
-estg1/5,divn/5,divn1/6,conn/3,conn1/3,div1/5,div11/6,divm/5,div2/5,
+estg1/5,divn/5,divn1/6,conn/3,conn1/3,div1/5,div11/6,divm/5,div2/5,estd/4,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     193884     60    220    10    1584000        0
-After:      10037     38    129     3      98304        0
-GCed :     183847     22     91     7    1485696        0
+Used :     194485     60    180    10    1584008        0
+After:      10217     38    109     3      97152        0
+GCed :     184268     22     71     7    1486856        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
-estd/4,estd1/3,chkd/7,chkd1/8,subn/5,subn/6,prune/2,prune1/2,subp/5,subp1/5,sub1/3,comn/4,com1/4,real/5,binrad/3,standardise/2,END.
+estd1/3,chkd/7,chkd1/8,subn/5,subn/6,prune/2,prune1/2,subp/5,subp1/5,sub1/3,comn/4,com1/4,real/5,binrad/3,standardise/2,END.
 
 [pascal/0,go/1,go/2]
 successdone

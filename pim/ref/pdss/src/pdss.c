@@ -13,6 +13,13 @@
 #include "io.h"
 #include "instr.h"
 #include "ctype.h"
+/* PORT: forward declarations */
+static int load_kl1b_file();
+static int load_kl1b_file_and_enter_module();
+static OBJ *read_top_level_goal();
+static CHAR *scan_name();
+static int write_result();
+
 
 #ifndef sigmask
 #define sigmask(m) (1 << ((m)-1))
@@ -25,10 +32,11 @@ static CHAR execute_goal[128];	/** top level goal name **/
 *    PDSS Main.								 *
 *************************************************************************/
 
-main(argc, argv)
+main(argc, argv_)
     int argc; 
-    CHAR **argv;
+    char **argv_;
 {
+    CHAR **argv = (CHAR **)argv_;  /* PORT */
     OBJ	 *top_level, *read_top_level_goal();
     CHAR yn[2], motd[256];
     FILE *fp;

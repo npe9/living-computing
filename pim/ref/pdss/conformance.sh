@@ -9,9 +9,13 @@
 # reassembled libraries (build.sh's build/, or the modern build's
 # tree).  Each job is one Micro PIMOS session: compile(File) (PDSS's
 # KL1 compiler, then its assembler, loader and saver), then the job's
-# goals, then halt.  The transcript is normalised (the banner line,
-# "World is", and the msec of stat/1 and of the GC report are
-# host-dependent and removed), the emulator's exit status is appended,
+# goals, then halt.  PDSS_WORLD makes the "World is" directory a path
+# of the same length wherever the tree is (the string is in the heap,
+# so its length changes GC timing; port_low.c and src/ honour it), and
+# it is printed as <world>.
+# The transcript is normalised (the banner line, and the msec of stat/1
+# and of the GC report are host-dependent and removed), the emulator's
+# exit status is appended,
 # and so are the sha256 sums of the .asm the compiler wrote and the
 # .sav the saver wrote.  It is compared byte for byte with
 # golden/<job>.out.  --record writes the golden files instead (only
@@ -30,12 +34,18 @@ cp "$ROOT"/test/*.kl1 "$ROOT"/sample/*.kl1 "$W/"
 cp "$ROOT"/emulator/sample.kl1 "$W/emu_sample.kl1"
 # Micro PIMOS reads ~/.PDSSsave and friends; keep the user's home out.
 mkdir -p "$W/home"; HOME="$W/home"; export HOME
+# The world directory, seen through a symlink whose path has the same
+# length on every host: /tmp/pdssw.XXXXXXXX/t/emulator (30 characters).
+L=$(mktemp -d /tmp/pdssw.XXXXXXXX) || exit 2
+trap 'rm -rf "$L"' 0 1 2 15
+ln -s "$ROOT" "$L/t"
+PDSS_WORLD="$L/t/emulator"; export PDSS_WORLD
 T=timeout; command -v timeout >/dev/null 2>&1 || T=
 RUN=${PDSS_RUN:-}
 SHA="shasum -a 256"; command -v shasum >/dev/null 2>&1 || SHA=sha256sum
 pass=0; fail=0; failed=
 norm() {
-  sed -e '1{/^\*\*\*\*\* PDSS-KL1/d;}' -e '/^World is /d' \
+  sed -e '1{/^\*\*\*\*\* PDSS-KL1/d;}' -e "s|$PDSS_WORLD|<world>|g" \
       -e 's/ reductions in [0-9]* msec/ reductions in N msec/' \
       -e 's/^GC Time: [0-9]* msec/GC Time: N msec/' \
       -e 's/[[:space:]]*$//'

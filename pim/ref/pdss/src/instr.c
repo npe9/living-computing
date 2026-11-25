@@ -9,6 +9,10 @@
 #include "io.h"
 #include "klb.h"
 #include "instr.h"
+/* PORT: forward declarations */
+static int reset_instruction_table();
+static int op();
+
 
 #define INVALID	      -1
 #define NOT_SUPPORTED ASSM_NOT_SUPPORTED

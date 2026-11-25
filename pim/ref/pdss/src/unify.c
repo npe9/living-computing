@@ -8,6 +8,10 @@
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
+/* PORT: forward declarations */
+static int terminate_merger();
+static int make_unify_goal_and_enqueue_for_merger();
+
 
 static CELL work;
 

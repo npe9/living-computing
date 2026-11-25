@@ -3,15 +3,16 @@
 *******************************************
 **** Micro PIMOS (version 2.5) ************
 *******************************************
+World is <world>
 Total heap size is 200000 words
 Total code size is 272544 bytes
 *******************************************
 
 | ?- "../conf/tri" : Compiling ... triangle/0,go/1,count/2,count/3,sweeper$playS/5,playS/3#1/5,playS/3#2/5,cont$playS/3/4,sweeper$smove/4,foobar/4,smove/3#1/4,smove/3#2/4,smove/3#3/4,smove/3#4/4,smove/3#5/4,smove/3#6/4,smove/3#7/4,smove/3#8/4,smove/3#9/4,smove/3#10/4,smove/3#11/4,smove/3#12/4,smove/3#13/4,smove/3#14/4,smove/3#15/4,smove/3#16/4,smove/3#17/4,smove/3#18/4,smove/3#19/4,smove/3#20/4,smove/3#21/4,smove/3#22/4,smove/3#23/4,smove/3#24/4,smove/3#25/4,smove/3#26/4,smove/3#27/4,smove/3#28/4,smove/3#29/4,smove/3#30/4,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     193696     50    232    10    1584000        0
-After:       6128     38    127     3      66856        0
-GCed :     187568     12    105     7    1517144        0
+Used :     194131     50    203    10    1584000        0
+After:       5882     38    111     3      62584        0
+GCed :     188249     12     92     7    1521416        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 smove/3#31/4,smove/3#32/4,smove/3#33/4,smove/3#34/4,smove/3#35/4,smove/3#36/4,cont$smove/3/5,END.
@@ -25,23 +26,23 @@ Saving ... done
 yes.
 | ?-
 GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194077     48    223    13    1584208     9936
-After:       1457     16    155     5      31504     9936
-GCed :     192620     32     68     8    1552704        0
+Used :     194059     48    223    13    1584064     9936
+After:       1497     16    171     5      33744     9936
+GCed :     192562     32     52     8    1550320        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 
 GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
 Used :     194861     16    199     5    1584016     9936
-After:       2573     16    159     5      40912     9936
-GCed :     192288      0     40     0    1543104        0
+After:       2461     16    125     5      35936     9936
+GCed :     192400      0     74     0    1548080        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 
 GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194889     16    199     5    1584240     9936
-After:       3198     16    158     5      45792     9936
-GCed :     191691      0     41     0    1538448        0
+Used :     194877     16    199     5    1584144     9936
+After:       3075     16    131     5      41568     9936
+GCed :     191802      0     68     0    1542576        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 Total of 666239 reductions in N msec.

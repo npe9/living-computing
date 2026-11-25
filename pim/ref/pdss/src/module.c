@@ -9,6 +9,11 @@
 #include "memory.h"
 #include "io.h"
 #include "klb.h"
+/* PORT: forward declarations */
+static int load_sav_file();
+static int load_asm_file();
+static int save_sav_file();
+
 
 MODULE_ENTRY  *module_id_table[MODULE_TABLE_SIZE];
 

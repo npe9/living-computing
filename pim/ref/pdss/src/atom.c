@@ -30,6 +30,9 @@ unsigned int gensym_count2 = 0xFFFFFFFF; /* for Atoms without Name */
     return(gensym_count2--);\
 }
 #include "table.c"  /* General Purpose Name Table Lookup Subroutine Package */
+/* PORT: forward declarations */
+static unsigned int intern_atom3();
+
 
 CHAR *atom_name(atom)
     unsigned int atom;

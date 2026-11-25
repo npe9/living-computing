@@ -11,6 +11,9 @@
 #include "memory.h"
 #include "io.h"
 #include "gc.h"
+/* PORT: forward declarations */
+static int swap_highest_queue();
+
 
 int gc_code;
 int gc_counter;

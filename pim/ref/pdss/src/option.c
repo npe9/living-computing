@@ -7,6 +7,9 @@
 
 #include  <stdio.h>
 #include  "pdss.h"
+/* PORT: forward declarations */
+static int read_option_sub();
+
 
 unsigned int option_heap_size	      = HEAP_SIZE;
 unsigned int option_code_size	      = CODE_SIZE;

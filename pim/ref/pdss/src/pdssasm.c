@@ -10,10 +10,11 @@
 #include "io.h"
 #include "klb.h"
 
-main(argc, argv)
+main(argc, argv_)
     int	 argc;
-    CHAR **argv;
+    char **argv_;
 {
+    CHAR **argv = (CHAR **)argv_;  /* PORT */
     CHAR file_name[256];
     FILE *fp;
     int	 i, len;

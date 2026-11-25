@@ -11,6 +11,10 @@
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
+/* PORT: forward declarations */
+static int alarm_clock_int();
+static int set_timer();
+
 
 #ifndef sigmask
 #define sigmask(m) (1 << ((m)-1))

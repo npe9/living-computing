@@ -28,9 +28,9 @@ Configuration of the directory/file environment for PDSS.
       object. It is uesd by dynamic native code module linker.
       (But, native code generator is not supported yet.)
 *************************************************************************/
-#define PDSS_LIBDIR      "/usr/local/src/pdss"
-#define PDSS_SUPDIR      "/usr/local/src/pdss/emulator"
-#define PDSS_OBJECT_FILE "/usr/local/src/pdss/emulator/pdss"
+#define PDSS_LIBDIR      ".."   /* PORT: run from emulator/ */
+#define PDSS_SUPDIR      "."
+#define PDSS_OBJECT_FILE "./pdss"
 
 
 /*************************************************************************

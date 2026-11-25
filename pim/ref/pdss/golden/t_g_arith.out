@@ -3,18 +3,19 @@
 *******************************************
 **** Micro PIMOS (version 2.5) ************
 *******************************************
+World is <world>
 Total heap size is 200000 words
 Total code size is 272544 bytes
 *******************************************
 
-| ?- "../conf/g_arith" : Compiling ... go/0,add/0,add00/0,add00/2,add00/1,add01/0,add01/2,add01/1,add02/0,add02/2,add02/1,add03/0,add03/2,add03/1,add04/0,add04/2,add04/1,add05/0,add05/2,add05/1,add06/0,add06/2,add06/1,add07/0,add07/2,add07/1,add08/0,add08/2,add08/1,add09/0,add09/2,add10/0,add10/2,add11/0,sub/0,sub00/0,sub00/2,sub00/1,sub01/0,sub01/2,sub01/1,sub02/0,sub02/2,sub02/1,sub03/0,sub03/2,sub03/1,sub04/0,sub04/2,sub04/1,sub05/0,sub05/2,sub05/1,sub06/0,sub06/2,sub06/1,sub07/0,sub07/2,sub07/1,sub08/0,sub08/2,sub08/1,sub09/0,sub09/2,sub10/0,sub10/2,sub11/0,mul/0,mul00/0,mul00/2,mul00/1,mul01/0,mul01/2,mul01/1,mul02/0,mul02/2,mul02/1,mul03/0,mul03/2,mul03/1,mul04/0,mul04/2,mul04/1,mul05/0,mul05/2,mul05/1,mul06/0,mul06/2,mul06/1,mul07/0,mul07/2,mul07/1,mul08/0,mul08/2,mul08/1,mul09/0,mul09/2,mul10/0,mul10/2,mul11/0,div/0,div00/0,div00/2,div00/1,div01/0,div01/2,div02/0,div02/2,div02/1,div03/0,div03/2,div03/1,div04/0,div04/2,div05/0,div05/2,div05/1,div06/0,div06/2,div06/1,div07/0,div07/2,div08/0,div08/2,div08/1,div09/0,div09/2,div10/0,mod/0,mod00/0,mod00/2,mod00/1,mod01/0,mod01/2,mod02/0,mod02/2,mod02/1,mod03/0,mod03/2,mod03/1,mod04/0,mod04/2,mod05/0,mod05/2,mod05/1,mod06/0,mod06/2,mod06/1,mod07/0,mod07/2,mod08/0,mod08/2,mod08/1,mod09/0,min/0,min00/0,min00/1,min00ans/1,min01/0,min01/1,min01ans/1,min02/0,min02/1,min02ans/1,min03/0,min03/1,min04/0,inc/0,
+| ?- "../conf/g_arith" : Compiling ... go/0,add/0,add00/0,add00/2,add00/1,add01/0,add01/2,add01/1,add02/0,add02/2,add02/1,add03/0,add03/2,add03/1,add04/0,add04/2,add04/1,add05/0,add05/2,add05/1,add06/0,add06/2,add06/1,add07/0,add07/2,add07/1,add08/0,add08/2,add08/1,add09/0,add09/2,add10/0,add10/2,add11/0,sub/0,sub00/0,sub00/2,sub00/1,sub01/0,sub01/2,sub01/1,sub02/0,sub02/2,sub02/1,sub03/0,sub03/2,sub03/1,sub04/0,sub04/2,sub04/1,sub05/0,sub05/2,sub05/1,sub06/0,sub06/2,sub06/1,sub07/0,sub07/2,sub07/1,sub08/0,sub08/2,sub08/1,sub09/0,sub09/2,sub10/0,sub10/2,sub11/0,mul/0,mul00/0,mul00/2,mul00/1,mul01/0,mul01/2,mul01/1,mul02/0,mul02/2,mul02/1,mul03/0,mul03/2,mul03/1,mul04/0,mul04/2,mul04/1,mul05/0,mul05/2,mul05/1,mul06/0,mul06/2,mul06/1,mul07/0,mul07/2,mul07/1,mul08/0,mul08/2,mul08/1,mul09/0,mul09/2,mul10/0,mul10/2,mul11/0,div/0,div00/0,div00/2,div00/1,div01/0,div01/2,div02/0,div02/2,div02/1,div03/0,div03/2,div03/1,div04/0,div04/2,div05/0,div05/2,div05/1,div06/0,div06/2,div06/1,div07/0,div07/2,div08/0,div08/2,div08/1,div09/0,div09/2,div10/0,mod/0,mod00/0,mod00/2,mod00/1,mod01/0,mod01/2,mod02/0,mod02/2,mod02/1,mod03/0,mod03/2,mod03/1,mod04/0,mod04/2,mod05/0,mod05/2,mod05/1,mod06/0,mod06/2,mod06/1,mod07/0,mod07/2,mod08/0,mod08/2,mod08/1,mod09/0,min/0,min00/0,min00/1,min00ans/1,min01/0,min01/1,min01ans/1,min02/0,min02/1,min02ans/1,min03/0,min03/1,min04/0,inc/0,inc00/0,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194363     50    203    10    1584000        0
-After:       6939     40    115     3      72160        0
-GCed :     187424     10     88     7    1511840        0
+Used :     195188     50    148    10    1584000        0
+After:       6994     40    118     3      73088        0
+GCed :     188194     10     30     7    1510912        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
-inc00/0,inc00/1,inc00ans/1,inc01/0,inc01/1,inc01ans/1,inc02/0,inc02/1,inc02ans/1,inc03/0,inc03/1,inc04/0,dec/0,dec00/0,dec00/1,dec00ans/1,dec01/0,dec01/1,dec01ans/1,dec02/0,dec02/1,dec02ans/1,dec03/0,dec03/1,dec04/0,done/0,END.
+inc00/1,inc00ans/1,inc01/0,inc01/1,inc01ans/1,inc02/0,inc02/1,inc02ans/1,inc03/0,inc03/1,inc04/0,dec/0,dec00/0,dec00/1,dec00ans/1,dec01/0,dec01/1,dec01ans/1,dec02/0,dec02/1,dec02ans/1,dec03/0,dec03/1,dec04/0,done/0,END.
 
 [go/0]
 successdone

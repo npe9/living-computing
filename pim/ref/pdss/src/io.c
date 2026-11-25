@@ -9,6 +9,12 @@
 #include  "pdss.h"
 #include  "memory.h"
 #include  "io.h"
+/* PORT: forward declarations */
+static int keyboard_to_buffer();
+static int keyboard_eof_to_buffer();
+static int keyboard_interrupt();
+static int keyboard_interrupt_without_emacs();
+
 
 #ifndef sigmask
 #define sigmask(m) (1 << ((m)-1))

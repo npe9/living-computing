@@ -1,9 +1,9 @@
 .......................................
 Assemble : Optimize : KL1 File : ASM File : "../mpimos/utl.kl1" : Compiling ... melt/3,set_empty/4,melt_term/5,melt_args/8,enter/4,unify_variables_table_entry/3,unify_elements/1,freeze/2,wait_freeze/3,freeze/8,wait_unbound_result/8,get_variable_number/6,unify/8,unify_vector/12,unify_variable/5,get_predicate/3,copy_args/5,write/1,symbol_append/2,symbol_to_string/2,string_append/2,string_append/3,pathname/3,pathname1/3,extend_name/3,extend/3,extend/4,compress/2,compress/4,integer_to_string/2,element_list_to_string/4,element_list_to_string0/4,integer_to_element_list/4,qsort/2,qsort/3,qsortn/3,qsortr/3,part/4,qsortv/3,qsortv/4,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     192987     50    267    10    1584000        0
-After:      10812     38    101     3     100952        0
-GCed :     182175     12    166     7    1483048        0
+Used :     193499     50    233    10    1584016        0
+After:      11199     40    113     3     105936        0
+GCed :     182300     10    120     7    1478080        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 qsortvn/4,qsortvr/4,partv/5,report_tokens/3,report_tokens/4,report_remains/2,report_tokens/2,report_one/3,copy_string_elements/7,copy_string_elements1/9,copy_string_elements2/9,copy_zero/4,append_string/2,append_string/6,END.

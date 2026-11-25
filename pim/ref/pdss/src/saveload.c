@@ -10,6 +10,31 @@
 #include "io.h"
 #include "klb.h"
 #include "instr.h"
+/* PORT: forward declarations */
+static int make_atom_table();
+static OBJ *enter_atoms_in_predicate();
+static int enter_atoms_in_constant_section();
+static int enter_atom();
+static int write_atom_table();
+static unsigned int convert_atom_id();
+static int write_code_body();
+static OBJ *write_predicate();
+static int write_constant_section();
+static unsigned short get2c();
+static unsigned int get4c();
+static short get2sc();
+static int get4sc();
+static int read_atom_table();
+static int read_code_body();
+static OBJ *read_predicate();
+static int read_constant_section();
+static struct hash_table *read_hash_table_atom();
+static struct hash_table *read_hash_table_int();
+static OBJ *put_hash_table_atom();
+static OBJ *put_hash_table_int();
+static struct hash_table *read_entry_table();
+static OBJ *put_entry_table();
+
 
 #define SAV_MAGIC  ZZ(0xA5C3,0xA5C5,0xA5C7,0xA5C9)
 #define SAV_VRSON1 0x25

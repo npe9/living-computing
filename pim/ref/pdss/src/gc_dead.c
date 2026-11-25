@@ -10,6 +10,15 @@
 #include "io.h"
 #include "klb.h"
 #include "gc.h"
+/* PORT: forward declarations */
+static int deadlock_mark_goals();
+static int deadlock_link_goals();
+static int deadlock_report_goal();
+static int deadlock_report_merger();
+static int dead_cp_cell();
+static int dead_cp_stream_merger();
+static int terminate_shoen_without_child();
+
 
 #define	 GoalList(shoen)	 ((CELL *)((shoen)->number_of_children))
 #define	 SetGoalList(shoen, x)	 ((shoen)->number_of_children) = (int)(x)

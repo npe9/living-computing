@@ -5,11 +5,15 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <varargs.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
 #include "tracer.h"
+/* PORT: forward declarations */
+static unsigned int rnd();
+static int other_var_exist();
+static int same_var_exist();
+
 
 /** Reqdy Queue **/
 READY_QUEUE_BACKET ready_queue_array[MAX_PRIORITY+1];
@@ -530,22 +534,23 @@ single_wait_suspend(goal, ref)
 *   Suspend -- Body Builtin Suspend.					 *
 *************************************************************************/
 
-body_builtin_suspend(code, waitref, argio, va_alist)
+body_builtin_suspend(code, waitref, argio, pa0, pa1, pa2, pa3, pa4, pa5, pa6, pa7)
     OBJ *code;
     unsigned int argio;
     CELL *waitref;
-    va_dcl
+    CELL *pa0, *pa1, *pa2, *pa3, *pa4, *pa5, *pa6, *pa7;  /* PORT: was va_alist */
 {
-    va_list bltargs;
+    CELL *bltargs[8]; int bltn = 0;  /* PORT */
     register int i;
     register CELL *x, *y, *undef;
     register GOAL_RECORD *grec;
     static CELL *ap[MAXREGS];
     GetGoalRecord(grec, 8);  /** Number of Builtin Argument <= 8 **/
     y = grec->args;
-    va_start(bltargs);
+    bltargs[0]=pa0; bltargs[1]=pa1; bltargs[2]=pa2; bltargs[3]=pa3;
+    bltargs[4]=pa4; bltargs[5]=pa5; bltargs[6]=pa6; bltargs[7]=pa7;
     for(i=0; argio&(I|O); i++,argio>>=3){
-	x = va_arg(bltargs, CELL *);
+	x = bltargs[bltn++];
 	if(argio&I){
 	    /*** Input Argument ***/
 	    *y = *x;
@@ -558,7 +563,6 @@ body_builtin_suspend(code, waitref, argio, va_alist)
 	}
 	y++;
     }
-    va_end(bltargs);
     grec->argn = i;
     grec->parent = parent;
     grec->code = code;
@@ -580,21 +584,22 @@ body_builtin_suspend(code, waitref, argio, va_alist)
 *   Swap Goal -- Body Builtin Swap.					 *
 *************************************************************************/
 
-body_builtin_swap(code, argio, va_alist)
+body_builtin_swap(code, argio, pa0, pa1, pa2, pa3, pa4, pa5, pa6, pa7)
     OBJ *code;
     unsigned int argio;
-    va_dcl
+    CELL *pa0, *pa1, *pa2, *pa3, *pa4, *pa5, *pa6, *pa7;  /* PORT: was va_alist */
 {
-    va_list bltargs;
+    CELL *bltargs[8]; int bltn = 0;  /* PORT */
     register int i;
     register CELL *x, *y, *undef;
     register GOAL_RECORD *grec;
     static CELL *ap[MAXREGS];
     GetGoalRecord(grec, 8);  /** Number of Builtin Argument <= 8 **/
     y = grec->args;
-    va_start(bltargs);
+    bltargs[0]=pa0; bltargs[1]=pa1; bltargs[2]=pa2; bltargs[3]=pa3;
+    bltargs[4]=pa4; bltargs[5]=pa5; bltargs[6]=pa6; bltargs[7]=pa7;
     for(i=0; argio&(I|O); i++,argio>>=3){
-	x = va_arg(bltargs, CELL *);
+	x = bltargs[bltn++];
 	if(argio&I){
 	    /*** Input Argument ***/
 	    *y = *x;
@@ -607,7 +612,6 @@ body_builtin_swap(code, argio, va_alist)
 	}
 	y++;
     }
-    va_end(bltargs);
     grec->argn = i;
     while(i--){
 	y--;

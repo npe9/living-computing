@@ -27,8 +27,9 @@ KLB_4BYTE_REL_ADDR:
 #endif
 
 #if KLB_4BYTE_REL_ADDR
-typedef long RADDR;
-typedef unsigned long MSIZE;
+/* PORT: every "long" below was 32 bits in 1992; now int. */
+typedef int RADDR;
+typedef unsigned int MSIZE;
 #else
 typedef short RADDR;
 typedef unsigned short MSIZE;
@@ -57,40 +58,40 @@ typedef unsigned short MSIZE;
 #define PutReg(x, p)		{ *(p) = (x); }
 #define PutReg2(x, p)		{ *(p) = (x)-1; }
 #define PutAtom(x, p)		{ *(unsigned short *)(p) = (x); }
-#define PutInt(x, p)		{ *(long *)(p) = (x); }
-#define PutFloat(x, p)		{ *(long *)(p) = (x); }
+#define PutInt(x, p)		{ *(int *)(p) = (x); }
+#define PutFloat(x, p)		{ *(int *)(p) = (x); }
 #define PutArity(x, p)		{ *(p) = (x); }
 #define PutIndex(x, p)		{ *(p) = (x); }
 #define PutRepnum(x, p)		{ *(p) = (x); }
 #define PutPredArity(x, p)	{ *(p) = (x); }
-#define PutPredID(x, p)		{ *(unsigned long *)(p) = (x); }
+#define PutPredID(x, p)		{ *(unsigned int *)(p) = (x); }
 #define PutRelAddr(x, p)	{ *(RADDR *)(p) = (x); }
 #define PutModPredSize(x, p)	{ *(MSIZE *)(p) = (x); }
 #define PutChar(x, p)		{ *(p) = (x); }
 #define PutShort(x, p)		{ *(short *)(p) = (x); }
-#define PutLong(x, p)		{ *(long *)(p) = (x); }
+#define PutLong(x, p)		{ *(int *)(p) = (x); }
 #define PutCell(ty, va, mr, p)	{ SetAll(((CELL *)(p)), (ty), (va), (mr)); }
 
 #define GetOpCode(p)	    (*(unsigned char *)(p))
 #define GetReg(p)	    (*(unsigned char *)(p))
 #define GetReg2(p)	    ((*(unsigned char *)(p))+1)
 #define GetAtom(p)	    (*(unsigned short *)(p))
-#define GetInt(p)	    (*(long *)(p))
-#define GetFloat(p)	    (*(long *)(p))
+#define GetInt(p)	    (*(int *)(p))
+#define GetFloat(p)	    (*(int *)(p))
 #define GetArity(p)	    (*(unsigned char *)(p))
 #define GetIndex(p)	    (*(unsigned char *)(p))
 #define GetRepnum(p)	    (*(unsigned char *)(p))
 #define GetPredArity(p)	    (*(unsigned char *)(p))
-#define GetPredID(p)	    (*(unsigned long *)(p))
+#define GetPredID(p)	    (*(unsigned int *)(p))
 #define GetRelAddr(p)	    (*(RADDR *)(p))
 #define GetAddr(p)	    ((p)+(*(RADDR *)(p)))
 #define GetModPredSize(p)   (*(MSIZE *)(p))
 #define GetChar(p)	    (*(char *)(p))
 #define GetShort(p)	    (*(short *)(p))
-#define GetLong(p)	    (*(long *)(p))
+#define GetLong(p)	    (*(int *)(p))
 #define GetUChar(p)	    (*(unsigned char *)(p))
 #define GetUShort(p)	    (*(unsigned short *)(p))
-#define GetULong(p)	    (*(unsigned long *)(p))
+#define GetULong(p)	    (*(unsigned int *)(p))
 #define GetCell(p)	    (*(struct cell *)(p))
 #define GetCellP(p)	    ((struct cell *)(p))
 

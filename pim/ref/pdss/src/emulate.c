@@ -11,6 +11,11 @@
 #include "klb.h"
 #include "instr.h"
 #include "tracer.h"
+/* PORT: forward declarations */
+static int do_interrupt();
+static int idle();
+static int idle2();
+
 
 CELL regs[MAXREGS];
 OBJ *PC;

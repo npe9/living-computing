@@ -1,6 +1,6 @@
 diff -u -r a/emulator/assemble.c b/emulator/assemble.c
---- a/emulator/assemble.c	2026-11-20 06:22:07
-+++ b/emulator/assemble.c	2026-11-20 06:22:07
+--- a/emulator/assemble.c	2026-11-25 04:58:43
++++ b/emulator/assemble.c	2026-11-25 04:58:43
 @@ -13,6 +13,31 @@
  #include "klb.h"
  #include "instr.h"
@@ -34,8 +34,8 @@ diff -u -r a/emulator/assemble.c b/emulator/assemble.c
  #define ARGMAX 32
  #define REGMAX MAXREGS
 diff -u -r a/emulator/atom.c b/emulator/atom.c
---- a/emulator/atom.c	2026-11-20 06:22:07
-+++ b/emulator/atom.c	2026-11-20 06:22:07
+--- a/emulator/atom.c	2026-11-25 04:58:43
++++ b/emulator/atom.c	2026-11-25 04:58:43
 @@ -30,6 +30,9 @@
      return(gensym_count2--);\
  }
@@ -46,22 +46,53 @@ diff -u -r a/emulator/atom.c b/emulator/atom.c
  
  CHAR *atom_name(atom)
      unsigned int atom;
+diff -u -r a/emulator/blt_code.c b/emulator/blt_code.c
+--- a/emulator/blt_code.c	2026-11-25 04:58:43
++++ b/emulator/blt_code.c	2026-11-25 04:58:43
+@@ -121,10 +121,15 @@
+ 				   IOOOO, code, mod, pred, arity, info);
+ 	    break;
+ 	  case MODMAN_NATIVE_CODE_MODULE:
+-	    if(find_predicate(Valueof(x+0), Valueof(x+1)|(Valueof(x+2)<<16))){
++	    /* PORT: the original passed the module-name atom where
++	       find_predicate() takes a MODULE_ENTRY pointer, and
++	       dereferenced address 1 (test/b_code_e.kl1, check b). */
++	    { MODULE_ENTRY *mte;
++	    if(lookup_module(Valueof(x+0), &mte) == MODMAN_SUCCESS &&
++	       find_predicate(mte, Valueof(x+1)|(Valueof(x+2)<<16))){
+ 		flag = 0;
+ 		goto success;
+-	    }
++	    } }
+ 	  case MODMAN_PREDICATE_NOT_FOUND:
+ 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
+ 				   KL1B_B_CODE_TO_PREDICATE,
 diff -u -r a/emulator/blt_iodev.c b/emulator/blt_iodev.c
---- a/emulator/blt_iodev.c	2026-11-20 06:22:07
-+++ b/emulator/blt_iodev.c	2026-11-20 06:22:07
-@@ -11,6 +11,9 @@
+--- a/emulator/blt_iodev.c	2026-11-25 04:58:43
++++ b/emulator/blt_iodev.c	2026-11-25 04:58:43
+@@ -11,8 +11,11 @@
  #include "memory.h"
  #include "io.h"
  #include "instr.h"
 +/* PORT: forward declarations */
 +static CHAR *wildcard_to_regular_expression();
+ 
+ 
 +
- 
- 
  /*************************************************************************
+ *   b_create_window(Rname,^Rstt,^Rinterrupt,^Rio)			 *
+ *************************************************************************/
+@@ -827,6 +830,7 @@
+ 	}else{
+ 	    getwd(path);
+ 	    chdir(here);
++	    pdss_world(path);  /* PORT: test hook, see port_low.c */
+ 	    SetAll(exname, STRING, convert_to_kl1_string(path), MRBOFF);
+ 	    SetAll(status, INT, IOSUB_SUCCESS, MRBOFF);
+ 	}
 diff -u -r a/emulator/config.h b/emulator/config.h
---- a/emulator/config.h	2026-11-20 06:22:07
-+++ b/emulator/config.h	2026-11-20 06:22:07
+--- a/emulator/config.h	2026-11-25 04:58:43
++++ b/emulator/config.h	2026-11-25 04:58:43
 @@ -28,9 +28,9 @@
        object. It is uesd by dynamic native code module linker.
        (But, native code generator is not supported yet.)
@@ -76,8 +107,8 @@ diff -u -r a/emulator/config.h b/emulator/config.h
  
  /*************************************************************************
 diff -u -r a/emulator/emulate.c b/emulator/emulate.c
---- a/emulator/emulate.c	2026-11-20 06:22:07
-+++ b/emulator/emulate.c	2026-11-20 06:22:07
+--- a/emulator/emulate.c	2026-11-25 04:58:43
++++ b/emulator/emulate.c	2026-11-25 04:58:43
 @@ -11,6 +11,11 @@
  #include "klb.h"
  #include "instr.h"
@@ -91,8 +122,8 @@ diff -u -r a/emulator/emulate.c b/emulator/emulate.c
  CELL regs[MAXREGS];
  OBJ *PC;
 diff -u -r a/emulator/exception.c b/emulator/exception.c
---- a/emulator/exception.c	2026-11-20 06:22:07
-+++ b/emulator/exception.c	2026-11-20 06:22:07
+--- a/emulator/exception.c	2026-11-25 04:58:43
++++ b/emulator/exception.c	2026-11-25 04:58:43
 @@ -5,13 +5,15 @@
  *  Read "../COPYRIGHT" for detailed information.			 *
  *************************************************************************/
@@ -147,9 +178,20 @@ diff -u -r a/emulator/exception.c b/emulator/exception.c
      while(i--){
  	if(ap[i]){
  	    *ap[i] = *g;
+diff -u -r a/emulator/float.c b/emulator/float.c
+--- a/emulator/float.c	2026-11-25 04:58:43
++++ b/emulator/float.c	2026-11-25 04:58:43
+@@ -6,6 +6,7 @@
+ *************************************************************************/
+ 
+ #include <math.h>
++#include <stdlib.h>	/* atof() returns double: undeclared, it was taken as int */
+ #include <signal.h>
+ #include <errno.h>
+ #include "pdss.h"
 diff -u -r a/emulator/gc.c b/emulator/gc.c
---- a/emulator/gc.c	2026-11-20 06:22:07
-+++ b/emulator/gc.c	2026-11-20 06:22:07
+--- a/emulator/gc.c	2026-11-25 04:58:43
++++ b/emulator/gc.c	2026-11-25 04:58:43
 @@ -11,6 +11,9 @@
  #include "memory.h"
  #include "io.h"
@@ -161,8 +203,8 @@ diff -u -r a/emulator/gc.c b/emulator/gc.c
  int gc_code;
  int gc_counter;
 diff -u -r a/emulator/gc_cell.c b/emulator/gc_cell.c
---- a/emulator/gc_cell.c	2026-11-20 06:22:07
-+++ b/emulator/gc_cell.c	2026-11-20 06:22:07
+--- a/emulator/gc_cell.c	2026-11-25 04:58:43
++++ b/emulator/gc_cell.c	2026-11-25 04:58:43
 @@ -9,6 +9,9 @@
  #include "memory.h"
  #include "io.h"
@@ -174,8 +216,8 @@ diff -u -r a/emulator/gc_cell.c b/emulator/gc_cell.c
  
  /*************************************************************************
 diff -u -r a/emulator/gc_dead.c b/emulator/gc_dead.c
---- a/emulator/gc_dead.c	2026-11-20 06:22:07
-+++ b/emulator/gc_dead.c	2026-11-20 06:22:07
+--- a/emulator/gc_dead.c	2026-11-25 04:58:43
++++ b/emulator/gc_dead.c	2026-11-25 04:58:43
 @@ -10,6 +10,15 @@
  #include "io.h"
  #include "klb.h"
@@ -193,8 +235,8 @@ diff -u -r a/emulator/gc_dead.c b/emulator/gc_dead.c
  #define	 GoalList(shoen)	 ((CELL *)((shoen)->number_of_children))
  #define	 SetGoalList(shoen, x)	 ((shoen)->number_of_children) = (int)(x)
 diff -u -r a/emulator/goal.c b/emulator/goal.c
---- a/emulator/goal.c	2026-11-20 06:22:07
-+++ b/emulator/goal.c	2026-11-20 06:22:07
+--- a/emulator/goal.c	2026-11-25 04:58:43
++++ b/emulator/goal.c	2026-11-25 04:58:43
 @@ -5,12 +5,16 @@
  *  Read "../COPYRIGHT" for detailed information.			 *
  *************************************************************************/
@@ -287,8 +329,8 @@ diff -u -r a/emulator/goal.c b/emulator/goal.c
      while(i--){
  	y--;
 diff -u -r a/emulator/instr.c b/emulator/instr.c
---- a/emulator/instr.c	2026-11-20 06:22:07
-+++ b/emulator/instr.c	2026-11-20 06:22:07
+--- a/emulator/instr.c	2026-11-25 04:58:43
++++ b/emulator/instr.c	2026-11-25 04:58:43
 @@ -9,6 +9,10 @@
  #include "io.h"
  #include "klb.h"
@@ -301,8 +343,8 @@ diff -u -r a/emulator/instr.c b/emulator/instr.c
  #define INVALID	      -1
  #define NOT_SUPPORTED ASSM_NOT_SUPPORTED
 diff -u -r a/emulator/io.c b/emulator/io.c
---- a/emulator/io.c	2026-11-20 06:22:07
-+++ b/emulator/io.c	2026-11-20 06:22:07
+--- a/emulator/io.c	2026-11-25 04:58:43
++++ b/emulator/io.c	2026-11-25 04:58:43
 @@ -9,6 +9,12 @@
  #include  "pdss.h"
  #include  "memory.h"
@@ -317,8 +359,8 @@ diff -u -r a/emulator/io.c b/emulator/io.c
  #ifndef sigmask
  #define sigmask(m) (1 << ((m)-1))
 diff -u -r a/emulator/iosub.c b/emulator/iosub.c
---- a/emulator/iosub.c	2026-11-20 06:22:07
-+++ b/emulator/iosub.c	2026-11-20 06:22:07
+--- a/emulator/iosub.c	2026-11-25 04:58:43
++++ b/emulator/iosub.c	2026-11-25 04:58:43
 @@ -9,6 +9,21 @@
  #include  "memory.h"
  #include  "io.h"
@@ -342,8 +384,8 @@ diff -u -r a/emulator/iosub.c b/emulator/iosub.c
  
  /*************************************************************************
 diff -u -r a/emulator/klb.h b/emulator/klb.h
---- a/emulator/klb.h	2026-11-20 06:22:07
-+++ b/emulator/klb.h	2026-11-20 06:22:07
+--- a/emulator/klb.h	2026-11-25 04:58:43
++++ b/emulator/klb.h	2026-11-25 04:58:43
 @@ -27,8 +27,9 @@
  #endif
  
@@ -406,9 +448,25 @@ diff -u -r a/emulator/klb.h b/emulator/klb.h
  #define GetCell(p)	    (*(struct cell *)(p))
  #define GetCellP(p)	    ((struct cell *)(p))
  
+diff -u -r a/emulator/memory.c b/emulator/memory.c
+--- a/emulator/memory.c	2026-11-25 04:58:43
++++ b/emulator/memory.c	2026-11-25 04:58:43
+@@ -317,7 +317,11 @@
+     register unsigned int size, num;
+ {
+     register CELL *p;
+-    if(size*num > HeapRest()) num = HeapRest()/size;
++    /* PORT: HeapRest() is a pointer difference, int on the 32-bit
++       original, so this comparison and division were unsigned there.
++       Past the GC warning line it is negative; signed 64-bit
++       arithmetic made num huge and overran the heap. */
++    if(size*num > (unsigned int)HeapRest()) num = (unsigned int)HeapRest()/size;
+     if(num == 0) num = 1;
+     p = H;
+     SetObjectof(p, NULL);
 diff -u -r a/emulator/module.c b/emulator/module.c
---- a/emulator/module.c	2026-11-20 06:22:07
-+++ b/emulator/module.c	2026-11-20 06:22:07
+--- a/emulator/module.c	2026-11-25 04:58:43
++++ b/emulator/module.c	2026-11-25 04:58:43
 @@ -9,6 +9,11 @@
  #include "memory.h"
  #include "io.h"
@@ -422,8 +480,8 @@ diff -u -r a/emulator/module.c b/emulator/module.c
  MODULE_ENTRY  *module_id_table[MODULE_TABLE_SIZE];
  
 diff -u -r a/emulator/mrbgc.c b/emulator/mrbgc.c
---- a/emulator/mrbgc.c	2026-11-20 06:22:07
-+++ b/emulator/mrbgc.c	2026-11-20 06:22:07
+--- a/emulator/mrbgc.c	2026-11-25 04:58:43
++++ b/emulator/mrbgc.c	2026-11-25 04:58:43
 @@ -9,6 +9,16 @@
  #include "memory.h"
  #include "io.h"
@@ -442,8 +500,8 @@ diff -u -r a/emulator/mrbgc.c b/emulator/mrbgc.c
  
  /*************************************************************************
 diff -u -r a/emulator/native.c b/emulator/native.c
---- a/emulator/native.c	2026-11-20 06:22:07
-+++ b/emulator/native.c	2026-11-20 06:22:07
+--- a/emulator/native.c	2026-11-25 04:58:43
++++ b/emulator/native.c	2026-11-25 04:58:43
 @@ -5,7 +5,7 @@
  *  Read "../COPYRIGHT" for detailed information.			 *
  *************************************************************************/
@@ -454,8 +512,8 @@ diff -u -r a/emulator/native.c b/emulator/native.c
  #include <a.out.h>
  #include <sys/file.h>
 diff -u -r a/emulator/option.c b/emulator/option.c
---- a/emulator/option.c	2026-11-20 06:22:07
-+++ b/emulator/option.c	2026-11-20 06:22:07
+--- a/emulator/option.c	2026-11-25 04:58:43
++++ b/emulator/option.c	2026-11-25 04:58:43
 @@ -7,6 +7,9 @@
  
  #include  <stdio.h>
@@ -467,8 +525,8 @@ diff -u -r a/emulator/option.c b/emulator/option.c
  unsigned int option_heap_size	      = HEAP_SIZE;
  unsigned int option_code_size	      = CODE_SIZE;
 diff -u -r a/emulator/pdss.c b/emulator/pdss.c
---- a/emulator/pdss.c	2026-11-20 06:22:07
-+++ b/emulator/pdss.c	2026-11-20 06:22:07
+--- a/emulator/pdss.c	2026-11-25 04:58:43
++++ b/emulator/pdss.c	2026-11-25 04:58:43
 @@ -13,7 +13,14 @@
  #include "io.h"
  #include "instr.h"
@@ -499,8 +557,8 @@ diff -u -r a/emulator/pdss.c b/emulator/pdss.c
      CHAR yn[2], motd[256];
      FILE *fp;
 diff -u -r a/emulator/pdssasm.c b/emulator/pdssasm.c
---- a/emulator/pdssasm.c	2026-11-20 06:22:07
-+++ b/emulator/pdssasm.c	2026-11-20 06:22:07
+--- a/emulator/pdssasm.c	2026-11-25 04:58:43
++++ b/emulator/pdssasm.c	2026-11-25 04:58:43
 @@ -10,10 +10,11 @@
  #include "io.h"
  #include "klb.h"
@@ -516,8 +574,8 @@ diff -u -r a/emulator/pdssasm.c b/emulator/pdssasm.c
      FILE *fp;
      int	 i, len;
 diff -u -r a/emulator/pdssinv.c b/emulator/pdssinv.c
---- a/emulator/pdssinv.c	2026-11-20 06:22:07
-+++ b/emulator/pdssinv.c	2026-11-20 06:22:07
+--- a/emulator/pdssinv.c	2026-11-25 04:58:43
++++ b/emulator/pdssinv.c	2026-11-25 04:58:43
 @@ -11,10 +11,11 @@
  #include "klb.h"
  #include "instr.h"
@@ -533,8 +591,8 @@ diff -u -r a/emulator/pdssinv.c b/emulator/pdssinv.c
      int	 i, len;
      OBJ	 *module_top;
 diff -u -r a/emulator/print.c b/emulator/print.c
---- a/emulator/print.c	2026-11-20 06:22:07
-+++ b/emulator/print.c	2026-11-20 06:22:07
+--- a/emulator/print.c	2026-11-25 04:58:43
++++ b/emulator/print.c	2026-11-25 04:58:43
 @@ -9,8 +9,22 @@
  #include  "memory.h"
  #include  "io.h"
@@ -560,8 +618,8 @@ diff -u -r a/emulator/print.c b/emulator/print.c
  static int  var_mode = PRINT_VAR_MODE_ABC;
  static int  length;
 diff -u -r a/emulator/saveload.c b/emulator/saveload.c
---- a/emulator/saveload.c	2026-11-20 06:22:07
-+++ b/emulator/saveload.c	2026-11-20 06:22:07
+--- a/emulator/saveload.c	2026-11-25 04:58:43
++++ b/emulator/saveload.c	2026-11-25 04:58:43
 @@ -10,6 +10,31 @@
  #include "io.h"
  #include "klb.h"
@@ -595,8 +653,8 @@ diff -u -r a/emulator/saveload.c b/emulator/saveload.c
  #define SAV_MAGIC  ZZ(0xA5C3,0xA5C5,0xA5C7,0xA5C9)
  #define SAV_VRSON1 0x25
 diff -u -r a/emulator/shoen.c b/emulator/shoen.c
---- a/emulator/shoen.c	2026-11-20 06:22:07
-+++ b/emulator/shoen.c	2026-11-20 06:22:07
+--- a/emulator/shoen.c	2026-11-25 04:58:43
++++ b/emulator/shoen.c	2026-11-25 04:58:43
 @@ -8,6 +8,14 @@
  #include "pdss.h"
  #include "memory.h"
@@ -613,8 +671,8 @@ diff -u -r a/emulator/shoen.c b/emulator/shoen.c
  PARENT_RECORD *grand_mother;  /** Root of Shoen Tree **/
  CELL *result_of_grand_mother;
 diff -u -r a/emulator/timer.c b/emulator/timer.c
---- a/emulator/timer.c	2026-11-20 06:22:07
-+++ b/emulator/timer.c	2026-11-20 06:22:07
+--- a/emulator/timer.c	2026-11-25 04:58:43
++++ b/emulator/timer.c	2026-11-25 04:58:43
 @@ -11,6 +11,10 @@
  #include "pdss.h"
  #include "memory.h"
@@ -627,8 +685,8 @@ diff -u -r a/emulator/timer.c b/emulator/timer.c
  #ifndef sigmask
  #define sigmask(m) (1 << ((m)-1))
 diff -u -r a/emulator/tracer.c b/emulator/tracer.c
---- a/emulator/tracer.c	2026-11-20 06:22:07
-+++ b/emulator/tracer.c	2026-11-20 06:22:07
+--- a/emulator/tracer.c	2026-11-25 04:58:43
++++ b/emulator/tracer.c	2026-11-25 04:58:43
 @@ -12,6 +12,37 @@
  #include "instr.h"
  #include "ctype.h"
@@ -668,8 +726,8 @@ diff -u -r a/emulator/tracer.c b/emulator/tracer.c
  /*** Trace Status ***/
  int trace_status    = STEP_TRACE;
 diff -u -r a/emulator/unify.c b/emulator/unify.c
---- a/emulator/unify.c	2026-11-20 06:22:07
-+++ b/emulator/unify.c	2026-11-20 06:22:07
+--- a/emulator/unify.c	2026-11-25 04:58:43
++++ b/emulator/unify.c	2026-11-25 04:58:43
 @@ -8,6 +8,10 @@
  #include "pdss.h"
  #include "memory.h"
@@ -681,51 +739,3 @@ diff -u -r a/emulator/unify.c b/emulator/unify.c
  
  static CELL work;
  
-diff -u -r a/emulator/float.c b/emulator/float.c
---- a/emulator/float.c
-+++ b/emulator/float.c
-@@ -6,6 +6,7 @@
- *************************************************************************/
- 
- #include <math.h>
-+#include <stdlib.h>	/* atof() returns double: undeclared, it was taken as int */
- #include <signal.h>
- #include <errno.h>
- #include "pdss.h"
-diff -u -r a/emulator/memory.c b/emulator/memory.c
---- a/emulator/memory.c
-+++ b/emulator/memory.c
-@@ -317,7 +317,11 @@
-     register unsigned int size, num;
- {
-     register CELL *p;
--    if(size*num > HeapRest()) num = HeapRest()/size;
-+    /* PORT: HeapRest() is a pointer difference, int on the 32-bit
-+       original, so this comparison and division were unsigned there.
-+       Past the GC warning line it is negative; signed 64-bit
-+       arithmetic made num huge and overran the heap. */
-+    if(size*num > (unsigned int)HeapRest()) num = (unsigned int)HeapRest()/size;
-     if(num == 0) num = 1;
-     p = H;
-     SetObjectof(p, NULL);
-diff -u -r a/emulator/blt_code.c b/emulator/blt_code.c
---- a/emulator/blt_code.c
-+++ b/emulator/blt_code.c
-@@ -121,10 +121,15 @@
- 				   IOOOO, code, mod, pred, arity, info);
- 	    break;
- 	  case MODMAN_NATIVE_CODE_MODULE:
--	    if(find_predicate(Valueof(x+0), Valueof(x+1)|(Valueof(x+2)<<16))){
-+	    /* PORT: the original passed the module-name atom where
-+	       find_predicate() takes a MODULE_ENTRY pointer, and
-+	       dereferenced address 1 (test/b_code_e.kl1, check b). */
-+	    { MODULE_ENTRY *mte;
-+	    if(lookup_module(Valueof(x+0), &mte) == MODMAN_SUCCESS &&
-+	       find_predicate(mte, Valueof(x+1)|(Valueof(x+2)<<16))){
- 		flag = 0;
- 		goto success;
--	    }
-+	    } }
- 	  case MODMAN_PREDICATE_NOT_FOUND:
- 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
- 				   KL1B_B_CODE_TO_PREDICATE,

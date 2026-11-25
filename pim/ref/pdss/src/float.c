@@ -6,6 +6,7 @@
 *************************************************************************/
 
 #include <math.h>
+#include <stdlib.h>	/* atof() returns double: undeclared, it was taken as int */
 #include <signal.h>
 #include <errno.h>
 #include "pdss.h"

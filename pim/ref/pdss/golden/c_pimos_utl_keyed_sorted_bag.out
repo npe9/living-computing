@@ -1,40 +1,40 @@
 .......................................
 Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/keyed_sorted_bag.kl1" : Compiling ... keyed_sorted_bag/2,keyed_sorted_bag/3,prepend/3,empty/3,empty/5,empty/2,put/5,put/3,get/5,get/2,get_all/4,get_all/3,get_all_descending/3,get_elements/4,get_all_with_key/5,get_all_with_key/2,get_and_put/6,get_and_put/4,get_if_any/5,get_if_any/2,get_if_any_and_put/6,get_if_any_and_put/4,get_and_put_if_any/7,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     193983     50    223    10    1584000        0
-After:      13060     38    133     3     122968        0
-GCed :     180923     12     90     7    1461032        0
+Used :     194579     50    181    10    1583728        0
+After:      12781     35     93     3     115392        0
+GCed :     181798     15     88     7    1468336        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 get_and_put_if_any/4,carbon_copy/5,carbon_copy/4,carbon_copy_descending/4,carbon_copy_elements/8,carbon_copy_with_key/5,carbon_copy_with_key/2,carbon_copy_elements/4,get_max_if_any/4,do_get_max_if_any/3,get_min_if_any/4,do_get_min_if_any/3,depth/3,depth/4,depth_checker/3,count/3,do_count/3,counter/3,data_count/3,do_data_count/3,possessory_rate/3,down/6,down_def/5,wait_def/6,down_def_r/6,
 GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     189369    108    493     3    1584000        0
-After:      20378     40    122     3     180192        0
-GCed :     168991     68    371     0    1403808        0
+Used :     194768     45    176     3    1584000        0
+After:      21178     38    135     3     188088        0
+GCed :     173590      7     41     0    1395912        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 wait_def_r2/7,down_def_l/6,wait_def_l2/7,down_cod/6,wait_cod/7,down_cod_r/7,wait_cod_r2/8,down_cod_l/7,wait_cod_l2/8,down_for_get/5,waitG/6,
 GC-3     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194869     50    171     3    1583984        0
-After:      23501     38    136     3     207304        0
-GCed :     171368     12     35     0    1376680        0
+Used :     187659    128    599     3    1584000        0
+After:      24970     42    133     3     218440        0
+GCed :     162689     86    466     0    1365560        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 downG/7,waitG_LorR/8,downG_again/9,stay/4,splay/4,splay0/6,splay/6,join/3,splay_at_max/2,splay_at_max/3,splay_at_max2/4,splay_at_min/2,splay_at_min/3,splay_at_min2/4,keyed_sorted_set/2,
 GC-4     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     192248     48    343     3    1583976        0
-After:      26684     38    131     3     231720        0
-GCed :     165564     10    212     0    1352256        0
+Used :     185107    162    749     3    1584016        0
+After:      28955     42    158     3     253832        0
+GCed :     156152    120    591     0    1330184        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
-keyed_sorted_set/3,putS/6,putS/4,getS/5,getS/2,get_allS/4,get_allS/3,get_allS_descending/3,get_all_with_keyS/5,get_all_with_keyS/2,get_and_putS/6,get_and_putS/4,get_if_anyS/5,get_if_anyS/2,get_if_any_and_putS/6,get_if_any_and_putS/4,get_and_put_if_anyS/7,get_and_put_if_anyS/4,carbon_copyS/5,carbon_copyS/4,carbon_copyS_descending/4,carbon_copy_with_keyS/5,carbon_copy_with_keyS/2,get_max_if_anyS/4,do_get_max_if_anyS/3,get_min_if_anyS/4,do_get_min_if_anyS/3,sorted_bag/2,sorted_bag/3,putSB/4,putSB/2,getSB/3,getSB/2,
+keyed_sorted_set/3,putS/6,putS/4,getS/5,getS/2,get_allS/4,get_allS/3,get_allS_descending/3,get_all_with_keyS/5,get_all_with_keyS/2,get_and_putS/6,get_and_putS/4,get_if_anyS/5,get_if_anyS/2,get_if_any_and_putS/6,get_if_any_and_putS/4,get_and_put_if_anyS/7,get_and_put_if_anyS/4,carbon_copyS/5,carbon_copyS/4,carbon_copyS_descending/4,carbon_copy_with_keyS/5,carbon_copy_with_keyS/2,get_max_if_anyS/4,do_get_max_if_anyS/3,get_min_if_anyS/4,do_get_min_if_anyS/3,sorted_bag/2,sorted_bag/3,putSB/4,putSB/2,getSB/3,
 GC-5     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     193099     48    288     3    1583992        0
-After:      35668     38    100     3     299616        0
-GCed :     157431     10    188     0    1284376        0
+Used :     191747     92    352     3    1583992        0
+After:      36160     38    103     3     303912        0
+GCed :     155587     54    249     0    1280080        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
-get_allSB/4,get_allSB/3,get_allSB_descending/3,get_elementsSB/3,get_if_anySB/3,get_if_anySB/2,carbon_copySB/5,carbon_copySB/4,carbon_copySB_descending/4,carbon_copy_elementsSB/5,get_max_if_anySB/4,do_get_max_if_anySB/3,get_min_if_anySB/4,do_get_min_if_anySB/3,data_countSB/3,do_data_countSB/3,down_for_getSB/3,downGSB/4,downG_againSB/5,END.
+getSB/2,get_allSB/4,get_allSB/3,get_allSB_descending/3,get_elementsSB/3,get_if_anySB/3,get_if_anySB/2,carbon_copySB/5,carbon_copySB/4,carbon_copySB_descending/4,carbon_copy_elementsSB/5,get_max_if_anySB/4,do_get_max_if_anySB/3,get_min_if_anySB/4,do_get_min_if_anySB/3,data_countSB/3,do_data_countSB/3,down_for_getSB/3,downGSB/4,downG_againSB/5,END.
 
 [keyed_sorted_bag/2,keyed_sorted_set/2,sorted_bag/2]
 successdone

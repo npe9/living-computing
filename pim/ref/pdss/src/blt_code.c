@@ -121,10 +121,15 @@ blt_b_code_to_predicate(code, mod, pred, arity, info)
 				   IOOOO, code, mod, pred, arity, info);
 	    break;
 	  case MODMAN_NATIVE_CODE_MODULE:
-	    if(find_predicate(Valueof(x+0), Valueof(x+1)|(Valueof(x+2)<<16))){
+	    /* PORT: the original passed the module-name atom where
+	       find_predicate() takes a MODULE_ENTRY pointer, and
+	       dereferenced address 1 (test/b_code_e.kl1, check b). */
+	    { MODULE_ENTRY *mte;
+	    if(lookup_module(Valueof(x+0), &mte) == MODMAN_SUCCESS &&
+	       find_predicate(mte, Valueof(x+1)|(Valueof(x+2)<<16))){
 		flag = 0;
 		goto success;
-	    }
+	    } }
 	  case MODMAN_PREDICATE_NOT_FOUND:
 	    body_builtin_exception(ILLEGAL_INPUT_TYPE, 1,
 				   KL1B_B_CODE_TO_PREDICATE,

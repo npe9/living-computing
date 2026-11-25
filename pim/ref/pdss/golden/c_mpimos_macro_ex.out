@@ -1,12 +1,12 @@
 .......................................
-Assemble : Optimize : KL1 File : ASM File : "../mpimos/macro_ex.kl1" : Compiling ... create/1,do/1,expand_goal/4,expand_expression/6,expand_float_expression/6,convert_macro_arg/2,convert_macro_arg_vect/5,wait_macro_arg/2,get_all_variables/2,get_all_variables/3,
+Assemble : Optimize : KL1 File : ASM File : "../mpimos/macro_ex.kl1" : Compiling ... create/1,do/1,expand_goal/4,expand_expression/6,expand_float_expression/6,convert_macro_arg/2,convert_macro_arg_vect/5,wait_macro_arg/2,get_all_variables/2,get_all_variables/3,get_all_variables1/5,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194239     50    207    10    1584000        0
-After:       5971     38    108     3      63000        0
-GCed :     188268     12     99     7    1521000        0
+Used :     194869     50    165    10    1584000        0
+After:       5090     38    101     3      55176        0
+GCed :     189779     12     64     7    1528824        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
-get_all_variables1/5,add_to_list/3,term_to_list/2,term_to_list/3,get_variable_name/2,new_variable/3,END.
+add_to_list/3,term_to_list/2,term_to_list/3,get_variable_name/2,new_variable/3,END.
 
 [create/1]
 successdone

@@ -1,16 +1,16 @@
 .......................................
 Assemble : Optimize : KL1 File : ASM File : "../pimos_utl/keyed_bag.kl1" : Compiling ... keyed_bag/3,wait_table_size/3,get_table_size/3,keyed_bag/6,prepend/3,empty/2,empty/6,empty_wait_hashed_value/6,if_empty/4,put/11,do_put/8,put_wait_hashed_value/8,get_m_cnt/4,rehash/6,do_rehash/8,rehash_each_entry/7,rehash_wait_hashed_value/8,get/9,
 GC-1     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     193752     60    232    10    1584000        0
-After:       7144     36    103     3      71784        0
-GCed :     186608     24    129     7    1512216        0
+Used :     194412     60    188    10    1584000        0
+After:       7248     38    101     3      72120        0
+GCed :     187164     22     87     7    1511880        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 get_wait_hashed_value/9,do_get/8,if_subtract_entry_number/5,raise_error/2,get_all/4,get_entry/3,get_all/10,get_all_wait_hashed_value/10,get_entry_with_key/9,if_subtract_entry_number/3,get_and_put/8,get_and_put_wait_hashed_value/8,do_get_and_put/6,get_if_any/10,get_if_any_wait_hashed_value/10,do_get_if_any/9,get_if_any_and_put/12,do_get_if_any_and_put/11,do_get_if_wait_hashed_value/11,do_get_if_any_and_put1/10,if_add_entry_number/3,if_rehash/7,get_and_put_if_any/8,
 GC-2     KL1-Data   Srec   Grec  Prec  HeapTotal     Code
-Used :     194535     66    186     3    1584008        0
-After:       9439     38    102     3      90216        0
-GCed :     185096     28     84     0    1493792        0
+Used :     194569     58    186     3    1584024        0
+After:       9659     38    109     3      92816        0
+GCed :     184910     20     77     0    1491208        0
              word    rec    rec   rec       byte     byte
 GC Time: N msec
 get_and_put_if_wait_hashed_value/8,do_get_and_put_if_any/6,carbon_copy/4,carbon_copy_entry/4,carbon_copy/6,carbon_copy_wait_hashed_value/6,carbon_copy_entry_with_key/4,get_average_chaining_length/3,copy_keyed_bag/7,copy_keyed_set/7,do_copy/4,do_copy/5,copy_entry/3,keyed_set/3,wait_table_size_set/3,keyed_set/6,get_at_most_one/10,get_at_most_one/2,carbon_copy_at_most_one/6,carbon_copy_one_wait_hashed_value/6,carbon_copy_if_any/4,END.

@@ -317,7 +317,11 @@ CELL *alloc_cells_to_free_list(size, num)
     register unsigned int size, num;
 {
     register CELL *p;
-    if(size*num > HeapRest()) num = HeapRest()/size;
+    /* PORT: HeapRest() is a pointer difference, int on the 32-bit
+       original, so this comparison and division were unsigned there.
+       Past the GC warning line it is negative; signed 64-bit
+       arithmetic made num huge and overran the heap. */
+    if(size*num > (unsigned int)HeapRest()) num = (unsigned int)HeapRest()/size;
     if(num == 0) num = 1;
     p = H;
     SetObjectof(p, NULL);

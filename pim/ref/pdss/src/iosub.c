@@ -9,6 +9,21 @@
 #include  "memory.h"
 #include  "io.h"
 #include  "ctype.h"
+/* PORT: forward declarations */
+static int remove_suspended_goals();
+static int scan_integer_or_float();
+static int conv_to_integer();
+static int scan_variable();
+static int scan_alpha_atom();
+static int scan_symbol_atom();
+static int scan_quote_atom();
+static int scan_string();
+static int scan_comment();
+static int expand_ts_buffer();
+static int reset_var_table();
+static VAR_ENTRY *alloc_var_table();
+static int conv_to_var();
+
 
 
 /*************************************************************************

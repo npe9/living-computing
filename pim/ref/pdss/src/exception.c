@@ -5,11 +5,13 @@
 *  Read "../COPYRIGHT" for detailed information.			 *
 *************************************************************************/
 
-#include <varargs.h>
 #include "pdss.h"
 #include "memory.h"
 #include "io.h"
 #include "klb.h"
+/* PORT: forward declarations */
+static int create_goal_and_wait_new_code();
+
 
 
 /*************************************************************************
@@ -210,11 +212,11 @@ exception_illegal_merger_input(x, strm)
 *   Body Builtin Exception.						 *
 *************************************************************************/
 
-body_builtin_exception(excp_code, where, opcode, argio, va_alist)
+body_builtin_exception(excp_code, where, opcode, argio, pa0, pa1, pa2, pa3, pa4, pa5, pa6, pa7)
     unsigned int excp_code, where, opcode, argio;
-    va_dcl
+    CELL *pa0, *pa1, *pa2, *pa3, *pa4, *pa5, *pa6, *pa7;  /* PORT: was va_alist */
 {
-    va_list bltargs;
+    CELL *bltargs[8]; int bltn = 0;  /* PORT */
     register int i;
     register CELL *v, *g, *x, *undef, *code, *argv;
     CELL mesg; /** exception(ExpCode,OP,Argv,UserCode,NewCode,NewArgv) **/
@@ -231,10 +233,11 @@ body_builtin_exception(excp_code, where, opcode, argio, va_alist)
     SetAll(v, INT, opcode, MRBOFF); v++;
     SetAll(v, VECTOR, g, MRBOFF); v++;
     if(where){ SetAll(v, INT, where, MRBOFF); v++; }
-    va_start(bltargs);
+    bltargs[0]=pa0; bltargs[1]=pa1; bltargs[2]=pa2; bltargs[3]=pa3;
+    bltargs[4]=pa4; bltargs[5]=pa5; bltargs[6]=pa6; bltargs[7]=pa7;
     for(i=0; argio&(I|O); i++,argio>>=3){
 	g++;
-	x = va_arg(bltargs, CELL *);
+	x = bltargs[bltn++];
 	if(argio&I){
 	    /*** Input Argument ***/
 	    *g = *x;
@@ -246,7 +249,6 @@ body_builtin_exception(excp_code, where, opcode, argio, va_alist)
 	    ap[i] = x;
 	}
     }
-    va_end(bltargs);
     while(i--){
 	if(ap[i]){
 	    *ap[i] = *g;

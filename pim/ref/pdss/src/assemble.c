@@ -13,6 +13,31 @@
 #include "klb.h"
 #include "instr.h"
 #include "ctype.h"
+/* PORT: forward declarations */
+static int clear_label_table();
+static int enter_label_table();
+static int enter_label_table2();
+static int define_label();
+static int check_undefined_label();
+static int scan_integer();
+static int scan_float();
+static int parse_atom();
+static int parse_integer();
+static int parse_float();
+static int parse_reg();
+static int parse_arg();
+static int parse_pred_arity();
+static int parse_arity();
+static int parse_short();
+static int parse_addr();
+static CHAR *parse_label();
+static int make_jump_on_xxx_table();
+static int make_branch_on_int_table();
+static int make_branch_on_atom_table();
+static int make_hash_mask();
+static int make_hash_on_int_table();
+static int make_hash_on_atom_table();
+
 
 #define ARGMAX 32
 #define REGMAX MAXREGS

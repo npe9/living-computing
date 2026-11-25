@@ -9,6 +9,9 @@
 #include "memory.h"
 #include "io.h"
 #include "gc.h"
+/* PORT: forward declarations */
+static int gc_stream_merger();
+
 
 
 /*************************************************************************
