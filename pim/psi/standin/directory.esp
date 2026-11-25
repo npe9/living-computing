@@ -1,0 +1,60 @@
+% SCAFFOLDING stand-in for SIMPOS's class `directory`, compiled by
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no body of
+% `directory` is printed or held.  Step 3l, route step B5
+% (docs/simpos/boot_route.md).  MINIMAL: what the boot route and the held
+% callers on it send.
+%
+% PRINTED interfaces (no bodies; page images read 2026-11-25):
+%   - TR-056 PDF p22 (folio 20): "if class 'directory' has a class slot of
+%     the name 'root', a root directory can be retrieved by the class
+%     predicate  :root(#directory,Root_directory)."
+%   - TR-056 PDF p23 (folio 21): :find(Directory,Object,Name),
+%     :bind(...), :remove(...); a pathname "Name1>Name2>..." is used in
+%     :retrieve(Directory,Object,"Name1>Name2>...").
+%   - TR-524 PDF p36 (folio 35) Table 3: Directory Methods (class
+%     directory) :retrieve/c, :make/c, :delete/i, :undelete/i, :find/i,
+%     :expunge/i.
+%   - TR-524 PDF p37 (folio 36) App. A, local_logical_file:
+%     :retrieve(#directory, Lfile, Pathname, FullPathname).
+%   - TR-524 PDF p9 (folio 8): ">sys>user>gee>humm.txt.3", "the first '>'
+%     stands for the local root directory"; a file name is an identifier,
+%     an extension and a version; "If only an identifier and an extension
+%     are specified in opening a file, its latest version is retrieved";
+%     a world is "a set of aliases" ("snoopy:humm.txt").
+% The class methods retrieve/3 and retrieve/4 are modelled in Python
+% (psi/kl0.py Machine.directory_retrieve, INTERPOLATED; its docstring
+% names the held call sites), as the library is: the tree is the
+% file system's, mounted by psi/simpos_fs.py (OURS).
+% Representation (OURS): a directory instance holds its name, its full
+% name, its parent and a list of {Name, Node} entries.
+
+class directory has
+
+% PRINTED (TR-056 PDF p22): the class slot `root`.  Its value is OURS:
+% psi/simpos_fs.py mount/1 stores the mounted root here; 0 until then.
+attribute root := 0;
+
+% :root(#directory, Root) -- INTERPOLATED from the printed interface
+% (TR-056 PDF p22); fails when no file system is mounted (OURS).
+:root(Class, Root) :- Root = Class!root, Root \== 0;
+
+instance
+
+% OURS representation (see the head comment).
+attribute name := 0, full_name := 0, parent := 0, entries := 0;
+
+% :is_directory(Node) / :not_directory(Node) -- INTERPOLATED from the held
+% call sites: pimfep##pimos_file local remove/2 @1d7-1e3 (retrieve/4 then
+% is_directory/1; clause 2 @1e3 the other case) and local
+% check_file_size/1 @3d1-3e4 (retrieve/3, not_directory/1, size/2).  A
+% directory is one; binary_file.esp answers the other way.
+:is_directory(Node);
+% INTERPOLATED: see is_directory/1 just above.
+:not_directory(Node) :- fail;
+
+% :full_name(Node, Name) -- INTERPOLATED (selector OURS): the absolute
+% pathname retrieve/4 returns for a directory (no version: TR-524 PDF p9
+% gives versions to files only).
+:full_name(Node, Name) :- Name = Node!full_name;
+
+end.

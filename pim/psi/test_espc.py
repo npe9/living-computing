@@ -251,6 +251,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import espc  # noqa: E402
 import kl0 as K  # noqa: E402
+import simpos_fs as FS  # noqa: E402
 
 _CHECK = None
 _LIB_SIX = None
@@ -590,9 +591,10 @@ class Standins(unittest.TestCase):
         self.assertEqual(sorted(t.id for t in self.ts), [
             'simpos##alarm_watch', 'simpos##as_boot_program', 'simpos##as_class_with_lock',
             'simpos##as_message', 'simpos##as_program', 'simpos##as_resource',
-            'simpos##boot_process',
+            'simpos##binary_file', 'simpos##boot_process',
             'simpos##bounded_channel', 'simpos##bounded_post_queue', 'simpos##channel',
             'simpos##common_network', 'simpos##context', 'simpos##date_time',
+            'simpos##directory',
             'simpos##e_string', 'simpos##hash_index', 'simpos##list', 'simpos##list_index',
             'simpos##message', 'simpos##name', 'simpos##network_listener_buffer',
             'simpos##network_node_name',
@@ -1403,9 +1405,13 @@ end.''', 'simpos')
         # pimos_file: with the open mode `read` (step 3g), initiate/1 and
         # goal/1 reach the SIMPOS directory (step 3f's failure and
         # success were on a stream in the open-mode argument)
+        # step 3l: the directory's retrieve/3 is modelled (INTERPOLATED,
+        # kl0 directory_retrieve); the recipe gives no pathname, so it
+        # refuses on the unbound one
         for sel in ('initiate/1', 'goal/1'):
-            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'simpos'))
-            self.assertIn('simpos##directory:retrieve/3', by[('pimos_file', 'instance', sel)][2])
+            self.assertEqual(by[('pimos_file', 'instance', sel)][:2], ('refused', 'unbound argument'))
+            self.assertIn('directory retrieve/3 on an unbound pathname',
+                          by[('pimos_file', 'instance', sel)][2])
         # step 3g: the device replies to the request REQUEST_ID
         for c in ('pimos_timer', 'pimos_directory', 'pimos_window_process', 'pimos_file',
                   'simpos_user_device', 'pimos_remote_login_replier', 'pimos_standard_io_window',
@@ -2064,6 +2070,121 @@ end.'''
         # the two integers in the order of get_count(D, Date, Time)
         m, s = self.b4_run(304, dt)
         self.assertEqual(s['r2'].codes(), [16, 0, 1, 2, 0xffffffff, 0xffffffff, 33000, 45678])
+
+    def fs_machine(self, extra=''):
+        # step 3l: the stand-ins (and EXTRA, OURS probes) on a fresh machine
+        # with the file system of psi/simpos_fs.py mounted (OURS population
+        # from the HELD psdpim archive and its HELD INSTALL placement)
+        lib = K.load_six()
+        ts = []
+        if extra:
+            ts, failed = espc.compile_text(extra, 'simpos')
+            self.assertFalse(failed)
+        for t in list(self.ts) + ts:
+            lib.add(t)
+        m = K.Machine(lib, max_steps=600000)
+        FS.mount(m)
+        return m
+
+    @staticmethod
+    def run_local(m, cid, off, args):
+        # a held local predicate at @OFF run alone: its first solution's
+        # arguments, 'fail', or ('refused', cause, detail)
+        m.reset()
+        try:
+            for _ in m.solve((m.code(cid), off), args):
+                return [K.resolve(a) for a in args]
+        except K.Refusal as e:
+            return ('refused', e.cause, e.detail)
+        return 'fail'
+
+    def test_step3l_b5(self):
+        # step 3l, docs/simpos/boot_route.md B5: the directory.  The tree is
+        # psi/simpos_fs.py's (OURS population; placement and contents HELD:
+        # psdpim/INSTALL and the archive's members); retrieve/3 and /4 are
+        # kl0 models (INTERPOLATED from the printed interfaces, TR-056 PDF
+        # p22-p23, TR-524 PDF p9, p36-p37, and the held call sites); the
+        # nodes are standin/directory.esp and binary_file.esp.
+        # Injections, observed (2026-11-25; each from a backup copy,
+        # restored by copy, cmp clean):
+        #   L1 fs_walk ignores an explicit version (kl0.py): this test FAIL,
+        #      nothing else.
+        #   L2 a miss succeeds with the parent directory (kl0.py fs_walk
+        #      returns the last node found): this test FAIL, nothing else.
+        #   L3 the full name without the version (kl0.py): this test FAIL,
+        #      nothing else.
+        #   L4 binary_file not_directory/1 fails: this test FAIL, nothing
+        #      else.
+        #   L5 node_full_name/3 succeeds for any name
+        #      (network_node_name.esp): this test, test_fep_census and
+        #      test_step3f_census_recipes FAIL (the census row
+        #      set_default_node/2 succeeds on its unbound name), nothing
+        #      else.
+        #   test_kl0.py stayed OK in L1-L5.
+        D = K.ClassRef('simpos##directory')
+        m = self.fs_machine()
+
+        def retrieve(path, n=4):
+            m.reset()
+            obj, full = K.Var(), K.Var()
+            regs = [obj, K.Str(path)] + ([full] if n == 4 else []) + [D]
+            for _ in m.solve_send(D, 'retrieve', regs):
+                return K.deref(obj), (K.deref(full).text if n == 4 else None)
+            return None
+        # the HELD login.com is at me: (>sys>user>pmpsi, INFERENCE), its
+        # first line the stamp of the copy it was made from
+        f, full = retrieve('>sys>user>pmpsi>login.com')
+        self.assertEqual(f.cid, 'simpos##binary_file')
+        self.assertEqual(full, '>sys>user>pmpsi>login.com.1')
+        text = FS.text_of(m.get_slot(f, 'contents').codes())
+        self.assertTrue(text.startswith('% icpsi277::>sys>csp>INSTALL.DIR>login.com.8,'), text[:60])
+        self.assertIn('{"Login PIMOS", pimfep##pimos_login_requester}', text)
+        self.assertEqual(m.get_slot(f, 'size'), 2448)
+        # an explicit version; a version not held; a directory (no version)
+        self.assertIs(retrieve('>sys>user>pmpsi>login.com.1')[0], f)
+        self.assertIsNone(retrieve('>sys>user>pmpsi>login.com.2'))
+        d, dfull = retrieve('>sys>csp>INSTALL.DIR')
+        self.assertEqual((d.cid, dfull), ('simpos##directory', '>sys>csp>INSTALL.DIR'))
+        self.assertEqual(retrieve('>sys>csp>INSTALL.DIR>pimfep.ptf', 3)[0].cid, 'simpos##binary_file')
+        # a miss fails (the held callers' fallback clauses), as does a
+        # path through a file or with an empty component
+        for miss in ('>sys>user>pmpsi>nope.com', '>sys>user>pmpsi>login.com>x', '>sys>>csp',
+                     'pimos:pimfep.image', 'login.com'):
+            self.assertIsNone(retrieve(miss), miss)
+        # the root (TR-056 PDF p22's printed :root(#directory, Root))
+        m.reset()
+        (root,) = K.call_class_method(m, 'simpos##directory', 'root', [K.Var()])[0]
+        self.assertEqual(m.get_slot(root, 'full_name').text, '>')
+        # held pimfep##pimos_file local check_file_size/1 @3d1: retrieve/3,
+        # not_directory/1, size/2, size >= 1
+        pf = 'pimfep##pimos_file'
+        self.assertNotEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>user>pmpsi>login.com')]), 'fail')
+        self.assertEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>csp>PIMOS.DIR')]), 'fail')
+        self.assertEqual(self.run_local(m, pf, 0x3d1, [K.Str('>sys>nope')]), 'fail')
+        # held pimos_fep_superviser local full_pathname/1 @1bc: clause 1
+        # misses "pimos:pimfep.image" (no world defines pimos: yet, and the
+        # image is not in the archive), so clause 2 asks the coordinator
+        # for an image file name: the coordinator is not stood in (B6)
+        r = self.run_local(m, 'pimfep##pimos_fep_superviser', 0x1bc, [K.Var()])
+        self.assertEqual(r[:2], ('refused', 'simpos'))
+        self.assertIn('simpos##coordinator:information/3', r[2])
+        # held pimfep##net_spawn_user set_default_node/2 @29-36 with this
+        # node's name (network_node_name's "psi", OURS): its full name is
+        # stored; another name fails (INFERENCE: get_your_node/3's later
+        # clauses take it as an IP address)
+        m.reset()
+        self.assertEqual(len(K.call_class_method(m, 'pimfep##net_spawn_user', 'set_default_node',
+                                                 [K.Str('psi')])), 1)
+        self.assertEqual(m.get_slot(K.ClassRef('pimfep##net_spawn_user'), 'default_spawn_node').text, 'psi')
+        m.reset()
+        self.assertEqual(K.call_class_method(m, 'pimfep##net_spawn_user', 'set_default_node',
+                                             [K.Str('10.1.2.3')]), [])
+        # nothing mounted: refused loudly
+        m.class_slots = {}
+        m.reset()
+        with self.assertRaises(K.Refusal) as cm:
+            any(True for _ in m.solve_send(D, 'retrieve', [K.Var(), K.Str('>sys'), D]))
+        self.assertIn('no file system is mounted', cm.exception.detail)
 
     def test_step3j_as_resource(self):
         # step 3j: as_resource assign/1, assigned/1, resign/1 (INTERPOLATED:
