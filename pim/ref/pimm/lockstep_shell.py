@@ -128,6 +128,8 @@ PINNED = {
     # primer's file served from the home directory
     ('prompt', ('compile', 'sample2', '!exit')): (1770029, 318476),
     ('prompt', ('compile', 'sample1', '!exit')): (4048964, 973759),
+    # compile_work: the same file into the package work, loaded
+    ('prompt', ('compile', '!package work', 'sample1', '!exit')): (4359920, 1008832),
 }
 # The commands past the shell (2026-11-24; docs/binary_reverse_engineering.md
 # 1.4, "Commands past the shell", has each against what the primers and
@@ -176,7 +178,21 @@ APPS = {
          '!ERROR! module registration error : pimos:: sample1\n',
          'Total Number of Warning : 1\nTotal Number of Error : 1\n',
          'COMPILE> ', 'Shell>> ')),
-
+    # the same into the package `work` (the compiler's `!package`,
+    # pimosman e-compiler.tex:437-440): the module is loaded, as the
+    # primer's `"nak::sample1" Loaded` (primer25.tex:1297); r7_sieve.py
+    # runs it
+    'compile_work': (('compile', '!package work', 'sample1', '!exit'),
+        ('** KL1 Compiler **\n', 'COMPILE> ',
+         'Package : work\n!WARNING! not included in the working packages : work\n',
+         'COMPILE> ',
+         'Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1\n',
+         "!WARNING! no with_macro declaraion. assumed `pimos'.\n[sample1.kl1@0] Compile Module : sample1\n",
+         '=>  :- module sample1 .\n',
+         'Compile Succeeded : sample1\n\n',
+         '"work:: sample1" Loaded\n',
+         'Total Number of Warning : 1\n',
+         'COMPILE> ', 'Shell>> ')),
 }
 POISON = (0xff, 0xdeadbeef)     # a heap cell the saved machine never wrote
 T0 = time.time()
@@ -486,6 +502,12 @@ DROPPED = {
     ('echo_new_atom', 1): 25012, ('echo_new_atom', 2): None, ('echo_new_atom', 3): None,
     ('compile_exit', 1): None, ('compile_exit', 2): 828137, ('compile_exit', 3): 828137,
     ('compile_missing', 2): 1484817, ('compile_missing', 3): None,
+    # the waiting command's fields, 2026-11-25 (bsv/README.md)
+    # (the one waiting: unit 7, lun 1, a 5-byte cdb, dir 2, 16384
+    # bytes); every one caught, measured 2026-11-25
+    ('pwd', 16): 1, ('pwd', 17): 1, ('pwd', 18): 1, ('pwd', 19): 1,
+    ('pwd', 20): 1, ('pwd', 21): 1, ('pwd', 22): 12, ('pwd', 23): 4,
+    ('pwd', 24): 4101, ('pwd', 25): 4102, ('pwd', 26): 4103,
 }
 
 

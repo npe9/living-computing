@@ -815,6 +815,7 @@ the device are given it again whenever the machine runs dry.
   | `compile`, `!exit` | 255,083 | 1,029,437 | `** KL1 Compiler **`, `COMPILE> ` | `primer25.tex`:1240-1244: the same banner and prompt |
   | `compile`, `sample2`, `!exit` | 318,476 | 1,770,029 | as above, then `!ERROR! unable to open file : sample2`, `Total Number of Error : 1`, `COMPILE> ` | none; the file is asked for under the home directory (201 of `>sys>user>pmpsi>sample2`, `.aya`, `.mac`, `.kl1`, each 5), which holds only `sample1.kl1` (2026-11-25; this row typed `sample1` before, the same counts) |
   | `compile`, `sample1`, `!exit` | 973,759 | 4,048,964 | as above, then `Compile File : PSI::>sys>user>pmpsi>sample1.kl1.1`, the with_macro warning, `[sample1.kl1@0] Compile Module : sample1`, `=>  :- module sample1 .`, `Compile Succeeded : sample1`, `!ERROR! module registration error : pimos:: sample1`, the totals, `COMPILE> `, `Shell>> `; nothing left to run (until 2026-11-25 refused: at the long-vector merge, 608,552 and 2,236,196; at `wait_value` on vectors of vectors, 612,857 and 2,248,660; at `new_string(15, 1)`, 727,607 and 2,563,611) | the file is read (201 of `.kl1` answered 1, then 222, 221, 222, 221, two getb), as the primer's compile reads it; see "R7, the primer's sample1" below |
+  | `compile`, `!package work`, `sample1`, `!exit` | 1,008,832 | 4,359,920 | as above, but `Package : work`, `!WARNING! not included in the working packages : work`, `COMPILE> ` after the package line, and `"work:: sample1" Loaded` for the registration error, `Total Number of Warning : 1` only; nothing left to run | the compiler's own `!package` command (APPS `compile_work`, 2026-11-25); the module is loaded |
 
   `pwd` against the primer, each difference root-caused: the prompt
   `Shell>> ` is the held source's (`shell.kl1`:330; the primer is PIMOS
@@ -830,7 +831,9 @@ the device are given it again whenever the machine runs dry.
   at line 25,012; dropping the clock's ticks or the instructions since
   the last tick fails `compile`/`!exit` at line 828,137 (its one
   `system_timer` read); so each of RESTOREs 0-4 and the waiting command
-  (31) is now caught by some window (16-26 not dropped one by one).
+  (31) is now caught by some window; and each of 16-26, the waiting
+  command's fields, dropped one at a time, fails `pwd` (2026-11-25:
+  16-21 at line 1, 22 at 12, 23 at 4, 24-26 at 4,101-4,103).
 
   What these needed: the rest of printable ASCII in `fep.py`'s JIS
   table, from PIMOS's own `table_ascii_to_jis` (`code_cv.kl1`:152-251;
@@ -918,15 +921,31 @@ the device are given it again whenever the machine runs dry.
     | `Compilation(s) Succeeded` | `Total Number of Warning : 1`, `Total Number of Error : 1` | follows from the error |
 
     So the compiler itself runs as the held source says; the difference
-    that matters is the login. A login as a user who owns a package
-    (the held `pimos.logins` has `pmpsi`, UID 102) would load the
-    module as the primer's does, but it changes the saved machine every
-    command of APPS starts from (`fep.py` `LOGIN`, the prompt
-    checkpoint) and so every pin: not done here. The Listener run
-    (`primer25.tex`:1343, `sample1:sieve([1,2,3],E,O)`) needs the
-    module loaded and the Listener, which stops at
-    `listener_task_monitor:create/15` wanting `resource_low` (above):
-    not reached.
+    that matters is the package. The compiler's own `!package work`
+    before the file (APPS `compile_work`, in lockstep on both models,
+    1,008,832 instructions, 4,359,920 lines, 178 SCSI commands; the
+    login and the saved machine unchanged) gives `Package : work`, the
+    compiler's warning that `work` is not among the working packages,
+    and then, for the registration error, `"work:: sample1" Loaded`:
+    the primer's line with our package for its `nak`.
+
+    The module loaded, against the source (`ref/pimm/r7_sieve.py`,
+    reference only: it replays `compile_work` and catches the last
+    `new_module`): 47 elements, one predicate head (`sieve/3`), and
+    the code is the source's three clauses (`primer25.tex`:592-605)
+    under `try_me_else`: a list's head `X`, `modulo X,2`, then
+    `equal` 0 building `E` = `[X|E1]` and `execute` `sieve`;
+    `not_equal` 0 building `O` the same way; `[]` with `get_nil` on
+    both outputs and `proceed`; `suspend` last. Run as a goal of the
+    root with `[1,2,3]` and two new variables, it answers `E = [2]`,
+    `O = [1,3]`, the primer's answer in the Listener
+    (`primer25.tex`:1343-1349). How the goal is started is OURS: the
+    Listener run (`[1] sample1:sieve([1,2,3],E,O).`) needs the
+    Listener, which stops at `listener_task_monitor:create/15`
+    wanting `resource_low` (above): not reached; and the shell's own
+    goal form (`sample1:sieve(...)` typed at `Shell>>`) stops, on the
+    reference, at `string_less_than` (not implemented; a scratch
+    probe, not kept).
 
   The counts from `jump` on are from a cached machine made afresh with
   `longrun_ipl.py --reference --save` on 2026-11-24 (the run that made

@@ -1102,7 +1102,11 @@ ref/pimm/pimm.py` (152), `ls ref/pimm/fep_tapes` (9), the commits named.
   1-bit string, `refused: new_string(15, 1)`; with 1-bit strings, the
   unary `string_operation` and `module_element` the compile runs to
   `Compile Succeeded : sample1` and PIMOS's registration error for the
-  login user `pimos`, the package's protection.)
+  login user `pimos`, the package's protection; with the compiler's
+  `!package work` first, `"work:: sample1" Loaded`, `compile_work`,
+  and the module's `sieve([1,2,3],E,O)` gives the primer's answer on
+  the reference, `ref/pimm/r7_sieve.py`. The Listener, which would run
+  it as the primer does, is not reached.)
 - **The PSI side:** the KL0 interpreter, then stand-in SIMPOS classes
   (started: `process`, `stream`, compiled by `psi/espc.py`), then
   `pimfep.ptf` itself as the front end in place of `fep.py`.
