@@ -1220,7 +1220,16 @@ end.''', 'simpos')
         # census's front end fep_type is the template constant 0 (create/6
         # writes it, @50), so the shutdown branch is skipped, and the
         # census's process has no children.  A census artifact, not progress
-        self.assertEqual((len(rows), out), (1420, {'success': 810, 'failure': 165, 'refused': 428, 'exception': 16,
+        # step 3i: every row from freshly generated class objects (kl0
+        # census_of; test_step3i_census_order): 810 / 165 / 428 -> 757 /
+        # 219 / 427.  70 rows move, all order effects (each checked alone
+        # on a new machine, psi/README.md "Step 3i"): 54 resign/1 and
+        # resign_core/1 rows fail on the row's own empty program stack;
+        # two locked/1 fail unlocked; pseudo_scsi shutdown/1 and three
+        # remote_login_replier rows refuse; create_socket/9 fails (no
+        # program on its process's stack); four pimfep_message_log rows
+        # succeed on the empty log (`none`), not progress
+        self.assertEqual((len(rows), out), (1420, {'success': 757, 'failure': 219, 'refused': 427, 'exception': 16,
                                                    'step limit': 1}))
         self.assertNotIn('slot init by code', {r[4] for r in rows})
 
@@ -1285,10 +1294,15 @@ end.''', 'simpos')
         # (each checked alone: a reply put on the output stream);
         # abort_loop/1 fails (try_to_see/2 on the empty input stream);
         # loop_main/1 waits in see/2 ('would suspend')
-        self.assertEqual((len(rows), out), (1420, {'success': 836, 'failure': 164, 'refused': 403,
+        # step 3i: every row from freshly generated class objects: 836 /
+        # 164 / 403 -> 782 / 220 / 401, the same order effects as the
+        # plain census (55 resign rows here, two remote_login_replier);
+        # slot constants 93 -> 94 (pseudo_scsi_handler send_to_PE/2, which
+        # met an earlier row's unbound value before)
+        self.assertEqual((len(rows), out), (1420, {'success': 782, 'failure': 220, 'refused': 401,
                                                    'exception': 16, 'step limit': 1}))
         slot_const = sum(1 for r in rows if r[4] == 'receiver a slot constant')
-        self.assertEqual(slot_const, 93)
+        self.assertEqual(slot_const, 94)
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'loop_main/1')][:2], ('refused', 'would suspend'))
         self.assertEqual(by[('pimos_tcpip_socket', 'instance', 'bind/4')][0], 'success')
         # the four string-I/O programs, made by create_string_io/10
@@ -1462,6 +1476,35 @@ end.''', 'simpos')
             self.assertEqual(sl['device_id'], K.REQUEST_ID)
         finally:
             self.send(stack, 'clear')
+
+    def test_step3i_census_order(self):
+        # step 3i: each census row starts from freshly generated class
+        # objects (kl0 census_of drops the class slots before every call),
+        # so a row's outcome does not depend on the rows before it.  The
+        # census run backwards (classes and each class's methods in the
+        # opposite order) must give the same row, row for row, plain and
+        # with recipes.  Variable names are normalised.
+        # Injected (2026-11-25) from a backup, restored by cp, cmp-checked.
+        # Observed:
+        # - the reset line removed: this test, test_fep_census and
+        #   test_step3f_census_recipes fail; test_kl0.py passes
+        def norm(rows):
+            return {r[:3]: (r[3], r[4], re.sub(r'_G\d+', '_G', r[5])) for r in rows}
+        for recipes in (None, K.RECIPES):
+            m = K.fep_machine()
+            classes = [c for c in m.lib.templates if c.split('##')[0] in K.FEP_PACKAGES]
+            fwd = norm(K.census_of(m, classes, recipes))
+            bwd = norm(K.census_of(K.fep_machine(), classes, recipes, reverse=True))
+            self.assertEqual(len(fwd), 1420)
+            diff = sorted(k for k in fwd if fwd[k] != bwd.get(k))
+            self.assertEqual(diff, [], recipes is not None)
+        # the order effect step 3h left open: set_log_table/2's unbound
+        # argument no longer reaches dump_log/1, which goes on to the
+        # message window (pmacs_window putl/2, not stood in)
+        by = norm(K.census_fep(K.fep_machine()))
+        self.assertEqual(by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][:2],
+                         ('refused', 'simpos'))
+        self.assertIn('pmacs_window:putl/2', by[('pimfep##pimfep_message_log', 'class', 'dump_log/1')][2])
 
     def test_step3h_tcpip_recipe(self):
         # step 3h: pimos_tcpip_socket's recipe (kl0 _tcpip_socket): a front

@@ -2844,6 +2844,78 @@ Injected from a backup, restored by cp, cmp-checked. Observed:
 - No pop: only `test_step3h_tcpip_recipe` fails. No census row depends
   on the stack being emptied.
 
+### Step 3i: the census made order-independent (2026-11-25)
+
+Step 3h left `pimfep_message_log dump_log/1` and `/2` as "a census
+order effect". The shared state is the machine's **class slots**. Until
+step 3i every census row ran on one `Machine`, so a class slot written by
+one row was read by every later row. The old code was run on a fresh
+machine, writer row then reader row (MEASURED 2026-11-25):
+
+- `set_log_table/2`, called with the census's unbound argument, sets
+  `log_table` to that variable. `dump_log/1` and `/2` then stop at
+  `vector_element on _G`. Alone, `log_table` is its template constant
+  `none`.
+- `log/2` makes the table, and `set_position/2` sets `position` to an
+  unbound variable. `initialize/2` then stops at `index on _G`.
+- `assign/1` rows push their program on the one census process, which
+  is kept in `process`'s class slot `current`. Later `resign/1` and
+  `resign_core/1` rows pop it and succeed. Alone, the stack is empty and
+  they fail.
+
+**The change (OURS).** `kl0.census_of` drops the class slots before
+every row. Class objects then take their initial values again on first
+access (TM-388 p.49), and each row gets a new census process. A row's
+outcome is what it is alone on a fresh machine. The one-row body is now
+`census_row/6`.
+
+**Checked.** Every row of both FEP censuses was run alone on its own new
+`fep_machine()`: 1,420 plain rows and 1,420 recipe rows. Each agrees with
+the census (0 differences; the script is not kept).
+
+**Effect, row by row (MEASURED 2026-11-25).**
+
+- Six packages: identical, row by row (311 / 12 / 206 / 1).
+- Plain FEP: 810 / 165 / 428 becomes **757 / 219 / 427** (exception 16,
+  step limit 1). 70 rows move, all order effects:
+  - 54 `resign/1` and `resign_core/1` rows go from success to failure:
+    the row's own process has an empty program stack.
+  - `pimos_socket_manager_table` and `pseudo_scsi` `locked/1` fail: no
+    earlier `lock/1`.
+  - `pimos_tcpip_socket create_socket/9` fails at `get_first/2` (@4d-59):
+    its process's invocation stack is empty. Before, an earlier row's
+    program was on top and it went on to `status/3`. The recipe pushes a
+    front end first (step 3h).
+  - `pseudo_scsi shutdown/1` goes from success to refused (built-in
+    `class_object` of the integer 1900544). `initialize/2` and
+    `pseudo_scsi_handler send_to_PE/2` change their detail.
+  - `pimos_remote_login_replier` `io/4`, `io/5` and `do_io/6` go from
+    failure to refused, at `class_object/2` (no primary in the held
+    classes; the stand-in `as_program` is an ancestor).
+  - `pimfep_message_log`: `initialize/2`, `dump_log/2`, `sorted_log/2`
+    and `sorted_log_string/2` succeed, and `dump_log/1`, `sorted_log/1`
+    and `sorted_log_string/1` stop at `pmacs_window:putl/2` (not stood
+    in). The four successes are paths on an empty log (`log_table` is
+    `none`); run after `initialize/2` the sorted ones reach
+    `sorted_sequence:create/2`. Not progress.
+- With recipes: 836 / 164 / 403 becomes **782 / 220 / 401**, the same
+  order effects (55 resign rows; `io/4` was already refused). Slot
+  constants go from 93 to 94: `pseudo_scsi_handler send_to_PE/2` used to
+  meet an earlier row's unbound value.
+
+None of the drop is lost progress. The successes removed were each
+produced by a row that ran earlier.
+
+Test (`test_espc.py` `test_step3i_census_order`): the census run
+backwards (classes and each class's methods reversed) equals the forward
+one row for row, plain and with recipes; and `dump_log/1` reaches
+`pmacs_window:putl/2`. `test_fep_census` and
+`test_step3f_census_recipes` are re-pinned.
+
+Injected from a backup (the reset line removed), restored by cp,
+cmp-checked. Observed: `test_step3i_census_order`, `test_fep_census` and
+`test_step3f_census_recipes` fail; `test_kl0.py` passes.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

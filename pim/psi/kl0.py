@@ -2409,32 +2409,56 @@ def census(m=None, max_steps=20000):
     return census_of(m, m.lib.free_of_simpos(six, 'union'))
 
 
-def census_of(m, classes, recipes=None):
+def census_of(m, classes, recipes=None, reverse=False):
     """census(): every method of CLASSES, each called once.  RECIPES
     (step 3f): class -> a function making the instance receiver (RECIPES
-    above); a class without one gets new/2's instance."""
+    above); a class without one gets new/2's instance.
+
+    Each row starts from freshly generated class objects (step 3i, OURS):
+    the class slots are dropped before every call, so they take their
+    initial values again on first access (TM-388 p.49), and the census
+    process (stand-in process's class slot `current`) is a new one.  A
+    row's outcome is then what it is alone on a fresh machine, whatever
+    rows ran before it.  Before step 3i one machine's class slots were
+    shared by every row, so a row could read what an earlier row left
+    (pimfep_message_log dump_log/1 read the `log_table` that
+    set_log_table/2 had set to an unbound variable; resign/1 and
+    resign_core/1 popped a program that an earlier row's assign/1 had
+    pushed on the shared process's stack; psi/README.md "Step 3i").  REVERSE runs
+    the classes and each class's methods in the opposite order (the test
+    of that independence, test_espc.py test_step3i_census_order)."""
     rows = []
-    for cid in classes:
+    for cid in (list(classes)[::-1] if reverse else classes):
         co = m.lib.build(cid)
-        for section, table in (('class', co.class_methods), ('instance', co.instance_methods)):
-            for (name, n), meth in table.items():
-                sel = '%s/%d' % (name, n)
-                try:
-                    # step 3g: a request for a device command handler
-                    # (REQUEST_ID), only where the receiver has a recipe
-                    lead = (request_args(m, cid, name, n)
-                            if section == 'instance' and recipes and cid in recipes else [])
-                    recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
-                    regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
-                    ok = any(True for _ in m.solve_send(recv, name, regs))
-                    rows.append((cid, section, sel, 'success' if ok else 'failure', '', ''))
-                except Refusal as e:
-                    rows.append((cid, section, sel, 'refused', e.cause, e.detail))
-                except Raised as e:
-                    rows.append((cid, section, sel, 'exception', 'raise', repr(e.info)))
-                except StepLimit:
-                    rows.append((cid, section, sel, 'step limit', '', ''))
+        calls = [(section, name, n)
+                 for section, table in (('class', co.class_methods), ('instance', co.instance_methods))
+                 for (name, n) in table]
+        for section, name, n in (calls[::-1] if reverse else calls):
+            m.class_slots = {}
+            rows.append(census_row(m, cid, section, name, n, recipes))
     return rows
+
+
+def census_row(m, cid, section, name, n, recipes=None):
+    """One census row: NAME/N of CID called once with unbound arguments
+    (census_of above).  -> (class, section, selector, outcome, cause,
+    detail)."""
+    sel = '%s/%d' % (name, n)
+    try:
+        # step 3g: a request for a device command handler
+        # (REQUEST_ID), only where the receiver has a recipe
+        lead = (request_args(m, cid, name, n)
+                if section == 'instance' and recipes and cid in recipes else [])
+        recv = ClassRef(cid) if section == 'class' else recipe_instance(m, cid, recipes)
+        regs = lead + [Var() for _ in range(n - 1 - len(lead))] + [recv]
+        ok = any(True for _ in m.solve_send(recv, name, regs))
+        return (cid, section, sel, 'success' if ok else 'failure', '', '')
+    except Refusal as e:
+        return (cid, section, sel, 'refused', e.cause, e.detail)
+    except Raised as e:
+        return (cid, section, sel, 'exception', 'raise', repr(e.info))
+    except StepLimit:
+        return (cid, section, sel, 'step limit', '', '')
 
 
 FEP_PACKAGES = ('pimfep', 'pimscsi')
