@@ -622,17 +622,6 @@ function Tuple3#(Bool, Maybe#(Tuple2#(WordAddr, Word64)), VflCommit)
     return tuple3(ds, tail, r);
 endfunction
 
-// The Action form, for the arms not yet converted to VflCommit.
-function ActionValue#(Tuple2#(Bool, Maybe#(Tuple2#(WordAddr, Word64))))
-    vflFieldStore(StretchStorage st, BitAddr ea, Bit#(7) len_, Bit#(64) val,
-                  Word64 hi, Word64 lo);
-  actionvalue
-    match {.ds, .tail, .c} = vflFieldStorePlan(st, vflNoCommit, ea, len_, val, hi, lo);
-    commitVfl(st, c);
-    return tuple2(ds, tail);
-  endactionvalue
-endfunction
-
 // A NEGATIVE EFFECTIVE ADDRESS IS USED BY ITS MAGNITUDE.  Fixed
 // 2026-11-18; until then all three helpers (this, effAddr19, effAddr18)
 // wrapped `raw - value` modulo 2**24, so an index whose magnitude
@@ -5849,6 +5838,8 @@ function ActionValue#(VflOutcome)
     Maybe#(Tuple2#(Bit#(7), Bit#(7))) connCounts = tagged Invalid;
     Maybe#(Tuple2#(WordAddr, Word64)) tailWrite = tagged Invalid;
     Word64 ind = ind0;
+    VflCommit vc = vflNoCommit;          // its writes (VflCommit), A2
+    Word64 accSb = st.readAccSign();   // what writeAcc read: see vcAcc
 
       Bool isProgressive = (cn.a.p != 0 && cn.a.p != 4);
       Bool immediate = (cn.a.p == 4);
@@ -6027,8 +6018,9 @@ function ActionValue#(VflOutcome)
             // below sets them (cmFinish) -- this path set no counts at
             // all until 2026-11-17, though p.76 makes them part of every
             // connective.
-            match {.cmDs, .cmTail} <- vflFieldStore(st, ea, len_, result,
+            match {.cmDs, .cmTail, .cmDsVc} = vflFieldStorePlan(st, vc, ea, len_, result,
                                                     mHiWord, prefetch[1]);
+            vc = cmDsVc;
             tailWrite = cmTail;
             match {.cmInd, .cmCounts} = cmFinish(ind, cmDs, result, len_);
             ind = cmInd;
@@ -6092,14 +6084,15 @@ function ActionValue#(VflOutcome)
                 Bit#(128) resultSh = rVec << offSh;
                 SM128 merged = SM128 { sign: acc.sign,
                                         mag: (acc.mag & ~fieldMask128) | resultSh };
-                writeAcc(st, merged);
+                vc = vcAcc(vc, accSb, merged);
               end
               conn_CM: begin
                 // One word or two, both compared when the field crosses
                 // (p.31), and -- since 2026-11-17 -- the one-word store
                 // compared too (p.32); see vflFieldStore.
-                match {.ds, .tw} <- vflFieldStore(st, ea, len_, result,
+                match {.ds, .tw, .dsVc} = vflFieldStorePlan(st, vc, ea, len_, result,
                                                   mHiWord, mLoWord);
+                vc = dsVc;
                 cmDs = ds;
                 if (ds) vflOk = False;   // p.22: an exception in the VFL part suppresses the entire operation
                 tailWrite = tw;
@@ -6168,7 +6161,7 @@ function ActionValue#(VflOutcome)
       end
     return VflOutcome{needsRead: needsRead, vflPending: vflPending, ind: ind,
                       connCounts: connCounts, needsBox: tagged Invalid,
-                      tailWrite: tailWrite, commit: vflNoCommit};
+                      tailWrite: tailWrite, commit: vc};
   endactionvalue
 endfunction
 
