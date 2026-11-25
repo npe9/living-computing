@@ -22,7 +22,7 @@ agents report it: each file gives its own method and limits.
 
 ## 1. The target, in one number
 
-**A SIMPOS that runs every surviving ESP program provides 3,470
+**A SIMPOS that runs every surviving ESP program provides 3,474
 distinct requirements** (`required/subset_cover.tsv`). These are
 classes, methods with arity and kind (class or instance), inherited
 slots, built-ins, and system objects reached by pathname. There are
@@ -33,8 +33,8 @@ step exactly satisfying the programs added so far:
 
     txtstrct 138 -> chal 245 -> utter 403 -> knov 580 -> disc 741 ->
     icotext 917 -> papyrus 1,100 -> sum 1,324 -> fuzclust 1,538 ->
-    gog-esp 1,784 -> euod 2,017 -> cal-esp 2,314 -> kwic-esp 2,593 ->
-    cil 2,941 -> kappa2 3,470
+    gog-esp 1,785 -> euod 2,018 -> cal-esp 2,315 -> kwic-esp 2,595 ->
+    cil 2,944 -> kappa2 3,474
 
 That is also the build and test order. Each program is the acceptance
 test for its step, run against the reconstruction and compared with
@@ -48,9 +48,9 @@ The requirements in detail:
   programs; **115 used by one program only and not confirmed**, which
   may be application classes missing from their archives; 3 provided
   by held packages (not SIMPOS); 4 defined in another IFS application.
-- **1,436 methods on named classes and 706 on inherited natures**
+- **1,440 methods on named classes and 706 on inherited natures**
   (`required/requirements.tsv`), with call counts, programs and an
-  example call site. 760 more selectors have a receiver the scan could
+  example call site. 759 more selectors have a receiver the scan could
   not type; they are listed with candidate classes.
 - **93 inherited slots.**
 - **353 built-in predicates** (`required/builtins.tsv`). 176 of them
@@ -408,6 +408,14 @@ and stand-in `simpos##` classes. In order:
        710f3933), the census is identical row by row. Against step 3d,
        row by row, the only method out of success is the blt f2 census
        order effect (`psi/README.md`).
+     - 2026-11-25, the source check applied (`source_check_2026-11-24.md`
+       §5, with a status per item): the stand-ins' labels and citations
+       re-checked against page images and held lines and corrected
+       (`semaphore`, `message`, `as_message`, `stream`, `time`'s
+       milliseconds, `pathname`'s `remote_or_local/6`, and more). The
+       census generator learns that `time` `now/2` returns an instance,
+       so `required/classes.tsv`'s `time` row has get_count/2 and
+       set_count/2 (3,474 keys in all). Census unchanged.
 4. **The PSI-III microcode emulator** becomes the authority on what
    each opcode does once the microword work lands. On its own it is a
    bare machine with nothing to load.

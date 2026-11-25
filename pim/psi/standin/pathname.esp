@@ -28,7 +28,9 @@
 % the result into an 8-bit string for CESP; what SIMPOS's append/4 did
 % instead is not evidenced, so it is not guessed (kl0 refuses the send,
 % class cesp##string not loaded).
-% Not carried by the port, and so not here: remove_or_local/6,
+% Not carried by the port, and so not here: remote_or_local/6 (the
+% spelling of its held callers: cal-esp deb2.12/init.esp:314, cil
+% src/ds_fep.esp:909),
 % check_pathname/3, last/4, straighten_up/5 (sweep §2.1).
 % Each method's first clause has a label line `% HELD-SOURCE:
 % pathname.esp:N` above it.  The methods espc.py refuses are pinned in

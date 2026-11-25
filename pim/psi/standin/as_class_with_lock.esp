@@ -16,6 +16,9 @@
 %   - the pimfep tables (pimos_remote_login_socket_table,
 %     pimos_socket_manager_table) and pimscsi's packet and pseudo_scsi,
 %     whose class methods send lock/1 and locked/1 to their own class.
+% Not stood in: the class-level locked/2 (Class, ^Process), sent by
+% kappa2 utility/mop/MOPMANAGER.ESP:55 `:locked(#kappaMOP_window_manager,
+% Useing_process)`.
 % Model (OURS): a count in a class slot.  One process is modelled, so a
 % lock never waits; a second lock by the same process nests.
 
@@ -24,8 +27,11 @@ class as_class_with_lock has
 % INTERPOLATED: the representation (OURS).
 attribute lock_count := 0;
 
-% INTERPOLATED from: LOADER.ESP:140-147 and its comment (:unlock is the
-% alternative of :lock, so failing after a lock unlocks).
+% HELD-SOURCE statement of the behaviour, not of the code: kappa2
+% LOADER.ESP:144-146 (M. Ozawa, 1991-12-17): :unlock is :lock's own
+% alternative, so no ! after the load; at :149-153 the unlock-on-failure
+% clause is commented out as not needed.  The code is INTERPOLATED (from
+% LOADER.ESP:140-147): failing after a lock unlocks.
 :lock(Class) :-
         N = Class!lock_count,
         Class!lock_count := N + 1;

@@ -14,6 +14,11 @@
 % new_string/3 (blt 1c), string_element/3 (blt 23),
 % set_string_element/3 (blt 2b), integer/1 (blt 01), and X+Y (blt 40),
 % X-Y (blt 41), X*K, X/K, X-K, X+K (the immediate forms).
+% Primary sources: the ESP manual (ESPtex program-e.tex:6748-6762, an
+% example session: get_atom, enter_atom, get_number, get_number_string,
+% and get_number_string/4 with a radix, which is not stood in) and
+% TM-115 PDF p98 (folio 93): string_to_list/3 "cannot be used with the
+% result already instantiated".
 % Model (OURS): a new string's elements are 16-bit (type 16); a digit is
 % its JIS code (#"0" .. #"9", as espc.py encodes a character constant).
 
@@ -26,7 +31,10 @@ class symbolizer has
 % `:string_to_list(#symbolizer,List,Condition), delete_list(8481,List,
 % List1)` (8481 = the JIS space, an element code), motif.esp:92,
 % retrieve2.esp:186 (the list then made a vector); utter
-% source/Tour/tour_sit.esp:61.
+% source/Tour/tour_sit.esp:61.  OURS: SIMPOS's string_to_list/3 could
+% not be called with List already bound (TM-115 PDF p98, folio 93: the
+% fix printed there is `:string_to_list(#symbolizer,L,String), !, L =
+% List`); the stand-in can.
 :string_to_list(Class, List, S) :-
         string(S, N, _),
         to_list(S, 0, N, List);
@@ -47,7 +55,10 @@ class symbolizer has
 % :get_number(#symbolizer, Number, String) -- Number is the integer that
 % String writes in decimal, with an optional leading `-`; fails if String
 % is empty or has an element that is not a digit.
-% INTERPOLATED from: the call sites, which give the order (the number
+% READ: the interface and the result for "123" (ESPtex
+% program-e.tex:6755-6756, `:get_number(S,Number,"123")`, `Number= 123`).
+% INTERPOLATED: the body.  INFERENCE: the failure on a non-number (below).
+% The call sites agree on the order (the number
 % out, the string in): cil src/ms_cdn.esp:613 `do_item(capsule_selector_
 % height, String, State_table) :- !, :get_number(#symbolizer, Height,
 % String), :put_at(State_table, Height, ...)`; kappa2 user_if/pb/
@@ -66,7 +77,9 @@ class symbolizer has
 
 % :get_number_string(#symbolizer, Number, String) -- String is a new
 % string, the integer Number in decimal, `-` first if it is negative.
-% INTERPOLATED from: the call sites (the number in, the string out):
+% READ: ESPtex program-e.tex:6757-6758 (`String= "123"`).
+% INTERPOLATED: the body.  The call sites agree (the number in, the
+% string out):
 % HELD-SOURCE morphana _simpos/name.esp:138 `:get_number_string(
 % #symbolizer,Version,Version_string)` (a file name's version, made a
 % string to append); linguist prog/browzer.esp:45 `:get_number_string(

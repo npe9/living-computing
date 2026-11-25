@@ -15,7 +15,13 @@
 %     32)` (`a7 01 3f 7a`, `a7 02 00 20`), then `:set_buffer(Self, Buf)`.
 % Not stood in: data_buffer/2, set_send_data_size/2, buffer/3, convert/7
 % (required/classes.tsv): what the integers size is not settled by any
-% held text.
+% held text.  They stay UNKNOWN.  INFERENCE, with sources: the first is
+% a length in elements and the second the element width in bits (an ESP
+% string element is 1, 8, 16 or 32 bits wide, TM-388 PDF p29): kappa2
+% kernel/net/SRVCMD.ESP:22 creates `(..,2048,16)`, and 2048 x 16 bits
+% = 4096 bytes, the "length = 4096 byte (double_bytes string)" buffer of
+% kappa2 kernel/net/MSGCMD.ESP:22 (made by `:buffer(Class,Buffer,4096)`
+% at :38-39).
 
 class network_listener_buffer has
 

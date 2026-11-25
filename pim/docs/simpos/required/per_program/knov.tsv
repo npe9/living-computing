@@ -241,8 +241,8 @@ requirement	standard_output_file	instance	close_output	1	1	knov/src/system/fman.
 requirement	?	ambiguous	load	2	1	knov/src/system/aman.esp:19
 requirement	?	ambiguous	create	3	1	knov/src/system/kco.esp:55
 requirement	symbolizer	class	get_variable	5	1	knov/src/system/assum_n.esp:357
-requirement	?	unknown	get_string	2	1	knov/src/system/kvs.esp:146
 requirement	time	class	now	2	1	knov/src/system/kvs.esp:145
+requirement	time	instance	get_string	2	1	knov/src/system/kvs.esp:146
 requirement	symbolizer	class	get_number	3	1	knov/src/system/kvs.esp:261
 requirement	?	ambiguous	goal	1	1	knov/src/system/ap.esp:175
 requirement	?	ambiguous	create	2	1	knov/src/system/kvs.esp:396

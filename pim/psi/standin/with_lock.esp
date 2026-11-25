@@ -14,8 +14,19 @@
 %     LOADER.ESP:145-146).  That with_lock's :lock does the same is an
 %     INFERENCE.
 %   - docs/simpos/required/classes.tsv:193, 267, 296: lock/1, locked/1 and
-%     unlock/1 are sent through this nature.
-% Model (OURS): a count in an instance slot; one process, so no wait.
+%     unlock/1 are sent through this nature;
+%   - an instance-level user in held IFS source: kwic-esp
+%     src/functions.esp:763-836, class fncRightOf (natures `as_resource,
+%     with_lock`, :768-769), sends :lock/1 (:825, :832, :836), :unlock/1
+%     (:796), :locked/1 (:802) and :locked/2 (:821, `:locked(Ri,
+%     LockedProcess)`, not stood in).  It shows a waiting message around
+%     the :lock at :827-836, so the real :lock blocks;
+%   - TR-056 PDF p26 (folio 24): mutual exclusion "is implemented by an
+%     object lock, so that each object has a stream for a lock"; TR-524
+%     PDF p4 (folio 3): in the first SIMPOS file system "each user process
+%     blocks a critical region using lock and unlock primitives".
+% Model (OURS): a count in an instance slot; one process, so no wait
+% (the real :lock blocks, above).
 
 class with_lock has
 

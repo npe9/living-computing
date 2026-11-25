@@ -1,6 +1,7 @@
 % SCAFFOLDING stand-in for SIMPOS's class `as_message`, compiled by
-% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no part of
-% `as_message` is printed.  Every slot and method is INTERPOLATED
+% psi/espc.py into the package `simpos`.  It is NOT SIMPOS: no code of
+% `as_message` is printed; its two slots are printed in prose (TR-056,
+% below; labelled PRINTED (prose)).  Every method is INTERPOLATED
 % (labelled) from:
 %   - TR-056 p.12 (PDF p14, §4(2)): "A message is intended to be
 %     self-descriptive and has a sender slot (a channel for reply, if
@@ -19,7 +20,8 @@ class as_message has
 
 instance
 
-% INTERPOLATED from: TR-056 p.12's "a sender slot" and "a receiver slot".
+% PRINTED (prose): TR-056 PDF p14, folio 12, "a sender slot (a channel
+% for reply, if available), a receiver slot (a channel to receive it)".
 attribute sender, receiver;
 
 % INTERPOLATED from: TM-100 Fig. 3.7 `:set_sender(Message, Sender)`.

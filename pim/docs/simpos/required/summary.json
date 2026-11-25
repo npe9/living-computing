@@ -19,7 +19,7 @@
   "P:provided-by-held-package(pimscsi##mbus_allocator)": 1
  },
  "nature_sets": 129,
- "methods_on_named_classes": 1436,
+ "methods_on_named_classes": 1440,
  "methods_on_nature_sets_or_root": 706,
  "unattributed_selectors": 935,
  "slots": 93,
@@ -73,7 +73,7 @@
  ],
  "minimal": "txtstrct",
  "minimal_keys": 138,
- "full_keys": 3470,
- "ambiguous_rows": 175,
- "ambiguous_uses": 7658
+ "full_keys": 3474,
+ "ambiguous_rows": 176,
+ "ambiguous_uses": 7654
 }

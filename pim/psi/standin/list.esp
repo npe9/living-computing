@@ -28,19 +28,24 @@ attribute elements := [];
 % INTERPOLATED from: TM-100 Fig. 3.1 suspend/2, `:add_last(Process!
 % suspend_reasons, Reason)` (PDF p9).
 :add_last(List, X) :- append(List!elements, [X], E), List!elements := E;
-% INTERPOLATED from: the selector add/2 in held programs (classes.tsv);
-% taken to be add_last/2 (OURS).
+% INTERPOLATED from: the selector add/2 in held programs (classes.tsv)
+% and TR-056 p4 (PDF p6), as_pool's `:add(Pool,Object)`; taken to be
+% add_last/2 (OURS).
 :add(List, X) :- append(List!elements, [X], E), List!elements := E;
-% INTERPOLATED from: the selector add_first/2 (classes.tsv).
+% READ: TM-161 PDF p12: add_first/2 is a method of the SIMPOS pool
+% subsystem that adds its 2nd argument at the head of the list.
+% INTERPOLATED: the body.
 :add_first(List, X) :- E = List!elements, List!elements := [X|E];
 % INTERPOLATED from: TM-100 Fig. 3.1 resume/2, `:remove(Process!
-% suspend_reasons, Reason), !` (PDF p9): fails if Reason is not there.
+% suspend_reasons, Reason), !` (PDF p9): fails if Reason is not there
+% (the printed comment there: "If there's no such Reason, then fail").
 :remove(List, X) :- E0 = List!elements, delete(E0, X, E), !, List!elements := E;
 % INTERPOLATED from: the selector remove_first/2 (classes.tsv).
 :remove_first(List, X) :- [X|E] = List!elements, List!elements := E;
 % INTERPOLATED from: the selector remove_last/2 (classes.tsv).
 :remove_last(List, X) :- E0 = List!elements, append(E, [X], E0), !, List!elements := E;
-% INTERPOLATED from: the selector get_first/2 (classes.tsv).
+% INTERPOLATED from: the selector get_first/2 (classes.tsv); sent in
+% TM-100 Fig. 3.8 (PDF p16), `:get_first(Port!out_port, Out_port)`.
 :get_first(List, X) :- [X|_] = List!elements;
 % INTERPOLATED from: the selector get_last/2 (classes.tsv).
 :get_last(List, X) :- E = List!elements, append(_, [X], E), !;
@@ -49,9 +54,11 @@ attribute elements := [];
 % INTERPOLATED from: TM-100 Fig. 3.1 resume/2, `:empty(Process!
 % suspend_reasons), !` (PDF p9).
 :empty(List) :- List!elements == [];
-% INTERPOLATED from: the selector clear/1 (classes.tsv).
+% INTERPOLATED from: the selector clear/1 (classes.tsv); sent in TM-100
+% Fig. 3.4 (PDF p13), `:clear(Process!suspend_reasons)`.
 :clear(List) :- List!elements := [];
-% INTERPOLATED from: the selector count/2 (classes.tsv).
+% INTERPOLATED from: the selector count/2 (classes.tsv); sent in TM-100
+% Fig. 3.8 (PDF p16), `:count(Port!out_port, Count)`.
 :count(List, N) :- len(List!elements, 0, N);
 
 local

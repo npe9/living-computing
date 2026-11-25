@@ -107,9 +107,13 @@
     %   - the printed create_core/3 (TM-100 Fig. 3.1, PDF p8), whose slot
     %     settings it repeats, without the hardware context (class
     %     `context` is not stood in) and without :add_child (not stood in).
-    % What the four-element list means (four memory areas' sizes, by the
-    % atoms free/default/small/middle: INFERENCE) is not known; it is
-    % ignored.
+    % What the four-element list means is not known; it is ignored.
+    % INFERENCE: four area-limit check settings, one per stack.  The same
+    % atoms open set_area_limit_execution/6, commented "area limit check
+    % free" (gog-esp and gog-kl1 CGS_MAIN.ESP:70, gog-esp FEP.ESP:21:
+    % `:set_area_limit_execution(Pr,free,free,free,free,nil,nil)`), and
+    % TR-079 PDF p9 (Fig. 2, folio 8) draws four stacks: control, global,
+    % local and trail.
     :create(Class, Process, Areas) :-
         :new(Class, Process),
         :self(#process, Self_process),

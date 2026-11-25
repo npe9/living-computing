@@ -1417,6 +1417,46 @@ Step 3e as a whole, compared method by method with the tree at step 3d
 - Six packages: 303 / 11 / 216 becomes 307 / 12 / 211. Four refused
   methods succeed, one fails, and none moves out of success.
 
+### The source check applied: labels and citations (2026-11-25)
+
+`docs/simpos/source_check_2026-11-24.md` §5 proposed label and citation
+changes for the stand-ins (P-s1 to P-s20). Each was re-checked before
+it was applied: page images for the TR/TM citations, the held file and
+line for source citations. The status of each is marked in that file's
+§5. Only labels and comments change, so the census is unchanged
+(rerun, row by row).
+
+- Corrections of fact in a label: `semaphore` (TR-056 p11 does print a
+  stream-based `:p`/`:v`/`:init`, an earlier design, cited and not
+  transcribed); `message` and `as_message` (their nature and slots are
+  printed in TR-056's prose, so they are `PRINTED (prose)`, the slot
+  name `body` being OURS); `stream` (the classes it said had "no
+  stand-in yet" have stand-ins); `time` (the count is in MILLISECONDS,
+  CH_CLOCK.ESP:60); `pathname` (`remote_or_local/6`, not
+  `remove_or_local/6`).
+- One audit citation did not match its file: `pathname`'s
+  `remote_or_local/6` is not at cil `ms_ist.esp`:251/1668/1793 or
+  `ds_fep.esp`:912. It is cited from cal-esp `deb2.12/init.esp`:314
+  and cil `src/ds_fep.esp`:909 instead.
+- `network_listener_buffer`: TM-388 PDF p29 lists four element widths
+  (1, 8, 16, 32), not the audit's "16 or 32".
+- Not applied: `hash_index`'s `put_at/3` and the IPSJ citation for
+  `pmacs_window`, both optional in the audit (new behaviour or a
+  citation not re-read here, so out of a labels-only change).
+- `required/classes.tsv`'s `time` row now has get_count/2 and
+  set_count/2. The table is generated, so the generator changed:
+  `asm/simpos_census/espscan.py` learns that `time` `now/2` returns an
+  instance (`INSTANCE_RESULT`, READ from CH_CLOCK.ESP:33-34, 59-60). The
+  whole scan was rerun: the committed generator reproduces every
+  committed table byte for byte, and the change moves only `time`'s
+  sends (`time` gains get_count/2, set_count/2, get_value/5, minus/3;
+  the full set is 3,474 keys, was 3,470).
+- P-f2: `asm/ptfdump.py`, `fepread/ptfread.py` and `fepread/README.md`
+  now say that the opcode NUMBERS are printed nowhere, but the
+  MNEMONICS are (TM-444, TR-236).
+- `test_espc.test_source_check_labels` pins the corrected statements
+  and the absence of the stale ones.
+
 ## Open
 
 - **KL0 opcodes still unnamed.** blt e1 is seen only inside `$or$`

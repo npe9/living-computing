@@ -11,7 +11,14 @@
 %   - kernel/svm/SVHSH_IDX.ESP (`kappaSVM_hash_index`, nature
 %     hash_index): the same walk from `List_index!first` (`get/4`,
 %     `get_with_key/4`), and `:empty(List_index)`.
-% So: one slot `first`, holding '$$void' or an entry {Next, Object, Key}.
+% So: one slot `first`, holding '$$void' or an entry with Next at 0,
+% Object at 1, Key at 2 (KPPOOL.ESP:35-43: `first`, `second`,
+% `vector_element(Entry, 2, Key)`).  OURS: the entry is written here as a
+% stack vector `{Next, Object, Key}`.  On the PSI a stack vector, and so a
+% compound term or a list, "cannot be saved in a slot" (TM-388 PDF p138,
+% folio 126), so SIMPOS's entry was a heap vector or an object: TM-161
+% PDF p18 (a call-count profile) names the methods `index_entry /
+% get_key`, `list_entry / get_object` and `with_link / get_next`.
 %
 % The interface is TR-056 p8 (PDF; docs/simpos/printed/listings/
 % TR-056_p08.esp), "(3) Index": `:add_at(Pool,Object,Key)`,
@@ -27,7 +34,11 @@
 % OURS: a new entry goes at the end of the chain (insertion order);
 % several entries may share a key (KPPOOL.ESP's get_all/3 and
 % remove_all/3 collect every object under one key, and p_wshell.esp
-% removes before it adds); keys are matched by unification.
+% removes before it adds); keys are matched by unification.  SIMPOS
+% matched them with a local `equal_key/2` (TM-161 PDF p18, the row
+% `list_index / equal_key / local / 2`; its body is not printed).  kl0's
+% unification compares strings by content, which the PSI's does not
+% (TM-388 PDF p79, folio 67).
 
 class list_index has
 
@@ -42,7 +53,9 @@ instance
 attribute first := '$$void';
 
 % INTERPOLATED from: TR-056 p8 `:add_at(Pool,Object,Key)`; the entry
-% layout from KPPOOL.ESP.  Appends (OURS).
+% layout from KPPOOL.ESP.  Appends (OURS).  TM-161 PDF p14 prints
+% `:add_at(Hash,Key,Object)`, key first, against TR-056 p8,
+% program-e.tex:6523/6529 and every held caller; not followed.
 :add_at(Index, Object, Key) :-
         E = Index!first,
         add_last(E, Object, Key, E1),

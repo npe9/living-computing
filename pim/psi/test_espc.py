@@ -154,6 +154,9 @@ restored with cp and checked with cmp):
     stand-in-ancestor rule disabled: test_step3e_as_program and
     test_fep_census fail; process die/1 doing nothing, and no_program/1
     always failing: each only test_step3e_as_program fails.
+  - source check (2026-11-25, observed): standin/pathname.esp put back
+    to its committed text (`remove_or_local/6`), restored by cp from a
+    backup and cmp-checked: only test_source_check_labels fails.
   The injections into kl0.py's slot initialisation, the string
   built-ins and :refute, and espc's head-save fix, and what they fail
   here, are recorded in test_kl0.py's header.
@@ -557,6 +560,34 @@ class Standins(unittest.TestCase):
                 self.assertTrue(any('PRINTED:' in x or 'INTERPOLATED' in x
                                     or re.search(r'HELD-SOURCE: \w+\.esp:\d+', x) for x in block),
                                 (t.id, p.name))
+
+    def test_source_check_labels(self):
+        # docs/simpos/source_check_2026-11-24.md §5, applied 2026-11-25:
+        # each corrected statement is pinned, and each stale one is absent.
+        def text(name):
+            with open(os.path.join(espc.STANDIN, name + '.esp')) as f:
+                return f.read()
+        must = {
+            'time': ['MILLISECONDS', 'CH_CLOCK.ESP:60'],                 # P-s15
+            'pathname': ['remote_or_local/6'],                            # P-s7
+            'semaphore': ['no body of\n% TM-100', 'TR-056 p11 (PDF p13)'],  # P-s1
+            'message': ['PRINTED (prose): TR-056 PDF p14'],               # P-s14
+            'with_lock': ['functions.esp:763-836'],                       # P-s13
+            'list_index': ['equal_key'],                                  # P-s2
+            'trace': ['autoTracer.esp:23'],                               # P-s16
+        }
+        never = {
+            'pathname': ['remove_or_local'],
+            'stream': ['no stand-in yet'],
+            'message': ['no part of\n% `message` is printed'],
+            'as_message': ['no part of\n% `as_message` is printed'],
+        }
+        for name, xs in must.items():
+            for x in xs:
+                self.assertIn(x, text(name), name)
+        for name, xs in never.items():
+            for x in xs:
+                self.assertNotIn(x, text(name), name)
 
     def test_self(self):
         (a,) = K.call_class_method(self.m, 'simpos##process', 'self', [K.Var()])

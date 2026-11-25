@@ -427,7 +427,10 @@ check's edit.
 | 4.19 | login record ID = 1, OURS (:1146) | §6.5: the real requester's ID is "the smallest integer from 0 not in use" (pimfep `pimos_remote_login_socket_table get_key/4`); the first login is 0 | **CONTRADICTED**: the held PSI gives the first login ID 0; the stand-in sends 1. Proposal P-f3 (§5) |
 | 4.20 | RN `"pmpsi"` is the SIMPOS user, INFERENCE; RP `""` OURS (:1149-1150) | `pimosobj/object/login.com` `"me" := ["user:pmpsi"]` (held); `primer25.tex` gives the pseudo-Multi-PSI setup with logical directories under `>sys>csp`, but no user | CONFIRMED for the name; the user role NO SOURCE FOUND (counted as CONFIRMED) |
 
-## §5 Proposed changes to `pim/psi/` (ready to apply; NOT applied)
+## §5 Proposed changes to `pim/psi/`
+
+Applied on 2026-11-25, each after its own re-check: the status of every
+item is in "Status" at the end of this section.
 
 These are listed by file. Each gives the location, the change, and the
 citation. P-numbers are for reference.
@@ -658,6 +661,40 @@ These are outside `psi/` in part. Changing them requires the full suite.
   it to 0, or keep 1 and label it a known deviation. Either way the
   tapes and pins that carry it move: the full suite is needed.
 
+### Status (2026-11-25)
+
+Each item was re-checked against its primary source before it was
+applied: the page image for a TR/TM citation, the held file and line
+for a source citation, the held cells for a witness. APPLIED means
+applied as proposed unless the note says otherwise.
+
+| Item | Status | Note |
+|---|---|---|
+| P-s1 | APPLIED | TR-056 p11 is PDF p13 (image read) |
+| P-s2 | APPLIED | TM-388 PDF p79 and TM-161 PDF p18 read as images |
+| P-s3 | APPLIED, except `put_at/3` | `put_at/3` NOT APPLIED: optional, and new behaviour, not a label |
+| P-s4 | APPLIED | |
+| P-s5 | APPLIED | |
+| P-s6 | APPLIED | |
+| P-s7 | APPLIED with other citations | the audit's cil `ms_ist.esp`:251/1668/1793 and `ds_fep.esp`:912 do not hold `remote_or_local`; cited instead: cal-esp `deb2.12/init.esp`:314, cil `src/ds_fep.esp`:909 (and `ds_bep.esp`:2026) |
+| P-s8 | APPLIED, except the IPSJ citation | the optional IPSJ 114007 citation NOT APPLIED: not re-read |
+| P-s9 | ALREADY DONE | step 3e (1695727f) |
+| P-s10 | APPLIED | |
+| P-s11 | APPLIED | |
+| P-s12 | APPLIED | |
+| P-s13 | APPLIED | |
+| P-s14 | APPLIED | |
+| P-s15 | APPLIED | time_dvc.kl1 lines are 199-210, not 197-209 |
+| P-s16 | APPLIED | |
+| P-s17 | APPLIED, corrected | TM-388 PDF p29 lists four element widths (1, 8, 16, 32), not "16 or 32" |
+| P-s18 | APPLIED | |
+| P-s19 | APPLIED | |
+| P-s20 | APPLIED | |
+| P-f1 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
+| P-f2 | APPLIED | also `psi/fepread/ptfread.py`'s docstring, which said the same |
+| P-f3 | NOT APPLIED | `ref/pimm/` is another agent's directory; outside this change |
+| §6 `classes.tsv` | APPLIED (generator) | `asm/simpos_census/espscan.py` `INSTANCE_RESULT`: `time` `now/2` returns an instance (CH_CLOCK.ESP:33-34, 59-60); the scan rerun, every table regenerated; only `time`'s sends move |
+
 ## §6 Open after this check
 
 - No V3.0 PIMOS source is held, so `login Server End` stays INFERENCE
@@ -671,9 +708,8 @@ These are outside `psi/` in part. Changing them requires the full suite.
 - Not given rows: the unlabelled local helpers of INTERPOLATED files
   (about 20 in `hash_index`, `list`, `list_index`), which inherit their
   file's label.
-- `required/classes.tsv`'s `time` row lacks get_count/2 and
-  set_count/2, which held IFS source sends (CH_CLOCK.ESP:59-60); not
-  fixed here (a generated table).
+- ~~`required/classes.tsv`'s `time` row lacks get_count/2 and
+  set_count/2~~: fixed 2026-11-25 in the generator (Status, §5).
 - The primer cited as `primer25.tex` is titled "PIMOS 3.0 Introductory
   Manual" (its `\title`), but points readers to the "PIMOS 2.5 Manual".
 - The OCR corpus covers about half the held TR/TM pages. It covers all
