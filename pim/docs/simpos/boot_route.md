@@ -317,3 +317,22 @@ B3 is the gate. In order of preference:
 Then B7's `user` and `world` (USAGE) and B5's `directory`. Then a
 coordinator process with a system menu that has the two PIM/m items of
 §1.
+
+**B5's `directory`, examined in step 3i (PARTIAL).** The interface is
+printed (TR-056 p22-p24; TR-524 p36-p37), and the held callers settle
+what a miss does: it fails, and the caller takes another clause.
+- `pimfep##pimos_fep_superviser` local `full_pathname/1` @1bc: clause 1
+  sends `retrieve/4` (@1c4) and cuts (@1c5). Its alternative (`c0`
+  @1c6) asks `information/3` for the image file name and sends
+  `retrieve/4` again (@1d7).
+- `pimfep##pimos_file` local `remove/2` @1d7: clause 1 sends
+  `retrieve/4` (@1de) and `is_directory/1`. Clause 2 (`c2` @1e3) is the
+  other case.
+- `check_file_size/1` @3d1 has one clause: `retrieve/3` (@3d7),
+  `not_directory/1`, `size/2`. A miss fails it.
+
+No stand-in was written. A hit needs entries, and the entries are the
+file system's (B5's other half, not held). A directory with no entries
+would only turn the census's `retrieve` refusals into failures, which is
+not progress. A directory with entries would be OURS. So `directory`
+waits for the file system.
