@@ -502,3 +502,14 @@ surviving PSI.** What it adds:
 4. **東京理科大学**: the fate of the 1986 PSI.
 5. Then, unchanged: NDL, Mitsubishi Electric's IT group, AIST, Oki, the other CESP universities,
    ASTEM, Argonne and Lawrence Berkeley (§9), booksellers.
+
+## 16. The second file search (2026-11-24)
+
+`simpos/subsystems/search_files_2026-11-24b.md` searched places that hold files rather than
+catalogues: code search (GitHub, Sourcegraph, GitLab), Software Heritage, SourceForge and the OSDN
+mirrors, live and archived FTP mirrors (seven live hosts, 35 more in Wayback CDX), archive.org's
+metadata and full-text search, Discmaster, Usenet backups, and the KLIC and PDSS distributions. It
+found no SIMPOS, ESP or CESP file. The ICOT files it met (the CMU AI Repository mirror on GitHub,
+the Waseda AITEC/ICOT mirror) are the held IFS tree. Its leads need an account: GitHub's signed-in
+code search with exact punctuation, GitLab code search, two archive.org lending-library proceedings
+(MFCS'86, ICLP'86) with SIMPOS screens, and a Codeberg retry.
